@@ -42,7 +42,7 @@
 #define UNUSED
 #endif
 
-// TODO do not compare double with equality
+
 
 static const REAL8 G_CP2 = LAL_G_SI / LAL_C_SI / LAL_C_SI;
 
@@ -92,6 +92,7 @@ typedef struct tagLALSDWaveformParams {
     REAL8 ccoeff10pn[30];
     REAL8 ccoeff15pn[34];
     REAL8 prevdomega;
+    REAL8 polarizationangle;
 } LALSDWaveformParams;
 
 static INT4 XLALSpinDominatedWaveformStoppingTest(UNUSED REAL8 t, const REAL8 values[], REAL8 dvalues[],
@@ -150,8 +151,7 @@ int XLALSpinDominatedWaveformConstantCoefficients(LALSDWaveformParams * params) 
     REAL8 k[PLUS_MINUS_DIM] = { ckp[1] - 1., ckp[1] + 1. };
     REAL8 c2t = cos(2. * params->theta);
 
-    // TODO inner variables can be rewritten into multidimensional arrays
-    // TODO can be separated into different functions according to pn order
+
     acoeff00pn = XLALDmatrix(PN00DIM, PLUS_MINUS_DIM);
     b0coeff0pn = XLALDmatrix(PN00DIM, PLUS_MINUS_DIM);
     d0coeff0pn = XLALDmatrix(PN00DIM, PLUS_MINUS_DIM);
@@ -636,11 +636,30 @@ int idx /**< index of the time dependent variables */) {
     REAL8 k[PLUS_MINUS_DIM] = { ckp[1] - 1., ckp[1] + 1. };
     REAL8 s2k1 = sin(2. * params->kappa1);
     REAL8 c2k1 = cos(2. * params->kappa1);
+
+    REAL8 vP[OMEGA_POWER_DIM];
+    vP[0] = 1.;
+    vP[1] = cbrt(params->totalmass * expr[OMEGA] * G_CP2 / LAL_C_SI);
+    for (int i = 2; i < OMEGA_POWER_DIM; ++i) {
+        vP[i] = vP[1] * vP[i - 1];
+    }
+    params->eps = vP[2];
+    REAL8 eta = params->nu / (1. + params->nu) / (1. + params->nu);
+    REAL8 eps_corr[PN_ORDER][PN_ORDER];
+    eps_corr[PN00][PN10] = params->eps
+            * (1. + vP[2] * (1. - eta / 3.) );
+    eps_corr[PN05][PN10] = eps_corr[PN00][PN10];
+    eps_corr[PN00][PN15] = params->eps
+            * (1. + vP[2] * (1. - eta / 3.) + vP[3] * (eta + (2. / 3.) / (eta / params->nu)));
+    REAL8 epssqrt = sqrt(params->eps);
+    params->xi = params->nu / epssqrt; // second small parameter
+
     REAL8 phin[PHI_PSI_DIM], psin[PHI_PSI_DIM];
     phin[0] = psin[0] = 1.;
     for (int i = 1; i < PHI_PSI_DIM; ++i) {
         phin[i] = i * expr[PHI];
         psin[i] = i * expr[PSI];
+
     }
     REAL8 *waveampcoeffs = XLALDmatrix(AMPCOEFF_DIM, PLUS_MINUS_DIM);
     switch (params->pnamp) {
@@ -656,10 +675,10 @@ int idx /**< index of the time dependent variables */) {
                                 /**/+ sin(phin[1] - psin[2]) * k[MINUS]    //
                                 )//
                         )//
-                ) + 3. * log(expr[OMEGA] / omega0) * (    //
+                ) + 3. * log(eps_corr[PN00][PN15] / omega0) * (    //
                 4. * ctp[1] * skp[1] * stp[1] * (    //
-                        /* */-k[MINUS] * cos(phin[1] - psin[2])
-                        /**/+ k[PLUS_] * cos(phin[1] + psin[2])    //
+                        -k[MINUS] * cos(phin[1] - psin[2])
+                        + k[PLUS_] * cos(phin[1] + psin[2])    //
                         )//
                 + sin(phin[2] - psin[2]) * (2. * ckp[1] - skp[2] + 2.) * (-stp[2] + 2.)  //
                 + sin(phin[2] + psin[2]) * (2. * ckp[1] + skp[2] - 2.) //
@@ -673,16 +692,17 @@ int idx /**< index of the time dependent variables */) {
                         /*  */cos(phin[1] + psin[2]) * k[PLUS_]
                         /**/+ cos(phin[1] - psin[2]) * k[MINUS] //
                         )//
-                ) + 6. * log(expr[OMEGA] / omega0) * ( //
-                /*  */(2. * ckp[1] - skp[2] + 2.) * ctp[1] * cos(phin[2] - psin[2])
-                /**/+ (2. * ckp[1] + skp[2] - 2.) * ctp[1] * cos(phin[2] + psin[2])
-                /**/+ 2. * k[MINUS] * skp[1] * stp[1] * sin(phin[1] - psin[2])
-                /**/- 2. * k[PLUS_] * skp[1] * stp[1] * sin(phin[1] + psin[2]) //
+                ) + 6. * log(eps_corr[PN00][PN15] / omega0) * ( //
+                (2. * ckp[1] - skp[2] + 2.) * ctp[1] * cos(phin[2] - psin[2])
+                + (2. * ckp[1] + skp[2] - 2.) * ctp[1] * cos(phin[2] + psin[2])
+                + 2. * k[MINUS] * skp[1] * stp[1] * sin(phin[1] - psin[2])
+                - 2. * k[PLUS_] * skp[1] * stp[1] * sin(phin[1] + psin[2]) //
                 );
+
         waveampcoeffs[PN15_B + AMPCOEFF_DIM * PLUS_] = chi1_1 / 2. * (4. * skp[1] * ( //
                 /**/ckp[1] * skp[1] * cos(phin[2]) - c2k1 * ctp[1] * stp[1] * sin(phin[1])
                 /**/+ ckp[1] * skp[1] * stp[2] * ( //
-                        /*  */6. * sin(psin[1]) * sin(psin[1]) - 2. * sin(phin[1]) * sin(phin[1]) //
+                        /*  */6. * sin(psin[1]) * sin(psin[1]) - 2. + sin(phin[1]) * sin(phin[1]) //
                         )//
                 ) + ( //
                 2. * ctp[1] * skp[1] * stp[1] * ( //
@@ -1031,7 +1051,7 @@ int idx /**< index of the time dependent variables */) {
                 ) + 2. * ctp[1] * skp[1] * ( //
                 /*  */cos(phin[2] + psin[1]) * params->ccoeff05pn[2 + PN05DIM * PLUS_]
                 /**/+ cos(phin[2] - psin[1]) * params->ccoeff05pn[2 + PN05DIM * MINUS] //
-                + 9. * (2 - 3. * stp[2]) * ( //
+                + 9. * (2. - 3. * stp[2]) * ( //
                         /*  */cos(phin[2] + psin[3]) * params->ccoeff00pn[0 + PN00DIM * PLUS_]
                         /**/+ cos(phin[2] - psin[3]) * params->ccoeff00pn[0 + PN00DIM * MINUS] //
                         )//
@@ -1076,6 +1096,7 @@ int idx /**< index of the time dependent variables */) {
                 ) + stp[1] * (    //
                 /*  */cos(phin[1] + psin[2]) * params->ccoeff00pn[1 + PN00DIM * PLUS_]
                 /**/+ cos(phin[1] - psin[2]) * params->ccoeff00pn[1 + PN00DIM * MINUS]);
+
         waveampcoeffs[PN00_A + AMPCOEFF_DIM * PLUS_] = 0.25 * ((stp[2] - 2.) * (    //
                 /*  */cos(phin[2] + psin[2]) * params->ccoeff00pn[0 + PN00DIM * PLUS_]
                 /**/+ cos(phin[2] - psin[2]) * params->ccoeff00pn[0 + PN00DIM * MINUS]    //
@@ -1089,27 +1110,10 @@ int idx /**< index of the time dependent variables */) {
                 ) - 2. * stp[1] * skp[1] * (    //
                 /*  */cos(phin[1] + psin[2]) * k[PLUS_]
                 /**/+ cos(phin[1] - psin[2]) * k[MINUS]));
+
     }
     }
-    REAL8 vP[OMEGA_POWER_DIM];// = { 1., };
-    vP[0] = 1.;
-    vP[1] = cbrt(params->totalmass * expr[OMEGA] * G_CP2 / LAL_C_SI);
-    for (int i = 2; i < OMEGA_POWER_DIM; ++i) {
-        vP[i] = vP[1] * vP[i - 1];
-    }
-    params->eps = vP[2];
-    REAL8 eta = params->nu / (1. + params->nu) / (1. + params->nu);
-    REAL8 eps_corr[PN_ORDER][PN_ORDER];
-    eps_corr[PN00][PN10] = params->eps
-            * (1. + vP[2] * (1. - eta / 3.) + vP[3] * (eta + (2. / 3.) * (eta / params->nu)));
-    eps_corr[PN05][PN10] = eps_corr[PN00][PN10];
-    eps_corr[PN00][PN15] = params->eps
-            * (1. + vP[2] * (1. - eta / 3.) + vP[3] * (eta + (2. / 3.) / (eta / params->nu))
-                    + vP[4]
-                            * (1. - 65. / 12. * eta
-                                    - params->chi1 * params->chi1 * params->nu * eta * (3. * ckp[2] - 1.) / 4.));
-    REAL8 epssqrt = sqrt(params->eps);
-    params->xi = params->nu / epssqrt; // second small parameter
+
 
     REAL8 h[PLUS_CROSS_DIM] = { 0., 0. };
     switch (params->pnamp) {
@@ -1117,7 +1121,7 @@ int idx /**< index of the time dependent variables */) {
     case (PN15):
         // Highest order, only leading order of eps(omega) is needed.
         for (int i = PLUS_; i < PLUS_CROSS_DIM; ++i) {
-            h[i] += params->eps * epssqrt
+            h[i] += params->eps * epssqrt// eps_corr[PN00][PN15] * sqrt(eps_corr[PN00][PN15])
                     * (waveampcoeffs[PN15_A + AMPCOEFF_DIM * i] + waveampcoeffs[PN15_B + AMPCOEFF_DIM * i]
                             + waveampcoeffs[PN15_C + AMPCOEFF_DIM * i]);
         }
@@ -1125,8 +1129,8 @@ int idx /**< index of the time dependent variables */) {
     case (PN10):
         // Since highest order is 1.5 PN and there is no 0.5 PN order correction to eps(omega), leading order eps is enough.
         for (int i = PLUS_; i < PLUS_CROSS_DIM; ++i) {
-            h[i] += params->eps
-                    * (4. * params->xi * waveampcoeffs[PN05_A + AMPCOEFF_DIM * i] //
+            h[i] += params->eps // eps_corr[PN00][PN10]
+                    * (4. * params->xi * waveampcoeffs[PN05_A + AMPCOEFF_DIM * i]
                     + waveampcoeffs[PN10_A + AMPCOEFF_DIM * i] + waveampcoeffs[PN10_C + AMPCOEFF_DIM * i]
                             + params->beta1 * waveampcoeffs[PN10_B + AMPCOEFF_DIM * i]
                             + params->beta1 * waveampcoeffs[PN10_D + AMPCOEFF_DIM * i]);
@@ -1139,9 +1143,9 @@ int idx /**< index of the time dependent variables */) {
                     + params->beta1 * waveampcoeffs[PN05_B + AMPCOEFF_DIM * i]
                     - 2. * params->xi * waveampcoeffs[PN00_A + AMPCOEFF_DIM * i];
             if (params->pnamp == PN15) {
-                h[i] += 1. / (params->eps * epssqrt) * (eps_corr[PN05][PN10] * sqrt(eps_corr[PN05][PN10]) * temp);
+                h[i] += 1. / (params->eps * epssqrt) * (eps_corr[PN05][PN10] * sqrt(eps_corr[PN05][PN10])) * epssqrt * temp;
             } else {
-                h[i] += /*                                                                      */epssqrt * temp;
+                h[i] +=epssqrt * temp;
             }
         }
         /* no break */
@@ -1161,8 +1165,9 @@ int idx /**< index of the time dependent variables */) {
         break;
     }
     REAL8 ampcoeff = 2. * G_CP2 * params->totalmass * params->eps * epssqrt * params->xi / params->dist;
-    (*hplus)->data->data[idx] = ampcoeff * h[PLUS_];
-    (*hcross)->data->data[idx] = ampcoeff * h[MINUS];
+    // rotating h+ and hx into the LALSimulation precessing radiation frame
+    (*hplus)->data->data[idx] = ampcoeff * (h[PLUS_]*cos(params->polarizationangle)-h[MINUS]*sin(params->polarizationangle));
+    (*hcross)->data->data[idx] = ampcoeff * (h[MINUS]*cos(params->polarizationangle)+h[PLUS_]*sin(params->polarizationangle));
     XLALFreeDmatrix(waveampcoeffs);
     return XLAL_SUCCESS;
 }
@@ -1184,6 +1189,7 @@ REAL8 s1z, /**< initial value of S1z */
 REAL8 lnhatx, /**< initial value of LNhatx */
 REAL8 lnhaty, /**< initial value of LNhaty */
 REAL8 lnhatz, /**< initial value of LNhatz */
+REAL8 incl, /**< inclination, angle between L and line of sight N */
 int phaseO, /**< twice PN phase order */
 int amplitudeO, /**< twice PN amplitude order */
 REAL8 phiRef /**< Reference phase at the Reference Frequency */
@@ -1191,8 +1197,8 @@ REAL8 phiRef /**< Reference phase at the Reference Frequency */
     enum {
         X, Y, Z, DIM_XYZ,
     };
-    REAL8 totalmass, nu, chi1, beta1, kappa1, totalJ, S1, omega, eta, romega, v, LN, theta;
-    REAL8 alpha0, phin0;
+    REAL8 totalmass, nu, chi1, beta1, kappa1, totalJ, S1, omega, eta, romega, v, LN, theta, polarizationangle;
+    REAL8 phin0;
     totalmass = m1 + m2;
     if (m1 > m2) {
         nu = m2 / m1;
@@ -1222,38 +1228,101 @@ REAL8 phiRef /**< Reference phase at the Reference Frequency */
 
     // Calculate the orbital angular momentum, up to 1.5 PN, with SO corrections
     v = cbrt(G_CP2 * totalmass * omega / LAL_C_SI);
-    romega = G_CP2 * totalmass / v / v * (1.); //-(3.-eta)*v*v/3.-v*v*v/3.*(2./(1.+nu)/(1.+nu)+3.*eta)-v*v*v*v*(-eta*(19./4.+eta/9.)+1./4.*(-chi1*chi1*eta*nu)*(3.*cos(kappa1)*cos(kappa1)-1.)));
+    romega = G_CP2 * totalmass / v / v * (1.);
     LN = eta * totalmass * romega * romega * omega;
     // Calculate Spin magnitude, and the total angular momentum J
     S1 = chi1 * LAL_G_SI / LAL_C_SI * totalmass * totalmass * eta / nu;
-    REAL8 JxN[DIM_XYZ], JxL[DIM_XYZ], LXY[DIM_XYZ], inertiax[DIM_XYZ];
+
+    REAL8 JxN[DIM_XYZ], JxL[DIM_XYZ], Nvec[DIM_XYZ];
     REAL8 J[DIM_XYZ] = { LN * Lnh[X] + S1 * s1x / chi1, LN * Lnh[Y] + S1 * s1y / chi1, LN * Lnh[Z] + S1 * s1z / chi1 };
     totalJ = sqrt(J[X] * J[X] + J[Y] * J[Y] + J[Z] * J[Z]);
     // calculate the remaining angles
-    theta = acos(J[Z] / totalJ);
     if (kappa1 < 1e-7) {
         kappa1 = 0.;
-        phin0 = 3. * LAL_PI_2;
+        phin0 = LAL_PI_2;
         beta1 = 0.;
+        polarizationangle=LAL_PI;
+        theta = incl;
     } else if (kappa1 - LAL_PI > 0 && kappa1 - LAL_PI < 1.0e-12) {
-	    kappa1 = LAL_PI;
-        phin0 = 3. * LAL_PI_2;
+        kappa1 = LAL_PI;
+        phin0 = LAL_PI_2;
         beta1 = LAL_PI;
-	} else {
+        polarizationangle=LAL_PI;
+        theta = incl;
+    } else {
+        REAL8 JdotS = (J[X] * s1x + J[Y] * s1y + J[Z] * s1z) / totalJ / chi1 ;
+        if (JdotS - 1.0 > 0 && JdotS - 1.0 < 1.0e-12){
+            beta1 = acos(1.0);
+        } else{
         beta1 = acos((J[X] * s1x + J[Y] * s1y + J[Z] * s1z) / totalJ / chi1);
-        // calculating the initial value of the phi_n variable
-        JxN[X] = +J[Y] / totalJ * 1.0;
-        JxN[Y] = -J[X] / totalJ * 1.0;
-        JxN[Z] = +0.;
-        vectorProd(JxN, J, totalJ, inertiax);
+        }
+        // Line of sight vectorProd
+        Nvec[X]=0.;
+        Nvec[Y]=cos(incl);
+        Nvec[Z]=sin(incl);
+        theta = acos((J[X] * Nvec[X] + J[Y] * Nvec[Y] + J[Z] * Nvec[Z]) / totalJ );
+
+
+
         vectorProd(J, Lnh, totalJ, JxL);
-        vectorProd(JxL, J, totalJ, LXY);
-        alpha0 = acos(inertiax[X] * LXY[X] + inertiax[Y] * LXY[Y] + inertiax[Z] * LXY[Z]);
-        phin0 = 3. * LAL_PI_2 - alpha0;
+        vectorProd(J, Nvec, totalJ, JxN);
+        REAL8 JxNxN[DIM_XYZ], NxLxN[DIM_XYZ], LxN[DIM_XYZ], NLNxJNN[DIM_XYZ];
+
+        REAL8 JxNxNamp, NxLxNamp, polarizationanglesign, JxLamp;
+        vectorProd(Lnh, Nvec, 1.0, LxN);
+        vectorProd(JxN, Nvec, 1.0, JxNxN);
+        vectorProd(Nvec, LxN, 1.0, NxLxN);
+
+        JxLamp = sqrt(JxL[X]*JxL[X]+JxL[Y]*JxL[Y]+JxL[Z]*JxL[Z]);
+        JxNxNamp=sqrt(JxNxN[X]*JxNxN[X]+JxNxN[Y]*JxNxN[Y]+JxNxN[Z]*JxNxN[Z]);
+        NxLxNamp=sqrt(NxLxN[X]*NxLxN[X]+NxLxN[Y]*NxLxN[Y]+NxLxN[Z]*NxLxN[Z]);
+
+        REAL8 JxNxNdotNxLxN = (JxNxN[X]*NxLxN[X]+JxNxN[Y]*NxLxN[Y]+JxNxN[Z]*NxLxN[Z])/JxNxNamp/NxLxNamp ;
+
+        if (JxNxNdotNxLxN - 1.0 > 0 && JxNxNdotNxLxN - 1.0 < 1.0e-12){
+            polarizationangle = acos(1.0);
+        } else if (JxNxNdotNxLxN + 1.0 < 0 && abs(JxNxNdotNxLxN + 1.0) < 1.0e-12){
+            polarizationangle = acos(-1.0);
+        }
+        else {
+        polarizationangle = acos((JxNxN[X]*NxLxN[X]+JxNxN[Y]*NxLxN[Y]+JxNxN[Z]*NxLxN[Z])/JxNxNamp/NxLxNamp);
+        }
+
+        vectorProd(NxLxN, JxNxN, JxNxNamp*NxLxNamp, NLNxJNN);
+
+        if (beta1 < 1e-7){
+            polarizationangle =LAL_PI;
+        } else{
+        polarizationanglesign = NLNxJNN[X]*Nvec[X]+NLNxJNN[Y]*Nvec[Y]+NLNxJNN[Z]*Nvec[Z];
+
+        if (polarizationanglesign < 0.) {
+            polarizationangle *= -1.0;
+        }
+        }
+
+        REAL8 JxNxJ[DIM_XYZ];
+        REAL8 alpha0;
+        vectorProd(JxN, J, totalJ, JxNxJ);
+
+        REAL8 JxNxJamp;
+        JxNxJamp = sqrt(JxNxJ[X]*JxNxJ[X]+JxNxJ[Y]*JxNxJ[Y]+JxNxJ[Z]*JxNxJ[Z]);
+
+        alpha0 = acos((JxNxJ[X] * JxL[X] + JxNxJ[Y] * JxL[Y] + JxNxJ[Z] * JxL[Z])/JxNxJamp/JxLamp);
+
+        phin0 =  alpha0;
+
+        REAL8 JNJxJL[DIM_XYZ];
+        vectorProd(JxNxJ, JxL, JxNxJamp*JxLamp, JNJxJL);
+        REAL8 JNJxJLsign = JNJxJL[X]*J[X]+JNJxJL[Y]*J[Y]+JNJxJL[Z]*J[Z];
+
+        if (JNJxJLsign > 0.) {
+            phin0 *= -1.0;
+        }
+        phiRef += LAL_PI_2;
     }
     // calling the SDW driver with the prefered variables
     int n = XLALSimInspiralSpinDominatedWaveformDriver(hplus, hcross, totalmass, nu, chi1, D, kappa1, beta1, theta,
-            fStart, fRef, phaseO, amplitudeO, deltaT, phiRef, phin0);
+            fStart, fRef, phaseO, amplitudeO, deltaT, phiRef, phin0, polarizationangle);
     return n;
 }
 
@@ -1277,7 +1346,8 @@ int phaseO, /**< twice PN phase order */
 int amplitudeO, /**< twice PN amplitude order */
 REAL8 deltaT, /**< Sampling time interval */
 REAL8 phiRef, /**< Reference phase at the Reference Frequency */
-REAL8 phin0 /**< Starting value of the phi_n parameter */
+REAL8 phin0, /**< Starting value of the phi_n parameter */
+REAL8 polarizationangle /**< Angle to rotate the radiaton frame to the default LALSimulation radiation frame */
 ) {
     int idx;
     int n;
@@ -1323,6 +1393,7 @@ REAL8 phin0 /**< Starting value of the phi_n parameter */
     params.pnamp = amplitudeO;
     params.pnphase = phaseO;
     params.prevdomega = 0.;
+    params.polarizationangle = polarizationangle;
     n = XLALSpinDominatedWaveformConstantCoefficients(&params);
     if (n < 0) {
         XLAL_ERROR(XLAL_EFUNC);
@@ -1333,7 +1404,7 @@ REAL8 phin0 /**< Starting value of the phi_n parameter */
     yin[PSI] = 0.;
     REAL8Array *yout;
     // estimating the length of the waveform
-    REAL8 length = 5. / 256. * pow(fStart * LAL_PI, -8. / 3.) * (1 + params.nu) * (1 + params.nu) / params.nu
+    REAL8 length = 5. / 256. * pow(fStart * LAL_PI, -8. / 3.) * (1. + params.nu) * (1. + params.nu) / params.nu
             * pow(G_CP2 * params.totalmass / LAL_C_SI, -5. / 3.);
     INT4 intLen = XLALAdaptiveRungeKutta4Hermite(integrator, (void *) &params, yin, 0.0, length, deltaT, &yout);
     UNUSED INT4 intReturn = integrator->returncode;
@@ -1385,16 +1456,20 @@ REAL8 phin0 /**< Starting value of the phi_n parameter */
         }
     }
 
+
     REAL8 expr[3];
     for (idx = 0; idx < intLen; idx++) {
         expr[PHI] = phin->data->data[idx];
         expr[OMEGA] = omega->data->data[idx];
         expr[PSI] = psi->data->data[idx];
-        n = XLALSpinDominatedWaveformBuild(&params, expr, hplus, hcross, idx);
+
+    n = XLALSpinDominatedWaveformBuild(&params, expr, hplus, hcross, idx);
         if (n < 0) {
             XLAL_ERROR(XLAL_EFUNC);
         }
+
     }
+
     XLALDestroyREAL8Array(yout);
     XLALDestroyREAL8TimeSeries(phin);
     XLALDestroyREAL8TimeSeries(omega);
@@ -1417,10 +1492,10 @@ static INT4 XLALSpinDominatedWaveformDerivatives(UNUSED REAL8 t, const REAL8 val
     for (int i = 2; i < OMEGA_POWER_DIM; ++i) {
         vP[i] = vP[1] * vP[i - 1];
     }
-    // TODO wouldn't be better to use v instead of eps? Or sqrtEpsP[i]?
+
     params->eps = vP[2];
     REAL8 epsP3 = params->eps * params->eps * params->eps;
-    params->xi = params->nu / sqrt(params->eps); // second small parameter
+    params->xi = params->nu / sqrt(params->eps);
     REAL8 eta = params->nu / (1. + params->nu) / (1. + params->nu);
     REAL8 phasecoeff = 96. / 5. * eta * vP[5] * values[OMEGA] * values[OMEGA];
     REAL8 sinKappa1 = sin(params->kappa1);
@@ -1434,12 +1509,12 @@ static INT4 XLALSpinDominatedWaveformDerivatives(UNUSED REAL8 t, const REAL8 val
         case (PN20):
             dvalues[PHI] += +3. / 2. / LAL_G_SI / params->totalmass / sinKappa1 * params->chi1 * params->chi1 * LAL_C_SI
                     * LAL_C_SI * LAL_C_SI * epsP3 * sqrt(params->eps)
-                    * ((1. - 2. * params->xi * sqrt(params->eps)) * sinKappa1 * cosKappa1
+                    * (1. - 2. * params->xi * sqrt(params->eps)) * (sinKappa1 * cosKappa1
                             + params->beta1 * cosKappa1 * cosKappa1);
             /* no break */
         case (PN15):
             dvalues[PHI] += params->chi1 * LAL_C_SI * LAL_C_SI * LAL_C_SI * epsP3 / 2. / LAL_G_SI / params->totalmass
-                    * (-4. * cosKappa1 * params->beta1 + 5 * sqrt(params->eps) * params->xi - 4.);
+                    * ( 5. * sqrt(params->eps) * params->xi - 4.)*(1. + cosKappa1 * params->beta1 / sinKappa1 );
             /* no break */
         case (PN10):
             /* no break */
@@ -1475,7 +1550,7 @@ static INT4 XLALSpinDominatedWaveformDerivatives(UNUSED REAL8 t, const REAL8 val
         dvalues[OMEGA] += phasecoeff * 1.;
         break;
     }
-    dvalues[PSI] = values[OMEGA];
+    dvalues[PSI] = values[OMEGA]-dvalues[PHI]*cos(params->kappa1-params->beta1);
 
     return GSL_SUCCESS;
 } /* end of XLALSpinDominatedWaveformDerivatives */
@@ -1506,7 +1581,7 @@ UNUSED void *mparams) {
     case (PN20):
         mecotest += +6. * vP[PN20]
                 * (1. / 8. * (-27. + 19. * eta - eta * eta / 3.)
-                        - (3. * cosKappa1 * cosKappa1 - 1) / 2. * params->chi1 * params->chi1 * eta / params->nu);
+                        - (3. * cosKappa1 * cosKappa1 - 1.) / 2. * params->chi1 * params->chi1 * eta / params->nu);
         /* no break */
     case (PN15):
         mecotest += +5. * vP[PN15] * (8. / 3. * eta / params->nu + 2. * eta) * cosKappa1 * params->chi1;
@@ -1522,24 +1597,24 @@ UNUSED void *mparams) {
         break;
     }
 
-    /* Check value of SEOBNRv2 stopping frequency */
+    /* Check value of SEOBNRv2 stopping frequency
 
     REAL8 mcheck1 = params->totalmass / (1. + params->nu);
     REAL8 mcheck2 = params->totalmass - mcheck1;
     REAL8 spincheckz1 = params->chi1 * cos(params->kappa1);
     REAL8 spincheckz2 = 0.0;
     REAL8 seobnr_stop_freq = XLALSimIMRSpinAlignedEOBPeakFrequency(mcheck1, mcheck2, spincheckz1, spincheckz2, 2);
-
+*/
 
     if (mecotest < 0) {
         XLALPrintWarning("** LALSimInspiralSDW WARNING **: MECO reached\n");
         return -1;
 
-    } else if (omega > seobnr_stop_freq*LAL_PI) {
+    }  /*else if (omega > seobnr_stop_freq*LAL_PI) {
         XLALPrintWarning("** LALSimInspiralSDW WARNING **: SEOBNR stopping frequency reached\n");
         return -1;
 
-    } else if (isnan(omega)) {
+    } */else if (isnan(omega)) {
         XLALPrintWarning("** LALSimInspiralSDW WARNING **: omega is NAN\n");
         return -1;
     } else if (vP[1] >= 1.) {

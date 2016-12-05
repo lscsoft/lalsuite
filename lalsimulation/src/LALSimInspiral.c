@@ -614,13 +614,12 @@ int XLALSimInspiralChooseTDWaveform(
                 XLALPrintError("XLAL Error : For the spindominatedwf approximant maximal phase correction is 2 PN\n");
                 XLAL_ERROR(XLAL_EDOM);
                 }
-	        incl=inclination;
-	        XLALSimInspiralInitialConditionsPrecessingApproxs(&incl,&spin1x,&spin1y,&spin1z,&spin2x,&spin2y,&spin2z,inclination,S1x,S1y,S1z,S2x,S2y,S2z,m1,m2,f_ref,phiRef,XLALSimInspiralWaveformParamsLookupFrameAxis(LALparams));
-                LNhatx = sin(incl);
+	            incl=inclination;
+                LNhatx = 0.;
                 LNhaty = 0.;
-                LNhatz = cos(incl);
+                LNhatz = 1.;
                 /* Call the waveform driver routine */
-                ret = XLALSimInspiralSpinDominatedWaveformInterfaceTD(hplus, hcross, deltaT, m1, m2, f_min, f_ref, distance, spin1x, spin1y, spin1z, LNhatx, LNhaty, LNhatz, phaseO, amplitudeO, phiRef);
+                ret = XLALSimInspiralSpinDominatedWaveformInterfaceTD(hplus, hcross, deltaT, m1, m2, f_min, f_ref, distance, S1x, S1y, S1z, LNhatx, LNhaty, LNhatz, incl, phaseO, amplitudeO, phiRef);
                 break;
 
         /* spin aligned inspiral-merger-ringdown models */
@@ -3364,6 +3363,7 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
     ampfac = 2. * M * LAL_G_SI * pow(LAL_C_SI, -3) * eta / dist;
 
     /* loop over time steps and compute polarizations h+ and hx */
+
     len = V->data->length;
     for(idx = 0; idx < len; idx++)
     {
@@ -5294,7 +5294,7 @@ double XLALSimInspiralGetFinalFreq(
             }
             freqFunc = fSEOBNRv4RD;
             break;
-            
+
         case IMRPhenomA:
             /* Check that spins are zero */
             if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
@@ -5491,19 +5491,19 @@ int XLALSimInspiralTDConditionStage2(REAL8TimeSeries *hplus, REAL8TimeSeries *hc
 
 
 /**
- * @brief Function for determining the starting frequency 
+ * @brief Function for determining the starting frequency
  * of the (2,2) mode when the highest order contribution starts at fLow.
  * @details
- * Compute the minimum frequency for waveform generation 
- *  using amplitude orders above Newtonian.  The waveform 
- *  generator turns on all orders at the orbital          
- *  associated with fMin, so information from higher      
- *  orders is not included at fLow unless fMin is         
+ * Compute the minimum frequency for waveform generation
+ *  using amplitude orders above Newtonian.  The waveform
+ *  generator turns on all orders at the orbital
+ *  associated with fMin, so information from higher
+ *  orders is not included at fLow unless fMin is
  *  sufficiently low.
  *
  * @param fLow  Requested lower frequency.
  * @param ampOrder Requested amplitude order.
- * @param approximant LALApproximant 
+ * @param approximant LALApproximant
  * @retval fStart The lower frequency to use to include corrections.
  */
 REAL8 XLALSimInspiralfLow2fStart(REAL8 fLow, INT4 ampOrder, INT4 approximant)
@@ -5857,13 +5857,12 @@ int XLALSimInspiralChooseTDWaveformOLD(
                 XLALPrintError("XLAL Error : For the spindominatedwf approximant maximal phase correction is 2 PN\n");
                 XLAL_ERROR(XLAL_EDOM);
                 }
-	        incl=inclination;
-	        XLALSimInspiralInitialConditionsPrecessingApproxs(&incl,&spin1x,&spin1y,&spin1z,&spin2x,&spin2y,&spin2z,inclination,S1x,S1y,S1z,S2x,S2y,S2z,m1,m2,f_ref,phiRef,XLALSimInspiralGetFrameAxis(waveFlags));
-                LNhatx = sin(incl);
+	            incl=inclination;
+                LNhatx = 0.;
                 LNhaty = 0.;
-                LNhatz = cos(incl);
+                LNhatz = 1.;
                 /* Call the waveform driver routine */
-                ret = XLALSimInspiralSpinDominatedWaveformInterfaceTD(hplus, hcross, deltaT, m1, m2, f_min, f_ref, distance, spin1x, spin1y, spin1z, LNhatx, LNhaty, LNhatz, phaseO, amplitudeO, phiRef);
+                ret = XLALSimInspiralSpinDominatedWaveformInterfaceTD(hplus, hcross, deltaT, m1, m2, f_min, f_ref, distance, S1x, S1y, S1z, LNhatx, LNhaty, LNhatz, incl, phaseO, amplitudeO, phiRef);
                 break;
 
         /* spin aligned inspiral-merger-ringdown models */
