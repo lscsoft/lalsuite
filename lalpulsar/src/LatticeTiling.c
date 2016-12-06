@@ -107,6 +107,7 @@ struct tagLatticeTiling {
   LT_Lattice lattice;                   ///< Type of lattice to generate tiling with
   gsl_vector *phys_bbox;                ///< Metric ellipse bounding box
   gsl_vector *phys_origin;              ///< Parameter-space origin in physical coordinates
+  gsl_vector *phys_origin_shift_frac;   ///< Fraction of step size to shift physical parameter-space origin
   gsl_matrix *int_from_phys;            ///< Transform to generating integers from physical coordinates
   gsl_matrix *phys_from_int;            ///< Transform to physical coordinates from generating integers
   gsl_matrix *tiled_generator;          ///< Lattice generator matrix in tiled dimensions
@@ -838,7 +839,7 @@ void XLALDestroyLatticeTiling(
     XLALFree( tiling->stats_cntnr->stats );
     XLALFree( tiling->stats_cntnr );
     GFMAT( tiling->int_from_phys, tiling->phys_from_int, tiling->tiled_generator );
-    GFVEC( tiling->phys_bbox, tiling->phys_origin );
+    GFVEC( tiling->phys_bbox, tiling->phys_origin, tiling->phys_origin_shift_frac );
     XLALFree( tiling );
   }
 }
@@ -960,6 +961,32 @@ int XLALSetLatticeTilingPadding(
 
   // Set level of padding added to parameter space bounds
   tiling->padding = padding;
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALSetLatticeTilingRandomOriginOffsets(
+  LatticeTiling *tiling,
+  RandomParams *rng
+  )
+{
+
+  // Check input
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tiling->lattice == LT_LATTICE_MAX, XLAL_EINVAL );
+  XLAL_CHECK( rng != NULL, XLAL_EFAULT );
+
+  const size_t n = tiling->ndim;
+
+  // Allocate memory
+  GAVEC( tiling->phys_origin_shift_frac, n );
+
+  // Generate random uniform offsets for later use in XLALSetTilingLatticeAndMetric()
+  // - Only values in tiled dimensions of 'phys_origin_shift_frac' will actually be used
+  for ( size_t i = 0; i < n; ++i ) {
+    gsl_vector_set( tiling->phys_origin_shift_frac, i, XLALUniformDeviate( rng ) );
+  }
 
   return XLAL_SUCCESS;
 
@@ -1230,14 +1257,17 @@ int XLALSetTilingLatticeAndMetric(
   }
 
   // Round tiled dimensions of physical parameter-space origin to nearest lattice step size, then
-  // shift by half a step size. This ensures that the tiling will never place a lattice point at zero
-  // in physical coordinates, since the physical coordinates may not be well-defined at zero.
+  // shift by the fraction of a step size 'phys_origin_shift_frac_i', if given, or 0.5 otherwise.
+  // - The default of 0.5 was to ensure that the tiling will never place a lattice point at zero
+  //   in physical coordinates, since the physical coordinates may not be well-defined at zero.
+  //   This could potentially not be the case if 'phys_origin_shift_frac_i' happens to be zero.
   for ( size_t ti = 0; ti < tn; ++ti ) {
     const size_t i = tiling->tiled_idx[ti];
     const double int_from_phys_i_i = gsl_matrix_get( tiling->int_from_phys, i, i );
     const double phys_from_int_i_i = gsl_matrix_get( tiling->phys_from_int, i, i );
+    const double phys_origin_shift_frac_i = ( tiling->phys_origin_shift_frac != NULL ) ? gsl_vector_get( tiling->phys_origin_shift_frac, i ) : 0.5;
     double phys_origin_i = gsl_vector_get( tiling->phys_origin, i );
-    phys_origin_i = ( round( phys_origin_i * int_from_phys_i_i ) + 0.5 ) * phys_from_int_i_i;
+    phys_origin_i = ( round( phys_origin_i * int_from_phys_i_i ) + phys_origin_shift_frac_i ) * phys_from_int_i_i;
     gsl_vector_set( tiling->phys_origin, i, phys_origin_i );
   }
 
