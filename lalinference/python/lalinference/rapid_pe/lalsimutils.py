@@ -1443,18 +1443,6 @@ def string_gps_pretty_print(tgps):
     """
     return "%d.%d" % (tgps.gpsSeconds, tgps.gpsNanoSeconds)
 
-def pylal_psd_to_swig_psd(raw_pylal_psd):
-    """
-    pylal_psd_to_swig_psd
-    Why do I do a conversion? I am having trouble returning modified PSDs
-    """
-    data = raw_pylal_psd.data
-    df = raw_pylal_psd.deltaF
-    psdNew = lal.CreateREAL8FrequencySeries("PSD", lal.LIGOTimeGPS(0.), 0., df ,lal.HertzUnit, len(data))
-    for i in range(len(data)):
-        psdNew.data.data[i] = data[i]   # don't mix memory management between pylal and swig
-    return psdNew
-
 def get_psd_series_from_xmldoc(fname, inst):
     return series.read_psd_xmldoc(utils.load_filename(fname, contenthandler=series.PSDContentHandler))[inst]  # return value is pylal wrapping of the data type; index data by a.data[k]
 
