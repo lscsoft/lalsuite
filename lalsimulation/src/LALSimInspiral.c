@@ -806,8 +806,8 @@ int XLALSimInspiralChooseTDWaveform(
                                               deltaT, m1pert, m2, f_min, distance, inclination, spin1, spin2, PrecEOBversion);
 
             } else {
-              if(approximant==SEOBNRv3_opt) SpinAlignedEOBversion = 300;
-              if(approximant==SEOBNRv3_opt_rk4) SpinAlignedEOBversion = 304;
+              if(approximant==SEOBNRv3_opt) PrecEOBversion = 300;
+              if(approximant==SEOBNRv3_opt_rk4) PrecEOBversion = 304;
               ret = XLALSimIMRSpinEOBWaveform(hplus, hcross, /*&epoch,*/ phiRef,
                                               deltaT, m1, m2, f_min, distance, inclination, spin1, spin2, PrecEOBversion);
             }
