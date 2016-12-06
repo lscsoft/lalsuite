@@ -313,6 +313,8 @@ typedef enum tagApproximant {
                          * @remarks Implemented in lalsimulation (time domain). */
    SEOBNRv3,		/**< Spin precessing EOBNR model v3
                          * @todo Fix implementation in lalsimulation (time domain). */
+   SEOBNRv3_pert,        /**< Perturbed [m1 -> m1*(1+1e-15)] Spin precessing EOBNR model v3
+                         * @remarks Implemented in lalsimulation (time domain). */
    SEOBNRv3_opt,        /**< Optimized Spin precessing EOBNR model v3
                          * @remarks Implemented in lalsimulation (time domain). */
    SEOBNRv3_opt_rk4,        /**< USE RK4 Optimized Spin precessing EOBNR model v3
