@@ -46,10 +46,10 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN sft_files_check_crc, sft_files_check_count, interpolation, output_per_detector, output_per_segment, output_misc_info, shortcut_compute, shortcut_search;
+    BOOLEAN sft_files_check_crc, sft_files_check_count, interpolation, lattice_rand_offset, output_per_detector, output_per_segment, output_misc_info, shortcut_compute, shortcut_search;
     CHAR *setup_file, *sft_files, *lattice, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd;
-    REAL8 sft_timebase, param_rand_offset, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit;
+    REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
     UINT4 sky_patch_count, sky_patch_index, freq_partitions, Fstat_run_med_window, Fstat_Dterms, Fstat_SSB_precision, output_toplist_limit, rand_seed, cache_max_size, cache_gc_limit;
     int Fstat_method;
@@ -167,12 +167,6 @@ int main( int argc, char *argv[] )
     "Search parameter space in fourth spindown, in Hertz/second^4. "
     "(Just in case a nearby supernova goes off!) "
     );
-  XLALRegisterUvarMember(
-    param_rand_offset, REAL8, 'b', DEVELOPER,
-    "If given, add random offsets to the search range in each parameter. "
-    "The range of the random offsets is +/- the value given by this option * the search range in each parameter. "
-    "Arguments to this option must be in the range (0,0.5). "
-    );
   //
   // - Lattice tiling setup
   //
@@ -197,6 +191,11 @@ int main( int argc, char *argv[] )
     "Type of lattice used to generate the lattice tilings. Options are:\n"
     " - 'An-star': An-star lattice. Gives the thinnest tiling in low dimensions, and is therefore the default.\n"
     " - 'cubic':   Hypercubic lattice. Probably only useful for testing purposes. "
+    );
+  XLALRegisterUvarMember(
+    lattice_rand_offset, BOOLEAN, 'j', DEVELOPER,
+    "If given, offset the physical parameter-space origin of the lattice tilings by a random fraction of the lattice step size. "
+    "This is important when performing mismatch studies to ensure that the mismatch distribution is fully sampled. "
     );
   //
   // - F-statistic computation options
@@ -356,9 +355,6 @@ int main( int argc, char *argv[] )
   XLALUserVarCheck( &should_exit,
                     !UVAR_SET( f4dot ) || UVAR_SET( f3dot ),
                     UVAR_STR( f3dot ) " must be specified if " UVAR_STR( f4dot ) " is specified" );
-  XLALUserVarCheck( &should_exit,
-                    !UVAR_SET( param_rand_offset ) || ( 0 < uvar->param_rand_offset && uvar->param_rand_offset < 0.5 ),
-                    UVAR_STR( param_rand_offset ) " must be in range (0,0.5)" );
   //
   // - Lattice tiling setup
   //
@@ -503,31 +499,6 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( XLALComputePhysicalSkyEqualAreaPatch( &ps[psialpha][0], &ps[psialpha][1], &ps[psidelta][0], &ps[psidelta][1], uvar->sky_patch_count, uvar->sky_patch_index ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
-  // If requested, add random offsets to the search range in each parameter
-  if ( UVAR_SET( param_rand_offset ) ) {
-    LogPrintf( LOG_NORMAL, "Adding random offsets of up to +/-%0.1f%% of the search range in each parameter, as requested\n", 100.0 * uvar->param_rand_offset );
-
-    // Generate and add random offsets
-    RandomParams *rand_par = XLALCreateRandomParams( uvar->rand_seed );
-    XLAL_CHECK_MAIN( rand_par != NULL, XLAL_EFUNC );
-    for ( size_t i = 0; i < XLAL_NUM_ELEM( ps ); ++i ) {
-      const REAL4 u = XLALUniformDeviate( rand_par );
-      XLAL_CHECK_MAIN( !XLAL_IS_REAL4_FAIL_NAN(u), XLAL_EFUNC );
-      const REAL8 range = ps[i][1] - ps[i][0];
-      const REAL8 offset = uvar->param_rand_offset * ( -1 + 2 * u ) * range;
-      ps[i][0] += offset;
-      ps[i][1] += offset;
-    }
-
-    // Ensure that the search ranges of some parameters are still valid
-    ps[psidelta][0] = GSL_MAX( ps[psidelta][0], -LAL_PI_2 );
-    ps[psidelta][1] = GSL_MIN( ps[psidelta][1], LAL_PI_2 );
-
-    // Cleanup
-    XLALDestroyRandomParams( rand_par );
-
-  }
-
   // Check that metrics computed in setup file have sufficient spindown dimensions to cover user input
   size_t nmetricspins = 0;
   XLAL_CHECK_MAIN( XLALSuperskyMetricsDimensions( setup.metrics, &nmetricspins ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -596,6 +567,16 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( XLALSetLatticeTilingPadding( tiling[i], interpolation ? 2 : 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
   XLAL_CHECK_MAIN( XLALSetLatticeTilingPadding( tiling[isemi], 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Add random offsets to physical origin of lattice tilings, if requested
+  if ( UVAR_SET( lattice_rand_offset ) ) {
+    RandomParams *rand_par = XLALCreateRandomParams( uvar->rand_seed );
+    XLAL_CHECK_MAIN( rand_par != NULL, XLAL_EFUNC );
+    for ( size_t i = 0; i < ntiles; ++i ) {
+      XLAL_CHECK_MAIN( XLALSetLatticeTilingRandomOriginOffsets( tiling[i], rand_par ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+    XLALDestroyRandomParams( rand_par );
+  }
 
   // Set parameter-space lattice and metric
   for ( size_t i = 0; i < ncohtiles; ++i ) {
