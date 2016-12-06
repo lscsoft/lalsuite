@@ -726,11 +726,15 @@ def Fcross(theta, phi, psi):
 # Mass parameter conversion functions - note they assume m1 >= m2
 #
 def norm_sym_ratio(eta):
-    # FIXME: Replace with isclose when available
-    if eta > 0.25:
-        np.testing.assert_almost_equal(0.25, eta)
-        eta = 0.25
-    return sqrt(1 - 4.*eta)
+
+    # Assume floating point precision issues
+    #if np.any(np.isclose(eta, 0.25)):
+        #eta[np.isclose(eta, 0.25)] = 0.25
+
+    # Assert phyisicality
+    assert np.all(eta <= 0.25)
+
+    return np.sqrt(1 - 4. * eta)
 
 def mass1(Mc, eta):
     """Compute larger component mass from Mc, eta"""
