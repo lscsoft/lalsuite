@@ -140,6 +140,16 @@ int XLALSetLatticeTilingPadding(
   );
 
 ///
+/// Offset the physical parameter-space origin of the lattice tiling by a random fraction of the
+/// lattice step size in tiled dimensions. This is important when performing mismatch studies to
+/// ensure that the mismatch distribution is fully sampled.
+///
+int XLALSetLatticeTilingRandomOriginOffsets(
+  LatticeTiling *tiling,                ///< [in] Lattice tiling
+  RandomParams *rng                     ///< [in] Random number generator used to generate offsets
+  );
+
+///
 /// Set the tiling lattice, parameter-space metric, and maximum prescribed mismatch.  The lattice
 /// tiling \c tiling is now fully initialised, and can be used to create tiling iterators [via
 /// XLALCreateLatticeTilingIterator()] and locators [via XLALCreateLatticeTilingLocator()].
