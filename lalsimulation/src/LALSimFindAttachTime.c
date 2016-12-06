@@ -20,10 +20,10 @@
 #include "LALSimIMREOBNRv2.h"
 #include "LALSimIMRSpinEOB.h"
 #include "LALSimFindAttachTime.h"
+#include "LALSimIMRSpinPrecEOBHcapExactDerivative.c"
 #include "LALSimIMRSpinEOBHamiltonianPrec.c"
 #include "LALSimIMREOBHybridRingdownPrec.c"
-
-
+#include "LALSpinPrecHcapRvecDerivative_v3opt.c"
 
 
 double  XLALSimLocateOmegaTime(
@@ -36,8 +36,9 @@ double  XLALSimLocateOmegaTime(
     REAL8 m2,
     REAL8Vector *radiusVec,
     int *found,
-    REAL8* tMaxOmega
-        )
+    REAL8* tMaxOmega,
+    INT4 use_optimized
+    )
 {
     /*
     * Locate merger point (max omega),
@@ -134,12 +135,22 @@ double  XLALSimLocateOmegaTime(
 
         /* Calculate dr/dt */
         memset( dvalues->data, 0, numdynvars*sizeof(dvalues->data[0]));
-        if( XLALSpinPrecHcapRvecDerivative( 0, values->data, dvalues->data,
-            &seobParams) != XLAL_SUCCESS )
-        {
+        if(use_optimized){
+          if( XLALSpinPrecHcapRvecDerivative_exact( 0, values->data, dvalues->data,
+                                              &seobParams) != XLAL_SUCCESS )
+          {
                 XLAL_PRINT_INFO(
                     " Calculation of dr/dt failed while computing omegaHi time series\n");
                 XLAL_ERROR( XLAL_EFUNC );
+          }
+        } else {
+          if( XLALSpinPrecHcapRvecDerivative( 0, values->data, dvalues->data,
+                                              &seobParams) != XLAL_SUCCESS )
+          {
+                XLAL_PRINT_INFO(
+                    " Calculation of dr/dt failed while computing omegaHi time series\n");
+                XLAL_ERROR( XLAL_EFUNC );
+          }
         }
 
         /* Calculare r x dr/dt */

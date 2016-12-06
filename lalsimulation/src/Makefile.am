@@ -79,7 +79,9 @@ pkginclude_HEADERS = \
 	LALSimulationVCSInfoHeader.h
 
 noinst_HEADERS = \
-	LALSimBlackHoleRingdownPrec.c \
+	LALSimIMRSpinEOBHcapExactDerivativePrec_v3opt.c \
+	LALSimIMRSpinEOBFactorizedWaveformPrec_v3opt.c \
+	LALSimIMRSpinEOBFactorizedFluxPrec_v3opt.c \
 	LALSimBlackHoleRingdownPrec.h \
 	LALSimFindAttachTime.h \
 	LALSimIMREOBFactorizedFlux.c \
@@ -130,6 +132,7 @@ noinst_HEADERS = \
 lib_LTLIBRARIES = liblalsimulation.la
 
 liblalsimulation_la_SOURCES = \
+	LALSimBlackHoleRingdownPrec.c \
 	LALSimBlackHoleRingdown.c \
 	LALSimBurst.c \
 	LALSimBurstImg.c \
@@ -194,7 +197,8 @@ liblalsimulation_la_SOURCES = \
 	check_waveform_macros.h \
 	unicorn.xpm \
 	LALSimInspiralHGimri.c \
-	LALSimFindAttachTime.c
+	LALSimFindAttachTime.c \
+	LALSimIMRSpinEOB.c
 
 nodist_liblalsimulation_la_SOURCES = \
 	LALSimulationBuildInfoHeader.h \
