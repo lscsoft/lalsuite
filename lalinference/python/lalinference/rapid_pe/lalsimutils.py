@@ -1469,12 +1469,7 @@ def resample_psd_series(psd, df=None, fmin=None, fmax=None):
     psd_intp[psd_intp == 0.0] = float("inf")
 
     tmpepoch = lal.LIGOTimeGPS(float(psd.epoch))
-    # FIXME: Reenable when we figure out generic error
-    """
-    tmpunit = lal.Unit()
-    lal.ParseUnitString(tmpunit, str(psd.sampleUnits))
-    """
-    tmpunit = lal.SecondUnit
+    tmpunit = lal.Unit(str(psd.sampleUnits))
     new_psd = lal.CreateREAL8FrequencySeries(epoch = tmpepoch, deltaF=df,
             f0 = fmin, sampleUnits = tmpunit, name = psd.name,
             length=len(psd_intp))
