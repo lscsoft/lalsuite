@@ -78,7 +78,13 @@ LALAdaptiveRungeKutta4Integrator *XLALAdaptiveRungeKutta4InitEighthOrderInstead(
                              double eps_abs, double eps_rel
                              );
 /* END OPTIMIZED */
-
+/* OPTV3 */
+int XLALAdaptiveRungeKutta4_no_interpolate_SaveD(
+                            LALAdaptiveRungeKutta4Integrator * integrator,
+                            void * params, REAL8 * yinit, REAL8 tinit, REAL8 tend, REAL8 deltat_or_h0,
+                            REAL8Array ** t_and_y_out
+                            );
+/* END OPTV3 */
 void XLALAdaptiveRungeKutta4Free( LALAdaptiveRungeKutta4Integrator *integrator );
 
 int XLALAdaptiveRungeKutta4( LALAdaptiveRungeKutta4Integrator *integrator,
