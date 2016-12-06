@@ -210,7 +210,7 @@ const LatticeTilingStats *XLALLatticeTilingStatistics(
 int XLALRandomLatticeTilingPoints(
   const LatticeTiling *tiling,          ///< [in] Lattice tiling
   const double scale,                   ///< [in] Scale of random points
-  RandomParams *rng,                    ///< [in] Random number generator
+  RandomParams *rng,                    ///< [in] Random number generator used to generate points
   gsl_matrix *random_points             ///< [out] Matrix whose columns are the random points
   );
 
