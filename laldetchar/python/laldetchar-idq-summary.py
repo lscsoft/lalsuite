@@ -1093,8 +1093,14 @@ while gpsstart < gpsstop:
                 gvalues.append( 1.0*g[-1]/(e-s) )
                 cvalues.append( 1.0*c[-1]/(e-s) )
 
-                fap = np.array(c, dtype='float')/c[-1]
-                eff = np.array(g, dtype='float')/g[-1]
+                if c[-1]:
+                    fap = np.array(c, dtype='float')/c[-1]
+                else:
+                    fap = [0.0]
+                if g[-1]:
+                    eff = np.array(g, dtype='float')/g[-1]
+                else:
+                    eff = [0.0]
         
                 ### iterate over opts.FAPthr -> efficiencies at these FAPs -> plot!
                 _effs = []
