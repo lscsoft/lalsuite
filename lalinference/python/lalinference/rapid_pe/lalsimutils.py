@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Evan Ochsner, R. O'Shaughnessy
+# Copyright (C) 2012, 2016  Evan Ochsner, R. O'Shaughnessy, Chris Pankow
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
