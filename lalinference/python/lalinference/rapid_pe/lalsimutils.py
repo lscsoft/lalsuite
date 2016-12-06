@@ -1479,3 +1479,13 @@ def resample_psd_series(psd, df=None, fmin=None, fmax=None):
             length=len(psd_intp))
     new_psd.data.data = psd_intp
     return new_psd
+
+if __name__ == "__main__":
+    # Do forward and backwards m1m2 <-> mchirp_eta transform
+    # FIXME: Send to amrlib
+    m1, m2 = np.random.uniform(1.0, 100.0, 200).reshape(2, 100)
+    m1, m2 = np.max([m1, m2], axis=0), np.min([m1, m2], axis=0)
+    mc, eta = Mceta(m1, m2)
+    m1_out, m2_out = m1m2(mc, eta)
+    assert np.allclose(m1, m1_out)
+    assert np.allclose(m2, m2_out)
