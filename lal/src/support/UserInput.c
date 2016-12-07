@@ -105,6 +105,7 @@ typedef struct tagLALUserVariable {
   CHAR name[64];			// full name
   UserVarType type;			// variable type: BOOLEAN, INT4, REAL8, ...
   CHAR optchar;				// cmd-line character
+  const CHAR* subsection;		// optional subsection heading under OPTIONS
   CHAR help[2048];			// help-string
   void *cvar;				// pointer to the actual C-variable
   const void *cdata;			// pointer to auxilliary data needed to parse the C-variable
@@ -248,6 +249,11 @@ const char *lalUserVarHelpBrief = NULL;
  */
 const char *lalUserVarHelpDescription = NULL;
 
+/**
+ * An optional subsection heading under \e OPTIONS, under which all subsequently-defined user variables are printed as part of the help page.
+ */
+const char *lalUserVarHelpOptionSubsection = NULL;
+
 
 // ==================== Function definitions ====================
 
@@ -314,6 +320,9 @@ XLALRegisterUserVar ( void *cvar,		/**< pointer to the actual C-variable to link
   // copy entry name, replacing '_' with '-' so that
   // e.g. uvar->a_long_option maps to --a-long-option
   XLALStringReplaceChar( strncpy( ptr->name, name, sizeof(ptr->name) - 1 ), '_', '-' );
+
+  // copy current subsection heading
+  ptr->subsection = lalUserVarHelpOptionSubsection;
 
   // copy entry help string
   strncpy( ptr->help, help, sizeof(ptr->help) - 1 );
@@ -877,6 +886,7 @@ XLALUserVarPrintHelp ( FILE *file )
       BOOLEAN print_section_header = 1;
 
       /* Go through all user variables */
+      const char *subsection = NULL;
       for ( LALUserVariable *ptr = &UVAR_vars; (ptr=ptr->next) != NULL; )
         {
 
@@ -907,6 +917,12 @@ XLALUserVarPrintHelp ( FILE *file )
                 {
                   fprintf( f, "\n%s\n", section_headers[section] );
                   print_section_header = 0;
+                }
+
+              if ( ptr->subsection != NULL && ( subsection == NULL || strcmp( ptr->subsection, subsection ) != 0 ) )
+                {
+                  fprintf( f, "   %s\n", ptr->subsection );
+                  subsection = ptr->subsection;
                 }
 
               /* Print option, format help, and default value */
