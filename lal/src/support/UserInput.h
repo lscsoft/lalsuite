@@ -209,6 +209,7 @@ typedef enum tagUserVarLogFormat {
 /* Global variables */
 #ifndef SWIG /* exclude from SWIG interface */
 extern const char *lalUserVarHelpBrief;
+extern const char *lalUserVarHelpDescription;
 #endif /* SWIG */
 
 /* Function prototypes */

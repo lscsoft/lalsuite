@@ -90,6 +90,15 @@ main(int argc, char *argv[])
   const UserChoices enumData = { { -1, "noenum" }, { 1, "enum1" }, { 2, "enum2" }, { 2, "enumB" }, { 0, "enum0" } };
   const UserChoices flagData = { { -1, "noflag" }, { 1, "flagA" }, { 2, "flagB" }, { 4, "flagC" }, { 5, "flagAC" } };
 
+  lalUserVarHelpBrief = "brief description";
+  lalUserVarHelpDescription =
+    "This is a longer description of the program. This is a longer description of the program. This is a longer description of the program."
+    "This is a longer description of the program. This is a longer description of the program. This is a longer description of the program."
+    "This is a longer description of the program. This is a longer description of the program. This is a longer description of the program."
+    "\n"
+    "This is a longer description of the program. This is a longer description of the program. This is a longer description of the program."
+    "This is a longer description of the program. This is a longer description of the program. This is a longer description of the program.";
+
   XLAL_CHECK ( XLALRegisterUvarMember( argNum, REAL8, 0, REQUIRED, "Testing float argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( argStr, STRING, 0, REQUIRED, "Testing string argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( argBool, BOOLEAN, 0, REQUIRED, "Testing bool argument") == XLAL_SUCCESS, XLAL_EFUNC );

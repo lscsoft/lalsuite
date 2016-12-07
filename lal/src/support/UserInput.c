@@ -239,9 +239,14 @@ static CHAR *program_name = NULL;	// keep a pointer to the program name
 
 
 /**
- * An optional brief description of the program printed as part of the help page.
+ * An optional brief description of the program, printed after its name as part of the help page.
  */
 const char *lalUserVarHelpBrief = NULL;
+
+/**
+ * An optional longer description of the program, printed in its own section as part of the help page.
+ */
+const char *lalUserVarHelpDescription = NULL;
 
 
 // ==================== Function definitions ====================
@@ -857,6 +862,13 @@ XLALUserVarPrintHelp ( FILE *file )
   fprintf( f, "       %s -h|--help\n", program_name );
   fprintf( f, "       %s -v|--version[=verbose]\n", program_name );
   fprintf( f, "       %s [@<config-file>] [<options>...]\n", program_name );
+  if ( lalUserVarHelpDescription != NULL ) {
+    CHAR *description = XLALStringDuplicate( lalUserVarHelpDescription );
+    XLAL_CHECK ( description != NULL, XLAL_EFUNC );
+    fprintf( f, "\nDESCRIPTION\n" );
+    fprint_wrapped( f, line_width, "       ", description );
+    XLALFree( description );
+  }
 
   /* Print options in sections */
   const char* section_headers[] = { "OPTIONS", "DEVELOPER OPTIONS", "DEPRECATED OPTIONS" };
