@@ -86,12 +86,14 @@ def get_neighborhood_df_fmax(waveforms, flow):
     df and big enough f_max to cover all waveforms.
     """
     max_dur = max(w.dur for w in waveforms)
+    max_dur = max_dur * 1.1
     assert 16384 * max_dur > 1   # chirp lasts long enough for one LIGO sample
     if max_dur >= 1:
         df = 1 / next_pow2(max_dur)
     else:
         df = prev_pow2(1 / max_dur)
     max_ffinal = max(w.f_final for w in waveforms)
+    max_ffinal = max_ffinal * 1.
     f_max = next_pow2(max_ffinal)  # will always be greater than 1
     assert f_max - flow >= 2 * df  # need a few frequencies at least!
     return df, f_max
