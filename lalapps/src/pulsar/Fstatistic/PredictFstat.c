@@ -129,8 +129,6 @@ typedef struct {
   REAL8 transientStartTime;	/**< GPS start-time of transient window */
   REAL8 transientTauDays;	/**< time-scale in days of transient window */
 
-  BOOLEAN version;	/**< output version-info */
-
 } UserInput_t;
 
 /* ---------- local prototypes ---------- */
@@ -166,17 +164,12 @@ int main(int argc,char *argv[])
 
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit (1);
   }
 
   XLAL_CHECK_MAIN ( (VCSInfoString = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
-
-  if ( uvar.version ) {
-    printf ("%s\n", VCSInfoString );
-    exit(0);
-  }
 
   /* Initialize code-setup */
   XLAL_CHECK_MAIN ( InitPFS ( &GV, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -310,8 +303,6 @@ initUserVars ( UserInput_t *uvar )
 
   XLALRegisterUvarMember( assumeSqrtSX,	 STRINGVector, 0,  OPTIONAL, "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs)");
   XLALRegisterUvarMember( SignalOnly,	BOOLEAN, 'S', DEPRECATED,"DEPRECATED ALTERNATIVE: Don't estimate noise-floors but assume sqrtSX=1 instead");
-
-  XLALRegisterUvarMember( version,        BOOLEAN, 'V', SPECIAL,  "Output code version");
 
   XLALRegisterUvarMember( RngMedWindow,	INT4, 'k', DEVELOPER, "Running-Median window size");
 

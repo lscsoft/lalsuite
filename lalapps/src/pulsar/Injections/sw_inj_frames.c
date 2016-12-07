@@ -667,7 +667,7 @@ InitUserVars ( UserInput_t *uvar,      /**< [out] UserInput structure to be fill
   XLALRegisterUvarMember( logDir, STRING, 'L', OPTIONAL, "Directory to put .log file");
 
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit(1);
   }

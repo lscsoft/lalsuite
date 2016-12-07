@@ -87,8 +87,6 @@ typedef struct
   CHAR *outab; 			/**< output file for antenna pattern functions a(t), b(t) at each timestamp */
   CHAR *outABCD; 		/**< output file for antenna pattern matrix elements A, B, C, D averaged over timestamps */
 
-  BOOLEAN version;	/**< output code versions */
-
 } UserVariables_t;
 
 /* ---------- global variables ----------*/
@@ -116,16 +114,10 @@ main(int argc, char *argv[])
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit(1);
   }
-
-  if ( uvar.version )
-    {
-      XLALOutputVersionString ( stdout, lalDebugLevel );
-      exit(0);
-    }
 
   /* basic setup and initializations */
   XLAL_CHECK ( XLALInitCode( &config, &uvar, argv[0] ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -322,8 +314,6 @@ XLALInitUserVars ( UserVariables_t *uvar )
 
   XLALRegisterUvarMember(	outab,		STRING, 'o', OPTIONAL,	"output file for antenna pattern functions a(t), b(t) at each timestamp");
   XLALRegisterUvarMember(	outABCD,	STRING, 'O', OPTIONAL,	"output file for antenna pattern matrix elements A, B, C, D averaged over timestamps");
-
-  XLALRegisterUvarMember(	version,        BOOLEAN, 'V', SPECIAL,      "Output code version");
 
   /* developer user variables */
   XLALRegisterUvarMember(	timeStampsFile,	  STRING, 0, OPTIONAL,	"Alternative: single time-stamps file (deprecated, use --timeStampsFiles instead");

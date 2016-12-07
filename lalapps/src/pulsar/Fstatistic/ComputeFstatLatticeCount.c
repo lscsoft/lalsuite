@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 
   // Parse user input
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Check user input
   XLALUserVarCheck( &should_exit, UVAR_SET2(square, age_braking) == 1, "Exactly one of " UVAR_STR2AND(square, age_braking) " must be specified" );

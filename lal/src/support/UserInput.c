@@ -283,6 +283,10 @@ XLALRegisterUserVar ( void *cvar,		/**< pointer to the actual C-variable to link
   XLAL_CHECK ( strcmp ( name, "help" ) != 0, XLAL_EINVAL, "Long-option name '--%s' is reserved for help!\n", name );
   XLAL_CHECK ( optchar != 'h', XLAL_EINVAL, "Short-option '-%c' is reserved for help!\n", optchar );
 
+  // check that neither short- nor long-option are used by version
+  XLAL_CHECK ( strcmp ( name, "version" ) != 0, XLAL_EINVAL, "Long-option name '--%s' is reserved for version!\n", name );
+  XLAL_CHECK ( optchar != 'v', XLAL_EINVAL, "Short-option '-%c' is reserved for version!\n", optchar );
+
   // find end of uvar-list && check that neither short- nor long-option are taken already
   LALUserVariable *ptr = &UVAR_vars;
   while ( ptr->next != NULL )
@@ -370,7 +374,7 @@ XLALDestroyUserVars ( void )
  * caller should exit immediately.
  */
 int
-XLALUserVarReadCmdline ( BOOLEAN *should_exit, int argc, char *argv[] )
+XLALUserVarReadCmdline ( BOOLEAN *should_exit, int argc, char *argv[], const LALVCSInfoList vcs_list )
 {
   XLAL_CHECK ( should_exit != NULL, XLAL_EFAULT );
   XLAL_CHECK ( argv != NULL, XLAL_EINVAL, "Input error, NULL argv[] pointer passed.\n" );
@@ -384,8 +388,15 @@ XLALUserVarReadCmdline ( BOOLEAN *should_exit, int argc, char *argv[] )
   // ---------- build optstring of short-options
   UINT4 numvars = 0;
   char optstring[512] = "\0";	// string of short-options
-  ptr = &UVAR_vars;	// set to empty head
   pos = 0;
+
+  // add special version option
+  optstring[pos++] = 'v';
+  optstring[pos++] = ':';
+  optstring[pos++] = ':';
+
+  // add user-specified options
+  ptr = &UVAR_vars;	// set to empty head
   while ( (ptr = ptr->next) != NULL )
     {
       numvars ++;			/* counter number of user-variables */
@@ -398,12 +409,23 @@ XLALUserVarReadCmdline ( BOOLEAN *should_exit, int argc, char *argv[] )
 	optstring[pos++] = ':';
       }
     } // while ptr->next
+
+  // null-terminate array
   optstring[pos] = '\0';
 
   // ---------- fill option-struct for long-options
-  struct LALoption *long_options = LALCalloc (1, (numvars+1) * sizeof(struct LALoption));
-  ptr = &UVAR_vars;	// start again from beginning: empty head
+  struct LALoption *long_options = LALCalloc (1, (numvars+2) * sizeof(struct LALoption));
   pos = 0;
+
+  // add special version option
+  long_options[pos].name = "version";
+  long_options[pos].has_arg = optional_argument;
+  long_options[pos].flag = NULL;
+  long_options[pos].val = 0;
+  pos ++;
+
+  // add user-specified options
+  ptr = &UVAR_vars;	// start again from beginning: empty head
   while ( (ptr= ptr->next) != NULL)
     {
       long_options[pos].name 	= ptr->name;
@@ -447,6 +469,31 @@ XLALUserVarReadCmdline ( BOOLEAN *should_exit, int argc, char *argv[] )
         *should_exit = 1;
         return XLAL_SUCCESS;
       }
+
+      // handle special version option
+      if ( (c != 0) ? (c == 'v') : !strcmp(long_options[longindex].name, "version") )
+        {
+          int verbose = 0;
+          if ( LALoptarg != NULL )
+            {
+              if ( !strcmp(LALoptarg, "verbose") )
+                {
+                  verbose = 1;
+                }
+              else
+                {
+                  XLALPrintError( "\n%s: invalid value '%s' given to option " UVAR_FMT "\n\n", program_name, LALoptarg, "version" );
+                  *should_exit = 1;
+                  return XLAL_SUCCESS;
+                }
+            }
+          char *str = XLALVCSInfoString( vcs_list, verbose, NULL );
+          XLAL_CHECK( str != NULL, XLAL_EFUNC );
+          printf( "%s", str );
+          XLALFree( str );
+          *should_exit = 1;
+          return XLAL_SUCCESS;
+        }
 
       if (c != 0) 	// find short-option character
 	{
@@ -657,7 +704,7 @@ XLALUserVarPrintUsage ( FILE *file )
   XLAL_CHECK ( UVAR_vars.next != NULL, XLAL_EINVAL, "No UVAR memory allocated. Did you register any user-variables?" );
 
   /* Print usage: only required and regular arguments are printed */
-  fprintf( file, "\nUsage: %s [-h|--help] [@<config-file>]", program_name );
+  fprintf( file, "\nUsage: %s [-h|--help] [-v|--version] [@<config-file>]", program_name );
   for ( LALUserVariable *ptr = &UVAR_vars; (ptr=ptr->next) != NULL; )
     {
       switch ( ptr->category )
@@ -808,6 +855,7 @@ XLALUserVarPrintHelp ( FILE *file )
   fprintf( f, "\n" );
   fprintf( f, "\nSYNOPSIS\n" );
   fprintf( f, "       %s -h|--help\n", program_name );
+  fprintf( f, "       %s -v|--version[=verbose]\n", program_name );
   fprintf( f, "       %s [@<config-file>] [<options>...]\n", program_name );
 
   /* Print options in sections */
@@ -922,7 +970,7 @@ XLALUserVarPrintHelp ( FILE *file )
  * program should exit immediately with a non-zero status.
  */
 int
-XLALUserVarReadAllInput ( BOOLEAN *should_exit, int argc, char *argv[] )
+XLALUserVarReadAllInput ( BOOLEAN *should_exit, int argc, char *argv[], const LALVCSInfoList vcs_list )
 {
   XLAL_CHECK ( should_exit != NULL, XLAL_EFAULT );
   XLAL_CHECK ( argc > 0, XLAL_EINVAL );
@@ -986,7 +1034,7 @@ XLALUserVarReadAllInput ( BOOLEAN *should_exit, int argc, char *argv[] )
     }
 
   // ---------- now parse cmdline: overloads previous config-file settings
-  XLAL_CHECK ( XLALUserVarReadCmdline ( should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALUserVarReadCmdline ( should_exit, argc, argv, vcs_list ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( *should_exit ) {
     return XLAL_SUCCESS;
   }
@@ -995,11 +1043,6 @@ XLALUserVarReadAllInput ( BOOLEAN *should_exit, int argc, char *argv[] )
   BOOLEAN skipCheckRequired = FALSE;
   for ( LALUserVariable *ptr = &UVAR_vars; (ptr=ptr->next) != NULL; )
     {
-
-      // check 'special' category, which suppresses the CheckRequired test
-      if ( (ptr->category == UVAR_CATEGORY_SPECIAL) && ptr->was_set ) {
-	skipCheckRequired = TRUE;
-      }
 
       // handle DEPRECATED options by outputting a warning (on error-level to make this very noticeable!)
       if ( ptr->category == UVAR_CATEGORY_DEPRECATED && ptr->was_set ) {

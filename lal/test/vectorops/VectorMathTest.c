@@ -21,6 +21,7 @@
 
 #include <config.h>
 
+#include <lal/LALVCSInfo.h>
 #include <lal/LALConstants.h>
 #include <lal/XLALError.h>
 #include <lal/AVFactories.h>
@@ -135,7 +136,7 @@ main ( int argc, char *argv[] )
   XLALRegisterUvarMember(  outAlign,            INT4, 'b', OPTIONAL, "Alignment of output vectors; default is sizeof(void*), i.e. no particular alignment" );
 
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit (1);
   }

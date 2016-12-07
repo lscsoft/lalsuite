@@ -41,6 +41,7 @@
 #include <lal/Random.h>
 #include <lal/LALString.h>
 #include <lal/UserInput.h>
+#include <lal/LALPulsarVCSInfo.h>
 #include <lal/TranslateAngles.h>
 
 /*---------- local defines ---------- */
@@ -701,7 +702,7 @@ initUserVars ( int argc, char *argv[], UserVariables_t *uvar )
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit(1);
   }

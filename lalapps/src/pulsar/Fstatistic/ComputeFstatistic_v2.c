@@ -279,8 +279,6 @@ typedef struct {
   CHAR *workingDir;		/**< directory to use for output files */
   REAL8 timerCount;		/**< output progress-meter every timerCount seconds */
 
-  BOOLEAN version;		/**< output version information */
-
   CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
 
   BOOLEAN outputSingleFstats;	/**< in multi-detector case, also output single-detector F-stats */
@@ -381,16 +379,10 @@ int main(int argc,char *argv[])
 
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit (1);
   }
-
-  if ( uvar.version )
-    {
-      printf ( "%s\n", GV.VCSInfoString );
-      exit (0);
-    }
 
   /* do some sanity checks on the user-input before we proceed */
   XLAL_CHECK_MAIN ( checkUserInputConsistency ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -924,8 +916,6 @@ initUserVars ( UserInput_t *uvar )
 
   uvar->metricMismatch = 0.02;
 
-  uvar->version = FALSE;
-
   uvar->outputLogfile = NULL;
   uvar->outputFstat = NULL;
   uvar->outputLoudest = NULL;
@@ -1059,8 +1049,6 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( transient_dtau,   INT4, 0,  OPTIONAL,     "TransientCW: Step-size in transient-CW duration timescale, in seconds [Default:Tsft]");
 
   XLALRegisterUvarMember(FstatMethod,             STRING, 0,  OPTIONAL,  "F-statistic method to use. Available methods: %s", XLALFstatMethodHelpString() );
-
-  XLALRegisterUvarMember(  version,	BOOLEAN, 'V', SPECIAL,  "Output version information");
 
   /* ----- more experimental/expert options ----- */
   XLALRegisterUvarMember( 	UseNoiseWeights,BOOLEAN, 'W', DEVELOPER, "Use per-SFT noise weights");

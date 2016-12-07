@@ -122,7 +122,6 @@ typedef struct {
 
   BOOLEAN SignalOnly;	/**< don't generate noise-draws: will result in non-random 'signal only' values of F and B */
 
-  BOOLEAN version;	/**< output version-info */
 } UserInput_t;
 
 
@@ -202,17 +201,12 @@ int main(int argc,char *argv[])
 
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     return EXIT_FAILURE;
   }
 
   XLAL_CHECK_MAIN ( (version_string = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
-
-  if ( uvar.version ) {
-    printf ( "%s\n", version_string );
-    return 0;
-  }
 
   /* ---------- Initialize code-setup ---------- */
   XLAL_CHECK_MAIN ( InitCode ( &GV, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -372,9 +366,7 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( integrationMethod,INT4, 'm', OPTIONAL, "2D Integration-method: 0=Gauss-Kronod, 1=Monte-Carlo(Vegas)");
   XLALRegisterUvarMember(	numMCpoints,	REAL8, 'M', OPTIONAL, "Number of points to use in Monte-Carlo integration");
 
-  XLALRegisterUvarMember(	SignalOnly,     BOOLEAN, 'S', SPECIAL,  "No noise-draws: will result in non-random 'signal only' values for F and B");
-
-  XLALRegisterUvarMember(	version,        BOOLEAN, 'V', SPECIAL,   "Output code version");
+  XLALRegisterUvarMember(	SignalOnly,     BOOLEAN, 'S', OPTIONAL,  "No noise-draws: will result in non-random 'signal only' values for F and B");
 
   return XLAL_SUCCESS;
 

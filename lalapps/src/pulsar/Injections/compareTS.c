@@ -46,7 +46,6 @@ typedef struct {
   CHAR *infile2;
   INT4 debug;
   BOOLEAN verbose;
-  BOOLEAN version;
   REAL8 relErrorMax;
 } UserVar;
 
@@ -72,19 +71,10 @@ main(int argc, char *argv[])
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit (1);
   }
-
-  if (uvar.version)
-    {
-      CHAR *VCSInfoString;
-      XLAL_CHECK_MAIN ( (VCSInfoString = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
-      printf ("%s\n", VCSInfoString );
-      XLALFree ( VCSInfoString );
-      exit(0);
-    }
 
   /* now read in the two timeseries */
   REAL4Vector *ts1, *ts2;
@@ -126,7 +116,6 @@ initUserVars ( UserVar *uvar )
   XLALRegisterUvarMember( 	infile2,	STRING, '2', REQUIRED, "Second timeseries input file");
   XLALRegisterUvarMember( 	verbose,	BOOLEAN, 'v', OPTIONAL, "Verbose output of differences");
   XLALRegisterUvarMember( 	relErrorMax,   	REAL8, 'e', OPTIONAL, "Maximal relative error acceptable to 'pass' comparison");
-  XLALRegisterUvarMember( 	version,	BOOLEAN, 'V', SPECIAL,  "Output version information");
 
   return XLAL_SUCCESS;
 } /* initUserVars() */

@@ -29,6 +29,7 @@
 #include <lal/LFTandTSutils.h>
 #include <lal/LALString.h>
 #include <lal/UserInput.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 // benchmark ComputeFstat() functions for performance and memory usage
 REAL8 XLALGetCurrentHeapUsageMB ( void );
@@ -94,7 +95,7 @@ main ( int argc, char *argv[] )
   XLAL_CHECK ( XLALRegisterUvarMember ( reuseInput,     BOOLEAN,        0, DEVELOPER, "Re-use FstatInput from previous setups (only useful for checking workspace management)" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     return EXIT_FAILURE;
   }

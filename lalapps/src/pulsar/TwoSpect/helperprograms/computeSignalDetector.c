@@ -287,7 +287,7 @@ INT4 InitUserVars(UserVariables_t *uvar, int argc, char *argv[])
    XLALRegisterUvarMember(  rectWindow,       BOOLEAN, 0 , OPTIONAL , "Use rectangular window function instead of Hann windowing");
 
    BOOLEAN should_exit = 0;
-   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
    if ( should_exit ) exit (1);
 
    return XLAL_SUCCESS;

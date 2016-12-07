@@ -440,7 +440,6 @@ int MAIN( int argc, char *argv[]) {
   INT4 uvar_numSkyPartitions = 0;
   INT4 uvar_partitionIndex = 0;
   INT4 uvar_SortToplist = 0;
-  BOOLEAN uvar_version = 0;
 
   CHAR *uvar_outputTiming = NULL;
   CHAR *uvar_outputTimingDetails = NULL;
@@ -551,13 +550,11 @@ int MAIN( int argc, char *argv[]) {
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outputTiming,        "outputTiming",        STRING,       0,   DEVELOPER,  "Append timing information into this file") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outputTimingDetails, "outputTimingDetails", STRING,       0,   DEVELOPER,  "Append detailed F-stat timing information to this file") == XLAL_SUCCESS, XLAL_EFUNC);
 
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_version,             "version",             BOOLEAN,      'V', SPECIAL,    "Output version information") == XLAL_SUCCESS, XLAL_EFUNC);
-
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_loglevel,            "logLevel",            INT4,         0,   DEFUNCT,    "DEFUNCT; used to set logLevel, now set by LAL_DEBUG_LEVEL") == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     return(1);
 
@@ -570,12 +567,6 @@ int MAIN( int argc, char *argv[]) {
 
   LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s\n", VCSInfoString );
   // LogPrintfVerbatim( LOG_DEBUG, "CFS Hotloop variant: %s\n", OptimisedHotloopSource );
-
-  if ( uvar_version )
-    {
-      printf ("%s\n", VCSInfoString );
-      return (0);
-    }
 
   /* some basic sanity checks on user vars */
   if ( uvar_nStacksMax < 1) {

@@ -138,8 +138,6 @@ typedef struct
   /* pulsar parameters */
   LALStringVector *injectionSources;	///< Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}')
 
-  BOOLEAN version;		/**< output version information */
-
   INT4 randSeed;		/**< allow user to specify random-number seed for reproducible noise-realizations */
 
   // ---------- DEPRECATED and DEFUNCT options ----------
@@ -365,13 +363,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
   cfg->VCSInfoString = XLALGetVersionString(0);
   XLAL_CHECK ( cfg->VCSInfoString != NULL, XLAL_EFUNC, "XLALGetVersionString(0) failed.\n" );
-
-  // version info was requested: output then exit
-  if ( uvar->version )
-    {
-      printf ("%s\n", cfg->VCSInfoString );
-      exit (0);
-    }
 
   /* if requested, log all user-input and code-versions */
   if ( uvar->logfile ) {
@@ -617,8 +608,6 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember ( outFrChannels, STRINGVector, 0,  DEFUNCT, "Need to compile with lalframe support for this option to work");
 #endif
 
-  XLALRegisterUvarMember(  version,             BOOLEAN, 'V', SPECIAL, "Output version information");
-
   // ----- 'expert-user/developer' options ----- (only shown in help at lalDebugLevel >= warning)
   XLALRegisterUvarMember(   randSeed,             INT4, 0, DEVELOPER, "Specify random-number seed for reproducible noise (0 means use /dev/urandom for seeding).");
 
@@ -633,7 +622,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit (1);
   }

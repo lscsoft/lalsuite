@@ -424,7 +424,6 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_DataFiles1 = NULL;
   CHAR *uvar_skyGridFile=NULL;
   INT4 uvar_numSkyPartitions = 0;
-  BOOLEAN uvar_version = 0;
   INT4 uvar_partitionIndex = 0;
 
   BOOLEAN uvar_correctFreqs = TRUE;
@@ -507,11 +506,10 @@ int MAIN( int argc, char *argv[]) {
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_df1dotRes,        "df1dotRes",        REAL8,   0,   DEVELOPER, "Resolution in residual fdot values (default=df1dot/nf1dotRes)") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_correctFreqs,     "correctFreqs",     BOOLEAN, 0,   DEVELOPER, "Correct candidate output frequencies (ie fix bug #147). Allows reproducing 'historical results'") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_gpu_device,       "device",           INT4,    0,   DEVELOPER, "GPU device id" ) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN ( XLALRegisterNamedUvar( &uvar_version,         "version",          BOOLEAN, 'V', SPECIAL,   "Output version information") == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     return(1);
 
@@ -523,12 +521,6 @@ int MAIN( int argc, char *argv[]) {
     return( HIERARCHICALSEARCH_EBAD );
   }
   LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s", VCSInfoString );
-
-  if ( uvar_version )
-    {
-      printf ("%s\n", VCSInfoString );
-      return (0);
-    }
 
   if(uvar_gpu_device >= 0)
     gpu_device_id = uvar_gpu_device;

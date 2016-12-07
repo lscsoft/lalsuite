@@ -82,7 +82,6 @@ typedef struct {
 
   REAL8 upsampling;	/**< factor by which to upsample the frequency resolution by */
 
-  BOOLEAN version;	/**< output version-info */
 } UserInput_t;
 
 /* ---------- local prototypes ---------- */
