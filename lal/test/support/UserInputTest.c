@@ -55,7 +55,7 @@ typedef struct
  * but should be enough to catch big obvious malfunctions
  */
 int
-main(void)
+main(int argc, char *argv[])
 {
 
   const char *argv_in[] = {
@@ -120,8 +120,17 @@ main(void)
 
   /* ---------- now read all input from commandline and config-file ---------- */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK ( XLALUserVarReadAllInput ( &should_exit, my_argc, my_argv ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( should_exit == 0, XLAL_EFUNC );
+  if ( argc > 1 ) {
+    /* parse actual command-line arguments: this is only useful for debugging and testing, never used by 'make check' */
+    XLAL_CHECK ( XLALUserVarReadAllInput ( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+    if ( should_exit ) {
+      return EXIT_FAILURE;
+    }
+  } else {
+    /* parse constructed command-line arguments: used by 'make check' */
+    XLAL_CHECK ( XLALUserVarReadAllInput ( &should_exit, my_argc, my_argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( should_exit == 0, XLAL_EFUNC );
+  }
 
   /* ---------- test print usage and help page */
   printf( "=== Begin usage string ===\n" );
