@@ -90,7 +90,6 @@ typedef struct{
   CHAR    *gammaAveOutputFilename; /**< output filename to write Gamma_ave = (aa+bb)/10 */
   CHAR    *gammaCircOutputFilename; /**< output filename to write Gamma_circ = (ab-ba)/10 */
   CHAR    *toplistFilename;   /**< output filename containing candidates in toplist */
-  BOOLEAN version;            /**<output version information*/
   CHAR    *logFilename;       /**< name of log file*/
 } UserInput_t;
 
@@ -164,7 +163,7 @@ int main(int argc, char *argv[]){
 
   /* read user input from the command line or config file */
   BOOLEAN should_exit = 0;
-  if ( XLALUserVarReadAllInput ( &should_exit, argc, argv ) != XLAL_SUCCESS ) {
+  if ( XLALUserVarReadAllInput ( &should_exit, argc, argv, lalAppsVCSInfoList ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALUserVarReadAllInput() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -172,12 +171,6 @@ int main(int argc, char *argv[]){
     return EXIT_FAILURE;
 
   CHAR *VCSInfoString = XLALGetVersionString(0);     /**<LAL + LALapps Vsersion string*/
-  /*If the version information was requested, output it and exit*/
-  if ( uvar.version ){
-    XLAL_CHECK ( VCSInfoString != NULL, XLAL_EFUNC, "XLALGetVersionString(0) failed.\n" );
-    printf ("%s\n", VCSInfoString );
-    exit (0);
-  }
 
   /* configure useful variables based on user input */
   if ( XLALInitializeConfigVars ( &config, &uvar) != XLAL_SUCCESS ) {
@@ -999,7 +992,6 @@ int XLALInitUserVars (UserInput_t *uvar)
   /* initialize number of candidates in toplist -- default is just to return the single best candidate */
   uvar->numCand = 1;
   uvar->toplistFilename = XLALStringDuplicate("toplist_crosscorr.dat");
-  uvar->version = FALSE;
 
   /* register  user-variables */
   XLALRegisterUvarMember( startTime,       INT4, 0,  REQUIRED, "Desired start time of analysis in GPS seconds");
@@ -1042,7 +1034,6 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALRegisterUvarMember( gammaCircOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write ab-ba weights (for e.g., systematic error)");
   XLALRegisterUvarMember( toplistFilename, STRING, 0,  OPTIONAL, "Output filename containing candidates in toplist");
   XLALRegisterUvarMember( logFilename, STRING, 0,  OPTIONAL, "Output a meta-data file for the search");
-  XLALRegisterUvarMember( version, 	   BOOLEAN, 'V',  SPECIAL, "Output version(VCS) information");
   if ( xlalErrno ) {
     XLALPrintError ("%s: user variable initialization failed with errno = %d.\n", __func__, xlalErrno );
     XLAL_ERROR ( XLAL_EFUNC );

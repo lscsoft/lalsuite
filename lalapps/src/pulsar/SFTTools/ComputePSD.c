@@ -130,8 +130,6 @@ typedef struct
   REAL8 fStart;		/**< Start Frequency to load from SFT and compute PSD, including wings (it is RECOMMENDED to use --Freq instead) */
   REAL8 fBand;		/**< Frequency Band to load from SFT and compute PSD, including wings (it is RECOMMENDED to use --FreqBand instead) */
 
-  BOOLEAN version;	/**< Output version information */
-
 } UserVariables_t;
 
 /**
@@ -185,19 +183,6 @@ main(int argc, char *argv[])
   /* register and read user variables */
   if (initUserVars(argc, argv, &uvar) != XLAL_SUCCESS)
     return EXIT_FAILURE;
-
-  /* assemble version string */
-  CHAR *VCSInfoString;
-  if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
-    XLALPrintError("XLALGetVersionString(0) failed with xlalErrno = %d\n", xlalErrno );
-    return EXIT_FAILURE;
-  }
-
-  if ( uvar.version )
-    {
-      printf ("%s\n", VCSInfoString );
-      return (0);
-    }
 
   MultiSFTVector *inputSFTs = NULL;
   if ( ( inputSFTs = XLALReadSFTs ( &cfg, &uvar ) ) == NULL )
@@ -464,7 +449,6 @@ main(int argc, char *argv[])
   XLALDestroyREAL8Vector ( overIFOs );
   XLALDestroyREAL8Vector ( finalPSD );
   XLALDestroyREAL8Vector ( finalNormSFT );
-  XLALFree ( VCSInfoString );
 
   LALCheckMemoryLeaks();
 
@@ -595,8 +579,6 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
   uvar->binStep   = 0.0;
   uvar->binStep   = 1;
 
-  uvar->version = FALSE;
-
   /* register user input variables */
   XLALRegisterUvarMember(inputData,        STRING, 'i', REQUIRED, "Input SFT pattern");
   XLALRegisterUvarMember(outputPSD,        STRING, 'o', OPTIONAL, "Output PSD into this file");
@@ -648,12 +630,10 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
   XLALRegisterUvarMember(fStart,           REAL8, 'f', DEVELOPER, "Start Frequency to load from SFT and compute PSD, including rngmed wings (BETTER: use --Freq instead)");
   XLALRegisterUvarMember(fBand,            REAL8, 'b', DEVELOPER, "Frequency Band to load from SFT and compute PSD, including rngmed wings (BETTER: use --FreqBand instead)");
 
-  XLALRegisterUvarMember(version,          BOOLEAN, 'V', SPECIAL, "Output version information");
-
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit(1);
   }

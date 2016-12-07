@@ -173,8 +173,6 @@ typedef struct
 
   BOOLEAN approxPhase;	/**< use an approximate phase-model, neglecting Roemer delay in spindown coordinates */
 
-  BOOLEAN version;	/**< output code versions */
-
 } UserVariables_t;
 
 /* ---------- global variables ----------*/
@@ -213,7 +211,7 @@ main(int argc, char *argv[])
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit )
     return EXIT_FAILURE;
 
@@ -222,12 +220,6 @@ main(int argc, char *argv[])
     XLALPrintError("XLALGetVersionString(0) failed.\n");
     exit(1);
   }
-
-  if ( uvar.version ) {
-    printf ( "%s\n", VCSInfoString );
-    return 0;
-  }
-
 
   if ( uvar.coordsHelp )
     {
@@ -391,8 +383,6 @@ initUserVars (UserVariables_t *uvar)
 
   XLALRegisterUvarMember(detMotionStr,  STRING, 0,  DEVELOPER,	"Detector-motion string: S|O|S+O where S=spin|spinz|spinxy and O=orbit|ptoleorbit");
   XLALRegisterUvarMember(approxPhase,     BOOLEAN, 0,  DEVELOPER,	"Use an approximate phase-model, neglecting Roemer delay in spindown coordinates (or orders >= 1)");
-
-  XLALRegisterUvarMember(version,        BOOLEAN, 'V', SPECIAL,      "Output code version");
 
   return XLAL_SUCCESS;
 

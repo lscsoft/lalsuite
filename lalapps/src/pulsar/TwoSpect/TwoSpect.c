@@ -1780,7 +1780,7 @@ INT4 readTwoSpectInputParams(UserInput_t *uvar, int argc, char *argv[])
    //Read all the input from config file and command line (command line has priority)
    //Also checks required variables unless help is requested
    BOOLEAN should_exit = 0;
-   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
    if ( should_exit ) exit(1);
 
    //Check analysis parameters

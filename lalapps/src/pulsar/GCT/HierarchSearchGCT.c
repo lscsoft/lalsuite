@@ -444,7 +444,6 @@ int MAIN( int argc, char *argv[]) {
   INT4 uvar_numSkyPartitions = 0;
   INT4 uvar_partitionIndex = 0;
   INT4 uvar_SortToplist = 0;
-  BOOLEAN uvar_version = 0;
 
   CHAR *uvar_outputTiming = NULL;
   CHAR *uvar_outputTimingDetails = NULL;
@@ -559,14 +558,13 @@ int MAIN( int argc, char *argv[]) {
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outputTimingDetails, "outputTimingDetails", STRING,       0,   DEVELOPER,  "Append detailed F-stat timing information to this file") == XLAL_SUCCESS, XLAL_EFUNC);
 
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_loudestTwoFPerSeg,   "loudestTwoFPerSeg",   BOOLEAN,      0, DEVELOPER, "Output loudest per-segment Fstat values into file '_loudestTwoFPerSeg'" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_version,             "version",             BOOLEAN,      'V', SPECIAL,    "Output version information") == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* inject signals into the data being analyzed */
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar ( &uvar_injectionSources, "injectionSources",      STRINGVector, 0, DEVELOPER,     "CSV list of files containing signal parameters for injection [see mfdv5]") == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     return(1);
 
@@ -579,12 +577,6 @@ int MAIN( int argc, char *argv[]) {
 
   LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s\n", VCSInfoString );
   // LogPrintfVerbatim( LOG_DEBUG, "CFS Hotloop variant: %s\n", OptimisedHotloopSource );
-
-  if ( uvar_version )
-    {
-      printf ("%s\n", VCSInfoString );
-      return (0);
-    }
 
   /* some basic sanity checks on user vars */
   if ( uvar_nStacksMax < 1) {

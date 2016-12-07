@@ -19,6 +19,7 @@
 */
 #include <math.h>
 
+#include <lal/LALVCSInfo.h>
 #include <lal/Date.h>
 #include <lal/LALString.h>
 
@@ -122,13 +123,13 @@ main(int argc, char *argv[])
   BOOLEAN should_exit = 0;
   if ( argc > 1 ) {
     /* parse actual command-line arguments: this is only useful for debugging and testing, never used by 'make check' */
-    XLAL_CHECK ( XLALUserVarReadAllInput ( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALUserVarReadAllInput ( &should_exit, argc, argv, lalVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
     if ( should_exit ) {
       return EXIT_FAILURE;
     }
   } else {
     /* parse constructed command-line arguments: used by 'make check' */
-    XLAL_CHECK ( XLALUserVarReadAllInput ( &should_exit, my_argc, my_argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALUserVarReadAllInput ( &should_exit, my_argc, my_argv, lalVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK ( should_exit == 0, XLAL_EFUNC );
   }
 

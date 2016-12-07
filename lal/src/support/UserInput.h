@@ -29,6 +29,7 @@ extern "C" {
 
 #include <lal/ConfigFile.h>
 #include <lal/UserInputParse.h>
+#include <lal/LALVCSInfoType.h>
 
 /**
  * \defgroup UserInput_h Header UserInput.h
@@ -100,7 +101,7 @@ extern "C" {
  *   XLALRegisterUvarMember( specialGeekSwitch,  REAL8,    'g', DEVELOPER, "This REAL8 user-variable may not be relevant for standard usage");
  *
  *   // 3. step: parse all user-input, from either config-file if given, or commandline (overloads config-file values)
- *   XLAL_CHECK ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC);
+ *   XLAL_CHECK ( XLALUserVarReadAllInput ( argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC);
  *
  *   if (uvar->help){      // if user had requested help, then we're already done here
  *     return 0;
@@ -189,7 +190,6 @@ typedef enum tagUserVarCategory {
   UVAR_CATEGORY_DEVELOPER,	///< optional and hidden in help-output until lalDebugLevel>=warning
   UVAR_CATEGORY_DEPRECATED,	///< optional and hidden until lalDebugLevel>=info; still supported but output warning if used
   UVAR_CATEGORY_DEFUNCT,	///< hidden completely from help output; not supported, will output error + help-string if used
-  UVAR_CATEGORY_SPECIAL,	///< optional and *turns off* all checking of required variables, useful for output of version info
   UVAR_CATEGORY_NODEFAULT,	///< optional and supresses printing the default value in the help, where it doesn't make sense
   UVAR_CATEGORY_END		///< internal end marker for range checking
 } UserVarCategory;
@@ -213,9 +213,9 @@ extern const char *lalUserVarHelpBrief;
 
 /* Function prototypes */
 void XLALDestroyUserVars( void );
-int XLALUserVarReadCmdline( BOOLEAN *should_exit, int argc, char *argv[] );
+int XLALUserVarReadCmdline( BOOLEAN *should_exit, int argc, char *argv[], const LALVCSInfoList vcs_list );
 int XLALUserVarReadCfgfile( BOOLEAN *should_exit, const CHAR *cfgfile );
-int XLALUserVarReadAllInput( BOOLEAN *should_exit, int argc, char *argv[] );
+int XLALUserVarReadAllInput( BOOLEAN *should_exit, int argc, char *argv[], const LALVCSInfoList vcs_list );
 int XLALUserVarWasSet( const void *cvar );
 void XLALUserVarCheck( BOOLEAN *should_exit, const int assertion, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(3,4);
 CHAR * XLALUserVarGetLog ( UserVarLogFormat format );

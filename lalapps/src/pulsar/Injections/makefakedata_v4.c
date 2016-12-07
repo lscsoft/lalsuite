@@ -194,8 +194,6 @@ typedef struct
   BOOLEAN exactSignal;	/**< generate signal timeseries as exactly as possible (slow) */
   BOOLEAN lineFeature;	/**< generate a monochromatic line instead of a pulsar-signal */
 
-  BOOLEAN version;		/**< output version information */
-
   INT4 randSeed;		/**< allow user to specify random-number seed for reproducible noise-realizations */
 
   CHAR *parfile;             /** option .par file path */
@@ -589,13 +587,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
   cfg->VCSInfoString = XLALGetVersionString(0);
   XLAL_CHECK ( cfg->VCSInfoString != NULL, XLAL_EFUNC, "XLALGetVersionString(0) failed.\n" );
-
-  // version info was requested: output then exit
-  if ( uvar->version )
-    {
-      printf ("%s\n", cfg->VCSInfoString );
-      exit (0);
-    }
 
   BOOLEAN have_parfile = XLALUserVarWasSet (&uvar->parfile);
   BinaryPulsarParams pulparams;
@@ -1279,8 +1270,6 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 
   XLALRegisterUvarMember(  lineFeature,          BOOLEAN, 0, OPTIONAL, "Generate a monochromatic 'line' of amplitude h0 and frequency 'Freq'}");
 
-  XLALRegisterUvarMember(  version,             BOOLEAN, 'V', SPECIAL, "Output version information");
-
   XLALRegisterUvarMember(parfile,             STRING, 'p', OPTIONAL, "Directory path for optional .par files");            /*registers .par file in mfd*/
 
   /* transient signal window properties (name, start, duration) */
@@ -1315,7 +1304,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit )
     exit (1);
 
