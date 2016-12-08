@@ -68,6 +68,6 @@ echo
 echo "=== Compare F-statistics from lalapps_Weave without/with checkpointing ==="
 set -x
 LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info"
-${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --output-file-1=WeaveOutNoCkpt.fits --output-file-2=WeaveOutCkpt.fits
+${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoCkpt.fits --result-file-2=WeaveOutCkpt.fits
 set +x
 echo

@@ -69,6 +69,6 @@ done
 echo "=== Compare F-statistics from lalapps_Weave without/with a maximum cache size ==="
 set -x
 LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info"
-${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --output-file-1=WeaveOutNoMax.fits --output-file-2=WeaveOutMax.fits
+${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoMax.fits --result-file-2=WeaveOutMax.fits
 set +x
 echo
