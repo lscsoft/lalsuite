@@ -52,7 +52,7 @@ int main( int argc, char *argv[] )
 
   // Register user input variables:
   //
-  // - Input files
+  // - General
   //
   XLALRegisterUvarMember(
     setup_file, STRING, 'S', REQUIRED,
@@ -69,6 +69,7 @@ int main( int argc, char *argv[] )
   //
   // - Tolerances
   //
+  lalUserVarHelpOptionSubsection = "Tolerances";
   XLALRegisterUvarMember(
     param_tol_mism, REAL8, 'm', OPTIONAL,
     "Allowed tolerance on mismatch between parameter-space points. "
@@ -101,6 +102,10 @@ int main( int argc, char *argv[] )
   XLAL_CHECK_FAIL( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Check user input:
+  //
+  // - General
+  //
+
   //
   // - Tolerances
   //

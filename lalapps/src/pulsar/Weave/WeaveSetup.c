@@ -56,8 +56,16 @@ int main( int argc, char *argv[] )
 
   // Register user input variables:
   //
+  // - General
+  //
+  XLALRegisterUvarMember(
+    output_file, STRING, 'o', REQUIRED,
+    "Output file while stores the segment list, parameter-space metrics, and other data required by lalapps_Weave, e.g. ephemerides. "
+    );
+  //
   // - Segment list input/generation
   //
+  lalUserVarHelpOptionSubsection = "Segment list input/generation";
   XLALRegisterUvarMember(
     segment_list, STRING, 'L', OPTIONAL,
     "Loads the start and end times of each segment from this file. "
@@ -81,6 +89,7 @@ int main( int argc, char *argv[] )
   //
   // - Parameter-space metric computation
   //
+  lalUserVarHelpOptionSubsection = "Parameter-space metric computation";
   XLALRegisterUvarMember(
     ref_time, EPOCH, 'r', NODEFAULT,
     "Reference time for the search, including the parameter-space metrics computed here, and the parameter space and output of lalapps_Weave. "
@@ -112,13 +121,6 @@ int main( int argc, char *argv[] )
     "Must be at least 1. "
     "This option limits the size of the spindown parameter space given to lalapps_Weave. "
     );
-  //
-  // - Output
-  //
-  XLALRegisterUvarMember(
-    output_file, STRING, 'o', REQUIRED,
-    "Output file while stores the segment list, parameter-space metrics, and other data required by lalapps_Weave, e.g. ephemerides. "
-    );
 
   // Parse user input
   XLAL_CHECK_MAIN( xlalErrno == 0, XLAL_EFUNC, "A call to XLALRegisterUvarMember() failed" );
@@ -126,6 +128,10 @@ int main( int argc, char *argv[] )
   XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Check user input:
+  //
+  // - General
+  //
+
   //
   // - Segment list input/generation
   //
