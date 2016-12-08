@@ -46,12 +46,12 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN sft_files_check_crc, sft_files_check_count, interpolation, lattice_rand_offset, output_per_detector, output_per_segment, output_misc_info, shortcut_compute, shortcut_search;
+    BOOLEAN sft_files_check_crc, sft_files_check_count, interpolation, lattice_rand_offset, per_detector, per_segment, misc_info, shortcut_compute, shortcut_search;
     CHAR *setup_file, *sft_files, *lattice, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
-    UINT4 sky_patch_count, sky_patch_index, freq_partitions, Fstat_run_med_window, Fstat_Dterms, Fstat_SSB_precision, output_toplist_limit, rand_seed, cache_max_size, cache_gc_limit;
+    UINT4 sky_patch_count, sky_patch_index, freq_partitions, Fstat_run_med_window, Fstat_Dterms, Fstat_SSB_precision, toplist_limit, rand_seed, cache_max_size, cache_gc_limit;
     int Fstat_method;
   } uvar_struct = {
     .Fstat_Dterms = Fstat_opt_args.Dterms,
@@ -63,7 +63,7 @@ int main( int argc, char *argv[] )
     .freq_partitions = 1,
     .interpolation = 1,
     .lattice = XLALStringDuplicate( "An-star" ),
-    .output_toplist_limit = 1000,
+    .toplist_limit = 1000,
   };
   struct uvar_type *const uvar = &uvar_struct;
 
@@ -242,21 +242,21 @@ int main( int argc, char *argv[] )
   //
   lalUserVarHelpOptionSubsection = "Output control";
   XLALRegisterUvarMember(
-    output_toplist_limit, UINT4, 'n', OPTIONAL,
+    toplist_limit, UINT4, 'n', OPTIONAL,
     "Maximum number of candidates to return in an output top-list; if 0, all candidates are returned. "
     );
   XLALRegisterUvarMember(
-    output_per_detector, BOOLEAN, 'D', DEVELOPER,
+    per_detector, BOOLEAN, 'D', DEVELOPER,
     "If TRUE, compute and output per-detector quantities, e.g. single-detector F-statistics. "
-    "May be combined with " UVAR_STR( output_per_segment ) ". "
+    "May be combined with " UVAR_STR( per_segment ) ". "
     );
   XLALRegisterUvarMember(
-    output_per_segment, BOOLEAN, 'N', DEVELOPER,
+    per_segment, BOOLEAN, 'N', DEVELOPER,
     "If TRUE, compute and output per-segment quantities, e.g. coherent F-statistics in each segment. "
-    "May be combined with " UVAR_STR( output_per_detector ) ". "
+    "May be combined with " UVAR_STR( per_detector ) ". "
     );
   XLALRegisterUvarMember(
-    output_misc_info, BOOLEAN, 'M', DEVELOPER,
+    misc_info, BOOLEAN, 'M', DEVELOPER,
     "If TRUE, output miscellaneous per-segment information: SFT properties, cache usage, etc. "
     );
   //
@@ -452,10 +452,10 @@ int main( int argc, char *argv[] )
   ////////// Set up lattice tilings //////////
 
   // If outputting per-detector quantities, list of detectors
-  const LALStringVector *per_detectors = uvar->output_per_detector ? setup.detectors : NULL;
+  const LALStringVector *per_detectors = uvar->per_detector ? setup.detectors : NULL;
 
   // Number of per-segment items to output (may be zero)
-  const UINT4 per_nsegments = uvar->output_per_segment ? nsegments : 0;
+  const UINT4 per_nsegments = uvar->per_segment ? nsegments : 0;
 
   // Check interpolation/maximum mismatch options are consistent with the type of search being performed
   if ( nsegments == 1 ) {
@@ -783,7 +783,7 @@ int main( int argc, char *argv[] )
   for ( size_t i = 0; i < nsegments; ++i ) {
     const size_t cache_max_size = interpolation ? uvar->cache_max_size : 1;
     const size_t cache_gc_limit = interpolation ? uvar->cache_gc_limit : 0;
-    coh_cache[i] = XLALWeaveCacheCreate( tiling[i], interpolation, setup.phys_to_latt, setup.latt_to_phys, rssky_transf[i], rssky_transf[isemi], coh_input[i], cache_max_size, cache_gc_limit, uvar->output_misc_info );
+    coh_cache[i] = XLALWeaveCacheCreate( tiling[i], interpolation, setup.phys_to_latt, setup.latt_to_phys, rssky_transf[i], rssky_transf[isemi], coh_input[i], cache_max_size, cache_gc_limit, uvar->misc_info );
     XLAL_CHECK_MAIN( coh_cache[i] != NULL, XLAL_EFUNC );
   }
 
@@ -815,7 +815,7 @@ int main( int argc, char *argv[] )
   WeaveSemiResults *semi_res = NULL;
 
   // Create output results structure
-  WeaveOutputResults *out = XLALWeaveOutputResultsCreate( &setup.ref_time, ninputspins, per_detectors, per_nsegments, uvar->output_toplist_limit );
+  WeaveOutputResults *out = XLALWeaveOutputResultsCreate( &setup.ref_time, ninputspins, per_detectors, per_nsegments, uvar->toplist_limit );
   XLAL_CHECK_MAIN( out != NULL, XLAL_EFUNC );
 
   // Number of times output results have been restored from a checkpoint
@@ -1125,7 +1125,7 @@ int main( int argc, char *argv[] )
     }
 
     // Write miscellaneous per-segment information
-    if ( uvar->output_misc_info ) {
+    if ( uvar->misc_info ) {
       XLAL_CHECK_MAIN( XLALWeaveOutputMiscPerSegInfoWrite( file, &setup, sft_catalog != NULL, nsegments, per_seg_info ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 

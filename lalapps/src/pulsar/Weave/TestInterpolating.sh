@@ -26,7 +26,7 @@ echo
 echo "=== Perform interpolating search ==="
 set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
-    --output-toplist-limit=3000 --output-per-detector --output-per-segment --output-misc-info \
+    --toplist-limit=3000 --per-detector --per-segment --misc-info \
     --setup-file=WeaveSetup.fits --sft-files='*.sft' --Fstat-method=DemodBest \
     --alpha=2.3/0.9 --delta=-1.2/2.3 --freq=50.5~1e-4 --f1dot=-3e-9,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3
 set +x

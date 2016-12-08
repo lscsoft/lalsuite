@@ -9,7 +9,7 @@ echo
 echo "=== Perform interpolating search without a maximum cache size ==="
 set -x
 ${builddir}/lalapps_Weave --cache-max-size=0 --output-file=WeaveOutNoMax.fits \
-    --output-toplist-limit=5000 --output-misc-info --setup-file=WeaveSetup.fits \
+    --toplist-limit=5000 --misc-info --setup-file=WeaveSetup.fits \
     --rand-seed=3456 --sft-timebase=1800 --sft-noise-psd=1,1 \
     --sft-timestamps-files=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt \
     --alpha=0.9/1.4 --delta=-1.2/2.3 --freq=50.5/1e-4 --f1dot=-1.5e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.3
@@ -29,7 +29,7 @@ echo
 echo "=== Perform interpolating search with a maximum cache size ==="
 set -x
 ${builddir}/lalapps_Weave --cache-max-size=10 --output-file=WeaveOutMax.fits \
-    --output-toplist-limit=5000 --output-misc-info --setup-file=WeaveSetup.fits \
+    --toplist-limit=5000 --misc-info --setup-file=WeaveSetup.fits \
     --rand-seed=3456 --sft-timebase=1800 --sft-noise-psd=1,1 \
     --sft-timestamps-files=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt \
     --alpha=0.9/1.4 --delta=-1.2/2.3 --freq=50.5/1e-4 --f1dot=-1.5e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.3
