@@ -80,11 +80,11 @@ int toplist_fits_table_init(
   }
 
   // Add columns for mean multi- and per-detector F-statistic
-  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, mean_twoF ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, mean2F ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( par->per_detectors != NULL ) {
     for ( size_t i = 0; i < par->per_detectors->length; ++i ) {
-      snprintf( col_name, sizeof( col_name ), "mean_twoF_%s", par->per_detectors->data[i] );
-      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, mean_twoF_per_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+      snprintf( col_name, sizeof( col_name ), "mean2F_%s", par->per_detectors->data[i] );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, mean2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   }
 
@@ -100,11 +100,11 @@ int toplist_fits_table_init(
     }
 
     // Add columns for coherent multi- and per-detector F-statistic
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, par->per_nsegments, twoF, "twoF_seg" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, par->per_nsegments, coh2F, "coh2F_seg" ) == XLAL_SUCCESS, XLAL_EFUNC );
     if ( par->per_detectors != NULL ) {
       for ( size_t i = 0; i < par->per_detectors->length; ++i ) {
-        snprintf( col_name, sizeof( col_name ), "twoF_%s_seg", par->per_detectors->data[i] );
-        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, par->per_nsegments, twoF_per_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+        snprintf( col_name, sizeof( col_name ), "coh2F_%s_seg", par->per_detectors->data[i] );
+        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, par->per_nsegments, coh2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
     }
 
@@ -559,8 +559,8 @@ int XLALWeaveResultsToplistCompare(
       // Compare mean multi-detector F-statistics
       XLALPrintInfo( "%s: comparing mean multi-detector F-statistics ...\n", __func__ );
       for ( size_t i = 0; i < n; ++i ) {
-        res_1->data[i] = items_1[i]->mean_twoF;
-        res_2->data[i] = items_2[i]->mean_twoF;
+        res_1->data[i] = items_1[i]->mean2F;
+        res_2->data[i] = items_2[i]->mean2F;
       }
       XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
       if ( !*equal ) {
@@ -572,8 +572,8 @@ int XLALWeaveResultsToplistCompare(
         for ( size_t k = 0; k < par->per_detectors->length; ++k ) {
           XLALPrintInfo( "%s: comparing mean per-detector F-statistics for detector '%s'...\n", __func__, par->per_detectors->data[k] );
           for ( size_t i = 0; i < n; ++i ) {
-            res_1->data[i] = items_1[i]->mean_twoF_per_det[k];
-            res_2->data[i] = items_2[i]->mean_twoF_per_det[k];
+            res_1->data[i] = items_1[i]->mean2F_det[k];
+            res_2->data[i] = items_2[i]->mean2F_det[k];
           }
           XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
         }
@@ -586,8 +586,8 @@ int XLALWeaveResultsToplistCompare(
       for ( size_t j = 0; j < par->per_nsegments; ++j ) {
         XLALPrintInfo( "%s: comparing coherent multi-detector F-statistics for segment %zu...\n", __func__, j );
         for ( size_t i = 0; i < n; ++i ) {
-          res_1->data[i] = items_1[i]->twoF[j];
-          res_2->data[i] = items_2[i]->twoF[j];
+          res_1->data[i] = items_1[i]->coh2F[j];
+          res_2->data[i] = items_2[i]->coh2F[j];
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
@@ -599,11 +599,11 @@ int XLALWeaveResultsToplistCompare(
       if ( par->per_detectors != NULL ) {
         for ( size_t j = 0; j < par->per_nsegments; ++j ) {
           for ( size_t k = 0; k < par->per_detectors->length; ++k ) {
-            if ( isfinite( items_1[0]->twoF_per_det[k][j] ) || isfinite( items_2[0]->twoF_per_det[k][j] ) ) {
+            if ( isfinite( items_1[0]->coh2F_det[k][j] ) || isfinite( items_2[0]->coh2F_det[k][j] ) ) {
               XLALPrintInfo( "%s: comparing per-segment per-detector F-statistics for segment %zu, detector '%s'...\n", __func__, j, par->per_detectors->data[k] );
               for ( size_t i = 0; i < n; ++i ) {
-                res_1->data[i] = items_1[i]->twoF_per_det[k][j];
-                res_2->data[i] = items_2[i]->twoF_per_det[k][j];
+                res_1->data[i] = items_1[i]->coh2F_det[k][j];
+                res_2->data[i] = items_2[i]->coh2F_det[k][j];
               }
               XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
             } else {

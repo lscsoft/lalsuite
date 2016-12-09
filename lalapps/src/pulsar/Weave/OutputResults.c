@@ -34,7 +34,7 @@ struct tagWeaveOutputResults {
   /// Number of computed semicoherent results
   INT8 semi_ncomp;
   /// Toplist of output results ranked by mean multi-detector F-statistic
-  WeaveResultsToplist *mean_twoF_toplist;
+  WeaveResultsToplist *mean2F_toplist;
 };
 
 ///
@@ -42,21 +42,21 @@ struct tagWeaveOutputResults {
 ///
 /// @{
 
-static int result_item_compare_by_mean_twoF( const void *x, const void *y );
+static int result_item_compare_by_mean2F( const void *x, const void *y );
 
 /// @}
 
 ///
 /// Compare output result items by mean multi-detector F-statistic
 ///
-int result_item_compare_by_mean_twoF(
+int result_item_compare_by_mean2F(
   const void *x,
   const void *y
   )
 {
   const WeaveOutputResultItem *ix = ( const WeaveOutputResultItem * ) x;
   const WeaveOutputResultItem *iy = ( const WeaveOutputResultItem * ) y;
-  WEAVE_COMPARE_BY( iy->mean_twoF, ix->mean_twoF );   // Compare in descending order
+  WEAVE_COMPARE_BY( iy->mean2F, ix->mean2F );   // Compare in descending order
   return 0;
 }
 
@@ -85,15 +85,15 @@ WeaveOutputResultItem *XLALWeaveOutputResultItemCreate(
       item->coh_fkdot[k] = XLALCalloc( par->per_nsegments, sizeof( *item->coh_fkdot[k] ) );
       XLAL_CHECK_NULL( item->coh_fkdot[k] != NULL, XLAL_ENOMEM );
     }
-    item->twoF = XLALCalloc( par->per_nsegments, sizeof( *item->twoF ) );
-    XLAL_CHECK_NULL( item->twoF != NULL, XLAL_ENOMEM );
+    item->coh2F = XLALCalloc( par->per_nsegments, sizeof( *item->coh2F ) );
+    XLAL_CHECK_NULL( item->coh2F != NULL, XLAL_ENOMEM );
   }
 
   // Allocate memory for per-detector and per-segment output results
   if ( par->per_detectors != NULL && par->per_nsegments > 0 ) {
     for ( size_t i = 0; i < par->per_detectors->length; ++i ) {
-      item->twoF_per_det[i] = XLALCalloc( par->per_nsegments, sizeof( *item->twoF_per_det[i] ) );
-      XLAL_CHECK_NULL( item->twoF_per_det[i] != NULL, XLAL_ENOMEM );
+      item->coh2F_det[i] = XLALCalloc( par->per_nsegments, sizeof( *item->coh2F_det[i] ) );
+      XLAL_CHECK_NULL( item->coh2F_det[i] != NULL, XLAL_ENOMEM );
     }
   }
 
@@ -114,9 +114,9 @@ void XLALWeaveOutputResultItemDestroy(
     for ( size_t k = 0; k < PULSAR_MAX_SPINS; ++k ) {
       XLALFree( item->coh_fkdot[k] );
     }
-    XLALFree( item->twoF );
+    XLALFree( item->coh2F );
     for ( size_t i = 0; i < PULSAR_MAX_DETECTORS; ++i ) {
-      XLALFree( item->twoF_per_det[i] );
+      XLALFree( item->coh2F_det[i] );
     }
     XLALFree( item );
   }
@@ -153,8 +153,8 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
   }
 
   // Create a toplist which ranks results by mean multi-detector F-statistic
-  out->mean_twoF_toplist = XLALWeaveResultsToplistCreate( &out->par, "mean_twoF", "mean multi-detector F-statistic", toplist_limit, result_item_compare_by_mean_twoF );
-  XLAL_CHECK_NULL( out->mean_twoF_toplist != NULL, XLAL_EFUNC );
+  out->mean2F_toplist = XLALWeaveResultsToplistCreate( &out->par, "mean2F", "mean multi-detector F-statistic", toplist_limit, result_item_compare_by_mean2F );
+  XLAL_CHECK_NULL( out->mean2F_toplist != NULL, XLAL_EFUNC );
 
   return out;
 
@@ -169,7 +169,7 @@ void XLALWeaveOutputResultsDestroy(
 {
   if ( out != NULL ) {
     XLALDestroyStringVector( out->par.per_detectors );
-    XLALWeaveResultsToplistDestroy( out->mean_twoF_toplist );
+    XLALWeaveResultsToplistDestroy( out->mean2F_toplist );
     XLALFree( out );
   }
 }
@@ -192,7 +192,7 @@ int XLALWeaveOutputResultsAdd(
   out->semi_ncomp += semi_nfreqs;
 
   // Add results to toplist ranked by mean multi-detector F-statistic
-  XLAL_CHECK( XLALWeaveResultsToplistAdd( out->mean_twoF_toplist, semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALWeaveResultsToplistAdd( out->mean2F_toplist, semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
@@ -233,7 +233,7 @@ int XLALWeaveOutputResultsWrite(
   XLAL_CHECK( XLALFITSHeaderWriteUINT8( file, "semicomp", out->semi_ncomp, "number of computed semicoherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Write toplist ranked by mean multi-detector F-statistic
-  XLAL_CHECK( XLALWeaveResultsToplistWrite( file, out->mean_twoF_toplist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALWeaveResultsToplistWrite( file, out->mean2F_toplist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
@@ -315,7 +315,7 @@ int XLALWeaveOutputResultsReadAppend(
   }
 
   // Read and append to toplist ranked by mean multi-detector F-statistic
-  XLAL_CHECK( XLALWeaveResultsToplistReadAppend( file, ( *out )->mean_twoF_toplist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALWeaveResultsToplistReadAppend( file, ( *out )->mean2F_toplist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Cleanup
   XLALDestroyStringVector( per_detectors );
@@ -401,7 +401,7 @@ int XLALWeaveOutputResultsCompare(
   }
 
   // Compare toplists ranked by mean multi-detector F-statistic
-  XLAL_CHECK( XLALWeaveResultsToplistCompare( equal, setup, param_tol_mism, result_tol, out_1->mean_twoF_toplist, out_2->mean_twoF_toplist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALWeaveResultsToplistCompare( equal, setup, param_tol_mism, result_tol, out_1->mean2F_toplist, out_2->mean2F_toplist ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( !*equal ) {
     return XLAL_SUCCESS;
   }

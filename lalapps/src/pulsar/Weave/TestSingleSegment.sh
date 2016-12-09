@@ -79,10 +79,10 @@ echo
 
 echo "=== Extract template bank and F-statistics from WeaveOut.fits as ASCII table ==="
 set -x
-${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean_twoF_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0]" > WeaveBank.txt
-${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean_twoF_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean_twoF,-999)]" > WeaveFstats.txt
-${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean_twoF_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean_twoF_H1,-999)]" > WeaveFstatsH1.txt
-${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean_twoF_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean_twoF_L1,-999)]" > WeaveFstatsL1.txt
+${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0]" > WeaveBank.txt
+${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean2F,-999)]" > WeaveFstats.txt
+${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean2F_H1,-999)]" > WeaveFstatsH1.txt
+${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean2F_L1,-999)]" > WeaveFstatsL1.txt
 set +x
 echo
 
@@ -115,12 +115,12 @@ echo
 
 echo "=== Compare F-statistic at exact injected signal parameters with loudest F-statistic found by lalapps_Weave ==="
 set -x
-twoF_exact=`cat CFSv2Exact.txt | sed -n '/^[^%]/{p;q}' | awk '{print $7}'`
-${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean_twoF_toplist][col c1=mean_twoF][#row == 1]" > tmp
-twoF_loud=`cat tmp | sed "/^#/d" | xargs printf "%g"`
+coh2F_exact=`cat CFSv2Exact.txt | sed -n '/^[^%]/{p;q}' | awk '{print $7}'`
+${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=mean2F][#row == 1]" > tmp
+coh2F_loud=`cat tmp | sed "/^#/d" | xargs printf "%g"`
 # Value of 'mean_mu' was calculated by:
 #   octapps_run WeaveFstatMismatch --setup-file=TestSingleSegment.testdir/WeaveSetup.fits --spindowns=1 --semi-max-mismatch=11 --coh-max-mismatch=0 --output=mean
 mean_mu=0.6102
-awk "BEGIN { print mu = ( ${twoF_exact} - ${twoF_loud} ) / ${twoF_exact}; exit ( mu < ${mean_mu} ? 0 : 1 ) }"
+awk "BEGIN { print mu = ( ${coh2F_exact} - ${coh2F_loud} ) / ${coh2F_exact}; exit ( mu < ${mean_mu} ? 0 : 1 ) }"
 set +x
 echo

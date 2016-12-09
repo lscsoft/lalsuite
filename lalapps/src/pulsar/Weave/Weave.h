@@ -92,13 +92,13 @@ typedef struct tagWeaveOutputResultItem {
   /// Physical frequency and spindowns of coherent templates (only needed for per-segment output)
   REAL8 *coh_fkdot[PULSAR_MAX_SPINS];
   /// Mean multi-detector F-statistic
-  REAL4 mean_twoF;
+  REAL4 mean2F;
   /// Coherent multi-detector F-statistics (only needed for per-segment output)
-  REAL4 *twoF;
+  REAL4 *coh2F;
   /// Mean per-detector F-statistic (only needed for per-detector output)
-  REAL4 mean_twoF_per_det[PULSAR_MAX_DETECTORS];
+  REAL4 mean2F_det[PULSAR_MAX_DETECTORS];
   /// Coherent per-detector F-statistics (only needed for per-detector and per-segment output)
-  REAL4 *twoF_per_det[PULSAR_MAX_DETECTORS];
+  REAL4 *coh2F_det[PULSAR_MAX_DETECTORS];
 } WeaveOutputResultItem;
 
 ///

@@ -58,9 +58,9 @@ struct tagWeaveCohResults {
   /// Number of frequencies
   UINT4 nfreqs;
   /// Multi-detector F-statistics per frequency
-  REAL4Vector *twoF;
+  REAL4Vector *coh2F;
   /// Per-detector F-statistics per frequency
-  REAL4Vector *twoF_per_det[PULSAR_MAX_DETECTORS];
+  REAL4Vector *coh2F_det[PULSAR_MAX_DETECTORS];
 };
 
 ///
@@ -92,13 +92,13 @@ struct tagWeaveSemiPartials {
   /// Number of detectors for per-detector results
   UINT4 ndetectors;
   /// Summed multi-detector F-statistics per frequency
-  REAL4VectorAligned *sum_twoF;
+  REAL4VectorAligned *sum2F;
   /// Number of additions to multi-detector F-statistics thus far
-  UINT4 nsum_twoF;
+  UINT4 nsum2F;
   /// Summed per-detector F-statistics per frequency
-  REAL4VectorAligned *sum_twoF_per_det[PULSAR_MAX_DETECTORS];
+  REAL4VectorAligned *sum2F_det[PULSAR_MAX_DETECTORS];
   /// Number of additions to per-detector F-statistics thus far
-  UINT4 nsum_twoF_per_det[PULSAR_MAX_DETECTORS];
+  UINT4 nsum2F_det[PULSAR_MAX_DETECTORS];
 };
 
 ///
@@ -118,9 +118,9 @@ struct tagWeaveSemiResults {
   /// Number of detectors for per-detector results
   UINT4 ndetectors;
   /// Mean multi-detector F-statistics per frequency
-  REAL4VectorAligned *mean_twoF;
+  REAL4VectorAligned *mean2F;
   /// Mean per-detector F-statistics per frequency
-  REAL4VectorAligned *mean_twoF_per_det[PULSAR_MAX_DETECTORS];
+  REAL4VectorAligned *mean2F_det[PULSAR_MAX_DETECTORS];
 };
 
 ///
@@ -222,15 +222,15 @@ int XLALWeaveCohResultsCompute(
   ( *coh_res )->nfreqs = coh_nfreqs;
 
   // Reallocate vectors of multi- and per-detector F-statistics per frequency
-  if ( ( *coh_res )->twoF == NULL || ( *coh_res )->twoF->length < ( *coh_res )->nfreqs ) {
-    ( *coh_res )->twoF = XLALResizeREAL4Vector( ( *coh_res )->twoF, ( *coh_res )->nfreqs );
-    XLAL_CHECK( ( *coh_res )->twoF != NULL, XLAL_ENOMEM );
+  if ( ( *coh_res )->coh2F == NULL || ( *coh_res )->coh2F->length < ( *coh_res )->nfreqs ) {
+    ( *coh_res )->coh2F = XLALResizeREAL4Vector( ( *coh_res )->coh2F, ( *coh_res )->nfreqs );
+    XLAL_CHECK( ( *coh_res )->coh2F != NULL, XLAL_ENOMEM );
   }
   for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
     const size_t idx = coh_input->Fstat_res_idx[i];
-    if ( ( *coh_res )->twoF_per_det[idx] == NULL || ( *coh_res )->twoF_per_det[idx]->length < ( *coh_res )->nfreqs ) {
-      ( *coh_res )->twoF_per_det[idx] = XLALResizeREAL4Vector( ( *coh_res )->twoF_per_det[idx], ( *coh_res )->nfreqs );
-      XLAL_CHECK( ( *coh_res )->twoF_per_det[idx] != NULL, XLAL_ENOMEM );
+    if ( ( *coh_res )->coh2F_det[idx] == NULL || ( *coh_res )->coh2F_det[idx]->length < ( *coh_res )->nfreqs ) {
+      ( *coh_res )->coh2F_det[idx] = XLALResizeREAL4Vector( ( *coh_res )->coh2F_det[idx], ( *coh_res )->nfreqs );
+      XLAL_CHECK( ( *coh_res )->coh2F_det[idx] != NULL, XLAL_ENOMEM );
     }
   }
 
@@ -240,7 +240,7 @@ int XLALWeaveCohResultsCompute(
   }
 
   // Use a local F-statistic results structure, since we supply our own memory
-  // - The 'internalalloclen' field stores the memory size in elements of the results arrays (e.g. 'twoF'),
+  // - The 'internalalloclen' field stores the memory size in elements of the results arrays (e.g. 'coh2F'),
   //   as opposed to 'numFreqBins' which stores how many elements of the result arrays are in use.
   FstatResults XLAL_INIT_DECL( Fstat_res_struct );
   FstatResults *Fstat_res = &Fstat_res_struct;
@@ -248,10 +248,10 @@ int XLALWeaveCohResultsCompute(
   if ( coh_input->what_to_compute & FSTATQ_2F_PER_DET ) {
     Fstat_res->numDetectors = coh_input->Fstat_ndetectors;
   }
-  Fstat_res->twoF = ( *coh_res )->twoF->data;
+  Fstat_res->twoF = ( *coh_res )->coh2F->data;
   for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
     const size_t idx = coh_input->Fstat_res_idx[i];
-    Fstat_res->twoFPerDet[i] = ( *coh_res )->twoF_per_det[idx]->data;
+    Fstat_res->twoFPerDet[i] = ( *coh_res )->coh2F_det[idx]->data;
   }
 
   // Compute the F-statistic starting at the point 'coh_phys', with 'nfreqs' frequency bins
@@ -261,10 +261,10 @@ int XLALWeaveCohResultsCompute(
   XLAL_CHECK( Fstat_res->internalalloclen == ( *coh_res )->nfreqs, XLAL_EFAILED );
   XLAL_CHECK( Fstat_res->numFreqBins == ( *coh_res )->nfreqs, XLAL_EFAILED );
   XLAL_CHECK( !( coh_input->what_to_compute & FSTATQ_2F_PER_DET ) || ( Fstat_res->numDetectors == coh_input->Fstat_ndetectors ), XLAL_EFAILED );
-  XLAL_CHECK( Fstat_res->twoF == ( *coh_res )->twoF->data, XLAL_EFAILED );
+  XLAL_CHECK( Fstat_res->twoF == ( *coh_res )->coh2F->data, XLAL_EFAILED );
   for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
     const size_t idx = coh_input->Fstat_res_idx[i];
-    XLAL_CHECK( Fstat_res->twoFPerDet[i] == ( *coh_res )->twoF_per_det[idx]->data, XLAL_EFAILED, "%p vs %p", Fstat_res->twoFPerDet[i], ( *coh_res )->twoF_per_det[idx]->data );
+    XLAL_CHECK( Fstat_res->twoFPerDet[i] == ( *coh_res )->coh2F_det[idx]->data, XLAL_EFAILED, "%p vs %p", Fstat_res->twoFPerDet[i], ( *coh_res )->coh2F_det[idx]->data );
   }
 
   // Double-check that F-statistic results detectors correctly match up with coherent results detectors
@@ -287,9 +287,9 @@ void XLALWeaveCohResultsDestroy(
   )
 {
   if ( coh_res != NULL ) {
-    XLALDestroyREAL4Vector( coh_res->twoF );
+    XLALDestroyREAL4Vector( coh_res->coh2F );
     for ( size_t i = 0; i < PULSAR_MAX_DETECTORS; ++i ) {
-      XLALDestroyREAL4Vector( coh_res->twoF_per_det[i] );
+      XLALDestroyREAL4Vector( coh_res->coh2F_det[i] );
     }
     XLALFree( coh_res );
   }
@@ -336,20 +336,20 @@ int XLALWeaveSemiPartialsInit(
   ( *semi_parts )->ncoh_off_res = 0;
 
   // Initialise number of additions to multi- and per-detector F-statistics
-  ( *semi_parts )->nsum_twoF = 0;
-  XLAL_INIT_MEM( ( *semi_parts )->nsum_twoF_per_det );
+  ( *semi_parts )->nsum2F = 0;
+  XLAL_INIT_MEM( ( *semi_parts )->nsum2F_det );
 
   // Reallocate vectors of summed multi- and per-detector F-statistics per frequency
-  if ( ( *semi_parts )->sum_twoF == NULL || ( *semi_parts )->sum_twoF->length < ( *semi_parts )->nfreqs ) {
-    XLALDestroyREAL4VectorAligned( ( *semi_parts )->sum_twoF );
-    ( *semi_parts )->sum_twoF = XLALCreateREAL4VectorAligned( ( *semi_parts )->nfreqs, alignment );
-    XLAL_CHECK( ( *semi_parts )->sum_twoF != NULL, XLAL_ENOMEM );
+  if ( ( *semi_parts )->sum2F == NULL || ( *semi_parts )->sum2F->length < ( *semi_parts )->nfreqs ) {
+    XLALDestroyREAL4VectorAligned( ( *semi_parts )->sum2F );
+    ( *semi_parts )->sum2F = XLALCreateREAL4VectorAligned( ( *semi_parts )->nfreqs, alignment );
+    XLAL_CHECK( ( *semi_parts )->sum2F != NULL, XLAL_ENOMEM );
   }
   for ( size_t i = 0; i < ( *semi_parts )->ndetectors; ++i ) {
-    if ( ( *semi_parts )->sum_twoF_per_det[i] == NULL || ( *semi_parts )->sum_twoF_per_det[i]->length < ( *semi_parts )->nfreqs ) {
-      XLALDestroyREAL4VectorAligned( ( *semi_parts )->sum_twoF_per_det[i] );
-      ( *semi_parts )->sum_twoF_per_det[i] = XLALCreateREAL4VectorAligned( ( *semi_parts )->nfreqs, alignment );
-      XLAL_CHECK( ( *semi_parts )->sum_twoF_per_det[i] != NULL, XLAL_ENOMEM );
+    if ( ( *semi_parts )->sum2F_det[i] == NULL || ( *semi_parts )->sum2F_det[i]->length < ( *semi_parts )->nfreqs ) {
+      XLALDestroyREAL4VectorAligned( ( *semi_parts )->sum2F_det[i] );
+      ( *semi_parts )->sum2F_det[i] = XLALCreateREAL4VectorAligned( ( *semi_parts )->nfreqs, alignment );
+      XLAL_CHECK( ( *semi_parts )->sum2F_det[i] != NULL, XLAL_ENOMEM );
     }
   }
 
@@ -366,9 +366,9 @@ void XLALWeaveSemiPartialsDestroy(
 {
   if ( semi_parts != NULL ) {
     XLALFree( semi_parts->coh_off_res );
-    XLALDestroyREAL4VectorAligned( semi_parts->sum_twoF );
+    XLALDestroyREAL4VectorAligned( semi_parts->sum2F );
     for ( size_t i = 0; i < PULSAR_MAX_DETECTORS; ++i ) {
-      XLALDestroyREAL4VectorAligned( semi_parts->sum_twoF_per_det[i] );
+      XLALDestroyREAL4VectorAligned( semi_parts->sum2F_det[i] );
     }
     XLALFree( semi_parts );
   }
@@ -422,12 +422,12 @@ int XLALWeaveSemiPartialsAdd(
   }
 
   // Add to summed multi-detector F-statistics per frequency, and increment number of additions thus far
-  XLAL_CHECK( semi_partials_add_REAL4( &semi_parts->nsum_twoF, semi_parts->sum_twoF->data, coh_res->twoF->data + coh_offset, semi_parts->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( semi_partials_add_REAL4( &semi_parts->nsum2F, semi_parts->sum2F->data, coh_res->coh2F->data + coh_offset, semi_parts->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Add to summed per-detector F-statistics per frequency, and increment number of additions thus far
   for ( size_t i = 0; i < semi_parts->ndetectors; ++i ) {
-    if ( coh_res->twoF_per_det[i] != NULL ) {
-      XLAL_CHECK( semi_partials_add_REAL4( &semi_parts->nsum_twoF_per_det[i], semi_parts->sum_twoF_per_det[i]->data, coh_res->twoF_per_det[i]->data + coh_offset, semi_parts->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    if ( coh_res->coh2F_det[i] != NULL ) {
+      XLAL_CHECK( semi_partials_add_REAL4( &semi_parts->nsum2F_det[i], semi_parts->sum2F_det[i]->data, coh_res->coh2F_det[i]->data + coh_offset, semi_parts->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   }
 
@@ -463,16 +463,16 @@ int XLALWeaveSemiResultsCompute(
   ( *semi_res )->ndetectors = semi_parts->ndetectors;
 
   // Reallocate vectors of mean multi- and per-detector F-statistics per frequency
-  if ( ( *semi_res )->mean_twoF == NULL || ( *semi_res )->mean_twoF->length < semi_parts->nfreqs ) {
-    XLALDestroyREAL4VectorAligned( ( *semi_res )->mean_twoF );
-    ( *semi_res )->mean_twoF = XLALCreateREAL4VectorAligned( semi_parts->nfreqs, alignment );
-    XLAL_CHECK( ( *semi_res )->mean_twoF != NULL, XLAL_ENOMEM );
+  if ( ( *semi_res )->mean2F == NULL || ( *semi_res )->mean2F->length < semi_parts->nfreqs ) {
+    XLALDestroyREAL4VectorAligned( ( *semi_res )->mean2F );
+    ( *semi_res )->mean2F = XLALCreateREAL4VectorAligned( semi_parts->nfreqs, alignment );
+    XLAL_CHECK( ( *semi_res )->mean2F != NULL, XLAL_ENOMEM );
   }
   for ( size_t i = 0; i < semi_parts->ndetectors; ++i ) {
-    if ( ( *semi_res )->mean_twoF_per_det[i] == NULL || ( *semi_res )->mean_twoF_per_det[i]->length < semi_parts->nfreqs ) {
-      XLALDestroyREAL4VectorAligned( ( *semi_res )->mean_twoF_per_det[i] );
-      ( *semi_res )->mean_twoF_per_det[i] = XLALCreateREAL4VectorAligned( semi_parts->nfreqs, alignment );
-      XLAL_CHECK( ( *semi_res )->mean_twoF_per_det[i] != NULL, XLAL_ENOMEM );
+    if ( ( *semi_res )->mean2F_det[i] == NULL || ( *semi_res )->mean2F_det[i]->length < semi_parts->nfreqs ) {
+      XLALDestroyREAL4VectorAligned( ( *semi_res )->mean2F_det[i] );
+      ( *semi_res )->mean2F_det[i] = XLALCreateREAL4VectorAligned( semi_parts->nfreqs, alignment );
+      XLAL_CHECK( ( *semi_res )->mean2F_det[i] != NULL, XLAL_ENOMEM );
     }
   }
 
@@ -482,11 +482,11 @@ int XLALWeaveSemiResultsCompute(
   }
 
   // Calculate mean multi-detector F-statistics per frequency
-  XLAL_CHECK( XLALVectorScaleREAL4( ( *semi_res )->mean_twoF->data, 1.0 / semi_parts->nsum_twoF, semi_parts->sum_twoF->data, ( *semi_res )->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALVectorScaleREAL4( ( *semi_res )->mean2F->data, 1.0 / semi_parts->nsum2F, semi_parts->sum2F->data, ( *semi_res )->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Calculate mean per-detector F-statistics per frequency
   for ( size_t i = 0; i < ( *semi_res )->ndetectors; ++i ) {
-    XLAL_CHECK( XLALVectorScaleREAL4( ( *semi_res )->mean_twoF_per_det[i]->data, 1.0 / semi_parts->nsum_twoF_per_det[i], semi_parts->sum_twoF_per_det[i]->data, ( *semi_res )->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALVectorScaleREAL4( ( *semi_res )->mean2F_det[i]->data, 1.0 / semi_parts->nsum2F_det[i], semi_parts->sum2F_det[i]->data, ( *semi_res )->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   return XLAL_SUCCESS;
@@ -501,9 +501,9 @@ void XLALWeaveSemiResultsDestroy(
   )
 {
   if ( semi_res != NULL ) {
-    XLALDestroyREAL4VectorAligned( semi_res->mean_twoF );
+    XLALDestroyREAL4VectorAligned( semi_res->mean2F );
     for ( size_t i = 0; i < PULSAR_MAX_DETECTORS; ++i ) {
-      XLALDestroyREAL4VectorAligned( semi_res->mean_twoF_per_det[i] );
+      XLALDestroyREAL4VectorAligned( semi_res->mean2F_det[i] );
     }
     XLALFree( semi_res );
   }
@@ -560,23 +560,23 @@ int XLALWeaveFillOutputResultItem(
   }
 
   // Update multi-detector F-statistics
-  ( *item )->mean_twoF = semi_res->mean_twoF->data[freq_idx];
+  ( *item )->mean2F = semi_res->mean2F->data[freq_idx];
   for ( size_t j = 0; j < semi_res->ncoh_off_res; ++j ) {
     const coh_offset_results *coh_off_res = &semi_res->coh_off_res[j];
-    ( *item )->twoF[j] = coh_off_res->res->twoF->data[coh_off_res->offset + freq_idx];
+    ( *item )->coh2F[j] = coh_off_res->res->coh2F->data[coh_off_res->offset + freq_idx];
   }
 
   // Update per-detector F-statistics
   for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
-    ( *item )->mean_twoF_per_det[i] = semi_res->mean_twoF_per_det[i]->data[freq_idx];
+    ( *item )->mean2F_det[i] = semi_res->mean2F_det[i]->data[freq_idx];
     for ( size_t j = 0; j < semi_res->ncoh_off_res; ++j ) {
       const coh_offset_results *coh_off_res = &semi_res->coh_off_res[j];
-      if ( coh_off_res->res->twoF_per_det[i] != NULL ) {
-        ( *item )->twoF_per_det[i][j] = coh_off_res->res->twoF_per_det[i]->data[coh_off_res->offset + freq_idx];
+      if ( coh_off_res->res->coh2F_det[i] != NULL ) {
+        ( *item )->coh2F_det[i][j] = coh_off_res->res->coh2F_det[i]->data[coh_off_res->offset + freq_idx];
       } else {
         // There is not per-detector F-statistic for this segment, usually because this segment contains
         // no data from this detector. In this case we output a clearly invalid F-statistic value.
-        ( *item )->twoF_per_det[i][j] = NAN;
+        ( *item )->coh2F_det[i][j] = NAN;
       }
     }
   }
