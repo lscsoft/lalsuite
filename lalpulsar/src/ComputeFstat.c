@@ -876,9 +876,9 @@ XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   ///< 
 /// Return true if given #FstatMethodType corresponds to a valid and *available* Fstat method, false otherwise
 ///
 int
-XLALFstatMethodIsAvailable ( FstatMethodType i )
+XLALFstatMethodIsAvailable ( FstatMethodType method )
 {
-  switch (i) {
+  switch (method) {
 
   case FMETHOD_DEMOD_GENERIC:
   case FMETHOD_DEMOD_BEST:
@@ -915,14 +915,14 @@ XLALFstatMethodIsAvailable ( FstatMethodType i )
 } // XLALFstatMethodIsAvailable()
 
 ///
-/// Return pointer to a static string giving the name of the #FstatMethodType \p i
+/// Return pointer to a static string giving the name of the #FstatMethodType \p method
 ///
 const CHAR *
-XLALFstatMethodName ( FstatMethodType i )
+XLALFstatMethodName ( FstatMethodType method )
 {
-  XLAL_CHECK_NULL( i < XLAL_NUM_ELEM(FstatMethodNames) && FstatMethodNames[i] != NULL,
-                   XLAL_EINVAL, "FstatMethodType = %i is invalid", i );
-  return FstatMethodNames[i];
+  XLAL_CHECK_NULL( method < XLAL_NUM_ELEM(FstatMethodNames) && FstatMethodNames[method] != NULL,
+                   XLAL_EINVAL, "FstatMethodType = %i is invalid", method );
+  return FstatMethodNames[method];
 }
 
 ///
