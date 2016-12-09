@@ -45,6 +45,8 @@ struct tagFstatInput {
 
 // ---------- Internal prototypes ---------- //
 
+static int XLALSelectBestFstatMethod ( FstatMethodType *method );
+
 int XLALSetupFstatDemod  ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
 int XLALSetupFstatResamp ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
 
@@ -257,30 +259,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   // Check optional Fstat method type argument
   XLAL_CHECK_NULL ( ( FMETHOD_START < optArgs.FstatMethod ) && ( optArgs.FstatMethod < FMETHOD_END ), XLAL_EINVAL );
   XLAL_CHECK_NULL ( FstatMethodNames[optArgs.FstatMethod] != NULL, XLAL_EFAULT );
-  switch (optArgs.FstatMethod) {
-
-  case FMETHOD_DEMOD_BEST:
-  case FMETHOD_RESAMP_BEST:
-    // If user asks for a 'best' method:
-    //   Decrement the current method, then check for the first available Fstat method. This assumes the FstatMethodType enum is ordered as follows:
-    //     FMETHOD_..._GENERIC,      (must **always** avaiable)
-    //     FMETHOD_..._OPTIMISED,    (always avaiable)
-    //     FMETHOD_..._SUPERFAST     (not always available; requires special hardware)
-    //     FMETHOD_..._BEST          (must **always** avaiable)
-    XLALPrintInfo( "%s: trying to find best available Fstat method for '%s'\n", __func__, FstatMethodNames[optArgs.FstatMethod] );
-    while ( !XLALFstatMethodIsAvailable( --optArgs.FstatMethod ) ) {
-      XLAL_CHECK_NULL ( FMETHOD_START < optArgs.FstatMethod, XLAL_EFAILED );
-      XLALPrintInfo( "%s: Fstat method '%s' is unavailable\n",  __func__, FstatMethodNames[optArgs.FstatMethod] );
-    }
-    XLALPrintInfo( "%s: Fstat method '%s' is available; selected as best method\n", __func__, FstatMethodNames[optArgs.FstatMethod] );
-    break;
-
-  default:
-    // If user asks for a specific method:
-    //   Check that method is available
-    XLAL_CHECK_NULL ( XLALFstatMethodIsAvailable(optArgs.FstatMethod), XLAL_EINVAL, "Fstat method '%s' is unavailable", FstatMethodNames[optArgs.FstatMethod] );
-    break;
-  }
+  XLAL_CHECK_NULL ( XLALSelectBestFstatMethod( &optArgs.FstatMethod ) == XLAL_SUCCESS, XLAL_EFAULT );
 
   //
   // Parse which F-statistic method to use, and set these variables:
@@ -871,6 +850,38 @@ XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   ///< 
 
 } // XLALComputeFstatFromAtoms()
 
+///
+/// If user asks for a 'best' #FstatMethodType, find and select it
+///
+static int
+XLALSelectBestFstatMethod ( FstatMethodType *method )
+{
+  switch ( *method ) {
+
+  case FMETHOD_DEMOD_BEST:
+  case FMETHOD_RESAMP_BEST:
+    // If user asks for a 'best' method:
+    //   Decrement the current method, then check for the first available Fstat method. This assumes the FstatMethodType enum is ordered as follows:
+    //     FMETHOD_..._GENERIC,      (must **always** avaiable)
+    //     FMETHOD_..._OPTIMISED,    (always avaiable)
+    //     FMETHOD_..._SUPERFAST     (not always available; requires special hardware)
+    //     FMETHOD_..._BEST          (must **always** avaiable)
+    XLALPrintInfo( "%s: trying to find best available Fstat method for '%s'\n", __func__, FstatMethodNames[*method] );
+    while ( !XLALFstatMethodIsAvailable( --( *method ) ) ) {
+      XLAL_CHECK ( FMETHOD_START < *method, XLAL_EFAILED );
+      XLALPrintInfo( "%s: Fstat method '%s' is unavailable\n",  __func__, FstatMethodNames[*method] );
+    }
+    XLALPrintInfo( "%s: Fstat method '%s' is available; selected as best method\n", __func__, FstatMethodNames[*method] );
+    break;
+
+  default:
+    // If user asks for a specific method:
+    //   Check that method is available
+    XLAL_CHECK ( XLALFstatMethodIsAvailable(*method), XLAL_EINVAL, "Fstat method '%s' is unavailable", FstatMethodNames[*method] );
+    break;
+  }
+  return XLAL_SUCCESS;
+}
 
 ///
 /// Return true if given #FstatMethodType corresponds to a valid and *available* Fstat method, false otherwise
@@ -926,73 +937,50 @@ XLALFstatMethodName ( FstatMethodType method )
 }
 
 ///
-/// Return pointer to a static help string enumerating all (available) #FstatMethodType options.
-/// Also indicates which is the (guessed) available 'best' method available.
+/// Return pointer to a static array of all (available) #FstatMethodType choices.
+/// This data is used by the UserInput module to parse a user enumeration.
 ///
-const CHAR *
-XLALFstatMethodHelpString ( void )
+const UserChoices *
+XLALFstatMethodChoices ( void )
 {
   static int firstCall = 1;
-  static CHAR helpstr[1024];
+  static UserChoices choices;
   if ( firstCall )
     {
-      XLAL_INIT_MEM ( helpstr );
-      for (int i = FMETHOD_START + 1; i < FMETHOD_END; i++ )
+      XLAL_INIT_MEM ( choices );
+      size_t i = 0;
+      for (FstatMethodType m = FMETHOD_START + 1; m < FMETHOD_END; m++ )
         {
-          if ( ! XLALFstatMethodIsAvailable(i) ) {
+          if ( ! XLALFstatMethodIsAvailable(m) ) {
             continue;
           }
-          XLAL_CHECK_NULL ( FstatMethodNames[i] != NULL, XLAL_EFAULT );
-          if ( strcmp ( FstatMethodNames[i] + strlen(FstatMethodNames[i]) - 4, "Best" ) == 0 ) {
-            strcat ( helpstr, "=" );
-          } else if ( i > FMETHOD_START + 1 ) {
-            strcat ( helpstr, "|" );
+          FstatMethodType bm = m;
+          XLAL_CHECK_NULL ( XLALSelectBestFstatMethod( &bm ) == XLAL_SUCCESS, XLAL_EFAULT );
+          if ( bm == m ) {
+            // add an Fstat method
+            choices[i].name = FstatMethodNames[m];
+            choices[i].val = m;
+            i++;
+          } else {
+            // add a "best" Fstat method twice, so that:
+            // - name of "best" method will appear as equal to the actual method it selects,
+            //   in the help string, e.g. "...|DemodSuperFast=DemodBest|..."
+            // - FMETHOD_..._BEST will print as "...Best" in e.g. help default argument, log output
+            choices[i].name = FstatMethodNames[m];
+            choices[i].val = bm;
+            i++;
+            choices[i].name = FstatMethodNames[m];
+            choices[i].val = m;
+            i++;
           }
-          strcat ( helpstr, FstatMethodNames[i] );
-        } // for i < FMETHOD_LAST
-
-      XLAL_CHECK_NULL ( XLAL_LAST_ELEM ( helpstr ) == '\0', XLAL_EBADLEN, "FstatMethod help-string exceeds buffer length (%zu)\n", sizeof(helpstr) );
+        } // for m < FMETHOD_LAST
 
       firstCall = 0;
 
     } // if firstCall
 
-  return helpstr;
-} // XLALFstatMethodHelpString()
-
-///
-/// Parse a given string into an #FstatMethodType number if valid and available,
-/// return error otherwise.
-///
-int
-XLALParseFstatMethodString ( FstatMethodType *Fmethod,          //!< [out] Parsed #FstatMethodType enum
-                             const char *s                      //!< [in] String to parse
-                             )
-{
-  XLAL_CHECK ( s != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( Fmethod != NULL, XLAL_EINVAL );
-
-  // find matching FstatMethod string
-  for (int i = FMETHOD_START + 1; i < FMETHOD_END; i++ )
-    {
-      XLAL_CHECK ( FstatMethodNames[i] != NULL, XLAL_EFAULT );
-      if ( XLALStringCaseCompare ( s, FstatMethodNames[i] ) == 0 )
-        {
-          if ( XLALFstatMethodIsAvailable(i) )
-            {
-              (*Fmethod) = i;
-              return XLAL_SUCCESS;
-            }
-          else
-            {
-              XLAL_ERROR ( XLAL_EINVAL, "Chosen FstatMethod '%s' valid but unavailable in this binary\n", s );
-            }
-        } // if found matching FstatMethod
-    } // for i < FMETHOD_LAST
-
-  XLAL_ERROR ( XLAL_EINVAL, "Unknown FstatMethod '%s'\n", s );
-
-} // XLALParseFstatMethodString()
+  return (const UserChoices *) &choices;
+} // XLALFstatMethodChoices()
 
 int
 XLALGetFstatTiming ( const FstatInput* input, REAL8 *tauF1Buf, REAL8 *tauF1NoBuf )

@@ -36,7 +36,7 @@ REAL8 XLALGetCurrentHeapUsageMB ( void );
 
 typedef struct
 {
-  CHAR *FstatMethod;		//!< select which method/algorithm to use to compute the F-statistic
+  int FstatMethod;		//!< select which method/algorithm to use to compute the F-statistic
   REAL8 Freq;
   REAL8 f1dot;
   REAL8Vector *FreqResolution;
@@ -60,7 +60,7 @@ main ( int argc, char *argv[] )
   UserInput_t XLAL_INIT_DECL(uvar_s);
   UserInput_t *uvar = &uvar_s;
 
-  uvar->FstatMethod = XLALStringDuplicate("ResampBest");
+  uvar->FstatMethod = FMETHOD_RESAMP_BEST;
   uvar->Freq = 100;
   uvar->f1dot = -3e-9;
   uvar->FreqResolution = XLALCreateREAL8Vector ( 2 );
@@ -79,7 +79,7 @@ main ( int argc, char *argv[] )
   XLAL_CHECK ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) != NULL, XLAL_EFUNC );
   uvar->outputInfo = NULL;
 
-  XLAL_CHECK ( XLALRegisterUvarMember ( FstatMethod,    STRING,         0, OPTIONAL,  "F-statistic method to use. Available methods: %s", XLALFstatMethodHelpString() ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarAuxDataMember ( FstatMethod, UserEnum, XLALFstatMethodChoices(), 0, OPTIONAL, "F-statistic method to use" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( Freq,           REAL8,          0, OPTIONAL,  "Search frequency in Hz" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( f1dot,          REAL8,          0, OPTIONAL,  "Search spindown f1dot in Hz/s" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( FreqResolution, REAL8Vector,    0, OPTIONAL,  "Frequency resolution 'R' in natural units 1/Tseg such that: dFreq = R/Tseg) [range]" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -130,9 +130,6 @@ main ( int argc, char *argv[] )
   // ---------- end: handle user input ----------
 
   // common setup over repeated trials
-  FstatMethodType FstatMethod;
-  XLAL_CHECK ( XLALParseFstatMethodString ( &FstatMethod, uvar->FstatMethod ) == XLAL_SUCCESS, XLAL_EFUNC );
-
   EphemerisData *ephem;
   XLAL_CHECK ( (ephem = XLALInitBarycenter ( TEST_DATA_DIR "earth00-19-DE405.dat.gz", TEST_DATA_DIR "sun00-19-DE405.dat.gz" )) != NULL, XLAL_EFUNC );
   REAL8 memBase = XLALGetCurrentHeapUsageMB();
@@ -183,7 +180,7 @@ main ( int argc, char *argv[] )
     injectSqrtSX.sqrtSn[X] = 1;
   }
   optionalArgs.injectSqrtSX = &injectSqrtSX;
-  optionalArgs.FstatMethod = FstatMethod;
+  optionalArgs.FstatMethod = uvar->FstatMethod;
   optionalArgs.collectTiming = 1;
 
   FILE *timingLogFILE = NULL;
