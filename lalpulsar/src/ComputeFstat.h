@@ -275,8 +275,8 @@ typedef struct tagFstatResults {
 } FstatResults;
 
 // ---------- API function prototypes ----------
-int XLALFstatMethodIsAvailable ( FstatMethodType i );
-const CHAR *XLALFstatMethodName ( FstatMethodType i );
+int XLALFstatMethodIsAvailable ( FstatMethodType method );
+const CHAR *XLALFstatMethodName ( FstatMethodType method );
 const CHAR *XLALFstatMethodHelpString ( void );
 int XLALParseFstatMethodString ( FstatMethodType *Fmethod, const char *s );
 
