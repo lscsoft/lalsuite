@@ -1212,6 +1212,9 @@ static int SEOBNRv2ROMDoubleSpinCore(
     fRef_geom = Mf_ROM_min;
   }
 
+  if (Mtot_sec/LAL_MTSUN_SI > 500.0)
+    XLALPrintWarning("Total mass=%gMsun > 500Msun. SEOBNRv2_ROM_DoubleSpin_HI disagrees with SEOBNRv2 for high total masses.\n", Mtot_sec/LAL_MTSUN_SI);
+
   /* Internal storage for waveform coefficiencts */
   SEOBNRROMdataDS_coeff *romdata_coeff_lo=NULL;
   SEOBNRROMdataDS_coeff *romdata_coeff_hi=NULL;
@@ -1455,7 +1458,7 @@ static int SEOBNRv2ROMDoubleSpinCore(
  * @note Parameter ranges:
  *   * 0.01 <= eta <= 0.25
  *   * -1 <= chi_i <= 0.99
- *   * Mtot >= 2 Msun
+ *   * Mtot >= 2 Msun < 500Msun
  *
  *  Aligned component spins chi1, chi2.
  *  Symmetric mass-ratio eta = m1*m2/(m1+m2)^2.
