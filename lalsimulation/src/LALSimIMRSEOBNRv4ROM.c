@@ -1273,7 +1273,7 @@ static int SEOBNRv4ROMTimeFrequencySetup(
   }
 
   if (eta < 0.01 || eta > 0.25) {
-    XLALPrintError( "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv4ROM is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
+    XLALPrintError( "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv4ROM is only available for symmetric mass-ratios in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
     XLAL_ERROR( XLAL_EDOM );
   }
 
@@ -1444,7 +1444,7 @@ int XLALSimIMRSEOBNRv4ROMTimeOfFrequency(
   //XLAL_PRINT_INFO("t_corr[s] = %g\n", t_corr * Mtot_sec);
 
   double Mf = frequency * Mtot_sec;
-  if (Mf < Mf_ROM_min || Mf > Mf_ROM_max) {
+  if (Mf < Mf_ROM_min || Mf > Mf_ROM_max || Mf > Mf_final) {
     gsl_spline_free(spline_phi);
     gsl_interp_accel_free(acc_phi);
     XLAL_ERROR(XLAL_EDOM, "Frequency %g is outside allowed frequency range.\n", frequency);
@@ -1470,8 +1470,7 @@ int XLALSimIMRSEOBNRv4ROMTimeOfFrequency(
  * chirp time, but it includes both the inspiral and the merger ringdown part of SEOBNRv4.
  *
  * If the frequency that corresponds to the specified elapsed time is lower than the
- * geometric frequency Mf=0.00053 (ROM starting frequency) or above half of the SEOBNRv4
- * ringdown frequency an error is thrown.
+ * ROM starting frequency or above half of the SEOBNRv4 ringdown frequency an error is thrown.
  * The SEOBNRv4 ringdown frequency can be obtained by calling XLALSimInspiralGetFinalFreq().
  *
  * See XLALSimIMRSEOBNRv4ROMTimeOfFrequency() for the inverse function.

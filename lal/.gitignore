@@ -41,7 +41,7 @@ python/lal/__init__.py
 python/lal/_lal*
 python/lal/git_version.py
 python/lal/lal.py
-src/LALBuildInfo.c
+src/LALBuildInfoHeader.h
 src/LALConfig.h
 src/LALVCSInfo.c
 src/LALVCSInfo.h
@@ -50,10 +50,11 @@ src/config.h
 src/config.h.in
 src/fft/CudaFFT.cpp
 src/git_version
-src/lal-simd-detect
-src/lal-version
+src/lal_simd_detect
+src/lal_version
 src/stamp-h1
 src/stamp-h2
+src/version.c
 swig/swiglal*
 test/*/*.dat
 test/*/*.out
@@ -92,7 +93,6 @@ test/std/LALGSLTest
 test/std/LALMallocPerf
 test/std/LALMallocTest
 test/std/LALStringTest
-test/std/LALVersionTest
 test/std/StringConvertTest
 test/support/ConfigFileTest
 test/support/GzipTest

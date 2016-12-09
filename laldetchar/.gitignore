@@ -67,7 +67,7 @@ python/laldetchar/__init__.py
 python/laldetchar/_laldetchar*
 python/laldetchar/git_version.py
 python/laldetchar/laldetchar.py
-src/LALDetCharBuildInfo.c
+src/LALDetCharBuildInfoHeader.h
 src/LALDetCharConfig.h
 src/LALDetCharVCSInfo.c
 src/LALDetCharVCSInfo.h
@@ -75,6 +75,8 @@ src/LALDetCharVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/laldetchar-hveto
+src/laldetchar_version
 src/stamp-h1
 src/stamp-h2
+src/version.c
 swig/swiglal*

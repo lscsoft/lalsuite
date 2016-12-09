@@ -614,13 +614,12 @@ int XLALSimInspiralChooseTDWaveform(
                 XLALPrintError("XLAL Error : For the spindominatedwf approximant maximal phase correction is 2 PN\n");
                 XLAL_ERROR(XLAL_EDOM);
                 }
-	        incl=inclination;
-	        XLALSimInspiralInitialConditionsPrecessingApproxs(&incl,&spin1x,&spin1y,&spin1z,&spin2x,&spin2y,&spin2z,inclination,S1x,S1y,S1z,S2x,S2y,S2z,m1,m2,f_ref,phiRef,XLALSimInspiralWaveformParamsLookupFrameAxis(LALparams));
-                LNhatx = sin(incl);
+	            incl=inclination;
+                LNhatx = 0.;
                 LNhaty = 0.;
-                LNhatz = cos(incl);
+                LNhatz = 1.;
                 /* Call the waveform driver routine */
-                ret = XLALSimInspiralSpinDominatedWaveformInterfaceTD(hplus, hcross, deltaT, m1, m2, f_min, f_ref, distance, spin1x, spin1y, spin1z, LNhatx, LNhaty, LNhatz, phaseO, amplitudeO, phiRef);
+                ret = XLALSimInspiralSpinDominatedWaveformInterfaceTD(hplus, hcross, deltaT, m1, m2, f_min, f_ref, distance, S1x, S1y, S1z, LNhatx, LNhaty, LNhatz, incl, phaseO, amplitudeO, phiRef);
                 break;
 
         /* spin aligned inspiral-merger-ringdown models */
@@ -680,7 +679,7 @@ int XLALSimInspiralChooseTDWaveform(
 	    // generate TD waveforms with zero inclincation so that amplitude can be
 	    // calculated from hplus and hcross, apply inclination-dependent factors
 	    // in loop below
-	    ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
+	    ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, 0., phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
 	    REAL8 maxamp=0;
 	    REAL8TimeSeries *hp = *hplus;
 	    REAL8TimeSeries *hc = *hcross;
@@ -739,6 +738,7 @@ int XLALSimInspiralChooseTDWaveform(
                     deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion);
             break;
 
+        case SEOBNRv2_opt:
         case SEOBNRv2:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
@@ -751,10 +751,12 @@ int XLALSimInspiralChooseTDWaveform(
                 XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
             /* Call the waveform driver routine */
             SpinAlignedEOBversion = 2;
+            if(approximant==SEOBNRv2_opt) SpinAlignedEOBversion = 200;
             ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
                     deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion);
             break;
 
+        case SEOBNRv4_opt:
         case SEOBNRv4:
             /* Waveform-specific sanity checks */
 	    if(!XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams))
@@ -767,25 +769,10 @@ int XLALSimInspiralChooseTDWaveform(
                 XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
             /* Call the waveform driver routine */
             SpinAlignedEOBversion = 4;
+            if(approximant==SEOBNRv4_opt) SpinAlignedEOBversion = 400;
             ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
                                                    deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion);
             break;
-
-        case SEOBNRv2_opt:
-             /* Waveform-specific sanity checks */
-             if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
-                 ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
-             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                 ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
-             if( !checkTidesZero(lambda1, lambda2) )
-                 ABORT_NONZERO_TIDES(LALparams);
-             if( f_ref != 0.)
-                 XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
-             /* Call the waveform driver routine */
-             SpinAlignedEOBversion = 200;
-             ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
-						    deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion);
-             break;
 
         case SEOBNRv3:
             /* Waveform-specific sanity checks */
@@ -802,22 +789,6 @@ int XLALSimInspiralChooseTDWaveform(
 	    polariz+=-LAL_PI/2.;
             ret = XLALSimIMRSpinEOBWaveform(hplus, hcross, /*&epoch,*/ phiRef,
                     deltaT, m1, m2, f_min, distance, inclination, spin1, spin2);
-            break;
-
-        case SEOBNRv4_opt:
-            /* Waveform-specific sanity checks */
-            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
-                ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
-            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
-            if( !checkTidesZero(lambda1, lambda2) )
-                ABORT_NONZERO_TIDES(LALparams);
-            if( f_ref != 0.)
-                XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
-            /* Call the waveform driver routine */
-            SpinAlignedEOBversion = 400;
-            ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
-                                                   deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion);
             break;
 
 	case HGimri:
@@ -3392,6 +3363,7 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
     ampfac = 2. * M * LAL_G_SI * pow(LAL_C_SI, -3) * eta / dist;
 
     /* loop over time steps and compute polarizations h+ and hx */
+
     len = V->data->length;
     for(idx = 0; idx < len; idx++)
     {
@@ -5322,7 +5294,7 @@ double XLALSimInspiralGetFinalFreq(
             }
             freqFunc = fSEOBNRv4RD;
             break;
-            
+
         case IMRPhenomA:
             /* Check that spins are zero */
             if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
@@ -5519,19 +5491,19 @@ int XLALSimInspiralTDConditionStage2(REAL8TimeSeries *hplus, REAL8TimeSeries *hc
 
 
 /**
- * @brief Function for determining the starting frequency 
+ * @brief Function for determining the starting frequency
  * of the (2,2) mode when the highest order contribution starts at fLow.
  * @details
- * Compute the minimum frequency for waveform generation 
- *  using amplitude orders above Newtonian.  The waveform 
- *  generator turns on all orders at the orbital          
- *  associated with fMin, so information from higher      
- *  orders is not included at fLow unless fMin is         
+ * Compute the minimum frequency for waveform generation
+ *  using amplitude orders above Newtonian.  The waveform
+ *  generator turns on all orders at the orbital
+ *  associated with fMin, so information from higher
+ *  orders is not included at fLow unless fMin is
  *  sufficiently low.
  *
  * @param fLow  Requested lower frequency.
  * @param ampOrder Requested amplitude order.
- * @param approximant LALApproximant 
+ * @param approximant LALApproximant
  * @retval fStart The lower frequency to use to include corrections.
  */
 REAL8 XLALSimInspiralfLow2fStart(REAL8 fLow, INT4 ampOrder, INT4 approximant)
@@ -5885,13 +5857,12 @@ int XLALSimInspiralChooseTDWaveformOLD(
                 XLALPrintError("XLAL Error : For the spindominatedwf approximant maximal phase correction is 2 PN\n");
                 XLAL_ERROR(XLAL_EDOM);
                 }
-	        incl=inclination;
-	        XLALSimInspiralInitialConditionsPrecessingApproxs(&incl,&spin1x,&spin1y,&spin1z,&spin2x,&spin2y,&spin2z,inclination,S1x,S1y,S1z,S2x,S2y,S2z,m1,m2,f_ref,phiRef,XLALSimInspiralGetFrameAxis(waveFlags));
-                LNhatx = sin(incl);
+	            incl=inclination;
+                LNhatx = 0.;
                 LNhaty = 0.;
-                LNhatz = cos(incl);
+                LNhatz = 1.;
                 /* Call the waveform driver routine */
-                ret = XLALSimInspiralSpinDominatedWaveformInterfaceTD(hplus, hcross, deltaT, m1, m2, f_min, f_ref, distance, spin1x, spin1y, spin1z, LNhatx, LNhaty, LNhatz, phaseO, amplitudeO, phiRef);
+                ret = XLALSimInspiralSpinDominatedWaveformInterfaceTD(hplus, hcross, deltaT, m1, m2, f_min, f_ref, distance, S1x, S1y, S1z, LNhatx, LNhaty, LNhatz, incl, phaseO, amplitudeO, phiRef);
                 break;
 
         /* spin aligned inspiral-merger-ringdown models */

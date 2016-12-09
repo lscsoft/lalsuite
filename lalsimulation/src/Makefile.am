@@ -8,8 +8,6 @@ SUBDIRS = \
 	mathematica_codes \
 	$(END_OF_LIST)
 
-LDADD = liblalsimulation.la
-
 NOISEPSDFILES = \
 	LIGO-P1200087-v18-AdV_BNS_OPTIMIZED.txt \
 	LIGO-P1200087-v18-AdV_DESIGN.txt \
@@ -39,6 +37,8 @@ EOSDATAFILES = \
 	LALSimNeutronStarEOS_FPS.dat \
 	LALSimNeutronStarEOS_SLY4.dat
 
+LDADD = liblalsimulation.la
+
 bin_PROGRAMS = \
 	lalsim-bh-qnmode \
 	lalsim-bh-ringdown \
@@ -52,7 +52,9 @@ bin_PROGRAMS = \
 	lalsim-ns-mass-radius \
 	lalsim-ns-params \
 	lalsim-sgwb \
-	lalsim-unicorn
+	lalsim-unicorn \
+	lalsimulation_version \
+	$(END_OF_LIST)
 
 pkginclude_HEADERS = \
 	LALSimBlackHoleRingdown.h \
@@ -126,6 +128,7 @@ noinst_HEADERS = \
 	LALSimIMRSpinEOBHamiltonian.h
 
 lib_LTLIBRARIES = liblalsimulation.la
+
 liblalsimulation_la_SOURCES = \
 	LALSimBlackHoleRingdown.c \
 	LALSimBurst.c \
@@ -175,7 +178,6 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralWaveformTaper.c \
 	LALSimIMRNRWaveforms.c \
 	LALSimulation.c \
-	LALSimulationVCSInfo.c \
 	LALSimNeutronStarEOS.c \
 	LALSimNeutronStarFamily.c \
 	LALSimNeutronStarTOV.c \
@@ -194,7 +196,10 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralHGimri.c \
 	LALSimFindAttachTime.c
 
-nodist_liblalsimulation_la_SOURCES = LALSimulationBuildInfo.c
+nodist_liblalsimulation_la_SOURCES = \
+	LALSimulationBuildInfoHeader.h \
+	LALSimulationVCSInfo.c \
+	$(END_OF_LIST)
 
 liblalsimulation_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
@@ -211,6 +216,7 @@ lalsim_detector_noise_SOURCES = detector_noise.c
 lalsim_detector_strain_SOURCES = detector_strain.c
 lalsim_inspiral_SOURCES = inspiral.c
 lalsim_inject_SOURCES = inject.c
+lalsimulation_version_SOURCES = version.c
 
 pkgdata_DATA = \
 	$(NOISEPSDFILES) \
@@ -230,6 +236,11 @@ EXTRA_DIST = \
 
 DISTCLEANFILES = config.h
 
+vcs_build_info_source = LALSimulationVCSInfo.c
 vcs_info_sources = LALSimulationVCSInfoHeader.h
-build_info_source = LALSimulationBuildInfo.c
-$(build_info_source): $(liblalsimulation_la_DEPENDENCIES)
+build_info_source = LALSimulationBuildInfoHeader.h
+build_info_dependencies = $(liblalsimulation_la_DEPENDENCIES)
+
+TESTS = \
+	lalsimulation_version \
+	$(END_OF_LIST)

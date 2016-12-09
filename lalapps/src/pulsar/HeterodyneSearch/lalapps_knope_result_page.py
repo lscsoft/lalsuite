@@ -213,18 +213,19 @@ def get_atnf_info(psr):
   return (dist, p1_I, assoc)
 
 
-def set_spin_down(p1_I, assoc, f0, f1):
+def set_spin_down(p1_I, assoc, f0, f1, n=5.):
   """
   Set the spin-down of the source based on the intrinsic period derivative (p1_I) corrected for any proper motion/
   globular cluster acceleration if available, or if not give AND the pulsar is in a globular cluster base the
-  spin-down on assuming an age of 10^9 years. Otherwise just return the unadjusted spin-down.
+  spin-down on assuming an age of 10^9 years (defaulting to the source being a gravitar, with n=5).
+  Otherwise just return the unadjusted spin-down.
   """
 
   if p1_I != None and p1_I > 0.:
     return -p1_I*f0**2 # convert period derivative into frequency derivative
   elif assoc != None:
     if 'GC' in assoc: # check if a globular cluster pulsar
-      return -f0/(2. * 1.e9 * 365.25 * 86400.)
+      return -f0/((n-1.) * 1.e9 * 365.25 * 86400.)
     else:
       return f1
   else:

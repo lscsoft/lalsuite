@@ -20,8 +20,9 @@ import sys
 from glue import iterutils
 from glue import pipeline
 from glue import segments
-from glue.lal import CacheEntry, LIGOTimeGPS
-from pylal import ligolw_cafe
+from lal import LIGOTimeGPS
+from lal.utils import CacheEntry
+from lalburst import cafe
 from lalapps import power
 
 
@@ -409,7 +410,7 @@ def compute_segment_lists(seglists, offset_vectors, min_segment_length, pad):
 
   # extract the segments that are coincident under the time
   # slides
-  new = ligolw_cafe.get_coincident_segmentlistdict(seglists, offset_vectors)
+  new = cafe.get_coincident_segmentlistdict(seglists, offset_vectors)
 
   # round to integer boundaries because lalapps_StringSearch can't accept
   # non-integer start/stop times

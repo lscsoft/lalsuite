@@ -28,66 +28,9 @@
 #include "six.h"
 
 
-/**
- * Premalloced objects.
- */
-
-
-typedef struct {
-    PyObject_HEAD
-    void *data;
-} premalloced_object;
-
-
-static void premalloced_dealloc(premalloced_object *self)
+static void capsule_free(PyObject *self)
 {
-    free(self->data);
-    Py_TYPE(self)->tp_free((PyObject *) self);
-}
-
-
-static PyTypeObject premalloced_type = {
-    PyObject_HEAD_INIT(NULL)
-    .tp_name = "premalloced",
-    .tp_basicsize = sizeof(premalloced_object),
-    .tp_dealloc = (destructor)premalloced_dealloc,
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_doc = "Pre-malloc'd memory"
-};
-
-
-static PyObject *premalloced_new(void *data)
-{
-    premalloced_object *obj = PyObject_New(premalloced_object, &premalloced_type);
-    if (obj)
-        obj->data = data;
-    else
-        free(data);
-    return (PyObject *) obj;
-}
-
-
-static PyObject *premalloced_npy_double_array(double *data, int ndims, npy_intp *dims)
-{
-    PyObject *premalloced = premalloced_new(data);
-    if (!premalloced)
-        return NULL;
-
-    PyArrayObject *out = (PyArrayObject *)
-        PyArray_SimpleNewFromData(ndims, dims, NPY_DOUBLE, data);
-    if (!out)
-    {
-        Py_DECREF(premalloced);
-        return NULL;
-    }
-
-    if (PyArray_SetBaseObject(out, premalloced))
-    {
-        Py_DECREF(out);
-        return NULL;
-    }
-
-    return (PyObject *)out;
+    free(PyCapsule_GetPointer(self, NULL));
 }
 
 
@@ -240,11 +183,27 @@ static PyObject *sky_map_toa_phoa_snr(
         epochs, snrs, responses, locations, horizons);
     gsl_set_error_handler(old_handler);
 
+    if (!ret)
+        goto fail;
+
     /* Prepare output object */
-    if (ret)
+    PyObject *capsule = PyCapsule_New(ret, NULL, capsule_free);
+    if (!capsule)
+        goto fail;
+
+    npy_intp dims[] = {npix, 4};
+    out = PyArray_SimpleNewFromData(2, dims, NPY_DOUBLE, ret);
+    if (!out)
     {
-        npy_intp dims[] = {npix, 4};
-        out = premalloced_npy_double_array(ret, 2, dims);
+        Py_DECREF(capsule);
+        goto fail;
+    }
+
+    if (PyArray_SetBaseObject(out, capsule))
+    {
+        Py_DECREF(out);
+        out = NULL;
+        goto fail;
     }
 
 fail: /* Cleanup */
@@ -393,10 +352,6 @@ PyMODINIT_FUNC PyInit__sky_map(void)
     PyObject *module = NULL;
 
     import_array();
-
-    premalloced_type.tp_new = PyType_GenericNew;
-    if (PyType_Ready(&premalloced_type) < 0)
-        goto done;
 
     module = PyModule_Create(&moduledef);
     if (!module)

@@ -34,6 +34,7 @@ AC_CONFIG_FILES([ \
   src/tools/Makefile \
   src/utilities/Makefile \
   src/vectorops/Makefile \
+  src/version.c \
   src/window/Makefile \
   swig/Makefile \
   test/Makefile \
@@ -42,6 +43,7 @@ AC_CONFIG_FILES([ \
   test/fft/Makefile \
   test/inject/Makefile \
   test/noisemodels/Makefile \
+  test/python/Makefile \
   test/stats/Makefile \
   test/std/Makefile \
   test/support/Makefile \

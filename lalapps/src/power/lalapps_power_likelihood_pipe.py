@@ -40,8 +40,8 @@ import tempfile
 from glue import iterutils
 from glue import pipeline
 from glue import segmentsUtils
-from glue.lal import CacheEntry
-from pylal.date import LIGOTimeGPS
+import lal
+from lal.utils import CacheEntry
 from lalapps import power
 
 
@@ -75,7 +75,7 @@ def parse_command_line():
 
 	if options.distribution_segments is None:
 		raise ValueError, "missing required argument --distribution-segments"
-	options.distribution_segments = segmentsUtils.fromsegwizard(file(options.distribution_segments), coltype = LIGOTimeGPS)
+	options.distribution_segments = segmentsUtils.fromsegwizard(file(options.distribution_segments), coltype = lal.LIGOTimeGPS)
 
 	options.input_cache = set([CacheEntry(line) for filename in options.input_cache for line in file(filename)])
 	options.round_robin_cache = [set(map(CacheEntry, file(filename))) for filename in options.round_robin_cache]

@@ -1,5 +1,6 @@
 /*
- * @PACKAGE_NAME@VCSInfo.c - @PACKAGE_NAME@ VCS Information
+ * Copyright (C) 2014, 2016 Karl Wette
+ * Copyright (C) 2009-2013 Adam Mercer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,9 +16,10 @@
  * along with with program; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
- *
- * Copyright (C) 2009-2013 Adam Mercer
- * Copyright (C) 2014, 2016 Karl Wette
+ */
+
+/*
+ * @PACKAGE_NAME@VCSInfo.c - @PACKAGE_NAME@ VCS Information
  */
 
 #include <stdlib.h>
@@ -60,40 +62,44 @@
 #endif
 
 #include "@PACKAGE_NAME@VCSInfoHeader.h"
+#include "@PACKAGE_NAME@BuildInfoHeader.h"
 
-/* global variables for vcs information */
-const char *const lal@PACKAGE_NAME_NOLAL@VCSVersion = @PACKAGE_NAME_UCASE@_VERSION;
-const char *const lal@PACKAGE_NAME_NOLAL@VCSId = @PACKAGE_NAME_UCASE@_VCS_ID;
-const char *const lal@PACKAGE_NAME_NOLAL@VCSDate = @PACKAGE_NAME_UCASE@_VCS_DATE;
-const char *const lal@PACKAGE_NAME_NOLAL@VCSBranch = @PACKAGE_NAME_UCASE@_VCS_BRANCH;
-const char *const lal@PACKAGE_NAME_NOLAL@VCSTag = @PACKAGE_NAME_UCASE@_VCS_TAG;
-const char *const lal@PACKAGE_NAME_NOLAL@VCSAuthor = @PACKAGE_NAME_UCASE@_VCS_AUTHOR;
-const char *const lal@PACKAGE_NAME_NOLAL@VCSCommitter = @PACKAGE_NAME_UCASE@_VCS_COMMITTER;
-const char *const lal@PACKAGE_NAME_NOLAL@VCSStatus = @PACKAGE_NAME_UCASE@_VCS_STATUS;
-
-/* global variables for vcs information - identable */
-const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentId = @PACKAGE_NAME_UCASE@_VCS_IDENT_ID;
-const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentDate = @PACKAGE_NAME_UCASE@_VCS_IDENT_DATE;
-const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentBranch = @PACKAGE_NAME_UCASE@_VCS_IDENT_BRANCH;
-const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentTag = @PACKAGE_NAME_UCASE@_VCS_IDENT_TAG;
-const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentAuthor = @PACKAGE_NAME_UCASE@_VCS_IDENT_AUTHOR;
-const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentCommitter = @PACKAGE_NAME_UCASE@_VCS_IDENT_COMMITTER;
-const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentStatus = @PACKAGE_NAME_UCASE@_VCS_IDENT_STATUS;
-
-/* library vcs information structure */
-const struct tagLALVCSInfo lal@PACKAGE_NAME_NOLAL@VCSInfo = { \
-  @PACKAGE_NAME_UCASE@_NAME, \
-  @PACKAGE_NAME_UCASE@_VERSION, \
-  @PACKAGE_NAME_UCASE@_VCS_ID, \
-  @PACKAGE_NAME_UCASE@_VCS_DATE, \
-  @PACKAGE_NAME_UCASE@_VCS_BRANCH, \
-  @PACKAGE_NAME_UCASE@_VCS_TAG, \
-  @PACKAGE_NAME_UCASE@_VCS_AUTHOR, \
-  @PACKAGE_NAME_UCASE@_VCS_COMMITTER, \
-  @PACKAGE_NAME_UCASE@_VCS_STATUS \
+/* VCS and build information */
+const LALVCSInfo lal@PACKAGE_NAME_NOLAL@VCSInfo = {
+  .name = "@PACKAGE_NAME@",
+  .version = @PACKAGE_NAME_UCASE@_VERSION,
+  .vcsId = @PACKAGE_NAME_UCASE@_VCS_ID,
+  .vcsDate = @PACKAGE_NAME_UCASE@_VCS_DATE,
+  .vcsBranch = @PACKAGE_NAME_UCASE@_VCS_BRANCH,
+  .vcsTag = @PACKAGE_NAME_UCASE@_VCS_TAG,
+  .vcsAuthor = @PACKAGE_NAME_UCASE@_VCS_AUTHOR,
+  .vcsCommitter = @PACKAGE_NAME_UCASE@_VCS_COMMITTER,
+  .vcsClean = @PACKAGE_NAME_UCASE@_VCS_CLEAN,
+  .vcsStatus = @PACKAGE_NAME_UCASE@_VCS_STATUS,
+  .configureArgs = @PACKAGE_NAME_UCASE@_CONFIGURE_ARGS,
+  .configureDate = @PACKAGE_NAME_UCASE@_CONFIGURE_DATE,
+  .buildDate = @PACKAGE_NAME_UCASE@_BUILD_DATE,
 };
 
-const LALVCSInfo *const lal@PACKAGE_NAME_NOLAL@VCSInfoList[32] = {
+/* Identable VCS and build information */
+const LALVCSInfo lal@PACKAGE_NAME_NOLAL@VCSIdentInfo = {
+  .name = "$@PACKAGE_NAME@Name: " "@PACKAGE_NAME@" " $",
+  .version = "$@PACKAGE_NAME@Version: " @PACKAGE_NAME_UCASE@_VERSION " $",
+  .vcsId = "$@PACKAGE_NAME@VCSId: " @PACKAGE_NAME_UCASE@_VCS_ID " $",
+  .vcsDate = "$@PACKAGE_NAME@VCSDate: " @PACKAGE_NAME_UCASE@_VCS_DATE " $",
+  .vcsBranch = "$@PACKAGE_NAME@VCSBranch: " @PACKAGE_NAME_UCASE@_VCS_BRANCH " $",
+  .vcsTag = "$@PACKAGE_NAME@VCSTag: " @PACKAGE_NAME_UCASE@_VCS_TAG " $",
+  .vcsAuthor = "$@PACKAGE_NAME@VCSAuthor: " @PACKAGE_NAME_UCASE@_VCS_AUTHOR " $",
+  .vcsCommitter = "$@PACKAGE_NAME@VCSCommitter: " @PACKAGE_NAME_UCASE@_VCS_COMMITTER " $",
+  .vcsClean = "$@PACKAGE_NAME@VCSClean: " @PACKAGE_NAME_UCASE@_VCS_CLEAN " $",
+  .vcsStatus = "$@PACKAGE_NAME@VCSStatus: " @PACKAGE_NAME_UCASE@_VCS_STATUS " $",
+  .configureArgs = "$@PACKAGE_NAME@ConfigureArgs: " @PACKAGE_NAME_UCASE@_CONFIGURE_ARGS " $",
+  .configureDate = "$@PACKAGE_NAME@ConfigureDate: " @PACKAGE_NAME_UCASE@_CONFIGURE_DATE " $",
+  .buildDate = "$@PACKAGE_NAME@BuildDate: " @PACKAGE_NAME_UCASE@_BUILD_DATE " $",
+};
+
+/* NULL-terminated list of library and dependencies VCS and build information */
+const LALVCSInfoList lal@PACKAGE_NAME_NOLAL@VCSInfoList = {
 #if defined(HAVE_LIBLAL)
   &lalVCSInfo,
 #endif
@@ -132,5 +138,48 @@ const LALVCSInfo *const lal@PACKAGE_NAME_NOLAL@VCSInfoList[32] = {
 };
 
 /*
- * vim: tw=0 ts=2 et
+ * VCS header/library mismatch link check function:
+ * This function will successfully link only if the link check functions defined
+ * in the included LAL VCS info headers (e.g. LAL_VCS_LINK_CHECK() defined in
+ * <lal/LALVCSInfoHeader.h>) are present in the LAL libraries being linked
+ * against. A successful link ensures that the LAL headers included by this
+ * library are consistent with the LAL libraries linked against by this library.
  */
+void @PACKAGE_NAME_UCASE@_VCS_LINK_CHECK(void)
+{
+#if @PACKAGE_NAME_UCASE@_VERSION_DEVEL != 0
+#if defined(HAVE_LIBLAL) && LAL_VERSION_DEVEL != 0
+  LAL_VCS_LINK_CHECK();
+#endif
+#if defined(HAVE_LIBLALFRAME) && LALFRAME_VERSION_DEVEL != 0
+  LALFRAME_VCS_LINK_CHECK();
+#endif
+#if defined(HAVE_LIBLALMETAIO) && LALMETAIO_VERSION_DEVEL != 0
+  LALMETAIO_VCS_LINK_CHECK();
+#endif
+#if defined(HAVE_LIBLALXML) && LALXML_VERSION_DEVEL != 0
+  LALXML_VCS_LINK_CHECK();
+#endif
+#if defined(HAVE_LIBLALSIMULATION) && LALSIMULATION_VERSION_DEVEL != 0
+  LALSIMULATION_VCS_LINK_CHECK();
+#endif
+#if defined(HAVE_LIBLALBURST) && LALBURST_VERSION_DEVEL != 0
+  LALBURST_VCS_LINK_CHECK();
+#endif
+#if defined(HAVE_LIBLALDETCHAR) && LALDETCHAR_VERSION_DEVEL != 0
+  LALDETCHAR_VCS_LINK_CHECK();
+#endif
+#if defined(HAVE_LIBLALINSPIRAL) && LALINSPIRAL_VERSION_DEVEL != 0
+  LALINSPIRAL_VCS_LINK_CHECK();
+#endif
+#if defined(HAVE_LIBLALPULSAR) && LALPULSAR_VERSION_DEVEL != 0
+  LALPULSAR_VCS_LINK_CHECK();
+#endif
+#if defined(HAVE_LIBLALINFERENCE) && LALINFERENCE_VERSION_DEVEL != 0
+  LALINFERENCE_VCS_LINK_CHECK();
+#endif
+#if defined(HAVE_LIBLALSTOCHASTIC) && LALSTOCHASTIC_VERSION_DEVEL != 0
+  LALSTOCHASTIC_VCS_LINK_CHECK();
+#endif
+#endif
+}

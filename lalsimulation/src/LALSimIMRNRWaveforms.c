@@ -346,6 +346,10 @@ int XLALSimInspiralNRWaveformGetSpinsFromHDF5File(
   #else
   LALH5File *file;
   file = XLALH5FileOpen(NRDataFile, "r");
+  if (file == NULL)
+  {
+     XLAL_ERROR(XLAL_EIO, "NR SIMULATION DATA FILE %s NOT FOUND.\n", NRDataFile);
+  }
   XLALSimInspiralNRWaveformGetSpinsFromHDF5FilePointer(S1x, S1y, S1z, S2x, S2y,
                                                        S2z, file);
 
@@ -408,6 +412,10 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   m2 = m2 / LAL_MSUN_SI;
 
   file = XLALH5FileOpen(NRDataFile, "r");
+  if (file == NULL)
+  {
+     XLAL_ERROR(XLAL_EIO, "NR SIMULATION DATA FILE %s NOT FOUND.\n", NRDataFile);
+  }
 
   /* Sanity checks on physical parameters passed to waveform
    * generator to guarantee consistency with NR data file.

@@ -765,8 +765,8 @@ int XLALSimInspiralEFD(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySer
 /* spin-dominated waveform functions */
 /* in module LALSimInspiralSpinDominatedWaveform.c */
 
-int XLALSimInspiralSpinDominatedWaveformInterfaceTD(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 D, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, int phaseO, int amplitudeO, REAL8 phiRef);
-int XLALSimInspiralSpinDominatedWaveformDriver(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 totalmass, REAL8 nu, REAL8 chi1, REAL8 D, REAL8 kappa1, REAL8 beta1, REAL8 theta, REAL8 fStart, REAL8 fRef, int phaseO, int amplitudeO, REAL8 deltaT, REAL8 phiRef, REAL8 phin0);
+int XLALSimInspiralSpinDominatedWaveformInterfaceTD(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 D, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 incl, int phaseO, int amplitudeO, REAL8 phiRef);
+int XLALSimInspiralSpinDominatedWaveformDriver(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 totalmass, REAL8 nu, REAL8 chi1, REAL8 D, REAL8 kappa1, REAL8 beta1, REAL8 theta, REAL8 fStart, REAL8 fRef, int phaseO, int amplitudeO, REAL8 deltaT, REAL8 phiRef, REAL8 phin0, REAL8 polarizationangle);
 
 
 /* TaylorF2 Reduced Spin routines */

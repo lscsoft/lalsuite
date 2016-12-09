@@ -68,13 +68,13 @@ def get_glitch_times(glitch_xmlfiles):
         return []
 
     # check if glitch table is present
-    if not table.Table.TableName(idq_tables.IDQGlitchTable.tableName) in tablenames:
+    if not idq_tables.IDQGlitchTable.tableName in tablenames:
         print "No glitch table is found in database."
         print "Can not perform requested query."
         return []
 
     data = cursor.execute("""SELECT gps, gps_ns FROM """ + \
-        table.Table.TableName(idq_tables.IDQGlitchTable.tableName)).fetchall()
+        idq_tables.IDQGlitchTable.tableName).fetchall()
     # close database
     connection.close()
     return data

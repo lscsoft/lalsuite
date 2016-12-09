@@ -506,6 +506,15 @@ def transform_tau0tau3_m1m2(tau0, tau3, flow=40.):
 def transform_s1zs2z_chi(m1, m2, s1z, s2z):
     return (m1 * s1z + m2 * s2z) / (m1 + m2)
 
+def transform_m1m2_mcq(m1, m2):
+    mc = (m1 * m2)**(3./5) / (m1 + m2)**(1./5)
+    q = np.min([m1, m2], axis=0) / np.max([m1, m2], axis=0)
+    return mc, q
+
+def transform_mcq_m1m2(mc, q):
+    m = mc * (1 + q)**(1./5)
+    return m / q**(3./5), m * q**(2/5.)
+
 #
 # Coordinate transformation boundaries
 #
@@ -554,12 +563,14 @@ def check_grid(grid, intr_prms, distance_coordinates):
 
 VALID_TRANSFORMS_MASS = { \
     "mchirp_eta": transform_m1m2_mceta,
+    "mchirp_q": transform_m1m2_mcq,
     "tau0_tau3": transform_m1m2_tau0tau3,
     None: None
 }
 
 INVERSE_TRANSFORMS_MASS = { \
     transform_m1m2_mceta: transform_mceta_m1m2,
+    transform_m1m2_mcq: transform_mcq_m1m2,
     transform_m1m2_tau0tau3: transform_tau0tau3_m1m2,
     None: None
 }

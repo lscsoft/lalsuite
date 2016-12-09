@@ -850,6 +850,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     else:
         selected_events=None
 
+    if(self.config.has_option('engine','correlatedGaussianLikelihood') or
+       self.config.has_option('engine','bimodalGaussianLikelihood') or
+       self.config.has_option('engine','rosenbrockLikelihood')):
+        analytic_test = True
+    else:
+        analytic_test = False
+
     # No input file given, analyse the entire time stretch between gpsstart and gpsend
     if self.config.has_option('input','analyse-all-time') and self.config.getboolean('input','analyse-all-time')==True:
         print 'Setting up for analysis of continuous time stretch %f - %f'%(gpsstart,gpsend)
@@ -871,11 +878,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         while(t<gpsend):
             ev=Event(trig_time=t+seglen-2)
             ev.set_engine_option('segment-start',str(t-overlap))
-            ev.set_engine_option('time-min',str(t))
+            if not analytic_test:
+                ev.set_engine_option('time-min',str(t))
             tMax=t + seglen - overlap
             if tMax>=gpsend:
                 tMax=gpsend
-            ev.set_engine_option('time-max',str(tMax))
+            if not analytic_test:
+                ev.set_engine_option('time-max',str(tMax))
             events.append(ev)
             t=tMax
         return events
@@ -1236,7 +1245,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     myifos=set([])
     for ifo in ifos:
       for seg in self.segments[ifo]:
-        if segstart >= seg.start() and segend < seg.end():
+        if segstart >= seg.start() and segend <= seg.end():
           myifos.add(ifo)
     ifos=myifos
     if len(ifos)==0:
@@ -1441,8 +1450,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if gotdata:
       self.add_node(node)
     else:
-      'Print no data found for time %f'%(end_time)
-      return None
+      print 'no data found for time %f'%(end_time)
+      return None, bayeswavepsdnode
     if extra_options is not None:
       for opt in extra_options.keys():
 	    node.add_var_arg('--'+opt+' '+extra_options[opt])

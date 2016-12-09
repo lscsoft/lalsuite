@@ -1771,8 +1771,8 @@ void BankEfficiencyPrintResultsXml(
     XLALGPSTimeNow ( &(templateBank.processTable->start_time)) ;
 
     XLALPopulateProcessTable(templateBank.processTable, \
-        PROGRAM_NAME, lalAppsVCSIdentId, lalAppsVCSIdentStatus, \
-        lalAppsVCSIdentDate, 0);
+        PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId, lalAppsVCSIdentInfo.vcsStatus, \
+        lalAppsVCSIdentInfo.vcsDate, 0);
 
     this_proc_param = processParamsTable.processParamsTable =
       (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
@@ -1908,8 +1908,8 @@ BankEfficiencyPrintProtoXml(
   XLALGPSTimeNow (&(templateBank.processTable->start_time));
 
   XLALPopulateProcessTable(templateBank.processTable, \
-      PROGRAM_NAME, lalAppsVCSIdentId, lalAppsVCSIdentStatus, \
-      lalAppsVCSIdentDate, 0);
+      PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId, lalAppsVCSIdentInfo.vcsStatus, \
+      lalAppsVCSIdentInfo.vcsDate, 0);
 
   this_proc_param = processParamsTable.processParamsTable =
       (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
@@ -2570,8 +2570,8 @@ void BankEfficiencyBankPrintXML(
   XLALGPSTimeNow (&(proctable.processTable->start_time));
 
   XLALPopulateProcessTable(proctable.processTable, \
-      PROGRAM_NAME, lalAppsVCSIdentId, lalAppsVCSIdentStatus, \
-      lalAppsVCSIdentDate, 0);
+      PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId, lalAppsVCSIdentInfo.vcsStatus, \
+      lalAppsVCSIdentInfo.vcsDate, 0);
 
   this_proc_param = processParamsTable.processParamsTable =
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );

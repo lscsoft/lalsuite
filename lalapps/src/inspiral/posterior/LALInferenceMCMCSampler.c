@@ -1458,7 +1458,7 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, LALInfere
         benchmark = 1;
 
     /* Print version info */
-    fprintf(threadoutput, "  LALInference version:%s,%s,%s,%s,%s\n", lalAppsVCSId,lalAppsVCSDate,lalAppsVCSBranch,lalAppsVCSAuthor,lalAppsVCSStatus);
+    fprintf(threadoutput, "  LALInference version:%s,%s,%s,%s,%s\n", lalAppsVCSInfo.vcsId, lalAppsVCSInfo.vcsDate, lalAppsVCSInfo.vcsBranch, lalAppsVCSInfo.vcsAuthor, lalAppsVCSInfo.vcsStatus);
     fprintf(threadoutput,"  %s\n", arg_str);
 
     /* Print algorithm parameters */

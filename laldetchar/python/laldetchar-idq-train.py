@@ -24,7 +24,6 @@ import numpy
 import ConfigParser
 from optparse import OptionParser
 
-import subprocess
 import multiprocessing as mp
 
 from laldetchar.idq import idq
@@ -94,7 +93,7 @@ sys.stderr = idq.LogFile(logger)
 #===================================================================================================
 ### check lockfile
 if opts.lockfile:
-    lockfp = idq.dieiflocked( opts.lockfile )
+    idq.dieiflocked( opts.lockfile )
 
 #===================================================================================================
 ### read global configuration file
@@ -678,7 +677,9 @@ while gpsstart < gpsstop:
         logger.info('launching conversion from .trg to .xml files')
         for dir in new_dirs:
 #            trg_to_xml_exit_code = idq.submit_command([config.get('condor', 'convertkwtosb'), dir], process_name='convertkwtosb', dir=dir)
-            trg_to_xml_exit_code = subprocess.Popen([config.get('convertkwtosb','executable'), dir], cwd=dir)
+            proc = idq.fork([config.get('convertkwtosb','executable'), dir], cwd=dir)
+            proc.wait()
+            trg_to_xml_exit_code = proc.returncode
             os.chdir(cwd)
             if trg_to_xml_exit_code != 0:
                 logger.info('WARNING: Conversion from single-channel KW trig files to xml failed in '+ dir)
@@ -692,5 +693,4 @@ while gpsstart < gpsstop:
 
 #===================================================================================================
 if opts.lockfile:
-    idq.release(lockfp) ### unlock lockfile
-    os.remove( opts.lockfile )
+    idq.release(opts.lockfile) ### unlock lockfile
