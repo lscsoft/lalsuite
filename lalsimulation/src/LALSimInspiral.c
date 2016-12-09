@@ -679,7 +679,7 @@ int XLALSimInspiralChooseTDWaveform(
 	    // generate TD waveforms with zero inclincation so that amplitude can be
 	    // calculated from hplus and hcross, apply inclination-dependent factors
 	    // in loop below
-	    ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
+	    ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, 0., phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
 	    REAL8 maxamp=0;
 	    REAL8TimeSeries *hp = *hplus;
 	    REAL8TimeSeries *hc = *hcross;
