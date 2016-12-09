@@ -48,6 +48,7 @@
 #include <lal/LALFrStream.h>
 #include <lalappsfrutils.h>
 #include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /***********************************************************************************************/
 /* some global constants */
@@ -261,7 +262,6 @@ typedef struct {
   CHAR *outputdir;                  /**< name of output directory */
   REAL8 deltat;                     /**< the desired sampling time */
   BOOLEAN bary;                     /**< flag for performing barycentering */
-  BOOLEAN version;	            /**< output version-info */
 } UserInput_t;
 
 /***********************************************************************************************/
@@ -489,21 +489,11 @@ ReadUserVars( int argc,char *argv[], UserInput_t *uvar, CHAR *clargs)
   XLALRegisterUvarMember( 	outputdir, 	STRING, 'o', REQUIRED, "The output frame file directory name");
   XLALRegisterUvarMember( 	deltat,         REAL8, 't', OPTIONAL, "The output sampling time (in seconds)");
   XLALRegisterUvarMember( 	bary,   	BOOLEAN, 'b', OPTIONAL, "Output barycentered data");
-  XLALRegisterUvarMember(	version,        BOOLEAN, 'V', SPECIAL,  "Output code version");
 
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) { exit(1); }
-
-  if (uvar->version) {
-    CHAR *version_string;
-    XLAL_CHECK ( (version_string = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
-    printf("%s\n",version_string);
-    XLALFree(version_string);
-    exit(0);
-  }
-
 
   /* put clargs into string */
   strcpy(clargs,"");

@@ -440,13 +440,12 @@ int MAIN( int argc, char *argv[]) {
   INT4 uvar_numSkyPartitions = 0;
   INT4 uvar_partitionIndex = 0;
   INT4 uvar_SortToplist = 0;
-  BOOLEAN uvar_version = 0;
 
   CHAR *uvar_outputTiming = NULL;
   CHAR *uvar_outputTimingDetails = NULL;
 
-  CHAR *uvar_FstatMethod = XLALStringDuplicate("DemodBest");
-  CHAR *uvar_FstatMethodRecalc = XLALStringDuplicate("DemodBest");
+  int uvar_FstatMethod = FMETHOD_DEMOD_BEST;
+  int uvar_FstatMethodRecalc = FMETHOD_DEMOD_BEST;
 
   timingInfo_t XLAL_INIT_DECL(timing);
 
@@ -540,8 +539,9 @@ int MAIN( int argc, char *argv[]) {
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_SortToplist,         "SortToplist",         INT4,         0,   OPTIONAL,   "Sort toplist by: 0=Fstat, 1=nc, 2=B_S/GL, 3='Fstat + B_S/GL', 4=B_S/GLtL, 5=B_tS/GLtL, 6='B_S/GL + B_S/GLtL + B_tS/GLtL'") == XLAL_SUCCESS, XLAL_EFUNC);
   // --------------------------------------------
 
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_FstatMethod,         "FstatMethod",         STRING,       0,   OPTIONAL,   "F-statistic method to use. Available methods: %s", XLALFstatMethodHelpString() ) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_FstatMethodRecalc,   "FstatMethodRecalc",   STRING,       0,   OPTIONAL,   "F-statistic method to use for recalc. Available methods: %s", XLALFstatMethodHelpString() ) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvarAuxData( &uvar_FstatMethod, "FstatMethod", UserEnum, XLALFstatMethodChoices(), 0, OPTIONAL, "F-statistic method to use" ) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvarAuxData( &uvar_FstatMethodRecalc, "FstatMethodRecalc", UserEnum, XLALFstatMethodChoices(), 0, OPTIONAL, "F-statistic method to use for recalc" ) == XLAL_SUCCESS, XLAL_EFUNC);
+
   /* developer user variables */
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_blocksRngMed,        "blocksRngMed",        INT4,         0,   DEVELOPER,  "RngMed block size") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_SSBprecision,        "SSBprecision",        INT4,         0,   DEVELOPER,  "Precision for SSB transform.") == XLAL_SUCCESS, XLAL_EFUNC);
@@ -551,13 +551,11 @@ int MAIN( int argc, char *argv[]) {
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outputTiming,        "outputTiming",        STRING,       0,   DEVELOPER,  "Append timing information into this file") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outputTimingDetails, "outputTimingDetails", STRING,       0,   DEVELOPER,  "Append detailed F-stat timing information to this file") == XLAL_SUCCESS, XLAL_EFUNC);
 
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_version,             "version",             BOOLEAN,      'V', SPECIAL,    "Output version information") == XLAL_SUCCESS, XLAL_EFUNC);
-
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_loglevel,            "logLevel",            INT4,         0,   DEFUNCT,    "DEFUNCT; used to set logLevel, now set by LAL_DEBUG_LEVEL") == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     return(1);
 
@@ -570,12 +568,6 @@ int MAIN( int argc, char *argv[]) {
 
   LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s\n", VCSInfoString );
   // LogPrintfVerbatim( LOG_DEBUG, "CFS Hotloop variant: %s\n", OptimisedHotloopSource );
-
-  if ( uvar_version )
-    {
-      printf ("%s\n", VCSInfoString );
-      return (0);
-    }
 
   /* some basic sanity checks on user vars */
   if ( uvar_nStacksMax < 1) {
@@ -812,9 +804,8 @@ int MAIN( int argc, char *argv[]) {
   usefulParams.assumeSqrtSX = uvar_assumeSqrtSX;
   usefulParams.SignalOnly = uvar_SignalOnly;
   usefulParams.SSBprec = uvar_SSBprecision;
-
-  XLAL_CHECK_MAIN ( XLALParseFstatMethodString ( &usefulParams.Fmethod, uvar_FstatMethod ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN ( XLALParseFstatMethodString ( &usefulParams.FmethodRecalc, uvar_FstatMethodRecalc ) == XLAL_SUCCESS, XLAL_EFUNC );
+  usefulParams.Fmethod = uvar_FstatMethod;
+  usefulParams.FmethodRecalc = uvar_FstatMethodRecalc;
   usefulParams.recalcToplistStats = uvar_recalcToplistStats;
 
   usefulParams.mismatch1 = uvar_mismatch1;

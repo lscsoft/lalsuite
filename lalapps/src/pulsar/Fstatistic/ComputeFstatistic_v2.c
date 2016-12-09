@@ -178,7 +178,6 @@ typedef struct {
   BSGLSetup *BSGLsetup;                    /**< pre-computed setup for line-robust statistic */
   RankingStat_t RankingStatistic;           /**< rank candidates according to F or BSGL */
   BOOLEAN useResamp;
-  FstatMethodType FstatMethod;
   UINT4 numFreqBins_FBand;
   REAL8 dFreq;
 } ConfigVariables;
@@ -279,8 +278,6 @@ typedef struct {
   CHAR *workingDir;		/**< directory to use for output files */
   REAL8 timerCount;		/**< output progress-meter every timerCount seconds */
 
-  BOOLEAN version;		/**< output version information */
-
   CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
 
   BOOLEAN outputSingleFstats;	/**< in multi-detector case, also output single-detector F-stats */
@@ -304,7 +301,7 @@ typedef struct {
 
   CHAR *outputTiming;		/**< output timing measurements and parameters into this file [append!]*/
 
-  CHAR *FstatMethod;		//!< select which method/algorithm to use to compute the F-statistic
+  int FstatMethod;		//!< select which method/algorithm to use to compute the F-statistic
 
   // ----- deprecated and obsolete variables, kept around for backwards-compatibility -----
   LIGOTimeGPS internalRefTime;   /**< [DEPRECATED] internal reference time. Has no effect, XLALComputeFstat() now always uses midtime anyway ... */
@@ -381,16 +378,10 @@ int main(int argc,char *argv[])
 
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit (1);
   }
-
-  if ( uvar.version )
-    {
-      printf ( "%s\n", GV.VCSInfoString );
-      exit (0);
-    }
 
   /* do some sanity checks on the user-input before we proceed */
   XLAL_CHECK_MAIN ( checkUserInputConsistency ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -924,8 +915,6 @@ initUserVars ( UserInput_t *uvar )
 
   uvar->metricMismatch = 0.02;
 
-  uvar->version = FALSE;
-
   uvar->outputLogfile = NULL;
   uvar->outputFstat = NULL;
   uvar->outputLoudest = NULL;
@@ -954,7 +943,7 @@ initUserVars ( UserInput_t *uvar )
   uvar->minBraking = 0.0;
   uvar->maxBraking = 0.0;
 
-  uvar->FstatMethod = XLALStringDuplicate("DemodBest");	// default to guessed 'best' demod hotloop variant
+  uvar->FstatMethod = FMETHOD_DEMOD_BEST;	// default to guessed 'best' demod hotloop variant
 
   uvar->outputSingleFstats = FALSE;
   uvar->RankingStatistic = XLALStringDuplicate ( "F" );
@@ -1058,9 +1047,7 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( transient_tauDaysBand,REAL8, 0,  OPTIONAL, "TransientCW: Range of transient-CW duration timescales to search, in days");
   XLALRegisterUvarMember( transient_dtau,   INT4, 0,  OPTIONAL,     "TransientCW: Step-size in transient-CW duration timescale, in seconds [Default:Tsft]");
 
-  XLALRegisterUvarMember(FstatMethod,             STRING, 0,  OPTIONAL,  "F-statistic method to use. Available methods: %s", XLALFstatMethodHelpString() );
-
-  XLALRegisterUvarMember(  version,	BOOLEAN, 'V', SPECIAL,  "Output version information");
+  XLALRegisterUvarAuxDataMember( FstatMethod, UserEnum, XLALFstatMethodChoices(), 0, OPTIONAL,  "F-statistic method to use" );
 
   /* ----- more experimental/expert options ----- */
   XLALRegisterUvarMember( 	UseNoiseWeights,BOOLEAN, 'W', DEVELOPER, "Use per-SFT noise weights");
@@ -1118,9 +1105,7 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   XLAL_CHECK ( chdir ( uvar->workingDir ) == 0, XLAL_EINVAL, "Unable to change directory to workinDir '%s'\n", uvar->workingDir );
 
   /* ----- set computational parameters for F-statistic from User-input ----- */
-  XLAL_CHECK ( XLALParseFstatMethodString ( &cfg->FstatMethod, uvar->FstatMethod ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  cfg->useResamp = ( cfg->FstatMethod >= FMETHOD_RESAMP_GENERIC ); // use resampling;
+  cfg->useResamp = ( uvar->FstatMethod >= FMETHOD_RESAMP_GENERIC ); // use resampling;
 
   /* use IFO-contraint if one given by the user */
   if ( XLALUserVarWasSet ( &uvar->IFO ) ) {
@@ -1367,7 +1352,7 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   optionalArgs.injectSources = injectSources;
   optionalArgs.injectSqrtSX = injectSqrtSX;
   optionalArgs.assumeSqrtSX = assumeSqrtSX;
-  optionalArgs.FstatMethod = cfg->FstatMethod;
+  optionalArgs.FstatMethod = uvar->FstatMethod;
 
   XLAL_CHECK ( (cfg->Fstat_in = XLALCreateFstatInput( catalog, fCoverMin, fCoverMax, cfg->dFreq, cfg->ephemeris, &optionalArgs )) != NULL, XLAL_EFUNC );
   XLALDestroySFTCatalog(catalog);

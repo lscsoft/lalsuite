@@ -70,8 +70,6 @@ typedef struct
 
   REAL8 timeGPS;	/**< GPS time to compute detector state for (REAL8 format) */
 
-  BOOLEAN version;	/**< output code versions */
-
 } UserVariables_t;
 
 /* ---------- global variables ----------*/
@@ -100,16 +98,10 @@ main(int argc, char *argv[])
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit(1);
   }
-
-  if ( uvar.version )
-    {
-      XLALOutputVersionString ( stdout, lalDebugLevel );
-      exit(0);
-    }
 
   /* basic setup and initializations */
   XLAL_CHECK ( XLALInitCode( &config, &uvar, argv[0] ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -193,8 +185,6 @@ XLALInitUserVars ( UserVariables_t *uvar )
 
   XLALRegisterUvarMember(	ephemEarth,   	 STRING, 0,  OPTIONAL,     "Earth ephemeris file to use");
   XLALRegisterUvarMember(	ephemSun,     	 STRING, 0,  OPTIONAL,     "Sun ephemeris file to use");
-
-  XLALRegisterUvarMember(	version,        BOOLEAN, 'V', SPECIAL,      "Output code version");
 
   return XLAL_SUCCESS;
 

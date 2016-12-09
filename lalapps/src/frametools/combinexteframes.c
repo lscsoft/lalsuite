@@ -169,7 +169,6 @@ typedef struct {
   CHAR *outputdir;                  /**< name of output directory */
   REAL8 deltat;                     /**< the desired sampling time */
   INT4 goodxenon;                   /**< flag for using goodxenon data */
-  BOOLEAN version;	            /**< output version-info */
 } UserInput_t;
 
 /***********************************************************************************************/
@@ -360,7 +359,6 @@ int main( int argc, char *argv[] )
 void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar,CHAR *clargs)
 {
   
-  CHAR *version_string;
   INT4 i;
 
   INITSTATUS(status);
@@ -379,23 +377,11 @@ void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar,CHAR
   LALregSTRINGUserStruct(status,outputdir, 	'o', UVAR_REQUIRED, "The output frame file directory"); 
   LALregREALUserStruct(status,  deltat,         't', UVAR_OPTIONAL, "The output sampling time (in seconds)");
   LALregINTUserStruct(status,  goodxenon,       'x', UVAR_OPTIONAL, "Set this flag to include good xenon data");
-  LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,  "Output code version");
 
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;
   LAL_CALL (LALUserVarReadAllInput(status->statusPtr, &should_exit, argc, argv), status->statusPtr);
   if (should_exit) exit(1);
-
-  if ((version_string = XLALGetVersionString(0)) == NULL) {
-    XLALPrintError("XLALGetVersionString(0) failed.\n");
-    exit(1);
-  }
-  
-  if (uvar->version) {
-    printf("%s\n",version_string);
-    exit(0);
-  }
-  XLALFree(version_string);
 
   /* put clargs into string */
   strcpy(clargs,"");

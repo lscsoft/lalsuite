@@ -140,6 +140,16 @@ int XLALSetLatticeTilingPadding(
   );
 
 ///
+/// Offset the physical parameter-space origin of the lattice tiling by a random fraction of the
+/// lattice step size in tiled dimensions. This is important when performing mismatch studies to
+/// ensure that the mismatch distribution is fully sampled.
+///
+int XLALSetLatticeTilingRandomOriginOffsets(
+  LatticeTiling *tiling,                ///< [in] Lattice tiling
+  RandomParams *rng                     ///< [in] Random number generator used to generate offsets
+  );
+
+///
 /// Set the tiling lattice, parameter-space metric, and maximum prescribed mismatch.  The lattice
 /// tiling \c tiling is now fully initialised, and can be used to create tiling iterators [via
 /// XLALCreateLatticeTilingIterator()] and locators [via XLALCreateLatticeTilingLocator()].
@@ -167,6 +177,14 @@ size_t XLALTotalLatticeTilingDimensions(
 ///
 size_t XLALTiledLatticeTilingDimensions(
   const LatticeTiling *tiling           ///< [in] Lattice tiling
+  );
+
+///
+/// Return >0 if a lattice tiling dimension is tiled (i.e. not a single point), and 0 otherwise.
+///
+int XLALIsTiledLatticeTilingDimension(
+  const LatticeTiling *tiling,          ///< [in] Lattice tiling
+  const size_t dim                      ///< [in] Dimension of which to return tiling status
   );
 
 ///
@@ -202,7 +220,7 @@ const LatticeTilingStats *XLALLatticeTilingStatistics(
 int XLALRandomLatticeTilingPoints(
   const LatticeTiling *tiling,          ///< [in] Lattice tiling
   const double scale,                   ///< [in] Scale of random points
-  RandomParams *rng,                    ///< [in] Random number generator
+  RandomParams *rng,                    ///< [in] Random number generator used to generate points
   gsl_matrix *random_points             ///< [out] Matrix whose columns are the random points
   );
 

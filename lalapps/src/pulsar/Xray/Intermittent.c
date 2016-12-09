@@ -440,7 +440,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;
-  if (XLALUserVarReadAllInput(&should_exit, argc, argv)) {
+  if (XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput failed with error = %d\n",__func__,xlalErrno);
     return XLAL_EFAULT;
   }

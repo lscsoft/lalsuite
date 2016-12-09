@@ -208,10 +208,23 @@ XLALFormatHelpStringOfUserEnum ( const UserChoices *enumData )
 
   // Generate format help string
   CHAR *str = NULL;
+  int prev_val = -1;
+  const char *prev_name = NULL;
   for ( size_t i = 0; i < XLAL_NUM_ELEM(*enumData); ++i ) {
     if ((*enumData)[i].val >= 0 && (*enumData)[i].name != NULL) {
-      str = XLALStringAppendFmt( str, "%s%s", ( str == NULL ? "=(" : "|" ), (*enumData)[i].name);
+      if (prev_name != NULL && strcmp(prev_name, (*enumData)[i].name) == 0) {
+        continue;
+      }
+      if (str == NULL) {
+        str = XLALStringAppendFmt( str, "=(%s", (*enumData)[i].name);
+      } else if (prev_val >= 0 && prev_val == (*enumData)[i].val) {
+        str = XLALStringAppendFmt( str, "=%s", (*enumData)[i].name);
+      } else {
+        str = XLALStringAppendFmt( str, "|%s", (*enumData)[i].name);
+      }
       XLAL_CHECK_NULL(str != NULL, XLAL_EFUNC);
+      prev_val = (*enumData)[i].val;
+      prev_name = (*enumData)[i].name;
     }
   }
   str = XLALStringAppendFmt( str, ")");
@@ -262,10 +275,23 @@ XLALFormatHelpStringOfUserFlag ( const UserChoices *flagData )
 
   // Generate format help string
   CHAR *str = NULL;
+  int prev_val = 0;
+  const char *prev_name = NULL;
   for ( size_t i = 0; i < XLAL_NUM_ELEM(*flagData); ++i ) {
     if ((*flagData)[i].val > 0 && (*flagData)[i].name != NULL) {
-      str = XLALStringAppendFmt( str, "%s%s", ( str == NULL ? "=[" : "|" ), (*flagData)[i].name);
+      if (prev_name != NULL && strcmp(prev_name, (*flagData)[i].name) == 0) {
+        continue;
+      }
+      if (str == NULL) {
+        str = XLALStringAppendFmt( str, "=[%s", (*flagData)[i].name);
+      } else if (prev_val > 0 && prev_val == (*flagData)[i].val ) {
+        str = XLALStringAppendFmt( str, "=%s", (*flagData)[i].name);
+      } else {
+        str = XLALStringAppendFmt( str, "|%s", (*flagData)[i].name);
+      }
       XLAL_CHECK_NULL(str != NULL, XLAL_EFUNC);
+      prev_val = (*flagData)[i].val;
+      prev_name = (*flagData)[i].name;
     }
   }
   str = XLALStringAppendFmt( str, "],...");

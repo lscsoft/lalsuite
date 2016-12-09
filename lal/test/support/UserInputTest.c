@@ -19,6 +19,7 @@
 */
 #include <math.h>
 
+#include <lal/LALVCSInfo.h>
 #include <lal/Date.h>
 #include <lal/LALString.h>
 
@@ -55,7 +56,7 @@ typedef struct
  * but should be enough to catch big obvious malfunctions
  */
 int
-main(void)
+main(int argc, char *argv[])
 {
 
   const char *argv_in[] = {
@@ -89,21 +90,36 @@ main(void)
   const UserChoices enumData = { { -1, "noenum" }, { 1, "enum1" }, { 2, "enum2" }, { 2, "enumB" }, { 0, "enum0" } };
   const UserChoices flagData = { { -1, "noflag" }, { 1, "flagA" }, { 2, "flagB" }, { 4, "flagC" }, { 5, "flagAC" } };
 
+  lalUserVarHelpBrief = "brief description";
+  lalUserVarHelpDescription =
+    "This is a longer description of the program. This is a longer description of the program. This is a longer description of the program."
+    "This is a longer description of the program. This is a longer description of the program. This is a longer description of the program."
+    "This is a longer description of the program. This is a longer description of the program. This is a longer description of the program."
+    "\n"
+    "This is a longer description of the program. This is a longer description of the program. This is a longer description of the program."
+    "This is a longer description of the program. This is a longer description of the program. This is a longer description of the program.";
+
   XLAL_CHECK ( XLALRegisterUvarMember( argNum, REAL8, 0, REQUIRED, "Testing float argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( argStr, STRING, 0, REQUIRED, "Testing string argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( argBool, BOOLEAN, 0, REQUIRED, "Testing bool argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( argInt, INT4, 'a', REQUIRED, "Testing INT4 argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( argUInt, UINT4, 'A', REQUIRED, "Testing UINT4 argument") == XLAL_SUCCESS, XLAL_EFUNC );
+
+  lalUserVarHelpOptionSubsection = "More Options";
   XLAL_CHECK ( XLALRegisterUvarMember( dummy,  INT4, 'c', OPTIONAL, "Testing INT4 argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( argB2, BOOLEAN, 'b', REQUIRED, "Testing short-option bool argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( string2, STRING, 0, REQUIRED, "Testing another string argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( epochGPS, EPOCH, 0, REQUIRED, "Testing epoch given as GPS time") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( epochMJDTT, EPOCH, 0, REQUIRED, "Testing epoch given as MJD(TT) time") == XLAL_SUCCESS, XLAL_EFUNC );
+
+  lalUserVarHelpOptionSubsection = "Here's Some More Options";
   XLAL_CHECK ( XLALRegisterUvarMember( longHMS, RAJ, 0, REQUIRED, "Testing RAJ(HMS) argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( longRad, RAJ, 0, REQUIRED, "Testing RAJ(rad) argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( latDMS, DECJ, 0, REQUIRED, "Testing DECJ(DMS) argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( latRad, DECJ, 0, REQUIRED, "Testing DECJ(rad) argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( longInt, INT8, 0, REQUIRED, "Testing INT8 argument") == XLAL_SUCCESS, XLAL_EFUNC );
+
+  lalUserVarHelpOptionSubsection = "And Hey Look There's More Options Over Here";
   XLAL_CHECK ( XLALRegisterUvarAuxDataMember( argEnum, UserEnum, &enumData, 0, REQUIRED, "Testing user enumeration") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarAuxDataMember( argFlag, UserFlag, &flagData, 0, REQUIRED, "Testing user bitflag") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( long_help, BOOLEAN, 0, NODEFAULT,
@@ -120,8 +136,17 @@ main(void)
 
   /* ---------- now read all input from commandline and config-file ---------- */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK ( XLALUserVarReadAllInput ( &should_exit, my_argc, my_argv ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( should_exit == 0, XLAL_EFUNC );
+  if ( argc > 1 ) {
+    /* parse actual command-line arguments: this is only useful for debugging and testing, never used by 'make check' */
+    XLAL_CHECK ( XLALUserVarReadAllInput ( &should_exit, argc, argv, lalVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+    if ( should_exit ) {
+      return EXIT_FAILURE;
+    }
+  } else {
+    /* parse constructed command-line arguments: used by 'make check' */
+    XLAL_CHECK ( XLALUserVarReadAllInput ( &should_exit, my_argc, my_argv, lalVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( should_exit == 0, XLAL_EFUNC );
+  }
 
   /* ---------- test print usage and help page */
   printf( "=== Begin usage string ===\n" );

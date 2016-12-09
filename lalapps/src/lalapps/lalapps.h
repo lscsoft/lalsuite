@@ -23,6 +23,7 @@
 #include <config.h>
 #include <stdio.h>
 #include <lal/LALDatatypes.h>
+#include <LALAppsVCSInfo.h>
 
 #if defined(__cplusplus)
 extern "C" {

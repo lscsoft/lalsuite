@@ -115,7 +115,7 @@ int main( int argc, char *argv[] )
   BOOLEAN should_exit = 0;
   XLAL_CHECK_MAIN( argc > 0, XLAL_ESYS );
   char *my_argv[] = { argv[0], XLALStringDuplicate( "--dummy=3" ) };
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, XLAL_NUM_ELEM( my_argv ), my_argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, XLAL_NUM_ELEM( my_argv ), my_argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( !should_exit, XLAL_EFAILED );
   XLALFree( my_argv[1] );
 

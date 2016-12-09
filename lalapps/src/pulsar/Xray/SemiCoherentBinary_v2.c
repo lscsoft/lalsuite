@@ -93,7 +93,6 @@ typedef struct {
   CHAR *comment;
   CHAR *tempdir;                    /**< a temporary directory for keeping the results */
   BOOLEAN with_xbins;               /**< enable fast summing of extra bins */
-  BOOLEAN version;                  /**< output version-info */
 } UserInput_t;
 
 typedef struct {
@@ -446,7 +445,6 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
                      CHAR **clargs        /**< [out] the command line args string */
                      )
 {
-  CHAR *version_string;
   INT4 i;
 
   /* initialise user variables */
@@ -494,26 +492,14 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   XLALRegisterUvarMember(gpsstart,                INT4, 's', OPTIONAL, "The minimum start time (GPS sec)");
   XLALRegisterUvarMember(gpsend,                INT4, 'e', OPTIONAL, "The maximum end time (GPS sec)");
   XLALRegisterUvarMember(with_xbins,             BOOLEAN, 0, DEVELOPER,  "Enable fast summing of extra bins");
-  XLALRegisterUvarMember(version,                BOOLEAN, 'V', SPECIAL,  "Output code version");
 
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;
-  if (XLALUserVarReadAllInput(&should_exit, argc, argv)) {
+  if (XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput failed with error = %d\n",__func__,xlalErrno);
     return XLAL_EFAULT;
   }
   if (should_exit) exit(1);
-
-  if ((version_string = XLALGetVersionString(0)) == NULL) {
-    XLALPrintError("XLALGetVersionString(0) failed.\n");
-    exit(1);
-  }
-
-  if (uvar->version) {
-    printf("%s\n",version_string);
-    exit(0);
-  }
-  XLALFree(version_string);
 
   /* put clargs into string */
   *clargs = XLALCalloc(1,sizeof(CHAR));

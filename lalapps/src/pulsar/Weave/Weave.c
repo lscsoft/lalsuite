@@ -47,15 +47,16 @@ int main( int argc, char *argv[] )
   // Initialise user input variables
   struct uvar_type {
     BOOLEAN sft_files_check_crc, sft_files_check_count, interpolation, output_per_detector, output_per_segment, output_misc_info, shortcut_compute, shortcut_search;
-    CHAR *setup_file, *sft_files, *lattice, *Fstat_method, *output_file, *ckpt_output_file;
+    CHAR *setup_file, *sft_files, *lattice, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd;
     REAL8 sft_timebase, param_rand_offset, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
     UINT4 sky_patch_count, sky_patch_index, freq_partitions, Fstat_run_med_window, Fstat_Dterms, Fstat_SSB_precision, output_toplist_limit, rand_seed, cache_max_size, cache_gc_limit;
+    int Fstat_method;
   } uvar_struct = {
     .Fstat_Dterms = Fstat_opt_args.Dterms,
     .Fstat_SSB_precision = Fstat_opt_args.SSBprec,
-    .Fstat_method = XLALStringDuplicate( "ResampBest" ),
+    .Fstat_method = FMETHOD_RESAMP_BEST,
     .Fstat_run_med_window = Fstat_opt_args.runningMedianWindow,
     .alpha = {0, LAL_TWOPI},
     .delta = {-LAL_PI_2, LAL_PI_2},
@@ -200,9 +201,9 @@ int main( int argc, char *argv[] )
   //
   // - F-statistic computation options
   //
-  XLALRegisterUvarMember(
-    Fstat_method, STRING, 'm', DEVELOPER,
-    "Method used to calculate coherent F-statistics. Available methods:\n  %s", XLALFstatMethodHelpString()
+  XLALRegisterUvarAuxDataMember(
+    Fstat_method, UserEnum, XLALFstatMethodChoices(), 'm', DEVELOPER,
+    "Method used to calculate the F-statistic. "
     );
   XLALRegisterUvarMember(
     Fstat_run_med_window, UINT4, 'w', DEVELOPER,
@@ -304,7 +305,7 @@ int main( int argc, char *argv[] )
   // Parse user input
   XLAL_CHECK_MAIN( xlalErrno == 0, XLAL_EFUNC, "A call to XLALRegisterUvarMember() failed" );
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Check user input:
   //
@@ -678,16 +679,12 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( injections != NULL, XLAL_EFUNC );
   }
 
-  // Parse F-statistic method string
-  FstatMethodType Fstat_method;
-  XLAL_CHECK_MAIN( XLALParseFstatMethodString( &Fstat_method, uvar->Fstat_method ) == XLAL_SUCCESS, XLAL_EINVAL, "Invalid value '%s' for F-statistic method", uvar->Fstat_method );
-
   // Set F-statistic optional arguments
   Fstat_opt_args.randSeed = uvar->rand_seed;
   Fstat_opt_args.SSBprec = uvar->Fstat_SSB_precision;
   Fstat_opt_args.Dterms = uvar->Fstat_Dterms;
   Fstat_opt_args.runningMedianWindow = uvar->Fstat_run_med_window;
-  Fstat_opt_args.FstatMethod = Fstat_method;
+  Fstat_opt_args.FstatMethod = uvar->Fstat_method;
   Fstat_opt_args.injectSources = injections;
   Fstat_opt_args.prevInput = NULL;
 

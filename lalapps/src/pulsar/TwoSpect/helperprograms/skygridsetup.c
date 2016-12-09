@@ -148,7 +148,7 @@ INT4 InitUserVars(UserVariables_t *uvar, int argc, char *argv[])
    XLALRegisterUvarMember(  v1,          BOOLEAN, 0 , DEVELOPER, "Flag to use older style of CompDetectorVmax (for S6/VSR2-3 analysis)");
 
    BOOLEAN should_exit = 0;
-   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
    if ( should_exit ) exit (1);
 
    if (!uvar->v1 && !XLALUserVarWasSet(&uvar->t0)) XLAL_ERROR( XLAL_EINVAL, "Must set t0" );

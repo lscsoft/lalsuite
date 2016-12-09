@@ -104,7 +104,6 @@ typedef struct {
  * A structure that stores user input variables
  */
 typedef struct { 
-  BOOLEAN version;			/**< output version information */
   BOOLEAN tophat;			/**< tophat template flag */
   CHAR *inputFstat;			/**< filename of Fstat input data file to use */
   CHAR *outputCstat;			/**< filename to output Cstatistic */
@@ -259,12 +258,6 @@ int initUserVars(int argc,char *argv[],UserInput_t *uvar)
 {
   const CHAR *fn = __func__;      /* store function name for log output */
   
-  CHAR *version_string;
-
-  /* set a few defaults */
-  uvar->version = FALSE;
-
- 
   /* register all user-variables */
   XLALRegisterUvarMember(Freq,          REAL8, 'f', REQUIRED, "Starting search frequency in Hz");
   XLALRegisterUvarMember(FreqBand,      REAL8, 'b', REQUIRED, "Search frequency band in Hz");
@@ -273,27 +266,15 @@ int initUserVars(int argc,char *argv[],UserInput_t *uvar)
   XLALRegisterUvarMember(inputFstat,    STRING, 'D', REQUIRED, "Filename specifying input Fstat file");
   XLALRegisterUvarMember(outputCstat,	STRING, 'C', REQUIRED, "Output-file for C-statistic");
   XLALRegisterUvarMember(tophat,	BOOLEAN, 't', OPTIONAL, "Perform search with tophat template");
-  XLALRegisterUvarMember(version,	BOOLEAN, 'V', SPECIAL,  "Output version information");
   
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;
-  if (XLALUserVarReadAllInput(&should_exit, argc, argv)) {
+  if (XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput failed with error = %d\n",fn,xlalErrno);
     return XLAL_EFAULT;
   }
   if (should_exit) exit(1);
 
-  if ((version_string = XLALGetVersionString(0)) == NULL) {
-    XLALPrintError("XLALGetVersionString(0) failed.\n");
-    exit(1);
-  }
-  
-  if (uvar->version) {
-    printf("%s\n",version_string);
-    exit(0);
-  }
-  XLALFree(version_string);
- 
   LogPrintf(LOG_DEBUG,"'%s' successfully completed. Leaving. \n",fn); 
   return XLAL_SUCCESS;
 

@@ -21,6 +21,7 @@
 #define _COMPUTEFSTAT_H
 
 #include <lal/LALStdlib.h>
+#include <lal/UserInputParse.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/LALComputeAM.h>
 #include <lal/LALComputeAM.h>
@@ -273,10 +274,9 @@ typedef struct tagFstatResults {
 } FstatResults;
 
 // ---------- API function prototypes ----------
-int XLALFstatMethodIsAvailable ( FstatMethodType i );
-const CHAR *XLALFstatMethodName ( FstatMethodType i );
-const CHAR *XLALFstatMethodHelpString ( void );
-int XLALParseFstatMethodString ( FstatMethodType *Fmethod, const char *s );
+int XLALFstatMethodIsAvailable ( FstatMethodType method );
+const CHAR *XLALFstatMethodName ( FstatMethodType method );
+const UserChoices *XLALFstatMethodChoices ( void );
 
 FstatInputVector* XLALCreateFstatInputVector ( const UINT4 length );
 void XLALDestroyFstatInputVector ( FstatInputVector* input );
