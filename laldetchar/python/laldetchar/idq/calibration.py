@@ -145,7 +145,7 @@ def check_calibration( segs, times, timeseries, FAPthrs):
         max_statedFAP = 0.0
         for (t, ts) in zip(times, timeseries):
             (_segs, _min_ts) = idq.timeseries_to_segments(t, -ts, -FAPthr)  # we want FAP <= FAPthr <--> -FAP >= -FAPthr
-            SEGS += _segs
+            SEGS += (_segs) ### ensure this is a list in case the behavior of timeseries_to_segments changes...
             if _min_ts != None:
                 statedFAP = -_min_ts
                 if max_statedFAP < statedFAP:
