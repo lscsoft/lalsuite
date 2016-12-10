@@ -85,7 +85,7 @@ int main( int argc, char *argv[] )
   //
   lalUserVarHelpOptionSubsection = "SFT input/generation and signal generation";
   XLALRegisterUvarMember(
-    sft_files, STRING, 'I', OPTIONAL,
+    sft_files, STRING, 'I', NODEFAULT,
     "Pattern matching the SFT files to be analysed. Possibilities are:\n"
     " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'"
     );
@@ -96,7 +96,7 @@ int main( int argc, char *argv[] )
     " - Check that the number of SFTs in each segment matches the number provided by the segment list in the setup file given by " UVAR_STR( setup_file ) ".\n"
     );
   XLALRegisterUvarMember(
-    sft_timebase, REAL8, 't', OPTIONAL,
+    sft_timebase, REAL8, 't', NODEFAULT,
     "Generate SFTs with this timebase instead of loading from files. "
     );
   XLALRegisterUvarMember(
@@ -108,14 +108,14 @@ int main( int argc, char *argv[] )
     "The timebase of the generated SFTs is specified by " UVAR_STR( sft_timebase ) ". "
     );
   XLALRegisterUvarMember(
-    sft_noise_psd, STRINGVector, 'p', OPTIONAL,
+    sft_noise_psd, STRINGVector, 'p', NODEFAULT,
     "Inject fake Gaussian noise with these power spectral densities (PSDs) into the generated SFTs. "
     "Arguments correspond to the detectors in the setup file given by " UVAR_STR( setup_file )
     "; for example, if the setup file was created with " UVAR_STR( detectors ) " set to 'H1,L1', then an argument of "
     "'1.2,3.4' to this option will generate H1 SFTs with a noise PSD of 1.2, and L1 SFTs with a noise PSD of 3.4. "
     );
   XLALRegisterUvarMember(
-    injections, STRINGVector, 'J', OPTIONAL,
+    injections, STRINGVector, 'J', NODEFAULT,
     "Inject simulated CW signals in the loaded/generated SFTs. Possibilities for <string> are:\n"
     "  <config-file>\n"
     "  {parameter=value; ...} where:\n"
@@ -181,7 +181,7 @@ int main( int argc, char *argv[] )
     "Maximum metric mismatch of the lattice tiling on which semicoherent quantities are computed, e.g. F-statistics averaged over segments. "
     );
   XLALRegisterUvarMember(
-    coh_max_mismatch, REAL8, 'c', OPTIONAL,
+    coh_max_mismatch, REAL8, 'c', NODEFAULT,
     "Maximum metric mismatch of the per-segment lattice tilings on which coherent quantities are computed, e.g. coherent F-statistics. "
     "If the search setup contains only 1 segment, then this option must not be specified. "
     );
