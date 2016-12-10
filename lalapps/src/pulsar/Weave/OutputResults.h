@@ -42,7 +42,7 @@ extern "C" {
 typedef enum {
   /// Toplist ranked by mean multi-detector F-statistic
   WEAVE_TOPLIST_RANKED_MEAN2F           = 0001,
-  /// Must be strictly greater than all possible bitflag values
+  /// Must be exactly one more than maximum possible bitflag value
   WEAVE_TOPLIST_MAX                     = 0002,
 } WeaveToplistType;
 
