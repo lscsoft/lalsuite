@@ -271,7 +271,7 @@ typedef struct {
   INT4 RngMedWindow;		/**< running-median window for noise floor estimation */
   LIGOTimeGPS refTime;		/**< reference-time for definition of pulsar-parameters [GPS] */
 
-  INT4 SSBprecision;		/**< full relativistic timing or Newtonian */
+  int SSBprecision;		/**< full relativistic timing or Newtonian */
 
   LIGOTimeGPS minStartTime;	/**< Only use SFTs with timestamps starting from (including) this epoch (format 'xx.yy[GPS]' or 'xx.yyMJD') */
   LIGOTimeGPS maxStartTime;	/**< Only use SFTs with timestamps up to (excluding) this epoch (format 'xx.yy[GPS]' or 'xx.yyMJD') */
@@ -1054,7 +1054,7 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember(ephemEarth, 	 STRING, 0,  DEVELOPER, "Earth ephemeris file to use");
   XLALRegisterUvarMember(ephemSun, 	 STRING, 0,  DEVELOPER, "Sun ephemeris file to use");
 
-  XLALRegisterUvarMember( 	SSBprecision,	 INT4, 0,  DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
+  XLALRegisterUvarAuxDataMember( SSBprecision, UserEnum, &SSBprecisionChoices, 0, DEVELOPER, "Precision to use for time-transformation to SSB" );
 
   XLALRegisterUvarMember( 	RngMedWindow,	INT4, 'k', DEVELOPER, "Running-Median window size");
   XLALRegisterUvarMember(	Dterms,		INT4, 't', DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
