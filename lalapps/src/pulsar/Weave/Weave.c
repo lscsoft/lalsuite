@@ -52,7 +52,7 @@ int main( int argc, char *argv[] )
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
     UINT4 sky_patch_count, sky_patch_index, freq_partitions, Fstat_run_med_window, Fstat_Dterms, toplist_limit, rand_seed, cache_max_size, cache_gc_limit;
-    int lattice, Fstat_method, Fstat_SSB_precision;
+    int lattice, Fstat_method, Fstat_SSB_precision, toplists;
   } uvar_struct = {
     .Fstat_Dterms = Fstat_opt_args.Dterms,
     .Fstat_SSB_precision = Fstat_opt_args.SSBprec,
@@ -64,6 +64,7 @@ int main( int argc, char *argv[] )
     .interpolation = 1,
     .lattice = TILING_LATTICE_ANSTAR,
     .toplist_limit = 1000,
+    .toplists = WEAVE_TOPLIST_RANKED_MEAN2F,
   };
   struct uvar_type *const uvar = &uvar_struct;
 
@@ -77,7 +78,7 @@ int main( int argc, char *argv[] )
     );
   XLALRegisterUvarMember(
     output_file, STRING, 'o', REQUIRED,
-    "Output file which stores all quantities computed by lalapps_Weave, e.g. top-lists of averaged F-statistics. "
+    "Output file which stores all quantities computed by lalapps_Weave. "
     );
   //
   // - SFT input/generation and signal generation
@@ -233,9 +234,13 @@ int main( int argc, char *argv[] )
   // - Output control
   //
   lalUserVarHelpOptionSubsection = "Output control";
+  XLALRegisterUvarAuxDataMember(
+    toplists, UserFlag, &WeaveToplistTypeChoices, 'L', OPTIONAL,
+    "Sets which combination of toplists to return in the output file given by " UVAR_STR( output_file ) "."
+    );
   XLALRegisterUvarMember(
     toplist_limit, UINT4, 'n', OPTIONAL,
-    "Maximum number of candidates to return in an output top-list; if 0, all candidates are returned. "
+    "Maximum number of candidates to return in an output toplist; if 0, all candidates are returned. "
     );
   XLALRegisterUvarMember(
     per_detector, BOOLEAN, 'D', DEVELOPER,
@@ -804,7 +809,7 @@ int main( int argc, char *argv[] )
   WeaveSemiResults *semi_res = NULL;
 
   // Create output results structure
-  WeaveOutputResults *out = XLALWeaveOutputResultsCreate( &setup.ref_time, ninputspins, per_detectors, per_nsegments, uvar->toplist_limit );
+  WeaveOutputResults *out = XLALWeaveOutputResultsCreate( &setup.ref_time, ninputspins, per_detectors, per_nsegments, uvar->toplists, uvar->toplist_limit );
   XLAL_CHECK_MAIN( out != NULL, XLAL_EFUNC );
 
   // Number of times output results have been restored from a checkpoint

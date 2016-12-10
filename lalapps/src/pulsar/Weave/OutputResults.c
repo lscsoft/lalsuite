@@ -25,6 +25,13 @@
 #include "OutputResults.h"
 #include "ResultsToplist.h"
 
+#include <lal/UserInputPrint.h>
+
+const UserChoices WeaveToplistTypeChoices = {
+  { WEAVE_TOPLIST_RANKED_MEAN2F,        "mean2F" },
+  { WEAVE_TOPLIST_MAX - 1,              "all" },
+};
+
 ///
 /// Internal definition of output results from a search
 ///
@@ -33,8 +40,12 @@ struct tagWeaveOutputResults {
   WeaveOutputParams par;
   /// Number of computed semicoherent results
   INT8 semi_ncomp;
-  /// Toplist of output results ranked by mean multi-detector F-statistic
-  WeaveResultsToplist *mean2F_toplist;
+  /// Names of selected output toplist types
+  char *toplist_type_names;
+  /// Number of output results toplists
+  size_t ntoplists;
+  /// Output result toplists
+  WeaveResultsToplist *toplists[8];
 };
 
 ///
@@ -130,12 +141,14 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
   const size_t nspins,
   const LALStringVector *per_detectors,
   const UINT4 per_nsegments,
+  const WeaveToplistType toplist_types,
   const int toplist_limit
   )
 {
 
   // Check input
   XLAL_CHECK_NULL( ref_time != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( toplist_types > 0, XLAL_EINVAL );
 
   // Allocate memory
   WeaveOutputResults *out = XLALCalloc( 1, sizeof( *out ) );
@@ -152,9 +165,19 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
     XLAL_CHECK_NULL( out->par.per_detectors != NULL, XLAL_EFUNC );
   }
 
+  // Generate names of selected output toplist types
+  out->toplist_type_names = XLALPrintStringValueOfUserFlag( ( const int* ) &toplist_types, &WeaveToplistTypeChoices );
+  XLAL_CHECK_NULL( out->toplist_type_names != NULL, XLAL_EFUNC );
+
+  // Initialise number of toplists
+  out->ntoplists = 0;
+
   // Create a toplist which ranks results by mean multi-detector F-statistic
-  out->mean2F_toplist = XLALWeaveResultsToplistCreate( &out->par, "mean2F", "mean multi-detector F-statistic", toplist_limit, result_item_compare_by_mean2F );
-  XLAL_CHECK_NULL( out->mean2F_toplist != NULL, XLAL_EFUNC );
+  if ( toplist_types & WEAVE_TOPLIST_RANKED_MEAN2F ) {
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( &out->par, "mean2F", "mean multi-detector F-statistic", toplist_limit, result_item_compare_by_mean2F );
+    XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
+    XLAL_CHECK_NULL( out->ntoplists++ < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
+  }
 
   return out;
 
@@ -169,7 +192,10 @@ void XLALWeaveOutputResultsDestroy(
 {
   if ( out != NULL ) {
     XLALDestroyStringVector( out->par.per_detectors );
-    XLALWeaveResultsToplistDestroy( out->mean2F_toplist );
+    XLALFree( out->toplist_type_names );
+    for ( size_t i = 0; i < out->ntoplists; ++i ) {
+      XLALWeaveResultsToplistDestroy( out->toplists[i] );
+    }
     XLALFree( out );
   }
 }
@@ -191,8 +217,10 @@ int XLALWeaveOutputResultsAdd(
   // Increment number of computed semicoherent results
   out->semi_ncomp += semi_nfreqs;
 
-  // Add results to toplist ranked by mean multi-detector F-statistic
-  XLAL_CHECK( XLALWeaveResultsToplistAdd( out->mean2F_toplist, semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Add results to toplists
+  for ( size_t i = 0; i < out->ntoplists; ++i ) {
+    XLAL_CHECK( XLALWeaveResultsToplistAdd( out->toplists[i], semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
 
   return XLAL_SUCCESS;
 
@@ -229,11 +257,16 @@ int XLALWeaveOutputResultsWrite(
     XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "nsegment", out->par.per_nsegments, "number of segments" ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
+  // Write names of selected output toplist types
+  XLAL_CHECK( XLALFITSHeaderWriteString( file, "toplists", out->toplist_type_names, "names of selected toplist types" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   // Write number of computed semicoherent results
   XLAL_CHECK( XLALFITSHeaderWriteUINT8( file, "semicomp", out->semi_ncomp, "number of computed semicoherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Write toplist ranked by mean multi-detector F-statistic
-  XLAL_CHECK( XLALWeaveResultsToplistWrite( file, out->mean2F_toplist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Write toplists
+  for ( size_t i = 0; i < out->ntoplists; ++i ) {
+    XLAL_CHECK( XLALWeaveResultsToplistWrite( file, out->toplists[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
 
   return XLAL_SUCCESS;
 
@@ -276,10 +309,18 @@ int XLALWeaveOutputResultsReadAppend(
     XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "nsegment", &per_nsegments ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
+  // Read names of selected output toplist types
+  char *toplist_type_names = NULL;
+  XLAL_CHECK( XLALFITSHeaderReadString( file, "toplists", &toplist_type_names ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   if ( *out == NULL ) {
 
+    // Parse names of selected output toplist types
+    int toplist_types = 0;
+    XLAL_CHECK( XLALParseStringValueAsUserFlag( &toplist_types, &WeaveToplistTypeChoices, toplist_type_names ) == XLAL_SUCCESS, XLAL_EFUNC );
+
     // Create new output results
-    *out = XLALWeaveOutputResultsCreate( &ref_time, nspins, per_detectors, per_nsegments, 0 );
+    *out = XLALWeaveOutputResultsCreate( &ref_time, nspins, per_detectors, per_nsegments, toplist_types, 0 );
     XLAL_CHECK( *out != NULL, XLAL_EFUNC );
 
   } else {
@@ -305,6 +346,9 @@ int XLALWeaveOutputResultsReadAppend(
       XLAL_CHECK( (size_t) per_nsegments == ( *out )->par.per_nsegments, XLAL_EIO, "Inconsistent number of segments: %i != %u", per_nsegments, ( *out )->par.per_nsegments );
     }
 
+    // Check names of selected output toplist types
+    XLAL_CHECK( strcmp( toplist_type_names, ( *out )->toplist_type_names ) == 0, XLAL_EIO, "Inconsistent names of selected output toplist types: %s != %s", toplist_type_names, ( *out )->toplist_type_names );
+
   }
 
   // Read and increment number of computed semicoherent results
@@ -314,11 +358,14 @@ int XLALWeaveOutputResultsReadAppend(
     ( *out )->semi_ncomp += semi_ncomp;
   }
 
-  // Read and append to toplist ranked by mean multi-detector F-statistic
-  XLAL_CHECK( XLALWeaveResultsToplistReadAppend( file, ( *out )->mean2F_toplist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Read and append to toplists
+  for ( size_t i = 0; i < ( *out )->ntoplists; ++i ) {
+    XLAL_CHECK( XLALWeaveResultsToplistReadAppend( file, ( *out )->toplists[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
 
   // Cleanup
   XLALDestroyStringVector( per_detectors );
+  XLALFree( toplist_type_names );
 
   return XLAL_SUCCESS;
 
@@ -400,10 +447,12 @@ int XLALWeaveOutputResultsCompare(
     return XLAL_SUCCESS;
   }
 
-  // Compare toplists ranked by mean multi-detector F-statistic
-  XLAL_CHECK( XLALWeaveResultsToplistCompare( equal, setup, param_tol_mism, result_tol, out_1->mean2F_toplist, out_2->mean2F_toplist ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if ( !*equal ) {
-    return XLAL_SUCCESS;
+  // Compare toplists
+  for ( size_t i = 0; i < out_1->ntoplists; ++i ) {
+    XLAL_CHECK( XLALWeaveResultsToplistCompare( equal, setup, param_tol_mism, result_tol, out_1->toplists[i], out_2->toplists[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    if ( !*equal ) {
+      return XLAL_SUCCESS;
+    }
   }
 
   return XLAL_SUCCESS;

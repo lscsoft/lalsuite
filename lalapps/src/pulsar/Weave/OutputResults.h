@@ -29,11 +29,27 @@
 #include "SetupData.h"
 #include "ComputeResults.h"
 
+#include <lal/UserInputParse.h>
 #include <lal/LFTandTSutils.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+///
+/// Bitflags representing possible output toplist types
+///
+typedef enum {
+  /// Toplist ranked by mean multi-detector F-statistic
+  WEAVE_TOPLIST_RANKED_MEAN2F           = 0001,
+  /// Must be strictly greater than all possible bitflag values
+  WEAVE_TOPLIST_MAX                     = 0002,
+} WeaveToplistType;
+
+///
+/// Static array of all #WeaveToplistType choices, for use by the UserInput module parsing routines
+///
+extern const UserChoices WeaveToplistTypeChoices;
 
 ///
 /// Output results from a search
@@ -70,6 +86,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
   const size_t nspins,
   const LALStringVector *per_detectors,
   const UINT4 per_nsegments,
+  const WeaveToplistType toplist_types,
   const int toplist_limit
   );
 void XLALWeaveOutputResultsDestroy(
