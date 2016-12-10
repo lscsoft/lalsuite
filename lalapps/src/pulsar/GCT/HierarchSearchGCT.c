@@ -157,7 +157,7 @@ typedef struct {
   UINT4 nf1dot;			/**< number of 1st spindown Fstat bins */
   UINT4 nf2dot;			/**< number of 2nd spindown Fstat bins */
   UINT4 nf3dot;			/**< number of 3rd spindown Fstat bins */
-  SSBprecision SSBprec;            /**< SSB transform precision */
+  int SSBprec;                     /**< SSB transform precision */
   FstatMethodType Fmethod;         //!< which Fstat-method/algorithm to use
   BOOLEAN recalcToplistStats;	   //!< do additional analysis for all toplist candidates, output F, FXvector for postprocessing */
   FstatMethodType FmethodRecalc;   //!< which Fstat-method/algorithm to use for the recalc step
@@ -550,7 +550,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* developer user variables */
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_blocksRngMed,        "blocksRngMed",        INT4,         0,   DEVELOPER,  "RngMed block size") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_SSBprecision,        "SSBprecision",        INT4,         0,   DEVELOPER,  "Precision for SSB transform.") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvarAuxData( &uvar_SSBprecision, "SSBprecision", UserEnum, &SSBprecisionChoices, 0, DEVELOPER, "Precision for SSB transform") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_Dterms,              "Dterms",              INT4,         0,   DEVELOPER,  "Number of kernel terms (single-sided) to use in\na) Dirichlet kernel if FstatMethod=Demod*\nb) sinc-interpolation kernel if FstatMethod=Resamp*" ) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_DtermsRecalc,        "DtermsRecalc",        INT4,         0,   DEVELOPER,  "Same as 'Dterms', applies to 'Recalc' step" ) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_skyPointIndex,       "skyPointIndex",       INT4,         0,   DEVELOPER,  "Only analyze this skypoint in grid" ) == XLAL_SUCCESS, XLAL_EFUNC);

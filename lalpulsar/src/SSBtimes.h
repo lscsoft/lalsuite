@@ -35,6 +35,7 @@ extern "C" {
 
 /*---------- exported INCLUDES ----------*/
 #include <lal/LALStdlib.h>
+#include <lal/UserInputParse.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/DetectorStates.h>
 
@@ -47,6 +48,9 @@ typedef enum tagSSBprecision {
   SSBPREC_RELATIVISTICOPT,  	/**< optimized relativistic, numerically equivalent to #SSBPREC_RELATIVISTIC, but faster */
   SSBPREC_LAST			/**< end marker */
 } SSBprecision;
+
+/** Static array of all #SSBprecision choices, for use by the UserInput module parsing routines */
+extern const UserChoices SSBprecisionChoices;
 
 /** Simple container for two REAL8-vectors, namely the SSB-timings DeltaT_alpha  and Tdot_alpha,
  * with one entry per SFT-timestamp. These are required input for XLALNewDemod().
