@@ -46,7 +46,7 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN sft_files_check_crc, sft_files_check_count, interpolation, lattice_rand_offset, per_detector, per_segment, misc_info, shortcut_compute, shortcut_search;
+    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, per_detector, per_segment, misc_info, shortcut_compute, shortcut_search;
     CHAR *setup_file, *sft_files, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit;
@@ -89,12 +89,10 @@ int main( int argc, char *argv[] )
     " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'"
     );
   XLALRegisterUvarMember(
-    sft_files_check_crc, BOOLEAN, 'V', OPTIONAL,
-    "Validate the checksums of the SFTs matched by " UVAR_STR( sft_files ) " before loading."
-    );
-  XLALRegisterUvarMember(
-    sft_files_check_count, BOOLEAN, 'L', OPTIONAL,
-    "Check that the number of SFTs in each segment matches the number provided by the segment list in the setup file given by " UVAR_STR( setup_file ) "."
+    validate_sft_files, BOOLEAN, 'V', DEVELOPER,
+    "Perform the following checks to validate the SFTs matched by " UVAR_STR( sft_files ) ":\n"
+    " - Validate the checksums of the SFTs before loading them into memory.\n"
+    " - Check that the number of SFTs in each segment matches the number provided by the segment list in the setup file given by " UVAR_STR( setup_file ) ".\n"
     );
   XLALRegisterUvarMember(
     sft_timebase, REAL8, 't', OPTIONAL,
@@ -322,11 +320,8 @@ int main( int argc, char *argv[] )
                     !UVAR_SET( sft_files ) || !UVAR_ALLSET3( sft_timebase, sft_timestamps_files, sft_noise_psd ),
                     UVAR_STR( sft_files ) " are mutually exclusive with " UVAR_STR3AND( sft_timebase, sft_timestamps_files, sft_noise_psd ) );
   XLALUserVarCheck( &should_exit,
-                    !UVAR_SET( sft_files_check_crc ) || UVAR_SET( sft_files ),
-                    UVAR_STR( sft_files_check_crc ) " requires " UVAR_STR( sft_files ) );
-  XLALUserVarCheck( &should_exit,
-                    !UVAR_SET( sft_files_check_count ) || UVAR_SET( sft_files ),
-                    UVAR_STR( sft_files_check_count ) " requires " UVAR_STR( sft_files ) );
+                    !UVAR_SET( validate_sft_files ) || UVAR_SET( sft_files ),
+                    UVAR_STR( validate_sft_files ) " requires " UVAR_STR( sft_files ) );
   XLALUserVarCheck( &should_exit,
                     !UVAR_SET( sft_timebase ) || uvar->sft_timebase > 0,
                     UVAR_STR( sft_timebase ) " must be strictly positive" );
@@ -612,7 +607,7 @@ int main( int argc, char *argv[] )
     LogPrintf( LOG_NORMAL, "Loaded SFT catalog from SFTs matching '%s'\n", uvar->sft_files );
 
     // Validate checksums of SFTs, if requested
-    if ( uvar->sft_files_check_crc ) {
+    if ( uvar->validate_sft_files ) {
       BOOLEAN crc_check = 0;
       XLAL_CHECK_MAIN( XLALCheckCRCSFTCatalog( &crc_check, sft_catalog ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( crc_check, XLAL_EFUNC, "Failed to validate checksums of SFTs matching '%s'\n", uvar->sft_files );
@@ -704,7 +699,7 @@ int main( int argc, char *argv[] )
       }
 
       // Check that the number of SFTs in each segment matches the number provided by the segment list in the setup file, if requested
-      if ( uvar->sft_files_check_count ) {
+      if ( uvar->validate_sft_files ) {
         XLAL_CHECK_MAIN( sft_count > 0, XLAL_EFAILED, "No number of SFTs given for segment %zu in setup file '%s'", i, uvar->setup_file );
         XLAL_CHECK_MAIN( sft_catalog_i.length == sft_count, XLAL_EFAILED, "Number of SFTs found for segment %zu (%u) is inconsistent with expected number of SFTs given by segment list (%u) in setup file '%s'", i, sft_catalog_i.length, sft_count, uvar->setup_file );
       }
