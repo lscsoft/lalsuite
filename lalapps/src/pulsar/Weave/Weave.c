@@ -749,16 +749,17 @@ int main( int argc, char *argv[] )
 
       // Record SFT information
       for ( size_t j = 0; j < sft_catalog_i_view->length; ++j ) {
-        char *det_name = XLALGetChannelPrefix( sft_catalog_i_view->data[j].data[0].header.name );
-        const int k = XLALFindStringInVector( det_name, setup.detectors );
+        char *detector_name = XLALGetChannelPrefix( sft_catalog_i_view->data[j].data[0].header.name );
+        XLAL_CHECK_MAIN( detector_name != NULL, XLAL_EFUNC );
+        const int k = XLALFindStringInVector( detector_name, setup.detectors );
         if ( k >= 0 ) {
           const UINT4 length = sft_catalog_i_view->data[j].length;
           per_seg_info[i].sft_first[k] = sft_catalog_i_view->data[j].data[0].header.epoch;
           per_seg_info[i].sft_last[k] = sft_catalog_i_view->data[j].data[length - 1].header.epoch;
           per_seg_info[i].sft_count[k] = length;
         }
-        XLALFree( det_name );
-      }
+        XLALFree( detector_name );
+     }
       per_seg_info[i].sft_min_cover_freq = sft_min_cover_freq;
       per_seg_info[i].sft_max_cover_freq = sft_max_cover_freq;
 
