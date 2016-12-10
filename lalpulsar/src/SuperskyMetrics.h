@@ -33,7 +33,7 @@ extern "C" {
 /// \defgroup SuperskyMetrics_h Header SuperskyMetrics.h
 /// \ingroup lalpulsar_metric
 /// \author Karl Wette
-/// \brief Compute the supersky metrics and coordinate transforms of \cite WettePrix2013a .
+/// \brief Compute the supersky metrics and coordinate transforms of \cite WettePrix2013a and \cite Wette2015a .
 ///
 /// @{
 ///
