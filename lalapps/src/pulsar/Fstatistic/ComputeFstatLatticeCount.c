@@ -45,7 +45,7 @@ typedef struct {
   REAL8Vector *square;
   REAL8Vector *age_braking;
   REAL8 max_mismatch;
-  CHAR *lattice;
+  int lattice;
   CHAR *metric;
 } UserVariables;
 
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 
   // Initialise user variables
   UserVariables uvar_struct = {
-    .lattice = XLALStringDuplicate("an-star"),
+    .lattice = TILING_LATTICE_ANSTAR,
     .metric = XLALStringDuplicate("spindown"),
   };
   UserVariables *const uvar = &uvar_struct;
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
   XLAL_CHECK_MAIN(XLALRegisterUvarMember(square, REAL8Vector, 0, OPTIONAL, "Square parameter space: start,width,...") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN(XLALRegisterUvarMember(age_braking, REAL8Vector, 0, OPTIONAL, "Age/braking index parameter space: alpha,delta,freq,freqband,age,minbrake,maxbrake") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN(XLALRegisterUvarMember(max_mismatch, REAL8, 'X', REQUIRED, "Maximum allowed mismatch between the templates") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(XLALRegisterUvarMember(lattice, STRING, 'L', REQUIRED, "Lattice: 'an-star' or 'cubic'") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(XLALRegisterUvarAuxDataMember(lattice, UserEnum, &TilingLatticeChoices, 'L', REQUIRED, "Type of lattice to use") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN(XLALRegisterUvarMember(metric, STRING, 'M', OPTIONAL, "Metric: 'spindown' or 'eye'") == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Parse user input
