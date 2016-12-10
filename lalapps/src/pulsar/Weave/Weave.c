@@ -705,6 +705,7 @@ int main( int argc, char *argv[] )
 
   // Create input data required for computing coherent results
   WeaveCohInput *XLAL_INIT_DECL( coh_input, [nsegments] );
+  const char *Fstat_method_name = NULL;
   for ( size_t i = 0; i < nsegments; ++i ) {
 
     const LIGOTimeGPS *segment_start = &setup.segments->segs[i].start;
@@ -781,6 +782,12 @@ int main( int argc, char *argv[] )
       Fstat_input = XLALCreateFstatInput( &sft_catalog_i, sft_min_cover_freq, sft_max_cover_freq, dfreq, setup.ephemerides, &Fstat_opt_args );
       XLAL_CHECK_MAIN( Fstat_input != NULL, XLAL_EFUNC );
       Fstat_opt_args.prevInput = Fstat_input;
+
+      // Get F-statistic method name
+      if ( Fstat_method_name == NULL ) {
+        Fstat_method_name = XLALGetFstatInputMethodName( Fstat_input );
+        XLAL_CHECK_MAIN( Fstat_method_name != NULL, XLAL_EFUNC );
+      }
 
       // Cleanup
       XLALDestroyMultiSFTCatalogView( sft_catalog_i_view );
@@ -1136,9 +1143,14 @@ int main( int argc, char *argv[] )
     // Write total number of computed coherent results
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "tcohcomp", tot_coh_ncomp, "total number of computed coherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Write search results (unless main search loop is being shortcutted)
-    if ( !uvar->shortcut_search ) {
+    if ( !uvar->shortcut_search ) {   // Unless main search loop is being shortcutted...
+
+      // Write F-statistic method name
+      XLAL_CHECK_MAIN( XLALFITSHeaderWriteString( file, "fmethod", Fstat_method_name, "name of F-statistic method" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      // Write search results
       XLAL_CHECK_MAIN( XLALWeaveOutputResultsWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
+
     }
 
     // Write miscellaneous per-segment information
