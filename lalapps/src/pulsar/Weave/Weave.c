@@ -656,15 +656,35 @@ int main( int argc, char *argv[] )
 
   }
 
-  // Check that all SFT catalog detectors were included in metrics computed in setup file
   if ( sft_catalog != NULL ) {
+
+    // Check that all SFT catalog detectors were included in metrics computed in setup file
     LALStringVector *sft_catalog_detectors = XLALListIFOsInCatalog( sft_catalog );
     XLAL_CHECK_MAIN( sft_catalog_detectors != NULL, XLAL_EFUNC );
     char *sft_catalog_detectors_string = XLALConcatStringVector( sft_catalog_detectors, "," );
     XLAL_CHECK_MAIN( sft_catalog_detectors_string != NULL, XLAL_EFUNC );
     XLAL_CHECK_MAIN( strcmp( sft_catalog_detectors_string, setup_detectors_string ) == 0, XLAL_EINVAL, "List of detectors '%s' in SFT catalog differs from list of detectors '%s' in setup file '%s'", sft_catalog_detectors_string, setup_detectors_string, uvar->setup_file );
+
+    // Log number of SFTs, both in total and for each detector
+    MultiSFTCatalogView *sft_catalog_view = XLALGetMultiSFTCatalogView( sft_catalog );
+    XLAL_CHECK_MAIN( sft_catalog_view != NULL, XLAL_EINVAL );
+    XLAL_CHECK_MAIN( sft_catalog_view->length > 0, XLAL_EFUNC );
+    LogPrintf( LOG_NORMAL, "Using %u SFTs in total", sft_catalog->length );
+    for ( size_t j = 0; j < sft_catalog_view->length; ++j ) {
+      XLAL_CHECK_MAIN( sft_catalog_view->data[j].length > 0, XLAL_EFUNC );
+      char *detector_name = XLALGetChannelPrefix( sft_catalog_view->data[j].data[0].header.name );
+      XLAL_CHECK_MAIN( detector_name != NULL, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFindStringInVector( detector_name, setup.detectors ) >= 0, XLAL_EFAILED );
+      LogPrintfVerbatim( LOG_NORMAL, ", %u SFTs from detector '%s'", sft_catalog_view->data[j].length, detector_name );
+      XLALFree( detector_name );
+    }
+    LogPrintfVerbatim( LOG_NORMAL, "\n" );
+
+    // Cleanup
     XLALDestroyStringVector( sft_catalog_detectors );
     XLALFree( sft_catalog_detectors_string );
+    XLALDestroyMultiSFTCatalogView( sft_catalog_view );
+
   }
 
   // Parse signal injection string
