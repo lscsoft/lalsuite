@@ -24,6 +24,7 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 #include <lal/LALStdlib.h>
+#include <lal/UserInputParse.h>
 #include <lal/Random.h>
 #include <lal/FITSFileIO.h>
 
@@ -55,6 +56,20 @@ typedef struct tagLatticeTilingIterator LatticeTilingIterator;
 /// Locates the nearest point in a lattice tiling.
 ///
 typedef struct tagLatticeTilingLocator LatticeTilingLocator;
+
+///
+/// Type of lattice to generate tiling with.
+///
+typedef enum tagTilingLattice {
+  TILING_LATTICE_CUBIC,                 ///< Cubic (\f$Z_n\f$) lattice
+  TILING_LATTICE_ANSTAR,                ///< An-star (\f$A_n^*\f$) lattice
+  TILING_LATTICE_MAX
+} TilingLattice;
+
+///
+/// Static array of all #TilingLattice choices, for use by the UserInput module parsing routines
+///
+extern const UserChoices TilingLatticeChoices;
 
 ///
 /// Statistics related to the number/value of lattice tiling points in a dimension.
@@ -154,13 +169,9 @@ int XLALSetLatticeTilingRandomOriginOffsets(
 /// tiling \c tiling is now fully initialised, and can be used to create tiling iterators [via
 /// XLALCreateLatticeTilingIterator()] and locators [via XLALCreateLatticeTilingLocator()].
 ///
-/// Valid lattice names are:
-/// - Cubic (\f$Z_n\f$) lattice: \c Zn or \c Cubic
-/// - An-star (\f$A_n^*\f$) lattice: \c Ans or \c An-star
-///
 int XLALSetTilingLatticeAndMetric(
   LatticeTiling *tiling,                ///< [in] Lattice tiling
-  const char *lattice_name,             ///< [in] Name of lattice to generate tiling with
+  const TilingLattice lattice,          ///< [in] Type of lattice to generate tiling with
   const gsl_matrix *metric,             ///< [in] Parameter-space metric
   const double max_mismatch             ///< [in] Maximum prescribed mismatch
   );

@@ -47,12 +47,12 @@ int main( int argc, char *argv[] )
   // Initialise user input variables
   struct uvar_type {
     BOOLEAN sft_files_check_crc, sft_files_check_count, interpolation, lattice_rand_offset, per_detector, per_segment, misc_info, shortcut_compute, shortcut_search;
-    CHAR *setup_file, *sft_files, *lattice, *output_file, *ckpt_output_file;
+    CHAR *setup_file, *sft_files, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
     UINT4 sky_patch_count, sky_patch_index, freq_partitions, Fstat_run_med_window, Fstat_Dterms, toplist_limit, rand_seed, cache_max_size, cache_gc_limit;
-    int Fstat_method, Fstat_SSB_precision;
+    int lattice, Fstat_method, Fstat_SSB_precision;
   } uvar_struct = {
     .Fstat_Dterms = Fstat_opt_args.Dterms,
     .Fstat_SSB_precision = Fstat_opt_args.SSBprec,
@@ -62,7 +62,7 @@ int main( int argc, char *argv[] )
     .delta = {-LAL_PI_2, LAL_PI_2},
     .freq_partitions = 1,
     .interpolation = 1,
-    .lattice = XLALStringDuplicate( "An-star" ),
+    .lattice = TILING_LATTICE_ANSTAR,
     .toplist_limit = 1000,
   };
   struct uvar_type *const uvar = &uvar_struct;
@@ -193,11 +193,9 @@ int main( int argc, char *argv[] )
     "If FALSE, turn off interpolation and use the same lattice tiling for both semicoherent and coherent computations; "
     UVAR_STR( coh_max_mismatch ) " must not be specified in this case. "
     );
-  XLALRegisterUvarMember(
-    lattice, STRING, 'l', DEVELOPER,
-    "Type of lattice used to generate the lattice tilings. Options are:\n"
-    " - 'An-star': An-star lattice. Gives the thinnest tiling in low dimensions, and is therefore the default.\n"
-    " - 'cubic':   Hypercubic lattice. Probably only useful for testing purposes. "
+  XLALRegisterUvarAuxDataMember(
+    lattice, UserEnum, &TilingLatticeChoices, 'l', DEVELOPER,
+    "Type of lattice used to generate the lattice tilings. "
     );
   XLALRegisterUvarMember(
     lattice_rand_offset, BOOLEAN, 'j', DEVELOPER,
