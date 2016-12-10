@@ -46,8 +46,11 @@ typedef struct {
   REAL8Vector *age_braking;
   REAL8 max_mismatch;
   int lattice;
-  CHAR *metric;
+  int metric;
 } UserVariables;
+
+enum { SPINDOWN, EYE } MetricType;
+const UserChoices MetricTypeChoices = { { SPINDOWN, "spindown" }, { EYE, "eye" } };
 
 int main(int argc, char *argv[])
 {
@@ -55,7 +58,7 @@ int main(int argc, char *argv[])
   // Initialise user variables
   UserVariables uvar_struct = {
     .lattice = TILING_LATTICE_ANSTAR,
-    .metric = XLALStringDuplicate("spindown"),
+    .metric = SPINDOWN,
   };
   UserVariables *const uvar = &uvar_struct;
 
@@ -65,7 +68,7 @@ int main(int argc, char *argv[])
   XLAL_CHECK_MAIN(XLALRegisterUvarMember(age_braking, REAL8Vector, 0, OPTIONAL, "Age/braking index parameter space: alpha,delta,freq,freqband,age,minbrake,maxbrake") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN(XLALRegisterUvarMember(max_mismatch, REAL8, 'X', REQUIRED, "Maximum allowed mismatch between the templates") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN(XLALRegisterUvarAuxDataMember(lattice, UserEnum, &TilingLatticeChoices, 'L', REQUIRED, "Type of lattice to use") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(XLALRegisterUvarMember(metric, STRING, 'M', OPTIONAL, "Metric: 'spindown' or 'eye'") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(XLALRegisterUvarAuxDataMember(metric, UserEnum, &MetricTypeChoices, 'M', OPTIONAL, "Type of metric to use") == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Parse user input
   BOOLEAN should_exit = 0;
@@ -115,16 +118,14 @@ int main(int argc, char *argv[])
 
   // Set lattice and metric
   gsl_matrix *metric = NULL;
-  if (XLALStringCaseCompare(uvar->metric, "spindown") == 0) {
+  if (uvar->metric == SPINDOWN) {
     GAMAT(metric, n, n);
     gsl_matrix_set_identity(metric);
     gsl_matrix_view spin_metric = gsl_matrix_submatrix(metric, 2, 2, n - 2, n - 2);
     XLAL_CHECK_MAIN(XLALSpindownMetric(&spin_metric.matrix, uvar->time_span) == XLAL_SUCCESS, XLAL_EFUNC);
-  } else if (XLALStringCaseCompare(uvar->metric, "eye") == 0) {
+  } else {
     GAMAT(metric, n, n);
     gsl_matrix_set_identity(metric);
-  } else {
-    XLAL_ERROR_MAIN(XLAL_EINVAL, "Invalid value '%s' for 'metric'", uvar->metric);
   }
   XLAL_CHECK_MAIN(XLALSetTilingLatticeAndMetric(tiling, uvar->lattice, metric, uvar->max_mismatch)  == XLAL_SUCCESS, XLAL_EFUNC);
   gsl_matrix_free(metric);
