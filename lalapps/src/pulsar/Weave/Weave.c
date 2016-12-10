@@ -553,9 +553,9 @@ int main( int argc, char *argv[] )
     }
     XLAL_CHECK_MAIN( XLALSetSuperskyPhysicalSkyBounds( tiling[isemi], rssky_metric[isemi], rssky_transf[isemi], ps[psialpha][0], ps[psialpha][1], ps[psidelta][0], ps[psidelta][1] ) == XLAL_SUCCESS, XLAL_EFUNC );
     if ( UVAR_SET( sky_patch_count ) ) {
-      LogPrintf( LOG_NORMAL, "Search sky parameter space: sky patch %u of %u\n", uvar->sky_patch_index, uvar->sky_patch_count );
+      LogPrintf( LOG_NORMAL, "Search sky parameter space = sky patch %u of %u\n", uvar->sky_patch_index, uvar->sky_patch_count );
     }
-    LogPrintf( LOG_NORMAL, "Search sky parameter space: right ascension [%.15g, %.15g] rad, declination [%.15g, %.15g] rad\n", ps[psialpha][0], ps[psialpha][1], ps[psidelta][0], ps[psidelta][1] );
+    LogPrintf( LOG_NORMAL, "Search sky parameter space = right ascension [%.15g, %.15g] rad, declination [%.15g, %.15g] rad\n", ps[psialpha][0], ps[psialpha][1], ps[psidelta][0], ps[psidelta][1] );
   }
 
   // Set frequency/spindown parameter-space bounds
@@ -565,9 +565,9 @@ int main( int argc, char *argv[] )
     }
     XLAL_CHECK_MAIN( XLALSetSuperskyPhysicalSpinBound( tiling[isemi], rssky_transf[isemi], s, ps[psifreq+s][0], ps[psifreq+s][1] ) == XLAL_SUCCESS, XLAL_EFUNC );
     if ( s == 0 ) {
-      LogPrintf( LOG_NORMAL, "Search frequency parameter space: [%.15g, %.15g] Hz\n", ps[psifreq+s][0], ps[psifreq+s][1] );
+      LogPrintf( LOG_NORMAL, "Search frequency parameter space = [%.15g, %.15g] Hz\n", ps[psifreq+s][0], ps[psifreq+s][1] );
     } else {
-      LogPrintf( LOG_NORMAL, "Search %zu-order spindown parameter space: [%.15g, %.15g] Hz/s^%zu\n", s, ps[psifreq+s][0], ps[psifreq+s][1], s );
+      LogPrintf( LOG_NORMAL, "Search %zu-order spindown parameter space = [%.15g, %.15g] Hz/s^%zu\n", s, ps[psifreq+s][0], ps[psifreq+s][1], s );
     }
   }
 
