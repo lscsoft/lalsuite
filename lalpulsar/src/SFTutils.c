@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Karl Wette
+ * Copyright (C) 2014, 2016 Karl Wette
  * Copyright (C) 2010 Chris Messenger
  * Copyright (C) 2005 Reinhard Prix
  *
@@ -1095,17 +1095,17 @@ XLALrefineCOMPLEX8Vector ( const COMPLEX8Vector *in,
 
 
 /**
- * Function to read a segment list from given filename, returns a *sorted* SegmentList
+ * Function to read a segment list from given filename, returns a *sorted* LALSegList
  *
- * The segment-list format parse here is consistent with Xavie's segment lists used previously
- * and follows the format <repeated lines of form "startGPS endGPS duration[h] NumSFTs">,
- * or an alternative format <repeated lines of form "startGPS endGPS">,
- * allowed comment-characters are '%' and '#'
+ * The segment list file format is repeated lines (excluding comment lines beginning with
+ * <tt>\%</tt> or <tt>#</tt>) of one of the following forms:
+ * - <tt>startGPS endGPS</tt>
+ * - <tt>startGPS endGPS NumSFTs</tt> (NumSFTs must be a positive integer)
+ * - <tt>startGPS endGPS duration NumSFTs</tt> (\b DEPRECATED, duration is ignored)
  *
- * \note we (ab)use the integer 'id' field in LALSeg to carry the total number of SFTs
- * contained in that segment if NumSFTs was provided in the segment file.
+ * \note We (ab)use the integer \p id field in LALSeg to carry the total number of SFTs
+ * contained in that segment if <tt>NumSFTs</tt> was provided in the segment file.
  * This can be used as a consistency check when loading SFTs for these segments.
- *
  */
 LALSegList *
 XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segment list */
@@ -1114,70 +1114,76 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
   LALSegList *segList = NULL;
 
   /* check input consistency */
-  if ( !fname ) {
-    XLALPrintError ( "%s: NULL input 'fname'", __func__ );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
-  }
+  XLAL_CHECK_NULL( fname != NULL, XLAL_EFAULT );
 
   /* read and parse segment-list file contents*/
   LALParsedDataFile *flines = NULL;
-  if ( XLALParseDataFile ( &flines, fname ) != XLAL_SUCCESS )
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
+  XLAL_CHECK_NULL( XLALParseDataFile ( &flines, fname ) == XLAL_SUCCESS, XLAL_EFUNC );
+  const UINT4 numSegments = flines->lines->nTokens;
+  XLAL_CHECK_NULL( numSegments > 0, XLAL_EINVAL, "%s: segment file '%s' does not contain any segments", __func__, fname );
 
-  UINT4 numSegments = flines->lines->nTokens;
   /* allocate and initialized segment list */
-  if ( (segList = XLALCalloc ( 1, sizeof(*segList) )) == NULL )
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-  if ( XLALSegListInit ( segList ) != XLAL_SUCCESS )
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
+  XLAL_CHECK_NULL( ( segList = XLALCalloc ( 1, sizeof(*segList) ) ) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL( XLALSegListInit ( segList ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  /* determine number of columns */
+  int ncol = 0;
+  {
+    REAL8 col[4];
+    ncol = sscanf( flines->lines->tokens[0], "%lf %lf %lf %lf", &col[0], &col[1], &col[2], &col[3] );
+    switch (ncol) {
+    case 2:
+    case 3:
+      break;
+    case 4:
+      XLALPrintError( "\n%s: WARNING: segment file '%s' is in DEPRECATED 4-column (startGPS endGPS duration NumSFTs, duration is ignored)\n", __func__, fname );
+      break;
+    default:
+      XLAL_ERROR_NULL( XLAL_EIO, "%s: segment file '%s' contains an unknown %i-column format", __func__, fname, ncol );
+    }
+  }
 
-  UINT4 iSeg;
-  for ( iSeg = 0; iSeg < numSegments; iSeg ++ )
+  /* parse segment list */
+  for ( UINT4 iSeg = 0; iSeg < numSegments; iSeg ++ )
     {
-      REAL8 t0, t1, TspanHours;
-      INT4 NSFT;
-      LALSeg thisSeg;
+
+      /* parse line of segment file, depending on determined number of columns */
+      REAL8 start = 0, end = 0, duration = 0;
+      INT4 NumSFTs = 0;
       int ret;
-      ret = sscanf ( flines->lines->tokens[iSeg], "%lf %lf %lf %d", &t0, &t1, &TspanHours, &NSFT );
-      if ( !(ret == 2 || ret == 4) ) {
-        XLALPrintError ("%s: failed to parse data-line %d (%d columns instead of supported 2 or 4) in segment-list '%s':\n%s\n", __func__, iSeg, ret, fname, flines->lines->tokens[iSeg] );
-        XLALSegListClear ( segList );
-        XLALFree ( segList );
-        XLALDestroyParsedDataFile ( flines );
-        XLAL_ERROR_NULL ( XLAL_ESYS );
+      switch (ncol) {
+      case 2:
+        ret = sscanf( flines->lines->tokens[iSeg], "%lf %lf", &start, &end );
+        XLAL_CHECK_NULL( ret == 2, XLAL_EIO, "%s: number of columns in segment file '%s' is inconsistent (line 1: %i, line %u: %i)", __func__, fname, ncol, iSeg+1, ret );
+        break;
+      case 3:
+        ret = sscanf( flines->lines->tokens[iSeg], "%lf %lf %i", &start, &end, &NumSFTs );
+        XLAL_CHECK_NULL( ret == 3, XLAL_EIO, "%s: number of columns in segment file '%s' is inconsistent (line 1: %i, line %u: %i)", __func__, fname, ncol, iSeg+1, ret );
+        XLAL_CHECK_NULL( NumSFTs > 0, XLAL_EIO, "%s: number of SFTs (3rd column) in segment file '%s' must be a positive integer if given (line %u: %i)", __func__, fname, iSeg+1, NumSFTs );
+        break;
+      case 4:
+        ret = sscanf( flines->lines->tokens[iSeg], "%lf %lf %lf %i", &start, &end, &duration, &NumSFTs );
+        XLAL_CHECK_NULL( ret == 4, XLAL_EIO, "%s: number of columns in segment file '%s' is inconsistent (line 1 = %i, line %u = %i)", __func__, fname, ncol, iSeg+1, ret );
+        break;
+      default:
+        XLAL_ERROR_NULL( XLAL_EFAILED, "Unexpected error!" );
       }
 
-      if ( ret == 4 ) {
-        /* check internal consistency of these numbers */
-        REAL8 hours = 3600.0;
-        if ( fabs ( t1 - t0 - TspanHours * hours ) >= 1.0 ) {
-          XLALPrintError ("%s: Inconsistent segment list, in line %d: t0 = %f, t1 = %f, Tspan = %f != t1 - t0 (to within 1s)\n", __func__, iSeg, t0, t1, TspanHours );
-          XLAL_ERROR_NULL ( XLAL_EDOM );
-        }
-      }
+      /* set GPS start and end times */
+      LIGOTimeGPS startGPS, endGPS;
+      XLALGPSSetREAL8( &startGPS, start );
+      XLALGPSSetREAL8( &endGPS, end );
 
-      LIGOTimeGPS start, end;
-      XLALGPSSetREAL8( &start, t0 );
-      XLALGPSSetREAL8( &end,   t1 );
-
-      if ( ret == 2 ) {
-        if ( XLALSegSet ( &thisSeg, &start, &end, 0 ) != XLAL_SUCCESS )
-          XLAL_ERROR_NULL ( XLAL_EFUNC );
-      } else {
-        /* we set number of SFTs as 'id' field, as we have no other use for it */
-        if ( XLALSegSet ( &thisSeg, &start, &end, NSFT ) != XLAL_SUCCESS )
-          XLAL_ERROR_NULL ( XLAL_EFUNC );
-      }
-
-      if ( XLALSegListAppend ( segList, &thisSeg ) != XLAL_SUCCESS )
-        XLAL_ERROR_NULL ( XLAL_EFUNC );
+      /* create segment and append to list
+         - we set number of SFTs as 'id' field, as we have no other use for it */
+      LALSeg thisSeg;
+      XLAL_CHECK_NULL( XLALSegSet ( &thisSeg, &startGPS, &endGPS, NumSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_NULL( XLALSegListAppend ( segList, &thisSeg ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     } /* for iSeg < numSegments */
 
   /* sort final segment list in increasing GPS start-times */
-  if ( XLALSegListSort( segList ) != XLAL_SUCCESS )
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
+  XLAL_CHECK_NULL( XLALSegListSort( segList ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* free parsed segment file contents */
   XLALDestroyParsedDataFile ( flines );
