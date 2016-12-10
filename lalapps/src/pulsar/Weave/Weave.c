@@ -609,6 +609,7 @@ int main( int argc, char *argv[] )
     // Load SFT catalog from files given by 'sft_files'
     sft_catalog = XLALSFTdataFind( uvar->sft_files, NULL );
     XLAL_CHECK_MAIN( sft_catalog != NULL, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( sft_catalog->length > 0, XLAL_EFUNC );
     LogPrintf( LOG_NORMAL, "Loaded SFT catalog from SFTs matching '%s'\n", uvar->sft_files );
 
     // Validate checksums of SFTs, if requested
@@ -648,6 +649,7 @@ int main( int argc, char *argv[] )
     // Generate SFT catalog for detectors 'sft_detectors' and timestamps 'sft_timestamps'
     sft_catalog = XLALMultiAddToFakeSFTCatalog( sft_catalog, setup.detectors, sft_timestamps );
     XLAL_CHECK_MAIN( sft_catalog != NULL, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( sft_catalog->length > 0, XLAL_EFUNC );
 
     // Cleanup
     XLALDestroyMultiTimestamps( sft_timestamps );
