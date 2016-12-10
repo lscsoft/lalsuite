@@ -33,6 +33,12 @@
 #include <lal/Random.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 
+// Return elapsed wall time in seconds
+static inline double wall_time(void) { return XLALGetTimeOfDay(); }
+
+// Return elapsed CPU time in seconds
+static inline double cpu_time(void) { return XLALGetCPUTime(); }
+
 int main( int argc, char *argv[] )
 {
 
@@ -904,12 +910,22 @@ int main( int argc, char *argv[] )
     LogPrintf( LOG_NORMAL, "Shortcutting the main search loop, as requested\n" );
   }
 
-  // Record zero of CPU time counter
-  const double time_zero = XLALGetCPUTime();
+  // Initial wall and CPU times
+  const double wall_zero = wall_time();
+  const double cpu_zero = cpu_time();
+
+  // Time at which search was last checkpointed
+  double wall_ckpt_output = wall_zero;
+
+  // Time at which progress was last printed, and interval at which to print progress
+  double wall_prog = wall_zero;
+  double wall_prog_period = 5.0;
+
+  // Whether to print predicted remaining time, and previous prediction for total elapsed time
+  BOOLEAN wall_prog_remain_print = 0;
+  double wall_prog_total_prev = 0;
 
   // Print initial progress in frequency blocks and partitions
-  double prog_time = time_zero;
-  double prog_period = 5.0;
   const UINT8 prog_count = uvar->freq_partitions * freq_block_count;
   if ( !uvar->shortcut_search ) {
     const UINT8 prog_index = partition_index * freq_block_count + freq_block_index;
@@ -918,11 +934,10 @@ int main( int argc, char *argv[] )
     if ( uvar->freq_partitions > 1 ) {
       LogPrintfVerbatim( LOG_NORMAL, ", partition %i/%i", partition_index, uvar->freq_partitions );
     }
-    LogPrintfVerbatim( LOG_NORMAL, ", peak memory = %.1fMB ...\n", XLALGetPeakHeapUsageMB() );
+    LogPrintfVerbatim( LOG_NORMAL, ", peak memory %.1fMB\n", XLALGetPeakHeapUsageMB() );
   }
 
   // Begin main search loop (unless it is being shortcutted)
-  double ckpt_output_time = time_zero;
   BOOLEAN search_complete = uvar->shortcut_search;
   while ( !search_complete ) {
 
@@ -991,42 +1006,19 @@ int main( int argc, char *argv[] )
     // Increment semicoherent frequency block index
     ++freq_block_index;
 
-    // Print iteration progress, if required
+    // Progress index and percentage complete
     const UINT8 prog_index = partition_index * freq_block_count + freq_block_index;
     const double prog_per_cent = 100.0 * prog_index / prog_count;
-    const double prog_time_now = XLALGetCPUTime();
-    const double prog_time_elapsed = prog_time_now - prog_time;
-    if ( prog_time_elapsed >= prog_period ) {
-      prog_time = prog_time_now;
 
-      // Print progress in frequency blocks and partitions
-      LogPrintf( LOG_NORMAL, "Searched %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " frequency blocks (%.1f%%)", prog_index, prog_count, prog_per_cent );
-      if ( uvar->freq_partitions > 1 ) {
-        LogPrintfVerbatim( LOG_NORMAL, ", partition %i/%i", partition_index, uvar->freq_partitions );
-      }
-
-      // Print progress in time
-      const double prog_time_remain = prog_time_elapsed * ( prog_count - prog_index ) / prog_index;
-      LogPrintfVerbatim( LOG_NORMAL, ", CPU time elapsed %.1f sec, remaining ~%.1f sec", prog_time_elapsed, prog_time_remain );
-
-      // Print memory usage
-      LogPrintfVerbatim( LOG_NORMAL, ", peak memory = %.1fMB", XLALGetPeakHeapUsageMB() );
-
-      // Finish progress printing
-      LogPrintfVerbatim( LOG_NORMAL, "\n" );
-
-      // Increase progress period, up to a maximum
-      prog_period = GSL_MIN( 1200, prog_period * 1.5 );
-
-    }
+    // Current wall and CPU times
+    const double wall_now = wall_time();
+    const double cpu_now = cpu_time();
 
     // Checkpoint output results, if required
     if ( UVAR_SET( ckpt_output_file ) ) {
 
       // Decide whether to checkpoint output results
-      const double ckpt_output_time_now = XLALGetCPUTime();
-      const double ckpt_output_time_elapsed = ckpt_output_time_now - ckpt_output_time;
-      const BOOLEAN do_ckpt_output_period = UVAR_SET( ckpt_output_period ) && ckpt_output_time_elapsed >= uvar->ckpt_output_period;
+      const BOOLEAN do_ckpt_output_period = UVAR_SET( ckpt_output_period ) && wall_now - wall_ckpt_output >= uvar->ckpt_output_period;
       const BOOLEAN do_ckpt_output_exit = UVAR_SET( ckpt_output_exit ) && prog_per_cent >= 100.0 * uvar->ckpt_output_exit;
       if ( do_ckpt_output_period || do_ckpt_output_exit ) {
 
@@ -1056,27 +1048,65 @@ int main( int argc, char *argv[] )
         XLALFITSFileClose( file );
 
         // Print progress
-        LogPrintf( LOG_NORMAL, "Wrote output checkpoint to file '%s' after %.1f time elapsed, %" LAL_UINT8_FORMAT " frequency blocks\n", uvar->ckpt_output_file, ckpt_output_time_elapsed, freq_block_index );
+        LogPrintf( LOG_NORMAL, "Wrote output checkpoint to file '%s' after %.1f time elapsed, %" LAL_UINT8_FORMAT " frequency blocks\n", uvar->ckpt_output_file, wall_now - wall_zero, freq_block_index );
+
+        // Exit main search loop, if checkpointing was triggered by 'do_ckpt_output_exit'
+        if ( do_ckpt_output_exit ) {
+          LogPrintf( LOG_NORMAL, "Exiting main seach loop after writing output checkpoint\n" );
+          break;
+        }
+
+        // Update time at which search was last checkpointed
+        wall_ckpt_output = wall_now;
 
       }
 
-      // Update checkpoint time, if checkpointing was triggered by 'do_ckpt_output_period'
-      if ( do_ckpt_output_period ) {
-        ckpt_output_time = ckpt_output_time_now;
+    }
+
+    // Print iteration progress, if required
+    if ( wall_now - wall_prog >= wall_prog_period ) {
+      const double wall_elapsed = wall_now - wall_zero;
+      const double cpu_elapsed = cpu_now - cpu_zero;
+
+      // Print progress in frequency blocks and partitions
+      LogPrintf( LOG_NORMAL, "Searched %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " frequency blocks (%.1f%%)", prog_index, prog_count, prog_per_cent );
+      if ( uvar->freq_partitions > 1 ) {
+        LogPrintfVerbatim( LOG_NORMAL, ", partition %i/%i", partition_index, uvar->freq_partitions );
       }
 
-      // Exit main search loop, if checkpointing was triggered by 'do_ckpt_output_exit'
-      if ( do_ckpt_output_exit ) {
-        LogPrintf( LOG_NORMAL, "Exiting main seach loop after writing output checkpoint\n" );
-        break;
+      // Print elapsed time
+      LogPrintfVerbatim( LOG_NORMAL, ", elapsed %.1f sec", wall_now - wall_zero );
+
+      // Print remaining time, if it can be reliably predicted
+      const double wall_prog_remain = wall_elapsed * ( prog_count - prog_index ) / prog_index;
+      const double wall_prog_total = wall_elapsed + wall_prog_remain;
+      if ( wall_prog_remain_print || fabs( wall_prog_total - wall_prog_total_prev ) <= 0.1 * wall_prog_total_prev ) {
+        LogPrintfVerbatim( LOG_NORMAL, ", remaining ~%.1f sec", wall_prog_remain );
+        wall_prog_remain_print = 1;   // Always print remaining time once it can be reliably predicted
+      } else {
+        wall_prog_total_prev = wall_prog_total;
       }
+
+      // Print CPU usage
+      LogPrintfVerbatim( LOG_NORMAL, ", CPU %.1f%%", 100.0 * cpu_elapsed / wall_elapsed );
+
+      // Print memory usage
+      LogPrintfVerbatim( LOG_NORMAL, ", peak memory %.1fMB", XLALGetPeakHeapUsageMB() );
+
+      // Finish progress printing
+      LogPrintfVerbatim( LOG_NORMAL, "\n" );
+
+      // Update time at which progress was last printed, and increase interval at which to print progress
+      wall_prog = wall_now;
+      wall_prog_period = GSL_MIN( 1200, wall_prog_period * 1.5 );
 
     }
 
   }
 
-  // Record elapsed CPU time
-  const double time_elapsed = XLALGetCPUTime() - time_zero;
+  // Total elapsed wall and CPU times
+  const double wall_total = wall_time() - wall_zero;
+  const double cpu_total = cpu_time() - cpu_zero;
 
   // Print final progress in frequency blocks and partitions
   if ( !uvar->shortcut_search ) {
@@ -1086,7 +1116,7 @@ int main( int argc, char *argv[] )
     if ( uvar->freq_partitions > 1 ) {
       LogPrintfVerbatim( LOG_NORMAL, ", partition %i/%i", partition_index, uvar->freq_partitions );
     }
-    LogPrintfVerbatim( LOG_NORMAL, ", CPU time elapsed %.1f sec, peak memory = %.1fMB\n", time_elapsed, XLALGetPeakHeapUsageMB() );
+    LogPrintfVerbatim( LOG_NORMAL, ", total %.1f sec, CPU %.1f%%, peak memory %.1fMB\n", wall_total, 100.0 * cpu_total / wall_total, XLALGetPeakHeapUsageMB() );
   }
 
   ////////// Output search results //////////
