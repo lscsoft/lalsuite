@@ -38,6 +38,12 @@
 
 /*---------- Global variables ----------*/
 
+const UserChoices SSBprecisionChoices = {
+  { SSBPREC_NEWTONIAN,		"newtonian" },
+  { SSBPREC_RELATIVISTIC,	"relativistic" },
+  { SSBPREC_RELATIVISTICOPT,  	"relativisticopt" },
+};
+
 /*---------- internal prototypes ----------*/
 
 static double gsl_E_solver ( double E, void *p );

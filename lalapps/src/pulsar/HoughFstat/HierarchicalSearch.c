@@ -197,7 +197,7 @@ typedef struct {
   UINT4 blocksRngMed;              /**< blocksize for running median noise floor estimation */
   UINT4 Dterms;                    /**< size of Dirichlet kernel for Fstat calculation */
   REAL8 dopplerMax;                /**< extra sft wings for doppler motion */
-  SSBprecision SSBprec;            /**< SSB transform precision */
+  int SSBprec;                     /**< SSB transform precision */
   REAL8 dFreqStack;		   /**< frequency resolution of Fstat calculation */
 } UsefulStageVariables;
 
@@ -493,7 +493,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* developer user variables */
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_blocksRngMed,     "blocksRngMed",     INT4,    0,   DEVELOPER, "RngMed block size") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_SSBprecision,     "SSBprecision",     INT4,    0,   DEVELOPER, "Precision for SSB transform.") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvarAuxData( &uvar_SSBprecision, "SSBprecision", UserEnum, &SSBprecisionChoices, 0, DEVELOPER, "Precision for SSB transform") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_printMaps,        "printMaps",        BOOLEAN, 0,   DEVELOPER, "Print Hough maps -- for debugging") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_printGrid,        "printGrid",        BOOLEAN, 0,   DEVELOPER, "Print Hough fine grid -- for debugging") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_dumpLUT,          "dumpLUT",          BOOLEAN, 0,   DEVELOPER, "Print Hough look-up-tables -- for debugging") == XLAL_SUCCESS, XLAL_EFUNC);
