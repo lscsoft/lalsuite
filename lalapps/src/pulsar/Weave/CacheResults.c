@@ -603,41 +603,35 @@ int XLALWeaveCacheRetrieve(
 
   // See if coherent results are already cached
   const cache_item key = { .partition_index = queries->partition_index, .coh_index = queries->coh_index[query_index] };
-  const cache_item *item = NULL;
+  cache_item *item = NULL;
   XLAL_CHECK( XLALHashTblFind( cache->coh_index_hash, &key, ( const void ** ) &item ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( item == NULL ) {
 
-    // Allocate memory for new cache item, if needed
-    cache_item *new_item = cache->saved_item;
-    if ( new_item == NULL ) {
-      new_item = XLALCalloc( 1, sizeof( *new_item ) );
-      XLAL_CHECK( new_item != NULL, XLAL_EINVAL );
+    // Reuse 'saved_item' if possible, otherwise allocate memory for a new cache item
+    if ( cache->saved_item == NULL ) {
+      cache->saved_item = XLALCalloc( 1, sizeof( *cache->saved_item ) );
+      XLAL_CHECK( cache->saved_item != NULL, XLAL_EINVAL );
     }
-
-    // New cache item will contain the required coherent results about to be computed
-    item = new_item;
+    item = cache->saved_item;
 
     // Set the key of the new cache item for future lookups
-    new_item->partition_index = key.partition_index;
-    new_item->coh_index = key.coh_index;
+    item->partition_index = key.partition_index;
+    item->coh_index = key.coh_index;
 
     // Set the relevance of the coherent frequency block associated with the new cache item
-    new_item->relevance = queries->coh_relevance[query_index];
+    item->relevance = queries->coh_relevance[query_index];
 
     // Determine the number of points in the coherent frequency block
     const UINT4 coh_nfreqs = queries->coh_right[query_index] - queries->coh_left[query_index] + 1;
 
     // Compute coherent results for the new cache item
-    XLAL_CHECK( XLALWeaveCohResultsCompute( &new_item->coh_res, cache->coh_input, &queries->coh_phys[query_index], coh_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALWeaveCohResultsCompute( &item->coh_res, cache->coh_input, &queries->coh_phys[query_index], coh_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Increase the total number of computed results, including results that may have been recomputed
     *tot_coh_ncomp += coh_nfreqs;
 
     // Add new cache item to the index hash table
-    XLAL_CHECK( XLALHashTblAdd( cache->coh_index_hash, new_item ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    // Stage new cache item into 'saved_item', ready to be added to the cache
-    cache->saved_item = new_item;
+    XLAL_CHECK( XLALHashTblAdd( cache->coh_index_hash, item ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Get the item in the cache with the smallest relevance
     const cache_item *least_relevant_item = ( const cache_item * ) XLALHeapRoot( cache->relevance_heap );
