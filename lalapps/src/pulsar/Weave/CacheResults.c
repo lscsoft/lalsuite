@@ -641,7 +641,7 @@ int XLALWeaveCacheRetrieve(
     const cache_item relevance_threshold = { .partition_index = queries->partition_index, .relevance = queries->semi_relevance };
 
     // If item's relevance has fallen below the threshold relevance, it can be removed from the cache
-    if ( least_relevant_item != NULL && cache_item_compare_by_relevance( least_relevant_item, &relevance_threshold ) < 0 ) {
+    if ( least_relevant_item != NULL && least_relevant_item != item && cache_item_compare_by_relevance( least_relevant_item, &relevance_threshold ) < 0 ) {
 
       // Remove least relevant item from index hash table
       XLAL_CHECK( XLALHashTblRemove( cache->coh_index_hash, least_relevant_item ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -657,7 +657,7 @@ int XLALWeaveCacheRetrieve(
         XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
 
         // If item's relevance has fallen below the threshold relevance, it can be removed from the cache
-        if ( least_relevant_item != NULL && cache_item_compare_by_relevance( least_relevant_item, &relevance_threshold ) < 0 ) {
+        if ( least_relevant_item != NULL && least_relevant_item != item && cache_item_compare_by_relevance( least_relevant_item, &relevance_threshold ) < 0 ) {
 
           // Remove least relevant item from index hash table
           XLAL_CHECK( XLALHashTblRemove( cache->coh_index_hash, least_relevant_item ) == XLAL_SUCCESS, XLAL_EFUNC );
