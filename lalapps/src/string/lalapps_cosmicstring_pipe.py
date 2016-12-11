@@ -17,11 +17,12 @@ the standalone ring code on LIGO data
 """
 
 
-import itertools
-import sys, os
-import tempfile
 import ConfigParser
+import itertools
 from optparse import OptionParser
+import os
+import sys
+import tempfile
 
 
 from glue import pipeline
