@@ -61,30 +61,17 @@ static inline size_t optimized_gsl_interp_accel_find(gsl_interp_accel * a, const
 {
   size_t x_index = a->cache;
 
-  if(x < xa[x_index]) { //OPTIMIZED: This shouldn't occur often, if at all
+  if(x < xa[x_index]) {
     a->miss_count++;
     a->cache = optimized_gsl_interp_bsearch(xa, x, 0, x_index);
   }
-  else
-    {
-      if(x >= xa[x_index + 1])
-        {
-	  if( x>=xa[x_index + 2]) //OPTIMIZED: Check the next one. It'll probably be there.
-            {
-	      a->miss_count++;
-	      a->cache = optimized_gsl_interp_bsearch(xa, x, x_index, len-1);
-            }
-	  else
-            {
-	      a->hit_count++;
-	      a->cache = x_index + 1;
-            }
-        }
-      else
-        {
-	  a->hit_count++;
-        }
-    }
+  else if(x >= xa[x_index + 1]) {
+    a->miss_count++;
+    a->cache = optimized_gsl_interp_bsearch(xa, x, x_index, len-1);
+  }
+  else {
+    a->hit_count++;
+  }
   return a->cache;
 }
 
