@@ -185,7 +185,7 @@ class EPAllSkyCoincParamsDistributions(BurcaCoincParamsDistributions):
 		t += sum(float(event.peak - t) * event.ms_snr**2.0 for event in events) / sum(event.ms_snr**2.0 for event in events)
 		gmst = lal.GreenwichMeanSiderealTime(t) % (2 * math.pi)
 
-		for event1, event2 in itertools.combinations(sorted(events, lambda a, b: cmp(a.ifo, b.ifo)), 2):
+		for event1, event2 in itertools.combinations(sorted(events, key = lambda x: x.ifo), 2):
 			if event1.ifo == event2.ifo:
 				# a coincidence is parameterized only by
 				# inter-instrument deltas
