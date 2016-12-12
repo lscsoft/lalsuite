@@ -1136,6 +1136,12 @@ int main( int argc, char *argv[] )
     // Write peak memory usage
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "peakmem [MB]", XLALGetPeakHeapUsageMB(), "peak memory usage" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+    // Write list of detectors
+    XLAL_CHECK( XLALFITSHeaderWriteStringVector( file, "detect", setup.detectors, "setup detectors" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Write number of segments
+    XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "nsegment", nsegments, "number of segments" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
     // Write physical parameter-space ranges
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "minrng alpha [rad]", ps[psialpha][0], "minimum right ascension range" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "maxrng alpha [rad]", ps[psialpha][1], "maximum right ascension range" ) == XLAL_SUCCESS, XLAL_EFUNC );

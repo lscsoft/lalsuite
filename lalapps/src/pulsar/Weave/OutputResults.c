@@ -245,17 +245,13 @@ int XLALWeaveOutputResultsWrite(
   // Write number of spindowns
   XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "nspins", out->par.nspins, "number of spindowns" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Write if outputting per-detector quantities
-  XLAL_CHECK( XLALFITSHeaderWriteBOOLEAN( file, "perdet", out->par.per_detectors != NULL, "output per detector?" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Write list of detectors (if outputting per-detector quantities)
   if ( out->par.per_detectors != NULL ) {
-    XLAL_CHECK( XLALFITSHeaderWriteStringVector( file, "detect", out->par.per_detectors, "setup detectors" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALFITSHeaderWriteStringVector( file, "perdet", out->par.per_detectors, "output per detector?" ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
-  // Write if outputting per-segment quantities
-  XLAL_CHECK( XLALFITSHeaderWriteBOOLEAN( file, "perseg", out->par.per_nsegments > 0, "output per segment?" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if ( out->par.per_nsegments > 0 ) {
-    XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "nsegment", out->par.per_nsegments, "number of segments" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
+  // Write number of per-segment items being output (may be zero)
+  XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "perseg", out->par.per_nsegments, "output per segment?" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Write names of selected output toplist types
   XLAL_CHECK( XLALFITSHeaderWriteString( file, "toplists", out->toplist_type_names, "names of selected toplist types" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -293,21 +289,19 @@ int XLALWeaveOutputResultsReadAppend(
   UINT4 nspins = 0;
   XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "nspins", &nspins ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Read if outputting per-detector quantities, and list of detectors
-  BOOLEAN perdet = 0;
+  // Read list of detectors (if outputting per-detector quantities)
   LALStringVector *per_detectors = NULL;
-  XLAL_CHECK( XLALFITSHeaderReadBOOLEAN( file, "perdet", &perdet ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if ( perdet ) {
-    XLAL_CHECK( XLALFITSHeaderReadStringVector( file, "detect", &per_detectors ) == XLAL_SUCCESS, XLAL_EFUNC );
+  {
+    BOOLEAN exists = 0;
+    XLAL_CHECK( XLALFITSHeaderQueryKeyExists( file, "perdet1", &exists ) == XLAL_SUCCESS, XLAL_EFUNC );
+    if ( exists ) {
+      XLAL_CHECK( XLALFITSHeaderReadStringVector( file, "perdet", &per_detectors ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
   }
 
-  // Read if outputting per-segment quantities, and number of per-segment items
-  BOOLEAN perseg = 0;
+  // Read number of per-segment items being output (may be zero)
   UINT4 per_nsegments = 0;
-  XLAL_CHECK( XLALFITSHeaderReadBOOLEAN( file, "perseg", &perseg ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if ( perseg ) {
-    XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "nsegment", &per_nsegments ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
+  XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "perseg", &per_nsegments ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Read names of selected output toplist types
   char *toplist_type_names = NULL;
@@ -332,8 +326,8 @@ int XLALWeaveOutputResultsReadAppend(
     XLAL_CHECK( (size_t) nspins == ( *out )->par.nspins, XLAL_EIO, "Inconsistent number of spindowns: %i != %zu", nspins, ( *out )->par.nspins );
 
     // Check if outputting per-detector quantities, and list of detectors
-    XLAL_CHECK( ( !perdet ) == ( ( *out )->par.per_detectors == NULL ), XLAL_EIO, "Inconsistent output per detector flag vs list of detectors: %i != %i", perseg, ( *out )->par.per_detectors != NULL );
-    if ( perdet ) {
+    XLAL_CHECK( ( per_detectors != NULL ) == ( ( *out )->par.per_detectors != NULL ), XLAL_EIO, "Inconsistent output per detector?: flag vs list of detectors: %i != %i", per_detectors != NULL, ( *out )->par.per_detectors != NULL );
+    if ( per_detectors != NULL ) {
       XLAL_CHECK( per_detectors->length == ( *out )->par.per_detectors->length, XLAL_EIO, "Inconsistent number of detectors: %u != %u", per_detectors->length, ( *out )->par.per_detectors->length );
       for ( size_t i = 0; i < per_detectors->length; ++i ) {
         XLAL_CHECK( strcmp( per_detectors->data[i], ( *out )->par.per_detectors->data[i] ) == 0, XLAL_EIO, "Inconsistent detectors: %s != %s", per_detectors->data[i], ( *out )->par.per_detectors->data[i] );
@@ -341,10 +335,7 @@ int XLALWeaveOutputResultsReadAppend(
     }
 
     // Check if outputting per-segment quantities, and number of per-segment items
-    XLAL_CHECK( ( !perseg ) == ( ( *out )->par.per_nsegments == 0 ), XLAL_EIO, "Inconsistent output per segment flag vs number of segments: %i != %i", perseg, ( *out )->par.per_nsegments > 0 );
-    if ( perseg ) {
-      XLAL_CHECK( (size_t) per_nsegments == ( *out )->par.per_nsegments, XLAL_EIO, "Inconsistent number of segments: %i != %u", per_nsegments, ( *out )->par.per_nsegments );
-    }
+    XLAL_CHECK( per_nsegments == ( *out )->par.per_nsegments, XLAL_EIO, "Inconsistent output per segment?: %i != %u", per_nsegments, ( *out )->par.per_nsegments );
 
     // Check names of selected output toplist types
     XLAL_CHECK( strcmp( toplist_type_names, ( *out )->toplist_type_names ) == 0, XLAL_EIO, "Inconsistent names of selected output toplist types: %s != %s", toplist_type_names, ( *out )->toplist_type_names );

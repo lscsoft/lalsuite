@@ -66,7 +66,7 @@ typedef struct tagWeaveOutputParams {
   size_t nspins;
   /// If outputting per-detector quantities, list of detectors
   LALStringVector *per_detectors;
-  /// Number of per-segment items to output (may be zero)
+  /// Number of per-segment items being output (may be zero)
   UINT4 per_nsegments;
 } WeaveOutputParams;
 
