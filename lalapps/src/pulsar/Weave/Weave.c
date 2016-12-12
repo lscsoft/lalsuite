@@ -852,6 +852,7 @@ int main( int argc, char *argv[] )
   UINT4 ckpt_output_count = 0;
 
   // Total number of computed coherent results
+  UINT8 tot_coh_nfblk = 0;
   UINT8 tot_coh_ncomp = 0;
 
   // Semicoherent frequency block count and index
@@ -881,6 +882,7 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( ckpt_output_count > 0, XLAL_EIO, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
 
       // Read total number of computed coherent results
+      XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT8( file, "tcohfblk", &tot_coh_nfblk ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT8( file, "tcohcomp", &tot_coh_ncomp ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Read output results
@@ -987,7 +989,7 @@ int main( int argc, char *argv[] )
         // Retrieve coherent results for this segment
         const WeaveCohResults *coh_res = NULL;
         UINT4 coh_offset = 0;
-        XLAL_CHECK_MAIN( XLALWeaveCacheRetrieve( coh_cache[i], queries, i, &coh_res, &coh_offset, &tot_coh_ncomp, &per_seg_info[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALWeaveCacheRetrieve( coh_cache[i], queries, i, &coh_res, &coh_offset, &tot_coh_nfblk, &tot_coh_ncomp, &per_seg_info[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK_MAIN( coh_res != NULL, XLAL_EFUNC );
 
         // Add coherent results to partial semicoherent results
@@ -1033,6 +1035,7 @@ int main( int argc, char *argv[] )
         XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "ckptcnt", ckpt_output_count, "number of checkpoints" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
         // Write total number of computed coherent results
+        XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "tcohfblk", tot_coh_nfblk, "total number of computed coherent frequency blocks" ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "tcohcomp", tot_coh_ncomp, "total number of computed coherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
         // Write output results
@@ -1177,6 +1180,7 @@ int main( int argc, char *argv[] )
     }
 
     // Write total number of computed coherent results
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "tcohfblk", tot_coh_nfblk, "total number of computed coherent frequency blocks" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "tcohcomp", tot_coh_ncomp, "total number of computed coherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     if ( !uvar->shortcut_search ) {   // Unless main search loop is being shortcutted...

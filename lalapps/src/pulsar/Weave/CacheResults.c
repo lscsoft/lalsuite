@@ -587,6 +587,7 @@ int XLALWeaveCacheRetrieve(
   const UINT4 query_index,
   const WeaveCohResults **coh_res,
   UINT4 *coh_offset,
+  UINT8 *tot_coh_nfblk,
   UINT8 *tot_coh_ncomp,
   WeaveOutputMiscPerSegInfo *per_seg_info
   )
@@ -599,6 +600,7 @@ int XLALWeaveCacheRetrieve(
   XLAL_CHECK( query_index < queries->nqueries, XLAL_EINVAL );
   XLAL_CHECK( coh_res != NULL, XLAL_EFAULT );
   XLAL_CHECK( coh_offset != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tot_coh_nfblk != NULL, XLAL_EFAULT );
   XLAL_CHECK( tot_coh_ncomp != NULL, XLAL_EFAULT );
 
   // See if coherent results are already cached
@@ -628,6 +630,7 @@ int XLALWeaveCacheRetrieve(
     XLAL_CHECK( XLALWeaveCohResultsCompute( &item->coh_res, cache->coh_input, &queries->coh_phys[query_index], coh_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Increase the total number of computed results, including results that may have been recomputed
+    *tot_coh_nfblk += 1;
     *tot_coh_ncomp += coh_nfreqs;
 
     // Add new cache item to the index hash table
