@@ -178,9 +178,7 @@ class Bank(object):
         tmpbank.sort(key=lambda b: abs( getattr(b, self.nhood_param) - prop_nhd))
 
         # set parameters of match calculation that are optimized for this block
-        # NOTE: Here I didn't see the point of a large comparison, just compare
-        # to proposal.
-        df_end, f_max = get_neighborhood_df_fmax([proposal], self.flow)
+        df_end, f_max = get_neighborhood_df_fmax(tmpbank + [proposal], self.flow)
         if self.fhigh_max:
             f_max = min(f_max, self.fhigh_max)
         df_start = max(df_end, self.iterative_match_df_max)
