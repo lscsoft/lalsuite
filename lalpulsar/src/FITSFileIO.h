@@ -75,6 +75,16 @@ int XLALFITSFileWriteUVarCmdLine( FITSFile *file );
 /// @}
 
 ///
+/// \name Query FITS Header-Data Unit
+///
+/// These function perform various queries of the current FITS header-data unit (HDU):
+/// - XLALFITSHeaderQueryKeyExists() checks if the given key exists in the current HDU.
+///
+/// @{
+int XLALFITSHeaderQueryKeyExists( FITSFile *file, const CHAR *key, BOOLEAN *exists );
+/// @}
+
+///
 /// \name Write/Read Key-Value Pairs to/from FITS Header-Data Unit
 ///
 /// These functions write/read key-value pairs (\p key, \p value) to/from a FITS header-data unit (HDU).
