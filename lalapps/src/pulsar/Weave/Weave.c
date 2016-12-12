@@ -986,18 +986,17 @@ int main( int argc, char *argv[] )
       // Initialise partial semicoherent results
       XLAL_CHECK_MAIN( XLALWeaveSemiPartialsInit( &semi_parts, uvar->shortcut == SHORTCUT_COMPUTE, per_detectors, per_nsegments, &semi_phys, dfreq, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-      // Add coherent results from each segment
+      // Retrieve coherent results from each segment
+      const WeaveCohResults *XLAL_INIT_DECL( coh_res, [nsegments] );
+      UINT4 XLAL_INIT_DECL( coh_offset, [nsegments] );
       for ( size_t i = 0; i < nsegments; ++i ) {
+        XLAL_CHECK_MAIN( XLALWeaveCacheRetrieve( coh_cache[i], queries, i, &coh_res[i], &coh_offset[i], &tot_coh_nfblk, &tot_coh_ncomp, &per_seg_info[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( coh_res[i] != NULL, XLAL_EFUNC );
+      }
 
-        // Retrieve coherent results for this segment
-        const WeaveCohResults *coh_res = NULL;
-        UINT4 coh_offset = 0;
-        XLAL_CHECK_MAIN( XLALWeaveCacheRetrieve( coh_cache[i], queries, i, &coh_res, &coh_offset, &tot_coh_nfblk, &tot_coh_ncomp, &per_seg_info[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK_MAIN( coh_res != NULL, XLAL_EFUNC );
-
-        // Add coherent results to partial semicoherent results
-        XLAL_CHECK_MAIN( XLALWeaveSemiPartialsAdd( semi_parts, coh_res, coh_offset ) == XLAL_SUCCESS, XLAL_EFUNC );
-
+      // Add coherent results to partial semicoherent results
+      for ( size_t i = 0; i < nsegments; ++i ) {
+        XLAL_CHECK_MAIN( XLALWeaveSemiPartialsAdd( semi_parts, coh_res[i], coh_offset[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
 
       // Compute final semicoherent results
