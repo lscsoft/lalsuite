@@ -61,20 +61,28 @@ int fffree( void *, int * );
 
 #if defined(HAVE_LIBCFITSIO)
 
-// Call a CFITSIO function, or print error messages on failure
-#define CALL_FITS_VAL(errnum, function, ...) \
+// Convenience macros for CFITSIO error checking
+#define CHECK_FITS_VAL(errnum, function) \
   do { \
-    if (function(__VA_ARGS__, &status) != 0) { \
-      CHAR CALL_FITS_buf[FLEN_STATUS + FLEN_ERRMSG]; \
-      fits_get_errstatus(status, CALL_FITS_buf); \
-      XLAL_PRINT_ERROR("%s() failed: %s", #function, CALL_FITS_buf); \
-      while (fits_read_errmsg(CALL_FITS_buf) > 0) { \
-        XLAL_PRINT_ERROR("%s() error: %s", #function, CALL_FITS_buf); \
+    if (status != 0) { \
+      CHAR _check_fits_buf_[FLEN_STATUS + FLEN_ERRMSG]; \
+      fits_get_errstatus(status, _check_fits_buf_); \
+      XLAL_PRINT_ERROR("%s() failed: %s", #function, _check_fits_buf_); \
+      while (fits_read_errmsg(_check_fits_buf_) > 0) { \
+        XLAL_PRINT_ERROR("%s() error: %s", #function, _check_fits_buf_); \
       } \
-      XLAL_ERROR_FAIL(XLAL_EIO); \
+      XLAL_ERROR_FAIL(errnum); \
     } \
   } while(0)
-#define CALL_FITS(function, ...) CALL_FITS_VAL(XLAL_EIO, function, __VA_ARGS__)
+#define CHECK_FITS(function) \
+  CHECK_FITS_VAL(XLAL_EIO, function)
+#define CALL_FITS_VAL(errnum, function, ...) \
+  do { \
+    function(__VA_ARGS__, &status); \
+    CHECK_FITS_VAL(errnum, function); \
+  } while(0)
+#define CALL_FITS(function, ...) \
+  CALL_FITS_VAL(XLAL_EIO, function, __VA_ARGS__)
 
 // Internal representation of a FITS file opened for reading or writing
 struct tagFITSFile {
@@ -538,6 +546,41 @@ XLAL_FAIL:
   }
 
   XLALFree( cmd_line );
+  return XLAL_FAILURE;
+
+#endif // !defined(HAVE_LIBCFITSIO)
+}
+
+int XLALFITSHeaderQueryKeyExists( FITSFile UNUSED *file, const CHAR UNUSED *key, BOOLEAN UNUSED *exists )
+{
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
+  int UNUSED status = 0;
+
+  // Check input
+  XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK_FAIL( !file->write, XLAL_EINVAL, "FITS file is not open for reading" );
+  XLAL_CHECK_FAIL( key != NULL, XLAL_EFAULT );
+  XLAL_CHECK_FAIL( exists != NULL, XLAL_EFAULT );
+
+  // Checks if the given key exists in the current HDU
+  CHAR card[FLEN_CARD];
+  CALL_FITS( fits_read_record, file->ff, 0, card );
+  union { const CHAR *cc; CHAR *c; } bad_cast = { .cc = key };
+  CHAR* inclist[] = { bad_cast.c };
+  fits_find_nextkey( file->ff, inclist, XLAL_NUM_ELEM( inclist ), NULL, 0, card, &status );
+  if ( status == KEY_NO_EXIST ) {
+    *exists = 0;
+  } else {
+    CHECK_FITS( fits_find_nextkey );
+    *exists = 1;
+  }
+
+  return XLAL_SUCCESS;
+
+XLAL_FAIL:
   return XLAL_FAILURE;
 
 #endif // !defined(HAVE_LIBCFITSIO)
@@ -1298,10 +1341,7 @@ int XLALFITSHeaderWriteString( FITSFile UNUSED *file, const CHAR UNUSED *key, co
   XLAL_CHECK_FAIL( comment != NULL, XLAL_EFAULT );
 
   // Write string value to current header
-  union {
-    const CHAR *cc;
-    CHAR *c;
-  } bad_cast = { .cc = value };
+  union { const CHAR *cc; CHAR *c; } bad_cast = { .cc = value };
   CALL_FITS( fits_write_key_longstr, file->ff, keyword, bad_cast.c, comment );
 
   return XLAL_SUCCESS;
@@ -1373,10 +1413,7 @@ int XLALFITSHeaderWriteStringVector( FITSFile UNUSED *file, const CHAR UNUSED *k
 
   // Write string values to current header
   {
-    union {
-      const CHAR *cc;
-      CHAR *c;
-    } bad_casts[values->length];
+    union { const CHAR *cc; CHAR *c; } bad_casts[values->length];
     for ( size_t i = 0; i < values->length; ++i ) {
       bad_casts[i].cc = comment;
     }
@@ -1723,10 +1760,7 @@ static int UNUSED XLALFITSArrayWrite( FITSFile UNUSED *file, const size_t UNUSED
   for ( int i = 0; i < file->array.naxis; ++i ) {
     fpixel[i] = 1 + idx[i];
   }
-  union {
-    const void *cv;
-    CHAR *c;
-  } bad_cast = { .cv = elem };
+  union { const void *cv; CHAR *c; } bad_cast = { .cv = elem };
   CALL_FITS( fits_write_pix, file->ff, file->array.datatype, fpixel, 1, bad_cast.c );
 
   return XLAL_SUCCESS;
@@ -2501,10 +2535,7 @@ int XLALFITSTableWriteRow( FITSFile UNUSED *file, const void UNUSED *record )
 
   // Write next table row
   for ( int i = 0; i < file->table.tfields; ++i ) {
-    union {
-      const void *cv;
-      void *v;
-    } bad_cast = { .cv = record };
+    union { const void *cv; void *v; } bad_cast = { .cv = record };
     void *value = bad_cast.v;
     for ( size_t n = 0; n < file->table.noffsets[i]; ++n ) {
       if ( n > 0 ) {
