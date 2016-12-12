@@ -1,8 +1,10 @@
-lalinference (1.8.0.1-1) UNRELEASED; urgency=medium
+lalinference (1.8.1-1) unstable; urgency=low
 
-  * Back to development
+  * LALInference 1.8.1
+  * Explicitly set no-op Matplotlib backend
+  * Set matplotlib backend to no-op
 
- -- Leo Singer <leo@lalsuitedev>  Thu, 13 Oct 2016 20:03:52 -0400
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 09 Dec 2016 07:31:20 -0600
 
 lalinference (1.8.0-1) unstable; urgency=low
 
