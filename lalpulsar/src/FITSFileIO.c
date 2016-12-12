@@ -61,20 +61,28 @@ int fffree( void *, int * );
 
 #if defined(HAVE_LIBCFITSIO)
 
-// Call a CFITSIO function, or print error messages on failure
-#define CALL_FITS_VAL(errnum, function, ...) \
+// Convenience macros for CFITSIO error checking
+#define CHECK_FITS_VAL(errnum, function) \
   do { \
-    if (function(__VA_ARGS__, &status) != 0) { \
-      CHAR CALL_FITS_buf[FLEN_STATUS + FLEN_ERRMSG]; \
-      fits_get_errstatus(status, CALL_FITS_buf); \
-      XLAL_PRINT_ERROR("%s() failed: %s", #function, CALL_FITS_buf); \
-      while (fits_read_errmsg(CALL_FITS_buf) > 0) { \
-        XLAL_PRINT_ERROR("%s() error: %s", #function, CALL_FITS_buf); \
+    if (status != 0) { \
+      CHAR _check_fits_buf_[FLEN_STATUS + FLEN_ERRMSG]; \
+      fits_get_errstatus(status, _check_fits_buf_); \
+      XLAL_PRINT_ERROR("%s() failed: %s", #function, _check_fits_buf_); \
+      while (fits_read_errmsg(_check_fits_buf_) > 0) { \
+        XLAL_PRINT_ERROR("%s() error: %s", #function, _check_fits_buf_); \
       } \
-      XLAL_ERROR_FAIL(XLAL_EIO); \
+      XLAL_ERROR_FAIL(errnum); \
     } \
   } while(0)
-#define CALL_FITS(function, ...) CALL_FITS_VAL(XLAL_EIO, function, __VA_ARGS__)
+#define CHECK_FITS(function) \
+  CHECK_FITS_VAL(XLAL_EIO, function)
+#define CALL_FITS_VAL(errnum, function, ...) \
+  do { \
+    function(__VA_ARGS__, &status); \
+    CHECK_FITS_VAL(errnum, function); \
+  } while(0)
+#define CALL_FITS(function, ...) \
+  CALL_FITS_VAL(XLAL_EIO, function, __VA_ARGS__)
 
 // Internal representation of a FITS file opened for reading or writing
 struct tagFITSFile {
