@@ -1298,10 +1298,7 @@ int XLALFITSHeaderWriteString( FITSFile UNUSED *file, const CHAR UNUSED *key, co
   XLAL_CHECK_FAIL( comment != NULL, XLAL_EFAULT );
 
   // Write string value to current header
-  union {
-    const CHAR *cc;
-    CHAR *c;
-  } bad_cast = { .cc = value };
+  union { const CHAR *cc; CHAR *c; } bad_cast = { .cc = value };
   CALL_FITS( fits_write_key_longstr, file->ff, keyword, bad_cast.c, comment );
 
   return XLAL_SUCCESS;
@@ -1373,10 +1370,7 @@ int XLALFITSHeaderWriteStringVector( FITSFile UNUSED *file, const CHAR UNUSED *k
 
   // Write string values to current header
   {
-    union {
-      const CHAR *cc;
-      CHAR *c;
-    } bad_casts[values->length];
+    union { const CHAR *cc; CHAR *c; } bad_casts[values->length];
     for ( size_t i = 0; i < values->length; ++i ) {
       bad_casts[i].cc = comment;
     }
@@ -1723,10 +1717,7 @@ static int UNUSED XLALFITSArrayWrite( FITSFile UNUSED *file, const size_t UNUSED
   for ( int i = 0; i < file->array.naxis; ++i ) {
     fpixel[i] = 1 + idx[i];
   }
-  union {
-    const void *cv;
-    CHAR *c;
-  } bad_cast = { .cv = elem };
+  union { const void *cv; CHAR *c; } bad_cast = { .cv = elem };
   CALL_FITS( fits_write_pix, file->ff, file->array.datatype, fpixel, 1, bad_cast.c );
 
   return XLAL_SUCCESS;
@@ -2501,10 +2492,7 @@ int XLALFITSTableWriteRow( FITSFile UNUSED *file, const void UNUSED *record )
 
   // Write next table row
   for ( int i = 0; i < file->table.tfields; ++i ) {
-    union {
-      const void *cv;
-      void *v;
-    } bad_cast = { .cv = record };
+    union { const void *cv; void *v; } bad_cast = { .cv = record };
     void *value = bad_cast.v;
     for ( size_t n = 0; n < file->table.noffsets[i]; ++n ) {
       if ( n > 0 ) {

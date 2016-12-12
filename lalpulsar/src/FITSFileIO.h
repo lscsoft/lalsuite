@@ -75,7 +75,7 @@ int XLALFITSFileWriteUVarCmdLine( FITSFile *file );
 /// @}
 
 ///
-/// \name Write/Read Key-Value Pairs To/From FITS Header-Data Unit
+/// \name Write/Read Key-Value Pairs to/from FITS Header-Data Unit
 ///
 /// These functions write/read key-value pairs (\p key, \p value) to/from a FITS header-data unit (HDU).
 /// Scalar #BOOLEAN, #UINT2, #UINT4, #UINT8, #INT2, #INT4, #INT8, #REAL4, #REAL8, #COMPLEX8, and #COMPLEX16 values,
@@ -128,7 +128,7 @@ int XLALFITSHeaderReadGPSTime( FITSFile *file, const CHAR *key, LIGOTimeGPS *val
 /// @}
 
 ///
-/// \name Write/Read Array To/From FITS File
+/// \name Write/Read Array to/from FITS File
 ///
 /// These function write/read arbitrary-dimensional array to/from a FITS image extension data
 /// unit. A call to XLALFITSArrayOpenWrite() or XLALFITSArrayOpenRead() is required first to
@@ -168,7 +168,7 @@ int XLALFITSArrayReadGSLMatrix( FITSFile *file, const size_t idx[], gsl_matrix *
 /// @}
 
 ///
-/// \name Write/Read Table To/From FITS File
+/// \name Write/Read Table to/from FITS File
 ///
 /// These functions write/read arbitrary tables to/from a FITS binary table extension data unit.
 /// A call to XLALFITSTableOpenWrite() or XLALFITSTableOpenRead() is required first; the latter
