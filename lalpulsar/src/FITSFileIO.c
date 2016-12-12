@@ -551,6 +551,41 @@ XLAL_FAIL:
 #endif // !defined(HAVE_LIBCFITSIO)
 }
 
+int XLALFITSHeaderQueryKeyExists( FITSFile UNUSED *file, const CHAR UNUSED *key, BOOLEAN UNUSED *exists )
+{
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
+  int UNUSED status = 0;
+
+  // Check input
+  XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK_FAIL( !file->write, XLAL_EINVAL, "FITS file is not open for reading" );
+  XLAL_CHECK_FAIL( key != NULL, XLAL_EFAULT );
+  XLAL_CHECK_FAIL( exists != NULL, XLAL_EFAULT );
+
+  // Checks if the given key exists in the current HDU
+  CHAR card[FLEN_CARD];
+  CALL_FITS( fits_read_record, file->ff, 0, card );
+  union { const CHAR *cc; CHAR *c; } bad_cast = { .cc = key };
+  CHAR* inclist[] = { bad_cast.c };
+  fits_find_nextkey( file->ff, inclist, XLAL_NUM_ELEM( inclist ), NULL, 0, card, &status );
+  if ( status == KEY_NO_EXIST ) {
+    *exists = 0;
+  } else {
+    CHECK_FITS( fits_find_nextkey );
+    *exists = 1;
+  }
+
+  return XLAL_SUCCESS;
+
+XLAL_FAIL:
+  return XLAL_FAILURE;
+
+#endif // !defined(HAVE_LIBCFITSIO)
+}
+
 int XLALFITSHeaderWriteComment( FITSFile UNUSED *file, const CHAR UNUSED *format, ... )
 {
 #if !defined(HAVE_LIBCFITSIO)
