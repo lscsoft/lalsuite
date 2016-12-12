@@ -1136,8 +1136,6 @@ int main( int argc, char *argv[] )
     // Write number of times output results were restored from a checkpoint
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "numckpt", ckpt_output_count, "number of checkpoints" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Write peak memory usage
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "peakmem [MB]", XLALGetPeakHeapUsageMB(), "peak memory usage" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Write list of detectors
     XLAL_CHECK( XLALFITSHeaderWriteStringVector( file, "detect", setup.detectors, "setup detectors" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -1160,9 +1158,6 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, keyword, ps[psifreq][1], "maximum frequency range" ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
-    // Write approximate number of semicoherent templates
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT8( file, "semiappx", semi_nappx, "approximate number of semicoherent templates" ) == XLAL_SUCCESS, XLAL_EFUNC );
-
     // Write average number of semicoherent templates per each dimension
     {
       char keyword[32];
@@ -1182,6 +1177,12 @@ int main( int argc, char *argv[] )
     // Write total number of computed coherent results
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "tcohfblk", tot_coh_nfblk, "total number of computed coherent frequency blocks" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "tcohcomp", tot_coh_ncomp, "total number of computed coherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Write approximate number of semicoherent templates
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT8( file, "semiappx", semi_nappx, "approximate number of semicoherent templates" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Write peak memory usage
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "peakmem [MB]", XLALGetPeakHeapUsageMB(), "peak memory usage" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     if ( !uvar->shortcut_search ) {   // Unless main search loop is being shortcutted...
 
