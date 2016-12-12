@@ -919,6 +919,11 @@ int main( int argc, char *argv[] )
   const double wall_zero = wall_time();
   const double cpu_zero = cpu_time();
 
+  // Time taken during various sections of the main search loop
+  double cpu_timing_coh_res = 0;
+  double cpu_timing_semi_parts = 0;
+  double cpu_timing_semi_res = 0;
+
   // Time at which search was last checkpointed
   double wall_ckpt_output = wall_zero;
 
@@ -986,6 +991,10 @@ int main( int argc, char *argv[] )
       // Initialise partial semicoherent results
       XLAL_CHECK_MAIN( XLALWeaveSemiPartialsInit( &semi_parts, uvar->shortcut == SHORTCUT_COMPUTE, per_detectors, per_nsegments, &semi_phys, dfreq, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+      // Start timing
+      double cpu_timing_tic = cpu_time();
+      double cpu_timing_toc = 0;
+
       // Retrieve coherent results from each segment
       const WeaveCohResults *XLAL_INIT_DECL( coh_res, [nsegments] );
       UINT4 XLAL_INIT_DECL( coh_offset, [nsegments] );
@@ -994,13 +1003,28 @@ int main( int argc, char *argv[] )
         XLAL_CHECK_MAIN( coh_res[i] != NULL, XLAL_EFUNC );
       }
 
+      // Time computation of coherent results
+      cpu_timing_toc = cpu_time();
+      cpu_timing_coh_res += cpu_timing_toc - cpu_timing_tic;
+      cpu_timing_tic = cpu_timing_toc;
+
       // Add coherent results to partial semicoherent results
       for ( size_t i = 0; i < nsegments; ++i ) {
         XLAL_CHECK_MAIN( XLALWeaveSemiPartialsAdd( semi_parts, coh_res[i], coh_offset[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
 
+      // Time computation of partial semicoherent results
+      cpu_timing_toc = cpu_time();
+      cpu_timing_semi_parts += cpu_timing_toc - cpu_timing_tic;
+      cpu_timing_tic = cpu_timing_toc;
+
       // Compute final semicoherent results
       XLAL_CHECK_MAIN( XLALWeaveSemiResultsCompute( &semi_res, semi_parts ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      // Time computation of final semicoherent results
+      cpu_timing_toc = cpu_time();
+      cpu_timing_semi_res += cpu_timing_toc - cpu_timing_tic;
+      cpu_timing_tic = cpu_timing_toc;
 
       // Add semicoherent results to output
       XLAL_CHECK_MAIN( XLALWeaveOutputResultsAdd( out, semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -1124,6 +1148,9 @@ int main( int argc, char *argv[] )
     LogPrintfVerbatim( LOG_NORMAL, ", total %.1f sec, CPU %.1f%%, peak memory %.1fMB\n", wall_total, 100.0 * cpu_total / wall_total, XLALGetPeakHeapUsageMB() );
   }
 
+  // Elapsed time not accounted for by the various timed sections of the main search loop
+  const double cpu_timing_other = cpu_total - cpu_timing_coh_res - cpu_timing_semi_parts - cpu_timing_semi_res;
+
   ////////// Output search results //////////
 
   if ( search_complete ) {
@@ -1190,6 +1217,14 @@ int main( int argc, char *argv[] )
 
       // Write F-statistic method name
       XLAL_CHECK_MAIN( XLALFITSHeaderWriteString( file, "fmethod", Fstat_method_name, "name of F-statistic method" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      // Write timing information
+      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "wall total", wall_total, "total wall time" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "cpu total", cpu_total, "total CPU time" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "cpu cohres", cpu_timing_coh_res, "CPU time taken computing coherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "cpu semiparts", cpu_timing_semi_parts, "CPU time taken computing partial semicoherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "cpu semires", cpu_timing_semi_res, "CPU time taken computing final semicoherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "cpu other", cpu_timing_other, "CPU time unaccounted for" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Write search results
       XLAL_CHECK_MAIN( XLALWeaveOutputResultsWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
