@@ -596,7 +596,7 @@ XLALCalculateSphHamiltonianDeriv2Prec(
 				  const int idx2,	/**<< Derivative w.r.t. index 2 */
 				  const REAL8 values[],	/**<< Dynamical variables in spherical coordinates */
 				  SpinEOBParams * params,	/**<< Spin EOB Parameters */
-                                  INT4 use_optimized
+                                  INT4 use_optimized    /**<< use_optimized=1 -> use EXACT instead of finite difference derivatives... UNSUPPORTED AT MOMENT. */
 )
 {
 
@@ -692,7 +692,7 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 				   const REAL8 spin1[],	/**<< Initial spin vector 1 */
 				   const REAL8 spin2[],	/**<< Initial spin vector 2 */
 				   SpinEOBParams * params,	/**<< Spin EOB parameters */
-                                   INT4 use_optimized
+                                   INT4 use_optimized /**<< use_optimized=1 -> use EXACT instead of finite difference derivatives, where needed */
 )
 {
 

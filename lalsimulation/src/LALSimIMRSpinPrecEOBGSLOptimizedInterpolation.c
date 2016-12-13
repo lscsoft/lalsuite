@@ -3,11 +3,9 @@
 
 #include "LALSimIMRSpinAlignedEOBOptimizedInterpolatorGeneral.c"
 
-
-
 /*------------------------------------------------------------------------------------------
  *
- *          Prototypes of functions defined in this code.
+ *    Definitions of functions (only one in this file, so no prototypes needed).
  *
  *------------------------------------------------------------------------------------------
  */
@@ -17,17 +15,8 @@ static int SEOBNRv3OptimizedInterpolatorGeneral(
                 REAL8 deltat, /**<< Spacing between interpolated times */
                 UINT4 num_input_times, /**<< The number of input times */
                 REAL8Array ** yout, /**<< Interpolation output */
-                size_t dim /**<< Number of quantities interpolated (e.g. if yin = [<t>|<x>|<y>|<z>] then dim 3) */
-                );
-
-/*------------------------------------------------------------------------------------------
- *
- *          Defintions of functions.
- *
- *------------------------------------------------------------------------------------------
- */
-//static int SEOBNRv3OptimizedInterpolatorGeneral(REAL8 * yin, REAL8 tinit, REAL8 deltat, UINT4 num_input_times, REAL8Array ** yout, size_t dim)
-static int SEOBNRv3OptimizedInterpolatorGeneral(REAL8 * yin, REAL8 tinit, REAL8 deltat, UINT4 num_input_times, REAL8Array ** yout, size_t dim)
+                size_t dim /**<< Number of quantities interpolated (e.g. if yin = {t,x,y,z} then dim 3) */
+                )
 {
     int errnum = 0;
 
