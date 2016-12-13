@@ -492,7 +492,7 @@ static int SEOBNRv1ROMDoubleSpinCore(
 
   // Enforce allowed geometric frequency range
   if (fLow_geom < Mf_ROM_min)
-    XLAL_ERROR(XLAL_EDOM, "Starting frequency Mflow=%g is smaller than lowest frequency in ROM Mf=%g. Starting at lowest frequency in ROM.\n", fLow_geom, Mf_ROM_min);
+    XLAL_ERROR(XLAL_EDOM, "Starting frequency Mflow=%g is smaller than lowest frequency in ROM Mf=%g.\n", fLow_geom, Mf_ROM_min);
   if (fHigh_geom == 0)
     fHigh_geom = Mf_ROM_max;
   else if (fHigh_geom > Mf_ROM_max) {
@@ -637,7 +637,7 @@ static int SEOBNRv1ROMDoubleSpinCore(
     pdata[j] =      pcoef * htilde;
     cdata[j] = -I * ccoef * htilde;
   }
-  
+
   /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
 
   // Get SEOBNRv1 ringdown frequency for 22 mode
