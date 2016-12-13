@@ -912,13 +912,12 @@ XLALUserVarPrintHelp ( FILE *file )
           if ( print_section == section )
             {
 
-              /* Print section header */
+              /* Print section (and possibly subsection) headers */
               if ( print_section_header )
                 {
                   fprintf( f, "\n%s\n", section_headers[section] );
                   print_section_header = 0;
                 }
-
               if ( ptr->subsection != NULL && ( subsection == NULL || strcmp( ptr->subsection, subsection ) != 0 ) )
                 {
                   fprintf( f, "   %s\n", ptr->subsection );
