@@ -1809,7 +1809,7 @@ int XLALSimIMRSpinEOBWaveformAll(
 
     seobParams.alignedSpins = 0;
 
-    if ( (retLenHi == XLAL_FAILURE) )
+    if ( retLenHi == XLAL_FAILURE )
       {
         XLALDestroyREAL8Vector( sigmaKerr );
         XLALDestroyREAL8Vector( sigmaStar );
