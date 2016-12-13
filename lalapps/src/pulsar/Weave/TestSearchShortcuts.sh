@@ -28,7 +28,7 @@ echo
 
 echo "=== Perform interpolating search with all computations shortcut ==="
 set -x
-${builddir}/lalapps_Weave --shortcut-compute --output-file=WeaveOutShortComp.fits \
+${builddir}/lalapps_Weave --shortcut=compute --output-file=WeaveOutShortComp.fits \
     --toplists=all --toplist-limit=5000 --misc-info --setup-file=WeaveSetup.fits \
     --rand-seed=3456 --sft-timebase=1800 --sft-noise-psd=1,1 \
     --sft-timestamps-files=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt \
@@ -38,7 +38,7 @@ echo
 
 echo "=== Perform interpolating search with main search loop shortcut ==="
 set -x
-${builddir}/lalapps_Weave --shortcut-search --output-file=WeaveOutShortSearch.fits \
+${builddir}/lalapps_Weave --shortcut=search --output-file=WeaveOutShortSearch.fits \
     --toplists=all --toplist-limit=5000 --misc-info --setup-file=WeaveSetup.fits \
     --rand-seed=3456 --sft-timebase=1800 --sft-noise-psd=1,1 \
     --sft-timestamps-files=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt \

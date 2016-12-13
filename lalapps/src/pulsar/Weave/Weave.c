@@ -50,15 +50,19 @@ int main( int argc, char *argv[] )
   // Optional arguments to XLALCreateFstatInput(), used to initialise some user input variables
   FstatOptionalArgs Fstat_opt_args = FstatOptionalArgsDefaults;
 
+  // Enumeration and auxilliary parsing data for 'shortcut' option
+  enum { SHORTCUT_NONE, SHORTCUT_COMPUTE, SHORTCUT_SEARCH };
+  const UserChoices shortcut_choices = { { SHORTCUT_NONE, "none" }, { SHORTCUT_COMPUTE, "compute" }, { SHORTCUT_SEARCH, "search" } };
+
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, per_detector, per_segment, misc_info, shortcut_compute, shortcut_search;
+    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, per_detector, per_segment, misc_info;
     CHAR *setup_file, *sft_files, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
     UINT4 sky_patch_count, sky_patch_index, freq_partitions, Fstat_run_med_window, Fstat_Dterms, toplist_limit, rand_seed, cache_max_size, cache_gc_limit;
-    int lattice, Fstat_method, Fstat_SSB_precision, toplists;
+    int lattice, Fstat_method, Fstat_SSB_precision, toplists, shortcut;
   } uvar_struct = {
     .Fstat_Dterms = Fstat_opt_args.Dterms,
     .Fstat_SSB_precision = Fstat_opt_args.SSBprec,
@@ -69,6 +73,7 @@ int main( int argc, char *argv[] )
     .freq_partitions = 1,
     .interpolation = 1,
     .lattice = TILING_LATTICE_ANSTAR,
+    .shortcut = SHORTCUT_NONE,
     .toplist_limit = 1000,
     .toplists = WEAVE_TOPLIST_RANKED_MEAN2F,
   };
@@ -288,15 +293,11 @@ int main( int argc, char *argv[] )
     rand_seed, UINT4, 'e', DEVELOPER,
     "Random seed used to initialise random number generators. "
     );
-  XLALRegisterUvarMember(
-    shortcut_compute, BOOLEAN, 'X', DEVELOPER,
-    "Perform all setup and search actions, but shortcut all computations. "
-    "This option can be used to gain some information of the performance of the code, e.g. total memory usage. "
-    );
-  XLALRegisterUvarMember(
-    shortcut_search, BOOLEAN, 'Y', DEVELOPER,
-    "Perform all setup actions, but shortcut the main search loop. "
-    "This option can be used to gain some properties of the search parameter space, e.g. approximate template counts. "
+  XLALRegisterUvarAuxDataMember(
+    shortcut, UserEnum, &shortcut_choices, 'X', DEVELOPER,
+    "Shortcut various parts of the search, useful for debugging or informational purposes. Choices are:\n"
+    " - compute: Perform all setup and search actions, but shortcut all computations. This option can be used to gain some information of the performance of the code, e.g. total memory usage.\n"
+    " - search: Perform all setup actions, but shortcut the main search loop. This option can be used to gain some properties of the search parameter space, e.g. approximate template counts.\n"
     );
   XLALRegisterUvarMember(
     cache_max_size, UINT4, 0, DEVELOPER,
@@ -325,7 +326,7 @@ int main( int argc, char *argv[] )
   // - SFT input/generation and signal generation
   //
   XLALUserVarCheck( &should_exit,
-                    uvar->shortcut_search || UVAR_SET2( sft_files, sft_timebase ) == 1,
+                    uvar->shortcut == SHORTCUT_SEARCH || UVAR_SET2( sft_files, sft_timebase ) == 1,
                     "Exactly one of " UVAR_STR2OR( sft_files, sft_timebase ) " must be specified" );
   XLALUserVarCheck( &should_exit,
                     !UVAR_SET( sft_files ) || !UVAR_ALLSET3( sft_timebase, sft_timestamps_files, sft_noise_psd ),
@@ -389,8 +390,8 @@ int main( int argc, char *argv[] )
   // - Checkpointing
   //
   XLALUserVarCheck( &should_exit,
-                    !UVAR_ALLSET3( shortcut_search, ckpt_output_period, ckpt_output_exit ),
-                    UVAR_STR3AND( shortcut_search, ckpt_output_period, ckpt_output_exit ) " are mutually exclusive" );
+                    !UVAR_ALLSET2( ckpt_output_period, ckpt_output_exit ),
+                    UVAR_STR2AND( ckpt_output_period, ckpt_output_exit ) " are mutually exclusive" );
   XLALUserVarCheck( &should_exit,
                     !UVAR_SET( ckpt_output_period ) || uvar->ckpt_output_period > 0,
                     UVAR_STR( ckpt_output_period ) " must be strictly positive" );
@@ -400,9 +401,6 @@ int main( int argc, char *argv[] )
   //
   // - Esoterica
   //
-  XLALUserVarCheck( &should_exit,
-                    !UVAR_ALLSET2( shortcut_compute, shortcut_search ),
-                    UVAR_STR2AND( shortcut_compute, shortcut_search ) " are mutually exclusive" );
 
   // Exit if required
   if ( should_exit ) {
@@ -802,7 +800,7 @@ int main( int argc, char *argv[] )
     }
 
     // Create coherent input data for 'i'th segment
-    coh_input[i] = XLALWeaveCohInputCreate( uvar->shortcut_compute, Fstat_input, per_detectors );
+    coh_input[i] = XLALWeaveCohInputCreate( uvar->shortcut == SHORTCUT_COMPUTE, Fstat_input, per_detectors );
     XLAL_CHECK_MAIN( coh_input[i] != NULL, XLAL_EFUNC );
 
   }
@@ -906,10 +904,15 @@ int main( int argc, char *argv[] )
   }
 
   // Log if part of the search is being shortcutted
-  if ( uvar->shortcut_compute ) {
+  switch ( uvar->shortcut ) {
+  case SHORTCUT_COMPUTE:
     LogPrintf( LOG_NORMAL, "Shortcutting all computations, as requested\n" );
-  } else if ( uvar->shortcut_search ) {
+    break;
+  case SHORTCUT_SEARCH:
     LogPrintf( LOG_NORMAL, "Shortcutting the main search loop, as requested\n" );
+    break;
+  default:
+    break;
   }
 
   // Initial wall and CPU times
@@ -929,7 +932,7 @@ int main( int argc, char *argv[] )
 
   // Print initial progress in frequency blocks and partitions
   const UINT8 prog_count = uvar->freq_partitions * freq_block_count;
-  if ( !uvar->shortcut_search ) {
+  if ( uvar->shortcut != SHORTCUT_SEARCH ) {
     const UINT8 prog_index = partition_index * freq_block_count + freq_block_index;
     const double prog_per_cent = 100.0 * prog_index / prog_count;
     LogPrintf( LOG_NORMAL, "Starting main search loop at %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " frequency blocks (%.1f%%)", prog_index, prog_count, prog_per_cent );
@@ -940,7 +943,7 @@ int main( int argc, char *argv[] )
   }
 
   // Begin main search loop (unless it is being shortcutted)
-  BOOLEAN search_complete = uvar->shortcut_search;
+  BOOLEAN search_complete = ( uvar->shortcut == SHORTCUT_SEARCH );
   while ( !search_complete ) {
 
     // Get mid-point of the next semicoherent frequency block
@@ -981,7 +984,7 @@ int main( int argc, char *argv[] )
     if ( semi_nfreqs > 0 ) {
 
       // Initialise partial semicoherent results
-      XLAL_CHECK_MAIN( XLALWeaveSemiPartialsInit( &semi_parts, uvar->shortcut_compute, per_detectors, per_nsegments, &semi_phys, dfreq, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALWeaveSemiPartialsInit( &semi_parts, uvar->shortcut == SHORTCUT_COMPUTE, per_detectors, per_nsegments, &semi_phys, dfreq, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Add coherent results from each segment
       for ( size_t i = 0; i < nsegments; ++i ) {
@@ -1112,7 +1115,7 @@ int main( int argc, char *argv[] )
   const double cpu_total = cpu_time() - cpu_zero;
 
   // Print final progress in frequency blocks and partitions
-  if ( !uvar->shortcut_search ) {
+  if ( uvar->shortcut != SHORTCUT_SEARCH ) {
     const UINT8 prog_index = partition_index * freq_block_count + freq_block_index;
     const double prog_per_cent = 100.0 * prog_index / prog_count;
     LogPrintf( LOG_NORMAL, "Finished main search loop at %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " frequency blocks (%.1f%%)", prog_index, prog_count, prog_per_cent );
@@ -1184,7 +1187,7 @@ int main( int argc, char *argv[] )
     // Write peak memory usage
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "peakmem [MB]", XLALGetPeakHeapUsageMB(), "peak memory usage" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    if ( !uvar->shortcut_search ) {   // Unless main search loop is being shortcutted...
+    if ( uvar->shortcut != SHORTCUT_SEARCH ) {   // Unless main search loop is being shortcutted...
 
       // Write F-statistic method name
       XLAL_CHECK_MAIN( XLALFITSHeaderWriteString( file, "fmethod", Fstat_method_name, "name of F-statistic method" ) == XLAL_SUCCESS, XLAL_EFUNC );
