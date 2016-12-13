@@ -1489,3 +1489,44 @@ if __name__ == "__main__":
     m1_out, m2_out = m1m2(mc, eta)
     assert np.allclose(m1, m1_out)
     assert np.allclose(m2, m2_out)
+
+    # Try generating a few waveforms
+    m1 = np.logspace(0.0, 2.0, 10)
+    m2 = np.logspace(0.0, 2.0, 10)
+    s1z = np.linspace(-0.9, 0.9, 4)
+    s2z = np.linspace(-0.9, 0.9, 4)
+    approx = (lalsim.SpinTaylorT4, lalsim.IMRPhenomPv2)
+    plist = (m1, m2, s1z, s2z, approx)
+
+    import itertools, lal
+    params = ChooseWaveformParams()
+    params.tref = 1e9
+    for m1i, m2i, s1zi, s2zi, a in itertools.product(*plist):
+        params.m1, params.m2 = m1i * lal.MSUN_SI, m2i * lal.MSUN_SI
+        params.spin1z, params.spin2z = s1zi, s2zi
+        params.approx = a
+
+        params.fmin = 20.
+        #if a == lalsim.IMRPhenomPv2 and m1i/m2i >= 18.:
+        # Getting segfaults for both waveform families. IMRPhenomPv2 is
+        # calibrated up to this, and I'll cut STT4 conservatively because it's
+        # unlikely to be used for anything but BNS
+        if a == lalsim.SpinTaylorT4 and (max(m1i, m2i)/min(m2i, m1i) >= 10. or m1i + m2i > 50):
+            continue
+        if max(m1i, m2i)/min(m2i, m1i) >= 18. and a == lalsim.IMRPhenomPv2:
+            continue
+
+        params.deltaT = 1.0/16384
+        try:
+            hoft(params)
+        except RuntimeError:
+            print >>sys.stderr, "TD waveform generation failed for params\n" \
+                "masses: %e %e, spins: %e, %e, approx: %s" % (m1i, m2i, s1zi, s2zi, a)
+
+        params.deltaF = 1.0/8
+        params.fmax = 2048.
+        try:
+            hoff(params)
+        except RuntimeError:
+            print >>sys.stderr, "FD waveform generation failed for params\n" \
+                "masses: %e %e, spins: %e, %e, approx: %s" % (m1i, m2i, s1zi, s2zi, a)
