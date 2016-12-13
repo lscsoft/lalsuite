@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
   /* Open the input file */
   if (!fits_open_file(&infptr, argv[1], READONLY, &status)) {
     /* Create the output file */
-    if (!fits_create_file(&outfptr, argv[2], &status)) {
+    if (!fits_open_file(&outfptr, argv[2], READWRITE, &status)) {
       /* Copy every HDU until we get an error */
       while (!fits_movabs_hdu(infptr, ii++, NULL, &status)) {
         fits_copy_hdu(infptr, outfptr, 0, &status);
