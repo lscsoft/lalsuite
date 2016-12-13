@@ -80,8 +80,15 @@ pkginclude_HEADERS = \
 
 noinst_HEADERS = \
 	LALSimIMRSpinEOBHcapExactDerivativePrec_v3opt.c \
+	LALSimIMRSpinPrecEOBEulerAngles.c \
+	LALSimIMRSpinPrecEOBWfGen.c \
+	LALSimIMRSpinAlignedEOBOptimizedInterpolatorGeneral.c \
+	LALSimIMRSpinPrecEOBGSLOptimizedInterpolation.c \
+	LALSpinPrecHcapRvecDerivative_v3opt.c \
+	LALSimIMRSpinPrecEOBHcapExactDerivative.c \
 	LALSimIMRSpinEOBFactorizedWaveformPrec_v3opt.c \
 	LALSimIMRSpinEOBFactorizedFluxPrec_v3opt.c \
+	LALSimIMRCalculateSpinPrecEOBHCoeffs.c \
 	LALSimBlackHoleRingdownPrec.h \
 	LALSimFindAttachTime.h \
 	LALSimIMREOBFactorizedFlux.c \

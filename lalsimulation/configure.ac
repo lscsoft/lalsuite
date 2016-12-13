@@ -21,6 +21,7 @@ AC_CONFIG_FILES([ \
   src/LALSimulationVCSInfo.h \
   src/Makefile \
   src/mathematica_codes/Makefile \
+  src/mathematica_codes/SEOBNRv3_opt/Makefile \
   src/version.c \
   swig/Makefile \
   test/Makefile \
