@@ -208,8 +208,8 @@ int LackeyTidal2013SEOBNRv2ROMCore(
       "eta = %g is not in allowed range 5/36 < eta < 2/9 (5 < q < 2)!", eta);
   if (chi_BH > 0.5) XLAL_ERROR(XLAL_EDOM, "BH spin = %g > 0.5!", chi_BH);
   if (chi_BH < -0.5) XLAL_ERROR(XLAL_EDOM, "BH spin = %g < -0.5!", chi_BH);
-  if (Lambda > 4382) XLAL_ERROR(XLAL_EDOM,
-      "Dimensionless tidal deformability = %g > 4382!", Lambda);
+  if ((Lambda < 0) || (Lambda > 4382)) XLAL_ERROR(XLAL_EDOM,
+      "Dimensionless tidal deformability = %g is not in allowed range [0, 4382]!", Lambda);
 
   // Call the high-resolution SEOBNRv2 ROM that can go to very low total mass
   // We call either the FrequencySequence version or the regular LAL version depending on how we've been called.
