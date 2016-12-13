@@ -482,7 +482,7 @@ XLALUserVarReadCmdline ( BOOLEAN *should_exit, int argc, char *argv[], const LAL
         break;
       }
       if ( c == '?' || c == ':' ) {   // LALgetopt_long() returned an error
-        XLALUserVarPrintUsage( stderr );
+        XLAL_CHECK( XLALUserVarPrintUsage( stderr ) == XLAL_SUCCESS, XLAL_EFUNC );
         *should_exit = 1;
         return XLAL_SUCCESS;
       }
@@ -838,8 +838,9 @@ fprint_wrapped( FILE *file, int line_width, const char *prefix, char *text )
 int
 XLALUserVarPrintHelp ( FILE *file )
 {
+  int retn = XLAL_FAILURE;
 
-  XLAL_CHECK ( UVAR_vars.next != NULL, XLAL_EINVAL, "No UVAR memory allocated. Did you register any user-variables?" );
+  XLAL_CHECK_FAIL ( UVAR_vars.next != NULL, XLAL_EINVAL, "No UVAR memory allocated. Did you register any user-variables?" );
 
   /* Determine terminal line width, or set to zero otherwise */
   int line_width = 0;
@@ -876,7 +877,7 @@ XLALUserVarPrintHelp ( FILE *file )
   fprintf( f, "       %s [@<config-file>] [<options>...]\n", program_name );
   if ( lalUserVarHelpDescription != NULL ) {
     CHAR *description = XLALStringDuplicate( lalUserVarHelpDescription );
-    XLAL_CHECK ( description != NULL, XLAL_EFUNC );
+    XLAL_CHECK_FAIL ( description != NULL, XLAL_EFUNC );
     fprintf( f, "\nDESCRIPTION\n" );
     fprint_wrapped( f, line_width, "       ", description );
     XLALFree( description );
@@ -910,7 +911,7 @@ XLALUserVarPrintHelp ( FILE *file )
             default:
               break;
             }
-          XLAL_CHECK( print_section < XLAL_NUM_ELEM(section_headers), XLAL_EFAILED );
+          XLAL_CHECK_FAIL( print_section < XLAL_NUM_ELEM(section_headers), XLAL_EFAILED );
 
           if ( print_section == section )
             {
@@ -939,7 +940,7 @@ XLALUserVarPrintHelp ( FILE *file )
                   if ( ptr->cdata != NULL )
                     {
                       CHAR *format_help_str = UserVarTypeMap [ ptr->type ].format_help_cdata( ptr->cdata );
-                      XLAL_CHECK( format_help_str != NULL, XLAL_EFUNC );
+                      XLAL_CHECK_FAIL( format_help_str != NULL, XLAL_EFUNC );
                       fprintf( f, "%s", format_help_str );
                       XLALFree( format_help_str );
                     }
@@ -961,7 +962,7 @@ XLALUserVarPrintHelp ( FILE *file )
                   else
                     {
                       CHAR *valstr = ptr->cdata != NULL ? UserVarTypeMap [ ptr->type ].printer_cdata( ptr->cvar, ptr->cdata ) : UserVarTypeMap [ ptr->type ].printer( ptr->cvar );
-                      XLAL_CHECK( valstr != NULL, XLAL_EFUNC );
+                      XLAL_CHECK_FAIL( valstr != NULL, XLAL_EFUNC );
                       fprintf( f, " [default: %s]",  valstr );
                       XLALFree( valstr );
                     }
@@ -978,6 +979,9 @@ XLALUserVarPrintHelp ( FILE *file )
 
     }
 
+  retn = XLAL_SUCCESS;
+XLAL_FAIL:
+
   /* Close pipe to pager if used */
   fflush( f );
 #if defined(PAGER) && defined(HAVE_POPEN) && defined(HAVE_PCLOSE)
@@ -986,7 +990,7 @@ XLALUserVarPrintHelp ( FILE *file )
   }
 #endif
 
-  return XLAL_SUCCESS;
+  return retn;
 
 } // XLALUserVarPrintHelp()
 
@@ -1025,13 +1029,13 @@ XLALUserVarReadAllInput ( BOOLEAN *should_exit, int argc, char *argv[], const LA
       XLAL_CHECK( argv[i] != NULL, XLAL_EINVAL, "argc = %d, but argv[%d] == NULL!\n", argc, i );
       if ( strcmp( argv[i], "-h" ) == 0 )
         {
-          XLALUserVarPrintUsage( stdout );
+          XLAL_CHECK( XLALUserVarPrintUsage( stdout ) == XLAL_SUCCESS, XLAL_EFUNC );
           *should_exit = 1;
           return XLAL_SUCCESS;
         }
       else if ( strcmp( argv[i], "--help" ) == 0 || strcmp( argv[i], "-help" ) == 0 )
         {
-          XLALUserVarPrintHelp( stdout );
+          XLAL_CHECK( XLALUserVarPrintHelp( stdout ) == XLAL_SUCCESS, XLAL_EFUNC );
           *should_exit = 1;
           return XLAL_SUCCESS;
         }
@@ -1152,7 +1156,7 @@ XLALUserVarCheck( BOOLEAN *should_exit, const int assertion, const CHAR *fmt, ..
     va_end( ap );
     format_user_var_names( buf );
     fprintf( stderr, "\n%s: %s\n", program_name, buf );
-    XLALUserVarPrintUsage( stderr );
+    XLAL_CHECK_VOID( XLALUserVarPrintUsage( stderr ) == XLAL_SUCCESS, XLAL_EFUNC );
     fflush( stderr );
     *should_exit = 1;
   }
