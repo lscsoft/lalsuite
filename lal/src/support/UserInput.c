@@ -839,11 +839,12 @@ int
 XLALUserVarPrintHelp ( FILE *file )
 {
   int retn = XLAL_FAILURE;
+  FILE *f = file;
+  int line_width = 0;
 
   XLAL_CHECK_FAIL ( UVAR_vars.next != NULL, XLAL_EINVAL, "No UVAR memory allocated. Did you register any user-variables?" );
 
   /* Determine terminal line width, or set to zero otherwise */
-  int line_width = 0;
 #if defined(HAVE_ISATTY) && defined(HAVE_FILENO) && defined(HAVE_IOCTL)
 #if HAVE_DECL_TIOCGWINSZ && HAVE_STRUCT_WINSIZE_WS_COL
   if ( isatty( fileno( file ) ) ) {
@@ -855,7 +856,6 @@ XLALUserVarPrintHelp ( FILE *file )
 #endif
 
   /* Pipe output through pager if possible */
-  FILE *f = file;
 #if defined(PAGER) && defined(HAVE_POPEN) && defined(HAVE_PCLOSE)
   f = popen(PAGER, "w");
   if ( f == NULL ) {
