@@ -43,7 +43,11 @@ from ..plot import cmap
 # Set no-op Matplotlib backend to defer importing anything that requires a GUI
 # until we have determined that it is necessary based on the command line
 # arguments.
-matplotlib.use('Template')
+if 'matplotlib.pyplot' in sys.modules:
+    from matplotlib import pyplot as plt
+    plt.switch_backend('Template')
+else:
+    matplotlib.use('Template', warn=False, force=True)
 
 
 @contextlib.contextmanager
