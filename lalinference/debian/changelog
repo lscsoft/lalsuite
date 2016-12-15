@@ -1,3 +1,11 @@
+lalinference (1.8.2-1) unstable; urgency=low
+
+  * LALInference 1.8.2
+  * Be more emphatic about switching matplotlib backend
+  * Prevent trying to build python3 packages when unsupported
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 15 Dec 2016 07:33:35 -0600
+
 lalinference (1.8.1-1) unstable; urgency=low
 
   * LALInference 1.8.1
