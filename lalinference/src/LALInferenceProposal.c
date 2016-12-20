@@ -3796,8 +3796,11 @@ REAL8 LALInferenceComputeMaxAutoCorrLen(REAL8 *array, INT4 nPoints, INT4 nPar) {
                 }
             }
             ACL = cumACF;
-            if (ACL>maxACL)
-                maxACL=ACL;
+
+            if (ACL > maxACL)
+                maxACL = ACL;
+            else if (gsl_isnan(ACL))
+                return INFINITY; /* Short circuit: this parameter has indeterminate ACL */
 
             for (i=0; i<nPoints; i++)
                 array[i*nPar + par] += mean;
