@@ -30,7 +30,12 @@ NOISEPSDFILES = \
 	LIGO-T0900288-v3-NO_SRM.txt \
 	LIGO-T0900288-v3-NSNS_Opt.txt \
 	LIGO-T0900288-v3-ZERO_DET_high_P.txt \
-	LIGO-T0900288-v3-ZERO_DET_low_P.txt
+	LIGO-T0900288-v3-ZERO_DET_low_P.txt \
+        LIGO-T1600593-v1-KAGRA_Opening.txt \
+        LIGO-T1600593-v1-KAGRA_Early.txt \
+        LIGO-T1600593-v1-KAGRA_Mid.txt \
+        LIGO-T1600593-v1-KAGRA_Late.txt \
+        LIGO-T1600593-v1-KAGRA_Design.txt
 
 EOSDATAFILES = \
 	LALSimNeutronStarEOS_AP4.dat \

@@ -69,9 +69,11 @@ static LALUnit strainSquaredPerHertzUnit = { 0, { 0, 0, 1, 0, 0, 2, 0}, { 0, 0, 
 /* prefix for noise psd files provided by LIGO-T0900288 */
 #define T0900288 "LIGO-T0900288-v3-"
 
-/* prefix for noise psd files provided by LIGO-T0900288 */
+/* prefix for noise psd files provided by LIGO-P1200087 */
 #define P1200087 "LIGO-P1200087-v18-"
 
+/* prefix for noise psd files provided by LIGO-T1600593 */
+#define T1600593 "LIGO-T1600593-v1-"
 
 /**
  * @addtogroup LALSimNoisePSD_c
@@ -1387,6 +1389,78 @@ int XLALSimNoisePSDAdVBNSOptimizedSensitivityP1200087(
 {
 	return XLALSimNoisePSDFromFile(psd, flow,
 		P1200087 "AdV_BNS_OPTIMIZED.txt");
+}
+
+/** @} */
+
+/**
+ * @name Noise PSDs from LIGO-
+ * @{
+ */
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the KAGRA 2018 opening (earliest) scenario in LIGO-T1600593.
+ */
+int XLALSimNoisePSDKAGRAOpeningSensitivityT1600593(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		T1600593 "KAGRA_Opening.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the KAGRA 2019 early scenario in LIGO-T1600593.
+ */
+int XLALSimNoisePSDKAGRAEarlySensitivityT1600593(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		T1600593 "KAGRA_Early.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the KAGRA start-of-2020 mid scenario in LIGO-T1600593.
+ */
+int XLALSimNoisePSDKAGRAMidSensitivityT1600593(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		T1600593 "KAGRA_Mid.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the KAGRA end-of-2020 late scenario in LIGO-T1600593.
+ */
+int XLALSimNoisePSDKAGRALateSensitivityT1600593(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		T1600593 "KAGRA_Late.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the KAGRA design scenario in LIGO-T1600593.
+ */
+int XLALSimNoisePSDKAGRADesignSensitivityT1600593(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		T1600593 "KAGRA_Design.txt");
 }
 
 /** @} */
