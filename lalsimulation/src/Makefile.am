@@ -31,11 +31,11 @@ NOISEPSDFILES = \
 	LIGO-T0900288-v3-NSNS_Opt.txt \
 	LIGO-T0900288-v3-ZERO_DET_high_P.txt \
 	LIGO-T0900288-v3-ZERO_DET_low_P.txt \
-        LIGO-T1600593-v1-KAGRA_Opening.txt \
-        LIGO-T1600593-v1-KAGRA_Early.txt \
-        LIGO-T1600593-v1-KAGRA_Mid.txt \
-        LIGO-T1600593-v1-KAGRA_Late.txt \
-        LIGO-T1600593-v1-KAGRA_Design.txt
+	LIGO-T1600593-v1-KAGRA_Opening.txt \
+	LIGO-T1600593-v1-KAGRA_Early.txt \
+	LIGO-T1600593-v1-KAGRA_Mid.txt \
+	LIGO-T1600593-v1-KAGRA_Late.txt \
+	LIGO-T1600593-v1-KAGRA_Design.txt
 
 EOSDATAFILES = \
 	LALSimNeutronStarEOS_AP4.dat \
@@ -70,7 +70,7 @@ pkginclude_HEADERS = \
 	LALSimInspiralTestGRParams.h \
 	LALSimInspiralWaveformCache.h \
 	LALSimInspiralWaveformFlags.h \
-        LALSimInspiralWaveformParams.h \
+	LALSimInspiralWaveformParams.h \
 	LALSimNeutronStar.h \
 	LALSimNoise.h \
 	LALSimReadData.h \
@@ -168,7 +168,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimPhenSpinRingDown.c \
 	LALSimInspiralWaveformFlags.c \
 	LALSimInspiralTestGRParams.c \
-        LALSimInspiralWaveformParams.c \
+	LALSimInspiralWaveformParams.c \
 	LALSimInspiralPrecess.c \
 	LALSimInspiral.c \
 	LALSimInspiralPNMode.c \
