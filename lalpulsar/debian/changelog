@@ -1,8 +1,9 @@
-lalpulsar (1.15.0.1-1) UNRELEASED; urgency=medium
+lalpulsar (1.16.0-1) unstable; urgency=low
 
-  * Back to development
+  * LALPulsar 1.16.0
+  * O2 release
 
- -- Leo Singer <leo@lalsuitedev>  Thu, 13 Oct 2016 20:04:37 -0400
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 07 Feb 2017 10:14:31 -0600
 
 lalpulsar (1.15.0-1) unstable; urgency=low
 
