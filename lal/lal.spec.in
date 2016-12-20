@@ -14,6 +14,7 @@ Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: bc
 BuildRequires: fftw-devel
+BuildRequires: glue
 BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
 BuildRequires: less
