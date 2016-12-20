@@ -175,6 +175,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.9.0-1
+- O2 release
+
 * Thu Dec 15 2016 Adam Mercer <adam.mercer@ligo.org> 1.8.2-1
 - Be more emphatic about switching matplotlib backend
 - Prevent trying to build python3 packages when unsupported

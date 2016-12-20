@@ -1,3 +1,10 @@
+lalinference (1.9.0-1) unstable; urgency=low
+
+  * LALInference 1.9.0
+  * O2 release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 07 Feb 2017 10:28:08 -0600
+
 lalinference (1.8.2-1) unstable; urgency=low
 
   * LALInference 1.8.2
