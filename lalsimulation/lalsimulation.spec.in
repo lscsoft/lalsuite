@@ -84,7 +84,8 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
-%{_bindir}/lalsim*
+%{_bindir}/lalsim-*
+%{_bindir}/lalsimulation_version
 %{_datarootdir}/lalsimulation/LALSimNeutronStarEOS_*
 %{_datarootdir}/lalsimulation/LIGO-P1200087-v18*
 %{_datarootdir}/lalsimulation/LIGO-T0900288-v3*

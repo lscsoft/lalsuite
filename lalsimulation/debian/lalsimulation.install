@@ -1,4 +1,5 @@
-usr/bin/lalsim*
+usr/bin/lalsim-*
+usr/bin/lalsimulation_version
 etc/*
 usr/lib/*/*.so.*
 usr/share/lalsimulation/LALSimNeutronStarEOS_*
