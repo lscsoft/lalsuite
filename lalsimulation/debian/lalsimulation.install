@@ -5,4 +5,5 @@ usr/lib/*/*.so.*
 usr/share/lalsimulation/LALSimNeutronStarEOS_*
 usr/share/lalsimulation/LIGO-P1200087*
 usr/share/lalsimulation/LIGO-T0900288*
+usr/share/lalsimulation/LIGO-T1600593*
 usr/share/man/*
