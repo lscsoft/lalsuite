@@ -97,6 +97,7 @@ Requires: numpy >= 1.7
 Requires: python
 Requires: scipy
 Requires: python-six
+Requires: python-seaborn
 Requires: glue >= 1.49.1
 Requires: glue-common >= 1.49.1
 Requires: glue-segments >= 1.49.1
