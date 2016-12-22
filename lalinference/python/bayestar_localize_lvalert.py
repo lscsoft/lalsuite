@@ -138,7 +138,8 @@ for graceid in graceids:
                 distmean=distmean, diststd=diststd,
                 origin='LIGO/Virgo', nest=True)
             if not opts.dry_run:
-                gracedb.writeLog(graceid, "INFO:BAYESTAR:uploaded sky map",
+                gracedb.writeLog(
+                    graceid, "BAYESTAR rapid sky localization ready",
                     filename=fitspath, tagname=("sky_loc", "lvem"))
             else:
                 command.rename(fitspath, os.path.join('.', opts.output))
