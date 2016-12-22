@@ -79,7 +79,7 @@ Package: lalinference-python
 Section: python
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
-  python-scipy, python-six, python-h5py, python-shapely,
+  python-scipy, python-seaborn, python-six, python-h5py, python-shapely,
   python-pkg-resources,
   python-glue (>= 1.49.1~),
   python-glue-common (>= 1.49.1~),
