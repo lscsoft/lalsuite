@@ -259,6 +259,7 @@ SWIGINTERNINLINE gsl_complex_float gsl_complex_float_rect(float x, float y) {
 %header %{
 #include <lal/LALDatatypes.h>
 #include <lal/LALMalloc.h>
+#include <lal/LALString.h>
 #include <lal/XLALError.h>
 #include <lal/Date.h>
 %}
@@ -1526,6 +1527,13 @@ if (strides[I-1] == 0) {
     char *slstr = 0;
     size_t slsize = 0;
     int slalloc = 0;
+    /* Allow empty 'obj' to correspond to NULL string pointer */
+    if (swiglal_null_ptr(obj)) {
+      if (pstr) {
+        *pstr = NULL;
+      }
+      return SWIG_OK;
+    }
     /* Get pointer to scripting-language string 'slstr' and size 'slsize'. */
     /* The 'slalloc' argument indicates whether a new string was allocated. */
     int res = SWIG_AsCharPtrAndSize(obj, &slstr, &slsize, &slalloc);

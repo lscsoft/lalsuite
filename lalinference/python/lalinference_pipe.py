@@ -93,29 +93,69 @@ if cp.has_option('paths','roq_b_matrix_directory'):
   use_roq=True
   roq_paths=os.listdir(path)
   roq_params={}
+  roq_force_flow = None
+  gid=None
+  row=None
   def key(item): # to order the ROQ bases
     return float(item[1]['seglen'])
 
-  print "WARNING: Overwriting user choice of flow, srate, seglen,mc_min, mc_max and q-min"
+  if cp.has_option('lalinference','roq_force_flow'):
+     roq_force_flow = cp.getfloat('lalinference','roq_force_flow')
+     print "WARNING: Forcing the f_low to ", str(roq_force_flow), "Hz"
 
-  if opts.gid is not None: 
-  	mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, opts.gid)
-        roq_mass_freq_scale_factor = pipe_utils.get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp)
+  print "WARNING: Overwriting user choice of flow, srate, seglen, and (mc_min, mc_max and q-min) or (mass1_min, mass1_max, mass2_min, mass2_max)"
 
-	for mc_prior in mc_priors:
-		mc_priors[mc_prior] = array(mc_priors[mc_prior])*roq_mass_freq_scale_factor
-	# find mass bin containing the trigger
-	trigger_bin = None
-	for roq in roq_paths:
-		print 	
-		if mc_priors[roq][0] <= trigger_mchirp <= mc_priors[roq][1]:
-			trigger_bin = roq
-			break
-	roq_paths = [trigger_bin]
+  if opts.gid is not None:
+    gid=opts.gid
+  elif opts.injections is not None or cp.has_option('input','injection-file'):
+    print "Only 0-th event in the XML table will be considered while running with ROQ\n"
+    # Read event 0 from  Siminspiral Table
+    from pylal import SimInspiralUtils
+    if opts.injections is not None:
+      inxml=opts.injections
+    else:
+      inxml=cp.get('input','injection-file')
+    injTable=SimInspiralUtils.ReadSimInspiralFromFiles([inxml])
+    row=injTable[0]
   else:
-	mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, None)
-  	roq_mass_freq_scale_factor = 1
- 
+    gid=None
+    row=None
+
+  roq_bounds = pipe_utils.Query_ROQ_Bounds_Type(path, roq_paths)
+  if roq_bounds == 'chirp_mass_q':
+    print 'ROQ has bounds in chirp mass and mass-ratio'
+    mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=gid, sim_inspiral=row)
+  elif roq_bounds == 'component_mass':
+    print 'ROQ has bounds in component masses'
+    # get component mass bounds, then compute the chirp mass that can be safely covered
+    # further below we pass along the component mass bounds to the sampler, not the tighter chirp-mass, q bounds
+    m1_priors, m2_priors, trigger_mchirp = pipe_utils.get_roq_component_mass_priors(path, roq_paths, roq_params, key, gid=gid, sim_inspiral=row)
+    mc_priors = {}
+    for (roq,m1_prior), (roq2,m2_prior) in zip(m1_priors.items(), m2_priors.items()):
+      mc_priors[roq] = sorted([pipe_utils.mchirp_from_components(m1_prior[1], m2_prior[0]), pipe_utils.mchirp_from_components(m1_prior[0], m2_prior[1])])
+
+  if cp.has_option('lalinference','trigger_mchirp'):
+      trigger_mchirp=float(cp.get('lalinference','trigger_mchirp'))
+  roq_mass_freq_scale_factor = pipe_utils.get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp, roq_force_flow)
+  if roq_mass_freq_scale_factor != 1.:
+    print 'WARNING: Rescaling ROQ basis, please ensure it is allowed with the model used.'
+
+  if opts.gid is not None or (opts.injections is not None or cp.has_option('input','injection-file')):
+
+    for mc_prior in mc_priors:
+      mc_priors[mc_prior] = array(mc_priors[mc_prior])
+    # find mass bin containing the trigger
+    trigger_bin = None
+    for roq in roq_paths:
+      if mc_priors[roq][0]*roq_mass_freq_scale_factor <= trigger_mchirp <= mc_priors[roq][1]*roq_mass_freq_scale_factor:
+        trigger_bin = roq
+        print 'Prior in Mchirp will be ['+str(mc_priors[roq][0]*roq_mass_freq_scale_factor)+','+str(mc_priors[roq][1]*roq_mass_freq_scale_factor)+'] to contain the trigger Mchirp '+str(trigger_mchirp)
+        break
+    roq_paths = [trigger_bin]
+  else:
+    for mc_prior in mc_priors:
+      mc_priors[mc_prior] = array(mc_priors[mc_prior])*roq_mass_freq_scale_factor
+
 else:
   roq_paths=[None]
 
@@ -168,26 +208,44 @@ for sampler in samps:
         path=cp.get('paths','roq_b_matrix_directory')
         thispath=os.path.join(path,roq)
         cp.set('paths','roq_b_matrix_directory',thispath)
-        mc_min=mc_priors[roq][0]
-        mc_max=mc_priors[roq][1]
         flow=int(roq_params[roq]['flow'] / roq_mass_freq_scale_factor)
         srate=int(2.*roq_params[roq]['fhigh'] / roq_mass_freq_scale_factor)
 	if srate > 8192:
 		srate = 8192
-	
+
         seglen=int(roq_params[roq]['seglen'] * roq_mass_freq_scale_factor)
         # params.dat uses the convention q>1 so our q_min is the inverse of their qmax
-        q_min=1./float(roq_params[roq]['qmax'])
         cp.set('engine','srate',str(srate))
         cp.set('engine','seglen',str(seglen))
-        tmp=cp.get('lalinference','flow')
-        tmp=eval(tmp)
-        for i in tmp.keys():
+        if cp.has_option('lalinference','flow'):
+          tmp=cp.get('lalinference','flow')
+          tmp=eval(tmp)
+          ifos=tmp.keys()
+        else:
+          tmp={}
+          ifos=eval(cp.get('analysis','ifos'))
+        for i in ifos:
           tmp[i]=flow
         cp.set('lalinference','flow',str(tmp))
-        cp.set('engine','chirpmass-min',str(mc_min))
-        cp.set('engine','chirpmass-max',str(mc_max))
-        cp.set('engine','q-min',str(q_min))
+        if roq_bounds == 'chirp_mass_q':
+          mc_min=mc_priors[roq][0]*roq_mass_freq_scale_factor
+          mc_max=mc_priors[roq][1]*roq_mass_freq_scale_factor
+          # params.dat uses the convention q>1 so our q_min is the inverse of their qmax
+          q_min=1./float(roq_params[roq]['qmax'])
+          cp.set('engine','chirpmass-min',str(mc_min))
+          cp.set('engine','chirpmass-max',str(mc_max))
+          cp.set('engine','q-min',str(q_min))
+          cp.set('engine','comp-min', str(max(roq_params[roq]['compmin'] * roq_mass_freq_scale_factor, mc_min * pow(1+q_min, 1./5.) * pow(q_min, 2./5.))))
+          cp.set('engine','comp-max', str(mc_max * pow(1+q_min, 1./5.) * pow(q_min, -3./5.)))
+        elif roq_bounds == 'component_mass':
+          m1_min = m1_priors[roq][0]
+          m1_max = m1_priors[roq][1]
+          m2_min = m2_priors[roq][0]
+          m2_max = m2_priors[roq][1]
+          cp.set('engine','mass1-min',str(m1_min))
+          cp.set('engine','mass1-max',str(m1_max))
+          cp.set('engine','mass2-min',str(m2_min))
+          cp.set('engine','mass2-max',str(m2_max))
 
       if opts.run_path is not None:
         cp.set('paths','basedir',os.path.abspath(opts.run_path))

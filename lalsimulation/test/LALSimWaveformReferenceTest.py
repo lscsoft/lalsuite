@@ -86,12 +86,26 @@ def recalculate_waveform(conf):
     parDict['m1'] *= lal.MSUN_SI
     parDict['m2'] *= lal.MSUN_SI
     parDict['distance'] *= (1.e6 * lal.PC_SI)
-                                                                                                               
+
     params = [parDict[name] for name in names]
+    LALpars=lal.CreateDict()
+    try:
+        tmp=parDict['lambda1']
+    except:
+        tmp=0.
+    if (tmp):
+        lalsim.SimInspiralWaveformParamsInsertTidalLambda1(LALpars,parDict['lambda1'])
+    try:
+        tmp=parDict['lambda2']
+    except:
+        tmp=0.
+    if (tmp):
+        lalsim.SimInspiralWaveformParamsInsertTidalLambda2(LALpars,parDict['lambda2'])
+    params.append(LALpars)
     params.append(approx)
-                                                                                                               
+
     hp, hc = waveformgenerator(domain, params)
-    
+
     return [hpref, hcref, hp, hc]
 
 if options.plot:
@@ -242,11 +256,10 @@ class ReferenceFile:
         self.size = len(self.content)
         self.newapproxindex = [i for i in range(self.size)
                 if self.content[i] == NEW_DATA_STR]
-        defaultparams = {'waveformFlags': None, 'nonGRparams': None}
         # possibly add more above
         ConfigParser.RawConfigParser.optionxform = str
         # prevent ConfigParser to use lower case version of option
-        self.dataset = [ConfigParser.RawConfigParser(defaults = defaultparams)
+        self.dataset = [ConfigParser.RawConfigParser()
                 for i in range(len(self.newapproxindex))]
         self.newapproxindex.append(self.size)
         for i in range(len(self.newapproxindex) - 1):
@@ -256,24 +269,21 @@ class ReferenceFile:
 
 
 class CheckReferenceWaveforms(unittest.TestCase):
-    paramnames = {'TD': ['phiref', 'deltaT', 'm1', 'm2', 'spin1x', 'spin1y', 'spin1z',
-                         'spin2x', 'spin2y', 'spin2z', 'fmin', 'fref', 'distance', 'inclination',
-                         'lambda1', 'lambda2', 'waveformFlags', 'nonGRparams',
-                         'ampOrder', 'phaseOrder'],
-                  'FD': ['phiref', 'deltaF', 'm1', 'm2', 'spin1x', 'spin1y', 'spin1z',
-                         'spin2x', 'spin2y', 'spin2z', 'fmin', 'fmax', 'fref', 'distance',
-                         'inclination', 'lambda1', 'lambda2', 'waveformFlags',
-                         'nonGRparams', 'ampOrder', 'phaseOrder']}
+    paramnames = {'TD': ['m1', 'm2', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y', 'spin2z',
+                         'distance', 'inclination', 'phiref', 'longAscNodes', 'eccentricity', 'meanPerAno',
+                         'deltaT', 'f_min', 'f_ref'],
 
-    paramtype = {'phiref':float, 'deltaT':float, 'deltaF':float,
-                 'm1':float, 'm2':float,
+                  'FD': ['m1', 'm2', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y', 'spin2z',
+                         'distance', 'inclination', 'phiref', 'longAscNodes', 'eccentricity', 'meanPerAno',
+                         'deltaF', 'f_min', 'f_max', 'f_ref']}
+
+    paramtype = {'m1':float, 'm2':float,
                  'spin1x':float, 'spin1y':float, 'spin1z':float,
                  'spin2x':float, 'spin2y':float, 'spin2z':float,
-                 'fmin':float, 'fref':float, 'distance':float, 'fmax':float,
-                 'inclination':float, 'lambda1':float, 'lambda2':float,
-                 'waveformFlags':lambda x: x, 'nonGRparams':lambda x: x,
-                 'ampOrder':int, 'phaseOrder':int}
-    #TODO: introduce function that properly handles waveformFlags and nonGRparams
+                 'distance':float, 'inclination':float,
+                 'phiref':float, 'longAscNodes':float, 'eccentricity':float, 'meanPerAno':float,
+                 'deltaT':float, 'deltaF':float, 'f_min':float, 'f_ref':float, 'f_max':float,
+                 'lambda1':float, 'lambda2':float}
 
     def errmsg(self, obj, approxstr, par):
         return ('{1} fails consistency test of {0} for the following '

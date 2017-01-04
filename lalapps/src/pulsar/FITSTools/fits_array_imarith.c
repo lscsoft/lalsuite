@@ -47,7 +47,9 @@ int main(int argc, char *argv[])
   double *apix = 0, *bpix = 0, value = 0;
   int array2=1;
 
-  if (argc != 5) {
+  int printhelp = (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0));
+
+  if (printhelp || argc != 5) {
     fprintf(stderr, "Usage: %s array1 { array2 | value } oper outarray \n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "Perform 'array1 oper array2' or 'array1 oper value'\n");

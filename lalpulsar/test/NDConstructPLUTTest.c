@@ -147,11 +147,6 @@ do {                                                                 \
 } while (0)
 /******************************************************************/
 
-/* A global pointer for debugging. */
-#ifndef NDEBUG
-char *lalWatch;
-#endif
-
 /* the Hough Map derivative pixel type */
 typedef CHAR HoughDT;
 

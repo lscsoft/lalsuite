@@ -2,7 +2,7 @@ Source: lalsimulation
 Section: science
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
-Build-Depends: debhelper (>= 9), pkg-config, dh-python, python-all-dev, python3-all-dev,
+Build-Depends: debhelper (>= 9), help2man, pkg-config, dh-python, python-all-dev, python3-all-dev,
   zlib1g-dev, libgsl-dev | libgsl0-dev (>= 1.9), swig (>= 3.0.7), liboctave-dev,
   python-numpy, python3-numpy,
   lal-dev (>= @MIN_LAL_VERSION@~),

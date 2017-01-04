@@ -38,7 +38,7 @@ extern "C" {
 #include <lal/LALDetectors.h>
 #include <lal/LALDatatypes.h>
 #include <lal/DetectorStates.h>
-#include <lal/ComplexAM.h>
+#include <lal/LALComputeAM.h>
 
 /*---------- exported DEFINES ----------*/
 
@@ -64,6 +64,16 @@ typedef struct tagCmplxDetectorTensor
   SymmTensor3 im;	/**< tensor holding imaginary-parts of all components */
 } CmplxDetectorTensor;
 
+/**
+ * Convenience container for precomputed pi f L/c  and skyposition vector
+ */
+typedef struct tagFreqSkypos_t
+{
+  REAL4 Freq;		/**< signal frequency */
+  REAL8 skyposV[3];	/**< unit vector pointing to skyposition of source */
+  SymmTensor3 ePlus;	/**< ePlus polarization tensor (skypos-dependent) */
+  SymmTensor3 eCross;	/**< eCross polarization tensor (skypos-dependent) */
+} FreqSkypos_t;
 
 /*---------- exported Global variables ----------*/
 /* empty init-structs for the types defined in here */

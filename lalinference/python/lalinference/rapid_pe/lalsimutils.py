@@ -1480,11 +1480,8 @@ def get_intp_psd_series_from_xmldoc(fname, inst):
     return intp_psd_series(psd)
 
 def resample_psd_series(psd, df=None, fmin=None, fmax=None):
-    # handle pylal REAL8FrequencySeries
-    if isinstance(psd, pylal.xlal.datatypes.real8frequencyseries.REAL8FrequencySeries):
-        psd_fmin, psd_fmax, psd_df, data = psd.f0, psd.f0 + psd.deltaF*len(psd.data), psd.deltaF, psd.data
     # handle SWIG REAL8FrequencySeries
-    elif isinstance(psd, lal.REAL8FrequencySeries):
+    if isinstance(psd, lal.REAL8FrequencySeries):
         psd_fmin, psd_fmax, psd_df, data = psd.f0, psd.f0 + psd.deltaF*len(psd.data.data), psd.deltaF, psd.data.data
     # die horribly
     else:
@@ -1495,7 +1492,7 @@ def resample_psd_series(psd, df=None, fmin=None, fmax=None):
 
     f = np.arange(psd_fmin, psd_fmax, psd_df)
     ifunc = interpolate.interp1d(f, data, fill_value=float("inf"), bounds_error=False)
-    psd_intp = np.zeros(np.ceil((fmax - fmin) / df))
+    psd_intp = np.zeros(int(np.ceil((fmax - fmin) / df)))
     newf = np.arange(fmin, psd_fmax, df)
     psd_intp = ifunc(newf)
     psd_intp[psd_intp == 0.0] = float("inf")

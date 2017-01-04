@@ -35,7 +35,8 @@ BUILT_SOURCES += $(PACKAGE)rc
 sysconf_DATA += $(PACKAGE)rc
 MOSTLYCLEANFILES += $(PACKAGE)rc
 $(PACKAGE)rc: Makefile
-	$(AM_V_GEN)echo "echo '$@ is deprecated; source $(sysconfdir)/$(PACKAGE)-user-env.[c]sh instead'; expr \"X\$$0\" : '^X.*csh' >/dev/null && source $(sysconfdir)/$(PACKAGE)-user-env.csh >/dev/null || . $(sysconfdir)/$(PACKAGE)-user-env.sh >/dev/null" >$@
+	$(AM_V_GEN)echo "# source this file to access $(PACKAGE_NAME) from Bourne or C shells" >$@; \
+	echo "expr \"X\$$0\" : '^X.*csh' >/dev/null && source $(sysconfdir)/$(PACKAGE)-user-env.csh || . $(sysconfdir)/$(PACKAGE)-user-env.sh" >>$@
 
 if DOXYGEN
 

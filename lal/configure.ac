@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LAL],[6.16.1.1],[lal-discuss@ligo.org])
+AC_INIT([LAL],[6.17.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALConfig.h])
 AC_CONFIG_SRCDIR([src/std/LALStdio.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -34,6 +34,7 @@ AC_CONFIG_FILES([ \
   src/tools/Makefile \
   src/utilities/Makefile \
   src/vectorops/Makefile \
+  src/version.c \
   src/window/Makefile \
   swig/Makefile \
   test/Makefile \
@@ -42,6 +43,7 @@ AC_CONFIG_FILES([ \
   test/fft/Makefile \
   test/inject/Makefile \
   test/noisemodels/Makefile \
+  test/python/Makefile \
   test/stats/Makefile \
   test/std/Makefile \
   test/support/Makefile \
@@ -81,8 +83,8 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[12])
-AC_SUBST([LIBREVISION],[1])
+AC_SUBST([LIBCURRENT],[13])
+AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
@@ -100,9 +102,9 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT_SUPPORT],[9])
+AC_SUBST([LIBCURRENT_SUPPORT],[10])
 AC_SUBST([LIBREVISION_SUPPORT],[0])
-AC_SUBST([LIBAGE_SUPPORT],[0])
+AC_SUBST([LIBAGE_SUPPORT],[1])
 AC_SUBST([LIBVERSION_SUPPORT],[${LIBCURRENT_SUPPORT}:${LIBREVISION_SUPPORT}:${LIBAGE_SUPPORT}])
 
 LAL_ENABLE_INTELFFT
@@ -114,10 +116,12 @@ LALSUITE_WITH_NVCC_CFLAGS
 LALSUITE_ENABLE_BOINC
 LALSUITE_ENABLE_GCC_FLAGS
 
-LAL_ENABLE_DEBUG
+LAL_WITH_DEFAULT_DEBUG_LEVEL
 LAL_ENABLE_MACROS
 LAL_ENABLE_PTHREAD_LOCK
 LALSUITE_ENABLE_NIGHTLY
+
+LAL_ENABLE_DEBUG   ## option no longer supported, now just prints an error message
 
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG

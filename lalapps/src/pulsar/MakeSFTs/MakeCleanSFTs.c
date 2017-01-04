@@ -2832,10 +2832,9 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   }  
 
   /* make container to store the SFT data */
-  LALCreateSFTtype (&status, &oneSFT, ((UINT4)nBins));
-  TESTSTATUS( &status );
+  XLAL_CHECK_LAL( &status, ( oneSFT = XLALCreateSFT ( ((UINT4)nBins)) ) != NULL, XLAL_EFUNC );
   #if TRACKMEMUSE
-      printf("Memory use after creating oneSFT and calling LALCreateSFTtype in WriteVersion2SFT:\n"); printmemuse();
+      printf("Memory use after creating oneSFT and calling XLALCreateSFT in WriteVersion2SFT:\n"); printmemuse();
   #endif
   
   /* copy the data to oneSFT */
@@ -2897,18 +2896,16 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   }  
 
   /* write the SFT */
-  LALWriteSFT2file(&status, oneSFT, sftname, CLA.commentField);
-  TESTSTATUS( &status );
+  XLAL_CHECK_LAL( &status, XLALWriteSFT2file(oneSFT, sftname, CLA.commentField) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* 01/09/06 gam; sftname is temporary; move to sftnameFinal. */
   if(CLA.makeTmpFile) {  
     mvFilenames(sftname,sftnameFinal);
   }
 
-  LALDestroySFTtype (&status,&oneSFT);
-  TESTSTATUS( &status );
+  XLALDestroySFT (oneSFT);
   #if TRACKMEMUSE
-      printf("Memory use after destroying oneSFT and calling LALDestroySFTtype in WriteVersion2SFT:\n"); printmemuse();
+      printf("Memory use after destroying oneSFT and calling XLALDestroySFT in WriteVersion2SFT:\n"); printmemuse();
   #endif
 
   return 0;

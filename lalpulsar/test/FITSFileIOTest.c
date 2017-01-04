@@ -54,6 +54,7 @@ typedef struct {
   INT4 n;
   REAL4 v;
   CHAR desc[4];
+  UINT8 idx;
 } TestSubRecord;
 
 typedef struct {
@@ -69,23 +70,42 @@ typedef struct {
   REAL8 values[2];
   COMPLEX8 phasef;
   COMPLEX16 phase;
+  REAL4 *array;
   const TestSubRecord *sub;
 } TestRecord;
 
+REAL4 testarray[3][1824] = { { 0 }, { 0 }, { 0 } };
+
 const TestSubRecord testsub[3][2] = {
-  { { .n=0, .v=1.23, .desc="A1" }, { .n=1, .v=2.34, .desc="X9" } },
-  { { .n=0, .v=3.45, .desc="B3" }, { .n=1, .v=4.56, .desc="Y7" } },
-  { { .n=0, .v=5.67, .desc="C5" }, { .n=1, .v=6.78, .desc="Z5" } },
+  { { .n=0, .v=1.23, .desc="A1", .idx =  3 }, { .n=1, .v=2.34, .desc="X9", .idx = LAL_UINT8_MAX >> 0 } },
+  { { .n=0, .v=3.45, .desc="B3", .idx =  7 }, { .n=1, .v=4.56, .desc="Y7", .idx = LAL_UINT8_MAX >> 1 } },
+  { { .n=0, .v=5.67, .desc="C5", .idx = 11 }, { .n=1, .v=6.78, .desc="Z5", .idx = LAL_UINT8_MAX >> 5 } },
 };
 
 const TestRecord testtable[3] = {
-  { .index=3, .flag=1, .name="CasA", .epoch={123456789, 5}, .pos={.sky=5.4321, .freq=100.999, .fkdot={1e-9, 5e-20}}, .values={13.24, 43.234}, .phasef=crectf( 1.2, 3.4 ), .phase=crect( 4.5, 0.2 ), .sub=testsub[0] },
-  { .index=2, .flag=0, .name="Vela", .epoch={452456245, 9}, .pos={.sky=34.454, .freq=1345.34, .fkdot={2e-8, 6e-21}}, .values={14.35, 94.128}, .phasef=crectf( 3.6, 9.3 ), .phase=crect( 8.3, 4.0 ), .sub=testsub[1] },
-  { .index=1, .flag=1, .name="Crab", .epoch={467846774, 4}, .pos={.sky=64.244, .freq=15.6463, .fkdot={4e-6,     0}}, .values={153.4, 3.0900}, .phasef=crectf( 6.7, 4.4 ), .phase=crect( 5.6, 6.3 ), .sub=testsub[2] },
+  {
+    .index=3, .flag=1, .name="CasA", .epoch={123456789, 5}, .pos={.sky=5.4321, .freq=100.999, .fkdot={1e-9, 5e-20}}, .values={13.24, 43.234},
+    .phasef=crectf( 1.2, 3.4 ), .phase=crect( 4.5, 0.2 ), .array=testarray[0], .sub=testsub[0]
+  },
+  {
+    .index=2, .flag=0, .name="Vela", .epoch={452456245, 9}, .pos={.sky=34.454, .freq=1345.34, .fkdot={2e-8, 6e-21}}, .values={14.35, 94.128},
+    .phasef=crectf( 3.6, 9.3 ), .phase=crect( 8.3, 4.0 ), .array=testarray[1], .sub=testsub[1]
+  },
+  {
+    .index=1, .flag=1, .name="Crab", .epoch={467846774, 4}, .pos={.sky=64.244, .freq=15.6463, .fkdot={4e-6,     0}}, .values={153.4, 3.0900},
+    .phasef=crectf( 6.7, 4.4 ), .phase=crect( 5.6, 6.3 ), .array=testarray[2], .sub=testsub[2]
+  },
 };
 
 int main( int argc, char *argv[] )
 {
+
+  // Initialise test array data
+  for ( size_t i = 0; i < XLAL_NUM_ELEM( testarray ); ++i ) {
+    for ( size_t j = 0; j < XLAL_NUM_ELEM( testarray[0] ); ++j ) {
+      testarray[i][j] = LAL_PI*i - LAL_E*j;
+    }
+  }
 
   // Create a dummy user enviroment, for testing XLALFITSFileWriteUVarCmdLine()
   struct uvar_type { INT4 dummy; } uvar_struct = { .dummy = 0 };
@@ -107,7 +127,19 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteBOOLEAN( file, "testbool", 1, "This is a test BOOLEAN" ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: wrote a BOOLEAN\n" );
 
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT4( file, "testint [s]", 2345, "This is a test INT4" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT2( file, "testushrt", 1234, "This is a test UINT2" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    fprintf( stderr, "PASSED: wrote a UINT2\n" );
+
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "testuint [m]", 34567, "This is a test UINT4" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    fprintf( stderr, "PASSED: wrote a UINT4\n" );
+
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "testuint2", LAL_UINT8_MAX >> 1, "This is a test UINT8" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    fprintf( stderr, "PASSED: wrote a UINT8\n" );
+
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT2( file, "testshrt", -1234, "This is a test INT2" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    fprintf( stderr, "PASSED: wrote a INT2\n" );
+
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT4( file, "testint [s]", -2345, "This is a test INT4" ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: wrote a INT4\n" );
 
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT8( file, "testint2", LAL_INT4_MAX + 6789, "This is a test INT8" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -158,7 +190,17 @@ int main( int argc, char *argv[] )
     }
     fprintf( stderr, "PASSED: wrote a INT4 array\n" );
 
-    XLAL_CHECK_MAIN( XLALFITSArrayOpenWrite1( file, "array2", 14, "This is a test REAL4 array" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSArrayOpenWrite2( file, "array2", 2, 2, "This is a test UINT8 array" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    for ( size_t i = 0; i < 2; ++i ) {
+      for ( size_t j = 0; j < 2; ++j ) {
+        const size_t idx[] = { i, j };
+        const UINT8 value = LAL_UINT8_MAX >> ( 1 + i + j );
+        XLAL_CHECK_MAIN( XLALFITSArrayWriteUINT8( file, idx, value ) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
+    }
+    fprintf( stderr, "PASSED: wrote a UINT8 array\n" );
+
+    XLAL_CHECK_MAIN( XLALFITSArrayOpenWrite1( file, "array3", 14, "This is a test REAL4 array" ) == XLAL_SUCCESS, XLAL_EFUNC );
     for ( size_t i = 0; i < 14; ++i ) {
       const size_t idx[] = { i };
       const REAL4 value = 21 + 0.5*i;
@@ -175,7 +217,7 @@ int main( int argc, char *argv[] )
           gsl_matrix_set( elems, i, j, value );
         }
       }
-      XLAL_CHECK_MAIN( XLALFITSArrayOpenWrite2( file, "array3", m, n, "This is a test REAL8 array" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSArrayOpenWrite2( file, "array4", m, n, "This is a test REAL8 array" ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLALFITSArrayWriteGSLMatrix( file, NULL, elems ) == XLAL_SUCCESS, XLAL_EFUNC );
       GFMAT( elems );
     }
@@ -192,17 +234,20 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, pos.freq ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, pos.fkdot[0], "f1dot [Hz/s]" ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, pos.fkdot[1], "f2dot [Hz/s^2]" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, values ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY_NAMED( file, REAL8, values, "values [g]" ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX8, phasef ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX16, phase ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, XLAL_NUM_ELEM( testarray[0] ), array, "array [m]" ) == XLAL_SUCCESS, XLAL_EFUNC );
       {
-        XLAL_FITS_TABLE_COLUMN_PTR_BEGIN( sub, TestSubRecord, 2 );
-        XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 0, INT4, n, "n1" );
-        XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 0, REAL4, v, "v1" );
-        XLAL_FITS_TABLE_COLUMN_PTR_ADD_ARRAY_NAMED( file, 0, CHAR, desc, "desc1" );
-        XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 1, INT4, n, "n2" );
-        XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 1, REAL4, v, "v2" );
-        XLAL_FITS_TABLE_COLUMN_PTR_ADD_ARRAY_NAMED( file, 1, CHAR, desc, "desc2" );
+        XLAL_FITS_TABLE_COLUMN_PTR_STRUCT_BEGIN( sub, TestSubRecord, 2 );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, 0, INT4, n, "n1" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, 0, REAL4, v, "v1" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_ARRAY_NAMED( file, 0, CHAR, desc, "desc1" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, 0, UINT8, idx, "idx1" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, 1, INT4, n, "n2" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, 1, REAL4, v, "v2" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_ARRAY_NAMED( file, 1, CHAR, desc, "desc2" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, 1, UINT8, idx, "idx2" ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
     }
     for ( size_t i = 0; i < XLAL_NUM_ELEM( testtable ); ++i ) {
@@ -212,7 +257,7 @@ int main( int argc, char *argv[] )
 
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteComment( file, "%s", "This is another test comment" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "table1" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array2" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array4" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array1" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSFileWriteHistory( file, "%s\n%s", "This is a test history", longstring_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: HDU seeking in write mode\n" );
@@ -262,21 +307,26 @@ int main( int argc, char *argv[] )
         XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, values ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX8, phasef ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX16, phase ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY( file, REAL4, XLAL_NUM_ELEM( testarray[0] ), array ) == XLAL_SUCCESS, XLAL_EFUNC );
         {
-          XLAL_FITS_TABLE_COLUMN_PTR_BEGIN( sub, TestSubRecord, 2 );
+          XLAL_FITS_TABLE_COLUMN_PTR_STRUCT_BEGIN( sub, TestSubRecord, 2 );
           for ( size_t s = 0; s < 2; ++s ) {
             char col_name[32];
             snprintf( col_name, sizeof( col_name ), "n%zu", s + 1 );
-            XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, INT4, n, col_name );
+            XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, s, INT4, n, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
             snprintf( col_name, sizeof( col_name ), "v%zu", s + 1 );
-            XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, REAL4, v, col_name );
+            XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, s, REAL4, v, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
             snprintf( col_name, sizeof( col_name ), "desc%zu", s + 1 );
-            XLAL_FITS_TABLE_COLUMN_PTR_ADD_ARRAY_NAMED( file, s, CHAR, desc, col_name );
+            XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_ARRAY_NAMED( file, s, CHAR, desc, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+            snprintf( col_name, sizeof( col_name ), "idx%zu", s + 1 );
+            XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, s, UINT8, idx, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
           }
         }
       }
       TestRecord XLAL_INIT_DECL( record );
-      TestSubRecord XLAL_INIT_ARRAY_DECL( record_sub, 2 );
+      REAL4 XLAL_INIT_DECL( record_array, [XLAL_NUM_ELEM( testarray[0] )] );
+      record.array = record_array;
+      TestSubRecord XLAL_INIT_DECL( record_sub, [2] );
       record.sub = record_sub;
       size_t i = 0;
       while ( nrows > 0 ) {
@@ -296,10 +346,14 @@ int main( int argc, char *argv[] )
         }
         XLAL_CHECK_MAIN( record.phasef == testtable[i].phasef, XLAL_EFAILED );
         XLAL_CHECK_MAIN( record.phase == testtable[i].phase, XLAL_EFAILED );
+        for ( size_t j = 0; j < XLAL_NUM_ELEM( testarray[0] ); ++j ) {
+          XLAL_CHECK_MAIN( record.array[j] == testtable[i].array[j], XLAL_EFAILED );
+        }
         for ( size_t s = 0; s < 2; ++s ) {
           XLAL_CHECK_MAIN( record.sub[s].n == testtable[i].sub[s].n, XLAL_EFAILED );
           XLAL_CHECK_MAIN( record.sub[s].v == testtable[i].sub[s].v, XLAL_EFAILED );
           XLAL_CHECK_MAIN( strcmp( record.sub[s].desc, testtable[i].sub[s].desc ) == 0, XLAL_EFAILED );
+          XLAL_CHECK_MAIN( record.sub[s].idx == testtable[i].sub[s].idx, XLAL_EFAILED );
         }
         ++i;
       }
@@ -312,7 +366,7 @@ int main( int argc, char *argv[] )
 
     {
       size_t m = 0, n = 0;
-      XLAL_CHECK_MAIN( XLALFITSArrayOpenRead2( file, "array3", &m, &n ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSArrayOpenRead2( file, "array4", &m, &n ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( m == 2, XLAL_EFAILED );
       XLAL_CHECK_MAIN( n == 3, XLAL_EFAILED );
       gsl_matrix *elems = NULL;
@@ -330,7 +384,7 @@ int main( int argc, char *argv[] )
 
     {
       size_t dim = 0;
-      XLAL_CHECK_MAIN( XLALFITSArrayOpenRead1( file, "array2", &dim ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSArrayOpenRead1( file, "array3", &dim ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( dim == 14, XLAL_EFAILED );
       for ( size_t i = 0; i < dim; ++i ) {
         const size_t idx[] = { i };
@@ -341,6 +395,23 @@ int main( int argc, char *argv[] )
       }
     }
     fprintf( stderr, "PASSED: read and verified a REAL4 array\n" );
+
+    {
+      size_t dim_i = 0, dim_j = 0;
+      XLAL_CHECK_MAIN( XLALFITSArrayOpenRead2( file, "array2", &dim_i, &dim_j ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( dim_i == 2, XLAL_EFAILED );
+      XLAL_CHECK_MAIN( dim_j == 2, XLAL_EFAILED );
+      for ( size_t i = 0; i < dim_i; ++i ) {
+        for ( size_t j = 0; j < dim_j; ++j ) {
+          const size_t idx[] = { i, j };
+          const UINT8 value_ref = LAL_UINT8_MAX >> ( 1 + i + j );
+          UINT8 value = 0;
+          XLAL_CHECK_MAIN( XLALFITSArrayReadUINT8( file, idx, &value ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK_MAIN( value == value_ref, XLAL_EFAILED, "value[%zu,%zu] = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT, i, j, value, value_ref );
+        }
+      }
+    }
+    fprintf( stderr, "PASSED: read and verified a UINT8 array\n" );
 
     {
       size_t ndim, dims[FFIO_MAX];
@@ -372,7 +443,45 @@ int main( int argc, char *argv[] )
     fprintf( stderr, "PASSED: read and verified a BOOLEAN\n" );
 
     {
-      const INT4 testint_ref = 2345;
+      const UINT2 testushrt_ref = 1234;
+      UINT2 testushrt;
+      XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT2( file, "testushrt", &testushrt ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( testushrt == testushrt_ref, XLAL_EFAILED, "testushrt = %i != %i", testushrt, testushrt_ref );
+    }
+    fprintf( stderr, "PASSED: read and verified a UINT2\n" );
+
+    {
+      const UINT4 testuint_ref = 34567;
+      UINT4 testuint;
+      XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT4( file, "testuint", &testuint ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( testuint == testuint_ref, XLAL_EFAILED, "testuint = %i != %i", testuint, testuint_ref );
+    }
+    fprintf( stderr, "PASSED: read and verified a UINT4\n" );
+
+    {
+      UINT4 testuint2_too_small;
+      int errnum = 0;
+      XLAL_TRY_SILENT( XLALFITSHeaderReadUINT4( file, "testuint2", &testuint2_too_small ), errnum );
+      XLAL_CHECK_MAIN( errnum = XLAL_ERANGE, XLAL_EFAILED );
+    }
+    {
+      const UINT8 testuint2_ref = LAL_UINT8_MAX >> 1;
+      UINT8 testuint2;
+      XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT8( file, "testuint2", &testuint2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( testuint2 == testuint2_ref, XLAL_EFAILED, "testuint = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT, testuint2, testuint2_ref );
+    }
+    fprintf( stderr, "PASSED: read and verified a UINT8\n" );
+
+    {
+      const INT2 testshrt_ref = -1234;
+      INT2 testshrt;
+      XLAL_CHECK_MAIN( XLALFITSHeaderReadINT2( file, "testshrt", &testshrt ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( testshrt == testshrt_ref, XLAL_EFAILED, "testshrt = %i != %i", testshrt, testshrt_ref );
+    }
+    fprintf( stderr, "PASSED: read and verified a INT2\n" );
+
+    {
+      const INT4 testint_ref = -2345;
       INT4 testint;
       XLAL_CHECK_MAIN( XLALFITSHeaderReadINT4( file, "testint", &testint ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( testint == testint_ref, XLAL_EFAILED, "testint = %i != %i", testint, testint_ref );
@@ -431,7 +540,7 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( err < err_tol, XLAL_EFAILED, "|testdblcmp - testdblcmp_ref| = |(%0.*g,%0.*g) - (%0.*g,%0.*g)| = %0.*g >= %0.*g",
                        DBL_DIG, creal( testdblcmp ), DBL_DIG, cimag( testdblcmp ), DBL_DIG, creal( testdblcmp_ref ), DBL_DIG, cimag( testdblcmp_ref ), DBL_DIG, err, DBL_DIG, err_tol );
     }
-    fprintf( stderr, "PASSED: read and verified a COMPLEX16\n" );
+   fprintf( stderr, "PASSED: read and verified a COMPLEX16\n" );
 
     {
       const CHAR *teststr_ref = "This is a short string";
@@ -470,7 +579,7 @@ int main( int argc, char *argv[] )
     fprintf( stderr, "PASSED: read and verified a GPS time\n" );
 
     XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "table1" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array2" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array3" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array1" ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: HDU seeking in read mode\n" );
 

@@ -160,10 +160,16 @@ def rcg_to_rocFig(c, g, color='b', label=None, figax=None):
     eff = np.array(g, dtype="float")/n_g
 
     if color:
-        ax.step(fap, eff, color=color, where='post', label=label) ### plot steps after increase in eff
+        if label:
+            ax.step(fap, eff, color=color, where='post', label=label) ### plot steps after increase in eff
+        else:
+            ax.step(fap, eff, color=color, where='post') ### plot steps after increase in eff
         ax.plot(fap, eff, markersize=2, marker='o', markerfacecolor=color, markeredgecolor=color, linestyle='none') ### plot steps after increase in eff
     else:
-        ax.step(fap, eff, where='post', label=label) ### plot steps after increase in eff
+        if label:
+            ax.step(fap, eff, where='post', label=label) ### plot steps after increase in eff
+        else:
+            ax.step(fap, eff, where='post') ### plot steps after increase in eff
         ax.plot(fap, eff, markersize=2, marker='o', markerfacecolor=color, markeredgecolor=color, linestyle='none') ### plot steps after increase in eff
 
     ### plot error bars at sample points
@@ -211,9 +217,15 @@ def stacked_hist(r, s, color='b', linestyle='solid', histtype='step', label=None
     bins = np.linspace(bmin, bmax, nbins+1)
 
     if color:
-        n, b, p = axh.hist( r, bins, weights=s, color=color, label=label , linestyle=linestyle, histtype=histtype)
+        if label:
+            n, b, p = axh.hist( r, bins, weights=s, color=color, label=label, linestyle=linestyle, histtype=histtype)
+        else:
+            n, b, p = axh.hist( r, bins, weights=s, color=color, linestyle=linestyle, histtype=histtype)
     else:
-        n, b, p = axh.hist( r, bins, weights=s, label=label , linestyle=linestyle, histtype=histtype)
+        if label:
+            n, b, p = axh.hist( r, bins, weights=s, label=label, linestyle=linestyle, histtype=histtype)
+        else:
+            n, b, p = axh.hist( r, bins, weights=s, linestyle=linestyle, histtype=histtype)
 
     nsamples = 501
     rsamples = np.linspace(min(r), max(1, max(r)), nsamples)
@@ -222,9 +234,15 @@ def stacked_hist(r, s, color='b', linestyle='solid', histtype='step', label=None
         cum[rsamples>=_r] += _s
     cum = cum[-1] - cum ### switch so it is cumulative starting at the right
     if color:
-        axc.plot( rsamples, cum, color=color, label=label , linestyle=linestyle )
+        if label:
+            axc.plot( rsamples, cum, color=color, label=label, linestyle=linestyle )
+        else:
+            axc.plot( rsamples, cum, color=color, linestyle=linestyle )
     else:
-        axc.plot( rsamples, cum, label=label , linestyle=linestyle )
+        if label:
+            axc.plot( rsamples, cum, label=label , linestyle=linestyle )
+        else:
+            axc.plot( rsamples, cum, label=label , linestyle=linestyle )
 
     axh.grid(True, which="both")
     axc.grid(True, which="both")
@@ -249,10 +267,16 @@ def stacked_kde(r, s, color='b', linestyle='solid', label=None, figax=None):
     else:
         fig, axh, axc = figax
 
-    axh.plot( r, s, color=color, linestyle=linestyle, label=label)
+    if label:
+        axh.plot( r, s, color=color, linestyle=linestyle, label=label)
+    else:
+        axh.plot( r, s, color=color, linestyle=linestyle)
 
     c = idq.kde_to_ckde( s )
-    axc.plot( r, c, color=color, linestyle=linestyle, label=label)
+    if label:
+        axc.plot( r, c, color=color, linestyle=linestyle, label=label)
+    else:
+        axc.plot( r, c, color=color, linestyle=linestyle)
 
     axh.grid(True, which="both")
     axc.grid(True, which="both")
@@ -286,13 +310,19 @@ def stacked_L(r, c, g, color='b', linestyle='solid', label=None, figax=None):
         fig, axh, axc = figax
 
     truth = c > 0
-    axh.plot( r[truth], g[truth]/c[truth], color=color, linestyle=linestyle, label=label)
+    if label:
+        axh.plot( r[truth], g[truth]/c[truth], color=color, linestyle=linestyle, label=label)
+    else:
+        axh.plot( r[truth], g[truth]/c[truth], color=color, linestyle=linestyle)
 
     G = idq.kde_to_ckde( g )
     C = idq.kde_to_ckde( c )
 
     Truth = C > 0
-    axc.plot( r[Truth], G[Truth]/C[Truth], color=color, linestyle=linestyle, label=label)
+    if label:
+        axc.plot( r[Truth], G[Truth]/C[Truth], color=color, linestyle=linestyle, label=label)
+    else:
+        axc.plot( r[Truth], G[Truth]/C[Truth], color=color, linestyle=linestyle)
 
     axh.grid(True, which='both')
     axc.grid(True, which='both')
@@ -327,7 +357,10 @@ def stacked_params_hist( samples, figax=None, nperbin=10 , labels=None , xlabel=
     nbins = int(max( 5, min([len(s)/nperbin for s in samples])))
     bins = np.linspace(np.min(samples), np.max(samples), nbins+1)
 
-    ax.hist(samples, bins=bins, histtype='step', stacked=True, label=labels)
+    if labels:
+        ax.hist(samples, bins=bins, histtype='step', stacked=True, label=labels)
+    else:
+        ax.hist(samples, bins=bins, histtype='step', stacked=True)
 
     ax.grid(True, which="both")
 
@@ -362,9 +395,11 @@ def bitword( samples, classifiers, figax=None, label=None):
     bins = np.arange(2**len(classifiers))+0.5
     values = gps.values()
     if values: 
-#        ax.hist( values, bins, histtype='step', label=label )
         N = len(values)
-        ax.hist( values, bins, weights=np.ones(N, dtype=float)/N, histtype="step", label=label )
+        if label:
+            ax.hist( values, bins, weights=np.ones(N, dtype=float)/N, histtype="step", label=label)
+        else:
+            ax.hist( values, bins, weights=np.ones(N, dtype=float)/N, histtype="step")
 
 #    ax.set_ylabel('count')
     ax.set_ylabel('fraction of identified events')
@@ -386,9 +421,15 @@ def calibration_scatter( deadtimes, statedFAPs, color='b', label=None, marker='o
         fig, ax = figax
 
     if color:
-        ax.plot( statedFAPs, deadtimes, label=label, linestyle='none', marker=marker, markeredgecolor=color, markerfacecolor='none' ) 
+        if label:
+            ax.plot( statedFAPs, deadtimes, label=label, linestyle='none', marker=marker, markeredgecolor=color, markerfacecolor='none' ) 
+        else:
+            ax.plot( statedFAPs, deadtimes, linestyle='none', marker=marker, markeredgecolor=color, markerfacecolor='none' ) 
     else:
-        ax.plot( statedFAPs, deadtimes, label=label, linestyle='none', marker=marker, markerfacecolor='none' ) 
+        if label:
+            ax.plot( statedFAPs, deadtimes, label=label, linestyle='none', marker=marker, markerfacecolor='none' ) 
+        else:
+            ax.plot( statedFAPs, deadtimes, linestyle='none', marker=marker, markerfacecolor='none' ) 
 
     ax.set_xlabel( 'stated False Alarm Probability' )
     ax.set_ylabel( 'observed deadtime' )
@@ -423,14 +464,20 @@ def rates( ranges, values, color='b', label=None, figax=None, linestyle='solid')
 
     for v, (s, e) in zip(values, ranges):
         if color:
-            ax.plot((s-S, e-S), [v]*2, color=color, label=None, linestyle=linestyle, alpha=0.25)
+            ax.plot((s-S, e-S), [v]*2, color=color, linestyle=linestyle, alpha=0.25)
         else:
-            ax.plot((s-S, e-S), [v]*2, label=None, linestyle=linestyle, alpha=0.25)
+            ax.plot((s-S, e-S), [v]*2, linestyle=linestyle, alpha=0.25)
 
     if color:
-         ax.plot( [0.5*(s+e)-S for s, e in ranges], values, color=color, label=label, linestyle=linestyle, marker='o', markerfacecolor=color, markeredgecolor=color, markersize=4)
+         if label:
+             ax.plot( [0.5*(s+e)-S for s, e in ranges], values, color=color, label=label, linestyle=linestyle, marker='o', markerfacecolor=color, markeredgecolor=color, markersize=4)
+         else:
+             ax.plot( [0.5*(s+e)-S for s, e in ranges], values, color=color, linestyle=linestyle, marker='o', markerfacecolor=color, markeredgecolor=color, markersize=4)
     else:
-         ax.plot( [0.5*(s+e)-S for s, e in ranges], values, label=label, linestyle=linestyle, marker='o', markersize=4)
+         if label:
+             ax.plot( [0.5*(s+e)-S for s, e in ranges], values, label=label, linestyle=linestyle, marker='o', markersize=4)
+         else:
+             ax.plot( [0.5*(s+e)-S for s, e in ranges], values, linestyle=linestyle, marker='o', markersize=4)
 
     ax.grid(True, which="both")
 

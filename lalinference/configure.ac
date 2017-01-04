@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALInference],[1.7.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALInference],[1.8.2.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALInferenceConfig.h])
 AC_CONFIG_SRCDIR([src/LALInference.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -27,6 +27,7 @@ AC_CONFIG_FILES([ \
   src/LALInferenceVCSInfo.c \
   src/LALInferenceVCSInfo.h \
   src/Makefile \
+  src/version.c \
   swig/Makefile \
   test/Makefile \
 ])
@@ -42,14 +43,14 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="6.16.1"
-MIN_LALMETAIO_VERSION="1.2.8"
-MIN_LALFRAME_VERSION="1.4.1"
-MIN_LALSIMULATION_VERSION="1.6.0"
-MIN_LALINSPIRAL_VERSION="1.7.5"
-MIN_LALPULSAR_VERSION="1.14.0"
-MIN_LALBURST_VERSION="1.4.2"
-MIN_LALXML_VERSION="1.2.2"
+MIN_LAL_VERSION="6.17.0"
+MIN_LALMETAIO_VERSION="1.3.0"
+MIN_LALFRAME_VERSION="1.4.2"
+MIN_LALSIMULATION_VERSION="1.6.1"
+MIN_LALINSPIRAL_VERSION="1.7.6"
+MIN_LALPULSAR_VERSION="1.15.0"
+MIN_LALBURST_VERSION="1.4.3"
+MIN_LALXML_VERSION="1.2.3"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALMETAIO_VERSION])
 AC_SUBST([MIN_LALFRAME_VERSION])
@@ -80,7 +81,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[11])
+AC_SUBST([LIBCURRENT],[12])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
@@ -191,7 +192,7 @@ if test "$lalxml" = "true"; then
 fi
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
 LALSUITE_CHECK_LIB([LALMetaIO],[${MIN_LALMETAIO_VERSION}],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
 LALSUITE_CHECK_LIB([LALFrame],[${MIN_LALFRAME_VERSION}],[LALFrOpen],[lal/LALFrameL.h])

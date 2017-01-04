@@ -355,3 +355,15 @@ git commit --amend
 # 2015-02-27 lalapps/src/pulsar/hough/src2/testRecalcHS.sh
 # 2016-03-28 lalapps/src/pulsar/MakeSFTs/Makefile_MakeSFTs
 # 2016-03-28 lalapps/src/pulsar/MakeSFTs/Makefile_MakeSFTsCondor
+# 2016-10-21 lalapps/src/pulsar/Hough/FstatToplistTest.c
+# 2016-10-21 lalapps/src/pulsar/Hough/PeakSelectTest.c
+# 2016-10-21 lalapps/src/pulsar/Hough/SFTbinTest.c
+# 2016-10-21 lalapps/src/pulsar/Hough/SFTdiff.c
+# 2016-10-21 lalapps/src/pulsar/Hough/Validation1.c
+# 2016-10-21 lalapps/src/pulsar/Hough/Validation2a.c
+# 2016-10-21 lalapps/src/pulsar/Hough/Validation2b.c
+# 2016-10-21 lalapps/src/pulsar/Hough/scripts/H1_freqbands.c
+# 2016-10-21 lalapps/src/pulsar/Hough/scripts/H1_h0range.c
+# 2016-10-21 lalapps/src/pulsar/Hough/scripts/L1_freqbands.c
+# 2016-10-21 lalapps/src/pulsar/Hough/scripts/makeangles.c
+# 2016-10-21 lalapps/src/pulsar/Hough/scripts/skypatches.c

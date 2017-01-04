@@ -98,23 +98,23 @@ int main(int argc, char **argv)
   /*========================================================================================================================*/
     
     
-    LAL_CALL(LALRegisterSTRINGUserVar(&status, "SFTs",         'p', UVAR_REQUIRED, "SFT location/pattern",        &SFTpatt     ), &status);
-    LAL_CALL(LALRegisterSTRINGUserVar(&status, "IFO",          'I', UVAR_REQUIRED, "Detector",                    &IFO         ), &status);
-    LAL_CALL(LALRegisterINTUserVar   (&status, "startGPS",     's', UVAR_REQUIRED, "Starting GPS time",           &startGPS    ), &status);
-    LAL_CALL(LALRegisterINTUserVar   (&status, "endGPS",       'e', UVAR_REQUIRED, "Ending GPS time",             &endGPS      ), &status);
-    LAL_CALL(LALRegisterREALUserVar  (&status, "fMin",         'f', UVAR_REQUIRED, "Minimum frequency",           &f_min       ), &status);
-    LAL_CALL(LALRegisterREALUserVar  (&status, "fMax",         'F', UVAR_REQUIRED, "Maximum frequency",           &f_max       ), &status);
-    LAL_CALL(LALRegisterINTUserVar   (&status, "blocksRngMed", 'w', UVAR_OPTIONAL, "Running Median window size",  &blocksRngMed), &status);
-    LAL_CALL(LALRegisterSTRINGUserVar(&status, "outputBname",  'o', UVAR_OPTIONAL, "Base name of output files",   &outputBname ), &status);
-    LAL_CALL(LALRegisterREALUserVar  (&status, "freqRes",      'r', UVAR_REQUIRED, "Spectrogram freq resolution", &freqres     ), &status);
-    LAL_CALL(LALRegisterREALUserVar  (&status, "timeBaseline", 't', UVAR_REQUIRED, "The time baseline of sfts",   &timebaseline), &status);
-    LAL_CALL(LALRegisterSTRINGUserVar(&status, "psrInput",     'P', UVAR_OPTIONAL, "name of tempo pulsar file",   &psrInput ), &status);
-    LAL_CALL(LALRegisterSTRINGUserVar(&status, "psrEphemeris", 'S', UVAR_OPTIONAL, "pulsar ephemeris file",   &psrEphemeris ), &status);
-    LAL_CALL(LALRegisterSTRINGUserVar(&status, "earthFile",  'y', UVAR_OPTIONAL, "earth .dat file",   &earthFile ), &status);
-    LAL_CALL(LALRegisterSTRINGUserVar(&status, "sunFile",   'z', UVAR_OPTIONAL, "sun .dat file",   &sunFile ), &status);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&SFTpatt,      "SFTs",         STRING, 'p', REQUIRED, "SFT location/pattern" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&IFO,          "IFO",          STRING, 'I', REQUIRED, "Detector" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&startGPS,     "startGPS",     INT4,   's', REQUIRED, "Starting GPS time" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&endGPS,       "endGPS",       INT4,   'e', REQUIRED, "Ending GPS time" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&f_min,        "fMin",         REAL8,  'f', REQUIRED, "Minimum frequency" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&f_max,        "fMax",         REAL8,  'F', REQUIRED, "Maximum frequency" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&blocksRngMed, "blocksRngMed", INT4,   'w', OPTIONAL, "Running Median window size") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&outputBname,  "outputBname",  STRING, 'o', OPTIONAL, "Base name of output files" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&freqres,      "freqRes",      REAL8,  'r', REQUIRED, "Spectrogram freq resolution" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&timebaseline, "timeBaseline", REAL8,  't', REQUIRED, "The time baseline of sfts") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&psrInput,     "psrInput",     STRING, 'P', OPTIONAL, "name of tempo pulsar file" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&psrEphemeris, "psrEphemeris", STRING, 'S', OPTIONAL, "pulsar ephemeris file" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&earthFile,    "earthFile",    STRING, 'y', OPTIONAL, "earth .dat file" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&sunFile,      "sunFile",      STRING, 'z', OPTIONAL, "sun .dat file" ) == XLAL_SUCCESS, XLAL_EFUNC);
     
     BOOLEAN should_exit = 0;
-    LAL_CALL(LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+    XLAL_CHECK_MAIN(XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
     if (should_exit)
       return(1);
     
@@ -126,11 +126,11 @@ int main(int argc, char **argv)
     endTime.gpsNanoSeconds = 0;
     constraints.maxStartTime = &endTime;/*cg; This line puts the end time into the structure constraints*/
     constraints.detector = IFO;/*cg; this adds the interferometer into the contraints structure*/
-    LALSFTdataFind ( &status, &catalog, SFTpatt, &constraints );/*cg; creates SFT catalog, uses the constraints structure*/
+    catalog = XLALSFTdataFind ( SFTpatt, &constraints );/*cg; creates SFT catalog, uses the constraints structure*/
 
     if (catalog == NULL)/*need to check for a NULL pointer, and print info about circumstances if it is null*/
     {
-        fprintf(stderr, "SFT catalog pointer is NULL!  There has been an error with LALSFTdataFind\n");
+        fprintf(stderr, "SFT catalog pointer is NULL!  There has been an error with XLALSFTdataFind\n");
         fprintf(stderr, "LALStatus info.... status code: %d, message: %s, offending function: %s\n", status.statusCode, status.statusDescription, status.function);
         exit(0);
     }
@@ -140,21 +140,21 @@ int main(int argc, char **argv)
         exit(0);
     }
 
-    LALLoadSFTs ( &status, &sft_vect, catalog, f_min,f_max);/*cg;reads the SFT data into the structure sft_vect*/
+    sft_vect = XLALLoadSFTs ( catalog, f_min,f_max);/*cg;reads the SFT data into the structure sft_vect*/
 
     if (sft_vect == NULL)
     {
-        fprintf(stderr, "SFT vector pointer is NULL!  There has been an error with LALLoadSFTs\n");
+        fprintf(stderr, "SFT vector pointer is NULL!  There has been an error with XLALLoadSFTs\n");
         fprintf(stderr, "LALStatus info.... status code: %d, message: %s, offending function: %s\n", status.statusCode, status.statusDescription, status.function);
         exit(0);
     }
 
-    LALDestroySFTCatalog( &status, &catalog);/*cg; desctroys the SFT catalogue*/
+    XLALDestroySFTCatalog(catalog);/*cg; desctroys the SFT catalogue*/
     numBins = sft_vect->data->data->length;/*the number of bins in the freq_range*/
     nSFT = sft_vect->length;/* the number of sfts.*/
     
     fprintf(stderr, "nSFT = %d\tnumBins = %d\tf0 = %f\n", nSFT, numBins,sft_vect->data->f0);/*print->logs/spectrumAverage_testcg_0.err */
-    if (LALUserVarWasSet(&outputBname))
+    if (XLALUserVarWasSet(&outputBname))
     strcpy(outbase, outputBname);
     else
     sprintf(outbase, "spec_%.2f_%.2f_%s_%d_%d", f_min,f_max,constraints.detector,startTime.gpsSeconds,endTime.gpsSeconds);/*cg; this is the default name for producing the output files, the different suffixes are just added to this*/
@@ -233,8 +233,8 @@ int main(int argc, char **argv)
 /*cg;  Create the third and final file, called   blah_blah_blah.txt.  This file will contain the data used in the matlab plot script to plot the normalised average power vs the frequency.*/
 
     /* Find time average of normalized SFTs */
-    LALNormalizeSFTVect(&status, sft_vect, blocksRngMed);   
-    LALNormalizeSFTVect(&status, sft_vect, blocksRngMed);   
+    XLALNormalizeSFTVect(sft_vect, blocksRngMed, 0.0);
+    XLALNormalizeSFTVect(sft_vect, blocksRngMed, 0.0);
     timeavg = XLALMalloc(numBins*sizeof(REAL4));
     if (timeavg == NULL) fprintf(stderr,"Timeavg memory not allocated\n");
 
@@ -376,11 +376,6 @@ int main(int argc, char **argv)
     fprintf(stderr,"crabOutput:\tf0= %f\tf1= %e\tf2= %e\n", crabOutput.f0->data[0], crabOutput.f1->data[0], crabOutput.f2->data[0]);/*need to change the type of printf for F1 and f2 to exponentials.*/
     fprintf(stderr,"--------------------\n");
 
-    /*Allocate memory for edat, no need to do in the loop*/
-    edat = XLALMalloc(sizeof(*edat));
-    (*edat).ephiles.earthEphemeris = earthFile; /*"/archive/home/colingill/lalsuite/lal/packages/pulsar/test/earth05-09.dat";*/
-    (*edat).ephiles.sunEphemeris = sunFile;/*"/archive/home/colingill/lalsuite/lal/packages/pulsar/test/sun05-09.dat";*/
-
     /*work out the eclitptic lattitude of the source, used in max freq calc.*/
     ecliptic_lat=asin(cos(e_tilt)*sin(pulsarParams.dec)-sin(pulsarParams.ra)*cos(pulsarParams.dec)*sin(e_tilt));
     fprintf(stderr,"eqcliptic_lat: %e\t", ecliptic_lat);
@@ -429,7 +424,7 @@ int main(int argc, char **argv)
         /*now I have the freq, I need to add the doppler shift for the earths motion around the sun */
         baryinput.dInv = 0.;/*I can always set this to zero, as Matt said so, I must ask him why*/
 
-        LAL_CALL( LALInitBarycenter(&status, edat), &status );/*  */
+        XLAL_CHECK_MAIN( ( edat = XLALInitBarycenter( earthFile, sunFile ) ) != NULL, XLAL_EFUNC );/*  */
     
         /*this lines take position of detector which are in xyz coords in meters from earths centre and converts them into seconds (time)*/
         baryinput.site.location[0] = det.location[0]/LAL_C_SI;
@@ -439,7 +434,7 @@ int main(int argc, char **argv)
         /*dtpos should be the time between the entry in the ephemeris and the point in time for which doppler shifts are being calc.ed*/
         dtpos = cur_epoch - pulsarParams.posepoch;
     
-        /* set up RA, DEC, and distance variables for LALBarycenter*/
+        /* set up RA, DEC, and distance variables for XLALBarycenter*/
         baryinput.delta = pulsarParams.dec + dtpos*pulsarParams.pmdec;
         baryinput.alpha = pulsarParams.ra + dtpos*pulsarParams.pmra/cos(baryinput.delta);
         
@@ -454,11 +449,11 @@ int main(int argc, char **argv)
         baryinput2.tgps.gpsNanoSeconds = (INT4)floor((fmod(t2,1.0)*1.e9));
     
         /*the barycentre functions are needed to calc the inputs for the correction to fcoarse, namely emit, earth and baryinput*/
-        LAL_CALL( LALBarycenterEarth(&status, &earth, &baryinput.tgps, edat), &status );
-        LAL_CALL( LALBarycenter(&status, &emit, &baryinput, &earth), &status );
+        XLAL_CHECK_MAIN( XLALBarycenterEarth(&earth, &baryinput.tgps, edat) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALBarycenter(&emit, &baryinput, &earth) == XLAL_SUCCESS, XLAL_EFUNC );
         
-        LAL_CALL( LALBarycenterEarth(&status, &earth2, &baryinput2.tgps, edat), &status );
-        LAL_CALL( LALBarycenter(&status, &emit2, &baryinput2, &earth2), &status );
+        XLAL_CHECK_MAIN( XLALBarycenterEarth(&earth2, &baryinput2.tgps, edat) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALBarycenter(&emit2, &baryinput2, &earth2) == XLAL_SUCCESS, XLAL_EFUNC );
     
         /* I need to calc the correction to the freq for the doppler shifts, the correction is df, from line 1074 heterdyne_pulsar.  deltaT is T_emission in TDB - T_arrrival in GPS + light travel time to SSB.  we are working out delta(delatT) over 1 second, so do not bother with the divide by one bit.*/
         df = freq*(emit2.deltaT - emit.deltaT);
@@ -481,7 +476,7 @@ int main(int argc, char **argv)
     fprintf(stderr,"end of crab stuff\n");
     
     /*Free up any memory allocated in crab section*/
-    XLALFree(edat);
+    XLALDestroyEphemerisData(edat);
     
     }
     #endif
@@ -495,7 +490,7 @@ int main(int argc, char **argv)
     /*release a;; the allocaeted memory*/
     LALCHARDestroyVector(&status, &timestamp);
     LALCHARDestroyVector(&status, &year_date);
-    LALDestroySFTVector (&status, &sft_vect );
+    XLALDestroySFTVector ( sft_vect );
 
     /*fprintf(stderr,"end of spec_avg 2\n");*/
 
@@ -503,7 +498,7 @@ int main(int argc, char **argv)
 
     /*fprintf(stderr,"end of spec_avg 3\n");*/
 
-    LAL_CALL(LALDestroyUserVars(&status), &status);
+    XLALDestroyUserVars();
 
     /*fprintf(stderr,"end of spec_avg 4\n");*/
     /*close all the files, spec_avg.c is done, all info written to the files.*/

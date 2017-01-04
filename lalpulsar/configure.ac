@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALPulsar],[1.14.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALPulsar],[1.15.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALPulsarConfig.h])
 AC_CONFIG_SRCDIR([src/ComputeFstat.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -20,6 +20,7 @@ AC_CONFIG_FILES([ \
   src/LALPulsarVCSInfo.c \
   src/LALPulsarVCSInfo.h \
   src/Makefile \
+  src/version.c \
   swig/Makefile \
   test/Makefile \
 ])
@@ -35,8 +36,8 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="6.16.1"
-MIN_LALXML_VERSION="1.2.2"
+MIN_LAL_VERSION="6.17.0"
+MIN_LALXML_VERSION="1.2.3"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALXML_VERSION])
 
@@ -61,7 +62,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[14])
+AC_SUBST([LIBCURRENT],[15])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
@@ -162,7 +163,7 @@ if test "${boinc}" = "true" ; then
 fi
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 
 # check that lal was built with BOINC support, if required
 LALSUITE_CHECK_BOINC

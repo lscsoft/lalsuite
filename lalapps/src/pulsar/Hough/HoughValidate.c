@@ -58,12 +58,17 @@ Input shoud be from
 
 #include "./MCInjectComputeHough.h" /* proper path*/
 
+#include "SFTfileIOv1.h"
 
 #define VALIDATEOUT "./outHM1/skypatch_1/HM1validate"
 #define VALIDATEIN  "./outHM1/skypatch_1/HM1templates"
 
 #define TRUE (1==1)
 #define FALSE (1==0)
+
+#define SQ(x) ((x)*(x))
+
+static void LALComputeAM (LALStatus *, AMCoeffs *coe, LIGOTimeGPS *ts, AMCoeffsParams *params);
 
 /*************************************/
 
@@ -144,18 +149,18 @@ int main(int argc, char *argv[]){
   uvar_blocksRngMed = BLOCKSRNGMED;
 
   /* register user input variables */
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ifo", 'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)", &uvar_ifo ), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris", 'E', UVAR_OPTIONAL, "Earth Ephemeris file", &uvar_earthEphemeris), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris", 'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir", 'D', UVAR_OPTIONAL, "SFT Directory", &uvar_sftDir), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameIn", 'T', UVAR_OPTIONAL, "Input template file", &uvar_fnameIn), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameOut", 'o', UVAR_OPTIONAL, "Output filename", &uvar_fnameOut), &status);
-  LAL_CALL( LALRegisterINTUserVar( &status, "blocksRngMed", 'w', UVAR_OPTIONAL, "RngMed block size", &uvar_blocksRngMed), &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "peakThreshold", 't', UVAR_OPTIONAL, "Peak selection threshold", &uvar_peakThreshold), &status);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_ifo,            "ifo",            STRING, 'i', OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)" ) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_earthEphemeris, "earthEphemeris", STRING, 'E', OPTIONAL, "Earth Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sunEphemeris,   "sunEphemeris",   STRING, 'S', OPTIONAL, "Sun Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,         "sftDir",         STRING, 'D', OPTIONAL, "SFT Directory") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fnameIn,        "fnameIn",        STRING, 'T', OPTIONAL, "Input template file") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fnameOut,       "fnameOut",       STRING, 'o', OPTIONAL, "Output filename") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_blocksRngMed,   "blocksRngMed",   INT4,   'w', OPTIONAL, "RngMed block size") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_peakThreshold,  "peakThreshold",  REAL8,  't', OPTIONAL, "Peak selection threshold") == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     exit(1);
  
@@ -170,7 +175,7 @@ int main(int argc, char *argv[]){
   }
   
   /* get the log string */
-  LAL_CALL( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
+  XLAL_CHECK_MAIN( ( logstr = XLALUserVarGetLog(UVAR_LOGFMT_CFGFILE) ) != NULL, XLAL_EFUNC);  
 
   fprintf( fpLog, "## Log file for HoughValidate\n\n");
   fprintf( fpLog, "# User Input:\n");
@@ -266,28 +271,28 @@ int main(int argc, char *argv[]){
 
     /* set detector constraint */
     constraints.detector = NULL;
-    if ( LALUserVarWasSet( &uvar_ifo ) )    
+    if ( XLALUserVarWasSet( &uvar_ifo ) )    
       constraints.detector = XLALGetChannelPrefix ( uvar_ifo );
 
     /* get sft catalog */
     tempDir = (CHAR *)LALCalloc(512, sizeof(CHAR));
     strcpy(tempDir, uvar_sftDir);
     strcat(tempDir, "/*SFT*.*");
-    LAL_CALL( LALSFTdataFind( &status, &catalog, tempDir, &constraints), &status);
+    XLAL_CHECK_MAIN( ( catalog = XLALSFTdataFind( tempDir, &constraints) ) != NULL, XLAL_EFUNC);
     
     detector = XLALGetSiteInfo( catalog->data[0].header.name);
 
     mObsCoh = catalog->length;
     timeBase = 1.0 / catalog->data->header.deltaF;
 
-    LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, catalog, f_min, f_max), &status);
+    XLAL_CHECK_MAIN( ( inputSFTs = XLALLoadSFTs ( catalog, f_min, f_max) ) != NULL, XLAL_EFUNC);
 
-    LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed), &status);
+    XLAL_CHECK_MAIN( XLALNormalizeSFTVect( inputSFTs, uvar_blocksRngMed, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC);
 
-    if ( LALUserVarWasSet( &uvar_ifo ) )    
+    if ( XLALUserVarWasSet( &uvar_ifo ) )    
       LALFree( constraints.detector );
     LALFree( tempDir);
-    LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
+    XLALDestroySFTCatalog(catalog );  	
 
   }
 
@@ -324,7 +329,7 @@ int main(int argc, char *argv[]){
 
 
   /* having calculated the peakgrams we don't need the sfts anymore */
-  LAL_CALL(LALDestroySFTVector(&status, &inputSFTs),&status );
+  XLALDestroySFTVector( inputSFTs);
 
 
   
@@ -367,13 +372,6 @@ int main(int argc, char *argv[]){
     }  
   }
 
-  /******************************************************************/ 
-  /*   setting of ephemeris info */ 
-  /******************************************************************/ 
-  edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
-  (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
-  
   /******************************************************************/
   /* compute detector velocity for those time stamps                */
   /******************************************************************/
@@ -392,7 +390,7 @@ int main(int argc, char *argv[]){
     velPar.edat = NULL;
 
     /* read in ephemeris data */
-    LAL_CALL( LALInitBarycenter( &status, edat), &status);
+    XLAL_CHECK_MAIN( ( edat = XLALInitBarycenter( uvar_earthEphemeris, uvar_sunEphemeris ) ) != NULL, XLAL_EFUNC);
     velPar.edat = edat;
 
     /* now calculate average velocity */    
@@ -411,7 +409,7 @@ int main(int argc, char *argv[]){
   
   /* amplitude modulation stuff */
   {
-    AMCoeffs amc; 
+    AMCoeffs XLAL_INIT_DECL(amc);
     AMCoeffsParams *amParams;
     EarthState earth;
     BarycenterInput baryinput;  /* Stores detector location and other barycentering data */
@@ -563,11 +561,9 @@ int main(int argc, char *argv[]){
   
   LALFree(pulsarTemplate.spindown.data);
    
-  LALFree(edat->ephemE);
-  LALFree(edat->ephemS);
-  LALFree(edat);
+  XLALDestroyEphemerisData(edat);
   
-  LAL_CALL (LALDestroyUserVars(&status), &status);
+  XLALDestroyUserVars();
 
   LALCheckMemoryLeaks();
     
@@ -575,5 +571,80 @@ int main(int argc, char *argv[]){
 }
 
 
- 
+/**
+ * Original antenna-pattern function by S Berukoff
+ */
+void LALComputeAM (LALStatus          *status,
+		   AMCoeffs           *coe,
+		   LIGOTimeGPS        *ts,
+		   AMCoeffsParams     *params)
+{
 
+  REAL4 zeta;                  /* sine of angle between detector arms        */
+  INT4 i;                      /* temporary loop index                       */
+  LALDetAMResponse response;   /* output of LALComputeDetAMResponse          */
+
+  REAL4 sumA2=0.0;
+  REAL4 sumB2=0.0;
+  REAL4 sumAB=0.0;             /* variables to store scalar products         */
+  INT4 length=coe->a->length;  /* length of input time series                */
+
+  REAL4 cos2psi;
+  REAL4 sin2psi;               /* temp variables                             */
+
+  INITSTATUS(status);
+  ATTATCHSTATUSPTR(status);
+
+  /* Must put an ASSERT checking that ts vec and coe vec are same length */
+
+  /* Compute the angle between detector arms, then the reciprocal */
+  {
+    LALFrDetector det = params->das->pDetector->frDetector;
+    zeta = 1.0/(sin(det.xArmAzimuthRadians - det.yArmAzimuthRadians));
+    if(params->das->pDetector->type == LALDETECTORTYPE_CYLBAR) zeta=1.0;
+  }
+
+  cos2psi = cos(2.0 * params->polAngle);
+  sin2psi = sin(2.0 * params->polAngle);
+
+  /* Note the length is the same for the b vector */
+  for(i=0; i<length; ++i)
+    {
+      REAL4 *a = coe->a->data;
+      REAL4 *b = coe->b->data;
+
+      /* Compute F_plus, F_cross */
+      LALComputeDetAMResponse(status->statusPtr, &response, params->das, &ts[i]);
+
+      /*  Compute a, b from JKS eq 10,11
+       *  a = zeta * (F_plus*cos(2\psi)-F_cross*sin(2\psi))
+       *  b = zeta * (F_cross*cos(2\psi)+Fplus*sin(2\psi))
+       */
+      a[i] = zeta * (response.plus*cos2psi-response.cross*sin2psi);
+      b[i] = zeta * (response.cross*cos2psi+response.plus*sin2psi);
+
+      /* Compute scalar products */
+      sumA2 += SQ(a[i]);                       /*  A  */
+      sumB2 += SQ(b[i]);                       /*  B  */
+      sumAB += (a[i]) * (b[i]);                /*  C  */
+    }
+
+  {
+    /* Normalization factor */
+    REAL8 L = 2.0/(REAL8)length;
+
+    /* Assign output values and normalise */
+    coe->A = L*sumA2;
+    coe->B = L*sumB2;
+    coe->C = L*sumAB;
+    coe->D = ( coe->A * coe->B - SQ(coe->C) );
+    /* protection against case when AB=C^2 */
+    if(coe->D == 0) coe->D=1.0e-9;
+  }
+
+  /* Normal exit */
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+} /* LALComputeAM() */

@@ -340,11 +340,15 @@ static int test_consistency(
     PNPhasingSeries dtdv_pn;
     dtdv_from_pncoefficients(&dtdv_pn, m1M, chi1, chi2, qm_def1, qm_def2);
     
-    LALSimInspiralTestGRParam *extraParams=NULL;
+    LALDict *extraParams=XLALCreateDict();
+    XLALSimInspiralWaveformParamsInsertdQuadMon1(extraParams,qm_def1-1.);
+    XLALSimInspiralWaveformParamsInsertdQuadMon2(extraParams,qm_def2-1.);
+    XLALSimInspiralWaveformParamsInsertPNSpinOrder(extraParams,7);
     PNPhasingSeries phasing;
     XLALSimInspiralPNPhasing_F2(&phasing, m1M,m2M, chi1, chi2,\
                                 chi1*chi1, chi2*chi2, chi1*chi2,\
-                                qm_def1, qm_def2, 7, extraParams);
+                                extraParams);
+    XLALDestroyDict(extraParams);
 
     /* Divide the phasing by the leading-order term */
     REAL8 phase0 = phasing.v[0];

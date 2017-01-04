@@ -24,18 +24,6 @@
 // General SWIG directives and interface code
 //
 
-// Call VCS information check function when module is loaded
-%init %{
-  if (VCS_INFO_CHECK() != XLAL_SUCCESS) {
-    SWIG_Error(SWIG_RuntimeError, "Could not load SWIG module");
-#if PY_VERSION_HEX >= 0x03000000
-    return NULL;
-#else
-    return;
-#endif
-  }
-%}
-
 // In SWIG Python modules, everything is namespaced, so it makes sense to rename symbols to remove
 // superfluous C-API prefixes.
 #define SWIGLAL_MODULE_RENAME_CONSTANTS
@@ -85,6 +73,11 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
 // empty.
 %header %{
 #define swiglal_append_output_if_empty(v) if (resultobj == Py_None) resultobj = SWIG_Python_AppendOutput(resultobj, v)
+%}
+
+// Evaluates true if a PyObject represents a null pointer, false otherwise.
+%header %{
+#define swiglal_null_ptr(v)  ((v) == Py_None)
 %}
 
 //

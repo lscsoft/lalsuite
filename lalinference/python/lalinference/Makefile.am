@@ -22,10 +22,7 @@ pymoduledir = $(pkgpythondir)
 
 pymodule_PYTHON = \
 	__init__.py \
-	cmap.py \
-	fits.py \
 	healpix_tree.py \
-	marker.py \
 	lalinference_pipe_utils.py \
 	nest2pos.py \
 	git_version.py \

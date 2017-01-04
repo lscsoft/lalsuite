@@ -117,7 +117,6 @@
 #include <lal/LALMalloc.h>
 #include <lal/LALStdlib.h>
 #include <lal/PtoleMetric.h>
-#include <lal/StackMetric.h>
 
 /** \cond DONT_DOXYGEN */
 

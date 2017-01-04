@@ -159,10 +159,14 @@ def ligolw_sky_map(
     if psds is None:
         psds = [timing.get_noise_psd_func(ifo) for ifo in ifos]
 
+    log.debug('calculating templates')
     H = filter.sngl_inspiral_psd(sngl_inspirals[0], waveform, f_min=f_low)
+
+    log.debug('calculating noise PSDs')
     HS = [filter.signal_psd_series(H, S) for S in psds]
 
     # Signal models for each detector.
+    log.debug('calculating Fisher matrix elements')
     signal_models = [timing.SignalModel(_) for _ in HS]
 
     # Get SNR=1 horizon distances for each detector.
@@ -309,6 +313,7 @@ def ligolw_sky_map(
         kde = False
 
     # Time and run sky localization.
+    log.debug('starting computationally-intensive section')
     start_time = time.time()
     if method == "toa_phoa_snr":
         prob = _sky_map.toa_phoa_snr(
@@ -332,6 +337,7 @@ def ligolw_sky_map(
     prob[2] *= max_horizon * fudge
     prob[3] /= np.square(max_horizon * fudge)
     end_time = time.time()
+    log.debug('finished computationally-intensive section')
 
     # Find elapsed run time.
     elapsed_time = end_time - start_time
@@ -344,9 +350,9 @@ def gracedb_sky_map(
         coinc_file, psd_file, waveform, f_low, min_distance=None,
         max_distance=None, prior_distance_power=None,
         method="toa_phoa_snr", nside=-1, chain_dump=None,
-        phase_convention='antifindchirp', f_high_truncate=1.0,
-        enable_snr_series=False):
+        f_high_truncate=1.0, enable_snr_series=False):
     # Read input file.
+    log.debug('reading coinc file')
     xmldoc, _ = ligolw_utils.load_fileobj(
         coinc_file, contenthandler=ligolw.LSCTablesAndSeriesContentHandler)
 
@@ -358,6 +364,19 @@ def gracedb_sky_map(
     sngl_inspiral_table = ligolw_table.get_table(xmldoc,
         lsctables.SnglInspiralTable.tableName)
 
+    # Attempt to determine phase convention from process table.
+    try:
+        process_table = ligolw_table.get_table(xmldoc,
+            lsctables.ProcessTable.tableName)
+        process, = process_table
+        process_name = process.program.lower()
+    except ValueError:
+        process_name = ''
+    if 'pycbc' in process_name:
+        phase_convention = 'findchirp'
+    else:
+        phase_convention = 'antifindchirp'
+
     # Locate the sngl_inspiral rows that we need.
     coinc_inspiral = coinc_inspiral_table[0]
     coinc_event_id = coinc_inspiral.coinc_event_id
@@ -365,7 +384,7 @@ def gracedb_sky_map(
         if coinc_map.coinc_event_id == coinc_event_id]
     sngl_inspirals = [next((sngl_inspiral for sngl_inspiral in sngl_inspiral_table
         if sngl_inspiral.event_id == event_id)) for event_id in event_ids]
-    instruments = set(sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals)
+    instruments = {sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals}
 
     # Try to load complex SNR time series.
     snrs = ligolw.snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc)
@@ -375,6 +394,7 @@ def gracedb_sky_map(
         snrs = None
 
     # Read PSDs.
+    log.debug('reading PSDs time series')
     xmldoc, _ = ligolw_utils.load_fileobj(
         psd_file, contenthandler=lal.series.PSDContentHandler)
     psds = lal.series.read_psd_xmldoc(xmldoc, root_name=None)
@@ -383,6 +403,7 @@ def gracedb_sky_map(
     psds = [psds[sngl_inspiral.ifo] for sngl_inspiral in sngl_inspirals]
 
     # Interpolate PSDs.
+    log.debug('constructing PSD interpolants')
     psds = [timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data,
             f_high_truncate=f_high_truncate)
         for psd in psds]

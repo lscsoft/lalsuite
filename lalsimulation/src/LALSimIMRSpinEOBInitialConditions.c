@@ -29,6 +29,7 @@ struct tagSEOBRootParams
   REAL8          values[12]; /**<< Dynamical variables, x, y, z, px, py, pz, S1x, S1y, S1z, S2x, S2y and S2z */
   SpinEOBParams *params;     /**<< Spin EOB parameters -- physical, pre-computed, etc. */
   REAL8          omega;      /**<< Orbital frequency */
+  INT4           use_optimized;
 }
 SEOBRootParams;
 
@@ -383,7 +384,6 @@ static double GSLSpinHamiltonianDerivWrapperHybrid( double x,    /**<< Derivativ
     {
     case 0:
       /* dHdr */
-      //CALEBS: Ham Path to Wrapper (next 3 lines)
       dHdx  = XLALSpinHcapHybDerivWRTParam( 0, cartValues, dParams->params );
       dHdpy = XLALSpinHcapHybDerivWRTParam( 4, cartValues, dParams->params );
       dHdpz = XLALSpinHcapHybDerivWRTParam( 5, cartValues, dParams->params );
@@ -395,13 +395,11 @@ static double GSLSpinHamiltonianDerivWrapperHybrid( double x,    /**<< Derivativ
       break;
     case 4:
       /* dHdptheta */
-      //CALEBS: Ham Path to Wrapper
       dHdpz = XLALSpinHcapHybDerivWRTParam( 5, cartValues, dParams->params );
       return - dHdpz / r;
       break;
     case 5:
       /* dHdpphi */
-      //CALEBS: Ham Path to Wrapper
       dHdpy = XLALSpinHcapHybDerivWRTParam( 4, cartValues, dParams->params );
       return dHdpy / r;
       break;

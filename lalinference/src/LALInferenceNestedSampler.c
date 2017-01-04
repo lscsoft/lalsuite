@@ -368,13 +368,14 @@ static REAL8 incrementEvidenceSamples(gsl_rng *GSLrandom, UINT4 Nlive, REAL8 log
 static REAL8 incrementEvidenceSamples(gsl_rng *GSLrandom, UINT4 Nlive, REAL8 logL, NSintegralState *s)
 {
   REAL8 Wtarray[s->size];
-  //UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
   /* Update evidence array */
   for(UINT4 j=0;j<s->size;j++){
+    s->oldZarray->data[j]=s->logZarray->data[j];
     Wtarray[j]=s->logwarray->data[j]+logL+logsubexp(0,s->logt2array->data[j] + s->logtarray->data[j])-log(2.0);
     s->logZarray->data[j]=logaddexp(s->logZarray->data[j],Wtarray[j]);
-    s->Harray->data[j]= exp(Wtarray[j]-s->logZarray->data[j])*logL
-    + exp(s->oldZarray->data[j]-s->logZarray->data[j])*(s->Harray->data[j]+s->oldZarray->data[j])-s->logZarray->data[j];
+    if(isfinite(s->oldZarray->data[j]) && isfinite(s->logZarray->data[j]))
+        s->Harray->data[j]= exp(Wtarray[j]-s->logZarray->data[j])*logL
+          + exp(s->oldZarray->data[j]-s->logZarray->data[j])*(s->Harray->data[j]+s->oldZarray->data[j])-s->logZarray->data[j];
     REAL8 tmp=s->logtarray->data[j];
     s->logtarray->data[j]=s->logt2array->data[j];
     s->logt2array->data[j]=tmp;
@@ -772,7 +773,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   UINT4 HDFOUTPUT=1;
   UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
   UINT4 Nruns=100;
-  REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*logtarray;
+  REAL8 *logZarray,*Harray,*logwarray,*logtarray;
   REAL8 TOLERANCE=0.1;
   REAL8 logZ,logZnew,logLmin,logLmax=-INFINITY,logLtmp,logw,H,logZnoise,dZ=0;
   LALInferenceVariables *temp;
@@ -947,7 +948,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 
   logZarray=s->logZarray->data;
   logtarray=s->logtarray->data;
-  oldZarray=s->oldZarray->data;
   logwarray=s->logwarray->data;
   Harray=s->Harray->data;
 
@@ -1010,7 +1010,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     //deltaZ=logZnew-logZ; - set but not used
     H=mean(Harray,Nruns);
     logZ=logZnew;
-    for(j=0;j<Nruns;j++) oldZarray[j]=logZarray[j];
     if(runState->logsample) runState->logsample(runState->algorithmParams,runState->livePoints[minpos]);
     UINT4 itercounter=0;
 
@@ -1232,7 +1231,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   LALInferenceCopyVariables(oldAlgParams,&myAlgParams);
   if(LALInferenceCheckVariable(&myAlgParams,"outputarray")) LALInferenceRemoveVariable(&myAlgParams,"outputarray");
   if(LALInferenceCheckVariable(&myAlgParams,"N_outputarray")) LALInferenceRemoveVariable(&myAlgParams,"N_outputarray");
-  LALInferenceRemoveVariable(&myAlgParams,"outfile");
+  if(LALInferenceCheckVariable(&myAlgParams,"outfile")) LALInferenceRemoveVariable(&myAlgParams,"outfile");
   LALInferenceRemoveVariable(&myAlgParams,"Nmcmc");
   LALInferenceAddVariable(&myAlgParams,"Nmcmc",&thinning,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
 
@@ -1718,7 +1717,6 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	}
 	threadState->currentParams=curParsBackup;
 	if(!threadState->currentParams) threadState->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
-
 }
 
 

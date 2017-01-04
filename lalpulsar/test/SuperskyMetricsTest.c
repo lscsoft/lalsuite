@@ -286,7 +286,7 @@ int main( void )
   }
   XLAL_CHECK_MAIN( metrics != NULL, XLAL_EFUNC );
 
-  // Check coherent metrics
+  // Check coherent and semicoherent metrics
   for ( size_t n = 0; n < NUM_SEGS; ++n ) {
     XLAL_CHECK_MAIN( CheckSuperskyMetrics(
                        metrics->coh_rssky_metric[n], coh_rssky_metric_refs[n],
@@ -294,8 +294,6 @@ int main( void )
                        coh_phys_mismatches[n], 1e-2
                        ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
-
-  // Check semicoherent metric
   XLAL_CHECK_MAIN( CheckSuperskyMetrics(
                      metrics->semi_rssky_metric, semi_rssky_metric_ref,
                      metrics->semi_rssky_transf, semi_rssky_transf_ref,
@@ -314,6 +312,21 @@ int main( void )
     XLAL_CHECK( err <= err_tol, XLAL_ETOL, "'rssky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol );
   }
   XLAL_CHECK_MAIN( XLALScaleSuperskyMetricsFiducialFreq( metrics, FIDUCIAL_FREQ ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( CheckSuperskyMetrics(
+                     metrics->semi_rssky_metric, semi_rssky_metric_ref,
+                     metrics->semi_rssky_transf, semi_rssky_transf_ref,
+                     semi_phys_mismatch, 3e-2
+                     ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Check that XLALEqualizeReducedSuperskyMetricsFreqSpacing() with equal mismatches does nothing
+  XLAL_CHECK_MAIN( XLALEqualizeReducedSuperskyMetricsFreqSpacing( metrics, 0.1, 0.1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  for ( size_t n = 0; n < NUM_SEGS; ++n ) {
+    XLAL_CHECK_MAIN( CheckSuperskyMetrics(
+                       metrics->coh_rssky_metric[n], coh_rssky_metric_refs[n],
+                       metrics->coh_rssky_transf[n], coh_rssky_transf_refs[n],
+                       coh_phys_mismatches[n], 1e-2
+                       ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
   XLAL_CHECK_MAIN( CheckSuperskyMetrics(
                      metrics->semi_rssky_metric, semi_rssky_metric_ref,
                      metrics->semi_rssky_transf, semi_rssky_transf_ref,

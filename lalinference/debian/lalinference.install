@@ -1,8 +1,5 @@
 etc/*
-usr/bin/lalinference_burst
-usr/bin/lalinference_nest
-usr/bin/lalinference_datadump
-usr/bin/lalinference_bench
+usr/bin/lalinference_*
 usr/lib/*/*.so.*
 usr/share/lalinference/*.csv
 usr/share/man/*

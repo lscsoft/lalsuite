@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2011 Nickolas Fotopoulos, Evan Ochsner
+*  Copyright (C) 2011 Nickolas Fotopoulos, Evan Ochsner, 2016 Riccardo Sturani
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -30,14 +30,12 @@
 #include <lal/LALSimIMR.h>
 #include <lal/XLALError.h>
 #include <lal/LALAdaptiveRungeKutta4.h>
-
+#include <lal/LALSimInspiralWaveformParams.h>
 
 /* internal storage is in SI units! */
-typedef struct tagGSParams {
+typedef struct GSParams {
     Approximant approximant;  /**< waveform family or "approximant" */
     LALSimulationDomain domain; /**< flag for time or frequency domain waveform */
-    int phaseO;               /**< twice PN order of the phase */
-    int ampO;                 /**< twice PN order of the amplitude */
     REAL8 phiRef;             /**< phase at fRef */
     REAL8 fRef;               /**< reference frequency */
     REAL8 deltaT;             /**< sampling interval */
@@ -54,16 +52,15 @@ typedef struct tagGSParams {
     REAL8 s2x;                /**< (x,y,z) component ofs spin of m2 body */
     REAL8 s2y;                /**< z-axis along line of sight, L in x-z plane */
     REAL8 s2z;                /**< dimensionless spin, Kerr bound: |s2| <= 1 */
-    REAL8 lambda1;	      /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
-    REAL8 lambda2;	      /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
-    LALSimInspiralWaveformFlags *waveFlags; /**< Set of flags to control special behavior of some waveform families */
-    LALSimInspiralTestGRParam *nonGRparams; /**< Linked list of non-GR parameters. Pass in NULL for standard GR waveforms */
-    int axisChoice;           /**< flag to choose reference frame for spin coordinates */
-    int inspiralOnly;         /**< flag to choose if generating only the the inspiral 1 or also merger and ring-down*/
+    REAL8 longAscNodes;       /**< longitude of ascending nodes 0<= omega < 2 pi */
+    REAL8 ecc;                /**< eccentricity 0<= ecc < 1 */
+    REAL8 meanPerAno;         /**< mean periastron anomaly 0<= psi < 2 Pi */
     char outname[256];        /**< file to which output should be written */
+    LALDict *params;          /**<Container for all accessory parameters */
     int ampPhase;
     int verbose;
 } GSParams;
+
 
 const char * usage =
 "Generate a simulation using the lalsimulation library\n\n"
@@ -149,8 +146,26 @@ const char * usage =
 "--f-max FMAX               Frequency at which to stop waveform in Hz\n"
 "                           (default: generate as much as possible)\n"
 "--distance D               Distance in Mpc (default 100)\n"
+"--long-asc-nodes omega     Longitude of ascending nodes in radians (default 0)\n"
+"--eccentricity ecc         Eccentricity (default 0)\n"
+"--mean-per-ano psi         Mean periastron anomaly in radians (default 0)\n"
 "--axis AXIS                for PhenSpin: 'View' (default), 'TotalJ', 'OrbitalL'\n"
 "--nonGRpar NAME VALUE      add the nonGRparam with name 'NAME' and value 'VALUE'\n"
+"                           Supported names:\n"
+"                             NonGRPhi1\n"
+"                             NonGRPhi2\n"
+"                             NonGRPhi3\n"
+"                             NonGRPhi4\n"
+"                             NonGRDChi0\n"
+"                             NonGRDChi1\n"
+"                             NonGRDChi2\n"
+"                             NonGRDChi3\n"
+"                             NonGRDChi4\n"
+"                             NonGRDChi5\n"
+"                             NonGRDChi5L\n"
+"                             NonGRDChi6\n"
+"                             NonGRDChi6L\n"
+"                             NonGRDChi7\n"
 "--higher-modes VALUE       specify l modes with value 'VALUE' (L2 or RESTRICTED is default)\n"
 "--outname FNAME            Output to file FNAME (default 'simulation.dat')\n"
 "--verbose                  If included, add verbose output\n"
@@ -163,14 +178,12 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
     GSParams *params;
     params = (GSParams *) XLALMalloc(sizeof(GSParams));
     memset(params, 0, sizeof(GSParams));
-
+    params->params=XLALCreateDict();
     /* Set default values to the arguments */
-    params->waveFlags = XLALSimInspiralCreateWaveformFlags();
-    params->nonGRparams = NULL;
     params->approximant = TaylorT1;
     params->domain = LAL_SIM_DOMAIN_TIME;
-    params->phaseO = 7;
-    params->ampO = 0;
+    XLALSimInspiralWaveformParamsInsertPNPhaseOrder(params->params, -1);
+    XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(params->params, -1);
     params->phiRef = 0.;
     params->deltaT = 1./4096.;
     params->deltaF = 0.125;
@@ -187,10 +200,12 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
     params->s2x = 0.;
     params->s2y = 0.;
     params->s2z = 0.;
-    params->lambda1 = 0.;
-    params->lambda2 = 0.;
+    params->longAscNodes = 0.;
+    params->ecc = 0.;
+    params->meanPerAno = 0.;
+    XLALSimInspiralWaveformParamsInsertTidalLambda1(params->params, 0.);
+    XLALSimInspiralWaveformParamsInsertTidalLambda2(params->params, 0.);
     strncpy(params->outname, "simulation.dat", 256); /* output to this file */
-    params->ampPhase = 0; /* output h+ and hx */
     params->verbose = 0; /* No verbosity */
 
     /* consume command line */
@@ -202,7 +217,7 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
         } else if (strcmp(argv[i], "--verbose") == 0) {
             params->verbose = 1;
         } else if (strcmp(argv[i], "--amp-phase") == 0) {
-            params->ampPhase = 1;
+	    params->ampPhase = 1;
         } else if ( ( i == argc ) || ( !argv[i+1] ) ) {
           XLALPrintError("Error: value required for option %s\n", argv[i]);
         } else if (strcmp(argv[i], "--approximant") == 0) {
@@ -222,9 +237,9 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
                 goto fail;
             }
         } else if (strcmp(argv[i], "--phase-order") == 0) {
-            params->phaseO = atoi(argv[++i]);
+	    XLALSimInspiralWaveformParamsInsertPNPhaseOrder(params->params, atoi(argv[++i]));
         } else if (strcmp(argv[i], "--amp-order") == 0) {
-            params->ampO = atoi(argv[++i]);
+	    XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(params->params, atoi(argv[++i]));
         } else if (strcmp(argv[i], "--phiRef") == 0) {
             params->phiRef = atof(argv[++i]);
         } else if (strcmp(argv[i], "--fRef") == 0) {
@@ -250,13 +265,13 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
         } else if (strcmp(argv[i], "--spin2z") == 0) {
             params->s2z = atof(argv[++i]);
         } else if (strcmp(argv[i], "--tidal-lambda1") == 0) {
-            params->lambda1 = atof(argv[++i]);
+	    XLALSimInspiralWaveformParamsInsertTidalLambda1(params->params, atoi(argv[++i]));
         } else if (strcmp(argv[i], "--tidal-lambda2") == 0) {
-            params->lambda2 = atof(argv[++i]);
+	    XLALSimInspiralWaveformParamsInsertTidalLambda2(params->params, atoi(argv[++i]));
         } else if (strcmp(argv[i], "--spin-order") == 0) {
-            XLALSimInspiralSetSpinOrder( params->waveFlags, atoi(argv[++i]) );
+	    XLALSimInspiralWaveformParamsInsertPNSpinOrder(params->params, atoi(argv[++i]));
         } else if (strcmp(argv[i], "--tidal-order") == 0) {
-            XLALSimInspiralSetTidalOrder( params->waveFlags, atoi(argv[++i]) );
+	    XLALSimInspiralWaveformParamsInsertPNTidalOrder(params->params, atoi(argv[++i]));
         } else if (strcmp(argv[i], "--f-min") == 0) {
             params->f_min = atof(argv[++i]);
         } else if (strcmp(argv[i], "--f-max") == 0) {
@@ -265,19 +280,22 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
             params->distance = atof(argv[++i]) * 1e6 * LAL_PC_SI;
         } else if (strcmp(argv[i], "--inclination") == 0) {
             params->inclination = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--long-asc-nodes") == 0) {
+            params->longAscNodes = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--eccentricity") == 0) {
+            params->ecc = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--mean-per-ano") == 0) {
+            params->meanPerAno = atof(argv[++i]);
         } else if (strcmp(argv[i], "--axis") == 0) {
-            XLALSimInspiralSetFrameAxis( params->waveFlags,
-                    XLALGetFrameAxisFromString(argv[++i]) );
-            if ( (int) XLALSimInspiralGetFrameAxis(params->waveFlags)
+	    XLALSimInspiralWaveformParamsInsertFrameAxis(params->params, XLALGetFrameAxisFromString(argv[++i]) );
+            if ( (int) XLALSimInspiralWaveformParamsLookupFrameAxis(params->params)
                     == (int) XLAL_FAILURE) {
                 XLALPrintError("Error: invalid value %s for --axis\n", argv[i]);
                 goto fail;
             }
         } else if (strcmp(argv[i], "--modes") == 0) {
-            XLALSimInspiralSetModesChoice( params->waveFlags,
-                    XLALGetHigherModesFromString(argv[++i]) );
-            if ( (int) XLALSimInspiralGetModesChoice(params->waveFlags)
-                    == (int) XLAL_FAILURE) {
+	    XLALSimInspiralWaveformParamsInsertModesChoice(params->params, XLALSimInspiralGetHigherModesFromString(argv[++i]));
+            if ( (int) XLALSimInspiralWaveformParamsLookupModesChoice(params->params) == (int) XLAL_FAILURE) {
                 XLALPrintError("Error: invalid value %s for --modes\n", argv[i]);
                 goto fail;
             }
@@ -286,11 +304,9 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
 	    strcpy(name,argv[++i]);
             if ( ( i == argc ) || ( !argv[i+1] ) ) {
               XLALPrintError("Error: 'name value' pair required for option %s\n", argv[i-1]);
-            } else if (params->nonGRparams==NULL) {
-	      params->nonGRparams=XLALSimInspiralCreateTestGRParam(name,atof(argv[++i]));
-            } else {
-	      XLALSimInspiralAddTestGRParam(&params->nonGRparams,name,atof(argv[++i]));
-            }
+            } else if(strcmp(name,"Phi1")==0) {
+	      XLALSimInspiralWaveformParamsInsertNonGRPhi1(params->params,atof(argv[++i]));
+	    }
         } else if (strcmp(argv[i], "--outname") == 0) {
             strncpy(params->outname, argv[++i], 256);
         } else {
@@ -450,22 +466,22 @@ int main (int argc , char **argv) {
     start_time = time(NULL);
     switch (params->domain) {
         case LAL_SIM_DOMAIN_FREQUENCY:
-            XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, params->phiRef, 
-                    params->deltaF, params->m1, params->m2, params->s1x, 
-                    params->s1y, params->s1z, params->s2x, params->s2y, 
-                    params->s2z, params->f_min, params->f_max, params->fRef, 
-                    params->distance, params->inclination, params->lambda1, 
-                    params->lambda2, params->waveFlags, params->nonGRparams,
-                    params->ampO, params->phaseO, params->approximant);
+            XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde,
+                    params->m1, params->m2, params->s1x,
+                    params->s1y, params->s1z, params->s2x, params->s2y,
+                    params->s2z, params->distance, params->inclination,
+                    params->phiRef, params->longAscNodes, params->ecc, params->meanPerAno,
+                    params->deltaF, params->f_min, params->f_max, params->fRef,
+                    params->params, params->approximant);
             break;
         case LAL_SIM_DOMAIN_TIME:
-            XLALSimInspiralChooseTDWaveform(&hplus, &hcross, params->phiRef, 
-                    params->deltaT, params->m1, params->m2, params->s1x, 
-                    params->s1y, params->s1z, params->s2x, params->s2y, 
-                    params->s2z, params->f_min, params->fRef, 
-                    params->distance, params->inclination, params->lambda1, 
-                    params->lambda2, params->waveFlags,
-                    params->nonGRparams, params->ampO, params->phaseO,
+            XLALSimInspiralChooseTDWaveform(&hplus, &hcross,
+                    params->m1, params->m2, params->s1x,
+                    params->s1y, params->s1z, params->s2x, params->s2y,
+                    params->s2z, params->distance, params->inclination,
+		    params->phiRef, params->longAscNodes, params->ecc, params->meanPerAno,
+                    params->deltaT, params->f_min, params->fRef,
+                    params->params,
                     params->approximant);
             break;
         default:
@@ -504,18 +520,17 @@ int main (int argc , char **argv) {
     }
 
     /* clean up */
+    XLALDestroyDict(params->params);
     XLALDestroyREAL8TimeSeries(hplus);
     XLALDestroyREAL8TimeSeries(hcross);
-    XLALSimInspiralDestroyWaveformFlags(params->waveFlags);
-    XLALSimInspiralDestroyTestGRParam(params->nonGRparams);
     XLALFree(params);
+
     XLALDestroyCOMPLEX16FrequencySeries(hptilde);
     XLALDestroyCOMPLEX16FrequencySeries(hctilde);
     return 0;
 
     fail:
-    XLALSimInspiralDestroyWaveformFlags(params->waveFlags);
-    XLALSimInspiralDestroyTestGRParam(params->nonGRparams);
+    XLALDestroyDict(params->params);
     XLALFree(params);
     XLALDestroyCOMPLEX16FrequencySeries(hptilde);
     XLALDestroyCOMPLEX16FrequencySeries(hctilde);

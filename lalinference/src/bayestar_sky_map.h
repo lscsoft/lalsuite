@@ -120,14 +120,6 @@ double bayestar_log_likelihood_toa_phoa_snr(
  * or otherwise EXIT_FAILURE. */
 int bayestar_test(void);
 
-typedef struct log_radial_integrator_t log_radial_integrator;
-
-log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, double pmax, size_t size);
-
-void log_radial_integrator_free(log_radial_integrator *integrator);
-
-double log_radial_integrator_eval(const log_radial_integrator *integrator, double p, double b);
-
 #endif /* !defined(SWIG) && !defined(__cplusplus) */
 
 #endif /* BAYESTAR_SKY_MAP_H */

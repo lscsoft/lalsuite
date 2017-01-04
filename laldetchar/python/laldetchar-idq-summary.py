@@ -144,7 +144,7 @@ sys.stderr = idq.LogFile(logger)
 #===================================================================================================
 ### check lockfile
 if opts.lockfile:
-    lockfp = idq.dieiflocked( opts.lockfile )
+    idq.dieiflocked( opts.lockfile )
 
 #===================================================================================================
 ### read global configuration file
@@ -1093,8 +1093,14 @@ while gpsstart < gpsstop:
                 gvalues.append( 1.0*g[-1]/(e-s) )
                 cvalues.append( 1.0*c[-1]/(e-s) )
 
-                fap = np.array(c, dtype='float')/c[-1]
-                eff = np.array(g, dtype='float')/g[-1]
+                if c[-1]:
+                    fap = np.array(c, dtype='float')/c[-1]
+                else:
+                    fap = [0.0]
+                if g[-1]:
+                    eff = np.array(g, dtype='float')/g[-1]
+                else:
+                    eff = [0.0]
         
                 ### iterate over opts.FAPthr -> efficiencies at these FAPs -> plot!
                 _effs = []
@@ -1603,5 +1609,4 @@ segment lists -> a form to request segments?
 
 #===================================================================================================
 if opts.lockfile:
-    idq.release(lockfp) ### unlock lockfile
-    os.remove( opts.lockfile )
+    idq.release( opts.lockfile ) ### unlock lockfile

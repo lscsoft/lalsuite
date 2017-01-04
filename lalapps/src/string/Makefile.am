@@ -12,7 +12,14 @@ lalapps_StringAddFrame_SOURCES = AddFrame.c
 if HAVE_PYTHON
 pybin_scripts = \
 	lalapps_cosmicstring_pipe \
-	lalapps_string_cs_gamma
+	lalapps_string_apply_vetoes \
+	lalapps_string_calc_likelihood \
+	lalapps_string_contour_plotter \
+	lalapps_string_cs_gamma \
+	lalapps_string_meas_likelihood \
+	lalapps_string_plot_binj \
+	lalapps_string_plot_likelihood \
+	lalapps_string_final
 pkgpython_PYTHON = cosmicstring.py
 endif
 

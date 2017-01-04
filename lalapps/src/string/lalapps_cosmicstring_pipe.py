@@ -17,23 +17,24 @@ the standalone ring code on LIGO data
 """
 
 
-import sys, os
-import tempfile
 import ConfigParser
+import itertools
 from optparse import OptionParser
+import os
+import sys
+import tempfile
 
 
-from glue import iterutils
 from glue import pipeline
 from glue import segments
 from glue import segmentsUtils
-from glue.lal import CacheEntry
 from glue.ligolw import lsctables
 from glue.ligolw import utils
 from glue.ligolw.utils import segments as ligolwsegments
 from glue import offsetvector
-from lalburst import timeslides as ligolw_tisi
 from lal import LIGOTimeGPS
+from lal.utils import CacheEntry
+from lalburst import timeslides
 from lalapps import cosmicstring
 from lalapps import power
 
@@ -198,19 +199,19 @@ background_time_slides = {}
 background_seglists = segments.segmentlistdict()
 for filename in options.background_time_slides:
 	cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
-	background_time_slides[cache_entry] = ligolw_tisi.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
+	background_time_slides[cache_entry] = timeslides.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
 	for i in range(len(background_time_slides[cache_entry])):
 		background_time_slides[cache_entry][i] = offsetvector.offsetvector((instrument, LIGOTimeGPS(offset)) for instrument, offset in background_time_slides[cache_entry][i].items())
-	background_seglists |= cosmicstring.compute_segment_lists(seglists, ligolw_tisi.time_slide_component_vectors(background_time_slides[cache_entry], 2), min_segment_length, pad)
+	background_seglists |= cosmicstring.compute_segment_lists(seglists, timeslides.time_slide_component_vectors(background_time_slides[cache_entry], 2), min_segment_length, pad)
 
 injection_time_slides = {}
 injection_seglists = segments.segmentlistdict()
 for filename in options.injection_time_slides:
 	cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
-	injection_time_slides[cache_entry] = ligolw_tisi.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
+	injection_time_slides[cache_entry] = timeslides.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
 	for i in range(len(injection_time_slides[cache_entry])):
 		injection_time_slides[cache_entry][i] = offsetvector.offsetvector((instrument, LIGOTimeGPS(offset)) for instrument, offset in injection_time_slides[cache_entry][i].items())
-	injection_seglists |= cosmicstring.compute_segment_lists(seglists, ligolw_tisi.time_slide_component_vectors(injection_time_slides[cache_entry], 2), min_segment_length, pad)
+	injection_seglists |= cosmicstring.compute_segment_lists(seglists, timeslides.time_slide_component_vectors(injection_time_slides[cache_entry], 2), min_segment_length, pad)
 
 
 #
@@ -315,7 +316,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 		coinc_nodes.append(set())
 
 		#
-		# ligolw_cafe & ligolw_add
+		# lalapps_cafe & ligolw_add
 		#
 
 		tisi_cache = set([time_slides_cache_entry])
@@ -357,7 +358,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 				lladd_nodes |= these_lladd_nodes
 
 		#
-		# ligolw_burca pool.  these are the burca jobs that don't
+		# lalapps_burca pool.  these are the burca jobs that don't
 		# require special clipping command line options, and so can
 		# bulk-process many files with each job
 		#
@@ -369,7 +370,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 			print >>sys.stderr, "done %s %d/%d" % (tag, n + 1, len(time_slides))
 
 	#
-	# ligolw_binjfind
+	# lalapps_binjfind
 	#
 
 	if do_injections:
@@ -452,11 +453,9 @@ if options.verbose:
 	print >>sys.stderr, "building lalapps_string_calc_likelihood jobs ..."
 
 def round_robin_and_flatten(injection_coinc_node_groups, injection_likelihood_node_groups):
-	# see the documentation for glue.iterutils.choices() for an
-	# explanation of the procedure used here to round-robin the node
-	# lists
-	A = list(iterutils.choices(injection_coinc_node_groups, 1))
-	B = list(iterutils.choices(injection_likelihood_node_groups, len(injection_likelihood_node_groups) - 1))
+	# round-robin the node lists
+	A = list(itertools.combinations(injection_coinc_node_groups, 1))
+	B = list(itertools.combinations(injection_likelihood_node_groups, len(injection_likelihood_node_groups) - 1))
 	B.reverse()
 	A = [flatten_node_groups(node_groups) for node_groups in A]
 	B = [flatten_node_groups(node_groups) for node_groups in B]

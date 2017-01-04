@@ -641,11 +641,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->PSSCleanExt = 1;      /* by default, extend the timeseries */
 
   strcat(allargs, "\nMakeSFTs ");
-  strcat(allargs, lalVCSIdentId);
-  strcat(allargs, lalVCSIdentStatus);
+  strcat(allargs, lalVCSIdentInfo.vcsId);
+  strcat(allargs, lalVCSIdentInfo.vcsStatus);
   strcat(allargs, "\nMakeSFTs ");
-  strcat(allargs, lalAppsVCSIdentId);
-  strcat(allargs, lalAppsVCSIdentStatus);
+  strcat(allargs, lalAppsVCSIdentInfo.vcsId);
+  strcat(allargs, lalAppsVCSIdentInfo.vcsStatus);
   strcat(allargs, "\nMakeSFTs command line args: "); /* 06/26/07 gam; copy all command line args into commentField */
   for(i = 0; i < argc; i++)
   {
@@ -839,8 +839,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       exit(0);
     case 'V':
       /* print version */
-      fprintf(stdout,"MakeSFTs %s %s\n", lalVCSIdentId, lalVCSIdentStatus);
-      fprintf(stdout,"MakeSFTs %s %s\n", lalAppsVCSIdentId, lalAppsVCSIdentStatus);
+      fprintf(stdout,"MakeSFTs %s %s\n", lalVCSIdentInfo.vcsId, lalVCSIdentInfo.vcsStatus);
+      fprintf(stdout,"MakeSFTs %s %s\n", lalAppsVCSIdentInfo.vcsId, lalAppsVCSIdentInfo.vcsStatus);
       exit(0);
     default:
       /* unrecognized option */
@@ -2086,10 +2086,9 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   }  
 
   /* make container to store the SFT data */
-  LALCreateSFTtype (&status, &oneSFT, ((UINT4)nBins));
-  TESTSTATUS( &status );
+  XLAL_CHECK( ( oneSFT = XLALCreateSFT ( ((UINT4)nBins)) ) != NULL, XLAL_EFUNC );
   #if TRACKMEMUSE
-      printf("Memory use after creating oneSFT and calling LALCreateSFTtype in WriteVersion2SFT:\n"); printmemuse();
+      printf("Memory use after creating oneSFT and calling XLALCreateSFT in WriteVersion2SFT:\n"); printmemuse();
   #endif
   
   /* copy the data to oneSFT */
@@ -2147,18 +2146,16 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   }  
 
   /* write the SFT */
-  LALWriteSFT2file(&status, oneSFT, sftname, CLA.commentField);
-  TESTSTATUS( &status );
+  XLAL_CHECK( XLALWriteSFT2file(oneSFT, sftname, CLA.commentField) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* 01/09/06 gam; sftname is temporary; move to sftnameFinal. */
   if(CLA.makeTmpFile) {  
     mvFilenames(sftname,sftnameFinal);
   }
 
-  LALDestroySFTtype (&status,&oneSFT);
-  TESTSTATUS( &status );
+  XLALDestroySFT (oneSFT);
   #if TRACKMEMUSE
-      printf("Memory use after destroying oneSFT and calling LALDestroySFTtype in WriteVersion2SFT:\n"); printmemuse();
+      printf("Memory use after destroying oneSFT and calling XLALDestroySFT in WriteVersion2SFT:\n"); printmemuse();
   #endif
 
   return 0;

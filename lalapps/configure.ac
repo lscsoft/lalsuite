@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALApps],[6.19.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALApps],[6.20.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/lalapps/lalapps.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -23,6 +23,7 @@ AC_CONFIG_FILES([\
   src/lalapps/LALAppsVCSInfo.c \
   src/lalapps/LALAppsVCSInfo.h \
   src/lalapps/Makefile \
+  src/lalapps/version2.c \
   src/online/Makefile \
   src/power/Makefile \
   src/pulsar/CreateEphemeris/Makefile \
@@ -58,16 +59,16 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="6.16.1"
-MIN_LALFRAME_VERSION="1.4.1"
-MIN_LALMETAIO_VERSION="1.2.8"
-MIN_LALXML_VERSION="1.2.2"
-MIN_LALSIMULATION_VERSION="1.6.0"
-MIN_LALBURST_VERSION="1.4.2"
-MIN_LALINSPIRAL_VERSION="1.7.5"
-MIN_LALPULSAR_VERSION="1.14.0"
-MIN_LALINFERENCE_VERSION="1.7.0"
-MIN_LALSTOCHASTIC_VERSION="1.1.18"
+MIN_LAL_VERSION="6.17.0"
+MIN_LALFRAME_VERSION="1.4.2"
+MIN_LALMETAIO_VERSION="1.3.0"
+MIN_LALXML_VERSION="1.2.3"
+MIN_LALSIMULATION_VERSION="1.6.1"
+MIN_LALBURST_VERSION="1.4.3"
+MIN_LALINSPIRAL_VERSION="1.7.6"
+MIN_LALPULSAR_VERSION="1.15.0"
+MIN_LALINFERENCE_VERSION="1.8.0"
+MIN_LALSTOCHASTIC_VERSION="1.1.19"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALFRAME_VERSION])
 AC_SUBST([MIN_LALMETAIO_VERSION])
@@ -375,7 +376,7 @@ if test "${boinc}" = "true" ; then
 fi
 
 # check for lal libararies and headers
-LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
 LALSUITE_CHECK_OPT_LIB([LALFrame],[${MIN_LALFRAME_VERSION}],[LALFrOpen],[lal/LALFrameL.h])
 LALSUITE_CHECK_OPT_LIB([LALMetaIO],[${MIN_LALMETAIO_VERSION}],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])

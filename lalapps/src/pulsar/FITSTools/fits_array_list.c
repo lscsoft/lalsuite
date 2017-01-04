@@ -46,7 +46,9 @@ int main(int argc, char *argv[])
   double *pixels = 0;
   char format[20], hdformat[20];
 
-  if (argc != 2) {
+  int printhelp = (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0));
+
+  if (printhelp || argc != 2) {
     fprintf(stderr, "Usage:  %s filename[ext][section filter] \n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "List the the pixel values in a FITS array \n");

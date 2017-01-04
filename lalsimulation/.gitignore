@@ -39,7 +39,7 @@ python/lalsimulation/__init__.py
 python/lalsimulation/_lalsimulation*
 python/lalsimulation/git_version.py
 python/lalsimulation/lalsimulation.py
-src/LALSimulationBuildInfo.c
+src/LALSimulationBuildInfoHeader.h
 src/LALSimulationConfig.h
 src/LALSimulationVCSInfo.c
 src/LALSimulationVCSInfo.h
@@ -59,8 +59,10 @@ src/lalsim-ns-mass-radius
 src/lalsim-ns-params
 src/lalsim-sgwb
 src/lalsim-unicorn
+src/lalsimulation_version
 src/stamp-h1
 src/stamp-h2
+src/version.c
 swig/swiglal*
 test/EOBNRv2Test
 test/GRFlagsTest

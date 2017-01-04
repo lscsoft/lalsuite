@@ -8,6 +8,7 @@ __version__ = '$Revision$'
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
+import itertools
 import sys, os, copy, math
 import math
 import socket, time
@@ -21,7 +22,6 @@ import subprocess
 
 ##############################################################################
 # import the modules we need to build the pipeline
-from glue import iterutils
 from glue import pipeline
 from glue import lal
 from glue.ligolw import lsctables
@@ -565,7 +565,7 @@ def ifo_combos(ifosegdict):
     if ifosegdict[ifo]: ifos.append(ifo)
   ifos.sort()
   for i in range(2, len(ifos)+1):
-    combos.extend([j for j in iterutils.choices(ifos,i)])
+    combos.extend([j for j in itertools.combinations(ifos,i)])
   l = [i for i in combos]
   combos = []
   for i in l: combos.append(",".join(i))
@@ -633,7 +633,7 @@ def grep_pieces_and_append(string, inname, outname, append_cache=None):
 
 def get_doubles(instruments):
   all_ifos = instruments.strip().split(',')
-  ifo_combinations = list(iterutils.choices(all_ifos,2))
+  ifo_combinations = list(itertools.combinations(all_ifos,2))
   for comb in ifo_combinations:
     comb=','.join(comb)
   return comb

@@ -153,14 +153,12 @@ static int compareSFTloc(const void *ptr1, const void *ptr2);
 static int compareDetNameCatalogs ( const void *ptr1, const void *ptr2 );
 
 static UINT8 calc_crc64(const CHAR *data, UINT4 length, UINT8 crc);
+static BOOLEAN has_valid_v2_crc64 (FILE *fp );
+
 static int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
 REAL8 TSFTfromDFreq ( REAL8 dFreq );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
-
-// ---------- obsolete LAL-API was moved into external file
-#include "SFTfileIO-LAL.c"
-// ------------------------------
 
 /**
  * Defines the official CW convention for whether a GPS time is 'within' a given range, defined
@@ -649,7 +647,7 @@ read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, 
 
 /**
  * Load the given frequency-band <tt>[fMin, fMax]</tt> (inclusively) from the SFT-files listed in the
- * SFT-'catalogue' ( returned by LALSFTdataFind() ).
+ * SFT-'catalogue' ( returned by XLALSFTdataFind() ).
  *
  * Note: \a fMin (or \a fMax) is allowed to be set to \c -1, which means to read in all
  * Frequency-bins from the lowest (or up to the highest) found in all SFT-files of the catalog.
@@ -975,10 +973,10 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
 /**
  * Function to load a catalog of SFTs from possibly different detectors.
- * This is similar to LALLoadSFTs except that the input SFT catalog is
+ * This is similar to XLALLoadSFTs except that the input SFT catalog is
  * allowed to contain multiple ifos. The output is the structure
  * MultiSFTVector which is a vector of (pointers to) SFTVectors, one for
- * each ifo found in the catalog. As in LALLoadSFTs, fMin and fMax can be
+ * each ifo found in the catalog. As in XLALLoadSFTs, fMin and fMax can be
  * set to -1 to get the full SFT from the lowest to the highest frequency
  * bin found in the SFT.
  *
@@ -1119,6 +1117,68 @@ XLALReadTimestampsFile ( const CHAR *fname )
   return timestamps;
 
 } /* XLALReadTimestampsFile() */
+
+
+/**
+ * This function reads in the SFTs in the catalog and validates their CRC64 checksums.
+ * The result of the validation is returned in '*crc_check'. The function itself returns
+ * XLAL_SUCCESS if the operation suceeds (even if the checksums fail to validate),
+ * and XLAL_FAILURE otherwise.
+ *
+ * \note: because this function has to read the complete SFT data into memory it is
+ * potentially slow and memory-intensive.
+ */
+int
+XLALCheckCRCSFTCatalog(
+  BOOLEAN *crc_check,  /**< set to true if checksum validation passes */
+  SFTCatalog *catalog  /**< catalog of SFTs to check */
+  )
+{
+
+  XLAL_CHECK( crc_check != NULL, XLAL_EINVAL );
+  XLAL_CHECK( catalog != NULL, XLAL_EINVAL );
+
+  /* CRC checks are assumed to pass until one fails */
+  *crc_check = 1;
+
+  /* step through SFTs and check CRC64 */
+  for ( UINT4 i=0; i < catalog->length; i ++ )
+    {
+      FILE *fp;
+
+      switch ( catalog->data[i].version  )
+	{
+	case 1:	/* version 1 had no CRC  */
+	  continue;
+	case 2:
+	  if ( (fp = fopen_SFTLocator ( catalog->data[i].locator )) == NULL )
+	    {
+	      XLALPrintError ( "Failed to open locator '%s'\n",
+			      XLALshowSFTLocator ( catalog->data[i].locator ) );
+              return XLAL_FAILURE;
+	    }
+	  if ( !(has_valid_v2_crc64 ( fp ) != 0) )
+	    {
+	      XLALPrintError ( "CRC64 checksum failure for SFT '%s'\n",
+			      XLALshowSFTLocator ( catalog->data[i].locator ) );
+              *crc_check = 0;
+	      fclose(fp);
+              return XLAL_SUCCESS;
+	    }
+	  fclose(fp);
+	  break;
+
+	default:
+	  XLALPrintError ( "Illegal SFT-version encountered : %d\n", catalog->data[i].version );
+          return XLAL_FAILURE;
+	  break;
+	} /* switch (version ) */
+
+    } /* for i < numSFTs */
+
+  return XLAL_SUCCESS;
+
+} /* XLALCheckCRCSFTCatalog() */
 
 
 /**
@@ -2291,6 +2351,91 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
 } /* read_v2_header_from_fp() */
 
 
+/* ----- SFT v1 -specific header-reading function:
+ *
+ * return general SFTtype header, place filepointer at the end of the header if it succeeds,
+ * set fp to initial position if it fails.
+ * RETURN: 0 = OK, -1 = ERROR
+ *
+ * NOTE: fatal errors will produce a XLALPrintError() error-message, but
+ * non-fatal 'SFT-format'-errors will only output error-messages if lalDebugLevel > 0.
+ *
+ */
+static int
+read_v1_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, BOOLEAN swapEndian)
+{
+  _SFT_header_v1_t rawheader;
+  long save_filepos;
+
+  if ( !fp || !header || !nsamples)
+    {
+      XLALPrintError ( "\nERROR read_v1_header_from_fp(): called with NULL input!\n\n");
+      return -1;
+    }
+
+  /* store fileposition for restoring in case of failure */
+  if ( ( save_filepos = ftell(fp) ) == -1 )
+    {
+      XLALPrintError ("\nftell() failed: %s\n\n", strerror(errno) );
+      return -1;
+    }
+
+  /* read the whole header */
+  if (fread( &rawheader, sizeof(rawheader), 1, fp) != 1)
+    {
+      if (lalDebugLevel) XLALPrintError ("\nCould not read v1-header. %s\n\n", strerror(errno) );
+      goto failed;
+    }
+
+  if (swapEndian)
+    {
+      endian_swap((CHAR*)(&rawheader.version), 			sizeof(rawheader.version) 		, 1);
+      endian_swap((CHAR*)(&rawheader.gps_sec), 			sizeof(rawheader.gps_sec) 		, 1);
+      endian_swap((CHAR*)(&rawheader.gps_nsec), 		sizeof(rawheader.gps_nsec) 		, 1);
+      endian_swap((CHAR*)(&rawheader.tbase), 			sizeof(rawheader.tbase) 		, 1);
+      endian_swap((CHAR*)(&rawheader.first_frequency_index), 	sizeof(rawheader.first_frequency_index) , 1);
+      endian_swap((CHAR*)(&rawheader.nsamples), 		sizeof(rawheader.nsamples) 		, 1);
+    }
+
+  /* double-check version-number */
+  if ( rawheader.version != 1 )
+    {
+      XLALPrintError ("\nWrong SFT-version %g in read_v1_header_from_fp()\n\n", rawheader.version );
+      goto failed;
+    }
+
+  if ( rawheader.nsamples <= 0 )
+    {
+      XLALPrintError ("\nNon-positive number of samples in SFT!\n\n");
+      goto failed;
+    }
+
+
+  /* ok: */
+  memset ( header, 0, sizeof( *header ) );
+
+  /* NOTE: v1-SFTs don't contain a detector-name, in which case we set it to '??' */
+  strcpy ( header->name, "??" );
+
+  header->epoch.gpsSeconds 	= rawheader.gps_sec;
+  header->epoch.gpsNanoSeconds 	= rawheader.gps_nsec;
+  header->deltaF 		= 1.0 / rawheader.tbase;
+  header->f0 			= rawheader.first_frequency_index / rawheader.tbase;
+
+  (*nsamples) = rawheader.nsamples;
+
+  return 0;
+
+ failed:
+  /* restore filepointer initial position  */
+  if ( fseek ( fp, save_filepos, SEEK_SET ) == -1 )
+    XLALPrintError ("\nfseek() failed to return to intial fileposition: %s\n\n", strerror(errno) );
+
+  return -1;
+
+} /* read_v1_header_from_fp() */
+
+
 /* check that channel-prefix defines a valid 'known' detector.
  * This is just a convenience wrapper to XLALGetCWDetectorPrefix(), which defines all valid 'CW detectors'
  *
@@ -2750,6 +2895,79 @@ calc_crc64(const CHAR *data, UINT4 length, UINT8 crc)
   return crc;
 
 } /* calc_crc64() */
+
+
+/**
+ * Check the v2 SFT-block starting at fp for valid crc64 checksum.
+ * Restores filepointer before leaving.
+ */
+static BOOLEAN
+has_valid_v2_crc64 ( FILE *fp )
+{
+  long save_filepos;
+  UINT8 computed_crc, ref_crc;
+  SFTtype header;
+  UINT4 numBins;
+  CHAR *SFTcomment = NULL;
+  UINT4 data_len;
+  char block[BLOCKSIZE];
+  UINT4 version;
+  BOOLEAN need_swap;
+
+  /* input consistency */
+  if ( !fp )
+    {
+      XLALPrintError ("\nhas_valid_v2_crc64() was called with NULL filepointer!\n\n");
+      return FALSE;
+    }
+
+  /* store fileposition for restoring in case of failure */
+  if ( ( save_filepos = ftell(fp) ) == -1 )
+    {
+      XLALPrintError ("\nERROR: ftell() failed: %s\n\n", strerror(errno) );
+      return -1;
+    }
+
+  if ( read_SFTversion_from_fp ( &version, &need_swap, fp ) != 0 )
+    return -1;
+
+  if ( version != 2 )
+    {
+      XLALPrintError ("\nhas_valid_v2_crc64() was called on non-v2 SFT.\n\n");
+      return -1;
+    }
+
+  /* ----- compute CRC ----- */
+  /* read the header, unswapped, only to obtain it's crc64 checksum */
+  if ( read_v2_header_from_fp ( fp, &header, &numBins, &computed_crc, &ref_crc, &SFTcomment, need_swap ) != 0 )
+    {
+      if ( SFTcomment ) LALFree ( SFTcomment );
+      return FALSE;
+    }
+  if ( SFTcomment ) LALFree ( SFTcomment );
+
+  /* read data in blocks of BLOCKSIZE, computing CRC */
+  data_len = numBins * 8 ;	/* COMPLEX8 data */
+  while ( data_len > 0 )
+    {
+      /* read either BLOCKSIZE or amount remaining */
+      int toread = (BLOCKSIZE < data_len) ? BLOCKSIZE : data_len;
+      if (toread != (int)fread ( block, 1, toread, fp) )
+	{
+	  XLALPrintError ("\nFailed to read all frequency-bins from SFT.\n\n");
+	  return FALSE;
+	}
+      data_len -= toread;
+
+      /* compute CRC64: don't endian-swap for that! */
+      computed_crc = calc_crc64( (const CHAR*)block, toread, computed_crc );
+
+    } /* while data */
+
+  /* check that checksum is consistent */
+  return ( computed_crc == ref_crc );
+
+} /* has_valid_v2_crc64 */
 
 
 /* compare two SFT-descriptors by their GPS-epoch, then starting frequency */

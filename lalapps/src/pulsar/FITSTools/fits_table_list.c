@@ -25,6 +25,7 @@
 #include <config.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 #if defined(HAVE_LIBCFITSIO)
 #include <fitsio.h>
@@ -37,16 +38,30 @@
 #define pclose(...)
 #endif
 
+static int ndigits(int x) {
+  return floor(log10(abs(x))) + 1;
+}
+
 int main(int argc, char *argv[])
 {
   fitsfile *fptr = 0;      /* FITS file pointer, defined in fitsio.h */
   char *val = 0, value[1000], nullstr[]="NAN";
   char keyword[FLEN_KEYWORD], colname[1000][FLEN_VALUE];
   int status = 0;   /*  CFITSIO status value MUST be initialized to zero!  */
-  int hdunum = 0, hdutype = 0, ncols = 0, ii = 0, anynul = 0, dispwidth[1000];
-  long jj = 0, nrows = 0;
+  int hdunum = 0, hdutype = 0, ncols = 0, ii = 0, anynul = 0, typecode[1000], dispwidth[1000], nd = 0;
+  long jj = 0, nrows = 0, nvecelem[1000], kk = 0, repeat, width = 0;
 
-  if (argc != 2) {
+  int printhelp = (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0));
+
+  char *argfile;
+  int printhdr;
+  if (!printhelp && argc == 3 && strcmp(argv[1], "-n") == 0) {
+    printhdr = 0;
+    argfile = argv[2];
+  } else if (!printhelp && argc == 2) {
+    printhdr = 1;
+    argfile = argv[1];
+  } else {
     fprintf(stderr, "Usage:  %s filename[ext][col filter][row filter] \n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "List the contents of a FITS table \n");
@@ -57,6 +72,7 @@ int main(int argc, char *argv[])
     fprintf(stderr, "  %s tab.fits[1][col X;Y]    - list X and Y cols only\n", argv[0]);
     fprintf(stderr, "  %s tab.fits[1][col -PI]    - list all but the PI col\n", argv[0]);
     fprintf(stderr, "  %s tab.fits[1][col -PI][#row < 101]  - combined case\n", argv[0]);
+    fprintf(stderr, "  %s -n ...                  - list without table header\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "Display formats can be modified with the TDISPn keywords.\n");
     return (0);
@@ -68,7 +84,7 @@ int main(int argc, char *argv[])
     return (1);
   }
 
-  if (!fits_open_file(&fptr, argv[1], READONLY, &status)) {
+  if (!fits_open_file(&fptr, argfile, READONLY, &status)) {
     if (fits_get_hdu_num(fptr, &hdunum) == 1)
       /* This is the primary array;  try to move to the */
       /* first extension and see if it is a table */
@@ -88,30 +104,46 @@ int main(int argc, char *argv[])
         fits_make_keyn("TTYPE", ii, keyword, &status);
         fits_read_key(fptr, TSTRING, keyword, colname[ii], NULL, &status);
         fits_get_col_display_width(fptr, ii, &dispwidth[ii], &status);
+        fits_get_coltype(fptr, ii, &typecode[ii], &repeat, &width, &status);
+        if (typecode[ii] != TSTRING && repeat > 1) {
+          nvecelem[ii] = repeat;
+          dispwidth[ii] += ndigits(nvecelem[ii]) + 2;
+        } else {
+          nvecelem[ii] = 1;
+        }
         if (dispwidth[ii] < (int)strlen(colname[ii])) {
           dispwidth[ii] = (int)strlen(colname[ii]);
         }
       }
 
       /* print column names as column headers */
-      fprintf(fout, "##\n## ");
-      for (ii = 1; ii <= ncols; ii++) {
-        fprintf(fout, "%*s ",dispwidth[ii], colname[ii]);
+      if (printhdr) {
+        fprintf(fout, "##\n## ");
+        for (ii = 1; ii <= ncols; ii++) {
+          if (nvecelem[ii] > 1) {
+            for (kk = 1; kk <= nvecelem[ii]; kk++) {
+              nd = ndigits(kk);
+              fprintf(fout, "%*s[%*li] ", dispwidth[ii] - nd - 2, colname[ii], nd, kk);
+            }
+          } else {
+            fprintf(fout, "%*s ", dispwidth[ii], colname[ii]);
+          }
+        }
+        fprintf(fout, "\n");  /* terminate header line */
       }
-      fprintf(fout, "\n");  /* terminate header line */
 
       /* print each column, row by row (there are faster ways to do this) */
       val = value;
       for (jj = 1; jj <= nrows && !status; jj++) {
         fprintf(fout, "   ");
-        for (ii = 1; ii <= ncols; ii++) {
+        for (ii = 1; ii <= ncols && !status; ii++) {
+
           /* read value as a string, regardless of intrinsic datatype */
-          if (fits_read_col_str(fptr,ii,jj, 1, 1, nullstr,
-                                &val, &anynul, &status)) {
-            break;  /* jump out of loop on error */
+          for (kk = 1; kk <= nvecelem[ii] && !status; kk++) {
+            if (fits_read_col_str(fptr, ii, jj, kk, 1, nullstr, &val, &anynul, &status)) break;   /* jump out of loop on error */
+            fprintf(fout, "%*s ",dispwidth[ii], value);
           }
 
-          fprintf(fout, "%*s ",dispwidth[ii], value);
         }
         fprintf(fout, "\n");
       }

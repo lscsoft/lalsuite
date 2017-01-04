@@ -140,3 +140,7 @@ void set_boinc_options(void) {
   eah_hostcpid = eah_app_init_data.host_info.host_cpid;
   boinc_options_defaults(eah_boinc_options);
 }
+
+int eah_temporary_exit(int delay, const char* reason) {
+    return boinc_temporary_exit(delay, reason);
+}

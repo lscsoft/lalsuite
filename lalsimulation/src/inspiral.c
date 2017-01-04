@@ -57,7 +57,7 @@
  * <DD>output data in frequency domain</DD>
  * <DT>`-c`, `--condition-waveform`
  * <DD>apply waveform conditioning</DD>
- * <DT>`-Q`, `--amp-phase`
+ * <DT>`-P`, `--amp-phase`
  * <DD>output data as amplitude and phase</DD>
  * <DT>`-a` APPROX, `--approximant=`APPROX 
  * <DD>approximant [TaylorT1]</DD>
@@ -70,8 +70,14 @@
  * <DD>twice pN order of phase (-1 == highest) [-1]</DD>
  * <DT>`-o` AMPO, `--amp-order=`AMPO       
  * <DD>twice pN order of amplitude (-1 == highest) [0]</DD>
- * <DT>`-q` PHIREF, `--phiRef=`PHIREF      
+ * <DT>`-u` PHIREF, `--phiRef=`PHIREF
  * <DD>reference phase in degrees [0]</DD>
+ * <DT>`-U` PERIANOM, `--periastron-anomaly=`PERIANOM
+ * <DD>mean periastron anomaly in degrees [0]</DD>
+ * <DT>`-W` LONGASC, `--longitude-ascending-node=`LONGASC
+ * <DD>longitude of ascending node in degrees [0]</DD>
+ * <DT>`-e` ECC, `--eccentricity=`ECC
+ * <DD>orbital eccentricity [0]</DD>
  * <DT>`-R` SRATE, `--sample-rate=`SRATE   
  * <DD>sample rate in Hertz [16384]</DD>
  * <DT>`-M` M1, `--m1=`M1                  
@@ -98,6 +104,10 @@
  * <DD>dimensionless tidal deformability of primary [0]</DD>
  * <DT>`-l` LAM2, `--tidal-lambda2=`LAM2   
  * <DD>dimensionless tidal deformability of secondary [0]</DD>
+ * <DT>`-q` DQM1, `--delta-quad-mon1=`DQM1
+ * <DD>difference in quadrupole-monopole term of primary [0]</DD>
+ * <DT>`-Q` DQM2, `--delta-quad-mon2=`DQM2
+ * <DD>difference in quadrupole-monopole term of secondary [0]</DD>
  * <DT>`-s` SPINO, `--spin-order=`SPINO    
  * <DD>twice pN order of spin effects (-1 == all) [-1]</DD>
  * <DT>`-t` TIDEO, `--tidal-order=`TIDEO   
@@ -111,7 +121,7 @@
  * <DT>`-n` MODES, `--modes=`MODES         
  * <DD>allowed l modes {L2, L23, ..., ALL} [L2]</DD>
  * <DT>`-p` KEY1`=`VAL1`,`KEY2`=`VAL2,...,
- * `--nonGRpar=`KEY1`=`VAL1`,`KEY2`=`VAL2,...</DT>
+ * `--params=`KEY1`=`VAL1`,`KEY2`=`VAL2,...</DT>
  * <DD>extra parameters as a key-value pair</DD>
  * </DL>
  *
@@ -179,6 +189,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LALError.h>
 #include <lal/LALString.h>
+#include <lal/LALDict.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
 
@@ -186,8 +197,11 @@
 #define DEFAULT_APPROX "TaylorT1"
 #define DEFAULT_DOMAIN -1
 #define DEFAULT_PHASEO -1
-#define DEFAULT_AMPO 0
+#define DEFAULT_AMPO -1
 #define DEFAULT_PHIREF 0.0
+#define DEFAULT_MEANPERANO 0.0
+#define DEFAULT_LONGASCNODE 0.0
+#define DEFAULT_ECCENTRICITY 0.0
 #define DEFAULT_FREF 0.0
 #define DEFAULT_SRATE 16384.0
 #define DEFAULT_M1 1.4
@@ -203,6 +217,8 @@
 #define DEFAULT_S2Z 0.0
 #define DEFAULT_LAMBDA1 0.0
 #define DEFAULT_LAMBDA2 0.0
+#define DEFAULT_DQUADMON1 0.0
+#define DEFAULT_DQUADMON2 0.0
 
 /* parameters given in command line arguments */
 struct params {
@@ -212,9 +228,10 @@ struct params {
     int amp_phase;
     Approximant approx;
     int domain;
-    int phaseO;
-    int ampO;
     double phiRef;
+    double meanPerAno;
+    double longAscNodes;
+    double eccentricity;
     double fRef;
     double srate;
     double m1;
@@ -228,10 +245,7 @@ struct params {
     double s2x;
     double s2y;
     double s2z;
-    double lambda1;
-    double lambda2;
-    LALSimInspiralWaveformFlags *waveFlags;
-    LALSimInspiralTestGRParam *nonGRparams;
+    LALDict *params;
 };
 
 int usage(const char *program);
@@ -305,8 +319,7 @@ int main(int argc, char *argv[])
     }
 
     /* cleanup */
-    XLALSimInspiralDestroyWaveformFlags(p.waveFlags);
-    XLALSimInspiralDestroyTestGRParam(p.nonGRparams);
+    XLALDestroyDict(p.params);
     LALCheckMemoryLeaks();
     return 0;
 }
@@ -413,12 +426,11 @@ int create_td_waveform(REAL8TimeSeries ** h_plus, REAL8TimeSeries ** h_cross, st
     clock_t timer_start = 0;
 
     if (p.condition) {
-        double redshift = 0.0;
         if (p.verbose) {
             fprintf(stderr, "generating waveform in time domain using XLALSimInspiralTD...\n");
             timer_start = clock();
         }
-        XLALSimInspiralTD(h_plus, h_cross, p.phiRef, 1.0 / p.srate, p.m1, p.m2, p.s1x, p.s1y, p.s1z, p.s2x, p.s2y, p.s2z, p.f_min, p.fRef, p.distance, redshift, p.inclination, p.lambda1, p.lambda2, p.waveFlags, p.nonGRparams, p.ampO, p.phaseO, p.approx);
+        XLALSimInspiralTD(h_plus, h_cross, p.m1, p.m2, p.s1x, p.s1y, p.s1z, p.s2x, p.s2y, p.s2z, p.distance, p.inclination, p.phiRef, p.longAscNodes, p.eccentricity, p.meanPerAno, 1.0 / p.srate, p.f_min, p.fRef, p.params, p.approx);
         if (p.verbose)
             fprintf(stderr, "generation took %g seconds\n", (double)(clock() - timer_start) / CLOCKS_PER_SEC);
     } else if (p.domain == LAL_SIM_DOMAIN_TIME) {
@@ -427,7 +439,7 @@ int create_td_waveform(REAL8TimeSeries ** h_plus, REAL8TimeSeries ** h_cross, st
             fprintf(stderr, "generating waveform in time domain using XLALSimInspiralChooseTDWaveform...\n");
             timer_start = clock();
         }
-        XLALSimInspiralChooseTDWaveform(h_plus, h_cross, p.phiRef, 1.0 / p.srate, p.m1, p.m2, p.s1x, p.s1y, p.s1z, p.s2x, p.s2y, p.s2z, p.f_min, p.fRef, p.distance, p.inclination, p.lambda1, p.lambda2, p.waveFlags, p.nonGRparams, p.ampO, p.phaseO, p.approx);
+        XLALSimInspiralChooseTDWaveform(h_plus, h_cross, p.m1, p.m2, p.s1x, p.s1y, p.s1z, p.s2x, p.s2y, p.s2z, p.distance, p.inclination, p.phiRef, p.longAscNodes, p.eccentricity, p.meanPerAno, 1.0 / p.srate, p.f_min, p.fRef, p.params, p.approx);
         if (p.verbose)
             fprintf(stderr, "generation took %g seconds\n", (double)(clock() - timer_start) / CLOCKS_PER_SEC);
     } else {
@@ -452,7 +464,7 @@ int create_td_waveform(REAL8TimeSeries ** h_plus, REAL8TimeSeries ** h_cross, st
             fprintf(stderr, "generating waveform in frequency domain using XLALSimInspiralChooseFDWaveform...\n");
             timer_start = clock();
         }
-        XLALSimInspiralChooseFDWaveform(&htilde_plus, &htilde_cross, p.phiRef, deltaF, p.m1, p.m2, p.s1x, p.s1y, p.s1z, p.s2x, p.s2y, p.s2z, p.f_min, 0.5 * p.srate, p.fRef, p.distance, p.inclination, p.lambda1, p.lambda2, p.waveFlags, p.nonGRparams, p.ampO, p.phaseO, p.approx);
+        XLALSimInspiralChooseFDWaveform(&htilde_plus, &htilde_cross, p.m1, p.m2, p.s1x, p.s1y, p.s1z, p.s2x, p.s2y, p.s2z, p.distance, p.inclination, p.phiRef, p.longAscNodes, p.eccentricity, p.meanPerAno, deltaF, p.f_min, 0.5 * p.srate, p.fRef, p.params, p.approx);
         if (p.verbose)
             fprintf(stderr, "generation took %g seconds\n", (double)(clock() - timer_start) / CLOCKS_PER_SEC);
 
@@ -496,12 +508,11 @@ int create_fd_waveform(COMPLEX16FrequencySeries ** htilde_plus, COMPLEX16Frequen
         fprintf(stderr, "using frequency resolution deltaF = %g Hz\n", deltaF);
 
     if (p.condition) {
-        double redshift = 0.0;
         if (p.verbose) {
             fprintf(stderr, "generating waveform in frequency domain using XLALSimInspiralFD...\n");
             timer_start = clock();
         }
-        XLALSimInspiralFD(htilde_plus, htilde_cross, p.phiRef, deltaF, p.m1, p.m2, p.s1x, p.s1y, p.s1z, p.s2x, p.s2y, p.s2z, p.f_min, 0.5 * p.srate, p.fRef, p.distance, redshift, p.inclination, p.lambda1, p.lambda2, p.waveFlags, p.nonGRparams, p.ampO, p.phaseO, p.approx);
+        XLALSimInspiralFD(htilde_plus, htilde_cross, p.m1, p.m2, p.s1x, p.s1y, p.s1z, p.s2x, p.s2y, p.s2z, p.distance, p.inclination, p.phiRef, p.longAscNodes, p.eccentricity, p.meanPerAno, deltaF, p.f_min, 0.5 * p.srate, p.fRef, p.params, p.approx);
         if (p.verbose)
             fprintf(stderr, "generation took %g seconds\n", (double)(clock() - timer_start) / CLOCKS_PER_SEC);
     } else if (p.domain == LAL_SIM_DOMAIN_FREQUENCY) {
@@ -509,7 +520,7 @@ int create_fd_waveform(COMPLEX16FrequencySeries ** htilde_plus, COMPLEX16Frequen
             fprintf(stderr, "generating waveform in frequency domain using XLALSimInspiralChooseFDWaveform...\n");
             timer_start = clock();
         }
-        XLALSimInspiralChooseFDWaveform(htilde_plus, htilde_cross, p.phiRef, deltaF, p.m1, p.m2, p.s1x, p.s1y, p.s1z, p.s2x, p.s2y, p.s2z, p.f_min, 0.5 * p.srate, p.fRef, p.distance, p.inclination, p.lambda1, p.lambda2, p.waveFlags, p.nonGRparams, p.ampO, p.phaseO, p.approx);
+        XLALSimInspiralChooseFDWaveform(htilde_plus, htilde_cross, p.m1, p.m2, p.s1x, p.s1y, p.s1z, p.s2x, p.s2y, p.s2z, p.distance, p.inclination, p.phiRef, p.longAscNodes, p.eccentricity, p.meanPerAno, deltaF, p.f_min, 0.5 * p.srate, p.fRef, p.params, p.approx);
         if (p.verbose)
             fprintf(stderr, "generation took %g seconds\n", (double)(clock() - timer_start) / CLOCKS_PER_SEC);
     } else {
@@ -522,7 +533,7 @@ int create_fd_waveform(COMPLEX16FrequencySeries ** htilde_plus, COMPLEX16Frequen
             fprintf(stderr, "generating waveform in time domain using XLALSimInspiralChooseTDWaveform...\n");
             timer_start = clock();
         }
-        XLALSimInspiralChooseTDWaveform(&h_plus, &h_cross, p.phiRef, 1.0 / p.srate, p.m1, p.m2, p.s1x, p.s1y, p.s1z, p.s2x, p.s2y, p.s2z, p.f_min, p.fRef, p.distance, p.inclination, p.lambda1, p.lambda2, p.waveFlags, p.nonGRparams, p.ampO, p.phaseO, p.approx);
+        XLALSimInspiralChooseTDWaveform(&h_plus, &h_cross, p.m1, p.m2, p.s1x, p.s1y, p.s1z, p.s2x, p.s2y, p.s2z, p.distance, p.inclination, p.phiRef, p.longAscNodes, p.eccentricity, p.meanPerAno, 1.0 / p.srate, p.f_min, p.fRef, p.params, p.approx);
         if (p.verbose)
             fprintf(stderr, "generation took %g seconds\n", (double)(clock() - timer_start) / CLOCKS_PER_SEC);
 
@@ -632,19 +643,29 @@ const char *modes_choice_to_string(LALSimInspiralModesChoice modes)
 int print_params(struct params p)
 {
     if (p.verbose) {
-        int spinO = XLALSimInspiralGetSpinOrder(p.waveFlags);
-        int tideO = XLALSimInspiralGetTidalOrder(p.waveFlags);
-        int axis = XLALSimInspiralGetFrameAxis(p.waveFlags);
-        int modes = XLALSimInspiralGetModesChoice(p.waveFlags);
+        int phaseO = XLALSimInspiralWaveformParamsLookupPNPhaseOrder(p.params);
+        int ampO = XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(p.params);
+        int spinO = XLALSimInspiralWaveformParamsLookupPNSpinOrder(p.params);
+        int tideO = XLALSimInspiralWaveformParamsLookupPNTidalOrder(p.params);
+        int axis = XLALSimInspiralWaveformParamsLookupFrameAxis(p.params);
+        int modes = XLALSimInspiralWaveformParamsLookupModesChoice(p.params);
         fprintf(stderr, "approximant:                                  %s\n", XLALSimInspiralGetStringFromApproximant(p.approx));
-        if (p.phaseO == -1)
+        if (phaseO == -1)
             fprintf(stderr, "phase post-Newtonian order:                   highest available\n");
         else
-            fprintf(stderr, "twice phase post-Newtonian order:             %d (%g pN)\n", p.phaseO, 0.5 * p.phaseO);
-        if (p.ampO == -1)
+            fprintf(stderr, "twice phase post-Newtonian order:             %d (%g pN)\n", phaseO, 0.5 * phaseO);
+        if (ampO == -1)
             fprintf(stderr, "amplitude post-Newtonian order:               highest available\n");
         else
-            fprintf(stderr, "twice amplitude post-Newtonian order:         %d (%g pN)\n", p.ampO, 0.5 * p.ampO);
+            fprintf(stderr, "twice amplitude post-Newtonian order:         %d (%g pN)\n", ampO, 0.5 * ampO);
+        if (spinO == -1)
+            fprintf(stderr, "spin post-Newtonian order:                    highest available\n");
+        else
+            fprintf(stderr, "twice spin post-Newtonian order:              %d (%g pN)\n", spinO, 0.5 * spinO);
+        if (tideO == -1)
+            fprintf(stderr, "tidal post-Newtonian order:                   highest available\n");
+        else
+            fprintf(stderr, "twice tidal post-Newtonian order:             %d (%g pN)\n", tideO, 0.5 * tideO);
         fprintf(stderr, "reference phase:                              %g deg, %g rad\n", p.phiRef / LAL_PI_180, p.phiRef);
         fprintf(stderr, "sample rate:                                  %g Hz\n", p.srate);
         fprintf(stderr, "primary mass:                                 %g Msun\n", p.m1 / LAL_MSUN_SI);
@@ -655,22 +676,17 @@ int print_params(struct params p)
         fprintf(stderr, "reference frequency:                          %g Hz\n", p.fRef);
         fprintf(stderr, "distance:                                     %g Mpc\n", p.distance / (1e6 * LAL_PC_SI));
         fprintf(stderr, "inclination:                                  %g deg, %g rad\n", p.inclination / LAL_PI_180, p.inclination);
-        fprintf(stderr, "primary dimensionless tidal deformability:    %g\n", p.lambda1);
-        fprintf(stderr, "secondary dimensionless tidal deformability:  %g\n", p.lambda2);
-        if (spinO == -1)
-            fprintf(stderr, "spin post-Newtonian order:                    highest available\n");
-        else
-            fprintf(stderr, "twice spin post-Newtonian order:              %d (%g pN)\n", spinO, 0.5 * spinO);
-        if (tideO == -1)
-            fprintf(stderr, "tidal post-Newtonian order:                   highest available\n");
-        else
-            fprintf(stderr, "twice tidal post-Newtonian order:             %d (%g pN)\n", tideO, 0.5 * tideO);
         fprintf(stderr, "frame axis:                                   %s\n", frame_axis_to_string(axis));
         fprintf(stderr, "higher mode l values:                         %s\n", modes_choice_to_string(modes));
-        while (p.nonGRparams) {
-            fprintf(stderr, "extra non-GR parameter:                       %s=%g\n", p.nonGRparams->data->name,
-                p.nonGRparams->data->value);
-            p.nonGRparams = p.nonGRparams->next;
+        if (p.params) {
+            LALDictEntry *param;
+            LALDictIter iter;
+            XLALDictIterInit(&iter, p.params);
+            while ((param = XLALDictIterNext(&iter)) != NULL) {
+                fprintf(stderr, "extra parameters:                             %s=", XLALDictEntryGetKey(param));
+                XLALValuePrint(XLALDictEntryGetValue(param), fileno(stderr));
+                fprintf(stderr, "\n");
+            }
         }
     }
     return 0;
@@ -687,13 +703,16 @@ int usage(const char *program)
     fprintf(stderr, "\t-C, --radians            \tuse radians rather than decimal degrees\n");
     fprintf(stderr, "\t-F, --frequency-domain   \toutput data in frequency domain\n");
     fprintf(stderr, "\t-c, --condition-waveform \tapply waveform conditioning\n");
-    fprintf(stderr, "\t-Q, --amp-phase          \toutput data as amplitude and phase\n");
+    fprintf(stderr, "\t-P, --amp-phase          \toutput data as amplitude and phase\n");
     fprintf(stderr, "\t-a APPROX, --approximant=APPROX \n\t\tapproximant [%s]\n", DEFAULT_APPROX);
     fprintf(stderr, "\t-w WAVEFORM, --waveform=WAVEFORM \n\t\twaveform string giving both approximant and order\n");
     fprintf(stderr, "\t-D domain, --domain=DOMAIN      \n\t\tdomain for waveform generation when both are available\n\t\t{\"time\", \"freq\"} [use natural domain for output]\n");
     fprintf(stderr, "\t-O PHASEO, --phase-order=PHASEO \n\t\ttwice pN order of phase (-1 == highest) [%d]\n", DEFAULT_PHASEO);
     fprintf(stderr, "\t-o AMPO, --amp-order=AMPO       \n\t\ttwice pN order of amplitude (-1 == highest) [%d]\n", DEFAULT_AMPO);
-    fprintf(stderr, "\t-q PHIREF, --phiRef=PHIREF      \n\t\treference phase in degrees [%g]\n", DEFAULT_PHIREF);
+    fprintf(stderr, "\t-u PHIREF, --phiRef=PHIREF      \n\t\treference phase in degrees [%g]\n", DEFAULT_PHIREF);
+    fprintf(stderr, "\t-U PERIANOM, --periastron-anomaly=PERIANOM\n\t\tmean periastron anomaly in degrees [%g]\n", DEFAULT_MEANPERANO);
+    fprintf(stderr, "\t-W LONGASC, --longitude-ascending-node=LONGASC\n\t\tlongitude of ascending node in degrees [%g]\n", DEFAULT_LONGASCNODE);
+    fprintf(stderr, "\t-e ECC, --eccentricity=ECC      \n\t\torbital eccentricity [%g]\n", DEFAULT_ECCENTRICITY);
     fprintf(stderr, "\t-R SRATE, --sample-rate=SRATE   \n\t\tsample rate in Hertz [%g]\n", DEFAULT_SRATE);
     fprintf(stderr, "\t-M M1, --m1=M1                  \n\t\tmass of primary in solar masses [%g]\n", DEFAULT_M1);
     fprintf(stderr, "\t-m M2, --m2=M2                  \n\t\tmass of secondary in solar masses [%g]\n", DEFAULT_M2);
@@ -707,6 +726,8 @@ int usage(const char *program)
     fprintf(stderr, "\t-z S2Z, --spin2z=S2Z            \n\t\tz-component of dimensionless spin of secondary [%g]\n", DEFAULT_S2Z);
     fprintf(stderr, "\t-L LAM1, --tidal-lambda1=LAM1   \n\t\tdimensionless tidal deformability of primary [%g]\n", DEFAULT_LAMBDA1);
     fprintf(stderr, "\t-l LAM2, --tidal-lambda2=LAM2   \n\t\tdimensionless tidal deformability of secondary [%g]\n", DEFAULT_LAMBDA2);
+    fprintf(stderr, "\t-q DQM1, --delta-quad-mon1=DQM1 \n\t\tdifference in quadrupole-monopole term of primary [%g]\n", DEFAULT_DQUADMON1);
+    fprintf(stderr, "\t-Q DQM2, --delta-quad-mon2=DQM2 \n\t\tdifference in quadrupole-monopole term of secondary [%g]\n", DEFAULT_DQUADMON2);
     fprintf(stderr, "\t-s SPINO, --spin-order=SPINO    \n\t\ttwice pN order of spin effects (-1 == all) [%d]\n", LAL_SIM_INSPIRAL_SPIN_ORDER_DEFAULT);
     fprintf(stderr, "\t-t TIDEO, --tidal-order=TIDEO   \n\t\ttwice pN order of tidal effects (-1 == all) [%d]\n", LAL_SIM_INSPIRAL_TIDAL_ORDER_DEFAULT);
     fprintf(stderr, "\t-f FMIN, --f-min=FMIN           \n\t\tfrequency to start waveform in Hertz [%g]\n", DEFAULT_F_MIN);
@@ -714,7 +735,7 @@ int usage(const char *program)
     fprintf(stderr, "\t-A AXIS, --axis=AXIS            \n\t\taxis for PhenSpin {View, TotalJ, OrbitalL} [%s]\n", frame_axis_to_string(LAL_SIM_INSPIRAL_FRAME_AXIS_DEFAULT));
     fprintf(stderr, "\t-n MODES, --modes=MODES         \n\t\tallowed l modes {L2, L23, ..., ALL} [%s]\n", modes_choice_to_string(LAL_SIM_INSPIRAL_MODES_CHOICE_DEFAULT));
     fprintf(stderr,
-        "\t-p KEY1=VAL1,KEY2=VAL2,..., --nonGRpar=KEY1=VAL1,KEY2=VAL2,...  \n\t\textra parameters as a key-value pair\n");
+        "\t-p KEY1=VAL1,KEY2=VAL2,..., --params=KEY1=VAL1,KEY2=VAL2,...  \n\t\textra parameters as a key-value pair\n");
     fprintf(stderr, "recognized time-domain approximants:");
     for (a = 0, c = 0; a < NumApproximants; ++a) {
         if (XLALSimInspiralImplementedTDApproximants(a)) {
@@ -742,8 +763,11 @@ int usage(const char *program)
 struct params parseargs(int argc, char **argv)
 {
     int degrees = 1;
+    int phaseO;
     char *inclination_string = NULL;
     char *phiRef_string = NULL;
+    char *meanPerAno_string = NULL;
+    char *longAscNodes_string = NULL;
     char *kv;
     struct params p = {
         .verbose = 0,
@@ -752,9 +776,10 @@ struct params parseargs(int argc, char **argv)
         .freq_dom = 0,
         .amp_phase = 0,
         .domain = DEFAULT_DOMAIN,
-        .phaseO = DEFAULT_PHASEO,
-        .ampO = DEFAULT_AMPO,
         .phiRef = DEFAULT_PHIREF * LAL_PI_180,
+        .meanPerAno = DEFAULT_MEANPERANO * LAL_PI_180,
+        .longAscNodes = DEFAULT_LONGASCNODE * LAL_PI_180,
+        .eccentricity = DEFAULT_ECCENTRICITY,
         .fRef = DEFAULT_FREF,
         .srate = DEFAULT_SRATE,
         .m1 = DEFAULT_M1 * LAL_MSUN_SI,
@@ -768,10 +793,7 @@ struct params parseargs(int argc, char **argv)
         .s2x = DEFAULT_S2X,
         .s2y = DEFAULT_S2Y,
         .s2z = DEFAULT_S2Z,
-        .lambda1 = DEFAULT_LAMBDA1,
-        .lambda2 = DEFAULT_LAMBDA2,
-        .waveFlags = NULL,
-        .nonGRparams = NULL
+        .params = NULL
     };
     struct LALoption long_options[] = {
         {"help", no_argument, 0, 'h'},
@@ -779,13 +801,16 @@ struct params parseargs(int argc, char **argv)
         {"radians", no_argument, 0, 'C'},
         {"frequency-domain", no_argument, 0, 'F'},
         {"condition-waveform", no_argument, 0, 'c'},
-        {"amp-phase", no_argument, 0, 'Q'},
+        {"amp-phase", no_argument, 0, 'P'},
         {"approximant", required_argument, 0, 'a'},
         {"waveform", required_argument, 0, 'w'},
         {"domain", required_argument, 0, 'D'},
         {"phase-order", required_argument, 0, 'O'},
         {"amp-order", required_argument, 0, 'o'},
-        {"phiRef", required_argument, 0, 'q'},
+        {"phiRef", required_argument, 0, 'u'},
+        {"periastron-anomaly", required_argument, 0, 'U'},
+        {"longitude-ascending-node", required_argument, 0, 'W'},
+        {"eccentricity", required_argument, 0, 'e'},
         {"fRef", required_argument, 0, 'r'},
         {"sample-rate", required_argument, 0, 'R'},
         {"m1", required_argument, 0, 'M'},
@@ -798,6 +823,8 @@ struct params parseargs(int argc, char **argv)
         {"spin2z", required_argument, 0, 'z'},
         {"tidal-lambda1", required_argument, 0, 'L'},
         {"tidal-lambda2", required_argument, 0, 'l'},
+        {"delta-quad-mon1", required_argument, 0, 'q'},
+        {"delta-quad-mon2", required_argument, 0, 'Q'},
         {"spin-order", required_argument, 0, 's'},
         {"tidal-order", required_argument, 0, 't'},
         {"f-min", required_argument, 0, 'f'},
@@ -806,10 +833,10 @@ struct params parseargs(int argc, char **argv)
         {"inclination", required_argument, 0, 'i'},
         {"axis", required_argument, 0, 'A'},
         {"modes", required_argument, 0, 'n'},
-        {"nonGRpar", required_argument, 0, 'p'},
+        {"params", required_argument, 0, 'p'},
         {0, 0, 0, 0}
     };
-    char args[] = "hvCFcQa:w:D:O:o:q:r:R:M:m:X:x:Y:y:Z:z:L:l:s:t:f:d:i:A:n:p:";
+    char args[] = "hvCFcPa:w:D:O:o:u:U:W:e:r:R:M:m:X:x:Y:y:Z:z:L:l:q:Q:s:t:f:d:i:A:n:p:";
 
     while (1) {
         int option_index = 0;
@@ -842,7 +869,7 @@ struct params parseargs(int argc, char **argv)
         case 'c':      /* condition-waveform */
             p.condition = 1;
             break;
-        case 'Q':      /* amp-phase */
+        case 'P':      /* amp-phase */
             p.amp_phase = 1;
             break;
         case 'a':      /* approximant */
@@ -858,11 +885,14 @@ struct params parseargs(int argc, char **argv)
                 fprintf(stderr, "error: could not parse approximant from %s for %s\n", LALoptarg, long_options[option_index].name);
                 exit(1);
             }
-            p.phaseO = XLALSimInspiralGetPNOrderFromString(LALoptarg);
-            if ((int)p.approx == XLAL_FAILURE) {
+            phaseO = XLALSimInspiralGetPNOrderFromString(LALoptarg);
+            if ((int)phaseO == XLAL_FAILURE) {
                 fprintf(stderr, "error: could not parse order from %s for %s\n", LALoptarg, long_options[option_index].name);
                 exit(1);
             }
+            if (p.params == NULL)
+                p.params = XLALCreateDict();
+            XLALSimInspiralWaveformParamsInsertPNPhaseOrder(p.params, phaseO);
             break;
         case 'D':      /* domain */
             switch (*LALoptarg) {
@@ -879,13 +909,26 @@ struct params parseargs(int argc, char **argv)
                 exit(1);
             }
         case 'O':      /* phase-order */
-            p.phaseO = atoi(LALoptarg);
+            if (p.params == NULL)
+                p.params = XLALCreateDict();
+            XLALSimInspiralWaveformParamsInsertPNPhaseOrder(p.params, atoi(LALoptarg));
             break;
         case 'o':      /* amp-order */
-            p.ampO = atoi(LALoptarg);
+            if (p.params == NULL)
+                p.params = XLALCreateDict();
+            XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(p.params, atoi(LALoptarg));
             break;
-        case 'q':      /* phiRef */
+        case 'u':      /* phiRef */
             phiRef_string = LALoptarg;
+            break;
+        case 'U':      /* mean-periastron-anomaly */
+            meanPerAno_string = LALoptarg;
+            break;
+        case 'W':      /* longitude-ascending-node */
+            longAscNodes_string = LALoptarg;
+            break;
+        case 'e':      /* eccentricity */
+            p.eccentricity = atof(LALoptarg);
             break;
         case 'r':      /* fRef */
             p.fRef = atof(LALoptarg);
@@ -918,20 +961,34 @@ struct params parseargs(int argc, char **argv)
             p.s2z = atof(LALoptarg);
             break;
         case 'L':      /* tidal-lambda1 */
-            p.lambda1 = atof(LALoptarg);
+            if (p.params == NULL)
+                p.params = XLALCreateDict();
+            XLALSimInspiralWaveformParamsInsertTidalLambda1(p.params, atoi(LALoptarg));
             break;
         case 'l':      /* tidal-lambda2 */
-            p.lambda2 = atof(LALoptarg);
+            if (p.params == NULL)
+                p.params = XLALCreateDict();
+            XLALSimInspiralWaveformParamsInsertTidalLambda2(p.params, atoi(LALoptarg));
+            break;
+        case 'q':      /* diff-quad-mon1 */
+            if (p.params == NULL)
+                p.params = XLALCreateDict();
+            XLALSimInspiralWaveformParamsInsertdQuadMon1(p.params, atoi(LALoptarg));
+            break;
+        case 'Q':      /* diff-quad-mon2 */
+            if (p.params == NULL)
+                p.params = XLALCreateDict();
+            XLALSimInspiralWaveformParamsInsertdQuadMon2(p.params, atoi(LALoptarg));
             break;
         case 's':      /* spin-order */
-            if (p.waveFlags == NULL)
-                p.waveFlags = XLALSimInspiralCreateWaveformFlags();
-            XLALSimInspiralSetSpinOrder(p.waveFlags, atoi(LALoptarg));
+            if (p.params == NULL)
+                p.params = XLALCreateDict();
+            XLALSimInspiralWaveformParamsInsertPNSpinOrder(p.params, atoi(LALoptarg));
             break;
         case 't':      /* tidal-order */
-            if (p.waveFlags == NULL)
-                p.waveFlags = XLALSimInspiralCreateWaveformFlags();
-            XLALSimInspiralSetTidalOrder(p.waveFlags, atoi(LALoptarg));
+            if (p.params == NULL)
+                p.params = XLALCreateDict();
+            XLALSimInspiralWaveformParamsInsertPNTidalOrder(p.params, atoi(LALoptarg));
             break;
         case 'f':      /* f-min */
             p.f_min = atof(LALoptarg);
@@ -943,34 +1000,25 @@ struct params parseargs(int argc, char **argv)
             inclination_string = LALoptarg;
             break;
         case 'A':      /* axis */
-            if (p.waveFlags == NULL)
-                p.waveFlags = XLALSimInspiralCreateWaveformFlags();
-            XLALSimInspiralSetFrameAxis(p.waveFlags, XLALSimInspiralGetFrameAxisFromString(LALoptarg));
-            if ((int)XLALSimInspiralGetFrameAxis(p.waveFlags) == XLAL_FAILURE) {
-                fprintf(stderr, "error: invalid value %s for %s\n", LALoptarg, long_options[option_index].name);
-                exit(1);
-            }
+            if (p.params == NULL)
+                p.params = XLALCreateDict();
+            XLALSimInspiralWaveformParamsInsertFrameAxis(p.params, XLALSimInspiralGetFrameAxisFromString(LALoptarg));
             break;
         case 'n':      /* modes */
-            if (p.waveFlags == NULL)
-                p.waveFlags = XLALSimInspiralCreateWaveformFlags();
-            XLALSimInspiralSetModesChoice(p.waveFlags, XLALSimInspiralGetHigherModesFromString(LALoptarg));
-            if (XLALSimInspiralGetModesChoice(p.waveFlags) == 0) {
-                fprintf(stderr, "error: invalid value %s for %s\n", LALoptarg, long_options[option_index].name);
-                exit(1);
-            }
+            if (p.params == NULL)
+                p.params = XLALCreateDict();
+            XLALSimInspiralWaveformParamsInsertModesChoice(p.params, XLALSimInspiralGetHigherModesFromString(LALoptarg));
             break;
-        case 'p':      /* nonGRpar */
+        case 'p':      /* params */
+            if (p.params == NULL)
+                p.params = XLALCreateDict();
             while ((kv = XLALStringToken(&LALoptarg, ",", 0))) {
                 char *key = XLALStringToken(&kv, "=", 0);
                 if (kv == NULL || key == NULL || *key == '\0') {
                     fprintf(stderr, "error: invalid key-value pair for %s\n", long_options[option_index].name);
                     exit(1);
                 }
-                if (p.nonGRparams == NULL)
-                    p.nonGRparams = XLALSimInspiralCreateTestGRParam(key, atof(kv));
-                else
-                    XLALSimInspiralAddTestGRParam(&p.nonGRparams, key, atof(kv));
+                XLALDictInsertREAL8Value(p.params, key, atof(kv));
             }
             break;
         case '?':
@@ -996,6 +1044,16 @@ struct params parseargs(int argc, char **argv)
         p.inclination = atof(inclination_string);
         if (degrees)
             p.inclination *= LAL_PI_180;
+    }
+    if (meanPerAno_string) {
+        p.meanPerAno = atof(meanPerAno_string);
+        if (degrees)
+            p.meanPerAno *= LAL_PI_180;
+    }
+    if (longAscNodes_string) {
+        p.longAscNodes = atof(longAscNodes_string);
+        if (degrees)
+            p.longAscNodes *= LAL_PI_180;
     }
 
     return p;

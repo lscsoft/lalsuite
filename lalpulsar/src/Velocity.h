@@ -78,12 +78,12 @@ extern "C" {
  */
 
 /**
- * This structure stores the parameters required by LALBarycenter() to calculate
+ * This structure stores the parameters required by XLALBarycenter() to calculate
  * Earth velocity at a given detector location.
  */
 typedef struct tagVelocityPar {
   LALDetector    detector; 	/**< the detector */
-  EphemerisData  *edat;  	/**< ephemeris data pointer from LALInitBarycenter() */
+  EphemerisData  *edat;  	/**< ephemeris data pointer from XLALInitBarycenter() */
   LIGOTimeGPS    startTime; 	/**< start of time interval */
   REAL8          tBase; 	/**< duration of interval */
   REAL8          vTol;  	/**< fractional accuracy required for velocity (redundant for average velocity calculation) */

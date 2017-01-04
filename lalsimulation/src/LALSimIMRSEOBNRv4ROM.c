@@ -54,8 +54,8 @@
 
 #ifdef LAL_HDF5_ENABLED
 #include <lal/H5FileIO.h>
-static const char ROMDataHDF5[] = "SEOBNRv4ROM_v1.0.hdf5";
-static const INT4 ROMDataHDF5_VERSION_MAJOR = 1;
+static const char ROMDataHDF5[] = "SEOBNRv4ROM_v2.0.hdf5";
+static const INT4 ROMDataHDF5_VERSION_MAJOR = 2;
 static const INT4 ROMDataHDF5_VERSION_MINOR = 0;
 static const INT4 ROMDataHDF5_VERSION_MICRO = 0;
 #endif
@@ -830,7 +830,7 @@ static int SEOBNRv4ROMCore(
 
   // Enforce allowed geometric frequency range
   if (fLow_geom < Mf_ROM_min)
-    XLAL_ERROR(XLAL_EDOM, "Starting frequency Mflow=%g is smaller than lowest frequency in ROM Mf=%g. Starting at lowest frequency in ROM.\n", fLow_geom, Mf_ROM_min);
+    XLAL_ERROR(XLAL_EDOM, "Starting frequency Mflow=%g is smaller than lowest frequency in ROM Mf=%g.\n", fLow_geom, Mf_ROM_min);
   if (fHigh_geom == 0 || fHigh_geom > Mf_ROM_max)
     fHigh_geom = Mf_ROM_max;
   else if (fHigh_geom < Mf_ROM_min)
@@ -845,6 +845,9 @@ static int SEOBNRv4ROMCore(
     XLALPrintWarning("Reference frequency Mf_ref=%g is smaller than lowest frequency in ROM Mf=%g. Starting at lowest frequency in ROM.\n", fLow_geom, Mf_ROM_min);
     fRef_geom = Mf_ROM_min;
   }
+
+  if (Mtot_sec/LAL_MTSUN_SI > 500.0)
+    XLALPrintWarning("Total mass=%gMsun > 500Msun. SEOBNRv4ROM disagrees with SEOBNRv4 for high total masses.\n", Mtot_sec/LAL_MTSUN_SI);
 
   /* Internal storage for waveform coefficiencts */
   SEOBNRROMdataDS_coeff *romdata_coeff_lo=NULL;
@@ -1084,15 +1087,15 @@ static int SEOBNRv4ROMCore(
  *
  * @note Parameter ranges:
  *   * 0.01 <= eta <= 0.25
- *   * -1 <= chi_i <= 0.99
- *   * Mtot >= 3 Msun
+ *   * -1 <= chi_i <= 1.0
+ *   * 2Msun (@ flow=20Hz) <= Mtot < 500Msun
  *
  *  Aligned component spins chi1, chi2.
  *  Symmetric mass-ratio eta = m1*m2/(m1+m2)^2.
  *  Total mass Mtot.
  *
  * This ROM consists of three submodels and glues together one low-mass and 2 high-mass models
- * These submodels and theor boundaries are not explicit in the source, just in the HDF5 data file.
+ * These submodels and their boundaries are not explicit in the source, just in the HDF5 data file.
  *
  * @{
  */
@@ -1270,7 +1273,7 @@ static int SEOBNRv4ROMTimeFrequencySetup(
   }
 
   if (eta < 0.01 || eta > 0.25) {
-    XLALPrintError( "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv4ROM is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
+    XLALPrintError( "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv4ROM is only available for symmetric mass-ratios in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
     XLAL_ERROR( XLAL_EDOM );
   }
 
@@ -1441,7 +1444,7 @@ int XLALSimIMRSEOBNRv4ROMTimeOfFrequency(
   //XLAL_PRINT_INFO("t_corr[s] = %g\n", t_corr * Mtot_sec);
 
   double Mf = frequency * Mtot_sec;
-  if (Mf < Mf_ROM_min || Mf > Mf_ROM_max) {
+  if (Mf < Mf_ROM_min || Mf > Mf_ROM_max || Mf > Mf_final) {
     gsl_spline_free(spline_phi);
     gsl_interp_accel_free(acc_phi);
     XLAL_ERROR(XLAL_EDOM, "Frequency %g is outside allowed frequency range.\n", frequency);
@@ -1467,8 +1470,7 @@ int XLALSimIMRSEOBNRv4ROMTimeOfFrequency(
  * chirp time, but it includes both the inspiral and the merger ringdown part of SEOBNRv4.
  *
  * If the frequency that corresponds to the specified elapsed time is lower than the
- * geometric frequency Mf=0.00053 (ROM starting frequency) or above half of the SEOBNRv4
- * ringdown frequency an error is thrown.
+ * ROM starting frequency or above half of the SEOBNRv4 ringdown frequency an error is thrown.
  * The SEOBNRv4 ringdown frequency can be obtained by calling XLALSimInspiralGetFinalFreq().
  *
  * See XLALSimIMRSEOBNRv4ROMTimeOfFrequency() for the inverse function.

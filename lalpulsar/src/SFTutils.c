@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014 Karl Wette
+ * Copyright (C) 2010 Chris Messenger
  * Copyright (C) 2005 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -53,10 +54,6 @@ REAL8 TSFTfromDFreq ( REAL8 dFreq );
 int compareSFTdesc(const void *ptr1, const void *ptr2);     // defined in SFTfileIO.c
 
 /*==================== FUNCTION DEFINITIONS ====================*/
-
-// ---------- obsolete LAL-API was moved into external file
-#include "SFTutils-LAL.c"
-// ------------------------------
 
 /**
  * XLAL function to create one SFT-struct.
@@ -152,6 +149,26 @@ XLALCreateSFTVector ( UINT4 numSFTs, 	/**< number of SFTs */
 } /* XLALCreateSFTVector() */
 
 
+/** Append the given SFTtype to the SFT-vector (no SFT-specific checks are done!) */
+int XLALAppendSFT2Vector (SFTVector *vect,		/**< destinatino SFTVector to append to */
+                          const SFTtype *sft            /**< the SFT to append */
+                          )
+{
+  UINT4 oldlen = vect->length;
+
+  if ( (vect->data = LALRealloc ( vect->data, (oldlen + 1)*sizeof( *vect->data ) )) == NULL ) {
+     XLAL_ERROR(XLAL_ENOMEM);
+  }
+  memset ( &(vect->data[oldlen]), 0, sizeof( vect->data[0] ) );
+  vect->length ++;
+
+  XLALCopySFT(&vect->data[oldlen], sft );
+
+  return XLAL_SUCCESS;
+
+} /* XLALAppendSFT2Vector() */
+
+
 /**
  * XLAL interface to destroy an SFTVector
  */
@@ -206,6 +223,38 @@ XLALDestroyPSDVector ( PSDVector *vect )	/**< the PSD-vector to free */
   return;
 
 } /* XLALDestroyPSDVector() */
+
+
+/**
+ * Create an empty multi-IFO SFT vector for given number of IFOs and number of SFTs per IFO
+ */
+MultiSFTVector *XLALCreateMultiSFTVector (
+  UINT4 length,          /**< number of sft data points */
+  UINT4Vector *numsft    /**< number of sfts in each sftvect */
+  )
+{
+
+  XLAL_CHECK_NULL( length > 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL( numsft != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( numsft->length > 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL( numsft->data != NULL, XLAL_EFAULT );
+
+  MultiSFTVector *multSFTVec = NULL;
+
+  XLAL_CHECK_NULL( ( multSFTVec = XLALCalloc( 1, sizeof(*multSFTVec) ) ) != NULL, XLAL_ENOMEM );
+
+  const UINT4 numifo = numsft->length;
+  multSFTVec->length = numifo;
+
+  XLAL_CHECK_NULL( ( multSFTVec->data = XLALCalloc( numifo, sizeof(*multSFTVec->data) ) ) != NULL, XLAL_ENOMEM );
+
+  for ( UINT4 k = 0; k < numifo; k++) {
+    XLAL_CHECK_NULL( ( multSFTVec->data[k] = XLALCreateSFTVector( numsft->data[k], length ) ) != NULL, XLAL_ENOMEM );
+  } /* loop over ifos */
+
+  return multSFTVec;
+
+} /* XLALCreateMultiSFTVector() */
 
 
 /**
@@ -1637,43 +1686,6 @@ XLALLatestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] latest GPS 
   return XLAL_SUCCESS;
 
 } /* XLALLatestMultiSFTsample() */
-
-
-/**
- * XLAL function to get a sorted list of unique 2-character detector IDs (prefixes) from a SFTcatalog
- * IFOList can be either
- * (1) NULL, in which case it will be allocated and filled from the IDs in the SFTcatalog
- * (2) or a pre-allocated and filled list, then it appends any new detectors and resorts the list
- */
-LALStringVector *
-XLALGetDetectorIDsFromSFTCatalog ( LALStringVector *IFOList,		/**< [in/out] IFO string vector for (appending and) returning */
-                                   const SFTCatalog *SFTcatalog		/**< [in] SFT catalog which carries the detector prefixes */
-                                   )
-{
-
-  XLAL_CHECK_NULL( SFTcatalog != NULL, XLAL_EFAULT );
-
-  for (UINT4 n = 0; n < SFTcatalog->length; n++) {
-
-    /* get only the official 2-character prefix, not any longer name that might be in the SFT header */
-    char *thisIFO = NULL;
-    XLAL_CHECK_NULL ( ( thisIFO =  XLALGetChannelPrefix(SFTcatalog->data[n].header.name) ) != NULL, XLAL_EFUNC );
-
-    if ( XLALFindStringInVector ( thisIFO, IFOList ) == -1 ) { /* only append to IFOList if not a duplicate */
-      XLAL_CHECK_NULL ( (IFOList = XLALAppendString2Vector ( IFOList, thisIFO )) != NULL, XLAL_EFUNC );
-    }
-
-    XLALFree ( thisIFO );
-
-  } /* for n < SFTcatalog->length */
-
-  /* sort final list alphabetically by detector-name */
-  XLAL_CHECK_NULL ( XLALSortStringVector ( IFOList ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  return IFOList;
-
-} /* XLALGetDetectorIDsFromSFTCatalog() */
-
 
 /**
  * Create a 'fake' SFT catalog which contains only detector and timestamp information.

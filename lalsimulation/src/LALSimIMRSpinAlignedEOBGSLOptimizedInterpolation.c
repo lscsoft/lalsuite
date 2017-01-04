@@ -16,6 +16,7 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
+
 #ifndef _LALSIMIMRSPINALIGNEDEOBGSLOPTIMIZEDINTERPOLATION_C
 #define _LALSIMIMRSPINALIGNEDEOBGSLOPTIMIZEDINTERPOLATION_C
 
@@ -27,12 +28,6 @@
 #include <lal/LALSimIMR.h>
 
 #include "LALSimIMRSpinEOB.h"
-
-/* static size_t optimized_gsl_interp_bsearch(const double x_array[], double x, size_t index_lo, size_t index_hi); */
-/* static inline size_t optimized_gsl_interp_accel_find(gsl_interp_accel * a, const double xa[], size_t len, double x); */
-/* static inline void optimized_coeff_calc (const double c_array[], double dy, double dx, size_t index, double * b, double * c, double * d); */
-/* static int optimized_cspline_eval (const void * vstate, const double x_array[], const double y_array[], size_t size, double x, gsl_interp_accel * a, double *y,unsigned int *index_old, double *x_lo_old,double *y_lo_old,double *b_i_old,double *c_i_old,double *d_i_old); */
-/* static int optimized_gsl_spline_eval_e(const gsl_spline * spline, double interptime, gsl_interp_accel * accel, double * output,unsigned int *index_old, double *x_lo_old,double *y_lo_old,double *b_i_old,double *c_i_old,double *d_i_old){ */
 
 typedef struct
 {
@@ -166,6 +161,28 @@ optimized_gsl_spline_eval_e (const gsl_spline * spline, double interptime,
 				 b_i_old, c_i_old, d_i_old);
 }
 
+/**
+ * This function is largely based on/copied from
+ * XLALAdaptiveRungeKutta4(), which exists inside the
+ * lal/src/utilities/LALAdaptiveRungeKutta4.c file
+ * subroutine. It reads in an array of timeseries that
+ * contain data *not* evenly spaced in time
+ * and performs cubic spline interpolations to resample
+ * the data to uniform time sampling. Interpolations use
+ * GSL's built-in routines, which recompute interpolation
+ * coefficients each time the itnerpolator is called.
+ * This can be extremely inefficient; in case of SEOBNRv4,
+ * first data points exist at very large dt, and
+ * interp. coefficients might be needlessly recomputed
+ * 10,000+ times or more. We also made the optimization
+ * that assumes the data are sampled at points monotone
+ * in time.
+ * tinit and deltat specify the desired initial time and
+ *   time spacing for the output interpolated data,
+ * num_input_times denotes the number of points yin arrays
+ *   are sampled in time.
+ * yout is the output array.
+ */
 UNUSED static int
 SEOBNRv2OptimizedInterpolatorNoAmpPhase (REAL8Array * yin, REAL8 tinit,
 					 REAL8 deltat, UINT4 num_input_times,
@@ -237,74 +254,13 @@ bail_out:
   return outputlen;
 }
 
-UNUSED static int
-SEOBNRv2OptimizedInterpolatorIncludeAmpPhase (REAL8Array * yin, REAL8 tinit, REAL8 deltat, UINT4 num_input_times, REAL8Array ** yout)	// Davids: maybe this function can be removed since it is split into noampphase and onlyampphase
-{
-  int errnum = 0;
-
-  /* needed for the integration */
-  size_t dim = 4;
-
-  /* needed for the final interpolation */
-  gsl_spline *interp = NULL;
-  gsl_interp_accel *accel = NULL;
-  int outputlen = 0;
-  REAL8Array *output = NULL;
-  REAL8 *times, *vector;	/* aliases */
-
-  /* note: for speed, this replaces the single CALLGSL wrapper applied before each GSL call */
-  interp = gsl_spline_alloc (gsl_interp_cspline, num_input_times);
-  accel = gsl_interp_accel_alloc ();
-
-
-  outputlen = (int) (yin->data[num_input_times - 1] / deltat) + 1;
-  output = XLALCreateREAL8ArrayL (2, dim + 3, outputlen);	/* Original (dim+1), Optimized (dim+3), since we're adding amp & phase */
-
-  if (!interp || !accel || !output)
-    {
-      errnum = XLAL_ENOMEM;	/* ouch again, ran out of memory */
-      if (output)
-	XLALDestroyREAL8Array (output);
-      outputlen = 0;
-      goto bail_out;
-    }
-
-  /* make an array of times */
-  times = output->data;
-  for (int j = 0; j < outputlen; j++)
-    times[j] = tinit + deltat * j;
-  /* interpolate! */
-  for (unsigned int i = 1; i <= dim + 2; i++)
-    {				/* Original (dim), Optimized (dim+2), since we're also interpolating amp & phase */
-      //gsl_spline_init(interp, &yin->data[0], &yin->data[num_input_times * i], num_input_times + 1);
-      gsl_spline_init (interp, &yin->data[0], &yin->data[num_input_times * i],
-		       num_input_times);
-      vector = output->data + outputlen * i;
-      unsigned int index_old = 0;
-      double x_lo_old = 0, y_lo_old = 0, b_i_old = 0, c_i_old = 0, d_i_old =
-	0;
-      for (int j = 0; j < outputlen; j++)
-	{
-	  optimized_gsl_spline_eval_e (interp, times[j], accel, &(vector[j]),
-				       &index_old, &x_lo_old, &y_lo_old,
-				       &b_i_old, &c_i_old, &d_i_old);
-	}
-    }
-  /* deallocate stuff and return */
-bail_out:
-
-  if (interp)
-    XLAL_CALLGSL (gsl_spline_free (interp));
-  if (accel)
-    XLAL_CALLGSL (gsl_interp_accel_free (accel));
-
-  if (errnum)
-    XLAL_ERROR (errnum);
-
-  *yout = output;
-  return outputlen;
-}
-
+/**
+ * This function applies the same routines as
+ * SEOBNRv2OptimizedInterpolatorNoAmpPhase() above
+ * to interpolate *only the amplitude & phase*; see
+ * documentation for
+ * SEOBNRv2OptimizedInterpolatorNoAmpPhase().
+ */
 UNUSED static int
 SEOBNRv2OptimizedInterpolatorOnlyAmpPhase (REAL8Array * yin, REAL8 tinit,
 					   REAL8 deltat,

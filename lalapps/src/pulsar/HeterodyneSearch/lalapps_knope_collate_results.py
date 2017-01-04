@@ -362,11 +362,12 @@ parameters = ['f0rot', 'ra', 'dec'] # a list of pulsar parameters to output (def
       latexsdtag = ''
 
       # set footnotes for pulsar's that have had a "corrected" spin-down
-      if 'sdlim' in prepar:
-        if pulsar['Pulsar data']['F1SD'] != None: # spin-down has been corrected for intrinsic motion effects
-          htmlsdtag = htmltag('sup', tagtext="&dagger;").text
-          latexsdtag = '$\dagger$'
-          dagger = True
+      if 'SDLIM' in prepar:
+        if pulsar['Pulsar data']['P1_I'] != None: # spin-down has been corrected for intrinsic motion effects
+          if pulsar['Pulsar data']['P1_I'] > 0.: # double check that intrinsic period derivative is positive
+            htmlsdtag = htmltag('sup', tagtext="&dagger;").text
+            latexsdtag = '$\dagger$'
+            dagger = True
         elif pulsar['Pulsar data']['ASSOC'] != None:
           if 'GC' in pulsar['Pulsar data']['ASSOC']:
             htmlsdtag = htmltag('sup', tagtext="&Dagger;").text

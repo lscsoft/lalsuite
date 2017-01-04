@@ -37,20 +37,6 @@ extern "C" {
  */
 /*@{*/
 
-/**
- * Routines for cleaning SFT files using known spectral disturbances.
- *
- */
-
-/*
- * 5. Includes. This header may include others; if so, they go immediately
- *    after include-loop protection. Includes should appear in the following
- *    order:
- *    a. Standard library includes
- *    b. LDAS includes
- *    c. LAL includes
- */
-
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
@@ -67,45 +53,6 @@ extern "C" {
 #include <lal/LALRunningMedian.h>
 #include <lal/DetectorStates.h>
 
-/*
- * 7. Error codes and messages. This must be auto-extracted for
- *    inclusion in the documentation.
- */
-/** \name Error codes */
-/*@{*/
-#define NORMALIZESFTRNGMEDH_ENULL 1
-#define NORMALIZESFTRNGMEDH_EVAL 2
-#define NORMALIZESFTRNGMEDH_EMEM 3
-
-#define NORMALIZESFTRNGMEDH_MSGENULL "Null pointer"
-#define NORMALIZESFTRNGMEDH_MSGEVAL  "Invalid value"
-#define NORMALIZESFTRNGMEDH_MSGEMEM  "Memory allocation problem"
-/*@}*/
-
-/* ******************************************************
- * 8. Macros. But, note that macros are deprecated.
- *    They could be moved to the modules where are needed
- */
-
-/* *******************************************************
- * 9. Constant Declarations. (discouraged)
- */
-
-
-
-/* **************************************************************
- * 10. Structure, enum, union, etc., typdefs.
- */
-
-
-/*
- * 11. Extern Global variables. (discouraged)
- */
-
-
-/*
- * 12. Functions Declarations (i.e., prototypes).
- */
 int XLALSFTtoRngmed ( REAL8FrequencySeries *rngmed, const SFTtype *sft, UINT4 blockSize );
 int XLALSFTtoPeriodogram ( REAL8FrequencySeries *periodo, const COMPLEX8FrequencySeries  *SFT );
 int XLALPeriodoToRngmed ( REAL8FrequencySeries  *rngmed, const REAL8FrequencySeries  *periodo, UINT4 blockSize );
@@ -113,43 +60,6 @@ int XLALNormalizeSFT ( REAL8FrequencySeries *rngmed, SFTtype *sft, UINT4 blockSi
 int XLALNormalizeSFTVect ( SFTVector  *sftVect,	UINT4 blockSize, const REAL8 assumeSqrtS );
 MultiPSDVector * XLALNormalizeMultiSFTVect ( MultiSFTVector *multsft, UINT4 blockSize, const MultiNoiseFloor *assumeSqrtSX );
 int XLALSFTstoCrossPeriodogram ( REAL8FrequencySeries *periodo, const COMPLEX8FrequencySeries *sft1, const COMPLEX8FrequencySeries *sft2 );
-
-// ****************************** OBSOLETE + DEPRECATED LAL-INTERFACE FUNCTIONS ******************************
-
-void LALSFTtoPeriodogram (LALStatus *status,
-			  REAL8FrequencySeries *periodo,
-			  const COMPLEX8FrequencySeries *SFT);
-
-
-void LALPeriodoToRngmed (LALStatus  *status,
-			 REAL8FrequencySeries  *rngmed,
-			 const REAL8FrequencySeries  *periodo,
-			 UINT4 blockSize);
-
-void LALSFTtoRngmed (LALStatus  *status,
-		     REAL8FrequencySeries  *rngmed,
-		     const COMPLEX8FrequencySeries *SFT,
-		     UINT4                  blockSize);
-
-void LALNormalizeSFT (LALStatus            *status,
-		      REAL8FrequencySeries *rngmed,
-		      SFTtype              *sft,
-		      UINT4                blockSize);
-
-void LALNormalizeSFTVect (LALStatus  *status,
-			  SFTVector  *sftVect,
-			  UINT4     blockSize);
-
-void LALNormalizeMultiSFTVect (LALStatus  *status,
-			       MultiPSDVector **multiRngmed,
-			       MultiSFTVector *multsft,
-			       UINT4     blockSize);
-
-
-void LALSFTstoCrossPeriodogram (LALStatus    *status,
-				REAL8FrequencySeries    *periodo,
-				const COMPLEX8FrequencySeries *sft1,
-				const COMPLEX8FrequencySeries *sft2);
 
 /*@}*/
 

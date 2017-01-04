@@ -250,7 +250,7 @@ int XLALSimIMRPhenomP(
   const REAL8 f_max,                          /**< End frequency; 0 defaults to ringdown cutoff freq */
   const REAL8 f_ref,                          /**< Reference frequency */
   IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD */
-  const LALSimInspiralTestGRParam *extraParams) /**<linked list containing the extra testing GR parameters */
+  LALDict *extraParams) /**<linked list containing the extra testing GR parameters */
 {
   // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
   // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParameters
@@ -304,7 +304,7 @@ int XLALSimIMRPhenomPFrequencySequence(
   const REAL8 phic,                           /**< Orbital phase at the peak of the underlying non precessing model (rad) */
   const REAL8 f_ref,                          /**< Reference frequency */
   IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD */
-  const LALSimInspiralTestGRParam *extraParams) /**<linked list containing the extra testing GR parameters */
+  LALDict *extraParams) /**<linked list containing the extra testing GR parameters */
 {
   // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
   // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParameters
@@ -348,7 +348,7 @@ static int PhenomPCore(
    * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
    * Then we will use deltaF = 0 to create the frequency series we return. */
   IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD */
-  const LALSimInspiralTestGRParam *extraParams /**<linked list containing the extra testing GR parameters */
+  LALDict *extraParams /**<linked list containing the extra testing GR parameters */
   )
 {
   /* Check inputs for sanity */
@@ -507,11 +507,14 @@ static int PhenomPCore(
         XLAL_PRINT_WARNING("Warning: final spin magnitude %g > 1. Setting final spin magnitude = 1.", finspin);
         finspin = copysign(1.0, finspin);
       }
-
       // IMRPhenomD assumes that m1 >= m2.
       pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi2_l, chi1_l, finspin);
       pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi2_l, chi1_l, finspin, extraParams);
-      XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1_l, chi2_l, 1.0, 1.0, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN, extraParams);
+      if (extraParams==NULL)
+	extraParams=XLALCreateDict();
+      XLALSimInspiralWaveformParamsInsertPNSpinOrder(extraParams, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN);
+      XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1_l, chi2_l, extraParams);
+
       if (!pAmp || !pPhi || !pn) {
         errcode = XLAL_EFUNC;
         goto cleanup;
@@ -643,7 +646,6 @@ static int PhenomPCore(
     errcode = XLAL_ENOMEM;
     goto cleanup;
   }
-  REAL8 phasing = 0;
 
   AmpInsPrefactors amp_prefactors;
   PhiInsPrefactors phi_prefactors;
@@ -664,6 +666,7 @@ static int PhenomPCore(
   for (UINT4 i=0; i<L_fCut; i++) { // loop over frequency points in sequence
     COMPLEX16 hp_val = 0.0;
     COMPLEX16 hc_val = 0.0;
+    REAL8 phasing = 0;
     double f = freqs->data[i];
     int j = i + offset; // shift index for frequency series if needed
 
@@ -711,6 +714,12 @@ static int PhenomPCore(
     goto cleanup;
   }
 
+  if (L_fCut<=5){ // prevent spline interpolation failing in phase correction below
+    XLALPrintError("XLAL Error - %s: PhenomP waveform is too short: L_fcut is too small.", __func__);
+    errcode = XLAL_EDOM;
+    goto cleanup;
+   }
+
   /* Time correction is t(f_final) = 1/(2pi) dphi/df (f_final) */
   REAL8 t_corr = gsl_spline_eval_deriv(phiI, f_final, acc) / (2*LAL_PI);
   /* Now correct phase */
@@ -735,10 +744,14 @@ static int PhenomPCore(
   if(freqs) XLALDestroyREAL8Sequence(freqs);
 
   if( errcode != XLAL_SUCCESS ) {
-    if(*hptilde)
+    if(*hptilde) {
       XLALDestroyCOMPLEX16FrequencySeries(*hptilde);
-    if(*hctilde)
+      *hptilde=NULL;
+    }
+    if(*hctilde) {
       XLALDestroyCOMPLEX16FrequencySeries(*hctilde);
+      *hctilde=NULL;
+    }
     XLAL_ERROR(errcode);
   }
   else {
@@ -1305,7 +1318,7 @@ UNUSED static BBHPhenomCParams *ComputeIMRPhenomCParamsRDmod(
   const REAL8 m2,   /**< Mass of companion 2 (solar masses) */
   const REAL8 chi,  /**< Reduced aligned spin of the binary chi = (m1*chi1 + m2*chi2)/M */
   const REAL8 chip, /**< Dimensionless spin in the orbital plane */
-  const LALSimInspiralTestGRParam *extraParams) /**< linked list containing the extra testing GR parameters */
+  LALDict *extraParams) /**< linked list containing the extra testing GR parameters */
 {
 
   BBHPhenomCParams *p = NULL;

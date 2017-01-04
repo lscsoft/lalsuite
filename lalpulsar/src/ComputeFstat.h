@@ -23,7 +23,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/LALComputeAM.h>
-#include <lal/ComplexAM.h>
+#include <lal/LALComputeAM.h>
 #include <lal/SSBtimes.h>
 #include <lal/CWMakeFakeData.h>
 

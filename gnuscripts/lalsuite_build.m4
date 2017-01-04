@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 130
+# serial 135
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -602,9 +602,9 @@ AC_DEFUN([LALSUITE_CHECK_LIB],[
   else
     AC_CHECK_LIB(lowercase,[$3],,[AC_MSG_ERROR([could not find the $1 library])])
     AC_CHECK_HEADERS([$4],,[AC_MSG_ERROR([could not find the $4 header])])
-    if test "$1" != "LALSupport"; then
+    m4_if(lowercase,[lalsupport],[],[
       LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK([$1])
-    fi
+    ])
   fi
   AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
   # add $1 to list of LALSuite libraries
@@ -640,24 +640,46 @@ AC_DEFUN([LALSUITE_CHECK_OPT_LIB],[
 
 AC_DEFUN([LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK],[
   # $0: check for version mismatch between library $1 and its headers
+  m4_pushdef([uppercase],m4_translit([[$1]], [a-z], [A-Z]))
+  m4_pushdef([withoutlal],m4_bpatsubst([$1], [^LAL], []))
   AC_MSG_CHECKING([whether $1 headers match the library])
-  lib_structure=`echo $1 | sed 's/LAL/lal/'`VCSInfo
-  header_structure=`echo $1 | sed 's/LAL/lal/'`VCSInfoHeader
-  AC_RUN_IFELSE([
+  AC_LINK_IFELSE([
     AC_LANG_SOURCE([[
-#include <string.h>
-#include <stdlib.h>
 #include <lal/$1VCSInfoHeader.h>
-int main(void) { exit(XLALVCSInfoCompare(&$lib_structure, &$header_structure) ? 1 : 0); }
+int main(void) {
+#if ]uppercase[_VERSION_DEVEL != 0
+  ]uppercase[_VCS_LINK_CHECK();
+#endif
+  return 0;
+}
     ]])
   ],[
-    AC_MSG_RESULT(yes)
+    AC_MSG_RESULT([yes])
   ],[
-    AC_MSG_RESULT(no)
+    AC_MSG_RESULT([no])
+    AC_LINK_IFELSE([
+      AC_LANG_SOURCE([[
+#include <stdio.h>
+#include <lal/$1VCSInfoHeader.h>
+int main(void) {
+  printf("$1 headers: %s %s %s\n", ]uppercase[_VERSION, ]uppercase[_VCS_ID, ]uppercase[_VCS_STATUS);
+  printf("$1 library: %s %s %s\n", lal]withoutlal[VCSInfo.version, lal]withoutlal[VCSInfo.vcsId, lal]withoutlal[VCSInfo.vcsStatus);
+  return 0;
+}
+      ]])
+    ],[
+      AS_IF([test ${cross_compiling} != yes],[
+        ./conftest${EXEEXT} | ${SED} -e "s/^/${as_me}:${as_lineno-$LINENO}: /" >&AS_MESSAGE_LOG_FD
+      ])
+    ],[
+      _AS_ECHO_LOG([could not determine further details of $1 header-library mismatch (compile/link error)])
+    ],[
+      _AS_ECHO_LOG([could not determine further details of $1 header-library mismatch (cross compiling)])
+    ])
     AC_MSG_ERROR([Your $1 headers do not match your library. Check config.log for details.])
-  ],[
-    AC_MSG_WARN([cross compiling: not checking])
   ])
+  m4_popdef([uppercase])
+  m4_popdef([withoutlal])
   # end $0
 ])
 
@@ -1366,9 +1388,11 @@ AC_DEFUN([LALSUITE_CHECK_PAGER],[
     AS_CASE([${PAGER}],
       [''],[:],
       [*/less],[
-        AS_IF([echo | ${PAGER} -FRX >/dev/null 2>&1],[
-          PAGER="${PAGER} -FRX"
-        ])
+        for pager_arg in -F -R -S -X; do
+          AS_IF([echo | ${PAGER} ${pager_arg} >/dev/null 2>&1],[
+            PAGER="${PAGER} ${pager_arg}"
+          ])
+        done
       ]
     )
   ])
@@ -1382,6 +1406,33 @@ AC_DEFUN([LALSUITE_CHECK_PAGER],[
 AC_DEFUN([LALSUITE_ENABLE_HELP2MAN],[
   # $0: check for help2man utility
   AC_PATH_PROG([HELP2MAN], [help2man])
+  # Require a minimum version of help2man to support the
+  # --version-string and --no-discard-stderr flags.
+  AS_IF(
+    [test -n "${HELP2MAN}"],
+    [
+      HELP2MAN_MIN_VERSION="1.37"
+      AC_MSG_CHECKING([for help2man >= ${HELP2MAN_MIN_VERSION}])
+      HELP2MAN_VERSION=`${HELP2MAN} --version --version | head -n 1 | cut -d ' ' -f 3`
+      AX_COMPARE_VERSION(
+        [${HELP2MAN_VERSION}], [ge], [${HELP2MAN_MIN_VERSION}],
+        [AC_MSG_RESULT([yes])],
+        [
+          AC_MSG_RESULT([no])
+          HELP2MAN=
+        ]
+      )
+    ]
+  )
+  AC_ARG_ENABLE(
+    [help2man],
+    AC_HELP_STRING([--enable-help2man],[automatically generate man pages with help2man @<:@default=yes@:>@]),
+    AS_CASE([${enableval}],
+      [yes], [],
+      [no], [HELP2MAN=],
+      AC_MSG_ERROR([bad value ${enableval} for --enable-help2man])
+    )
+  )
   AC_SUBST([HELP2MAN], ["${HELP2MAN}"])
   AS_IF([test -n "${HELP2MAN}"], [help2man=true], [help2man=false])
   LALSUITE_ENABLE_MODULE([HELP2MAN])

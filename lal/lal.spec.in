@@ -14,15 +14,19 @@ Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: bc
 BuildRequires: fftw-devel
+BuildRequires: glue
 BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
+BuildRequires: less
 BuildRequires: numpy
 BuildRequires: octave-devel
 BuildRequires: python-devel
+BuildRequires: python-six
 BuildRequires: swig
 Requires: fftw
 Requires: gsl
 Requires: hdf5
+Requires: less
 Prefix: %{_prefix}
 
 %description
@@ -48,6 +52,7 @@ Group: LAL
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
+Requires: python-six
 %description python
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python bindings.
@@ -87,8 +92,8 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
-%{_bindir}/lal-simd-detect
-%{_bindir}/lal-version
+%{_bindir}/lal_simd_detect
+%{_bindir}/lal_version
 %{_libdir}/*.so.*
 %{_sysconfdir}/lal-user-env.*
 
@@ -109,6 +114,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Mon Sep 26 2016 Adam Mercer <adam.mercer@lgio.org> 6.17.0-1
+- ER10 Release
+
 * Tue Jun 21 2016 Adam Mercer <adam.mercer@ligo.org> 6.16.1-1
 - ER9 Release
 

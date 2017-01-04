@@ -20,6 +20,7 @@ from time import strftime
 from collections import deque
 import numpy as np
 import sys, os
+import h5py
 
 from scipy.interpolate import UnivariateSpline
 from glue.ligolw import ligolw
@@ -39,6 +40,7 @@ from lalinspiral.sbank.psds import noise_models, read_psd, get_PSD
 from lalinspiral.sbank.waveforms import waveforms, SnglInspiralTable
 
 import lal
+import lalsimulation as lalsim
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
     pass
@@ -61,12 +63,11 @@ Example command lines:
 inspiral-merger-ringdown binary black hole waveforms for use in an
 aLIGO search.
 
-lalapps_cbc_sbank --approximant IMRPhenomC --aligned-spin \\
+lalapps_cbc_sbank --approximant IMRPhenomD --aligned-spin \\
         --mass1-min 15.0 --mass1-max 25.0 \\
         --spin1-min 0.0 --spin1-max 0.5 \\
         --match-min 0.97 --flow 20.0 --noise-model aLIGOZeroDetHighPower \\
-        --instrument H1 --gps-start-time 961545543  --gps-end-time 962150343 \\
-        --user-tag BBH-IMRPhenomC-aLIGOZeroDetHighPower --verbose
+        --output-filename BBH-IMRPhenomD-aLIGOZeroDetHighPower.xml.gz --verbose
 
 
 ** Generate a template bank of mildly spinning neutron stars and
@@ -80,8 +81,7 @@ lalapps_cbc_sbank --approximant TaylorF2RedSpin --aligned-spin --use-metric \\
         --spin1-min 0.0 --spin1-max 0.05 \\
         --spin2-min 0.0 --spin2-max 0.5 \\
         --match-min 0.97 --flow 20.0 --noise-model aLIGOZeroDetHighPower \\
-        --instrument H1 --gps-start-time 961545543  --gps-end-time 962150343 \\
-        --user-tag NSBH-TaylorF2RedSpin-aLIGOZeroDetHighPower --verbose
+        --output-filename NSBH-TaylorF2RedSpin-aLIGOZeroDetHighPower.xml.gz --verbose
 
 
 ** Generate a template bank of mildly spinning binary neutron star
@@ -93,11 +93,10 @@ lalapps_cbc_sbank --approximant TaylorF2RedSpin --aligned-spin --use-metric \\
         --mass1-min 1.0 --mass1-max 2.0 \\
         --spin1-min 0.0 --spin1-max 0.05 \\
         --match-min 0.97 --flow 20.0 --noise-model aLIGOZeroDetHighPower \\
-        --instrument H1 --gps-start-time 961545543  --gps-end-time 962150343 \\
-        --user-tag BNS-TaylorF2RedSpin-aLIGOZeroDetHighPower --verbose
+        --output-filename BNS-TaylorF2RedSpin-aLIGOZeroDetHighPower.xml.gz --verbose
 
 
-** Example (not necessarily effectual ;) aligned-spin template bank covering
+** Example (not necessarily effectual) aligned-spin template bank covering
 BNS, NSBH and BBH systems. Objects lighter than 2 solar masses are considered
 neutron stars. Objects heavier than 2 solar masses are considered black holes.
 Use appropriate spin limits based on the type of the object.
@@ -110,8 +109,7 @@ lalapps_cbc_sbank --approximant TaylorF2RedSpin --aligned-spin --use-metric \\
         --bh-spin-min -0.98 --bh-spin-max 0.98 \\
         --ns-spin-min -0.4 --ns-spin-max 0.4 \\
         --match-min 0.97 --flow 30 --noise-model aLIGOZeroDetHighPower \\
-        --instrument H1 --gps-start-time 961545543 --gps-end-time 962150343 \\
-        --user-tag combined-TaylorF2RedSpin-aLIGOZeroDetHighPower --verbose
+        --output-filename combined-TaylorF2RedSpin-aLIGOZeroDetHighPower.xml.gz --verbose
 
 
 For large parameter spaces with many templates, it is recommended that
@@ -192,11 +190,13 @@ def parse_command_line():
     #
     parser.add_option("--noise-model", choices=noise_models.keys(), metavar='|'.join(noise_models.keys()), default="aLIGOZeroDetHighPower", help="Choose a noise model for the PSD from a set of available analytical model.")
     parser.add_option("--reference-psd", help="Read PSD from an xml file instead of using analytical noise model. The PSD is assumed to be infinite beyond the maximum frequency contained in the file. This effectively sets the upper frequency cutoff to that frequency, unless a smaller frequency is given via --fhigh-max.", metavar="FILE")
+    parser.add_option("--instrument", metavar="IFO", help="Specify the instrument from input PSD file for which to generate a template bank.")
 
     #
     # match calculation options
     #
     parser.add_option("--flow", type="float", help="Required. Set the low-frequency cutoff to use for the match caluclation.")
+    parser.add_option("--optimize-flow", type=float, metavar="FRACTION", help="Increase the low-frequency cutoff by a variable amount so as to make each waveform as short as possible, but recovering at least FRACTION of the range as calculated using the original cutoff. The resulting frequency is stored according to the --flow-column option.")
     parser.add_option("--match-min",help="Set minimum match of the bank. Note that since this is a stochastic process, the requested minimal match may not be strictly guaranteed but should be fulfilled on a statistical basis. Default: 0.95.", type="float", default=0.95)
     parser.add_option("--convergence-threshold", metavar="N", help="Set the criterion for convergence of the stochastic bank. The code terminates when there are N rejected proposals for each accepted proposal, averaged over the last ten acceptances. Default 1000.", type="int", default=1000)
     parser.add_option("--max-new-templates", metavar="N", help="Use this option to force the code to exit after accepting a specified number N of new templates. Note that the code may exit with fewer than N templates if the convergence criterion is met first.", type="int", default=float('inf'))
@@ -212,12 +212,9 @@ def parse_command_line():
     #
     # output options
     #
-    parser.add_option("--instrument", metavar="IFO", help="Specify the instrument for which to generate a template bank. This option is used for naming of the output file but also for reading in PSDs or template bank seeds from file.")
-    parser.add_option("--gps-start-time", type="int", default=0, help="GPS time of start. Used only for naming of output file.", metavar="INT")
-    parser.add_option("--gps-end-time", type="int", default=999999999, help="GPS time of end. Used only for naming of output file", metavar="INT")
-    parser.add_option("--output-filename", default=None, help="Over-ride default filenaming and use this as the output filename.")
-    parser.add_option("--user-tag", default=None, help="Apply descriptive tag to output filename.")
+    parser.add_option("--output-filename", default=None, help="Required. Name for output template bank. May not clash with seed bank.")
     parser.add_option("--verbose", default=False,action="store_true", help="Be verbose and write diagnostic information out to file.")
+    parser.add_option("--flow-column", type=str, metavar="NAME", help="If given, store the low-frequency cutoff for each template in column NAME of the single-inspiral table.")
 
     parser.add_option("--mchirp-boundaries-file", metavar="FILE", help="Deprecated. File containing chirp mass bin boundaries")
     parser.add_option("--mchirp-boundaries-index", metavar="INDEX", type="int", help="Deprecated. Integer index into --mchirp-boundaries-file line number such that boundaries[INDEX] is taken as --mchirp-min and boundaries[INDEX + 1] is taken as --mchirp-max")
@@ -229,13 +226,17 @@ def parse_command_line():
     #
     # check for required arguments
     #
-    for opt in ("flow", "match_min", "mass1_min", "mass1_max", "instrument"):
+    for opt in ("flow", "match_min", "mass1_min", "mass1_max", "output_filename"):
         if getattr(opts, opt) is None:
             parser.error("--%s is required" % opt.replace("_", "-"))
 
     #
     # check for argument consistency
     #
+    for seed in opts.bank_seed:
+        if seed == opts.output_filename:
+            raise ValueError("Bank seed %s would be overwritten by output file. Choose a different output name." % seed)
+
     if opts.qmin < 1:
         parser.error("Mass ratio is assumed to be >= 1.")
 
@@ -301,6 +302,18 @@ def parse_command_line():
             if opts.mchirp_max is None or opts.mchirp_max > boundary_mchirp_max:
                 opts.mchirp_max = boundary_mchirp_max
 
+    if opts.optimize_flow is not None:
+        if opts.optimize_flow >= 1 or opts.optimize_flow <= 0:
+            parser.error('--optimize-flow takes a value between 0 and 1, excluded')
+        if opts.flow_column is None and \
+                opts.output_filename.endswith(('.xml', '.xml.gz')):
+            parser.error('--flow-column is required when using --optimize-flow')
+
+    if opts.checkpoint and not opts.output_filename.endswith(('.xml',
+                                                              '.xml.gz')):
+        err_msg = "Checkpointing currently only supported for XML format."
+        raise ValueError(err_msg)
+
     return opts, args
 
 
@@ -308,16 +321,6 @@ def parse_command_line():
 # begin main
 #
 opts, args = parse_command_line()
-
-#
-# determine output bank filename
-#
-if opts.output_filename:
-    fout = opts.output_filename
-elif opts.user_tag:
-    fout = "%s-SBANK_%s-%d-%d.xml.gz" % (opts.instrument, opts.user_tag, opts.gps_start_time, opts.gps_end_time-opts.gps_start_time)
-else:
-    fout = "%s-SBANK-%d-%d.xml.gz" % (opts.instrument, opts.gps_start_time, opts.gps_end_time-opts.gps_start_time)
 
 #
 # choose waveform approximant
@@ -328,8 +331,26 @@ tmplt_class = waveforms[opts.approximant]
 # choose noise model
 #
 if opts.reference_psd is not None:
-    psd = read_psd(opts.reference_psd)[opts.instrument]
-    f_orig = psd.f0 + np.arange(len(psd.data.data)) * psd.deltaF
+
+    if opts.reference_psd.endswith(".txt") or opts.reference_psd.endswith(".txt.gz") or opts.reference_psd.endswith(".dat"):
+        # assume psd file is a two-column ASCII formatted file
+        data = np.loadtxt(opts.reference_psd)
+        f_orig, psddata = data[:,0], data[:,1]
+
+    elif opts.reference_psd.endswith(".xml") or opts.reference_psd.endswith(".xml.gz"):
+        # assume psd file is formatted as a LIGOLW XML
+        psddict = read_psd(opts.reference_psd)
+        if opts.instrument:
+            psd = psddict[opts.instrument]
+        elif len(psddict.keys()) == 1:
+            psd = psddict[psddict.keys()[0]]
+        else:
+            raise ValueError("More than one PSD found in file %s. Specify which you want with --instrument." % opts.reference_psd)
+        f_orig = psd.f0 + np.arange(len(psd.data.data)) * psd.deltaF
+        psddata = psd.data.data
+
+    # cut off upper frequency content as requested by user for better
+    # computational performance
     f_max_orig = max(f_orig)
     if opts.fhigh_max:
         if opts.fhigh_max > f_max_orig:
@@ -341,18 +362,19 @@ if opts.reference_psd is not None:
                 % f_max_orig
         opts.fhigh_max = float(f_max_orig)
 
-    interpolator = UnivariateSpline(f_orig, np.log(psd.data.data), s=0)
+    interpolator = UnivariateSpline(f_orig, np.log(psddata), s=0)
 
     # spline extrapolation may lead to unexpected results,
     # so set the PSD to infinity above the max original frequency
     noise_model = lambda g: np.where(g < f_max_orig, np.exp(interpolator(g)), np.inf)
+
 else:
     noise_model = noise_models[opts.noise_model]
 
 #
 # initialize the bank
 #
-bank = Bank(noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param, coarse_match_df=opts.coarse_match_df, iterative_match_df_max=opts.iterative_match_df_max, fhigh_max=opts.fhigh_max)
+bank = Bank(noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param, coarse_match_df=opts.coarse_match_df, iterative_match_df_max=opts.iterative_match_df_max, fhigh_max=opts.fhigh_max, optimize_flow=opts.optimize_flow, flow_column=opts.flow_column)
 for file_approx in opts.bank_seed:
 
     # if no approximant specified, use same approximant as the
@@ -365,16 +387,22 @@ for file_approx in opts.bank_seed:
         seed_file, approx = file_approx.split(":")
 
     # add templates to bank
-    tmpdoc = utils.load_filename(seed_file, contenthandler=ContentHandler)
-    sngl_inspiral = lsctables.SnglInspiralTable.get_table(tmpdoc)
-    seed_waveform = waveforms[approx]
-    bank.add_from_sngls(sngl_inspiral, seed_waveform)
+    if opts.output_filename.endswith(('.xml', '.xml.gz')):
+        tmpdoc = utils.load_filename(seed_file, contenthandler=ContentHandler)
+        sngl_inspiral = lsctables.SnglInspiralTable.get_table(tmpdoc)
+        seed_waveform = waveforms[approx]
+        bank.add_from_sngls(sngl_inspiral, seed_waveform)
 
-    if opts.verbose:
-        print>>sys.stdout,"Added %d %s seed templates from %s to initial bank." % (len(sngl_inspiral), approx, seed_file)
+        if opts.verbose:
+            print>>sys.stdout,"Added %d %s seed templates from %s to initial bank." % (len(sngl_inspiral), approx, seed_file)
 
-    tmpdoc.unlink()
-    del sngl_inspiral, tmpdoc
+        tmpdoc.unlink()
+        del sngl_inspiral, tmpdoc
+
+    elif opts.output_filename.endswith(('.hdf', '.h5', '.hdf5')):
+        hdf_fp = h5py.File(seed_file, 'r')
+        bank.add_from_hdf(hdf_fp)
+        hdf_fp.close()
 
 if opts.verbose:
     print>>sys.stdout,"Initialized the template bank to seed with %d precomputed templates." % len(bank)
@@ -383,18 +411,19 @@ if opts.verbose:
 #
 # check for saved work
 #
-if opts.checkpoint and os.path.exists( fout + "_checkpoint.gz" ):
 
-    xmldoc = utils.load_filename(fout + "_checkpoint.gz", contenthandler=ContentHandler)
+if opts.checkpoint and os.path.exists( opts.output_filename + "_checkpoint.gz" ):
+
+    xmldoc = utils.load_filename(opts.output_filename + "_checkpoint.gz", contenthandler=ContentHandler)
     tbl = lsctables.SnglInspiralTable.get_table(xmldoc)
     [bank.insort(t) for t in Bank.from_sngls(tbl, tmplt_class, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param, coarse_match_df=opts.coarse_match_df, iterative_match_df_max=opts.iterative_match_df_max, fhigh_max=opts.fhigh_max)]
 
     if opts.verbose:
-        print >>sys.stdout,"Found checkpoint file %s with %d precomputed templates." % (fout + "_checkpoint.gz", len(tbl))
+        print >>sys.stdout,"Found checkpoint file %s with %d precomputed templates." % (opts.output_filename + "_checkpoint.gz", len(tbl))
         print >>sys.stdout, "Resuming from checkpoint with %d total templates..." % len(bank)
 
     # reset rng state
-    rng_state = np.load(fout + "_checkpoint.rng.npz")
+    rng_state = np.load(opts.output_filename + "_checkpoint.rng.npz")
     rng1 = rng_state["state1"]
     rng2 = rng_state["state2"]
     rng3 = rng_state["state3"]
@@ -402,13 +431,20 @@ if opts.checkpoint and os.path.exists( fout + "_checkpoint.gz" ):
     np.random.mtrand.set_state( ("MT19937", rng1, rng2, rng3, rng4) )
 
 else:
-
-    # prepare a new XML document
-    xmldoc = ligolw.Document()
-    xmldoc.appendChild(ligolw.LIGO_LW())
-    lsctables.SnglInspiralTable.RowType = SnglInspiralTable
-    tbl = lsctables.New(lsctables.SnglInspiralTable)
-    xmldoc.childNodes[-1].appendChild(tbl)
+    if opts.output_filename.endswith(('.xml', '.xml.gz')):
+        # prepare a new XML document
+        xmldoc = ligolw.Document()
+        xmldoc.appendChild(ligolw.LIGO_LW())
+        lsctables.SnglInspiralTable.RowType = SnglInspiralTable
+        tbl = lsctables.New(lsctables.SnglInspiralTable)
+        xmldoc.childNodes[-1].appendChild(tbl)
+    elif opts.output_filename.endswith(('.hdf', '.h5', '.hdf5')):
+        # No setup is required for HDF files
+        tbl = []
+    else:
+        err_msg = "File extension is unrecognized. Sbank supports xml and "
+        err_msg += "HDF5 file formats. {}".format(opts.output_filename)
+        raise ValueError(err_msg)
 
     # initialize random seed
     np.random.mtrand.seed(opts.seed)
@@ -418,9 +454,10 @@ else:
 # prepare process table with information about the current program
 #
 opts_dict = dict((k, v) for k, v in opts.__dict__.iteritems() if v is not False and v is not None)
-process = ligolw_process.register_to_xmldoc(xmldoc, "lalapps_cbc_sbank",
-    opts_dict, version="no version",
-    cvs_repository="sbank", cvs_entry_time=strftime('%Y/%m/%d %H:%M:%S'))
+if opts.output_filename.endswith(('.xml', '.xml.gz')):
+    process = ligolw_process.register_to_xmldoc(xmldoc, "lalapps_cbc_sbank",
+        opts_dict, version="no version",
+        cvs_repository="sbank", cvs_entry_time=strftime('%Y/%m/%d %H:%M:%S'))
 
 
 #
@@ -428,9 +465,28 @@ process = ligolw_process.register_to_xmldoc(xmldoc, "lalapps_cbc_sbank",
 #
 
 if opts.trial_waveforms:
-    trialdoc = utils.load_filename(opts.trial_waveforms, contenthandler=ContentHandler, gz=opts.trial_waveforms.endswith('.gz'))
-    trial_sngls = lsctables.SnglInspiralTable.get_table(trialdoc)
-    proposal = [tmplt_class.from_sngl(t, bank=bank) for t in trial_sngls]
+    if opts.trial_waveforms.endswith(('.xml', '.xml.gz')):
+        trialdoc = utils.load_filename(opts.trial_waveforms, contenthandler=ContentHandler, gz=opts.trial_waveforms.endswith('.gz'))
+        trial_sngls = lsctables.SnglInspiralTable.get_table(trialdoc)
+        proposal = (tmplt_class.from_sngl(t, bank=bank) for t in trial_sngls)
+    elif opts.trial_waveforms.endswith(('.hdf', '.h5', '.hdf5')):
+        hdf_fp = h5py.File(opts.trial_waveforms, 'r')
+        num_points = len(hdf_fp['mass1'])
+        proposal=[]
+        for idx in xrange(num_points):
+            # Reading one point in at a time from HDF for 2 million points can
+            # be slow. Better to read in groups of points at a time and process
+            # from there. 100000 points seems a reasonable setting to hard-code
+            if not idx % 100000:
+                tmp = {}
+                end_idx = min(idx+100000, num_points)
+                for name in hdf_fp:
+                    tmp[name] = hdf_fp[name][idx:end_idx]
+            c_idx = idx % 100000
+            approx = hdf_fp['approximant'][c_idx]
+            tmplt_class = waveforms[approx]
+            proposal.append(tmplt_class.from_dict(tmp, c_idx, bank))
+        hdf_fp.close()
 
 else:
     params = {'mass1': (opts.mass1_min, opts.mass1_max),
@@ -458,7 +514,7 @@ else:
 # the last len(ks) proposals have been rejected by SBank.
 ks = deque(10*[1], maxlen=10)
 k = 0 # k is nprop per iteration
-nprop = 1  # count total number of proposed templates
+nprop = 0  # count total number of proposed templates
 status_format = "\t".join("%s: %s" % name_format for name_format in zip(tmplt_class.param_names, tmplt_class.param_formats))
 
 #
@@ -485,7 +541,7 @@ for tmplt in proposal:
         bank.insort(tmplt)
         ks.append(k)
         if opts.verbose:
-            print "\nbank size: %d\t\tproposed: %d\trejection rate: %.6f / (%.6f)" % (len(bank), k, 1 - float(len(ks))/float(sum(ks)), 1 - 1./opts.convergence_threshold )
+            print "\nbank size: %d\t\tproposed: %d\trejection rate: %.6f / (%.6f)" % (len(bank), nprop, 1 - float(len(ks))/float(sum(ks)), 1 - 1./opts.convergence_threshold )
             print >>sys.stdout, "accepted:\t\t", tmplt
             if matcher is not None:
                 print >>sys.stdout, "max match (%.4f):\t" % match, matcher
@@ -494,21 +550,30 @@ for tmplt in proposal:
         # Add to single inspiral table. Do not store templates that
         # were in the original bank, only store the additions.
         if not hasattr(tmplt, 'is_seed_point'):
-            row = tmplt.to_sngl()
-            # Event ids must be unique, or the table isn't valid, SQL needs this
-            row.event_id = ilwd.ilwdchar('sngl_inspiral:event_id:%d' %(len(bank),))
-            # If we figure out how to use metaio's SnglInspiralTable the
-            # following change then defines the event_id
-            #curr_id = EventIDColumn()
-            #curr_id.id = len(bank)
-            #curr_id.snglInspiralTable = row
-            #row.event_id = curr_id
-            row.ifo = opts.instrument
-            row.process_id = process.process_id
-            tbl.append(row)
+            if opts.output_filename.endswith(('.xml', '.xml.gz')):
+                row = tmplt.to_sngl()
+                # Event ids must be unique, or the table isn't valid,
+                # SQL needs this
+                row.event_id = ilwd.ilwdchar('sngl_inspiral:event_id:%d' %
+                                             (len(bank), ))
+                # If we figure out how to use metaio's SnglInspiralTable the
+                # following change then defines the event_id
+                #curr_id = EventIDColumn()
+                #curr_id.id = len(bank)
+                #curr_id.snglInspiralTable = row
+                #row.event_id = curr_id
+                row.ifo = opts.instrument
+                row.process_id = process.process_id
+                tbl.append(row)
+            if opts.output_filename.endswith(('.hdf', '.h5', '.hdf5')):
+                row = tmplt.to_storage_arr()
+                if len(tbl) == 0:
+                    tbl = row
+                else:
+                    tbl = np.append(tbl, row)
 
         if opts.checkpoint and not len(bank) % opts.checkpoint:
-            checkpoint_save(xmldoc, fout, process)
+            checkpoint_save(xmldoc, opts.output_filename, process)
 
     # clear the proposal template if caching is not enabled
     if not opts.cache_waveforms:
@@ -523,5 +588,16 @@ if opts.verbose:
 bank.clear()  # clear caches
 
 # write out the document
-ligolw_process.set_process_end_time(process)
-utils.write_filename(xmldoc, fout,  gz=fout.endswith("gz"))
+if opts.output_filename.endswith(('.xml', '.xml.gz')):
+    ligolw_process.set_process_end_time(process)
+    utils.write_filename(xmldoc, opts.output_filename,
+                         gz=opts.output_filename.endswith("gz"))
+elif opts.output_filename.endswith(('.hdf', '.h5', '.hdf5')):
+    hdf_fp = h5py.File(opts.output_filename, 'w')
+    if len(tbl) == 0:
+        hdf_fp.attrs['empty_file'] = True
+    else:
+        params = tbl.dtype.names
+        hdf_fp.attrs['parameters'] = params
+        for param in params:
+            hdf_fp[param] = tbl[param]

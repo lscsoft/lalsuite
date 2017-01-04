@@ -16,10 +16,10 @@ BuildRequires: chealpix-devel
 BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
 BuildRequires: healpy >= 1.9.1
-BuildRequires: python-basemap
+BuildRequires: python-shapely
 BuildRequires: libmetaio-devel
 BuildRequires: libxml2-devel
-BuildRequires: numpy
+BuildRequires: numpy >= 1.7
 BuildRequires: octave-devel
 BuildRequires: python-devel
 BuildRequires: scipy
@@ -92,11 +92,12 @@ Summary: Python Bindings for LALInference
 Group: LAL
 Requires: %{name} = %{version}
 Requires: healpy >= 1.9.1
-Requires: python-basemap
-Requires: numpy
+Requires: python-shapely
+Requires: numpy >= 1.7
 Requires: python
 Requires: scipy
 Requires: python-six
+Requires: python-seaborn
 Requires: glue >= 1.49.1
 Requires: glue-common >= 1.49.1
 Requires: glue-segments >= 1.49.1
@@ -178,6 +179,17 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Thu Dec 15 2016 Adam Mercer <adam.mercer@ligo.org> 1.8.2-1
+- Be more emphatic about switching matplotlib backend
+- Prevent trying to build python3 packages when unsupported
+
+* Fri Dec 09 2016 Adam Mercer <adam.mercer@ligo.org> 1.8.1-1
+- Explicitly set no-op Matplotlib backend
+- Set matplotlib backend to no-op
+
+* Mon Sep 26 2016 Adam Mercer <adam.mercer@ligo.org> 1.8.0-1
+- ER10 release
+
 * Thu Jun 23 2016 Adam Mercer <adam.mercer@ligo.org> 1.7.0-1
 - ER9 release
 

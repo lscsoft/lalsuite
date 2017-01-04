@@ -22,26 +22,13 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 
-from lalsimulation import SimInspiralTaylorF2ReducedSpinComputeChi, SimIMRPhenomBComputeChi
+from lalsimulation import SimInspiralTaylorF2ReducedSpinComputeChi, SimIMRPhenomBComputeChi, SimIMRSEOBNRv4ROMTimeOfFrequency
 
+from lal import MSUN_SI
 from lalinspiral.sbank.waveforms import compute_mchirp
 from lalinspiral.sbank.tau0tau3 import m1m2_to_tau0tau3
 
 from h5py import File as H5File
-
-matplotlib.rcParams.update({
-    "text.usetex": True,
-    "text.verticalalignment": "center",
-    "font.size": 18,
-    "axes.titlesize": 22,
-    "axes.labelsize": 22,
-    "xtick.labelsize": 18,
-    "ytick.labelsize": 18,
-    "legend.fontsize": 16,
-    "figure.figsize": [12,9],
-   })
-
-fname = sys.argv[1]
 
 def find_process_id(process_table, prog_name):
     for program, pid in process_table["program", "process_id"]:
@@ -55,29 +42,31 @@ def find_process_param(pp_table, process_id, param):
             return value
 
 # grab data
-with H5File(fname, "r") as h5file:
-    match = h5file["/match_map"]["match"]
+match = None
+for fname in sys.argv[1:]:
+    with H5File(fname, "r") as h5file:
 
-    # order data by descending match so that low matches are plotted on top
-    order = match.argsort()[::-1]
-    inj_ind = h5file["/match_map"]["inj_index"][order]
-    tmplt_ind = h5file["/match_map"]["best_match_tmplt_index"][order]
-    match = match[order]
+        if match is None:
+            match = np.array(h5file["/match_map"])
+            inj_arr = np.array(h5file["/sim_inspiral"])
+            tmplt_arr = np.array(h5file["/sngl_inspiral"])
 
-    # extract columns of interest and apply row ordering
-    inj_arr = h5file["/sim_inspiral"]["mass1", "mass2", "spin1x", "spin1y", "spin1z", "spin2x", "spin2y", "spin2z", "inclination"][inj_ind]
-    tmplt_arr = h5file["/sngl_inspiral"]["mass1", "mass2", "spin1x", "spin1y", "spin1z", "spin2x", "spin2y", "spin2z"][tmplt_ind]
-    inj_sigmasq = h5file["/match_map"]["inj_sigmasq"]
+        else:
+            match = np.concatenate((np.array(h5file["/match_map"]), match))
+            tmplt_arr = np.concatenate((np.array(h5file["/sngl_inspiral"]), tmplt_arr))
+            inj_arr = np.concatenate((np.array(h5file["/sim_inspiral"]), inj_arr))
 
-    # extract waveforms
-    pid = find_process_id(h5file["/process"], u"lalapps_cbc_sbank_sim")
-    pparams = h5file["/process_params"]
-    inj_approx = find_process_param(pparams, pid, u"--injection-approx"),
-    tmplt_approx = find_process_param(pparams, pid, u"--template-approx")
+inj_sigmasq = match["inj_sigmasq"]
+match = match["match"]
 
-    # get other useful quantities
-    pid = find_process_id(h5file["/process"], u"lalapps_cbc_sbank_sim")
-    flow = float(find_process_param(pparams, pid, u"--flow"))
+order = match.argsort()[::-1]
+match = match[order]
+inj_arr = inj_arr[order]
+tmplt_arr = tmplt_arr[order]
+
+inj_approx = "FIXME"
+tmplt_approx = "FIXME"
+flow = 30 # FIXME
 
 # derived quantities
 # NB: Named fields in dtypes (see ligolw_table_to_array in lalapps_cbc_sbank_sim)
@@ -101,6 +90,9 @@ if tmplt_approx == "TaylorF2RedSpin":
 else: # default to effective spin
     tmplt_chi_label = "\chi_\mathrm{eff}"
     tmplt_chi = [SimIMRPhenomBComputeChi(float(row["mass1"]), float(row["mass2"]), float(row["spin1z"]), float(row["spin2z"])) for row in tmplt_arr]
+
+# FIXME hack
+inj_dur = [SimIMRSEOBNRv4ROMTimeOfFrequency(flow, float(row["mass1"]) * MSUN_SI, float(row["mass2"]) * MSUN_SI, float(row["spin1z"]), float(row["spin2z"])) for row in inj_arr]
 
 
 #
@@ -252,6 +244,16 @@ ax.set_ylabel("Fitting Factor Between Injection and Template Bank")
 ax.grid(True)
 canvas = FigureCanvas(fig)
 fig.savefig(name+"_match_vs_injMc.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+ax.plot(inj_dur, match, marker = ".", linestyle="None")
+ax.axvline(x=0.2, linewidth=2, color='k')
+ax.set_xlabel("Injection Duration (s)")
+ax.set_ylabel("Fitting Factor Between Injection and Template Bank")
+ax.grid(True)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_injdur.png")
 
 fig = Figure()
 ax = fig.add_subplot(111)

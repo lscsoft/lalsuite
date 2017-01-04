@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALBurst],[1.4.2.1],[lal-discuss@ligo.org])
+AC_INIT([LALBurst],[1.4.3.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALBurstConfig.h])
 AC_CONFIG_SRCDIR([src/EPSearch.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -20,6 +20,7 @@ AC_CONFIG_FILES([ \
   src/LALBurstVCSInfo.c \
   src/LALBurstVCSInfo.h \
   src/Makefile \
+  src/version.c \
   swig/Makefile \
   test/Makefile \
 ])
@@ -35,9 +36,9 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="6.16.1"
-MIN_LALMETAIO_VERSION="1.2.8"
-MIN_LALSIMULATION_VERSION="1.6.0"
+MIN_LAL_VERSION="6.17.0"
+MIN_LALMETAIO_VERSION="1.3.0"
+MIN_LALSIMULATION_VERSION="1.6.1"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALMETAIO_VERSION])
 AC_SUBST([MIN_LALSIMULATION_VERSION])
@@ -112,21 +113,19 @@ AC_HEADER_STDC
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for Python
-#AX_PYTHON_DEVEL()
-# hack to remove default lib dirs from PYTHON_LDFLAGS.  only tested on
-# Debian and SL6.  FIXME:  find a way to do this properly
-#PYTHON_LDFLAGS="`echo $PYTHON_LDFLAGS | sed -e 'sX-L/usr/lib\(64\)\?\(/\)\?[[:space:]]*XXg'`"
+LALSUITE_CHECK_PYTHON([2.6])
+AX_PYTHON_DEVEL()
 
 # check for NumPy
-#AX_PYTHON_MODULE(numpy, fatal)
-#NUMPY_CFLAGS=-I`$PYTHON -c "import numpy;print (numpy.get_include());"`
-#old_CFLAGS="$CFLAGS"
-#CFLAGS="$CFLAGS ${PYTHON_CPPFLAGS} ${NUMPY_CFLAGS}"
-#AC_CHECK_HEADER([numpy/arrayobject.h],
-#	[PYTHON_CPPFLAGS="${PYTHON_CPPFLAGS} ${NUMPY_CFLAGS}"],
-#	[AC_MSG_ERROR([Numpy extension header not found])],
-#	[#include "Python.h"])
-#CFLAGS="$old_CFLAGS"
+AX_PYTHON_MODULE(numpy, fatal)
+NUMPY_CFLAGS=-I`$PYTHON -c "import numpy;print (numpy.get_include());"`
+old_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS ${PYTHON_CPPFLAGS} ${NUMPY_CFLAGS}"
+AC_CHECK_HEADER([numpy/arrayobject.h],
+  [PYTHON_CPPFLAGS="${PYTHON_CPPFLAGS} ${NUMPY_CFLAGS}"],
+  [AC_MSG_ERROR([Numpy extension header not found])],
+  [#include "Python.h"])
+CFLAGS="$old_CFLAGS"
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
@@ -148,7 +147,7 @@ AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio lib
 AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
 LALSUITE_CHECK_LIB([LALMetaIO],[${MIN_LALMETAIO_VERSION}],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
 LALSUITE_CHECK_LIB([LALSimulation],[${MIN_LALSIMULATION_VERSION}],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])

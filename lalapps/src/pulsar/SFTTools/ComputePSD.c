@@ -234,7 +234,7 @@ main(int argc, char *argv[])
 
   /* get power running-median rngmed[ |data|^2 ] from SFTs */
   MultiPSDVector *multiPSD = NULL;
-  LAL_CALL( LALNormalizeMultiSFTVect (&status, &multiPSD, inputSFTs, uvar.blocksRngMed), &status);
+  XLAL_CHECK_MAIN( ( multiPSD = XLALNormalizeMultiSFTVect ( inputSFTs, uvar.blocksRngMed, NULL ) ) != NULL, XLAL_EFUNC);
   /* restrict this PSD to just the "physical" band if requested using {--Freq, --FreqBand} */
   if ( ( XLALCropMultiPSDandSFTVectors ( multiPSD, inputSFTs, cfg.firstBin, cfg.lastBin )) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: XLALCropMultiPSDandSFTVectors (inputPSD, inputSFTs, %d, %d) failed with xlalErrno = %d\n", __func__, cfg.firstBin, cfg.lastBin, xlalErrno );
@@ -455,10 +455,10 @@ main(int argc, char *argv[])
   }
 
   /* we are now done with the psd */
-  LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multiPSD), &status);
-  LAL_CALL ( LALDestroyMultiSFTVector  (&status, &inputSFTs), &status);
+  XLALDestroyMultiPSDVector  ( multiPSD);
+  XLALDestroyMultiSFTVector  ( inputSFTs);
 
-  LAL_CALL (LALDestroyUserVars(&status), &status);
+  XLALDestroyUserVars();
 
   XLALDestroyREAL8Vector ( overSFTs );
   XLALDestroyREAL8Vector ( overIFOs );
@@ -987,10 +987,8 @@ XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration 
 
   /* get sft catalog */
   LogPrintf ( LOG_DEBUG, "Finding all SFTs to load ... ");
-  LALStatus status = blank_status;
-  LALSFTdataFind ( &status, &catalog, uvar->inputData, &constraints);
-  if ( status.statusCode != 0 ) {
-    XLALPrintError ("%s: LALSFTdataFind() failed with statusCode = %d\n", __func__, status.statusCode );
+  if ( ( catalog = XLALSFTdataFind ( uvar->inputData, &constraints) ) == NULL ) {
+    XLALPrintError ("%s: XLALSFTdataFind() failed with xlalErrno = %d\n", __func__, xlalErrno );
     XLAL_ERROR_NULL ( XLAL_EFAILED );
   }
   if ( (catalog == NULL) || (catalog->length == 0) ) {

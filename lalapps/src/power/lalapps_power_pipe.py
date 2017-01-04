@@ -41,10 +41,10 @@ import tempfile
 from glue import pipeline
 from glue import segments
 from glue import segmentsUtils
-from glue.lal import CacheEntry
-from pylal import ligolw_cafe
-from lalburst import timeslides as ligolw_tisi
 from lal import LIGOTimeGPS
+from lal.utils import CacheEntry
+from lalburst import cafe
+from lalburst import timeslides
 from lalapps import power
 
 
@@ -72,7 +72,7 @@ def parse_command_line():
 	parser.add_option("--full-segments", action = "store_true", help = "Analyze all data from segment lists, not just coincident times.")
 	parser.add_option("--minimum-gap", metavar = "seconds", type = "float", default = 60.0, help = "Merge jobs analyzing data from the same instrument if the gap between them is less than this many seconds (default = 60).")
 	parser.add_option("--variant", metavar = "[injections|noninjections|both]", default = "both", help = "Select the variant of the pipeline to construct.  \"injections\" produces a simulations-only version of the pipeline, \"noninjections\" produces a version with no simulation jobs, and \"both\" produces a full pipeline with both simulation and non-simulation jobs.")
-	parser.add_option("--background-time-slides", metavar = "filename", default = [], action = "append", help = "Set file from which to obtain the time slide table for use in the background branch of the pipeline (default = \"background_time_slides.xml.gz\").  Provide this argument multiple times to provide multiple time slide files, each will result in a separate set of ligolw_burca jobs.")
+	parser.add_option("--background-time-slides", metavar = "filename", default = [], action = "append", help = "Set file from which to obtain the time slide table for use in the background branch of the pipeline (default = \"background_time_slides.xml.gz\").  Provide this argument multiple times to provide multiple time slide files, each will result in a separate set of lalapps_burca jobs.")
 	parser.add_option("--injection-time-slides", metavar = "filename", help = "Set file from which to obtain the time slide table for use in the injection branch of the pipeline (default = \"injection_time_slides.xml.gz\").")
 	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
 	options, filenames = parser.parse_args()
@@ -155,7 +155,7 @@ def compute_segment_lists(seglistdict, time_slides, minimum_gap, timing_params, 
 
 		# extract the segments that are coincident under the time
 		# slides
-		new = ligolw_cafe.get_coincident_segmentlistdict(seglistdict, time_slides)
+		new = cafe.get_coincident_segmentlistdict(seglistdict, time_slides)
 
 		# adjust surviving segment lengths up to the next integer
 		# number of PSDs
@@ -260,7 +260,7 @@ background_seglistdict = segments.segmentlistdict()
 if options.do_noninjections:
 	for filename in options.background_time_slides:
 		cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
-		background_time_slides[cache_entry] = ligolw_tisi.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
+		background_time_slides[cache_entry] = timeslides.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
 		background_seglistdict |= compute_segment_lists(seglistdict, background_time_slides[cache_entry], options.minimum_gap, options.timing_params, full_segments = options.full_segments, verbose = options.verbose)
 
 
@@ -269,7 +269,7 @@ injection_seglistdict = segments.segmentlistdict()
 if options.do_injections:
 	for filename in options.injection_time_slides:
 		cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
-		injection_time_slides[cache_entry] = ligolw_tisi.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
+		injection_time_slides[cache_entry] = timeslides.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
 		injection_seglistdict |= compute_segment_lists(seglistdict, injection_time_slides[cache_entry], options.minimum_gap, options.timing_params, full_segments = options.full_segments, verbose = options.verbose)
 
 

@@ -65,7 +65,7 @@ python/rapidpe_compute_intrinsic_fisher
 python/rapidpe_compute_intrinsic_grid
 python/rapidpe_create_event_dag
 python/rapidpe_integrate_extrinsic_likelihood
-src/LALInferenceBuildInfo.c
+src/LALInferenceBuildInfoHeader.h
 src/LALInferenceConfig.h
 src/LALInferenceVCSInfo.c
 src/LALInferenceVCSInfo.h
@@ -77,8 +77,10 @@ src/lalinference_bench
 src/lalinference_burst
 src/lalinference_datadump
 src/lalinference_nest
+src/lalinference_version
 src/stamp-h1
 src/stamp-h2
+src/version.c
 swig/swiglal*
 test/LALInferenceGenerateROQTest
 test/LALInferenceHDF5Test

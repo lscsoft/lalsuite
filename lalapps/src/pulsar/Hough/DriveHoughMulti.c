@@ -398,52 +398,52 @@ int main(int argc, char *argv[]){
     strcpy(uvar_skyfile,SKYFILE);
     
     /* register user input variables */
-    LAL_CALL( LALRegisterREALUserVar( &status, "f0",               'f',  UVAR_OPTIONAL, "Start search frequency", &uvar_f0), &status);
-    LAL_CALL( LALRegisterREALUserVar( &status, "freqBand",         'b',  UVAR_OPTIONAL, "Search frequency band", &uvar_freqBand), &status);
-    LAL_CALL( LALRegisterREALUserVar( &status, "startTime",         0,  UVAR_OPTIONAL, "GPS start time of observation", &uvar_startTime), &status);
-    LAL_CALL( LALRegisterREALUserVar(   &status, "endTime",         0,  UVAR_OPTIONAL, "GPS end time of observation", &uvar_endTime), &status);
-    LAL_CALL( LALRegisterSTRINGUserVar( &status, "timeStampsFile",  0,  UVAR_OPTIONAL, "Input time-stamps file", &uvar_timeStampsFile),   &status);
-    LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",       0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
-    LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",          0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid (rad)", &uvar_dAlpha), &status);
-    LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",          0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid (rad)", &uvar_dDelta), &status);
-    LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",         0,  UVAR_OPTIONAL, "Alternative: input skypatch file", &uvar_skyfile),  &status);
-    LAL_CALL( LALRegisterREALUserVar(   &status, "peakThreshold",   0,  UVAR_OPTIONAL, "Peak selection threshold", &uvar_peakThreshold),   &status);
-    LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",         0,  UVAR_OPTIONAL, "Use amplitude modulation weights", &uvar_weighAM),  &status);
-    LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",      0,  UVAR_OPTIONAL, "Use SFT noise weights", &uvar_weighNoise), &status);
-    LAL_CALL( LALRegisterINTUserVar(    &status, "keepBestSFTs",    0,  UVAR_OPTIONAL, "Number of best SFTs to use (default--keep all)", &uvar_keepBestSFTs),  &status);
-    LAL_CALL( LALRegisterBOOLUserVar(   &status, "printLog",        0,  UVAR_OPTIONAL, "Print Log file", &uvar_printLog), &status);
-    LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris", 'E', UVAR_OPTIONAL, "Earth Ephemeris file",  &uvar_earthEphemeris),  &status);
-    LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",   'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
-    LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftData",        'D', UVAR_REQUIRED, "SFT filename pattern", &uvar_sftData), &status);
-    LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",     'o', UVAR_OPTIONAL, "Output directory", &uvar_dirnameOut), &status);
-    LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",    0,  UVAR_OPTIONAL, "Output file basename", &uvar_fbasenameOut), &status);
-    LAL_CALL( LALRegisterINTUserVar(    &status, "binsHisto",       0,  UVAR_OPTIONAL, "No. of bins for histogram", &uvar_binsHisto),  &status);
-    LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles",       0,  UVAR_OPTIONAL, "Comma separated List of linefiles (filenames must contain IFO name)", &uvar_linefiles), &status);
-    LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",  0,  UVAR_OPTIONAL, "Size of cylinder of PHMDs", &uvar_nfSizeCylinder),  &status);
-    LAL_CALL( LALRegisterINTUserVar(    &status, "nfLUTvalidity",   0,  UVAR_OPTIONAL, "Frequency bins validity of LUT (default most restrictive value)", &uvar_nfLUTvalidity),  &status);
-    LAL_CALL( LALRegisterINTUserVar(    &status, "nSpinUp",         0,  UVAR_OPTIONAL, "Num of bins for Spin-up in PHMDs", &uvar_nSpinUp),  &status);
-    LAL_CALL( LALRegisterREALUserVar(   &status, "pixelFactor",    'p', UVAR_OPTIONAL, "sky resolution=1/v*pixelFactor*f*Tcoh", &uvar_pixelFactor), &status);
-    LAL_CALL( LALRegisterINTUserVar(    &status, "numCand",         0,  UVAR_OPTIONAL, "No. of toplist candidates", &uvar_numCand), &status);
-    LAL_CALL( LALRegisterBOOLUserVar(   &status, "printExtraInfo",  0,  UVAR_OPTIONAL, "Print HoughMaps, HoughStatistics, expected number count stdev", &uvar_EnableExtraInfo), &status);
-    LAL_CALL( LALRegisterINTUserVar(    &status, "chiSqBins",       0,  UVAR_OPTIONAL, "Number of chi-square bins for veto tests",  &uvar_chiSqBins), &status);
-    LAL_CALL( LALRegisterBOOLUserVar(   &status, "enableChi2",      0,  UVAR_OPTIONAL, "Print Chi2 value for each element in the Toplist", &uvar_EnableChi2), &status);
-    LAL_CALL( LALRegisterINTUserVar(    &status, "spindownJump",       0,  UVAR_OPTIONAL, "Jump to the next spin-down being analyzed (to avoid doing them all)",  &uvar_spindownJump), &status);
-    LAL_CALL( LALRegisterINTUserVar(    &status, "numSkyPartitions",0,UVAR_OPTIONAL, "Number of (equi-)partitions to split skygrid into", &uvar_numSkyPartitions), &status);
-    LAL_CALL( LALRegisterINTUserVar(    &status, "partitionIndex",0,UVAR_OPTIONAL, "Index [0,numSkyPartitions-1] of sky-partition to generate", &uvar_partitionIndex), &status);
-    LAL_CALL( LALRegisterREALUserVar( &status, "refTime",         0,  UVAR_OPTIONAL, "GPS reference time of observation", &uvar_refTime), &status);
-    LAL_CALL( LALRegisterREALUserVar( &status, "deltaF1dot",         0,  UVAR_OPTIONAL, "(Step size for f1dot)*Tcoh [Default: 1/Tobs]", &uvar_deltaF1dot), &status);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_f0,                 "f0",                 REAL8,        'f', OPTIONAL,  "Start search frequency") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_freqBand,           "freqBand",           REAL8,        'b', OPTIONAL,  "Search frequency band") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_startTime,          "startTime",          REAL8,        0,   OPTIONAL,  "GPS start time of observation") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_endTime,            "endTime",            REAL8,        0,   OPTIONAL,  "GPS end time of observation") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_timeStampsFile,     "timeStampsFile",     STRING,       0,   OPTIONAL,  "Input time-stamps file") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_skyRegion,          "skyRegion",          STRING,       0,   OPTIONAL,  "sky-region polygon (or 'allsky')") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_dAlpha,             "dAlpha",             REAL8,        0,   OPTIONAL,  "Resolution for flat or isotropic coarse grid (rad)") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_dDelta,             "dDelta",             REAL8,        0,   OPTIONAL,  "Resolution for flat or isotropic coarse grid (rad)") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_skyfile,            "skyfile",            STRING,       0,   OPTIONAL,  "Alternative: input skypatch file") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_peakThreshold,      "peakThreshold",      REAL8,        0,   OPTIONAL,  "Peak selection threshold") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_weighAM,            "weighAM",            BOOLEAN,      0,   OPTIONAL,  "Use amplitude modulation weights") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_weighNoise,         "weighNoise",         BOOLEAN,      0,   OPTIONAL,  "Use SFT noise weights") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_keepBestSFTs,       "keepBestSFTs",       INT4,         0,   OPTIONAL,  "Number of best SFTs to use (default--keep all)") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_printLog,           "printLog",           BOOLEAN,      0,   OPTIONAL,  "Print Log file") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_earthEphemeris,     "earthEphemeris",     STRING,       'E', OPTIONAL,  "Earth Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sunEphemeris,       "sunEphemeris",       STRING,       'S', OPTIONAL,  "Sun Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftData,            "sftData",            STRING,       'D', REQUIRED,  "SFT filename pattern") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_dirnameOut,         "dirnameOut",         STRING,       'o', OPTIONAL,  "Output directory") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fbasenameOut,       "fbasenameOut",       STRING,       0,   OPTIONAL,  "Output file basename") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_binsHisto,          "binsHisto",          INT4,         0,   OPTIONAL,  "No. of bins for histogram") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_linefiles,          "linefiles",          STRINGVector, 0,   OPTIONAL,  "Comma separated List of linefiles (filenames must contain IFO name)") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_nfSizeCylinder,     "nfSizeCylinder",     INT4,         0,   OPTIONAL,  "Size of cylinder of PHMDs") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_nfLUTvalidity,      "nfLUTvalidity",      INT4,         0,   OPTIONAL,  "Frequency bins validity of LUT (default most restrictive value)") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_nSpinUp,            "nSpinUp",            INT4,         0,   OPTIONAL,  "Num of bins for Spin-up in PHMDs") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_pixelFactor,        "pixelFactor",        REAL8,        'p', OPTIONAL,  "sky resolution=1/v*pixelFactor*f*Tcoh") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_numCand,            "numCand",            INT4,         0,   OPTIONAL,  "No. of toplist candidates") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_EnableExtraInfo,    "printExtraInfo",     BOOLEAN,      0,   OPTIONAL,  "Print HoughMaps, HoughStatistics, expected number count stdev") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_chiSqBins,          "chiSqBins",          INT4,         0,   OPTIONAL,  "Number of chi-square bins for veto tests") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_EnableChi2,         "enableChi2",         BOOLEAN,      0,   OPTIONAL,  "Print Chi2 value for each element in the Toplist") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_spindownJump,       "spindownJump",       INT4,         0,   OPTIONAL,  "Jump to the next spin-down being analyzed (to avoid doing them all)") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_numSkyPartitions,   "numSkyPartitions",  INT4,          0,   OPTIONAL,  "Number of (equi-)partitions to split skygrid into") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_partitionIndex,     "partitionIndex",    INT4,          0,   OPTIONAL,  "Index [0,xnumSkyPartitions-1] of sky-partition to generate") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_refTime,            "refTime",            REAL8,        0,   OPTIONAL,  "GPS reference time of observation") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_deltaF1dot,         "deltaF1dot",         REAL8,        0,   OPTIONAL,  "(Step size for f1dot)*Tcoh [Default: 1/Tobs]") == XLAL_SUCCESS, XLAL_EFUNC);
 
-    LAL_CALL( LALRegisterBOOLUserVar(   &status, "EnableToplistPatch",0,UVAR_OPTIONAL, "Enables a toplist per Patch, requires to enableChi2", &uvar_EnableToplistPatch), &status);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_EnableToplistPatch, "EnableToplistPatch",BOOLEAN,       0,   OPTIONAL,  "Enables a toplist per Patch, requires to enableChi2") == XLAL_SUCCESS, XLAL_EFUNC);
 
     
     /* developer input variables */
-    LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    0, UVAR_DEVELOPER, "Running Median block size", &uvar_blocksRngMed), &status);
-    LAL_CALL( LALRegisterINTUserVar(    &status, "maxBinsClean",    0, UVAR_DEVELOPER, "Maximum number of bins in cleaning", &uvar_maxBinsClean), &status);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_blocksRngMed,       "blocksRngMed",       INT4,         0,   DEVELOPER, "Running Median block size") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_maxBinsClean,       "maxBinsClean",       INT4,         0,   DEVELOPER, "Maximum number of bins in cleaning") == XLAL_SUCCESS, XLAL_EFUNC);
     
     
     /* read all command line variables */
     BOOLEAN should_exit = 0;
-    LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+    XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
     if (should_exit)
         exit(1);
     
@@ -521,30 +521,30 @@ int main(int argc, char *argv[]){
         /* set detector constraint */
         constraints.detector = NULL;
         
-        if ( LALUserVarWasSet( &uvar_startTime ) ) {
+        if ( XLALUserVarWasSet( &uvar_startTime ) ) {
             XLALGPSSetREAL8(&startTimeGPS, uvar_startTime);
             constraints.minStartTime = &startTimeGPS;
         }
         
-        if ( LALUserVarWasSet( &uvar_endTime ) ) {
+        if ( XLALUserVarWasSet( &uvar_endTime ) ) {
             XLALGPSSetREAL8(&endTimeGPS, uvar_endTime);
             constraints.maxStartTime = &endTimeGPS;
         }
         
-        if ( LALUserVarWasSet( &uvar_timeStampsFile ) ) {
+        if ( XLALUserVarWasSet( &uvar_timeStampsFile ) ) {
             LAL_CALL ( ReadTimeStampsFile ( &status, &inputTimeStampsVector, uvar_timeStampsFile), &status);
             constraints.timestamps = &inputTimeStampsVector;
         }
         
         /* get sft catalog */
-        LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftData, &constraints), &status);
+        XLAL_CHECK_MAIN( ( catalog = XLALSFTdataFind( uvar_sftData, &constraints) ) != NULL, XLAL_EFUNC);
         if ( (catalog == NULL) || (catalog->length == 0) ) {
             LogPrintf (LOG_CRITICAL,"Unable to match any SFTs with pattern '%s'\n", uvar_sftData );
             exit(1);
         }
         
         /* now we can free the inputTimeStampsVector */
-        if ( LALUserVarWasSet( &uvar_timeStampsFile ) ) {
+        if ( XLALUserVarWasSet( &uvar_timeStampsFile ) ) {
             LALFree( inputTimeStampsVector.data );
         }
         
@@ -565,7 +565,7 @@ int main(int argc, char *argv[]){
         f_max = uvar_f0 + uvar_freqBand + doppWings + (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
         
         /* read the sfts */
-        LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, f_min, f_max), &status);
+        XLAL_CHECK_MAIN( ( inputSFTs = XLALLoadMultiSFTs ( catalog, f_min, f_max) ) != NULL, XLAL_EFUNC);
         numifo = inputSFTs->length;
         
         /* find number of sfts */
@@ -580,7 +580,7 @@ int main(int argc, char *argv[]){
         /* set number of SFTs to be kept */
         /* currently mobscohbest is set equal to mobscoh if no weights are used
          -- this probably will be changed in the future */
-        if ( LALUserVarWasSet( &uvar_keepBestSFTs ) && (uvar_weighNoise||uvar_weighAM)) {
+        if ( XLALUserVarWasSet( &uvar_keepBestSFTs ) && (uvar_weighNoise||uvar_weighAM)) {
             mObsCohBest = uvar_keepBestSFTs;
             
             /* set to mobscoh if it is more than number of sfts */
@@ -595,7 +595,7 @@ int main(int argc, char *argv[]){
         firstTimeStamp = catalog->data[0].header.epoch;
         lastTimeStamp = catalog->data[catalog->length - 1].header.epoch;
         
-        if ( LALUserVarWasSet( &uvar_refTime ) )
+        if ( XLALUserVarWasSet( &uvar_refTime ) )
         {
             XLALGPSSetREAL8(&refTimeGPS, uvar_refTime);
             tObs = XLALGPSDiff( &lastTimeStamp, &refTimeGPS ) + timeBase;
@@ -609,7 +609,7 @@ int main(int argc, char *argv[]){
         
         
         /* clean sfts if required */
-        if ( LALUserVarWasSet( &uvar_linefiles ) )
+        if ( XLALUserVarWasSet( &uvar_linefiles ) )
         {
             
             RandomParams *randPar=NULL;
@@ -637,7 +637,7 @@ int main(int argc, char *argv[]){
         } /* end cleaning */
         
         
-        LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
+        XLALDestroySFTCatalog(catalog );
         
     } /* end of sft reading block */
     LogPrintfVerbatim (LOG_NORMAL, "done\n");
@@ -669,27 +669,25 @@ int main(int argc, char *argv[]){
         UINT4 j;
         
         /*  get ephemeris  */
-        edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
-        (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
-        (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
-        LAL_CALL( LALInitBarycenter( &status, edat), &status);
+        XLAL_CHECK_MAIN( ( edat = XLALInitBarycenter( uvar_earthEphemeris, uvar_sunEphemeris ) ) != NULL, XLAL_EFUNC);
         
         
         /* normalize sfts */
-        LAL_CALL( LALNormalizeMultiSFTVect (&status, &multPSD, inputSFTs, uvar_blocksRngMed), &status);
+        XLAL_CHECK_MAIN( ( multPSD = XLALNormalizeMultiSFTVect(  inputSFTs, uvar_blocksRngMed, NULL ) ) != NULL, XLAL_EFUNC);
         
         /* compute multi noise weights */
         if ( uvar_weighNoise ) {
-            LAL_CALL ( LALComputeMultiNoiseWeights ( &status, &multweight, multPSD, uvar_blocksRngMed, 0), &status);
+            XLAL_CHECK_MAIN ( ( multweight = XLALComputeMultiNoiseWeights ( multPSD, uvar_blocksRngMed, 0) ) != NULL, XLAL_EFUNC);
         }
         
         /* we are now done with the psd */
-        LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multPSD), &status);
+        XLALDestroyMultiPSDVector  ( multPSD);
         
         /* get information about all detectors including velocity and timestamps */
         /* note that this function returns the velocity at the
          mid-time of the SFTs -- should not make any difference */
-        LAL_CALL ( LALGetMultiDetectorStates ( &status, &mdetStates, inputSFTs, edat), &status);
+        const REAL8 tOffset = 0.5 / inputSFTs->data[0]->data[0].deltaF;
+        XLAL_CHECK_MAIN ( ( mdetStates = XLALGetMultiDetectorStatesFromMultiSFTs ( inputSFTs, edat, tOffset ) ) != NULL, XLAL_EFUNC);
         
         LAL_CALL ( GetSFTVelTime( &status, &velV, timeV, mdetStates), &status);
         
@@ -698,11 +696,11 @@ int main(int argc, char *argv[]){
             
             LAL_CALL ( GetSFTNoiseWeights( &status, weightsNoise, multweight), &status);
             
-            LAL_CALL ( LALDestroyMultiNoiseWeights ( &status, &multweight), &status);
+            XLALDestroyMultiNoiseWeights (multweight);
         }
         
         /* compute the time difference relative to startTime for all SFTs */
-        if ( LALUserVarWasSet( &uvar_refTime ) )
+        if ( XLALUserVarWasSet( &uvar_refTime ) )
         {
             for(j = 0; j < mObsCoh; j++)
                 timeDiffV->data[j] = XLALGPSDiff( timeV->data + j, &refTimeGPS );
@@ -738,7 +736,7 @@ int main(int argc, char *argv[]){
     
     
     /* we are done with the sfts and ucharpeakgram now */
-    LAL_CALL (LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
+    XLALDestroyMultiSFTVector( inputSFTs);
     LogPrintfVerbatim (LOG_NORMAL, "done\n");
     
     /* if we want to print expected sigma for each skypatch */
@@ -880,7 +878,7 @@ int main(int argc, char *argv[]){
         /* nSpin1Max = floor(uvar_nfSizeCylinder/2.0) ;*/
         
         
-        if ( LALUserVarWasSet( &uvar_deltaF1dot ) )
+        if ( XLALUserVarWasSet( &uvar_deltaF1dot ) )
         {
             f1jump = uvar_deltaF1dot * uvar_spindownJump;
         }
@@ -1160,9 +1158,7 @@ int main(int argc, char *argv[]){
     
     XLALDestroyMultiDetectorStateSeries ( mdetStates );
     
-    LALFree(edat->ephemE);
-    LALFree(edat->ephemS);
-    LALFree(edat);
+    XLALDestroyEphemerisData(edat);
     
     LALFree(skyAlpha);
     LALFree(skyDelta);
@@ -1184,7 +1180,7 @@ int main(int argc, char *argv[]){
     
     free_fstat_toplist(&toplist);
     
-    LAL_CALL (LALDestroyUserVars(&status), &status);
+    XLALDestroyUserVars();
     
     LALCheckMemoryLeaks();
     
@@ -1399,7 +1395,7 @@ void PrintLogFile (LALStatus       *status,
     }
     
     /* get the log string */
-    TRY( LALUserVarGetLog(status->statusPtr, &logstr, UVAR_LOGFMT_CFGFILE), status);
+    XLAL_CHECK_LAL( status, ( logstr = XLALUserVarGetLog(UVAR_LOGFMT_CFGFILE) ) != NULL, XLAL_EFUNC);
     
     fprintf( fpLog, "## LOG FILE FOR Hough Driver\n\n");
     fprintf( fpLog, "# User Input:\n");
@@ -1890,7 +1886,7 @@ void GetAMWeights(LALStatus                *status,
     skypos.longitude = alpha;
     skypos.latitude = delta;
     skypos.system = COORDINATESYSTEM_EQUATORIAL;
-    TRY ( LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, mdetStates, skypos), status);
+    XLAL_CHECK_LAL ( status, ( multiAMcoef = XLALComputeMultiAMCoeffs ( mdetStates, NULL, skypos) ) != NULL, XLAL_EFUNC);
     
     numifo = mdetStates->length;
     

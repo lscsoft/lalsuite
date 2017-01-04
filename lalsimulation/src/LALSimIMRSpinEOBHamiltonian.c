@@ -715,7 +715,7 @@ static int XLALSimIMRCalculateSpinEOBHCoeffs (SpinEOBHCoeffs * coeffs,
 		    m1PlusEtaKK * (-3008. + 123. * LAL_PI * LAL_PI))) / 96.;
   coeffs->k5 = k5 = 0.0;
   coeffs->k5l = k5l = 0.0;
-  if (SpinAlignedEOBversion == 2 || SpinAlignedEOBversion == 4)
+  if (SpinAlignedEOBversion == 2)
     {
       coeffs->k5 = k5 = m1PlusEtaKK * m1PlusEtaKK
 	* (-4237. / 60. + 128. / 5. * LAL_GAMMA +
@@ -732,7 +732,7 @@ static int XLALSimIMRCalculateSpinEOBHCoeffs (SpinEOBHCoeffs * coeffs,
 	   m1PlusEtaKK + 256. / 5. * log (2.));
       coeffs->k5l = k5l = m1PlusEtaKK * m1PlusEtaKK * 64. / 5.;
     }
-  if (SpinAlignedEOBversion == 0)
+  if (SpinAlignedEOBversion == 4)
     {
       /* Include eta^2 terms at 4PN from arXiv:1305.4884 */
       coeffs->k5 = k5 = m1PlusEtaKK * m1PlusEtaKK

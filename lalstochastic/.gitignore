@@ -28,8 +28,8 @@ include/lal/*.i
 include/lal/header-link-stamp
 lalstochastic-*.tar.xz
 lalstochastic-user-env.csh
-lalstochastic-user-env.sh
 lalstochastic-user-env.fish
+lalstochastic-user-env.sh
 lalstochastic-user-env.shell
 lalstochastic.spec
 libtool
@@ -38,7 +38,7 @@ python/lalstochastic/__init__.py
 python/lalstochastic/_lalstochastic*
 python/lalstochastic/git_version.py
 python/lalstochastic/lalstochastic.py
-src/LALStochasticBuildInfo.c
+src/LALStochasticBuildInfoHeader.h
 src/LALStochasticConfig.h
 src/LALStochasticVCSInfo.c
 src/LALStochasticVCSInfo.h
@@ -46,13 +46,18 @@ src/LALStochasticVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/git_version
+src/lalstochastic_version
 src/stamp-h1
 src/stamp-h2
+src/version.c
 swig/swiglal*
 test/??_714382918*.dat
 test/AstroOmegaTest
+test/CCoarseGrainFrequencySeriesTest
 test/CZeroPadAndFFTTest
+test/DCoarseGrainFrequencySeriesTest
 test/OverlapReductionFunctionTest
+test/SCoarseGrainFrequencySeriesTest
 test/SZeroPadAndFFTTest
 test/SimulatePopcornTest
 test/SimulateSBTest
@@ -64,3 +69,4 @@ test/StochasticOmegaGWTest
 test/StochasticOptimalFilterNormalizationTest
 test/StochasticOptimalFilterTest
 test/WHITENED-SB?
+test/ZCoarseGrainFrequencySeriesTest
