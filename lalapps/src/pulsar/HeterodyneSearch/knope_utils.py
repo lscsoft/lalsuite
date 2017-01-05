@@ -598,6 +598,25 @@ class knopeDAG(pipeline.CondorDAG):
       self.mkdirs(self.results_pulsar_dir[pname])
       if self.error_code != 0: return
 
+      # try getting some pulsar information (dist, p1_I and assoc) from the ATNF catalogue for use in lalapps_knope_result_page
+      # NOTE: this is mainly required because on the ARCCA cluster the nodes cannot access the internet
+      pinfo = pppu.get_atnf_info(pname)
+      if pinfo is not None:
+        dist, p1_I, assoc = pinfo # unpack values
+        psrinfo = {}
+        psrinfo['Pulsar data'] = {}
+        psrinfo['Pulsar data']['DIST'] = dist
+        psrinfo['Pulsar data']['P1_I'] = p1_I
+        psrinfo['Pulsar data']['ASSOC'] = assoc
+
+        jsonfile = os.path.join(self.results_pulsar_dir[pname], pname+'.json')
+        try:
+          fp = open(jsonfile, 'w')
+          jsf = json.dump(psrinfo, fp, indent=2)
+          fp.close()
+        except:
+          print("Warning... could not write out ATNF catalogue information to JSON file '%s'." % jsonfile, file=sys.stderr)
+
       cp = ConfigParser.ConfigParser() # create config parser to output .ini file
       # create configuration .ini file
       inifile = os.path.join(self.results_pulsar_dir[pname], pname+'.ini')

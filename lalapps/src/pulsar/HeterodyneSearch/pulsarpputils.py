@@ -34,6 +34,7 @@ import numpy as np
 import struct
 import re
 import h5py
+import urllib2
 
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
@@ -2983,3 +2984,46 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
   evrat = sigev - noiselike
 
   return like, posts['h0'], posts['phi0'], posts['psi'], posts['cosiota'], lingrids, evrat
+
+
+# current version of the ATNF pulsar catalogue
+ATNF_VERSION = '1.55'
+
+def get_atnf_info(psr):
+  """
+  Get the pulsar (psr) distance (DIST in kpc), proper motion corrected period derivative (P1_I) and any association
+  (ASSOC e.g. GC) from the ATNF catalogue.
+  """
+
+  psrname = re.sub('\+', '%2B', psr) # switch '+' for unicode character
+
+  atnfurl = 'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=' + ATNF_VERSION
+  atnfurl += '&Dist=Dist&Assoc=Assoc&P1_i=P1_i' # set parameters to get
+  atnfurl += '&startUserDefined=true&c1_val=&c2_val=&c3_val=&c4_val=&sort_attr=jname&sort_order=asc&condition=&pulsar_names=' + psrname
+  atnfurl += '&ephemeris=selected&submit_ephemeris=Get+Ephemeris&coords_unit=raj%2Fdecj&radius=&coords_1=&coords_2='
+  atnfurl += '&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=linear&y_axis=&y_scale=linear&state=query'
+
+  try:
+    urldat = urllib2.urlopen(atnfurl).read() # read ATNF url
+    predat = re.search(r'<pre[^>]*>([^<]+)</pre>', urldat) # to extract data within pre environment (without using BeautifulSoup) see e.g. http://stackoverflow.com/a/3369000/1862861 and http://stackoverflow.com/a/20046030/1862861
+    pdat = predat.group(1).strip().split('\n') # remove preceeding and trailing new lines and split lines
+  except:
+    print("Warning... could not get information from ATNF pulsar catalogue.", file=sys.stderr)
+    return None
+
+  # check whether information could be found and get distance, age and association from data
+  dist = None
+  p1_I = None
+  assoc = None
+  for line in pdat:
+    if 'WARNING' in line or 'not in catalogue' in line:
+      return None
+    vals = line.split()
+    if 'DIST' in vals[0]:
+      dist = float(vals[1])
+    if 'P1_I' in vals[0]:
+      age = float(vals[1])
+    if 'ASSOC' in vals[0]:
+      assoc = vals[1]
+
+  return (dist, p1_I, assoc, atnfurl)
