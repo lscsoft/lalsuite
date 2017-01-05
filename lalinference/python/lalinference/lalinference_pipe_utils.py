@@ -1026,6 +1026,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         mkdirs(os.path.join(self.basepath,'coherence_test'))
         par_mergenodes=[]
         for ifo in enginenodes[0].ifos:
+            co_merge_job = MergeNSJob(self.config,os.path.join(self.basepath,'merge_runs_%s.sub'%(ifo)),self.logpath,dax=self.is_dax())
+            co_merge_job.set_grid_site('local')
             cotest_nodes=[]
             for i in range(Npar):
                cot_node,bwpsdnodes=self.add_engine_node(event,bwpsdnodes,ifos=[ifo],co_test=True)
@@ -1041,7 +1043,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
               else:
                 co.set_psd_files()
                 co.set_snr_file()
-            pmergenode=MergeNSNode(self.merge_job,parents=cotest_nodes)
+            pmergenode=MergeNSNode(co_merge_job,parents=cotest_nodes)
             pmergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.hdf5'%(ifo,evstring)))
             self.add_node(pmergenode)
             par_mergenodes.append(pmergenode)
