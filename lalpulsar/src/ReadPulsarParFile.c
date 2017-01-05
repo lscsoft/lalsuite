@@ -693,7 +693,7 @@ ParConversion pc[NUM_PARS] = {
   { .name = "OMDOT", .convfunc = ParConvDegPerYrToRadPerSec, .converrfunc = ParConvDegPerYrToRadPerSec, .ptype = PULSARTYPE_REAL8_t }, /* angle of periastron time derivative (degs/year converted to rad/s) */
   { .name = "XDOT", .convfunc = ParConvBinaryUnits, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* project semi-major axis time derivative (light sec/sec) */
   { .name = "PBDOT", .convfunc = ParConvBinaryUnits, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* period time derivative */
-  { .name = "EDOT", .convfunc = ParConvBinaryUnits, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* eccentricity time derivative (1/year) */
+  { .name = "EDOT", .convfunc = ParConvBinaryUnits, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* eccentricity time derivative (1/s) */
   { .name = "EPS1DOT", .convfunc = ParConvBinaryUnits, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
   { .name = "EPS2DOT", .convfunc = ParConvBinaryUnits, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
   { .name = "XPBDOT", .convfunc = ParConvBinaryUnits, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
