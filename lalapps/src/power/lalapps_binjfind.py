@@ -93,7 +93,7 @@ def parse_command_line():
 #
 
 
-ligolw_binjfind.lsctables.table.RowBuilder = ligolw_binjfind.lsctables.table.InterningRowBuilder
+ligolw_binjfind.lsctables.table.TableStream.RowBuilder = ligolw_binjfind.lsctables.table.InterningRowBuilder
 
 
 #

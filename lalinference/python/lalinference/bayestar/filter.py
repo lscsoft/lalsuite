@@ -364,6 +364,12 @@ def sngl_inspiral_psd(sngl, waveform, f_min=10, f_max=2048, f_ref=0):
             waveform = 'TaylorF2threePointFivePN'
         else:
             waveform = 'SEOBNRv2_ROM_DoubleSpin'
+    elif waveform == 'o2-uberbank':
+        log.warn('Template is unspecified; using ER10/O2 uberbank criterion')
+        if sngl.mass1 + sngl.mass2 < 4:
+            waveform = 'TaylorF2threePointFivePN'
+        else:
+            waveform = 'SEOBNRv4_ROM'
     approx, ampo, phaseo = get_approximant_and_orders_from_string(waveform)
     log.info('Selected template: %s', waveform)
 

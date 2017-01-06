@@ -210,7 +210,7 @@ void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) 
   LALInferenceThreadState *thread;
   INT4 t, nifo;
   INT4 randomseed;
-  LALInferenceIFOData *data = run_state->data;
+  LALInferenceIFOData *data;
   run_state->nthreads = nthreads;
   run_state->threads = LALInferenceInitThreads(nthreads);
 
@@ -226,6 +226,7 @@ void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) 
 
     /* Allocate IFO likelihood holders */
     nifo = 0;
+    data = run_state->data;
     while (data != NULL) {
         data = data->next;
         nifo++;

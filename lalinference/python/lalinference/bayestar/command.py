@@ -75,9 +75,9 @@ group.add_argument('--f-low', type=float, metavar='Hz', default=30,
 group.add_argument('--f-high-truncate', type=float, default=0.95,
     help='Truncate waveform at this fraction of the maximum frequency of the '
     'PSD [default: %(default)s]')
-group.add_argument('--waveform', default='o1-uberbank',
+group.add_argument('--waveform', default='o2-uberbank',
     help='Template waveform approximant (e.g., TaylorF2threePointFivePN) '
-    '[default: O1 uberbank mass-dependent waveform]')
+    '[default: O2 uberbank mass-dependent waveform]')
 del group
 
 
