@@ -323,9 +323,6 @@ void LALInferenceUpdateMaxAutoCorrLen(LALInferenceThreadState *thread);
 /* Determine the effective sample size based on the DE buffer. */
 INT4 LALInferenceComputeEffectiveSampleSize(LALInferenceThreadState *thread);
 
-/* Initialize differential evolution proposal */
-void LALInferenceSetupDifferentialEvolutionProposal(LALInferenceThreadState *thread);
-
 /** Helper function to setup the adaptive step proposals before the run */
 void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInferenceVariables *params);
 

@@ -250,7 +250,6 @@ void LALInferenceDeleteProposalCycle(LALInferenceProposalCycle *cycle) {
 }
 
 LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runState) {
-    INT4 i;
     ProcessParamsTable *ppt;
     LALInferenceIFOData *ifo = runState->data;
 
@@ -467,11 +466,6 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
       LALInferenceModel *model = LALInferenceInitCBCModel(runState);
       LALInferenceSetupAdaptiveProposals(propArgs, model->params);
       XLALFree(model);
-    }
-    /* Setup buffer now since threads aren't accessible to the main setup function */
-    if (diffevo || stretch || walk) {
-        for (i=0; i<runState->nthreads; i++)
-            LALInferenceSetupDifferentialEvolutionProposal(runState->threads[i]);
     }
 
     /* Setup now since we need access to the data */
@@ -3017,14 +3011,6 @@ void LALInferenceSetupGlitchProposal(LALInferenceIFOData *data, LALInferenceVari
     LALInferenceAddVariable(propArgs, "fd_data", fd_data, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(propArgs, "f2t_plans", plans, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
 
-}
-
-/* Initialize differential evolution proposal */
-void LALInferenceSetupDifferentialEvolutionProposal(LALInferenceThreadState *thread) {
-    thread->differentialPoints = XLALCalloc(1, sizeof(LALInferenceVariables *));
-    thread->differentialPointsLength = 0;
-    thread->differentialPointsSize = 1;
-    thread->differentialPointsSkip = 1;
 }
 
 
