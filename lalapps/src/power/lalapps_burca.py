@@ -48,7 +48,7 @@ lsctables.use_in(ligolw.LIGOLWContentHandler)
 #
 
 
-lsctables.table.RowBuilder = lsctables.table.InterningRowBuilder
+lsctables.table.TableStream.RowBuilder = lsctables.table.InterningRowBuilder
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"

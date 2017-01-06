@@ -136,7 +136,7 @@ lsctables.use_in(ContentHandler)
 #
 
 
-lsctables.table.RowBuilder = lsctables.table.InterningRowBuilder
+lsctables.table.TableStream.RowBuilder = lsctables.table.InterningRowBuilder
 
 
 #
