@@ -126,10 +126,14 @@ def readLValert(threshold_snr=None,gid=None,flow=40.0,gracedb="gracedb",basepath
     for e in these_sngls:
       # Review: Replace this with a call to LALSimulation function at some point
       if roq==False:
-        p=Popen(["lalapps_chirplen","--flow",str(flow),"-m1",str(e.mass1),"-m2",str(e.mass2)],stdout=PIPE, stderr=PIPE, stdin=PIPE)
-        strlen = p.stdout.read()
-        dur.append(pow(2.0, ceil( log(max(8.0,float(strlen.splitlines()[2].split()[5]) + 2.0), 2) ) ) )
-        srate.append(pow(2.0, ceil( log(float(strlen.splitlines()[1].split()[5]), 2) ) ) * 2 )
+        try:
+          p=Popen(["lalapps_chirplen","--flow",str(flow),"-m1",str(e.mass1),"-m2",str(e.mass2)],stdout=PIPE, stderr=PIPE, stdin=PIPE)
+          strlen = p.stdout.read()
+          dur.append(pow(2.0, ceil( log(max(8.0,float(strlen.splitlines()[2].split()[5]) + 2.0), 2) ) ) )
+          srate.append(pow(2.0, ceil( log(float(strlen.splitlines()[1].split()[5]), 2) ) ) * 2 )
+        except:
+          print "WARNING: lalapps_chirplen --flow",str(flow),"-m1",str(e.mass1),"-m2",str(e.mass2)," failed."
+          print "WARNING: make sure you have set manually seglen and srate in the .ini file."
       snr = e.snr
       eff_dist = e.eff_distance
       if threshold_snr is not None:
