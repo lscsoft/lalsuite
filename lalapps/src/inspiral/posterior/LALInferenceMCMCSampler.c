@@ -1218,7 +1218,7 @@ void LALInferenceCheckpointMCMC(LALInferenceRunState *runState) {
         LALInferenceH5VariablesArrayToDataset(chain_group, &(thread->currentParams), 1, "current_parameters");
         XLALH5FileAddScalarAttribute(chain_group, "temperature", &(thread->temperature), LAL_D_TYPE_CODE);
         XLALH5FileAddScalarAttribute(chain_group, "last_step", &(thread->step), LAL_I4_TYPE_CODE);
-        XLALH5FileAddScalarAttribute(chain_group, "effective_sample_size", &(thread->effective_sample_size), LAL_D_TYPE_CODE);
+        XLALH5FileAddScalarAttribute(chain_group, "effective_sample_size", &(thread->effective_sample_size), LAL_I4_TYPE_CODE);
         XLALH5FileAddScalarAttribute(chain_group, "differential_point_skip", &(thread->differentialPointsSkip), LAL_I4_TYPE_CODE);
 
         /* Store the total number of temperature swaps accepted over the stored window */
