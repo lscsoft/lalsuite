@@ -241,13 +241,13 @@ XLALReadUserInput ( int argc, char *argv[], UserVariables_t *uvar )
 
   // ---------- sanity input checks ----------
   // deal with deprecated --noHeader option by mapping it 1:1 onto --dataOnly
-  XLAL_CHECK ( UVAR_SET2( noHeader, dataOnly ) == 1, XLAL_EINVAL, "Use only one of --dataOnly or --noHeader [deprecated]\n");
+  XLAL_CHECK ( UVAR_SET2( noHeader, dataOnly ) <= 1, XLAL_EINVAL, "Use at most one of --dataOnly or --noHeader [deprecated]\n");
   if ( XLALUserVarWasSet( &uvar->noHeader ) ) {
     uvar->dataOnly = uvar->noHeader;
     uvar->noHeader = 0;
   }
 
-  XLAL_CHECK ( UVAR_SET3( headerOnly, dataOnly, timestampsOnly ) == 1, XLAL_EINVAL, "Contradictory input: only *one* of --headerOnly, --dataOnly or --timestampsOnly allowed\n" );
+  XLAL_CHECK ( UVAR_SET3( headerOnly, dataOnly, timestampsOnly ) <= 1, XLAL_EINVAL, "Contradictory input: at most *one* of --headerOnly, --dataOnly or --timestampsOnly allowed\n" );
 
   return XLAL_SUCCESS;
 
