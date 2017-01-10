@@ -141,40 +141,55 @@ static REAL8 XLALSpinPrecHcapExactDerivativeNoWrap(
 	memcpy(pVec.data,values+3,3*sizeof(REAL8));
 
     REAL8 a2 = sigmaKerr->data[0] * sigmaKerr->data[0] + sigmaKerr->data[1] * sigmaKerr->data[1] +  sigmaKerr->data[2] * sigmaKerr->data[2];
-	REAL8 a = sqrt(a2);
+    REAL8 a = sqrt(a2);
 
     INT4 divby0 = 0;
 
     if(a !=0.)
     {
-        const REAL8 inva = 1./a;
-        e3_x = sigmaKerr->data[0] * inva;
-        e3_y = sigmaKerr->data[1] * inva;
-        e3_z = sigmaKerr->data[2] * inva;
+      const REAL8 inva = 1./a;
+      e3_x = sigmaKerr->data[0] * inva;
+      e3_y = sigmaKerr->data[1] * inva;
+      e3_z = sigmaKerr->data[2] * inva;
     }
     else
     {
-      /*e3_x = 1./sqrt(3.);
-        e3_y = 1./sqrt(3.);
-        e3_z = 1./sqrt(3.);*/
+      /*OPTV3: Since spin=0, we are free to choose the "spin direction".*/
+      e3_x = 1./sqrt(3.);
+      e3_y = 1./sqrt(3.);
+      e3_z = 1./sqrt(3.);
 
-        /*OPTV3: Since spin=0, this is equivalent. Changed for consistency with the if(), below*/
-        e3_x = 1./sqrt(2.);
-        e3_y = 1./sqrt(2.);
-        e3_z = 0.;
-        divby0=1;
+      divby0=1;
     }
 
     const REAL8 invr = 1./sqrt(xData[0]*xData[0]+xData[1]*xData[1]+xData[2]*xData[2]);
 
     if (1. - fabs(e3_x*(xData[0]*invr) + e3_y*(xData[1]*invr) + e3_z*(xData[2]*invr)) <= 1.e-8) {
-        e3_x = e3_x+0.1;
-        e3_y = e3_y+0.1;
-        const REAL8 invnorm = 1./sqrt(e3_x*e3_x + e3_y*e3_y + e3_z*e3_z);
-        e3_x = e3_x*invnorm;
-        e3_y = e3_y*invnorm;
-        e3_z = e3_z*invnorm;
-        divby0 = 1;
+      e3_x = e3_x+0.1;
+      e3_y = e3_y+0.1;
+      e3_z = e3_z+0.1; /* ZACH ADDED */
+      const REAL8 invnorm = 1./sqrt(e3_x*e3_x + e3_y*e3_y + e3_z*e3_z);
+      e3_x = e3_x*invnorm;
+      e3_y = e3_y*invnorm;
+      e3_z = e3_z*invnorm;
+      divby0 = 1;
+    }
+
+    if(divby0) {
+      /* s1 & s2Vec's cannot all be zero when taking spin derivatives, because naturally
+         some s1Vec's & s2Vec's appear in denominators of exact deriv expressions.
+      */
+      const double epsilon_spin=1e-14;
+      if(fabs(s1Vec->data[0] + s2Vec->data[0])<epsilon_spin &&
+         fabs(s1Vec->data[1] + s2Vec->data[1])<epsilon_spin &&
+         fabs(s1Vec->data[2] + s2Vec->data[2])<epsilon_spin) {
+        s1Vec->data[0] = epsilon_spin;
+        s1Vec->data[1] = epsilon_spin;
+        s1Vec->data[2] = epsilon_spin;
+        s2Vec->data[0] = epsilon_spin;
+        s2Vec->data[1] = epsilon_spin;
+        s2Vec->data[2] = epsilon_spin;
+      }
     }
 
     REAL8 m1PlusEtaKK = coeffs->KK*eta-1.0;
