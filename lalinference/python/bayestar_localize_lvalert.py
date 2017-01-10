@@ -137,13 +137,13 @@ for graceid in graceids:
                 runtime=elapsed_time, instruments=instruments,
                 distmean=distmean, diststd=diststd,
                 origin='LIGO/Virgo', nest=True)
-            if not opts.dry_run:
+            if opts.dry_run:
+                command.rename(fitspath, os.path.join('.', opts.output))
+            else:
                 gracedb.writeLog(
                     graceid, "BAYESTAR rapid sky localization ready",
                     filename=fitspath, tagname=("sky_loc", "lvem"))
-            else:
-                command.rename(fitspath, os.path.join('.', opts.output))
-            log.debug('uploaded sky map')
+                log.debug('uploaded sky map')
     except:
         # Produce log message for any otherwise uncaught exception
         log.exception("sky localization failed")

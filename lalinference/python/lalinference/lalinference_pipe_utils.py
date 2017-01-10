@@ -770,7 +770,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     padding=self.config.getint('input','padding')
     if self.config.has_option('engine','seglen') or self.config.has_option('lalinference','seglen'):
       if self.config.has_option('engine','seglen'):
-        seglen = self.config.getint('engine','seglen')
+        seglen = int(np.ceil(self.config.getfloat('engine','seglen')))
       if self.config.has_option('lalinference','seglen'):
         seglen = self.config.getint('lalinference','seglen')
 
@@ -1280,14 +1280,28 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     randomseed=random.randint(1,2**31)
     node.set_seed(randomseed)
     prenode.set_seed(randomseed)
+    original_srate=0
     srate=0
     if event.srate:
-      srate=event.srate
+      original_srate=event.srate
     if self.config.has_option('lalinference','srate'):
-      srate=ast.literal_eval(self.config.get('lalinference','srate'))
+      original_srate=self.config.getfloat('lalinference','srate')
     elif self.config.has_option('engine','srate'):
-      srate=ast.literal_eval(self.config.get('engine','srate'))
+      original_srate=self.config.getfloat('engine','srate')
+    if (np.log2(original_srate)%1):
+      print 'The srate given,'+str(original_srate)+' Hz, is not a power of 2.'
+      print 'For data handling purposes, the srate used will be '+str(np.power(2., np.ceil(np.log2(original_srate))))+' Hz'
+      print 'The inner products will still however be integrated up to '+str(original_srate/2.)+' Hz'
+      srate = np.power(2., np.ceil(np.log2(original_srate)))
+    else:
+      srate = original_srate
     if srate is not 0:
+      node.set_srate(int(np.ceil(srate)))
+      prenode.set_srate(int(np.ceil(srate)))
+    if original_srate is not 0:
+      for ifo in ifos:
+        node.fhighs[ifo]=str(original_srate/2.)
+        prenode.fhighs[ifo]=str(original_srate/2.)
       node.set_srate(srate)
       prenode.set_srate(srate)
     if event.trigSNR:
@@ -1369,9 +1383,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         bw_seglen = np.power(2., np.ceil(np.log2(bw_seglen)))
     if self.config.has_option('condor','bayeswave'):
       if (np.log2(srate)%1):
-        print 'BayesWave only supports srates which are powers of 2, you have specified a srate of '+str(srate)+' seconds.'
-        print 'Instead, a srate of '+str(np.power(2., np.ceil(np.log2(srate))))+'s will be used for the BayesWave PSD estimation.'
-        print 'The main LALInference job will stil use srate '+str(srate)+' seconds.'
+        print 'BayesWave only supports srates which are powers of 2, you have specified a srate of '+str(srate)+' Hertz.'
+        print 'Instead, a srate of '+str(np.power(2., np.ceil(np.log2(srate))))+'Hz will be used for the BayesWave PSD estimation.'
+        print 'The main LALInference job will stil use srate '+str(srate)+' Hertz.'
         bw_srate = np.power(2., np.ceil(np.log2(srate)))
       else:
         bw_srate = srate
@@ -1442,11 +1456,12 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                   bayeslinenode[ifo].add_var_arg('-o '+os.path.join(roqeventpath,'BayesLine_PSD_'+ifo+'.dat'))
                   bayeslinenode[ifo].add_output_file(os.path.join(roqeventpath,'BayesLine_PSD_'+ifo+'.dat'))
                 if self.config.has_option('condor','computeroqweights'):
-                  computeroqweightsnode[ifo].add_var_arg('-d '+freqDataFile)
+                  computeroqweightsnode[ifo].add_var_arg('--fHigh '+str(prenode.fhighs[ifo]))
+                  computeroqweightsnode[ifo].add_var_arg('--data '+freqDataFile)
                   computeroqweightsnode[ifo].add_input_file(freqDataFile)
-                  computeroqweightsnode[ifo].add_var_arg('-p '+os.path.join(roqeventpath,'data-dump'+ifo+'-PSD.dat'))
+                  computeroqweightsnode[ifo].add_var_arg('--psd '+os.path.join(roqeventpath,'data-dump'+ifo+'-PSD.dat'))
                   computeroqweightsnode[ifo].add_input_file(os.path.join(roqeventpath,'data-dump'+ifo+'-PSD.dat'))
-                  computeroqweightsnode[ifo].add_var_arg('-o '+roqeventpath)
+                  computeroqweightsnode[ifo].add_var_arg('--out '+roqeventpath)
                   computeroqweightsnode[ifo].add_output_file(os.path.join(roqeventpath,'weights_quadratic_'+ifo+'.dat'))
               #self.prenodes[seg.id()]=(prenode,computeroqweightsnode)
               if self.config.has_option('condor','bayesline'):
@@ -1487,7 +1502,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     else:
       node.set_seglen(event.duration)
     if self.config.has_option('condor','bayeswave') and bayeswavepsdnode:
-      node.set_psdlength(0.0)
+      node.set_psdlength(bw_seglen)
     if self.config.has_option('input','psd-length'):
       node.set_psdlength(self.config.getint('input','psd-length'))
       if self.config.has_option('condor','bayeswave') and bayeswavepsdnode:
@@ -2483,9 +2498,9 @@ class ROMNode(pipeline.CondorDAGNode):
   def __init__(self,computeroqweights_job,ifo,seglen,flow):
     pipeline.CondorDAGNode.__init__(self,computeroqweights_job)
     self.__finalized=False
-    self.add_var_arg('-s '+str(seglen))
-    self.add_var_arg('-f '+str(flow))
-    self.add_var_arg('-i '+ifo)
+    self.add_var_arg('--seglen '+str(seglen))
+    self.add_var_arg('--fLow '+str(flow))
+    self.add_var_arg('--ifo '+ifo)
 
   def finalize(self):
     if self.__finalized:
