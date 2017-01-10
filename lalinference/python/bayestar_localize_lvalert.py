@@ -143,7 +143,7 @@ for graceid in graceids:
                 gracedb.writeLog(
                     graceid, "BAYESTAR rapid sky localization ready",
                     filename=fitspath, tagname=("sky_loc", "lvem"))
-            log.debug('uploaded sky map')
+                log.debug('uploaded sky map')
     except:
         # Produce log message for any otherwise uncaught exception
         log.exception("sky localization failed")
