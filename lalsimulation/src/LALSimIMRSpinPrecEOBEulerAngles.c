@@ -188,12 +188,24 @@ static void EulerAnglesP2J(
     normLz = LframeEz[0]*LframeEz[0]+LframeEz[1]*LframeEz[1]+LframeEz[2]*LframeEz[2];
     *aP2J = atan2(JframeEz[0]*LframeEy[0]+JframeEz[1]*LframeEy[1]+JframeEz[2]*LframeEy[2],
                  JframeEz[0]*LframeEx[0]+JframeEz[1]*LframeEx[1]+JframeEz[2]*LframeEx[2]);
-    *bP2J = acos( JframeEz[0]*LframeEz[0]+JframeEz[1]*LframeEz[1]+JframeEz[2]*LframeEz[2]);
-    if (*bP2J < 1.e-4){
-        *bP2J = acos((JframeEz[0]*LframeEz[0]+JframeEz[1]*LframeEz[1]+JframeEz[2]*LframeEz[2])/sqrt(normJ*normLz));
-
+    REAL8 cosarg = JframeEz[0]*LframeEz[0]+JframeEz[1]*LframeEz[1]+JframeEz[2]*LframeEz[2];
+    if ( cosarg >= 1.  && cosarg < 1. + 1.e-10 ) {
+        cosarg = 1.;
     }
-
+    if ( cosarg <= -1. && cosarg > -1. - 1.e-10 ) {
+        cosarg = -1.;
+    }
+    *bP2J = acos( cosarg );
+    if (*bP2J < 1.e-4){
+        cosarg = (JframeEz[0]*LframeEz[0]+JframeEz[1]*LframeEz[1]+JframeEz[2]*LframeEz[2])/sqrt(normJ*normLz);
+        if ( cosarg >= 1.  && cosarg < 1. + 1.e-10 ) {
+            cosarg = 1.;
+        }
+        if ( cosarg <= -1. && cosarg > -1. - 1.e-10 ) {
+            cosarg = -1.;
+        }
+        *bP2J = acos( cosarg );
+    }
     *gP2J = atan2(  JframeEy[0]*LframeEz[0]+JframeEy[1]*LframeEz[1]+JframeEy[2]*LframeEz[2],
                  -(JframeEx[0]*LframeEz[0]+JframeEx[1]*LframeEz[1]+JframeEx[2]*LframeEz[2]));
 
