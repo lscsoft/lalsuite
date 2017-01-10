@@ -203,11 +203,6 @@ class Bank(object):
                     # FIXME: This could be dealt with dynamically??
                     raise ValueError(err_msg)
 
-                # record match and template params for highest match
-                if match > max_match:
-                    max_match = match
-                    template = tmplt
-
                 if (1 - match) > 0.05 + (1 - min_match):
                     continue
 
@@ -221,11 +216,6 @@ class Bank(object):
                     err_msg += "iterative-match-df-max value lower."
                     # FIXME: This could be dealt with dynamically??
                     raise ValueError(err_msg)
-
-                # record match and template params for highest match
-                if match > max_match:
-                    max_match = match
-                    template = tmplt
 
                 # if the result is a really bad match, trust it isn't
                 # misrepresenting a good match
@@ -242,6 +232,11 @@ class Bank(object):
 
             if match > min_match:
                 return (match, tmplt)
+
+            # record match and template params for highest match
+            if match > max_match:
+                max_match = match
+                template = tmplt
 
         return (max_match, template)
 
