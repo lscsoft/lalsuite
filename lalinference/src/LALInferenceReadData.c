@@ -146,11 +146,11 @@ REAL8 interpolate(struct fvec *fvec, REAL8 f){
 	{
 		return (INFINITY);
 	}
-//  if(i==0){return (fvec[0].x);}
 	a=(fvec[i].f-f)/(fvec[i].f-fvec[i-1].f);
 	delta=fvec[i].x-fvec[i-1].x;
-	return (fvec[i-1].x + delta*a);
+	return (fvec[i-1].x*a + fvec[i].x*(1.0-a));
 }
+
 void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, ProcessParamsTable *commandLine);
 void enforce_m1_larger_m2(SimInspiralTable* injEvent);
 
