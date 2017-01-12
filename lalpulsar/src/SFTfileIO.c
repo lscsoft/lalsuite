@@ -36,6 +36,7 @@
 
 /*---------- INCLUDES ----------*/
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <errno.h>
 #include <string.h>
 #include <strings.h>
@@ -394,6 +395,12 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
 	      XLALFree ( this_comment );
 	    }
 
+	  mfirst_block = FALSE;
+
+	  /* skip seeking if we know we would reach the end */
+	  if ( ftell ( fp ) + this_nsamples * 8 >= file_len )
+	    break;
+
 	  /* seek to end of SFT data-entries in file  */
 	  if ( fseek ( fp, this_nsamples * 8 , SEEK_CUR ) == -1 )
 	    {
@@ -404,8 +411,6 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
 	      fclose(fp);
 	      XLAL_ERROR_NULL ( XLAL_EIO );
 	    }
-
-	  mfirst_block = FALSE;
 
 	} /* while !feof */
 
@@ -2826,6 +2831,8 @@ XLALFindFiles (const CHAR *globstring)
 /* portable file-len function */
 static long get_file_len ( FILE *fp )
 {
+#ifdef _WIN32
+
   long save_fp;
   long len;
 
@@ -2842,6 +2849,16 @@ static long get_file_len ( FILE *fp )
 
   return len;
 
+#else
+
+  struct stat st;
+
+  if ( fstat(fileno(fp), &st) )
+    return 0;
+
+  return st.st_size;
+
+#endif
 } /* get_file_len() */
 
 
