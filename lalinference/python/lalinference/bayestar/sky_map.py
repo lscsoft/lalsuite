@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2016  Leo Singer
+# Copyright (C) 2013-2017  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -28,10 +28,12 @@ import time
 import numpy as np
 import healpy as hp
 from .decorator import with_numpy_random_seed
+from . import distance
 from . import ligolw
 from . import filter
 from . import postprocess
 from . import timing
+from ._moc import rasterize
 from . import _sky_map
 import lal, lalsimulation
 from glue.ligolw import table as ligolw_table
@@ -316,21 +318,29 @@ def ligolw_sky_map(
     log.debug('starting computationally-intensive section')
     start_time = time.time()
     if method == "toa_phoa_snr":
-        prob = _sky_map.toa_phoa_snr(
+        skymap = _sky_map.toa_phoa_snr(
             min_distance, max_distance, prior_distance_power, gmst, sample_rate,
-            toas, snr_series, responses, locations, horizons, nside).T
+            toas, snr_series, responses, locations, horizons)
+        distmu, distsigma, distnorm = distance.moments_to_parameters(
+            skymap['distmean'], skymap['diststd'])
+        skymap = np.rec.fromarrays(
+            [skymap['uniq'], skymap['prob'], distmu, distsigma, distnorm],
+            names='uniq,prob,distmu,distsigma,distnorm')
+        skymap = rasterize(skymap)
+        prob = [4 * np.pi / len(skymap) * skymap['prob'], skymap['distmu'], skymap['distsigma'], skymap['distnorm']]
     elif method == "toa_phoa_snr_mcmc":
-        prob = emcee_sky_map(
-            logl=_sky_map.log_likelihood_toa_phoa_snr,
-            loglargs=(gmst, sample_rate, toas, snr_series, responses, locations,
-                horizons),
-            logp=toa_phoa_snr_log_prior,
-            logpargs=(min_distance, max_distance, prior_distance_power,
-                max_abs_t),
-            xmin=[0, -1, min_distance, -1, 0, 0],
-            xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi, 2 * max_abs_t],
-            nside=nside, kde=kde, chain_dump=chain_dump,
-            max_horizon=max_horizon)
+        # prob = emcee_sky_map(
+        #     logl=_sky_map.log_likelihood_toa_phoa_snr,
+        #     loglargs=(gmst, sample_rate, toas, snr_series, responses, locations,
+        #         horizons),
+        #     logp=toa_phoa_snr_log_prior,
+        #     logpargs=(min_distance, max_distance, prior_distance_power,
+        #         max_abs_t),
+        #     xmin=[0, -1, min_distance, -1, 0, 0],
+        #     xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi, 2 * max_abs_t],
+        #     nside=nside, kde=kde, chain_dump=chain_dump,
+        #     max_horizon=max_horizon)
+        raise NotImplemented('Working on porting this to new MOC format')
     else:
         raise ValueError("Unrecognized method: %s" % method)
     prob[1] *= max_horizon * fudge

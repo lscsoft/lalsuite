@@ -47,7 +47,7 @@
 
 
 /*
- * Copyright (C) 2013-2016  Leo Singer
+ * Copyright (C) 2013-2017  Leo Singer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -68,6 +68,7 @@
 #include "config.h"
 #include "bayestar_sky_map.h"
 #include "bayestar_distance.h"
+#include "bayestar_moc.h"
 
 #include <assert.h>
 #include <float.h>
@@ -617,48 +618,50 @@ static double complex exp_i(double phi) {
 }
 
 
-/* Data structure to store a pixel in an adaptively refined sky map. */
-typedef struct {
-    double log4p_r[3];      /* Logarithm base 4 of probability x distance^k */
-    unsigned char order;    /* HEALPix resolution order */
-    unsigned long ipix;     /* HEALPix nested pixel index */
-} adaptive_sky_map_pixel;
-
-
-/* Data structure to store an adaptively refined sky map. */
-typedef struct {
-    unsigned char max_order;
-    size_t len;
-    adaptive_sky_map_pixel pixels[];
-} adaptive_sky_map;
-
-
 /* Compare two pixels by contained probability. */
-static int adaptive_sky_map_pixel_compare(const void *a, const void *b)
+static int bayestar_pixel_compare_prob(const void *a, const void *b)
 {
-    int ret;
-    const adaptive_sky_map_pixel *apix = a;
-    const adaptive_sky_map_pixel *bpix = b;
+    const bayestar_pixel *apix = a;
+    const bayestar_pixel *bpix = b;
 
-    const double delta_log4p = apix->log4p_r[0] - bpix->log4p_r[0];
-    const char delta_order = apix->order - bpix->order;
+    const double delta_logp = (apix->value[0] - bpix->value[0])
+        - 2 * M_LN2 * (uniq2order64(apix->uniq) - uniq2order64(bpix->uniq));
 
-    if (delta_log4p < delta_order)
-        ret = -1;
-    else if (delta_log4p > delta_order)
-        ret = 1;
+    if (delta_logp < 0)
+        return -1;
+    else if (delta_logp > 0)
+        return 1;
     else
-        ret = 0;
-
-    return ret;
+        return 0;
 }
 
 
-/* Sort pixels by ascending contained probability. */
-static void adaptive_sky_map_sort(adaptive_sky_map *map)
+static void bayestar_pixels_sort_prob(bayestar_pixel *pixels, size_t len)
 {
-    qsort(map->pixels, map->len, sizeof(map->pixels[0]),
-        adaptive_sky_map_pixel_compare);
+    qsort(pixels, len, sizeof(bayestar_pixel), bayestar_pixel_compare_prob);
+}
+
+
+/* Compare two pixels by contained probability. */
+static int bayestar_pixel_compare_uniq(const void *a, const void *b)
+{
+    const bayestar_pixel *apix = a;
+    const bayestar_pixel *bpix = b;
+    const unsigned long long auniq = apix->uniq;
+    const unsigned long long buniq = bpix->uniq;
+
+    if (auniq < buniq)
+        return -1;
+    else if (auniq > buniq)
+        return 1;
+    else
+        return 0;
+}
+
+
+static void bayestar_pixels_sort_uniq(bayestar_pixel *pixels, size_t len)
+{
+    qsort(pixels, len, sizeof(bayestar_pixel), bayestar_pixel_compare_uniq);
 }
 
 
@@ -675,141 +678,49 @@ static void *realloc_or_free(void *ptr, size_t size)
 
 
 /* Subdivide the final last_n pixels of an adaptively refined sky map. */
-static adaptive_sky_map *adaptive_sky_map_refine(
-    adaptive_sky_map *map,
-    size_t last_n
+static bayestar_pixel *bayestar_pixels_refine(
+    bayestar_pixel *pixels, size_t *len, size_t last_n
 ) {
-    assert(last_n <= map->len);
+    assert(last_n <= *len);
 
     /* New length: adding 4*last_n new pixels, removing last_n old pixels. */
-    const size_t new_len = map->len + 3 * last_n;
-    const size_t new_size = sizeof(adaptive_sky_map)
-        + new_len * sizeof(adaptive_sky_map_pixel);
+    const size_t new_len = *len + 3 * last_n;
+    const size_t new_size = new_len * sizeof(bayestar_pixel);
 
-    map = realloc_or_free(map, new_size);
-    if (map)
+    pixels = realloc_or_free(pixels, new_size);
+    if (pixels)
     {
         for (size_t i = 0; i < last_n; i ++)
         {
-            adaptive_sky_map_pixel *const old_pixel
-                = &map->pixels[map->len - i - 1];
-            const unsigned char order = 1 + old_pixel->order;
-            if (order > map->max_order)
-                map->max_order = order;
-            const unsigned long ipix = 4 * old_pixel->ipix;
+            const uint64_t uniq = 4 * pixels[*len - i - 1].uniq;
             for (unsigned char j = 0; j < 4; j ++)
-            {
-                adaptive_sky_map_pixel *const new_pixel
-                    = &map->pixels[new_len - (4 * i + j) - 1];
-                for (unsigned char k = 0; k < 3; k ++)
-                    new_pixel->log4p_r[k] = old_pixel->log4p_r[k];
-                new_pixel->order = order;
-                new_pixel->ipix = j + ipix;
-            }
+                pixels[new_len - (4 * i + j) - 1].uniq = j + uniq;
         }
-        map->len = new_len;
+        *len = new_len;
     }
-    return map;
+    return pixels;
 }
 
 
-static adaptive_sky_map *adaptive_sky_map_alloc(unsigned char order)
+static bayestar_pixel *bayestar_pixels_alloc(size_t *len, unsigned char order)
 {
-    const unsigned long nside = (unsigned long)1 << order;
-    const unsigned long npix = nside2npix(nside);
-    const size_t size = sizeof(adaptive_sky_map)
-        + npix * sizeof(adaptive_sky_map_pixel);
+    const uint64_t nside = (uint64_t)1 << order;
+    const uint64_t npix = nside2npix64(nside);
+    const size_t size = npix * sizeof(bayestar_pixel);
 
-    adaptive_sky_map *map = malloc(size);
-    if (!map)
+    bayestar_pixel *pixels = malloc(size);
+    if (!pixels)
         XLAL_ERROR_NULL(XLAL_ENOMEM, "not enough memory to allocate sky map");
 
-    map->len = npix;
-    map->max_order = order;
-    for (unsigned long ipix = 0; ipix < npix; ipix ++)
-    {
-        for (unsigned char k = 0; k < 3; k ++)
-            map->pixels[ipix].log4p_r[k] = GSL_NAN;
-        map->pixels[ipix].order = order;
-        map->pixels[ipix].ipix = ipix;
-    }
-    return map;
+    *len = npix;
+    for (unsigned long long ipix = 0; ipix < npix; ipix ++)
+        pixels[ipix].uniq = nest2uniq64(order, ipix);
+    return pixels;
 }
 
 
-static const double M_LN4 = 2 * M_LN2;
-static const double M_1_LN4 = 0.5 / M_LN2;
-
-
-static double (*adaptive_sky_map_rasterize(adaptive_sky_map *map, long *out_npix))[4]
-{
-    const unsigned char order = map->max_order;
-    const unsigned long nside = (unsigned long)1 << order;
-    const long npix = nside2npix(nside);
-
-    double (*P)[4] = malloc(npix * 4 * sizeof(double));
-    if (!P)
-        XLAL_ERROR_NULL(XLAL_ENOMEM, "not enough memory to allocate image");
-
-    double norm = 0;
-    const double max_log4p = map->pixels[map->len - 1].log4p_r[0];
-
-    /* Rescale so that log(max) = 0, and convert from log base 4 to
-     * natural logarithm. */
-    for (ssize_t i = (ssize_t)map->len - 1; i >= 0; i --)
-    {
-        for (unsigned char k = 0; k < 3; k ++)
-        {
-            map->pixels[i].log4p_r[k] -= max_log4p;
-            map->pixels[i].log4p_r[k] *= M_LN4;
-        }
-    }
-
-    for (ssize_t i = (ssize_t)map->len - 1; i >= 0; i --)
-    {
-        const unsigned long reps = (unsigned long)1 << 2 * (order - map->pixels[i].order);
-        const double dP = gsl_sf_exp_mult(map->pixels[i].log4p_r[0], reps);
-        if (dP <= 0)
-            break; /* We have reached underflow. */
-        norm += dP;
-    }
-    norm = 1 / norm;
-    for (ssize_t i = (ssize_t)map->len - 1; i >= 0; i --)
-    {
-        const unsigned long base_ipix = map->pixels[i].ipix;
-        const unsigned long reps = (unsigned long)1 << 2 * (order - map->pixels[i].order);
-        const unsigned long start = base_ipix * reps;
-        const unsigned long stop = (base_ipix + 1) * reps;
-
-        const double prob = gsl_sf_exp_mult(map->pixels[i].log4p_r[0], norm);
-        double rmean = exp(map->pixels[i].log4p_r[1] - map->pixels[i].log4p_r[0]);
-        double rstd = exp(map->pixels[i].log4p_r[2] - map->pixels[i].log4p_r[0]) - gsl_pow_2(rmean);
-        double distmu, distsigma, distnorm;
-        if (rstd >= 0)
-        {
-            rstd = sqrt(rstd);
-        } else {
-            rmean = INFINITY;
-            rstd = 1;
-        }
-        bayestar_distance_moments_to_parameters(rmean, rstd, &distmu, &distsigma, &distnorm);
-
-        for (unsigned long ipix_nest = start; ipix_nest < stop; ipix_nest ++)
-        {
-            P[ipix_nest][0] = prob;
-            P[ipix_nest][1] = distmu;
-            P[ipix_nest][2] = distsigma;
-            P[ipix_nest][3] = distnorm;
-        }
-    }
-    *out_npix = npix;
-
-    return P;
-}
-
-
-double (*bayestar_sky_map_toa_phoa_snr(
-    long *inout_npix,
+bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
+    size_t *out_len,                /* Number of returned pixels */
     /* Prior */
     double min_distance,            /* Minimum distance */
     double max_distance,            /* Maximum distance */
@@ -824,7 +735,7 @@ double (*bayestar_sky_map_toa_phoa_snr(
     const float (**responses)[3],   /* Detector responses */
     const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
     const double *horizons          /* SNR=1 horizon distances for each detector */
-))[4] {
+) {
     log_radial_integrator *integrators[] = {NULL, NULL, NULL};
     {
         double pmax = 0;
@@ -849,14 +760,15 @@ double (*bayestar_sky_map_toa_phoa_snr(
 
     static const unsigned char order0 = 4;
     unsigned char level = order0;
-    adaptive_sky_map *map = adaptive_sky_map_alloc(order0);
-    if (!map)
+    size_t len;
+    bayestar_pixel *pixels = bayestar_pixels_alloc(&len, order0);
+    if (!pixels)
     {
         for (unsigned char k = 0; k < 3; k ++)
             log_radial_integrator_free(integrators[k]);
         return NULL;
     }
-    const unsigned long npix0 = map->len;
+    const unsigned long npix0 = len;
 
     /* Look up Gauss-Legendre quadrature rule for integral over cos(i). */
     gsl_integration_glfixed_table *gltable
@@ -876,15 +788,14 @@ double (*bayestar_sky_map_toa_phoa_snr(
         #pragma omp parallel for
         for (unsigned long i = 0; i < npix0; i ++)
         {
-            adaptive_sky_map_pixel *const pixel = &map->pixels[map->len - npix0 + i];
+            bayestar_pixel *const pixel = &pixels[len - npix0 + i];
             double complex F[nifos];
             double dt[nifos];
             double accum[3] = {-INFINITY, -INFINITY, -INFINITY};
 
             {
                 double theta, phi;
-                const unsigned long nside = (unsigned long)1 << pixel->order;
-                pix2ang_nest(nside, pixel->ipix, &theta, &phi);
+                pix2ang_uniq64(pixel->uniq, &theta, &phi);
 
                 /* Look up antenna factors */
                 for (unsigned int iifo = 0; iifo < nifos; iifo++)
@@ -966,32 +877,68 @@ double (*bayestar_sky_map_toa_phoa_snr(
             /* Record logarithm base 4 of posterior. */
             for (unsigned char k = 0; k < 3; k ++)
             {
-                pixel->log4p_r[k] = M_1_LN4 * accum[k];
+                pixel->value[k] = accum[k];
             }
         }
 
         /* Sort pixels by ascending posterior probability. */
-        adaptive_sky_map_sort(map);
+        bayestar_pixels_sort_prob(pixels, len);
 
         /* If we have reached order=11 (nside=2048), stop. */
         if (level++ >= 11)
             break;
 
         /* Adaptively refine the pixels that contain the most probability. */
-        map = adaptive_sky_map_refine(map, npix0 / 4);
-        if (!map)
+        pixels = bayestar_pixels_refine(pixels, &len, npix0 / 4);
+        if (!pixels)
             return NULL;
     }
 
     for (unsigned char k = 0; k < 3; k ++)
         log_radial_integrator_free(integrators[k]);
 
-    /* Flatten sky map to an image. */
-    double (*P)[4] = adaptive_sky_map_rasterize(map, inout_npix);
-    free(map);
+    /* Rescale so that log(max) = 0. */
+    const double max_logp = pixels[len - 1].value[0];
+    for (ssize_t i = (ssize_t)len - 1; i >= 0; i --)
+        for (unsigned char k = 0; k < 3; k ++)
+            pixels[i].value[k] -= max_logp;
+
+    /* Determine normalization of map. */
+    double norm = 0;
+    for (ssize_t i = (ssize_t)len - 1; i >= 0; i --)
+    {
+        const double dA = ldexp(M_PI / 3, -2 * uniq2order64(pixels[i].uniq));
+        const double dP = gsl_sf_exp_mult(pixels[i].value[0], dA);
+        if (dP <= 0)
+            break; /* We have reached underflow. */
+        norm += dP;
+    }
+    norm = 1 / norm;
+
+    /* Rescale, normalize, and prepare output. */
+    for (ssize_t i = (ssize_t)len - 1; i >= 0; i --)
+    {
+        const double prob = gsl_sf_exp_mult(pixels[i].value[0], norm);
+        double rmean = exp(pixels[i].value[1] - pixels[i].value[0]);
+        double rstd = exp(pixels[i].value[2] - pixels[i].value[0]) - gsl_pow_2(rmean);
+        if (rstd >= 0)
+        {
+            rstd = sqrt(rstd);
+        } else {
+            rmean = INFINITY;
+            rstd = 1;
+        }
+        pixels[i].value[0] = prob;
+        pixels[i].value[1] = rmean;
+        pixels[i].value[2] = rstd;
+    }
+
+    /* Sort pixels by ascending NUNIQ index. */
+    bayestar_pixels_sort_uniq(pixels, len);
 
     /* Done! */
-    return P;
+    *out_len = len;
+    return pixels;
 }
 
 
@@ -1501,6 +1448,21 @@ static void test_distance_moments_to_parameters_round_trip(double mean, double s
 }
 
 
+static void test_nest2uniq64(uint8_t order, uint64_t nest, uint64_t uniq)
+{
+    const uint64_t uniq_result = nest2uniq64(order, nest);
+    gsl_test(!(uniq_result == uniq),
+        "expected nest2uniq64(%u, %llu) = %llu, got %llu",
+        (unsigned) order, nest, uniq, uniq_result);
+
+    uint64_t nest_result = uniq;
+    const uint8_t order_result = uniq2nest64(&nest_result);
+    gsl_test(!(nest_result == nest && order_result == order),
+        "expected uniq2nest64(%llu) = (%u, %llu), got (%u, %llu)",
+        uniq, (unsigned) order, nest, order_result, nest_result);
+}
+
+
 int bayestar_test(void)
 {
     for (double re = -1; re < 1; re += 0.1)
@@ -1576,6 +1538,28 @@ int bayestar_test(void)
     for (double mean = 0; mean < 100; mean ++)
         for (double std = 0; std < 100; std ++)
             test_distance_moments_to_parameters_round_trip(mean, std);
+
+    test_nest2uniq64(0, 0, 4);
+    test_nest2uniq64(0, 1, 5);
+    test_nest2uniq64(0, 2, 6);
+    test_nest2uniq64(0, 3, 7);
+    test_nest2uniq64(0, 4, 8);
+    test_nest2uniq64(0, 5, 9);
+    test_nest2uniq64(0, 6, 10);
+    test_nest2uniq64(0, 7, 11);
+    test_nest2uniq64(0, 8, 12);
+    test_nest2uniq64(0, 9, 13);
+    test_nest2uniq64(0, 10, 14);
+    test_nest2uniq64(0, 11, 15);
+    test_nest2uniq64(1, 0, 16);
+    test_nest2uniq64(1, 1, 17);
+    test_nest2uniq64(1, 2, 18);
+    test_nest2uniq64(1, 47, 63);
+    test_nest2uniq64(12, 0, 0x4000000ull);
+    test_nest2uniq64(12, 1, 0x4000001ull);
+    test_nest2uniq64(29, 0, 0x1000000000000000ull);
+    test_nest2uniq64(29, 1, 0x1000000000000001ull);
+    test_nest2uniq64(29, 0x2FFFFFFFFFFFFFFFull, 0x3FFFFFFFFFFFFFFFull);
 
     return gsl_test_summary();
 }

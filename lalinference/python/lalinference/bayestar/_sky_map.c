@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2016  Leo Singer
+ * Copyright (C) 2013-2017  Leo Singer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_nan.h>
 #include <lal/bayestar_sky_map.h>
-#include <assert.h>
+#include <stddef.h>
 #include "six.h"
 
 
@@ -80,12 +80,35 @@ static void capsule_free(PyObject *self)
     INPUT_VECTOR_NIFOS(double, NAME, NPY_DOUBLE)
 
 
+static PyArray_Descr *sky_map_descr;
+
+
+static PyArray_Descr *sky_map_create_descr(void)
+{
+    PyArray_Descr *dtype = NULL;
+    PyObject *dtype_dict = Py_BuildValue("{s(ssss)s(cccc)s(IIII)}",
+        "names", "uniq", "prob", "distmean", "diststd",
+        "formats", NPY_ULONGLONGLTR, NPY_DOUBLELTR, NPY_DOUBLELTR, NPY_DOUBLELTR,
+        "offsets",
+        (unsigned int) offsetof(bayestar_pixel, uniq),
+        (unsigned int) offsetof(bayestar_pixel, value[0]),
+        (unsigned int) offsetof(bayestar_pixel, value[1]),
+        (unsigned int) offsetof(bayestar_pixel, value[2]));
+
+    if (dtype_dict)
+    {
+        PyArray_DescrConverter(dtype_dict, &dtype);
+        Py_DECREF(dtype_dict);
+    }
+
+    return dtype;
+}
+
+
 static PyObject *sky_map_toa_phoa_snr(
     PyObject *NPY_UNUSED(module), PyObject *args, PyObject *kwargs)
 {
     /* Input arguments */
-    long nside = -1;
-    long npix;
     double min_distance;
     double max_distance;
     int prior_distance_power;
@@ -102,26 +125,13 @@ static PyObject *sky_map_toa_phoa_snr(
     /* Names of arguments */
     static const char *keywords[] = {"min_distance", "max_distance",
         "prior_distance_power", "gmst", "sample_rate", "epochs", "snrs",
-        "responses", "locations", "horizons", "nside", NULL};
+        "responses", "locations", "horizons", NULL};
 
     /* Parse arguments */
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ddiddOOOOO|l",
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ddiddOOOOO",
         keywords, &min_distance, &max_distance, &prior_distance_power, &gmst,
         &sample_rate, &epochs_obj, &snrs_obj, &responses_obj, &locations_obj,
-        &horizons_obj, &nside)) return NULL;
-
-    /* Determine HEALPix resolution, if specified */
-    if (nside == -1)
-    {
-        npix = -1;
-    } else {
-        npix = nside2npix(nside);
-        if (npix == -1)
-        {
-            PyErr_SetString(PyExc_ValueError, "nside must be a power of 2");
-            return NULL;
-        }
-    }
+        &horizons_obj)) return NULL;
 
     /* Determine number of detectors */
     {
@@ -178,21 +188,24 @@ static PyObject *sky_map_toa_phoa_snr(
 
     /* Call function */
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
-    double (*ret)[4] = bayestar_sky_map_toa_phoa_snr(&npix, min_distance,
+    size_t len;
+    bayestar_pixel *pixels = bayestar_sky_map_toa_phoa_snr(&len, min_distance,
         max_distance, prior_distance_power, gmst, nifos, nsamples, sample_rate,
         epochs, snrs, responses, locations, horizons);
     gsl_set_error_handler(old_handler);
 
-    if (!ret)
+    if (!pixels)
         goto fail;
 
     /* Prepare output object */
-    PyObject *capsule = PyCapsule_New(ret, NULL, capsule_free);
+    PyObject *capsule = PyCapsule_New(pixels, NULL, capsule_free);
     if (!capsule)
         goto fail;
 
-    npy_intp dims[] = {npix, 4};
-    out = PyArray_SimpleNewFromData(2, dims, NPY_DOUBLE, ret);
+    npy_intp dims[] = {len};
+    Py_INCREF(sky_map_descr);
+    out = PyArray_NewFromDescr(&PyArray_Type,
+        sky_map_descr, 1, dims, NULL, pixels, NPY_ARRAY_DEFAULT, NULL);
     if (!out)
     {
         Py_DECREF(capsule);
@@ -352,6 +365,10 @@ PyMODINIT_FUNC PyInit__sky_map(void)
     PyObject *module = NULL;
 
     import_array();
+
+    sky_map_descr = sky_map_create_descr();
+    if (!sky_map_descr)
+        goto done;
 
     module = PyModule_Create(&moduledef);
     if (!module)
