@@ -1845,7 +1845,7 @@ int XLALSimIMRSpinEOBWaveformAll(
       dynamicsHi->data[6*retLenHi + i] = 0.;
       dynamicsHi->data[7*retLenHi + i] = 0.;
       dynamicsHi->data[8*retLenHi + i] = 0.;
-      dynamicsHi->data[9*retLenHi + i] = spin1[2]*(m2*m2/mTotal/mTotal);
+      dynamicsHi->data[9*retLenHi + i] = spin1[2]*(m1*m1/mTotal/mTotal);
       dynamicsHi->data[10*retLenHi + i] = 0.;
       dynamicsHi->data[11*retLenHi + i] = 0.;
       dynamicsHi->data[12*retLenHi + i] = spin2[2]*(m2*m2/mTotal/mTotal);
