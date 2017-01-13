@@ -3029,3 +3029,25 @@ def get_atnf_info(psr):
       assoc = vals[1]
 
   return (dist, p1_I, assoc, atnfurl)
+
+
+def cov_to_cor(cov):
+  """
+  Convert a covariance matrix to a correlation coefficient matrix.
+  Return the correlation coefficient matrix and the standard deviations
+  from the covariance matrix.
+  """
+
+  # get the standard deviations from the covariance matrix
+  sigmas = np.sqrt(np.diag(cov))
+
+  # convert these into a diagonal matrix
+  D = sigmas*np.identity(cov.shape[0])
+
+  # invert D
+  Dinv = np.linalg.inv(D)
+
+  # get correlation coefficient matrix
+  Ccor = np.dot(np.dot(Dinv, cov), Dinv)
+
+  return Ccor, sigmas
