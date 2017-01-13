@@ -51,6 +51,9 @@ void add_correlation_matrix( LALInferenceVariables *ini,
 void sum_data( LALInferenceRunState *runState );
 void LogSampleToFile(LALInferenceVariables *algorithmParams, LALInferenceVariables *vars);
 void LogSampleToArray(LALInferenceVariables *algorithmParams, LALInferenceVariables *vars);
+REAL8Vector** parse_gmm_means(CHAR *meanstr, UINT4 npars, UINT4 nmodes);
+gsl_matrix** parse_gmm_covs(CHAR *covstr, UINT4 npars, UINT4 nmodes);
+CHAR* get_bracketed_string(CHAR *dest, const CHAR *bstr, int openbracket, int closebracket);
 void initialise_threads(LALInferenceRunState *state, INT4 nthreads);
 
 #ifdef __cplusplus
