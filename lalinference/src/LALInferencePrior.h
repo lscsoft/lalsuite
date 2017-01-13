@@ -154,34 +154,58 @@ void LALInferenceRemoveGaussianPrior(LALInferenceVariables *priorArgs, const cha
 
 
 /**
- * \brief Add a one-dimensional Gaussian Mixture Model prior
+ * \brief Add a Gaussian Mixture Model prior
  *
- * Add a Gaussian Mixture Model prior defined by a number of Gaussian modes, each with a
- * specified mean, standard devaition and weight (where weights are the relative probabilities
- * for each mode). This prior is only one-dimensional, so is not a multi-variate Gaussian
- * mixture model. Currently this prior does not define any hyperparameters for the mixture
- * model.
+ * Add a Gaussian Mixture Model prior defined by a number of multi-variate Gaussian modes, each with a
+ * specified set of means, standard deviations, covariance matrices and weights (where weights are the
+ * relative probabilities for each mode). The minumum and maximum allowed prior range for each
+ * parameter should also be supplied, although if the array pointers are NULL these ranges will default
+ * to +/-infinity.
+ *
+ * The \c name input should be a colon separated list of all the parameters in the multivariate GMM,
+ * e.g. "H0:COSIOTA". The number of parameters in this list will be checked against the number of
+ * means supplied for each mode, and the shape of the covariances for each mode to make sure that
+ * they are consistent. If just one parameter is supplied (e.g. "H0") then this will just be a
+ * one-dimensional GMM.
+ *
+ * Internally the function will convert the covariance matrices into correlation matrices and inverse
+ * correlation matrices for use later (provided they are positive-definite). This will avoid
+ * dynamic range/numerical precision issue with using covariances of parameters spanning a large range
+ * of values. The standard deviations of each parameter will also be extracted from the covariance
+ * matrices and stored, along with the determinants of the covariance matrices.
  */
-void LALInferenceAdd1DGMMPrior( LALInferenceVariables *priorArgs, const char *name,
-                                REAL8Vector **sigmas, REAL8Vector **mus, REAL8Vector **weights,
-                                REAL8 *minrange, REAL8 *maxrange );
+void LALInferenceAddGMMPrior( LALInferenceVariables *priorArgs, const char *name,
+                              REAL8Vector ***mus, gsl_matrix ***covs, REAL8Vector **weights,
+                              REAL8Vector **minrange, REAL8Vector **maxrange );
 
 /**
- * Check for a 1D Gaussian Mixture Model prior
+ * \brief Check for a Gaussian Mixture Model prior
+ *
+ * Check if the single parameter given by \c name has a Gaussian Mixture model prior. If the
+ * parameter was within a multivariate GMM prior then it will be found.
  */
-int LALInferenceCheck1DGMMPrior(LALInferenceVariables *priorArgs, const char *name);
+int LALInferenceCheckGMMPrior(LALInferenceVariables *priorArgs, const char *name);
 
 /**
- * Remove a 1D Gaussian Mixture Model prior
+ * Remove a Gaussian Mixture Model prior
  */
-void LALInferenceRemove1DGMMPrior( LALInferenceVariables *priorArgs, const char *name );
+void LALInferenceRemoveGMMPrior( LALInferenceVariables *priorArgs, const char *name );
 
 /**
- * Get the parameters defining a 1D Gaussian Mixture Model prior
+ * \brief Get the parameters defining a Gaussian Mixture Model prior
+ *
+ * For a single parameter given by \c name it will check if that parameter has a GMM prior (even if
+ * it is within a multivariate GMM prior). Arrays of the following values for each GMM mode will be
+ * returned: means of each parameter; standard deviations of each parameter; a correlation matrix;
+ * and inverse correlation matrix; the weight (relative probability) of the mode; and, the determinant
+ * of the covariance matrix. The minimum and maximum ranges for each parameter are returned.
+ * The position (index) of the parameter \c name within a multivariate GMM will is returned. Finally,
+ * the combined name of the prior (i.e. including all parameters) is returned.
  */
-void LALInferenceGet1DGMMPrior( LALInferenceVariables *priorArgs, const char *name,
-                                REAL8Vector **sigmas, REAL8Vector **mus, REAL8Vector **weights,
-                                REAL8 *minrange, REAL8 *maxrange );
+void LALInferenceGetGMMPrior( LALInferenceVariables *priorArgs, const char *name,
+                              REAL8Vector ***mus, REAL8Vector ***sigmas, gsl_matrix ***cors, gsl_matrix ***invcors,
+                              REAL8Vector **weights, REAL8Vector **minrange, REAL8Vector **maxrange,
+                              REAL8Vector **dets, UINT4 *idx, CHAR *fullname );
 
 /**
  * \brief Add a log-uniform prior
@@ -359,7 +383,7 @@ REAL8 LALInferenceFermiDiracPrior(LALInferenceVariables *priorArgs, const char *
 /**
  * \brief Calculate the log probability for the Gaussian Mixture Model prior
  */
-REAL8 LALInference1DGMMPrior(LALInferenceVariables *priorArgs, const char *name, REAL8 value);
+REAL8 LALInferenceGMMPrior(LALInferenceVariables *priorArgs, const char *name, REAL8 value);
 
 /* Return the log Prior for a parameter that has a prior that is uniform in log space */
 REAL8 LALInferenceLogUniformPrior( LALInferenceVariables *priorArgs, const char *name, REAL8 value );
