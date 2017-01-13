@@ -322,6 +322,19 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
   {   /* Template is not aligned-spin only. */
       /* Set all the other spin components according to the angles we received above */
       /* The transformation function doesn't know fLow, so f_ref==0 isn't interpretted as a request to use the starting frequency for reference. */
+
+      /* For anti-aligned spins, use positive a_spin and tilt=pi. */
+      if (tilt1==0 && tilt2==0) {
+        if (a_spin1<0) {
+          tilt1=LAL_PI;
+          a_spin1=-a_spin1;
+        }
+        if (a_spin2<0) {
+          tilt2=LAL_PI;
+          a_spin2=-a_spin2;
+        }
+      }
+
       XLAL_TRY(ret=XLALSimInspiralTransformPrecessingNewInitialConditions(
                     &inclination, &spin1x, &spin1y, &spin1z, &spin2x, &spin2y, &spin2z,
                     thetaJN, phiJL, tilt1, tilt2, phi12, a_spin1, a_spin2, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, fTemp, phi0), errnum);
@@ -746,6 +759,18 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
       /* The transformation function doesn't know fLow, so f_ref==0 isn't interpretted as a request to use the starting frequency for reference. */
       if(fTemp==0.0)
         fTemp = f_start;
+
+        /* For anti-aligned spins, use positive a_spin and tilt=pi. */
+        if (tilt1==0 && tilt2==0) {
+          if (a_spin1<0) {
+            tilt1=LAL_PI;
+            a_spin1=-a_spin1;
+          }
+          if (a_spin2<0) {
+            tilt2=LAL_PI;
+            a_spin2=-a_spin2;
+          }
+        }
 
       XLAL_TRY(ret=XLALSimInspiralTransformPrecessingNewInitialConditions(
                     &inclination, &spin1x, &spin1y, &spin1z, &spin2x, &spin2y, &spin2z,
@@ -1226,6 +1251,18 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
         /* The transformation function doesn't know fLow, so f_ref==0 isn't interpretted as a request to use the starting frequency for reference. */
         if(fTemp==0.0)
             fTemp = f_start;
+
+        /* For anti-aligned spins, use positive a_spin and tilt=pi. */
+        if (tilt1==0 && tilt2==0) {
+          if (a_spin1<0) {
+            tilt1=LAL_PI;
+            a_spin1=-a_spin1;
+          }
+          if (a_spin2<0) {
+            tilt2=LAL_PI;
+            a_spin2=-a_spin2;
+          }
+        }
 
         XLAL_TRY(ret=XLALSimInspiralTransformPrecessingNewInitialConditions(
                                                                             &inclination, &spin1x, &spin1y, &spin1z, &spin2x, &spin2y, &spin2z,
