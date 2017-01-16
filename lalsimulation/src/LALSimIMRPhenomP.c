@@ -378,6 +378,7 @@ static int PhenomPCore(
   REAL8Sequence *freqs = NULL;
   REAL8 *phis=NULL;
   int errcode = XLAL_SUCCESS;
+  LALDict *extraParams_in=extraParams;
 
   // Enforce convention m2 >= m1
   REAL8 chi1_l, chi2_l;
@@ -511,7 +512,9 @@ static int PhenomPCore(
       pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi2_l, chi1_l, finspin);
       pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi2_l, chi1_l, finspin, extraParams);
       if (extraParams==NULL)
-	extraParams=XLALCreateDict();
+      {
+              extraParams=XLALCreateDict();
+      }
       XLALSimInspiralWaveformParamsInsertPNSpinOrder(extraParams, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN);
       XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1_l, chi2_l, extraParams);
 
@@ -740,6 +743,10 @@ static int PhenomPCore(
   if(pAmp) XLALFree(pAmp);
   if(pPhi) XLALFree(pPhi);
   if(pn) XLALFree(pn);
+
+  /* If extraParams was allocated in this function and not passed in
+   * we need to free it to prevent a leak */
+  if(extraParams && !extraParams_in) XLALDestroyDict(extraParams);
 
   if(freqs) XLALDestroyREAL8Sequence(freqs);
 
