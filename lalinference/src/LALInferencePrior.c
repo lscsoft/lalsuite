@@ -62,6 +62,7 @@ void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
     (--analyticnullprior)            Use analytic null prior\n\
     (--nullprior)                    Use null prior in the sampled parameters\n\
     (--alignedspin-zprior)           Use prior on z component of spin that corresponds to fully precessing model\n\
+    (--spin-volumetricprior)         Use prior on spin components that is uniform inside the sphere\n\
     \n";
     ProcessParamsTable *ppt = NULL;
 
@@ -141,10 +142,19 @@ void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
                                 LALINFERENCE_REAL8_t,
                                 LALINFERENCE_PARAM_OUTPUT);
     }
+    INT4 one=1;
     if(LALInferenceGetProcParamVal(commandLine,"--alignedspin-zprior"))
     {
-      INT4 one=1;
       LALInferenceAddVariable(runState->priorArgs,"projected_aligned_spin",&one,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
+    }
+    if(LALInferenceGetProcParamVal(commandLine,"--spin-volumetricprior"))
+    {
+      LALInferenceAddVariable(runState->priorArgs,"volumetric_spin",&one,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
+    }
+    if(LALInferenceGetProcParamVal(commandLine,"--alignedspin-zprior")&&LALInferenceGetProcParamVal(commandLine,"--spin-volumetricprior"))
+    {
+        fprintf(stderr,"Error: You cannot use both --alignedspin-zprior and --spin-volumetricprior\n");
+        exit(1);
     }
 }
 
@@ -462,22 +472,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
     if(LALInferenceGetVariableVaryType(params,"declination")==LALINFERENCE_PARAM_LINEAR)
       logPrior+=log(fabs(cos(*(REAL8 *)LALInferenceGetVariable(params,"declination"))));
   }
-  if(LALInferenceCheckVariable(params,"tilt_spin1"))
-  {
-    LALInferenceParamVaryType vtype=LALInferenceGetVariableVaryType(params,"tilt_spin1");
-    if(vtype!=LALINFERENCE_PARAM_FIXED && vtype!=LALINFERENCE_PARAM_OUTPUT)
-    {
-      logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"tilt_spin1"))));
-    }
-  }
-  if(LALInferenceCheckVariable(params,"tilt_spin2"))
-  {
-    LALInferenceParamVaryType vtype=LALInferenceGetVariableVaryType(params,"tilt_spin2");
-    if(vtype!=LALINFERENCE_PARAM_FIXED && vtype!=LALINFERENCE_PARAM_OUTPUT)
-    {
-      logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"tilt_spin2"))));
-    }
-  }
+ 
 
   if(LALInferenceCheckVariable(params,"logmc")) {
     mc=exp(*(REAL8 *)LALInferenceGetVariable(params,"logmc"));
@@ -533,14 +528,76 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
         *(UINT4 *)LALInferenceGetVariable(priorParams,"malmquist") &&
         !within_malmquist(runState, params, model))
       return -INFINITY;
-
-  }/* end prior for signal model parameters */
-
+  
+  UINT4 volumetric_spins = LALInferenceCheckVariable(runState->priorArgs,"volumetric_spin") && LALInferenceGetVariable(runState->priorArgs,"volumetric_spin");
+  /* Apply spin priors for precessing case */
+  if(LALInferenceCheckVariable(params,"tilt_spin1"))
+  {
+    LALInferenceParamVaryType vtype=LALInferenceGetVariableVaryType(params,"tilt_spin1");
+    if(vtype!=LALINFERENCE_PARAM_FIXED && vtype!=LALINFERENCE_PARAM_OUTPUT)
+    {
+      if(volumetric_spins)
+      {
+              /* homogenous inside spin bound */
+              /* V = (4/3)*pi*(a_max^3 - a_min^3) */
+              REAL8 a = LALInferenceGetREAL8Variable(params,"a_spin1");
+              REAL8 a_max,a_min;
+              LALInferenceGetMinMaxPrior(runState->priorArgs,"a_spin1",&a_min,&a_max);
+              REAL8 V = (4./3.)*LAL_PI * (a_max*a_max*a_max - a_min*a_min*a_min);
+              logPrior+=log(fabs(a*a))-log(fabs(V));
+      }
+      /* Usual case has uniform in a, but both cases have sin(tilt) from volume element */
+      logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"tilt_spin1"))));
+    }
+  }
+  else
+  {
+     if(volumetric_spins)
+     {
+            /* Volumetric prior marginalised onto z component */
+              REAL8 a = LALInferenceGetREAL8Variable(params,"a_spin1");
+              REAL8 a_max,a_min;
+              LALInferenceGetMinMaxPrior(runState->priorArgs,"a_spin1",&a_min,&a_max);
+              REAL8 V = (4./3.)*LAL_PI * (a_max*a_max*a_max);
+              logPrior+=log(fabs((3./4.)*(a_max*a_max - a*a)))-log(fabs(V));
+            
+     }
+  }
+  if(LALInferenceCheckVariable(params,"tilt_spin2"))
+  {
+    LALInferenceParamVaryType vtype=LALInferenceGetVariableVaryType(params,"tilt_spin2");
+    if(vtype!=LALINFERENCE_PARAM_FIXED && vtype!=LALINFERENCE_PARAM_OUTPUT)
+    {
+      if(volumetric_spins)
+      {
+              REAL8 a = LALInferenceGetREAL8Variable(params,"a_spin2");
+              REAL8 a_max,a_min;
+              LALInferenceGetMinMaxPrior(runState->priorArgs,"a_spin2",&a_min,&a_max);
+              REAL8 V = (4./3.)*LAL_PI * (a_max*a_max*a_max - a_min*a_min*a_min);
+              logPrior+=log(fabs(a*a))-log(fabs(V));
+      }
+      logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"tilt_spin2"))));
+    }
+  }
+  else
+  {
+     if(volumetric_spins)
+     {
+            /* Volumetric prior marginalised onto z component */
+              REAL8 a = LALInferenceGetREAL8Variable(params,"a_spin1");
+              REAL8 a_max,a_min;
+              LALInferenceGetMinMaxPrior(runState->priorArgs,"a_spin1",&a_min,&a_max);
+              REAL8 V = (4./3.)*LAL_PI * (a_max*a_max*a_max);
+              logPrior+=log(fabs((3./4.)*(a_max*a_max - a*a)))-log(fabs(V));
+            
+     }
+  }
+  
   /* Optional prior on aligned spin component that corresponds to the effective prior on
    that component when using a precessing spin model. p(z) = (1/2)(1/R)log(|z|/R)
    Where R is the maximum magnitude of the spin vector max(|a_spin1_max|,|a_spin1_min|).
    */
-  if (LALInferenceCheckVariable(priorParams,"projected_aligned_spin") && LALInferenceCheckVariable(priorParams,"projected_aligned_spin"))
+  if (LALInferenceCheckVariable(priorParams,"projected_aligned_spin") && LALInferenceGetVariable(priorParams,"projected_aligned_spin"))
   {
     REAL8 z=0.0;
     /* Double-check for tilts to prevent accidental double-prior */
@@ -558,6 +615,9 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
     }
 
   }
+
+  }/* end prior for signal model parameters */
+
 
   /* Calibration priors. */
   /* Disabled as this is now handled automatically */
