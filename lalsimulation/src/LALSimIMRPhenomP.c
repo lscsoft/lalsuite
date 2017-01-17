@@ -93,9 +93,9 @@ const double sqrt_6 = 2.44948974278317788;
  * Each IMRPhenomP version inherits its range of validity
  * over the parameter space from the respective aligned-spin waveform.
  *
- * @attention A time-domain implementation of IMRPhenomPv2 is available in XLALChooseTDWaveform(). 
+ * @attention A time-domain implementation of IMRPhenomPv2 is available in XLALChooseTDWaveform().
  * This is based on a straight-forward inverse Fourier transformation via XLALSimInspiralTDfromFD(),
- * but it was not included in the IMRPhenomPv2 review. Use it at your own risk. 
+ * but it was not included in the IMRPhenomPv2 review. Use it at your own risk.
  */
 
 static REAL8 atan2tol(REAL8 a, REAL8 b, REAL8 tol)
@@ -451,7 +451,7 @@ int XLALSimIMRPhenomPCalculateModelParametersFromSourceFrame(
  * Reference:
  * - Hannam et al., arXiv:1308.3271 [gr-qc]
  *
- * \ref XLALSimIMRPhenomPCalculateModelParameters should be called first
+ * \ref XLALSimIMRPhenomPCalculateModelParametersFromSourceFrame should be called first
  * to map LAL parameters into IMRPhenomP intrinsic parameters
  * (chi1_l, chi2_l, chip, thetaJ, alpha0).
  *
@@ -478,7 +478,7 @@ int XLALSimIMRPhenomP(
   LALDict *extraParams) /**<linked list containing the extra testing GR parameters */
 {
   // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
-  // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParameters
+  // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParametersFromSourceFrame
   // and alpha0 are degenerate. Therefore phiJ is not passed to this function.
 
   // Use f_min, f_max, deltaF to compute freqs sequence
@@ -506,7 +506,7 @@ int XLALSimIMRPhenomP(
  * Reference:
  * - Hannam et al., arXiv:1308.3271 [gr-qc]
  *
- * \ref XLALSimIMRPhenomPCalculateModelParameters should be called first
+ * \ref XLALSimIMRPhenomPCalculateModelParametersFromSourceFrame should be called first
  * to map LAL parameters into IMRPhenomP intrinsic parameters
  * (chi1_l, chi2_l, chip, thetaJ, alpha0).
  *
@@ -532,7 +532,7 @@ int XLALSimIMRPhenomPFrequencySequence(
   LALDict *extraParams) /**<linked list containing the extra testing GR parameters */
 {
   // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
-  // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParameters
+  // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParametersFromSourceFrame
   // and alpha0 are degenerate. Therefore phiJ is not passed to this function.
 
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
@@ -591,7 +591,7 @@ static int PhenomPCore(
   XLAL_CHECK(fabs(chip) <= 1.0, XLAL_EDOM, "In-plane spin chip =%g must be <= 1 in magnitude!\n", chip);
 
   // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
-  // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParameters
+  // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParametersFromSourceFrame
   // and alpha0 are degenerate. Therefore phiJ is not passed to this function.
   /* Phenomenological parameters */
   IMRPhenomDAmplitudeCoefficients *pAmp = NULL;
@@ -1452,7 +1452,7 @@ static REAL8 FinalSpinIMRPhenomD_all_in_plane_spin_on_larger_BH(
   else {
     q_factor = m2/M;
     af_parallel = FinalSpin0815(eta, chi2_l, chi1_l);
-  }  
+  }
 
   REAL8 Sperp = chip * q_factor*q_factor;
   REAL8 af = copysign(1.0, af_parallel) * sqrt(Sperp*Sperp + af_parallel*af_parallel);
@@ -1628,4 +1628,3 @@ static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon) {
       *x = X;
   }
 }
-
