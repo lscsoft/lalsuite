@@ -742,6 +742,12 @@ int XLALSimIMRSpinEOBWaveformAll(
   /* OPTV3 BEGIN */
   posVecx.data = posVecy.data = posVecz.data = phiMod.data = phiDMod.data = tVec.data = NULL;
   s1Vecx.data = s1Vecy.data = s1Vecz.data = s2Vecx.data = s2Vecy.data = s2Vecz.data =  momVecx.data =  momVecy.data = momVecz.data = NULL;
+
+  REAL8Vector posVecxEOMv, posVecyEOMv, posVeczEOMv, tVecEOMv; /* OPTV3: Dynamics for sparse ODE solution */
+  REAL8Vector * posVecxEOM = &posVecxEOMv, * posVecyEOM = &posVecyEOMv, /* OPTV3: Pointers to Dynamics Vectors */
+    * posVeczEOM = &posVeczEOMv, * tVecEOM = &tVecEOMv;
+
+  posVecxEOMv.data = posVecyEOMv.data = posVeczEOMv.data = tVecEOMv.data = NULL;
   /* OPTV3 END */
 
   /* Cartesian vectors needed to calculate Hamiltonian */
@@ -942,8 +948,8 @@ int XLALSimIMRSpinEOBWaveformAll(
   const REAL8 EPS_REL = 1.0e-8;
 
   //David: values for checking v3opt code agreement
-  //EPS_ABS = 1.0e-10;
-  //REAL8 EPS_REL = 1.0e-10;
+  //REAL8 EPS_ABS = 1.0e-10;
+  //const REAL8 EPS_REL = 1.0e-10;
 
   /* Relax abs accuracy in case of highly symmetric case that would otherwise slow down significantly */
   if (sqrt((INspin1[0] + INspin2[0])*(INspin1[0] + INspin2[0]) + (INspin1[1] + INspin2[1])*(INspin1[1] + INspin2[1])) < 1.0e-10 && !SpinsAlmostAligned)
@@ -1680,6 +1686,12 @@ int XLALSimIMRSpinEOBWaveformAll(
 
         retLenLow =  (int)(dynamicsEOMLo->data[retLenEOMLow-1] / (deltaT/mTScaled))+ 1;
         SEOBNRv3OptimizedInterpolatorGeneral(dynamicsEOMLo->data,0., deltaT/mTScaled, retLenEOMLow, &dynamics,14);
+
+        posVecxEOMv.length = posVecyEOMv.length = posVeczEOMv.length = tVecEOMv.length = retLenEOMLow;
+        posVecxEOM->data = dynamicsEOMLo->data+retLenEOMLow;
+        posVecyEOM->data = dynamicsEOMLo->data+2*retLenEOMLow;
+        posVeczEOM->data = dynamicsEOMLo->data+3*retLenEOMLow;
+        tVecEOM->data =  dynamicsEOMLo->data;
       }else{
         retLen = XLALAdaptiveRungeKutta4( integrator, &seobParams, values->data,
                                          0., 20./mTScaled, deltaT/mTScaled, &dynamics );
@@ -1696,21 +1708,23 @@ int XLALSimIMRSpinEOBWaveformAll(
       tVec.data   = dynamics->data;
     }
 
-    /* This is common to all un-optimized cases, even when we use SEOBNRv2 dynamics */
-    posVecx.data = dynamics->data+retLenLow;
-    posVecy.data = dynamics->data+2*retLenLow;
-    posVecz.data = dynamics->data+3*retLenLow;
-    momVecx.data = dynamics->data+4*retLenLow;
-    momVecy.data = dynamics->data+5*retLenLow;
-    momVecz.data = dynamics->data+6*retLenLow;
-    s1Vecx.data = dynamics->data+7*retLenLow;
-    s1Vecy.data = dynamics->data+8*retLenLow;
-    s1Vecz.data = dynamics->data+9*retLenLow;
-    s2Vecx.data = dynamics->data+10*retLenLow;
-    s2Vecy.data = dynamics->data+11*retLenLow;
-    s2Vecz.data = dynamics->data+12*retLenLow;
-    phiDMod.data= dynamics->data+13*retLenLow;
-    phiMod.data = dynamics->data+14*retLenLow;
+    if (!use_optimized) {
+      /* This is common to all un-optimized cases, even when we use SEOBNRv2 dynamics */
+      posVecx.data = dynamics->data+retLenLow;
+      posVecy.data = dynamics->data+2*retLenLow;
+      posVecz.data = dynamics->data+3*retLenLow;
+      momVecx.data = dynamics->data+4*retLenLow;
+      momVecy.data = dynamics->data+5*retLenLow;
+      momVecz.data = dynamics->data+6*retLenLow;
+      s1Vecx.data = dynamics->data+7*retLenLow;
+      s1Vecy.data = dynamics->data+8*retLenLow;
+      s1Vecz.data = dynamics->data+9*retLenLow;
+      s2Vecx.data = dynamics->data+10*retLenLow;
+      s2Vecy.data = dynamics->data+11*retLenLow;
+      s2Vecz.data = dynamics->data+12*retLenLow;
+      phiDMod.data= dynamics->data+13*retLenLow;
+      phiMod.data = dynamics->data+14*retLenLow;
+    }
     if(debugPK) { XLAL_PRINT_INFO("\n\n FINISHED THE EVOLUTION\n\n"); fflush(NULL);  }
 
   if (debugPK) {
@@ -1942,11 +1956,17 @@ int XLALSimIMRSpinEOBWaveformAll(
 /* Interpolate trajectories to compute L_N (t) in order to get alpha(t) and
    * beta(t). */
     INT4 phaseCounterA = 0, phaseCounterB = 0;
-    Alpha = XLALCreateREAL8Vector( retLenLow );
-    Beta  = XLALCreateREAL8Vector( retLenLow );
-    Gamma = XLALCreateREAL8Vector( retLenLow );
-    EulerAnglesI2P(Alpha, Beta, Gamma, &phaseCounterA, &phaseCounterB, tVec, posVecx, posVecy, posVecz, retLenLow, 0., 0.5*LAL_PI, 0);
-
+    if (use_optimized) {
+      Alpha = XLALCreateREAL8Vector( retLenEOMLow );
+      Beta  = XLALCreateREAL8Vector( retLenEOMLow );
+      Gamma = XLALCreateREAL8Vector( retLenEOMLow );
+      EulerAnglesI2P(Alpha, Beta, Gamma, &phaseCounterA, &phaseCounterB, *tVecEOM, *posVecxEOM, *posVecyEOM, *posVeczEOM, retLenEOMLow, 0., 0.5*LAL_PI, 0);
+    } else {
+      Alpha = XLALCreateREAL8Vector( retLenLow );
+      Beta  = XLALCreateREAL8Vector( retLenLow );
+      Gamma = XLALCreateREAL8Vector( retLenLow );
+      EulerAnglesI2P(Alpha, Beta, Gamma, &phaseCounterA, &phaseCounterB, tVec, posVecx, posVecy, posVecz, retLenLow, 0., 0.5*LAL_PI, 0);
+    }
     if (debugPK){
         XLAL_PRINT_INFO("Writing Alpha and Beta angle timeseries at low SR to alphaANDbeta.dat\n" );
         fflush(NULL);
@@ -1966,10 +1986,55 @@ int XLALSimIMRSpinEOBWaveformAll(
     }
 
     AlphaHi = XLALCreateREAL8Vector( retLenHi );
-    BetaHi   = XLALCreateREAL8Vector( retLenHi );
+    BetaHi  = XLALCreateREAL8Vector( retLenHi );
     GammaHi = XLALCreateREAL8Vector( retLenHi );
 
-    EulerAnglesI2P(AlphaHi, BetaHi, GammaHi, &phaseCounterA, &phaseCounterB, timeHi, posVecxHi, posVecyHi, posVeczHi, retLenHi, Alpha->data[hiSRndx], Gamma->data[hiSRndx], 1);
+    if (use_optimized) {
+      REAL8 alphaHiSRndx; //OPTV3: Alpha at time dynamics->data[hiSRndx]
+      REAL8 gammaHiSRndx; //OPTV3: Gamma at time dynamics->data[hiSRndx]
+
+      REAL8 precEulerresult = 0, precEulererror = 0;
+      gsl_integration_workspace * precEulerw = gsl_integration_workspace_alloc (1000);
+      gsl_function precEulerF;
+      PrecEulerAnglesIntegration precEulerparams;
+
+      /* OPTV3: Since the angles are now solved for sparsely,
+       * we must get alpha and gamma at hiSRndx, in another way */
+
+      gsl_interp_accel *alpha_acc    = gsl_interp_accel_alloc();
+      gsl_spline *alpha_spline = gsl_spline_alloc( gsl_interp_cspline, retLenEOMLow );
+      gsl_spline_init( alpha_spline, dynamicsEOMLo->data, Alpha->data, retLenEOMLow );
+
+      gsl_interp_accel *beta_acc    = gsl_interp_accel_alloc();
+      gsl_spline *beta_spline = gsl_spline_alloc( gsl_interp_cspline, retLenEOMLow );
+      gsl_spline_init( beta_spline, dynamicsEOMLo->data, Beta->data, retLenEOMLow );
+
+      precEulerparams.alpha_spline = alpha_spline;
+      precEulerparams.alpha_acc    = alpha_acc;
+      precEulerparams.beta_spline  = beta_spline;
+      precEulerparams.beta_acc     = beta_acc;
+
+      precEulerF.function = &f_alphadotcosi;
+      precEulerF.params   = &precEulerparams;
+
+      /* OPTV3: Each gamma value is calculated using the one before it, so we find the nearest time below t[hiSRndx]*/
+      int hiSRndxEOMf=retLenEOMLow-1;
+      for (;dynamicsEOMLo->data[hiSRndxEOMf] > dynamics->data[hiSRndx]; hiSRndxEOMf--);
+
+      /* OPTV3: Now use it to get Gamma at t[hiSRndx]*/
+      gsl_integration_qags (&precEulerF, dynamicsEOMLo->data[hiSRndxEOMf], dynamics->data[hiSRndx], 1e-9, 1e-9, 1000, precEulerw, &precEulerresult, &precEulererror);
+      gammaHiSRndx = Gamma->data[hiSRndxEOMf]+precEulerresult;
+      alphaHiSRndx = gsl_spline_eval(alpha_spline,tVec.data[hiSRndx],alpha_acc);
+      gsl_spline_free(alpha_spline);
+      gsl_interp_accel_free(alpha_acc);
+      gsl_spline_free(beta_spline);
+      gsl_interp_accel_free(beta_acc);
+      gsl_integration_workspace_free(precEulerw);
+
+      EulerAnglesI2P(AlphaHi, BetaHi, GammaHi, &phaseCounterA, &phaseCounterB, timeHi, posVecxHi, posVecyHi, posVeczHi, retLenHi, alphaHiSRndx, gammaHiSRndx, 1);
+    } else {
+      EulerAnglesI2P(AlphaHi, BetaHi, GammaHi, &phaseCounterA, &phaseCounterB, timeHi, posVecxHi, posVecyHi, posVeczHi, retLenHi, Alpha->data[hiSRndx], Gamma->data[hiSRndx], 1);
+    }
 
     if (debugPK){
         XLAL_PRINT_INFO("Writing Alpha and Beta angle timeseries at high SR to alphaANDbetaHi.dat\n" );
@@ -2268,19 +2333,18 @@ int XLALSimIMRSpinEOBWaveformAll(
     COMPLEX16 Y[5]={Y2m2,Y2m1,Y20,Y21,Y22};
 
     /* OPTV3: Generate the low and high sampling waveforms. */
-    XLALEOBSpinPrecGenerateAmpPhaseTSFromEOMSoln(hVecEOM,retLenLow,Alpha,Beta,Gamma,JframeEx,JframeEy,JframeEz,Y,dynamics,&seobParams);
+    XLALEOBSpinPrecGenerateHplusHcrossTSFromEOMSoln(hVecEOM,retLenEOMLow,Alpha,Beta,Gamma,JframeEx,JframeEy,JframeEz,Y,dynamicsEOMLo,&seobParams);
     XLALEOBSpinPrecGenerateHTSModesFromEOMSoln(h2m2TSHi->data->data,h2m1TSHi->data->data,h20TSHi->data->data,h21TSHi->data->data,h22TSHi->data->data,retLenHi,dynamicsHi,&seobParams);
 
+    //OPTV3: Interpolate the WF solutions to the desired times
+    SEOBNRv3OptimizedInterpolatorGeneral(hVecEOM->data,0., deltaT/mTScaled, retLenEOMLow, &hVec,2);
+
     REAL8Vector phaseVecEOMLo;
-    phaseVecEOMLo.length = retLenLow;
-    phaseVecEOMLo.data = hVecEOM->data+2*retLenLow;
+    phaseVecEOMLo.length = retLenEOMLow;
+    phaseVecEOMLo.data = hVecEOM->data+2*retLenEOMLow;
     //ZACH SAYS: David, we must figure out why XLALREAL8VectorUnwrapAngleByMonotonicity sometimes misbehaves.
     //XLALREAL8VectorUnwrapAngleByMonotonicity(&phaseVecEOMLo,&phaseVecEOMLo);
     XLALREAL8VectorUnwrapAngle(&phaseVecEOMLo,&phaseVecEOMLo);
-
-    //OPTV3: Interpolate the WF solutions to the desired times
-    SEOBNRv3OptimizedInterpolatorGeneral(hVecEOM->data,0., deltaT/mTScaled, retLenLow, &hVec,2);
-    XLALDestroyREAL8Vector( hVecEOM );
 
     if ( !(tlist = XLALCreateREAL8Vector( retLenLow ))
          || !(tlistRDPatch = XLALCreateREAL8Vector( retLenLow + retLenRDPatchLow )) )
