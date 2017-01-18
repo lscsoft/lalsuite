@@ -1615,6 +1615,9 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	XLALSimInspiralWaveformParamsInsertNumRelData(LALpars, ppt->value);
 	fprintf(stdout,"Injection will use %s.\n",ppt->value);
       }
+      else if (strlen(injEvent->numrel_data) > 0) {
+        XLALSimInspiralWaveformParamsInsertNumRelData(LALpars, injEvent->numrel_data);
+      }
 
       /* Print a line with information about approximant, amporder, phaseorder, tide order and spin order */
       fprintf(stdout,"Injection will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i, tidal order %i, in the time domain with a reference frequency of %f.\n",approximant,XLALSimInspiralGetStringFromApproximant(approximant),order,amporder,(int) spinO, (int) tideO, (float) fref);
