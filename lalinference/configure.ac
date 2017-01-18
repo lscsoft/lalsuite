@@ -145,7 +145,7 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 LALSUITE_ENABLE_OPENMP
 
 # check for HEALPix
-PKG_CHECK_MODULES([CHEALPIX],[chealpix],[true],[false])
+PKG_CHECK_MODULES([CHEALPIX],[chealpix >= 3.30.0],[true],[false])
 LALSUITE_ADD_FLAGS([C],[${CHEALPIX_CFLAGS}],[${CHEALPIX_LIBS}])
 HEALPIX_ENABLE_VAL=ENABLED
 AC_CHECK_LIB([chealpix],[nside2npix],,[HEALPIX_ENABLE_VAL=DISABLED])
