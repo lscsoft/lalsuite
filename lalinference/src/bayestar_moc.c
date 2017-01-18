@@ -70,11 +70,11 @@ void pix2ang_uniq64(uint64_t ipix, double *theta, double *phi)
 void *moc_rasterize64(const void *pixels, size_t offset, size_t itemsize, size_t len, size_t *npix)
 {
     const size_t pixelsize = offset + itemsize;
-    const char *pixel = (const char *) pixels + (len - 1) * pixelsize;
+    const void *pixel = (const char *) pixels + (len - 1) * pixelsize;
     uint64_t ipix = *(const uint64_t *) pixel;
     const int8_t max_order = uniq2order64(ipix);
     *npix = 12 * ((size_t) 1 << 2 * max_order);
-    char *ret = calloc(*npix, itemsize);
+    void *ret = calloc(*npix, itemsize);
     if (!ret)
         XLAL_ERROR_NULL(XLAL_ENOMEM, "not enough memory to allocate image");
 
@@ -85,7 +85,7 @@ void *moc_rasterize64(const void *pixels, size_t offset, size_t itemsize, size_t
         const int8_t order = uniq2nest64(&ipix);
         const size_t reps = (size_t) 1 << 2 * (max_order - order);
         for (size_t j = 0; j < reps; j ++)
-            memcpy(ret + (ipix * reps + j) * itemsize, pixel + offset, itemsize);
+            memcpy((char *) ret + (ipix * reps + j) * itemsize, (const char *) pixel + offset, itemsize);
     }
 
     return ret;
