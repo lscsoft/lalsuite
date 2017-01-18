@@ -15,6 +15,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: bc
 BuildRequires: fftw-devel
 BuildRequires: glue
+BuildRequires: glue-segments
 BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
 BuildRequires: less
