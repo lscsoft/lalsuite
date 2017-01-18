@@ -134,7 +134,7 @@ static void volume_render_loop(
 {
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
     const npy_intp n = dimensions[0];
-    const long nside = npix2nside(dimensions[2]);
+    const long long nside = npix2nside64(dimensions[2]);
 
     /* Assert that rotation matrix is 3x3 */
     assert(dimensions[1] == 3);
@@ -168,7 +168,7 @@ static void marginal_pdf_loop(
 {
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
     const npy_intp n = dimensions[0];
-    const long npix = dimensions[1];
+    const npy_intp npix = dimensions[1];
 
     /* Assert that array arguments are stored contiguously */
     assert(steps[6] == sizeof(double));
@@ -194,7 +194,7 @@ static void marginal_cdf_loop(
 {
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
     const npy_intp n = dimensions[0];
-    const long npix = dimensions[1];
+    const npy_intp npix = dimensions[1];
 
     /* Assert that array arguments are stored contiguously */
     assert(steps[6] == sizeof(double));
@@ -220,7 +220,7 @@ static void marginal_ppf_loop(
 {
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
     const npy_intp n = dimensions[0];
-    const long npix = dimensions[1];
+    const npy_intp npix = dimensions[1];
 
     /* Assert that array arguments are stored contiguously */
     assert(steps[6] == sizeof(double));
@@ -253,7 +253,7 @@ static const PyUFuncGenericFunction
     marginal_ppf_loops[] = {marginal_ppf_loop};
 
 static const char volume_render_ufunc_types[] = {
-    NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_INT, NPY_INT, NPY_DOUBLE, NPY_BOOL,
+    NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_INTP, NPY_INT, NPY_DOUBLE, NPY_BOOL,
     NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE};
 
 static const char double_ufunc_types[] = {
