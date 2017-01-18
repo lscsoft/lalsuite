@@ -41,7 +41,7 @@ Standards-Version: 3.9.8
 Package: lalinference
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
-  libchealpix0, python-healpy (>= 1.9.1),
+  python-healpy (>= 1.9.1),
   libmetaio1 (>= 8.2),
   lal (>= @MIN_LAL_VERSION@~),
   lalframe (>= @MIN_LALFRAME_VERSION@~),
