@@ -28,6 +28,7 @@
 /*Modified June 2010 by Andrew Mergl for use with Python*/
 
 #include <Python.h>
+#include "six.h"
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/arrayobject.h>
 #include <math.h>
@@ -205,11 +206,20 @@ static PyMethodDef cs_gammaMethods[] = {
   {NULL, NULL, 0, NULL}
 };
 
+static PyModuleDef moduledef = {
+  PyModuleDef_HEAD_INIT,
+  "cs_gamma", NULL, -1, cs_gammaMethods,
+  NULL, NULL, NULL, NULL
+};
+
 //They Python module initialization function.
-PyMODINIT_FUNC initcs_gamma(void);	/* silence no-previous-prototype warning */
+PyMODINIT_FUNC PyInit_cs_gamma(void);	/* silence no-previous-prototype warning */
 PyMODINIT_FUNC
-initcs_gamma(void)
+PyInit_cs_gamma(void)
 {
-  Py_InitModule("cs_gamma", cs_gammaMethods);
   import_array();
+  return PyModule_Create(&moduledef);
 }
+
+
+SIX_COMPAT_MODULE(cs_gamma)
