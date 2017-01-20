@@ -28,7 +28,6 @@
 /*Modified June 2010 by Andrew Mergl for use with Python*/
 
 #include <Python.h>
-#include "six.h"
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/arrayobject.h>
 #include <math.h>
@@ -38,6 +37,7 @@
 #include <gsl/gsl_errno.h>
 #include <lal/cs_cosmo.h>
 #include <lal/cs_lambda_cosmo.h>
+#include "six.h"
 
 #define CUSPS_PER_LOOP 1.0		/* c */
 #define LOOP_RAD_POWER 50.0		/* Gamma */
