@@ -62,6 +62,8 @@ __all__ = ("read_sky_map", "write_sky_map")
 import math
 import healpy as hp
 import numpy as np
+from astropy.io import fits
+from astropy import units as u
 from glue.ligolw import lsctables
 import time
 import lal
@@ -171,9 +173,9 @@ def gps_to_mjd(gps_time):
     return mjd + gps_seconds_fraction / 86400.
 
 
-def write_sky_map(filename, m, nest=False, objid=None, url=None, instruments=None,
-    gps_time=None, gps_creation_time=None, creator=None, origin=None,
-    runtime=None, distmean=None, diststd=None):
+def write_sky_map(filename, m, nest=False, moc=False, objid=None, url=None,
+    instruments=None, gps_time=None, gps_creation_time=None, creator=None,
+    origin=None, runtime=None, distmean=None, diststd=None):
     """Write a gravitational-wave sky map to a file, populating the header
     with optional metadata."""
 
@@ -228,12 +230,32 @@ def write_sky_map(filename, m, nest=False, objid=None, url=None, instruments=Non
         extra_header.append(('DISTSTD', diststd,
             'Posterior standard deviation of distance in Mpc'))
 
-    m = np.atleast_2d(m)
-
-    hp.write_map(filename, m, nest=nest, fits_IDL=True, coord='C',
-        column_names=('PROB', 'DISTMU', 'DISTSIGMA', 'DISTNORM')[:len(m)],
-        column_units=('pix-1', 'Mpc', 'Mpc', 'Mpc-2')[:len(m)],
-        extra_header=extra_header)
+    if moc:
+        m = m.copy()
+        for name, default_unit in (('PROBDENSITY', u.steradian**-1),
+                                   ('DISTMU', u.Mpc),
+                                   ('DISTSIGMA', u.Mpc),
+                                   ('DISTNORM', u.Mpc**-2)):
+            try:
+                col = m[name]
+            except KeyError:
+                continue
+            if not col.unit:
+                col.unit = default_unit
+        hdu = fits.table_to_hdu(m)
+        hdu.header.extend((
+            ('PIXTYPE', 'HEALPIX', 'HEALPIX pixelisation'),
+            ('ORDERING', 'NUNIQ', 'Pixel ordering scheme: RING, NESTED, or NUNIQ'),
+            ('COORDSYS', 'C', 'Ecliptic, Galactic or Celestial (equatorial)')))
+        hdu.header.extend(extra_header)
+        hdulist = fits.HDUList([fits.PrimaryHDU(), hdu])
+        hdulist.writeto(filename, clobber=True)
+    else:
+        m = np.atleast_2d(m)
+        hp.write_map(filename, m, nest=nest, fits_IDL=True, coord='C',
+            column_names=('PROB', 'DISTMU', 'DISTSIGMA', 'DISTNORM')[:len(m)],
+            column_units=('pix-1', 'Mpc', 'Mpc', 'Mpc-2')[:len(m)],
+            extra_header=extra_header)
 
 
 def read_sky_map(filename, nest=False, distances=False):

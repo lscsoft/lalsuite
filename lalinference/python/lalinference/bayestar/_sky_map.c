@@ -87,7 +87,7 @@ static PyArray_Descr *sky_map_create_descr(void)
 {
     PyArray_Descr *dtype = NULL;
     PyObject *dtype_dict = Py_BuildValue("{s(ssss)s(cccc)s(IIII)}",
-        "names", "uniq", "prob", "distmean", "diststd",
+        "names", "UNIQ", "PROBDENSITY", "DISTMEAN", "DISTSTD",
         "formats", NPY_ULONGLONGLTR, NPY_DOUBLELTR, NPY_DOUBLELTR, NPY_DOUBLELTR,
         "offsets",
         (unsigned int) offsetof(bayestar_pixel, uniq),

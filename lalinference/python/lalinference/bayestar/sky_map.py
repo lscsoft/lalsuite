@@ -322,12 +322,12 @@ def ligolw_sky_map(
             min_distance, max_distance, prior_distance_power, gmst, sample_rate,
             toas, snr_series, responses, locations, horizons)
         distmu, distsigma, distnorm = distance.moments_to_parameters(
-            skymap['distmean'], skymap['diststd'])
+            skymap['DISTMEAN'], skymap['DISTSTD'])
         skymap = np.rec.fromarrays(
-            [skymap['uniq'], skymap['prob'], distmu, distsigma, distnorm],
-            names='uniq,prob,distmu,distsigma,distnorm')
+            [skymap['UNIQ'], skymap['PROBDENSITY'], distmu, distsigma, distnorm],
+            names='UNIQ,PROBDENSITY,DISTMU,DISTSIGMA,DISTNORM')
         skymap = rasterize(skymap)
-        prob = [4 * np.pi / len(skymap) * skymap['prob'], skymap['distmu'], skymap['distsigma'], skymap['distnorm']]
+        prob = [4 * np.pi / len(skymap) * skymap['PROBDENSITY'], skymap['DISTMU'], skymap['DISTSIGMA'], skymap['DISTNORM']]
     elif method == "toa_phoa_snr_mcmc":
         # prob = emcee_sky_map(
         #     logl=_sky_map.log_likelihood_toa_phoa_snr,

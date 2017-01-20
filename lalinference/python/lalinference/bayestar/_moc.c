@@ -35,7 +35,7 @@ static PyObject *rasterize(PyObject *NPY_UNUSED(module), PyObject *arg)
 {
     PyArrayObject *arr = (PyArrayObject *) PyArray_FromAny(
         arg, NULL, 1, 1, NPY_ARRAY_CARRAY_RO, NULL);
-    PyObject *uniq_key = PyUnicode_FromString("uniq");
+    PyObject *uniq_key = PyUnicode_FromString("UNIQ");
     PyObject *new_fields = PyDict_New();
     PyObject *capsule = NULL;
     PyArrayObject *ret = NULL;
@@ -50,9 +50,12 @@ static PyObject *rasterize(PyObject *NPY_UNUSED(module), PyObject *arg)
         goto done;
     }
 
-    PyObject *uniq_field = PyDict_GetItemString(fields, "uniq");
+    PyObject *uniq_field = PyDict_GetItem(fields, uniq_key);
     if (!uniq_field)
+    {
+        PyErr_SetString(PyExc_ValueError, "array does not have UNIQ column");
         goto done;
+    }
 
     PyObject *uniq_dtype;
     int uniq_offset;
