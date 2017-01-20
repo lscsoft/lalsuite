@@ -172,13 +172,28 @@ static void uniq2nest_loop(
 }
 
 
+static void uniq2order_loop(
+    char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
+{
+    const npy_intp n = dimensions[0];
+
+    #pragma omp parallel for
+    for (npy_intp i = 0; i < n; i ++)
+    {
+        *(int8_t *)  &args[1][i * steps[1]] = uniq2order64(
+        *(int64_t *) &args[0][i * steps[0]]);
+    }
+}
+
+
 static const PyUFuncGenericFunction
     nest2uniq_loops[] = {nest2uniq_loop},
-    uniq2nest_loops[] = {uniq2nest_loop};
+    uniq2nest_loops[] = {uniq2nest_loop},
+    uniq2order_loops[] = {uniq2order_loop};
 
-static const char nest2uniq_types[] = {NPY_INT8, NPY_UINT64, NPY_UINT64};
-
-static const char uniq2nest_types[] = {NPY_UINT64, NPY_INT8, NPY_UINT64};
+static const char nest2uniq_types[] = {NPY_INT8, NPY_UINT64, NPY_UINT64},
+                  uniq2nest_types[] = {NPY_UINT64, NPY_INT8, NPY_UINT64},
+                  uniq2order_types[] = {NPY_UINT64, NPY_INT8};
 
 static const void *no_ufunc_data[] = {NULL};
 
@@ -220,6 +235,12 @@ PyMODINIT_FUNC PyInit__moc(void)
             uniq2nest_loops, no_ufunc_data,
             uniq2nest_types, 1, 1, 2, PyUFunc_None,
             "uniq2nest", NULL, 0));
+
+    PyModule_AddObject(
+        module, "uniq2order", PyUFunc_FromFuncAndData(
+            uniq2order_loops, no_ufunc_data,
+            uniq2order_types, 1, 1, 1, PyUFunc_None,
+            "uniq2order", NULL, 0));
 
 done:
     return module;
