@@ -109,6 +109,8 @@ int XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights
 
 int write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisTransCand );
 
+int write_transientCandidateAll_to_fp ( FILE *fp, const transientCandidate_t *thisTransCand );
+
 
 transientFstatMap_t *XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms,
                                                     transientWindowRange_t windowRange,

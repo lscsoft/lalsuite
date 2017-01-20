@@ -293,6 +293,7 @@ typedef struct {
   REAL8 BSGLthreshold;		/**< output threshold on BSGL */
 
   CHAR *outputTransientStats;	/**< output file for transient B-stat values */
+  CHAR *outputTransientStatsAll;	/**< output file for transient B-stat values */
   CHAR *transient_WindowType;	/**< name of transient window ('none', 'rect', 'exp',...) */
   REAL8 transient_t0Days;	/**< earliest GPS start-time for transient window search, as offset in days from dataStartGPS */
   REAL8 transient_t0DaysBand;	/**< Range of GPS start-times to search in transient search, in days */
@@ -360,7 +361,7 @@ BOOLEAN XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 s
  */
 int main(int argc,char *argv[])
 {
-  FILE *fpFstat = NULL, *fpTransientStats = NULL;
+  FILE *fpFstat = NULL, *fpTransientStats = NULL, *fpTransientStatsAll = NULL;
   REAL8 numTemplates, templateCounter;
   time_t clock0;
   PulsarDopplerParams XLAL_INIT_DECL(dopplerpos);
@@ -444,6 +445,13 @@ int main(int argc,char *argv[])
       XLAL_CHECK_MAIN ( (fpTransientStats = fopen (uvar.outputTransientStats, "wb")) != NULL, XLAL_ESYS, "\nError opening file '%s' for writing..\n\n", uvar.outputTransientStats );
       fprintf (fpTransientStats, "%s", GV.logstring );			/* write search log comment */
       XLAL_CHECK_MAIN ( write_transientCandidate_to_fp ( fpTransientStats, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );	/* write header-line comment */
+    }
+
+  if ( uvar.outputTransientStatsAll )
+    {
+      XLAL_CHECK_MAIN ( (fpTransientStatsAll = fopen (uvar.outputTransientStatsAll, "wb")) != NULL, XLAL_ESYS, "\nError opening file '%s' for writing..\n\n", uvar.outputTransientStatsAll );
+      fprintf (fpTransientStatsAll, "%s", GV.logstring );			/* write search log comment */
+      XLAL_CHECK_MAIN ( write_transientCandidateAll_to_fp ( fpTransientStatsAll, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );	/* write header-line comment */
     }
 
   /* start Fstatistic histogram with a single empty bin */
@@ -688,7 +696,7 @@ int main(int argc,char *argv[])
 	} /* if outputFstatAtoms */
 
       /* ----- compute transient-CW statistics if their output was requested  ----- */
-      if ( fpTransientStats )
+      if ( fpTransientStats || fpTransientStatsAll )
         {
           transientCandidate_t XLAL_INIT_DECL(transientCand);
 
@@ -712,11 +720,14 @@ int main(int argc,char *argv[])
           XLAL_CHECK_MAIN ( (pdf_t0 = XLALComputeTransientPosterior_t0 ( GV.transientWindowRange, transientCand.FstatMap )) != NULL, XLAL_EFUNC );
           XLAL_CHECK_MAIN ( (pdf_tau = XLALComputeTransientPosterior_tau ( GV.transientWindowRange, transientCand.FstatMap )) != NULL, XLAL_EFUNC );
 
-          /* get maximum-posterior estimate (MP) from the modes of these pdfs */
-          transientCand.t0_MP = XLALFindModeOfPDF1D ( pdf_t0 );
-          XLAL_CHECK_MAIN ( xlalErrno == 0, XLAL_EFUNC, "mode-estimation failed for pdf_t0. xlalErrno = %d\n", xlalErrno );
-          transientCand.tau_MP =  XLALFindModeOfPDF1D ( pdf_tau );
-          XLAL_CHECK_MAIN ( xlalErrno == 0, XLAL_EFUNC, "mode-estimation failed for pdf_tau. xlalErrno = %d\n", xlalErrno );
+          if ( fpTransientStats )
+            {
+              /* get maximum-posterior estimate (MP) from the modes of these pdfs */
+              transientCand.t0_MP = XLALFindModeOfPDF1D ( pdf_t0 );
+              XLAL_CHECK_MAIN ( xlalErrno == 0, XLAL_EFUNC, "mode-estimation failed for pdf_t0. xlalErrno = %d\n", xlalErrno );
+              transientCand.tau_MP =  XLALFindModeOfPDF1D ( pdf_tau );
+              XLAL_CHECK_MAIN ( xlalErrno == 0, XLAL_EFUNC, "mode-estimation failed for pdf_tau. xlalErrno = %d\n", xlalErrno );
+            }
 
           /* record timing-relevant transient search params */
           timing.tauMin  = GV.transientWindowRange.tau;
@@ -732,15 +743,24 @@ int main(int argc,char *argv[])
           if ( uvar.SignalOnly )
             transientCand.FstatMap->maxF += 2;
 
-          /* output everything into stats-file (one line per candidate) */
-          XLAL_CHECK_MAIN ( write_transientCandidate_to_fp ( fpTransientStats, &transientCand ) == XLAL_SUCCESS, XLAL_EFUNC );
+          if ( fpTransientStats )
+            {
+              /* output everything into stats-file (one line per candidate) */
+              XLAL_CHECK_MAIN ( write_transientCandidate_to_fp ( fpTransientStats, &transientCand ) == XLAL_SUCCESS, XLAL_EFUNC );
+            }
+
+          if ( fpTransientStatsAll )
+            {
+              /* output everything into stats-file (one block for the whole (t0,tau) grid per candidate) */
+              XLAL_CHECK_MAIN ( write_transientCandidateAll_to_fp ( fpTransientStatsAll, &transientCand ) == XLAL_SUCCESS, XLAL_EFUNC );
+            }
 
           /* free dynamically allocated F-stat map */
           XLALDestroyTransientFstatMap ( transientCand.FstatMap );
           XLALDestroyPDF1D ( pdf_t0 );
           XLALDestroyPDF1D ( pdf_tau );
 
-        } /* if fpTransientStats */
+        } /* if ( fpTransientStats || fpTransientStatsAll ) */
 
       } // for ( iFreq < numFreqBins_FBand )
 
@@ -812,6 +832,7 @@ int main(int argc,char *argv[])
       fpFstat = NULL;
     }
   if ( fpTransientStats ) fclose (fpTransientStats);
+  if ( fpTransientStatsAll ) fclose (fpTransientStatsAll);
 
   /* ----- estimate amplitude-parameters for the loudest canidate and output into separate file ----- */
   if ( uvar.outputLoudest )
@@ -1052,6 +1073,7 @@ initUserVars ( UserInput_t *uvar )
   // --------------------------------------------
 
   XLALRegisterUvarMember(outputTransientStats,STRING, 0,  OPTIONAL, "TransientCW: Output filename for transient-CW statistics.");
+  XLALRegisterUvarMember(outputTransientStatsAll,STRING, 0,  DEVELOPER, "TransientCW: Output filename for transient-CW statistics -- including the whole (t0,tau) grid for each candidate -- WARNING: CAN BE HUGE!.");
   XLALRegisterUvarMember( transient_WindowType,STRING, 0,OPTIONAL,  "TransientCW: Type of transient signal window to use. ('none', 'rect', 'exp').");
   XLALRegisterUvarMember( transient_t0Days, REAL8, 0,  OPTIONAL,    "TransientCW: Earliest GPS start-time for transient window search, as offset in days from dataStartGPS");
   XLALRegisterUvarMember( transient_t0DaysBand,REAL8, 0,OPTIONAL,   "TransientCW: Range of GPS start-times to search in transient search, in days");
@@ -1481,7 +1503,7 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   }
 
   /* get atoms back from Fstat-computing, either if atoms-output or transient-Bstat output was requested */
-  if ( ( uvar->outputFstatAtoms != NULL ) || ( uvar->outputTransientStats != NULL ) ) {
+  if ( ( uvar->outputFstatAtoms != NULL ) || ( uvar->outputTransientStats != NULL ) || ( uvar->outputTransientStatsAll != NULL ) ) {
     cfg->Fstat_what |= FSTATQ_ATOMS_PER_DET;
   }
 

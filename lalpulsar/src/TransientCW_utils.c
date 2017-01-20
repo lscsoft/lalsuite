@@ -999,7 +999,60 @@ write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand 
 
   return XLAL_SUCCESS;
 
-} /* write_TransCandidate_to_fp() */
+} /* write_transientCandidate_to_fp() */
+
+
+/**
+ * Write full set of t0 and tau grid points for given transient CW candidate into output file.
+ *
+ * NOTE: if input thisCand == NULL, we write a header comment-line explaining the fields
+ *
+ */
+int
+write_transientCandidateAll_to_fp ( FILE *fp, const transientCandidate_t *thisCand )
+{
+  /* sanity checks */
+  if ( !fp ) {
+    XLALPrintError ( "%s: invalid NULL filepointer input.\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
+  }
+
+
+  if ( thisCand == NULL )	/* write header-line comment */
+    {
+      fprintf (fp, "%%%% Freq[Hz]            Alpha[rad]          Delta[rad]          fkdot[1]  fkdot[2]  fkdot[3]  t0[s]      tau[s]      twoF\n");
+    }
+  else
+    {
+      if ( !thisCand->FstatMap ) {
+        XLALPrintError ("%s: incomplete: transientCand->FstatMap == NULL!\n", __func__ );
+        XLAL_ERROR ( XLAL_EINVAL );
+      }
+      UINT4 t0 = thisCand->windowRange.t0;
+
+      UINT4 N_t0Range  = (UINT4) floor ( thisCand->windowRange.t0Band / thisCand->windowRange.dt0 ) + 1;
+      UINT4 N_tauRange = (UINT4) floor ( thisCand->windowRange.tauBand / thisCand->windowRange.dtau ) + 1;
+      LogPrintf ( LOG_DETAIL, "N_t0Range=%d, N_tauRange=%d\n", N_t0Range, N_tauRange);
+      /* ----- OUTER loop over start-times [t0,t0+t0Band] ---------- */
+      for ( UINT4 m = 0; m < N_t0Range; m ++ ) /* m enumerates 'binned' t0 start-time indices  */
+        {
+         UINT4 this_t0 = t0 + m * thisCand->windowRange.dt0;
+          /* ----- INNER loop over timescale-parameter tau ---------- */
+          for ( UINT4 n = 0; n < N_tauRange; n ++ )
+            {
+              UINT4 this_tau = thisCand->windowRange.tau + n * thisCand->windowRange.dtau;
+              fprintf (fp, "  %- 18.16f %- 19.16f %- 19.16f %- 9.6g %- 9.5g %- 9.5g %10d %10d %- 11.8g\n",
+                       thisCand->doppler.fkdot[0], thisCand->doppler.Alpha, thisCand->doppler.Delta,
+                       thisCand->doppler.fkdot[1], thisCand->doppler.fkdot[2], thisCand->doppler.fkdot[3],
+                       this_t0, this_tau, 2.0 * gsl_matrix_get ( thisCand->FstatMap->F_mn, m, n )
+                      );
+            }
+        }
+    }
+
+  return XLAL_SUCCESS;
+
+} /* write_transientCandidateAll_to_fp() */
 
 
 /**
