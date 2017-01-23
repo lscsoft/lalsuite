@@ -423,10 +423,13 @@ int main(int argc,char *argv[])
       strcat ( column_headings_string, colum_headings_string_base );
       if ( uvar.computeBSGL )
         {
+          column_headings_string_length += 10; /* for " log10BSGL"*/
+          strcat ( column_headings_string, " log10BSGL" );
+        }
+      if ( uvar.outputSingleFstats || uvar.computeBSGL )
+        {
           const UINT4 numDetectors = GV.detectorIDs->length;
           column_headings_string_length += numDetectors*6; /* 6 per detector for " 2F_XY" */
-          column_headings_string_length += 10; /* 3 for " log10BSGL"*/
-          strcat ( column_headings_string, " log10BSGL" );
           for ( UINT4 X = 0; X < numDetectors ; X ++ )
             {
               char headingX[7];
