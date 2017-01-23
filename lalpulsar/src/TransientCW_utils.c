@@ -962,7 +962,7 @@ XLALmergeMultiFstatAtomsBinned ( const MultiFstatAtomVector *multiAtoms, UINT4 d
  *
  */
 int
-write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand )
+write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand, const char timeUnit )
 {
   /* sanity checks */
   if ( !fp ) {
@@ -973,7 +973,7 @@ write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand 
 
   if ( thisCand == NULL )	/* write header-line comment */
     {
-      fprintf (fp, "%%%% Freq[Hz]            Alpha[rad]          Delta[rad]          fkdot[1]  fkdot[2]  fkdot[3]    t0_ML[d]      tau_ML[d]    maxTwoF        logBstat      t0_MP[d]      tau_MP[d]\n");
+      fprintf (fp, "%%%% Freq[Hz]            Alpha[rad]          Delta[rad]          fkdot[1]  fkdot[2]  fkdot[3]  t0_ML[%c]    tau_ML[%c]  maxTwoF     logBstat   t0_MP[%c]        tau_MP[%c]\n", timeUnit, timeUnit, timeUnit, timeUnit);
     }
   else
     {
@@ -981,20 +981,38 @@ write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand 
         XLALPrintError ("%s: incomplete: transientCand->FstatMap == NULL!\n", __func__ );
         XLAL_ERROR ( XLAL_EINVAL );
       }
-      UINT4 t0 = thisCand->windowRange.t0;
-      REAL8 t0_d_ML = 1.0 * (thisCand->FstatMap->t0_ML - t0) / DAY24;
-      REAL8 tau_d_ML= 1.0 *  thisCand->FstatMap->tau_ML / DAY24;
-      REAL8 maxTwoF = 2.0 *  thisCand->FstatMap->maxF;
-      REAL8 t0_d_MP = 1.0 * ( thisCand->t0_MP - t0 ) / DAY24;
-      REAL8 tau_d_MP= 1.0 * thisCand->tau_MP / DAY24;
 
-      fprintf (fp, "  %- 18.16f %- 19.16f %- 19.16f %- 9.6g %- 9.5g %- 9.5g    %-8.5f      %-8.5f    %- 11.8g    %- 11.8g    %-8.5f      %8.5f\n",
+      REAL8 maxTwoF = 2.0 *  thisCand->FstatMap->maxF;
+      fprintf (fp, "  %- 18.16f %- 19.16f %- 19.16f %- 9.6g %- 9.5g %- 9.5g",
                thisCand->doppler.fkdot[0], thisCand->doppler.Alpha, thisCand->doppler.Delta,
-               thisCand->doppler.fkdot[1], thisCand->doppler.fkdot[2], thisCand->doppler.fkdot[3],
-               t0_d_ML, tau_d_ML, maxTwoF,
-               thisCand->logBstat,
-               t0_d_MP, tau_d_MP
-               );
+               thisCand->doppler.fkdot[1], thisCand->doppler.fkdot[2], thisCand->doppler.fkdot[3]
+              );
+      if ( timeUnit == 's' )
+        {
+           fprintf (fp, " %10d %10d %- 11.8g %- 11.8g %15.4f %15.4f\n",
+                    thisCand->FstatMap->t0_ML, thisCand->FstatMap->tau_ML,
+                    maxTwoF, thisCand->logBstat,
+                    thisCand->t0_MP, thisCand->tau_MP
+                   );
+        }
+      else if ( timeUnit == 'd' )
+        {
+           UINT4 t0 = thisCand->windowRange.t0;
+           REAL8 t0_d_ML = 1.0 * (thisCand->FstatMap->t0_ML - t0) / DAY24;
+           REAL8 tau_d_ML= 1.0 *  thisCand->FstatMap->tau_ML / DAY24;
+           REAL8 t0_d_MP = 1.0 * ( thisCand->t0_MP - t0 ) / DAY24;
+           REAL8 tau_d_MP= 1.0 * thisCand->tau_MP / DAY24;
+           fprintf (fp, "    %-8.5f      %-8.5f    %- 11.8g    %- 11.8g    %-8.5f      %8.5f\n",
+                    t0_d_ML, tau_d_ML,
+                    maxTwoF, thisCand->logBstat,
+                    t0_d_MP, tau_d_MP
+           );
+        }
+      else
+        {
+           XLALPrintError ( "%s: Unknown time unit '%c'!\n", __func__, timeUnit );
+           XLAL_ERROR ( XLAL_EINVAL );
+        }
     }
 
   return XLAL_SUCCESS;

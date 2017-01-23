@@ -181,6 +181,7 @@ typedef struct {
   FstatMethodType FstatMethod;
   UINT4 numFreqBins_FBand;
   REAL8 dFreq;
+  CHAR transientOutputTimeUnit; /**< output format for transient times t0,tau: 'd' for days (deprecated) or 's' for seconds */
 } ConfigVariables;
 
 
@@ -449,7 +450,7 @@ int main(int argc,char *argv[])
     {
       XLAL_CHECK_MAIN ( (fpTransientStats = fopen (uvar.outputTransientStats, "wb")) != NULL, XLAL_ESYS, "\nError opening file '%s' for writing..\n\n", uvar.outputTransientStats );
       fprintf (fpTransientStats, "%s", GV.logstring );			/* write search log comment */
-      XLAL_CHECK_MAIN ( write_transientCandidate_to_fp ( fpTransientStats, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );	/* write header-line comment */
+      XLAL_CHECK_MAIN ( write_transientCandidate_to_fp ( fpTransientStats, NULL, GV.transientOutputTimeUnit ) == XLAL_SUCCESS, XLAL_EFUNC );	/* write header-line comment */
     }
 
   if ( uvar.outputTransientStatsAll )
@@ -751,7 +752,7 @@ int main(int argc,char *argv[])
           if ( fpTransientStats )
             {
               /* output everything into stats-file (one line per candidate) */
-              XLAL_CHECK_MAIN ( write_transientCandidate_to_fp ( fpTransientStats, &transientCand ) == XLAL_SUCCESS, XLAL_EFUNC );
+              XLAL_CHECK_MAIN ( write_transientCandidate_to_fp ( fpTransientStats, &transientCand, GV.transientOutputTimeUnit ) == XLAL_SUCCESS, XLAL_EFUNC );
             }
 
           if ( fpTransientStatsAll )
@@ -1488,6 +1489,13 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
          XLALUserVarWasSet ( &uvar->transient_tau ) || XLALUserVarWasSet ( &uvar->transient_tauBand ) || XLALUserVarWasSet ( &uvar->transient_dtau ) ) {
       XLAL_ERROR ( XLAL_EINVAL, "ERROR: transientWindow->type == NONE, but window-parameters were set! Use a different window-type!\n" );
     }
+
+  if ( XLALUserVarWasSet ( &uvar->transient_t0Days ) || XLALUserVarWasSet ( &uvar->transient_t0DaysBand ) || XLALUserVarWasSet ( &uvar->transient_tauDays ) || XLALUserVarWasSet ( &uvar->transient_tauDaysBand ) ) {
+      cfg->transientOutputTimeUnit = 'd';
+  }
+  else {
+      cfg->transientOutputTimeUnit = 's';
+  }
 
   if (   uvar->transient_t0DaysBand < 0 || uvar->transient_tauDaysBand < 0 ) {
     XLAL_ERROR (XLAL_EINVAL, "Only positive t0/tau bands allowed (%f, %f)\n", uvar->transient_t0DaysBand, uvar->transient_tauDaysBand );
