@@ -1,8 +1,8 @@
 # -*- mode: autoconf; -*-
 # lalsuite_swig.m4 - SWIG configuration
-# Author: Karl Wette, 2011--2014
+# Author: Karl Wette, 2011--2017
 #
-# serial 88
+# serial 89
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -210,7 +210,7 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
   LALSUITE_USE_SWIG_LANGUAGE([Octave],[C++],[cpp],[
 
     # check for Octave
-    AC_PATH_PROG(OCTAVE,[octave],[],[])
+    AC_PATH_PROG(OCTAVE,[octave-cli octave],[],[])
     AS_IF([test "x${OCTAVE}" = x],[
       AC_MSG_ERROR([could not find octave in PATH])
     ])
@@ -256,6 +256,12 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[4.0.0],[
       LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[3.0.7],[
         swig_min_version=3.0.7
+        swig_min_version_info="for Octave version ${octave_version}"
+      ])
+    ])
+    LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[4.2.0],[
+      LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[3.0.12],[
+        swig_min_version=3.0.12
         swig_min_version_info="for Octave version ${octave_version}"
       ])
     ])
@@ -334,9 +340,11 @@ int main() { std::string s = "a"; return 0; }
     # determine Octave compiler flags
     AC_SUBST([SWIG_OCTAVE_CXXFLAGS],[])
     swig_octave_cxxflags=
-    for arg in CXXPICFLAG ALL_CXXFLAGS; do
+    for arg in CXX CXXPICFLAG ALL_CXXFLAGS; do
       for flag in `${mkoctfile} -p ${arg} 2>/dev/null`; do
-        swig_octave_cxxflags="${swig_octave_cxxflags} ${flag}"
+        AS_CASE([${flag}],
+          [-*],[swig_octave_cxxflags="${swig_octave_cxxflags} ${flag}"]
+        )
       done
     done
     LALSUITE_CHECK_COMPILE_FLAGS([
@@ -367,6 +375,7 @@ int main() { std::string s = "a"; return 0; }
     # check for Octave headers
     LALSUITE_PUSH_UVARS
     CPPFLAGS="${SWIG_OCTAVE_CPPFLAGS_IOCTAVE} ${SWIG_OCTAVE_CPPFLAGS}"
+    CXXFLAGS="${SWIG_OCTAVE_CXXFLAGS}"
     AC_CHECK_HEADER([octave/oct.h],[],[
       AC_MSG_ERROR([could not find the header "octave/oct.h"])
     ],[
