@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 91
+# serial 92
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -340,9 +340,14 @@ int main() { std::string s = "a"; return 0; }
     done
     LALSUITE_CHECK_COMPILE_FLAGS([
       ${swig_octave_cxxflags}
-      -Wno-uninitialized -Wno-unused-variable -Wno-unused-but-set-variable
-      -Wno-format-extra-args -Wno-tautological-compare -fno-strict-aliasing
-      -O0 -Wp[,]-U_FORTIFY_SOURCE
+      -Wno-uninitialized
+      -Wno-unused-variable
+      -Wno-unused-but-set-variable
+      -Wno-format-extra-args
+      -Wno-tautological-compare
+      -fno-strict-aliasing
+      -O0
+      -Wp[,]-U_FORTIFY_SOURCE
       ],[SWIG_OCTAVE_CXXFLAGS="${SWIG_OCTAVE_CXXFLAGS} ${flag}"]
     )
 
@@ -450,8 +455,12 @@ EOD`]
     done
     LALSUITE_CHECK_COMPILE_FLAGS([
       ${swig_python_cflags}
-      -Wno-uninitialized -Wno-unused-variable -Wno-unused-but-set-variable
-      -Wno-format-extra-args -Wno-tautological-compare -fno-strict-aliasing
+      -Wno-uninitialized
+      -Wno-unused-variable
+      -Wno-unused-but-set-variable
+      -Wno-format-extra-args
+      -Wno-tautological-compare
+      -fno-strict-aliasing
       ],[SWIG_PYTHON_CFLAGS="${SWIG_PYTHON_CFLAGS} ${flag}"]
     )
 
