@@ -1437,7 +1437,7 @@ static int SEOBNRv2ROMDoubleSpinCore(
 }
 
 /**
- * @addtogroup LALSimIMRSEOBNRv2ROMDoubleSpin_c
+ * @addtogroup LALSimIMRSEOBNRROM_c
  *
  * \author Michael Puerrer
  *

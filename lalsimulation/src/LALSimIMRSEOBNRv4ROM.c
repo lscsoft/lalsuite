@@ -1068,7 +1068,7 @@ static int SEOBNRv4ROMCore(
 }
 
 /**
- * @addtogroup LALSimIMRSEOBNRv4ROM_c
+ * @addtogroup LALSimIMRSEOBNRROM_c
  *
  * \author Michael Puerrer
  *
