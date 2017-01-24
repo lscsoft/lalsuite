@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 92
+# serial 93
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -345,6 +345,7 @@ int main() { std::string s = "a"; return 0; }
       -Wno-unused-but-set-variable
       -Wno-format-extra-args
       -Wno-tautological-compare
+      -Wno-deprecated-declarations
       -fno-strict-aliasing
       -O0
       -Wp[,]-U_FORTIFY_SOURCE
