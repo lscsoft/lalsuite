@@ -519,7 +519,7 @@ int XLALFrStreamNext(LALFrStream * stream)
 /**
  * @brief Seeks a LALFrStream stream to data at a given time
  * @details
- * The position of a LALFrStream is set so that the net read will
+ * The position of a LALFrStream is set so that the next read will
  * be at the specified time.  #LAL_FR_STREAM_END and #LAL_FR_STREAM_GAP
  * bits are turned off in the #LALFrStreamState state.  If the time is before
  * the beginning of the stream, the stream position is set to the beginning of
@@ -656,7 +656,7 @@ int XLALFrStreamSeek(LALFrStream * stream, const LIGOTimeGPS * epoch)
 /**
  * @brief Seeks a LALFrStream stream by a time offset
  * @details
- * The position of a LALFrStream is set so that the net read will
+ * The position of a LALFrStream is set so that the next read will
  * be at the specified time offset.  The offset @p dt is a number of
  * seconds relative to the @p whence postion, which can be
  * @p SEEK_SET to seek relative to the beginning of the stream,
