@@ -1832,7 +1832,7 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
     if tryatnf: # try getting ATNF info now
       pinfo = get_atnf_info(pname)
       if pinfo is not None:
-        dist, p1_I, assoc = pinfo # unpack values
+        dist, p1_I, assoc, atnfurlref = pinfo # unpack values
 
     # if distance is in the par file use that instead
     if par['DIST']:
