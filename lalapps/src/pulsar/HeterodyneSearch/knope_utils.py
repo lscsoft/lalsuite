@@ -603,7 +603,7 @@ class knopeDAG(pipeline.CondorDAG):
       # NOTE: this is mainly required because on the ARCCA cluster the nodes cannot access the internet
       pinfo = pppu.get_atnf_info(pname)
       if pinfo is not None:
-        dist, p1_I, assoc = pinfo # unpack values
+        dist, p1_I, assoc, atnfurl = pinfo # unpack values
         psrinfo = {}
         psrinfo['Pulsar data'] = {}
         psrinfo['Pulsar data']['DIST'] = dist
@@ -1318,6 +1318,7 @@ class knopeDAG(pipeline.CondorDAG):
             fp = open(self.pe_previous_posteriors_file, 'r')
             self.pe_previous_posterior_files = json.load(fp)
             fp.close()
+            posteriorfile = self.pe_previous_posterior_files[pname]
           except:
             print("Error... could not open file '%s' listing previous posterior files." % self.pe_previous_posteriors_file, file=sys.stderr)
             self.error_code = -1
@@ -1363,7 +1364,7 @@ class knopeDAG(pipeline.CondorDAG):
       # set the required amplitude priors or parameters to estimate from previous posterior samples (and limits)
       requls = {} # dictionary to contain the required upper limits
       gmmpars = OrderedDict()
-      gmmpars['COSIOTA'] = [-1., 1.] # limits on COSIOTA prior (required in all cases)
+
       if self.pe_model_type == 'waveform':
         if 2. in self.freq_factors:
           requls['C22'] = None
@@ -1381,6 +1382,7 @@ class knopeDAG(pipeline.CondorDAG):
             requls['I31'] = None
             gmmpars['I21'] = [0., np.inf]
             gmmpars['I31'] = [0., np.inf]
+      gmmpars['COSIOTA'] = [-1., 1.] # limits on COSIOTA prior (required in all cases)
 
       if len(requls) == 0:
         print("Error... unknown frequency factors or model type in configuration file.", file=sys.stderr)
@@ -1532,7 +1534,7 @@ class knopeDAG(pipeline.CondorDAG):
           return outfile
         # output GMM prior
         parssep = ':'.join(gmmpars.keys())
-        fp.write("%s\t" % parssep)
+        fp.write("%s\tgmm\t%d\t" % (parssep, len(means)))
         # write out means
         meanstr = ','.join(['['+','.join([str(v) for v in vs.tolist()])+']' for vs in means])
         fp.write("[%s]\t" % meanstr)
@@ -1540,7 +1542,7 @@ class knopeDAG(pipeline.CondorDAG):
         covstr = ','.join(['['+','.join(['['+','.join([str(ca) for ca in c])+']' for c in cs.tolist()])+']' for cs in covs])
         fp.write("[%s]\t" % covstr)
         # write out weights
-        fp.write("[%s]\t" % ','.join(weights))
+        fp.write("[%s]\t" % ','.join([str(w) for w in weights]))
         # write out limits for each parameter in turn
         for gp in gmmpars:
           fp.write("[%s]\t" % ','.join([str(lim) for lim in gmmpars[gp]]))
@@ -1720,8 +1722,10 @@ class knopeDAG(pipeline.CondorDAG):
     scalesmat = np.identity(npars)*parscales
     scaledsamples = allsamplesnp/parscales
 
-    # run DPGMM
-    dpgmm = mixture.BayesianGaussianMixture(n_components=ncomps, covariance_type='full').fit(scaledsamples)
+    # run DPGMM (tolerance and max_iter are increased over the default values
+    # to aid convergence, although "unconverged" initialisations are generally
+    # still fine to use)
+    dpgmm = mixture.BayesianGaussianMixture(n_components=ncomps, covariance_type='full', tol=5e-2, max_iter=500).fit(scaledsamples)
 
     # predict the GMM components in which the samples live
     parpred = dpgmm.predict(scaledsamples)
@@ -2732,7 +2736,7 @@ class knopeDAG(pipeline.CondorDAG):
 
     xmlToTxtCall = ' '.join([ligolwprint,
                              "--table segment --column start_time --column end_time --delimiter ' '",
-                             ' > ', outfile])
+                             '>', outfile])
 
     segCall = ' '.join([segFindCall, '|', xmlToTxtCall])
 
