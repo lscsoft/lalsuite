@@ -153,7 +153,6 @@ static void nest2uniq_loop(
 {
     const npy_intp n = dimensions[0];
 
-    #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
     {
         *(int64_t *) &args[2][i * steps[2]] = nest2uniq64(
@@ -168,7 +167,6 @@ static void uniq2nest_loop(
 {
     const npy_intp n = dimensions[0];
 
-    #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
     {
         *(int64_t *) &args[2][i * steps[2]] = *(int64_t *) &args[0][i * steps[0]];
@@ -183,7 +181,6 @@ static void uniq2order_loop(
 {
     const npy_intp n = dimensions[0];
 
-    #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
     {
         *(int8_t *)  &args[1][i * steps[1]] = uniq2order64(
@@ -192,14 +189,29 @@ static void uniq2order_loop(
 }
 
 
+static void uniq2pixarea_loop(
+    char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
+{
+    const npy_intp n = dimensions[0];
+
+    for (npy_intp i = 0; i < n; i ++)
+    {
+        *(double *)  &args[1][i * steps[1]] = uniq2pixarea64(
+        *(int64_t *) &args[0][i * steps[0]]);
+    }
+}
+
+
 static const PyUFuncGenericFunction
     nest2uniq_loops[] = {nest2uniq_loop},
     uniq2nest_loops[] = {uniq2nest_loop},
-    uniq2order_loops[] = {uniq2order_loop};
+    uniq2order_loops[] = {uniq2order_loop},
+    uniq2pixarea_loops[] = {uniq2pixarea_loop};
 
 static const char nest2uniq_types[] = {NPY_INT8, NPY_UINT64, NPY_UINT64},
                   uniq2nest_types[] = {NPY_UINT64, NPY_INT8, NPY_UINT64},
-                  uniq2order_types[] = {NPY_UINT64, NPY_INT8};
+                  uniq2order_types[] = {NPY_UINT64, NPY_INT8},
+                  uniq2pixarea_types[] = {NPY_UINT64, NPY_DOUBLE};
 
 static const void *no_ufunc_data[] = {NULL};
 
@@ -249,6 +261,12 @@ PyMODINIT_FUNC PyInit__moc(void)
             uniq2order_loops, no_ufunc_data,
             uniq2order_types, 1, 1, 1, PyUFunc_None,
             "uniq2order", NULL, 0));
+
+    PyModule_AddObject(
+        module, "uniq2pixarea", PyUFunc_FromFuncAndData(
+            uniq2pixarea_loops, no_ufunc_data,
+            uniq2pixarea_types, 1, 1, 1, PyUFunc_None,
+            "uniq2pixarea", NULL, 0));
 
 done:
     return module;

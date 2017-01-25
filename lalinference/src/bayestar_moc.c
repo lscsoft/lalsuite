@@ -19,6 +19,8 @@
 
 
 #include "bayestar_moc.h"
+#include <math.h>
+#include <gsl/gsl_math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <chealpix.h>
@@ -48,6 +50,12 @@ int8_t uniq2order64(uint64_t n)
         /* noop */;
 #endif
     return (order >> 1) - 1;
+}
+
+
+double uniq2pixarea64(uint64_t n)
+{
+    return ldexp(M_PI / 3, -2 * uniq2order64(n));
 }
 
 

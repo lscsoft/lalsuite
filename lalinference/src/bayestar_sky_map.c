@@ -907,7 +907,7 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
     double norm = 0;
     for (ssize_t i = (ssize_t)len - 1; i >= 0; i --)
     {
-        const double dA = ldexp(M_PI / 3, -2 * uniq2order64(pixels[i].uniq));
+        const double dA = uniq2pixarea64(pixels[i].uniq);
         const double dP = gsl_sf_exp_mult(pixels[i].value[0], dA);
         if (dP <= 0)
             break; /* We have reached underflow. */

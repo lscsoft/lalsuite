@@ -73,8 +73,7 @@ import os
 import shutil
 import sys
 import tempfile
-from lalinference.bayestar import distance
-from lalinference.bayestar.sky_map import gracedb_sky_map
+from lalinference.bayestar.sky_map import gracedb_sky_map, rasterize
 from lalinference.io import fits
 import ligo.gracedb.logging
 import ligo.gracedb.rest
@@ -117,26 +116,20 @@ for graceid in graceids:
 
         # perform sky localization
         log.info("starting sky localization")
-        sky_map, epoch, elapsed_time, instruments = gracedb_sky_map(
+        sky_map = rasterize(gracedb_sky_map(
             coinc_file, psd_file, opts.waveform, opts.f_low,
             opts.min_distance, opts.max_distance, opts.prior_distance_power,
             nside=opts.nside, f_high_truncate=opts.f_high_truncate,
             method=opts.method, chain_dump=chain_dump,
-            enable_snr_series=opts.enable_snr_series)
-        prob, distmu, distsigma, _ = sky_map
-        distmean, diststd = distance.parameters_to_marginal_moments(
-            prob, distmu, distsigma)
+            enable_snr_series=opts.enable_snr_series))
+        sky_map.meta['objid'] = str(graceid)
+        sky_map.meta['url'] = 'https://gracedb.ligo.org/events/{0}'.format(graceid)
         log.info("sky localization complete")
 
         # upload FITS file
         with command.TemporaryDirectory() as fitsdir:
             fitspath = os.path.join(fitsdir, opts.output)
-            fits.write_sky_map(fitspath, sky_map, gps_time=float(epoch),
-                creator=parser.prog, objid=str(graceid),
-                url='https://gracedb.ligo.org/events/{0}'.format(graceid),
-                runtime=elapsed_time, instruments=instruments,
-                distmean=distmean, diststd=diststd,
-                origin='LIGO/Virgo', nest=True)
+            fits.write_sky_map(fitspath, sky_map, nest=True)
             log.debug('wrote FITS file: %s', opts.output)
             if opts.dry_run:
                 command.rename(fitspath, os.path.join('.', opts.output))

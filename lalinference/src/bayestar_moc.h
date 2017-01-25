@@ -35,6 +35,8 @@ uint64_t nest2uniq64(uint8_t order, uint64_t nest);
 
 int8_t uniq2order64(uint64_t n);
 
+double uniq2pixarea64(uint64_t n);
+
 /* Convert a NUNIQ pixel index to NESTED ordering. */
 int8_t uniq2nest64(uint64_t *n);
 
