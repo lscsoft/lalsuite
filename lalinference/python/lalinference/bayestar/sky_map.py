@@ -34,7 +34,7 @@ from . import filter
 from . import postprocess
 from . import timing
 try:
-    from . import _moc
+    from ._moc import rasterize
 except ImportError:
     raise ImportError(
         'Could not import the lalinference.bayestar._moc Python C '
