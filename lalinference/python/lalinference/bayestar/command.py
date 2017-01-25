@@ -15,6 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
+from __future__ import print_function
 """
 Functions that support the command line interface.
 """
@@ -349,13 +350,17 @@ def register_to_xmldoc(xmldoc, parser, opts, **kwargs):
         for key, value in opts.__dict__.items()})
 
 
-def iterlines(file):
+def iterlines(file, start_message='Waiting for input on stdin. Type control-D followed by a newline to terminate.', stop_message='Reached end of file. Exiting.'):
     """Safely iterate over non-emtpy lines in a file. Works around buffering
     issues with `for line in sys.stdin`. Also works around early closing of
     fifos (named pipes)."""
     fd = file.fileno()
-    # Determine if the file is a FIFO (named pipe).
+    # Determine if the file is a FIFO (named pipe) or a TTY (terminal).
     is_fifo = stat.S_ISFIFO(os.fstat(fd).st_mode)
+    is_tty = os.isatty(fd)
+
+    if is_tty:
+        print(start_message, file=sys.stderr)
 
     while True:
         # Wait until some data is available for reading.
@@ -379,3 +384,6 @@ def iterlines(file):
         # Emit the line if it is not empty.
         if line:
             yield line
+
+    if is_tty:
+        print(stop_message, file=sys.stderr)
