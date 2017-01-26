@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Evan Ochsner, R. O'Shaughnessy
+# Copyright (C) 2012, 2016  Evan Ochsner, R. O'Shaughnessy, Chris Pankow
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -90,12 +90,26 @@ class ChooseWaveformParams:
         self.theta = theta     # DEC.  DEC =0 on the equator; the south pole has DEC = - pi/2
         self.phi = phi         # RA.   
         self.psi = psi
+        # FIXME: make into property
+        self.longAscNodes = self.psi
+        # FIXME: Allow to be a value at some point
+        self.eccentricity = 0.0
+        self.meanPerAno = 0.0
         self.tref = tref
         self.radec = radec
         self.detector = "H1"
         self.deltaF=deltaF
         self.fmax=fmax
         self.taper = taper
+
+    _LAL_DICT_PARAMS = {"Lambda1": "lambda1", "Lambda2": "lambda2", "ampO": "ampO", "phaseO": "phaseO"}
+    _LAL_DICT_PTYPE = {"Lambda1": lal.DictInsertREAL8Value, "Lambda2": lal.DictInsertREAL8Value, "ampO": lal.DictInsertINT4Value, "phaseO": lal.DictInsertINT4Value}
+    def to_lal_dict(self):
+        extra_params = lal.CreateDict()
+        for k, p in ChooseWaveformParams._LAL_DICT_PARAMS.iteritems():
+            typfunc = ChooseWaveformParams._LAL_DICT_PTYPE[k]
+            typfunc(extra_params, k, getattr(self, p))
+        return extra_params
 
     def copy(self):
         """
@@ -712,11 +726,15 @@ def Fcross(theta, phi, psi):
 # Mass parameter conversion functions - note they assume m1 >= m2
 #
 def norm_sym_ratio(eta):
-    # FIXME: Replace with isclose when available
-    if eta > 0.25:
-        np.testing.assert_almost_equal(0.25, eta)
-        eta = 0.25
-    return sqrt(1 - 4.*eta)
+
+    # Assume floating point precision issues
+    #if np.any(np.isclose(eta, 0.25)):
+        #eta[np.isclose(eta, 0.25)] = 0.25
+
+    # Assert phyisicality
+    assert np.all(eta <= 0.25)
+
+    return np.sqrt(1 - 4. * eta)
 
 def mass1(Mc, eta):
     """Compute larger component mass from Mc, eta"""
@@ -887,10 +905,16 @@ def hoft(P, Fp=None, Fc=None):
 
     Returns a REAL8TimeSeries object
     """
-    hp, hc = lalsim.SimInspiralChooseTDWaveform(P.phiref, P.deltaT, P.m1, P.m2, 
-            P.spin1x, P.spin1y, P.spin1z, P.spin2x, P.spin2y, P.spin2z, P.fmin,
-            P.fref, P.dist, P.incl, P.lambda1, P.lambda2, P.waveFlags,
-            P.nonGRparams, P.ampO, P.phaseO, P.approx)
+
+    extra_params = P.to_lal_dict()
+    hp, hc = lalsim.SimInspiralTD( \
+            P.m1, P.m2, \
+            P.spin1x, P.spin1y, P.spin1z, \
+            P.spin2x, P.spin2y, P.spin2z, \
+            P.dist, P.incl, P.phiref,  \
+            P.psi, P.eccentricity, P.meanPerAno, \
+            P.deltaT, P.fmin, P.fref, \
+            extra_params, P.approx)
 
     if Fp!=None and Fc!=None:
         hp.data.data *= Fp
@@ -910,96 +934,35 @@ def hoft(P, Fp=None, Fc=None):
         ht = lalsim.SimDetectorStrainREAL8TimeSeries(hp, hc, 
                 P.phi, P.theta, P.psi, 
                 lalsim.DetectorPrefixToLALDetector(str(P.detector)))
+
     if P.taper != lalsim.SIM_INSPIRAL_TAPER_NONE: # Taper if requested
         lalsim.SimInspiralREAL8WaveTaper(ht.data, P.taper)
-    if P.deltaF is not None:
-        TDlen = int(1./P.deltaF * 1./P.deltaT)
-        if TDlen < ht.data.length:
-            print "TD length requirement not met: Needed at most %d (%f s), got %d (%f s)" % (TDlen, TDlen*P.deltaT, ht.data.length, ht.data.length*ht.deltaT)
-            P.print_params()
-        assert TDlen >= ht.data.length
-        ht = lal.ResizeREAL8TimeSeries(ht, 0, TDlen)
+
     return ht
 
-def hoff(P, Fp=None, Fc=None, fwdplan=None):
+def hoff(P, Fp=None, Fc=None):
     """
     Generate a FD waveform from ChooseWaveformParams P.
     Will return a COMPLEX16FrequencySeries object.
 
-    If P.approx is a FD approximant, hoff_FD is called.
-    This path calls SimInspiralChooseFDWaveform
-        fwdplan must be None for FD approximants.
-
-    If P.approx is a TD approximant, hoff_TD is called.
-    This path calls ChooseTDWaveform and performs an FFT.
-        The TD waveform will be zero-padded so it's Fourier transform has
-        frequency bins of size P.deltaT.
-        If P.deltaF == None, the TD waveform will be zero-padded
-        to the next power of 2.
-    """
-    # For FD approximants, use the ChooseFDWaveform path = hoff_FD
-    if lalsim.SimInspiralImplementedFDApproximants(P.approx)==1:
-        # Raise exception if unused arguments were specified
-        if fwdplan is not None:
-            raise ValueError('FFT plan fwdplan given with FD approximant.\nFD approximants cannot use this.')
-        hf = hoff_FD(P, Fp, Fc)
-
-    # For TD approximants, do ChooseTDWaveform + FFT path = hoff_TD
-    else:
-        hf = hoff_TD(P, Fp, Fc, fwdplan)
-
-    return hf
-
-def hoff_TD(P, Fp=None, Fc=None, fwdplan=None):
-    """
-    Generate a FD waveform from ChooseWaveformParams P
-    by creating a TD waveform, zero-padding and
-    then Fourier transforming with FFTW3 forward FFT plan fwdplan
-
-    If P.deltaF==None, just pad up to next power of 2
-    If P.deltaF = 1/X, will generate a TD waveform, zero-pad to length X seconds
-        and then FFT. Will throw an error if waveform is longer than X seconds
-
-    If you do not provide a forward FFT plan, one will be created.
-    If you are calling this function many times, you may to create it
-    once beforehand and pass it in, e.g.:
-    fwdplan=lal.CreateForwardREAL8FFTPlan(TDlen,0)
-
-    You may pass in antenna patterns Fp, Fc. If none are provided, they will
-    be computed from the information in ChooseWaveformParams
-
-    Returns a COMPLEX16FrequencySeries object
-    """
-    ht = hoft(P, Fp, Fc)
-
-    if P.deltaF == None: # h(t) was not zero-padded, so do it now
-        TDlen = nextPow2(ht.data.length)
-        ht = lal.ResizeREAL8TimeSeries(ht, 0, TDlen)
-    else: # Check zero-padding was done to expected length
-        TDlen = int(1./P.deltaF * 1./P.deltaT)
-        assert TDlen == ht.data.length
-    
-    if fwdplan==None:
-        fwdplan=lal.CreateForwardREAL8FFTPlan(TDlen,0)
-    FDlen = TDlen/2+1
-    hf = lal.CreateCOMPLEX16FrequencySeries("Template h(f)", 
-            ht.epoch, ht.f0, 1./ht.deltaT/TDlen, lal.HertzUnit,
-            FDlen)
-    lal.REAL8TimeFreqFFT(hf, ht, fwdplan)
-    return hf
-
-def hoff_FD(P, Fp=None, Fc=None):
-    """
-    Generate a FD waveform for a FD approximant.
-    Note that P.deltaF (which is None by default) must be set
+    The TD waveform will be zero-padded so it's Fourier transform has
+    frequency bins of size P.deltaT.
+    If P.deltaF == None, the TD waveform will be zero-padded
+    to the next power of 2.
     """
     if P.deltaF is None:
         raise ValueError('None given for freq. bin size P.deltaF')
 
-    hptilde, hctilde = lalsim.SimInspiralChooseFDWaveform(P.phiref, P.deltaF,
-            P.m1, P.m2, P.spin1x, P.spin1y, P.spin1z, P.spin2x, P.spin2y, P.spin2z, P.fmin,
-            P.fmax, P.fref, P.dist, P.incl, P.lambda1, P.lambda2, P.waveFlags,
-            P.nonGRparams, P.ampO, P.phaseO, P.approx)
+    extra_params = P.to_lal_dict()
+    hptilde, hctilde = lalsim.SimInspiralFD( \
+            P.m1, P.m2, \
+            P.spin1x, P.spin1y, P.spin1z, \
+            P.spin2x, P.spin2y, P.spin2z, \
+            P.dist, P.incl, P.phiref,  \
+            P.psi, P.eccentricity, P.meanPerAno, \
+            P.deltaF, P.fmin, P.fmax, P.fref, \
+            extra_params, P.approx)
+
     if Fp is not None and Fc is not None:
         hptilde.data.data *= Fp
         hctilde.data.data *= Fc
@@ -1014,6 +977,7 @@ def hoff_FD(P, Fp=None, Fc=None):
         htilde = hptilde
     else:
         raise ValueError('Must use P.radec=False for FD approximant (for now)')
+
     # N.B. TaylorF2(RedSpin)(Tidal)  stop filling the output array at ISCO.
     # The Hermitian inner product classes now expect the arrays to be a
     # power of two plus one. Therefore, we zero-pad the output
@@ -1130,26 +1094,35 @@ def hlmoft(P, Lmax=2, Fp=None, Fc=None):
     and all values of m for these l.
     """
     assert Lmax >= 2
+
+    extra_params = P.to_lal_dict()
+
     try:
-        hlms = lalsim.SimInspiralChooseTDModes(P.phiref, P.deltaT, P.m1, P.m2,
-            P.fmin, P.fref, P.dist, P.lambda1, P.lambda2, P.waveFlags,
-            P.nonGRparams, P.ampO, P.phaseO, Lmax, P.approx)
+        hlms = lalsim.SimInspiralChooseTDModes( \
+            P.phiref, P.deltaT, \
+            P.m1, P.m2, \
+            P.fmin, P.fref, P.dist, \
+            extra_params, Lmax, P.approx)
     except RuntimeError:
-        hlms = lalsim.SimInspiralTDModesFromPolarizations(P.deltaT,
-            P.m1, P.m2, P.spin1x, P.spin1y, P.spin1z, 
-            P.spin2x, P.spin2y, P.spin2z, 
-            P.fmin, P.fref, P.dist, P.lambda1, P.lambda2, 0.0, P.waveFlags,
-            P.nonGRparams, P.ampO, P.phaseO, P.approx)
+        hlms = lalsim.SimInspiralTDModesFromPolarizations( \
+            P.m1, P.m2, \
+            P.spin1x, P.spin1y, P.spin1z, \
+            P.spin2x, P.spin2y, P.spin2z, \
+            P.dist, P.incl, P.phiref,  \
+            P.psi, P.eccentricity, P.meanPerAno, \
+            P.deltaT, P.fmin, P.fref, \
+            extra_params, P.approx)
+
     # FIXME: Add ability to taper
     # COMMENT: Add ability to generate hlmoft at a nonzero GPS time directly.
-    #      USUALLY we will use the hlms in template-generation mode, so will want the event at zero GPS time
+    # USUALLY we will use the hlms in template-generation mode, so will want the
+    # event at zero GPS time
 
     if P.deltaF is not None:
         TDlen = int(1./P.deltaF * 1./P.deltaT)
         hxx = lalsim.SphHarmTimeSeriesGetMode(hlms, 2, 2)
         assert TDlen >= hxx.data.length
         hlms = lalsim.ResizeSphHarmTimeSeries(hlms, 0, TDlen)
-
 
     return hlms
 
@@ -1165,10 +1138,12 @@ def hlmoff(P, Lmax=2, Fp=None, Fc=None):
 
     hlms = hlmoft(P, Lmax, Fp, Fc)
     hxx = lalsim.SphHarmTimeSeriesGetMode(hlms, 2, 2)
-    if P.deltaF == None: # h_lm(t) was not zero-padded, so do it now
+    if P.deltaF == None:
+        # h_lm(t) was not zero-padded, so do it now
         TDlen = nextPow2(hxx.data.length)
         hlms = lalsim.ResizeSphHarmTimeSeries(hlms, 0, TDlen)
-    else: # Check zero-padding was done to expected length
+    else:
+        # Check zero-padding was done to expected length
         TDlen = int(1./P.deltaF * 1./P.deltaT)
         assert TDlen == hxx.data.length
 
@@ -1244,13 +1219,22 @@ def complex_hoft(P, sgn=-1):
     Returns a COMPLEX16TimeSeries object
     """
     assert sgn == 1 or sgn == -1
-    hp, hc = lalsim.SimInspiralChooseTDWaveform(P.phiref, P.deltaT, P.m1, P.m2, 
-            P.spin1x, P.spin1y, P.spin1z, P.spin2x, P.spin2y, P.spin2z, 
-            P.fmin, P.fref, P.dist, P.incl, P.lambda1, P.lambda2, P.waveFlags, 
-            P.nonGRparams, P.ampO, P.phaseO, P.approx)
+
+    extra_params = P.to_lal_dict()
+
+    hp, hc = lalsim.SimInspiralTD( \
+            P.m1, P.m2, \
+            P.spin1x, P.spin1y, P.spin1z, \
+            P.spin2x, P.spin2y, P.spin2z, \
+            P.dist, P.incl, P.phiref,  \
+            P.psi, P.eccentricity, P.meanPerAno, \
+            P.deltaT, P.fmin, P.fref, \
+            extra_params, P.approx)
+
     if P.taper != lalsim.SIM_INSPIRAL_TAPER_NONE: # Taper if requested
         lalsim.SimInspiralREAL8WaveTaper(hp.data, P.taper)
         lalsim.SimInspiralREAL8WaveTaper(hc.data, P.taper)
+
     if P.deltaF is not None:
         TDlen = int(1./P.deltaF * 1./P.deltaT)
         assert TDlen >= hp.data.length
@@ -1273,34 +1257,37 @@ def complex_hoff(P, sgn=-1, fwdplan=None):
     h(t) = h+(t) + 1j sgn hx(t)    where sgn = -1 (default) or 1
 
     If P.deltaF==None, just pad up to next power of 2
-    If P.deltaF = 1/X, will generate a TD waveform, zero-pad to length X seconds
-        and then FFT. Will throw an error if waveform is longer than X seconds
-
-    If you do not provide a forward FFT plan, one will be created.
-    If you are calling this function many times, it is best to create it
-    once beforehand and pass it in, e.g.:
-    fwdplan=lal.CreateForwardCOMPLEX16FFTPlan(TDlen,0)
+    If P.deltaF = 1/X, zero-pad to length X seconds. Will throw an error if waveform is longer than X seconds
 
     Returns a COMPLEX16FrequencySeries object
     """
     ht = complex_hoft(P, sgn)
+    assert sgn == 1 or sgn == -1
 
-    if P.deltaF == None: # h(t) was not zero-padded, so do it now
-        TDlen = nextPow2(ht.data.length)
-        ht = lal.ResizeCOMPLEX16TimeSeries(ht, 0, TDlen)
-    else: # Check zero-padding was done to expected length
-        TDlen = int(1./P.deltaF * 1./P.deltaT)
-        assert TDlen == ht.data.length
+    extra_params = P.to_lal_dict()
 
-    if fwdplan==None:
-        fwdplan=lal.CreateForwardCOMPLEX16FFTPlan(TDlen,0)
+    hptilde, hctilde = lalsim.SimInspiralFD( \
+            P.m1, P.m2, \
+            P.spin1x, P.spin1y, P.spin1z, \
+            P.spin2x, P.spin2y, P.spin2z, \
+            P.dist, P.incl, P.phiref,  \
+            P.psi, P.eccentricity, P.meanPerAno, \
+            P.deltaT, P.fmin, P.fref, \
+            extra_params, P.approx)
 
-    FDlen = TDlen/2+1
-    hf = lal.CreateCOMPLEX16FrequencySeries("Template h(f)", 
-            ht.epoch, ht.f0, 1./ht.deltaT/TDlen, lal.HertzUnit,
-            TDlen)
-    lal.COMPLEX16TimeFreqFFT(hf, ht, fwdplan)
-    return hf
+    # N.B. TaylorF2(RedSpin)(Tidal)  stop filling the output array at ISCO.
+    # The Hermitian inner product classes now expect the arrays to be a
+    # power of two plus one. Therefore, we zero-pad the output
+    # so it will work with lalsimutils inner products
+    FDlen = int(1./P.deltaF/P.deltaT/2.+1)
+    if hptilde.data.length != FDlen:
+        hptilde = lal.ResizeCOMPLEX16FrequencySeries(hptilde, 0, FDlen)
+    if hctilde.data.length != FDlen:
+        hctilde = lal.ResizeCOMPLEX16FrequencySeries(hctilde, 0, FDlen)
+
+    hptilde.data.data = hptilde.data.data + 1j * sgn * hctilde.data.data
+
+    return hptilde
 
 def complex_norm_hoff(P, IP, sgn=-1, fwdplan=None):
     """
@@ -1460,18 +1447,6 @@ def string_gps_pretty_print(tgps):
     """
     return "%d.%d" % (tgps.gpsSeconds, tgps.gpsNanoSeconds)
 
-def pylal_psd_to_swig_psd(raw_pylal_psd):
-    """
-    pylal_psd_to_swig_psd
-    Why do I do a conversion? I am having trouble returning modified PSDs
-    """
-    data = raw_pylal_psd.data
-    df = raw_pylal_psd.deltaF
-    psdNew = lal.CreateREAL8FrequencySeries("PSD", lal.LIGOTimeGPS(0.), 0., df ,lal.HertzUnit, len(data))
-    for i in range(len(data)):
-        psdNew.data.data[i] = data[i]   # don't mix memory management between pylal and swig
-    return psdNew
-
 def get_psd_series_from_xmldoc(fname, inst):
     return series.read_psd_xmldoc(utils.load_filename(fname, contenthandler=series.PSDContentHandler))[inst]  # return value is pylal wrapping of the data type; index data by a.data[k]
 
@@ -1498,14 +1473,60 @@ def resample_psd_series(psd, df=None, fmin=None, fmax=None):
     psd_intp[psd_intp == 0.0] = float("inf")
 
     tmpepoch = lal.LIGOTimeGPS(float(psd.epoch))
-    # FIXME: Reenable when we figure out generic error
-    """
-    tmpunit = lal.Unit()
-    lal.ParseUnitString(tmpunit, str(psd.sampleUnits))
-    """
-    tmpunit = lal.SecondUnit
+    tmpunit = lal.Unit(str(psd.sampleUnits))
     new_psd = lal.CreateREAL8FrequencySeries(epoch = tmpepoch, deltaF=df,
             f0 = fmin, sampleUnits = tmpunit, name = psd.name,
             length=len(psd_intp))
     new_psd.data.data = psd_intp
     return new_psd
+
+if __name__ == "__main__":
+    # Do forward and backwards m1m2 <-> mchirp_eta transform
+    # FIXME: Send to amrlib
+    m1, m2 = np.random.uniform(1.0, 100.0, 200).reshape(2, 100)
+    m1, m2 = np.max([m1, m2], axis=0), np.min([m1, m2], axis=0)
+    mc, eta = Mceta(m1, m2)
+    m1_out, m2_out = m1m2(mc, eta)
+    assert np.allclose(m1, m1_out)
+    assert np.allclose(m2, m2_out)
+
+    # Try generating a few waveforms
+    m1 = np.logspace(0.0, 2.0, 10)
+    m2 = np.logspace(0.0, 2.0, 10)
+    s1z = np.linspace(-0.9, 0.9, 4)
+    s2z = np.linspace(-0.9, 0.9, 4)
+    approx = (lalsim.SpinTaylorT4, lalsim.IMRPhenomPv2)
+    plist = (m1, m2, s1z, s2z, approx)
+
+    import itertools, lal
+    params = ChooseWaveformParams()
+    params.tref = 1e9
+    for m1i, m2i, s1zi, s2zi, a in itertools.product(*plist):
+        params.m1, params.m2 = m1i * lal.MSUN_SI, m2i * lal.MSUN_SI
+        params.spin1z, params.spin2z = s1zi, s2zi
+        params.approx = a
+
+        params.fmin = 20.
+        #if a == lalsim.IMRPhenomPv2 and m1i/m2i >= 18.:
+        # Getting segfaults for both waveform families. IMRPhenomPv2 is
+        # calibrated up to this, and I'll cut STT4 conservatively because it's
+        # unlikely to be used for anything but BNS
+        if a == lalsim.SpinTaylorT4 and (max(m1i, m2i)/min(m2i, m1i) >= 10. or m1i + m2i > 50):
+            continue
+        if max(m1i, m2i)/min(m2i, m1i) >= 18. and a == lalsim.IMRPhenomPv2:
+            continue
+
+        params.deltaT = 1.0/16384
+        try:
+            hoft(params)
+        except RuntimeError:
+            print >>sys.stderr, "TD waveform generation failed for params\n" \
+                "masses: %e %e, spins: %e, %e, approx: %s" % (m1i, m2i, s1zi, s2zi, a)
+
+        params.deltaF = 1.0/8
+        params.fmax = 2048.
+        try:
+            hoff(params)
+        except RuntimeError:
+            print >>sys.stderr, "FD waveform generation failed for params\n" \
+                "masses: %e %e, spins: %e, %e, approx: %s" % (m1i, m2i, s1zi, s2zi, a)

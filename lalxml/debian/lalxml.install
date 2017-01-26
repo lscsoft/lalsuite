@@ -1,3 +1,4 @@
+usr/bin/lalxml_version
 usr/lib/*/*.so.*
 etc/*
 usr/share/lal*

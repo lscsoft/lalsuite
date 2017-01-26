@@ -23,6 +23,7 @@ import sys
 
 import ConfigParser
 
+from laldetchar.idq import idq
 from laldetchar import git_version
 
 __author__ = \

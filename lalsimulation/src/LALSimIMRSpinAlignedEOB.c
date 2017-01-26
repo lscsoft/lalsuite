@@ -1050,6 +1050,10 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 					      20. / mTScaled,
 					      deltaT / mTScaled,
 					      &dynamicstmp);
+      if (retLen_fromOptStep2 == XLAL_FAILURE || !dynamicstmp)
+        {
+          XLAL_ERROR (XLAL_EFUNC);
+        }
       retLen =
 	SEOBNRv2OptimizedInterpolatorNoAmpPhase (dynamicstmp, 0.,
 						 deltaT / mTScaled,
@@ -1145,6 +1149,10 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 					      20. / mTScaled,
 					      deltaTHigh / mTScaled,
 					      &dynamicsHitmp);
+      if (retLen_fromOptStep3 == XLAL_FAILURE || !dynamicsHitmp)
+        {
+          XLAL_ERROR (XLAL_EFUNC);
+        }
       retLen =
 	SEOBNRv2OptimizedInterpolatorNoAmpPhase (dynamicsHitmp, 0.,
 						 deltaTHigh / mTScaled,

@@ -250,7 +250,6 @@ void LALInferenceDeleteProposalCycle(LALInferenceProposalCycle *cycle) {
 }
 
 LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runState) {
-    INT4 i;
     ProcessParamsTable *ppt;
     LALInferenceIFOData *ifo = runState->data;
 
@@ -467,11 +466,6 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
       LALInferenceModel *model = LALInferenceInitCBCModel(runState);
       LALInferenceSetupAdaptiveProposals(propArgs, model->params);
       XLALFree(model);
-    }
-    /* Setup buffer now since threads aren't accessible to the main setup function */
-    if (diffevo || stretch || walk) {
-        for (i=0; i<runState->nthreads; i++)
-            LALInferenceSetupDifferentialEvolutionProposal(runState->threads[i]);
     }
 
     /* Setup now since we need access to the data */
@@ -3019,14 +3013,6 @@ void LALInferenceSetupGlitchProposal(LALInferenceIFOData *data, LALInferenceVari
 
 }
 
-/* Initialize differential evolution proposal */
-void LALInferenceSetupDifferentialEvolutionProposal(LALInferenceThreadState *thread) {
-    thread->differentialPoints = XLALCalloc(1, sizeof(LALInferenceVariables *));
-    thread->differentialPointsLength = 0;
-    thread->differentialPointsSize = 1;
-    thread->differentialPointsSkip = 1;
-}
-
 
 /** Setup adaptive proposals. Should be called when state->currentParams is already filled with an initial sample */
 void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInferenceVariables *params) {
@@ -3796,8 +3782,11 @@ REAL8 LALInferenceComputeMaxAutoCorrLen(REAL8 *array, INT4 nPoints, INT4 nPar) {
                 }
             }
             ACL = cumACF;
-            if (ACL>maxACL)
-                maxACL=ACL;
+
+            if (ACL > maxACL)
+                maxACL = ACL;
+            else if (gsl_isnan(ACL))
+                return INFINITY; /* Short circuit: this parameter has indeterminate ACL */
 
             for (i=0; i<nPoints; i++)
                 array[i*nPar + par] += mean;

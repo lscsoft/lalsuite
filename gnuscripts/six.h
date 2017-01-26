@@ -46,6 +46,10 @@ typedef struct PyModuleDef {
     const char *m_doc;
     Py_ssize_t m_size;
     PyMethodDef *m_methods;
+    inquiry m_reload;
+    traverseproc m_traverse;
+    inquiry m_clear;
+    freefunc m_free;
 } PyModuleDef;
 
 #define PyModuleDef_HEAD_INIT 0

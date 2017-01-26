@@ -25,7 +25,15 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 import numpy as np
 import healpy as hp
 import scipy.special
-from . import _distance
+try:
+    from . import _distance
+except ImportError:
+    raise ImportError(
+        'Could not import the lalinference.bayestar._distance Python C '
+        'extension module. This probably means that LALInfernece was built '
+        'without HEALPix support. Please install CHEALPix '
+        '(https://sourceforge.net/projects/healpix/files/Healpix_3.30/'
+        'chealpix-3.30.0.tar.gz), rebuild LALInference, and try again.')
 from ._distance import *
 
 

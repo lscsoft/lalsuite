@@ -91,7 +91,7 @@ else:
     (prob2, mu2, sigma2, norm2), _ = io.read_sky_map(
         opts.align_to.name, distances=True)
 if opts.max_distance is None:
-    max_distance = marginal_ppf(0.99, prob2, mu2, sigma2, norm2)
+    max_distance = 1.2 * marginal_ppf(0.99, prob2, mu2, sigma2, norm2)
 else:
     max_distance = opts.max_distance
 R = np.ascontiguousarray(principal_axes(prob2, mu2, sigma2))

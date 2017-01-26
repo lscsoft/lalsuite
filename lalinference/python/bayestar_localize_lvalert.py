@@ -92,6 +92,11 @@ gracedb = ligo.gracedb.rest.GraceDb(
     os.environ.get('GRACEDB_SERVICE_URL',
     ligo.gracedb.rest.DEFAULT_SERVICE_URL))
 
+if opts.chain_dump:
+    chain_dump = opts.output.replace('.fits.gz', '').replace('.fits', '') + '.chain.npy'
+else:
+    chain_dump = None
+
 for graceid in graceids:
 
     # Send log messages to GraceDb too
@@ -109,11 +114,6 @@ for graceid in graceids:
 
         # download psd.xml.gz
         psd_file = gracedb.files(graceid, "psd.xml.gz")
-
-        if opts.chain_dump:
-            chain_dump = opts.output.replace('.fits.gz', '').replace('.fits', '') + '.chain.npy'
-        else:
-            chain_dump = None
 
         # perform sky localization
         log.info("starting sky localization")
@@ -137,12 +137,14 @@ for graceid in graceids:
                 runtime=elapsed_time, instruments=instruments,
                 distmean=distmean, diststd=diststd,
                 origin='LIGO/Virgo', nest=True)
-            if not opts.dry_run:
-                gracedb.writeLog(graceid, "INFO:BAYESTAR:uploaded sky map",
-                    filename=fitspath, tagname=("sky_loc", "lvem"))
-            else:
+            log.debug('wrote FITS file: %s', opts.output)
+            if opts.dry_run:
                 command.rename(fitspath, os.path.join('.', opts.output))
-            log.debug('uploaded sky map')
+            else:
+                gracedb.writeLog(
+                    graceid, "BAYESTAR rapid sky localization ready",
+                    filename=fitspath, tagname=("sky_loc", "lvem"))
+            log.debug('uploaded FITS file')
     except:
         # Produce log message for any otherwise uncaught exception
         log.exception("sky localization failed")

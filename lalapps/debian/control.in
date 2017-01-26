@@ -33,7 +33,7 @@ Standards-Version: 3.9.8
 Package: lalapps
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
-  python-healpy,
+  python-healpy, python-h5py,
   zlib1g, less,
   libframe1 (>= 8.0), libmetaio1 (>= 8.2),
   lal (>= @MIN_LAL_VERSION@~),

@@ -91,6 +91,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %files
 %defattr(-,root,root)
 %{_bindir}/lalfr-*
+%{_bindir}/lalframe_version
 %{_datadir}/man/man1/*
 %{_libdir}/*.so.*
 %{_sysconfdir}/*

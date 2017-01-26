@@ -48,7 +48,7 @@ lsctables.use_in(ligolw.LIGOLWContentHandler)
 #
 
 
-lsctables.table.RowBuilder = lsctables.table.InterningRowBuilder
+lsctables.table.TableStream.RowBuilder = lsctables.table.InterningRowBuilder
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -319,4 +319,4 @@ for n, filename in enumerate(filenames):
 
 	utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = (filename or "stdout").endswith(".gz"))
 	xmldoc.unlink()
-	lsctables.table.reset_next_ids(lsctables.TableByName.values())
+	lsctables.reset_next_ids(lsctables.TableByName.values())

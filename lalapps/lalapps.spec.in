@@ -44,6 +44,7 @@ BuildRequires: lalinference-python >= @MIN_LALINFERENCE_VERSION@
 Requires: cfitsio
 Requires: fftw
 Requires: gsl
+Requires: h5py
 Requires: healpy
 Requires: less
 Requires: libframe

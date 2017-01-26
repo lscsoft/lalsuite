@@ -177,7 +177,7 @@ def replace_fiducial_bns(line):
     if 'neff=' in line:
         return line.replace(line,"neff=500")
     if 'nlive=' in line:
-        return line.replace(line,"nlive=256")
+        return line.replace(line,"nlive=512")
     if 'maxmcmc=' in line:
         return line.replace(line,"#maxmcmc=3000")
     return line
@@ -303,7 +303,7 @@ def replace_fiducial_bbh(line):
     if 'neff=' in line:
         return line.replace(line,"neff=500")
     if 'nlive=' in line:
-        return line.replace(line,"nlive=256")
+        return line.replace(line,"nlive=512")
     if 'maxmcmc=' in line:
         return line.replace(line,"#maxmcmc=3000")
     if 'fref=' in line:
@@ -376,7 +376,7 @@ def replace_analytic_test(line, test_func):
     if 'neff=' in line:
         return line.replace(line,"neff=10000")
     if 'nlive=' in line:
-        return line.replace(line,"nlive=256")
+        return line.replace(line,"nlive=512")
     if 'maxmcmc=' in line:
         return line.replace(line,"#maxmcmc=3000")
     if test_func != "rosenbrockLikelihood":

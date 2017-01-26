@@ -21,6 +21,7 @@ from __future__ import division
 __all__ = ('PPPlot',)
 
 
+import matplotlib
 from matplotlib import axes
 from matplotlib.projections import projection_registry
 import scipy.stats

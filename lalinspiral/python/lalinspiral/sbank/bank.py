@@ -26,6 +26,7 @@ from glue.iterutils import inorder, uniq
 from lal import PI, MTSUN_SI
 from lalinspiral import CreateSBankWorkspaceCache
 from lalinspiral.sbank.psds import get_neighborhood_ASD, get_neighborhood_PSD, get_PSD, get_neighborhood_df_fmax
+from . import waveforms
 
 class lazy_nhoods(object):
     __slots__ = ("seq", "nhood_param")
@@ -109,6 +110,23 @@ class Bank(object):
         self._templates.extend(newtmplts)
         self._templates.sort(key=attrgetter(self.nhood_param))
 
+    def add_from_hdf(self, hdf_fp):
+        num_points = len(hdf_fp['mass1'])
+        newtmplts=[]
+        for idx in xrange(num_points):
+            if not idx % 100000:
+                tmp = {}
+                end_idx = min(idx+100000, num_points)
+                for name in hdf_fp:
+                    tmp[name] = hdf_fp[name][idx:end_idx]
+            c_idx = idx % 100000
+            approx = tmp['approximant'][c_idx]
+            tmplt_class = waveforms.waveforms[approx]
+            newtmplts.append(tmplt_class.from_dict(tmp, c_idx, self))
+            newtmplts[-1].is_seed_point=True
+        self._templates.extend(newtmplts)
+        self._templates.sort(key=attrgetter(self.nhood_param))
+
     @classmethod
     def from_sngls(cls, sngls, tmplt_class, *args, **kwargs):
         bank = cls(*args, **kwargs)
@@ -185,11 +203,6 @@ class Bank(object):
                     # FIXME: This could be dealt with dynamically??
                     raise ValueError(err_msg)
 
-                # record match and template params for highest match
-                if match > max_match:
-                    max_match = match
-                    template = tmplt
-
                 if (1 - match) > 0.05 + (1 - min_match):
                     continue
 
@@ -203,11 +216,6 @@ class Bank(object):
                     err_msg += "iterative-match-df-max value lower."
                     # FIXME: This could be dealt with dynamically??
                     raise ValueError(err_msg)
-
-                # record match and template params for highest match
-                if match > max_match:
-                    max_match = match
-                    template = tmplt
 
                 # if the result is a really bad match, trust it isn't
                 # misrepresenting a good match
@@ -224,6 +232,11 @@ class Bank(object):
 
             if match > min_match:
                 return (match, tmplt)
+
+            # record match and template params for highest match
+            if match > max_match:
+                max_match = match
+                template = tmplt
 
         return (max_match, template)
 

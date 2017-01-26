@@ -19,7 +19,7 @@
 
 /**
  * \author Craig Robinson, Yi Pan, Zachariah Etienne, Caleb Devine,
- *                         David N. Buch
+ *                         David Buch
  *
  * Functions for calculating the effective one-body Hamiltonian for
  * spinning binaries, as described in

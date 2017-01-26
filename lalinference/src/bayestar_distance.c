@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016  Leo Singer
+ * Copyright (C) 2015-2017  Leo Singer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -289,7 +289,7 @@ void bayestar_distance_parameters_to_moments(
 
 double bayestar_volume_render(
     double x, double y, double max_distance, int axis0, int axis1,
-    const double *R, long nside, int nest,
+    const double *R, long long nside, int nest,
     const double *prob, const double *mu,
     const double *sigma, const double *norm)
 {
@@ -331,11 +331,11 @@ double bayestar_volume_render(
         double vec[3];
         cblas_dgemv(
             CblasRowMajor, CblasNoTrans, 3, 3, 1, R, 3, xyz, 1, 0, vec, 1);
-        long ipix;
+        int64_t ipix;
         if (nest)
-            vec2pix_nest(nside, vec, &ipix);
+            vec2pix_nest64(nside, vec, &ipix);
         else
-            vec2pix_ring(nside, vec, &ipix);
+            vec2pix_ring64(nside, vec, &ipix);
         double r = sqrt(gsl_pow_2(x) + gsl_pow_2(y) + gsl_pow_2(z));
 
         if (isfinite(mu[ipix]))
@@ -349,13 +349,13 @@ double bayestar_volume_render(
 
 
 double bayestar_distance_marginal_pdf(
-    double r, long npix,
+    double r, long long npix,
     const double *prob, const double *mu,
     const double *sigma, const double *norm)
 {
     double sum = 0;
     #pragma omp parallel for reduction(+:sum)
-    for (long i = 0; i < npix; i ++)
+    for (long long i = 0; i < npix; i ++)
         sum += prob[i] * bayestar_distance_conditional_pdf(
             r, mu[i], sigma[i], norm[i]);
     return sum;
@@ -363,13 +363,13 @@ double bayestar_distance_marginal_pdf(
 
 
 double bayestar_distance_marginal_cdf(
-    double r, long npix,
+    double r, long long npix,
     const double *prob, const double *mu,
     const double *sigma, const double *norm)
 {
     double sum = 0;
     #pragma omp parallel for reduction(+:sum)
-    for (long i = 0; i < npix; i ++)
+    for (long long i = 0; i < npix; i ++)
         sum += prob[i] * bayestar_distance_conditional_cdf(
             r, mu[i], sigma[i], norm[i]);
     return sum;
@@ -378,7 +378,7 @@ double bayestar_distance_marginal_cdf(
 
 typedef struct {
     double p;
-    long npix;
+    long long npix;
     const double *prob;
     const double *mu;
     const double *sigma;
@@ -421,7 +421,7 @@ static double marginal_ppf_df(double r, void *params)
 
 
 double bayestar_distance_marginal_ppf(
-    double p, long npix,
+    double p, long long npix,
     const double *prob, const double *mu,
     const double *sigma, const double *norm)
 {
