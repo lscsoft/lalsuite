@@ -92,6 +92,11 @@ gracedb = ligo.gracedb.rest.GraceDb(
     os.environ.get('GRACEDB_SERVICE_URL',
     ligo.gracedb.rest.DEFAULT_SERVICE_URL))
 
+if opts.chain_dump:
+    chain_dump = opts.output.replace('.fits.gz', '').replace('.fits', '') + '.chain.npy'
+else:
+    chain_dump = None
+
 for graceid in graceids:
 
     # Send log messages to GraceDb too
@@ -109,11 +114,6 @@ for graceid in graceids:
 
         # download psd.xml.gz
         psd_file = gracedb.files(graceid, "psd.xml.gz")
-
-        if opts.chain_dump:
-            chain_dump = opts.output.replace('.fits.gz', '').replace('.fits', '') + '.chain.npy'
-        else:
-            chain_dump = None
 
         # perform sky localization
         log.info("starting sky localization")
