@@ -214,7 +214,7 @@ if opts.use_overlap is not None:
 
 intr_prms, expand_prms = common_cl.parse_param(opts.intrinsic_param)
 pin_prms, _ = common_cl.parse_param(opts.pin_param)
-intr_pt = numpy.array([intr_prms[k] for k in intr_prms])
+intr_pt = numpy.array([intr_prms[k] for k in sorted(intr_prms)])
 # This keeps the list of parameters consistent across runs
 intr_prms = sorted(intr_prms.keys())
 

@@ -222,7 +222,7 @@ static void Test_XLALSimIMRPhenomPCalculateModelParameters(void) {
   REAL8 f_ref = f_min;
   IMRPhenomP_version_type version = IMRPhenomPv2_V;
 
-  XLALSimIMRPhenomPCalculateModelParameters(
+  XLALSimIMRPhenomPCalculateModelParametersOld(
       &chi1_l,            /**< Output: aligned spin on companion 1 */
       &chi2_l,            /**< Output: aligned spin on companion 2 */
       &chip,              /**< Output: Effective spin in the orbital plane */
@@ -419,7 +419,7 @@ static void Test_XLALSimIMRPhenomP(void) {
   REAL8 f_ref = f_min;
   IMRPhenomP_version_type version = IMRPhenomPv2_V;
 
-  XLALSimIMRPhenomPCalculateModelParameters(
+  XLALSimIMRPhenomPCalculateModelParametersOld(
       &chi1_l,            /**< Output: aligned spin on companion 1 */
       &chi2_l,            /**< Output: aligned spin on companion 2 */
       &chip,              /**< Output: Effective spin in the orbital plane */
@@ -642,7 +642,7 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
   REAL8 f_ref = f_min;
   IMRPhenomP_version_type version = IMRPhenomPv2_V;
 
-  XLALSimIMRPhenomPCalculateModelParameters(
+  XLALSimIMRPhenomPCalculateModelParametersOld(
       &chi1_l,            /**< Output: aligned spin on companion 1 */
       &chi2_l,            /**< Output: aligned spin on companion 2 */
       &chip,              /**< Output: Effective spin in the orbital plane */
@@ -699,7 +699,7 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
   // Now repeat for a different f_ref
   f_ref = 5;
 
-  XLALSimIMRPhenomPCalculateModelParameters(
+  XLALSimIMRPhenomPCalculateModelParametersOld(
       &chi1_l,            /**< Output: aligned spin on companion 1 */
       &chi2_l,            /**< Output: aligned spin on companion 2 */
       &chip,              /**< Output: Effective spin in the orbital plane */

@@ -14,12 +14,14 @@ Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: bc
 BuildRequires: fftw-devel
+BuildRequires: glue
 BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
 BuildRequires: less
 BuildRequires: numpy
 BuildRequires: octave-devel
 BuildRequires: python-devel
+BuildRequires: python-six
 BuildRequires: swig
 Requires: fftw
 Requires: gsl
@@ -50,6 +52,7 @@ Group: LAL
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
+Requires: python-six
 %description python
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python bindings.

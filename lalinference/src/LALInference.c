@@ -122,6 +122,12 @@ LALInferenceThreadState *LALInferenceInitThread(void) {
     thread->preProposalParams=XLALCalloc(1,sizeof(LALInferenceVariables));
     thread->proposedParams=XLALCalloc(1,sizeof(LALInferenceVariables));
 
+    /* Differential evolution (also used for caching output) */
+    thread->differentialPoints = XLALCalloc(1, sizeof(LALInferenceVariables *));
+    thread->differentialPointsLength = 0;
+    thread->differentialPointsSize = 1;
+    thread->differentialPointsSkip = 1;
+
     return thread;
 }
 

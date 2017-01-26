@@ -3,6 +3,10 @@ MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
+SUBDIRS = \
+	SEOBNRv3_opt \
+	$(END_OF_LIST)
+
 noinst_HEADERS = \
 	SEOBNRv2_opt_3derivs.h \
 	SEOBNRv2_opt_3derivstortoise.h \

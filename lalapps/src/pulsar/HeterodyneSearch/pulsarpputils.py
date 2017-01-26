@@ -26,6 +26,8 @@
 # Many functions in this a taken from, or derived from equivalents available in
 # the PRESTO pulsar software package http://www.cv.nrao.edu/~sransom/presto/
 
+from __future__ import print_function
+
 import sys
 import math
 import cmath
@@ -34,6 +36,7 @@ import numpy as np
 import struct
 import re
 import h5py
+import urllib2
 
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
@@ -168,7 +171,7 @@ def ra_to_rad(ra_string):
   elif len(hms) == 1:
     return hms_to_rad(float(hms[0]), 0.0, 0.0)
   else:
-    print >> sys.stderr, "Problem parsing RA string %s" % ra_string
+    print("Problem parsing RA string %s" % ra_string, file=sys.stderr)
     sys.exit(1)
 
 def dec_to_rad(dec_string):
@@ -192,7 +195,7 @@ def dec_to_rad(dec_string):
   elif len(dms) == 1:
     return dms_to_rad(float(dms[0]), 0.0, 0.0)
   else:
-    print >> sys.stderr, "Problem parsing DEC string %s" % dec_string
+    print("Problem parsing DEC string %s" % dec_string, file=sys.stderr)
     sys.exit(1)
 
 def p_to_f(p, pd, pdd=None):
@@ -366,7 +369,7 @@ class psr_par:
           if hasattr(self, epoch+'_ERR'): # convert errors from days to seconds
             setattr(self, epoch+'_ERR', self[epoch+'_ERR'] * SECPERDAY)
     except:
-      print("Could not convert epochs to GPS times. They are all still MJD values.")
+      print("Could not convert epochs to GPS times. They are all still MJD values.", file=sys.stderr)
 
     # distance and parallax (distance: kpc -> metres, parallax: mas -> rads)
     convfacs = {'DIST': KPC, 'PX': 1e-3*ARCSECTORAD}
@@ -870,13 +873,13 @@ def read_hist_from_file(histfile):
   try:
     fp = open(histfile, 'rb')
   except:
-    print >> sys.stderr, "Could not open prior file %s" % histfile
+    print("Could not open prior file %s" % histfile, file=sys.stderr)
     return None, None, None
 
   try:
     pd = fp.read() # read in all the data
   except:
-    print >> sys.stderr, "Could not read in data from prior file %s" % histfile
+    print("Could not read in data from prior file %s" % histfile, file=sys.stderr)
     return None, None, None
 
   fp.close()
@@ -923,7 +926,7 @@ def plot_2Dhist_from_file(histfile, ndimlabel, mdimlabel, margpars=True, \
   xbins, ybins, histarr = read_hist_from_file(histfile)
 
   if not xbins.any():
-    print >> sys.stderr, "Could not read binary histogram file"
+    print("Could not read binary histogram file", file=sys.stderr)
     return None
 
   figs = []
@@ -1023,7 +1026,7 @@ def h0ul_from_prior_file(priorfile, ulval=0.95):
   h0bins, cibins, histarr = read_hist_from_file(priorfile)
 
   if not h0bins.any():
-    print >> sys.stderr, "Could not read binary histogram file"
+    print("Could not read binary histogram file", file=sys.stderr)
     return None
 
   # marginalise over cos(iota)
@@ -1056,7 +1059,7 @@ def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50], \
   from lalapps.pulsarhtmlutils import paramlatexdict
 
   if len(params) != 2:
-    print >> sys.stderr, "Require 2 parameters"
+    print("Require 2 parameters", file=sys.stderr)
     sys.exit(1)
 
   # set some matplotlib defaults for amplitude spectral density
@@ -1311,7 +1314,7 @@ def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeout
     try:
       Bk = np.loadtxt(Bkdata[ifo], comments=['#', '%'])
     except:
-      print "Could not open file ", Bkdata[ifo]
+      print("Could not open file %s" % Bkdata[ifo], file=sys.stderr)
       sys.exit(-1)
 
     # should be three lines in file
@@ -1363,7 +1366,7 @@ def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeout
 
       # check mindt is an integer and greater than 1
       if math.fmod(mindt, 1) != 0. or mindt < 1:
-        print "Error time steps between data points must be integers"
+        print("Error... time steps between data points must be integers", file=sys.stderr)
         sys.exit(-1)
 
       count = 0
@@ -1746,13 +1749,13 @@ def heterodyned_pulsar_signal(starttime, duration, dt, detector, pardict):
     iota = math.acos(cosiota)
     siniota = math.sin(iota)
   else:
-    print >> sys.stderr, "cos(iota) not defined!"
+    print("cos(iota) not defined!", file=sys.stderr)
     raise KeyError
 
   if 'psi' in pardict:
     psi = pardict['psi']
   else:
-    print >> sys.stderr, "psi not defined!"
+    print("psi not defined!", file=sys.stderr)
     raise KeyError
 
   if 'C22' in pardict:
@@ -2129,7 +2132,7 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
 
       i = i+2
     else:
-      print >> sys.stderr, "Something wrong with injection"
+      print("Something wrong with injection", file=sys.stderr)
       sys.exit(1)
 
   snrtot = snrtot*snrscale
@@ -2238,7 +2241,7 @@ def pulsar_mcmc_to_posterior(chainfiles):
       mcmc.append(mcmcChain[::nskip,:])
       cl.append(mcmcChain.shape[0])
     else:
-      print >> sys.stderr, "File %s does not exist!" % cfile
+      print("File %s does not exist!" % cfile, file=sys.stderr)
       return None, None, None, None
 
   # output data to common results format
@@ -2273,7 +2276,7 @@ def pulsar_mcmc_to_posterior(chainfiles):
   try:
     cf = open(comfile, 'w')
   except:
-    print >> sys.stderr, "Can't open common posterior file!"
+    print("Can't open common posterior file!", file=sys.stderr)
     sys.exit(0)
 
   cf.write(headers)
@@ -2804,7 +2807,7 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
     if isinstance(dets, basestring):
       dets = [dets] # make into list
     else:
-      print >> sys.stderr, 'Detector not, or incorrectly, set'
+      print('Detector not, or incorrectly, set', file=sys.stderr)
       return
 
   # allowed list of detectors
@@ -2813,32 +2816,32 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
   # check consistency of arguments
   for det in dets:
     if det not in alloweddets:
-      print >> sys.stderr, 'Detector not in list of allowed detectors (' + ','.join(alloweddets) + ')'
+      print('Detector not in list of allowed detectors (' + ','.join(alloweddets) + ')', file=sys.stderr)
       return
 
     # checks on time stamps
     if det not in ts:
-      print >> sys.stderr, 'No time stamps given for detector %s' % det
+      print('No time stamps given for detector %s' % det, file=sys.stderr)
       return
 
     # checks on data
     if det not in data:
-      print >> sys.stderr, 'No data time series given for detector %s' % det
+      print('No data time series given for detector %s' % det, file=sys.stderr)
       return
 
     # checks on sigmas
     if sigmas != None:
       if det not in sigmas:
-        print >> sys.stderr, 'No sigma time series given for detector %s' % det
+        print('No sigma time series given for detector %s' % det, file=sys.stderr)
         return
 
     # check length consistency
     if len(ts[det]) != len(data[det]):
-      print >> sys.stderr, 'Length of times stamps array and data array are inconsistent for %s' % det
+      print('Length of times stamps array and data array are inconsistent for %s' % det, file=sys.stderr)
 
     if sigmas != None:
       if len(ts[det]) != len(sigmas[det]):
-        print >> sys.stderr, 'Length of times stamps array and sigma array are inconsistent for %s' % det
+        print('Length of times stamps array and sigma array are inconsistent for %s' % det, file=sys.stderr)
 
   # setup grid on parameter space
   params = ['h0', 'phi0', 'psi', 'cosiota']
@@ -2857,7 +2860,7 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
         paramranges[param] = defaultranges[param] # set to default range
       else:
         if paramranges[param][1] < paramranges[param][0] or paramranges[param][2] < 1:
-          print >> sys.stderr, "Parameter ranges wrong for %s, reverting to defaults" % param
+          print("Parameter ranges wrong for %s, reverting to defaults" % param, file=sys.stderr)
           paramranges[param] = defaultranges[param]
     else: # use defaults
       paramranges[param] = defaultranges[param]
@@ -2983,3 +2986,46 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
   evrat = sigev - noiselike
 
   return like, posts['h0'], posts['phi0'], posts['psi'], posts['cosiota'], lingrids, evrat
+
+
+# current version of the ATNF pulsar catalogue
+ATNF_VERSION = '1.55'
+
+def get_atnf_info(psr):
+  """
+  Get the pulsar (psr) distance (DIST in kpc), proper motion corrected period derivative (P1_I) and any association
+  (ASSOC e.g. GC) from the ATNF catalogue.
+  """
+
+  psrname = re.sub('\+', '%2B', psr) # switch '+' for unicode character
+
+  atnfurl = 'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=' + ATNF_VERSION
+  atnfurl += '&Dist=Dist&Assoc=Assoc&P1_i=P1_i' # set parameters to get
+  atnfurl += '&startUserDefined=true&c1_val=&c2_val=&c3_val=&c4_val=&sort_attr=jname&sort_order=asc&condition=&pulsar_names=' + psrname
+  atnfurl += '&ephemeris=selected&submit_ephemeris=Get+Ephemeris&coords_unit=raj%2Fdecj&radius=&coords_1=&coords_2='
+  atnfurl += '&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=linear&y_axis=&y_scale=linear&state=query'
+
+  try:
+    urldat = urllib2.urlopen(atnfurl).read() # read ATNF url
+    predat = re.search(r'<pre[^>]*>([^<]+)</pre>', urldat) # to extract data within pre environment (without using BeautifulSoup) see e.g. http://stackoverflow.com/a/3369000/1862861 and http://stackoverflow.com/a/20046030/1862861
+    pdat = predat.group(1).strip().split('\n') # remove preceeding and trailing new lines and split lines
+  except:
+    print("Warning... could not get information from ATNF pulsar catalogue.", file=sys.stderr)
+    return None
+
+  # check whether information could be found and get distance, age and association from data
+  dist = None
+  p1_I = None
+  assoc = None
+  for line in pdat:
+    if 'WARNING' in line or 'not in catalogue' in line:
+      return None
+    vals = line.split()
+    if 'DIST' in vals[0]:
+      dist = float(vals[1])
+    if 'P1_I' in vals[0]:
+      age = float(vals[1])
+    if 'ASSOC' in vals[0]:
+      assoc = vals[1]
+
+  return (dist, p1_I, assoc, atnfurl)

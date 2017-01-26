@@ -5,8 +5,8 @@ include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 if HAVE_CHEALPIX
-BAYESTARHDR = bayestar_sky_map.h bayestar_distance.h
-BAYESTARSRC = bayestar_sky_map.c bayestar_distance.c
+BAYESTARHDR = bayestar_sky_map.h bayestar_distance.h bayestar_moc.h
+BAYESTARSRC = bayestar_sky_map.c bayestar_distance.c bayestar_moc.c
 endif
 
 ANALYTICFILES = CorrelationMatrix.csv unimodalMeans.csv bimodalMeans.csv

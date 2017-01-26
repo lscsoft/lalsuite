@@ -1,4 +1,5 @@
 usr/bin/lalfr-*
+usr/bin/lalframe_version
 usr/lib/*/*.so.*
 etc/*
 usr/share/man/man1/*

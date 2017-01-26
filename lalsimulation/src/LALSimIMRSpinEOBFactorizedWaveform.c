@@ -920,9 +920,14 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
   coeffs->delta32vh9 = -9112. / 405. + (208. * LAL_PI * LAL_PI) / 63.;
 
   coeffs->rho32v = (4. * chiS * eta) / (-3. * m1Plus3eta);
-  coeffs->rho32v2 = (328. - 1115. * eta +
+  coeffs->rho32v2 = (-4. * a2 * eta2) / (9. * m1Plus3eta2) + (328. - 1115. * eta +
+                       320. * eta2) / (270. *
+                                       m1Plus3eta);
+  if (SpinAlignedEOBversion == 4) {
+      coeffs->rho32v2 = (328. - 1115. * eta +
 					      320. * eta2) / (270. *
 							      m1Plus3eta);
+    }
   coeffs->rho32v3 =
     (2. *
      (45. * a * m1Plus3eta3 -

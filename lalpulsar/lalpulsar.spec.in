@@ -99,6 +99,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
+%{_bindir}/lalpulsar_version
 %{_datarootdir}/lalpulsar/*
 %{_libdir}/*.so.*
 %{_sysconfdir}/*

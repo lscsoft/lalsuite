@@ -128,7 +128,7 @@ endif # SWIG_BUILD
 
 if SWIG_BUILD_OCTAVE
 
-swig_octave_flags = -octave -globals . -DSWIG_CPLUSPLUS_CAST -outdir swiglal_octave/ $(swig_flags)
+swig_octave_flags = -octave $(SWIG_OCTAVE_FLAGS) -outdir swiglal_octave/ $(swig_flags)
 
 octexec_LTLIBRARIES = swiglal_octave.la
 nodist_swiglal_octave_la_SOURCES = swiglal_octave.cpp

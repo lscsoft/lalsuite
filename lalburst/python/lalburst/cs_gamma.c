@@ -37,6 +37,7 @@
 #include <gsl/gsl_errno.h>
 #include <lal/cs_cosmo.h>
 #include <lal/cs_lambda_cosmo.h>
+#include "six.h"
 
 #define CUSPS_PER_LOOP 1.0		/* c */
 #define LOOP_RAD_POWER 50.0		/* Gamma */
@@ -205,11 +206,20 @@ static PyMethodDef cs_gammaMethods[] = {
   {NULL, NULL, 0, NULL}
 };
 
+static PyModuleDef moduledef = {
+  PyModuleDef_HEAD_INIT,
+  "cs_gamma", NULL, -1, cs_gammaMethods,
+  NULL, NULL, NULL, NULL
+};
+
 //They Python module initialization function.
-PyMODINIT_FUNC initcs_gamma(void);	/* silence no-previous-prototype warning */
+PyMODINIT_FUNC PyInit_cs_gamma(void);	/* silence no-previous-prototype warning */
 PyMODINIT_FUNC
-initcs_gamma(void)
+PyInit_cs_gamma(void)
 {
-  Py_InitModule("cs_gamma", cs_gammaMethods);
   import_array();
+  return PyModule_Create(&moduledef);
 }
+
+
+SIX_COMPAT_MODULE(cs_gamma)

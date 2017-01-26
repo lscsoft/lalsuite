@@ -30,7 +30,12 @@ NOISEPSDFILES = \
 	LIGO-T0900288-v3-NO_SRM.txt \
 	LIGO-T0900288-v3-NSNS_Opt.txt \
 	LIGO-T0900288-v3-ZERO_DET_high_P.txt \
-	LIGO-T0900288-v3-ZERO_DET_low_P.txt
+	LIGO-T0900288-v3-ZERO_DET_low_P.txt \
+	LIGO-T1600593-v1-KAGRA_Opening.txt \
+	LIGO-T1600593-v1-KAGRA_Early.txt \
+	LIGO-T1600593-v1-KAGRA_Mid.txt \
+	LIGO-T1600593-v1-KAGRA_Late.txt \
+	LIGO-T1600593-v1-KAGRA_Design.txt
 
 EOSDATAFILES = \
 	LALSimNeutronStarEOS_AP4.dat \
@@ -65,7 +70,7 @@ pkginclude_HEADERS = \
 	LALSimInspiralTestGRParams.h \
 	LALSimInspiralWaveformCache.h \
 	LALSimInspiralWaveformFlags.h \
-        LALSimInspiralWaveformParams.h \
+	LALSimInspiralWaveformParams.h \
 	LALSimNeutronStar.h \
 	LALSimNoise.h \
 	LALSimReadData.h \
@@ -79,7 +84,16 @@ pkginclude_HEADERS = \
 	LALSimulationVCSInfoHeader.h
 
 noinst_HEADERS = \
-	LALSimBlackHoleRingdownPrec.c \
+	LALSimIMRSpinEOBHcapExactDerivativePrec_v3opt.c \
+	LALSimIMRSpinPrecEOBEulerAngles.c \
+	LALSimIMRSpinPrecEOBWfGen.c \
+	LALSimIMRSpinAlignedEOBOptimizedInterpolatorGeneral.c \
+	LALSimIMRSpinPrecEOBGSLOptimizedInterpolation.c \
+	LALSpinPrecHcapRvecDerivative_v3opt.c \
+	LALSimIMRSpinPrecEOBHcapExactDerivative.c \
+	LALSimIMRSpinEOBFactorizedWaveformPrec_v3opt.c \
+	LALSimIMRSpinEOBFactorizedFluxPrec_v3opt.c \
+	LALSimIMRCalculateSpinPrecEOBHCoeffs.c \
 	LALSimBlackHoleRingdownPrec.h \
 	LALSimFindAttachTime.h \
 	LALSimIMREOBFactorizedFlux.c \
@@ -130,6 +144,7 @@ noinst_HEADERS = \
 lib_LTLIBRARIES = liblalsimulation.la
 
 liblalsimulation_la_SOURCES = \
+	LALSimBlackHoleRingdownPrec.c \
 	LALSimBlackHoleRingdown.c \
 	LALSimBurst.c \
 	LALSimBurstImg.c \
@@ -153,7 +168,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimPhenSpinRingDown.c \
 	LALSimInspiralWaveformFlags.c \
 	LALSimInspiralTestGRParams.c \
-        LALSimInspiralWaveformParams.c \
+	LALSimInspiralWaveformParams.c \
 	LALSimInspiralPrecess.c \
 	LALSimInspiral.c \
 	LALSimInspiralPNMode.c \
@@ -194,7 +209,8 @@ liblalsimulation_la_SOURCES = \
 	check_waveform_macros.h \
 	unicorn.xpm \
 	LALSimInspiralHGimri.c \
-	LALSimFindAttachTime.c
+	LALSimFindAttachTime.c \
+	LALSimIMRSpinEOB.c
 
 nodist_liblalsimulation_la_SOURCES = \
 	LALSimulationBuildInfoHeader.h \

@@ -13,6 +13,9 @@
  * between the two models in ring-down waveform is the pseudo-QNM introduced
  * in the latter (see Taracchini et al. PRD 86, 024011 (2012) for more details).
  */
+#ifndef _LALSIMIMREOBHYBRIDRINGDOWNPREC_C
+#define _LALSIMIMREOBHYBRIDRINGDOWNPREC_C
+
 #include <math.h>
 #include <complex.h>
 #include <stdlib.h>
@@ -30,8 +33,6 @@
 #include "LALSimIMREOBNQCCorrection.c"
 //#include "LALSimIMREOBHybridRingdown.c"
 
-#ifndef _LALSIMIMREOBHYBRIDRINGDOWNPREC_C
-#define _LALSIMIMREOBHYBRIDRINGDOWNPREC_C
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -458,7 +459,7 @@ XLALSimIMREOBHybridAttachRingdownPrec(
 		XLALDestroyCOMPLEX16Vector(modefreqs);
 		XLAL_ERROR(XLAL_EFUNC);
 	}
-	if (approximant == SEOBNRv3) {
+	if (approximant == SEOBNRv3 || approximant == SEOBNRv3_opt) {
 
         if (JLN > 0){
             mHere = (int)fabs((REAL8) m);
@@ -629,7 +630,7 @@ XLALSimIMREOBHybridAttachRingdownPrec(
 			 * 1./cimag(modefreqs->data[5])/mTot);
 			 */
 		}
-	if (approximant == SEOBNRv3) {
+	if (approximant == SEOBNRv3 || approximant == SEOBNRv3_opt) {
         REAL8 kappa_thr = 0.175;
         //REAL8 eJL_thr = 7.5e-3;
         REAL8 eJL_thr = 5.0e-2;

@@ -75,7 +75,7 @@ class Event():
 
 dummyCacheNames=['LALLIGO','LALVirgo','LALAdLIGO','LALAdVirgo']
 
-def readLValert(threshold_snr=None,gid=None,flow=40.0,gracedb="gracedb",basepath="./",downloadpsd=True):
+def readLValert(threshold_snr=None,gid=None,flow=40.0,gracedb="gracedb",basepath="./",downloadpsd=True,roq=False):
   """
   Parse LV alert file, containing coinc, sngl, coinc_event_map.
   and create a list of Events as input for pipeline
@@ -125,10 +125,15 @@ def readLValert(threshold_snr=None,gid=None,flow=40.0,gracedb="gracedb",basepath
     horizon_distance=[]
     for e in these_sngls:
       # Review: Replace this with a call to LALSimulation function at some point
-      p=Popen(["lalapps_chirplen","--flow",str(flow),"-m1",str(e.mass1),"-m2",str(e.mass2)],stdout=PIPE, stderr=PIPE, stdin=PIPE)
-      strlen = p.stdout.read()
-      dur.append(pow(2.0, ceil( log(max(8.0,float(strlen.splitlines()[2].split()[5]) + 2.0), 2) ) ) )
-      srate.append(pow(2.0, ceil( log(float(strlen.splitlines()[1].split()[5]), 2) ) ) * 2 )
+      if roq==False:
+        try:
+          p=Popen(["lalapps_chirplen","--flow",str(flow),"-m1",str(e.mass1),"-m2",str(e.mass2)],stdout=PIPE, stderr=PIPE, stdin=PIPE)
+          strlen = p.stdout.read()
+          dur.append(pow(2.0, ceil( log(max(8.0,float(strlen.splitlines()[2].split()[5]) + 2.0), 2) ) ) )
+          srate.append(pow(2.0, ceil( log(float(strlen.splitlines()[1].split()[5]), 2) ) ) * 2 )
+        except:
+          print "WARNING: lalapps_chirplen --flow",str(flow),"-m1",str(e.mass1),"-m2",str(e.mass2)," failed."
+          print "WARNING: make sure you have set manually seglen and srate in the .ini file."
       snr = e.snr
       eff_dist = e.eff_distance
       if threshold_snr is not None:
@@ -136,14 +141,21 @@ def readLValert(threshold_snr=None,gid=None,flow=40.0,gracedb="gracedb",basepath
               horizon_distance.append(eff_dist * snr/threshold_snr)
           else:
               horizon_distance.append(2 * eff_dist)
-    if max(srate)<srate_psdfile:
-      srate = max(srate)
+    if srate:
+      if max(srate)<srate_psdfile:
+        srate = max(srate)
+      else:
+        srate = srate_psdfile
+        if downloadpsd:
+          fhigh = srate_psdfile/2.0 * 0.95 # Because of the drop-off near Nyquist of the PSD from gstlal
     else:
-      srate = srate_psdfile
-      if downloadpsd:
-        fhigh = srate_psdfile/2.0 * 0.95 # Because of the drop-off near Nyquist of the PSD from gstlal
+      srate = None
+    if dur:
+      duration = max(dur)
+    else:
+      duration = None
     horizon_distance = max(horizon_distance) if len(horizon_distance) > 0 else None
-    ev=Event(CoincInspiral=coinc, GID=gid, ifos = ifos, duration = max(dur), srate = srate,
+    ev=Event(CoincInspiral=coinc, GID=gid, ifos = ifos, duration = duration, srate = srate,
              trigSNR = trigSNR, fhigh = fhigh, horizon_distance=horizon_distance)
     output.append(ev)
 
@@ -758,7 +770,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     padding=self.config.getint('input','padding')
     if self.config.has_option('engine','seglen') or self.config.has_option('lalinference','seglen'):
       if self.config.has_option('engine','seglen'):
-        seglen = self.config.getint('engine','seglen')
+        seglen = int(np.ceil(self.config.getfloat('engine','seglen')))
       if self.config.has_option('lalinference','seglen'):
         seglen = self.config.getint('lalinference','seglen')
 
@@ -936,7 +948,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       threshold_snr = None
       if not self.config.has_option('engine','distance-max') and self.config.has_option('input','threshold-snr'):
         threshold_snr=self.config.getfloat('input','threshold-snr')
-      events = readLValert(gid=gid,flow=flow,gracedb=self.config.get('condor','gracedb'),basepath=self.basepath,downloadpsd=downloadgracedbpsd,threshold_snr=threshold_snr)
+      events = readLValert(gid=gid,flow=flow,gracedb=self.config.get('condor','gracedb'),basepath=self.basepath,downloadpsd=downloadgracedbpsd,
+                           threshold_snr=threshold_snr,roq=self.config.has_option('condor','computeroqweights'))
     else: gid=None
     # pipedown-database
     if self.config.has_option('input','gstlal-db'):
@@ -1026,6 +1039,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         mkdirs(os.path.join(self.basepath,'coherence_test'))
         par_mergenodes=[]
         for ifo in enginenodes[0].ifos:
+            co_merge_job = MergeNSJob(self.config,os.path.join(self.basepath,'merge_runs_%s.sub'%(ifo)),self.logpath,dax=self.is_dax())
+            co_merge_job.set_grid_site('local')
             cotest_nodes=[]
             for i in range(Npar):
                cot_node,bwpsdnodes=self.add_engine_node(event,bwpsdnodes,ifos=[ifo],co_test=True)
@@ -1041,7 +1056,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
               else:
                 co.set_psd_files()
                 co.set_snr_file()
-            pmergenode=MergeNSNode(self.merge_job,parents=cotest_nodes)
+            pmergenode=MergeNSNode(co_merge_job,parents=cotest_nodes)
             pmergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.hdf5'%(ifo,evstring)))
             self.add_node(pmergenode)
             par_mergenodes.append(pmergenode)
@@ -1265,14 +1280,28 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     randomseed=random.randint(1,2**31)
     node.set_seed(randomseed)
     prenode.set_seed(randomseed)
+    original_srate=0
     srate=0
     if event.srate:
-      srate=event.srate
+      original_srate=event.srate
     if self.config.has_option('lalinference','srate'):
-      srate=ast.literal_eval(self.config.get('lalinference','srate'))
+      original_srate=self.config.getfloat('lalinference','srate')
     elif self.config.has_option('engine','srate'):
-      srate=ast.literal_eval(self.config.get('engine','srate'))
+      original_srate=self.config.getfloat('engine','srate')
+    if (np.log2(original_srate)%1):
+      print 'The srate given,'+str(original_srate)+' Hz, is not a power of 2.'
+      print 'For data handling purposes, the srate used will be '+str(np.power(2., np.ceil(np.log2(original_srate))))+' Hz'
+      print 'The inner products will still however be integrated up to '+str(original_srate/2.)+' Hz'
+      srate = np.power(2., np.ceil(np.log2(original_srate)))
+    else:
+      srate = original_srate
     if srate is not 0:
+      node.set_srate(int(np.ceil(srate)))
+      prenode.set_srate(int(np.ceil(srate)))
+    if original_srate is not 0:
+      for ifo in ifos:
+        node.fhighs[ifo]=str(original_srate/2.)
+        prenode.fhighs[ifo]=str(original_srate/2.)
       node.set_srate(srate)
       prenode.set_srate(srate)
     if event.trigSNR:
@@ -1354,9 +1383,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         bw_seglen = np.power(2., np.ceil(np.log2(bw_seglen)))
     if self.config.has_option('condor','bayeswave'):
       if (np.log2(srate)%1):
-        print 'BayesWave only supports srates which are powers of 2, you have specified a srate of '+str(srate)+' seconds.'
-        print 'Instead, a srate of '+str(np.power(2., np.ceil(np.log2(srate))))+'s will be used for the BayesWave PSD estimation.'
-        print 'The main LALInference job will stil use srate '+str(srate)+' seconds.'
+        print 'BayesWave only supports srates which are powers of 2, you have specified a srate of '+str(srate)+' Hertz.'
+        print 'Instead, a srate of '+str(np.power(2., np.ceil(np.log2(srate))))+'Hz will be used for the BayesWave PSD estimation.'
+        print 'The main LALInference job will stil use srate '+str(srate)+' Hertz.'
         bw_srate = np.power(2., np.ceil(np.log2(srate)))
       else:
         bw_srate = srate
@@ -1427,11 +1456,12 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                   bayeslinenode[ifo].add_var_arg('-o '+os.path.join(roqeventpath,'BayesLine_PSD_'+ifo+'.dat'))
                   bayeslinenode[ifo].add_output_file(os.path.join(roqeventpath,'BayesLine_PSD_'+ifo+'.dat'))
                 if self.config.has_option('condor','computeroqweights'):
-                  computeroqweightsnode[ifo].add_var_arg('-d '+freqDataFile)
+                  computeroqweightsnode[ifo].add_var_arg('--fHigh '+str(prenode.fhighs[ifo]))
+                  computeroqweightsnode[ifo].add_var_arg('--data '+freqDataFile)
                   computeroqweightsnode[ifo].add_input_file(freqDataFile)
-                  computeroqweightsnode[ifo].add_var_arg('-p '+os.path.join(roqeventpath,'data-dump'+ifo+'-PSD.dat'))
+                  computeroqweightsnode[ifo].add_var_arg('--psd '+os.path.join(roqeventpath,'data-dump'+ifo+'-PSD.dat'))
                   computeroqweightsnode[ifo].add_input_file(os.path.join(roqeventpath,'data-dump'+ifo+'-PSD.dat'))
-                  computeroqweightsnode[ifo].add_var_arg('-o '+roqeventpath)
+                  computeroqweightsnode[ifo].add_var_arg('--out '+roqeventpath)
                   computeroqweightsnode[ifo].add_output_file(os.path.join(roqeventpath,'weights_quadratic_'+ifo+'.dat'))
               #self.prenodes[seg.id()]=(prenode,computeroqweightsnode)
               if self.config.has_option('condor','bayesline'):
@@ -1472,7 +1502,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     else:
       node.set_seglen(event.duration)
     if self.config.has_option('condor','bayeswave') and bayeswavepsdnode:
-      node.set_psdlength(0.0)
+      node.set_psdlength(bw_seglen)
     if self.config.has_option('input','psd-length'):
       node.set_psdlength(self.config.getint('input','psd-length'))
       if self.config.has_option('condor','bayeswave') and bayeswavepsdnode:
@@ -2468,9 +2498,9 @@ class ROMNode(pipeline.CondorDAGNode):
   def __init__(self,computeroqweights_job,ifo,seglen,flow):
     pipeline.CondorDAGNode.__init__(self,computeroqweights_job)
     self.__finalized=False
-    self.add_var_arg('-s '+str(seglen))
-    self.add_var_arg('-f '+str(flow))
-    self.add_var_arg('-i '+ifo)
+    self.add_var_arg('--seglen '+str(seglen))
+    self.add_var_arg('--fLow '+str(flow))
+    self.add_var_arg('--ifo '+ifo)
 
   def finalize(self):
     if self.__finalized:

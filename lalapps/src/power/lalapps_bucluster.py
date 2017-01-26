@@ -94,7 +94,7 @@ def parse_command_line():
 #
 
 
-lsctables.table.RowBuilder = lsctables.table.InterningRowBuilder
+lsctables.table.TableStream.RowBuilder = lsctables.table.InterningRowBuilder
 
 
 #

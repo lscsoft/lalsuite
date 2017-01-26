@@ -220,7 +220,7 @@ if options.normalize:
 #
 
 
-lsctables.table.reset_next_ids([lsctables.TimeSlideTable])
+lsctables.TimeSlideTable.reset_next_id()
 while filenames:
 	#
 	# Create an empty document, populate the process information.

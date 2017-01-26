@@ -84,6 +84,10 @@ parser.add_option("-f", "--fLow", type=float,
                       action="store",
                       dest="fLow",
                       help="low frequency cut off",)
+parser.add_option("-u", "--fHigh", type=float,
+                      action="store",
+                      dest="fHigh",
+                      help="high frequency cut off",)
 parser.add_option("-T", "--delta_tc", type=float,
                       action="store",
                       dest="delta_tc",
@@ -131,24 +135,24 @@ for ifo in options.IFOs:
 	dat_file = np.column_stack( np.loadtxt(options.data_file[i]) )
 	data = dat_file[1] + 1j*dat_file[2]
 	fseries = dat_file[0]
-        deltaF = fseries[1] - fseries[0]
-	fHigh = fseries[-1]
-	fHigh_index = fHigh / deltaF
+	deltaF = fseries[1] - fseries[0]
+	if options.fHigh:
+ 		fHigh = options.fHigh
+	else:
+		fHigh = fseries[-1]
+	fHigh_index = int(fHigh / deltaF)
 
-	
 	if options.fLow: 
 		fLow = options.fLow
 		scale_factor = basis_params[0] / fLow
 
-	else:
+ 	else:
 		fLow = basis_params[0]
-
-
 		assert fHigh == basis_params[1]
+ 	fLow_index = int(fLow / deltaF)
 		
-	fseries = fseries[int(fLow/deltaF):fHigh_index]
-	data = data[int(fLow/deltaF):fHigh_index]
-
+	fseries = fseries[fLow_index:fHigh_index]
+	data = data[fLow_index:fHigh_index]
 
 	psdfile = np.column_stack( np.loadtxt(options.psd_file[i]) )
 	psd = psdfile[1]
@@ -159,8 +163,8 @@ for ifo in options.IFOs:
 	data /= psd
 
 	# only get frequency components up to fHigh
-	B_linear = B_linear.T[0:(fHigh_index - fLow/deltaF)][:].T
-	B_quadratic = B_quadratic.T[0:(fHigh_index-fLow/deltaF)][:].T
+	B_linear = B_linear.T[0:(fHigh_index - fLow_index)][:].T
+	B_quadratic = B_quadratic.T[0:(fHigh_index-fLow_index)][:].T
 	print B_linear.shape[1], B_quadratic.shape[1], len(data), len(psd) 
 	assert len(data) == len(psd) == B_linear.shape[1] == B_quadratic.shape[1]
 

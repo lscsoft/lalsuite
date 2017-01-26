@@ -830,7 +830,7 @@ static int SEOBNRv4ROMCore(
 
   // Enforce allowed geometric frequency range
   if (fLow_geom < Mf_ROM_min)
-    XLAL_ERROR(XLAL_EDOM, "Starting frequency Mflow=%g is smaller than lowest frequency in ROM Mf=%g. Starting at lowest frequency in ROM.\n", fLow_geom, Mf_ROM_min);
+    XLAL_ERROR(XLAL_EDOM, "Starting frequency Mflow=%g is smaller than lowest frequency in ROM Mf=%g.\n", fLow_geom, Mf_ROM_min);
   if (fHigh_geom == 0 || fHigh_geom > Mf_ROM_max)
     fHigh_geom = Mf_ROM_max;
   else if (fHigh_geom < Mf_ROM_min)
@@ -1068,7 +1068,7 @@ static int SEOBNRv4ROMCore(
 }
 
 /**
- * @addtogroup LALSimIMRSEOBNRv4ROM_c
+ * @addtogroup LALSimIMRSEOBNRROM_c
  *
  * \author Michael Puerrer
  *

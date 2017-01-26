@@ -10,6 +10,7 @@ import ast
 import os
 import uuid
 from glue import pipeline
+from math import ceil
 
 usage=""" %prog [options] config.ini
 Setup a Condor DAG file to run the LALInference pipeline based on
@@ -208,12 +209,12 @@ for sampler in samps:
         path=cp.get('paths','roq_b_matrix_directory')
         thispath=os.path.join(path,roq)
         cp.set('paths','roq_b_matrix_directory',thispath)
-        flow=int(roq_params[roq]['flow'] / roq_mass_freq_scale_factor)
-        srate=int(2.*roq_params[roq]['fhigh'] / roq_mass_freq_scale_factor)
+        flow=roq_params[roq]['flow'] / roq_mass_freq_scale_factor
+        srate=2.*roq_params[roq]['fhigh'] / roq_mass_freq_scale_factor
 	if srate > 8192:
 		srate = 8192
 
-        seglen=int(roq_params[roq]['seglen'] * roq_mass_freq_scale_factor)
+        seglen=roq_params[roq]['seglen'] * roq_mass_freq_scale_factor
         # params.dat uses the convention q>1 so our q_min is the inverse of their qmax
         cp.set('engine','srate',str(srate))
         cp.set('engine','seglen',str(seglen))

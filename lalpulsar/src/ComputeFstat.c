@@ -741,14 +741,14 @@ XLALDestroyFstatResults ( FstatResults* Fstats  ///< [in] #FstatResults structur
       XLALFree ( Fstats->twoFPerDet[X] );
       XLALFree ( Fstats->FaPerDet[X] );
       XLALFree ( Fstats->FbPerDet[X] );
-      if ( Fstats->multiFatoms != NULL )
+    }
+  if ( Fstats->multiFatoms != NULL )
+    {
+      for ( UINT4 n = 0; n < Fstats->internalalloclen; ++n )
         {
-          for ( UINT4 n = 0; n < Fstats->internalalloclen; ++n )
-            {
-              XLALDestroyMultiFstatAtomVector ( Fstats->multiFatoms[n] );
-            }
-          XLALFree ( Fstats->multiFatoms );
+          XLALDestroyMultiFstatAtomVector ( Fstats->multiFatoms[n] );
         }
+      XLALFree ( Fstats->multiFatoms );
     }
 
   XLALFree ( Fstats );

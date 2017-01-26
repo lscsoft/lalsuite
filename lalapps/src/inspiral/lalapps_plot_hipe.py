@@ -11,6 +11,7 @@ __version__ = '$Revision$'
 
 ##############################################################################
 # import standard modules
+import itertools
 import sys, os, copy, math
 import socket, time
 import re, string
@@ -19,7 +20,6 @@ import tempfile
 from glue.pipeline import DeepCopyableConfigParser as dcConfigParser
 import urlparse
 from pylal import CoincInspiralUtils
-from glue import iterutils
 ##############################################################################
 # import the modules we need to build the pipeline
 from glue import pipeline
@@ -250,12 +250,12 @@ ifolist = [ifo for ifo in ('G1','H1', 'H2', 'L1', 'V1') \
             if getattr(opts, "%s_data" % ifo.lower())]
 
 if opts.two_ifo:
-   ifo_combo=list(iterutils.choices(ifolist,2))
+   ifo_combo=list(itertools.combinations(ifolist,2))
 if opts.three_ifo:
-   ifo_combo=list(iterutils.choices(ifolist,2)) + list(iterutils.choices(ifolist,3))
+   ifo_combo=list(itertools.combinations(ifolist,2)) + list(itertools.combinations(ifolist,3))
 if opts.four_ifo:
-   ifo_combo=list(iterutils.choices(ifolist,2)) + list(iterutils.choices(ifolist,3)) + \
-             list(iterutils.choices(ifolist,4))
+   ifo_combo=list(itertools.combinations(ifolist,2)) + list(itertools.combinations(ifolist,3)) + \
+             list(itertools.combinations(ifolist,4))
 if opts.analyze_all: 
    ifo_combo=CoincInspiralUtils.get_ifo_combos(ifolist)
 

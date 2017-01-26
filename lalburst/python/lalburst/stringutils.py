@@ -24,6 +24,7 @@
 #
 
 
+import itertools
 import math
 import scipy.stats
 import sys
@@ -32,7 +33,6 @@ import sys
 import lal
 
 
-from glue import iterutils
 from glue import segmentsUtils
 from glue.ligolw import lsctables
 from glue.ligolw import utils
@@ -88,7 +88,7 @@ def triangulators(timing_uncertainties):
 
 	triangulators = {}
 	for n in range(2, len(allinstruments) + 1):
-		for instruments in iterutils.choices(allinstruments, n):
+		for instruments in itertools.combinations(allinstruments, n):
 			triangulators[instruments] = snglcoinc.TOATriangulator([lal.cached_detector_by_prefix[instrument].location for instrument in instruments], [timing_uncertainties[instrument] for instrument in instruments])
 
 	return triangulators
@@ -216,7 +216,7 @@ class StringCoincParamsDistributions(snglcoinc.CoincParamsDistributions):
 		# instrument
 		#
 
-		for event1, event2 in iterutils.choices(events, 2):
+		for event1, event2 in itertools.combinations(events, 2):
 			assert event1.ifo != event2.ifo
 
 			prefix = "%s_%s_" % (event1.ifo, event2.ifo)

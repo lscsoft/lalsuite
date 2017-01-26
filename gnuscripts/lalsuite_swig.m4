@@ -1,8 +1,8 @@
 # -*- mode: autoconf; -*-
 # lalsuite_swig.m4 - SWIG configuration
-# Author: Karl Wette, 2011--2014
+# Author: Karl Wette, 2011--2017
 #
-# serial 88
+# serial 93
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -102,9 +102,8 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
   AS_IF([test "${swig_build_iface}" = true],[
 
     # configure SWIG binding languages
-    swig_min_version=2.0.11
+    swig_min_version=2.0.12
     swig_min_version_info=""
-    swig_src_files=""
     LALSUITE_USE_SWIG_OCTAVE
     LALSUITE_USE_SWIG_PYTHON
 
@@ -136,18 +135,6 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
       ])
       SWIG="env CCACHE_DISABLE=1 ${ac_cv_path_SWIG}"
     ])
-
-    # determine SWIG Python flags
-    AC_SUBST([SWIG_PYTHON_FLAGS],[])
-    SWIG_PYTHON_FLAGS="-O -builtin -globals globalvar"
-    AC_MSG_CHECKING([if SWIG supports relative Python imports])
-    LALSUITE_VERSION_COMPARE([${swig_version}],[<],[3.0.0],
-      [AC_MSG_RESULT([no])],
-      [
-        AC_MSG_RESULT([yes])
-        SWIG_PYTHON_FLAGS="-py3 -relativeimport ${SWIG_PYTHON_FLAGS}"
-      ]
-    )
 
     # extract -I and -D flags from LALSuite library preprocessor flags
     AC_SUBST([SWIG_CPPFLAGS],[])
@@ -186,8 +173,14 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
 
   ])
   AM_CONDITIONAL([SWIG_BUILD],[test "${swig_build_iface}" = true])
+
+  # run SWIG binding language post-actions
+  _LALSUITE_USE_SWIG_POST_ACTIONS
+
   # end $0
 ])
+
+m4_define([_LALSUITE_USE_SWIG_POST_ACTIONS],[])
 
 AC_DEFUN([LALSUITE_USE_SWIG_LANGUAGE],[
   # $0: configure SWIG binding languages
@@ -196,9 +189,13 @@ AC_DEFUN([LALSUITE_USE_SWIG_LANGUAGE],[
   AS_IF([test "${swig_build_]lowercase[}" = true],[
     AC_LANG_PUSH([$2])
     swig_build=true
-    swig_src_files="${swig_src_files} swiglal_[]lowercase[].$3"
-    $4
+    $3
     AC_LANG_POP([$2])
+  ])
+  m4_append([_LALSUITE_USE_SWIG_POST_ACTIONS],[
+    AS_IF([test "${swig_build_]]lowercase[[}" = true],[
+      $4
+    ])
   ])
   m4_popdef([uppercase])
   m4_popdef([lowercase])
@@ -207,10 +204,10 @@ AC_DEFUN([LALSUITE_USE_SWIG_LANGUAGE],[
 
 AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
   # $0: configure SWIG Octave bindings
-  LALSUITE_USE_SWIG_LANGUAGE([Octave],[C++],[cpp],[
+  LALSUITE_USE_SWIG_LANGUAGE([Octave],[C++],[
 
     # check for Octave
-    AC_PATH_PROG(OCTAVE,[octave],[],[])
+    AC_PATH_PROG(OCTAVE,[octave-cli octave],[],[])
     AS_IF([test "x${OCTAVE}" = x],[
       AC_MSG_ERROR([could not find octave in PATH])
     ])
@@ -247,15 +244,15 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     LALSUITE_VERSION_COMPARE([${octave_version}],[<],[${octave_min_version}],[
       AC_MSG_ERROR([Octave version ${octave_min_version} or later is required])
     ])
-    LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[3.8.0],[
-      LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[2.0.12],[
-        swig_min_version=2.0.12
-        swig_min_version_info="for Octave version ${octave_version}"
-      ])
-    ])
     LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[4.0.0],[
       LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[3.0.7],[
         swig_min_version=3.0.7
+        swig_min_version_info="for Octave version ${octave_version}"
+      ])
+    ])
+    LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[4.2.0],[
+      LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[3.0.12],[
+        swig_min_version=3.0.12
         swig_min_version_info="for Octave version ${octave_version}"
       ])
     ])
@@ -334,16 +331,24 @@ int main() { std::string s = "a"; return 0; }
     # determine Octave compiler flags
     AC_SUBST([SWIG_OCTAVE_CXXFLAGS],[])
     swig_octave_cxxflags=
-    for arg in CXXPICFLAG ALL_CXXFLAGS; do
+    for arg in CXX CXXPICFLAG ALL_CXXFLAGS; do
       for flag in `${mkoctfile} -p ${arg} 2>/dev/null`; do
-        swig_octave_cxxflags="${swig_octave_cxxflags} ${flag}"
+        AS_CASE([${flag}],
+          [-*],[swig_octave_cxxflags="${swig_octave_cxxflags} ${flag}"]
+        )
       done
     done
     LALSUITE_CHECK_COMPILE_FLAGS([
       ${swig_octave_cxxflags}
-      -Wno-uninitialized -Wno-unused-variable -Wno-unused-but-set-variable
-      -Wno-format-extra-args -Wno-tautological-compare -fno-strict-aliasing
-      -O0 -Wp[,]-U_FORTIFY_SOURCE
+      -Wno-uninitialized
+      -Wno-unused-variable
+      -Wno-unused-but-set-variable
+      -Wno-format-extra-args
+      -Wno-tautological-compare
+      -Wno-deprecated-declarations
+      -fno-strict-aliasing
+      -O0
+      -Wp[,]-U_FORTIFY_SOURCE
       ],[SWIG_OCTAVE_CXXFLAGS="${SWIG_OCTAVE_CXXFLAGS} ${flag}"]
     )
 
@@ -367,6 +372,7 @@ int main() { std::string s = "a"; return 0; }
     # check for Octave headers
     LALSUITE_PUSH_UVARS
     CPPFLAGS="${SWIG_OCTAVE_CPPFLAGS_IOCTAVE} ${SWIG_OCTAVE_CPPFLAGS}"
+    CXXFLAGS="${SWIG_OCTAVE_CXXFLAGS}"
     AC_CHECK_HEADER([octave/oct.h],[],[
       AC_MSG_ERROR([could not find the header "octave/oct.h"])
     ],[
@@ -374,13 +380,18 @@ int main() { std::string s = "a"; return 0; }
     ])
     LALSUITE_POP_UVARS
 
+  ],[
+
+    # determine SWIG Octave flags
+    AC_SUBST([SWIG_OCTAVE_FLAGS],["-globals . -DSWIG_CPLUSPLUS_CAST"])
+
   ])
   # end $0
 ])
 
 AC_DEFUN([LALSUITE_USE_SWIG_PYTHON],[
   # $0: configure SWIG Python bindings
-  LALSUITE_USE_SWIG_LANGUAGE([Python],[C],[c],[
+  LALSUITE_USE_SWIG_LANGUAGE([Python],[C],[
 
     # check for distutils
     AC_MSG_CHECKING([for distutils])
@@ -445,8 +456,12 @@ EOD`]
     done
     LALSUITE_CHECK_COMPILE_FLAGS([
       ${swig_python_cflags}
-      -Wno-uninitialized -Wno-unused-variable -Wno-unused-but-set-variable
-      -Wno-format-extra-args -Wno-tautological-compare -fno-strict-aliasing
+      -Wno-uninitialized
+      -Wno-unused-variable
+      -Wno-unused-but-set-variable
+      -Wno-format-extra-args
+      -Wno-tautological-compare
+      -fno-strict-aliasing
       ],[SWIG_PYTHON_CFLAGS="${SWIG_PYTHON_CFLAGS} ${flag}"]
     )
 
@@ -514,6 +529,18 @@ EOD`]
       #include <numpy/arrayobject.h>
     ])
     LALSUITE_POP_UVARS
+
+  ],[
+
+    # determine SWIG Python flags
+    AC_SUBST([SWIG_PYTHON_FLAGS],["-O -builtin -globals globalvar"])
+    AC_MSG_CHECKING([if SWIG supports relative Python imports])
+    LALSUITE_VERSION_COMPARE([${swig_version}],[<],[3.0.0],[
+      AC_MSG_RESULT([no])
+    ],[
+      AC_MSG_RESULT([yes])
+      SWIG_PYTHON_FLAGS="-py3 -relativeimport ${SWIG_PYTHON_FLAGS}"
+    ])
 
   ])
   # end $0
