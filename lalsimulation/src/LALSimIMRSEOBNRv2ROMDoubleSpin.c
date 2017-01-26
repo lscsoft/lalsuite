@@ -678,8 +678,6 @@ int SEOBNRROMdataDS_Init(SEOBNRROMdataDS *romdata, const char dir[]) {
     return (XLAL_FAILURE);
   }
 
-  gsl_set_error_handler(&err_handler);
-
   load_dataPtr load_data = &load_data_sub1;
   ret = SEOBNRROMdataDS_Init_submodel(&(romdata)->sub1, nk_amp_sub1, nk_phi_sub1,
           gA_sub1, gPhi_sub1, etavec_sub1, chi1vec_sub1, chi2vec_sub1, ncx_sub1, ncy_sub1, ncz_sub1, dir, load_data);

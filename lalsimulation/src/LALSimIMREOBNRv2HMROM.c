@@ -195,7 +195,6 @@ static REAL8 ModeAmpFactor(const INT4 l, const INT4 m, const REAL8 q) {
 /* Function interpolating the data in matrix/vector form produces an interpolated data in the form of SplineLists */
 static INT4 Interpolate_Spline_Data(const EOBNRHMROMdata *data, EOBNRHMROMdata_interp *data_interp) {
 
-  gsl_set_error_handler(&err_handler);
   SplineList* splinelist;
   gsl_spline* spline;
   gsl_interp_accel* accel;

@@ -371,7 +371,6 @@ static int SEOBNRROMdataDS_Init(SEOBNRROMdataDS *romdata, const char dir[]) {
     return (XLAL_FAILURE);
   }
 
-  gsl_set_error_handler(&err_handler);
   (romdata)->cvec_amp = gsl_vector_alloc(N*nk_amp);
   (romdata)->cvec_phi = gsl_vector_alloc(N*nk_phi);
   (romdata)->Bamp = gsl_matrix_alloc(nk_amp, nk_amp);
