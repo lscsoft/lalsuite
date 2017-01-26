@@ -1060,61 +1060,65 @@ def bbh_final_spin_precessing_HBR2016(m1, m2, chi1, chi2, tilt1, tilt2, phi12, v
         # Return the final spin value [Eq. (16) in HBR]
         return (chi1*chi1 + chi2*chi2*q2*q2 + 2.*chi1*chi2*q2*cos_alpha + 2.*(chi1*cos_betas + chi2*q2*cos_gammas)*ell*q + ell*ell*q2)**0.5/((1.+q)*(1.+q))
 
-def bbh_aligned_Lpeak_6mode_SHXJDK(q, chi1para, chi2para):
+def _rescale_Lpeak(Lpeak):
     """
-    Calculate the peak luminosity (using modes 22, 21, 33, 32, 44, and 43) of a binary black hole with aligned spins using the fit made by Sascha Husa, Xisco Jimenez Forteza, David Keitel [LIGO-T1500598] using 5th order in chieff and return results in units of 10^56 ergs/s
+    convert from geometric units ("Planck luminosity" of c^5/G) to multiples of 10^56 erg/s = 10^49 J/s
+    """
+    LumPl_ergs_per_sec = lal.LUMPL_SI*1e-49 # Approximate value = 3628.505
+    return LumPl_ergs_per_sec*Lpeak
+
+def bbh_aligned_Lpeak_6mode_SHXJDK(q, chi1, chi2):
+    """
+    wrapper to bbh_peak_luminosity_non_precessing_T1600018() for backwards compatibility
 
     q: mass ratio (here m2/m1, where m1>m2)
-    chi1para: the component of the dimensionless spin of m1 along the angular momentum (z)
-    chi2para: the component of the dimensionless spin of m2 along the angular momentum (z)
-    
-    Note: Here it is assumed that m1>m2.
+    chi1: the component of the dimensionless spin of m1 along the angular momentum (z)
+    chi2: the component of the dimensionless spin of m2 along the angular momentum (z)
     """
     # Vectorize the function if arrays are provided as input
     q = np.vectorize(float)(np.array(q))
-    chi1para = np.vectorize(float)(np.array(chi1para))
-    chi2para = np.vectorize(float)(np.array(chi2para))
-    
+
+    # from bayespputils.py convention is q = m2/m1, where m1>m2.
     if np.any(q<=0.):
       raise ValueError("q has to be > 0.")
     if np.any(q>1.):
       raise ValueError("q has to be <= 1.")
-    
-    if np.any(abs(chi1para)>1):
-      raise ValueError("chi1para has to be in [-1, 1]")
-    if np.any(abs(chi2para)>1):
-      raise ValueError("chi2para has to be in [-1, 1]")
 
-    # Calculate eta and the effective spin
-    
-    # This function is designed for bayespputils.py that expects q = m2/m1, where m1>m2. Expressions in reference above are for q = m1/m2. Here we do the appropriate conversion.
-    q_inv = 1./q
+    # T1600018 fit expects m1>m2
+    m1 = 1./(1.+q)
+    m2 = q/(1.+q)
 
-    eta = q_inv/(1.+q_inv)**2.
+    return bbh_peak_luminosity_non_precessing_T1600018(m1, m2, chi1, chi2)
 
-    eta2 = eta*eta
-    eta3 = eta2*eta
-    eta4 = eta3*eta
+def bbh_peak_luminosity_non_precessing_T1600018(m1, m2, chi1, chi2):
+    """
+    Calculate the peak luminosity (using modes 22, 21, 33, 32, 44, and 43) of a binary black hole with aligned spins using the fit made by Sascha Husa, Xisco Jimenez Forteza, David Keitel [LIGO-T1500598] using 5th order in chieff and return results in units of 10^56 ergs/s
 
-    dm2 = 1. - 4.*eta
+    m1, m2: component masses
+    chi1: the component of the dimensionless spin of m1 along the angular momentum (z)
+    chi2: the component of the dimensionless spin of m2 along the angular momentum (z)
 
-    chi_eff = (q_inv*chi1para + chi2para)/(1. + q_inv)
+    Note: Here it is assumed that m1>m2.
+    """
+    # Vectorize the function if arrays are provided as input
+    m1 = np.vectorize(float)(np.array(m1))
+    m2 = np.vectorize(float)(np.array(m2))
+    chi1 = np.vectorize(float)(np.array(chi1))
+    chi2 = np.vectorize(float)(np.array(chi2))
 
+    # Calculate powers of eta and the effective spin S (not used in this fit)
+    m, eta, eta2, eta3, eta4, Stot, Shat, Shat2, Shat3, Shat4, chidiff, chidiff2, sqrt2, sqrt3, sqrt1m4eta = bbh_UIBfits_setup(m1, m2, chi1, chi2)
+
+    dm2 = 1. - 4.*eta # equivalent to sqrt1m4eta**2
+
+    chi_eff = (m1*chi1+m2*chi2)/m # equivalent to (q_inv*chi1 + chi2)/(1. + q_inv)
     chi_eff2 = chi_eff*chi_eff
     chi_eff3 = chi_eff2*chi_eff
     chi_eff4 = chi_eff3*chi_eff
     chi_eff5 = chi_eff4*chi_eff
 
-    chi_diff = chi1para - chi2para
-    chi_diff2 = chi_diff*chi_diff
-
     # Calculate best fit (from [https://dcc.ligo.org/T1500598-v4])
-
-    Lpeak = (0.012851338846828302 + 0.007822265919928252*chi_eff + 0.010221856361035788*chi_eff2 + 0.015805535732661396*chi_eff3 + 0.0011356206806770043*chi_eff4 - 0.009868152529667197*chi_eff5)*eta2 + (0.05681786589129071 - 0.0017473702709303457*chi_eff - 0.10150706091341818*chi_eff2 - 0.2349153289253309*chi_eff3 + 0.015657737820040145*chi_eff4 + 0.19556893194885075*chi_eff5)*eta4 + 0.026161288241420833*dm2**0.541825641769908*eta**3.1629576945611757*chi_diff + 0.0007771032100485481*dm2**0.4499151697918658*eta**1.7800346166040835*chi_diff2
+    Lpeak = (0.012851338846828302 + 0.007822265919928252*chi_eff + 0.010221856361035788*chi_eff2 + 0.015805535732661396*chi_eff3 + 0.0011356206806770043*chi_eff4 - 0.009868152529667197*chi_eff5)*eta2 + (0.05681786589129071 - 0.0017473702709303457*chi_eff - 0.10150706091341818*chi_eff2 - 0.2349153289253309*chi_eff3 + 0.015657737820040145*chi_eff4 + 0.19556893194885075*chi_eff5)*eta4 + 0.026161288241420833*dm2**0.541825641769908*eta**3.1629576945611757*chidiff + 0.0007771032100485481*dm2**0.4499151697918658*eta**1.7800346166040835*chidiff2
 
     # Convert to 10^56 ergs/s units
-    
-    # We first define the "Planck luminosity" of c^5/G in 10^56 ergs/s units. Note: 10^56 ergs/s = 10^49 J/s
-    LumPl_ergs_per_sec = lal.LUMPL_SI*1e-49 # Approximate value = 3628.505 
-    
-    return LumPl_ergs_per_sec*Lpeak
+    return _rescale_Lpeak(Lpeak)
