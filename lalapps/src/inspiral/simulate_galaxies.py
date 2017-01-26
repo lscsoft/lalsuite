@@ -4,7 +4,6 @@ import sys
 import os
 import shutil
 import re
-import exceptions
 import glob
 import string
 

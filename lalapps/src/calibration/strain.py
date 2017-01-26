@@ -7,7 +7,6 @@ __date__ = '$Date$'
 __version__ = '$Revision$'
 
 import string,sys,os
-import exceptions
 from glue import pipeline
 from pylab import *
 import operator
@@ -15,7 +14,7 @@ from math import *
 import numpy
 import time
 
-class StringError(exceptions.Exception):
+class StringError(Exception):
   def __init__(self, args=None):
     self.args = args
 

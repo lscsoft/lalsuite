@@ -7,11 +7,10 @@ __date__ = '$Date$'
 __version__ = '$Revision$'
 
 import string
-import exceptions
 from glue import pipeline
 
 
-class RingError(exceptions.Exception):
+class RingError(Exception):
   def __init__(self, args=None):
     self.args = args
 
