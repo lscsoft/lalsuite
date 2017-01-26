@@ -355,7 +355,8 @@ static PyMethodDef methods[] = {
 
 static PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
-    "_sky_map", NULL, -1, methods
+    "_sky_map", NULL, -1, methods,
+    NULL, NULL, NULL, NULL
 };
 
 

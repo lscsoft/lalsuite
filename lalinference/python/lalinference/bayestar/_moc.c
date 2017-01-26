@@ -211,7 +211,8 @@ static PyMethodDef methods[] = {
 
 static PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
-    modulename, NULL, -1, methods
+    modulename, NULL, -1, methods,
+    NULL, NULL, NULL, NULL
 };
 
 

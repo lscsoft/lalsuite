@@ -266,7 +266,8 @@ static const char modulename[] = "_distance";
 
 static PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
-    modulename, NULL, -1, NULL
+    modulename, NULL, -1, NULL,
+    NULL, NULL, NULL, NULL
 };
 
 
