@@ -1122,3 +1122,58 @@ def bbh_peak_luminosity_non_precessing_T1600018(m1, m2, chi1, chi2):
 
     # Convert to 10^56 ergs/s units
     return _rescale_Lpeak(Lpeak)
+
+def bbh_peak_luminosity_non_precessing_UIB2016(m1, m2, chi1, chi2):
+    """
+    Calculate the peak luminosity with the aligned-spin NR fit
+    by David Keitel, Xisco Jimenez Forteza, Sascha Husa, Lionel London et al.
+    [LIGO-P1600279-v5] [https://arxiv.org/abs/1612.09566v1]
+    using modes up to lmax=6,
+    and return results in units of 10^56 ergs/s
+
+    m1, m2: component masses
+    chi1, chi2: dimensionless spins of two BHs
+    Note: Here it is assumed that m1>m2.
+    """
+
+    m, eta, eta2, eta3, eta4, Stot, Shat, Shat2, Shat3, Shat4, chidiff, chidiff2, sqrt2, sqrt3, sqrt1m4eta = bbh_UIBfits_setup(m1, m2, chi1, chi2)
+    eta5 = eta3*eta2
+
+    # fit coefficients corresponding to Table I, II, IV,
+    # exact values corresponding to https://arxiv.org/src/1612.09566v1/anc/LpeakUIB2016_suppl_coeffs.txt
+    a0 = 0.8742169580717333
+    a1 = -2.111792574893241
+    a2 = 35.214103272783646
+    a3 = -244.94930678226913
+    a4 = 877.1061892200927
+    a5 = -1172.549896493467
+    b1 = 0.9800204548606681
+    b2 = -0.1779843936224084
+    b4 = 1.7859209418791981
+    f71 = 0.
+    d10 = 3.789116271213293
+    d20 = 0.40214125006660567
+    d30 = 4.273116678713487
+    f10 = 1.6281049269810424
+    f11 = -3.6322940180721037
+    f20 = 31.710537408279116
+    f21 = -273.84758785648336
+    f30 = -0.23470852321351202
+    f31 = 6.961626779884965
+    f40 = 0.21139341988062182
+    f41 = 1.5255885529750841
+    f60 = 3.0901740789623453
+    f61 = -16.66465705511997
+    f70 = 0.8362061463375388
+
+    # calculate the Lpeak/(eta2*L0) fit from Eq. (14)
+    Lpeak = a0 + a1*eta + a2*eta2 + a3*eta3 + a4*eta4 + a5*eta5 + (0.465*b1*Shat*(f10 + f11*eta + (16. - 16.*f10 - 4.*f11)*eta2) + 0.107*b2*Shat2*(f20 + f21*eta + (16. - 16.*f20 - 4.*f21)*eta2) + 1.*Shat3*(f30 + f31*eta + (-16.*f30 - 4.*f31)*eta2) + 1.*Shat4*(f40 + f41*eta + (-16.*f40 - 4.*f41)*eta2))/(1. - 0.328*b4*Shat*(f60 + f61*eta + (16. - 16.*f60 - 4.*f61)*eta2) + 1.*Shat2*(f70 + f71*eta + (-16.*f70 - 4.*f71)*eta2)) + d10*sqrt1m4eta*eta3*chidiff + d30*Shat*sqrt1m4eta*eta3*chidiff + d20*eta3*chidiff2
+
+    # Lpeak(eta=0.25,chi1=chi2=0)/0.25^2
+    L0 = 0.016379197203103536
+
+    # Convert to actual peak luminosity
+    Lpeak = Lpeak*eta2*L0
+
+    # Convert to 10^56 ergs/s units
+    return _rescale_Lpeak(Lpeak)
