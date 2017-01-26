@@ -379,7 +379,7 @@ XLALMakeTimestamps ( LIGOTimeGPS tStart,	/**< GPS start-time */
   // now we might be covering the end-time several times, if using overlapping SFTs, so
   // let's trim this back down so that end-time is covered exactly once
   UINT4 numSFTs = numSFTsMax;
-  while ( (numSFTs >= 2) && ( (numSFTs - 1) * Tstep + Tsft > Tspan) ) {
+  while ( (numSFTs >= 2) && ( (numSFTs - 2) * Tstep + Tsft >= Tspan) ) {
     numSFTs --;
   }
 
