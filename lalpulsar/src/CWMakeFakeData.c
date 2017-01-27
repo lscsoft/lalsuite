@@ -184,7 +184,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
   REAL8 Tsft = timestamps->deltaT;
 
   // if SFT output requested: need *effective* fMin and Band consistent with SFT bins
-  if ( SFTvect )
+  if ( SFTvect != NULL )
     {
       UINT4 firstBinEff, numBinsEff;
       XLAL_CHECK ( XLALFindCoveringSFTBins ( &firstBinEff, &numBinsEff, fMin, fBand, Tsft ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -214,7 +214,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
   UINT4 n1_fSamp;
   XLAL_CHECK ( XLALFindSmallestValidSamplingRate ( &n1_fSamp, n0_fSamp, timestamps ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  if ( n1_fSamp != n0_fSamp )
+  if ( (SFTvect != NULL) && (n1_fSamp != n0_fSamp) )
     {
       REAL8 fSamp1 = n1_fSamp / Tsft;	// increased sampling rate to fit all gaps
       XLALPrintWarning ( "GAPS: Initial SFT sampling frequency fSamp0= %d/%.0f = %g had to be increased to fSamp1 = %d/%.0f = %g\n",
@@ -224,12 +224,28 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
     } // if higher effective sampling rate required
 
   // ----- start-time and duration -----
-  LIGOTimeGPS firstGPS = timestamps->data[0];
+  LIGOTimeGPS XLAL_INIT_DECL(firstGPS);
+  LIGOTimeGPS XLAL_INIT_DECL(lastGPS);
+  REAL8 duration;
+  // NOTE: use time-interval of timeseries (if given) otherwise timestamps (must be subset of timeseries)
+  if ( dataParams->inputMultiTS != NULL )
+    {
+      const REAL8TimeSeries *ts = dataParams->inputMultiTS->data[detectorIndex];
+      XLAL_CHECK ( ts != NULL, XLAL_EINVAL );
+      firstGPS = ts->epoch;
+      duration = ts->data->length * ts->deltaT;
+      lastGPS = firstGPS;
+      XLALGPSAdd ( &lastGPS, duration );
+    }
+  else // use input timestamps
+    {
+      firstGPS = timestamps->data[0];
+      lastGPS = timestamps->data [ timestamps->length - 1 ];
+      XLALGPSAdd( &lastGPS, Tsft );
+      duration = XLALGPSDiff ( &lastGPS, &firstGPS );
+    }
   REAL8 firstGPS_REAL8 = XLALGPSGetREAL8 ( &firstGPS );
-  LIGOTimeGPS lastGPS  = timestamps->data [ timestamps->length - 1 ];
-  XLALGPSAdd( &lastGPS, Tsft );
-  REAL8 lastGPS_REAL8 = XLALGPSGetREAL8 ( &lastGPS );
-  REAL8 duration = XLALGPSDiff ( &lastGPS, &firstGPS );
+  REAL8 lastGPS_REAL8  = XLALGPSGetREAL8 ( &lastGPS );
 
   // start with an empty output time-series
   REAL4TimeSeries *Tseries_sum;

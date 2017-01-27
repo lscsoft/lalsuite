@@ -521,13 +521,19 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
                            X, tStart, tEnd, frames_start, frames_end );
               XLALGPSSetREAL8 ( &ts_startGPS, tStart );
               ts_duration = (tEnd - tStart);
-            }
+            } // if have_timestamps
           else
             {
               ts_startGPS = frames_startGPS;
               ts_duration = frames_span;
               XLAL_CHECK ( (cfg->multiTimestamps->data[X] = XLALMakeTimestamps ( ts_startGPS, ts_duration, uvar->Tsft, uvar->SFToverlap ) ) != NULL, XLAL_EFUNC );
-            }
+              // in this case we can't allow timestamps extending beyond the end of the frame timeseries, so we drop the last timestamp if necessary
+              LIGOTimeGPSVector *timestampsX = cfg->multiTimestamps->data[X];
+              REAL8 tEnd;
+              while ( (tEnd = XLALGPSGetREAL8 ( &timestampsX->data[timestampsX->length-1] ) + timestampsX->deltaT) > frames_end ) {
+                timestampsX->length --;
+              }
+            } // if have no timestamps
 
           const char *channel = uvar->inFrChannels->data[X];
           size_t limit = 0;	// unlimited read
