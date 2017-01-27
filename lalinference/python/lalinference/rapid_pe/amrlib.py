@@ -31,9 +31,9 @@ def refine_regular_grid(grid, grid_spacing, return_cntr=False):
     >>> region = Cell(numpy.array([(-1., 1.), (-2., 2.)]))
     >>> grid, spacing = create_regular_grid_from_cell(region, side_pts=2)
     >>> grid, spacing = refine_regular_grid(grid, spacing)
-    >>> print grid
+    >>> print(grid)
     [array([-2., -4.]), array([-2., -2.]), array([-1., -4.]), array([-1., -2.]), array([-2.,  0.]), array([-2.,  2.]), array([-1.,  0.]), array([-1.,  2.]), array([ 0., -4.]), array([ 0., -2.]), array([ 1., -4.]), array([ 1., -2.]), array([ 0.,  0.]), array([ 0.,  2.]), array([ 1.,  0.]), array([ 1.,  2.])]
-    >>> print spacing
+    >>> print(spacing)
     [ 1.  2.]
     """
 
@@ -284,12 +284,12 @@ def create_regular_grid_from_cell(cell, side_pts=5, return_cells=False):
     >>> import numpy
     >>> region = Cell(numpy.array([(-1., 1.), (-2., 2.)]))
     >>> grid, spacing = create_regular_grid_from_cell(region, side_pts=2)
-    >>> print grid
+    >>> print(grid)
     [[-1. -2.]
      [-1.  2.]
      [ 1. -2.]
      [ 1.  2.]]
-    >>> print spacing
+    >>> print(spacing)
     [ 2.  4.]
     """
 
