@@ -144,7 +144,7 @@ done:
     Py_XDECREF(uniq_key);
     Py_XDECREF(new_fields);
     Py_XDECREF(capsule);
-    return ret;
+    return (PyObject *) ret;
 }
 
 
