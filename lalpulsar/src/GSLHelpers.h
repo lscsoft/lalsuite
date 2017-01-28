@@ -89,7 +89,7 @@
     fprintf(stderr, "%s:%i ", strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__, __LINE__); \
     fprintf(stderr, "%s = [", #name); \
     for (size_t GH_i = 0; (name) != NULL && GH_i < (name)->size; ++GH_i) { \
-      fprintf(stderr, " "fmt, gsl_##type##_get(name, GH_i)); \
+      fprintf(stderr, " " fmt, gsl_##type##_get(name, GH_i)); \
     } \
     fprintf(stderr, " ]\n"); \
   } while (0)
@@ -101,7 +101,7 @@
     for (size_t GH_i = 0; (name) != NULL && GH_i < (name)->size1; ++GH_i) { \
       fprintf(stderr, "  "); \
       for (size_t GH_j = 0; GH_j < (name)->size2; ++GH_j) { \
-        fprintf(stderr, " "fmt, gsl_##type##_get(name, GH_i, GH_j)); \
+        fprintf(stderr, " " fmt, gsl_##type##_get(name, GH_i, GH_j)); \
       } \
       fprintf(stderr, ";\n"); \
     } \
