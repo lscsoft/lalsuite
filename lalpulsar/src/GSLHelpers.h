@@ -28,6 +28,8 @@
 #include <lal/XLALError.h>
 #include <lal/XLALGSL.h>
 
+#ifndef SWIG // exclude from SWIG interface
+
 #define ALLOC_GSL_VAL(val, name, call) \
   name = (call); \
   XLAL_CHECK_VAL(val, (name) != NULL, XLAL_ENOMEM, #call " failed")
@@ -317,6 +319,8 @@
 #define GCMPMATLU_REAL4(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(XLAL_REAL4_FAIL_NAN, matrix_ulong, lhs, rhs, tol)
 #define GPMATLU(name, fmt)		PRINT_GSL_2D(matrix_ulong, name, fmt)
 #define GFMATLU(...)			FREE_GSL(matrix_ulong, __VA_ARGS__)
+
+#endif // SWIG
 
 /// \endcond
 #endif // _GSLHELPERS_H
