@@ -155,9 +155,9 @@ static void nest2uniq_loop(
 
     for (npy_intp i = 0; i < n; i ++)
     {
-        *(int64_t *) &args[2][i * steps[2]] = nest2uniq64(
-        *(int8_t *)  &args[0][i * steps[0]],
-        *(int64_t *) &args[1][i * steps[1]]);
+        *(uint64_t *) &args[2][i * steps[2]] = nest2uniq64(
+        *(int8_t *)   &args[0][i * steps[0]],
+        *(uint64_t *) &args[1][i * steps[1]]);
     }
 }
 
@@ -169,9 +169,9 @@ static void uniq2nest_loop(
 
     for (npy_intp i = 0; i < n; i ++)
     {
-        *(int64_t *) &args[2][i * steps[2]] = *(int64_t *) &args[0][i * steps[0]];
-        *(int8_t *)  &args[1][i * steps[1]] = uniq2nest64(
-         (int64_t *) &args[2][i * steps[2]]);
+        *(int8_t *)   &args[1][i * steps[1]] = uniq2nest64(
+        *(uint64_t *) &args[0][i * steps[0]],
+         (uint64_t *) &args[2][i * steps[2]]);
     }
 }
 
@@ -183,8 +183,8 @@ static void uniq2order_loop(
 
     for (npy_intp i = 0; i < n; i ++)
     {
-        *(int8_t *)  &args[1][i * steps[1]] = uniq2order64(
-        *(int64_t *) &args[0][i * steps[0]]);
+        *(int8_t *)   &args[1][i * steps[1]] = uniq2order64(
+        *(uint64_t *) &args[0][i * steps[0]]);
     }
 }
 
