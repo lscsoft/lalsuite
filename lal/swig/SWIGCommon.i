@@ -825,8 +825,8 @@ if (strides[I-1] == 0) {
 /// Typemaps which convert to/from the dynamically-allocated array.
 %typemap(in, noblock=1) TYPE* DATA {
   if (arg1) {
-    const size_t dims[] = {NI};
-    const size_t strides[] = {SI};
+    const size_t dims[] = {%static_cast(NI, size_t)};
+    const size_t strides[] = {%static_cast(SI, size_t)};
     %swiglal_array_dynamic_check_strides(NAME, DATA, 1);
     $1 = %reinterpret_cast(arg1->DATA, TYPE*);
     /* swiglal_array_typeid input type: $1_type */
@@ -841,8 +841,8 @@ if (strides[I-1] == 0) {
 }
 %typemap(out, noblock=1) TYPE* DATA {
   if (arg1) {
-    const size_t dims[] = {NI};
-    const size_t strides[] = {SI};
+    const size_t dims[] = {%static_cast(NI, size_t)};
+    const size_t strides[] = {%static_cast(SI, size_t)};
     %swiglal_array_dynamic_check_strides(NAME, DATA, 1);
     $1 = %reinterpret_cast(arg1->DATA, TYPE*);
     /* swiglal_array_typeid input type: $1_type */
@@ -888,8 +888,8 @@ if (strides[I-1] == 0) {
 /// Typemaps which convert from the dynamically-allocated array, indexed by \c arg2
 %typemap(out, noblock=1) TYPE* DATA {
   if (arg1) {
-    const size_t dims[] = {NJ};
-    const size_t strides[] = {SJ};
+    const size_t dims[] = {%static_cast(NJ, size_t)};
+    const size_t strides[] = {%static_cast(SJ, size_t)};
     %swiglal_array_dynamic_check_strides(NAME, DATA, 1);
     if (((uint64_t)arg2) >= ((uint64_t)NI)) {
       SWIG_exception_fail(SWIG_IndexError, "Index to "#NAME"."#DATA" is outside of range [0,"#NI"]");
@@ -937,8 +937,8 @@ if (strides[I-1] == 0) {
 /// Typemaps which convert to/from the dynamically-allocated array.
 %typemap(in, noblock=1) TYPE* DATA {
   if (arg1) {
-    const size_t dims[] = {NI, NJ};
-    const size_t strides[] = {SI, SJ};
+    const size_t dims[] = {%static_cast(NI, size_t), %static_cast(NJ, size_t)};
+    const size_t strides[] = {%static_cast(SI, size_t), %static_cast(SJ, size_t)};
     %swiglal_array_dynamic_check_strides(NAME, DATA, 1);
     %swiglal_array_dynamic_check_strides(NAME, DATA, 2);
     $1 = %reinterpret_cast(arg1->DATA, TYPE*);
@@ -954,8 +954,8 @@ if (strides[I-1] == 0) {
 }
 %typemap(out, noblock=1) TYPE* DATA {
   if (arg1) {
-    const size_t dims[] = {NI, NJ};
-    const size_t strides[] = {SI, SJ};
+    const size_t dims[] = {%static_cast(NI, size_t), %static_cast(NJ, size_t)};
+    const size_t strides[] = {%static_cast(SI, size_t), %static_cast(SJ, size_t)};
     %swiglal_array_dynamic_check_strides(NAME, DATA, 1);
     %swiglal_array_dynamic_check_strides(NAME, DATA, 2);
     $1 = %reinterpret_cast(arg1->DATA, TYPE*);
@@ -1040,11 +1040,11 @@ if (strides[I-1] == 0) {
         if (!SWIG_IsOK(res)) {
           %argument_fail(res, "$type", $symname, $argnum);
         } else {
-          temp.NI = %reinterpret_cast(dims[0], SIZET);
+          temp.NI = %static_cast(dims[0], SIZET);
           argp = &temp;
         }
       } else {
-        temp.NI = %reinterpret_cast(dims[0], SIZET);
+        temp.NI = %static_cast(dims[0], SIZET);
         argp = &temp;
       }
     } else {
@@ -1078,7 +1078,7 @@ if (strides[I-1] == 0) {
       if (!SWIG_IsOK(res)) {
         %argument_fail(res, "$type", $symname, $argnum);
       } else {
-        temp.NI = %reinterpret_cast(dims[0], SIZET);
+        temp.NI = %static_cast(dims[0], SIZET);
         argp = &temp;
       }
     } else {
@@ -1117,7 +1117,7 @@ if (strides[I-1] == 0) {
         if (!SWIG_IsOK(res)) {
           %argument_fail(res, "$type", $symname, $argnum);
         } else {
-          temp.NI = %reinterpret_cast(dims[0], SIZET);
+          temp.NI = %static_cast(dims[0], SIZET);
           argp = &temp;
         }
       } else {
@@ -1133,7 +1133,7 @@ if (strides[I-1] == 0) {
 %}
 %typemap(argout, match="in", noblock=1) NAME* SWIGLAL_COPYINOUT_ARRAY %{
   if (temp_data$argnum) {
-    const size_t dims[] = {temp$argnum.NI};
+    const size_t dims[] = {%static_cast(temp$argnum.NI, size_t)};
     const size_t strides[] = {1};
     /* swiglal_array_typeid input type: TYPE* */
     %append_output(%swiglal_array_copyout(TYPE*)(swiglal_no_self(), %as_voidptr(temp_data$argnum),
@@ -1182,13 +1182,13 @@ if (strides[I-1] == 0) {
         if (!SWIG_IsOK(res)) {
           %argument_fail(res, "$type", $symname, $argnum);
         } else {
-          temp.NI = %reinterpret_cast(dims[0], SIZET);
-          temp.NJ = %reinterpret_cast(dims[1], SIZET);
+          temp.NI = %static_cast(dims[0], SIZET);
+          temp.NJ = %static_cast(dims[1], SIZET);
           argp = &temp;
         }
       } else {
-        temp.NI = %reinterpret_cast(dims[0], SIZET);
-        temp.NJ = %reinterpret_cast(dims[1], SIZET);
+        temp.NI = %static_cast(dims[0], SIZET);
+        temp.NJ = %static_cast(dims[1], SIZET);
         argp = &temp;
       }
     } else {
@@ -1222,8 +1222,8 @@ if (strides[I-1] == 0) {
       if (!SWIG_IsOK(res)) {
         %argument_fail(res, "$type", $symname, $argnum);
       } else {
-        temp.NI = %reinterpret_cast(dims[0], SIZET);
-        temp.NJ = %reinterpret_cast(dims[1], SIZET);
+        temp.NI = %static_cast(dims[0], SIZET);
+        temp.NJ = %static_cast(dims[1], SIZET);
         argp = &temp;
       }
     } else {
@@ -1262,8 +1262,8 @@ if (strides[I-1] == 0) {
         if (!SWIG_IsOK(res)) {
           %argument_fail(res, "$type", $symname, $argnum);
         } else {
-          temp.NI = %reinterpret_cast(dims[0], SIZET);
-          temp.NJ = %reinterpret_cast(dims[1], SIZET);
+          temp.NI = %static_cast(dims[0], SIZET);
+          temp.NJ = %static_cast(dims[1], SIZET);
           argp = &temp;
         }
       } else {
@@ -1279,7 +1279,7 @@ if (strides[I-1] == 0) {
 %}
 %typemap(argout, match="in", noblock=1) NAME* SWIGLAL_COPYINOUT_ARRAY %{
   if (temp_data$argnum) {
-    const size_t dims[] = {temp$argnum.NI, temp$argnum.NJ};
+    const size_t dims[] = {%static_cast(temp$argnum.NI, size_t), %static_cast(temp$argnum.NJ, size_t)};
     size_t strides[] = {dims[1], 1};
     /* swiglal_array_typeid input type: TYPE* */
     %append_output(%swiglal_array_copyout(TYPE*)(swiglal_no_self(), %as_voidptr(temp_data$argnum),
