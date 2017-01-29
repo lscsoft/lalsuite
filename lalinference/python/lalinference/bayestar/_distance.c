@@ -266,7 +266,8 @@ static const char modulename[] = "_distance";
 
 static PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
-    modulename, NULL, -1, NULL
+    modulename, NULL, -1, NULL,
+    NULL, NULL, NULL, NULL
 };
 
 
@@ -275,6 +276,7 @@ PyMODINIT_FUNC PyInit__distance(void)
 {
     PyObject *module = NULL;
 
+    gsl_set_error_handler_off();
     import_array();
     import_umath();
 
