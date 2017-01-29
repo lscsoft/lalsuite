@@ -907,7 +907,7 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
     double norm = 0;
     for (ssize_t i = (ssize_t)len - 1; i >= 0; i --)
     {
-        const double dA = ldexp(M_PI / 3, -2 * uniq2order64(pixels[i].uniq));
+        const double dA = uniq2pixarea64(pixels[i].uniq);
         const double dP = gsl_sf_exp_mult(pixels[i].value[0], dA);
         if (dP <= 0)
             break; /* We have reached underflow. */
@@ -1455,8 +1455,8 @@ static void test_nest2uniq64(uint8_t order, uint64_t nest, uint64_t uniq)
         "expected nest2uniq64(%u, %llu) = %llu, got %llu",
         (unsigned) order, nest, uniq, uniq_result);
 
-    uint64_t nest_result = uniq;
-    const uint8_t order_result = uniq2nest64(&nest_result);
+    uint64_t nest_result;
+    const uint8_t order_result = uniq2nest64(uniq, &nest_result);
     gsl_test(!(nest_result == nest && order_result == order),
         "expected uniq2nest64(%llu) = (%u, %llu), got (%u, %llu)",
         uniq, (unsigned) order, nest, order_result, nest_result);

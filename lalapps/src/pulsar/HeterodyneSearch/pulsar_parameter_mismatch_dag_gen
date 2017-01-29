@@ -18,7 +18,6 @@ import re
 import string
 import tempfile
 import ConfigParser
-import exceptions
 
 # append the lalapps python path
 sys.path.append('/home/matthew/lscsoft/lib/python')

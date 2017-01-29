@@ -6,7 +6,7 @@ __date__ = "$Date$"
 __name__ = "plotbankefficiency"
 __title__ = "Figure of merits for BankEfficiency results."
   
-import getopt, sys, os, re, glob, exceptions, dircache, string
+import getopt, sys, os, re, glob, dircache, string
 from optparse import *
 from matplotlib.ticker import FormatStrFormatter
 from numpy import *

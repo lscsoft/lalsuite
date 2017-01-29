@@ -189,9 +189,12 @@ static PyObject *sky_map_toa_phoa_snr(
     /* Call function */
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
     size_t len;
-    bayestar_pixel *pixels = bayestar_sky_map_toa_phoa_snr(&len, min_distance,
+    bayestar_pixel *pixels;
+    Py_BEGIN_ALLOW_THREADS
+    pixels = bayestar_sky_map_toa_phoa_snr(&len, min_distance,
         max_distance, prior_distance_power, gmst, nifos, nsamples, sample_rate,
         epochs, snrs, responses, locations, horizons);
+    Py_END_ALLOW_THREADS
     gsl_set_error_handler(old_handler);
 
     if (!pixels)
@@ -335,8 +338,11 @@ fail: /* Cleanup */
 static PyObject *test(
     PyObject *NPY_UNUSED(module), PyObject *NPY_UNUSED(arg))
 {
+    int ret;
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
-    int ret = bayestar_test();
+    Py_BEGIN_ALLOW_THREADS
+    ret = bayestar_test();
+    Py_END_ALLOW_THREADS
     gsl_set_error_handler(old_handler);
     return PyLong_FromLong(ret);
 }
@@ -355,7 +361,8 @@ static PyMethodDef methods[] = {
 
 static PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
-    "_sky_map", NULL, -1, methods
+    "_sky_map", NULL, -1, methods,
+    NULL, NULL, NULL, NULL
 };
 
 
@@ -364,6 +371,7 @@ PyMODINIT_FUNC PyInit__sky_map(void)
 {
     PyObject *module = NULL;
 
+    gsl_set_error_handler_off();
     import_array();
 
     sky_map_descr = sky_map_create_descr();

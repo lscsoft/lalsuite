@@ -1101,7 +1101,6 @@ XLALrefineCOMPLEX8Vector ( const COMPLEX8Vector *in,
  * <tt>\%</tt> or <tt>#</tt>) of one of the following forms:
  * - <tt>startGPS endGPS</tt>
  * - <tt>startGPS endGPS NumSFTs</tt> (NumSFTs must be a positive integer)
- * - <tt>startGPS endGPS duration NumSFTs</tt> (\b DEPRECATED, duration is ignored)
  *
  * \note We (ab)use the integer \p id field in LALSeg to carry the total number of SFTs
  * contained in that segment if <tt>NumSFTs</tt> was provided in the segment file.
@@ -1135,9 +1134,6 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
     case 2:
     case 3:
       break;
-    case 4:
-      XLALPrintError( "\n%s: WARNING: segment file '%s' is in DEPRECATED 4-column (startGPS endGPS duration NumSFTs, duration is ignored)\n", __func__, fname );
-      break;
     default:
       XLAL_ERROR_NULL( XLAL_EIO, "%s: segment file '%s' contains an unknown %i-column format", __func__, fname, ncol );
     }
@@ -1148,7 +1144,7 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
     {
 
       /* parse line of segment file, depending on determined number of columns */
-      REAL8 start = 0, end = 0, duration = 0;
+      REAL8 start = 0, end = 0;
       INT4 NumSFTs = 0;
       int ret;
       switch (ncol) {
@@ -1160,10 +1156,6 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
         ret = sscanf( flines->lines->tokens[iSeg], "%lf %lf %i", &start, &end, &NumSFTs );
         XLAL_CHECK_NULL( ret == 3, XLAL_EIO, "%s: number of columns in segment file '%s' is inconsistent (line 1: %i, line %u: %i)", __func__, fname, ncol, iSeg+1, ret );
         XLAL_CHECK_NULL( NumSFTs > 0, XLAL_EIO, "%s: number of SFTs (3rd column) in segment file '%s' must be a positive integer if given (line %u: %i)", __func__, fname, iSeg+1, NumSFTs );
-        break;
-      case 4:
-        ret = sscanf( flines->lines->tokens[iSeg], "%lf %lf %lf %i", &start, &end, &duration, &NumSFTs );
-        XLAL_CHECK_NULL( ret == 4, XLAL_EIO, "%s: number of columns in segment file '%s' is inconsistent (line 1 = %i, line %u = %i)", __func__, fname, ncol, iSeg+1, ret );
         break;
       default:
         XLAL_ERROR_NULL( XLAL_EFAILED, "Unexpected error!" );

@@ -27,6 +27,7 @@ import logging
 import time
 import numpy as np
 import healpy as hp
+from astropy.table import Table
 from .decorator import with_numpy_random_seed
 from . import distance
 from . import ligolw
@@ -34,7 +35,7 @@ from . import filter
 from . import postprocess
 from . import timing
 try:
-    from ._moc import rasterize
+    from . import _moc as moc
 except ImportError:
     raise ImportError(
         'Could not import the lalinference.bayestar._moc Python C '
@@ -332,18 +333,11 @@ def ligolw_sky_map(
 
     # Time and run sky localization.
     log.debug('starting computationally-intensive section')
-    start_time = time.time()
+    start_time = lal.GPSTimeNow()
     if method == "toa_phoa_snr":
-        skymap = _sky_map.toa_phoa_snr(
+        skymap = Table(_sky_map.toa_phoa_snr(
             min_distance, max_distance, prior_distance_power, gmst, sample_rate,
-            toas, snr_series, responses, locations, horizons)
-        distmu, distsigma, distnorm = distance.moments_to_parameters(
-            skymap['DISTMEAN'], skymap['DISTSTD'])
-        skymap = np.rec.fromarrays(
-            [skymap['UNIQ'], skymap['PROBDENSITY'], distmu, distsigma, distnorm],
-            names='UNIQ,PROBDENSITY,DISTMU,DISTSIGMA,DISTNORM')
-        skymap = rasterize(skymap)
-        prob = [4 * np.pi / len(skymap) * skymap['PROBDENSITY'], skymap['DISTMU'], skymap['DISTSIGMA'], skymap['DISTNORM']]
+            toas, snr_series, responses, locations, horizons))
     elif method == "toa_phoa_snr_mcmc":
         # prob = emcee_sky_map(
         #     logl=_sky_map.log_likelihood_toa_phoa_snr,
@@ -359,17 +353,43 @@ def ligolw_sky_map(
         raise NotImplemented('Working on porting this to new MOC format')
     else:
         raise ValueError("Unrecognized method: %s" % method)
-    prob[1] *= max_horizon * fudge
-    prob[2] *= max_horizon * fudge
-    prob[3] /= np.square(max_horizon * fudge)
-    end_time = time.time()
+
+    # Convert distance moments to parameters
+    distmean = skymap.columns.pop('DISTMEAN')
+    diststd = skymap.columns.pop('DISTSTD')
+    skymap['DISTMU'], skymap['DISTSIGMA'], skymap['DISTNORM'] = \
+        distance.moments_to_parameters(distmean, diststd)
+
+    # Add marginal distance moments
+    good = np.isfinite(distmean) & np.isfinite(diststd)
+    prob = (moc.uniq2pixarea(skymap['UNIQ']) * skymap['PROBDENSITY'])[good]
+    distmean = distmean[good]
+    diststd = diststd[good]
+    rbar = (prob * distmean).sum()
+    r2bar = (prob * (np.square(diststd) + np.square(distmean))).sum()
+    skymap.meta['distmean'] = rbar
+    skymap.meta['diststd'] = np.sqrt(r2bar - np.square(rbar))
+
+    # Rescale
+    rescale = max_horizon * fudge
+    skymap['DISTMU'] *= rescale
+    skymap['DISTSIGMA'] *= rescale
+    skymap.meta['distmean'] *= rescale
+    skymap.meta['diststd'] *= rescale
+    skymap['DISTNORM'] /= np.square(rescale)
+
+    end_time = lal.GPSTimeNow()
     log.debug('finished computationally-intensive section')
 
-    # Find elapsed run time.
-    elapsed_time = end_time - start_time
+    # Fill in metadata and return.
+    skymap.meta['creator'] = 'BAYESTAR'
+    skymap.meta['origin'] = 'LIGO/Virgo'
+    skymap.meta['gps_time'] = float(epoch)
+    skymap.meta['runtime'] = float(end_time - start_time)
+    skymap.meta['instruments'] = {sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals}
+    skymap.meta['gps_creation_time'] = end_time
 
-    # Done!
-    return prob, epoch, elapsed_time
+    return skymap
 
 
 def gracedb_sky_map(
@@ -410,7 +430,6 @@ def gracedb_sky_map(
         if coinc_map.coinc_event_id == coinc_event_id]
     sngl_inspirals = [next((sngl_inspiral for sngl_inspiral in sngl_inspiral_table
         if sngl_inspiral.event_id == event_id)) for event_id in event_ids]
-    instruments = {sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals}
 
     # Try to load complex SNR time series.
     snrs = ligolw.snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc)
@@ -435,13 +454,18 @@ def gracedb_sky_map(
         for psd in psds]
 
     # Run sky localization
-    prob, epoch, elapsed_time = ligolw_sky_map(sngl_inspirals, waveform, f_low,
+    return ligolw_sky_map(sngl_inspirals, waveform, f_low,
         min_distance, max_distance, prior_distance_power, method=method,
         nside=nside, psds=psds, phase_convention=phase_convention,
         chain_dump=chain_dump, snr_series=snrs,
         enable_snr_series=enable_snr_series)
 
-    return prob, epoch, elapsed_time, instruments
+
+def rasterize(skymap):
+    skymap = Table(moc.rasterize(skymap), meta=skymap.meta)
+    skymap.rename_column('PROBDENSITY', 'PROB')
+    skymap['PROB'] *= 4 * np.pi / len(skymap)
+    return skymap
 
 
 def test():
