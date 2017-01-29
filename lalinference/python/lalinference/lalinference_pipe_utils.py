@@ -1043,9 +1043,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             co_merge_job.set_grid_site('local')
             cotest_nodes=[]
             for i in range(Npar):
-               cot_node,bwpsdnodes=self.add_engine_node(event,bwpsdnodes,ifos=[ifo],co_test=True)
-            if cot_node is not None:
-               cotest_nodes.append(cot_node)
+                cot_node,bwpsdnodes=self.add_engine_node(event,bwpsdnodes,ifos=[ifo],co_test=True)
+                if cot_node is not None:
+                    if i>0:
+                        cot_node.add_var_arg('--dont-dump-extras')
+                    cotest_nodes.append(cot_node)
             if len(cotest_nodes)==0:
                return False
             for co in cotest_nodes:
