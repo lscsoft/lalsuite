@@ -437,6 +437,7 @@ static struct spcal_envelope *initCalibrationEnvelope(char *filename)
             fprintf(stderr,"Malformed input line in file %s: %s\n",filename,tmpline);
             exit(1);
         }
+		mag_med[Nlines]-=1.0; /* Subtract off 1 to get delta */
         logfreq[Nlines]=log(freq);
         mag_std[Nlines]=(mag_hi - mag_low ) /2.0;
         phase_std[Nlines]=(phase_hi - phase_low) /2.0;
