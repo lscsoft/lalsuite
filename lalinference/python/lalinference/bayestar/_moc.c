@@ -20,8 +20,12 @@
 #include "config.h"
 #include <lal/bayestar_moc.h>
 #include <Python.h>
+/* Ignore warnings in Numpy API itself */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 #include <numpy/arrayobject.h>
 #include <numpy/ufuncobject.h>
+#pragma GCC diagnostic pop
 #include "six.h"
 
 
