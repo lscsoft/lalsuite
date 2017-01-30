@@ -256,15 +256,14 @@ static const PyUFuncGenericFunction
     marginal_cdf_loops[] = {marginal_cdf_loop},
     marginal_ppf_loops[] = {marginal_ppf_loop};
 
-
 static const char volume_render_ufunc_types[] = {
     NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_INTP, NPY_INT, NPY_DOUBLE, NPY_BOOL,
     NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE};
 
-
 static const char double_ufunc_types[] = {
     NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE};
 
+static const void *no_ufunc_data[] = {NULL};
 
 static const char modulename[] = "_distance";
 
@@ -291,58 +290,58 @@ PyMODINIT_FUNC PyInit__distance(void)
 
     PyModule_AddObject(
         module, "conditional_pdf", PyUFunc_FromFuncAndData(
-            conditional_pdf_loops, NULL,
+            conditional_pdf_loops, no_ufunc_data,
             double_ufunc_types, 1, 4, 1, PyUFunc_None,
             "conditional_pdf", NULL, 0));
 
     PyModule_AddObject(
         module, "conditional_cdf", PyUFunc_FromFuncAndData(
-            conditional_cdf_loops, NULL,
+            conditional_cdf_loops, no_ufunc_data,
             double_ufunc_types, 1, 4, 1, PyUFunc_None,
             "conditional_cdf", NULL, 0));
 
     PyModule_AddObject(
         module, "conditional_ppf", PyUFunc_FromFuncAndData(
-            conditional_ppf_loops, NULL,
+            conditional_ppf_loops, no_ufunc_data,
             double_ufunc_types, 1, 4, 1, PyUFunc_None,
             "conditional_ppf", NULL, 0));
 
     PyModule_AddObject(
         module, "moments_to_parameters", PyUFunc_FromFuncAndData(
-            moments_to_parameters_loops, NULL,
+            moments_to_parameters_loops, no_ufunc_data,
             double_ufunc_types, 1, 2, 3, PyUFunc_None,
             "moments_to_parameters", NULL, 0));
 
     PyModule_AddObject(
         module, "parameters_to_moments", PyUFunc_FromFuncAndData(
-            parameters_to_moments_loops, NULL,
+            parameters_to_moments_loops, no_ufunc_data,
             double_ufunc_types, 1, 2, 3, PyUFunc_None,
             "parameters_to_moments", NULL, 0));
 
     PyModule_AddObject(
         module, "volume_render", PyUFunc_FromFuncAndDataAndSignature(
-            volume_render_loops, NULL,
+            volume_render_loops, no_ufunc_data,
             volume_render_ufunc_types, 1, 11, 1, PyUFunc_None,
             "volume_render", NULL, 0,
             "(),(),(),(),(),(i,i),(),(n),(n),(n),(n)->()"));
 
     PyModule_AddObject(
         module, "marginal_pdf", PyUFunc_FromFuncAndDataAndSignature(
-            marginal_pdf_loops, NULL,
+            marginal_pdf_loops, no_ufunc_data,
             double_ufunc_types, 1, 5, 1, PyUFunc_None,
             "marginal_pdf", NULL, 0,
             "(),(n),(n),(n),(n)->()"));
 
     PyModule_AddObject(
         module, "marginal_cdf", PyUFunc_FromFuncAndDataAndSignature(
-            marginal_cdf_loops, NULL,
+            marginal_cdf_loops, no_ufunc_data,
             double_ufunc_types, 1, 5, 1, PyUFunc_None,
             "marginal_cdf", NULL, 0,
             "(),(n),(n),(n),(n)->()"));
 
     PyModule_AddObject(
         module, "marginal_ppf", PyUFunc_FromFuncAndDataAndSignature(
-            marginal_ppf_loops, NULL,
+            marginal_ppf_loops, no_ufunc_data,
             double_ufunc_types, 1, 5, 1, PyUFunc_None,
             "marginal_ppf", NULL, 0,
             "(),(n),(n),(n),(n)->()"));
