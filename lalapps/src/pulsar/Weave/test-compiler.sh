@@ -28,16 +28,13 @@ export fstatdir=$(cd ${builddir}/../Fstatistic && pwd)
 
 # Create directory for test
 testdir="${builddir}/${scriptname}.testdir"
-if [ -d "${testdir}" ]; then
-    echo "--- Removing contents of directory ${testdir} ---"
-    rm -rf "${testdir}/*"
-else
-    mkdir -p "${testdir}"
-fi
+mkdir -p "${testdir}"
 
 # Run test in test directory
 echo "--- Running test in directory ${testdir} ---"
 cd "${testdir}"
+rm -rf *
+[ "x`ls -A .`" = x ]
 echo "--- Running test ${script} ---"
 echo
 time -p ${SHELL} -c "set -e; source ${script}; echo '--- Successfully ran test ${script} ---'"
