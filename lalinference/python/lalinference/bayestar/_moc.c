@@ -19,6 +19,7 @@
 
 #include "config.h"
 #include <lal/bayestar_moc.h>
+#include <gsl/gsl_errno.h>
 #include <Python.h>
 /* Ignore warnings in Numpy API itself */
 #pragma GCC diagnostic push
