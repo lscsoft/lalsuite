@@ -263,7 +263,7 @@ static const char volume_render_ufunc_types[] = {
 static const char double_ufunc_types[] = {
     NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE};
 
-static const void *no_ufunc_data[] = {NULL};
+static void *const no_ufunc_data[] = {NULL};
 
 static const char modulename[] = "_distance";
 
@@ -287,6 +287,10 @@ PyMODINIT_FUNC PyInit__distance(void)
     module = PyModule_Create(&moduledef);
     if (!module)
         goto done;
+
+    /* Ignore warnings in Numpy API */
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
 
     PyModule_AddObject(
         module, "conditional_pdf", PyUFunc_FromFuncAndData(
@@ -345,6 +349,8 @@ PyMODINIT_FUNC PyInit__distance(void)
             double_ufunc_types, 1, 5, 1, PyUFunc_None,
             "marginal_ppf", NULL, 0,
             "(),(n),(n),(n),(n)->()"));
+
+    #pragma GCC diagnostic pop
 
 done:
     return module;
