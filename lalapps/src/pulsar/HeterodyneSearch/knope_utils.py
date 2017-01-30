@@ -599,6 +599,16 @@ class knopeDAG(pipeline.CondorDAG):
       self.mkdirs(self.results_pulsar_dir[pname])
       if self.error_code != 0: return
 
+      # if in autonomous mode, and a previous JSON results file already exists, make a copy of it
+      jsonfile = os.path.join(self.results_pulsar_dir[pname], pname+'.json')
+      if self.autonomous:
+        if os.path.isfile(jsonfile):
+          # add starttime timestamp to JSON file
+          try:
+            shutil.copyfile(jsonfile, jsonfile.strip('.json') + '_%d.json' % self.initial_start.values()[0])
+          except:
+            print("Warning... could not copy previous results JSON file '%s'. Previous results may get overwritten." % jsonfile, file=sys.stderr)
+
       # try getting some pulsar information (dist, p1_I and assoc) from the ATNF catalogue for use in lalapps_knope_result_page
       # NOTE: this is mainly required because on the ARCCA cluster the nodes cannot access the internet
       pinfo = pppu.get_atnf_info(pname)
@@ -610,7 +620,6 @@ class knopeDAG(pipeline.CondorDAG):
         psrinfo['Pulsar data']['P1_I'] = p1_I
         psrinfo['Pulsar data']['ASSOC'] = assoc
 
-        jsonfile = os.path.join(self.results_pulsar_dir[pname], pname+'.json')
         try:
           fp = open(jsonfile, 'w')
           jsf = json.dump(psrinfo, fp, indent=2)
@@ -698,6 +707,14 @@ class knopeDAG(pipeline.CondorDAG):
 
         posteriorsfiles[det] = os.path.join(posteriorsfiles[det], dirpostfix)
         posteriorsfiles[det] = os.path.join(posteriorsfiles[det], 'posterior_samples_%s.hdf' % pname)
+
+        # if in autonomous mode copy previous posterior files
+        if self.autonomous:
+          try: # copy to file with the start time appended
+            shutil.copyfile(posteriorsfiles[det], posteriorsfiles[det].strip('.hdf') + '_%d.hdf' % self.initial_start.values()[0])
+          except:
+            print("Warning... could not create copy of current posterior samples file '%s'. This will get overwritten on next autonomous run." % posteriorsfiles[det], file=sys.stderr)
+
         if self.pe_num_background > 0: backgrounddir[det] = os.path.join(backgrounddir[det], dirpostfix)
 
       cp.set('parameter_estimation', 'posteriors', posteriorsfiles)
