@@ -42,13 +42,6 @@
 %include <typemaps.i>
 
 ///
-/// Suppress some SWIG warnings.
-///
-#pragma SWIG nowarn=SWIGWARN_PARSE_KEYWORD
-#pragma SWIG nowarn=SWIGWARN_LANG_VARARGS_KEYWORD
-#pragma SWIG nowarn=SWIGWARN_LANG_OVERLOAD_KEYWORD
-
-///
 /// Turn on auto-documentation of functions.
 ///
 %feature("autodoc", 1);
