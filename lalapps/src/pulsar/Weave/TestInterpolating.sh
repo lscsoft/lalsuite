@@ -6,6 +6,15 @@ ${builddir}/lalapps_WeaveSetup --first-segment=1122332211/90000 --segment-count=
 set +x
 echo
 
+echo "=== Restrict timestamps to segment list in WeaveSetup.fits ==="
+set -x
+${fitsdir}/lalapps_fits_table_list 'WeaveSetup.fits[segments][col c1=start_s; col2=end_s]' \
+    | awk 'BEGIN { print "/^#/ { print }" } /^#/ { next } { printf "%i <= $1 && $1 <= %i { print }\n", $1, $2 + 1 }' > timestamp-filter.awk
+awk -f timestamp-filter.awk ${srcdir}/timestamps-1.txt > timestamps-1.txt
+awk -f timestamp-filter.awk ${srcdir}/timestamps-2.txt > timestamps-2.txt
+set +x
+echo
+
 echo "=== Extract reference time from WeaveSetup.fits ==="
 set -x
 ${fitsdir}/lalapps_fits_header_getval "WeaveSetup.fits[0]" 'DATE-OBS GPS' > tmp
@@ -19,7 +28,7 @@ inject_params="Alpha=3.0; Delta=0.7; Freq=50.5; f1dot=-1.5e-9"
 ${injdir}/lalapps_Makefakedata_v5 --randSeed=3456 --fmin=50.0 --Band=1.0 --Tsft=1800 \
     --injectionSources="{refTime=${ref_time}; h0=0.5; cosi=0.7; psi=2.1; phi0=3.1; ${inject_params}}" \
     --outSingleSFT --outSFTdir=. --IFOs=H1,L1 --sqrtSX=1,1 \
-    --timestampsFiles=${srcdir}/timestamps-1.txt,${srcdir}/timestamps-2.txt
+    --timestampsFiles=timestamps-1.txt,timestamps-2.txt
 set +x
 echo
 
