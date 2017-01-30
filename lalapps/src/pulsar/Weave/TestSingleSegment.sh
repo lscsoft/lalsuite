@@ -19,7 +19,7 @@ inject_params="Alpha=5.4; Delta=1.1; Freq=70.5; f1dot=-1e-9"
 ${injdir}/lalapps_Makefakedata_v5 --randSeed=1234 --fmin=70.0 --Band=1.0 \
     --injectionSources="{refTime=${ref_time}; h0=0.5; cosi=0.2; psi=0.4; phi0=0.1; ${inject_params}}" \
     --Tsft=1800 --outSingleSFT --outSFTdir=. --IFOs=H1,L1 --sqrtSX=1,1 \
-    --timestampsFiles=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt
+    --timestampsFiles=${srcdir}/timestamps-1.txt,${srcdir}/timestamps-2.txt
 set +x
 echo
 

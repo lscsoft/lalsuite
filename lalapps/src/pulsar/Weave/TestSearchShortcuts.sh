@@ -11,7 +11,7 @@ set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOutNoShort.fits \
     --toplists=all --toplist-limit=5000 --misc-info --setup-file=WeaveSetup.fits \
     --rand-seed=3456 --sft-timebase=1800 --sft-noise-psd=1,1 \
-    --sft-timestamps-files=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt \
+    --sft-timestamps-files=${srcdir}/timestamps-1.txt,${srcdir}/timestamps-2.txt \
     --alpha=0.9/1.4 --delta=-1.2/2.3 --freq=55.5/1e-4 --f1dot=-1.5e-9,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3
 set +x
 echo
@@ -31,7 +31,7 @@ set -x
 ${builddir}/lalapps_Weave --shortcut=compute --output-file=WeaveOutShortComp.fits \
     --toplists=all --toplist-limit=5000 --misc-info --setup-file=WeaveSetup.fits \
     --rand-seed=3456 --sft-timebase=1800 --sft-noise-psd=1,1 \
-    --sft-timestamps-files=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt \
+    --sft-timestamps-files=${srcdir}/timestamps-1.txt,${srcdir}/timestamps-2.txt \
     --alpha=0.9/1.4 --delta=-1.2/2.3 --freq=55.5/1e-4 --f1dot=-1.5e-9,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3
 set +x
 echo
@@ -41,7 +41,7 @@ set -x
 ${builddir}/lalapps_Weave --shortcut=search --output-file=WeaveOutShortSearch.fits \
     --toplists=all --toplist-limit=5000 --misc-info --setup-file=WeaveSetup.fits \
     --rand-seed=3456 --sft-timebase=1800 --sft-noise-psd=1,1 \
-    --sft-timestamps-files=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt \
+    --sft-timestamps-files=${srcdir}/timestamps-1.txt,${srcdir}/timestamps-2.txt \
     --alpha=0.9/1.4 --delta=-1.2/2.3 --freq=55.5/1e-4 --f1dot=-1.5e-9,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3
 set +x
 echo

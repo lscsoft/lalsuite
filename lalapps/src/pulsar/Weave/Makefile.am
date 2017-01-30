@@ -59,8 +59,8 @@ TESTS = \
 EXTRA_DIST = \
 	$(TESTS) \
 	test-compiler.sh \
-	timestamps-irregular.txt \
-	timestamps-regular.txt \
+	timestamps-1.txt \
+	timestamps-2.txt \
 	$(END_OF_LIST)
 
 clean-local:

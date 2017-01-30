@@ -10,7 +10,7 @@ echo "=== Generate SFTs ==="
 set -x
 ${injdir}/lalapps_Makefakedata_v5 --randSeed=3456 --fmin=49.5 --Band=2.0 --Tsft=1800 \
     --outSingleSFT --outSFTdir=. --IFOs=H1,L1 --sqrtSX=1,1 \
-    --timestampsFiles=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt
+    --timestampsFiles=${srcdir}/timestamps-1.txt,${srcdir}/timestamps-2.txt
 set +x
 echo
 
