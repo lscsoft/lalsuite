@@ -66,7 +66,7 @@ def remove_cron(cronid):
 # function to send an email
 def send_email(FROM, TO, SUBJECT, MESSAGE, server, quitserver=True):
   # set a notication email template
-  emailtemplate = "From: {0}\nTo: {1}\nSubject: {3}\n\n{4}"
+  emailtemplate = "From: {0}\nTo: {1}\nSubject: {2}\n\n{3}"
   message = emailtemplate.format(FROM, TO, SUBJECT, MESSAGE)
 
   try:
@@ -94,7 +94,7 @@ A configuration .ini file is required.
 
   startcron = False # variable to say whether to create the crontab (if this is the first time the script is run then this will be changed to True later)
   cronid = 'knopeJob' # an ID for the crontab job
-  croncommand = '%s -i {0}' % sys.argv[0] # set the cron command (which will re-run this script)
+  croncommand = '%s {0}' % sys.argv[0] # set the cron command (which will re-run this script)
 
   # open and parse config file
   cp = ConfigParser()
@@ -192,7 +192,7 @@ A configuration .ini file is required.
           sys.exit(0)
         else: # add a day to the crontab job and re-run then
           cron = CronTab(user=True)
-          for job in cron.find_comment(cronid)
+          for job in cron.find_comment(cronid):
             thisjob = job # cron job
 
           # get a detlaT for a day
@@ -248,7 +248,7 @@ A configuration .ini file is required.
           sys.exit(0)
         else: # add a day to the crontab job and re-run then
           cron = CronTab(user=True)
-          for job in cron.find_comment(cronid)
+          for job in cron.find_comment(cronid):
             thisjob = job # cron job
 
           # get a detlaT for a day
@@ -285,7 +285,7 @@ A configuration .ini file is required.
       sys.exit(1)
 
   # check start time is in the past
-  if startime >= gpsnow:
+  if starttime >= gpsnow:
     errmsg = "Error... start time (%f) must be in the past!" % starttime
     print(errmsg, file=sys.stderr)
     if email != None:
@@ -339,7 +339,7 @@ A configuration .ini file is required.
   # get a lag time (this will add a lag to gpsnow - if there is a lag between data creation and replication on the various sites a lag may be required, so that the data exists)
   if cp.has_option('times', 'lag'):
     try:
-      timelag = gp.getint('times', 'lag')
+      timelag = cp.getint('times', 'lag')
     except:
       timelag = 0
   else:
@@ -416,15 +416,15 @@ A configuration .ini file is required.
     cprun.set('analysis', 'submit_dag', 'True')        # set to make sure Condor DAG is submitted
 
     # create file name for DAG
-    dagname = 'automated_run_%s-%s.dag' % (str(newstart), str(newend))
+    dagname = 'automated_run_%s-%s' % (str(newstart), str(newend))
     cprun.set('analysis', 'dag_name', dagname) # add this dag file name to the automation code configuration script (to be used to check for DAG completion)
 
     if prevdags != None:
       # add on new DAG file to list
       prevdags.append(os.path.join(rundir, dagname))
-      cp.set('configuation', 'previous_dags', '['+', '.join(z for z in prevdags)+']') # output as list
+      cp.set('configuration', 'previous_dags', '['+', '.join(z for z in prevdags)+']') # output as list
     else: # output DAG file to previous_dags list
-      cp.set('configuation', 'previous_dags', '['+dagname+']')
+      cp.set('configuration', 'previous_dags', '['+dagname+']')
 
     # add the initial start time
     cprun.set('analysis', 'autonomous_initial_start', str(starttime))
@@ -448,7 +448,7 @@ A configuration .ini file is required.
   fc.close()
 
   ### RUN ANALYSIS SCRIPT ###
-  p = sp.Popen('{0} -i {1}'.format(runscript, runconfig), shell=True)
+  p = sp.Popen('{0} {1}'.format(runscript, runconfig), shell=True)
   out, err = p.communicate()
   if p.returncode != 0:
     errmsg = "Error... problem running main script '%s'.: %s, %s" % (runscript, out, err)
@@ -464,7 +464,7 @@ A configuration .ini file is required.
   if startcron:
     try:
       cron = CronTab(user=True)
-      job = cron.new(command=croncommand.format(runconfig), comment=cronid)
+      job = cron.new(command=croncommand.format(inifile), comment=cronid)
 
       # set job time - this will start at the next time step (as we've just run the first step)
       day = now.datetime.day
