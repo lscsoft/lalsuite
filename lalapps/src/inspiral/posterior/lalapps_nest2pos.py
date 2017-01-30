@@ -156,7 +156,7 @@ def read_nested_from_ascii(nested_path_list):
 def write_posterior_to_hdf(posterior_path, headers, posterior, metadata,
                            run_identifier):
   from lalinference.io import write_samples
-  write_samples(posterior, posterior_path, path='/'.join(['','lalinference',run_identifier,'posterior_samples']), metadata=metadata)
+  write_samples(posterior, posterior_path, path='/'.join(['','lalinference',run_identifier,'posterior_samples']), metadata=metadata, overwrite=True)
 
 def write_posterior_to_ascii(posterior_path, headers, posterior,
                              log_bayes_factor, log_evidence,
