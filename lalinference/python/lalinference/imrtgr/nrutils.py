@@ -18,6 +18,7 @@ class bbh_final_state_fits:
     phenD   = "PhenomD" # Husa et al.            [Phys Rev D 93, 044006 (2016)] (mass+spin, aligned)
     uib2016 = "UIB2016" # Jimenez-Forteza et al. [LIGO-P1600270 (2016)]         (mass+spin, aligned)
     hbr2016 = "HBR2016" # Hofmann et al.         [ApJL 825:L19 (2016)]          (spin only, precessing)
+    hl2016  = "HL2016"  # Healy and Lousto       [arXiv:1610.09713]             (mass+spin, aligned)
 
 # list of Kerr truncation behaviours
 class bbh_Kerr_trunc_opts:
@@ -136,8 +137,8 @@ def calc_isco_radius(a):
     a_sign = np.sign(a)
     return 3+z2 - np.sqrt((3.-z1)*(3.+z1+2.*z2))*a_sign
 
-def _final_spin_diff_Healyetal(a_f, eta, delta_m, S, Delta):
-    """ Internal function: the final spin is determined by minimizing this function """
+def _final_spin_diff_Healyetal(a_f, eta, delta_m, S, Delta, version):
+    """ Internal function: the final spin with the Healy et al. fits is determined by minimizing this function """
     
     # calculate ISCO radius
     r_isco = calc_isco_radius(a_f)
@@ -145,27 +146,49 @@ def _final_spin_diff_Healyetal(a_f, eta, delta_m, S, Delta):
     # angular momentum at ISCO -- Eq.(2.8) of Ori, Thorne Phys Rev D 62 124022 (2000)
     J_isco = (3*np.sqrt(r_isco)-2*a_f)*2./np.sqrt(3*r_isco)
     
-    # fitting coefficients - Table XI of Healy et al Phys Rev D 90, 104004 (2014)
-    # [fourth order fits]
-    L0  = 0.686710
-    L1  = 0.613247
-    L2a = -0.145427
-    L2b = -0.115689
-    L2c = -0.005254
-    L2d = 0.801838
-    L3a = -0.073839
-    L3b = 0.004759
-    L3c = -0.078377
-    L3d = 1.585809
-    L4a = -0.003050
-    L4b = -0.002968
-    L4c = 0.004364
-    L4d = -0.047204
-    L4e = -0.053099
-    L4f = 0.953458
-    L4g = -0.067998
-    L4h = 0.001629
-    L4i = -0.066693
+    # fitting coefficients
+    if version == "2014": # From Table XI of Healy et al Phys Rev D 90, 104004 (2014) [fourth order fits]
+        L0  = 0.686710
+        L1  = 0.613247
+        L2a = -0.145427
+        L2b = -0.115689
+        L2c = -0.005254
+        L2d = 0.801838
+        L3a = -0.073839
+        L3b = 0.004759
+        L3c = -0.078377
+        L3d = 1.585809
+        L4a = -0.003050
+        L4b = -0.002968
+        L4c = 0.004364
+        L4d = -0.047204
+        L4e = -0.053099
+        L4f = 0.953458
+        L4g = -0.067998
+        L4h = 0.001629
+        L4i = -0.066693
+    elif version == "2016": # From Table III of Healy and Lousto arXiv:1610.09713 (values taken from Matlab implementation and thus slightly more precise than the ones in the table)
+        L0  = 0.686732132
+        L1  = 0.613284976
+        L2a = -0.148530075
+        L2b = -0.113826318
+        L2c = -0.00323995784
+        L2d = 0.798011319
+        L3a = -0.0687823713
+        L3b = 0.00129103641
+        L3c = -0.0780143929
+        L3d = 1.55728564
+        L4a = -0.00571010557
+        L4b = 0.005919799
+        L4c = -0.00170575554
+        L4d = -0.0588819084
+        L4e = -0.0101866693
+        L4f = 0.964444768
+        L4g = -0.11088507
+        L4h = -0.00682082169
+        L4i = -0.0816482139
+    else:
+        raise ValueError('Unknown version--should be either "2014" or "2016".')
     
     a_f_new = (4.*eta)**2.*(L0  +  L1*S +  L2a*Delta*delta_m + L2b*S**2. + L2c*Delta**2 \
         + L2d*delta_m**2. + L3a*Delta*S*delta_m + L3b*S*Delta**2. + L3c*S**3. \
@@ -176,9 +199,9 @@ def _final_spin_diff_Healyetal(a_f, eta, delta_m, S, Delta):
     
     return abs(a_f-a_f_new)
 
-def bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2):
+def bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2, version="2014"):
     """
-    Calculate the spin of the final BH resulting from the merger of two black holes with non-precessing spins using fit from Healy et al Phys Rev D 90, 104004 (2014)
+    Calculate the spin of the final BH resulting from the merger of two black holes with non-precessing spins using fit from Healy et al Phys Rev D 90, 104004 (2014) (version == "2014") or the small update from Healy and Lousto arXiv:1610.09713 (version == "2016")
     
     Parameters
     ----------
@@ -201,7 +224,7 @@ def bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2):
     
     # Vectorize the function if arrays are provided as input
     if np.size(m1) * np.size(m2) * np.size(chi1) * np.size(chi2) > 1:
-        return np.vectorize(bbh_final_spin_non_precessing_Healyetal)(m1, m2, chi1, chi2)
+        return np.vectorize(bbh_final_spin_non_precessing_Healyetal)(m1, m2, chi1, chi2, version)
     
     # binary parameters
     m = m1+m2
@@ -218,7 +241,7 @@ def bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2):
     # compute the final spin
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     
-    x, cov_x = so.leastsq(_final_spin_diff_Healyetal, 0., args=(eta, delta_m, S, Delta))
+    x, cov_x = so.leastsq(_final_spin_diff_Healyetal, 0., args=(eta, delta_m, S, Delta, version))
     
     # The first element returned by so.leastsq() is a scalar in early versions of scipy (like 0.7.2) while it is a tuple of length 1 in later versions of scipy (like 0.10.1). The following bit ensures that a scalar is returned for a set of scalar inputs in a version-independent way.
     if hasattr(x, '__len__'):
@@ -228,9 +251,9 @@ def bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2):
     
     return chif
 
-def bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, chif=None):
+def bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, version="2014", chif=None):
     """
-    Calculate the mass of the final BH resulting from the merger of two black holes with non-precessing spins using fit from Healy et al Phys Rev D 90, 104004 (2014)
+    Calculate the mass of the final BH resulting from the merger of two black holes with non-precessing spins using fit from Healy et al Phys Rev D 90, 104004 (2014) (version == "2014") or the small update from Healy and Lousto arXiv:1610.09713 (version == "2016")
     
     Parameters
     ----------
@@ -264,7 +287,7 @@ def bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, chif=None):
     Delta = (S2/m2-S1/m1)/m # antisymmetric spin (dimensionless -- called tilde{Delta} in the paper
     
     if chif is None:
-        chif = bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2)
+        chif = bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2, version)
     else:
         chif = np.array(chif)
     
@@ -273,27 +296,49 @@ def bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, chif=None):
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     r_isco = calc_isco_radius(chif)
     
-    # fitting coefficients - Table XI of Healy et al Phys Rev D 90, 104004 (2014)
-    # [fourth order fits]
-    M0  = 0.951507
-    K1  = -0.051379
-    K2a = -0.004804
-    K2b = -0.054522
-    K2c = -0.000022
-    K2d = 1.995246
-    K3a = 0.007064
-    K3b = -0.017599
-    K3c = -0.119175
-    K3d = 0.025000
-    K4a = -0.068981
-    K4b = -0.011383
-    K4c = -0.002284
-    K4d = -0.165658
-    K4e = 0.019403
-    K4f = 2.980990
-    K4g = 0.020250
-    K4h = -0.004091
-    K4i = 0.078441
+    # fitting coefficients
+    if version == "2014": # From Table XI of Healy et al Phys Rev D 90, 104004 (2014) [fourth order fits]
+        M0  = 0.951507
+        K1  = -0.051379
+        K2a = -0.004804
+        K2b = -0.054522
+        K2c = -0.000022
+        K2d = 1.995246
+        K3a = 0.007064
+        K3b = -0.017599
+        K3c = -0.119175
+        K3d = 0.025000
+        K4a = -0.068981
+        K4b = -0.011383
+        K4c = -0.002284
+        K4d = -0.165658
+        K4e = 0.019403
+        K4f = 2.980990
+        K4g = 0.020250
+        K4h = -0.004091
+        K4i = 0.078441
+    elif version == "2016": # From Table III of Healy and Lousto arXiv:1610.09713 (values taken from Matlab implementation and thus slightly more precise than the ones in the table)
+        M0  = 0.951659087
+        K1  = -0.0511301363
+        K2a = -0.00569897591
+        K2b = -0.0580644933
+        K2c = -0.00186732281
+        K2d = 1.99570464
+        K3a = 0.00499137602
+        K3b = -0.00923776244
+        K3c = -0.120577082
+        K3d = 0.0164168385
+        K4a = -0.0607207285
+        K4b = -0.00179828653
+        K4c = 0.000654388173
+        K4d = -0.156625642
+        K4e = 0.0103033606
+        K4f = 2.97872857
+        K4g = 0.00790433045
+        K4h = 0.000631241195
+        K4i = 0.0844776942
+    else:
+        raise ValueError('Unknown version--should be either "2014" or "2016".')
     
     # binding energy at ISCO -- Eq.(2.7) of Ori, Thorne Phys Rev D 62 124022 (2000)
     E_isco = (1. - 2./r_isco + chif/r_isco**1.5)/np.sqrt(1. - 3./r_isco + 2.*chif/r_isco**1.5)
@@ -336,8 +381,8 @@ def bbh_final_mass_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, ch
     m1, m2 : component masses
     chi1, chi2 : dimensionless spins of two BHs
     tilt1, tilt2 : tilts (in radians) in the new spin convention
-    fitname: fit selection currently supports Pan2011 (non-spinning), HLZ2014, PhenomD, UIB2016
-    chif: final spin (optional, only used for HLZ2014), if already calculated
+    fitname: fit selection currently supports Pan2011 (non-spinning), HLZ2014, PhenomD, UIB2016, HL2016
+    chif: final spin (optional, only used for HLZ2014 and HL2016), if already calculated
 
     Returns
     -------
@@ -365,7 +410,9 @@ def bbh_final_mass_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, ch
           print "Note: Precomputed chif not used by this fit."
        mf = bbh_final_mass_non_spinning_Panetal(m1, m2)
     elif fitname==bbh_final_state_fits.hlz2014:
-       mf = bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1proj, chi2proj, chif=chif)
+       mf = bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1proj, chi2proj, version="2014", chif=chif)
+    elif fitname==bbh_final_state_fits.hl2016:
+       mf = bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1proj, chi2proj, version="2016", chif=chif)
     elif fitname==bbh_final_state_fits.phenD:
        if chif is not None:
           print "Note: Precomputed chif not used by this fit."
@@ -390,7 +437,7 @@ def bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, tr
     m1, m2 : component masses
     chi1, chi2 : dimensionless spins of two BHs
     tilt1, tilt2 : tilts (in radians) in the new spin convention
-    fitname: fit selection currently supports Pan2011 (non-spinning), HLZ2014, PhenomD, UIB2016, HBR2016
+    fitname: fit selection currently supports Pan2011 (non-spinning), HLZ2014, PhenomD, UIB2016, HBR2016, HL2016
 
     Returns
     -------
@@ -414,7 +461,9 @@ def bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, tr
           print "Note: Pan2011 fit does not use spins."
        chif = bbh_final_spin_non_spinning_Panetal(m1, m2)
     elif fitname==bbh_final_state_fits.hlz2014:
-       chif = bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1proj, chi2proj)
+       chif = bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1proj, chi2proj, "2014")
+    elif fitname==bbh_final_state_fits.hl2016:
+       chif = bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1proj, chi2proj, "2016")
     elif fitname==bbh_final_state_fits.phenD:
        chif = bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1proj, chi2proj)
     elif fitname==bbh_final_state_fits.uib2016:
@@ -444,7 +493,7 @@ def bbh_final_spin_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fitname, 
     phi12: angle (in radians) between in-plane spin components
     fitname: fit selection currently supports Pan2011 (non-spinning), HLZ2014 (aligned+augmentation),
                                               PhenomD (aligned+augmentation), UIB2016 (aligned+augmentation),
-                                              HBR2016 (precessing)
+                                              HL2016 (aligned+augmentation), HBR2016 (precessing)
 
     Returns
     -------
@@ -461,7 +510,7 @@ def bbh_final_spin_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fitname, 
 
     _check_mchi(m1,m2,chi1,chi2) # Check that inputs are physical
 
-    if fitname==bbh_final_state_fits.pan2011 or fitname==bbh_final_state_fits.hlz2014 or fitname==bbh_final_state_fits.phenD or fitname==bbh_final_state_fits.uib2016:
+    if fitname==bbh_final_state_fits.pan2011 or fitname==bbh_final_state_fits.hlz2014 or fitname==bbh_final_state_fits.phenD or fitname==bbh_final_state_fits.uib2016 or fitname==bbh_final_state_fits.hl2016:
        precfit = False
     elif fitname==bbh_final_state_fits.hbr2016:
        precfit = True
