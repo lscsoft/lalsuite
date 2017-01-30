@@ -390,7 +390,7 @@ def bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, tr
     m1, m2 : component masses
     chi1, chi2 : dimensionless spins of two BHs
     tilt1, tilt2 : tilts (in radians) in the new spin convention
-    fitname: fit selection currently supports Pan2011 (non-spinning), HLZ2014, PhenomD, UIB2016
+    fitname: fit selection currently supports Pan2011 (non-spinning), HLZ2014, PhenomD, UIB2016, HBR2016
 
     Returns
     -------
@@ -419,6 +419,8 @@ def bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, tr
        chif = bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1proj, chi2proj)
     elif fitname==bbh_final_state_fits.uib2016:
        chif = bbh_final_spin_non_precessing_UIB2016(m1, m2, chi1proj, chi2proj)
+    elif fitname==bbh_final_state_fits.hbr2016:
+       chif = bbh_final_spin_non_precessing_HBR2016(m1, m2, chi1proj, chi2proj)
     else:
        raise ValueError("Unrecognized fit name.")
 
@@ -463,7 +465,6 @@ def bbh_final_spin_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fitname, 
        precfit = False
     elif fitname==bbh_final_state_fits.hbr2016:
        precfit = True
-       raise ValueError("HBR2016 fit not yet implemented.")
        chif = bbh_final_spin_precessing_HBR2016(m1, m2, chi1, chi2, tilt1, tilt2, phi12)
     else:
        raise ValueError("Unrecognized fit name.")
@@ -729,6 +730,192 @@ def bbh_final_spin_non_precessing_UIB2016(m1, m2, chi1, chi2):
     chif = Lorb + Stot
 
     return chif
+
+def _bbh_HBR2016_setup(m1, m2, chi1, chi2):
+    """
+    Setup function for the Hofmann, Barausse, and Rezzolla final spin fits to vectorize the masses and spins and calculate the mass ratio.
+    """
+
+    # Vectorize if arrays are provided as input
+    m1 = np.vectorize(float)(np.array(m1))
+    m2 = np.vectorize(float)(np.array(m2))
+    chi1 = np.vectorize(float)(np.array(chi1))
+    chi2 = np.vectorize(float)(np.array(chi2))
+
+    return m1, m2, chi1, chi2, m2/m1
+
+def _bbh_HBR2016_ell(m1, m2, chi1z, chi2z, version):
+    """
+    Compute the orbital angular momentum ell used by the Hofmann, Barausse, and Rezzolla final spin fit [from ApJL 825, L19 (2016)], henceforth HBR.
+    The three versions available correspond to the three choices of fit coefficients given in Table 1 of that paper, with 6, 16, and 20 coefficients, respectively.
+
+    version can thus be "M1J2", "M3J3", or "M3J4"
+    """
+
+    # Set upper bounds for sums and coefficients from Table 1 in HBR; k00 is calculated from Eq. (11) in the paper
+
+    if version == "M1J2":
+        nM = 1
+        nJ = 2
+
+        k00 = -3.82116
+        k01 = -1.2019
+        k02 = -1.20764
+        k10 = 3.79245
+        k11 = 1.18385
+        k12 = 4.90494
+        xi = 0.41616
+
+    elif version == "M3J3":
+        nM = 3
+        nJ = 3
+
+        k00 = -5.83164
+        k01 = 2.87025
+        k02 = -1.53315
+        k03 = -3.78893
+        k10 = 32.9127
+        k11 = -62.9901
+        k12 = 10.0068
+        k13 = 56.1926
+        k20 = -136.832
+        k21 = 329.32
+        k22 = -13.2034
+        k23 = -252.27
+        k30 = 210.075
+        k31 = -545.35
+        k32 = -3.97509
+        k33 = 368.405
+        xi = 0.463926
+
+    elif version == "M3J4":
+        nM = 3
+        nJ = 4
+
+        k00 = -5.97723
+        k01 = 3.39221
+        k02 = 4.48865
+        k03 = -5.77101
+        k04 = -13.0459
+        k10 = 35.1278
+        k11 = -72.9336
+        k12 = -86.0036
+        k13 = 93.7371
+        k14 = 200.975
+        k20 = -146.822
+        k21 = 387.184
+        k22 = 447.009
+        k23 = -467.383
+        k24 = -884.339
+        k30 = 223.911
+        k31 = -648.502
+        k32 = -697.177
+        k33 = 753.738
+        k34 = 1166.89
+        xi = 0.474046
+
+    else:
+        raise ValueError('Unknown version--should be either "M1J2", "M3J3", or "M3J4".')
+
+    # Calculate eta, atot, and aeff; note that HBR call the symmetric mass ratio nu instead of eta
+
+    m = m1 + m2
+    q = m2/m1
+    eta = m1*m2/(m*m)
+
+    atot = (chi1z + q*q*chi2z)/((1.+q)*(1.+q)) # Eq. (12) in HBR
+    aeff = atot + xi*eta*(chi1z + chi2z) # Inline equation below Eq. (7); see also Eq. (15) for the precessing analogue
+
+    # Calculate ISCO energy and angular momentum
+    r_isco = calc_isco_radius(aeff)
+    e_isco = (1. - 2./3./r_isco)**0.5 # Eq. (2) in HBR
+    l_isco = 2./(3.*3.**0.5)*(1. + 2.*(3.*r_isco - 2.)**0.5) # Eq. (3) in HBR
+
+    # The following expressions give the double sum in Eq. (13) in HBR (without the overall factor of eta that is put in below) specialized to the nJ values for the three versions, i.e., nJ = 2 => M1J2, nJ = 3 => M3J3, nJ = 4 => M3J4
+    if nJ >= 2:
+        aeff2 = aeff*aeff
+        ksum = k00 + k01*aeff + k02*aeff2 + eta*(k10 + k11*aeff + k12*aeff2)
+    if nJ >= 3:
+        eta2 = eta*eta
+        eta3 = eta2*eta
+        aeff3 = aeff2*aeff
+        ksum = ksum + (k03 + eta*k13)*aeff3 + eta2*(k20 + k21*aeff + k22*aeff2 + k23*aeff3) + eta3*(k30 + k31*aeff + k32*aeff2 + k33*aeff3)
+    if nJ >= 4:
+        ksum = ksum + (k04 + eta*k14 + eta2*k24 + eta3*k34)*aeff3*aeff
+
+    # Calculate the absolute value of ell
+    ell = abs((l_isco - 2.*atot*(e_isco - 1.)) + eta*ksum) # Eq. (13) in HBR
+
+    return ell
+
+def bbh_final_spin_non_precessing_HBR2016(m1, m2, chi1z, chi2z, version="M3J3"):
+        """
+        Calculate the (signed) dimensionless spin of the final BH resulting from the
+        merger of two black holes with aligned spins using the fit from Hofmann, Barausse, and Rezzolla ApJL 825, L19 (2016), henceforth HBR.
+
+        The three versions available correspond to the three choices of fit coefficients given in Table 1 of that paper, with 6, 16, and 20 coefficients, respectively.
+
+        version can thus be "M1J2", "M3J3", or "M3J4"
+
+        m1, m2: component masses
+        chi1z, chi2z: components of the dimensionless spins of the two BHs along the orbital angular momentum
+        """
+
+        # Calculate q and vectorize the masses and spins if arrays are provided as input
+
+        m1, m2, chi1z, chi2z, q = _bbh_HBR2016_setup(m1, m2, chi1z, chi2z)
+
+        # Calculate the final spin
+
+        atot = (chi1z + chi2z*q*q)/((1.+q)*(1.+q)) # Eq. (12) in HBR
+
+        ell = _bbh_HBR2016_ell(m1, m2, chi1z, chi2z, version)
+
+        return atot + ell/(1./q + 2. + q) # Eq. (12) in HBR, writing the symmetric mass ratio in terms of q
+
+def bbh_final_spin_precessing_HBR2016(m1, m2, chi1, chi2, tilt1, tilt2, phi12, version="M3J3"):
+        """
+        Calculate the dimensionless spin of the final BH resulting from the
+        merger of two black holes with precessing spins using the fit from Hofmann, Barausse, and Rezzolla ApJL 825, L19 (2016), henceforth HBR.
+
+        The three versions available correspond to the three choices of fit coefficients given in Table 1 of that paper, with 6, 16, and 20 coefficients, respectively.
+
+        version can thus be "M1J2", "M3J3", or "M3J4"
+
+        m1, m2: component masses
+        chi1, chi2: dimensionless spins of two BHs
+        tilt1, tilt2: tilt angles of the spins from the orbital angular momentum
+        phi12: angle between in-plane spin components
+        """
+
+        # Calculate q and vectorize the masses and spins if arrays are provided as input
+
+        m1, m2, chi1, chi2, q = _bbh_HBR2016_setup(m1, m2, chi1, chi2)
+
+        # Vectorize the spin angles if arrays are provided as input
+        tilt1 = np.vectorize(float)(np.array(tilt1))
+        tilt2 = np.vectorize(float)(np.array(tilt2))
+        phi12 = np.vectorize(float)(np.array(phi12))
+
+        # Set eps (\epsilon_\beta or \epsilon_\gamma) to the value given below Eq. (18) in HBR
+
+        eps = 0.024
+
+        # Computing angles defined in Eq. (17) of HBR. The betas and gammas expressions are for the starred quantities computed using the second (approximate) equality in Eq. (18) in HBR
+        cos_beta = np.cos(tilt1)
+        cos_betas = np.cos(tilt1 + eps*np.sin(tilt1))
+        cos_gamma = np.cos(tilt2)
+        cos_gammas = np.cos(tilt2 + eps*np.sin(tilt2))
+        cos_alpha = ((1 - cos_beta*cos_beta)*(1 - cos_gamma*cos_gamma))**0.5*np.cos(phi12) + cos_beta*cos_gamma # This rewrites the inner product definition of cos_alpha in terms of cos_beta, cos_gamma, and phi12
+
+        # Define a shorthand and compute the final spin
+
+        q2 = q*q
+
+        ell = _bbh_HBR2016_ell(m1, m2, chi1*cos_betas, chi2*cos_gammas, version)
+
+        # Return the final spin value [Eq. (16) in HBR]
+        return (chi1*chi1 + chi2*chi2*q2*q2 + 2.*chi1*chi2*q2*cos_alpha + 2.*(chi1*cos_betas + chi2*q2*cos_gammas)*ell*q + ell*ell*q2)**0.5/((1.+q)*(1.+q))
 
 def bbh_aligned_Lpeak_6mode_SHXJDK(q, chi1para, chi2para):
     """
