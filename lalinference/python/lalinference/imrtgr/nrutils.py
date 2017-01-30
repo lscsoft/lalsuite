@@ -679,9 +679,11 @@ def bbh_UIBfits_setup(m1, m2, chi1, chi2):
     Shat3 = Shat2*Shat
     Shat4 = Shat2*Shat2
 
-    # spin difference, assuming m1>m2
+    # asymmetric spin combination (spin difference), where the paper assumes m1>m2
+    # to make our implementation symmetric under simultaneous exchange of m1<->m2 and chi1<->chi2,
+    # we flip the sign here when m2>m1
     chidiff  = chi1 - chi2
-    if np.any(m2>m1): # fit assumes m1>m2
+    if np.any(m2>m1):
       chidiff = np.sign(m1-m2)*chidiff
     chidiff2 = chidiff*chidiff
 
@@ -702,7 +704,7 @@ def bbh_final_mass_non_precessing_UIB2016(m1, m2, chi1, chi2, version="v2"):
 
     m1, m2: component masses
     chi1, chi2: dimensionless spins of two BHs
-    Note: Here it is assumed that m1>m2.
+    Results are symmetric under simultaneous exchange of m1<->m2 and chi1<->chi2.
     """
 
     m, eta, eta2, eta3, eta4, Stot, Shat, Shat2, Shat3, Shat4, chidiff, chidiff2, sqrt2, sqrt3, sqrt1m4eta = bbh_UIBfits_setup(m1, m2, chi1, chi2)
@@ -789,7 +791,7 @@ def bbh_final_spin_non_precessing_UIB2016(m1, m2, chi1, chi2, version="v2"):
 
     m1, m2: component masses
     chi1, chi2: dimensionless spins of two BHs
-    Note: Here it is assumed that m1>m2.
+    Results are symmetric under simultaneous exchange of m1<->m2 and chi1<->chi2.
     """
 
     m, eta, eta2, eta3, eta4, Stot, Shat, Shat2, Shat3, Shat4, chidiff, chidiff2, sqrt2, sqrt3, sqrt1m4eta = bbh_UIBfits_setup(m1, m2, chi1, chi2)
@@ -1084,7 +1086,9 @@ def bbh_aligned_Lpeak_6mode_SHXJDK(q, chi1, chi2):
     if np.any(q>1.):
       raise ValueError("q has to be <= 1.")
 
-    # T1600018 fit expects m1>m2
+    # T1600018 fit expects m1>m2;
+    # implementation here should be symmetric,
+    # but we follow that convention to be sure
     m1 = 1./(1.+q)
     m2 = q/(1.+q)
 
@@ -1097,9 +1101,9 @@ def bbh_peak_luminosity_non_precessing_T1600018(m1, m2, chi1, chi2):
     m1, m2: component masses
     chi1: the component of the dimensionless spin of m1 along the angular momentum (z)
     chi2: the component of the dimensionless spin of m2 along the angular momentum (z)
-
-    Note: Here it is assumed that m1>m2.
+    Results are symmetric under simultaneous exchange of m1<->m2 and chi1<->chi2.
     """
+
     # Vectorize the function if arrays are provided as input
     m1 = np.vectorize(float)(np.array(m1))
     m2 = np.vectorize(float)(np.array(m2))
@@ -1133,7 +1137,7 @@ def bbh_peak_luminosity_non_precessing_UIB2016(m1, m2, chi1, chi2):
 
     m1, m2: component masses
     chi1, chi2: dimensionless spins of two BHs
-    Note: Here it is assumed that m1>m2.
+    Results are symmetric under simultaneous exchange of m1<->m2 and chi1<->chi2.
     """
 
     m, eta, eta2, eta3, eta4, Stot, Shat, Shat2, Shat3, Shat4, chidiff, chidiff2, sqrt2, sqrt3, sqrt1m4eta = bbh_UIBfits_setup(m1, m2, chi1, chi2)
@@ -1141,6 +1145,7 @@ def bbh_peak_luminosity_non_precessing_UIB2016(m1, m2, chi1, chi2):
 
     # fit coefficients corresponding to Table I, II, IV,
     # exact values corresponding to https://arxiv.org/src/1612.09566v1/anc/LpeakUIB2016_suppl_coeffs.txt
+    # fi2 coefficients are replaced by functions of fi0, fi1 as in Eq. (10)
     a0 = 0.8742169580717333
     a1 = -2.111792574893241
     a2 = 35.214103272783646
@@ -1150,7 +1155,6 @@ def bbh_peak_luminosity_non_precessing_UIB2016(m1, m2, chi1, chi2):
     b1 = 0.9800204548606681
     b2 = -0.1779843936224084
     b4 = 1.7859209418791981
-    f71 = 0.
     d10 = 3.789116271213293
     d20 = 0.40214125006660567
     d30 = 4.273116678713487
@@ -1165,9 +1169,10 @@ def bbh_peak_luminosity_non_precessing_UIB2016(m1, m2, chi1, chi2):
     f60 = 3.0901740789623453
     f61 = -16.66465705511997
     f70 = 0.8362061463375388
+    f71 = 0.
 
-    # calculate the Lpeak/(eta2*L0) fit from Eq. (14)
-    Lpeak = a0 + a1*eta + a2*eta2 + a3*eta3 + a4*eta4 + a5*eta5 + (0.465*b1*Shat*(f10 + f11*eta + (16. - 16.*f10 - 4.*f11)*eta2) + 0.107*b2*Shat2*(f20 + f21*eta + (16. - 16.*f20 - 4.*f21)*eta2) + 1.*Shat3*(f30 + f31*eta + (-16.*f30 - 4.*f31)*eta2) + 1.*Shat4*(f40 + f41*eta + (-16.*f40 - 4.*f41)*eta2))/(1. - 0.328*b4*Shat*(f60 + f61*eta + (16. - 16.*f60 - 4.*f61)*eta2) + 1.*Shat2*(f70 + f71*eta + (-16.*f70 - 4.*f71)*eta2)) + d10*sqrt1m4eta*eta3*chidiff + d30*Shat*sqrt1m4eta*eta3*chidiff + d20*eta3*chidiff2
+    # calculate the Lpeak/(eta2*L0) fit from Eq. (14), using the constraints for fi2 from Eq. (10)
+    Lpeak = a0 + a1*eta + a2*eta2 + a3*eta3 + a4*eta4 + a5*eta5 + (0.465*b1*Shat*(f10 + f11*eta + (16. - 16.*f10 - 4.*f11)*eta2) + 0.107*b2*Shat2*(f20 + f21*eta + (16. - 16.*f20 - 4.*f21)*eta2) + Shat3*(f30 + f31*eta + (-16.*f30 - 4.*f31)*eta2) + Shat4*(f40 + f41*eta + (-16.*f40 - 4.*f41)*eta2))/(1. - 0.328*b4*Shat*(f60 + f61*eta + (16. - 16.*f60 - 4.*f61)*eta2) + Shat2*(f70 + f71*eta + (-16.*f70 - 4.*f71)*eta2)) + eta3*((d10+d30*Shat)*sqrt1m4eta*chidiff + d20*chidiff2)
 
     # Lpeak(eta=0.25,chi1=chi2=0)/0.25^2
     L0 = 0.016379197203103536
