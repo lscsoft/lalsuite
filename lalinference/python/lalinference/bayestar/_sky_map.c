@@ -219,7 +219,7 @@ static PyObject *sky_map_toa_phoa_snr(
         goto fail;
     }
 
-    if (PyArray_SetBaseObject(out, capsule))
+    if (PyArray_SetBaseObject((PyArrayObject *) out, capsule))
     {
         Py_DECREF(out);
         out = NULL;
