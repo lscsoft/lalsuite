@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 93
+# serial 94
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -133,8 +133,26 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
       ],[
         AC_MSG_ERROR([SWIG version ${swig_min_version} or later is required ${swig_min_version_info}])
       ])
-      SWIG="env CCACHE_DISABLE=1 ${ac_cv_path_SWIG}"
+      SWIG="${ac_cv_path_SWIG}"
     ])
+
+    # check if SWIG works with ccache
+    ccache_swig_env="CCACHE_CPP2=1"
+    AC_MSG_CHECKING([if ${SWIG} works with ${ccache_swig_env}])
+    echo '%module conftest;' > conftest-swig.i
+    env_ccache_swig_cmd="env ${ccache_swig_env} ${SWIG} -includeall -ignoremissing -xml -xmllite -MP -MD -MF conftest-swig.deps -o conftest-swig.xml conftest-swig.i"
+    _AS_ECHO_LOG([${env_ccache_swig_cmd}])
+    ${env_ccache_swig_cmd} >&AS_MESSAGE_LOG_FD 2>&AS_MESSAGE_LOG_FD
+    result=$?
+    _AS_ECHO_LOG([\$? = ${result}])
+    AS_IF([test ${result} -eq 0],[
+      AC_MSG_RESULT([yes])
+    ],[
+      AC_MSG_RESULT([no])
+      ccache_swig_env="CCACHE_DISABLE=1"
+    ])
+    SWIG="env ${ccache_swig_env} ${SWIG}"
+    rm -f conftest-swig.i conftest-swig.deps conftest-swig.xml
 
     # extract -I and -D flags from LALSuite library preprocessor flags
     AC_SUBST([SWIG_CPPFLAGS],[])
