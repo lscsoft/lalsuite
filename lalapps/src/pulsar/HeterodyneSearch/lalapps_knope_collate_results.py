@@ -212,7 +212,7 @@ parameters = ['f0rot', 'ra', 'dec'] # a list of pulsar parameters to output (def
     ld = os.listdir(d)
     jsonfile = None
     for fd in ld:
-      if '.json' in fd:
+      if '.json' == os.path.splitext(fd)[-1]:
         jsonfile = os.path.join(d, fd)
         break
     if jsonfile == None: # no file found, so move on to next directory

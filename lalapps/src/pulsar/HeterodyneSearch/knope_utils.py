@@ -603,9 +603,9 @@ class knopeDAG(pipeline.CondorDAG):
       jsonfile = os.path.join(self.results_pulsar_dir[pname], pname+'.json')
       if self.autonomous:
         if os.path.isfile(jsonfile):
-          # add starttime timestamp to JSON file
+          # append starttime (which will be the end time of the previous results) timestamp to JSON file
           try:
-            shutil.copyfile(jsonfile, jsonfile.strip('.json') + '_%d.json' % self.initial_start.values()[0])
+            shutil.copyfile(jsonfile, jsonfile + '_%d' % self.initial_start.values()[0])
           except:
             print("Warning... could not copy previous results JSON file '%s'. Previous results may get overwritten." % jsonfile, file=sys.stderr)
 
@@ -710,10 +710,11 @@ class knopeDAG(pipeline.CondorDAG):
 
         # if in autonomous mode copy previous posterior files
         if self.autonomous:
-          try: # copy to file with the start time appended
-            shutil.copyfile(posteriorsfiles[det], posteriorsfiles[det].strip('.hdf') + '_%d.hdf' % self.initial_start.values()[0])
-          except:
-            print("Warning... could not create copy of current posterior samples file '%s'. This will get overwritten on next autonomous run." % posteriorsfiles[det], file=sys.stderr)
+          if os.path.isfile(posteriorsfiles[det]):
+            try: # copy to file with the start time (i.e. the end time of the previous analysis for which the posterior file belongs) appended
+              shutil.copyfile(posteriorsfiles[det], posteriorsfiles[det].strip('.hdf') + '_%d.hdf' % self.initial_start.values()[0])
+            except:
+              print("Warning... could not create copy of current posterior samples file '%s'. This will get overwritten on next autonomous run." % posteriorsfiles[det], file=sys.stderr)
 
         if self.pe_num_background > 0: backgrounddir[det] = os.path.join(backgrounddir[det], dirpostfix)
 

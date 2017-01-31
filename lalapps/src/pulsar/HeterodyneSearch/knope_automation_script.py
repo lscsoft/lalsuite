@@ -217,9 +217,9 @@ A configuration .ini file is required.
 
     # check if there is a rescue DAG, and if so run it, and wait
     rescuefile = prevdags[-1] + '.rescue'
-    if rescuefile in os.listdir(os.path.dirname(prevdags[-1])):
+    if os.path.basename(rescuefile+'001') in os.listdir(os.path.dirname(prevdags[-1])):
       # if more than 2 rescue DAGs have already been run then just abort as there's probably some problem
-      if rescuefile+'003' in os.listdir(os.path.dirname(prevdags[-1])):
+      if os.path.basename(rescuefile+'003') in os.listdir(os.path.dirname(prevdags[-1])):
         errmsg = "Error... rescue DAG has been run twice and there are still failures. Automation code is aborting. Fix the problem and then retry"
         print(errmsg, file=sys.stderr)
         remove_cron(cronid) # remove cron job
@@ -421,10 +421,10 @@ A configuration .ini file is required.
 
     if prevdags != None:
       # add on new DAG file to list
-      prevdags.append(os.path.join(rundir, dagname))
-      cp.set('configuration', 'previous_dags', '['+', '.join(z for z in prevdags)+']') # output as list
+      prevdags.append(os.path.join(rundir, dagname+'.dag'))
+      cp.set('configuration', 'previous_dags', '['+', '.join(['"%s"' % z for z in prevdags])+']') # output as list
     else: # output DAG file to previous_dags list
-      cp.set('configuration', 'previous_dags', '['+dagname+']')
+      cp.set('configuration', 'previous_dags', '["'+os.path.join(rundir, dagname+'.dag')+'"]')
 
     # add the initial start time
     cprun.set('analysis', 'autonomous_initial_start', str(starttime))
