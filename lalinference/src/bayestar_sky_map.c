@@ -213,10 +213,12 @@ static double complex eval_snr(
 }
 
 
+#define INTERP_SIZE 400
+
+
 typedef struct {
-    size_t size;
     double fx, xmin;
-    double y[];
+    double y[INTERP_SIZE];
 } cubic_interp;
 
 
@@ -225,7 +227,7 @@ static double cubic_interp_eval(const cubic_interp *interp, double x)
     double i;
     const double u = modf((x - interp->xmin) * interp->fx, &i);
 
-    #define CLAMP(m) ((size_t) ((m) <= 0 ? 0 : ((m) >= interp->size - 1 ? interp->size - 1 : m)))
+    #define CLAMP(_) ((int) ((_) < 0 ? 0 : ((_) < INTERP_SIZE ? (_) : INTERP_SIZE - 1)))
     const double y0 = interp->y[CLAMP(i - 1)];
     const double y1 = interp->y[CLAMP(i)];
     const double y2 = interp->y[CLAMP(i + 1)];
@@ -237,58 +239,95 @@ static double cubic_interp_eval(const cubic_interp *interp, double x)
 
 
 typedef struct {
-    size_t xsize, ysize;
     double xmin, ymin, fx, fy;
-    double z[];
+    double a[INTERP_SIZE][INTERP_SIZE][4][4];
 } bicubic_interp;
 
 
-/*
- * FIXME:
- * This is an inefficient implementation of bicubic interpolation. We are doing
- * 4x more operations than we need to by evaluating multiple 1D cubic
- * interpolants. Instead, we should rearrange this as an inner product of the
- * vector [1, x, x^2, x^3], a matrix consisting of weighted sums of the data
- * points, and [1, y, y^2, y^3]. The matrix will have to be precomputed at each
- * point in the data grid. This will speed up the cubic interpolant by 4x at
- * the expense of increasing the memory footprint by 16x.
- *
- * On the other hand, this implementation fits in the L2 cache whereas the
- * precomputed version would not.
- *
- * We can also decrease the amount of branching by checking for infinities when
- * we precompute the matrices and we can reduce the number of conditionals
- * needed for bounds checking.
- */
+static void bicubic_interp_init(bicubic_interp *interp, const double z[INTERP_SIZE][INTERP_SIZE], double xmin, double ymin, double dx, double dy)
+{
+    interp->xmin = xmin;
+    interp->ymin = ymin;
+    interp->fx = 1 / dx;
+    interp->fy = 1 / dy;
+
+    #define CLAMP(_) ((_) < 0 ? 0 : ((_) < INTERP_SIZE ? (_) : INTERP_SIZE - 1))
+
+    for (int x = 0; x < INTERP_SIZE; x ++)
+    {
+        for (int y = 0; y < INTERP_SIZE; y ++)
+        {
+            double m[4][4], a[4][4];
+            for (int x_ = 0; x_ < 4; x_ ++)
+                for (int y_ = 0; y_ < 4; y_ ++)
+                    m[x_][y_] = z[CLAMP(x + x_ - 1)][CLAMP(y + y_ - 1)];
+
+            a[0][0] = m[1][1];
+            a[0][1] = -0.5*m[0][1] + 0.5*m[2][1];
+            a[0][2] = m[0][1] - 2.5*m[1][1] + 2.0*m[2][1] - 0.5*m[3][1];
+            a[0][3] = -0.5*m[0][1] + 1.5*m[1][1] - 1.5*m[2][1] + 0.5*m[3][1];
+            a[1][0] = -0.5*m[1][0] + 0.5*m[1][2];
+            a[1][1] = 0.25*m[0][0] - 0.25*m[0][2] - 0.25*m[2][0] + 0.25*m[2][2];
+            a[1][2] = -0.5*m[0][0] + 0.5*m[0][2] + 1.25*m[1][0] - 1.25*m[1][2] - 1.0*m[2][0] + 1.0*m[2][2] + 0.25*m[3][0] - 0.25*m[3][2];
+            a[1][3] = 0.25*m[0][0] - 0.25*m[0][2] - 0.75*m[1][0] + 0.75*m[1][2] + 0.75*m[2][0] - 0.75*m[2][2] - 0.25*m[3][0] + 0.25*m[3][2];
+            a[2][0] = m[1][0] - 2.5*m[1][1] + 2.0*m[1][2] - 0.5*m[1][3];
+            a[2][1] = -0.5*m[0][0] + 1.25*m[0][1] - 1.0*m[0][2] + 0.25*m[0][3] + 0.5*m[2][0] - 1.25*m[2][1] + 1.0*m[2][2] - 0.25*m[2][3];
+            a[2][2] = m[0][0] - 2.5*m[0][1] + 2.0*m[0][2] - 0.5*m[0][3] - 2.5*m[1][0] + 6.25*m[1][1] - 5.0*m[1][2] + 1.25*m[1][3] + 2.0*m[2][0] - 5.0*m[2][1] + 4.0*m[2][2] - 1.0*m[2][3] - 0.5*m[3][0] + 1.25*m[3][1] - 1.0*m[3][2] + 0.25*m[3][3];
+            a[2][3] = -0.5*m[0][0] + 1.25*m[0][1] - 1.0*m[0][2] + 0.25*m[0][3] + 1.5*m[1][0] - 3.75*m[1][1] + 3.0*m[1][2] - 0.75*m[1][3] - 1.5*m[2][0] + 3.75*m[2][1] - 3.0*m[2][2] + 0.75*m[2][3] + 0.5*m[3][0] - 1.25*m[3][1] + 1.0*m[3][2] - 0.25*m[3][3];
+            a[3][0] = -0.5*m[1][0] + 1.5*m[1][1] - 1.5*m[1][2] + 0.5*m[1][3];
+            a[3][1] = 0.25*m[0][0] - 0.75*m[0][1] + 0.75*m[0][2] - 0.25*m[0][3] - 0.25*m[2][0] + 0.75*m[2][1] - 0.75*m[2][2] + 0.25*m[2][3];
+            a[3][2] = -0.5*m[0][0] + 1.5*m[0][1] - 1.5*m[0][2] + 0.5*m[0][3] + 1.25*m[1][0] - 3.75*m[1][1] + 3.75*m[1][2] - 1.25*m[1][3] - 1.0*m[2][0] + 3.0*m[2][1] - 3.0*m[2][2] + 1.0*m[2][3] + 0.25*m[3][0] - 0.75*m[3][1] + 0.75*m[3][2] - 0.25*m[3][3];
+            a[3][3] = 0.25*m[0][0] - 0.75*m[0][1] + 0.75*m[0][2] - 0.25*m[0][3] - 0.75*m[1][0] + 2.25*m[1][1] - 2.25*m[1][2] + 0.75*m[1][3] + 0.75*m[2][0] - 2.25*m[2][1] + 2.25*m[2][2] - 0.75*m[2][3] - 0.25*m[3][0] + 0.75*m[3][1] - 0.75*m[3][2] + 0.25*m[3][3];
+
+            for (int x_ = 0; x_ < 4; x_ ++)
+                for (int y_ = 0; y_ < 4; y_ ++)
+                    interp->a[x][y][x_][y_] = a[x_][y_];
+        }
+    }
+
+    #undef CLAMP
+}
+
+
 static double bicubic_interp_eval(const bicubic_interp *interp, double x, double y)
 {
+    x -= interp->xmin;
+    x *= interp->fx;
+    y -= interp->ymin;
+    y *= interp->fy;
+
+    if (x < 0)
+        x = 0;
+    else if (x > INTERP_SIZE - 1)
+        x = INTERP_SIZE - 1;
+    if (y < 0)
+        y = 0;
+    else if (y > INTERP_SIZE - 1)
+        y = INTERP_SIZE - 1;
+
     double i, j;
-    const double u = modf((x - interp->xmin) * interp->fx, &i);
-    const double v = modf((y - interp->ymin) * interp->fy, &j);
-    double z[4];
+    x = modf(x, &i);
+    y = modf(y, &j);
 
-    #define CLAMPX(m) ((size_t) ((m) <= 0 ? 0 : ((m) >= interp->xsize - 1 ? interp->xsize - 1 : m)))
-    #define CLAMPY(m) ((size_t) ((m) <= 0 ? 0 : ((m) >= interp->ysize - 1 ? interp->ysize - 1 : m)))
-    for (unsigned int k = 0; k < 4; k ++)
-    {
-        const size_t ii = CLAMPX(i + k - 1);
-        const double z0 = interp->z[ii * interp->xsize + CLAMPY(j - 1)];
-        const double z1 = interp->z[ii * interp->xsize + CLAMPY(j)];
-        const double z2 = interp->z[ii * interp->xsize + CLAMPY(j + 1)];
-        const double z3 = interp->z[ii * interp->xsize + CLAMPY(j + 2)];
-        z[k] = real_catrom(z0, z1, z2, z3, v);
-    }
-    #undef CLAMPX
-    #undef CLAMPY
+    const double (*a)[4] = interp->a[(int) i][(int) j];
+    const double u[] = {1, x, x * x, x * x * x};
+    const double v[] = {1, y, y * y, y * y * y};
 
-    return real_catrom(z[0], z[1], z[2], z[3], u);
+    return v[0] * a[0][0] * u[0] + v[0] * a[0][1] * u[1]
+         + v[0] * a[0][2] * u[2] + v[0] * a[0][3] * u[3]
+         + v[1] * a[1][0] * u[0] + v[1] * a[1][1] * u[1]
+         + v[1] * a[1][2] * u[2] + v[1] * a[1][3] * u[3]
+         + v[2] * a[2][0] * u[0] + v[2] * a[2][1] * u[1]
+         + v[2] * a[2][2] * u[2] + v[2] * a[2][3] * u[3]
+         + v[3] * a[3][0] * u[0] + v[3] * a[3][1] * u[1]
+         + v[3] * a[3][2] * u[2] + v[3] * a[3][3] * u[3];
 }
 
 
 typedef struct {
-    bicubic_interp *region0;
-    cubic_interp *region1;
-    cubic_interp *region2;
+    bicubic_interp region0;
+    cubic_interp region1;
+    cubic_interp region2;
     double xmax, ymax, vmax, r1, r2;
     int k;
 } log_radial_integrator;
@@ -433,14 +472,8 @@ static double log_radial_integral(double r1, double r2, double p, double b, int 
 }
 
 
-static const size_t default_log_radial_integrator_size = 400;
-
-
-static log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, double pmax, size_t size)
+static void log_radial_integrator_init(log_radial_integrator *integrator, double r1, double r2, int k, double pmax)
 {
-    if (size <= 1)
-        XLAL_ERROR_NULL(XLAL_EINVAL, "size must be > 1");
-
     const double alpha = 4;
     const double p0 = 0.5 * (k >= 0 ? r2 : r1);
     const double xmax = log(pmax);
@@ -448,64 +481,38 @@ static log_radial_integrator *log_radial_integrator_init(double r1, double r2, i
     const double xmin = x0 - (1 + M_SQRT2) * alpha;
     const double ymax = x0 + alpha;
     const double ymin = 2 * x0 - M_SQRT2 * alpha - xmax;
-    const size_t len = size * size;
-    const double d = (xmax - xmin) / (size - 1); /* dx = dy = du */
+    const double d = (xmax - xmin) / (INTERP_SIZE - 1); /* dx = dy = du */
     const double umin = - (1 + M_SQRT1_2) * alpha;
     const double vmax = x0 - M_SQRT1_2 * alpha;
+    double z[INTERP_SIZE][INTERP_SIZE];
     /* const double umax = xmax - vmax; */ /* unused */
 
-    log_radial_integrator *integrator = malloc(sizeof(log_radial_integrator));
-    void *region0 = malloc(sizeof(bicubic_interp) + len * sizeof(double));
-    void *region1 = malloc(sizeof(cubic_interp) + size * sizeof(double));
-    void *region2 = malloc(sizeof(cubic_interp) + size * sizeof(double));
-    if (!(integrator && region0 && region1 && region2))
-    {
-        free(integrator);
-        free(region0);
-        free(region1);
-        free(region2);
-        XLAL_ERROR_NULL(XLAL_ENOMEM, "not enough memory to allocate integrator");
-    }
-
-    integrator->region0 = region0;
-    integrator->region0->xsize = integrator->region0->ysize = size;
-    integrator->region0->xmin = xmin;
-    integrator->region0->ymin = ymin;
-    integrator->region0->fx = integrator->region0->fy = 1 / d;
-
     #pragma omp parallel for
-    for (size_t i = 0; i < len; i ++)
+    for (size_t i = 0; i < INTERP_SIZE * INTERP_SIZE; i ++)
     {
-        const size_t ix = i / size;
-        const size_t iy = i % size;
+        const size_t ix = i / INTERP_SIZE;
+        const size_t iy = i % INTERP_SIZE;
         const double x = xmin + ix * d;
         const double y = ymin + iy * d;
         const double p = exp(x);
         const double r0 = exp(y);
         const double b = 2 * gsl_pow_2(p) / r0;
         /* Note: using this where p > r0; could reduce evaluations by half */
-        integrator->region0->z[i] = log_radial_integral(r1, r2, p, b, k);
+        z[ix][iy] = log_radial_integral(r1, r2, p, b, k);
     }
+    bicubic_interp_init(&integrator->region0, z, xmin, ymin, d, d);
 
-    integrator->region1 = region1;
-    integrator->region1->size = size;
-    integrator->region1->xmin = xmin;
-    integrator->region1->fx = 1 / d;
+    integrator->region1.xmin = xmin;
+    integrator->region1.fx = 1 / d;
 
-    for (size_t i = 0; i < size; i ++)
-    {
-        integrator->region1->y[i] = integrator->region0->z[i * size + (size - 1)];
-    }
+    for (size_t i = 0; i < INTERP_SIZE; i ++)
+        integrator->region1.y[i] = z[i][INTERP_SIZE - 1];
 
-    integrator->region2 = region2;
-    integrator->region2->size = size;
-    integrator->region2->xmin = umin;
-    integrator->region2->fx = 1 / d;
+    integrator->region2.xmin = umin;
+    integrator->region2.fx = 1 / d;
 
-    for (size_t i = 0; i < size; i ++)
-    {
-        integrator->region2->y[i] = integrator->region0->z[i * size + (size - 1 - i)];
-    }
+    for (size_t i = 0; i < INTERP_SIZE; i ++)
+        integrator->region2.y[i] = z[i][INTERP_SIZE - 1 - i];
 
     integrator->xmax = xmax;
     integrator->ymax = ymax;
@@ -513,22 +520,6 @@ static log_radial_integrator *log_radial_integrator_init(double r1, double r2, i
     integrator->r1 = r1;
     integrator->r2 = r2;
     integrator->k = k;
-    return integrator;
-}
-
-
-static void log_radial_integrator_free(log_radial_integrator *integrator)
-{
-    if (integrator)
-    {
-        free(integrator->region0);
-        integrator->region0 = NULL;
-        free(integrator->region1);
-        integrator->region1 = NULL;
-        free(integrator->region2);
-        integrator->region2 = NULL;
-        free(integrator);
-    }
 }
 
 
@@ -552,15 +543,15 @@ static double log_radial_integrator_eval(const log_radial_integrator *integrator
         }
     } else {
         if (y >= integrator->ymax) {
-            result = cubic_interp_eval(integrator->region1, x);
+            result = cubic_interp_eval(&integrator->region1, x);
         } else {
             const double v = 0.5 * (x + y);
             if (v <= integrator->vmax)
             {
                 const double u = 0.5 * (x - y);
-                result = cubic_interp_eval(integrator->region2, u);
+                result = cubic_interp_eval(&integrator->region2, u);
             } else {
-                result = bicubic_interp_eval(integrator->region0, x, y);
+                result = bicubic_interp_eval(&integrator->region0, x, y);
             }
         }
         result += gsl_pow_2(0.5 * b / p);
@@ -762,15 +753,16 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
         pmax = sqrt(0.5 * pmax);
         for (unsigned char k = 0; k < 3; k ++)
         {
-            integrators[k] = log_radial_integrator_init(
-                min_distance, max_distance, prior_distance_power + k, pmax,
-                default_log_radial_integrator_size);
+            integrators[k] = malloc(sizeof(log_radial_integrator));
             if (!integrators[k])
             {
                 for (unsigned char kk = 0; kk < k; kk ++)
-                    log_radial_integrator_free(integrators[kk]);
+                    free(integrators[kk]);
                 return NULL;
             }
+            log_radial_integrator_init(
+                integrators[k], min_distance, max_distance,
+                prior_distance_power + k, pmax);
         }
     }
 
@@ -781,7 +773,7 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
     if (!pixels)
     {
         for (unsigned char k = 0; k < 3; k ++)
-            log_radial_integrator_free(integrators[k]);
+            free(integrators[k]);
         return NULL;
     }
     const unsigned long npix0 = len;
@@ -923,7 +915,7 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
     }
 
     for (unsigned char k = 0; k < 3; k ++)
-        log_radial_integrator_free(integrators[k]);
+        free(integrators[k]);
 
     /* Rescale so that log(max) = 0. */
     const double max_logp = pixels[len - 1].value[0];
@@ -1414,8 +1406,8 @@ static void test_log_radial_integral(
     double expected, double tol, double r1, double r2, double p2, double b, int k)
 {
     const double p = sqrt(p2);
-    log_radial_integrator *integrator = log_radial_integrator_init(
-        r1, r2, k, p + 0.5, default_log_radial_integrator_size);
+    log_radial_integrator *integrator = malloc(sizeof(log_radial_integrator));
+    log_radial_integrator_init(integrator, r1, r2, k, p + 0.5);
 
     gsl_test(!integrator, "testing that integrator object is non-NULL");
     if (integrator)
@@ -1426,8 +1418,7 @@ static void test_log_radial_integral(
             result, expected, tol,
             "testing toa_phoa_snr_log_radial_integral("
             "r1=%g, r2=%g, p2=%g, b=%g, k=%d)", r1, r2, p2, b, k);
-
-        log_radial_integrator_free(integrator);
+        free(integrator);
     }
 }
 
@@ -1539,8 +1530,8 @@ int bayestar_test(void)
         const double r1 = 0.0, r2 = 0.25, pmax = 1.0;
         const int k = 2;
         const double tol = 1e-5;
-        log_radial_integrator *integrator = log_radial_integrator_init(
-            r1, r2, k, pmax, default_log_radial_integrator_size);
+        log_radial_integrator *integrator = malloc(sizeof(log_radial_integrator));
+        log_radial_integrator_init(integrator, r1, r2, k, pmax);
 
         gsl_test(!integrator, "testing that integrator object is non-NULL");
         if (integrator)
@@ -1559,7 +1550,7 @@ int bayestar_test(void)
                         "r1=%g, r2=%g, p=%g, b=%g, k=%d, x=%g, y=%g)", r1, r2, p, b, k, x, y);
                 }
             }
-            log_radial_integrator_free(integrator);
+            free(integrator);
         }
     }
 
