@@ -398,7 +398,7 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
 	  mfirst_block = FALSE;
 
 	  /* skip seeking if we know we would reach the end */
-	  if ( ftell ( fp ) + this_nsamples * 8 >= file_len )
+	  if ( ftell ( fp ) + (long)this_nsamples * 8 >= file_len )
 	    break;
 
 	  /* seek to end of SFT data-entries in file  */
