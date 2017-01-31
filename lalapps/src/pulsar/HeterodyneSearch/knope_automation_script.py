@@ -20,6 +20,7 @@ import numpy as np
 import subprocess as sp
 import socket
 import smtplib
+import stat
 
 import argparse
 from ConfigParser import ConfigParser
@@ -92,9 +93,13 @@ A configuration .ini file is required.
 
   inifile = opts.inifile
 
+  # check that inifile contains full absolute path
+  if not os.path.isabs(inifile):
+    print("Error... must supply the full absolute path of the configuration file.", file=sys.stderr)
+    sys.exit(1)
+
   startcron = False # variable to say whether to create the crontab (if this is the first time the script is run then this will be changed to True later)
-  cronid = 'knopeJob' # an ID for the crontab job
-  croncommand = '%s {0}' % sys.argv[0] # set the cron command (which will re-run this script)
+  cronid = 'knopeJob' # default ID for the crontab job
 
   # open and parse config file
   cp = ConfigParser()
@@ -120,6 +125,10 @@ A configuration .ini file is required.
     print("Error... must specify a run configuration '.ini' file", file=sys.stderr)
     if startcron: remove_cron(cronid)
     sys.exit(1)
+
+  # check for cron ID
+  if cp.has_option('configuration', 'cronid'):
+    cronid = cp.get('configuration', 'cronid')
 
   cprun = ConfigParser()
   try:
@@ -462,9 +471,53 @@ A configuration .ini file is required.
 
   # create crontab job
   if startcron:
+    # check for a virtual environment to run code under
+    wov = ""
+    if cp.has_option('configuration', 'virtualenv'): # assumes using virtualenvwrapper.sh
+      virtualenv = cp.get('configuration', 'virtualenv')
+      try:
+        woh = os.environ['WORKON_HOME']
+        if not os.path.isdir(os.path.join(woh, virtualenv)):
+          print("Error... if specifying a virtualenv the environment must exist", file=sys.stderr)
+          sys.exit(1)
+        else:
+          wov = "workon " + virtualenv
+      except:
+        print("Error... if specifying a virtualenv the 'WORKON_HOME' environment must exist", file=sys.stderr)
+        sys.exit(1)
+
+    # check for .bash_profile, or similar file, to invoke
+    profile = None
+    if cp.has_option('configuration', 'profile'):
+      profile = cp.get('configuration', 'profile')
+    else:
+      # default to ${HOME}/.bash_profile
+      profile = os.path.join(os.environ['HOME'], '.bash_profile')
+    if not os.path.isfile(profile):
+      print("Error... no profile file is given", file=sys.stderr)
+      sys.exit(1)
+
+    # output wrapper script
+    try:
+      # set the cron wrapper script (which will re-run this script)
+      cronwrapperscript = os.path.splitext(inifile)[0] + '.sh'
+      cronwrapper = """#!/bin/bash
+source {0} # source profile
+{1}        # enable virtual environment (assumes you have virtualenvwrapper.sh)
+%s {2}     # re-run this script
+""" % sys.argv[0]
+
+      fp = open(cronwrapperscript, 'w')
+      fp.write(cronwrapper.format(profile, wov, inifile))
+      fp.close()
+      os.chmod(cronwrapperscript, stat.S_IRWXU | stat.S_IRWXG | stat.S_IXOTH) # make executable
+    except:
+      print("Error... could not output cron wrapper script '%s'." % cronwrapperscript, file=sys.stderr)
+      sys.exit(1)
+
     try:
       cron = CronTab(user=True)
-      job = cron.new(command=croncommand.format(inifile), comment=cronid)
+      job = cron.new(command=cronwrapperscript, comment=cronid)
 
       # set job time - this will start at the next time step (as we've just run the first step)
       day = now.datetime.day
