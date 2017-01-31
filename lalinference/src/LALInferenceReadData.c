@@ -934,14 +934,14 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                 {fprintf(stderr,USAGE); return(NULL);}
 
                 fprintf(stderr,"Estimating PSD for %s using %i segments of %i samples (%lfs)\n",IFOnames[i],nSegs,(int)seglen,SegmentLength);
-                /*LIGOTimeGPS trueGPSstart=GPSstart;
+                LIGOTimeGPS trueGPSstart=GPSstart;
                 if(Ntimeslides) {
                   REAL4 deltaT=-atof(timeslides[i]);
                   XLALGPSAdd(&GPSstart, deltaT);
                   fprintf(stderr,"Slid PSD estimation of %s by %f s from %10.10lf to %10.10lf\n",IFOnames[i],deltaT,trueGPSstart.gpsSeconds+1e-9*trueGPSstart.gpsNanoSeconds,GPSstart.gpsSeconds+1e-9*GPSstart.gpsNanoSeconds);
-                }*/
+                }
                 PSDtimeSeries=readTseries(cache,channels[i],GPSstart,PSDdatalength);
-                //GPSstart=trueGPSstart;
+                GPSstart=trueGPSstart;
                 if(!PSDtimeSeries) {XLALPrintError("Error reading PSD data for %s\n",IFOnames[i]); exit(1);}
                 XLALResampleREAL8TimeSeries(PSDtimeSeries,1.0/SampleRate);
                 PSDtimeSeries=(REAL8TimeSeries *)XLALShrinkREAL8TimeSeries(PSDtimeSeries,(size_t) 0, (size_t) seglen*nSegs);

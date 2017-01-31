@@ -904,7 +904,33 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # ASCII list of GPS times
     if self.config.has_option('input','gps-time-file'):
       times=scan_timefile(self.config.get('input','gps-time-file'))
-      events=[Event(trig_time=time) for time in times]
+      if self.config.has_option('input','timeslides-ascii'):
+        # The timeslides-ascii files contains one row per trigtime, and a column per IFO
+        # Note: the IFO order is the same given in the ifos section of the [analysis] tag
+        print "Reading timeslides from ascii file. Columns order is understood as follow:"
+        for this_ifo,ifo in enumerate(self.ifos):
+            print "Column %d"%this_ifo + "= %s "%(ifo)
+        dest=self.config.get('input','timeslides-ascii')
+        if not os.path.isfile(dest):
+            print "ERROR the ascii file %s containing the timeslides does not exist\n"%dest
+            exit(1)
+        else:
+            from numpy import loadtxt
+            data=loadtxt(dest).reshape(-1,len(self.ifos))
+            if len(self.ifos)!= len(data[0,:]):
+                print "ERROR: ascii timeslide file must contain a column for each IFO used in the analysis!\n"
+                exit(1)
+            if len(times)!=len(data[:,0]):
+                print 'ERROR: ascii timeslide must contain a row for each trigtime. Exiting...\n'
+                exit(1)
+            timeslides={}
+            for this_time,time in enumerate(times):
+              timeslides[this_time]={}
+              for this_ifo,ifo in enumerate(self.ifos):
+                timeslides[this_time][ifo]=data[this_time,this_ifo]
+        events=[Event(trig_time=time,timeslide_dict=timeslides[i_time]) for i_time,time in enumerate(times)]
+      else:
+        events=[Event(trig_time=time) for time in times]
     # Siminspiral Table
     if self.config.has_option('input','injection-file'):
       from pylal import SimInspiralUtils
@@ -1965,10 +1991,10 @@ class EngineNode(pipeline.CondorDAGNode):
     pipeline.CondorDAGNode.finalize(self)
 
   def _finalize_ifo_data(self):
-      """
-      Add final list of IFOs and data to analyse to command line arguments.
-      """
-      for ifo in self.ifos:
+    """
+    Add final list of IFOs and data to analyse to command line arguments.
+    """
+    for ifo in self.ifos:
         self.add_var_arg('--ifo '+ifo)
         if self.fakedata:
             self.add_var_opt('%s-cache'%(ifo),self.cachefiles[ifo])
@@ -1982,54 +2008,52 @@ class EngineNode(pipeline.CondorDAGNode):
             #self.add_input_file(self.psds[ifo])
         if any(self.timeslides): self.add_var_opt('%s-timeslide'%(ifo),self.timeslides[ifo])
 
-      # Start at earliest common time
-      # NOTE: We perform this arithmetic for all ifos to ensure that a common data set is
-      # Used when we are running the coherence test.
-      # Otherwise the noise evidence will differ.
-      #if self.scisegs!={}:
-      starttime=max([int(self.scisegs[ifo].start()) for ifo in self.ifos])
-      endtime=min([int(self.scisegs[ifo].end()) for ifo in self.ifos])
-      #else:
-      #  (starttime,endtime)=self.get_required_data(self.get_trig_time())
-      #  starttime=floor(starttime)
-      #  endtime=ceil(endtime)
-        #starttime=self.get_trig_time()-self.padding-self.seglen-self.psdlength#-0.5*self.maxlength
-        #endtime=starttime+self.padding#+self.maxlength
-      self.GPSstart=starttime
-      self.__GPSend=endtime
-      length=endtime-starttime
+    """ The logic here is the following:
+            The CBC code starts from the earliest commont time, but that means that if you run on *the same trigtime* the PSD start and PSDlength you'll get will be different, depending on wheather you are running on only one event or several, and the exact position of the event you are interested in in the list of times. 
+            Instead for each event (including single IFO runs) we do:
+            a) get its trigtime
+            b) set PSDlengh=maxPSD (requested by the user or equal to 32seglen)
+            c) go define GPSstart= trigtime - PSDlength - seglen - padding -2 
+  
+            By definition this means that GPSstart+ PSDlengh with never overlap with trigtime. Furthermore running on the same event will lead to the same PSDstart and lenght, no matter of whether that is a one-event or multi-event run.
+            We should check that the PSDstart so obtained is in science mode. This is what the while loop 9 lines below is meant for. However that part is not active yet because I need to learn how to use scisegs. That is not a problem right now since we do run with disable-science (Since the searches will already have checked that the ~1-2 minutes of time prior to the event are in science. It might be a problem if one runs with hour-long slides).
+    """
+    trig_time=self.get_trig_time()
+    maxLength=self.maxlength
+    offset=(maxLength+self.seglen+2+self.padding)
+    self.GPSstart=trig_time-offset
+    self.__GPSend=0
+    length=maxLength
+    dt=self.seglen/4.
 
-      # Now we need to adjust the start time and length to make sure the maximum data length
-      # is not exceeded.
-      trig_time=self.get_trig_time()
-      maxLength=self.maxlength
-      if(length > maxLength):
-        while(self.GPSstart+maxLength<trig_time and self.GPSstart+maxLength<self.__GPSend):
-          self.GPSstart+=maxLength/2.0
-      # Override calculated start time if requested by user in ini file
-      if self.psdstart is not None:
-        self.GPSstart=self.psdstart
-        #print 'Over-riding start time to user-specified value %f'%(self.GPSstart)
-        #if self.GPSstart<starttime or self.GPSstart>endtime:
-        #  print 'ERROR: Over-ridden time lies outside of science segment!'
-        #  raise Exception('Bad psdstart specified')
-      self.add_var_opt('psdstart',str(self.GPSstart))
-      if self.psdlength is None:
-        self.psdlength=self.__GPSend-self.GPSstart-2*self.padding-self.seglen-1
-        if(self.psdlength>self.maxlength):
-          self.psdlength=self.maxlength
-      self.add_var_opt('psdlength',self.psdlength)
-      self.add_var_opt('seglen',self.seglen)
-      for lfn in self.lfns:
-        a, b, c, d = lfn.split('.')[0].split('-')
-        t_start = int(c)
-        t_end = int(c) + int(d)
-        data_end=max(self.GPSstart+self.psdlength,trig_time+2)
-        if( t_start <= data_end and t_end>self.GPSstart):
-        #if (t_start <= (self.GPSstart+self.psdlength or t_start <=trig_time+2 or t_end >=) \
-        #    and ( (t_end <= (self.GPSstart+self.psdlength )) or (t_end <= trig_time+2) ))  :
-            self.add_input_file(lfn)
-      self.__finaldata=True
+    while(self.GPSstart+length>=trig_time):
+    ### or self.GPSstart not in  Science) --><-- here we should also have checked that we are in science mode, but I'm not sure how to do that yet.
+      self.GPSstart+=dt
+      length-=dt
+
+    if self.psdstart is not None:
+      self.GPSstart=self.psdstart
+      #print 'Over-riding start time to user-specified value %f'%(self.GPSstart)
+      #if self.GPSstart<starttime or self.GPSstart>endtime:
+      #  print 'ERROR: Over-ridden time lies outside of science segment!'
+      #  raise Exception('Bad psdstart specified') 
+    self.add_var_opt('psdstart',str(self.GPSstart))
+    if self.psdlength is None:
+      self.psdlength=length
+      if(self.psdlength>self.maxlength):
+        self.psdlength=self.maxlength
+    self.add_var_opt('psdlength',self.psdlength)
+    self.add_var_opt('seglen',self.seglen)
+    for lfn in self.lfns:
+      a, b, c, d = lfn.split('.')[0].split('-')
+      t_start = int(c)
+      t_end = int(c) + int(d)
+      data_end=max(self.GPSstart+self.psdlength,trig_time+2)
+      if( t_start <= data_end and t_end>self.GPSstart):
+      #if (t_start <= (self.GPSstart+self.psdlength or t_start <=trig_time+2 or t_end >=) \
+      #    and ( (t_end <= (self.GPSstart+self.psdlength )) or (t_end <= trig_time+2) ))  :
+          self.add_input_file(lfn)
+    self.__finaldata=True
 
 class LALInferenceNestNode(EngineNode):
   def __init__(self,li_job):
