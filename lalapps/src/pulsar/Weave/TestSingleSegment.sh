@@ -24,8 +24,8 @@ echo
 
 echo "=== Generate SFTs with injected signal ==="
 set -x
-inject_params="Alpha=5.4; Delta=1.1; Freq=70.5; f1dot=-1e-9"
-${injdir}/lalapps_Makefakedata_v5 --randSeed=1234 --fmin=70.0 --Band=1.0 \
+inject_params="Alpha=5.4; Delta=1.1; Freq=55.5; f1dot=-1e-9"
+${injdir}/lalapps_Makefakedata_v5 --randSeed=1234 --fmin=55.0 --Band=1.0 \
     --injectionSources="{refTime=${ref_time}; h0=0.5; cosi=0.2; psi=0.4; phi0=0.1; ${inject_params}}" \
     --Tsft=1800 --outSingleSFT --outSFTdir=. --IFOs=H1,L1 --sqrtSX=1,1 \
     --timestampsFiles=timestamps-1.txt,timestamps-2.txt
@@ -37,7 +37,7 @@ set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
     --toplists=mean2F --toplist-limit=0 --per-detector --misc-info \
     --setup-file=WeaveSetup.fits --sft-files='*.sft' --Fstat-method=DemodBest \
-    --freq=70.5~1e-4 --f1dot=-2e-9,0 --semi-max-mismatch=11
+    --freq=55.5~1e-4 --f1dot=-2e-9,0 --semi-max-mismatch=9
 set +x
 echo
 
@@ -128,8 +128,8 @@ coh2F_exact=`cat CFSv2Exact.txt | sed -n '/^[^%]/{p;q}' | awk '{print $7}'`
 ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=mean2F][#row == 1]" > tmp
 coh2F_loud=`cat tmp | sed "/^#/d" | xargs printf "%g"`
 # Value of 'mean_mu' was calculated by:
-#   octapps_run WeaveFstatMismatch --setup-file=TestSingleSegment.testdir/WeaveSetup.fits --spindowns=1 --semi-max-mismatch=11 --coh-max-mismatch=0 --output=mean
-mean_mu=0.6102
+#   octapps_run WeaveFstatMismatch --setup-file=TestSingleSegment.testdir/WeaveSetup.fits --spindowns=1 --semi-max-mismatch=9 --coh-max-mismatch=0 --printarg=meanOfHist
+mean_mu=0.58305
 awk "BEGIN { print mu = ( ${coh2F_exact} - ${coh2F_loud} ) / ${coh2F_exact}; exit ( mu < ${mean_mu} ? 0 : 1 ) }"
 set +x
 echo
