@@ -47,13 +47,13 @@ lalapps_WeaveCompare_SOURCES = \
 	$(END_OF_LIST)
 
 TESTS = \
-	TestSingleSegment.sh \
-	TestNonInterpolating.sh \
 	TestInterpolating.sh \
-	TestFreqPartition.sh \
+	TestNonInterpolating.sh \
+	TestSingleSegment.sh \
+	TestSearchShortcuts.sh \
 	TestCacheMaxSize.sh \
 	TestCheckpointing.sh \
-	TestSearchShortcuts.sh \
+	TestFreqPartition.sh \
 	$(END_OF_LIST)
 
 EXTRA_DIST = \
