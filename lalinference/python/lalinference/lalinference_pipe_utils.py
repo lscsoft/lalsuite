@@ -370,14 +370,13 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
   """
   Get a psd.xml.gz file and:
   1) Reads it
-  2) Converts PSD (10e-44) -> ASD ( ~10e-22)
-  3) Checks the psd file contains all the IFO we want to analyze
-  4) Writes down the ASDs into an ascii file for each IFO in psd.xml.gz. The name of the file contains the trigtime (if given) and the ifo name.
+  2) Checks the psd file contains all the IFO we want to analyze
+  3) Writes down the PSDs into an ascii file for each IFO in psd.xml.gz. The name of the file contains the trigtime (if given) and the IFO name.
   Input:
     psdxml: psd.xml.gz file
     ifos: list of ifos used for the analysis
-    outpath: path where the ascii ASD will be written to
-    (end_time): trigtime for this event. Will be used a part of the ASD file name
+    outpath: path where the ascii PSD will be written to
+    (end_time): trigtime for this event. Will be used a part of the PSD file name
   """
   lal=1
   from glue.ligolw import utils
@@ -447,7 +446,7 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
     combine=[]
 
     for i in np.arange(len(data.data.data)) :
-      combine.append([f0+i*deltaF,np.sqrt(data.data.data[i])])
+      combine.append([f0+i*deltaF,data.data.data[i]])
     np.savetxt(path_to_ascii_psd,combine)
     ifo=instrument.encode('ascii')
     # set node.psds dictionary with the path to the ascii files
