@@ -451,24 +451,6 @@ A configuration .ini file is required.
       send_email(FROM, email, subject, errmsg, server)
     sys.exit(1)
 
-  # Write out updated configuration file
-  fc = open(inifile, 'w')
-  cp.write(fc)
-  fc.close()
-
-  ### RUN ANALYSIS SCRIPT ###
-  p = sp.Popen('{0} {1}'.format(runscript, runconfig), shell=True)
-  out, err = p.communicate()
-  if p.returncode != 0:
-    errmsg = "Error... problem running main script '%s'.: %s, %s" % (runscript, out, err)
-    print(errmsg, file=sys.stderr)
-    if not startcron: remove_cron(cronid)
-    if email != None:
-      subject = sys.argv[0] + ': Error message'
-      send_email(FROM, email, subject, errmsg, server)
-    sys.exit(1)
-  ###########################
-
   # create crontab job
   if startcron:
     # check for a virtual environment to run code under
@@ -552,5 +534,23 @@ source {0} # source profile
         subject = sys.argv[0] + ': Error message'
         send_email(FROM, email, subject, errmsg, server)
       sys.exit(1)
+
+  ### RUN ANALYSIS SCRIPT ###
+  p = sp.Popen('{0} {1}'.format(runscript, runconfig), shell=True)
+  out, err = p.communicate()
+  if p.returncode != 0:
+    errmsg = "Error... problem running main script '%s'.: %s, %s" % (runscript, out, err)
+    print(errmsg, file=sys.stderr)
+    if not startcron: remove_cron(cronid)
+    if email != None:
+      subject = sys.argv[0] + ': Error message'
+      send_email(FROM, email, subject, errmsg, server)
+    sys.exit(1)
+  ###########################
+
+  # Write out updated configuration file
+  fc = open(inifile, 'w')
+  cp.write(fc)
+  fc.close()
 
   sys.exit(0)
