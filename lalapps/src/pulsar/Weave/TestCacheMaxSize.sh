@@ -1,8 +1,8 @@
 # Perform an interpolating search without/with a maximum cache size, and check for consistent results
 
-echo "=== Create search setup with 3 segments ==="
+echo "=== Create search setup with 3 segments spanning ~260 days ==="
 set -x
-${builddir}/lalapps_WeaveSetup --first-segment=1122332211/90000 --segment-count=3 --detectors=H1,L1 --output-file=WeaveSetup.fits
+${builddir}/lalapps_WeaveSetup --first-segment=1122332211/90000 --segment-count=3 --segment-gap=11130000 --detectors=H1,L1 --output-file=WeaveSetup.fits
 set +x
 echo
 
@@ -21,7 +21,7 @@ ${builddir}/lalapps_Weave --cache-max-size=0 --output-file=WeaveOutNoMax.fits \
     --toplists=all --toplist-limit=5000 --misc-info --setup-file=WeaveSetup.fits \
     --rand-seed=3456 --sft-timebase=1800 --sft-noise-psd=1,1 \
     --sft-timestamps-files=timestamps-1.txt,timestamps-2.txt \
-    --alpha=0.9/1.4 --delta=-1.2/2.3 --freq=50.5/1e-4 --f1dot=-1.5e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.3
+    --alpha=0.9/0.05 --delta=-1.2/0.1 --freq=50.5/1e-5 --f1dot=-5e-11,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3
 set +x
 echo
 
@@ -41,7 +41,7 @@ ${builddir}/lalapps_Weave --cache-max-size=10 --output-file=WeaveOutMax.fits \
     --toplists=all --toplist-limit=5000 --misc-info --setup-file=WeaveSetup.fits \
     --rand-seed=3456 --sft-timebase=1800 --sft-noise-psd=1,1 \
     --sft-timestamps-files=timestamps-1.txt,timestamps-2.txt \
-    --alpha=0.9/1.4 --delta=-1.2/2.3 --freq=50.5/1e-4 --f1dot=-1.5e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.3
+    --alpha=0.9/0.05 --delta=-1.2/0.1 --freq=50.5/1e-5 --f1dot=-5e-11,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3
 set +x
 echo
 
