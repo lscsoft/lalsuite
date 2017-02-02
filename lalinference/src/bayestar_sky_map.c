@@ -253,13 +253,12 @@ typedef struct {
  * point in the data grid. This will speed up the cubic interpolant by 4x at
  * the expense of increasing the memory footprint by 16x.
  *
+ * On the other hand, this implementation fits in the L2 cache whereas the
+ * precomputed version would not.
+ *
  * We can also decrease the amount of branching by checking for infinities when
  * we precompute the matrices and we can reduce the number of conditionals
  * needed for bounds checking.
- *
- * Profiling shows that the bicubic interpolant comprises about 50% of the run
- * time of the algorithm, so these changes will speed up BAYESTAR by up to 2x
- * by making these changes.
  */
 static double bicubic_interp_eval(const bicubic_interp *interp, double x, double y)
 {
