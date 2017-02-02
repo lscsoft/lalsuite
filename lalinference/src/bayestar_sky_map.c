@@ -215,7 +215,7 @@ static double complex eval_snr(
 
 typedef struct {
     size_t size;
-    double dx, xmin;
+    double fx, xmin;
     double y[];
 } cubic_interp;
 
@@ -223,7 +223,7 @@ typedef struct {
 static double cubic_interp_eval(const cubic_interp *interp, double x)
 {
     double i;
-    const double u = modf((x - interp->xmin) / interp->dx, &i);
+    const double u = modf((x - interp->xmin) * interp->fx, &i);
 
     #define CLAMP(m) ((size_t) ((m) <= 0 ? 0 : ((m) >= interp->size - 1 ? interp->size - 1 : m)))
     const double y0 = interp->y[CLAMP(i - 1)];
@@ -238,7 +238,7 @@ static double cubic_interp_eval(const cubic_interp *interp, double x)
 
 typedef struct {
     size_t xsize, ysize;
-    double xmin, ymin, dx, dy;
+    double xmin, ymin, fx, fy;
     double z[];
 } bicubic_interp;
 
@@ -263,8 +263,8 @@ typedef struct {
 static double bicubic_interp_eval(const bicubic_interp *interp, double x, double y)
 {
     double i, j;
-    const double u = modf((x - interp->xmin) / interp->dx, &i);
-    const double v = modf((y - interp->ymin) / interp->dy, &j);
+    const double u = modf((x - interp->xmin) * interp->fx, &i);
+    const double v = modf((y - interp->ymin) * interp->fy, &j);
     double z[4];
 
     #define CLAMPX(m) ((size_t) ((m) <= 0 ? 0 : ((m) >= interp->xsize - 1 ? interp->xsize - 1 : m)))
@@ -471,7 +471,7 @@ static log_radial_integrator *log_radial_integrator_init(double r1, double r2, i
     integrator->region0->xsize = integrator->region0->ysize = size;
     integrator->region0->xmin = xmin;
     integrator->region0->ymin = ymin;
-    integrator->region0->dx = integrator->region0->dy = d;
+    integrator->region0->fx = integrator->region0->fy = 1 / d;
 
     #pragma omp parallel for
     for (size_t i = 0; i < len; i ++)
@@ -490,7 +490,7 @@ static log_radial_integrator *log_radial_integrator_init(double r1, double r2, i
     integrator->region1 = region1;
     integrator->region1->size = size;
     integrator->region1->xmin = xmin;
-    integrator->region1->dx = d;
+    integrator->region1->fx = 1 / d;
 
     for (size_t i = 0; i < size; i ++)
     {
@@ -500,7 +500,7 @@ static log_radial_integrator *log_radial_integrator_init(double r1, double r2, i
     integrator->region2 = region2;
     integrator->region2->size = size;
     integrator->region2->xmin = umin;
-    integrator->region2->dx = d;
+    integrator->region2->fx = 1 / d;
 
     for (size_t i = 0; i < size; i ++)
     {
