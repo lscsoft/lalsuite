@@ -832,7 +832,11 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
                 for (unsigned int iu = 0; iu < nglfixed; iu++)
                 {
                     double u, weight;
-                    double accum2[3] = {-INFINITY, -INFINITY, -INFINITY};
+                    double accum2[nsamples][3];
+                    for (long isample = 0; isample < 3; isample ++)
+                        for (unsigned char k = 0; k < 3; k ++)
+                            accum2[isample][k] = -INFINITY;
+
                     {
                         /* Look up Gauss-Legendre abscissa and weight. */
                         int ret = gsl_integration_glfixed_point(
@@ -874,16 +878,22 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
 
                         for (unsigned char k = 0; k < 3; k ++)
                         {
-                            double result = log_radial_integrator_eval(
+                            accum2[isample][k] = log_radial_integrator_eval(
                                 integrators[k], p, b, log_p, log_b);
-                            accum2[k] = logaddexp(accum2[k], result);
                         }
                     }
 
+                    double max_accum2[3] = {-INFINITY, -INFINITY, -INFINITY};
+                    for (long isample = 0; isample < 3; isample ++)
+                        for (unsigned char k = 0; k < 3; k ++)
+                            if (accum2[isample][k] > max_accum2[k])
+                                max_accum2[k] = accum2[isample][k];
+                    double sum_accum2[3] = {0, 0, 0};
+                    for (long isample = 0; isample < 3; isample ++)
+                        for (unsigned char k = 0; k < 3; k ++)
+                            sum_accum2[k] += exp(accum2[isample][k] - max_accum2[k]);
                     for (unsigned char k = 0; k < 3; k ++)
-                    {
-                        accum1[k] = logaddexp(accum1[k], accum2[k] + log(weight));
-                    }
+                        accum1[k] = logaddexp(accum1[k], log(sum_accum2[k] * weight));
                 }
 
                 for (unsigned char k = 0; k < 3; k ++)
