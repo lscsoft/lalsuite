@@ -21,8 +21,12 @@
 #include <chealpix.h>
 #include <gsl/gsl_errno.h>
 #include <Python.h>
+/* Ignore warnings in Numpy API itself */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 #include <numpy/arrayobject.h>
 #include <numpy/ufuncobject.h>
+#pragma GCC diagnostic pop
 #include <lal/bayestar_distance.h>
 #include "six.h"
 
@@ -36,11 +40,15 @@ static void conditional_pdf_loop(
     #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
     {
+        /* FIXME: args must be void ** to avoid alignment warnings */
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wcast-align"
         *(double *) &args[4][i * steps[4]] = bayestar_distance_conditional_pdf(
         *(double *) &args[0][i * steps[0]],
         *(double *) &args[1][i * steps[1]],
         *(double *) &args[2][i * steps[2]],
         *(double *) &args[3][i * steps[3]]);
+        #pragma GCC diagnostic pop
     }
 
     gsl_set_error_handler(old_handler);
@@ -56,11 +64,15 @@ static void conditional_cdf_loop(
     #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
     {
+        /* FIXME: args must be void ** to avoid alignment warnings */
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wcast-align"
         *(double *) &args[4][i * steps[4]] = bayestar_distance_conditional_cdf(
         *(double *) &args[0][i * steps[0]],
         *(double *) &args[1][i * steps[1]],
         *(double *) &args[2][i * steps[2]],
         *(double *) &args[3][i * steps[3]]);
+        #pragma GCC diagnostic pop
     }
 
     gsl_set_error_handler(old_handler);
@@ -76,11 +88,15 @@ static void conditional_ppf_loop(
     #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
     {
+        /* FIXME: args must be void ** to avoid alignment warnings */
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wcast-align"
         *(double *) &args[4][i * steps[4]] = bayestar_distance_conditional_ppf(
         *(double *) &args[0][i * steps[0]],
         *(double *) &args[1][i * steps[1]],
         *(double *) &args[2][i * steps[2]],
         *(double *) &args[3][i * steps[3]]);
+        #pragma GCC diagnostic pop
     }
 
     gsl_set_error_handler(old_handler);
@@ -96,12 +112,16 @@ static void moments_to_parameters_loop(
     #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
     {
+        /* FIXME: args must be void ** to avoid alignment warnings */
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wcast-align"
         bayestar_distance_moments_to_parameters(
             *(double *) &args[0][i * steps[0]],
             *(double *) &args[1][i * steps[1]],
              (double *) &args[2][i * steps[2]],
              (double *) &args[3][i * steps[3]],
              (double *) &args[4][i * steps[4]]);
+        #pragma GCC diagnostic pop
     }
 
     gsl_set_error_handler(old_handler);
@@ -117,12 +137,16 @@ static void parameters_to_moments_loop(
     #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
     {
+        /* FIXME: args must be void ** to avoid alignment warnings */
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wcast-align"
         bayestar_distance_parameters_to_moments(
             *(double *) &args[0][i * steps[0]],
             *(double *) &args[1][i * steps[1]],
              (double *) &args[2][i * steps[2]],
              (double *) &args[3][i * steps[3]],
              (double *) &args[4][i * steps[4]]);
+        #pragma GCC diagnostic pop
     }
 
     gsl_set_error_handler(old_handler);
@@ -144,6 +168,9 @@ static void volume_render_loop(
     #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
     {
+        /* FIXME: args must be void ** to avoid alignment warnings */
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wcast-align"
         *(double *) &args[11][i * steps[11]] = bayestar_volume_render(
             *(double *)   &args[0][i * steps[0]],
             *(double *)   &args[1][i * steps[1]],
@@ -157,6 +184,7 @@ static void volume_render_loop(
              (double *)   &args[8][i * steps[8]],
              (double *)   &args[9][i * steps[9]],
              (double *)   &args[10][i * steps[10]]);
+        #pragma GCC diagnostic pop
     }
 
     gsl_set_error_handler(old_handler);
@@ -176,6 +204,9 @@ static void marginal_pdf_loop(
     #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
     {
+        /* FIXME: args must be void ** to avoid alignment warnings */
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wcast-align"
         *(double *) &args[5][i * steps[5]] =
             bayestar_distance_marginal_pdf(
             *(double *) &args[0][i * steps[0]], npix,
@@ -183,6 +214,7 @@ static void marginal_pdf_loop(
              (double *) &args[2][i * steps[2]],
              (double *) &args[3][i * steps[3]],
              (double *) &args[4][i * steps[4]]);
+        #pragma GCC diagnostic pop
     }
 
     gsl_set_error_handler(old_handler);
@@ -202,6 +234,9 @@ static void marginal_cdf_loop(
     #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
     {
+        /* FIXME: args must be void ** to avoid alignment warnings */
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wcast-align"
         *(double *) &args[5][i * steps[5]] =
             bayestar_distance_marginal_cdf(
             *(double *) &args[0][i * steps[0]], npix,
@@ -209,6 +244,7 @@ static void marginal_cdf_loop(
              (double *) &args[2][i * steps[2]],
              (double *) &args[3][i * steps[3]],
              (double *) &args[4][i * steps[4]]);
+        #pragma GCC diagnostic pop
     }
 
     gsl_set_error_handler(old_handler);
@@ -228,6 +264,9 @@ static void marginal_ppf_loop(
     #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
     {
+        /* FIXME: args must be void ** to avoid alignment warnings */
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wcast-align"
         *(double *) &args[5][i * steps[5]] =
             bayestar_distance_marginal_ppf(
             *(double *) &args[0][i * steps[0]], npix,
@@ -235,6 +274,7 @@ static void marginal_ppf_loop(
              (double *) &args[2][i * steps[2]],
              (double *) &args[3][i * steps[3]],
              (double *) &args[4][i * steps[4]]);
+        #pragma GCC diagnostic pop
     }
 
     gsl_set_error_handler(old_handler);
@@ -259,7 +299,7 @@ static const char volume_render_ufunc_types[] = {
 static const char double_ufunc_types[] = {
     NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE};
 
-static const void *no_ufunc_data[] = {NULL};
+static void *const no_ufunc_data[] = {NULL};
 
 static const char modulename[] = "_distance";
 
@@ -283,6 +323,14 @@ PyMODINIT_FUNC PyInit__distance(void)
     module = PyModule_Create(&moduledef);
     if (!module)
         goto done;
+
+    /* Ignore warnings in Numpy API */
+    #pragma GCC diagnostic push
+    #ifdef __clang__
+    #pragma GCC diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"
+    #else
+    #pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+    #endif
 
     PyModule_AddObject(
         module, "conditional_pdf", PyUFunc_FromFuncAndData(
@@ -341,6 +389,8 @@ PyMODINIT_FUNC PyInit__distance(void)
             double_ufunc_types, 1, 5, 1, PyUFunc_None,
             "marginal_ppf", NULL, 0,
             "(),(n),(n),(n),(n)->()"));
+
+    #pragma GCC diagnostic pop
 
 done:
     return module;

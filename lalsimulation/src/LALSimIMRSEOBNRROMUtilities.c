@@ -44,7 +44,6 @@
 #include <lal/H5FileIO.h>
 #endif
 
-UNUSED static void err_handler(const char *reason, const char *file, int line, int gsl_errno);
 UNUSED static int read_vector(const char dir[], const char fname[], gsl_vector *v);
 UNUSED static int read_matrix(const char dir[], const char fname[], gsl_matrix *m);
 
@@ -100,10 +99,6 @@ UNUSED static double SEOBNRROM_Ringdown_Mf_From_Mtot_Eta(
 
 
 // Definitions
-
-static void err_handler(const char *reason, const char *file, int line, int gsl_errno) {
-  XLALPrintError("gsl: %s:%d: %s - %d\n", file, line, reason, gsl_errno);
-}
 
 // Helper functions to read gsl_vector and gsl_matrix data with error checking
 static int read_vector(const char dir[], const char fname[], gsl_vector *v) {

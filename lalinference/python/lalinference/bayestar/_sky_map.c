@@ -19,7 +19,11 @@
 
 #include "config.h"
 #include <Python.h>
+/* Ignore warnings in Numpy API itself */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 #include <numpy/arrayobject.h>
+#pragma GCC diagnostic pop
 #include <chealpix.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_nan.h>
@@ -128,10 +132,14 @@ static PyObject *sky_map_toa_phoa_snr(
         "responses", "locations", "horizons", NULL};
 
     /* Parse arguments */
+    /* FIXME: PyArg_ParseTupleAndKeywords should expect keywords to be const */
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ddiddOOOOO",
         keywords, &min_distance, &max_distance, &prior_distance_power, &gmst,
         &sample_rate, &epochs_obj, &snrs_obj, &responses_obj, &locations_obj,
         &horizons_obj)) return NULL;
+    #pragma GCC diagnostic pop
 
     /* Determine number of detectors */
     {
@@ -215,7 +223,7 @@ static PyObject *sky_map_toa_phoa_snr(
         goto fail;
     }
 
-    if (PyArray_SetBaseObject(out, capsule))
+    if (PyArray_SetBaseObject((PyArrayObject *) out, capsule))
     {
         Py_DECREF(out);
         out = NULL;
@@ -257,10 +265,14 @@ static PyObject *log_likelihood_toa_phoa_snr(
         "snrs", "responses", "locations", "horizons", NULL};
 
     /* Parse arguments */
+    /* FIXME: PyArg_ParseTupleAndKeywords should expect keywords to be const */
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "(dddddd)ddOOOOO",
         keywords, &ra, &sin_dec, &distance, &u, &twopsi, &t, &gmst,
         &sample_rate, &epochs_obj, &snrs_obj, &responses_obj, &locations_obj,
         &horizons_obj)) return NULL;
+    #pragma GCC diagnostic pop
 
     /* Determine number of detectors */
     {

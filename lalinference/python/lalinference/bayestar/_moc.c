@@ -19,9 +19,14 @@
 
 #include "config.h"
 #include <lal/bayestar_moc.h>
+#include <gsl/gsl_errno.h>
 #include <Python.h>
+/* Ignore warnings in Numpy API itself */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 #include <numpy/arrayobject.h>
 #include <numpy/ufuncobject.h>
+#pragma GCC diagnostic pop
 #include "six.h"
 
 
@@ -155,9 +160,13 @@ static void nest2uniq_loop(
 
     for (npy_intp i = 0; i < n; i ++)
     {
+        /* FIXME: args must be void ** to avoid alignment warnings */
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wcast-align"
         *(uint64_t *) &args[2][i * steps[2]] = nest2uniq64(
         *(int8_t *)   &args[0][i * steps[0]],
         *(uint64_t *) &args[1][i * steps[1]]);
+        #pragma GCC diagnostic pop
     }
 }
 
@@ -169,9 +178,13 @@ static void uniq2nest_loop(
 
     for (npy_intp i = 0; i < n; i ++)
     {
+        /* FIXME: args must be void ** to avoid alignment warnings */
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wcast-align"
         *(int8_t *)   &args[1][i * steps[1]] = uniq2nest64(
         *(uint64_t *) &args[0][i * steps[0]],
          (uint64_t *) &args[2][i * steps[2]]);
+        #pragma GCC diagnostic pop
     }
 }
 
@@ -183,8 +196,12 @@ static void uniq2order_loop(
 
     for (npy_intp i = 0; i < n; i ++)
     {
+        /* FIXME: args must be void ** to avoid alignment warnings */
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wcast-align"
         *(int8_t *)   &args[1][i * steps[1]] = uniq2order64(
         *(uint64_t *) &args[0][i * steps[0]]);
+        #pragma GCC diagnostic pop
     }
 }
 
@@ -196,8 +213,12 @@ static void uniq2pixarea_loop(
 
     for (npy_intp i = 0; i < n; i ++)
     {
+        /* FIXME: args must be void ** to avoid alignment warnings */
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wcast-align"
         *(double *)  &args[1][i * steps[1]] = uniq2pixarea64(
         *(int64_t *) &args[0][i * steps[0]]);
+        #pragma GCC diagnostic pop
     }
 }
 
@@ -213,7 +234,7 @@ static const char nest2uniq_types[] = {NPY_INT8, NPY_UINT64, NPY_UINT64},
                   uniq2order_types[] = {NPY_UINT64, NPY_INT8},
                   uniq2pixarea_types[] = {NPY_UINT64, NPY_DOUBLE};
 
-static const void *no_ufunc_data[] = {NULL};
+static void *const no_ufunc_data[] = {NULL};
 
 static const char modulename[] = "_moc";
 
@@ -244,6 +265,14 @@ PyMODINIT_FUNC PyInit__moc(void)
     if (!module)
         goto done;
 
+    /* Ignore warnings in Numpy API */
+    #pragma GCC diagnostic push
+    #ifdef __clang__
+    #pragma GCC diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"
+    #else
+    #pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+    #endif
+
     PyModule_AddObject(
         module, "nest2uniq", PyUFunc_FromFuncAndData(
             nest2uniq_loops, no_ufunc_data,
@@ -267,6 +296,8 @@ PyMODINIT_FUNC PyInit__moc(void)
             uniq2pixarea_loops, no_ufunc_data,
             uniq2pixarea_types, 1, 1, 1, PyUFunc_None,
             "uniq2pixarea", NULL, 0));
+
+    #pragma GCC diagnostic pop
 
 done:
     return module;
