@@ -5,7 +5,7 @@ Maintainer: Adam Mercer <adam.mercer@ligo.org>
 Build-Depends: debhelper (>= 9), help2man, pkg-config, dh-python, python-all-dev,
   libchealpix-dev (>= 3.30.0),
   zlib1g-dev, libgsl0-dev (>= 1.15), libmetaio-dev (>= 8.2), python-healpy (>= 1.9.1), python-h5py,
-  swig (>= 3.0.7), liboctave-dev, python-numpy (>= 1.7), python-scipy, python-shapely,
+  swig (>= 3.0.7), liboctave-dev, python-numpy (>= 1.7), python-scipy, python-shapely, python-seaborn,
   libhdf5-dev,
   python-glue (>= 1.49.1~),
   python-glue-common (>= 1.49.1~),
@@ -41,7 +41,6 @@ Standards-Version: 3.9.8
 Package: lalinference
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
-  python-healpy (>= 1.9.1),
   libmetaio1 (>= 8.2),
   lal (>= @MIN_LAL_VERSION@~),
   lalframe (>= @MIN_LALFRAME_VERSION@~),
@@ -61,6 +60,7 @@ Section: libdevel
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g-dev,
   libchealpix-dev (>= 3.30.0), libgsl0-dev (>= 1.15), libmetaio-dev (>= 8.2), libhdf5-dev,
+  python-healpy (>= 1.9.1),
   lalinference (= ${binary:Version}),
   lal-dev (>= @MIN_LAL_VERSION@~),
   lalframe-dev (>= @MIN_LALFRAME_VERSION@~),

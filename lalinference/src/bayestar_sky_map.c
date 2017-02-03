@@ -173,7 +173,7 @@ static double real_catrom(
         result = x2;
     else if (!(isfinite(x0 + x3)))
         result = x1 + (1 - t) * x2;
-    else if (isfinite(x1) && isfinite(x2))
+    else if (isfinite(x1 + x2))
         result = x1
             + t*(-0.5*x0 + 0.5*x2
             + t*(x0 - 2.5*x1 + 2.*x2 - 0.5*x3
@@ -215,7 +215,7 @@ static double complex eval_snr(
 
 typedef struct {
     size_t size;
-    double dx, xmin;
+    double fx, xmin;
     double y[];
 } cubic_interp;
 
@@ -223,7 +223,7 @@ typedef struct {
 static double cubic_interp_eval(const cubic_interp *interp, double x)
 {
     double i;
-    const double u = modf((x - interp->xmin) / interp->dx, &i);
+    const double u = modf((x - interp->xmin) * interp->fx, &i);
 
     #define CLAMP(m) ((size_t) ((m) <= 0 ? 0 : ((m) >= interp->size - 1 ? interp->size - 1 : m)))
     const double y0 = interp->y[CLAMP(i - 1)];
@@ -238,16 +238,33 @@ static double cubic_interp_eval(const cubic_interp *interp, double x)
 
 typedef struct {
     size_t xsize, ysize;
-    double xmin, ymin, dx, dy;
+    double xmin, ymin, fx, fy;
     double z[];
 } bicubic_interp;
 
 
+/*
+ * FIXME:
+ * This is an inefficient implementation of bicubic interpolation. We are doing
+ * 4x more operations than we need to by evaluating multiple 1D cubic
+ * interpolants. Instead, we should rearrange this as an inner product of the
+ * vector [1, x, x^2, x^3], a matrix consisting of weighted sums of the data
+ * points, and [1, y, y^2, y^3]. The matrix will have to be precomputed at each
+ * point in the data grid. This will speed up the cubic interpolant by 4x at
+ * the expense of increasing the memory footprint by 16x.
+ *
+ * On the other hand, this implementation fits in the L2 cache whereas the
+ * precomputed version would not.
+ *
+ * We can also decrease the amount of branching by checking for infinities when
+ * we precompute the matrices and we can reduce the number of conditionals
+ * needed for bounds checking.
+ */
 static double bicubic_interp_eval(const bicubic_interp *interp, double x, double y)
 {
     double i, j;
-    const double u = modf((x - interp->xmin) / interp->dx, &i);
-    const double v = modf((y - interp->ymin) / interp->dy, &j);
+    const double u = modf((x - interp->xmin) * interp->fx, &i);
+    const double v = modf((y - interp->ymin) * interp->fy, &j);
     double z[4];
 
     #define CLAMPX(m) ((size_t) ((m) <= 0 ? 0 : ((m) >= interp->xsize - 1 ? interp->xsize - 1 : m)))
@@ -454,7 +471,7 @@ static log_radial_integrator *log_radial_integrator_init(double r1, double r2, i
     integrator->region0->xsize = integrator->region0->ysize = size;
     integrator->region0->xmin = xmin;
     integrator->region0->ymin = ymin;
-    integrator->region0->dx = integrator->region0->dy = d;
+    integrator->region0->fx = integrator->region0->fy = 1 / d;
 
     #pragma omp parallel for
     for (size_t i = 0; i < len; i ++)
@@ -473,7 +490,7 @@ static log_radial_integrator *log_radial_integrator_init(double r1, double r2, i
     integrator->region1 = region1;
     integrator->region1->size = size;
     integrator->region1->xmin = xmin;
-    integrator->region1->dx = d;
+    integrator->region1->fx = 1 / d;
 
     for (size_t i = 0; i < size; i ++)
     {
@@ -483,7 +500,7 @@ static log_radial_integrator *log_radial_integrator_init(double r1, double r2, i
     integrator->region2 = region2;
     integrator->region2->size = size;
     integrator->region2->xmin = umin;
-    integrator->region2->dx = d;
+    integrator->region2->fx = 1 / d;
 
     for (size_t i = 0; i < size; i ++)
     {
@@ -515,11 +532,10 @@ static void log_radial_integrator_free(log_radial_integrator *integrator)
 }
 
 
-static double log_radial_integrator_eval(const log_radial_integrator *integrator, double p, double b)
+static double log_radial_integrator_eval(const log_radial_integrator *integrator, double p, double b, double log_p, double log_b)
 {
-    const double r0 = 2 * gsl_pow_2(p) / b;
-    const double x = log(p);
-    const double y = log(r0);
+    const double x = log_p;
+    const double y = M_LN2 + 2 * log_p - log_b;
     double result;
     assert(x <= integrator->xmax);
 
@@ -837,7 +853,8 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
                                 F[iifo], exp_i_twopsi, u, u2));
                     }
                     p2 *= 0.5;
-                    double p = sqrt(p2);
+                    const double p = sqrt(p2);
+                    const double log_p = log(p);
 
                     for (long isample = 0;
                         isample < (long)nsamples; isample++)
@@ -853,11 +870,12 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
                             }
                             b = cabs(I0arg_complex_times_r);
                         }
+                        const double log_b = log(b);
 
                         for (unsigned char k = 0; k < 3; k ++)
                         {
                             double result = log_radial_integrator_eval(
-                                integrators[k], p, b);
+                                integrators[k], p, b, log_p, log_b);
                             accum2[k] = logaddexp(accum2[k], result);
                         }
                     }
@@ -1392,7 +1410,7 @@ static void test_log_radial_integral(
     gsl_test(!integrator, "testing that integrator object is non-NULL");
     if (integrator)
     {
-        const double result = log_radial_integrator_eval(integrator, p, b);
+        const double result = log_radial_integrator_eval(integrator, p, b, log(p), log(b));
 
         gsl_test_rel(
             result, expected, tol,
@@ -1525,7 +1543,7 @@ int bayestar_test(void)
                     const double x = log(p);
                     const double y = log(r0);
                     const double expected = exp(log_radial_integral(r1, r2, p, b, k));
-                    const double result = exp(log_radial_integrator_eval(integrator, p, b) - gsl_pow_2(0.5 * b / p));
+                    const double result = exp(log_radial_integrator_eval(integrator, p, b, log(p), log(b)) - gsl_pow_2(0.5 * b / p));
                     gsl_test_abs(
                         result, expected, tol, "testing log_radial_integrator_eval("
                         "r1=%g, r2=%g, p=%g, b=%g, k=%d, x=%g, y=%g)", r1, r2, p, b, k, x, y);

@@ -221,7 +221,6 @@ static void EOBNRHMROMdata_Init(EOBNRHMROMdata **data) {
   {
     EOBNRHMROMdata_Cleanup(*data);
   }
-  gsl_set_error_handler(&err_handler);
   (*data)->q = gsl_vector_alloc(nbwf);
   (*data)->freq = gsl_vector_alloc(nbfreq);
   (*data)->Camp = gsl_matrix_alloc(nk_amp,nbwf);
@@ -252,7 +251,6 @@ static void EOBNRHMROMdata_coeff_Init(EOBNRHMROMdata_coeff **data_coeff) {
   {
     EOBNRHMROMdata_coeff_Cleanup(*data_coeff);
   }
-  gsl_set_error_handler(&err_handler);
   (*data_coeff)->Camp_coeff = gsl_vector_alloc(nk_amp);
   (*data_coeff)->Cphi_coeff = gsl_vector_alloc(nk_phi);
   (*data_coeff)->shifttime_coeff = XLALMalloc(sizeof(double));

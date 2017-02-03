@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 94
+# serial 95
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -225,7 +225,7 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
   LALSUITE_USE_SWIG_LANGUAGE([Octave],[C++],[
 
     # check for Octave
-    AC_PATH_PROG(OCTAVE,[octave-cli octave],[],[])
+    AC_PATH_PROGS(OCTAVE,[octave-cli octave],[],[])
     AS_IF([test "x${OCTAVE}" = x],[
       AC_MSG_ERROR([could not find octave in PATH])
     ])

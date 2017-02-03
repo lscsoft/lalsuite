@@ -854,8 +854,6 @@ int SEOBNRROMdataDS_Init(SEOBNRROMdataDS *romdata, const char dir[]) {
     return (XLAL_FAILURE);
   }
 
-  gsl_set_error_handler(&err_handler);
-
 #ifdef LAL_HDF5_ENABLED
   // First, check we got the correct version number
   size_t size = strlen(dir) + strlen(ROMDataHDF5) + 2;
