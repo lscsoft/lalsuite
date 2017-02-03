@@ -18,8 +18,8 @@ BuildRequires: octave-devel
 BuildRequires: python-devel
 BuildRequires: swig
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: lal-python >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
+BuildRequires: lal-python >= @MIN_LAL_VERSION@
 Requires: libmetaio
 Requires: lal >= @MIN_LAL_VERSION@
 Prefix: %{_prefix}
