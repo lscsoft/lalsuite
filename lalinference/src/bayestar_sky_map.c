@@ -825,9 +825,6 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
                 {
                     double u, weight;
                     double accum2[nsamples][3];
-                    for (long isample = 0; isample < 3; isample ++)
-                        for (unsigned char k = 0; k < 3; k ++)
-                            accum2[isample][k] = -INFINITY;
 
                     {
                         /* Look up Gauss-Legendre abscissa and weight. */
