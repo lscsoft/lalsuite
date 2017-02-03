@@ -244,7 +244,7 @@ typedef struct {
 } bicubic_interp;
 
 
-static void bicubic_interp_init(bicubic_interp *interp, const double z[INTERP_SIZE][INTERP_SIZE], double xmin, double ymin, double dx, double dy)
+static void bicubic_interp_init(bicubic_interp *interp, const double *z, double xmin, double ymin, double dx, double dy)
 {
     interp->xmin = xmin;
     interp->ymin = ymin;
@@ -260,7 +260,7 @@ static void bicubic_interp_init(bicubic_interp *interp, const double z[INTERP_SI
             double m[4][4], a[4][4];
             for (int x_ = 0; x_ < 4; x_ ++)
                 for (int y_ = 0; y_ < 4; y_ ++)
-                    m[x_][y_] = z[CLAMP(x + x_ - 1)][CLAMP(y + y_ - 1)];
+                    m[x_][y_] = z[CLAMP(x + x_ - 1) * INTERP_SIZE + CLAMP(y + y_ - 1)];
 
             a[0][0] = m[1][1];
             a[0][1] = -0.5*m[0][1] + 0.5*m[2][1];
@@ -500,7 +500,7 @@ static void log_radial_integrator_init(log_radial_integrator *integrator, double
         /* Note: using this where p > r0; could reduce evaluations by half */
         z[ix][iy] = log_radial_integral(r1, r2, p, b, k);
     }
-    bicubic_interp_init(&integrator->region0, z, xmin, ymin, d, d);
+    bicubic_interp_init(&integrator->region0, z[0], xmin, ymin, d, d);
 
     integrator->region1.xmin = xmin;
     integrator->region1.fx = 1 / d;
