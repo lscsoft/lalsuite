@@ -873,12 +873,12 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
                     }
 
                     double max_accum2[3] = {-INFINITY, -INFINITY, -INFINITY};
-                    for (long isample = 0; isample < 3; isample ++)
+                    for (unsigned long isample = 0; isample < nsamples; isample ++)
                         for (unsigned char k = 0; k < 3; k ++)
                             if (accum2[isample][k] > max_accum2[k])
                                 max_accum2[k] = accum2[isample][k];
                     double sum_accum2[3] = {0, 0, 0};
-                    for (long isample = 0; isample < 3; isample ++)
+                    for (unsigned long isample = 0; isample < nsamples; isample ++)
                         for (unsigned char k = 0; k < 3; k ++)
                             sum_accum2[k] += exp(accum2[isample][k] - max_accum2[k]);
                     for (unsigned char k = 0; k < 3; k ++)
