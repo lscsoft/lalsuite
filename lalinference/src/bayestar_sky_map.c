@@ -76,6 +76,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <lal/cubic_interp.h>
 #include <lal/DetResponse.h>
 #include <lal/InspiralInjectionParams.h>
 #include <lal/FrequencySeries.h>
@@ -130,61 +131,6 @@ static double complex complex_catrom(
 }
 
 
-/*
- * Catmull-Rom cubic spline interpolant of x(t) for regularly gridded
- * samples x_i(t_i), assuming:
- *
- *     t_0 = -1, x_0 = x[0],
- *     t_1 = 0,  x_1 = x[1],
- *     t_2 = 1,  x_2 = x[2],
- *     t_3 = 2,  x_3 = x[3].
- *
- * I am careful to handle certain situations where some of
- * the samples are infinite or not-a-number:
- *
- *     * If t <= 0, then return x1.
- *     * If t >= 1, then return x2.
- *     * Otherwise, if either x0 or x3 are non-real, then fall back to
- *       linear interpolation between x1 and x2.
- *     * Otherwise, if x1 and/or x2 are infinite and both have the same
- *       then return infinity of that sign.
- *     * If x1 and x2 are infinities of different signs or if either are
- *       NaN, then return NaN.
- *     * Otherwise, if x0, x1, x2, and x3 are all finite, then return
- *       the standard Catmull-Rom formula.
- *
- * ***IMPORTANT NOTE*** I use the ISO C99 function isfinite() instead of
- * isinf(), the non-standard finite(), or gsl_finite(), because isfinite()
- * is reliably faster than the alternatives on Mac OS and Scientific Linux.
- *
- */
-static double real_catrom(
-    double x0,
-    double x1,
-    double x2,
-    double x3,
-    double t
-) {
-    double result;
-
-    if (t <= 0)
-        result = x1;
-    else if (t >= 1)
-        result = x2;
-    else if (!(isfinite(x0 + x3)))
-        result = x1 + (1 - t) * x2;
-    else if (isfinite(x1 + x2))
-        result = x1
-            + t*(-0.5*x0 + 0.5*x2
-            + t*(x0 - 2.5*x1 + 2.*x2 - 0.5*x3
-            + t*(-0.5*x0 + 1.5*x1 - 1.5*x2 + 0.5*x3)));
-    else
-        result = x1 + x2;
-
-    return result;
-}
-
-
 /* Evaluate a complex time series using cubic spline interpolation, assuming
  * that the vector x gives the samples of the time series at times
  * 0, 1, ..., nsamples-1. */
@@ -217,117 +163,9 @@ static double complex eval_snr(
 
 
 typedef struct {
-    double fx, xmin;
-    double y[INTERP_SIZE];
-} cubic_interp;
-
-
-static double cubic_interp_eval(const cubic_interp *interp, double x)
-{
-    double i;
-    const double u = modf((x - interp->xmin) * interp->fx, &i);
-
-    #define CLAMP(_) ((int) ((_) < 0 ? 0 : ((_) < INTERP_SIZE ? (_) : INTERP_SIZE - 1)))
-    const double y0 = interp->y[CLAMP(i - 1)];
-    const double y1 = interp->y[CLAMP(i)];
-    const double y2 = interp->y[CLAMP(i + 1)];
-    const double y3 = interp->y[CLAMP(i + 2)];
-    #undef CLAMP
-
-    return real_catrom(y0, y1, y2, y3, u);
-}
-
-
-typedef struct {
-    double xmin, ymin, fx, fy;
-    double a[INTERP_SIZE][INTERP_SIZE][4][4];
-} bicubic_interp;
-
-
-static void bicubic_interp_init(bicubic_interp *interp, const double *z, double xmin, double ymin, double dx, double dy)
-{
-    interp->xmin = xmin;
-    interp->ymin = ymin;
-    interp->fx = 1 / dx;
-    interp->fy = 1 / dy;
-
-    #define CLAMP(_) ((_) < 0 ? 0 : ((_) < INTERP_SIZE ? (_) : INTERP_SIZE - 1))
-
-    for (int x = 0; x < INTERP_SIZE; x ++)
-    {
-        for (int y = 0; y < INTERP_SIZE; y ++)
-        {
-            double m[4][4], a[4][4];
-            for (int x_ = 0; x_ < 4; x_ ++)
-                for (int y_ = 0; y_ < 4; y_ ++)
-                    m[x_][y_] = z[CLAMP(x + x_ - 1) * INTERP_SIZE + CLAMP(y + y_ - 1)];
-
-            a[0][0] = m[1][1];
-            a[0][1] = -0.5*m[0][1] + 0.5*m[2][1];
-            a[0][2] = m[0][1] - 2.5*m[1][1] + 2.0*m[2][1] - 0.5*m[3][1];
-            a[0][3] = -0.5*m[0][1] + 1.5*m[1][1] - 1.5*m[2][1] + 0.5*m[3][1];
-            a[1][0] = -0.5*m[1][0] + 0.5*m[1][2];
-            a[1][1] = 0.25*m[0][0] - 0.25*m[0][2] - 0.25*m[2][0] + 0.25*m[2][2];
-            a[1][2] = -0.5*m[0][0] + 0.5*m[0][2] + 1.25*m[1][0] - 1.25*m[1][2] - 1.0*m[2][0] + 1.0*m[2][2] + 0.25*m[3][0] - 0.25*m[3][2];
-            a[1][3] = 0.25*m[0][0] - 0.25*m[0][2] - 0.75*m[1][0] + 0.75*m[1][2] + 0.75*m[2][0] - 0.75*m[2][2] - 0.25*m[3][0] + 0.25*m[3][2];
-            a[2][0] = m[1][0] - 2.5*m[1][1] + 2.0*m[1][2] - 0.5*m[1][3];
-            a[2][1] = -0.5*m[0][0] + 1.25*m[0][1] - 1.0*m[0][2] + 0.25*m[0][3] + 0.5*m[2][0] - 1.25*m[2][1] + 1.0*m[2][2] - 0.25*m[2][3];
-            a[2][2] = m[0][0] - 2.5*m[0][1] + 2.0*m[0][2] - 0.5*m[0][3] - 2.5*m[1][0] + 6.25*m[1][1] - 5.0*m[1][2] + 1.25*m[1][3] + 2.0*m[2][0] - 5.0*m[2][1] + 4.0*m[2][2] - 1.0*m[2][3] - 0.5*m[3][0] + 1.25*m[3][1] - 1.0*m[3][2] + 0.25*m[3][3];
-            a[2][3] = -0.5*m[0][0] + 1.25*m[0][1] - 1.0*m[0][2] + 0.25*m[0][3] + 1.5*m[1][0] - 3.75*m[1][1] + 3.0*m[1][2] - 0.75*m[1][3] - 1.5*m[2][0] + 3.75*m[2][1] - 3.0*m[2][2] + 0.75*m[2][3] + 0.5*m[3][0] - 1.25*m[3][1] + 1.0*m[3][2] - 0.25*m[3][3];
-            a[3][0] = -0.5*m[1][0] + 1.5*m[1][1] - 1.5*m[1][2] + 0.5*m[1][3];
-            a[3][1] = 0.25*m[0][0] - 0.75*m[0][1] + 0.75*m[0][2] - 0.25*m[0][3] - 0.25*m[2][0] + 0.75*m[2][1] - 0.75*m[2][2] + 0.25*m[2][3];
-            a[3][2] = -0.5*m[0][0] + 1.5*m[0][1] - 1.5*m[0][2] + 0.5*m[0][3] + 1.25*m[1][0] - 3.75*m[1][1] + 3.75*m[1][2] - 1.25*m[1][3] - 1.0*m[2][0] + 3.0*m[2][1] - 3.0*m[2][2] + 1.0*m[2][3] + 0.25*m[3][0] - 0.75*m[3][1] + 0.75*m[3][2] - 0.25*m[3][3];
-            a[3][3] = 0.25*m[0][0] - 0.75*m[0][1] + 0.75*m[0][2] - 0.25*m[0][3] - 0.75*m[1][0] + 2.25*m[1][1] - 2.25*m[1][2] + 0.75*m[1][3] + 0.75*m[2][0] - 2.25*m[2][1] + 2.25*m[2][2] - 0.75*m[2][3] - 0.25*m[3][0] + 0.75*m[3][1] - 0.75*m[3][2] + 0.25*m[3][3];
-
-            for (int x_ = 0; x_ < 4; x_ ++)
-                for (int y_ = 0; y_ < 4; y_ ++)
-                    interp->a[x][y][x_][y_] = a[x_][y_];
-        }
-    }
-
-    #undef CLAMP
-}
-
-
-static double bicubic_interp_eval(const bicubic_interp *interp, double x, double y)
-{
-    x -= interp->xmin;
-    x *= interp->fx;
-    y -= interp->ymin;
-    y *= interp->fy;
-
-    if (x < 0)
-        x = 0;
-    else if (x > INTERP_SIZE - 1)
-        x = INTERP_SIZE - 1;
-    if (y < 0)
-        y = 0;
-    else if (y > INTERP_SIZE - 1)
-        y = INTERP_SIZE - 1;
-
-    double i, j;
-    x = modf(x, &i);
-    y = modf(y, &j);
-
-    const double (*a)[4] = interp->a[(int) i][(int) j];
-    const double u[] = {1, x, x * x, x * x * x};
-    const double v[] = {1, y, y * y, y * y * y};
-
-    return v[0] * a[0][0] * u[0] + v[0] * a[0][1] * u[1]
-         + v[0] * a[0][2] * u[2] + v[0] * a[0][3] * u[3]
-         + v[1] * a[1][0] * u[0] + v[1] * a[1][1] * u[1]
-         + v[1] * a[1][2] * u[2] + v[1] * a[1][3] * u[3]
-         + v[2] * a[2][0] * u[0] + v[2] * a[2][1] * u[1]
-         + v[2] * a[2][2] * u[2] + v[2] * a[2][3] * u[3]
-         + v[3] * a[3][0] * u[0] + v[3] * a[3][1] * u[1]
-         + v[3] * a[3][2] * u[2] + v[3] * a[3][3] * u[3];
-}
-
-
-typedef struct {
-    bicubic_interp region0;
-    cubic_interp region1;
-    cubic_interp region2;
+    bicubic_interp *region0;
+    cubic_interp *region1;
+    cubic_interp *region2;
     double xmax, ymax, vmax, r1, r2;
     int k;
 } log_radial_integrator;
@@ -472,8 +310,14 @@ static double log_radial_integral(double r1, double r2, double p, double b, int 
 }
 
 
-static void log_radial_integrator_init(log_radial_integrator *integrator, double r1, double r2, int k, double pmax)
+static const size_t default_log_radial_integrator_size = 400;
+
+
+static log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, double pmax, size_t size)
 {
+    log_radial_integrator *integrator;
+    bicubic_interp *region0;
+    cubic_interp *region1, *region2;
     const double alpha = 4;
     const double p0 = 0.5 * (k >= 0 ? r2 : r1);
     const double xmax = log(pmax);
@@ -484,42 +328,68 @@ static void log_radial_integrator_init(log_radial_integrator *integrator, double
     const double d = (xmax - xmin) / (INTERP_SIZE - 1); /* dx = dy = du */
     const double umin = - (1 + M_SQRT1_2) * alpha;
     const double vmax = x0 - M_SQRT1_2 * alpha;
-    double z[INTERP_SIZE][INTERP_SIZE];
+    double z0[size][size], z1[size], z2[size];
     /* const double umax = xmax - vmax; */ /* unused */
 
+    integrator = malloc(sizeof(*integrator));
+
     #pragma omp parallel for
-    for (size_t i = 0; i < INTERP_SIZE * INTERP_SIZE; i ++)
+    for (size_t i = 0; i < size * size; i ++)
     {
-        const size_t ix = i / INTERP_SIZE;
-        const size_t iy = i % INTERP_SIZE;
+        const size_t ix = i / size;
+        const size_t iy = i % size;
         const double x = xmin + ix * d;
         const double y = ymin + iy * d;
         const double p = exp(x);
         const double r0 = exp(y);
         const double b = 2 * gsl_pow_2(p) / r0;
         /* Note: using this where p > r0; could reduce evaluations by half */
-        z[ix][iy] = log_radial_integral(r1, r2, p, b, k);
+        z0[ix][iy] = log_radial_integral(r1, r2, p, b, k);
     }
-    bicubic_interp_init(&integrator->region0, z[0], xmin, ymin, d, d);
+    region0 = bicubic_interp_init(*z0, size, size, xmin, ymin, d, d);
 
-    integrator->region1.xmin = xmin;
-    integrator->region1.fx = 1 / d;
+    for (size_t i = 0; i < size; i ++)
+        z1[i] = z0[i][size - 1];
+    region1 = cubic_interp_init(z1, size, xmin, d);
 
-    for (size_t i = 0; i < INTERP_SIZE; i ++)
-        integrator->region1.y[i] = z[i][INTERP_SIZE - 1];
+    for (size_t i = 0; i < size; i ++)
+        z2[i] = z0[i][size - 1 - i];
+    region2 = cubic_interp_init(z2, size, umin, d);
 
-    integrator->region2.xmin = umin;
-    integrator->region2.fx = 1 / d;
+    if (!(integrator && region0 && region1 && region2))
+    {
+        free(integrator);
+        free(region0);
+        free(region1);
+        free(region2);
+        XLAL_ERROR_NULL(XLAL_ENOMEM, "not enough memory to allocate integrator");
+    }
 
-    for (size_t i = 0; i < INTERP_SIZE; i ++)
-        integrator->region2.y[i] = z[i][INTERP_SIZE - 1 - i];
-
+    integrator->region0 = region0;
+    integrator->region1 = region1;
+    integrator->region2 = region2;
     integrator->xmax = xmax;
     integrator->ymax = ymax;
     integrator->vmax = vmax;
     integrator->r1 = r1;
     integrator->r2 = r2;
     integrator->k = k;
+    return integrator;
+}
+
+
+static void log_radial_integrator_free(log_radial_integrator *integrator)
+{
+    if (integrator)
+    {
+        bicubic_interp_free(integrator->region0);
+        integrator->region0 = NULL;
+        cubic_interp_free(integrator->region1);
+        integrator->region1 = NULL;
+        cubic_interp_free(integrator->region2);
+        integrator->region2 = NULL;
+    }
+    free(integrator);
 }
 
 
@@ -543,15 +413,15 @@ static double log_radial_integrator_eval(const log_radial_integrator *integrator
         }
     } else {
         if (y >= integrator->ymax) {
-            result = cubic_interp_eval(&integrator->region1, x);
+            result = cubic_interp_eval(integrator->region1, x);
         } else {
             const double v = 0.5 * (x + y);
             if (v <= integrator->vmax)
             {
                 const double u = 0.5 * (x - y);
-                result = cubic_interp_eval(&integrator->region2, u);
+                result = cubic_interp_eval(integrator->region2, u);
             } else {
-                result = bicubic_interp_eval(&integrator->region0, x, y);
+                result = bicubic_interp_eval(integrator->region0, x, y);
             }
         }
         result += gsl_pow_2(0.5 * b / p);
@@ -753,16 +623,15 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
         pmax = sqrt(0.5 * pmax);
         for (unsigned char k = 0; k < 3; k ++)
         {
-            integrators[k] = malloc(sizeof(log_radial_integrator));
+            integrators[k] = log_radial_integrator_init(
+                min_distance, max_distance, prior_distance_power + k, pmax,
+                default_log_radial_integrator_size);
             if (!integrators[k])
             {
                 for (unsigned char kk = 0; kk < k; kk ++)
-                    free(integrators[kk]);
+                    log_radial_integrator_free(integrators[kk]);
                 return NULL;
             }
-            log_radial_integrator_init(
-                integrators[k], min_distance, max_distance,
-                prior_distance_power + k, pmax);
         }
     }
 
@@ -773,7 +642,7 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
     if (!pixels)
     {
         for (unsigned char k = 0; k < 3; k ++)
-            free(integrators[k]);
+            log_radial_integrator_free(integrators[k]);
         return NULL;
     }
     const unsigned long npix0 = len;
@@ -912,7 +781,7 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
     }
 
     for (unsigned char k = 0; k < 3; k ++)
-        free(integrators[k]);
+        log_radial_integrator_free(integrators[k]);
 
     /* Rescale so that log(max) = 0. */
     const double max_logp = pixels[len - 1].value[0];
@@ -1076,156 +945,6 @@ static void test_complex_catrom(void)
             "testing complex Catmull-rom interpolant for quadratic real input");
         gsl_test_abs(cimag(result), cimag(expected), 0,
             "testing complex Catmull-rom interpolant for quadratic real input");
-    }
-}
-
-
-static void test_real_catrom(void)
-{
-    for (double t = 0; t <= 1; t += 0.01)
-    {
-        const double result = real_catrom(0, 0, 0, 0, t);
-        const double expected = 0;
-        gsl_test_abs(result, expected, 0,
-            "testing Catmull-rom interpolant for zero input");
-    }
-
-    for (double t = 0; t <= 1; t += 0.01)
-    {
-        const double result = real_catrom(1, 1, 1, 1, t);
-        const double expected = 1;
-        gsl_test_abs(result, expected, 0,
-            "testing Catmull-rom interpolant for unit input");
-    }
-
-    for (double t = 0; t <= 1; t += 0.01)
-    {
-        const double result = real_catrom(1, 0, 1, 4, t);
-        const double expected = gsl_pow_2(t);
-        gsl_test_abs(result, expected, 0,
-            "testing Catmull-rom interpolant for quadratic input");
-    }
-
-    for (double t = 0; t <= 1; t += 0.01)
-    {
-        const double result = real_catrom(
-            GSL_POSINF, GSL_POSINF, GSL_POSINF, GSL_POSINF, t);
-        const double expected = GSL_POSINF;
-        gsl_test_abs(result, expected, 0,
-            "testing Catmull-rom interpolant for +inf input");
-    }
-
-    for (double t = 0; t <= 1; t += 0.01)
-    {
-        const double result = real_catrom(
-            0, GSL_POSINF, GSL_POSINF, GSL_POSINF, t);
-        const double expected = GSL_POSINF;
-        gsl_test_abs(result, expected, 0,
-            "testing Catmull-rom interpolant for +inf input");
-    }
-
-    for (double t = 0; t <= 1; t += 0.01)
-    {
-        const double result = real_catrom(
-            GSL_POSINF, GSL_POSINF, GSL_POSINF, 0, t);
-        const double expected = GSL_POSINF;
-        gsl_test_abs(result, expected, 0,
-            "testing Catmull-rom interpolant for +inf input");
-    }
-
-    for (double t = 0; t <= 1; t += 0.01)
-    {
-        const double result = real_catrom(
-            0, GSL_POSINF, GSL_POSINF, 0, t);
-        const double expected = GSL_POSINF;
-        gsl_test_abs(result, expected, 0,
-            "testing Catmull-rom interpolant for +inf input");
-    }
-
-    for (double t = 0.01; t <= 1; t += 0.01)
-    {
-        const double result = real_catrom(
-            0, 0, GSL_POSINF, 0, t);
-        const double expected = GSL_POSINF;
-        gsl_test_abs(result, expected, 0,
-            "testing Catmull-rom interpolant for +inf input");
-    }
-
-    {
-        const double result = real_catrom(
-            0, GSL_NEGINF, GSL_POSINF, 0, 1);
-        const double expected = GSL_POSINF;
-        gsl_test_abs(result, expected, 0,
-            "testing Catmull-rom interpolant for +inf input");
-    }
-
-    {
-        const double result = real_catrom(
-            0, GSL_POSINF, GSL_NEGINF, 0, 0);
-        const double expected = GSL_POSINF;
-        gsl_test_abs(result, expected, 0,
-            "testing Catmull-rom interpolant for +inf input");
-    }
-
-    for (double t = 0; t <= 1; t += 0.01)
-    {
-        const double result = real_catrom(
-            0, GSL_NEGINF, GSL_NEGINF, GSL_NEGINF, t);
-        const double expected = GSL_NEGINF;
-        gsl_test_abs(result, expected, 0,
-            "testing Catmull-rom interpolant for -inf input");
-    }
-
-    for (double t = 0; t <= 1; t += 0.01)
-    {
-        const double result = real_catrom(
-            GSL_NEGINF, GSL_NEGINF, GSL_NEGINF, 0, t);
-        const double expected = GSL_NEGINF;
-        gsl_test_abs(result, expected, 0,
-            "testing Catmull-rom interpolant for -inf input");
-    }
-
-    for (double t = 0; t <= 1; t += 0.01)
-    {
-        const double result = real_catrom(
-            0, GSL_NEGINF, GSL_NEGINF, 0, t);
-        const double expected = GSL_NEGINF;
-        gsl_test_abs(result, expected, 0,
-            "testing Catmull-rom interpolant for -inf input");
-    }
-
-    for (double t = 0.01; t <= 1; t += 0.01)
-    {
-        const double result = real_catrom(
-            0, 0, GSL_NEGINF, 0, t);
-        const double expected = GSL_NEGINF;
-        gsl_test_abs(result, expected, 0,
-            "testing Catmull-rom interpolant for -inf input");
-    }
-
-    {
-        const double result = real_catrom(
-            0, GSL_NEGINF, GSL_POSINF, 0, 0);
-        const double expected = GSL_NEGINF;
-        gsl_test_abs(result, expected, 0,
-            "testing Catmull-rom interpolant for -inf input");
-    }
-
-    {
-        const double result = real_catrom(
-            0, GSL_POSINF, GSL_NEGINF, 0, 1);
-        const double expected = GSL_NEGINF;
-        gsl_test_abs(result, expected, 0,
-            "testing Catmull-rom interpolant for -inf input");
-    }
-
-    for (double t = 0.01; t < 1; t += 0.01)
-    {
-        const double result = real_catrom(
-            0, GSL_NEGINF, GSL_POSINF, 0, t);
-        const double expected = GSL_NAN;
-        gsl_test_abs(result, expected, 0,
-            "testing Catmull-rom interpolant for indeterminate input");
     }
 }
 
@@ -1403,8 +1122,8 @@ static void test_log_radial_integral(
     double expected, double tol, double r1, double r2, double p2, double b, int k)
 {
     const double p = sqrt(p2);
-    log_radial_integrator *integrator = malloc(sizeof(log_radial_integrator));
-    log_radial_integrator_init(integrator, r1, r2, k, p + 0.5);
+    log_radial_integrator *integrator = log_radial_integrator_init(
+        r1, r2, k, p + 0.5, default_log_radial_integrator_size);
 
     gsl_test(!integrator, "testing that integrator object is non-NULL");
     if (integrator)
@@ -1486,7 +1205,6 @@ int bayestar_test(void)
             test_cabs2(re + im * 1.0j);
 
     test_complex_catrom();
-    test_real_catrom();
     test_eval_snr();
 
     for (double ra = -M_PI; ra <= M_PI; ra += 0.4 * M_PI)
@@ -1527,8 +1245,8 @@ int bayestar_test(void)
         const double r1 = 0.0, r2 = 0.25, pmax = 1.0;
         const int k = 2;
         const double tol = 1e-5;
-        log_radial_integrator *integrator = malloc(sizeof(log_radial_integrator));
-        log_radial_integrator_init(integrator, r1, r2, k, pmax);
+        log_radial_integrator *integrator = log_radial_integrator_init(
+            r1, r2, k, pmax, default_log_radial_integrator_size);
 
         gsl_test(!integrator, "testing that integrator object is non-NULL");
         if (integrator)
