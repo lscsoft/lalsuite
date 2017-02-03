@@ -882,7 +882,7 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
                         for (unsigned char k = 0; k < 3; k ++)
                             sum_accum2[k] += exp(accum2[isample][k] - max_accum2[k]);
                     for (unsigned char k = 0; k < 3; k ++)
-                        accum1[k] = logaddexp(accum1[k], log(sum_accum2[k] * weight));
+                        accum1[k] = logaddexp(accum1[k], log(sum_accum2[k] * weight) + max_accum2[k]);
                 }
 
                 for (unsigned char k = 0; k < 3; k ++)
