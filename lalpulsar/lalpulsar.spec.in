@@ -20,11 +20,11 @@ BuildRequires: octave-devel
 BuildRequires: python-devel
 BuildRequires: swig
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: lal-python >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
+BuildRequires: lal-python >= @MIN_LAL_VERSION@
 BuildRequires: lalxml-devel >= @MIN_LALXML_VERSION@
-BuildRequires: lalxml-python >= @MIN_LALXML_VERSION@
 BuildRequires: lalxml-octave >= @MIN_LALXML_VERSION@
+BuildRequires: lalxml-python >= @MIN_LALXML_VERSION@
 Requires: cfitsio
 Requires: fftw
 Requires: gsl
