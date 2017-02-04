@@ -193,7 +193,7 @@ void bicubic_interp_free(bicubic_interp *interp)
 double bicubic_interp_eval(const bicubic_interp *interp, double s, double t)
 {
     const double (*a)[4];
-    double b[4];
+    double b[4] __attribute__ ((aligned));
     double is, it;
 
     if (isnan(s) || isnan(t))
@@ -202,6 +202,10 @@ double bicubic_interp_eval(const bicubic_interp *interp, double s, double t)
     cubic_interp_index(interp->ft, interp->t0, interp->tlength, &t, &it);
     a = interp->a[(int) (is * interp->slength + it)];
     for (int i = 0; i < 4; i ++)
-        b[i] = cubic_eval(a[i], s);
+        b[i] = a[0][i] * s + a[1][i];
+    for (int i = 0; i < 4; i ++)
+        b[i] = b[i] * s + a[2][i];
+    for (int i = 0; i < 4; i ++)
+        b[i] = b[i] * s + a[3][i];
     return cubic_eval(b, t);
 }

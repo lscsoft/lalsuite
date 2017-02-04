@@ -38,12 +38,12 @@
 
 typedef struct {
     double f, t0, length;
-    double a[][4];
+    double a[][4] __attribute__ ((aligned));
 } cubic_interp;
 
 typedef struct {
     double fs, ft, s0, t0, slength, tlength;
-    double a[][4][4];
+    double a[][4][4] __attribute__ ((aligned));
 } bicubic_interp;
 
 cubic_interp *cubic_interp_init(
