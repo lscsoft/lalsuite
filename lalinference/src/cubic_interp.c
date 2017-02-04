@@ -21,6 +21,7 @@
 #include "cubic_interp.h"
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 static int clip_int(int t, int min, int max)
@@ -177,13 +178,7 @@ bicubic_interp *bicubic_interp_init(
                 {
                     cubic_interp_init_coefficients(a[js], a1[js], a1[3]);
                 }
-                for (int js = 0; js < 4; js ++)
-                {
-                    for (int jt = 0; jt < 4; jt ++)
-                    {
-                        interp->a[is * slength + it][js][jt] = a[js][jt];
-                    }
-                }
+                memcpy(interp->a[is * slength + it], a, sizeof(a));
             }
         }
     }
