@@ -159,9 +159,6 @@ static double complex eval_snr(
 }
 
 
-#define INTERP_SIZE 400
-
-
 typedef struct {
     bicubic_interp *region0;
     cubic_interp *region1;
@@ -325,7 +322,7 @@ static log_radial_integrator *log_radial_integrator_init(double r1, double r2, i
     const double xmin = x0 - (1 + M_SQRT2) * alpha;
     const double ymax = x0 + alpha;
     const double ymin = 2 * x0 - M_SQRT2 * alpha - xmax;
-    const double d = (xmax - xmin) / (INTERP_SIZE - 1); /* dx = dy = du */
+    const double d = (xmax - xmin) / (size - 1); /* dx = dy = du */
     const double umin = - (1 + M_SQRT1_2) * alpha;
     const double vmax = x0 - M_SQRT1_2 * alpha;
     double z0[size][size], z1[size], z2[size];
