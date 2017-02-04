@@ -42,8 +42,7 @@ typedef struct {
 } cubic_interp;
 
 typedef struct {
-    double fs, ft, s0, t0;
-    int slength, tlength;
+    double fs, ft, s0, t0, slength, tlength;
     double a[][4][4];
 } bicubic_interp;
 

@@ -86,11 +86,9 @@ static double cubic_eval(const double *a, double t)
 
 
 static void cubic_interp_index(
-    double f, double t0, int length, double *t, int *i)
+    double f, double t0, double length, double *t, double *i)
 {
-    double i_double;
-    *t = modf(clip_double(*t * f + t0, 0, length), &i_double);
-    *i = i_double;
+    *t = modf(clip_double(*t * f + t0, 0, length), i);
 }
 
 
@@ -127,11 +125,11 @@ void cubic_interp_free(cubic_interp *interp)
 
 double cubic_interp_eval(const cubic_interp *interp, double t)
 {
-    int i;
+    double i;
     if (isnan(t))
         return t;
     cubic_interp_index(interp->f, interp->t0, interp->length, &t, &i);
-    return cubic_eval(interp->a[i], t);
+    return cubic_eval(interp->a[(int) i], t);
 }
 
 
@@ -196,13 +194,13 @@ double bicubic_interp_eval(const bicubic_interp *interp, double s, double t)
 {
     const double (*a)[4];
     double b[4];
-    int is, it;
+    double is, it;
 
     if (isnan(s) || isnan(t))
         return s + t;
     cubic_interp_index(interp->fs, interp->s0, interp->slength, &s, &is);
     cubic_interp_index(interp->ft, interp->t0, interp->tlength, &t, &it);
-    a = interp->a[is * interp->slength + it];
+    a = interp->a[(int) (is * interp->slength + it)];
     for (int i = 0; i < 4; i ++)
         b[i] = cubic_eval(a[i], s);
     return cubic_eval(b, t);
