@@ -757,7 +757,7 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
                 }
             }
 
-            /* Record logarithm base 4 of posterior. */
+            /* Record logarithm of posterior. */
             for (unsigned char k = 0; k < 3; k ++)
             {
                 pixel->value[k] = accum[k];
