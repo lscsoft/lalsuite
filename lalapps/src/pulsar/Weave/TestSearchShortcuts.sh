@@ -50,7 +50,7 @@ for setup in short mid long; do
     set +x
     echo
 
-    echo "=== Setup '${setup}': Check average number of semicoherent templates per dimension is more than one"
+    echo "=== Setup '${setup}': Check average number of semicoherent templates per dimension ==="
     set -x
     for dim in SSKYA SSKYB NU0DOT NU1DOT; do
         ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoShort.fits[0]" "SEMIAVG ${dim}" > tmp

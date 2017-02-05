@@ -25,7 +25,7 @@ ${builddir}/lalapps_Weave --cache-max-size=0 --output-file=WeaveOutNoMax.fits \
 set +x
 echo
 
-echo "=== Check average number of semicoherent templates per dimension is more than one"
+echo "=== Check average number of semicoherent templates per dimension ==="
 set -x
 for dim in SSKYA SSKYB NU0DOT NU1DOT; do
     ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoMax.fits[0]" "SEMIAVG ${dim}" > tmp
