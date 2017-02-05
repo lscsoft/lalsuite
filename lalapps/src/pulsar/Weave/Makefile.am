@@ -50,7 +50,7 @@ TESTS = \
 	TestInterpolating.sh \
 	TestNonInterpolating.sh \
 	TestSingleSegment.sh \
-	TestSearchShortcuts.sh \
+	TestSimulateSearch.sh \
 	TestCacheMaxSize.sh \
 	TestCheckpointing.sh \
 	TestFreqPartition.sh \

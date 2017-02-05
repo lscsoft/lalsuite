@@ -50,19 +50,15 @@ int main( int argc, char *argv[] )
   // Optional arguments to XLALCreateFstatInput(), used to initialise some user input variables
   FstatOptionalArgs Fstat_opt_args = FstatOptionalArgsDefaults;
 
-  // Enumeration and auxilliary parsing data for 'shortcut' option
-  enum { SHORTCUT_NONE, SHORTCUT_COMPUTE, SHORTCUT_SEARCH };
-  const UserChoices shortcut_choices = { { SHORTCUT_NONE, "none" }, { SHORTCUT_COMPUTE, "compute" }, { SHORTCUT_SEARCH, "search" } };
-
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, per_detector, per_segment, misc_info;
+    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, per_detector, per_segment, misc_info, simulate_search;
     CHAR *setup_file, *sft_files, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
     UINT4 sky_patch_count, sky_patch_index, freq_partitions, Fstat_run_med_window, Fstat_Dterms, toplist_limit, rand_seed, cache_max_size, cache_gc_limit;
-    int lattice, Fstat_method, Fstat_SSB_precision, toplists, shortcut;
+    int lattice, Fstat_method, Fstat_SSB_precision, toplists;
   } uvar_struct = {
     .Fstat_Dterms = Fstat_opt_args.Dterms,
     .Fstat_SSB_precision = Fstat_opt_args.SSBprec,
@@ -73,7 +69,6 @@ int main( int argc, char *argv[] )
     .freq_partitions = 1,
     .interpolation = 1,
     .lattice = TILING_LATTICE_ANSTAR,
-    .shortcut = SHORTCUT_NONE,
     .toplist_limit = 1000,
     .toplists = WEAVE_TOPLIST_RANKED_MEAN2F,
   };
@@ -293,12 +288,12 @@ int main( int argc, char *argv[] )
     rand_seed, UINT4, 'e', DEVELOPER,
     "Random seed used to initialise random number generators. "
     );
-  XLALRegisterUvarAuxDataMember(
-    shortcut, UserEnum, &shortcut_choices, 'X', DEVELOPER,
-    "Shortcut various parts of the search, useful for debugging or informational purposes. Choices are:\n"
-    " - compute: Perform all setup and search actions, but shortcut all computations. This option can be used to gain some information of the performance of the code, e.g. total memory usage.\n"
-    " - search: Perform all setup actions, but shortcut the main search loop. This option can be used to gain some properties of the search parameter space, e.g. approximate template counts.\n"
-    );
+   XLALRegisterUvarMember(
+     simulate_search, BOOLEAN, 0, DEVELOPER,
+     "Simulate search; perform all search actions apart from computing any results. "
+     "If SFT parameters (i.e. " UVAR_STR( sft_files ) " or " UVAR_STR( sft_timebase ) ") are supplied, simulate search with full memory allocation, i.e. with F-statistic input data, cached coherent results, etc. "
+     "Otherwise, perform search with minimal memory allocation, i.e. do not allocate memory for any data or results. "
+     );
   XLALRegisterUvarMember(
     cache_max_size, UINT4, 0, DEVELOPER,
     "Limit the size of the internal caches, used to store intermediate results, to this number of items per segment. "
@@ -326,7 +321,7 @@ int main( int argc, char *argv[] )
   // - SFT input/generation and signal generation
   //
   XLALUserVarCheck( &should_exit,
-                    uvar->shortcut == SHORTCUT_SEARCH || UVAR_SET2( sft_files, sft_timebase ) == 1,
+                    uvar->simulate_search || UVAR_SET2( sft_files, sft_timebase ) == 1,
                     "Exactly one of " UVAR_STR2OR( sft_files, sft_timebase ) " must be specified" );
   XLALUserVarCheck( &should_exit,
                     !UVAR_SET( sft_files ) || !UVAR_ALLSET3( sft_timebase, sft_timestamps_files, sft_noise_psd ),
@@ -407,6 +402,11 @@ int main( int argc, char *argv[] )
     return EXIT_FAILURE;
   }
   LogPrintf( LOG_NORMAL, "Parsed user input successfully\n" );
+
+  // Log whether search is being simulated
+  if ( uvar->simulate_search ) {
+    LogPrintf( LOG_NORMAL, "Simulating search; no results will be computed\n" );
+  }
 
   ////////// Load setup data //////////
 
@@ -604,9 +604,17 @@ int main( int argc, char *argv[] )
   // - XLALEqualizeReducedSuperskyMetricsFreqSpacing() ensures this is the same for all segments
   const double dfreq = XLALLatticeTilingStepSizes( tiling[isemi], ndim - 1 );
 
+  // Count approximate number of semicoherent templates
+  {
+    LogPrintf( LOG_NORMAL, "Counting approximate number of semicoherent templates ...\n" );
+    const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling[isemi], ndim - 1 );
+    XLAL_CHECK_MAIN( stats != NULL, XLAL_EFUNC );
+    LogPrintf( LOG_NORMAL, "Counted ~%" LAL_UINT8_FORMAT " semicoherent templates\n", stats->total_points );
+  }
+
   ////////// Load input data //////////
 
-  // Load or generate SFTs (unless main search loop is being shortcutted)
+  // Load or generate SFTs, unless search is being simulated
   SFTCatalog *sft_catalog = NULL;
   if ( UVAR_SET( sft_files ) ) {
 
@@ -689,6 +697,12 @@ int main( int argc, char *argv[] )
     XLALFree( sft_catalog_detectors_string );
     XLALDestroyMultiSFTCatalogView( sft_catalog_view );
 
+  }
+
+  // Decide on search simulation level
+  const WeaveSimulationLevel simulation_level = uvar->simulate_search ? ( WEAVE_SIMULATE | ( sft_catalog == NULL ? WEAVE_SIMULATE_MIN_MEM : 0 ) ) : 0;
+  if ( simulation_level & WEAVE_SIMULATE ) {
+    LogPrintf( LOG_NORMAL, "Simulating search with %s memory usage\n", simulation_level & WEAVE_SIMULATE_MIN_MEM ? "minimal" : "full" );
   }
 
   // Parse signal injection string
@@ -800,7 +814,7 @@ int main( int argc, char *argv[] )
     }
 
     // Create coherent input data for 'i'th segment
-    coh_input[i] = XLALWeaveCohInputCreate( uvar->shortcut == SHORTCUT_COMPUTE, Fstat_input, per_detectors );
+    coh_input[i] = XLALWeaveCohInputCreate( simulation_level, Fstat_input, per_detectors );
     XLAL_CHECK_MAIN( coh_input[i] != NULL, XLAL_EFUNC );
 
   }
@@ -816,14 +830,6 @@ int main( int argc, char *argv[] )
   }
 
   ////////// Perform search //////////
-
-  // Count approximate number of semicoherent templates
-  LogPrintf( LOG_NORMAL, "Counting approximate number of semicoherent templates ...\n" );
-  const LatticeTilingStats *semi_freqdim_stats = XLALLatticeTilingStatistics( tiling[isemi], ndim - 1 );
-  XLAL_CHECK_MAIN( semi_freqdim_stats != NULL, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( semi_freqdim_stats->total_points > 0, XLAL_EFUNC );
-  const UINT8 semi_nappx = semi_freqdim_stats->total_points;
-  LogPrintf( LOG_NORMAL, "Counted ~%" LAL_UINT8_FORMAT " semicoherent templates\n", semi_nappx );
 
   // Create iterator over semicoherent tiling
   // - The last parameter-space dimension is always frequency and is not iterated over, since we
@@ -849,14 +855,13 @@ int main( int argc, char *argv[] )
   // Number of times output results have been restored from a checkpoint
   UINT4 ckpt_output_count = 0;
 
-  // Total number of computed coherent results
-  UINT8 tot_coh_nfblk = 0;
-  UINT8 tot_coh_ncomp = 0;
+  // Number of computed coherent and semicoherent results
+  UINT8 coh_nfbk = 0, coh_nres = 0, semi_nres = 0;
 
   // Semicoherent frequency block count and index
-  UINT8 freq_block_index = 0;
   const UINT8 freq_block_count = XLALTotalLatticeTilingPoints( semi_itr );
   XLAL_CHECK_MAIN( freq_block_count > 0, XLAL_EFUNC );
+  UINT8 freq_block_index = 0;
 
   // Partition index
   UINT4 partition_index = 0;
@@ -879,9 +884,10 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT4( file, "ckptcnt", &ckpt_output_count ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( ckpt_output_count > 0, XLAL_EIO, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
 
-      // Read total number of computed coherent results
-      XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT8( file, "tcohfblk", &tot_coh_nfblk ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT8( file, "tcohcomp", &tot_coh_ncomp ) == XLAL_SUCCESS, XLAL_EFUNC );
+      // Read number of computed coherent and semicoherent results
+      XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT8( file, "ncohfbk", &coh_nfbk ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT8( file, "ncohres", &coh_nres ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT8( file, "nsemires", &semi_nres ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Read output results
       XLAL_CHECK_MAIN( XLALWeaveOutputResultsReadAppend( file, &out ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -901,18 +907,6 @@ int main( int argc, char *argv[] )
 
     }
 
-  }
-
-  // Log if part of the search is being shortcutted
-  switch ( uvar->shortcut ) {
-  case SHORTCUT_COMPUTE:
-    LogPrintf( LOG_NORMAL, "Shortcutting all computations, as requested\n" );
-    break;
-  case SHORTCUT_SEARCH:
-    LogPrintf( LOG_NORMAL, "Shortcutting the main search loop, as requested\n" );
-    break;
-  default:
-    break;
   }
 
   // Initial wall and CPU times
@@ -937,7 +931,7 @@ int main( int argc, char *argv[] )
 
   // Print initial progress in frequency blocks and partitions
   const UINT8 prog_count = uvar->freq_partitions * freq_block_count;
-  if ( uvar->shortcut != SHORTCUT_SEARCH ) {
+  {
     const UINT8 prog_index = partition_index * freq_block_count + freq_block_index;
     const double prog_per_cent = 100.0 * prog_index / prog_count;
     LogPrintf( LOG_NORMAL, "Starting main search loop at %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " frequency blocks (%.1f%%)", prog_index, prog_count, prog_per_cent );
@@ -947,8 +941,8 @@ int main( int argc, char *argv[] )
     LogPrintfVerbatim( LOG_NORMAL, ", peak memory %.1fMB\n", XLALGetPeakHeapUsageMB() );
   }
 
-  // Begin main search loop (unless it is being shortcutted)
-  BOOLEAN search_complete = ( uvar->shortcut == SHORTCUT_SEARCH );
+  // Begin main search loop
+  BOOLEAN search_complete = 0;
   while ( !search_complete ) {
 
     // Get mid-point of the next semicoherent frequency block
@@ -989,7 +983,7 @@ int main( int argc, char *argv[] )
     if ( semi_nfreqs > 0 ) {
 
       // Initialise partial semicoherent results
-      XLAL_CHECK_MAIN( XLALWeaveSemiPartialsInit( &semi_parts, uvar->shortcut == SHORTCUT_COMPUTE, per_detectors, per_nsegments, &semi_phys, dfreq, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALWeaveSemiPartialsInit( &semi_parts, simulation_level, per_detectors, per_nsegments, &semi_phys, dfreq, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Start timing
       double cpu_timing_tic = cpu_time();
@@ -999,7 +993,7 @@ int main( int argc, char *argv[] )
       const WeaveCohResults *XLAL_INIT_DECL( coh_res, [nsegments] );
       UINT4 XLAL_INIT_DECL( coh_offset, [nsegments] );
       for ( size_t i = 0; i < nsegments; ++i ) {
-        XLAL_CHECK_MAIN( XLALWeaveCacheRetrieve( coh_cache[i], queries, i, &coh_res[i], &coh_offset[i], &tot_coh_nfblk, &tot_coh_ncomp, &per_seg_info[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALWeaveCacheRetrieve( coh_cache[i], queries, i, &coh_res[i], &coh_offset[i], &coh_nfbk, &coh_nres, &per_seg_info[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK_MAIN( coh_res[i] != NULL, XLAL_EFUNC );
       }
 
@@ -1028,6 +1022,9 @@ int main( int argc, char *argv[] )
 
       // Add semicoherent results to output
       XLAL_CHECK_MAIN( XLALWeaveOutputResultsAdd( out, semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      // Increment number of computed semicoherent results
+      semi_nres += semi_nfreqs;
 
     }
 
@@ -1060,9 +1057,10 @@ int main( int argc, char *argv[] )
         ++ckpt_output_count;
         XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "ckptcnt", ckpt_output_count, "number of checkpoints" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-        // Write total number of computed coherent results
-        XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "tcohfblk", tot_coh_nfblk, "total number of computed coherent frequency blocks" ) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "tcohcomp", tot_coh_ncomp, "total number of computed coherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        // Write number of computed coherent and semicoherent results
+        XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "ncohfbk", coh_nfbk, "number of computed coherent frequency blocks" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "ncohres", coh_nres, "number of computed coherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "nsemires", semi_nres, "number of computed semicoherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
         // Write output results
         XLAL_CHECK_MAIN( XLALWeaveOutputResultsWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -1097,8 +1095,11 @@ int main( int argc, char *argv[] )
       const double wall_elapsed = wall_now - wall_zero;
       const double cpu_elapsed = cpu_now - cpu_zero;
 
+      // Print whether search is being simulated
+      LogPrintf( LOG_NORMAL, "%s", simulation_level & WEAVE_SIMULATE ? "Simulated" : "Searched" );
+
       // Print progress in frequency blocks and partitions
-      LogPrintf( LOG_NORMAL, "Searched %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " frequency blocks (%.1f%%)", prog_index, prog_count, prog_per_cent );
+      LogPrintfVerbatim( LOG_NORMAL, " %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " frequency blocks (%.1f%%)", prog_index, prog_count, prog_per_cent );
       if ( uvar->freq_partitions > 1 ) {
         LogPrintfVerbatim( LOG_NORMAL, ", partition %i/%i", partition_index, uvar->freq_partitions );
       }
@@ -1138,7 +1139,7 @@ int main( int argc, char *argv[] )
   const double cpu_total = cpu_time() - cpu_zero;
 
   // Print final progress in frequency blocks and partitions
-  if ( uvar->shortcut != SHORTCUT_SEARCH ) {
+  {
     const UINT8 prog_index = partition_index * freq_block_count + freq_block_index;
     const double prog_per_cent = 100.0 * prog_index / prog_count;
     LogPrintf( LOG_NORMAL, "Finished main search loop at %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " frequency blocks (%.1f%%)", prog_index, prog_count, prog_per_cent );
@@ -1164,7 +1165,6 @@ int main( int argc, char *argv[] )
 
     // Write number of times output results were restored from a checkpoint
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "numckpt", ckpt_output_count, "number of checkpoints" ) == XLAL_SUCCESS, XLAL_EFUNC );
-
 
     // Write list of detectors
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteStringVector( file, "detect", setup.detectors, "setup detectors" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -1203,17 +1203,15 @@ int main( int argc, char *argv[] )
       }
     }
 
-    // Write total number of computed coherent results
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "tcohfblk", tot_coh_nfblk, "total number of computed coherent frequency blocks" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "tcohcomp", tot_coh_ncomp, "total number of computed coherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    // Write approximate number of semicoherent templates
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT8( file, "semiappx", semi_nappx, "approximate number of semicoherent templates" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    // Write number of computed coherent and semicoherent results
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "ncohfbk", coh_nfbk, "number of computed coherent frequency blocks" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "ncohres", coh_nres, "number of computed coherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "nsemires", semi_nres, "number of computed semicoherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Write peak memory usage
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "peakmem [MB]", XLALGetPeakHeapUsageMB(), "peak memory usage" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    if ( uvar->shortcut != SHORTCUT_SEARCH ) {   // Unless main search loop is being shortcutted...
+    if ( simulation_level == 0 ) {   // Unless search is being simulated...
 
       // Write F-statistic method name
       XLAL_CHECK_MAIN( XLALFITSHeaderWriteString( file, "fmethod", Fstat_method_name, "name of F-statistic method" ) == XLAL_SUCCESS, XLAL_EFUNC );

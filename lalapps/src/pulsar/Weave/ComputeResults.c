@@ -35,8 +35,8 @@ const UINT4 alignment = 32;
 /// Internal definition of input data required for computing coherent results
 ///
 struct tagWeaveCohInput {
-  /// Whether to shortcut computing coherent results
-  BOOLEAN shortcut_compute;
+  /// Bitflag representing search simulation level
+  WeaveSimulationLevel simulation_level;
   /// F-statistic input data
   FstatInput *Fstat_input;
   /// If computing per-detector quantities, list of detectors
@@ -77,8 +77,8 @@ typedef struct {
 /// Internal definition of partial results of a semicoherent computation in progress
 ///
 struct tagWeaveSemiPartials {
-  /// Whether to shortcut computing semicoherent results
-  BOOLEAN shortcut_compute;
+  /// Bitflag representing search simulation level
+  WeaveSimulationLevel simulation_level;
   /// Per-segment coherent results with appropriate index offsets (optional)
   coh_offset_results *coh_off_res;
   /// Number of per-segment coherent results added thus far
@@ -105,6 +105,8 @@ struct tagWeaveSemiPartials {
 /// Internal definition of final results of a semicoherent computation over many segments
 ///
 struct tagWeaveSemiResults {
+  /// Bitflag representing search simulation level
+  WeaveSimulationLevel simulation_level;
   /// Per-segment coherent results with appropriate index offsets (optional)
   const coh_offset_results *coh_off_res;
   /// Number of per-segment coherent results (optional)
@@ -136,7 +138,7 @@ static int semi_partials_add_REAL4( UINT4 *nsum, REAL4 *sum, const REAL4 *x, con
 /// Create coherent input data
 ///
 WeaveCohInput *XLALWeaveCohInputCreate(
-  const BOOLEAN shortcut_compute,
+  const WeaveSimulationLevel simulation_level,
   FstatInput *Fstat_input,
   const LALStringVector *per_detectors
   )
@@ -145,9 +147,10 @@ WeaveCohInput *XLALWeaveCohInputCreate(
   // Allocate memory
   WeaveCohInput *coh_input = XLALCalloc( 1, sizeof( *coh_input ) );
   XLAL_CHECK_NULL( coh_input != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL( ( simulation_level & WEAVE_SIMULATE_MIN_MEM ) || ( Fstat_input != NULL ), XLAL_EFAULT );
 
   // Set fields
-  coh_input->shortcut_compute = shortcut_compute;
+  coh_input->simulation_level = simulation_level;
   coh_input->Fstat_input = Fstat_input;
   coh_input->per_detectors = per_detectors;
 
@@ -221,6 +224,11 @@ int XLALWeaveCohResultsCompute(
   ( *coh_res )->coh_phys = *coh_phys;
   ( *coh_res )->nfreqs = coh_nfreqs;
 
+  // Return now if simulating search with minimal memory allocation
+  if ( coh_input->simulation_level & WEAVE_SIMULATE_MIN_MEM ) {
+    return XLAL_SUCCESS;
+  }
+
   // Reallocate vectors of multi- and per-detector F-statistics per frequency
   if ( ( *coh_res )->coh2F == NULL || ( *coh_res )->coh2F->length < ( *coh_res )->nfreqs ) {
     ( *coh_res )->coh2F = XLALResizeREAL4Vector( ( *coh_res )->coh2F, ( *coh_res )->nfreqs );
@@ -234,8 +242,8 @@ int XLALWeaveCohResultsCompute(
     }
   }
 
-  // Return now if computation shortcut is in place
-  if ( coh_input->shortcut_compute ) {
+  // Return now if simulating search
+  if ( coh_input->simulation_level & WEAVE_SIMULATE ) {
     return XLAL_SUCCESS;
   }
 
@@ -300,7 +308,7 @@ void XLALWeaveCohResultsDestroy(
 ///
 int XLALWeaveSemiPartialsInit(
   WeaveSemiPartials **semi_parts,
-  const BOOLEAN shortcut_compute,
+  const WeaveSimulationLevel simulation_level,
   const LALStringVector *per_detectors,
   const UINT4 per_nsegments,
   const PulsarDopplerParams *semi_phys,
@@ -326,7 +334,7 @@ int XLALWeaveSemiPartialsInit(
   }
 
   // Set fields
-  ( *semi_parts )->shortcut_compute = shortcut_compute;
+  ( *semi_parts )->simulation_level = simulation_level;
   ( *semi_parts )->semi_phys = *semi_phys;
   ( *semi_parts )->dfreq = dfreq;
   ( *semi_parts )->nfreqs = semi_nfreqs;
@@ -338,6 +346,11 @@ int XLALWeaveSemiPartialsInit(
   // Initialise number of additions to multi- and per-detector F-statistics
   ( *semi_parts )->nsum2F = 0;
   XLAL_INIT_MEM( ( *semi_parts )->nsum2F_det );
+
+  // Return now if simulating search with minimal memory allocation
+  if ( ( *semi_parts )->simulation_level & WEAVE_SIMULATE_MIN_MEM ) {
+    return XLAL_SUCCESS;
+  }
 
   // Reallocate vectors of summed multi- and per-detector F-statistics per frequency
   if ( ( *semi_parts )->sum2F == NULL || ( *semi_parts )->sum2F->length < ( *semi_parts )->nfreqs ) {
@@ -416,8 +429,8 @@ int XLALWeaveSemiPartialsAdd(
     ++semi_parts->ncoh_off_res;
   }
 
-  // Return now if computation shortcut is in place
-  if ( semi_parts->shortcut_compute ) {
+  // Return now if simulating search
+  if ( semi_parts->simulation_level & WEAVE_SIMULATE ) {
     return XLAL_SUCCESS;
   }
 
@@ -455,12 +468,18 @@ int XLALWeaveSemiResultsCompute(
   }
 
   // Set fields
+  ( *semi_res )->simulation_level = semi_parts->simulation_level;
   ( *semi_res )->coh_off_res = semi_parts->coh_off_res;
   ( *semi_res )->ncoh_off_res = semi_parts->ncoh_off_res;
   ( *semi_res )->semi_phys = semi_parts->semi_phys;
   ( *semi_res )->dfreq = semi_parts->dfreq;
   ( *semi_res )->nfreqs = semi_parts->nfreqs;
   ( *semi_res )->ndetectors = semi_parts->ndetectors;
+
+  // Return now if simulating search with minimal memory allocation
+  if ( ( *semi_res )->simulation_level & WEAVE_SIMULATE_MIN_MEM ) {
+    return XLAL_SUCCESS;
+  }
 
   // Reallocate vectors of mean multi- and per-detector F-statistics per frequency
   if ( ( *semi_res )->mean2F == NULL || ( *semi_res )->mean2F->length < semi_parts->nfreqs ) {
@@ -476,8 +495,8 @@ int XLALWeaveSemiResultsCompute(
     }
   }
 
-  // Return now if computation shortcut is in place
-  if ( semi_parts->shortcut_compute ) {
+  // Return now if simulating search
+  if ( ( *semi_res )->simulation_level & WEAVE_SIMULATE ) {
     return XLAL_SUCCESS;
   }
 
@@ -557,6 +576,11 @@ int XLALWeaveFillOutputResultItem(
   for ( size_t j = 0; j < semi_res->ncoh_off_res; ++j ) {
     const coh_offset_results *coh_off_res = &semi_res->coh_off_res[j];
     ( *item )->coh_fkdot[0][j] = coh_off_res->res->coh_phys.fkdot[0] + ( coh_off_res->offset + freq_idx ) * semi_res->dfreq;
+  }
+
+  // Return now if simulating search
+  if ( semi_res->simulation_level & WEAVE_SIMULATE ) {
+    return XLAL_SUCCESS;
   }
 
   // Update multi-detector F-statistics

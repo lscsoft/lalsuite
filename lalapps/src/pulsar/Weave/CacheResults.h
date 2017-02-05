@@ -99,8 +99,8 @@ int XLALWeaveCacheRetrieve(
   const UINT4 query_index,
   const WeaveCohResults **coh_res,
   UINT4 *coh_offset,
-  UINT8 *tot_coh_nfblk,
-  UINT8 *tot_coh_ncomp,
+  UINT8 *coh_nfbk,
+  UINT8 *coh_nres,
   WeaveOutputMiscPerSegInfo *per_seg_info
   );
 

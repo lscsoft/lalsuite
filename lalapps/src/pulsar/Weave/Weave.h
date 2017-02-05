@@ -66,6 +66,16 @@ extern "C" {
 #endif
 
 ///
+/// Bitflags representing search simulation levels
+///
+typedef enum {
+  /// Simulate search (implicitly with full memory allocation)
+  WEAVE_SIMULATE                        = 0001,
+  /// Simulate search with minimal memory allocation
+  WEAVE_SIMULATE_MIN_MEM                = 0002,
+} WeaveSimulationLevel;
+
+///
 /// Function which transforms a point from physical coordinates to lattice tiling coordinates
 ///
 typedef int ( *WeavePhysicalToLattice )( gsl_vector *out_latt, const PulsarDopplerParams *in_phys, const void *transf_data );

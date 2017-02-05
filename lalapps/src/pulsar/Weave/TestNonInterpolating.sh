@@ -41,16 +41,6 @@ ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
 set +x
 echo
 
-echo "=== Check approximate/computed number of semicoherent templates ==="
-set -x
-${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'SEMIAPPX' > tmp
-semi_ntmpl=`cat tmp | xargs printf "%d"`
-${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'SEMICOMP' > tmp
-semi_ncomp=`cat tmp | xargs printf "%d"`
-expr ${semi_ncomp} '=' ${semi_ntmpl}
-set +x
-echo
-
 echo "=== Check average number of semicoherent templates per dimension ==="
 set -x
 for dim in SSKYA SSKYB NU0DOT NU1DOT; do
@@ -65,9 +55,11 @@ echo "=== Check computed number of coherent results ==="
 set -x
 ${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NSEGMENT' > tmp
 nsegments=`cat tmp | xargs printf "%d"`
-${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'TCOHCOMP' > tmp
-tot_coh_ncomp=`cat tmp | xargs printf "%d"`
-expr ${tot_coh_ncomp} '=' ${semi_ntmpl} '*' ${nsegments}
+${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NCOHRES' > tmp
+coh_nres=`cat tmp | xargs printf "%d"`
+${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NSEMIRES' > tmp
+semi_nres=`cat tmp | xargs printf "%d"`
+expr ${coh_nres} '=' ${semi_nres} '*' ${nsegments}
 set +x
 echo
 

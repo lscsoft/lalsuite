@@ -38,8 +38,6 @@ const UserChoices WeaveToplistTypeChoices = {
 struct tagWeaveOutputResults {
   /// Various varameters required to output results
   WeaveOutputParams par;
-  /// Number of computed semicoherent results
-  INT8 semi_ncomp;
   /// Names of selected output toplist types
   char *toplist_type_names;
   /// Number of output results toplists
@@ -214,9 +212,6 @@ int XLALWeaveOutputResultsAdd(
   XLAL_CHECK( out != NULL, XLAL_EFAULT );
   XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
 
-  // Increment number of computed semicoherent results
-  out->semi_ncomp += semi_nfreqs;
-
   // Add results to toplists
   for ( size_t i = 0; i < out->ntoplists; ++i ) {
     XLAL_CHECK( XLALWeaveResultsToplistAdd( out->toplists[i], semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -255,9 +250,6 @@ int XLALWeaveOutputResultsWrite(
 
   // Write names of selected output toplist types
   XLAL_CHECK( XLALFITSHeaderWriteString( file, "toplists", out->toplist_type_names, "names of selected toplist types" ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // Write number of computed semicoherent results
-  XLAL_CHECK( XLALFITSHeaderWriteUINT8( file, "semicomp", out->semi_ncomp, "number of computed semicoherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Write toplists
   for ( size_t i = 0; i < out->ntoplists; ++i ) {
@@ -342,13 +334,6 @@ int XLALWeaveOutputResultsReadAppend(
 
   }
 
-  // Read and increment number of computed semicoherent results
-  {
-    UINT8 semi_ncomp = 0;
-    XLAL_CHECK( XLALFITSHeaderReadUINT8( file, "semicomp", &semi_ncomp ) == XLAL_SUCCESS, XLAL_EFUNC );
-    ( *out )->semi_ncomp += semi_ncomp;
-  }
-
   // Read and append to toplists
   for ( size_t i = 0; i < ( *out )->ntoplists; ++i ) {
     XLAL_CHECK( XLALWeaveResultsToplistReadAppend( file, ( *out )->toplists[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -428,13 +413,6 @@ int XLALWeaveOutputResultsCompare(
   if ( out_1->par.per_nsegments != out_2->par.per_nsegments ) {
     *equal = 0;
     XLALPrintInfo( "%s: unequal number of segments: %u != %u\n", __func__, out_1->par.per_nsegments, out_2->par.per_nsegments );
-    return XLAL_SUCCESS;
-  }
-
-  // Compare number of computed semicoherent results
-  if ( out_1->semi_ncomp != out_2->semi_ncomp ) {
-    *equal = 0;
-    XLALPrintInfo( "%s: unequal number of computed semicoherent results: %" LAL_INT8_FORMAT " != %" LAL_INT8_FORMAT "\n", __func__, out_1->semi_ncomp, out_2->semi_ncomp );
     return XLAL_SUCCESS;
   }
 

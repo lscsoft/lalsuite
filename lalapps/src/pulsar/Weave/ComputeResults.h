@@ -59,7 +59,7 @@ typedef struct tagWeaveSemiPartials WeaveSemiPartials;
 typedef struct tagWeaveSemiResults WeaveSemiResults;
 
 WeaveCohInput *XLALWeaveCohInputCreate(
-  const BOOLEAN shortcut_compute,
+  const WeaveSimulationLevel simulation_level,
   FstatInput *Fstat_input,
   const LALStringVector *per_detectors
   );
@@ -77,7 +77,7 @@ void XLALWeaveCohResultsDestroy(
   );
 int XLALWeaveSemiPartialsInit(
   WeaveSemiPartials **semi_parts,
-  const BOOLEAN shortcut_compute,
+  const WeaveSimulationLevel simulation_level,
   const LALStringVector *per_detectors,
   const UINT4 per_nsegments,
   const PulsarDopplerParams *semi_phys,
