@@ -535,7 +535,8 @@ int XLALSimInspiralChooseTDWaveform(
         /* spinning inspiral-only models */
         case SpinTaylorT2:
             /* Waveform-specific sanity checks */
-            /* Sanity check unused fields of waveFlags */
+	    if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) && (XLALSimInspiralWaveformParamsLookupPNSpinOrder(LALparams)>5) )
+	      ABORT_NONZERO_TRANSVERSE_SPINS_HIGH_SPINO(LALparams);
 	    XLALSimInspiralInitialConditionsPrecessingApproxs(&incl,&spin1x,&spin1y,&spin1z,&spin2x,&spin2y,&spin2z,inclination,S1x,S1y,S1z,S2x,S2y,S2z,m1,m2,f_ref,phiRef,XLALSimInspiralWaveformParamsLookupFrameAxis(LALparams));
             LNhatx = sin(incl);
             LNhaty = 0.;
@@ -565,7 +566,8 @@ int XLALSimInspiralChooseTDWaveform(
         // initial ** L **.
         case SpinTaylorT4:
             /* Waveform-specific sanity checks */
-            /* Sanity check unused fields of waveFlags */
+	    if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) && (XLALSimInspiralWaveformParamsLookupPNSpinOrder(LALparams)>5) )
+	      ABORT_NONZERO_TRANSVERSE_SPINS_HIGH_SPINO(LALparams);
             XLALSimInspiralInitialConditionsPrecessingApproxs(&incl,&spin1x,&spin1y,&spin1z,&spin2x,&spin2y,&spin2z,inclination,S1x,S1y,S1z,S2x,S2y,S2z,m1,m2,f_ref,phiRef,XLALSimInspiralWaveformParamsLookupFrameAxis(LALparams));
             LNhatx = sin(incl);
             LNhaty = 0.;
@@ -588,7 +590,9 @@ int XLALSimInspiralChooseTDWaveform(
 
 	 case SpinTaylorT1:
             /* Waveform-specific sanity checks */
-            /* Sanity check unused fields of waveFlags */
+            /* Waveform-specific sanity checks */
+	    if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) && (XLALSimInspiralWaveformParamsLookupPNSpinOrder(LALparams)>5) )
+	      ABORT_NONZERO_TRANSVERSE_SPINS_HIGH_SPINO(LALparams);
 	    XLALSimInspiralInitialConditionsPrecessingApproxs(&incl,&spin1x,&spin1y,&spin1z,&spin2x,&spin2y,&spin2z,inclination,S1x,S1y,S1z,S2x,S2y,S2z,m1,m2,f_ref,phiRef,XLALSimInspiralWaveformParamsLookupFrameAxis(LALparams));
             LNhatx = sin(incl);
             LNhaty = 0.;

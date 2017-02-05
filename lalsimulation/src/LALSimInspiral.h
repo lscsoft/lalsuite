@@ -642,37 +642,31 @@ typedef struct tagXLALSimInspiralSpinTaylorTxCoeffs
   REAL8 wdotcoeff[LAL_MAX_PN_ORDER]; ///< coeffs. of PN corrections to wdot
   REAL8 wdotlogcoeff; ///< coefficient of log term in wdot
   REAL8 wdot3S1O, wdot3S2O; ///< non-dynamical 1.5PN SO corrections
-  REAL8 wdot4S1S2, wdot4S1OS2O; ///< non-dynamical 2PN SS corrections
-  REAL8 wdot4S1S1,wdot4S2S2; ///< non-dynamical self S^2 2PN correction
-  REAL8 wdot4S1OS1O, wdot4S2OS2O; ///< non-dynamical self SO^2 2PN correction
-  REAL8 wdot4QMS1S1; ///< non-dynamical S1^2 2PN quadrupole-monopole correct
-  REAL8 wdot4QMS1OS1O; ///< non-dynamical (S1.L)^2 2PN quadrupole-monopole co
-  REAL8 wdot4QMS2S2; ///< non-dynamical S2^2 2PN quadrupole-monopole correct
-  REAL8 wdot4QMS2OS2O; ///< non-dynamical (S2.L)^2 2PN quadrupole-monopole c
+  REAL8 wdot4S1S2Avg, wdot4S1OS2OAvg; ///< non-dynamical, averaged 2PN SS corrections
+  REAL8 wdot4S1S1Avg, wdot4S1OS1OAvg, wdot4S2S2Avg, wdot4S2OS2OAvg; ///< non-dynamical, averaged self S^2 2PN correction
+  REAL8 wdot4QMS1S1Avg, wdot4QMS1OS1OAvg; ///< non-dynamical, averaged (S_1)^2 2PN quadrupole-monopole corrections
+  REAL8 wdot4QMS2S2Avg, wdot4QMS2OS2OAvg; ///< non-dynamical,averaged (S_2)^2 2PN quadrupole-monopole corrections
   REAL8 wdot5S1O, wdot5S2O; ///< non-dynamical 2.5PN SO corrections
-  REAL8 wdot6S1O, wdot6S2O; ///< non-dynamical 3PN SO corrections
-  REAL8 wdot6S1S2, wdot6S1OS2O; ///< non-dynamical 3PN S1-S2 corrections
-  REAL8 wdot6S1S1, wdot6S1OS1O; ///< non-dynamical 3PN Spin^2 corrections
-  REAL8 wdot6S2S2, wdot6S2OS2O; ///< non-dynamical 3PN Spin^2 corrections
-  REAL8 wdot6QMS1S1, wdot6QMS1OS1O; ///< non-dynamical 3PN quadrupole-monopole S1^2 corrections
-  REAL8 wdot6QMS2S2, wdot6QMS2OS2O; ///< non-dynamical 3PN quadrupole-monopole S2^2 corrections
+  REAL8 wdot6S1O, wdot6S2O; ///< non-dynamical, 3PN SO corrections
+  REAL8 wdot6S1S2, wdot6S1OS2O, wdot6S1nS2n; ///< non-dynamical 3PN S1-S2 corrections
+  REAL8 wdot6S1S1, wdot6S1OS1O, wdot6S1nS1n; ///< non-dynamical 3PN Spin^2 corrections
+  REAL8 wdot6S2S2, wdot6S2OS2O, wdot6S2nS2n; ///< non-dynamical 3PN Spin^2 corrections
+  REAL8 wdot6QMS1S1, wdot6QMS1OS1O, wdot6QMS1nS1n; ///< non-dynamical 3PN quadrupole-monopole (S_1)^2 corrections
+  REAL8 wdot6QMS2S2, wdot6QMS2OS2O, wdot6QMS2nS2n; ///< non-dynamical 3PN quadrupole-monopole (S_2)^2 corrections
   REAL8 wdot7S1O, wdot7S2O; ///< non-dynamical 3.5PN SO corrections
   REAL8 wdottidal10;	///< leading order tidal correction
   REAL8 wdottidal12;	///< next to leading order tidal correction
   REAL8 Ecoeff[LAL_MAX_PN_ORDER]; ///< coeffs. of PN corrections to energy
   REAL8 E3S1O, E3S2O; ///< non-dynamical 1.5PN SO corrections
-  REAL8 E4S1S2,E4S1OS2O; ///< non-dynamical 2PN SS correction
-  REAL8 E4QMS1S1; ///< non-dynamical S1^2 2PN quadrupole-monopole correction
-  REAL8 E4QMS1OS1O;///< non-dynamical (S1.L)^2 2PN quadrupole-monopole correction
-  REAL8 E4QMS2S2; ///< non-dynamical S2^2 2PN quadrupole-monopole correction
-  REAL8 E4QMS2OS2O;///< non-dynamical (S2.L)^2 2PN quadrupole-monopole correction
+  REAL8 E4S1S2Avg,E4S1OS2OAvg; ///< non-dynamical, averaged 2PN SS correction
+  REAL8 E4QMS1S1Avg, E4QMS1OS1OAvg;///< non-dynamical, averaged (S_1)^2 2PN quadrupole-monopole correction
+  REAL8 E4QMS2S2Avg, E4QMS2OS2OAvg;///< non-dynamical, averaged (S_2)^2 2PN quadrupole-monopole correction
   REAL8 E5S1O, E5S2O; ///< non-dynamical 2.5PN SO corrections
-  REAL8 E6S1S2;  ///< non-dynamical 3PN S1-S2 correction
-  REAL8 E6S1OS2O; ///< non-dynamical 3PN S1.LN S2.LN correction
-  REAL8 E6S1S1, E6S1OS1O; ///< non-dynamical 3PN slef-spin^2 corrections
-  REAL8 E6S2S2, E6S2OS2O; ///< non-dynamical 3PN self-spin^2 corrections
-  REAL8 E6QMS1S1, E6QMS1OS1O; ///< non-dynamical 3PN quadrupole-monopole spin^2 corrections
-  REAL8 E6QMS2S2, E6QMS2OS2O; ///< non-dynamical 3PN quadrupole-monopole spin^2 corrections
+  REAL8 E6S1S2, E6S1OS2O, E6S1nS2n; ///< non-dynamical 3PN S_1.S_2 correction
+  REAL8 E6S1S1, E6S1OS1O, E6S1nS1n; ///< non-dynamical 3PN self-spin^2 corrections
+  REAL8 E6S2S2, E6S2OS2O, E6S2nS2n; ///< non-dynamical 3PN self-spin^2 corrections
+  REAL8 E6QMS1S1, E6QMS1OS1O, E6QMS1nS1n; ///< non-dynamical 3PN quadrupole-monopole spin^2 corrections
+  REAL8 E6QMS2S2, E6QMS2OS2O, E6QMS2nS2n; ///< non-dynamical 3PN quadrupole-monopole spin^2 corrections
   REAL8 E7S1O, E7S2O; ///< non-dynamical 3.5PN SO corrections
   REAL8 Etidal10; ///< leading order 5PN tidal correction to energy
   REAL8 Etidal12; ///< next to leading order 6PN tidal correction to energy
@@ -682,51 +676,34 @@ typedef struct tagXLALSimInspiralSpinTaylorTxCoeffs
   REAL8 Flogcoeff; ///<log coeff in flux
   REAL8 F3S1O;  ///< Coefficient of S1.LN term
   REAL8 F3S2O;  ///< Coefficient of S2.LN term
-  REAL8 F4S1S2; ///< Coefficient of S1.S2 term
-  REAL8 F4S1OS2O;///< Coefficient of S1.LN S2.LN term
-  REAL8 F4S1S1;  ///< Coefficient of S1.S1 term
-  REAL8 F4S1OS1O;///< Coefficient of (S1.LN)^2 term
-  REAL8 F4S2S2;  ///< Coefficient of S1.S2 term
-  REAL8 F4S2OS2O; ///< Coefficient of (S2.LN)^2 term
-  REAL8 F4QMS1S1; ///< Coefficient of S1.S1 term
-  REAL8 F4QMS2S2; ///< Coefficient of S2.S2 term
-  REAL8 F4QMS1OS1O; ///< Coefficient of quad-monop. (S1.LN)^2 term
-  REAL8 F4QMS2OS2O; ///< Coefficient of quad-monop. (S2.LN)^2 term
+  REAL8 F4S1S2Avg, F4S1OS2OAvg;///< Averaged coefficients of S1.S2 terms
+  REAL8 F4S1S1Avg, F4S1OS1OAvg;///< Coefficient of averaged (S_1)^2 term
+  REAL8 F4S2S2Avg, F4S2OS2OAvg;///< Coefficient of averaged (S_2)^2 term
+  REAL8 F4QMS1S1Avg, F4QMS1OS1OAvg; ///< Averaged coefficient of quad-monop. (S_1)^2 terms
+  REAL8 F4QMS2S2Avg, F4QMS2OS2OAvg; ///< Averaged coefficient of quad-monop. (S_2)^2 terms
   REAL8 F5S1O;  ///< Coefficient of (S1.LN)
   REAL8 F5S2O;  ///< Coefficient of (S1.LN) term
   REAL8 F6S1O, F6S2O; ///< Coefficient of (Si.LN) term
-  REAL8 F6S1S2, F6S1OS2O; ///< Coefficients of S1.S2 and S1.LN S2.LN terms
-  REAL8 F6S1S1, F6S1OS1O; ///< Coefficients of S1.S1 and (S1.LN)^2 terms
-  REAL8 F6S2S2, F6S2OS2O; ///< Coefficients of S2.S2 and (S2.LN)^2 terms
-  REAL8 F6QMS1S1, F6QMS2S2; ///< Coefficients of quad-monop. S1.S1 and S2.S2 terms
-  REAL8 F6QMS1OS1O, F6QMS2OS2O; ///< Coefficients of quad-monop. (S1.LN)^2 and (S2.LN)^2 terms
+  REAL8 F6S1S2, F6S1OS2O, F6S1nS2n; ///< Coefficients of S1.S2 terms
+  REAL8 F6S1S1, F6S1OS1O, F6S1nS1n; ///< Coefficients of S1.S1 terms
+  REAL8 F6S2S2, F6S2OS2O, F6S2nS2n; ///< Coefficients of S2.S2 terms
+  REAL8 F6QMS1S1, F6QMS1OS1O, F6QMS1nS2n; ///< Coefficients of quad-monop. S1.S1 terms
+  REAL8 F6QMS2S2, F6QMS2OS2O, F6QMS2nS2n; ///< Coefficients of quad-monop. S2.S22 terms
   REAL8 F7S1O; ///< Coefficients of S1.LN term
   REAL8 F7S2O; ///< Coefficients of S2.LN term
   REAL8 Ftidal10;     ///< leading order 5PN tidal correction
   REAL8 Ftidal12;     ///< next-to-leading order 6PN tidal correction
   REAL8 Ldot3S1O, Ldot3S2O; ///< non-dynamical 1.5PN SO corrections
-  REAL8 Ldot4S1S2; ///< non-dynamical 2PN coefficients of S1.LN S2xL and S2.LN S1xL
-  REAL8 Ldot4QMS1; ///< non-dynamical quad-monop. 2PN coeff of S1.LN S1xL
-  REAL8 Ldot4QMS2; ///< non-dynamical quad-monop. 2PN coeff of S2.LN S2xL
   REAL8 Ldot5S1O, Ldot5S2O; ///< non-dynamical 2.5PN SO corrections
-  REAL8 Ldot6S1OS2, Ldot6S2OS1; ///< non-dynamical 3PN S1S2 corrections
-  REAL8 Ldot6S1OS1, Ldot6S2OS2; ///< non-dynamical 3PN S^2 corrections
-  REAL8 Ldot6QMS1O, Ldot6QMS2O; ///< non-dynamical 3PN quadrupole-monopole S^2 corrections
   REAL8 Ldot7S1, Ldot7S2; ///< non-dynamical 3.5PN SxL terms in Ldot
   REAL8 S1dot3; ///< coeff of LNxS1 term in S1dot
   REAL8 S2dot3; ///< coeff of LNxS2 term in S2dot
-  REAL8 Sdot4S2;  ///< coeff of S2xS1 term in S1dot and of S1xS2 in S2dot
-  REAL8 Sdot4S2O; ///< coeff of LN.S2 LNxS1 term in S1dot and of LN.S1 LNxS2 in S2dot
-  REAL8 S1dot4QMS1O; ///< coeff of quad-monop. LN.S1 LNxS1 term in S1dot
-  REAL8 S2dot4QMS2O; ///< coeff of quad-monop. LN.S2 LNxS2 term in S1dot
+  REAL8 Sdot4S2Avg;  ///< coeff of S2xS1 term in S1dot and of S1xS2 in S2dot
+  REAL8 Sdot4S2OAvg; ///< coeff of LN.S2 LNxS1 term in S1dot and of LN.S1 LNxS2 in S2dot
+  REAL8 S1dot4QMS1OAvg; ///< coeff of quad-monop. LN.S1 LNxS1 averaged term in S1dot
+  REAL8 S2dot4QMS2OAvg; ///< coeff of quad-monop. LN.S2 LNxS2 averaged term in S1dot
   REAL8 S1dot5S2; ///< coeff of LNxS1 term in S1dot
   REAL8 S2dot5S1; ///< coeff of LNxS2 term in S2dot
-  REAL8 S1dot6S1O, S1dot6S2O;  ///< coeff of LN.Si LNxS1 term in S1dot
-  REAL8 S1dot6S2; ///< coeff of S2xS1 term in S1dot
-  REAL8 S1dot6QMS1O; ///< coeff of quad-monop. S1.LN LNxS1 term in S1dot
-  REAL8 S2dot6S1O, S2dot6S2O; ///< coeff of LN.Si LNxS2 term in S2dot
-  REAL8 S2dot6S1;    // Coefficient of S1 x S2 in S2dot
-  REAL8 S2dot6QMS2O; //Coeff. of quad-monop. S2.LN LN X S2 term in S2dot
   REAL8 S1dot7S2;// Coefficient of S1 x S2 in S1dot
   REAL8 S2dot7S1;// Coefficient of S1 x S2 in S2dot
   REAL8 fStart; ///< starting GW frequency of integration
@@ -736,6 +713,7 @@ typedef struct tagXLALSimInspiralSpinTaylorTxCoeffs
   LALSimInspiralTidalOrder tideO;///< Twice PN order of included tidal effects
   REAL8 prev_domega; ///< Previous value of domega/dt used in stopping test
 } XLALSimInspiralSpinTaylorTxCoeffs;
+
 int XLALSimInspiralSpinTaylorPNEvolveOrbit(REAL8TimeSeries **V, REAL8TimeSeries **Phi, REAL8TimeSeries **S1x, REAL8TimeSeries **S1y, REAL8TimeSeries **S1z, REAL8TimeSeries **S2x, REAL8TimeSeries **S2y, REAL8TimeSeries **S2z, REAL8TimeSeries **LNhatx, REAL8TimeSeries **LNhaty, REAL8TimeSeries **LNhatz, REAL8TimeSeries **E1x, REAL8TimeSeries **E1y, REAL8TimeSeries **E1z, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fEnd, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, INT4 phaseO, Approximant approx);
 int XLALSimInspiralSpinTaylorT1(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 v0, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALDict *LALparams, int phaseO, int amplitudeO);
 int XLALSimInspiralSpinTaylorT2(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 v0, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALDict *LALparams, int phaseO, int amplitudeO);
@@ -747,7 +725,7 @@ int XLALSimInspiralSpinTaylorT4Fourier(COMPLEX16FrequencySeries **hplus, COMPLEX
 int XLALSimInspiralSpinTaylorF2(COMPLEX16FrequencySeries **hplus_out, COMPLEX16FrequencySeries **hcross_out, REAL8 phi_ref, REAL8 deltaF, REAL8 m1_SI, REAL8 m2_SI, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, const REAL8 fStart, const REAL8 fEnd, const REAL8 f_ref, const REAL8 r, LALDict *moreParams, INT4 phaseO, INT4 amplitudeO);
 int XLALSimInspiralPrecessingPTFQWaveforms(REAL8TimeSeries **Q1, REAL8TimeSeries **Q2, REAL8TimeSeries **Q3, REAL8TimeSeries **Q4, REAL8TimeSeries **Q5, REAL8TimeSeries *V, REAL8TimeSeries *Phi, REAL8TimeSeries *S1x, REAL8TimeSeries *S1y, REAL8TimeSeries *S1z, REAL8TimeSeries *S2x, REAL8TimeSeries *S2y, REAL8TimeSeries *S2z, REAL8TimeSeries *LNhatx, REAL8TimeSeries *LNhaty, REAL8TimeSeries *LNhatz, REAL8TimeSeries *E1x, REAL8TimeSeries *E1y, REAL8TimeSeries *E1z, REAL8 m1, REAL8 m2, REAL8 r);
 int XLALSimInspiralInitialConditionsPrecessingApproxs(REAL8 *inc, REAL8 *S1x, REAL8 *S1y, REAL8 *S1z, REAL8 *S2x, REAL8 *S2y, REAL8 *S2z, const REAL8 inclIn, const REAL8 S1xIn, const REAL8 S1yIn, const REAL8 S1zIn, const REAL8 S2xIn, const REAL8 S2yIn, const REAL8 S2zIn, const REAL8 m1, const REAL8 m2, const REAL8 fRef, const REAL8 phiRef, LALSimInspiralFrameAxis axisChoice);
-INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx, REAL8 *dLNhy, REAL8 *dLNhz, REAL8 *dE1x, REAL8 *dE1y, REAL8 *dE1z, REAL8 *dS1x, REAL8 *dS1y, REAL8 *dS1z, REAL8 *dS2x, REAL8 *dS2y, REAL8 *dS2z, REAL8 *dphiExtra, const REAL8 v, const REAL8 LNhx, const REAL8 LNhy, const REAL8 LNhz, const REAL8 E1x, const REAL8 E1y, const REAL8 E1z, const REAL8 S1x, const REAL8 S1y, const REAL8 S1z, const REAL8 S2x, const REAL8 S2y, const REAL8 S2z, const REAL8 LNhdotS1, const REAL8 LNhdotS2, XLALSimInspiralSpinTaylorTxCoeffs *params);
+INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx, REAL8 *dLNhy, REAL8 *dLNhz, REAL8 *dE1x, REAL8 *dE1y, REAL8 *dE1z, REAL8 *dS1x, REAL8 *dS1y, REAL8 *dS1z, REAL8 *dS2x, REAL8 *dS2y, REAL8 *dS2z, const REAL8 v, const REAL8 LNhx, const REAL8 LNhy, const REAL8 LNhz, const REAL8 E1x, const REAL8 E1y, const REAL8 E1z, const REAL8 S1x, const REAL8 S1y, const REAL8 S1z, const REAL8 S2x, const REAL8 S2y, const REAL8 S2z, const REAL8 LNhdotS1, const REAL8 LNhdotS2, XLALSimInspiralSpinTaylorTxCoeffs *params);
 INT4 XLALSimInspiralSpinTaylorT4Derivatives(REAL8 t, const REAL8 values[], REAL8 dvalues[], void *mparams);
 INT4 XLALSimInspiralSpinTaylorT4Setup(XLALSimInspiralSpinTaylorTxCoeffs *params, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fEnd, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, INT4 phaseO);
 INT4 XLALSimSpinTaylorEnergySpinDerivativeSetup(XLALSimInspiralSpinTaylorTxCoeffs *params, const REAL8 lambda1, const REAL8 lambda2, const REAL8 quadparam1, const REAL8 quadparam2);
