@@ -589,7 +589,7 @@ FROM
 					# 1/amplitude needs to be first so
 					# that it acts as the sort key
 					record = (1.0 / sim.amplitude, sim, offsetvectors[sim.time_slide_id], contents.filename, likelihood_ratio)
-					if len(self.quietest_found) < self.n_diagnostics):
+					if len(self.quietest_found) < self.n_diagnostics:
 						heapq.heappush(self.quietest_found, record)
 					else:
 						heapq.heappushpop(self.quietest_found, record)
