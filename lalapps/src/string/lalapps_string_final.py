@@ -643,7 +643,7 @@ FROM
 		# regularize:  adjust unused bins so that the efficiency is
 		# 0, not NaN
 		assert (efficiency_num <= efficiency_den).all()
-		efficiency_den[efficiency_num == 0 && efficiency_den == 0] = 1
+		efficiency_den[efficiency_num == 0 & efficiency_den == 0] = 1
 
 		line1, A50, A50_err = render_data_from_bins(file("string_efficiency.dat", "w"), axes, efficiency_num, efficiency_den, self.cal_uncertainty, self.filter_width, colour = "k", linestyle = "-", erroralpha = 0.2)
 		print >>sys.stderr, "Pipeline's 50%% efficiency point for all detections = %g +/- %g%%\n" % (A50, A50_err * 100)
