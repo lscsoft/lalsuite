@@ -37,6 +37,11 @@ extern "C" {
 #endif
 
 ///
+/// \name Routines which handle the output results
+///
+/// @{
+
+///
 /// Bitflags representing possible output toplist types
 ///
 typedef enum {
@@ -69,11 +74,6 @@ typedef struct tagWeaveOutputParams {
   /// Number of per-segment items being output (may be zero)
   UINT4 per_nsegments;
 } WeaveOutputParams;
-
-///
-/// \name Routines which handle the output results
-///
-/// @{
 
 WeaveOutputResultItem *XLALWeaveOutputResultItemCreate(
   const WeaveOutputParams *par

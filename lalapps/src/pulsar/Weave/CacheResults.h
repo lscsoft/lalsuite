@@ -35,6 +35,11 @@ extern "C" {
 #endif
 
 ///
+/// \name Routines which cache computed coherent results
+///
+/// @{
+
+///
 /// Cache used to store coherent results
 ///
 typedef struct tagWeaveCache WeaveCache;
@@ -43,11 +48,6 @@ typedef struct tagWeaveCache WeaveCache;
 /// Storage for a series of cache queries
 ///
 typedef struct tagWeaveCacheQueries WeaveCacheQueries;
-
-///
-/// \name Routines which cache computed coherent results
-///
-/// @{
 
 WeaveCache *XLALWeaveCacheCreate(
   const LatticeTiling *coh_tiling,

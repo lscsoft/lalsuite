@@ -36,6 +36,11 @@ extern "C" {
 #endif
 
 ///
+/// \name Routines which handle the setup data
+///
+/// @{
+
+///
 /// Setup data which is computed only once for a given search setup
 ///
 typedef struct {
@@ -54,11 +59,6 @@ typedef struct {
   /// Ephemeris data over time-span of segments
   EphemerisData *ephemerides;
 } WeaveSetupData;
-
-///
-/// \name Routines which handle the setup data
-///
-/// @{
 
 void XLALWeaveSetupDataClear(
   WeaveSetupData *setup

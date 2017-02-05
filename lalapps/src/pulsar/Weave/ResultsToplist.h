@@ -38,14 +38,14 @@ extern "C" {
 #endif
 
 ///
-/// Toplist of output results
-///
-typedef struct tagWeaveResultsToplist WeaveResultsToplist;
-
-///
 /// \name Routines which handle toplists of results
 ///
 /// @{
+
+///
+/// Toplist of output results
+///
+typedef struct tagWeaveResultsToplist WeaveResultsToplist;
 
 WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   const WeaveOutputParams *par,

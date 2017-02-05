@@ -34,6 +34,11 @@ extern "C" {
 #endif
 
 ///
+/// \name Routines which compute coherent and semicoherent results
+///
+/// @{
+
+///
 /// Input data required for computing coherent results
 ///
 typedef struct tagWeaveCohInput WeaveCohInput;
@@ -52,11 +57,6 @@ typedef struct tagWeaveSemiPartials WeaveSemiPartials;
 /// Final results of a semicoherent computation over many segments
 ///
 typedef struct tagWeaveSemiResults WeaveSemiResults;
-
-///
-/// \name Routines which compute coherent and semicoherent results
-///
-/// @{
 
 WeaveCohInput *XLALWeaveCohInputCreate(
   const BOOLEAN shortcut_compute,
