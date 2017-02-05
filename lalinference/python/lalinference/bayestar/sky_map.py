@@ -203,18 +203,19 @@ def ligolw_sky_map(
     else:
         snr_series = None
 
+    # Maximum barycentered arrival time error:
+    # |distance from array barycenter to furthest detector| / c + 5 ms.
+    # For LHO+LLO, this is 15.0 ms.
+    # For an arbitrary terrestrial detector network, the maximum is 26.3 ms.
+    max_abs_t = np.max(
+        np.sqrt(np.sum(np.square(locations / lal.C_SI), axis=1))) + 0.005
+
     if snr_series is None:
         log.warn("No SNR time series found, so we are creating a zero-noise "
                  "SNR time series from the whitened template's autocorrelation "
                  "sequence. The sky localization uncertainty may be "
                  "underestimated.")
 
-        # Maximum barycentered arrival time error:
-        # |distance from array barycenter to furthest detector| / c + 5 ms.
-        # For LHO+LLO, this is 15.0 ms.
-        # For an arbitrary terrestrial detector network, the maximum is 26.3 ms.
-        max_abs_t = np.max(
-            np.sqrt(np.sum(np.square(locations / lal.C_SI), axis=1))) + 0.005
 
         acors, sample_rates = zip(
             *[filter.autocorrelation(_, max_abs_t) for _ in HS])
@@ -249,6 +250,19 @@ def ligolw_sky_map(
     sample_rate = 1 / deltaT
     if any(deltaT != series.deltaT for series in snr_series):
         raise ValueError('BAYESTAR does not yet support SNR time series with mixed sample rates')
+
+    # Ensure that all of the SNR time series have odd lengths.
+    if any(len(series.data.data) % 2 == 0 for series in snr_series):
+        raise ValueError('SNR time series must have odd lengths')
+
+    # Trim time series to the desired length.
+    max_abs_n = int(np.ceil(max_abs_t * sample_rate))
+    desired_length = 2 * max_abs_n - 1
+    for i, series in enumerate(snr_series):
+        length = len(series.data.data)
+        if length > desired_length:
+            snr_series[i] = lal.CutCOMPLEX8TimeSeries(
+                series, length // 2 + 1 - max_abs_n, desired_length)
 
     # FIXME: for now, the Python wrapper expects all of the SNR time sries to
     # also be the same length.
