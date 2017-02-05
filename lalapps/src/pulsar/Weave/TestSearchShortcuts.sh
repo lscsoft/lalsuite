@@ -54,8 +54,8 @@ for setup in short mid long; do
     set -x
     for dim in SSKYA SSKYB NU0DOT NU1DOT; do
         ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoShort.fits[0]" "SEMIAVG ${dim}" > tmp
-        semi_avg_ntmpl_dim=`cat tmp | xargs printf "%d"`
-        expr ${semi_avg_ntmpl_dim} '>' 1
+        semi_avg_dim=`cat tmp | xargs printf "%d"`
+        expr ${semi_avg_dim} '>' 1
     done
     set +x
     echo
