@@ -6,7 +6,7 @@ Build-Depends: bc,
   debhelper (>= 9),
   dh-python,
   less,
-  libfftw3-dev, swig (>= 3.0.7),
+  libfftw3-dev,
   libgsl-dev | libgsl0-dev (>= 1.9),
   libhdf5-dev,
   liboctave-dev,
@@ -19,6 +19,7 @@ Build-Depends: bc,
   python3-glue (>= @MIN_GLUE_VERSION@),
   python3-numpy,
   python3-six,
+  swig (>= 3.0.7),
   zlib1g-dev
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.4
@@ -55,9 +56,9 @@ Architecture: any
 Depends: ${misc:Depends},
   ${python:Depends},
   ${shlibs:Depends},
-  lal (= ${binary:Version}),
   python-glue (>= @MIN_GLUE_VERSION@),
-  python-six
+  python-six,
+  lal (= ${binary:Version})
 Description: Python bindings for LAL
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains Python bindings for the LAL library.
@@ -68,9 +69,9 @@ Architecture: any
 Depends: ${misc:Depends},
   ${python3:Depends},
   ${shlibs:Depends},
-  lal (= ${binary:Version}),
   python3-glue (>= @MIN_GLUE_VERSION@),
-  python3-six
+  python3-six,
+  lal (= ${binary:Version})
 Description: Python 3 bindings for LAL
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains Python 3 bindings for the LAL library.
@@ -79,8 +80,8 @@ Package: lal-octave
 Architecture: any
 Depends: ${misc:Depends},
   ${shlibs:Depends},
-  lal (= ${binary:Version}),
-  octave
+  octave,
+  lal (= ${binary:Version})
 Description: Octave bindings for LAL
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains Octave bindings for the LAL library.
