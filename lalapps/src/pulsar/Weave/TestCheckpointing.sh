@@ -26,7 +26,7 @@ echo
 echo "=== Perform interpolating search without checkpointing ==="
 set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOutNoCkpt.fits \
-    --toplists=all --toplist-limit=5000 --per-detector --per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
+    --toplists=all --toplist-limit=2321 --per-detector --per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
     --sky-patch-count=3 --sky-patch-index=1 --freq=50/1e-4 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4
 set +x
 echo
@@ -46,19 +46,19 @@ echo "--- Start to first checkpoint ---"
 set -x
 rm -f WeaveCkpt.fits
 ${builddir}/lalapps_Weave --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits --ckpt-output-exit=0.22 \
-    --toplists=all --toplist-limit=5000 --per-detector --per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
+    --toplists=all --toplist-limit=2321 --per-detector --per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
     --sky-patch-count=3 --sky-patch-index=1 --freq=50/1e-4 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4
 set +x
 echo "--- First to second checkpoint ---"
 set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits --ckpt-output-exit=0.63 \
-    --toplists=all --toplist-limit=5000 --per-detector --per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
+    --toplists=all --toplist-limit=2321 --per-detector --per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
     --sky-patch-count=3 --sky-patch-index=1 --freq=50/1e-4 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4
 set +x
 echo "--- Second checkpoint to end ---"
 set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits \
-    --toplists=all --toplist-limit=5000 --per-detector --per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
+    --toplists=all --toplist-limit=2321 --per-detector --per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
     --sky-patch-count=3 --sky-patch-index=1 --freq=50/1e-4 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4
 set +x
 echo

@@ -43,7 +43,7 @@ for setup in short mid long; do
     echo "=== Setup '${setup}': Perform interpolating search ==="
     set -x
     ${builddir}/lalapps_Weave --output-file=WeaveOutNoSim.fits \
-        --toplists=all --toplist-limit=5000 --misc-info --setup-file=WeaveSetup.fits \
+        --toplists=all --toplist-limit=2321 --misc-info --setup-file=WeaveSetup.fits \
         --rand-seed=3456 --sft-timebase=1800 --sft-noise-psd=1,1 \
         --sft-timestamps-files=timestamps-1.txt,timestamps-2.txt \
         ${weave_search_options}
@@ -63,7 +63,7 @@ for setup in short mid long; do
     echo "=== Setup '${setup}': Simulate interpolating search with full memory allocation ==="
     set -x
     ${builddir}/lalapps_Weave --simulate-search --output-file=WeaveOutSimFull.fits \
-        --toplists=all --toplist-limit=5000 --misc-info --setup-file=WeaveSetup.fits \
+        --toplists=all --toplist-limit=2321 --misc-info --setup-file=WeaveSetup.fits \
         --rand-seed=3456 --sft-timebase=1800 --sft-noise-psd=1,1 \
         --sft-timestamps-files=timestamps-1.txt,timestamps-2.txt \
         ${weave_search_options}
@@ -73,7 +73,7 @@ for setup in short mid long; do
     echo "=== Setup '${setup}': Simulate interpolating search with minimal memory allocation ==="
     set -x
     ${builddir}/lalapps_Weave --simulate-search --output-file=WeaveOutSimMin.fits \
-        --toplists=all --toplist-limit=5000 --misc-info --setup-file=WeaveSetup.fits \
+        --toplists=all --toplist-limit=2321 --misc-info --setup-file=WeaveSetup.fits \
         ${weave_search_options}
     set +x
     echo
