@@ -24,7 +24,7 @@ BuildRequires: octave-devel
 BuildRequires: python-devel
 BuildRequires: scipy
 BuildRequires: swig
-BuildRequires: glue >= 1.49.1
+BuildRequires: glue >= @MIN_GLUE_VERSION@
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 BuildRequires: lal-python >= @MIN_LAL_VERSION@
@@ -96,7 +96,7 @@ Requires: python
 Requires: scipy
 Requires: python-six
 Requires: python-seaborn
-Requires: glue >= 1.49.1
+Requires: glue >= @MIN_GLUE_VERSION@
 Requires: lal-python >= @MIN_LAL_VERSION@
 Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 Requires: lalxml-python >= @MIN_LALXML_VERSION@
