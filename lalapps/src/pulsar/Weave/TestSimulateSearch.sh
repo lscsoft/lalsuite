@@ -123,7 +123,7 @@ for setup in short mid long; do
     peak_mem_no_sim=`cat tmp | xargs printf "%g"`
     ${fitsdir}/lalapps_fits_header_getval "WeaveOutSimFull.fits[0]" 'PEAKMEM' > tmp
     peak_mem_sim_full=`cat tmp | xargs printf "%g"`
-    awk "BEGIN { print x = ${peak_mem_sim_full} / ${peak_mem_no_sim}; exit ( ( 0.95 < x && x < 1.05 ) ? 0 : 1 ) }"
+    awk "BEGIN { print x = ${peak_mem_sim_full} / ${peak_mem_no_sim}; exit ( ( 0.9 < x && x < 1.0 ) ? 0 : 1 ) }"
     set +x
     echo
 
