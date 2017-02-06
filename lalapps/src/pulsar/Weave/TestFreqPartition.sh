@@ -62,7 +62,6 @@ done
 
 echo "=== Compare F-statistics from lalapps_Weave without/with frequency partitions ==="
 set -x
-LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info"
-${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoPart.fits --result-file-2=WeaveOutPart.fits
+env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" ${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoPart.fits --result-file-2=WeaveOutPart.fits
 set +x
 echo
