@@ -14,7 +14,7 @@ Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: bc
 BuildRequires: fftw-devel
-BuildRequires: glue
+BuildRequires: glue >= @MIN_GLUE_VERSION@
 BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
 BuildRequires: less
@@ -50,6 +50,7 @@ as well as the documentation for the library.
 Summary: Python bindings for LAL
 Group: LAL
 Requires: %{name} = %{version}
+Requires: glue >= @MIN_GLUE_VERSION@
 Requires: numpy
 Requires: python
 Requires: python-six

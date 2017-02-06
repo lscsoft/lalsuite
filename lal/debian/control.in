@@ -12,11 +12,11 @@ Build-Depends: bc,
   liboctave-dev,
   pkg-config,
   python-all-dev,
-  python-glue,
+  python-glue (>= @MIN_GLUE_VERSION@),
   python-numpy,
   python-six,
   python3-all-dev,
-  python3-glue,
+  python3-glue (>= @MIN_GLUE_VERSION@),
   python3-numpy,
   python3-six,
   zlib1g-dev
@@ -56,7 +56,7 @@ Depends: ${misc:Depends},
   ${python:Depends},
   ${shlibs:Depends},
   lal (= ${binary:Version}),
-  python-glue,
+  python-glue (>= @MIN_GLUE_VERSION@),
   python-six
 Description: Python bindings for LAL
  The LSC Algorithm Library for gravitational wave analysis.
@@ -69,7 +69,7 @@ Depends: ${misc:Depends},
   ${python3:Depends},
   ${shlibs:Depends},
   lal (= ${binary:Version}),
-  python3-glue,
+  python3-glue (>= @MIN_GLUE_VERSION@),
   python3-six
 Description: Python 3 bindings for LAL
  The LSC Algorithm Library for gravitational wave analysis.
