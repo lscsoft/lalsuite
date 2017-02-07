@@ -144,7 +144,7 @@ LALInference tools */
 LALStringVector *corlist = NULL;
 
 INT4 main( INT4 argc, CHAR *argv[] ){
-  ProcessParamsTable *param_table;
+  ProcessParamsTable *param_table, *testgausslike;
   LALInferenceRunState runState;
   REAL8 logZnoise = 0.;
 
@@ -159,41 +159,87 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   /* Include setting up random number generator etc */
   initialise_algorithm( &runState );
 
+  /* check if testing with hardcoded Gaussian likelihood */
+  testgausslike = LALInferenceGetProcParamVal(param_table, "--test-gaussian-likelihood");
+
   /* read in data */
-  read_pulsar_data( &runState );
+  if( !testgausslike ){ read_pulsar_data( &runState ); }
+  else{
+    /* initialise some required values if running on test Gaussian likelihood */
+    REAL8 h0val = 0., h0sigma = 2.5e-24, h0mean = 0.;
+    runState.data = NULL;
+    runState.threads[0]->model = XLALCalloc(1, sizeof(LALInferenceModel));
+    runState.data = XLALCalloc( 1, sizeof(LALInferenceIFOData) );
+    runState.data->likeli_counter = 0;
+    runState.data->templa_counter = 0;
+    runState.data->next = NULL;
+    runState.threads[0]->model->ifo = XLALMalloc(sizeof(LALInferenceIFOModel));
+    runState.threads[0]->model->ifo->params = XLALCalloc(1, sizeof(LALInferenceVariables) );
+    runState.threads[0]->model->ifo->next = NULL;
+    runState.threads[0]->model->ifo_loglikelihoods = XLALMalloc( sizeof(REAL8) );
+    runState.threads[0]->model->ifo_SNRs = XLALMalloc( sizeof(REAL8) );
+    runState.threads[0]->currentParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
+
+    /* add parameters of the Gaussian */
+    LALInferenceAddVariable( runState.threads[0]->currentParams, "H0", &h0val, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED ); /* add H0 parameter */
+    if ( LALInferenceGetProcParamVal(param_table, "--test-gaussian-sigma") ){
+      h0sigma = atof(LALInferenceGetProcParamVal(param_table, "--test-gaussian-sigma")->value);
+    }
+    LALInferenceAddVariable( runState.threads[0]->currentParams, "H0SIGMA", &h0sigma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED ); /* add standard deviation */
+    if ( LALInferenceGetProcParamVal(param_table, "--test-gaussian-mean") ){
+      h0mean = atof(LALInferenceGetProcParamVal(param_table, "--test-gaussian-mean")->value);
+    }
+    LALInferenceAddVariable( runState.threads[0]->currentParams, "H0MEAN", &h0mean, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED ); /* add standard deviation */
+  }
 
   /* set algorithm to use Nested Sampling */
   runState.algorithm = &nested_sampling_algorithm_wrapper;
   runState.evolve = &LALInferenceNestedSamplingOneStep;
 
   /* set likelihood function */
-  runState.likelihood = &pulsar_log_likelihood;
+  if( testgausslike ){
+    runState.likelihood = &test_gaussian_log_likelihood; /* run on a simple test Gaussian likelihood */
+  }
+  else{ runState.likelihood = &pulsar_log_likelihood; }
 
   /* set prior function */
   runState.prior = &priorFunction;
 
   /* Generate the lookup tables and read parameters from par file */
-  setup_from_par_file( &runState );
+  if ( !testgausslike ){ setup_from_par_file( &runState ); }
 
   /* set signal model/template */
-  runState.threads[0]->model->templt = &get_pulsar_model;
+  if ( !testgausslike ){
+    runState.threads[0]->model->templt = &get_pulsar_model;
+  }
 
   /* add injections if requested */
-  inject_signal( &runState );
+  if( !testgausslike ){
+    inject_signal( &runState );
+  }
 
   /* Initialise the prior distribution given the command line arguments */
   initialise_prior( &runState );
 
   /* create sum square of the data to speed up the likelihood calculation */
-  sum_data( &runState );
+  if( !testgausslike ){
+    sum_data( &runState );
+  }
 
   /* check whether using reduced order quadrature */
-  generate_interpolant( &runState );
+  if( !testgausslike ){
+    generate_interpolant( &runState );
+  }
 
-  gridOutput( &runState );
+  if( !testgausslike ){
+    gridOutput( &runState );
+  }
 
   /* get noise likelihood and add as variable to runState */
-  logZnoise = noise_only_likelihood( &runState );
+  if( !testgausslike ){
+    logZnoise = noise_only_likelihood( &runState );
+  }
+  else{ logZnoise = 0.; }
   LALInferenceAddVariable( runState.algorithmParams, "logZnoise", &logZnoise, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 
   /* Create live points array and fill initial parameters */
@@ -221,7 +267,10 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   }
 
   /* get SNR of highest likelihood point */
-  get_loudest_snr( &runState );
+  if( !testgausslike ){ get_loudest_snr( &runState ); }
+
+  /* output log evidence and 95% upper limit of test Gaussian likelihood */
+  if ( testgausslike ){ test_gaussian_output( &runState ); }
 
   /* close timing file */
   if ( LALInferenceCheckVariable( runState.algorithmParams, "timefile" ) ){

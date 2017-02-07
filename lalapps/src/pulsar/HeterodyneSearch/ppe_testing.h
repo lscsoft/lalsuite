@@ -27,6 +27,8 @@
 #include "pulsar_parameter_estimation_nested.h"
 #include "ppe_utils.h"
 
+#include <gsl/gsl_roots.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -54,6 +56,8 @@ void gridOutput( LALInferenceRunState *runState );
 REAL8 test_gaussian_log_likelihood( LALInferenceVariables *vars,
                                     LALInferenceIFOData *data,
                                     LALInferenceModel *get_model );
+
+void test_gaussian_output( LALInferenceRunState *runState );
 
 void outputPriorSamples( LALInferenceRunState *runState );
 

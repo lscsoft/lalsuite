@@ -569,7 +569,10 @@ void initialise_prior( LALInferenceRunState *runState )
   CHAR *tempPar = NULL, *tempPrior = NULL;
   REAL8 low, high;
 
-  LALInferenceIFOModel *ifo = threadState->model->ifo;
+  LALInferenceIFOModel *ifo = NULL;
+  if ( !LALInferenceGetProcParamVal(commandLine, "--test-gaussian-likelihood" ) ){
+    ifo = threadState->model->ifo;
+  }
 
   CHAR *filebuf =  NULL; /* buffer to store prior file */
   TokenList *tlist = NULL;
@@ -605,7 +608,7 @@ void initialise_prior( LALInferenceRunState *runState )
     LALInferenceParamVaryType varyType;
 
     /* check for comment line starting with '#' or '%' */
-    if ( !strcmp(tlist->tokens[k], "#") || !strcmp(tlist->tokens[k], "%") ){ continue; }
+    if ( tlist->tokens[k][0] == '#' || tlist->tokens[k][0] == '%' ){ continue; }
 
     /* check the number of values in the line by counting the whitespace separated values */
     nvals = 0;
@@ -794,11 +797,13 @@ void initialise_prior( LALInferenceRunState *runState )
     ifotemp = ifotemp->next;
   }
 
-  REAL8Vector *freqFactors = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "freqfactors" );
+  if ( !LALInferenceGetProcParamVal(commandLine, "--test-gaussian-likelihood" ) ){
+    REAL8Vector *freqFactors = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "freqfactors" );
 
-  if ( nonGR && freqFactors->length != 1 && freqFactors->data[0] != 2. ){
-    fprintf(stderr, "Error... currently can only run with non-GR parameters for l=m=2 harmonic!\n");
-    exit(3);
+    if ( nonGR && freqFactors->length != 1 && freqFactors->data[0] != 2. ){
+      fprintf(stderr, "Error... currently can only run with non-GR parameters for l=m=2 harmonic!\n");
+      exit(3);
+    }
   }
 
   /* now check for a parameter correlation coefficient matrix file */

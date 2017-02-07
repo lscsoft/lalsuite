@@ -114,7 +114,7 @@ void read_pulsar_data( LALInferenceRunState *runState ){
   REAL8 *fstarts = NULL, *flengths = NULL, *fdt = NULL;
 
   CHAR dets[MAXDETS][256];
-  INT4 numDets = 0, i = 0, numPsds = 0, numLengths = 0, numStarts = 0;
+  INT4 numDets = 1, i = 0, numPsds = 0, numLengths = 0, numStarts = 0;
   INT4 numDt = 0, count = 0;
   UINT4 maxlen = 0;
 
@@ -375,7 +375,6 @@ number of detectors specified (no. dets =%d)\n", ml, ml, numDets);
     else{ /* set default (60 sesonds) */
       for(i = 0; i < ml*numDets; i++) { fdt[i] = 60.; }
     }
-
   }
   /*psds set and timestamps set.*/
   /*====================================================================*/
@@ -974,7 +973,7 @@ void setup_from_par_file( LALInferenceRunState *runState )
 /* Generates lookup tables also */
 {
   LALSource psr;
-  PulsarParameters *pulsar;
+  PulsarParameters *pulsar = NULL;
   LALInferenceIFOData *data = runState->data;
   ProcessParamsTable *ppt = NULL;
   REAL8 DeltaT = 0.; /* maximum data time span */
