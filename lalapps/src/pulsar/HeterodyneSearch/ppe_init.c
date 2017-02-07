@@ -1502,7 +1502,7 @@ REAL8Vector** parse_gmm_means(CHAR *meanstr, UINT4 npars, UINT4 nmodes){
  *
  * These values are returned in an array of GSL matrices. If an error occurred then NULL will be returned.
  *
- * \param meanstr [in] A string containing the covariance matrix values
+ * \param covstr [in] A string containing the covariance matrix values
  * \param npars [in] The number of parameters
  * \param nmodes [in] The number of modes
  */
