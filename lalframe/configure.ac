@@ -38,7 +38,9 @@ AM_INIT_AUTOMAKE([ \
 
 # version requirements
 MIN_LAL_VERSION="6.18.0"
+MIN_FRAMECPPC_VERSION="2.5.5"
 AC_SUBST([MIN_LAL_VERSION])
+AC_SUBST([MIN_FRAMECPPC_VERSION])
 
 AC_CANONICAL_HOST
 
@@ -137,7 +139,7 @@ FRAMEL_AVAILABLE="no"
 
 AS_IF([test "${framec}" = "true"], [
        FRAMEC_AVAILABLE="yes"
-       PKG_CHECK_MODULES([FRAMECPPC],[framecppc >= 2.0.0],[true],[false])
+       PKG_CHECK_MODULES([FRAMECPPC],[framecppc >= ${MIN_FRAMECPPC_VERSION}],[true],[false])
        LALSUITE_ADD_FLAGS([C],[${FRAMECPPC_CFLAGS}],[${FRAMECPPC_LIBS}])
        AC_CHECK_LIB([framecppc],[FrameCFileOpen],,[FRAMEC_AVAILABLE="no"])
        AC_CHECK_HEADERS([framecppc/FrameC.h],,[FRAMEC_AVAILABLE="no"])
@@ -157,7 +159,7 @@ AS_IF([test "${FRAMEC_AVAILABLE}" = "no" -a "${FRAMEL_AVAILABLE}" = "no"], [
 ])
 
 AS_IF([test "${FRAMEC_AVAILABLE}" = "yes"],
-      [AC_SUBST([PC_REQUIRES_FRAMEC], [", framecppc >= 2.0.0"])],
+      [AC_SUBST([PC_REQUIRES_FRAMEC], [", framecppc >= ${MIN_FRAMECPPC_VERSION}"])],
       [AC_SUBST([PC_REQUIRES_FRAMEC], [""])]
 )
 
@@ -204,7 +206,6 @@ AC_MSG_NOTICE([
 LALFrame has now been successfully configured:
 
 * Python support is $PYTHON_ENABLE_VAL
-* using the $FRAME_LIBRARY frame library
 * FrameC availability... ${FRAMEC_AVAILABLE}
 * FrameL availability... ${FRAMEL_AVAILABLE}
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
