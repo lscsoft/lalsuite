@@ -541,6 +541,14 @@ class knopeDAG(pipeline.CondorDAG):
     # check whether to plot priors on 1D posteriors plots
     self.show_priors = self.get_config_option('results_page', 'show_priors', cftype='boolean', default=False)
 
+    # check whether to copy "all" files used to create results (fine heterodyne files, par file, prior file, posterior files)
+    # into the results page directory
+    self.copy_all_files = self.get_config_option('results_page', 'copy_all_files', cftype='boolean', default=False)
+    cpjob = None
+    if self.copy_all_files:
+      # create job for copying files
+      cpjob = copyJob(accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
+
     # create parameter estimation job
     resultpagejob = resultpageJob(self.results_exec, univ=self.results_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
     collatejob = collateJob(self.collate_exec, univ=self.results_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
@@ -598,6 +606,31 @@ class knopeDAG(pipeline.CondorDAG):
 
       self.mkdirs(self.results_pulsar_dir[pname])
       if self.error_code != 0: return
+
+      copydir = None
+      if self.copy_all_files: # create directory for file copies
+        copydir = os.path.join(self.results_pulsar_dir[pname], files)
+        self.mkdirs(copydir)
+        if self.error_code != 0: return
+
+        # copy par file
+        cpnode = copyNode(cpjob)
+        cpnode.set_source(self.analysed_pulsars[pname])
+        cpnode.set_destination(os.path.join(copydir, pname+'.par'))
+        self.add_node(cpnode)
+
+        # copy prior file
+        cpnode = copyNode(cpjob)
+        cpnode.set_source(self.pe_prior_files[pname])
+        cpnode.set_destination(copydir)
+        self.add_node(cpnode)
+
+        # copy correlation coefficient file
+        if pname in self.pe_cor_files:
+          cpnode = copyNode(cpjob)
+          cpnode.set_source(self.pe_cor_files[pname])
+          cpnode.set_destination(copydir)
+          self.add_node(cpnode)
 
       # if in autonomous mode, and a previous JSON results file already exists, make a copy of it
       jsonfile = os.path.join(self.results_pulsar_dir[pname], pname+'.json')
@@ -680,6 +713,11 @@ class knopeDAG(pipeline.CondorDAG):
       # get posterior files (and background directories)
       posteriorsfiles = {}
       backgrounddir = {}
+      copydirpos = None
+      if copydir is not None:
+        copydirpos = os.path.join(copydir, 'posteriors')
+        self.mkdirs(copydirpos)
+
       for i, comb in enumerate(self.pe_combinations):
         dets = comb['detectors']
         detprefix = comb['prefix']
@@ -691,6 +729,9 @@ class knopeDAG(pipeline.CondorDAG):
 
         posteriorsfiles[det] = os.path.join(self.pe_posterior_basedir, pname)
         posteriorsfiles[det] = os.path.join(posteriorsfiles[det], detprefix)
+
+        if copydirpos is not None:
+          self.mkdirs(os.path.join(copydirpos, detprefix))
 
         if self.pe_num_background > 0:
           backgrounddir[det] = os.path.join(self.pe_posterior_background_basedir, pname)
@@ -708,6 +749,17 @@ class knopeDAG(pipeline.CondorDAG):
         posteriorsfiles[det] = os.path.join(posteriorsfiles[det], dirpostfix)
         posteriorsfiles[det] = os.path.join(posteriorsfiles[det], 'posterior_samples_%s.hdf' % pname)
 
+        if copydirpos is not None:
+          copydirposp = os.path.join(copydirpos, detprefix)
+          copydirposp = os.path.join(copydirposp, dirpostfix)
+          self.mkdirs(copydirposp)
+          cpnode = copyNode(cpjob)
+          cpnode.set_source(posteriorsfiles[det])
+          cpnode.set_destination(copydirposp)
+          for n2pnode in self.pe_nest2pos_nodes[pname]:
+            cpnode.add_parent(n2pnode)
+          self.add_node(cpnode)
+
         # if in autonomous mode copy previous posterior files
         if self.autonomous:
           if os.path.isfile(posteriorsfiles[det]):
@@ -723,15 +775,44 @@ class knopeDAG(pipeline.CondorDAG):
       if self.pe_num_background > 0:
         cp.set('parameter_estimation', 'background', backgrounddir)
 
+      # copy fine heterodyned/spectrally interpolated files if required
+      copydirhet = None
+      if copydir is not None:
+        copydirhet = os.path.join(copydir, 'data')
+        self.mkdirs(copydirhet)
+
       datafiles = {}
       for ifo in self.ifos:
-        if len(self.freq_factors) > 1:
-          filelist = []
-          for ff in self.freq_factors:
-            filelist.append(self.processed_files[pname][ifo][ff][-1])
-        else:
-          filelist = self.processed_files[pname][ifo][self.freq_factors[0]][-1]
+        if copydir is not None:
+          copydirhet = os.path.join(copydirhet, ifo)
+          self.mkdirs(copydirhet)
+
+        filelist = []
+        for ff in self.freq_factors:
+          filelist.append(self.processed_files[pname][ifo][ff][-1])
+
+          # copy fine heterodyned/spectrally interpolated files
+          if copydir is not None:
+            if not ff%1.: # for integers just output director as e.g. 2f
+              ffdir = os.path.join(copydirhet, '%df' % int(freqfactor))
+            else: # for non-integers use 2 d.p. for dir name
+              ffdir = os.path.join(copydirhet, '%.3ff' % int(freqfactor))
+
+            self.mkdirs(ffdir)
+            cpnode = copyNode(cpjob)
+            cpnode.set_source(self.processed_files[pname][ifo][ff][-1])
+            cpnode.set_destination(ffdir)
+            if self.engine == 'heterodyne':
+              cpnode.add_parent(self.fine_heterodyne_nodes[pname][ifo][ff])
+            elif self.engine == 'splinter':
+              cpnode.add_parent(self.splinter_nodes_modified[ifo][ff])
+            self.add_node(cpnode)
+
+        if len(self.freq_factors) == 1:
+          filelist = filelist[0] # don't need list if only one value
         datafiles[ifo] = filelist
+
+        copydirhet = os.path.join(copydir, 'data') # reset to base path
 
       cp.set('data', 'files', datafiles)
 
@@ -1487,7 +1568,6 @@ class knopeDAG(pipeline.CondorDAG):
                 print("Error... frequency range in ASD file does not span pulsar frequency.", file=sys.stderr)
                 self.error_code = -1
                 return outfile
-
 
           # get upper limit spectrum (harmonic mean of all the weighted spectra)
           mspec = np.zeros(len(self.freq_factors))
@@ -3291,6 +3371,64 @@ class moveJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 class moveNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   An instance of a moveJob in a condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of mv.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+
+    self.__sourcefile = None
+    self.__destinationfile = None
+
+  def set_source(self, sfile):
+    # set file to be moved
+    self.add_macro('macrosource', sfile)
+    self.__sourcefiles = sfile
+
+  def set_destination(self, dfile):
+    # set destination of file to be moved
+    self.add_macro('macrodestination', dfile)
+    self.__destinationfile = dfile
+
+
+"""
+  Job for copying files
+"""
+class copyJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A copy job (using "cp" to copy files)
+  """
+  def __init__(self, accgroup=None, accuser=None, logdir=None, rundir=None):
+    self.__executable = "/bin/cp"  # use "cp"
+    self.__universe = "local"      # cp should not be compute intensive, so use local universe
+
+    pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
+    pipeline.AnalysisJob.__init__(self, None)
+
+    if accgroup != None: self.add_condor_cmd('accounting_group', accgroup)
+    if accuser != None: self.add_condor_cmd('accounting_group_user', accuser)
+
+    # set log files for job
+    if logdir != None:
+      self.set_stdout_file(os.path.join(logdir, 'cp-$(cluster).out'))
+      self.set_stderr_file(os.path.join(logdir, 'cp-$(cluster).err'))
+    else:
+      self.set_stdout_file('cp-$(cluster).out')
+      self.set_stderr_file('cp-$(cluster).err')
+
+    self.add_arg('$(macrosource) $(macrodestination)') # macro for source and destination files
+
+    if rundir != None:
+      self.set_sub_file(os.path.join(rundir, 'cp.sub'))
+    else:
+      self.set_sub_file('cp.sub')
+
+
+class copyNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  An instance of a copyJob in a condor DAG.
   """
   def __init__(self,job):
     """
