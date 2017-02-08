@@ -569,9 +569,6 @@ class TaylorF2Template(InspiralAlignedSpinTemplate):
     def _compute_waveform(self, df, f_final):
         phi0 = 0  # This is a reference phase, and not an intrinsic parameter
         LALpars=lal.CreateDict()
-        lalsim.SimInspiralWaveformParamsInsertPNAmplitudeOrder(LALpars, 0)
-        lalsim.SimInspiralWaveformParamsInsertPNPhaseOrder(LALpars, 7)
-        lalsim.SimInspiralWaveformParamsInsertPNSpinOrder(LALpars, 5)
         approx = lalsim.GetApproximantFromString( self.approx_name )
         hplus_fd, hcross_fd = lalsim.SimInspiralChooseFDWaveform(
                 self.m1*MSUN_SI, self.m2*MSUN_SI,
