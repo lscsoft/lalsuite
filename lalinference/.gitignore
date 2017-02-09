@@ -100,5 +100,6 @@ test/test_bayestar_prune_neighborhood_tmpltbank.xml
 test/test_bayestar_realize_coincs.xml
 test/test_bayestar_sample_model_psd.xml
 test/test_bayestar_sim_to_tmpltbank.xml
+test/test_cubic_interp
 test/test_result_images
 test/test_vot.xml
