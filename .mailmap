@@ -154,7 +154,6 @@ Larry Price <larry.price@ligo.org> <larry>
 Larry Price <larry.price@ligo.org> <larry@ldas-pcdev1.ligo.caltech.edu>
 Larry Price <larry.price@ligo.org> GraceDB Processor <gdb_processor@trout.phys.uwm.edu>
 Leo Singer <leo.singer@ligo.org> <leo.singer@nasa.gov>
-Lightweight DataBase Dumper <ldbd@segdb-test.phy.syr.edu> <ldbd@ldr.ligo.caltech.edu>
 Lisa Goggin <lisa.goggin@ligo.org> <lgoggin>
 Llucia Sancho de la Jordana <llucia>
 Lucia Santamaria <lucia>
@@ -226,7 +225,6 @@ Sebastian Khan <sebastian.khan@ligo.org> <sebastian.khan@atlas2.atlas.local>
 Shin Kee Chung <shinkee.chung@ligo.org> <shinkee>
 Stanislav Babak <Stanislav.Babak@aei.mpg.de> <babak>
 Stanislav Babak <Stanislav.Babak@aei.mpg.de> <stas@switchblade.aei.mpg.de>
-Stanislav Babak <stas@switchblade.aei.mpg.de>
 Steffen Grunewald <Steffen.Grunewald@aei.mpg.de> <steffen.grunewald@aei.mpg.de>
 Steffen Grunewald <Steffen.Grunewald@aei.mpg.de> <steffen.grunewald@ligo.org>
 Steffen Grunewald <Steffen.Grunewald@aei.mpg.de> <steffeng>
@@ -247,12 +245,13 @@ Tomoki Isogai <tomoki.isogai@ligo.org>
 Tomoki Isogai <tomoki.isogai@ligo.org> <isogait>
 Tomoki Isogai <tomoki.isogai@ligo.org> <isogait@carleton.edu>
 Tyson Littenberg <tyson.littenberg@ligo.org> <tyson.littenberg@gmail.com>
-UNKNOWN AUTHOR <akbar>
-UNKNOWN AUTHOR <btucker>
-UNKNOWN AUTHOR <charlie>
-UNKNOWN AUTHOR <gbb>
-UNKNOWN AUTHOR <laltest>
-UNKNOWN AUTHOR <ldbd@segdb-test.phy.syr.edu>
+UNKNOWN AUTHOR 'akbar' <akbar>
+UNKNOWN AUTHOR 'btucker' <btucker>
+UNKNOWN AUTHOR 'charlie' <charlie>
+UNKNOWN AUTHOR 'gbb' <gbb>
+UNKNOWN AUTHOR 'laltest' <laltest>
+UNKNOWN AUTHOR 'ldbd@segdb-test.phy.syr.edu' <ldbd@segdb-test.phy.syr.edu>
+UNKNOWN AUTHOR 'ldbd@segdb-test.phy.syr.edu' <ldbd@segdb-test.phy.syr.edu> <ldbd@ldr.ligo.caltech.edu>
 Valeriu Predoi <valeriu.predoi@ligo.org> <valeriu@valeriu-laptop.(none)>
 Virginia Re <virginia.re@ligo.org> <virginia>
 Vivien Raymond <vivien.raymond@ligo.org> <vra623@quser01.(none)>
