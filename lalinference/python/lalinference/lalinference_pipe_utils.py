@@ -75,7 +75,7 @@ class Event():
 
 dummyCacheNames=['LALLIGO','LALVirgo','LALAdLIGO','LALAdVirgo']
 
-def readLValert(threshold_snr=None,gid=None,flow=40.0,gracedb="gracedb",basepath="./",downloadpsd=True,roq=False):
+def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath="./",downloadpsd=True,roq=False):
   """
   Parse LV alert file, containing coinc, sngl, coinc_event_map.
   and create a list of Events as input for pipeline
@@ -963,7 +963,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # LVAlert CoincInspiral Table
     if self.config.has_option('input','gid'):
       gid=self.config.get('input','gid')
-      flow=40.0
+      flow=20.0
       if self.config.has_option('lalinference','flow'):
         flow=min(ast.literal_eval(self.config.get('lalinference','flow')).values())
       downloadgracedbpsd=True
@@ -1372,7 +1372,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         node.psds=get_xml_psds(psdpath,ifos,os.path.join(self.basepath,'PSDs'),end_time=None)
         prenode.psds=get_xml_psds(psdpath,ifos,os.path.join(self.basepath,'PSDs'),end_time=None)
     for ifo in ifos:
-      prenode.flows[ifo]=str(40.0)
+      prenode.flows[ifo]=str(20.0)
     if self.config.has_option('lalinference','flow'):
       node.flows=ast.literal_eval(self.config.get('lalinference','flow'))
       prenode.flows=ast.literal_eval(self.config.get('lalinference','flow'))
