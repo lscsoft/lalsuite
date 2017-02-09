@@ -35,8 +35,11 @@ close IN;
 
 foreach my $pname (sort { $a cmp $b } keys(%name2mails)) {
 
+  my $pname2mail = lc($pname);
+  $pname2mail =~ s/\s+/./g;
+
   my @pmails;
-  push @pmails, grep { /^[a-z.-]+[.][a-z.-]+[@]ligo[.]org$/ } keys(%{$name2mails{$pname}});
+  push @pmails, grep { /^${pname2mail}[@]ligo[.]org$/ } keys(%{$name2mails{$pname}});
   push @pmails, grep { /^[a-z.-]+[@]ligo[.]org$/ } keys(%{$name2mails{$pname}});
   push @pmails, grep { /[@]ligo[.]org$/ } keys(%{$name2mails{$pname}});
   push @pmails, grep { $name2mails{$pname}->{$_} < 0 } keys(%{$name2mails{$pname}});
