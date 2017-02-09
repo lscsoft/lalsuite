@@ -24,30 +24,28 @@ BuildRequires: octave-devel
 BuildRequires: python-devel
 BuildRequires: scipy
 BuildRequires: swig
-BuildRequires: glue >= 1.49.1
-BuildRequires: glue-common >= 1.49.1
-BuildRequires: glue-segments >= 1.49.1
+BuildRequires: glue >= @MIN_GLUE_VERSION@
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: lal-python >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
+BuildRequires: lal-python >= @MIN_LAL_VERSION@
 BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
+BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalxml-devel >= @MIN_LALXML_VERSION@
-BuildRequires: lalxml-python >= @MIN_LALXML_VERSION@
 BuildRequires: lalxml-octave >= @MIN_LALXML_VERSION@
+BuildRequires: lalxml-python >= @MIN_LALXML_VERSION@
 BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
-BuildRequires: lalburst-python >= @MIN_LALBURST_VERSION@
 BuildRequires: lalburst-octave >= @MIN_LALBURST_VERSION@
+BuildRequires: lalburst-python >= @MIN_LALBURST_VERSION@
 BuildRequires: lalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
-BuildRequires: lalinspiral-python >= @MIN_LALINSPIRAL_VERSION@
 BuildRequires: lalinspiral-octave >= @MIN_LALINSPIRAL_VERSION@
+BuildRequires: lalinspiral-python >= @MIN_LALINSPIRAL_VERSION@
 BuildRequires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
-BuildRequires: lalpulsar-python >= @MIN_LALPULSAR_VERSION@
 BuildRequires: lalpulsar-octave >= @MIN_LALPULSAR_VERSION@
+BuildRequires: lalpulsar-python >= @MIN_LALPULSAR_VERSION@
 Requires: chealpix
 Requires: gsl >= 1.15
 Requires: hdf5
@@ -98,9 +96,7 @@ Requires: python
 Requires: scipy
 Requires: python-six
 Requires: python-seaborn
-Requires: glue >= 1.49.1
-Requires: glue-common >= 1.49.1
-Requires: glue-segments >= 1.49.1
+Requires: glue >= @MIN_GLUE_VERSION@
 Requires: lal-python >= @MIN_LAL_VERSION@
 Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 Requires: lalxml-python >= @MIN_LALXML_VERSION@
@@ -179,6 +175,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.9.0-1
+- O2 release
+
 * Thu Dec 15 2016 Adam Mercer <adam.mercer@ligo.org> 1.8.2-1
 - Be more emphatic about switching matplotlib backend
 - Prevent trying to build python3 packages when unsupported

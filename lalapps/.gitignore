@@ -72,10 +72,13 @@ src/inspiral/lalapps_cbc_pipedown
 src/inspiral/lalapps_cbc_pipedown_ssipe
 src/inspiral/lalapps_cbc_sbank
 src/inspiral/lalapps_cbc_sbank_choose_mchirp_boundaries
+src/inspiral/lalapps_cbc_sbank_hdf5_bankcombiner
+src/inspiral/lalapps_cbc_sbank_hdf5_choose_mchirp_boundaries
 src/inspiral/lalapps_cbc_sbank_merge_sims
 src/inspiral/lalapps_cbc_sbank_pipe
 src/inspiral/lalapps_cbc_sbank_plot_sim
 src/inspiral/lalapps_cbc_sbank_sim
+src/inspiral/lalapps_cbc_sbank_sim_pipe
 src/inspiral/lalapps_cbc_sbank_splitter
 src/inspiral/lalapps_cbc_stochasticbank
 src/inspiral/lalapps_check_flag
@@ -111,6 +114,7 @@ src/inspiral/lalapps_inspiral_online_pipe_inject
 src/inspiral/lalapps_inspiral_pipe
 src/inspiral/lalapps_inspiral_ssipe
 src/inspiral/lalapps_link_old_ihope
+src/inspiral/lalapps_make_nr_hdf_catalog
 src/inspiral/lalapps_mdc_ninja
 src/inspiral/lalapps_minj
 src/inspiral/lalapps_multi_hipe

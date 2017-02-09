@@ -27,6 +27,7 @@ from copy import deepcopy
 import numpy as np
 import pickle
 from scipy import optimize
+from collections import OrderedDict
 
 from lalapps import pulsarpputils as pppu
 
@@ -601,7 +602,7 @@ class knopeDAG(pipeline.CondorDAG):
       # NOTE: this is mainly required because on the ARCCA cluster the nodes cannot access the internet
       pinfo = pppu.get_atnf_info(pname)
       if pinfo is not None:
-        dist, p1_I, assoc = pinfo # unpack values
+        dist, p1_I, assoc, atnfurl = pinfo # unpack values
         psrinfo = {}
         psrinfo['Pulsar data'] = {}
         psrinfo['Pulsar data']['DIST'] = dist
@@ -892,6 +893,10 @@ class knopeDAG(pipeline.CondorDAG):
     if self.pe_derive_amplitude_prior:
       # get JSON file containing any previous amplitude upper limits for pulsars
       self.pe_amplitude_prior_file = self.get_config_option('pe', 'amplitude_prior_file', allownone=True)
+
+      # get JSON file containing any previous posterior files from which to use amplitude vs cosiota samples as GMM prior
+      self.pe_previous_posterior_files = None
+      self.pe_previous_posteriors_file = self.get_config_option('pe', 'previous_posteriors_file', allownone=True)
 
       self.pe_prior_info = None
       self.pe_prior_asds = {}
@@ -1216,10 +1221,12 @@ class knopeDAG(pipeline.CondorDAG):
           self.pe_nest2pos_background_nodes[pname] = n2pnodes[pname]
 
 
-  def create_prior_file(self, psr, psrdir, detectors, freqfactors, outputpath):
+  def create_prior_file(self, psr, psrdir, detectors, freqfactors, outputpath, scalefactor=25.):
     """
     Create the prior file to use for a particular job defined by a set of detectors, or single detector, and
-    a set of frequency factors, or a single frequency factor.
+    a set of frequency factors, or a single frequency factor. If creating an prior limit based on a set of given
+    amplitude spectral densities (by calculating an estimate of the 95% UL they would produce) then it will
+    additionally be scaled by a factor of `scalefactor`.
 
     Return the full output file and the create prior node
     """
@@ -1302,11 +1309,29 @@ class knopeDAG(pipeline.CondorDAG):
 
     # check if deriving amplitude priors
     if self.pe_derive_amplitude_prior:
+      # check if there is a file containing a previous posterior to use for amplitude vs cosiota prior
+      posteriorfile = None
+      if self.pe_previous_posterior_files is None:
+        if self.pe_previous_posteriors_file is not None:
+          try:
+            fp = open(self.pe_previous_posteriors_file, 'r')
+            self.pe_previous_posterior_files = json.load(fp)
+            fp.close()
+            posteriorfile = self.pe_previous_posterior_files[pname]
+          except:
+            print("Error... could not open file '%s' listing previous posterior files." % self.pe_previous_posteriors_file, file=sys.stderr)
+            self.error_code = -1
+            return outfile
+      else:
+        # check if current pulsar has a previous posterior sample file to use as prior
+        if psr in self.pe_previous_posterior_files:
+          posteriorfile = self.pe_previous_posterior_files[pname]
+
       # open output prior file
       try:
         fp = open(outfile, 'w')
       except:
-        print("Error... could no open prior file '%s'" % outfile, file=sys.stderr)
+        print("Error... could not open prior file '%s'" % outfile, file=sys.stderr)
         self.error_code = -1
         return outfile
 
@@ -1329,22 +1354,34 @@ class knopeDAG(pipeline.CondorDAG):
           self.error_code = -1
           return outfile
 
-        fp.write('%s\t%s\t%.16le\t%.16le\n' % (prioritem, ptype, rangevals[0], rangevals[1]))
+        # ignore cosiota if using previous posterior file as prior
+        if posteriorfile is not None and prioritem.upper() == 'COSIOTA':
+          continue
+        else:
+          fp.write('%s\t%s\t%.16le\t%.16le\n' % (prioritem, ptype, rangevals[0], rangevals[1]))
 
-      # set the required amplitude priors
+      # set the required amplitude priors or parameters to estimate from previous posterior samples (and limits)
       requls = {} # dictionary to contain the required upper limits
+      gmmpars = OrderedDict()
+
       if self.pe_model_type == 'waveform':
         if 2. in self.freq_factors:
           requls['C22'] = None
+          gmmpars['C22'] = [0., np.inf] # limits on C22 prior
         if 1. in self.freq_factors:
           requls['C21'] = None
+          gmmpars['C21'] = [0., np.inf] # limits on C21 prior
       elif self.pe_model_type == 'source':
         if len(self.freq_factors) == 1:
           requls['H0'] = None
+          gmmpars['H0'] = [0., np.inf] # limits on H0 prior
         if len(self.freq_factors) == 2:
           if 1. in self.freq_factors and 2. in self.freq_factors:
             requls['I21'] = None
             requls['I31'] = None
+            gmmpars['I21'] = [0., np.inf]
+            gmmpars['I31'] = [0., np.inf]
+      gmmpars['COSIOTA'] = [-1., 1.] # limits on COSIOTA prior (required in all cases)
 
       if len(requls) == 0:
         print("Error... unknown frequency factors or model type in configuration file.", file=sys.stderr)
@@ -1379,8 +1416,8 @@ class knopeDAG(pipeline.CondorDAG):
       # if there are some required amplitude limits that have not been obtained try and get amplitude spectral densities
       freq = psr['F0']
 
-      if None in requls.values() and freq > 0.0:
-        if self.pe_amplitude_prior_asds != None and self.pe_amplitude_prior_obstimes != None:
+      if None in requls.values() and freq > 0.0 and posteriorfile is None:
+        if self.pe_amplitude_prior_asds is not None and self.pe_amplitude_prior_obstimes is not None:
           asdfiles = self.pe_amplitude_prior_asds
           obstimes = self.pe_amplitude_prior_obstimes
 
@@ -1446,47 +1483,69 @@ class knopeDAG(pipeline.CondorDAG):
           if self.pe_model_type == 'waveform':
             if 1. in self.freq_factors:
               if requls['C21'] == None:
-                requls['C21'] = ulspec[self.freq_factors.index(1.0)]
+                requls['C21'] = ulspec[self.freq_factors.index(1.0)]*scalefactor
             if 2. in self.freq_factors:
               if requls['C22'] == None:
-                requls['C22'] = ulspec[self.freq_factors.index(2.0)]
+                requls['C22'] = ulspec[self.freq_factors.index(2.0)]*scalefactor
           if self.pe_model_type == 'source':
             if len(self.freq_factors) == 1:
               if requls['H0'] == None:
-                requls['H0'] = ulspec[0]
+                requls['H0'] = ulspec[0]*scalefactor
             else:
               if 1. in self.freq_factors and 2. in self.freq_factors:
-                # set both I21 and I31 to use the maximum of the 1f and 2f es
+                # set both I21 and I31 to use the maximum of the 1f and 2f estimate
                 if requls['I21'] == None:
-                  requls['I21'] = np.max(ulspec)
+                  requls['I21'] = np.max(ulspec)*scalefactor
                 if requls['I31'] == None:
-                  requls['I31'] = np.max(ulspec)
+                  requls['I31'] = np.max(ulspec)*scalefactor
 
       # get amplitude prior type
-      if self.pe_amplitude_prior_type not in ['fermidirac', 'uniform']:
+      if self.pe_amplitude_prior_type not in ['fermidirac', 'uniform'] and posteriorfile is None:
         print("Error... prior type must be 'fermidirac' or 'uniform'", file=sys.stderr)
         self.error_code = -1
         return outfile
 
-      # go through required upper limits and output a Fermi-Dirac prior that also has a 95% limit at that value
-      for ult in requls:
-        if requls[ult] == None:
-          print("Error... a required upper limit for '%s' is not available." % ult, file=sys.stderr)
-          self.error_code = -1
-          return outfile
-        else:
-          if self.pe_amplitude_prior_type == 'fermidirac':
-            try:
-              b, a = self.fermidirac_rsigma(requls[ult])
-            except:
-              print("Error... problem deriving the Fermi-Dirac prior for '%s'." % ult, file=sys.stderr)
-              self.error_code = -1
-              return outfile
+      if posteriorfile is None:
+        # go through required upper limits and output a Fermi-Dirac prior that also has a 95% limit at that value
+        for ult in requls:
+          if requls[ult] == None:
+            print("Error... a required upper limit for '%s' is not available." % ult, file=sys.stderr)
+            self.error_code = -1
+            return outfile
           else:
-            a = 0. # uniform prior bound at 0
-            b = requls[utl]/0.95 # stretch limit to ~100% bound
+            if self.pe_amplitude_prior_type == 'fermidirac':
+              try:
+                b, a = self.fermidirac_rsigma(requls[ult])
+              except:
+                print("Error... problem deriving the Fermi-Dirac prior for '%s'." % ult, file=sys.stderr)
+                self.error_code = -1
+                return outfile
+            else:
+              a = 0. # uniform prior bound at 0
+              b = requls[utl]/0.95 # stretch limit to ~100% bound
 
-          fp.write('%s\t%s\t%.16le\t%.16le\n' % (ult, self.pe_amplitude_prior_type, a, b))
+            fp.write('%s\t%s\t%.16le\t%.16le\n' % (ult, self.pe_amplitude_prior_type, a, b))
+      else:
+        # try and fit Gaussian Mixture Model to required amplitude parameters
+        means, covs, weights, samps = self.gmm_prior(posteriorfile, gmmpars, taper='elliptical', decaywidth=1.)
+        if self.error_code == -1:
+          print("Error... could not set GMM prior using previous posterior samples.", file=sys.stderr)
+          return outfile
+        # output GMM prior
+        parssep = ':'.join(gmmpars.keys())
+        fp.write("%s\tgmm\t%d\t" % (parssep, len(means)))
+        # write out means
+        meanstr = ','.join(['['+','.join([str(v) for v in vs.tolist()])+']' for vs in means])
+        fp.write("[%s]\t" % meanstr)
+        # write out covariance matrices
+        covstr = ','.join(['['+','.join(['['+','.join([str(ca) for ca in c])+']' for c in cs.tolist()])+']' for cs in covs])
+        fp.write("[%s]\t" % covstr)
+        # write out weights
+        fp.write("[%s]\t" % ','.join([str(w) for w in weights]))
+        # write out limits for each parameter in turn
+        for gp in gmmpars:
+          fp.write("[%s]\t" % ','.join([str(lim) for lim in gmmpars[gp]]))
+        fp.write("\n")
 
       fp.close()
     else:
@@ -1530,6 +1589,171 @@ class knopeDAG(pipeline.CondorDAG):
     sigma = solution.x[0]
 
     return r, sigma
+
+
+  def gmm_prior(self, prevpostfile, pardict, ncomps=20, taper=None, decaywidth=5.):
+    """
+    Create an ND Gaussian Mixture Model for use as a prior.
+
+    This will use the BayesianGaussianMixture Model from scikit-learn, which fits a Dirichlet Process Gaussian
+    Mixture Model to the input data infering the number of components required. The input to this should be
+    a previously calculated posterior sample file, or numpy array of samples. If a files is given then the
+    parameters given as keys in the `pardict` ordered dictionary will be extracted. For each parameter name
+    key in the `pardict` ordered there should be pairs of hard upper an lower limits of the particular parameters.
+    If any of these are not +/-infinity then the samples will be duplicated and reflected around that limit. This
+    is to avoid edge effects for the inferred Gaussian distributions. `ncomps` sets the hyperparameter used in
+    the Dirichlet process related to the number of Gaussian components.
+
+    `taper` sets whether or not to taper-off any reflected samples, and how that tapering happens. Tapering can
+    use: a 'gaussian' taper, where the half-width of the Gaussian is set by the range of the samples multiplied
+    by `decaywidth`; a 'triangular' taper, which falls from one to zero over the range of the samples; an
+    'exponential' taper, where the decay constant is defined by 'decaywidth' multiplied by the range of the
+    samples; or, an 'elliptical' taper, where the axis of the ellipse is set by 'decaywidth' multiplied by the
+    range of the samples. The default is that no tapering is applied, and it should be noted that tapering can
+    still leave artifacts in the final GMM.
+
+    The means, covariance matrices and weights of the Gaussian components will be returned, along with
+    the full set of points (including reflected points) used for the estimation.
+
+    An example of using this would be for "H0" versus "COSIOTA", in which case the `pardict` might be:
+    >> pardict = OrderedDict()
+    >> pardict['H0'] = [0., np.inf]
+    >> pardict['COSIOTA'] = [-1., 1.]
+    """
+
+    try:
+      from sklearn import mixture
+    except:
+      print('Error... could not import scikit-learn.', file=sys.stderr)
+      self.errpr_code = -1
+      return None, None, None, None
+
+    means = None
+    covs = None
+    weights = None
+
+    if not isinstance(pardict, OrderedDict):
+      print('Error... Input must be an ordered dictionary', file=sys.stderr)
+      self.error_code = -1
+      return means, covs, weights, None
+
+    npars = len(pardict)
+    allsamples = []
+
+    # get samples
+    try:
+      if not isinstance(prevpostfile, (np.ndarray, np.generic)):
+        # get samples from posterior sample hdf5 file
+        if not os.path.isfile(prevpostfile):
+          print("Error... previous posterior sample file '%s' does not exist" % prevpostfile, file=sys.stderr)
+          self.error_code = -1
+          return means, covs, weights, None
+
+        possamps, B, N = pppu.pulsar_nest_to_posterior(prevpostfile)
+        for par in pardict:
+          allsamples.append(possamps[par.upper()].samples)
+      else: # get samples fron numpy array
+        if prevpostfile.shape[1] == npars:
+          for i in range(npars):
+            allsamples.append(prevpostfile[:,i].reshape(len(prevpostfile), 1))
+        else:
+          print('Error... input numpy array does not contain correct number of parameters', file=sys.stderr)
+          self.error_code = -1
+          return means, covs, weights, None
+    except:
+      print("Error... could not extract posterior samples from file or numpy array", file=sys.stderr)
+      self.error_code = -1
+      return means, covs, weights, None
+
+    # reflect and duplicate samples if required for all parameters (for each reflection add to ncomp)
+    allsamplesnp = np.copy(allsamples).squeeze().T
+    for i, p in enumerate(pardict.keys()):
+      refsamples = None
+
+      for lim in pardict[p]:
+        if np.isfinite(lim):
+          maxp = np.max(allsamples[i])
+          minp = np.min(allsamples[i])
+
+          sigmap = decaywidth*(maxp-minp)
+
+          dist = lim - allsamplesnp[:,i]
+
+          refidxs = np.ones(len(allsamplesnp[:,i]), dtype=bool)
+          # reflect about this limit (with given tapering if required)
+          if taper is not None:
+            if lim > maxp:
+              deltav = allsamplesnp[:,i]+2.*dist-maxp
+            elif lim < minp:
+              deltav = minp-(allsamplesnp[:,i]+2.*dist)
+            else:
+              print("Warning... limit is inside the extent of the samples", file=sys.stderr)
+              continue
+
+            probkeep = np.ones(len(allsamplesnp[:,i]))
+            if taper == 'gaussian':
+              probkeep = np.exp(-0.5*(deltav)**2/sigmap**2)
+            elif taper == 'triangular':
+              probkeep = 1.-(deltav)/(maxp-minp)
+            elif taper == 'exponential':
+              probkeep = np.exp(-(deltav)/sigmap)
+            elif taper == 'elliptical':
+              probkeep = np.zeros(len(allsamplesnp[:,i]))
+              probkeep[deltav < sigmap] = np.sqrt(1.-(deltav[deltav < sigmap]/sigmap)**2)
+            else:
+              print("Warning... unknown tapering has been set, so none will be applied", file=sys.stderr)
+
+            refidxs = (np.random.rand(len(allsamplesnp[:,i])) < probkeep).flatten()
+
+          thesesamples = allsamplesnp[refidxs,:]
+          thesesamples[:,i] += 2.*dist[refidxs]
+          if refsamples is None:
+            refsamples = np.copy(thesesamples)
+          else:
+            refsamples = np.concatenate((refsamples, thesesamples))
+
+      # stack samples
+      if refsamples is not None:
+        allsamplesnp = np.concatenate((allsamplesnp, refsamples))
+
+    # scale parameters to avoid dynamic range issues
+    parscales = np.std(allsamplesnp, axis=0)
+    scalesmat = np.identity(npars)*parscales
+    scaledsamples = allsamplesnp/parscales
+
+    # run DPGMM (tolerance and max_iter are increased over the default values
+    # to aid convergence, although "unconverged" initialisations are generally
+    # still fine to use)
+    dpgmm = mixture.BayesianGaussianMixture(n_components=ncomps, covariance_type='full', tol=5e-2, max_iter=500).fit(scaledsamples)
+
+    # predict the GMM components in which the samples live
+    parpred = dpgmm.predict(scaledsamples)
+
+    # get the means, covariances and weights of the GMM components in which actually contain predicted samples
+    means = []
+    covs = []
+    weights = []
+    for i, (mean, covar, weight) in enumerate(zip(dpgmm.means_, dpgmm.covariances_, dpgmm.weights_)):
+        if np.any(parpred == i): # check if any samples predicted to be in component i
+            # check that mode is within 3.5 sigma of limits otherwise don't include it
+            outlims = 0
+            for (mus, sigs, lowlim, highlim) in zip(mean*parscales, parscales*np.sqrt(np.diag(covar)), [pardict[p][0] for p in pardict], [pardict[p][1] for p in pardict]):
+                if mus < lowlim - 3.*sigs or mus > highlim + 3.*sigs:
+                    outlims += 1
+
+            if outlims == 2:
+                continue
+
+            # rescale to get back to true values
+            means.append(mean*parscales)
+            covs.append(np.dot(scalesmat, np.dot(covar, scalesmat)))
+            weights.append(weight)
+
+    if len(means) == 0:
+        print("Error... no GMM components returned", file=sys.stderr)
+        self.error_code = -1
+
+    return means, covs, weights, allsamplesnp
 
 
   def setup_heterodyne(self):
@@ -2511,7 +2735,7 @@ class knopeDAG(pipeline.CondorDAG):
 
     xmlToTxtCall = ' '.join([ligolwprint,
                              "--table segment --column start_time --column end_time --delimiter ' '",
-                             ' > ', outfile])
+                             '>', outfile])
 
     segCall = ' '.join([segFindCall, '|', xmlToTxtCall])
 

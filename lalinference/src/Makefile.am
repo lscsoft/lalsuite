@@ -35,6 +35,7 @@ pkginclude_HEADERS = \
 	LALInferenceBurstRoutines.h \
 	LALInferenceHDF5.h \
 	LALInferencePriorVolumes.h \
+	cubic_interp.h \
 	$(BAYESTARHDR) \
 	$(XMLHDR)
 
@@ -63,6 +64,7 @@ liblalinference_la_SOURCES = \
 	LALInferencePriorVolumes.c \
 	DetectorFixedSkyCoords.c \
 	logaddexp.h \
+	cubic_interp.c \
 	$(BAYESTARSRC) \
 	$(XMLSRC)
 

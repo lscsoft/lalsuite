@@ -55,6 +55,7 @@ python/imrtgr_imr_consistency_test
 python/lalinference/__init__.py
 python/lalinference/_lalinference*
 python/lalinference/bayestar/_distance.so
+python/lalinference/bayestar/_moc.so
 python/lalinference/bayestar/_sky_map.so
 python/lalinference/bayestar/sky_map.so
 python/lalinference/git_version.py
@@ -99,5 +100,6 @@ test/test_bayestar_prune_neighborhood_tmpltbank.xml
 test/test_bayestar_realize_coincs.xml
 test/test_bayestar_sample_model_psd.xml
 test/test_bayestar_sim_to_tmpltbank.xml
+test/test_cubic_interp
 test/test_result_images
 test/test_vot.xml

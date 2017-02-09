@@ -1,8 +1,9 @@
-lalsimulation (1.6.1.1-1) UNRELEASED; urgency=medium
+lalsimulation (1.7.0-1) unstable; urgency=low
 
-  * Back to development
+  * LALSimulation 1.7.0
+  * O2 release
 
- -- Leo Singer <leo@lalsuitedev>  Thu, 13 Oct 2016 20:04:51 -0400
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 07 Feb 2017 16:55:59 -0600
 
 lalsimulation (1.6.1-1) unstable; urgency=low
 

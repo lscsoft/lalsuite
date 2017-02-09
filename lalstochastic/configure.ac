@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALStochastic],[1.1.19.1],[lal-discuss@ligo.org])
+AC_INIT([LALStochastic],[1.1.20.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALStochasticConfig.h])
 AC_CONFIG_SRCDIR([src/StochasticOmegaGW.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -36,8 +36,8 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="6.17.0"
-MIN_LALMETAIO_VERSION="1.3.0"
+MIN_LAL_VERSION="6.18.0"
+MIN_LALMETAIO_VERSION="1.3.1"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALMETAIO_VERSION])
 
