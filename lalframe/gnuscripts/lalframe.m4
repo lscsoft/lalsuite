@@ -1,6 +1,6 @@
 # lalframe.m4 - lalframe specific macros
 #
-# serial 6
+# serial 7
 
 AC_DEFUN([LALFRAME_ENABLE_FRAMEC],
 [AC_ARG_ENABLE(
