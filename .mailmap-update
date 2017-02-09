@@ -1,19 +1,61 @@
 #!/usr/bin/perl
+
 use strict;
-open IN, "git shortlog -s -e -n |" or die $!;
-my %authors;
-my %emails;
+
+my %name2mails;
+my %cmail2cname;
+
+open IN, ".mailmap" or die $!;
 while (<IN>) {
-    chomp;
-    $_ =~ m/^\s*\d+\s+([^<>]+)\s+<([^>]+)>\s*$/ or die;
-    my $author = $1;
-    my $email = $2;
-    next if $author =~ /^UNKNOWN/;
-    if (defined($authors{$author})) {
-        print "$authors{$author} <$email>\n";
-    } elsif (defined($emails{$email})) {
-        print "$emails{$email} <$email>\n";
+  chomp;
+
+  my ($pname, $pmail, $cname, $cmail) = /^([^<]*?)\s*<([^>]*)>(?:\s*([^<]*?)\s*<([^>]*)>)?$/ or die;
+
+  $cmail = $pmail if $cmail eq "";
+
+  $name2mails{$pname}->{$pmail} = -1;
+  $name2mails{$pname}->{$cmail} = 0 if !defined($name2mails{$pname}->{$cmail});
+  $cmail2cname{$cmail} = $cname;
+
+}
+close IN;
+
+open IN, "git shortlog -s -e -n |" or die $!;
+while (<IN>) {
+  chomp;
+
+  my ($n, $cname, $cmail) = m/^\s*(\d+)\s+([^<>]+)\s+<([^>]+)>\s*$/ or die;
+
+  next if $cname =~ /^UNKNOWN AUTHOR/;
+
+  $name2mails{$cname}->{$cmail} = $n if !defined($name2mails{$cname}->{$cmail});
+
+}
+close IN;
+
+foreach my $pname (sort { $a cmp $b } keys(%name2mails)) {
+
+  my @pmails;
+  push @pmails, grep { /^[a-z.-]+[.][a-z.-]+[@]ligo[.]org$/ } keys(%{$name2mails{$pname}});
+  push @pmails, grep { /^[a-z.-]+[@]ligo[.]org$/ } keys(%{$name2mails{$pname}});
+  push @pmails, grep { /[@]ligo[.]org$/ } keys(%{$name2mails{$pname}});
+  push @pmails, grep { $name2mails{$pname}->{$_} < 0 } keys(%{$name2mails{$pname}});
+  push @pmails, sort { $name2mails{$pname}->{$b} <=> $name2mails{$pname}->{$a} } keys(%{$name2mails{$pname}});
+  shift @pmails if $pmails[0] =~ /^albert[.]einstein@/i;
+
+  my $pmail = shift @pmails;
+  die "Could not determine email address for $pname" unless defined($pmail);
+
+  next unless keys(%{$name2mails{$pname}}) > 1 || $name2mails{$pname}->{$pmail} <= 0;
+
+  print "$pname <$pmail>\n";
+  foreach my $mail (sort { $a cmp $b } keys(%{$name2mails{$pname}})) {
+    next if $mail eq $pmail;
+    if ($cmail2cname{$mail} ne "") {
+      print "$pname <$pmail> $cmail2cname{$mail} <$mail>\n";
     } else {
-        $authors{$author} = $emails{$email} = "$author <$email>";
+      print "$pname <$pmail> <$mail>\n";
     }
+  }
+
 }
