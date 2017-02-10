@@ -283,7 +283,7 @@ class DocContents(object):
 		# sort the event list for each coin by peak time and
 		# convert to tuples for speed
 		for coinc_event_id, events in self.coincs.items():
-			events.sort(lambda a, b: cmp(a.peak_time, b.peak_time) or cmp(a.peak_time_ns, b.peak_time_ns))
+			events.sort(key = lambda event: event.peak)
 			self.coincs[coinc_event_id] = tuple(events)
 		# convert dictionary to a list of (coinc_event_id, events)
 		# tuples and create a coinc_event_id to offset vector
@@ -301,7 +301,7 @@ class DocContents(object):
 		#
 
 		self.snglbursttable = dict((instrument, sorted((event for event in self.snglbursttable if event.ifo == instrument), key = lambda event: event.peak)) for instrument in set(self.snglbursttable.getColumnByName("ifo")))
-		self.coincs.sort(key = lambda (coinc_id, events): events[0].peak)
+		self.coincs.sort(key = lambda coinc_id_events: coinc_id_events[1][0].peak)
 
 	def bursts_near_peaktime(self, t, window, offsetvector):
 		"""
