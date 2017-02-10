@@ -219,6 +219,13 @@ static int BasicTest(
     printf( "  Lattice type: %i\n", lattice );
   }
 
+  // Check tiled status of lattce tiling dimensions
+  for ( size_t i = 0; i < n; ++i ) {
+    const int is_tiled_i = XLALIsTiledLatticeTilingDimension( tiling, i );
+    XLAL_CHECK( is_tiled_i >= 0, XLAL_EFUNC );
+    XLAL_CHECK( !is_tiled_i == !bound_on[i], XLAL_EFAILED, "XLALIsTiledLatticeTilingDimension(tiling, %zu) = %i, should be %i", i, is_tiled_i, bound_on[i] );
+  }
+
   // Create lattice tiling locator
   LatticeTilingLocator *loc = XLALCreateLatticeTilingLocator( tiling );
   XLAL_CHECK( loc != NULL, XLAL_EFUNC );
