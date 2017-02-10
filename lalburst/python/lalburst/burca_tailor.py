@@ -398,7 +398,7 @@ WHERE
 process_program_name = "lalapps_burca_tailor"
 
 
-def gen_likelihood_control(coinc_params_distributions, seglists, name = u"ligolw_burca_tailor", comment = u""):
+def gen_likelihood_control(coinc_params_distributions, seglists, name = u"lalapps_burca_tailor", comment = u""):
 	xmldoc = ligolw.Document()
 	node = xmldoc.appendChild(ligolw.LIGO_LW())
 

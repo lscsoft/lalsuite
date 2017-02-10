@@ -38,7 +38,7 @@ from glue.ligolw import lsctables
 from glue.ligolw import utils
 from glue.ligolw.utils import process as ligolw_process
 from glue.offsetvector import offsetvector
-from . import ligolw_burca_tailor
+from . import burca_tailor
 from . import git_version
 from pylal import rate
 from pylal import snglcoinc
@@ -334,7 +334,7 @@ def load_likelihood_data(filenames, verbose = False):
 
 
 def write_likelihood_data(filename, coincparamsdistributions, seglists, verbose = False):
-	utils.write_filename(ligolw_burca_tailor.gen_likelihood_control(coincparamsdistributions, seglists, name = u"string_cusp_likelihood"), filename, verbose = verbose, gz = (filename or "stdout").endswith(".gz"))
+	utils.write_filename(burca_tailor.gen_likelihood_control(coincparamsdistributions, seglists, name = u"string_cusp_likelihood"), filename, verbose = verbose, gz = (filename or "stdout").endswith(".gz"))
 
 
 #

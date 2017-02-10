@@ -33,7 +33,7 @@ import sqlite3
 from glue.ligolw import dbtables
 from lal.utils import CacheEntry
 from lalburst import git_version
-from lalburst import ligolw_burca_tailor
+from lalburst import burca_tailor
 from lalburst import ligolw_burca2
 from lalburst import SnglBurstUtils
 from pylal import snglcoinc
@@ -114,7 +114,7 @@ options, filenames = parse_command_line()
 
 
 def load_likelihood_data(filenames, verbose = False):
-	distributions, ignored = ligolw_burca_tailor.EPGalacticCoreCoincParamsDistributions.from_filenames(filenames, u"ligolw_burca_tailor", verbose = verbose)
+	distributions, ignored = burca_tailor.EPGalacticCoreCoincParamsDistributions.from_filenames(filenames, u"lalapps_burca_tailor", verbose = verbose)
 	distributions.finish()
 	return distributions
 
