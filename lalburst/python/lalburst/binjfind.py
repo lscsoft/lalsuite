@@ -593,7 +593,7 @@ def add_sim_coinc_coinc(contents, sim, coinc_event_ids, coinc_def_id):
 #
 
 
-def ligolw_binjfind(xmldoc, process, search, snglcomparefunc, nearcoinccomparefunc, verbose = False):
+def binjfind(xmldoc, process, search, snglcomparefunc, nearcoinccomparefunc, verbose = False):
 	#
 	# Analyze the document's contents.
 	#
