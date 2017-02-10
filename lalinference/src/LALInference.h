@@ -59,6 +59,7 @@
 #include <lal/FindChirp.h>
 #include <lal/Window.h>
 #include <lal/LALString.h>
+#include <lal/StringInput.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimInspiralWaveformCache.h>
 #include <lal/LALHashTbl.h>

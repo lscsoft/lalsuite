@@ -1,8 +1,9 @@
-lalstochastic (1.1.19.1-1) UNRELEASED; urgency=medium
+lalstochastic (1.1.20-1) unstable; urgency=low
 
-  * Back to development
+  * LALStochastic 1.1.20
+  * O2 release
 
- -- Leo Singer <leo@lalsuitedev>  Thu, 13 Oct 2016 20:05:16 -0400
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 07 Feb 2017 10:32:40 -0600
 
 lalstochastic (1.1.19-1) unstable; urgency=low
 

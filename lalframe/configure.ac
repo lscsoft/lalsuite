@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALFrame],[1.4.2.1],[lal-discuss@ligo.org])
+AC_INIT([LALFrame],[1.4.3.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALFrameConfig.h])
 AC_CONFIG_SRCDIR([src/LALFrameIO.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -37,7 +37,7 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="6.17.0"
+MIN_LAL_VERSION="6.18.0"
 AC_SUBST([MIN_LAL_VERSION])
 
 AC_CANONICAL_HOST
@@ -68,9 +68,6 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
-
-# enable check for inotify
-LALFRAME_ENABLE_INOTIFY
 
 # enable check for framec
 LALFRAME_ENABLE_FRAMEC
@@ -176,14 +173,6 @@ AM_CONDITIONAL([FRAMEL],[test "${FRAMEL_AVAILABLE}" = "yes"])
 LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
 
-# check for inotify
-if test "${inotify}" = "true"; then
-  AC_CHECK_HEADER([sys/inotify.h],
-                  [AC_DEFINE([HAVE_INOTIFY],[1],[Define if you have inotify])],
-                  [inotify=false])
-fi
-INOTIFY_ENABLE_VAL="`eval test x$inotify = xtrue && echo "ENABLED" || echo "DISABLED"`"
-
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG
 
@@ -218,7 +207,6 @@ LALFrame has now been successfully configured:
 * using the $FRAME_LIBRARY frame library
 * FrameC availability... ${FRAMEC_AVAILABLE}
 * FrameL availability... ${FRAMEL_AVAILABLE}
-* inotify support is $INOTIFY_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
 * Doxygen documentation is $DOXYGEN_ENABLE_VAL

@@ -191,6 +191,14 @@ size_t XLALTiledLatticeTilingDimensions(
   );
 
 ///
+/// Return the dimension of the tiled lattice tiling dimension indexed by 'tiled_dim'
+///
+size_t XLALLatticeTilingTiledDimension(
+  const LatticeTiling *tiling,          ///< [in] Lattice tiling
+  const size_t tiled_dim                ///< [in] Index of tiled dimension to return
+  );
+
+///
 /// Return >0 if a lattice tiling dimension is tiled (i.e. not a single point), and 0 otherwise.
 ///
 int XLALIsTiledLatticeTilingDimension(

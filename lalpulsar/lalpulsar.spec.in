@@ -20,11 +20,11 @@ BuildRequires: octave-devel
 BuildRequires: python-devel
 BuildRequires: swig
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: lal-python >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
+BuildRequires: lal-python >= @MIN_LAL_VERSION@
 BuildRequires: lalxml-devel >= @MIN_LALXML_VERSION@
-BuildRequires: lalxml-python >= @MIN_LALXML_VERSION@
 BuildRequires: lalxml-octave >= @MIN_LALXML_VERSION@
+BuildRequires: lalxml-python >= @MIN_LALXML_VERSION@
 Requires: cfitsio
 Requires: fftw
 Requires: gsl
@@ -121,6 +121,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.16.0-1
+- O2 release
+
 * Mon Sep 26 2016 Adam Mercer <adam.mercer@ligo.org> 1.15.0-1
 - ER10 release
 

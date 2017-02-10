@@ -218,8 +218,8 @@ del group
 # Defer loading SWIG bindings until version string is needed.
 class VersionAction(argparse._VersionAction):
     def __call__(self, parser, namespace, values, option_string=None):
-        from .. import InferenceVCSVersion
-        self.version = 'LALInference ' + InferenceVCSVersion
+        from .. import InferenceVCSInfo
+        self.version = 'LALInference ' + InferenceVCSInfo.version
         super(VersionAction, self).__call__(
             parser, namespace, values, option_string)
 

@@ -1296,6 +1296,21 @@ size_t XLALTiledLatticeTilingDimensions(
 
 }
 
+size_t XLALLatticeTilingTiledDimension(
+  const LatticeTiling *tiling,
+  const size_t tiled_dim
+  )
+{
+
+  // Check input
+  XLAL_CHECK_VAL( 0, tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK_VAL( 0, tiling->lattice < TILING_LATTICE_MAX, XLAL_EINVAL );
+  XLAL_CHECK_VAL( 0, tiled_dim < tiling->tiled_ndim, XLAL_ESIZE );
+
+  return tiling->tiled_idx[tiled_dim];
+
+}
+
 int XLALIsTiledLatticeTilingDimension(
   const LatticeTiling *tiling,
   const size_t dim
