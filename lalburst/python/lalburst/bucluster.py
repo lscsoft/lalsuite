@@ -333,7 +333,7 @@ def OmegaClusterFunc(a, b):
 #
 
 
-def ligolw_bucluster(
+def bucluster(
 	xmldoc,
 	program,
 	process,
