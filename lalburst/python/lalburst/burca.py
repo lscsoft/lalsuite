@@ -67,7 +67,7 @@ lsctables.SnglBurst.__cmp__ = sngl_burst___cmp__
 #
 
 
-process_program_name = "ligolw_burca"
+process_program_name = "lalapps_burca"
 
 
 def append_process(xmldoc, comment = None, **kwargs):
@@ -342,7 +342,7 @@ def StringNTupleCoincCompare(events, offset_vector):
 #
 
 
-def ligolw_burca(
+def burca(
 	xmldoc,
 	process_id,
 	EventListType,

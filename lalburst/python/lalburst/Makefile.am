@@ -14,10 +14,10 @@ pymodule_PYTHON = \
 	__init__.py \
 	binjfind.py \
 	bucluster.py \
+	burca.py \
 	cafe.py \
 	date.py \
 	git_version.py \
-	ligolw_burca.py \
 	ligolw_burca2.py \
 	ligolw_burca_tailor.py \
 	packing.py \

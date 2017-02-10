@@ -48,7 +48,7 @@ from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw.utils import search_summary as ligolw_search_summary
 from glue.ligolw.utils import time_slide as ligolw_time_slide
 from . import git_version
-from . import ligolw_burca
+from . import burca
 from . import SimBurstUtils
 
 
@@ -602,8 +602,8 @@ def binjfind(xmldoc, process, search, snglcomparefunc, nearcoinccomparefunc, ver
 		print >>sys.stderr, "indexing ..."
 
 	b_b_def = {
-		"StringCusp": ligolw_burca.StringCuspBBCoincDef,
-		"excesspower": ligolw_burca.ExcessPowerBBCoincDef,
+		"StringCusp": burca.StringCuspBBCoincDef,
+		"excesspower": burca.ExcessPowerBBCoincDef,
 		"waveburst": CWBBBCoincDef,
 		"omega": OmegaBBCoincDef
 	}[search]

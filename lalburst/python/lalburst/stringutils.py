@@ -260,9 +260,9 @@ class StringCoincParamsDistributions(snglcoinc.CoincParamsDistributions):
 				orig_peak_times[event] = event.peak
 
 		# parse the --thresholds H1,L1=... command-line options from burca
-		delta_t = [float(threshold.split("=")[-1]) for threshold in ligolw_process.get_process_params(database.xmldoc, "ligolw_burca", "--thresholds")]
+		delta_t = [float(threshold.split("=")[-1]) for threshold in ligolw_process.get_process_params(database.xmldoc, "lalapps_burca", "--thresholds")]
 		if not all(delta_t[0] == threshold for threshold in delta_t[1:]):
-			raise ValueError("\Delta t is not unique in ligolw_burca arguments")
+			raise ValueError("\Delta t is not unique in lalapps_burca arguments")
 		delta_t = delta_t.pop()
 
 		# construct the coinc generator.  note that H1+H2-only
