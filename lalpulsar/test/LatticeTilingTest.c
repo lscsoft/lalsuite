@@ -102,7 +102,7 @@ static int SerialisationTest(
   // Count number of points
   const UINT8 total = XLALTotalLatticeTilingPoints( itr );
   XLAL_CHECK( total > 0, XLAL_EFUNC );
-  XLAL_CHECK( imaxabs( total - total_ref ) <= total_tol, XLAL_EFUNC, "\nERROR: |total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", total, total_ref, total_tol );
+  XLAL_CHECK( imaxabs( total - total_ref ) <= total_tol, XLAL_EFUNC, "|total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", total, total_ref, total_tol );
 
   // Get all points
   gsl_matrix *GAMAT( points, n, total );
@@ -120,7 +120,7 @@ static int SerialisationTest(
     gsl_vector_const_view points_k_view = gsl_matrix_const_column( points, k );
     gsl_vector_sub( point, &points_k_view.vector );
     double err = gsl_blas_dasum( point ) / n;
-    XLAL_CHECK( err < 1e-6, XLAL_EFAILED, "\nERROR: err = %e < 1e-6", err );
+    XLAL_CHECK( err < 1e-6, XLAL_EFAILED, "err = %e < 1e-6", err );
 
     // Checkpoint iterator at certain intervals
     if ( k_ckpt < XLAL_NUM_ELEM( total_ckpt ) && k + 1 >= total_ckpt[k_ckpt] ) {
@@ -237,12 +237,10 @@ static int BasicTest(
     const UINT8 total = XLALTotalLatticeTilingPoints( itr );
     XLAL_CHECK( total > 0, XLAL_EFUNC );
     printf( "Number of lattice points in %zu dimensions: %" LAL_UINT8_FORMAT " (vs %" LAL_UINT8_FORMAT ", tolerance = %i)\n", i+1, total, total_ref[i], total_tol );
-    XLAL_CHECK( imaxabs( total - total_ref[i] ) <= total_tol, XLAL_EFUNC,
-                "ERROR: |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", i, total, total_ref[i], total_tol );
+    XLAL_CHECK( imaxabs( total - total_ref[i] ) <= total_tol, XLAL_EFUNC, "|total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", i, total, total_ref[i], total_tol );
     for ( UINT8 k = 0; XLALNextLatticeTilingPoint( itr, NULL ) > 0; ++k ) {
       const UINT8 itr_index = XLALCurrentLatticeTilingIndex( itr );
-      XLAL_CHECK( k == itr_index, XLAL_EFUNC,
-                  "ERROR: k = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = itr_index", k, itr_index );
+      XLAL_CHECK( k == itr_index, XLAL_EFUNC, "k = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = itr_index", k, itr_index );
     }
     XLAL_CHECK( XLALResetLatticeTilingIterator( itr ) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -252,12 +250,9 @@ static int BasicTest(
       const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, j );
       XLAL_CHECK( stats != NULL, XLAL_EFUNC );
       XLAL_CHECK( stats->name != NULL, XLAL_EFUNC );
-      XLAL_CHECK( imaxabs( stats->total_points - total_ref[j] ) <= total_tol, XLAL_EFAILED, "\n  "
-                  "ERROR: |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", j, stats->total_points, total_ref[j], total_tol );
-      XLAL_CHECK( stats->min_points <= stats->max_points, XLAL_EFAILED, "\n  "
-                  "ERROR: min_points = %" LAL_INT4_FORMAT " > %" LAL_INT4_FORMAT " = max_points", stats->min_points, stats->max_points );
-      XLAL_CHECK( stats->min_value <= stats->max_value, XLAL_EFAILED, "\n  "
-                  "ERROR: min_value = %g > %g = max_value", stats->min_value, stats->max_value );
+      XLAL_CHECK( imaxabs( stats->total_points - total_ref[j] ) <= total_tol, XLAL_EFAILED, "|total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", j, stats->total_points, total_ref[j], total_tol );
+      XLAL_CHECK( stats->min_points <= stats->max_points, XLAL_EFAILED, "min_points = %" LAL_INT4_FORMAT " > %" LAL_INT4_FORMAT " = max_points", stats->min_points, stats->max_points );
+      XLAL_CHECK( stats->min_value <= stats->max_value, XLAL_EFAILED, "min_value = %g > %g = max_value", stats->min_value, stats->max_value );
       printf( " %s ...", stats->name );
     }
     printf( " done\n" );
@@ -278,35 +273,27 @@ static int BasicTest(
       XLAL_CHECK( XLALNearestLatticeTilingPoint( loc, point, nearest, nearest_indexes ) == XLAL_SUCCESS, XLAL_EFUNC );
       gsl_vector_sub( nearest, point );
       double err = gsl_blas_dasum( nearest ) / n;
-      XLAL_CHECK( err < 1e-6, XLAL_EFAILED, "\n  "
-                  "ERROR: err = %e < 1e-6", err );
-      XLAL_CHECK( nearest_indexes->data[i] == k, XLAL_EFAILED, "\n  "
-                  "ERROR: nearest_indexes[%zu] = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", i, nearest_indexes->data[i], k );
+      XLAL_CHECK( err < 1e-6, XLAL_EFAILED, "err = %e < 1e-6", err );
+      XLAL_CHECK( nearest_indexes->data[i] == k, XLAL_EFAILED, "nearest_indexes[%zu] = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", i, nearest_indexes->data[i], k );
       if ( 0 < i ) {
         const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, i );
         UINT8 nearest_index = 0;
         INT4 nearest_left = 0, nearest_right = 0;
         XLAL_CHECK( XLALNearestLatticeTilingBlock( loc, point, i, nearest, &nearest_index, &nearest_left, &nearest_right ) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK( nearest_index == nearest_indexes->data[i-1], XLAL_EFAILED, "\n  "
-                    "ERROR: nearest_index = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", nearest_index, nearest_indexes->data[i-1] );
-        XLAL_CHECK( nearest_left <= nearest_right, XLAL_EFAILED, "\n  "
-                    "ERROR: invalid [nearest_left, nearest_right] = [%i, %i]\n", nearest_left, nearest_right );
+        XLAL_CHECK( nearest_index == nearest_indexes->data[i-1], XLAL_EFAILED, "nearest_index = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", nearest_index, nearest_indexes->data[i-1] );
+        XLAL_CHECK( nearest_left <= nearest_right, XLAL_EFAILED, "invalid [nearest_left, nearest_right] = [%i, %i]\n", nearest_left, nearest_right );
         UINT4 nearest_len = nearest_right - nearest_left + 1;
-        XLAL_CHECK( nearest_len <= stats->max_points, XLAL_EFAILED, "\n  "
-                    "ERROR: nearest_len = %i > %i = stats[%zu]->max_points\n", nearest_len, stats->max_points, i );
+        XLAL_CHECK( nearest_len <= stats->max_points, XLAL_EFAILED, "nearest_len = %i > %i = stats[%zu]->max_points\n", nearest_len, stats->max_points, i );
       }
       if ( i+1 < n ) {
         const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, i+1 );
         UINT8 nearest_index = 0;
         INT4 nearest_left = 0, nearest_right = 0;
         XLAL_CHECK( XLALNearestLatticeTilingBlock( loc, point, i+1, nearest, &nearest_index, &nearest_left, &nearest_right ) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK( nearest_index == nearest_indexes->data[i], XLAL_EFAILED, "\n  "
-                    "ERROR: nearest_index = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", nearest_index, nearest_indexes->data[i] );
-        XLAL_CHECK( nearest_left <= nearest_right, XLAL_EFAILED, "\n  "
-                    "ERROR: invalid [nearest_left, nearest_right] = [%i, %i]\n", nearest_left, nearest_right );
+        XLAL_CHECK( nearest_index == nearest_indexes->data[i], XLAL_EFAILED, "nearest_index = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", nearest_index, nearest_indexes->data[i] );
+        XLAL_CHECK( nearest_left <= nearest_right, XLAL_EFAILED, "invalid [nearest_left, nearest_right] = [%i, %i]\n", nearest_left, nearest_right );
         UINT4 nearest_len = nearest_right - nearest_left + 1;
-        XLAL_CHECK( nearest_len <= stats->max_points, XLAL_EFAILED, "\n  "
-                    "ERROR: nearest_len = %i > %i = stats[%zu]->max_points\n", nearest_len, stats->max_points, i+1 );
+        XLAL_CHECK( nearest_len <= stats->max_points, XLAL_EFAILED, "nearest_len = %i > %i = stats[%zu]->max_points\n", nearest_len, stats->max_points, i+1 );
       }
     }
     printf( " done\n" );
@@ -328,7 +315,7 @@ static int BasicTest(
     while ( XLALNextLatticeTilingPoint( itr_alt, NULL ) > 0 ) {
       ++total_alt;
     }
-    XLAL_CHECK( imaxabs( total_alt - total_ref[i] ) <= total_tol, XLAL_EFUNC, "ERROR: alternating |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", i, total_alt, total_ref[i], total_tol );
+    XLAL_CHECK( imaxabs( total_alt - total_ref[i] ) <= total_tol, XLAL_EFUNC, "alternating |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", i, total_alt, total_ref[i], total_tol );
     printf( " done\n" );
 
     // Cleanup
@@ -374,7 +361,7 @@ static int MismatchTest(
   const UINT8 total = XLALTotalLatticeTilingPoints( itr );
   XLAL_CHECK( total > 0, XLAL_EFUNC );
   printf( "Number of lattice points: %" LAL_UINT8_FORMAT " (vs %" LAL_UINT8_FORMAT ", tolerance = %i)\n", total, total_ref, total_tol );
-  XLAL_CHECK( imaxabs( total - total_ref ) <= total_tol, XLAL_EFUNC, "ERROR: |total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", total, total_ref, total_tol );
+  XLAL_CHECK( imaxabs( total - total_ref ) <= total_tol, XLAL_EFUNC, "|total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", total, total_ref, total_tol );
 
   // Get all points
   gsl_matrix *GAMAT( points, n, total );
@@ -454,14 +441,14 @@ static int MismatchTest(
   mism_hist_error /= MISM_HIST_BINS;
   printf( "Mismatch histogram error: %0.3e (tolerance %0.3e)\n", mism_hist_error, mism_hist_error_tol );
   if ( mism_hist_error >= mism_hist_error_tol ) {
-    XLAL_ERROR( XLAL_EFAILED, "ERROR: mismatch histogram error exceeds tolerance\n" );
+    XLAL_ERROR( XLAL_EFAILED, "mismatch histogram error exceeds tolerance\n" );
   }
 
   // Check fraction of injections out of histogram range
   const double mism_out_of_range = mism_hist_out_of_range / mism_hist_total;
   printf( "Fraction of points out of histogram range: %0.3e (tolerance %0.3e)\n", mism_out_of_range, mism_out_of_range_tol );
   if ( mism_out_of_range > mism_out_of_range_tol ) {
-    XLAL_ERROR( XLAL_EFAILED, "ERROR: fraction of points out of histogram range exceeds tolerance\n" );
+    XLAL_ERROR( XLAL_EFAILED, "fraction of points out of histogram range exceeds tolerance\n" );
   }
 
   // Perform 10 injections outside parameter space
@@ -694,8 +681,7 @@ static int SuperskyTests(
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
     const double coh_dfreq = XLALLatticeTilingStepSizes( coh_tiling[n], ifreq );
     const double tol = 1e-8;
-    XLAL_CHECK( fabs( coh_dfreq - semi_dfreq ) < tol * semi_dfreq, XLAL_EFAILED,
-                "  ERROR: semi_dfreq=%0.15e, coh_dfreq[%zu]=%0.15e, |coh_dfreq - semi_dfreq| >= %0.5g * semi_dfreq", semi_dfreq, n, coh_dfreq, tol );
+    XLAL_CHECK( fabs( coh_dfreq - semi_dfreq ) < tol * semi_dfreq, XLAL_EFAILED, "semi_dfreq=%0.15e, coh_dfreq[%zu]=%0.15e, |coh_dfreq - semi_dfreq| >= %0.5g * semi_dfreq", semi_dfreq, n, coh_dfreq, tol );
   }
 
   // Print information on bounds
