@@ -609,28 +609,19 @@ class knopeDAG(pipeline.CondorDAG):
 
       copydir = None
       if self.copy_all_files: # create directory for file copies
-        copydir = os.path.join(self.results_pulsar_dir[pname], files)
+        copydir = os.path.join(self.results_pulsar_dir[pname], 'files')
         self.mkdirs(copydir)
         if self.error_code != 0: return
 
         # copy par file
-        cpnode = copyNode(cpjob)
-        cpnode.set_source(self.analysed_pulsars[pname])
-        cpnode.set_destination(os.path.join(copydir, pname+'.par'))
-        self.add_node(cpnode)
+        shutil.copy(self.analysed_pulsars[pname], os.path.join(copydir, pname+'.par'))
 
         # copy prior file
-        cpnode = copyNode(cpjob)
-        cpnode.set_source(self.pe_prior_files[pname])
-        cpnode.set_destination(copydir)
-        self.add_node(cpnode)
+        shutil.copy(self.pe_prior_files[pname], copydir)
 
         # copy correlation coefficient file
         if pname in self.pe_cor_files:
-          cpnode = copyNode(cpjob)
-          cpnode.set_source(self.pe_cor_files[pname])
-          cpnode.set_destination(copydir)
-          self.add_node(cpnode)
+          shutil.copy(self.pe_cor_files[pname], copydir)
 
       # if in autonomous mode, and a previous JSON results file already exists, make a copy of it
       jsonfile = os.path.join(self.results_pulsar_dir[pname], pname+'.json')
@@ -794,9 +785,9 @@ class knopeDAG(pipeline.CondorDAG):
           # copy fine heterodyned/spectrally interpolated files
           if copydir is not None:
             if not ff%1.: # for integers just output director as e.g. 2f
-              ffdir = os.path.join(copydirhet, '%df' % int(freqfactor))
+              ffdir = os.path.join(copydirhet, '%df' % int(ff))
             else: # for non-integers use 2 d.p. for dir name
-              ffdir = os.path.join(copydirhet, '%.3ff' % int(freqfactor))
+              ffdir = os.path.join(copydirhet, '%.3ff' % int(ff))
 
             self.mkdirs(ffdir)
             cpnode = copyNode(cpjob)
@@ -812,7 +803,8 @@ class knopeDAG(pipeline.CondorDAG):
           filelist = filelist[0] # don't need list if only one value
         datafiles[ifo] = filelist
 
-        copydirhet = os.path.join(copydir, 'data') # reset to base path
+        if copydir is not None:
+          copydirhet = os.path.join(copydir, 'data') # reset to base path
 
       cp.set('data', 'files', datafiles)
 
