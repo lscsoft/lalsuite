@@ -70,7 +70,7 @@ int main( int argc, char *argv[] )
     segment_list, STRING, 'L', OPTIONAL,
     "Loads the start and end times of each segment from this file. "
     "Format is:\n"
-    "  # comment\n  <segment-start-time-GPS> <segment-end-time-GPS>\n  ..."
+    "  # comment\n  <segment-start-time-GPS> <segment-end-time-GPS> [number-of-SFTs-in-segment]\n  ..."
     );
   XLALRegisterUvarMember(
     first_segment, EPOCHRange, 't', OPTIONAL,
