@@ -716,6 +716,7 @@ int main( int argc, char *argv[] )
 
   // Get timeslices of SFT catalogs restricted to each segment
   SFTCatalog XLAL_INIT_DECL( sft_catalog_seg, [nsegments] );
+  UINT4 nsfts = 0;
   if ( sft_catalog != NULL ) {
     for ( size_t i = 0; i < nsegments; ++i ) {
 
@@ -724,6 +725,9 @@ int main( int argc, char *argv[] )
       const LIGOTimeGPS *segment_end = &setup.segments->segs[i].end;
       XLAL_CHECK_MAIN( XLALSFTCatalogTimeslice( &sft_catalog_seg[i], sft_catalog, segment_start, segment_end ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( sft_catalog_seg[i].length > 0, XLAL_EINVAL, "No SFTs found for segment %zu", i );
+
+      // Count total number of SFTs used by search
+      nsfts += sft_catalog_seg[i].length;
 
       // Record information on SFTs in catalog
       MultiSFTCatalogView *sft_catalog_seg_i_view = XLALGetMultiSFTCatalogView( &sft_catalog_seg[i] );
@@ -1190,6 +1194,9 @@ int main( int argc, char *argv[] )
 
     // Write number of segments
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "nsegment", nsegments, "number of segments" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Write total number of SFTs used by search
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "nsfts", nsfts, "number of SFTs used by search" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Write physical parameter-space ranges
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "minrng alpha [rad]", ps[psialpha][0], "minimum right ascension range" ) == XLAL_SUCCESS, XLAL_EFUNC );
