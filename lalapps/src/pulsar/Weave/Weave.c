@@ -624,14 +624,6 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( sft_catalog->length > 0, XLAL_EFUNC );
     LogPrintf( LOG_NORMAL, "Loaded SFT catalog from SFTs matching '%s'\n", uvar->sft_files );
 
-    // Validate checksums of SFTs, if requested
-    if ( uvar->validate_sft_files ) {
-      BOOLEAN crc_check = 0;
-      XLAL_CHECK_MAIN( XLALCheckCRCSFTCatalog( &crc_check, sft_catalog ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( crc_check, XLAL_EFUNC, "Failed to validate checksums of SFTs matching '%s'\n", uvar->sft_files );
-      LogPrintf( LOG_NORMAL, "Validated checksums of SFTs matching '%s'\n", uvar->sft_files );
-    }
-
   } else if ( UVAR_SET( sft_timebase ) ) {
 
     // Create timestamps for generated SFTs
@@ -755,7 +747,18 @@ int main( int argc, char *argv[] )
     }
   }
 
+  // Validate SFTs within segment-restricted catalogs, if requested
   if ( sft_catalog != NULL && uvar->validate_sft_files ) {
+    LogPrintf( LOG_NORMAL, "Validating SFTs ...\n" );
+
+    // Validate checksums of SFTs, if requested
+    if ( UVAR_SET( sft_files ) ) {
+      for ( size_t i = 0; i < nsegments; ++i ) {
+        BOOLEAN crc_check = 0;
+        XLAL_CHECK_MAIN( XLALCheckCRCSFTCatalog( &crc_check, &sft_catalog_seg[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( crc_check, XLAL_EFUNC, "Failed to validate checksums of SFTs in segment %zu\n", i );
+      }
+    }
 
     // Check that the number of SFTs in each segment matches the number provided by the segment list in the setup file, if requested
     for ( size_t i = 0; i < nsegments; ++i ) {
@@ -763,6 +766,9 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( sft_count > 0, XLAL_EFAILED, "No number of SFTs given for segment %zu in setup file '%s'", i, uvar->setup_file );
       XLAL_CHECK_MAIN( sft_catalog_seg[i].length == sft_count, XLAL_EFAILED, "Number of SFTs found for segment %zu (%u) is inconsistent with expected number of SFTs given by segment list (%u) in setup file '%s'", i, sft_catalog_seg[i].length, sft_count, uvar->setup_file );
     }
+
+    // Validation complete
+    LogPrintf( LOG_NORMAL, "Finished validation of SFTs\n" );
 
   }
 
