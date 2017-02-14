@@ -254,11 +254,19 @@ void test_gaussian_output( LALInferenceRunState *runState ){
   h0sigma = LALInferenceGetREAL8Variable( runState->threads[0]->currentParams, "H0SIGMA" );
 
   /* calculate the log evidence */
-  Z = log(0.5*(erf((h0mean - min)/(sqrt(2.)*h0sigma)) - erf((h0mean - max)/(sqrt(2.)*h0sigma))));
+  Z = log(0.5*(erf(LAL_SQRT1_2*(h0mean - min)/h0sigma) - erf(LAL_SQRT1_2*(h0mean - max)/h0sigma)));
   Z -= log(max-min); /* divide by prior */
 
   /* calculate the 95% upper limit */
   h095 = ul_gauss_CDFRoot(h0mean, h0sigma, min, max);
+
+  /* calculate the KL divergence */
+  REAL8 lnC = -log(max-min); /* log of prior range */
+  REAL8 D = sqrt(LAL_TWOPI*h0sigma*h0sigma);
+  REAL8 Cpart = 0.25*(1. + 2.*lnC + 2.*log(D));
+
+  REAL8 KLdiv = (0.5/D)*exp(-0.5*((max-h0mean)/h0sigma)*((max-h0mean)/h0sigma))*(max-h0mean) - Cpart*erf(LAL_SQRT1_2*(max-h0mean)/h0sigma);
+  KLdiv -= ((0.5/D)*exp(-0.5*((min-h0mean)/h0sigma)*((min-h0mean)/h0sigma))*(min-h0mean) - Cpart*erf(LAL_SQRT1_2*(min-h0mean)/h0sigma));
 
   /* Open output file (called test_gauss.txt) using the path of the --outfile value */
   ppt = LALInferenceGetProcParamVal(runState->commandLine, "--outfile");
@@ -270,7 +278,7 @@ void test_gaussian_output( LALInferenceRunState *runState ){
   outfile = XLALStringAppend(outfile, "test_gauss.txt");
 
   if ( ( fp = fopen(outfile, "w") ) != NULL ){
-    fprintf(fp, "%.12le\t%.12le\n", Z, h095);
+    fprintf(fp, "%.12le\t%.12le\t%.12le\n", Z, h095, KLdiv);
     fclose(fp);
   }
   else{
