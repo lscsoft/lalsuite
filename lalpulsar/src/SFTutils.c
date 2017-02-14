@@ -511,32 +511,69 @@ XLALExtractMultiTimestampsFromSFTs ( const MultiSFTVector *multiSFTs )
 
 
 /**
- * Extract timstamps-vector from the given SFTVector
+ * Extract timestamps-vector of *unique* timestamps from the given SFTCatalog
+ *
+ * NOTE: when dealing with catalogs of frequency-slided SFTs, each timestamp will appear in the
+ * catalog multiple times, depending on how many frequency slices have been read in.
+ * In such cases this function will return the list of *unique* timestamps.
+ *
+ * NOTE 2: This function will also enfore the multiplicity of each timestamp to be the
+ * same through the whole catalog, corresponding to the case of 'frequency-sliced' SFTs,
+ * while non-constant multiplicities would indicate a potential problem somewhere.
  */
 LIGOTimeGPSVector *
 XLALTimestampsFromSFTCatalog ( const SFTCatalog *catalog )		/**< [in] input SFT-catalog  */
 {
-  /* check input consistency */
+  // check input consistency
   XLAL_CHECK_NULL ( catalog != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( catalog->length > 0, XLAL_EINVAL );
 
-  UINT4 numSFTs = catalog->length;
+  UINT4 numEntries = catalog->length;
 
-  /* create output vector */
+  // create output vector, assuming maximal length, realloc at the end
   LIGOTimeGPSVector *ret;
-  XLAL_CHECK_NULL ( ( ret = XLALCreateTimestampVector ( numSFTs )) != NULL, XLAL_EINVAL, "Failed to XLALCreateTimestampVector ( %d )\n", numSFTs );
+  XLAL_CHECK_NULL ( ( ret = XLALCreateTimestampVector ( numEntries )) != NULL, XLAL_EFUNC );
 
   REAL8 Tsft0 = 1.0 / catalog->data[0].header.deltaF;
-  if ( fabs ( (Tsft0 - round(Tsft0)) ) / Tsft0 < 10 * LAL_REAL8_EPS ) {
+  if ( fabs ( (Tsft0 - round(Tsft0)) ) / Tsft0 < 10 * LAL_REAL8_EPS ) {	// 10-eps 'snap' to closest integer
     ret->deltaT = round(Tsft0);
   } else {
     ret->deltaT = Tsft0;
   }
 
-  for ( UINT4 i = 0; i < numSFTs; i ++ ) {
-    ret->data[i] = catalog->data[i].header.epoch;
-  }
+  // For dealing with SFTCatalogs corresponding to frequency-sliced input SFTs:
+  // Given the guaranteed GPS-ordering of XLALSFTDataFind(), we can rely on duplicate
+  // timestamps to all be found next to each other, and therefore can easily skip them
+  ret->data[0] = catalog->data[0].header.epoch;
+  UINT4 numUnique = 1;
+  UINT4 stride = 0;
+  for ( UINT4 i = 1; i < numEntries; i ++ )
+    {
+      UINT4 thisStride = 1;
+      const LIGOTimeGPS *ti   = &(catalog->data[i].header.epoch);
+      const LIGOTimeGPS *tim1 = &(catalog->data[i-1].header.epoch);
+      if ( XLALGPSCmp( ti, tim1 ) == 0 ) {
+        thisStride ++;
+        continue;	// skip duplicates
+      }
+      ret->data[numUnique] = catalog->data[i].header.epoch;
+      numUnique ++;
 
-  /* done: return Ts-vector */
+      // keep track of stride, ensure that it's the same for every unique timestamp
+      if ( stride == 0 ) {
+        stride = thisStride;
+      }
+      else {
+        XLAL_CHECK_NULL ( stride == thisStride, XLAL_EINVAL, "Suspicious SFT Catalog with non-constant timestamps multiplicities '%u != %u'\n", stride, thisStride );
+      }
+    } // for i < numEntries
+
+
+  // now truncate output vector to actual length of unique timestamps
+  ret->length = numUnique;
+  XLAL_CHECK_NULL ( (ret->data = XLALRealloc ( ret->data, numUnique * sizeof( (*ret->data) ))) != NULL, XLAL_ENOMEM );
+
+  // done: return Ts-vector
   return ret;
 
 } /* XLALTimestampsFromSFTCatalog() */
