@@ -721,83 +721,94 @@ int main( int argc, char *argv[] )
   Fstat_opt_args.injectSources = injections;
   Fstat_opt_args.prevInput = NULL;
 
+  // Get timeslices of SFT catalogs restricted to each segment
+  SFTCatalog XLAL_INIT_DECL( sft_catalog_seg, [nsegments] );
+  if ( sft_catalog != NULL ) {
+    for ( size_t i = 0; i < nsegments; ++i ) {
+
+      // Get a timeslice of SFT catalog restricted to 'i'th segment
+      const LIGOTimeGPS *segment_start = &setup.segments->segs[i].start;
+      const LIGOTimeGPS *segment_end = &setup.segments->segs[i].end;
+      XLAL_CHECK_MAIN( XLALSFTCatalogTimeslice( &sft_catalog_seg[i], sft_catalog, segment_start, segment_end ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( sft_catalog_seg[i].length > 0, XLAL_EINVAL, "No SFTs found for segment %zu", i );
+
+      // Record information on SFTs in catalog
+      MultiSFTCatalogView *sft_catalog_seg_i_view = XLALGetMultiSFTCatalogView( &sft_catalog_seg[i] );
+      XLAL_CHECK_MAIN( sft_catalog_seg_i_view != NULL, XLAL_EINVAL );
+      for ( size_t j = 0; j < sft_catalog_seg_i_view->length; ++j ) {
+        XLAL_CHECK_MAIN( sft_catalog_seg_i_view->data[j].length > 0, XLAL_EINVAL, "No SFTs found for segment %zu, detector %zu", i, j );
+        char *detector_name = XLALGetChannelPrefix( sft_catalog_seg_i_view->data[j].data[0].header.name );
+        XLAL_CHECK_MAIN( detector_name != NULL, XLAL_EFUNC );
+        const int k = XLALFindStringInVector( detector_name, setup.detectors );
+        if ( k >= 0 ) {
+          const UINT4 length = sft_catalog_seg_i_view->data[j].length;
+          per_seg_info[i].sft_first[k] = sft_catalog_seg_i_view->data[j].data[0].header.epoch;
+          per_seg_info[i].sft_last[k] = sft_catalog_seg_i_view->data[j].data[length - 1].header.epoch;
+          per_seg_info[i].sft_count[k] = length;
+        }
+        XLALFree( detector_name );
+      }
+
+      // Cleanup
+      XLALDestroyMultiSFTCatalogView( sft_catalog_seg_i_view );
+
+    }
+  }
+
+  if ( sft_catalog != NULL && uvar->validate_sft_files ) {
+
+    // Check that the number of SFTs in each segment matches the number provided by the segment list in the setup file, if requested
+    for ( size_t i = 0; i < nsegments; ++i ) {
+      const UINT4 sft_count = ( UINT4 ) setup.segments->segs[i].id;
+      XLAL_CHECK_MAIN( sft_count > 0, XLAL_EFAILED, "No number of SFTs given for segment %zu in setup file '%s'", i, uvar->setup_file );
+      XLAL_CHECK_MAIN( sft_catalog_seg[i].length == sft_count, XLAL_EFAILED, "Number of SFTs found for segment %zu (%u) is inconsistent with expected number of SFTs given by segment list (%u) in setup file '%s'", i, sft_catalog_seg[i].length, sft_count, uvar->setup_file );
+    }
+
+  }
+
   // Create input data required for computing coherent results
   WeaveCohInput *XLAL_INIT_DECL( coh_input, [nsegments] );
   const char *Fstat_method_name = NULL;
   for ( size_t i = 0; i < nsegments; ++i ) {
 
-    const LIGOTimeGPS *segment_start = &setup.segments->segs[i].start;
-    const LIGOTimeGPS *segment_end = &setup.segments->segs[i].end;
-    const UINT4 sft_count = ( UINT4 ) setup.segments->segs[i].id;
-
     // Create F-statistic input data for 'i'th segment
     FstatInput *Fstat_input = NULL;
     if ( sft_catalog != NULL ) {
 
-      // Get a timeslice of SFT catalog restricted to range of 'i'th segment
-      SFTCatalog sft_catalog_i;
-      XLAL_CHECK_MAIN( XLALSFTCatalogTimeslice( &sft_catalog_i, sft_catalog, segment_start, segment_end ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( sft_catalog_i.length > 0, XLAL_EINVAL, "No SFTs found for segment %zu", i );
-      MultiSFTCatalogView *sft_catalog_i_view = XLALGetMultiSFTCatalogView( &sft_catalog_i );
-      XLAL_CHECK_MAIN( sft_catalog_i_view != NULL, XLAL_EINVAL );
-      for ( size_t j = 0; j < sft_catalog_i_view->length; ++j ) {
-        XLAL_CHECK_MAIN( sft_catalog_i_view->data[j].length > 0, XLAL_EINVAL, "No SFTs found for segment %zu, detector %zu", i, j );
-      }
-
-      // Check that the number of SFTs in each segment matches the number provided by the segment list in the setup file, if requested
-      if ( uvar->validate_sft_files ) {
-        XLAL_CHECK_MAIN( sft_count > 0, XLAL_EFAILED, "No number of SFTs given for segment %zu in setup file '%s'", i, uvar->setup_file );
-        XLAL_CHECK_MAIN( sft_catalog_i.length == sft_count, XLAL_EFAILED, "Number of SFTs found for segment %zu (%u) is inconsistent with expected number of SFTs given by segment list (%u) in setup file '%s'", i, sft_catalog_i.length, sft_count, uvar->setup_file );
-      }
-
       // Get list of detectors of SFT catalog in 'i'th segment
-      LALStringVector *sft_catalog_i_detectors = XLALListIFOsInCatalog( &sft_catalog_i );
-      XLAL_CHECK_MAIN( sft_catalog_i_detectors != NULL, XLAL_EFUNC );
+      LALStringVector *sft_catalog_seg_i_detectors = XLALListIFOsInCatalog( &sft_catalog_seg[i] );
+      XLAL_CHECK_MAIN( sft_catalog_seg_i_detectors != NULL, XLAL_EFUNC );
 
       // Get spindown range covered by parameter-space tiling of 'i'th segment
       PulsarSpinRange XLAL_INIT_DECL( spin_range );
       XLAL_CHECK_MAIN( XLALSuperskyLatticePulsarSpinRange( &spin_range, tiling[i], rssky_transf[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Compute frequency range covered by spindown range over 'i'th segment
-      LIGOTimeGPS sft_start = sft_catalog_i.data[0].header.epoch;
-      LIGOTimeGPS sft_end = sft_catalog_i.data[sft_catalog_i.length - 1].header.epoch;
-      const double sft_end_timebase = 1.0 / sft_catalog_i.data[sft_catalog_i.length - 1].header.deltaF;
+      LIGOTimeGPS sft_start = sft_catalog_seg[i].data[0].header.epoch;
+      LIGOTimeGPS sft_end = sft_catalog_seg[i].data[sft_catalog_seg[i].length - 1].header.epoch;
+      const double sft_end_timebase = 1.0 / sft_catalog_seg[i].data[sft_catalog_seg[i].length - 1].header.deltaF;
       XLALGPSAdd( &sft_end, sft_end_timebase );
       double sft_min_cover_freq = 0, sft_max_cover_freq = 0;
       XLAL_CHECK_MAIN( XLALCWSignalCoveringBand( &sft_min_cover_freq, &sft_max_cover_freq, &sft_start, &sft_end, &spin_range, 0, 0, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      // Record SFT information
-      for ( size_t j = 0; j < sft_catalog_i_view->length; ++j ) {
-        char *detector_name = XLALGetChannelPrefix( sft_catalog_i_view->data[j].data[0].header.name );
-        XLAL_CHECK_MAIN( detector_name != NULL, XLAL_EFUNC );
-        const int k = XLALFindStringInVector( detector_name, setup.detectors );
-        if ( k >= 0 ) {
-          const UINT4 length = sft_catalog_i_view->data[j].length;
-          per_seg_info[i].sft_first[k] = sft_catalog_i_view->data[j].data[0].header.epoch;
-          per_seg_info[i].sft_last[k] = sft_catalog_i_view->data[j].data[length - 1].header.epoch;
-          per_seg_info[i].sft_count[k] = length;
-        }
-        XLALFree( detector_name );
-     }
       per_seg_info[i].sft_min_cover_freq = sft_min_cover_freq;
       per_seg_info[i].sft_max_cover_freq = sft_max_cover_freq;
 
       // Parse SFT noise PSD string vector
       MultiNoiseFloor sft_noise_psd;
       if ( UVAR_SET( sft_noise_psd ) ) {
-        XLAL_CHECK_MAIN( XLALParseMultiNoiseFloorMapped( &sft_noise_psd, sft_catalog_i_detectors, uvar->sft_noise_psd, setup.detectors ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALParseMultiNoiseFloorMapped( &sft_noise_psd, sft_catalog_seg_i_detectors, uvar->sft_noise_psd, setup.detectors ) == XLAL_SUCCESS, XLAL_EFUNC );
         Fstat_opt_args.injectSqrtSX = &sft_noise_psd;
       }
 
       // Parse F-statistic assumed PSD string vector
       MultiNoiseFloor Fstat_assume_psd;
       if ( UVAR_SET( Fstat_assume_psd ) ) {
-        XLAL_CHECK_MAIN( XLALParseMultiNoiseFloorMapped( &Fstat_assume_psd, sft_catalog_i_detectors, uvar->Fstat_assume_psd, setup.detectors ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALParseMultiNoiseFloorMapped( &Fstat_assume_psd, sft_catalog_seg_i_detectors, uvar->Fstat_assume_psd, setup.detectors ) == XLAL_SUCCESS, XLAL_EFUNC );
         Fstat_opt_args.assumeSqrtSX = &Fstat_assume_psd;
       }
 
       // Create F-statistic input data
-      Fstat_input = XLALCreateFstatInput( &sft_catalog_i, sft_min_cover_freq, sft_max_cover_freq, dfreq, setup.ephemerides, &Fstat_opt_args );
+      Fstat_input = XLALCreateFstatInput( &sft_catalog_seg[i], sft_min_cover_freq, sft_max_cover_freq, dfreq, setup.ephemerides, &Fstat_opt_args );
       XLAL_CHECK_MAIN( Fstat_input != NULL, XLAL_EFUNC );
       Fstat_opt_args.prevInput = Fstat_input;
 
@@ -808,8 +819,7 @@ int main( int argc, char *argv[] )
       }
 
       // Cleanup
-      XLALDestroyMultiSFTCatalogView( sft_catalog_i_view );
-      XLALDestroyStringVector( sft_catalog_i_detectors );
+      XLALDestroyStringVector( sft_catalog_seg_i_detectors );
 
     }
 
