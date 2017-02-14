@@ -619,6 +619,7 @@ int main( int argc, char *argv[] )
   if ( UVAR_SET( sft_files ) ) {
 
     // Load SFT catalog from files given by 'sft_files'
+    LogPrintf( LOG_NORMAL, "Loading SFTs matching '%s' into catalog ...\n", uvar->sft_files );
     sft_catalog = XLALSFTdataFind( uvar->sft_files, NULL );
     XLAL_CHECK_MAIN( sft_catalog != NULL, XLAL_EFUNC );
     XLAL_CHECK_MAIN( sft_catalog->length > 0, XLAL_EFUNC );
@@ -772,12 +773,13 @@ int main( int argc, char *argv[] )
 
   }
 
-  // Create input data required for computing coherent results
+  // Load input data required for computing coherent results
   WeaveCohInput *XLAL_INIT_DECL( coh_input, [nsegments] );
   const char *Fstat_method_name = NULL;
+  LogPrintf( LOG_NORMAL, "Loading input data for coherent results ...\n" );
   for ( size_t i = 0; i < nsegments; ++i ) {
 
-    // Create F-statistic input data for 'i'th segment
+    // Load F-statistic input data for 'i'th segment
     FstatInput *Fstat_input = NULL;
     if ( sft_catalog != NULL ) {
 
@@ -813,7 +815,7 @@ int main( int argc, char *argv[] )
         Fstat_opt_args.assumeSqrtSX = &Fstat_assume_psd;
       }
 
-      // Create F-statistic input data
+      // Load F-statistic input data
       Fstat_input = XLALCreateFstatInput( &sft_catalog_seg[i], sft_min_cover_freq, sft_max_cover_freq, dfreq, setup.ephemerides, &Fstat_opt_args );
       XLAL_CHECK_MAIN( Fstat_input != NULL, XLAL_EFUNC );
       Fstat_opt_args.prevInput = Fstat_input;
@@ -829,11 +831,12 @@ int main( int argc, char *argv[] )
 
     }
 
-    // Create coherent input data for 'i'th segment
+    // Load coherent input data for 'i'th segment
     coh_input[i] = XLALWeaveCohInputCreate( simulation_level, Fstat_input, per_detectors );
     XLAL_CHECK_MAIN( coh_input[i] != NULL, XLAL_EFUNC );
 
   }
+  LogPrintf( LOG_NORMAL, "Finished input data for coherent results ...\n" );
 
   // Create caches to store intermediate results from coherent parameter-space tilings
   // - If no interpolation, caching is not required so reduce maximum cache size to 1
