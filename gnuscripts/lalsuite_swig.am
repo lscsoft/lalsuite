@@ -135,8 +135,7 @@ nodist_swiglal_octave_la_SOURCES = swiglal_octave.cpp
 swiglal_octave_la_SOURCES = SWIGTest.c
 swiglal_octave_la_CPPFLAGS = $(SWIG_OCTAVE_CPPFLAGS_IOCTAVE) $(swig_cppflags) $(SWIG_OCTAVE_CPPFLAGS)
 swiglal_octave_la_CXXFLAGS = $(SWIG_OCTAVE_CXXFLAGS)
-swiglal_octave_la_LDFLAGS = $(swig_ldflags) $(SWIG_OCTAVE_LDFLAGS)
-swiglal_octave_la_LIBADD = $(LDADD)
+swiglal_octave_la_LDFLAGS = $(LDADD) $(swig_ldflags) $(SWIG_OCTAVE_LDFLAGS)
 swiglal_octave_la_LIBTOOLFLAGS = $(swig_libtoolflags)
 
 if AMDEP
@@ -191,8 +190,7 @@ nodist_swiglal_python_la_SOURCES = swiglal_python.c
 swiglal_python_la_SOURCES = SWIGTest.c
 swiglal_python_la_CFLAGS = $(SWIG_PYTHON_CFLAGS)
 swiglal_python_la_CPPFLAGS = $(swig_cppflags) $(SWIG_PYTHON_CPPFLAGS)
-swiglal_python_la_LDFLAGS = $(swig_ldflags) $(SWIG_PYTHON_LDFLAGS)
-swiglal_python_la_LIBADD = $(LDADD)
+swiglal_python_la_LDFLAGS = $(LDADD) $(swig_ldflags) $(SWIG_PYTHON_LDFLAGS)
 swiglal_python_la_LIBTOOLFLAGS = $(swig_libtoolflags)
 
 if AMDEP
