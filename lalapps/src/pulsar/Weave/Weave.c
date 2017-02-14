@@ -1187,6 +1187,9 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, keyword, ps[psifreq][1], "maximum frequency range" ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
+    // Write frequency spacing
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "dfreq", dfreq, "frequency spacing" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
     // Write average number of semicoherent templates per each dimension
     {
       char keyword[32];
