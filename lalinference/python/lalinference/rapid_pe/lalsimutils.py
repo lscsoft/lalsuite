@@ -987,63 +987,7 @@ def hoff(P, Fp=None, Fc=None):
         htilde = lal.ResizeCOMPLEX16FrequencySeries(htilde, 0, FDlen)
     return htilde
 
-def norm_hoff(P, IP, Fp=None, Fc=None, fwdplan=None):
-    """
-    Generate a normalized FD waveform from ChooseWaveformParams P.
-    Will return a COMPLEX16FrequencySeries object.
-
-    If P.approx is a FD approximant, norm_hoff_FD is called.
-    This path calls SimInspiralChooseFDWaveform
-        fwdplan must be None for FD approximants.
-
-    If P.approx is a TD approximant, norm_hoff_TD is called.
-    This path calls ChooseTDWaveform and performs an FFT.
-        The TD waveform will be zero-padded so it's Fourier transform has
-        frequency bins of size P.deltaT.
-        If P.deltaF == None, the TD waveform will be zero-padded
-        to the next power of 2.
-    """
-    # For FD approximants, use the ChooseFDWaveform path = hoff_FD
-    if lalsim.SimInspiralImplementedFDApproximants(P.approx)==1:
-        # Raise exception if unused arguments were specified
-        if fwdplan is not None:
-            raise ValueError('FFT plan fwdplan given with FD approximant.\nFD approximants cannot use this.')
-        hf = norm_hoff_FD(P, IP, Fp, Fc)
-
-    # For TD approximants, do ChooseTDWaveform + FFT path = hoff_TD
-    else:
-        hf = norm_hoff_TD(P, IP, Fp, Fc, fwdplan)
-
-    return hf
-
-def norm_hoff_TD(P, IP, Fp=None, Fc=None, fwdplan=None):
-    """
-    Generate a waveform from ChooseWaveformParams P normalized according
-    to inner product IP by creating a TD waveform, zero-padding and
-    then Fourier transforming with FFTW3 forward FFT plan fwdplan.
-    Returns a COMPLEX16FrequencySeries object.
-
-    If P.deltaF==None, just pad up to next power of 2
-    If P.deltaF = 1/X, will generate a TD waveform, zero-pad to length X seconds
-        and then FFT. Will throw an error if waveform is longer than X seconds
-
-    If you do not provide a forward FFT plan, one will be created.
-    If you are calling this function many times, you may to create it
-    once beforehand and pass it in, e.g.:
-    fwdplan=lal.CreateForwardREAL8FFTPlan(TDlen,0)
-
-    You may pass in antenna patterns Fp, Fc. If none are provided, they will
-    be computed from the information in ChooseWaveformParams.
-
-    N.B. IP and the waveform generated from P must have the same deltaF and 
-        the waveform must extend to at least the highest frequency of IP's PSD.
-    """
-    hf = hoff_TD(P, Fp, Fc, fwdplan)
-    norm = IP.norm(hf)
-    hf.data.data /= norm
-    return hf
-
-def norm_hoff_FD(P, IP, Fp=None, Fc=None):
+def norm_hoff(P, IP, Fp=None, Fc=None):
     """
     Generate a FD waveform for a FD approximant normalized according to IP.
     Note that P.deltaF (which is None by default) must be set.
@@ -1053,7 +997,7 @@ def norm_hoff_FD(P, IP, Fp=None, Fc=None):
     if P.deltaF is None:
         raise ValueError('None given for freq. bin size P.deltaF')
 
-    htilde = hoff_FD(P, Fp, Fc)
+    htilde = hoff(P, Fp, Fc)
     norm = IP.norm(htilde)
     htilde.data.data /= norm
     return htilde
@@ -1081,8 +1025,6 @@ def non_herm_hoff(P):
             htR.data.length)
     lal.COMPLEX16TimeFreqFFT(hf, htC, fwdplan)
     return hf
-
-
 
 def hlmoft(P, Lmax=2, Fp=None, Fc=None):
     """
@@ -1261,7 +1203,6 @@ def complex_hoff(P, sgn=-1, fwdplan=None):
 
     Returns a COMPLEX16FrequencySeries object
     """
-    ht = complex_hoft(P, sgn)
     assert sgn == 1 or sgn == -1
 
     extra_params = P.to_lal_dict()
