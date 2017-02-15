@@ -194,7 +194,7 @@ class AlignedSpinTemplate(object):
         self._metric = None
         self.sigmasq = 0.
         self._mchirp = compute_mchirp(m1, m2)
-        self.tau0 = compute_tau0(self._mchirp, self.flow)
+        self.tau0 = compute_tau0(self._mchirp, bank.flow)
         self._dur = duration
         self._f_final = None
         self._fhigh_max = bank.fhigh_max
