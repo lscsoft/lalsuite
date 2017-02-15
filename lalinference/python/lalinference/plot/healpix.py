@@ -23,6 +23,8 @@ __all__ = ('heatmap', 'contour', 'contourf', 'healpix_heatmap',
 
 
 import functools
+import matplotlib
+from distutils.version import StrictVersion
 from matplotlib import text
 from matplotlib import ticker
 from matplotlib import patheffects
@@ -61,9 +63,19 @@ def heatmap(func, *args, **kwargs):
     zz[mask] = func(lons[mask], lats[mask])
 
     # Plot bitmap using imshow.
-    aximg = plt.imshow(zz.reshape(xx.shape), aspect=ax.get_aspect(),
-        origin='upper', extent=(0, 1, 1, 0), transform=ax.transAxes,
-        *args, **kwargs)
+    if StrictVersion(matplotlib.__version__) < StrictVersion('2.0'):
+        # FIXME: workaround for old behavior of imshow().
+        # Remove this once we require matplotlib >= 2.0.
+        # See also:
+        #   * https://bugs.ligo.org/redmine/issues/5152
+        #   * https://github.com/matplotlib/matplotlib/issues/7903
+        aximg = plt.imshow(zz.reshape(xx.shape), aspect=ax.get_aspect(),
+            origin='upper', extent=(xmin, xmax, ymax, ymin),
+            *args, **kwargs)
+    else:
+        aximg = plt.imshow(zz.reshape(xx.shape), aspect=ax.get_aspect(),
+            origin='upper', extent=(0, 1, 1, 0), transform=ax.transAxes,
+            *args, **kwargs)
 
     # Hide masked-out values by displaying them in transparent white.
     aximg.cmap.set_bad('w', alpha=0.)
