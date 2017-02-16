@@ -38,7 +38,7 @@ from glue.ligolw import lsctables
 from glue.ligolw import utils
 from glue.ligolw.utils import process as ligolw_process
 from glue.offsetvector import offsetvector
-from . import ligolw_burca_tailor
+from . import burca_tailor
 from . import git_version
 from pylal import rate
 from pylal import snglcoinc
@@ -260,9 +260,9 @@ class StringCoincParamsDistributions(snglcoinc.CoincParamsDistributions):
 				orig_peak_times[event] = event.peak
 
 		# parse the --thresholds H1,L1=... command-line options from burca
-		delta_t = [float(threshold.split("=")[-1]) for threshold in ligolw_process.get_process_params(database.xmldoc, "ligolw_burca", "--thresholds")]
+		delta_t = [float(threshold.split("=")[-1]) for threshold in ligolw_process.get_process_params(database.xmldoc, "lalapps_burca", "--thresholds")]
 		if not all(delta_t[0] == threshold for threshold in delta_t[1:]):
-			raise ValueError("\Delta t is not unique in ligolw_burca arguments")
+			raise ValueError("\Delta t is not unique in lalapps_burca arguments")
 		delta_t = delta_t.pop()
 
 		# construct the coinc generator.  note that H1+H2-only
@@ -334,7 +334,7 @@ def load_likelihood_data(filenames, verbose = False):
 
 
 def write_likelihood_data(filename, coincparamsdistributions, seglists, verbose = False):
-	utils.write_filename(ligolw_burca_tailor.gen_likelihood_control(coincparamsdistributions, seglists, name = u"string_cusp_likelihood"), filename, verbose = verbose, gz = (filename or "stdout").endswith(".gz"))
+	utils.write_filename(burca_tailor.gen_likelihood_control(coincparamsdistributions, seglists, name = u"string_cusp_likelihood"), filename, verbose = verbose, gz = (filename or "stdout").endswith(".gz"))
 
 
 #

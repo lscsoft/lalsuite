@@ -3758,8 +3758,8 @@ int XLALSimIMRSpinEOBWaveformAll(
     //OPTV3: copy over the low sampling part
     for ( i = 0; i < idxRD; i++ )
       {
-        hPlusTS->data->data[i]  = amp0*hVec->data[i+retLenLow]*cos(hVec->data[i+2*retLenLow]);
-        hCrossTS->data->data[i] = -amp0*hVec->data[i+retLenLow]*sin(hVec->data[i+2*retLenLow]);
+        hPlusTS->data->data[i]  =  amp0*hVec->data[i+retLenLow];
+        hCrossTS->data->data[i] = -amp0*hVec->data[i+retLenLow];
       }
 
     XLALDestroyREAL8Array(hVec);

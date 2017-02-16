@@ -48,7 +48,7 @@ from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw.utils import search_summary as ligolw_search_summary
 from glue.ligolw.utils import time_slide as ligolw_time_slide
 from . import git_version
-from . import ligolw_burca
+from . import burca
 from . import SimBurstUtils
 
 
@@ -283,7 +283,7 @@ class DocContents(object):
 		# sort the event list for each coin by peak time and
 		# convert to tuples for speed
 		for coinc_event_id, events in self.coincs.items():
-			events.sort(lambda a, b: cmp(a.peak_time, b.peak_time) or cmp(a.peak_time_ns, b.peak_time_ns))
+			events.sort(key = lambda event: event.peak)
 			self.coincs[coinc_event_id] = tuple(events)
 		# convert dictionary to a list of (coinc_event_id, events)
 		# tuples and create a coinc_event_id to offset vector
@@ -301,7 +301,7 @@ class DocContents(object):
 		#
 
 		self.snglbursttable = dict((instrument, sorted((event for event in self.snglbursttable if event.ifo == instrument), key = lambda event: event.peak)) for instrument in set(self.snglbursttable.getColumnByName("ifo")))
-		self.coincs.sort(key = lambda (coinc_id, events): events[0].peak)
+		self.coincs.sort(key = lambda coinc_id_events: coinc_id_events[1][0].peak)
 
 	def bursts_near_peaktime(self, t, window, offsetvector):
 		"""
@@ -593,7 +593,7 @@ def add_sim_coinc_coinc(contents, sim, coinc_event_ids, coinc_def_id):
 #
 
 
-def ligolw_binjfind(xmldoc, process, search, snglcomparefunc, nearcoinccomparefunc, verbose = False):
+def binjfind(xmldoc, process, search, snglcomparefunc, nearcoinccomparefunc, verbose = False):
 	#
 	# Analyze the document's contents.
 	#
@@ -602,8 +602,8 @@ def ligolw_binjfind(xmldoc, process, search, snglcomparefunc, nearcoinccomparefu
 		print >>sys.stderr, "indexing ..."
 
 	b_b_def = {
-		"StringCusp": ligolw_burca.StringCuspBBCoincDef,
-		"excesspower": ligolw_burca.ExcessPowerBBCoincDef,
+		"StringCusp": burca.StringCuspBBCoincDef,
+		"excesspower": burca.ExcessPowerBBCoincDef,
 		"waveburst": CWBBBCoincDef,
 		"omega": OmegaBBCoincDef
 	}[search]

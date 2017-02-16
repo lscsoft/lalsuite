@@ -26,8 +26,6 @@ while (<IN>) {
 
   my ($n, $cname, $cmail) = m/^\s*(\d+)\s+([^<>]+)\s+<([^>]+)>\s*$/ or die;
 
-  next if $cname =~ /^UNKNOWN AUTHOR/;
-
   $name2mails{$cname}->{$cmail} = $n if !defined($name2mails{$cname}->{$cmail});
 
 }

@@ -36,7 +36,7 @@ from glue.ligolw import lsctables
 from glue.ligolw import utils
 from glue.ligolw.utils import process as ligolw_process
 from lalburst import git_version
-from lalburst import ligolw_burca
+from lalburst import burca
 from pylal import snglcoinc
 
 
@@ -235,23 +235,23 @@ if options.coinc_segs is not None:
 
 
 if options.coincidence_algorithm == "excesspower":
-	EventListType = ligolw_burca.ExcessPowerEventList
-	comparefunc = ligolw_burca.ExcessPowerCoincCompare
+	EventListType = burca.ExcessPowerEventList
+	comparefunc = burca.ExcessPowerCoincCompare
 	if options.coinc_segs is not None:
 		ntuple_comparefunc = coinc_segs_ntuple_comparefunc
 	else:
 		ntuple_comparefunc = lambda *args: False	# keep everything
-	CoincTables = ligolw_burca.ExcessPowerCoincTables
-	CoincDef = ligolw_burca.ExcessPowerBBCoincDef
+	CoincTables = burca.ExcessPowerCoincTables
+	CoincDef = burca.ExcessPowerBBCoincDef
 elif options.coincidence_algorithm == "stringcusp":
-	EventListType = ligolw_burca.StringEventList
-	comparefunc = ligolw_burca.StringCoincCompare
+	EventListType = burca.StringEventList
+	comparefunc = burca.StringCoincCompare
 	if options.coinc_segs is not None:
-		ntuple_comparefunc = lambda *args: coinc_segs_ntuple_comparefunc(*args) or ligolw_burca.StringNTupleCoincCompare(*args)
+		ntuple_comparefunc = lambda *args: coinc_segs_ntuple_comparefunc(*args) or burca.StringNTupleCoincCompare(*args)
 	else:
-		ntuple_comparefunc = ligolw_burca.StringNTupleCoincCompare
-	CoincTables = ligolw_burca.StringCuspCoincTables
-	CoincDef = ligolw_burca.StringCuspBBCoincDef
+		ntuple_comparefunc = burca.StringNTupleCoincCompare
+	CoincTables = burca.StringCuspCoincTables
+	CoincDef = burca.StringCuspBBCoincDef
 else:
 	raise Exception("should never get here")
 
@@ -275,7 +275,7 @@ for n, filename in enumerate(filenames):
 	# Have we already processed it?
 	#
 
-	if ligolw_process.doc_includes_process(xmldoc, ligolw_burca.process_program_name):
+	if ligolw_process.doc_includes_process(xmldoc, burca.process_program_name):
 		if options.verbose:
 			print >>sys.stderr, "warning: %s already processed," % (filename or "stdin"),
 		if not options.force:
@@ -289,13 +289,13 @@ for n, filename in enumerate(filenames):
 	# Add an entry to the process table.
 	#
 
-	process = ligolw_burca.append_process(xmldoc, **options.__dict__)
+	process = burca.append_process(xmldoc, **options.__dict__)
 
 	#
 	# Run coincidence algorithm.
 	#
 
-	ligolw_burca.ligolw_burca(
+	burca.burca(
 		xmldoc = xmldoc,
 		process_id = process.process_id,
 		EventListType = EventListType,

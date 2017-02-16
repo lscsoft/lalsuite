@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2016  Leo Singer
+# Copyright (C) 2013-2017  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -27,7 +27,7 @@ Or, `bayetar_localize_lvalert` can GraceDB IDs from stdin (e.g., from the
 terminal, or redirected from a fifo):
 
     $ mkfifo /var/run/bayestar
-    $ bayestar_localize_lvalert < /var/run/bayestar &
+    $ tail -F /var/run/bayestar | bayestar_localize_lvalert &
     $ echo T90713 > /var/run/bayestar
 """
 __author__ = "Leo Singer <leo.singer@ligo.org>"
