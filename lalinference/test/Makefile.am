@@ -1,6 +1,8 @@
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_test.am
 
+SUBDIRS = baseline
+
 # Add compiled test programs to this variable
 test_programs += LALInferenceTest
 test_programs += LALInferencePriorTest
@@ -16,7 +18,7 @@ test_programs += test_cubic_interp
 # Disable test_multiband.sh for now
 #test_scripts = test_multiband.sh
 if SWIG_BUILD_PYTHON
-# test_scripts += test_plot.py
+test_scripts += test_plot.py
 test_scripts += test_detframe.py
 if HAVE_CHEALPIX
 test_scripts += doctests.py
@@ -59,15 +61,9 @@ MOSTLYCLEANFILES = \
 	test_bayestar_prune_neighborhood_tmpltbank.xml \
 	test_bayestar_littlehope.xml \
 	test_bayestar_lattice_tmpltbank.xml \
-	test_result_images/pp_plot_default.png \
-	test_result_images/pp_plot_lines.png \
-	test_result_images/pp_plot_steps.png \
 	$(END_OF_LIST)
 
 EXTRA_DIST += \
 	LALInferenceTest.h \
-	baseline_images/pp_plot_default.png \
-	baseline_images/pp_plot_lines.png \
-	baseline_images/pp_plot_steps.png \
 	HL-INJECTIONS_1_TEST-1000000000-10.xml \
 	$(END_OF_LIST)
