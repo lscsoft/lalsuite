@@ -196,7 +196,8 @@ esac
 # check for zlib libraries and headers
 PKG_CHECK_MODULES([ZLIB],[zlib],[true],[false])
 LALSUITE_PUSH_UVARS
-LALSUITE_ADD_FLAGS([C],[${ZLIB_CFLAGS}],[${ZLIB_LIBS}])
+CFLAGS="${CFLAGS} ${ZLIB_CFLAGS}"
+LIBS="${ZLIB_LIBS} ${LIBS}"
 AC_SEARCH_LIBS([compress],[],[:],[AC_MSG_ERROR([could not find the zlib library])])
 AC_CHECK_HEADER([zlib.h],[:],[AC_MSG_ERROR([could not find the zlib.h header])])
 LALSUITE_POP_UVARS
