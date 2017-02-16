@@ -39,7 +39,7 @@ import sys
 
 
 from lalburst import git_version
-from lalburst import ligolw_burca_tailor
+from lalburst import burca_tailor
 from lalburst import SnglBurstUtils
 
 
@@ -138,7 +138,7 @@ def add_to_dtplot(axes, red, black, blue, gmst, plottype = "LR"):
 
 
 #
-# distributions is a ligolw_burca_tailor.BurcaCoincParamsDistributions instance
+# distributions is a burca_tailor.BurcaCoincParamsDistributions instance
 #
 
 
@@ -259,7 +259,7 @@ options, filenames = parse_command_line()
 filenames.sort()
 
 
-distributions, seglists = ligolw_burca_tailor.EPGalacticCoreCoincParamsDistributions.from_filenames(filenames, u"ligolw_burca_tailor", verbose = options.verbose)
+distributions, seglists = burca_tailor.EPGalacticCoreCoincParamsDistributions.from_filenames(filenames, u"lalapps_burca_tailor", verbose = options.verbose)
 if options.verbose:
 	print >>sys.stderr, "applying filters ..."
 distributions.finish()

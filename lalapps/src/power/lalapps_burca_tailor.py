@@ -35,7 +35,7 @@ from lal.utils import CacheEntry
 from glue import segments
 from glue.ligolw import dbtables
 from glue.ligolw import utils
-from lalburst import ligolw_burca_tailor
+from lalburst import burca_tailor
 from lalburst import SnglBurstUtils
 from lalburst.SimBurstUtils import MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD
 from lalburst import git_version
@@ -110,7 +110,7 @@ options, filenames = parse_command_line()
 #
 
 
-distributions = ligolw_burca_tailor.EPGalacticCoreCoincParamsDistributions()
+distributions = burca_tailor.EPGalacticCoreCoincParamsDistributions()
 segs = segments.segmentlistdict()
 
 
@@ -120,7 +120,7 @@ segs = segments.segmentlistdict()
 
 
 if options.add_from:
-	c, s = distributions.from_filenames(options.add_from, u"ligolw_burca_tailor", verbose = options.verbose)
+	c, s = distributions.from_filenames(options.add_from, u"lalapps_burca_tailor", verbose = options.verbose)
 	distributions += c
 	segs |= s
 	del c
@@ -161,7 +161,7 @@ for n, filename in enumerate(filenames):
 
 	if database.sim_burst_table is None:
 		# iterate over burst<-->burst coincs
-		for is_background, events, offsetvector in ligolw_burca_tailor.get_noninjections(database):
+		for is_background, events, offsetvector in burca_tailor.get_noninjections(database):
 			params = distributions.coinc_params(events, offsetvector, MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD)
 			if params is not None:
 				if is_background:
@@ -171,7 +171,7 @@ for n, filename in enumerate(filenames):
 	else:
 		# iterate over burst<-->burst coincs matching injections
 		# "exactly"
-		for sim, events, offsetvector in ligolw_burca_tailor.get_injections(database):
+		for sim, events, offsetvector in burca_tailor.get_injections(database):
 			params = distributions.coinc_params(events, offsetvector, MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD)
 			if params is not None:
 				distributions.add_injection(params)
@@ -200,5 +200,5 @@ else:
 	filename = options.output
 
 
-xmldoc = ligolw_burca_tailor.gen_likelihood_control(distributions, segs)
+xmldoc = burca_tailor.gen_likelihood_control(distributions, segs)
 utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = (filename or "stdout").endswith(".gz"))

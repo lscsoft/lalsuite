@@ -25,18 +25,15 @@ pymodule_LTLIBRARIES = _sky_map.la _distance.la _moc.la
 
 _sky_map_la_CPPFLAGS = $(AM_CPPFLAGS) $(SWIG_PYTHON_CPPFLAGS) -I$(top_srcdir)/src
 _sky_map_la_CFLAGS = $(AM_CFLAGS) $(SWIG_PYTHON_CFLAGS) -Wno-error
-_sky_map_la_LDFLAGS = -shared -module -avoid-version
-_sky_map_la_LIBADD = $(top_builddir)/src/liblalinference.la
+_sky_map_la_LDFLAGS = $(top_builddir)/src/liblalinference.la -shared -module -avoid-version
 
 _distance_la_CPPFLAGS = $(AM_CPPFLAGS) $(SWIG_PYTHON_CPPFLAGS) -I$(top_srcdir)/src
 _distance_la_CFLAGS = $(AM_CFLAGS) $(SWIG_PYTHON_CFLAGS) -Wno-error
-_distance_la_LDFLAGS = -shared -module -avoid-version
-_distance_la_LIBADD = $(top_builddir)/src/liblalinference.la
+_distance_la_LDFLAGS = $(top_builddir)/src/liblalinference.la -shared -module -avoid-version
 
 _moc_la_CPPFLAGS = $(AM_CPPFLAGS) $(SWIG_PYTHON_CPPFLAGS) -I$(top_srcdir)/src
 _moc_la_CFLAGS = $(AM_CFLAGS) $(SWIG_PYTHON_CFLAGS) -Wno-error
-_moc_la_LDFLAGS = -shared -module -avoid-version
-_moc_la_LIBADD = $(top_builddir)/src/liblalinference.la
+_moc_la_LDFLAGS = $(top_builddir)/src/liblalinference.la -shared -module -avoid-version
 endif
 endif
 

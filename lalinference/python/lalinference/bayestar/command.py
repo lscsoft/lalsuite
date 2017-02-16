@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2016  Leo Singer
+# Copyright (C) 2013-2017  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -31,9 +31,7 @@ import glob
 import inspect
 import itertools
 import os
-from select import select
 import shutil
-import stat
 import sys
 import tempfile
 import matplotlib
@@ -351,32 +349,19 @@ def register_to_xmldoc(xmldoc, parser, opts, **kwargs):
 
 
 def iterlines(file, start_message='Waiting for input on stdin. Type control-D followed by a newline to terminate.', stop_message='Reached end of file. Exiting.'):
-    """Safely iterate over non-emtpy lines in a file. Works around buffering
-    issues with `for line in sys.stdin`. Also works around early closing of
-    fifos (named pipes)."""
-    fd = file.fileno()
-    # Determine if the file is a FIFO (named pipe) or a TTY (terminal).
-    is_fifo = stat.S_ISFIFO(os.fstat(fd).st_mode)
-    is_tty = os.isatty(fd)
+    """Iterate over non-emtpy lines in a file."""
+    is_tty = os.isatty(file.fileno())
 
     if is_tty:
         print(start_message, file=sys.stderr)
 
     while True:
-        # Wait until some data is available for reading.
-        rlist, _, _ = select([fd], [], [])
-        assert len(rlist) == 1 and rlist[0] == fd
-
         # Read a line.
         line = file.readline()
 
         if not line:
-            if is_fifo:
-                # If we reached EOF, and this is a FIFO, then just keep reading.
-                continue
-            else:
-                # If we reached EOF, and this is not a FIFO, then exit.
-                break
+            # If we reached EOF, then exit.
+            break
 
         # Strip off the trailing newline and any whitespace.
         line = line.strip()

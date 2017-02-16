@@ -12,14 +12,14 @@ pymoduledir = $(pkgpythondir)
 
 pymodule_PYTHON = \
 	__init__.py \
+	binjfind.py \
+	bucluster.py \
+	burca.py \
+	burca_tailor.py \
 	cafe.py \
 	date.py \
 	git_version.py \
-	ligolw_binjfind.py \
-	ligolw_bucluster.py \
-	ligolw_burca.py \
 	ligolw_burca2.py \
-	ligolw_burca_tailor.py \
 	packing.py \
 	SimBurstUtils.py \
 	SnglBurstUtils.py \
@@ -33,7 +33,6 @@ pkgpython_LTLIBRARIES = \
 cs_gamma_la_SOURCES = cs_gamma.c
 cs_gamma_la_CPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS) $(PYTHON_CPPFLAGS) -I$(top_srcdir)/src
 cs_gamma_la_CFLAGS = $(AM_CFLAGS) $(CFLAGS) $(GSL_CFLAGS) $(LAL_CFLAGS) -Wno-cast-qual
-cs_gamma_la_LIBADD = $(top_builddir)/src/liblalburst.la
-cs_gamma_la_LDFLAGS = $(AM_LDFLAGS) $(LIBS) $(GSL_LIBS) $(LAL_LIBS) $(PYTHON_LIBS) -module -avoid-version
+cs_gamma_la_LDFLAGS = $(top_builddir)/src/liblalburst.la $(AM_LDFLAGS) $(LIBS) $(GSL_LIBS) $(LAL_LIBS) $(PYTHON_LIBS) -module -avoid-version
 
 endif

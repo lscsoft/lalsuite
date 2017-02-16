@@ -348,6 +348,7 @@ def read_sky_map(filename, nest=False, distances=False, moc=False):
         m.meta['nest'] = True
 
     if 'UNIQ' not in m.colnames:
+        m = Table([col.ravel() for col in m.columns.values()], meta=m.meta)
         npix = len(m)
         nside = hp.npix2nside(npix)
 
@@ -360,9 +361,9 @@ def read_sky_map(filename, nest=False, distances=False, moc=False):
 
     if not moc:
         if distances:
-            return tuple(np.asarray(m[name]).ravel() for name in DEFAULT_NESTED_NAMES), m.meta
+            return tuple(np.asarray(m[name]) for name in DEFAULT_NESTED_NAMES), m.meta
         else:
-            return np.asarray(m[DEFAULT_NESTED_NAMES[0]]).ravel(), m.meta
+            return np.asarray(m[DEFAULT_NESTED_NAMES[0]]), m.meta
 
     return m
 
