@@ -1213,7 +1213,7 @@ def complex_hoff(P, sgn=-1, fwdplan=None):
             P.spin2x, P.spin2y, P.spin2z, \
             P.dist, P.incl, P.phiref,  \
             P.psi, P.eccentricity, P.meanPerAno, \
-            P.deltaT, P.fmin, P.fref, \
+            P.deltaF, P.fmin, P.fmax, P.fref, \
             extra_params, P.approx)
 
     # N.B. TaylorF2(RedSpin)(Tidal)  stop filling the output array at ISCO.
