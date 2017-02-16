@@ -22,7 +22,7 @@ BuildRequires: libxml2-devel
 BuildRequires: numpy >= 1.7
 BuildRequires: octave-devel
 BuildRequires: python-devel
-BuildRequires: scipy
+BuildRequires: scipy >= 0.8
 BuildRequires: swig
 BuildRequires: glue >= @MIN_GLUE_VERSION@
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
@@ -93,7 +93,7 @@ Requires: healpy >= 1.9.1
 Requires: python-shapely
 Requires: numpy >= 1.7
 Requires: python
-Requires: scipy
+Requires: scipy >= 0.8
 Requires: python-six
 Requires: python-seaborn
 Requires: glue >= @MIN_GLUE_VERSION@

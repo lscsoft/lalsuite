@@ -50,52 +50,44 @@ def image_comparison(testfunc, filename=None, tolerance=1):
     return test
 
 
+class TestPPPlot(unittest.TestCase):
 
-# FIXME: remove try/except/else when we get Scipy >= 0.8 on SL clusters.
-from scipy.stats import beta
-try:
-    beta.interval
-except AttributeError:
-    pass
-else:
-    class TestPPPlot(unittest.TestCase):
+    def setUp(self):
+        # Re-initialize the random seed to make the unit test repeatable
+        np.random.seed(0)
+        self.fig = plt.figure(figsize=(3, 3), dpi=72)
+        self.ax = self.fig.add_subplot(111, projection='pp_plot')
+        # self.ax = lalinference.plot.PPPlot(self.fig, [0.1, 0.1, 0.8, 0.8])
+        # self.fig.add_axes(self.ax)
+        self.p_values = np.arange(1, 20) / 20
 
-        def setUp(self):
-            # Re-initialize the random seed to make the unit test repeatable
-            np.random.seed(0)
-            self.fig = plt.figure(figsize=(3, 3), dpi=72)
-            self.ax = self.fig.add_subplot(111, projection='pp_plot')
-            # self.ax = lalinference.plot.PPPlot(self.fig, [0.1, 0.1, 0.8, 0.8])
-            # self.fig.add_axes(self.ax)
-            self.p_values = np.arange(1, 20) / 20
+    @image_comparison
+    def test_pp_plot_steps(self):
+        """Test P--P plot with drawstyle='steps'."""
+        self.ax.add_confidence_band(len(self.p_values))
+        self.ax.add_diagonal()
+        self.ax.add_lightning(len(self.p_values), 20, drawstyle='steps')
+        self.ax.add_series(self.p_values, drawstyle='steps')
+        return self.fig
 
-        @image_comparison
-        def test_pp_plot_steps(self):
-            """Test P--P plot with drawstyle='steps'."""
-            self.ax.add_confidence_band(len(self.p_values))
-            self.ax.add_diagonal()
-            self.ax.add_lightning(len(self.p_values), 20, drawstyle='steps')
-            self.ax.add_series(self.p_values, drawstyle='steps')
-            return self.fig
+    @image_comparison
+    def test_pp_plot_lines(self):
+        """Test P--P plot with drawstyle='steps'."""
+        self.ax.add_confidence_band(len(self.p_values))
+        self.ax.add_diagonal()
+        self.ax.add_lightning(len(self.p_values), 20, drawstyle='lines')
+        self.ax.add_series(self.p_values, drawstyle='lines')
+        self.ax.add_diagonal()
+        return self.fig
 
-        @image_comparison
-        def test_pp_plot_lines(self):
-            """Test P--P plot with drawstyle='steps'."""
-            self.ax.add_confidence_band(len(self.p_values))
-            self.ax.add_diagonal()
-            self.ax.add_lightning(len(self.p_values), 20, drawstyle='lines')
-            self.ax.add_series(self.p_values, drawstyle='lines')
-            self.ax.add_diagonal()
-            return self.fig
-
-        @image_comparison
-        def test_pp_plot_default(self):
-            """Test P--P plot with drawstyle='steps'."""
-            self.ax.add_confidence_band(len(self.p_values))
-            self.ax.add_diagonal()
-            self.ax.add_lightning(len(self.p_values), 20)
-            self.ax.add_series(self.p_values)
-            return self.fig
+    @image_comparison
+    def test_pp_plot_default(self):
+        """Test P--P plot with drawstyle='steps'."""
+        self.ax.add_confidence_band(len(self.p_values))
+        self.ax.add_diagonal()
+        self.ax.add_lightning(len(self.p_values), 20)
+        self.ax.add_series(self.p_values)
+        return self.fig
 
 
 class TestMollweideAxes(unittest.TestCase):
