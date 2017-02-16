@@ -141,6 +141,16 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetDataFromHDF5File(
   for (idx = 0; idx < length; idx++)
   {
     massTime = (startTime + idx*deltaT) / (totalMass * LAL_MTSUN_SI);
+    /* This if statement is used to catch the case where massTime at idx=0
+     * ends up at double precision smaller than the first point in the
+     * interpolation. In this case set it back to exactly the first point.
+     * Sanity checking that we are not trying to use data below the
+     * interpolation range is done elsewhere.
+     */
+    if ((idx == 0) && (massTime < knotsVector->data[0]))
+    {
+      massTime = knotsVector->data[0];
+    }
     (*output)->data[idx] = gsl_spline_eval(spline, massTime, acc);
   }
 
