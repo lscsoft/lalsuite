@@ -332,6 +332,21 @@ def read_sky_map(filename, nest=False, distances=False, moc=False):
 
     moc: bool, optional
         If true, then preserve multi-order structure if present.
+
+    Example
+    -------
+
+    Test that we can read a legacy IDL-compatible file
+    (https://bugs.ligo.org/redmine/issues/5168):
+
+    >>> import tempfile
+    >>> with tempfile.NamedTemporaryFile(suffix='.fits') as f:
+    ...     nside = 512
+    ...     npix = hp.nside2npix(nside)
+    ...     ipix_nest = np.arange(npix)
+    ...     hp.write_map(f.name, ipix_nest, nest=True, column_names=['PROB'])
+    ...     m, meta = read_sky_map(f.name)
+    ...     np.testing.assert_array_equal(m, hp.ring2nest(nside, ipix_nest))
     """
     m = Table.read(filename, format='fits')
 
