@@ -27,7 +27,7 @@ Or, `bayetar_localize_lvalert` can GraceDB IDs from stdin (e.g., from the
 terminal, or redirected from a fifo):
 
     $ mkfifo /var/run/bayestar
-    $ bayestar_localize_lvalert < /var/run/bayestar &
+    $ tail -F /var/run/bayestar | bayestar_localize_lvalert &
     $ echo T90713 > /var/run/bayestar
 """
 __author__ = "Leo Singer <leo.singer@ligo.org>"
