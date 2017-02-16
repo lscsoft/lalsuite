@@ -30,6 +30,7 @@ AC_CONFIG_FILES([ \
   src/version.c \
   swig/Makefile \
   test/Makefile \
+  test/baseline/Makefile
 ])
 AM_INIT_AUTOMAKE([ \
   1.11 \
