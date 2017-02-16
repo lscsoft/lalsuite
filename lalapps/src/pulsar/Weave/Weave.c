@@ -773,7 +773,7 @@ int main( int argc, char *argv[] )
     }
 
     // Validation complete
-    LogPrintf( LOG_NORMAL, "Finished validation of SFTs\n" );
+    LogPrintf( LOG_NORMAL, "Finished validating SFTs\n" );
 
   }
 
@@ -840,7 +840,7 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( coh_input[i] != NULL, XLAL_EFUNC );
 
   }
-  LogPrintf( LOG_NORMAL, "Finished input data for coherent results ...\n" );
+  LogPrintf( LOG_NORMAL, "Finished loading input data for coherent results\n" );
 
   // Create caches to store intermediate results from coherent parameter-space tilings
   // - If no interpolation, caching is not required so reduce maximum cache size to 1
