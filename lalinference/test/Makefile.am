@@ -16,7 +16,7 @@ test_programs += test_cubic_interp
 # Disable test_multiband.sh for now
 #test_scripts = test_multiband.sh
 if SWIG_BUILD_PYTHON
-#test_scripts += test_plot.py
+test_scripts += test_plot.py
 test_scripts += test_detframe.py
 if HAVE_CHEALPIX
 test_scripts += doctests.py
