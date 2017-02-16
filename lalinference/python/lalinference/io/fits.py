@@ -214,7 +214,31 @@ FITS_META_MAPPING = (
 
 def write_sky_map(filename, m, **kwargs):
     """Write a gravitational-wave sky map to a file, populating the header
-    with optional metadata."""
+    with optional metadata.
+
+    Parameters
+    ----------
+
+    filename: string
+        Path to the optionally gzip-compressed FITS file.
+
+    m : astropy.table.Table or numpy.array
+        If a Numpy record array or astorpy.table.Table instance, and has a
+        column named 'UNIQ', then interpret the input as NUNIQ-style
+        multi-order map [1]_. Otherwise, interpret as a NESTED or RING ordered
+        map.
+
+    **kwargs
+        Additional metadata to add to FITS header. If m is an
+        astropy.table.Table instance, then the header is initialized from both
+        m.meta and **kwargs.
+
+    References
+    ----------
+    .. [1] Górski, K.M., Wandelt, B.D., Hivon, E., Hansen, F.K., & Banday, A.J.
+        2017. The HEALPix Primer. The Unique Identifier scheme.
+        http://healpix.sourceforge.net/html/intronode4.htm#SECTION00042000000000000000
+    """
 
     if isinstance(m, Table) or (isinstance(m, np.ndarray) and m.dtype.names):
         m = Table(m)
