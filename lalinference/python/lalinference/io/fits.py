@@ -362,13 +362,12 @@ def read_sky_map(filename, nest=False, distances=False, moc=False):
         elif not m.meta['nest'] and nest:
             m = m[hp.nest2ring(nside, np.arange(npix))]
 
-    if not moc:
-        if distances:
-            return tuple(np.asarray(m[name]) for name in DEFAULT_NESTED_NAMES), m.meta
-        else:
-            return np.asarray(m[DEFAULT_NESTED_NAMES[0]]), m.meta
-
-    return m
+    if moc:
+        return m
+    elif distances:
+        return tuple(np.asarray(m[name]) for name in DEFAULT_NESTED_NAMES), m.meta
+    else:
+        return np.asarray(m[DEFAULT_NESTED_NAMES[0]]), m.meta
 
 
 if __name__ == '__main__':
