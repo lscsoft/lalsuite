@@ -208,7 +208,6 @@ def ligolw_sky_map(
                  "sequence. The sky localization uncertainty may be "
                  "underestimated.")
 
-
         acors, sample_rates = zip(
             *[filter.autocorrelation(_, max_abs_t) for _ in HS])
         sample_rate = sample_rates[0]
