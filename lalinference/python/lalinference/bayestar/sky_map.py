@@ -34,15 +34,7 @@ from . import ligolw
 from . import filter
 from . import postprocess
 from . import timing
-try:
-    from . import _moc as moc
-except ImportError:
-    raise ImportError(
-        'Could not import the lalinference.bayestar._moc Python C '
-        'extension module. This probably means that LALInfernece was built '
-        'without HEALPix support. Please install CHEALPix '
-        '(https://sourceforge.net/projects/healpix/files/Healpix_3.30/'
-        'chealpix-3.30.0.tar.gz), rebuild LALInference, and try again.')
+from . import moc
 try:
     from . import _sky_map
 except ImportError:
