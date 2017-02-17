@@ -33,6 +33,10 @@
 #include <lal/Random.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 
+#ifdef MAKEFILE_WEAVE_CALLGRIND   // Set when compiling lalapps_Weave_Callgrind
+#include <valgrind/callgrind.h>
+#endif
+
 // Return elapsed wall time in seconds
 static inline double wall_time(void) { return XLALGetTimeOfDay(); }
 
@@ -41,6 +45,11 @@ static inline double cpu_time(void) { return XLALGetCPUTime(); }
 
 int main( int argc, char *argv[] )
 {
+
+#ifdef MAKEFILE_WEAVE_CALLGRIND   // Set when compiling lalapps_Weave_Callgrind
+  // Do not profile setup
+  CALLGRIND_STOP_INSTRUMENTATION;
+#endif
 
   // Set help information
   lalUserVarHelpBrief = "search for gravitational-wave pulsars";
@@ -964,6 +973,12 @@ int main( int argc, char *argv[] )
     LogPrintfVerbatim( LOG_NORMAL, ", peak memory %.1fMB\n", XLALGetPeakHeapUsageMB() );
   }
 
+#ifdef MAKEFILE_WEAVE_CALLGRIND   // Set when compiling lalapps_Weave_Callgrind
+  // Start profiling before main search loop
+  CALLGRIND_START_INSTRUMENTATION;
+  CALLGRIND_ZERO_STATS;
+#endif
+
   // Begin main search loop
   BOOLEAN search_complete = 0;
   while ( !search_complete ) {
@@ -1155,7 +1170,13 @@ int main( int argc, char *argv[] )
 
     }
 
-  }
+  }   // End of main search loop
+
+#ifdef MAKEFILE_WEAVE_CALLGRIND   // Set when compiling lalapps_Weave_Callgrind
+  // Stop profiling and dump statistics after main search loop
+  CALLGRIND_STOP_INSTRUMENTATION;
+  CALLGRIND_DUMP_STATS_AT("main search loop");
+#endif
 
   // Total elapsed wall and CPU times
   const double wall_total = wall_time() - wall_zero;

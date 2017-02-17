@@ -2,7 +2,6 @@ include $(top_srcdir)/gnuscripts/lalapps.am
 
 TEST_EXTENSIONS = .sh
 SH_LOG_COMPILER = /bin/bash $(srcdir)/test-compiler.sh
-
 if !CFITSIO
 SH_LOG_COMPILER += skip
 endif
@@ -11,6 +10,10 @@ bin_PROGRAMS = \
 	lalapps_WeaveSetup \
 	lalapps_Weave \
 	lalapps_WeaveCompare \
+	$(END_OF_LIST)
+
+EXTRA_PROGRAMS = \
+	lalapps_Weave_Callgrind \
 	$(END_OF_LIST)
 
 lalapps_WeaveSetup_SOURCES = \
@@ -45,6 +48,9 @@ lalapps_WeaveCompare_SOURCES = \
 	Weave.h \
 	WeaveCompare.c \
 	$(END_OF_LIST)
+
+lalapps_Weave_Callgrind_SOURCES = $(lalapps_Weave_SOURCES)
+lalapps_Weave_Callgrind_CPPFLAGS = $(AM_CPPFLAGS) -DMAKEFILE_WEAVE_CALLGRIND
 
 TESTS = \
 	TestInterpolating.sh \
