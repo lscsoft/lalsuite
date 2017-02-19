@@ -21,6 +21,7 @@ Multi-order coverage (MOC) HEALPix indexing.
 __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
+import numpy as np
 try:
     from . import _moc
 except ImportError:
