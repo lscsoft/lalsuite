@@ -80,7 +80,7 @@ order : `numpy.ndarray`
 """)
 
 
-_add_newdoc_ufunc(uniq2area, """\
+_add_newdoc_ufunc(uniq2pixarea, """\
 Determine the area of a HEALPix NESTED index.
 
 Parameters
