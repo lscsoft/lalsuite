@@ -1720,24 +1720,30 @@ int XLALNextLatticeTilingPoint(
 
   }
 
-  // Reset specified dimensions
+  // Reset parameter-space bounds and recompute physical point
   for ( size_t i = 0, ti = 0; i < n; ++i ) {
 
-    // Get the physical bounds on the current dimension, with padding
-    double phys_lower = 0, phys_upper = 0;
-    LT_GetBounds( itr->tiling, itr->tiling->padding, i, itr->phys_point, &phys_lower, &phys_upper );
+    // Determine if the current dimension is tiled
+    const bool is_tiled = itr->tiling->bounds[i].is_tiled;
+
+    // Get physical parameter-space origin in the current dimension
+    const double phys_origin_i = gsl_vector_get( itr->tiling->phys_origin, i );
 
     // If not tiled, set current physical point to non-tiled parameter-space bound
-    if ( !itr->tiling->bounds[i].is_tiled ) {
+    if ( !is_tiled && ti >= reset_ti ) {
+      double phys_lower = 0, phys_upper = 0;
+      LT_GetBounds( itr->tiling, itr->tiling->padding, i, itr->phys_point, &phys_lower, &phys_upper );
       gsl_vector_set( itr->phys_point, i, phys_lower );
-      continue;
     }
 
-    // If tiled dimension needs to be reset:
-    if ( ti >= reset_ti ) {
+    // If tiled, reset parameter-space bounds
+    if ( is_tiled && ti >= reset_ti ) {
+
+      // Get the physical bounds on the current dimension, with padding
+      double phys_lower = 0, phys_upper = 0;
+      LT_GetBounds( itr->tiling, itr->tiling->padding, i, itr->phys_point, &phys_lower, &phys_upper );
 
       // Transform physical point in lower dimensions to generating integer offset
-      const double phys_origin_i = gsl_vector_get( itr->tiling->phys_origin, i );
       double int_from_phys_point_i = 0;
       for ( size_t j = 0; j < i; ++j ) {
         const double int_from_phys_i_j = gsl_matrix_get( itr->tiling->int_from_phys, i, j );
@@ -1787,7 +1793,10 @@ int XLALNextLatticeTilingPoint(
         itr->int_point[ti] = ( int_lower_i + int_upper_i ) / 2;
       }
 
-      // Set current physical point from integer point
+    }
+
+    // If tiled, recompute current physical point from integer point
+    if ( is_tiled && ti >= changed_ti ) {
       double phys_point_i = phys_origin_i;
       for ( size_t tj = 0; tj < tn; ++tj ) {
         const size_t j = itr->tiling->tiled_idx[tj];
@@ -1796,10 +1805,12 @@ int XLALNextLatticeTilingPoint(
         phys_point_i += phys_from_int_i_j * int_point_tj;
       }
       gsl_vector_set( itr->phys_point, i, phys_point_i );
-
     }
 
-    ++ti;
+    // Increment tiled dimension index
+    if ( is_tiled ) {
+      ++ti;
+    }
 
   }
 
