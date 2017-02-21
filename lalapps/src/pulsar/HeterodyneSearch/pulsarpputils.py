@@ -26,7 +26,7 @@
 # Many functions in this a taken from, or derived from equivalents available in
 # the PRESTO pulsar software package http://www.cv.nrao.edu/~sransom/presto/
 
-from __future__ import print_function
+from __future__ import print_function, division
 
 import sys
 import math
@@ -1743,7 +1743,7 @@ def heterodyned_triaxial_pulsar(starttime, duration, dt, detector, pardict):
 # injections). Hence, when converting h0, from the conventional model, to C22 a minus sign needs to be
 # introduced. Also, phi0 here is defined as the rotational phase of the source, so when converting to phi22
 # a factor of 2 is needed.
-def heterodyned_pulsar_signal(starttime, duration, dt, detector, pardict):
+def heterodyned_pulsar_signal(pardict, detector, starttime=900000000., duration=86400., dt=60., datatimes=None):
   if 'cosiota' in pardict:
     cosiota = pardict['cosiota']
     iota = math.acos(cosiota)
@@ -1797,29 +1797,19 @@ def heterodyned_pulsar_signal(starttime, duration, dt, detector, pardict):
     freqs = [2.]
 
   for f in freqs:
-    sf = np.array([], dtype=complex)
-    tsf = []
-
-    tmpts = starttime
     i = 0
-    while tmpts < starttime + duration:
-      tsf.append(starttime + (dt*i))
+    if datatimes is None:
+      datatimes = np.arange(starttime, starttime+duration, dt)
 
-      # get the antenna response
-      fp, fc = antenna_response(tsf[i], pardict['ra'], pardict['dec'], pardict['psi'], detector)
+    # get the antenna response
+    fp, fc = antenna_response(datatimes, pardict['ra'], pardict['dec'], pardict['psi'], detector)
 
-      if f == 1.:
-        stmp = -(C21/4.)*ePhi21*siniota*cosiota*fp + 1j*(C21/4.)*ePhi21*siniota*fc
-      elif f == 2.:
-        stmp = -(C22/2.)*ePhi22*(1.+cosiota**2.)*fp + 1j*(C22)*ePhi22*cosiota*fc
+    if f == 1.:
+      sf = -(C21/4.)*ePhi21*siniota*cosiota*fp + 1j*(C21/4.)*ePhi21*siniota*fc
+    elif f == 2.:
+      sf = -(C22/2.)*ePhi22*(1.+cosiota**2.)*fp + 1j*(C22)*ePhi22*cosiota*fc
 
-      sf = np.append(sf, stmp)
-
-      tmpts = tsf[i] + dt
-
-      i = i+1
-
-    ts.append(tsf)
+    ts.append(datatimes)
     s.append(sf)
 
   return ts, s
