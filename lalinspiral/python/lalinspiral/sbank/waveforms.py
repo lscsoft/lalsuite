@@ -633,7 +633,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
     def from_sim(cls, sim, bank):
         # theta = polar angle wrt overhead
         #       = pi/2 - latitude (which is 0 on the horizon)
-        return cls(sim.mass1, sim.mass2, sim.spin1x, sim.spin1y, sim.spin1z, sim.spin2x, sim.spin2y, sim.spin2z, np.pi/2 - sim.latitude, sim.longitude, sim.inclination, sim.polarization, sim.orb_phase, bank)
+        return cls(sim.mass1, sim.mass2, sim.spin1x, sim.spin1y, sim.spin1z, sim.spin2x, sim.spin2y, sim.spin2z, np.pi/2 - sim.latitude, sim.longitude, sim.inclination, sim.polarization, sim.coa_phase, bank)
 
     def _compute_waveform_comps(self, df, f_final):
         approx = lalsim.GetApproximantFromString( self.approximant )
