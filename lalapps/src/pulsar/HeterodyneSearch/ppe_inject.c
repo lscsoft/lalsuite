@@ -292,7 +292,7 @@ void inject_signal( LALInferenceRunState *runState ){
       snrval = calculate_time_domain_snr( data, ifo_model );
       snrmulti += SQUARE(snrval);
 
-      fprintf(fpsnr, "%s\t%.3lf\t%le\n", data->name, freqFactors->data[ndats%(INT4)freqFactors->length], snrval);
+      fprintf(fpsnr, "%s\t%.3lf\t%le\t%le\n", data->name, freqFactors->data[ndats%(INT4)freqFactors->length], snrscale, snrval);
 
       data = data->next;
       ifo_model = ifo_model->next;
