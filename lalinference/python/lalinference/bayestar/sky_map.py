@@ -49,6 +49,140 @@ from glue.ligolw import table as ligolw_table
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import lsctables
 
+
+# FIXME: workaround so that np.average supports masked arrays.
+# Remove this when numpy 1.13.0 is available. See also:
+# https://github.com/numpy/numpy/commit/3f3d205cd3f607caeada0dddf41e996e288a3c50
+from distutils.version import StrictVersion
+if StrictVersion(np.__version__) >= '1.13.0':
+    average = np.average
+else:
+    # Copied from numpy/lib/function_base.py
+    def average(a, axis=None, weights=None, returned=False):
+        """
+        Compute the weighted average along the specified axis.
+
+        Parameters
+        ----------
+        a : array_like
+            Array containing data to be averaged. If `a` is not an array, a
+            conversion is attempted.
+        axis : None or int or tuple of ints, optional
+            Axis or axes along which to average `a`.  The default,
+            axis=None, will average over all of the elements of the input array.
+            If axis is negative it counts from the last to the first axis.
+
+            .. versionadded:: 1.7.0
+
+            If axis is a tuple of ints, averaging is performed on all of the axes
+            specified in the tuple instead of a single axis or all the axes as
+            before.
+        weights : array_like, optional
+            An array of weights associated with the values in `a`. Each value in
+            `a` contributes to the average according to its associated weight.
+            The weights array can either be 1-D (in which case its length must be
+            the size of `a` along the given axis) or of the same shape as `a`.
+            If `weights=None`, then all data in `a` are assumed to have a
+            weight equal to one.
+        returned : bool, optional
+            Default is `False`. If `True`, the tuple (`average`, `sum_of_weights`)
+            is returned, otherwise only the average is returned.
+            If `weights=None`, `sum_of_weights` is equivalent to the number of
+            elements over which the average is taken.
+
+
+        Returns
+        -------
+        average, [sum_of_weights] : array_type or double
+            Return the average along the specified axis. When returned is `True`,
+            return a tuple with the average as the first element and the sum
+            of the weights as the second element. The return type is `Float`
+            if `a` is of integer type, otherwise it is of the same type as `a`.
+            `sum_of_weights` is of the same type as `average`.
+
+        Raises
+        ------
+        ZeroDivisionError
+            When all weights along axis are zero. See `numpy.ma.average` for a
+            version robust to this type of error.
+        TypeError
+            When the length of 1D `weights` is not the same as the shape of `a`
+            along axis.
+
+        See Also
+        --------
+        mean
+
+        ma.average : average for masked arrays -- useful if your data contains
+                     "missing" values
+
+        Examples
+        --------
+        >>> data = range(1,5)
+        >>> data
+        [1, 2, 3, 4]
+        >>> np.average(data)
+        2.5
+        >>> np.average(range(1,11), weights=range(10,0,-1))
+        4.0
+
+        >>> data = np.arange(6).reshape((3,2))
+        >>> data
+        array([[0, 1],
+               [2, 3],
+               [4, 5]])
+        >>> np.average(data, axis=1, weights=[1./4, 3./4])
+        array([ 0.75,  2.75,  4.75])
+        >>> np.average(data, weights=[1./4, 3./4])
+        Traceback (most recent call last):
+        ...
+        TypeError: Axis must be specified when shapes of a and weights differ.
+
+        """
+        a = np.asanyarray(a)
+
+        if weights is None:
+            avg = a.mean(axis)
+            scl = avg.dtype.type(a.size/avg.size)
+        else:
+            wgt = np.asanyarray(weights)
+
+            if issubclass(a.dtype.type, (np.integer, np.bool_)):
+                result_dtype = np.result_type(a.dtype, wgt.dtype, 'f8')
+            else:
+                result_dtype = np.result_type(a.dtype, wgt.dtype)
+
+            # Sanity checks
+            if a.shape != wgt.shape:
+                if axis is None:
+                    raise TypeError(
+                        "Axis must be specified when shapes of a and weights "
+                        "differ.")
+                if wgt.ndim != 1:
+                    raise TypeError(
+                        "1D weights expected when shapes of a and weights differ.")
+                if wgt.shape[0] != a.shape[axis]:
+                    raise ValueError(
+                        "Length of weights not compatible with specified axis.")
+
+                # setup wgt to broadcast along axis
+                wgt = np.broadcast_to(wgt, (a.ndim-1)*(1,) + wgt.shape)
+                wgt = wgt.swapaxes(-1, axis)
+
+            scl = wgt.sum(axis=axis, dtype=result_dtype)
+            if (scl == 0.0).any():
+                raise ZeroDivisionError(
+                    "Weights sum to zero, can't be normalized")
+
+            avg = np.multiply(a, wgt, dtype=result_dtype).sum(axis)/scl
+
+        if returned:
+            if scl.shape != avg.shape:
+                scl = np.broadcast_to(scl, avg.shape).copy()
+            return avg, scl
+        else:
+            return avg
+
 log = logging.getLogger('BAYESTAR')
 
 
@@ -157,7 +291,8 @@ def ligolw_sky_map(
     ifos = [sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals]
 
     # Extract SNRs from table.
-    snrs = np.asarray([sngl_inspiral.snr
+    snrs = np.ma.asarray([
+        np.ma.masked if sngl_inspiral.snr is None else sngl_inspiral.snr
         for sngl_inspiral in sngl_inspirals])
 
     # Look up physical parameters for detector.
@@ -188,7 +323,7 @@ def ligolw_sky_map(
         for signal_model, snr in zip(signal_models, snrs)]
 
     # Center detector array.
-    locations -= np.average(locations, weights=weights, axis=0)
+    locations -= average(locations, weights=weights, axis=0)
 
     if enable_snr_series:
         log.warn('Enabling input of SNR time series. This feature is UNREVIEWED.')
@@ -294,7 +429,7 @@ def ligolw_sky_map(
     # initial datatype.
     epoch = sum(toas_ns) // len(toas_ns)
     toas = 1e-9 * (np.asarray(toas_ns) - epoch)
-    mean_toa = np.average(toas, weights=weights, axis=0)
+    mean_toa = average(toas, weights=weights, axis=0)
     toas -= mean_toa
     epoch += int(np.round(1e9 * mean_toa))
     epoch = lal.LIGOTimeGPS(0, int(epoch))
