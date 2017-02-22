@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2015  Leo Singer
+# Copyright (C) 2011-2017  Leo Singer
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ parser.add_argument('--transparent', action='store_true', default=False,
 parser.add_argument(
     'fitsfileglobs', metavar='GLOB.fits[.gz]', nargs='+',
     help='Input FITS filenames and/or globs')
+parser.set_defaults(colormap=None)
 opts = parser.parse_args()
 
 # Late imports
@@ -62,7 +63,12 @@ progress.max = len(fitsfilenames)
 
 matplotlib.rc('path', simplify=True, simplify_threshold=1)
 
-for count_records, fitsfilename in enumerate(fitsfilenames):
+if opts.colormap is None:
+    colors = ['k'] * len(fitsfilenames)
+else:
+    colors = matplotlib.cm.get_cmap(opts.colormap)
+    colors = colors(np.linspace(0, 1, len(fitsfilenames)))
+for count_records, (color, fitsfilename) in enumerate(zip(colors, fitsfilenames)):
     progress.update(count_records, fitsfilename)
     skymap, metadata = fits.read_sky_map(fitsfilename, nest=None)
     nside = hp.npix2nside(len(skymap))
@@ -72,8 +78,8 @@ for count_records, fitsfilename in enumerate(fitsfilenames):
     region = np.empty(skymap.shape)
     region[indices] = 100 * np.cumsum(skymap[indices])
     plot.healpix_contour(
-        region, nest=metadata['nest'], dlon=-gmst, colors='k', linewidths=0.5,
-        levels=[opts.contour], alpha=opts.alpha)
+        region, nest=metadata['nest'], dlon=-gmst,
+        colors=[color], linewidths=0.5, levels=[opts.contour], alpha=opts.alpha)
 
 progress.update(-1, 'saving figure')
 
