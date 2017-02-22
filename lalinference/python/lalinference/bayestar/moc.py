@@ -53,8 +53,8 @@ Convert a pixel index from NESTED to NUNIQ ordering.
 
 Parameters
 ----------
-nside : `numpy.ndarray`
-    HEALPix resolution
+order : `numpy.ndarray`
+    HEALPix resolution order, the logarithm base 2 of `nside`
 ipix : `numpy.ndarray`
     NESTED pixel index
 
