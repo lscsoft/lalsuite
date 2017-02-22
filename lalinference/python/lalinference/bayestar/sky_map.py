@@ -49,17 +49,6 @@ from glue.ligolw import table as ligolw_table
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import lsctables
 
-
-# FIXME: workaround so that np.average supports masked arrays.
-# Remove this when numpy 1.13.0 is available. See also:
-# https://github.com/numpy/numpy/commit/3f3d205cd3f607caeada0dddf41e996e288a3c50
-from distutils.version import StrictVersion
-if StrictVersion(np.__version__) >= '1.13.0':
-    average = np.average
-else:
-    def average(a, axis, weights):
-        return np.sum(a * weights, axis=axis) / np.sum(weights)
-
 log = logging.getLogger('BAYESTAR')
 
 
@@ -201,7 +190,7 @@ def ligolw_sky_map(
         for signal_model, snr in zip(signal_models, snrs)])
 
     # Center detector array.
-    locations -= average(locations, weights=weights, axis=0)
+    locations -= np.sum(locations * weights.reshape(-1, 1), axis=0) / np.sum(weights)
 
     if enable_snr_series:
         log.warn('Enabling input of SNR time series. This feature is UNREVIEWED.')
@@ -307,7 +296,9 @@ def ligolw_sky_map(
     # initial datatype.
     epoch = sum(toas_ns) // len(toas_ns)
     toas = 1e-9 * (np.asarray(toas_ns) - epoch)
-    mean_toa = average(toas, weights=weights, axis=0)
+    # FIXME: np.average does not yet support masked arrays.
+    # Replace with np.average when numpy 1.13.0 is available.
+    mean_toa = np.sum(toas * weights) / np.sum(weights)
     toas -= mean_toa
     epoch += int(np.round(1e9 * mean_toa))
     epoch = lal.LIGOTimeGPS(0, int(epoch))
