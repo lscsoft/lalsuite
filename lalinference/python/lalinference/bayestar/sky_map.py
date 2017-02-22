@@ -69,9 +69,10 @@ def toa_phoa_snr_log_prior(
 @with_numpy_random_seed
 def emcee_sky_map(
         logl, loglargs, logp, logpargs, xmin, xmax,
-        nside=-1, kde=False, chain_dump=None, max_horizon=1.0):
+        nside=-1, chain_dump=None, max_horizon=1.0):
     # Set up sampler
     import emcee
+    from sky_area.sky_area_clustering import Clustered3DKDEPosterior
     ntemps = 20
     nwalkers = 100
     nburnin = 1000
@@ -100,26 +101,26 @@ def emcee_sky_map(
     phi = chain[:, 0]
     dist = chain[:, 2]
 
-    # Do adaptive histogram binning if the user has not selected the KDE,
-    # or if the user has selected the KDE but we need to guess the resolution.
-    if nside == -1 or not kde:
-        samples_per_bin = int(np.ceil(0.005 * len(chain)))
-        prob = postprocess.adaptive_healpix_histogram(
-            theta, phi, samples_per_bin, nside=nside, nest=True)
+    ra = phi
+    dec = 0.5 * np.pi - theta
+    pts = np.column_stack((ra, dec, dist))
+    # Pass a random subset of 1000 points to the KDE, to save time.
+    pts = np.random.permutation(pts)[:1000, :]
+    ckde = Clustered3DKDEPosterior(pts)
+    _, nside, ipix = zip(*ckde._bayestar_adaptive_grid())
+    uniq = (4 * np.square(nside) + ipix).astype(np.uint64)
 
-        # Determine what nside what actually used.
-        nside = hp.npix2nside(len(prob))
-        # Go one level finer, because the KDE will find more detail.
-        nside *= 2
+    pts = np.transpose(hp.pix2vec(nside, ipix, nest=True))
 
-    if kde:
-        from sky_area.sky_area_clustering import Clustered3DKDEPosterior
-        ra = phi
-        dec = 0.5 * np.pi - theta
-        pts = np.column_stack((ra, dec, dist))
-        # Pass a random subset of 1000 points to the KDE, to save time.
-        pts = np.random.permutation(pts)[:1000, :]
-        prob = Clustered3DKDEPosterior(pts).as_healpix(nside)
+    datasets = [kde.dataset for kde in ckde.kdes]
+    inverse_covariances = [kde.inv_cov for kde in ckde.kdes]
+    weights = ckde.weights
+
+    # Compute marginal probability, conditional mean, and conditional
+    # standard deviation in all directions.
+    probdensity, distmean, diststd = np.transpose([distance.cartesian_kde_to_moments(
+        pt, datasets, inverse_covariances, weights)
+        for pt in pts])
 
     # Optionally save posterior sample chain to file.
     # Read back in with np.load().
@@ -130,7 +131,9 @@ def emcee_sky_map(
         np.save(chain_dump, np.rec.fromrecords(chain, names=names))
 
     # Done!
-    return prob
+    return Table(
+        [uniq, probdensity, distmean, diststd],
+        names='UNIQ PROBDENSITY DISTMEAN DISTSTD'.split())
 
 
 def ligolw_sky_map(
@@ -333,13 +336,6 @@ def ligolw_sky_map(
     min_distance /= max_horizon
     max_distance /= max_horizon
 
-    # Use KDE for density estimation?
-    if method.endswith('_kde'):
-        method = method[:-4]
-        kde = True
-    else:
-        kde = False
-
     # Time and run sky localization.
     log.debug('starting computationally-intensive section')
     start_time = lal.GPSTimeNow()
@@ -348,18 +344,16 @@ def ligolw_sky_map(
             min_distance, max_distance, prior_distance_power, gmst, sample_rate,
             toas, snr_series, responses, locations, horizons))
     elif method == "toa_phoa_snr_mcmc":
-        # prob = emcee_sky_map(
-        #     logl=_sky_map.log_likelihood_toa_phoa_snr,
-        #     loglargs=(gmst, sample_rate, toas, snr_series, responses, locations,
-        #         horizons),
-        #     logp=toa_phoa_snr_log_prior,
-        #     logpargs=(min_distance, max_distance, prior_distance_power,
-        #         max_abs_t),
-        #     xmin=[0, -1, min_distance, -1, 0, 0],
-        #     xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi, 2 * max_abs_t],
-        #     nside=nside, kde=kde, chain_dump=chain_dump,
-        #     max_horizon=max_horizon)
-        raise NotImplemented('Working on porting this to new MOC format')
+        skymap = emcee_sky_map(
+            logl=_sky_map.log_likelihood_toa_phoa_snr,
+            loglargs=(gmst, sample_rate, toas, snr_series, responses, locations,
+                horizons),
+            logp=toa_phoa_snr_log_prior,
+            logpargs=(min_distance, max_distance, prior_distance_power,
+                max_abs_t),
+            xmin=[0, -1, min_distance, -1, 0, 0],
+            xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi, 2 * max_abs_t],
+            nside=nside, chain_dump=chain_dump, max_horizon=max_horizon * fudge)
     else:
         raise ValueError("Unrecognized method: %s" % method)
 
