@@ -49,6 +49,17 @@ from glue.ligolw import table as ligolw_table
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import lsctables
 
+
+# FIXME: workaround so that np.average supports masked arrays.
+# Remove this when numpy 1.13.0 is available. See also:
+# https://github.com/numpy/numpy/commit/3f3d205cd3f607caeada0dddf41e996e288a3c50
+from distutils.version import StrictVersion
+if StrictVersion(np.__version__) >= '1.13.0':
+    average = np.average
+else:
+    def average(a, axis, weights):
+        return np.sum(a * weights, axis=axis) / np.sum(weights)
+
 log = logging.getLogger('BAYESTAR')
 
 
@@ -157,7 +168,8 @@ def ligolw_sky_map(
     ifos = [sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals]
 
     # Extract SNRs from table.
-    snrs = np.asarray([sngl_inspiral.snr
+    snrs = np.ma.asarray([
+        np.ma.masked if sngl_inspiral.snr is None else sngl_inspiral.snr
         for sngl_inspiral in sngl_inspirals])
 
     # Look up physical parameters for detector.
@@ -184,11 +196,12 @@ def ligolw_sky_map(
     horizons = np.asarray([signal_model.get_horizon_distance()
         for signal_model in signal_models])
 
-    weights = [1/np.square(signal_model.get_crb_toa_uncert(snr))
-        for signal_model, snr in zip(signal_models, snrs)]
+    weights = np.ma.asarray([
+        1 / np.square(signal_model.get_crb_toa_uncert(snr))
+        for signal_model, snr in zip(signal_models, snrs)])
 
     # Center detector array.
-    locations -= np.average(locations, weights=weights, axis=0)
+    locations -= average(locations, weights=weights, axis=0)
 
     if enable_snr_series:
         log.warn('Enabling input of SNR time series. This feature is UNREVIEWED.')
@@ -294,7 +307,7 @@ def ligolw_sky_map(
     # initial datatype.
     epoch = sum(toas_ns) // len(toas_ns)
     toas = 1e-9 * (np.asarray(toas_ns) - epoch)
-    mean_toa = np.average(toas, weights=weights, axis=0)
+    mean_toa = average(toas, weights=weights, axis=0)
     toas -= mean_toa
     epoch += int(np.round(1e9 * mean_toa))
     epoch = lal.LIGOTimeGPS(0, int(epoch))
