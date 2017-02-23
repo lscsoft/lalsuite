@@ -470,7 +470,6 @@ INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx,
     REAL8 v5=omega*v2;
     REAL8 omega2=omega*omega;
 
-    REAL8 *S1cS2=NULL;
     REAL8 *LNcS1=NULL;
     XLALSimInspiralVectorCrossProduct(&LNcS1,LNhx,LNhy,LNhz,S1x,S1y,S1z);
 
@@ -485,6 +484,7 @@ INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx,
     *dS2y += params->S2dot3 * v5 * LNcS2[1];
     *dS2z += params->S2dot3 * v5 * LNcS2[2];
 
+    REAL8 *S1cS2=NULL;
     if ( (params->spinO>=4) || (params->spinO<0.) ) {
       /* dS1,2 next-to-leading term */
 
@@ -509,6 +509,8 @@ INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx,
       *dS2z += omega2 * params->S2dot4QMS2OAvg * LNhdotS2 * LNcS2[2];
 
     }
+    XLALFree(LNcS1);
+    XLALFree(LNcS2);
 
     /* At NLO we can compute dLNh from dS, see eq. 3.20 of arXiv:0810.5336*/
     REAL8 dLNhatx=-v*((*dS1x)+(*dS2x))/params->eta;
@@ -521,6 +523,7 @@ INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx,
     REAL8 OmegaLNx=OmegaLN[0];
     REAL8 OmegaLNy=OmegaLN[1];
     REAL8 OmegaLNz=OmegaLN[2];
+    XLALFree(OmegaLN);
 
     /* We have now all the ingredients to compute dL at NLO with.
      * The cSi-s are the coefficients multiplying the S.LNhat contribution to L,
@@ -597,25 +600,28 @@ INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx,
 	*dS2z += params->S2dot7S1 * omega3 * S1cS2[2];
       }
     }
-
-    /*dL is the derivative of the total angular momentum*/
-    REAL8 *dL=NULL;
-    XLALSimInspiralVectorCrossProduct(&dL,OmegaLx,OmegaLy,OmegaLz,Lx,Ly,Lz);
-    REAL8 L_LNmag=sqrt(Lx*Lx+Ly*Ly+Lz*Lz-(L_Sx*L_Sx+L_Sy*L_Sy+L_Sz*L_Sz));
+    XLALFree(S1cS2);
 
     /* We now obtain the derivative of the spin-independent part of the
      * total angular momentum, which is parallel to the Newtonian angular
      * momentum Newtonian.
      */
+    REAL8 L_LNmag=sqrt(Lx*Lx+Ly*Ly+Lz*Lz-(L_Sx*L_Sx+L_Sy*L_Sy+L_Sz*L_Sz));
+
+    /*dL is the derivative of the total angular momentum*/
+    REAL8 *dL=NULL;
+    XLALSimInspiralVectorCrossProduct(&dL,OmegaLx,OmegaLy,OmegaLz,Lx,Ly,Lz);
     *dLNhx=(dL[0]-dL_Sx-dLNhdotS1*LNhx-LNhdotS1*dLNhatx)/L_LNmag;
     *dLNhy=(dL[1]-dL_Sy-dLNhdotS1*LNhy-LNhdotS1*dLNhaty)/L_LNmag;
     *dLNhz=(dL[2]-dL_Sz-dLNhdotS1*LNhz-LNhdotS1*dLNhatz)/L_LNmag;
+    XLALFree(dL);
 
     /* We now define the \Omega_LN precession vector as the cross product of
      * dLN and LN, hence $\Omega_{LN} = LN \cross LNdot
      *
      */
-    XLALSimInspiralVectorCrossProduct(&OmegaLN,LNhx,LNhy,LNhz,*dLNhx,*dLNhy,*dLNhz);
+    REAL8 *OmegaLNbis=NULL;
+    XLALSimInspiralVectorCrossProduct(&OmegaLNbis,LNhx,LNhy,LNhz,*dLNhx,*dLNhy,*dLNhz);
 
     /*
      * dE1
@@ -625,15 +631,11 @@ INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx,
      */
 
     /* Take cross product of \Omega_E with E_1 */
-    *dE1x = (-OmegaLN[2]*E1y + OmegaLN[1]*E1z);
-    *dE1y = (-OmegaLN[0]*E1z + OmegaLN[2]*E1x);
-    *dE1z = (-OmegaLN[1]*E1x + OmegaLN[0]*E1y);
+    *dE1x = (-OmegaLNbis[2]*E1y + OmegaLNbis[1]*E1z);
+    *dE1y = (-OmegaLNbis[0]*E1z + OmegaLNbis[2]*E1x);
+    *dE1z = (-OmegaLNbis[1]*E1x + OmegaLNbis[0]*E1y);
 
-    XLALFree(LNcS1);
-    XLALFree(LNcS2);
-    XLALFree(S1cS2);
-    XLALFree(dL);
-    XLALFree(OmegaLN);
+    XLALFree(OmegaLNbis);
   }
 
   return XLAL_SUCCESS;
