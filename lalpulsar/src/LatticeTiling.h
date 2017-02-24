@@ -244,21 +244,6 @@ int XLALRandomLatticeTilingPoints(
   );
 
 ///
-/// Allocate and return vectors containing the bounds on neighbouring dimesions of the lattice
-/// tiling parameter space.
-///
-int XLALLatticeTilingDimensionBounds(
-  const LatticeTiling *tiling,          ///< [in] Lattice tiling
-  const UINT4 padding,                  ///< [in] Level of padding added to parameter space bounds
-  const gsl_vector *point,              ///< [in] Point at which to return bounds
-  const size_t y_dim,                   ///< [in] Dimension 'y' of which to return bounds
-  const double x_scale,                 ///< [in] Scale of steps in 'x', in units of lattice step size
-  gsl_vector **y_lower,                 ///< [in] Lower bounds of dimension 'y' as function of 'x'
-  gsl_vector **y_upper,                 ///< [in] Upper bounds of dimension 'y' as function of 'x'
-  gsl_vector **x                        ///< [in] Values 'x' in dimension 'y-1'
-  );
-
-///
 /// Create a new lattice tiling iterator.
 ///
 #ifdef SWIG // SWIG interface directives
