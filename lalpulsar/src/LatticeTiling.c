@@ -204,7 +204,6 @@ static void LT_CallBoundFunc(
 ///
 static void LT_FindBoundExtrema(
   const LatticeTiling *tiling,          ///< [in] Lattice tiling
-  const UINT4 padding,                  ///< [in] Level of padding added to parameter space bounds
   const size_t i,                       ///< [in] Current dimension in LT_FindBoundExtrema() iteration
   const size_t dim,                     ///< [in] Dimension on which bound applies
   gsl_vector *phys_point,               ///< [in] Physical point at which to find bounds
@@ -227,7 +226,7 @@ static void LT_FindBoundExtrema(
     gsl_vector_set(phys_point, i, phys_point_i + (x)); \
     double phys_lower = *phys_lower_minimum; \
     double phys_upper = *phys_upper_maximum; \
-    LT_FindBoundExtrema( tiling, padding, i + 1, dim, phys_point, &phys_lower, &phys_upper ); \
+    LT_FindBoundExtrema( tiling, i + 1, dim, phys_point, &phys_lower, &phys_upper ); \
     *phys_lower_minimum = GSL_MIN( *phys_lower_minimum, phys_lower ); \
     *phys_upper_maximum = GSL_MAX( *phys_upper_maximum, phys_upper ); \
   }
@@ -235,8 +234,8 @@ static void LT_FindBoundExtrema(
   // Sample parameter-space bounds at original physical point
   LT_FindBoundExtrema_SAMPLE_BOUNDS( 0 );
 
-  // Sample parameter-space bounds at (a multiple of) +/- half the lattice tiling step size
-  const double phys_hstep_i = padding * 0.5 * gsl_matrix_get( tiling->phys_from_int, i, i );
+  // Sample parameter-space bounds at +/- half the lattice tiling step size
+  const double phys_hstep_i = 0.5 * gsl_matrix_get( tiling->phys_from_int, i, i );
   LT_FindBoundExtrema_SAMPLE_BOUNDS( -phys_hstep_i );
   LT_FindBoundExtrema_SAMPLE_BOUNDS( +phys_hstep_i );
 
@@ -278,7 +277,7 @@ static void LT_GetBounds(
       gsl_vector_memcpy( local_phys_point, phys_point );
 
       // Find the extrema of the parameter-space bounds
-      LT_FindBoundExtrema( tiling, padding, 0, dim, local_phys_point, phys_lower, phys_upper );
+      LT_FindBoundExtrema( tiling, 0, dim, local_phys_point, phys_lower, phys_upper );
 
     }
 
