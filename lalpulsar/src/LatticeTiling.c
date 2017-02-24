@@ -235,11 +235,6 @@ static void LT_FindBoundExtrema(
   // Sample parameter-space bounds at original physical point
   LT_FindBoundExtrema_SAMPLE_BOUNDS( 0 );
 
-  // Sample parameter-space bounds at (a multiple of) +/- half the extext of the metric ellipse bounding box
-  const double phys_hbbox_i = padding * 0.5 * gsl_vector_get( tiling->phys_bbox, i );
-  LT_FindBoundExtrema_SAMPLE_BOUNDS( -phys_hbbox_i );
-  LT_FindBoundExtrema_SAMPLE_BOUNDS( +phys_hbbox_i );
-
   // Sample parameter-space bounds at (a multiple of) +/- half the lattice tiling step size
   const double phys_hstep_i = padding * 0.5 * gsl_matrix_get( tiling->phys_from_int, i, i );
   LT_FindBoundExtrema_SAMPLE_BOUNDS( -phys_hstep_i );
