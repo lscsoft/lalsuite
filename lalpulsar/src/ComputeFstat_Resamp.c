@@ -127,6 +127,9 @@ typedef struct
   MultiCOMPLEX8TimeSeries  *multiTimeSeries_DET;	// input SFTs converted into a heterodyned timeseries
   // ----- buffering -----
   PulsarDopplerParams prev_doppler;			// buffering: previous phase-evolution ("doppler") parameters
+  MultiAMCoeffs *multiAMcoef;				// buffered antenna-pattern functions
+  MultiSSBtimes *multiSSBtimes;				// buffered SSB times, including *only* sky-position corrections, not binary
+  MultiSSBtimes *multiBinaryTimes;			// buffered SRC times, including both sky- and binary corrections [to avoid re-allocating this]
 
   AntennaPatternMatrix Mmunu;				// combined multi-IFO antenna-pattern coefficients {A,B,C,E}
   AntennaPatternMatrix MmunuX[PULSAR_MAX_DETECTORS];	// per-IFO antenna-pattern coefficients {AX,BX,CX,EX}
@@ -218,6 +221,9 @@ XLALDestroyResampMethodData ( void* method_data )
   // ----- free buffer
   XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->multiTimeSeries_SRC_a );
   XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->multiTimeSeries_SRC_b );
+  XLALDestroyMultiAMCoeffs ( resamp->multiAMcoef );
+  XLALDestroyMultiSSBtimes ( resamp->multiSSBtimes );
+  XLALDestroyMultiSSBtimes ( resamp->multiBinaryTimes );
 
   LAL_FFTW_WISDOM_LOCK;
   fftwf_destroy_plan ( resamp->fftplan );
@@ -424,27 +430,12 @@ XLALComputeFstatResamp ( FstatResults* Fstats,
     ticStart = XLALGetCPUTime();
   }
 
-  // ============================== BEGIN: handle buffering =============================
-  BOOLEAN same_skypos = (resamp->prev_doppler.Alpha == thisPoint.Alpha) && (resamp->prev_doppler.Delta == thisPoint.Delta);
-  BOOLEAN same_refTime = ( GPSDIFF ( resamp->prev_doppler.refTime, thisPoint.refTime ) == 0 );
-  BOOLEAN same_binary = \
-    (resamp->prev_doppler.asini == thisPoint.asini) &&
-    (resamp->prev_doppler.period == thisPoint.period) &&
-    (resamp->prev_doppler.ecc == thisPoint.ecc) &&
-    (GPSDIFF( resamp->prev_doppler.tp, thisPoint.tp ) == 0 ) &&
-    (resamp->prev_doppler.argp == thisPoint.argp);
-
-  // ----- not same skypos+binary+refTime? --> re-compute SRC-frame timeseries, AM-coeffs and store in buffer
+  // call barycentering + resampling function
   if ( ti->collectTiming ) {
     tic = XLALGetCPUTime();
   }
-
-  if ( ! ( same_skypos && same_refTime && same_binary) )
-    {
-      XLAL_CHECK ( XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( resamp, &thisPoint, common ) == XLAL_SUCCESS, XLAL_EFUNC );
-      // record barycenter parameters in order to allow re-usal of this result ('buffering')
-      resamp->prev_doppler = thisPoint;
-    }
+  // Note: all sky-buffering is done within that function
+  XLAL_CHECK ( XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( resamp, &thisPoint, common ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   if ( ti->collectTiming ) {
     toc = XLALGetCPUTime();
@@ -822,8 +813,9 @@ XLALApplySpindownAndFreqShift ( COMPLEX8 *restrict xOut,      			///< [out] the 
 ///
 /// Performs barycentric resampling on a multi-detector timeseries, updates resampling buffer with results
 ///
-/// NOTE: this function does NOT check whether the previously-buffered solution can be reused, it assumes the
-/// caller has already done so, and simply computes the requested resampled time-series, and AM-coefficients
+/// NOTE Buffering: this function does check
+/// 1) whether the previously-buffered solution can be completely reused (same sky-position and binary parameters), or
+/// 2) if at least sky-dependent quantities can be re-used (antenna-patterns + timings) in case only binary parameters changed
 ///
 static int
 XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( ResampMethodData *resamp,		// [in/out] resampling input and buffer (to store resampling TS)
@@ -845,28 +837,57 @@ XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( ResampMethodData *resamp,		// [
   XLAL_CHECK ( resamp->multiTimeSeries_SRC_a->length == numDetectors, XLAL_EINVAL, "Inconsistent number of detectors tsDET(%d) != tsSRC(%d)\n", numDetectors, resamp->multiTimeSeries_SRC_a->length );
   XLAL_CHECK ( resamp->multiTimeSeries_SRC_b->length == numDetectors, XLAL_EINVAL, "Inconsistent number of detectors tsDET(%d) != tsSRC(%d)\n", numDetectors, resamp->multiTimeSeries_SRC_b->length );
 
-  SkyPosition skypos;
-  skypos.system = COORDINATESYSTEM_EQUATORIAL;
-  skypos.longitude = thisPoint->Alpha;
-  skypos.latitude  = thisPoint->Delta;
+  // ============================== BEGIN: handle buffering =============================
+  BOOLEAN same_skypos = (resamp->prev_doppler.Alpha == thisPoint->Alpha) && (resamp->prev_doppler.Delta == thisPoint->Delta);
+  BOOLEAN same_refTime = ( GPSDIFF ( resamp->prev_doppler.refTime, thisPoint->refTime ) == 0 );
+  BOOLEAN same_binary = \
+    (resamp->prev_doppler.asini == thisPoint->asini) &&
+    (resamp->prev_doppler.period == thisPoint->period) &&
+    (resamp->prev_doppler.ecc == thisPoint->ecc) &&
+    (GPSDIFF( resamp->prev_doppler.tp, thisPoint->tp ) == 0 ) &&
+    (resamp->prev_doppler.argp == thisPoint->argp);
 
-  MultiAMCoeffs *multiAMcoef;
-  XLAL_CHECK ( (multiAMcoef = XLALComputeMultiAMCoeffs ( common->multiDetectorStates, common->multiNoiseWeights, skypos )) != NULL, XLAL_EFUNC );
-  resamp->Mmunu = multiAMcoef->Mmunu;
-  for ( UINT4 X = 0; X < numDetectors; X ++ )
-    {
-      resamp->MmunuX[X].Ad = multiAMcoef->data[X]->A;
-      resamp->MmunuX[X].Bd = multiAMcoef->data[X]->B;
-      resamp->MmunuX[X].Cd = multiAMcoef->data[X]->C;
-      resamp->MmunuX[X].Ed = 0;
-      resamp->MmunuX[X].Dd = multiAMcoef->data[X]->D;
-    }
-
-  MultiSSBtimes *multiSRCtimes;
-  XLAL_CHECK ( (multiSRCtimes = XLALGetMultiSSBtimes ( common->multiDetectorStates, skypos, thisPoint->refTime, common->SSBprec )) != NULL, XLAL_EFUNC );
-  if ( thisPoint->asini > 0 ) {
-    XLAL_CHECK ( XLALAddMultiBinaryTimes ( &multiSRCtimes, multiSRCtimes, thisPoint ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // if same sky-position *and* same binary, we can simply return as there's nothing to be done here
+  if ( same_skypos && same_refTime && same_binary ) {
+    return XLAL_SUCCESS;
   }
+
+  MultiSSBtimes *multiSRCtimes = NULL;
+
+  // only if different sky-position: re-compute antenna-patterns and SSB timings, re-use from buffer otherwise
+  if ( ! ( same_skypos && same_refTime ) )
+    {
+      SkyPosition skypos;
+      skypos.system = COORDINATESYSTEM_EQUATORIAL;
+      skypos.longitude = thisPoint->Alpha;
+      skypos.latitude  = thisPoint->Delta;
+
+      XLALDestroyMultiAMCoeffs ( resamp->multiAMcoef );
+      XLAL_CHECK ( (resamp->multiAMcoef = XLALComputeMultiAMCoeffs ( common->multiDetectorStates, common->multiNoiseWeights, skypos )) != NULL, XLAL_EFUNC );
+      resamp->Mmunu = resamp->multiAMcoef->Mmunu;
+      for ( UINT4 X = 0; X < numDetectors; X ++ )
+        {
+          resamp->MmunuX[X].Ad = resamp->multiAMcoef->data[X]->A;
+          resamp->MmunuX[X].Bd = resamp->multiAMcoef->data[X]->B;
+          resamp->MmunuX[X].Cd = resamp->multiAMcoef->data[X]->C;
+          resamp->MmunuX[X].Ed = 0;
+          resamp->MmunuX[X].Dd = resamp->multiAMcoef->data[X]->D;
+        }
+
+      XLALDestroyMultiSSBtimes ( resamp->multiSSBtimes );
+      XLAL_CHECK ( (resamp->multiSSBtimes = XLALGetMultiSSBtimes ( common->multiDetectorStates, skypos, thisPoint->refTime, common->SSBprec )) != NULL, XLAL_EFUNC );
+
+    } // if cannot re-use buffered solution ie if !(same_skypos && same_binary)
+
+  if ( thisPoint->asini > 0 ) { // binary case
+    XLAL_CHECK ( XLALAddMultiBinaryTimes ( &resamp->multiBinaryTimes, resamp->multiSSBtimes, thisPoint ) == XLAL_SUCCESS, XLAL_EFUNC );
+    multiSRCtimes = resamp->multiBinaryTimes;
+  } else { // isolated case
+    multiSRCtimes = resamp->multiSSBtimes;
+  }
+
+  // record barycenter parameters in order to allow re-usal of this result ('buffering')
+  resamp->prev_doppler = (*thisPoint);
 
   // shorthands
   REAL8 fHet = resamp->multiTimeSeries_DET->data[0]->f0;
@@ -882,7 +903,7 @@ XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( ResampMethodData *resamp,		// [
       const COMPLEX8TimeSeries *TimeSeries_DETX = resamp->multiTimeSeries_DET->data[X];
       const LIGOTimeGPSVector  *Timestamps_DETX = common->multiTimestamps->data[X];
       const SSBtimes *SRCtimesX                 = multiSRCtimes->data[X];
-      const AMCoeffs *AMcoefX			= multiAMcoef->data[X];
+      const AMCoeffs *AMcoefX			= resamp->multiAMcoef->data[X];
 
       // shorthand pointers: output
       COMPLEX8TimeSeries *TimeSeries_SRCX_a     = resamp->multiTimeSeries_SRC_a->data[X];
@@ -989,9 +1010,6 @@ XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( ResampMethodData *resamp,		// [
         } // for j < numSamples_SRCX
 
     } // for X < numDetectors
-
-  XLALDestroyMultiAMCoeffs ( multiAMcoef );
-  XLALDestroyMultiSSBtimes ( multiSRCtimes );
 
   return XLAL_SUCCESS;
 
