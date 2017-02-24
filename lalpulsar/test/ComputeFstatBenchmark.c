@@ -186,12 +186,10 @@ main ( int argc, char *argv[] )
   optionalArgs.collectTiming = 1;
 
   FILE *timingLogFILE = NULL;
-  BOOLEAN printHeader = 0;
   if ( uvar->outputInfo != NULL )
     {
       FILE *tmp;
       if ( (tmp = fopen ( uvar->outputInfo, "r" )) == NULL ) {
-        printHeader = 1;
       } else {
         fclose (tmp );
       }
