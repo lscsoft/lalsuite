@@ -779,14 +779,9 @@ static int LT_FindNearestPoints(
     if ( !loc->tiling->bounds[i].is_tiled ) {
       for ( size_t j = 0; j < num_points; ++j ) {
         gsl_vector_view nearest_points_col = gsl_matrix_column( nearest_points, j );
-
-        // Get the physical bounds on the current dimension, without padding
         double phys_lower = 0.0, phys_upper = 0.0;
-        LT_GetBounds( loc->tiling, 0, i, &nearest_points_col.vector, &phys_lower, &phys_upper );
-
-        // Set point to non-tiled parameter-space bound
+        LT_CallBoundFunc( loc->tiling, i, &nearest_points_col.vector, &phys_lower, &phys_upper );
         gsl_vector_set( &nearest_points_col.vector, i, phys_lower );
-
       }
     }
   }
@@ -1090,7 +1085,7 @@ int XLALSetTilingLatticeAndMetric(
   // Set physical parameter-space origin to mid-point of parameter-space bounds
   for ( size_t i = 0; i < n; ++i ) {
     double phys_lower = 0.0, phys_upper = 0.0;
-    LT_GetBounds( tiling, false, i, tiling->phys_origin, &phys_lower, &phys_upper );
+    LT_CallBoundFunc( tiling, i, tiling->phys_origin, &phys_lower, &phys_upper );
     gsl_vector_set( tiling->phys_origin, i, 0.5 * ( phys_lower + phys_upper ) );
   }
 
@@ -1428,9 +1423,9 @@ int XLALRandomLatticeTilingPoints(
     gsl_vector_view phys_point = gsl_matrix_column( random_points, k );
     for ( size_t i = 0; i < n; ++i ) {
 
-      // Get the physical bounds on the current dimension, without padding
+      // Get the physical bounds on the current dimension
       double phys_lower = 0.0, phys_upper = 0.0;
-      LT_GetBounds( tiling, 0, i, &phys_point.vector, &phys_lower, &phys_upper );
+      LT_CallBoundFunc( tiling, i, &phys_point.vector, &phys_lower, &phys_upper );
 
       // Generate random number
       const double u = ( 1.0 + scale ) * ( XLALUniformDeviate( rng ) - 0.5 ) + 0.5;
@@ -1671,7 +1666,7 @@ int XLALNextLatticeTilingPoint(
     // If not tiled, set current physical point to non-tiled parameter-space bound
     if ( !is_tiled && ti >= reset_ti ) {
       double phys_lower = 0, phys_upper = 0;
-      LT_GetBounds( itr->tiling, itr->tiling->padding, i, itr->phys_point, &phys_lower, &phys_upper );
+      LT_CallBoundFunc( itr->tiling, i, itr->phys_point, &phys_lower, &phys_upper );
       gsl_vector_set( itr->phys_point, i, phys_lower );
     }
 
