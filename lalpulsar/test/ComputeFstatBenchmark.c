@@ -245,7 +245,7 @@ main ( int argc, char *argv[] )
           tauF1Buf_i   += Fstat_tauF1Buf;
           // ----- output timing details to file if requested
           if ( timingLogFILE != NULL ) {
-            XLAL_CHECK ( AppendFstatTimingInfo2File ( inputs->data[l], timingLogFILE, printHeader ) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK ( AppendFstatTimingInfo2File ( inputs->data[l], timingLogFILE, (l == 0) ) == XLAL_SUCCESS, XLAL_EFUNC );
           }
 
         } // for l < numSegments
