@@ -1,3 +1,11 @@
+lalsimulation (1.7.1-1) unstable; urgency=low
+
+  * LALSimulation 1.7.1
+  * fix memory leak in SpinTaylor code
+  * https://bugs.ligo.org/redmine/issues/5182
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Sat, 25 Feb 2017 10:29:37 -0600
+
 lalsimulation (1.7.0-1) unstable; urgency=low
 
   * LALSimulation 1.7.0

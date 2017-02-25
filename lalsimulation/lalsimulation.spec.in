@@ -110,6 +110,10 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Sat Feb 25 2017 Adam Mercer <adam.mercer@ligo.org> 1.7.1-1
+- fix memory leak in SpinTaylor code
+- https://bugs.ligo.org/redmine/issues/5182
+
 * Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.7.0-1
 - O2 release
 
