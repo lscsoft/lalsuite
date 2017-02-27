@@ -11,24 +11,6 @@ try:
 except ImportError:
     print('Cannot import lal SWIG bindings')
 
-# list of final mass and spin fit names
-class bbh_final_state_fits:
-    pan2011   = "Pan2011"   # Pan et al.             [Phys Rev D 84, 124052 (2011)] (mass+spin, non-spinning)
-    hlz2014   = "HLZ2014"   # Healy et al.           [Phys Rev D 90, 104004 (2014)] (mass+spin, aligned)
-    phenD     = "PhenomD"   # Husa et al.            [Phys Rev D 93, 044006 (2016)] (mass+spin, aligned)
-    uib2016v1 = "UIB2016v1" # Jimenez-Forteza et al. [arXiv:1611.00332v1]           (mass+spin, aligned)
-    uib2016   = "UIB2016"   # Jimenez-Forteza et al. [LIGO-P1600270-v4 / arXiv:1611.00332v2]           (mass+spin, aligned)
-    hbr2016   = "HBR2016"   # Hofmann et al.         [ApJL 825:L19 (2016)]          (spin only, precessing)
-    hl2016    = "HL2016"    # Healy and Lousto       [arXiv:1610.09713]             (mass+spin, aligned)
-
-# list of Kerr truncation behaviours
-class bbh_Kerr_trunc_opts:
-    trunc        = "TRUNCATE"       # truncate fit value to 1.0, with an info message
-    trunc_silent = "TRUNCATESILENT" # truncate fit value to 1.0, without info message
-    keep         = "KEEP"           # keep fit value, even if superextremal, but still give the info message
-    ign          = "IGNORE"         # keep fit value, even if superextremal, without info message
-    err          = "ERROR"          # abort with an error if fit value is superextremal
-
 # Functions to check that input values are physical
 
 def _check_m(m1,m2):
@@ -47,9 +29,43 @@ def _check_chi(chi1, chi2):
     if np.any(chi2<0):
       raise ValueError("chi2 has to be nonnegative")
 
+def _check_chi_aligned(chi1, chi2):
+    if np.any(abs(chi1)>1):
+      raise ValueError("chi1 has to be <= 1")
+    if np.any(abs(chi2)>1):
+      raise ValueError("chi2 has to be <= 1")
+
 def _check_mchi(m1,m2,chi1,chi2):
     _check_m(m1,m2)
     _check_chi(chi1,chi2)
+
+def _check_mchi_aligned(m1,m2,chi1,chi2):
+    _check_m(m1,m2)
+    _check_chi_aligned(chi1,chi2)
+
+###########################
+# Final mass and spin fits
+###########################
+
+# list of final mass and spin fit names
+class bbh_final_state_fits:
+    pan2011   = "Pan2011"   # Pan et al.             [Phys Rev D 84, 124052 (2011)] (mass+spin, non-spinning)
+    hlz2014   = "HLZ2014"   # Healy et al.           [Phys Rev D 90, 104004 (2014)] (mass+spin, aligned)
+    phenD     = "PhenomD"   # Husa et al.            [Phys Rev D 93, 044006 (2016)] (mass+spin, aligned)
+    uib2016v1 = "UIB2016v1" # Jimenez-Forteza et al. [arXiv:1611.00332v1]           (mass+spin, aligned)
+    uib2016   = "UIB2016"   # Jimenez-Forteza et al. [LIGO-P1600270-v4 / arXiv:1611.00332v2]           (mass+spin, aligned)
+    hbr2016   = "HBR2016"   # Hofmann et al.         [ApJL 825:L19 (2016)]          (spin only, precessing)
+    hl2016    = "HL2016"    # Healy and Lousto       [arXiv:1610.09713]             (mass+spin, aligned)
+
+# list of Kerr truncation behaviours
+class bbh_Kerr_trunc_opts:
+    trunc        = "TRUNCATE"       # truncate fit value to 1.0, with an info message
+    trunc_silent = "TRUNCATESILENT" # truncate fit value to 1.0, without info message
+    keep         = "KEEP"           # keep fit value, even if superextremal, but still give the info message
+    ign          = "IGNORE"         # keep fit value, even if superextremal, without info message
+    err          = "ERROR"          # abort with an error if fit value is superextremal
+
+# Function to truncate final spins at Kerr limit (with various options)
 
 def _truncate_at_Kerr_limit(chif, behavior, fitname="this"):
     if behavior not in bbh_Kerr_trunc_opts.__dict__.values():
@@ -138,6 +154,42 @@ def calc_isco_radius(a):
     a_sign = np.sign(a)
     return 3+z2 - np.sqrt((3.-z1)*(3.+z1+2.*z2))*a_sign
 
+
+def _RIT_setup(m1, m2, chi1, chi2):
+    """ Internal function to compute the combinations of masses and spins that are used in the RIT fits """
+
+    _check_mchi_aligned(m1, m2, chi1, chi2)
+
+    m = m1+m2
+    eta = m1*m2/m/m
+    delta_m = (m1 - m2)/m
+
+    S = (m1*m1*chi1 + m2*m2*chi2)/m**2 # symmetric spin (dimensionless -- called \tilde{S} in the paper)
+    Delta = (m2*chi2 - m1*chi1)/m # antisymmetric spin (dimensionless -- called tilde{Delta} in the paper
+
+    return eta, delta_m, S, Delta
+
+def _RIT_symm_express(eta, delta_m, S, Delta, coeffs):
+    """
+    Internal function to return the basic even-in-interchange-of-particles expression used in the RIT fits for the final mass, final spin, and peak luminosity
+
+    The coefficients in the expression are passed as a vector as [0 1 2a 2b 2c 2d 3a 3b 3c 3d 4a 4b 4c 4d 4e 4f 4g 4h 4i] (giving the subscripts).
+    """
+
+    S2 = S*S
+
+    dm2 = delta_m*delta_m
+
+    Deltadm = Delta*delta_m
+
+    Delta2 = Delta*Delta
+
+    return 16.*eta*eta*(coeffs[0] + coeffs[1]*S + coeffs[2]*Deltadm + coeffs[3]*S2 + coeffs[4]*Delta2 \
+        + coeffs[5]*dm2 + coeffs[6]*Deltadm*S + coeffs[7]*S*Delta2 + coeffs[8]*S2*S \
+        + coeffs[9]*S*dm2 + coeffs[10]*Deltadm*S2 + coeffs[11]*Delta2*Deltadm \
+        + coeffs[12]*Delta2*Delta2 + coeffs[13]*S2*S2 + coeffs[14]*Delta2*S2 + coeffs[15]*dm2*dm2 + coeffs[16]*Deltadm*dm2 \
+        + coeffs[17]*Delta2*dm2 + coeffs[18]*S2*dm2)
+
 def _final_spin_diff_Healyetal(a_f, eta, delta_m, S, Delta, version):
     """ Internal function: the final spin with the Healy et al. fits is determined by minimizing this function """
     
@@ -190,13 +242,13 @@ def _final_spin_diff_Healyetal(a_f, eta, delta_m, S, Delta, version):
         L4i = -0.0816482139
     else:
         raise ValueError('Unknown version--should be either "2014" or "2016".')
-    
-    a_f_new = (4.*eta)**2.*(L0  +  L1*S +  L2a*Delta*delta_m + L2b*S**2. + L2c*Delta**2 \
-        + L2d*delta_m**2. + L3a*Delta*S*delta_m + L3b*S*Delta**2. + L3c*S**3. \
-        + L3d*S*delta_m**2. + L4a*Delta*S**2*delta_m + L4b*Delta**3.*delta_m \
-        + L4c*Delta**4. + L4d*S**4. + L4e*Delta**2.*S**2. + L4f*delta_m**4 + L4g*Delta*delta_m**3. \
-        + L4h*Delta**2.*delta_m**2. + L4i*S**2.*delta_m**2.) \
-        + S*(1. + 8.*eta)*delta_m**4. + eta*J_isco*delta_m**6.
+
+    dm2 = delta_m*delta_m
+    dm4 = dm2*dm2
+    dm6 = dm4*dm2
+
+    a_f_new = _RIT_symm_express(eta, delta_m, S, Delta, [L0, L1, L2a, L2b, L2c, L2d, L3a, L3b, L3c, L3d, L4a, L4b, L4c, L4d, L4e, L4f, L4g, L4h, L4i]) \
+        + S*(1. + 8.*eta)*dm4 + eta*J_isco*dm6
     
     return abs(a_f-a_f_new)
 
@@ -218,25 +270,11 @@ def bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2, version="2014"):
     chi1 = np.vectorize(float)(np.array(chi1))
     chi2 = np.vectorize(float)(np.array(chi2))
     
-    if np.any(abs(chi1)>1):
-      raise ValueError("chi1 has to be in [-1, 1]")
-    if np.any(abs(chi2)>1):
-      raise ValueError("chi2 has to be in [-1, 1]")
-    
     # Vectorize the function if arrays are provided as input
     if np.size(m1) * np.size(m2) * np.size(chi1) * np.size(chi2) > 1:
         return np.vectorize(bbh_final_spin_non_precessing_Healyetal)(m1, m2, chi1, chi2, version)
     
-    # binary parameters
-    m = m1+m2
-    q = m1/m2
-    eta = q/(1.+q)**2.
-    delta_m = (m1-m2)/m
-    
-    S1 = chi1*m1**2 # spin angular momentum 1
-    S2 = chi2*m2**2 # spin angular momentum 2
-    S = (S1+S2)/m**2 # symmetric spin (dimensionless -- called \tilde{S} in the paper)
-    Delta = (S2/m2-S1/m1)/m # antisymmetric spin (dimensionless -- called tilde{Delta} in the paper
+    eta, delta_m, S, Delta = _RIT_setup(m1, m2, chi1, chi2)
     
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # compute the final spin
@@ -271,21 +309,7 @@ def bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, version="2014", 
     chi1 = np.vectorize(float)(np.array(chi1))
     chi2 = np.vectorize(float)(np.array(chi2))
     
-    if np.any(abs(chi1)>1):
-      raise ValueError("chi1 has to be in [-1, 1]")
-    if np.any(abs(chi2)>1):
-      raise ValueError("chi2 has to be in [-1, 1]")
-    
-    # binary parameters
-    m = m1+m2
-    q = m1/m2
-    eta = q/(1.+q)**2.
-    delta_m = (m1-m2)/m
-    
-    S1 = chi1*m1**2 # spin angular momentum 1
-    S2 = chi2*m2**2 # spin angular momentum 2
-    S = (S1+S2)/m**2 # symmetric spin (dimensionless -- called \tilde{S} in the paper)
-    Delta = (S2/m2-S1/m1)/m # antisymmetric spin (dimensionless -- called tilde{Delta} in the paper
+    eta, delta_m, S, Delta = _RIT_setup(m1, m2, chi1, chi2)
     
     if chif is None:
         chif = bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2, version)
@@ -344,12 +368,14 @@ def bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, version="2014", 
     # binding energy at ISCO -- Eq.(2.7) of Ori, Thorne Phys Rev D 62 124022 (2000)
     E_isco = (1. - 2./r_isco + chif/r_isco**1.5)/np.sqrt(1. - 3./r_isco + 2.*chif/r_isco**1.5)
     
+    dm2 = delta_m*delta_m
+    dm6 = dm2*dm2*dm2
+
+    m = m1 + m2
+
     # final mass -- Eq. (14) of Healy et al Phys Rev D 90, 104004 (2014)
-    mf = (4.*eta)**2*(M0 + K1*S + K2a*Delta*delta_m + K2b*S**2 + K2c*Delta**2 + K2d*delta_m**2 \
-        + K3a*Delta*S*delta_m + K3b*S*Delta**2 + K3c*S**3 + K3d*S*delta_m**2 \
-        + K4a*Delta*S**2*delta_m + K4b*Delta**3*delta_m + K4c*Delta**4 + K4d*S**4 \
-        + K4e*Delta**2*S**2 + K4f*delta_m**4 + K4g*Delta*delta_m**3 + K4h*Delta**2*delta_m**2 \
-        + K4i*S**2*delta_m**2) + (1+eta*(E_isco+11.))*delta_m**6.
+    mf = _RIT_symm_express(eta, delta_m, S, Delta, [M0, K1, K2a, K2b, K2c, K2d, K3a, K3b, K3c, K3d, K4a, K4b, K4c, K4d, K4e, K4f, K4g, K4h, K4i]) \
+        + (1+eta*(E_isco+11.))*dm6
     
     return mf*m
 
@@ -1062,6 +1088,10 @@ def bbh_final_spin_precessing_HBR2016(m1, m2, chi1, chi2, tilt1, tilt2, phi12, v
         # Return the final spin value [Eq. (16) in HBR]
         return (chi1*chi1 + chi2*chi2*q2*q2 + 2.*chi1*chi2*q2*cos_alpha + 2.*(chi1*cos_betas + chi2*q2*cos_gammas)*ell*q + ell*ell*q2)**0.5/((1.+q)*(1.+q))
 
+#######################
+# Peak luminosity fits
+#######################
+
 def _rescale_Lpeak(Lpeak):
     """
     convert from geometric units ("Planck luminosity" of c^5/G) to multiples of 10^56 erg/s = 10^49 J/s
@@ -1181,4 +1211,34 @@ def bbh_peak_luminosity_non_precessing_UIB2016(m1, m2, chi1, chi2):
     Lpeak = Lpeak*eta2*L0
 
     # Convert to 10^56 ergs/s units
+    return _rescale_Lpeak(Lpeak)
+
+def bbh_peak_luminosity_non_precessing_Healyetal(m1, m2, chi1z, chi2z):
+    """
+    Calculate the peak luminosity of an aligned-spin binary black hole coalescence using the fit from Healy and Lousto arXiv:1610.09713 (henceforth HL)
+
+    Parameters
+    ----------
+    m1, m2 : component masses
+    chi1z, chi2z : components of the dimensionless spins of the two BHs along their orbital angular momentum
+
+    Returns
+    -------
+    peak luminosity in units of 10^56 ergs/s
+
+    """
+
+    m1 = np.vectorize(float)(np.array(m1))
+    m2 = np.vectorize(float)(np.array(m2))
+    chi1z = np.vectorize(float)(np.array(chi1z))
+    chi2z = np.vectorize(float)(np.array(chi2z))
+
+    eta, delta_m, S, Delta = _RIT_setup(m1, m2, chi1z, chi2z)
+
+    # fitting coefficients (from the RIT group's private Matlab implementation; versions to fewer digits are given in Table IV of HL)
+    coeffs = [0.00102101737,0.000897428902,-9.77467189e-05,0.000920883841,1.86982704e-05,-0.000391316975,-0.000120214144,0.000148102239,0.00137901473,-0.000493730555,0.000884792724,3.29254224e-07,1.70170729e-05,0.00151484008,-0.000148456828,0.000136659593,0.000160343115,-6.18530577e-05,-0.00103602521]
+
+    # Return the peak luminosity in units of 10^56 ergs/s [cf. Eq. (3) in HL]
+    Lpeak = _RIT_symm_express(eta, delta_m, S, Delta, coeffs)
+
     return _rescale_Lpeak(Lpeak)
