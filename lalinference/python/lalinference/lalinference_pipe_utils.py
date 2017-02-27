@@ -1674,7 +1674,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if engine=='lalinferenceburst':
       prefix='LIB'
     elif engine is None:
-      prefix=""
+      prefix="skymap"
     else:
       prefix='LALInference'
     nodes=None
@@ -1693,7 +1693,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
               #for p in sk.__parents:
               #  if isinstance(p,ResultPageNode):
               #    resultpagenode=p
-              node.set_filename(sk.outdir+'/%s_skymap.fits.gz'%prefix)
+              node.set_filename(sk.outdir+'/%s.fits.gz'%prefix)
               node.set_message('%s FITS sky map'%prefix)
               self.add_node(node)
               nodes.append(node)
@@ -2033,12 +2033,12 @@ class EngineNode(pipeline.CondorDAGNode):
         if any(self.timeslides): self.add_var_opt('%s-timeslide'%(ifo),self.timeslides[ifo])
 
     """ The logic here is the following:
-            The CBC code starts from the earliest commont time, but that means that if you run on *the same trigtime* the PSD start and PSDlength you'll get will be different, depending on wheather you are running on only one event or several, and the exact position of the event you are interested in in the list of times. 
+            The CBC code starts from the earliest commont time, but that means that if you run on *the same trigtime* the PSD start and PSDlength you'll get will be different, depending on wheather you are running on only one event or several, and the exact position of the event you are interested in in the list of times.
             Instead for each event (including single IFO runs) we do:
             a) get its trigtime
             b) set PSDlengh=maxPSD (requested by the user or equal to 32seglen)
-            c) go define GPSstart= trigtime - PSDlength - seglen - padding -2 
-  
+            c) go define GPSstart= trigtime - PSDlength - seglen - padding -2
+
             By definition this means that GPSstart+ PSDlengh with never overlap with trigtime. Furthermore running on the same event will lead to the same PSDstart and lenght, no matter of whether that is a one-event or multi-event run.
             We should check that the PSDstart so obtained is in science mode. This is what the while loop 9 lines below is meant for. However that part is not active yet because I need to learn how to use scisegs. That is not a problem right now since we do run with disable-science (Since the searches will already have checked that the ~1-2 minutes of time prior to the event are in science. It might be a problem if one runs with hour-long slides).
     """
@@ -2060,7 +2060,7 @@ class EngineNode(pipeline.CondorDAGNode):
       #print 'Over-riding start time to user-specified value %f'%(self.GPSstart)
       #if self.GPSstart<starttime or self.GPSstart>endtime:
       #  print 'ERROR: Over-ridden time lies outside of science segment!'
-      #  raise Exception('Bad psdstart specified') 
+      #  raise Exception('Bad psdstart specified')
     self.add_var_opt('psdstart',str(self.GPSstart))
     if self.psdlength is None:
       self.psdlength=length
@@ -2693,7 +2693,7 @@ class SkyAreaNode(pipeline.CondorDAGNode):
   def set_fits_name(self):
       name='skymap.fits.gz'
       if self.prefix is not None:
-        name=self.prefix+name
+        name=self.prefix+'.fits.gz'
       self.add_var_opt('fitsoutname',name)
   def set_injection(self,injfile,eventnum):
       if injfile is not None:
