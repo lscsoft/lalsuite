@@ -176,7 +176,7 @@ class LWAddJob(pipeline.CondorDAGJob):
 class LWAddNode(pipeline.CondorDAGNode):
     """
     """
-    def __init__(self, job, dag, xmls,output,p_node=[]):
+    def __init__(self, job, dag, xmls,output, p_node=[]):
 
         pipeline.CondorDAGNode.__init__(self,job)
         for x in xmls: self.add_file_arg(x)
@@ -228,8 +228,6 @@ spin1-min = -0.98
 spin2-max = 0.98
 spin2-min = -0.98
 aligned-spin =
-gps-start-time = 1000000000
-gps-end-time =  1000050000
 neighborhood-param = dur
 neighborhood-size = 0.5
 checkpoint = 500
