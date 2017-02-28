@@ -1342,7 +1342,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
                 sin2psi*data.lookupTable->lookupTable[timebin].plus;
 
         /* create the signal model */
-        XLAL_CHECK( XLALSinCos2PiLUT( &sphi, &cphi, -dphi->data[j] ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK( XLALSinCos2PiLUT( &sphi, &cphi, dphi->data[j] ) == XLAL_SUCCESS, XLAL_EFUNC );
 
         model = ((plus*vars.Xpcosphi_2 + cross*vars.Xcsinphi_2)*cphi +
           (cross*vars.Xccosphi_2 - plus*vars.Xpsinphi_2)*sphi) +
