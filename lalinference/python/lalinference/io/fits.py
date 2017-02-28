@@ -394,6 +394,8 @@ def read_sky_map(filename, nest=False, distances=False, moc=False):
         m.meta['nest'] = True
     elif 'UNIQ' not in m.colnames and moc:
         from ..bayestar.sky_map import derasterize
+        if not m.meta['nest']:
+            m = m[hp.nest2ring(nside, np.arange(npix))]
         m = derasterize(m)
         m.meta.pop('nest', None)
 
