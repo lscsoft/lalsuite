@@ -475,6 +475,9 @@ def rasterize(skymap):
 
 
 def derasterize(skymap):
+    skymap.rename_column('PROB', 'PROBDENSITY')
+    skymap['PROBDENSITY'] *= len(skymap) / (4 * np.pi)
+    skymap['PROBDENSITY'].unit = u.steradian ** -1
     nside, _, ipix, _, _, value = zip(
         *healpix_tree.reconstruct_nested(skymap))
     nside = np.asarray(nside)
@@ -485,9 +488,6 @@ def derasterize(skymap):
     skymap = Table(value, meta=skymap.meta)
     for old_unit, column in zip(old_units, skymap.columns.values()):
         column.unit = old_unit
-    skymap.rename_column('PROB', 'PROBDENSITY')
-    skymap['PROBDENSITY'] /= hp.nside2pixarea(nside)
-    skymap['PROBDENSITY'].unit = u.steradian ** -1
     skymap.add_column(Column(uniq, name='UNIQ'), 0)
     return skymap
 
