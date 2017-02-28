@@ -486,7 +486,7 @@ def derasterize(skymap):
     for old_unit, column in zip(old_units, skymap.columns.values()):
         column.unit = old_unit
     skymap.rename_column('PROB', 'PROBDENSITY')
-    skymap['PROBDENSITY'] *= hp.nside2pixarea(nside)
+    skymap['PROBDENSITY'] /= hp.nside2pixarea(nside)
     skymap['PROBDENSITY'].unit = u.steradian ** -1
     skymap.add_column(Column(uniq, name='UNIQ'), 0)
     return skymap
