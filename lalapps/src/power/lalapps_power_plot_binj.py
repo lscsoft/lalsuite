@@ -436,8 +436,8 @@ class RecoveredTimeOffset(object):
 		# 21 bins per filter width
 		bins = int(float(abs(interval)) / width) * 21
 		binning = rate.NDBins((rate.LinearBins(interval[0], interval[1], bins),))
-		self.offsets = rate.BinnedArray(binning)
-		self.coinc_offsets = rate.BinnedArray(binning)
+		self.offsets = rate.BinnedDensity(binning)
+		self.coinc_offsets = rate.BinnedDensity(binning)
 
 	def add_contents(self, contents):
 		# this outer loop assumes each injection can only be found
@@ -469,14 +469,14 @@ WHERE
 				dt = float(burst.peak - sim_peak)
 				if burst.ifo == self.instrument:
 					try:
-						self.offsets[dt,] += 1.0
+						self.offsets.count[dt,] += 1.0
 					except IndexError:
 						# outside plot range
 						pass
 				coinc_dt += dt * burst.ms_snr
 			coinc_dt /= sum(burst.ms_snr for burst in bursts)
 			try:
-				self.coinc_offsets[coinc_dt,] += 1.0
+				self.coinc_offsets.count[coinc_dt,] += 1.0
 			except IndexError:
 				# outside plot range
 				pass
@@ -485,10 +485,10 @@ WHERE
 		self.axes.set_title("Trigger Peak Time - Injection Peak Time\n(%d Found Injections)" % self.found)
 		# 21 bins per filter width
 		filter = rate.gaussian_window(21)
-		rate.to_moving_mean_density(self.offsets, filter)
-		rate.to_moving_mean_density(self.coinc_offsets, filter)
-		self.axes.plot(self.offsets.centres()[0], self.offsets.array, "k")
-		self.axes.plot(self.coinc_offsets.centres()[0], self.coinc_offsets.array, "r")
+		rate.filter_array(self.offsets.array, filter)
+		rate.filter_array(self.coinc_offsets.array, filter)
+		self.axes.plot(self.offsets.centres()[0], self.offsets.at_centres(), "k")
+		self.axes.plot(self.coinc_offsets.centres()[0], self.coinc_offsets.at_centres(), "r")
 		self.axes.legend(["%s residuals" % self.instrument, "SNR-weighted mean of residuals in all instruments"], loc = "lower right")
 
 
@@ -510,8 +510,8 @@ class RecoveredFrequencyOffset(object):
 		# 21 bins per filter width
 		bins = int(float(abs(interval)) / width) * 21
 		binning = rate.NDBins((rate.LinearBins(interval[0], interval[1], bins),))
-		self.offsets = rate.BinnedArray(binning)
-		self.coinc_offsets = rate.BinnedArray(binning)
+		self.offsets = rate.BinnedDensity(binning)
+		self.coinc_offsets = rate.BinnedDensity(binning)
 
 	def add_contents(self, contents):
 		# this outer loop assumes each injection can only be found
@@ -539,7 +539,7 @@ WHERE
 				if burst.ifo == self.instrument:
 					df = math.log(burst.peak_frequency / sim_frequency, 10)
 					try:
-						self.offsets[df,] += 1.0
+						self.offsets.count[df,] += 1.0
 					except IndexError:
 						# outside plot range
 						pass
@@ -547,7 +547,7 @@ WHERE
 			coinc_freq = sum(burst.peak_frequency * burst.ms_snr for burst in bursts) / sum(burst.ms_snr for burst in bursts)
 			df = math.log(coinc_freq / sim_frequency, 10)
 			try:
-				self.coinc_offsets[df,] += 1.0
+				self.coinc_offsets.count[df,] += 1.0
 			except IndexError:
 				# outside plot range
 				pass
@@ -556,10 +556,10 @@ WHERE
 		self.axes.set_title("Trigger Peak Frequency / Injection Centre Frequency\n(%d Found Injections)" % self.found)
 		# 21 bins per filter width
 		filter = rate.gaussian_window(21)
-		rate.to_moving_mean_density(self.offsets, filter)
-		rate.to_moving_mean_density(self.coinc_offsets, filter)
-		self.axes.plot(10**self.offsets.centres()[0], self.offsets.array, "k")
-		self.axes.plot(10**self.coinc_offsets.centres()[0], self.coinc_offsets.array, "r")
+		rate.filter_array(self.offsets.array, filter)
+		rate.filter_array(self.coinc_offsets.array, filter)
+		self.axes.plot(10**self.offsets.centres()[0], self.offsets.at_centres(), "k")
+		self.axes.plot(10**self.coinc_offsets.centres()[0], self.coinc_offsets.at_centres(), "r")
 		self.axes.legend(["%s triggers" % self.instrument, "SNR-weighted mean of all matching triggers"], loc = "lower right")
 		ymin, ymax = self.axes.get_ylim()
 		if ymax / ymin > 1e6:

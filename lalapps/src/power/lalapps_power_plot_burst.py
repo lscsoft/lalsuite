@@ -206,22 +206,22 @@ class RateVsPeakFreq(object):
 		# 21 bins per filter width
 		bins = int(float(abs(interval)) / width) * 21
 		binning = rate.NDBins((rate.LinearBins(interval[0], interval[1], bins),))
-		self.rate = rate.BinnedArray(binning)
+		self.rate = rate.BinnedDensity(binning)
 
 	def add_contents(self, contents, seglists):
 		self.nevents += contents[self.ifo].nevents
 		for f in contents[self.ifo].peak_freq:
 			try:
-				self.rate[f,] += 1.0
+				self.rate.count[f,] += 1.0
 			except IndexError:
 				raise ValueError("trigger peak frequency %g Hz outside plot range [%g Hz, %g Hz]" % (f, self.rate.bins[0].min, self.rate.bins[0].max))
 
 	def finish(self):
 		self.axes.set_title("Trigger Rate vs. Peak Frequency\n(%d Triggers)" % self.nevents)
 		# 21 bins per filter width
-		rate.to_moving_mean_density(self.rate, rate.gaussian_window(21))
+		rate.filter_array(self.rate.array, rate.gaussian_window(21))
 		xvals = self.rate.centres()[0]
-		self.axes.plot(xvals, self.rate.array, "k")
+		self.axes.plot(xvals, self.rate.at_centres(), "k")
 		self.axes.semilogy()
 		self.axes.set_xlim((min(xvals), max(xvals)))
 
@@ -272,7 +272,7 @@ class Delays(object):
 		self.nevents = 0
 		# 21 bins per filter width
 		interval = segments.segment(0, max + 2)
-		self.bins = rate.BinnedArray(rate.NDBins((rate.LinearBins(interval[0], interval[1], int(float(abs(interval)) / width) * 21),)))
+		self.bins = rate.BinnedDensity(rate.NDBins((rate.LinearBins(interval[0], interval[1], int(float(abs(interval)) / width) * 21),)))
 		self.axes.semilogy()
 
 	def add_contents(self, contents, seglists):
@@ -282,7 +282,7 @@ class Delays(object):
 		for i in xrange(1, len(peaks)):
 			dt = float(peaks[i] - peaks[i - 1])
 			try:
-				self.bins[dt,] += 1
+				self.bins.count[dt,] += 1
 			except IndexError:
 				# out of bounds
 				pass
@@ -290,12 +290,13 @@ class Delays(object):
 	def finish(self):
 		self.axes.set_title("Time Between Triggers\n(%d Triggers)" % self.nevents)
 
+		rate.filter_array(self.bins.array, rate.gaussian_window(21))
 		xvals = self.bins.centres()[0]
-		rate.to_moving_mean_density(self.bins, rate.gaussian_window(21))
-		self.axes.plot(xvals, self.bins.array, "k")
+		yvals = self.bins.at_centres()
+		self.axes.plot(xvals, yvals, "k")
 
 		self.axes.set_xlim((0, xvals[-1]))
-		self.axes.set_ylim((1, 10.0**(int(math.log10(max(self.bins.array))) + 1)))
+		self.axes.set_ylim((1, 10.0**(int(math.log10(yvals.max())) + 1)))
 
 
 #
