@@ -27,7 +27,8 @@ import logging
 import time
 import numpy as np
 import healpy as hp
-from astropy.table import Table
+from astropy.table import Column, Table
+from astropy import units as u
 from .decorator import with_numpy_random_seed
 from . import distance
 from . import ligolw
@@ -35,6 +36,7 @@ from . import filter
 from . import postprocess
 from . import timing
 from . import moc
+from .. import healpix_tree
 try:
     from . import _sky_map
 except ImportError:
@@ -468,6 +470,25 @@ def rasterize(skymap):
     skymap = Table(moc.rasterize(skymap), meta=skymap.meta)
     skymap.rename_column('PROBDENSITY', 'PROB')
     skymap['PROB'] *= 4 * np.pi / len(skymap)
+    skymap['PROB'].unit = u.pixel ** -1
+    return skymap
+
+
+def derasterize(skymap):
+    nside, _, ipix, _, _, value = zip(
+        *healpix_tree.reconstruct_nested(skymap))
+    nside = np.asarray(nside)
+    ipix = np.asarray(ipix)
+    value = np.stack(value)
+    uniq = (4 * np.square(nside) + ipix).astype(np.uint64)
+    old_units = [column.unit for column in skymap.columns.values()]
+    skymap = Table(value, meta=skymap.meta)
+    for old_unit, column in zip(old_units, skymap.columns.values()):
+        column.unit = old_unit
+    skymap.rename_column('PROB', 'PROBDENSITY')
+    skymap['PROBDENSITY'] *= hp.nside2pixarea(nside)
+    skymap['PROBDENSITY'].unit = u.steradian ** -1
+    skymap.add_column(Column(uniq, name='UNIQ'), 0)
     return skymap
 
 
