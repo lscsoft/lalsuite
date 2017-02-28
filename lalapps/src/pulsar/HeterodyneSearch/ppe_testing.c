@@ -249,24 +249,25 @@ void test_gaussian_output( LALInferenceRunState *runState ){
   }
 
   /* get mean and standard deviation */
-  REAL8 h0mean = 0., h0sigma = 0., h095 = 0.;
+  REAL8 h0mean = 0., h0sigma = 0., h0sigma2 = 0., h095 = 0.;
   h0mean = LALInferenceGetREAL8Variable( runState->threads[0]->currentParams, "H0MEAN" );
   h0sigma = LALInferenceGetREAL8Variable( runState->threads[0]->currentParams, "H0SIGMA" );
+  h0sigma2 = h0sigma*h0sigma;
 
   /* calculate the log evidence */
   Z = log(0.5*(erf(LAL_SQRT1_2*(h0mean - min)/h0sigma) - erf(LAL_SQRT1_2*(h0mean - max)/h0sigma)));
-  Z -= log(max-min); /* divide by prior */
+  Z -= log(max-min); /* multiply by prior */
 
   /* calculate the 95% upper limit */
   h095 = ul_gauss_CDFRoot(h0mean, h0sigma, min, max);
 
   /* calculate the KL divergence */
-  REAL8 lnC = -log(max-min); /* log of prior range */
-  REAL8 D = sqrt(LAL_TWOPI*h0sigma*h0sigma);
-  REAL8 Cpart = 0.25*(1. + 2.*lnC + 2.*log(D));
-
-  REAL8 KLdiv = (0.5/D)*exp(-0.5*((max-h0mean)/h0sigma)*((max-h0mean)/h0sigma))*(max-h0mean) - Cpart*erf(LAL_SQRT1_2*(max-h0mean)/h0sigma);
-  KLdiv -= ((0.5/D)*exp(-0.5*((min-h0mean)/h0sigma)*((min-h0mean)/h0sigma))*(min-h0mean) - Cpart*erf(LAL_SQRT1_2*(min-h0mean)/h0sigma));
+  REAL8 lnC = -log(max-min); /* log of prior */
+  REAL8 p_Z = exp(lnC - Z); /* prior divided by the evidence */
+  REAL8 L = Z + 0.5*log(LAL_TWOPI*h0sigma2);
+  REAL8 D = (1. + 2.*L)*(erf((h0mean-min)*LAL_SQRT1_2/h0sigma) - erf((h0mean-max)*LAL_SQRT1_2/h0sigma));
+  REAL8 G = (1./(sqrt(LAL_TWOPI)*h0sigma))*((min-h0mean)*exp(-0.5*(min-h0mean)*(min-h0mean)/h0sigma2) - (max-h0mean)*exp(-0.5*(max-h0mean)*(max-h0mean)/h0sigma2));
+  REAL8 KLdiv = -0.25*p_Z*(D + 2.*G);
 
   /* Open output file (called test_gauss.txt) using the path of the --outfile value */
   ppt = LALInferenceGetProcParamVal(runState->commandLine, "--outfile");
