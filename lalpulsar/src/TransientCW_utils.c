@@ -822,7 +822,11 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
 
 
           /* generic F-stat calculation from A,B,C, Fa, Fb */
-          REAL4 DdInv = 1.0f / ( Ad * Bd - Cd * Cd );
+          REAL4 Dd = ( Ad * Bd - Cd * Cd );
+          REAL4 DdInv = 0;
+          if ( Dd > 0 ) { /* safety catch as in XLALWeightMultiAMCoeffs(): make it so that in the end F=0 instead of -nan */
+            DdInv = 1.0f / Dd;
+          }
           REAL4 F;
           { // function body copied from XLALComputeFstatFromFaFb()
             REAL4 Fa_re = creal(Fa);
