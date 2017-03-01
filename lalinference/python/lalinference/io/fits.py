@@ -71,6 +71,7 @@ import time
 import lal
 import six
 from astropy.table import Table
+from ..bayestar import moc
 
 
 def gps_to_iso8601(gps_time):
@@ -254,7 +255,8 @@ def write_sky_map(filename, m, **kwargs):
         extra_header = [
             ('PIXTYPE', 'HEALPIX', 'HEALPIX pixelisation'),
             ('ORDERING', 'NUNIQ', 'Pixel ordering scheme: RING, NESTED, or NUNIQ'),
-            ('COORDSYS', 'C', 'Ecliptic, Galactic or Celestial (equatorial)')]
+            ('COORDSYS', 'C', 'Ecliptic, Galactic or Celestial (equatorial)'),
+            ('MOCORDER', moc.uniq2order(m['UNIQ'].max()), 'MOC resolution (best order)')]
     else:
         default_names = DEFAULT_NESTED_NAMES
         default_units = DEFAULT_NESTED_UNITS
