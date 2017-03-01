@@ -212,9 +212,18 @@ static void LT_FindBoundExtrema(
   )
 {
 
+  // Get bound information for this dimension
+  const LT_Bound *bound = &tiling->bounds[dim];
+
   // If 'i' equals target dimension 'dim', get parameter-space bounds in this dimension
   if ( i == dim ) {
     LT_CallBoundFunc( tiling, dim, phys_point, phys_lower_minimum, phys_upper_maximum );
+    return;
+  }
+
+  // Move to higher dimensions if this dimension is not tiled
+  if ( !bound->is_tiled ) {
+    LT_FindBoundExtrema( tiling, i + 1, dim, phys_point, phys_lower_minimum, phys_upper_maximum );
     return;
   }
 
