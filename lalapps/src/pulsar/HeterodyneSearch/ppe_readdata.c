@@ -879,6 +879,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
     }
 
     LALInferenceAddVariable( modeltmp->params, "chunkLength", &chunkLength, LALINFERENCE_UINT4Vector_t, LALINFERENCE_PARAM_FIXED );
+    LALInferenceAddVariable( modeltmp->params, "inputSigma", &inputsigma, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
 
     /* compute the variance */
     if( !inputsigma ){ compute_variance( datatmp, modeltmp ); }
