@@ -248,49 +248,6 @@ static void LT_FindBoundExtrema(
 }
 
 ///
-/// Return the parameter-space bounds on a given dimension.
-///
-static void LT_GetBounds(
-  const LatticeTiling *tiling,          ///< [in] Lattice tiling
-  const UINT4 padding,                  ///< [in] Level of padding added to parameter space bounds
-  const size_t dim,                     ///< [in] Dimension on which bound applies
-  const gsl_vector *phys_point,         ///< [in] Physical point at which to find bounds
-  double *phys_lower,                   ///< [out] Lower parameter-space bound
-  double *phys_upper                    ///< [out] Upper parameter-space bound
-  )
-{
-
-  // Get bound information for this dimension
-  const LT_Bound *bound = &tiling->bounds[dim];
-
-  // Get parameter-space bounds in dimension 'dim'
-  LT_CallBoundFunc( tiling, dim, phys_point, phys_lower, phys_upper );
-
-  if ( bound->is_tiled ) {
-
-    if ( dim > 0 ) {
-
-      // Create a local copy of current physical point
-      double local_phys_point_array[phys_point->size];
-      gsl_vector_view local_phys_point_view = gsl_vector_view_array( local_phys_point_array, phys_point->size );
-      gsl_vector *const local_phys_point = &local_phys_point_view.vector;
-      gsl_vector_memcpy( local_phys_point, phys_point );
-
-      // Find the extrema of the parameter-space bounds
-      LT_FindBoundExtrema( tiling, 0, dim, local_phys_point, phys_lower, phys_upper );
-
-    }
-
-    // Add padding of (a multiple of) half the extext of the metric ellipse bounding box
-    const double phys_hbbox_dim = padding * 0.5 * gsl_vector_get( tiling->phys_bbox, dim );
-    *phys_lower -= phys_hbbox_dim;
-    *phys_upper += phys_hbbox_dim;
-
-  }
-
-}
-
-///
 /// Fast-forward a lattice tiling iterator over its highest tiled dimension.
 /// Return the number of points fast-forwarded over.
 ///
@@ -1651,25 +1608,38 @@ int XLALNextLatticeTilingPoint(
   // Reset parameter-space bounds and recompute physical point
   for ( size_t i = 0, ti = 0; i < n; ++i ) {
 
-    // Determine if the current dimension is tiled
-    const bool is_tiled = itr->tiling->bounds[i].is_tiled;
+    // Get bound information for this dimension
+    const LT_Bound *bound = &itr->tiling->bounds[i];
 
     // Get physical parameter-space origin in the current dimension
     const double phys_origin_i = gsl_vector_get( itr->tiling->phys_origin, i );
 
     // If not tiled, set current physical point to non-tiled parameter-space bound
-    if ( !is_tiled && ti >= reset_ti ) {
+    if ( !bound->is_tiled && ti >= reset_ti ) {
       double phys_lower = 0, phys_upper = 0;
       LT_CallBoundFunc( itr->tiling, i, itr->phys_point, &phys_lower, &phys_upper );
       gsl_vector_set( itr->phys_point, i, phys_lower );
     }
 
     // If tiled, reset parameter-space bounds
-    if ( is_tiled && ti >= reset_ti ) {
+    if ( bound->is_tiled && ti >= reset_ti ) {
 
-      // Get the physical bounds on the current dimension, with padding
-      double phys_lower = 0, phys_upper = 0;
-      LT_GetBounds( itr->tiling, itr->tiling->padding, i, itr->phys_point, &phys_lower, &phys_upper );
+      // Create a local copy of current physical point
+      double local_phys_point_array[itr->phys_point->size];
+      gsl_vector_view local_phys_point_view = gsl_vector_view_array( local_phys_point_array, itr->phys_point->size );
+      gsl_vector *const local_phys_point = &local_phys_point_view.vector;
+      gsl_vector_memcpy( local_phys_point, itr->phys_point );
+
+      // Find the extrema of the parameter-space bounds on the current dimension
+      double phys_lower = GSL_POSINF, phys_upper = GSL_NEGINF;
+      LT_FindBoundExtrema( itr->tiling, 0, i, local_phys_point, &phys_lower, &phys_upper );
+
+      // Add padding of (a multiple of) half the extext of the metric ellipse bounding box
+      {
+        const double phys_hbbox_i = itr->tiling->padding * 0.5 * gsl_vector_get( itr->tiling->phys_bbox, i );
+        phys_lower -= phys_hbbox_i;
+        phys_upper += phys_hbbox_i;
+      }
 
       // Transform physical point in lower dimensions to generating integer offset
       double int_from_phys_point_i = 0;
@@ -1724,7 +1694,7 @@ int XLALNextLatticeTilingPoint(
     }
 
     // If tiled, recompute current physical point from integer point
-    if ( is_tiled && ti >= changed_ti ) {
+    if ( bound->is_tiled && ti >= changed_ti ) {
       double phys_point_i = phys_origin_i;
       for ( size_t tj = 0; tj < tn; ++tj ) {
         const size_t j = itr->tiling->tiled_idx[tj];
@@ -1736,7 +1706,7 @@ int XLALNextLatticeTilingPoint(
     }
 
     // Increment tiled dimension index
-    if ( is_tiled ) {
+    if ( bound->is_tiled ) {
       ++ti;
     }
 
