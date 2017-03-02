@@ -21,7 +21,6 @@
 #define _STREAMOUTPUT_H
 
 #include <lal/LALStdlib.h>
-#include <lal/Grid.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -149,27 +148,6 @@ LALZWriteFSeries( LALStatus  *status, FILE *stream, COMPLEX16FrequencySeries *se
 
 
 
-
-void
-LALI2WriteGrid( LALStatus  *status, FILE *stream, INT2Grid *grid );
-void
-LALI4WriteGrid( LALStatus  *status, FILE *stream, INT4Grid *grid );
-void
-LALI8WriteGrid( LALStatus  *status, FILE *stream, INT8Grid *grid );
-void
-LALU2WriteGrid( LALStatus  *status, FILE *stream, UINT2Grid *grid );
-void
-LALU4WriteGrid( LALStatus  *status, FILE *stream, UINT4Grid *grid );
-void
-LALU8WriteGrid( LALStatus  *status, FILE *stream, UINT8Grid *grid );
-void
-LALSWriteGrid( LALStatus  *status, FILE *stream, REAL4Grid *grid );
-void
-LALDWriteGrid( LALStatus  *status, FILE *stream, REAL8Grid *grid );
-void
-LALCWriteGrid( LALStatus  *status, FILE *stream, COMPLEX8Grid *grid );
-void
-LALZWriteGrid( LALStatus  *status, FILE *stream, COMPLEX16Grid *grid );
 
 #ifdef __cplusplus
 }
