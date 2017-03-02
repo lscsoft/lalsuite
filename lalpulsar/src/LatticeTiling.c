@@ -161,7 +161,7 @@ static void LT_ReverseOrderRowsCols( gsl_matrix *A )
 ///
 /// Call the parameter-space bound function of a given dimension.
 ///
-static void LT_CallBoundFunc(
+static inline void LT_CallBoundFunc(
   const LatticeTiling *tiling,          ///< [in] Lattice tiling
   const size_t dim,                     ///< [in] Dimension on which bound applies
   const gsl_vector *phys_point,         ///< [in] Physical point at which to find bounds
