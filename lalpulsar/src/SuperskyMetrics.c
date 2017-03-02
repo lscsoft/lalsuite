@@ -1179,6 +1179,7 @@ typedef struct {
 static double PhysicalSkyBound(
   const void *data,
   const size_t dim UNUSED,
+  const gsl_matrix *cache UNUSED,
   const gsl_vector *point
   )
 {
@@ -1884,6 +1885,7 @@ int XLALComputePhysicalSkyEqualAreaPatch(
 static double PhysicalSpinBound(
   const void *data,
   const size_t dim UNUSED,
+  const gsl_matrix *cache UNUSED,
   const gsl_vector *point
   )
 {

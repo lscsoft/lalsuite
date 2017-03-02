@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2007, 2008, 2012, 2014, 2015, 2016 Karl Wette
+// Copyright (C) 2007, 2008, 2012, 2014, 2015, 2016, 2017 Karl Wette
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -39,6 +39,9 @@
 // Maximum length of arbitrary data describing parameter-space bounds
 #define LT_DATA_MAX_SIZE 1024
 
+// Number of cached values which can be stored per dimension
+#define LT_CACHE_MAX_SIZE 6
+
 ///
 /// Lattice tiling parameter-space bound for one dimension.
 ///
@@ -50,6 +53,7 @@ typedef struct tagLT_Bound {
   size_t data_len;                      ///< Length of arbitrary data describing parameter-space bounds
   char data_lower[LT_DATA_MAX_SIZE];    ///< Arbitrary data describing lower parameter-space bound
   char data_upper[LT_DATA_MAX_SIZE];    ///< Arbitrary data describing upper parameter-space bound
+  LatticeTilingBoundCache cache_func;   ///< Parameter space bound cache function
 } LT_Bound;
 
 ///
@@ -111,7 +115,9 @@ struct tagLatticeTilingIterator {
   bool alternating;                     ///< If true, alternate iterator direction after every crossing
   UINT4 state;                          ///< Iterator state: 0=initialised, 1=in progress, 2=finished
   gsl_vector *phys_point;               ///< Current lattice point in physical coordinates
+  gsl_matrix *phys_point_cache;         ///< Cached values for computing physical bounds on current point
   gsl_vector *phys_sampl;               ///< Copy of physical point for sampling bounds with LT_FindBoundExtrema()
+  gsl_matrix *phys_sampl_cache;         ///< Cached values for sampling bounds with LT_FindBoundExtrema()
   INT4 *int_point;                      ///< Current lattice point in generating integers
   INT4 *int_lower;                      ///< Current lower parameter-space bound in generating integers
   INT4 *int_upper;                      ///< Current upper parameter-space bound in generating integers
@@ -165,6 +171,7 @@ static void LT_ReverseOrderRowsCols( gsl_matrix *A )
 static inline void LT_CallBoundFunc(
   const LatticeTiling *tiling,          ///< [in] Lattice tiling
   const size_t dim,                     ///< [in] Dimension on which bound applies
+  const gsl_matrix *phys_point_cache,   ///< [in] Cached values for computing physical point bounds
   const gsl_vector *phys_point,         ///< [in] Physical point at which to find bounds
   double *phys_lower,                   ///< [out] Lower parameter-space bound
   double *phys_upper                    ///< [out] Upper parameter-space bound
@@ -174,24 +181,28 @@ static inline void LT_CallBoundFunc(
   // Get bound information for this dimension
   const LT_Bound *bound = &tiling->bounds[dim];
 
-  // Get view of first (dimension) dimensions of physical point
+  // Get view of first 'dim' rows of cache
+  gsl_matrix_const_view phys_point_cache_subm_view = gsl_matrix_const_submatrix( phys_point_cache, 0, 0, GSL_MAX( 1, dim ), phys_point_cache->size2 );
+  const gsl_matrix *phys_point_cache_subm = ( dim == 0 ) ? NULL : &phys_point_cache_subm_view.matrix;
+
+  // Get view of first 'dim' dimensions of physical point
   gsl_vector_const_view phys_point_subv_view = gsl_vector_const_subvector( phys_point, 0, GSL_MAX( 1, dim ) );
   const gsl_vector *phys_point_subv = ( dim == 0 ) ? NULL : &phys_point_subv_view.vector;
 
   // Get lower parameter-space bound
-  *phys_lower = ( bound->func )( ( const void* ) bound->data_lower, dim, phys_point_subv );
+  *phys_lower = ( bound->func )( ( const void* ) bound->data_lower, dim, phys_point_cache_subm, phys_point_subv );
 
   if ( bound->is_tiled ) {
 
     // Get upper parameter-space bound
-    *phys_upper = ( bound->func )( ( const void* ) bound->data_upper, dim, phys_point_subv );
+    *phys_upper = ( bound->func )( ( const void* ) bound->data_upper, dim, phys_point_cache_subm, phys_point_subv );
 
     // Do not allow upper parameter-space bound to be less than lower parameter-space bound
     if ( *phys_upper < *phys_lower ) {
       *phys_upper = *phys_lower;
     }
 
-  } else {
+  } else if ( phys_upper != NULL ) {
 
     // Set upper bound to lower bound
     *phys_upper = *phys_lower;
@@ -201,17 +212,37 @@ static inline void LT_CallBoundFunc(
 }
 
 ///
-/// Set value of physical point in a given dimension
+/// Set value of physical point in a given dimension, and update cache
 ///
 static inline void LT_SetPhysPoint(
+  const LatticeTiling *tiling,          ///< [in] Lattice tiling
+  gsl_matrix *phys_point_cache,         ///< [out] Cached values for computing physical point bounds
   gsl_vector *phys_point,               ///< [out] Physical point
   const size_t dim,                     ///< [in] Dimension on which to set point
   const double phys_point_dim           ///< [in] Value of physical point in this dimension
   )
 {
 
+  // Get bound information for this dimension
+  const LT_Bound *bound = &tiling->bounds[dim];
+
   // Set physical point
   gsl_vector_set( phys_point, dim, phys_point_dim );
+
+  if ( bound->cache_func != NULL ) {
+
+    // Get view of 'dim'th row of cache
+    gsl_vector_view phys_point_cache_subv_view = gsl_matrix_row( phys_point_cache, dim );
+    gsl_vector *phys_point_cache_subv = &phys_point_cache_subv_view.vector;
+
+    // Get view of first 'dim+1' dimensions of physical point
+    gsl_vector_const_view phys_point_subv_view = gsl_vector_const_subvector( phys_point, 0, dim + 1 );
+    const gsl_vector *phys_point_subv = &phys_point_subv_view.vector;
+
+    // Update cache values required by bound functions
+    ( bound->cache_func )( dim, phys_point_subv, phys_point_cache_subv );
+
+  }
 
 }
 
@@ -222,6 +253,7 @@ static void LT_FindBoundExtrema(
   const LatticeTiling *tiling,          ///< [in] Lattice tiling
   const size_t i,                       ///< [in] Current dimension in LT_FindBoundExtrema() iteration
   const size_t dim,                     ///< [in] Dimension on which bound applies
+  gsl_matrix *phys_point_cache,         ///< [in] Cached values for computing physical point bounds
   gsl_vector *phys_point,               ///< [in] Physical point at which to find bounds
   double *phys_lower_minimum,           ///< [out] Minimum lower parameter-space bound
   double *phys_upper_maximum            ///< [out] Maximum upper parameter-space bound
@@ -233,13 +265,13 @@ static void LT_FindBoundExtrema(
 
   // If 'i' equals target dimension 'dim', get parameter-space bounds in this dimension
   if ( i == dim ) {
-    LT_CallBoundFunc( tiling, dim, phys_point, phys_lower_minimum, phys_upper_maximum );
+    LT_CallBoundFunc( tiling, dim, phys_point_cache, phys_point, phys_lower_minimum, phys_upper_maximum );
     return;
   }
 
   // Move to higher dimensions if this dimension is not tiled
   if ( !bound->is_tiled ) {
-    LT_FindBoundExtrema( tiling, i + 1, dim, phys_point, phys_lower_minimum, phys_upper_maximum );
+    LT_FindBoundExtrema( tiling, i + 1, dim, phys_point_cache, phys_point, phys_lower_minimum, phys_upper_maximum );
     return;
   }
 
@@ -248,10 +280,10 @@ static void LT_FindBoundExtrema(
 
   // Sample parameter-space bounds at offset 'x' from original physical point
 #define LT_FindBoundExtrema_SAMPLE_BOUNDS(x) { \
-    LT_SetPhysPoint(phys_point, i, phys_point_i + (x)); \
+    LT_SetPhysPoint( tiling, phys_point_cache, phys_point, i, phys_point_i + (x) ); \
     double phys_lower = *phys_lower_minimum; \
     double phys_upper = *phys_upper_maximum; \
-    LT_FindBoundExtrema( tiling, i + 1, dim, phys_point, &phys_lower, &phys_upper ); \
+    LT_FindBoundExtrema( tiling, i + 1, dim, phys_point_cache, phys_point, &phys_lower, &phys_upper ); \
     *phys_lower_minimum = GSL_MIN( *phys_lower_minimum, phys_lower ); \
     *phys_upper_maximum = GSL_MAX( *phys_upper_maximum, phys_upper ); \
   }
@@ -268,7 +300,7 @@ static void LT_FindBoundExtrema(
 #undef LT_FindBoundExtrema_SAMPLE_BOUNDS
 
   // Reset physical point in this dimension to original value
-  LT_SetPhysPoint( phys_point, i, phys_point_i );
+  LT_SetPhysPoint( tiling, phys_point_cache, phys_point, i, phys_point_i );
 
 }
 
@@ -299,7 +331,7 @@ static INT4 LT_FastForwardIterator(
   {
     const double phys_point_i = gsl_vector_get( itr->phys_point, i );
     const double phys_from_int_i_i = gsl_matrix_get( itr->tiling->phys_from_int, i, i );
-    LT_SetPhysPoint( itr->phys_point, i, phys_point_i + phys_from_int_i_i * ff_increment );
+    LT_SetPhysPoint( itr->tiling, itr->phys_point_cache, itr->phys_point, i, phys_point_i + phys_from_int_i_i * ff_increment );
   }
 
   // Get total number of points fast-forwarded over
@@ -750,15 +782,21 @@ static int LT_FindNearestPoints(
     gsl_vector_add_constant( &nearest_points_row.vector, phys_origin );
   }
 
+  // Create local cache for computing physical bounds
+  double local_cache_array[n * LT_CACHE_MAX_SIZE];
+  gsl_matrix_view local_cache_view = gsl_matrix_view_array( local_cache_array, n, LT_CACHE_MAX_SIZE );
+  gsl_matrix *local_cache = &local_cache_view.matrix;
+  gsl_matrix_set_all( local_cache, GSL_NAN );
+
   // Set any non-tiled dimensions in 'nearest_points'
-  for ( size_t i = 0; i < n; ++i ) {
-    if ( !loc->tiling->bounds[i].is_tiled ) {
-      for ( size_t j = 0; j < num_points; ++j ) {
-        gsl_vector_view nearest_points_col = gsl_matrix_column( nearest_points, j );
-        double phys_lower = 0.0, phys_upper = 0.0;
-        LT_CallBoundFunc( loc->tiling, i, &nearest_points_col.vector, &phys_lower, &phys_upper );
-        LT_SetPhysPoint( &nearest_points_col.vector, i, phys_lower );
+  for ( size_t j = 0; j < num_points; ++j ) {
+    gsl_vector_view nearest_points_col = gsl_matrix_column( nearest_points, j );
+    for ( size_t i = 0; i < n; ++i ) {
+      double phys_point = gsl_vector_get( &nearest_points_col.vector, i );
+      if ( !loc->tiling->bounds[i].is_tiled ) {
+        LT_CallBoundFunc( loc->tiling, i, local_cache, &nearest_points_col.vector, &phys_point, NULL );
       }
+      LT_SetPhysPoint( loc->tiling, local_cache, &nearest_points_col.vector, i, phys_point );
     }
   }
 
@@ -884,9 +922,33 @@ int XLALSetLatticeTilingBoundName(
 
 }
 
+int XLALSetLatticeTilingBoundCacheFunction(
+  LatticeTiling *tiling,
+  const size_t dim,
+  const LatticeTilingBoundCache func
+  )
+{
+
+  // Check input
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tiling->lattice == TILING_LATTICE_MAX, XLAL_EINVAL );
+  XLAL_CHECK( dim < tiling->ndim, XLAL_ESIZE );
+  XLAL_CHECK( func != NULL, XLAL_EFAULT );
+
+  // Check that bound has been set
+  XLAL_CHECK( tiling->bounds[dim].func != NULL, XLAL_EINVAL, "Lattice tiling dimension #%zu is not bounded", dim );
+
+  // Set the parameter-space bound cache function
+  tiling->bounds[dim].cache_func = func;
+
+  return XLAL_SUCCESS;
+
+}
+
 static double ConstantBound(
   const void *data,
   const size_t dim UNUSED,
+  const gsl_matrix *cache UNUSED,
   const gsl_vector *point UNUSED
   )
 {
@@ -955,7 +1017,7 @@ int XLALSetLatticeTilingRandomOriginOffsets(
   // Generate random uniform offsets for later use in XLALSetTilingLatticeAndMetric()
   // - Only values in tiled dimensions of 'phys_origin_shift_frac' will actually be used
   for ( size_t i = 0; i < n; ++i ) {
-    LT_SetPhysPoint( tiling->phys_origin_shift_frac, i, XLALUniformDeviate( rng ) );
+    gsl_vector_set( tiling->phys_origin_shift_frac, i, XLALUniformDeviate( rng ) );
   }
 
   return XLAL_SUCCESS;
@@ -1060,10 +1122,12 @@ int XLALSetTilingLatticeAndMetric(
   }
 
   // Set physical parameter-space origin to mid-point of parameter-space bounds
+  gsl_matrix *GAMAT( phys_origin_cache, n, LT_CACHE_MAX_SIZE );
+  gsl_matrix_set_all( phys_origin_cache, GSL_NAN );
   for ( size_t i = 0; i < n; ++i ) {
     double phys_lower = 0.0, phys_upper = 0.0;
-    LT_CallBoundFunc( tiling, i, tiling->phys_origin, &phys_lower, &phys_upper );
-    LT_SetPhysPoint( tiling->phys_origin, i, 0.5 * ( phys_lower + phys_upper ) );
+    LT_CallBoundFunc( tiling, i, phys_origin_cache, tiling->phys_origin, &phys_lower, &phys_upper );
+    LT_SetPhysPoint( tiling, phys_origin_cache, tiling->phys_origin, i, 0.5 * ( phys_lower + phys_upper ) );
   }
 
   // Compute a lower-triangular basis matrix whose columns are orthonormal with respect to the tiled metric
@@ -1218,18 +1282,19 @@ int XLALSetTilingLatticeAndMetric(
   // - The default of 0.5 was to ensure that the tiling will never place a lattice point at zero
   //   in physical coordinates, since the physical coordinates may not be well-defined at zero.
   //   This could potentially not be the case if 'phys_origin_shift_frac_i' happens to be zero.
-  for ( size_t ti = 0; ti < tn; ++ti ) {
-    const size_t i = tiling->tiled_idx[ti];
-    const double int_from_phys_i_i = gsl_matrix_get( tiling->int_from_phys, i, i );
-    const double phys_from_int_i_i = gsl_matrix_get( tiling->phys_from_int, i, i );
-    const double phys_origin_shift_frac_i = ( tiling->phys_origin_shift_frac != NULL ) ? gsl_vector_get( tiling->phys_origin_shift_frac, i ) : 0.5;
+  for ( size_t i = 0; i < n; ++i ) {
     double phys_origin_i = gsl_vector_get( tiling->phys_origin, i );
-    phys_origin_i = ( round( phys_origin_i * int_from_phys_i_i ) + phys_origin_shift_frac_i ) * phys_from_int_i_i;
-    LT_SetPhysPoint( tiling->phys_origin, i, phys_origin_i );
+    if ( tiling->bounds[i].is_tiled ) {
+      const double int_from_phys_i_i = gsl_matrix_get( tiling->int_from_phys, i, i );
+      const double phys_from_int_i_i = gsl_matrix_get( tiling->phys_from_int, i, i );
+      const double phys_origin_shift_frac_i = ( tiling->phys_origin_shift_frac != NULL ) ? gsl_vector_get( tiling->phys_origin_shift_frac, i ) : 0.5;
+      phys_origin_i = ( round( phys_origin_i * int_from_phys_i_i ) + phys_origin_shift_frac_i ) * phys_from_int_i_i;
+    }
+    LT_SetPhysPoint( tiling, phys_origin_cache, tiling->phys_origin, i, phys_origin_i );
   }
 
   // Cleanup
-  GFMAT( t_metric, t_basis, t_norm_from_int, t_int_from_norm );
+  GFMAT( t_metric, t_basis, t_norm_from_int, t_int_from_norm, phys_origin_cache );
   GFVEC( t_norm, t_bbox );
 
   return XLAL_SUCCESS;
@@ -1389,23 +1454,28 @@ int XLALRandomLatticeTilingPoints(
   const size_t n = tiling->ndim;
 
   // Generate random points in parameter space
+  gsl_matrix *GAMAT( phys_point_cache, n, LT_CACHE_MAX_SIZE );
+  gsl_matrix_set_all( phys_point_cache, GSL_NAN );
   for ( size_t k = 0; k < random_points->size2; ++k ) {
     gsl_vector_view phys_point = gsl_matrix_column( random_points, k );
     for ( size_t i = 0; i < n; ++i ) {
 
       // Get the physical bounds on the current dimension
       double phys_lower = 0.0, phys_upper = 0.0;
-      LT_CallBoundFunc( tiling, i, &phys_point.vector, &phys_lower, &phys_upper );
+      LT_CallBoundFunc( tiling, i, phys_point_cache, &phys_point.vector, &phys_lower, &phys_upper );
 
       // Generate random number
       const double u = ( 1.0 + scale ) * ( XLALUniformDeviate( rng ) - 0.5 ) + 0.5;
 
       // Set parameter-space point
-      LT_SetPhysPoint( &phys_point.vector, i, phys_lower + u * ( phys_upper - phys_lower ) );
+      LT_SetPhysPoint( tiling, phys_point_cache, &phys_point.vector, i, phys_lower + u * ( phys_upper - phys_lower ) );
 
     }
 
   }
+
+  // Cleanup
+  GFMAT( phys_point_cache );
 
   return XLAL_SUCCESS;
 
@@ -1455,7 +1525,11 @@ LatticeTilingIterator *XLALCreateLatticeTilingIterator(
 
   // Allocate and initialise vectors and matrices
   GAVEC_NULL( itr->phys_point, n );
+  GAMAT_NULL( itr->phys_point_cache, n, LT_CACHE_MAX_SIZE );
+  gsl_matrix_set_all( itr->phys_point_cache, GSL_NAN );
   GAVEC_NULL( itr->phys_sampl, n );
+  GAMAT_NULL( itr->phys_sampl_cache, n, LT_CACHE_MAX_SIZE );
+  gsl_matrix_set_all( itr->phys_sampl_cache, GSL_NAN );
   if ( tn > 0 ) {
     itr->int_lower = XLALCalloc( tn, sizeof( *itr->int_lower ) );
     XLAL_CHECK_NULL( itr->int_lower != NULL, XLAL_EINVAL );
@@ -1480,6 +1554,7 @@ void XLALDestroyLatticeTilingIterator(
 {
   if ( itr ) {
     GFVEC( itr->phys_point, itr->phys_sampl );
+    GFMAT( itr->phys_point_cache, itr->phys_sampl_cache );
     XLALFree( itr->int_lower );
     XLALFree( itr->int_point );
     XLALFree( itr->int_upper );
@@ -1637,8 +1712,8 @@ int XLALNextLatticeTilingPoint(
     // If not tiled, set current physical point to non-tiled parameter-space bound
     if ( !bound->is_tiled && ti >= reset_ti ) {
       double phys_lower = 0, phys_upper = 0;
-      LT_CallBoundFunc( itr->tiling, i, itr->phys_point, &phys_lower, &phys_upper );
-      LT_SetPhysPoint( itr->phys_point, i, phys_lower );
+      LT_CallBoundFunc( itr->tiling, i, itr->phys_point_cache, itr->phys_point, &phys_lower, &phys_upper );
+      LT_SetPhysPoint( itr->tiling, itr->phys_point_cache, itr->phys_point, i, phys_lower );
     }
 
     // If tiled, reset parameter-space bounds
@@ -1647,7 +1722,7 @@ int XLALNextLatticeTilingPoint(
       // Find the extrema of the parameter-space bounds on the current dimension
       gsl_vector_memcpy( itr->phys_sampl, itr->phys_point );
       double phys_lower = GSL_POSINF, phys_upper = GSL_NEGINF;
-      LT_FindBoundExtrema( itr->tiling, 0, i, itr->phys_sampl, &phys_lower, &phys_upper );
+      LT_FindBoundExtrema( itr->tiling, 0, i, itr->phys_sampl_cache, itr->phys_sampl, &phys_lower, &phys_upper );
 
       // Add padding of (a multiple of) half the extext of the metric ellipse bounding box
       {
@@ -1717,7 +1792,7 @@ int XLALNextLatticeTilingPoint(
         const INT4 int_point_tj = itr->int_point[tj];
         phys_point_i += phys_from_int_i_j * int_point_tj;
       }
-      LT_SetPhysPoint( itr->phys_point, i, phys_point_i );
+      LT_SetPhysPoint( itr->tiling, itr->phys_point_cache, itr->phys_point, i, phys_point_i );
     }
 
     // Increment tiled dimension index
@@ -2051,7 +2126,7 @@ int XLALRestoreLatticeTilingIterator(
     }
     XLAL_CHECK( record.phys_bbox == gsl_vector_get( itr->tiling->phys_bbox, i ), XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
     XLAL_CHECK( record.phys_origin == gsl_vector_get( itr->tiling->phys_origin, i ), XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
-    LT_SetPhysPoint( itr->phys_point, i, record.phys_point );
+    LT_SetPhysPoint( itr->tiling, itr->phys_point_cache, itr->phys_point, i, record.phys_point );
     if ( itr->tiling->bounds[i].is_tiled ) {
       itr->int_point[ti] = record.int_point;
       XLAL_CHECK( record.int_lower <= record.int_point, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
