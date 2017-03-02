@@ -111,6 +111,7 @@ struct tagLatticeTilingIterator {
   bool alternating;                     ///< If true, alternate iterator direction after every crossing
   UINT4 state;                          ///< Iterator state: 0=initialised, 1=in progress, 2=finished
   gsl_vector *phys_point;               ///< Current lattice point in physical coordinates
+  gsl_vector *phys_sampl;               ///< Copy of physical point for sampling bounds with LT_FindBoundExtrema()
   INT4 *int_point;                      ///< Current lattice point in generating integers
   INT4 *int_lower;                      ///< Current lower parameter-space bound in generating integers
   INT4 *int_upper;                      ///< Current upper parameter-space bound in generating integers
@@ -1454,6 +1455,7 @@ LatticeTilingIterator *XLALCreateLatticeTilingIterator(
 
   // Allocate and initialise vectors and matrices
   GAVEC_NULL( itr->phys_point, n );
+  GAVEC_NULL( itr->phys_sampl, n );
   if ( tn > 0 ) {
     itr->int_lower = XLALCalloc( tn, sizeof( *itr->int_lower ) );
     XLAL_CHECK_NULL( itr->int_lower != NULL, XLAL_EINVAL );
@@ -1477,7 +1479,7 @@ void XLALDestroyLatticeTilingIterator(
   )
 {
   if ( itr ) {
-    GFVEC( itr->phys_point );
+    GFVEC( itr->phys_point, itr->phys_sampl );
     XLALFree( itr->int_lower );
     XLALFree( itr->int_point );
     XLALFree( itr->int_upper );
@@ -1642,15 +1644,10 @@ int XLALNextLatticeTilingPoint(
     // If tiled, reset parameter-space bounds
     if ( bound->is_tiled && ti >= reset_ti ) {
 
-      // Create a local copy of current physical point
-      double local_phys_point_array[itr->phys_point->size];
-      gsl_vector_view local_phys_point_view = gsl_vector_view_array( local_phys_point_array, itr->phys_point->size );
-      gsl_vector *const local_phys_point = &local_phys_point_view.vector;
-      gsl_vector_memcpy( local_phys_point, itr->phys_point );
-
       // Find the extrema of the parameter-space bounds on the current dimension
+      gsl_vector_memcpy( itr->phys_sampl, itr->phys_point );
       double phys_lower = GSL_POSINF, phys_upper = GSL_NEGINF;
-      LT_FindBoundExtrema( itr->tiling, 0, i, local_phys_point, &phys_lower, &phys_upper );
+      LT_FindBoundExtrema( itr->tiling, 0, i, itr->phys_sampl, &phys_lower, &phys_upper );
 
       // Add padding of (a multiple of) half the extext of the metric ellipse bounding box
       {
