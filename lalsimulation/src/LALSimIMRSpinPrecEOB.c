@@ -3759,7 +3759,7 @@ int XLALSimIMRSpinEOBWaveformAll(
     for ( i = 0; i < idxRD; i++ )
       {
         hPlusTS->data->data[i]  =  amp0*hVec->data[i+retLenLow];
-        hCrossTS->data->data[i] = -amp0*hVec->data[i+retLenLow];
+        hCrossTS->data->data[i] = -amp0*hVec->data[i+2*retLenLow];
       }
 
     XLALDestroyREAL8Array(hVec);

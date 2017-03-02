@@ -27,22 +27,16 @@ import logging
 import time
 import numpy as np
 import healpy as hp
-from astropy.table import Table
+from astropy.table import Column, Table
+from astropy import units as u
 from .decorator import with_numpy_random_seed
 from . import distance
 from . import ligolw
 from . import filter
 from . import postprocess
 from . import timing
-try:
-    from . import _moc as moc
-except ImportError:
-    raise ImportError(
-        'Could not import the lalinference.bayestar._moc Python C '
-        'extension module. This probably means that LALInfernece was built '
-        'without HEALPix support. Please install CHEALPix '
-        '(https://sourceforge.net/projects/healpix/files/Healpix_3.30/'
-        'chealpix-3.30.0.tar.gz), rebuild LALInference, and try again.')
+from . import moc
+from .. import healpix_tree
 try:
     from . import _sky_map
 except ImportError:
@@ -77,9 +71,10 @@ def toa_phoa_snr_log_prior(
 @with_numpy_random_seed
 def emcee_sky_map(
         logl, loglargs, logp, logpargs, xmin, xmax,
-        nside=-1, kde=False, chain_dump=None, max_horizon=1.0):
+        nside=-1, chain_dump=None, max_horizon=1.0):
     # Set up sampler
     import emcee
+    from sky_area.sky_area_clustering import Clustered3DKDEPosterior
     ntemps = 20
     nwalkers = 100
     nburnin = 1000
@@ -108,26 +103,26 @@ def emcee_sky_map(
     phi = chain[:, 0]
     dist = chain[:, 2]
 
-    # Do adaptive histogram binning if the user has not selected the KDE,
-    # or if the user has selected the KDE but we need to guess the resolution.
-    if nside == -1 or not kde:
-        samples_per_bin = int(np.ceil(0.005 * len(chain)))
-        prob = postprocess.adaptive_healpix_histogram(
-            theta, phi, samples_per_bin, nside=nside, nest=True)
+    ra = phi
+    dec = 0.5 * np.pi - theta
+    pts = np.column_stack((ra, dec, dist))
+    # Pass a random subset of 1000 points to the KDE, to save time.
+    pts = np.random.permutation(pts)[:1000, :]
+    ckde = Clustered3DKDEPosterior(pts)
+    _, nside, ipix = zip(*ckde._bayestar_adaptive_grid())
+    uniq = (4 * np.square(nside) + ipix).astype(np.uint64)
 
-        # Determine what nside what actually used.
-        nside = hp.npix2nside(len(prob))
-        # Go one level finer, because the KDE will find more detail.
-        nside *= 2
+    pts = np.transpose(hp.pix2vec(nside, ipix, nest=True))
 
-    if kde:
-        from sky_area.sky_area_clustering import Clustered3DKDEPosterior
-        ra = phi
-        dec = 0.5 * np.pi - theta
-        pts = np.column_stack((ra, dec, dist))
-        # Pass a random subset of 1000 points to the KDE, to save time.
-        pts = np.random.permutation(pts)[:1000, :]
-        prob = Clustered3DKDEPosterior(pts).as_healpix(nside)
+    datasets = [kde.dataset for kde in ckde.kdes]
+    inverse_covariances = [kde.inv_cov for kde in ckde.kdes]
+    weights = ckde.weights
+
+    # Compute marginal probability, conditional mean, and conditional
+    # standard deviation in all directions.
+    probdensity, distmean, diststd = np.transpose([distance.cartesian_kde_to_moments(
+        pt, datasets, inverse_covariances, weights)
+        for pt in pts])
 
     # Optionally save posterior sample chain to file.
     # Read back in with np.load().
@@ -138,7 +133,9 @@ def emcee_sky_map(
         np.save(chain_dump, np.rec.fromrecords(chain, names=names))
 
     # Done!
-    return prob
+    return Table(
+        [uniq, probdensity, distmean, diststd],
+        names='UNIQ PROBDENSITY DISTMEAN DISTSTD'.split())
 
 
 def ligolw_sky_map(
@@ -165,7 +162,8 @@ def ligolw_sky_map(
     ifos = [sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals]
 
     # Extract SNRs from table.
-    snrs = np.asarray([sngl_inspiral.snr
+    snrs = np.ma.asarray([
+        np.ma.masked if sngl_inspiral.snr is None else sngl_inspiral.snr
         for sngl_inspiral in sngl_inspirals])
 
     # Look up physical parameters for detector.
@@ -192,11 +190,12 @@ def ligolw_sky_map(
     horizons = np.asarray([signal_model.get_horizon_distance()
         for signal_model in signal_models])
 
-    weights = [1/np.square(signal_model.get_crb_toa_uncert(snr))
-        for signal_model, snr in zip(signal_models, snrs)]
+    weights = np.ma.asarray([
+        1 / np.square(signal_model.get_crb_toa_uncert(snr))
+        for signal_model, snr in zip(signal_models, snrs)])
 
     # Center detector array.
-    locations -= np.average(locations, weights=weights, axis=0)
+    locations -= np.sum(locations * weights.reshape(-1, 1), axis=0) / np.sum(weights)
 
     if enable_snr_series:
         log.warn('Enabling input of SNR time series. This feature is UNREVIEWED.')
@@ -215,7 +214,6 @@ def ligolw_sky_map(
                  "SNR time series from the whitened template's autocorrelation "
                  "sequence. The sky localization uncertainty may be "
                  "underestimated.")
-
 
         acors, sample_rates = zip(
             *[filter.autocorrelation(_, max_abs_t) for _ in HS])
@@ -303,7 +301,9 @@ def ligolw_sky_map(
     # initial datatype.
     epoch = sum(toas_ns) // len(toas_ns)
     toas = 1e-9 * (np.asarray(toas_ns) - epoch)
-    mean_toa = np.average(toas, weights=weights, axis=0)
+    # FIXME: np.average does not yet support masked arrays.
+    # Replace with np.average when numpy 1.13.0 is available.
+    mean_toa = np.sum(toas * weights) / np.sum(weights)
     toas -= mean_toa
     epoch += int(np.round(1e9 * mean_toa))
     epoch = lal.LIGOTimeGPS(0, int(epoch))
@@ -338,13 +338,6 @@ def ligolw_sky_map(
     min_distance /= max_horizon
     max_distance /= max_horizon
 
-    # Use KDE for density estimation?
-    if method.endswith('_kde'):
-        method = method[:-4]
-        kde = True
-    else:
-        kde = False
-
     # Time and run sky localization.
     log.debug('starting computationally-intensive section')
     start_time = lal.GPSTimeNow()
@@ -353,18 +346,16 @@ def ligolw_sky_map(
             min_distance, max_distance, prior_distance_power, gmst, sample_rate,
             toas, snr_series, responses, locations, horizons))
     elif method == "toa_phoa_snr_mcmc":
-        # prob = emcee_sky_map(
-        #     logl=_sky_map.log_likelihood_toa_phoa_snr,
-        #     loglargs=(gmst, sample_rate, toas, snr_series, responses, locations,
-        #         horizons),
-        #     logp=toa_phoa_snr_log_prior,
-        #     logpargs=(min_distance, max_distance, prior_distance_power,
-        #         max_abs_t),
-        #     xmin=[0, -1, min_distance, -1, 0, 0],
-        #     xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi, 2 * max_abs_t],
-        #     nside=nside, kde=kde, chain_dump=chain_dump,
-        #     max_horizon=max_horizon)
-        raise NotImplemented('Working on porting this to new MOC format')
+        skymap = emcee_sky_map(
+            logl=_sky_map.log_likelihood_toa_phoa_snr,
+            loglargs=(gmst, sample_rate, toas, snr_series, responses, locations,
+                horizons),
+            logp=toa_phoa_snr_log_prior,
+            logpargs=(min_distance, max_distance, prior_distance_power,
+                max_abs_t),
+            xmin=[0, -1, min_distance, -1, 0, 0],
+            xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi, 2 * max_abs_t],
+            nside=nside, chain_dump=chain_dump, max_horizon=max_horizon * fudge)
     else:
         raise ValueError("Unrecognized method: %s" % method)
 
@@ -479,6 +470,25 @@ def rasterize(skymap):
     skymap = Table(moc.rasterize(skymap), meta=skymap.meta)
     skymap.rename_column('PROBDENSITY', 'PROB')
     skymap['PROB'] *= 4 * np.pi / len(skymap)
+    skymap['PROB'].unit = u.pixel ** -1
+    return skymap
+
+
+def derasterize(skymap):
+    skymap.rename_column('PROB', 'PROBDENSITY')
+    skymap['PROBDENSITY'] *= len(skymap) / (4 * np.pi)
+    skymap['PROBDENSITY'].unit = u.steradian ** -1
+    nside, _, ipix, _, _, value = zip(
+        *healpix_tree.reconstruct_nested(skymap))
+    nside = np.asarray(nside)
+    ipix = np.asarray(ipix)
+    value = np.stack(value)
+    uniq = (4 * np.square(nside) + ipix).astype(np.uint64)
+    old_units = [column.unit for column in skymap.columns.values()]
+    skymap = Table(value, meta=skymap.meta)
+    for old_unit, column in zip(old_units, skymap.columns.values()):
+        column.unit = old_unit
+    skymap.add_column(Column(uniq, name='UNIQ'), 0)
     return skymap
 
 

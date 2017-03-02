@@ -223,6 +223,12 @@ def latexnumber(s):
 	"""
 	Convert a string of the form "d.dddde-dd" to "d.dddd \times
 	10^{-dd}"
+
+	Example:
+
+	>>> import math
+	>>> print latexnumber("%.16e" % math.pi)
+	3.1415926535897931 \\times 10^{0}
 	"""
 	m, e = floatpattern.match(s).groups()
 	return r"%s \times 10^{%d}" % (m, int(e))

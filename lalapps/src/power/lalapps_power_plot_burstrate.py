@@ -116,7 +116,7 @@ options, filenames = parse_command_line()
 
 nbins = int(float(abs(options.read_segment)) / options.window) * bins_per_filterwidth
 binning = rate.NDBins((rate.LinearBins(options.read_segment[0], options.read_segment[1], nbins),))
-trigger_rate = rate.BinnedArray(binning)
+trigger_rate = rate.BinnedDensity(binning)
 
 num_triggers = 0
 
@@ -125,7 +125,7 @@ def snglburst_append(self, row, verbose = options.verbose):
 	global num_triggers, rate
 	t = row.peak
 	if t in options.read_segment:
-		trigger_rate[t,] += 1.0
+		trigger_rate.count[t,] += 1.0
 	num_triggers += 1
 	if verbose and not (num_triggers % 125):
 		print >>sys.stderr, "sngl_burst rows read:  %d\r" % num_triggers,
@@ -219,10 +219,10 @@ fig = newfig(options.segment)
 axes = fig.gca()
 
 
-rate.to_moving_mean_density(trigger_rate, rate.gaussian_window(bins_per_filterwidth))
+rate.filter_array(trigger_rate.array, rate.gaussian_window(bins_per_filterwidth))
 
 
-axes.plot(trigger_rate.centres()[0], trigger_rate.array)
+axes.plot(trigger_rate.centres()[0], trigger_rate.at_centres())
 
 
 axes.set_xlim(list(options.segment))

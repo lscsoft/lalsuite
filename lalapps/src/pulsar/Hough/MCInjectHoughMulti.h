@@ -83,10 +83,11 @@ typedef struct tagHoughInjectParams{
   REAL8       delta;
   REAL8       patchSizeAlpha;
   REAL8       patchSizeDelta;
-  UINT2       pixelFactor; /* default 2, Width of the thinnest annulus in terms of pixels*/
+  REAL8       pixelFactor; /* default 2, Width of the thinnest annulus in terms of pixels*/
   REAL8       vTotC;    /* estimate value of v-total/C as VTOT */
   REAL8       timeObs;
   REAL8Vector spnFmax;
+  REAL8Vector spnFmin;
 } HoughInjectParams;
 
 typedef struct tagHoughTemplate{

@@ -25,10 +25,8 @@
 
 
 """
-This module is a wrapper of the xlal.date module, supplementing the C code
-in that module with additional features that are more easily implemented in
-Python.  It is recommended that you import this module rather than
-importing xlal.date directly.
+This module provides a few time-related utilities that have been used in
+burst searches in the past.
 """
 
 

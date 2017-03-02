@@ -212,26 +212,30 @@ static LALCache *GlobFramesPWD(char *ifo)
             fprintf( stderr, "error: no frame file files found\n");
             exit( 1 );
         }
-    CHAR ifoRegExPattern[6];
-    LALCache *frInCache=NULL;
-    /* sieve out the requested data type */
+        CHAR ifoRegExPattern[6];
+        LALCache *frInCache=NULL;
+        /* sieve out the requested data type */
         snprintf( ifoRegExPattern,
-                XLAL_NUM_ELEM(ifoRegExPattern), ".*%c.*",
-                ifo[0] );
-    {
+                        XLAL_NUM_ELEM(ifoRegExPattern), ".*%c.*",
+                        ifo[0] );
         fprintf(stderr,"GlobFramesPWD : Found unseived src files:\n");
         for(UINT4 i=0;i<frGlobCache->length;i++)
-            fprintf(stderr,"(%s,%s,%s)\n",frGlobCache->list[i].src,frGlobCache->list[i].dsc,frGlobCache->list[i].url);
-    }
-    frInCache = XLALCacheDuplicate(frGlobCache);
-    XLALCacheSieve(frInCache, 0, 0, ifoRegExPattern, NULL, NULL);
-    {
-        fprintf(stderr,"GlobFramesPWD : Sieved frames with pattern %s. Found src files:\n",ifoRegExPattern);
-        for(UINT4 i=0;i<frInCache->length;i++)
-            fprintf(stderr,"(%s,%s,%s)\n",frInCache->list[i].src,frInCache->list[i].dsc,frInCache->list[i].url);
-    }
+                        fprintf(stderr,"(%s,%s,%s)\n",frGlobCache->list[i].src,frGlobCache->list[i].dsc,frGlobCache->list[i].url);
+        frInCache = XLALCacheDuplicate(frGlobCache);
+        XLALCacheSieve(frInCache, 0, 0, ifoRegExPattern, NULL, NULL);
+        if ( ! frGlobCache->length )
+        {
+            fprintf( stderr, "error: no frame file files found after sieving\n");
+            exit( 1 );
+        }
+        else
+        {
+                fprintf(stderr,"GlobFramesPWD : Sieved frames with pattern %s. Found src files:\n",ifoRegExPattern);
+                for(UINT4 i=0;i<frInCache->length;i++)
+                        fprintf(stderr,"(%s,%s,%s)\n",frInCache->list[i].src,frInCache->list[i].dsc,frInCache->list[i].url);
+        }
 
-    return(frGlobCache);
+        return(frGlobCache);
 }
 
 static REAL8TimeSeries *readTseries(LALCache *cache, CHAR *channel, LIGOTimeGPS start, REAL8 length)
