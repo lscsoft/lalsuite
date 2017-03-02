@@ -1242,6 +1242,25 @@ static double PhysicalSkyBound(
 
 }
 
+static void PhysicalSkyBoundCache(
+  const size_t dim UNUSED,
+  const gsl_vector *point,
+  gsl_vector* cache
+  )
+{
+
+  // Convert from 2-dimensional reduced supersky coordinates to 3-dimensional aligned sky coordinates
+  const double A = gsl_vector_get( point, 0 );
+  double as[3];
+  SM_ReducedToAligned( as, point, A );
+
+  // Store aligned sky position in cache
+  for ( size_t i = 0; i < 3; ++i ) {
+    gsl_vector_set( cache, i, as[i] );
+  }
+
+}
+
 int XLALSetSuperskyPhysicalSkyBounds(
   LatticeTiling *tiling,
   gsl_matrix *rssky_metric,
@@ -1296,6 +1315,7 @@ int XLALSetSuperskyPhysicalSkyBounds(
     for ( size_t dim = 0; dim < 2; ++dim ) {
       XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, dim, rssky_point[dim], rssky_point[dim] ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
+    XLAL_CHECK( XLALSetLatticeTilingBoundCacheFunction( tiling, 1, PhysicalSkyBoundCache ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     return XLAL_SUCCESS;
 
@@ -1328,6 +1348,7 @@ int XLALSetSuperskyPhysicalSkyBounds(
     // Set the parameter-space bounds on reduced supersky sky coordinates A and B
     XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, data_lower.min_A, data_lower.max_A ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, PhysicalSkyBound, sizeof( data_lower ), &data_lower, &data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALSetLatticeTilingBoundCacheFunction( tiling, 1, PhysicalSkyBoundCache ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     return XLAL_SUCCESS;
 
@@ -1799,6 +1820,7 @@ int XLALSetSuperskyPhysicalSkyBounds(
   // Set the parameter-space bounds on reduced supersky sky coordinates A and B
   XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, data_lower.min_A, data_lower.max_A ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, PhysicalSkyBound, sizeof( data_lower ), &data_lower, &data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingBoundCacheFunction( tiling, 1, PhysicalSkyBoundCache ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
@@ -1886,7 +1908,7 @@ static double PhysicalSpinBound(
   const void *data,
   const size_t dim UNUSED,
   const gsl_matrix *cache UNUSED,
-  const gsl_vector *point
+  const gsl_vector *point UNUSED
   )
 {
 
@@ -1896,10 +1918,9 @@ static double PhysicalSpinBound(
 
   // Add the inner product of the sky offsets with the aligned sky
   // position to the physical bound to get the reduced supersky bound
-  const double A = gsl_vector_get( point, 0 );
-  double as[3];
-  SM_ReducedToAligned( as, point, A );
-  bound += DOT3( sky_offsets, as );
+  for ( size_t i = 0; i < 3; ++i ) {
+    bound += sky_offsets[i] * gsl_matrix_get( cache, 1, i );
+  }
 
   return bound;
 
