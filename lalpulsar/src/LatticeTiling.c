@@ -851,6 +851,7 @@ int XLALSetLatticeTilingBoundName(
   XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
   XLAL_CHECK( tiling->lattice == TILING_LATTICE_MAX, XLAL_EINVAL );
   XLAL_CHECK( dim < tiling->ndim, XLAL_ESIZE );
+  XLAL_CHECK( fmt != NULL, XLAL_EFAULT );
 
   // Check that bound has not already been named
   XLAL_CHECK( !tiling->bounds[dim].name_set, XLAL_EINVAL, "Lattice tiling dimension #%zu is already named", dim );
