@@ -3,15 +3,15 @@ include $(top_srcdir)/gnuscripts/lalapps.am
 TEST_EXTENSIONS = .sh
 SH_LOG_COMPILER = /bin/bash $(srcdir)/test-compiler.sh
 
-if CFITSIO
+if !CFITSIO
+SH_LOG_COMPILER += skip
+endif
+
 bin_PROGRAMS = \
 	lalapps_WeaveSetup \
 	lalapps_Weave \
 	lalapps_WeaveCompare \
 	$(END_OF_LIST)
-else
-SH_LOG_COMPILER += skip
-endif
 
 lalapps_WeaveSetup_SOURCES = \
 	SetupData.c \
