@@ -72,6 +72,8 @@ parser.add_argument(
     choices=('zero-noise', 'from-truth', 'from-measurement'),
     default='zero-noise',
     help='How to compute the measurement error [default: %(default)s]')
+parser.add_argument('--enable-snr-series', default=False, action='store_true',
+    help='Enable output of SNR time series (WARNING: UNREVIEWED!) [default: no]')
 parser.add_argument(
     '--reference-psd', metavar='PSD.xml[.gz]', type=argparse.FileType('rb'),
     required=True, help='Name of PSD file [required]')
@@ -359,18 +361,19 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
         sngl_inspiral.event_id = sngl_inspiral_table.get_next_id()
         sngl_inspiral_table.append(sngl_inspiral)
 
-        snr, sample_rate = filter.autocorrelation(W, max_abs_t)
-        dt = 1 / sample_rate
-        epoch = sngl_inspiral.end - (len(snr) - 1) / sample_rate
-        snr = np.concatenate((snr[:0:-1].conj(), snr))
-        snr *= sngl_inspiral.snr * np.exp(1j * sngl_inspiral.coa_phase)
-        snr_series = lal.CreateCOMPLEX16TimeSeries(
-            'snr', epoch, 0, dt, lal.StrainUnit, len(snr))
-        snr_series.data.data[:] = snr
-        elem = lal.series.build_COMPLEX16TimeSeries(snr_series)
-        elem.appendChild(
-            ligolw_param.Param.from_pyvalue(u'event_id', sngl_inspiral.event_id))
-        out_xmldoc.childNodes[0].appendChild(elem)
+        if opts.enable_snr_series:
+            snr, sample_rate = filter.autocorrelation(W, max_abs_t)
+            dt = 1 / sample_rate
+            epoch = sngl_inspiral.end - (len(snr) - 1) / sample_rate
+            snr = np.concatenate((snr[:0:-1].conj(), snr))
+            snr *= sngl_inspiral.snr * np.exp(1j * sngl_inspiral.coa_phase)
+            snr_series = lal.CreateCOMPLEX16TimeSeries(
+                'snr', epoch, 0, dt, lal.StrainUnit, len(snr))
+            snr_series.data.data[:] = snr
+            elem = lal.series.build_COMPLEX16TimeSeries(snr_series)
+            elem.appendChild(
+                ligolw_param.Param.from_pyvalue(u'event_id', sngl_inspiral.event_id))
+            out_xmldoc.childNodes[0].appendChild(elem)
 
         # Add CoincMap entry.
         coinc_map = lsctables.CoincMap()
