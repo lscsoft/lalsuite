@@ -134,7 +134,7 @@ summary = ligolw_search_summary.append_search_summary(out_xmldoc, process,
 progress.update(-1, 'reading ' + opts.reference_psd.name)
 xmldoc, _ = ligolw_utils.load_fileobj(
     opts.reference_psd, contenthandler=lal.series.PSDContentHandler)
-psds = lal.series.read_psd_xmldoc(xmldoc)
+psds = lal.series.read_psd_xmldoc(xmldoc, root_name=None)
 psds = {
     key: timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data)
     for key, psd in psds.items() if psd is not None}

@@ -725,11 +725,11 @@ static int SuperskyTests(
   // Perform mismatch test of coherent and semicoherent tilings
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
     printf( "Coherent #%zu mismatch tests:\n", n );
-    XLAL_CHECK( MismatchTest( coh_tiling[n], metrics->coh_rssky_metric[n], coh_max_mismatch, 1, 5e-2, 4e-3, coh_total_ref[n], total_tol, A4s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( MismatchTest( coh_tiling[n], metrics->coh_rssky_metric[n], coh_max_mismatch, 1, 7e-2, 4e-2, coh_total_ref[n], total_tol, A4s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
     printf( "\n" );
   }
   printf( "Semicoherent mismatch tests:\n" );
-  XLAL_CHECK( MismatchTest( semi_tiling, metrics->semi_rssky_metric, semi_max_mismatch, 1, 5e-2, 1e-2, semi_total_ref, total_tol, A4s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( MismatchTest( semi_tiling, metrics->semi_rssky_metric, semi_max_mismatch, 1, 6e-2, 3e-2, semi_total_ref, total_tol, A4s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
   printf( "\n" );
 
   // Cleanup
@@ -794,12 +794,12 @@ int main( void )
   XLAL_CHECK_MAIN( MismatchSquareTest( TILING_LATTICE_ANSTAR, 1e-4, -2e-9, 2e-17, 20268, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform mismatch tests with an age--braking index parameter space
-  XLAL_CHECK_MAIN( MismatchAgeBrakeTest( TILING_LATTICE_ANSTAR, 100, 4.0e-5, 37872, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( MismatchAgeBrakeTest( TILING_LATTICE_ANSTAR, 200, 1.5e-5, 37232, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( MismatchAgeBrakeTest( TILING_LATTICE_ANSTAR, 100, 4.0e-5, 37870, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( MismatchAgeBrakeTest( TILING_LATTICE_ANSTAR, 200, 1.5e-5, 37230, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( MismatchAgeBrakeTest( TILING_LATTICE_ANSTAR, 300, 1.0e-5, 37022, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform a variety of tests with the reduced supersky parameter space and metric
-  XLAL_CHECK_MAIN( SuperskyTests( 99376, 80817, 63091, 482182 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( SuperskyTests( 60278, 45819, 39437, 292983 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return EXIT_SUCCESS;
 

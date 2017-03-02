@@ -184,12 +184,10 @@ main ( int argc, char *argv[] )
   optionalArgs.collectTiming = 1;
 
   FILE *timingLogFILE = NULL;
-  BOOLEAN printHeader = 0;
   if ( uvar->outputInfo != NULL )
     {
       FILE *tmp;
       if ( (tmp = fopen ( uvar->outputInfo, "r" )) == NULL ) {
-        printHeader = 1;
       } else {
         fclose (tmp );
       }
@@ -243,7 +241,7 @@ main ( int argc, char *argv[] )
           tauF1Buf_i   += Fstat_tauF1Buf;
           // ----- output timing details to file if requested
           if ( timingLogFILE != NULL ) {
-            XLAL_CHECK ( AppendFstatTimingInfo2File ( inputs->data[l], timingLogFILE, printHeader ) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK ( AppendFstatTimingInfo2File ( inputs->data[l], timingLogFILE, (l == 0) ) == XLAL_SUCCESS, XLAL_EFUNC );
           }
 
         } // for l < numSegments

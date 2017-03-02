@@ -395,7 +395,7 @@ INT4 XLALSimSpinTaylorEnergySpinDerivativeSetup(
 
 /**
  * Function called by all functions computing derivatives, as
- * angular momentum/spin derivative are common for SpinTaylors.
+ * angular momentum/spin derivative are common for SpinTaylor approximants.
  */
 INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx,
 				    REAL8 *dLNhy,
@@ -442,7 +442,7 @@ INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx,
 
   /* Phasing is given in terms of LNhat, however we know the
    * evolution equation for L, which is not parallel to LN, because
-   * of S terms at 1.5PN order wrt to leading order.
+   * of S terms at 1.5PN order wrt leading order.
    * Thus we have  $dL/dt = \Omega \times L = d L_LN/dt + dL_S/dt
    * where we have separated L = L_LN + L_S in its contributions
    * (in)dependent on spins. Note the L_S has in general components along
@@ -470,7 +470,6 @@ INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx,
     REAL8 v5=omega*v2;
     REAL8 omega2=omega*omega;
 
-    REAL8 *S1cS2=NULL;
     REAL8 *LNcS1=NULL;
     XLALSimInspiralVectorCrossProduct(&LNcS1,LNhx,LNhy,LNhz,S1x,S1y,S1z);
 
@@ -485,6 +484,7 @@ INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx,
     *dS2y += params->S2dot3 * v5 * LNcS2[1];
     *dS2z += params->S2dot3 * v5 * LNcS2[2];
 
+    REAL8 *S1cS2=NULL;
     if ( (params->spinO>=4) || (params->spinO<0.) ) {
       /* dS1,2 next-to-leading term */
 
@@ -509,18 +509,24 @@ INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx,
       *dS2z += omega2 * params->S2dot4QMS2OAvg * LNhdotS2 * LNcS2[2];
 
     }
+    XLALFree(LNcS1);
+    XLALFree(LNcS2);
 
     /* At NLO we can compute dLNh from dS, see eq. 3.20 of arXiv:0810.5336*/
     REAL8 dLNhatx=-v*((*dS1x)+(*dS2x))/params->eta;
     REAL8 dLNhaty=-v*((*dS1y)+(*dS2y))/params->eta;
     REAL8 dLNhatz=-v*((*dS1z)+(*dS2z))/params->eta;
     /* This is dLNhat only up to NLO, up to this order LNhat = Lhat.*/
+    /* Now we compute OmegaLN, defined by dLNhat=OmegaLN x LNhat,
+     * which can be inverted to OmegaLN=LNhat x dLNhat.
+     */
 
     REAL8 *OmegaLN=NULL;
-    XLALSimInspiralVectorCrossProduct(&OmegaLN,dLNhatx,dLNhaty,dLNhatz,LNhx,LNhy,LNhz);
-    REAL8 OmegaLNx=OmegaLN[0];
-    REAL8 OmegaLNy=OmegaLN[1];
-    REAL8 OmegaLNz=OmegaLN[2];
+    XLALSimInspiralVectorCrossProduct(&OmegaLN,LNhx,LNhy,LNhz,dLNhatx,dLNhaty,dLNhatz);
+    REAL8 OmegaLx=OmegaLN[0];
+    REAL8 OmegaLy=OmegaLN[1];
+    REAL8 OmegaLz=OmegaLN[2];
+    XLALFree(OmegaLN);
 
     /* We have now all the ingredients to compute dL at NLO with.
      * The cSi-s are the coefficients multiplying the S.LNhat contribution to L,
@@ -548,14 +554,11 @@ INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx,
     REAL8 L_Sx=omega*(cS1*(S1x+LNhdotS1*LNhx) + cS2*(S2x+LNhdotS2*LNhx));
     REAL8 L_Sy=omega*(cS1*(S1y+LNhdotS1*LNhy) + cS2*(S2y+LNhdotS2*LNhy));
     REAL8 L_Sz=omega*(cS1*(S1z+LNhdotS1*LNhz) + cS2*(S2z+LNhdotS2*LNhz));
+    REAL8 LNmagv4=(1.+v2*XLALSimInspiralL_2PN(params->eta)+v4*XLALSimInspiralL_4PN(params->eta));
 
-    REAL8 Lx=(1.+v2*XLALSimInspiralL_2PN(params->eta)+v4*XLALSimInspiralL_4PN(params->eta))*LNhx+L_Sx;
-    REAL8 Ly=(1.+v2*XLALSimInspiralL_2PN(params->eta)+v4*XLALSimInspiralL_4PN(params->eta))*LNhy+L_Sy;
-    REAL8 Lz=(1.+v2*XLALSimInspiralL_2PN(params->eta)+v4*XLALSimInspiralL_4PN(params->eta))*LNhz+L_Sz;
-
-    REAL8 OmegaLx = OmegaLNx;
-    REAL8 OmegaLy = OmegaLNy;
-    REAL8 OmegaLz = OmegaLNz;
+    REAL8 Lx=LNmagv4*LNhx+L_Sx;
+    REAL8 Ly=LNmagv4*LNhy+L_Sy;
+    REAL8 Lz=LNmagv4*LNhz+L_Sz;
 
     /*
      * Now we can add NNLO effects in \Omega_L. For NNNLO effects one should now
@@ -597,25 +600,26 @@ INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx,
 	*dS2z += params->S2dot7S1 * omega3 * S1cS2[2];
       }
     }
+    XLALFree(S1cS2);
+
+    /* We now obtain the derivative of the spin-independent part of the
+     * total angular momentum, which is parallel to the Newtonian angular
+     * momentum.
+     */
 
     /*dL is the derivative of the total angular momentum*/
     REAL8 *dL=NULL;
     XLALSimInspiralVectorCrossProduct(&dL,OmegaLx,OmegaLy,OmegaLz,Lx,Ly,Lz);
-    REAL8 L_LNmag=sqrt(Lx*Lx+Ly*Ly+Lz*Lz-(L_Sx*L_Sx+L_Sy*L_Sy+L_Sz*L_Sz));
+    *dLNhx=(dL[0]-dL_Sx-dLNhdotS1*LNhx-LNhdotS1*dLNhatx)/LNmagv4;
+    *dLNhy=(dL[1]-dL_Sy-dLNhdotS1*LNhy-LNhdotS1*dLNhaty)/LNmagv4;
+    *dLNhz=(dL[2]-dL_Sz-dLNhdotS1*LNhz-LNhdotS1*dLNhatz)/LNmagv4;
+    XLALFree(dL);
 
-    /* We now obtain the derivative of the spin-independent part of the
-     * total angular momentum, which is parallel to the Newtonian angular
-     * momentum Newtonian.
+    /* We now define the OmegaLNE precession vector as above as the cross
+     * product of L and dL.
      */
-    *dLNhx=(dL[0]-dL_Sx-dLNhdotS1*LNhx-LNhdotS1*dLNhatx)/L_LNmag;
-    *dLNhy=(dL[1]-dL_Sy-dLNhdotS1*LNhy-LNhdotS1*dLNhaty)/L_LNmag;
-    *dLNhz=(dL[2]-dL_Sz-dLNhdotS1*LNhz-LNhdotS1*dLNhatz)/L_LNmag;
-
-    /* We now define the \Omega_LN precession vector as the cross product of
-     * dLN and LN, hence $\Omega_{LN} = LN \cross LNdot
-     *
-     */
-    XLALSimInspiralVectorCrossProduct(&OmegaLN,LNhx,LNhy,LNhz,*dLNhx,*dLNhy,*dLNhz);
+    REAL8 *OmegaLNE=NULL;
+    XLALSimInspiralVectorCrossProduct(&OmegaLNE,LNhx,LNhy,LNhz,*dLNhx,*dLNhy,*dLNhz);
 
     /*
      * dE1
@@ -625,15 +629,11 @@ INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx,
      */
 
     /* Take cross product of \Omega_E with E_1 */
-    *dE1x = (-OmegaLN[2]*E1y + OmegaLN[1]*E1z);
-    *dE1y = (-OmegaLN[0]*E1z + OmegaLN[2]*E1x);
-    *dE1z = (-OmegaLN[1]*E1x + OmegaLN[0]*E1y);
+    *dE1x = (-OmegaLNE[2]*E1y + OmegaLNE[1]*E1z);
+    *dE1y = (-OmegaLNE[0]*E1z + OmegaLNE[2]*E1x);
+    *dE1z = (-OmegaLNE[1]*E1x + OmegaLNE[0]*E1y);
 
-    XLALFree(LNcS1);
-    XLALFree(LNcS2);
-    XLALFree(S1cS2);
-    XLALFree(dL);
-    XLALFree(OmegaLN);
+    XLALFree(OmegaLNE);
   }
 
   return XLAL_SUCCESS;
@@ -3345,12 +3345,12 @@ int XLALSimInspiralTransformPrecessingObsoleteInitialConditions(
  * * frameChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW
  * * N // Z, L = (sin(inc), 0, cos(inc))
  *
- * Cartesian components of S1 and S2 are given wrt to wrt axes x-y-Z (ORBITAL_L and VIEW cases),
+ * Cartesian components of S1 and S2 are given wrt axes x-y-Z (ORBITAL_L and VIEW cases),
  * being x the vector pointing from body 2 to body 1.
- * x-y axes are rotated wrt to X-Y by phiRef counterclockwise, i.e. if
+ * x-y axes are rotated wrt X-Y by phiRef counterclockwise, i.e. if
  * S1=(a,b,0) in fame x-y-Z, in frame X-Y-Z it will have components
  * S1'=(a cos(phiRef) - b sin(phiRef), a sin(phiRef) + b cos(phiRef), 0).
- * In the TOTAL_J case spin components are given wrt to J, with the x-Z plane
+ * In the TOTAL_J case spin components are given wrt J, with the x-Z plane
  * spanned by the line connecting the two bodies and J.
  *
  * m1, m2, f_ref are the component masses and reference GW frequency,

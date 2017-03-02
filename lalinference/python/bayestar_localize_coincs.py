@@ -49,7 +49,6 @@ from lalinference.bayestar import command
 methods = '''
     toa_phoa_snr
     toa_phoa_snr_mcmc
-    toa_phoa_snr_mcmc_kde
     '''.split()
 default_method = 'toa_phoa_snr'
 command.skymap_parser.add_argument(

@@ -95,11 +95,6 @@ class CacheEntry(object):
     object describing the interval spanned by the file.  Any of these
     attributes except the URL is allowed to be None.
 
-    This module also provides a Cache class, which some codes use to
-    represent an entire LAL cache file.  However, for most use cases a
-    simple Python list or set of CacheEntry objects is sufficient for
-    representing a LAL cache file.
-
     Example (parse a string):
 
     >>> c = CacheEntry("H1 S5 815901601 576.5 file://localhost/home/kipp/tmp/1/H1-815901601-576.xml")

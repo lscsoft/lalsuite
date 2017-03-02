@@ -22,7 +22,7 @@ BuildRequires: libxml2-devel
 BuildRequires: numpy >= 1.7
 BuildRequires: octave-devel
 BuildRequires: python-devel
-BuildRequires: scipy
+BuildRequires: scipy >= 0.8
 BuildRequires: swig
 BuildRequires: glue >= @MIN_GLUE_VERSION@
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
@@ -93,7 +93,7 @@ Requires: healpy >= 1.9.1
 Requires: python-shapely
 Requires: numpy >= 1.7
 Requires: python
-Requires: scipy
+Requires: scipy >= 0.8
 Requires: python-six
 Requires: python-seaborn
 Requires: glue >= @MIN_GLUE_VERSION@
@@ -175,6 +175,15 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Sat Feb 18 2017 Adam Mercer <adam.mercer@ligo.org> 1.9.1-1
+- Do not use $(..._la_LIBADD) to link against external libraries
+- Track version info API change
+- Fix to weights calculation so that posterior samples are now drawn correctly
+- Fix incorrect axes limits for Mollweide sky maps
+- Drop code for reading past EOF of named pipe
+- Fix incorrect reordering of IDL-compatible sky maps
+- Tune default max distance for volume rendering plots
+
 * Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.9.0-1
 - O2 release
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2007, 2008, 2012, 2014, 2015, 2016 Karl Wette
+// Copyright (C) 2007, 2008, 2012, 2014, 2015, 2016, 2017 Karl Wette
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -92,7 +92,17 @@ typedef struct tagLatticeTilingStats {
 typedef double( *LatticeTilingBound )(
   const void *data,                     ///< [in] Arbitrary data describing parameter space bound
   const size_t dim,                     ///< [in] Dimension on which bound applies
+  const gsl_matrix* cache,              ///< [in] Cached values computed in lower dimensions
   const gsl_vector *point               ///< [in] Point at which to find bound
+  );
+
+///
+/// Function which caches values required by a lattice tiling bound function.
+///
+typedef void( *LatticeTilingBoundCache )(
+  const size_t dim,                     ///< [in] Dimension on which bound applies
+  const gsl_vector *point,              ///< [in] Point at which to find bound
+  gsl_vector* cache                     ///< [out] Values to cache
   );
 
 ///
@@ -134,6 +144,15 @@ int XLALSetLatticeTilingBoundName(
   const char *fmt,                      ///< [in] Name format string
   ...                                   ///< [in] Arguments to format string
   ) _LAL_GCC_PRINTF_FORMAT_(3,4);
+
+///
+/// Set bound cache function for a lattice tiling parameter-space dimension
+///
+int XLALSetLatticeTilingBoundCacheFunction(
+  LatticeTiling *tiling,                ///< [in] Lattice tiling
+  const size_t dim,                     ///< [in] Dimension on which bound cache function applies
+  const LatticeTilingBoundCache func    ///< [in] Parameter space bound cache function
+  );
 
 ///
 /// Set a constant lattice tiling parameter-space bound, given by the minimum and maximum of the two
@@ -241,21 +260,6 @@ int XLALRandomLatticeTilingPoints(
   const double scale,                   ///< [in] Scale of random points
   RandomParams *rng,                    ///< [in] Random number generator used to generate points
   gsl_matrix *random_points             ///< [out] Matrix whose columns are the random points
-  );
-
-///
-/// Allocate and return vectors containing the bounds on neighbouring dimesions of the lattice
-/// tiling parameter space.
-///
-int XLALLatticeTilingDimensionBounds(
-  const LatticeTiling *tiling,          ///< [in] Lattice tiling
-  const UINT4 padding,                  ///< [in] Level of padding added to parameter space bounds
-  const gsl_vector *point,              ///< [in] Point at which to return bounds
-  const size_t y_dim,                   ///< [in] Dimension 'y' of which to return bounds
-  const double x_scale,                 ///< [in] Scale of steps in 'x', in units of lattice step size
-  gsl_vector **y_lower,                 ///< [in] Lower bounds of dimension 'y' as function of 'x'
-  gsl_vector **y_upper,                 ///< [in] Upper bounds of dimension 'y' as function of 'x'
-  gsl_vector **x                        ///< [in] Values 'x' in dimension 'y-1'
   );
 
 ///

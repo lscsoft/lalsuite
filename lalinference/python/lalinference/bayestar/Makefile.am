@@ -14,6 +14,7 @@ pymodule_PYTHON = \
 	distance.py \
 	filter.py \
 	ligolw.py \
+	moc.py \
 	sky_map.py \
 	postprocess.py \
 	timing.py \
