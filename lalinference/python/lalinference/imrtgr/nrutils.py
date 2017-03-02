@@ -1092,6 +1092,12 @@ def bbh_final_spin_precessing_HBR2016(m1, m2, chi1, chi2, tilt1, tilt2, phi12, v
 # Peak luminosity fits
 #######################
 
+# list of peak luminosity fit names
+class bbh_Lpeak_fits:
+    t1600018  = "T1600018" # Jimenez Forteza et al. [LIGO-T1600018 (2016)]         (aligned)
+    uib2016   = "UIB2016"  # Keitel et al.          [arXiv:1612.09566]             (aligned)
+    hl2016    = "HL2016"   # Healy and Lousto       [arXiv:1610.09713]             (aligned)
+
 def _rescale_Lpeak(Lpeak):
     """
     convert from geometric units ("Planck luminosity" of c^5/G) to multiples of 10^56 erg/s = 10^49 J/s
@@ -1242,3 +1248,44 @@ def bbh_peak_luminosity_non_precessing_Healyetal(m1, m2, chi1z, chi2z):
     Lpeak = _RIT_symm_express(eta, delta_m, S, Delta, coeffs)
 
     return _rescale_Lpeak(Lpeak)
+
+def bbh_peak_luminosity_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname):
+    """
+    Calculate the peak luminosity of the merger of two black holes,
+    only using the projected spins along the total angular momentum
+    and some aligned-spin fit from the literature
+
+    Parameters
+    ----------
+    m1, m2 : component masses
+    chi1, chi2 : dimensionless spins of two BHs
+    tilt1, tilt2 : tilts (in radians) in the new spin convention
+    fitname: fit selection currently supports T1600018, UIB2016, HL2016
+
+    Returns
+    -------
+    peak luminosity, Lpeak, in units of 10^56 ergs/s
+    """
+
+    m1    = np.vectorize(float)(np.array(m1))
+    m2    = np.vectorize(float)(np.array(m2))
+    chi1  = np.vectorize(float)(np.array(chi1))
+    chi2  = np.vectorize(float)(np.array(chi2))
+    tilt1 = np.vectorize(float)(np.array(tilt1))
+    tilt2 = np.vectorize(float)(np.array(tilt2))
+
+    _check_mchi(m1,m2,chi1,chi2) # Check that inputs are physical
+
+    chi1proj = chi1*np.cos(tilt1)
+    chi2proj = chi2*np.cos(tilt2)
+
+    if fitname==bbh_Lpeak_fits.t1600018:
+       Lpeak = bbh_peak_luminosity_non_precessing_T1600018(m1, m2, chi1proj, chi2proj)
+    elif fitname==bbh_Lpeak_fits.uib2016:
+       Lpeak = bbh_peak_luminosity_non_precessing_UIB2016(m1, m2, chi1proj, chi2proj)
+    elif fitname==bbh_Lpeak_fits.hl2016:
+       Lpeak = bbh_peak_luminosity_non_precessing_Healyetal(m1, m2, chi1proj, chi2proj)
+    else:
+       raise ValueError("Unrecognized fit name.")
+
+    return Lpeak
