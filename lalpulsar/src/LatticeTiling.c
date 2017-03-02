@@ -1050,13 +1050,6 @@ int XLALSetTilingLatticeAndMetric(
     gsl_vector_set( tiling->phys_origin, i, 0.5 * ( phys_lower + phys_upper ) );
   }
 
-  // Set non-tiled dimensions of physical parameter-space origin back to zero
-  for ( size_t i = 0; i < n; ++i ) {
-    if ( !tiling->bounds[i].is_tiled ) {
-      gsl_vector_set( tiling->phys_origin, i, 0 );
-    }
-  }
-
   // Compute a lower-triangular basis matrix whose columns are orthonormal with respect to the tiled metric
   gsl_matrix *GAMAT( t_basis, tn, tn );
   {
