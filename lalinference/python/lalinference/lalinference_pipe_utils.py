@@ -2339,7 +2339,7 @@ class CoherenceTestJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         requirements=requirements+cp.get('condor','Requirements')
       if requirements!='':
         self.add_condor_cmd('Requirements',requirements)
-      self.add_opt('coherent-incoherent','')
+      self.add_opt('new-coherent-incoherent-noise','')
       self.add_condor_cmd('getenv','True')
       self.set_stdout_file(os.path.join(logdir,'coherencetest-$(cluster)-$(process).out'))
       self.set_stderr_file(os.path.join(logdir,'coherencetest-$(cluster)-$(process).err'))
