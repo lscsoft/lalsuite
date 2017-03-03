@@ -319,10 +319,12 @@ class psr_par:
     for pv in ['RA', 'DEC']:
       if hasattr(self, 'PM'+pv):
         pmv = self['PM'+pv]
+        setattr(self, 'PM'+pv+'_ORIGINAL', pmv) # save original value
         setattr(self, 'PM'+pv , pmv*np.pi/(180.*3600.e3*365.25*86400.))
 
         if hasattr(self, 'PM'+pv+'_ERR'):
           pmve = self['PM'+pv+'_ERR']
+          setattr(self, 'PM'+pv+'_ERR_ORIGINAL', pmv) # save original value
           setattr(self, 'PM'+pv+'_ERR' , pmve*np.pi/(180.*3600.e3*365.25*86400.))
 
     # periods and frequencies
@@ -364,9 +366,11 @@ class psr_par:
       import lalpulsar
       for epoch in ['PEPOCH', 'POSEPOCH', 'DMEPOCH', 'T0', 'TASC', 'T0_2', 'T0_3']:
         if hasattr(self, epoch):
+          setattr(self, epoch+'_ORIGINAL', self[epoch]) # save original value
           setattr(self, epoch, lalpulsar.TTMJDtoGPS(self[epoch]))
 
           if hasattr(self, epoch+'_ERR'): # convert errors from days to seconds
+            setattr(self, epoch+'_ERR_ORIGINAL', self[epoch+'_ERR']) # save original value
             setattr(self, epoch+'_ERR', self[epoch+'_ERR'] * SECPERDAY)
     except:
       print("Could not convert epochs to GPS times. They are all still MJD values.", file=sys.stderr)
@@ -375,10 +379,12 @@ class psr_par:
     convfacs = {'DIST': KPC, 'PX': 1e-3*ARCSECTORAD}
     for item in convfacs:
       if hasattr(self, item): # convert kpc to metres
+        setattr(self, item+'_ORIGINAL', self[item]) # save original value
         setattr(self, item, self[item] * convfacs[item])
 
-      if hasattr(self, item+'_ERR'):
-        setattr(self, item+'_ERR', self[item+'_ERR'] * convfacs[item])
+        if hasattr(self, item+'_ERR'):
+          setattr(self, item+'_ERR_ORIGINAL', self[item+'_ERR']) # save original value
+          setattr(self, item+'_ERR', self[item+'_ERR'] * convfacs[item])
 
     # binary parameters
     # omega (angle of periastron) parameters (or others requiring conversion from degs to rads)
@@ -392,16 +398,20 @@ class psr_par:
     # period
     for pb in ['PB', 'PB_2', 'PB_3']:
       if hasattr(self, pb): # convert PB from days to seconds
+        setattr(self, pb+'_ORIGINAL', self[pb]) # save original value
         setattr(self, pb, self[pb] * SECPERDAY)
 
         if hasattr(self, pb+'_ERR'):
+          setattr(self, pb+'_ERR_ORIGINAL', self[pb+'_ERR']) # save original value
           setattr(self, pb+'_ERR', self[pb+'_ERR'] * SECPERDAY)
 
     # OMDOT
     if hasattr(self, 'OMDOT'): # convert from deg/year to rad/sec
+      setattr(self, 'OMDOT_ORIGINAL', self['OMDOT']) # save original value
       setattr(self, 'OMDOT', self['OMDOT'] / (RADTODEG * 365.25 * SECPERDAY))
 
       if hasattr(self, 'OMDOT_ERR'):
+        setattr(self, 'OMDOT_ERR_ORIGINAL', self['OMDOT_ERR']) # save original value
         setattr(self, 'OMDOT_ERR', self['OMDOT_ERR'] / (RADTODEG * 365.25 * SECPERDAY))
 
     if hasattr(self, 'EPS1') and hasattr(self, 'EPS2'):
@@ -418,6 +428,7 @@ class psr_par:
     # binary unit conversion for small numbers (TEMPO2 checks if these are > 1e-7 and if so then the units are in 1e-12) - errors are not converted
     for binu in ['XDOT', 'PBDOT', 'EDOT', 'EPS1DOT', 'EPS2DOT', 'XPBDOT']:
       if hasattr(self, binu):
+        setattr(self, binu+'_ORIGINAL', self[binu]) # save original value
         if np.abs(self[binu]) > 1e-7:
           setattr(self, binu, self[binu] * 1.0e-12)
 
@@ -428,13 +439,16 @@ class psr_par:
     # masses
     for mass in ['M2', 'MTOT']:
       if hasattr(self, mass): # convert solar masses to kg
+        setattr(self, mass+'_ORIGINAL', self[mass]) # save original value
         setattr(self, mass, self[mass]*MSUN)
 
         if hasattr(self, mass+'_ERR'):
+          setattr(self, mass+'_ERR_ORIGINAL', self[mass+'_ERR']) # save original value
           setattr(self, mass+'_ERR', self[mass+'_ERR'] * MSUN)
 
     # D_AOP
     if hasattr(self, 'D_AOP'): # convert from inverse arcsec to inverse radians
+      setattr(self, 'D_AOP_ORIGINAL', self['D_AOP']) # save original value
       setattr(self, 'D_AOP', self['D_AOP'] * RADTODEG * 3600. )
 
     pf.close()
