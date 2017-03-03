@@ -118,7 +118,7 @@ if opts.geo:
 
 radecs = np.deg2rad(opts.radec)
 if opts.inj_database:
-    query = '''SELECT longitude, latitude FROM sim_inspiral AS si
+    query = '''SELECT DISTINCT longitude, latitude FROM sim_inspiral AS si
                INNER JOIN coinc_event_map AS cm1
                ON (si.simulation_id = cm1.event_id)
                INNER JOIN coinc_event_map AS cm2
