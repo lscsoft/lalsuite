@@ -1307,7 +1307,7 @@ def bbh_average_fits_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, quantit
     tilt1, tilt2 : tilts (in radians) in the new spin convention
     phi12: angle (in radians) between in-plane spin components (only used for the final spin)
     quantity: "Mf", "af", or "Lpeak"
-    fits: An array of fit names to be used. The possible fitnames are those known by bbh_final_mass_projected_spins, bbh_final_spin_precessing,
+    fits: An array of fit names to be used. The possible fit names are those known by bbh_final_mass_projected_spins, bbh_final_spin_precessing,
           and bbh_peak_luminosity_projected_spins
 
     Returns
@@ -1341,6 +1341,9 @@ def bbh_average_fits_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, quantit
     # Initialize
 
     fits = np.atleast_1d(fits)
+
+    if not fits.size: # Check to make sure that fits is not an empty array
+        raise ValueError("The list of fits passed cannot be an empty array.")
 
     num_fits = len(fits)
     num_data = max(_len_smart(m1), _len_smart(m2), _len_smart(chi1), _len_smart(chi2), _len_smart(tilt1), _len_smart(tilt2), _len_smart(phi12))
