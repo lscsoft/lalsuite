@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2016  Leo Singer
+# Copyright (C) 2013-2017  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -63,6 +63,8 @@ parser.add_argument('input', metavar='INPUT.xml[.gz]', default='-', nargs='?',
     help='Input LIGO-LW XML file [default: stdin]')
 parser.add_argument('--psd-files', nargs='*',
     help='pycbc-style merged HDF5 PSD files')
+parser.add_argument('--coinc-event-id', type=int, nargs='*',
+    help='run on only these specified events')
 opts = parser.parse_args()
 
 #
@@ -167,6 +169,9 @@ count_sky_maps_failed = 0
 
 # Loop over all coinc_event <-> sim_inspiral coincs.
 for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
+
+    if opts.coinc_event_id and int(coinc.coinc_event_id) not in opts.coinc_event_id:
+        continue
 
     instruments = {sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals}
 

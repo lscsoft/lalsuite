@@ -841,7 +841,7 @@ int XLALSimInspiralChooseTDWaveform(
             XLAL_ERROR(XLAL_EINVAL);
     }
 
-    if (polariz) {
+    if (polariz && (*hplus) && (*hcross) ) {
       REAL8 tmpP,tmpC;
       REAL8 cp=cos(2.*polariz);
       REAL8 sp=sin(2.*polariz);
