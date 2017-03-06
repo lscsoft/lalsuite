@@ -36,8 +36,8 @@ struct tagWeaveResultsToplist {
   const char *stat_desc;
   /// Heap which ranks output results by a particular statistic
   LALHeap *heap;
-  /// Save a no-longer-used output result item for re-use
-  WeaveOutputResultItem *saved_item;
+  /// Save a no-longer-used toplist item for re-use
+  WeaveResultsToplistItem *saved_item;
 };
 
 ///
@@ -45,13 +45,167 @@ struct tagWeaveResultsToplist {
 ///
 /// @{
 
+static WeaveResultsToplistItem *toplist_item_create( const WeaveOutputParams *par );
 static int compare_templates( BOOLEAN *equal, const char *loc_str, const char *tmpl_str, const REAL8 param_tol_mism, const WeavePhysicalToLattice phys_to_latt, const gsl_matrix *metric, const void *transf_data, const PulsarDopplerParams *phys_1, const PulsarDopplerParams *phys_2 );
 static int compare_vectors( BOOLEAN *equal, const VectorComparison *result_tol, const REAL4Vector *res_1, const REAL4Vector *res_2 );
-static int result_item_sort_by_semi_phys( const void *x, const void *y );
 static int toplist_fits_table_init( FITSFile *file, const WeaveOutputParams *par );
 static int toplist_fits_table_write_visitor( void *param, const void *x );
+static int toplist_item_fill( WeaveResultsToplistItem **item, BOOLEAN *full_init, const WeaveOutputParams *par, const WeaveSemiResults *semi_res, const size_t nspins, const size_t freq_idx );
+static int toplist_item_sort_by_semi_phys( const void *x, const void *y );
+static void toplist_item_destroy( WeaveResultsToplistItem *item );
 
 /// @}
+
+///
+/// Create a toplist item
+///
+WeaveResultsToplistItem *toplist_item_create(
+  const WeaveOutputParams *par
+  )
+{
+
+  // Check input
+  XLAL_CHECK_NULL( par != NULL, XLAL_EFAULT );
+
+  // Allocate memory for item
+  WeaveResultsToplistItem *item = XLALCalloc( 1, sizeof( *item ) );
+  XLAL_CHECK_NULL( item != NULL, XLAL_ENOMEM );
+
+  // Allocate memory for per-segment output results
+  if ( par->per_nsegments > 0 ) {
+    item->coh_alpha = XLALCalloc( par->per_nsegments, sizeof( *item->coh_alpha ) );
+    XLAL_CHECK_NULL( item->coh_alpha != NULL, XLAL_ENOMEM );
+    item->coh_delta = XLALCalloc( par->per_nsegments, sizeof( *item->coh_delta ) );
+    XLAL_CHECK_NULL( item->coh_delta != NULL, XLAL_ENOMEM );
+    for ( size_t k = 0; k <= par->nspins; ++k ) {
+      item->coh_fkdot[k] = XLALCalloc( par->per_nsegments, sizeof( *item->coh_fkdot[k] ) );
+      XLAL_CHECK_NULL( item->coh_fkdot[k] != NULL, XLAL_ENOMEM );
+    }
+    item->coh2F = XLALCalloc( par->per_nsegments, sizeof( *item->coh2F ) );
+    XLAL_CHECK_NULL( item->coh2F != NULL, XLAL_ENOMEM );
+  }
+
+  // Allocate memory for per-detector and per-segment output results
+  if ( par->per_detectors != NULL && par->per_nsegments > 0 ) {
+    for ( size_t i = 0; i < par->per_detectors->length; ++i ) {
+      item->coh2F_det[i] = XLALCalloc( par->per_nsegments, sizeof( *item->coh2F_det[i] ) );
+      XLAL_CHECK_NULL( item->coh2F_det[i] != NULL, XLAL_ENOMEM );
+    }
+  }
+
+  return item;
+
+}
+
+///
+/// Fill a output result item, creating a new one if needed
+///
+int toplist_item_fill(
+  WeaveResultsToplistItem **item,
+  BOOLEAN *full_init,
+  const WeaveOutputParams *par,
+  const WeaveSemiResults *semi_res,
+  const size_t nspins,
+  const size_t freq_idx
+  )
+{
+
+  // Check input
+  XLAL_CHECK( item != NULL, XLAL_EFAULT );
+  XLAL_CHECK( full_init != NULL, XLAL_EFAULT );
+  XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
+  XLAL_CHECK( freq_idx < semi_res->nfreqs, XLAL_EINVAL );
+
+  // Fully initialise all output result item field, if requested
+  // - Otherwise only output result item fields that change with 'freq_idx' are updated
+  if ( *full_init ) {
+
+    // Set all semicoherent template parameters
+    ( *item )->semi_alpha = semi_res->semi_phys.Alpha;
+    ( *item )->semi_delta = semi_res->semi_phys.Delta;
+    for ( size_t k = 0; k <= nspins; ++k ) {
+      ( *item )->semi_fkdot[k] = semi_res->semi_phys.fkdot[k];
+    }
+
+    // Set all coherent template parameters
+    if ( par->per_nsegments > 0 ) {
+      for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
+        ( *item )->coh_alpha[j] = semi_res->coh_phys[j].Alpha;
+        ( *item )->coh_delta[j] = semi_res->coh_phys[j].Delta;
+        for ( size_t k = 0; k <= nspins; ++k ) {
+          ( *item )->coh_fkdot[k][j] = semi_res->coh_phys[j].fkdot[k];
+        }
+      }
+    }
+
+    // Next time, only output result item fields that change with 'freq_idx' should need updating
+    *full_init = 0;
+
+  }
+
+  // Update semicoherent and coherent template frequency
+  ( *item )->semi_fkdot[0] = semi_res->semi_phys.fkdot[0] + freq_idx * semi_res->dfreq;
+  if ( par->per_nsegments > 0 ) {
+    for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
+      ( *item )->coh_fkdot[0][j] = semi_res->coh_phys[j].fkdot[0] + freq_idx * semi_res->dfreq;
+    }
+  }
+
+  // Return now if simulating search
+  if ( semi_res->simulation_level & WEAVE_SIMULATE ) {
+    return XLAL_SUCCESS;
+  }
+
+  // Update multi-detector F-statistics
+  ( *item )->mean2F = semi_res->mean2F->data[freq_idx];
+  if ( par->per_nsegments > 0 ) {
+    for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
+      ( *item )->coh2F[j] = semi_res->coh2F[j][freq_idx];
+    }
+  }
+
+  // Update per-detector F-statistics
+  if ( par->per_detectors != NULL ) {
+    for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
+      ( *item )->mean2F_det[i] = semi_res->mean2F_det[i]->data[freq_idx];
+      if (  par->per_nsegments > 0 ) {
+        for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
+          if ( semi_res->coh2F_det[i][j] != NULL ) {
+            ( *item )->coh2F_det[i][j] = semi_res->coh2F_det[i][j][freq_idx];
+          } else {
+            // There is not per-detector F-statistic for this segment, usually because this segment contains
+            // no data from this detector. In this case we output a clearly invalid F-statistic value.
+            ( *item )->coh2F_det[i][j] = NAN;
+          }
+        }
+      }
+    }
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
+///
+/// Destroy a toplist item
+///
+void toplist_item_destroy(
+  WeaveResultsToplistItem *item
+  )
+{
+  if ( item != NULL ) {
+    XLALFree( item->coh_alpha );
+    XLALFree( item->coh_delta );
+    for ( size_t k = 0; k < PULSAR_MAX_SPINS; ++k ) {
+      XLALFree( item->coh_fkdot[k] );
+    }
+    XLALFree( item->coh2F );
+    for ( size_t i = 0; i < PULSAR_MAX_DETECTORS; ++i ) {
+      XLALFree( item->coh2F_det[i] );
+    }
+    XLALFree( item );
+  }
+}
 
 ///
 /// Initialise a FITS table for writing/reading a toplist
@@ -68,7 +222,7 @@ int toplist_fits_table_init(
   char col_name[32];
 
   // Begin FITS table description
-  XLAL_FITS_TABLE_COLUMN_BEGIN( WeaveOutputResultItem );
+  XLAL_FITS_TABLE_COLUMN_BEGIN( WeaveResultsToplistItem );
 
   // Add columns for semicoherent template parameters
   XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, semi_alpha, "alpha [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -128,18 +282,18 @@ int toplist_fits_table_write_visitor(
 }
 
 ///
-/// Sort output result items by physical coordinates of semicoherent template.
+/// Sort toplist items by physical coordinates of semicoherent template.
 ///
 /// For stable comparisons, the order of parameter comparisons should be the same
 /// as the order in which parameters are generated by the search lattice tiling.
 ///
-int result_item_sort_by_semi_phys(
+int toplist_item_sort_by_semi_phys(
   const void *x,
   const void *y
   )
 {
-  const WeaveOutputResultItem *ix = *( const WeaveOutputResultItem *const * ) x;
-  const WeaveOutputResultItem *iy = *( const WeaveOutputResultItem *const * ) y;
+  const WeaveResultsToplistItem *ix = *( const WeaveResultsToplistItem *const * ) x;
+  const WeaveResultsToplistItem *iy = *( const WeaveResultsToplistItem *const * ) y;
   WEAVE_COMPARE_BY( ix->semi_alpha, iy->semi_alpha );   // Compare in ascending order
   WEAVE_COMPARE_BY( ix->semi_delta, iy->semi_delta );   // Compare in ascending order
   for ( size_t s = 1; s < XLAL_NUM_ELEM( ix->semi_fkdot ); ++s ) {
@@ -264,7 +418,7 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   const char *stat_name,
   const char *stat_desc,
   const int toplist_limit,
-  LALHeapCmpFcn toplist_result_item_compare_fcn
+  LALHeapCmpFcn toplist_item_compare_fcn
   )
 {
 
@@ -284,7 +438,7 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   toplist->stat_desc = stat_desc;
 
   // Create heap which ranks output results using the given comparison function
-  toplist->heap = XLALHeapCreate( ( LALHeapDtorFcn ) XLALWeaveOutputResultItemDestroy, toplist_limit, +1, toplist_result_item_compare_fcn );
+  toplist->heap = XLALHeapCreate( ( LALHeapDtorFcn ) toplist_item_destroy, toplist_limit, +1, toplist_item_compare_fcn );
   XLAL_CHECK_NULL( toplist->heap != NULL, XLAL_EFUNC );
 
   return toplist;
@@ -300,7 +454,7 @@ void XLALWeaveResultsToplistDestroy(
 {
   if ( toplist != NULL ) {
     XLALHeapDestroy( toplist->heap );
-    XLALWeaveOutputResultItemDestroy( toplist->saved_item );
+    toplist_item_destroy( toplist->saved_item );
     XLALFree( toplist );
   }
 }
@@ -327,7 +481,7 @@ int XLALWeaveResultsToplistAdd(
 
     // Create a new output result item if needed
     if ( toplist->saved_item == NULL ) {
-      toplist->saved_item = XLALWeaveOutputResultItemCreate( toplist->par );
+      toplist->saved_item = toplist_item_create( toplist->par );
       XLAL_CHECK( toplist->saved_item != NULL, XLAL_ENOMEM );
 
       // Output result item must be fully initialised
@@ -336,10 +490,10 @@ int XLALWeaveResultsToplistAdd(
     }
 
     // Fill output result item, creating a new one if needed
-    XLAL_CHECK( XLALWeaveFillOutputResultItem( &toplist->saved_item, &full_init, toplist->par, semi_res, toplist->par->nspins, i ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( toplist_item_fill( &toplist->saved_item, &full_init, toplist->par, semi_res, toplist->par->nspins, i ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Add item to heap
-    const WeaveOutputResultItem *prev_item = toplist->saved_item;
+    const WeaveResultsToplistItem *prev_item = toplist->saved_item;
     XLAL_CHECK( XLALHeapAdd( toplist->heap, ( void ** ) &toplist->saved_item ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // If heap added item and returned a different, now-unused item,
@@ -427,9 +581,9 @@ int XLALWeaveResultsToplistReadAppend(
     // Read all items from FITS table
     while ( nrows > 0 ) {
 
-      // Create a new output result item if needed
+      // Create a new toplist item if needed
       if ( toplist->saved_item == NULL ) {
-        toplist->saved_item = XLALWeaveOutputResultItemCreate( toplist->par );
+        toplist->saved_item = toplist_item_create( toplist->par );
         XLAL_CHECK( toplist->saved_item != NULL, XLAL_ENOMEM );
       }
 
@@ -491,21 +645,21 @@ int XLALWeaveResultsToplistCompare(
       }
     }
 
-    // Get lists of output result items
-    const WeaveOutputResultItem **items_1 = ( const WeaveOutputResultItem ** ) XLALHeapElements( toplist_1->heap );
+    // Get lists of toplist items
+    const WeaveResultsToplistItem **items_1 = ( const WeaveResultsToplistItem ** ) XLALHeapElements( toplist_1->heap );
     XLAL_CHECK( items_1 != NULL, XLAL_EFUNC );
-    const WeaveOutputResultItem **items_2 = ( const WeaveOutputResultItem ** ) XLALHeapElements( toplist_2->heap );
+    const WeaveResultsToplistItem **items_2 = ( const WeaveResultsToplistItem ** ) XLALHeapElements( toplist_2->heap );
     XLAL_CHECK( items_2 != NULL, XLAL_EFUNC );
 
-    // Sort output result items by physical coordinates of semicoherent template
+    // Sort toplist items by physical coordinates of semicoherent template
     // - Template coordinates are less likely to suffer from numerical differences
     //   than result values, and therefore provide more stable sort values to ensure
     //   that equivalent items in both templates match up with each other.
-    // - Ideally one would compare output result items with possess the minimum mismatch
+    // - Ideally one would compare toplist items with possess the minimum mismatch
     //   in template parameters with respect to each other, but that would require
     //   of order 'n^2' mismatch calculations, which may be too expensive
-    qsort( items_1, n, sizeof( *items_1 ), result_item_sort_by_semi_phys );
-    qsort( items_2, n, sizeof( *items_2 ), result_item_sort_by_semi_phys );
+    qsort( items_1, n, sizeof( *items_1 ), toplist_item_sort_by_semi_phys );
+    qsort( items_2, n, sizeof( *items_2 ), toplist_item_sort_by_semi_phys );
 
     // Allocate vectors for storing results for comparison with compare_vectors()
     REAL4Vector *res_1 = XLALCreateREAL4Vector( n );
@@ -521,7 +675,7 @@ int XLALWeaveResultsToplistCompare(
 
         // Compare semicoherent template parameters
         {
-          snprintf( loc_str, sizeof(loc_str), "output result item %zu", i );
+          snprintf( loc_str, sizeof(loc_str), "toplist item %zu", i );
           PulsarDopplerParams XLAL_INIT_DECL( semi_phys_1 );
           PulsarDopplerParams XLAL_INIT_DECL( semi_phys_2 );
           semi_phys_1.Alpha = items_1[i]->semi_alpha;
@@ -537,7 +691,7 @@ int XLALWeaveResultsToplistCompare(
 
         // Compare coherent template parameters
         for ( size_t j = 0; j < par->per_nsegments; ++j ) {
-          snprintf( loc_str, sizeof(loc_str), "output result item %zu, segment %zu", i, j );
+          snprintf( loc_str, sizeof(loc_str), "toplist item %zu, segment %zu", i, j );
           PulsarDopplerParams XLAL_INIT_DECL( coh_phys_1 );
           PulsarDopplerParams XLAL_INIT_DECL( coh_phys_2 );
           coh_phys_1.Alpha = items_1[i]->coh_alpha[j];

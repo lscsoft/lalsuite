@@ -47,12 +47,38 @@ extern "C" {
 ///
 typedef struct tagWeaveResultsToplist WeaveResultsToplist;
 
+///
+/// Toplist item
+///
+typedef struct tagWeaveResultsToplistItem {
+  /// Physical right ascension of semicoherent template
+  REAL8 semi_alpha;
+  /// Physical right ascension of coherent templates (only needed for per-segment output)
+  REAL8 *coh_alpha;
+  /// Physical declination of semicoherent template
+  REAL8 semi_delta;
+  /// Physical declination of coherent templates (only needed for per-segment output)
+  REAL8 *coh_delta;
+  /// Physical frequency and spindowns of semicoherent template
+  REAL8 semi_fkdot[PULSAR_MAX_SPINS];
+  /// Physical frequency and spindowns of coherent templates (only needed for per-segment output)
+  REAL8 *coh_fkdot[PULSAR_MAX_SPINS];
+  /// Mean multi-detector F-statistic
+  REAL4 mean2F;
+  /// Coherent multi-detector F-statistics (only needed for per-segment output)
+  REAL4 *coh2F;
+  /// Mean per-detector F-statistic (only needed for per-detector output)
+  REAL4 mean2F_det[PULSAR_MAX_DETECTORS];
+  /// Coherent per-detector F-statistics (only needed for per-detector and per-segment output)
+  REAL4 *coh2F_det[PULSAR_MAX_DETECTORS];
+} WeaveResultsToplistItem;
+
 WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   const WeaveOutputParams *par,
   const char *stat_name,
   const char *stat_desc,
   const int toplist_limit,
-  LALHeapCmpFcn toplist_result_item_compare_fcn
+  LALHeapCmpFcn toplist_item_compare_fcn
   );
 void XLALWeaveResultsToplistDestroy(
   WeaveResultsToplist *toplist

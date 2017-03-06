@@ -51,173 +51,22 @@ struct tagWeaveOutputResults {
 ///
 /// @{
 
-static int result_item_compare_by_mean2F( const void *x, const void *y );
+static int toplist_item_compare_by_mean2F( const void *x, const void *y );
 
 /// @}
 
 ///
-/// Compare output result items by mean multi-detector F-statistic
+/// Compare toplist items by mean multi-detector F-statistic
 ///
-int result_item_compare_by_mean2F(
+int toplist_item_compare_by_mean2F(
   const void *x,
   const void *y
   )
 {
-  const WeaveOutputResultItem *ix = ( const WeaveOutputResultItem * ) x;
-  const WeaveOutputResultItem *iy = ( const WeaveOutputResultItem * ) y;
+  const WeaveResultsToplistItem *ix = ( const WeaveResultsToplistItem * ) x;
+  const WeaveResultsToplistItem *iy = ( const WeaveResultsToplistItem * ) y;
   WEAVE_COMPARE_BY( iy->mean2F, ix->mean2F );   // Compare in descending order
   return 0;
-}
-
-///
-/// Create a output result item
-///
-WeaveOutputResultItem *XLALWeaveOutputResultItemCreate(
-  const WeaveOutputParams *par
-  )
-{
-
-  // Check input
-  XLAL_CHECK_NULL( par != NULL, XLAL_EFAULT );
-
-  // Allocate memory for item
-  WeaveOutputResultItem *item = XLALCalloc( 1, sizeof( *item ) );
-  XLAL_CHECK_NULL( item != NULL, XLAL_ENOMEM );
-
-  // Allocate memory for per-segment output results
-  if ( par->per_nsegments > 0 ) {
-    item->coh_alpha = XLALCalloc( par->per_nsegments, sizeof( *item->coh_alpha ) );
-    XLAL_CHECK_NULL( item->coh_alpha != NULL, XLAL_ENOMEM );
-    item->coh_delta = XLALCalloc( par->per_nsegments, sizeof( *item->coh_delta ) );
-    XLAL_CHECK_NULL( item->coh_delta != NULL, XLAL_ENOMEM );
-    for ( size_t k = 0; k <= par->nspins; ++k ) {
-      item->coh_fkdot[k] = XLALCalloc( par->per_nsegments, sizeof( *item->coh_fkdot[k] ) );
-      XLAL_CHECK_NULL( item->coh_fkdot[k] != NULL, XLAL_ENOMEM );
-    }
-    item->coh2F = XLALCalloc( par->per_nsegments, sizeof( *item->coh2F ) );
-    XLAL_CHECK_NULL( item->coh2F != NULL, XLAL_ENOMEM );
-  }
-
-  // Allocate memory for per-detector and per-segment output results
-  if ( par->per_detectors != NULL && par->per_nsegments > 0 ) {
-    for ( size_t i = 0; i < par->per_detectors->length; ++i ) {
-      item->coh2F_det[i] = XLALCalloc( par->per_nsegments, sizeof( *item->coh2F_det[i] ) );
-      XLAL_CHECK_NULL( item->coh2F_det[i] != NULL, XLAL_ENOMEM );
-    }
-  }
-
-  return item;
-
-}
-
-///
-/// Fill a output result item, creating a new one if needed
-///
-int XLALWeaveFillOutputResultItem(
-  WeaveOutputResultItem **item,
-  BOOLEAN *full_init,
-  const WeaveOutputParams *par,
-  const WeaveSemiResults *semi_res,
-  const size_t nspins,
-  const size_t freq_idx
-  )
-{
-
-  // Check input
-  XLAL_CHECK( item != NULL, XLAL_EFAULT );
-  XLAL_CHECK( full_init != NULL, XLAL_EFAULT );
-  XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
-  XLAL_CHECK( freq_idx < semi_res->nfreqs, XLAL_EINVAL );
-
-  // Fully initialise all output result item field, if requested
-  // - Otherwise only output result item fields that change with 'freq_idx' are updated
-  if ( *full_init ) {
-
-    // Set all semicoherent template parameters
-    ( *item )->semi_alpha = semi_res->semi_phys.Alpha;
-    ( *item )->semi_delta = semi_res->semi_phys.Delta;
-    for ( size_t k = 0; k <= nspins; ++k ) {
-      ( *item )->semi_fkdot[k] = semi_res->semi_phys.fkdot[k];
-    }
-
-    // Set all coherent template parameters
-    if ( par->per_nsegments > 0 ) {
-      for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
-        ( *item )->coh_alpha[j] = semi_res->coh_phys[j].Alpha;
-        ( *item )->coh_delta[j] = semi_res->coh_phys[j].Delta;
-        for ( size_t k = 0; k <= nspins; ++k ) {
-          ( *item )->coh_fkdot[k][j] = semi_res->coh_phys[j].fkdot[k];
-        }
-      }
-    }
-
-    // Next time, only output result item fields that change with 'freq_idx' should need updating
-    *full_init = 0;
-
-  }
-
-  // Update semicoherent and coherent template frequency
-  ( *item )->semi_fkdot[0] = semi_res->semi_phys.fkdot[0] + freq_idx * semi_res->dfreq;
-  if ( par->per_nsegments > 0 ) {
-    for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
-      ( *item )->coh_fkdot[0][j] = semi_res->coh_phys[j].fkdot[0] + freq_idx * semi_res->dfreq;
-    }
-  }
-
-  // Return now if simulating search
-  if ( semi_res->simulation_level & WEAVE_SIMULATE ) {
-    return XLAL_SUCCESS;
-  }
-
-  // Update multi-detector F-statistics
-  ( *item )->mean2F = semi_res->mean2F->data[freq_idx];
-  if ( par->per_nsegments > 0 ) {
-    for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
-      ( *item )->coh2F[j] = semi_res->coh2F[j][freq_idx];
-    }
-  }
-
-  // Update per-detector F-statistics
-  if ( par->per_detectors != NULL ) {
-    for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
-      ( *item )->mean2F_det[i] = semi_res->mean2F_det[i]->data[freq_idx];
-      if (  par->per_nsegments > 0 ) {
-        for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
-          if ( semi_res->coh2F_det[i][j] != NULL ) {
-            ( *item )->coh2F_det[i][j] = semi_res->coh2F_det[i][j][freq_idx];
-          } else {
-            // There is not per-detector F-statistic for this segment, usually because this segment contains
-            // no data from this detector. In this case we output a clearly invalid F-statistic value.
-            ( *item )->coh2F_det[i][j] = NAN;
-          }
-        }
-      }
-    }
-  }
-
-  return XLAL_SUCCESS;
-
-}
-
-///
-/// Destroy a output result item
-///
-void XLALWeaveOutputResultItemDestroy(
-  WeaveOutputResultItem *item
-  )
-{
-  if ( item != NULL ) {
-    XLALFree( item->coh_alpha );
-    XLALFree( item->coh_delta );
-    for ( size_t k = 0; k < PULSAR_MAX_SPINS; ++k ) {
-      XLALFree( item->coh_fkdot[k] );
-    }
-    XLALFree( item->coh2F );
-    for ( size_t i = 0; i < PULSAR_MAX_DETECTORS; ++i ) {
-      XLALFree( item->coh2F_det[i] );
-    }
-    XLALFree( item );
-  }
 }
 
 ///
@@ -261,7 +110,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   // Create a toplist which ranks results by mean multi-detector F-statistic
   if ( toplist_types & WEAVE_TOPLIST_RANKED_MEAN2F ) {
-    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( &out->par, "mean2F", "mean multi-detector F-statistic", toplist_limit, result_item_compare_by_mean2F );
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( &out->par, "mean2F", "mean multi-detector F-statistic", toplist_limit, toplist_item_compare_by_mean2F );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists++ < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
   }
