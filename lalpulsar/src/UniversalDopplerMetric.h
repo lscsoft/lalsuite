@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2017 Arunava Mukherjee
  * Copyright (C) 2012--2015 Karl Wette
  * Copyright (C) 2008, 2009 Reinhard Prix
  *
@@ -150,6 +151,12 @@ typedef enum tagDopplerCoordinateID {
   DOPPLERCOORD_PORB,		/**< Period of binary orbit (ELL1 model) [Units: s]. */
   DOPPLERCOORD_KAPPA,		/**< Lagrange parameter 'kappa = ecc * cos(argp)', ('ecc' = eccentricity, 'argp' = argument of periapse) of binary orbit (ELL1 model) [Units: none] */
   DOPPLERCOORD_ETA,		/**< Lagrange parameter 'eta = ecc * sin(argp) of binary orbit (ELL1 model) [Units: none] */
+
+  DOPPLERCOORD_VP,		/**< Rescaled (by asini) differential-coordinate 'dvp = asini * dOMEGA', ('OMEGA' = 2 * pi/'porb') of binary orbit (ELL1 model) [Units: (light second)/(GPS second)]. */
+  DOPPLERCOORD_DASC,		/**< Distance traversed on the arc of binary orbit (ELL1 model) 'dasc = 2 * pi * (ap/porb) * tasc' [Units: light second]. */
+  DOPPLERCOORD_KAPPAP,		/**< Rescaled (by asini) differential-coordinate 'dkappap = asini * dkappa' [Units: light seconds]. */
+  DOPPLERCOORD_ETAP,		/**< Rescaled (by asini) differential-coordinate 'detap = asini * deta' [Units: light seconds]. */
+
 
   DOPPLERCOORD_LAST
 } DopplerCoordinateID;
