@@ -439,12 +439,15 @@ int main( int argc, char *argv[] )
   // Print reference time
   LogPrintf( LOG_NORMAL, "Setup file reference time = %" LAL_GPS_FORMAT "\n", LAL_GPS_PRINT( setup.ref_time ) );
 
+  // Number of detectors and segments
+  const UINT4 ndetectors = setup.detectors->length;
+  const UINT4 nsegments = setup.segments->length;
+
   // Concatenate list of detector into a string
   char *setup_detectors_string = XLALConcatStringVector( setup.detectors, "," );
   XLAL_CHECK_MAIN( setup_detectors_string != NULL, XLAL_EFUNC );
 
   // Compute segment list range
-  const UINT4 nsegments = setup.segments->length;
   LIGOTimeGPS segments_start, segments_end;
   XLAL_CHECK_MAIN( XLALSegListRange( setup.segments, &segments_start, &segments_end ) == XLAL_SUCCESS, XLAL_EFUNC );
   LogPrintf( LOG_NORMAL, "Setup file segment list range = [%" LAL_GPS_FORMAT ", %" LAL_GPS_FORMAT "] GPS, segment count = %u\n", LAL_GPS_PRINT( segments_start ), LAL_GPS_PRINT( segments_end ), nsegments );
@@ -641,12 +644,12 @@ int main( int argc, char *argv[] )
     if ( UVAR_SET( sft_timestamps_files ) ) {
 
       // Check that the number of SFT timestamp files is consistent with the number of detectors
-      XLAL_CHECK_MAIN( uvar->sft_timestamps_files->length == setup.detectors->length, XLAL_EINVAL, "Number SFT timestamp files (%i) is inconsistent with number of detectors (%i) in setup file '%s'", uvar->sft_timestamps_files->length, setup.detectors->length, uvar->setup_file );
+      XLAL_CHECK_MAIN( uvar->sft_timestamps_files->length == ndetectors, XLAL_EINVAL, "Number SFT timestamp files (%i) is inconsistent with number of detectors (%i) in setup file '%s'", uvar->sft_timestamps_files->length, ndetectors, uvar->setup_file );
 
       // Load SFT timestamps from files given by 'sft_timestamps_files'
       sft_timestamps = XLALReadMultiTimestampsFiles( uvar->sft_timestamps_files );
       XLAL_CHECK_MAIN( sft_timestamps != NULL, XLAL_EFUNC );
-      for ( size_t i = 0; i < setup.detectors->length; ++i ) {
+      for ( size_t i = 0; i < ndetectors; ++i ) {
         sft_timestamps->data[i]->deltaT = uvar->sft_timebase;
         LogPrintf( LOG_NORMAL, "Loaded SFT timestamps for detector '%s' from file '%s'\n", setup.detectors->data[i], uvar->sft_timestamps_files->data[i] );
       }
@@ -654,9 +657,9 @@ int main( int argc, char *argv[] )
     } else {
 
       // Generate identical SFT timestamps for each detector, starting from beginning of segment list, with timebase given by 'sft_timebase'
-      sft_timestamps = XLALMakeMultiTimestamps( segments_start, XLALGPSDiff( &segments_end, &segments_start ), uvar->sft_timebase, 0, setup.detectors->length );
+      sft_timestamps = XLALMakeMultiTimestamps( segments_start, XLALGPSDiff( &segments_end, &segments_start ), uvar->sft_timebase, 0, ndetectors );
       XLAL_CHECK_MAIN( sft_timestamps != NULL, XLAL_EFUNC );
-      LogPrintf( LOG_NORMAL, "Generated SFT timestamps for %i detectors, timebase = %.15g sec\n", setup.detectors->length, uvar->sft_timebase );
+      LogPrintf( LOG_NORMAL, "Generated SFT timestamps for %i detectors, timebase = %.15g sec\n", ndetectors, uvar->sft_timebase );
 
     }
 
