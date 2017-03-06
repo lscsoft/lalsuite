@@ -36,8 +36,14 @@ const UserChoices WeaveToplistTypeChoices = {
 /// Internal definition of output results from a search
 ///
 struct tagWeaveOutputResults {
-  /// Various varameters required to output results
-  WeaveOutputParams par;
+  /// Reference time at which search is conducted
+  LIGOTimeGPS ref_time;
+  /// Number of spindown parameters to output
+  size_t nspins;
+  /// If outputting per-detector quantities, list of detectors
+  LALStringVector *per_detectors;
+  /// Number of per-segment items being output (may be zero)
+  UINT4 per_nsegments;
   /// Names of selected output toplist types
   char *toplist_type_names;
   /// Number of output results toplists
@@ -91,14 +97,14 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
   XLAL_CHECK_NULL( out != NULL, XLAL_ENOMEM );
 
   // Set fields
-  out->par.ref_time = *ref_time;
-  out->par.nspins = nspins;
-  out->par.per_nsegments = per_nsegments;
+  out->ref_time = *ref_time;
+  out->nspins = nspins;
+  out->per_nsegments = per_nsegments;
 
   // Copy list of detectors
   if ( per_detectors != NULL ) {
-    out->par.per_detectors = XLALCopyStringVector( per_detectors );
-    XLAL_CHECK_NULL( out->par.per_detectors != NULL, XLAL_EFUNC );
+    out->per_detectors = XLALCopyStringVector( per_detectors );
+    XLAL_CHECK_NULL( out->per_detectors != NULL, XLAL_EFUNC );
   }
 
   // Generate names of selected output toplist types
@@ -110,7 +116,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   // Create a toplist which ranks results by mean multi-detector F-statistic
   if ( toplist_types & WEAVE_TOPLIST_RANKED_MEAN2F ) {
-    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( &out->par, "mean2F", "mean multi-detector F-statistic", toplist_limit, toplist_item_compare_by_mean2F );
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, per_detectors, per_nsegments, "mean2F", "mean multi-detector F-statistic", toplist_limit, toplist_item_compare_by_mean2F );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists++ < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
   }
@@ -127,7 +133,7 @@ void XLALWeaveOutputResultsDestroy(
   )
 {
   if ( out != NULL ) {
-    XLALDestroyStringVector( out->par.per_detectors );
+    XLALDestroyStringVector( out->per_detectors );
     XLALFree( out->toplist_type_names );
     for ( size_t i = 0; i < out->ntoplists; ++i ) {
       XLALWeaveResultsToplistDestroy( out->toplists[i] );
@@ -173,18 +179,18 @@ int XLALWeaveOutputResultsWrite(
   XLAL_CHECK( out != NULL, XLAL_EFAULT );
 
   // Write reference time
-  XLAL_CHECK( XLALFITSHeaderWriteGPSTime( file, "date-obs", &out->par.ref_time, "reference time" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSHeaderWriteGPSTime( file, "date-obs", &out->ref_time, "reference time" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Write number of spindowns
-  XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "nspins", out->par.nspins, "number of spindowns" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "nspins", out->nspins, "number of spindowns" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Write list of detectors (if outputting per-detector quantities)
-  if ( out->par.per_detectors != NULL ) {
-    XLAL_CHECK( XLALFITSHeaderWriteStringVector( file, "perdet", out->par.per_detectors, "output per detector?" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( out->per_detectors != NULL ) {
+    XLAL_CHECK( XLALFITSHeaderWriteStringVector( file, "perdet", out->per_detectors, "output per detector?" ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Write number of per-segment items being output (may be zero)
-  XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "perseg", out->par.per_nsegments, "output per segment?" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "perseg", out->per_nsegments, "output per segment?" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Write names of selected output toplist types
   XLAL_CHECK( XLALFITSHeaderWriteString( file, "toplists", out->toplist_type_names, "names of selected toplist types" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -250,22 +256,22 @@ int XLALWeaveOutputResultsReadAppend(
   } else {
 
     // Check reference time
-    XLAL_CHECK( XLALGPSCmp( &ref_time, &( *out )->par.ref_time ) == 0, XLAL_EIO, "Inconsistent reference time: %" LAL_GPS_FORMAT " != %" LAL_GPS_FORMAT, LAL_GPS_PRINT( ref_time ), LAL_GPS_PRINT( ( *out )->par.ref_time ) );
+    XLAL_CHECK( XLALGPSCmp( &ref_time, &( *out )->ref_time ) == 0, XLAL_EIO, "Inconsistent reference time: %" LAL_GPS_FORMAT " != %" LAL_GPS_FORMAT, LAL_GPS_PRINT( ref_time ), LAL_GPS_PRINT( ( *out )->ref_time ) );
 
     // Check number of spindowns
-    XLAL_CHECK( (size_t) nspins == ( *out )->par.nspins, XLAL_EIO, "Inconsistent number of spindowns: %i != %zu", nspins, ( *out )->par.nspins );
+    XLAL_CHECK( (size_t) nspins == ( *out )->nspins, XLAL_EIO, "Inconsistent number of spindowns: %i != %zu", nspins, ( *out )->nspins );
 
     // Check if outputting per-detector quantities, and list of detectors
-    XLAL_CHECK( ( per_detectors != NULL ) == ( ( *out )->par.per_detectors != NULL ), XLAL_EIO, "Inconsistent output per detector?: flag vs list of detectors: %i != %i", per_detectors != NULL, ( *out )->par.per_detectors != NULL );
+    XLAL_CHECK( ( per_detectors != NULL ) == ( ( *out )->per_detectors != NULL ), XLAL_EIO, "Inconsistent output per detector?: flag vs list of detectors: %i != %i", per_detectors != NULL, ( *out )->per_detectors != NULL );
     if ( per_detectors != NULL ) {
-      XLAL_CHECK( per_detectors->length == ( *out )->par.per_detectors->length, XLAL_EIO, "Inconsistent number of detectors: %u != %u", per_detectors->length, ( *out )->par.per_detectors->length );
+      XLAL_CHECK( per_detectors->length == ( *out )->per_detectors->length, XLAL_EIO, "Inconsistent number of detectors: %u != %u", per_detectors->length, ( *out )->per_detectors->length );
       for ( size_t i = 0; i < per_detectors->length; ++i ) {
-        XLAL_CHECK( strcmp( per_detectors->data[i], ( *out )->par.per_detectors->data[i] ) == 0, XLAL_EIO, "Inconsistent detectors: %s != %s", per_detectors->data[i], ( *out )->par.per_detectors->data[i] );
+        XLAL_CHECK( strcmp( per_detectors->data[i], ( *out )->per_detectors->data[i] ) == 0, XLAL_EIO, "Inconsistent detectors: %s != %s", per_detectors->data[i], ( *out )->per_detectors->data[i] );
       }
     }
 
     // Check if outputting per-segment quantities, and number of per-segment items
-    XLAL_CHECK( per_nsegments == ( *out )->par.per_nsegments, XLAL_EIO, "Inconsistent output per segment?: %i != %u", per_nsegments, ( *out )->par.per_nsegments );
+    XLAL_CHECK( per_nsegments == ( *out )->per_nsegments, XLAL_EIO, "Inconsistent output per segment?: %i != %u", per_nsegments, ( *out )->per_nsegments );
 
     // Check names of selected output toplist types
     XLAL_CHECK( strcmp( toplist_type_names, ( *out )->toplist_type_names ) == 0, XLAL_EIO, "Inconsistent names of selected output toplist types: %s != %s", toplist_type_names, ( *out )->toplist_type_names );
@@ -310,37 +316,37 @@ int XLALWeaveOutputResultsCompare(
   *equal = 1;
 
   // Compare reference times
-  if ( XLALGPSCmp( &out_1->par.ref_time, &out_2->par.ref_time ) != 0 ) {
+  if ( XLALGPSCmp( &out_1->ref_time, &out_2->ref_time ) != 0 ) {
     *equal = 0;
-    XLALPrintInfo( "%s: unequal reference times: %" LAL_GPS_FORMAT " != %" LAL_GPS_FORMAT "\n", __func__, LAL_GPS_PRINT( out_1->par.ref_time ), LAL_GPS_PRINT( out_2->par.ref_time ) );
+    XLALPrintInfo( "%s: unequal reference times: %" LAL_GPS_FORMAT " != %" LAL_GPS_FORMAT "\n", __func__, LAL_GPS_PRINT( out_1->ref_time ), LAL_GPS_PRINT( out_2->ref_time ) );
     return XLAL_SUCCESS;
   }
 
   // Compare number of spindowns
-  if ( out_1->par.nspins != out_2->par.nspins ) {
+  if ( out_1->nspins != out_2->nspins ) {
     *equal = 0;
-    XLALPrintInfo( "%s: unequal number of spindowns: %zu != %zu\n", __func__, out_1->par.nspins, out_2->par.nspins );
+    XLALPrintInfo( "%s: unequal number of spindowns: %zu != %zu\n", __func__, out_1->nspins, out_2->nspins );
     return XLAL_SUCCESS;
   }
 
   // Compare if outputting per-detector quantities, and list of detectors
   {
-    const BOOLEAN perdet_1 = ( out_1->par.per_detectors != NULL ), perdet_2 = ( out_2->par.per_detectors != NULL );
+    const BOOLEAN perdet_1 = ( out_1->per_detectors != NULL ), perdet_2 = ( out_2->per_detectors != NULL );
     if ( perdet_1 != perdet_2 ) {
       *equal = 0;
       XLALPrintInfo( "%s: unequal output per detector?: %i != %i\n", __func__, perdet_1, perdet_2 );
       return XLAL_SUCCESS;
     }
     if ( perdet_1 ) {
-      if ( out_1->par.per_detectors->length != out_2->par.per_detectors->length ) {
+      if ( out_1->per_detectors->length != out_2->per_detectors->length ) {
         *equal = 0;
-        XLALPrintInfo( "%s: unequal number of detectors: %u != %u\n", __func__, out_1->par.per_detectors->length, out_2->par.per_detectors->length );
+        XLALPrintInfo( "%s: unequal number of detectors: %u != %u\n", __func__, out_1->per_detectors->length, out_2->per_detectors->length );
         return XLAL_SUCCESS;
       }
-      for ( size_t i = 0; i < out_1->par.per_detectors->length; ++i ) {
-        if ( strcmp( out_1->par.per_detectors->data[i], out_2->par.per_detectors->data[i] ) != 0 ) {
+      for ( size_t i = 0; i < out_1->per_detectors->length; ++i ) {
+        if ( strcmp( out_1->per_detectors->data[i], out_2->per_detectors->data[i] ) != 0 ) {
           *equal = 0;
-          XLALPrintInfo( "%s: unequal detectors: %s != %s\n", __func__, out_1->par.per_detectors->data[i], out_2->par.per_detectors->data[i] );
+          XLALPrintInfo( "%s: unequal detectors: %s != %s\n", __func__, out_1->per_detectors->data[i], out_2->per_detectors->data[i] );
           return XLAL_SUCCESS;
         }
       }
@@ -348,9 +354,9 @@ int XLALWeaveOutputResultsCompare(
   }
 
   // Compare number of per-segment items
-  if ( out_1->par.per_nsegments != out_2->par.per_nsegments ) {
+  if ( out_1->per_nsegments != out_2->per_nsegments ) {
     *equal = 0;
-    XLALPrintInfo( "%s: unequal number of segments: %u != %u\n", __func__, out_1->par.per_nsegments, out_2->par.per_nsegments );
+    XLALPrintInfo( "%s: unequal number of segments: %u != %u\n", __func__, out_1->per_nsegments, out_2->per_nsegments );
     return XLAL_SUCCESS;
   }
 

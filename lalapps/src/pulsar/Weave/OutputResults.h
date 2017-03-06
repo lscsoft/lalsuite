@@ -61,20 +61,6 @@ extern const UserChoices WeaveToplistTypeChoices;
 ///
 typedef struct tagWeaveOutputResults WeaveOutputResults;
 
-///
-/// Various varameters required to output results
-///
-typedef struct tagWeaveOutputParams {
-  /// Reference time at which search is conducted
-  LIGOTimeGPS ref_time;
-  /// Number of spindown parameters to output
-  size_t nspins;
-  /// If outputting per-detector quantities, list of detectors
-  LALStringVector *per_detectors;
-  /// Number of per-segment items being output (may be zero)
-  UINT4 per_nsegments;
-} WeaveOutputParams;
-
 WeaveOutputResults *XLALWeaveOutputResultsCreate(
   const LIGOTimeGPS *ref_time,
   const size_t nspins,

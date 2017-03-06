@@ -28,8 +28,12 @@
 /// Internal definition of toplist of output results
 ///
 struct tagWeaveResultsToplist {
-  /// Various varameters required to output results
-  const WeaveOutputParams *par;
+  /// Number of spindown parameters to output
+  size_t nspins;
+  /// If outputting per-detector quantities, list of detectors
+  LALStringVector *per_detectors;
+  /// Number of per-segment items being output (may be zero)
+  UINT4 per_nsegments;
   /// Name of ranking statistic
   const char *stat_name;
   /// Description of ranking statistic
@@ -45,12 +49,12 @@ struct tagWeaveResultsToplist {
 ///
 /// @{
 
-static WeaveResultsToplistItem *toplist_item_create( const WeaveOutputParams *par );
+static WeaveResultsToplistItem *toplist_item_create( const WeaveResultsToplist *toplist );
 static int compare_templates( BOOLEAN *equal, const char *loc_str, const char *tmpl_str, const REAL8 param_tol_mism, const WeavePhysicalToLattice phys_to_latt, const gsl_matrix *metric, const void *transf_data, const PulsarDopplerParams *phys_1, const PulsarDopplerParams *phys_2 );
 static int compare_vectors( BOOLEAN *equal, const VectorComparison *result_tol, const REAL4Vector *res_1, const REAL4Vector *res_2 );
-static int toplist_fits_table_init( FITSFile *file, const WeaveOutputParams *par );
+static int toplist_fits_table_init( FITSFile *file, const WeaveResultsToplist *toplist );
 static int toplist_fits_table_write_visitor( void *param, const void *x );
-static int toplist_item_fill( WeaveResultsToplistItem **item, BOOLEAN *full_init, const WeaveOutputParams *par, const WeaveSemiResults *semi_res, const size_t nspins, const size_t freq_idx );
+static int toplist_item_fill( WeaveResultsToplistItem **item, BOOLEAN *full_init, const WeaveResultsToplist *toplist, const WeaveSemiResults *semi_res, const size_t nspins, const size_t freq_idx );
 static int toplist_item_sort_by_semi_phys( const void *x, const void *y );
 static void toplist_item_destroy( WeaveResultsToplistItem *item );
 
@@ -60,35 +64,35 @@ static void toplist_item_destroy( WeaveResultsToplistItem *item );
 /// Create a toplist item
 ///
 WeaveResultsToplistItem *toplist_item_create(
-  const WeaveOutputParams *par
+  const WeaveResultsToplist *toplist
   )
 {
 
   // Check input
-  XLAL_CHECK_NULL( par != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( toplist != NULL, XLAL_EFAULT );
 
   // Allocate memory for item
   WeaveResultsToplistItem *item = XLALCalloc( 1, sizeof( *item ) );
   XLAL_CHECK_NULL( item != NULL, XLAL_ENOMEM );
 
   // Allocate memory for per-segment output results
-  if ( par->per_nsegments > 0 ) {
-    item->coh_alpha = XLALCalloc( par->per_nsegments, sizeof( *item->coh_alpha ) );
+  if ( toplist->per_nsegments > 0 ) {
+    item->coh_alpha = XLALCalloc( toplist->per_nsegments, sizeof( *item->coh_alpha ) );
     XLAL_CHECK_NULL( item->coh_alpha != NULL, XLAL_ENOMEM );
-    item->coh_delta = XLALCalloc( par->per_nsegments, sizeof( *item->coh_delta ) );
+    item->coh_delta = XLALCalloc( toplist->per_nsegments, sizeof( *item->coh_delta ) );
     XLAL_CHECK_NULL( item->coh_delta != NULL, XLAL_ENOMEM );
-    for ( size_t k = 0; k <= par->nspins; ++k ) {
-      item->coh_fkdot[k] = XLALCalloc( par->per_nsegments, sizeof( *item->coh_fkdot[k] ) );
+    for ( size_t k = 0; k <= toplist->nspins; ++k ) {
+      item->coh_fkdot[k] = XLALCalloc( toplist->per_nsegments, sizeof( *item->coh_fkdot[k] ) );
       XLAL_CHECK_NULL( item->coh_fkdot[k] != NULL, XLAL_ENOMEM );
     }
-    item->coh2F = XLALCalloc( par->per_nsegments, sizeof( *item->coh2F ) );
+    item->coh2F = XLALCalloc( toplist->per_nsegments, sizeof( *item->coh2F ) );
     XLAL_CHECK_NULL( item->coh2F != NULL, XLAL_ENOMEM );
   }
 
   // Allocate memory for per-detector and per-segment output results
-  if ( par->per_detectors != NULL && par->per_nsegments > 0 ) {
-    for ( size_t i = 0; i < par->per_detectors->length; ++i ) {
-      item->coh2F_det[i] = XLALCalloc( par->per_nsegments, sizeof( *item->coh2F_det[i] ) );
+  if ( toplist->per_detectors != NULL && toplist->per_nsegments > 0 ) {
+    for ( size_t i = 0; i < toplist->per_detectors->length; ++i ) {
+      item->coh2F_det[i] = XLALCalloc( toplist->per_nsegments, sizeof( *item->coh2F_det[i] ) );
       XLAL_CHECK_NULL( item->coh2F_det[i] != NULL, XLAL_ENOMEM );
     }
   }
@@ -103,7 +107,7 @@ WeaveResultsToplistItem *toplist_item_create(
 int toplist_item_fill(
   WeaveResultsToplistItem **item,
   BOOLEAN *full_init,
-  const WeaveOutputParams *par,
+  const WeaveResultsToplist *toplist,
   const WeaveSemiResults *semi_res,
   const size_t nspins,
   const size_t freq_idx
@@ -128,7 +132,7 @@ int toplist_item_fill(
     }
 
     // Set all coherent template parameters
-    if ( par->per_nsegments > 0 ) {
+    if ( toplist->per_nsegments > 0 ) {
       for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
         ( *item )->coh_alpha[j] = semi_res->coh_phys[j].Alpha;
         ( *item )->coh_delta[j] = semi_res->coh_phys[j].Delta;
@@ -145,7 +149,7 @@ int toplist_item_fill(
 
   // Update semicoherent and coherent template frequency
   ( *item )->semi_fkdot[0] = semi_res->semi_phys.fkdot[0] + freq_idx * semi_res->dfreq;
-  if ( par->per_nsegments > 0 ) {
+  if ( toplist->per_nsegments > 0 ) {
     for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
       ( *item )->coh_fkdot[0][j] = semi_res->coh_phys[j].fkdot[0] + freq_idx * semi_res->dfreq;
     }
@@ -158,17 +162,17 @@ int toplist_item_fill(
 
   // Update multi-detector F-statistics
   ( *item )->mean2F = semi_res->mean2F->data[freq_idx];
-  if ( par->per_nsegments > 0 ) {
+  if ( toplist->per_nsegments > 0 ) {
     for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
       ( *item )->coh2F[j] = semi_res->coh2F[j][freq_idx];
     }
   }
 
   // Update per-detector F-statistics
-  if ( par->per_detectors != NULL ) {
+  if ( toplist->per_detectors != NULL ) {
     for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
       ( *item )->mean2F_det[i] = semi_res->mean2F_det[i]->data[freq_idx];
-      if (  par->per_nsegments > 0 ) {
+      if (  toplist->per_nsegments > 0 ) {
         for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
           if ( semi_res->coh2F_det[i][j] != NULL ) {
             ( *item )->coh2F_det[i][j] = semi_res->coh2F_det[i][j][freq_idx];
@@ -212,7 +216,7 @@ void toplist_item_destroy(
 ///
 int toplist_fits_table_init(
   FITSFile *file,
-  const WeaveOutputParams *par
+  const WeaveResultsToplist *toplist
   )
 {
 
@@ -228,37 +232,37 @@ int toplist_fits_table_init(
   XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, semi_alpha, "alpha [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, semi_delta, "delta [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, semi_fkdot[0], "freq [Hz]" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  for ( size_t k = 1; k <= par->nspins; ++k ) {
+  for ( size_t k = 1; k <= toplist->nspins; ++k ) {
     snprintf( col_name, sizeof( col_name ), "f%zudot [Hz/s^%zu]", k, k );
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, semi_fkdot[k], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Add columns for mean multi- and per-detector F-statistic
   XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, mean2F ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if ( par->per_detectors != NULL ) {
-    for ( size_t i = 0; i < par->per_detectors->length; ++i ) {
-      snprintf( col_name, sizeof( col_name ), "mean2F_%s", par->per_detectors->data[i] );
+  if ( toplist->per_detectors != NULL ) {
+    for ( size_t i = 0; i < toplist->per_detectors->length; ++i ) {
+      snprintf( col_name, sizeof( col_name ), "mean2F_%s", toplist->per_detectors->data[i] );
       XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, mean2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   }
 
-  if ( par->per_nsegments > 0 ) {
+  if ( toplist->per_nsegments > 0 ) {
 
     // Add columns for coherent template parameters
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, par->per_nsegments, coh_alpha, "alpha_seg [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, par->per_nsegments, coh_delta, "delta_seg [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, par->per_nsegments, coh_fkdot[0], "freq_seg [Hz]" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    for ( size_t k = 1; k <= par->nspins; ++k ) {
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, toplist->per_nsegments, coh_alpha, "alpha_seg [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, toplist->per_nsegments, coh_delta, "delta_seg [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, toplist->per_nsegments, coh_fkdot[0], "freq_seg [Hz]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    for ( size_t k = 1; k <= toplist->nspins; ++k ) {
       snprintf( col_name, sizeof( col_name ), "f%zudot_seg [Hz/s^%zu]", k, k );
-      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, par->per_nsegments, coh_fkdot[k], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, toplist->per_nsegments, coh_fkdot[k], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
     // Add columns for coherent multi- and per-detector F-statistic
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, par->per_nsegments, coh2F, "coh2F_seg" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    if ( par->per_detectors != NULL ) {
-      for ( size_t i = 0; i < par->per_detectors->length; ++i ) {
-        snprintf( col_name, sizeof( col_name ), "coh2F_%s_seg", par->per_detectors->data[i] );
-        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, par->per_nsegments, coh2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, toplist->per_nsegments, coh2F, "coh2F_seg" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    if ( toplist->per_detectors != NULL ) {
+      for ( size_t i = 0; i < toplist->per_detectors->length; ++i ) {
+        snprintf( col_name, sizeof( col_name ), "coh2F_%s_seg", toplist->per_detectors->data[i] );
+        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, toplist->per_nsegments, coh2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
     }
 
@@ -414,7 +418,9 @@ int compare_vectors(
 /// Create results toplist
 ///
 WeaveResultsToplist *XLALWeaveResultsToplistCreate(
-  const WeaveOutputParams *par,
+  const size_t nspins,
+  const LALStringVector *per_detectors,
+  const UINT4 per_nsegments,
   const char *stat_name,
   const char *stat_desc,
   const int toplist_limit,
@@ -423,7 +429,6 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
 {
 
   // Check input
-  XLAL_CHECK_NULL( par != NULL, XLAL_EFAULT );
   XLAL_CHECK_NULL( stat_name != NULL, XLAL_EFAULT );
   XLAL_CHECK_NULL( stat_desc != NULL, XLAL_EFAULT );
   XLAL_CHECK_NULL( toplist_limit >= 0, XLAL_EINVAL );
@@ -433,9 +438,16 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   XLAL_CHECK_NULL( toplist != NULL, XLAL_ENOMEM );
 
   // Set fields
-  toplist->par = par;
+  toplist->nspins = nspins;
+  toplist->per_nsegments = per_nsegments;
   toplist->stat_name = stat_name;
   toplist->stat_desc = stat_desc;
+
+  // Copy list of detectors
+  if ( per_detectors != NULL ) {
+    toplist->per_detectors = XLALCopyStringVector( per_detectors );
+    XLAL_CHECK_NULL( toplist->per_detectors != NULL, XLAL_EFUNC );
+  }
 
   // Create heap which ranks output results using the given comparison function
   toplist->heap = XLALHeapCreate( ( LALHeapDtorFcn ) toplist_item_destroy, toplist_limit, +1, toplist_item_compare_fcn );
@@ -453,6 +465,7 @@ void XLALWeaveResultsToplistDestroy(
   )
 {
   if ( toplist != NULL ) {
+    XLALDestroyStringVector( toplist->per_detectors );
     XLALHeapDestroy( toplist->heap );
     toplist_item_destroy( toplist->saved_item );
     XLALFree( toplist );
@@ -481,7 +494,7 @@ int XLALWeaveResultsToplistAdd(
 
     // Create a new output result item if needed
     if ( toplist->saved_item == NULL ) {
-      toplist->saved_item = toplist_item_create( toplist->par );
+      toplist->saved_item = toplist_item_create( toplist );
       XLAL_CHECK( toplist->saved_item != NULL, XLAL_ENOMEM );
 
       // Output result item must be fully initialised
@@ -490,7 +503,7 @@ int XLALWeaveResultsToplistAdd(
     }
 
     // Fill output result item, creating a new one if needed
-    XLAL_CHECK( toplist_item_fill( &toplist->saved_item, &full_init, toplist->par, semi_res, toplist->par->nspins, i ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( toplist_item_fill( &toplist->saved_item, &full_init, toplist, semi_res, toplist->nspins, i ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Add item to heap
     const WeaveResultsToplistItem *prev_item = toplist->saved_item;
@@ -530,7 +543,7 @@ int XLALWeaveResultsToplistWrite(
 
     // Open FITS table for writing and initialise
     XLAL_CHECK( XLALFITSTableOpenWrite( file, name, desc ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( toplist_fits_table_init( file, toplist->par ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( toplist_fits_table_init( file, toplist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Write all heap items to FITS table
     XLAL_CHECK( XLALHeapVisit( toplist->heap, toplist_fits_table_write_visitor, file ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -567,7 +580,7 @@ int XLALWeaveResultsToplistReadAppend(
     // Open FITS table for reading and initialise
     UINT8 nrows = 0;
     XLAL_CHECK( XLALFITSTableOpenRead( file, name, &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( toplist_fits_table_init( file, toplist->par ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( toplist_fits_table_init( file, toplist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Read maximum size of heap from FITS header
     INT4 toplist_limit = 0;
@@ -583,7 +596,7 @@ int XLALWeaveResultsToplistReadAppend(
 
       // Create a new toplist item if needed
       if ( toplist->saved_item == NULL ) {
-        toplist->saved_item = toplist_item_create( toplist->par );
+        toplist->saved_item = toplist_item_create( toplist );
         XLAL_CHECK( toplist->saved_item != NULL, XLAL_ENOMEM );
       }
 
@@ -624,14 +637,13 @@ int XLALWeaveResultsToplistCompare(
   XLAL_CHECK( strcmp( toplist_1->stat_name, toplist_2->stat_name ) == 0, XLAL_EINVAL );
   XLAL_CHECK( strcmp( toplist_1->stat_desc, toplist_2->stat_desc ) == 0, XLAL_EINVAL );
 
-  const WeaveOutputParams *par = toplist_1->par;
-  const char *stat_desc = toplist_1->stat_desc;
+  const WeaveResultsToplist *toplist = toplist_1;
 
   // Results toplists are assumed equal until we find otherwise
   *equal = 1;
 
   // Compare toplists
-  XLALPrintInfo( "%s: comparing toplists ranked by %s ...\n", __func__, stat_desc );
+  XLALPrintInfo( "%s: comparing toplists ranked by %s ...\n", __func__, toplist->stat_desc );
   {
 
     // Compare lengths of heaps
@@ -640,7 +652,7 @@ int XLALWeaveResultsToplistCompare(
       const size_t n_2 = XLALHeapSize( toplist_2->heap );
       if ( n != n_2 ) {
         *equal = 0;
-        XLALPrintInfo( "%s: unequal size %s toplists: %zu != %zu\n", __func__, stat_desc, n, n_2 );
+        XLALPrintInfo( "%s: unequal size %s toplists: %zu != %zu\n", __func__, toplist->stat_desc, n, n_2 );
         return XLAL_SUCCESS;
       }
     }
@@ -682,7 +694,7 @@ int XLALWeaveResultsToplistCompare(
           semi_phys_2.Alpha = items_2[i]->semi_alpha;
           semi_phys_1.Delta = items_1[i]->semi_delta;
           semi_phys_2.Delta = items_2[i]->semi_delta;
-          for ( size_t k = 0; k <= par->nspins; ++k ) {
+          for ( size_t k = 0; k <= toplist->nspins; ++k ) {
             semi_phys_1.fkdot[k] = items_1[i]->semi_fkdot[k];
             semi_phys_2.fkdot[k] = items_2[i]->semi_fkdot[k];
           };
@@ -690,7 +702,7 @@ int XLALWeaveResultsToplistCompare(
         }
 
         // Compare coherent template parameters
-        for ( size_t j = 0; j < par->per_nsegments; ++j ) {
+        for ( size_t j = 0; j < toplist->per_nsegments; ++j ) {
           snprintf( loc_str, sizeof(loc_str), "toplist item %zu, segment %zu", i, j );
           PulsarDopplerParams XLAL_INIT_DECL( coh_phys_1 );
           PulsarDopplerParams XLAL_INIT_DECL( coh_phys_2 );
@@ -698,7 +710,7 @@ int XLALWeaveResultsToplistCompare(
           coh_phys_2.Alpha = items_2[i]->coh_alpha[j];
           coh_phys_1.Delta = items_1[i]->coh_delta[j];
           coh_phys_2.Delta = items_2[i]->coh_delta[j];
-          for ( size_t k = 0; k <= par->nspins; ++k ) {
+          for ( size_t k = 0; k <= toplist->nspins; ++k ) {
             coh_phys_1.fkdot[k] = items_1[i]->coh_fkdot[k][j];
             coh_phys_2.fkdot[k] = items_2[i]->coh_fkdot[k][j];
           };
@@ -722,9 +734,9 @@ int XLALWeaveResultsToplistCompare(
       }
 
       // Compare mean per-detector F-statistic
-      if ( par->per_detectors != NULL ) {
-        for ( size_t k = 0; k < par->per_detectors->length; ++k ) {
-          XLALPrintInfo( "%s: comparing mean per-detector F-statistics for detector '%s'...\n", __func__, par->per_detectors->data[k] );
+      if ( toplist->per_detectors != NULL ) {
+        for ( size_t k = 0; k < toplist->per_detectors->length; ++k ) {
+          XLALPrintInfo( "%s: comparing mean per-detector F-statistics for detector '%s'...\n", __func__, toplist->per_detectors->data[k] );
           for ( size_t i = 0; i < n; ++i ) {
             res_1->data[i] = items_1[i]->mean2F_det[k];
             res_2->data[i] = items_2[i]->mean2F_det[k];
@@ -737,7 +749,7 @@ int XLALWeaveResultsToplistCompare(
       }
 
       // Compare per-segment coherent multi-detector F-statistics
-      for ( size_t j = 0; j < par->per_nsegments; ++j ) {
+      for ( size_t j = 0; j < toplist->per_nsegments; ++j ) {
         XLALPrintInfo( "%s: comparing coherent multi-detector F-statistics for segment %zu...\n", __func__, j );
         for ( size_t i = 0; i < n; ++i ) {
           res_1->data[i] = items_1[i]->coh2F[j];
@@ -750,18 +762,18 @@ int XLALWeaveResultsToplistCompare(
       }
 
       // Compare per-segment per-detector F-statistics
-      if ( par->per_detectors != NULL ) {
-        for ( size_t j = 0; j < par->per_nsegments; ++j ) {
-          for ( size_t k = 0; k < par->per_detectors->length; ++k ) {
+      if ( toplist->per_detectors != NULL ) {
+        for ( size_t j = 0; j < toplist->per_nsegments; ++j ) {
+          for ( size_t k = 0; k < toplist->per_detectors->length; ++k ) {
             if ( isfinite( items_1[0]->coh2F_det[k][j] ) || isfinite( items_2[0]->coh2F_det[k][j] ) ) {
-              XLALPrintInfo( "%s: comparing per-segment per-detector F-statistics for segment %zu, detector '%s'...\n", __func__, j, par->per_detectors->data[k] );
+              XLALPrintInfo( "%s: comparing per-segment per-detector F-statistics for segment %zu, detector '%s'...\n", __func__, j, toplist->per_detectors->data[k] );
               for ( size_t i = 0; i < n; ++i ) {
                 res_1->data[i] = items_1[i]->coh2F_det[k][j];
                 res_2->data[i] = items_2[i]->coh2F_det[k][j];
               }
               XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
             } else {
-              XLALPrintInfo( "%s: no per-segment per-detector F-statistics for segment %zu, detector '%s'; skipping comparison\n", __func__, j, par->per_detectors->data[k] );
+              XLALPrintInfo( "%s: no per-segment per-detector F-statistics for segment %zu, detector '%s'; skipping comparison\n", __func__, j, toplist->per_detectors->data[k] );
             }
           }
         }

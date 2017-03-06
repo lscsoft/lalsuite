@@ -74,7 +74,9 @@ typedef struct tagWeaveResultsToplistItem {
 } WeaveResultsToplistItem;
 
 WeaveResultsToplist *XLALWeaveResultsToplistCreate(
-  const WeaveOutputParams *par,
+  const size_t nspins,
+  const LALStringVector *per_detectors,
+  const UINT4 per_nsegments,
   const char *stat_name,
   const char *stat_desc,
   const int toplist_limit,
