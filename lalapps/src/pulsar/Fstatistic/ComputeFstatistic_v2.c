@@ -416,20 +416,16 @@ int main(int argc,char *argv[])
       fprintf (fpFstat, "%s", GV.logstring );
 
       /* assemble column headings string */
-      char colum_headings_string_base[] = "freq alpha delta f1dot f2dot f3dot 2F";
-      UINT4 column_headings_string_length = sizeof(colum_headings_string_base);
-      char column_headings_string[column_headings_string_length];
+      char column_headings_string[1024];
       XLAL_INIT_MEM( column_headings_string );
-      strcat ( column_headings_string, colum_headings_string_base );
+      strcat ( column_headings_string, "freq alpha delta f1dot f2dot f3dot 2F" );
       if ( uvar.computeBSGL )
         {
-          column_headings_string_length += 10; /* for " log10BSGL"*/
           strcat ( column_headings_string, " log10BSGL" );
         }
       if ( uvar.outputSingleFstats || uvar.computeBSGL )
         {
           const UINT4 numDetectors = GV.detectorIDs->length;
-          column_headings_string_length += numDetectors*6; /* 6 per detector for " 2F_XY" */
           for ( UINT4 X = 0; X < numDetectors ; X ++ )
             {
               char headingX[7];
