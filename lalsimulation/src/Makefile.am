@@ -178,6 +178,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralOptimizedCoefficientsEccentricityFD.c \
 	LALSimInspiralTaylorEt.c \
 	LALSimInspiralTaylorF2.c \
+	LALSimInspiralTaylorF2NLTides.c \
 	LALSimInspiralTaylorF2ReducedSpin.c \
 	LALSimInspiralTaylorF2ReducedSpinMetric.c \
 	LALSimInspiralTaylorF2ReducedSpinTidal.c \
