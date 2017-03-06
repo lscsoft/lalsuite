@@ -111,6 +111,95 @@ WeaveOutputResultItem *XLALWeaveOutputResultItemCreate(
 }
 
 ///
+/// Fill a output result item, creating a new one if needed
+///
+int XLALWeaveFillOutputResultItem(
+  WeaveOutputResultItem **item,
+  BOOLEAN *full_init,
+  const WeaveOutputParams *par,
+  const WeaveSemiResults *semi_res,
+  const size_t nspins,
+  const size_t freq_idx
+  )
+{
+
+  // Check input
+  XLAL_CHECK( item != NULL, XLAL_EFAULT );
+  XLAL_CHECK( full_init != NULL, XLAL_EFAULT );
+  XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
+  XLAL_CHECK( freq_idx < semi_res->nfreqs, XLAL_EINVAL );
+
+  // Fully initialise all output result item field, if requested
+  // - Otherwise only output result item fields that change with 'freq_idx' are updated
+  if ( *full_init ) {
+
+    // Set all semicoherent template parameters
+    ( *item )->semi_alpha = semi_res->semi_phys.Alpha;
+    ( *item )->semi_delta = semi_res->semi_phys.Delta;
+    for ( size_t k = 0; k <= nspins; ++k ) {
+      ( *item )->semi_fkdot[k] = semi_res->semi_phys.fkdot[k];
+    }
+
+    // Set all coherent template parameters
+    if ( par->per_nsegments > 0 ) {
+      for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
+        ( *item )->coh_alpha[j] = semi_res->coh_phys[j].Alpha;
+        ( *item )->coh_delta[j] = semi_res->coh_phys[j].Delta;
+        for ( size_t k = 0; k <= nspins; ++k ) {
+          ( *item )->coh_fkdot[k][j] = semi_res->coh_phys[j].fkdot[k];
+        }
+      }
+    }
+
+    // Next time, only output result item fields that change with 'freq_idx' should need updating
+    *full_init = 0;
+
+  }
+
+  // Update semicoherent and coherent template frequency
+  ( *item )->semi_fkdot[0] = semi_res->semi_phys.fkdot[0] + freq_idx * semi_res->dfreq;
+  if ( par->per_nsegments > 0 ) {
+    for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
+      ( *item )->coh_fkdot[0][j] = semi_res->coh_phys[j].fkdot[0] + freq_idx * semi_res->dfreq;
+    }
+  }
+
+  // Return now if simulating search
+  if ( semi_res->simulation_level & WEAVE_SIMULATE ) {
+    return XLAL_SUCCESS;
+  }
+
+  // Update multi-detector F-statistics
+  ( *item )->mean2F = semi_res->mean2F->data[freq_idx];
+  if ( par->per_nsegments > 0 ) {
+    for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
+      ( *item )->coh2F[j] = semi_res->coh2F[j][freq_idx];
+    }
+  }
+
+  // Update per-detector F-statistics
+  if ( par->per_detectors != NULL ) {
+    for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
+      ( *item )->mean2F_det[i] = semi_res->mean2F_det[i]->data[freq_idx];
+      if (  par->per_nsegments > 0 ) {
+        for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
+          if ( semi_res->coh2F_det[i][j] != NULL ) {
+            ( *item )->coh2F_det[i][j] = semi_res->coh2F_det[i][j][freq_idx];
+          } else {
+            // There is not per-detector F-statistic for this segment, usually because this segment contains
+            // no data from this detector. In this case we output a clearly invalid F-statistic value.
+            ( *item )->coh2F_det[i][j] = NAN;
+          }
+        }
+      }
+    }
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
+///
 /// Destroy a output result item
 ///
 void XLALWeaveOutputResultItemDestroy(

@@ -226,21 +226,3 @@ XLAL_FAIL:
   return 2;
 
 }
-
-/// \cond DONT_DOXYGEN
-
-// This function is not required by lalapps_WeaveCompare, but
-// must be defined since it is referenced in OutputResults.o,
-// which lalapps_WeaveCompare then links against
-int XLALWeaveFillOutputResultItem(
-  WeaveOutputResultItem UNUSED **item,
-  BOOLEAN UNUSED *full_init,
-  const WeaveSemiResults UNUSED *semi_res,
-  const size_t UNUSED nspins,
-  const size_t UNUSED freq_idx
-  )
-{
-  XLAL_ERROR( XLAL_EFAILED, "Implementation error" );
-}
-
-/// \endcond

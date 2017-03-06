@@ -1024,7 +1024,7 @@ int main( int argc, char *argv[] )
     if ( semi_nfreqs > 0 ) {
 
       // Initialise partial semicoherent results
-      XLAL_CHECK_MAIN( XLALWeaveSemiPartialsInit( &semi_parts, simulation_level, per_detectors, per_nsegments, &semi_phys, dfreq, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALWeaveSemiPartialsInit( &semi_parts, simulation_level, ndetectors, nsegments, &semi_phys, dfreq, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Start timing
       double cpu_timing_tic = cpu_time();

@@ -336,7 +336,7 @@ int XLALWeaveResultsToplistAdd(
     }
 
     // Fill output result item, creating a new one if needed
-    XLAL_CHECK( XLALWeaveFillOutputResultItem( &toplist->saved_item, &full_init, semi_res, toplist->par->nspins, i ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALWeaveFillOutputResultItem( &toplist->saved_item, &full_init, toplist->par, semi_res, toplist->par->nspins, i ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Add item to heap
     const WeaveOutputResultItem *prev_item = toplist->saved_item;

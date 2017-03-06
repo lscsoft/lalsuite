@@ -27,6 +27,7 @@
 
 #include "Weave.h"
 
+#include <lal/VectorMath.h>
 #include <lal/ComputeFstat.h>
 
 #ifdef __cplusplus
@@ -56,7 +57,30 @@ typedef struct tagWeaveSemiPartials WeaveSemiPartials;
 ///
 /// Final results of a semicoherent computation over many segments
 ///
-typedef struct tagWeaveSemiResults WeaveSemiResults;
+typedef struct tagWeaveSemiResults {
+  /// Bitflag representing search simulation level
+  WeaveSimulationLevel simulation_level;
+  /// Number of detectors
+  UINT4 ndetectors;
+  /// Number of segments
+  UINT4 nsegments;
+  /// Frequency spacing for semicoherent results
+  double dfreq;
+  /// Number of frequencies
+  UINT4 nfreqs;
+  /// Per-segment coherent template parameters of the first frequency bin (optional)
+  const PulsarDopplerParams *coh_phys;
+  /// Per-segment multi-detector F-statistics per frequency (optional)
+  const REAL4 *const *coh2F;
+  /// Per-segment per-detector F-statistics per frequency (optional)
+  const REAL4 *const *coh2F_det[PULSAR_MAX_DETECTORS];
+  /// Semicoherent template parameters of the first frequency bin
+  PulsarDopplerParams semi_phys;
+  /// Mean multi-detector F-statistics per frequency
+  REAL4VectorAligned *mean2F;
+  /// Mean per-detector F-statistics per frequency
+  REAL4VectorAligned *mean2F_det[PULSAR_MAX_DETECTORS];
+} WeaveSemiResults;
 
 WeaveCohInput *XLALWeaveCohInputCreate(
   const WeaveSimulationLevel simulation_level,
@@ -78,8 +102,8 @@ void XLALWeaveCohResultsDestroy(
 int XLALWeaveSemiPartialsInit(
   WeaveSemiPartials **semi_parts,
   const WeaveSimulationLevel simulation_level,
-  const LALStringVector *per_detectors,
-  const UINT4 per_nsegments,
+  const UINT4 ndetectors,
+  const UINT4 nsegments,
   const PulsarDopplerParams *semi_phys,
   const double dfreq,
   const UINT4 semi_nfreqs
@@ -98,13 +122,6 @@ int XLALWeaveSemiResultsCompute(
   );
 void XLALWeaveSemiResultsDestroy(
   WeaveSemiResults *semi_res
-  );
-int XLALWeaveFillOutputResultItem(
-  WeaveOutputResultItem **item,
-  BOOLEAN *full_init,
-  const WeaveSemiResults *semi_res,
-  const size_t nspins,
-  const size_t freq_idx
   );
 
 /// @}

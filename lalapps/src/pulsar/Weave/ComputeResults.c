@@ -24,8 +24,6 @@
 
 #include "ComputeResults.h"
 
-#include <lal/VectorMath.h>
-
 ///
 /// Aligned arrays use maximum required alignment, i.e.\ 32 bytes for AVX
 ///
@@ -64,33 +62,29 @@ struct tagWeaveCohResults {
 };
 
 ///
-/// Internal definition of results of a coherent computation together with an index offset
-///
-typedef struct {
-  /// Coherent results
-  const WeaveCohResults *res;
-  /// Index offset which should be applied when accessing coherent results
-  UINT4 offset;
-} coh_offset_results;
-
-///
 /// Internal definition of partial results of a semicoherent computation in progress
 ///
 struct tagWeaveSemiPartials {
   /// Bitflag representing search simulation level
   WeaveSimulationLevel simulation_level;
-  /// Per-segment coherent results with appropriate index offsets (optional)
-  coh_offset_results *coh_off_res;
-  /// Number of per-segment coherent results added thus far
-  UINT4 ncoh_off_res;
-  /// Semicoherent template parameters of the first frequency bin
-  PulsarDopplerParams semi_phys;
+  /// Number of detectors
+  UINT4 ndetectors;
+  /// Number of segments
+  UINT4 nsegments;
   /// Frequency spacing for semicoherent results
   double dfreq;
   /// Number of frequencies
   UINT4 nfreqs;
-  /// Number of detectors for per-detector results
-  UINT4 ndetectors;
+  /// Per-segment coherent template parameters of the first frequency bin (optional)
+  PulsarDopplerParams *coh_phys;
+  /// Per-segment multi-detector F-statistics per frequency (optional)
+  const REAL4 **coh2F;
+  /// Per-segment per-detector F-statistics per frequency (optional)
+  const REAL4 **coh2F_det[PULSAR_MAX_DETECTORS];
+  /// Number of coherent results processed thus far
+  UINT4 ncoh_res;
+  /// Semicoherent template parameters of the first frequency bin
+  PulsarDopplerParams semi_phys;
   /// Summed multi-detector F-statistics per frequency
   REAL4VectorAligned *sum2F;
   /// Number of additions to multi-detector F-statistics thus far
@@ -102,35 +96,11 @@ struct tagWeaveSemiPartials {
 };
 
 ///
-/// Internal definition of final results of a semicoherent computation over many segments
-///
-struct tagWeaveSemiResults {
-  /// Bitflag representing search simulation level
-  WeaveSimulationLevel simulation_level;
-  /// Per-segment coherent results with appropriate index offsets (optional)
-  const coh_offset_results *coh_off_res;
-  /// Number of per-segment coherent results (optional)
-  UINT4 ncoh_off_res;
-  /// Semicoherent template parameters of the first frequency bin
-  PulsarDopplerParams semi_phys;
-  /// Frequency spacing for semicoherent results
-  double dfreq;
-  /// Number of frequencies
-  UINT4 nfreqs;
-  /// Number of detectors for per-detector results
-  UINT4 ndetectors;
-  /// Mean multi-detector F-statistics per frequency
-  REAL4VectorAligned *mean2F;
-  /// Mean per-detector F-statistics per frequency
-  REAL4VectorAligned *mean2F_det[PULSAR_MAX_DETECTORS];
-};
-
-///
 /// \name Internal routines
 ///
 /// @{
 
-static int semi_partials_add_REAL4( UINT4 *nsum, REAL4 *sum, const REAL4 *x, const UINT4 nbins );
+static int semi_parts_sum_2F( UINT4 *nsum, REAL4 *sum2F, const REAL4 *coh2F, const UINT4 nfreqs );
 
 /// @}
 
@@ -309,8 +279,8 @@ void XLALWeaveCohResultsDestroy(
 int XLALWeaveSemiPartialsInit(
   WeaveSemiPartials **semi_parts,
   const WeaveSimulationLevel simulation_level,
-  const LALStringVector *per_detectors,
-  const UINT4 per_nsegments,
+  const UINT4 ndetectors,
+  const UINT4 nsegments,
   const PulsarDopplerParams *semi_phys,
   const double dfreq,
   const UINT4 semi_nfreqs
@@ -327,30 +297,30 @@ int XLALWeaveSemiPartialsInit(
   if ( *semi_parts == NULL ) {
     *semi_parts = XLALCalloc( 1, sizeof( **semi_parts ) );
     XLAL_CHECK( *semi_parts != NULL, XLAL_ENOMEM );
-    if ( per_nsegments > 0 ) {
-      ( *semi_parts )->coh_off_res = XLALCalloc( per_nsegments, sizeof( *( *semi_parts )->coh_off_res ) );
-      XLAL_CHECK( ( *semi_parts )->coh_off_res != NULL, XLAL_ENOMEM );
+    ( *semi_parts )->coh_phys = XLALCalloc( nsegments, sizeof( *( *semi_parts )->coh_phys ) );
+    XLAL_CHECK( ( *semi_parts )->coh_phys != NULL, XLAL_ENOMEM );
+    ( *semi_parts )->coh2F = XLALCalloc( nsegments, sizeof( *( *semi_parts )->coh2F ) );
+    XLAL_CHECK( ( *semi_parts )->coh2F != NULL, XLAL_ENOMEM );
+    for ( size_t i = 0; i < ndetectors; ++i ) {
+      ( *semi_parts )->coh2F_det[i] = XLALCalloc( nsegments, sizeof( *( *semi_parts )->coh2F_det[i] ) );
+      XLAL_CHECK( ( *semi_parts )->coh2F_det[i] != NULL, XLAL_ENOMEM );
     }
   }
 
   // Set fields
   ( *semi_parts )->simulation_level = simulation_level;
-  ( *semi_parts )->semi_phys = *semi_phys;
+  ( *semi_parts )->ndetectors = ndetectors;
+  ( *semi_parts )->nsegments = nsegments;
   ( *semi_parts )->dfreq = dfreq;
   ( *semi_parts )->nfreqs = semi_nfreqs;
-  ( *semi_parts )->ndetectors = ( per_detectors != NULL ) ? per_detectors->length : 0;
+  ( *semi_parts )->semi_phys = *semi_phys;
 
-  // Initialise number of per-segment coherent results
-  ( *semi_parts )->ncoh_off_res = 0;
+  // Initialise number of coherent results
+  ( *semi_parts )->ncoh_res = 0;
 
   // Initialise number of additions to multi- and per-detector F-statistics
   ( *semi_parts )->nsum2F = 0;
   XLAL_INIT_MEM( ( *semi_parts )->nsum2F_det );
-
-  // Return now if simulating search with minimal memory allocation
-  if ( ( *semi_parts )->simulation_level & WEAVE_SIMULATE_MIN_MEM ) {
-    return XLAL_SUCCESS;
-  }
 
   // Reallocate vectors of summed multi- and per-detector F-statistics per frequency
   if ( ( *semi_parts )->sum2F == NULL || ( *semi_parts )->sum2F->length < ( *semi_parts )->nfreqs ) {
@@ -378,7 +348,11 @@ void XLALWeaveSemiPartialsDestroy(
   )
 {
   if ( semi_parts != NULL ) {
-    XLALFree( semi_parts->coh_off_res );
+    XLALFree( semi_parts->coh_phys );
+    XLALFree( semi_parts->coh2F );
+    for ( size_t i = 0; i < PULSAR_MAX_DETECTORS; ++i ) {
+      XLALFree( semi_parts->coh2F_det[i] );
+    }
     XLALDestroyREAL4VectorAligned( semi_parts->sum2F );
     for ( size_t i = 0; i < PULSAR_MAX_DETECTORS; ++i ) {
       XLALDestroyREAL4VectorAligned( semi_parts->sum2F_det[i] );
@@ -388,21 +362,21 @@ void XLALWeaveSemiPartialsDestroy(
 }
 
 ///
-/// Add 'nbins' of REAL4 array 'x' to 'sum', and keep track of the number of summations 'nsum'
+/// Add F-statistic array 'coh2F' to summed array 'sum2F', and keep track of the number of summations 'nsum'
 ///
-int semi_partials_add_REAL4(
+int semi_parts_sum_2F(
   UINT4 *nsum,
-  REAL4 *sum,
-  const REAL4 *x,
-  const UINT4 nbins
+  REAL4 *sum2F,
+  const REAL4 *coh2F,
+  const UINT4 nfreqs
   )
 {
   if ( (*nsum)++ == 0 ) {
     // If this is the first summation, just use memcpy()
-    memcpy( sum, x, sizeof( *sum ) * nbins );
+    memcpy( sum2F, coh2F, sizeof( *sum2F ) * nfreqs );
     return XLAL_SUCCESS;
   }
-  return XLALVectorAddREAL4( sum, sum, x, nbins );
+  return XLALVectorAddREAL4( sum2F, sum2F, coh2F, nfreqs );
 }
 
 ///
@@ -417,30 +391,42 @@ int XLALWeaveSemiPartialsAdd(
 
   // Check input
   XLAL_CHECK( semi_parts != NULL, XLAL_EFAULT );
+  XLAL_CHECK( semi_parts->ncoh_res < semi_parts->nsegments, XLAL_EINVAL );
   XLAL_CHECK( coh_res != NULL, XLAL_EFAULT );
 
   // Check that offset does not overrun coherent results arrays
   XLAL_CHECK( coh_offset + semi_parts->nfreqs <= coh_res->nfreqs, XLAL_EFAILED, "Coherent offset (%u) + number of semicoherent frequency bins (%u) > number of coherent frequency bins (%u)", coh_offset, semi_parts->nfreqs, coh_res->nfreqs );
 
-  // Store per-segment coherent template parameters and F-statistics per frequency
-  if ( semi_parts->coh_off_res != NULL ) {
-    semi_parts->coh_off_res[semi_parts->ncoh_off_res].res = coh_res;
-    semi_parts->coh_off_res[semi_parts->ncoh_off_res].offset = coh_offset;
-    ++semi_parts->ncoh_off_res;
-  }
+  // Increment number of processed coherent results
+  const size_t j = semi_parts->ncoh_res;
+  ++semi_parts->ncoh_res;
+
+  // Store per-segment coherent template parameters
+  semi_parts->coh_phys[j] = coh_res->coh_phys;
+  semi_parts->coh_phys[j].fkdot[0] += semi_parts->dfreq * coh_offset;
 
   // Return now if simulating search
   if ( semi_parts->simulation_level & WEAVE_SIMULATE ) {
     return XLAL_SUCCESS;
   }
 
+  // Store per-segment F-statistics per frequency
+  semi_parts->coh2F[j] = coh_res->coh2F->data + coh_offset;
+  for ( size_t i = 0; i < semi_parts->ndetectors; ++i ) {
+    if ( coh_res->coh2F_det[i] != NULL ) {
+      semi_parts->coh2F_det[i][j] = coh_res->coh2F_det[i]->data + coh_offset;
+    } else {
+      semi_parts->coh2F_det[i][j] = NULL;
+    }
+  }
+
   // Add to summed multi-detector F-statistics per frequency, and increment number of additions thus far
-  XLAL_CHECK( semi_partials_add_REAL4( &semi_parts->nsum2F, semi_parts->sum2F->data, coh_res->coh2F->data + coh_offset, semi_parts->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( semi_parts_sum_2F( &semi_parts->nsum2F, semi_parts->sum2F->data, semi_parts->coh2F[j], semi_parts->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Add to summed per-detector F-statistics per frequency, and increment number of additions thus far
   for ( size_t i = 0; i < semi_parts->ndetectors; ++i ) {
-    if ( coh_res->coh2F_det[i] != NULL ) {
-      XLAL_CHECK( semi_partials_add_REAL4( &semi_parts->nsum2F_det[i], semi_parts->sum2F_det[i]->data, coh_res->coh2F_det[i]->data + coh_offset, semi_parts->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    if ( semi_parts->coh2F_det[i][j] != NULL ) {
+      XLAL_CHECK( semi_parts_sum_2F( &semi_parts->nsum2F_det[i], semi_parts->sum2F_det[i]->data, semi_parts->coh2F_det[i][j], semi_parts->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   }
 
@@ -460,6 +446,7 @@ int XLALWeaveSemiResultsCompute(
   // Check input
   XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
   XLAL_CHECK( semi_parts != NULL, XLAL_EFAULT );
+  XLAL_CHECK( semi_parts->ncoh_res == semi_parts->nsegments, XLAL_EINVAL );
 
   // Allocate results struct if required
   if ( *semi_res == NULL ) {
@@ -469,17 +456,14 @@ int XLALWeaveSemiResultsCompute(
 
   // Set fields
   ( *semi_res )->simulation_level = semi_parts->simulation_level;
-  ( *semi_res )->coh_off_res = semi_parts->coh_off_res;
-  ( *semi_res )->ncoh_off_res = semi_parts->ncoh_off_res;
-  ( *semi_res )->semi_phys = semi_parts->semi_phys;
+  ( *semi_res )->ndetectors = semi_parts->ndetectors;
+  ( *semi_res )->nsegments = semi_parts->nsegments;
   ( *semi_res )->dfreq = semi_parts->dfreq;
   ( *semi_res )->nfreqs = semi_parts->nfreqs;
-  ( *semi_res )->ndetectors = semi_parts->ndetectors;
-
-  // Return now if simulating search with minimal memory allocation
-  if ( ( *semi_res )->simulation_level & WEAVE_SIMULATE_MIN_MEM ) {
-    return XLAL_SUCCESS;
-  }
+  ( *semi_res )->coh_phys = semi_parts->coh_phys;
+  ( *semi_res )->coh2F = semi_parts->coh2F;
+  memcpy( ( *semi_res )->coh2F_det, semi_parts->coh2F_det, sizeof( ( *semi_res )->coh2F_det ) );
+  ( *semi_res )->semi_phys = semi_parts->semi_phys;
 
   // Reallocate vectors of mean multi- and per-detector F-statistics per frequency
   if ( ( *semi_res )->mean2F == NULL || ( *semi_res )->mean2F->length < semi_parts->nfreqs ) {
@@ -526,85 +510,4 @@ void XLALWeaveSemiResultsDestroy(
     }
     XLALFree( semi_res );
   }
-}
-
-///
-/// Fill a output result item, creating a new one if needed
-///
-int XLALWeaveFillOutputResultItem(
-  WeaveOutputResultItem **item,
-  BOOLEAN *full_init,
-  const WeaveSemiResults *semi_res,
-  const size_t nspins,
-  const size_t freq_idx
-  )
-{
-
-  // Check input
-  XLAL_CHECK( item != NULL, XLAL_EFAULT );
-  XLAL_CHECK( full_init != NULL, XLAL_EFAULT );
-  XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
-  XLAL_CHECK( freq_idx < semi_res->nfreqs, XLAL_EINVAL );
-
-  // Fully initialise all output result item field, if requested
-  // - Otherwise only output result item fields that change with 'freq_idx' are updated
-  if ( *full_init ) {
-
-    // Set all semicoherent template parameters
-    ( *item )->semi_alpha = semi_res->semi_phys.Alpha;
-    ( *item )->semi_delta = semi_res->semi_phys.Delta;
-    for ( size_t k = 0; k <= nspins; ++k ) {
-      ( *item )->semi_fkdot[k] = semi_res->semi_phys.fkdot[k];
-    }
-
-    // Set all coherent template parameters
-    for ( size_t j = 0; j < semi_res->ncoh_off_res; ++j ) {
-      ( *item )->coh_alpha[j] = semi_res->coh_off_res[j].res->coh_phys.Alpha;
-      ( *item )->coh_delta[j] = semi_res->coh_off_res[j].res->coh_phys.Delta;
-      for ( size_t k = 0; k <= nspins; ++k ) {
-        ( *item )->coh_fkdot[k][j] = semi_res->coh_off_res[j].res->coh_phys.fkdot[k];
-      }
-    }
-
-    // Next time, only output result item fields that change with 'freq_idx' should need updating
-    *full_init = 0;
-
-  }
-
-  // Update semicoherent and coherent template frequency
-  ( *item )->semi_fkdot[0] = semi_res->semi_phys.fkdot[0] + freq_idx * semi_res->dfreq;
-  for ( size_t j = 0; j < semi_res->ncoh_off_res; ++j ) {
-    const coh_offset_results *coh_off_res = &semi_res->coh_off_res[j];
-    ( *item )->coh_fkdot[0][j] = coh_off_res->res->coh_phys.fkdot[0] + ( coh_off_res->offset + freq_idx ) * semi_res->dfreq;
-  }
-
-  // Return now if simulating search
-  if ( semi_res->simulation_level & WEAVE_SIMULATE ) {
-    return XLAL_SUCCESS;
-  }
-
-  // Update multi-detector F-statistics
-  ( *item )->mean2F = semi_res->mean2F->data[freq_idx];
-  for ( size_t j = 0; j < semi_res->ncoh_off_res; ++j ) {
-    const coh_offset_results *coh_off_res = &semi_res->coh_off_res[j];
-    ( *item )->coh2F[j] = coh_off_res->res->coh2F->data[coh_off_res->offset + freq_idx];
-  }
-
-  // Update per-detector F-statistics
-  for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
-    ( *item )->mean2F_det[i] = semi_res->mean2F_det[i]->data[freq_idx];
-    for ( size_t j = 0; j < semi_res->ncoh_off_res; ++j ) {
-      const coh_offset_results *coh_off_res = &semi_res->coh_off_res[j];
-      if ( coh_off_res->res->coh2F_det[i] != NULL ) {
-        ( *item )->coh2F_det[i][j] = coh_off_res->res->coh2F_det[i]->data[coh_off_res->offset + freq_idx];
-      } else {
-        // There is not per-detector F-statistic for this segment, usually because this segment contains
-        // no data from this detector. In this case we output a clearly invalid F-statistic value.
-        ( *item )->coh2F_det[i][j] = NAN;
-      }
-    }
-  }
-
-  return XLAL_SUCCESS;
-
 }
