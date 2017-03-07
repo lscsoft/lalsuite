@@ -355,7 +355,7 @@ int main( int argc, char *argv[] )  {
   /* fclose(cfp); */
   LogPrintf(LOG_NORMAL,"%s : computed the demodulated power\n",__func__);
 
-  LogPrintf(LOG_NORMAL,"%s : time to compute coarse grid = %g\n",__func__, XLALGetCPUTime() - coarse_t0);
+  LogPrintf(LOG_NORMAL,"%s : time to compute coarse grid = %0.12e\n",__func__, XLALGetCPUTime() - coarse_t0);
   LogPrintf(LOG_NORMAL,"%s : number of coarse grid points = %"LAL_UINT8_FORMAT"\n",__func__, num_coarse);
 
   /**********************************************************************************/
@@ -383,7 +383,7 @@ int main( int argc, char *argv[] )  {
   fclose(sfp);
   LogPrintf(LOG_NORMAL,"%s : computed the semi-coherent statistic\n",__func__);
 
-  LogPrintf(LOG_NORMAL,"%s : time to compute fine grid = %g\n",__func__, XLALGetCPUTime() - fine_t0);
+  LogPrintf(LOG_NORMAL,"%s : time to compute fine grid = %0.12e\n",__func__, XLALGetCPUTime() - fine_t0);
   LogPrintf(LOG_NORMAL,"%s : number of fine grid points = %"LAL_UINT8_FORMAT"\n",__func__, num_fine);
 
   /**********************************************************************************/
