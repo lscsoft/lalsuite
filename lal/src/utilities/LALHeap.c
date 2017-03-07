@@ -29,6 +29,9 @@
 /* Evaluates true if the pair (x, y) is NOT ordered, according to the heap compare function */
 #define UNORDERED(h, x, y)   ((h)->cmp((h)->cmp_param, (x), (y)) * (h)->min_or_max_heap > 0)
 
+/* Function to use when adding an element to the heap */
+typedef int ( *LALHeapAddFcn )( LALHeap *h, void **x );
+
 struct tagLALHeap {
   void **data;                  /* Binary heap data */
   int data_len;                 /* Size of the memory block 'data', in number of elements */
@@ -38,6 +41,7 @@ struct tagLALHeap {
   int min_or_max_heap;          /* -1|+1 if root of heap is minimum|maximum element */
   LALHeapCmpParamFcn cmp;       /* Parameterised heap element comparison function */
   void *cmp_param;              /* Parameter to pass to comparison function */
+  LALHeapAddFcn add;            /* Function to use when adding an element to the heap */
 };
 
 /* Call a non-parameterised compare function, which is passed in 'param' */
@@ -93,6 +97,52 @@ static void heap_trickle_down( LALHeap *h, int i )
   } while ( i >= 0 );
 }
 
+/* Add item to heap which is full */
+static int heap_add_full(
+  LALHeap *h,
+  void **x
+  )
+{
+
+  /* If new element should replace root */
+  if ( UNORDERED( h, h->data[0], *x ) ) {
+
+    /* Swap root with *x, and trickle down new root to restore heap property */
+    SWAP( h->data[0], *x );
+    heap_trickle_down( h, 0 );
+
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
+/* Add item to heap which is unlimited, or not full yet */
+static int heap_add_not_full(
+  LALHeap *h,
+  void **x
+  )
+{
+
+  /* Resize binary heap; designed so that resizing costs amortized constant time */
+  if ( h->n + 1 > h->data_len ) {
+    XLAL_CHECK( heap_resize( h ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  /* Add new element to end of binary heap, and bubble up to restore heap property */
+  h->data[h->n++] = *x;
+  *x = NULL;
+  heap_bubble_up( h, h->n - 1 );
+
+  /* If (limited) heap is now full, switch add function to heap_add_full() */
+  if ( h->max_size > 0 && h->n == h->max_size ) {
+    h->add = heap_add_full;
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
 LALHeap *XLALHeapCreate(
   LALHeapDtorFcn dtor,
   int max_size,
@@ -133,6 +183,7 @@ LALHeap *XLALHeapCreate2(
   h->min_or_max_heap = min_or_max_heap;
   h->cmp = cmp;
   h->cmp_param = cmp_param;
+  h->add = heap_add_not_full;
 
   return h;
 
@@ -212,23 +263,8 @@ int XLALHeapAdd(
   XLAL_CHECK( x != NULL, XLAL_EFAULT );
   XLAL_CHECK( *x != NULL, XLAL_EINVAL );
 
-  if ( h->max_size == 0 || h->n < h->max_size ) { /* If heap is unlimited, or not full yet */
-
-    /* Resize binary heap; designed so that resizing costs amortized constant time */
-    if ( h->n + 1 > h->data_len ) {
-      XLAL_CHECK( heap_resize( h ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-
-    /* Add new element to end of binary heap, and bubble up to restore heap property */
-    h->data[h->n++] = *x;
-    *x = NULL;
-    heap_bubble_up( h, h->n - 1 );
-
-  } else if ( UNORDERED( h, h->data[0], *x ) ) { /* If new element should replace root */
-    XLAL_CHECK( XLALHeapExchangeRoot( h, x ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
-
-  return XLAL_SUCCESS;
+  /* Call the appropriate function */
+  return ( h->add )( h, x );
 
 }
 
@@ -252,6 +288,9 @@ void *XLALHeapExtractRoot(
   if ( 3*h->n < h->data_len ) {
     XLAL_CHECK_NULL( heap_resize( h ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
+
+  /* Heap now cannot be full, so switch add function to heap_add_not_full() */
+  h->add = heap_add_not_full;
 
   return x;
 

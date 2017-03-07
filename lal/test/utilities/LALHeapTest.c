@@ -63,6 +63,10 @@ static int reverse_ptr_int( void *param, void *x )
 int main( void )
 {
 
+  /* Turn off buffering to sync standard output and error printing */
+  setvbuf( stdout, NULL, _IONBF, 0 );
+  setvbuf( stderr, NULL, _IONBF, 0 );
+
   /* Create heaps for storing integers */
   LALHeap *minh = XLALHeapCreate( XLALFree, 0, -1, cmp_ptr_int );
   XLAL_CHECK_MAIN( minh != NULL, XLAL_EFUNC );
@@ -209,8 +213,6 @@ int main( void )
         XLAL_CHECK_MAIN( XLALHeapVisit( max10h, check_ptr_int, &ref0 ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
     }
-
-    fflush( stdout );
   }
 
   /* Modify unlimited heaps, and check properties */
@@ -232,6 +234,7 @@ int main( void )
       XLAL_CHECK( XLALHeapModify( minh, reverse_ptr_int, &param ) == XLAL_SUCCESS, XLAL_EFUNC );
       printf( "minh={" );
       XLAL_CHECK_MAIN( XLALHeapVisit( minh, print_ptr_int, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+      printf( " }" );
       const int r = *( ( const int * ) XLALHeapRoot( minh ) );
       const int r_ref = *ref[0];
       XLAL_CHECK_MAIN( r == r_ref, XLAL_EFAILED, "(root) %i != %i (ref)", r, r_ref );
@@ -245,6 +248,7 @@ int main( void )
       XLAL_CHECK( XLALHeapModify( maxh, reverse_ptr_int, &param ) == XLAL_SUCCESS, XLAL_EFUNC );
       printf( "maxh={" );
       XLAL_CHECK_MAIN( XLALHeapVisit( maxh, print_ptr_int, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+      printf( " }" );
       const int r = *( ( const int * ) XLALHeapRoot( maxh ) );
       const int r_ref = *ref[99];
       XLAL_CHECK_MAIN( r == r_ref, XLAL_EFAILED, "(root) %i != %i (ref)", r, r_ref );
@@ -254,7 +258,6 @@ int main( void )
         XLAL_CHECK_MAIN( XLALHeapVisit( maxh, check_ptr_int, &ref0 ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
     }
-    fflush( stdout );
   }
 
   /* Resize unlimited heaps, and check properties */
@@ -280,7 +283,6 @@ int main( void )
       }
       XLALFree( elems );
     }
-    fflush( stdout );
   }
 
   /* Cleanup */
@@ -294,7 +296,6 @@ int main( void )
     /* Check for memory leaks */
     LALCheckMemoryLeaks();
 
-    fflush( stdout );
   }
 
   return EXIT_SUCCESS;
