@@ -40,6 +40,7 @@ double  XLALSimLocateOmegaTime(
     INT4 use_optimized
     )
 {
+    *tMaxOmega = 0; //Zach E: Fixes Heisenbug with ICC 16 and 17 compilers (5181); removing this line will result in segfaults with both compilers.
     /*
     * Locate merger point (max omega),
     * WaveStep 1.1: locate merger point */
