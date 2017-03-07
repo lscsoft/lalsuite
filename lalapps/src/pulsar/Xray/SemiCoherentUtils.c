@@ -516,7 +516,8 @@ int XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **fs
  * This function is simply a wrapper for XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries()
  *
  */
-int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **power,     /**< [out] the spin derivitive demodulated power */
+int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(UINT8 *num_coarse,                       /**< [out] number of coarse templates computed */
+                                                  REAL4DemodulatedPowerVector **power,     /**< [out] the spin derivitive demodulated power */
                                                   COMPLEX8TimeSeriesArray *dsdata,         /**< [in] the downsampled SFT data */
                                                   GridParametersVector *gridparams,        /**< [in/out] the spin derivitive gridding parameters */
                                                   FILE *fp		/**< UNDOCUMENTED */
@@ -555,6 +556,7 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
   (*power)->length = dsdata->length;
 
   /* loop over each segment */
+  *num_coarse = 0;
   for (i=0;i<dsdata->length;i++) {
 
     COMPLEX8TimeSeries *ts = dsdata->data[i];
@@ -638,6 +640,7 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
       }
       (*power)->segment[i]->epoch.gpsSeconds = ts->epoch.gpsSeconds;
       (*power)->segment[i]->epoch.gpsNanoSeconds = ts->epoch.gpsNanoSeconds;
+      *num_coarse += fs->data->length;
 
       /* free memory */
       XLALDestroyCOMPLEX8FrequencySeries(fs);

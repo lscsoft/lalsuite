@@ -111,7 +111,7 @@ extern int vrbflg;              /**< defined in lalapps.c */
 /* define functions */
 int main(int argc,char *argv[]);
 int XLALReadUserVars(int argc,char *argv[],UserInput_t *uvar, CHAR **clargs);
-int XLALComputeSemiCoherentStat(FILE *fp,REAL4DemodulatedPowerVector *power,ParameterSpace *pspace,GridParametersVector *fgrid,GridParameters *bingrid,INT4 ntoplist,BOOLEAN with_xbins);
+int XLALComputeSemiCoherentStat(UINT8 *num_fine,FILE *fp,REAL4DemodulatedPowerVector *power,ParameterSpace *pspace,GridParametersVector *fgrid,GridParameters *bingrid,INT4 ntoplist,BOOLEAN with_xbins);
 int XLALDefineBinaryParameterSpace(REAL8Space **, LIGOTimeGPS, REAL8, UserInput_t *);
 int XLALOpenSemiCoherentResultsFile(FILE **,CHAR *,ParameterSpace *,CHAR *,UserInput_t *);
 int XLALtoplist(REAL4 x,Template *params,toplist *TL);
@@ -344,13 +344,19 @@ int main( int argc, char *argv[] )  {
   /* COMPUTE THE STATISTICS ON THE COARSE GRID */
   /**********************************************************************************/
 
+  const double coarse_t0 = XLALGetCPUTime();
+  UINT8 num_coarse = 0;
+
   /* compute the demodulated power on the frequency derivitive grid */
-  if (XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(&dmpower,dstimevec,freqgridparams,NULL)) {
+  if (XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(&num_coarse,&dmpower,dstimevec,freqgridparams,NULL)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
   /* fclose(cfp); */
   LogPrintf(LOG_DEBUG,"%s : computed the demodulated power\n",__func__);
+
+  LogPrintf(LOG_DEBUG,"%s : time to compute coarse grid = %g\n",__func__, XLALGetCPUTime() - coarse_t0);
+  LogPrintf(LOG_DEBUG,"%s : number of coarse grid points = %"LAL_UINT8_FORMAT"\n",__func__, num_coarse);
 
   /**********************************************************************************/
   /* OPEN RESULTS FILE */
@@ -366,13 +372,19 @@ int main( int argc, char *argv[] )  {
   /* COMPUTE THE STATISTICS ON THE FINE GRID */
   /**********************************************************************************/
 
+  const double fine_t0 = XLALGetCPUTime();
+  UINT8 num_fine = 0;
+
   /* compute the semi-coherent detection statistic on the fine grid */
-  if (XLALComputeSemiCoherentStat(sfp,dmpower,&pspace,freqgridparams,bingridparams,uvar.ntoplist,uvar.with_xbins)) {
+  if (XLALComputeSemiCoherentStat(&num_fine,sfp,dmpower,&pspace,freqgridparams,bingridparams,uvar.ntoplist,uvar.with_xbins)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALComputeSemiCoherentStat() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
   fclose(sfp);
   LogPrintf(LOG_DEBUG,"%s : computed the semi-coherent statistic\n",__func__);
+
+  LogPrintf(LOG_DEBUG,"%s : time to compute fine grid = %g\n",__func__, XLALGetCPUTime() - fine_t0);
+  LogPrintf(LOG_DEBUG,"%s : number of fine grid points = %"LAL_UINT8_FORMAT"\n",__func__, num_fine);
 
   /**********************************************************************************/
   /* CLEAN UP */
@@ -538,7 +550,8 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
  * This function computes the semi-coherent s.
  *
  */
-int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [in] the output file pointer */
+int XLALComputeSemiCoherentStat(UINT8 *num_fine,                         /**< [out] number of fine templates computed */
+                                FILE *fp,                                /**< [in] the output file pointer */
                                 REAL4DemodulatedPowerVector *power,      /**< [in] the input data in the form of power */
                                 ParameterSpace *pspace,                  /**< [in] the parameter space */
                                 GridParametersVector *fgrid,		/**< UNDOCUMENTED */
@@ -652,6 +665,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   REAL4 *logLratiosumvec = NULL;
 
   /* single loop over binary templates */
+  *num_fine = 0;
   while (getnext(&bintemp,bingrid,temppspace,r)) {
 
     const REAL8 asini = bintemp->x[1];           /* define asini */
@@ -717,6 +731,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
 
     } /* end loop over segments */
     /*************************************************************************************/
+    *num_fine += tot_xbins;
 
     /* make it a true chi-squared variable */
     XLAL_CHECK( XLALVectorScaleREAL4( logLratiosumvec, 2.0, logLratiosumvec, tot_xbins ) == XLAL_SUCCESS, XLAL_EFUNC );

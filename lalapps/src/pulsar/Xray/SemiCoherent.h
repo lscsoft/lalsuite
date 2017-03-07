@@ -232,7 +232,7 @@ extern "C" {
   int XLALSFTVectorToCOMPLEX8TimeSeriesArray(COMPLEX8TimeSeriesArray **dstimevec, SFTVector *sftvec);
   int XLALSFTToCOMPLEX8TimeSeries(COMPLEX8TimeSeries **ts, COMPLEX8FrequencySeries *sft,COMPLEX8FFTPlan **plan);
   int XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **fs,const COMPLEX8TimeSeries *ts,GridParameters **gridparams);
-  int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector**,COMPLEX8TimeSeriesArray*,GridParametersVector*,FILE *fp);
+  int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(UINT8 *num_coarse,REAL4DemodulatedPowerVector**,COMPLEX8TimeSeriesArray*,GridParametersVector*,FILE *fp);
   int XLALApplyPhaseCorrection(COMPLEX8TimeSeries **outts, COMPLEX8TimeSeries *ints, Template *fn);
   /* int XLALNormaliseSFTs(SFTVector **sftvec,UINT4 blocksize); */
   int XLALComputeBinaryGridParams(GridParameters **binarygridparams,REAL8Space *space,REAL8 T,REAL8 DT,REAL8 mu,REAL8 coverage);
