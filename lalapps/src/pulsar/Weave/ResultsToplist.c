@@ -38,6 +38,8 @@ struct tagWeaveResultsToplist {
   const char *stat_name;
   /// Description of ranking statistic
   const char *stat_desc;
+  /// Function which minimally initialises a toplist item before it is added
+  WeaveResultsToplistItemInit toplist_item_init_fcn;
   /// Heap which ranks output results by a particular statistic
   LALHeap *heap;
   /// Save a no-longer-used toplist item for re-use
@@ -54,7 +56,6 @@ static int compare_templates( BOOLEAN *equal, const char *loc_str, const char *t
 static int compare_vectors( BOOLEAN *equal, const VectorComparison *result_tol, const REAL4Vector *res_1, const REAL4Vector *res_2 );
 static int toplist_fits_table_init( FITSFile *file, const WeaveResultsToplist *toplist );
 static int toplist_fits_table_write_visitor( void *param, const void *x );
-static int toplist_item_fill( WeaveResultsToplistItem **item, BOOLEAN *full_init, const WeaveResultsToplist *toplist, const WeaveSemiResults *semi_res, const size_t nspins, const size_t freq_idx );
 static int toplist_item_sort_by_semi_phys( const void *x, const void *y );
 static void toplist_item_destroy( WeaveResultsToplistItem *item );
 
@@ -98,95 +99,6 @@ WeaveResultsToplistItem *toplist_item_create(
   }
 
   return item;
-
-}
-
-///
-/// Fill a output result item, creating a new one if needed
-///
-int toplist_item_fill(
-  WeaveResultsToplistItem **item,
-  BOOLEAN *full_init,
-  const WeaveResultsToplist *toplist,
-  const WeaveSemiResults *semi_res,
-  const size_t nspins,
-  const size_t freq_idx
-  )
-{
-
-  // Check input
-  XLAL_CHECK( item != NULL, XLAL_EFAULT );
-  XLAL_CHECK( full_init != NULL, XLAL_EFAULT );
-  XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
-  XLAL_CHECK( freq_idx < semi_res->nfreqs, XLAL_EINVAL );
-
-  // Fully initialise all output result item field, if requested
-  // - Otherwise only output result item fields that change with 'freq_idx' are updated
-  if ( *full_init ) {
-
-    // Set all semicoherent template parameters
-    ( *item )->semi_alpha = semi_res->semi_phys.Alpha;
-    ( *item )->semi_delta = semi_res->semi_phys.Delta;
-    for ( size_t k = 0; k <= nspins; ++k ) {
-      ( *item )->semi_fkdot[k] = semi_res->semi_phys.fkdot[k];
-    }
-
-    // Set all coherent template parameters
-    if ( toplist->per_nsegments > 0 ) {
-      for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
-        ( *item )->coh_alpha[j] = semi_res->coh_phys[j].Alpha;
-        ( *item )->coh_delta[j] = semi_res->coh_phys[j].Delta;
-        for ( size_t k = 0; k <= nspins; ++k ) {
-          ( *item )->coh_fkdot[k][j] = semi_res->coh_phys[j].fkdot[k];
-        }
-      }
-    }
-
-    // Next time, only output result item fields that change with 'freq_idx' should need updating
-    *full_init = 0;
-
-  }
-
-  // Update semicoherent and coherent template frequency
-  ( *item )->semi_fkdot[0] = semi_res->semi_phys.fkdot[0] + freq_idx * semi_res->dfreq;
-  if ( toplist->per_nsegments > 0 ) {
-    for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
-      ( *item )->coh_fkdot[0][j] = semi_res->coh_phys[j].fkdot[0] + freq_idx * semi_res->dfreq;
-    }
-  }
-
-  // Return now if simulating search
-  if ( semi_res->simulation_level & WEAVE_SIMULATE ) {
-    return XLAL_SUCCESS;
-  }
-
-  // Update multi-detector F-statistics
-  ( *item )->mean2F = semi_res->mean2F->data[freq_idx];
-  if ( toplist->per_nsegments > 0 ) {
-    for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
-      ( *item )->coh2F[j] = semi_res->coh2F[j][freq_idx];
-    }
-  }
-
-  // Update per-detector F-statistics
-  if ( toplist->per_detectors != NULL ) {
-    for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
-      ( *item )->mean2F_det[i] = semi_res->mean2F_det[i]->data[freq_idx];
-      if (  toplist->per_nsegments > 0 ) {
-        for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
-          if ( semi_res->coh2F_det[i][j] != NULL ) {
-            ( *item )->coh2F_det[i][j] = semi_res->coh2F_det[i][j][freq_idx];
-          } else {
-            // There is not per-detector F-statistic for this segment, usually because this segment contains
-            // no data from this detector. In this case we output a clearly invalid F-statistic value.
-            ( *item )->coh2F_det[i][j] = NAN;
-          }
-        }
-      }
-    }
-  }
-
-  return XLAL_SUCCESS;
 
 }
 
@@ -424,6 +336,7 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   const char *stat_name,
   const char *stat_desc,
   const int toplist_limit,
+  WeaveResultsToplistItemInit toplist_item_init_fcn,
   LALHeapCmpFcn toplist_item_compare_fcn
   )
 {
@@ -442,6 +355,7 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   toplist->per_nsegments = per_nsegments;
   toplist->stat_name = stat_name;
   toplist->stat_desc = stat_desc;
+  toplist->toplist_item_init_fcn = toplist_item_init_fcn;
 
   // Copy list of detectors
   if ( per_detectors != NULL ) {
@@ -486,32 +400,83 @@ int XLALWeaveResultsToplistAdd(
   XLAL_CHECK( toplist != NULL, XLAL_EFAULT );
   XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
 
-  // Must initialise all output result item fields the first time
-  BOOLEAN full_init = 1;
-
   // Iterate over the frequency bins of the semicoherent results
-  for ( size_t i = 0; i < semi_nfreqs; ++i ) {
+  for ( size_t freq_idx = 0; freq_idx < semi_nfreqs; ++freq_idx ) {
 
-    // Create a new output result item if needed
+    // Create a new toplist item if needed
     if ( toplist->saved_item == NULL ) {
       toplist->saved_item = toplist_item_create( toplist );
       XLAL_CHECK( toplist->saved_item != NULL, XLAL_ENOMEM );
-
-      // Output result item must be fully initialised
-      full_init = 1;
-
     }
+    WeaveResultsToplistItem *item = toplist->saved_item;
 
-    // Fill output result item, creating a new one if needed
-    XLAL_CHECK( toplist_item_fill( &toplist->saved_item, &full_init, toplist, semi_res, toplist->nspins, i ) == XLAL_SUCCESS, XLAL_EFUNC );
+    // Perform minimal initialisation of toplist item
+    ( toplist->toplist_item_init_fcn )( item, semi_res, freq_idx );
 
     // Add item to heap
-    const WeaveResultsToplistItem *prev_item = toplist->saved_item;
     XLAL_CHECK( XLALHeapAdd( toplist->heap, ( void ** ) &toplist->saved_item ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // If heap added item and returned a different, now-unused item,
-    // that item will have to be fully initialised at the next call
-    full_init = ( toplist->saved_item != prev_item );
+    // Skip remainder of loop if item was not added to heap
+    if ( item == toplist->saved_item ) {
+      continue;
+    }
+
+    // Set all semicoherent template parameters
+    item->semi_alpha = semi_res->semi_phys.Alpha;
+    item->semi_delta = semi_res->semi_phys.Delta;
+    for ( size_t k = 0; k <= toplist->nspins; ++k ) {
+      item->semi_fkdot[k] = semi_res->semi_phys.fkdot[k];
+    }
+
+    // Set all coherent template parameters
+    if ( toplist->per_nsegments > 0 ) {
+      for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
+        item->coh_alpha[j] = semi_res->coh_phys[j].Alpha;
+        item->coh_delta[j] = semi_res->coh_phys[j].Delta;
+        for ( size_t k = 0; k <= toplist->nspins; ++k ) {
+          item->coh_fkdot[k][j] = semi_res->coh_phys[j].fkdot[k];
+        }
+      }
+    }
+
+    // Update semicoherent and coherent template frequency
+    item->semi_fkdot[0] = semi_res->semi_phys.fkdot[0] + freq_idx * semi_res->dfreq;
+    if ( toplist->per_nsegments > 0 ) {
+      for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
+        item->coh_fkdot[0][j] = semi_res->coh_phys[j].fkdot[0] + freq_idx * semi_res->dfreq;
+      }
+    }
+
+    // Skip remainder of loop if simulating search
+    if ( semi_res->simulation_level & WEAVE_SIMULATE ) {
+      continue;
+    }
+
+    // Update multi-detector F-statistics
+    item->mean2F = semi_res->mean2F->data[freq_idx];
+    if ( toplist->per_nsegments > 0 ) {
+      for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
+        item->coh2F[j] = semi_res->coh2F[j][freq_idx];
+      }
+    }
+
+    // Update per-detector F-statistics
+    if ( toplist->per_detectors != NULL ) {
+      for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
+        item->mean2F_det[i] = semi_res->mean2F_det[i]->data[freq_idx];
+        if (  toplist->per_nsegments > 0 ) {
+          for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
+            if ( semi_res->coh2F_det[i][j] != NULL ) {
+              item->coh2F_det[i][j] = semi_res->coh2F_det[i][j][freq_idx];
+            } else {
+              // There is not per-detector F-statistic for this segment, usually because this segment contains
+              // no data from this detector. In this case we output a clearly invalid F-statistic value.
+              item->coh2F_det[i][j] = NAN;
+            }
+          }
+        }
+      }
+    }
 
   }
 

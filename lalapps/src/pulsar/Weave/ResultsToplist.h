@@ -73,6 +73,11 @@ typedef struct tagWeaveResultsToplistItem {
   REAL4 *coh2F_det[PULSAR_MAX_DETECTORS];
 } WeaveResultsToplistItem;
 
+///
+/// Function which minimally initialises a toplist item before it is added
+///
+typedef void ( *WeaveResultsToplistItemInit )( WeaveResultsToplistItem *item, const WeaveSemiResults *semi_res, const size_t freq_idx );
+
 WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   const size_t nspins,
   const LALStringVector *per_detectors,
@@ -80,6 +85,7 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   const char *stat_name,
   const char *stat_desc,
   const int toplist_limit,
+  WeaveResultsToplistItemInit toplist_item_init_fcn,
   LALHeapCmpFcn toplist_item_compare_fcn
   );
 void XLALWeaveResultsToplistDestroy(

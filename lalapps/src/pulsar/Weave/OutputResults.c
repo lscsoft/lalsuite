@@ -58,8 +58,21 @@ struct tagWeaveOutputResults {
 /// @{
 
 static int toplist_item_compare_by_mean2F( const void *x, const void *y );
+static void toplist_item_init_mean2F( WeaveResultsToplistItem *item, const WeaveSemiResults *semi_res, const size_t freq_idx );
 
 /// @}
+
+///
+/// Initialise mean multi-detector F-statistic of toplist item
+///
+static void toplist_item_init_mean2F(
+  WeaveResultsToplistItem *item,
+  const WeaveSemiResults *semi_res,
+  const size_t freq_idx
+  )
+{
+  item->mean2F = semi_res->mean2F->data[freq_idx];
+}
 
 ///
 /// Compare toplist items by mean multi-detector F-statistic
@@ -116,7 +129,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   // Create a toplist which ranks results by mean multi-detector F-statistic
   if ( toplist_types & WEAVE_TOPLIST_RANKED_MEAN2F ) {
-    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, per_detectors, per_nsegments, "mean2F", "mean multi-detector F-statistic", toplist_limit, toplist_item_compare_by_mean2F );
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, per_detectors, per_nsegments, "mean2F", "mean multi-detector F-statistic", toplist_limit, toplist_item_init_mean2F, toplist_item_compare_by_mean2F );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists++ < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
   }
