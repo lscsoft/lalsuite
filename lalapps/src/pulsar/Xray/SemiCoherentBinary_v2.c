@@ -153,7 +153,7 @@ int main( int argc, char *argv[] )  {
     LogPrintf(LOG_CRITICAL,"%s : XLALReadUserVars() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : read in uservars\n",__func__);
+  LogPrintf(LOG_NORMAL,"%s : read in uservars\n",__func__);
 
   /* initialise sin-cosine lookup table */
   XLALSinCosLUTInit();
@@ -221,7 +221,7 @@ int main( int argc, char *argv[] )  {
     fmin_read = MINBAND*floor((uvar.freq - WINGS_FACTOR*uvar.freq*wings - (REAL8)uvar.blocksize/(REAL8)uvar.tsft)/MINBAND);
     fmax_read = MINBAND*ceil((uvar.freq + (REAL8)uvar.blocksize/(REAL8)uvar.tsft + uvar.freqband + WINGS_FACTOR*(uvar.freq + uvar.freqband)*wings)/MINBAND);
     fband_read = fmax_read - fmin_read;
-    LogPrintf(LOG_DEBUG,"%s : reading in SFT frequency band [%f -> %f]\n",__func__,fmin_read,fmax_read);
+    LogPrintf(LOG_NORMAL,"%s : reading in SFT frequency band [%f -> %f]\n",__func__,fmin_read,fmax_read);
   }
 
   /* initialise the random number generator */
@@ -239,14 +239,14 @@ int main( int argc, char *argv[] )  {
     LogPrintf(LOG_CRITICAL,"%s : XLALReadSFTs() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : read in SFTs\n",__func__);
+  LogPrintf(LOG_NORMAL,"%s : read in SFTs\n",__func__);
 
   /* define SFT length and the start and span of the observations plus the definitive segment time */
   pspace.tseg = 1.0/sftvec->data[0].deltaF;
   memcpy(&(pspace.epoch),&(sftvec->data[0].epoch),sizeof(LIGOTimeGPS));
   pspace.span = XLALGPSDiff(&(sftvec->data[sftvec->length-1].epoch),&(sftvec->data[0].epoch)) + pspace.tseg;
-  LogPrintf(LOG_DEBUG,"%s : SFT length = %f seconds\n",__func__,pspace.tseg);
-  LogPrintf(LOG_DEBUG,"%s : entire dataset starts at GPS time %d contains %d SFTS and spans %.0f seconds\n",__func__,pspace.epoch.gpsSeconds,sftvec->length,pspace.span);
+  LogPrintf(LOG_NORMAL,"%s : SFT length = %f seconds\n",__func__,pspace.tseg);
+  LogPrintf(LOG_NORMAL,"%s : entire dataset starts at GPS time %d contains %d SFTS and spans %.0f seconds\n",__func__,pspace.epoch.gpsSeconds,sftvec->length,pspace.span);
 
   /**********************************************************************************/
   /* NORMALISE THE SFTS */
@@ -277,7 +277,7 @@ int main( int argc, char *argv[] )  {
     }
     XLALDestroyREAL8Vector(means);
   }
-  LogPrintf(LOG_DEBUG,"%s : normalised the SFTs\n",__func__);
+  LogPrintf(LOG_NORMAL,"%s : normalised the SFTs\n",__func__);
 
   /* for (i=0;i<sftvec->length;i++) {
     for (j=0;j<sftvec->data[i].data->length;j++) {
@@ -296,7 +296,7 @@ int main( int argc, char *argv[] )  {
     LogPrintf(LOG_CRITICAL,"%s : XLALDefineBinaryParameterSpace() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : defined binary parameter prior space\n",__func__);
+  LogPrintf(LOG_NORMAL,"%s : defined binary parameter prior space\n",__func__);
 
   /**********************************************************************************/
   /* COMPUTE THE COARSE GRID ON FREQUENCY DERIVITIVES */
@@ -317,7 +317,7 @@ int main( int argc, char *argv[] )  {
     LogPrintf(LOG_CRITICAL,"%s : XLALComputeBinaryGridParams() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : computed the binary parameter space grid\n",__func__);
+  LogPrintf(LOG_NORMAL,"%s : computed the binary parameter space grid\n",__func__);
 
   /**********************************************************************************/
   /* CONVERT ALL SFTS TO DOWNSAMPLED TIMESERIES */
@@ -328,7 +328,7 @@ int main( int argc, char *argv[] )  {
     LogPrintf(LOG_CRITICAL,"%s : XLALSFTVectorToCOMPLEX8TimeSeriesArray() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : converted SFTs to downsampled timeseries\n",__func__);
+  LogPrintf(LOG_NORMAL,"%s : converted SFTs to downsampled timeseries\n",__func__);
 
   /**********************************************************************************/
   /* OPEN INTERMEDIATE RESULTS FILE */
@@ -338,7 +338,7 @@ int main( int argc, char *argv[] )  {
     LogPrintf(LOG_CRITICAL,"%s : XLALOpenCoherentResultsFile() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : opened coherent results file.\n",__func__); */
+  LogPrintf(LOG_NORMAL,"%s : opened coherent results file.\n",__func__); */
 
    /**********************************************************************************/
   /* COMPUTE THE STATISTICS ON THE COARSE GRID */
@@ -353,10 +353,10 @@ int main( int argc, char *argv[] )  {
     return 1;
   }
   /* fclose(cfp); */
-  LogPrintf(LOG_DEBUG,"%s : computed the demodulated power\n",__func__);
+  LogPrintf(LOG_NORMAL,"%s : computed the demodulated power\n",__func__);
 
-  LogPrintf(LOG_DEBUG,"%s : time to compute coarse grid = %g\n",__func__, XLALGetCPUTime() - coarse_t0);
-  LogPrintf(LOG_DEBUG,"%s : number of coarse grid points = %"LAL_UINT8_FORMAT"\n",__func__, num_coarse);
+  LogPrintf(LOG_NORMAL,"%s : time to compute coarse grid = %g\n",__func__, XLALGetCPUTime() - coarse_t0);
+  LogPrintf(LOG_NORMAL,"%s : number of coarse grid points = %"LAL_UINT8_FORMAT"\n",__func__, num_coarse);
 
   /**********************************************************************************/
   /* OPEN RESULTS FILE */
@@ -366,7 +366,7 @@ int main( int argc, char *argv[] )  {
     LogPrintf(LOG_CRITICAL,"%s : XLALOutputBayesResults() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : output results to file.\n",__func__);
+  LogPrintf(LOG_NORMAL,"%s : output results to file.\n",__func__);
 
    /**********************************************************************************/
   /* COMPUTE THE STATISTICS ON THE FINE GRID */
@@ -381,10 +381,10 @@ int main( int argc, char *argv[] )  {
     return 1;
   }
   fclose(sfp);
-  LogPrintf(LOG_DEBUG,"%s : computed the semi-coherent statistic\n",__func__);
+  LogPrintf(LOG_NORMAL,"%s : computed the semi-coherent statistic\n",__func__);
 
-  LogPrintf(LOG_DEBUG,"%s : time to compute fine grid = %g\n",__func__, XLALGetCPUTime() - fine_t0);
-  LogPrintf(LOG_DEBUG,"%s : number of fine grid points = %"LAL_UINT8_FORMAT"\n",__func__, num_fine);
+  LogPrintf(LOG_NORMAL,"%s : time to compute fine grid = %g\n",__func__, XLALGetCPUTime() - fine_t0);
+  LogPrintf(LOG_NORMAL,"%s : number of fine grid points = %"LAL_UINT8_FORMAT"\n",__func__, num_fine);
 
   /**********************************************************************************/
   /* CLEAN UP */
@@ -443,7 +443,7 @@ int main( int argc, char *argv[] )  {
   LALCheckMemoryLeaks();
   LogPrintf(LOG_DEBUG,"%s : successfully checked memory leaks.\n",__func__);
 
-  LogPrintf(LOG_DEBUG,"%s : successfully completed.\n",__func__);
+  LogPrintf(LOG_NORMAL,"%s : successfully completed.\n",__func__);
   return 0;
 
 } /* end of main */
