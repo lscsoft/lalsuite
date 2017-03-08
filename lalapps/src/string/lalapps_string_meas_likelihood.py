@@ -40,7 +40,6 @@ from glue.ligolw import utils
 from glue.ligolw.utils import process as ligolwprocess
 from lalburst import SnglBurstUtils
 from lalburst import git_version
-from lalburst import burca_tailor
 from lalburst import stringutils
 
 
@@ -208,7 +207,7 @@ for n, filename in enumerate(filenames):
 
 	if contents.sim_burst_table is None:
 		# iterate over burst<-->burst coincs
-		for is_background, events, offsetvector in burca_tailor.get_noninjections(contents):
+		for is_background, events, offsetvector in contents.get_noninjections():
 			params = distributions.coinc_params([event for event in events if event.ifo not in contents.vetoseglists or event.peak not in contents.vetoseglists[event.ifo]], offsetvector, triangulators)
 			if params is not None:
 				if is_background:
@@ -219,7 +218,7 @@ for n, filename in enumerate(filenames):
 		weight_func = get_injection_weight_func(contents, options.injection_reweight, options.injection_reweight_cutoff)
 		# iterate over burst<-->burst coincs matching injections
 		# "exactly"
-		for sim, events, offsetvector in burca_tailor.get_injections(contents):
+		for sim, events, offsetvector in contents.get_injections():
 			params = distributions.coinc_params([event for event in events if event.ifo not in contents.vetoseglists or event.peak not in contents.vetoseglists[event.ifo]], offsetvector, triangulators)
 			if params is not None:
 				distributions.add_injection(params, weight = weight_func(sim))
