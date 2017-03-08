@@ -37,8 +37,8 @@ from glue import segmentsUtils
 from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
+from glue.ligolw.utils import search_summary as ligolw_search_summary
 from glue.offsetvector import offsetvector
-from . import burca_tailor
 from . import git_version
 from pylal import rate
 from pylal import snglcoinc
@@ -334,7 +334,17 @@ def load_likelihood_data(filenames, verbose = False):
 
 
 def write_likelihood_data(filename, coincparamsdistributions, seglists, verbose = False):
-	ligolw_utils.write_filename(burca_tailor.gen_likelihood_control(coincparamsdistributions, seglists, name = u"string_cusp_likelihood"), filename, verbose = verbose, gz = (filename or "stdout").endswith(".gz"))
+	# FIXME:  this has been in-lined from its previous home in
+	# burca_tailor and should now be re-thought to more specifically
+	# meet the needs of the string search
+	xmldoc = ligolw.Document()
+	node = xmldoc.appendChild(ligolw.LIGO_LW())
+	process = ligolw_process.register_to_xmldoc(xmldoc, program = u"lalapps_burca_tailor", paramdict = {}, version = __version__, cvs_repository = "lscsoft", cvs_entry_time = __date__, comment = u"")
+	coinc_params_distributions.process_id = process.process_id
+	ligolw_search_summary.append_search_summary(xmldoc, process, ifos = seglists.keys(), inseg = seglists.extent_all(), outseg = seglists.extent_all())
+	node.appendChild(coinc_params_distributions.to_xml(u"string_cusp_likelihood"))
+	ligolw_process.set_process_end_time(process)
+	ligolw_utils.write_filename(xmldoc, filename, verbose = verbose, gz = (filename or "stdout").endswith(".gz"))
 
 
 #
