@@ -27,8 +27,6 @@
 import copy
 import itertools
 import math
-import numpy
-from scipy.stats import stats
 import sys
 
 
