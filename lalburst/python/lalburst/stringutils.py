@@ -35,7 +35,7 @@ import lal
 
 from glue import segmentsUtils
 from glue.ligolw import lsctables
-from glue.ligolw import utils
+from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
 from glue.offsetvector import offsetvector
 from . import burca_tailor
@@ -334,7 +334,7 @@ def load_likelihood_data(filenames, verbose = False):
 
 
 def write_likelihood_data(filename, coincparamsdistributions, seglists, verbose = False):
-	utils.write_filename(burca_tailor.gen_likelihood_control(coincparamsdistributions, seglists, name = u"string_cusp_likelihood"), filename, verbose = verbose, gz = (filename or "stdout").endswith(".gz"))
+	ligolw_utils.write_filename(burca_tailor.gen_likelihood_control(coincparamsdistributions, seglists, name = u"string_cusp_likelihood"), filename, verbose = verbose, gz = (filename or "stdout").endswith(".gz"))
 
 
 #
