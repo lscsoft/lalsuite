@@ -614,7 +614,7 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
         LogPrintf(LOG_CRITICAL,"%s : XLALApplyPhseCorrection() failed with error = %d\n",__func__,xlalErrno);
         XLAL_ERROR(XLAL_EINVAL);
       }
-      LogPrintf(LOG_DEBUG,"%s : applied phase correction for template index %d/%d on segment %d/%d\n",__func__,spintemp->currentidx,tempgrid.max,i,dsdata->length);
+      LogPrintf(LOG_DEBUG,"%s : applied phase correction for template index %"LAL_UINT8_FORMAT"/%"LAL_UINT8_FORMAT" on segment %d/%d\n",__func__,spintemp->currentidx,tempgrid.max,i,dsdata->length);
 
       /* convert to the complex frequency domain - on the frequency grid specified */
       if (XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(&fs,temp_ts,&(gridparams->segment[i]))) {
@@ -1288,8 +1288,8 @@ int XLALComputeBinaryGridParams(GridParameters **binarygridparams,  /**< [out] t
     REAL8 Vsr = dVr*space->data[2].span*(1.0/60.0)*(pow(space->data[3].max,5.0)-pow(space->data[3].min,5.0))*(pow(space->data[0].max,4.0)-pow(space->data[0].min,4.0))*(pow(space->data[1].max,3.0)-pow(space->data[1].min,3.0));
 
     (*binarygridparams)->Nr = (INT4)ceil((1.0/Vn)*log(1.0/(1.0-coverage))*(pow(mu,-ndim/2.0))*Vsr);
-    LogPrintf(LOG_DEBUG,"%s : computed the number of random binary templates to be %d.\n",__func__,(*binarygridparams)->Nr);
-    LogPrintf(LOG_DEBUG,"%s : to br compared to the total number of cubic templates %d (%.6f).\n",__func__,(*binarygridparams)->max,(REAL8)(*binarygridparams)->max/(REAL8)(*binarygridparams)->Nr);
+    LogPrintf(LOG_DEBUG,"%s : computed the number of random binary templates to be %"LAL_UINT8_FORMAT".\n",__func__,(*binarygridparams)->Nr);
+    LogPrintf(LOG_DEBUG,"%s : to br compared to the total number of cubic templates %"LAL_UINT8_FORMAT" (%.6f).\n", __func__, (*binarygridparams)->max, (REAL8)(*binarygridparams)->max/(REAL8)(*binarygridparams)->Nr);
 
   }
   else (*binarygridparams)->Nr = -1;

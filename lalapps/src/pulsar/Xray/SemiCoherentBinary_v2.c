@@ -638,7 +638,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   LogPrintf(LOG_DEBUG,"%s : computed the threshold as %f\n",__func__,thr); */
 
   int (*getnext)(Template **temp,GridParameters *gridparams, ParameterSpace *space,void *);
-  INT4 newmax = bingrid->max;
+  INT8 newmax = bingrid->max;
   ParameterSpace *temppspace = NULL;
   if (bingrid->Nr>0) {
     getnext = &XLALGetNextRandomBinaryTemplate;
@@ -755,7 +755,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
     /* output status to screen */
     if ( (bintemp->currentidx == 0) || (floor(100.0*(REAL8)bintemp->currentidx/(REAL8)newmax) > (REAL8)percent) ) {
       percent = (UINT4)floor(100*(REAL8)bintemp->currentidx/(REAL8)newmax);
-      LogPrintf(LOG_NORMAL,"%s : completed %d%% (%d/%d)\n",__func__,percent,bintemp->currentidx,newmax);
+      LogPrintf(LOG_NORMAL,"%s : completed %d%% (%"LAL_UINT8_FORMAT"/%"LAL_UINT8_FORMAT")\n",__func__,percent,bintemp->currentidx,newmax);
     }
 
     /* we've computed this number of extra templates */

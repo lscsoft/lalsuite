@@ -149,7 +149,7 @@ extern "C" {
     REAL8 *x;                         /**< the location in parameter space */
     INT4 *idx;                        /**< the index of each dimension for this template */
     UINT4 ndim;                       /**< the dimension of the parameter space */
-    UINT4 currentidx;                 /**< the current index value of the template */
+    UINT8 currentidx;                 /**< the current index value of the template */
   } Template;
 
   /** Stores the gridding parameters for a hypercubic grid of templates
@@ -158,9 +158,9 @@ extern "C" {
     Grid *grid;                       /**< stores the parameters defining a single dimension */
     UINT4 ndim;                       /**< the number of dimensions */
     UINT4 *prod;                      /**< internal variable used to store the size of sub-dimensions */
-    UINT4 max;                        /**< the maximum (total) number of templates */
+    UINT8 max;                        /**< the maximum (total) number of templates */
     REAL8 mismatch;                   /**< the mismatch */
-    INT4 Nr;
+    INT8 Nr;
   } GridParameters;
 
    /** Stores the gridding parameters for a hypercubic grid of templates
