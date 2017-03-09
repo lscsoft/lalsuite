@@ -695,6 +695,110 @@ void XLALDestroySuperskyMetrics(
   }
 }
 
+int XLALFITSWriteSuperskyMetrics(
+  FITSFile *file,
+  const SuperskyMetrics *metrics
+  )
+{
+
+  // Check input
+  XLAL_CHECK( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK( metrics != NULL, XLAL_EFAULT );
+
+  // Write coherent metrics to a FITS array
+  {
+    size_t dims[3] = {
+      metrics->coh_rssky_metric[0]->size1,
+      metrics->coh_rssky_metric[0]->size2,
+      metrics->num_segments
+    };
+    XLAL_CHECK( XLALFITSArrayOpenWrite( file, "coh_rssky_metric", 3, dims, "coherent supersky metrics" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    size_t idx[3];
+    for ( idx[2] = 0; idx[2] < dims[2]; ++idx[2] ) {
+      XLAL_CHECK( XLALFITSArrayWriteGSLMatrix( file, idx, metrics->coh_rssky_metric[idx[2]] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+  }
+
+  // Write coherent metric transform data to a FITS array
+  {
+    size_t dims[3] = {
+      metrics->coh_rssky_transf[0]->size1,
+      metrics->coh_rssky_transf[0]->size2,
+      metrics->num_segments
+    };
+    XLAL_CHECK( XLALFITSArrayOpenWrite( file, "coh_rssky_transf", 3, dims, "coherent supersky metric transform data" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    size_t idx[3];
+    for ( idx[2] = 0; idx[2] < dims[2]; ++idx[2] ) {
+      XLAL_CHECK( XLALFITSArrayWriteGSLMatrix( file, idx, metrics->coh_rssky_transf[idx[2]] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+  }
+
+  // Write semicoherent metric to a FITS array
+  XLAL_CHECK( XLALFITSArrayOpenWrite2( file, "semi_rssky_metric", metrics->semi_rssky_metric->size1, metrics->semi_rssky_metric->size2, "semicoherent supersky metric" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSArrayWriteGSLMatrix( file, NULL, metrics->semi_rssky_metric ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Write semicoherent metric transform data to a FITS array
+  XLAL_CHECK( XLALFITSArrayOpenWrite2( file, "semi_rssky_transf", metrics->semi_rssky_transf->size1, metrics->semi_rssky_transf->size2, "semicoherent supersky metric transform data" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSArrayWriteGSLMatrix( file, NULL, metrics->semi_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALFITSReadSuperskyMetrics(
+  FITSFile *file,
+  SuperskyMetrics **metrics
+  )
+{
+
+  // Check input
+  XLAL_CHECK( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK( metrics != NULL && *metrics == NULL, XLAL_EFAULT );
+
+  // Allocate memory
+  *metrics = XLALCalloc( 1, sizeof( **metrics ) );
+  XLAL_CHECK( *metrics != NULL, XLAL_ENOMEM );
+
+  // Read coherent *metrics from a FITS array
+  {
+    size_t ndim, dims[FFIO_MAX];
+    XLAL_CHECK( XLALFITSArrayOpenRead( file, "coh_rssky_metric", &ndim, dims ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( ndim == 3, XLAL_EIO );
+    ( *metrics )->num_segments = dims[2];
+    ( *metrics )->coh_rssky_metric = XLALCalloc( ( *metrics )->num_segments, sizeof( ( *metrics )->coh_rssky_metric[0] ) );
+    XLAL_CHECK( ( *metrics )->coh_rssky_metric != NULL, XLAL_ENOMEM );
+    size_t idx[3];
+    for ( idx[2] = 0; idx[2] < dims[2]; ++idx[2] ) {
+      XLAL_CHECK( XLALFITSArrayReadGSLMatrix( file, idx, &( *metrics )->coh_rssky_metric[idx[2]] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+  }
+
+  // Read coherent metric transform data from a FITS array
+  {
+    size_t ndim, dims[FFIO_MAX];
+    XLAL_CHECK( XLALFITSArrayOpenRead( file, "coh_rssky_transf", &ndim, dims ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( ndim == 3, XLAL_EIO );
+    XLAL_CHECK( dims[2] == ( *metrics )->num_segments, XLAL_EIO );
+    ( *metrics )->coh_rssky_transf = XLALCalloc( ( *metrics )->num_segments, sizeof( ( *metrics )->coh_rssky_transf[0] ) );
+    XLAL_CHECK( ( *metrics )->coh_rssky_transf != NULL, XLAL_ENOMEM );
+    size_t idx[3];
+    for ( idx[2] = 0; idx[2] < dims[2]; ++idx[2] ) {
+      XLAL_CHECK( XLALFITSArrayReadGSLMatrix( file, idx, &( *metrics )->coh_rssky_transf[idx[2]] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+  }
+
+  // Read semicoherent metric from a FITS array
+  XLAL_CHECK( XLALFITSArrayOpenRead2( file, "semi_rssky_metric", NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSArrayReadGSLMatrix( file, NULL, &( *metrics )->semi_rssky_metric ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Read semicoherent metric transform data from a FITS array
+  XLAL_CHECK( XLALFITSArrayOpenRead2( file, "semi_rssky_transf", NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSArrayReadGSLMatrix( file, NULL, &( *metrics )->semi_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  return XLAL_SUCCESS;
+
+}
+
 int XLALSuperskyMetricsDimensions(
   const SuperskyMetrics *metrics,
   size_t *spindowns
