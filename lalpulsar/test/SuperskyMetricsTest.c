@@ -37,6 +37,12 @@
 #define REF_TIME        { REF_TIME_S, 0 }
 #define FIDUCIAL_FREQ   100.0
 
+// Internal definition of reduced supersky metric coordinate transform data
+// - Must match that given in src/SuperskyMetrics.c
+struct tagSuperskyTransformData {
+  gsl_matrix *data;
+};
+
 const PulsarDopplerParams phys_points[NUM_POINTS] = {
   { .refTime = REF_TIME, .Alpha = 0.00000000000000, .Delta =  0.000000000000000, .fkdot = {100.0000000000000,  0.00000000000000e-00} },
   { .refTime = REF_TIME, .Alpha = 4.88014010120016, .Delta = -0.954446475246007, .fkdot = { 99.9999983978492,  1.48957780038094e-09} },
@@ -182,7 +188,7 @@ static int CompareDoppler( const PulsarDopplerParams *a, const PulsarDopplerPara
 static int CheckSuperskyMetrics(
   const gsl_matrix *rssky_metric,
   const double rssky_metric_ref[4][4],
-  const gsl_matrix *rssky_transf,
+  const SuperskyTransformData *rssky_transf,
   const double rssky_transf_ref[6][3],
   const double phys_mismatch[NUM_POINTS][NUM_POINTS],
   const double phys_mismatch_tol
@@ -196,11 +202,11 @@ static int CheckSuperskyMetrics(
     XLAL_CHECK( err <= err_tol, XLAL_ETOL, "'rssky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol );
   }
   {
-    XLAL_CHECK( rssky_transf->size1 == 6 && rssky_transf->size2 == 3, XLAL_ESIZE );
+    XLAL_CHECK( rssky_transf->data->size1 == 6 && rssky_transf->data->size2 == 3, XLAL_ESIZE );
     const double err_tol = 1e-5;
-    for ( size_t i = 0; i < rssky_transf->size1; ++i ) {
-      for ( size_t j = 0; j < rssky_transf->size2; ++j ) {
-        const double rssky_transf_ij = gsl_matrix_get( rssky_transf, i, j );
+    for ( size_t i = 0; i < rssky_transf->data->size1; ++i ) {
+      for ( size_t j = 0; j < rssky_transf->data->size2; ++j ) {
+        const double rssky_transf_ij = gsl_matrix_get( rssky_transf->data, i, j );
         const double rssky_transf_ref_ij = rssky_transf_ref[i][j];
         CHECK_RELERR( rssky_transf_ij, rssky_transf_ref_ij, err_tol );
       }

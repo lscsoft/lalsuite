@@ -40,6 +40,11 @@ extern "C" {
 ///
 
 ///
+/// Supersky metric coordinate transform data
+///
+typedef struct tagSuperskyTransformData SuperskyTransformData;
+
+///
 /// Computed supersky metrics, returned by XLALComputeSuperskyMetrics().
 ///
 #ifdef SWIG // SWIG interface directives
@@ -55,10 +60,10 @@ typedef struct tagSuperskyMetrics {
 #ifdef SWIG // SWIG interface directives
   SWIGLAL( ARRAY_1D( SuperskyMetrics, gsl_matrix *, coh_rssky_transf, size_t, num_segments ) );
 #endif // SWIG
-  gsl_matrix **coh_rssky_transf;                ///< Coherent reduced supersky metric coordinate transform data for each segment
+  SuperskyTransformData **coh_rssky_transf;     ///< Coherent reduced supersky metric coordinate transform data for each segment
 
   gsl_matrix *semi_rssky_metric;                ///< Semicoherent reduced supersky metric (2-dimensional sky)
-  gsl_matrix *semi_rssky_transf;                ///< Semicoherent reduced supersky metric coordinate transform data
+  SuperskyTransformData *semi_rssky_transf;     ///< Semicoherent reduced supersky metric coordinate transform data
 
 } SuperskyMetrics;
 
@@ -116,7 +121,7 @@ SWIGLAL( COPYINOUT_ARRAYS( gsl_matrix, rssky_metric, rssky_transf ) );
 ///
 int XLALScaleSuperskyMetricFiducialFreq(
   gsl_matrix *rssky_metric,                     ///< [in] Reduced supersky metric
-  gsl_matrix *rssky_transf,                     ///< [in] Reduced supersky metric coordinate transform data
+  SuperskyTransformData *rssky_transf,          ///< [in] Reduced supersky metric coordinate transform data
   const double new_fiducial_freq                ///< [in] New fiducial frequency
   );
 
@@ -148,7 +153,7 @@ int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
 int XLALConvertPhysicalToSuperskyPoint(
   gsl_vector *out_rssky,                        ///< [out] Output point in supersky coordinates
   const PulsarDopplerParams *in_phys,           ///< [in] Input point in physical coordinates
-  const gsl_matrix *rssky_transf                ///< [in] Reduced supersky coordinate transform data
+  const SuperskyTransformData *rssky_transf     ///< [in] Reduced supersky coordinate transform data
   );
 
 ///
@@ -158,7 +163,7 @@ int XLALConvertSuperskyToPhysicalPoint(
   PulsarDopplerParams *out_phys,                ///< [out] Output point in physical coordinates
   const gsl_vector *in_rssky,                   ///< [in] Input point in supersky coordinates
   const gsl_vector *ref_rssky,                  ///< [in,optional] Reference point in supersky coordinates
-  const gsl_matrix *rssky_transf                ///< [in] Reduced supersky coordinate transform data
+  const SuperskyTransformData *rssky_transf     ///< [in] Reduced supersky coordinate transform data
   );
 
 ///
@@ -166,9 +171,9 @@ int XLALConvertSuperskyToPhysicalPoint(
 ///
 int XLALConvertSuperskyToSuperskyPoint(
   gsl_vector *out_rssky,                        ///< [out] Output point in supersky coordinates
-  const gsl_matrix *out_rssky_transf,           ///< [in] Output reduced supersky coordinate transform data
+  const SuperskyTransformData *out_rssky_transf,///< [in] Output reduced supersky coordinate transform data
   const gsl_vector *in_rssky,                   ///< [in] Input point in supersky coordinates
-  const gsl_matrix *in_rssky_transf             ///< [in] Input reduced supersky coordinate transform data
+  const SuperskyTransformData *in_rssky_transf  ///< [in] Input reduced supersky coordinate transform data
   );
 
 ///
@@ -180,7 +185,7 @@ SWIGLAL( INOUT_STRUCTS( gsl_matrix **, out_rssky ) );
 int XLALConvertPhysicalToSuperskyPoints(
   gsl_matrix **out_rssky,                       ///< [out] Columns are output point in supersky coordinates
   const gsl_matrix *in_phys,                    ///< [in] Columns are input point in physical coordinates
-  const gsl_matrix *rssky_transf                ///< [in] Reduced supersky coordinate transform data
+  const SuperskyTransformData *rssky_transf     ///< [in] Reduced supersky coordinate transform data
   );
 
 ///
@@ -192,7 +197,7 @@ SWIGLAL( INOUT_STRUCTS( gsl_matrix **, out_phys ) );
 int XLALConvertSuperskyToPhysicalPoints(
   gsl_matrix **out_phys,                        ///< [out] Columns are output point in physical coordinates
   const gsl_matrix *in_rssky,                   ///< [in] Columns are input point in supersky coordinates
-  const gsl_matrix *rssky_transf                ///< [in] Reduced supersky coordinate transform data
+  const SuperskyTransformData *rssky_transf     ///< [in] Reduced supersky coordinate transform data
   );
 
 #ifdef SWIG // SWIG interface directives
@@ -208,7 +213,7 @@ SWIGLAL( COPYINOUT_ARRAYS( gsl_matrix, rssky_metric, rssky_transf ) );
 int XLALSetSuperskyPhysicalSkyBounds(
   LatticeTiling *tiling,                        ///< [in] Lattice tiling
   gsl_matrix *rssky_metric,                     ///< [in,out] Reduced supersky metric
-  gsl_matrix *rssky_transf,                     ///< [in,out] Reduced supersky coordinate transform data
+  SuperskyTransformData *rssky_transf,          ///< [in,out] Reduced supersky coordinate transform data
   const double alpha1,                          ///< [in] First bound on sky position right ascension
   const double alpha2,                          ///< [in] Second bound on sky position right ascension
   const double delta1,                          ///< [in] First bound on sky position declination
@@ -238,7 +243,7 @@ SWIGLAL_CLEAR( COPYINOUT_ARRAYS( gsl_matrix, rssky_metric, rssky_transf ) );
 ///
 int XLALSetSuperskyPhysicalSpinBound(
   LatticeTiling *tiling,                        ///< [in] Lattice tiling
-  const gsl_matrix *rssky_transf,               ///< [in] Reduced supersky coordinate transform data
+  const SuperskyTransformData *rssky_transf,    ///< [in] Reduced supersky coordinate transform data
   const size_t s,                               ///< [in] Spindown order; 0=frequency, 1=first spindown, etc.
   const double bound1,                          ///< [in] First bound on frequency/spindown
   const double bound2                           ///< [in] Second bound on frequency/spindown
@@ -251,7 +256,7 @@ int XLALSetSuperskyPhysicalSpinBound(
 ///
 int XLALSetSuperskyCoordinateSpinBound(
   LatticeTiling *tiling,                        ///< [in] Lattice tiling.
-  const gsl_matrix *rssky_transf,               ///< [in] Reduced supersky coordinate transform data
+  const SuperskyTransformData *rssky_transf,    ///< [in] Reduced supersky coordinate transform data
   const size_t s,                               ///< [in] Spindown order; 0=frequency, 1=first spindown, etc.
   const double bound1,                          ///< [in] First bound on frequency/spindown
   const double bound2                           ///< [in] Second bound on frequency/spindown
@@ -264,7 +269,7 @@ int XLALSetSuperskyCoordinateSpinBound(
 int XLALSuperskyLatticePulsarSpinRange(
   PulsarSpinRange *spin_range,                  ///< [in,out] Physical frequency/spindown range
   LatticeTiling *tiling,                        ///< [in] Lattice tiling
-  const gsl_matrix *rssky_transf                ///< [in] Reduced supersky coordinate transform data
+  const SuperskyTransformData *rssky_transf     ///< [in] Reduced supersky coordinate transform data
   );
 
 /// @}
