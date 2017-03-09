@@ -325,8 +325,7 @@ int main( int argc, char *argv[] )  {
         /**********************************************************************************/
 
         /* compute the demodulated power on the frequency derivitive grid */
-        UINT8 num_coarse = 0;
-        if (XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(&num_coarse,&dmpower,dstimevec,freqgridparams,ifp)) {
+        if (XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(&dmpower,dstimevec,freqgridparams,ifp)) {
           LogPrintf(LOG_CRITICAL,"%s : XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector() failed with error = %d\n",__func__,xlalErrno);
           return 1;
         }

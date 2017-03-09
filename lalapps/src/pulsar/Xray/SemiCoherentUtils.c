@@ -516,8 +516,7 @@ int XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **fs
  * This function is simply a wrapper for XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries()
  *
  */
-int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(UINT8 *num_coarse,                       /**< [out] number of coarse templates computed */
-                                                  REAL4DemodulatedPowerVector **power,     /**< [out] the spin derivitive demodulated power */
+int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **power,     /**< [out] the spin derivitive demodulated power */
                                                   COMPLEX8TimeSeriesArray *dsdata,         /**< [in] the downsampled SFT data */
                                                   GridParametersVector *gridparams,        /**< [in/out] the spin derivitive gridding parameters */
                                                   FILE *fp		/**< UNDOCUMENTED */
@@ -556,7 +555,8 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(UINT8 *num_coarse,            
   (*power)->length = dsdata->length;
 
   /* loop over each segment */
-  *num_coarse = 0;
+  const double coarse_t0 = XLALGetCPUTime();
+  UINT8 num_coarse = 0;
   for (i=0;i<dsdata->length;i++) {
 
     COMPLEX8TimeSeries *ts = dsdata->data[i];
@@ -640,7 +640,7 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(UINT8 *num_coarse,            
       }
       (*power)->segment[i]->epoch.gpsSeconds = ts->epoch.gpsSeconds;
       (*power)->segment[i]->epoch.gpsNanoSeconds = ts->epoch.gpsNanoSeconds;
-      *num_coarse += fs->data->length;
+      num_coarse += fs->data->length;
 
       /* free memory */
       XLALDestroyCOMPLEX8FrequencySeries(fs);
@@ -662,6 +662,9 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(UINT8 *num_coarse,            
     XLALFree(tempgrid.prod);
 
   } /* end the loop over segments */
+
+  LogPrintf(LOG_NORMAL,"%s : time to compute coarse grid points = %0.12e\n",__func__, XLALGetCPUTime() - coarse_t0);
+  LogPrintf(LOG_NORMAL,"%s : number of coarse grid points = %"LAL_UINT8_FORMAT"\n",__func__, num_coarse);
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;

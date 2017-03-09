@@ -111,7 +111,7 @@ extern int vrbflg;              /**< defined in lalapps.c */
 /* define functions */
 int main(int argc,char *argv[]);
 int XLALReadUserVars(int argc,char *argv[],UserInput_t *uvar, CHAR **clargs);
-int XLALComputeSemiCoherentStat(UINT8 *num_fine,FILE *fp,REAL4DemodulatedPowerVector *power,ParameterSpace *pspace,GridParametersVector *fgrid,GridParameters *bingrid,INT4 ntoplist,BOOLEAN with_xbins);
+int XLALComputeSemiCoherentStat(FILE *fp,REAL4DemodulatedPowerVector *power,ParameterSpace *pspace,GridParametersVector *fgrid,GridParameters *bingrid,INT4 ntoplist,BOOLEAN with_xbins);
 int XLALDefineBinaryParameterSpace(REAL8Space **, LIGOTimeGPS, REAL8, UserInput_t *);
 int XLALOpenSemiCoherentResultsFile(FILE **,CHAR *,ParameterSpace *,CHAR *,UserInput_t *);
 int XLALtoplist(REAL4 x,Template *params,toplist *TL);
@@ -344,19 +344,13 @@ int main( int argc, char *argv[] )  {
   /* COMPUTE THE STATISTICS ON THE COARSE GRID */
   /**********************************************************************************/
 
-  const double coarse_t0 = XLALGetCPUTime();
-  UINT8 num_coarse = 0;
-
   /* compute the demodulated power on the frequency derivitive grid */
-  if (XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(&num_coarse,&dmpower,dstimevec,freqgridparams,NULL)) {
+  if (XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(&dmpower,dstimevec,freqgridparams,NULL)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
   /* fclose(cfp); */
   LogPrintf(LOG_NORMAL,"%s : computed the demodulated power\n",__func__);
-
-  LogPrintf(LOG_NORMAL,"%s : time to compute coarse grid = %0.12e\n",__func__, XLALGetCPUTime() - coarse_t0);
-  LogPrintf(LOG_NORMAL,"%s : number of coarse grid points = %"LAL_UINT8_FORMAT"\n",__func__, num_coarse);
 
   /**********************************************************************************/
   /* OPEN RESULTS FILE */
@@ -372,19 +366,13 @@ int main( int argc, char *argv[] )  {
   /* COMPUTE THE STATISTICS ON THE FINE GRID */
   /**********************************************************************************/
 
-  const double fine_t0 = XLALGetCPUTime();
-  UINT8 num_fine = 0;
-
   /* compute the semi-coherent detection statistic on the fine grid */
-  if (XLALComputeSemiCoherentStat(&num_fine,sfp,dmpower,&pspace,freqgridparams,bingridparams,uvar.ntoplist,uvar.with_xbins)) {
+  if (XLALComputeSemiCoherentStat(sfp,dmpower,&pspace,freqgridparams,bingridparams,uvar.ntoplist,uvar.with_xbins)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALComputeSemiCoherentStat() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
   fclose(sfp);
   LogPrintf(LOG_NORMAL,"%s : computed the semi-coherent statistic\n",__func__);
-
-  LogPrintf(LOG_NORMAL,"%s : time to compute fine grid = %0.12e\n",__func__, XLALGetCPUTime() - fine_t0);
-  LogPrintf(LOG_NORMAL,"%s : number of fine grid points = %"LAL_UINT8_FORMAT"\n",__func__, num_fine);
 
   /**********************************************************************************/
   /* CLEAN UP */
@@ -550,8 +538,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
  * This function computes the semi-coherent s.
  *
  */
-int XLALComputeSemiCoherentStat(UINT8 *num_fine,                         /**< [out] number of fine templates computed */
-                                FILE *fp,                                /**< [in] the output file pointer */
+int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [in] the output file pointer */
                                 REAL4DemodulatedPowerVector *power,      /**< [in] the input data in the form of power */
                                 ParameterSpace *pspace,                  /**< [in] the parameter space */
                                 GridParametersVector *fgrid,		/**< UNDOCUMENTED */
@@ -660,12 +647,14 @@ int XLALComputeSemiCoherentStat(UINT8 *num_fine,                         /**< [o
   }
   else getnext = &XLALGetNextTemplate;
 
-  INT4 max_tot_xbins = 0;
-
   REAL4 *logLratiosumvec = NULL;
 
   /* single loop over binary templates */
-  *num_fine = 0;
+  double fine_deriv_t = 0;
+  UINT8 num_fine_deriv = 0;
+  double fine_sum_t = 0;
+  UINT8 num_fine_sum = 0;
+  INT4 max_tot_xbins = 0;
   while (getnext(&bintemp,bingrid,temppspace,r)) {
 
     const REAL8 asini = bintemp->x[1];           /* define asini */
@@ -679,6 +668,7 @@ int XLALComputeSemiCoherentStat(UINT8 *num_fine,                         /**< [o
     INT4 left_xbins = xbins, right_xbins = xbins;
 
     /** loop over segments **********************************************************************************/
+    const double fine_deriv_t0 = XLALGetCPUTime();
     for (i=0;i<power->length;i++) {
 
       REAL8 tmid = XLALGPSGetREAL8(&(power->segment[i]->epoch)) + 0.5*pspace->tseg;
@@ -698,6 +688,8 @@ int XLALComputeSemiCoherentStat(UINT8 *num_fine,                         /**< [o
       right_xbins = GSL_MIN( right_xbins, (INT4)( fdotgrid->grid[0].length - fdots[i].idx[0] - 1 ) );
 
     } /* end loop over segments */
+    fine_deriv_t += XLALGetCPUTime() - fine_deriv_t0;
+    num_fine_deriv += power->length;
     /*************************************************************************************/
 
     const INT4 tot_xbins = 1 + left_xbins + right_xbins;
@@ -711,6 +703,7 @@ int XLALComputeSemiCoherentStat(UINT8 *num_fine,                         /**< [o
     }
 
     /** loop over segments **********************************************************************************/
+    const double fine_sum_t0 = XLALGetCPUTime();
     for (i=0;i<power->length;i++) {
 
       REAL4DemodulatedPower *currentpower = power->segment[i];
@@ -730,8 +723,9 @@ int XLALComputeSemiCoherentStat(UINT8 *num_fine,                         /**< [o
       }
 
     } /* end loop over segments */
+    fine_sum_t += XLALGetCPUTime() - fine_sum_t0;
+    num_fine_sum += ( power->length - 1 ) * tot_xbins;
     /*************************************************************************************/
-    *num_fine += tot_xbins;
 
     /* make it a true chi-squared variable */
     XLAL_CHECK( XLALVectorScaleREAL4( logLratiosumvec, 2.0, logLratiosumvec, tot_xbins ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -768,7 +762,11 @@ int XLALComputeSemiCoherentStat(UINT8 *num_fine,                         /**< [o
     bintemp->currentidx += left_xbins + right_xbins;
 
   } /* end loop over templates */
-  LogPrintf( LOG_NORMAL, "%s : summed up to %d frequency bins at a time\n", __func__, max_tot_xbins );
+  LogPrintf(LOG_NORMAL,"%s : time to compute fine grid derivatives = %0.12e\n",__func__, fine_deriv_t);
+  LogPrintf(LOG_NORMAL,"%s : number of fine grid derivatives = %"LAL_UINT8_FORMAT"\n",__func__, num_fine_deriv);
+  LogPrintf(LOG_NORMAL,"%s : time to compute fine summations = %0.12e\n",__func__, fine_sum_t);
+  LogPrintf(LOG_NORMAL,"%s : number of fine grid summations = %"LAL_UINT8_FORMAT"\n",__func__, num_fine_sum);
+  LogPrintf(LOG_NORMAL,"%s : summed up to %d frequency bins at a time\n", __func__, max_tot_xbins);
   /*************************************************************************************/
 
   /* compute mean and variance of results */
