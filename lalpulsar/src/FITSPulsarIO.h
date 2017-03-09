@@ -24,6 +24,7 @@
 #include <gsl/gsl_matrix.h>
 #include <lal/LALStdlib.h>
 #include <lal/FITSFileIO.h>
+#include <lal/Segments.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +38,25 @@ extern "C" {
 ///
 
 /// @{
+
+///
+/// Write a segment list to a FITS file
+///
+int XLALFITSWriteSegmentList(
+  FITSFile *file,                       ///< [in] FITS file pointer
+  const CHAR *name,                     ///< [in] Name of FITS table to write segment list to
+  const LALSegList *segments,           ///< [in] Segment list
+  const CHAR *comment                   ///< [in] Comment for FITS table
+  );
+
+///
+/// Read a segment list from a FITS file
+///
+int XLALFITSReadSegmentList(
+  FITSFile *file,                       ///< [in] FITS file pointer
+  const CHAR *name,                     ///< [in] Name of FITS table to read segment list from
+  LALSegList **segments                 ///< [out] Segment list
+  );
 
 /// @}
 
