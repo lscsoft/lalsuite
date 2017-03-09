@@ -280,3 +280,8 @@ int XLALFITSTableReadRow( FITSFile *file, void *record, UINT8 *rem_nrows );
 #endif
 
 #endif // _FITSFILEIO_H
+
+// Local Variables:
+// c-file-style: "linux"
+// c-basic-offset: 2
+// End:
