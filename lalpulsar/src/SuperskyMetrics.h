@@ -24,6 +24,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/UniversalDopplerMetric.h>
 #include <lal/LatticeTiling.h>
+#include <lal/FITSFileIO.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -80,6 +81,22 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
 ///
 void XLALDestroySuperskyMetrics(
   SuperskyMetrics *metrics                      ///< [in] Supersky metrics struct
+  );
+
+///
+/// Write a #SuperskyMetrics struct to a FITS file.
+///
+int XLALFITSWriteSuperskyMetrics(
+  FITSFile *file,                               ///< [in] FITS file pointer
+  const SuperskyMetrics *metrics                ///< [in] Supersky metrics struct
+  );
+
+///
+/// Read a #SuperskyMetrics struct from a FITS file.
+///
+int XLALFITSReadSuperskyMetrics(
+  FITSFile *file,                               ///< [in] FITS file pointer
+  SuperskyMetrics **metrics                     ///< [out] Supersky metrics struct
   );
 
 ///
