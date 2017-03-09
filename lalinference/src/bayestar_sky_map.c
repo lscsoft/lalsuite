@@ -75,6 +75,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 #include <lal/cubic_interp.h>
 #include <lal/DetResponse.h>
@@ -483,8 +484,40 @@ static double complex signal_amplitude_model(
 }
 
 
-static const unsigned int nglfixed = 10;
+#define nu 10
 static const unsigned int ntwopsi = 10;
+static double u_points_weights[nu][2];
+static pthread_once_t u_points_weights_init_once = PTHREAD_ONCE_INIT;
+static void u_points_weights_init(void)
+{
+    /* Look up Gauss-Legendre quadrature rule for integral over cos(i). */
+    gsl_integration_glfixed_table *gltable
+        = gsl_integration_glfixed_table_alloc(nu);
+
+    /* Don't bother checking the return value. GSL has static, precomputed
+     * values for certain orders, and for the order I have picked it will
+     * return a pointer to one of these. See:
+     *
+     * http://git.savannah.gnu.org/cgit/gsl.git/tree/integration/glfixed.c
+     */
+    assert(gltable);
+    assert(gltable->precomputed); /* We don't have to free it. */
+
+    for (unsigned int iu = 0; iu < nu; iu++)
+    {
+        double weight;
+
+        /* Look up Gauss-Legendre abscissa and weight. */
+        int ret = gsl_integration_glfixed_point(
+            -1, 1, iu, &u_points_weights[iu][0], &weight, gltable);
+
+        /* Don't bother checking return value; the only
+         * possible failure is in index bounds checking. */
+        assert(ret == GSL_SUCCESS);
+
+        u_points_weights[iu][1] = log(weight);
+    }
+}
 
 
 static double complex exp_i(double phi) {
@@ -593,8 +626,135 @@ static bayestar_pixel *bayestar_pixels_alloc(size_t *len, unsigned char order)
 }
 
 
+static void logsumexp(const double *accum, double log_weight, double *result, unsigned long ni, unsigned long nj)
+{
+    double max_accum[nj];
+    for (unsigned long j = 0; j < nj; j ++)
+        max_accum[j] = -INFINITY;
+    for (unsigned long i = 0; i < ni; i ++)
+        for (unsigned long j = 0; j < nj; j ++)
+            if (accum[i * nj + j] > max_accum[j])
+                max_accum[j] = accum[i * nj + j];
+    double sum_accum[nj];
+    for (unsigned long j = 0; j < nj; j ++)
+        sum_accum[j] = 0;
+    for (unsigned long i = 0; i < ni; i ++)
+        for (unsigned long j = 0; j < nj; j ++)
+            sum_accum[j] += exp(accum[i * nj + j] - max_accum[j]);
+    for (unsigned long j = 0; j < nj; j ++)
+        result[j] = log(sum_accum[j]) + max_accum[j] + log_weight;
+}
+
+
+static void bayestar_sky_map_toa_phoa_snr_pixel(
+    log_radial_integrator *integrators[],
+    unsigned char nint,
+    uint64_t uniq,
+    double *const value,
+    double gmst,
+    unsigned int nifos,
+    unsigned long nsamples,
+    double sample_rate,
+    const double *epochs,
+    const float complex **snrs,
+    const float (**responses)[3],
+    const double **locations,
+    const double *horizons
+) {
+    double complex F[nifos];
+    double dt[nifos];
+    double accum[nint];
+    for (unsigned char k = 0; k < nint; k ++)
+        accum[k] = -INFINITY;
+
+    {
+        double theta, phi;
+        pix2ang_uniq64(uniq, &theta, &phi);
+
+        /* Look up antenna factors */
+        for (unsigned int iifo = 0; iifo < nifos; iifo++)
+            F[iifo] = complex_antenna_factor(
+                responses[iifo], phi, M_PI_2-theta, gmst) * horizons[iifo];
+
+        toa_errors(dt, theta, phi, gmst, nifos, locations, epochs);
+    }
+
+    /* Integrate over 2*psi */
+    for (unsigned int itwopsi = 0; itwopsi < ntwopsi; itwopsi++)
+    {
+        const double twopsi = (2 * M_PI / ntwopsi) * itwopsi;
+        const double complex exp_i_twopsi = exp_i(twopsi);
+        double accum1[nint];
+        for (unsigned char k = 0; k < nint; k ++)
+            accum1[k] = -INFINITY;
+
+        /* Integrate over u from -1 to 1. */
+        for (unsigned int iu = 0; iu < nu; iu++)
+        {
+            const double u = u_points_weights[iu][0];
+            const double log_weight = u_points_weights[iu][1];
+            double accum2[nsamples][nint];
+
+            const double u2 = gsl_pow_2(u);
+            double complex z_times_r[nifos];
+            double p2 = 0;
+
+            for (unsigned int iifo = 0; iifo < nifos; iifo ++)
+            {
+                p2 += cabs2(
+                    z_times_r[iifo] = signal_amplitude_model(
+                        F[iifo], exp_i_twopsi, u, u2));
+            }
+            p2 *= 0.5;
+            const double p = sqrt(p2);
+            const double log_p = log(p);
+
+            for (unsigned long isample = 0; isample < nsamples; isample++)
+            {
+                double b;
+                {
+                    double complex I0arg_complex_times_r = 0;
+                    for (unsigned int iifo = 0; iifo < nifos; iifo ++)
+                    {
+                        I0arg_complex_times_r += conj(z_times_r[iifo])
+                            * eval_snr(snrs[iifo], nsamples,
+                                isample - dt[iifo] * sample_rate - 0.5 * (nsamples - 1));
+                    }
+                    b = cabs(I0arg_complex_times_r);
+                }
+                const double log_b = log(b);
+
+                for (unsigned char k = 0; k < nint; k ++)
+                {
+                    accum2[isample][k] = log_radial_integrator_eval(
+                        integrators[k], p, b, log_p, log_b);
+                }
+            }
+
+            double log_sum_accum2[nint];
+            logsumexp(*accum2, log_weight, log_sum_accum2, nsamples, nint);
+            for (unsigned char k = 0; k < nint; k ++)
+                accum1[k] = logaddexp(accum1[k], log_sum_accum2[k]);
+        }
+
+        for (unsigned char k = 0; k < nint; k ++)
+        {
+            accum[k] = logaddexp(accum[k], accum1[k]);
+        }
+    }
+
+    /* Record logarithm of posterior. */
+    for (unsigned char k = 0; k < nint; k ++)
+    {
+        value[k] = accum[k];
+    }
+}
+
+
 bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
     size_t *out_len,                /* Number of returned pixels */
+    double *out_log_bci,            /* log Bayes factor: coherent vs. incoherent */
+    double *out_log_bsn,            /* log Bayes factor: signal vs. noise */
     /* Prior */
     double min_distance,            /* Minimum distance */
     double max_distance,            /* Maximum distance */
@@ -633,7 +793,6 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
     }
 
     static const unsigned char order0 = 4;
-    unsigned char level = order0;
     size_t len;
     bayestar_pixel *pixels = bayestar_pixels_alloc(&len, order0);
     if (!pixels)
@@ -645,136 +804,69 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
     const unsigned long npix0 = len;
 
     /* Look up Gauss-Legendre quadrature rule for integral over cos(i). */
-    gsl_integration_glfixed_table *gltable
-        = gsl_integration_glfixed_table_alloc(nglfixed);
-
-    /* Don't bother checking the return value. GSL has static, precomputed
-     * values for certain orders, and for the order I have picked it will
-     * return a pointer to one of these. See:
-     *
-     * http://git.savannah.gnu.org/cgit/gsl.git/tree/integration/glfixed.c
-     */
-    assert(gltable);
-    assert(gltable->precomputed); /* We don't have to free it. */
-
-    while (1)
     {
+        int ret = pthread_once(&u_points_weights_init_once, u_points_weights_init);
+        assert(ret == 0);
+    }
+
+    /* At the lowest order, compute both the coherent probability map and the
+     * incoherent evidence. */
+    const double log_norm = -log(2 * (2 * M_PI) * (4 * M_PI) * ntwopsi * nsamples) - log_radial_integrator_eval(integrators[0], 0, 0, -INFINITY, -INFINITY);
+    double log_evidence_coherent, log_evidence_incoherent[nifos];
+    {
+        double accum[npix0][nifos];
+
         #pragma omp parallel for
         for (unsigned long i = 0; i < npix0; i ++)
         {
-            bayestar_pixel *const pixel = &pixels[len - npix0 + i];
-            double complex F[nifos];
-            double dt[nifos];
-            double accum[3] = {-INFINITY, -INFINITY, -INFINITY};
+            bayestar_sky_map_toa_phoa_snr_pixel(integrators, 1, pixels[i].uniq,
+                pixels[i].value, gmst, nifos, nsamples, sample_rate, epochs,
+                snrs, responses, locations, horizons);
 
+            for (unsigned int iifo = 0; iifo < nifos; iifo ++)
             {
-                double theta, phi;
-                pix2ang_uniq64(pixel->uniq, &theta, &phi);
-
-                /* Look up antenna factors */
-                for (unsigned int iifo = 0; iifo < nifos; iifo++)
-                    F[iifo] = complex_antenna_factor(
-                        responses[iifo], phi, M_PI_2-theta, gmst) * horizons[iifo];
-
-                toa_errors(dt, theta, phi, gmst, nifos, locations, epochs);
-            }
-
-            /* Integrate over 2*psi */
-            for (unsigned int itwopsi = 0; itwopsi < ntwopsi; itwopsi++)
-            {
-                const double twopsi = (2 * M_PI / ntwopsi) * itwopsi;
-                const double complex exp_i_twopsi = exp_i(twopsi);
-                double accum1[3] = {-INFINITY, -INFINITY, -INFINITY};
-
-                /* Integrate over u from -1 to 1. */
-                for (unsigned int iu = 0; iu < nglfixed; iu++)
-                {
-                    double u, weight;
-                    double accum2[nsamples][3];
-
-                    {
-                        /* Look up Gauss-Legendre abscissa and weight. */
-                        int ret = gsl_integration_glfixed_point(
-                            -1, 1, iu, &u, &weight, gltable);
-
-                        /* Don't bother checking return value; the only
-                         * possible failure is in index bounds checking. */
-                        assert(ret == GSL_SUCCESS);
-                    }
-                    const double u2 = gsl_pow_2(u);
-                    double complex z_times_r[nifos];
-                    double p2 = 0;
-
-                    for (unsigned int iifo = 0; iifo < nifos; iifo ++)
-                    {
-                        p2 += cabs2(
-                            z_times_r[iifo] = signal_amplitude_model(
-                                F[iifo], exp_i_twopsi, u, u2));
-                    }
-                    p2 *= 0.5;
-                    const double p = sqrt(p2);
-                    const double log_p = log(p);
-
-                    for (long isample = 0;
-                        isample < (long)nsamples; isample++)
-                    {
-                        double b;
-                        {
-                            double complex I0arg_complex_times_r = 0;
-                            for (unsigned int iifo = 0; iifo < nifos; iifo ++)
-                            {
-                                I0arg_complex_times_r += conj(z_times_r[iifo])
-                                    * eval_snr(snrs[iifo], nsamples,
-                                        isample - dt[iifo] * sample_rate - 0.5 * (nsamples - 1));
-                            }
-                            b = cabs(I0arg_complex_times_r);
-                        }
-                        const double log_b = log(b);
-
-                        for (unsigned char k = 0; k < 3; k ++)
-                        {
-                            accum2[isample][k] = log_radial_integrator_eval(
-                                integrators[k], p, b, log_p, log_b);
-                        }
-                    }
-
-                    double max_accum2[3] = {-INFINITY, -INFINITY, -INFINITY};
-                    for (unsigned long isample = 0; isample < nsamples; isample ++)
-                        for (unsigned char k = 0; k < 3; k ++)
-                            if (accum2[isample][k] > max_accum2[k])
-                                max_accum2[k] = accum2[isample][k];
-                    double sum_accum2[3] = {0, 0, 0};
-                    for (unsigned long isample = 0; isample < nsamples; isample ++)
-                        for (unsigned char k = 0; k < 3; k ++)
-                            sum_accum2[k] += exp(accum2[isample][k] - max_accum2[k]);
-                    for (unsigned char k = 0; k < 3; k ++)
-                        accum1[k] = logaddexp(accum1[k], log(sum_accum2[k] * weight) + max_accum2[k]);
-                }
-
-                for (unsigned char k = 0; k < 3; k ++)
-                {
-                    accum[k] = logaddexp(accum[k], accum1[k]);
-                }
-            }
-
-            /* Record logarithm of posterior. */
-            for (unsigned char k = 0; k < 3; k ++)
-            {
-                pixel->value[k] = accum[k];
+                bayestar_sky_map_toa_phoa_snr_pixel(integrators, 1,
+                    pixels[i].uniq, &accum[i][iifo], gmst, 1, nsamples,
+                    sample_rate, &epochs[iifo], &snrs[iifo], &responses[iifo],
+                    &locations[iifo], &horizons[iifo]);
             }
         }
 
-        /* Sort pixels by ascending posterior probability. */
-        bayestar_pixels_sort_prob(pixels, len);
+        const double log_weight = log_norm + log(uniq2pixarea64(pixels[0].uniq));
 
-        /* If we have reached order=11 (nside=2048), stop. */
-        if (level++ >= 11)
-            break;
+        logsumexp(*accum, log_weight, log_evidence_incoherent, npix0, nifos);
+    }
 
+    /* Sort pixels by ascending posterior probability. */
+    bayestar_pixels_sort_prob(pixels, len);
+
+    /* Adaptively refine until order=11 (nside=2048). */
+    for (unsigned char level = order0; level < 11; level ++)
+    {
         /* Adaptively refine the pixels that contain the most probability. */
         pixels = bayestar_pixels_refine(pixels, &len, npix0 / 4);
         if (!pixels)
             return NULL;
+
+        #pragma omp parallel for
+        for (unsigned long i = len - npix0; i < len; i ++)
+        {
+            bayestar_sky_map_toa_phoa_snr_pixel(integrators, 1, pixels[i].uniq,
+                pixels[i].value, gmst, nifos, nsamples, sample_rate, epochs,
+                snrs, responses, locations, horizons);
+        }
+
+        /* Sort pixels by ascending posterior probability. */
+        bayestar_pixels_sort_prob(pixels, len);
+    }
+
+    /* Evaluate distance layers. */
+    #pragma omp parallel for
+    for (unsigned long i = 0; i < len; i ++)
+    {
+        bayestar_sky_map_toa_phoa_snr_pixel(&integrators[1], 2, pixels[i].uniq,
+            &pixels[i].value[1], gmst, nifos, nsamples, sample_rate, epochs,
+            snrs, responses, locations, horizons);
     }
 
     for (unsigned char k = 0; k < 3; k ++)
@@ -796,6 +888,7 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
             break; /* We have reached underflow. */
         norm += dP;
     }
+    log_evidence_coherent = log(norm) + max_logp + log_norm;
     norm = 1 / norm;
 
     /* Rescale, normalize, and prepare output. */
@@ -818,6 +911,11 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
 
     /* Sort pixels by ascending NUNIQ index. */
     bayestar_pixels_sort_uniq(pixels, len);
+
+    /* Calculate log Bayes factor. */
+    *out_log_bci = *out_log_bsn = log_evidence_coherent;
+    for (unsigned int i = 0; i < nifos; i ++)
+        *out_log_bci -= log_evidence_incoherent[i];
 
     /* Done! */
     *out_len = len;

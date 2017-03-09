@@ -206,7 +206,9 @@ FITS_META_MAPPING = (
     ('origin', 'ORIGIN', 'Organization responsible for this FITS file', identity, identity),
     ('runtime', 'RUNTIME', 'Runtime in seconds of the CREATOR program', identity, identity),
     ('distmean', 'DISTMEAN', 'Posterior mean distance in Mpc', identity, identity),
-    ('diststd', 'DISTSTD', 'Posterior standard deviation of distance in Mpc', identity, identity))
+    ('diststd', 'DISTSTD', 'Posterior standard deviation of distance in Mpc', identity, identity),
+    ('log_bci', 'LOGBCI', 'Log Bayes factor: coherent vs. incoherent', identity, identity),
+    ('log_bsn', 'LOGBSN', 'Log Bayes factor: signal vs. noise', identity, identity))
 
 
 def write_sky_map(filename, m, **kwargs):
