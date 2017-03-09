@@ -79,3 +79,8 @@ int XLALWeaveSetupDataRead(
 #endif
 
 #endif // _SETUP_DATA_H
+
+// Local Variables:
+// c-file-style: "linux"
+// c-basic-offset: 2
+// End:

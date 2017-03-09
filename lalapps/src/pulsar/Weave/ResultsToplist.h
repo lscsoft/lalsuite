@@ -120,3 +120,8 @@ int XLALWeaveResultsToplistCompare(
 #endif
 
 #endif // _RESULTS_TOPLIST_H
+
+// Local Variables:
+// c-file-style: "linux"
+// c-basic-offset: 2
+// End:

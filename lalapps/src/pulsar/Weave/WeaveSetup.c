@@ -282,3 +282,8 @@ int main( int argc, char *argv[] )
   return EXIT_SUCCESS;
 
 }
+
+// Local Variables:
+// c-file-style: "linux"
+// c-basic-offset: 2
+// End:

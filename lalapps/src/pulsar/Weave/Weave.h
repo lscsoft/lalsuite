@@ -114,3 +114,8 @@ typedef struct tagWeaveOutputMiscPerSegInfo {
 #endif
 
 #endif // _WEAVE_H
+
+// Local Variables:
+// c-file-style: "linux"
+// c-basic-offset: 2
+// End:

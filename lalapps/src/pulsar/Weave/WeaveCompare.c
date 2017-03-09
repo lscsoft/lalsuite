@@ -226,3 +226,8 @@ XLAL_FAIL:
   return 2;
 
 }
+
+// Local Variables:
+// c-file-style: "linux"
+// c-basic-offset: 2
+// End:

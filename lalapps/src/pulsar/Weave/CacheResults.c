@@ -727,3 +727,8 @@ int XLALWeaveCacheRetrieve(
   return XLAL_SUCCESS;
 
 }
+
+// Local Variables:
+// c-file-style: "linux"
+// c-basic-offset: 2
+// End:
