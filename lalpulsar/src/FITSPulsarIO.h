@@ -25,6 +25,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/FITSFileIO.h>
 #include <lal/Segments.h>
+#include <lal/LALBarycenter.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,6 +57,22 @@ int XLALFITSReadSegmentList(
   FITSFile *file,                       ///< [in] FITS file pointer
   const CHAR *name,                     ///< [in] Name of FITS table to read segment list from
   LALSegList **segments                 ///< [out] Segment list
+  );
+
+///
+/// Write ephemeris data to a FITS file
+///
+int XLALFITSWriteEphemerisData(
+  FITSFile *file,                       ///< [in] FITS file pointer
+  const EphemerisData *ephemerides      ///< [in] Ephemeris data
+  );
+
+///
+/// Read ephemeris data from a FITS file
+///
+int XLALFITSReadEphemerisData(
+  FITSFile *file,                       ///< [in] FITS file pointer
+  EphemerisData **ephemerides           ///< [out] Ephemeris data
   );
 
 /// @}
