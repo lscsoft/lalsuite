@@ -226,9 +226,9 @@ for n, filename in enumerate(filenames):
 			params = distributions.coinc_params([event for event in events if event.ifo not in contents.vetoseglists or event.peak not in contents.vetoseglists[event.ifo]], offsetvector, triangulators)
 			if params is not None:
 				if is_background:
-					distributions.add_background(params)
+					distributions.denominator.increment(params)
 				else:
-					distributions.add_zero_lag(params)
+					distributions.candidates.increment(params)
 	else:
 		weight_func = get_injection_weight_func(contents, options.injection_reweight, options.injection_reweight_cutoff)
 		# iterate over burst<-->burst coincs matching injections
@@ -236,7 +236,7 @@ for n, filename in enumerate(filenames):
 		for sim, events, offsetvector in contents.get_injections():
 			params = distributions.coinc_params([event for event in events if event.ifo not in contents.vetoseglists or event.peak not in contents.vetoseglists[event.ifo]], offsetvector, triangulators)
 			if params is not None:
-				distributions.add_injection(params, weight = weight_func(sim))
+				distributions.numerator.increment(params, weight = weight_func(sim))
 
 	#
 	# Clean up.

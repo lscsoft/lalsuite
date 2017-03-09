@@ -37,7 +37,6 @@ from lal.utils import CacheEntry
 from lalburst import git_version
 from lalburst import ligolw_burca2
 from lalburst import SnglBurstUtils
-from pylal import snglcoinc
 from lalburst import stringutils
 
 
@@ -110,8 +109,6 @@ if options.verbose:
 	print >>sys.stderr, "computing event densities ..."
 coincparamsdistributions.finish(verbose = options.verbose)
 
-ln_likelihood_ratio = snglcoinc.LnLikelihoodRatio(coincparamsdistributions)
-
 
 #
 # iterate over files
@@ -153,7 +150,7 @@ for n, filename in enumerate(filenames):
 	# Run likelihood ratio calculation.
 	#
 
-	ligolw_burca2.ligolw_burca2(contents, ln_likelihood_ratio, coincparamsdistributions.coinc_params, verbose = options.verbose, params_func_extra_args = (triangulators,))
+	ligolw_burca2.ligolw_burca2(contents, coincparamsdistributions, coincparamsdistributions.coinc_params, verbose = options.verbose, params_func_extra_args = (triangulators,))
 
 	#
 	# Clean up.
