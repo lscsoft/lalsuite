@@ -165,16 +165,16 @@ for n, filename in enumerate(filenames):
 			params = distributions.coinc_params(events, offsetvector, MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD)
 			if params is not None:
 				if is_background:
-					distributions.add_background(params)
+					distributions.denominator.increment(params)
 				else:
-					distributions.add_zero_lag(params)
+					distributions.candidates.increment(params)
 	else:
 		# iterate over burst<-->burst coincs matching injections
 		# "exactly"
 		for sim, events, offsetvector in database.get_injections():
 			params = distributions.coinc_params(events, offsetvector, MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD)
 			if params is not None:
-				distributions.add_injection(params)
+				distributions.numerator.increment(params)
 
 	#
 	# Clean up.
