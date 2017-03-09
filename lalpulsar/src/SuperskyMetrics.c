@@ -701,7 +701,6 @@ int XLALSuperskyMetricsDimensions(
   )
 {
 
-
   // Check input
   XLAL_CHECK( metrics != NULL, XLAL_EFAULT );
   XLAL_CHECK( metrics->num_segments > 0, XLAL_EINVAL );
