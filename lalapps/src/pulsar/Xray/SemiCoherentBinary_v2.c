@@ -665,6 +665,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
        while keeping correct derivative bins (minus 10% for safety) */
     const INT4 xbins = !with_xbins ? 0 :
       (INT4) floor( 0.45 * dfreq / ( asini * omega ) );
+    XLAL_CHECK( xbins >= 0, XLAL_EDOM, "Invalid xbins=%d\n", xbins );
 
     INT4 left_xbins = xbins, right_xbins = xbins;
 
@@ -682,11 +683,21 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
       /* find ndim-D indices corresponding to the spin derivitive values for the segment power */
       for (j=0;j<fdots[i].ndim;j++) {
         fdots[i].idx[j] = lround( (fdots[i].x[j] - fdotgrid->grid[j].min)*fdotgrid->grid[j].oneoverdelta );
+        if ( fdots[i].idx[j] < 0 || ((UINT4)fdots[i].idx[j]) >= fdotgrid->grid[j].length ) {
+          LogPrintf(LOG_CRITICAL,"%s: stepped outside grid in segment %d, nu=%g, asini=%g, tasc=%g, omega=%g",__func__, i, bintemp->x[0], bintemp->x[1], bintemp->x[2], bintemp->x[3]);
+          for (j=0;j<fdots[i].ndim;j++) {
+            LogPrintfVerbatim(LOG_CRITICAL,", fdots[%d] = [%g <= %g <= %g, 0 <= %d < %d]", j, fdotgrid->grid[j].min, fdots[i].x[j], fdotgrid->grid[j].min + fdotgrid->grid[j].delta*fdotgrid->grid[j].length, fdots[i].idx[j], fdotgrid->grid[j].length);
+          }
+          LogPrintfVerbatim(LOG_CRITICAL,"\n");
+          XLAL_ERROR(XLAL_EDOM);
+        }
       }
 
       /* ensure number of extra frequency bins do not go out of range of coherent grids */
       left_xbins = GSL_MIN( left_xbins, (INT4)( fdots[i].idx[0] ) );
       right_xbins = GSL_MIN( right_xbins, (INT4)( fdotgrid->grid[0].length - fdots[i].idx[0] - 1 ) );
+      XLAL_CHECK( left_xbins >= 0, XLAL_EDOM, "Invalid left_xbins=%d\n", left_xbins );
+      XLAL_CHECK( right_xbins >= 0, XLAL_EDOM, "Invalid right_xbins=%d\n", right_xbins );
 
     } /* end loop over segments */
     fine_deriv_t += XLALGetCPUTime() - fine_deriv_t0;
