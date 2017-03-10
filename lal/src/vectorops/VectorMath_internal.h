@@ -48,7 +48,7 @@
   int XLALVector##NAME##_AVX  ARG_DEF; \
   int XLALVector##NAME##_SSE2 ARG_DEF; \
   int XLALVector##NAME##_SSE  ARG_DEF; \
-  int XLALVector##NAME##_FPU  ARG_DEF;
+  int XLALVector##NAME##_GEN  ARG_DEF;
 
 /* declare internal prototypes of SIMD-specific vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) */
 #define DECLARE_VECTORMATH_S2S(NAME)                                    \

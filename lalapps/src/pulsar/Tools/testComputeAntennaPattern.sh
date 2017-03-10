@@ -81,9 +81,10 @@ if [ -f $timestampsfile_L1 ]; then
 fi
 
 echo "----------------------------------------------------------------------------------------------------"
-echo "ComputeAntennaPattern Test0: internal consistency of different computeAM implementations in PrintDetectorState";
+echo "ComputeAntennaPattern Test1: single-sky-point, single-timestamp comparison of a(t), b(t) to PrintDetectorState";
 echo "----------------------------------------------------------------------------------------------------"
 
+## ----- run PrintDetectorState
 pds_cmdline="${pds_code} -I H1 -a $alpha -d $delta -t $timestamp1_pds >> $outPDS"
 echo $pds_cmdline;
 if ! eval $pds_cmdline; then
@@ -91,48 +92,9 @@ if ! eval $pds_cmdline; then
     exit 1
 fi
 
-pds_out_lalcomp=$(grep LALComputeAM ${outPDS} | tr ',' ' ')
-a_lalcomp=$( echo $pds_out_lalcomp | awk '{print $3}' )
-b_lalcomp=$( echo $pds_out_lalcomp | awk '{print $4}' )
-echo "==> LALComputeAM:                    a=$a_lalcomp, b=$b_lalcomp"
-pds_out_lalget=$(grep LALGetAMCoeffs ${outPDS} | tr ',' ' ')
-a_lalget=$( echo $pds_out_lalget | awk '{print $3}' )
-b_lalget=$( echo $pds_out_lalget | awk '{print $4}' )
-echo "    LALGetAMCoeffs:                  a=$a_lalget, b=$b_lalget"
-pds_out_lalnew=$(grep LALNewGetAMCoeffs ${outPDS} | tr ',' ' ')
-a_lalnew=$( echo $pds_out_lalnew | awk '{print $3}' )
-b_lalnew=$( echo $pds_out_lalnew | awk '{print $4}' )
-echo "    LALNewGetAMCoeffs:               a=$a_lalnew, b=$b_lalnew"
-pds_out_xlal=$(grep XLALComputeAntennaPatternCoeffs ${outPDS} | tr ',' ' ')
-a_xlal=$( echo $pds_out_xlal | awk '{print $3}' )
-b_xlal=$( echo $pds_out_xlal | awk '{print $4}' )
-echo "    XLALComputeAntennaPatternCoeffs: a=$a_xlal, b=$b_xlal"
-
-reldev_a_lalget=$(echo $a_lalcomp $a_lalget | awk "$awk_reldev")
-reldev_b_lalget=$(echo $b_lalcomp $b_lalget | awk "$awk_reldev")
-reldev_a_lalnew=$(echo $a_lalcomp $a_lalnew | awk "$awk_reldev")
-reldev_b_lalnew=$(echo $b_lalcomp $b_lalnew | awk "$awk_reldev")
-reldev_a_xlal=$(echo $a_lalcomp $a_xlal | awk "$awk_reldev")
-reldev_b_xlal=$(echo $b_lalcomp $b_xlal | awk "$awk_reldev")
-
-fail_a_get=$(echo $reldev_a_lalget $tolerance | awk "$awk_isgtr")
-fail_b_get=$(echo $reldev_b_lalget $tolerance | awk "$awk_isgtr")
-fail_a_new=$(echo $reldev_a_lalnew $tolerance | awk "$awk_isgtr")
-fail_b_new=$(echo $reldev_b_lalnew $tolerance | awk "$awk_isgtr")
-fail_a_xlal=$(echo $reldev_a_xlal $tolerance | awk "$awk_isgtr")
-fail_b_xlal=$(echo $reldev_b_xlal $tolerance | awk "$awk_isgtr")
-
-if [ "$fail_a_get" -o "$fail_b_get" -o "$fail_a_new" -o "$fail_b_new" -o "$fail_a_xlal" -o "$fail_b_xlal" ]; then
-    echo "==> FAILED at tolerance=$tolerance"
-    exit 1
-else
-    echo "==> OK at tolerance=$tolerance"
-fi
-
-
-echo "----------------------------------------------------------------------------------------------------"
-echo "ComputeAntennaPattern Test1: single-sky-point, single-timestamp comparison of a(t), b(t) to PrintDetectorState";
-echo "----------------------------------------------------------------------------------------------------"
+a=$( sed -n 's/^a = //p' $outPDS )
+b=$( sed -n 's/^b = //p' $outPDS )
+echo "==> lalapps_PrintDetectorState:      a=$a, b=$b"
 
 ## ----- run ComputeAntennaPattern
 cap_cmdline="${cap_code} --IFOs=H1 --timeGPS=$timestamp1 --outab=$outCAP --Alpha=$alpha --Delta=$delta"
@@ -146,10 +108,10 @@ a_cap=$(awk -v col=4 "$awk_print_wo_headers" $outCAP)
 b_cap=$(awk -v col=5 "$awk_print_wo_headers" $outCAP)
 echo "==> lalapps_ComputeAntennaPattern:   a=$a_cap, b=$b_cap"
 
-reldev_a_cap_xlal=$(echo $a_xlal $a_cap | awk "$awk_reldev")
-reldev_b_cap_xlal=$(echo $b_xlal $b_cap | awk "$awk_reldev")
-fail_a_cap=$(echo $reldev_a_cap_xlal $tolerance | awk "$awk_isgtr")
-fail_b_cap=$(echo $reldev_b_cap_xlal $tolerance | awk "$awk_isgtr")
+reldev_a_cap=$(echo $a $a_cap | awk "$awk_reldev")
+reldev_b_cap=$(echo $b $b_cap | awk "$awk_reldev")
+fail_a_cap=$(echo $reldev_a_cap $tolerance | awk "$awk_isgtr")
+fail_b_cap=$(echo $reldev_b_cap $tolerance | awk "$awk_isgtr")
 
 if [ "$fail_a_cap" -o "$fail_b_cap" ]; then
     echo "==> FAILED at tolerance=$tolerance"
@@ -180,9 +142,8 @@ if ! eval $pds_cmdline; then
     echo "Error.. something failed when running '$pds_code' ..."
     exit 1
 fi
-pds_out_xlal=$(grep XLALComputeAntennaPatternCoeffs ${outPDS} | tr ',' ' ')
-a1_pds=$( echo $pds_out_xlal | awk '{print $3}')
-b1_pds=$( echo $pds_out_xlal | awk '{print $4}')
+a1_pds=$( sed -n 's/^a = //p' $outPDS )
+b1_pds=$( sed -n 's/^b = //p' $outPDS )
 
 rm $outPDS
 pds_cmdline="${pds_code} -I H1 -a $alpha2 -d $delta2 -t $timestamp1_pds >> $outPDS"
@@ -191,9 +152,8 @@ if ! eval $pds_cmdline; then
     echo "Error.. something failed when running '$pds_code' ..."
     exit 1
 fi
-pds_out_xlal=$(grep XLALComputeAntennaPatternCoeffs ${outPDS} | tr ',' ' ')
-a2_pds=$( echo $pds_out_xlal | awk '{print $3}')
-b2_pds=$( echo $pds_out_xlal | awk '{print $4}')
+a2_pds=$( sed -n 's/^a = //p' $outPDS )
+b2_pds=$( sed -n 's/^b = //p' $outPDS )
 
 rm $outPDS
 pds_cmdline="${pds_code} -I H1 -a $alpha3 -d $delta3 -t $timestamp1_pds >> $outPDS"
@@ -202,9 +162,8 @@ if ! eval $pds_cmdline; then
     echo "Error.. something failed when running '$pds_code' ..."
     exit 1
 fi
-pds_out_xlal=$(grep XLALComputeAntennaPatternCoeffs ${outPDS} | tr ',' ' ')
-a3_pds=$( echo $pds_out_xlal | awk '{print $3}')
-b3_pds=$( echo $pds_out_xlal | awk '{print $4}')
+a3_pds=$( sed -n 's/^a = //p' $outPDS )
+b3_pds=$( sed -n 's/^b = //p' $outPDS )
 
 ## ----- run ComputeAntennaPattern
 cap_cmdline="${cap_code} --IFOs=H1 --timeGPS=$timestamp1 --outab=$outCAP --skyGridFile=$skygridfile"
@@ -328,7 +287,7 @@ if ! eval $mfd_cmdline; then
     exit 1
 fi
 
-pfs_cmdline="${pfs_code} --IFO=H1 --h0=1e-24 --cosi=0 --psi=0 --phi0=0 --Freq=60 --Alpha=$alpha --Delta=$delta --DataFiles=$sftfile_H1 --outputFstat=$outPFS --SignalOnly --printFstat=0"
+pfs_cmdline="${pfs_code} --IFO=H1 --h0=1e-24 --cosi=0 --psi=0 --phi0=0 --Freq=60 --Alpha=$alpha --Delta=$delta --DataFiles=$sftfile_H1 --outputFstat=$outPFS --assumeSqrtSX=1.0 --printFstat=0"
 echo $pfs_cmdline;
 if ! eval $pfs_cmdline; then
     echo "Error.. something failed when running '$pfs_code' ..."

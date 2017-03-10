@@ -164,7 +164,7 @@ typedef struct {
   DopplerRegion searchRegion;		    /**< parameter-space region to search over */
   DopplerFullScanState *scanState;          /**< current state of the Doppler-scan */
   PulsarDopplerParams stepSizes;	    /**< user-preferences on Doppler-param step-sizes */
-  EphemerisData *ephemeris;		    /**< ephemeris data (from LALInitBarycenter()) */
+  EphemerisData *ephemeris;		    /**< ephemeris data (from XLALInitBarycenter()) */
   UINT4 NSFTs;				    /**< total number of all SFTs used */
   UINT4Vector *numSFTsPerDet;		    /**< number of SFTs per detector, for log strings, etc. */
   LALStringVector *detectorIDs;		    /**< detector ID names, for column headings string */
@@ -188,7 +188,9 @@ typedef struct {
 typedef struct {
   INT4 Dterms;			/**< number of terms in LALDemod Dirichlet kernel is Dterms+1 */
   CHAR *IFO;			/**< IFO name: only required if using v1 SFTs */
-  BOOLEAN SignalOnly;		/**< FALSE: estimate noise-floor from data, TRUE: assume Sh=1 */
+
+  LALStringVector* assumeSqrtSX;/**< Assume stationary Gaussian noise with detector noise-floors sqrt{SX}" */
+  BOOLEAN SignalOnly;	        /**< DEPRECATED: ALTERNATIVE switch to assume Sh=1 instead of estimating noise-floors from SFTs */
   BOOLEAN UseNoiseWeights;	/**< use SFT-specific noise-weights for each segment in Fstat-computation */
 
   REAL8 Freq;			/**< start-frequency of search */
@@ -414,17 +416,16 @@ int main(int argc,char *argv[])
       fprintf (fpFstat, "%s", GV.logstring );
 
       /* assemble column headings string */
-      char colum_headings_string_base[] = "freq alpha delta f1dot f2dot f3dot 2F";
-      UINT4 column_headings_string_length = sizeof(colum_headings_string_base);
-      char column_headings_string[column_headings_string_length];
+      char column_headings_string[1024];
       XLAL_INIT_MEM( column_headings_string );
-      strcat ( column_headings_string, colum_headings_string_base );
+      strcat ( column_headings_string, "freq alpha delta f1dot f2dot f3dot 2F" );
       if ( uvar.computeBSGL )
         {
-          const UINT4 numDetectors = GV.detectorIDs->length;
-          column_headings_string_length += numDetectors*6; /* 6 per detector for " 2F_XY" */
-          column_headings_string_length += 10; /* 3 for " log10BSGL"*/
           strcat ( column_headings_string, " log10BSGL" );
+        }
+      if ( uvar.outputSingleFstats || uvar.computeBSGL )
+        {
+          const UINT4 numDetectors = GV.detectorIDs->length;
           for ( UINT4 X = 0; X < numDetectors ; X ++ )
             {
               char headingX[7];
@@ -896,7 +897,8 @@ initUserVars ( UserInput_t *uvar )
   uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
-  uvar->SignalOnly = FALSE;
+  uvar->assumeSqrtSX = NULL;
+  uvar->SignalOnly = 0;
   uvar->UseNoiseWeights = TRUE;
 
   /* default step-sizes for GRID_FLAT */
@@ -1010,7 +1012,8 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember(DataFiles, 	STRING, 'D', REQUIRED, "File-pattern specifying (also multi-IFO) input SFT-files");
   XLALRegisterUvarMember(IFO, 		STRING, 'I', OPTIONAL, "Detector: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
 
-  XLALRegisterUvarMember( 	SignalOnly, 	BOOLEAN, 'S', OPTIONAL, "Signal only flag");
+  XLALRegisterUvarMember( assumeSqrtSX,	 STRINGVector, 0,  OPTIONAL, "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs)");
+  XLALRegisterUvarMember( SignalOnly,	BOOLEAN, 'S', DEPRECATED,"DEPRECATED ALTERNATIVE: Don't estimate noise-floors but assume sqrtSX=1 instead");
 
   XLALRegisterUvarMember( 	TwoFthreshold,	REAL8, 'F', OPTIONAL, "Set the threshold for selection of 2F");
   XLALRegisterUvarMember( 	gridType,	 INT4, 0 , OPTIONAL, "Grid: 0=flat, 1=isotropic, 2=metric, 3=skygrid-file, 6=grid-file, 8=spin-square, 9=spin-age-brk");
@@ -1335,6 +1338,9 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
     for (UINT4 X = 0; X < s_assumeSqrtSX.length; ++X) {
       s_assumeSqrtSX.sqrtSn[X] = 1.0;
     }
+    assumeSqrtSX = &s_assumeSqrtSX;
+  } else if ( uvar->assumeSqrtSX != NULL ) {
+    XLAL_CHECK( XLALParseMultiNoiseFloor( &s_assumeSqrtSX, uvar->assumeSqrtSX, XLALCountIFOsInCatalog(catalog) ) == XLAL_SUCCESS, XLAL_EFUNC );
     assumeSqrtSX = &s_assumeSqrtSX;
   } else {
     assumeSqrtSX = NULL;
@@ -1815,6 +1821,9 @@ checkUserInputConsistency ( const UserInput_t *uvar )
     XLALPrintError ("\nERROR: FracCandidatesToKeep must be greater than 0.0 and less than or equal to 1.0\n\n");
     XLAL_ERROR ( XLAL_EINVAL );
   }
+
+  /* check SignalOnly and assumeSqrtSX */
+  XLAL_CHECK ( !uvar->SignalOnly || (uvar->assumeSqrtSX == NULL), XLAL_EINVAL, "Cannot pass --SignalOnly AND --assumeSqrtSX at the same time!\n");
 
   return XLAL_SUCCESS;
 

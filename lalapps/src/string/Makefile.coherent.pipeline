@@ -5,11 +5,11 @@ dag :
 	lalapps_gen_timeslides --verbose --instrument H1=0:0:0 --instrument H2=0:0:0 --instrument L1=-70.898154036220632:+70.898154036220632:3.5449077018110318 --instrument V1=-70.898154036220632:+70.898154036220632:3.5449077018110318 background_time_slides_0.xml.gz
 	mkdir coherent_dag ; pushd coherent_dag ; lalapps_cosmicstring_pipe --verbose --config-file ../JW1_H1H2_StringDag.ini --log-path $(TMPDIR) --segments-file ../segments.xml.gz --vetoes-file ../vetoes.xml.gz --injection-time-slides ../injection_time_slides.xml.gz --background-time-slides ../background_time_slides_0.xml.gz ; sed -i 's|macroframecache="[\/0-9a-zA-z]*cache/H-H2_RDS_C03_L2_CACHE-[0-9]*-[0-9]*.lcf" | macroframecache="/archive/home/frobinet/H1H2.florent.cache" | g' JW1_H1H2_StringDag.dag ; popd
 
-TOTALTIME=$(shell sed -n -e 's/Total time in zero-lag segments: \([0-9.]*\) s/\1/p' < lalapps_stringfinal.log)
+TOTALTIME=$(shell sed -n -e 's/Total time in zero-lag segments: \([0-9.]*\) s/\1/p' < lalapps_string_final.log)
 
 final :
 	lalapps_string_plot_likelihood --verbose $(shell find coherent_dag -name *LIKELIHOOD*.xml.gz)
-	lalapps_stringfinal --verbose --tmp-space $(TMPDIR) --cal-uncertainty 0.08 --injections-bin-size 8 --vetoes-name vetoes coherent_dag/injections*/*.sqlite coherent_dag/noninjections/*.sqlite >lalapps_stringfinal.log 2>&1
+	lalapps_string_final --verbose --tmp-space $(TMPDIR) --cal-uncertainty 0.08 --injections-bin-size 8 --vetoes-name vetoes coherent_dag/injections*/*.sqlite coherent_dag/noninjections/*.sqlite >lalapps_string_final.log 2>&1
 
 contour :
 	lalapps_string_cs_gamma --frequency 75 --Gmustart 1e-12 --Gmuend 1e-4 --nGmu 150 --epsilonstart 1e-12 --epsilonend 1e0 --nepsilon 150 --index 1.0 --efficiency-file string_efficiency.dat

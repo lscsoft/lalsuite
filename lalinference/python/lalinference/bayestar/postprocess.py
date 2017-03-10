@@ -207,11 +207,6 @@ def _vec2radec(vertices, degrees=False):
 
 
 def contour(m, levels, nest=False, degrees=False, simplify=True):
-    import pkg_resources
-    try:
-        pkg_resources.require('healpy >= 1.9.0')
-    except:
-        raise RuntimeError('This function requires healpy >= 1.9.0.')
     try:
         import networkx as nx
     except:

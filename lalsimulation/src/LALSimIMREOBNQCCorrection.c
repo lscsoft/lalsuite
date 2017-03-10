@@ -1368,23 +1368,23 @@ XLALSimIMREOBGetNRSpinPeakDeltaTv4 (INT4 UNUSED l,				/**<< Mode l */
       case 2:
           switch (m) {
               case 2:
-                  //Calibrationv21_Jul21_nonbcycles_noISCO_noPhDq8s85_inicondsfromrun7_chop
+                  // Calibrationv21_Sep8a
                   coeff00 = 2.50499;
-                  coeff01 = 11.5159;
-                  coeff02 = 9.20186;
-                  coeff03 = 0.;
+                  coeff01 = 13.0064;
+                  coeff02 = 11.5435;
+                  coeff03 = 0;
                   coeff10 = 45.8838;
-                  coeff11 = -49.1423;
-                  coeff12 = 0.;
-                  coeff13 = -42.163;
+                  coeff11 = -40.3183;
+                  coeff12 = 0;
+                  coeff13 = -19.0538;
                   coeff20 = 13.0879;
-                  coeff21 = 0.;
-                  coeff22 = 0.;
-                  coeff23 = 198.376;
+                  coeff21 = 0;
+                  coeff22 = 0;
+                  coeff23 = 0.192775;
                   coeff30 = -716.044;
-                  coeff31 = 0.;
-                  coeff32 = 110.537;
-                  coeff33 = 0.;
+                  coeff31 = 0;
+                  coeff32 = 0;
+                  coeff33 = 0;
                   res = coeff00 + coeff01 * chi + coeff02 * chiTo2 + coeff03 * chiTo3 +
                     coeff10 * eta + coeff11 * eta * chi + coeff12 * eta * chiTo2 +
                     coeff13 * eta * chiTo3 + coeff20 * eta2 + coeff21 * eta2 * chi +

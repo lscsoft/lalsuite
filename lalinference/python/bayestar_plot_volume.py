@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2015-2016  Leo Singer
+# Copyright (C) 2015-2017  Leo Singer
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,9 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 # Command line interface
 
+# Set no-op backend, because seaborn imports pyplot and we must not load X11
+import matplotlib
+matplotlib.use('Template')
 # Set seaborn style (overwrites rcParams, so has to be before argparse)
 import seaborn
 seaborn.set_style("white")
@@ -31,8 +34,8 @@ import argparse
 from lalinference.bayestar import command
 parser = command.ArgumentParser(parents=[command.figure_parser])
 parser.add_argument(
-    '--max-distance', metavar='Mpc', type=float, default=120,
-    help='maximum distance of plot in Mpc [default: %(default)s]')
+    '--max-distance', metavar='Mpc', type=float,
+    help='maximum distance of plot in Mpc [default: auto]')
 parser.add_argument(
     '--contour', metavar='PERCENT', type=float, nargs='+',
     help='plot contour enclosing this percentage of'
@@ -42,8 +45,8 @@ parser.add_argument(
     help='right ascension (deg), declination (deg), and distance to mark'
     ' [may be specified multiple times, default: none]')
 parser.add_argument(
-    '--chain', metavar='CHAIN.dat', type=argparse.FileType('r'),
-    help='parser.add_argumentally plot a posterior sample chain [default: none]')
+    '--chain', metavar='CHAIN.hdf5', type=argparse.FileType('rb'),
+    help='optionally plot a posterior sample chain [default: none]')
 parser.add_argument(
     '--projection', type=int, choices=list(range(4)), default=0,
     help='Plot one specific projection [default: plot all projections]')
@@ -65,32 +68,36 @@ progress.update(-1, 'Starting up')
 from matplotlib import pyplot as plt
 from matplotlib import gridspec
 from matplotlib import transforms
-from lalinference.io import fits
+from lalinference import io
 from lalinference.plot import marker
 from lalinference.bayestar.distance import (
-    principal_axes, volume_render, marginal_pdf)
+    principal_axes, volume_render, marginal_pdf, marginal_ppf)
 import healpy as hp
 import numpy as np
 import scipy.stats
 
 # Read input, determine input resolution.
 progress.update(-1, 'Loading FITS file')
-(prob, mu, sigma, norm), metadata = fits.read_sky_map(
+(prob, mu, sigma, norm), metadata = io.read_sky_map(
     opts.input.name, distances=True)
 npix = len(prob)
 nside = hp.npix2nside(npix)
 
 progress.update(-1, 'Preparing projection')
 
-if opts.align_to is None:
-    prob2, mu2, sigma2 = prob, mu, sigma
+if opts.align_to is None or opts.input.name == opts.align_to.name:
+    prob2, mu2, sigma2, norm2 = prob, mu, sigma, norm
 else:
-    (prob2, mu2, sigma2, _), _ = fits.read_sky_map(
+    (prob2, mu2, sigma2, norm2), _ = io.read_sky_map(
         opts.align_to.name, distances=True)
+if opts.max_distance is None:
+    max_distance = 2.5 * marginal_ppf(0.5, prob2, mu2, sigma2, norm2)
+else:
+    max_distance = opts.max_distance
 R = np.ascontiguousarray(principal_axes(prob2, mu2, sigma2))
 
 if opts.chain:
-    chain = np.recfromtxt(opts.chain, names=True)
+    chain = io.read_samples(opts.chain.name)
     chain = np.dot(R.T, (hp.ang2vec(
         0.5 * np.pi - chain['dec'], chain['ra'])
         * np.atleast_2d(chain['dist']).T).T)
@@ -102,7 +109,7 @@ gs = gridspec.GridSpec(
     wspace=0.05, hspace=0.05)
 
 imgwidth = int(opts.dpi * opts.figure_width / n)
-s = np.linspace(-opts.max_distance, opts.max_distance, imgwidth)
+s = np.linspace(-max_distance, max_distance, imgwidth)
 xx, yy = np.meshgrid(s, s)
 dtheta = 0.5 * np.pi / nside / 4
 
@@ -124,15 +131,14 @@ for iface, (axis0, axis1, (sp0, sp1)) in enumerate((
 
     # Marginalize onto the given face
     density = volume_render(
-        xx.ravel(), yy.ravel(), opts.max_distance, axis0, axis1, R, False,
+        xx.ravel(), yy.ravel(), max_distance, axis0, axis1, R, False,
         prob, mu, sigma, norm).reshape(xx.shape)
 
     # Plot heat map
     ax = fig.add_subplot(gs[0, 0] if opts.projection else gs[sp0, sp1], aspect=1)
     ax.imshow(
         density, origin='lower',
-        extent=[-opts.max_distance, opts.max_distance,
-                -opts.max_distance, opts.max_distance],
+        extent=[-max_distance, max_distance, -max_distance, max_distance],
         cmap=opts.colormap)
 
     # Add contours if requested
@@ -164,8 +170,8 @@ for iface, (axis0, axis1, (sp0, sp1)) in enumerate((
     ax.set_yticks([])
 
     # Set axis limits
-    ax.set_xlim([-opts.max_distance, opts.max_distance])
-    ax.set_ylim([-opts.max_distance, opts.max_distance])
+    ax.set_xlim([-max_distance, max_distance])
+    ax.set_ylim([-max_distance, max_distance])
 
     # Mark origin (Earth)
     ax.plot(
@@ -184,7 +190,8 @@ if not opts.projection:
     # Add scale bar, 1/4 width of the plot
     ax.plot([0.0625, 0.3125], [0.0625, 0.0625],
         color='black', linewidth=1, transform=ax.transAxes)
-    ax.text(0.0625, 0.0625, '{0:g} Mpc'.format(0.5 * opts.max_distance),
+    ax.text(0.0625, 0.0625,
+        '{0:d} Mpc'.format(int(np.round(0.5 * max_distance))),
         fontsize=8, transform=ax.transAxes, verticalalignment='bottom')
 
     # Create marginal distance plot.
@@ -193,7 +200,7 @@ if not opts.projection:
     ax = fig.add_subplot(gs1[1:-1, 1:-1])
 
     # Plot marginal distance distribution, integrated over the whole sky.
-    d = np.linspace(0, opts.max_distance)
+    d = np.linspace(0, max_distance)
     ax.fill_between(d, marginal_pdf(d, prob, mu, sigma, norm),
         alpha=0.5, color=colors[0])
 
@@ -215,9 +222,10 @@ if not opts.projection:
         ax.axvline(dist, color='black', linewidth=0.5)
 
     # Scale axes
-    ax.set_xticks([0, opts.max_distance])
-    ax.set_xticklabels(['0', "{0:g}\nMpc".format(opts.max_distance)], fontsize=9)
+    ax.set_xticks([0, max_distance])
+    ax.set_xticklabels(['0', "{0:d}\nMpc".format(int(np.round(max_distance)))], fontsize=9)
     ax.set_yticks([])
+    ax.set_xlim(0, max_distance)
     ax.set_ylim(0, ax.get_ylim()[1])
 
 progress.update(-1, 'Saving')

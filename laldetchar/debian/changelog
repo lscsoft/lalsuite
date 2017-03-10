@@ -1,9 +1,17 @@
-laldetchar (0.3.3.1-1) UNRELEASED; urgency=medium
+laldetchar (0.3.5-1) unstable; urgency=low
 
+  * LALDetChar 0.3.5
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 07 Feb 2017 23:35:17 -0600
+
+laldetchar (0.3.4-1) unstable; urgency=low
+
+  * LALDetChar 0.3.4
+  * ER10 release
   * Add some scaffolding for future python3 package.
     The laldetchar Python source is not compatible with Python 3 yet.
 
- -- Leo Singer <leo.singer@ligo.org>  Fri, 15 Jul 2016 00:03:38 -0400
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 26 Sep 2016 12:20:20 -0500
 
 laldetchar (0.3.3-1) unstable; urgency=low
 

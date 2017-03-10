@@ -3,8 +3,11 @@ include $(top_srcdir)/gnuscripts/lalsuite_test.am
 
 # Add compiled test programs to this variable
 test_programs += AstroOmegaTest
+test_programs += CCoarseGrainFrequencySeriesTest
 test_programs += CZeroPadAndFFTTest
+test_programs += DCoarseGrainFrequencySeriesTest
 test_programs += OverlapReductionFunctionTest
+test_programs += SCoarseGrainFrequencySeriesTest
 test_programs += SZeroPadAndFFTTest
 test_programs += SimulatePopcornTest
 test_programs += SimulateSBTest
@@ -15,6 +18,7 @@ test_programs += StochasticInverseNoiseTest
 test_programs += StochasticOmegaGWTest
 test_programs += StochasticOptimalFilterNormalizationTest
 test_programs += StochasticOptimalFilterTest
+test_programs += ZCoarseGrainFrequencySeriesTest
 
 # Add shell, Python, etc. test scripts to this variable
 test_scripts +=

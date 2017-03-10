@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 128
+# serial 135
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -602,9 +602,9 @@ AC_DEFUN([LALSUITE_CHECK_LIB],[
   else
     AC_CHECK_LIB(lowercase,[$3],,[AC_MSG_ERROR([could not find the $1 library])])
     AC_CHECK_HEADERS([$4],,[AC_MSG_ERROR([could not find the $4 header])])
-    if test "$1" != "LALSupport"; then
+    m4_if(lowercase,[lalsupport],[],[
       LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK([$1])
-    fi
+    ])
   fi
   AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
   # add $1 to list of LALSuite libraries
@@ -640,24 +640,46 @@ AC_DEFUN([LALSUITE_CHECK_OPT_LIB],[
 
 AC_DEFUN([LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK],[
   # $0: check for version mismatch between library $1 and its headers
+  m4_pushdef([uppercase],m4_translit([[$1]], [a-z], [A-Z]))
+  m4_pushdef([withoutlal],m4_bpatsubst([$1], [^LAL], []))
   AC_MSG_CHECKING([whether $1 headers match the library])
-  lib_structure=`echo $1 | sed 's/LAL/lal/'`VCSInfo
-  header_structure=`echo $1 | sed 's/LAL/lal/'`VCSInfoHeader
-  AC_RUN_IFELSE([
+  AC_LINK_IFELSE([
     AC_LANG_SOURCE([[
-#include <string.h>
-#include <stdlib.h>
 #include <lal/$1VCSInfoHeader.h>
-int main(void) { exit(XLALVCSInfoCompare(&$lib_structure, &$header_structure) ? 1 : 0); }
+int main(void) {
+#if ]uppercase[_VERSION_DEVEL != 0
+  ]uppercase[_VCS_LINK_CHECK();
+#endif
+  return 0;
+}
     ]])
   ],[
-    AC_MSG_RESULT(yes)
+    AC_MSG_RESULT([yes])
   ],[
-    AC_MSG_RESULT(no)
+    AC_MSG_RESULT([no])
+    AC_LINK_IFELSE([
+      AC_LANG_SOURCE([[
+#include <stdio.h>
+#include <lal/$1VCSInfoHeader.h>
+int main(void) {
+  printf("$1 headers: %s %s %s\n", ]uppercase[_VERSION, ]uppercase[_VCS_ID, ]uppercase[_VCS_STATUS);
+  printf("$1 library: %s %s %s\n", lal]withoutlal[VCSInfo.version, lal]withoutlal[VCSInfo.vcsId, lal]withoutlal[VCSInfo.vcsStatus);
+  return 0;
+}
+      ]])
+    ],[
+      AS_IF([test ${cross_compiling} != yes],[
+        ./conftest${EXEEXT} | ${SED} -e "s/^/${as_me}:${as_lineno-$LINENO}: /" >&AS_MESSAGE_LOG_FD
+      ])
+    ],[
+      _AS_ECHO_LOG([could not determine further details of $1 header-library mismatch (compile/link error)])
+    ],[
+      _AS_ECHO_LOG([could not determine further details of $1 header-library mismatch (cross compiling)])
+    ])
     AC_MSG_ERROR([Your $1 headers do not match your library. Check config.log for details.])
-  ],[
-    AC_MSG_WARN([cross compiling: not checking])
   ])
+  m4_popdef([uppercase])
+  m4_popdef([withoutlal])
   # end $0
 ])
 
@@ -1158,7 +1180,7 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
       DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/^citelist/d'"]
     ])
     LALSUITE_VERSION_COMPARE([1.8.8],[<=],[${doxygen_version}],[
-      LALSUITE_VERSION_COMPARE([${doxygen_version}],[<=],[9.9.9],[
+      LALSUITE_VERSION_COMPARE([${doxygen_version}],[<],[1.8.11],[
         # https://bugzilla.gnome.org/show_bug.cgi?id=743604
         DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/warning: Duplicate anchor/d'"]
         DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/warning: multiple use of section label/d'"]
@@ -1366,9 +1388,11 @@ AC_DEFUN([LALSUITE_CHECK_PAGER],[
     AS_CASE([${PAGER}],
       [''],[:],
       [*/less],[
-        AS_IF([echo | ${PAGER} -FRX >/dev/null 2>&1],[
-          PAGER="${PAGER} -FRX"
-        ])
+        for pager_arg in -F -R -S -X; do
+          AS_IF([echo | ${PAGER} ${pager_arg} >/dev/null 2>&1],[
+            PAGER="${PAGER} ${pager_arg}"
+          ])
+        done
       ]
     )
   ])
@@ -1382,8 +1406,88 @@ AC_DEFUN([LALSUITE_CHECK_PAGER],[
 AC_DEFUN([LALSUITE_ENABLE_HELP2MAN],[
   # $0: check for help2man utility
   AC_PATH_PROG([HELP2MAN], [help2man])
+  # Require a minimum version of help2man to support the
+  # --version-string and --no-discard-stderr flags.
+  AS_IF(
+    [test -n "${HELP2MAN}"],
+    [
+      HELP2MAN_MIN_VERSION="1.37"
+      AC_MSG_CHECKING([for help2man >= ${HELP2MAN_MIN_VERSION}])
+      HELP2MAN_VERSION=`${HELP2MAN} --version --version | head -n 1 | cut -d ' ' -f 3`
+      AX_COMPARE_VERSION(
+        [${HELP2MAN_VERSION}], [ge], [${HELP2MAN_MIN_VERSION}],
+        [AC_MSG_RESULT([yes])],
+        [
+          AC_MSG_RESULT([no])
+          HELP2MAN=
+        ]
+      )
+    ]
+  )
+  AC_ARG_ENABLE(
+    [help2man],
+    AC_HELP_STRING([--enable-help2man],[automatically generate man pages with help2man @<:@default=yes@:>@]),
+    AS_CASE([${enableval}],
+      [yes], [],
+      [no], [HELP2MAN=],
+      AC_MSG_ERROR([bad value ${enableval} for --enable-help2man])
+    )
+  )
   AC_SUBST([HELP2MAN], ["${HELP2MAN}"])
   AS_IF([test -n "${HELP2MAN}"], [help2man=true], [help2man=false])
   LALSUITE_ENABLE_MODULE([HELP2MAN])
+  # end $0
+])
+
+AC_DEFUN([LALSUITE_ENABLE_OPENMP],[
+  # $0: check for OpenMP support
+  # check for OpenMP
+  AC_OPENMP
+
+  # check that compiler supports C99 variable length arrays in OpenMP for loops.
+  # Apple's llvm-gcc-4.2 is buggy and does not.
+  AS_IF([test "x$OPENMP_CFLAGS" != "x"],
+    [
+      AC_MSG_CHECKING([if compiler supports C99 VLAs in OpenMP for loops])
+      LALSUITE_PUSH_UVARS
+      CFLAGS="$OPENMP_CFLAGS"
+      AC_LINK_IFELSE([
+          AC_LANG_PROGRAM(, [
+            int i, n = 10;
+            #pragma omp parallel for
+            for (i = 0; i < 10; i ++)
+            { int a@<:@n@:>@; }
+          ])
+        ],
+        [AC_MSG_RESULT([yes])],
+        [
+          AC_MSG_RESULT([no, disabling OpenMP])
+          OPENMP_CFLAGS=
+        ]
+      )
+      LALSUITE_POP_UVARS
+    ]
+  )
+
+  # Disable OpenMP by default.
+  # FIXME: OpenMP should be on by default, but it breaks condor_compiling lalapps.
+  AS_IF(
+    [test "x$enable_openmp" = "x"],
+    [OPENMP_CFLAGS=]
+  )
+  # add compiler flags for OpenMP
+  AS_IF(
+    [test "x$OPENMP_CFLAGS" = "x" -a "x$ac_cv_prog_[]_AC_LANG_ABBREV[]_openmp" != "xnone needed"],
+    [
+      openmp="false"
+      LALSUITE_ADD_FLAGS([C],[-Wno-unknown-pragmas],[])
+    ],
+    [
+      openmp="true"
+      LALSUITE_ADD_FLAGS([C],[${OPENMP_CFLAGS}],[])
+    ]
+  )
+
+  LALSUITE_ENABLE_MODULE([OPENMP])
   # end $0
 ])

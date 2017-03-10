@@ -2,46 +2,57 @@ Source: lalinference
 Section: science
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
-Build-Depends: debhelper (>= 9), help2man, pkg-config, dh-python, python-all-dev,
-  libchealpix-dev,
-  zlib1g-dev, libgsl0-dev (>= 1.15), libmetaio-dev (>= 8.2), python-healpy (>= 1.9.1), python-h5py,
-  swig (>= 3.0.7), liboctave-dev, python-numpy, python-scipy, python-mpltoolkits.basemap,
+Build-Depends: debhelper (>= 9),
+  dh-python,
+  help2man,
+  libchealpix-dev (>= 3.30.0),
+  libgsl0-dev (>= 1.15),
   libhdf5-dev,
-  python-glue (>= 1.49.1~),
-  python-glue-common (>= 1.49.1~),
-  python-glue-segments (>= 1.49.1~),
+  libmetaio-dev (>= 8.2),
+  liboctave-dev,
+  pkg-config,
+  python-all-dev,
+  python-h5py,
+  python-healpy (>= 1.9.1),
+  python-numpy (>= 1.7),
+  python-scipy (>= 0.8),
+  python-seaborn,
+  python-shapely,
+  swig (>= 3.0.7),
+  zlib1g-dev,
+  python-glue (>= @MIN_GLUE_VERSION@),
   lal-dev (>= @MIN_LAL_VERSION@~),
-  lal-python (>= @MIN_LAL_VERSION@~),
   lal-octave (>= @MIN_LAL_VERSION@~),
+  lal-python (>= @MIN_LAL_VERSION@~),
   lalframe-dev (>= @MIN_LALFRAME_VERSION@~),
-  lalframe-python (>= @MIN_LALFRAME_VERSION@~),
   lalframe-octave (>= @MIN_LALFRAME_VERSION@~),
+  lalframe-python (>= @MIN_LALFRAME_VERSION@~),
   lalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
-  lalmetaio-python (>= @MIN_LALMETAIO_VERSION@~),
   lalmetaio-octave (>= @MIN_LALMETAIO_VERSION@~),
+  lalmetaio-python (>= @MIN_LALMETAIO_VERSION@~),
   lalxml-dev (>= @MIN_LALXML_VERSION@~),
-  lalxml-python (>= @MIN_LALXML_VERSION@~),
   lalxml-octave (>= @MIN_LALXML_VERSION@~),
+  lalxml-python (>= @MIN_LALXML_VERSION@~),
   lalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
-  lalsimulation-python (>= @MIN_LALSIMULATION_VERSION@~),
   lalsimulation-octave (>= @MIN_LALSIMULATION_VERSION@~),
+  lalsimulation-python (>= @MIN_LALSIMULATION_VERSION@~),
   lalburst-dev (>= @MIN_LALBURST_VERSION@~),
-  lalburst-python (>= @MIN_LALBURST_VERSION@~),
   lalburst-octave (>= @MIN_LALBURST_VERSION@~),
+  lalburst-python (>= @MIN_LALBURST_VERSION@~),
   lalinspiral-dev (>= @MIN_LALINSPIRAL_VERSION@~),
-  lalinspiral-python (>= @MIN_LALINSPIRAL_VERSION@~),
   lalinspiral-octave (>= @MIN_LALINSPIRAL_VERSION@~),
+  lalinspiral-python (>= @MIN_LALINSPIRAL_VERSION@~),
   lalpulsar-dev (>= @MIN_LALPULSAR_VERSION@~),
-  lalpulsar-python (>= @MIN_LALPULSAR_VERSION@~),
-  lalpulsar-octave (>= @MIN_LALPULSAR_VERSION@~)
+  lalpulsar-octave (>= @MIN_LALPULSAR_VERSION@~),
+  lalpulsar-python (>= @MIN_LALPULSAR_VERSION@~)
 X-Python-Version: >= 2.7
-X-Python3-Version: >= 3.4
+X-Python3-Version: <= 3.0
 Standards-Version: 3.9.8
 
 Package: lalinference
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends},
-  libchealpix0, python-healpy (>= 1.9.1),
+Depends: ${misc:Depends},
+  ${shlibs:Depends},
   libmetaio1 (>= 8.2),
   lal (>= @MIN_LAL_VERSION@~),
   lalframe (>= @MIN_LALFRAME_VERSION@~),
@@ -59,9 +70,14 @@ Description: LSC Algorithm Library Inference
 Package: lalinference-dev
 Section: libdevel
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g-dev,
-  libchealpix-dev, libgsl0-dev (>= 1.15), libmetaio-dev (>= 8.2), libhdf5-dev,
-  lalinference (= ${binary:Version}),
+Depends: ${misc:Depends},
+  ${shlibs:Depends},
+  libchealpix-dev (>= 3.30.0),
+  libgsl0-dev (>= 1.15),
+  libhdf5-dev,
+  libmetaio-dev (>= 8.2),
+  python-healpy (>= 1.9.1),
+  zlib1g-dev,
   lal-dev (>= @MIN_LAL_VERSION@~),
   lalframe-dev (>= @MIN_LALFRAME_VERSION@~),
   lalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
@@ -69,7 +85,8 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g-dev,
   lalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
   lalburst-dev (>= @MIN_LALBURST_VERSION@~),
   lalinspiral-dev (>= @MIN_LALINSPIRAL_VERSION@~),
-  lalpulsar-dev (>= @MIN_LALPULSAR_VERSION@~)
+  lalpulsar-dev (>= @MIN_LALPULSAR_VERSION@~),
+  lalinference (= ${binary:Version})
 Description: LSC Algorithm Library Inference Developers
  The LSC Algorithm Inference Library for gravitational wave data analysis.
  This package contains files needed build applications that use the LAL
@@ -78,12 +95,17 @@ Description: LSC Algorithm Library Inference Developers
 Package: lalinference-python
 Section: python
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
-  python-scipy, python-six, python-h5py, python-mpltoolkits.basemap,
-  python-glue (>= 1.49.1~),
-  python-glue-common (>= 1.49.1~),
-  python-glue-segments (>= 1.49.1~),
-  lalinference (= ${binary:Version}),
+Depends:
+  ${misc:Depends},
+  ${python:Depends},
+  ${shlibs:Depends},
+  python-h5py,
+  python-pkg-resources,
+  python-scipy (>= 0.8),
+  python-seaborn,
+  python-shapely,
+  python-six,
+  python-glue (>= @MIN_GLUE_VERSION@),
   lal-python (>= @MIN_LAL_VERSION@~),
   lalframe-python (>= @MIN_LALFRAME_VERSION@~),
   lalmetaio-python (>= @MIN_LALMETAIO_VERSION@~),
@@ -91,7 +113,8 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   lalsimulation-python (>= @MIN_LALSIMULATION_VERSION@~),
   lalburst-python (>= @MIN_LALBURST_VERSION@~),
   lalinspiral-python (>= @MIN_LALINSPIRAL_VERSION@~),
-  lalpulsar-python (>= @MIN_LALPULSAR_VERSION@~)
+  lalpulsar-python (>= @MIN_LALPULSAR_VERSION@~),
+  lalinference (= ${binary:Version})
 Replaces: lalapps (<< 6.14.0-1)
 Breaks: lalapps (<< 6.14.0-1)
 Description: Python bindings for LALInference
@@ -100,8 +123,9 @@ Description: Python bindings for LALInference
 
 Package: lalinference-octave
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
-  lalinference (= ${binary:Version}),
+Depends: ${misc:Depends},
+  ${shlibs:Depends},
+  octave,
   lal-octave (>= @MIN_LAL_VERSION@~),
   lalframe-octave (>= @MIN_LALFRAME_VERSION@~),
   lalmetaio-octave (>= @MIN_LALMETAIO_VERSION@~),
@@ -109,7 +133,8 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
   lalsimulation-octave (>= @MIN_LALSIMULATION_VERSION@~),
   lalburst-octave (>= @MIN_LALBURST_VERSION@~),
   lalinspiral-octave (>= @MIN_LALINSPIRAL_VERSION@~),
-  lalpulsar-octave (>= @MIN_LALPULSAR_VERSION@~)
+  lalpulsar-octave (>= @MIN_LALPULSAR_VERSION@~),
+  lalinference (= ${binary:Version})
 Description: Octave bindings for LALInference
  The LSC Algorithm Inference Library for gravitational wave data analysis.
  This package contains Octave bindings for the LAL Inference library.

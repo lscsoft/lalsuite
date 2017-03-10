@@ -5,7 +5,7 @@
 
 //#include <lal/LALDatatypes.h>
 //#include <lal/LALStdlib.h>
-//#include <lal/LALConstants.h>
+#include <lal/LALConstants.h>
 //#include <lal/TimeSeries.h>
 //#include <lal/Units.h>
 
@@ -125,6 +125,7 @@ INT4 XLALSimIMREOBFinalMassSpinPrec(
       tmpVar     = ( a1 + a2 /q/q) / ( 1. + 1/q/q);
       *finalSpin = tmpVar + tmpVar * eta * (s4 * tmpVar + s5 * eta + t0 ) + eta * (2. * sqrt(3.) + t2*eta + t3*eta*eta );
       break;
+    case SEOBNRv3_opt:
     case SEOBNRv3:
       //  Precessing spins (Barausse & Rezzolla 2009, Eqs (6-10))
       chi1   = sqrt( spin1[0]*spin1[0] + spin1[1]*spin1[1] + spin1[2]*spin1[2] );

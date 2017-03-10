@@ -28,8 +28,8 @@ include/lal/*.i
 include/lal/header-link-stamp
 lalpulsar-*.tar.xz
 lalpulsar-user-env.csh
-lalpulsar-user-env.sh
 lalpulsar-user-env.fish
+lalpulsar-user-env.sh
 lalpulsar-user-env.shell
 lalpulsar.spec
 libtool
@@ -38,7 +38,7 @@ python/lalpulsar/__init__.py
 python/lalpulsar/_lalpulsar*
 python/lalpulsar/git_version.py
 python/lalpulsar/lalpulsar.py
-src/LALPulsarBuildInfo.c
+src/LALPulsarBuildInfoHeader.h
 src/LALPulsarConfig.h
 src/LALPulsarVCSInfo.c
 src/LALPulsarVCSInfo.h
@@ -46,8 +46,10 @@ src/LALPulsarVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/git_version
+src/lalpulsar_version
 src/stamp-h1
 src/stamp-h2
+src/version.c
 swig/swiglal*
 test/BinarySSBTimesTest
 test/ComputeFstatBenchmark
@@ -60,7 +62,6 @@ test/ExtrapolatePulsarSpinsTest
 test/FITSFileIOTest
 test/FITSFileIOTest.fits
 test/FileIOTest
-test/FlatMeshTest
 test/GeneralMeshTest
 test/GeneralMetricTest
 test/GeneratePulsarSignalTest
@@ -107,6 +108,8 @@ test/XLALComputeAMTest
 test/XLALMultiNoiseWeightsTest
 test/outputsft_v1.sft
 test/outputsft_v2.sft
+test/outputsftv2_r1.sft
+test/outputsftv2_r2.sft
 test/outputsftv2_v1.sft
 test/outputsftv2_v2.sft
 test/testLFTandTSutils-LFT.sft

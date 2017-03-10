@@ -54,6 +54,8 @@ int XLALParseStringValueAsINT4PlusFrac ( INT4 *valINT4, REAL8 *valFrac, const ch
 // --------------- parsers for various USER_TYPE_\<UTYPE\>s ----------
 int XLALParseStringValueAsINT8 ( INT8 *valINT8, const char *valString );
 int XLALParseStringValueAsINT4 ( INT4 *valINT4, const char *valString );
+int XLALParseStringValueAsUINT8 ( UINT8 *valUINT8, const char *valString );
+int XLALParseStringValueAsUINT4 ( UINT4 *valUINT4, const char *valString );
 int XLALParseStringValueAsREAL8 ( REAL8 *valREAL8, const char *valString );
 int XLALParseStringValueAsREAL4 ( REAL4 *valREAL4, const char *valString );
 int XLALParseStringValueAsBOOLEAN ( BOOLEAN *valBOOLEAN, const char *valString );
@@ -74,10 +76,9 @@ int XLALParseStringValueAsSTRINGVector ( LALStringVector **valSTRINGVector, cons
 #define DECL_XLALParseStringValueAsVector(CTYPE)                        \
   int XLALParseStringValueAs ##CTYPE## Vector ( CTYPE ## Vector **vect, const CHAR *valString )
 
-DECL_XLALParseStringValueAsVector(REAL8);
 DECL_XLALParseStringValueAsVector(INT4);
-
-
+DECL_XLALParseStringValueAsVector(UINT4);
+DECL_XLALParseStringValueAsVector(REAL8);
 
 /*@}*/
 

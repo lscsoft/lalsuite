@@ -1,5 +1,14 @@
-lalburst (1.4.2.1-1) UNRELEASED; urgency=medium
+lalburst (1.4.4-1) unstable; urgency=low
 
+  * LALBurst 1.4.4
+  * O2 release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 07 Feb 2017 17:06:12 -0600
+
+lalburst (1.4.3-1) unstable; urgency=low
+
+  * LALBurst 1.4.3
+  * ER10 release
   * Add python3 package
 
  -- Leo Singer <leo.singer@ligo.org>  Fri, 15 Jul 2016 00:03:38 -0400

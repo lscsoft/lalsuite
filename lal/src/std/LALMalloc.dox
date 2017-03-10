@@ -86,7 +86,7 @@ non-thread-safe (but it can be made posix-thread-safe using the
 suppress memory leak detection at runtime by setting the global
 \c lalDebugLevel equal to zero or by setting the \c LALNMEMDBG bit of
 \c lalDebugLevel, or at compile time by compiling all modules with the
-\c NDEBUG flag set or by using the <tt>--disable-debug</tt> configure option.
+\c NDEBUG flag.
 This causes <tt>LALCheckMemoryLeaks()</tt> to do nothing, and the other functions
 to revert to their standard C counterparts.  In addition, you can turn off
 individual components of the memory debugging tools.  Setting the

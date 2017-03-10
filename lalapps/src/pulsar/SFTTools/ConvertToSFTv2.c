@@ -120,7 +120,7 @@ main(int argc, char *argv[])
     }
 
   /* use IFO-contraint if one given by the user */
-  if ( LALUserVarWasSet ( &uvar.IFO ) ) {
+  if ( XLALUserVarWasSet ( &uvar.IFO ) ) {
     XLAL_CHECK_MAIN ( (constraints.detector = XLALGetChannelPrefix ( uvar.IFO )) != NULL, XLAL_EINVAL );
   }
 
@@ -161,9 +161,9 @@ main(int argc, char *argv[])
   /* which frequency-band to extract? */
   fMin = -1;	/* default: all */
   fMax = -1;
-  if ( LALUserVarWasSet ( &uvar.fmin ) )
+  if ( XLALUserVarWasSet ( &uvar.fmin ) )
     fMin = uvar.fmin;
-  if ( LALUserVarWasSet ( &uvar.fmax ) )
+  if ( XLALUserVarWasSet ( &uvar.fmax ) )
     fMax = uvar.fmax;
 
   FILE *fpSingleSFT = NULL;

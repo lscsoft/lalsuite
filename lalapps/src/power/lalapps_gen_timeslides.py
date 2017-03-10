@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Copyright (C) 2006--2014  Kipp Cannon
 #
@@ -37,7 +36,7 @@ from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw.utils import time_slide as ligolw_time_slide
 from glue import offsetvector
 from lalapps import git_version
-from lalburst import timeslides as ligolw_tisi
+from lalburst import timeslides
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -95,7 +94,7 @@ def new_doc(comment = None, **kwargs):
 	doc.appendChild(ligolw.LIGO_LW())
 	process = ligolw_process.register_to_xmldoc(
 		doc,
-		program = u"ligolw_tisi",
+		program = u"lalapps_gen_timeslides",
 		paramdict = kwargs,
 		version = __version__,
 		cvs_repository = u"lscsoft",
@@ -154,10 +153,10 @@ if options.verbose:
 
 # dictionary mapping time_slide_id --> (dictionary mapping insrument --> offset)
 
-for offsetvect in ligolw_tisi.SlidesIter(ligolw_tisi.parse_slides(options.instrument)):
+for offsetvect in timeslides.SlidesIter(timeslides.parse_slides(options.instrument)):
 	time_slides[lsctables.TimeSlideTable.get_next_id()] = offsetvect
 for inspiral_slidespec in options.inspiral_num_slides:
-	for offsetvect in ligolw_tisi.Inspiral_Num_Slides_Iter(*ligolw_tisi.parse_inspiral_num_slides_slidespec(inspiral_slidespec)):
+	for offsetvect in timeslides.Inspiral_Num_Slides_Iter(*timeslides.parse_inspiral_num_slides_slidespec(inspiral_slidespec)):
 		time_slides[lsctables.TimeSlideTable.get_next_id()] = offsetvect
 
 if options.verbose:
@@ -221,7 +220,7 @@ if options.normalize:
 #
 
 
-lsctables.table.reset_next_ids([lsctables.TimeSlideTable])
+lsctables.TimeSlideTable.reset_next_id()
 while filenames:
 	#
 	# Create an empty document, populate the process information.

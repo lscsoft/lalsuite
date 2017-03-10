@@ -123,6 +123,40 @@ void inject_signal( LALInferenceRunState *runState ){
     return;
   }
 
+  /* check the number of frequency and frequency derivative parameters (add DELTAF parameter) */
+  if ( LALInferenceCheckVariable( runState->threads[0]->currentParams, "FREQNUM" ) ){
+    UINT4 freqnum = LALInferenceGetUINT4Variable(runState->threads[0]->currentParams, "FREQNUM" );
+    REAL8Vector *deltafreqs = XLALCreateREAL8Vector( freqnum );
+    REAL8Vector *freqs = NULL, *freqsnew = NULL;
+
+    if ( PulsarCheckParam( injpars, "F" ) ){
+      freqs = PulsarGetREAL8VectorParam( injpars, "F" );
+
+      if ( freqs->length > freqnum ){ freqnum = freqs->length; }
+      else if ( freqs->length < freqnum ){ /* add on additional freqs */
+        freqsnew = XLALCreateREAL8Vector( freqnum );
+        for ( UINT4 i = 0; i < freqs->length; i++ ){ freqsnew->data[i] = freqs->data[i]; }
+        for ( UINT4 i = freqs->length; i < freqnum; i++ ){ freqsnew->data[i] = 0.; }
+        PulsarRemoveParam( injpars, "F" );
+        PulsarAddParam( injpars, "F", &freqsnew, PULSARTYPE_REAL8Vector_t );
+      }
+    }
+    else{
+      freqsnew = XLALCreateREAL8Vector( freqnum );
+      for ( UINT4 i = 0; i < freqnum; i++ ){ freqsnew->data[i] = 0.; }
+      PulsarAddParam( injpars, "F", &freqsnew, PULSARTYPE_REAL8Vector_t );
+      freqs = PulsarGetREAL8VectorParam( injpars, "F" );
+    }
+
+    for ( UINT4 i = 0; i < freqnum; i++ ){
+      CHAR varname[256];
+      snprintf(varname, sizeof(varname), "F%u_FIXED", i);
+      REAL8 f0fixed = LALInferenceGetREAL8Variable( runState->threads[0]->currentParams, varname );
+      deltafreqs->data[i] = freqs->data[i]-f0fixed; /* frequency (derivative) difference */
+    }
+    PulsarAddParam( injpars, "DELTAF", &deltafreqs, PULSARTYPE_REAL8Vector_t );
+  }
+
   freqFactors = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "freqfactors" );
 
   /* get the SNR scale factor if required */
@@ -149,8 +183,9 @@ void inject_signal( LALInferenceRunState *runState ){
         }
       }
     }
-    ifo_model = runState->threads[0]->model->ifo;
+    ifo_model = ifo_model->next;
   }
+  ifo_model = runState->threads[0]->model->ifo;
 
   /* check whether to inject a non-GR signal (the default will ALWAYS be GR) */
   UINT4 nonGR_search = LALInferenceCheckVariable( ifo_model->params, "nonGR" );
@@ -352,9 +387,6 @@ void inject_signal( LALInferenceRunState *runState ){
       while ( ifo_model ){
         LALInferenceAddVariable( ifo_model->params, "nonGR", &nonGRval, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
         ifo_model = ifo_model->next;
-        if ( !varyphase ){ LALInferenceRemoveVariable( ifo_model->params, "varyphase" ); }
-        if ( !varyskypos ){ LALInferenceRemoveVariable( ifo_model->params, "varyskypos" ); }
-        if ( !varybinary ){ LALInferenceRemoveVariable( ifo_model->params, "varybinary" ); }
       }
       ifo_model = runState->threads[0]->model->ifo;
     }
@@ -362,13 +394,18 @@ void inject_signal( LALInferenceRunState *runState ){
   else {
     while ( ifo_model ){
       LALInferenceRemoveVariable(ifo_model->params, "nonGR");
-      if ( !varyphase ){ LALInferenceRemoveVariable( ifo_model->params, "varyphase" ); }
-      if ( !varyskypos ){ LALInferenceRemoveVariable( ifo_model->params, "varyskypos" ); }
-      if ( !varybinary ){ LALInferenceRemoveVariable( ifo_model->params, "varybinary" ); }
       ifo_model = ifo_model->next;
     }
     ifo_model = runState->threads[0]->model->ifo;
   }
+  
+  while ( ifo_model ){
+    if ( !varyphase ){ LALInferenceRemoveVariable( ifo_model->params, "varyphase" ); }
+    if ( !varyskypos ){ LALInferenceRemoveVariable( ifo_model->params, "varyskypos" ); }
+    if ( !varybinary ){ LALInferenceRemoveVariable( ifo_model->params, "varybinary" ); }
+    ifo_model = ifo_model->next;
+  }
+  ifo_model = runState->threads[0]->model->ifo;
 
   PulsarFreeParams( injpars ); /* free memory */
 }

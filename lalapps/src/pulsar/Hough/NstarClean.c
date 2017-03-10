@@ -89,12 +89,6 @@ do {                                                                 \
 } while (0)
 /******************************************************************/
 
-/* A global pointer for debugging. */
-#ifndef NDEBUG
-char *lalWatch;
-#endif
-
-
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
 int main(int argc, char *argv[]){ 
@@ -129,14 +123,14 @@ int main(int argc, char *argv[]){
   strcpy(uvar_cleannstar, CLEANNSTARFILE);
 
   /* register user input variables */
-  SUB( LALRegisterSTRINGUserVar( &status, "nstarfile",       'n', UVAR_OPTIONAL, "File with max number counts",   &uvar_nstarfile),       &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "harmonicsfile",   'l', UVAR_OPTIONAL, "File with line information",    &uvar_harmonicsfile),   &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "cleannstarfile",  'o', UVAR_OPTIONAL, "Output file",                   &uvar_cleannstar),      &status);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_nstarfile,     "nstarfile",      STRING, 'n', OPTIONAL, "File with max number counts") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_harmonicsfile, "harmonicsfile",  STRING, 'l', OPTIONAL, "File with line information") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_cleannstar,    "cleannstarfile", STRING, 'o', OPTIONAL, "Output file") == XLAL_SUCCESS, XLAL_EFUNC);
 
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  SUB( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     exit(1);
   
@@ -310,7 +304,7 @@ int main(int argc, char *argv[]){
       LALFree(harmonics.rightWing);
     }
 
-  SUB (LALDestroyUserVars(&status), &status);
+  XLALDestroyUserVars();
   LALCheckMemoryLeaks(); 
 
   INFO( SFTCLEANC_MSGENORM );

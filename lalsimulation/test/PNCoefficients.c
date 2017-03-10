@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2014 Andrew Lundgren
+ *  Copyright (C) 2014 Andrew Lundgren, 2017 Riccardo Sturani
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,6 +27,20 @@
 
 #define EPSILON 1.e-11
 
+static int compare_value(
+    REAL8 val1,
+    REAL8 val2)
+{
+    if (fabs(val1 - val2) > EPSILON)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
 static int compare(
     REAL8 val1,
     REAL8 val2,
@@ -45,39 +59,20 @@ static int compare(
     }
 }
 
-static int compare_dtdv(
-    PNPhasingSeries *dtdv1,
-    PNPhasingSeries *dtdv2)
+static int compare_pnseries(
+    PNPhasingSeries *s1,
+    PNPhasingSeries *s2)
 {
     int ret = 0;
 
-    ret += compare(dtdv1->v[0], dtdv2->v[0], 0, 0);
-    ret += compare(dtdv1->v[2], dtdv2->v[2], 2, 0);
-    ret += compare(dtdv1->v[3], dtdv2->v[3], 3, 0);
-    ret += compare(dtdv1->v[4], dtdv2->v[4], 4, 0);
-    ret += compare(dtdv1->v[5], dtdv2->v[5], 5, 0);
-    ret += compare(dtdv1->v[6], dtdv2->v[6], 6, 0);
-    ret += compare(dtdv1->vlogv[6], dtdv2->vlogv[6], 6, 1);
-    ret += compare(dtdv1->v[7], dtdv2->v[7], 7, 0);
-
-    return ret;
-}
-
-static int compare_wdot(
-    PNPhasingSeries *wdot1,
-    PNPhasingSeries *wdot2)
-{
-    int ret = 0;
-
-    ret += compare(wdot1->v[0], wdot2->v[0], 0, 0);
-    ret += compare(wdot1->v[2], wdot2->v[2], 2, 0);
-    ret += compare(wdot1->v[3], wdot2->v[3], 3, 0);
-    ret += compare(wdot1->v[4], wdot2->v[4], 4, 0);
-    ret += compare(wdot1->v[5], wdot2->v[5], 5, 0);
-    ret += compare(wdot1->v[6], wdot2->v[6], 6, 0);
-    ret += compare(wdot1->vlogv[6], wdot2->vlogv[6], 6, 1);
-    ret += compare(wdot1->v[7], wdot2->v[7], 7, 0);
-    ret += compare(wdot1->v[8], wdot2->v[8], 8, 0);
+    ret += compare(s1->v[0], s2->v[0], 0, 0);
+    ret += compare(s1->v[2], s2->v[2], 2, 0);
+    ret += compare(s1->v[3], s2->v[3], 3, 0);
+    ret += compare(s1->v[4], s2->v[4], 4, 0);
+    ret += compare(s1->v[5], s2->v[5], 5, 0);
+    ret += compare(s1->v[6], s2->v[6], 6, 0);
+    ret += compare(s1->vlogv[6], s2->vlogv[6], 6, 1);
+    ret += compare(s1->v[7], s2->v[7], 7, 0);
 
     return ret;
 }
@@ -222,23 +217,21 @@ static void dtdv_from_energy_flux(
      */
     REAL8 energy_ss4 = XLALSimInspiralPNEnergy_4PNS1S2OCoeff(eta)*S1L*S2L;
     energy_ss4 += XLALSimInspiralPNEnergy_4PNS1S2Coeff(eta)*S1L*S2L;
-    energy_ss4 += qm_def1*XLALSimInspiralPNEnergy_4PNQM2SCoeff(m1M)*S1L*S1L;
-    energy_ss4 += qm_def1*XLALSimInspiralPNEnergy_4PNQM2SOCoeff(m1M)*S1L*S1L;
-    energy_ss4 += qm_def2*XLALSimInspiralPNEnergy_4PNQM2SCoeff(m2M)*S2L*S2L;
-    energy_ss4 += qm_def2*XLALSimInspiralPNEnergy_4PNQM2SOCoeff(m2M)*S2L*S2L;
+    energy_ss4 += qm_def1*XLALSimInspiralPNEnergy_4PNQM2SCoeffAvg(m1M)*S1L*S1L;
+    energy_ss4 += qm_def1*XLALSimInspiralPNEnergy_4PNQM2SOCoeffAvg(m1M)*S1L*S1L;
+    energy_ss4 += qm_def2*XLALSimInspiralPNEnergy_4PNQM2SCoeffAvg(m2M)*S2L*S2L;
+    energy_ss4 += qm_def2*XLALSimInspiralPNEnergy_4PNQM2SOCoeffAvg(m2M)*S2L*S2L;
 
-    REAL8 flux_ss4 = XLALSimInspiralPNFlux_4PNS1S2OCoeff(eta)*S1L*S2L;
-    flux_ss4 += XLALSimInspiralPNFlux_4PNS1S2Coeff(eta)*S1L*S2L;
-
-    flux_ss4 += qm_def1*XLALSimInspiralPNFlux_4PNQM2SCoeff(m1M)*S1L*S1L;
-    flux_ss4 += qm_def1*XLALSimInspiralPNFlux_4PNQM2SOCoeff(m1M)*S1L*S1L;
-    flux_ss4 += XLALSimInspiralPNFlux_4PNSelf2SCoeff(m1M)*S1L*S1L;
-    flux_ss4 += XLALSimInspiralPNFlux_4PNSelf2SOCoeff(m1M)*S1L*S1L;
-
-    flux_ss4 += qm_def2*XLALSimInspiralPNFlux_4PNQM2SCoeff(m2M)*S2L*S2L;
-    flux_ss4 += qm_def2*XLALSimInspiralPNFlux_4PNQM2SOCoeff(m2M)*S2L*S2L;
-    flux_ss4 += XLALSimInspiralPNFlux_4PNSelf2SCoeff(m2M)*S2L*S2L;
-    flux_ss4 += XLALSimInspiralPNFlux_4PNSelf2SOCoeff(m2M)*S2L*S2L;
+    REAL8 flux_ss4 = XLALSimInspiralPNFlux_4PNS1S2OCoeffAvg(eta)*S1L*S2L;
+    flux_ss4 += XLALSimInspiralPNFlux_4PNS1S2CoeffAvg(eta)*S1L*S2L;
+    flux_ss4 += qm_def1*XLALSimInspiralPNFlux_4PNQM2SCoeffAvg(m1M)*S1L*S1L;
+    flux_ss4 += qm_def1*XLALSimInspiralPNFlux_4PNQM2SOCoeffAvg(m1M)*S1L*S1L;
+    flux_ss4 += XLALSimInspiralPNFlux_4PNSelf2SCoeffAvg(m1M)*S1L*S1L;
+    flux_ss4 += XLALSimInspiralPNFlux_4PNSelf2SOCoeffAvg(m1M)*S1L*S1L;
+    flux_ss4 += qm_def2*XLALSimInspiralPNFlux_4PNQM2SCoeffAvg(m2M)*S2L*S2L;
+    flux_ss4 += qm_def2*XLALSimInspiralPNFlux_4PNQM2SOCoeffAvg(m2M)*S2L*S2L;
+    flux_ss4 += XLALSimInspiralPNFlux_4PNSelf2SCoeffAvg(m2M)*S2L*S2L;
+    flux_ss4 += XLALSimInspiralPNFlux_4PNSelf2SOCoeffAvg(m2M)*S2L*S2L;
 
     dtdv->v[4] += 3.*energy_ss4 - flux_ss4;
 
@@ -246,21 +239,19 @@ static void dtdv_from_energy_flux(
     energy_ss6 += XLALSimInspiralPNEnergy_6PNS1S2Coeff(eta)*S1L*S2L;
     energy_ss6 += XLALSimInspiralPNEnergy_6PNSelf2SCoeff(m1M)*S1L*S1L;
     energy_ss6 += XLALSimInspiralPNEnergy_6PNSelf2SOCoeff(m1M)*S1L*S1L;
-    energy_ss6 += XLALSimInspiralPNEnergy_6PNSelf2SCoeff(m2M)*S2L*S2L;
-    energy_ss6 += XLALSimInspiralPNEnergy_6PNSelf2SOCoeff(m2M)*S2L*S2L;
     energy_ss6 += qm_def1*XLALSimInspiralPNEnergy_6PNQM2SCoeff(m1M)*S1L*S1L;
     energy_ss6 += qm_def1*XLALSimInspiralPNEnergy_6PNQM2SOCoeff(m1M)*S1L*S1L;
+    energy_ss6 += XLALSimInspiralPNEnergy_6PNSelf2SCoeff(m2M)*S2L*S2L;
+    energy_ss6 += XLALSimInspiralPNEnergy_6PNSelf2SOCoeff(m2M)*S2L*S2L;
     energy_ss6 += qm_def2*XLALSimInspiralPNEnergy_6PNQM2SCoeff(m2M)*S2L*S2L;
     energy_ss6 += qm_def2*XLALSimInspiralPNEnergy_6PNQM2SOCoeff(m2M)*S2L*S2L;
 
     REAL8 flux_ss6 = XLALSimInspiralPNFlux_6PNS1S2OCoeff(eta)*S1L*S2L;
     flux_ss6 += XLALSimInspiralPNFlux_6PNS1S2Coeff(eta)*S1L*S2L;
-
     flux_ss6 += qm_def1*XLALSimInspiralPNFlux_6PNQM2SCoeff(m1M)*S1L*S1L;
     flux_ss6 += qm_def1*XLALSimInspiralPNFlux_6PNQM2SOCoeff(m1M)*S1L*S1L;
     flux_ss6 += XLALSimInspiralPNFlux_6PNSelf2SCoeff(m1M)*S1L*S1L;
     flux_ss6 += XLALSimInspiralPNFlux_6PNSelf2SOCoeff(m1M)*S1L*S1L;
-
     flux_ss6 += qm_def2*XLALSimInspiralPNFlux_6PNQM2SCoeff(m2M)*S2L*S2L;
     flux_ss6 += qm_def2*XLALSimInspiralPNFlux_6PNQM2SOCoeff(m2M)*S2L*S2L;
     flux_ss6 += XLALSimInspiralPNFlux_6PNSelf2SCoeff(m2M)*S2L*S2L;
@@ -302,12 +293,12 @@ static void dtdv_from_pncoefficients(
     dtdv->v[6] += XLALSimInspiralTaylorT2dtdv_6PNSOCoeff(m1M)*S1L + XLALSimInspiralTaylorT2dtdv_6PNSOCoeff(m2M)*S2L;
     dtdv->v[7] += XLALSimInspiralTaylorT2dtdv_7PNSOCoeff(m1M)*S1L + XLALSimInspiralTaylorT2dtdv_7PNSOCoeff(m2M)*S2L;
 
-    dtdv->v[4] += XLALSimInspiralTaylorT2dtdv_4PNS1S2Coeff(eta)*S1L*S2L;
-    dtdv->v[4] += XLALSimInspiralTaylorT2dtdv_4PNS1S2OCoeff(eta)*S1L*S2L;
-    dtdv->v[4] += (XLALSimInspiralTaylorT2dtdv_4PNSelf2SCoeff(m1M)+qm_def1*XLALSimInspiralTaylorT2dtdv_4PNQM2SCoeff(m1M))*S1L*S1L;
-    dtdv->v[4] += (XLALSimInspiralTaylorT2dtdv_4PNSelf2SOCoeff(m1M)+qm_def1*XLALSimInspiralTaylorT2dtdv_4PNQM2SOCoeff(m1M))*S1L*S1L;
-    dtdv->v[4] += (XLALSimInspiralTaylorT2dtdv_4PNSelf2SCoeff(m2M)+qm_def2*XLALSimInspiralTaylorT2dtdv_4PNQM2SCoeff(m2M))*S2L*S2L;
-    dtdv->v[4] += (XLALSimInspiralTaylorT2dtdv_4PNSelf2SOCoeff(m2M)+qm_def2*XLALSimInspiralTaylorT2dtdv_4PNQM2SOCoeff(m2M))*S2L*S2L;
+    dtdv->v[4] += XLALSimInspiralTaylorT2dtdv_4PNS1S2CoeffAvg(eta)*S1L*S2L;
+    dtdv->v[4] += XLALSimInspiralTaylorT2dtdv_4PNS1S2OCoeffAvg(eta)*S1L*S2L;
+    dtdv->v[4] += (XLALSimInspiralTaylorT2dtdv_4PNSelf2SCoeffAvg(m1M)+qm_def1*XLALSimInspiralTaylorT2dtdv_4PNQM2SCoeffAvg(m1M))*S1L*S1L;
+    dtdv->v[4] += (XLALSimInspiralTaylorT2dtdv_4PNSelf2SOCoeffAvg(m1M)+qm_def1*XLALSimInspiralTaylorT2dtdv_4PNQM2SOCoeffAvg(m1M))*S1L*S1L;
+    dtdv->v[4] += (XLALSimInspiralTaylorT2dtdv_4PNSelf2SCoeffAvg(m2M)+qm_def2*XLALSimInspiralTaylorT2dtdv_4PNQM2SCoeffAvg(m2M))*S2L*S2L;
+    dtdv->v[4] += (XLALSimInspiralTaylorT2dtdv_4PNSelf2SOCoeffAvg(m2M)+qm_def2*XLALSimInspiralTaylorT2dtdv_4PNQM2SOCoeffAvg(m2M))*S2L*S2L;
 
     dtdv->v[6] += XLALSimInspiralTaylorT2dtdv_6PNS1S2Coeff(eta)*S1L*S2L;
     dtdv->v[6] += XLALSimInspiralTaylorT2dtdv_6PNS1S2OCoeff(eta)*S1L*S2L;
@@ -317,6 +308,41 @@ static void dtdv_from_pncoefficients(
     dtdv->v[6] += (XLALSimInspiralTaylorT2dtdv_6PNSelf2SOCoeff(m2M)+qm_def2*XLALSimInspiralTaylorT2dtdv_6PNQM2SOCoeff(m2M))*S2L*S2L;
 
     return;
+}
+
+static int test_average(const REAL8 m1M)
+{
+  const REAL8 m2M=1.-m1M;
+  const REAL8 eta=m1M*m2M;
+
+  int ret=0;
+
+  printf("Testing consistency between averaged and instantaneous coefficients (2PN spin^2)\n");
+
+  ret += compare_value(XLALSimInspiralPNEnergy_4PNS1S2OCoeff(eta)+XLALSimInspiralPNEnergy_4PNS1S2Coeff(eta),XLALSimInspiralPNEnergy_4PNS1S2OCoeffAvg(eta)+XLALSimInspiralPNEnergy_4PNS1S2CoeffAvg(eta));
+
+  ret+=compare_value(XLALSimInspiralPNEnergy_4PNQM2SCoeffAvg(m1M)+XLALSimInspiralPNEnergy_4PNQM2SOCoeffAvg(m1M),XLALSimInspiralPNEnergy_4PNQM2SCoeff(m1M)+XLALSimInspiralPNEnergy_4PNQM2SOCoeff(m1M));
+
+  ret+=compare_value(XLALSimInspiralPNFlux_4PNS1S2OCoeffAvg(eta)+XLALSimInspiralPNFlux_4PNS1S2CoeffAvg(eta),XLALSimInspiralPNFlux_4PNS1S2OCoeff(eta)+XLALSimInspiralPNFlux_4PNS1S2Coeff(eta));
+
+  ret+=compare_value(XLALSimInspiralPNFlux_4PNSelf2SCoeffAvg(m1M)+XLALSimInspiralPNFlux_4PNSelf2SOCoeffAvg(m1M),XLALSimInspiralPNFlux_4PNSelf2SCoeff(m1M)+XLALSimInspiralPNFlux_4PNSelf2SOCoeff(m1M));
+
+  ret+=compare_value(XLALSimInspiralPNFlux_4PNQM2SCoeffAvg(m1M)+XLALSimInspiralPNFlux_4PNQM2SOCoeffAvg(m1M),XLALSimInspiralPNFlux_4PNQM2SCoeff(m1M)+XLALSimInspiralPNFlux_4PNQM2SOCoeff(m1M));
+
+  ret+=compare_value(XLALSimInspiralTaylorT4wdot_4PNS1S2OCoeffAvg(eta)+XLALSimInspiralTaylorT4wdot_4PNS1S2CoeffAvg(eta),XLALSimInspiralTaylorT4wdot_4PNS1S2OCoeff(eta)+XLALSimInspiralTaylorT4wdot_4PNS1S2Coeff(eta));
+
+  ret+=compare_value(XLALSimInspiralTaylorT4wdot_4PNSelf2SCoeffAvg(m1M)+XLALSimInspiralTaylorT4wdot_4PNSelf2SOCoeffAvg(m1M),XLALSimInspiralTaylorT4wdot_4PNSelf2SCoeff(m1M)+XLALSimInspiralTaylorT4wdot_4PNSelf2SOCoeff(m1M));
+
+  ret+=compare_value(XLALSimInspiralTaylorT4wdot_4PNQM2SCoeffAvg(m1M)+XLALSimInspiralTaylorT4wdot_4PNQM2SOCoeffAvg(m1M),XLALSimInspiralTaylorT4wdot_4PNQM2SCoeff(m1M)+XLALSimInspiralTaylorT4wdot_4PNQM2SOCoeff(m1M));
+
+  ret+=compare_value(XLALSimInspiralTaylorT2dtdv_4PNS1S2OCoeffAvg(eta)+XLALSimInspiralTaylorT2dtdv_4PNS1S2CoeffAvg(eta),XLALSimInspiralTaylorT2dtdv_4PNS1S2OCoeff(eta)+XLALSimInspiralTaylorT2dtdv_4PNS1S2Coeff(eta));
+
+  ret+=compare_value(XLALSimInspiralTaylorT2dtdv_4PNSelf2SCoeffAvg(m1M)+XLALSimInspiralTaylorT2dtdv_4PNSelf2SOCoeffAvg(m1M),XLALSimInspiralTaylorT2dtdv_4PNSelf2SCoeff(m1M)+XLALSimInspiralTaylorT2dtdv_4PNSelf2SOCoeff(m1M));
+
+  ret+=compare_value(XLALSimInspiralTaylorT2dtdv_4PNQM2SCoeffAvg(m1M)+XLALSimInspiralTaylorT2dtdv_4PNQM2SOCoeffAvg(m1M),XLALSimInspiralTaylorT2dtdv_4PNQM2SCoeff(m1M)+XLALSimInspiralTaylorT2dtdv_4PNQM2SOCoeff(m1M));
+
+  return ret;
+
 }
 
 static int test_consistency(
@@ -332,7 +358,7 @@ static int test_consistency(
 
     int ret = 0;
 
-    fprintf(stdout, "\n=== Testing eta=%.4f, chi1=%.4f, chi2=%.4f ===\n", eta, chi1, chi2);
+    fprintf(stdout, "\n=== Testing eta=%.4f, chi1=%.4f, chi2=%.4f, qm1=%.4f, qm2=%.4f ===\n", eta, chi1, chi2, qm_def1, qm_def2);
 
     PNPhasingSeries dtdv_ef;
     dtdv_from_energy_flux(&dtdv_ef, m1M, chi1, chi2, qm_def1, qm_def2);
@@ -340,11 +366,15 @@ static int test_consistency(
     PNPhasingSeries dtdv_pn;
     dtdv_from_pncoefficients(&dtdv_pn, m1M, chi1, chi2, qm_def1, qm_def2);
     
-    LALSimInspiralTestGRParam *extraParams=NULL;
+    LALDict *extraParams=XLALCreateDict();
+    XLALSimInspiralWaveformParamsInsertdQuadMon1(extraParams,qm_def1-1.);
+    XLALSimInspiralWaveformParamsInsertdQuadMon2(extraParams,qm_def2-1.);
+    XLALSimInspiralWaveformParamsInsertPNSpinOrder(extraParams,7);
     PNPhasingSeries phasing;
     XLALSimInspiralPNPhasing_F2(&phasing, m1M,m2M, chi1, chi2,\
                                 chi1*chi1, chi2*chi2, chi1*chi2,\
-                                qm_def1, qm_def2, 7, extraParams);
+                                extraParams);
+    XLALDestroyDict(extraParams);
 
     /* Divide the phasing by the leading-order term */
     REAL8 phase0 = phasing.v[0];
@@ -356,7 +386,7 @@ static int test_consistency(
     }
 
     fprintf(stdout, "Testing dtdv consistency with energy and flux.\n");
-    ret += compare_dtdv(&dtdv_pn, &dtdv_ef);
+    ret += compare_pnseries(&dtdv_pn, &dtdv_ef);
 
     fprintf(stdout, "Testing phasing consistency with dtdv.\n");
     ret += compare(phasing.v[0], 3./20.*dtdv_pn.v[0], 0, 0);
@@ -448,27 +478,27 @@ static void T4wdot_from_energy_flux(
     }
     wdot->vlogv[6]= XLALSimInspiralPNFlux_6PNLogCoeff(eta);
 
-    // The 8PN SO term is check by hand
+    // The 8PN SO term is checked by hand
     wdot->v[8]=flux[8]-5.*energy[8] - flux_so6*2.*XLALSimInspiralPNEnergy_2PNCoeff(eta) - XLALSimInspiralPNFlux_5PNCoeff(eta)*5./2.*energy_so3 + XLALSimInspiralPNFlux_3PNCoeff(eta)*(-7./2.*energy_so5 + 10.*XLALSimInspiralPNEnergy_2PNCoeff(eta)*energy_so3);
 
     /* Calculate the leading-order spin-spin terms separately */
-    REAL8 energy_ss4 = XLALSimInspiralPNEnergy_4PNS1S2OCoeff(eta)*S1L*S2L;
-    energy_ss4 += XLALSimInspiralPNEnergy_4PNS1S2Coeff(eta)*S1L*S2L;
-    energy_ss4 += qm_def1*XLALSimInspiralPNEnergy_4PNQM2SCoeff(m1M)*S1L*S1L;
-    energy_ss4 += qm_def1*XLALSimInspiralPNEnergy_4PNQM2SOCoeff(m1M)*S1L*S1L;
-    energy_ss4 += qm_def2*XLALSimInspiralPNEnergy_4PNQM2SCoeff(m2M)*S2L*S2L;
-    energy_ss4 += qm_def2*XLALSimInspiralPNEnergy_4PNQM2SOCoeff(m2M)*S2L*S2L;
+    REAL8 energy_ss4 = XLALSimInspiralPNEnergy_4PNS1S2OCoeffAvg(eta)*S1L*S2L;
+    energy_ss4 += XLALSimInspiralPNEnergy_4PNS1S2CoeffAvg(eta)*S1L*S2L;
+    energy_ss4 += qm_def1*XLALSimInspiralPNEnergy_4PNQM2SCoeffAvg(m1M)*S1L*S1L;
+    energy_ss4 += qm_def1*XLALSimInspiralPNEnergy_4PNQM2SOCoeffAvg(m1M)*S1L*S1L;
+    energy_ss4 += qm_def2*XLALSimInspiralPNEnergy_4PNQM2SCoeffAvg(m2M)*S2L*S2L;
+    energy_ss4 += qm_def2*XLALSimInspiralPNEnergy_4PNQM2SOCoeffAvg(m2M)*S2L*S2L;
 
-    REAL8 flux_ss4 = XLALSimInspiralPNFlux_4PNS1S2OCoeff(eta)*S1L*S2L;
-    flux_ss4 += XLALSimInspiralPNFlux_4PNS1S2Coeff(eta)*S1L*S2L;
-    flux_ss4 += qm_def1*XLALSimInspiralPNFlux_4PNQM2SCoeff(m1M)*S1L*S1L;
-    flux_ss4 += qm_def1*XLALSimInspiralPNFlux_4PNQM2SOCoeff(m1M)*S1L*S1L;
-    flux_ss4 += XLALSimInspiralPNFlux_4PNSelf2SCoeff(m1M)*S1L*S1L;
-    flux_ss4 += XLALSimInspiralPNFlux_4PNSelf2SOCoeff(m1M)*S1L*S1L;
-    flux_ss4 += qm_def2*XLALSimInspiralPNFlux_4PNQM2SCoeff(m2M)*S2L*S2L;
-    flux_ss4 += qm_def2*XLALSimInspiralPNFlux_4PNQM2SOCoeff(m2M)*S2L*S2L;
-    flux_ss4 += XLALSimInspiralPNFlux_4PNSelf2SCoeff(m2M)*S2L*S2L;
-    flux_ss4 += XLALSimInspiralPNFlux_4PNSelf2SOCoeff(m2M)*S2L*S2L;
+    REAL8 flux_ss4 = XLALSimInspiralPNFlux_4PNS1S2OCoeffAvg(eta)*S1L*S2L;
+    flux_ss4 += XLALSimInspiralPNFlux_4PNS1S2CoeffAvg(eta)*S1L*S2L;
+    flux_ss4 += qm_def1*XLALSimInspiralPNFlux_4PNQM2SCoeffAvg(m1M)*S1L*S1L;
+    flux_ss4 += qm_def1*XLALSimInspiralPNFlux_4PNQM2SOCoeffAvg(m1M)*S1L*S1L;
+    flux_ss4 += XLALSimInspiralPNFlux_4PNSelf2SCoeffAvg(m1M)*S1L*S1L;
+    flux_ss4 += XLALSimInspiralPNFlux_4PNSelf2SOCoeffAvg(m1M)*S1L*S1L;
+    flux_ss4 += qm_def2*XLALSimInspiralPNFlux_4PNQM2SCoeffAvg(m2M)*S2L*S2L;
+    flux_ss4 += qm_def2*XLALSimInspiralPNFlux_4PNQM2SOCoeffAvg(m2M)*S2L*S2L;
+    flux_ss4 += XLALSimInspiralPNFlux_4PNSelf2SCoeffAvg(m2M)*S2L*S2L;
+    flux_ss4 += XLALSimInspiralPNFlux_4PNSelf2SOCoeffAvg(m2M)*S2L*S2L;
 
     wdot->v[4] += flux_ss4 -3.*energy_ss4;
 
@@ -571,7 +601,7 @@ static int test_consistency_T4(
 
     int ret = 0;
 
-    fprintf(stdout, "\n=== Testing T4  eta=%.4f, chi1=%.4f, chi2=%.4f ===\n", eta, chi1, chi2);
+    fprintf(stdout, "\n=== Testing T4  eta=%.4f, chi1=%.4f, chi2=%.4f, qm1=%.4f, qm2=%.4f ===\n", eta, chi1, chi2, qm_def1, qm_def2);
 
     PNPhasingSeries wdot_ef;
     T4wdot_from_energy_flux(&wdot_ef, m1M, chi1, chi2, qm_def1, qm_def2);
@@ -579,8 +609,8 @@ static int test_consistency_T4(
     PNPhasingSeries wdot_pn;
     T4wdot_from_pncoefficients(&wdot_pn, m1M, chi1, chi2, qm_def1, qm_def2);
 
-    fprintf(stdout, "Testing T4wdot consistency with energy and flux.\n");
-    ret += compare_wdot(&wdot_pn, &wdot_ef);
+    fprintf(stdout, "Testing wdot consistency with energy and flux.\n");
+    ret += compare_pnseries(&wdot_pn, &wdot_ef);
 
     return ret;
 
@@ -682,16 +712,11 @@ static int test_tidal_T2(
 static void dL_from_pncoefficients(
     PNPhasingSeries *dL1,  /* Coefficients of \epsilon_{ijk}S1_jL_k */
     PNPhasingSeries *dL2,  /* Coefficients of \epsilon_{ijk}S2_jL_k */
-    const REAL8 m1M,
-    const REAL8 S1L,
-    const REAL8 S2L,
-    const REAL8 qm_def1,
-    const REAL8 qm_def2
+    const REAL8 m1M
     )
 {
     /* Check is performed for aligned spin only*/
     REAL8 m2M = 1.-m1M;
-    REAL8 eta = m1M*m2M;
     /* Spins use the LAL convention */
 
     memset(dL1, 0, sizeof(PNPhasingSeries));
@@ -701,18 +726,12 @@ static void dL_from_pncoefficients(
     dL1->v[2] = 0.;   dL2->v[2] = 0.;
     dL1->v[3] = XLALSimInspiralLDot_3PNSOCoeff(m1M);
     dL2->v[3] = XLALSimInspiralLDot_3PNSOCoeff(m2M);
-    dL1->v[4] = XLALSimInspiralLDot_4PNS1S2Coeff(eta)*S2L;
-    dL1->v[4]+= qm_def1*XLALSimInspiralLDot_4PNQMSSCoeff(m1M)*S1L;
-    dL2->v[4] = XLALSimInspiralLDot_4PNS1S2Coeff(eta)*S1L;
-    dL2->v[4]+= qm_def2*XLALSimInspiralLDot_4PNQMSSCoeff(m2M)*S2L;
+    dL1->v[4] = 0.;
+    dL2->v[4] = 0.;
     dL1->v[5] = XLALSimInspiralLDot_5PNSOCoeff(m1M);
     dL2->v[5] = XLALSimInspiralLDot_5PNSOCoeff(m2M);
-    dL1->v[6] = XLALSimInspiralLDot_6PNS1S1Coeff(m1M)*S1L;
-    dL2->v[6] = XLALSimInspiralLDot_6PNS1S1Coeff(m2M)*S2L;
-    dL1->v[6]+= XLALSimInspiralLDot_6PNS1S2Coeff(m1M)*S2L;
-    dL2->v[6]+= XLALSimInspiralLDot_6PNS1S2Coeff(m2M)*S1L;
-    dL1->v[6]+= qm_def1*XLALSimInspiralLDot_6PNQMSSCoeff(m1M)*S1L;
-    dL2->v[6]+= qm_def2*XLALSimInspiralLDot_6PNQMSSCoeff(m2M)*S2L;
+    dL1->v[6] = 0.;
+    dL2->v[6] = 0.;
     dL1->v[7] = XLALSimInspiralLDot_7PNSOCoeff(m1M);
     dL2->v[7] = XLALSimInspiralLDot_7PNSOCoeff(m2M);
 
@@ -725,11 +744,7 @@ static void dL_from_pncoefficients(
 static void dL_from_dSpncoefficients(
     PNPhasingSeries *dL1,  /* Coefficients of \epsilon_{ijk}S1_jL_k */
     PNPhasingSeries *dL2,  /* Coefficients of \epsilon_{ijk}S2_jL_k */
-    const REAL8 m1M,
-    const REAL8 S1L,
-    const REAL8 S2L,
-    const REAL8 qm_def1,
-    const REAL8 qm_def2
+    const REAL8 m1M
     )
 {
     /* Check is performed for aligned spin only*/
@@ -744,18 +759,12 @@ static void dL_from_dSpncoefficients(
     dL1->v[2] = 0.;   dL2->v[2] = 0.;
     dL1->v[3] = XLALSimInspiralSpinDot_3PNCoeff(m1M)/eta;
     dL2->v[3] = XLALSimInspiralSpinDot_3PNCoeff(m2M)/eta;
-    dL1->v[4] = XLALSimInspiralSpinDot_4PNS2OCoeff*S2L/eta;
-    dL1->v[4]+= qm_def1*XLALSimInspiralSpinDot_4PNQMSOCoeff(m1M)*S1L/eta;
-    dL2->v[4] = XLALSimInspiralSpinDot_4PNS2OCoeff*S1L/eta;
-    dL2->v[4]+= qm_def2*XLALSimInspiralSpinDot_4PNQMSOCoeff(m2M)*S2L/eta;
+    dL1->v[4] = 0.;
+    dL2->v[4] = 0.;
     dL1->v[5] = XLALSimInspiralSpinDot_5PNCoeff(m1M)/eta;
     dL2->v[5] = XLALSimInspiralSpinDot_5PNCoeff(m2M)/eta;
-    dL1->v[6] = XLALSimInspiralSpinDot_6PNS1OCoeff(m1M)*S1L/eta;
-    dL2->v[6] = XLALSimInspiralSpinDot_6PNS1OCoeff(m2M)*S2L/eta;
-    dL1->v[6]+= XLALSimInspiralSpinDot_6PNS2OCoeff(m1M)*S2L/eta;
-    dL2->v[6]+= XLALSimInspiralSpinDot_6PNS2OCoeff(m2M)*S1L/eta;
-    dL1->v[6]+= qm_def1*XLALSimInspiralSpinDot_6PNQMSOCoeff(m1M)*S1L/eta;
-    dL2->v[6]+= qm_def2*XLALSimInspiralSpinDot_6PNQMSOCoeff(m2M)*S2L/eta;
+    dL1->v[6] = 0.;
+    dL2->v[6] = 0.;
     dL1->v[7] = XLALSimInspiralSpinDot_7PNCoeff(m1M)/eta;
     dL2->v[7] = XLALSimInspiralSpinDot_7PNCoeff(m2M)/eta;
 
@@ -763,33 +772,28 @@ static void dL_from_dSpncoefficients(
 }
 
 static int test_consistency_dL(
-    const REAL8 m1M,
-    const REAL8 S1L,
-    const REAL8 S2L,
-    const REAL8 qm_def1,
-    const REAL8 qm_def2
-    )
+    const REAL8 m1M)
 {
 
     REAL8 m2M = 1.-m1M;
     REAL8 eta = m1M*m2M;
 
     int ret = 0;
-	int idx;
+    int idx;
 
-    fprintf(stdout, "\n=== Testing dL  eta=%.4f, S1L=%.4f, S2L=%.4f ===\n", eta, S1L, S2L);
+    fprintf(stdout, "\n=== Testing dL  eta=%.4f ===\n", eta);
 
     PNPhasingSeries dL1_dL, dL2_dL;
-    dL_from_pncoefficients(&dL1_dL, &dL2_dL, m1M, S1L, S2L, qm_def1, qm_def2);
+    dL_from_pncoefficients(&dL1_dL, &dL2_dL, m1M);
 
     PNPhasingSeries dL1_dS, dL2_dS;
-    dL_from_dSpncoefficients(&dL1_dS, &dL2_dS, m1M, S1L, S2L, qm_def1, qm_def2);
+    dL_from_dSpncoefficients(&dL1_dS, &dL2_dS, m1M);
 
     fprintf(stdout, "Testing dL consistency with dS.\n");
-	for (idx=0;idx<9;idx++) {
-		ret += compare(dL1_dL.v[idx], dL1_dS.v[idx],idx,0);
-		ret += compare(dL2_dL.v[idx], dL2_dS.v[idx],idx,0);
-	}
+    for (idx=0;idx<9;idx++) {
+      ret += compare(dL1_dL.v[idx], dL1_dS.v[idx],idx,0);
+      ret += compare(dL2_dL.v[idx], dL2_dS.v[idx],idx,0);
+    }
 
     return ret;
 
@@ -831,22 +835,20 @@ int main (int argc, char **argv)
     ret += test_consistency_T4(0.9, 0., -0.4, 1., 4.5);
     ret += test_consistency_T4(0.01, 0., -0.4, 1., 4.5);
 
-    ret += test_consistency_T4(0.5, 0.9, -0.9, 2., 2.);
-    ret += test_consistency_T4(0.9, 0.9, -0.9, 3., 3.);
-    ret += test_consistency_T4(0.01, 0.9, -0.9, 4., 4.);
+    ret += test_consistency_T4(0.5, 0.9, 0.9, 0., 0.);
+    ret += test_consistency_T4(0.9, 0.9, -0.9, 3., 2.);
+    ret += test_consistency_T4(0.01, 0.9, 0.9, 4., 4.);
 
     fprintf(stdout, "Testing tidal terms.\n");
     for (UINT4 idx=1;idx<=9;idx++) {
       ret += test_tidal_F2(0.1*((REAL8)idx));
       ret += test_tidal_T2(0.1*((REAL8)idx));
       ret += test_tidal_T4(0.1*((REAL8)idx));
+      ret += test_average(0.1*((REAL8)idx));
     }
 
-    fprintf(stdout, "Testing dL.\n");
-    for (UINT4 idx=1;idx<=9;idx++) {
-      ret += test_consistency_dL(0.1*((REAL8)idx),0.2,0.3,1.,2.);
-      ret += test_consistency_dL(0.1*((REAL8)idx),0.2,0.3,1.,2.);
-      ret += test_consistency_dL(0.1*((REAL8)idx),0.2,0.3,1.,2.);
+    for (UINT4 idx=1;idx<=5;idx++) {
+      ret += test_consistency_dL(0.1*((REAL8)idx));
     }
 
     if (ret == 0)

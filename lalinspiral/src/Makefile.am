@@ -55,6 +55,7 @@ pkginclude_HEADERS = \
 	TrigScanEThincaCommon.h
 
 lib_LTLIBRARIES = liblalinspiral.la
+
 liblalinspiral_la_SOURCES = \
 	BandPassInspiralTemplate.c \
 	Chisq_CPU.c \
@@ -171,7 +172,6 @@ liblalinspiral_la_SOURCES = \
 	LALInspiralTofV.c \
 	LALInspiralTofVIntegrand.c \
 	LALInspiralUpdateParams.c \
-	LALInspiralVCSInfo.c \
 	LALInspiralValidParams.c \
 	LALInspiralValidTemplate.c \
 	LALInspiralVelocity.c \
@@ -216,8 +216,13 @@ liblalinspiral_la_SOURCES = \
 	SimulateInspiral.c \
 	SnglInspiralUtils.c \
 	SnglRingdownUtils.c \
-	TrigScanEThincaCommon.c
-nodist_liblalinspiral_la_SOURCES = LALInspiralBuildInfo.c
+	TrigScanEThincaCommon.c \
+	$(END_OF_LIST)
+
+nodist_liblalinspiral_la_SOURCES = \
+	LALInspiralBuildInfoHeader.h \
+	LALInspiralVCSInfo.c \
+	$(END_OF_LIST)
 
 if CUDA
 INSPCXXSRC =
@@ -241,9 +246,22 @@ CLEANFILES = \
 
 DISTCLEANFILES = config.h
 
+vcs_build_info_source = LALInspiralVCSInfo.c
 vcs_info_sources = LALInspiralVCSInfoHeader.h
-build_info_source = LALInspiralBuildInfo.c
-$(build_info_source): $(liblalinspiral_la_DEPENDENCIES)
+build_info_source = LALInspiralBuildInfoHeader.h
+build_info_dependencies = $(liblalinspiral_la_DEPENDENCIES)
+
+LDADD = liblalinspiral.la
+
+bin_PROGRAMS = \
+	lalinspiral_version \
+	$(END_OF_LIST)
+
+lalinspiral_version_SOURCES = version.c
+
+TESTS = \
+	lalinspiral_version \
+	$(END_OF_LIST)
 
 EXTRA_DIST = \
 	Chisq_GPU.cu \

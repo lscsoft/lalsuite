@@ -17,8 +17,8 @@
 *  MA  02111-1307  USA
 */
 
-#ifndef _RANDOM_H
-#define _RANDOM_H
+#ifndef _LAL_RANDOM_H
+#define _LAL_RANDOM_H
 
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
@@ -155,4 +155,4 @@ void LALDestroyMTRandomParams(
 }
 #endif
 
-#endif /* _RANDOM_H */
+#endif /* _LAL_RANDOM_H */

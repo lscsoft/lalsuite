@@ -168,39 +168,39 @@ int main(INT4 argc, CHAR *argv[])
   uvar_format = (CHAR *)LALCalloc(1, 256 * sizeof(CHAR));
   strcpy(uvar_format, "NINJA1");
 
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "datadir", 'D', UVAR_REQUIRED, "Directory with NR data", &uvar_nrDir), &status);
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "pattern", 0, UVAR_OPTIONAL, "Filename pattern", &uvar_pattern), &status);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_nrDir,        "datadir",        STRING, 'D', REQUIRED, "Directory with NR data") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_pattern,      "pattern",        STRING, 0,   OPTIONAL, "Filename pattern") == XLAL_SUCCESS, XLAL_EFUNC);
 
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "outfile", 'o', UVAR_OPTIONAL, "Output xml filename", &uvar_outFile), &status);
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "format", 0, UVAR_OPTIONAL, "Metadata format", &uvar_format), &status);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_outFile,      "outfile",        STRING, 'o', OPTIONAL, "Output xml filename") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_format,       "format",         STRING, 0,   OPTIONAL, "Metadata format") == XLAL_SUCCESS, XLAL_EFUNC);
 
-  LAL_CALL(LALRegisterREALUserVar(&status, "min-mass-ratio", 0, UVAR_OPTIONAL, "Min. mass ratio", &uvar_minMassRatio), &status);
-  LAL_CALL(LALRegisterREALUserVar(&status, "max-mass-ratio", 0, UVAR_OPTIONAL, "Max. mass ratio", &uvar_maxMassRatio), &status);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_minMassRatio, "min-mass-ratio", REAL8,  0,   OPTIONAL, "Min. mass ratio") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_maxMassRatio, "max-mass-ratio", REAL8,  0,   OPTIONAL, "Max. mass ratio") == XLAL_SUCCESS, XLAL_EFUNC);
 
-  LAL_CALL(LALRegisterREALUserVar(&status, "min-sx1", 0, UVAR_OPTIONAL, "Min. x-spin of first BH", &uvar_minSx1), &status);
-  LAL_CALL(LALRegisterREALUserVar(&status, "min-sx2", 0, UVAR_OPTIONAL, "Min. x-Spin of second BH", &uvar_minSx2), &status);
-  LAL_CALL(LALRegisterREALUserVar(&status, "max-sx1", 0, UVAR_OPTIONAL, "Max. x-spin of first BH", &uvar_maxSx1), &status);
-  LAL_CALL(LALRegisterREALUserVar(&status, "max-sx2", 0, UVAR_OPTIONAL, "Max. x-spin of second BH", &uvar_maxSx2), &status);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_minSx1,       "min-sx1",        REAL8,  0,   OPTIONAL, "Min. x-spin of first BH") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_minSx2,       "min-sx2",        REAL8,  0,   OPTIONAL, "Min. x-Spin of second BH") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_maxSx1,       "max-sx1",        REAL8,  0,   OPTIONAL, "Max. x-spin of first BH") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_maxSx2,       "max-sx2",        REAL8,  0,   OPTIONAL, "Max. x-spin of second BH") == XLAL_SUCCESS, XLAL_EFUNC);
 
-  LAL_CALL(LALRegisterREALUserVar(&status, "min-sy1", 0, UVAR_OPTIONAL, "Min. y-spin of first BH", &uvar_minSy1), &status);
-  LAL_CALL(LALRegisterREALUserVar(&status, "min-sy2", 0, UVAR_OPTIONAL, "Min. y-Spin of second BH", &uvar_minSy2), &status);
-  LAL_CALL(LALRegisterREALUserVar(&status, "max-sy1", 0, UVAR_OPTIONAL, "Max. y-spin of first BH", &uvar_maxSy1), &status);
-  LAL_CALL(LALRegisterREALUserVar(&status, "max-sy2", 0, UVAR_OPTIONAL, "Max. y-spin of second BH", &uvar_maxSy2), &status);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_minSy1,       "min-sy1",        REAL8,  0,   OPTIONAL, "Min. y-spin of first BH") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_minSy2,       "min-sy2",        REAL8,  0,   OPTIONAL, "Min. y-Spin of second BH") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_maxSy1,       "max-sy1",        REAL8,  0,   OPTIONAL, "Max. y-spin of first BH") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_maxSy2,       "max-sy2",        REAL8,  0,   OPTIONAL, "Max. y-spin of second BH") == XLAL_SUCCESS, XLAL_EFUNC);
 
-  LAL_CALL(LALRegisterREALUserVar(&status, "min-sz1", 0, UVAR_OPTIONAL, "Min. z-spin of first BH", &uvar_minSz1), &status);
-  LAL_CALL(LALRegisterREALUserVar(&status, "min-sz2", 0, UVAR_OPTIONAL, "Min. z-Spin of second BH", &uvar_minSz2), &status);
-  LAL_CALL(LALRegisterREALUserVar(&status, "max-sz1", 0, UVAR_OPTIONAL, "Max. z-spin of first BH", &uvar_maxSz1), &status);
-  LAL_CALL(LALRegisterREALUserVar(&status, "max-sz2", 0, UVAR_OPTIONAL, "Max. z-spin of second BH", &uvar_maxSz2), &status);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_minSz1,       "min-sz1",        REAL8,  0,   OPTIONAL, "Min. z-spin of first BH") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_minSz2,       "min-sz2",        REAL8,  0,   OPTIONAL, "Min. z-Spin of second BH") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_maxSz1,       "max-sz1",        REAL8,  0,   OPTIONAL, "Max. z-spin of first BH") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_maxSz2,       "max-sz2",        REAL8,  0,   OPTIONAL, "Max. z-spin of second BH") == XLAL_SUCCESS, XLAL_EFUNC);
 
-  LAL_CALL(LALRegisterREALUserVar(&status, "freq-lo", 0, UVAR_OPTIONAL, "Lower cutoff frequency", &uvar_freqLo), &status);
-  LAL_CALL(LALRegisterINTUserVar(&status, "min-mode", 0, UVAR_OPTIONAL, "Min mode value to be injected", &uvar_minMode), &status);
-  LAL_CALL(LALRegisterINTUserVar(&status, "max-mode", 0, UVAR_OPTIONAL, "Max mode value to be injected", &uvar_maxMode), &status);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_freqLo,       "freq-lo",        REAL8,  0,   OPTIONAL, "Lower cutoff frequency") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_minMode,      "min-mode",       INT4,   0,   OPTIONAL, "Min mode value to be injected") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_maxMode,      "max-mode",       INT4,   0,   OPTIONAL, "Max mode value to be injected") == XLAL_SUCCESS, XLAL_EFUNC);
 
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "nr-group", 0, UVAR_OPTIONAL, "NR group list (default=all)", &uvar_nrGroup), &status);
+  XLAL_CHECK_MAIN(XLALRegisterNamedUvar(&uvar_nrGroup,      "nr-group",       STRING, 0,   OPTIONAL, "NR group list (default=all)") == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  LAL_CALL(LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  XLAL_CHECK_MAIN(XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     exit(1);
 
@@ -322,8 +322,8 @@ int main(INT4 argc, CHAR *argv[])
   proctable.processTable = (ProcessTable *)LALCalloc(1, sizeof(ProcessTable));
   XLALGPSTimeNow(&(proctable.processTable->start_time));
 
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentId,
-      lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0);
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
+      lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
   snprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " ");
 
   memset(&xmlfp, 0, sizeof(LIGOLwXMLStream));
@@ -397,7 +397,7 @@ int main(INT4 argc, CHAR *argv[])
   /* destroy all user input variables */
   if (range.grouplist != NULL)
     LALFree(range.grouplist);
-  LAL_CALL(LALDestroyUserVars(&status), &status);
+  XLALDestroyUserVars();
 
   LALCheckMemoryLeaks();
   LogPrintfVerbatim(LOG_NORMAL, "bye\n");

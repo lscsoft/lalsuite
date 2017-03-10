@@ -1733,7 +1733,8 @@ drawMassSpinFromNRNinja2( SimInspiralTable* inj )
       startFreq = nrSimArray[k]->f_lower;
     else
       startFreq   = start_freq_from_frame_url(nrSimArray[k]->numrel_data);
-    startFreqHz = startFreq / (LAL_TWOPI * massTotal * LAL_MTSUN_SI);
+    /*startFreqHz = startFreq / (LAL_TWOPI * massTotal * LAL_MTSUN_SI);*/
+		startFreqHz = startFreq / (massTotal);
     /* if this startFreqHz makes us happy, inject it */
     if (startFreqHz <= inj->f_lower)
     {
@@ -1768,7 +1769,7 @@ drawMassSpinFromNRNinja2( SimInspiralTable* inj )
   /* If we hit the end of the list, oops */
   XLALFree(indicies);
   /* should throw an error here... */
-  fprintf(stderr,"No waveform could be injected at MTotal=%f Msun\n", massTotal/LAL_MTSUN_SI);
+  fprintf(stderr,"No waveform could be injected at MTotal=%f Msun\n", massTotal);
 }
 
 /*
@@ -2037,8 +2038,8 @@ int main( int argc, char *argv[] )
   proctable.processTable = (ProcessTable *)
     calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentId,
-      lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0);
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
+      lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
   snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
     calloc( 1, sizeof(ProcessParamsTable) );

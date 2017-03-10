@@ -139,6 +139,8 @@ void PrintHoughEvents (LALStatus *status, FILE *fpEvents, INT4 houghThreshold, H
 
 void PrintnStarFile (LALStatus *status, HoughSignificantEventVector *eventVec, CHAR *dirname, CHAR *basename);
 
+void ComputeNoiseWeights (LALStatus *status, REAL8Vector *weightV, const SFTVector *sftVect, INT4 blkSize, UINT4 excludePercentile);
+
 /***********************************************/
 
 int main(int argc, char *argv[]){
@@ -267,34 +269,34 @@ int main(int argc, char *argv[]){
   strcpy(uvar_skyfile,SKYFILE);
 
   /* register user input variables */
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ifo",              'i', UVAR_OPTIONAL, "Detector L1, H1, H2, G1",             &uvar_ifo ),            &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "f0",               'f', UVAR_OPTIONAL, "Start search frequency",              &uvar_f0),              &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "fSearchBand",      'b', UVAR_OPTIONAL, "Search frequency band",               &uvar_fSearchBand),     &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",           0,  UVAR_OPTIONAL, "Input skypatch file",                 &uvar_skyfile),         &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "peakThreshold",     0,  UVAR_OPTIONAL, "Peak selection threshold",            &uvar_peakThreshold),   &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",           0,  UVAR_OPTIONAL, "Use amplitude modulation weights",    &uvar_weighAM),         &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",        0,  UVAR_OPTIONAL, "Use SFT noise weights",               &uvar_weighNoise),      &status);  
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",   'E', UVAR_OPTIONAL, "Earth Ephemeris file",                &uvar_earthEphemeris),  &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",     'S', UVAR_OPTIONAL, "Sun Ephemeris file",                  &uvar_sunEphemeris),    &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",           'D', UVAR_OPTIONAL, "SFT Directory",                       &uvar_sftDir),          &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",       'o', UVAR_OPTIONAL, "Output directory",                    &uvar_dirnameOut),      &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",      0,  UVAR_OPTIONAL, "Output file basename",                &uvar_fbasenameOut),    &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",         0,  UVAR_OPTIONAL, "Print Hough maps",                    &uvar_printMaps),       &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printTemplates",    0,  UVAR_OPTIONAL, "Print templates file",                &uvar_printTemplates),  &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "houghFalseAlarm",   0,  UVAR_OPTIONAL, "Hough false alarm to set threshold",  &uvar_houghFalseAlarm), &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printEvents",       0,  UVAR_OPTIONAL, "Print events above threshold",        &uvar_printEvents),     &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",        0,  UVAR_OPTIONAL, "Print Hough statistics",              &uvar_printStats),      &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printSigma",        0,  UVAR_OPTIONAL, "Print expected number count stdev.",  &uvar_printSigma),      &status);  
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "linefile",          0,  UVAR_OPTIONAL, "list of known lines to clean SFTs",   &uvar_linefile),        &status);  
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_ifo,             "ifo",             STRING,  'i', OPTIONAL,  "Detector L1, H1, H2, G1" ) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_f0,              "f0",              REAL8,   'f', OPTIONAL,  "Start search frequency") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fSearchBand,     "fSearchBand",     REAL8,   'b', OPTIONAL,  "Search frequency band") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_skyfile,         "skyfile",         STRING,  0,   OPTIONAL,  "Input skypatch file") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_peakThreshold,   "peakThreshold",   REAL8,   0,   OPTIONAL,  "Peak selection threshold") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_weighAM,         "weighAM",         BOOLEAN, 0,   OPTIONAL,  "Use amplitude modulation weights") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_weighNoise,      "weighNoise",      BOOLEAN, 0,   OPTIONAL,  "Use SFT noise weights") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_earthEphemeris,  "earthEphemeris",  STRING,  'E', OPTIONAL,  "Earth Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sunEphemeris,    "sunEphemeris",    STRING,  'S', OPTIONAL,  "Sun Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,          "sftDir",          STRING,  'D', OPTIONAL,  "SFT Directory") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_dirnameOut,      "dirnameOut",      STRING,  'o', OPTIONAL,  "Output directory") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fbasenameOut,    "fbasenameOut",    STRING,  0,   OPTIONAL,  "Output file basename") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_printMaps,       "printMaps",       BOOLEAN, 0,   OPTIONAL,  "Print Hough maps") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_printTemplates,  "printTemplates",  BOOLEAN, 0,   OPTIONAL,  "Print templates file") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_houghFalseAlarm, "houghFalseAlarm", REAL8,   0,   OPTIONAL,  "Hough false alarm to set threshold") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_printEvents,     "printEvents",     BOOLEAN, 0,   OPTIONAL,  "Print events above threshold") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_printStats,      "printStats",      BOOLEAN, 0,   OPTIONAL,  "Print Hough statistics") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_printSigma,      "printSigma",      BOOLEAN, 0,   OPTIONAL,  "Print expected number count stdev.") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_linefile,        "linefile",        STRING,  0,   OPTIONAL,  "list of known lines to clean SFTs") == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* developer input variables */
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",    0, UVAR_DEVELOPER, "Size of cylinder of PHMDs",           &uvar_nfSizeCylinder),  &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",      0, UVAR_DEVELOPER, "Running Median block size",           &uvar_blocksRngMed),    &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "maxBinsClean",      0, UVAR_DEVELOPER, "Maximum number of bins in cleaning",  &uvar_maxBinsClean),    &status);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_nfSizeCylinder,  "nfSizeCylinder",  INT4,    0,   DEVELOPER, "Size of cylinder of PHMDs") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_blocksRngMed,    "blocksRngMed",    INT4,    0,   DEVELOPER, "Running Median block size") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_maxBinsClean,    "maxBinsClean",    INT4,    0,   DEVELOPER, "Maximum number of bins in cleaning") == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     exit(1);
 
@@ -323,7 +325,7 @@ int main(int argc, char *argv[]){
 
 
   /* write log file with command line arguments, cvs tags, contents of skypatch file and, if required, contents of linefile*/
-  if ( LALUserVarWasSet( &uvar_linefile ) )    
+  if ( XLALUserVarWasSet( &uvar_linefile ) )    
     LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fbasenameOut, uvar_skyfile, uvar_linefile, argv[0]), &status);
   else
     LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fbasenameOut, uvar_skyfile, NULL, argv[0]), &status);
@@ -380,17 +382,17 @@ int main(int argc, char *argv[]){
 
     /* set detector constraint */
     constraints.detector = NULL;
-    if ( LALUserVarWasSet( &uvar_ifo ) )    
+    if ( XLALUserVarWasSet( &uvar_ifo ) )    
       constraints.detector = XLALGetChannelPrefix ( uvar_ifo );
 
     /* get sft catalog */
     tempDir = (CHAR *)LALCalloc(512, sizeof(CHAR));
     strcpy(tempDir, uvar_sftDir);
     strcat(tempDir, "/*SFT*.*");
-    LAL_CALL( LALSFTdataFind( &status, &catalog, tempDir, &constraints), &status);
+    XLAL_CHECK_MAIN( ( catalog = XLALSFTdataFind( tempDir, &constraints) ) != NULL, XLAL_EFUNC);
 
     /* exit if catalog has multi ifos and no detector constraint has been set */
-    if ( ( XLALCountIFOsInCatalog(catalog) > 1) && !(LALUserVarWasSet( &uvar_ifo ))) {
+    if ( ( XLALCountIFOsInCatalog(catalog) > 1) && !(XLALUserVarWasSet( &uvar_ifo ))) {
       fprintf(stderr, "sft catalog contains more than one ifo and no ifo has been specified...exiting\n");
       exit(1);
     }
@@ -414,7 +416,7 @@ int main(int argc, char *argv[]){
     memset( nStarEventVec.event, 0, length+1);
     
     /* get SFT timestamps */
-    LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &timeV, catalog ), &status);  	
+    XLAL_CHECK_MAIN( ( timeV = XLALTimestampsFromSFTCatalog( catalog ) ) != NULL, XLAL_EFUNC);  	
 
     /* total observation time = last timestamp - first timestamp + timeBase*/
     tObs = XLALGPSDiff( timeV->data + mObsCoh - 1, timeV->data ) + timeBase;
@@ -426,10 +428,10 @@ int main(int argc, char *argv[]){
 
     /* read sft files making sure to add extra bins for running median */
     /* read the sfts */
-    LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, catalog, f_min, f_max), &status);
+    XLAL_CHECK_MAIN( ( inputSFTs = XLALLoadSFTs ( catalog, f_min, f_max) ) != NULL, XLAL_EFUNC);
 
     /* clean sfts if required */
-    if ( LALUserVarWasSet( &uvar_linefile ) )
+    if ( XLALUserVarWasSet( &uvar_linefile ) )
       {
 	RandomParams *randPar=NULL;
 	FILE *fpRand=NULL;
@@ -455,10 +457,10 @@ int main(int argc, char *argv[]){
       } /* end cleaning */
 
     /* free memory */
-    if ( LALUserVarWasSet( &uvar_ifo ) )    
+    if ( XLALUserVarWasSet( &uvar_ifo ) )    
       LALFree( constraints.detector );
     LALFree( tempDir);
-    LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
+    XLALDestroySFTCatalog(catalog );  	
 
     /* set up weights -- this should be done before normalizing the sfts */
     weightsV.length = mObsCoh;
@@ -473,12 +475,12 @@ int main(int argc, char *argv[]){
 
     /* calculate sft noise weights if required by user */
     if (uvar_weighNoise ) {
-      LAL_CALL( LALComputeNoiseWeights( &status, &weightsNoise, inputSFTs, uvar_blocksRngMed, 0), &status); 
+      LAL_CALL( ComputeNoiseWeights( &status, &weightsNoise, inputSFTs, uvar_blocksRngMed, 0), &status); 
       LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsNoise), &status);
     }
 
     /* normalize sfts */
-    LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed), &status);
+    XLAL_CHECK_MAIN( XLALNormalizeSFTVect( inputSFTs, uvar_blocksRngMed, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC);
 
   } /* end of sft reading block */
   
@@ -517,7 +519,7 @@ int main(int argc, char *argv[]){
     } /* end loop over sfts */
 
     /* we are done with the sfts and ucharpeakgram now */
-    LAL_CALL (LALDestroySFTVector(&status, &inputSFTs), &status );
+    XLALDestroySFTVector( inputSFTs);
     LALFree(pg1.data);
 
   }/* end block for selecting peaks */
@@ -539,13 +541,8 @@ int main(int argc, char *argv[]){
     velPar.vTol = ACCURACY; /* irrelevant */
     velPar.edat = NULL; 
 
-    /*  ephemeris info */
-    edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
-   (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
-   (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
-
     /* read in ephemeris data */
-    LAL_CALL( LALInitBarycenter( &status, edat), &status);
+    XLAL_CHECK_MAIN( ( edat = XLALInitBarycenter( uvar_earthEphemeris, uvar_sunEphemeris ) ) != NULL, XLAL_EFUNC);
     velPar.edat = edat;
 
     /* calculate average velocity for each SFT duration */    
@@ -1053,7 +1050,7 @@ int main(int argc, char *argv[]){
   }
   LALFree(pgV.pg);
 
-  LAL_CALL(LALDestroyTimestampVector ( &status, &timeV), &status); 
+  XLALDestroyTimestampVector (timeV); 
   
   LALFree(timeDiffV.data);
 
@@ -1062,9 +1059,7 @@ int main(int argc, char *argv[]){
   LALFree(weightsV.data);
   LALFree(weightsNoise.data);  
 
-  LALFree(edat->ephemE);
-  LALFree(edat->ephemS);
-  LALFree(edat);
+  XLALDestroyEphemerisData(edat);
 
   LALFree(skyAlpha);
   LALFree(skyDelta);
@@ -1073,7 +1068,7 @@ int main(int argc, char *argv[]){
 
   LALFree( nStarEventVec.event );
 
-  LAL_CALL (LALDestroyUserVars(&status), &status);
+  XLALDestroyUserVars();
 
   LALCheckMemoryLeaks();
 
@@ -1311,7 +1306,7 @@ void PrintLogFile (LALStatus       *status,
   }
   
   /* get the log string */
-  TRY( LALUserVarGetLog(status->statusPtr, &logstr, UVAR_LOGFMT_CFGFILE), status);  
+  XLAL_CHECK_LAL( status, ( logstr = XLALUserVarGetLog(UVAR_LOGFMT_CFGFILE) ) != NULL, XLAL_EFUNC);  
 
   fprintf( fpLog, "## LOG FILE FOR Hough Driver\n\n");
   fprintf( fpLog, "# User Input:\n");
@@ -1427,3 +1422,113 @@ void PrintnStarFile (LALStatus                   *status,
   /* normal exit */
   RETURN (status);
 }    
+
+
+/**
+ * Computes weight factors arising from SFTs with different noise
+ * floors -- it multiplies an existing weight vector
+ */
+void
+ComputeNoiseWeights  (LALStatus        *status,
+                          REAL8Vector      *weightV,
+                          const SFTVector  *sftVect,
+                          INT4             blkSize,
+                          UINT4            excludePercentile)
+{
+
+  UINT4 lengthVect, lengthSFT, lengthPSD, halfLengthPSD;
+  UINT4 j, excludeIndex;
+  SFTtype *sft;
+  REAL8FrequencySeries periodo;
+  REAL8Sequence mediansV, inputV;
+  LALRunningMedianPar rngMedPar;
+
+  /* --------------------------------------------- */
+  INITSTATUS(status);
+  ATTATCHSTATUSPTR (status);
+
+  /*   Make sure the arguments are not NULL: */
+  ASSERT (weightV, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (sftVect, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (blkSize > 0, status,  DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG);
+  ASSERT (weightV->data,status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (sftVect->data,status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (excludePercentile <= 100, status, DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG);
+  /* -------------------------------------------   */
+
+  /* Make sure there is no size mismatch */
+  ASSERT (weightV->length == sftVect->length, status, DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG);
+  /* -------------------------------------------   */
+
+  /* Make sure there are elements to be computed*/
+  ASSERT (sftVect->length, status, DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG);
+
+
+  /* set various lengths */
+  lengthVect = sftVect->length;
+  lengthSFT = sftVect->data->data->length;
+  ASSERT( lengthSFT > 0, status,  DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG);
+  lengthPSD = lengthSFT - blkSize + 1;
+
+  /* make sure blksize is not too big */
+  ASSERT(lengthPSD > 0, status, DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG);
+
+  halfLengthPSD = lengthPSD/2; /* integer division */
+
+  /* allocate memory for periodogram */
+  periodo.data = NULL;
+  periodo.data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
+  periodo.data->length = lengthSFT;
+  periodo.data->data = (REAL8 *)LALMalloc( lengthSFT * sizeof(REAL8));
+
+  /* allocate memory for vector of medians */
+  mediansV.length = lengthPSD;
+  mediansV.data = (REAL8 *)LALMalloc(lengthPSD * sizeof(REAL8));
+
+  /* rng med block size */
+  rngMedPar.blocksize = blkSize;
+
+  /* calculate index in psd medians vector from which to calculate mean */
+  excludeIndex =  (excludePercentile * halfLengthPSD) ; /* integer arithmetic */
+  excludeIndex /= 100; /* integer arithmetic */
+
+  /* loop over sfts and calculate weights */
+  for (j=0; j<lengthVect; j++) {
+    REAL8 sumMed = 0.0;
+    UINT4 k;
+
+    sft = sftVect->data + j;
+
+    /* calculate the periodogram */
+    XLAL_CHECK_LAL (status, XLALSFTtoPeriodogram (&periodo, sft) == XLAL_SUCCESS, XLAL_EFUNC);
+
+    /* calculate the running median */
+    inputV.length = lengthSFT;
+    inputV.data = periodo.data->data;
+    TRY( LALDRunningMedian2(status->statusPtr, &mediansV, &inputV, rngMedPar), status);
+
+    /* now sort the mediansV.data vector and exclude the top and last percentiles */
+    gsl_sort(mediansV.data, 1, mediansV.length);
+
+    /* sum median excluding appropriate elements */
+    for (k = excludeIndex; k < lengthPSD - excludeIndex; k++) {
+      sumMed += mediansV.data[k];
+    }
+
+    /* weight is proportional to 1/sumMed */
+    weightV->data[j] /= sumMed;
+
+  } /* end of loop over sfts */
+
+  /* remember to normalize weights immediately after leaving this function */
+
+  /* free memory */
+  LALFree(mediansV.data);
+  LALFree(periodo.data->data);
+  LALFree(periodo.data);
+
+  DETATCHSTATUSPTR (status);
+   /* normal exit */
+  RETURN (status);
+
+} /* ComputeNoiseWeights() */

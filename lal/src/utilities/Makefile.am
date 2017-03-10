@@ -1,7 +1,6 @@
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
 pkginclude_HEADERS = \
-	CoarseGrainFrequencySeries.h \
 	Factorial.h \
 	FindRoot.h \
 	Integrate.h \
@@ -22,11 +21,11 @@ pkginclude_HEADERS = \
 noinst_LTLIBRARIES = libutilities.la
 
 libutilities_la_SOURCES = \
-	CoarseGrainFrequencySeries.c \
 	DetInverse.c \
 	Eigen.c \
 	FindRoot.c \
 	HeapSort.c \
+	InsertionSort.c \
 	Integrate.c \
 	Interpolate.c \
 	LALAdaptiveRungeKutta4.c \
@@ -44,5 +43,4 @@ libutilities_la_SOURCES = \
 	$(END_OF_LIST)
 
 EXTRA_DIST = \
-	utilitiesCoarseGrain.png \
 	$(END_OF_LIST)

@@ -6,47 +6,46 @@ Name: @PACKAGE@
 Version: @VERSION@
 Release: 1%{?dist}
 Summary: LSC Algorithm Inference Library
-License: GPL
+License: GPLv2+
 Group: LAL
 Source: %{name}-%{version}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: chealpix-devel
+BuildRequires: chealpix-devel >= 3.30.0
 BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
-BuildRequires: healpy >= 1.8.5
+BuildRequires: healpy >= 1.9.1
+BuildRequires: python-shapely
 BuildRequires: libmetaio-devel
 BuildRequires: libxml2-devel
-BuildRequires: numpy
+BuildRequires: numpy >= 1.7
 BuildRequires: octave-devel
 BuildRequires: python-devel
-BuildRequires: scipy
+BuildRequires: scipy >= 0.8
 BuildRequires: swig
-BuildRequires: glue >= 1.49.1
-BuildRequires: glue-common >= 1.49.1
-BuildRequires: glue-segments >= 1.49.1
+BuildRequires: glue >= @MIN_GLUE_VERSION@
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: lal-python >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
+BuildRequires: lal-python >= @MIN_LAL_VERSION@
 BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
+BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalxml-devel >= @MIN_LALXML_VERSION@
-BuildRequires: lalxml-python >= @MIN_LALXML_VERSION@
 BuildRequires: lalxml-octave >= @MIN_LALXML_VERSION@
+BuildRequires: lalxml-python >= @MIN_LALXML_VERSION@
 BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
-BuildRequires: lalburst-python >= @MIN_LALBURST_VERSION@
 BuildRequires: lalburst-octave >= @MIN_LALBURST_VERSION@
+BuildRequires: lalburst-python >= @MIN_LALBURST_VERSION@
 BuildRequires: lalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
-BuildRequires: lalinspiral-python >= @MIN_LALINSPIRAL_VERSION@
 BuildRequires: lalinspiral-octave >= @MIN_LALINSPIRAL_VERSION@
+BuildRequires: lalinspiral-python >= @MIN_LALINSPIRAL_VERSION@
 BuildRequires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
-BuildRequires: lalpulsar-python >= @MIN_LALPULSAR_VERSION@
 BuildRequires: lalpulsar-octave >= @MIN_LALPULSAR_VERSION@
+BuildRequires: lalpulsar-python >= @MIN_LALPULSAR_VERSION@
 Requires: chealpix
 Requires: gsl >= 1.15
 Requires: hdf5
@@ -70,7 +69,7 @@ that use the LAL Inference library.
 Summary: Files and documentation needed for compiling programs that use LAL Inference
 Group: LAL
 Requires: %{name} = %{version}
-Requires: chealpix-devel
+Requires: chealpix-devel >= 3.30.0
 Requires: gsl-devel >= 1.15
 Requires: libmetaio-devel
 Requires: libxml2-devel
@@ -90,14 +89,14 @@ library.
 Summary: Python Bindings for LALInference
 Group: LAL
 Requires: %{name} = %{version}
-Requires: healpy
-Requires: numpy
+Requires: healpy >= 1.9.1
+Requires: python-shapely
+Requires: numpy >= 1.7
 Requires: python
-Requires: scipy
+Requires: scipy >= 0.8
 Requires: python-six
-Requires: glue >= 1.49.1
-Requires: glue-common >= 1.49.1
-Requires: glue-segments >= 1.49.1
+Requires: python-seaborn
+Requires: glue >= @MIN_GLUE_VERSION@
 Requires: lal-python >= @MIN_LAL_VERSION@
 Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 Requires: lalxml-python >= @MIN_LALXML_VERSION@
@@ -137,7 +136,7 @@ This package provides the Octave bindings for LALInference.
 
 %install
 %make_install
-rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
+find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
 %post
 ldconfig
@@ -151,39 +150,24 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
-%{_libdir}/*.so*
-%{_sysconfdir}/*
-%{_datarootdir}/lalinference/*.csv
 %{_bindir}/lalinference_*
+%{_datarootdir}/lalinference/*
+%{_libdir}/*.so.*
+%{_sysconfdir}/*
 
 %files devel
 %defattr(-,root,root)
-%{_libdir}/*.a
-%{_libdir}/pkgconfig/*
 %{_includedir}/lal
+%{_libdir}/*.a
+%{_libdir}/*.so
+%{_libdir}/pkgconfig/*
 
 %files python
 %defattr(-,root,root)
 %{_bindir}/bayestar_*
+%{_bindir}/imrtgr_*
 %{_bindir}/rapidpe_*
-%{_libdir}/python*/site-packages/lalinference/*.py
-%{_libdir}/python*/site-packages/lalinference/*.pyc
-%{_libdir}/python*/site-packages/lalinference/bayestar/*.py
-%{_libdir}/python*/site-packages/lalinference/bayestar/*.pyc
-%{_libdir}/python*/site-packages/lalinference/bayestar/_distance.so*
-%{_libdir}/python*/site-packages/lalinference/bayestar/sky_map.so*
-%{_libdir}/python*/site-packages/lalinference/cylon.csv
-%{_libdir}/python*/site-packages/lalinference/imrtgr/*.py
-%{_libdir}/python*/site-packages/lalinference/imrtgr/*.pyc
-%{_libdir}/python*/site-packages/lalinference/ne_simplified_coastline.json
-%{_libdir}/python*/site-packages/lalinference/rapid_pe/*.py
-%{_libdir}/python*/site-packages/lalinference/rapid_pe/*.pyc
-%{_libdir}/python*/site-packages/lalinference/_lalinference.so*
-%exclude %{_libdir}/python*/site-packages/lalinference/*.pyo
-%exclude %{_libdir}/python*/site-packages/lalinference/bayestar/*.pyo
-%exclude %{_libdir}/python*/site-packages/lalinference/bayestar/*.la
-%exclude %{_libdir}/python*/site-packages/lalinference/imrtgr/*.pyo
-%exclude %{_libdir}/python*/site-packages/lalinference/rapid_pe/*.pyo
+%{_libdir}/python*
 
 %files octave
 %defattr(-,root,root)
@@ -191,6 +175,29 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Sat Feb 18 2017 Adam Mercer <adam.mercer@ligo.org> 1.9.1-1
+- Do not use $(..._la_LIBADD) to link against external libraries
+- Track version info API change
+- Fix to weights calculation so that posterior samples are now drawn correctly
+- Fix incorrect axes limits for Mollweide sky maps
+- Drop code for reading past EOF of named pipe
+- Fix incorrect reordering of IDL-compatible sky maps
+- Tune default max distance for volume rendering plots
+
+* Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.9.0-1
+- O2 release
+
+* Thu Dec 15 2016 Adam Mercer <adam.mercer@ligo.org> 1.8.2-1
+- Be more emphatic about switching matplotlib backend
+- Prevent trying to build python3 packages when unsupported
+
+* Fri Dec 09 2016 Adam Mercer <adam.mercer@ligo.org> 1.8.1-1
+- Explicitly set no-op Matplotlib backend
+- Set matplotlib backend to no-op
+
+* Mon Sep 26 2016 Adam Mercer <adam.mercer@ligo.org> 1.8.0-1
+- ER10 release
+
 * Thu Jun 23 2016 Adam Mercer <adam.mercer@ligo.org> 1.7.0-1
 - ER9 release
 

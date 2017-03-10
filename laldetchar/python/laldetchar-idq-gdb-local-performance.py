@@ -264,8 +264,12 @@ for t, ts in zip(t, ts):
             segs[fapThr][1] = min(segs[fapThr][1], -minFAP)
 if opts.verbose:
     print "computing associated deadtimes"
-dt = [event.livetime(segs[fapThr][0])/T for fapThr in opts.FAPthr]
-maxFAP = [segs[fapThr][1] for fapThr in opts.FAPthr]
+if T: ### nonzero livetime
+    dt = [event.livetime(segs[fapThr][0])/T for fapThr in opts.FAPthr]
+    maxFAP = [segs[fapThr][1] for fapThr in opts.FAPthr]
+else: ### zero livetime, meaning there can be no deadtime
+    dt = [0.0 for fapThr in opts.FAPthr]
+    maxFAP = [1.0 for fapThr in opts.FAPthr]
 
 ### write json for calibration check
 jsonfilename = idq.gdb_calib_json( gdbdir, ifo, opts.classifier, filetag, opts.start, opts.end-opts.start )
@@ -279,7 +283,7 @@ if not opts.skip_gracedb_upload:
     message = "iDQ calibration sanity check for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
     if opts.verbose:
         print "    "+message
-    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename )
+    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=idq.tagnames )
 
 ### plot calibration check
 fig = isp.plt.figure()
@@ -314,7 +318,7 @@ if not opts.skip_gracedb_upload:
     message = "iDQ calibration sanity check figure for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
     if opts.verbose:
         print "    "+message
-    gracedb.writeLog( opts.gracedb_id, message=message, filename=figname, tagname=['data_quality'] )
+    gracedb.writeLog( opts.gracedb_id, message=message, filename=figname, tagname=idq.tagnames+['data_quality'] )
 
 ### discover KW triggers, compute efficiencies, plot ROC curves
 if opts.verbose:
@@ -375,7 +379,12 @@ jsonD['dat'] = {'rank':list(r), 'cumulative cleans':list(c), 'cumulative glitche
 ax.set_xlabel('Deadtime (FAP)')
 ax.set_ylabel('Efficiency')
 
-ax.set_xscale('log')
+try:
+    ax.set_xscale('log') ### may not have any positive values, so we have to try/except
+
+except ValueError:
+    ax.set_xscale('linear')
+
 ax.set_yscale('linear')
 
 ax.grid(True)
@@ -398,10 +407,10 @@ fig.savefig(figname)
 isp.plt.close(fig)
 
 if not opts.skip_gracedb_upload:
-    message = "iDQ local ROC figure for %s at %s within [%.3f, %.3f]"%(ifo, opts.classifier, opts.start, opts.end)
+    message = "iDQ local ROC figure for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
     if opts.verbose:
         print "    "+message
-    gracedb.writeLog( opts.gracedb_id, message=message, filename=figname, tagname=['data_quality'] )
+    gracedb.writeLog( opts.gracedb_id, message=message, filename=figname, tagname=idq.tagnames+['data_quality'] )
 
 jsonfilename = idq.gdb_roc_json(  gdbdir, opts.classifier, ifo, filetag, opts.start, opts.end-opts.start )
 if opts.verbose:
@@ -414,7 +423,7 @@ if not opts.skip_gracedb_upload:
     message = "iDQ local ROC curves for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
     if opts.verbose:
         print "    "+message
-    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename )
+    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=idq.tagnames )
 
 #=================================================
 
@@ -476,7 +485,7 @@ if not opts.skip_gracedb_upload:
     message = "iDQ local calibration vital statistics for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
     if opts.verbose:
         print "    "+message
-    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=['data_quality'] )
+    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=idq.tagnames+['data_quality'] )
 
 
 ### repeat for training
@@ -533,7 +542,7 @@ if not opts.skip_gracedb_upload:
     message = "iDQ local training vital statistics for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
     if opts.verbose:
         print "    "+message
-    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=['data_quality'] )
+    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=idq.tagnames+['data_quality'] )
 
 
 #=================================================

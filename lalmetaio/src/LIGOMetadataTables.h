@@ -81,16 +81,11 @@ extern "C" {
 #define LIGOMETA_SUMMVALUE_COMM_MAX 81
 #define LIGOMETA_UNIQUE_MAX 65
 #define LIGOMETA_DBUNIQUE_MAX 13
-#define LIGOMETA_TRANSDATA_EVENT_TABLE_MAX 19
-#define LIGOMETA_TRANSDATA_NAME_MAX 33
-#define LIGOMETA_TRANSDATA_UNITS_MAX 17
-#define LIGOMETA_TRANSDATA_DATA_MAX 17
 #define LIGOMETA_SOURCE_MAX 30
 #define LIGOMETA_WAVEFORM_MAX 50
 #define LIGOMETA_COORDINATES_MAX 16
 #define LIGOMETA_SIMINSTPARAMS_NAME_MAX 25
 #define LIGOMETA_SIMINSTPARAMS_COMM_MAX 65
-#define LIGOMETA_FILTER_NAME_MAX 65
 #define LIGOMETA_STD 100
 #define LIGOMETA_INSPIRALTAPER_MAX 35
 
@@ -110,7 +105,6 @@ tagMetadataTableType
   sngl_inspiral_table_bns,
   sngl_inspiral_table_bcv,
   sngl_ringdown_table,
-  sngl_transdata_table,
   multi_inspiral_table,
   sim_inspiral_table,
   sim_ringdown_table,
@@ -120,8 +114,7 @@ tagMetadataTableType
   coinc_ringdown_table,
   stochastic_table,
   stoch_summ_table,
-  ext_triggers_table,
-  filter_table
+  ext_triggers_table
 }
 MetadataTableType;
 
@@ -143,19 +136,6 @@ tagInterferometerNumber
   LAL_UNKNOWN_IFO = -1
 }
 InterferometerNumber;
-
-
-/**
- * The ProcessIDColumn contains the process_id for a given row in a table.
- */
-typedef struct
-tagProcessIDColumn
-{
-  UINT8  id;
-  CHAR   textId[LIGOMETA_UNIQUE_MAX];
-  UCHAR  dbUniqueId[LIGOMETA_DBUNIQUE_MAX];
-}
-ProcessIDColumn;
 
 
 /**
@@ -768,28 +748,6 @@ tagCoincRingdownTable
 }
 CoincRingdownTable;
 
-typedef struct
-tagSnglTransdataTable
-{
-  CHAR          event_table[LIGOMETA_TRANSDATA_EVENT_TABLE_MAX];
-  CHAR          ifo[LIGOMETA_IFO_MAX];
-  CHAR          name[LIGOMETA_TRANSDATA_NAME_MAX];
-  INT4          dimensions;
-  INT4          x_bins;
-  REAL8         x_start;
-  REAL8         x_end;
-  CHAR          x_units[LIGOMETA_TRANSDATA_UNITS_MAX];
-  INT4          y_bins;
-  REAL8         y_start;
-  REAL8         y_end;
-  CHAR          y_units[LIGOMETA_TRANSDATA_UNITS_MAX];
-  CHAR          data_type[LIGOMETA_TRANSDATA_DATA_MAX];
-  CHAR          data_units[LIGOMETA_TRANSDATA_DATA_MAX];
-  UCHAR         *trans_data; /* must be big Endian */
-  INT4          transdata_length;
-  EventIDColumn *event_id;
-}
-SnglTransdataTable;
 
 typedef struct
 tagSummValueTable
@@ -913,17 +871,6 @@ tagExtTriggerTable
 }
 ExtTriggerTable;
 
-typedef struct
-tagFilterTable
-{
-  struct tagFilterTable *next;
-  CHAR          program[LIGOMETA_PROGRAM_MAX];
-  INT4          start_time;
-  CHAR          filter_name[LIGOMETA_FILTER_NAME_MAX];
-  CHAR          comment[LIGOMETA_SUMMVALUE_COMM_MAX];
-}
-FilterTable;
-
 
 /**
  * This structure corresponds to one row of a time_slide table.
@@ -952,13 +899,11 @@ tagMetadataTable
   MultiInspiralTable    *multiInspiralTable;
   SimInspiralTable      *simInspiralTable;
   SimRingdownTable      *simRingdownTable;
-  SnglTransdataTable    *snglTransdataTable;
   SummValueTable        *summValueTable;
   SimInstParamsTable    *simInstParamsTable;
   StochasticTable       *stochasticTable;
   StochSummTable        *stochSummTable;
   ExtTriggerTable       *extTriggerTable;
-  FilterTable           *filterTable;
 }
 MetadataTable;
 

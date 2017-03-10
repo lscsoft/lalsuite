@@ -6,7 +6,7 @@ Name: @PACKAGE@
 Version: @VERSION@
 Release: 1%{?dist}
 Summary: LSC Algorithm Stochastic Library
-License: GPL
+License: GPLv2+
 Group: LAL
 Source: %{name}-%{version}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
@@ -18,11 +18,11 @@ BuildRequires: octave-devel
 BuildRequires: python-devel
 BuildRequires: swig
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: lal-python >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
+BuildRequires: lal-python >= @MIN_LAL_VERSION@
 BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
+BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 Requires: libmetaio
 Requires: lal >= @MIN_LAL_VERSION@
 Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
@@ -80,7 +80,7 @@ This package provides the Octave bindings for LALStochastic.
 
 %install
 %make_install
-rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
+find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
 %post
 ldconfig
@@ -94,21 +94,20 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
-%{_libdir}/*.so*
+%{_bindir}/lalstochastic_version
+%{_libdir}/*.so.*
 %{_sysconfdir}/*
 
 %files devel
 %defattr(-,root,root)
-%{_libdir}/*.a
-%{_libdir}/pkgconfig/*
 %{_includedir}/lal
+%{_libdir}/*.a
+%{_libdir}/*.so
+%{_libdir}/pkgconfig/*
 
 %files python
 %defattr(-,root,root)
-%{_libdir}/python*/site-packages/lalstochastic/*.py
-%{_libdir}/python*/site-packages/lalstochastic/*.pyc
-%{_libdir}/python*/site-packages/lalstochastic/_lalstochastic.so*
-%exclude %{_libdir}/python*/site-packages/lalstochastic/*.pyo
+%{_libdir}/python*
 
 %files octave
 %defattr(-,root,root)
@@ -116,6 +115,12 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.1.20-1
+- O2 release
+
+* Mon Sep 26 2016 Adam Mercer <adam.mercer@ligo.org> 1.1.19-1
+- ER10 release
+
 * Thu Jun 23 2016 Adam Mercer <adam.mercer@ligo.org> 1.1.18-1
 - ER9 release
 

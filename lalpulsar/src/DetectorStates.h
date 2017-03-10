@@ -118,7 +118,7 @@ typedef struct tagMultiNoiseFloor
                                                 //!< with \f$N_{\mathrm{sft}}^X\f$ the number of SFTs (labeled by \f$\alpha\f$) from detector \f$X\f$
 } MultiNoiseFloor;
 
-/* ----- Output types for LALGetDetectorStates() */
+/* ----- Output types for XLALGetDetectorStates() */
 /**
  * State-info about position, velocity and LMST of a detector together
  * with corresponding EarthState.
@@ -166,24 +166,11 @@ typedef struct tagMultiDetectorStateSeries
 /*---------- exported Global variables ----------*/
 
 /*---------- exported prototypes [API] ----------*/
-void
-LALGetDetectorStates (LALStatus *,
-		      DetectorStateSeries **DetectorStates,
-		      const LIGOTimeGPSVector *timestamps,
-		      const LALDetector *detector,
-		      const EphemerisData *edat,
-		      REAL8 tOffset);
-
-void
-LALGetMultiDetectorStates( LALStatus *,
-			   MultiDetectorStateSeries **mdetStates,
-			   const MultiSFTVector *multiSFTs,
-			   const EphemerisData *edat );
-
-void LALCreateDetectorStateSeries (LALStatus *, DetectorStateSeries **vect, UINT4 length );
+DetectorStateSeries *XLALCreateDetectorStateSeries ( UINT4 length );
 
 DetectorStateSeries* XLALGetDetectorStates ( const LIGOTimeGPSVector *timestamps, const LALDetector *detector, const EphemerisData *edat, REAL8 tOffset );
 MultiDetectorStateSeries* XLALGetMultiDetectorStates( const MultiLIGOTimeGPSVector *multiTS, const MultiLALDetector *multiIFO, const EphemerisData *edat, REAL8 tOffset );
+MultiDetectorStateSeries *XLALGetMultiDetectorStatesFromMultiSFTs( const MultiSFTVector *multiSFTs, const EphemerisData *edat, REAL8 tOffset );
 
 int XLALParseMultiLALDetector ( MultiLALDetector *multiIFO, const LALStringVector *detNames );
 int XLALParseMultiNoiseFloor ( MultiNoiseFloor *multiNoiseFloor, const LALStringVector *sqrtSX, UINT4 numDetectors );
@@ -198,21 +185,8 @@ int XLALTensorSquareVector3 ( SymmTensor3 *vxv, REAL4 v[3] );
 int XLALSymmetricTensorProduct3 ( SymmTensor3 *vxw, REAL4 v[3], REAL4 w[3] );
 REAL4 XLALContractSymmTensor3s ( const SymmTensor3 *T1, const SymmTensor3 *T2 );
 
-/* creators */
-DetectorStateSeries *XLALCreateDetectorStateSeries ( UINT4 length );
-
-/* destructors */
 void XLALDestroyDetectorStateSeries ( DetectorStateSeries *detStates );
-void LALDestroyDetectorStateSeries(LALStatus *, DetectorStateSeries **vect );
 void XLALDestroyMultiDetectorStateSeries ( MultiDetectorStateSeries *mdetStates );
-
-/* helpers */
-
-void LALGetMultiDetectorVelTimePos(LALStatus                *status,
-				   REAL8VectorSequence      **outVel,
-				   REAL8VectorSequence      **outPos,
-				   LIGOTimeGPSVector        **outTime,
-				   MultiDetectorStateSeries *in);
 
 /*@}*/
 

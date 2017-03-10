@@ -30,7 +30,6 @@ import sys
 import ast
 import numpy as np
 import re
-import urllib2
 import copy
 import os
 import fnmatch
@@ -39,6 +38,7 @@ import datetime
 import json
 from scipy import stats
 import h5py
+import itertools
 
 import matplotlib
 matplotlib.use("Agg")
@@ -171,59 +171,19 @@ function toggle(id) {{
 """
 
 
-def get_atnf_info(psr):
+def set_spin_down(p1_I, assoc, f0, f1, n=5.):
   """
-  Get the pulsar (psr) distance (DIST in kpc), proper motion corrected age (AGE_I) and any association
-  (ASSOC e.g. GC) from the ATNF catalogue.
-  """
-
-  psrname = re.sub('\+', '%2B', psr) # switch '+' for unicode character
-
-  atnfversion = '1.54' # the latest ATNF version
-  atnfurl = 'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=' + atnfversion
-  atnfurl += '&Dist=Dist&Assoc=Assoc&Age_i=Age_i' # set parameters to get
-  atnfurl += '&startUserDefined=true&c1_val=&c2_val=&c3_val=&c4_val=&sort_attr=jname&sort_order=asc&condition=&pulsar_names=' + psrname
-  atnfurl += '&ephemeris=selected&submit_ephemeris=Get+Ephemeris&coords_unit=raj%2Fdecj&radius=&coords_1=&coords_2='
-  atnfurl += '&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=linear&y_axis=&y_scale=linear&state=query'
-
-  try:
-    urldat = urllib2.urlopen(atnfurl).read() # read ATNF url
-    predat = re.search(r'<pre[^>]*>([^<]+)</pre>', urldat) # to extract data within pre environment (without using BeautifulSoup) see e.g. http://stackoverflow.com/a/3369000/1862861 and http://stackoverflow.com/a/20046030/1862861
-    pdat = predat.group(1).strip().split('\n') # remove preceeding and trailing new lines and split lines
-  except:
-    print("Warning... could not get information from ATNF pulsar catalogue.")
-    return None
-
-  # check whether information could be found and get distance, age and association from data
-  dist = None
-  age = None
-  assoc = None
-  for line in pdat:
-    if 'WARNING' in line or 'not in catalogue' in line:
-      return None
-    vals = line.split()
-    if 'DIST' in vals[0]:
-      dist = float(vals[1])
-    if 'AGE_I' in vals[0]:
-      age = float(vals[1])
-    if 'ASSOC' in vals[0]:
-      assoc = vals[1]
-
-  return (dist, age, assoc)
-
-
-def set_spin_down(age, assoc, f0, f1):
-  """
-  Set the spin-down of the source based on the instrinsic age (age) corrected for any proper motion/
-  globular cluster accelation if available, or if not give AND the pulsar is in a globular cluster base the
-  spin-down on assuming an age of 10^9 years. Otherwise just return the unadjusted spin-down.
+  Set the spin-down of the source based on the intrinsic period derivative (p1_I) corrected for any proper motion/
+  globular cluster acceleration if available, or if not give AND the pulsar is in a globular cluster base the
+  spin-down on assuming an age of 10^9 years (defaulting to the source being a gravitar, with n=5).
+  Otherwise just return the unadjusted spin-down.
   """
 
-  if age != None and age > 0.:
-    return -f0/(2.* age * 365.25 * 86400.)
+  if p1_I != None and p1_I > 0.:
+    return -p1_I*f0**2 # convert period derivative into frequency derivative
   elif assoc != None:
     if 'GC' in assoc: # check if a globular cluster pulsar
-      return -f0/(2. * 1.e9 * 365.25 * 86400.)
+      return -f0/((n-1.) * 1.e9 * 365.25 * 86400.)
     else:
       return f1
   else:
@@ -441,7 +401,7 @@ class posteriors:
   """
   Get sample posteriors and created a set of functions for outputting tables, plots and posterior statistics
   """
-  def __init__(self, postfiles, outputdir, harmonics=[2], modeltype='waveform', biaxial=False, usegwphase=False, parfile=None, priorfile=None, subtracttruths=False):
+  def __init__(self, postfiles, outputdir, ifos=None, harmonics=[2], modeltype='waveform', biaxial=False, usegwphase=False, parfile=None, priorfile=None, subtracttruths=False, showcontours=False):
     """
     Initialise with a dictionary keyed in detector names containing paths to the equivalent posterior samples
     file for that detector.
@@ -451,7 +411,19 @@ class posteriors:
       print("Error... output path '%s' for data plots does not exist" % self._outputdir, file=sys.stderr)
       sys.exit(1)
 
-    self._ifos = list(postfiles.keys())    # get list of detectors
+    if ifos is None: # get list of detectors from postfiles dictionary
+      self._ifos = list(postfiles.keys())    # get list of detectors
+    else:
+      if isinstance(ifos, list):
+        self._ifos = ifos
+      else:
+        self._ifos = [ifos]
+      # check ifos are in postfiles dictionary
+      for ifo in self._ifos:
+        if ifo not in postfiles:
+          print("Error... posterior files for detector '%s' not given" % ifo, file=sys.stderr)
+          sys.exit(1)
+
     self._postfiles = postfiles
     self._posteriors = {}                  # dictionary of posterior objects
     self._posterior_stats = {}             # dictionary if posteriors statistics
@@ -475,6 +447,7 @@ class posteriors:
     self._biaxial = biaxial                # whether the source is a biaxial star (rather than triaxial)
     self._usegwphase = usegwphase          # whether to use GW phase rather than rotational phase
     self._subtract_truths = subtracttruths # set whether to subtract true/heterodyned values of phase parameters from the distributions (so true/heterodyned value is at zero)
+    self._showcontours = showcontours      # set whether to show probability contours on 2d posterior plots
 
     # check if parameter file has been given
     if self._parfile is not None:
@@ -520,7 +493,7 @@ class posteriors:
           sys.exit(1)
 
         if priorlinevals[1] in ['uniform', 'fermidirac', 'gaussian', 'loguniform']:
-          if len(prirolinevals) != 4:
+          if len(priorlinevals) != 4:
             print("Error... there must be four values on each line of the prior file '%s'." % self._priorfile, file=sys.stderr)
             sys.exit(1)
           ranges = np.array([float(priorlinevals[2]), float(priorlinevals[3])]) # set ranges
@@ -752,18 +725,34 @@ class posteriors:
     return snr/len(snrfiles)
 
   def _get_bayes_factors(self):
-    # get the Bayes factors for the signal
-    incoherent = 0. # the incoherent evidence
+    # get the Bayes factors (actually odds ratios with equal priors for all hypotheses) for the signal
+    nifos = 0
+    ifosn = [] # list of signal and noise evidences for each detector
     for ifo in self._ifos:
       self._Bsn[ifo], self._signal_evidence[ifo], self._noise_evidence[ifo], self._maxL[ifo] = self.get_bayes_factor(self._postfiles[ifo])
 
       if ifo != 'Joint':
-        incoherent += self._signal_evidence[ifo]
+        nifos += 1
+        ifosn.append({'s': self._signal_evidence[ifo], 'n': self._noise_evidence[ifo]})
 
-    # get the coherent vs incoherent noise evidence
+    # get all combinations of (incoherent) noise and signal hypotheses
+    combs = [list(i) for i in itertools.product(['s', 'n'], repeat=nifos)] # see e.g. http://stackoverflow.com/q/14931769/1862861
+    incoherentcombs = -np.inf
+    incoherentsig = 0. # incoherent signal in all detectors
+    for comb in combs:
+      # don't include the all noise hypotheses (as we have that already as self._noise_evidence['Joint'])
+      if comb.count('n') != len(comb): # see e.g. http://stackoverflow.com/a/3844948/1862861
+        combsum = 0.
+        for i, cval in enumerate(comb):
+          combsum += ifosn[i][cval]
+        incoherentcombs = np.logaddexp(incoherentcombs, combsum)
+        if comb.count('s') == len(comb):
+          incoherentsig = combsum
+
+    # get the coherent vs incoherent noise odds ratio (assuming all hypotheses have equal priors)
     if len(self._ifos) > 2 and 'Joint' in self._ifos:
-      self._Bci = self._signal_evidence['Joint'] - incoherent
-      self._Bcin = self._signal_evidence['Joint'] - np.logaddexp(incoherent, self._noise_evidence['Joint'])
+      self._Bci = self._signal_evidence['Joint'] - incoherentsig
+      self._Bcin = self._signal_evidence['Joint'] - np.logaddexp(incoherentcombs, self._noise_evidence['Joint'])
 
   def get_bayes_factor(self, postfile):
     # return the Bayes factor extracted from a posterior file
@@ -877,14 +866,14 @@ class posteriors:
     if plotifos[0] == 'Joint':
       histops = {'histtype': 'stepfilled', 'color': 'darkslategrey', 'edgecolor': coldict['Joint'], 'linewidth': 1.5}
       contourops = {'colors': coldict[plotifos[0]]}
-      showcontours = True
+      showcontours = self._showcontours
       if whichtruth == 'Joint' or whichtruth == 'all':
         truthops = {'color': 'black', 'markeredgewidth': 2}
       else:
         truthops = {}
       showpoints = jointsamples
     else:
-      showcontours = True
+      showcontours = self._showcontours
       contourops = {'colors': 'dark'+coldict[plotifos[0]]}
       showpoints = True
       if len(plotifos) == 1: # if just one detector use a filled histogram
@@ -910,7 +899,7 @@ class posteriors:
         x = self._posteriors[ifo][parameters[0]].samples
         for param in parameters[1:]:
           x = np.hstack((x, self._posteriors[ifo][param].samples))
-        showcontours = True
+        showcontours = self._showcontours
         contourops = {'colors': 'dark'+coldict[plotifos[k+1]]}
         if whichtruth == plotifos[k+1]:
           truthops = {'color': 'black', 'markeredgewidth': 2}
@@ -1127,7 +1116,7 @@ class posteriors:
           contourlimits.append(limits[p])
           figlimits.append(limits[p])
       if notpresent: break
-      # contourlimits = None # temporary for testing
+
       pf = self.create_joint_posterior_plot(parampairs, figformats=['png'], ratio=2, figlimits=figlimits, contourlimits=contourlimits, jointsamples=False)
       if allparams:
         tagclass = 'jointplot'
@@ -1426,7 +1415,7 @@ class create_background(posteriors):
   """
   Get information (evidence ratios and SNRs) from any the background analyses
   """
-  def __init__(self, backgrounddirs, snrs, Bsn, outputdir, Bci=None, Bcin=None):
+  def __init__(self, backgrounddirs, snrs, Bsn, outputdir, Bci=None, Bcin=None, showcontours=True):
     # initialise with a dictionary (keyed to detectors) of directories containing the background analyses,
     # a dictionary of signal vs noise Bayes factors, a coherent vs incoherent Bayes factor and a coherent
     # vs incoherent or noise Bayes factor (all created from the posterior class)
@@ -1711,6 +1700,7 @@ indexpage = 'path_to_index_page'       # an optional path (relative to the base 
 [plotting]
 all_posteriors = False  # a boolean stating whether to show joint posterior plots of all parameters (default: False)
 subtract_truths = False # a boolean stating whether to subtract the true/heterodyned value from any phase parameters to centre the plot at zero for that value
+show_contours = False   # a boolean stating whether to show probabilty contours on 2D posterior plots (default: False)
 eps_output = False      # a boolean stating whether to also output eps versions of figures (png figures will automatically be produced)
 pdf_output = False      # a boolean stating whether to also output pdf versions of figures (png figures will automatically be produced)
 
@@ -1814,26 +1804,45 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
     priorfile = None
 
   # attempt to get pulsar distance, proper motion corrected age and any association (e.g. GC from the ATNF catalogue)
-  dist = age = assoc = sdlim = f1sd = None
+  dist = p1_I = assoc = sdlim = f1sd = None
   atnfurl = None
   if not injection:
-    pinfo = get_atnf_info(pname)
-    if pinfo != None:
-      dist, age, assoc = pinfo # unpack values
-      atnfversion = '1.54'
-      atnfurl = 'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=' + atnfversion
-      atnfurl += '&startUserDefined=true&pulsar_names=' + re.sub('\+', '%2B', pname)
-      atnfurl += '&ephemeris=long&submit_ephemeris=Get+Ephemeris&state=query'
+    # set ATNF URL where pulsar can be found
+    atnfurl = 'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=' + ATNF_VERSION
+    atnfurl += '&startUserDefined=true&pulsar_names=' + re.sub('\+', '%2B', pname)
+    atnfurl += '&ephemeris=long&submit_ephemeris=Get+Ephemeris&state=query'
+
+    # try getting information already parsed from ATNF catalogue by lalapps_knope pipeline setup
+    jsonfile = os.path.join(outdir, pname+'.json')
+    tryatnf = True
+    if os.path.isfile(jsonfile):
+      try:
+        fp = open(jsonfile, 'r')
+        info = json.load(fp)
+        fp.close()
+
+        # extract distance, intrinsic period derivative, pulsar association and required URL
+        dist = info['Pulsar data']['DIST']
+        p1_I = info['Pulsar data']['P1_I']
+        assoc = info['Pulsar data']['ASSOC']
+        tryatnf = False
+      except:
+        print("Warning... could not read in JSON file '%s'." % jsonfile, file=sys.stderr)
+
+    if tryatnf: # try getting ATNF info now
+      pinfo = get_atnf_info(pname)
+      if pinfo is not None:
+        dist, p1_I, assoc, atnfurlref = pinfo # unpack values
 
     # if distance is in the par file use that instead
     if par['DIST']:
-      dist = par['DIST']
+      dist = par['DIST']/KPC # convert back into kpc
 
-    # set the corrected spin-down value (based on intrinsic age or using consverative value from GC pulsars)
-    f1sd = set_spin_down(age, assoc, f0, f1)
+    # set the corrected spin-down value (based on intrinsic period derivative or using conservative age (10^9) value from GC pulsars)
+    f1sd = set_spin_down(p1_I, assoc, f0, f1)
 
     # get spin-down limit
-    if f1sd != None and dist != None:
+    if f1sd is not None and dist is not None:
       sdlim = spin_down_limit(f0, f1sd, dist)
 
   # check whether to only include results from a joint (multi-detector) analysis
@@ -1886,6 +1895,12 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
     subtracttruths = cp.getboolean('plotting', 'subtract_truths')
   except:
     subtracttruths = False
+
+  # check whether to show probability contours on 2D posterior plots
+  try:
+    showcontours = cp.getboolean('plotting', 'show_contours')
+  except:
+    showcontours = False
 
   figformat = ['png'] # default to outputting png versions of figures
   # check whether to (also) output figures as eps
@@ -2000,9 +2015,10 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
   htmlinput['pulsartable'] = psrtable
 
   # get posterior class (containing samples, sample plots and posterior plots)
-  postinfo = posteriors(postfiles, outdir, harmonics=harmonics, modeltype=modeltype,
+  postinfo = posteriors(postfiles, outdir, ifos=ifos, harmonics=harmonics, modeltype=modeltype,
                         biaxial=biaxial, parfile=parfile, usegwphase=usegwphase,
-                        subtracttruths=subtracttruths, priorfile=priorfile)
+                        subtracttruths=subtracttruths, priorfile=priorfile,
+                        showcontours=showcontours)
 
   # create table of upper limits, SNR and evidence ratios
   htmlinput['limitstable'] = postinfo.create_limits_table(f0 , sdlim=sdlim, dist=dist, ul=upperlim)
@@ -2087,6 +2103,7 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
   info['Pulsar data']['F1ROT'] = f1
   info['Pulsar data']['F1GW'] = 2.*f1 # assuming l=m=2 mode emission
   info['Pulsar data']['F1SD'] = f1sd # acceleration corrected f1
+  info['Pulsar data']['P1_I'] = p1_I # intrinsic period derivative (corrected for proper motion/GC acceleration effects)
   info['Pulsar data']['DIST'] = dist
   info['Pulsar data']['RA'] = par['RA_RAD']   # right ascension in radians
   info['Pulsar data']['DEC'] = par['DEC_RAD'] # declination in radians

@@ -184,7 +184,7 @@ main(int argc, char *argv[])
 
   PulsarParamsVector *injectionSources = NULL;
   if ( uvar.injectionSources ) {
-    XLAL_CHECK ( (injectionSources = XLALPulsarParamsFromUserInput ( uvar.injectionSources ) ) != NULL, XLAL_EFUNC );
+    XLAL_CHECK ( (injectionSources = XLALPulsarParamsFromUserInput ( uvar.injectionSources, NULL ) ) != NULL, XLAL_EFUNC );
   }
 
   CWMFDataParams XLAL_INIT_DECL(DataParams);
@@ -563,6 +563,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   uvar->Tsft = 1800;
   uvar->fmin = 0;	/* no heterodyning by default */
   uvar->Band = 8192;	/* 1/2 LIGO sampling rate by default */
+  uvar->outSingleSFT = 1; /* write our a single SFT file by default */
 
 #define MISC_DEFAULT "mfdv5"
   XLAL_CHECK ( (uvar->outLabel = XLALStringDuplicate ( MISC_DEFAULT ))  != NULL, XLAL_EFUNC );

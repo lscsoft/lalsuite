@@ -23,8 +23,6 @@ import logging
 import traceback
 import ConfigParser
 
-import subprocess
-
 from ligo.gracedb.rest import GraceDb
 
 from laldetchar.idq import idq
@@ -270,7 +268,7 @@ performance_gps_end = event_gps_time + performance_time_after
 
 logger.info("Started searching for iDQ information within [%.3f, %.3f] at %s"%(gps_start, gps_end, ifo))
 if not options.skip_gracedb_upload:
-    gracedb.writeLog(gdb_id, message="Started searching for iDQ information within [%.3f, %.3f] at %s"%(gps_start, gps_end, ifo))
+    gracedb.writeLog(gdb_id, message="Started searching for iDQ information within [%.3f, %.3f] at %s"%(gps_start, gps_end, ifo), tagname=idq.tagnames)
 
 #=================================================
 # LOGIC for waiting for idq data 
@@ -297,16 +295,16 @@ if options.realtime_log:
     elif timed_out:
         logger.info("WARNING: could not find a recent enough stride in %s after searching for %.1f seconds. Realtime process may be behind"%(options.realtime_log, 2*max_wait))
         if not options.skip_gracedb_upload:
-            gracedb.writeLog(gdb_id, message="WARNING: iDQ data quality coverage was not complete and no new information was reported after waiting %.1f seconds. Data quality information at %s may not be complete."%(2*max_wait, ifo))
+            gracedb.writeLog(gdb_id, message="WARNING: iDQ data quality coverage was not complete and no new information was reported after waiting %.1f seconds. Data quality information at %s may not be complete."%(2*max_wait, ifo), tagname=idq.tagnames)
 
     else: # dead
         logger.info("WARNING: no new iDQ information was reported to %s after waiting %.1f seconds. Realtime process may be dead."%(options.realtime_log, max_wait))
         if not options.skip_gracedb_upload:
-            gracedb.writeLog(gdb_id, message="WARNING: iDQ data quality coverage was not complete and no new information was reported after waiting %.1f seconds. Data quality information at %s may not be complete."%(max_wait, ifo))
+            gracedb.writeLog(gdb_id, message="WARNING: iDQ data quality coverage was not complete and no new information was reported after waiting %.1f seconds. Data quality information at %s may not be complete."%(max_wait, ifo), tagname=idq.tagnames)
 else:
     logger.info("no idq-realtime.log provided. Proceeding without checking idq-realtime state")
     if not options.skip_gracedb_upload:
-        gracedb.writeLog(gdb_id, message="WARNING: no idq-realtime.log provided. Proceeding without checking idq-realtime state at %s"%ifo)
+        gracedb.writeLog(gdb_id, message="WARNING: no idq-realtime.log provided. Proceeding without checking idq-realtime state at %s"%ifo, tagname=idq.tagnames)
 
 #=================================================
 # launch the actual processes
@@ -326,7 +324,7 @@ for classifier in classifiers+combiners:
 
     tables_out_file = open(tables_out, 'a')
     tables_err_file = open(tables_err, 'a')
-    proc = subprocess.Popen(tables_cmd.split(), stdout=tables_out_file, stderr=tables_err_file, cwd=cwd)
+    proc = idq.fork(tables_cmd.split(), stdout=tables_out_file, stderr=tables_err_file, cwd=cwd)
     tables_out_file.close()
     tables_err_file.close()
     exit_status = proc.wait() # block!
@@ -334,7 +332,7 @@ for classifier in classifiers+combiners:
     if exit_status != 0:
         logger.info("    WARNING: idq-gdb-glitch-tables failed for " + classifier)
         if not options.skip_gracedb_upload:
-            gracedb.writeLog(gdb_id, message="FAILED: iDQ glitch tables for " + classifier + " at " + ifo)
+            gracedb.writeLog(gdb_id, message="FAILED: iDQ glitch tables for " + classifier + " at " + ifo, tagname=idq.tagnames)
         gch_xml = None
     else:
         logger.info("    Done: idq-gdb-glitch-tables for " + classifier + ".")
@@ -361,7 +359,7 @@ for classifier in classifiers+combiners:
 
     timeseries_out_file = open(timeseries_out, 'a')
     timeseries_err_file = open(timeseries_err, 'a')
-    proc = subprocess.Popen(timeseries_cmd.split(), stdout=timeseries_out_file, stderr=timeseries_err_file, cwd=cwd)
+    proc = idq.fork(timeseries_cmd.split(), stdout=timeseries_out_file, stderr=timeseries_err_file, cwd=cwd)
     timeseries_out_file.close()
     timeseries_err_file.close()
     exit_status = proc.wait() # block !
@@ -369,7 +367,7 @@ for classifier in classifiers+combiners:
     if exit_status != 0:
         logger.info("    WARNING: idq-gdb-timeseries failed for " + classifier)
         if not options.skip_gracedb_upload:
-            gracedb.writeLog(gdb_id, message="FAILED: iDQ glitch-rank timeseries for " + classifier + " at " + ifo)
+            gracedb.writeLog(gdb_id, message="FAILED: iDQ glitch-rank timeseries for " + classifier + " at " + ifo, tagname=idq.tagnames)
     else:
         logger.info("    Done: idq-gdb-timeseries for " + classifier + ".")
 
@@ -393,7 +391,7 @@ for classifier in classifiers+combiners:
 
     performance_out_file = open(performance_out, 'a')
     performance_err_file = open(performance_err, 'a')
-    proc = subprocess.Popen(performance_cmd.split(), stdout=performance_out_file, stderr=performance_err_file, cwd=cwd)
+    proc = idq.fork(performance_cmd.split(), stdout=performance_out_file, stderr=performance_err_file, cwd=cwd)
     performance_out_file.close()
     performance_err_file.close()
     exit_status = proc.wait() # block !
@@ -401,7 +399,7 @@ for classifier in classifiers+combiners:
     if exit_status != 0:
         logger.info("    WARNING: idq-gdb-local-performance failed for " + classifier)
         if not options.skip_gracedb_upload:
-            gracedb.writeLog(gdb_id, message="FAILED: iDQ local performance for " + classifier + " at " + ifo)
+            gracedb.writeLog(gdb_id, message="FAILED: iDQ local performance for " + classifier + " at " + ifo, tagname=idq.tagnames)
     else:
         logger.info("    Done: idq-gdb-local-performance for " + classifier + ".")
 
@@ -409,4 +407,4 @@ for classifier in classifiers+combiners:
 ### print clean-up statements
 logger.info("Finished searching for iDQ information within [%.3f, %.3f] at %s"%(gps_start, gps_end, ifo))
 if not options.skip_gracedb_upload:
-    gracedb.writeLog(gdb_id, message="Finished searching for iDQ information within [%.3f, %.3f] at %s"%(gps_start, gps_end, ifo))
+    gracedb.writeLog(gdb_id, message="Finished searching for iDQ information within [%.3f, %.3f] at %s"%(gps_start, gps_end, ifo), tagname=idq.tagnames)

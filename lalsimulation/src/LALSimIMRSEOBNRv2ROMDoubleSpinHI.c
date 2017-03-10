@@ -854,8 +854,6 @@ int SEOBNRROMdataDS_Init(SEOBNRROMdataDS *romdata, const char dir[]) {
     return (XLAL_FAILURE);
   }
 
-  gsl_set_error_handler(&err_handler);
-
 #ifdef LAL_HDF5_ENABLED
   // First, check we got the correct version number
   size_t size = strlen(dir) + strlen(ROMDataHDF5) + 2;
@@ -1137,7 +1135,13 @@ static int SEOBNRv2ROMDoubleSpinCore(
   /* Check output arrays */
   if(!hptilde || !hctilde)
     XLAL_ERROR(XLAL_EFAULT);
+
   SEOBNRROMdataDS *romdata=&__lalsim_SEOBNRv2ROMDS_data;
+  if(!SEOBNRv2ROMDoubleSpin_IsSetup()) {
+    XLAL_ERROR(XLAL_EFAILED,
+               "Error setting up SEOBNRv2ROMDoubleSpinHI data - check your $LAL_DATA_PATH\n");
+  }
+
   if(*hptilde || *hctilde)
   {
     XLALPrintError("(*hptilde) and (*hctilde) are supposed to be NULL, but got %p and %p",(*hptilde),(*hctilde));
@@ -1192,7 +1196,7 @@ static int SEOBNRv2ROMDoubleSpinCore(
 
   // Enforce allowed geometric frequency range
   if (fLow_geom < Mf_ROM_min)
-    XLAL_ERROR(XLAL_EDOM, "Starting frequency Mflow=%g is smaller than lowest frequency in ROM Mf=%g. Starting at lowest frequency in ROM.\n", fLow_geom, Mf_ROM_min);
+    XLAL_ERROR(XLAL_EDOM, "Starting frequency Mflow=%g is smaller than lowest frequency in ROM Mf=%g.\n", fLow_geom, Mf_ROM_min);
   if (fHigh_geom == 0 || fHigh_geom > Mf_ROM_max)
     fHigh_geom = Mf_ROM_max;
   else if (fHigh_geom < Mf_ROM_min)
@@ -1205,6 +1209,9 @@ static int SEOBNRv2ROMDoubleSpinCore(
     XLALPrintWarning("Reference frequency Mf_ref=%g is smaller than lowest frequency in ROM Mf=%g. Starting at lowest frequency in ROM.\n", fLow_geom, Mf_ROM_min);
     fRef_geom = Mf_ROM_min;
   }
+
+  if (Mtot_sec/LAL_MTSUN_SI > 500.0)
+    XLALPrintWarning("Total mass=%gMsun > 500Msun. SEOBNRv2_ROM_DoubleSpin_HI disagrees with SEOBNRv2 for high total masses.\n", Mtot_sec/LAL_MTSUN_SI);
 
   /* Internal storage for waveform coefficiencts */
   SEOBNRROMdataDS_coeff *romdata_coeff_lo=NULL;
@@ -1428,7 +1435,7 @@ static int SEOBNRv2ROMDoubleSpinCore(
 }
 
 /**
- * @addtogroup LALSimIMRSEOBNRv2ROMDoubleSpin_c
+ * @addtogroup LALSimIMRSEOBNRROM_c
  *
  * \author Michael Puerrer
  *
@@ -1449,7 +1456,7 @@ static int SEOBNRv2ROMDoubleSpinCore(
  * @note Parameter ranges:
  *   * 0.01 <= eta <= 0.25
  *   * -1 <= chi_i <= 0.99
- *   * Mtot >= 2 Msun
+ *   * Mtot >= 2 Msun < 500Msun
  *
  *  Aligned component spins chi1, chi2.
  *  Symmetric mass-ratio eta = m1*m2/(m1+m2)^2.
@@ -1517,7 +1524,10 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinHIFrequencySequence(
   SEOBNRv2ROMDoubleSpin_Init_LALDATA();
 #endif
 
-  if(!SEOBNRv2ROMDoubleSpin_IsSetup()) XLAL_ERROR(XLAL_EFAILED,"Error setting up SEOBNRv2ROMDoubleSpinHI data - check your $LAL_DATA_PATH\n");
+  if(!SEOBNRv2ROMDoubleSpin_IsSetup()) {
+    XLAL_ERROR(XLAL_EFAILED,
+               "Error setting up SEOBNRv2ROMDoubleSpinHI data - check your $LAL_DATA_PATH\n");
+  }
 
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
@@ -1640,6 +1650,10 @@ static int SEOBNRv2ROMDoubleSpinTimeFrequencySetup(
 #endif
 
   SEOBNRROMdataDS *romdata=&__lalsim_SEOBNRv2ROMDS_data;
+  if(!SEOBNRv2ROMDoubleSpin_IsSetup()) {
+    XLAL_ERROR(XLAL_EFAILED,
+               "Error setting up SEOBNRv2ROMDoubleSpinHI data - check your $LAL_DATA_PATH\n");
+  }
 
   /* We always need to glue two submodels together for this ROM */
   SEOBNRROMdataDS_submodel *submodel_hi; // high frequency ROM
@@ -1787,7 +1801,7 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinHITimeOfFrequency(
   XLAL_PRINT_INFO("t_corr[s] = %g\n", t_corr * Mtot_sec);
 
   double Mf = frequency * Mtot_sec;
-  if (Mf < Mf_ROM_min || Mf > Mf_ROM_max) {
+  if (Mf < Mf_ROM_min || Mf > Mf_ROM_max || Mf > Mf_final) {
     gsl_spline_free(spline_phi);
     gsl_interp_accel_free(acc_phi);
     XLAL_ERROR(XLAL_EDOM, "Frequency %g is outside allowed frequency range.\n", frequency);

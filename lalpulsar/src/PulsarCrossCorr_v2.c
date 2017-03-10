@@ -407,8 +407,16 @@ int XLALCalculatePulsarCrossCorrStatistic
       baseCCSign *= -1;
     }
   }
-  *evSquared = 8 * SQUARE(multiWeights->Sinv_Tsft) * curlyGSqr;
-  *ccStat = 4 * multiWeights->Sinv_Tsft * nume / sqrt(*evSquared);
+  if (curlyGSqr == 0.0)
+    {
+      *evSquared = 0.0;
+      *ccStat = 0.0;
+    }
+  else
+    {
+      *evSquared = 8 * SQUARE(multiWeights->Sinv_Tsft) * curlyGSqr;
+      *ccStat = 4 * multiWeights->Sinv_Tsft * nume / sqrt(*evSquared);
+    }
   return XLAL_SUCCESS;
 }
 

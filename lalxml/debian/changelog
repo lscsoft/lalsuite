@@ -1,8 +1,17 @@
-lalxml (1.2.2.1-1) UNRELEASED; urgency=medium
+lalxml (1.2.4-1) unstable; urgency=low
 
+  * LALXML 1.2.4
+  * O2 release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 07 Feb 2017 16:45:49 -0600
+
+lalxml (1.2.3-1) unstable; urgency=low
+
+  * LALXML 1.2.3
+  * ER10 release
   * Add python3 package
 
- -- Leo Singer <leo.singer@ligo.org>  Fri, 15 Jul 2016 00:03:38 -0400
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 26 Sep 2016 11:44:31 -0500
 
 lalxml (1.2.2-1) unstable; urgency=low
 

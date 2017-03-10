@@ -46,24 +46,24 @@ extern "C" {
  * gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft sftlib, Copyright (C) 2004 Bruce Allen
  *
  * <p> <h3> Overview:</h3>
- * - SFT-reading: LALSFTdataFind(), LALLoadSFTs(), LALLoadMultiSFTs()
- * - SFT-writing: LALWriteSFT2file(), LALWrite_v2SFT_to_v1file()
- * - SFT-checking: LALCheckSFTs(): complete check of SFT-validity including CRC64 checksum
- * - free SFT-catalog: LALDestroySFTCatalog()
+ * - SFT-reading: XLALSFTdataFind(), XLALLoadSFTs(), XLALLoadMultiSFTs()
+ * - SFT-writing: XLALWriteSFT2file(), XLALWriteSFTVector2File(), XLALWriteSFTVector2Dir()
+ * - SFT-checking: XLALCheckCRCSFTCatalog(): complete check of SFT-validity including CRC64 checksum
+ * - free SFT-catalog: XLALDestroySFTCatalog()
  * - general manipulation of SFTVectors:
- * - LALDestroySFTVector(): free up a complete SFT-vector
- * - LALDestroyMultiSFTVector(): free a multi-IFO vector of SFT-vectors
- * - LALConcatSFTVectors(): concatenate two ::SFTVector's
- * - LALAppendSFT2Vector(): append a single SFT (::SFTtype) to an ::SFTVector
+ * - XLALDestroySFTVector(): free up a complete SFT-vector
+ * - XLALDestroyMultiSFTVector(): free a multi-IFO vector of SFT-vectors
+ * - XLALConcatSFTVectors(): concatenate two ::SFTVector's
+ * - XLALAppendSFT2Vector(): append a single SFT (::SFTtype) to an ::SFTVector
  *
  * <p>
  * <h2>Usage: Reading of SFT-files</h2>
  *
  * The basic operation of <b>reading SFTs</b> from files proceeds in two simple steps:
  *
- * -# LALSFTdataFind(): get an '::SFTCatalog' of SFTs matching certain requirements (free with LALDestroySFTCatalog())
- * -# LALLoadSFTs(): load a frequency-band into a single-IFO SFTVector defined by the catalogue, OR <br>
- * LALLoadMultiSFTs(): load a frequency-band into a multi-IFO vector of SFTVectors defined by the catalogue
+ * -# XLALSFTdataFind(): get an '::SFTCatalog' of SFTs matching certain requirements (free with XLALDestroySFTCatalog())
+ * -# XLALLoadSFTs(): load a frequency-band into a single-IFO SFTVector defined by the catalogue, OR <br>
+ * XLALLoadMultiSFTs(): load a frequency-band into a multi-IFO vector of SFTVectors defined by the catalogue
  *
  * <b>Note 1:</b> currently supported SFT file-formats are (merged or single) SFT-v1 and SFT-v2 files.
  * This might be extended in the future to support further file-formats (frames?).
@@ -80,11 +80,7 @@ extern "C" {
  *
  * <h4>Details to 1: find matching SFTs and get the SFTCatalog:</h4>
  *
- * \code
- * LALSFTdataFind(LALStatus *, SFTCatalog **catalog, const CHAR *file_pattern, SFTConstraints *constraints);
- * \endcode
- *
- * This function returns an SFTCatalog of matching SFTs for a given file-pattern
+ * Thes function XLALSFTdataFind() returns an SFTCatalog of matching SFTs for a given file-pattern
  * (e.g. "SFT.*", "SFT.000", "/some/path/some_files_[0-9]?.sft", etc ) and additional, optional SFTConstraints.
  *
  * The optional constraints are:
@@ -98,7 +94,7 @@ extern "C" {
  * <b>Note 2:</b> if a timestamps-list is given, *ALL* timestamps within
  * <tt>[minStartTime, maxStartTime)</tt> MUST be found!]
  *
- * <b>Note 3:</b> LALSFTdataFind() will refuse to return any SFTs without their detector-name
+ * <b>Note 3:</b> XLALSFTdataFind() will refuse to return any SFTs without their detector-name
  * properly set. This applies only to v1-SFTs, for which you have to use constraints->detector,
  * so that the detector-name gets properly set.
  *
@@ -115,9 +111,9 @@ extern "C" {
  * - \c crc64: the crc64 checksum reported by this SFT
  *
  * One can use the following catalog-handling API functions:
- * - LALDestroySFTCatalog(): free up a complete SFT-catalog
- * - LALSFTtimestampsFromCatalog(): extract the list of SFT timestamps found in the ::SFTCatalog
- * - LALDestroyTimestampVector(): free up a timestamps-vector (::LIGOTimeGPSVector)
+ * - XLALDestroySFTCatalog(): free up a complete SFT-catalog
+ * - XLALSFTtimestampsFromCatalog(): extract the list of SFT timestamps found in the ::SFTCatalog
+ * - XLALDestroyTimestampVector(): free up a timestamps-vector (::LIGOTimeGPSVector)
  * - XLALshowSFTLocator(): [*debugging only*] show a static string describing the 'locator'
  *
  * <b>NOTE:</b> The SFTs in the returned catalogue are \em guaranteed to
@@ -126,40 +122,23 @@ extern "C" {
  *
  * <h4>Details to 2: load frequency-band from SFTs described in an SFTCatalog</h4>
  *
- * \code
- * LALLoadSFTs ( LALStatus *, SFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
- * \endcode
- *
- * This function takes an ::SFTCatalog and reads the smallest frequency-band containing <tt>[fMin, fMax]</tt>
+ * The function XLALLoadSFTs() takes an ::SFTCatalog and reads the smallest frequency-band containing <tt>[fMin, fMax]</tt>
  * from the SFTs, returning the resulting ::SFTVector. Note that this function will return an error if the
- * SFTCatalog contains SFTs from different detectors, for which LALLoadMultiSFTs() must be used.
+ * SFTCatalog contains SFTs from different detectors, for which XLALLoadMultiSFTs() must be used.
  *
  * The frequency-bounds are optional and \c -1 can be used to specify an 'open bound', i.e.<br>
  * <tt>[-1, fMax]</tt>: read from first frequency-bin in the SFT up to \c fMax.<br>
  * <tt>[fMin, -1]</tt>: read from \c fMin up to last frequency-bin in the SFTS<br>
  * <tt>[-1, -1]</tt>: read ALL frequency-bins from SFT.
  *
- * \code
- * LALLoadMultiSFTs ( LALStatus *, MultiSFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
- * \endcode
- *
- * This function is similar to the above, except that it accepts an ::SFTCatalog with different detectors,
+ * The function XLALLoadMultiSFTs() is similar to the above, except that it accepts an ::SFTCatalog with different detectors,
  * and returns corresponding multi-IFO vector of SFTVectors.
  *
  * <p><h2>Usage: Writing of SFT-files</h2>
  *
- * For <b>writing SFTs</b> there are two functions, depending on the desired output-format (v1 or v2  SFTs):
- * - LALWriteSFT2file(): write a single SFT (::SFTtype) into an SFT-file following the specification v2
+ * For <b>writing SFTs</b>:
+ * - XLALWriteSFT2file(): write a single SFT (::SFTtype) into an SFT-file following the specification v2
  * (<tt>LIGO-T040164-01-Z</tt>).
- *
- * - LALWrite_v2SFT_to_v1file(): write a single ::SFTtype into an SFT-v1 file. Note: this is provided
- * for backwards-compatibility, and assumes the input SFT-data in memory to be correctly normalized
- * according to the v2-specification (i.e. data = dt x DFT).
- *
- * Note: in addition to these two function which take properly normalized SFTs as input, there is a DEPRECATED
- * legacy-function, LALWriteSFTfile(), which writes an v1-SFT file, but *without* changing the data-normalization,
- * i.e. this will only be correct for v1-normalized data (i.e. data = DFT)
- *
  */
 
 /*@{*/
@@ -270,7 +249,7 @@ typedef struct tagSFTDescriptor
 } SFTDescriptor;
 
 
-/** An "SFT-catalogue": a vector of SFTdescriptors, as returned by LALSFTdataFind() */
+/** An "SFT-catalogue": a vector of SFTdescriptors, as returned by XLALSFTdataFind() */
 typedef struct tagSFTCatalog
 {
 #ifdef SWIG /* SWIG interface directives */
@@ -325,6 +304,8 @@ SFTVector* XLALLoadSFTs (const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 MultiSFTVector* XLALLoadMultiSFTs (const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 MultiSFTVector *XLALLoadMultiSFTsFromView ( const MultiSFTCatalogView *multiCatalogView, REAL8 fMin, REAL8 fMax );
 
+int XLALCheckCRCSFTCatalog( BOOLEAN *crc_check, SFTCatalog *catalog );
+
 void XLALDestroySFTCatalog ( SFTCatalog *catalog );
 LALStringVector *XLALListIFOsInCatalog( const SFTCatalog *catalog );
 INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog );
@@ -339,10 +320,6 @@ char *XLALOfficialSFTFilename ( char site, char channel, UINT4 numSFTs, UINT4 Ts
 int XLALCheckValidDescriptionField ( const char *desc );
 
 /*@}*/
-
-// ---------- obsolete LAL-API was moved into external file
-#include <lal/SFTfileIO-LAL.h>
-// ------------------------------
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

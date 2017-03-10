@@ -28,8 +28,8 @@ include/lal/*.i
 include/lal/header-link-stamp
 lalinspiral-*.tar.xz
 lalinspiral-user-env.csh
-lalinspiral-user-env.sh
 lalinspiral-user-env.fish
+lalinspiral-user-env.sh
 lalinspiral-user-env.shell
 lalinspiral.spec
 libtool
@@ -39,7 +39,7 @@ python/lalinspiral/_lalinspiral*
 python/lalinspiral/git_version.py
 python/lalinspiral/lalinspiral.py
 src/Chisq_GPU.cpp
-src/LALInspiralBuildInfo.c
+src/LALInspiralBuildInfoHeader.h
 src/LALInspiralConfig.h
 src/LALInspiralVCSInfo.c
 src/LALInspiralVCSInfo.h
@@ -47,13 +47,13 @@ src/LALInspiralVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/git_version
+src/lalinspiral_version
 src/stamp-h1
 src/stamp-h2
+src/version.c
 swig/swiglal*
 test/BCVTemplates
 test/BCVTemplates.out
-test/BCVTemplatesFlatMesh
-test/BCVTemplatesFlatMesh.out
 test/BasicInjectTest
 test/ChirpSpace.out
 test/CoarseTest

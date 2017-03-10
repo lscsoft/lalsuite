@@ -31,9 +31,9 @@ def refine_regular_grid(grid, grid_spacing, return_cntr=False):
     >>> region = Cell(numpy.array([(-1., 1.), (-2., 2.)]))
     >>> grid, spacing = create_regular_grid_from_cell(region, side_pts=2)
     >>> grid, spacing = refine_regular_grid(grid, spacing)
-    >>> print grid
+    >>> print(grid)
     [array([-2., -4.]), array([-2., -2.]), array([-1., -4.]), array([-1., -2.]), array([-2.,  0.]), array([-2.,  2.]), array([-1.,  0.]), array([-1.,  2.]), array([ 0., -4.]), array([ 0., -2.]), array([ 1., -4.]), array([ 1., -2.]), array([ 0.,  0.]), array([ 0.,  2.]), array([ 1.,  0.]), array([ 1.,  2.])]
-    >>> print spacing
+    >>> print(spacing)
     [ 1.  2.]
     """
 
@@ -284,12 +284,12 @@ def create_regular_grid_from_cell(cell, side_pts=5, return_cells=False):
     >>> import numpy
     >>> region = Cell(numpy.array([(-1., 1.), (-2., 2.)]))
     >>> grid, spacing = create_regular_grid_from_cell(region, side_pts=2)
-    >>> print grid
+    >>> print(grid)
     [[-1. -2.]
      [-1.  2.]
      [ 1. -2.]
      [ 1.  2.]]
-    >>> print spacing
+    >>> print(spacing)
     [ 2.  4.]
     """
 
@@ -506,6 +506,15 @@ def transform_tau0tau3_m1m2(tau0, tau3, flow=40.):
 def transform_s1zs2z_chi(m1, m2, s1z, s2z):
     return (m1 * s1z + m2 * s2z) / (m1 + m2)
 
+def transform_m1m2_mcq(m1, m2):
+    mc = (m1 * m2)**(3./5) / (m1 + m2)**(1./5)
+    q = np.min([m1, m2], axis=0) / np.max([m1, m2], axis=0)
+    return mc, q
+
+def transform_mcq_m1m2(mc, q):
+    m = mc * (1 + q)**(1./5)
+    return m / q**(3./5), m * q**(2/5.)
+
 #
 # Coordinate transformation boundaries
 #
@@ -523,7 +532,7 @@ def check_tau0tau3(tau0, tau3, flow=40):
     return tau3 > tau3_bnd
 
 def check_mchirpeta(mchirp, eta):
-    return (numpy.array(eta) <= 0.25) & (numpy.array(mchirp) >= 0)
+    return (numpy.array(eta) <= 0.25) & (numpy.array(eta) > 0) & (numpy.array(mchirp) >= 0)
 
 def check_spins(spin):
     return numpy.sqrt(numpy.atleast_2d(spin**2).sum(axis=0)) <= 1
@@ -554,12 +563,14 @@ def check_grid(grid, intr_prms, distance_coordinates):
 
 VALID_TRANSFORMS_MASS = { \
     "mchirp_eta": transform_m1m2_mceta,
+    "mchirp_q": transform_m1m2_mcq,
     "tau0_tau3": transform_m1m2_tau0tau3,
     None: None
 }
 
 INVERSE_TRANSFORMS_MASS = { \
     transform_m1m2_mceta: transform_mceta_m1m2,
+    transform_m1m2_mcq: transform_mcq_m1m2,
     transform_m1m2_tau0tau3: transform_tau0tau3_m1m2,
     None: None
 }

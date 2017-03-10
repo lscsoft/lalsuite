@@ -126,8 +126,8 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetDataFromHDF5File(
   LALH5File *group = XLALH5GroupOpen(pointer, keyName);
   knotsVector=dataVector=NULL;
 
-  ReadHDF5RealVectorDataset(group, "knots", &knotsVector);
-  ReadHDF5RealVectorDataset(group, "data", &dataVector);
+  ReadHDF5RealVectorDataset(group, "X", &knotsVector);
+  ReadHDF5RealVectorDataset(group, "Y", &dataVector);
 
   *output = XLALCreateREAL8Vector(length);
 
@@ -141,6 +141,16 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetDataFromHDF5File(
   for (idx = 0; idx < length; idx++)
   {
     massTime = (startTime + idx*deltaT) / (totalMass * LAL_MTSUN_SI);
+    /* This if statement is used to catch the case where massTime at idx=0
+     * ends up at double precision smaller than the first point in the
+     * interpolation. In this case set it back to exactly the first point.
+     * Sanity checking that we are not trying to use data below the
+     * interpolation range is done elsewhere.
+     */
+    if ((idx == 0) && (massTime < knotsVector->data[0]))
+    {
+      massTime = knotsVector->data[0];
+    }
     (*output)->data[idx] = gsl_spline_eval(spline, massTime, acc);
   }
 
@@ -346,6 +356,10 @@ int XLALSimInspiralNRWaveformGetSpinsFromHDF5File(
   #else
   LALH5File *file;
   file = XLALH5FileOpen(NRDataFile, "r");
+  if (file == NULL)
+  {
+     XLAL_ERROR(XLAL_EIO, "NR SIMULATION DATA FILE %s NOT FOUND.\n", NRDataFile);
+  }
   XLALSimInspiralNRWaveformGetSpinsFromHDF5FilePointer(S1x, S1y, S1z, S2x, S2y,
                                                        S2z, file);
 
@@ -408,6 +422,10 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   m2 = m2 / LAL_MSUN_SI;
 
   file = XLALH5FileOpen(NRDataFile, "r");
+  if (file == NULL)
+  {
+     XLAL_ERROR(XLAL_EIO, "NR SIMULATION DATA FILE %s NOT FOUND.\n", NRDataFile);
+  }
 
   /* Sanity checks on physical parameters passed to waveform
    * generator to guarantee consistency with NR data file.
@@ -464,7 +482,7 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   XLALH5FileQueryScalarAttributeValue(&Mflower, file, "f_lower_at_1MSUN");
   /* Figure out start time of data */
   group = XLALH5GroupOpen(file, "amp_l2_m2");
-  ReadHDF5RealVectorDataset(group, "knots", &tmpVector);
+  ReadHDF5RealVectorDataset(group, "X", &tmpVector);
   time_start_M = (REAL8)(gsl_vector_get(tmpVector, 0));
   time_end_M = (REAL8)(gsl_vector_get(tmpVector, tmpVector->size - 1));
   gsl_vector_free(tmpVector);

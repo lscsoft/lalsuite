@@ -71,7 +71,7 @@ int main(void)
   result[3] = -1.000000000000000e-22;
 
   /* first propagate single spin-vector */
-  printf(" \n ----- Test1: LALExtrapolatePulsarSpins() ----- \n");
+  printf(" \n ----- Test1: XLALExtrapolatePulsarSpinsTODO() ----- \n");
   printf("Input @ tau0 = %d.%09d : [%.10g, %.10g, %.10g, %.10g ]\n",
 	 epoch0.gpsSeconds, epoch0.gpsNanoSeconds,
 	 fkdot0[0], fkdot0[1], fkdot0[2], fkdot0[3] );
@@ -145,7 +145,7 @@ int main(void)
   rangeResult.fkdotBand[2] =  1.046080000000000e-14;
   rangeResult.fkdotBand[3] =  1.000000000000000e-22;
 
-  printf(" \n ----- Test2: LALExtrapolatePulsarSpinRange() ----- \n");
+  printf(" \n ----- Test2: XLALExtrapolatePulsarSpinRangeTODO() ----- \n");
   printf ("Input: epoch = %d.%09d \n", range0.refTime.gpsSeconds, range0.refTime.gpsNanoSeconds );
   printf ("Input: fkdot     = [%.10g, %.10g, %.10g, %.10g ]\n",
 	  range0.fkdot[0], range0.fkdot[1], range0.fkdot[2],  range0.fkdot[3] );

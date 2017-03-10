@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2015  Leo Singer
+# Copyright (C) 2013-2016  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -26,12 +26,23 @@ import itertools
 import operator
 
 # LIGO-LW XML imports.
-from pylal import ligolw_inspinjfind
 from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw import ligolw
+from glue.ligolw import array as ligolw_array
+from glue.ligolw import param as ligolw_param
 from glue.ligolw import table as ligolw_table
-from pylal import ligolw_thinca
 from glue.ligolw import lsctables
+import lal.series
+
+
+# FIXME: Copied from pylal.ligolw_thinca to avoid dependency.
+# Should be moved to lalinspiral.
+InspiralCoincDef = lsctables.CoincDef(search = u"inspiral", search_coinc_type = 0, description = u"sngl_inspiral<-->sngl_inspiral coincidences")
+
+
+# FIXME: Copied from pylal.ligolw_inspinjfind to avoid dependency.
+# Should be moved to lalinspiral.
+InspiralSCExactCoincDef = lsctables.CoincDef(search = u"inspiral", search_coinc_type = 3, description = u"sim_inspiral<-->coinc_event coincidences (exact)")
 
 
 def get_template_bank_f_low(xmldoc):
@@ -71,8 +82,8 @@ def sim_coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
 
     # Look up coinc_def ids.
     sim_coinc_def_id = coinc_def_table.get_coinc_def_id(
-        ligolw_inspinjfind.InspiralSCExactCoincDef.search,
-        ligolw_inspinjfind.InspiralSCExactCoincDef.search_coinc_type,
+        InspiralSCExactCoincDef.search,
+        InspiralSCExactCoincDef.search_coinc_type,
         create_new=False)
 
     def events_for_coinc_event_id(coinc_event_id):
@@ -94,11 +105,11 @@ def sim_coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
         sim_inspiral = None
         coinc = None
         for event_id, event in events_for_coinc_event_id(sim_coinc.coinc_event_id):
-            if event_id.table_name == ligolw_table.StripTableName(lsctables.SimInspiralTable.tableName):
+            if event_id.table_name == ligolw_table.Table.TableName(lsctables.SimInspiralTable.tableName):
                 if sim_inspiral is not None:
                     raise RuntimeError("Found more than one matching sim_inspiral entry")
                 sim_inspiral = event
-            elif event_id.table_name == ligolw_table.StripTableName(lsctables.CoincTable.tableName):
+            elif event_id.table_name == ligolw_table.Table.TableName(lsctables.CoincTable.tableName):
                 if coinc is not None:
                     raise RuntimeError("Found more than one matching coinc entry")
                 coinc = event
@@ -123,18 +134,17 @@ def coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
     sngl_inspiral_table = ligolw_table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
 
     # Look up coinc_def id.
-    sngl_sngl_coinc_def_ids = set(row.coinc_def_id for row in coinc_def_table
+    sngl_sngl_coinc_def_ids = {row.coinc_def_id for row in coinc_def_table
         if (row.search, row.search_coinc_type) ==
-        (ligolw_thinca.InspiralCoincDef.search,
-        ligolw_thinca.InspiralCoincDef.search_coinc_type))
+        (InspiralCoincDef.search, InspiralCoincDef.search_coinc_type)}
 
     # Indices to speed up lookups by ID.
     key = operator.attrgetter('coinc_event_id')
-    coinc_maps_by_coinc_event_id = dict((coinc_event_id, tuple(coinc_maps))
+    coinc_maps_by_coinc_event_id = {coinc_event_id: tuple(coinc_maps)
         for coinc_event_id, coinc_maps
-        in itertools.groupby(sorted(coinc_map_table, key=key), key=key))
-    sngl_inspirals_by_event_id = dict((sngl_inspiral.event_id, sngl_inspiral)
-        for sngl_inspiral in sngl_inspiral_table)
+        in itertools.groupby(sorted(coinc_map_table, key=key), key=key)}
+    sngl_inspirals_by_event_id = {sngl_inspiral.event_id: sngl_inspiral
+        for sngl_inspiral in sngl_inspiral_table}
 
     # Loop over all sngl_inspiral <-> sngl_inspiral coincs.
     for coinc in coinc_table:
@@ -146,12 +156,39 @@ def coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
 
 def psd_filenames_by_process_id_for_xmldoc(xmldoc):
     """Retrieve a dictionary mapping process_ids to reference PSD filenames."""
-    return dict((process_param.process_id, process_param.value)
+    return {process_param.process_id: process_param.value
         for process_param
         in ligolw_table.get_table(xmldoc, lsctables.ProcessParamsTable.tableName)
-        if process_param.param == '--reference-psd')
+        if process_param.param == '--reference-psd'}
+
+
+def _snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc):
+    for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName):
+        try:
+            if elem.Name != lal.COMPLEX8TimeSeries.__name__:
+                continue
+            array_elem = ligolw_array.get_array(elem, 'snr')
+            event_id = ligolw_param.get_pyvalue(elem, 'event_id')
+            if not isinstance(event_id, lsctables.SnglInspiralID):
+                continue
+        except (AttributeError, ValueError):
+            continue
+        else:
+            yield event_id, lal.series.parse_COMPLEX8TimeSeries(elem)
+
+
+def snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc):
+    return dict(_snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc))
 
 
 @lsctables.use_in
 class LSCTablesContentHandler(ligolw.LIGOLWContentHandler):
 	"""Content handler for reading LIGO-LW XML files with LSC table schema."""
+
+
+@ligolw_array.use_in
+@ligolw_param.use_in
+@lsctables.use_in
+class LSCTablesAndSeriesContentHandler(ligolw.LIGOLWContentHandler):
+    """Content handler for reading LIGO-LW XML files with LSC table schema and
+    gridded arrays."""

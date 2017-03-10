@@ -464,8 +464,8 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
   if ( detector->site && detector->ephemerides ) {
     LIGOTimeGPS gpsTime;   /* detector time when we compute delay */
     EarthState state;      /* Earth position info at that time */
-    BarycenterInput input; /* input structure to LALBarycenter() */
-    EmissionTime emit;     /* output structure from LALBarycenter() */
+    BarycenterInput input; /* input structure to XLALBarycenter() */
+    EmissionTime emit;     /* output structure from XLALBarycenter() */
 
     /* Arrange nested pointers, and set initial values. */
     gpsTime = input.tgps = output->epoch;
@@ -483,15 +483,15 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
     /* Compute table. */
     for ( i = 0; i < nMax; i++ ) {
       REAL8 tDelay; /* propagation time */
-      LALBarycenterEarth( stat->statusPtr, &state, &gpsTime,
-                          detector->ephemerides );
-      BEGINFAIL( stat )
+      if ( XLALBarycenterEarth(&state, &gpsTime,
+                          detector->ephemerides ) != XLAL_SUCCESS ) {
         TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-      ENDFAIL( stat );
-      LALBarycenter( stat->statusPtr, &emit, &input, &state );
-      BEGINFAIL( stat )
+        ABORTXLAL( stat );
+      }
+      if ( XLALBarycenter(&emit, &input, &state ) != XLAL_SUCCESS ) {
         TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-      ENDFAIL( stat );
+        ABORTXLAL( stat );
+      }
       delayData[i] = tDelay = emit.deltaT/output->deltaT;
       if ( tDelay < delayMin )
         delayMin = tDelay;

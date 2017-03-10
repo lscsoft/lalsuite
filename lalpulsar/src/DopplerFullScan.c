@@ -36,7 +36,6 @@
 #include <lal/ConfigFile.h>
 #include <lal/LogPrintf.h>
 
-#include <lal/FlatPulsarMetric.h>
 #include <lal/DopplerFullScan.h>
 
 /*---------- DEFINES ----------*/

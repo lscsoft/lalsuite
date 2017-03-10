@@ -693,7 +693,7 @@ ParConversion pc[NUM_PARS] = {
   { .name = "OMDOT", .convfunc = ParConvDegPerYrToRadPerSec, .converrfunc = ParConvDegPerYrToRadPerSec, .ptype = PULSARTYPE_REAL8_t }, /* angle of periastron time derivative (degs/year converted to rad/s) */
   { .name = "XDOT", .convfunc = ParConvBinaryUnits, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* project semi-major axis time derivative (light sec/sec) */
   { .name = "PBDOT", .convfunc = ParConvBinaryUnits, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* period time derivative */
-  { .name = "EDOT", .convfunc = ParConvBinaryUnits, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* eccentricity time derivative (1/year) */
+  { .name = "EDOT", .convfunc = ParConvBinaryUnits, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* eccentricity time derivative (1/s) */
   { .name = "EPS1DOT", .convfunc = ParConvBinaryUnits, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
   { .name = "EPS2DOT", .convfunc = ParConvBinaryUnits, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
   { .name = "XPBDOT", .convfunc = ParConvBinaryUnits, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
@@ -2656,7 +2656,7 @@ REAL8 XLALTTMJDtoGPS(REAL8 MJD){
  * the equivalent GPS time in TDB (see Table 1 of Seidelmann and Fukushima,
  * Astronomy & Astrophysics, 265, 833-838 (1992).
  *
- * Note that LALBarycenter performs these TDBtoTT corrections (i.e. the
+ * Note that XLALBarycenter performs these TDBtoTT corrections (i.e. the
  * Einstein delay) when correcting a GPS time on the Earth to TDB. Also, for
  * TEMPO produced pulsar epochs given in MJD these are already in the TDB
  * system and an equivalent GPS time in the TDB can be calculated just using

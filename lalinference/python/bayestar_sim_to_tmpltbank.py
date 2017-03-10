@@ -89,12 +89,12 @@ sim_inspiral_table = ligolw_table.get_table(xmldoc,
     lsctables.SimInspiralTable.tableName)
 
 # Get just the intrinsic parameters from the sim_inspiral table.
-sim_inspiral_intrinsic_params = set(TaylorF2RedSpinIntrinsicParams(sim_inspiral)
-    for sim_inspiral in sim_inspiral_table)
+sim_inspiral_intrinsic_params = {TaylorF2RedSpinIntrinsicParams(sim_inspiral)
+    for sim_inspiral in sim_inspiral_table}
 
 if opts.low_frequency_cutoff is None:
     # Get the low-frequency cutoffs from the sim_inspiral table.
-    f_lows = set(sim_inspiral.f_lower for sim_inspiral in sim_inspiral_table)
+    f_lows = {sim_inspiral.f_lower for sim_inspiral in sim_inspiral_table}
 
     # There can be only one!
     try:

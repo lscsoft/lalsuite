@@ -6,7 +6,7 @@ Name: @PACKAGE@
 Version: @VERSION@
 Release: 1%{?dist}
 Summary: LSC Algorithm Simulation Library
-License: GPL
+License: GPLv2+
 Group: LAL
 Source: %{name}-%{version}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
@@ -18,8 +18,8 @@ BuildRequires: octave-devel
 BuildRequires: python-devel
 BuildRequires: swig
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: lal-python >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
+BuildRequires: lal-python >= @MIN_LAL_VERSION@
 Requires: gsl
 Requires: lal >= @MIN_LAL_VERSION@
 Prefix: %{_prefix}
@@ -71,8 +71,7 @@ This package provides the Octave Bindings for LALSimulation.
 
 %install
 %make_install
-rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
-
+find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 %post
 ldconfig
 
@@ -85,25 +84,25 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
-%{_libdir}/*.so*
-%{_sysconfdir}/*
-%{_bindir}/lalsim*
+%{_bindir}/lalsim-*
+%{_bindir}/lalsimulation_version
 %{_datarootdir}/lalsimulation/LALSimNeutronStarEOS_*
-%{_datarootdir}/lalsimulation/LIGO-P1200087-v18*
-%{_datarootdir}/lalsimulation/LIGO-T0900288-v3*
+%{_datarootdir}/lalsimulation/LIGO-P1200087*
+%{_datarootdir}/lalsimulation/LIGO-T0900288*
+%{_datarootdir}/lalsimulation/LIGO-T1600593*
+%{_libdir}/*.so.*
+%{_sysconfdir}/*
 
 %files devel
 %defattr(-,root,root)
-%{_libdir}/*.a
-%{_libdir}/pkgconfig/*
 %{_includedir}/lal
+%{_libdir}/*.a
+%{_libdir}/*.so
+%{_libdir}/pkgconfig/*
 
 %files python
 %defattr(-,root,root)
-%{_libdir}/python*/site-packages/lalsimulation/*.py
-%{_libdir}/python*/site-packages/lalsimulation/*.pyc
-%{_libdir}/python*/site-packages/lalsimulation/_lalsimulation.so*
-%exclude %{_libdir}/python*/site-packages/lalsimulation/*.pyo
+%{_libdir}/python*
 
 %files octave
 %defattr(-,root,root)
@@ -111,6 +110,19 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Wed Mar 01 2017 Adam Mercer <adam.mercer@ligo.org> 1.7.2-1
+- fix bug in SpinTaylor, spin precession vector had incorrect sign
+
+* Sat Feb 25 2017 Adam Mercer <adam.mercer@ligo.org> 1.7.1-1
+- fix memory leak in SpinTaylor code
+- https://bugs.ligo.org/redmine/issues/5182
+
+* Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.7.0-1
+- O2 release
+
+* Mon Sep 26 2016 Adam Mercer <adam.mercer@ligo.org> 1.6.1-1
+- ER10 release
+
 * Thu Jun 23 2016 Adam Mercer <adam.mercer@ligo.org> 1.6.0-1
 - ER9 release
 

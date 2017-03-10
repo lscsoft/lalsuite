@@ -122,7 +122,7 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
         datasets = [dataset[dataset['snr'] >= bin_edge] for dataset in datasets_]
     else:
         datasets = datasets_
-    nsamples = list(set(len(dataset) for dataset in datasets))
+    nsamples = list({len(dataset) for dataset in datasets})
 
     # Compute titles and labels for plots.
     if rcParams['text.usetex']:

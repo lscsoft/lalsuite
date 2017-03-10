@@ -44,7 +44,9 @@ int main(int argc, char *argv[])
   int status = 0;   /* CFITSIO status value MUST be initialized to zero! */
   int single = 0, hdupos = 0, nkeys = 0, ii = 0;
 
-  if (argc != 2) {
+  int printhelp = (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0));
+
+  if (printhelp || argc != 2) {
     fprintf(stderr, "Usage:  %s filename[ext] \n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "List the FITS header keywords in a single extension, or, if \n");

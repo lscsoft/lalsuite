@@ -167,9 +167,9 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
                                          REAL8 lambda2,      /**< Tidal par2*/
                                          REAL8 quadparam1,   /**< Quad-monop par1*/
 					 REAL8 quadparam2,   /**< Quad-monop par2*/
-					 LALSimInspiralSpinOrder spinO,                 /**< Spin interaction */
-                                         LALSimInspiralTidalOrder tideO,                /**< Tidal iteraction interaction */
-                                         LALSimInspiralTestGRParam *testGR,             /**< Test GR param */
+					 int spinO,                 /**< Spin interaction */
+					 int tideO,                /**< Tidal iteraction interaction */
+					 LALDict *LALparams,    /**< Extra parameters */
                                          UINT4 order                                    /**< twice PN Order in Phase */
 )
 {
@@ -188,10 +188,7 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
   else
     params->dt     = dt;
 
-  REAL8 phi1 = XLALSimInspiralTestGRParamExists(testGR,"phi1") ? XLALSimInspiralGetTestGRParam(testGR,"phi1") : 0.;
-  REAL8 phi2 = XLALSimInspiralTestGRParamExists(testGR,"phi2") ? XLALSimInspiralGetTestGRParam(testGR,"phi2") : 0.;
-  REAL8 phi3 = XLALSimInspiralTestGRParamExists(testGR,"phi3") ? XLALSimInspiralGetTestGRParam(testGR,"phi3") : 0.;
-  REAL8 phi4 = XLALSimInspiralTestGRParamExists(testGR,"phi4") ? XLALSimInspiralGetTestGRParam(testGR,"phi4") : 0.;
+  REAL8 phi1 = XLALSimInspiralWaveformParamsLookupNonGRPhi1(LALparams);
 
   params->wdotnewt = XLALSimInspiralTaylorT4wdot_0PNCoeff(params->eta);
   params->Enewt    = XLALSimInspiralPNEnergy_0PNCoeff(params->eta);
@@ -220,12 +217,12 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
       params->S2dot5    = XLALSimInspiralSpinDot_5PNCoeff(params->m2ByM);
 
     case 4:
-      params->wdotcoeff[4]  = XLALSimInspiralTaylorT4wdot_4PNCoeff(params->eta)+phi4;
+      params->wdotcoeff[4]  = XLALSimInspiralTaylorT4wdot_4PNCoeff(params->eta);
       params->Ecoeff[4]     = XLALSimInspiralPNEnergy_4PNCoeff(params->eta);
-      params->wdot4S1S2     = XLALSimInspiralTaylorT4wdot_4PNS1S2Coeff(params->eta);
-      params->wdot4S1OS2O   = XLALSimInspiralTaylorT4wdot_4PNS1S2OCoeff(params->eta);
-      params->E4S1S2      = XLALSimInspiralPNEnergy_4PNS1S2Coeff(params->eta);
-      params->E4S1OS2O    = XLALSimInspiralPNEnergy_4PNS1S2OCoeff(params->eta);
+      params->wdot4S1S2     = XLALSimInspiralTaylorT4wdot_4PNS1S2CoeffAvg(params->eta);
+      params->wdot4S1OS2O   = XLALSimInspiralTaylorT4wdot_4PNS1S2OCoeffAvg(params->eta);
+      params->E4S1S2      = XLALSimInspiralPNEnergy_4PNS1S2CoeffAvg(params->eta);
+      params->E4S1OS2O    = XLALSimInspiralPNEnergy_4PNS1S2OCoeffAvg(params->eta);
       params->wdot4S1S1     = XLALSimInspiralTaylorT4wdot_4PNSelf2SCoeff(params->m1ByM);
       params->wdot4S1OS1O   = XLALSimInspiralTaylorT4wdot_4PNSelf2SOCoeff(params->m1ByM);
       params->wdot4S2S2     = XLALSimInspiralTaylorT4wdot_4PNSelf2SCoeff(params->m2ByM);
@@ -234,18 +231,18 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
       params->wdot4QMS1O    = quadparam1*XLALSimInspiralTaylorT4wdot_4PNQM2SOCoeff(params->m1ByM);
       params->wdot4QMS2     = quadparam2*XLALSimInspiralTaylorT4wdot_4PNQM2SCoeff(params->m2ByM);
       params->wdot4QMS2O    = quadparam2*XLALSimInspiralTaylorT4wdot_4PNQM2SOCoeff(params->m2ByM);
-      params->E4QMS1      = quadparam1*XLALSimInspiralPNEnergy_4PNQM2SCoeff(params->m1ByM);
-      params->E4QMS2      = quadparam2*XLALSimInspiralPNEnergy_4PNQM2SCoeff(params->m2ByM);
-      params->E4QMS1O     = quadparam1*XLALSimInspiralPNEnergy_4PNQM2SOCoeff(params->m1ByM);
-      params->E4QMS2O     = quadparam2*XLALSimInspiralPNEnergy_4PNQM2SOCoeff(params->m2ByM);
-      params->Sdot4S2     = XLALSimInspiralSpinDot_4PNS2Coeff;
-      params->Sdot4S2O    = XLALSimInspiralSpinDot_4PNS2OCoeff;
-      params->S1dot4QMS1O  = quadparam1*XLALSimInspiralSpinDot_4PNQMSOCoeff(params->m1ByM);
-      params->S2dot4QMS2O  = quadparam2*XLALSimInspiralSpinDot_4PNQMSOCoeff(params->m2ByM);
+      params->E4QMS1      = quadparam1*XLALSimInspiralPNEnergy_4PNQM2SCoeffAvg(params->m1ByM);
+      params->E4QMS2      = quadparam2*XLALSimInspiralPNEnergy_4PNQM2SCoeffAvg(params->m2ByM);
+      params->E4QMS1O     = quadparam1*XLALSimInspiralPNEnergy_4PNQM2SOCoeffAvg(params->m1ByM);
+      params->E4QMS2O     = quadparam2*XLALSimInspiralPNEnergy_4PNQM2SOCoeffAvg(params->m2ByM);
+      params->Sdot4S2     = XLALSimInspiralSpinDot_4PNS2CoeffAvg;
+      params->Sdot4S2O    = XLALSimInspiralSpinDot_4PNS2OCoeffAvg;
+      params->S1dot4QMS1O  = quadparam1*XLALSimInspiralSpinDot_4PNQMSOCoeffAvg(params->m1ByM);
+      params->S2dot4QMS2O  = quadparam2*XLALSimInspiralSpinDot_4PNQMSOCoeffAvg(params->m2ByM);
 
     case 3:
       params->Ecoeff[3]      = 0.;
-      params->wdotcoeff[3]   = XLALSimInspiralTaylorT4wdot_3PNCoeff(params->eta)+phi3;
+      params->wdotcoeff[3]   = XLALSimInspiralTaylorT4wdot_3PNCoeff(params->eta);
       params->wdot3S1O  = XLALSimInspiralTaylorT4wdot_3PNSOCoeff(params->m1ByM);
       params->wdot3S2O  = XLALSimInspiralTaylorT4wdot_3PNSOCoeff(params->m1ByM);
       params->E3S1O     = XLALSimInspiralPNEnergy_3PNSOCoeff(params->m1ByM);
@@ -255,7 +252,7 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
 
     case 2:
       params->Ecoeff[2]  = XLALSimInspiralPNEnergy_2PNCoeff(params->eta);
-      params->wdotcoeff[2] = XLALSimInspiralTaylorT4wdot_2PNCoeff(params->eta)+phi2;
+      params->wdotcoeff[2] = XLALSimInspiralTaylorT4wdot_2PNCoeff(params->eta);
 
     case 1:
       params->Ecoeff[1]  = 0.;
@@ -1279,8 +1276,7 @@ static INT4 XLALSimIMRPhenSpinInitialize(REAL8 mass1,                           
 					 REAL8 deltaT,        /**< sampling time (sec)*/
                                          INT4 phaseO,         /**< (twice) phase order*/
                                          LALSimInspiralPhenSpinTaylorT4Coeffs *params,        /**< Coefficient holder*/
-                                         LALSimInspiralWaveformFlags      *waveFlags,         /**< Flags*/
-                                         LALSimInspiralTestGRParam        *testGRparams,      /**< Extra pars container*/
+                                         LALDict *LALparams,    /**< Extra parameters */
                                          Approximant approx    /**< Approximant*/)
 {
   if (fStart<=0.) {
@@ -1320,7 +1316,7 @@ static INT4 XLALSimIMRPhenSpinInitialize(REAL8 mass1,                           
   }
 
   /* setup coefficients for PN equations */
-  if(XLALSimIMRPhenSpinParamsSetup(params,deltaT,fStart,fEnd,mass1,mass2,lambda1,lambda2,quadparam1,quadparam2,XLALSimInspiralGetSpinOrder(waveFlags),XLALSimInspiralGetTidalOrder(waveFlags),testGRparams,phaseO)) {
+  if(XLALSimIMRPhenSpinParamsSetup(params,deltaT,fStart,fEnd,mass1,mass2,lambda1,lambda2,quadparam1,quadparam2,XLALSimInspiralWaveformParamsLookupPNSpinOrder(LALparams),XLALSimInspiralWaveformParamsLookupPNTidalOrder(LALparams),LALparams,phaseO)) {
     XLAL_ERROR(XLAL_ENOMEM);
   }
 
@@ -1657,8 +1653,7 @@ INT4 XLALSimSpinInspiralGenerator(REAL8TimeSeries **hPlus,               /**< +-
 				 REAL8 lambda2,        /**< Tidal  par2*/
 				 REAL8 quadparam1,     /**< Quad-monopole  par1*/
 				 REAL8 quadparam2,     /**< Quad-monopole  par1*/
-                                 LALSimInspiralWaveformFlags *waveFlags,/**< Choice of axis for input spin params */
-                                 LALSimInspiralTestGRParam *testGRparams/**< Non-GR params */)
+				 LALDict *LALparams    /**< Extra parameters */ )
 {
 
   INT4 errcode=0;
@@ -1705,9 +1700,9 @@ INT4 XLALSimSpinInspiralGenerator(REAL8TimeSeries **hPlus,               /**< +-
 
   REAL8 iotaTmp=iota;
   if (f_ref<=f_start) {
-    if (XLALSimIMRPhenSpinInitialize(mass1,mass2,lambda1,lambda2,quadparam1,quadparam2,yinit,f_start,-1.,deltaT,phaseO,&params,waveFlags,testGRparams,XLALGetApproximantFromString("PhenSpinTaylor")))
+    if (XLALSimIMRPhenSpinInitialize(mass1,mass2,lambda1,lambda2,quadparam1,quadparam2,yinit,f_start,-1.,deltaT,phaseO,&params,LALparams,XLALGetApproximantFromString("PhenSpinTaylor")))
       XLAL_ERROR(XLAL_EFUNC);
-    if(XLALSimIMRPhenSpinInspiralSetAxis(&yinitOut,&iota,&phiN,yinit,iotaTmp,mass1,mass2,XLALSimInspiralGetFrameAxis(waveFlags)))
+    if(XLALSimIMRPhenSpinInspiralSetAxis(&yinitOut,&iota,&phiN,yinit,iotaTmp,mass1,mass2,XLALSimInspiralWaveformParamsLookupFrameAxis(LALparams)))
       XLAL_ERROR(XLAL_EFUNC);
     for (idx=0;idx<LAL_NUM_PST4_VARIABLES;idx++)
       yinit[idx] = yinitOut[idx];
@@ -1716,9 +1711,9 @@ INT4 XLALSimSpinInspiralGenerator(REAL8TimeSeries **hPlus,               /**< +-
   }
   else {
     REAL8TimeSeries *Phi1,*omega1,*LNhatx1,*LNhaty1,*LNhatz1,*S1x1,*S1y1,*S1z1,*S2x1,*S2y1,*S2z1,*Energy1;
-    if (XLALSimIMRPhenSpinInitialize(mass1,mass2,lambda1,lambda2,quadparam1,quadparam2,yinit,f_ref,f_start,deltaT,phaseO,&params,waveFlags,testGRparams,XLALGetApproximantFromString("PhenSpinTaylor")))
+    if (XLALSimIMRPhenSpinInitialize(mass1,mass2,lambda1,lambda2,quadparam1,quadparam2,yinit,f_ref,f_start,deltaT,phaseO,&params,LALparams,XLALGetApproximantFromString("PhenSpinTaylor")))
       XLAL_ERROR(XLAL_EFUNC);
-    if(XLALSimIMRPhenSpinInspiralSetAxis(&yinitOut,&iota,&phiN,yinit,iotaTmp,mass1,mass2,XLALSimInspiralGetFrameAxis(waveFlags)))
+    if(XLALSimIMRPhenSpinInspiralSetAxis(&yinitOut,&iota,&phiN,yinit,iotaTmp,mass1,mass2,XLALSimInspiralWaveformParamsLookupFrameAxis(LALparams)))
       XLAL_ERROR(XLAL_EFUNC);
     for (idx=0;idx<LAL_NUM_PST4_VARIABLES;idx++)
       yinit[idx] = yinitOut[idx];
@@ -1848,7 +1843,7 @@ INT4 XLALSimSpinInspiralGenerator(REAL8TimeSeries **hPlus,               /**< +-
   XLALDestroyREAL8TimeSeries(Energy);
 
   INT4 m,l;
-  LALSimInspiralModesChoice modesChoice=XLALSimInspiralGetModesChoice(waveFlags);
+  int modesChoice=XLALSimInspiralWaveformParamsLookupModesChoice(LALparams);
   if ( ( modesChoice &  LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED) ==  LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED ) {
     l=2;
     for (m=-l;m<=l;m++) {
@@ -2021,7 +2016,7 @@ INT4 XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,             
                                           REAL8 lambda2,        /**< Tidal  par2*/
                                           REAL8 quadparam1,     /**< Quad-monopole par1*/
                                           REAL8 quadparam2,     /**< Quad-monopole par2*/
-                                          LALSimInspiralWaveformFlags *waveFlags,/**< Choice of axis for input spin params */                                                 LALSimInspiralTestGRParam *testGRparams/**< Non-GR params */)
+					  LALDict *LALparams    /**< Extra parameters */ )
 {
 
   const double rateHi=16384;
@@ -2068,9 +2063,9 @@ INT4 XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,             
 
   REAL8 iotaTmp=iota;
   if (f_ref<=f_start) {
-    if (XLALSimIMRPhenSpinInitialize(mass1,mass2,lambda1,lambda2,quadparam1,quadparam2,yinit,f_start,-1.,deltaT,phaseO,&params,waveFlags,testGRparams,XLALGetApproximantFromString("PhenSpinTaylorRD")))
+    if (XLALSimIMRPhenSpinInitialize(mass1,mass2,lambda1,lambda2,quadparam1,quadparam2,yinit,f_start,-1.,deltaT,phaseO,&params,LALparams,XLALGetApproximantFromString("PhenSpinTaylorRD")))
       XLAL_ERROR(XLAL_EFUNC);
-    if(XLALSimIMRPhenSpinInspiralSetAxis(&yinitOut,&iota,&phiN,yinit,iotaTmp,mass1,mass2,XLALSimInspiralGetFrameAxis(waveFlags)))
+    if(XLALSimIMRPhenSpinInspiralSetAxis(&yinitOut,&iota,&phiN,yinit,iotaTmp,mass1,mass2,XLALSimInspiralWaveformParamsLookupFrameAxis(LALparams)))
       XLAL_ERROR(XLAL_EFUNC);
     for (idx=0;idx<LAL_NUM_PST4_VARIABLES;idx++)
       yinit[idx]=yinitOut[idx];
@@ -2080,9 +2075,9 @@ INT4 XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,             
   else /* do both forward and backward integration*/ {
     REAL8TimeSeries *Phi1, *omega1, *LNhatx1, *LNhaty1, *LNhatz1;
     REAL8TimeSeries *S1x1, *S1y1, *S1z1, *S2x1, *S2y1, *S2z1, *Energy1;
-    if (XLALSimIMRPhenSpinInitialize(mass1,mass2,lambda1,lambda2,quadparam1,quadparam2,yinit,f_ref,f_start,deltaT,phaseO,&params,waveFlags,testGRparams,XLALGetApproximantFromString("PhenSpinTaylorRD")))
+    if (XLALSimIMRPhenSpinInitialize(mass1,mass2,lambda1,lambda2,quadparam1,quadparam2,yinit,f_ref,f_start,deltaT,phaseO,&params,LALparams,XLALGetApproximantFromString("PhenSpinTaylorRD")))
       XLAL_ERROR(XLAL_EFUNC);
-    if(XLALSimIMRPhenSpinInspiralSetAxis(&yinitOut,&iota,&phiN,yinit,iotaTmp,mass1,mass2,XLALSimInspiralGetFrameAxis(waveFlags)))
+    if(XLALSimIMRPhenSpinInspiralSetAxis(&yinitOut,&iota,&phiN,yinit,iotaTmp,mass1,mass2,XLALSimInspiralWaveformParamsLookupFrameAxis(LALparams)))
       XLAL_ERROR(XLAL_EFUNC);
     for (idx=0;idx<LAL_NUM_PST4_VARIABLES;idx++)
       yinit[idx]=yinitOut[idx];
@@ -2094,7 +2089,7 @@ INT4 XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,             
 
     errcode=XLALSimInspiralSpinTaylorT4Engine(&omega1,&Phi1,&LNhatx1,&LNhaty1,&LNhatz1,&S1x1,&S1y1,&S1z1,&S2x1,&S2y1,&S2z1,&Energy1,yinit,lengthH,PhenSpinTaylorRD,&params);
     /* report on abnormal termination*/
-    if ( (errcode != LALSIMINSPIRAL_PST4_TEST_FREQBOUND ) ) {
+    if ( errcode != LALSIMINSPIRAL_PST4_TEST_FREQBOUND ) {
       XLALPrintError("** LALSimIMRPSpinInspiralRD WARNING **: integration terminated with code %d.\n",errcode);
       XLALPrintError("   1025: Energy increases\n  1026: Omegadot -ve\n  1027: Freqbound\n 1028: Omega NAN\n  1030: Omega -ve\n  1031: Omega > OmegaMatch\n");
       XLALPrintError("  Waveform parameters were m1 = %14.6e, m2 = %14.6e, inc = %10.6f,  fref %10.4f Hz\n", mass1, mass2, iota, f_ref);
@@ -2122,7 +2117,7 @@ INT4 XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,             
 
     params.fEnd=-1.;
     params.dt*=-1.;
-    errcodeInt=XLALSimInspiralSpinTaylorT4Engine(&omega2,&Phi2,&LNhatx2,&LNhaty2,&LNhatz2,&S1x2,&S1y2,&S1z2,&S2x2,&S2y2,&S2z2,&Energy2,yinit,lengthH,PhenSpinTaylorRD,&params);
+       errcodeInt=XLALSimInspiralSpinTaylorT4Engine(&omega2,&Phi2,&LNhatx2,&LNhaty2,&LNhatz2,&S1x2,&S1y2,&S1z2,&S2x2,&S2y2,&S2z2,&Energy2,yinit,lengthH,PhenSpinTaylorRD,&params);
 
     REAL8 phiRef=Phi1->data->data[omega1->data->length-1];
     omega =appendTSandFree(omega1,omega2);
@@ -2140,7 +2135,7 @@ INT4 XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,             
     intLen=Phi->data->length;
     for (idx=0;idx<(int)intLen;idx++) Phi->data->data[idx]-=phiRef;
 
-  } /* End of int forward + integration backward*/
+       } /* End of int forward + integration backward*/
 
   /* report on abnormal termination*/
   if ( (errcodeInt != LALSIMINSPIRAL_PST4_TEST_OMEGAMATCH) ) {
@@ -2181,7 +2176,7 @@ INT4 XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,             
   REAL8 alpha=0.,v=0.,v2=0.,Psi,om;
   REAL8 eta=m1*m2/(m1+m2)/(m1+m2);
   REAL8 dm=(m1-m2)/(m1+m2);
-  LALSimInspiralModesChoice modesChoice=XLALSimInspiralGetModesChoice(waveFlags);
+  int modesChoice=XLALSimInspiralWaveformParamsLookupModesChoice(LALparams);
 
   for (idx=0;idx<(int)intLen;idx++) {
     om=omega->data->data[idx];

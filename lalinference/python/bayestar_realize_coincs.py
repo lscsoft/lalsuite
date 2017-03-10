@@ -72,6 +72,8 @@ parser.add_argument(
     choices=('zero-noise', 'from-truth', 'from-measurement'),
     default='zero-noise',
     help='How to compute the measurement error [default: %(default)s]')
+parser.add_argument('--enable-snr-series', default=False, action='store_true',
+    help='Enable output of SNR time series (WARNING: UNREVIEWED!) [default: no]')
 parser.add_argument(
     '--reference-psd', metavar='PSD.xml[.gz]', type=argparse.FileType('rb'),
     required=True, help='Name of PSD file [required]')
@@ -85,12 +87,13 @@ import os
 
 # LIGO-LW XML imports.
 from glue.ligolw import ligolw
+from glue.ligolw import param as ligolw_param
 from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw.utils import search_summary as ligolw_search_summary
 from glue.ligolw import table as ligolw_table
-from pylal import ligolw_thinca
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import lsctables
+Attributes = ligolw.sax.xmlreader.AttributesImpl
 
 # glue, LAL and pylal imports.
 from glue import segments
@@ -133,10 +136,10 @@ summary = ligolw_search_summary.append_search_summary(out_xmldoc, process,
 progress.update(-1, 'reading ' + opts.reference_psd.name)
 xmldoc, _ = ligolw_utils.load_fileobj(
     opts.reference_psd, contenthandler=lal.series.PSDContentHandler)
-psds = lal.series.read_psd_xmldoc(xmldoc)
-psds = dict(
-    (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data))
-    for key, psd in psds.items() if psd is not None)
+psds = lal.series.read_psd_xmldoc(xmldoc, root_name=None)
+psds = {
+    key: timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data)
+    for key, psd in psds.items() if psd is not None}
 
 # Read injection file.
 progress.update(-1, 'reading ' + opts.input.name)
@@ -156,13 +159,13 @@ sngl_inspiral_table.set_next_id(lsctables.SnglInspiralID(0))
 time_slide_table = lsctables.New(lsctables.TimeSlideTable)
 out_xmldoc.childNodes[0].appendChild(time_slide_table)
 time_slide_id = time_slide_table.get_time_slide_id(
-    dict((ifo, 0) for ifo in opts.detector), create_new=process)
+    {ifo: 0 for ifo in opts.detector}, create_new=process)
 
 # Create a CoincDef table and record a CoincDef row for
 # sngl_inspiral <-> sngl_inspiral coincidences.
 coinc_def_table = lsctables.New(lsctables.CoincDefTable)
 out_xmldoc.childNodes[0].appendChild(coinc_def_table)
-coinc_def = ligolw_thinca.InspiralCoincDef
+coinc_def = ligolw_bayestar.InspiralCoincDef
 coinc_def_id = coinc_def_table.get_next_id()
 coinc_def.coinc_def_id = coinc_def_id
 coinc_def_table.append(coinc_def)
@@ -214,9 +217,8 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
 
     # Signal models for each detector.
     H = filter.sngl_inspiral_psd(sim_inspiral, waveform, f_low)
-    signal_models = [
-        timing.SignalModel(filter.signal_psd_series(H, psds[ifo]))
-        for ifo in opts.detector]
+    W = [filter.signal_psd_series(H, psds[ifo]) for ifo in opts.detector]
+    signal_models = [timing.SignalModel(_) for _ in W]
 
     # Get SNR=1 horizon distances for each detector.
     horizons = np.asarray([signal_model.get_horizon_distance()
@@ -248,6 +250,8 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
         for i, signal_model in enumerate(signal_models):
             arg_snrs[i], toas[i]  = np.random.multivariate_normal(
                 [arg_snrs[i], toas[i]], signal_model.get_cov(abs_snrs[i]))
+
+        snrs = abs_snrs * np.exp(1j * arg_snrs)
     elif opts.measurement_error == 'from-measurement':
         # Otherwise, by defualt, apply noise to TOAs and phases first.
 
@@ -257,16 +261,23 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
 
         # Add noise to SNR estimates.
         abs_snrs += np.random.randn(len(abs_snrs))
+
+        snrs = abs_snrs * np.exp(1j * arg_snrs)
     else:
         raise RuntimeError("This code should not be reached.")
 
     sngl_inspirals = []
     net_snr = 0.0
     count_triggers = 0
+    used_locations = []
+    used_signal_models = []
+    used_abs_snrs = []
+    used_W = []
 
     # Loop over individual detectors and create SnglInspiral entries.
-    for ifo, abs_snr, arg_snr, toa, horizon in zip(
-            opts.detector, abs_snrs, arg_snrs, toas, horizons):
+    for ifo, abs_snr, arg_snr, toa, horizon, location, signal_model, W_ in zip(
+            opts.detector, abs_snrs, arg_snrs, toas, horizons,
+            locations, signal_models, W):
 
         # If SNR < threshold, then the injection is not found. Skip it.
         if abs_snr >= opts.snr_threshold:
@@ -290,6 +301,11 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
         sngl_inspiral.eff_distance = horizon / sngl_inspiral.snr
         sngl_inspirals.append(sngl_inspiral)
 
+        used_locations.append(locations)
+        used_signal_models.append(signal_model)
+        used_abs_snrs.append(abs_snr)
+        used_W.append(W_)
+
     net_snr = np.sqrt(net_snr)
 
     # If too few triggers were found, then skip this event.
@@ -299,6 +315,18 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
     # If network SNR < threshold, then the injection is not found. Skip it.
     if net_snr < opts.net_snr_threshold:
         continue
+
+    weights = [1/np.square(signal_model.get_crb_toa_uncert(snr))
+        for signal_model, snr in zip(used_signal_models, used_abs_snrs)]
+
+    # Center detector array.
+    used_locations = np.asarray(used_locations)
+    used_locations -= np.average(used_locations, weights=weights, axis=0)
+
+    # Maximum barycentered arrival time error:
+    # |distance from array barycenter to furthest detector| / c + 5 ms
+    max_abs_t = np.max(
+        np.sqrt(np.sum(np.square(used_locations / lal.C_SI), axis=1))) + 0.005
 
     # Add Coinc table entry.
     coinc = lsctables.Coinc()
@@ -328,10 +356,24 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
     coinc_inspiral_table.append(coinc_inspiral)
 
     # Record all sngl_inspiral records and associate them with coincidences.
-    for sngl_inspiral in sngl_inspirals:
+    for sngl_inspiral, W in zip(sngl_inspirals, used_W):
         # Give this sngl_inspiral record an id and add it to the table.
         sngl_inspiral.event_id = sngl_inspiral_table.get_next_id()
         sngl_inspiral_table.append(sngl_inspiral)
+
+        if opts.enable_snr_series:
+            snr, sample_rate = filter.autocorrelation(W, max_abs_t)
+            dt = 1 / sample_rate
+            epoch = sngl_inspiral.end - (len(snr) - 1) / sample_rate
+            snr = np.concatenate((snr[:0:-1].conj(), snr))
+            snr *= sngl_inspiral.snr * np.exp(1j * sngl_inspiral.coa_phase)
+            snr_series = lal.CreateCOMPLEX16TimeSeries(
+                'snr', epoch, 0, dt, lal.StrainUnit, len(snr))
+            snr_series.data.data[:] = snr
+            elem = lal.series.build_COMPLEX16TimeSeries(snr_series)
+            elem.appendChild(
+                ligolw_param.Param.from_pyvalue(u'event_id', sngl_inspiral.event_id))
+            out_xmldoc.childNodes[0].appendChild(elem)
 
         # Add CoincMap entry.
         coinc_map = lsctables.CoincMap()

@@ -26,13 +26,41 @@ XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralWaveformFlags given, 
 XLAL_ERROR_NULL(XLAL_EINVAL);\
 } while (0)
 
+#define ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams)\
+do {\
+XLALDestroyDict(LALparams);\
+XLALPrintError("XLAL Error - %s: Non-default flags given, but this approximant does not support this case.\n", __func__);\
+XLAL_ERROR(XLAL_EINVAL);\
+} while (0)
+
+/*
+ * Same as above macro, but returns a null pointer rather than XLAL_FAILURE int
+ */
+#define ABORT_NONDEFAULT_LALDICT_FLAGS_NULL(LALparams)\
+do {\
+XLALDestroyDict(LALparams);\
+XLALPrintError("XLAL Error - %s: Non-default flags given, but this approximant does not support this case.\n", __func__);\
+XLAL_ERROR_NULL(XLAL_EINVAL);\
+} while (0)
+
 /*
  * Macro procedure for aborting if non-zero spins
  * given to a non-spinning approximant
  */
-#define ABORT_NONZERO_SPINS(waveFlags)\
+#define ABORT_NONZERO_SPINS_OLD(waveFlags)\
 do {\
 XLALSimInspiralDestroyWaveformFlags(waveFlags);\
+XLALPrintError("XLAL Error - %s: Non-zero spins were given, but this is a non-spinning approximant.\n", __func__);\
+XLAL_ERROR(XLAL_EINVAL);\
+} while (0)
+
+/*
+ * Macro procedure for aborting if non-zero spins
+ * given to a non-spinning approximant
+ */
+#define ABORT_NONZERO_SPINS(LALparams)\
+do {\
+XLALDestroyDict(LALparams);\
 XLALPrintError("XLAL Error - %s: Non-zero spins were given, but this is a non-spinning approximant.\n", __func__);\
 XLAL_ERROR(XLAL_EINVAL);\
 } while (0)
@@ -41,7 +69,7 @@ XLAL_ERROR(XLAL_EINVAL);\
  * Macro procedure for aborting if non-zero transverse spin
  * components given to a non-precessing approximant
  */
-#define ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags)\
+#define ABORT_NONZERO_TRANSVERSE_SPINS_OLD(waveFlags)\
 do {\
 XLALSimInspiralDestroyWaveformFlags(waveFlags);\
 XLALPrintError("XLAL Error - %s: Non-zero transverse spins were given, but this is a non-precessing approximant.\n", __func__);\
@@ -49,12 +77,45 @@ XLAL_ERROR(XLAL_EINVAL);\
 } while (0)
 
 /*
+ * Macro procedure for aborting if non-zero transverse spin
+ * components given to a non-precessing approximant
+ */
+#define ABORT_NONZERO_TRANSVERSE_SPINS(LALparams)\
+do {\
+XLALDestroyDict(LALparams);\
+XLALPrintError("XLAL Error - %s: Non-zero transverse spins were given, but this is a non-precessing approximant.\n", __func__);\
+XLAL_ERROR(XLAL_EINVAL);\
+} while (0)
+
+/*
+ * Macro procedure for aborting if non-zero transverse spin
+ * components given to a SpinTaylor approximant with spinO>5
+ */
+#define ABORT_NONZERO_TRANSVERSE_SPINS_HIGH_SPINO(LALparams)\
+do {\
+XLALDestroyDict(LALparams);\
+XLALPrintError("XLAL Error - %s: Non-zero transverse spins were given with spinOrder %d, but this spins dynamics is not implemented to this order for precessing spins.\n", __func__, XLALSimInspiralWaveformParamsLookupPNSpinOrder(LALparams)); \
+XLAL_ERROR(XLAL_EINVAL);\
+} while (0)
+
+/*
  * Macro procedure for aborting if non-zero tidal parameters
  * given to an approximant with no tidal corrections
  */
-#define ABORT_NONZERO_TIDES(waveFlags)\
+#define ABORT_NONZERO_TIDES_OLD(waveFlags)\
 do {\
 XLALSimInspiralDestroyWaveformFlags(waveFlags);\
+XLALPrintError("XLAL Error - %s: Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.\n", __func__);\
+XLAL_ERROR(XLAL_EINVAL);\
+} while (0)
+
+/*
+ * Macro procedure for aborting if non-zero tidal parameters
+ * given to an approximant with no tidal corrections
+ */
+#define ABORT_NONZERO_TIDES(LALparams)\
+do {\
+XLALDestroyDict(LALparams);\
 XLALPrintError("XLAL Error - %s: Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.\n", __func__);\
 XLAL_ERROR(XLAL_EINVAL);\
 } while (0)
@@ -64,9 +125,21 @@ XLAL_ERROR(XLAL_EINVAL);\
  * LALSimInspiralSpinOrder is given for an approximant
  * which does not use that flag
  */
-#define ABORT_NONDEFAULT_SPIN_ORDER(waveFlags)\
+#define ABORT_NONDEFAULT_SPIN_ORDER_OLD(waveFlags)\
 do {\
 XLALSimInspiralDestroyWaveformFlags(waveFlags);\
+XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralSpinOrder provided, but this approximant does not use that flag.\n", __func__);\
+XLAL_ERROR(XLAL_EINVAL);\
+} while (0)
+
+/*
+ * Macro procedure for aborting if non-default value of
+ * LALSimInspiralSpinOrder is given for an approximant
+ * which does not use that flag
+ */
+#define ABORT_NONDEFAULT_SPIN_ORDER(LALparams)\
+do {\
+XLALDestroyDict(LALparams);\
 XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralSpinOrder provided, but this approximant does not use that flag.\n", __func__);\
 XLAL_ERROR(XLAL_EINVAL);\
 } while (0)
@@ -76,9 +149,21 @@ XLAL_ERROR(XLAL_EINVAL);\
  * LALSimInspiralTidalOrder is given for an approximant
  * which does not use that flag
  */
-#define ABORT_NONDEFAULT_TIDAL_ORDER(waveFlags)\
+#define ABORT_NONDEFAULT_TIDAL_ORDER_OLD(waveFlags)\
 do {\
 XLALSimInspiralDestroyWaveformFlags(waveFlags);\
+XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralTidalOrder provided, but this approximant does not use that flag.\n", __func__);\
+XLAL_ERROR(XLAL_EINVAL);\
+} while (0)
+
+/*
+ * Macro procedure for aborting if non-default value of
+ * LALSimInspiralTidalOrder is given for an approximant
+ * which does not use that flag
+ */
+#define ABORT_NONDEFAULT_TIDAL_ORDER(LALparams)\
+do {\
+XLALDestroyDict(LALparams);\
 XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralTidalOrder provided, but this approximant does not use that flag.\n", __func__);\
 XLAL_ERROR(XLAL_EINVAL);\
 } while (0)
@@ -88,7 +173,7 @@ XLAL_ERROR(XLAL_EINVAL);\
  * LALSimInspiralFrameAxis is given for an approximant
  * which does not use that flag
  */
-#define ABORT_NONDEFAULT_FRAME_AXIS(waveFlags)\
+#define ABORT_NONDEFAULT_FRAME_AXIS_OLD(waveFlags)\
 do {\
 XLALSimInspiralDestroyWaveformFlags(waveFlags);\
 XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralFrameAxis provided, but this approximant does not use that flag.\n", __func__);\
@@ -98,9 +183,26 @@ XLAL_ERROR(XLAL_EINVAL);\
 /*
  * Same as above macro, but returns a null pointer rather than XLAL_FAILURE int
  */
-#define ABORT_NONDEFAULT_FRAME_AXIS_NULL(waveFlags)\
+#define ABORT_NONDEFAULT_FRAME_AXIS_NULL_OLD(waveFlags)\
 do {\
 XLALSimInspiralDestroyWaveformFlags(waveFlags);\
+XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralFrameAxis provided, but this approximant does not use that flag.\n", __func__);\
+XLAL_ERROR_NULL(XLAL_EINVAL);\
+} while (0)
+
+#define ABORT_NONDEFAULT_FRAME_AXIS(LALparams)\
+do {\
+XLALDestroyDict(LALparams);\
+XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralFrameAxis provided, but this approximant does not use that flag.\n", __func__);\
+XLAL_ERROR(XLAL_EINVAL);\
+} while (0)
+
+/*
+ * Same as above macro, but returns a null pointer rather than XLAL_FAILURE int
+ */
+#define ABORT_NONDEFAULT_FRAME_AXIS_NULL(LALparams)\
+do {\
+XLALDestroyDict(LALparams);\
 XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralFrameAxis provided, but this approximant does not use that flag.\n", __func__);\
 XLAL_ERROR_NULL(XLAL_EINVAL);\
 } while (0)
@@ -110,9 +212,16 @@ XLAL_ERROR_NULL(XLAL_EINVAL);\
  * LALSimInspiralModesChoice is given for an approximant
  * which does not use that flag
  */
-#define ABORT_NONDEFAULT_MODES_CHOICE(waveFlags)\
+#define ABORT_NONDEFAULT_MODES_CHOICE_OLD(waveFlags)\
 do {\
 XLALSimInspiralDestroyWaveformFlags(waveFlags);\
+XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralModesChoice provided, but this approximant does not use that flag.\n", __func__);\
+XLAL_ERROR(XLAL_EINVAL);\
+} while (0)
+
+#define ABORT_NONDEFAULT_MODES_CHOICE(LALparams)\
+do {\
+XLALDestroyDict(LALparams);\
 XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralModesChoice provided, but this approximant does not use that flag.\n", __func__);\
 XLAL_ERROR(XLAL_EINVAL);\
 } while (0)
@@ -120,9 +229,19 @@ XLAL_ERROR(XLAL_EINVAL);\
 /*
  * Same as above macro, but returns a null pointer rather than XLAL_FAILURE int
  */
-#define ABORT_NONDEFAULT_MODES_CHOICE_NULL(waveFlags)\
+#define ABORT_NONDEFAULT_MODES_CHOICE_NULL_OLD(waveFlags)\
 do {\
 XLALSimInspiralDestroyWaveformFlags(waveFlags);\
+XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralModesChoice provided, but this approximant does not use that flag.\n", __func__);\
+XLAL_ERROR_NULL(XLAL_EINVAL);\
+} while (0)
+
+/*
+ * Same as above macro, but returns a null pointer rather than XLAL_FAILURE int
+ */
+#define ABORT_NONDEFAULT_MODES_CHOICE_NULL(LALparams)\
+do {\
+XLALDestroyDict(LALparams);\
 XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralModesChoice provided, but this approximant does not use that flag.\n", __func__);\
 XLAL_ERROR_NULL(XLAL_EINVAL);\
 } while (0)
@@ -131,9 +250,20 @@ XLAL_ERROR_NULL(XLAL_EINVAL);\
  * Macro procedure for aborting if non-zero spin2
  * components given to central-spin-only approximant
  */
-#define ABORT_NONZERO_SPIN2(waveFlags)\
+#define ABORT_NONZERO_SPIN2_OLD(waveFlags)\
 	do {\
 	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
+	XLALPrintError("XLAL Error - %s: Non-zero CO spin given, but this approximant does not support this case.\n", __func__);\
+	XLAL_ERROR(XLAL_EINVAL);\
+	} while (0)
+
+/*
+ * Macro procedure for aborting if non-zero spin2
+ * components given to central-spin-only approximant
+ */
+#define ABORT_NONZERO_SPIN2(LALparams)\
+	do {\
+	XLALDestroyDict(LALparams);\
 	XLALPrintError("XLAL Error - %s: Non-zero CO spin given, but this approximant does not support this case.\n", __func__);\
 	XLAL_ERROR(XLAL_EINVAL);\
 	} while (0)

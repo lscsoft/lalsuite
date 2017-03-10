@@ -421,7 +421,6 @@ static int SEOBNRROMdata_Init(SEOBNRROMdata *romdata, const char dir[]) {
     return (XLAL_FAILURE);
   }
 
-  gsl_set_error_handler(&err_handler);
   (romdata)->cvec_amp = gsl_vector_alloc(N*nk_amp);
   (romdata)->cvec_phi = gsl_vector_alloc(N*nk_phi);
   (romdata)->Bamp = gsl_matrix_alloc(nk_amp, nk_amp);
@@ -534,7 +533,7 @@ static int SEOBNRv2ROMEffectiveSpinCore(
 
   // Enforce allowed geometric frequency range
   if (fLow_geom < Mf_ROM_min)
-    XLAL_ERROR(XLAL_EDOM, "Starting frequency Mflow=%g is smaller than lowest frequency in ROM Mf=%g. Starting at lowest frequency in ROM.\n", fLow_geom, Mf_ROM_min);
+    XLAL_ERROR(XLAL_EDOM, "Starting frequency Mflow=%g is smaller than lowest frequency in ROM Mf=%g.\n", fLow_geom, Mf_ROM_min);
   if (fHigh_geom == 0)
     fHigh_geom = Mf_ROM_max;
   else if (fHigh_geom > Mf_ROM_max) {

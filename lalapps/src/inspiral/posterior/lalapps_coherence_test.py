@@ -18,8 +18,15 @@ B.txt files from the individual runs on each IFO. The coherent file must be spec
 The code will then perform either the test of coherent vs incoherent signal models, i.e.
 B_{CI} = Z_co / Z_1 * Z_2 * Z_3
 
+or a test of coherent vs incoherent
+B_{CIN} = Z_co / (Z_1 * Z_2 * Z_3 + N_{123})
+
 or the test of coherent vs ( incoherent signal or noise ) models, i.e.
-B_{CIN} / Z_co / (Z_1 * Z_2 *Z_3 + Z_noise )
+B_{CIN} = Z_co / Z_{inc OR noise} 
+with Z_{inc OR noise} = sum over all permutations of the signal and noise hypotheses in each detector
+e.g. for 2 detectors:
+Z_{inc OR noise} =
+see also https://dcc.ligo.org/LIGO-T1600068
 
 Output will be written to stdout, and to a text file specified by the --outfile option.
 
@@ -28,6 +35,7 @@ Output will be written to stdout, and to a text file specified by the --outfile 
 parser=OptionParser(usage)
 parser.add_option("-c","--coherent-incoherent",action="store_true",dest="ci",help="Perform coherence test of Coherent signal vs incoherent signal",default=False )
 parser.add_option("-n","--coherent-incoherent-noise", dest="cin", action="store_true",  help="Perform coherence test of coherent signal vs incoherent signal or noise", default=False )
+parser.add_option("-b","--new-coherent-incoherent-noise", dest="cin_or_n", action="store_true",  help="Perform coherence test of coherent signal vs incoherent signal or noise using the most inclusive hypothesis", default=False )
 parser.add_option("-o","--outfile",default=None, help="Optional output file name", metavar="OUTFILE.txt",type="string",action="store")
 
 (opts,args)=parser.parse_args()
@@ -90,6 +98,20 @@ def get_metadata(filename,key):
 
 Zco = get_metadata(cofile,'log_evidence')
 Zinco=0
+Z_single_noise = [ get_metadata(inco,'log_noise_evidence') for inco in incofiles]
+Z_single_signal = [ get_metadata(inco,'log_evidence') for inco in incofiles]
+
+# we compute now the evidence for the hypothesis "incoherent signal OR noise" as the
+# sum over all posible permutations over mutually exclusive sub propositions
+
+from itertools import combinations
+from scipy.misc import logsumexp
+
+def not_seen(t, seen=set()):
+    return False if t[0] in seen or t[1] in seen else seen.update(t) or True
+
+Z_incoherentORnoise = logsumexp([sum(p) for p in list(filter(lambda t, seen=set(): False if t[0] in seen or t[1] in seen else seen.update(t) or True, combinations(Z_single_signal+Z_single_noise, len(Z_single_signal))))])
+
 for inco in incofiles:
 	Zinco+=get_metadata(inco,'log_evidence')
 Znoise = get_metadata(cofile,'log_noise_evidence')
@@ -98,13 +120,14 @@ if(opts.outfile is not None):
 	out=open(opts.outfile,'w')
 
 if(opts.ci):
-	B=Zco-Zinco
-if(opts.cin):
-	B=Zco-logadd(Zinco,Znoise)
+    B=Zco-Zinco
+if (opts.cin):
+    B=Zco-logadd(Zinco,Znoise)
+if(opts.cin_or_n):
+    B=Zco-Z_incoherentORnoise
 
 print '%.3f'%(B)
 
 if(opts.outfile is not None ):
 	print >>out,'%.3f'%(B)
 	out.close()
-

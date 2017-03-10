@@ -30,6 +30,7 @@
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/AVFactories.h>
+#include <lal/SinCosLUT.h>
 
 /**
  * \author Reinhard Prix, John Whelan
@@ -37,10 +38,10 @@
  * \ingroup LALComputeAM_h
  *
  * \brief Test for XLALComputeAMCoeffs() and XLALComputeMultiAMCoeffs() by
- * comparison with the equivalent LAL functions LALNewGetAMCoeffs() and LALGetMultiAMCoeffs().
+ * comparison with the old LAL functions old_LALGetAMCoeffs() and old_LALGetMultiAMCoeffs().
  *
  * Note, we run a comparison only for the 2-IFO multiAM functions XLALComputeMultiAMCoeffs()
- * comparing it to LALGetMultiAMCoeffs() [combined with XLALWeightMultiAMCoeffs()],
+ * comparing it to old_LALGetMultiAMCoeffs() [combined with XLALWeightMultiAMCoeffs()],
  * as this excercises the 1-IFO functions as well.
  *
  * Sky-location is picked at random each time, which allows a minimal
@@ -49,8 +50,19 @@
  */
 
 /* ----- internal prototypes ---------- */
-int XLALCompareMultiAMCoeffs ( MultiAMCoeffs *multiAM1, MultiAMCoeffs *multiAM2, REAL8 tolerance );
+static int XLALCompareMultiAMCoeffs ( MultiAMCoeffs *multiAM1, MultiAMCoeffs *multiAM2, REAL8 tolerance );
+static void old_LALGetMultiAMCoeffs (LALStatus *, MultiAMCoeffs **multiAMcoef, const MultiDetectorStateSeries *multiDetStates, SkyPosition pos );
+static void old_LALNewGetAMCoeffs(LALStatus *, AMCoeffs *coeffs, const DetectorStateSeries *DetectorStates, SkyPosition skypos);
 
+#define LALCOMPUTEAMH_ENULL 	   7
+#define LALCOMPUTEAMH_EINPUT   	   8
+#define LALCOMPUTEAMH_ENONULL 	   9
+#define LALCOMPUTEAMH_EMEM   	  10
+
+#define LALCOMPUTEAMH_MSGENULL 	  "Arguments contained an unexpected null pointer"
+#define LALCOMPUTEAMH_MSGEINPUT   "Invalid input"
+#define LALCOMPUTEAMH_MSGENONULL  "Output pointer is non-NULL"
+#define LALCOMPUTEAMH_MSGEMEM     "Out of memory. Bad."
 
 /* ----- function definitions ---------- */
 int main(int argc, char *argv[])
@@ -161,11 +173,11 @@ int main(int argc, char *argv[])
 
       MultiNoiseWeights *weights = NULL;	/* for now we only deal with unit-weights case */
 
-      /* ----- compute multiAM using LAL function ----- */
+      /* ----- compute multiAM using old LAL function ----- */
       MultiAMCoeffs *multiAM_LAL  = NULL;
-      LALGetMultiAMCoeffs ( &status, &multiAM_LAL, multiDetStates, skypos );
+      old_LALGetMultiAMCoeffs ( &status, &multiAM_LAL, multiDetStates, skypos );
       if ( status.statusCode ) {
-        XLALPrintError ("%s: LALGetMultiAMCoeffs() failed with statusCode = %d : %s\n", __func__, status.statusCode, status.statusDescription );
+        XLALPrintError ("%s: old_LALGetMultiAMCoeffs() failed with statusCode = %d : %s\n", __func__, status.statusCode, status.statusDescription );
         return XLAL_EFAILED;
       }
       if ( XLALWeightMultiAMCoeffs ( multiAM_LAL, weights ) != XLAL_SUCCESS ) {
@@ -204,7 +216,7 @@ int main(int argc, char *argv[])
 
 } /* main() */
 
-/**
+/*
  * Comparison function for two multiAM vectors, return success or failure for given tolerance.
  * we compare avg() and max of |a1_i - a2_i|^2 and |b1_i - b2_i|^2 respectively,
  * and error in |A1 - A2|, |B1 - B2|, |C1 - C2|.
@@ -343,3 +355,203 @@ XLALCompareMultiAMCoeffs ( MultiAMCoeffs *multiAM1, MultiAMCoeffs *multiAM2, REA
   return failed;
 
 } /* XLALCompareMultiAMCoeffs() */
+
+/*
+ * Multi-IFO version of old_LALGetAMCoeffs().
+ * Get all antenna-pattern coefficients for all input detector-series.
+ *
+ * NOTE: contrary to old_LALGetAMCoeffs(), this functions *allocates* the output-vector,
+ * use XLALDestroyMultiAMCoeffs() to free this.
+ */
+void
+old_LALGetMultiAMCoeffs (LALStatus *status,			/*< [in/out] LAL status structure pointer */
+		     MultiAMCoeffs **multiAMcoef,	/*< [out] AM-coefficients for all input detector-state series */
+		     const MultiDetectorStateSeries *multiDetStates, /*< [in] detector-states at timestamps t_i */
+		     SkyPosition skypos			/*< source sky-position [in equatorial coords!] */
+		     )
+{
+  UINT4 X, numDetectors;
+  MultiAMCoeffs *ret = NULL;
+
+  INITSTATUS(status);
+  ATTATCHSTATUSPTR (status);
+
+  /* check input */
+  ASSERT (multiDetStates, status,LALCOMPUTEAMH_ENULL, LALCOMPUTEAMH_MSGENULL);
+  ASSERT (multiDetStates->length, status,LALCOMPUTEAMH_ENULL, LALCOMPUTEAMH_MSGENULL);
+  ASSERT (multiAMcoef, status,LALCOMPUTEAMH_ENULL, LALCOMPUTEAMH_MSGENULL);
+  ASSERT ( *multiAMcoef == NULL, status,LALCOMPUTEAMH_ENONULL, LALCOMPUTEAMH_MSGENONULL);
+  ASSERT ( skypos.system == COORDINATESYSTEM_EQUATORIAL, status, LALCOMPUTEAMH_EINPUT, LALCOMPUTEAMH_MSGEINPUT );
+
+  numDetectors = multiDetStates->length;
+
+  if ( ( ret = LALCalloc( 1, sizeof( *ret ) )) == NULL ) {
+    ABORT (status, LALCOMPUTEAMH_EMEM, LALCOMPUTEAMH_MSGEMEM);
+  }
+  ret->length = numDetectors;
+  if ( ( ret->data = LALCalloc ( numDetectors, sizeof ( *ret->data ) )) == NULL ) {
+    LALFree ( ret );
+    ABORT (status, LALCOMPUTEAMH_EMEM, LALCOMPUTEAMH_MSGEMEM);
+  }
+
+  for ( X=0; X < numDetectors; X ++ )
+    {
+      AMCoeffs *amcoeX = NULL;
+      UINT4 numStepsX = multiDetStates->data[X]->length;
+
+      ret->data[X] = LALCalloc ( 1, sizeof ( *(ret->data[X]) ) );
+      amcoeX = ret->data[X];
+      amcoeX->a = XLALCreateREAL4Vector ( numStepsX );
+      if ( (amcoeX->b = XLALCreateREAL4Vector ( numStepsX )) == NULL ) {
+	LALPrintError ("\nOut of memory!\n\n");
+	goto failed;
+      }
+
+      old_LALNewGetAMCoeffs (status->statusPtr, amcoeX, multiDetStates->data[X], skypos );
+      if ( status->statusPtr->statusCode )
+	{
+	  LALPrintError ( "\nCall to old_LALNewGetAMCoeffs() has failed ... \n\n");
+	  goto failed;
+	}
+
+    } /* for X < numDetectors */
+
+  goto success;
+
+ failed:
+  /* free all memory allocated so far */
+  XLALDestroyMultiAMCoeffs ( ret );
+  ABORT ( status, -1, "old_LALGetMultiAMCoeffs() failed" );
+
+ success:
+  (*multiAMcoef) = ret;
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+} /* old_LALGetMultiAMCoeffs() */
+
+/*
+ * Compute the 'amplitude coefficients' \f$a(t)\sin\zeta\f$,
+ * \f$b(t)\sin\zeta\f$ as defined in \cite JKS98 for a series of
+ * timestamps.
+ *
+ * The input consists of the DetectorState-timeseries, which contains
+ * the detector-info and the LMST's corresponding to the different times.
+ *
+ * In order to allow re-using the output-structure AMCoeffs for subsequent
+ * calls, we require the REAL4Vectors a and b to be allocated already and
+ * to have the same length as the DetectoStates-timeseries.
+ *
+ * \note This is an alternative implementation to both LALComputeAM()
+ * and old_LALGetAMCoeffs(), which uses the geometrical definition of
+ * \f$a\sin\zeta\f$ and \f$b\sin\zeta\f$ as detector response
+ * coefficients in a preferred polarization basis.  (It is thereby
+ * more general than the JKS expressions and could be used e.g., with
+ * the response tensor of a bar detector with no further modification
+ * needed.)
+ */
+void
+old_LALNewGetAMCoeffs(LALStatus *status,			/*< [in/out] LAL status structure pointer */
+	       AMCoeffs *coeffs,			/*< [out] amplitude-coeffs {a(t_i), b(t_i)} */
+	       const DetectorStateSeries *DetectorStates,/*< timeseries of detector states */
+	       SkyPosition skypos			/*< {alpha,delta} of the source */
+	       )
+{
+  REAL4 delta, alpha;
+  REAL4 sin1delta, cos1delta;
+  REAL4 sin1alpha, cos1alpha;
+
+  REAL4 xi1, xi2;
+  REAL4 eta1, eta2, eta3;
+  REAL4 norm;
+  UINT4 i, numSteps;
+
+  INITSTATUS(status);
+
+  /*---------- check input ---------- */
+  ASSERT ( DetectorStates, status, LALCOMPUTEAMH_ENULL, LALCOMPUTEAMH_MSGENULL);
+
+  numSteps = DetectorStates->length;
+
+  /* require the coeffients-vectors to be allocated and consistent with timestamps */
+  ASSERT ( coeffs, status, LALCOMPUTEAMH_ENULL, LALCOMPUTEAMH_MSGENULL);
+  ASSERT ( coeffs->a && coeffs->b, status, LALCOMPUTEAMH_ENULL, LALCOMPUTEAMH_MSGENULL);
+  ASSERT ( (coeffs->a->length == numSteps) && (coeffs->b->length == numSteps), status,
+	   LALCOMPUTEAMH_EINPUT,  LALCOMPUTEAMH_MSGEINPUT);
+
+  /* require sky-pos to be in equatorial coordinates */
+  ASSERT ( skypos.system == COORDINATESYSTEM_EQUATORIAL, status,
+	   SKYCOORDINATESH_ESYS, SKYCOORDINATESH_MSGESYS );
+
+  /*---------- We write components of xi and eta vectors in SSB-fixed coords */
+  alpha = skypos.longitude;
+  delta = skypos.latitude;
+
+  if( XLALSinCosLUT (&sin1delta, &cos1delta, delta ) != XLAL_SUCCESS )
+    ABORT( status->statusPtr, LAL_EXLAL, "XLALSinCosLUT (&sin1delta, &cos1delta, delta ) failed" );
+
+  if( XLALSinCosLUT (&sin1alpha, &cos1alpha, alpha ) != XLAL_SUCCESS )
+    ABORT( status->statusPtr, LAL_EXLAL, "XLALSinCosLUT (&sin1alpha, &cos1alpha, alpha ) failed" );
+
+  // see Eq.(17) in CFSv2 notes (version v3):
+  // https://dcc.ligo.org/cgi-bin/private/DocDB/ShowDocument?docid=1665&version=3
+  xi1 =   sin1alpha;
+  xi2 =  -cos1alpha;
+  eta1 = -sin1delta * cos1alpha;
+  eta2 = -sin1delta * sin1alpha;
+  eta3 = cos1delta;
+
+  /*---------- Compute the a(t_i) and b(t_i) ---------- */
+  coeffs->A = 0;
+  coeffs->B = 0;
+  coeffs->C = 0;
+  coeffs->D = 0;
+  for ( i=0; i < numSteps; i++ )
+    {
+      REAL4 ai, bi;
+
+      SymmTensor3 *d = &(DetectorStates->data[i].detT);
+
+      ai =    d->d11 * ( xi1 * xi1 - eta1 * eta1 )
+	+ 2 * d->d12 * ( xi1*xi2 - eta1*eta2 )
+	- 2 * d->d13 *             eta1 * eta3
+	+     d->d22 * ( xi2*xi2 - eta2*eta2 )
+	- 2 * d->d23 *             eta2 * eta3
+	-     d->d33 *             eta3*eta3;
+
+      bi =    d->d11 * 2 * xi1 * eta1
+	+ 2 * d->d12 *   ( xi1 * eta2 + xi2 * eta1 )
+	+ 2 * d->d13 *     xi1 * eta3
+	+     d->d22 * 2 * xi2 * eta2
+	+ 2 * d->d23 *     xi2 * eta3;
+
+      /*
+      printf("xi = (%f,%f)\n",xi1,xi2);
+      printf("eta = (%f,%f,%f)\n",eta1,eta2,eta3);
+      printf("d = (%f %f %f\n",d->d11,d->d12,d->d13);
+      printf("     %f %f %f\n",d->d12,d->d22,d->d23);
+      printf("     %f %f %f)\n",d->d13,d->d23,d->d33);
+      */
+
+      coeffs->a->data[i] = ai;
+      coeffs->b->data[i] = bi;
+
+      /* sum A, B, C on the fly */
+      coeffs->A += ai * ai;
+      coeffs->B += bi * bi;
+      coeffs->C += ai * bi;
+
+    } /* for i < numSteps */
+
+  /* finish calculation of A,B,C, D */
+  norm = 2.0f / numSteps;
+  coeffs->A *= norm;
+  coeffs->B *= norm;
+  coeffs->C *= norm;
+
+  coeffs->D = coeffs->A * coeffs->B - coeffs->C * coeffs->C;
+
+  RETURN(status);
+
+} /* old_LALNewGetAMCoeffs() */

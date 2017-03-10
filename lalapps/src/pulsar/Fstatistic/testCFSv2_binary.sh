@@ -82,7 +82,7 @@ fi
 echo "done."
 
 ## ---------- predict F-stat value 'PFS'
-cmdline="${pfs_code} --Alpha=$Alpha --Delta=$Delta --Freq=$Freq --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --IFO=$IFO --DataFiles='$SFTdir/*.sft' --SignalOnly"
+cmdline="${pfs_code} --Alpha=$Alpha --Delta=$Delta --Freq=$Freq --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --IFO=$IFO --DataFiles='$SFTdir/*.sft' --PureSignal --assumeSqrtSX=1"
 if [ "$DEBUG" ]; then echo $cmdline; fi
 echo -n "Running $cmdline ... "
 resPFS0=`$cmdline`
@@ -90,7 +90,7 @@ resPFS=`echo $resPFS0 | awk '{printf "%g", $1}'`
 echo "done:         2F_PFS = $resPFS"
 
 ## ---------- targeted CFSv2 search
-cfs_CL=" --refTime=${refTime} --Alpha=$Alpha --Delta=$Delta  --Freq=$Freq --f1dot=$f1dot --orbitasini=$orbitasini --orbitPeriod=$orbitPeriod --orbitEcc=$orbitEcc --orbitArgp=$orbitArgp --orbitTp=$orbitTp --DataFiles='$SFTdir/*.sft' --SignalOnly"
+cfs_CL=" --refTime=${refTime} --Alpha=$Alpha --Delta=$Delta  --Freq=$Freq --f1dot=$f1dot --orbitasini=$orbitasini --orbitPeriod=$orbitPeriod --orbitEcc=$orbitEcc --orbitArgp=$orbitArgp --orbitTp=$orbitTp --DataFiles='$SFTdir/*.sft' --assumeSqrtSX=1"
 cmdline="$cfs_code $cfs_CL  --outputLoudest=$outfileCFS"
 if [ "$DEBUG" ]; then echo $cmdline; fi
 echo -n "Running $cmdline ... "

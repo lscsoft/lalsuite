@@ -1228,7 +1228,7 @@ static double DPhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p, PNPhas
  * A struct containing all the parameters that need to be calculated
  * to compute the phenomenological phase
  */
-static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double eta, double chi1, double chi2, double finspin, const LALSimInspiralTestGRParam *extraParams) {
+static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double eta, double chi1, double chi2, double finspin, LALDict *extraParams) {
 
   IMRPhenomDPhaseCoefficients *p = (IMRPhenomDPhaseCoefficients *) XLALMalloc(sizeof(IMRPhenomDPhaseCoefficients));
 
@@ -1258,21 +1258,18 @@ static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double et
   p->fRD = fring(eta, chi1, chi2, finspin);
   p->fDM = fdamp(eta, chi1, chi2, finspin);
 
-  if (extraParams!=NULL)
-    {
-      if (XLALSimInspiralTestGRParamExists(extraParams,"dsigma1")) p->sigma1*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dsigma1"));
-      if (XLALSimInspiralTestGRParamExists(extraParams,"dsigma2")) p->sigma2*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dsigma2"));
-      if (XLALSimInspiralTestGRParamExists(extraParams,"dsigma3")) p->sigma3*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dsigma3"));
-      if (XLALSimInspiralTestGRParamExists(extraParams,"dsigma4")) p->sigma4*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dsigma4"));
-      if (XLALSimInspiralTestGRParamExists(extraParams,"dbeta1")) p->beta1*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dbeta1"));
-      if (XLALSimInspiralTestGRParamExists(extraParams,"dbeta2")) p->beta2*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dbeta2"));
-      if (XLALSimInspiralTestGRParamExists(extraParams,"dbeta3")) p->beta3*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dbeta3"));
-      if (XLALSimInspiralTestGRParamExists(extraParams,"dalpha1")) p->alpha1*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dalpha1"));
-      if (XLALSimInspiralTestGRParamExists(extraParams,"dalpha2")) p->alpha2*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dalpha2"));
-      if (XLALSimInspiralTestGRParamExists(extraParams,"dalpha3")) p->alpha3*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dalpha3"));
-      if (XLALSimInspiralTestGRParamExists(extraParams,"dalpha4")) p->alpha4*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dalpha4"));
-      if (XLALSimInspiralTestGRParamExists(extraParams,"dalpha5")) p->alpha5*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dalpha5"));
-    }
+  p->sigma1*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDSigma1(extraParams));
+  p->sigma2*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDSigma2(extraParams));
+  p->sigma3*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDSigma3(extraParams));
+  p->sigma4*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDSigma4(extraParams));
+  p->beta1*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDBeta1(extraParams));
+  p->beta2*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDBeta2(extraParams));
+  p->beta3*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDBeta3(extraParams));
+  p->alpha1*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDAlpha1(extraParams));
+  p->alpha2*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDAlpha2(extraParams));
+  p->alpha3*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDAlpha3(extraParams));
+  p->alpha4*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDAlpha4(extraParams));
+  p->alpha5*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDAlpha5(extraParams));
 
   return p;
 }

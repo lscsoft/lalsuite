@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
       numSFTs->data[X] = inputData.multiSFTs->data[X]->length;		/* number of sfts for IFO X */
     }
 
-    LAL_CALL ( LALCreateMultiSFTVector ( &status, &SSBmultiSFTs, inputData.numBins, numSFTs ), &status );
+    XLAL_CHECK_MAIN ( ( SSBmultiSFTs = XLALCreateMultiSFTVector ( inputData.numBins, numSFTs ) ) != NULL, XLAL_EFUNC );
 
     XLALDestroyUINT4Vector ( numSFTs );
 
@@ -201,16 +201,16 @@ int main(int argc, char *argv[])
 
   /* write output LFT */
   if ( uvar.outputLFT ) {
-    LAL_CALL ( LALWriteSFT2file ( &status, outputLFT, uvar.outputLFT, inputData.dataSummary), &status);
+    XLAL_CHECK_MAIN ( XLALWriteSFT2file (outputLFT, uvar.outputLFT, inputData.dataSummary) == XLAL_SUCCESS, XLAL_EFUNC);
   }
 
   /* Free config-Variables and userInput stuff */
   LAL_CALL (LALDestroyUserVars (&status), &status);
 
   LALFree ( inputData.dataSummary );
-  LAL_CALL ( LALDestroyMultiSFTVector (&status, &inputData.multiSFTs), &status );
-  LAL_CALL ( LALDestroySFTtype ( &status, &outputLFT ), &status );
-  LAL_CALL ( LALDestroyMultiSFTVector (&status, &SSBmultiSFTs), &status);
+  XLALDestroyMultiSFTVector ( inputData.multiSFTs);
+  XLALDestroySFT ( outputLFT );
+  XLALDestroyMultiSFTVector ( SSBmultiSFTs);
 
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
@@ -282,7 +282,7 @@ LoadInputSFTs ( LALStatus *status, InputSFTData *sftData, const UserInput_t *uva
   /* ----- get full SFT-catalog of all matching (multi-IFO) SFTs */
   LogPrintf (LOG_DEBUG, "Finding all SFTs to load ... ");
 
-  TRY ( LALSFTdataFind ( status->statusPtr, &catalog, uvar->inputSFTs, &constraints ), status);
+  XLAL_CHECK_LAL ( status, ( catalog = XLALSFTdataFind ( uvar->inputSFTs, &constraints ) ) != NULL, XLAL_EFUNC);
   LogPrintfVerbatim (LOG_DEBUG, "done. (found %d SFTs)\n", catalog->length);
 
   if ( catalog->length == 0 )
@@ -311,9 +311,9 @@ LoadInputSFTs ( LALStatus *status, InputSFTData *sftData, const UserInput_t *uva
       fMax = uvar->fmax;
 
     LogPrintf (LOG_DEBUG, "Loading SFTs ... ");
-    TRY ( LALLoadMultiSFTs ( status->statusPtr, &multiSFTs, catalog, fMin, fMax ), status );
+    XLAL_CHECK_LAL ( status, ( multiSFTs = XLALLoadMultiSFTs ( catalog, fMin, fMax ) ) != NULL, XLAL_EFUNC );
     LogPrintfVerbatim (LOG_DEBUG, "done.\n");
-    TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
+    XLALDestroySFTCatalog (catalog );
 
     sftData->fmin = multiSFTs->data[0]->data[0].f0;
     sftData->numBins = multiSFTs->data[0]->data[0].data->length;

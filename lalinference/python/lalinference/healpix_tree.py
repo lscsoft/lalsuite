@@ -304,6 +304,7 @@ def interpolate_nested(m, nest=False):
 
 
 def _reconstruct_nested_breadthfirst(m, extra):
+    m = np.asarray(m)
     max_npix = len(m)
     max_nside = hp.npix2nside(max_npix)
     max_order = hp.nside2order(max_nside)

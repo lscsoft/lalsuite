@@ -220,7 +220,7 @@ TNInput.f1, TNInput.f2, TNInput.t0);
     baryinput.tgps.gpsSeconds = TNInput.epoch.gpsSeconds;
     baryinput.tgps.gpsNanoSeconds = TNInput.epoch.gpsNanoSeconds;
 
-    /* set up RA, DEC, and distance variables for LALBarycenter*/
+    /* set up RA, DEC, and distance variables for XLALBarycenter*/
     baryinput.delta = pulsarParams.dec + dtpos*pulsarParams.pmdec;
     baryinput.alpha = pulsarParams.ra +
       dtpos*pulsarParams.pmra/cos(baryinput.delta);

@@ -29,7 +29,7 @@
 
 #include <lal/VectorMath.h>
 
-/* for access to internal prototypes for FPU functions, for reference results */
+/* for access to internal prototypes for generic (GEN) functions, for reference results */
 #include "../../src/vectorops/VectorMath_internal.h"
 
 // ---------- Macros ----------
@@ -39,7 +39,7 @@
 // ----- test and benchmark operators with 1 REAL4 vector input and 1 REAL4 vector output (S2S) ----------
 #define TESTBENCH_VECTORMATH_S2S(name,in)                               \
   {                                                                     \
-    XLAL_CHECK ( XLALVector##name##REAL4_FPU( xOutRef, in, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+    XLAL_CHECK ( XLALVector##name##REAL4_GEN( xOutRef, in, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
     tic = XLALGetCPUTime();                                           \
     for (UINT4 l=0; l < Nruns; l ++ ) {                                 \
       XLAL_CHECK ( XLALVector##name##REAL4( xOut, in, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
@@ -61,7 +61,7 @@
 
 #define TESTBENCH_VECTORMATH_S2SS(name,in)                              \
   {                                                                     \
-    XLAL_CHECK ( XLALVector##name##REAL4_FPU( xOutRef, xOutRef2, xIn, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+    XLAL_CHECK ( XLALVector##name##REAL4_GEN( xOutRef, xOutRef2, xIn, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
     tic = XLALGetCPUTime();                                               \
     for (UINT4 l=0; l < Nruns; l ++ ) {                                 \
       XLAL_CHECK ( XLALVector##name##REAL4( xOut, xOut2, xIn, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
@@ -87,7 +87,7 @@
 
 #define TESTBENCH_VECTORMATH_SS2S(name,in1,in2)                         \
   {                                                                     \
-    XLAL_CHECK ( XLALVector##name##REAL4_FPU( xOutRef, in1, in2, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+    XLAL_CHECK ( XLALVector##name##REAL4_GEN( xOutRef, in1, in2, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
     tic = XLALGetCPUTime();                                             \
     for (UINT4 l=0; l < Nruns; l ++ ) {                                 \
       XLAL_CHECK ( XLALVector##name##REAL4( xOut, in1, in2, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \

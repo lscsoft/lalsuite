@@ -56,6 +56,9 @@ struct tagBarycenterBuffer
   BOOLEAN active;		/// switch set on TRUE of buffer has been filled
 }; // struct tagBarycenterBuffer
 
+/* Internal functions */
+static void precessionMatrix( REAL8 prn[3][3], REAL8 mjd, REAL8 dpsi, REAL8 deps );
+static void observatoryEarth( REAL8 obsearth[3], const LALDetector det, const LIGOTimeGPS *tgps, REAL8 gmst, REAL8 dpsi, REAL8 deps );
 
 /**
  * \author Curt Cutler
@@ -812,7 +815,7 @@ XLALBarycenterEarthNew ( EarthState *earth,                /**< [out] the earth'
  *
  * Actually, the returned \f$t_e\f$ is
  * the emission time plus the constant light-travel-time from
- * source to SSB.) The inputs to LALBarycenter(), through
+ * source to SSB.) The inputs to XLALBarycenter(), through
  * the BarycenterInput structure, are the source location,
  * detector site identifier, and GPS arrival time.
  * The function returns the  emission time \f$t_e(t_a)\f$, the
@@ -824,7 +827,7 @@ XLALBarycenterEarthNew ( EarthState *earth,                /**< [out] the earth'
 int
 XLALBarycenter ( EmissionTime *emit, 			/**< [out] emission-time information */
                  const BarycenterInput *baryinput, 	/**< [in] info about detector and source-location */
-                 const EarthState *earth) 		/**< [in] earth-state (from LALBarycenterEarth()) */
+                 const EarthState *earth) 		/**< [in] earth-state (from XLALBarycenterEarth()) */
 {
   REAL8 longitude,latitude,rd;  /*geocentric (not geodetic!!) longitude
                                   and latitude of detector vertex, and
@@ -1129,7 +1132,7 @@ XLALBarycenter ( EmissionTime *emit, 			/**< [out] emission-time information */
 int
 XLALBarycenterOpt ( EmissionTime *emit, 		/**< [out] emission-time information */
                     const BarycenterInput *baryinput, 	/**< [in] info about detector and source-location */
-                    const EarthState *earth, 		/**< [in] earth-state (from LALBarycenterEarth()) */
+                    const EarthState *earth, 		/**< [in] earth-state (from XLALBarycenterEarth()) */
                     BarycenterBuffer **buffer		/**< [in/out] internal buffer for speed optimization */
                     )
 {
@@ -1457,52 +1460,6 @@ XLALBarycenterOpt ( EmissionTime *emit, 		/**< [out] emission-time information *
   return XLAL_SUCCESS;
 
 } /* XLALBarycenterOpt() */
-
-
-
-/* ==================== deprecated LAL interface (only wrappers to XLAL-fcts now) ==================== */
-
-/**
- * Deprecated LAL wrapper to XLALBarycenterEarth()
- * \deprecated use XLALBarycenterEarth() instead.
- */
-void
-LALBarycenterEarth(LALStatus *status,		/**< [in/out] LAL status structure pointer */
-		   EarthState *earth, 		/**< [out] the earth's state at time tGPS */
-		   const LIGOTimeGPS *tGPS, 	/**< [in] GPS time tgps */
-		   const EphemerisData *edat) 	/**< [in] ephemeris-files */
-{
-  INITSTATUS(status);
-
-  if ( XLALBarycenterEarth ( earth, tGPS, edat) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALBarycenterEarth() failed with xlalErrno = %d\n", __func__, xlalErrno );
-    ABORT ( status, LALBARYCENTERH_EXLAL, LALBARYCENTERH_MSGEXLAL);
-  }
-
-  RETURN(status);
-
-} /* LALBarycenterEarth() */
-
-/**
- * Deprecated LAL wrapper to XLALBarycenter()
- * \deprecated use XLALBarycenter() instead.
- */
-void
-LALBarycenter(LALStatus *status,		/**< [in/out] LAL status structure pointer */
-	      EmissionTime *emit, 		/**< [out] emission-time information */
-	      const BarycenterInput *baryinput, /**< [in] info about detector and source-location */
-	      const EarthState *earth) 		/**< [in] earth-state (from LALBarycenterEarth()) */
-{
-  INITSTATUS(status);
-
-  if ( XLALBarycenter ( emit, baryinput, earth ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALBarycenter() failed with xlalErrno = %d\n", __func__, xlalErrno );
-    ABORT ( status, LALBARYCENTERH_EXLAL, LALBARYCENTERH_MSGEXLAL);
-  }
-
-  RETURN(status);
-
-} /* LALBarycenter() */
 
 /**
  * Function to calculate the precession matrix give Earth nutation values

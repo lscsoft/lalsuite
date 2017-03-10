@@ -215,31 +215,31 @@ int main(int argc, char *argv[]){
 
 
   /* register user input variables */
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ifo",             'i', UVAR_OPTIONAL, "Detector L1, H1, H2, G1",       &uvar_ifo ),            &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",             &uvar_blocksRngMed),    &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "f0",              'f', UVAR_OPTIONAL, "Start search frequency",        &uvar_f0),              &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "fSearchBand",     'b', UVAR_OPTIONAL, "Search frequency band",         &uvar_fSearchBand),     &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "peakThreshold",   't', UVAR_OPTIONAL, "Peak selection threshold",      &uvar_peakThreshold),   &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",          &uvar_earthEphemeris),  &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",            &uvar_sunEphemeris),    &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_OPTIONAL, "SFT Directory",                 &uvar_sftDir),          &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",        'o', UVAR_OPTIONAL, "Output file prefix",            &uvar_fnameout),        &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "alpha",           'r', UVAR_OPTIONAL, "Right ascension",               &uvar_alpha),           &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "delta",           'l', UVAR_OPTIONAL, "Declination",                   &uvar_delta),           &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "patchSizeAlpha",  'R', UVAR_OPTIONAL, "Patch size in right ascension", &uvar_patchSizeAlpha),  &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "patchSizeDelta",  'L', UVAR_OPTIONAL, "Patch size in declination",     &uvar_patchSizeDelta),  &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "patch",           'P', UVAR_OPTIONAL, "Inject in patch if 0",          &uvar_AllSkyFlag),      &status);  
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nMCloop",         'N', UVAR_OPTIONAL, "Number of MC injections",       &uvar_nMCloop),         &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "h0Min",           'm', UVAR_OPTIONAL, "Smallest h0 to inject",         &uvar_h0Min),           &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "h0Max",           'M', UVAR_OPTIONAL, "Largest h0 to inject",          &uvar_h0Max),           &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nh0",             'n', UVAR_OPTIONAL, "Number of h0 values to inject", &uvar_nh0),             &status);  
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "harmonicsfile",   'H', UVAR_OPTIONAL, "List of known lines",           &uvar_harmonicsfile),   &status);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_ifo,            "ifo",            STRING, 'i', OPTIONAL, "Detector L1, H1, H2, G1" ) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_blocksRngMed,   "blocksRngMed",   INT4,   'w', OPTIONAL, "RngMed block size") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_f0,             "f0",             REAL8,  'f', OPTIONAL, "Start search frequency") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fSearchBand,    "fSearchBand",    REAL8,  'b', OPTIONAL, "Search frequency band") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_peakThreshold,  "peakThreshold",  REAL8,  't', OPTIONAL, "Peak selection threshold") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_earthEphemeris, "earthEphemeris", STRING, 'E', OPTIONAL, "Earth Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sunEphemeris,   "sunEphemeris",   STRING, 'S', OPTIONAL, "Sun Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,         "sftDir",         STRING, 'D', OPTIONAL, "SFT Directory") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fnameout,       "fnameout",       STRING, 'o', OPTIONAL, "Output file prefix") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_alpha,          "alpha",          REAL8,  'r', OPTIONAL, "Right ascension") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_delta,          "delta",          REAL8,  'l', OPTIONAL, "Declination") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_patchSizeAlpha, "patchSizeAlpha", REAL8,  'R', OPTIONAL, "Patch size in right ascension") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_patchSizeDelta, "patchSizeDelta", REAL8,  'L', OPTIONAL, "Patch size in declination") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_AllSkyFlag,     "patch",          INT4,   'P', OPTIONAL, "Inject in patch if 0") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_nMCloop,        "nMCloop",        INT4,   'N', OPTIONAL, "Number of MC injections") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_h0Min,          "h0Min",          REAL8,  'm', OPTIONAL, "Smallest h0 to inject") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_h0Max,          "h0Max",          REAL8,  'M', OPTIONAL, "Largest h0 to inject") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_nh0,            "nh0",            INT4,   'n', OPTIONAL, "Number of h0 values to inject") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_harmonicsfile,  "harmonicsfile",  STRING, 'H', OPTIONAL, "List of known lines") == XLAL_SUCCESS, XLAL_EFUNC);
 
 
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     exit(1);
   
@@ -256,7 +256,7 @@ int main(int argc, char *argv[]){
   }
 
   /* get the log string */
-  LAL_CALL( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
+  XLAL_CHECK_MAIN( ( logstr = XLALUserVarGetLog(UVAR_LOGFMT_CFGFILE) ) != NULL, XLAL_EFUNC);  
 
 
   fprintf( fpLog, "## Log file for MCInjectHoughS2\n\n");
@@ -455,14 +455,14 @@ int main(int argc, char *argv[]){
 
     /* set detector constraint */
     constraints.detector = NULL;
-    if ( LALUserVarWasSet( &uvar_ifo ) )    
+    if ( XLALUserVarWasSet( &uvar_ifo ) )    
       constraints.detector = XLALGetChannelPrefix ( uvar_ifo );
 
     /* get sft catalog */
     tempDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
     strcpy(tempDir, uvar_sftDir);
     strcat(tempDir, "/*SFT*.*");
-    LAL_CALL( LALSFTdataFind( &status, &catalog, tempDir, &constraints), &status);
+    XLAL_CHECK_MAIN( ( catalog = XLALSFTdataFind( tempDir, &constraints) ) != NULL, XLAL_EFUNC);
 
 
     /* get some sft parameters */
@@ -481,7 +481,7 @@ int main(int argc, char *argv[]){
     tSamplingRate = 2.0*deltaF*(sftlength -1.);
 
     /* get SFT timestamps */
-    LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &timeV, catalog ), &status);  	
+    XLAL_CHECK_MAIN( ( timeV = XLALTimestampsFromSFTCatalog( catalog ) ) != NULL, XLAL_EFUNC);  	
 
     /* add wings for Doppler modulation and running median block size*/
     doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
@@ -490,20 +490,20 @@ int main(int argc, char *argv[]){
 
     /* read sfts */
     /* read sft files making sure to add extra bins for running median */
-    LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, catalog, f_min, f_max), &status);
+    XLAL_CHECK_MAIN( ( inputSFTs = XLALLoadSFTs ( catalog, f_min, f_max) ) != NULL, XLAL_EFUNC);
 
 
     /* calculation of weights comes here */
 
     /* normalize sfts */
-    LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed), &status);
+    XLAL_CHECK_MAIN( XLALNormalizeSFTVect( inputSFTs, uvar_blocksRngMed, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC);
 
         
     /* free memory */
-    if ( LALUserVarWasSet( &uvar_ifo ) )    
+    if ( XLALUserVarWasSet( &uvar_ifo ) )    
       LALFree( constraints.detector );
     LALFree( tempDir);
-    LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	 
+    XLALDestroySFTCatalog(catalog );  	 
 
   } 
    
@@ -523,13 +523,6 @@ int main(int argc, char *argv[]){
 
 
 
-  /******************************************************************/ 
-  /*   setting of ephemeris info */ 
-  /******************************************************************/ 
-  edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
-  (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
-  
   /******************************************************************/
   /* compute detector velocity for those time stamps  
      if it is too slow , we can read it from the file genrated from the driver*/
@@ -549,7 +542,7 @@ int main(int argc, char *argv[]){
     velPar.edat = NULL;
 
     /* read in ephemeris data */
-    LAL_CALL( LALInitBarycenter( &status, edat), &status);
+    XLAL_CHECK_MAIN( ( edat = XLALInitBarycenter( uvar_earthEphemeris, uvar_sunEphemeris ) ) != NULL, XLAL_EFUNC);
     velPar.edat = edat;
     
     for(j=0; j< velV.length; ++j){
@@ -833,7 +826,7 @@ int main(int argc, char *argv[]){
     LALFree(signalTseries->data);
     LALFree(signalTseries);
     signalTseries =NULL;
-    LAL_CALL(LALDestroySFTVector(&status, &outputSFTs),&status );
+    XLALDestroySFTVector( outputSFTs);
     outputSFTs = NULL;
     
   } /* Closing MC loop */
@@ -855,7 +848,7 @@ int main(int argc, char *argv[]){
   LALFree(periPSD.psd.data);
   LALFree(pg1.data);
 
-  LAL_CALL(LALDestroyTimestampVector ( &status, &timeV), &status); 
+  XLALDestroyTimestampVector (timeV); 
   
   LALFree(timeDiffV.data);
   LALFree(velV.data);
@@ -873,11 +866,9 @@ int main(int argc, char *argv[]){
   LALFree(pulsarInject.spindown.data);
   LALFree(pulsarTemplate.spindown.data);
    
-  LALFree(edat->ephemE);
-  LALFree(edat->ephemS);
-  LALFree(edat);
+  XLALDestroyEphemerisData(edat);
   
-  LAL_CALL(LALDestroySFTVector(&status, &inputSFTs),&status );
+  XLALDestroySFTVector( inputSFTs);
 
   if (nLines > 0)
     {
@@ -886,7 +877,7 @@ int main(int argc, char *argv[]){
       LALFree(lines.rightWing);
     }
 
-  LAL_CALL (LALDestroyUserVars(&status), &status);  
+  XLALDestroyUserVars();  
   LALCheckMemoryLeaks();
   
   

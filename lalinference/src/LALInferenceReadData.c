@@ -91,9 +91,9 @@ struct fvec {
 #define LALINFERENCE_DEFAULT_FLOW "40.0"
 
 static void LALInferenceSetGPSTrigtime(LIGOTimeGPS *GPStrig, ProcessParamsTable *commandLine);
-struct fvec *interpFromFile(char *filename);
+struct fvec *interpFromFile(char *filename, REAL8 squareinput);
 
-struct fvec *interpFromFile(char *filename){
+struct fvec *interpFromFile(char *filename, REAL8 squareinput){
 	UINT4 fileLength=0;
 	UINT4 i=0;
 	UINT4 minLength=100; /* size of initial file buffer, and also size of increment */
@@ -109,14 +109,20 @@ struct fvec *interpFromFile(char *filename){
 		exit(1);
 	}
 	while(2==fscanf(interpfile," %lf %lf ", &f, &x )){
-		interp[i].f=f; interp[i].x=x*x;
+		interp[i].f=f;
+		if (squareinput) {
+			interp[i].x=x*x;
+		}
+		else {
+			interp[i].x=x;
+		}
 		i++;
 		if(i>fileLength-1){ /* Grow the array */
 			interp=XLALRealloc(interp,(fileLength+minLength)*sizeof(struct fvec));
 			fileLength+=minLength;
 		}
 	}
-	interp[i].f=0; interp[i].x=0;
+	interp[i].f=0.0; interp[i].x=0.0;
 	fileLength=i+1;
 	interp=XLALRealloc(interp,fileLength*sizeof(struct fvec)); /* Resize array */
 	fclose(interpfile);
@@ -126,25 +132,23 @@ struct fvec *interpFromFile(char *filename){
             XLALPrintError("Error: read no records from %s\n",filename);
             exit(1);
     }
-	return interp;
+    return interp;
 }
 
 REAL8 interpolate(struct fvec *fvec, REAL8 f);
 REAL8 interpolate(struct fvec *fvec, REAL8 f){
 	int i=0;
 	REAL8 a=0.0; /* fractional distance between bins */
-	REAL8 delta=0.0;
-	if(f<fvec[0].f) return(0.0);
+	if(f<fvec[1].f) return(INFINITY); /* Frequency below minimum */
 	while(fvec[i].f<f && (fvec[i].x!=0.0 )){i++;}; //&& fvec[i].f!=0.0)){i++;};
-	if (fvec[i].f==0.0 && fvec[i].x==0.0) /* Frequency above moximum */
+	if (fvec[i].f==0.0 && fvec[i].x==0.0) /* Frequency above maximum */
 	{
-		return (fvec[i-1].x);
+		return (INFINITY);
 	}
-//  if(i==0){return (fvec[0].x);}
 	a=(fvec[i].f-f)/(fvec[i].f-fvec[i-1].f);
-	delta=fvec[i].x-fvec[i-1].x;
-	return (fvec[i-1].x + delta*a);
+	return (fvec[i-1].x*a + fvec[i].x*(1.0-a));
 }
+
 void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, ProcessParamsTable *commandLine);
 void enforce_m1_larger_m2(SimInspiralTable* injEvent);
 
@@ -208,26 +212,30 @@ static LALCache *GlobFramesPWD(char *ifo)
             fprintf( stderr, "error: no frame file files found\n");
             exit( 1 );
         }
-    CHAR ifoRegExPattern[6];
-    LALCache *frInCache=NULL;
-    /* sieve out the requested data type */
+        CHAR ifoRegExPattern[6];
+        LALCache *frInCache=NULL;
+        /* sieve out the requested data type */
         snprintf( ifoRegExPattern,
-                XLAL_NUM_ELEM(ifoRegExPattern), ".*%c.*",
-                ifo[0] );
-    {
+                        XLAL_NUM_ELEM(ifoRegExPattern), ".*%c.*",
+                        ifo[0] );
         fprintf(stderr,"GlobFramesPWD : Found unseived src files:\n");
         for(UINT4 i=0;i<frGlobCache->length;i++)
-            fprintf(stderr,"(%s,%s,%s)\n",frGlobCache->list[i].src,frGlobCache->list[i].dsc,frGlobCache->list[i].url);
-    }
-    frInCache = XLALCacheDuplicate(frGlobCache);
-    XLALCacheSieve(frInCache, 0, 0, ifoRegExPattern, NULL, NULL);
-    {
-        fprintf(stderr,"GlobFramesPWD : Sieved frames with pattern %s. Found src files:\n",ifoRegExPattern);
-        for(UINT4 i=0;i<frInCache->length;i++)
-            fprintf(stderr,"(%s,%s,%s)\n",frInCache->list[i].src,frInCache->list[i].dsc,frInCache->list[i].url);
-    }
+                        fprintf(stderr,"(%s,%s,%s)\n",frGlobCache->list[i].src,frGlobCache->list[i].dsc,frGlobCache->list[i].url);
+        frInCache = XLALCacheDuplicate(frGlobCache);
+        XLALCacheSieve(frInCache, 0, 0, ifoRegExPattern, NULL, NULL);
+        if ( ! frGlobCache->length )
+        {
+            fprintf( stderr, "error: no frame file files found after sieving\n");
+            exit( 1 );
+        }
+        else
+        {
+                fprintf(stderr,"GlobFramesPWD : Sieved frames with pattern %s. Found src files:\n",ifoRegExPattern);
+                for(UINT4 i=0;i<frInCache->length;i++)
+                        fprintf(stderr,"(%s,%s,%s)\n",frInCache->list[i].src,frInCache->list[i].dsc,frInCache->list[i].url);
+        }
 
-    return(frGlobCache);
+        return(frGlobCache);
 }
 
 static REAL8TimeSeries *readTseries(LALCache *cache, CHAR *channel, LIGOTimeGPS start, REAL8 length)
@@ -259,16 +267,16 @@ static REAL8TimeSeries *readTseries(LALCache *cache, CHAR *channel, LIGOTimeGPS 
 }
 
 /**
- * Parse the command line looking for options of the kind --ifo H1 --H1-channel H1:LDAS_STRAIN --H1-cache H1.cache --H1-flow 40.0 --H1-fhigh 4096.0 --H1-timeslide 100.0 --H1-psd psdascii.txt ...
+ * Parse the command line looking for options of the kind --ifo H1 --H1-channel H1:LDAS_STRAIN --H1-cache H1.cache --H1-flow 40.0 --H1-fhigh 4096.0 --H1-timeslide 100.0 --H1-asd asd_ascii.txt --H1-psd psd_ascii.txt ...
  * It is necessary to use this method instead of the old method for the pipeline to work in DAX mode. Warning: do not mix options between
  * the old and new style.
  */
-static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***ifos, char ***caches, char ***channels, char ***flows , char ***fhighs, char ***timeslides, char ***psds, UINT4 *N)
+static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***ifos, char ***caches, char ***channels, char ***flows , char ***fhighs, char ***timeslides, char ***asds, char ***psds, UINT4 *N)
 {
     /* Check that the input has no lists with [ifo,ifo] */
     ProcessParamsTable *this=commandLine;
     UINT4 i=0;
-    *caches=*ifos=*channels=*flows=*fhighs=*timeslides=*psds=NULL;
+    *caches=*ifos=*channels=*flows=*fhighs=*timeslides=*asds=*psds=NULL;
     *N=0;
     char tmp[128];
     if(!this) {fprintf(stderr,"No command line arguments given!\n"); exit(1);}
@@ -287,6 +295,7 @@ static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***i
     *flows=XLALCalloc(*N,sizeof(REAL8));
     *fhighs=XLALCalloc(*N,sizeof(REAL8));
     *timeslides=XLALCalloc(*N,sizeof(REAL8));
+    *asds=XLALCalloc(*N,sizeof(char *));
     *psds=XLALCalloc(*N,sizeof(char *));
 
     int globFrames=!!LALInferenceGetProcParamVal(commandLine,"--glob-frame-data");
@@ -321,6 +330,11 @@ static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***i
         sprintf(tmp,"--%s-timeslide",(*ifos)[i]);
         this=LALInferenceGetProcParamVal(commandLine,tmp);
         (*timeslides)[i]=XLALStringDuplicate(this?this->value:"0.0");
+
+        /* ASD */
+        sprintf(tmp,"--%s-asd",(*ifos)[i]);
+        this=LALInferenceGetProcParamVal(commandLine,tmp);
+        (*asds)[i]=this?XLALStringDuplicate(this->value):NULL;
 
         /* PSD */
         sprintf(tmp,"--%s-psd",(*ifos)[i]);
@@ -485,25 +499,7 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
         fprintf(out, "%10.10g %10.10g %10.10g\n", f, dre, dim);
       }
       fclose(out);
-      
-      ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
-      if(ppt) {
-        snprintf(filename, nameLength, "%s%s-ASD.dat", ppt->value, IFOdata[i].name);
-      }
-      else
-        snprintf(filename, nameLength, "%.3f_%s-ASD.dat",GPStrig.gpsSeconds+1e-9*GPStrig.gpsNanoSeconds, IFOdata[i].name);
-      out = fopen(filename, "w");
-      if(!out){
-        fprintf(stderr,"Unable to open the path %s for writing freq ASD files\n",filename);
-        exit(1);
-      }
-      for (j = 0; j < IFOdata[i].oneSidedNoisePowerSpectrum->data->length; j++) {
-        REAL8 f = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF*j;
-        REAL8 asd = sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]);
 
-        fprintf(out, "%10.10g %10.10g\n", f, asd);
-      }
-      fclose(out);
     }
 
   }
@@ -518,6 +514,7 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
     --IFO1-cache cache1         Cache files \n\
     [--IFO2-cache2 cache2 ...]      lal PSDs: LAL{Ad}LIGO, LALVirgo\n\
                                     lalsimuation PSDs: LALSim{Ad}LIGO, LALSim{Ad}Virgo\n\
+                                    interpolate from file: interp:asd_file.txt\n\
     --psdstart GPStime          GPS start time of PSD estimation data\n\
     --psdlength length          Length of PSD estimation data in seconds\n\
     --seglen length             Length of segments for PSD estimation and analysis in seconds\n\
@@ -536,9 +533,12 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
      [--IFO2-fhigh freq2 ...])      freq 0.5*srate)\n\
     (--IFO1-channel chan1       Specify channel names when reading cache files\n\
      [--IFO2-channel chan2 ...])\n\
+         (--IFO1-asd asd1-ascii.txt        Read in ASD from ascii file. This is not equivalent \n\
+     [--IFO2-asd asd2-ascii.txt ...])     to using --IFO1-cache interp:asd_file.txt since the former\n\
+                                          won't use the ascii ASD to generate fake noise. \n\
     (--IFO1-psd psd1-ascii.txt        Read in PSD from ascii file. This is not equivalent \n\
-     [--IFO2-psd psd2-ascii.txt ...])     to using --IFO1-cache interp:file.txt since the former\n\
-                                          won't use the ascii psd to generate fake noise. \n\
+     [--IFO2-psd psd2-ascii.txt ...])     to using --IFO1-cache interp:asd_file.txt since the former\n\
+                                          won't use the ascii PSD to generate fake noise. \n\
     (--dataseed number)         Specify random seed to use when generating data\n\
     (--lalinspiralinjection)    Enables injections via the LALInspiral package\n\
     (--inj-fref)                Reference frequency of parameters in injection XML (default 100Hz)\n\
@@ -575,7 +575,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     size_t seglen=0;
     REAL8TimeSeries *PSDtimeSeries=NULL;
     REAL8 padding=0.4;//Default was 1.0 second. However for The Event the Common Inputs specify a Tukey parameter of 0.1, so 0.4 second of padding for 8 seconds of data.
-    UINT4 Ncache=0,Npsd=0,Nifo=0,Nchannel=0,NfLow=0,NfHigh=0;
+    UINT4 Ncache=0,Nifo=0,Nchannel=0,NfLow=0,NfHigh=0;
     UINT4 i,j;
     //int FakeFlag=0; - set but not used
     char strainname[]="LSC-STRAIN";
@@ -587,6 +587,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     char *chartmp=NULL;
     char **channels=NULL;
     char **caches=NULL;
+    char **asds=NULL;
     char **psds=NULL;
     char **IFOnames=NULL;
     char **fLows=NULL,**fHighs=NULL;
@@ -602,11 +603,12 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 
     struct fvec *interp;
     int interpFlag=0;
+    REAL8 asdFlag=0;
 
     if(LALInferenceGetProcParamVal(commandLine,"--glob-frame-data")) globFrames=1;
 
     /* Check if the new style command line arguments are used */
-    INT4 dataOpts=getDataOptionsByDetectors(commandLine, &IFOnames, &caches, &channels, &fLows , &fHighs, &timeslides,&psds, &Nifo);
+    INT4 dataOpts=getDataOptionsByDetectors(commandLine, &IFOnames, &caches, &channels, &fLows, &fHighs, &timeslides, &asds, &psds, &Nifo);
     /* Check for options if not given in the new style */
     if(!dataOpts){
         if(!(globFrames||LALInferenceGetProcParamVal(commandLine,"--cache"))||!(LALInferenceGetProcParamVal(commandLine,"--IFO")||LALInferenceGetProcParamVal(commandLine,"--ifo")))
@@ -628,9 +630,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         if(ppt){
             LALInferenceParseCharacterOptionString(ppt->value,&fHighs,&NfHigh);
         }
-
-        ppt=LALInferenceGetProcParamVal(commandLine,"--psd");
-        if (ppt)  LALInferenceParseCharacterOptionString(ppt->value,&psds,&Npsd);
 
         if((ppt=LALInferenceGetProcParamVal(commandLine,"--timeslide"))) LALInferenceParseCharacterOptionString(ppt->value,&timeslides,&Ntimeslides);
         if(Nifo!=Ncache) {fprintf(stderr,"ERROR: Must specify equal number of IFOs and Cache files\n"); exit(1);}
@@ -812,9 +811,10 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         if( (globFrames)?0:strstr(caches[i],"interp:")==caches[i]){
           /* Extract the file name */
          char *interpfilename=&(caches[i][7]);
-         printf("Looking for interpolation file %s\n",interpfilename);
+         printf("Looking for ASD interpolation file %s\n",interpfilename);
          interpFlag=1;
-         interp=interpFromFile(interpfilename);
+         asdFlag=1;
+         interp=interpFromFile(interpfilename, asdFlag);
         }
         /* Check if fake data is requested */
        if( (globFrames)?0:(interpFlag || (!(strcmp(caches[i],"LALLIGO") && strcmp(caches[i],"LALVirgo") && strcmp(caches[i],"LALGEO") && strcmp(caches[i],"LALEGO") && strcmp(caches[i],"LALSimLIGO") && strcmp(caches[i],"LALSimAdLIGO") && strcmp(caches[i],"LALSimVirgo") && strcmp(caches[i],"LALSimAdVirgo") && strcmp(caches[i],"LALAdLIGO")))))
@@ -898,12 +898,30 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 
             }
             if(!cache) {fprintf(stderr,"ERROR: Cannot find any frame data!\n"); exit(1);}
-            if (!((psds)==NULL || (psds[i])==NULL)){
+            if ((!((psds[i])==NULL)) && (!((asds[i])==NULL))) {fprintf(stderr,"ERROR: Cannot provide both ASD and PSD file from command line!\n"); exit(1);}
+            if (!((asds)==NULL || (asds[i])==NULL)){
                 interp=NULL;
+                asdFlag=1;
+                char *interpfilename=&(asds[i][0]);
+                fprintf(stderr,"Reading ASD for %s using %s\n",IFOnames[i],interpfilename);
+                printf("Looking for ASD file %s for PSD interpolation\n",interpfilename);
+                interp=interpFromFile(interpfilename, asdFlag);
+                IFOdata[i].oneSidedNoisePowerSpectrum=(REAL8FrequencySeries *)
+                    XLALCreateREAL8FrequencySeries("spectrum",&GPSstart,0.0,
+                            (REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
+                if(!IFOdata[i].oneSidedNoisePowerSpectrum) XLAL_ERROR_NULL(XLAL_EFUNC);
+                for(j=0;j<IFOdata[i].oneSidedNoisePowerSpectrum->data->length;j++)
+                {
+                    MetaNoiseFunc(&status,&(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]),j*IFOdata[i].oneSidedNoisePowerSpectrum->deltaF,interp,NULL);
+                    //fprintf(stdout,"%lf\n",IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]);
+                }
+             }else if(!((psds)==NULL || (psds[i])==NULL)){
+                interp=NULL;
+                asdFlag=0;
                 char *interpfilename=&(psds[i][0]);
                 fprintf(stderr,"Reading PSD for %s using %s\n",IFOnames[i],interpfilename);
-                printf("Looking for psd interpolation file %s\n",interpfilename);
-                interp=interpFromFile(interpfilename);
+                printf("Looking for PSD file %s for PSD interpolation\n",interpfilename);
+                interp=interpFromFile(interpfilename, asdFlag);
                 IFOdata[i].oneSidedNoisePowerSpectrum=(REAL8FrequencySeries *)
                     XLALCreateREAL8FrequencySeries("spectrum",&GPSstart,0.0,
                             (REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
@@ -920,14 +938,14 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                 {fprintf(stderr,USAGE); return(NULL);}
 
                 fprintf(stderr,"Estimating PSD for %s using %i segments of %i samples (%lfs)\n",IFOnames[i],nSegs,(int)seglen,SegmentLength);
-                /*LIGOTimeGPS trueGPSstart=GPSstart;
+                LIGOTimeGPS trueGPSstart=GPSstart;
                 if(Ntimeslides) {
                   REAL4 deltaT=-atof(timeslides[i]);
                   XLALGPSAdd(&GPSstart, deltaT);
                   fprintf(stderr,"Slid PSD estimation of %s by %f s from %10.10lf to %10.10lf\n",IFOnames[i],deltaT,trueGPSstart.gpsSeconds+1e-9*trueGPSstart.gpsNanoSeconds,GPSstart.gpsSeconds+1e-9*GPSstart.gpsNanoSeconds);
-                }*/
+                }
                 PSDtimeSeries=readTseries(cache,channels[i],GPSstart,PSDdatalength);
-                //GPSstart=trueGPSstart;
+                GPSstart=trueGPSstart;
                 if(!PSDtimeSeries) {XLALPrintError("Error reading PSD data for %s\n",IFOnames[i]); exit(1);}
                 XLALResampleREAL8TimeSeries(PSDtimeSeries,1.0/SampleRate);
                 PSDtimeSeries=(REAL8TimeSeries *)XLALShrinkREAL8TimeSeries(PSDtimeSeries,(size_t) 0, (size_t) seglen*nSegs);
@@ -1234,6 +1252,25 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                 REAL8 dim = cimag(IFOdata[i].freqData->data->data[j]);
 
                 fprintf(out, "%10.10g %10.10g %10.10g\n", f, dre, dim);
+            }
+            fclose(out);
+
+            ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
+            if(ppt) {
+              snprintf(filename, nameLength, "%s%s-ASD.dat", ppt->value, IFOdata[i].name);
+            }
+            else
+              snprintf(filename, nameLength, "%.3f_%s-ASD.dat",GPStrig.gpsSeconds+1e-9*GPStrig.gpsNanoSeconds, IFOdata[i].name);
+            out = fopen(filename, "w");
+            if(!out){
+              fprintf(stderr,"Unable to open the path %s for writing freq ASD files\n",filename);
+              exit(1);
+            }
+            for (j = 0; j < IFOdata[i].oneSidedNoisePowerSpectrum->data->length; j++) {
+              REAL8 f = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF*j;
+              REAL8 asd = sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]);
+
+              fprintf(out, "%10.10g %10.10g\n", f, asd);
             }
             fclose(out);
 
@@ -1557,30 +1594,35 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
         fref = atoi(LALInferenceGetProcParamVal(commandLine,"--inj-fref")->value);
       }
 
-      LALSimInspiralWaveformFlags *waveFlags = XLALSimInspiralCreateWaveformFlags();
+      LALDict *LALpars=XLALCreateDict();
 
       /* Set the spin-frame convention */
 
       LALSimInspiralSpinOrder spinO = -1;
       if(LALInferenceGetProcParamVal(commandLine,"--inj-spinOrder")) {
         spinO = atoi(LALInferenceGetProcParamVal(commandLine,"--inj-spinOrder")->value);
-        XLALSimInspiralSetSpinOrder(waveFlags, spinO);
+        XLALSimInspiralWaveformParamsInsertPNSpinOrder(LALpars, spinO);
       }
       LALSimInspiralTidalOrder tideO = -1;
       if(LALInferenceGetProcParamVal(commandLine,"--inj-tidalOrder")) {
         tideO = atoi(LALInferenceGetProcParamVal(commandLine,"--inj-tidalOrder")->value);
-        XLALSimInspiralSetTidalOrder(waveFlags, tideO);
+        XLALSimInspiralWaveformParamsInsertPNTidalOrder(LALpars, tideO);
       }
+
       LALSimInspiralFrameAxis frameAxis = LAL_SIM_INSPIRAL_FRAME_AXIS_DEFAULT;
       if((ppt=LALInferenceGetProcParamVal(commandLine,"--inj-spin-frame"))) {
         frameAxis = XLALSimInspiralGetFrameAxisFromString(ppt->value);
       }
-      XLALSimInspiralSetFrameAxis(waveFlags,frameAxis);
+      XLALSimInspiralWaveformParamsInsertFrameAxis(LALpars,(int) frameAxis);
+
       if((ppt=LALInferenceGetProcParamVal(commandLine,"--inj-numreldata"))) {
-	XLALSimInspiralSetNumrelData(waveFlags, ppt->value);
+	XLALSimInspiralWaveformParamsInsertNumRelData(LALpars, ppt->value);
 	fprintf(stdout,"Injection will use %s.\n",ppt->value);
       }
-      LALSimInspiralTestGRParam *nonGRparams = NULL;
+      else if (strlen(injEvent->numrel_data) > 0) {
+        XLALSimInspiralWaveformParamsInsertNumRelData(LALpars, injEvent->numrel_data);
+      }
+
       /* Print a line with information about approximant, amporder, phaseorder, tide order and spin order */
       fprintf(stdout,"Injection will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i, tidal order %i, in the time domain with a reference frequency of %f.\n",approximant,XLALSimInspiralGetStringFromApproximant(approximant),order,amporder,(int) spinO, (int) tideO, (float) fref);
 
@@ -1588,18 +1630,24 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       REAL8 f_min = XLALSimInspiralfLow2fStart(injEvent->f_lower, amporder, approximant);
       printf("Injecting with f_min = %f.\n", f_min);
 
-      XLALSimInspiralChooseTDWaveform(&hplus, &hcross, injEvent->coa_phase, 1.0/InjSampleRate,
-                                      injEvent->mass1*LAL_MSUN_SI, injEvent->mass2*LAL_MSUN_SI, injEvent->spin1x,
-                                      injEvent->spin1y, injEvent->spin1z, injEvent->spin2x, injEvent->spin2y,
-                                      injEvent->spin2z, f_min, fref, injEvent->distance*LAL_PC_SI * 1.0e6,
-                                      injEvent->inclination, lambda1, lambda2, waveFlags,
-                                      nonGRparams, amporder, order, approximant);
+      XLALSimInspiralWaveformParamsInsertTidalLambda1(LALpars,lambda1);
+      XLALSimInspiralWaveformParamsInsertTidalLambda2(LALpars,lambda2);
+      XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(LALpars,amporder);
+      XLALSimInspiralWaveformParamsInsertPNPhaseOrder(LALpars,order);
+
+      XLALSimInspiralChooseTDWaveform(&hplus, &hcross, injEvent->mass1*LAL_MSUN_SI, injEvent->mass2*LAL_MSUN_SI,
+				      injEvent->spin1x, injEvent->spin1y, injEvent->spin1z,
+				      injEvent->spin2x, injEvent->spin2y, injEvent->spin2z,
+				      injEvent->distance*LAL_PC_SI * 1.0e6, injEvent->inclination,
+				      injEvent->coa_phase, 0., 0., 0.,
+				      1.0/InjSampleRate, f_min, fref,
+				      LALpars,  approximant);
+      XLALDestroyDict(LALpars);
+
       if(!hplus || !hcross) {
         fprintf(stderr,"Error: XLALSimInspiralChooseWaveform() failed to produce waveform.\n");
         exit(-1);
       }
-      XLALSimInspiralDestroyWaveformFlags(waveFlags);
-      XLALSimInspiralDestroyTestGRParam(nonGRparams);
       XLALResampleREAL8TimeSeries(hplus,thisData->timeData->deltaT);
       XLALResampleREAL8TimeSeries(hcross,thisData->timeData->deltaT);
       /* XLALSimInspiralChooseTDWaveform always ends the waveform at t=0 */
@@ -2238,30 +2286,30 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
     fprintf(stdout,"lambda2 set to %f\n",lambda2);
   }
 
-  /* Set up wave flags */
-  LALSimInspiralWaveformFlags *waveFlags = XLALSimInspiralCreateWaveformFlags();
+  /* Set up LAL dictionary */
+  LALDict* LALpars=XLALCreateDict();
 
   /* Set the spin-frame convention */
   ppt = LALInferenceGetProcParamVal(commandLine,"--inj-spin-frame");
   if(ppt) {
       if (!strcmp(ppt->value, "view"))
-          XLALSimInspiralSetFrameAxis(waveFlags, LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW);
+          XLALSimInspiralWaveformParamsInsertFrameAxis(LALpars, LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW);
       else if (!strcmp(ppt->value, "orbital-l"))
-          XLALSimInspiralSetFrameAxis(waveFlags, LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L);
+          XLALSimInspiralWaveformParamsInsertFrameAxis(LALpars, LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L);
       else if (!strcmp(ppt->value, "total-j"))
-          XLALSimInspiralSetFrameAxis(waveFlags, LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J);
+          XLALSimInspiralWaveformParamsInsertFrameAxis(LALpars, LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J);
   }
 
   LALSimInspiralSpinOrder spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_ALL;
   if(LALInferenceGetProcParamVal(commandLine, "--inj-spinOrder")) {
     spinO = atoi(LALInferenceGetProcParamVal(commandLine, "--inj-spinOrder")->value);
-    XLALSimInspiralSetSpinOrder(waveFlags, spinO);
+    XLALSimInspiralWaveformParamsInsertPNSpinOrder(LALpars, spinO);
   }
 
   LALSimInspiralTidalOrder tideO = LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL;
   if(LALInferenceGetProcParamVal(commandLine, "--inj-tidalOrder")) {
     tideO = atoi(LALInferenceGetProcParamVal(commandLine, "--inj-tidalOrder")->value);
-    XLALSimInspiralSetTidalOrder(waveFlags, tideO);
+    XLALSimInspiralWaveformParamsInsertPNTidalOrder(LALpars, tideO);
   }
 
   REAL8 deltaT = IFOdata->timeData->deltaT;
@@ -2275,8 +2323,6 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
     fref = atoi(LALInferenceGetProcParamVal(commandLine,"--inj-fref")->value);
   }
 
-  LALSimInspiralTestGRParam *nonGRparams = NULL;
-
  /* Print a line with information about approximant, amp_order, phaseorder, tide order and spin order */
   fprintf(stdout,"\n\n---\t\t ---\n");
  fprintf(stdout,"Injection will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i, tidal order %i, in the frequency domain.\n",approximant,XLALSimInspiralGetStringFromApproximant(approximant),phase_order,amp_order,(int) spinO,(int) tideO);
@@ -2284,12 +2330,13 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
 
   COMPLEX16FrequencySeries *hptilde=NULL, *hctilde=NULL;
 
-  XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, inj_table->coa_phase, deltaF,
-                                  inj_table->mass1*LAL_MSUN_SI, inj_table->mass2*LAL_MSUN_SI, inj_table->spin1x,
-                                  inj_table->spin1y, inj_table->spin1z, inj_table->spin2x, inj_table->spin2y,
-                                  inj_table->spin2z, f_min, f_max, fref, inj_table->distance*LAL_PC_SI * 1.0e6,
-                                  inj_table->inclination, lambda1, lambda2, waveFlags,
-                                  nonGRparams, amp_order, phase_order, approximant);
+  XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, inj_table->mass1*LAL_MSUN_SI, inj_table->mass2*LAL_MSUN_SI,
+				  inj_table->spin1x, inj_table->spin1y, inj_table->spin1z,
+				  inj_table->spin2x, inj_table->spin2y, inj_table->spin2z,
+				  inj_table->distance*LAL_PC_SI * 1.0e6, inj_table->inclination,
+				  inj_table->coa_phase, 0., 0., 0., deltaF, f_min, f_max, fref,
+				  LALpars, approximant);
+  XLALDestroyDict(LALpars);
 
   /* Fail if injection waveform generation was not successful */
   errnum = *XLALGetErrnoPtr();
@@ -2297,9 +2344,6 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
     XLALPrintError(" ERROR in InjectFD(): error encountered when injecting waveform. errnum=%d\n",errnum);
     exit(1);
   }
-
-  XLALSimInspiralDestroyWaveformFlags(waveFlags);
-  XLALSimInspiralDestroyTestGRParam(nonGRparams);
 
   LALInferenceIFOData *dataPtr;
   REAL8 Fplus, Fcross;
@@ -2661,7 +2705,7 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
   SimInspiralTable *injTable=NULL;
   FILE *tempfp;
   unsigned int n_basis_linear=0, n_basis_quadratic=0, n_samples=0, time_steps=0;
- 
+
   LIGOTimeGPS GPStrig;
   REAL8 endtime=0.0;
 
@@ -2720,7 +2764,7 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
 
 	  model->roq->frequencyNodesLinear = XLALCreateREAL8Sequence(n_basis_linear);
 	  model->roq->frequencyNodesQuadratic = XLALCreateREAL8Sequence(n_basis_quadratic);
-	  
+
 	  model->roq->trigtime = endtime;
 
           model->roq->frequencyNodesLinear = XLALCreateREAL8Sequence(n_basis_linear);
@@ -2859,10 +2903,10 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
 
 	for(unsigned int gg=0;gg < time_steps; gg++){
 
-		fread(&(tmp_tcs[gg]), sizeof(double), 1, tcFile); 
+		fread(&(tmp_tcs[gg]), sizeof(double), 1, tcFile);
 	}
 
-	
+
       for(unsigned int ii=0; ii<n_basis_linear;ii++){
 		for(unsigned int jj=0; jj<time_steps;jj++){
 
@@ -2871,13 +2915,14 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
 		tmp_imag_weight[jj] = cimag(thisData->roq->weightsLinear[ii*time_steps + jj]);
 
       		}
-
-	thisData->roq->weights_linear[ii].acc_real_weight_linear = gsl_interp_accel_alloc ();
- 	thisData->roq->weights_linear[ii].acc_imag_weight_linear = gsl_interp_accel_alloc ();
+  //gsl_interp_accel is not thread-safe, and each OpenMP thread will need its
+  //own gsl_interp_accel object.
+	thisData->roq->weights_linear[ii].acc_real_weight_linear = NULL;
+ 	thisData->roq->weights_linear[ii].acc_imag_weight_linear = NULL;
 
 	thisData->roq->weights_linear[ii].spline_real_weight_linear = gsl_spline_alloc (gsl_interp_linear, time_steps);
         gsl_spline_init(thisData->roq->weights_linear[ii].spline_real_weight_linear, tmp_tcs, tmp_real_weight, time_steps);
-      
+
         thisData->roq->weights_linear[ii].spline_imag_weight_linear = gsl_spline_alloc (gsl_interp_linear, time_steps);
         gsl_spline_init(thisData->roq->weights_linear[ii].spline_imag_weight_linear, tmp_tcs, tmp_imag_weight, time_steps);
 
@@ -2897,10 +2942,10 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
       for(unsigned int ii=0; ii<n_basis_quadratic;ii++){
 
 		fread(&(thisData->roq->weightsQuadratic[ii]), sizeof(double), 1, thisData->roq->weightsFileQuadratic);
-      }	
+      }
 
 
-      
+
       fprintf(stderr, "loaded %s ROQ weights\n", thisData->name);
       thisData = thisData->next;
     }

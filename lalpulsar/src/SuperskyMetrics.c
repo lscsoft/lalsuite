@@ -138,8 +138,11 @@ static gsl_matrix *SM_ComputePhaseMetric(
     par.multiNoiseFloor.length = 0;   // Indicates unit weights
   }
 
-  // Set reference time and fiducial frequency
-  par.signalParams.Doppler.refTime = *ref_time;
+  // Set reference time to segment mid-time, to improve stability of numerical calculation of metric
+  par.signalParams.Doppler.refTime = *start_time;
+  XLALGPSAdd( &par.signalParams.Doppler.refTime, 0.5 * XLALGPSDiff( end_time, start_time ) );
+
+  // Set fiducial frequency
   par.signalParams.Doppler.fkdot[0] = fiducial_calc_freq;
 
   // Do not project metric
@@ -152,9 +155,10 @@ static gsl_matrix *SM_ComputePhaseMetric(
   DopplerPhaseMetric *metric = XLALComputeDopplerPhaseMetric( &par, ephemerides );
   XLAL_CHECK_NULL( metric != NULL && metric->g_ij != NULL, XLAL_EFUNC, "XLALComputeDopplerPhaseMetric() failed" );
 
-  // Extract metric
-  gsl_matrix *g_ij = metric->g_ij;
-  metric->g_ij = NULL;
+  // Extract metric, while transforming its reference time from segment mid-time to time specified by 'ref_time'
+  gsl_matrix *g_ij = NULL;
+  const REAL8 Dtau = XLALGPSDiff( ref_time, &par.signalParams.Doppler.refTime );
+  XLAL_CHECK_NULL( XLALChangeMetricReferenceTime( &g_ij, NULL, metric->g_ij, coords, Dtau ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Cleanup
   XLALDestroyDopplerPhaseMetric( metric );
@@ -788,27 +792,41 @@ int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
   DECOMPOSE_RSSKY_TRANSF( metrics->semi_rssky_transf );
   const size_t ifreq = RSSKY_FKDOT_DIM( 0 );
 
-  // Find the maximum, over both coherent and semicoherent metrics, of 'g_{ff} / mu',
+  // Find the maximum, over both semicoherent and coherent metrics, of 'g_{ff} / mu',
   // where 'g_{ff}' is the frequency-frequency metric element, and mu is the mismatch
-  double max_rssky_metric_ff_d_mu = 0;
+  double max_gff_d_mu = gsl_matrix_get( metrics->semi_rssky_metric, ifreq, ifreq ) / semi_max_mismatch;
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
-    const double coh_rssky_metric_ff_d_mu = gsl_matrix_get( metrics->coh_rssky_metric[n], ifreq, ifreq ) / coh_max_mismatch;
-    max_rssky_metric_ff_d_mu = GSL_MAX( max_rssky_metric_ff_d_mu, coh_rssky_metric_ff_d_mu );
-  }
-  {
-    const double semi_rssky_metric_ff_d_mu = gsl_matrix_get( metrics->semi_rssky_metric, ifreq, ifreq ) / semi_max_mismatch;
-    max_rssky_metric_ff_d_mu = GSL_MAX( max_rssky_metric_ff_d_mu, semi_rssky_metric_ff_d_mu );
+    const double coh_gff_d_mu = gsl_matrix_get( metrics->coh_rssky_metric[n], ifreq, ifreq ) / coh_max_mismatch;
+    if ( max_gff_d_mu < coh_gff_d_mu ) {
+      max_gff_d_mu = coh_gff_d_mu;
+    }
   }
 
-  // Project all metrics in the frequency dimension, and set frequency-frequency
-  // metric element to 'max_rssky_metric_ff_d_mu' * 'mu', where mu is the mismatch
-  for ( size_t n = 0; n < metrics->num_segments; ++n ) {
-    XLAL_CHECK( XLALProjectMetric( &metrics->coh_rssky_metric[n], metrics->coh_rssky_metric[n], ifreq ) == XLAL_SUCCESS, XLAL_EFUNC );
-    gsl_matrix_set( metrics->coh_rssky_metric[n], ifreq, ifreq, max_rssky_metric_ff_d_mu * coh_max_mismatch );
-  }
+  // Rescale rows 'g_{f*}' and columns 'g_{*f}' of both semicoherent and coherent metrics by
+  // 'sqrt( max{ g_{ff} / mu } / ( g_{ff} / mu ) )'; this scales the frequency coordinate such
+  // that 'g_{ff}' will give the same frequency spacing for all metrics, while also scaling the
+  // off-diagonal frequency terms (e.g. frequency-spindown correlations) correctly.
   {
-    XLAL_CHECK( XLALProjectMetric( &metrics->semi_rssky_metric, metrics->semi_rssky_metric, ifreq ) == XLAL_SUCCESS, XLAL_EFUNC );
-    gsl_matrix_set( metrics->semi_rssky_metric, ifreq, ifreq, max_rssky_metric_ff_d_mu * semi_max_mismatch );
+    const double semi_gff_d_mu = gsl_matrix_get( metrics->semi_rssky_metric, ifreq, ifreq ) / semi_max_mismatch;
+    const double scale = sqrt( max_gff_d_mu / semi_gff_d_mu );
+    {
+      gsl_vector_view rssky_metric_f_row = gsl_matrix_row( metrics->semi_rssky_metric, ifreq );
+      gsl_vector_scale( &rssky_metric_f_row.vector, scale );
+    } {
+      gsl_vector_view rssky_metric_f_col = gsl_matrix_column( metrics->semi_rssky_metric, ifreq );
+      gsl_vector_scale( &rssky_metric_f_col.vector, scale );
+    }
+  }
+  for ( size_t n = 0; n < metrics->num_segments; ++n ) {
+    const double coh_gff_d_mu = gsl_matrix_get( metrics->coh_rssky_metric[n], ifreq, ifreq ) / coh_max_mismatch;
+    const double scale = sqrt( max_gff_d_mu / coh_gff_d_mu );
+    {
+      gsl_vector_view rssky_metric_f_row = gsl_matrix_row( metrics->coh_rssky_metric[n], ifreq );
+      gsl_vector_scale( &rssky_metric_f_row.vector, scale );
+    } {
+      gsl_vector_view rssky_metric_f_col = gsl_matrix_column( metrics->coh_rssky_metric[n], ifreq );
+      gsl_vector_scale( &rssky_metric_f_col.vector, scale );
+    }
   }
 
   return XLAL_SUCCESS;
@@ -1250,6 +1268,10 @@ int XLALSetSuperskyPhysicalSkyBounds(
     XLAL_CHECK( -LAL_PI_2 <= delta2 && delta2 <= LAL_PI_2, XLAL_EINVAL,
                 "If |alpha1 - alpha2| does not cover the whole sky, then -PI/2 <= delta2 <= PI/2 is required" );
   }
+
+  // Set parameter-space bound names
+  XLAL_CHECK( XLALSetLatticeTilingBoundName( tiling, 0, "sskyA" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingBoundName( tiling, 1, "sskyB" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // If parameter space is a single point:
   if ( alpha1 == alpha2 && delta1 == delta2 ) {
@@ -1892,6 +1914,9 @@ int XLALSetSuperskyPhysicalSpinBound(
   DECOMPOSE_CONST_RSSKY_TRANSF( rssky_transf );
   XLAL_CHECK( s <= smax, XLAL_ESIZE );
 
+  // Set parameter-space bound name
+  XLAL_CHECK( XLALSetLatticeTilingBoundName( tiling, RSSKY_FKDOT_DIM( s ), "nu%zudot", s ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   // Copy the sky offset vector to bounds data
   double data_lower[4], data_upper[4];
   for ( size_t j = 0; j < 3; ++j ) {
@@ -1925,6 +1950,9 @@ int XLALSetSuperskyCoordinateSpinBound(
   // Decompose coordinate transform data
   DECOMPOSE_CONST_RSSKY_TRANSF( rssky_transf );
   XLAL_CHECK( s <= smax, XLAL_ESIZE );
+
+  // Set parameter-space bound name
+  XLAL_CHECK( XLALSetLatticeTilingBoundName( tiling, RSSKY_FKDOT_DIM( s ), "nu%zudot", s ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Set the parameter-space bound on reduced supersky frequency/spindown coordinate
   XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, RSSKY_FKDOT_DIM( s ), bound1, bound2 ) == XLAL_SUCCESS, XLAL_EFUNC );

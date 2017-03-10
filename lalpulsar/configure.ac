@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALPulsar],[1.14.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALPulsar],[1.16.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALPulsarConfig.h])
 AC_CONFIG_SRCDIR([src/ComputeFstat.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -20,6 +20,7 @@ AC_CONFIG_FILES([ \
   src/LALPulsarVCSInfo.c \
   src/LALPulsarVCSInfo.h \
   src/Makefile \
+  src/version.c \
   swig/Makefile \
   test/Makefile \
 ])
@@ -35,8 +36,8 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="6.16.1"
-MIN_LALXML_VERSION="1.2.2"
+MIN_LAL_VERSION="6.18.0"
+MIN_LALXML_VERSION="1.2.4"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALXML_VERSION])
 
@@ -61,7 +62,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[14])
+AC_SUBST([LIBCURRENT],[16])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
@@ -124,32 +125,7 @@ AC_CHECK_HEADERS([unistd.h])
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for OpenMP
-AC_OPENMP
-
-# check that compiler supports C99 variable length arrays in OpenMP for loops.
-# Apple's llvm-gcc-4.2 is buggy and does not.
-AS_IF([test "x$OPENMP_CFLAGS" != "x"],
-  [
-    AC_MSG_CHECKING([if compiler supports C99 VLAs in OpenMP for loops])
-    LALSUITE_PUSH_UVARS
-    CFLAGS="$OPENMP_CFLAGS"
-    AC_LINK_IFELSE([
-        AC_LANG_PROGRAM(, [
-          int i, n = 10;
-          #pragma omp parallel for
-          for (i = 0; i < 10; i ++)
-          { int a@<:@n@:>@; }
-        ])
-      ],
-      [AC_MSG_RESULT([yes])],
-      [
-        AC_MSG_RESULT([no, disabling OpenMP])
-        OPENMP_CFLAGS=
-      ]
-    )
-    LALSUITE_POP_UVARS
-  ]
-)
+LALSUITE_ENABLE_OPENMP
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
@@ -187,7 +163,7 @@ if test "${boinc}" = "true" ; then
 fi
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 
 # check that lal was built with BOINC support, if required
 LALSUITE_CHECK_BOINC
@@ -208,25 +184,6 @@ LALSUITE_USE_SWIG
 
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN
-
-# Disable OpenMP by default.
-# FIXME: OpenMP should be on by default, but it breaks condor_compiling lalapps.
-AS_IF(
-  [test "x$enable_openmp" = "x"],
-  [OPENMP_CFLAGS=]
-)
-# add compiler flags for OpenMP
-AS_IF(
-  [test "x$OPENMP_CFLAGS" = "x"],
-  [
-    OPENMP_ENABLE_VAL="DISABLED"
-    LALSUITE_ADD_FLAGS([C],[-Wno-unknown-pragmas],[])
-  ],
-  [
-    OPENMP_ENABLE_VAL="ENABLED"
-    LALSUITE_ADD_FLAGS([C],[${OPENMP_CFLAGS}],[])
-  ]
-)
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS

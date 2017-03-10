@@ -33,6 +33,8 @@
  * between the two models in ring-down waveform is the pseudo-QNM introduced
  * in the latter (see Taracchini et al. PRD 86, 024011 (2012) for more details).
  */
+#ifndef _LALSIMIMREOBHYBRIDRINGDOWN_C
+#define _LALSIMIMREOBHYBRIDRINGDOWN_C
 #include <math.h>
 #include <complex.h>
 #include <stdlib.h>
@@ -47,8 +49,6 @@
 #include "LALSimBlackHoleRingdown.h"
 #include "LALSimIMREOBNQCCorrection.c"
 
-#ifndef _LALSIMIMREOBHYBRIDRINGDOWN_C
-#define _LALSIMIMREOBHYBRIDRINGDOWN_C
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))

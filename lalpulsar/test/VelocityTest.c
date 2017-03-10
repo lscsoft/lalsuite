@@ -144,12 +144,6 @@ do {                                                                 \
 } while (0)
 /******************************************************************/
 
-/* A global pointer for debugging. */
-#ifndef NDEBUG
-char *lalWatch;
-#endif
-
-
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
 int main(int argc, char *argv[]){
@@ -210,14 +204,8 @@ int main(int argc, char *argv[]){
   } /* End of argument parsing loop. */
   /******************************************************************/
 
-  /* read ephemeris data */
-  /* ephemeris info */
-  edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = EARTHDATA;
-  (*edat).ephiles.sunEphemeris = SUNDATA;
-
   /* read in ephemeris data */
-  SUB( LALInitBarycenter( &status, edat), &status);
+  XLAL_CHECK_MAIN( ( edat = XLALInitBarycenter( EARTHDATA, SUNDATA ) ) != NULL, XLAL_EFUNC);
 
   /* fill in ephemeris data in velPar */
   velPar.edat = edat;
@@ -243,9 +231,7 @@ int main(int argc, char *argv[]){
 
   printf("Avg. detector position in a interval of %g from %d = %g, %g, %g \n", TBASE, T0SEC, pos[0],pos[1],pos[2]);
 
-  LALFree(edat->ephemE);
-  LALFree(edat->ephemS);
-  LALFree(edat);
+  XLALDestroyEphemerisData(edat);
   LALCheckMemoryLeaks();
 
   //INFO(TESTVELOCITYC_MSGENORM);

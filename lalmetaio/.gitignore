@@ -28,8 +28,8 @@ include/lal/*.i
 include/lal/header-link-stamp
 lalmetaio-*.tar.xz
 lalmetaio-user-env.csh
-lalmetaio-user-env.sh
 lalmetaio-user-env.fish
+lalmetaio-user-env.sh
 lalmetaio-user-env.shell
 lalmetaio.spec
 libtool
@@ -38,7 +38,7 @@ python/lalmetaio/__init__.py
 python/lalmetaio/_lalmetaio*
 python/lalmetaio/git_version.py
 python/lalmetaio/lalmetaio.py
-src/LALMetaIOBuildInfo.c
+src/LALMetaIOBuildInfoHeader.h
 src/LALMetaIOConfig.h
 src/LALMetaIOVCSInfo.c
 src/LALMetaIOVCSInfo.h
@@ -46,6 +46,8 @@ src/LALMetaIOVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/git_version
+src/lalmetaio_version
 src/stamp-h1
 src/stamp-h2
+src/version.c
 swig/swiglal*

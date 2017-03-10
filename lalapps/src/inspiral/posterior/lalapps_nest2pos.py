@@ -106,7 +106,7 @@ def read_nested_from_hdf5(nested_path_list):
             if isinstance(metadata[level][key], list):
                 metadata[level][key] = mean(metadata[level][key])
 
-    log_noise_evidence = reduce(logaddexp, log_noise_evidences)
+    log_noise_evidence = reduce(logaddexp, log_noise_evidences) - log(len(log_noise_evidences))
     log_max_likelihood = max(log_max_likelihoods)
 
     return input_arrays, log_noise_evidence, log_max_likelihood, metadata, nlive, run_identifier
@@ -156,7 +156,7 @@ def read_nested_from_ascii(nested_path_list):
 def write_posterior_to_hdf(posterior_path, headers, posterior, metadata,
                            run_identifier):
   from lalinference.io import write_samples
-  write_samples(posterior, posterior_path, path='/'.join(['','lalinference',run_identifier,'posterior_samples']), metadata=metadata)
+  write_samples(posterior, posterior_path, path='/'.join(['','lalinference',run_identifier,'posterior_samples']), metadata=metadata, overwrite=True)
 
 def write_posterior_to_ascii(posterior_path, headers, posterior,
                              log_bayes_factor, log_evidence,

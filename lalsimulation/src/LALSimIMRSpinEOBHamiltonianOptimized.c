@@ -18,7 +18,8 @@
 */
 
 /**
- * \author Craig Robinson, Yi Pan
+ * \author Craig Robinson, Yi Pan, Zachariah Etienne, Caleb Devine,
+ *                         David Buch
  *
  * Functions for calculating the effective one-body Hamiltonian for
  * spinning binaries, as described in
@@ -27,7 +28,9 @@
  * unless otherwise specified.
  * This code borrows hugely from a C implementation originally written
  * by Enrico Barausse, following Barausse and Buonanno
- * PRD 81, 084024 (2010) and PRD 84, 104027 (2011), henceforth BB1 and BB2
+ * PRD 81, 084024 (2010) and PRD 84, 104027 (2011), henceforth BB1 and BB2,
+ * and additionally from the original un-optimized version
+ * LALSimIMRSpinEOBHamiltonian.c
  */
 
 #ifndef _LALSIMIMRSPINEOBHAMILTONIANOPTIMIZED_C

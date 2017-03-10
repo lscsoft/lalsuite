@@ -212,7 +212,7 @@ int main(int argc, char *argv[]){
   /* tObs = XLALGPSDiff( &lastTimeStamp, &firstTimeStamp ) + timeBase; */
 
   /* /\*set pulsar reference time *\/ */
-  /* if (LALUserVarWasSet ( &uvar_refTime )) { */
+  /* if (XLALUserVarWasSet ( &uvar_refTime )) { */
   /*   XLALGPSSetREAL8(&refTime, uvar_refTime); */
   /* }  */
   /* else {	/\*if refTime is not set, set it to midpoint of sfts*\/ */
@@ -220,7 +220,7 @@ int main(int argc, char *argv[]){
   /* } */
 
   /* /\* set frequency resolution defaults if not set by user *\/ */
-  /* if (!(LALUserVarWasSet (&uvar_fResolution))) { */
+  /* if (!(XLALUserVarWasSet (&uvar_fResolution))) { */
   /*   uvar_fResolution = 1/tObs; */
   /* } */
 
@@ -1277,12 +1277,26 @@ INT4 XLALFindBadBins
 
   for ( INT4 badBin = firstBadBin ; badBin <= lastBadBin ; badBin++ ){
     /* printf ("%d %d %d\n", badBin, firstBadBin, lastBadBin); */
-    if (newBinCount >= (INT4) length) {
+    if (newBinCount > (INT4) length) {
       LogPrintf ( LOG_CRITICAL, "%s: requested bin %d longer than series length %d\n", __func__, newBinCount, length);
       XLAL_ERROR( XLAL_EINVAL );
     }
-    badBinData->data[newBinCount] = badBin;
-    newBinCount++;
+    UINT4 checkIfBinAppeared = 0;
+    for (INT4 checkExistBadBin = 0; checkExistBadBin < binCount; checkExistBadBin++)
+      {
+	if (badBin < 0)
+	  {
+	    LogPrintf ( LOG_CRITICAL, "badBin %d negative", badBin);
+	    XLAL_ERROR(XLAL_ETYPE);
+	  }
+	if (badBinData->data[checkExistBadBin] == (UINT4) badBin)
+	  checkIfBinAppeared++;
+      }
+    if (checkIfBinAppeared == 0)
+      {
+	badBinData->data[newBinCount] = badBin;
+	newBinCount++;
+      }
   }
 
   return newBinCount;

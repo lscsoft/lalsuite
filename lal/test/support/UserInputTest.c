@@ -34,6 +34,7 @@ typedef struct
   CHAR * argStr;
   BOOLEAN argBool;
   INT4 argInt;
+  UINT4 argUInt;
   BOOLEAN argB2;
   CHAR *string2;	// will be read from config-file
   INT4 dummy;
@@ -54,19 +55,19 @@ typedef struct
 int
 main(void)
 {
-  int i, my_argc = 8;
-  char **my_argv;
-  const char *argv_in[] = { "progname", "--argNum=1", "--argStr=xyz", "--argBool=true", "-a", "1", "-b", "@" TEST_DATA_DIR "ConfigFileSample.cfg" };
-  UserInput_t XLAL_INIT_DECL(my_uvars);
 
-  my_argv = XLALCalloc ( my_argc, sizeof(char*) );
-  for (i=0; i < my_argc; i ++ )
+  const char *argv_in[] = { "progname", "--argNum=1", "--argStr=xyz", "--argBool=true", "-a", "-1", "-A", "7", "-b", "@" TEST_DATA_DIR "ConfigFileSample.cfg" };
+
+  const int my_argc = XLAL_NUM_ELEM( argv_in );
+  char **my_argv = XLALCalloc ( my_argc, sizeof(char*) );
+  for ( int i=0; i < my_argc; i ++ )
     {
       my_argv[i] = XLALCalloc ( 1, strlen(argv_in[i])+1);
       strcpy ( my_argv[i], argv_in[i] );
     }
 
   /* ---------- Register all test user-variables ---------- */
+  UserInput_t XLAL_INIT_DECL(my_uvars);
   UserInput_t *uvar = &my_uvars;
   uvar->string2 = XLALStringDuplicate ( "this is the default value");
 
@@ -74,6 +75,7 @@ main(void)
   XLAL_CHECK ( XLALRegisterUvarMember( argStr, STRING, 0, REQUIRED, "Testing string argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( argBool, BOOLEAN, 0, REQUIRED, "Testing bool argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( argInt, INT4, 'a', REQUIRED, "Testing INT4 argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( argUInt, UINT4, 'A', REQUIRED, "Testing UINT4 argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( dummy,  INT4, 'c', OPTIONAL, "Testing INT4 argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( argB2, BOOLEAN, 'b', REQUIRED, "Testing short-option bool argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( string2, STRING, 0, REQUIRED, "Testing another string argument") == XLAL_SUCCESS, XLAL_EFUNC );
@@ -121,7 +123,8 @@ main(void)
   XLAL_CHECK ( uvar->argNum == 1, XLAL_EFAILED, "Failed to read in argNum\n" );
   XLAL_CHECK ( strcmp ( uvar->argStr, "xyz" ) == 0, XLAL_EFAILED, "Failed to read in argStr\n" );
   XLAL_CHECK ( uvar->argBool, XLAL_EFAILED, "Failed to read in argBool\n" );
-  XLAL_CHECK ( uvar->argInt == 1, XLAL_EFAILED, "Failed to read in argInt\n" );
+  XLAL_CHECK ( uvar->argInt == -1, XLAL_EFAILED, "Failed to read in argInt\n" );
+  XLAL_CHECK ( uvar->argUInt == 7, XLAL_EFAILED, "Failed to read in argUInt\n" );
   XLAL_CHECK ( uvar->argB2, XLAL_EFAILED, "Failed to read in argB2\n" );
   XLAL_CHECK ( strcmp ( uvar->string2, "this is also possible, and # here does nothing; and neither does semi-colon " ) == 0, XLAL_EFAILED, "Failed to read in string2\n" );
 
@@ -137,7 +140,7 @@ main(void)
 
   /* ----- cleanup ---------- */
   XLALDestroyUserVars();
-  for (i=0; i < my_argc; i ++ ) {
+  for ( int i=0; i < my_argc; i ++ ) {
     XLALFree ( my_argv[i] );
   }
   XLALFree ( my_argv );

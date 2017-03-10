@@ -46,7 +46,7 @@ LAL_TYPE_STR = {
     lal.C_TYPE_CODE: 'COMPLEX8',
     lal.Z_TYPE_CODE: 'COMPLEX16',
 }
-LAL_TYPE_FROM_STR = dict((v, k) for k, v in LAL_TYPE_STR.iteritems())
+LAL_TYPE_FROM_STR = dict((v, k) for k, v in LAL_TYPE_STR.items())
 LAL_TYPE_STR_REGEX = re.compile(
     '(?P<dtype>(%s))' % ('|'.join(LAL_TYPE_FROM_STR.keys())), re.I)
 
@@ -63,7 +63,7 @@ LAL_TYPE_FROM_NUMPY = {
     numpy.complex64: lal.C_TYPE_CODE,
     numpy.complex128: lal.Z_TYPE_CODE,
 }
-NUMPY_TYPE_FROM_LAL = dict((v, k) for k, v in LAL_TYPE_FROM_NUMPY.iteritems())
+NUMPY_TYPE_FROM_LAL = dict((v, k) for k, v in LAL_TYPE_FROM_NUMPY.items())
 
 
 # structure definers

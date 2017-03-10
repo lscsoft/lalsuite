@@ -104,7 +104,7 @@ def _find_table(group, tablename):
     ...         _find_table(f, 'bat')
     Traceback (most recent call last):
         ...
-    KeyError: 'Multiple tables called bat exist: foo/xyzzy/bat, foo/bat'
+    KeyError: 'Multiple tables called bat exist: foo/bat, foo/xyzzy/bat'
     """
     results = {}
 
@@ -120,7 +120,7 @@ def _find_table(group, tablename):
 
     if len(results) > 1:
         raise KeyError('Multiple tables called {0} exist: {1}'.format(
-            tablename, ', '.join(results.keys())))
+            tablename, ', '.join(sorted(results.keys()))))
 
     table, = results.values()
     return table
@@ -155,7 +155,7 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
     ... ])
     >>> with TemporaryDirectory() as dir:
     ...     filename = os.path.join(dir, 'test.hdf5')
-    ...     write_samples(table, filename, 'foo/bar/posterior_samples')
+    ...     write_samples(table, filename, path='foo/bar/posterior_samples')
     ...     len(read_samples(filename))
     10
 
@@ -195,7 +195,7 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
     return table
 
 
-def write_samples(table, filename, path, metadata=None):
+def write_samples(table, filename, metadata=None, **kwargs):
     """Write an HDF5 sample chain file.
 
     Parameters
@@ -204,11 +204,11 @@ def write_samples(table, filename, path, metadata=None):
         The sample chain as an Astropy table.
     filename : str
         The path of the HDF5 file on the filesystem.
-    path : str
-        The path of the dataset within the HDF5 file.
     metadata: dict (optional)
         Dictionary of (path, value) pairs of metadata attributes
         to add to the output file
+    kwargs: dict
+        Any keyword arguments for `astropy.table.Table.write`.
 
     Check that we catch columns that are supposed to be FIXED but are not:
     >>> table = Table([
@@ -232,7 +232,7 @@ def write_samples(table, filename, path, metadata=None):
     ...     Column(np.arange(10), name='baz', meta={'vary': OUTPUT})
     ... ])
     >>> with TemporaryDirectory() as dir:
-    ...     write_samples(table, os.path.join(dir, 'test.hdf5'), 'bat/baz')
+    ...     write_samples(table, os.path.join(dir, 'test.hdf5'), path='bat/baz')
     """
     # Copy the table so that we do not modify the original.
     table = table.copy()
@@ -248,7 +248,7 @@ def write_samples(table, filename, path, metadata=None):
             del table[colname]
     for i, column in enumerate(table.columns.values()):
         table.meta['FIELD_{0}_VARY'.format(i)] = column.meta['vary']
-    table.write(filename, format='hdf5', path=path)
+    table.write(filename, format='hdf5', **kwargs)
     if metadata:
         with h5py.File(filename) as hdf:
             for internal_path, attributes in metadata.items():

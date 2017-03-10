@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <errno.h>
 #include <lal/Date.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/LALInference.h>
@@ -163,9 +164,9 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
         LALInferenceCopyUnsetREAL8Variables(priorDraw, thread->currentParams,
                                             run_state->commandLine);
 
-        while (run_state->prior(run_state,
-                                thread->currentParams,
-                                thread->model) <= -DBL_MAX) {
+        while(isinf(run_state->prior(run_state,
+                                     thread->currentParams,
+                                     thread->model))) {
             LALInferenceDrawApproxPrior(thread,
                                         thread->currentParams,
                                         thread->currentParams);
@@ -210,7 +211,7 @@ void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) 
   LALInferenceThreadState *thread;
   INT4 t, nifo;
   INT4 randomseed;
-  LALInferenceIFOData *data = run_state->data;
+  LALInferenceIFOData *data;
   run_state->nthreads = nthreads;
   run_state->threads = LALInferenceInitThreads(nthreads);
 
@@ -226,6 +227,7 @@ void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) 
 
     /* Allocate IFO likelihood holders */
     nifo = 0;
+    data = run_state->data;
     while (data != NULL) {
         data = data->next;
         nifo++;
@@ -279,7 +281,7 @@ LALInferenceTemplateFunction LALInferenceInitCBCTemplate(LALInferenceRunState *r
   if(ppt) {
     if(!strcmp("LALSim",ppt->value))
       templt=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
-	else if(!strcmp("null",ppt->value))
+    else if(!strcmp("null",ppt->value))
         templt=&LALInferenceTemplateNullFreqdomain;
 	else if(!strcmp("multiband",ppt->value)){
         templt=&LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated;
@@ -399,6 +401,79 @@ void LALInferenceInitGlitchVariables(LALInferenceRunState *runState, LALInferenc
   LALInferenceAddVariable(priorArgs, "glitch_norm", &Anorm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 }
 
+struct spcal_envelope
+{
+    gsl_spline  *amp_median,*amp_std,
+                *phase_median,*phase_std;
+};
+
+/* Format string for the calibratino envelope file */
+/* Frequency    Median Mag     Phase (Rad)    -1 Sigma Mag   -1 Sigma Phase +1 Sigma Mag   +1 Sigma Phase */
+
+#define CAL_ENV_FORMAT "%lf %lf %lf %lf %lf %lf %lf\n"
+
+static struct spcal_envelope *initCalibrationEnvelope(char *filename);
+
+static struct spcal_envelope *initCalibrationEnvelope(char *filename)
+{
+    FILE *fp=fopen(filename,"r");
+    char tmpline[1024];
+    if(!fp) {fprintf(stderr,"Unable to open %s: Error %i %s\n",filename,errno,strerror(errno)); exit(1);}
+    int Nlines=0;
+    REAL8 freq, *logfreq=NULL, *mag_med=NULL, mag_low, mag_hi, *mag_std=NULL, *phase_med=NULL, phase_low, phase_hi, *phase_std=NULL;
+    for(Nlines=0;fgets(tmpline,1024,fp); )
+    {
+        /* Skip header */
+        if(tmpline[0]=='#') continue;
+        /* Grow arrays */
+        logfreq=realloc(logfreq,sizeof(*logfreq)*(Nlines+1));
+        mag_med=realloc(mag_med,sizeof(*mag_med)*(Nlines+1));
+        mag_std=realloc(mag_std,sizeof(*mag_std)*(Nlines+1));
+        phase_med=realloc(phase_med,sizeof(*phase_med)*(Nlines+1));
+        phase_std=realloc(phase_std,sizeof(*phase_std)*(Nlines+1));
+
+        if((7!=sscanf(tmpline,CAL_ENV_FORMAT, &freq, &(mag_med[Nlines]), &(phase_med[Nlines]), &mag_low, &phase_low, &mag_hi, &phase_hi)))
+        {
+            fprintf(stderr,"Malformed input line in file %s: %s\n",filename,tmpline);
+            exit(1);
+        }
+		mag_med[Nlines]-=1.0; /* Subtract off 1 to get delta */
+        logfreq[Nlines]=log(freq);
+        mag_std[Nlines]=(mag_hi - mag_low ) /2.0;
+        phase_std[Nlines]=(phase_hi - phase_low) /2.0;
+		Nlines++;
+    }
+    fprintf(stdout,"Read %i lines from calibration envelope %s\n",Nlines,filename);
+    fclose(fp);
+
+    struct spcal_envelope *env=XLALCalloc(1,sizeof(*env));
+    env->amp_median = gsl_spline_alloc ( gsl_interp_cspline, Nlines);
+    env->amp_std = gsl_spline_alloc ( gsl_interp_cspline, Nlines);
+    env->phase_median = gsl_spline_alloc ( gsl_interp_cspline, Nlines);
+    env->phase_std = gsl_spline_alloc ( gsl_interp_cspline, Nlines);
+
+    gsl_spline_init(env->amp_median, logfreq, mag_med, Nlines);
+    gsl_spline_init(env->amp_std, logfreq, mag_std, Nlines);
+    gsl_spline_init(env->phase_median, logfreq, phase_med, Nlines);
+    gsl_spline_init(env->phase_std, logfreq, phase_std, Nlines);
+    
+    free(logfreq); free(mag_med); free(mag_std); free(phase_med); free(phase_std);
+    
+    return(env);
+}
+
+static int destroyCalibrationEnvelope(struct spcal_envelope *env);
+static int destroyCalibrationEnvelope(struct spcal_envelope *env)
+{
+    if(!env) XLAL_ERROR(XLAL_EINVAL);
+    if(env->amp_median) gsl_spline_free(env->amp_median);
+    if(env->amp_std) gsl_spline_free(env->amp_std);
+    if(env->phase_median) gsl_spline_free(env->phase_median);
+    if(env->phase_std) gsl_spline_free(env->phase_std);
+    XLALFree(env);
+    return XLAL_SUCCESS;
+}
+
 void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInferenceVariables *currentParams) {
   ProcessParamsTable *ppt = NULL;
   LALInferenceIFOData *ifo = NULL;
@@ -433,41 +508,59 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
       REAL8 logFMin = log(fMin);
       REAL8 logFMax = log(fMax);
       REAL8 dLogF = (logFMax - logFMin)/(ncal-1);
-
+      
       char amp_uncert_op[VARNAME_MAX];
       char pha_uncert_op[VARNAME_MAX];
+      char env_uncert_op[VARNAME_MAX];
+      struct spcal_envelope *env=NULL;
+      
       snprintf(amp_uncert_op, VARNAME_MAX, "--%s-spcal-amp-uncertainty", ifo->name);
       snprintf(pha_uncert_op, VARNAME_MAX, "--%s-spcal-phase-uncertainty", ifo->name);
-      if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, amp_uncert_op))) {
-        ampUncertaintyPrior = atof(ppt->value);
-      }
-      else{
-        fprintf(stderr,"Error, missing --%s-spcal-amp-uncertainty\n",ifo->name);
-        exit(1);
-      }
+      snprintf(env_uncert_op, VARNAME_MAX, "--%s-spcal-envelope",ifo->name);
 
-      if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, pha_uncert_op))) {
-        phaseUncertaintyPrior = M_PI/180.0*atof(ppt->value); /* CL arg in degrees, variable in radians */
+      if( (ppt=LALInferenceGetProcParamVal(runState->commandLine, env_uncert_op)))
+          env = initCalibrationEnvelope(ppt->value);
+      else
+      {
+        if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, amp_uncert_op))) {
+            ampUncertaintyPrior = atof(ppt->value);
+        }
+        else{
+            fprintf(stderr,"Error, missing %s or %s\n",amp_uncert_op, env_uncert_op);
+            exit(1);
+        }
+
+        if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, pha_uncert_op))) {
+            phaseUncertaintyPrior = M_PI/180.0*atof(ppt->value); /* CL arg in degrees, variable in radians */
+        }
+        else{
+            fprintf(stderr,"Error, missing %s or %s\n",pha_uncert_op,env_uncert_op);
+            exit(1);
+        }
       }
-      else{
-        fprintf(stderr,"Error, missing --%s-spcal-phase-uncertainty\n",ifo->name);
-        exit(1);
-      }
-      
       /* Now add each spline node */
       for(i=0;i<ncal;i++)
-      {
-	snprintf(freqVarName, VARNAME_MAX, "%s_spcal_logfreq_%i",ifo->name,i);
-	snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp_%i", ifo->name,i);
-	snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase_%i", ifo->name,i);
-	
-	REAL8 logFreq = logFMin + i*dLogF;
-	LALInferenceAddREAL8Variable(currentParams,freqVarName,logFreq,LALINFERENCE_PARAM_FIXED);
-	LALInferenceRegisterGaussianVariableREAL8(runState, currentParams, ampVarName, 0, 0, ampUncertaintyPrior, LALINFERENCE_PARAM_LINEAR);
-	LALInferenceRegisterGaussianVariableREAL8(runState, currentParams, phaseVarName, 0, 0, phaseUncertaintyPrior, LALINFERENCE_PARAM_LINEAR);
-      } /* End loop over spline nodes */
+	  {
+			  snprintf(freqVarName, VARNAME_MAX, "%s_spcal_logfreq_%i",ifo->name,i);
+			  snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp_%i", ifo->name,i);
+			  snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase_%i", ifo->name,i);
+			  REAL8 amp_std=ampUncertaintyPrior,amp_mean=0.0;
+			  REAL8 phase_std=phaseUncertaintyPrior,phase_mean=0.0;
+			  REAL8 logFreq = logFMin + i*dLogF;
+			  LALInferenceAddREAL8Variable(currentParams,freqVarName,logFreq,LALINFERENCE_PARAM_FIXED);
+			  if(env)
+			  {
+					  amp_std = gsl_spline_eval(env->amp_std, logFreq, NULL);
+					  amp_mean = gsl_spline_eval(env->amp_median, logFreq, NULL);
+					  phase_std = gsl_spline_eval(env->phase_std, logFreq, NULL);
+					  phase_mean = gsl_spline_eval(env->phase_std, logFreq, NULL);
+			  }
+			  LALInferenceRegisterGaussianVariableREAL8(runState, currentParams, ampVarName, 0, amp_mean, amp_std, LALINFERENCE_PARAM_LINEAR);
+			  LALInferenceRegisterGaussianVariableREAL8(runState, currentParams, phaseVarName, 0, phase_mean, phase_std, LALINFERENCE_PARAM_LINEAR);
+	  } /* End loop over spline nodes */
 
-    } /* End loop over IFOs */
+	  if(env) destroyCalibrationEnvelope(env);
+	} /* End loop over IFOs */
   } /* End case of spline calibration error */
   else if(LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalAmp") ||LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalPha")){
     /* Use constant (in frequency) approximation for the errors */
@@ -1241,16 +1334,14 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
    * assumes the LALSimulations default frame */
   LALSimInspiralFrameAxis frameAxis = LAL_SIM_INSPIRAL_FRAME_AXIS_DEFAULT;
 
-  model->waveFlags = XLALSimInspiralCreateWaveformFlags();
-  XLALSimInspiralSetSpinOrder(model->waveFlags,  spinO);
-  XLALSimInspiralSetTidalOrder(model->waveFlags, tideO);
-  XLALSimInspiralSetFrameAxis(model->waveFlags,frameAxis);
+  model->LALpars = XLALCreateDict();
+  XLALSimInspiralWaveformParamsInsertPNSpinOrder(model->LALpars,  spinO);
+  XLALSimInspiralWaveformParamsInsertPNTidalOrder(model->LALpars, tideO);
+  XLALSimInspiralWaveformParamsInsertFrameAxis(model->LALpars,frameAxis);
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--numreldata"))) {
-    XLALSimInspiralSetNumrelData(model->waveFlags, ppt->value);
+    XLALSimInspiralWaveformParamsInsertNumRelData(model->LALpars, ppt->value);
     fprintf(stdout,"Template will use %s.\n",ppt->value);
   }
-
-
 
   fprintf(stdout,"\n\n---\t\t ---\n");
   LALInferenceInitSpinVariables(state, model);

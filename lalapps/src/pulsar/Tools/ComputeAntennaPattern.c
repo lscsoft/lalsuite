@@ -52,7 +52,7 @@
 
 typedef struct
 {
-  EphemerisData *edat;			/**< ephemeris data (from LALInitBarycenter()) */
+  EphemerisData *edat;			/**< ephemeris data (from XLALInitBarycenter()) */
   UINT4 numDetectors;			/**< number of detectors */
   MultiDetectorStateSeries *multiDetStates;	/**< detector state time series */
   MultiNoiseWeights *multiNoiseWeights;		/**< per-detector noise weights */

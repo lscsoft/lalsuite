@@ -98,7 +98,7 @@ int XLALSimIMRPhenomCGenerateFD(
     const REAL8 f_min,                 /**< starting GW frequency (Hz) */
     const REAL8 f_max,                 /**< end frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance,              /**< distance of source (m) */
-    const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
+    LALDict *extraParams /**< linked list containing the extra testing GR parameters */
 ) {
   BBHPhenomCParams *params;
   int status;
@@ -166,7 +166,7 @@ double XLALSimIMRPhenomCGetFinalFreq(
     const REAL8 chi
 ) {
     BBHPhenomCParams *phenomParams;
-    const LALSimInspiralTestGRParam *extraParams = NULL;
+    LALDict *extraParams = NULL;
     phenomParams = ComputeIMRPhenomCParams(m1, m2, chi, extraParams);
     return phenomParams->fCut;
 }
@@ -197,7 +197,7 @@ int XLALSimIMRPhenomCGenerateTD(
     const REAL8 f_max,        /**< end GW frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance,     /**< distance of source (m) */
     const REAL8 inclination,   /**< inclination of source (rad) */
-    const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */ 
+    LALDict *extraParams /**< linked list containing the extra testing GR parameters */
 ) {
 	BBHPhenomCParams *params;
 	size_t cut_ind, peak_ind, ind_t0;

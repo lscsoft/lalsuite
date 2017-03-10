@@ -1,6 +1,7 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013-2016  Leo Singer
+# Copyright (C) 2013-2017  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -62,10 +63,15 @@ __all__ = ("read_sky_map", "write_sky_map")
 import math
 import healpy as hp
 import numpy as np
+from astropy.io import fits
+from astropy import units as u
 from glue.ligolw import lsctables
+import itertools
 import time
 import lal
 import six
+from astropy.table import Table
+from ..bayestar import moc
 
 
 def gps_to_iso8601(gps_time):
@@ -171,72 +177,134 @@ def gps_to_mjd(gps_time):
     return mjd + gps_seconds_fraction / 86400.
 
 
-def write_sky_map(filename, m, nest=False, objid=None, url=None, instruments=None,
-    gps_time=None, gps_creation_time=None, creator=None, origin=None,
-    runtime=None, distmean=None, diststd=None):
+def identity(x):
+    return x
+
+
+def nest_to_fits(value):
+    return 'NESTED' if value else 'RING'
+
+
+def instruments_to_fits(value):
+    if not isinstance(value, six.string_types):
+        value = str(lsctables.ifos_from_instrument_set(value))
+    return value
+
+
+def instruments_from_fits(value):
+    return {str(ifo) for ifo in lsctables.instrument_set_from_ifos(value)}
+
+
+DEFAULT_NUNIQ_NAMES = ('PROBDENSITY', 'DISTMU', 'DISTSIGMA', 'DISTNORM')
+DEFAULT_NUNIQ_UNITS = (u.steradian**-1, u.Mpc, u.Mpc, u.Mpc**-2)
+DEFAULT_NESTED_NAMES = ('PROB', 'DISTMU', 'DISTSIGMA', 'DISTNORM')
+DEFAULT_NESTED_UNITS = (u.pix**-1, u.Mpc, u.Mpc, u.Mpc**-2)
+FITS_META_MAPPING = (
+    ('nest', 'ORDERING', 'Pixel ordering scheme: RING, NESTED, or NUNIQ', nest_to_fits, None),
+    ('objid', 'OBJECT', 'Unique identifier for this event', identity, identity),
+    ('url', 'REFERENC', 'URL of this event', identity, identity),
+    ('instruments', 'INSTRUME', 'Instruments that triggered this event', instruments_to_fits, instruments_from_fits),
+    ('gps_time', 'DATE-OBS', 'UTC date of the observation', gps_to_iso8601, iso8601_to_gps),
+    ('gps_time', 'MJD-OBS', 'modified Julian date of the observation', gps_to_mjd, None),
+    ('gps_creation_time', 'DATE', 'UTC date of file creation', gps_to_iso8601, iso8601_to_gps),
+    ('creator', 'CREATOR', 'Program that created this file', identity, identity),
+    ('origin', 'ORIGIN', 'Organization responsible for this FITS file', identity, identity),
+    ('runtime', 'RUNTIME', 'Runtime in seconds of the CREATOR program', identity, identity),
+    ('distmean', 'DISTMEAN', 'Posterior mean distance in Mpc', identity, identity),
+    ('diststd', 'DISTSTD', 'Posterior standard deviation of distance in Mpc', identity, identity))
+
+
+def write_sky_map(filename, m, **kwargs):
     """Write a gravitational-wave sky map to a file, populating the header
-    with optional metadata."""
+    with optional metadata.
 
-    #
-    # Populate optional header fieds.
-    #
+    Parameters
+    ----------
 
-    extra_header = []
+    filename: string
+        Path to the optionally gzip-compressed FITS file.
 
-    if objid is not None:
-        extra_header.append(('OBJECT', objid,
-            'Unique identifier for this event'))
+    m : astropy.table.Table or numpy.array
+        If a Numpy record array or astorpy.table.Table instance, and has a
+        column named 'UNIQ', then interpret the input as NUNIQ-style
+        multi-order map [1]_. Otherwise, interpret as a NESTED or RING ordered
+        map.
 
-    if url is not None:
-        extra_header.append(('REFERENC', url,
-            'URL of this event'))
+    **kwargs
+        Additional metadata to add to FITS header. If m is an
+        astropy.table.Table instance, then the header is initialized from both
+        m.meta and **kwargs.
 
-    if instruments is not None:
-        if not isinstance(instruments, six.string_types):
-            instruments = str(lsctables.ifos_from_instrument_set(instruments))
-        extra_header.append(('INSTRUME', instruments,
-            'Instruments that triggered this event'))
+    References
+    ----------
+    .. [1] Górski, K.M., Wandelt, B.D., Hivon, E., Hansen, F.K., & Banday, A.J.
+        2017. The HEALPix Primer. The Unique Identifier scheme.
+        http://healpix.sourceforge.net/html/intronode4.htm#SECTION00042000000000000000
+    """
 
-    if gps_time is not None:
-        extra_header.append(('DATE-OBS', gps_to_iso8601(gps_time),
-            'UTC date of the observation'))
-        extra_header.append(('MJD-OBS', gps_to_mjd(gps_time),
-            'modified Julian date of the observation'))
+    if isinstance(m, Table) or (isinstance(m, np.ndarray) and m.dtype.names):
+        m = Table(m)
+    else:
+        m = np.atleast_2d(m).T
+        m = Table(m, names=DEFAULT_NESTED_NAMES[:len(m)])
+    m.meta.update(kwargs)
 
-    if gps_creation_time is None:
-        gps_creation_time = lal.GPSTimeNow()
-    extra_header.append(('DATE', gps_to_iso8601(gps_creation_time),
-        'UTC date of file creation'))
+    if 'UNIQ' in m.colnames:
+        default_names = DEFAULT_NUNIQ_NAMES
+        default_units = DEFAULT_NUNIQ_UNITS
+        extra_header = [
+            ('PIXTYPE', 'HEALPIX', 'HEALPIX pixelisation'),
+            ('ORDERING', 'NUNIQ', 'Pixel ordering scheme: RING, NESTED, or NUNIQ'),
+            ('COORDSYS', 'C', 'Ecliptic, Galactic or Celestial (equatorial)'),
+            ('MOCORDER', moc.uniq2order(m['UNIQ'].max()), 'MOC resolution (best order)')]
+    else:
+        default_names = DEFAULT_NESTED_NAMES
+        default_units = DEFAULT_NESTED_UNITS
+        extra_header = [
+            ('PIXTYPE', 'HEALPIX', 'HEALPIX pixelisation'),
+            ('COORDSYS', 'C', 'Ecliptic, Galactic or Celestial (equatorial)'),
+            ('NSIDE', hp.npix2nside(len(m)), 'Resolution parameter of HEALPIX'),
+            ('INDXSCHM', 'IMPLICIT', 'Indexing: IMPLICIT or EXPLICIT')]
 
-    if creator is not None:
-        extra_header.append(('CREATOR', creator,
-            'Program that created this file'))
+    for key, rows in itertools.groupby(FITS_META_MAPPING, lambda row: row[0]):
+        try:
+            value = m.meta.pop(key)
+        except KeyError:
+            pass
+        else:
+            for row in rows:
+                _, fits_key, fits_comment, to_fits, _ = row
+                if to_fits is not None:
+                    extra_header.append((fits_key, to_fits(value), fits_comment))
 
-    if origin is not None:
-        extra_header.append(('ORIGIN', origin,
-            'Organization responsible for this FITS file'))
+    for default_name, default_unit in zip(default_names, default_units):
+        try:
+            col = m[default_name]
+        except KeyError:
+            pass
+        else:
+            if not col.unit:
+                col.unit = default_unit
 
-    if runtime is not None:
-        extra_header.append(('RUNTIME', runtime,
-            'Runtime in seconds of the CREATOR program'))
-
-    if distmean is not None:
-        extra_header.append(('DISTMEAN', distmean,
-            'Posterior mean distance in Mpc'))
-
-    if diststd is not None:
-        extra_header.append(('DISTSTD', diststd,
-            'Posterior standard deviation of distance in Mpc'))
-
-    m = np.atleast_2d(m)
-
-    hp.write_map(filename, m, nest=nest, fits_IDL=True, coord='C',
-        column_names=('PROB', 'DISTMU', 'DISTSIGMA', 'DISTNORM')[:len(m)],
-        column_units=('pix-1', 'Mpc', 'Mpc', 'Mpc-2')[:len(m)],
-        extra_header=extra_header)
+    try:
+        # FIXME: astropy.io.fits.table_to_hdu was added in astropy 1.2.
+        # We must currently support astropy >= 1.1.1 on the LIGO Data Grid's
+        # Scientific Linux 7 computing clusters.
+        fits.table_to_hdu
+    except AttributeError:
+        m.write(filename, format='fits')
+        hdulist = fits.open(filename)
+        _, hdu = hdulist
+        hdu.header.extend(extra_header)
+        hdulist.writeto(filename, clobber=True)
+    else:
+        hdu = fits.table_to_hdu(m)
+        hdu.header.extend(extra_header)
+        hdulist = fits.HDUList([fits.PrimaryHDU(), hdu])
+        hdulist.writeto(filename, clobber=True)
 
 
-def read_sky_map(filename, nest=False, distances=False):
+def read_sky_map(filename, nest=False, distances=False, moc=False):
     """
     Read a LIGO/Virgo-type sky map and return a tuple of the HEALPix array
     and a dictionary of metadata from the header.
@@ -264,96 +332,89 @@ def read_sky_map(filename, nest=False, distances=False):
         If true, then read also read the additional HEALPix layers representing
         the conditional mean and standard deviation of distance as a function
         of sky location.
+
+    moc: bool, optional
+        If true, then preserve multi-order structure if present.
+
+    Example
+    -------
+
+    Test that we can read a legacy IDL-compatible file
+    (https://bugs.ligo.org/redmine/issues/5168):
+
+    >>> import tempfile
+    >>> with tempfile.NamedTemporaryFile(suffix='.fits') as f:
+    ...     nside = 512
+    ...     npix = hp.nside2npix(nside)
+    ...     ipix_nest = np.arange(npix)
+    ...     hp.write_map(f.name, ipix_nest, nest=True, column_names=['PROB'])
+    ...     m, meta = read_sky_map(f.name)
+    ...     np.testing.assert_array_equal(m, hp.ring2nest(nside, ipix_nest))
     """
-    out = hp.read_map(
-        filename, h=True, verbose=False, nest=nest,
-        field=(list(range(4)) if distances else 0))
-    prob = out[:-1] if distances else out[0]
-    header = dict(out[-1])
+    m = Table.read(filename, format='fits')
 
-    metadata = {}
+    del m.meta['PIXTYPE']
 
-    ordering = header['ORDERING']
-    if ordering == 'RING':
-        metadata['nest'] = False
-    elif ordering == 'NESTED':
-        metadata['nest'] = True
-    else:
-        raise ValueError(
-            'ORDERING card in header has unknown value: {0}'.format(ordering))
+    if m.meta.pop('COORDSYS', 'C') != 'C':
+        raise ValueError('LALInference only reads and writes sky maps in equatorial coordinates.')
 
     try:
-        value = header['OBJECT']
+        value = m.meta.pop('ORDERING')
     except KeyError:
         pass
     else:
-        metadata['objid'] = value
+        if value == 'RING':
+            m.meta['nest'] = False
+        elif value == 'NESTED':
+            m.meta['nest'] = True
+        elif value == 'NUNIQ':
+            pass
+        else:
+            raise ValueError(
+                'ORDERING card in header has unknown value: {0}'.format(value))
 
-    try:
-        value = header['REFERENC']
-    except KeyError:
-        pass
+    for fits_key, rows in itertools.groupby(FITS_META_MAPPING, lambda row: row[1]):
+        try:
+            value = m.meta.pop(fits_key)
+        except KeyError:
+            pass
+        else:
+            for row in rows:
+                key, _, _, _, from_fits = row
+                if from_fits is not None:
+                    m.meta[key] = from_fits(value)
+
+    if 'UNIQ' not in m.colnames:
+        m = Table([col.ravel() for col in m.columns.values()], meta=m.meta)
+
+    if 'UNIQ' in m.colnames and not moc:
+        from ..bayestar.sky_map import rasterize
+        m = rasterize(m)
+        m.meta['nest'] = True
+    elif 'UNIQ' not in m.colnames and moc:
+        from ..bayestar.sky_map import derasterize
+        if not m.meta['nest']:
+            m = m[hp.nest2ring(nside, np.arange(npix))]
+        m = derasterize(m)
+        m.meta.pop('nest', None)
+
+    if 'UNIQ' not in m.colnames:
+        npix = len(m)
+        nside = hp.npix2nside(npix)
+
+        if nest is None:
+            pass
+        elif m.meta['nest'] and not nest:
+            m = m[hp.ring2nest(nside, np.arange(npix))]
+        elif not m.meta['nest'] and nest:
+            m = m[hp.nest2ring(nside, np.arange(npix))]
+
+    if moc:
+        return m
+    elif distances:
+        return tuple(np.asarray(m[name]) for name in DEFAULT_NESTED_NAMES), m.meta
     else:
-        metadata['url'] = value
-
-    try:
-        value = header['INSTRUME']
-    except KeyError:
-        pass
-    else:
-        value = set(str(ifo) for ifo in lsctables.instrument_set_from_ifos(value))
-        metadata['instruments'] = value
-
-    try:
-        value = header['DATE-OBS']
-    except KeyError:
-        pass
-    else:
-        metadata['gps_time'] = iso8601_to_gps(value)
-
-    try:
-        value = header['DATE']
-    except KeyError:
-        pass
-    else:
-        metadata['gps_creation_time'] = iso8601_to_gps(value)
-
-    try:
-        value = header['CREATOR']
-    except KeyError:
-        pass
-    else:
-        metadata['creator'] = value
-
-    try:
-        value = header['ORIGIN']
-    except KeyError:
-        pass
-    else:
-        metadata['origin'] = value
-
-    try:
-        value = header['RUNTIME']
-    except KeyError:
-        pass
-    else:
-        metadata['runtime'] = value
-
-    try:
-        value = header['DISTMEAN']
-    except KeyError:
-        pass
-    else:
-        metadata['distmean'] = value
-
-    try:
-        value = header['DISTSTD']
-    except KeyError:
-        pass
-    else:
-        metadata['diststd'] = value
-
-    return prob, metadata
+        return np.asarray(m[DEFAULT_NESTED_NAMES[0]]), m.meta
 
 
 if __name__ == '__main__':

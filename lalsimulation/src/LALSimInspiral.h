@@ -24,6 +24,8 @@
 #include <lal/LALSimSphHarmSeries.h>
 #include <lal/LALSimInspiralTestGRParams.h>
 #include <lal/LALSimInspiralWaveformFlags.h>
+#include <lal/LALSimInspiralWaveformParams.h>
+
 #include <gsl/gsl_matrix.h>
 
 #if defined(__cplusplus)
@@ -48,8 +50,6 @@ extern "C" {
  * #include <lal/LALSimInspiral.h>
  * #include <lal/LALConstants.h>
  * ...
- * double phiRef = 0;             // gravitational wave phase at end
- * double deltaT = 1.0/16384.0;   // series sampling interval
  * double m1 = 1.4 * LAL_MSUN_SI; // mass of body 1
  * double m2 = 1.4 * LAL_MSUN_SI; // mass of body 2
  * double S1x = 0.0;              // x-component of dimensionless spin of body 1
@@ -58,21 +58,21 @@ extern "C" {
  * double S2x = 0.0;              // x-component of dimensionless spin of body 2
  * double S2y = 0.0;              // y-component of dimensionless spin of body 2
  * double S2z = 0.0;              // z-component of dimensionless spin of body 2
- * double f_min = 40.0;           // start frequency of inspiral
- * double f_ref = 0.0;            // reference frequency: 0 means waveform end
  * double r = 1e6 * LAL_PC_SI;    // distance
  * double i = 0.0;                // inclination
- * double lambda1 = 0.0;          // dimensionless tidal parameter of body 1
- * double lambda2 = 0.0;          // dimensionless tidal parameter of body 2
- * LALSimInspiralWaveformFlags *waveFlags = NULL;  // no extra flags
- * LALSimInspiralTestGRParam *nonGRparams = NULL;  // no non-GR parameters
- * int amplitudeO = -1;           // amplitude pN order: -1 means include all
- * int phaseO = -1;               // phase pN order: -1 means include all
+ * double phiRef = 0.0;           // gravitational wave phase at reference
+ * double longAscNodes=0.0;       // longitude of ascending nodes, degenerate with the polarization angle, Omega in documentation
+ * double eccentricity=0.0;       // eccentrocity at reference epoch
+ * double meanPerAno=0.0;         // mean anomaly of periastron
+ * double deltaT = 1.0/16384.0;   // series sampling interval
+ * double f_min = 40.0;           // start frequency of inspiral
+ * double f_ref = 0.0;            // reference frequency: 0 means waveform end
+ * LALDict *LALpars = NULL;       // structure containing variable with default values
  * Approximant approximant = TaylorT2;  // post-Newtonian approximant
  * REAL8TimeSeries *hplus = NULL;  // plus polarization to be returned
  * REAL8TimeSeries *hcross = NULL; // cross polarization to be returned
  * ...
- * XLALSimInspiralChooseTDWaveform(&hplus, &hcross, phiRef, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
+ * XLALSimInspiralChooseTDWaveform( &hplus, &hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, r, i, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALpars, approximant);
  * @endcode
  *
  * Generate a frequency-domain waveform:
@@ -80,32 +80,30 @@ extern "C" {
  * #include <lal/LALSimInspiral.h>
  * #include <lal/LALConstants.h>
  * ...
- * double phiRef = 0;             // gravitational wave phase at end
- * double deltaF = 1.0/64.0;      // series sampling interval
- * double m1 = 1.4 * LAL_MSUN_SI; // mass of body 1
- * double m2 = 1.4 * LAL_MSUN_SI; // mass of body 2
- * double S1x = 0.0;              // x-component of dimensionless spin of body 1
- * double S1y = 0.0;              // y-component of dimensionless spin of body 1
- * double S1z = 0.0;              // z-component of dimensionless spin of body 1
- * double S2x = 0.0;              // x-component of dimensionless spin of body 2
- * double S2y = 0.0;              // y-component of dimensionless spin of body 2
- * double S2z = 0.0;              // z-component of dimensionless spin of body 2
- * double f_min = 40.0;           // start frequency of inspiral
- * double f_max = 0.0;            // end frequency of inspiral: 0 means use default
- * double f_ref = 0.0;            // reference frequency: 0 means waveform end
- * double r = 1e6 * LAL_PC_SI;    // distance
- * double i = 0.0;                // inclination
- * double lambda1 = 0.0;          // dimensionless tidal parameter of body 1
- * double lambda2 = 0.0;          // dimensionless tidal parameter of body 2
- * LALSimInspiralWaveformFlags *waveFlags = NULL;  // no extra flags
- * LALSimInspiralTestGRParam *nonGRparams = NULL;  // no non-GR parameters
- * int amplitudeO = -1;           // amplitude pN order: -1 means include all
- * int phaseO = -1;               // phase pN order: -1 means include all
+ * double m1 = 1.4 * LAL_MSUN_SI;     // mass of body 1
+ * double m2 = 1.4 * LAL_MSUN_SI;     // mass of body 2
+ * double S1x = 0.0;                  // x-component of dimensionless spin of body 1
+ * double S1y = 0.0;                  // y-component of dimensionless spin of body 1
+ * double S1z = 0.0;                  // z-component of dimensionless spin of body 1
+ * double S2x = 0.0;                  // x-component of dimensionless spin of body 2
+ * double S2y = 0.0;                  // y-component of dimensionless spin of body 2
+ * double S2z = 0.0;                  // z-component of dimensionless spin of body 2
+ * double distance = 1e6 * LAL_PC_SI; // distance
+ * double inclination = 0.0;          // inclination
+ * double phiRef = 0;                 // gravitational wave phase at end
+ * double longAscNodes=0.0;           // longitude of ascending nodes, degenerate with the polarization angle, Omega in documentation
+ * double eccentricity=0.0;           // eccentricity at reference epoch
+ * double meanPerAno=0.0;             // mean anomaly of periastron
+ * double deltaF = 1.;                // frequency sampling interval
+ * double f_min = 40.0;               // start frequency of inspiral
+ * double f_max = 0.0;                // end frequency of inspiral: 0 means use default
+ * double f_ref = 0.0;                // reference frequency: 0 means waveform end
+ * LALDict *LALpars = NULL;       // structure containing variable with default values
  * Approximant approximant = TaylorF2;  // post-Newtonian approximant
  * COMPLEX16FrequencySeries *hptilde = NULL;  // plus polarization to be returned
  * COMPLEX16FrequencySeries *hctilde = NULL; // cross polarization to be returned
  * ...
- * XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, phiRef, deltaF, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_max, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
+ * XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_max, f_ref, r, i, phiRef, longAscNodes, eccentricity, meanPerAno, deltaF, f_min, f_ref, LALpars, approximant);
  * @endcode
  *
  * ### Coordinate Systems
@@ -131,6 +129,11 @@ extern "C" {
  * (@p S2x,@p S2y, @p S2z), are defined in the source-frame.  Therefore,
  * when the spins are aligned with the orbital angular momentum,
  * @p S1x = @p S1y = @p S2x = @p S2y = 0.
+ * @note
+ * The spin components transverse to the orbital angular momentum @b L at the
+ * reference gravitational wave frequency @p f_ref are given with respect to
+ * the triad x-y-z, with x-axis parallel to the vector pointing from
+ * body 2 to body 1.
  *
  * The wave frame is defined by the Z-axis, which points toward the Earth,
  * and some reference direction, defining the X-axis.  The X-Y-plane is
@@ -139,49 +142,46 @@ extern "C" {
  * The plus- and cross-polarizations of the gravitational waveform are defined
  * in this wave frame.  Specifically, if \f$ h^{ij} \f$ is computed in the
  * source frame, then
- * \f[ h_+ = \frac12 ( \hat{p}_i \hat{p}_j - \hat{q}_i \hat{q}_j ) h^{ij} \f]
+ * \f[ h_+ = \frac12 ( \hat{P}_i \hat{P}_j - \hat{Q}_i \hat{Q}_j ) h^{ij} \f]
  * and
- * \f[ h_\times = \frac12 ( \hat{p}_i \hat{q}_j + \hat{q}_i \hat{p}_j ) h^{ij} \f]
- * where \f$ \hat{p}_i \f$ are the components of the unit vector pointing
- * along the X-axis and \f$ \hat{q}_i \f$ are the components of the unit
+ * \f[ h_\times = \frac12 ( \hat{P}_i \hat{Q}_j + \hat{Q}_i \hat{P}_j ) h^{ij} \f]
+ * where \f$ \hat{P}_i \f$ are the components of the unit vector pointing
+ * along the X-axis and \f$ \hat{Q}_i \f$ are the components of the unit
  * vector pointing along the Y-axis.
  *
  * The orbital elements are:
  *
  *  * Inclination (&iota;).  The angle between the Z-axis of the wave frame
  *    and the z-axis of the source frame.
+ *  * Reference phase (&Phi;) : The angle on the plane of the orbit from the
+ *    line of ascending nodes to the position of body 1
+ *    (x axis in our convention).
+ *    ascending node @htmlonly &#x260A; @endhtmlonly.
  *  * Longitude of ascending node (&Omega;).  The angle on the plane of the
  *    sky from the X-axis of the reference direction in the wave frame to the
  *    ascending node @htmlonly &#x260A; @endhtmlonly.
  *    @note This angle is entirely degenerate with the polarization angle &psi;.
- *  * Argument of pariapsis (&omega;).  The angle on the orbital plane from
- *    the ascending node @htmlonly &#x260A; @endhtmlonly to the x-axis in the
- *    source frame.
- *  * True anomaly (&phi;).  The angle along the orbital plane from the
- *    periapsis to the present position of the orbiting body (body 1).
- *    The reference phase @p phiRef is @e twice the true anomaly of body 1
- *    at the moment when the system reaches the gravitational wave frequency
- *    @p f_ref which is @e twice the orbital frequency.
- *
- * @attention
- * At present, eccentric orbits are not fully supported, and the x-axis
- * of the source frame is defined to be the ascending node
- * @htmlonly &#x260A; @endhtmlonly.  Therefore, &omega;=0 by definition.
- *
- * @attention
- * In the present implementation, the reference direction in the wave frame,
- * i.e., the X-axis, is defined to be the ascending node
- * @htmlonly &#x260A; @endhtmlonly.  Therefore, &Omega;=0 by definition.  At
- * present, then, the X-axis and the x-axis coincide.
+ *    @attention
+ *    In the present implementation, the Y-axis in the wave frame is defined to
+ *    be the ascending node @htmlonly &#x260A; @endhtmlonly.
+ *    Therefore, &Omega;=&pi; /2 by definition with the consequences that
+ *    the z axis lies in the X-Z plane, with positive projection over X.
+ *    Another consequence is that the Z axis lies in the plane spanned by z
+ *    and the axis perpendicular both z and the line of ascending nodes
+ *    (i.e. y at &Phi;=0) with positive projection over the latter.
+ *  * True anomaly (&delta;). The angle along the orbital plane from the
+ *    periapsis to the present position of the orbiting body 1
+ *    (it only applies to eccentric orbits).
  *
  * @sa
- * The coordinate systems used here follow those of
- * > Clifford M. Will and Alan G. Wiseman
- * > "Gravitational radiation from compact binary systems: Gravitational
- * > waveforms and energy loss to second post-Newtonian order"
- * > Phys. Rev. D @b 54, 4813 (1996)
- * > http://dx.doi.org/10.1103/PhysRevD.54.4813
- *
+ * The coordinate systems used here follows those of
+ * > L. Blanchet, G. Faye, B. R. Iyer and S. Sinha,
+ * > "The Third post-Newtonian gravitational wave polarisations and
+ * > associated spherical harmonic modes for inspiralling compact binaries
+ * > in quasi-circular orbits"
+ * > Class. Quant. Grav. @b 25, (2008) 165003
+ * > Erratum: [Class. Quant. Grav. @b 29, (2012) 239501,
+ * > arXiv:0802.1249 [gr-qc].
  */
 
 /**
@@ -238,6 +238,8 @@ typedef enum tagApproximant {
    EccentricFD,         /**< Frequency domain waveform in the SPA to describe low eccentricity systems.
                          * @remarks Implemented in lalsimulation (frequency domain). */
    TaylorF2,		/**< The standard stationary phase approximation; Outputs a frequency-domain wave.
+                         * @remarks Implemented in lalsimulation (frequency domain). */
+   TaylorF2NLTides,     /**< The standard stationary phase approximation including a phenomenological model of nonlinear tidal effects; Outputs a frequency-domain wave.
                          * @remarks Implemented in lalsimulation (frequency domain). */
    TaylorR2F4,		/**< A frequency domain model closely related to TaylorT4
                          * @attention Not implemented in lalsimulation. */
@@ -312,7 +314,13 @@ typedef enum tagApproximant {
    SEOBNRv2_opt,	/**< Optimized Spin-aligned EOBNR model v2
                          * @remarks Implemented in lalsimulation (time domain). */
    SEOBNRv3,		/**< Spin precessing EOBNR model v3
+                         * @todo Fix implementation in lalsimulation (time domain). */
+   SEOBNRv3_pert,        /**< Perturbed [m1 -> m1*(1+1e-15)] Spin precessing EOBNR model v3
                          * @remarks Implemented in lalsimulation (time domain). */
+   SEOBNRv3_opt,        /**< Optimized Spin precessing EOBNR model v3
+                         * @remarks Implemented in lalsimulation (time domain). */
+   SEOBNRv3_opt_rk4,        /**< USE RK4 Optimized Spin precessing EOBNR model v3
+                         * @todo Fix implementation in lalsimulation (time domain). */
    SEOBNRv4,		/**< Spin nonprecessing EOBNR model v4 
                          * @remarks Implemented in lalsimulation (time domain). */
    SEOBNRv4_opt,	/**< Optimized Spin-aligned EOBNR model v4
@@ -448,16 +456,20 @@ PNPhasingSeries;
 /** @} */
 
 /* general waveform switching generation routines  */
-int XLALSimInspiralChooseTDWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 f_min, REAL8 f_ref, REAL8 r, REAL8 i, REAL8 lambda1, REAL8 lambda2, LALSimInspiralWaveformFlags *waveFlags, LALSimInspiralTestGRParam *nonGRparams, int amplitudeO, int phaseO, Approximant approximant);
-int XLALSimInspiralChooseFDWaveform(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, REAL8 phiRef, REAL8 deltaF, REAL8 m1, REAL8 m2, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z, REAL8 f_min, REAL8 f_max, REAL8 f_ref, REAL8 r, REAL8 i, REAL8 lambda1, REAL8 lambda2, LALSimInspiralWaveformFlags *waveFlags, LALSimInspiralTestGRParam *nonGRparams, int amplitudeO, int phaseO, Approximant approximant);
-int XLALSimInspiralTD(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z, REAL8 f_min, REAL8 f_ref, REAL8 r, REAL8 z, REAL8 i, REAL8 lambda1, REAL8 lambda2, LALSimInspiralWaveformFlags *waveFlags, LALSimInspiralTestGRParam *nonGRparams, int amplitudeO, int phaseO, Approximant approximant);
-SphHarmTimeSeries* XLALSimInspiralTDModesFromPolarizations(REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z, REAL8 f_min, REAL8 f_ref, REAL8 r, REAL8 z, REAL8 lambda1, REAL8 lambda2, LALSimInspiralWaveformFlags *waveFlags, LALSimInspiralTestGRParam *nonGRparams, int amplitudeO, int phaseO, Approximant approximant);
-int XLALSimInspiralFD(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hcross, REAL8 phiRef, REAL8 deltaF, REAL8 m1, REAL8 m2, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z, REAL8 f_min, REAL8 f_max, REAL8 f_ref, REAL8 r, REAL8 z, REAL8 i, REAL8 lambda1, REAL8 lambda2, LALSimInspiralWaveformFlags *waveFlags, LALSimInspiralTestGRParam *nonGRparams, int amplitudeO, int phaseO, Approximant approximant);
-int XLALSimInspiralChooseWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z, REAL8 f_min, REAL8 f_ref, REAL8 r, REAL8 i, REAL8 lambda1, REAL8 lambda2, LALSimInspiralWaveformFlags *waveFlags, LALSimInspiralTestGRParam *nonGRparams, int amplitudeO, int phaseO, Approximant approximant); /* DEPRECATED */
+
+int XLALSimInspiralChooseTDWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 m1, const REAL8 m2, const REAL8 s1x, const REAL8 s1y, const REAL8 s1z, const REAL8 s2x, const REAL8 s2y, const REAL8 s2z, const REAL8 distance, const REAL8 inclination, const REAL8 phiRef, const REAL8 longAscNodes, const REAL8 eccentricity, const REAL8 meanPerAno, const REAL8 deltaT, const REAL8 f_min, REAL8 f_ref, LALDict *params, const Approximant approximant);
+int XLALSimInspiralChooseTDWaveformOLD(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 m1, const REAL8 m2, const REAL8 s1x, const REAL8 s1y, const REAL8 s1z, const REAL8 s2x, const REAL8 s2y, const REAL8 s2z, const REAL8 distance, const REAL8 inclination, const REAL8 phiRef, const REAL8 longAscNodes, const REAL8 eccentricity, const REAL8 meanPerAno, const REAL8 deltaT, const REAL8 f_min, REAL8 f_ref, const REAL8 lambda1, const REAL8 lambda2, const REAL8 dQuadParam1, const REAL8 dQuadParam2, LALSimInspiralWaveformFlags *waveFlags, LALSimInspiralTestGRParam *nonGRparams, int amplitudeO, const int phaseO, const Approximant approximant);
+int XLALSimInspiralChooseFDWaveform(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, const REAL8 m1, const REAL8 m2, const REAL8 S1x, const REAL8 S1y, const REAL8 S1z, const REAL8 S2x, const REAL8 S2y, const REAL8 S2z, const REAL8 distance, const REAL8 inclination, const REAL8 phiRef, const REAL8 longAscNodes, const REAL8 eccentricity, const REAL8 meanPerAno,  const REAL8 deltaF, const REAL8 f_min, const REAL8 f_max, REAL8 f_ref, LALDict *LALpars, const Approximant approximant);
+int XLALSimInspiralChooseFDWaveformOLD(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, const REAL8 m1, const REAL8 m2, const REAL8 S1x, const REAL8 S1y, const REAL8 S1z, const REAL8 S2x, const REAL8 S2y, const REAL8 S2z, const REAL8 distance, const REAL8 inclination, const REAL8 phiRef, const REAL8 longAscNodes, const REAL8 eccentricity, const REAL8 meanPerAno,  const REAL8 deltaF, const REAL8 f_min, const REAL8 f_max, REAL8 f_ref, const REAL8 lambda1, const REAL8 lambda2, const REAL8 dQuadParam1, const REAL8 dQuadParam2, LALSimInspiralWaveformFlags *waveFlags, LALSimInspiralTestGRParam *nonGRparams, int amplitudeO, int phaseO, const Approximant approximant);
+int XLALSimInspiralTD(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 m1, REAL8 m2, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z, REAL8 distance, REAL8 inclination, REAL8 phiRef, REAL8 longAscNodes, REAL8 eccentricity, REAL8 meanPerAno, REAL8 deltaT, REAL8 f_min, REAL8 f_ref, LALDict *LALparams, Approximant approximant);
+SphHarmTimeSeries * XLALSimInspiralTDModesFromPolarizations(REAL8 m1, REAL8 m2, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z, REAL8 distance, REAL8 inclination, REAL8 phiRef, REAL8 longAscNodes, REAL8 eccentricity, REAL8 meanPerAno, REAL8 deltaT, REAL8 f_min, REAL8 f_ref, LALDict *LALparams, Approximant approximant);
+int XLALSimInspiralFD(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, REAL8 m1, REAL8 m2, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z, REAL8 distance, REAL8 inclination, REAL8 phiRef, REAL8 longAscNodes, REAL8 eccentricity, REAL8 meanPerAno, REAL8 deltaF, REAL8 f_min, REAL8 f_max, REAL8 f_ref, LALDict *LALparams, Approximant approximant);
+int XLALSimInspiralChooseWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 m1, const REAL8 m2, const REAL8 s1x, const REAL8 s1y, const REAL8 s1z, const REAL8 s2x, const REAL8 s2y, const REAL8 s2z, const REAL8 inclination, const REAL8 phiRef, const REAL8 distance, const REAL8 longAscNodes, const REAL8 eccentricity, const REAL8 meanPerAno, const REAL8 deltaT, const REAL8 f_min, const REAL8 f_ref, LALDict *LALpars, const Approximant approximant);
+/* DEPRECATED */
 
 /* general waveform switching mode generation routines */
-SphHarmTimeSeries *XLALSimInspiralChooseTDModes(REAL8 phiRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_ref, REAL8 r, REAL8 lambda1, REAL8 lambda2, LALSimInspiralWaveformFlags *waveFlags, LALSimInspiralTestGRParam *nonGRparams, int amplitudeO, int phaseO, int lmax, Approximant approximant);
-SphHarmTimeSeries *XLALSimInspiralModesTD(REAL8 phiRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_ref, REAL8 r, REAL8 lambda1, REAL8 lambda2, LALSimInspiralWaveformFlags *waveFlags, LALSimInspiralTestGRParam *nonGRparams, int amplitudeO, int phaseO, int lmax, Approximant approximant);
+SphHarmTimeSeries *XLALSimInspiralChooseTDModes(REAL8 phiRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_ref, REAL8 r, LALDict* LALpars, int lmax, Approximant approximant);
+SphHarmTimeSeries *XLALSimInspiralModesTD(REAL8 phiRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_ref, REAL8 r, LALDict *LALpars, int lmax, Approximant approximant);
 COMPLEX16TimeSeries *XLALSimInspiralChooseTDMode(REAL8 phiRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_ref, REAL8 r, REAL8 lambda1, REAL8 lambda2, LALSimInspiralWaveformFlags *waveFlags, LALSimInspiralTestGRParam *nonGRparams, int amplitudeO, int phaseO, int l, int m, Approximant approximant);
 
 /* routines for generating inspiral waveforms from orbital data */
@@ -507,8 +519,9 @@ int XLALSimInspiralTDConditionStage1(REAL8TimeSeries *hplus, REAL8TimeSeries *hc
 int XLALSimInspiralTDConditionStage2(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, REAL8 f_min, REAL8 f_max);
 
 /* routines for transforming initial conditions of precessing waveforms */
-int XLALSimInspiralTransformPrecessingNewInitialConditions(REAL8 *incl, REAL8 *S1x, REAL8 *S1y, REAL8 *S1z, REAL8 *S2x, REAL8 *S2y, REAL8 *S2z, REAL8 thetaJN, REAL8 phiJL, REAL8 theta1, REAL8 theta2, REAL8 phi12, REAL8 chi1, REAL8 chi2, REAL8 m1, REAL8 m2, REAL8 fRef);
+int XLALSimInspiralTransformPrecessingNewInitialConditions(REAL8 *incl, REAL8 *S1x, REAL8 *S1y, REAL8 *S1z, REAL8 *S2x, REAL8 *S2y, REAL8 *S2z, const REAL8 thetaJN, const REAL8 phiJL, const REAL8 theta1, const REAL8 theta2, const REAL8 phi12, const REAL8 chi1, const REAL8 chi2, const REAL8 m1, const REAL8 m2, const REAL8 fRef, REAL8 phiRef);
 int XLALSimInspiralTransformPrecessingObsoleteInitialConditions(REAL8 *incl, REAL8 *S1x, REAL8 *S1y, REAL8 *S1z, REAL8 *S2x, REAL8 *S2y, REAL8 *S2z, REAL8 thetaJN, REAL8 phiJL, REAL8 theta1, REAL8 theta2, REAL8 phi12, REAL8 chi1, REAL8 chi2, REAL8 m1, REAL8 m2, REAL8 fRef);
+int XLALSimInspiralTransformPrecessingWvf2PE( REAL8 *thetaJN, REAL8 *phiJL, REAL8 *theta1,  	REAL8 *theta2, REAL8 *phi12, REAL8 *chi1, REAL8 *chi2,const REAL8 incl, const REAL8 S1x,	const REAL8 S1y,const REAL8 S1z, const REAL8 S2x, const REAL8 S2y, const REAL8 S2z, const REAL8 m1, const REAL8 m2,	const REAL8 fRef, const REAL8 phiRef);
 
 /* routines for generating PN modes based on orbital data */
 /* in module LALSimInspiralPNMode.c */
@@ -609,9 +622,17 @@ int XLALHGimriGenerator(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8
 /* TaylorF2 functions */
 /* in module LALSimInspiralTaylorF2.c */
 
-int XLALSimInspiralTaylorF2AlignedPhasing(PNPhasingSeries **pfa, const REAL8 m1, const REAL8 m2, const REAL8 chi1, const REAL8 chi2, const REAL8 qm_def1, const REAL8 qm_def2, const LALSimInspiralSpinOrder spinO, const LALSimInspiralTestGRParam *nonGRparams);
-int XLALSimInspiralTaylorF2Core(COMPLEX16FrequencySeries **htilde, const REAL8Sequence *freqs, const REAL8 phi_ref, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 S1z, const REAL8 S2z, const REAL8 f_ref, const REAL8 shft, const REAL8 r, const REAL8 quadparam1, const REAL8 quadparam2, const REAL8 lambda1, const REAL8 lambda2, const LALSimInspiralSpinOrder spinO, const LALSimInspiralTidalOrder tideO, const INT4 phaseO, const INT4 amplitudeO, const LALSimInspiralTestGRParam *nonGRparams);
-int XLALSimInspiralTaylorF2(COMPLEX16FrequencySeries **htilde, const REAL8 phi_ref, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 S1z, const REAL8 S2z, const REAL8 fStart, const REAL8 fEnd, const REAL8 f_ref, const REAL8 r, const REAL8 quadparam1, const REAL8 quadparam2, const REAL8 lambda1, const REAL8 lambda2, const LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, const INT4 phaseO, const INT4 amplitudeO, const LALSimInspiralTestGRParam *nonGRparams);
+int XLALSimInspiralTaylorF2AlignedPhasing(PNPhasingSeries **pfa, const REAL8 m1, const REAL8 m2, const REAL8 chi1, const REAL8 chi2, LALDict *extraPars);
+int XLALSimInspiralTaylorF2Core(COMPLEX16FrequencySeries **htilde, const REAL8Sequence *freqs, const REAL8 phi_ref, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 S1z, const REAL8 S2z, const REAL8 f_ref, const REAL8 shft, const REAL8 r, LALDict *LALparams);
+int XLALSimInspiralTaylorF2(COMPLEX16FrequencySeries **htilde, const REAL8 phi_ref, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 S1z, const REAL8 S2z, const REAL8 fStart, const REAL8 fEnd, const REAL8 f_ref, const REAL8 r, LALDict *LALpars);
+
+/* TaylorF2NLPhase functions */
+/* in module LALSimInspiralTaylorF2NLTides.c */
+
+int XLALSimInspiralTaylorF2AlignedPhasingNLTides(PNPhasingSeries **pfa, const REAL8 m1, const REAL8 m2, const REAL8 chi1, const REAL8 chi2, LALDict *extraPars);
+int XLALSimInspiralTaylorF2NLPhase(REAL8Sequence *dphi, const REAL8Sequence *freqs, const REAL8 Anl1, const REAL8 n1, const REAL8 fo1, const REAL8 m1_SI, const REAL8 Anl2, const REAL8 n2, const REAL8 fo2, const REAL8 m2_SI);
+int XLALSimInspiralTaylorF2CoreNLTides(COMPLEX16FrequencySeries **htilde, const REAL8Sequence *freqs, const REAL8 phi_ref, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 S1z, const REAL8 S2z, const REAL8 f_ref, const REAL8 shft, const REAL8 r, LALDict *LALparams);
+int XLALSimInspiralTaylorF2NLTides(COMPLEX16FrequencySeries **htilde, const REAL8 phi_ref, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 S1z, const REAL8 S2z, const REAL8 fStart, const REAL8 fEnd, const REAL8 f_ref, const REAL8 r, LALDict *LALpars);
 
 
 /* SpinTaylor precessing waveform functions */
@@ -631,37 +652,31 @@ typedef struct tagXLALSimInspiralSpinTaylorTxCoeffs
   REAL8 wdotcoeff[LAL_MAX_PN_ORDER]; ///< coeffs. of PN corrections to wdot
   REAL8 wdotlogcoeff; ///< coefficient of log term in wdot
   REAL8 wdot3S1O, wdot3S2O; ///< non-dynamical 1.5PN SO corrections
-  REAL8 wdot4S1S2, wdot4S1OS2O; ///< non-dynamical 2PN SS corrections
-  REAL8 wdot4S1S1,wdot4S2S2; ///< non-dynamical self S^2 2PN correction
-  REAL8 wdot4S1OS1O, wdot4S2OS2O; ///< non-dynamical self SO^2 2PN correction
-  REAL8 wdot4QMS1S1; ///< non-dynamical S1^2 2PN quadrupole-monopole correct
-  REAL8 wdot4QMS1OS1O; ///< non-dynamical (S1.L)^2 2PN quadrupole-monopole co
-  REAL8 wdot4QMS2S2; ///< non-dynamical S2^2 2PN quadrupole-monopole correct
-  REAL8 wdot4QMS2OS2O; ///< non-dynamical (S2.L)^2 2PN quadrupole-monopole c
+  REAL8 wdot4S1S2Avg, wdot4S1OS2OAvg; ///< non-dynamical, averaged 2PN SS corrections
+  REAL8 wdot4S1S1Avg, wdot4S1OS1OAvg, wdot4S2S2Avg, wdot4S2OS2OAvg; ///< non-dynamical, averaged self S^2 2PN correction
+  REAL8 wdot4QMS1S1Avg, wdot4QMS1OS1OAvg; ///< non-dynamical, averaged (S_1)^2 2PN quadrupole-monopole corrections
+  REAL8 wdot4QMS2S2Avg, wdot4QMS2OS2OAvg; ///< non-dynamical,averaged (S_2)^2 2PN quadrupole-monopole corrections
   REAL8 wdot5S1O, wdot5S2O; ///< non-dynamical 2.5PN SO corrections
-  REAL8 wdot6S1O, wdot6S2O; ///< non-dynamical 3PN SO corrections
-  REAL8 wdot6S1S2, wdot6S1OS2O; ///< non-dynamical 3PN S1-S2 corrections
-  REAL8 wdot6S1S1, wdot6S1OS1O; ///< non-dynamical 3PN Spin^2 corrections
-  REAL8 wdot6S2S2, wdot6S2OS2O; ///< non-dynamical 3PN Spin^2 corrections
-  REAL8 wdot6QMS1S1, wdot6QMS1OS1O; ///< non-dynamical 3PN quadrupole-monopole S1^2 corrections
-  REAL8 wdot6QMS2S2, wdot6QMS2OS2O; ///< non-dynamical 3PN quadrupole-monopole S2^2 corrections
+  REAL8 wdot6S1O, wdot6S2O; ///< non-dynamical, 3PN SO corrections
+  REAL8 wdot6S1S2, wdot6S1OS2O, wdot6S1nS2n; ///< non-dynamical 3PN S1-S2 corrections
+  REAL8 wdot6S1S1, wdot6S1OS1O, wdot6S1nS1n; ///< non-dynamical 3PN Spin^2 corrections
+  REAL8 wdot6S2S2, wdot6S2OS2O, wdot6S2nS2n; ///< non-dynamical 3PN Spin^2 corrections
+  REAL8 wdot6QMS1S1, wdot6QMS1OS1O, wdot6QMS1nS1n; ///< non-dynamical 3PN quadrupole-monopole (S_1)^2 corrections
+  REAL8 wdot6QMS2S2, wdot6QMS2OS2O, wdot6QMS2nS2n; ///< non-dynamical 3PN quadrupole-monopole (S_2)^2 corrections
   REAL8 wdot7S1O, wdot7S2O; ///< non-dynamical 3.5PN SO corrections
   REAL8 wdottidal10;	///< leading order tidal correction
   REAL8 wdottidal12;	///< next to leading order tidal correction
   REAL8 Ecoeff[LAL_MAX_PN_ORDER]; ///< coeffs. of PN corrections to energy
   REAL8 E3S1O, E3S2O; ///< non-dynamical 1.5PN SO corrections
-  REAL8 E4S1S2,E4S1OS2O; ///< non-dynamical 2PN SS correction
-  REAL8 E4QMS1S1; ///< non-dynamical S1^2 2PN quadrupole-monopole correction
-  REAL8 E4QMS1OS1O;///< non-dynamical (S1.L)^2 2PN quadrupole-monopole correction
-  REAL8 E4QMS2S2; ///< non-dynamical S2^2 2PN quadrupole-monopole correction
-  REAL8 E4QMS2OS2O;///< non-dynamical (S2.L)^2 2PN quadrupole-monopole correction
+  REAL8 E4S1S2Avg,E4S1OS2OAvg; ///< non-dynamical, averaged 2PN SS correction
+  REAL8 E4QMS1S1Avg, E4QMS1OS1OAvg;///< non-dynamical, averaged (S_1)^2 2PN quadrupole-monopole correction
+  REAL8 E4QMS2S2Avg, E4QMS2OS2OAvg;///< non-dynamical, averaged (S_2)^2 2PN quadrupole-monopole correction
   REAL8 E5S1O, E5S2O; ///< non-dynamical 2.5PN SO corrections
-  REAL8 E6S1S2;  ///< non-dynamical 3PN S1-S2 correction
-  REAL8 E6S1OS2O; ///< non-dynamical 3PN S1.LN S2.LN correction
-  REAL8 E6S1S1, E6S1OS1O; ///< non-dynamical 3PN slef-spin^2 corrections
-  REAL8 E6S2S2, E6S2OS2O; ///< non-dynamical 3PN self-spin^2 corrections
-  REAL8 E6QMS1S1, E6QMS1OS1O; ///< non-dynamical 3PN quadrupole-monopole spin^2 corrections
-  REAL8 E6QMS2S2, E6QMS2OS2O; ///< non-dynamical 3PN quadrupole-monopole spin^2 corrections
+  REAL8 E6S1S2, E6S1OS2O, E6S1nS2n; ///< non-dynamical 3PN S_1.S_2 correction
+  REAL8 E6S1S1, E6S1OS1O, E6S1nS1n; ///< non-dynamical 3PN self-spin^2 corrections
+  REAL8 E6S2S2, E6S2OS2O, E6S2nS2n; ///< non-dynamical 3PN self-spin^2 corrections
+  REAL8 E6QMS1S1, E6QMS1OS1O, E6QMS1nS1n; ///< non-dynamical 3PN quadrupole-monopole spin^2 corrections
+  REAL8 E6QMS2S2, E6QMS2OS2O, E6QMS2nS2n; ///< non-dynamical 3PN quadrupole-monopole spin^2 corrections
   REAL8 E7S1O, E7S2O; ///< non-dynamical 3.5PN SO corrections
   REAL8 Etidal10; ///< leading order 5PN tidal correction to energy
   REAL8 Etidal12; ///< next to leading order 6PN tidal correction to energy
@@ -671,51 +686,34 @@ typedef struct tagXLALSimInspiralSpinTaylorTxCoeffs
   REAL8 Flogcoeff; ///<log coeff in flux
   REAL8 F3S1O;  ///< Coefficient of S1.LN term
   REAL8 F3S2O;  ///< Coefficient of S2.LN term
-  REAL8 F4S1S2; ///< Coefficient of S1.S2 term
-  REAL8 F4S1OS2O;///< Coefficient of S1.LN S2.LN term
-  REAL8 F4S1S1;  ///< Coefficient of S1.S1 term
-  REAL8 F4S1OS1O;///< Coefficient of (S1.LN)^2 term
-  REAL8 F4S2S2;  ///< Coefficient of S1.S2 term
-  REAL8 F4S2OS2O; ///< Coefficient of (S2.LN)^2 term
-  REAL8 F4QMS1S1; ///< Coefficient of S1.S1 term
-  REAL8 F4QMS2S2; ///< Coefficient of S2.S2 term
-  REAL8 F4QMS1OS1O; ///< Coefficient of quad-monop. (S1.LN)^2 term
-  REAL8 F4QMS2OS2O; ///< Coefficient of quad-monop. (S2.LN)^2 term
+  REAL8 F4S1S2Avg, F4S1OS2OAvg;///< Averaged coefficients of S1.S2 terms
+  REAL8 F4S1S1Avg, F4S1OS1OAvg;///< Coefficient of averaged (S_1)^2 term
+  REAL8 F4S2S2Avg, F4S2OS2OAvg;///< Coefficient of averaged (S_2)^2 term
+  REAL8 F4QMS1S1Avg, F4QMS1OS1OAvg; ///< Averaged coefficient of quad-monop. (S_1)^2 terms
+  REAL8 F4QMS2S2Avg, F4QMS2OS2OAvg; ///< Averaged coefficient of quad-monop. (S_2)^2 terms
   REAL8 F5S1O;  ///< Coefficient of (S1.LN)
   REAL8 F5S2O;  ///< Coefficient of (S1.LN) term
   REAL8 F6S1O, F6S2O; ///< Coefficient of (Si.LN) term
-  REAL8 F6S1S2, F6S1OS2O; ///< Coefficients of S1.S2 and S1.LN S2.LN terms
-  REAL8 F6S1S1, F6S1OS1O; ///< Coefficients of S1.S1 and (S1.LN)^2 terms
-  REAL8 F6S2S2, F6S2OS2O; ///< Coefficients of S2.S2 and (S2.LN)^2 terms
-  REAL8 F6QMS1S1, F6QMS2S2; ///< Coefficients of quad-monop. S1.S1 and S2.S2 terms
-  REAL8 F6QMS1OS1O, F6QMS2OS2O; ///< Coefficients of quad-monop. (S1.LN)^2 and (S2.LN)^2 terms
+  REAL8 F6S1S2, F6S1OS2O, F6S1nS2n; ///< Coefficients of S1.S2 terms
+  REAL8 F6S1S1, F6S1OS1O, F6S1nS1n; ///< Coefficients of S1.S1 terms
+  REAL8 F6S2S2, F6S2OS2O, F6S2nS2n; ///< Coefficients of S2.S2 terms
+  REAL8 F6QMS1S1, F6QMS1OS1O, F6QMS1nS2n; ///< Coefficients of quad-monop. S1.S1 terms
+  REAL8 F6QMS2S2, F6QMS2OS2O, F6QMS2nS2n; ///< Coefficients of quad-monop. S2.S22 terms
   REAL8 F7S1O; ///< Coefficients of S1.LN term
   REAL8 F7S2O; ///< Coefficients of S2.LN term
   REAL8 Ftidal10;     ///< leading order 5PN tidal correction
   REAL8 Ftidal12;     ///< next-to-leading order 6PN tidal correction
   REAL8 Ldot3S1O, Ldot3S2O; ///< non-dynamical 1.5PN SO corrections
-  REAL8 Ldot4S1S2; ///< non-dynamical 2PN coefficients of S1.LN S2xL and S2.LN S1xL
-  REAL8 Ldot4QMS1; ///< non-dynamical quad-monop. 2PN coeff of S1.LN S1xL
-  REAL8 Ldot4QMS2; ///< non-dynamical quad-monop. 2PN coeff of S2.LN S2xL
   REAL8 Ldot5S1O, Ldot5S2O; ///< non-dynamical 2.5PN SO corrections
-  REAL8 Ldot6S1OS2, Ldot6S2OS1; ///< non-dynamical 3PN S1S2 corrections
-  REAL8 Ldot6S1OS1, Ldot6S2OS2; ///< non-dynamical 3PN S^2 corrections
-  REAL8 Ldot6QMS1O, Ldot6QMS2O; ///< non-dynamical 3PN quadrupole-monopole S^2 corrections
   REAL8 Ldot7S1, Ldot7S2; ///< non-dynamical 3.5PN SxL terms in Ldot
   REAL8 S1dot3; ///< coeff of LNxS1 term in S1dot
   REAL8 S2dot3; ///< coeff of LNxS2 term in S2dot
-  REAL8 Sdot4S2;  ///< coeff of S2xS1 term in S1dot and of S1xS2 in S2dot
-  REAL8 Sdot4S2O; ///< coeff of LN.S2 LNxS1 term in S1dot and of LN.S1 LNxS2 in S2dot
-  REAL8 S1dot4QMS1O; ///< coeff of quad-monop. LN.S1 LNxS1 term in S1dot
-  REAL8 S2dot4QMS2O; ///< coeff of quad-monop. LN.S2 LNxS2 term in S1dot
+  REAL8 Sdot4S2Avg;  ///< coeff of S2xS1 term in S1dot and of S1xS2 in S2dot
+  REAL8 Sdot4S2OAvg; ///< coeff of LN.S2 LNxS1 term in S1dot and of LN.S1 LNxS2 in S2dot
+  REAL8 S1dot4QMS1OAvg; ///< coeff of quad-monop. LN.S1 LNxS1 averaged term in S1dot
+  REAL8 S2dot4QMS2OAvg; ///< coeff of quad-monop. LN.S2 LNxS2 averaged term in S1dot
   REAL8 S1dot5S2; ///< coeff of LNxS1 term in S1dot
   REAL8 S2dot5S1; ///< coeff of LNxS2 term in S2dot
-  REAL8 S1dot6S1O, S1dot6S2O;  ///< coeff of LN.Si LNxS1 term in S1dot
-  REAL8 S1dot6S2; ///< coeff of S2xS1 term in S1dot
-  REAL8 S1dot6QMS1O; ///< coeff of quad-monop. S1.LN LNxS1 term in S1dot
-  REAL8 S2dot6S1O, S2dot6S2O; ///< coeff of LN.Si LNxS2 term in S2dot
-  REAL8 S2dot6S1;    // Coefficient of S1 x S2 in S2dot
-  REAL8 S2dot6QMS2O; //Coeff. of quad-monop. S2.LN LN X S2 term in S2dot
   REAL8 S1dot7S2;// Coefficient of S1 x S2 in S1dot
   REAL8 S2dot7S1;// Coefficient of S1 x S2 in S2dot
   REAL8 fStart; ///< starting GW frequency of integration
@@ -725,18 +723,19 @@ typedef struct tagXLALSimInspiralSpinTaylorTxCoeffs
   LALSimInspiralTidalOrder tideO;///< Twice PN order of included tidal effects
   REAL8 prev_domega; ///< Previous value of domega/dt used in stopping test
 } XLALSimInspiralSpinTaylorTxCoeffs;
+
 int XLALSimInspiralSpinTaylorPNEvolveOrbit(REAL8TimeSeries **V, REAL8TimeSeries **Phi, REAL8TimeSeries **S1x, REAL8TimeSeries **S1y, REAL8TimeSeries **S1z, REAL8TimeSeries **S2x, REAL8TimeSeries **S2y, REAL8TimeSeries **S2z, REAL8TimeSeries **LNhatx, REAL8TimeSeries **LNhaty, REAL8TimeSeries **LNhatz, REAL8TimeSeries **E1x, REAL8TimeSeries **E1y, REAL8TimeSeries **E1z, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fEnd, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, INT4 phaseO, Approximant approx);
-int XLALSimInspiralSpinTaylorT1(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 v0, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, int phaseO, int amplitudeO);
-int XLALSimInspiralSpinTaylorT2(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 v0, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, int phaseO, int amplitudeO);
-int XLALSimInspiralSpinTaylorT4(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 v0, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, int phaseO, int amplitudeO);
+int XLALSimInspiralSpinTaylorT1(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 v0, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALDict *LALparams, int phaseO, int amplitudeO);
+int XLALSimInspiralSpinTaylorT2(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 v0, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALDict *LALparams, int phaseO, int amplitudeO);
+int XLALSimInspiralSpinTaylorT4(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 v0, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALDict *LALParams, int phaseO, int amplitudeO);
 int XLALSimInspiralSpinTaylorT5(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 incAngle, int phaseO, int amplitudeO);
 int XLALSimInspiralSpinTaylorT4PTFQVecs(REAL8TimeSeries **Q1, REAL8TimeSeries **Q2, REAL8TimeSeries **Q3, REAL8TimeSeries **Q4, REAL8TimeSeries **Q5, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 chi1, REAL8 kappa, REAL8 fStart, REAL8 lambda1, REAL8 lambda2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, int phaseO);
-int XLALSimInspiralSpinTaylorT2Fourier(COMPLEX16FrequencySeries **hplus, COMPLEX16FrequencySeries **hcross, REAL8 fMin, REAL8 fMax, REAL8 deltaF, INT4 kMax, REAL8 phiRef, REAL8 v0, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, INT4 phaseO, INT4 amplitudeO, INT4 phiRefAtEnd);
-int XLALSimInspiralSpinTaylorT4Fourier(COMPLEX16FrequencySeries **hplus, COMPLEX16FrequencySeries **hcross, REAL8 fMin, REAL8 fMax, REAL8 deltaF, INT4 kMax, REAL8 phiRef, REAL8 v0, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, INT4 phaseO, INT4 amplitudeO, INT4 phiRefAtEnd);
-int XLALSimInspiralSpinTaylorF2(COMPLEX16FrequencySeries **hplus_out, COMPLEX16FrequencySeries **hcross_out, REAL8 phi_ref, REAL8 deltaF, REAL8 m1_SI, REAL8 m2_SI, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, const REAL8 fStart, const REAL8 fEnd, const REAL8 f_ref, const REAL8 r, LALSimInspiralTestGRParam *moreParams, const LALSimInspiralSpinOrder spinO, const INT4 phaseO, const INT4 amplitudeO);
+int XLALSimInspiralSpinTaylorT2Fourier(COMPLEX16FrequencySeries **hplus, COMPLEX16FrequencySeries **hcross, REAL8 fMin, REAL8 fMax, REAL8 deltaF, INT4 kMax, REAL8 phiRef, REAL8 v0, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALDict *LALparams, INT4 phaseO, INT4 amplitudeO, INT4 phiRefAtEnd);
+int XLALSimInspiralSpinTaylorT4Fourier(COMPLEX16FrequencySeries **hplus, COMPLEX16FrequencySeries **hcross, REAL8 fMin, REAL8 fMax, REAL8 deltaF, INT4 kMax, REAL8 phiRef, REAL8 v0, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALDict *LALparams, INT4 phaseO, INT4 amplitudeO, INT4 phiRefAtEnd);
+int XLALSimInspiralSpinTaylorF2(COMPLEX16FrequencySeries **hplus_out, COMPLEX16FrequencySeries **hcross_out, REAL8 phi_ref, REAL8 deltaF, REAL8 m1_SI, REAL8 m2_SI, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, const REAL8 fStart, const REAL8 fEnd, const REAL8 f_ref, const REAL8 r, LALDict *moreParams, INT4 phaseO, INT4 amplitudeO);
 int XLALSimInspiralPrecessingPTFQWaveforms(REAL8TimeSeries **Q1, REAL8TimeSeries **Q2, REAL8TimeSeries **Q3, REAL8TimeSeries **Q4, REAL8TimeSeries **Q5, REAL8TimeSeries *V, REAL8TimeSeries *Phi, REAL8TimeSeries *S1x, REAL8TimeSeries *S1y, REAL8TimeSeries *S1z, REAL8TimeSeries *S2x, REAL8TimeSeries *S2y, REAL8TimeSeries *S2z, REAL8TimeSeries *LNhatx, REAL8TimeSeries *LNhaty, REAL8TimeSeries *LNhatz, REAL8TimeSeries *E1x, REAL8TimeSeries *E1y, REAL8TimeSeries *E1z, REAL8 m1, REAL8 m2, REAL8 r);
-int XLALSimInspiralInitialConditionsPrecessingApproxs(REAL8 *inc, REAL8 *S1x, REAL8 *S1y, REAL8 *S1z, REAL8 *S2x, REAL8 *S2y, REAL8 *S2z, const REAL8 inclIn, const REAL8 S1xIn, const REAL8 S1yIn, const REAL8 S1zIn, const REAL8 S2xIn, const REAL8 S2yIn, const REAL8 S2zIn, const REAL8 m1, const REAL8 m2, const REAL8 fRef, LALSimInspiralFrameAxis axisChoice);
-INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx, REAL8 *dLNhy, REAL8 *dLNhz, REAL8 *dE1x, REAL8 *dE1y, REAL8 *dE1z, REAL8 *dS1x, REAL8 *dS1y, REAL8 *dS1z, REAL8 *dS2x, REAL8 *dS2y, REAL8 *dS2z, REAL8 *dphiExtra, const REAL8 v, const REAL8 LNhx, const REAL8 LNhy, const REAL8 LNhz, const REAL8 E1x, const REAL8 E1y, const REAL8 E1z, const REAL8 S1x, const REAL8 S1y, const REAL8 S1z, const REAL8 S2x, const REAL8 S2y, const REAL8 S2z, const REAL8 LNhdotS1, const REAL8 LNhdotS2, XLALSimInspiralSpinTaylorTxCoeffs *params);
+int XLALSimInspiralInitialConditionsPrecessingApproxs(REAL8 *inc, REAL8 *S1x, REAL8 *S1y, REAL8 *S1z, REAL8 *S2x, REAL8 *S2y, REAL8 *S2z, const REAL8 inclIn, const REAL8 S1xIn, const REAL8 S1yIn, const REAL8 S1zIn, const REAL8 S2xIn, const REAL8 S2yIn, const REAL8 S2zIn, const REAL8 m1, const REAL8 m2, const REAL8 fRef, const REAL8 phiRef, LALSimInspiralFrameAxis axisChoice);
+INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx, REAL8 *dLNhy, REAL8 *dLNhz, REAL8 *dE1x, REAL8 *dE1y, REAL8 *dE1z, REAL8 *dS1x, REAL8 *dS1y, REAL8 *dS1z, REAL8 *dS2x, REAL8 *dS2y, REAL8 *dS2z, const REAL8 v, const REAL8 LNhx, const REAL8 LNhy, const REAL8 LNhz, const REAL8 E1x, const REAL8 E1y, const REAL8 E1z, const REAL8 S1x, const REAL8 S1y, const REAL8 S1z, const REAL8 S2x, const REAL8 S2y, const REAL8 S2z, const REAL8 LNhdotS1, const REAL8 LNhdotS2, XLALSimInspiralSpinTaylorTxCoeffs *params);
 INT4 XLALSimInspiralSpinTaylorT4Derivatives(REAL8 t, const REAL8 values[], REAL8 dvalues[], void *mparams);
 INT4 XLALSimInspiralSpinTaylorT4Setup(XLALSimInspiralSpinTaylorTxCoeffs *params, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fEnd, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, INT4 phaseO);
 INT4 XLALSimSpinTaylorEnergySpinDerivativeSetup(XLALSimInspiralSpinTaylorTxCoeffs *params, const REAL8 lambda1, const REAL8 lambda2, const REAL8 quadparam1, const REAL8 quadparam2);
@@ -760,8 +759,8 @@ int XLALSimInspiralEFD(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySer
 /* spin-dominated waveform functions */
 /* in module LALSimInspiralSpinDominatedWaveform.c */
 
-int XLALSimInspiralSpinDominatedWaveformInterfaceTD(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 D, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, int phaseO, int amplitudeO, REAL8 phiRef);
-int XLALSimInspiralSpinDominatedWaveformDriver(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 totalmass, REAL8 nu, REAL8 chi1, REAL8 D, REAL8 kappa1, REAL8 beta1, REAL8 theta, REAL8 fStart, REAL8 fRef, int phaseO, int amplitudeO, REAL8 deltaT, REAL8 phiRef, REAL8 phin0);
+int XLALSimInspiralSpinDominatedWaveformInterfaceTD(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 D, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 incl, int phaseO, int amplitudeO, REAL8 phiRef);
+int XLALSimInspiralSpinDominatedWaveformDriver(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 totalmass, REAL8 nu, REAL8 chi1, REAL8 D, REAL8 kappa1, REAL8 beta1, REAL8 theta, REAL8 fStart, REAL8 fRef, int phaseO, int amplitudeO, REAL8 deltaT, REAL8 phiRef, REAL8 phin0, REAL8 polarizationangle);
 
 
 /* TaylorF2 Reduced Spin routines */

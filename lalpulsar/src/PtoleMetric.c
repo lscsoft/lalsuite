@@ -24,8 +24,7 @@
 #include <lal/DetectorSite.h>
 #include <lal/LALStdlib.h>
 #include <lal/PtoleMetric.h>
-#include <lal/PulsarTimes.h>
-#include <lal/StackMetric.h>
+#include <lal/GetEarthTimes.h>
 #include <lal/Factorial.h>
 
 /* Bounds on acceptable parameters, may be somewhat arbitrary */
@@ -62,7 +61,7 @@
  * docs/S2/FDS/Isolated/ptolemetric.tex.  Jones, Owen, and Whitbeck will write
  * up the calculation and some tests as a journal article.
  *
- * The function LALGetEarthTimes() is used to calculate the spin and
+ * The function XLALGetEarthTimes() is used to calculate the spin and
  * rotational phase of the Earth at the beginning of the observation.
  *
  * On output, the \a metric->data is arranged with the same indexing
@@ -110,7 +109,7 @@ void LALPtoleMetric( LALStatus *status,
   REAL8 B[10];     /* Array of intermediate quantities */
   REAL8 Is[5];      /* Array of integrals needed for spindown.*/
   UINT2 dim;         /* Dimension of parameter space */
-  PulsarTimesParamStruc zero_phases; /* Needed to calculate phases of spin*/
+  REAL8 tMidnight, tAutumn; /* Needed to calculate phases of spin*/
   /* and orbit at t_gps =0             */
   REAL8Vector *big_metric; /* 10-dim metric in (phi,f,a,d,f1) for internal use */
   REAL8 T;  /* Duration of observation */
@@ -227,11 +226,9 @@ void LALPtoleMetric( LALStatus *status,
   sin_2d = sin(2*(input->position.latitude));
 
   /* Calculation of phases of spin and orbit at start: */
-  zero_phases.epoch.gpsSeconds = input->epoch.gpsSeconds;
-  zero_phases.epoch.gpsNanoSeconds = input->epoch.gpsNanoSeconds;
-  LALGetEarthTimes( status, &zero_phases);
-  phi_o_i = -zero_phases.tAutumn/LAL_YRSID_SI*LAL_TWOPI;
-  phi_s_i = -zero_phases.tMidnight/LAL_DAYSID_SI*LAL_TWOPI + lon;
+  XLAL_CHECK_LAL( status, XLALGetEarthTimes(&input->epoch, &tMidnight, &tAutumn) == XLAL_SUCCESS, XLAL_EFUNC );
+  phi_o_i = -tAutumn/LAL_YRSID_SI*LAL_TWOPI;
+  phi_s_i = -tMidnight/LAL_DAYSID_SI*LAL_TWOPI + lon;
 
 
   /* Quantities involving the orbital phase: */
@@ -631,12 +628,7 @@ void LALPulsarMetric ( LALStatus *stat,
 		       REAL8Vector **metric,
 		       PtoleMetricIn *input )
 {
-  MetricParamStruc XLAL_INIT_DECL(params);
-  PulsarTimesParamStruc XLAL_INIT_DECL(spinParams);
-  PulsarTimesParamStruc XLAL_INIT_DECL(baryParams);
-  PulsarTimesParamStruc XLAL_INIT_DECL(compParams);
-  REAL8Vector *lambda = NULL;
-  UINT4 i, nSpin, dim;
+  UINT4 nSpin, dim;
 
   INITSTATUS(stat);
   ATTATCHSTATUSPTR (stat);
@@ -644,11 +636,6 @@ void LALPulsarMetric ( LALStatus *stat,
   ASSERT ( input, stat, PTOLEMETRICH_ENULL, PTOLEMETRICH_MSGENULL );
   ASSERT ( metric != NULL, stat, PTOLEMETRICH_ENULL, PTOLEMETRICH_MSGENULL );
   ASSERT ( *metric == NULL, stat, PTOLEMETRICH_ENONULL, PTOLEMETRICH_MSGENONULL );
-
-  if (input->metricType == LAL_PMETRIC_COH_EPHEM) {
-    ASSERT ( input->ephemeris != NULL, stat, PTOLEMETRICH_ENULL, PTOLEMETRICH_MSGENULL);
-  }
-
 
   if ( input->spindown )
     nSpin = input->spindown->length;
@@ -670,96 +657,6 @@ void LALPulsarMetric ( LALStatus *stat,
       }ENDFAIL(stat);
       break;
 
-    case LAL_PMETRIC_COH_PTOLE_NUMERIC:   /* use CoherentMetric + Ptolemaic timing */
-    case LAL_PMETRIC_COH_EPHEM:   /* use CoherentMetric + ephemeris timing */
-      /* Set up constant parameters for barycentre transformation. */
-      baryParams.epoch = input->epoch;
-      baryParams.t0 = 0;
-      /* FIXME: should be redundant now, with Detector passed */
-      baryParams.latitude = input->site->frDetector.vertexLatitudeRadians;
-      baryParams.longitude = input->site->frDetector.vertexLongitudeRadians;
-
-      baryParams.site = input->site;
-      LALGetEarthTimes( stat->statusPtr, &baryParams );
-      BEGINFAIL(stat) {
-	LALDDestroyVector (stat->statusPtr, metric);
-      }ENDFAIL(stat);
-
-      /* set timing-function for earth-motion: either ptolemaic or ephemeris */
-      if (input->metricType == LAL_PMETRIC_COH_PTOLE_NUMERIC)
-	{
-	  baryParams.t1 = LALTBaryPtolemaic;
-	  baryParams.dt1 = LALDTBaryPtolemaic;
-	}
-      else	/* use precise ephemeris-timing */
-	{
-	  baryParams.t1 = LALTEphemeris;	/* LAL-bug: fix type of LALTEphemeris! */
-	  baryParams.dt1 = LALDTEphemeris;
-	  baryParams.ephemeris = input->ephemeris;
-	}
-
-
-      /* Set up input structure for CoherentMetric()  */
-      if (nSpin)
-	{
-	  /* Set up constant parameters for spindown transformation. */
-	  spinParams.epoch = input->epoch;
-	  spinParams.t0 = 0;
-
-	  /* Set up constant parameters for composed transformation. */
-	  compParams.epoch = input->epoch;
-	  compParams.t1 = baryParams.t1;
-	  compParams.dt1 = baryParams.dt1;
-	  compParams.t2 = LALTSpin;
-	  compParams.dt2 = LALDTSpin;
-	  compParams.constants1 = &baryParams;
-	  compParams.constants2 = &spinParams;
-	  compParams.nArgs = 2;
-
-	  params.dtCanon = LALDTComp;
-	  params.constants = &compParams;
-	}
-      else	/* simple case: just account for earth motion */
-	{
-	  params.dtCanon = baryParams.dt1;
-	  params.constants = &baryParams;
-	}
-
-      params.start = 0;
-      params.deltaT = (REAL8) input->duration;
-      params.n = 1; 	/* only 1 stack */
-      params.errors = 0;
-
-      /* Set up the parameter list. */
-      LALDCreateVector( stat->statusPtr, &lambda, nSpin + 2 + 1 );
-      BEGINFAIL(stat) {
-	LALDDestroyVector (stat->statusPtr, metric);
-      }ENDFAIL(stat);
-
-      lambda->data[0] = (REAL8) input->maxFreq;
-      lambda->data[1] = (REAL8) input->position.longitude;	/* Alpha */
-      lambda->data[2] = (REAL8) input->position.latitude;	/* Delta */
-
-      if ( nSpin )
-	{
-	  for (i=0; i < nSpin; i++)
-	    lambda->data[3 + i] = (REAL8) input->spindown->data[i];
-	}
-
-      /* _finally_ we can call the metric */
-      LALCoherentMetric( stat->statusPtr, *metric, lambda, &params );
-      BEGINFAIL(stat) {
-	LALDDestroyVector (stat->statusPtr, metric);
-	LALDDestroyVector( stat->statusPtr, &lambda );
-      }ENDFAIL(stat);
-
-      LALDDestroyVector( stat->statusPtr, &lambda );
-      BEGINFAIL(stat) {
-	LALDDestroyVector (stat->statusPtr, metric);
-      }ENDFAIL(stat);
-
-      break;
-
     default:
       XLALPrintError ("Unknown metric type `%d`\n", input->metricType);
       ABORT (stat, PTOLEMETRICH_EMETRIC,  PTOLEMETRICH_MSGEMETRIC);
@@ -771,6 +668,119 @@ void LALPulsarMetric ( LALStatus *stat,
   RETURN (stat);
 
 } /* LALPulsarMetric() */
+
+
+/**
+ * \brief Project out the zeroth dimension of a metric.
+ * \author Creighton, T. D.
+ * \date 2000
+ *
+ * ### Description ###
+ *
+ * This function takes a metric \f$g_{\alpha\beta}\f$, where
+ * \f$\alpha,\beta=0,1,\ldots,n\f$, and computes the projected metric
+ * \f$\gamma_{ij}\f$ on the subspace \f$i,j=1,\ldots,n\f$, as described in the
+ * header StackMetric.h.
+ *
+ * The argument \a *metric stores the metric components in the manner
+ * used by the functions LALCoherentMetric() and
+ * LALStackMetric(), and \a errors indicates whether error
+ * estimates are included in \a *metric.  Thus \a *metric is a
+ * vector of length \f$(n+1)(n+2)/2\f$ if \a errors is zero, or of length
+ * \f$(n+1)(n+2)\f$ if \a errors is nonzero; see LALCoherentMetric()
+ * for the indexing scheme.
+ *
+ * Upon return, \a *metric stores the components of \f$\gamma_{ij}\f$ in
+ * the same manner as above, with the physically meaningless components
+ * \f$\gamma_{\alpha0} = \gamma_{0\alpha}\f$ (and their uncertainties) set
+ * identically to zero.
+ *
+ * ### Algorithm ###
+ *
+ * The function simply implements \eqref{eq_gij_gab} in
+ * StackMetric.h.  The formula used to convert uncertainties
+ * \f$s_{\alpha\beta}\f$ in the metric components \f$g_{\alpha\beta}\f$ into
+ * uncertainties \f$\sigma_{ij}\f$ in \f$\gamma_{ij}\f$ is:
+ * \f[
+ * \sigma_{ij} = s_{ij}
+ * + s_{0i}\left|\frac{g_{0j}}{g_{00}}\right|
+ * + s_{0j}\left|\frac{g_{0i}}{g_{00}}\right|
+ * + s_{00}\left|\frac{g_{0i}g_{0j}}{(g_{00})^2}\right| \; .
+ * \f]
+ * Note that if the metric is highly degenerate, one may find that one or
+ * more projected components are comparable in magnitude to their
+ * estimated numerical uncertainties.  This can occur when the
+ * observation times are very short or very long compared to the
+ * timescales over which the timing derivatives are varying.  In the
+ * former case, one is advised to use analytic approximations or a
+ * different parameter basis.  In the latter case, the degenerate
+ * components are often not relevant for data analysis, and can be
+ * effectively set to zero.
+ *
+ * Technically, starting from a full metric
+ * \f$g_{\alpha\beta}(\mathbf{\lambda})\f$, the projection
+ * \f$\gamma_{ij}(\vec\lambda)\f$ is the metric of a subspace
+ * \f$\{\vec\lambda\}\f$ passing through the point \f$\mathbf{\lambda}\f$ on a plane
+ * orthogonal to the \f$\lambda^0\f$ axis.  In order for \f$\gamma_{ij}\f$ to
+ * measure the \em maximum distance between points \f$\vec\lambda\f$, it
+ * is important to evaluate \f$g_{\alpha\beta}\f$ at the value of \f$\lambda^0\f$
+ * that gives the largest possible separations.  For the pulsar search
+ * formalism discussed in StackMetric.h, this is always
+ * achieved by choosing the largest value of \f$\lambda^0=f_\mathrm{max}\f$
+ * that is to be covered in the search.
+ */
+void
+LALProjectMetric( LALStatus *stat, REAL8Vector *metric, BOOLEAN errors )
+{
+  UINT4 s;     /* The number of parameters before projection. */
+  UINT4 i, j;  /* Indecies. */
+  REAL8 *data; /* The metric data array. */
+
+  INITSTATUS(stat);
+
+  /* Check that data exist. */
+  ASSERT(metric,stat,PTOLEMETRICH_ENULL,PTOLEMETRICH_MSGENULL);
+  ASSERT(metric->data,stat,PTOLEMETRICH_ENULL,PTOLEMETRICH_MSGENULL);
+  data=metric->data;
+
+  /* Make sure the metric's length is compatible with some
+     dimensionality s. */
+  for(s=0,i=1;i<metric->length;s++){
+    i=s*(s+1);
+    if(!errors)
+      i=i>>1;
+  }
+  s--; /* counteract the final s++ */
+  ASSERT(i==metric->length,stat,PTOLEMETRICH_EPARM,
+	 PTOLEMETRICH_MSGEPARM);
+
+  /* Now project out the zeroth component of the metric. */
+  for(i=1;i<s;i++)
+    for(j=1;j<=i;j++){
+      INT4 i0 = (i*(i+1))>>1;
+      INT4 myj0 = (j*(j+1))>>1;
+      INT4 ij = i0+j;
+      if(errors){
+	data[2*ij]-=data[2*i0]*data[2*myj0]/data[0];
+	data[2*ij+1]+=data[2*i0+1]*fabs(data[2*myj0]/data[0])
+	  + data[2*myj0+1]*fabs(data[2*i0]/data[0])
+	  + data[1]*fabs(data[2*i0]/data[0])*fabs(data[2*myj0]/data[0]);
+      } else
+	data[ij]-=data[i0]*data[myj0]/data[0];
+    }
+
+  /* Set all irrelevant metric coefficients to zero. */
+  for(i=0;i<s;i++){
+    INT4 i0 = i*(i+1)>>1;
+    if(errors)
+      data[2*i0]=data[2*i0+1]=0.0;
+    else
+      data[i0]=0.0;
+  }
+
+  /* And that's it! */
+  RETURN(stat);
+}
 
 
 /**

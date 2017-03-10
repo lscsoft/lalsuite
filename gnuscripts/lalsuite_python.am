@@ -10,7 +10,10 @@ if HAVE_PYTHON
 
 BUILT_SOURCES += $(pymodule_PYTHON) $(pybin_scripts)
 MOSTLYCLEANFILES += $(pybin_scripts)
-EXTRA_DIST +=
+
+uninstalled_runner = $(top_srcdir)/gnuscripts/lalsuite_run_uninstalled
+uninstalled_compiler = $(uninstalled_runner) '$(abs_top_builddir)' '$(abs_builddir)' '$(LDADD)'
+EXTRA_DIST += $(uninstalled_runner)
 
 all-local: pymodule-all-local pyscripts-all-local
 pymodule-all-local: pymodule-mostlyclean-local
@@ -56,17 +59,14 @@ $(pybin_scripts): Makefile pyscripts-all-local
 		printf "\nERROR: $(srcdir)/$@.py must not be executable\n\n" >&2; \
 		exit 1; \
 	fi; \
-	if test "x`$(SED) -n -e '/^$${shebang}/p' $(srcdir)/$@.py`" != x; then \
+	if test "x`$(SED) -n -e /^$${shebang}/p $(srcdir)/$@.py`" != x; then \
 		printf "\nERROR: $(srcdir)/$@.py must not contain a $${shebang} command line\n\n" >&2; \
 		exit 1; \
 	fi; \
 	echo "$${shebang}/bin/sh" > $@.tmp; \
-	echo "pypath=\"$(abs_builddir):$(abs_srcdir):$(LAL_PYTHON_PATH)\"" >> $@.tmp; \
-	echo "pyscript=\"$(abs_builddir)/$@.py\"" >> $@.tmp; \
-	echo "PYTHONPATH=\`echo \"\$${PYTHONPATH}\" | $(SED) -e \"s|\$${pypath}:||g;\"\`" >> $@.tmp; \
-	echo "PYTHONPATH=\"\$${pypath}:\$${PYTHONPATH}\"" >> $@.tmp; \
+	echo "PYTHONPATH=\"$(abs_builddir):$(abs_srcdir):$(LAL_PYTHON_PATH):\$${PYTHONPATH}\"" >> $@.tmp; \
 	echo "export PYTHONPATH" >> $@.tmp; \
-	echo "exec $(PYTHON) \"\$${pyscript}\" \"\$$@\"" >> $@.tmp; \
+	echo "exec $(uninstalled_compiler) $(PYTHON) \"$(abs_builddir)/$@.py\" \"\$$@\"" >> $@.tmp; \
 	echo "exit 1" >> $@.tmp; \
 	chmod +x $@.tmp || exit 1; \
 	mv -f $@.tmp $@
@@ -91,7 +91,7 @@ pybin-install-exec-local:
 				echo "$${shebang}$(PYTHON)" > $${file}.tmp; \
 				cat $(srcdir)/$${file}.py >> $${file}.tmp; \
 			else \
-				sed_regex="s|^pypath=.*$$|pypath=\"$${pypath}\"|;s|^pyscript=.*$$|pyscript=\"$(pkglibexecdir)/$${file}.py\"|"; \
+				sed_regex="s|^PYTHONPATH=.*$$|PYTHONPATH=\"$${pypath}:\$${PYTHONPATH}\"|;s|^exec .*$$|exec $(PYTHON) \"$(pkglibexecdir)/$${file}.py\" \"\$$@\"|"; \
 				$(SED) -e "$${sed_regex}" $${file} > $${file}.tmp || exit 1; \
 				echo " $(INSTALL_DATA) $(srcdir)/$${file}.py '$(DESTDIR)$(pkglibexecdir)/$${file}.py'"; \
 				$(INSTALL_DATA) $(srcdir)/$${file}.py "$(DESTDIR)$(pkglibexecdir)/$${file}.py" || exit 1; \

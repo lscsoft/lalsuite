@@ -8,18 +8,19 @@ Name: @PACKAGE@
 Version: @VERSION@
 Release: 1%{?dist}
 Summary: LSC Algorithm Library Applications
-License: GPL
+License: GPLv2+
 Group: LAL
 Source: %{name}-%{version}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: openmpi-devel
 BuildRequires: cfitsio-devel
 BuildRequires: fftw-devel
 BuildRequires: gsl-devel
+BuildRequires: less
 BuildRequires: libframe-devel
 BuildRequires: libmetaio-devel
+BuildRequires: openmpi-devel
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lal-python >= @MIN_LAL_VERSION@
 BuildRequires: lalframe-devel >= @MIN_LALFRAME_VERSION@
@@ -40,13 +41,15 @@ BuildRequires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
 BuildRequires: lalpulsar-python >= @MIN_LALPULSAR_VERSION@
 BuildRequires: lalinference-devel >= @MIN_LALINFERENCE_VERSION@
 BuildRequires: lalinference-python >= @MIN_LALINFERENCE_VERSION@
-Requires: openmpi
 Requires: cfitsio
 Requires: fftw
 Requires: gsl
+Requires: h5py
 Requires: healpy
+Requires: less
 Requires: libframe
 Requires: libmetaio
+Requires: openmpi
 Requires: python
 Requires: lal >= @MIN_LAL_VERSION@
 Requires: lal-python >= @MIN_LAL_VERSION@
@@ -103,14 +106,19 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %files
 %defattr(-,root,root)
 %{_bindir}/*
-%{_pkgpythondir}/*
-%{_mandir}/man1/*
 %{_datadir}/lalapps/*
+%{_mandir}/man1/*
+%{_pkgpythondir}/*
 %{_sysconfdir}/lalapps-user-env.*
-
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 6.21.0-1
+- O2 release
+
+* Mon Sep 26 2016 Adam Mercer <adam.mercer@ligo.org> 6.20.0-1
+- ER10 release
+
 * Thu Jun 23 2016 Adam Mercer <adam.mercer@ligo.org> 6.19.0-1
 - ER9 release
 

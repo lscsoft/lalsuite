@@ -970,6 +970,20 @@ clear ans;
 LALCheckMemoryLeaks();
 disp("PASSED dynamic array of pointers access");
 
+## check typemaps for strings and double pointers
+disp("checking typemaps for strings and double pointers ...");
+sts = new_swig_lal_test_struct();
+[ptr_ptr, ptr_null_ptr, null_ptr_ptr] = swig_lal_test_typemaps_string_ptrptr("abcde", "", [], sts, 0, []);
+assert(swig_this(ptr_ptr) == swig_this(sts));
+assert(swig_this(ptr_null_ptr) == swig_this(sts));
+assert(swig_this(null_ptr_ptr) == 0);
+clear sts;
+clear ptr_ptr;
+clear ptr_null_ptr;
+clear null_ptr_ptr;
+LALCheckMemoryLeaks();
+disp("PASSED typemaps for strings and double pointers");
+
 ## check 'tm' struct conversions
 disp("checking 'tm' struct conversions ...");
 gps0 = 989168284;
@@ -1020,8 +1034,8 @@ assert(LIGOTimeGPS("-6542354.389038577") == LIGOTimeGPS("-914984.929117316") * 7
 assert(LIGOTimeGPS("-6542354.389038577") == 7.1502318572066237 * LIGOTimeGPS("-914984.929117316"));
 assert(LIGOTimeGPS("-127965.770535834") == LIGOTimeGPS("-914984.929117316") / 7.1502318572066237);
 t1 += 812345667.75;
-assert(strcmp(t1.__str__(), "812345678.250000000"));
-assert(new_LIGOTimeGPS(t1.__repr__()) == t1);
+assert(strcmp(t1.__str__(), "812345678.25"));
+assert(new_LIGOTimeGPS(t1.__str__()) == t1);
 assert(t1.ns() == 812345678250000000);
 t4struct = new_swig_lal_test_gps;
 t4struct.t = 1234.5;

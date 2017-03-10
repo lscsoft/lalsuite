@@ -456,6 +456,8 @@ void record_likelihoods(LALInferenceThreadState *thread) {
     LALInferenceAddVariable(thread->currentParams, "logprior", &(thread->currentPrior), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddVariable(thread->currentParams, "logl", &(thread->currentLikelihood), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddVariable(thread->currentParams, "deltalogl", &deltalogl, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(thread->currentParams, "temperature", &(thread->temperature), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(thread->currentParams, "nullLogL", &(thread->nullLikelihood), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
 
     LALInferenceIFOData *headIFO = thread->parent->data;
     char name[256];
@@ -493,10 +495,10 @@ void mcmc_step(LALInferenceRunState *runState, LALInferenceThreadState *thread) 
 
     // compute prior & likelihood:
     logPriorProposed = runState->prior(runState, thread->proposedParams, thread->model);
-    if (logPriorProposed > -DBL_MAX)
+    if (isfinite(logPriorProposed))
         logLikelihoodProposed = runState->likelihood(thread->proposedParams, runState->data, thread->model);
     else
-        logLikelihoodProposed = -DBL_MAX;
+        logLikelihoodProposed = -INFINITY;
 
     if (propTrack)
         LALInferenceCopyVariables(thread->currentParams, thread->preProposalParams);
@@ -1024,9 +1026,9 @@ void LALInferenceAdaptation(LALInferenceThreadState *thread) {
     INT4 adaptTau = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptTau");
     INT4 length = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptLength");
     INT4 adaptRestartBuffer = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptResetBuffer");
-    REAL8 logLAtAdaptStart = LALInferenceGetREAL8Variable(thread->proposalArgs, "logLAtAdaptStart");
+    REAL8 logPAtAdaptStart = LALInferenceGetREAL8Variable(thread->proposalArgs, "logPAtAdaptStart");
 
-    if (thread->currentLikelihood > logLAtAdaptStart+(REAL8)nPar/2) {
+    if (thread->currentPrior + thread->currentLikelihood > logPAtAdaptStart+(REAL8)nPar/2) {
         LALInferenceAdaptationRestart(thread);
     } else if (adapting) {
         /* Turn off adaption after adaptLength steps without restarting */
@@ -1070,6 +1072,8 @@ void LALInferenceAdaptationRestart(LALInferenceThreadState *thread) {
         }
     }
 
+    REAL8 current_posterior = thread->currentPrior + thread->currentLikelihood;
+
     INT4 length = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptLength");
     INT4 tau = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptTau");
     INT4 adaptRestartBuffer = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptResetBuffer");
@@ -1077,7 +1081,7 @@ void LALInferenceAdaptationRestart(LALInferenceThreadState *thread) {
     LALInferenceAddVariable(thread->proposalArgs, "s_gamma", &s_gamma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
 
     LALInferenceSetVariable(thread->proposalArgs, "adapting", &adapting);
-    LALInferenceSetVariable(thread->proposalArgs, "logLAtAdaptStart", &(thread->currentLikelihood));
+    LALInferenceSetVariable(thread->proposalArgs, "logPAtAdaptStart", &(current_posterior));
     LALInferenceSetVariable(thread->proposalArgs, "acl", &bigACL);
 
     thread->step = -length;
@@ -1151,9 +1155,9 @@ void LALInferenceNameOutputs(LALInferenceRunState *runState) {
     }
 
     if((ppt=LALInferenceGetProcParamVal(runState->commandLine, "--runid")))
-        snprintf(runState->runID, 255, "%s_%s", "lalinference_mcmc",ppt->value);
+        snprintf(runState->runID, sizeof(runState->runID), "%s_%s", "lalinference_mcmc",ppt->value);
     else
-        snprintf(runState->runID, 255, "lalinference_mcmc");
+        snprintf(runState->runID, sizeof(runState->runID), "lalinference_mcmc");
 }
 
 
@@ -1216,7 +1220,7 @@ void LALInferenceCheckpointMCMC(LALInferenceRunState *runState) {
         LALInferenceH5VariablesArrayToDataset(chain_group, &(thread->currentParams), 1, "current_parameters");
         XLALH5FileAddScalarAttribute(chain_group, "temperature", &(thread->temperature), LAL_D_TYPE_CODE);
         XLALH5FileAddScalarAttribute(chain_group, "last_step", &(thread->step), LAL_I4_TYPE_CODE);
-        XLALH5FileAddScalarAttribute(chain_group, "effective_sample_size", &(thread->effective_sample_size), LAL_D_TYPE_CODE);
+        XLALH5FileAddScalarAttribute(chain_group, "effective_sample_size", &(thread->effective_sample_size), LAL_I4_TYPE_CODE);
         XLALH5FileAddScalarAttribute(chain_group, "differential_point_skip", &(thread->differentialPointsSkip), LAL_I4_TYPE_CODE);
 
         /* Store the total number of temperature swaps accepted over the stored window */
@@ -1390,10 +1394,10 @@ void LALInferenceWriteMCMCSamples(LALInferenceRunState *runState) {
                 && LALInferenceCheckVariable(thread->algorithmParams, "N_outputarray") ) {
             output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(thread->algorithmParams,"outputarray");
             N_output_array=*(UINT4 *)LALInferenceGetVariable(thread->algorithmParams,"N_outputarray");
-        }
 
-        /* Create run identifier group */
-        LALInferenceH5VariablesArrayToDataset(group, output_array, N_output_array, thread->name);
+            /* Create run identifier group */
+            LALInferenceH5VariablesArrayToDataset(group, output_array, N_output_array, thread->name);
+        }
 
         /* TODO: Write metadata */
     }
@@ -1456,7 +1460,7 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, LALInfere
         benchmark = 1;
 
     /* Print version info */
-    fprintf(threadoutput, "  LALInference version:%s,%s,%s,%s,%s\n", lalAppsVCSId,lalAppsVCSDate,lalAppsVCSBranch,lalAppsVCSAuthor,lalAppsVCSStatus);
+    fprintf(threadoutput, "  LALInference version:%s,%s,%s,%s,%s\n", lalAppsVCSInfo.vcsId, lalAppsVCSInfo.vcsDate, lalAppsVCSInfo.vcsBranch, lalAppsVCSInfo.vcsAuthor, lalAppsVCSInfo.vcsStatus);
     fprintf(threadoutput,"  %s\n", arg_str);
 
     /* Print algorithm parameters */
@@ -1881,4 +1885,45 @@ void LALInferenceMCMCResumeRead(LALInferenceThreadState *thread, FILE *resumeFil
     thread->currentParams = LALInferenceReadVariablesBinary(resumeFile);
 
     return;
+}
+
+void LALInferenceAddPTMCMCMetaInfo(LALInferenceRunState *runState) {
+    UINT4  nIFO = 0;
+    INT4 i, MPIsize, n_local_threads, ntemps, randomseed;
+    REAL8 seglen, epoch;
+    LALInferenceIFOData *ifodata1;
+    LALInferenceThreadState *thread;
+
+    MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+
+    n_local_threads = runState->nthreads;
+    ntemps = MPIsize*n_local_threads;
+
+    randomseed = LALInferenceGetINT4Variable(runState->algorithmParams, "random_seed");
+
+    ifodata1 = runState->data;
+    while(ifodata1){
+        nIFO++;
+        ifodata1 = ifodata1->next;
+    }
+
+    REAL8 SampleRate = 4096.0; //default value of the sample rate from LALInferenceReadData()
+    if(LALInferenceGetProcParamVal(runState->commandLine, "--srate"))
+        SampleRate = atof(LALInferenceGetProcParamVal(runState->commandLine, "--srate")->value);
+
+    seglen = atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value);
+    epoch = XLALGPSGetREAL8(&(runState->data->epoch));
+
+    for (i=0; i<runState->nthreads; i++) {
+
+        thread = runState->threads[i];
+
+        LALInferenceAddVariable(thread->currentParams, "nIFO", &nIFO, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceAddVariable(thread->currentParams, "nLocalTemps", &n_local_threads, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceAddVariable(thread->currentParams, "nTemps", &ntemps, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceAddVariable(thread->currentParams, "randomSeed", &randomseed, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceAddVariable(thread->currentParams, "sampleRate", &SampleRate, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceAddVariable(thread->currentParams, "segmentLength", &seglen, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceAddVariable(thread->currentParams, "segmentStart", &epoch, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    }
 }

@@ -48,33 +48,6 @@ extern "C" {
 #include <lal/LALBarycenter.h>
 #include <lal/DetectorStates.h>
 
-/* ---------- exported defines and macros -------------------- */
-
-/** \name Error codes */
-/*@{*/
-#define LALCOMPUTEAMH_ENOTS        1
-#define LALCOMPUTEAMH_EBCERR       2
-#define LALCOMPUTEAMH_EESERR       3
-#define LALCOMPUTEAMH_EEPH         4
-#define LALCOMPUTEAMH_EDAS         5
-#define LALCOMPUTEAMH_EFRD         6
-#define LALCOMPUTEAMH_ENULL 	   7
-#define LALCOMPUTEAMH_EINPUT   	   8
-#define LALCOMPUTEAMH_ENONULL 	   9
-#define LALCOMPUTEAMH_EMEM   	  10
-
-#define LALCOMPUTEAMH_MSGENOTS    "Input LIGOTimeGPS Vector is wrong size or NULL"
-#define LALCOMPUTEAMH_MSGEBCERR   "Baryinput pointer is invalid"
-#define LALCOMPUTEAMH_MSGEESERR   "EarthState structure invalid, or pointer NULL"
-#define LALCOMPUTEAMH_MSGEEPH     "Ephemeris Table invalid, or pointer NULL"
-#define LALCOMPUTEAMH_MSGEDAS     "Detector and source information invalid, or pointer NULL"
-#define LALCOMPUTEAMH_MSGEFRD     "Detector geometry information invalid, or pointer NULL"
-#define LALCOMPUTEAMH_MSGENULL 	  "Arguments contained an unexpected null pointer"
-#define LALCOMPUTEAMH_MSGEINPUT   "Invalid input"
-#define LALCOMPUTEAMH_MSGENONULL  "Output pointer is non-NULL"
-#define LALCOMPUTEAMH_MSGEMEM     "Out of memory. Bad."
-/*@}*/
-
 /* ---------- exported data types -------------------- */
 
 /**
@@ -102,7 +75,7 @@ typedef struct tagAMCoeffs
 typedef struct tagAMCoeffsParams
 {
   BarycenterInput      *baryinput;  /**< data from Barycentring routine */
-  EarthState           *earth;      /**< from LALBarycenter()           */
+  EarthState           *earth;      /**< from XLALBarycenter()           */
   EphemerisData        *edat;       /**< the ephemerides                */
   LALDetAndSource      *das;        /**< det and source information     */
   LALFrDetector        *det;        /**< detector geometry              */
@@ -173,21 +146,14 @@ typedef struct tagMultiAMCoeffs {
 
 /*---------- exported prototypes [API] ----------*/
 
-void LALComputeAM (LALStatus *, AMCoeffs *coe, LIGOTimeGPS *ts, AMCoeffsParams *params);
-
-void LALGetAMCoeffs(LALStatus *, AMCoeffs *coeffs, const DetectorStateSeries *DetectorStates, SkyPosition skypos);
-
-void LALNewGetAMCoeffs(LALStatus *, AMCoeffs *coeffs, const DetectorStateSeries *DetectorStates, SkyPosition skypos);
 int XLALComputeAntennaPatternCoeffs ( REAL8 *ai, REAL8 *bi, const SkyPosition *skypos, const LIGOTimeGPS *tGPS, const LALDetector *site, const EphemerisData *edat );
-void LALGetMultiAMCoeffs (LALStatus *, MultiAMCoeffs **multiAMcoef, const MultiDetectorStateSeries *multiDetStates, SkyPosition pos );
+
 int XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights );
 
 AMCoeffs *XLALComputeAMCoeffs ( const DetectorStateSeries *DetectorStates, SkyPosition skypos );
 MultiAMCoeffs *XLALComputeMultiAMCoeffs ( const MultiDetectorStateSeries *multiDetStates, const MultiNoiseWeights *multiWeights, SkyPosition skypos );
 
-/* creators and destructors for AM-vectors */
 AMCoeffs *XLALCreateAMCoeffs ( UINT4 numSteps );
-
 void XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef );
 void XLALDestroyAMCoeffs ( AMCoeffs *amcoef );
 

@@ -99,6 +99,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     ----------------------------------------------\n\
     --- Parallel Tempering Algorithm Parameters --\n\
     ----------------------------------------------\n\
+    (--adapt-temps)     Adapt the spacing between temperatures for uniform swap acceptance\n\
     (--temp-skip N)     Number of steps between temperature swap proposals (100)\n\
     (--tempKill N)      Iteration number to stop temperature swapping (Niter)\n\
     (--ntemps N)         Number of temperature chains in ladder (as many as needed)\n\
@@ -315,6 +316,10 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
 
     /* Establish the random state across MPI threads */
     init_mpi_randomstate(runState);
+
+    /* Add common fixed parameters to output */
+
+    LALInferenceAddPTMCMCMetaInfo(runState);
 
     /* Give a new set of proposal args to each thread */
     for (i=0; i<runState->nthreads; i++) {

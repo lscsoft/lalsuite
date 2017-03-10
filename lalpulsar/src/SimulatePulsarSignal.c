@@ -113,7 +113,7 @@ static LALUnit emptyUnit;
  * outside-functions <em>except</em> for LALGPStoLMST1() to calculate
  * the local (mean) sidereal time at the detector for given GPS-time,
  * (which I double-checked with an independent Mathematica script),
- * and and LALBarycenter() to calculate \f$\tau(t)\f$.
+ * and and XLALBarycenter() to calculate \f$\tau(t)\f$.
  *
  * NOTE: currently only isolated pulsars are supported
  *

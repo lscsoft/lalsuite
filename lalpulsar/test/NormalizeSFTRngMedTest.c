@@ -92,7 +92,7 @@ octave> printf ("rngmedREF3 = { %.16g, %.16g, %.16g, %.16g, %.16g };\n", rngmed 
   XLAL_CHECK ( XLALSFTtoRngmed ( &rngmed, mySFT, blockSize3 ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALSFTtoRngmed() failed.");
 
   /* get median->mean bias correction, needed for octave-reference results, to make
-   * them comparable to the bias-corrected results from LALSFTtoRngmed()
+   * them comparable to the bias-corrected results from XLALSFTtoRngmed()
    */
   REAL8 medianBias3 = XLALRngMedBias ( blockSize3 );
   XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALRngMedBias() failed.");
@@ -133,7 +133,7 @@ rngmedREF4[] = { 3.96013552804278e-42, 3.96013552804278e-42, 3.96013552804278e-4
   XLAL_CHECK ( XLALSFTtoRngmed ( &rngmed, mySFT, blockSize4 ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALSFTtoRngmed() failed.");
 
   /* get median->mean bias correction, needed for octave-reference results, to make
-   * them comparable to the bias-corrected results from LALSFTtoRngmed()
+   * them comparable to the bias-corrected results from XLALSFTtoRngmed()
    */
   REAL8 medianBias4 = XLALRngMedBias ( blockSize4 );
   XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALRngMedBias() failed.");
