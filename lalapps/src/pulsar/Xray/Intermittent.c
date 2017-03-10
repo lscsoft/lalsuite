@@ -39,6 +39,7 @@
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
 #include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include <lal/BandPassTimeSeries.h>
 
 #include <lal/LALDatatypes.h>
@@ -513,7 +514,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 
 /*   /\* get GIT version information *\/ */
 /*   { */
-/*     CHAR *temp_version = XLALGetVersionString(0); */
+/*     CHAR *temp_version = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% "); */
 /*     UINT4 n = strlen(temp_version); */
 /*     version_string = XLALCalloc(n,sizeof(CHAR)); */
 /*     snprintf(version_string,n-1,"%s",temp_version); */
@@ -597,13 +598,7 @@ int XLALOpenIntermittentResultsFile(FILE **fp,                  /**< [in] filepo
   }
 
   /* get GIT version information */
-  {
-    CHAR *temp_version = XLALGetVersionString(0);
-    UINT4 n = strlen(temp_version);
-    version_string = XLALCalloc(n,sizeof(CHAR));
-    snprintf(version_string,n-1,"%s",temp_version);
-    XLALFree(temp_version);
-  }
+  version_string = XLALVCSInfoString( lalAppsVCSInfoList, 0, "%% " );
 
   /* output header information */
   fprintf((*fp),"%s \n",version_string);

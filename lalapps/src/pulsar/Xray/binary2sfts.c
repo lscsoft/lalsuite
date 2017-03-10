@@ -39,6 +39,7 @@
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
 #include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include <lal/BandPassTimeSeries.h>
 
 #include <lal/LALDatatypes.h>
@@ -196,8 +197,8 @@ int main( int argc, char *argv[] )  {
 
   /**********************************************************************************/
   /* generate comment string */
-  char *VCSInfoString = XLALGetVersionString(0);
-  XLAL_CHECK ( VCSInfoString != NULL, XLAL_EFUNC, "XLALGetVersionString(0) failed.\n" );
+  char *VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ");
+  XLAL_CHECK ( VCSInfoString != NULL, XLAL_EFUNC, "XLALVCSInfoString() failed.\n" );
   CHAR *logstr;
   size_t len;
   XLAL_CHECK ( (logstr = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE )) != NULL, XLAL_EFUNC );

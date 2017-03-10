@@ -63,6 +63,7 @@
 #include <lal/LogPrintf.h>
 #include <lal/VectorMath.h>
 #include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 #include "SemiCoherent.h"
 
@@ -504,8 +505,8 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   }
   if (should_exit) exit(1);
 
-  if ((version_string = XLALGetVersionString(0)) == NULL) {
-    XLALPrintError("XLALGetVersionString(0) failed.\n");
+  if ((version_string = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) == NULL) {
+    XLALPrintError("XLALVCSInfoString() failed.\n");
     exit(1);
   }
 
@@ -911,13 +912,7 @@ int XLALOpenSemiCoherentResultsFile(FILE **fp,                  /**< [in] filepo
   }
 
   /* get GIT version information */
-  {
-    CHAR *temp_version = XLALGetVersionString(0);
-    UINT4 n = strlen(temp_version);
-    version_string = XLALCalloc(n,sizeof(CHAR));
-    snprintf(version_string,n-1,"%s",temp_version);
-    XLALFree(temp_version);
-  }
+  version_string = XLALVCSInfoString( lalAppsVCSInfoList, 0, "%% " );
 
   /* output header information */
   fprintf((*fp),"%s \n",version_string);
