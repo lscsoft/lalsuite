@@ -220,7 +220,7 @@ int XLALGetNextRandomBinaryTemplate(Template **temp,                        /**<
     (*temp)->ndim = gridparams->ndim;
 
   }
-  else if ((*temp)->currentidx >= (UINT4)gridparams->Nr - 1) {
+  else if ((*temp)->currentidx >= gridparams->Nr - 1) {
 
     /* free binary template memory */
     XLALFree((*temp)->x);
@@ -1275,7 +1275,8 @@ int XLALComputeBinaryGridParams(GridParameters **binarygridparams,  /**< [out] t
   for (k=1;k<(INT4)(*binarygridparams)->ndim;k++) (*binarygridparams)->prod[k] = (*binarygridparams)->prod[k-1]*(*binarygridparams)->grid[k-1].length;
 
   /* if we've specified a random template bank */
-  if (coverage>0) {
+  (*binarygridparams)->coverage = coverage;
+  if ((*binarygridparams)->coverage>0) {
 
     REAL8 Vn = pow(LAL_PI,ndim/2.0)/gsl_sf_gamma(1.0+ndim/2.0);
 
@@ -1287,12 +1288,11 @@ int XLALComputeBinaryGridParams(GridParameters **binarygridparams,  /**< [out] t
     REAL8 dVr = sqrt(G11*G22*G33*G44);
     REAL8 Vsr = dVr*space->data[2].span*(1.0/60.0)*(pow(space->data[3].max,5.0)-pow(space->data[3].min,5.0))*(pow(space->data[0].max,4.0)-pow(space->data[0].min,4.0))*(pow(space->data[1].max,3.0)-pow(space->data[1].min,3.0));
 
-    (*binarygridparams)->Nr = (INT4)ceil((1.0/Vn)*log(1.0/(1.0-coverage))*(pow(mu,-ndim/2.0))*Vsr);
+    (*binarygridparams)->Nr = (UINT8)ceil((1.0/Vn)*log(1.0/(1.0-coverage))*(pow(mu,-ndim/2.0))*Vsr);
     LogPrintf(LOG_DEBUG,"%s : computed the number of random binary templates to be %"LAL_UINT8_FORMAT".\n",__func__,(*binarygridparams)->Nr);
-    LogPrintf(LOG_DEBUG,"%s : to br compared to the total number of cubic templates %"LAL_UINT8_FORMAT" (%.6f).\n", __func__, (*binarygridparams)->max, (REAL8)(*binarygridparams)->max/(REAL8)(*binarygridparams)->Nr);
+    LogPrintf(LOG_DEBUG,"%s : to be compared to the total number of cubic templates %"LAL_UINT8_FORMAT" (%.6f).\n", __func__, (*binarygridparams)->max, (REAL8)(*binarygridparams)->max/(REAL8)(*binarygridparams)->Nr);
 
   }
-  else (*binarygridparams)->Nr = -1;
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;

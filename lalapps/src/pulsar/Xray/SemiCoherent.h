@@ -160,7 +160,8 @@ extern "C" {
     UINT4 *prod;                      /**< internal variable used to store the size of sub-dimensions */
     UINT8 max;                        /**< the maximum (total) number of templates */
     REAL8 mismatch;                   /**< the mismatch */
-    INT8 Nr;
+    REAL8 coverage;                   /**< random template bank coverage */
+    UINT8 Nr;                         /**< number of random templates to generate */
   } GridParameters;
 
    /** Stores the gridding parameters for a hypercubic grid of templates

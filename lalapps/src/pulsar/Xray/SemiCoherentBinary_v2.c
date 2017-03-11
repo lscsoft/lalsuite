@@ -639,9 +639,9 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   LogPrintf(LOG_DEBUG,"%s : computed the threshold as %f\n",__func__,thr); */
 
   int (*getnext)(Template **temp,GridParameters *gridparams, ParameterSpace *space,void *);
-  INT8 newmax = bingrid->max;
+  UINT8 newmax = bingrid->max;
   ParameterSpace *temppspace = NULL;
-  if (bingrid->Nr>0) {
+  if (bingrid->coverage>0) {
     getnext = &XLALGetNextRandomBinaryTemplate;
     newmax = bingrid->Nr;
     temppspace = pspace;
