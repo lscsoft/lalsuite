@@ -683,14 +683,14 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
       /* find ndim-D indices corresponding to the spin derivitive values for the segment power */
       for (j=0;j<fdots[i].ndim;j++) {
         fdots[i].idx[j] = lround( (fdots[i].x[j] - fdotgrid->grid[j].min)*fdotgrid->grid[j].oneoverdelta );
-        if ( fdots[i].idx[j] < 0 || ((UINT4)fdots[i].idx[j]) >= fdotgrid->grid[j].length ) {
-          LogPrintf(LOG_CRITICAL,"%s: stepped outside grid in segment %d, nu=%g, asini=%g, tasc=%g, omega=%g",__func__, i, bintemp->x[0], bintemp->x[1], bintemp->x[2], bintemp->x[3]);
-          for (j=0;j<fdots[i].ndim;j++) {
-            LogPrintfVerbatim(LOG_CRITICAL,", fdots[%d] = [%g <= %g <= %g, 0 <= %d < %d]", j, fdotgrid->grid[j].min, fdots[i].x[j], fdotgrid->grid[j].min + fdotgrid->grid[j].delta*fdotgrid->grid[j].length, fdots[i].idx[j], fdotgrid->grid[j].length);
-          }
-          LogPrintfVerbatim(LOG_CRITICAL,"\n");
-          XLAL_ERROR(XLAL_EDOM);
+
+        /* check that index is in range - if not push back into range, but log it */
+        if ( fdots[i].idx[j] < 0 || fdots[i].idx[j] >= (INT4)fdotgrid->grid[j].length ) {
+          LogPrintf(LOG_CRITICAL,"%s: stepped outside grid in segment %d, nu=%g, asini=%g, tasc=%g, omega=%g, fdots[%d] = [%g <= %g <= %g, 0 <= %d < %d]\n", __func__, i, bintemp->x[0], bintemp->x[1], bintemp->x[2], bintemp->x[3], j, fdotgrid->grid[j].min, fdots[i].x[j], fdotgrid->grid[j].min + fdotgrid->grid[j].delta*fdotgrid->grid[j].length, fdots[i].idx[j], fdotgrid->grid[j].length);
+          if ( fdots[i].idx[j] < 0 ) fdots[i].idx[j] = 0;
+          if ( fdots[i].idx[j] >= (INT4)fdotgrid->grid[j].length ) fdots[i].idx[j] = (INT4)fdotgrid->grid[j].length - 1;
         }
+
       }
 
       /* ensure number of extra frequency bins do not go out of range of coherent grids */
