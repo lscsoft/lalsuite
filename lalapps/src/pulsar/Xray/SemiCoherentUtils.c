@@ -1104,7 +1104,7 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
     LogPrintf(LOG_CRITICAL,"%s : Null pointer returned from XLALSFTdataFind.  Exiting.\n",__func__);
     XLAL_ERROR(XLAL_EINVAL);
   }
-  LogPrintf(LOG_DEBUG,"%s : found %d SFTs\n",__func__,catalog->length);
+  LogPrintf(LOG_NORMAL,"%s : found %d SFTs\n",__func__,catalog->length);
 
   /* define actual frequency range to read in */
   freqmin = freq;

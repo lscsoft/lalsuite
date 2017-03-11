@@ -1102,11 +1102,11 @@ int XLALDefineBinaryParameterSpace(REAL8Space **space,                 /**< [out
   (*space)->data[3].span = (*space)->data[3].max - (*space)->data[3].min;
 
   /* output boundaries to screen */
-  LogPrintf(LOG_DEBUG,"%s : using flat priors on the following ranges\n",__func__);
-  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[0].name,(*space)->data[0].min,(*space)->data[0].max);
-  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[1].name,(*space)->data[1].min,(*space)->data[1].max);
-  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[2].name,(*space)->data[2].min,(*space)->data[2].max);
-  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[3].name,(*space)->data[3].min,(*space)->data[3].max);
+  LogPrintf(LOG_NORMAL,"%s : using flat priors on the following ranges\n",__func__);
+  LogPrintf(LOG_NORMAL,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[0].name,(*space)->data[0].min,(*space)->data[0].max);
+  LogPrintf(LOG_NORMAL,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[1].name,(*space)->data[1].min,(*space)->data[1].max);
+  LogPrintf(LOG_NORMAL,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[2].name,(*space)->data[2].min,(*space)->data[2].max);
+  LogPrintf(LOG_NORMAL,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[3].name,(*space)->data[3].min,(*space)->data[3].max);
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
