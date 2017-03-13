@@ -71,12 +71,12 @@ def parse_command_line():
 	if options.likelihood_file is not None:
 		options.likelihood_filenames += options.likelihood_file
 	if options.likelihood_cache is not None:
-		options.likelihood_filenames += [CacheEntry(line).path for line in file(options.likelihood_cache)]
+		options.likelihood_filenames += [CacheEntry(line).path for line in open(options.likelihood_cache)]
 	if not options.likelihood_filenames:
 		raise ValueError("no likelihood files specified")
 
 	if options.input_cache:
-		filenames += [CacheEntry(line).path for line in file(options.input_cache)]
+		filenames += [CacheEntry(line).path for line in open(options.input_cache)]
 	if not filenames:
 		raise ValueError("no candidate databases specified")
 
