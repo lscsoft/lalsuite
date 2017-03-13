@@ -73,7 +73,7 @@ def parse_command_line():
 	if options.likelihood_cache is not None:
 		options.likelihood_filenames += [CacheEntry(line).path for line in open(options.likelihood_cache)]
 	if not options.likelihood_filenames:
-		raise ValueError("no likelihood files specified")
+		raise ValueError("no ranking statistic likelihood data files specified")
 
 	if options.input_cache:
 		filenames += [CacheEntry(line).path for line in open(options.input_cache)]
@@ -147,7 +147,7 @@ for n, filename in enumerate(filenames):
 	# identical for H1, H2, L1, and V1.
 	#
 
-	triangulators = stringutils.triangulators(dict((instrument, 8e-5) for instrument in contents.instruments))
+	triangulators = stringutils.triangulators(dict.fromkeys(contents.instruments, 8e-5))
 
 	#
 	# Run likelihood ratio calculation.
