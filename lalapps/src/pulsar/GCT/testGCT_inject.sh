@@ -192,7 +192,7 @@ fi
 rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT2="${testDir}/GCT2.dat"
 
-cmdline="$gct_code $gct_CL_common --DataFiles=\"$SFTdir$dirsep*$label*.sft\" --fnameout='$outfile_GCT2' --injectionSources=\"$injectionSources\""
+cmdline="$gct_code $gct_CL_common --DataFiles=\"$SFTdir$dirsep*$label*.sft\" --fnameout='$outfile_GCT2' --injectionSources=\"$injectionSources\" --loudestTwoFPerSeg"
 echo $cmdline
 if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$gct_code' ..."
