@@ -288,7 +288,7 @@ class StringCoincParamsDistributions(snglcoinc.CoincParamsDistributions):
 		n_coincs, = scipy.stats.poisson.rvs(float(abs(segmentsUtils.vote(seglists.values(), 2))) * sum(coinc_generator.rates.values()) * experiments)
 
 		# generate synthetic background coincs
-		zero_lag_offset_vector = offsetvector((instrument, 0.0) for instrument in seglists)
+		zero_lag_offset_vector = offsetvector.fromkeys(seglists, 0.0)
 		for n, events in enumerate(coinc_generator.coincs(lsctables.SnglBurst.get_peak)):
 			# n = 1 on 2nd iteration, so placing this condition
 			# where it is in the loop causes the correct number
