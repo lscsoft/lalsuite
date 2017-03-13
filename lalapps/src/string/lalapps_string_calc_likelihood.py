@@ -32,9 +32,8 @@ import sqlite3
 import sys
 
 
+from glue.ligolw import dbtables
 from lal.utils import CacheEntry
-
-
 from lalburst import git_version
 from lalburst import ligolw_burca2
 from lalburst import SnglBurstUtils
@@ -122,9 +121,6 @@ ln_likelihood_ratio = snglcoinc.LnLikelihoodRatio(coincparamsdistributions)
 #
 # iterate over files
 #
-
-
-from glue.ligolw import dbtables
 
 
 for n, filename in enumerate(filenames):
