@@ -245,7 +245,8 @@ def write_sky_map(filename, m, **kwargs):
     if isinstance(m, Table) or (isinstance(m, np.ndarray) and m.dtype.names):
         m = Table(m)
     else:
-        m = np.atleast_2d(m).T
+        if np.ndim(m) == 1:
+            m = [m]
         m = Table(m, names=DEFAULT_NESTED_NAMES[:len(m)])
     m.meta.update(kwargs)
 
