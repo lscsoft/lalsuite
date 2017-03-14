@@ -316,14 +316,14 @@ SWIGLAL_CLEAR(COPYINOUT_ARRAYS(gsl_matrix_complex, copyinout));
 // Test dynamic array of pointer access.
 typedef struct tagswig_lal_test_arrayofdata {
 #ifdef SWIG
-  SWIGLAL(ARRAY_1D(swig_lal_test_arrayofdata, INT4, data, UINT4, length));
+  SWIGLAL(ARRAY_STRUCT_1D(swig_lal_test_arrayofdata, INT4, data, UINT4, length));
 #endif // SWIG
   UINT4 length;
   INT4 *data;
 } swig_lal_test_arrayofdata;
 typedef struct tagswig_lal_test_arrayofptrs {
 #ifdef SWIG
-  SWIGLAL(ARRAY_1D(swig_lal_test_arrayofptrs, swig_lal_test_arrayofdata*, data, UINT4, length));
+  SWIGLAL(ARRAY_STRUCT_1D(swig_lal_test_arrayofptrs, swig_lal_test_arrayofdata*, data, UINT4, length));
 #endif // SWIG
   UINT4 length;
   swig_lal_test_arrayofdata **data;
