@@ -629,7 +629,7 @@ class knopeDAG(pipeline.CondorDAG):
         if os.path.isfile(jsonfile):
           # append starttime (which will be the end time of the previous results) timestamp to JSON file
           try:
-            shutil.copyfile(jsonfile, jsonfile + '_%d' % self.initial_start.values()[0])
+            shutil.copyfile(jsonfile, jsonfile + '_%d' % self.starttime.values()[0])
           except:
             print("Warning... could not copy previous results JSON file '%s'. Previous results may get overwritten." % jsonfile, file=sys.stderr)
 
@@ -755,7 +755,7 @@ class knopeDAG(pipeline.CondorDAG):
         if self.autonomous:
           if os.path.isfile(posteriorsfiles[det]):
             try: # copy to file with the start time (i.e. the end time of the previous analysis for which the posterior file belongs) appended
-              shutil.copyfile(posteriorsfiles[det], posteriorsfiles[det].strip('.hdf') + '_%d.hdf' % self.initial_start.values()[0])
+              shutil.copyfile(posteriorsfiles[det], posteriorsfiles[det].strip('.hdf') + '_%d.hdf' % self.starttime.values()[0])
             except:
               print("Warning... could not create copy of current posterior samples file '%s'. This will get overwritten on next autonomous run." % posteriorsfiles[det], file=sys.stderr)
 
@@ -1975,6 +1975,8 @@ class knopeDAG(pipeline.CondorDAG):
           if os.path.isfile(segfiles[ifo]):
             # get filename for list containing all previous segments
             prevsegs = os.path.join(os.path.dirname(segfiles[ifo]), 'previous_segments.txt')
+            if not os.path.isfile(prevsegs):
+              shutil.copy2(segfiles[ifo], prevsegs) # copy current (unupdated) segfile into previous segments file if it does not already exist
             self.segment_file_update.append((segfiles[ifo], prevsegs)) # add to list of files to be concatenated together at the end (i.e. provided no errors have occurred)
 
           if self.autonomous:
@@ -2018,9 +2020,9 @@ class knopeDAG(pipeline.CondorDAG):
 
           # create output files
           if self.coarse_heterodyne_binary_output:
-            coarseoutput = os.path.join(freqfacdircoarse, 'coarse-%s-%d-%d.bin' % (ifo, int(self.initial_start[ifo]), int(self.endtime[ifo])))
+            coarseoutput = os.path.join(freqfacdircoarse, 'coarse-%s-%d-%d.bin' % (ifo, int(self.starttime[ifo]), int(self.endtime[ifo])))
           else:
-            coarseoutput = os.path.join(freqfacdircoarse, 'coarse-%s-%d-%d.txt' % (ifo, int(self.initial_start[ifo]), int(self.endtime[ifo])))
+            coarseoutput = os.path.join(freqfacdircoarse, 'coarse-%s-%d-%d.txt' % (ifo, int(self.starttime[ifo]), int(self.endtime[ifo])))
 
           # create coarse heterodyne node
           coarsenode = heterodyneNode(chetjob)
@@ -2058,7 +2060,7 @@ class knopeDAG(pipeline.CondorDAG):
           finenode.add_parent(coarsenode)
 
           # create output files
-          fineoutput = os.path.join(freqfacdirfine, 'fine-%s-%d-%d.txt' % (ifo, int(self.initial_start[ifo]), int(self.endtime[ifo])))
+          fineoutput = os.path.join(freqfacdirfine, 'fine-%s-%d-%d.txt' % (ifo, int(self.starttime[ifo]), int(self.endtime[ifo])))
 
           # set data, segment location and output location
           if self.coarse_heterodyne_gzip_output:
@@ -2317,6 +2319,8 @@ class knopeDAG(pipeline.CondorDAG):
         # append segments to file containing all previously analysed segments
         # get filename for list containing all previous segments
         prevsegs = os.path.join(self.preprocessing_base_dir[ifo], 'previous_segments.txt')
+        if not os.path.isfile(prevsegs):
+          shutil.copy2(unmodsegfile, prevsegs) # copy current (unupdated) segfile into previous segments file if it does not already exist
         self.segment_file_update.append((unmodsegfile, prevsegs)) # add to list of files to be concatenated together at the end (i.e. provided no errors have occurred)
 
       # loop through frequency factors for analysis
