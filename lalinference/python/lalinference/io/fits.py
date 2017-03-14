@@ -353,7 +353,9 @@ def read_sky_map(filename, nest=False, distances=False, moc=False):
     """
     m = Table.read(filename, format='fits')
 
-    del m.meta['PIXTYPE']
+    # Remove some keys that we do not need
+    for key in ('PIXTYPE', 'EXTNAME', 'NSIDE', 'FIRSTPIX', 'LASTPIX', 'INDXSCHM'):
+      m.meta.pop(key, None)
 
     if m.meta.pop('COORDSYS', 'C') != 'C':
         raise ValueError('LALInference only reads and writes sky maps in equatorial coordinates.')
