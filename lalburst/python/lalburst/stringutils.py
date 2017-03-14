@@ -139,11 +139,11 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 
 	def increment(self, params, weight = 1.0):
 		for param, value in params.items():
-			self.densities[param][value] += weight
+			self.densities[param].count[value] += weight
 
 	def copy(self):
 		new = type(self)([])
-		for key, pdf in self.densities:
+		for key, pdf in self.densities.items():
 			new.densities[key] = pdf.copy()
 		return new
 
