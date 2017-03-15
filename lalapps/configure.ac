@@ -463,7 +463,7 @@ LALApps has now been successfully configured:
 * LALStochastic library support is $LALSTOCHASTIC_ENABLE_VAL
 * LALPulsar library support is $LALPULSAR_ENABLE_VAL
 * LALInference library support is $LALINFERENCE_ENABLE_VAL
-* FITS library support is $CFITSIO_ENABLE_VAL
+* CFITSIO library support is $CFITSIO_ENABLE_VAL
 * PSS library support is $PSS_ENABLE_VAL
 * BAMBI library support is $BAMBI_ENABLE_VAL
 * Condor support is $CONDOR_ENABLE_VAL
