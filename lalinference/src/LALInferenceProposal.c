@@ -1894,6 +1894,11 @@ static void UpdateWaveletSum(LALInferenceThreadState *thread,
 
     LALInferenceVariables *args = thread->proposalArgs;
 
+    /* FIXME: can't store arrays of REAL8FrequencySeries in LI
+       Variables (any more?) 
+
+       Need instead Nifo variables called "asdH1", "asdL1", ...
+    */
     asds = *(REAL8FrequencySeries ***)LALInferenceGetVariable(args, "asds");
     flows = LALInferenceGetREAL8VectorVariable(args, "flows");
     td_data = *(REAL8TimeSeries ***)LALInferenceGetVariable(args, "td_data");
@@ -1968,231 +1973,6 @@ static void UpdateWaveletSum(LALInferenceThreadState *thread,
 
         }//end upper/lower check
     }//end loop over glitch samples
-}
-
-static void phase_blind_time_shift(REAL8 *corr, REAL8 *corrf, COMPLEX16Vector *data1,
-                                   COMPLEX16Vector *data2, INT4 ifo, LALInferenceVariables *args) {
-    INT4 i, N, N2;
-    INT4 lower, upper;
-    REAL8 deltaF, deltaT;
-    REAL8FrequencySeries **psds;
-    REAL8FrequencySeries *psd;
-    COMPLEX16FrequencySeries *corrFD, *corrfFD;
-    REAL8TimeSeries *corrTD, *corrfTD;
-    REAL8TimeSeries **td_data;
-    COMPLEX16FrequencySeries **fd_data;
-    REAL8FFTPlan **plans;
-    REAL8Vector *flows, *fhighs;
-
-    psds = *(REAL8FrequencySeries ***)LALInferenceGetVariable(args, "psds");
-    flows = LALInferenceGetREAL8VectorVariable(args, "flows");
-    fhighs = LALInferenceGetREAL8VectorVariable(args, "fhighs");
-
-    td_data = *(REAL8TimeSeries ***)LALInferenceGetVariable(args, "td_data");
-    fd_data = *(COMPLEX16FrequencySeries ***)LALInferenceGetVariable(args, "fd_data");
-
-    plans = *(REAL8FFTPlan ***)LALInferenceGetVariable(args, "f2t_plans");
-
-    /* get dataPtr pointing to correct IFO */
-    psd = psds[ifo];
-
-    N  = td_data[ifo]->data->length;   // Number of data points
-    N2 = fd_data[ifo]->data->length-1; // 1/2 number of data points (plus 1)
-
-    deltaF = fd_data[ifo]->deltaF;
-    deltaT = td_data[ifo]->deltaT;
-
-    lower  = (INT4)ceil(flows->data[ifo]  / deltaF);
-    upper  = (INT4)floor(fhighs->data[ifo] / deltaF);
-
-    corrFD  = XLALCreateCOMPLEX16FrequencySeries("cf1", &(fd_data[ifo]->epoch), 0.0, deltaF, &lalDimensionlessUnit, N2+1);
-    corrfFD = XLALCreateCOMPLEX16FrequencySeries("cf2", &(fd_data[ifo]->epoch), 0.0, deltaF, &lalDimensionlessUnit, N2+1);
-
-    corrTD  = XLALCreateREAL8TimeSeries("ct1", &(td_data[ifo]->epoch), 0.0, deltaT, &lalDimensionlessUnit, N);
-    corrfTD = XLALCreateREAL8TimeSeries("ct2", &(td_data[ifo]->epoch), 0.0, deltaT, &lalDimensionlessUnit, N);
-
-    //convolution of signal & template
-    for (i=0; i < N2; i++) {
-        corrFD->data->data[i]  = crect(0.0,0.0);
-        corrfFD->data->data[i] = crect(0.0,0.0);
-
-        if(i>lower && i<upper) {
-            corrFD->data->data[i] = crect( ( creal(data1->data[i])*creal(data2->data[i]) + cimag(data1->data[i])*cimag(data2->data[i])) / psd->data->data[i],
-                                           ( cimag(data1->data[i])*creal(data2->data[i]) - creal(data1->data[i])*cimag(data2->data[i])) / psd->data->data[i] );
-            corrfFD->data->data[i] = crect( ( creal(data1->data[i])*cimag(data2->data[i]) - cimag(data1->data[i])*creal(data2->data[i])) / psd->data->data[i],
-                                            ( cimag(data1->data[i])*cimag(data2->data[i]) + creal(data1->data[i])*creal(data2->data[i])) / psd->data->data[i] );
-        }
-    }
-
-    //invFFT convolutions to find time offset
-    XLALREAL8FreqTimeFFT(corrTD, corrFD, plans[ifo]);
-    XLALREAL8FreqTimeFFT(corrfTD, corrfFD, plans[ifo]);
-
-    for (i=0; i < N; i++) {
-        corr[i]  = corrTD->data->data[i];
-        corrf[i] = corrfTD->data->data[i];
-    }
-
-    XLALDestroyREAL8TimeSeries(corrTD);
-    XLALDestroyREAL8TimeSeries(corrfTD);
-    XLALDestroyCOMPLEX16FrequencySeries(corrFD);
-    XLALDestroyCOMPLEX16FrequencySeries(corrfFD);
-}
-
-static void MaximizeGlitchParameters(LALInferenceThreadState *thread,
-                                     LALInferenceVariables *currentParams,
-                                     INT4 ifo, INT4 n)
-{
-    INT4 i, imax, N;
-    INT4 lower, upper;
-    REAL8 deltaT, Tobs, deltaF, sqTwoDeltaToverN;
-    REAL8 Amp, t0, ph0;
-    REAL8 rho=0.0;
-    REAL8 hRe, hIm;
-    REAL8 gRe, gIm;
-    REAL8 dPhase, dTime;
-    REAL8 max;
-    REAL8 *corr, *AC, *AF;
-    REAL8FrequencySeries **psds;
-    REAL8Vector *flows, *fhighs, *Sn;
-    INT4Vector *gsize;
-    COMPLEX16Sequence *s, *h, *r;
-    gsl_matrix *glitchFD, *glitch_A, *glitch_t, *glitch_p, *hmatrix;
-    REAL8TimeSeries **td_data;
-    COMPLEX16FrequencySeries **fd_data;
-
-    LALInferenceVariables *args = thread->proposalArgs;
-
-    INT4 nDet = LALInferenceGetINT4Variable(args, "nDet");
-    psds = *(REAL8FrequencySeries ***)LALInferenceGetVariable(args, "psds");
-    flows = LALInferenceGetREAL8VectorVariable(args, "flows");
-    fhighs = LALInferenceGetREAL8VectorVariable(args, "fhighs");
-
-    td_data = XLALCalloc(nDet, sizeof(REAL8TimeSeries *));
-    fd_data = XLALCalloc(nDet, sizeof(COMPLEX16FrequencySeries *));
-
-    N = td_data[ifo]->data->length;
-    deltaT = td_data[ifo]->deltaT;
-    Tobs = (REAL8)(deltaT*N);
-    sqTwoDeltaToverN = sqrt(2.0 * deltaT / ((REAL8) N) );
-
-    deltaF = 1.0 / (((REAL8)N) * deltaT);
-    lower = (INT4)ceil(flows->data[ifo] / deltaF);
-    upper = (INT4)floor(fhighs->data[ifo] / deltaF);
-
-    s = fd_data[ifo]->data;
-    h = XLALCreateCOMPLEX16Vector(N/2);
-    r = XLALCreateCOMPLEX16Vector(N/2);
-    Sn = psds[ifo]->data;
-
-    /* Get parameters for new wavelet */
-    gsize = LALInferenceGetINT4VectorVariable(currentParams, "glitch_size");
-
-    glitchFD = LALInferenceGetgslMatrixVariable(currentParams, "morlet_FD");
-    glitch_A = LALInferenceGetgslMatrixVariable(currentParams, "morlet_Amp");
-    glitch_t = LALInferenceGetgslMatrixVariable(currentParams, "morlet_t0");
-    glitch_p = LALInferenceGetgslMatrixVariable(currentParams, "morlet_phi");
-
-    /* sine-Gaussian parameters */
-    Amp = gsl_matrix_get(glitch_A, ifo, n);
-    t0 = gsl_matrix_get(glitch_t, ifo, n);
-    ph0 = gsl_matrix_get(glitch_p, ifo, n);
-
-    /* Make new wavelet */
-    hmatrix = gsl_matrix_alloc(ifo+1, N);
-    gsl_matrix_set_all(hmatrix, 0.0);
-
-    UpdateWaveletSum(thread, currentParams, hmatrix, ifo, n, 1);
-
-    /* Copy to appropriate template array*/
-    for (i=0; i<N/2; i++) {
-        hRe = 0.0;
-        hIm = 0.0;
-        gRe = 0.0;
-        gIm = 0.0;
-        r->data[i] = crect(0.0, 0.0);
-
-        if(i>lower && i<upper) {
-            hRe = sqTwoDeltaToverN * gsl_matrix_get(hmatrix, ifo, 2*i);
-            hIm = sqTwoDeltaToverN * gsl_matrix_get(hmatrix, ifo, 2*i+1);
-            h->data[i] = crect(hRe, hIm);
-            //compute SNR of new wavelet
-            rho += (hRe*hRe + hIm*hIm) / Sn->data[i];
-
-            //form up residual while we're in here (w/out new template)
-            if(gsize->data[ifo]>0) {
-                gRe = gsl_matrix_get(glitchFD, ifo, 2*i);
-                gIm = gsl_matrix_get(glitchFD, ifo, 2*i+1);
-            }
-            r->data[i] = crect(sqTwoDeltaToverN * (creal(s->data[i])/deltaT-gRe),
-                               sqTwoDeltaToverN * (cimag(s->data[i])/deltaT-gIm));
-        }
-    }
-    rho*=4.0;
-
-    /* Compute correlation of data & template */
-    corr = XLALMalloc(sizeof(REAL8) * N);
-    AF = XLALMalloc(sizeof(REAL8) * N);
-    AC = XLALMalloc(sizeof(REAL8) * N);
-
-    for(i=0; i<N; i++)
-        corr[i] = 0.0;
-
-    /* Cross-correlate template & residual */
-    phase_blind_time_shift(AC, AF, r, h, ifo, thread->proposalArgs);
-
-    for(i=0; i<N; i++)
-        corr[i] += sqrt(AC[i]*AC[i] + AF[i]*AF[i]);
-
-    /* Find element where correlation is maximized */
-    max = corr[0];
-    imax = 0;
-    for(i=1; i<N; i++) {
-        if(corr[i] > max) {
-            max  = corr[i];
-            imax = i;
-        }
-    }
-    max *= 4.0;
-
-    /* Get phase shift at max correlation */
-    dPhase = atan2(AF[imax], AC[imax]);
-
-    /* Compute time shift needed for propsed template */
-    if (imax < (N/2)-1)
-        dTime = ((REAL8)imax/(REAL8)N) * Tobs;
-    else
-        dTime = (((REAL8)imax-(REAL8)N)/(REAL8)N) * Tobs;
-
-    /* Shift template parameters accordingly */
-    t0 += dTime;
-    Amp *= 1.0;//dAmplitude;
-    ph0 -= dPhase;
-
-    /* Map time & phase back in range if necessary */
-    if (ph0 < 0.0)
-        ph0 += LAL_TWOPI;
-    else if (ph0 > LAL_TWOPI)
-        ph0 -= LAL_TWOPI;
-
-    if (t0 < 0.0)
-        t0 += Tobs;
-    else if (t0 > Tobs)
-        t0 -= Tobs;
-
-    gsl_matrix_set(glitch_t, ifo, n, t0);
-    gsl_matrix_set(glitch_A, ifo, n, Amp);
-    gsl_matrix_set(glitch_p, ifo, n, ph0);
-
-    gsl_matrix_free(hmatrix);
-
-    XLALDestroyCOMPLEX16Vector(h);
-    XLALDestroyCOMPLEX16Vector(r);
-
-    XLALFree(corr);
-    XLALFree(AF);
-    XLALFree(AC);
-
 }
 
 static void MorletDiagonalFisherMatrix(REAL8Vector *params, REAL8Vector *sigmas) {
@@ -2272,7 +2052,7 @@ REAL8 LALInferenceGlitchMorletProposal(LALInferenceThreadState *thread,
     REAL8Vector *sigmas_y = XLALCreateREAL8Vector(5);
 
     /* Get glitch meta paramters (dimnsion, proposal) */
-    INT4Vector *gsize = LALInferenceGetINT4VectorVariable(proposedParams, "glitch_size");
+    UINT4Vector *gsize = LALInferenceGetUINT4VectorVariable(proposedParams, "glitch_size");
 
     glitchFD = LALInferenceGetgslMatrixVariable(proposedParams, "morlet_FD");
     glitch_f = LALInferenceGetgslMatrixVariable(proposedParams, "morlet_f0");
@@ -2405,7 +2185,7 @@ REAL8 LALInferenceGlitchMorletReverseJump(LALInferenceThreadState *thread,
 
     LALInferenceCopyVariables(currentParams, proposedParams);
 
-    INT4Vector *gsize = LALInferenceGetINT4VectorVariable(proposedParams, "glitch_size");
+    UINT4Vector *gsize = LALInferenceGetUINT4VectorVariable(proposedParams, "glitch_size");
     gsl_matrix *glitchFD = LALInferenceGetgslMatrixVariable(proposedParams, "morlet_FD");
 
     INT4 nmin = (INT4)(LALInferenceGetREAL8Variable(thread->priorArgs,"glitch_dim_min"));
@@ -2467,10 +2247,6 @@ REAL8 LALInferenceGlitchMorletReverseJump(LALInferenceThreadState *thread,
             params = LALInferenceGetgslMatrixVariable(proposedParams, "morlet_phi");
             val = draw_flat(thread, "morlet_phi_prior");
             gsl_matrix_set(params, ifo, nx, val);
-
-            //Maximize phase, time, and amplitude using cross-correlation of data & wavelet
-            if (adapting)
-                MaximizeGlitchParameters(thread, proposedParams, ifo, nx);
 
             //Add wavlet to linear combination
             UpdateWaveletSum(thread, proposedParams, glitchFD, ifo, nx, 1);
