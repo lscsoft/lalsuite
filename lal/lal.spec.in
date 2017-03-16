@@ -22,7 +22,7 @@ BuildRequires: numpy
 BuildRequires: octave-devel
 BuildRequires: python-devel
 BuildRequires: python-six
-BuildRequires: swig
+BuildRequires: swig >= 3.0.7
 Requires: fftw
 Requires: gsl
 Requires: hdf5
