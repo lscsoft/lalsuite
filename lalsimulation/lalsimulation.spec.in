@@ -110,6 +110,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Thu Mar 16 2017 Adam Mercer <adam.mercer@ligo.org> 1.7.3-1
+- fix Ldot equation in SpinTaylor
+
 * Wed Mar 01 2017 Adam Mercer <adam.mercer@ligo.org> 1.7.2-1
 - fix bug in SpinTaylor, spin precession vector had incorrect sign
 
