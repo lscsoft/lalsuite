@@ -193,12 +193,12 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
         else:
             chain_dump = None
         try:
-            sky_map = rasterize(ligolw_sky_map(
+            sky_map = ligolw_sky_map(
                 sngl_inspirals, opts.waveform, opts.f_low, opts.min_distance,
                 opts.max_distance, opts.prior_distance_power, psds=psds,
                 method=method, nside=opts.nside, chain_dump=chain_dump,
                 phase_convention=opts.phase_convention, snr_series=snrs,
-                enable_snr_series=opts.enable_snr_series))
+                enable_snr_series=opts.enable_snr_series)
             sky_map.meta['objid'] = str(coinc.coinc_event_id)
         except (ArithmeticError, ValueError):
             log.exception("%s:method '%s':sky localization failed", coinc.coinc_event_id, method)
