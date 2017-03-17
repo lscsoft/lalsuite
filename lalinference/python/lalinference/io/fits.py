@@ -181,10 +181,6 @@ def identity(x):
     return x
 
 
-def nest_to_fits(value):
-    return 'NESTED' if value else 'RING'
-
-
 def instruments_to_fits(value):
     if not isinstance(value, six.string_types):
         value = str(lsctables.ifos_from_instrument_set(value))
@@ -200,7 +196,6 @@ DEFAULT_NUNIQ_UNITS = (u.steradian**-1, u.Mpc, u.Mpc, u.Mpc**-2)
 DEFAULT_NESTED_NAMES = ('PROB', 'DISTMU', 'DISTSIGMA', 'DISTNORM')
 DEFAULT_NESTED_UNITS = (u.pix**-1, u.Mpc, u.Mpc, u.Mpc**-2)
 FITS_META_MAPPING = (
-    ('nest', 'ORDERING', 'Pixel ordering scheme: RING, NESTED, or NUNIQ', nest_to_fits, None),
     ('objid', 'OBJECT', 'Unique identifier for this event', identity, identity),
     ('url', 'REFERENC', 'URL of this event', identity, identity),
     ('instruments', 'INSTRUME', 'Instruments that triggered this event', instruments_to_fits, instruments_from_fits),
@@ -261,8 +256,10 @@ def write_sky_map(filename, m, **kwargs):
     else:
         default_names = DEFAULT_NESTED_NAMES
         default_units = DEFAULT_NESTED_UNITS
+        ordering = 'NESTED' if m.meta.pop('nest', False) else 'RING'
         extra_header = [
             ('PIXTYPE', 'HEALPIX', 'HEALPIX pixelisation'),
+            (ordering, 'Pixel ordering scheme: RING, NESTED, or NUNIQ'),
             ('COORDSYS', 'C', 'Ecliptic, Galactic or Celestial (equatorial)'),
             ('NSIDE', hp.npix2nside(len(m)), 'Resolution parameter of HEALPIX'),
             ('INDXSCHM', 'IMPLICIT', 'Indexing: IMPLICIT or EXPLICIT')]
