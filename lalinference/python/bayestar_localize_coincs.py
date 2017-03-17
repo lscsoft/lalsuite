@@ -67,6 +67,8 @@ parser.add_argument('--coinc-event-id', type=int, nargs='*',
     help='run on only these specified events')
 parser.add_argument('--output', '-o', default='.',
     help='output directory [default: current directory]')
+parser.add_argument('--condor-submit', action='store_true',
+    help='submit to Condor instead of running locally')
 opts = parser.parse_args()
 
 #
@@ -91,12 +93,30 @@ from lalinference.bayestar.sky_map import ligolw_sky_map, rasterize
 
 # Other imports.
 import os
+import sys
 import numpy as np
 
 # Read coinc file.
 log.info('%s:reading input XML file', opts.input.name)
 xmldoc, _ = ligolw_utils.load_fileobj(
     opts.input, contenthandler=ligolw_bayestar.LSCTablesAndSeriesContentHandler)
+
+if opts.condor_submit:
+    if opts.coinc_event_id:
+        raise ValueError('must not set --coinc-event-id with --condor-submit')
+    coinc_event_ids = [int(coinc.coinc_event_id) for coinc, _ in
+        ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc(xmldoc)]
+    cmd = ['condor_submit', 'accounting_group=ligo.dev.o3.cbc.pe.bayestar',
+           'universe=vanilla', 'getenv=true', 'executable=' + sys.executable,
+           'JobBatchName=BAYESTAR', 'environment="OMP_NUM_THREADS=1"',
+           'error=' + os.path.join(opts.output, '$(CoincEventId).err'),
+           'log=' + os.path.join(opts.output, '$(CoincEventId).log'),
+           'arguments="-B ' + ' '.join(arg for arg in sys.argv
+               if arg != '--condor-submit') + ' --coinc-event-id $(CoincEventId)"',
+           '-append', 'queue CoincEventId in ' + ' '.join(
+               str(coinc_event_id) for coinc_event_id in coinc_event_ids),
+           '/dev/null']
+    os.execvp('condor_submit', cmd)
 
 if opts.psd_files: # read pycbc psds here
     import lal
