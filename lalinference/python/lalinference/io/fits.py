@@ -293,7 +293,7 @@ def write_sky_map(filename, m, **kwargs):
         # Scientific Linux 7 computing clusters.
         fits.table_to_hdu
     except AttributeError:
-        m.write(filename, format='fits', clobber=True)
+        m.write(filename, format='fits')
         hdulist = fits.open(filename)
         _, hdu = hdulist
         hdu.header.extend(extra_header)
