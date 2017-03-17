@@ -65,6 +65,8 @@ parser.add_argument('--psd-files', nargs='*',
     help='pycbc-style merged HDF5 PSD files')
 parser.add_argument('--coinc-event-id', type=int, nargs='*',
     help='run on only these specified events')
+parser.add_argument('--output', '-o', default='.',
+    help='output directory [default: current directory]')
 opts = parser.parse_args()
 
 #
@@ -88,6 +90,7 @@ from lalinference.bayestar import timing
 from lalinference.bayestar.sky_map import ligolw_sky_map, rasterize
 
 # Other imports.
+import os
 import numpy as np
 
 # Read coinc file.
@@ -207,7 +210,9 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
                 raise
         else:
             log.info("%s:method '%s':saving sky map", coinc.coinc_event_id, method)
-            fits.write_sky_map('%s.%s.fits' % (int(coinc.coinc_event_id), method),
+            command.mkpath(opts.output)
+            filename = '%s.%s.fits' % (int(coinc.coinc_event_id), method)
+            fits.write_sky_map(os.path.join(opts.output, filename),
                 sky_map, nest=True)
 
 
