@@ -31,9 +31,9 @@ distance of the most sensitive detector.
 
 A FITS file is created for each sky map, having a filename of the form
 
-  "X.toa_phoa_snr.fits.gz"
-  "X.toa_snr_mcmc.fits.gz"
-  "X.toa_phoa_snr_mcmc.fits.gz"
+  "X.toa_phoa_snr.fits"
+  "X.toa_snr_mcmc.fits"
+  "X.toa_phoa_snr_mcmc.fits"
 
 where X is the LIGO-LW row id of the coinc and "toa" or "toa_phoa_snr"
 identifies whether the sky map accounts for times of arrival (TOA),
@@ -207,7 +207,7 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
                 raise
         else:
             log.info("%s:method '%s':saving sky map", coinc.coinc_event_id, method)
-            fits.write_sky_map('%s.%s.fits.gz' % (int(coinc.coinc_event_id), method),
+            fits.write_sky_map('%s.%s.fits' % (int(coinc.coinc_event_id), method),
                 sky_map, nest=True)
 
 
