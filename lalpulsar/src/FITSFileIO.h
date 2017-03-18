@@ -252,11 +252,23 @@ int XLALFITSTableColumnAddGPSTime( FITSFile *file, const CHAR *col_name, const s
 #define XLAL_FITS_TABLE_COLUMN_ADD_ARRAY_NAMED(file, type, field, col_name) \
   XLALFITSTableColumnAdd ## type (file, col_name, 1, _xlal_fits_offsets_, &_xlal_fits_record_, sizeof(_xlal_fits_record_), &(_xlal_fits_record_.field[0]), sizeof(_xlal_fits_record_.field))
 /// \hideinitializer
+#define XLAL_FITS_TABLE_COLUMN_ADD_ARRAY2(file, type, field) \
+  XLALFITSTableColumnAdd ## type (file, #field, 1, _xlal_fits_offsets_, &_xlal_fits_record_, sizeof(_xlal_fits_record_), &(_xlal_fits_record_.field[0][0]), sizeof(_xlal_fits_record_.field))
+/// \hideinitializer
+#define XLAL_FITS_TABLE_COLUMN_ADD_ARRAY2_NAMED(file, type, field, col_name) \
+  XLALFITSTableColumnAdd ## type (file, col_name, 1, _xlal_fits_offsets_, &_xlal_fits_record_, sizeof(_xlal_fits_record_), &(_xlal_fits_record_.field[0][0]), sizeof(_xlal_fits_record_.field))
+/// \hideinitializer
 #define XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY(file, type, length, field) \
   ( _xlal_fits_record_.field = (void*) &(_xlal_fits_record_.field), _xlal_fits_offsets_[0] = (size_t)(((intptr_t) &(_xlal_fits_record_.field)) - ((intptr_t) &_xlal_fits_record_)), XLALFITSTableColumnAdd ## type (file, #field, 2, _xlal_fits_offsets_, _xlal_fits_record_.field, ( length ) * sizeof(_xlal_fits_record_.field[0]), _xlal_fits_record_.field, ( length ) * sizeof(_xlal_fits_record_.field[0])) )
 /// \hideinitializer
 #define XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED(file, type, length, field, col_name) \
   ( _xlal_fits_record_.field = (void*) &(_xlal_fits_record_.field), _xlal_fits_offsets_[0] = (size_t)(((intptr_t) &(_xlal_fits_record_.field)) - ((intptr_t) &_xlal_fits_record_)), XLALFITSTableColumnAdd ## type (file, col_name, 2, _xlal_fits_offsets_, _xlal_fits_record_.field, ( length ) * sizeof(_xlal_fits_record_.field[0]), _xlal_fits_record_.field, ( length ) * sizeof(_xlal_fits_record_.field[0])) )
+/// \hideinitializer
+#define XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY2(file, type, length, field) \
+  ( _xlal_fits_record_.field = (void*) &(_xlal_fits_record_.field), _xlal_fits_offsets_[0] = (size_t)(((intptr_t) &(_xlal_fits_record_.field)) - ((intptr_t) &_xlal_fits_record_)), XLALFITSTableColumnAdd ## type (file, #field, 2, _xlal_fits_offsets_, _xlal_fits_record_.field, ( length ) * sizeof(_xlal_fits_record_.field[0][0]), _xlal_fits_record_.field, ( length ) * sizeof(_xlal_fits_record_.field[0][0])) )
+/// \hideinitializer
+#define XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY2_NAMED(file, type, length, field, col_name) \
+  ( _xlal_fits_record_.field = (void*) &(_xlal_fits_record_.field), _xlal_fits_offsets_[0] = (size_t)(((intptr_t) &(_xlal_fits_record_.field)) - ((intptr_t) &_xlal_fits_record_)), XLALFITSTableColumnAdd ## type (file, col_name, 2, _xlal_fits_offsets_, _xlal_fits_record_.field, ( length ) * sizeof(_xlal_fits_record_.field[0][0]), _xlal_fits_record_.field, ( length ) * sizeof(_xlal_fits_record_.field[0][0])) )
 /// \hideinitializer
 #define XLAL_FITS_TABLE_COLUMN_PTR_STRUCT_BEGIN(field, ptr_record_type, length) \
   ptr_record_type XLAL_INIT_DECL(_xlal_fits_ptr_record_, [length]); \
@@ -268,6 +280,9 @@ int XLALFITSTableColumnAddGPSTime( FITSFile *file, const CHAR *col_name, const s
 /// \hideinitializer
 #define XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_ARRAY_NAMED(file, index, type, field, col_name) \
   XLALFITSTableColumnAdd ## type (file, col_name, 2, _xlal_fits_offsets_, &_xlal_fits_ptr_record_[0], sizeof(_xlal_fits_ptr_record_), &(_xlal_fits_ptr_record_[index].field[0]), sizeof(_xlal_fits_ptr_record_[index].field))
+/// \hideinitializer
+#define XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_ARRAY2_NAMED(file, index, type, field, col_name) \
+  XLALFITSTableColumnAdd ## type (file, col_name, 2, _xlal_fits_offsets_, &_xlal_fits_ptr_record_[0], sizeof(_xlal_fits_ptr_record_), &(_xlal_fits_ptr_record_[index].field[0][0]), sizeof(_xlal_fits_ptr_record_[index].field))
 
 int XLALFITSTableWriteRow( FITSFile *file, const void *record );
 int XLALFITSTableReadRow( FITSFile *file, void *record, UINT8 *rem_nrows );
