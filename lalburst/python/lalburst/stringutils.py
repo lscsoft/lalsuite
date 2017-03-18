@@ -174,7 +174,7 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 		return xml
 
 	@classmethod
-	def from_xml(cls, name):
+	def from_xml(cls, xml, name):
 		xml = cls.get_xml_root(xml, name)
 		self = cls(lsctables.instrument_set_from_ifos(ligolw_param.get_pyvalue(xml, "instruments")))
 		for key in self.densities:
