@@ -793,9 +793,9 @@ class knopeDAG(pipeline.CondorDAG):
             cpnode = copyNode(cpjob)
             cpnode.set_source(self.processed_files[pname][ifo][ff][-1])
             cpnode.set_destination(ffdir)
-            if self.engine == 'heterodyne':
+            if self.engine == 'heterodyne' and not self.postonly:
               cpnode.add_parent(self.fine_heterodyne_nodes[pname][ifo][ff])
-            elif self.engine == 'splinter':
+            elif self.engine == 'splinter' and not self.postonly:
               cpnode.add_parent(self.splinter_nodes_modified[ifo][ff])
             self.add_node(cpnode)
 
