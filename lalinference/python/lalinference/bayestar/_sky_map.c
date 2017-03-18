@@ -150,6 +150,7 @@ static PyObject *sky_map_toa_phoa_snr(
 
     /* Return value */
     PyObject *out = NULL;
+    double log_bci, log_bsn;
 
     /* Numpy array objects */
     PyArrayObject *epochs_npy = NULL, *snrs_npy[nifos], *responses_npy[nifos],
@@ -199,9 +200,9 @@ static PyObject *sky_map_toa_phoa_snr(
     size_t len;
     bayestar_pixel *pixels;
     Py_BEGIN_ALLOW_THREADS
-    pixels = bayestar_sky_map_toa_phoa_snr(&len, min_distance,
-        max_distance, prior_distance_power, gmst, nifos, nsamples, sample_rate,
-        epochs, snrs, responses, locations, horizons);
+    pixels = bayestar_sky_map_toa_phoa_snr(&len, &log_bci, &log_bsn,
+        min_distance, max_distance, prior_distance_power, gmst, nifos,
+        nsamples, sample_rate, epochs, snrs, responses, locations, horizons);
     Py_END_ALLOW_THREADS
     gsl_set_error_handler(old_handler);
 
@@ -236,6 +237,9 @@ fail: /* Cleanup */
     FREE_INPUT_LIST_OF_ARRAYS(responses)
     FREE_INPUT_LIST_OF_ARRAYS(locations)
     Py_XDECREF(horizons_npy);
+    if (out) {
+        out = Py_BuildValue("Ndd", out, log_bci, log_bsn);
+    }
     return out;
 };
 

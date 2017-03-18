@@ -86,6 +86,8 @@ typedef struct {
 /* Perform sky localization based on TDOAs, PHOAs, and amplitude. */
 bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
     size_t *out_len,                /* Number of returned pixels */
+    double *out_log_bci,            /* log Bayes factor: coherent vs. incoherent */
+    double *out_log_bsn,            /* log Bayes factor: signal vs. noise */
     /* Prior */
     double min_distance,            /* Minimum distance */
     double max_distance,            /* Maximum distance */

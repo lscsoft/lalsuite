@@ -748,6 +748,7 @@ int XLALSimIMRSpinEOBWaveformAll(
     * posVeczEOM = &posVeczEOMv, * tVecEOM = &tVecEOMv;
 
   posVecxEOMv.data = posVecyEOMv.data = posVeczEOMv.data = tVecEOMv.data = NULL;
+  posVecxEOMv.length = posVecyEOMv.length = posVeczEOMv.length = tVecEOMv.length = 0; /* OPTV3: Initialize to avoid GCC warnings like "‘posVecyEOMv.length’ may be used uninitialized in this function" */
   /* OPTV3 END */
 
   /* Cartesian vectors needed to calculate Hamiltonian */

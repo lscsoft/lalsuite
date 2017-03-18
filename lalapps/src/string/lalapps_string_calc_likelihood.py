@@ -32,13 +32,11 @@ import sqlite3
 import sys
 
 
+from glue.ligolw import dbtables
 from lal.utils import CacheEntry
-
-
 from lalburst import git_version
 from lalburst import ligolw_burca2
 from lalburst import SnglBurstUtils
-from pylal import snglcoinc
 from lalburst import stringutils
 
 
@@ -66,20 +64,20 @@ def parse_command_line():
 	parser.add_option("-t", "--tmp-space", metavar = "path", help = "Path to a directory suitable for use as a work area while manipulating the database file.  The database file will be worked on in this directory, and then moved to the final location when complete.  This option is intended to improve performance when running in a networked environment, where there might be a local disk with higher bandwidth than is available to the filesystem on which the final output will reside.")
 	parser.add_option("--vetoes-name", metavar = "name", help = "Set the name of the segment lists to use as vetoes (default = do not apply vetoes).")
 	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
-	parser.add_option("--write-likelihood", metavar = "filename", help = "Write merged raw likelihood data to this file.")
-	parser.add_option("--write-filtered-likelihood", metavar = "filename", help = "Write merged and filtered likelihood data to this file.  NOTE:  this file is NOT suitable for use as a likelihood file as programs will attempt to re-filter the data.")
 	options, filenames = parser.parse_args()
 
 	options.likelihood_filenames = []
 	if options.likelihood_file is not None:
 		options.likelihood_filenames += options.likelihood_file
 	if options.likelihood_cache is not None:
-		options.likelihood_filenames += [CacheEntry(line).path for line in file(options.likelihood_cache)]
+		options.likelihood_filenames += [CacheEntry(line).path for line in open(options.likelihood_cache)]
 	if not options.likelihood_filenames:
-		raise ValueError("no likelihood files specified")
+		raise ValueError("no ranking statistic likelihood data files specified")
 
 	if options.input_cache:
-		filenames += [CacheEntry(line).path for line in file(options.input_cache)]
+		filenames += [CacheEntry(line).path for line in open(options.input_cache)]
+	if not filenames:
+		raise ValueError("no candidate databases specified")
 
 	return options, filenames
 
@@ -107,24 +105,14 @@ options, filenames = parse_command_line()
 
 
 coincparamsdistributions, likelihood_seglists = stringutils.load_likelihood_data(options.likelihood_filenames, verbose = options.verbose)
-if options.write_likelihood is not None:
-	stringutils.write_likelihood_data(options.write_likelihood, coincparamsdistributions, likelihood_seglists, verbose = options.verbose)
-
 if options.verbose:
 	print >>sys.stderr, "computing event densities ..."
 coincparamsdistributions.finish(verbose = options.verbose)
-if options.write_filtered_likelihood is not None:
-	stringutils.write_likelihood_data(options.write_filtered_likelihood, coincparamsdistributions, likelihood_seglists, verbose = options.verbose)
-
-ln_likelihood_ratio = snglcoinc.LnLikelihoodRatio(coincparamsdistributions)
 
 
 #
 # iterate over files
 #
-
-
-from glue.ligolw import dbtables
 
 
 for n, filename in enumerate(filenames):
@@ -156,13 +144,13 @@ for n, filename in enumerate(filenames):
 	# identical for H1, H2, L1, and V1.
 	#
 
-	triangulators = stringutils.triangulators(dict((instrument, 8e-5) for instrument in contents.instruments))
+	triangulators = stringutils.triangulators(dict.fromkeys(contents.instruments, 8e-5))
 
 	#
 	# Run likelihood ratio calculation.
 	#
 
-	ligolw_burca2.ligolw_burca2(contents, ln_likelihood_ratio, coincparamsdistributions.coinc_params, verbose = options.verbose, params_func_extra_args = (triangulators,))
+	ligolw_burca2.ligolw_burca2(contents, coincparamsdistributions, coincparamsdistributions.coinc_params, verbose = options.verbose, params_func_extra_args = (triangulators,))
 
 	#
 	# Clean up.

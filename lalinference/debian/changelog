@@ -1,3 +1,11 @@
+lalinference (1.9.2-1) unstable; urgency=low
+
+  * LALInference 1.9.2
+  * lalinference.io.fits: remove some redundant keys on reading
+  * lalinference.io.fits: fix writing single-column sky maps
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 16 Mar 2017 11:38:44 -0500
+
 lalinference (1.9.1-1) unstable; urgency=low
 
   * LALInference 1.9.1

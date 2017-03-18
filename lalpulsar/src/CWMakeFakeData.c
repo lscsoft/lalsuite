@@ -43,6 +43,7 @@
 #include <lal/LFTandTSutils.h>
 #include <fftw3.h>
 #include <lal/FFTWMutex.h>
+#include <lal/ExtrapolatePulsarSpins.h>
 
 // ---------- local defines
 
@@ -274,6 +275,18 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
       } else {
         signalEndGPS.gpsSeconds = t1;
       }
+
+      REAL8 fCoverMin, fCoverMax;
+      const PulsarSpins *fkdot = &(pulsarParams->Doppler.fkdot);
+      PulsarSpinRange XLAL_INIT_DECL ( spinRange );
+      spinRange.refTime = pulsarParams->Doppler.refTime;
+      memcpy ( spinRange.fkdot, fkdot, sizeof(spinRange.fkdot) );
+      XLAL_INIT_MEM ( spinRange.fkdotBand );
+
+      XLAL_CHECK ( XLALCWSignalCoveringBand ( &fCoverMin, &fCoverMax, &signalStartGPS, &signalEndGPS, &spinRange, pulsarParams->Doppler.asini, pulsarParams->Doppler.period, pulsarParams->Doppler.ecc ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( (fCoverMin >= fMin) && (fCoverMax < fMin + fBand), XLAL_EINVAL, "Error: injection signal %d:'%s' needs frequency band [%f,%f]Hz, injecting into [%f,%f]Hz\n",
+                   iInj, pulsarParams->name, fCoverMin, fCoverMax, fMin, fMin + fBand );
+
       REAL8 signalDuration = XLALGPSDiff ( &signalEndGPS, &signalStartGPS );
       XLAL_CHECK ( signalDuration >= 0, XLAL_EFAILED, "Something went wrong, got negative signal duration = %g\n", signalDuration );
       if ( signalDuration > 0 )	// only need to do sth if transient-window had finite overlap with output TS

@@ -167,6 +167,7 @@ typedef struct {
   FstatInputVector* Fstat_in_vec;	/**< Original wide-parameter search: vector of Fstat input data structures for XLALComputeFstat(), one per stack */
   FstatInputVector* Fstat_in_vec_recalc; /**< Recalculate the toplist: Vector of Fstat input data structures for XLALComputeFstat(), one per stack */
   FILE *timingDetailsFP;	// file pointer to write detailed coherent-timing info into
+  PulsarParamsVector *injectionSources; ///< Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}')
 } UsefulStageVariables;
 
 
@@ -371,7 +372,6 @@ int MAIN( int argc, char *argv[]) {
 
   /* user variables */
   BOOLEAN uvar_log = FALSE;     /* logging done if true */
-  INT4 uvar_loglevel = 0;       /* DEFUNCT; used to set logLevel, now set by LAL_DEBUG_LEVEL */
 
   BOOLEAN uvar_printCand1 = FALSE;      /* if 1st stage candidates are to be printed */
   BOOLEAN uvar_printFstat1 = FALSE;
@@ -448,6 +448,9 @@ int MAIN( int argc, char *argv[]) {
   int uvar_FstatMethodRecalc = FMETHOD_DEMOD_BEST;
 
   timingInfo_t XLAL_INIT_DECL(timing);
+
+
+  LALStringVector *uvar_injectionSources = NULL;
 
   // timing values
   REAL8 tic_RecalcToplist, time_RecalcToplist = 0;
@@ -551,7 +554,9 @@ int MAIN( int argc, char *argv[]) {
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outputTiming,        "outputTiming",        STRING,       0,   DEVELOPER,  "Append timing information into this file") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outputTimingDetails, "outputTimingDetails", STRING,       0,   DEVELOPER,  "Append detailed F-stat timing information to this file") == XLAL_SUCCESS, XLAL_EFUNC);
 
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_loglevel,            "logLevel",            INT4,         0,   DEFUNCT,    "DEFUNCT; used to set logLevel, now set by LAL_DEBUG_LEVEL") == XLAL_SUCCESS, XLAL_EFUNC);
+
+  /* inject signals into the data being analyzed */
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar ( &uvar_injectionSources, "injectionSources",      STRINGVector, 0, DEVELOPER,     "CSV list of files containing signal parameters for injection [see mfdv5]") == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
@@ -870,6 +875,12 @@ int MAIN( int argc, char *argv[]) {
     usefulParams.df3dot = 0;
   }
 
+  // read signal parameters to be injected, if requested by the user
+
+  if ( uvar_injectionSources != NULL ) {
+    XLAL_CHECK_MAIN ( (usefulParams.injectionSources = XLALPulsarParamsFromUserInput ( uvar_injectionSources, NULL ) ) != NULL, XLAL_EFUNC );
+  }
+
   /* for 1st stage: read sfts, calculate detector states */
   LogPrintf( LOG_NORMAL,"Reading input data ... ");
   LAL_CALL( SetUpSFTs( &status, &usefulParams ), &status);
@@ -893,7 +904,6 @@ int MAIN( int argc, char *argv[]) {
       XLAL_ERROR ( XLAL_EFUNC );
   XLALFree ( usefulParams.segmentList );
   usefulParams.segmentList = NULL;
-
 
   /*------- set frequency and spindown resolutions and ranges for Fstat and semicoherent steps -----*/
 
@@ -1953,6 +1963,10 @@ int MAIN( int argc, char *argv[]) {
     LALFree( fnameFstatVec1 );
   }
 
+  if ( usefulParams.injectionSources ) {
+    XLALDestroyPulsarParamsVector ( usefulParams.injectionSources );
+  }
+
   XLALDestroyFstatInputVector(usefulParams.Fstat_in_vec);
   XLALDestroyFstatInputVector(usefulParams.Fstat_in_vec_recalc);
 
@@ -2272,6 +2286,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   optionalArgs.runningMedianWindow = in->blocksRngMed;
   optionalArgs.FstatMethod = in->Fmethod;
   optionalArgs.collectTiming = (in->timingDetailsFP != NULL);
+  optionalArgs.injectSources = in->injectionSources;
 
   FstatOptionalArgs XLAL_INIT_DECL(optionalArgsRecalc);
 

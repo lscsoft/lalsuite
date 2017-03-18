@@ -991,7 +991,7 @@ if (strides[I-1] == 0) {
 
 ///
 /// The \b %swiglal_array_struct_<i>n</i>D() macros create typemaps which attempt to view a
-/// scripting-language array as a C array <tt>struct NAME</tt>. If the input is not already a
+/// C array <tt>struct NAME</tt> as a scripting-language array. If the input is not already a
 /// SWIG-wrapped object wrapping a <tt>struct NAME</tt>, an input view is attempted using \b
 /// %swiglal_array_viewin...().
 ///
@@ -1328,9 +1328,15 @@ if (strides[I-1] == 0) {
 %swiglal_array_dynamic_1D(NAME, TYPE, SIZET, DATA, arg1->NI, 1);
 %ignore DATA;
 %ignore NI;
-%swiglal_array_struct_1D(NAME, TYPE, SIZET, DATA, NI);
 %enddef
 #define %swiglal_public_clear_ARRAY_1D(NAME, TYPE, DATA, SIZET, NI)
+/// </li><li>
+/// 1-D array structs, e.g <tt>typedef struct { SIZET NI; TYPE* DATA; } NAME;</tt>:
+%define %swiglal_public_ARRAY_STRUCT_1D(NAME, TYPE, DATA, SIZET, NI)
+%swiglal_public_ARRAY_1D(NAME, TYPE, DATA, SIZET, NI)
+%swiglal_array_struct_1D(NAME, TYPE, SIZET, DATA, NI);
+%enddef
+#define %swiglal_public_clear_ARRAY_STRUCT_1D(NAME, TYPE, DATA, SIZET, NI)
 /// </li><li>
 /// a 1-D array of pointers to 1-D arrays, e.g. <tt>SIZET NI; SIZET NJ; ATYPE* DATA[(NI
 /// members)];</tt>
@@ -1343,15 +1349,6 @@ if (strides[I-1] == 0) {
 %enddef
 #define %swiglal_public_clear_ARRAY_1D_PTR_1D(NAME, TYPE, DATA, SIZET, NI, NJ)
 /// </li><li>
-/// 2-D arrays of fixed-length arrays, e.g <tt>typedef ETYPE[NJ] ATYPE; SIZET NI; ATYPE* DATA;</tt>:
-%define %swiglal_public_ARRAY_2D_FIXED(NAME, ETYPE, ATYPE, DATA, SIZET, NI)
-%swiglal_array_dynamic_size(SIZET, NI);
-%swiglal_array_dynamic_2D(NAME, ETYPE, SIZET, DATA, arg1->NI, (sizeof(ATYPE)/sizeof(ETYPE)), (sizeof(ATYPE)/sizeof(ETYPE)), 1);
-%ignore DATA;
-%ignore NI;
-%enddef
-#define %swiglal_public_clear_ARRAY_2D_FIXED(NAME, ETYPE, ATYPE, DATA, SIZET, NI)
-/// </li><li>
 /// 2-D arrays, e.g <tt>SIZET NI, NJ; TYPE* DATA;</tt>:
 %define %swiglal_public_ARRAY_2D(NAME, TYPE, DATA, SIZET, NI, NJ)
 %swiglal_array_dynamic_size(SIZET, NI);
@@ -1360,9 +1357,24 @@ if (strides[I-1] == 0) {
 %ignore DATA;
 %ignore NI;
 %ignore NJ;
+%enddef
+#define %swiglal_public_clear_ARRAY_2D(NAME, TYPE, DATA, SIZET, NI, NJ)
+/// </li><li>
+/// 2-D array structs, e.g <tt>typedef { SIZET NI, NJ; TYPE* DATA; } NAME</tt>:
+%define %swiglal_public_ARRAY_STRUCT_2D(NAME, TYPE, DATA, SIZET, NI, NJ)
+%swiglal_public_ARRAY_2D(NAME, TYPE, DATA, SIZET, NI, NJ)
 %swiglal_array_struct_2D(NAME, TYPE, SIZET, DATA, NI, NJ);
 %enddef
 #define %swiglal_public_clear_ARRAY_2D(NAME, TYPE, DATA, SIZET, NI, NJ)
+/// </li><li>
+/// 2-D arrays of fixed-length arrays, e.g <tt>typedef ETYPE[NJ] ATYPE; SIZET NI; ATYPE* DATA;</tt>:
+%define %swiglal_public_ARRAY_2D_FIXED(NAME, ETYPE, ATYPE, DATA, SIZET, NI)
+%swiglal_array_dynamic_size(SIZET, NI);
+%swiglal_array_dynamic_2D(NAME, ETYPE, SIZET, DATA, arg1->NI, (sizeof(ATYPE)/sizeof(ETYPE)), (sizeof(ATYPE)/sizeof(ETYPE)), 1);
+%ignore DATA;
+%ignore NI;
+%enddef
+#define %swiglal_public_clear_ARRAY_2D_FIXED(NAME, ETYPE, ATYPE, DATA, SIZET, NI)
 /// </li></ul>
 ///
 
