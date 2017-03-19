@@ -156,24 +156,6 @@ main ( int argc, char *argv[] )
     } // for l < numSegments
   LIGOTimeGPS endTime = endTime_l;
 
-  PulsarSpinRange XLAL_INIT_DECL(spinRange);
-  LIGOTimeGPS refTime = { startTime.gpsSeconds - 2.3 * uvar->Tseg, 0 };
-  spinRange.refTime = refTime;
-  spinRange.fkdot[0] = uvar->Freq;
-  spinRange.fkdot[1] = uvar->f1dot;
-  spinRange.fkdotBand[1] = 0;
-  REAL8 asini = 0, Period = 0, ecc = 0;
-  REAL8 minCoverFreq, maxCoverFreq;
-
-  PulsarDopplerParams XLAL_INIT_DECL(Doppler);
-  Doppler.refTime = refTime;
-  Doppler.Alpha = 0.5;
-  Doppler.Delta = 0.5;
-  memcpy ( &Doppler.fkdot, &spinRange.fkdot, sizeof(Doppler.fkdot) );;
-  Doppler.period = Period;
-  Doppler.ecc = ecc;
-  Doppler.asini = asini;
-
   // ----- setup optional Fstat arguments
   FstatOptionalArgs optionalArgs = FstatOptionalArgsDefaults;
   MultiNoiseFloor XLAL_INIT_DECL(injectSqrtSX);
@@ -203,6 +185,24 @@ main ( int argc, char *argv[] )
   // ---------- main loop over repeated trials ----------
   for ( INT4 i = 0; i < uvar->numTrials; i ++ )
     {
+      PulsarSpinRange XLAL_INIT_DECL(spinRange);
+      LIGOTimeGPS refTime = { startTime.gpsSeconds - 2.3 * uvar->Tseg, 0 };
+      spinRange.refTime = refTime;
+      spinRange.fkdot[0] = uvar->Freq;
+      spinRange.fkdot[1] = uvar->f1dot;
+      spinRange.fkdotBand[1] = 0;
+      REAL8 asini = 0, Period = 0, ecc = 0;
+      REAL8 minCoverFreq, maxCoverFreq;
+
+      PulsarDopplerParams XLAL_INIT_DECL(Doppler);
+      Doppler.refTime = refTime;
+      Doppler.Alpha = 0.5;
+      Doppler.Delta = 0.5;
+      memcpy ( &Doppler.fkdot, &spinRange.fkdot, sizeof(Doppler.fkdot) );;
+      Doppler.period = Period;
+      Doppler.ecc = ecc;
+      Doppler.asini = asini;
+
       // randomize numFreqBins
       UINT4 numFreqBins_i = numFreqBinsMin + (UINT4)round ( 1.0 * (numFreqBinsMax - numFreqBinsMin) * rand() / RAND_MAX );
       // randomize FreqResolution
@@ -243,7 +243,7 @@ main ( int argc, char *argv[] )
           tauF1Buf_i   += Fstat_tauF1Buf;
           // ----- output timing details to file if requested
           if ( timingLogFILE != NULL ) {
-            XLAL_CHECK ( AppendFstatTimingInfo2File ( inputs->data[l], timingLogFILE, (l == 0) ) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK ( AppendFstatTimingInfo2File ( inputs->data[l], timingLogFILE, (l == 0) && (i==0)) == XLAL_SUCCESS, XLAL_EFUNC );
           }
 
         } // for l < numSegments

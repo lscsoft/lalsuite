@@ -60,7 +60,7 @@
 typedef struct tagTimings_t
 {
   REAL8 Total;		// total time spent in XLALComputeFstatResamp()
-  REAL8 Bary;		// time spent in barycentric resampling
+  REAL8 bBary;		// actual total time spent in barycentric resampling (reduced by buffering)
   REAL8 Spin;		// time spent in spindown+frequency correction
   REAL8 FFT;		// time spent in FFT
   REAL8 Copy;		// time spent copying results from FFT to FabX
@@ -87,15 +87,15 @@ typedef struct tagResampTimingInfo
   // Resampling timing model in terms of 'fundamental' coefficients tau_Fbin, tau_spin, tau_FFT:
   // ==> tau_RS = tau_Fbin + (NsFFT / NFbin) * [ R * tau_spin + tau_FFT ]
   // The total runtime per call (over NFbin for one detector) will generally have an additional contribution from barycentering:
-  // ==> Tau.Total = NFbin * tau_RS + b * R * NsFFT * tau_bary,
+  // ==> Tau.Total = NFbin * tau_RS + R * NsFFT * (b*tau_bary),
   // where b = 1/N_{f1dot,f2dot,...} is the buffering weight applied to the barycentering contribution, which generally
   // will make b<<1 if there's many spindown template per sky- and binary-orbital templates.
-  REAL8 tau_RS;		// measured resampling F-stat time per output F-stat bin (excluding barycentering): = (Tau.Total - Tau.Bary) / NFbin
+  REAL8 tau_RS;		// measured resampling F-stat time per output F-stat bin (excluding barycentering): = (Tau_Total - b * Tau_Bary) / NFbin
   REAL8 tau_Fbin;	// time contribution of operations that scale exactly with numFreqBins, expressible as
                         // tau_Fbin = (Tau.Copy + Tau.Norm + Tau.SumFabX + Tau.Fab2F) / NFbin
   REAL8 tau_FFT;	// FFT time per FFT sample: tau_FFT = Tau.FFT / NsFFT
   REAL8 tau_spin;	// time contribution from applying spindown-correction (and freq-shift), per SRC-frame sample: tau_spin = Tau.Spin /(R* NsFFT)
-  REAL8 tau_bary;	// barycentering time per SRC-frame sample, assuming no buffering: tau_bary = Tau.Bary /(R * NsFFT)
+  REAL8 btau_bary;	// effective barycentering time per SRC-frame sample (including buffering): tau_bary = Tau_Bary /(R * NsFFT)
   // ------------------------------------------------------------
 
 } ResampTimingInfo;
@@ -448,7 +448,7 @@ XLALComputeFstatResamp ( FstatResults* Fstats,
 
   if ( ti->collectTiming ) {
     toc = XLALGetCPUTime();
-    ti->Tau.Bary = (toc-tic);
+    ti->Tau.bBary = (toc-tic);
   }
   MultiCOMPLEX8TimeSeries *multiTimeSeries_SRC_a = resamp->multiTimeSeries_SRC_a;
   MultiCOMPLEX8TimeSeries *multiTimeSeries_SRC_b = resamp->multiTimeSeries_SRC_b;
@@ -628,18 +628,18 @@ XLALComputeFstatResamp ( FstatResults* Fstats,
     Tau->Total = (tocEnd - ticStart);
     // rescale all relevant timings to single-IFO case
     Tau->Total /= numDetectors;
-    Tau->Bary  /= numDetectors;
+    Tau->bBary  /= numDetectors;
     Tau->Spin  /= numDetectors;
     Tau->FFT   /= numDetectors;
     Tau->Norm  /= numDetectors;
     Tau->Copy  /= numDetectors;
 
     // compute 'fundamental' per output bin timing numbers and timing-model coefficients
-    ti->tau_RS	= (Tau->Total - Tau->Bary) / ti->NFbin;
+    ti->tau_RS	= (Tau->Total - Tau->bBary) / ti->NFbin;
     ti->tau_FFT	= Tau->FFT / ti->NsFFT;
     ti->tau_spin= Tau->Spin / (ti->Resolution * ti->NsFFT );
     ti->tau_Fbin= (Tau->Copy + Tau->Norm + Tau->SumFabX + Tau->Fab2F) / ti->NFbin;
-    ti->tau_bary= Tau->Bary / (ti->Resolution * ti->NsFFT);
+    ti->btau_bary= Tau->bBary / (ti->Resolution * ti->NsFFT);
   }
 
   return XLAL_SUCCESS;
@@ -1026,16 +1026,23 @@ AppendFstatTimingInfo2File_Resamp ( const void* method_data, FILE *fp, BOOLEAN p
   // print header if requested
   if ( printHeader ) {
     fprintf (fp, "%%%% ----- Resampling F-stat timing: -----\n");
-    fprintf (fp, "%%%% Measured time (in seconds) per F-stat frequency bin per detector (excluding barycentering):\n");
-    fprintf (fp, "%%%% tau_RS = (TauTotal - TauBary) / NFbin\n");
+    fprintf (fp, "%%%% Measured effective time (in seconds) per F-stat frequency bin per detector:\n");
+    fprintf (fp, "%%%% tau_RSeff = TauTotal / NFbin\n\n");
+
+    fprintf (fp, "%%%% Measured ('perfect buffering') time (in seconds) per F-stat frequency bin per detector, i.e. excluding barycentering time 'TauBary':\n");
+    fprintf (fp, "%%%% tau_RS = (TauTotal - b * TauBary) / NFbin\n");
+    fprintf (fp, "%%%% where the buffering weight b = 1/N_{f1dot,f2dot,..} goes to 0 for many spindowns per sky+binary template\n\n");
+
+    fprintf (fp, "%%%% Predicted ('perfect buffering') time per frequency bin per detector:\n");
     fprintf (fp, "%%%% tau_RS-predicted = tau_Fbin + (NsFFT/NFbin) * ( R * tau_spin + tau_FFT )\n");
-    fprintf (fp, "%%%% with the frequency resolution in natural units, R = Tspan / T_FFT = NsSRC / NsFFT,\n");
-    fprintf (fp, "%%%% Total time per detector generally contains an additional barycentering contribution:\n");
-    fprintf (fp, "%%%% TauTotal = NFbin * tauRS + b * R * NsFFT * tau_bary\n");
-    fprintf (fp, "%%%% where the buffering weight b = 1/N_{f1dot,f2dot,..} goes to 0 for many spindowns per sky+binary template\n");
+    fprintf (fp, "%%%% with the frequency resolution in natural units, R = Tspan / T_FFT = NsSRC / NsFFT,\n\n");
+
+    fprintf (fp, "%%%% Predicted effective time per frequency bin per detector (including barycentering contribution):\n");
+    fprintf (fp, "%%%% tau_RSeff-predicted = tauRS-predicted + (NsFFT/NFbin) * R * (b*tau_bary)\n");
+    fprintf (fp, "%%%% where tau_bary = TauBary / NFbin\n\n" );
 
     fprintf (fp, "%%%%%8s %8s %8s %6s %6s", "NFbin", "NsFFT0", "l2NsFFT", "Ndet", "R" );
-    fprintf (fp, " %10s %10s %10s %10s %10s %10s", "TauTotal", "tau_RS", "tau_Fbin", "tau_FFT", "tau_spin", "tau_bary" );
+    fprintf (fp, " %10s %10s %10s %10s %10s %10s", "TauTotal", "tau_RS", "tau_Fbin", "tau_FFT", "tau_spin", "btau_bary" );
     fprintf (fp, "\n");
   }
 
@@ -1044,7 +1051,7 @@ AppendFstatTimingInfo2File_Resamp ( const void* method_data, FILE *fp, BOOLEAN p
            ti->NFbin, ti->NsFFT0, log2(ti->NsFFT), ti->Ndet, ti->Resolution );
 
   fprintf (fp, " %10.1e %10.1e %10.1e %10.1e %10.1e %10.1e",
-           ti->Tau.Total, ti->tau_RS, ti->tau_Fbin, ti->tau_FFT, ti->tau_spin, ti->tau_bary );
+           ti->Tau.Total, ti->tau_RS, ti->tau_Fbin, ti->tau_FFT, ti->tau_spin, ti->btau_bary );
 
   fprintf (fp, "\n");
 
