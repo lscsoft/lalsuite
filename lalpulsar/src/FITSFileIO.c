@@ -2272,7 +2272,10 @@ static int UNUSED XLALFITSTableColumnAdd( FITSFile UNUSED *file, const CHAR UNUS
     // Verify existing column format
     int datatype_chk = 0;
     long repeat_chk = 0, width_chk = 0;
-    CALL_FITS( fits_get_eqcoltype, file->ff, 1 + i, &datatype_chk, &repeat_chk, &width_chk );
+    CALL_FITS( fits_get_coltype, file->ff, 1 + i, &datatype_chk, &repeat_chk, &width_chk );
+    if ( datatype_chk == TLONG ) {
+      datatype_chk = TINT;
+    }
     XLAL_CHECK_FAIL( datatype_chk == datatype, XLAL_EIO, "Inconsistent column #%i datatype %i; should be %i", i, datatype_chk, datatype );
     const size_t elem_size_chk = ( datatype_chk == TSTRING ) ? 1 : width_chk;
     const size_t field_size_chk = repeat_chk * elem_size_chk;
@@ -2335,7 +2338,7 @@ int XLALFITSTableColumnAddUINT4( FITSFile UNUSED *file, const CHAR UNUSED *col_n
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
   XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( UINT4 ), 'V', TULONG ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( UINT4 ), 'V', TINT ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 
 #endif // !defined(HAVE_LIBCFITSIO)
@@ -2383,7 +2386,7 @@ int XLALFITSTableColumnAddINT4( FITSFile UNUSED *file, const CHAR UNUSED *col_na
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
   XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( INT4 ), 'J', TLONG ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( INT4 ), 'J', TINT ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 
 #endif // !defined(HAVE_LIBCFITSIO)
@@ -2494,9 +2497,9 @@ int XLALFITSTableColumnAddGPSTime( FITSFile UNUSED *file, const CHAR UNUSED *col
   XLAL_CHECK( field_size == sizeof( LIGOTimeGPS ), XLAL_EINVAL, "Array of GPS times is not supported" );
   CHAR name[FLEN_VALUE];
   snprintf( name, sizeof( name ), "%s_s", col_name );
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, "s", noffsets, offsets, record, record_size, &( field->gpsSeconds ), sizeof( field->gpsSeconds ), sizeof( field->gpsSeconds ), 'J', TINT32BIT ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, "s", noffsets, offsets, record, record_size, &( field->gpsSeconds ), sizeof( field->gpsSeconds ), sizeof( field->gpsSeconds ), 'J', TINT ) == XLAL_SUCCESS, XLAL_EFUNC );
   snprintf( name, sizeof( name ), "%s_ns", col_name );
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, "ns", noffsets, offsets, record, record_size, &( field->gpsNanoSeconds ), sizeof( field->gpsNanoSeconds ), sizeof( field->gpsNanoSeconds ), 'J', TINT32BIT ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, "ns", noffsets, offsets, record, record_size, &( field->gpsNanoSeconds ), sizeof( field->gpsNanoSeconds ), sizeof( field->gpsNanoSeconds ), 'J', TINT ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 
 #endif // !defined(HAVE_LIBCFITSIO)
