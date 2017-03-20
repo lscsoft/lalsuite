@@ -604,37 +604,38 @@ int XLALWeaveCacheRetrieve(
   XLAL_CHECK( coh_nres != NULL, XLAL_EFAULT );
 
   // See if coherent results are already cached
-  const cache_item key = { .partition_index = queries->partition_index, .coh_index = queries->coh_index[query_index] };
-  cache_item *item = NULL;
-  XLAL_CHECK( XLALHashTblFind( cache->coh_index_hash, &key, ( const void ** ) &item ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if ( item == NULL ) {
+  const cache_item find_key = { .partition_index = queries->partition_index, .coh_index = queries->coh_index[query_index] };
+  const cache_item *find_item = NULL;
+  XLAL_CHECK( XLALHashTblFind( cache->coh_index_hash, &find_key, ( const void ** ) &find_item ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( find_item == NULL ) {
 
     // Reuse 'saved_item' if possible, otherwise allocate memory for a new cache item
     if ( cache->saved_item == NULL ) {
       cache->saved_item = XLALCalloc( 1, sizeof( *cache->saved_item ) );
       XLAL_CHECK( cache->saved_item != NULL, XLAL_EINVAL );
     }
-    item = cache->saved_item;
+    cache_item *new_item = cache->saved_item;
+    find_item = new_item;
 
     // Set the key of the new cache item for future lookups
-    item->partition_index = key.partition_index;
-    item->coh_index = key.coh_index;
+    new_item->partition_index = find_key.partition_index;
+    new_item->coh_index = find_key.coh_index;
 
     // Set the relevance of the coherent frequency block associated with the new cache item
-    item->relevance = queries->coh_relevance[query_index];
+    new_item->relevance = queries->coh_relevance[query_index];
 
     // Determine the number of points in the coherent frequency block
     const UINT4 coh_nfreqs = queries->coh_right[query_index] - queries->coh_left[query_index] + 1;
 
     // Compute coherent results for the new cache item
-    XLAL_CHECK( XLALWeaveCohResultsCompute( &item->coh_res, cache->coh_input, &queries->coh_phys[query_index], coh_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALWeaveCohResultsCompute( &new_item->coh_res, cache->coh_input, &queries->coh_phys[query_index], coh_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Increment number of computed coherent results, including results that may have been recomputed
     *coh_nfbk += 1;
     *coh_nres += coh_nfreqs;
 
     // Add new cache item to the index hash table
-    XLAL_CHECK( XLALHashTblAdd( cache->coh_index_hash, item ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALHashTblAdd( cache->coh_index_hash, new_item ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Get the item in the cache with the smallest relevance
     const cache_item *least_relevant_item = ( const cache_item * ) XLALHeapRoot( cache->relevance_heap );
@@ -644,7 +645,7 @@ int XLALWeaveCacheRetrieve(
     const cache_item relevance_threshold = { .partition_index = queries->partition_index, .relevance = queries->semi_relevance };
 
     // If item's relevance has fallen below the threshold relevance, it can be removed from the cache
-    if ( least_relevant_item != NULL && least_relevant_item != item && cache_item_compare_by_relevance( least_relevant_item, &relevance_threshold ) < 0 ) {
+    if ( least_relevant_item != NULL && least_relevant_item != new_item && cache_item_compare_by_relevance( least_relevant_item, &relevance_threshold ) < 0 ) {
 
       // Remove least relevant item from index hash table
       XLAL_CHECK( XLALHashTblRemove( cache->coh_index_hash, least_relevant_item ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -660,7 +661,7 @@ int XLALWeaveCacheRetrieve(
         XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
 
         // If item's relevance has fallen below the threshold relevance, it can be removed from the cache
-        if ( least_relevant_item != NULL && least_relevant_item != item && cache_item_compare_by_relevance( least_relevant_item, &relevance_threshold ) < 0 ) {
+        if ( least_relevant_item != NULL && least_relevant_item != new_item && cache_item_compare_by_relevance( least_relevant_item, &relevance_threshold ) < 0 ) {
 
           // Remove least relevant item from index hash table
           XLAL_CHECK( XLALHashTblRemove( cache->coh_index_hash, least_relevant_item ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -694,7 +695,7 @@ int XLALWeaveCacheRetrieve(
 
       // Check if coherent results have been computed previously
       const void *computed = NULL;
-      XLAL_CHECK( XLALHashTblFind( cache->coh_computed_hash, &key, &computed ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALHashTblFind( cache->coh_computed_hash, &find_key, &computed ) == XLAL_SUCCESS, XLAL_EFUNC );
       if ( computed == NULL ) {
 
         // Coherent results have not been computed before: increment the number of results computed once
@@ -704,7 +705,7 @@ int XLALWeaveCacheRetrieve(
         // table to indicate these coherent results have been computed
         cache_item *new_key = XLALCalloc( 1, sizeof( *new_key ) );
         XLAL_CHECK( new_key != NULL, XLAL_EINVAL );
-        *new_key = key;
+        *new_key = find_key;
         XLAL_CHECK( XLALHashTblAdd( cache->coh_computed_hash, new_key ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       } else {
@@ -719,7 +720,7 @@ int XLALWeaveCacheRetrieve(
   }
 
   // Return coherent results from cache
-  *coh_res = item->coh_res;
+  *coh_res = find_item->coh_res;
 
   // Return offset at which coherent results should be combined with semicoherent results
   *coh_offset = queries->semi_left - queries->coh_left[query_index];
