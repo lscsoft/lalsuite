@@ -553,8 +553,8 @@ int main( int argc, char *argv[] )
   }
 
   // Create arrays to store the appropriate parameter-space metrics for each tiling
-  gsl_matrix *XLAL_INIT_DECL( rssky_metric, [nsegments] );
-  SuperskyTransformData *XLAL_INIT_DECL( rssky_transf, [nsegments] );
+  gsl_matrix *XLAL_INIT_DECL( rssky_metric, [ntiles] );
+  SuperskyTransformData *XLAL_INIT_DECL( rssky_transf, [ntiles] );
   for ( size_t i = 0; i < nsegments; ++i ) {
     rssky_metric[i] = setup.metrics->coh_rssky_metric[i];
     rssky_transf[i] = setup.metrics->coh_rssky_transf[i];
