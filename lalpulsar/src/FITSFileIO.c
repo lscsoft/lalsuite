@@ -100,6 +100,7 @@ struct tagFITSFile {
   } array;
   struct {                              // Parameters of current table
     int tfields;                                // Number of columns in table
+    size_t field_size[FFIO_MAX];                // Sizes of fields in table row record
     size_t noffsets[FFIO_MAX];                  // Number of nested offsets to field in table row record
     size_t offsets[FFIO_MAX][2];                // List of nested offsets to field in table row record
     CHAR ttype[FFIO_MAX][FLEN_VALUE];           // Names of columns in table
@@ -110,6 +111,8 @@ struct tagFITSFile {
     LONGLONG nrows;                             // Number of rows in table
     LONGLONG irow;                              // Index of current row in table
   } table;
+  char *buf;                            // Buffer for reading/writing table columns
+  size_t buf_size;                      // Current length of the buffer
 };
 
 ///
@@ -245,6 +248,7 @@ void XLALFITSFileClose( FITSFile UNUSED *file )
     if ( file->ff != NULL ) {
       fits_close_file( file->ff, &status );
     }
+    XLALFree( file->buf );
     XLALFree( file );
   }
 
@@ -2241,6 +2245,9 @@ static int UNUSED XLALFITSTableColumnAdd( FITSFile UNUSED *file, const CHAR UNUS
   XLAL_CHECK_FAIL( file->table.tfields <= FFIO_MAX, XLAL_ESIZE );
   const int i = file->table.tfields++;
 
+  // Store field size
+  file->table.field_size[i] = field_size;
+
   // Store field offsets
   file->table.noffsets[i] = noffsets;
   memcpy( file->table.offsets[i], offsets, sizeof( file->table.offsets[i] ) );
@@ -2538,6 +2545,8 @@ int XLALFITSTableWriteRow( FITSFile UNUSED *file, const void UNUSED *record )
 
   // Write next table row
   for ( int i = 0; i < file->table.tfields; ++i ) {
+
+    // Work out pointer to correct place in record
     union { const void *cv; void *v; } bad_cast = { .cv = record };
     void *value = bad_cast.v;
     for ( size_t n = 0; n < file->table.noffsets[i]; ++n ) {
@@ -2546,8 +2555,13 @@ int XLALFITSTableWriteRow( FITSFile UNUSED *file, const void UNUSED *record )
       }
       value = ( void * )( ( ( intptr_t ) value ) + file->table.offsets[i][n] );
     }
-    void *pvalue = ( file->table.datatype[i] == TSTRING ) ? ( void * ) &value : value;
-    CALL_FITS( fits_write_col, file->ff, file->table.datatype[i], 1 + i, file->table.irow, 1, file->table.nelements[i], pvalue );
+
+    // Write data in record to table column
+    {
+      void *pvalue = ( file->table.datatype[i] == TSTRING ) ? ( void * ) &value : value;
+      CALL_FITS( fits_write_col, file->ff, file->table.datatype[i], 1 + i, file->table.irow, 1, file->table.nelements[i], pvalue );
+    }
+
   }
 
   return XLAL_SUCCESS;
@@ -2594,6 +2608,24 @@ int XLALFITSTableReadRow( FITSFile UNUSED *file, void UNUSED *record, UINT8 UNUS
 
   // Read next table row
   for ( int i = 0; i < file->table.tfields; ++i ) {
+
+    // Resize temporary buffer, if required
+    // - Require double the field size to allow for buffer overruns in CFITSIO
+    const size_t req_buf_size = 2 * file->table.field_size[i];
+    if ( file->buf_size < req_buf_size ) {
+      file->buf = XLALRealloc( file->buf, req_buf_size );
+      XLAL_CHECK( file->buf != NULL, XLAL_ENOMEM );
+      file->buf_size = req_buf_size;
+    }
+    memset( file->buf, 0, req_buf_size );
+
+    // Read data from table column into temporary buffer
+    {
+      void *pbuf = ( file->table.datatype[i] == TSTRING ) ? ( void * ) &file->buf : file->buf;
+      CALL_FITS( fits_read_col, file->ff, file->table.datatype[i], 1 + i, file->table.irow, 1, file->table.nelements[i], NULL, pbuf, NULL );
+    }
+
+    // Work out pointer to correct place in record
     void *value = record;
     for ( size_t n = 0; n < file->table.noffsets[i]; ++n ) {
       if ( n > 0 ) {
@@ -2601,8 +2633,10 @@ int XLALFITSTableReadRow( FITSFile UNUSED *file, void UNUSED *record, UINT8 UNUS
       }
       value = ( void * )( ( ( intptr_t ) value ) + file->table.offsets[i][n] );
     }
-    void *pvalue = ( file->table.datatype[i] == TSTRING ) ? ( void * ) &value : value;
-    CALL_FITS( fits_read_col, file->ff, file->table.datatype[i], 1 + i, file->table.irow, 1, file->table.nelements[i], NULL, pvalue, NULL );
+
+    // Copy the required length of the temporary buffer into the record
+    memcpy( value, file->buf, file->table.field_size[i] );
+
   }
 
   return XLAL_SUCCESS;
