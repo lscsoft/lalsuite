@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2016  Leo Singer
+# Copyright (C) 2013-2017  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -115,8 +115,10 @@ def process(fitsfilename):
         far = float('nan')
     distmean = metadata.get('distmean', float('nan'))
     diststd = metadata.get('diststd', float('nan'))
+    log_bci = metadata.get('log_bci', float('nan'))
+    log_bsn = metadata.get('log_bsn', float('nan'))
 
-    ret = [coinc_event_id, simulation_id, far, snr, searched_area, searched_prob, offset, runtime, distmean, diststd] + contour_areas + area_probs
+    ret = [coinc_event_id, simulation_id, far, snr, searched_area, searched_prob, offset, runtime, distmean, diststd, log_bci, log_bsn] + contour_areas + area_probs
     if modes:
         ret += [searched_modes] + contour_modes
     return ret
@@ -149,7 +151,8 @@ if __name__ == '__main__':
 
     colnames = (
         ['coinc_event_id', 'simulation_id', 'far', 'snr', 'searched_area',
-        'searched_prob', 'offset', 'runtime', 'distmean', 'diststd'] +
+        'searched_prob', 'offset', 'runtime', 'distmean', 'diststd',
+        'log_bci', 'log_bsn'] +
         ["area({0:g})".format(p) for p in contours] +
         ["prob({0:g})".format(a) for a in areas])
     if modes:

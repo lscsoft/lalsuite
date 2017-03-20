@@ -127,6 +127,111 @@ class CoincDatabase(object):
 			self.scn_definer_id = None
 
 
+	def get_noninjections(self):
+		"""
+		Generator function to return
+
+			is_background, event_list, offsetvector
+
+		tuples by querying the coinc_event and sngl_burst tables in
+		the database.  Only coincs corresponding to
+		sngl_burst<-->sngl_burst coincs will be retrieved.
+		"""
+		cursor = self.connection.cursor()
+		for coinc_event_id, time_slide_id in self.connection.cursor().execute("""
+	SELECT
+		coinc_event_id,
+		time_slide_id
+	FROM
+		coinc_event
+	WHERE
+		coinc_def_id == ?
+		""", (self.bb_definer_id,)):
+			rows = [(self.sngl_burst_table.row_from_cols(row), row[-1]) for row in cursor.execute("""
+	SELECT
+		sngl_burst.*,
+		time_slide.offset
+	FROM
+		coinc_event_map
+		JOIN sngl_burst ON (
+			coinc_event_map.table_name == 'sngl_burst'
+			AND sngl_burst.event_id == coinc_event_map.event_id
+		)
+		JOIN time_slide ON (
+			time_slide.instrument == sngl_burst.ifo
+		)
+	WHERE
+		coinc_event_map.coinc_event_id == ?
+		AND time_slide.time_slide_id == ?
+			""", (coinc_event_id, time_slide_id))]
+			offsets = offsetvector((event.ifo, offset) for event, offset in rows)
+			yield any(offsets.values()), [event for event, offset in rows], offsets
+		cursor.close()
+
+
+	def get_injections(self):
+		"""
+		Generator function to return
+
+			sim, event_list, offsetvector
+
+		tuples by querying the sim_burst, coinc_event and
+		sngl_burst tables in the database.  Only coincs
+		corresponding to "exact" sim_burst<-->coinc_event coincs
+		will be retrieved.
+		"""
+		cursor = self.connection.cursor()
+		for values in self.connection.cursor().execute("""
+	SELECT
+		sim_burst.*,
+		burst_coinc_event_map.event_id
+	FROM
+		sim_burst
+		JOIN coinc_event_map AS sim_coinc_event_map ON (
+			sim_coinc_event_map.table_name == 'sim_burst'
+			AND sim_coinc_event_map.event_id == sim_burst.simulation_id
+		)
+		JOIN coinc_event AS sim_coinc_event ON (
+			sim_coinc_event.coinc_event_id == sim_coinc_event_map.coinc_event_id
+		)
+		JOIN coinc_event_map AS burst_coinc_event_map ON (
+			burst_coinc_event_map.coinc_event_id == sim_coinc_event_map.coinc_event_id
+			AND burst_coinc_event_map.table_name == 'coinc_event'
+		)
+	WHERE
+		sim_coinc_event.coinc_def_id == ?
+		""", (self.sce_definer_id,)):
+			# retrieve the injection and the coinc_event_id
+			sim = self.sim_burst_table.row_from_cols(values)
+			coinc_event_id = values[-1]
+
+			# retrieve the list of the sngl_bursts in this
+			# coinc, and their time slide dictionary
+			rows = [(self.sngl_burst_table.row_from_cols(row), row[-1]) for row in cursor.execute("""
+	SELECT
+		sngl_burst.*,
+		time_slide.offset
+	FROM
+		sngl_burst
+		JOIN coinc_event_map ON (
+			coinc_event_map.table_name == 'sngl_burst'
+			AND coinc_event_map.event_id == sngl_burst.event_id
+		)
+		JOIN coinc_event ON (
+			coinc_event.coinc_event_id == coinc_event_map.coinc_event_id
+		)
+		JOIN time_slide ON (
+			coinc_event.time_slide_id == time_slide.time_slide_id
+			AND time_slide.instrument == sngl_burst.ifo
+		)
+	WHERE
+		coinc_event.coinc_event_id == ?
+			""", (coinc_event_id,))]
+			# pass the events to whatever wants them
+			yield sim, [event for event, offset in rows], offsetvector((event.ifo, offset) for event, offset in rows)
+		cursor.close()
+
+
 def summarize_coinc_database(contents, filename = None):
 	if filename is None:
 		filename = ""

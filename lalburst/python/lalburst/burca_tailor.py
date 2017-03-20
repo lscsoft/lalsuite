@@ -27,8 +27,6 @@
 import copy
 import itertools
 import math
-import numpy
-from scipy.stats import stats
 import sys
 
 
@@ -37,10 +35,11 @@ import lal
 
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
+from glue.ligolw import array as ligolw_array
+from glue.ligolw import param as ligolw_param
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw.utils import search_summary as ligolw_search_summary
-from glue.offsetvector import offsetvector
 from . import git_version
 from pylal import rate
 from pylal import snglcoinc
@@ -60,69 +59,127 @@ __date__ = git_version.date
 #
 
 
-def dt_binning(instrument1, instrument2):
-	# FIXME:  hard-coded for directional search
-	#dt = 0.02 + snglcoinc.light_travel_time(instrument1, instrument2)
-	dt = 0.02
-	return rate.NDBins((rate.ATanBins(-dt, +dt, 12001), rate.LinearBins(0.0, 2 * math.pi, 61)))
+class LnLRDensity(snglcoinc.LnLRDensity):
+	def __init__(self, instruments):
+		self.densities = {}
+		for pair in intertools.combinations(sorted(instruments), 2):
+			# FIXME:  hard-coded for directional search
+			#dt = 0.02 + snglcoinc.light_travel_time(*pair)
+			dt = 0.02
+			self.densities["%s_%s_dt" % pair] = rate.BinnedLnDPF(rate.NDBins((rate.ATanBins(-dt, +dt, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))))
+			self.densities["%s_%s_dband" % pair] = rate.BinnedLnDPF(rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))))
+			self.densities["%s_%s_ddur" % pair] = rate.BinnedLnDPF(rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))))
+			self.densities["%s_%s_df" % pair] = rate.BinnedLnDPF(rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))))
+			self.densities["%s_%s_dh" % pair] = rate.BinnedLnDPF(rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))))
+
+	def __call__(self, params):
+		try:
+			interps = self.interps
+		except AttributeError:
+			self.mkinterps()
+			interps = self.interps
+		return sum(interps[param](value) for param, value in params.items())
+
+	def __iadd__(self, other):
+		if type(self) != type(other) or set(self.densities) != set(other.densities):
+			raise TypeError("cannot add %s and %s" % (type(self), type(other)))
+		for key, pdf in self.densities.items():
+			pdf += other.densities[key]
+		del self.interps
+		return self
+
+	def increment(self, params, weight = 1.0):
+		for param, value in params.items():
+			self.densities[param].count[value] += weight
+
+	def copy(self):
+		new = type(self)([])
+		for key, pdf in self.densities.items():
+			new.densities[key] = pdf.copy()
+		return new
+
+	def mkinterps(self):
+		self.interps = dict((key, pdf.mkinterp()) for key, pdf in self.densities.items())
+
+	def finish(self):
+		for key, pdf in self.densities.items():
+			rate.filter_array(pdf.array, rate.gaussian_window(11, 5))
+			pdf.normalize()
+		self.mkinterps()
+
+	def to_xml(self, name):
+		xml = super(LnLRDensity, self).to_xml(name)
+		instruments =  set(key.split("_", 2)[0] for key in self.densities if key.endswith("_dt"))
+		instruments |= set(key.split("_", 2)[1] for key in self.densities if key.endswith("_dt"))
+		xml.appendChild(ligolw_param.Param.from_pyvalue("instruments", lsctables.ifos_from_instrument_set(instruments)))
+		for key, pdf in self.densities.items():
+			xml.appendChild(pdf.to_xml(key))
+		return xml
+
+	@classmethod
+	def from_xml(cls, name):
+		xml = cls.get_xml_root(xml, name)
+		self = cls(lsctables.instrument_set_from_ifos(ligolw_param.get_pyvalue(xml, "instruments")))
+		for key in self.densities:
+			self.densities[key] = rate.BinnedLnPDF.from_xml(xml, key)
+		return self
 
 
-class BurcaCoincParamsDistributions(snglcoinc.CoincParamsDistributions):
-	binnings = {
-		"H1_H2_dband": rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))),
-		"H1_L1_dband": rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))),
-		"H2_L1_dband": rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))),
-		"H1_V1_dband": rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))),
-		"L1_V1_dband": rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))),
-		"H1_H2_ddur": rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))),
-		"H1_L1_ddur": rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))),
-		"H2_L1_ddur": rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))),
-		"H1_V1_ddur": rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))),
-		"L1_V1_ddur": rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))),
-		"H1_H2_df": rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))),
-		"H1_L1_df": rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))),
-		"H2_L1_df": rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))),
-		"H1_V1_df": rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))),
-		"L1_V1_df": rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))),
-		"H1_H2_dh": rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))),
-		"H1_L1_dh": rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))),
-		"H2_L1_dh": rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))),
-		"H1_V1_dh": rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))),
-		"L1_V1_dh": rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))),
-		"H1_H2_dt": dt_binning("H1", "H2"),
-		"H1_L1_dt": dt_binning("H1", "L1"),
-		"H2_L1_dt": dt_binning("H2", "L1"),
-		"H1_V1_dt": dt_binning("H1", "V1"),
-		"L1_V1_dt": dt_binning("L1", "V1")
-	}
+class BurcaCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
+	ligo_lw_name_suffix = u"excesspower_coincparamsdistributions"
 
-	filters = {
-		"H1_H2_dband": rate.gaussian_window(11, 5),
-		"H1_L1_dband": rate.gaussian_window(11, 5),
-		"H2_L1_dband": rate.gaussian_window(11, 5),
-		"H1_V1_dband": rate.gaussian_window(11, 5),
-		"L1_V1_dband": rate.gaussian_window(11, 5),
-		"H1_H2_ddur": rate.gaussian_window(11, 5),
-		"H1_L1_ddur": rate.gaussian_window(11, 5),
-		"H2_L1_ddur": rate.gaussian_window(11, 5),
-		"H1_V1_ddur": rate.gaussian_window(11, 5),
-		"L1_V1_ddur": rate.gaussian_window(11, 5),
-		"H1_H2_df": rate.gaussian_window(11, 5),
-		"H1_L1_df": rate.gaussian_window(11, 5),
-		"H2_L1_df": rate.gaussian_window(11, 5),
-		"H1_V1_df": rate.gaussian_window(11, 5),
-		"L1_V1_df": rate.gaussian_window(11, 5),
-		"H1_H2_dh": rate.gaussian_window(11, 5),
-		"H1_V1_df": rate.gaussian_window(11, 5),
-		"L1_V1_df": rate.gaussian_window(11, 5),
-		"H1_L1_dh": rate.gaussian_window(11, 5),
-		"H2_L1_dh": rate.gaussian_window(11, 5),
-		"H1_H2_dt": rate.gaussian_window(11, 5),
-		"H1_L1_dt": rate.gaussian_window(11, 5),
-		"H2_L1_dt": rate.gaussian_window(11, 5),
-		"H1_V1_dh": rate.gaussian_window(11, 5),
-		"L2_V1_dh": rate.gaussian_window(11, 5)
-	}
+	@ligolw_array.use_in
+	@ligolw_param.use_in
+	@lsctables.use_in
+	class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+		pass
+
+	def __init__(self, instruments):
+		self.numerator = LnLRDensity(instruments)
+		self.denominator = LnLRDensity(instruments)
+		self.candidates = LnLRDensity(instruments)
+
+	def __iadd__(self, other):
+		if type(self) != type(other):
+			raise TypeError(other)
+		self.numerator += other.numerator
+		self.denominator += other.denominator
+		self.candidates += other.candidates
+
+	def copy(self):
+		new = type(self)([])
+		new.numerator = self.numerator.copy()
+		new.denominator = self.denominator.copy()
+		new.candidates = self.candidates.copy()
+		return new
+
+	def finish(self):
+		self.numerator.finish()
+		self.denominator.finish()
+		self.candidates.finish()
+
+	@classmethod
+	def get_xml_root(cls, xml, name):
+		name = u"%s:%s" % (name, cls.ligo_lw_name_suffix)
+		xml = [elem for elem in xml.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.Name == name]
+		if len(xml) != 1:
+			raise ValueError("XML tree must contain exactly one %s element named %s" % (ligolw.LIGO_LW.tagName, name))
+		return xml[0]
+
+	@classmethod
+	def from_xml(cls, xml, name):
+		xml = cls.get_xml_root(xml, name)
+		self = cls([])
+		self.numerator = LnLRDensity.from_xml(xml, "numerator")
+		self.denominator = LnLRDensity.from_xml(xml, "denominator")
+		self.candidates = LnLRDensity.from_xml(xml, "candidates")
+
+	def to_xml(self, name):
+		xml = ligolw.LIGO_LW({u"Name": u"%s:%s" % (name, self.ligo_lw_name_suffix)})
+		xml.appendChild(self.numerator.to_xml("numerator"))
+		xml.appendChild(self.denominator.to_xml("denominator"))
+		xml.appendChild(self.candidates.to_xml("candidates"))
+		return xml
 
 	@classmethod
 	def from_filenames(cls, filenames, name, verbose = False):
@@ -271,119 +328,6 @@ class EPGalacticCoreCoincParamsDistributions(BurcaCoincParamsDistributions):
 	@staticmethod
 	def coinc_params(events, offsetvector, ra, dec):
 		return EPAllSkyCoincParamsDistributions.coinc_params([delay_and_amplitude_correct(copy.copy(event), ra, dec) for event in events], offsetvector)
-
-
-#
-# =============================================================================
-#
-#                                  Interface
-#
-# =============================================================================
-#
-
-
-def get_noninjections(contents):
-	"""
-	Generator function to return
-
-		is_background, event_list, offsetvector
-
-	tuples by querying the coinc_event and sngl_burst tables in the
-	database described by contents.  Only coincs corresponding to
-	sngl_burst<-->sngl_burst coincs will be retrieved.
-	"""
-	cursor = contents.connection.cursor()
-	for coinc_event_id, time_slide_id in contents.connection.cursor().execute("""
-SELECT
-	coinc_event_id,
-	time_slide_id
-FROM
-	coinc_event
-WHERE
-	coinc_def_id == ?
-	""", (contents.bb_definer_id,)):
-		rows = [(contents.sngl_burst_table.row_from_cols(row), row[-1]) for row in cursor.execute("""
-SELECT
-	sngl_burst.*,
-	time_slide.offset
-FROM
-	coinc_event_map
-	JOIN sngl_burst ON (
-		coinc_event_map.table_name == 'sngl_burst'
-		AND sngl_burst.event_id == coinc_event_map.event_id
-	)
-	JOIN time_slide ON (
-		time_slide.instrument == sngl_burst.ifo
-	)
-WHERE
-	coinc_event_map.coinc_event_id == ?
-	AND time_slide.time_slide_id == ?
-		""", (coinc_event_id, time_slide_id))]
-		offsets = offsetvector((event.ifo, offset) for event, offset in rows)
-		yield any(offsets.values()), [event for event, offset in rows], offsets
-	cursor.close()
-
-
-def get_injections(contents):
-	"""
-	Generator function to return
-
-		sim, event_list, offsetvector
-
-	tuples by querying the sim_burst, coinc_event and sngl_burst tables
-	in the database described by contents.  Only coincs corresponding
-	to "exact" sim_burst<-->coinc_event coincs will be retrieved.
-	"""
-	cursor = contents.connection.cursor()
-	for values in contents.connection.cursor().execute("""
-SELECT
-	sim_burst.*,
-	burst_coinc_event_map.event_id
-FROM
-	sim_burst
-	JOIN coinc_event_map AS sim_coinc_event_map ON (
-		sim_coinc_event_map.table_name == 'sim_burst'
-		AND sim_coinc_event_map.event_id == sim_burst.simulation_id
-	)
-	JOIN coinc_event AS sim_coinc_event ON (
-		sim_coinc_event.coinc_event_id == sim_coinc_event_map.coinc_event_id
-	)
-	JOIN coinc_event_map AS burst_coinc_event_map ON (
-		burst_coinc_event_map.coinc_event_id == sim_coinc_event_map.coinc_event_id
-		AND burst_coinc_event_map.table_name == 'coinc_event'
-	)
-WHERE
-	sim_coinc_event.coinc_def_id == ?
-	""", (contents.sce_definer_id,)):
-		# retrieve the injection and the coinc_event_id
-		sim = contents.sim_burst_table.row_from_cols(values)
-		coinc_event_id = values[-1]
-
-		# retrieve the list of the sngl_bursts in this
-		# coinc, and their time slide dictionary
-		rows = [(contents.sngl_burst_table.row_from_cols(row), row[-1]) for row in cursor.execute("""
-SELECT
-	sngl_burst.*,
-	time_slide.offset
-FROM
-	sngl_burst
-	JOIN coinc_event_map ON (
-		coinc_event_map.table_name == 'sngl_burst'
-		AND coinc_event_map.event_id == sngl_burst.event_id
-	)
-	JOIN coinc_event ON (
-		coinc_event.coinc_event_id == coinc_event_map.coinc_event_id
-	)
-	JOIN time_slide ON (
-		coinc_event.time_slide_id == time_slide.time_slide_id
-		AND time_slide.instrument == sngl_burst.ifo
-	)
-WHERE
-	coinc_event.coinc_event_id == ?
-		""", (coinc_event_id,))]
-		# pass the events to whatever wants them
-		yield sim, [event for event, offset in rows], offsetvector((event.ifo, offset) for event, offset in rows)
-	cursor.close()
 
 
 #

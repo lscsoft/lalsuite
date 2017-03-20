@@ -399,7 +399,7 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   REAL8 nrEta;
   REAL8 S1x, S1y, S1z, S2x, S2y, S2z;
   REAL8 Mflower, time_start_M, time_start_s, time_end_M, time_end_s;
-  REAL8 chi, est_start_time, curr_h_real, curr_h_imag;
+  REAL8 est_start_time, curr_h_real, curr_h_imag;
   REAL8 theta, psi, calpha, salpha;
   REAL8 distance_scale_fac;
   COMPLEX16 curr_ylm;
@@ -494,21 +494,21 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
    * the SEOBNR_ROM function and add 10% for safety.
    * FIXME: Is this correct for precessing waveforms?
    */
+	
+	if (fStart < Mflower / (m1 + m2) )
+	{
+	     XLAL_ERROR(XLAL_EDOM, "WAVEFORM IS NOT LONG ENOUGH TO REACH f_low. The lowest possible starting frequency for a total mass of %e MSUN is %e.\n",
+	                (m1 + m2), Mflower / (m1 + m2));
+	}
+	
+	XLALSimIMRSEOBNRv4ROMTimeOfFrequency(&est_start_time, fStart, m1 * LAL_MSUN_SI, m2 * LAL_MSUN_SI, s1z, s2z);
+	est_start_time = (-est_start_time) * 1.1;
 
-  chi = XLALSimIMRPhenomBComputeChi(m1, m2, s1z, s2z);
-  est_start_time = XLALSimIMRSEOBNRv2ChirpTimeSingleSpin(m1 * LAL_MSUN_SI,
-                                                m2 * LAL_MSUN_SI, chi, fStart);
-  est_start_time = (-est_start_time) * 1.1;
   if (est_start_time > time_start_s)
   {
     /* Restrict start time of waveform */
     time_start_s = est_start_time;
     time_start_M = time_start_s / ((m1 + m2) * LAL_MTSUN_SI);
-  }
-  else if (fStart < Mflower / (m1 + m2) )
-  {
-     XLAL_ERROR(XLAL_EDOM, "WAVEFORM IS NOT LONG ENOUGH TO REACH f_low. %e %e %e",
-                fStart, Mflower, Mflower / (m1 + m2));
   }
 
   array_length = (UINT4)(ceil( (time_end_s - time_start_s) / deltaT));

@@ -181,10 +181,6 @@ def identity(x):
     return x
 
 
-def nest_to_fits(value):
-    return 'NESTED' if value else 'RING'
-
-
 def instruments_to_fits(value):
     if not isinstance(value, six.string_types):
         value = str(lsctables.ifos_from_instrument_set(value))
@@ -200,7 +196,6 @@ DEFAULT_NUNIQ_UNITS = (u.steradian**-1, u.Mpc, u.Mpc, u.Mpc**-2)
 DEFAULT_NESTED_NAMES = ('PROB', 'DISTMU', 'DISTSIGMA', 'DISTNORM')
 DEFAULT_NESTED_UNITS = (u.pix**-1, u.Mpc, u.Mpc, u.Mpc**-2)
 FITS_META_MAPPING = (
-    ('nest', 'ORDERING', 'Pixel ordering scheme: RING, NESTED, or NUNIQ', nest_to_fits, None),
     ('objid', 'OBJECT', 'Unique identifier for this event', identity, identity),
     ('url', 'REFERENC', 'URL of this event', identity, identity),
     ('instruments', 'INSTRUME', 'Instruments that triggered this event', instruments_to_fits, instruments_from_fits),
@@ -211,7 +206,9 @@ FITS_META_MAPPING = (
     ('origin', 'ORIGIN', 'Organization responsible for this FITS file', identity, identity),
     ('runtime', 'RUNTIME', 'Runtime in seconds of the CREATOR program', identity, identity),
     ('distmean', 'DISTMEAN', 'Posterior mean distance in Mpc', identity, identity),
-    ('diststd', 'DISTSTD', 'Posterior standard deviation of distance in Mpc', identity, identity))
+    ('diststd', 'DISTSTD', 'Posterior standard deviation of distance in Mpc', identity, identity),
+    ('log_bci', 'LOGBCI', 'Log Bayes factor: coherent vs. incoherent', identity, identity),
+    ('log_bsn', 'LOGBSN', 'Log Bayes factor: signal vs. noise', identity, identity))
 
 
 def write_sky_map(filename, m, **kwargs):
@@ -245,7 +242,8 @@ def write_sky_map(filename, m, **kwargs):
     if isinstance(m, Table) or (isinstance(m, np.ndarray) and m.dtype.names):
         m = Table(m)
     else:
-        m = np.atleast_2d(m).T
+        if np.ndim(m) == 1:
+            m = [m]
         m = Table(m, names=DEFAULT_NESTED_NAMES[:len(m)])
     m.meta.update(kwargs)
 
@@ -260,8 +258,10 @@ def write_sky_map(filename, m, **kwargs):
     else:
         default_names = DEFAULT_NESTED_NAMES
         default_units = DEFAULT_NESTED_UNITS
+        ordering = 'NESTED' if m.meta.pop('nest', False) else 'RING'
         extra_header = [
             ('PIXTYPE', 'HEALPIX', 'HEALPIX pixelisation'),
+            (ordering, 'Pixel ordering scheme: RING, NESTED, or NUNIQ'),
             ('COORDSYS', 'C', 'Ecliptic, Galactic or Celestial (equatorial)'),
             ('NSIDE', hp.npix2nside(len(m)), 'Resolution parameter of HEALPIX'),
             ('INDXSCHM', 'IMPLICIT', 'Indexing: IMPLICIT or EXPLICIT')]
@@ -353,7 +353,9 @@ def read_sky_map(filename, nest=False, distances=False, moc=False):
     """
     m = Table.read(filename, format='fits')
 
-    del m.meta['PIXTYPE']
+    # Remove some keys that we do not need
+    for key in ('PIXTYPE', 'EXTNAME', 'NSIDE', 'FIRSTPIX', 'LASTPIX', 'INDXSCHM'):
+      m.meta.pop(key, None)
 
     if m.meta.pop('COORDSYS', 'C') != 'C':
         raise ValueError('LALInference only reads and writes sky maps in equatorial coordinates.')

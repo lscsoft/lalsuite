@@ -1289,3 +1289,73 @@ def bbh_peak_luminosity_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitnam
        raise ValueError("Unrecognized fit name.")
 
     return Lpeak
+
+#########################
+# Convenience functions
+#########################
+
+def bbh_average_fits_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, quantity, fits):
+    """
+    Calculate the average of the predictions of various fits, currently just for the final mass, final spin, or peak luminosity of a quasicircular
+    binary black hole coalescence. The final spin calculation returns the magnitude of the final spin, including the contribution
+    from in-plane spins; the other two cases just apply aligned-spin fits to the components of the spins along the orbital angular momentum.
+
+    Parameters
+    ----------
+    m1, m2 : component masses
+    chi1, chi2 : dimensionless spins of two BHs
+    tilt1, tilt2 : tilts (in radians) in the new spin convention
+    phi12: angle (in radians) between in-plane spin components (only used for the final spin)
+    quantity: "Mf", "af", or "Lpeak"
+    fits: An array of fit names to be used. The possible fit names are those known by bbh_final_mass_projected_spins, bbh_final_spin_precessing,
+          and bbh_peak_luminosity_projected_spins
+
+    Returns
+    -------
+    Average of the results for the given fits for the chosen quantity
+    """
+
+    if quantity != "af" and phi12 != 0:
+        print("Note: phi12 is only used for the final spin calculation.")
+
+    if quantity not in ["Mf", "af", "Lpeak"]:
+        raise ValueError("Unknown quantity: %s"%quantity)
+
+    # Define function to return the appropriate quantity
+
+    def _return_quantity(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fitname):
+        if quantity == "Mf":
+            return bbh_final_mass_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname)
+        elif quantity == "af":
+            return bbh_final_spin_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fitname)
+        elif quantity == "Lpeak":
+            return bbh_peak_luminosity_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname)
+
+    # Define a function that returns the length of an array when passed one and 1 when not passed an array
+    def _len_smart(x):
+        if hasattr(x, '__len__'):
+            return len(x)
+        else:
+            return 1
+
+    # Initialize
+
+    fits = np.atleast_1d(fits)
+
+    if not fits.size: # Check to make sure that fits is not an empty array
+        raise ValueError("The list of fits passed cannot be an empty array.")
+
+    num_fits = len(fits)
+    num_data = max(_len_smart(m1), _len_smart(m2), _len_smart(chi1), _len_smart(chi2), _len_smart(tilt1), _len_smart(tilt2), _len_smart(phi12))
+
+    data = np.zeros([num_fits, num_data])
+
+    # Loop over the fits
+
+    for k in np.arange(num_fits):
+        data[k] = _return_quantity(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fits[k])
+
+    # Calculate average:
+    data_avg = np.sum(data.T,1)/num_fits
+
+    return data_avg

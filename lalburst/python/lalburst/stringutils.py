@@ -34,11 +34,13 @@ import lal
 
 
 from glue import segmentsUtils
+from glue.ligolw import ligolw
+from glue.ligolw import array as ligolw_array
+from glue.ligolw import param as ligolw_param
 from glue.ligolw import lsctables
-from glue.ligolw import utils
+from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
 from glue.offsetvector import offsetvector
-from . import burca_tailor
 from . import git_version
 from pylal import rate
 from pylal import snglcoinc
@@ -99,71 +101,114 @@ def triangulators(timing_uncertainties):
 #
 
 
-def dt_binning(instrument1, instrument2):
-	dt = 0.005 + snglcoinc.light_travel_time(instrument1, instrument2)	# seconds
-	return rate.NDBins((rate.ATanBins(-dt, +dt, 801),))
-
-
-class StringCoincParamsDistributions(snglcoinc.CoincParamsDistributions):
-	ligo_lw_name_suffix = u"stringcusp_coincparamsdistributions"
-
-	binnings = {
-		"H1_snr2_chi2": rate.NDBins((rate.ATanLogarithmicBins(10, 1e7, 801), rate.ATanLogarithmicBins(.1, 1e4, 801))),
-		"H2_snr2_chi2": rate.NDBins((rate.ATanLogarithmicBins(10, 1e7, 801), rate.ATanLogarithmicBins(.1, 1e4, 801))),
-		"L1_snr2_chi2": rate.NDBins((rate.ATanLogarithmicBins(10, 1e7, 801), rate.ATanLogarithmicBins(.1, 1e4, 801))),
-		"V1_snr2_chi2": rate.NDBins((rate.ATanLogarithmicBins(10, 1e7, 801), rate.ATanLogarithmicBins(.1, 1e4, 801))),
-		"H1_H2_dt": dt_binning("H1", "H2"),
-		"H1_L1_dt": dt_binning("H1", "L1"),
-		"H1_V1_dt": dt_binning("H1", "V1"),
-		"H2_L1_dt": dt_binning("H2", "L1"),
-		"H2_V1_dt": dt_binning("H2", "V1"),
-		"L1_V1_dt": dt_binning("L1", "V1"),
-		"H1_H2_dA": rate.NDBins((rate.ATanBins(-0.5, +0.5, 801),)),
-		"H1_L1_dA": rate.NDBins((rate.ATanBins(-0.5, +0.5, 801),)),
-		"H1_V1_dA": rate.NDBins((rate.ATanBins(-0.5, +0.5, 801),)),
-		"H2_L1_dA": rate.NDBins((rate.ATanBins(-0.5, +0.5, 801),)),
-		"H2_V1_dA": rate.NDBins((rate.ATanBins(-0.5, +0.5, 801),)),
-		"L1_V1_dA": rate.NDBins((rate.ATanBins(-0.5, +0.5, 801),)),
-		"H1_H2_df": rate.NDBins((rate.ATanBins(-0.2, +0.2, 501),)),
-		"H1_L1_df": rate.NDBins((rate.ATanBins(-0.2, +0.2, 501),)),
-		"H1_V1_df": rate.NDBins((rate.ATanBins(-0.2, +0.2, 501),)),
-		"H2_L1_df": rate.NDBins((rate.ATanBins(-0.2, +0.2, 501),)),
-		"H2_V1_df": rate.NDBins((rate.ATanBins(-0.2, +0.2, 501),)),
-		"L1_V1_df": rate.NDBins((rate.ATanBins(-0.2, +0.2, 501),)),
+class LnLRDensity(snglcoinc.LnLRDensity):
+	# FIXME:  the interps dictionary maintained here should be
+	# eliminated in favour of an internal mechanism within the PDFs
+	# themselves that performs the interpolation on-the-fly, without
+	# requiring an intermediate object to be created
+	def __init__(self, instruments):
+		self.densities = {}
+		for instrument in instruments:
+			self.densities["%s_snr2_chi2" % instrument] = rate.BinnedLnPDF(rate.NDBins((rate.ATanLogarithmicBins(10, 1e7, 801), rate.ATanLogarithmicBins(.1, 1e4, 801))))
+		for pair in itertools.combinations(sorted(instruments), 2):
+			dt = 0.005 + snglcoinc.light_travel_time(instrument1, instrument2)	# seconds
+			self.densities["%s_%s_dt" % pair] = rate.BinnedLnPDF(rate.NDBins((rate.ATanBins(-dt, +dt, 801),)))
+			self.densities["%s_%s_dA" % pair] = rate.BinnedLnPDF(rate.NDBins((rate.ATanBins(-0.5, +0.5, 801),)))
+			self.densities["%s_%s_df" % pair] = rate.BinnedLnPDF(rate.NDBins((rate.ATanBins(-0.2, +0.2, 501),)))
 		# only non-negative rss timing residual bins will be used
 		# but we want a binning that's linear at the origin so
 		# instead of inventing a new one we just use atan bins that
 		# are symmetric about 0
-		"instrumentgroup,rss_timing_residual": rate.NDBins((snglcoinc.InstrumentBins(names = ("H1", "H2", "L1", "V1")), rate.ATanBins(-0.02, +0.02, 1001)))
-	}
+		self.densities["instrumentgroup,rss_timing_residual"] = rate.BinnedLnPDF(rate.NDBins((snglcoinc.InstrumentBins(names = instruments), rate.ATanBins(-0.02, +0.02, 1001))))
 
-	filters = {
-		"H1_snr2_chi2": rate.gaussian_window(11, 11, sigma = 20),
-		"H2_snr2_chi2": rate.gaussian_window(11, 11, sigma = 20),
-		"L1_snr2_chi2": rate.gaussian_window(11, 11, sigma = 20),
-		"V1_snr2_chi2": rate.gaussian_window(11, 11, sigma = 20),
-		"H1_H2_dt": rate.gaussian_window(11, sigma = 20),
-		"H1_L1_dt": rate.gaussian_window(11, sigma = 20),
-		"H1_V1_dt": rate.gaussian_window(11, sigma = 20),
-		"H2_L1_dt": rate.gaussian_window(11, sigma = 20),
-		"H2_V1_dt": rate.gaussian_window(11, sigma = 20),
-		"L1_V1_dt": rate.gaussian_window(11, sigma = 20),
-		"H1_H2_dA": rate.gaussian_window(11, sigma = 20),
-		"H1_L1_dA": rate.gaussian_window(11, sigma = 20),
-		"H1_V1_dA": rate.gaussian_window(11, sigma = 20),
-		"H2_L1_dA": rate.gaussian_window(11, sigma = 20),
-		"H2_V1_dA": rate.gaussian_window(11, sigma = 20),
-		"L1_V1_dA": rate.gaussian_window(11, sigma = 20),
-		"H1_H2_df": rate.gaussian_window(11, sigma = 20),
-		"H1_L1_df": rate.gaussian_window(11, sigma = 20),
-		"H1_V1_df": rate.gaussian_window(11, sigma = 20),
-		"H2_L1_df": rate.gaussian_window(11, sigma = 20),
-		"H2_V1_df": rate.gaussian_window(11, sigma = 20),
-		"L1_V1_df": rate.gaussian_window(11, sigma = 20),
-		# instrument group filter is a no-op, should produce a
-		# 1-bin top-hat window.
-		"instrumentgroup,rss_timing_residual": rate.gaussian_window(1e-100, 11, sigma = 20)
-	}
+	def __call__(self, params):
+		try:
+			interps = self.interps
+		except AttributeError:
+			self.mkinterps()
+			interps = self.interps
+		return sum(interps[param](value) for param, value in params.items())
+
+	def __iadd__(self, other):
+		if type(self) != type(other) or set(self.densities) != set(other.densities):
+			raise TypeError("cannot add %s and %s" % (type(self), type(other)))
+		for key, pdf in self.densities.items():
+			pdf += other.densities[key]
+		del self.interps
+		return self
+
+	def increment(self, params, weight = 1.0):
+		for param, value in params.items():
+			self.densities[param].count[value] += weight
+
+	def copy(self):
+		new = type(self)([])
+		for key, pdf in self.densities.items():
+			new.densities[key] = pdf.copy()
+		return new
+
+	def mkinterps(self):
+		self.interps = dict((key, pdf.mkinterp()) for key, pdf in self.densities.items())
+
+	def finish(self):
+		for key, pdf in self.densities.items():
+			if key.endswith("_snr2_chi2"):
+				rate.filter_array(pdf.array, rate.gaussian_window(11, 11, sigma = 20))
+			elif key.endswith("_dt") or key.endswith("_dA") or key.endswith("_df"):
+				rate.filter_array(pdf.array, rate.gaussian_window(11, sigma = 20))
+			elif key.startswith("instrumentgroup"):
+				# instrument group filter is a no-op
+				pass
+			else:
+				# shouldn't get here
+				raise Exception
+			pdf.normalize()
+		self.mkinterps()
+
+	def to_xml(self, name):
+		xml = super(LnLRDensity, self).to_xml(name)
+		instruments = set(key.split("_", 1)[0] for key in self.densities if key.endswith("_snr2_chi2"))
+		xml.appendChild(ligolw_param.Param.from_pyvalue("instruments", lsctables.ifos_from_instrument_set(instruments)))
+		for key, pdf in self.densities.items():
+			xml.appendChild(pdf.to_xml(key))
+		return xml
+
+	@classmethod
+	def from_xml(cls, name):
+		xml = cls.get_xml_root(xml, name)
+		self = cls(lsctables.instrument_set_from_ifos(ligolw_param.get_pyvalue(xml, "instruments")))
+		for key in self.densities:
+			self.densities[key] = rate.BinnedLnPDF.from_xml(xml, key)
+		return self
+
+
+class StringCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
+	ligo_lw_name_suffix = u"stringcusp_coincparamsdistributions"
+
+	@ligolw_array.use_in
+	@ligolw_param.use_in
+	@lsctables.use_in
+	class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+		pass
+
+	def __init__(self, instruments):
+		self.numerator = LnLRDensity(instruments)
+		self.denominator = LnLRDensity(instruments)
+		self.candidates = LnLRDensity(instruments)
+
+	def __iadd__(self, other):
+		if type(self) != type(other):
+			raise TypeError(other)
+		self.numerator += other.numerator
+		self.denominator += other.denominator
+		self.candidates += other.candidates
+
+	def copy(self):
+		new = type(self)([])
+		new.numerator = self.numerator.copy()
+		new.denominator = self.denominator.copy()
+		new.candidates = self.candidates.copy()
+		return new
 
 	@staticmethod
 	def coinc_params(events, offsetvector, triangulators):
@@ -207,9 +252,7 @@ class StringCoincParamsDistributions(snglcoinc.CoincParamsDistributions):
 		#
 
 		for event in events:
-			prefix = "%s_" % event.ifo
-
-			params["%ssnr2_chi2" % prefix] = (event.snr**2.0, event.chisq / event.chisq_dof)
+			params["%s_snr2_chi2" % evemt.ifo] = (event.snr**2.0, event.chisq / event.chisq_dof)
 
 		#
 		# two-instrument parameters.  note that events are sorted by
@@ -238,6 +281,35 @@ class StringCoincParamsDistributions(snglcoinc.CoincParamsDistributions):
 		#
 
 		return params
+
+	def finish(self):
+		self.numerator.finish()
+		self.denominator.finish()
+		self.candidates.finish()
+
+	@classmethod
+	def get_xml_root(cls, xml, name):
+		name = u"%s:%s" % (name, cls.ligo_lw_name_suffix)
+		xml = [elem for elem in xml.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.Name == name]
+		if len(xml) != 1:
+			raise ValueError("XML tree must contain exactly one %s element named %s" % (ligolw.LIGO_LW.tagName, name))
+		return xml[0]
+
+	@classmethod
+	def from_xml(cls, xml, name):
+		xml = cls.get_xml_root(xml, name)
+		self = cls([])
+		self.numerator = LnLRDensity.from_xml(xml, "numerator")
+		self.denominator = LnLRDensity.from_xml(xml, "denominator")
+		self.candidates = LnLRDensity.from_xml(xml, "candidates")
+		return self
+
+	def to_xml(self, name):
+		xml = ligolw.LIGO_LW({u"Name": u"%s:%s" % (name, self.ligo_lw_name_suffix)})
+		xml.appendChild(self.numerator.to_xml("numerator"))
+		xml.appendChild(self.denominator.to_xml("denominator"))
+		xml.appendChild(self.candidates.to_xml("candidates"))
+		return xml
 
 	def add_slidelessbackground(self, database, experiments, param_func_args = ()):
 		# FIXME:  this needs to be taught how to not slide H1 and
@@ -288,7 +360,7 @@ class StringCoincParamsDistributions(snglcoinc.CoincParamsDistributions):
 		n_coincs, = scipy.stats.poisson.rvs(float(abs(segmentsUtils.vote(seglists.values(), 2))) * sum(coinc_generator.rates.values()) * experiments)
 
 		# generate synthetic background coincs
-		zero_lag_offset_vector = offsetvector((instrument, 0.0) for instrument in seglists)
+		zero_lag_offset_vector = offsetvector.fromkeys(seglists, 0.0)
 		for n, events in enumerate(coinc_generator.coincs(lsctables.SnglBurst.get_peak)):
 			# n = 1 on 2nd iteration, so placing this condition
 			# where it is in the loop causes the correct number
@@ -300,7 +372,7 @@ class StringCoincParamsDistributions(snglcoinc.CoincParamsDistributions):
 			for event in events:
 				event.peak = toas[event.ifo]
 			# compute coincidence parameters
-			self.add_background(self.coinc_params(events, zero_lag_offset_vector, *param_func_args))
+			self.denominator.increment(self.coinc_params(events, zero_lag_offset_vector, *param_func_args))
 
 		# restore original peak times
 		for event, peak_time in orig_peak_times.iteritems():
@@ -331,10 +403,6 @@ def load_likelihood_data(filenames, verbose = False):
 		else:
 			seglists |= this_seglists
 	return coinc_params, seglists
-
-
-def write_likelihood_data(filename, coincparamsdistributions, seglists, verbose = False):
-	utils.write_filename(burca_tailor.gen_likelihood_control(coincparamsdistributions, seglists, name = u"string_cusp_likelihood"), filename, verbose = verbose, gz = (filename or "stdout").endswith(".gz"))
 
 
 #

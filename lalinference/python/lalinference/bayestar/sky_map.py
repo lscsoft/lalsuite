@@ -342,9 +342,12 @@ def ligolw_sky_map(
     log.debug('starting computationally-intensive section')
     start_time = lal.GPSTimeNow()
     if method == "toa_phoa_snr":
-        skymap = Table(_sky_map.toa_phoa_snr(
+        skymap, log_bci, log_bsn = _sky_map.toa_phoa_snr(
             min_distance, max_distance, prior_distance_power, gmst, sample_rate,
-            toas, snr_series, responses, locations, horizons))
+            toas, snr_series, responses, locations, horizons)
+        skymap = Table(skymap)
+        skymap.meta['log_bci'] = log_bci
+        skymap.meta['log_bsn'] = log_bsn
     elif method == "toa_phoa_snr_mcmc":
         skymap = emcee_sky_map(
             logl=_sky_map.log_likelihood_toa_phoa_snr,

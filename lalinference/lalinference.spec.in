@@ -23,7 +23,7 @@ BuildRequires: numpy >= 1.7
 BuildRequires: octave-devel
 BuildRequires: python-devel
 BuildRequires: scipy >= 0.8
-BuildRequires: swig
+BuildRequires: swig >= 3.0.7
 BuildRequires: glue >= @MIN_GLUE_VERSION@
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
@@ -175,6 +175,10 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Thu Mar 16 2017 Adam Mercer <adam.mercer@ligo.org> 1.9.2-1
+- lalinference.io.fits: remove some redundant keys on reading
+- lalinference.io.fits: fix writing single-column sky maps
+
 * Sat Feb 18 2017 Adam Mercer <adam.mercer@ligo.org> 1.9.1-1
 - Do not use $(..._la_LIBADD) to link against external libraries
 - Track version info API change
