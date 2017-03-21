@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 135
+# serial 136
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -691,10 +691,24 @@ AC_DEFUN([LALSUITE_CHECK_LIBRARY_FOR_SUPPORT],[
   save_CPPFLAGS="${CPPFLAGS}"
   LALSUITE_CLEAR_UVARS
   CPPFLAGS="${save_CPPFLAGS}"
+  AS_IF([test "x${LALSUITE_BUILD}" = xtrue],[
+    for arg in ${lalsuite_libs}; do
+      AS_CASE([${arg}],
+        [lalsupport],[:],[
+          CPPFLAGS="-I${ac_pwd}/../${arg}/src ${CPPFLAGS}"
+        ]
+      )
+    done
+    CPPFLAGS="-DLALSUITE_BUILD ${CPPFLAGS}"
+  ])
   AC_MSG_CHECKING([whether $1 has been compiled with $2 support])
   AC_COMPILE_IFELSE([
     AC_LANG_SOURCE([[
+#ifdef LALSUITE_BUILD
+#include "$1Config.h"
+#else
 #include <lal/$1Config.h>
+#endif
 #ifndef ]uppercase[_$2_ENABLED
 #error ]uppercase[_$2_ENABLED is not defined
 #endif
