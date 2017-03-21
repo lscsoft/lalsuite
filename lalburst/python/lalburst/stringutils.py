@@ -202,6 +202,7 @@ class StringCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
 		self.numerator += other.numerator
 		self.denominator += other.denominator
 		self.candidates += other.candidates
+		return self
 
 	def copy(self):
 		new = type(self)([])
