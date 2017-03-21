@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 136
+# serial 137
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -499,24 +499,32 @@ AC_DEFUN([LALSUITE_MULTILIB_LIBTOOL_HACK],[
 AC_DEFUN([LALSUITE_DISTCHECK_CONFIGURE_FLAGS],[
   # $0: store configure flags for 'make distcheck'
   DISTCHECK_CONFIGURE_FLAGS=
-  for arg in ${ac_configure_args}; do
-    case ${arg} in
-      (\'--enable-*\'|\'--disable-*\')
+  eval set x "${ac_configure_args}"
+  shift
+  for arg
+  do
+    AS_CASE(["${arg}"],
+      [--enable-*|--disable-*],[
         # save any --enable/--disable arguments
-        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} ${arg}";;
-      (\'--with-*\'|\'--without-*\')
+        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} '${arg}'"
+      ],
+      [--with-*|--without-*],[
         # save any --with/--without arguments
-        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} ${arg}";;
-      (\'--*\')
+        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} '${arg}'"
+      ],
+      [--*],[
         # skip all other ./configure arguments
-        : ;;
-      (\'DISTCHECK_CONFIGURE_FLAGS=*\')
+        :
+      ],
+      [DISTCHECK_CONFIGURE_FLAGS=*],[
         # append value of DISTCHECK_CONFIGURE_FLAGS
-        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} "`expr "X${arg}" : "X'DISTCHECK_CONFIGURE_FLAGS=\(.*\)'"`;;
-      (\'*=*\')
+        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} '`expr "X${arg}" : "XDISTCHECK_CONFIGURE_FLAGS=\(.*\)"`'"
+      ],
+      [*=*],[
         # save any environment variables given to ./configure
-        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} ${arg}";;
-    esac
+        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} '${arg}'"
+      ]
+    )
   done
   AC_SUBST(DISTCHECK_CONFIGURE_FLAGS)
   # end $0
