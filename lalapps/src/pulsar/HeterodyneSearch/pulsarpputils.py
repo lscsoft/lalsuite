@@ -2993,7 +2993,7 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
 
 
 # current version of the ATNF pulsar catalogue
-ATNF_VERSION = '1.55'
+ATNF_VERSION = '1.56'
 
 def get_atnf_info(psr):
   """
