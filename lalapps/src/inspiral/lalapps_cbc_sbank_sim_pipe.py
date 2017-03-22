@@ -112,8 +112,8 @@ class BankSimJob(inspiral.InspiralAnalysisJob):
         self.add_condor_cmd('request_memory', '3999')
         self.tag_base = tag_base
         self.add_condor_cmd('getenv','True')
-        self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
-        self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+        self.set_stdout_file('logs/'+tag_base+'$(macroid)-$(cluster)-$(process).out')
+        self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(cluster)-$(process).err')
         if cp.has_section("accounting"):
             self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
         if "OMP_NUM_THREADS" in os.environ:
@@ -196,6 +196,10 @@ mtotal-min = 4
 mratio-max = 97
 duration-min = 0.2
 neighborhood-size = 2.0
+
+[sbank_pipe]
+injections-per-job = 100
+njobs = 100
 
 ;
 ; FOR BANK SIMS
