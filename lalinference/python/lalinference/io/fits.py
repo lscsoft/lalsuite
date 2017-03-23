@@ -261,7 +261,7 @@ def write_sky_map(filename, m, **kwargs):
         ordering = 'NESTED' if m.meta.pop('nest', False) else 'RING'
         extra_header = [
             ('PIXTYPE', 'HEALPIX', 'HEALPIX pixelisation'),
-            (ordering, 'Pixel ordering scheme: RING, NESTED, or NUNIQ'),
+            ('ORDERING', ordering, 'Pixel ordering scheme: RING, NESTED, or NUNIQ'),
             ('COORDSYS', 'C', 'Ecliptic, Galactic or Celestial (equatorial)'),
             ('NSIDE', hp.npix2nside(len(m)), 'Resolution parameter of HEALPIX'),
             ('INDXSCHM', 'IMPLICIT', 'Indexing: IMPLICIT or EXPLICIT')]
