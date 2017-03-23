@@ -304,7 +304,7 @@ bank_names = []
 bank_nodes = []
 
 # set up sole coarse node to plan out the mini-sbank nodes
-coarse_sbank_node = SBankNode(sbankJob, dag, "SBANK_COARSE")
+coarse_sbank_node = SBankNode(sbankJob, dag, "SBANK_%s_COARSE" % options.user_tag)
 coarse_mm = cp.get("coarse-sbank", "match-min")
 coarse_sbank_node.add_var_opt("match-min", coarse_mm)
 coarse_thresh = cp.get("coarse-sbank", "convergence-threshold")
