@@ -304,7 +304,7 @@ bank_names = []
 bank_nodes = []
 
 # set up sole coarse node to plan out the mini-sbank nodes
-coarse_sbank_node = SBankNode(sbankJob, dag, "SBANK_%s_COARSE" % options.user_tag)
+coarse_sbank_node = SBankNode(sbankJob, dag, "%s_SBANK_COARSE" % options.user_tag)
 coarse_mm = cp.get("coarse-sbank", "match-min")
 coarse_sbank_node.add_var_opt("match-min", coarse_mm)
 coarse_thresh = cp.get("coarse-sbank", "convergence-threshold")
@@ -331,7 +331,7 @@ mchirp_boundaries_fname, = sbankChooseMchirpBoundariesNode.get_output_files()
 # first compute even numbered split banks
 for j in xrange(0, nbanks, 2):
 
-    bank_node = SBankNode(sbankJob, dag, "SBANK_SPLIT_BANK_%04d"%j, seed="%d" % (j*nbanks+1), mchirp_boundaries_file=mchirp_boundaries_fname, mchirp_boundaries_index=str(j), p_node=[sbankChooseMchirpBoundariesNode], bank_seed=[xmlCoarse])
+    bank_node = SBankNode(sbankJob, dag, "%s_SBANK_SPLIT_BANK_%04d" % (options.user_tag, j), seed="%d" % (j*nbanks+1), mchirp_boundaries_file=mchirp_boundaries_fname, mchirp_boundaries_index=str(j), p_node=[sbankChooseMchirpBoundariesNode], bank_seed=[xmlCoarse])
     bank_node.add_var_opt("match-min", mm)
     bank_node.set_priority(1)  # want complete bank before sims
     bank_nodes.append(bank_node)
