@@ -348,7 +348,7 @@ for j in xrange(1, nbanks, 2):
         p_node = [bank_nodes[(j+1)/2]]
         bank_seed = [xmlCoarse, bank_names[(j+1)/2]]
 
-    bank_node = SBankNode(sbankJob, dag, "SBANK_SPLIT_BANK_%04d"%j, seed="%d" % (j*nbanks+1), mchirp_boundaries_file=mchirp_boundaries_fname, mchirp_boundaries_index=str(j), p_node=p_node, bank_seed=bank_seed)
+    bank_node = SBankNode(sbankJob, dag, "%s_SBANK_SPLIT_BANK_%04d" % (options.user_tag, j), seed="%d" % (j*nbanks+1), mchirp_boundaries_file=mchirp_boundaries_fname, mchirp_boundaries_index=str(j), p_node=p_node, bank_seed=bank_seed)
     bank_node.add_var_opt("match-min", mm)
     bank_node.set_priority(1)  # want complete bank before sims
     bank_nodes.append(bank_node)
