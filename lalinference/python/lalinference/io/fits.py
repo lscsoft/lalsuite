@@ -237,6 +237,65 @@ def write_sky_map(filename, m, **kwargs):
     .. [1] Górski, K.M., Wandelt, B.D., Hivon, E., Hansen, F.K., & Banday, A.J.
         2017. The HEALPix Primer. The Unique Identifier scheme.
         http://healpix.sourceforge.net/html/intronode4.htm#SECTION00042000000000000000
+
+    Examples
+    --------
+
+    Test header contents:
+
+    >>> order = 9
+    >>> nside = 2 ** order
+    >>> npix = hp.nside2npix(nside)
+    >>> prob = np.ones(npix, dtype=np.float) / npix
+
+    >>> import tempfile
+    >>> with tempfile.NamedTemporaryFile(suffix='.fits') as f:
+    ...     write_sky_map(f.name, prob, nest=True)
+    ...     for card in fits.getheader(f.name, 1).cards:
+    ...         print(str(card).rstrip())
+    XTENSION= 'BINTABLE'           / binary table extension
+    BITPIX  =                    8 / array data type
+    NAXIS   =                    2 / number of array dimensions
+    NAXIS1  =                    8 / length of dimension 1
+    NAXIS2  =              3145728 / length of dimension 2
+    PCOUNT  =                    0 / number of group parameters
+    GCOUNT  =                    1 / number of groups
+    TFIELDS =                    1 / number of table fields
+    TTYPE1  = 'PROB    '
+    TFORM1  = 'D       '
+    PIXTYPE = 'HEALPIX '           / HEALPIX pixelisation
+    ORDERING= 'NESTED  '           / Pixel ordering scheme: RING, NESTED, or NUNIQ
+    COORDSYS= 'C       '           / Ecliptic, Galactic or Celestial (equatorial)
+    NSIDE   =                  512 / Resolution parameter of HEALPIX
+    INDXSCHM= 'IMPLICIT'           / Indexing: IMPLICIT or EXPLICIT
+    TUNIT1  = 'pix-1   '
+
+    >>> uniq = moc.nest2uniq(np.uint8(order), np.arange(npix, dtype=np.uint64))
+    >>> probdensity = prob / hp.nside2pixarea(nside)
+    >>> moc_data = np.rec.fromarrays(
+    ...     [uniq, probdensity], names=['UNIQ', 'PROBDENSITY'])
+    >>> with tempfile.NamedTemporaryFile(suffix='.fits') as f:
+    ...     write_sky_map(f.name, moc_data)
+    ...     for card in fits.getheader(f.name, 1).cards:
+    ...         print(str(card).rstrip())
+    XTENSION= 'BINTABLE'           / binary table extension
+    BITPIX  =                    8 / array data type
+    NAXIS   =                    2 / number of array dimensions
+    NAXIS1  =                   16 / length of dimension 1
+    NAXIS2  =              3145728 / length of dimension 2
+    PCOUNT  =                    0 / number of group parameters
+    GCOUNT  =                    1 / number of groups
+    TFIELDS =                    2 / number of table fields
+    TTYPE1  = 'UNIQ    '
+    TFORM1  = 'K       '
+    TZERO1  =  9223372036854775808
+    TTYPE2  = 'PROBDENSITY'
+    TFORM2  = 'D       '
+    PIXTYPE = 'HEALPIX '           / HEALPIX pixelisation
+    ORDERING= 'NUNIQ   '           / Pixel ordering scheme: RING, NESTED, or NUNIQ
+    COORDSYS= 'C       '           / Ecliptic, Galactic or Celestial (equatorial)
+    MOCORDER=                    9 / MOC resolution (best order)
+    TUNIT2  = 'sr-1    '
     """
 
     if isinstance(m, Table) or (isinstance(m, np.ndarray) and m.dtype.names):
