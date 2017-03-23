@@ -284,7 +284,7 @@ cp = dcConfigParser()
 cp.read(options.config_file)
 
 # initialize sbank job objects
-sbankJob = SBankJob(cp)
+sbankJob = SBankJob(cp, tag_base=options.user_tag + "_sbank")
 mm = cp.get("sbank", "match-min")
 cp.remove_option("sbank", "match-min")  # don't want it entering via add_ini_opts
 
@@ -323,7 +323,7 @@ bank_names.append(xmlCoarse)
 bank_nodes.append(coarse_sbank_node)
 
 # use coarse bank to choose mchirp regions of roughly equal template number
-sbankChooseMchirpBoundariesJob = SBankChooseMchirpBoundariesJob(cp)
+sbankChooseMchirpBoundariesJob = SBankChooseMchirpBoundariesJob(cp, tag_base=options.user_tag + "_mchirp_boundaries")
 sbankChooseMchirpBoundariesNode = SBankChooseMchirpBoundariesNode(sbankChooseMchirpBoundariesJob, dag, xmlCoarse, options.user_tag, pnode)
 mchirp_boundaries_fname, = sbankChooseMchirpBoundariesNode.get_output_files()
 
