@@ -30,8 +30,6 @@ parser.add_argument('--contour', metavar='PERCENT', type=float, default=90,
     ' probability mass [default: %(default)s]')
 parser.add_argument('--alpha', metavar='ALPHA', type=float, default=0.1,
     help='alpha blending for each sky map [default: %(default)s]')
-parser.add_argument('--transparent', action='store_true', default=False,
-    help='Save image with transparent background [default: %(default)s]')
 parser.add_argument(
     'fitsfileglobs', metavar='GLOB.fits[.gz]', nargs='+',
     help='Input FITS filenames and/or globs')
@@ -86,10 +84,5 @@ progress.update(-1, 'saving figure')
 # If we are using a new enough version of matplotlib, then
 # add a white outline to all text to make it stand out from the background.
 plot.outline_text(ax)
-
-if opts.transparent:
-    fig.patch.set_alpha(0.)
-    ax.patch.set_alpha(0.)
-    ax.set_alpha(0.)
 
 opts.output()
