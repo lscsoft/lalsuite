@@ -347,14 +347,14 @@ def ligolw_sky_map(
     # Time and run sky localization.
     log.debug('starting computationally-intensive section')
     start_time = lal.GPSTimeNow()
-    if method == "toa_phoa_snr":
+    if method == 'toa_phoa_snr':
         skymap, log_bci, log_bsn = _sky_map.toa_phoa_snr(
             min_distance, max_distance, prior_distance_power, gmst, sample_rate,
             toas, snr_series, responses, locations, horizons)
         skymap = Table(skymap)
         skymap.meta['log_bci'] = log_bci
         skymap.meta['log_bsn'] = log_bsn
-    elif method == "toa_phoa_snr_mcmc":
+    elif method == 'toa_phoa_snr_mcmc':
         skymap = emcee_sky_map(
             logl=_sky_map.log_likelihood_toa_phoa_snr,
             loglargs=(gmst, sample_rate, toas, snr_series, responses, locations,
@@ -366,7 +366,7 @@ def ligolw_sky_map(
             xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi, 2 * max_abs_t],
             nside=nside, chain_dump=chain_dump, max_horizon=max_horizon * fudge)
     else:
-        raise ValueError("Unrecognized method: %s" % method)
+        raise ValueError('Unrecognized method: %s' % method)
 
     # Convert distance moments to parameters
     distmean = skymap.columns.pop('DISTMEAN')
