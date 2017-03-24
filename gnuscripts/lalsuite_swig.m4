@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 96
+# serial 97
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -493,8 +493,6 @@ sys.stdout.write(' -L' + cfg.get_python_lib())
 sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1))
 sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1,standard_lib=1))
 sys.stdout.write(' -L' + cfg.get_config_var('LIBDIR'))
-sys.stdout.write(' -lpython' + cfg.get_config_var('VERSION'))
-sys.stdout.write(' ' + cfg.get_config_var('LIBS'))
 EOD`]
     AS_IF([test $? -ne 0],[
       AC_MSG_ERROR([could not determine Python linker flags])
