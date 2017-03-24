@@ -327,8 +327,8 @@ def ligolw_sky_map(
     if prior_distance_power is None:
         prior_distance_power = 2
 
-    # Raise an exception if 0 Mpc is the minimum effective distance and the prior
-    # is of the form r**k for k<0
+    # Raise an exception if 0 Mpc is the minimum effective distance and the
+    # prior is of the form r**k for k<0
     if min_distance == 0 and prior_distance_power < 0:
         raise ValueError(("Prior is a power law r^k with k={}, "
             + "undefined at min_distance=0").format(prior_distance_power))
