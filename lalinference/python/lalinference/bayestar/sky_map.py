@@ -19,7 +19,7 @@
 Convenience function to produce a sky map from LIGO-LW rows.
 """
 from __future__ import division
-__author__ = "Leo Singer <leo.singer@ligo.org>"
+__author__ = 'Leo Singer <leo.singer@ligo.org>'
 
 
 import itertools
@@ -142,7 +142,7 @@ def emcee_sky_map(
 def ligolw_sky_map(
         sngl_inspirals, waveform, f_low,
         min_distance=None, max_distance=None, prior_distance_power=None,
-        method="toa_phoa_snr", psds=None, nside=-1, chain_dump=None,
+        method='toa_phoa_snr', psds=None, nside=-1, chain_dump=None,
         phase_convention='antifindchirp', snr_series=None,
         enable_snr_series=False):
     """Convenience function to produce a sky map from LIGO-LW rows. Note that
@@ -199,7 +199,8 @@ def ligolw_sky_map(
     locations -= np.sum(locations * weights.reshape(-1, 1), axis=0) / np.sum(weights)
 
     if enable_snr_series:
-        log.warn('Enabling input of SNR time series. This feature is UNREVIEWED.')
+        log.warn('Enabling input of SNR time series. '
+                 'This feature is UNREVIEWED.')
     else:
         snr_series = None
 
@@ -248,7 +249,8 @@ def ligolw_sky_map(
     deltaT = snr_series[0].deltaT
     sample_rate = 1 / deltaT
     if any(deltaT != series.deltaT for series in snr_series):
-        raise ValueError('BAYESTAR does not yet support SNR time series with mixed sample rates')
+        raise ValueError('BAYESTAR does not yet support SNR time series with '
+                         'mixed sample rates')
 
     # Ensure that all of the SNR time series have odd lengths.
     if any(len(series.data.data) % 2 == 0 for series in snr_series):
@@ -267,14 +269,16 @@ def ligolw_sky_map(
     # also be the same length.
     nsamples = len(snr_series[0].data.data)
     if any(nsamples != len(series.data.data) for series in snr_series):
-        raise ValueError('BAYESTAR does not yet support SNR time series of mixed lengths')
+        raise ValueError('BAYESTAR does not yet support SNR time series of '
+                         'mixed lengths')
 
     # Perform sanity checks that the middle sample of the SNR time series match
     # the sngl_inspiral records.
     for sngl_inspiral, series in zip(sngl_inspirals, snr_series):
         if np.abs(0.5 * (nsamples - 1) * series.deltaT
                   + float(series.epoch - sngl_inspiral.end)) >= 0.5 * deltaT:
-            raise ValueError('BAYESTAR expects the SNR time series to be centered on the sngl_inspiral end times')
+            raise ValueError('BAYESTAR expects the SNR time series to be '
+                             'centered on the sngl_inspiral end times')
 
     # Extract the TOAs in GPS nanoseconds from the SNR time series, assuming
     # that the trigger happened in the middle.
@@ -330,8 +334,9 @@ def ligolw_sky_map(
     # Raise an exception if 0 Mpc is the minimum effective distance and the
     # prior is of the form r**k for k<0
     if min_distance == 0 and prior_distance_power < 0:
-        raise ValueError(("Prior is a power law r^k with k={}, "
-            + "undefined at min_distance=0").format(prior_distance_power))
+        raise ValueError(('Prior is a power law r^k with k={}, '
+                          'undefined at min_distance=0')
+                          .format(prior_distance_power))
 
     # Rescale distances to horizon distance of most sensitive detector.
     max_horizon = np.max(horizons)
@@ -405,7 +410,7 @@ def ligolw_sky_map(
 def gracedb_sky_map(
         coinc_file, psd_file, waveform, f_low, min_distance=None,
         max_distance=None, prior_distance_power=None,
-        method="toa_phoa_snr", nside=-1, chain_dump=None,
+        method='toa_phoa_snr', nside=-1, chain_dump=None,
         f_high_truncate=1.0, enable_snr_series=False):
     # Read input file.
     log.debug('reading coinc file')
