@@ -208,7 +208,11 @@ FITS_META_MAPPING = (
     ('distmean', 'DISTMEAN', 'Posterior mean distance in Mpc', identity, identity),
     ('diststd', 'DISTSTD', 'Posterior standard deviation of distance in Mpc', identity, identity),
     ('log_bci', 'LOGBCI', 'Log Bayes factor: coherent vs. incoherent', identity, identity),
-    ('log_bsn', 'LOGBSN', 'Log Bayes factor: signal vs. noise', identity, identity))
+    ('log_bsn', 'LOGBSN', 'Log Bayes factor: signal vs. noise', identity, identity),
+    ('vcs_info', 'VCSVERS', 'Software version', lambda _: _.name + ' ' + _.version, None),
+    ('vcs_info', 'VCSSTAT', 'Software version control status', lambda _: _.vcsStatus, None),
+    ('vcs_info', 'VCSID', 'Software git commit hash', lambda _: _.vcsId, None),
+    ('vcs_info', 'DATE-BLD', 'Software build date', lambda _: _.buildDate, None))
 
 
 def write_sky_map(filename, m, **kwargs):
