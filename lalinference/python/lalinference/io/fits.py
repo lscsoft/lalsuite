@@ -75,6 +75,13 @@ from astropy.table import Table
 from ..bayestar import moc
 
 
+# FIXME: Remove this after all Astropy monkeypatches are obsolete.
+import astropy
+import distutils.version
+astropy_version = distutils.version.StrictVersion(astropy.__version__)
+
+
+
 def gps_to_iso8601(gps_time):
     """
     Convert a floating-point GPS time in seconds to an ISO 8601 date string.
@@ -269,6 +276,7 @@ def write_sky_map(filename, m, **kwargs):
     TFIELDS =                    1 / number of table fields
     TTYPE1  = 'PROB    '
     TFORM1  = 'D       '
+    TUNIT1  = 'pix-1   '
     PIXTYPE = 'HEALPIX '           / HEALPIX pixelisation
     ORDERING= 'NESTED  '           / Pixel ordering scheme: RING, NESTED, or NUNIQ
     COORDSYS= 'C       '           / Ecliptic, Galactic or Celestial (equatorial)
@@ -278,7 +286,6 @@ def write_sky_map(filename, m, **kwargs):
     VCSSTAT = '...: ...' / Software version control status
     VCSID   = '...' / Software git commit hash
     DATE-BLD= '...' / Software build date
-    TUNIT1  = 'pix-1   '
 
     >>> uniq = moc.nest2uniq(np.uint8(order), np.arange(npix, dtype=np.uint64))
     >>> probdensity = prob / hp.nside2pixarea(nside)
@@ -301,6 +308,7 @@ def write_sky_map(filename, m, **kwargs):
     TZERO1  =  9223372036854775808
     TTYPE2  = 'PROBDENSITY'
     TFORM2  = 'D       '
+    TUNIT2  = 'sr-1    '
     PIXTYPE = 'HEALPIX '           / HEALPIX pixelisation
     ORDERING= 'NUNIQ   '           / Pixel ordering scheme: RING, NESTED, or NUNIQ
     COORDSYS= 'C       '           / Ecliptic, Galactic or Celestial (equatorial)
@@ -309,7 +317,6 @@ def write_sky_map(filename, m, **kwargs):
     VCSSTAT = '...: ...' / Software version control status
     VCSID   = '...' / Software git commit hash
     DATE-BLD= '...' / Software build date
-    TUNIT2  = 'sr-1    '
     """
 
     if isinstance(m, Table) or (isinstance(m, np.ndarray) and m.dtype.names):
@@ -359,27 +366,34 @@ def write_sky_map(filename, m, **kwargs):
             if not col.unit:
                 col.unit = default_unit
 
-    try:
-        # FIXME: astropy.io.fits.table_to_hdu was added in astropy 1.2.
-        # We must currently support astropy >= 1.1.1 on the LIGO Data Grid's
-        # Scientific Linux 7 computing clusters.
-        fits.table_to_hdu
-    except AttributeError:
-        # FIXME: With some old versions of astropy that we still have to
-        # support, the astropy.table.Table.write method did not support the
-        # clobber argument. So we have to manually delete the file first so
-        # that astropy.io.fits does not complain that the file exists.
-        from ..bayestar.command import rm_f
-        rm_f(filename)
-        m.write(filename, format='fits')
-        hdulist = fits.open(filename)
-        _, hdu = hdulist
-        hdu.header.extend(extra_header)
-        hdulist.writeto(filename, clobber=True)
-    else:
+    if astropy_version >= '1.3.1':
         hdu = fits.table_to_hdu(m)
         hdu.header.extend(extra_header)
         hdulist = fits.HDUList([fits.PrimaryHDU(), hdu])
+        hdulist.writeto(filename, clobber=True)
+    else:
+        # FIXME: This code path works around a number of issues with older
+        # versions of Astropy. Remove it once we drop support for
+        # astropy < 1.3.1.
+        #
+        # astropy.io.fits.table_to_hdu was added in astropy 1.2.
+        # We must currently support astropy >= 1.1.1 on the LIGO Data Grid's
+        # Scientific Linux 7 computing clusters.
+        #
+        # With some old versions of astropy that we still have to
+        # support, the astropy.table.Table.write method did not support the
+        # clobber argument. So we have to manually delete the file first so
+        # that astropy.io.fits does not complain that the file exists.
+        #
+        # Also this works around https://github.com/astropy/astropy/pull/5720,
+        # which was fixed in astropy 1.3.1.
+        from ..bayestar.command import rm_f
+        rm_f(filename)
+        m.write(filename, format='fits')
+
+        hdulist = fits.open(filename)
+        _, hdu = hdulist
+        hdu.header.extend(extra_header)
         hdulist.writeto(filename, clobber=True)
 
 
