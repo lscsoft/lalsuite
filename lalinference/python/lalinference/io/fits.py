@@ -253,8 +253,9 @@ def write_sky_map(filename, m, **kwargs):
     >>> prob = np.ones(npix, dtype=np.float) / npix
 
     >>> import tempfile
+    >>> from lalinference import InferenceVCSInfo as vcs_info
     >>> with tempfile.NamedTemporaryFile(suffix='.fits') as f:
-    ...     write_sky_map(f.name, prob, nest=True)
+    ...     write_sky_map(f.name, prob, nest=True, vcs_info=vcs_info)
     ...     for card in fits.getheader(f.name, 1).cards:
     ...         print(str(card).rstrip())
     XTENSION= 'BINTABLE'           / binary table extension
@@ -272,6 +273,10 @@ def write_sky_map(filename, m, **kwargs):
     COORDSYS= 'C       '           / Ecliptic, Galactic or Celestial (equatorial)
     NSIDE   =                  512 / Resolution parameter of HEALPIX
     INDXSCHM= 'IMPLICIT'           / Indexing: IMPLICIT or EXPLICIT
+    VCSVERS = 'LALInference ...' / Software version
+    VCSSTAT = '...: ...' / Software version control status
+    VCSID   = '...' / Software git commit hash
+    DATE-BLD= '...' / Software build date
     TUNIT1  = 'pix-1   '
 
     >>> uniq = moc.nest2uniq(np.uint8(order), np.arange(npix, dtype=np.uint64))
@@ -279,7 +284,7 @@ def write_sky_map(filename, m, **kwargs):
     >>> moc_data = np.rec.fromarrays(
     ...     [uniq, probdensity], names=['UNIQ', 'PROBDENSITY'])
     >>> with tempfile.NamedTemporaryFile(suffix='.fits') as f:
-    ...     write_sky_map(f.name, moc_data)
+    ...     write_sky_map(f.name, moc_data, vcs_info=vcs_info)
     ...     for card in fits.getheader(f.name, 1).cards:
     ...         print(str(card).rstrip())
     XTENSION= 'BINTABLE'           / binary table extension
@@ -299,6 +304,10 @@ def write_sky_map(filename, m, **kwargs):
     ORDERING= 'NUNIQ   '           / Pixel ordering scheme: RING, NESTED, or NUNIQ
     COORDSYS= 'C       '           / Ecliptic, Galactic or Celestial (equatorial)
     MOCORDER=                    9 / MOC resolution (best order)
+    VCSVERS = 'LALInference ...' / Software version
+    VCSSTAT = '...: ...' / Software version control status
+    VCSID   = '...' / Software git commit hash
+    DATE-BLD= '...' / Software build date
     TUNIT2  = 'sr-1    '
     """
 

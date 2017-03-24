@@ -53,7 +53,7 @@ modules = [
 
 
 finder = doctest.DocTestFinder()
-runner = doctest.DocTestRunner()
+runner = doctest.DocTestRunner(optionflags=doctest.ELLIPSIS)
 tests = []
 
 for module in modules:
