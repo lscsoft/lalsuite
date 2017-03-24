@@ -52,9 +52,6 @@ parser.add_argument(
     help='Plot in geographic coordinates, (lat, lon) instead of (RA, Dec)'
     ' [default: %(default)s]')
 parser.add_argument(
-    '--transparent', action='store_true', default=False,
-    help='Save image with transparent background [default: %(default)s]')
-parser.add_argument(
     'input', metavar='INPUT.fits[.gz]', type=argparse.FileType('rb'),
     default='-', nargs='?', help='Input FITS file [default: stdin]')
 opts = parser.parse_args()
@@ -141,12 +138,6 @@ for ra, dec in radecs:
 # If we are using a new enough version of matplotlib, then
 # add a white outline to all text to make it stand out from the background.
 plot.outline_text(ax)
-
-# Make transparent.
-if opts.transparent:
-    fig.patch.set_alpha(0.)
-    ax.patch.set_alpha(0.)
-    ax.set_alpha(0.)
 
 # Show or save output.
 opts.output()

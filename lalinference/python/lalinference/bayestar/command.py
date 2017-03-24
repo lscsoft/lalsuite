@@ -186,6 +186,11 @@ def dpi(value):
     from matplotlib import rcParams
     rcParams['figure.dpi'] = rcParams['savefig.dpi'] = float(value)
 
+@type_with_sideeffect(int)
+def transparent(value):
+    from matplotlib import rcParams
+    rcParams['savefig.transparent'] = bool(value)
+
 figure_parser = argparse.ArgumentParser(add_help=False)
 colormap_choices = sorted(cm.cmap_d.keys())
 group = figure_parser.add_argument_group(
@@ -209,6 +214,9 @@ group.add_argument(
 group.add_argument(
     '--dpi', metavar='PIXELS', type=dpi, default=300,
     help='resolution of figure in dots per inch [default: %(default)s]')
+group.add_argument(
+    '--transparent', const='1', default='0', nargs='?', type=transparent,
+    help='Save image with transparent background [default: false]')
 del colormap_choices
 del group
 
