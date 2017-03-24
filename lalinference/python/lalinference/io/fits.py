@@ -60,6 +60,7 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 __all__ = ("read_sky_map", "write_sky_map")
 
 
+import os
 import math
 import healpy as hp
 import numpy as np
@@ -364,6 +365,12 @@ def write_sky_map(filename, m, **kwargs):
         # Scientific Linux 7 computing clusters.
         fits.table_to_hdu
     except AttributeError:
+        # FIXME: With some old versions of astropy that we still have to
+        # support, the astropy.table.Table.write method did not support the
+        # clobber argument. So we have to manually delete the file first so
+        # that astropy.io.fits does not complain that the file exists.
+        from ..bayestar.command import rm_f
+        rm_f(filename)
         m.write(filename, format='fits')
         hdulist = fits.open(filename)
         _, hdu = hdulist

@@ -348,6 +348,15 @@ def rename(src, dst):
             raise
 
 
+def rm_f(filename):
+    """Remove a file, or be silent if the file does not exist, like `rm -f`."""
+    try:
+        os.remove(filename)
+    except OSError as e:
+        if e.errno != errno.ENOENT:
+            raise
+
+
 def register_to_xmldoc(xmldoc, parser, opts, **kwargs):
     from glue.ligolw.utils import process
     return process.register_to_xmldoc(
