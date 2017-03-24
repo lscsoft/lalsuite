@@ -37,6 +37,7 @@ from . import postprocess
 from . import timing
 from . import moc
 from .. import healpix_tree
+from .. import InferenceVCSInfo as vcs_info
 try:
     from . import _sky_map
 except ImportError:
@@ -392,6 +393,7 @@ def ligolw_sky_map(
     # Fill in metadata and return.
     skymap.meta['creator'] = 'BAYESTAR'
     skymap.meta['origin'] = 'LIGO/Virgo'
+    skymap.meta['vcs_info'] = vcs_info
     skymap.meta['gps_time'] = float(epoch)
     skymap.meta['runtime'] = float(end_time - start_time)
     skymap.meta['instruments'] = {sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals}
