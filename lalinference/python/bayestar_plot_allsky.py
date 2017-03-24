@@ -135,8 +135,7 @@ for ra, dec in radecs:
         ra = plot.wrapped_angle(ra + dlon)
     ax.plot(ra, dec, '*', markerfacecolor='white', markeredgecolor='black', markersize=10)
 
-# If we are using a new enough version of matplotlib, then
-# add a white outline to all text to make it stand out from the background.
+# Add a white outline to all text to make it stand out from the background.
 plot.outline_text(ax)
 
 # Show or save output.

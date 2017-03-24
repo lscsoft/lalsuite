@@ -81,8 +81,7 @@ for count_records, (color, fitsfilename) in enumerate(zip(colors, fitsfilenames)
 
 progress.update(-1, 'saving figure')
 
-# If we are using a new enough version of matplotlib, then
-# add a white outline to all text to make it stand out from the background.
+# Add a white outline to all text to make it stand out from the background.
 plot.outline_text(ax)
 
 opts.output()
