@@ -72,7 +72,7 @@ def toa_phoa_snr_log_prior(
 @with_numpy_random_seed
 def emcee_sky_map(
         logl, loglargs, logp, logpargs, xmin, xmax,
-        nside=-1, chain_dump=None, max_horizon=1.0):
+        nside=-1, chain_dump=None, fudge=1.0):
     # Set up sampler
     import emcee
     from sky_area.sky_area_clustering import Clustered3DKDEPosterior
@@ -129,7 +129,7 @@ def emcee_sky_map(
     # Read back in with np.load().
     if chain_dump:
         # Undo numerical conditioning of distances; convert back to Mpc
-        chain[:, 2] *= max_horizon
+        chain[:, 2] *= fudge
         names = 'ra sin_dec distance cos_inclination twopsi time'.split()[:ndim]
         np.save(chain_dump, np.rec.fromrecords(chain, names=names))
 
@@ -339,12 +339,6 @@ def ligolw_sky_map(
                           'undefined at min_distance=0')
                           .format(prior_distance_power))
 
-    # Rescale distances to horizon distance of most sensitive detector.
-    max_horizon = np.max(horizons)
-    horizons /= max_horizon
-    min_distance /= max_horizon
-    max_distance /= max_horizon
-
     # Time and run sky localization.
     log.debug('starting computationally-intensive section')
     start_time = lal.GPSTimeNow()
@@ -365,7 +359,7 @@ def ligolw_sky_map(
                 max_abs_t),
             xmin=[0, -1, min_distance, -1, 0, 0],
             xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi, 2 * max_abs_t],
-            nside=nside, chain_dump=chain_dump, max_horizon=max_horizon * fudge)
+            nside=nside, chain_dump=chain_dump, fudge=fudge)
     else:
         raise ValueError('Unrecognized method: %s' % method)
 
@@ -386,12 +380,11 @@ def ligolw_sky_map(
     skymap.meta['diststd'] = np.sqrt(r2bar - np.square(rbar))
 
     # Rescale
-    rescale = max_horizon * fudge
-    skymap['DISTMU'] *= rescale
-    skymap['DISTSIGMA'] *= rescale
-    skymap.meta['distmean'] *= rescale
-    skymap.meta['diststd'] *= rescale
-    skymap['DISTNORM'] /= np.square(rescale)
+    skymap['DISTMU'] *= fudge
+    skymap['DISTSIGMA'] *= fudge
+    skymap.meta['distmean'] *= fudge
+    skymap.meta['diststd'] *= fudge
+    skymap['DISTNORM'] /= np.square(fudge)
 
     end_time = lal.GPSTimeNow()
     log.debug('finished computationally-intensive section')
