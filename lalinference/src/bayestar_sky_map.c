@@ -775,7 +775,7 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
         double pmax = 0;
         for (unsigned int iifo = 0; iifo < nifos; iifo ++)
         {
-            pmax += gsl_pow_2(horizons[iifo] / max_distance);
+            pmax += gsl_pow_2(horizons[iifo]);
         }
         pmax = sqrt(0.5 * pmax);
         for (unsigned char k = 0; k < 3; k ++)
