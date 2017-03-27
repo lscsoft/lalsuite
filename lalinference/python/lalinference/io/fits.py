@@ -191,12 +191,12 @@ def identity(x):
 
 def instruments_to_fits(value):
     if not isinstance(value, six.string_types):
-        value = str(lsctables.ifos_from_instrument_set(value))
+        value = str(lsctables.instrumentsproperty.set(value))
     return value
 
 
 def instruments_from_fits(value):
-    return {str(ifo) for ifo in lsctables.instrument_set_from_ifos(value)}
+    return {str(ifo) for ifo in lsctables.instrumentsproperty.get(value)}
 
 
 DEFAULT_NUNIQ_NAMES = ('PROBDENSITY', 'DISTMU', 'DISTSIGMA', 'DISTNORM')
