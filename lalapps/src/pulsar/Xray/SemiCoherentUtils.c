@@ -819,7 +819,8 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
      REAL8 deltafn = 2.0*sqrt(mu/(ndim*gnn));
 
      /* compute number of grid points in this dimension and enforce a grid centered on the middle of the parameter space */
-     INT4 length = (INT4)ceil((fnmax[n]-fnmin[n])/deltafn) + 2*NBINS;                      /* add bins at each end for safety */
+     INT4 length = (INT4)ceil((fnmax[n]-fnmin[n])/deltafn);
+     length += MYMAX( 2*NBINS, (INT4)ceil(0.05*length) );                      /* add bins at each end for safety */
      REAL8 minfn = 0.5*(fnmin[n]+fnmax[n]) - 0.5*(length-1)*deltafn;
 
      (*gridparams)->grid[n].delta = deltafn;
