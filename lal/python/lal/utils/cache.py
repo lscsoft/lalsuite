@@ -307,7 +307,7 @@ class CacheEntry(object):
         The \"observatory\" column of the cache entry, which is frequently
         used to store instrument names, is parsed into instrument names for
         the dictionary keys using the same rules as
-        glue.ligolw.lsctables.instrument_set_from_ifos().
+        glue.ligolw.lsctables.instrumentsproperty.get().
 
         Example:
 
@@ -317,8 +317,8 @@ class CacheEntry(object):
         """
         # the import has to be done here to break the cyclic
         # dependancy
-        from glue.ligolw.lsctables import instrument_set_from_ifos
-        instruments = instrument_set_from_ifos(self.observatory) or (None,)
+        from glue.ligolw.lsctables import instrumentsproperty
+        instruments = instrumentsproperty.get(self.observatory) or (None,)
         return segments.segmentlistdict((instrument, segments.segmentlist(self.segment is not None and [self.segment] or [])) for instrument in instruments)
 
     @classmethod
