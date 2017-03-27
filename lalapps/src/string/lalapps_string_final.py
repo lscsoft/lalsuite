@@ -263,7 +263,7 @@ WHERE
 		""", (contents.bb_definer_id,)):
 			# likelihood ratio must be listed first to
 			# act as the sort key
-			record = (likelihood_ratio, contents.filename, coinc_event_id, dbtables.lsctables.instrument_set_from_ifos(instruments), peak_time)
+			record = (likelihood_ratio, contents.filename, coinc_event_id, dbtables.lsctables.instrumentsproperty.get(instruments), peak_time)
 			if likelihood_ratio is None:
 				# coinc got vetoed (unable to compute
 				# likelihood)
