@@ -646,6 +646,10 @@ static void logsumexp(const double *accum, double log_weight, double *result, un
 }
 
 
+/* Fudge factor for excess estimation error in gstlal_inspiral. */
+static const double FUDGE = 0.83;
+
+
 static void bayestar_sky_map_toa_phoa_snr_pixel(
     log_radial_integrator *integrators[],
     unsigned char nint,
@@ -706,6 +710,7 @@ static void bayestar_sky_map_toa_phoa_snr_pixel(
                         F[iifo], exp_i_twopsi, u, u2));
             }
             p2 *= 0.5;
+            p2 *= gsl_pow_2(FUDGE);
             const double p = sqrt(p2);
             const double log_p = log(p);
 
@@ -721,6 +726,7 @@ static void bayestar_sky_map_toa_phoa_snr_pixel(
                                 isample - dt[iifo] * sample_rate - 0.5 * (nsamples - 1));
                     }
                     b = cabs(I0arg_complex_times_r);
+                    b *= gsl_pow_2(FUDGE);
                 }
                 const double log_b = log(b);
 
@@ -778,6 +784,7 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
             pmax += gsl_pow_2(horizons[iifo]);
         }
         pmax = sqrt(0.5 * pmax);
+        pmax *= FUDGE;
         for (unsigned char k = 0; k < 3; k ++)
         {
             integrators[k] = log_radial_integrator_init(
@@ -973,7 +980,10 @@ double bayestar_log_likelihood_toa_phoa_snr(
     }
     A *= -0.5;
 
-    const double i0arg_times_r = cabs(i0arg_complex_times_r);
+    double i0arg_times_r = cabs(i0arg_complex_times_r);
+
+    A *= gsl_pow_2(FUDGE);
+    i0arg_times_r *= gsl_pow_2(FUDGE);
 
     return (A * one_by_r + i0arg_times_r) * one_by_r
         + log(gsl_sf_bessel_I0_scaled(i0arg_times_r * one_by_r));

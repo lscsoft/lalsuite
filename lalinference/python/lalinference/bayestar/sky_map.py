@@ -72,7 +72,7 @@ def toa_phoa_snr_log_prior(
 @with_numpy_random_seed
 def emcee_sky_map(
         logl, loglargs, logp, logpargs, xmin, xmax,
-        nside=-1, chain_dump=None, fudge=1.0):
+        nside=-1, chain_dump=None):
     # Set up sampler
     import emcee
     from sky_area.sky_area_clustering import Clustered3DKDEPosterior
@@ -129,7 +129,6 @@ def emcee_sky_map(
     # Read back in with np.load().
     if chain_dump:
         # Undo numerical conditioning of distances; convert back to Mpc
-        chain[:, 2] *= fudge
         names = 'ra sin_dec distance cos_inclination twopsi time'.split()[:ndim]
         np.save(chain_dump, np.rec.fromrecords(chain, names=names))
 
@@ -289,10 +288,6 @@ def ligolw_sky_map(
     # Collect all of the SNR series in one array.
     snr_series = np.vstack([series.data.data for series in snr_series])
 
-    # Fudge factor for excess estimation error in gstlal_inspiral.
-    fudge = 0.83
-    snr_series *= fudge
-
     # If using 'findchirp' phase convention rather than gstlal/mbta,
     # then flip signs of phases.
     if phase_convention.lower() == 'antifindchirp':
@@ -359,7 +354,7 @@ def ligolw_sky_map(
                 max_abs_t),
             xmin=[0, -1, min_distance, -1, 0, 0],
             xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi, 2 * max_abs_t],
-            nside=nside, chain_dump=chain_dump, fudge=fudge)
+            nside=nside, chain_dump=chain_dump)
     else:
         raise ValueError('Unrecognized method: %s' % method)
 
@@ -378,13 +373,6 @@ def ligolw_sky_map(
     r2bar = (prob * (np.square(diststd) + np.square(distmean))).sum()
     skymap.meta['distmean'] = rbar
     skymap.meta['diststd'] = np.sqrt(r2bar - np.square(rbar))
-
-    # Rescale
-    skymap['DISTMU'] *= fudge
-    skymap['DISTSIGMA'] *= fudge
-    skymap.meta['distmean'] *= fudge
-    skymap.meta['diststd'] *= fudge
-    skymap['DISTNORM'] /= np.square(fudge)
 
     end_time = lal.GPSTimeNow()
     log.debug('finished computationally-intensive section')
