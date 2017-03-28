@@ -102,6 +102,8 @@ group.add_argument('--max-distance', type=float, metavar='Mpc',
 group.add_argument('--prior-distance-power', type=int, metavar='-1|2',
     default=2, help='Distance prior '
     '[-1 for uniform in log, 2 for uniform in volume, default: %(default)s]')
+group.add_argument('--cosmology', default=False, action='store_true',
+    help='Apply cosmological comoving volume correction [default: %(default)s]')
 group.add_argument('--enable-snr-series', default=False, action='store_true',
     help='Enable input of SNR time series (WARNING: UNREVIEWED!) [default: no]')
 del group
