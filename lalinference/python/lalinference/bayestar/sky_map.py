@@ -141,8 +141,8 @@ def emcee_sky_map(
 def ligolw_sky_map(
         sngl_inspirals, waveform, f_low,
         min_distance=None, max_distance=None, prior_distance_power=None,
-        method='toa_phoa_snr', psds=None, nside=-1, chain_dump=None,
-        phase_convention='antifindchirp', snr_series=None,
+        cosmology=False, method='toa_phoa_snr', psds=None, nside=-1,
+        chain_dump=None, phase_convention='antifindchirp', snr_series=None,
         enable_snr_series=False):
     """Convenience function to produce a sky map from LIGO-LW rows. Note that
     min_distance and max_distance should be in Mpc.
@@ -196,6 +196,10 @@ def ligolw_sky_map(
 
     # Center detector array.
     locations -= np.sum(locations * weights.reshape(-1, 1), axis=0) / np.sum(weights)
+
+    if cosmology:
+        log.warn('Enabling cosmological prior. '
+                 'This feature is UNREVIEWED.')
 
     if enable_snr_series:
         log.warn('Enabling input of SNR time series. '
@@ -339,8 +343,8 @@ def ligolw_sky_map(
     start_time = lal.GPSTimeNow()
     if method == 'toa_phoa_snr':
         skymap, log_bci, log_bsn = _sky_map.toa_phoa_snr(
-            min_distance, max_distance, prior_distance_power, gmst, sample_rate,
-            toas, snr_series, responses, locations, horizons)
+            min_distance, max_distance, prior_distance_power, cosmology, gmst,
+            sample_rate, toas, snr_series, responses, locations, horizons)
         skymap = Table(skymap)
         skymap.meta['log_bci'] = log_bci
         skymap.meta['log_bsn'] = log_bsn
@@ -391,7 +395,7 @@ def ligolw_sky_map(
 
 def gracedb_sky_map(
         coinc_file, psd_file, waveform, f_low, min_distance=None,
-        max_distance=None, prior_distance_power=None,
+        max_distance=None, prior_distance_power=None, cosmology=False,
         method='toa_phoa_snr', nside=-1, chain_dump=None,
         f_high_truncate=1.0, enable_snr_series=False):
     # Read input file.
@@ -441,10 +445,10 @@ def gracedb_sky_map(
 
     # Run sky localization
     return ligolw_sky_map(sngl_inspirals, waveform, f_low,
-        min_distance, max_distance, prior_distance_power, method=method,
-        nside=nside, psds=psds, phase_convention=phase_convention,
-        chain_dump=chain_dump, snr_series=snrs,
-        enable_snr_series=enable_snr_series)
+        min_distance, max_distance, prior_distance_power, cosmology,
+        method=method, nside=nside, psds=psds,
+        phase_convention=phase_convention, chain_dump=chain_dump,
+        snr_series=snrs, enable_snr_series=enable_snr_series)
 
 
 def rasterize(skymap):
