@@ -1730,16 +1730,16 @@ SimInspiralTableFromLIGOLw (
 	}
         else if ( tableDir[j].idx == 53 )
         {
-            thisSim->amp_order = i4colData;
+          thisSim->amp_order = i4colData;
         }
         else if ( tableDir[j].idx == 54 )
         {
-            snprintf(thisSim->taper, LIGOMETA_INSPIRALTAPER_MAX * sizeof(CHAR),
-                    "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
+          snprintf(thisSim->taper, LIGOMETA_INSPIRALTAPER_MAX * sizeof(CHAR),
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
         }
         else if ( tableDir[j].idx == 55 )
         {
-            thisSim->bandpass = i4colData;
+          thisSim->bandpass = i4colData;
         }
         else if ( tableDir[j].idx == 56 ) {
         	thisSim->qmParameter1 = r4colData;
