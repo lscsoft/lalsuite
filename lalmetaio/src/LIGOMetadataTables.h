@@ -515,6 +515,7 @@ typedef struct
 tagSimInspiralTable
 {
   struct tagSimInspiralTable *next;
+  long           process_id;
   CHAR           waveform[LIGOMETA_WAVEFORM_MAX];
   LIGOTimeGPS    geocent_end_time;
   LIGOTimeGPS    h_end_time;
