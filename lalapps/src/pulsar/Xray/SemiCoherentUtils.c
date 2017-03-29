@@ -820,7 +820,7 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
 
      /* compute number of grid points in this dimension and enforce a grid centered on the middle of the parameter space */
      INT4 length = (INT4)ceil((fnmax[n]-fnmin[n])/deltafn);
-     length += MYMAX( 2*NBINS, (INT4)ceil(0.05*length) );                      /* add bins at each end for safety */
+     length += 2*MYMAX( NBINS, (INT4)ceil(BINS_FACTOR*length) );                      /* add bins at each end for safety */
      REAL8 minfn = 0.5*(fnmin[n]+fnmax[n]) - 0.5*(length-1)*deltafn;
 
      (*gridparams)->grid[n].delta = deltafn;
@@ -1110,6 +1110,15 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
   /* define actual frequency range to read in */
   freqmin = freq;
   freqmax = freqmin + freqband;
+
+  /* read in even more bins to account for grid padding */
+  {
+    REAL8 deltafn = catalog->data[0].header.deltaF;
+    INT4 length = (INT4)ceil((freqmax-freqmin)/deltafn);
+    INT4 safety_bins = MYMAX( NBINS, (INT4)ceil(BINS_FACTOR*length) );
+    freqmin -= safety_bins*deltafn;
+    freqmax += safety_bins*deltafn;
+  }
 
   /* check CRC sums of SFTs */
   /* XLAL_CHECK_MAIN ( XLALCheckCRCSFTCatalog (&sft_check_result, catalog ) == XLAL_SUCCESS, XLAL_EFUNC );
