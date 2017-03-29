@@ -776,20 +776,33 @@ XLALFreeSimInspiral (
     )
 
 {
-  EventIDColumn        *eventId;
-
-  while ( (*eventHead)->event_id )
-  {
-    /* free any associated event_id's */
-    eventId = (*eventHead)->event_id;
-    (*eventHead)->event_id = (*eventHead)->event_id->next;
-    LALFree( eventId );
-  }
   LALFree( *eventHead );
 
   return (0);
 }
 
+
+/**
+ * Assign simulation_id values to the entries in a SimInspiral linked list.
+ * All SimInspiral rows in the list will be blamed on the given process_id,
+ * and assigned sequential simulation_ids starting with the given
+ * simulation_id.  The return value is the next simulation_id after the
+ * last one assigned to a row in the list.
+ */
+long
+XLALSimInspiralAssignIDs (
+    SimInspiralTable *head,
+    long process_id,
+    long simulation_id
+)
+{
+  for( ; head; head = head->next )
+  {
+    head->process_id = process_id;
+    head->simulation_id = simulation_id++;
+  }
+  return simulation_id;
+}
 
 
 INT8

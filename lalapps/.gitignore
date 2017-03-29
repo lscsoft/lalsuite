@@ -87,7 +87,6 @@ src/inspiral/lalapps_check_hipe_times
 src/inspiral/lalapps_cohPTF_hipe
 src/inspiral/lalapps_coh_PTF_post_processing
 src/inspiral/lalapps_coherent_inspiral
-src/inspiral/lalapps_cohire
 src/inspiral/lalapps_coinext
 src/inspiral/lalapps_coinj
 src/inspiral/lalapps_compare_ini

@@ -4547,6 +4547,7 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
   }
 
+  XLALSimInspiralAssignIDs ( injections.simInspiralTable, 0, 0 );
   if ( injections.simInspiralTable )
   {
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_inspiral_table ),

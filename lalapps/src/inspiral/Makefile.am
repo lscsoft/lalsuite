@@ -8,7 +8,6 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 SUBDIRS = posterior
 
 TMPLTBANKSRC = tmpltbank.c inspiralutils.c inspiral.h
-COHIRESRC = cohire.c
 INCASRC = inca.c
 SIVASRC = siva.c
 INSPINJSRC = inspinj.c inspiralutils.c inspiral.h
@@ -48,7 +47,6 @@ LALMETAIO_PROGS = \
 	lalapps_trigbank \
 	lalapps_trigscan \
 	lalapps_spininj \
-	lalapps_cohire \
 	lalapps_coinext \
 	lalapps_randombank \
 	lalapps_ninja \
@@ -58,7 +56,6 @@ LALMETAIO_PROGS = \
 	lalapps_skymap \
 	lalapps_coinj \
 	lalapps_cbc_stochasticbank
-lalapps_cohire_SOURCES = $(COHIRESRC)
 lalapps_tmpltbank_SOURCES = $(TMPLTBANKSRC)
 lalapps_inca_SOURCES = $(INCASRC)
 lalapps_siva_SOURCES = $(SIVASRC)
