@@ -15,6 +15,7 @@ test_programs += WaveformFlagsTest
 test_programs += WaveformFromCacheTest
 test_programs += XLALSimAddInjectionTest
 test_programs += InitialSpinRotationTest
+test_programs += TEOBResumROMTest
 #test_programs += TestTaylorTFourier
 #test_programs += SpinTaylorT4DynamicsTest
 #if OPENMP
