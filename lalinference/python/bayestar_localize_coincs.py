@@ -151,7 +151,7 @@ if opts.psd_files: # read pycbc psds here
         kmin = int(flow / df)
 
         fseries = lal.CreateREAL8FrequencySeries(
-            'psd', psd.attrs['epoch'], kmin * df, df,
+            'psd', 0, kmin * df, df,
             lal.StrainUnit**2 / lal.HertzUnit, len(psd.value) - kmin)
         fseries.data.data = psd.value[kmin:] / np.square(ligolw_bayestar.PYCBC_DYN_RANGE_FAC)
 
