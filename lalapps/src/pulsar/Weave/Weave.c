@@ -354,7 +354,7 @@ int main( int argc, char *argv[] )
                     UVAR_SET2( sky_patch_count, sky_patch_index ) != 1,
                     UVAR_STR( sky_patch_count ) " requires " UVAR_STR( sky_patch_index ) " and vice versa" );
   XLALUserVarCheck( &should_exit,
-                    !UVAR_SET( sky_patch_index ) || ( 0 < uvar->sky_patch_index && uvar->sky_patch_index < uvar->sky_patch_count ),
+                    !UVAR_SET( sky_patch_index ) || uvar->sky_patch_index < uvar->sky_patch_count,
                     UVAR_STR( sky_patch_index ) " must be positive and strictly less than " UVAR_STR( sky_patch_count ) );
   XLALUserVarCheck( &should_exit,
                     uvar->freq_partitions > 0,
