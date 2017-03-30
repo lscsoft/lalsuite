@@ -188,7 +188,7 @@ nodist_swiglal_python_la_SOURCES = swiglal_python.c
 swiglal_python_la_SOURCES = SWIGTest.c
 swiglal_python_la_CFLAGS = $(SWIG_PYTHON_CFLAGS)
 swiglal_python_la_CPPFLAGS = $(swig_cppflags) $(SWIG_PYTHON_CPPFLAGS)
-swiglal_python_la_LDFLAGS = $(LDADD) $(swig_ldflags) $(SWIG_PYTHON_LDFLAGS)
+swiglal_python_la_LDFLAGS = $(LDADD) $(swig_ldflags) $(SWIG_PYTHON_LDFLAGS) $(EXTRA_SWIG_PYTHON_LDFLAGS)
 swiglal_python_la_LIBTOOLFLAGS = $(swig_libtoolflags)
 
 if AMDEP
