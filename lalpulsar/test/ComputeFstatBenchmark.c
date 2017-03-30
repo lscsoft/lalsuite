@@ -51,6 +51,7 @@ typedef struct
   REAL8 Tsft;
   BOOLEAN reuseInput;   // only useful for checking workspace management
   BOOLEAN resampFFTPowerOf2;
+  INT4 Dterms;
 } UserInput_t;
 
 // ---------- main ----------
@@ -78,6 +79,7 @@ main ( int argc, char *argv[] )
   uvar->Tsft = 1800;
   uvar->reuseInput = 1;
   uvar->resampFFTPowerOf2 = 1;
+  uvar->Dterms = 8;
 
   XLAL_CHECK ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) != NULL, XLAL_EFUNC );
   uvar->outputInfo = NULL;
@@ -98,6 +100,7 @@ main ( int argc, char *argv[] )
   XLAL_CHECK ( XLALRegisterUvarMember ( Tsft,           REAL8,          0, DEVELOPER, "SFT length" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( reuseInput,     BOOLEAN,        0, DEVELOPER, "Re-use FstatInput from previous setups (only useful for checking workspace management)" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( resampFFTPowerOf2, BOOLEAN,     0, DEVELOPER, "For Resampling methods: enforce FFT length to be a power of two (by rounding up)" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember ( Dterms,    	INT4,           0, OPTIONAL,  "Dterms to use in Demod Dirichlet kernel or in Resampling sinc-interpolation kernel" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   BOOLEAN should_exit = 0;
   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -173,6 +176,7 @@ main ( int argc, char *argv[] )
   optionalArgs.FstatMethod = FstatMethod;
   optionalArgs.collectTiming = 1;
   optionalArgs.resampFFTPowerOf2 = uvar->resampFFTPowerOf2;
+  optionalArgs.Dterms = uvar->Dterms;
 
   FILE *timingLogFILE = NULL;
   if ( uvar->outputInfo != NULL )
