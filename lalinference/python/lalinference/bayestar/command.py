@@ -64,7 +64,7 @@ class GlobAction(argparse._StoreAction):
     """Generate a list of filenames from a list of filenames and globs."""
 
     def __call__(self, parser, namespace, values, *args, **kwargs):
-        values = tuple(
+        values = list(
             itertools.chain.from_iterable(glob.iglob(s) for s in values))
         if values:
             super(GlobAction, self).__call__(
