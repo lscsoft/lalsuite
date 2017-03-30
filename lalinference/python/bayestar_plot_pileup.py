@@ -31,7 +31,7 @@ parser.add_argument('--contour', metavar='PERCENT', type=float, default=90,
 parser.add_argument('--alpha', metavar='ALPHA', type=float, default=0.1,
     help='alpha blending for each sky map [default: %(default)s]')
 parser.add_argument(
-    'fitsfileglobs', metavar='GLOB.fits[.gz]', nargs='+',
+    'fitsfilenames', metavar='GLOB.fits[.gz]', nargs='+', action='glob',
     help='Input FITS filenames and/or globs')
 parser.set_defaults(colormap=None)
 opts = parser.parse_args()
@@ -54,19 +54,16 @@ ax.grid()
 
 progress = ProgressBar()
 
-progress.update(-1, 'obtaining filenames of sky maps')
-fitsfilenames = tuple(command.chainglob(opts.fitsfileglobs))
-
-progress.max = len(fitsfilenames)
+progress.max = len(opts.fitsfilenames)
 
 matplotlib.rc('path', simplify=True, simplify_threshold=1)
 
 if opts.colormap is None:
-    colors = ['k'] * len(fitsfilenames)
+    colors = ['k'] * len(opts.fitsfilenames)
 else:
     colors = matplotlib.cm.get_cmap(opts.colormap)
-    colors = colors(np.linspace(0, 1, len(fitsfilenames)))
-for count_records, (color, fitsfilename) in enumerate(zip(colors, fitsfilenames)):
+    colors = colors(np.linspace(0, 1, len(opts.fitsfilenames)))
+for count_records, (color, fitsfilename) in enumerate(zip(colors, opts.fitsfilenames)):
     progress.update(count_records, fitsfilename)
     skymap, metadata = fits.read_sky_map(fitsfilename, nest=None)
     nside = hp.npix2nside(len(skymap))
