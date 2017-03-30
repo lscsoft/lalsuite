@@ -389,8 +389,7 @@ static INT4 getNamedDataOptionsByDetectors(ProcessParamsTable *commandLine, char
       return 0;
 }
 
-void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
-void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine){
+static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine){
 
   LALStatus status;
   memset(&status,0,sizeof(status));
