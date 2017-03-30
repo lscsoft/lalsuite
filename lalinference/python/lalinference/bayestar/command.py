@@ -60,7 +60,7 @@ def TemporaryDirectory(suffix='', prefix='tmp', dir=None, delete=True):
             shutil.rmtree(dir)
 
 
-class GlobAction(argparse._AppendAction):
+class GlobAction(argparse._StoreAction):
     """Generate a list of filenames from a list of filenames and globs."""
 
     def __call__(self, parser, namespace, values, *args, **kwargs):
