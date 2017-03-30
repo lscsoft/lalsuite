@@ -273,10 +273,11 @@ def ligolw_sky_map(
                          'mixed lengths')
 
     # Perform sanity checks that the middle sample of the SNR time series match
-    # the sngl_inspiral records.
+    # the sngl_inspiral records. Relax valid interval slightly from
+    # +/- 0.5 deltaT to +/- 0.6 deltaT for floating point roundoff error.
     for sngl_inspiral, series in zip(sngl_inspirals, snr_series):
         if np.abs(0.5 * (nsamples - 1) * series.deltaT
-                  + float(series.epoch - sngl_inspiral.end)) >= 0.5 * deltaT:
+                  + float(series.epoch - sngl_inspiral.end)) >= 0.6 * deltaT:
             raise ValueError('BAYESTAR expects the SNR time series to be '
                              'centered on the sngl_inspiral end times')
 
