@@ -24,6 +24,7 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 import argparse
 import contextlib
+import copy
 from distutils.dir_util import mkpath
 from distutils.errors import DistutilsFileError
 import errno
@@ -59,9 +60,15 @@ def TemporaryDirectory(suffix='', prefix='tmp', dir=None, delete=True):
             shutil.rmtree(dir)
 
 
-def chainglob(patterns):
-    """Generate a list of all files matching a list of globs."""
-    return itertools.chain.from_iterable(glob.iglob(s) for s in patterns)
+class GlobAction(argparse._AppendAction):
+    """Generate a list of filenames from a list of filenames and globs."""
+
+    def __call__(self, parser, namespace, values, *args, **kwargs):
+        values = tuple(
+            itertools.chain.from_iterable(glob.iglob(s) for s in values))
+        if values:
+            super(GlobAction, self).__call__(
+                parser, namespace, values, *args, **kwargs)
 
 
 waveform_parser = argparse.ArgumentParser(add_help=False)
@@ -279,6 +286,7 @@ class ArgumentParser(argparse.ArgumentParser):
                  conflict_handler=conflict_handler,
                  add_help=add_help)
         self.add_argument('--version', action=VersionAction)
+        self.register('action', 'glob', GlobAction)
 
 
 class DirType(object):
