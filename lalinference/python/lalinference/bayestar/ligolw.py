@@ -45,6 +45,11 @@ InspiralCoincDef = lsctables.CoincDef(search = u"inspiral", search_coinc_type = 
 InspiralSCExactCoincDef = lsctables.CoincDef(search = u"inspiral", search_coinc_type = 3, description = u"sim_inspiral<-->coinc_event coincidences (exact)")
 
 
+# FIXME: This should be imported from pycbc, or even better, embedded in the
+# pycbc PSD files.
+PYCBC_DYN_RANGE_FAC =  5.9029581035870565e+20
+
+
 def get_template_bank_f_low(xmldoc):
     """Determine the low frequency cutoff from a template bank file,
     whether the template bank was produced by lalapps_tmpltbank or
