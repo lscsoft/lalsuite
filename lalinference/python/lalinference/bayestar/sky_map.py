@@ -418,14 +418,6 @@ def gracedb_sky_map(
     xmldoc, _ = ligolw_utils.load_fileobj(
         coinc_file, contenthandler=ligolw.LSCTablesAndSeriesContentHandler)
 
-    # Locate the tables that we need.
-    coinc_inspiral_table = ligolw_table.get_table(xmldoc,
-        lsctables.CoincInspiralTable.tableName)
-    coinc_map_table = ligolw_table.get_table(xmldoc,
-        lsctables.CoincMapTable.tableName)
-    sngl_inspiral_table = ligolw_table.get_table(xmldoc,
-        lsctables.SnglInspiralTable.tableName)
-
     # Attempt to determine phase convention from process table.
     try:
         process_table = ligolw_table.get_table(xmldoc,
@@ -440,12 +432,9 @@ def gracedb_sky_map(
         phase_convention = 'antifindchirp'
 
     # Locate the sngl_inspiral rows that we need.
-    coinc_inspiral = coinc_inspiral_table[0]
-    coinc_event_id = coinc_inspiral.coinc_event_id
-    event_ids = [coinc_map.event_id for coinc_map in coinc_map_table
-        if coinc_map.coinc_event_id == coinc_event_id]
-    sngl_inspirals = [next((sngl_inspiral for sngl_inspiral in sngl_inspiral_table
-        if sngl_inspiral.event_id == event_id)) for event_id in event_ids]
+    (_, sngl_inspirals), = ligolw.coinc_and_sngl_inspirals_for_xmldoc(
+        xmldoc, coinc_def=None)
+    sngl_inspirals = list(sngl_inspirals)
 
     # Try to load complex SNR time series.
     snrs = ligolw.snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc)
