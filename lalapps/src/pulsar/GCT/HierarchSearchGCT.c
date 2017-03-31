@@ -140,6 +140,7 @@ typedef struct {
   LIGOTimeGPS maxStartTimeGPS;       /**< all sft timestamps must be before this GPS time */
   UINT4 blocksRngMed;              /**< blocksize for running median noise floor estimation */
   UINT4 Dterms;                    /**< size of Dirichlet kernel for Fstat calculation */
+  UINT4 DtermsRecalc;              /**< Recalc: size of Dirichlet kernel for Fstat calculation */
   LALStringVector* assumeSqrtSX;   /**< Assume stationary Gaussian noise with detector noise-floors sqrt{SX}" */
   BOOLEAN SignalOnly;              /**< DEPRECATED: ALTERNATIVE switch to assume Sh=1 instead of estimating noise-floors from SFTs */
   /* parameters describing the coherent data-segments */
@@ -425,6 +426,7 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_segmentList = NULL;	/**< ALTERNATIVE: file containing a pre-computed segment list of tuples (startGPS endGPS duration[h] NumSFTs) */
 
   INT4 uvar_Dterms = DTERMS;
+  INT4 uvar_DtermsRecalc = DTERMS;
   INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
   INT4 uvar_gammaRefine = 1;
   INT4 uvar_gamma2Refine = 1;
@@ -550,6 +552,7 @@ int MAIN( int argc, char *argv[]) {
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_blocksRngMed,        "blocksRngMed",        INT4,         0,   DEVELOPER,  "RngMed block size") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_SSBprecision,        "SSBprecision",        INT4,         0,   DEVELOPER,  "Precision for SSB transform.") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_Dterms,              "Dterms",              INT4,         0,   DEVELOPER,  "No. of terms to keep in Dirichlet Kernel" ) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_DtermsRecalc,        "DtermsRecalc",        INT4,         0,   DEVELOPER,  "Same as 'Dterms', applies to 'Recalc' step" ) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_skyPointIndex,       "skyPointIndex",       INT4,         0,   DEVELOPER,  "Only analyze this skypoint in grid" ) == XLAL_SUCCESS, XLAL_EFUNC);
 
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outputTiming,        "outputTiming",        STRING,       0,   DEVELOPER,  "Append timing information into this file") == XLAL_SUCCESS, XLAL_EFUNC);
@@ -820,6 +823,7 @@ int MAIN( int argc, char *argv[]) {
   usefulParams.maxStartTimeGPS = maxStartTimeGPS;
   usefulParams.blocksRngMed = uvar_blocksRngMed;
   usefulParams.Dterms = uvar_Dterms;
+  usefulParams.DtermsRecalc = uvar_DtermsRecalc;
   usefulParams.assumeSqrtSX = uvar_assumeSqrtSX;
   usefulParams.SignalOnly = uvar_SignalOnly;
   usefulParams.SSBprec = uvar_SSBprecision;
@@ -2382,6 +2386,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
       {
         optionalArgsRecalc = optionalArgs;
         optionalArgsRecalc.FstatMethod = in->FmethodRecalc;
+        optionalArgsRecalc.Dterms = in->DtermsRecalc;
         if ( k == 0 ) {
           optionalArgsRecalc.prevInput = NULL;
         } else {
