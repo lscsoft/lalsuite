@@ -7,15 +7,9 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 SUBDIRS = posterior
 
-INSPIRALSRC = inspiral.c inspiralutils.c inspiral.h
 TMPLTBANKSRC = tmpltbank.c inspiralutils.c inspiral.h
-COHERESRC = coherent_inspiral.c
 COHIRESRC = cohire.c
-COHEREBANK = coherentbank.c
 INCASRC = inca.c
-THINCASRC = thinca.c
-SIRESRC = sire.c
-COIRESRC = coire.c
 SIVASRC = siva.c
 INSPINJSRC = inspinj.c inspiralutils.c inspiral.h
 INJCUTSRC = injcut.c
@@ -24,7 +18,6 @@ BBHINJSRC = bbhinj.c
 BLINDINJSRC = blindinj.c
 SPLITBANKSRC = splitbank.c
 TRIGBANKSRC  = trigbank.c
-CHISQSRC = populate_chisq.c
 TRIGSCANSRC = trigscan.c
 INSPFRINJSRC = inspfrinj.c
 GWF2XMLSRC = gwf2xml.c
@@ -35,19 +28,14 @@ NINJASRC = ninja.c
 FRNINJASRC = fr_ninja.c
 MDCNINJASRC = mdc_ninja.c inspiralutils.c inspiral.h
 CALCEXPSNRSRC = calcexpsnr.c
-SNEDSRC = sned.c
-CORSESRC = corse.c
 SKYMAPSRC = skymap.c
 COINJSRC = coinj.c
 STOCHBANKSRC = stochasticbank.c
 
 if LALMETAIO
 LALMETAIO_PROGS = \
-	lalapps_inspiral \
 	lalapps_tmpltbank \
 	lalapps_inca \
-	lalapps_sire \
-	lalapps_coire \
 	lalapps_siva \
 	lalapps_inspinj \
 	lalapps_injcut \
@@ -57,32 +45,22 @@ LALMETAIO_PROGS = \
 	lalapps_blindinj \
 	lalapps_inspfrinj \
 	lalapps_gwf2xml \
-	lalapps_thinca \
 	lalapps_trigbank \
-	lalapps_populate_chisq \
 	lalapps_trigscan \
 	lalapps_spininj \
 	lalapps_cohire \
-	lalapps_coherentbank \
 	lalapps_coinext \
 	lalapps_randombank \
 	lalapps_ninja \
 	lalapps_fr_ninja \
 	lalapps_mdc_ninja \
 	lalapps_calcexpsnr \
-	lalapps_sned \
-	lalapps_corse \
 	lalapps_skymap \
 	lalapps_coinj \
 	lalapps_cbc_stochasticbank
-lalapps_inspiral_SOURCES = $(INSPIRALSRC)
 lalapps_cohire_SOURCES = $(COHIRESRC)
-lalapps_coherentbank_SOURCES = $(COHEREBANK)
 lalapps_tmpltbank_SOURCES = $(TMPLTBANKSRC)
 lalapps_inca_SOURCES = $(INCASRC)
-lalapps_thinca_SOURCES = $(THINCASRC)
-lalapps_sire_SOURCES = $(SIRESRC)
-lalapps_coire_SOURCES = $(COIRESRC)
 lalapps_siva_SOURCES = $(SIVASRC)
 lalapps_inspinj_SOURCES = $(INSPINJSRC)
 lalapps_injcut_SOURCES = $(INJCUTSRC)
@@ -91,7 +69,6 @@ lalapps_bbhinj_SOURCES = $(BBHINJSRC)
 lalapps_blindinj_SOURCES = $(BLINDINJSRC)
 lalapps_splitbank_SOURCES = $(SPLITBANKSRC)
 lalapps_trigbank_SOURCES = $(TRIGBANKSRC)
-lalapps_populate_chisq_SOURCES = $(CHISQSRC)
 lalapps_trigscan_SOURCES = $(TRIGSCANSRC)
 lalapps_spininj_SOURCES = $(SPININJSRC)
 lalapps_inspfrinj_SOURCES = $(INSPFRINJSRC)
@@ -102,23 +79,13 @@ lalapps_ninja_SOURCES = $(NINJASRC)
 lalapps_fr_ninja_SOURCES = $(FRNINJASRC)
 lalapps_mdc_ninja_SOURCES = $(MDCNINJASRC)
 lalapps_calcexpsnr_SOURCES = $(CALCEXPSNRSRC)
-lalapps_sned_SOURCES = $(SNEDSRC)
-lalapps_corse_SOURCES = $(CORSESRC)
 lalapps_skymap_SOURCES = $(SKYMAPSRC)
 lalapps_coinj_SOURCES = $(COINJSRC)
 lalapps_cbc_stochasticbank_SOURCES = $(STOCHBANKSRC)
 endif
 
-if LALMETAIO
-if LALPULSAR
-LALPULSAR_PROGS = lalapps_coherent_inspiral
-lalapps_coherent_inspiral_SOURCES = $(COHERESRC)
-endif
-endif
-
 bin_PROGRAMS = \
-	$(LALMETAIO_PROGS) \
-	$(LALPULSAR_PROGS)
+	$(LALMETAIO_PROGS)
 
 if HAVE_PYTHON
 pybin_scripts = \
@@ -256,14 +223,10 @@ MOSTLYCLEANFILES += \
 	*TMPLTBANK*.xml
 
 EXTRA_DIST += \
-	$(COHERESRC) \
-	$(COIRESRC) \
 	$(DATA) \
 	$(INCASRC) \
 	$(INSPINJSRC) \
-	$(INSPIRALSRC) \
 	$(MINJSRC) \
-	$(SIRESRC) \
 	$(SIVASRC) \
 	$(SPLITBANKSRC) \
 	$(TMPLTBANKSRC) \

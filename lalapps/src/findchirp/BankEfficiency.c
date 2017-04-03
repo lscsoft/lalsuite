@@ -3741,8 +3741,6 @@ void BankEfficiencyAscii2Xml(void)
 {
   UINT4 countline = 0, nfast_max=0;
 
-  UINT8  id = 0;
-
   ResultIn trigger;
   /* Initialising below variables to 0.0 to stop compilation warnings.
      Are they actually used!? Someone has commented out the lines where
@@ -3831,6 +3829,7 @@ void BankEfficiencyAscii2Xml(void)
       /*      id = inputData->event_id->id;*/
 
         fprintf(output, SNGL_INSPIRAL_ROW,
+          inputData->process_id,
           inputData->ifo,
           inputData->search,
           inputData->channel,
@@ -3893,7 +3892,7 @@ void BankEfficiencyAscii2Xml(void)
           inputData->spin2x,
           inputData->spin2y,
           inputData->spin2z,
-          id);
+          inputData->event_id);
       inputData = inputData->next;
       fprintf(output, "\n");
 
