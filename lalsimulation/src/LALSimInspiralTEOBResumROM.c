@@ -1,6 +1,7 @@
 /*
- *  Copyright (C) 2014 Michael Puerrer, John Veitch
- *  Reduced Order Model for SEOBNR
+ *  Copyright (C) 2017 Jeroen Meidam, Benjamin Lackey.
+ *  Reduced Order Model for a nonspinning Tidal EOB model with l=2,3,4
+ *  tidal interactions (arXiv:1610.04742). Based on SEOBNRv2ROM code.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,8 +39,6 @@
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_chebyshev.h>
 
-// #include <gsl/gsl_blas.h>
-// #include <gsl/gsl_min.h>
 #include <lal/Units.h>
 #include <lal/SeqFactories.h>
 #include <lal/LALConstants.h>
@@ -68,9 +67,7 @@
 /************** Model parameters **************/
 
 //Prepending G to make clear it is a global variable
-// #define Gntimes 69072 //(will be reduced in the future)
-// #define Gnamp 21
-#define Gntimes 73624 //(will be reduced in the future)
+#define Gntimes 73624 //
 #define Gnamp 12
 #define Gnphase 7
 #define Gnq 16
@@ -199,7 +196,8 @@ static int TEOBResumROM_Init(const char dir[]) {
   }
 }
 
-/** Helper function to check if the SEOBNRv2ROMDoubleSpin model has been initialised */
+/** Helper function to check if the SEOBNRv2ROMDoubleSpin model has been initialised
+*/
 static bool TEOBResumROM_IsSetup(void) {
   if(__lalsim_TEOBResumROMDS_data.setup)
     return true;
@@ -675,8 +673,6 @@ static int TEOBResumROMCore(
 /**
  * @addtogroup LALSimInspiralTEOBResumROM_c
  *
- * @{
- *
  * @name TEOBResum Reduced Order Model (Tidal effects)
  *
  * @author Jeroen Meidam, ... (Based on SEOBNRv2ROM code written by Michael Puerrer and John Veitch)
@@ -776,7 +772,7 @@ int XLALSimInspiralTEOBResumROM(
   return(retcode);
 }
 
-
+/** @} */
 
 /** Setup TEOBResum_ROM model using data files installed in $LAL_DATA_PATH
  */
