@@ -250,24 +250,21 @@ XLALGetTimeOfDay ( void )
 /// High-resolution CPU timer (returns result in seconds), aimed for code-timing purposes.
 /// Attempts to provide the highest time resolution available, while adding as little overhead as possible.
 ///
-/// \note uses clock_gettime() with ns precision if available, or falls back to XLALGetTimeOfDay() with
-/// mus-precision otherwise.
+/// \note Returns 0.0 if no CPU timer is available.
 ///
 ///
 REAL8
 XLALGetCPUTime ( void )
 {
-#ifndef HAVE_CLOCK_GETTIME
-  return XLALGetTimeOfDay();
-#else
+#if defined(HAVE_CLOCK_GETTIME) && HAVE_DECL_CLOCK_PROCESS_CPUTIME_ID
 
   struct timespec ut;
-  clockid_t clk_id;
-  clk_id = CLOCK_REALTIME;	// use this as fallback, guaranteed to exist.
-
-  clock_gettime ( clk_id, &ut);	// don't bother testing to avoid overheads, and we would notice in timing if unavailable
-
+  clock_gettime ( CLOCK_PROCESS_CPUTIME_ID, &ut );
   return ut.tv_sec + ut.tv_nsec * 1.e-9;
+
+#else   // no CPU timer available
+
+  return 0.0;
 
 #endif
 } // XLALGetCPUTime()

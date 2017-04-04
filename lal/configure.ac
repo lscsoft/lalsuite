@@ -288,6 +288,11 @@ AC_HEADER_TIME
 # checks for library functions
 AC_CHECK_FUNCS([gmtime_r localtime_r stat putenv posix_memalign backtrace clock_gettime])
 
+# check for CPU timer
+AC_CHECK_DECLS([CLOCK_PROCESS_CPUTIME_ID],,,[AC_INCLUDES_DEFAULT
+#include <time.h>
+])
+
 # check for pager programs
 LALSUITE_CHECK_PAGER
 
