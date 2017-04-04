@@ -38,6 +38,7 @@ typedef struct
   CHAR *FstatMethod;		//!< select which method/algorithm to use to compute the F-statistic
   REAL8 Freq;
   REAL8 f1dot;
+  REAL8 f2dot;
   REAL8Vector *FreqResolution;
   INT4Vector *numFreqBins;
   REAL8 Tseg;
@@ -62,6 +63,7 @@ main ( int argc, char *argv[] )
   uvar->FstatMethod = XLALStringDuplicate("ResampBest");
   uvar->Freq = 100;
   uvar->f1dot = -3e-9;
+  uvar->f2dot = 0;
   uvar->FreqResolution = XLALCreateREAL8Vector ( 2 );
   uvar->FreqResolution->data[0] = 0.1;
   uvar->FreqResolution->data[1] = 1;
@@ -80,7 +82,8 @@ main ( int argc, char *argv[] )
 
   XLAL_CHECK ( XLALRegisterUvarMember ( FstatMethod,    STRING,         0, OPTIONAL,  "F-statistic method to use. Available methods: %s", XLALFstatMethodHelpString() ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( Freq,           REAL8,          0, OPTIONAL,  "Search frequency in Hz" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember ( f1dot,          REAL8,          0, OPTIONAL,  "Search spindown f1dot in Hz/s" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember ( f1dot,          REAL8,          0, OPTIONAL,  "Search 1st spindown f1dot in Hz/s" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember ( f2dot,          REAL8,          0, OPTIONAL,  "Search 2nd spindown f2dot in Hz/s^2" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( FreqResolution, REAL8Vector,    0, OPTIONAL,  "Frequency resolution 'R' in natural units 1/Tseg such that: dFreq = R/Tseg) [range]" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( Tseg,           REAL8,          0, OPTIONAL,  "Coherent segment length" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( numSegments,    INT4,           0, OPTIONAL,  "Number of semi-coherent segments" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -186,10 +189,11 @@ main ( int argc, char *argv[] )
   for ( INT4 i = 0; i < uvar->numTrials; i ++ )
     {
       PulsarSpinRange XLAL_INIT_DECL(spinRange);
-      LIGOTimeGPS refTime = { startTime.gpsSeconds - 2.3 * uvar->Tseg, 0 };
+      LIGOTimeGPS refTime = { startTime.gpsSeconds + 0.5 * uvar->Tseg, 0 };
       spinRange.refTime = refTime;
       spinRange.fkdot[0] = uvar->Freq;
       spinRange.fkdot[1] = uvar->f1dot;
+      spinRange.fkdot[2] = uvar->f2dot;
       spinRange.fkdotBand[1] = 0;
       REAL8 asini = 0, Period = 0, ecc = 0;
       REAL8 minCoverFreq, maxCoverFreq;
@@ -213,8 +217,8 @@ main ( int argc, char *argv[] )
       REAL8 dFreq = FreqResolution_i / uvar->Tseg;
 
       REAL8 FreqBand = numFreqBins_i * dFreq;
-      fprintf ( stderr, "trial %d/%d: Tseg = %.1f d, numSegments = %d, Freq = %.1f Hz, f1dot = %.1e Hz/s, FreqResolution R = %.2f, numFreqBins = %d [dFreq = %.2e Hz, FreqBand = %.2e Hz]\n",
-                i+1, uvar->numTrials, uvar->Tseg / 86400.0, uvar->numSegments, uvar->Freq, uvar->f1dot, FreqResolution_i, numFreqBins_i, dFreq, FreqBand );
+      fprintf ( stderr, "trial %d/%d: Tseg = %.1f d, numSegments = %d, Freq = %.1f Hz, f1dot = %.1e Hz/s, f2dot = %.1e Hz/s^2, FreqResolution R = %.2f, numFreqBins = %d [dFreq = %.2e Hz, FreqBand = %.2e Hz]\n",
+                i+1, uvar->numTrials, uvar->Tseg / 86400.0, uvar->numSegments, uvar->Freq, uvar->f1dot, uvar->f2dot, FreqResolution_i, numFreqBins_i, dFreq, FreqBand );
 
       spinRange.fkdotBand[0] = FreqBand;
       XLAL_CHECK ( XLALCWSignalCoveringBand ( &minCoverFreq, &maxCoverFreq, &startTime, &endTime, &spinRange, asini, Period, ecc ) == XLAL_SUCCESS, XLAL_EFUNC );
