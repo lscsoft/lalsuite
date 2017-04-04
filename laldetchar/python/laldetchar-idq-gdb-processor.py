@@ -102,6 +102,12 @@ if args.command == 'start':
 #        lvalert_config_obj.set( node, "max_wait", config.getfloat(node, "max_wait") )
 #        lvalert_config_obj.set( node, "delay", config.getfloat(node, "delay") )
 
+    ### add heartbeat response
+    if config.has_section('heartbeat'):
+        node = config.get('heartbeat', 'node')
+        lvalert_config_obj.add_section( node )
+        lvalert_config_obj.set( node, "executable", config.get('heartbeat', "executable") )
+
     lvalert_config_file = open(lvalert_config, "w")
     lvalert_config_obj.write(lvalert_config_file) ### write new config to disk
     lvalert_config_file.close()
