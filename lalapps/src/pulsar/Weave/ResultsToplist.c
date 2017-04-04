@@ -135,7 +135,7 @@ int toplist_fits_table_init(
   // Check input
   XLAL_CHECK( file != NULL, XLAL_EFAULT );
 
-  char col_name[32];
+  char col_name[64];
 
   // Begin FITS table description
   XLAL_FITS_TABLE_COLUMN_BEGIN( WeaveResultsToplistItem );

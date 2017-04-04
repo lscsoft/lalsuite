@@ -1245,7 +1245,7 @@ int main( int argc, char *argv[] )
 
     // Write average number of semicoherent templates per each dimension
     {
-      char keyword[32];
+      char keyword[64];
       double avg_points_denom = 1;
       for ( size_t i = 0; i < ndim; ++i ) {
         const LatticeTilingStats *semi_stats = XLALLatticeTilingStatistics( tiling[isemi], i );

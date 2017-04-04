@@ -408,7 +408,7 @@ int XLALWeaveOutputMiscPerSegInfoWrite(
 
   // Describe FITS table
   {
-    char col_name[32];
+    char col_name[64];
     XLAL_FITS_TABLE_COLUMN_BEGIN( WeaveOutputMiscPerSegInfo );
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, segment_start ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, segment_end ) == XLAL_SUCCESS, XLAL_EFUNC );
