@@ -1230,11 +1230,14 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "minrng freq [Hz]", ps[psifreq][0], "minimum frequency range" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "maxrng freq [Hz]", ps[psifreq][1], "maximum frequency range" ) == XLAL_SUCCESS, XLAL_EFUNC );
     for ( size_t s = 1; s <= ninputspins; ++s ) {
-      char keyword[32];
+      char keyword[64];
+      char comment[64];
       snprintf( keyword, sizeof( keyword ), "minrng f%zudot [Hz/s^%zu]", s, s );
-      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, keyword, ps[psifreq][0], "minimum frequency range" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      snprintf( comment, sizeof( comment ), "minimum %zu-order spindown range", s );
+      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, keyword, ps[psifreq+s][0], comment ) == XLAL_SUCCESS, XLAL_EFUNC );
       snprintf( keyword, sizeof( keyword ), "maxrng f%zudot [Hz/s^%zu]", s, s );
-      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, keyword, ps[psifreq][1], "maximum frequency range" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      snprintf( comment, sizeof( comment ), "maximum %zu-order spindown range", s );
+      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, keyword, ps[psifreq+s][1], comment ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
     // Write frequency spacing
