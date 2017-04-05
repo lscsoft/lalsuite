@@ -123,9 +123,6 @@ if opts.psd_files: # read pycbc psds here
     from glue.segments import segment, segmentlist
     import h5py
 
-    # FIXME: This should be imported from pycbc.
-    DYN_RANGE_FAC =  5.9029581035870565e+20
-
     class psd_segment(segment):
         def __new__(cls, psd, *args):
             return segment.__new__(cls, *args)
@@ -154,9 +151,9 @@ if opts.psd_files: # read pycbc psds here
         kmin = int(flow / df)
 
         fseries = lal.CreateREAL8FrequencySeries(
-            'psd', psd.attrs['epoch'], kmin * df, df,
+            'psd', 0, kmin * df, df,
             lal.StrainUnit**2 / lal.HertzUnit, len(psd.value) - kmin)
-        fseries.data.data = psd.value[kmin:] / np.square(DYN_RANGE_FAC)
+        fseries.data.data = psd.value[kmin:] / np.square(ligolw_bayestar.PYCBC_DYN_RANGE_FAC)
 
         return timing.InterpolatedPSD(
             filter.abscissa(fseries), fseries.data.data,

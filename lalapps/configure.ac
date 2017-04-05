@@ -370,10 +370,8 @@ fi
 AM_CONDITIONAL([HAVE_BAMBI],[${hbf}])
 AM_CONDITIONAL([HAVE_BAMBI_MPI],[${bambimpi}])
 
-# use c++ mode for boinc build
-if test "${boinc}" = "true" ; then
-   AC_LANG_PUSH([C++])
-fi
+# check for boinc, and modify compiler for lal library checks
+LALSUITE_CHECK_BOINC
 
 # check for lal libararies and headers
 LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
@@ -388,13 +386,8 @@ LALSUITE_CHECK_OPT_LIB([LALPulsar],[${MIN_LALPULSAR_VERSION}],[XLALComputeFstat]
 LALSUITE_CHECK_OPT_LIB([LALInference],[${MIN_LALINFERENCE_VERSION}],[LALInferenceAddVariable],[lal/LALInference.h])
 LALSUITE_CHECK_OPT_LIB([LALStochastic],[${MIN_LALSTOCHASTIC_VERSION}],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
 
-# check that lal was built with BOINC support, if required
-LALSUITE_CHECK_BOINC
-
-# back to c mode
-if test "${boinc}" = "true" ; then
-   AC_LANG_POP([C++])
-fi
+# finish boinc checks, and restore compiler after lal library checks
+LALSUITE_END_CHECK_BOINC
 
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN

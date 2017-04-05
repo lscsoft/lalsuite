@@ -62,7 +62,7 @@ if __name__ == '__main__':
         'db', type=command.SQLiteType('r'), metavar='DB.sqlite',
         help='Input SQLite database from search pipeline')
     parser.add_argument(
-        'fitsfileglobs', metavar='GLOB.fits[.gz]', nargs='+',
+        'fitsfilenames', metavar='GLOB.fits[.gz]', nargs='+', action='glob',
         help='Input FITS filenames and/or globs')
     opts = parser.parse_args()
 
@@ -146,9 +146,6 @@ if __name__ == '__main__':
             (command.sqlite_get_filename(db), contours, modes, areas)
             ).imap_unordered
 
-    progress.update(-1, 'obtaining filenames of sky maps')
-    fitsfilenames = tuple(command.chainglob(opts.fitsfileglobs))
-
     colnames = (
         ['coinc_event_id', 'simulation_id', 'far', 'snr', 'searched_area',
         'searched_prob', 'offset', 'runtime', 'distmean', 'diststd',
@@ -160,8 +157,8 @@ if __name__ == '__main__':
     print(*colnames, sep="\t", file=opts.output)
 
     count_records = 0
-    progress.max = len(fitsfilenames)
-    for record in map(process, fitsfilenames):
+    progress.max = len(opts.fitsfilenames)
+    for record in map(process, opts.fitsfilenames):
         count_records += 1
         progress.update(count_records, record[0])
         print(*record, sep="\t", file=opts.output)

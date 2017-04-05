@@ -60,6 +60,7 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 __all__ = ("read_sky_map", "write_sky_map")
 
 
+import os
 import math
 import healpy as hp
 import numpy as np
@@ -72,6 +73,13 @@ import lal
 import six
 from astropy.table import Table
 from ..bayestar import moc
+
+
+# FIXME: Remove this after all Astropy monkeypatches are obsolete.
+import astropy
+import distutils.version
+astropy_version = distutils.version.StrictVersion(astropy.__version__)
+
 
 
 def gps_to_iso8601(gps_time):
@@ -183,12 +191,12 @@ def identity(x):
 
 def instruments_to_fits(value):
     if not isinstance(value, six.string_types):
-        value = str(lsctables.ifos_from_instrument_set(value))
+        value = str(lsctables.instrumentsproperty.set(value))
     return value
 
 
 def instruments_from_fits(value):
-    return {str(ifo) for ifo in lsctables.instrument_set_from_ifos(value)}
+    return {str(ifo) for ifo in lsctables.instrumentsproperty.get(value)}
 
 
 DEFAULT_NUNIQ_NAMES = ('PROBDENSITY', 'DISTMU', 'DISTSIGMA', 'DISTNORM')
@@ -208,7 +216,11 @@ FITS_META_MAPPING = (
     ('distmean', 'DISTMEAN', 'Posterior mean distance in Mpc', identity, identity),
     ('diststd', 'DISTSTD', 'Posterior standard deviation of distance in Mpc', identity, identity),
     ('log_bci', 'LOGBCI', 'Log Bayes factor: coherent vs. incoherent', identity, identity),
-    ('log_bsn', 'LOGBSN', 'Log Bayes factor: signal vs. noise', identity, identity))
+    ('log_bsn', 'LOGBSN', 'Log Bayes factor: signal vs. noise', identity, identity),
+    ('vcs_info', 'VCSVERS', 'Software version', lambda _: _.name + ' ' + _.version, None),
+    ('vcs_info', 'VCSSTAT', 'Software version control status', lambda _: _.vcsStatus, None),
+    ('vcs_info', 'VCSID', 'Software git commit hash', lambda _: _.vcsId, None),
+    ('vcs_info', 'DATE-BLD', 'Software build date', lambda _: _.buildDate, None))
 
 
 def write_sky_map(filename, m, **kwargs):
@@ -237,6 +249,74 @@ def write_sky_map(filename, m, **kwargs):
     .. [1] Górski, K.M., Wandelt, B.D., Hivon, E., Hansen, F.K., & Banday, A.J.
         2017. The HEALPix Primer. The Unique Identifier scheme.
         http://healpix.sourceforge.net/html/intronode4.htm#SECTION00042000000000000000
+
+    Examples
+    --------
+
+    Test header contents:
+
+    >>> order = 9
+    >>> nside = 2 ** order
+    >>> npix = hp.nside2npix(nside)
+    >>> prob = np.ones(npix, dtype=np.float) / npix
+
+    >>> import tempfile
+    >>> from lalinference import InferenceVCSInfo as vcs_info
+    >>> with tempfile.NamedTemporaryFile(suffix='.fits') as f:
+    ...     write_sky_map(f.name, prob, nest=True, vcs_info=vcs_info)
+    ...     for card in fits.getheader(f.name, 1).cards:
+    ...         print(str(card).rstrip())
+    XTENSION= 'BINTABLE'           / binary table extension
+    BITPIX  =                    8 / array data type
+    NAXIS   =                    2 / number of array dimensions
+    NAXIS1  =                    8 / length of dimension 1
+    NAXIS2  =              3145728 / length of dimension 2
+    PCOUNT  =                    0 / number of group parameters
+    GCOUNT  =                    1 / number of groups
+    TFIELDS =                    1 / number of table fields
+    TTYPE1  = 'PROB    '
+    TFORM1  = 'D       '
+    TUNIT1  = 'pix-1   '
+    PIXTYPE = 'HEALPIX '           / HEALPIX pixelisation
+    ORDERING= 'NESTED  '           / Pixel ordering scheme: RING, NESTED, or NUNIQ
+    COORDSYS= 'C       '           / Ecliptic, Galactic or Celestial (equatorial)
+    NSIDE   =                  512 / Resolution parameter of HEALPIX
+    INDXSCHM= 'IMPLICIT'           / Indexing: IMPLICIT or EXPLICIT
+    VCSVERS = 'LALInference ...' / Software version
+    VCSSTAT = '...: ...' / Software version control status
+    VCSID   = '...' / Software git commit hash
+    DATE-BLD= '...' / Software build date
+
+    >>> uniq = moc.nest2uniq(np.uint8(order), np.arange(npix, dtype=np.uint64))
+    >>> probdensity = prob / hp.nside2pixarea(nside)
+    >>> moc_data = np.rec.fromarrays(
+    ...     [uniq, probdensity], names=['UNIQ', 'PROBDENSITY'])
+    >>> with tempfile.NamedTemporaryFile(suffix='.fits') as f:
+    ...     write_sky_map(f.name, moc_data, vcs_info=vcs_info)
+    ...     for card in fits.getheader(f.name, 1).cards:
+    ...         print(str(card).rstrip())
+    XTENSION= 'BINTABLE'           / binary table extension
+    BITPIX  =                    8 / array data type
+    NAXIS   =                    2 / number of array dimensions
+    NAXIS1  =                   16 / length of dimension 1
+    NAXIS2  =              3145728 / length of dimension 2
+    PCOUNT  =                    0 / number of group parameters
+    GCOUNT  =                    1 / number of groups
+    TFIELDS =                    2 / number of table fields
+    TTYPE1  = 'UNIQ    '
+    TFORM1  = 'K       '
+    TZERO1  =  9223372036854775808
+    TTYPE2  = 'PROBDENSITY'
+    TFORM2  = 'D       '
+    TUNIT2  = 'sr-1    '
+    PIXTYPE = 'HEALPIX '           / HEALPIX pixelisation
+    ORDERING= 'NUNIQ   '           / Pixel ordering scheme: RING, NESTED, or NUNIQ
+    COORDSYS= 'C       '           / Ecliptic, Galactic or Celestial (equatorial)
+    MOCORDER=                    9 / MOC resolution (best order)
+    VCSVERS = 'LALInference ...' / Software version
+    VCSSTAT = '...: ...' / Software version control status
+    VCSID   = '...' / Software git commit hash
+    DATE-BLD= '...' / Software build date
     """
 
     if isinstance(m, Table) or (isinstance(m, np.ndarray) and m.dtype.names):
@@ -261,7 +341,7 @@ def write_sky_map(filename, m, **kwargs):
         ordering = 'NESTED' if m.meta.pop('nest', False) else 'RING'
         extra_header = [
             ('PIXTYPE', 'HEALPIX', 'HEALPIX pixelisation'),
-            (ordering, 'Pixel ordering scheme: RING, NESTED, or NUNIQ'),
+            ('ORDERING', ordering, 'Pixel ordering scheme: RING, NESTED, or NUNIQ'),
             ('COORDSYS', 'C', 'Ecliptic, Galactic or Celestial (equatorial)'),
             ('NSIDE', hp.npix2nside(len(m)), 'Resolution parameter of HEALPIX'),
             ('INDXSCHM', 'IMPLICIT', 'Indexing: IMPLICIT or EXPLICIT')]
@@ -286,21 +366,34 @@ def write_sky_map(filename, m, **kwargs):
             if not col.unit:
                 col.unit = default_unit
 
-    try:
-        # FIXME: astropy.io.fits.table_to_hdu was added in astropy 1.2.
-        # We must currently support astropy >= 1.1.1 on the LIGO Data Grid's
-        # Scientific Linux 7 computing clusters.
-        fits.table_to_hdu
-    except AttributeError:
-        m.write(filename, format='fits')
-        hdulist = fits.open(filename)
-        _, hdu = hdulist
-        hdu.header.extend(extra_header)
-        hdulist.writeto(filename, clobber=True)
-    else:
+    if astropy_version >= '1.3.1':
         hdu = fits.table_to_hdu(m)
         hdu.header.extend(extra_header)
         hdulist = fits.HDUList([fits.PrimaryHDU(), hdu])
+        hdulist.writeto(filename, clobber=True)
+    else:
+        # FIXME: This code path works around a number of issues with older
+        # versions of Astropy. Remove it once we drop support for
+        # astropy < 1.3.1.
+        #
+        # astropy.io.fits.table_to_hdu was added in astropy 1.2.
+        # We must currently support astropy >= 1.1.1 on the LIGO Data Grid's
+        # Scientific Linux 7 computing clusters.
+        #
+        # With some old versions of astropy that we still have to
+        # support, the astropy.table.Table.write method did not support the
+        # clobber argument. So we have to manually delete the file first so
+        # that astropy.io.fits does not complain that the file exists.
+        #
+        # Also this works around https://github.com/astropy/astropy/pull/5720,
+        # which was fixed in astropy 1.3.1.
+        from ..bayestar.command import rm_f
+        rm_f(filename)
+        m.write(filename, format='fits')
+
+        hdulist = fits.open(filename)
+        _, hdu = hdulist
+        hdu.header.extend(extra_header)
         hdulist.writeto(filename, clobber=True)
 
 

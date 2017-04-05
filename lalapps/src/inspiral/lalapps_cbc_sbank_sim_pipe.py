@@ -21,9 +21,8 @@
 #
 ###############################################################################
 
-import sys, os, shutil
-from itertools import cycle, izip
-import subprocess, socket, tempfile
+import os
+import socket, tempfile
 from optparse import OptionParser
 from glue.pipeline import DeepCopyableConfigParser as dcConfigParser
 from glue import pipeline
@@ -75,7 +74,7 @@ class bank_DAG(pipeline.CondorDAG):
         f.close()
 
 class InspinjJob(inspiral.InspiralAnalysisJob):
-    def __init__(self,cp,dax=False, tag_base="inspinj"):
+    def __init__(self, cp, dax=False, tag_base="inspinj"):
         exec_name = 'lalapps_inspinj'
         extension = 'xml'
         sections = ['inspinj']
@@ -90,7 +89,7 @@ class InspinjJob(inspiral.InspiralAnalysisJob):
 
 
 class InspinjNode(pipeline.CondorDAGNode):
-    def __init__(self,job, dag, tag=None,seed=0, p_node=[]):
+    def __init__(self, job, dag, tag=None, seed=0, p_node=[]):
         pipeline.CondorDAGNode.__init__(self,job)
         self.add_var_opt("seed", seed)
         outputFile = "HL-INJECTIONS_" + str(seed)
@@ -105,7 +104,7 @@ class InspinjNode(pipeline.CondorDAGNode):
         dag.add_node(self)
 
 class BankSimJob(inspiral.InspiralAnalysisJob):
-    def __init__(self,cp,dax=False, tag_base ="banksim"):
+    def __init__(self, cp, dax=False, tag_base ="banksim"):
         exec_name = 'lalapps_cbc_sbank_sim'
         extension = 'xml'
         sections = ['banksim']
@@ -113,8 +112,8 @@ class BankSimJob(inspiral.InspiralAnalysisJob):
         self.add_condor_cmd('request_memory', '3999')
         self.tag_base = tag_base
         self.add_condor_cmd('getenv','True')
-        self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
-        self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+        self.set_stdout_file('logs/'+tag_base+'$(macroid)-$(cluster)-$(process).out')
+        self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(cluster)-$(process).err')
         if cp.has_section("accounting"):
             self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
         if "OMP_NUM_THREADS" in os.environ:
@@ -137,7 +136,7 @@ class BankSimNode(pipeline.CondorDAGNode):
 
 
 class PlotSimJob(inspiral.InspiralAnalysisJob):
-    def __init__(self,cp,dax=False, tag_base="lalapps_cbc_sbank_plot_sim"):
+    def __init__(self, cp, dax=False, tag_base="lalapps_cbc_sbank_plot_sim"):
         exec_name = 'lalapps_cbc_sbank_plot_sim'
         extension = 'h5'
         sections = []
@@ -154,7 +153,7 @@ class PlotSimJob(inspiral.InspiralAnalysisJob):
 
 
 class PlotSimNode(pipeline.CondorDAGNode):
-    def __init__(self,job, dag, h5files=[],p_node=[]):
+    def __init__(self, job, dag, h5files=[],p_node=[]):
         pipeline.CondorDAGNode.__init__(self,job)
         [self.add_file_arg(h5f) for h5f in h5files]
         for p in p_node:
@@ -182,7 +181,7 @@ lalapps_inspinj = /home/sprivite/local/opt/master/bin/lalapps_inspinj
 ;[accounting]
 ;accounting-group = ???
 
-[sbank_sim]
+[banksim]
 ; This section contains the parameters of the entire bank parameter
 ; space you wish to cover. sbank_pipe will divide the space for you.
 template-bank = MYBANK1[:MYAPPROX1]
@@ -197,6 +196,10 @@ mtotal-min = 4
 mratio-max = 97
 duration-min = 0.2
 neighborhood-size = 2.0
+
+[sbank_pipe]
+injections-per-job = 100
+njobs = 100
 
 ;
 ; FOR BANK SIMS

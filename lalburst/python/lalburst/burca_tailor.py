@@ -111,15 +111,15 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 		xml = super(LnLRDensity, self).to_xml(name)
 		instruments =  set(key.split("_", 2)[0] for key in self.densities if key.endswith("_dt"))
 		instruments |= set(key.split("_", 2)[1] for key in self.densities if key.endswith("_dt"))
-		xml.appendChild(ligolw_param.Param.from_pyvalue("instruments", lsctables.ifos_from_instrument_set(instruments)))
+		xml.appendChild(ligolw_param.Param.from_pyvalue("instruments", lsctables.instrumentsproperty.set(instruments)))
 		for key, pdf in self.densities.items():
 			xml.appendChild(pdf.to_xml(key))
 		return xml
 
 	@classmethod
-	def from_xml(cls, name):
+	def from_xml(cls, xml, name):
 		xml = cls.get_xml_root(xml, name)
-		self = cls(lsctables.instrument_set_from_ifos(ligolw_param.get_pyvalue(xml, "instruments")))
+		self = cls(lsctables.instrumentsproperty.get(ligolw_param.get_pyvalue(xml, "instruments")))
 		for key in self.densities:
 			self.densities[key] = rate.BinnedLnPDF.from_xml(xml, key)
 		return self
@@ -145,6 +145,7 @@ class BurcaCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
 		self.numerator += other.numerator
 		self.denominator += other.denominator
 		self.candidates += other.candidates
+		return self
 
 	def copy(self):
 		new = type(self)([])

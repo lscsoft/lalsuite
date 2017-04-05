@@ -19,7 +19,7 @@
 Convenience function to produce a sky map from LIGO-LW rows.
 """
 from __future__ import division
-__author__ = "Leo Singer <leo.singer@ligo.org>"
+__author__ = 'Leo Singer <leo.singer@ligo.org>'
 
 
 import itertools
@@ -37,6 +37,7 @@ from . import postprocess
 from . import timing
 from . import moc
 from .. import healpix_tree
+from .. import InferenceVCSInfo as vcs_info
 try:
     from . import _sky_map
 except ImportError:
@@ -141,7 +142,7 @@ def emcee_sky_map(
 def ligolw_sky_map(
         sngl_inspirals, waveform, f_low,
         min_distance=None, max_distance=None, prior_distance_power=None,
-        method="toa_phoa_snr", psds=None, nside=-1, chain_dump=None,
+        method='toa_phoa_snr', psds=None, nside=-1, chain_dump=None,
         phase_convention='antifindchirp', snr_series=None,
         enable_snr_series=False):
     """Convenience function to produce a sky map from LIGO-LW rows. Note that
@@ -198,7 +199,8 @@ def ligolw_sky_map(
     locations -= np.sum(locations * weights.reshape(-1, 1), axis=0) / np.sum(weights)
 
     if enable_snr_series:
-        log.warn('Enabling input of SNR time series. This feature is UNREVIEWED.')
+        log.warn('Enabling input of SNR time series. '
+                 'This feature is UNREVIEWED.')
     else:
         snr_series = None
 
@@ -247,7 +249,8 @@ def ligolw_sky_map(
     deltaT = snr_series[0].deltaT
     sample_rate = 1 / deltaT
     if any(deltaT != series.deltaT for series in snr_series):
-        raise ValueError('BAYESTAR does not yet support SNR time series with mixed sample rates')
+        raise ValueError('BAYESTAR does not yet support SNR time series with '
+                         'mixed sample rates')
 
     # Ensure that all of the SNR time series have odd lengths.
     if any(len(series.data.data) % 2 == 0 for series in snr_series):
@@ -266,14 +269,17 @@ def ligolw_sky_map(
     # also be the same length.
     nsamples = len(snr_series[0].data.data)
     if any(nsamples != len(series.data.data) for series in snr_series):
-        raise ValueError('BAYESTAR does not yet support SNR time series of mixed lengths')
+        raise ValueError('BAYESTAR does not yet support SNR time series of '
+                         'mixed lengths')
 
     # Perform sanity checks that the middle sample of the SNR time series match
-    # the sngl_inspiral records.
+    # the sngl_inspiral records. Relax valid interval slightly from
+    # +/- 0.5 deltaT to +/- 0.6 deltaT for floating point roundoff error.
     for sngl_inspiral, series in zip(sngl_inspirals, snr_series):
         if np.abs(0.5 * (nsamples - 1) * series.deltaT
-                  + float(series.epoch - sngl_inspiral.end)) >= 0.5 * deltaT:
-            raise ValueError('BAYESTAR expects the SNR time series to be centered on the sngl_inspiral end times')
+                  + float(series.epoch - sngl_inspiral.end)) >= 0.6 * deltaT:
+            raise ValueError('BAYESTAR expects the SNR time series to be '
+                             'centered on the sngl_inspiral end times')
 
     # Extract the TOAs in GPS nanoseconds from the SNR time series, assuming
     # that the trigger happened in the middle.
@@ -326,11 +332,12 @@ def ligolw_sky_map(
     if prior_distance_power is None:
         prior_distance_power = 2
 
-    # Raise an exception if 0 Mpc is the minimum effective distance and the prior
-    # is of the form r**k for k<0
+    # Raise an exception if 0 Mpc is the minimum effective distance and the
+    # prior is of the form r**k for k<0
     if min_distance == 0 and prior_distance_power < 0:
-        raise ValueError(("Prior is a power law r^k with k={}, "
-            + "undefined at min_distance=0").format(prior_distance_power))
+        raise ValueError(('Prior is a power law r^k with k={}, '
+                          'undefined at min_distance=0')
+                          .format(prior_distance_power))
 
     # Rescale distances to horizon distance of most sensitive detector.
     max_horizon = np.max(horizons)
@@ -341,14 +348,14 @@ def ligolw_sky_map(
     # Time and run sky localization.
     log.debug('starting computationally-intensive section')
     start_time = lal.GPSTimeNow()
-    if method == "toa_phoa_snr":
+    if method == 'toa_phoa_snr':
         skymap, log_bci, log_bsn = _sky_map.toa_phoa_snr(
             min_distance, max_distance, prior_distance_power, gmst, sample_rate,
             toas, snr_series, responses, locations, horizons)
         skymap = Table(skymap)
         skymap.meta['log_bci'] = log_bci
         skymap.meta['log_bsn'] = log_bsn
-    elif method == "toa_phoa_snr_mcmc":
+    elif method == 'toa_phoa_snr_mcmc':
         skymap = emcee_sky_map(
             logl=_sky_map.log_likelihood_toa_phoa_snr,
             loglargs=(gmst, sample_rate, toas, snr_series, responses, locations,
@@ -360,7 +367,7 @@ def ligolw_sky_map(
             xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi, 2 * max_abs_t],
             nside=nside, chain_dump=chain_dump, max_horizon=max_horizon * fudge)
     else:
-        raise ValueError("Unrecognized method: %s" % method)
+        raise ValueError('Unrecognized method: %s' % method)
 
     # Convert distance moments to parameters
     distmean = skymap.columns.pop('DISTMEAN')
@@ -392,6 +399,7 @@ def ligolw_sky_map(
     # Fill in metadata and return.
     skymap.meta['creator'] = 'BAYESTAR'
     skymap.meta['origin'] = 'LIGO/Virgo'
+    skymap.meta['vcs_info'] = vcs_info
     skymap.meta['gps_time'] = float(epoch)
     skymap.meta['runtime'] = float(end_time - start_time)
     skymap.meta['instruments'] = {sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals}
@@ -403,20 +411,12 @@ def ligolw_sky_map(
 def gracedb_sky_map(
         coinc_file, psd_file, waveform, f_low, min_distance=None,
         max_distance=None, prior_distance_power=None,
-        method="toa_phoa_snr", nside=-1, chain_dump=None,
+        method='toa_phoa_snr', nside=-1, chain_dump=None,
         f_high_truncate=1.0, enable_snr_series=False):
     # Read input file.
     log.debug('reading coinc file')
     xmldoc, _ = ligolw_utils.load_fileobj(
         coinc_file, contenthandler=ligolw.LSCTablesAndSeriesContentHandler)
-
-    # Locate the tables that we need.
-    coinc_inspiral_table = ligolw_table.get_table(xmldoc,
-        lsctables.CoincInspiralTable.tableName)
-    coinc_map_table = ligolw_table.get_table(xmldoc,
-        lsctables.CoincMapTable.tableName)
-    sngl_inspiral_table = ligolw_table.get_table(xmldoc,
-        lsctables.SnglInspiralTable.tableName)
 
     # Attempt to determine phase convention from process table.
     try:
@@ -432,12 +432,9 @@ def gracedb_sky_map(
         phase_convention = 'antifindchirp'
 
     # Locate the sngl_inspiral rows that we need.
-    coinc_inspiral = coinc_inspiral_table[0]
-    coinc_event_id = coinc_inspiral.coinc_event_id
-    event_ids = [coinc_map.event_id for coinc_map in coinc_map_table
-        if coinc_map.coinc_event_id == coinc_event_id]
-    sngl_inspirals = [next((sngl_inspiral for sngl_inspiral in sngl_inspiral_table
-        if sngl_inspiral.event_id == event_id)) for event_id in event_ids]
+    (_, sngl_inspirals), = ligolw.coinc_and_sngl_inspirals_for_xmldoc(
+        xmldoc, coinc_def=None)
+    sngl_inspirals = list(sngl_inspirals)
 
     # Try to load complex SNR time series.
     snrs = ligolw.snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc)

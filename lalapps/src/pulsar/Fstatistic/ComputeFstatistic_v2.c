@@ -1917,7 +1917,7 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
   if ( !XLALIsREAL4FailNaN(Fcand->log10BSGL) ) /* if --computeBSGL=FALSE, the log10BSGL field was initialised to NAN - do not output it */
     fprintf (fp, "log10BSGL = % .6g;\n", Fcand->log10BSGL );
 
-  fprintf (fp, "\nAmpFisher = \\\n" );
+  fprintf (fp, "\nAmpFisher = " );
   XLALfprintfGSLmatrix ( fp, "%.9g",pulsarParams->AmpFisherMatrix );
 
   return 0;

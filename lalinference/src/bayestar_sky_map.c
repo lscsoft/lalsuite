@@ -846,7 +846,11 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
         /* Adaptively refine the pixels that contain the most probability. */
         pixels = bayestar_pixels_refine(pixels, &len, npix0 / 4);
         if (!pixels)
+        {
+            for (unsigned char k = 0; k < 3; k ++)
+                log_radial_integrator_free(integrators[k]);
             return NULL;
+        }
 
         #pragma omp parallel for
         for (unsigned long i = len - npix0; i < len; i ++)

@@ -342,7 +342,7 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
     # Add CoincInspiral table entry.
     coinc_inspiral = lsctables.CoincInspiral()
     coinc_inspiral.coinc_event_id = coinc.coinc_event_id
-    coinc_inspiral.ifos = lsctables.ifos_from_instrument_set(
+    coinc_inspiral.ifos = lsctables.instrumentsproperty.set(
         sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals)
     coinc_inspiral.end = lal.LIGOTimeGPS(
         sum(sngl_inspiral.end.ns() for sngl_inspiral in sngl_inspirals)

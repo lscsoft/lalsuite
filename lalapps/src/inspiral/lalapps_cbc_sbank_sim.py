@@ -246,7 +246,7 @@ h5file.create_dataset("/match_map", data=match_map, compression='gzip', compress
 h5file.flush()
 
 # merge process and process_params tables, then complete ourselves
-table.reset_next_ids((lsctables.ProcessTable, lsctables.ProcessParamsTable))
+lsctables.reset_next_ids((lsctables.ProcessTable, lsctables.ProcessParamsTable))
 ligolw_add.reassign_ids(fake_xmldoc)
 ligolw_add.merge_ligolws(fake_xmldoc)
 ligolw_add.merge_compatible_tables(fake_xmldoc)

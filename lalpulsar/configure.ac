@@ -157,16 +157,11 @@ fi
 # check for cfitsio
 LALSUITE_USE_CFITSIO
 
-# for boinc enabled build do checks for lal in c++ mode
-if test "${boinc}" = "true" ; then
-  AC_LANG_PUSH([C++])
-fi
+# check for boinc, and modify compiler for lal library checks
+LALSUITE_CHECK_BOINC
 
 # check for lal libraries and headers
 LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
-
-# check that lal was built with BOINC support, if required
-LALSUITE_CHECK_BOINC
 
 # check for lalsupport, needed for test suite
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
@@ -174,10 +169,8 @@ LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALC
 # check for lalxml
 LALSUITE_CHECK_OPT_LIB([LALXML],[${MIN_LALXML_VERSION}],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
-# back to c mode
-if test "${boinc}" = "true" ; then
-  AC_LANG_POP([C++])
-fi
+# finish boinc checks, and restore compiler after lal library checks
+LALSUITE_END_CHECK_BOINC
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG
