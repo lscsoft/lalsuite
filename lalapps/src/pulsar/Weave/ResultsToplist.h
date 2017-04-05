@@ -84,7 +84,7 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   const UINT4 per_nsegments,
   const char *stat_name,
   const char *stat_desc,
-  const int toplist_limit,
+  const UINT4 toplist_limit,
   WeaveResultsToplistItemInit toplist_item_init_fcn,
   LALHeapCmpFcn toplist_item_compare_fcn
   );

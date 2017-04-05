@@ -279,7 +279,7 @@ int main( int argc, char *argv[] )
     );
   XLALRegisterUvarMember(
     toplist_limit, UINT4, 'n', OPTIONAL,
-    "Maximum number of candidates to return in an output toplist; if 0, all candidates are returned. "
+    "Maximum number of candidates to return in an output toplist. "
     );
   XLALRegisterUvarMember(
     per_detector, BOOLEAN, 'D', DEVELOPER,
@@ -413,6 +413,9 @@ int main( int argc, char *argv[] )
   //
   // - Output control
   //
+  XLALUserVarCheck( &should_exit,
+                    uvar->toplist_limit > 0,
+                    UVAR_STR( toplist_limit ) " must be strictly positive" );
 
   //
   // - Checkpointing

@@ -67,7 +67,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
   const LALStringVector *per_detectors,
   const UINT4 per_nsegments,
   const WeaveToplistType toplist_types,
-  const int toplist_limit
+  const UINT4 toplist_limit
   );
 void XLALWeaveOutputResultsDestroy(
   WeaveOutputResults *out

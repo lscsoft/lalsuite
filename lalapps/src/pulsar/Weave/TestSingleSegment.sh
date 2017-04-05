@@ -35,7 +35,7 @@ echo
 echo "=== Perform fully-coherent search ==="
 set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
-    --toplists=mean2F --toplist-limit=0 --per-detector --misc-info \
+    --toplists=mean2F --toplist-limit=54321 --per-detector --misc-info \
     --setup-file=WeaveSetup.fits --sft-files='*.sft' --Fstat-method=DemodBest \
     --freq=55.5~1e-4 --f1dot=-2e-9,0 --semi-max-mismatch=9
 set +x

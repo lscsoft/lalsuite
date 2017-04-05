@@ -46,6 +46,8 @@ struct tagWeaveOutputResults {
   UINT4 per_nsegments;
   /// Names of selected output toplist types
   char *toplist_type_names;
+  // Maximum size of toplists
+  UINT4 toplist_limit;
   /// Number of output results toplists
   size_t ntoplists;
   /// Output result toplists
@@ -97,13 +99,14 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
   const LALStringVector *per_detectors,
   const UINT4 per_nsegments,
   const WeaveToplistType toplist_types,
-  const int toplist_limit
+  const UINT4 toplist_limit
   )
 {
 
   // Check input
   XLAL_CHECK_NULL( ref_time != NULL, XLAL_EFAULT );
   XLAL_CHECK_NULL( toplist_types > 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL( toplist_limit > 0, XLAL_EINVAL );
 
   // Allocate memory
   WeaveOutputResults *out = XLALCalloc( 1, sizeof( *out ) );
@@ -113,6 +116,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
   out->ref_time = *ref_time;
   out->nspins = nspins;
   out->per_nsegments = per_nsegments;
+  out->toplist_limit = toplist_limit;
 
   // Copy list of detectors
   if ( per_detectors != NULL ) {
@@ -208,6 +212,9 @@ int XLALWeaveOutputResultsWrite(
   // Write names of selected output toplist types
   XLAL_CHECK( XLALFITSHeaderWriteString( file, "toplists", out->toplist_type_names, "names of selected toplist types" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  // Write maximum size of toplists
+  XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "toplimit", out->toplist_limit, "maximum size of toplists" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   // Write toplists
   for ( size_t i = 0; i < out->ntoplists; ++i ) {
     XLAL_CHECK( XLALWeaveResultsToplistWrite( file, out->toplists[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -256,6 +263,10 @@ int XLALWeaveOutputResultsReadAppend(
   char *toplist_type_names = NULL;
   XLAL_CHECK( XLALFITSHeaderReadString( file, "toplists", &toplist_type_names ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  // Read maximum size of toplists
+  UINT4 toplist_limit = 0;
+  XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "toplimit", &toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   if ( *out == NULL ) {
 
     // Parse names of selected output toplist types
@@ -263,7 +274,7 @@ int XLALWeaveOutputResultsReadAppend(
     XLAL_CHECK( XLALParseStringValueAsUserFlag( &toplist_types, &WeaveToplistTypeChoices, toplist_type_names ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Create new output results
-    *out = XLALWeaveOutputResultsCreate( &ref_time, nspins, per_detectors, per_nsegments, toplist_types, 0 );
+    *out = XLALWeaveOutputResultsCreate( &ref_time, nspins, per_detectors, per_nsegments, toplist_types, toplist_limit );
     XLAL_CHECK( *out != NULL, XLAL_EFUNC );
 
   } else {

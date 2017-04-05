@@ -335,7 +335,7 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   const UINT4 per_nsegments,
   const char *stat_name,
   const char *stat_desc,
-  const int toplist_limit,
+  const UINT4 toplist_limit,
   WeaveResultsToplistItemInit toplist_item_init_fcn,
   LALHeapCmpFcn toplist_item_compare_fcn
   )
@@ -344,7 +344,7 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   // Check input
   XLAL_CHECK_NULL( stat_name != NULL, XLAL_EFAULT );
   XLAL_CHECK_NULL( stat_desc != NULL, XLAL_EFAULT );
-  XLAL_CHECK_NULL( toplist_limit >= 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL( toplist_limit > 0, XLAL_EINVAL );
 
   // Allocate memory
   WeaveResultsToplist *toplist = XLALCalloc( 1, sizeof( *toplist ) );
@@ -497,26 +497,18 @@ int XLALWeaveResultsToplistWrite(
   XLAL_CHECK( file != NULL, XLAL_EFAULT );
   XLAL_CHECK( toplist != NULL, XLAL_EFAULT );
 
-  // Write toplist
-  {
+  // Format name and description of statistic
+  char name[256];
+  snprintf( name, sizeof( name ), "%s_toplist", toplist->stat_name );
+  char desc[256];
+  snprintf( desc, sizeof( desc ), "toplist ranked by %s", toplist->stat_desc );
 
-    // Format name and description of statistic
-    char name[256];
-    snprintf( name, sizeof( name ), "%s_toplist", toplist->stat_name );
-    char desc[256];
-    snprintf( desc, sizeof( desc ), "toplist ranked by %s", toplist->stat_desc );
+  // Open FITS table for writing and initialise
+  XLAL_CHECK( XLALFITSTableOpenWrite( file, name, desc ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( toplist_fits_table_init( file, toplist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Open FITS table for writing and initialise
-    XLAL_CHECK( XLALFITSTableOpenWrite( file, name, desc ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( toplist_fits_table_init( file, toplist ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    // Write all heap items to FITS table
-    XLAL_CHECK( XLALHeapVisit( toplist->heap, toplist_fits_table_write_visitor, file ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    // Write maximum size of heap to FITS header
-    XLAL_CHECK( XLALFITSHeaderWriteINT4( file, "toplimit", XLALHeapMaxSize( toplist->heap ), "maximum size of toplist" ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  }
+  // Write all heap items to FITS table
+  XLAL_CHECK( XLALHeapVisit( toplist->heap, toplist_fits_table_write_visitor, file ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
@@ -535,43 +527,29 @@ int XLALWeaveResultsToplistReadAppend(
   XLAL_CHECK( file != NULL, XLAL_EFAULT );
   XLAL_CHECK( toplist != NULL, XLAL_EFAULT );
 
-  // Read and append to toplist
-  {
+  // Format name of statistic
+  char name[256];
+  snprintf( name, sizeof( name ), "%s_toplist", toplist->stat_name );
 
-    // Format name of statistic
-    char name[256];
-    snprintf( name, sizeof( name ), "%s_toplist", toplist->stat_name );
+  // Open FITS table for reading and initialise
+  UINT8 nrows = 0;
+  XLAL_CHECK( XLALFITSTableOpenRead( file, name, &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( toplist_fits_table_init( file, toplist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Open FITS table for reading and initialise
-    UINT8 nrows = 0;
-    XLAL_CHECK( XLALFITSTableOpenRead( file, name, &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( toplist_fits_table_init( file, toplist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Read all items from FITS table
+  while ( nrows > 0 ) {
 
-    // Read maximum size of heap from FITS header
-    INT4 toplist_limit = 0;
-    XLAL_CHECK( XLALFITSHeaderReadINT4( file, "toplimit", &toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    // Maximize size of heap
-    if ( toplist_limit > XLALHeapSize( toplist->heap ) ) {
-      XLAL_CHECK( XLALHeapResize( toplist->heap, toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC );
+    // Create a new toplist item if needed
+    if ( toplist->saved_item == NULL ) {
+      toplist->saved_item = toplist_item_create( toplist );
+      XLAL_CHECK( toplist->saved_item != NULL, XLAL_ENOMEM );
     }
 
-    // Read all items from FITS table
-    while ( nrows > 0 ) {
+    // Read item from FITS table
+    XLAL_CHECK( XLALFITSTableReadRow( file, toplist->saved_item, &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-      // Create a new toplist item if needed
-      if ( toplist->saved_item == NULL ) {
-        toplist->saved_item = toplist_item_create( toplist );
-        XLAL_CHECK( toplist->saved_item != NULL, XLAL_ENOMEM );
-      }
-
-      // Read item from FITS table
-      XLAL_CHECK( XLALFITSTableReadRow( file, toplist->saved_item, &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      // Add item to heap
-      XLAL_CHECK( XLALHeapAdd( toplist->heap, ( void ** ) &toplist->saved_item ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    }
+    // Add item to heap
+    XLAL_CHECK( XLALHeapAdd( toplist->heap, ( void ** ) &toplist->saved_item ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   }
 
