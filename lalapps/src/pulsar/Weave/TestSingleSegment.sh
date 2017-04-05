@@ -89,26 +89,26 @@ echo
 
 echo "=== Recompute lalapps_Weave F-statistics using lalapps_ComputeFstatistic_v2 ==="
 set -x
-${fstatdir}/lalapps_ComputeFstatistic_v2 --outputFstat=CFSv2Fstats.txt --outputSingleFstats --refTime=${ref_time} \
+${fstatdir}/lalapps_ComputeFstatistic_v2 --outputFstat=RefFstats.txt --outputSingleFstats --refTime=${ref_time} \
     --minStartTime=${start_time} --maxStartTime=${end_time} --DataFiles='*.sft' \
     --TwoFthreshold=0 --FstatMethod=DemodBest --gridType=6 --gridFile=WeaveBank.txt
-sed -i '/^%/d' CFSv2Fstats.txt
-awk '{print $1, $2, $3, $4, $5, $6, $8}' CFSv2Fstats.txt > CFSv2FstatsH1.txt
-awk '{print $1, $2, $3, $4, $5, $6, $9}' CFSv2Fstats.txt > CFSv2FstatsL1.txt
+sed -i '/^%/d' RefFstats.txt
+awk '{print $1, $2, $3, $4, $5, $6, $8}' RefFstats.txt > RefFstatsH1.txt
+awk '{print $1, $2, $3, $4, $5, $6, $9}' RefFstats.txt > RefFstatsL1.txt
 set +x
 echo
 
 echo "=== Compare F-statistics from lalapps_Weave to lalapps_ComputeFstatistic_v2 ==="
 set -x
-${fstatdir}/lalapps_compareFstats --Fname1=WeaveFstats.txt --Fname2=CFSv2Fstats.txt
-${fstatdir}/lalapps_compareFstats --Fname1=WeaveFstatsH1.txt --Fname2=CFSv2FstatsH1.txt
-${fstatdir}/lalapps_compareFstats --Fname1=WeaveFstatsL1.txt --Fname2=CFSv2FstatsL1.txt
+${fstatdir}/lalapps_compareFstats --Fname1=WeaveFstats.txt --Fname2=RefFstats.txt
+${fstatdir}/lalapps_compareFstats --Fname1=WeaveFstatsH1.txt --Fname2=RefFstatsH1.txt
+${fstatdir}/lalapps_compareFstats --Fname1=WeaveFstatsL1.txt --Fname2=RefFstatsL1.txt
 set +x
 echo
 
 echo "=== Compute F-statistic at exact injected signal parameters using lalapps_ComputeFstatistic_v2 ==="
 set -x
-${fstatdir}/lalapps_ComputeFstatistic_v2 --outputFstat=CFSv2Exact.txt --outputSingleFstats --refTime=${ref_time} \
+${fstatdir}/lalapps_ComputeFstatistic_v2 --outputFstat=RefExact.txt --outputSingleFstats --refTime=${ref_time} \
     --minStartTime=${start_time} --maxStartTime=${end_time} --DataFiles='*.sft' \
     --TwoFthreshold=0 --FstatMethod=ResampBest `echo "${inject_params}" | sed 's/^/--/;s/; / --/g'`
 set +x
@@ -116,7 +116,7 @@ echo
 
 echo "=== Compare F-statistic at exact injected signal parameters with loudest F-statistic found by lalapps_Weave ==="
 set -x
-coh2F_exact=`cat CFSv2Exact.txt | sed -n '/^[^%]/{p;q}' | awk '{print $7}'`
+coh2F_exact=`cat RefExact.txt | sed -n '/^[^%]/{p;q}' | awk '{print $7}'`
 ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=mean2F][#row == 1]" > tmp
 coh2F_loud=`cat tmp | sed "/^#/d" | xargs printf "%g"`
 # Value of 'mean_mu' was calculated by:

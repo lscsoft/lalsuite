@@ -86,28 +86,28 @@ for seg in 1 2 3; do
 
     echo "=== Segment #${seg}: Recompute coherent F-statistics using lalapps_ComputeFstatistic_v2 ==="
     set -x
-    ${fstatdir}/lalapps_ComputeFstatistic_v2 --outputFstat=CFSv2Seg${seg}Fstats.txt --outputSingleFstats --refTime=${ref_time} --minStartTime=${start_time} --maxStartTime=${end_time} --DataFiles='*.sft' --TwoFthreshold=0 --FstatMethod=DemodBest --gridType=6 --gridFile=WeaveSeg${seg}CohBank.txt
-    sed -i '/^%/d' CFSv2Seg${seg}Fstats.txt
+    ${fstatdir}/lalapps_ComputeFstatistic_v2 --outputFstat=RefSeg${seg}Fstats.txt --outputSingleFstats --refTime=${ref_time} --minStartTime=${start_time} --maxStartTime=${end_time} --DataFiles='*.sft' --TwoFthreshold=0 --FstatMethod=DemodBest --gridType=6 --gridFile=WeaveSeg${seg}CohBank.txt
+    sed -i '/^%/d' RefSeg${seg}Fstats.txt
     if [ ${seg} -eq 3 ]; then
-        awk '{print $1, $2, $3, $4, $5, $6, $7, $8, -999}' CFSv2Seg${seg}Fstats.txt > tmp
-        mv -f tmp CFSv2Seg${seg}Fstats.txt
+        awk '{print $1, $2, $3, $4, $5, $6, $7, $8, -999}' RefSeg${seg}Fstats.txt > tmp
+        mv -f tmp RefSeg${seg}Fstats.txt
     fi
-    awk '{print $1, $2, $3, $4, $5, $6, $8}' CFSv2Seg${seg}Fstats.txt > CFSv2Seg${seg}FstatsH1.txt
-    awk '{print $1, $2, $3, $4, $5, $6, $9}' CFSv2Seg${seg}Fstats.txt > CFSv2Seg${seg}FstatsL1.txt
+    awk '{print $1, $2, $3, $4, $5, $6, $8}' RefSeg${seg}Fstats.txt > RefSeg${seg}FstatsH1.txt
+    awk '{print $1, $2, $3, $4, $5, $6, $9}' RefSeg${seg}Fstats.txt > RefSeg${seg}FstatsL1.txt
     set +x
     echo
 
     echo "=== Segment #${seg}: Compare coherent F-statistics from lalapps_Weave to lalapps_ComputeFstatistic_v2 ==="
     set -x
-    ${fstatdir}/lalapps_compareFstats --Fname1=WeaveSeg${seg}CohBankCohFstats.txt --Fname2=CFSv2Seg${seg}Fstats.txt
-    ${fstatdir}/lalapps_compareFstats --Fname1=WeaveSeg${seg}CohBankCohFstatsH1.txt --Fname2=CFSv2Seg${seg}FstatsH1.txt
-    ${fstatdir}/lalapps_compareFstats --Fname1=WeaveSeg${seg}CohBankCohFstatsL1.txt --Fname2=CFSv2Seg${seg}FstatsL1.txt
+    ${fstatdir}/lalapps_compareFstats --Fname1=WeaveSeg${seg}CohBankCohFstats.txt --Fname2=RefSeg${seg}Fstats.txt
+    ${fstatdir}/lalapps_compareFstats --Fname1=WeaveSeg${seg}CohBankCohFstatsH1.txt --Fname2=RefSeg${seg}FstatsH1.txt
+    ${fstatdir}/lalapps_compareFstats --Fname1=WeaveSeg${seg}CohBankCohFstatsL1.txt --Fname2=RefSeg${seg}FstatsL1.txt
     set +x
     echo
 
     echo "=== Segment #${seg}: Compute F-statistic at exact injected signal parameters using lalapps_ComputeFstatistic_v2 ==="
     set -x
-    ${fstatdir}/lalapps_ComputeFstatistic_v2 --outputFstat=CFSv2Seg${seg}Exact.txt --outputSingleFstats --refTime=${ref_time} \
+    ${fstatdir}/lalapps_ComputeFstatistic_v2 --outputFstat=RefSeg${seg}Exact.txt --outputSingleFstats --refTime=${ref_time} \
         --minStartTime=${start_time} --maxStartTime=${end_time} --DataFiles='*.sft' \
         --TwoFthreshold=0 --FstatMethod=ResampBest `echo "${inject_params}" | sed 's/^/--/;s/; / --/g'`
     set +x
@@ -132,25 +132,25 @@ echo
 
 echo "=== Add coherent F-statistics computed by lalapps_ComputeFstatistic_v2 over segments ==="
 set -x
-paste WeaveSemiBank.txt CFSv2Seg1Fstats.txt CFSv2Seg2Fstats.txt CFSv2Seg3Fstats.txt > WeaveSemiBankCFSv2AllSegFstats.txt
-awk '{print $1, $2, $3, $4, $5, $6, ($13 + $22 + $31) / 3}' WeaveSemiBankCFSv2AllSegFstats.txt > CFSv2SemiFstats.txt
-awk '{print $1, $2, $3, $4, $5, $6, ($14 + $23 + $32) / 3}' WeaveSemiBankCFSv2AllSegFstats.txt > CFSv2SemiFstatsH1.txt
-awk '{print $1, $2, $3, $4, $5, $6, ($15 + $24      ) / 2}' WeaveSemiBankCFSv2AllSegFstats.txt > CFSv2SemiFstatsL1.txt
+paste WeaveSemiBank.txt RefSeg1Fstats.txt RefSeg2Fstats.txt RefSeg3Fstats.txt > WeaveSemiBankRefAllSegFstats.txt
+awk '{print $1, $2, $3, $4, $5, $6, ($13 + $22 + $31) / 3}' WeaveSemiBankRefAllSegFstats.txt > RefSemiFstats.txt
+awk '{print $1, $2, $3, $4, $5, $6, ($14 + $23 + $32) / 3}' WeaveSemiBankRefAllSegFstats.txt > RefSemiFstatsH1.txt
+awk '{print $1, $2, $3, $4, $5, $6, ($15 + $24      ) / 2}' WeaveSemiBankRefAllSegFstats.txt > RefSemiFstatsL1.txt
 set +x
 echo
 
 echo "=== Compare semicoherent F-statistics from lalapps_Weave to lalapps_ComputeFstatistic_v2 ==="
 set -x
-${fstatdir}/lalapps_compareFstats --Fname1=WeaveSemiFstats.txt --Fname2=CFSv2SemiFstats.txt
-${fstatdir}/lalapps_compareFstats --Fname1=WeaveSemiFstatsH1.txt --Fname2=CFSv2SemiFstatsH1.txt
-${fstatdir}/lalapps_compareFstats --Fname1=WeaveSemiFstatsL1.txt --Fname2=CFSv2SemiFstatsL1.txt
+${fstatdir}/lalapps_compareFstats --Fname1=WeaveSemiFstats.txt --Fname2=RefSemiFstats.txt
+${fstatdir}/lalapps_compareFstats --Fname1=WeaveSemiFstatsH1.txt --Fname2=RefSemiFstatsH1.txt
+${fstatdir}/lalapps_compareFstats --Fname1=WeaveSemiFstatsL1.txt --Fname2=RefSemiFstatsL1.txt
 set +x
 echo
 
 echo "=== Compare F-statistic at exact injected signal parameters with loudest F-statistic found by lalapps_Weave ==="
 set -x
-paste CFSv2Seg1Exact.txt CFSv2Seg2Exact.txt CFSv2Seg3Exact.txt > CFSv2AllSegExact.txt
-coh2F_exact=`cat CFSv2AllSegExact.txt | sed -n '/^[^%]/{p;q}' | awk '{print ($7 + $16 + $25) / 3}'`
+paste RefSeg1Exact.txt RefSeg2Exact.txt RefSeg3Exact.txt > RefAllSegExact.txt
+coh2F_exact=`cat RefAllSegExact.txt | sed -n '/^[^%]/{p;q}' | awk '{print ($7 + $16 + $25) / 3}'`
 ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=mean2F][#row == 1]" > tmp
 coh2F_loud=`cat tmp | sed "/^#/d" | xargs printf "%g"`
 # Value of 'mean_mu' was calculated by:
