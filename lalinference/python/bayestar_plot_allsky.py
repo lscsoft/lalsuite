@@ -34,6 +34,9 @@ import argparse
 from lalinference.bayestar import command
 parser = command.ArgumentParser(parents=[command.figure_parser])
 parser.add_argument(
+    '--annotate', default=False, action='store_true',
+    help='annotate plot with information about the event')
+parser.add_argument(
     '--contour', metavar='PERCENT', type=float, nargs='+',
     help='plot contour enclosing this percentage of'
     ' probability mass [may be specified multiple times, default: none]')
@@ -82,7 +85,8 @@ else:
     dlon = 0
 
 # Convert sky map from probability to probability per square degree.
-probperdeg2 = skymap / hp.nside2pixarea(nside, degrees=True)
+deg2perpix = hp.nside2pixarea(nside, degrees=True)
+probperdeg2 = skymap / deg2perpix
 
 # Plot sky map.
 vmax = probperdeg2.max()
@@ -137,6 +141,17 @@ for ra, dec in radecs:
 
 # Add a white outline to all text to make it stand out from the background.
 plot.outline_text(ax)
+
+if opts.annotate:
+    text = 'event ID: {}'.format(metadata['objid'])
+    text += '\nFITS file: {}'.format(opts.input.name)
+    if opts.contour:
+        pp = np.round(opts.contour).astype(int)
+        ii = np.round(np.searchsorted(np.sort(cls), opts.contour) *
+                      deg2perpix).astype(int)
+        for i, p in zip(ii, pp):
+            text += '\n{:d}% area: {:d} deg$^2$'.format(p, i, grouping=True)
+    ax.text(1, 1, text, transform=ax.transAxes, horizontalalignment='right')
 
 # Show or save output.
 opts.output()
