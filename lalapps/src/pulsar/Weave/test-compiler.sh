@@ -1,18 +1,14 @@
 # Driver script for Weave tests
 set -e
 echo "--- Test compiler is $0 ---"
+echo
 
 # Skip test if requested
 if test "x$1" = xskip; then
     echo "--- Skipping test $2 ---"
+    echo
     exit 77;
 fi
-
-# Test script name and location
-scriptname=$(expr "X$1" : "X.*/\([^/]*\)\.sh$")
-scriptdir=$(cd $(expr "X$1" : "X\(.*\)/[^/]*$") && pwd)
-script="${scriptdir}/${scriptname}.sh"
-[ -f ${script} ]
 
 # Source and build directories
 [ "X${LAL_TEST_SRCDIR}" != X ]
@@ -26,22 +22,38 @@ export sftdir=$(cd ${builddir}/../SFTTools && pwd)
 export fitsdir=$(cd ${builddir}/../FITSTools && pwd)
 export fstatdir=$(cd ${builddir}/../Fstatistic && pwd)
 
+# Test script name and location
+scriptname=$(expr "X$1" : "X.*/\([^/]*\)\.sh$")
+script="${srcdir}/${scriptname}.sh"
+[ -f "${script}" ]
+
 # Create directory for test
 testdir="${builddir}/${scriptname}.testdir"
+echo "--- Running test in directory ${testdir} ---"
+echo
+rm -rf "${testdir}"
+[ ! -d "${testdir}" ]
 mkdir -p "${testdir}"
 
+# Extract any reference results
+reftarball="${srcdir}/${scriptname}.tar.gz"
+if [ -f ${reftarball} ]; then
+    tar xf ${reftarball}
+fi
+ls -l "${testdir}"
+echo
+
 # Run test in test directory
-echo "--- Running test in directory ${testdir} ---"
-cd "${testdir}"
-rm -rf *
-[ "x`ls -A .`" = x ]
 echo "--- Running test ${script} ---"
 echo
+cd "${testdir}"
 time -p ${SHELL} -c "set -e; source ${script}; echo '--- Successfully ran test ${script} ---'"
+echo
 cd "${builddir}"
 
 # Remove test directory, unless NOCLEANUP is set
 if [ "X${NOCLEANUP}" = X ]; then
     echo "--- Removing directory ${testdir} ---"
+    echo
     rm -rf "${testdir}"
 fi
