@@ -38,7 +38,7 @@ extern "C" {
 #endif
 
 ///
-/// \name Routines which handle toplists of results
+/// \name Functions which handle toplists of results
 ///
 /// @{
 

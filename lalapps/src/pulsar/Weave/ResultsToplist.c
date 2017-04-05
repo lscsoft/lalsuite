@@ -47,7 +47,7 @@ struct tagWeaveResultsToplist {
 };
 
 ///
-/// \name Internal routines
+/// \name Internal functions
 ///
 /// @{
 

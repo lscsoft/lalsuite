@@ -35,7 +35,7 @@ extern "C" {
 #endif
 
 ///
-/// \name Routines which cache computed coherent results
+/// \name Functions which cache computed coherent results
 ///
 /// @{
 

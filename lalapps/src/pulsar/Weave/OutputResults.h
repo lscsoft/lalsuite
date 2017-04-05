@@ -37,7 +37,7 @@ extern "C" {
 #endif
 
 ///
-/// \name Routines which handle the output results
+/// \name Functions which handle the output results
 ///
 /// @{
 
@@ -52,7 +52,7 @@ typedef enum {
 } WeaveToplistType;
 
 ///
-/// Static array of all #WeaveToplistType choices, for use by the UserInput module parsing routines
+/// Static array of all #WeaveToplistType choices, for use by the UserInput module parsing functions
 ///
 extern const UserChoices WeaveToplistTypeChoices;
 

@@ -55,7 +55,7 @@ struct tagWeaveOutputResults {
 };
 
 ///
-/// \name Internal routines
+/// \name Internal functions
 ///
 /// @{
 

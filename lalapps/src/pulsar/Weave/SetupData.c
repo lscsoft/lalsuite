@@ -28,7 +28,7 @@
 #include <lal/FITSPulsarIO.h>
 
 ///
-/// \name Internal routines
+/// \name Internal functions
 ///
 /// @{
 

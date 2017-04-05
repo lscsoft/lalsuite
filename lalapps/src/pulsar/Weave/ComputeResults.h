@@ -35,7 +35,7 @@ extern "C" {
 #endif
 
 ///
-/// \name Routines which compute coherent and semicoherent results
+/// \name Functions which compute coherent and semicoherent results
 ///
 /// @{
 

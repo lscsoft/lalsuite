@@ -96,7 +96,7 @@ struct tagWeaveSemiPartials {
 };
 
 ///
-/// \name Internal routines
+/// \name Internal functions
 ///
 /// @{
 

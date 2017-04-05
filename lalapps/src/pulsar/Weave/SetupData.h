@@ -36,7 +36,7 @@ extern "C" {
 #endif
 
 ///
-/// \name Routines which handle the setup data
+/// \name Functions which handle the setup data
 ///
 /// @{
 

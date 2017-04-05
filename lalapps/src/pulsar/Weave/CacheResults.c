@@ -117,7 +117,7 @@ struct tagWeaveCacheQueries {
 };
 
 ///
-/// \name Internal routines
+/// \name Internal functions
 ///
 /// @{
 
