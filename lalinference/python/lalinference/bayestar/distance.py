@@ -39,7 +39,7 @@ from ._distance import *
 
 __all__ = tuple(_ for _ in _distance.__dict__ if not _.startswith('_')) + (
     'ud_grade', 'conditional_kde', 'cartesian_kde_to_moments', 'principal_axes',
-    'parameters_to_moments', 'find_injection_distance')
+    'parameters_to_moments')
 
 
 def _add_newdoc_ufunc(func, doc):
@@ -552,8 +552,3 @@ def parameters_to_marginal_moments(prob, distmu, distsigma):
     rbar = (prob * distmean).sum()
     r2bar = (prob * (np.square(diststd) + np.square(distmean))).sum()
     return rbar, np.sqrt(r2bar - np.square(rbar))
-
-
-def find_injection_distance(true_dist, prob, distmu, distsigma, distnorm):
-    return np.sum(prob * conditional_cdf(
-        true_dist, distmu, distsigma, distnorm))
