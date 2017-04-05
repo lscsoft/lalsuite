@@ -85,30 +85,6 @@ typedef int ( *WeavePhysicalToLattice )( gsl_vector *out_latt, const PulsarDoppl
 ///
 typedef int ( *WeaveLatticeToPhysical )( PulsarDopplerParams *out_phys, const gsl_vector *in_latt, const gsl_vector *ref_latt, const void *transf_data );
 
-///
-/// Output miscellaneous per-segment information
-///
-typedef struct tagWeaveOutputMiscPerSegInfo {
-  /// Start time of segment
-  LIGOTimeGPS segment_start;
-  /// End time of segment
-  LIGOTimeGPS segment_end;
-  /// Timestamp of first SFT from each detector
-  LIGOTimeGPS sft_first[PULSAR_MAX_DETECTORS];
-  /// Timestamp of last SFT from each detector
-  LIGOTimeGPS sft_last[PULSAR_MAX_DETECTORS];
-  /// Number of SFTs from each detector
-  INT4 sft_count[PULSAR_MAX_DETECTORS];
-  /// Minimum of frequency range covered by SFTs
-  REAL8 sft_min_cover_freq;
-  /// Maximum of frequency range covered by SFTs
-  REAL8 sft_max_cover_freq;
-  /// Number of coherent results computed once
-  INT4 coh_n1comp;
-  /// Number of recomputed coherent results
-  INT4 coh_nrecomp;
-} WeaveOutputMiscPerSegInfo;
-
 #ifdef __cplusplus
 }
 #endif

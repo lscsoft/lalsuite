@@ -101,7 +101,8 @@ int XLALWeaveCacheRetrieve(
   UINT4 *coh_offset,
   UINT8 *coh_nfbk,
   UINT8 *coh_nres,
-  WeaveOutputMiscPerSegInfo *per_seg_info
+  UINT4 *coh_n1comp,
+  UINT4 *coh_nrecomp
   );
 
 /// @}

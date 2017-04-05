@@ -589,7 +589,8 @@ int XLALWeaveCacheRetrieve(
   UINT4 *coh_offset,
   UINT8 *coh_nfbk,
   UINT8 *coh_nres,
-  WeaveOutputMiscPerSegInfo *per_seg_info
+  UINT4 *coh_n1comp,
+  UINT4 *coh_nrecomp
   )
 {
 
@@ -602,6 +603,8 @@ int XLALWeaveCacheRetrieve(
   XLAL_CHECK( coh_offset != NULL, XLAL_EFAULT );
   XLAL_CHECK( coh_nfbk != NULL, XLAL_EFAULT );
   XLAL_CHECK( coh_nres != NULL, XLAL_EFAULT );
+  XLAL_CHECK( coh_n1comp != NULL, XLAL_EFAULT );
+  XLAL_CHECK( coh_nrecomp != NULL, XLAL_EFAULT );
 
   // See if coherent results are already cached
   const cache_item find_key = { .partition_index = queries->partition_index, .coh_index = queries->coh_index[query_index] };
@@ -699,7 +702,7 @@ int XLALWeaveCacheRetrieve(
       if ( computed == NULL ) {
 
         // Coherent results have not been computed before: increment the number of results computed once
-        per_seg_info->coh_n1comp += coh_nfreqs;
+        *coh_n1comp += coh_nfreqs;
 
         // Create a copy of the cache item key, and add it to the hash
         // table to indicate these coherent results have been computed
@@ -711,7 +714,7 @@ int XLALWeaveCacheRetrieve(
       } else {
 
         // Coherent results have been computed previously: increment the number of recomputed results
-        per_seg_info->coh_nrecomp += coh_nfreqs;
+        *coh_nrecomp += coh_nfreqs;
 
       }
 

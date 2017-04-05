@@ -385,58 +385,6 @@ int XLALWeaveOutputResultsCompare(
 
 }
 
-///
-/// Write miscellaneous per-segment information to a FITS file
-///
-int XLALWeaveOutputMiscPerSegInfoWrite(
-  FITSFile *file,
-  const WeaveSetupData *setup,
-  const BOOLEAN write_SFT_info,
-  const UINT4 nsegments,
-  const WeaveOutputMiscPerSegInfo *per_seg_info
-  )
-{
-
-  // Check input
-  XLAL_CHECK( file != NULL, XLAL_EFAULT );
-  XLAL_CHECK( setup != NULL, XLAL_EFAULT );
-  XLAL_CHECK( nsegments > 0, XLAL_EINVAL );
-  XLAL_CHECK( per_seg_info != NULL, XLAL_EFAULT );
-
-  // Begin FITS table
-  XLAL_CHECK( XLALFITSTableOpenWrite( file, "per_seg_info", "miscellaneous per-segment information" ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // Describe FITS table
-  {
-    char col_name[64];
-    XLAL_FITS_TABLE_COLUMN_BEGIN( WeaveOutputMiscPerSegInfo );
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, segment_start ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, segment_end ) == XLAL_SUCCESS, XLAL_EFUNC );
-    if ( write_SFT_info ) {
-      for ( size_t i = 0; i < setup->detectors->length; ++i ) {
-        snprintf( col_name, sizeof( col_name ), "sft_first_%s", setup->detectors->data[i] );
-        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, GPSTime, sft_first[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-        snprintf( col_name, sizeof( col_name ), "sft_last_%s", setup->detectors->data[i] );
-        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, GPSTime, sft_last[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-        snprintf( col_name, sizeof( col_name ), "sft_count_%s", setup->detectors->data[i] );
-        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, INT4, sft_count[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-      }
-      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_min_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_max_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, coh_n1comp ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, coh_nrecomp ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
-
-  // Write FITS table
-  for ( size_t i = 0; i < nsegments; ++i ) {
-    XLAL_CHECK( XLALFITSTableWriteRow( file, &per_seg_info[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
-
-  return XLAL_SUCCESS;
-
-}
-
 // Local Variables:
 // c-file-style: "linux"
 // c-basic-offset: 2
