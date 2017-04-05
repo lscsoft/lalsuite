@@ -45,6 +45,11 @@ InspiralCoincDef = lsctables.CoincDef(search = u"inspiral", search_coinc_type = 
 InspiralSCExactCoincDef = lsctables.CoincDef(search = u"inspiral", search_coinc_type = 3, description = u"sim_inspiral<-->coinc_event coincidences (exact)")
 
 
+# FIXME: This should be imported from pycbc, or even better, embedded in the
+# pycbc PSD files.
+PYCBC_DYN_RANGE_FAC =  5.9029581035870565e+20
+
+
 def get_template_bank_f_low(xmldoc):
     """Determine the low frequency cutoff from a template bank file,
     whether the template bank was produced by lalapps_tmpltbank or
@@ -122,7 +127,7 @@ def sim_coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
         yield sim_inspiral, coinc, sngl_inspirals
 
 
-def coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
+def coinc_and_sngl_inspirals_for_xmldoc(xmldoc, coinc_def=InspiralCoincDef):
     """Retrieve (as a generator) all of the
     (sngl_inspiral, sngl_inspiral, ... sngl_inspiral) tuples from coincidences
     in a LIGO-LW XML document."""
@@ -134,9 +139,10 @@ def coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
     sngl_inspiral_table = ligolw_table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
 
     # Look up coinc_def id.
-    sngl_sngl_coinc_def_ids = {row.coinc_def_id for row in coinc_def_table
-        if (row.search, row.search_coinc_type) ==
-        (InspiralCoincDef.search, InspiralCoincDef.search_coinc_type)}
+    if coinc_def:
+        sngl_sngl_coinc_def_ids = {row.coinc_def_id for row in coinc_def_table
+            if (row.search, row.search_coinc_type) ==
+            (coinc_def.search, coinc_def.search_coinc_type)}
 
     # Indices to speed up lookups by ID.
     key = operator.attrgetter('coinc_event_id')
@@ -148,7 +154,7 @@ def coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
 
     # Loop over all sngl_inspiral <-> sngl_inspiral coincs.
     for coinc in coinc_table:
-        if coinc.coinc_def_id in sngl_sngl_coinc_def_ids:
+        if not coinc_def or coinc.coinc_def_id in sngl_sngl_coinc_def_ids:
             coinc_maps = coinc_maps_by_coinc_event_id[coinc.coinc_event_id]
             yield coinc, tuple(sngl_inspirals_by_event_id[coinc_map.event_id]
                 for coinc_map in coinc_maps)

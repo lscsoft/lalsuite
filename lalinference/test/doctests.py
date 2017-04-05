@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2015-2016  Leo Singer
+# Copyright (C) 2015-2017  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -53,7 +53,7 @@ modules = [
 
 
 finder = doctest.DocTestFinder()
-runner = doctest.DocTestRunner()
+runner = doctest.DocTestRunner(optionflags=doctest.ELLIPSIS)
 tests = []
 
 for module in modules:

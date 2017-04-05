@@ -1,4 +1,4 @@
-# Copyright (C) 2014  Stephen Privitera
+# Copyright (C) 2012-2017  Stephen Privitera
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -176,7 +176,7 @@ class LWAddJob(pipeline.CondorDAGJob):
 class LWAddNode(pipeline.CondorDAGNode):
     """
     """
-    def __init__(self, job, dag, xmls,output,p_node=[]):
+    def __init__(self, job, dag, xmls,output, p_node=[]):
 
         pipeline.CondorDAGNode.__init__(self,job)
         for x in xmls: self.add_file_arg(x)
@@ -228,8 +228,6 @@ spin1-min = -0.98
 spin2-max = 0.98
 spin2-min = -0.98
 aligned-spin =
-gps-start-time = 1000000000
-gps-end-time =  1000050000
 neighborhood-param = dur
 neighborhood-size = 0.5
 checkpoint = 500
@@ -286,7 +284,7 @@ cp = dcConfigParser()
 cp.read(options.config_file)
 
 # initialize sbank job objects
-sbankJob = SBankJob(cp)
+sbankJob = SBankJob(cp, tag_base=options.user_tag + "_sbank")
 mm = cp.get("sbank", "match-min")
 cp.remove_option("sbank", "match-min")  # don't want it entering via add_ini_opts
 
@@ -306,7 +304,7 @@ bank_names = []
 bank_nodes = []
 
 # set up sole coarse node to plan out the mini-sbank nodes
-coarse_sbank_node = SBankNode(sbankJob, dag, "SBANK_COARSE")
+coarse_sbank_node = SBankNode(sbankJob, dag, "%s_SBANK_COARSE" % options.user_tag)
 coarse_mm = cp.get("coarse-sbank", "match-min")
 coarse_sbank_node.add_var_opt("match-min", coarse_mm)
 coarse_thresh = cp.get("coarse-sbank", "convergence-threshold")
@@ -325,7 +323,7 @@ bank_names.append(xmlCoarse)
 bank_nodes.append(coarse_sbank_node)
 
 # use coarse bank to choose mchirp regions of roughly equal template number
-sbankChooseMchirpBoundariesJob = SBankChooseMchirpBoundariesJob(cp)
+sbankChooseMchirpBoundariesJob = SBankChooseMchirpBoundariesJob(cp, tag_base=options.user_tag + "_mchirp_boundaries")
 sbankChooseMchirpBoundariesNode = SBankChooseMchirpBoundariesNode(sbankChooseMchirpBoundariesJob, dag, xmlCoarse, options.user_tag, pnode)
 mchirp_boundaries_fname, = sbankChooseMchirpBoundariesNode.get_output_files()
 
@@ -333,7 +331,7 @@ mchirp_boundaries_fname, = sbankChooseMchirpBoundariesNode.get_output_files()
 # first compute even numbered split banks
 for j in xrange(0, nbanks, 2):
 
-    bank_node = SBankNode(sbankJob, dag, "SBANK_SPLIT_BANK_%04d"%j, seed="%d" % (j*nbanks+1), mchirp_boundaries_file=mchirp_boundaries_fname, mchirp_boundaries_index=str(j), p_node=[sbankChooseMchirpBoundariesNode], bank_seed=[xmlCoarse])
+    bank_node = SBankNode(sbankJob, dag, "%s_SBANK_SPLIT_BANK_%04d" % (options.user_tag, j), seed="%d" % (j*nbanks+1), mchirp_boundaries_file=mchirp_boundaries_fname, mchirp_boundaries_index=str(j), p_node=[sbankChooseMchirpBoundariesNode], bank_seed=[xmlCoarse])
     bank_node.add_var_opt("match-min", mm)
     bank_node.set_priority(1)  # want complete bank before sims
     bank_nodes.append(bank_node)
@@ -350,7 +348,7 @@ for j in xrange(1, nbanks, 2):
         p_node = [bank_nodes[(j+1)/2]]
         bank_seed = [xmlCoarse, bank_names[(j+1)/2]]
 
-    bank_node = SBankNode(sbankJob, dag, "SBANK_SPLIT_BANK_%04d"%j, seed="%d" % (j*nbanks+1), mchirp_boundaries_file=mchirp_boundaries_fname, mchirp_boundaries_index=str(j), p_node=p_node, bank_seed=bank_seed)
+    bank_node = SBankNode(sbankJob, dag, "%s_SBANK_SPLIT_BANK_%04d" % (options.user_tag, j), seed="%d" % (j*nbanks+1), mchirp_boundaries_file=mchirp_boundaries_fname, mchirp_boundaries_index=str(j), p_node=p_node, bank_seed=bank_seed)
     bank_node.add_var_opt("match-min", mm)
     bank_node.set_priority(1)  # want complete bank before sims
     bank_nodes.append(bank_node)

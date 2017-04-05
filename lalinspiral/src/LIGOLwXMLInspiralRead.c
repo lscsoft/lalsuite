@@ -1443,6 +1443,7 @@ SimInspiralTableFromLIGOLw (
     {"amp_order",           -1, 53},
     {"taper",               -1, 54},
     {"bandpass",            -1, 55},
+    {"process_id",          -1, 56},
     {NULL,                   0, 0}
   };
 
@@ -1730,22 +1731,24 @@ SimInspiralTableFromLIGOLw (
 	}
         else if ( tableDir[j].idx == 53 )
         {
-            thisSim->amp_order = i4colData;
+          thisSim->amp_order = i4colData;
         }
         else if ( tableDir[j].idx == 54 )
         {
-            snprintf(thisSim->taper, LIGOMETA_INSPIRALTAPER_MAX * sizeof(CHAR),
-                    "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
+          snprintf(thisSim->taper, LIGOMETA_INSPIRALTAPER_MAX * sizeof(CHAR),
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
         }
         else if ( tableDir[j].idx == 55 )
         {
-            thisSim->bandpass = i4colData;
+          thisSim->bandpass = i4colData;
         }
         else if ( tableDir[j].idx == 56 ) {
-        	thisSim->qmParameter1 = r4colData;
-        }
-        else if ( tableDir[j].idx == 57 ) {
-        	thisSim->qmParameter2 = r4colData;
+          if ( tableDir[j].pos > 0 )
+          {
+            thisSim->process_id = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "process", "process_id");
+            if ( thisSim->process_id < 0 )
+              return -1;
+          }
         }
         else
         {

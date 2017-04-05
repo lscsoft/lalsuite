@@ -629,6 +629,11 @@ int MAIN( int argc, char *argv[]) {
     fprintf(stderr, "Toplist sorting by BSGL only possible if --computeBSGL given.\n");
     return( HIERARCHICALSEARCH_EBAD );
   }
+  if ( ( uvar_SortToplist == SORTBY_BSGLtL || uvar_SortToplist == SORTBY_BtSGLtL ||
+        uvar_SortToplist == SORTBY_TRIPLE_BStSGLtL ) && !uvar_getMaxFperSeg ) {
+    fprintf(stderr, "Toplist sorting by B[t]SGLtL only possible if --getMaxFperSeg given.\n");
+    return( HIERARCHICALSEARCH_EBAD );
+  }
 
   /* create toplist -- semiCohToplist has the same structure
      as a fstat candidate, so treat it as a fstat candidate */
@@ -1089,7 +1094,9 @@ int MAIN( int argc, char *argv[]) {
     column_headings_string_length += 6 + 11 + numDetectors*9; /* 6 for " <2Fr>" and 9 per detector for " <2Fr_XY>" */
     if ( uvar_computeBSGL) {
       column_headings_string_length += 11; /* for " log10BSGLr" */
-      column_headings_string_length += 13; /* for " log10BSGLtLr" */
+      if ( uvar_getMaxFperSeg ) {
+        column_headings_string_length += 13; /* for " log10BSGLtLr" */
+      }
     }
     if (XLALUserVarWasSet(&uvar_f3dot)) {
       column_headings_string_length += 1;
@@ -1142,7 +1149,7 @@ int MAIN( int argc, char *argv[]) {
         strcat ( column_headings_string, headingX );
       }
     }
-    if ( uvar_computeBSGL) {
+    if ( uvar_computeBSGL && uvar_getMaxFperSeg ) {
       strcat ( column_headings_string, " log10BSGLtLr" );
     }
   }
@@ -1823,9 +1830,10 @@ int MAIN( int argc, char *argv[]) {
     timing.RecalcMethodStr = XLALGetFstatInputMethodName ( recalcParams.Fstat_in_vec->data[0] );
     recalcParams.detectorIDs		= usefulParams.detectorIDs;
     recalcParams.startTstack		= usefulParams.startTstack;
-    recalcParams.refTimeGPS		= refTimeGPS;
-    recalcParams.BSGLsetup		= usefulParams.BSGLsetup;
+    recalcParams.refTimeGPS         = refTimeGPS;
+    recalcParams.BSGLsetup		    = usefulParams.BSGLsetup;
     recalcParams.loudestSegOutput	= uvar_loudestSegOutput;
+    recalcParams.computeBSGLtL		= uvar_getMaxFperSeg;
     XLAL_CHECK ( XLAL_SUCCESS == XLALComputeExtraStatsForToplist ( semiCohToplist, &recalcParams ),
                  HIERARCHICALSEARCH_EXLAL, "XLALComputeExtraStatsForToplist() failed with xlalErrno = %d.\n\n", xlalErrno
                  );
@@ -2688,7 +2696,6 @@ void UpdateSemiCohToplistsOptimTriple ( LALStatus *status,
       XLALPrintError ("%s line %d : XLALComputeBSGL() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
     }
-
     if ( unlikely(line.log10BSGL < -LAL_REAL4_MAX*0.1) ) {
       line.log10BSGL = -LAL_REAL4_MAX*0.1; /* avoid minimum value, needed for output checking in print_gctFstatline_to_str() */
     }
@@ -2698,11 +2705,17 @@ void UpdateSemiCohToplistsOptimTriple ( LALStatus *status,
       XLALPrintError ("%s line %d : XLALComputeBSGLtL() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
     }
+    if ( unlikely(line.log10BSGLtL < -LAL_REAL4_MAX*0.1) ) {
+      line.log10BSGLtL = -LAL_REAL4_MAX*0.1; /* avoid minimum value, needed for output checking in print_gctFstatline_to_str() */
+    }
 
     line.log10BtSGLtL = XLALComputeBtSGLtL ( line.maxTwoFl, sumTwoFX, line.maxTwoFXl, usefulparams->BSGLsetup );
     if ( unlikely(xlalErrno != 0) ) {
       XLALPrintError ("%s line %d : XLALComputeBSGLtL() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
+    }
+    if ( unlikely(line.log10BtSGLtL < -LAL_REAL4_MAX*0.1) ) {
+      line.log10BtSGLtL = -LAL_REAL4_MAX*0.1; /* avoid minimum value, needed for output checking in print_gctFstatline_to_str() */
     }
 
     line.Freq = freq_fg; /* NOTE: this is not the final output frequency! For performance reasons, it will only later get correctly extrapolated for the final toplist */
@@ -2863,15 +2876,23 @@ void UpdateSemiCohToplists ( LALStatus *status,
        line.maxTwoFXl[X] = in->maxTwoFXl[FG_FX_INDEX(*in, X, ifreq_fg)];
        line.maxTwoFXlSeg[X] = in->maxTwoFXlIdx[FG_FX_INDEX(*in, X, ifreq_fg)];
       }
+
       line.log10BSGLtL  = XLALComputeBSGLtL ( sumTwoF, sumTwoFX, line.maxTwoFXl, usefulparams->BSGLsetup );
       if ( xlalErrno != 0 ) {
         XLALPrintError ("%s line %d : XLALComputeBSGLtL() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
         ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
       }
+      if ( line.log10BSGLtL < -LAL_REAL4_MAX*0.1 ) {
+        line.log10BSGLtL = -LAL_REAL4_MAX*0.1; /* avoid minimum value, needed for output checking in print_gctFstatline_to_str() */
+      }
+
       line.log10BtSGLtL = XLALComputeBtSGLtL ( line.maxTwoFl, sumTwoFX, line.maxTwoFXl, usefulparams->BSGLsetup );
       if ( xlalErrno != 0 ) {
         XLALPrintError ("%s line %d : XLALComputeBtSGLtL() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
         ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
+      }
+      if ( line.log10BtSGLtL < -LAL_REAL4_MAX*0.1 ) {
+        line.log10BtSGLtL = -LAL_REAL4_MAX*0.1; /* avoid minimum value, needed for output checking in print_gctFstatline_to_str() */
       }
 
     }

@@ -174,7 +174,7 @@ overlap = short_segment_duration / 2 + 2 * pad	# FIXME:  correct?
 # get the instruments and raw segments
 #
 
-instruments = lsctables.instrument_set_from_ifos(config_parser.get('pipeline','ifos'))
+instruments = lsctables.instrumentsproperty.get(config_parser.get('pipeline','ifos'))
 seglists = ligolwsegments.segmenttable_get_by_name(utils.load_filename(options.segments_file, gz = (options.segments_file or "stdin").endswith(".gz"), verbose = options.verbose), options.segments_name).coalesce()
 # remove extra instruments
 for instrument in set(seglists) - instruments:

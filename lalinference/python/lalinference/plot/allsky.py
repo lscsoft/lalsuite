@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2012-2016  Leo Singer
+# Copyright (C) 2012-2017  Leo Singer
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,41 +44,7 @@ import numpy as np
 if mpl_version >= '1.3.0':
     FixedMollweideAxes = MollweideAxes
 elif mpl_version < '1.2.0':
-    class FixedMollweideAxes(MollweideAxes):
-        """Patched version of matplotlib's Mollweide projection that implements a
-        correct inverse transform."""
-
-        class FixedMollweideTransform(MollweideAxes.MollweideTransform):
-
-            def inverted(self):
-                return FixedMollweideAxes.InvertedFixedMollweideTransform(self._resolution)
-            inverted.__doc__ = Transform.inverted.__doc__
-
-        class InvertedFixedMollweideTransform(MollweideAxes.InvertedMollweideTransform):
-
-            def inverted(self):
-                return FixedMollweideAxes.FixedMollweideTransform(self._resolution)
-            inverted.__doc__ = Transform.inverted.__doc__
-
-            def transform(self, xy):
-                x = xy[:, 0:1]
-                y = xy[:, 1:2]
-
-                sqrt2 = np.sqrt(2)
-                sintheta = y / sqrt2
-                with np.errstate(invalid='ignore'):
-                    costheta = np.sqrt(1. - 0.5 * y * y)
-                longitude = 0.25 * sqrt2 * np.pi * x / costheta
-                latitude = np.arcsin(2 / np.pi * (np.arcsin(sintheta) + sintheta * costheta))
-                return np.concatenate((longitude, latitude), 1)
-            transform.__doc__ = Transform.transform.__doc__
-
-            transform_non_affine = transform
-
-        def _get_core_transform(self, resolution):
-            return self.FixedMollweideTransform(resolution)
-
-    projection_registry.register(FixedMollweideAxes)
+    raise NotImplemented('This module requires matplotlib >= 1.2.0. You have matplotlib {}.'.format(mpl_version))
 else:
     class FixedMollweideAxes(MollweideAxes):
         """Patched version of matplotlib's Mollweide projection that implements a

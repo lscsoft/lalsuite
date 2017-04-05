@@ -70,6 +70,7 @@ typedef struct tagRecalcStatsParams {
   LIGOTimeGPSVector *startTstack;	/**< starting GPS time of each stack */
   LIGOTimeGPS refTimeGPS;		/**< reference time for fkdot values in toplist */
   BSGLSetup *BSGLsetup;			/**< pre-computed setup for line-robust statistic BSGL */
+  BOOLEAN computeBSGLtL;		/**< re-compute BSGLtL as well, or not */
   BOOLEAN loudestSegOutput;		/**< return extra info about loudest segment */
 } RecalcStatsParams;
 

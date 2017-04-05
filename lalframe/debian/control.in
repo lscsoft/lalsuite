@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
 Build-Depends: debhelper (>= 9),
   dh-python,
-  ldas-tools-framecpp-c-dev,
+  ldas-tools-framecpp-c-dev (>= @MIN_FRAMECPPC_VERSION@),
   libframe-dev (>= 8.0),
   liboctave-dev,
   pkg-config,
@@ -26,7 +26,7 @@ Package: lalframe
 Architecture: any
 Depends: ${misc:Depends},
   ${shlibs:Depends},
-  ldas-tools-framecpp-c,
+  ldas-tools-framecpp-c (>= @MIN_FRAMECPPC_VERSION@),
   libframe1 (>= 8.0),
   lal (>= @MIN_LAL_VERSION@~)
 Description: LSC Algorithm Library Frame
@@ -39,7 +39,7 @@ Section: libdevel
 Architecture: any
 Depends: ${misc:Depends},
   ${shlibs:Depends},
-  ldas-tools-framecpp-c-dev,
+  ldas-tools-framecpp-c-dev (>= @MIN_FRAMECPPC_VERSION@),
   libframe-dev (>= 8.0),
   zlib1g-dev,
   lal-dev (>= @MIN_LAL_VERSION@~),
