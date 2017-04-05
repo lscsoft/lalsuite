@@ -259,7 +259,9 @@ XLALGetCPUTime ( void )
 #if defined(HAVE_CLOCK_GETTIME) && HAVE_DECL_CLOCK_PROCESS_CPUTIME_ID
 
   struct timespec ut;
-  clock_gettime ( CLOCK_PROCESS_CPUTIME_ID, &ut );
+  if ( clock_gettime ( CLOCK_PROCESS_CPUTIME_ID, &ut ) != 0 ) {
+    return 0.0;
+  }
   return ut.tv_sec + ut.tv_nsec * 1.e-9;
 
 #else   // no CPU timer available
