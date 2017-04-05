@@ -594,7 +594,7 @@ static int TEOBResumROMCore(
   double *amp_res = calloc(Ntimes_res,sizeof(double));
   double *phi_res = calloc(Ntimes_res,sizeof(double));
   double t=tstart;
-  fprintf(stdout,"tstart=%.2f\n",tstart);
+  // fprintf(stdout,"tstart=%.2f\n",tstart);
   //fprintf(stdout,"Ntimes=%d\n",Ntimes_res);
 
   //for scaling the amplitude
@@ -755,10 +755,10 @@ int XLALSimInspiralTEOBResumROM(
     return(XLAL_EDOM);
   }
 
-  if (fRef!=0.0) fprintf(stdout,"WARNING: fREf != 0.0 -> TEOBResum_ROM does not do anything with fRef. It will be evaluated from fLow.\n");
+  // if (fRef!=0.0) fprintf(stdout,"WARNING: fREf != 0.0 -> TEOBResum_ROM does not do anything with fRef. It will be evaluated from fLow.\n");
 
   // Load ROM data if not loaded already
-  fprintf(stdout,"initializing with TEOBResumROM_Init_LALDATA()\n");
+  // fprintf(stdout,"initializing with TEOBResumROM_Init_LALDATA()\n");
   #ifdef LAL_PTHREAD_LOCK
   (void) pthread_once(&TEOBResumROM_is_initialized, TEOBResumROM_Init_LALDATA);
   #else
