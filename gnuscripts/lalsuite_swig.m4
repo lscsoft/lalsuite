@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 97
+# serial 98
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -509,6 +509,9 @@ EOD`]
       ${swig_python_ldflags}
       ],[SWIG_PYTHON_LDFLAGS="${SWIG_PYTHON_LDFLAGS} ${flag}"]
     )
+
+    # allow addition of extra Python linker flags
+    AC_ARG_VAR([EXTRA_SWIG_PYTHON_LDFLAGS],[Extra linker flags for SWIG Python bindings])
 
     # check for Python and NumPy headers
     LALSUITE_PUSH_UVARS
