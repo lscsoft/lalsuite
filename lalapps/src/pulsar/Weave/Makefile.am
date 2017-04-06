@@ -12,10 +12,6 @@ bin_PROGRAMS = \
 	lalapps_WeaveCompare \
 	$(END_OF_LIST)
 
-EXTRA_PROGRAMS = \
-	lalapps_Weave_Callgrind \
-	$(END_OF_LIST)
-
 lalapps_WeaveSetup_SOURCES = \
 	SetupData.c \
 	SetupData.h \
@@ -48,6 +44,10 @@ lalapps_WeaveCompare_SOURCES = \
 	Weave.h \
 	WeaveCompare.c \
 	$(END_OF_LIST)
+
+if VALGRIND_CALLGRIND
+noinst_PROGRAMS = lalapps_Weave_Callgrind
+endif
 
 lalapps_Weave_Callgrind_SOURCES = $(lalapps_Weave_SOURCES)
 lalapps_Weave_Callgrind_CPPFLAGS = $(AM_CPPFLAGS) -DMAKEFILE_WEAVE_CALLGRIND
