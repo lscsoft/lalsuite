@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2016  Leo Singer
+# Copyright (C) 2013-2017  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -96,7 +96,7 @@ else:
 
 # Set maximum range of progress bar: one tick for each of 5 figures, for each
 # false alarm rate bin.
-pb.max = len(bin_edges) * 4
+pb.max = len(bin_edges) * 5
 
 if opts.cumulative:
     histlabel = 'cumulative '
@@ -175,6 +175,14 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
         ax4.set_xlabel('run time (s)')
         ax4.set_ylabel(histlabel)
 
+    # Set up figure 5.
+    if 'searched_prob_distance' in dataset.dtype.names:
+        fig5 = plt.figure(figsize=(6, 6))
+        ax5 = fig5.add_subplot(111, projection='pp_plot')
+        fig5.subplots_adjust(bottom=0.15)
+        ax5.set_xlabel('distance CDF at true distance')
+        ax5.set_ylabel('cumulative fraction of injections')
+
     # Plot a histogram from each dataset onto each of the 5 figures.
     for (data, label) in zip(datasets, labels):
         if len(data): # Skip if data is empty
@@ -189,6 +197,8 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
             if 'runtime' in dataset.dtype.names:
                 if np.any(np.isfinite(data['runtime'])):
                     ax4.hist(data['runtime'], histtype='step', bins=np.logspace(np.log10(min_runtime), np.log10(max_runtime), 20), cumulative=opts.cumulative, normed=opts.normed)
+            if 'searched_prob_distance' in dataset.dtype.names:
+                ax5.add_series(data['searched_prob_distance'], label=label)
 
     # Finish and save plot 1.
     pb.update(i * 4)
@@ -219,6 +229,21 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
         pb.update(i * 4 + 3)
         ax4.grid()
         fig4.savefig('runtime_hist.pdf')
+        plt.close()
+
+    # Finish and save plot 4.
+    if 'runtime' in dataset.dtype.names:
+        pb.update(i * 4 + 4)
+        # Only plot target confidence band if all datasets have the same number
+        # of samples, because the confidence band depends on the number of samples.
+        ax5.add_diagonal()
+        if len(nsamples) == 1:
+            n, = nsamples
+            ax5.add_confidence_band(n, 0.01 * opts.pp_confidence_interval)
+        ax5.grid()
+        if len(datasets) > 1:
+            ax5.legend(loc='lower right')
+        fig5.savefig('searched_prob_distance.pdf')
         plt.close()
 
     # Go back to starting directory.

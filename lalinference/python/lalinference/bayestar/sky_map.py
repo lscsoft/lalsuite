@@ -72,7 +72,7 @@ def toa_phoa_snr_log_prior(
 @with_numpy_random_seed
 def emcee_sky_map(
         logl, loglargs, logp, logpargs, xmin, xmax,
-        nside=-1, chain_dump=None, max_horizon=1.0):
+        nside=-1, chain_dump=None):
     # Set up sampler
     import emcee
     from sky_area.sky_area_clustering import Clustered3DKDEPosterior
@@ -129,7 +129,6 @@ def emcee_sky_map(
     # Read back in with np.load().
     if chain_dump:
         # Undo numerical conditioning of distances; convert back to Mpc
-        chain[:, 2] *= max_horizon
         names = 'ra sin_dec distance cos_inclination twopsi time'.split()[:ndim]
         np.save(chain_dump, np.rec.fromrecords(chain, names=names))
 
@@ -142,8 +141,8 @@ def emcee_sky_map(
 def ligolw_sky_map(
         sngl_inspirals, waveform, f_low,
         min_distance=None, max_distance=None, prior_distance_power=None,
-        method='toa_phoa_snr', psds=None, nside=-1, chain_dump=None,
-        phase_convention='antifindchirp', snr_series=None,
+        cosmology=False, method='toa_phoa_snr', psds=None, nside=-1,
+        chain_dump=None, phase_convention='antifindchirp', snr_series=None,
         enable_snr_series=False):
     """Convenience function to produce a sky map from LIGO-LW rows. Note that
     min_distance and max_distance should be in Mpc.
@@ -197,6 +196,10 @@ def ligolw_sky_map(
 
     # Center detector array.
     locations -= np.sum(locations * weights.reshape(-1, 1), axis=0) / np.sum(weights)
+
+    if cosmology:
+        log.warn('Enabling cosmological prior. '
+                 'This feature is UNREVIEWED.')
 
     if enable_snr_series:
         log.warn('Enabling input of SNR time series. '
@@ -289,10 +292,6 @@ def ligolw_sky_map(
     # Collect all of the SNR series in one array.
     snr_series = np.vstack([series.data.data for series in snr_series])
 
-    # Fudge factor for excess estimation error in gstlal_inspiral.
-    fudge = 0.83
-    snr_series *= fudge
-
     # If using 'findchirp' phase convention rather than gstlal/mbta,
     # then flip signs of phases.
     if phase_convention.lower() == 'antifindchirp':
@@ -339,19 +338,13 @@ def ligolw_sky_map(
                           'undefined at min_distance=0')
                           .format(prior_distance_power))
 
-    # Rescale distances to horizon distance of most sensitive detector.
-    max_horizon = np.max(horizons)
-    horizons /= max_horizon
-    min_distance /= max_horizon
-    max_distance /= max_horizon
-
     # Time and run sky localization.
     log.debug('starting computationally-intensive section')
     start_time = lal.GPSTimeNow()
     if method == 'toa_phoa_snr':
         skymap, log_bci, log_bsn = _sky_map.toa_phoa_snr(
-            min_distance, max_distance, prior_distance_power, gmst, sample_rate,
-            toas, snr_series, responses, locations, horizons)
+            min_distance, max_distance, prior_distance_power, cosmology, gmst,
+            sample_rate, toas, snr_series, responses, locations, horizons)
         skymap = Table(skymap)
         skymap.meta['log_bci'] = log_bci
         skymap.meta['log_bsn'] = log_bsn
@@ -365,7 +358,7 @@ def ligolw_sky_map(
                 max_abs_t),
             xmin=[0, -1, min_distance, -1, 0, 0],
             xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi, 2 * max_abs_t],
-            nside=nside, chain_dump=chain_dump, max_horizon=max_horizon * fudge)
+            nside=nside, chain_dump=chain_dump)
     else:
         raise ValueError('Unrecognized method: %s' % method)
 
@@ -385,14 +378,6 @@ def ligolw_sky_map(
     skymap.meta['distmean'] = rbar
     skymap.meta['diststd'] = np.sqrt(r2bar - np.square(rbar))
 
-    # Rescale
-    rescale = max_horizon * fudge
-    skymap['DISTMU'] *= rescale
-    skymap['DISTSIGMA'] *= rescale
-    skymap.meta['distmean'] *= rescale
-    skymap.meta['diststd'] *= rescale
-    skymap['DISTNORM'] /= np.square(rescale)
-
     end_time = lal.GPSTimeNow()
     log.debug('finished computationally-intensive section')
 
@@ -410,7 +395,7 @@ def ligolw_sky_map(
 
 def gracedb_sky_map(
         coinc_file, psd_file, waveform, f_low, min_distance=None,
-        max_distance=None, prior_distance_power=None,
+        max_distance=None, prior_distance_power=None, cosmology=False,
         method='toa_phoa_snr', nside=-1, chain_dump=None,
         f_high_truncate=1.0, enable_snr_series=False):
     # Read input file.
@@ -460,10 +445,10 @@ def gracedb_sky_map(
 
     # Run sky localization
     return ligolw_sky_map(sngl_inspirals, waveform, f_low,
-        min_distance, max_distance, prior_distance_power, method=method,
-        nside=nside, psds=psds, phase_convention=phase_convention,
-        chain_dump=chain_dump, snr_series=snrs,
-        enable_snr_series=enable_snr_series)
+        min_distance, max_distance, prior_distance_power, cosmology,
+        method=method, nside=nside, psds=psds,
+        phase_convention=phase_convention, chain_dump=chain_dump,
+        snr_series=snrs, enable_snr_series=enable_snr_series)
 
 
 def rasterize(skymap):

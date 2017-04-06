@@ -122,8 +122,8 @@ for graceid in graceids:
         # perform sky localization
         log.info("starting sky localization")
         sky_map = rasterize(gracedb_sky_map(
-            coinc_file, psd_file, opts.waveform, opts.f_low,
-            opts.min_distance, opts.max_distance, opts.prior_distance_power,
+            coinc_file, psd_file, opts.waveform, opts.f_low, opts.min_distance,
+            opts.max_distance, opts.prior_distance_power, opts.cosmology,
             nside=opts.nside, f_high_truncate=opts.f_high_truncate,
             method=opts.method, chain_dump=chain_dump,
             enable_snr_series=opts.enable_snr_series))
