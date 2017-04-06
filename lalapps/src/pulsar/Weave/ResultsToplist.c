@@ -344,7 +344,6 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   // Check input
   XLAL_CHECK_NULL( stat_name != NULL, XLAL_EFAULT );
   XLAL_CHECK_NULL( stat_desc != NULL, XLAL_EFAULT );
-  XLAL_CHECK_NULL( toplist_limit > 0, XLAL_EINVAL );
 
   // Allocate memory
   WeaveResultsToplist *toplist = XLALCalloc( 1, sizeof( *toplist ) );

@@ -106,7 +106,6 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
   // Check input
   XLAL_CHECK_NULL( ref_time != NULL, XLAL_EFAULT );
   XLAL_CHECK_NULL( toplist_types > 0, XLAL_EINVAL );
-  XLAL_CHECK_NULL( toplist_limit > 0, XLAL_EINVAL );
 
   // Allocate memory
   WeaveOutputResults *out = XLALCalloc( 1, sizeof( *out ) );
