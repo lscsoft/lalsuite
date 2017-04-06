@@ -101,6 +101,8 @@ log.info('%s:reading input XML file', opts.input.name)
 xmldoc, _ = ligolw_utils.load_fileobj(
     opts.input, contenthandler=ligolw_bayestar.LSCTablesAndSeriesContentHandler)
 
+command.mkpath(opts.output)
+
 if opts.condor_submit:
     if opts.coinc_event_id:
         raise ValueError('must not set --coinc-event-id with --condor-submit')
@@ -227,7 +229,6 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
                 raise
         else:
             log.info("%s:method '%s':saving sky map", coinc.coinc_event_id, method)
-            command.mkpath(opts.output)
             filename = '%s.%s.fits' % (int(coinc.coinc_event_id), method)
             fits.write_sky_map(os.path.join(opts.output, filename),
                 sky_map, nest=True)
