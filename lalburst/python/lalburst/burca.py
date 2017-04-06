@@ -76,55 +76,9 @@ class SnglBurst(lsctables.SnglBurst):
 ExcessPowerBBCoincDef = lsctables.CoincDef(search = u"excesspower", search_coinc_type = 0, description = u"sngl_burst<-->sngl_burst coincidences")
 
 
-def make_multi_burst(process_id, coinc_event_id, events, offset_vector):
-	multiburst = lsctables.MultiBurst()
-	multiburst.process_id = process_id
-	multiburst.coinc_event_id = coinc_event_id
-
-	# snr = root sum of ms_snr squares
-
-	multiburst.snr = math.sqrt(sum(event.ms_snr**2.0 for event in events))
-
-	# peak time = ms_snr squared weighted average of peak times (no
-	# attempt to account for inter-site delays).  LIGOTimeGPS objects
-	# don't like being multiplied by things, so the first event's peak
-	# time is used as a reference epoch.
-
-	t = events[0].peak + offset_vector[events[0].ifo]
-	multiburst.peak = t + sum(event.ms_snr**2.0 * float(event.peak + offset_vector[event.ifo] - t) for event in events) / multiburst.snr**2.0
-
-	# duration = ms_snr squared weighted average of durations
-
-	multiburst.duration = sum(event.ms_snr**2.0 * event.duration for event in events) / multiburst.snr**2.0
-
-	# central_freq = ms_snr squared weighted average of peak frequencies
-
-	multiburst.central_freq = sum(event.ms_snr**2.0 * event.peak_frequency for event in events) / multiburst.snr**2.0
-
-	# bandwidth = ms_snr squared weighted average of bandwidths
-
-	multiburst.bandwidth = sum(event.ms_snr**2.0 * event.bandwidth for event in events) / multiburst.snr**2.0
-
-	# confidence = minimum of confidences
-
-	multiburst.confidence = min(event.confidence for event in events)
-
-	# "amplitude" = h_rss of event with highest confidence
-
-	multiburst.amplitude = max((event.ms_confidence, event.ms_hrss) for event in events)[1]
-
-	# populate the false alarm rate with none.
-
-	multiburst.false_alarm_rate = None
-
-	# done
-
-	return multiburst
-
-
 class ExcessPowerCoincTables(snglcoinc.CoincTables):
 	def __init__(self, xmldoc):
-		snglcoinc.CoincTables.__init__(self, xmldoc)
+		super(ExcessPowerCoincTables, self).__init__(xmldoc)
 
 		# find the multi_burst table or create one if not found
 		try:
@@ -133,9 +87,56 @@ class ExcessPowerCoincTables(snglcoinc.CoincTables):
 			self.multibursttable = lsctables.New(lsctables.MultiBurstTable, ("process_id", "duration", "central_freq", "bandwidth", "snr", "confidence", "amplitude", "coinc_event_id"))
 			xmldoc.childNodes[0].appendChild(self.multibursttable)
 
+	def make_multi_burst(self, process_id, coinc_event_id, events, offset_vector):
+		multiburst = self.multibursttable.RowType(
+			process_id = process_id,
+			coinc_event_id = coinc_event_id,
+			# populate the false alarm rate with none.
+			false_alarm_rate = None
+		)
+
+		# snr = root sum of ms_snr squares
+
+		multiburst.snr = math.sqrt(sum(event.ms_snr**2.0 for event in events))
+
+		# peak time = ms_snr squared weighted average of peak times
+		# (no attempt to account for inter-site delays).
+		# LIGOTimeGPS objects don't like being multiplied by
+		# things, so the first event's peak time is used as a
+		# reference epoch.
+
+		t = events[0].peak + offset_vector[events[0].ifo]
+		multiburst.peak = t + sum(event.ms_snr**2.0 * float(event.peak + offset_vector[event.ifo] - t) for event in events) / multiburst.snr**2.0
+
+		# duration = ms_snr squared weighted average of durations
+
+		multiburst.duration = sum(event.ms_snr**2.0 * event.duration for event in events) / multiburst.snr**2.0
+
+		# central_freq = ms_snr squared weighted average of peak
+		# frequencies
+
+		multiburst.central_freq = sum(event.ms_snr**2.0 * event.peak_frequency for event in events) / multiburst.snr**2.0
+
+		# bandwidth = ms_snr squared weighted average of bandwidths
+
+		multiburst.bandwidth = sum(event.ms_snr**2.0 * event.bandwidth for event in events) / multiburst.snr**2.0
+
+		# confidence = minimum of confidences
+
+		multiburst.confidence = min(event.confidence for event in events)
+
+		# "amplitude" = h_rss of event with highest confidence
+
+		multiburst.amplitude = max(events, key = lambda event: event.ms_confidence).ms_hrss
+
+		# done
+
+		return multiburst
+
 	def coinc_rows(self, process_id, time_slide_id, coinc_def_id, events):
 		coinc, coincmaps = super(ExcessPowerCoincTables, self).coinc_rows(process_id, time_slide_id, coinc_def_id, events)
-		return coinc, coincmaps, make_multi_burst(process_id, coinc.coinc_event_id, events, self.time_slide_index[time_slide_id])
+		coinc.insts = (event.ifo for event in events)
+		return coinc, coincmaps, self.make_multi_burst(process_id, coinc.coinc_event_id, events, self.time_slide_index[time_slide_id])
 
 	def append_coinc(self, coinc, coincmaps, multiburst):
 		coinc = super(ExcessPowerCoincTables, self).append_coinc(coinc, coincmaps)
@@ -155,7 +156,7 @@ StringCuspBBCoincDef = lsctables.CoincDef(search = u"StringCusp", search_coinc_t
 class StringCuspCoincTables(snglcoinc.CoincTables):
 	def coinc_rows(self, process_id, time_slide_id, coinc_def_id, events):
 		coinc, coincmaps = super(StringCuspCoincTables, self).coinc_rows(process_id, time_slide_id, coinc_def_id, events)
-		coinc.set_instruments(event.ifo for event in events)
+		coinc.insts = (event.ifo for event in events)
 		return coinc, coincmaps
 
 
@@ -187,13 +188,13 @@ class ExcessPowerEventList(snglcoinc.EventList):
 		LIGOTimeGPS.
 		"""
 		# sort by peak time
-		self.sort(lambda a, b: cmp(a.peak_time, b.peak_time) or cmp(a.peak_time_ns, b.peak_time_ns))
+		self.sort(key = lambda event: event.peak)
 
 		# for the events in this list, record the largest
 		# difference between an event's peak time and either its
 		# start or stop times
 		if self:
-			self.max_edge_peak_delta = max([max(float(event.peak - event.start), float(event.start + event.duration - event.peak)) for event in self])
+			self.max_edge_peak_delta = max(max(float(event.peak - event.start), float(event.start + event.duration - event.peak)) for event in self)
 		else:
 			# max() doesn't like empty lists
 			self.max_edge_peak_delta = 0
@@ -244,12 +245,12 @@ class StringEventList(snglcoinc.EventList):
 		previously been set to compare the event's peak time to a
 		LIGOTimeGPS.
 		"""
-		self.sort(lambda a, b: cmp(a.peak_time, b.peak_time) or cmp(a.peak_time_ns, b.peak_time_ns))
+		self.sort(key = lambda event: event.peak)
 
 	def get_coincs(self, event_a, offset_a, light_travel_time, threshold, comparefunc):
 		min_peak = max_peak = event_a.peak + offset_a - self.offset
-		min_peak -= threshold[0] + light_travel_time
-		max_peak += threshold[0] + light_travel_time
+		min_peak -= threshold + light_travel_time
+		max_peak += threshold + light_travel_time
 		return [event_b for event_b in self[bisect.bisect_left(self, min_peak) : bisect.bisect_right(self, max_peak)] if not comparefunc(event_a, offset_a, event_b, self.offset, light_travel_time, threshold)]
 
 
@@ -262,7 +263,7 @@ class StringEventList(snglcoinc.EventList):
 #
 
 
-def ExcessPowerCoincCompare(a, offseta, b, offsetb, light_travel_time, thresholds):
+def ExcessPowerCoincCompare(a, offseta, b, offsetb, light_travel_time, ignored):
 	if abs(a.central_freq - b.central_freq) > (a.bandwidth + b.bandwidth) / 2:
 		return True
 
@@ -280,20 +281,13 @@ def ExcessPowerCoincCompare(a, offseta, b, offsetb, light_travel_time, threshold
 	return False
 
 
-def StringCoincCompare(a, offseta, b, offsetb, light_travel_time, thresholds):
+def StringCoincCompare(a, offseta, b, offsetb, light_travel_time, threshold):
 	"""
 	Returns False (a & b are coincident) if the events' peak times
 	differ from each other by no more than dt plus the light travel
 	time from one instrument to the next.
 	"""
-	# unpack thresholds (it's just the \Delta t window)
-	dt, = thresholds
-
-	# test for time coincidence
-	coincident = abs(float(a.peak + offseta - b.peak - offsetb)) <= (dt + light_travel_time)
-
-	# return result
-	return not coincident
+	return abs(float(a.peak + offseta - b.peak - offsetb)) > threshold + light_travel_time
 
 
 def StringNTupleCoincCompare(events, offset_vector):
@@ -366,7 +360,7 @@ def burca(
 	for node, coinc in time_slide_graph.get_coincs(eventlists, event_comparefunc, thresholds, verbose = verbose):
 		if len(coinc) < min_instruments:
 			continue
-		ntuple = tuple(sngl_index[id] for id in coinc)
+		ntuple = tuple(sngl_index[event_id] for event_id in coinc)
 		if not ntuple_comparefunc(ntuple, node.offset_vector):
 			coinc_tables.append_coinc(*coinc_tables.coinc_rows(process_id, node.time_slide_id, coinc_def_id, ntuple))
 

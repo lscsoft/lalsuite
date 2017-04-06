@@ -63,98 +63,18 @@ __date__ = git_version.date
 #
 
 
-def parse_thresholdstrings(thresholdstrings):
+class Thresholds(object):
 	"""
-	Turn a list of strings of the form
-	inst1,inst2=threshold1[,threshold2,...] into a dictionary with
-	(inst1, inst2) 2-tuples as keys and the values being the thresholds
-	parsed into lists of strings split on the "," character.
-
-	For each pair of instruments present among the input strings, the
-	two possible orders are considered independent:  the input strings
-	are allowed to contain one set of thresholds for (inst1, inst2),
-	and a different set of thresholds for (inst2, inst1).  Be aware
-	that no input checking is done to ensure the user has not provided
-	duplicate, incompatible, thresholds.  This is considered the
-	responsibility of the application program to verify.
-
-	The output dictionary contains threshold sets for both instrument
-	orders.  If, for some pair of instruments, the input strings
-	specified thresholds for only one of the two possible orders, the
-	thresholds for the other order are copied from the one that was
-	provided.
-
-	Whitespace is removed from the start and end of all strings.
-
-	A typical use for this function is in parsing command line
-	arguments or configuration file entries.
-
-	Example:
-
-	>>> from pylal.snglcoinc import parse_thresholds
-	>>> parse_thresholds(["H1,H2=X=0.1,Y=100", "H1,L1=X=.2,Y=100"])
-	{('H1', 'H2'): ['X=0.1', 'Y=100'], ('H1', 'L1'): ['X=.2', 'Y=100'], ('H2', 'H1'): ['X=0.1', 'Y=100'], ('L1', 'H1'): ['X=.2', 'Y=100']}
+	Fake dictionary that returns the same thing for all keys.
 	"""
-	thresholds = {}
-	for pair, delta in [s.split("=", 1) for s in thresholdstrings]:
-		try:
-			A, B = [s.strip() for s in pair.split(",")]
-		except Exception:
-			raise ValueError("cannot parse instruments '%s'" % pair)
-		thresholds[(A, B)] = [s.strip() for s in delta.split(",")]
-	for (A, B), value in thresholds.items():
-		if (B, A) not in thresholds:
-			thresholds[(B, A)] = value
-	return thresholds
+	def __init__(self, val):
+		self.val = val
 
+	def __setitem__(self, key, val):
+		self.val = val
 
-def parse_thresholds(options):
-	#
-	# parse --thresholds options into a dictionary of instrument pairs
-	# and components
-	#
-
-	try:
-		thresholds = parse_thresholdstrings(options.thresholds)
-	except Exception as e:
-		raise ValueError("error parsing --thresholds: %s" % str(e))
-
-	#
-	# parse the components from --thresholds options
-	#
-
-	if options.coincidence_algorithm == "excesspower":
-		#
-		# excess power does not use adjustable thresholds, but for
-		# speed it helps to pre-compute the light travel time
-		# between the instruments involved in the analysis
-		#
-
-		for pair in thresholds.keys():
-			thresholds[pair] = snglcoinc.light_travel_time(*pair)
-
-	elif options.coincidence_algorithm == "stringcusp":
-		#
-		# parse thresholds into dt values
-		#
-
-		try:
-			thresholds = dict((instrumentpair, (float(dt),)) for instrumentpair, (dt,) in thresholds.iteritems())
-		except Exception as e:
-			raise ValueError("error parsing --thresholds: %s" % str(e))
-
-	else:
-		#
-		# unrecognized coincidence algorithm
-		#
-
-		raise ValueError(options.coincidence_algorithm)
-
-	#
-	# Done
-	#
-
-	return thresholds
+	def __getitem__(self, key):
+		return self.val
 
 
 def parse_command_line():
@@ -167,7 +87,8 @@ def parse_command_line():
 	parser.add_option("-f", "--force", action = "store_true", help = "Process document even if it has already been processed.")
 	parser.add_option("-a", "--coincidence-algorithm", metavar = "[excesspower|stringcusp]", default = None, help = "Select the coincidence test algorithm to use (required).")
 	parser.add_option("-s", "--coincidence-segments", metavar = "start:end[,start:end,...]", help = "Set the GPS segments in which to retain coincidences.  Multiple segments can be specified by separating them with commas.  If either start or end is absent from a segment then the interval is unbounded on that side, for example \"874000000:\" causes all coincidences starting at 874000000 to be retained.  The \"time\" of a coincidence is ambiguous, and is different for different search algorithms, but a deterministic algorithm is used in all cases so the same coincidence of events will always be assigned the same time.  This feature is intended to allow large input files to be analyzed;  the procedure is to make n copies of the file and run n instances of burca specifying disjoint --coincidence-segments for each.")
-	parser.add_option("-t", "--thresholds", metavar = "inst1,inst2=[threshold,...]", action = "append", default = [], help = "Set the coincidence algorithm's thresholds for an instrument pair.  For excesspower there are no thresholds.  For stringcusp, each instrument pair has a single threshold setting dt.  One set of thresholds must be provided for each instrument combination that will be compared, even if there are no thresholds to set.")
+	parser.add_option("-m", "--min-instruments", metavar = "N", type = "int", default = 2, help = "Set the minimum number of instruments required to form a coincidence (default = 2).")
+	parser.add_option("-t", "--threshold", metavar = "threshold", default = None, help = "Set the coincidence algorithm's threshold.  For excesspower this parameter is not used.  For stringcusp, this parameter sets the maximum peak time difference not including light travel time (which will be added internally).")
 	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
 	options, filenames = parser.parse_args()
 
@@ -187,12 +108,17 @@ def parse_command_line():
 			raise ValueError("refusing to allow use of --coincidence-segments with more than one input file")
 	else:
 		options.coinc_segs = None
+	if options.min_instruments < 1:
+		raise ValueError("--min-instruments must be >= 1")
 
 	#
 	# parse the --thresholds arguments
 	#
 
-	options.thresholds = parse_thresholds(options)
+	if options.coincidence_algorithm == "stringcusp":
+		if options.threshold is None:
+			raise ValueError("--threshold is required for --coincidence-algorithm stringcusp")
+		options.threshold = Thresholds(float(options.threshold))
 
 	#
 	# done
@@ -225,31 +151,28 @@ options, filenames, paramdict = parse_command_line()
 
 
 if options.coinc_segs is not None:
-	def coinc_segs_ntuple_comparefunc(events, offset_vector, coinc_segs = options.coinc_segs):
+	def coinc_segs_ntuple_comparefunc(events, offset_vector, min_instruments = options.min_instruments, coinc_segs = options.coinc_segs):
 		# sort so we always do arithmetic in the same order
 		events = sorted(events, key = lambda event: event.peak)
 		# coinc time is SNR-weighted mean of event peak times
 		epoch = events[0].peak + offset_vector[events[0].ifo]
 		coinc_time = epoch + sum(float(event.peak + offset_vector[event.ifo] - epoch) * event.snr for event in events) / sum(event.snr for event in events)
-		return coinc_time not in coinc_segs
+		return len(events) < min_instruments or coinc_time not in coinc_segs
+else:
+	def coinc_segs_ntuple_comparefunc(events, offset_vector, min_instruments = options.min_instruments):
+		return len(events) < min_instruments
 
 
 if options.coincidence_algorithm == "excesspower":
 	EventListType = burca.ExcessPowerEventList
 	comparefunc = burca.ExcessPowerCoincCompare
-	if options.coinc_segs is not None:
-		ntuple_comparefunc = coinc_segs_ntuple_comparefunc
-	else:
-		ntuple_comparefunc = lambda *args: False	# keep everything
+	ntuple_comparefunc = coinc_segs_ntuple_comparefunc
 	CoincTables = burca.ExcessPowerCoincTables
 	CoincDef = burca.ExcessPowerBBCoincDef
 elif options.coincidence_algorithm == "stringcusp":
 	EventListType = burca.StringEventList
 	comparefunc = burca.StringCoincCompare
-	if options.coinc_segs is not None:
-		ntuple_comparefunc = lambda *args: coinc_segs_ntuple_comparefunc(*args) or burca.StringNTupleCoincCompare(*args)
-	else:
-		ntuple_comparefunc = burca.StringNTupleCoincCompare
+	ntuple_comparefunc = lambda *args: coinc_segs_ntuple_comparefunc(*args) or burca.StringNTupleCoincCompare(*args)
 	CoincTables = burca.StringCuspCoincTables
 	CoincDef = burca.StringCuspBBCoincDef
 else:
@@ -306,7 +229,7 @@ for n, filename in enumerate(filenames):
 		CoincTables = CoincTables,
 		coinc_definer_row = CoincDef,
 		event_comparefunc = comparefunc,
-		thresholds = options.thresholds,
+		thresholds = options.threshold,
 		ntuple_comparefunc = ntuple_comparefunc,
 		verbose = options.verbose
 	)
