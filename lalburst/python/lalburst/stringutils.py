@@ -31,6 +31,7 @@ import sys
 
 
 import lal
+from lal import rate
 
 
 from glue import segmentsUtils
@@ -42,7 +43,6 @@ from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
 from glue.offsetvector import offsetvector
 from . import git_version
-from pylal import rate
 from pylal import snglcoinc
 
 

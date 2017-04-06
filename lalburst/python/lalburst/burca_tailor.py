@@ -31,6 +31,7 @@ import sys
 
 
 import lal
+from lal import rate
 
 
 from glue.ligolw import ligolw
@@ -41,7 +42,6 @@ from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw.utils import search_summary as ligolw_search_summary
 from . import git_version
-from pylal import rate
 from pylal import snglcoinc
 
 
