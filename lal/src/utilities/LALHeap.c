@@ -135,7 +135,7 @@ static int heap_add_not_full(
   heap_bubble_up( h, h->n - 1 );
 
   /* If (limited) heap is now full, switch add function to heap_add_full() */
-  if ( h->max_size > 0 && h->n == h->max_size ) {
+  if ( XLALHeapIsFull( h ) ) {
     h->add = heap_add_full;
   }
 
@@ -220,6 +220,14 @@ int XLALHeapMaxSize(
 {
   XLAL_CHECK( h != NULL, XLAL_EFAULT );
   return h->max_size;
+}
+
+int XLALHeapIsFull(
+  const LALHeap *h
+  )
+{
+  XLAL_CHECK( h != NULL, XLAL_EFAULT );
+  return h->max_size > 0 && h->n == h->max_size;
 }
 
 const void *XLALHeapRoot(

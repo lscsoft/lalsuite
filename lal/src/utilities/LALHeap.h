@@ -109,6 +109,13 @@ int XLALHeapMaxSize(
   );
 
 /**
+ * Return >0 if a limited-size heap is full, 0 otherwise (or if heap has unlimited size), or <0 on error
+ */
+int XLALHeapIsFull(
+  const LALHeap *h              /**< [in] Pointer to heap */
+  );
+
+/**
  * Return the root element of a heap
  */
 const void *XLALHeapRoot(

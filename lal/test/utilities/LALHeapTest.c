@@ -116,6 +116,7 @@ int main( void )
 
     /* Add integer to unlimited min-heap, and check properties */
     {
+      XLAL_CHECK_MAIN( XLALHeapIsFull( minh ) == 0, XLAL_EFAILED );
       void *x = NULL;
       x = new_int( input[i] );
       XLAL_CHECK_MAIN( x != NULL, XLAL_ENOMEM );
@@ -138,6 +139,7 @@ int main( void )
 
     /* Add integer to unlimited max-heap, and check properties */
     {
+      XLAL_CHECK_MAIN( XLALHeapIsFull( maxh ) == 0, XLAL_EFAILED );
       void *x = NULL;
       x = new_int( input[i] );
       XLAL_CHECK_MAIN( x != NULL, XLAL_ENOMEM );
@@ -160,6 +162,7 @@ int main( void )
 
     /* Add integer to limited min-heap, and check properties */
     {
+      XLAL_CHECK_MAIN( XLALHeapIsFull( min10h ) == (i >= 10), XLAL_EFAILED );
       void *x = new_int( input[i] );
       XLAL_CHECK_MAIN( x != NULL, XLAL_ENOMEM );
       XLAL_CHECK_MAIN( XLALHeapAdd( min10h, &x ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -188,6 +191,7 @@ int main( void )
 
     /* Add integer to limited max-heap, and check properties */
     {
+      XLAL_CHECK_MAIN( XLALHeapIsFull( max10h ) == (i >= 10), XLAL_EFAILED );
       void *x = new_int( input[i] );
       XLAL_CHECK_MAIN( x != NULL, XLAL_ENOMEM );
       XLAL_CHECK_MAIN( XLALHeapAdd( max10h, &x ) == XLAL_SUCCESS, XLAL_EFUNC );
