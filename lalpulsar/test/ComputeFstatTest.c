@@ -161,8 +161,10 @@ main ( int argc, char *argv[] )
       }
       optionalArgs.FstatMethod = iMethod;
       optionalArgs.prevInput = NULL;
+      optionalArgs.resampFFTPowerOf2 = (1 == 1);
       XLAL_CHECK ( (input_seg1[iMethod] = XLALCreateFstatInput ( catalog, minCoverFreq, maxCoverFreq, dFreq, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
       optionalArgs.prevInput = input_seg1[iMethod];
+      optionalArgs.resampFFTPowerOf2 = (1 == 0);
       XLAL_CHECK ( (input_seg2[iMethod] = XLALCreateFstatInput ( catalog, minCoverFreq - 0.01, maxCoverFreq + 0.01, dFreq, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
     }
 
@@ -281,8 +283,8 @@ compareFstatResults ( const FstatResults *result1, const FstatResults *result2 )
 
   // ----- set tolerance levels for comparisons ----------
   VectorComparison XLAL_INIT_DECL(tol);
-  tol.relErr_L1 	= 2e-2;
-  tol.relErr_L2		= 2e-2;
+  tol.relErr_L1 	= 2.5e-2;
+  tol.relErr_L2		= 2.2e-2;
   tol.angleV 		= 0.02;  // rad
   tol.relErr_atMaxAbsx	= 2.1e-2;
   tol.relErr_atMaxAbsy  = 2.1e-2;

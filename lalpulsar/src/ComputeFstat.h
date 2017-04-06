@@ -133,6 +133,7 @@ typedef struct tagFstatOptionalArgs {
   MultiNoiseFloor *assumeSqrtSX;  	///< Single-sided PSD values to be used for computing SFT noise weights instead of from a running median of the SFTs themselves.
   FstatInput *prevInput;		///< An \c FstatInput structure from a previous call to XLALCreateFstatInput(); may contain common workspace data than can be re-used to save memory.
   BOOLEAN collectTiming;		///< a flag to turn on/off the collection of F-stat-method-specific timing-data
+  BOOLEAN resampFFTPowerOf2;		///< \a Resamp: round up FFT lengths to next power of 2; see #FstatMethodType.
 } FstatOptionalArgs;
 
 ///

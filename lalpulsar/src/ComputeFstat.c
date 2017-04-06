@@ -72,7 +72,8 @@ const FstatOptionalArgs FstatOptionalArgsDefaults = {
   .injectSqrtSX = NULL,
   .assumeSqrtSX = NULL,
   .prevInput = NULL,
-  .collectTiming = 0
+  .collectTiming = 0,
+  .resampFFTPowerOf2 = 1
 };
 
 // hidden global variables used to pass timings to test/benchmark programs
