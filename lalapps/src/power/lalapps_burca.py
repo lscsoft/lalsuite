@@ -152,12 +152,10 @@ options, filenames, paramdict = parse_command_line()
 
 if options.coinc_segs is not None:
 	def coinc_segs_ntuple_comparefunc(events, offset_vector, min_instruments = options.min_instruments, coinc_segs = options.coinc_segs):
-		# sort so we always do arithmetic in the same order
-		events = sorted(events, key = lambda event: event.peak)
-		# coinc time is SNR-weighted mean of event peak times
-		epoch = events[0].peak + offset_vector[events[0].ifo]
-		coinc_time = epoch + sum(float(event.peak + offset_vector[event.ifo] - epoch) * event.snr for event in events) / sum(event.snr for event in events)
-		return len(events) < min_instruments or coinc_time not in coinc_segs
+		# for the purposes of the coinc segs feature, the coinc
+		# time is minimum of event peak times.  this is a fast, and
+		# guaranteed reproducible definition
+		return len(events) < min_instruments or min(event.peak for event in events) not in coinc_segs
 else:
 	def coinc_segs_ntuple_comparefunc(events, offset_vector, min_instruments = options.min_instruments):
 		return len(events) < min_instruments

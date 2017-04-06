@@ -290,14 +290,9 @@ def StringCoincCompare(a, offseta, b, offsetb, light_travel_time, threshold):
 	return abs(float(a.peak + offseta - b.peak - offsetb)) > threshold + light_travel_time
 
 
-def StringNTupleCoincCompare(events, offset_vector):
-	instruments = set(event.ifo for event in events)
-
+def StringNTupleCoincCompare(events, offset_vector, disallowed = frozenset(("H1", "H2"))):
 	# disallow H1,H2 only coincs
-	coincident = instruments != set(["H1", "H2"])
-
-	# return result
-	return not coincident
+	return set(event.ifo for event in events) == disallowed
 
 
 #
