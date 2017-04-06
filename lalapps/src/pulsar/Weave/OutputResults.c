@@ -59,36 +59,18 @@ struct tagWeaveOutputResults {
 ///
 /// @{
 
-static int toplist_item_compare_by_mean2F( const void *x, const void *y );
-static void toplist_item_init_mean2F( WeaveResultsToplistItem *item, const WeaveSemiResults *semi_res, const size_t freq_idx );
-
 /// @}
 
 ///
-/// Initialise mean multi-detector F-statistic of toplist item
+/// \name Functions for results toplist ranked by mean multi-detector F-statistic
 ///
-static void toplist_item_init_mean2F(
-  WeaveResultsToplistItem *item,
-  const WeaveSemiResults *semi_res,
-  const size_t freq_idx
-  )
-{
-  item->mean2F = semi_res->mean2F->data[freq_idx];
-}
+/// @{
 
-///
-/// Compare toplist items by mean multi-detector F-statistic
-///
-int toplist_item_compare_by_mean2F(
-  const void *x,
-  const void *y
-  )
-{
-  const WeaveResultsToplistItem *ix = ( const WeaveResultsToplistItem * ) x;
-  const WeaveResultsToplistItem *iy = ( const WeaveResultsToplistItem * ) y;
-  WEAVE_COMPARE_BY( iy->mean2F, ix->mean2F );   // Compare in descending order
-  return 0;
-}
+static const REAL4 *toplist_results_mean2F( const WeaveSemiResults *semi_res ) { return semi_res->mean2F->data; }
+static REAL4 toplist_item_get_mean2F( const WeaveResultsToplistItem *item ) { return item->mean2F; }
+static void toplist_item_set_mean2F( WeaveResultsToplistItem *item, const REAL4 value ) { item->mean2F = value; }
+
+/// @}
 
 ///
 /// Create output results
@@ -132,7 +114,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   // Create a toplist which ranks results by mean multi-detector F-statistic
   if ( toplist_types & WEAVE_TOPLIST_RANKED_MEAN2F ) {
-    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, per_detectors, per_nsegments, "mean2F", "mean multi-detector F-statistic", toplist_limit, toplist_item_init_mean2F, toplist_item_compare_by_mean2F );
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, per_detectors, per_nsegments, "mean2F", "mean multi-detector F-statistic", toplist_limit, toplist_results_mean2F, toplist_item_get_mean2F, toplist_item_set_mean2F );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists++ < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
   }

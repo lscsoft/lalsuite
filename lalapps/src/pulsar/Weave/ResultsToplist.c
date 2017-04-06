@@ -38,9 +38,15 @@ struct tagWeaveResultsToplist {
   const char *stat_name;
   /// Description of ranking statistic
   const char *stat_desc;
-  /// Function which minimally initialises a toplist item before it is added
-  WeaveResultsToplistItemInit toplist_item_init_fcn;
-  /// Heap which ranks output results by a particular statistic
+  /// Function which returns pointer to array of statistics by which toplist items are ranked
+  WeaveResultsToplistRankingStats rank_stats_fcn;
+  /// Function which returns the value of the statistic by which toplist items are ranked
+  WeaveResultsToplistItemGetRankStat item_get_rank_stat_fcn;
+  /// Function which sets the value of the statistic by which toplist items are ranked
+  WeaveResultsToplistItemSetRankStat item_set_rank_stat_fcn;
+  /// Vector of indexes of toplist results which should be considered for addition
+  UINT4Vector *maybe_add_freq_idxs;
+  /// Heap which ranks toplist items
   LALHeap *heap;
   /// Save a no-longer-used toplist item for re-use
   WeaveResultsToplistItem *saved_item;
@@ -58,6 +64,7 @@ static int toplist_fits_table_init( FITSFile *file, const WeaveResultsToplist *t
 static int toplist_fits_table_write_visitor( void *param, const void *x );
 static int toplist_item_sort_by_semi_phys( const void *x, const void *y );
 static void toplist_item_destroy( WeaveResultsToplistItem *item );
+static int toplist_item_compare( void *param, const void *x, const void *y );
 
 /// @}
 
@@ -121,6 +128,22 @@ void toplist_item_destroy(
     }
     XLALFree( item );
   }
+}
+
+///
+/// Compare toplist items
+///
+int toplist_item_compare(
+  void *param,
+  const void *x,
+  const void *y
+  )
+{
+  WeaveResultsToplistItemGetRankStat item_get_rank_stat_fcn = ( WeaveResultsToplistItemGetRankStat ) param;
+  const WeaveResultsToplistItem *ix = ( const WeaveResultsToplistItem * ) x;
+  const WeaveResultsToplistItem *iy = ( const WeaveResultsToplistItem * ) y;
+  WEAVE_COMPARE_BY( item_get_rank_stat_fcn( iy ), item_get_rank_stat_fcn( ix ) );   // Compare in descending order
+  return 0;
 }
 
 ///
@@ -336,8 +359,9 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   const char *stat_name,
   const char *stat_desc,
   const UINT4 toplist_limit,
-  WeaveResultsToplistItemInit toplist_item_init_fcn,
-  LALHeapCmpFcn toplist_item_compare_fcn
+  WeaveResultsToplistRankingStats toplist_rank_stats_fcn,
+  WeaveResultsToplistItemGetRankStat toplist_item_get_rank_stat_fcn,
+  WeaveResultsToplistItemSetRankStat toplist_item_set_rank_stat_fcn
   )
 {
 
@@ -354,7 +378,9 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   toplist->per_nsegments = per_nsegments;
   toplist->stat_name = stat_name;
   toplist->stat_desc = stat_desc;
-  toplist->toplist_item_init_fcn = toplist_item_init_fcn;
+  toplist->rank_stats_fcn = toplist_rank_stats_fcn;
+  toplist->item_get_rank_stat_fcn = toplist_item_get_rank_stat_fcn;
+  toplist->item_set_rank_stat_fcn = toplist_item_set_rank_stat_fcn;
 
   // Copy list of detectors
   if ( per_detectors != NULL ) {
@@ -362,8 +388,8 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
     XLAL_CHECK_NULL( toplist->per_detectors != NULL, XLAL_EFUNC );
   }
 
-  // Create heap which ranks output results using the given comparison function
-  toplist->heap = XLALHeapCreate( ( LALHeapDtorFcn ) toplist_item_destroy, toplist_limit, +1, toplist_item_compare_fcn );
+  // Create heap which ranks toplist items
+  toplist->heap = XLALHeapCreate2( ( LALHeapDtorFcn ) toplist_item_destroy, toplist_limit, +1, toplist_item_compare, toplist_item_get_rank_stat_fcn );
   XLAL_CHECK_NULL( toplist->heap != NULL, XLAL_EFUNC );
 
   return toplist;
@@ -379,6 +405,7 @@ void XLALWeaveResultsToplistDestroy(
 {
   if ( toplist != NULL ) {
     XLALDestroyStringVector( toplist->per_detectors );
+    XLALDestroyUINT4Vector( toplist->maybe_add_freq_idxs );
     XLALHeapDestroy( toplist->heap );
     toplist_item_destroy( toplist->saved_item );
     XLALFree( toplist );
@@ -399,8 +426,33 @@ int XLALWeaveResultsToplistAdd(
   XLAL_CHECK( toplist != NULL, XLAL_EFAULT );
   XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
 
-  // Iterate over the frequency bins of the semicoherent results
-  for ( size_t freq_idx = 0; freq_idx < semi_nfreqs; ++freq_idx ) {
+  // Reallocate vector of indexes of toplist results which should be considered for addition
+  if ( toplist->maybe_add_freq_idxs == NULL || toplist->maybe_add_freq_idxs->length < semi_nfreqs ) {
+    toplist->maybe_add_freq_idxs = XLALResizeUINT4Vector( toplist->maybe_add_freq_idxs, semi_nfreqs );
+    XLAL_CHECK( toplist->maybe_add_freq_idxs != NULL, XLAL_EFUNC );
+  }
+
+  // Get pointer to array of ranking statistics
+  const REAL4 *toplist_rank_stats = toplist->rank_stats_fcn( semi_res );
+
+  // Get ranking statistic of heap root (or -infinity if heap is not yet full)
+  const int heap_full = XLALHeapIsFull( toplist->heap );
+  XLAL_CHECK( heap_full >= 0, XLAL_EFUNC );
+  const REAL4 heap_root_rank_stat = heap_full ? toplist->item_get_rank_stat_fcn( XLALHeapRoot( toplist->heap ) ) : GSL_NEGINF;
+
+  // Find the indexes of the semicoherent results whose ranking statistic equals or exceeds
+  // that of the heap root; only select these results for possible insertion into the toplist
+  UINT4 n_maybe_add = 0;
+  for ( UINT4 freq_idx = 0; freq_idx < semi_nfreqs; ++freq_idx ) {
+    if ( toplist_rank_stats[freq_idx] >= heap_root_rank_stat ) {
+      toplist->maybe_add_freq_idxs->data[n_maybe_add] = freq_idx;
+      ++n_maybe_add;
+    }
+  }
+
+  // Iterate over semicoherent results which have been selected for possible toplist insertion
+  for ( UINT4 idx = 0; idx < n_maybe_add; ++idx ) {
+    const UINT4 freq_idx = toplist->maybe_add_freq_idxs->data[idx];
 
     // Create a new toplist item if needed
     if ( toplist->saved_item == NULL ) {
@@ -409,13 +461,13 @@ int XLALWeaveResultsToplistAdd(
     }
     WeaveResultsToplistItem *item = toplist->saved_item;
 
-    // Perform minimal initialisation of toplist item
-    ( toplist->toplist_item_init_fcn )( item, semi_res, freq_idx );
+    // Set ranking statistic of toplist item
+    toplist->item_set_rank_stat_fcn( item, toplist_rank_stats[freq_idx] );
 
-    // Add item to heap
+    // Possibly add toplist item to heap
     XLAL_CHECK( XLALHeapAdd( toplist->heap, ( void ** ) &toplist->saved_item ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Skip remainder of loop if item was not added to heap
+    // Skip remainder of loop if toplist item was not added to heap
     if ( item == toplist->saved_item ) {
       continue;
     }

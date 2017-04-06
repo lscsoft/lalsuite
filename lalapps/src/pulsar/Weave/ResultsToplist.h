@@ -74,9 +74,19 @@ typedef struct tagWeaveResultsToplistItem {
 } WeaveResultsToplistItem;
 
 ///
-/// Function which minimally initialises a toplist item before it is added
+/// Function which returns pointer to array of statistics by which toplist items are ranked
 ///
-typedef void ( *WeaveResultsToplistItemInit )( WeaveResultsToplistItem *item, const WeaveSemiResults *semi_res, const size_t freq_idx );
+typedef const REAL4 *( *WeaveResultsToplistRankingStats )( const WeaveSemiResults *semi_res );
+
+///
+/// Function which returns the value of the statistic by which toplist items are ranked
+///
+typedef REAL4 ( *WeaveResultsToplistItemGetRankStat )( const WeaveResultsToplistItem *item );
+
+///
+/// Function which sets the value of the statistic by which toplist items are ranked
+///
+typedef void ( *WeaveResultsToplistItemSetRankStat )( WeaveResultsToplistItem *item, const REAL4 value );
 
 WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   const size_t nspins,
@@ -85,8 +95,9 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   const char *stat_name,
   const char *stat_desc,
   const UINT4 toplist_limit,
-  WeaveResultsToplistItemInit toplist_item_init_fcn,
-  LALHeapCmpFcn toplist_item_compare_fcn
+  WeaveResultsToplistRankingStats toplist_rank_stats_fcn,
+  WeaveResultsToplistItemGetRankStat toplist_item_get_rank_stat_fcn,
+  WeaveResultsToplistItemSetRankStat toplist_item_set_rank_stat_fcn
   );
 void XLALWeaveResultsToplistDestroy(
   WeaveResultsToplist *toplist
