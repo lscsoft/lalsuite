@@ -106,17 +106,17 @@ for seg in 1 2 3; do
 
     echo "=== Segment #${seg}: Check that semicoherent and coherent template banks agree ==="
     set -x
-    ${fstatdir}/lalapps_compareFstats --Fname1=WeaveSeg${seg}SemiBankCohFstats.txt --Fname2=WeaveSeg${seg}CohBankCohFstats.txt
-    ${fstatdir}/lalapps_compareFstats --Fname1=WeaveSeg${seg}SemiBankCohFstatsH1.txt --Fname2=WeaveSeg${seg}CohBankCohFstatsH1.txt
-    ${fstatdir}/lalapps_compareFstats --Fname1=WeaveSeg${seg}SemiBankCohFstatsL1.txt --Fname2=WeaveSeg${seg}CohBankCohFstatsL1.txt
+    ${fstatdir}/lalapps_compareFstats --tol-param=1e-4 --Fname1=WeaveSeg${seg}SemiBankCohFstats.txt --Fname2=WeaveSeg${seg}CohBankCohFstats.txt
+    ${fstatdir}/lalapps_compareFstats --tol-param=1e-4 --Fname1=WeaveSeg${seg}SemiBankCohFstatsH1.txt --Fname2=WeaveSeg${seg}CohBankCohFstatsH1.txt
+    ${fstatdir}/lalapps_compareFstats --tol-param=1e-4 --Fname1=WeaveSeg${seg}SemiBankCohFstatsL1.txt --Fname2=WeaveSeg${seg}CohBankCohFstatsL1.txt
     set +x
     echo
 
     echo "=== Segment #${seg}: Compare coherent F-statistics from lalapps_Weave to reference results ==="
     set -x
-    ${fstatdir}/lalapps_compareFstats --Fname1=WeaveSeg${seg}SemiBankCohFstats.txt --Fname2=RefSeg${seg}Fstats.txt
-    ${fstatdir}/lalapps_compareFstats --Fname1=WeaveSeg${seg}SemiBankCohFstatsH1.txt --Fname2=RefSeg${seg}FstatsH1.txt
-    ${fstatdir}/lalapps_compareFstats --Fname1=WeaveSeg${seg}SemiBankCohFstatsL1.txt --Fname2=RefSeg${seg}FstatsL1.txt
+    ${fstatdir}/lalapps_compareFstats --tol-param=1e-4 --Fname1=WeaveSeg${seg}SemiBankCohFstats.txt --Fname2=RefSeg${seg}Fstats.txt
+    ${fstatdir}/lalapps_compareFstats --tol-param=1e-4 --Fname1=WeaveSeg${seg}SemiBankCohFstatsH1.txt --Fname2=RefSeg${seg}FstatsH1.txt
+    ${fstatdir}/lalapps_compareFstats --tol-param=1e-4 --Fname1=WeaveSeg${seg}SemiBankCohFstatsL1.txt --Fname2=RefSeg${seg}FstatsL1.txt
     set +x
     echo
 
@@ -132,9 +132,9 @@ echo
 
 echo "=== Compare semicoherent F-statistics from lalapps_Weave to reference results ==="
 set -x
-${fstatdir}/lalapps_compareFstats --Fname1=WeaveSemiFstats.txt --Fname2=RefSemiFstats.txt
-${fstatdir}/lalapps_compareFstats --Fname1=WeaveSemiFstatsH1.txt --Fname2=RefSemiFstatsH1.txt
-${fstatdir}/lalapps_compareFstats --Fname1=WeaveSemiFstatsL1.txt --Fname2=RefSemiFstatsL1.txt
+${fstatdir}/lalapps_compareFstats --tol-param=1e-4 --Fname1=WeaveSemiFstats.txt --Fname2=RefSemiFstats.txt
+${fstatdir}/lalapps_compareFstats --tol-param=1e-4 --Fname1=WeaveSemiFstatsH1.txt --Fname2=RefSemiFstatsH1.txt
+${fstatdir}/lalapps_compareFstats --tol-param=1e-4 --Fname1=WeaveSemiFstatsL1.txt --Fname2=RefSemiFstatsL1.txt
 set +x
 echo
 

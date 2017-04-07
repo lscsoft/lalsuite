@@ -89,9 +89,9 @@ echo
 
 echo "=== Compare F-statistics from lalapps_Weave to reference results ==="
 set -x
-${fstatdir}/lalapps_compareFstats --Fname1=WeaveFstats.txt --Fname2=RefFstats.txt
-${fstatdir}/lalapps_compareFstats --Fname1=WeaveFstatsH1.txt --Fname2=RefFstatsH1.txt
-${fstatdir}/lalapps_compareFstats --Fname1=WeaveFstatsL1.txt --Fname2=RefFstatsL1.txt
+${fstatdir}/lalapps_compareFstats --tol-param=1e-4 --Fname1=WeaveFstats.txt --Fname2=RefFstats.txt
+${fstatdir}/lalapps_compareFstats --tol-param=1e-4 --Fname1=WeaveFstatsH1.txt --Fname2=RefFstatsH1.txt
+${fstatdir}/lalapps_compareFstats --tol-param=1e-4 --Fname1=WeaveFstatsL1.txt --Fname2=RefFstatsL1.txt
 set +x
 echo
 
