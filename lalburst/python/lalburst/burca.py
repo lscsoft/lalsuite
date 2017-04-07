@@ -330,15 +330,13 @@ def burca(
 		print >>sys.stderr, "indexing ..."
 	coinc_tables = CoincTables(xmldoc)
 	coinc_def_id = ligolw_coincs.get_coinc_def_id(xmldoc, coinc_definer_row.search, coinc_definer_row.search_coinc_type, create_new = True, description = coinc_definer_row.description)
-	sngl_burst_table = lsctables.SnglBurstTable.get_table(xmldoc)
-	sngl_index = dict((row.event_id, row) for row in sngl_burst_table)
 
 	#
 	# build the event list accessors, populated with events from those
 	# processes that can participate in a coincidence
 	#
 
-	eventlists = snglcoinc.EventListDict(EventListType, sngl_burst_table, instruments = set(coinc_tables.time_slide_table.getColumnByName("instrument")))
+	eventlists = snglcoinc.EventListDict(EventListType, lsctables.SnglBurstTable.get_table(xmldoc), instruments = set(coinc_tables.time_slide_table.getColumnByName("instrument")))
 
 	#
 	# construct offset vector assembly graph
@@ -354,9 +352,8 @@ def burca(
 	for node, coinc in time_slide_graph.get_coincs(eventlists, event_comparefunc, thresholds, verbose = verbose):
 		if len(coinc) < min_instruments:
 			continue
-		ntuple = tuple(sngl_index[event_id] for event_id in coinc)
-		if not ntuple_comparefunc(ntuple, node.offset_vector):
-			coinc_tables.append_coinc(*coinc_tables.coinc_rows(process_id, node.time_slide_id, coinc_def_id, ntuple))
+		if not ntuple_comparefunc(coinc, node.offset_vector):
+			coinc_tables.append_coinc(*coinc_tables.coinc_rows(process_id, node.time_slide_id, coinc_def_id, coinc))
 
 	#
 	# done
