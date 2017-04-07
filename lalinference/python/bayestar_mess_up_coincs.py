@@ -83,12 +83,12 @@ def conj(xmldoc, ifos):
         if row.ifo in ifos:
             if row.coa_phase is not None:
                 row.coa_phase *= -1
-        try:
-            series = snrs[row.event_id]
-        except KeyError:
-            pass
-        else:
-            series.array[2, :] *= -1
+            try:
+                series = snrs[row.event_id]
+            except KeyError:
+                pass
+            else:
+                series.array[2, :] *= -1
 
 
 def amplify(xmldoc, ifos, gain):
@@ -99,12 +99,12 @@ def amplify(xmldoc, ifos, gain):
         if row.ifo in ifos:
             if row.snr is not None:
                 row.snr *= gain
-        try:
-            series = snrs[row.event_id]
-        except KeyError:
-            pass
-        else:
-            series.array[1:, :] *= gain
+            try:
+                series = snrs[row.event_id]
+            except KeyError:
+                pass
+            else:
+                series.array[1:, :] *= gain
 
 
 # Command line interface
