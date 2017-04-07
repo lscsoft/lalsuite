@@ -756,7 +756,8 @@ int XLALSimInspiralTEOBResumROM(
   }
 
   // if (fRef!=0.0) fprintf(stdout,"WARNING: fREf != 0.0 -> TEOBResum_ROM does not do anything with fRef. It will be evaluated from fLow.\n");
-
+  fRef = 0.0;
+  
   // Load ROM data if not loaded already
   // fprintf(stdout,"initializing with TEOBResumROM_Init_LALDATA()\n");
   #ifdef LAL_PTHREAD_LOCK
