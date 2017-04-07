@@ -96,8 +96,7 @@ done
 
 echo "=== Extract semicoherent template bank from WeaveOut.fits as ASCII table ==="
 set -x
-${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0]" > WeaveSemiBank.txt
-sed -i '/^#/d' WeaveSemiBank.txt
+${fitsdir}/lalapps_fits_table_list -n "WeaveOut.fits[mean2F_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0]" > WeaveSemiBank.txt
 set +x
 echo
 
