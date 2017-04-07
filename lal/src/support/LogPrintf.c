@@ -67,8 +67,8 @@
 
 /*---------- empty initializers ---------- */
 
-/*---------- internal Global variables ----------*/
-
+/*---------- internal variables ----------*/
+static FILE *logFile = NULL;
 
 /*---------- internal prototypes ----------*/
 static FILE* LogFile(void);
@@ -94,9 +94,17 @@ LogLevel_t LogLevel(void)
   return LOG_NORMAL;		// Print LOG_CRITICAL and LOG_NORMAL messages by default
 }
 
+/** Set file to print log messages to */
+void LogSetFile(FILE *fp)
+{
+  logFile = fp;
+}
+
 /** Decide where to print log messages */
 static FILE* LogFile(void)
 {
+  if (logFile)
+    return logFile;		// Print all messages to 'logFile' if defined
   if (LogLevel() < LOG_NORMAL)
     return stderr;		// Error log messages are printed to standard error
   return stdout;		// All other log messages are printed to standard output

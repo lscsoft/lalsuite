@@ -64,6 +64,8 @@ typedef enum tagLogLevel_t
 /*---------- PROTOTYPES [API] ----------*/
 LogLevel_t LogLevel(void);
 
+void LogSetFile( FILE* fp );
+
 void LogPrintf (LogLevel_t, const char* format, ...) _LAL_GCC_PRINTF_FORMAT_(2,3);
 void LogPrintfVerbatim (LogLevel_t, const char* format, ...) _LAL_GCC_PRINTF_FORMAT_(2,3);
 

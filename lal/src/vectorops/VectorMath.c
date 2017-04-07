@@ -37,48 +37,44 @@
 // -------------------- our own failsafe aligned memory handling --------------------
 
 ///
-/// Create a special REAL4 Vector with n-byte aligned memory \c data array.
+/// Create a special \<TYPE\>Vector with n-byte aligned memory \c data array.
 ///
 /// This does not rely on \c posix_memalign() being available, and should compile+run everywhere.
-/// Use XLALDestroyREAL4VectorAligned() to free this.
+/// Use XLALDestroy\<TYPE\>VectorAligned() to free this.
 ///
-REAL4VectorAligned *
-XLALCreateREAL4VectorAligned ( const UINT4 length, const UINT4 align )
-{
-  REAL4VectorAligned *ret;
-  XLAL_CHECK_NULL ( (ret = XLALMalloc ( sizeof(*ret))) != NULL, XLAL_ENOMEM );
+#define DEFINE_ALIGNED_VECT_API(TYPE)                                   \
+TYPE##VectorAligned *XLALCreate##TYPE##VectorAligned ( const UINT4 length, const UINT4 align ) \
+{                                                                       \
+ TYPE##VectorAligned *ret;                                              \
+ XLAL_CHECK_NULL ( (ret = XLALMalloc ( sizeof(*ret))) != NULL, XLAL_ENOMEM ); \
+                                                                        \
+ ret->length = length;                                                  \
+ UINT4 paddedLength = length + align - 1;                               \
+ XLAL_CHECK_NULL ( (ret->data0 = XLALMalloc ( paddedLength * sizeof(ret->data0[0]) )) != NULL, XLAL_ENOMEM ); \
+                                                                        \
+ size_t remBytes = ((size_t)ret->data0) % align;                        \
+ size_t offsetBytes = (align - remBytes) % align;                       \
+ ret->data = (void*)(((char*)ret->data0) + offsetBytes);                \
+                                                                        \
+ XLAL_CHECK_NULL ( isMemAligned(ret->data,align), XLAL_EFAULT, "Failed to allocate %zd-byte aligned memory. Must be a coding error.\n", (size_t)align ); \
+                                                                        \
+ return ret;                                                            \
+} /* XLALCreate\<TYPE\>VectorAligned() */                                 \
+                                                                        \
+void XLALDestroy##TYPE##VectorAligned ( TYPE##VectorAligned *in )       \
+{                                                                       \
+  if ( !in ) { return; }                                                \
+  if ( in->data0 ) {                                                    \
+    XLALFree ( in->data0 );                                             \
+  }                                                                     \
+  XLALFree ( in );                                                      \
+  return;                                                               \
+} /* XLALDestroy\<TYPE\>VectorAligned() */
 
-  ret->length = length;
-  UINT4 paddedLength = length + align - 1;
-  XLAL_CHECK_NULL ( (ret->data0 = XLALMalloc ( paddedLength * sizeof(REAL4) )) != NULL, XLAL_ENOMEM );
-
-  size_t remBytes = ((size_t)ret->data0) % align;
-  size_t offsetBytes = (align - remBytes) % align;
-  ret->data = (void*)(((char*)ret->data0) + offsetBytes);
-
-  XLAL_CHECK_NULL ( isMemAligned(ret->data,align), XLAL_EFAULT, "Failed to allocate %zd-byte aligned memory. Must be a coding error.\n", (size_t)align );
-
-  return ret;
-} // XLALCreateREAL4VectorAligned()
-
-///
-/// Destroy special n-byte aligned  REAL4VectorAligned
-///
-void
-XLALDestroyREAL4VectorAligned ( REAL4VectorAligned *in )
-{
-  if ( !in ) {
-    return;
-  }
-  if ( in->data0 ) {
-    XLALFree ( in->data0 );
-  }
-
-  XLALFree ( in );
-
-  return;
-
-} // XLALDestroyREAL4VectorAligned()
+DEFINE_ALIGNED_VECT_API(REAL4);
+DEFINE_ALIGNED_VECT_API(REAL8);
+DEFINE_ALIGNED_VECT_API(COMPLEX8);
+DEFINE_ALIGNED_VECT_API(COMPLEX16);
 
 // -------------------- export vector-operation functions --------------------
 

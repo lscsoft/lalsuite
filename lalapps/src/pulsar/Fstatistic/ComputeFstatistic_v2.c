@@ -303,6 +303,8 @@ typedef struct {
 
   int FstatMethod;		//!< select which method/algorithm to use to compute the F-statistic
 
+  BOOLEAN resampFFTPowerOf2;	//!< in Resamp: enforce FFT length to be a power of two (by rounding up)
+
   // ----- deprecated and obsolete variables, kept around for backwards-compatibility -----
   LIGOTimeGPS internalRefTime;   /**< [DEPRECATED] internal reference time. Has no effect, XLALComputeFstat() now always uses midtime anyway ... */
   REAL8 dopplermax;              /**< [DEPRECATED] HAS NO EFFECT and should no longer be used: maximum Doppler shift is accounted for internally */
@@ -955,6 +957,7 @@ initUserVars ( UserInput_t *uvar )
 
   uvar->transient_WindowType = XLALStringDuplicate ( "none" );
   uvar->transient_useFReg = 0;
+  uvar->resampFFTPowerOf2 = TRUE;
 
   /* ---------- register all user-variables ---------- */
   XLALRegisterUvarMember( 	Alpha, 		RAJ, 'a', OPTIONAL, "Sky: equatorial J2000 right ascension (in radians or hours:minutes:seconds)");
@@ -1056,7 +1059,7 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarAuxDataMember( SSBprecision, UserEnum, &SSBprecisionChoices, 0, DEVELOPER, "Precision to use for time-transformation to SSB" );
 
   XLALRegisterUvarMember( 	RngMedWindow,	INT4, 'k', DEVELOPER, "Running-Median window size");
-  XLALRegisterUvarMember(	Dterms,		INT4, 't', DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
+  XLALRegisterUvarMember(	Dterms,		INT4, 't', DEVELOPER, "Number of kernel terms (single-sided) to use in\na) Dirichlet kernel if FstatMethod=Demod*\nb) sinc-interpolation kernel if FstatMethod=Resamp*" );
 
   XLALRegisterUvarMember(workingDir,     STRING, 'w', DEVELOPER, "Directory to use as work directory.");
   XLALRegisterUvarMember( 	timerCount, 	 REAL8, 0,  DEVELOPER, "N: Output progress/timer info every N seconds");
@@ -1072,6 +1075,8 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember(transient_useFReg,   	 BOOLEAN, 0,  DEVELOPER, "FALSE: use 'standard' e^F for marginalization, if TRUE: use e^FReg = (1/D)*e^F (BAD)");
 
   XLALRegisterUvarMember(outputTiming,         STRING, 0,  DEVELOPER, "Append timing measurements and parameters into this file");
+
+  XLALRegisterUvarMember(resampFFTPowerOf2,  BOOLEAN, 0,  DEVELOPER, "For Resampling methods: enforce FFT length to be a power of two (by rounding up)" );
 
   // ---------- deprecated but still-supported or tolerated options ----------
   XLALRegisterUvarMember ( RA,	STRING, 0, DEPRECATED, "Use --Alpha instead" );
@@ -1352,6 +1357,7 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   optionalArgs.injectSqrtSX = injectSqrtSX;
   optionalArgs.assumeSqrtSX = assumeSqrtSX;
   optionalArgs.FstatMethod = uvar->FstatMethod;
+  optionalArgs.resampFFTPowerOf2 = uvar->resampFFTPowerOf2;
 
   XLAL_CHECK ( (cfg->Fstat_in = XLALCreateFstatInput( catalog, fCoverMin, fCoverMax, cfg->dFreq, cfg->ephemeris, &optionalArgs )) != NULL, XLAL_EFUNC );
   XLALDestroySFTCatalog(catalog);

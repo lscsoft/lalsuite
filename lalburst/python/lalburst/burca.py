@@ -1,4 +1,4 @@
-# Copyright (C) 2006  Kipp Cannon
+# Copyright (C) 2006--2011,2013,2015--2017  Kipp Cannon
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -50,40 +50,13 @@ __date__ = git_version.date
 #
 
 
-def sngl_burst___cmp__(self, other):
-	# compare self's peak time to the LIGOTimeGPS instance other
-	return cmp(self.peak_time, other.seconds) or cmp(self.peak_time_ns, other.nanoseconds)
-
-
-lsctables.SnglBurst.__cmp__ = sngl_burst___cmp__
-
-
-#
-# =============================================================================
-#
-#                           Add Process Information
-#
-# =============================================================================
-#
-
-
-process_program_name = "lalapps_burca"
-
-
-def append_process(xmldoc, comment = None, **kwargs):
-	paramdict = kwargs.copy()
-	if paramdict["coincidence_algorithm"] in ("stringcusp",):
-		paramdict["thresholds"] = [u"%s,%s=%s" % (a, b, ",".join(map(str, value))) for (a, b), value in paramdict["thresholds"].items() if a < b]
-
-	return ligolw_process.append_process(
-		xmldoc,
-		program = process_program_name,
-		paramdict = paramdict,
-		version = __version__,
-		cvs_repository = u"lscsoft",
-		cvs_entry_time = __date__,
-		comment = comment
-	)
+class SnglBurst(lsctables.SnglBurst):
+	__slots__ = ()
+	def __cmp__(self, other):
+		# compare self's end time to the LIGOTimeGPS instance
+		# other.  allows bisection searches by GPS time to find
+		# ranges of triggers quickly
+		return cmp(self.peak_time, other)
 
 
 #

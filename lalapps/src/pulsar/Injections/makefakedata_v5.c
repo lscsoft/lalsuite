@@ -484,11 +484,23 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
         {
           LALCache *cache;
           XLAL_CHECK ( (cache = XLALCacheImport ( uvar->inFrames->data[X] )) != NULL, XLAL_EFUNC, "Failed to import cache file '%s'\n", uvar->inFrames->data[X] );
-          // this is a sorted cache, so extract its time-range:
-          REAL8 cache_tStart = cache->list[0].t0;
-          REAL8 cache_tEnd   = cache->list[cache->length-1].t0 + cache->list[cache->length-1].dt;
-          REAL8 cache_duration = (cache_tEnd - cache_tStart);
-          LIGOTimeGPS ts_start;
+          // ----- open frame stream ----------
+          LALFrStream *stream;
+          XLAL_CHECK ( (stream = XLALFrStreamCacheOpen ( cache )) != NULL, XLAL_EFUNC, "Failed to open stream from cache file '%s'\n", uvar->inFrames->data[X] );
+          XLALDestroyCache ( cache );
+
+          // ----- determine time span of frame data from the stream ----------
+          // determine time spanned by the frames in this cache
+          LIGOTimeGPS frames_startGPS, frames_endGPS;
+          XLAL_CHECK ( XLALFrStreamSeekO ( stream, 0, SEEK_SET ) == 0, XLAL_EFUNC, "Failed to move to start of input frame-stream\n");
+          XLAL_CHECK ( XLALFrStreamTell ( &frames_startGPS, stream ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK ( XLALFrStreamSeekO ( stream, 0, SEEK_END ) == 0, XLAL_EFUNC, "Failed to move to end of input frame-stream\n");
+          XLAL_CHECK ( XLALFrStreamTell ( &frames_endGPS, stream ) == XLAL_SUCCESS, XLAL_EFUNC );
+          REAL8 frames_start = XLALGPSGetREAL8 ( &frames_startGPS );
+          REAL8 frames_end   = XLALGPSGetREAL8 ( &frames_endGPS );
+          REAL8 frames_span = frames_end - frames_start;
+
+          LIGOTimeGPS ts_startGPS;
           REAL8 ts_duration;
           // check that it's consistent with timestamps, if given, otherwise create timestamps from this
           if ( cfg->multiTimestamps->data[X] != NULL )	// FIXME: implicitly assumes timestamps are sorted, which is not guaranteed by timestamps-reading from file
@@ -496,27 +508,30 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
               const LIGOTimeGPSVector *timestampsX = cfg->multiTimestamps->data[X];
               REAL8 tStart = XLALGPSGetREAL8( &timestampsX->data[0] );
               REAL8 tEnd   = XLALGPSGetREAL8( &timestampsX->data[timestampsX->length-1]) + timestampsX->deltaT;
-              XLAL_CHECK ( tStart >= cache_tStart && tEnd <= cache_tEnd, XLAL_EINVAL, "Detector X=%d: Requested timestamps-range [%.0f, %.0f]s outside of cache range [%.0f,%.0f]s\n",
-                           X, tStart, tEnd, cache_tStart, cache_tEnd );
-              XLALGPSSetREAL8 ( &ts_start, tStart );
+              XLAL_CHECK ( tStart >= frames_start && tEnd <= frames_end, XLAL_EINVAL, "Detector X=%d: Requested timestamps-range [%.0f, %.0f]s outside of cache range [%.0f,%.0f]s\n",
+                           X, tStart, tEnd, frames_start, frames_end );
+              XLALGPSSetREAL8 ( &ts_startGPS, tStart );
               ts_duration = (tEnd - tStart);
-            }
+            } // if have_timestamps
           else
             {
-              XLALGPSSetREAL8 ( &ts_start, (REAL8)cache_tStart + 1); // cache times can apparently be by rounded up or down by 1s, so shift by 1s to be safe
-              ts_duration = cache_duration - 1;
-              XLAL_CHECK ( (cfg->multiTimestamps->data[X] = XLALMakeTimestamps ( ts_start, ts_duration, uvar->Tsft, uvar->SFToverlap ) ) != NULL, XLAL_EFUNC );
-            }
-          // ----- now open frame stream and read *all* the data within this time-range [FIXME] ----------
-          LALFrStream *stream;
-          XLAL_CHECK ( (stream = XLALFrStreamCacheOpen ( cache )) != NULL, XLAL_EFUNC, "Failed to open stream from cache file '%s'\n", uvar->inFrames->data[X] );
-          XLALDestroyCache ( cache );
+              ts_startGPS = frames_startGPS;
+              ts_duration = frames_span;
+              XLAL_CHECK ( (cfg->multiTimestamps->data[X] = XLALMakeTimestamps ( ts_startGPS, ts_duration, uvar->Tsft, uvar->SFToverlap ) ) != NULL, XLAL_EFUNC );
+              // in this case we can't allow timestamps extending beyond the end of the frame timeseries, so we drop the last timestamp if necessary
+              LIGOTimeGPSVector *timestampsX = cfg->multiTimestamps->data[X];
+              REAL8 tEnd;
+              while ( (tEnd = XLALGPSGetREAL8 ( &timestampsX->data[timestampsX->length-1] ) + timestampsX->deltaT) > frames_end ) {
+                timestampsX->length --;
+              }
+            } // if have no timestamps
 
           const char *channel = uvar->inFrChannels->data[X];
           size_t limit = 0;	// unlimited read
           REAL8TimeSeries *ts;
-          XLAL_CHECK ( (ts = XLALFrStreamInputREAL8TimeSeries ( stream, channel, &ts_start, ts_duration, limit )) != NULL,
-                       XLAL_EFUNC, "Frame reading failed for stream created for '%s': ts_start = {%d,%d}, duration=%.0f\n", uvar->inFrames->data[X], ts_start.gpsSeconds, ts_start.gpsNanoSeconds, ts_duration );
+          XLAL_CHECK ( (ts = XLALFrStreamInputREAL8TimeSeries ( stream, channel, &ts_startGPS, ts_duration, limit )) != NULL,
+                       XLAL_EFUNC, "Frame reading failed for stream created for '%s': ts_start = {%d,%d}, duration=%.0f\n",
+                       uvar->inFrames->data[X], ts_startGPS.gpsSeconds, ts_startGPS.gpsNanoSeconds, ts_duration );
           cfg->inputMultiTS->data[X] = ts;
 
           XLAL_CHECK ( XLALFrStreamClose ( stream ) == XLAL_SUCCESS, XLAL_EFUNC, "Stream closing failed for cache file '%s'\n", uvar->inFrames->data[X] );

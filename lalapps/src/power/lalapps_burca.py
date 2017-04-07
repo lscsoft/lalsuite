@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006--2010  Kipp Cannon
+# Copyright (C) 2006--2017  Kipp Cannon
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -33,22 +33,20 @@ import sys
 from glue import segmentsUtils
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
-from glue.ligolw import utils
+from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
 from lalburst import git_version
 from lalburst import burca
 from pylal import snglcoinc
 
 
-lsctables.use_in(ligolw.LIGOLWContentHandler)
+@lsctables.use_in
+class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+	pass
 
+lsctables.SnglBurstTable.RowType = burca.SnglBurst
 
-#
-# Use interning row builder to save memory.
-#
-
-
-lsctables.table.TableStream.RowBuilder = lsctables.table.InterningRowBuilder
+process_program_name = "lalapps_burca"
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -173,6 +171,8 @@ def parse_command_line():
 	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
 	options, filenames = parser.parse_args()
 
+	paramdict = options.__dict__.copy()
+
 	#
 	# check and convert and bunch of arguments
 	#
@@ -198,7 +198,7 @@ def parse_command_line():
 	# done
 	#
 
-	return options, (filenames or [None])
+	return options, (filenames or [None]), paramdict
 
 
 #
@@ -215,7 +215,7 @@ def parse_command_line():
 #
 
 
-options, filenames = parse_command_line()
+options, filenames, paramdict = parse_command_line()
 
 
 #
@@ -268,14 +268,13 @@ for n, filename in enumerate(filenames):
 
 	if options.verbose:
 		print >>sys.stderr, "%d/%d:" % (n + 1, len(filenames)),
-	xmldoc = utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw.LIGOLWContentHandler)
-	lsctables.table.InterningRowBuilder.strings.clear()
+	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = LIGOLWContentHandler)
 
 	#
 	# Have we already processed it?
 	#
 
-	if ligolw_process.doc_includes_process(xmldoc, burca.process_program_name):
+	if ligolw_process.doc_includes_process(xmldoc, process_program_name):
 		if options.verbose:
 			print >>sys.stderr, "warning: %s already processed," % (filename or "stdin"),
 		if not options.force:
@@ -289,7 +288,12 @@ for n, filename in enumerate(filenames):
 	# Add an entry to the process table.
 	#
 
-	process = burca.append_process(xmldoc, **options.__dict__)
+	process = ligolw_process.register_to_xmldoc(xmldoc, process_program_name, paramdict,
+		comment = options.comment,
+		version = __version__,
+		cvs_repository = u"lscsoft",
+		cvs_entry_time = __date__
+	)
 
 	#
 	# Run coincidence algorithm.
@@ -317,6 +321,6 @@ for n, filename in enumerate(filenames):
 	# Write back to disk, and clean up.
 	#
 
-	utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = (filename or "stdout").endswith(".gz"))
+	ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = (filename or "stdout").endswith(".gz"))
 	xmldoc.unlink()
 	lsctables.reset_next_ids(lsctables.TableByName.values())

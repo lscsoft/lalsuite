@@ -92,6 +92,7 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
     double min_distance,            /* Minimum distance */
     double max_distance,            /* Maximum distance */
     int prior_distance_power,       /* Power of distance in prior */
+    int cosmology,                  /* Set to nonzero to include comoving volume correction */
     /* Data */
     double gmst,                    /* GMST (rad) */
     unsigned int nifos,             /* Number of detectors */

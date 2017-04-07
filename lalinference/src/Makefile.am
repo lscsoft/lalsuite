@@ -1,8 +1,11 @@
-BUILT_SOURCES =
+BUILT_SOURCES = bayestar_cosmology.h
 MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
+
+bayestar_cosmology.h: bayestar_cosmology.py
+	$(AM_V_GEN)$(PYTHON) $< > $@
 
 if HAVE_CHEALPIX
 BAYESTARHDR = bayestar_sky_map.h bayestar_distance.h bayestar_moc.h
@@ -73,7 +76,7 @@ nodist_liblalinference_la_SOURCES = \
 	LALInferenceVCSInfo.c \
 	$(END_OF_LIST)
 
-noinst_HEADERS = six.h
+noinst_HEADERS = six.h bayestar_cosmology.h
 
 liblalinference_la_CFLAGS = $(AM_CFLAGS) $(HDF5_CFLAGS)
 liblalinference_la_CPPFLAGS = $(AM_CPPFLAGS) $(HDF5_CPPFLAGS)
@@ -97,6 +100,7 @@ lalinference_version_SOURCES = version.c
 
 EXTRA_DIST = \
 	LALInferenceConfig.h.in \
+	bayestar_cosmology.py \
 	$(ANALYTICFILES) \
 	config.h.in
 

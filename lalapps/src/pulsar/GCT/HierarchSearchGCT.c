@@ -140,6 +140,7 @@ typedef struct {
   LIGOTimeGPS maxStartTimeGPS;       /**< all sft timestamps must be before this GPS time */
   UINT4 blocksRngMed;              /**< blocksize for running median noise floor estimation */
   UINT4 Dterms;                    /**< size of Dirichlet kernel for Fstat calculation */
+  UINT4 DtermsRecalc;              /**< Recalc: size of Dirichlet kernel for Fstat calculation */
   LALStringVector* assumeSqrtSX;   /**< Assume stationary Gaussian noise with detector noise-floors sqrt{SX}" */
   BOOLEAN SignalOnly;              /**< DEPRECATED: ALTERNATIVE switch to assume Sh=1 instead of estimating noise-floors from SFTs */
   /* parameters describing the coherent data-segments */
@@ -242,6 +243,7 @@ int XLALExtrapolateToplistPulsarSpins ( toplist_t *list,
 					const LIGOTimeGPS finegridRefTime);
 
 static int write_TimingInfo ( const CHAR *fname, const timingInfo_t *ti );
+static inline REAL4 findLoudestTwoF ( const FstatResults *in );
 
 /* ---------- Global variables -------------------- */
 LALStatus *global_status; /* a global pointer to MAIN()s head of the LALStatus structure */
@@ -375,6 +377,7 @@ int MAIN( int argc, char *argv[]) {
 
   BOOLEAN uvar_printCand1 = FALSE;      /* if 1st stage candidates are to be printed */
   BOOLEAN uvar_printFstat1 = FALSE;
+  BOOLEAN uvar_loudestTwoFPerSeg = FALSE;	// output loudest per-segment Fstat candidates
   BOOLEAN uvar_semiCohToplist = TRUE; /* if overall first stage candidates are to be output */
 
   LALStringVector* uvar_assumeSqrtSX = NULL;    /* Assume stationary Gaussian noise with detector noise-floors sqrt{SX}" */
@@ -423,6 +426,7 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_segmentList = NULL;	/**< ALTERNATIVE: file containing a pre-computed segment list of tuples (startGPS endGPS duration[h] NumSFTs) */
 
   INT4 uvar_Dterms = DTERMS;
+  INT4 uvar_DtermsRecalc = DTERMS;
   INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
   INT4 uvar_gammaRefine = 1;
   INT4 uvar_gamma2Refine = 1;
@@ -448,7 +452,6 @@ int MAIN( int argc, char *argv[]) {
   int uvar_FstatMethodRecalc = FMETHOD_DEMOD_BEST;
 
   timingInfo_t XLAL_INIT_DECL(timing);
-
 
   LALStringVector *uvar_injectionSources = NULL;
 
@@ -548,12 +551,14 @@ int MAIN( int argc, char *argv[]) {
   /* developer user variables */
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_blocksRngMed,        "blocksRngMed",        INT4,         0,   DEVELOPER,  "RngMed block size") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvarAuxData( &uvar_SSBprecision, "SSBprecision", UserEnum, &SSBprecisionChoices, 0, DEVELOPER, "Precision for SSB transform") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_Dterms,              "Dterms",              INT4,         0,   DEVELOPER,  "No. of terms to keep in Dirichlet Kernel" ) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_Dterms,              "Dterms",              INT4,         0,   DEVELOPER,  "Number of kernel terms (single-sided) to use in\na) Dirichlet kernel if FstatMethod=Demod*\nb) sinc-interpolation kernel if FstatMethod=Resamp*" ) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_DtermsRecalc,        "DtermsRecalc",        INT4,         0,   DEVELOPER,  "Same as 'Dterms', applies to 'Recalc' step" ) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_skyPointIndex,       "skyPointIndex",       INT4,         0,   DEVELOPER,  "Only analyze this skypoint in grid" ) == XLAL_SUCCESS, XLAL_EFUNC);
 
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outputTiming,        "outputTiming",        STRING,       0,   DEVELOPER,  "Append timing information into this file") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outputTimingDetails, "outputTimingDetails", STRING,       0,   DEVELOPER,  "Append detailed F-stat timing information to this file") == XLAL_SUCCESS, XLAL_EFUNC);
 
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_loudestTwoFPerSeg,   "loudestTwoFPerSeg",   BOOLEAN,      0, DEVELOPER, "Output loudest per-segment Fstat values into file '_loudestTwoFPerSeg'" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* inject signals into the data being analyzed */
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar ( &uvar_injectionSources, "injectionSources",      STRINGVector, 0, DEVELOPER,     "CSV list of files containing signal parameters for injection [see mfdv5]") == XLAL_SUCCESS, XLAL_EFUNC );
@@ -811,6 +816,7 @@ int MAIN( int argc, char *argv[]) {
   usefulParams.maxStartTimeGPS = maxStartTimeGPS;
   usefulParams.blocksRngMed = uvar_blocksRngMed;
   usefulParams.Dterms = uvar_Dterms;
+  usefulParams.DtermsRecalc = uvar_DtermsRecalc;
   usefulParams.assumeSqrtSX = uvar_assumeSqrtSX;
   usefulParams.SignalOnly = uvar_SignalOnly;
   usefulParams.SSBprec = uvar_SSBprecision;
@@ -902,6 +908,12 @@ int MAIN( int argc, char *argv[]) {
   refTimeGPS = usefulParams.spinRange_refTime.refTime;
   fprintf(stderr, "%% --- GPS reference time = %.4f ,  GPS data mid time = %.4f\n",
           XLALGPSGetREAL8(&refTimeGPS), XLALGPSGetREAL8(&tMidGPS) );
+
+  REAL4 *loudestTwoFPerSeg = NULL;
+  if ( uvar_loudestTwoFPerSeg )
+    {
+      loudestTwoFPerSeg = XLALCalloc ( nStacks, sizeof(REAL4) );
+    } // if loudestTwoFPerSeg
 
   /* free segment list */
   if ( usefulParams.segmentList )
@@ -1615,6 +1627,12 @@ int MAIN( int argc, char *argv[]) {
                       LAL_CALL( PrintFstatVec ( &status, Fstat_res, fpFstat1, &thisPoint, refTimeGPS, k+1), &status);
                     }
 
+                  // if requested, keep track of loudest candidate from each segment
+                  if ( loudestTwoFPerSeg )
+                    {
+                      REAL4 loudestFstat_k = findLoudestTwoF ( Fstat_res );
+                      loudestTwoFPerSeg[k] = fmaxf ( loudestTwoFPerSeg[k], loudestFstat_k );
+                    }
                   /* --- Holger: This is not needed in U1-only case. Sort the coarse grid in Uindex --- */
                   /* qsort(coarsegrid.list, (size_t)coarsegrid.length, sizeof(CoarseGridPoint), compareCoarseGridUindex); */
 
@@ -1883,6 +1901,22 @@ int MAIN( int argc, char *argv[]) {
       }
     } // if uvar_outputTiming
 
+  // output loudest per-segment candidates
+  if ( loudestTwoFPerSeg )
+    {
+      CHAR *fname = XLALStringDuplicate ( uvar_fnameout );
+      fname = XLALStringAppend ( fname, "_loudestTwoFPerSeg");
+      FILE *fp;
+      if ( (fp = fopen ( fname, "wb" )) == NULL ) {
+        XLALPrintError ( "Unable to open '%s' for writing\n", fname );
+        return(HIERARCHICALSEARCH_EFILE);
+      }
+      for ( UINT4 l = 0; l < nStacks; l ++ ) {
+        fprintf ( fp, "%.6" LAL_REAL4_FORMAT "\n", loudestTwoFPerSeg[l] );
+      }
+      fclose ( fp );
+      XLALFree ( fname );
+    } // if loudestTwoFPerSeg
 
   char t1_suffix[16];
   char t2_suffix[16];
@@ -2050,6 +2084,7 @@ int MAIN( int argc, char *argv[]) {
   if ( usefulParams.timingDetailsFP != NULL ) {
     fclose ( usefulParams.timingDetailsFP );
   }
+  XLALFree ( loudestTwoFPerSeg );
 
   LALCheckMemoryLeaks();
 
@@ -2343,6 +2378,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
       {
         optionalArgsRecalc = optionalArgs;
         optionalArgsRecalc.FstatMethod = in->FmethodRecalc;
+        optionalArgsRecalc.Dterms = in->DtermsRecalc;
         if ( k == 0 ) {
           optionalArgsRecalc.prevInput = NULL;
         } else {
@@ -2913,8 +2949,18 @@ void UpdateSemiCohToplists ( LALStatus *status,
 } /* UpdateSemiCohToplists() */
 
 
+// simply return maximal (multi-IFO) Fstat-value over frequency-bins in in->twoF
+static inline REAL4
+findLoudestTwoF ( const FstatResults *in )
+{
+  REAL4 maxTwoF = 0;
+  for ( UINT4 k = 0; k < in->numFreqBins; k ++ )
+    {
+      maxTwoF = fmaxf ( maxTwoF, in->twoF[k] );
+    } // k < numFreqBins
 
-
+  return maxTwoF;
+} // findLoudestTwoF()
 
 
 /** Print Fstat vectors */
