@@ -24,7 +24,7 @@
 #
 
 
-import bisect
+from bisect import bisect_left, bisect_right
 import math
 import sys
 
@@ -153,6 +153,11 @@ StringCuspBBCoincDef = lsctables.CoincDef(search = u"StringCusp", search_coinc_t
 
 
 class StringCuspCoincTables(snglcoinc.CoincTables):
+	@staticmethod
+	def ntuple_comparefunc(events, offset_vector, disallowed = frozenset(("H1", "H2"))):
+		# disallow H1,H2 only coincs
+		return set(event.ifo for event in events) == disallowed
+
 	def coinc_rows(self, process_id, time_slide_id, coinc_def_id, events):
 		coinc, coincmaps = super(StringCuspCoincTables, self).coinc_rows(process_id, time_slide_id, coinc_def_id, events)
 		coinc.insts = (event.ifo for event in events)
@@ -198,7 +203,25 @@ class ExcessPowerEventList(snglcoinc.EventList):
 			# max() doesn't like empty lists
 			self.max_edge_peak_delta = 0
 
-	def get_coincs(self, event_a, offset_a, light_travel_time, ignored, comparefunc):
+	@staticmethod
+	def comparefunc(a, offseta, b, offsetb, light_travel_time, ignored):
+		if abs(a.central_freq - b.central_freq) > (a.bandwidth + b.bandwidth) / 2:
+			return True
+
+		astart = a.start + offseta
+		bstart = b.start + offsetb
+		if astart > bstart + b.duration + light_travel_time:
+			# a starts after the end of b
+			return True
+
+		if bstart > astart + a.duration + light_travel_time:
+			# b starts after the end of a
+			return True
+
+		# time-frequency times intersect
+		return False
+
+	def get_coincs(self, event_a, offset_a, light_travel_time, ignored):
 		# event_a's peak time
 		peak = event_a.peak
 
@@ -223,7 +246,7 @@ class ExcessPowerEventList(snglcoinc.EventList):
 		# coincidence with event_a (use bisection searches for the
 		# minimum and maximum allowed peak times to quickly
 		# identify a subset of the full list)
-		return [event_b for event_b in self[bisect.bisect_left(self, peak - dt) : bisect.bisect_right(self, peak + dt)] if not comparefunc(event_a, offset_a, event_b, self.offset, light_travel_time, ignored)]
+		return [event_b for event_b in self[bisect_left(self, peak - dt) : bisect_right(self, peak + dt)] if not self.comparefunc(event_a, offset_a, event_b, self.offset, light_travel_time, ignored)]
 
 
 #
@@ -246,52 +269,10 @@ class StringEventList(snglcoinc.EventList):
 		"""
 		self.sort(key = lambda event: event.peak)
 
-	def get_coincs(self, event_a, offset_a, light_travel_time, threshold, comparefunc):
-		min_peak = max_peak = event_a.peak + offset_a - self.offset
-		min_peak -= threshold + light_travel_time
-		max_peak += threshold + light_travel_time
-		return [event_b for event_b in self[bisect.bisect_left(self, min_peak) : bisect.bisect_right(self, max_peak)] if not comparefunc(event_a, offset_a, event_b, self.offset, light_travel_time, threshold)]
-
-
-#
-# =============================================================================
-#
-#                              Coincidence Tests
-#
-# =============================================================================
-#
-
-
-def ExcessPowerCoincCompare(a, offseta, b, offsetb, light_travel_time, ignored):
-	if abs(a.central_freq - b.central_freq) > (a.bandwidth + b.bandwidth) / 2:
-		return True
-
-	astart = a.start + offseta
-	bstart = b.start + offsetb
-	if astart > bstart + b.duration + light_travel_time:
-		# a starts after the end of b
-		return True
-
-	if bstart > astart + a.duration + light_travel_time:
-		# b starts after the end of a
-		return True
-
-	# time-frequency times intersect
-	return False
-
-
-def StringCoincCompare(a, offseta, b, offsetb, light_travel_time, threshold):
-	"""
-	Returns False (a & b are coincident) if the events' peak times
-	differ from each other by no more than dt plus the light travel
-	time from one instrument to the next.
-	"""
-	return abs(float(a.peak + offseta - b.peak - offsetb)) > threshold + light_travel_time
-
-
-def StringNTupleCoincCompare(events, offset_vector, disallowed = frozenset(("H1", "H2"))):
-	# disallow H1,H2 only coincs
-	return set(event.ifo for event in events) == disallowed
+	def get_coincs(self, event_a, offset_a, light_travel_time, threshold):
+		peak = event_a.peak + offset_a - self.offset
+		coinc_window = threshold + light_travel_time
+		return self[bisect_left(self, peak - coinc_window) : bisect_right(self, peak + coinc_window)]
 
 
 #
@@ -309,7 +290,6 @@ def burca(
 	EventListType,
 	CoincTables,
 	coinc_definer_row,
-	event_comparefunc,
 	thresholds,
 	ntuple_comparefunc = lambda events, offset_vector: False,
 	min_instruments = 2,
@@ -349,7 +329,7 @@ def burca(
 	# and record the survivors
 	#
 
-	for node, coinc in time_slide_graph.get_coincs(eventlists, event_comparefunc, thresholds, verbose = verbose):
+	for node, coinc in time_slide_graph.get_coincs(eventlists, thresholds, verbose = verbose):
 		if len(coinc) < min_instruments:
 			continue
 		if not ntuple_comparefunc(coinc, node.offset_vector):

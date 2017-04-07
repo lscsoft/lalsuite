@@ -161,14 +161,12 @@ else:
 
 if options.coincidence_algorithm == "excesspower":
 	EventListType = burca.ExcessPowerEventList
-	comparefunc = burca.ExcessPowerCoincCompare
 	ntuple_comparefunc = coinc_segs_ntuple_comparefunc
 	CoincTables = burca.ExcessPowerCoincTables
 	CoincDef = burca.ExcessPowerBBCoincDef
 elif options.coincidence_algorithm == "stringcusp":
 	EventListType = burca.StringEventList
-	comparefunc = burca.StringCoincCompare
-	ntuple_comparefunc = lambda *args: coinc_segs_ntuple_comparefunc(*args) or burca.StringNTupleCoincCompare(*args)
+	ntuple_comparefunc = lambda *args: coinc_segs_ntuple_comparefunc(*args) or burca.StringCuspCoincTables.ntuple_comparefunc(*args)
 	CoincTables = burca.StringCuspCoincTables
 	CoincDef = burca.StringCuspBBCoincDef
 else:
@@ -224,7 +222,6 @@ for n, filename in enumerate(filenames):
 		EventListType = EventListType,
 		CoincTables = CoincTables,
 		coinc_definer_row = CoincDef,
-		event_comparefunc = comparefunc,
 		thresholds = options.threshold,
 		ntuple_comparefunc = ntuple_comparefunc,
 		verbose = options.verbose
