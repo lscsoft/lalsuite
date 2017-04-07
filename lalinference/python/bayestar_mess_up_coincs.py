@@ -89,6 +89,21 @@ def conj(xmldoc, ifos):
             series.array[2, :] *= -1
 
 
+def amplify(xmldoc, ifos, gain):
+    """Multiply the SNR of one or more detectors by a constant factor"""
+    sngls = get_table(xmldoc, SnglInspiralTable.tableName)
+    snrs = get_snr_series(xmldoc)
+    for row in sngls:
+        if row.ifo in ifos:
+            row.snr *= gain
+        try:
+            series = snrs[row.event_id]
+        except KeyError:
+            pass
+        else:
+            series.array[1:, :] *= gain
+
+
 # Command line interface
 parser = command.ArgumentParser()
 subparsers = parser.add_subparsers()
@@ -103,6 +118,10 @@ subparser.add_argument('ifo2', choices=available_ifos)
 
 subparser = add_parser(conj)
 subparser.add_argument('ifos', choices=available_ifos, nargs='+')
+
+subparser = add_parser(amplify)
+subparser.add_argument('ifos', choices=available_ifos, nargs='+')
+subparser.add_argument('gain', type=float)
 
 args = parser.parse_args()
 
