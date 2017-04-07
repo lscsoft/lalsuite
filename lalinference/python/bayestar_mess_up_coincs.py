@@ -81,7 +81,8 @@ def conj(xmldoc, ifos):
     snrs = get_snr_series(xmldoc)
     for row in sngls:
         if row.ifo in ifos:
-            row.coa_phase *= -1
+            if row.coa_phase is not None:
+                row.coa_phase *= -1
         try:
             series = snrs[row.event_id]
         except KeyError:
@@ -96,7 +97,8 @@ def amplify(xmldoc, ifos, gain):
     snrs = get_snr_series(xmldoc)
     for row in sngls:
         if row.ifo in ifos:
-            row.snr *= gain
+            if row.snr is not None:
+                row.snr *= gain
         try:
             series = snrs[row.event_id]
         except KeyError:
