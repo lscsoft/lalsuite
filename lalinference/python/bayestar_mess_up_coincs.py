@@ -21,16 +21,17 @@ the trigger parameters and SNR time series."""
 
 # Standard library imports
 import argparse
-import sys
+import os
 
 
 # LALSuite improts
 from glue.ligolw.ligolw import LIGO_LW
 from glue.ligolw.param import get_pyvalue
 from glue.ligolw.array import get_array
-from glue.ligolw.utils import load_fileobj, write_fileobj
+from glue.ligolw.utils import load_fileobj, write_fileobj, SignalsTrap
 from glue.ligolw.table import get_table
 from glue.ligolw.lsctables import SnglInspiralTable
+from glue.ligolw.utils.process import set_process_end_time
 from lalinference.bayestar import command
 from lalinference.bayestar.decorator import as_dict
 from lalinference.bayestar.ligolw import LSCTablesAndSeriesContentHandler
@@ -106,6 +107,13 @@ def amplify(xmldoc, ifos, gain):
 
 # Command line interface
 parser = command.ArgumentParser()
+parser.add_argument(
+    '-i', '--input', metavar='IN.xml[.gz]', type=argparse.FileType('rb'),
+    default='-', help='Name of input file [default: stdin]')
+parser.add_argument(
+    '-o', '--output', metavar='OUT.xml[.gz]', type=argparse.FileType('wb'),
+    default='-', help='Name of output file [default: stdout]')
+
 subparsers = parser.add_subparsers()
 def add_parser(func):
     subparser = subparsers.add_parser(func.__name__, help=func.__doc__)
@@ -124,13 +132,22 @@ subparser.add_argument('ifos', choices=available_ifos, nargs='+')
 subparser.add_argument('gain', type=float)
 
 args = parser.parse_args()
-
-
-# Input document, process it, and write it out.
-xmldoc, _ = load_fileobj(
-    sys.stdin, contenthandler=LSCTablesAndSeriesContentHandler)
-command.register_to_xmldoc(xmldoc, parser, args)
 kwargs = dict(args.__dict__)
 func = locals()[kwargs.pop('func')]
+infile = kwargs.pop('input')
+outfile = kwargs.pop('output')
+
+
+# Read input file.
+xmldoc, _ = load_fileobj(
+    infile, contenthandler=LSCTablesAndSeriesContentHandler)
+
+# Process it.
+process = command.register_to_xmldoc(xmldoc, parser, args)
 func(xmldoc, **kwargs)
-write_fileobj(xmldoc, sys.stdout)
+set_process_end_time(process)
+
+# Write output file.
+with SignalsTrap():
+    write_fileobj(
+        xmldoc, outfile, gz=(os.path.splitext(outfile.name)[-1] == '.gz'))
