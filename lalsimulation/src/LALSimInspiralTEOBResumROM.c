@@ -709,7 +709,7 @@ int XLALSimInspiralTEOBResumROM(
   REAL8 phiRef,                                 /**< Orbital phase at reference frequency*/
   REAL8 deltaT,                                 /**< Sampling frequency (Hz) */
   REAL8 fLow,                                   /**< Starting GW frequency (Hz) */
-  REAL8 fRef,                                   /**< Reference frequency (Hz); 0 defaults to fLow */
+  UNUSED REAL8 fRef,                                   /**< Reference frequency (Hz); 0 defaults to fLow */
   REAL8 distance,                               /**< Distance of source (m) */
   REAL8 inclination,                            /**< Inclination of source (rad) */
   REAL8 m1SI,                                   /**< Mass of companion 1 (kg) */
@@ -756,8 +756,8 @@ int XLALSimInspiralTEOBResumROM(
   }
 
   // if (fRef!=0.0) fprintf(stdout,"WARNING: fREf != 0.0 -> TEOBResum_ROM does not do anything with fRef. It will be evaluated from fLow.\n");
-  fRef = 0.0;
-  
+  //fRef = 0.0;
+
   // Load ROM data if not loaded already
   // fprintf(stdout,"initializing with TEOBResumROM_Init_LALDATA()\n");
   #ifdef LAL_PTHREAD_LOCK
