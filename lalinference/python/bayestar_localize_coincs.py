@@ -142,11 +142,11 @@ if opts.psd_files: # read pycbc psds here
     def reference_psd_for_sngl(sngl):
         psd = psdseglistdict[sngl.ifo]
         try:
-            psd = psd[psd.find(sngl.get_end())].psd
+            psd = psd[psd.find(sngl.end)].psd
         except ValueError:
             raise ValueError(
                 'No PSD found for detector {0} at GPS time {1}'.format(
-                sngl.ifo, sngl.get_end()))
+                sngl.ifo, sngl.end))
 
         flow = psd.file.attrs['low_frequency_cutoff']
         df = psd.attrs['delta_f']
