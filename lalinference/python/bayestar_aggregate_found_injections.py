@@ -122,7 +122,9 @@ def process(fitsfilename):
     log_bci = metadata.get('log_bci', float('nan'))
     log_bsn = metadata.get('log_bsn', float('nan'))
 
-    ret = [coinc_event_id, simulation_id, far, snr, searched_area, searched_prob, searched_prob_distance, offset, runtime, distmean, diststd, log_bci, log_bsn] + contour_areas + area_probs
+    ret = [coinc_event_id, simulation_id, far, snr, searched_area,
+           searched_prob, searched_prob_distance, offset, runtime, distmean,
+           diststd, log_bci, log_bsn] + contour_areas + area_probs
     if modes:
         ret += [searched_modes] + contour_modes
     return ret
