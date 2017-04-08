@@ -157,7 +157,8 @@ if __name__ == '__main__':
         ['area({0:g})'.format(p) for p in contours] +
         ['prob({0:g})'.format(a) for a in areas])
     if modes:
-        colnames += ['searched_modes'] + ["modes({0:g})".format(p) for p in contours]
+        colnames += ['searched_modes']
+        colnames += ["modes({0:g})".format(p) for p in contours]
     print(*colnames, sep="\t", file=opts.output)
 
     count_records = 0
