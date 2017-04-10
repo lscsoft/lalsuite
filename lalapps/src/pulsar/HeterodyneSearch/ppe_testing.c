@@ -202,7 +202,7 @@ void gridOutput( LALInferenceRunState *runState ){
  * \return Natural logarithm of the likelihood
  */
 REAL8 test_gaussian_log_likelihood( LALInferenceVariables *vars,
-                                    UNUSED LALInferenceIFOData *data,
+                                    LALInferenceIFOData *data,
                                     LALInferenceModel *get_model ){
   REAL8 loglike = 0.; /* the log likelihood */
 
@@ -220,6 +220,8 @@ REAL8 test_gaussian_log_likelihood( LALInferenceVariables *vars,
   loglike = -log(sqrt(2.*LAL_PI)*like_sigma);
   loglike -= 0.5*(h0-like_mean)*(h0-like_mean) / (like_sigma*like_sigma);
   get_model->ifo_loglikelihoods[0] = loglike;
+
+  data->likeli_counter += 1;
 
   return loglike;
 }

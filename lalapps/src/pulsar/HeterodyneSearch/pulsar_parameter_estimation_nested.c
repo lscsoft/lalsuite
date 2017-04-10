@@ -147,6 +147,8 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   ProcessParamsTable *param_table, *testgausslike;
   LALInferenceRunState runState;
   REAL8 logZnoise = 0.;
+  struct timeval time1, time2;
+  gettimeofday(&time1, NULL); /* time program */
 
   /* set error handler to abort in main function */
   XLALSetErrorHandler( XLALExitErrorHandler );
@@ -274,7 +276,12 @@ INT4 main( INT4 argc, CHAR *argv[] ){
 
   /* close timing file */
   if ( LALInferenceCheckVariable( runState.algorithmParams, "timefile" ) ){
-    fclose(*(FILE**)LALInferenceGetVariable( runState.algorithmParams, "timefile" ));
+    gettimeofday(&time2, NULL);
+    REAL8 tottime = (REAL8)((time2.tv_sec + time2.tv_usec*1.e-6) - (time1.tv_sec + time1.tv_usec*1.e-6));
+    FILE *timefile = *(FILE **)LALInferenceGetVariable( runState.algorithmParams, "timefile" );
+    UINT4 timenum = *(UINT4 *)LALInferenceGetVariable( runState.algorithmParams, "timenum" );
+    fprintf(timefile, "[%d] %s: %.9le secs\n", timenum, __func__, tottime);
+    fclose(timefile);
   }
 
   return 0;

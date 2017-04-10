@@ -67,6 +67,16 @@ void nested_sampling_algorithm_wrapper( LALInferenceRunState *runState ){
     tottime = (REAL8)((time2.tv_sec + time2.tv_usec*1.e-6) - (time1.tv_sec + time1.tv_usec*1.e-6));
     fprintf(timefile, "[%d] %s: %.9le secs\n", timenum, __func__, tottime);
     timenum++;
+    /* get number of likelihood evaluations */
+    UINT4 nlike = 0, ndata = 0;
+    LALInferenceIFOData *tmpdata = runState->data;
+    while ( tmpdata ){
+      nlike += tmpdata->likeli_counter;
+      ndata++;
+      tmpdata = tmpdata->next;
+    }
+    fprintf(timefile, "[%d] Number of likelihood evaluations: %d\n", timenum, nlike/ndata);
+    timenum++;
     check_and_add_fixed_variable( runState->algorithmParams, "timenum", &timenum, LALINFERENCE_UINT4_t );
   }
 }
