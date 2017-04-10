@@ -1095,7 +1095,7 @@ def make_binj_fragment(dag, seg, time_slides_cache_entry, tag, offset, flow = No
 		node.add_macro("macroflow", flow)
 	if fhigh is not None:
 		node.add_macro("macrofhigh", fhigh)
-	node.add_macro("macroseed", int(time.time() + start))
+	node.add_macro("macroseed", int(time.time()%100 + start))
 	dag.add_node(node)
 	return set([node])
 
