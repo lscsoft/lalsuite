@@ -41,10 +41,9 @@
 
 #include <lal/ProbabilityDensity.h>
 #include <lal/TransientCW_utils.h>
-
+#include "ComputeFstat_internal.h"
 
 /* ----- MACRO definitions ---------- */
-#define SQ(x) ((x)*(x))
 
 /* ----- module-local fast lookup-table handling of negative exponentials ----- */
 /**
@@ -827,19 +826,8 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
           if ( Dd > 0 ) { /* safety catch as in XLALWeightMultiAMCoeffs(): make it so that in the end F=0 instead of -nan */
             DdInv = 1.0f / Dd;
           }
-          REAL4 F;
-          { // function body copied from XLALComputeFstatFromFaFb()
-            REAL4 Fa_re = creal(Fa);
-            REAL4 Fa_im = cimag(Fa);
-            REAL4 Fb_re = creal(Fb);
-            REAL4 Fb_im = cimag(Fb);
-
-            F = DdInv * (  Bd * ( SQ(Fa_re) + SQ(Fa_im) )
-                           + Ad * ( SQ(Fb_re) + SQ(Fb_im) )
-                           - 2.0 * Cd * (   Fa_re * Fb_re + Fa_im * Fb_im )
-                           );
-          }
-
+          REAL4 twoF = XLALComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, 0, DdInv );
+          REAL4 F = 0.5 * twoF;
           /* keep track of loudest F-stat value encountered over the m x n matrix */
           if ( F > ret->maxF )
             {
