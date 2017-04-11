@@ -109,8 +109,8 @@ if opts.condor_submit:
     coinc_event_ids = [int(coinc.coinc_event_id) for coinc, _ in
         ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc(xmldoc)]
     cmd = ['condor_submit', 'accounting_group=ligo.dev.o3.cbc.pe.bayestar',
-           'on_exit_hold = (ExitBySignal == False) && (ExitCode == 0)',
-           'on_exit_remove = (ExitBySignal == True) || (ExitCode != 0)',
+           'on_exit_remove = (ExitBySignal == False) && (ExitCode == 0)',
+           'on_exit_hold = (ExitBySignal == True) || (ExitCode != 0)',
            'universe=vanilla', 'getenv=true', 'executable=' + sys.executable,
            'JobBatchName=BAYESTAR', 'environment="OMP_NUM_THREADS=1"',
            'error=' + os.path.join(opts.output, '$(CoincEventId).err'),
