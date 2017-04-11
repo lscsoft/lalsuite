@@ -322,7 +322,7 @@ def burca(
 	# construct offset vector assembly graph
 	#
 
-	time_slide_graph = snglcoinc.TimeSlideGraph(coinc_tables.time_slide_index, verbose = verbose)
+	time_slide_graph = snglcoinc.TimeSlideGraph(coinc_tables.time_slide_index, min_instruments = min_instruments, verbose = verbose)
 
 	#
 	# retrieve all coincidences, apply the final n-tuple compare func
@@ -330,8 +330,6 @@ def burca(
 	#
 
 	for node, coinc in time_slide_graph.get_coincs(eventlists, thresholds, verbose = verbose):
-		if len(coinc) < min_instruments:
-			continue
 		if not ntuple_comparefunc(coinc, node.offset_vector):
 			coinc_tables.append_coinc(*coinc_tables.coinc_rows(process_id, node.time_slide_id, coinc_def_id, coinc))
 
