@@ -53,10 +53,10 @@ __date__ = git_version.date
 class SnglBurst(lsctables.SnglBurst):
 	__slots__ = ()
 	def __cmp__(self, other):
-		# compare self's end time to the LIGOTimeGPS instance
+		# compare self's peak time to the LIGOTimeGPS instance
 		# other.  allows bisection searches by GPS time to find
 		# ranges of triggers quickly
-		return cmp(self.peak_time, other)
+		return cmp(self.peak, other)
 
 
 #
