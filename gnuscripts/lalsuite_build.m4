@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 138
+# serial 139
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -43,6 +43,11 @@ AC_DEFUN([AC_OUTPUT],[
   m4_foreach_w([uvar],uvar_list,[
     AC_SUBST(AM_[]uvar,"${AM_[]uvar} ${sys_[]uvar}")
     uvar="${uvar_prefix[]uvar}"
+  ])
+  # append extra values for user variables to be added after configuration
+  m4_foreach_w([uvar],uvar_list,[
+    AC_ARG_VAR([POSTCONFIG_]uvar,[Extra ]uvar[ to be added after configuration])
+    uvar="${uvar} ${POSTCONFIG_[]uvar}"
   ])
   # call original AC_OUTPUT
   lalsuite_AC_OUTPUT
