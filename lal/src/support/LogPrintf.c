@@ -73,7 +73,6 @@ static FILE *logFile = NULL;
 /*---------- internal prototypes ----------*/
 static FILE* LogFile(void);
 
-static const char * LogGetTimestamp (void);
 static const char * LogTimeToString(double t);
 
 static const char *LogFormatLevel( LogLevel_t level );
@@ -281,7 +280,7 @@ XLALGetCPUTime ( void )
 
 
 /* returns static timestamps-string for 'now' */
-static const char *
+const char *
 LogGetTimestamp (void)
 {
   return ( LogTimeToString ( XLALGetTimeOfDay() ) );
