@@ -123,6 +123,7 @@ if opts.condor_submit:
     cmd = ['condor_submit', 'accounting_group=ligo.dev.o3.cbc.pe.bayestar',
            'on_exit_remove = (ExitBySignal == False) && (ExitCode == 0)',
            'on_exit_hold = (ExitBySignal == True) || (ExitCode != 0)',
+           'request_memory = 1000 MB',
            'universe=vanilla', 'getenv=true', 'executable=' + sys.executable,
            'JobBatchName=BAYESTAR', 'environment="OMP_NUM_THREADS=1"',
            'error=' + os.path.join(opts.output, '$(CoincEventId).err'),
