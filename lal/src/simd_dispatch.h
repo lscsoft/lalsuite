@@ -47,51 +47,52 @@
  */
 #define DISPATCH_SELECT_BEGIN()			do { do { } while(0)
 #define DISPATCH_SELECT_END(...)		(__VA_ARGS__); } while (0)
+#define DISPATCH_SELECT_NONE(...)		do { } while(0)
 
 #if defined(HAVE_SSE_COMPILER)			/* set by config.h if compiler supports SSE */
 #define DISPATCH_SELECT_SSE(...)		if (LAL_HAVE_SSE_RUNTIME()) { (__VA_ARGS__); break; } do { } while(0)
 #else
-#define DISPATCH_SELECT_SSE(...)		do { } while(0)
+#define DISPATCH_SELECT_SSE(...)		DISPATCH_SELECT_NONE()
 #endif
 
 #if defined(HAVE_SSE2_COMPILER)			/* set by config.h if compiler supports SSE2 */
 #define DISPATCH_SELECT_SSE2(...)		if (LAL_HAVE_SSE2_RUNTIME()) { (__VA_ARGS__); break; } do { } while(0)
 #else
-#define DISPATCH_SELECT_SSE2(...)		do { } while(0)
+#define DISPATCH_SELECT_SSE2(...)		DISPATCH_SELECT_NONE()
 #endif
 
 #if defined(HAVE_SSE3_COMPILER)			/* set by config.h if compiler supports SSE3 */
 #define DISPATCH_SELECT_SSE3(...)		if (LAL_HAVE_SSE3_RUNTIME()) { (__VA_ARGS__); break; } do { } while(0)
 #else
-#define DISPATCH_SELECT_SSE3(...)		do { } while(0)
+#define DISPATCH_SELECT_SSE3(...)		DISPATCH_SELECT_NONE()
 #endif
 
 #if defined(HAVE_SSSE3_COMPILER)		/* set by config.h if compiler supports SSSE3 */
 #define DISPATCH_SELECT_SSSE3(...)		if (LAL_HAVE_SSSE3_RUNTIME()) { (__VA_ARGS__); break; } do { } while(0)
 #else
-#define DISPATCH_SELECT_SSSE3(...)		do { } while(0)
+#define DISPATCH_SELECT_SSSE3(...)		DISPATCH_SELECT_NONE()
 #endif
 
 #if defined(HAVE_SSE4_1_COMPILER)		/* set by config.h if compiler supports SSE4_1 */
 #define DISPATCH_SELECT_SSE4_1(...)		if (LAL_HAVE_SSE4_1_RUNTIME()) { (__VA_ARGS__); break; } do { } while(0)
 #else
-#define DISPATCH_SELECT_SSE4_1(...)		do { } while(0)
+#define DISPATCH_SELECT_SSE4_1(...)		DISPATCH_SELECT_NONE()
 #endif
 
 #if defined(HAVE_SSE4_2_COMPILER)		/* set by config.h if compiler supports SSE4_2 */
 #define DISPATCH_SELECT_SSE4_2(...)		if (LAL_HAVE_SSE4_2_RUNTIME()) { (__VA_ARGS__); break; } do { } while(0)
 #else
-#define DISPATCH_SELECT_SSE4_2(...)		do { } while(0)
+#define DISPATCH_SELECT_SSE4_2(...)		DISPATCH_SELECT_NONE()
 #endif
 
 #if defined(HAVE_AVX_COMPILER)			/* set by config.h if compiler supports AVX */
 #define DISPATCH_SELECT_AVX(...)		if (LAL_HAVE_AVX_RUNTIME()) { (__VA_ARGS__); break; } do { } while(0)
 #else
-#define DISPATCH_SELECT_AVX(...)		do { } while(0)
+#define DISPATCH_SELECT_AVX(...)		DISPATCH_SELECT_NONE()
 #endif
 
 #if defined(HAVE_AVX2_COMPILER)			/* set by config.h if compiler supports AVX2 */
 #define DISPATCH_SELECT_AVX2(...)		if (LAL_HAVE_AVX2_RUNTIME()) { (__VA_ARGS__); break; } do { } while(0)
 #else
-#define DISPATCH_SELECT_AVX2(...)		do { } while(0)
+#define DISPATCH_SELECT_AVX2(...)		DISPATCH_SELECT_NONE()
 #endif
