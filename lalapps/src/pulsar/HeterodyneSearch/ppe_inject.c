@@ -431,6 +431,11 @@ void inject_signal( LALInferenceRunState *runState ){
   }
 
   PulsarFreeParams( injpars ); /* free memory */
+
+  /* check if we only want to create and output an injection file and not analyse it yet */
+  if ( LALInferenceGetProcParamVal( commandLine, "--inject-file" ) && LALInferenceGetProcParamVal( commandLine, "--inject-only" ) ){
+    exit(0); /* exit the code */
+  }
 }
 
 /*-------------------- END OF SOFTWARE INJECTION FUNCTIONS -------------------*/
