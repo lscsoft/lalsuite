@@ -153,7 +153,12 @@ def make_cache_entry(input_cache, description, path):
 	if path:
 		url = "file://localhost%s" % os.path.abspath(path)
 	else:
-		url = None
+		# FIXME:  old version of CacheEntry allowed None for URL,
+		# new version doesn't.  correct fix is to modify calling
+		# code to not try to initialize the output cache until
+		# after the input is known, but for now we'll just do this
+		# stupid hack.
+		url = "file://localhost/dev/null"
 
 	# construct a cache entry from the instruments and
 	# segments that remain
