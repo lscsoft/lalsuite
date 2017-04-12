@@ -19,16 +19,15 @@
  */
 
 /* ---------- internal macros ---------- */
-#define isMemAligned(x,align)  (((size_t)(x) % (align)) == 0)
-
-#define CONCAT2x(a,b) a##b
-#define CONCAT2(a,b) CONCAT2x(a,b)
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else
 #define UNUSED
 #endif
+
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
 
 /* define internal SIMD-specific vector math functions, used by VectorMath_xxx.c sources */
 #define DEFINE_VECTORMATH_ANY(GENERIC_FUNC, NAME, ARG_DEF, ARG_CHK, ARG_CALL) \
