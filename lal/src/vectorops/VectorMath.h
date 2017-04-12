@@ -60,6 +60,9 @@ typedef struct tagREAL4VectorAligned {
 /** Create a new #REAL4VectorAligned struct with length \c length and alignment \c align */
 REAL4VectorAligned *XLALCreateREAL4VectorAligned ( const UINT4 length, const UINT4 align );
 
+/** Resize an existing #REAL4VectorAligned struct to length \c length and alignment \c align */
+REAL4VectorAligned *XLALResizeREAL4VectorAligned ( REAL4VectorAligned *in, const UINT4 length, const UINT4 align );
+
 /** Free a #REAL4VectorAligned struct */
 void XLALDestroyREAL4VectorAligned ( REAL4VectorAligned *in );
 
@@ -72,6 +75,9 @@ typedef struct tagREAL8VectorAligned {
 
 /** Create a new #REAL8VectorAligned struct with length \c length and alignment \c align */
 REAL8VectorAligned *XLALCreateREAL8VectorAligned ( const UINT4 length, const UINT4 align );
+
+/** Resize an existing #REAL8VectorAligned struct to length \c length and alignment \c align */
+REAL8VectorAligned *XLALResizeREAL8VectorAligned ( REAL8VectorAligned *in, const UINT4 length, const UINT4 align );
 
 /** Free a #REAL8VectorAligned struct */
 void XLALDestroyREAL8VectorAligned ( REAL8VectorAligned *in );
@@ -86,6 +92,9 @@ typedef struct tagCOMPLEX8VectorAligned {
 /** Create a new #COMPLEX8VectorAligned struct with length \c length and alignment \c align */
 COMPLEX8VectorAligned *XLALCreateCOMPLEX8VectorAligned ( const UINT4 length, const UINT4 align );
 
+/** Resize an existing #COMPLEX8VectorAligned struct to length \c length and alignment \c align */
+COMPLEX8VectorAligned *XLALResizeCOMPLEX8VectorAligned ( COMPLEX8VectorAligned *in, const UINT4 length, const UINT4 align );
+
 /** Free a #COMPLEX8VectorAligned struct */
 void XLALDestroyCOMPLEX8VectorAligned ( COMPLEX8VectorAligned *in );
 
@@ -98,6 +107,9 @@ typedef struct tagCOMPLEX16VectorAligned {
 
 /** Create a new #COMPLEX16VectorAligned struct with length \c length and alignment \c align */
 COMPLEX16VectorAligned *XLALCreateCOMPLEX16VectorAligned ( const UINT4 length, const UINT4 align );
+
+/** Resize an existing #COMPLEX16VectorAligned struct to length \c length and alignment \c align */
+COMPLEX16VectorAligned *XLALResizeCOMPLEX16VectorAligned ( COMPLEX16VectorAligned *in, const UINT4 length, const UINT4 align );
 
 /** Free a #COMPLEX16VectorAligned struct */
 void XLALDestroyCOMPLEX16VectorAligned ( COMPLEX16VectorAligned *in );

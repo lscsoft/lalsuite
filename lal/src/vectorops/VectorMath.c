@@ -46,20 +46,35 @@
 TYPE##VectorAligned *XLALCreate##TYPE##VectorAligned ( const UINT4 length, const UINT4 align ) \
 {                                                                       \
  TYPE##VectorAligned *ret;                                              \
- XLAL_CHECK_NULL ( (ret = XLALMalloc ( sizeof(*ret))) != NULL, XLAL_ENOMEM ); \
+ XLAL_CHECK_NULL ( (ret = XLALCalloc ( 1, sizeof(*ret) )) != NULL, XLAL_ENOMEM ); \
                                                                         \
- ret->length = length;                                                  \
- UINT4 paddedLength = length + align - 1;                               \
- XLAL_CHECK_NULL ( (ret->data0 = XLALMalloc ( paddedLength * sizeof(ret->data0[0]) )) != NULL, XLAL_ENOMEM ); \
-                                                                        \
- size_t remBytes = ((size_t)ret->data0) % align;                        \
- size_t offsetBytes = (align - remBytes) % align;                       \
- ret->data = (void*)(((char*)ret->data0) + offsetBytes);                \
-                                                                        \
- XLAL_CHECK_NULL ( isMemAligned(ret->data,align), XLAL_EFAULT, "Failed to allocate %zd-byte aligned memory. Must be a coding error.\n", (size_t)align ); \
+ XLAL_CHECK_NULL ( (ret = XLALResize##TYPE##VectorAligned ( ret, length, align )) != NULL, XLAL_ENOMEM ); \
                                                                         \
  return ret;                                                            \
-} /* XLALCreate\<TYPE\>VectorAligned() */                                 \
+} /* XLALCreate\<TYPE\>VectorAligned() */                               \
+                                                                        \
+TYPE##VectorAligned *XLALResize##TYPE##VectorAligned ( TYPE##VectorAligned *in, const UINT4 length, const UINT4 align ) \
+{                                                                       \
+ if ( in == NULL ) {                                                    \
+  return XLALCreate##TYPE##VectorAligned ( length, align );             \
+ }                                                                      \
+ if ( length == 0 ) {                                                   \
+  XLALDestroy##TYPE##VectorAligned ( in );                              \
+  return NULL;                                                          \
+ }                                                                      \
+                                                                        \
+ in->length = length;                                                   \
+ UINT4 paddedLength = length + align - 1;                               \
+ XLAL_CHECK_NULL ( (in->data0 = XLALRealloc ( in->data0, paddedLength * sizeof(in->data0[0]) )) != NULL, XLAL_ENOMEM ); \
+                                                                        \
+ size_t remBytes = ((size_t)in->data0) % align;                         \
+ size_t offsetBytes = (align - remBytes) % align;                       \
+ in->data = (void*)(((char*)in->data0) + offsetBytes);                  \
+                                                                        \
+ XLAL_CHECK_NULL ( ((size_t)in->data) % align == 0, XLAL_EFAULT, "Failed to allocate %zd-byte aligned memory. Must be a coding error.\n", (size_t)align ); \
+                                                                        \
+ return in;                                                             \
+} /* XLALResize\<TYPE\>VectorAligned() */                               \
                                                                         \
 void XLALDestroy##TYPE##VectorAligned ( TYPE##VectorAligned *in )       \
 {                                                                       \
