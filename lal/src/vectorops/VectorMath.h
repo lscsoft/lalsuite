@@ -47,24 +47,65 @@ extern "C" {
  */
 /** @{ */
 
-/* -------------------- our own failsafe aligned memory handling -------------------- */
-/** A special \<TYPE\>Vector with n-byte aligned memory \c data array */
-#define DECLARE_ALIGNED_VECT_API(TYPE)                                  \
-  typedef struct tag##TYPE##VectorAligned {                             \
-    UINT4 length;	/**< number of 'usable' array entries (fully aligned) */ \
-    TYPE *data;		/**< start of aligned memory block */           \
-    TYPE *data0;	/**< actual physical start of memory block, possibly not aligned */ \
-  } TYPE##VectorAligned;                                                \
-                                                                        \
-TYPE##VectorAligned *XLALCreate##TYPE##VectorAligned ( const UINT4 length, const UINT4 align ); \
-void XLALDestroy##TYPE##VectorAligned ( TYPE##VectorAligned *in );
+/** \name Failsafe Aligned Memory Handling */
+/** @{ */
 
-DECLARE_ALIGNED_VECT_API(REAL4);
-DECLARE_ALIGNED_VECT_API(REAL8);
-DECLARE_ALIGNED_VECT_API(COMPLEX8);
-DECLARE_ALIGNED_VECT_API(COMPLEX16);
+/** A special #REAL4Vector with n-byte aligned memory \c data array */
+typedef struct tagREAL4VectorAligned {
+  UINT4 length;		/**< number of 'usable' array entries (fully aligned) */
+  REAL4 *data;		/**< start of aligned memory block */
+  REAL4 *data0;		/**< actual physical start of memory block, possibly not aligned */
+} REAL4VectorAligned;
 
-/* -------------------- exported vector math functions -------------------- */
+/** Create a new #REAL4VectorAligned struct with length \c length and alignment \c align */
+REAL4VectorAligned *XLALCreateREAL4VectorAligned ( const UINT4 length, const UINT4 align );
+
+/** Free a #REAL4VectorAligned struct */
+void XLALDestroyREAL4VectorAligned ( REAL4VectorAligned *in );
+
+/** A special #REAL8Vector with n-byte aligned memory \c data array */
+typedef struct tagREAL8VectorAligned {
+  UINT4 length;		/**< number of 'usable' array entries (fully aligned) */
+  REAL8 *data;		/**< start of aligned memory block */
+  REAL8 *data0;		/**< actual physical start of memory block, possibly not aligned */
+} REAL8VectorAligned;
+
+/** Create a new #REAL8VectorAligned struct with length \c length and alignment \c align */
+REAL8VectorAligned *XLALCreateREAL8VectorAligned ( const UINT4 length, const UINT4 align );
+
+/** Free a #REAL8VectorAligned struct */
+void XLALDestroyREAL8VectorAligned ( REAL8VectorAligned *in );
+
+/** A special #COMPLEX8Vector with n-byte aligned memory \c data array */
+typedef struct tagCOMPLEX8VectorAligned {
+  UINT4 length;		/**< number of 'usable' array entries (fully aligned) */
+  COMPLEX8 *data;	/**< start of aligned memory block */
+  COMPLEX8 *data0;	/**< actual physical start of memory block, possibly not aligned */
+} COMPLEX8VectorAligned;
+
+/** Create a new #COMPLEX8VectorAligned struct with length \c length and alignment \c align */
+COMPLEX8VectorAligned *XLALCreateCOMPLEX8VectorAligned ( const UINT4 length, const UINT4 align );
+
+/** Free a #COMPLEX8VectorAligned struct */
+void XLALDestroyCOMPLEX8VectorAligned ( COMPLEX8VectorAligned *in );
+
+/** A special #COMPLEX16Vector with n-byte aligned memory \c data array */
+typedef struct tagCOMPLEX16VectorAligned {
+  UINT4 length;		/**< number of 'usable' array entries (fully aligned) */
+  COMPLEX16 *data;	/**< start of aligned memory block */
+  COMPLEX16 *data0;	/**< actual physical start of memory block, possibly not aligned */
+} COMPLEX16VectorAligned;
+
+/** Create a new #COMPLEX16VectorAligned struct with length \c length and alignment \c align */
+COMPLEX16VectorAligned *XLALCreateCOMPLEX16VectorAligned ( const UINT4 length, const UINT4 align );
+
+/** Free a #COMPLEX16VectorAligned struct */
+void XLALDestroyCOMPLEX16VectorAligned ( COMPLEX16VectorAligned *in );
+
+/** @} */
+
+/** \name Vector Math Functions */
+/** @{ */
 
 /** Compute \f$\text{out} = \sin(\text{in})\f$ over REAL4 vectors \c out, \c in with \c len elements */
 int XLALVectorSinREAL4 ( REAL4 *out, const REAL4 *in, const UINT4 len );
@@ -84,7 +125,10 @@ int XLALVectorSinCosREAL4 ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UIN
 /** Compute \f$\text{out1} = \sin(2\pi \text{in}), \text{out2} = \cos(2\pi \text{in})\f$ over REAL4 vectors \c out1, \c out2, \c in with \c len elements */
 int XLALVectorSinCos2PiREAL4 ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len );
 
-/* -------------------- exported vector by vector operations -------------------- */
+/** @} */
+
+/** \name Vector by Vector Operations */
+/** @{ */
 
 /** Compute \f$\text{out} = \text{in1} + \text{in2}\f$ over REAL4 vectors \c in1 and \c in2 with \c len elements */
 int XLALVectorAddREAL4 ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len);
@@ -92,8 +136,10 @@ int XLALVectorAddREAL4 ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const U
 /** Compute \f$\text{out} = \text{in1} \times \text{in2}\f$ over REAL4 vectors \c in1 and \c in2 with \c len elements */
 int XLALVectorMultiplyREAL4 ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len);
 
+/** @} */
 
-/* -------------------- exported vector by scalar operations -------------------- */
+/** \name Vector by Scalar Operations */
+/** @{ */
 
 /** Compute \f$\text{out} = \text{scalar} + \text{in}\f$ over REAL4 vector \c in with \c len elements */
 int XLALVectorShiftREAL4 ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len);
@@ -101,6 +147,7 @@ int XLALVectorShiftREAL4 ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT
 /** Compute \f$\text{out} = \text{scalar} \times \text{in}\f$ over REAL4 vector \c in with \c len elements */
 int XLALVectorScaleREAL4 ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len);
 
+/** @} */
 
 /** @} */
 
