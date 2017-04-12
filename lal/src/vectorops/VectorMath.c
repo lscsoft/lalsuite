@@ -93,8 +93,8 @@ DEFINE_ALIGNED_VECT_API(COMPLEX16);
 
 // -------------------- export vector-operation functions --------------------
 
-/* Declare the function pointer, define the dispatch function and exported vector math function */
-#define EXPORT_VECTORMATH_ANY(NAME, ARG_DEF, ARG_CALL) \
+/* Declare the function pointer, define the dispatch function, and export vector math function with supported instruction sets */
+#define EXPORT_VECTORMATH_ANY(NAME, ARG_DEF, ARG_CALL, ISET1, ISET2, ISET3, ISET4) \
   \
   static int XLALVector##NAME##_DISPATCH ARG_DEF; \
   \
@@ -104,11 +104,11 @@ DEFINE_ALIGNED_VECT_API(COMPLEX16);
   int XLALVector##NAME##_DISPATCH ARG_DEF { \
     \
     DISPATCH_SELECT_BEGIN(); \
-    DISPATCH_SELECT_AVX2(XLALVector##NAME##_ptr = XLALVector##NAME##_AVX2, XLALVector##NAME##_name = "XLALVector"#NAME"_AVX2"); \
-    DISPATCH_SELECT_AVX( XLALVector##NAME##_ptr = XLALVector##NAME##_AVX,  XLALVector##NAME##_name = "XLALVector"#NAME"_AVX" ); \
-    DISPATCH_SELECT_SSE2(XLALVector##NAME##_ptr = XLALVector##NAME##_SSE2, XLALVector##NAME##_name = "XLALVector"#NAME"_SSE2"); \
-    DISPATCH_SELECT_SSE( XLALVector##NAME##_ptr = XLALVector##NAME##_SSE,  XLALVector##NAME##_name = "XLALVector"#NAME"_SSE" ); \
-    DISPATCH_SELECT_END( XLALVector##NAME##_ptr = XLALVector##NAME##_GEN,  XLALVector##NAME##_name = "XLALVector"#NAME"_GEN" ); \
+    CONCAT2(DISPATCH_SELECT_,ISET1)(XLALVector##NAME##_ptr = XLALVector##NAME##_##ISET1, XLALVector##NAME##_name = "XLALVector"#NAME"_"#ISET1); \
+    CONCAT2(DISPATCH_SELECT_,ISET2)(XLALVector##NAME##_ptr = XLALVector##NAME##_##ISET2, XLALVector##NAME##_name = "XLALVector"#NAME"_"#ISET2); \
+    CONCAT2(DISPATCH_SELECT_,ISET3)(XLALVector##NAME##_ptr = XLALVector##NAME##_##ISET3, XLALVector##NAME##_name = "XLALVector"#NAME"_"#ISET3); \
+    CONCAT2(DISPATCH_SELECT_,ISET4)(XLALVector##NAME##_ptr = XLALVector##NAME##_##ISET4, XLALVector##NAME##_name = "XLALVector"#NAME"_"#ISET4); \
+    DISPATCH_SELECT_END( XLALVector##NAME##_ptr = XLALVector##NAME##_GEN,     XLALVector##NAME##_name = "XLALVector"#NAME"_GEN"   ); \
     \
     return XLALVector##NAME ARG_CALL; \
     \
@@ -121,32 +121,31 @@ DEFINE_ALIGNED_VECT_API(COMPLEX16);
   }
 
 // ---------- define exported vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
-#define EXPORT_VECTORMATH_S2S(NAME)                                     \
-  EXPORT_VECTORMATH_ANY( NAME ## REAL4, (REAL4 *out, const REAL4 *in, const UINT4 len), (out, in, len) )
+#define EXPORT_VECTORMATH_S2S(NAME, ...)                                     \
+  EXPORT_VECTORMATH_ANY( NAME ## REAL4, (REAL4 *out, const REAL4 *in, const UINT4 len), (out, in, len), __VA_ARGS__ )
 
-EXPORT_VECTORMATH_S2S(Sin)
-EXPORT_VECTORMATH_S2S(Cos)
-EXPORT_VECTORMATH_S2S(Exp)
-EXPORT_VECTORMATH_S2S(Log)
+EXPORT_VECTORMATH_S2S(Sin, AVX2, AVX, SSE2, SSE)
+EXPORT_VECTORMATH_S2S(Cos, AVX2, AVX, SSE2, SSE)
+EXPORT_VECTORMATH_S2S(Exp, AVX2, AVX, SSE2, SSE)
+EXPORT_VECTORMATH_S2S(Log, AVX2, AVX, SSE2, SSE)
 
 // ---------- define exported vector math functions with 1 REAL4 vector input to 2 REAL4 vector outputs (S2SS) ----------
-#define EXPORT_VECTORMATH_S2SS(NAME)                                    \
-  EXPORT_VECTORMATH_ANY( NAME ## REAL4, (REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len), (out1, out2, in, len) )
+#define EXPORT_VECTORMATH_S2SS(NAME, ...)                                    \
+  EXPORT_VECTORMATH_ANY( NAME ## REAL4, (REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len), (out1, out2, in, len), __VA_ARGS__ )
 
-EXPORT_VECTORMATH_S2SS(SinCos)
-EXPORT_VECTORMATH_S2SS(SinCos2Pi)
+EXPORT_VECTORMATH_S2SS(SinCos, AVX2, AVX, SSE2, SSE)
+EXPORT_VECTORMATH_S2SS(SinCos2Pi, AVX2, AVX, SSE2, SSE)
 
 // ---------- define exported vector math functions with 2 REAL4 vector inputs to 1 REAL4 vector output (SS2S) ----------
-#define EXPORT_VECTORMATH_SS2S(NAME)                                    \
-  EXPORT_VECTORMATH_ANY( NAME ## REAL4, (REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len), (out, in1, in2, len) )
+#define EXPORT_VECTORMATH_SS2S(NAME, ...)                                    \
+  EXPORT_VECTORMATH_ANY( NAME ## REAL4, (REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len), (out, in1, in2, len), __VA_ARGS__ )
 
-EXPORT_VECTORMATH_SS2S(Add);
-EXPORT_VECTORMATH_SS2S(Multiply);
+EXPORT_VECTORMATH_SS2S(Add, AVX2, AVX, SSE2, SSE)
+EXPORT_VECTORMATH_SS2S(Multiply, AVX2, AVX, SSE2, SSE)
 
 // ---------- define exported vector math functions with 1 REAL4 scalar, 1 REAL4 vector inputs to 1 REAL4 vector output (sS2S) ----------
-#define EXPORT_VECTORMATH_sS2S(NAME)                                    \
-  EXPORT_VECTORMATH_ANY( NAME ## REAL4, (REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len), (out, scalar, in, len) )
+#define EXPORT_VECTORMATH_sS2S(NAME, ...)                                    \
+  EXPORT_VECTORMATH_ANY( NAME ## REAL4, (REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len), (out, scalar, in, len), __VA_ARGS__ )
 
-EXPORT_VECTORMATH_sS2S(Scale);
-EXPORT_VECTORMATH_sS2S(Shift);
-
+EXPORT_VECTORMATH_sS2S(Scale, AVX2, AVX, SSE2, SSE)
+EXPORT_VECTORMATH_sS2S(Shift, AVX2, AVX, SSE2, SSE)

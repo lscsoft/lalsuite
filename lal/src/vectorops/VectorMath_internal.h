@@ -41,41 +41,41 @@
 
 /* ---------- internal prototypes of SIMD-specific vector math functions ---------- */
 
-#define DECLARE_VECTORMATH_ANY(NAME, ARG_DEF) \
+#define DECLARE_VECTORMATH_ANY(NAME, ARG_DEF, ISET1, ISET2, ISET3, ISET4) \
   extern const char* XLALVector##NAME##_name; \
-  int XLALVector##NAME##_AVX2 ARG_DEF; \
-  int XLALVector##NAME##_AVX  ARG_DEF; \
-  int XLALVector##NAME##_SSE2 ARG_DEF; \
-  int XLALVector##NAME##_SSE  ARG_DEF; \
-  int XLALVector##NAME##_GEN  ARG_DEF;
+  int XLALVector##NAME##_##ISET1 ARG_DEF; \
+  int XLALVector##NAME##_##ISET2 ARG_DEF; \
+  int XLALVector##NAME##_##ISET3 ARG_DEF; \
+  int XLALVector##NAME##_##ISET4 ARG_DEF; \
+  int XLALVector##NAME##_GEN     ARG_DEF;
 
 /* declare internal prototypes of SIMD-specific vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) */
-#define DECLARE_VECTORMATH_S2S(NAME)                                    \
-  DECLARE_VECTORMATH_ANY( NAME ## REAL4, ( REAL4 *out, const REAL4 *in, const UINT4 len ) )
+#define DECLARE_VECTORMATH_S2S(NAME, ...)                                    \
+  DECLARE_VECTORMATH_ANY( NAME ## REAL4, ( REAL4 *out, const REAL4 *in, const UINT4 len ), __VA_ARGS__ )
 
-DECLARE_VECTORMATH_S2S(Sin)
-DECLARE_VECTORMATH_S2S(Cos)
-DECLARE_VECTORMATH_S2S(Exp)
-DECLARE_VECTORMATH_S2S(Log)
+DECLARE_VECTORMATH_S2S(Sin, AVX2, AVX, SSE2, SSE)
+DECLARE_VECTORMATH_S2S(Cos, AVX2, AVX, SSE2, SSE)
+DECLARE_VECTORMATH_S2S(Exp, AVX2, AVX, SSE2, SSE)
+DECLARE_VECTORMATH_S2S(Log, AVX2, AVX, SSE2, SSE)
 
 /* declare internal prototypes of SIMD-specific vector math functions with 1 REAL4 vector input to 2 REAL4 vector outputs (S2SS) */
-#define DECLARE_VECTORMATH_S2SS(NAME)                                   \
-  DECLARE_VECTORMATH_ANY( NAME ## REAL4, ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len ) )
+#define DECLARE_VECTORMATH_S2SS(NAME, ...)                                   \
+  DECLARE_VECTORMATH_ANY( NAME ## REAL4, ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len ), __VA_ARGS__ )
 
-DECLARE_VECTORMATH_S2SS(SinCos)
-DECLARE_VECTORMATH_S2SS(SinCos2Pi)
+DECLARE_VECTORMATH_S2SS(SinCos, AVX2, AVX, SSE2, SSE)
+DECLARE_VECTORMATH_S2SS(SinCos2Pi, AVX2, AVX, SSE2, SSE)
 
 /* declare internal prototypes of SIMD-specific vector math functions with 2 REAL4 vector inputs to 1 REAL4 vector output (SS2S) */
-#define DECLARE_VECTORMATH_SS2S(NAME)                                   \
-  DECLARE_VECTORMATH_ANY( NAME ## REAL4, ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len ) )
+#define DECLARE_VECTORMATH_SS2S(NAME, ...)                                   \
+  DECLARE_VECTORMATH_ANY( NAME ## REAL4, ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len ), __VA_ARGS__ )
 
-DECLARE_VECTORMATH_SS2S(Add);
-DECLARE_VECTORMATH_SS2S(Multiply);
+DECLARE_VECTORMATH_SS2S(Add, AVX2, AVX, SSE2, SSE)
+DECLARE_VECTORMATH_SS2S(Multiply, AVX2, AVX, SSE2, SSE)
 
 /* declare internal prototypes of SIMD-specific vector math functions with 1 REAL4 scalar and 1 REAL4 vector input to 1 REAL4 vector output (sS2S) */
-#define DECLARE_VECTORMATH_sS2S(NAME) \
-  DECLARE_VECTORMATH_ANY( NAME ## REAL4, ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len ) )
+#define DECLARE_VECTORMATH_sS2S(NAME, ...) \
+  DECLARE_VECTORMATH_ANY( NAME ## REAL4, ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len ), __VA_ARGS__ )
 
-DECLARE_VECTORMATH_sS2S(Shift);
-DECLARE_VECTORMATH_sS2S(Scale);
+DECLARE_VECTORMATH_sS2S(Shift, AVX2, AVX, SSE2, SSE)
+DECLARE_VECTORMATH_sS2S(Scale, AVX2, AVX, SSE2, SSE)
 
