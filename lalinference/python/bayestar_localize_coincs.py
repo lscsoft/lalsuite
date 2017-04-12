@@ -61,6 +61,8 @@ parser.add_argument('--keep-going', '-k', default=False, action='store_true',
 parser.add_argument('input', metavar='INPUT.xml[.gz]', default='-', nargs='+',
     type=argparse.FileType('rb'),
     help='Input LIGO-LW XML file [default: stdin] or PyCBC HDF5 files. If PyCBC files, must be bank file, coinc file, and trigger files, in that order.')
+parser.add_argument('--pycbc-sample', default='foreground',
+    help='sample population [PyCBC only; default: %(default)s]')
 parser.add_argument('--psd-files', nargs='*',
     help='pycbc-style merged HDF5 PSD files')
 parser.add_argument('--coinc-event-id', type=int, nargs='*',
@@ -104,7 +106,8 @@ if os.path.splitext(opts.input[0].name)[1] in {'.hdf', '.hdf5', '.h5'}:
 
     snr_dict = {}
 
-    coinc_and_sngl_inspirals = ligolw_bayestar.coinc_and_sngl_inspirals_for_hdf(*hdf5files)
+    coinc_and_sngl_inspirals = ligolw_bayestar.coinc_and_sngl_inspirals_for_hdf(
+        *hdf5files, sample=opts.pycbc_sample)
 else:
     infile, = opts.input
     xmldoc, _ = ligolw_utils.load_fileobj(
