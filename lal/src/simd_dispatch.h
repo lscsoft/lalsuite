@@ -30,7 +30,7 @@
  *
  * int SIMDFunction_AVX(...);
  * int SIMDFunction_SSE(...);
- * int SIMDFunction_FALLBACK(...);
+ * int SIMDFunction_GEN(...);
  *
  * int (*SIMDFunctionPtr)(...) = SIMDFunction_DISPATCH;
  *
@@ -39,7 +39,7 @@
  *   DISPATCH_SELECT_BEGIN();
  *   DISPATCH_SELECT_AVX(SIMDFunctionPtr = SIMDFunction_AVX);
  *   DISPATCH_SELECT_SSE(SIMDFunctionPtr = SIMDFunction_SSE);
- *   DISPATCH_SELECT_END(SIMDFunctionPtr = SIMDFunction_FALLBACK);
+ *   DISPATCH_SELECT_END(SIMDFunctionPtr = SIMDFunction_GEN);
  *
  *   return SIMDFunction(...);
  *

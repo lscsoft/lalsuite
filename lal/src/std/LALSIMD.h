@@ -46,7 +46,7 @@ extern "C" {
  */
 typedef enum tagLAL_SIMD_ISET {
 
-  LAL_SIMD_ISET_FPU,		/**< FPU (floating-point unit) */
+  LAL_SIMD_ISET_GEN,		/**< GENeric floating-point unit */
   LAL_SIMD_ISET_SSE,		/**< SSE (Streaming SIMD Extensions) */
   LAL_SIMD_ISET_SSE2,		/**< SSE version 2 */
   LAL_SIMD_ISET_SSE3,		/**< SSE version 3 */
