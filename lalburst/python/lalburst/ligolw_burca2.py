@@ -170,7 +170,7 @@ def sngl_burst_veto_func(event, vetoseglists):
 def ligolw_burca2(database, ln_likelihood_ratio, params_func, verbose = False, params_func_extra_args = ()):
 	"""
 	Assigns likelihood ratio values to excess power coincidences.
-	database is pylal.SnglBurstUtils.CoincDatabase instance, and
+	database is lalburst.SnglBurstUtils.CoincDatabase instance, and
 	ln_likelihood_ratio is a LnLikelihoodRatio class instance.
 	"""
 	#
