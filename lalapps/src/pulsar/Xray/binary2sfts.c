@@ -76,6 +76,7 @@ typedef struct {
   REAL8 freqband;                   /**< the band width */
   REAL8 highpassf;                  /**< the high pass filter frequency */
   BOOLEAN outSingleSFT;             /**< use to output a single concatenated SFT */
+  BOOLEAN outNoiseStr;              /**< output noise string in SFT comment */
   REAL8 amp_inj;                    /**< if set we inject a fake signal with this fractional amplitude */
   INT4 seed;
   REAL8 f_inj;
@@ -180,10 +181,12 @@ int main( int argc, char *argv[] )  {
     if ((np!=NULL) && (R!=NULL)) {
       for (k=0;k<np->length;k++) {
         ntot += np->data[k];
-        char temp[64];
-        sprintf(temp,"%d %e %e\n",SFTvect->data[oldlen+k].epoch.gpsSeconds,(REAL8)np->data[k]*norm1,R->data[k]*norm2);
-        noisestr = (char *)XLALRealloc(noisestr,sizeof(char)*(1+strlen(noisestr)+strlen(temp)));
-        strcat(noisestr,temp);
+        if (uvar.outNoiseStr) {
+          char temp[64];
+          sprintf(temp,"%d %e %e\n",SFTvect->data[oldlen+k].epoch.gpsSeconds,(REAL8)np->data[k]*norm1,R->data[k]*norm2);
+          noisestr = (char *)XLALRealloc(noisestr,sizeof(char)*(1+strlen(noisestr)+strlen(temp)));
+          strcat(noisestr,temp);
+        }
       }
       XLALDestroyINT8Vector(np);
       XLALDestroyREAL8Vector(R);
@@ -249,6 +252,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->freqband = 1;
   uvar->highpassf = 40;
   uvar->outSingleSFT = 0;
+  uvar->outNoiseStr = 0;
   uvar->amp_inj = 0;
   uvar->f_inj = 550.2;
   uvar->asini_inj = 2.0;
@@ -267,6 +271,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   XLALRegisterUvarMember(tsamp,                 REAL8, 's', OPTIONAL, "The sampling time (sec)");
   XLALRegisterUvarMember(highpassf,             REAL8, 'p', OPTIONAL, "The high pass filter frequency");
   XLALRegisterUvarMember(outSingleSFT,           BOOLEAN, 'S', OPTIONAL, "Write a single concatenated SFT file instead of individual files" );
+  XLALRegisterUvarMember(outNoiseStr,           BOOLEAN, 'N', OPTIONAL, "Output noise string in SFT comment" );
   XLALRegisterUvarMember(amp_inj,               REAL8, 'I', OPTIONAL, "Fractional amplitude of injected signal");
   XLALRegisterUvarMember(f_inj,                 REAL8, 'A', OPTIONAL, "frequency of injected signal");
   XLALRegisterUvarMember(asini_inj,             REAL8, 'B', OPTIONAL, "projected semi-major axis of injected signal");
