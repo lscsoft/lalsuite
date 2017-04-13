@@ -32,14 +32,12 @@ import sqlite3
 import sys
 
 
-from lal.utils import CacheEntry
-
-
 from glue import segments
 from glue.ligolw import dbtables
 from glue.ligolw import utils as ligolw_utils
+from lal import rate
+from lal.utils import CacheEntry
 from lalburst import git_version
-from pylal import rate
 from lalburst import SimBurstUtils
 from lalburst import SnglBurstUtils
 

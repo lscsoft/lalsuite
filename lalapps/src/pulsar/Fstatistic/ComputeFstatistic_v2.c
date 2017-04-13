@@ -1522,9 +1522,8 @@ XLALGetLogString ( const ConfigVariables *cfg )
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
 
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "%% Started search: " )) != NULL, XLAL_EFUNC );
-  time_t tp = GETTIME();
-  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, asctime( gmtime( &tp ) ))) != NULL, XLAL_EFUNC );
-  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "%% Loaded SFTs: [ " )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, LogGetTimestamp() )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "\n%% Loaded SFTs: [ " )) != NULL, XLAL_EFUNC );
 
   UINT4 numDet = cfg->detectorIDs->length;
   for ( UINT4 X=0; X < numDet; X ++ )

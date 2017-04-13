@@ -29,10 +29,10 @@ import sys
 
 
 import lal
+from lal import rate
 
 
 from . import git_version
-from pylal import rate
 from . import SnglBurstUtils
 
 

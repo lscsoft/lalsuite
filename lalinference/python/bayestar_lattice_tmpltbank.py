@@ -192,5 +192,5 @@ ligolw_process.set_process_end_time(process)
 
 # Write output file.
 with ligolw_utils.SignalsTrap():
-  ligolw_utils.write_fileobj(xmldoc, opts.output,
-      gz=(os.path.splitext(opts.output.name)[-1]==".gz"))
+    ligolw_utils.write_fileobj(xmldoc, opts.output,
+        gz=(os.path.splitext(opts.output.name)[-1]==".gz"))

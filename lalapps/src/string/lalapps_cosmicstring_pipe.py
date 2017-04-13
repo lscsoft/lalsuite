@@ -29,15 +29,14 @@ from glue import pipeline
 from glue import segments
 from glue import segmentsUtils
 from glue.ligolw import lsctables
-from glue.ligolw import utils
-from glue.ligolw.utils import segments as ligolwsegments
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw.utils import segments as ligolw_segments
 from glue import offsetvector
 from lal import LIGOTimeGPS
 from lal.utils import CacheEntry
 from lalburst import timeslides
 from lalapps import cosmicstring
 from lalapps import power
-
 
 __author__ = 'Xavier Siemens<siemens@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
@@ -175,7 +174,7 @@ overlap = short_segment_duration / 2 + 2 * pad	# FIXME:  correct?
 #
 
 instruments = lsctables.instrumentsproperty.get(config_parser.get('pipeline','ifos'))
-seglists = ligolwsegments.segmenttable_get_by_name(utils.load_filename(options.segments_file, gz = (options.segments_file or "stdin").endswith(".gz"), verbose = options.verbose), options.segments_name).coalesce()
+seglists = ligolw_segments.segmenttable_get_by_name(ligolw_utils.load_filename(options.segments_file, contenthandler = ligolw_segments.LIGOLWContentHandler, verbose = options.verbose), options.segments_name).coalesce()
 # remove extra instruments
 for instrument in set(seglists) - instruments:
 	if options.verbose:
@@ -199,19 +198,24 @@ background_time_slides = {}
 background_seglists = segments.segmentlistdict()
 for filename in options.background_time_slides:
 	cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
-	background_time_slides[cache_entry] = timeslides.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
+
+	background_time_slides[cache_entry] = lsctables.TimeSlideTable.get_table(ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw_segments.LIGOLWContentHandler)).as_dict().values()
+
+
 	for i in range(len(background_time_slides[cache_entry])):
 		background_time_slides[cache_entry][i] = offsetvector.offsetvector((instrument, LIGOTimeGPS(offset)) for instrument, offset in background_time_slides[cache_entry][i].items())
-	background_seglists |= cosmicstring.compute_segment_lists(seglists, timeslides.time_slide_component_vectors(background_time_slides[cache_entry], 2), min_segment_length, pad)
+	background_seglists |= cosmicstring.compute_segment_lists(seglists, offsetvector.component_offsetvectors(background_time_slides[cache_entry], 2), min_segment_length, pad)
 
 injection_time_slides = {}
 injection_seglists = segments.segmentlistdict()
 for filename in options.injection_time_slides:
 	cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
-	injection_time_slides[cache_entry] = timeslides.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
+
+        injection_time_slides[cache_entry] = lsctables.TimeSlideTable.get_table(ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw_segments.LIGOLWContentHandler)).as_dict().values()
+
 	for i in range(len(injection_time_slides[cache_entry])):
 		injection_time_slides[cache_entry][i] = offsetvector.offsetvector((instrument, LIGOTimeGPS(offset)) for instrument, offset in injection_time_slides[cache_entry][i].items())
-	injection_seglists |= cosmicstring.compute_segment_lists(seglists, timeslides.time_slide_component_vectors(injection_time_slides[cache_entry], 2), min_segment_length, pad)
+	injection_seglists |= cosmicstring.compute_segment_lists(seglists, offsetvector.component_offsetvectors(injection_time_slides[cache_entry], 2), min_segment_length, pad)
 
 
 #

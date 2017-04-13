@@ -41,8 +41,8 @@ from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables
 from glue.ligolw.utils import ligolw_add
-from pylal import rate
 import lal
+from lal import rate
 from lal.utils import CacheEntry
 from lalburst import date
 from lalburst import git_version

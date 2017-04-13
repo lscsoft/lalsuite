@@ -153,7 +153,12 @@ def make_cache_entry(input_cache, description, path):
 	if path:
 		url = "file://localhost%s" % os.path.abspath(path)
 	else:
-		url = None
+		# FIXME:  old version of CacheEntry allowed None for URL,
+		# new version doesn't.  correct fix is to modify calling
+		# code to not try to initialize the output cache until
+		# after the input is known, but for now we'll just do this
+		# stupid hack.
+		url = "file://localhost/dev/null"
 
 	# construct a cache entry from the instruments and
 	# segments that remain
@@ -1095,7 +1100,7 @@ def make_binj_fragment(dag, seg, time_slides_cache_entry, tag, offset, flow = No
 		node.add_macro("macroflow", flow)
 	if fhigh is not None:
 		node.add_macro("macrofhigh", fhigh)
-	node.add_macro("macroseed", int(time.time() + start))
+	node.add_macro("macroseed", int(time.time()%100 + start))
 	dag.add_node(node)
 	return set([node])
 

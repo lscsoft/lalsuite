@@ -49,16 +49,14 @@ import sys
 import traceback
 
 
-from lal.utils import CacheEntry
-
-
 from glue import segments
 from glue import segmentsUtils
 from glue.ligolw import dbtables
 from glue.ligolw.utils import process as ligolwprocess
+from lal import rate
+from lal.utils import CacheEntry
 from lalburst import git_version
 from lalburst import packing
-from pylal import rate
 from lalburst import SimBurstUtils
 from lalburst import SnglBurstUtils
 from lalburst import stringutils

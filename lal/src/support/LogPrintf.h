@@ -75,6 +75,7 @@ int XLALfprintfGSLvector_int ( FILE *fp, const char *fmt, const gsl_vector_int *
 
 REAL8 XLALGetTimeOfDay(void);
 REAL8 XLALGetCPUTime ( void );
+const char * LogGetTimestamp (void);
 
 REAL8 XLALGetPeakHeapUsageMB ( void );
 

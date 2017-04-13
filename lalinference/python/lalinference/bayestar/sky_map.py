@@ -417,8 +417,8 @@ def gracedb_sky_map(
         phase_convention = 'antifindchirp'
 
     # Locate the sngl_inspiral rows that we need.
-    (_, sngl_inspirals), = ligolw.coinc_and_sngl_inspirals_for_xmldoc(
-        xmldoc, coinc_def=None)
+    sngl_inspirals, = ligolw.coinc_and_sngl_inspirals_for_xmldoc(
+        xmldoc, coinc_def=None).values()
     sngl_inspirals = list(sngl_inspirals)
 
     # Try to load complex SNR time series.

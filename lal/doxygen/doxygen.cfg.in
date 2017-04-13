@@ -761,6 +761,7 @@ WARN_LOGFILE           = @abs_builddir@/warnings.log
 
 INPUT                  = @abs_builddir@/autogen.dox \
                          @abs_srcdir@/src/toplevel.dox \
+                         @abs_srcdir@/src \
                          @abs_builddir@/in
 
 # This tag can be used to specify the character encoding of the source files

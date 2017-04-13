@@ -122,7 +122,9 @@ def process(fitsfilename):
     log_bci = metadata.get('log_bci', float('nan'))
     log_bsn = metadata.get('log_bsn', float('nan'))
 
-    ret = [coinc_event_id, simulation_id, far, snr, searched_area, searched_prob, searched_prob_distance, offset, runtime, distmean, diststd, log_bci, log_bsn] + contour_areas + area_probs
+    ret = [coinc_event_id, simulation_id, far, snr, searched_area,
+           searched_prob, searched_prob_distance, offset, runtime, distmean,
+           diststd, log_bci, log_bsn] + contour_areas + area_probs
     if modes:
         ret += [searched_modes] + contour_modes
     return ret
@@ -152,12 +154,13 @@ if __name__ == '__main__':
 
     colnames = (
         ['coinc_event_id', 'simulation_id', 'far', 'snr', 'searched_area',
-        'searched_prob', 'searched_prob_distance', 'offset', 'runtime', 'distmean', 'diststd',
-        'log_bci', 'log_bsn'] +
-        ["area({0:g})".format(p) for p in contours] +
-        ["prob({0:g})".format(a) for a in areas])
+         'searched_prob', 'searched_prob_distance', 'offset', 'runtime',
+         'distmean', 'diststd', 'log_bci', 'log_bsn'] +
+        ['area({0:g})'.format(p) for p in contours] +
+        ['prob({0:g})'.format(a) for a in areas])
     if modes:
-        colnames += ['searched_modes'] + ["modes({0:g})".format(p) for p in contours]
+        colnames += ['searched_modes']
+        colnames += ["modes({0:g})".format(p) for p in contours]
     print(*colnames, sep="\t", file=opts.output)
 
     count_records = 0

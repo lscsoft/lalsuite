@@ -3597,7 +3597,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   *hIMRlmJTSHiOutput = hIMRlmJTSHi;
   if (debugPK){
     out = fopen( "JIMRWavesHi.dat", "w" );
-    for ( i = 0; i < retLenHi + retLenRDPatchHi; i++ )
+    for ( i = 0; i < (INT4) hIMR22JTSHi->data->length; i++ )
     {
       fprintf( out,
         "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",
@@ -3719,7 +3719,7 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   if (debugPK){
      out = fopen( "JIMRWaves.dat", "w" );
-     for ( i = 0; i < retLenLow + retLenRDPatchLow; i++ )
+     for ( i = 0; i < (INT4) hIMR22JTS->data->length; i++ )
      {
         fprintf( out,
           "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",
@@ -3849,23 +3849,23 @@ int XLALSimIMRSpinEOBWaveformAll(
   *hIMRoutput = XLALSphHarmTimeSeriesAddMode( *hIMRoutput, hIMR2m1ITS, 2, -1 );
   *hIMRoutput = XLALSphHarmTimeSeriesAddMode( *hIMRoutput, hIMR2m2ITS, 2, -2 );
   XLALSphHarmTimeSeriesSetTData( *hIMRoutput, tlistRDPatch );
-
-    if (debugPK){
-      out = fopen( "IWaves.dat", "w" );
-      for ( i = 0; i < retLenLow + retLenRDPatchLow; i++ )
-        {
-          fprintf( out,
-                   "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",
-                   tlistRDPatch->data[i],
-                   creal(hIMR22ITS->data->data[i]), cimag(hIMR22ITS->data->data[i]),
-                   creal(hIMR21ITS->data->data[i]), cimag(hIMR21ITS->data->data[i]),
-                   creal(hIMR20ITS->data->data[i]), cimag(hIMR20ITS->data->data[i]),
-                   creal(hIMR2m1ITS->data->data[i]), cimag(hIMR2m1ITS->data->data[i]),
-                   creal(hIMR2m2ITS->data->data[i]), cimag(hIMR2m2ITS->data->data[i]) );
-        }
-      fclose( out );
-    }
   }
+    
+    if (debugPK){
+        out = fopen( "IWaves.dat", "w" );
+        for ( i = 0; i < (INT4) hIMR22ITS->data->length; i++ )
+        {
+            fprintf( out,
+                    "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",
+                    tlistRDPatch->data[i],
+                    creal(hIMR22ITS->data->data[i]), cimag(hIMR22ITS->data->data[i]),
+                    creal(hIMR21ITS->data->data[i]), cimag(hIMR21ITS->data->data[i]),
+                    creal(hIMR20ITS->data->data[i]), cimag(hIMR20ITS->data->data[i]),
+                    creal(hIMR2m1ITS->data->data[i]), cimag(hIMR2m1ITS->data->data[i]),
+                    creal(hIMR2m2ITS->data->data[i]), cimag(hIMR2m2ITS->data->data[i]) );
+        }
+        fclose( out );
+    }
 
 /* *********************************************************************************
  * *********************************************************************************

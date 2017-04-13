@@ -84,8 +84,8 @@ import sys
 from glue import iterutils
 from glue import segments
 from glue.ligolw import dbtables
+from lal import rate
 from lalburst import git_version
-from pylal import rate
 from lalburst import SimBurstUtils
 from lalburst import SnglBurstUtils
 

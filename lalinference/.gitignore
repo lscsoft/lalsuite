@@ -43,6 +43,7 @@ python/bayestar_lattice_tmpltbank
 python/bayestar_littlehope
 python/bayestar_localize_coincs
 python/bayestar_localize_lvalert
+python/bayestar_mess_up_coincs
 python/bayestar_plot_allsky
 python/bayestar_plot_found_injections
 python/bayestar_plot_pileup

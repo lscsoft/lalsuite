@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2016  Leo Singer
+# Copyright (C) 2013-2017  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -69,5 +69,15 @@ def with_numpy_random_seed(func, seed=0):
         with NumpyRNGContext(seed):
             ret = func(*args, **kwargs)
         return ret
+
+    return wrapped_func
+
+
+def as_dict(func):
+    """Decorate a generator function to turn its output into a dict."""
+
+    @wraps(func)
+    def wrapped_func(*args, **kwargs):
+        return dict(func(*args, **kwargs))
 
     return wrapped_func
