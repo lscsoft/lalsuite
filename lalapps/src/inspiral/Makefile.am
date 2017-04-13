@@ -89,11 +89,13 @@ bin_PROGRAMS = \
 
 if HAVE_PYTHON
 pybin_scripts = \
+	lalapps_inspinjfind \
 	lalapps_inspiral_pipe \
 	lalapps_inspiral_hipe \
 	lalapps_inspiral_ssipe \
 	lalapps_multi_hipe \
 	lalapps_trigger_hipe \
+	lalapps_thinca \
 	lalapps_inspiral_online_pipe \
 	lalapps_inspiral_online_pipe_inject \
 	lalapps_ihope_daily_page \
