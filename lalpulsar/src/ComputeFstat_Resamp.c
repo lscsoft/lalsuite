@@ -124,6 +124,7 @@ typedef struct tagResampWorkspace
 
 typedef struct
 {
+  UINT4 Dterms;						// Number of terms to use (on either side) in Windowed-Sinc interpolation kernel
   MultiCOMPLEX8TimeSeries  *multiTimeSeries_DET;	// input SFTs converted into a heterodyned timeseries
   // ----- buffering -----
   PulsarDopplerParams prev_doppler;			// buffering: previous phase-evolution ("doppler") parameters
@@ -252,11 +253,24 @@ XLALSetupFstatResamp ( void **method_data,
   ResampMethodData *resamp = *method_data = XLALCalloc( 1, sizeof(*resamp) );
   XLAL_CHECK( resamp != NULL, XLAL_ENOMEM );
 
+  resamp->Dterms = optArgs->Dterms;
+
   // Set method function pointers
   funcs->compute_func = XLALComputeFstatResamp;
   funcs->method_data_destroy_func = XLALDestroyResampMethodData;
   funcs->workspace_destroy_func = XLALDestroyResampWorkspace;
 
+  // Extra band needed for resampling: Hamming-windowed sinc used for interpolation has a transition bandwith of
+  // TB=(4/L)*fSamp, where L=2*Dterms+1 is the window-length, and here fSamp=Band (i.e. the full SFT frequency band)
+  // However, we're only interested in the physical band and we'll be throwing away all bins outside of this.
+  // This implies that we're only affected by *half* the transition band TB/2 on either side, as the other half of TB is outside of the band of interest
+  // (and will actually get aliased, i.e. the region [-fNy - TB/2, -fNy] overlaps with [fNy-TB/2,fNy] and vice-versa: [fNy,fNy+TB/2] overlaps with [-fNy,-fNy+TB/2])
+  // ==> therefore we only need to add an extra TB/2 on each side to be able to safely avoid the transition-band effects
+  REAL8 f0 = multiSFTs->data[0]->data[0].f0;
+  REAL8 dFreq = multiSFTs->data[0]->data[0].deltaF;
+  REAL8 Band = multiSFTs->data[0]->data[0].data->length * dFreq;
+  REAL8 extraBand = 2.0  / ( 2 * optArgs->Dterms + 1 ) * Band;
+  XLAL_CHECK ( XLALMultiSFTVectorResizeBand ( multiSFTs, f0 - extraBand, Band + 2 * extraBand ) == XLAL_SUCCESS, XLAL_EFUNC );
   // Convert SFTs into heterodyned complex timeseries [in detector frame]
   XLAL_CHECK ( (resamp->multiTimeSeries_DET = XLALMultiSFTVectorToCOMPLEX8TimeSeries ( multiSFTs )) != NULL, XLAL_EFUNC );
 
@@ -1001,11 +1015,10 @@ XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( ResampMethodData *resamp,		// [
 
         } // for  alpha < numSFTsX
 
-      const UINT4 Dterms = 8;
       XLAL_CHECK ( ti_DET->length >= TimeSeries_SRCX_a->data->length, XLAL_EINVAL );
       UINT4 bak_length = ti_DET->length;
       ti_DET->length = TimeSeries_SRCX_a->data->length;
-      XLAL_CHECK ( XLALSincInterpolateCOMPLEX8TimeSeries ( TimeSeries_SRCX_a->data, ti_DET, TimeSeries_DETX, Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALSincInterpolateCOMPLEX8TimeSeries ( TimeSeries_SRCX_a->data, ti_DET, TimeSeries_DETX, resamp->Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
       ti_DET->length = bak_length;
 
       // apply heterodyne correction and AM-functions a(t) and b(t) to interpolated timeseries
