@@ -103,11 +103,9 @@ def parse_command_line():
 	if options.coincidence_algorithm not in ("excesspower", "stringcusp"):
 		raise ValueError("unrecognized --coincidence-algorithm %s" % options.coincidence_algorithm)
 	if options.coincidence_segments is not None:
-		options.coinc_segs = segmentsUtils.from_range_strings(options.coincidence_segments.split(","), boundtype = lsctables.LIGOTimeGPS).coalesce()
+		options.coincidence_segments = segmentsUtils.from_range_strings(options.coincidence_segments.split(","), boundtype = lsctables.LIGOTimeGPS).coalesce()
 		if filenames is not None and len(filenames) > 1:
 			raise ValueError("refusing to allow use of --coincidence-segments with more than one input file")
-	else:
-		options.coinc_segs = None
 	if options.min_instruments < 1:
 		raise ValueError("--min-instruments must be >= 1")
 
@@ -150,8 +148,8 @@ options, filenames, paramdict = parse_command_line()
 #
 
 
-if options.coinc_segs is not None:
-	def coinc_segs_ntuple_comparefunc(events, offset_vector, min_instruments = options.min_instruments, coinc_segs = options.coinc_segs):
+if options.coincidence_segments is not None:
+	def coinc_segs_ntuple_comparefunc(events, offset_vector, min_instruments = options.min_instruments, coinc_segs = options.coincidence_segments):
 		# for the purposes of the coinc segs feature, the coinc
 		# time is minimum of event peak times.  this is a fast, and
 		# guaranteed reproducible definition
@@ -163,14 +161,12 @@ else:
 
 if options.coincidence_algorithm == "excesspower":
 	EventListType = burca.ExcessPowerEventList
-	comparefunc = burca.ExcessPowerCoincCompare
 	ntuple_comparefunc = coinc_segs_ntuple_comparefunc
 	CoincTables = burca.ExcessPowerCoincTables
 	CoincDef = burca.ExcessPowerBBCoincDef
 elif options.coincidence_algorithm == "stringcusp":
 	EventListType = burca.StringEventList
-	comparefunc = burca.StringCoincCompare
-	ntuple_comparefunc = lambda *args: coinc_segs_ntuple_comparefunc(*args) or burca.StringNTupleCoincCompare(*args)
+	ntuple_comparefunc = lambda *args: coinc_segs_ntuple_comparefunc(*args) or burca.StringCuspCoincTables.ntuple_comparefunc(*args)
 	CoincTables = burca.StringCuspCoincTables
 	CoincDef = burca.StringCuspBBCoincDef
 else:
@@ -226,7 +222,6 @@ for n, filename in enumerate(filenames):
 		EventListType = EventListType,
 		CoincTables = CoincTables,
 		coinc_definer_row = CoincDef,
-		event_comparefunc = comparefunc,
 		thresholds = options.threshold,
 		ntuple_comparefunc = ntuple_comparefunc,
 		verbose = options.verbose

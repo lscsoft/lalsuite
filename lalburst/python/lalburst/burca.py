@@ -24,7 +24,7 @@
 #
 
 
-import bisect
+from bisect import bisect_left, bisect_right
 import math
 import sys
 
@@ -32,13 +32,12 @@ import sys
 from glue.ligolw import lsctables
 from glue.ligolw.utils import coincs as ligolw_coincs
 from glue.ligolw.utils import process as ligolw_process
-from . import git_version
 from pylal import snglcoinc
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-__version__ = "git id %s" % git_version.id
-__date__ = git_version.date
+from git_version import date as __date__
+from git_version import version as __version__
 
 
 #
@@ -154,6 +153,11 @@ StringCuspBBCoincDef = lsctables.CoincDef(search = u"StringCusp", search_coinc_t
 
 
 class StringCuspCoincTables(snglcoinc.CoincTables):
+	@staticmethod
+	def ntuple_comparefunc(events, offset_vector, disallowed = frozenset(("H1", "H2"))):
+		# disallow H1,H2 only coincs
+		return set(event.ifo for event in events) == disallowed
+
 	def coinc_rows(self, process_id, time_slide_id, coinc_def_id, events):
 		coinc, coincmaps = super(StringCuspCoincTables, self).coinc_rows(process_id, time_slide_id, coinc_def_id, events)
 		coinc.insts = (event.ifo for event in events)
@@ -199,7 +203,25 @@ class ExcessPowerEventList(snglcoinc.EventList):
 			# max() doesn't like empty lists
 			self.max_edge_peak_delta = 0
 
-	def get_coincs(self, event_a, offset_a, light_travel_time, ignored, comparefunc):
+	@staticmethod
+	def comparefunc(a, offseta, b, offsetb, light_travel_time, ignored):
+		if abs(a.central_freq - b.central_freq) > (a.bandwidth + b.bandwidth) / 2:
+			return True
+
+		astart = a.start + offseta
+		bstart = b.start + offsetb
+		if astart > bstart + b.duration + light_travel_time:
+			# a starts after the end of b
+			return True
+
+		if bstart > astart + a.duration + light_travel_time:
+			# b starts after the end of a
+			return True
+
+		# time-frequency times intersect
+		return False
+
+	def get_coincs(self, event_a, offset_a, light_travel_time, ignored):
 		# event_a's peak time
 		peak = event_a.peak
 
@@ -224,7 +246,7 @@ class ExcessPowerEventList(snglcoinc.EventList):
 		# coincidence with event_a (use bisection searches for the
 		# minimum and maximum allowed peak times to quickly
 		# identify a subset of the full list)
-		return [event_b for event_b in self[bisect.bisect_left(self, peak - dt) : bisect.bisect_right(self, peak + dt)] if not comparefunc(event_a, offset_a, event_b, self.offset, light_travel_time, ignored)]
+		return [event_b for event_b in self[bisect_left(self, peak - dt) : bisect_right(self, peak + dt)] if not self.comparefunc(event_a, offset_a, event_b, self.offset, light_travel_time, ignored)]
 
 
 #
@@ -247,52 +269,10 @@ class StringEventList(snglcoinc.EventList):
 		"""
 		self.sort(key = lambda event: event.peak)
 
-	def get_coincs(self, event_a, offset_a, light_travel_time, threshold, comparefunc):
-		min_peak = max_peak = event_a.peak + offset_a - self.offset
-		min_peak -= threshold + light_travel_time
-		max_peak += threshold + light_travel_time
-		return [event_b for event_b in self[bisect.bisect_left(self, min_peak) : bisect.bisect_right(self, max_peak)] if not comparefunc(event_a, offset_a, event_b, self.offset, light_travel_time, threshold)]
-
-
-#
-# =============================================================================
-#
-#                              Coincidence Tests
-#
-# =============================================================================
-#
-
-
-def ExcessPowerCoincCompare(a, offseta, b, offsetb, light_travel_time, ignored):
-	if abs(a.central_freq - b.central_freq) > (a.bandwidth + b.bandwidth) / 2:
-		return True
-
-	astart = a.start + offseta
-	bstart = b.start + offsetb
-	if astart > bstart + b.duration + light_travel_time:
-		# a starts after the end of b
-		return True
-
-	if bstart > astart + a.duration + light_travel_time:
-		# b starts after the end of a
-		return True
-
-	# time-frequency times intersect
-	return False
-
-
-def StringCoincCompare(a, offseta, b, offsetb, light_travel_time, threshold):
-	"""
-	Returns False (a & b are coincident) if the events' peak times
-	differ from each other by no more than dt plus the light travel
-	time from one instrument to the next.
-	"""
-	return abs(float(a.peak + offseta - b.peak - offsetb)) > threshold + light_travel_time
-
-
-def StringNTupleCoincCompare(events, offset_vector, disallowed = frozenset(("H1", "H2"))):
-	# disallow H1,H2 only coincs
-	return set(event.ifo for event in events) == disallowed
+	def get_coincs(self, event_a, offset_a, light_travel_time, threshold):
+		peak = event_a.peak + offset_a - self.offset
+		coinc_window = threshold + light_travel_time
+		return self[bisect_left(self, peak - coinc_window) : bisect_right(self, peak + coinc_window)]
 
 
 #
@@ -310,7 +290,6 @@ def burca(
 	EventListType,
 	CoincTables,
 	coinc_definer_row,
-	event_comparefunc,
 	thresholds,
 	ntuple_comparefunc = lambda events, offset_vector: False,
 	min_instruments = 2,
@@ -331,33 +310,28 @@ def burca(
 		print >>sys.stderr, "indexing ..."
 	coinc_tables = CoincTables(xmldoc)
 	coinc_def_id = ligolw_coincs.get_coinc_def_id(xmldoc, coinc_definer_row.search, coinc_definer_row.search_coinc_type, create_new = True, description = coinc_definer_row.description)
-	sngl_burst_table = lsctables.SnglBurstTable.get_table(xmldoc)
-	sngl_index = dict((row.event_id, row) for row in sngl_burst_table)
 
 	#
 	# build the event list accessors, populated with events from those
 	# processes that can participate in a coincidence
 	#
 
-	eventlists = snglcoinc.EventListDict(EventListType, sngl_burst_table, instruments = set(coinc_tables.time_slide_table.getColumnByName("instrument")))
+	eventlists = snglcoinc.EventListDict(EventListType, lsctables.SnglBurstTable.get_table(xmldoc), instruments = set(coinc_tables.time_slide_table.getColumnByName("instrument")))
 
 	#
 	# construct offset vector assembly graph
 	#
 
-	time_slide_graph = snglcoinc.TimeSlideGraph(coinc_tables.time_slide_index, verbose = verbose)
+	time_slide_graph = snglcoinc.TimeSlideGraph(coinc_tables.time_slide_index, min_instruments = min_instruments, verbose = verbose)
 
 	#
 	# retrieve all coincidences, apply the final n-tuple compare func
 	# and record the survivors
 	#
 
-	for node, coinc in time_slide_graph.get_coincs(eventlists, event_comparefunc, thresholds, verbose = verbose):
-		if len(coinc) < min_instruments:
-			continue
-		ntuple = tuple(sngl_index[event_id] for event_id in coinc)
-		if not ntuple_comparefunc(ntuple, node.offset_vector):
-			coinc_tables.append_coinc(*coinc_tables.coinc_rows(process_id, node.time_slide_id, coinc_def_id, ntuple))
+	for node, coinc in time_slide_graph.get_coincs(eventlists, thresholds, verbose = verbose):
+		if not ntuple_comparefunc(coinc, node.offset_vector):
+			coinc_tables.append_coinc(*coinc_tables.coinc_rows(process_id, node.time_slide_id, coinc_def_id, coinc))
 
 	#
 	# done
