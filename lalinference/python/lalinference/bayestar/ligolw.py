@@ -145,7 +145,9 @@ class coinc_and_sngl_inspirals_for_hdf(collections.Mapping):
             if key.startswith(key_prefix)))
 
         coinc_group = coinc_file[sample]
+        self.timeslide_interval = coinc_file.attrs['timeslide_interval']
         self.template_ids = coinc_group['template_id']
+        self.timeslide_ids = coinc_group['timeslide_id']
         self.trigger_ids = [
             coinc_group['trigger_id' + template_num]
             for template_num in template_nums]
@@ -163,6 +165,7 @@ class coinc_and_sngl_inspirals_for_hdf(collections.Mapping):
 
     def __getitem__(self, coinc_id):
         template_id = self.template_ids[coinc_id]
+        timeslide_id = self.timeslide_ids[coinc_id]
         template = [col[template_id] for col in self.bank]
 
         trigger_ids = [
@@ -172,9 +175,11 @@ class coinc_and_sngl_inspirals_for_hdf(collections.Mapping):
             self.SnglInspiral(
                 trigger_id, ifo,
                 triggers[0][trigger_id], triggers[1][trigger_id],
-                lal.LIGOTimeGPS(triggers[2][trigger_id]), *template
-            ) for trigger_id, ifo, triggers
-            in zip(trigger_ids, self.ifos, self.triggers)
+                lal.LIGOTimeGPS(triggers[2][trigger_id] +
+                    (timeslide_id * self.timeslide_interval if i == 0 else 0)),
+                *template
+            ) for i, (trigger_id, ifo, triggers)
+            in enumerate(zip(trigger_ids, self.ifos, self.triggers))
         ]
 
     def __iter__(self):
