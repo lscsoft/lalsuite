@@ -324,14 +324,12 @@ int XLALWeaveSemiPartialsInit(
 
   // Reallocate vectors of summed multi- and per-detector F-statistics per frequency
   if ( ( *semi_parts )->sum2F == NULL || ( *semi_parts )->sum2F->length < ( *semi_parts )->nfreqs ) {
-    XLALDestroyREAL4VectorAligned( ( *semi_parts )->sum2F );
-    ( *semi_parts )->sum2F = XLALCreateREAL4VectorAligned( ( *semi_parts )->nfreqs, alignment );
+    ( *semi_parts )->sum2F = XLALResizeREAL4VectorAligned( ( *semi_parts )->sum2F, ( *semi_parts )->nfreqs, alignment );
     XLAL_CHECK( ( *semi_parts )->sum2F != NULL, XLAL_ENOMEM );
   }
   for ( size_t i = 0; i < ( *semi_parts )->ndetectors; ++i ) {
     if ( ( *semi_parts )->sum2F_det[i] == NULL || ( *semi_parts )->sum2F_det[i]->length < ( *semi_parts )->nfreqs ) {
-      XLALDestroyREAL4VectorAligned( ( *semi_parts )->sum2F_det[i] );
-      ( *semi_parts )->sum2F_det[i] = XLALCreateREAL4VectorAligned( ( *semi_parts )->nfreqs, alignment );
+      ( *semi_parts )->sum2F_det[i] = XLALResizeREAL4VectorAligned( ( *semi_parts )->sum2F_det[i], ( *semi_parts )->nfreqs, alignment );
       XLAL_CHECK( ( *semi_parts )->sum2F_det[i] != NULL, XLAL_ENOMEM );
     }
   }
@@ -467,14 +465,12 @@ int XLALWeaveSemiResultsCompute(
 
   // Reallocate vectors of mean multi- and per-detector F-statistics per frequency
   if ( ( *semi_res )->mean2F == NULL || ( *semi_res )->mean2F->length < semi_parts->nfreqs ) {
-    XLALDestroyREAL4VectorAligned( ( *semi_res )->mean2F );
-    ( *semi_res )->mean2F = XLALCreateREAL4VectorAligned( semi_parts->nfreqs, alignment );
+    ( *semi_res )->mean2F = XLALResizeREAL4VectorAligned( ( *semi_res )->mean2F, semi_parts->nfreqs, alignment );
     XLAL_CHECK( ( *semi_res )->mean2F != NULL, XLAL_ENOMEM );
   }
   for ( size_t i = 0; i < semi_parts->ndetectors; ++i ) {
     if ( ( *semi_res )->mean2F_det[i] == NULL || ( *semi_res )->mean2F_det[i]->length < semi_parts->nfreqs ) {
-      XLALDestroyREAL4VectorAligned( ( *semi_res )->mean2F_det[i] );
-      ( *semi_res )->mean2F_det[i] = XLALCreateREAL4VectorAligned( semi_parts->nfreqs, alignment );
+      ( *semi_res )->mean2F_det[i] = XLALResizeREAL4VectorAligned( ( *semi_res )->mean2F_det[i], semi_parts->nfreqs, alignment );
       XLAL_CHECK( ( *semi_res )->mean2F_det[i] != NULL, XLAL_ENOMEM );
     }
   }
