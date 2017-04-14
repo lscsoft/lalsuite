@@ -395,7 +395,7 @@ for i_sim_inspiral in progress.iterate(range(n_injections), format='injection %d
         for sngl_inspiral in sngl_inspirals])))
     coinc_inspiral.set_ifos([sngl_inspiral.ifo
         for sngl_inspiral in sngl_inspirals])
-    coinc_inspiral.set_end(glue.lal.LIGOTimeGPS(float(np.mean([float(sngl_inspiral.get_end())
+    coinc_inspiral.set_end(glue.lal.LIGOTimeGPS(float(np.mean([float(sngl_inspiral.end)
         for sngl_inspiral in sngl_inspirals]))))
     coinc_inspiral.false_alarm_rate = None
     coinc_inspiral.combined_far = None
@@ -427,8 +427,8 @@ ligolw_process.set_process_end_time(process)
 
 # Write output file.
 with ligolw_utils.SignalsTrap():
-  ligolw_utils.write_fileobj(out_xmldoc, opts.output,
-      gz=(os.path.splitext(opts.output.name)[-1]==".gz"))
+    ligolw_utils.write_fileobj(out_xmldoc, opts.output,
+        gz=(os.path.splitext(opts.output.name)[-1]==".gz"))
 
 
 if handler.interrupted:

@@ -69,6 +69,7 @@ MOSTLYCLEANFILES = \
 	LatticeTilingTest.fits \
 	OutHistogram.asc \
 	OutHough.asc \
+	SuperskyMetricsTest.fits \
 	TEMPOcomparison.par \
 	TEMPOcomparison.tim \
 	TS_R4.dat \

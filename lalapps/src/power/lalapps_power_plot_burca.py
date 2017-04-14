@@ -33,13 +33,13 @@ import os
 import sqlite3
 import sys
 
-import lal
 
 from glue import segments
 from glue.ligolw import dbtables
 from glue.ligolw import utils as ligolw_utils
+import lal
+from lal import rate
 from lalburst import git_version
-from pylal import rate
 from lalburst import SnglBurstUtils
 from lalburst import SimBurstUtils
 

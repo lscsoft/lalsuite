@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2017 Arunava Mukherjee
  * Copyright (C) 2012--2015 Karl Wette
  * Copyright (C) 2008, 2009 Reinhard Prix
  *
@@ -138,8 +139,13 @@ static const struct {
   [DOPPLERCOORD_ASINI]    = {"asini",   1,                "Projected semimajor axis of binary orbit in small-eccentricy limit (ELL1 model) [Units: light seconds]."},
   [DOPPLERCOORD_TASC]     = {"tasc",    1,                "Time of ascension (neutron star crosses line of nodes moving away from observer) for binary orbit (ELL1 model) [Units: GPS seconds]."},
   [DOPPLERCOORD_PORB]     = {"porb",    1,                "Period of binary orbit (ELL1 model) [Units: s]."},
-  [DOPPLERCOORD_KAPPA]    = {"kappa", 	1,		  "Lagrange parameter 'kappa = ecc * cos(argp)', ('ecc' = eccentricity, 'argp' = argument of periapse) of binary orbit (ELL1 model) [Units: none]."},
-  [DOPPLERCOORD_ETA]      = {"eta",     1,                "Lagrange parameter 'eta = ecc * sin(argp) of binary orbit (ELL1 model) [Units: none]."}
+  [DOPPLERCOORD_KAPPA]    = {"kappa",   1,                "Lagrange parameter 'kappa = ecc * cos(argp)', ('ecc' = eccentricity, 'argp' = argument of periapse) of binary orbit (ELL1 model) [Units: none]."},
+  [DOPPLERCOORD_ETA]      = {"eta",     1,                "Lagrange parameter 'eta = ecc * sin(argp) of binary orbit (ELL1 model) [Units: none]."},
+
+  [DOPPLERCOORD_DASC]     = {"dasc",    1,                "Distance traversed on the arc of binary orbit (ELL1 model) 'dasc = 2 * pi * (ap/porb) * tasc' [Units: light second]."},
+  [DOPPLERCOORD_VP]       = {"vp",      1,                "Rescaled (by asini) differential-coordinate 'dvp = asini * dOMEGA', ('OMEGA' = 2 * pi/'porb') of binary orbit (ELL1 model) [Units: (light second)/(GPS second)]."},
+  [DOPPLERCOORD_KAPPAP]   = {"kappap",  1,                "Rescaled (by asini) differential-coordinate 'dkappap = asini * dkappa' [Units: light seconds]."},
+  [DOPPLERCOORD_ETAP]     = {"etap",    1,                "Rescaled (by asini) differential-coordinate 'detap = asini * deta' [Units: light seconds]."}
 
 };
 
@@ -717,6 +723,23 @@ CW_Phi_i ( double tt, void *params )
       break;
     case DOPPLERCOORD_ETA: /**< Lagrange parameter 'eta = ecc * sin(argp) of binary orbit (ELL1 model) [Units: none] */
       ret = LAL_PI * Freq * orb_asini * cos2Psi;
+      break;
+
+      // --------- rescaled binary orbital parameters for (approximately) flat metric
+    case DOPPLERCOORD_DASC:  /**< Distance traversed on the arc of binary orbit (ELL1 model) 'dasc = 2 * pi * (ap/porb) * tasc' [Units: light second]." */
+      ret = LAL_TWOPI * Freq * ( cosPsi + orb_kappa * cos2Psi + orb_eta * sin2Psi );
+      break;
+
+    case DOPPLERCOORD_VP: /**< Rescaled (by asini) differential-coordinate 'dvp = asini * dOMEGA', ('OMEGA' = 2 * pi/'porb') of binary orbit (ELL1 model) [Units: (light second)/(GPS second)]. */
+      ret = - LAL_TWOPI * Freq * ( orb_phase/orb_Omega ) * ( cosPsi + orb_kappa * cos2Psi + orb_eta * sin2Psi );
+      break;
+
+    case DOPPLERCOORD_KAPPAP: /**< Rescaled (by asini) differential-coordinate 'dkappap = asini * dkappa' [Units: light seconds]. */
+      ret = - LAL_PI * Freq * sin2Psi;
+      break;
+
+    case DOPPLERCOORD_ETAP: /**< Rescaled (by asini) differential-coordinate 'detap = asini * deta' [Units: light seconds]. */
+      ret = LAL_PI * Freq * cos2Psi;
       break;
 
       // ------------------------------------------------

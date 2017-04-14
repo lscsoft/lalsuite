@@ -11,7 +11,7 @@ from glue import segmentsUtils
 
 from pylal import db_thinca_rings
 from pylal import llwapp
-from pylal import rate
+from lal import rate
 from pylal import SimInspiralUtils
 from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
 

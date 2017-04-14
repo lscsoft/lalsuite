@@ -1,4 +1,4 @@
-# Copyright (C) 2009  Kipp Cannon
+# Copyright (C) 2009,2010,2016,2017  Kipp Cannon
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -31,12 +31,11 @@ import sys
 from glue import iterutils
 from glue import segments
 from glue.text_progress_bar import ProgressBar
-from . import git_version
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-__version__ = "git id %s" % git_version.id
-__date__ = git_version.date
+from git_version import date as __date__
+from git_version import version as __version__
 
 
 #

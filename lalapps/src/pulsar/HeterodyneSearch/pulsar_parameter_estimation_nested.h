@@ -281,6 +281,9 @@ extern "C" {
                      will be injected\n"\
 " --inject-output     a filename to which the injected signal will be\n\
                      output if specified\n"\
+" --inject-only       do not perform nested sampling on a created injection\n\
+                     provided that injection has been output (i.e. exit the code\n\
+                     after creation of and writing out of the injection).\n"\
 " --fake-data         a list of IFO's for which fake data will be generated\n\
                      e.g. H1,L1 (delimited by commas). Unless the --fake-psd\n\
                      flag is set the power spectral density for the data will\n\

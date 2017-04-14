@@ -378,13 +378,13 @@ def sngl_inspiral_psd(sngl, waveform, f_min=10, f_max=2048, f_ref=0):
     lalsimulation.SimInspiralWaveformParamsInsertPNPhaseOrder(params, phaseo)
     lalsimulation.SimInspiralWaveformParamsInsertPNAmplitudeOrder(params, ampo)
     hplus, hcross = lalsimulation.SimInspiralFD(
-        m1=sngl.mass1*lal.MSUN_SI, m2=sngl.mass2*lal.MSUN_SI,
-        S1x=getattr(sngl, 'spin1x', 0) or 0,
-        S1y=getattr(sngl, 'spin1y', 0) or 0,
-        S1z=getattr(sngl, 'spin1z', 0) or 0,
-        S2x=getattr(sngl, 'spin2x', 0) or 0,
-        S2y=getattr(sngl, 'spin2y', 0) or 0,
-        S2z=getattr(sngl, 'spin2z', 0) or 0,
+        m1=float(sngl.mass1) * lal.MSUN_SI, m2=float(sngl.mass2) * lal.MSUN_SI,
+        S1x=float(getattr(sngl, 'spin1x', 0) or 0),
+        S1y=float(getattr(sngl, 'spin1y', 0) or 0),
+        S1z=float(getattr(sngl, 'spin1z', 0) or 0),
+        S2x=float(getattr(sngl, 'spin2x', 0) or 0),
+        S2y=float(getattr(sngl, 'spin2y', 0) or 0),
+        S2z=float(getattr(sngl, 'spin2z', 0) or 0),
         distance=1e6*lal.PC_SI, inclination=0, phiRef=0,
         longAscNodes=0, eccentricity=0, meanPerAno=0,
         deltaF=0, f_min=f_min, f_max=f_max, f_ref=f_ref,
