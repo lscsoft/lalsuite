@@ -149,3 +149,15 @@ EXPORT_VECTORMATH_SS2S(Multiply, AVX2, AVX, SSE2, SSE)
 
 EXPORT_VECTORMATH_sS2S(Scale, AVX2, AVX, SSE2, SSE)
 EXPORT_VECTORMATH_sS2S(Shift, AVX2, AVX, SSE2, SSE)
+
+// ---------- define exported vector math functions with 2 REAL4 vector inputs to 1 UINT4 scalar and 1 UINT4 vector output (SS2uU) ----------
+#define EXPORT_VECTORMATH_SS2uU(NAME, ...)                            \
+  EXPORT_VECTORMATH_ANY( NAME ## REAL4, ( UINT4* count, UINT4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len ), (count, out, in1, in2, len), __VA_ARGS__ )
+
+EXPORT_VECTORMATH_SS2uU(FindVectorLessEqual, AVX2, SSSE3, NONE, NONE)
+
+// ---------- define exported vector math functions with 1 REAL4 scalar and 1 REAL4 vector inputs to 1 UINT4 scalar and 1 UINT4 vector output (sS2uU) ----------
+#define EXPORT_VECTORMATH_sS2uU(NAME, ...)                            \
+  EXPORT_VECTORMATH_ANY( NAME ## REAL4, ( UINT4* count, UINT4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len ), (count, out, scalar, in, len), __VA_ARGS__ )
+
+EXPORT_VECTORMATH_sS2uU(FindScalarLessEqual, AVX2, SSSE3, NONE, NONE)

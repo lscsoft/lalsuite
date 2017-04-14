@@ -109,6 +109,24 @@
   }
 
 
+#define TESTBENCH_VECTORMATH_SS2uU(name,in1,in2)                        \
+  {                                                                     \
+    UINT4 xCount = 0, xCountRef = 0;                                    \
+    XLAL_CHECK ( XLALVector##name##REAL4_GEN( &xCountRef, xOutRefU4->data, in1, in2, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+    tic = XLALGetCPUTime();                                             \
+    for (UINT4 l=0; l < Nruns; l ++ ) {                                 \
+      XLAL_CHECK ( XLALVector##name##REAL4( &xCount, xOutU4->data, in1, in2, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+      XLAL_CHECK ( xCount == xCountRef, XLAL_ETOL, "%s: count of found elements (%u) differs from reference (%u)", #name, xCount, xCountRef ); \
+    }                                                                   \
+    toc = XLALGetCPUTime();                                             \
+    for ( UINT4 i = 0; i < xCount; i ++ )                               \
+    {                                                                   \
+      XLAL_CHECK ( xOutU4->data[i] == xOutRefU4->data[i], XLAL_ETOL, "%s: found element #%u (%u) differs from reference (%u)", #name, i, xOutU4->data[i], xOutRefU4->data[i] ); \
+    }                                                                   \
+    XLALPrintInfo ( "%-32s: %4.0f Mops/sec\n", XLALVector##name##REAL4_name, (REAL8)Ntrials * Nruns / (toc - tic)/1e6 ); \
+  }
+
+
 // local types
 typedef struct
 {
@@ -163,6 +181,11 @@ main ( int argc, char *argv[] )
   REAL4 *xOutRef  = xOutRef_a->data;
   REAL4 *xOutRef2 = xOutRef2_a->data;
 
+  UINT4Vector *xOutU4;
+  UINT4Vector *xOutRefU4;
+  XLAL_CHECK ( ( xOutU4 = XLALCreateUINT4Vector ( Ntrials )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( ( xOutRefU4 = XLALCreateUINT4Vector ( Ntrials )) != NULL, XLAL_EFUNC );
+
   REAL8 tic, toc;
   REAL4 maxErr = 0, maxRelerr = 0;
   REAL4 abstol, reltol;
@@ -216,6 +239,17 @@ main ( int argc, char *argv[] )
   TESTBENCH_VECTORMATH_SS2S(Shift,xIn[0],xIn2);
   TESTBENCH_VECTORMATH_SS2S(Scale,xIn[0],xIn2);
 
+  // ==================== FIND ====================
+  for ( UINT4 i = 0; i < Ntrials; i ++ ) {
+    xIn[i]  = -10000.0f + 20000.0f * frand() + 1e-6;
+    xIn2[i] = -10000.0f + 20000.0f * frand() + 1e-6;
+  } // for i < Ntrials
+
+  XLALPrintInfo ("\nTesting find for x,y in (-10000, 10000]\n");
+  TESTBENCH_VECTORMATH_SS2uU(FindVectorLessEqual,xIn,xIn2);
+
+  TESTBENCH_VECTORMATH_SS2uU(FindScalarLessEqual,xIn[0],xIn2);
+
   XLALPrintInfo ("\n");
 
   // ---------- clean up memory ----------
@@ -226,6 +260,9 @@ main ( int argc, char *argv[] )
 
   XLALDestroyREAL4VectorAligned ( xOutRef_a );
   XLALDestroyREAL4VectorAligned ( xOutRef2_a );
+
+  XLALDestroyUINT4Vector ( xOutU4 );
+  XLALDestroyUINT4Vector ( xOutRefU4 );
 
   XLALDestroyUserVars();
 

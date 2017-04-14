@@ -161,6 +161,17 @@ int XLALVectorScaleREAL4 ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT
 
 /** @} */
 
+/** \name Vector Element Finding Operations */
+/** @{ */
+
+/** Count and return indexes (in \c count and \c out respectively) of vector elements where \f$\text{in1} \le \text{in2}\f$ */
+int XLALVectorFindVectorLessEqualREAL4( UINT4* count, UINT4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len );
+
+/** Count and return indexes (in \c count and \c out respectively) of vector elements where \f$\text{scalar} \le \text{in2}\f$ */
+int XLALVectorFindScalarLessEqualREAL4( UINT4* count, UINT4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len );
+
+/** @} */
+
 /** @} */
 
 #ifdef  __cplusplus
