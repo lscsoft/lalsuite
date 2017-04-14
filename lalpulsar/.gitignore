@@ -100,6 +100,7 @@ test/SkyMetricTest
 test/StackMetricTest
 test/StatisticsTest
 test/SuperskyMetricsTest
+test/SuperskyMetricsTest.fits
 test/TEMPOcomparison
 test/TwoDMeshTest
 test/UniversalDopplerMetricTest

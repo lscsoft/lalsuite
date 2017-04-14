@@ -19,6 +19,7 @@
 
 // Tests of the supersky metric code in SuperskyMetrics.[ch].
 
+#include <config.h>
 #include <math.h>
 #include <string.h>
 #include <gsl/gsl_blas.h>
@@ -33,14 +34,23 @@
 #define NUM_POINTS 10
 #define NUM_SEGS 3
 
-#define REF_TIME_S      900100100
-#define REF_TIME        { REF_TIME_S, 0 }
+#define REF_TIME        { 900100100, 0 }
 #define FIDUCIAL_FREQ   100.0
 
-// Internal definition of reduced supersky metric coordinate transform data
+// Maximum number of sky offsets required
 // - Must match that given in src/SuperskyMetrics.c
+#define MAX_SKY_OFFSETS PULSAR_MAX_SPINS
+
+// Internal definition of reduced supersky metric coordinate transform data
+// - MUST match the definition given in src/SuperskyMetrics.c
 struct tagSuperskyTransformData {
-  gsl_matrix *data;
+  UINT4 ndim;                                   ///< Dimensions of the corresponding metric
+  LIGOTimeGPS ref_time;                         ///< Reference time of the metric
+  REAL8 fiducial_freq;                          ///< Fiducial frequency of metric
+  UINT4 nspins;                                 ///< Number of spindown dimensions
+  REAL8 align_sky[3][3];                        ///< Alignment transform of the supersky metric
+  UINT4 nsky_offsets;                           ///< Number of sky offsets
+  REAL8 sky_offsets[MAX_SKY_OFFSETS][3];        ///< Sky offsets of the supersky metric
 };
 
 const PulsarDopplerParams phys_points[NUM_POINTS] = {
@@ -82,37 +92,69 @@ const double coh_rssky_metric_refs[NUM_SEGS][4][4] = {
   }
 };
 
-const double semi_rssky_transf_ref[6][3] = {
-  { REF_TIME_S, FIDUCIAL_FREQ, 0 },
-  { 9.363383835591375e-01,  3.276518345636219e-01,  1.261535048302427e-01},
-  {-3.309081001489509e-01,  9.436487575620593e-01,  5.181853663774516e-03},
-  {-1.173467542357819e-01, -4.659718509388588e-02,  9.919971983890140e-01},
-  {-2.134760488419512e-11,  1.830302603631687e-09,  7.303907936812212e-10},
-  { 9.866360627623324e-03,  4.620189300680953e-05,  1.748754269165573e-04},
+const SuperskyTransformData semi_rssky_transf_ref = {
+  .ndim = 4,
+  .ref_time = REF_TIME,
+  .fiducial_freq = FIDUCIAL_FREQ,
+  .nspins = 1,
+  .align_sky = {
+    { 9.363383835591375e-01,  3.276518345636219e-01,  1.261535048302427e-01},
+    {-3.309081001489509e-01,  9.436487575620593e-01,  5.181853663774516e-03},
+    {-1.173467542357819e-01, -4.659718509388588e-02,  9.919971983890140e-01},
+  },
+  .nsky_offsets = 2,
+  .sky_offsets = {
+    {-2.134760488419512e-11,  1.830302603631687e-09,  7.303907936812212e-10},
+    { 9.866360627623324e-03,  4.620189300680953e-05,  1.748754269165573e-04},
+  }
 };
 
-const double coh_rssky_transf_refs[NUM_SEGS][6][3] = {
+const SuperskyTransformData coh_rssky_transf_refs[NUM_SEGS] = {
   {
-    { REF_TIME_S, FIDUCIAL_FREQ, 0 },
-    { 7.014188729589919e-01, -7.127492992955380e-01,  3.179083552258733e-05},
-    { 7.127491812384910e-01,  7.014187811320953e-01,  5.460027715689418e-04},
-    {-4.114617819526091e-04, -3.603177566767635e-04,  9.999998504351469e-01},
-    {-1.518511649108543e-09,  9.119239045225907e-10,  7.652734977238319e-10},
-    { 4.238436305149103e-03,  8.987129848963495e-03,  1.432613602463570e-03},
+    .ndim = 4,
+    .ref_time = REF_TIME,
+    .fiducial_freq = FIDUCIAL_FREQ,
+    .nspins = 1,
+    .align_sky = {
+      { 7.014188729589919e-01, -7.127492992955380e-01,  3.179083552258733e-05},
+      { 7.127491812384910e-01,  7.014187811320953e-01,  5.460027715689418e-04},
+      {-4.114617819526091e-04, -3.603177566767635e-04,  9.999998504351469e-01},
+    },
+    .nsky_offsets = 2,
+    .sky_offsets = {
+      {-1.518511649108543e-09,  9.119239045225907e-10,  7.652734977238319e-10},
+      { 4.238436305149103e-03,  8.987129848963495e-03,  1.432613602463570e-03},
+    }
   }, {
-    { REF_TIME_S, FIDUCIAL_FREQ, 0 },
-    { 7.928332170641094e-01, -6.094386653165459e-01,  5.600859050599027e-05},
-    { 6.094384042541772e-01,  7.928329562280915e-01,  8.572856860540078e-04},
-    {-5.668685006887667e-04, -6.455507823947125e-04,  9.999996309620771e-01},
-    {-1.538506600219701e-09,  9.036045301253465e-10,  7.329842343015285e-10},
-    { 5.337970249571395e-03,  8.252674722491856e-03,  1.420014590206618e-03},
+    .ndim = 4,
+    .ref_time = REF_TIME,
+    .fiducial_freq = FIDUCIAL_FREQ,
+    .nspins = 1,
+    .align_sky = {
+      { 7.928332170641094e-01, -6.094386653165459e-01,  5.600859050599027e-05},
+      { 6.094384042541772e-01,  7.928329562280915e-01,  8.572856860540078e-04},
+      {-5.668685006887667e-04, -6.455507823947125e-04,  9.999996309620771e-01},
+    },
+    .nsky_offsets = 2,
+    .sky_offsets = {
+      {-1.538506600219701e-09,  9.036045301253465e-10,  7.329842343015285e-10},
+      { 5.337970249571395e-03,  8.252674722491856e-03,  1.420014590206618e-03},
+    }
   }, {
-    { REF_TIME_S, FIDUCIAL_FREQ, 0 },
-    { 8.689897105711624e-01, -4.948301493223842e-01,  7.901287635748977e-05},
-    { 4.948297433622081e-01,  8.689891816122729e-01,  1.152095883124570e-03},
-    {-6.387531126429617e-04, -9.620615466963718e-04,  9.999993332157983e-01},
-    {-1.560552363459718e-09,  9.006124427330534e-10,  6.868353365772801e-10},
-    { 6.434079710711734e-03,  7.519415923170119e-03,  1.434855908485180e-03},
+    .ndim = 4,
+    .ref_time = REF_TIME,
+    .fiducial_freq = FIDUCIAL_FREQ,
+    .nspins = 1,
+    .align_sky = {
+      { 8.689897105711624e-01, -4.948301493223842e-01,  7.901287635748977e-05},
+      { 4.948297433622081e-01,  8.689891816122729e-01,  1.152095883124570e-03},
+      {-6.387531126429617e-04, -9.620615466963718e-04,  9.999993332157983e-01},
+    },
+    .nsky_offsets = 2,
+    .sky_offsets = {
+      {-1.560552363459718e-09,  9.006124427330534e-10,  6.868353365772801e-10},
+      { 6.434079710711734e-03,  7.519415923170119e-03,  1.434855908485180e-03},
+    }
   }
 };
 
@@ -189,7 +231,7 @@ static int CheckSuperskyMetrics(
   const gsl_matrix *rssky_metric,
   const double rssky_metric_ref[4][4],
   const SuperskyTransformData *rssky_transf,
-  const double rssky_transf_ref[6][3],
+  const SuperskyTransformData *rssky_transf_ref,
   const double phys_mismatch[NUM_POINTS][NUM_POINTS],
   const double phys_mismatch_tol
   )
@@ -202,13 +244,21 @@ static int CheckSuperskyMetrics(
     XLAL_CHECK( err <= err_tol, XLAL_ETOL, "'rssky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol );
   }
   {
-    XLAL_CHECK( rssky_transf->data->size1 == 6 && rssky_transf->data->size2 == 3, XLAL_ESIZE );
+    XLAL_CHECK( rssky_transf->ndim == 4, XLAL_ESIZE );
+    XLAL_CHECK( rssky_transf->nsky_offsets == 2, XLAL_ESIZE );
     const double err_tol = 1e-5;
-    for ( size_t i = 0; i < rssky_transf->data->size1; ++i ) {
-      for ( size_t j = 0; j < rssky_transf->data->size2; ++j ) {
-        const double rssky_transf_ij = gsl_matrix_get( rssky_transf->data, i, j );
-        const double rssky_transf_ref_ij = rssky_transf_ref[i][j];
-        CHECK_RELERR( rssky_transf_ij, rssky_transf_ref_ij, err_tol );
+    for ( size_t i = 0; i < 3; ++i ) {
+      for ( size_t j = 0; j < 3; ++j ) {
+        const double align_sky_ij = rssky_transf->align_sky[i][j];
+        const double align_sky_ref_ij = rssky_transf_ref->align_sky[i][j];
+        CHECK_RELERR( align_sky_ij, align_sky_ref_ij, err_tol );
+      }
+    }
+    for ( size_t i = 0; i < rssky_transf->nsky_offsets; ++i ) {
+      for ( size_t j = 0; j < 3; ++j ) {
+        const double sky_offsets_ij = rssky_transf->sky_offsets[i][j];
+        const double sky_offsets_ref_ij = rssky_transf_ref->sky_offsets[i][j];
+        CHECK_RELERR( sky_offsets_ij, sky_offsets_ref_ij, err_tol );
       }
     }
   }
@@ -296,13 +346,13 @@ int main( void )
   for ( size_t n = 0; n < NUM_SEGS; ++n ) {
     XLAL_CHECK_MAIN( CheckSuperskyMetrics(
                        metrics->coh_rssky_metric[n], coh_rssky_metric_refs[n],
-                       metrics->coh_rssky_transf[n], coh_rssky_transf_refs[n],
+                       metrics->coh_rssky_transf[n], &coh_rssky_transf_refs[n],
                        coh_phys_mismatches[n], 1e-2
                        ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
   XLAL_CHECK_MAIN( CheckSuperskyMetrics(
                      metrics->semi_rssky_metric, semi_rssky_metric_ref,
-                     metrics->semi_rssky_transf, semi_rssky_transf_ref,
+                     metrics->semi_rssky_transf, &semi_rssky_transf_ref,
                      semi_phys_mismatch, 3e-2
                      ) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -315,12 +365,12 @@ int main( void )
     gsl_matrix_view sky_sky = gsl_matrix_submatrix( &semi_rssky_metric_rescale_view.matrix, 0, 0, 2, 2 );
     gsl_matrix_scale( &sky_sky.matrix, ( 257.52 / FIDUCIAL_FREQ ) * ( 257.52 / FIDUCIAL_FREQ ) );
     const double err = XLALCompareMetrics( metrics->semi_rssky_metric, &semi_rssky_metric_rescale_view.matrix ), err_tol = 1e-6;
-    XLAL_CHECK( err <= err_tol, XLAL_ETOL, "'rssky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol );
+    XLAL_CHECK_MAIN( err <= err_tol, XLAL_ETOL, "'rssky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol );
   }
   XLAL_CHECK_MAIN( XLALScaleSuperskyMetricsFiducialFreq( metrics, FIDUCIAL_FREQ ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( CheckSuperskyMetrics(
                      metrics->semi_rssky_metric, semi_rssky_metric_ref,
-                     metrics->semi_rssky_transf, semi_rssky_transf_ref,
+                     metrics->semi_rssky_transf, &semi_rssky_transf_ref,
                      semi_phys_mismatch, 3e-2
                      ) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -329,15 +379,45 @@ int main( void )
   for ( size_t n = 0; n < NUM_SEGS; ++n ) {
     XLAL_CHECK_MAIN( CheckSuperskyMetrics(
                        metrics->coh_rssky_metric[n], coh_rssky_metric_refs[n],
-                       metrics->coh_rssky_transf[n], coh_rssky_transf_refs[n],
+                       metrics->coh_rssky_transf[n], &coh_rssky_transf_refs[n],
                        coh_phys_mismatches[n], 1e-2
                        ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
   XLAL_CHECK_MAIN( CheckSuperskyMetrics(
                      metrics->semi_rssky_metric, semi_rssky_metric_ref,
-                     metrics->semi_rssky_transf, semi_rssky_transf_ref,
+                     metrics->semi_rssky_transf, &semi_rssky_transf_ref,
                      semi_phys_mismatch, 3e-2
                      ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Check writing/reading SuperskyMetrics to a FITS file
+#if !defined(HAVE_LIBCFITSIO)
+  fprintf( stderr, "CFITSIO library is not available; skipping FITS writing/reading test\n" );
+#else
+  {
+    FITSFile *file = XLALFITSFileOpenWrite( "SuperskyMetricsTest.fits" );
+    XLAL_CHECK_MAIN( file != NULL, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSWriteSuperskyMetrics( file, metrics ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLALFITSFileClose( file );
+  }
+  {
+    FITSFile *file = XLALFITSFileOpenRead( "SuperskyMetricsTest.fits" );
+    XLAL_CHECK_MAIN( file != NULL, XLAL_EFUNC );
+    SuperskyMetrics *metrics_from_fits = NULL;
+    XLAL_CHECK_MAIN( XLALFITSReadSuperskyMetrics( file, &metrics_from_fits ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLALFITSFileClose( file );
+    for ( size_t n = 0; n < NUM_SEGS; ++n ) {
+      XLAL_CHECK_MAIN( XLALCompareMetrics( metrics->coh_rssky_metric[n], metrics_from_fits->coh_rssky_metric[n] ) == 0,
+                       XLAL_EIO, "Failed to read coh_rssky_metric[%zu] from FITS file", n );
+      XLAL_CHECK_MAIN( memcmp( metrics->coh_rssky_transf[n], metrics_from_fits->coh_rssky_transf[n], sizeof( *metrics->coh_rssky_transf[n] ) ) == 0,
+                       XLAL_EIO, "Failed to read coh_rssky_transf[%zu] from FITS file", n );
+    }
+    XLAL_CHECK_MAIN( XLALCompareMetrics( metrics->semi_rssky_metric, metrics_from_fits->semi_rssky_metric ) == 0,
+                     XLAL_EIO, "Failed to read semi_rssky_metric from FITS file" );
+    XLAL_CHECK_MAIN( memcmp( metrics->semi_rssky_transf, metrics_from_fits->semi_rssky_transf, sizeof( *metrics->semi_rssky_transf ) ) == 0,
+                     XLAL_EIO, "Failed to read semi_rssky_transf from FITS file" );
+    XLALDestroySuperskyMetrics( metrics_from_fits );
+  }
+#endif
 
   // Cleanup
   XLALDestroyEphemerisData( edat );
