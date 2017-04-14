@@ -24,6 +24,8 @@
 
 #include "ResultsToplist.h"
 
+#include <lal/VectorMath.h>
+
 ///
 /// Internal definition of toplist of output results
 ///
@@ -443,12 +445,7 @@ int XLALWeaveResultsToplistAdd(
   // Find the indexes of the semicoherent results whose ranking statistic equals or exceeds
   // that of the heap root; only select these results for possible insertion into the toplist
   UINT4 n_maybe_add = 0;
-  for ( UINT4 freq_idx = 0; freq_idx < semi_nfreqs; ++freq_idx ) {
-    if ( toplist_rank_stats[freq_idx] >= heap_root_rank_stat ) {
-      toplist->maybe_add_freq_idxs->data[n_maybe_add] = freq_idx;
-      ++n_maybe_add;
-    }
-  }
+  XLAL_CHECK( XLALVectorFindScalarLessEqualREAL4( &n_maybe_add, toplist->maybe_add_freq_idxs->data, heap_root_rank_stat, toplist_rank_stats, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Iterate over semicoherent results which have been selected for possible toplist insertion
   for ( UINT4 idx = 0; idx < n_maybe_add; ++idx ) {
