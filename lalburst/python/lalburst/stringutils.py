@@ -1,4 +1,4 @@
-# Copyright (C) 2009--2014  Kipp Cannon
+# Copyright (C) 2009--2017  Kipp Cannon
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -42,13 +42,12 @@ from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
 from glue.offsetvector import offsetvector
-from . import git_version
 from pylal import snglcoinc
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-__version__ = "git id %s" % git_version.id
-__date__ = git_version.date
+from git_version import date as __date__
+from git_version import version as __version__
 
 
 #

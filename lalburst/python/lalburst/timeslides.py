@@ -1,4 +1,4 @@
-# Copyright (C) 2006--2016  Kipp Cannon
+# Copyright (C) 2006--2017  Kipp Cannon
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -28,12 +28,11 @@ import itertools
 
 
 from glue import offsetvector
-from . import git_version
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-__version__ = "git id %s" % git_version.id
-__date__ = git_version.date
+from git_version import date as __date__
+from git_version import version as __version__
 
 
 #

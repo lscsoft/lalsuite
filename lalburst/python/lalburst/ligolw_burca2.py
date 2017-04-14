@@ -30,12 +30,11 @@ import traceback
 
 from glue.ligolw import lsctables
 from glue.text_progress_bar import ProgressBar
-from . import git_version
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-__version__ = "git id %s" % git_version.id
-__date__ = git_version.date
+from git_version import date as __date__
+from git_version import version as __version__
 
 
 #
