@@ -77,11 +77,11 @@ local_cmple_ps ( __m128 in1, __m128 in2 )
   return _mm_cmple_ps ( in1, in2 );
 }
 
-// ========== internal generic AVX2 functions ==========
+// ========== internal generic SSSE3 functions ==========
 
-// ---------- generic AVX2 operator with 2 REAL4 vector inputs to 1 UINT4 scalar and 1 UINT4 vector output (SS2uU) ----------
+// ---------- generic SSSE3 operator with 2 REAL4 vector inputs to 1 UINT4 scalar and 1 UINT4 vector output (SS2uU) ----------
 static inline int
-XLALVectorMath_SS2uU_AVX2 ( UINT4* count, UINT4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len, __m128 (*pred)(__m128, __m128) )
+XLALVectorMath_SS2uU_SSSE3 ( UINT4* count, UINT4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len, __m128 (*pred)(__m128, __m128) )
 {
   *count = 0;
 
@@ -128,11 +128,11 @@ XLALVectorMath_SS2uU_AVX2 ( UINT4* count, UINT4 *out, const REAL4 *in1, const RE
 
   return XLAL_SUCCESS;
 
-} // XLALVectorMath_SS2uU_AVX2()
+} // XLALVectorMath_SS2uU_SSSE3()
 
-// ---------- generic AVX2 operator with 1 REAL4 scalar and 1 REAL4 vector inputs to 1 UINT4 scalar and 1 UINT4 vector output (Ss2uU) ----------
+// ---------- generic SSSE3 operator with 1 REAL4 scalar and 1 REAL4 vector inputs to 1 UINT4 scalar and 1 UINT4 vector output (Ss2uU) ----------
 static inline int
-XLALVectorMath_sS2uU_AVX2 ( UINT4* count, UINT4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len, __m128 (*pred)(__m128, __m128) )
+XLALVectorMath_sS2uU_SSSE3 ( UINT4* count, UINT4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len, __m128 (*pred)(__m128, __m128) )
 {
   const V4SF scalar4 = {.f={scalar,scalar,scalar,scalar}};
 
@@ -178,18 +178,18 @@ XLALVectorMath_sS2uU_AVX2 ( UINT4* count, UINT4 *out, REAL4 scalar, const REAL4 
 
   return XLAL_SUCCESS;
 
-} // XLALVectorMath_sS2uU_AVX2()
+} // XLALVectorMath_sS2uU_SSSE3()
 
-// ========== internal AVX2 vector math functions ==========
+// ========== internal SSSE3 vector math functions ==========
 
 // ---------- define vector math functions with 2 REAL4 vector inputs to 1 UINT4 scalar and 1 UINT4 vector output (SS2uU) ----------
-#define DEFINE_VECTORMATH_SS2uU(NAME, AVX_PRED)                            \
-  DEFINE_VECTORMATH_ANY( XLALVectorMath_SS2uU_AVX2, NAME ## REAL4, ( UINT4* count, UINT4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len ), ( (count != NULL) && (out != NULL) && (in1 != NULL) && (in2 != NULL) ), ( count, out, in1, in2, len, AVX_PRED ) )
+#define DEFINE_VECTORMATH_SS2uU(NAME, PRED)                            \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_SS2uU_SSSE3, NAME ## REAL4, ( UINT4* count, UINT4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len ), ( (count != NULL) && (out != NULL) && (in1 != NULL) && (in2 != NULL) ), ( count, out, in1, in2, len, PRED ) )
 
 DEFINE_VECTORMATH_SS2uU(FindVectorLessEqual, local_cmple_ps)
 
 // ---------- define vector math functions with 1 REAL4 scalar and 1 REAL4 vector inputs to 1 UINT4 scalar and 1 UINT4 vector output (sS2uU) ----------
-#define DEFINE_VECTORMATH_sS2uU(NAME, AVX_PRED)                            \
-  DEFINE_VECTORMATH_ANY( XLALVectorMath_sS2uU_AVX2, NAME ## REAL4, ( UINT4* count, UINT4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len ), ( (count != NULL) && (out != NULL) && (in != NULL) ), ( count, out, scalar, in, len, AVX_PRED ) )
+#define DEFINE_VECTORMATH_sS2uU(NAME, PRED)                            \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_sS2uU_SSSE3, NAME ## REAL4, ( UINT4* count, UINT4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len ), ( (count != NULL) && (out != NULL) && (in != NULL) ), ( count, out, scalar, in, len, PRED ) )
 
 DEFINE_VECTORMATH_sS2uU(FindScalarLessEqual, local_cmple_ps)
