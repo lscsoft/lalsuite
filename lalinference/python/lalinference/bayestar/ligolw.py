@@ -145,9 +145,9 @@ class coinc_and_sngl_inspirals_for_hdf(collections.Mapping):
             if key.startswith(key_prefix)))
 
         coinc_group = coinc_file[sample]
-        self.timeslide_interval = coinc_file.attrs['timeslide_interval']
+        self.timeslide_interval = coinc_file.attrs.get('timeslide_interval', 0)
         self.template_ids = coinc_group['template_id']
-        self.timeslide_ids = coinc_group['timeslide_id']
+        self.timeslide_ids = coinc_group.get('timeslide_id', np.zeros(len(self.template_ids)))
         self.trigger_ids = [
             coinc_group['trigger_id' + template_num]
             for template_num in template_nums]
