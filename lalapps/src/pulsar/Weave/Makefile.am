@@ -50,7 +50,7 @@ noinst_PROGRAMS = lalapps_Weave_Callgrind
 endif
 
 lalapps_Weave_Callgrind_SOURCES = $(lalapps_Weave_SOURCES)
-lalapps_Weave_Callgrind_CPPFLAGS = $(AM_CPPFLAGS) -DMAKEFILE_WEAVE_CALLGRIND
+lalapps_Weave_Callgrind_CPPFLAGS = $(AM_CPPFLAGS) -DWEAVE_CALLGRIND
 
 TESTS = \
 	TestInterpolating.sh \
