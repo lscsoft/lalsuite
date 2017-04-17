@@ -976,6 +976,7 @@ int main( int argc, char *argv[] )
   double cpu_timing_coh_res = 0;
   double cpu_timing_semi_parts = 0;
   double cpu_timing_semi_res = 0;
+  double cpu_timing_output = 0;
 
   // Time at which search was last checkpointed
   double wall_ckpt_output = wall_zero;
@@ -1087,6 +1088,11 @@ int main( int argc, char *argv[] )
 
       // Add semicoherent results to output
       XLAL_CHECK_MAIN( XLALWeaveOutputResultsAdd( out, semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      // Time output of semicoherent results
+      cpu_timing_toc = cpu_time();
+      cpu_timing_output += cpu_timing_toc - cpu_timing_tic;
+      cpu_timing_tic = cpu_timing_toc;
 
       // Increment number of computed semicoherent results
       semi_nres += semi_nfreqs;
@@ -1221,7 +1227,7 @@ int main( int argc, char *argv[] )
   }
 
   // Elapsed time not accounted for by the various timed sections of the main search loop
-  const double cpu_timing_other = cpu_total - cpu_timing_coh_res - cpu_timing_semi_parts - cpu_timing_semi_res;
+  const double cpu_timing_other = cpu_total - cpu_timing_coh_res - cpu_timing_semi_parts - cpu_timing_semi_res - cpu_timing_output;
 
   ////////// Output search results //////////
 
@@ -1299,9 +1305,10 @@ int main( int argc, char *argv[] )
       // Write timing information
       XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "wall total", wall_total, "total wall time" ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "cpu total", cpu_total, "total CPU time" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "cpu cohres", cpu_timing_coh_res, "CPU time taken computing coherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "cpu semiparts", cpu_timing_semi_parts, "CPU time taken computing partial semicoherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "cpu semires", cpu_timing_semi_res, "CPU time taken computing final semicoherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "cpu cohres", cpu_timing_coh_res, "CPU time taken to compute coherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "cpu semiparts", cpu_timing_semi_parts, "CPU time taken to compute partial semicoherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "cpu semires", cpu_timing_semi_res, "CPU time taken to compute final semicoherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "cpu output", cpu_timing_output, "CPU time taken to output semicoherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "cpu other", cpu_timing_other, "CPU time unaccounted for" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Write search results
