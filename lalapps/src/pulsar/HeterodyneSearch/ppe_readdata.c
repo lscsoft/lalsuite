@@ -714,8 +714,6 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
       }
 
       /* add data sample interval */
-      ppt = LALInferenceGetProcParamVal( commandLine, "--sample-interval" );
-      if( ppt ){ sampledt = atof( ppt->value ); }
       LALInferenceAddVariable( ifomodel->params, "dt", &sampledt, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 
       XLALDestroyREAL8Vector( temptimes );

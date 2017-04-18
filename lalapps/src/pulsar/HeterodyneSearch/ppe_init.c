@@ -260,7 +260,7 @@ void initialise_algorithm( LALInferenceRunState *runState )
 /**
  * \brief Sets the time angle antenna response lookup table
  *
- * This function sets up an antenna repsonse lookup table in time for each detector from which data
+ * This function sets up an antenna response lookup table in time for each detector from which data
  * exists (either real or fake). The time ranges over one sidereal day. The number of bins for the grid
  * over time can be specified on the command line via \c time-bins, but if this are not given then default
  * values are used. The data times as a fraction of a sidereal day from the start time will also be

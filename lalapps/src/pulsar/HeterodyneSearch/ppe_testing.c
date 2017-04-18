@@ -81,11 +81,6 @@ void gridOutput( LALInferenceRunState *runState ){
     if( ppt2 ){
       parname = XLALStringDuplicate( ppt2->value );
 
-      if( !recognised_parameter( parname ) ){
-        fprintf(stderr, "Error... parameter %s not recognised\n", parname );
-        exit(0);
-      }
-
       sprintf(parscale, "%s_scale", parname);
       sprintf(parmin, "%s_scale_min", parname);
     }

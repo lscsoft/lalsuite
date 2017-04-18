@@ -122,11 +122,7 @@ extern "C" {
 #define CHUNKMIN 5
 /** Default value of the maximum length into which the data can be split. */
 #define CHUNKMAX 0
-/**
- * Default number of bins in polarisation angle \f$ \psi \f$ for the time vs.
- * \f$ \psi \f$ antenna pattern lookup table.
- */
-#define PSIBINS 1000
+
 /**
  * Default number of bins in time (over one sidereal day) for the time vs.
  * \f$ \psi \f$ antenna pattern lookup table.
@@ -143,13 +139,6 @@ extern "C" {
  * Note: These should be increased if additional model parameters are added.
  */
 #define NUMAMPPARS 28
-
-/**
- * The total number of frequency parameters that can defined a signal e.g.
- * the signal frequency and its time derivatives, and the frequency (period)
- * epoch.
- */
-#define NUMFREQPARS 13
 
 /**
  * The total number of sky position parameters that can define a signal e.g.
@@ -186,11 +175,9 @@ extern "C" {
                      detector and model harmonic in the list (must be in the\n\
                      same order) delimited by commas. These files can be gzipped.\n\
                      If not set you can generate fake data (see --fake-data below)\n"\
-" --sample-interval   (REAL8) the time interval bewteen samples (default to 60 s)\n"\
 " --outfile           name of output data file (a HDF5 formated file with the\n\
                      extension '.hdf' or '.h5' [required])\n"\
 " --output-chunks     Output lists of stationary chunks into which the data has been split\n"\
-" --outXML            name of output XML file [not required]\n"\
 " --chunk-min         (INT4) minimum stationary length of data to be used in\n\
                      the likelihood e.g. 5 mins\n"\
 " --chunk-max         (INT4) maximum stationary length of data to be used in\n\
@@ -229,7 +216,6 @@ extern "C" {
                      (if not specified an adaptive number of points is used)\n"\
 " --Nmcmcinitial      (INT4) no. of MCMC points to use in the initial resampling of\n\
                      the prior (default is to use MAXMCMC)\n"\
-" --Nruns             (INT4) no. of parallel runs\n"\
 " --tolerance         (REAL8) tolerance of nested sampling integrator\n"\
 " --randomseed        seed for random number generator\n"\
 "\n"\
@@ -353,13 +339,6 @@ static const CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "H0", "PHI0", "PSI",
 "HSCALARL", "HVECTORX", "HVECTORY", "PSIVECTOR", "PHI0VECTOR", "PSISCALAR",
 "PHI0SCALAR", "PSITENSOR", "PHI0TENSOR", "I21", "I31", "LAMBDA", "COSTHETA",
 "IOTA", "THETA", "Q22", "DIST" };
-
-/**
- * A list of the frequency parameters. The names given here are those that are
- * recognised within the code.
- */
-static const CHAR freqpars[NUMFREQPARS][VARNAME_MAX] = { "F0", "F1", "F2", "F3",
-"F4", "F5", "F6", "F7", "F8", "F9", "F10", "PEPOCH", "CGW" };
 
 /**
  * A list of the sky position parameters. The names given here are those that
