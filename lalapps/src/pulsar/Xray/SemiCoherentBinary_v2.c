@@ -584,7 +584,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   const REAL8 dfreq = fgrid->segment[0]->grid[0].delta;
   for (i=0;i<power->length;i++) {
     if ( dfreq != fgrid->segment[i]->grid[0].delta ) {
-      LogPrintf(LOG_CRITICAL,"%s : inconsistent number of frequency bins %.10g != %.10g\n",__func__,fgrid->segment[i]->grid[0].delta,dfreq);
+      LogPrintf(LOG_CRITICAL,"%s : inconsistent frequency spacing in segment %u, %.10g != %.10g\n",__func__,i,fgrid->segment[i]->grid[0].delta,dfreq);
       XLAL_ERROR(XLAL_EINVAL);
     }
   }
@@ -593,7 +593,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   for (i=0;i<power->length;i++) {
     GridParameters *fdotgrid = fgrid->segment[i];
     if ( fdotgrid->prod[0] != 1 ) {
-      LogPrintf(LOG_CRITICAL,"%s : coherent grid step does not equal 1\n",__func__);
+      LogPrintf(LOG_CRITICAL,"%s : coherent grid step in segment %u does not equal 1\n",__func__,i);
       XLAL_ERROR(XLAL_EINVAL);
     }
   }
