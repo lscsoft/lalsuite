@@ -38,7 +38,7 @@ from glue import segments
 from glue.ligolw import lsctables
 from glue.ligolw import dbtables
 from glue.ligolw import utils
-from pylal import rate
+from lal import rate
 from pylal import db_thinca_rings
 from pylal import git_version
 from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS

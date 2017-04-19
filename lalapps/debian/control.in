@@ -2,9 +2,20 @@ Source: lalapps
 Section: science
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
-Build-Depends: debhelper (>= 9), help2man, pkg-config, dh-python, python-all-dev, libopenmpi-dev,
-  libgsl-dev | libgsl0-dev (>= 1.9), libfftw3-dev, libcfitsio3-dev, zlib1g-dev, less,
-  libframe-dev (>= 8.0), libmetaio-dev (>= 8.2),
+Build-Depends: bc,
+  debhelper (>= 9),
+  dh-python,
+  help2man,
+  less,
+  libcfitsio3-dev,
+  libfftw3-dev,
+  libframe-dev (>= 8.0),
+  libgsl-dev | libgsl0-dev (>= 1.9),
+  libmetaio-dev (>= 8.2),
+  libopenmpi-dev,
+  pkg-config,
+  python-all-dev,
+  zlib1g-dev,
   lal-dev (>= @MIN_LAL_VERSION@~),
   lal-python (>= @MIN_LAL_VERSION@~),
   lalframe-dev (>= @MIN_LALFRAME_VERSION@~),
@@ -24,18 +35,23 @@ Build-Depends: debhelper (>= 9), help2man, pkg-config, dh-python, python-all-dev
   lalstochastic-dev (>= @MIN_LALSTOCHASTIC_VERSION@~),
   lalstochastic-python (>= @MIN_LALSTOCHASTIC_VERSION@~),
   lalinference-dev (>= @MIN_LALINFERENCE_VERSION@~),
-  lalinference-python (>= @MIN_LALINFERENCE_VERSION@~),
-  bc
+  lalinference-python (>= @MIN_LALINFERENCE_VERSION@~)
 X-Python-Version: >= 2.7
 X-Python3-Version: <= 3.0
 Standards-Version: 3.9.8
 
 Package: lalapps
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
-  python-healpy, python-h5py,
-  zlib1g, less,
-  libframe1 (>= 8.0), libmetaio1 (>= 8.2),
+Depends: ${misc:Depends},
+  ${python:Depends},
+  ${shlibs:Depends},
+  less,
+  libframe1 (>= 8.0),
+  libmetaio1 (>= 8.2),
+  python-h5py,
+  python-healpy,
+  python-skyarea,
+  zlib1g,
   lal (>= @MIN_LAL_VERSION@~),
   lal-python (>= @MIN_LAL_VERSION@~),
   lalframe (>= @MIN_LALFRAME_VERSION@~),
@@ -55,12 +71,10 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   lalstochastic (>= @MIN_LALSTOCHASTIC_VERSION@~),
   lalstochastic-python (>= @MIN_LALSTOCHASTIC_VERSION@~),
   lalinference (>= @MIN_LALINFERENCE_VERSION@~),
-  lalinference-python (>= @MIN_LALINFERENCE_VERSION@~),
-  python-skyarea
-Recommends: python (>= 2.7)
+  lalinference-python (>= @MIN_LALINFERENCE_VERSION@~)
 Provides: python-bayestar-localization, python-bayestar
 Conflicts: python-bayestar-localization, python-bayestar
-Replaces: python-bayestar-localization, python-bayestar
+Replaces: python-bayestar-localization, python-bayestar, pylal (<< 0.13.1)
 Description: LSC Algorithm Library Applications
  The LSC Algorithm Library Applications for gravitational wave data analysis.
  This package contains applications that are built on tools in the

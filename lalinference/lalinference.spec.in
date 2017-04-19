@@ -16,38 +16,37 @@ BuildRequires: chealpix-devel >= 3.30.0
 BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
 BuildRequires: healpy >= 1.9.1
+BuildRequires: python-matplotlib >= 1.2.0
 BuildRequires: python-shapely
 BuildRequires: libmetaio-devel
 BuildRequires: libxml2-devel
 BuildRequires: numpy >= 1.7
 BuildRequires: octave-devel
 BuildRequires: python-devel
-BuildRequires: scipy
-BuildRequires: swig
-BuildRequires: glue >= 1.49.1
-BuildRequires: glue-common >= 1.49.1
-BuildRequires: glue-segments >= 1.49.1
+BuildRequires: scipy >= 0.8
+BuildRequires: swig >= 3.0.7
+BuildRequires: glue >= @MIN_GLUE_VERSION@
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: lal-python >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
+BuildRequires: lal-python >= @MIN_LAL_VERSION@
 BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
+BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalxml-devel >= @MIN_LALXML_VERSION@
-BuildRequires: lalxml-python >= @MIN_LALXML_VERSION@
 BuildRequires: lalxml-octave >= @MIN_LALXML_VERSION@
+BuildRequires: lalxml-python >= @MIN_LALXML_VERSION@
 BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
-BuildRequires: lalburst-python >= @MIN_LALBURST_VERSION@
 BuildRequires: lalburst-octave >= @MIN_LALBURST_VERSION@
+BuildRequires: lalburst-python >= @MIN_LALBURST_VERSION@
 BuildRequires: lalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
-BuildRequires: lalinspiral-python >= @MIN_LALINSPIRAL_VERSION@
 BuildRequires: lalinspiral-octave >= @MIN_LALINSPIRAL_VERSION@
+BuildRequires: lalinspiral-python >= @MIN_LALINSPIRAL_VERSION@
 BuildRequires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
-BuildRequires: lalpulsar-python >= @MIN_LALPULSAR_VERSION@
 BuildRequires: lalpulsar-octave >= @MIN_LALPULSAR_VERSION@
+BuildRequires: lalpulsar-python >= @MIN_LALPULSAR_VERSION@
 Requires: chealpix
 Requires: gsl >= 1.15
 Requires: hdf5
@@ -95,12 +94,11 @@ Requires: healpy >= 1.9.1
 Requires: python-shapely
 Requires: numpy >= 1.7
 Requires: python
-Requires: scipy
+Requires: scipy >= 0.8
+Requires: python-matplotlib >= 1.2.0
 Requires: python-six
 Requires: python-seaborn
-Requires: glue >= 1.49.1
-Requires: glue-common >= 1.49.1
-Requires: glue-segments >= 1.49.1
+Requires: glue >= @MIN_GLUE_VERSION@
 Requires: lal-python >= @MIN_LAL_VERSION@
 Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 Requires: lalxml-python >= @MIN_LALXML_VERSION@
@@ -179,6 +177,22 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Thu Mar 16 2017 Adam Mercer <adam.mercer@ligo.org> 1.9.2-1
+- lalinference.io.fits: remove some redundant keys on reading
+- lalinference.io.fits: fix writing single-column sky maps
+
+* Sat Feb 18 2017 Adam Mercer <adam.mercer@ligo.org> 1.9.1-1
+- Do not use $(..._la_LIBADD) to link against external libraries
+- Track version info API change
+- Fix to weights calculation so that posterior samples are now drawn correctly
+- Fix incorrect axes limits for Mollweide sky maps
+- Drop code for reading past EOF of named pipe
+- Fix incorrect reordering of IDL-compatible sky maps
+- Tune default max distance for volume rendering plots
+
+* Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.9.0-1
+- O2 release
+
 * Thu Dec 15 2016 Adam Mercer <adam.mercer@ligo.org> 1.8.2-1
 - Be more emphatic about switching matplotlib backend
 - Prevent trying to build python3 packages when unsupported

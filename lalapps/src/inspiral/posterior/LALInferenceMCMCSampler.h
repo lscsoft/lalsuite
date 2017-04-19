@@ -89,6 +89,7 @@ void LALInferenceNameOutputs(LALInferenceRunState *runState);
 void LALInferenceCheckpointMCMC(LALInferenceRunState *runState);
 void LALInferenceResumeMCMC(LALInferenceRunState *runState);
 void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState);
+void LALInferenceAddPTMCMCMetaInfo(LALInferenceRunState *runState);
 
 /** Reads final parameter values from the given output file, and
     stores them in the current params to try to continue the run. */

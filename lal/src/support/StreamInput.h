@@ -21,7 +21,6 @@
 #define _STREAMINPUT_H
 
 #include <lal/LALStdlib.h>
-#include <lal/Grid.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,7 +69,7 @@ extern "C" {
  * more efficient: they use <tt>fscanf()</tt> to parse the input stream
  * directly.  They are intended primarily for test programs that may need
  * to read large datafiles of undetermined length.  The routines in
- * \ref StreamSeriesInput_c and \ref StreamGridInput_c also parse the
+ * \ref StreamSeriesInput_c also parse the
  * input stream directly using <tt>fscanf()</tt>, to avoid potentially
  * crippling computational overhead.
  *
@@ -393,32 +392,6 @@ void
 LALCReadFSeries( LALStatus *status, COMPLEX8FrequencySeries *series, FILE *stream );
 void
 LALZReadFSeries( LALStatus *status, COMPLEX16FrequencySeries *series, FILE *stream );
-
-
-
-
-void
-LALI2ReadGrid( LALStatus *status, INT2Grid **grid, FILE *stream );
-void
-LALI4ReadGrid( LALStatus *status, INT4Grid **grid, FILE *stream );
-void
-LALI8ReadGrid( LALStatus *status, INT8Grid **grid, FILE *stream );
-void
-LALU2ReadGrid( LALStatus *status, UINT2Grid **grid, FILE *stream );
-void
-LALU4ReadGrid( LALStatus *status, UINT4Grid **grid, FILE *stream );
-void
-LALU8ReadGrid( LALStatus *status, UINT8Grid **grid, FILE *stream );
-void
-LALSReadGrid( LALStatus *status, REAL4Grid **grid, FILE *stream );
-void
-LALDReadGrid( LALStatus *status, REAL8Grid **grid, FILE *stream );
-void
-LALCReadGrid( LALStatus *status, COMPLEX8Grid **grid, FILE *stream );
-void
-LALZReadGrid( LALStatus *status, COMPLEX16Grid **grid, FILE *stream );
-
-
 
 
 

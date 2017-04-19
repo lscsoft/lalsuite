@@ -25,6 +25,7 @@
 #
 
 
+import math
 from optparse import OptionParser
 import sqlite3
 import string
@@ -36,11 +37,11 @@ from lal.utils import CacheEntry
 
 from glue import segments
 from glue.ligolw import dbtables
-from glue.ligolw import utils
-from glue.ligolw.utils import process as ligolwprocess
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw.utils import process as ligolw_process
+from glue.ligolw.utils import search_summary as ligolw_search_summary
 from lalburst import SnglBurstUtils
 from lalburst import git_version
-from lalburst import ligolw_burca_tailor
 from lalburst import stringutils
 
 
@@ -78,6 +79,8 @@ def parse_command_line():
 	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
 	options, filenames = parser.parse_args()
 
+	paramdict = options.__dict__.copy()
+
 	if options.T010150 is not None:
 		if options.output is not None:
 			raise ValueError("cannot set both --T010150 and --output")
@@ -95,7 +98,7 @@ def parse_command_line():
 	if options.injection_reweight not in ("off", "astrophysical"):
 		raise ValueError("--injection-reweight \"%s\" not recognized" % options.injections_reweight)
 
-	return options, filenames
+	return options, filenames, paramdict
 
 
 #
@@ -113,7 +116,7 @@ def get_injection_weight_func(contents, reweight_type, amplitude_cutoff):
 			# amplitude cut-off is not used
 			return 1.0
 	elif reweight_type == "astrophysical":
-		population, = ligolwprocess.get_process_params(contents.xmldoc, "lalapps_binj", "--population")
+		population, = ligolw_process.get_process_params(contents.xmldoc, "lalapps_binj", "--population")
 		if population != "string_cusp":
 			raise ValueError("lalapps_binj was not run with --population=\"string_cusp\"")
 		def weight_func(sim, amplitude_cutoff = amplitude_cutoff):
@@ -152,7 +155,7 @@ def get_injection_weight_func(contents, reweight_type, amplitude_cutoff):
 #
 
 
-options, filenames = parse_command_line()
+options, filenames, paramdict = parse_command_line()
 
 
 #
@@ -162,6 +165,17 @@ options, filenames = parse_command_line()
 
 distributions = stringutils.StringCoincParamsDistributions()
 segs = segments.segmentlistdict()
+
+
+#
+# Start output document
+#
+
+
+xmldoc = ligolw.Document()
+xmldoc.appendChild(ligolw.LIGO_LW())
+process = ligolw_process.register_to_xmldoc(xmldoc, program = u"lalapps_string_meas_likelihood", paramdict = paramdict, version = __version__, cvs_repository = "lscsoft", cvs_entry_time = __date__, comment = u"")
+distributions.process_id = process.process_id
 
 
 #
@@ -208,21 +222,21 @@ for n, filename in enumerate(filenames):
 
 	if contents.sim_burst_table is None:
 		# iterate over burst<-->burst coincs
-		for is_background, events, offsetvector in ligolw_burca_tailor.get_noninjections(contents):
+		for is_background, events, offsetvector in contents.get_noninjections():
 			params = distributions.coinc_params([event for event in events if event.ifo not in contents.vetoseglists or event.peak not in contents.vetoseglists[event.ifo]], offsetvector, triangulators)
 			if params is not None:
 				if is_background:
-					distributions.add_background(params)
+					distributions.denominator.increment(params)
 				else:
-					distributions.add_zero_lag(params)
+					distributions.candidates.increment(params)
 	else:
 		weight_func = get_injection_weight_func(contents, options.injection_reweight, options.injection_reweight_cutoff)
 		# iterate over burst<-->burst coincs matching injections
 		# "exactly"
-		for sim, events, offsetvector in ligolw_burca_tailor.get_injections(contents):
+		for sim, events, offsetvector in contents.get_injections():
 			params = distributions.coinc_params([event for event in events if event.ifo not in contents.vetoseglists or event.peak not in contents.vetoseglists[event.ifo]], offsetvector, triangulators)
 			if params is not None:
-				distributions.add_injection(params, weight = weight_func(sim))
+				distributions.numerator.increment(params, weight = weight_func(sim))
 
 	#
 	# Clean up.
@@ -238,13 +252,17 @@ for n, filename in enumerate(filenames):
 #
 
 
-def T010150_basename(description, seglists):
-	seg = seglists.extent_all()
-	return "%s-%s-%s-%s" % ("+".join(sorted(seglists.keys())), description, str(seg[0]), str(abs(seg)))
+ligolw_search_summary.append_search_summary(xmldoc, process, ifos = segs.keys(), inseg = segs.extent_all(), outseg = segs.extent_all())
+xmldoc.childNodes[-1].appendChild(distributions.to_xml(u"string_cusp_likelihood"))
+ligolw_process.set_process_end_time(process)
 
+
+def T010150_basename(instruments, description, seg):
+	start = int(math.floor(seg[0]))
+	duration = int(math.ceil(seg[1] - start))
+	return "%s-%s-%d-%d" % ("+".join(sorted(instruments)), description, start, duration)
 if options.T010150:
-	filename = "%s.xml.gz" % T010150_basename(options.T010150, segs)
+	filename = "%s.xml.gz" % T010150_basename(segs.keys(), options.T010150, segs.extent_all())
 else:
 	filename = options.output
-
-stringutils.write_likelihood_data(filename, distributions, segs, verbose = options.verbose)
+ligolw_utils.write_filename(xmldoc, filename, verbose = verbose, gz = (filename or "stdout").endswith(".gz"))

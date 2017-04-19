@@ -212,26 +212,30 @@ static LALCache *GlobFramesPWD(char *ifo)
             fprintf( stderr, "error: no frame file files found\n");
             exit( 1 );
         }
-    CHAR ifoRegExPattern[6];
-    LALCache *frInCache=NULL;
-    /* sieve out the requested data type */
+        CHAR ifoRegExPattern[6];
+        LALCache *frInCache=NULL;
+        /* sieve out the requested data type */
         snprintf( ifoRegExPattern,
-                XLAL_NUM_ELEM(ifoRegExPattern), ".*%c.*",
-                ifo[0] );
-    {
+                        XLAL_NUM_ELEM(ifoRegExPattern), ".*%c.*",
+                        ifo[0] );
         fprintf(stderr,"GlobFramesPWD : Found unseived src files:\n");
         for(UINT4 i=0;i<frGlobCache->length;i++)
-            fprintf(stderr,"(%s,%s,%s)\n",frGlobCache->list[i].src,frGlobCache->list[i].dsc,frGlobCache->list[i].url);
-    }
-    frInCache = XLALCacheDuplicate(frGlobCache);
-    XLALCacheSieve(frInCache, 0, 0, ifoRegExPattern, NULL, NULL);
-    {
-        fprintf(stderr,"GlobFramesPWD : Sieved frames with pattern %s. Found src files:\n",ifoRegExPattern);
-        for(UINT4 i=0;i<frInCache->length;i++)
-            fprintf(stderr,"(%s,%s,%s)\n",frInCache->list[i].src,frInCache->list[i].dsc,frInCache->list[i].url);
-    }
+                        fprintf(stderr,"(%s,%s,%s)\n",frGlobCache->list[i].src,frGlobCache->list[i].dsc,frGlobCache->list[i].url);
+        frInCache = XLALCacheDuplicate(frGlobCache);
+        XLALCacheSieve(frInCache, 0, 0, ifoRegExPattern, NULL, NULL);
+        if ( ! frGlobCache->length )
+        {
+            fprintf( stderr, "error: no frame file files found after sieving\n");
+            exit( 1 );
+        }
+        else
+        {
+                fprintf(stderr,"GlobFramesPWD : Sieved frames with pattern %s. Found src files:\n",ifoRegExPattern);
+                for(UINT4 i=0;i<frInCache->length;i++)
+                        fprintf(stderr,"(%s,%s,%s)\n",frInCache->list[i].src,frInCache->list[i].dsc,frInCache->list[i].url);
+        }
 
-    return(frGlobCache);
+        return(frGlobCache);
 }
 
 static REAL8TimeSeries *readTseries(LALCache *cache, CHAR *channel, LIGOTimeGPS start, REAL8 length)
@@ -385,8 +389,7 @@ static INT4 getNamedDataOptionsByDetectors(ProcessParamsTable *commandLine, char
       return 0;
 }
 
-void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
-void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine){
+static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine){
 
   LALStatus status;
   memset(&status,0,sizeof(status));
@@ -934,14 +937,14 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                 {fprintf(stderr,USAGE); return(NULL);}
 
                 fprintf(stderr,"Estimating PSD for %s using %i segments of %i samples (%lfs)\n",IFOnames[i],nSegs,(int)seglen,SegmentLength);
-                /*LIGOTimeGPS trueGPSstart=GPSstart;
+                LIGOTimeGPS trueGPSstart=GPSstart;
                 if(Ntimeslides) {
                   REAL4 deltaT=-atof(timeslides[i]);
                   XLALGPSAdd(&GPSstart, deltaT);
                   fprintf(stderr,"Slid PSD estimation of %s by %f s from %10.10lf to %10.10lf\n",IFOnames[i],deltaT,trueGPSstart.gpsSeconds+1e-9*trueGPSstart.gpsNanoSeconds,GPSstart.gpsSeconds+1e-9*GPSstart.gpsNanoSeconds);
-                }*/
+                }
                 PSDtimeSeries=readTseries(cache,channels[i],GPSstart,PSDdatalength);
-                //GPSstart=trueGPSstart;
+                GPSstart=trueGPSstart;
                 if(!PSDtimeSeries) {XLALPrintError("Error reading PSD data for %s\n",IFOnames[i]); exit(1);}
                 XLALResampleREAL8TimeSeries(PSDtimeSeries,1.0/SampleRate);
                 PSDtimeSeries=(REAL8TimeSeries *)XLALShrinkREAL8TimeSeries(PSDtimeSeries,(size_t) 0, (size_t) seglen*nSegs);

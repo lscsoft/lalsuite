@@ -72,6 +72,8 @@ parser.add_argument(
     choices=('zero-noise', 'from-truth', 'from-measurement'),
     default='zero-noise',
     help='How to compute the measurement error [default: %(default)s]')
+parser.add_argument('--enable-snr-series', default=False, action='store_true',
+    help='Enable output of SNR time series (WARNING: UNREVIEWED!) [default: no]')
 parser.add_argument(
     '--reference-psd', metavar='PSD.xml[.gz]', type=argparse.FileType('rb'),
     required=True, help='Name of PSD file [required]')
@@ -134,7 +136,7 @@ summary = ligolw_search_summary.append_search_summary(out_xmldoc, process,
 progress.update(-1, 'reading ' + opts.reference_psd.name)
 xmldoc, _ = ligolw_utils.load_fileobj(
     opts.reference_psd, contenthandler=lal.series.PSDContentHandler)
-psds = lal.series.read_psd_xmldoc(xmldoc)
+psds = lal.series.read_psd_xmldoc(xmldoc, root_name=None)
 psds = {
     key: timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data)
     for key, psd in psds.items() if psd is not None}
@@ -340,7 +342,7 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
     # Add CoincInspiral table entry.
     coinc_inspiral = lsctables.CoincInspiral()
     coinc_inspiral.coinc_event_id = coinc.coinc_event_id
-    coinc_inspiral.ifos = lsctables.ifos_from_instrument_set(
+    coinc_inspiral.ifos = lsctables.instrumentsproperty.set(
         sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals)
     coinc_inspiral.end = lal.LIGOTimeGPS(
         sum(sngl_inspiral.end.ns() for sngl_inspiral in sngl_inspirals)
@@ -359,18 +361,19 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
         sngl_inspiral.event_id = sngl_inspiral_table.get_next_id()
         sngl_inspiral_table.append(sngl_inspiral)
 
-        snr, sample_rate = filter.autocorrelation(W, max_abs_t)
-        dt = 1 / sample_rate
-        epoch = sngl_inspiral.end - (len(snr) - 1) / sample_rate
-        snr = np.concatenate((snr[:0:-1].conj(), snr))
-        snr *= sngl_inspiral.snr * np.exp(1j * sngl_inspiral.coa_phase)
-        snr_series = lal.CreateCOMPLEX16TimeSeries(
-            'snr', epoch, 0, dt, lal.StrainUnit, len(snr))
-        snr_series.data.data[:] = snr
-        elem = lal.series.build_COMPLEX16TimeSeries(snr_series)
-        elem.appendChild(
-            ligolw_param.Param.from_pyvalue(u'event_id', sngl_inspiral.event_id))
-        out_xmldoc.childNodes[0].appendChild(elem)
+        if opts.enable_snr_series:
+            snr, sample_rate = filter.autocorrelation(W, max_abs_t)
+            dt = 1 / sample_rate
+            epoch = sngl_inspiral.end - (len(snr) - 1) / sample_rate
+            snr = np.concatenate((snr[:0:-1].conj(), snr))
+            snr *= sngl_inspiral.snr * np.exp(1j * sngl_inspiral.coa_phase)
+            snr_series = lal.CreateCOMPLEX16TimeSeries(
+                'snr', epoch, 0, dt, lal.StrainUnit, len(snr))
+            snr_series.data.data[:] = snr
+            elem = lal.series.build_COMPLEX16TimeSeries(snr_series)
+            elem.appendChild(
+                ligolw_param.Param.from_pyvalue(u'event_id', sngl_inspiral.event_id))
+            out_xmldoc.childNodes[0].appendChild(elem)
 
         # Add CoincMap entry.
         coinc_map = lsctables.CoincMap()
@@ -386,5 +389,5 @@ ligolw_process.set_process_end_time(process)
 
 # Write output file.
 with ligolw_utils.SignalsTrap():
-  ligolw_utils.write_fileobj(out_xmldoc, opts.output,
-      gz=(os.path.splitext(opts.output.name)[-1]==".gz"))
+    ligolw_utils.write_fileobj(out_xmldoc, opts.output,
+        gz=(os.path.splitext(opts.output.name)[-1]==".gz"))

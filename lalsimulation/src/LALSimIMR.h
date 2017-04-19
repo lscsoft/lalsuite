@@ -223,6 +223,8 @@ int XLALSimInspiralNRWaveformGetSpinsFromHDF5File(
   REAL8 *S2x,             /**< [out] Dimensionless spin2x in LAL frame */
   REAL8 *S2y,             /**< [out] Dimensionless spin2y in LAL frame */
   REAL8 *S2z,             /**< [out] Dimensionless spin2z in LAL frame */
+  REAL8 fRef,             /**< Reference frequency */
+  REAL8 mTot,             /**< Total mass */
   const char *NRDataFile  /**< Location of NR HDF file */
 );
 

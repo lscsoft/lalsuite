@@ -1,8 +1,9 @@
-lalframe (1.4.2.1-1) UNRELEASED; urgency=medium
+lalframe (1.4.3-1) unstable; urgency=low
 
-  * Back to development
+  * LALFrame 1.4.3
+  * O2 release
 
- -- Leo Singer <leo@lalsuitedev>  Thu, 13 Oct 2016 20:03:37 -0400
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 07 Feb 2017 15:49:20 -0600
 
 lalframe (1.4.2-1) unstable; urgency=low
 

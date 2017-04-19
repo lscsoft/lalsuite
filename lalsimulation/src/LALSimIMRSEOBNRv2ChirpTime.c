@@ -361,7 +361,6 @@ static void Init_LALDATA(void)
   if (path==NULL)
     XLAL_ERROR_VOID(XLAL_EIO, "Unable to resolve data file %s in $LAL_DATA_PATH\n", datafile);
   char *dir = dirname(path);
-  gsl_set_error_handler(&err_handler);
   ChirpTimeData = gsl_vector_alloc(N);
   int ret = read_vector(dir, datafile, ChirpTimeData);
   XLALFree(path);

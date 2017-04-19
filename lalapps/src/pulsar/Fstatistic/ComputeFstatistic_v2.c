@@ -306,6 +306,8 @@ typedef struct {
 
   CHAR *FstatMethod;		//!< select which method/algorithm to use to compute the F-statistic
 
+  BOOLEAN resampFFTPowerOf2;	//!< in Resamp: enforce FFT length to be a power of two (by rounding up)
+
   // ----- deprecated and obsolete variables, kept around for backwards-compatibility -----
   LIGOTimeGPS internalRefTime;   /**< [DEPRECATED] internal reference time. Has no effect, XLALComputeFstat() now always uses midtime anyway ... */
   REAL8 dopplermax;              /**< [DEPRECATED] HAS NO EFFECT and should no longer be used: maximum Doppler shift is accounted for internally */
@@ -416,20 +418,16 @@ int main(int argc,char *argv[])
       fprintf (fpFstat, "%s", GV.logstring );
 
       /* assemble column headings string */
-      char colum_headings_string_base[] = "freq alpha delta f1dot f2dot f3dot 2F";
-      UINT4 column_headings_string_length = sizeof(colum_headings_string_base);
-      char column_headings_string[column_headings_string_length];
+      char column_headings_string[1024];
       XLAL_INIT_MEM( column_headings_string );
-      strcat ( column_headings_string, colum_headings_string_base );
+      strcat ( column_headings_string, "freq alpha delta f1dot f2dot f3dot 2F" );
       if ( uvar.computeBSGL )
         {
-          column_headings_string_length += 10; /* for " log10BSGL"*/
           strcat ( column_headings_string, " log10BSGL" );
         }
       if ( uvar.outputSingleFstats || uvar.computeBSGL )
         {
           const UINT4 numDetectors = GV.detectorIDs->length;
-          column_headings_string_length += numDetectors*6; /* 6 per detector for " 2F_XY" */
           for ( UINT4 X = 0; X < numDetectors ; X ++ )
             {
               char headingX[7];
@@ -970,6 +968,7 @@ initUserVars ( UserInput_t *uvar )
 
   uvar->transient_WindowType = XLALStringDuplicate ( "none" );
   uvar->transient_useFReg = 0;
+  uvar->resampFFTPowerOf2 = TRUE;
 
   /* ---------- register all user-variables ---------- */
   XLALRegisterUvarMember( 	Alpha, 		RAJ, 'a', OPTIONAL, "Sky: equatorial J2000 right ascension (in radians or hours:minutes:seconds)");
@@ -1073,7 +1072,7 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( 	SSBprecision,	 INT4, 0,  DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
 
   XLALRegisterUvarMember( 	RngMedWindow,	INT4, 'k', DEVELOPER, "Running-Median window size");
-  XLALRegisterUvarMember(	Dterms,		INT4, 't', DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
+  XLALRegisterUvarMember(	Dterms,		INT4, 't', DEVELOPER, "Number of kernel terms (single-sided) to use in\na) Dirichlet kernel if FstatMethod=Demod*\nb) sinc-interpolation kernel if FstatMethod=Resamp*" );
 
   XLALRegisterUvarMember(workingDir,     STRING, 'w', DEVELOPER, "Directory to use as work directory.");
   XLALRegisterUvarMember( 	timerCount, 	 REAL8, 0,  DEVELOPER, "N: Output progress/timer info every N seconds");
@@ -1089,6 +1088,8 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember(transient_useFReg,   	 BOOLEAN, 0,  DEVELOPER, "FALSE: use 'standard' e^F for marginalization, if TRUE: use e^FReg = (1/D)*e^F (BAD)");
 
   XLALRegisterUvarMember(outputTiming,         STRING, 0,  DEVELOPER, "Append timing measurements and parameters into this file");
+
+  XLALRegisterUvarMember(resampFFTPowerOf2,  BOOLEAN, 0,  DEVELOPER, "For Resampling methods: enforce FFT length to be a power of two (by rounding up)" );
 
   // ---------- deprecated but still-supported or tolerated options ----------
   XLALRegisterUvarMember ( RA,	STRING, 0, DEPRECATED, "Use --Alpha instead" );
@@ -1371,6 +1372,7 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   optionalArgs.injectSqrtSX = injectSqrtSX;
   optionalArgs.assumeSqrtSX = assumeSqrtSX;
   optionalArgs.FstatMethod = cfg->FstatMethod;
+  optionalArgs.resampFFTPowerOf2 = uvar->resampFFTPowerOf2;
 
   XLAL_CHECK ( (cfg->Fstat_in = XLALCreateFstatInput( catalog, fCoverMin, fCoverMax, cfg->dFreq, cfg->ephemeris, &optionalArgs )) != NULL, XLAL_EFUNC );
   XLALDestroySFTCatalog(catalog);
@@ -1535,9 +1537,8 @@ XLALGetLogString ( const ConfigVariables *cfg )
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
 
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "%% Started search: " )) != NULL, XLAL_EFUNC );
-  time_t tp = GETTIME();
-  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, asctime( gmtime( &tp ) ))) != NULL, XLAL_EFUNC );
-  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "%% Loaded SFTs: [ " )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, LogGetTimestamp() )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "\n%% Loaded SFTs: [ " )) != NULL, XLAL_EFUNC );
 
   UINT4 numDet = cfg->detectorIDs->length;
   for ( UINT4 X=0; X < numDet; X ++ )
@@ -1936,7 +1937,7 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
   if ( !XLALIsREAL4FailNaN(Fcand->log10BSGL) ) /* if --computeBSGL=FALSE, the log10BSGL field was initialised to NAN - do not output it */
     fprintf (fp, "log10BSGL = % .6g;\n", Fcand->log10BSGL );
 
-  fprintf (fp, "\nAmpFisher = \\\n" );
+  fprintf (fp, "\nAmpFisher = " );
   XLALfprintfGSLmatrix ( fp, "%.9g",pulsarParams->AmpFisherMatrix );
 
   return 0;

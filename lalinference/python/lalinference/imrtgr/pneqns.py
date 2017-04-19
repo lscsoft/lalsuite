@@ -109,9 +109,28 @@ def precession_eqns(t, y_vec, m1, m2):
 
 	return  [dv_dt, dS1_dt[0], dS1_dt[1], dS1_dt[2], dS2_dt[0], dS2_dt[1], dS2_dt[2], dL_dt[0], dL_dt[1], dL_dt[2]]
 
-
 def evolve_spins_dt(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z, Lnx, Lny, Lnz, v_final, dt):
 	""" evolve the spins and orb ang momentum according to the PN precession eqns."""
+
+        # Set maximum dv/dt for stopping condition
+
+        dvdt_max = 1.e-4
+
+        # Set maximum deviation from v_final allowed (unless dv/dt is greater than dvdt_max or negative, in which case just print a warning)
+
+        delta_vf_max = 1.e-2
+
+        # Set largest deviation from normalization of orbital angular momentum allowed
+
+        delta_Lnorm_max = 1.e-8
+
+        # Give indices for various quantities in the solution vector
+
+        V_POS = 0 # Location of v (and thus dv/dt)
+
+        LNX_POS = 7 # Location of the x component of Ln
+        LNY_POS = 8 # Location of the y component of Ln
+        LNZ_POS = 9 # Location of the z component of Ln
 
         # some sanity checks
         if m1<0:
@@ -152,8 +171,14 @@ def evolve_spins_dt(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z, Lnx, L
 	y_result.append(y_vec0)
 	t_output.append(t0)
 
+        # Set diagnostic quantities to some initial values that won't trigger any stopping conditions
+
+        v_current = 0.
+        dvdt_current = 1.e-5
+        Lnorm_current = 1.
+
 	# evolve the eqns
-	while solver.successful() and solver.t < 2.*T_MAX and solver.y[0] <= v_final and abs(np.sqrt((solver.y[7])**2+(solver.y[8])**2+(solver.y[9])**2)-1.)<1e-8:
+	while solver.successful() and solver.t < 2.*T_MAX and v_current <= v_final and dvdt_current > 0. and dvdt_current < dvdt_max and abs(Lnorm_current - 1.) < delta_Lnorm_max:
 
 		solver.integrate(solver.t + dt, step=1)
 		y_result.append(solver.y)
@@ -161,15 +186,28 @@ def evolve_spins_dt(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z, Lnx, L
 
 		#print '... t = ', solver.t, ' y = ', solver.y
 
+                v_current = solver.y[V_POS]
+                dvdt_current = precession_eqns(solver.t,solver.y,m1,m2)[V_POS]
+                Lnorm_current = np.sqrt((solver.y[LNX_POS])**2+(solver.y[LNY_POS])**2+(solver.y[LNZ_POS])**2)
+
 	Y = np.array(y_result)
 	t = np.array(t_output)
+
+        # Check if the integration stopped more than delta_vf_max away from v_final. If so, check if this occurred because dv/dt became larger than dvdt_max or negative. In this case, print a warning and remove the offending data, else raise an error
+
+        v_last = Y.T[V_POS][-1]
+
+        if abs(v_last-v_final) > delta_vf_max:
+            if dvdt_current <= 0 or dvdt_current > dvdt_max:
+                Y = np.delete(Y, -1, axis = 0)
+                print("Warning: Integration stopped at v_max = {0}, more than {1} different from v_final = {2}, because dv/dt became negative or exceeded {3}, with a value of {4}. The final value used is {5}.".format(v_last, delta_vf_max, v_final, dvdt_max, dvdt_current, precession_eqns(t,Y[-1],m1,m2)[V_POS]))
+            else:
+                raise ValueError("v_max = {0} is more than {1} different from v_final = {2} and dv/dt is positive and less than {3}".format(v_v[-1], delta_vf, v_final, dvdt_max))
+
+        if abs(Lnorm_current - 1.) >= delta_Lnorm_max:
+            raise ValueError("norm of Ln is more than {0:e} different from 1, with distance {1:e}".format(delta_Lnorm_max, abs(Lnorm_current - 1.)))
+
 	v_v, S1x_v, S1y_v, S1z_v, S2x_v, S2y_v, S2z_v, Lx_v, Ly_v, Lz_v  = Y.T
-
-        if abs(v_v[-1]-v_final)>1e-2:
-            raise ValueError("v_max = {0} is more than 0.01 different from v_final = {1}".format(v_v[-1], v_final))
-
-        if abs(np.sqrt((solver.y[7])**2+(solver.y[8])**2+(solver.y[9])**2)-1.)>=1e-8:
-            raise ValueError("norm of Ln is more than 10^{-8} different from 1, with distance {0}".format(abs(np.sqrt((solver.y[7])**2+(solver.y[8])**2+(solver.y[9])**2)-1.)))
 
 	return v_v, S1x_v/m1_sqr, S1y_v/m1_sqr, S1z_v/m1_sqr, S2x_v/m2_sqr, S2y_v/m2_sqr, S2z_v/m2_sqr, Lx_v, Ly_v, Lz_v
 

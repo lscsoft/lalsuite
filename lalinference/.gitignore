@@ -43,6 +43,7 @@ python/bayestar_lattice_tmpltbank
 python/bayestar_littlehope
 python/bayestar_localize_coincs
 python/bayestar_localize_lvalert
+python/bayestar_mess_up_coincs
 python/bayestar_plot_allsky
 python/bayestar_plot_found_injections
 python/bayestar_plot_pileup
@@ -55,6 +56,7 @@ python/imrtgr_imr_consistency_test
 python/lalinference/__init__.py
 python/lalinference/_lalinference*
 python/lalinference/bayestar/_distance.so
+python/lalinference/bayestar/_moc.so
 python/lalinference/bayestar/_sky_map.so
 python/lalinference/bayestar/sky_map.so
 python/lalinference/git_version.py
@@ -82,6 +84,7 @@ src/stamp-h1
 src/stamp-h2
 src/version.c
 swig/swiglal*
+test/.cache
 test/LALInferenceGenerateROQTest
 test/LALInferenceHDF5Test
 test/LALInferenceInjectionTest
@@ -99,5 +102,5 @@ test/test_bayestar_prune_neighborhood_tmpltbank.xml
 test/test_bayestar_realize_coincs.xml
 test/test_bayestar_sample_model_psd.xml
 test/test_bayestar_sim_to_tmpltbank.xml
-test/test_result_images
+test/test_cubic_interp
 test/test_vot.xml

@@ -47,27 +47,5 @@ EXTRA_DIST += \
 	$(FRAMEFILES) \
 	H1-CAL-V03-729273600-734367600.cache \
 	L1-CAL-V03-729273600-734367600.cache \
-	TestLowLatencyData1.c \
-	TestLowLatencyData2.c \
-	TestLowLatencyData3.c \
 	mkcatalog.sh \
 	$(END_OF_LIST)
-
-#if PTHREAD
-#PTHREADPRGS = \
-#	TestLowLatencyData1 \
-#	TestLowLatencyData2 \
-#	TestLowLatencyData3
-#
-# FIXME: technically codes that link against libpthread need to build
-# using the PTHREAD_CC compiler and not CC, this is only a different
-# compiler on AIX
-#
-# set appropriate pthread flags
-#TestLowLatencyData1_LDADD = $(PTHREAD_LIBS) $(LDADD)
-#TestLowLatencyData1_CFLAGS = $(PTHREAD_CFLAGS) $(AM_CFLAGS)
-#TestLowLatencyData2_LDADD = $(PTHREAD_LIBS) $(LDADD)
-#TestLowLatencyData2_CFLAGS = $(PTHREAD_CFLAGS) $(AM_CFLAGS)
-#TestLowLatencyData3_LDADD = $(PTHREAD_LIBS) $(LDADD)
-#TestLowLatencyData3_CFLAGS = $(PTHREAD_CFLAGS) $(AM_CFLAGS)
-#endif

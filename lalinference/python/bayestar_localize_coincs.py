@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2016  Leo Singer
+# Copyright (C) 2013-2017  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -31,9 +31,9 @@ distance of the most sensitive detector.
 
 A FITS file is created for each sky map, having a filename of the form
 
-  "X.toa_phoa_snr.fits.gz"
-  "X.toa_snr_mcmc.fits.gz"
-  "X.toa_phoa_snr_mcmc.fits.gz"
+  "X.toa_phoa_snr.fits"
+  "X.toa_snr_mcmc.fits"
+  "X.toa_phoa_snr_mcmc.fits"
 
 where X is the LIGO-LW row id of the coinc and "toa" or "toa_phoa_snr"
 identifies whether the sky map accounts for times of arrival (TOA),
@@ -49,7 +49,6 @@ from lalinference.bayestar import command
 methods = '''
     toa_phoa_snr
     toa_phoa_snr_mcmc
-    toa_phoa_snr_mcmc_kde
     '''.split()
 default_method = 'toa_phoa_snr'
 command.skymap_parser.add_argument(
@@ -59,11 +58,19 @@ parser = command.ArgumentParser(
     parents=[command.waveform_parser, command.prior_parser, command.skymap_parser])
 parser.add_argument('--keep-going', '-k', default=False, action='store_true',
     help='Keep processing events if a sky map fails to converge [default: no]')
-parser.add_argument('input', metavar='INPUT.xml[.gz]', default='-', nargs='?',
+parser.add_argument('input', metavar='INPUT.xml[.gz]', default='-', nargs='+',
     type=argparse.FileType('rb'),
-    help='Input LIGO-LW XML file [default: stdin]')
+    help='Input LIGO-LW XML file [default: stdin] or PyCBC HDF5 files. If PyCBC files, must be bank file, coinc file, and trigger files, in that order.')
+parser.add_argument('--pycbc-sample', default='foreground',
+    help='sample population [PyCBC only; default: %(default)s]')
 parser.add_argument('--psd-files', nargs='*',
     help='pycbc-style merged HDF5 PSD files')
+parser.add_argument('--coinc-event-id', type=int, nargs='*',
+    help='run on only these specified events')
+parser.add_argument('--output', '-o', default='.',
+    help='output directory [default: current directory]')
+parser.add_argument('--condor-submit', action='store_true',
+    help='submit to Condor instead of running locally')
 opts = parser.parse_args()
 
 #
@@ -82,26 +89,59 @@ from glue.ligolw import utils as ligolw_utils
 from lalinference.bayestar.decorator import memoized
 from lalinference.io import fits
 from lalinference.bayestar import ligolw as ligolw_bayestar
-from lalinference.bayestar import distance
 from lalinference.bayestar import filter
 from lalinference.bayestar import timing
-from lalinference.bayestar.sky_map import ligolw_sky_map
+from lalinference.bayestar.sky_map import ligolw_sky_map, rasterize
 
 # Other imports.
+import os
+import sys
 import numpy as np
+import h5py
 
 # Read coinc file.
-log.info('%s:reading input XML file', opts.input.name)
-xmldoc, _ = ligolw_utils.load_fileobj(
-    opts.input, contenthandler=ligolw_bayestar.LSCTablesAndSeriesContentHandler)
+log.info('%s:reading input files', ','.join(file.name for file in opts.input))
+if os.path.splitext(opts.input[0].name)[1] in {'.hdf', '.hdf5', '.h5'}:
+    hdf5files = [h5py.File(file.name, 'r') for file in opts.input]
+
+    snr_dict = {}
+
+    coinc_and_sngl_inspirals = ligolw_bayestar.coinc_and_sngl_inspirals_for_hdf(
+        *hdf5files, sample=opts.pycbc_sample)
+else:
+    infile, = opts.input
+    xmldoc, _ = ligolw_utils.load_fileobj(
+        infile,
+        contenthandler=ligolw_bayestar.LSCTablesAndSeriesContentHandler)
+
+    snr_dict = ligolw_bayestar.snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc)
+
+    coinc_and_sngl_inspirals = ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc(xmldoc)
+
+command.mkpath(opts.output)
+
+if opts.condor_submit:
+    if opts.coinc_event_id:
+        raise ValueError('must not set --coinc-event-id with --condor-submit')
+    cmd = ['condor_submit', 'accounting_group=ligo.dev.o3.cbc.pe.bayestar',
+           'on_exit_remove = (ExitBySignal == False) && (ExitCode == 0)',
+           'on_exit_hold = (ExitBySignal == True) || (ExitCode != 0)',
+           'request_memory = 1000 MB',
+           'universe=vanilla', 'getenv=true', 'executable=' + sys.executable,
+           'JobBatchName=BAYESTAR', 'environment="OMP_NUM_THREADS=1"',
+           'error=' + os.path.join(opts.output, '$(CoincEventId).err'),
+           'log=' + os.path.join(opts.output, '$(CoincEventId).log'),
+           'arguments="-B ' + ' '.join(arg for arg in sys.argv
+               if arg != '--condor-submit') + ' --coinc-event-id $(CoincEventId)"',
+           '-append', 'queue CoincEventId in ' + ' '.join(
+               str(coinc_event_id) for coinc_event_id in coinc_and_sngl_inspirals),
+           '/dev/null']
+    os.execvp('condor_submit', cmd)
 
 if opts.psd_files: # read pycbc psds here
     import lal
     from glue.segments import segment, segmentlist
     import h5py
-
-    # FIXME: This should be imported from pycbc.
-    DYN_RANGE_FAC =  5.9029581035870565e+20
 
     class psd_segment(segment):
         def __new__(cls, psd, *args):
@@ -120,20 +160,20 @@ if opts.psd_files: # read pycbc psds here
     def reference_psd_for_sngl(sngl):
         psd = psdseglistdict[sngl.ifo]
         try:
-            psd = psd[psd.find(sngl.get_end())].psd
+            psd = psd[psd.find(sngl.end)].psd
         except ValueError:
             raise ValueError(
                 'No PSD found for detector {0} at GPS time {1}'.format(
-                sngl.ifo, sngl.get_end()))
+                sngl.ifo, sngl.end))
 
         flow = psd.file.attrs['low_frequency_cutoff']
         df = psd.attrs['delta_f']
         kmin = int(flow / df)
 
         fseries = lal.CreateREAL8FrequencySeries(
-            'psd', psd.attrs['epoch'], kmin * df, df,
+            'psd', 0, kmin * df, df,
             lal.StrainUnit**2 / lal.HertzUnit, len(psd.value) - kmin)
-        fseries.data.data = psd.value[kmin:] / np.square(DYN_RANGE_FAC)
+        fseries.data.data = psd.value[kmin:] / np.square(ligolw_bayestar.PYCBC_DYN_RANGE_FAC)
 
         return timing.InterpolatedPSD(
             filter.abscissa(fseries), fseries.data.data,
@@ -163,17 +203,21 @@ else:
             reference_psd_filenames_by_process_id[sngl_inspiral.process_id])
             for sngl_inspiral in sngl_inspirals)
 
-snr_dict = ligolw_bayestar.snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc)
-
 count_sky_maps_failed = 0
 
 # Loop over all coinc_event <-> sim_inspiral coincs.
-for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
+if opts.coinc_event_id:
+    coinc_and_sngl_inspirals = {
+        coinc_event_id: coinc_and_sngl_inspirals[coinc_event_id]
+        for coinc_event_id in opts.coinc_event_id}
+
+for int_coinc_event_id, sngl_inspirals in coinc_and_sngl_inspirals.items():
+    coinc_event_id = 'coinc_event:coinc_event_id:{}'.format(int_coinc_event_id)
 
     instruments = {sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals}
 
     # Look up PSDs
-    log.info('%s:reading PSDs', coinc.coinc_event_id)
+    log.info('%s:reading PSDs', coinc_event_id)
     psds = reference_psds_for_sngls(sngl_inspirals)
 
     # Look up SNR time series
@@ -184,33 +228,29 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
 
     # Loop over sky localization methods
     for method in opts.method:
-        log.info("%s:method '%s':computing sky map", coinc.coinc_event_id, method)
+        log.info("%s:method '%s':computing sky map", coinc_event_id, method)
         if opts.chain_dump:
-            chain_dump = '%s.chain.npy' % int(coinc.coinc_event_id)
+            chain_dump = '%s.chain.npy' % int_coinc_event_id
         else:
             chain_dump = None
         try:
-            sky_map, epoch, elapsed_time = ligolw_sky_map(
+            sky_map = ligolw_sky_map(
                 sngl_inspirals, opts.waveform, opts.f_low, opts.min_distance,
-                opts.max_distance, opts.prior_distance_power, psds=psds,
-                method=method, nside=opts.nside, chain_dump=chain_dump,
-                phase_convention=opts.phase_convention, snr_series=snrs,
-                enable_snr_series=opts.enable_snr_series)
-            prob, distmu, distsigma, _ = sky_map
-            distmean, diststd = distance.parameters_to_marginal_moments(
-                prob, distmu, distsigma)
+                opts.max_distance, opts.prior_distance_power, opts.cosmology,
+                psds=psds, method=method, nside=opts.nside,
+                chain_dump=chain_dump, phase_convention=opts.phase_convention,
+                snr_series=snrs, enable_snr_series=opts.enable_snr_series)
+            sky_map.meta['objid'] = coinc_event_id
         except (ArithmeticError, ValueError):
-            log.exception("%s:method '%s':sky localization failed", coinc.coinc_event_id, method)
+            log.exception("%s:method '%s':sky localization failed", coinc_event_id, method)
             count_sky_maps_failed += 1
             if not opts.keep_going:
                 raise
         else:
-            log.info("%s:method '%s':saving sky map", coinc.coinc_event_id, method)
-            fits.write_sky_map('%s.%s.fits.gz' % (int(coinc.coinc_event_id), method),
-                sky_map, objid=str(coinc.coinc_event_id), gps_time=float(epoch),
-                creator=parser.prog, runtime=elapsed_time,
-                distmean=distmean, diststd=diststd,
-                instruments=instruments, nest=True)
+            log.info("%s:method '%s':saving sky map", coinc_event_id, method)
+            filename = '%d.%s.fits' % (int_coinc_event_id, method)
+            fits.write_sky_map(os.path.join(opts.output, filename),
+                sky_map, nest=True)
 
 
 if count_sky_maps_failed > 0:

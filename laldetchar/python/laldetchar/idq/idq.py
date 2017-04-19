@@ -2417,7 +2417,7 @@ def timeseries_to_segments(t, ts, thr):
 
         edges = numpy.array(edges)
         segs = numpy.transpose( numpy.array([t[edges[:-1:2]], t[edges[1::2]]]) )
-        return segs, numpy.min(ts[truth])
+        return [list(seg) for seg in segs], numpy.min(ts[truth])
     else:
         return [], None
 

@@ -39,7 +39,7 @@ from glue.ligolw import lsctables
 from glue.ligolw import utils
 from glue.ligolw.utils import process as ligolw_process
 from lalburst import git_version
-from lalburst import ligolw_binjfind
+from lalburst import binjfind
 
 
 lsctables.use_in(ligolw.LIGOLWContentHandler)
@@ -93,7 +93,7 @@ def parse_command_line():
 #
 
 
-ligolw_binjfind.lsctables.table.TableStream.RowBuilder = ligolw_binjfind.lsctables.table.InterningRowBuilder
+binjfind.lsctables.table.TableStream.RowBuilder = binjfind.lsctables.table.InterningRowBuilder
 
 
 #
@@ -121,17 +121,17 @@ search = {
 }[options.match_algorithm]
 
 snglcomparefunc = {
-	"stringcusp": ligolw_binjfind.StringCuspSnglCompare,
-	"excesspower": ligolw_binjfind.ExcessPowerSnglCompare,
-	"omega": ligolw_binjfind.OmegaSnglCompare,
-	"waveburst": ligolw_binjfind.CWBSnglCompare
+	"stringcusp": binjfind.StringCuspSnglCompare,
+	"excesspower": binjfind.ExcessPowerSnglCompare,
+	"omega": binjfind.OmegaSnglCompare,
+	"waveburst": binjfind.CWBSnglCompare
 }[options.match_algorithm]
 
 nearcoinccomparefunc = {
-	"stringcusp": ligolw_binjfind.StringCuspNearCoincCompare,
-	"excesspower": ligolw_binjfind.ExcessPowerNearCoincCompare,
-	"omega": ligolw_binjfind.OmegaNearCoincCompare,
-	"waveburst": ligolw_binjfind.CWBNearCoincCompare
+	"stringcusp": binjfind.StringCuspNearCoincCompare,
+	"excesspower": binjfind.ExcessPowerNearCoincCompare,
+	"omega": binjfind.OmegaNearCoincCompare,
+	"waveburst": binjfind.CWBNearCoincCompare
 }[options.match_algorithm]
 
 
@@ -148,13 +148,13 @@ for n, filename in enumerate(filenames):
 	if options.verbose:
 		print >>sys.stderr, "%d/%d:" % (n + 1, len(filenames)),
 	xmldoc = utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw.LIGOLWContentHandler)
-	ligolw_binjfind.table.InterningRowBuilder.strings.clear()
+	binjfind.table.InterningRowBuilder.strings.clear()
 
 	#
 	# have we already procesed it?
 	#
 
-	if ligolw_process.doc_includes_process(xmldoc, ligolw_binjfind.process_program_name):
+	if ligolw_process.doc_includes_process(xmldoc, binjfind.process_program_name):
 		if options.verbose:
 			print >>sys.stderr, "warning: %s already processed," % (filename or "stdin"),
 		if not options.force:
@@ -168,13 +168,13 @@ for n, filename in enumerate(filenames):
 	# add process metadata to document
 	#
 
-	process = ligolw_binjfind.append_process(xmldoc, match_algorithm = options.match_algorithm, comment = options.comment)
+	process = binjfind.append_process(xmldoc, match_algorithm = options.match_algorithm, comment = options.comment)
 
 	#
 	# run binjfind algorithm
 	#
 
-	ligolw_binjfind.ligolw_binjfind(xmldoc, process, search, snglcomparefunc, nearcoinccomparefunc, verbose = options.verbose)
+	binjfind.binjfind(xmldoc, process, search, snglcomparefunc, nearcoinccomparefunc, verbose = options.verbose)
 
 	#
 	# close out the process metadata

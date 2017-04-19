@@ -12,14 +12,14 @@ pymoduledir = $(pkgpythondir)
 
 pymodule_PYTHON = \
 	__init__.py \
+	binjfind.py \
+	bucluster.py \
+	burca.py \
+	burca_tailor.py \
 	cafe.py \
 	date.py \
 	git_version.py \
-	ligolw_binjfind.py \
-	ligolw_bucluster.py \
-	ligolw_burca.py \
 	ligolw_burca2.py \
-	ligolw_burca_tailor.py \
 	packing.py \
 	SimBurstUtils.py \
 	SnglBurstUtils.py \

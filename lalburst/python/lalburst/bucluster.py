@@ -32,13 +32,12 @@ from glue import segments
 from glue.ligolw import lsctables
 from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw.utils import search_summary as ligolw_search_summary
-from . import git_version
 from . import snglcluster
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-__version__ = "git id %s" % git_version.id
-__date__ = git_version.date
+from git_version import date as __date__
+from git_version import version as __version__
 
 
 #
@@ -333,7 +332,7 @@ def OmegaClusterFunc(a, b):
 #
 
 
-def ligolw_bucluster(
+def bucluster(
 	xmldoc,
 	program,
 	process,

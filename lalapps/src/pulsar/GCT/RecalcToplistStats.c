@@ -104,6 +104,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,				/**< list of cancidate
       /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
       RecalcStatsComponents XLAL_INIT_DECL(recalcStats); /* struct containing multi-detector F-stat, single-detector F-stats, BSGL */
       recalcStats.log10BSGL = -LAL_REAL4_MAX; /* proper initialization here is not 0 */
+      recalcStats.log10BSGLtL = -LAL_REAL4_MAX;
       XLAL_CHECK ( XLALComputeExtraStatsSemiCoherent( &recalcStats, &candidateDopplerParams, recalcParams ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed call to XLALComputeExtraStatsSemiCoherent()." );
 
       /* save values in toplist */
@@ -258,8 +259,11 @@ int XLALComputeExtraStatsSemiCoherent ( RecalcStatsComponents *recalcStats,		/**
       recalcStats->log10BSGL = XLALComputeBSGL ( sumTwoF, sumTwoFX, recalcParams->BSGLsetup );
       XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeBSGL() failed with xlalErrno = %d\n", xlalErrno );
 
-      recalcStats->log10BSGLtL  = XLALComputeBSGLtL ( sumTwoF, sumTwoFX, maxTwoFXl, recalcParams->BSGLsetup );
-      XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeBSGLtL() failed with xlalErrno = %d\n", xlalErrno );
+      if ( recalcParams->computeBSGLtL )
+        {
+          recalcStats->log10BSGLtL  = XLALComputeBSGLtL ( sumTwoF, sumTwoFX, maxTwoFXl, recalcParams->BSGLsetup );
+          XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeBSGLtL() failed with xlalErrno = %d\n", xlalErrno );
+        }
     } // if BSGLsetup != NULL
 
   /* get average stats over all segments */

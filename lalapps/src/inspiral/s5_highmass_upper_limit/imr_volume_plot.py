@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import sys
-from pylal import rate
+from lal import rate
 from pylal import SimInspiralUtils
 import scipy
 import numpy

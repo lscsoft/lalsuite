@@ -95,11 +95,6 @@ class CacheEntry(object):
     object describing the interval spanned by the file.  Any of these
     attributes except the URL is allowed to be None.
 
-    This module also provides a Cache class, which some codes use to
-    represent an entire LAL cache file.  However, for most use cases a
-    simple Python list or set of CacheEntry objects is sufficient for
-    representing a LAL cache file.
-
     Example (parse a string):
 
     >>> c = CacheEntry("H1 S5 815901601 576.5 file://localhost/home/kipp/tmp/1/H1-815901601-576.xml")
@@ -312,7 +307,7 @@ class CacheEntry(object):
         The \"observatory\" column of the cache entry, which is frequently
         used to store instrument names, is parsed into instrument names for
         the dictionary keys using the same rules as
-        glue.ligolw.lsctables.instrument_set_from_ifos().
+        glue.ligolw.lsctables.instrumentsproperty.get().
 
         Example:
 
@@ -322,8 +317,8 @@ class CacheEntry(object):
         """
         # the import has to be done here to break the cyclic
         # dependancy
-        from glue.ligolw.lsctables import instrument_set_from_ifos
-        instruments = instrument_set_from_ifos(self.observatory) or (None,)
+        from glue.ligolw.lsctables import instrumentsproperty
+        instruments = instrumentsproperty.get(self.observatory) or (None,)
         return segments.segmentlistdict((instrument, segments.segmentlist(self.segment is not None and [self.segment] or [])) for instrument in instruments)
 
     @classmethod

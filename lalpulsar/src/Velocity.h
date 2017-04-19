@@ -92,6 +92,9 @@ typedef struct tagVelocityPar {
 /* ***************************************************
  *  Functions Declarations (i.e., prototypes).
  */
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(OUTPUT_ARRAY_1D(REAL8, v[3], x[3]));
+#endif // SWIG
 void LALAvgDetectorVel(LALStatus    *status,
 		    REAL8        v[3], /* output vector representing average velocity */
 		    VelocityPar  *in); /* parameters required to calculate V */

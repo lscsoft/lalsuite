@@ -48,8 +48,6 @@ liblalsupport_la_SOURCES = \
 	StreamSeriesInput.c \
 	StreamSeriesOutput.c \
 	StreamSequenceInput.c \
-	StreamGridInput.c \
-	StreamGridOutput.c \
 	StreamVectorInput.c \
 	StreamVectorSequenceInput.c \
 	TranslateAngles.c \
@@ -77,8 +75,6 @@ noinst_HEADERS = \
 	PrintVector_source.c \
 	ReadFrequencySeries_source.c \
 	ReadTimeSeries_source.c \
-	StreamGridInput_source.c \
-	StreamGridOutput_source.c \
 	StreamSequenceInput_source.c \
 	StreamSequenceInputComplex_source.c \
 	StreamSeriesInput_source.c \

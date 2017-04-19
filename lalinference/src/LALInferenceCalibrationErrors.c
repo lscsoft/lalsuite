@@ -35,6 +35,7 @@
 #include <gsl/gsl_randist.h>
 #include <lal/LALInferenceLikelihood.h>
 
+
 /* Hard coded fmin and fmax for CE calculation. Those should be large enough to accomodate any realistic CBC WF */
 REAL8 freq_min=1.0;
 REAL8 freq_max=4096.01;
@@ -367,7 +368,8 @@ void LALInferenceApplyCalibrationErrors(LALInferenceIFOData *IFOdata, ProcessPar
   (--enable-spline-calibration)            Enable cubic-spline calibration error model.\n\
   (--spcal-nodes N)           Set the number of spline nodes per detector (default 5)\n\
   (--IFO-spcal-amp-uncertainty X) Set the prior on relative amplitude uncertainty for the instrument IFO (mandatory with --enable-spline-calibration)\n\
-  (--IFO-spcal-phase-uncertainty X) Set the prior on phase uncertanity in degrees  for the instrument IFO (mandatory with --enable-spline-calibration)\n\n\n";
+  (--IFO-spcal-phase-uncertainty X) Set the prior on phase uncertanity in degrees  for the instrument IFO (mandatory with --enable-spline-calibration)\n\
+  (--IFO-spcal-envelope F) Read amplitude and phase calibration uncertainty envelope from file F\n\n\n";
 
     static LALStatus   status;
     /* Print command line arguments if help requested */

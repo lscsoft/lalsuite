@@ -16,13 +16,13 @@ BuildRequires: libmetaio-devel
 BuildRequires: numpy
 BuildRequires: octave-devel
 BuildRequires: python-devel
-BuildRequires: swig
+BuildRequires: swig >= 3.0.7
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: lal-python >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
+BuildRequires: lal-python >= @MIN_LAL_VERSION@
 BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
+BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 Requires: libmetaio
 Requires: lal >= @MIN_LAL_VERSION@
 Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
@@ -115,6 +115,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.1.20-1
+- O2 release
+
 * Mon Sep 26 2016 Adam Mercer <adam.mercer@ligo.org> 1.1.19-1
 - ER10 release
 

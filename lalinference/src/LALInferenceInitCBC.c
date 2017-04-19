@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <errno.h>
 #include <lal/Date.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/LALInference.h>
@@ -45,15 +46,15 @@ static int checkParamInList(const char *list, const char *param)
   char *post=NULL,*pos=NULL;
   if (list==NULL) return 0;
   if (param==NULL) return 0;
-  
+
   if(!(pos=strstr(list,param))) return 0;
-  
+
   /* The string is a substring. Check that it is a token */
   /* Check the character before and after */
   if(pos!=list)
   if(*(pos-1)!=',')
   return 0;
-  
+
   post=&(pos[strlen(param)]);
   if(*post!='\0')
   if(*post!=',')
@@ -385,7 +386,7 @@ void LALInferenceInitGlitchVariables(LALInferenceRunState *runState, LALInferenc
   LALInferenceAddVariable(currentParams, "morlet_t0" , &mt0,  LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
   LALInferenceAddVariable(currentParams, "morlet_phi", &mphi, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
 
-  LALInferenceAddVariable(currentParams, "glitch_size",   &gsize, LALINFERENCE_UINT4Vector_t, LALINFERENCE_PARAM_LINEAR);
+  LALInferenceAddVariable(currentParams, "glitch_size", &gsize, LALINFERENCE_UINT4Vector_t, LALINFERENCE_PARAM_LINEAR);
   LALInferenceAddVariable(currentParams, "glitchFitFlag", &gflag, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
 
   LALInferenceAddMinMaxPrior(priorArgs, "morlet_Amp_prior", &Amin, &Amax, LALINFERENCE_REAL8_t);
@@ -398,6 +399,79 @@ void LALInferenceInitGlitchVariables(LALInferenceRunState *runState, LALInferenc
   LALInferenceAddMinMaxPrior(priorArgs, "glitch_dim", &gmin, &gmax, LALINFERENCE_REAL8_t);
 
   LALInferenceAddVariable(priorArgs, "glitch_norm", &Anorm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+}
+
+struct spcal_envelope
+{
+    gsl_spline  *amp_median,*amp_std,
+                *phase_median,*phase_std;
+};
+
+/* Format string for the calibratino envelope file */
+/* Frequency    Median Mag     Phase (Rad)    -1 Sigma Mag   -1 Sigma Phase +1 Sigma Mag   +1 Sigma Phase */
+
+#define CAL_ENV_FORMAT "%lf %lf %lf %lf %lf %lf %lf\n"
+
+static struct spcal_envelope *initCalibrationEnvelope(char *filename);
+
+static struct spcal_envelope *initCalibrationEnvelope(char *filename)
+{
+    FILE *fp=fopen(filename,"r");
+    char tmpline[1024];
+    if(!fp) {fprintf(stderr,"Unable to open %s: Error %i %s\n",filename,errno,strerror(errno)); exit(1);}
+    int Nlines=0;
+    REAL8 freq, *logfreq=NULL, *mag_med=NULL, mag_low, mag_hi, *mag_std=NULL, *phase_med=NULL, phase_low, phase_hi, *phase_std=NULL;
+    for(Nlines=0;fgets(tmpline,1024,fp); )
+    {
+        /* Skip header */
+        if(tmpline[0]=='#') continue;
+        /* Grow arrays */
+        logfreq=realloc(logfreq,sizeof(*logfreq)*(Nlines+1));
+        mag_med=realloc(mag_med,sizeof(*mag_med)*(Nlines+1));
+        mag_std=realloc(mag_std,sizeof(*mag_std)*(Nlines+1));
+        phase_med=realloc(phase_med,sizeof(*phase_med)*(Nlines+1));
+        phase_std=realloc(phase_std,sizeof(*phase_std)*(Nlines+1));
+
+        if((7!=sscanf(tmpline,CAL_ENV_FORMAT, &freq, &(mag_med[Nlines]), &(phase_med[Nlines]), &mag_low, &phase_low, &mag_hi, &phase_hi)))
+        {
+            fprintf(stderr,"Malformed input line in file %s: %s\n",filename,tmpline);
+            exit(1);
+        }
+		mag_med[Nlines]-=1.0; /* Subtract off 1 to get delta */
+        logfreq[Nlines]=log(freq);
+        mag_std[Nlines]=(mag_hi - mag_low ) /2.0;
+        phase_std[Nlines]=(phase_hi - phase_low) /2.0;
+		Nlines++;
+    }
+    fprintf(stdout,"Read %i lines from calibration envelope %s\n",Nlines,filename);
+    fclose(fp);
+
+    struct spcal_envelope *env=XLALCalloc(1,sizeof(*env));
+    env->amp_median = gsl_spline_alloc ( gsl_interp_cspline, Nlines);
+    env->amp_std = gsl_spline_alloc ( gsl_interp_cspline, Nlines);
+    env->phase_median = gsl_spline_alloc ( gsl_interp_cspline, Nlines);
+    env->phase_std = gsl_spline_alloc ( gsl_interp_cspline, Nlines);
+
+    gsl_spline_init(env->amp_median, logfreq, mag_med, Nlines);
+    gsl_spline_init(env->amp_std, logfreq, mag_std, Nlines);
+    gsl_spline_init(env->phase_median, logfreq, phase_med, Nlines);
+    gsl_spline_init(env->phase_std, logfreq, phase_std, Nlines);
+
+    free(logfreq); free(mag_med); free(mag_std); free(phase_med); free(phase_std);
+
+    return(env);
+}
+
+static int destroyCalibrationEnvelope(struct spcal_envelope *env);
+static int destroyCalibrationEnvelope(struct spcal_envelope *env)
+{
+    if(!env) XLAL_ERROR(XLAL_EINVAL);
+    if(env->amp_median) gsl_spline_free(env->amp_median);
+    if(env->amp_std) gsl_spline_free(env->amp_std);
+    if(env->phase_median) gsl_spline_free(env->phase_median);
+    if(env->phase_std) gsl_spline_free(env->phase_std);
+    XLALFree(env);
+    return XLAL_SUCCESS;
 }
 
 void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInferenceVariables *currentParams) {
@@ -437,38 +511,56 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
 
       char amp_uncert_op[VARNAME_MAX];
       char pha_uncert_op[VARNAME_MAX];
+      char env_uncert_op[VARNAME_MAX];
+      struct spcal_envelope *env=NULL;
+
       snprintf(amp_uncert_op, VARNAME_MAX, "--%s-spcal-amp-uncertainty", ifo->name);
       snprintf(pha_uncert_op, VARNAME_MAX, "--%s-spcal-phase-uncertainty", ifo->name);
-      if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, amp_uncert_op))) {
-        ampUncertaintyPrior = atof(ppt->value);
-      }
-      else{
-        fprintf(stderr,"Error, missing --%s-spcal-amp-uncertainty\n",ifo->name);
-        exit(1);
-      }
+      snprintf(env_uncert_op, VARNAME_MAX, "--%s-spcal-envelope",ifo->name);
 
-      if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, pha_uncert_op))) {
-        phaseUncertaintyPrior = M_PI/180.0*atof(ppt->value); /* CL arg in degrees, variable in radians */
+      if( (ppt=LALInferenceGetProcParamVal(runState->commandLine, env_uncert_op)))
+          env = initCalibrationEnvelope(ppt->value);
+      else
+      {
+        if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, amp_uncert_op))) {
+            ampUncertaintyPrior = atof(ppt->value);
+        }
+        else{
+            fprintf(stderr,"Error, missing %s or %s\n",amp_uncert_op, env_uncert_op);
+            exit(1);
+        }
+
+        if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, pha_uncert_op))) {
+            phaseUncertaintyPrior = M_PI/180.0*atof(ppt->value); /* CL arg in degrees, variable in radians */
+        }
+        else{
+            fprintf(stderr,"Error, missing %s or %s\n",pha_uncert_op,env_uncert_op);
+            exit(1);
+        }
       }
-      else{
-        fprintf(stderr,"Error, missing --%s-spcal-phase-uncertainty\n",ifo->name);
-        exit(1);
-      }
-      
       /* Now add each spline node */
       for(i=0;i<ncal;i++)
-      {
-	snprintf(freqVarName, VARNAME_MAX, "%s_spcal_logfreq_%i",ifo->name,i);
-	snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp_%i", ifo->name,i);
-	snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase_%i", ifo->name,i);
-	
-	REAL8 logFreq = logFMin + i*dLogF;
-	LALInferenceAddREAL8Variable(currentParams,freqVarName,logFreq,LALINFERENCE_PARAM_FIXED);
-	LALInferenceRegisterGaussianVariableREAL8(runState, currentParams, ampVarName, 0, 0, ampUncertaintyPrior, LALINFERENCE_PARAM_LINEAR);
-	LALInferenceRegisterGaussianVariableREAL8(runState, currentParams, phaseVarName, 0, 0, phaseUncertaintyPrior, LALINFERENCE_PARAM_LINEAR);
-      } /* End loop over spline nodes */
+	  {
+			  snprintf(freqVarName, VARNAME_MAX, "%s_spcal_logfreq_%i",ifo->name,i);
+			  snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp_%i", ifo->name,i);
+			  snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase_%i", ifo->name,i);
+			  REAL8 amp_std=ampUncertaintyPrior,amp_mean=0.0;
+			  REAL8 phase_std=phaseUncertaintyPrior,phase_mean=0.0;
+			  REAL8 logFreq = logFMin + i*dLogF;
+			  LALInferenceAddREAL8Variable(currentParams,freqVarName,logFreq,LALINFERENCE_PARAM_FIXED);
+			  if(env)
+			  {
+					  amp_std = gsl_spline_eval(env->amp_std, logFreq, NULL);
+					  amp_mean = gsl_spline_eval(env->amp_median, logFreq, NULL);
+					  phase_std = gsl_spline_eval(env->phase_std, logFreq, NULL);
+					  phase_mean = gsl_spline_eval(env->phase_std, logFreq, NULL);
+			  }
+			  LALInferenceRegisterGaussianVariableREAL8(runState, currentParams, ampVarName, 0, amp_mean, amp_std, LALINFERENCE_PARAM_LINEAR);
+			  LALInferenceRegisterGaussianVariableREAL8(runState, currentParams, phaseVarName, 0, phase_mean, phase_std, LALINFERENCE_PARAM_LINEAR);
+	  } /* End loop over spline nodes */
 
-    } /* End loop over IFOs */
+	  if(env) destroyCalibrationEnvelope(env);
+	} /* End loop over IFOs */
   } /* End case of spline calibration error */
   else if(LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalAmp") ||LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalPha")){
     /* Use constant (in frequency) approximation for the errors */
@@ -532,12 +624,12 @@ void LALInferenceRegisterGaussianVariableREAL8(LALInferenceRunState *state, LALI
   char valopt[VARNAME_MAX+3];
   char fixopt[VARNAME_MAX+7];
   ProcessParamsTable *ppt=NULL;
-  
+
   sprintf(meanopt,"--%s-mean",name);
   sprintf(sigmaopt,"--%s-sigma",name);
   sprintf(valopt,"--%s",name);
   sprintf(fixopt,"--fix-%s",name);
-  
+
   if((ppt=LALInferenceGetProcParamVal(state->commandLine,meanopt))) mean=atof(ppt->value);
   if((ppt=LALInferenceGetProcParamVal(state->commandLine,sigmaopt))) stdev=atof(ppt->value);
   if((ppt=LALInferenceGetProcParamVal(state->commandLine,fixopt)))
@@ -546,7 +638,7 @@ void LALInferenceRegisterGaussianVariableREAL8(LALInferenceRunState *state, LALI
     startval = atof(ppt->value);
   }
   if((ppt=LALInferenceGetProcParamVal(state->commandLine,valopt))) startval=atof(ppt->value);
-  
+
   assert(stdev>0);
   LALInferenceAddVariable(var,name,&startval,LALINFERENCE_REAL8_t,varytype);
   LALInferenceAddGaussianPrior(state->priorArgs, name, &mean, &stdev, LALINFERENCE_REAL8_t);
@@ -1359,7 +1451,7 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence(LALInferenceRunState *sta
     model->ifo_SNRs = XLALCalloc(nifo, sizeof(REAL8));
 
 	i=0;
- 
+
   /* Parameter bounds at ±5 sigma */
   fprintf(stdout,"Setting up priors\n");
   LALInferenceParamVaryType type=LALINFERENCE_PARAM_LINEAR;
@@ -2051,11 +2143,11 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
             if (checkParamInList(ppt->value,bPPEparam)) LALInferenceRegisterUniformVariableREAL8(state, model->params, bPPEparam, 0.0, bppe_min, bppe_max, LALINFERENCE_PARAM_LINEAR);
             sprintf(betaPPEparam, "%s%d","betaPPE",++counters[3]);
             if (checkParamInList(ppt->value,betaPPEparam)) LALInferenceRegisterUniformVariableREAL8(state, model->params, betaPPEparam, 0.0, betappe_min, betappe_max, LALINFERENCE_PARAM_LINEAR);
-            
+
         } while((checkParamInList(ppt->value,aPPEparam))||(checkParamInList(ppt->value,alphaPPEparam))||(checkParamInList(ppt->value,bPPEparam))||(checkParamInList(ppt->value,betaPPEparam)));
         if ((counters[0]!=counters[1])||(counters[2]!=counters[3])) {fprintf(stderr,"Unequal number of PPE parameters detected! Check your command line!\n"); exit(-1);}
     }
-    
+
 }
 
 

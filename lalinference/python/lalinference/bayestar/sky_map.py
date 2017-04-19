@@ -19,7 +19,7 @@
 Convenience function to produce a sky map from LIGO-LW rows.
 """
 from __future__ import division
-__author__ = "Leo Singer <leo.singer@ligo.org>"
+__author__ = 'Leo Singer <leo.singer@ligo.org>'
 
 
 import itertools
@@ -27,21 +27,17 @@ import logging
 import time
 import numpy as np
 import healpy as hp
+from astropy.table import Column, Table
+from astropy import units as u
 from .decorator import with_numpy_random_seed
 from . import distance
 from . import ligolw
 from . import filter
 from . import postprocess
 from . import timing
-try:
-    from ._moc import rasterize
-except ImportError:
-    raise ImportError(
-        'Could not import the lalinference.bayestar._moc Python C '
-        'extension module. This probably means that LALInfernece was built '
-        'without HEALPix support. Please install CHEALPix '
-        '(https://sourceforge.net/projects/healpix/files/Healpix_3.30/'
-        'chealpix-3.30.0.tar.gz), rebuild LALInference, and try again.')
+from . import moc
+from .. import healpix_tree
+from .. import InferenceVCSInfo as vcs_info
 try:
     from . import _sky_map
 except ImportError:
@@ -76,9 +72,10 @@ def toa_phoa_snr_log_prior(
 @with_numpy_random_seed
 def emcee_sky_map(
         logl, loglargs, logp, logpargs, xmin, xmax,
-        nside=-1, kde=False, chain_dump=None, max_horizon=1.0):
+        nside=-1, chain_dump=None):
     # Set up sampler
     import emcee
+    from sky_area.sky_area_clustering import Clustered3DKDEPosterior
     ntemps = 20
     nwalkers = 100
     nburnin = 1000
@@ -107,44 +104,45 @@ def emcee_sky_map(
     phi = chain[:, 0]
     dist = chain[:, 2]
 
-    # Do adaptive histogram binning if the user has not selected the KDE,
-    # or if the user has selected the KDE but we need to guess the resolution.
-    if nside == -1 or not kde:
-        samples_per_bin = int(np.ceil(0.005 * len(chain)))
-        prob = postprocess.adaptive_healpix_histogram(
-            theta, phi, samples_per_bin, nside=nside, nest=True)
+    ra = phi
+    dec = 0.5 * np.pi - theta
+    pts = np.column_stack((ra, dec, dist))
+    # Pass a random subset of 1000 points to the KDE, to save time.
+    pts = np.random.permutation(pts)[:1000, :]
+    ckde = Clustered3DKDEPosterior(pts)
+    _, nside, ipix = zip(*ckde._bayestar_adaptive_grid())
+    uniq = (4 * np.square(nside) + ipix).astype(np.uint64)
 
-        # Determine what nside what actually used.
-        nside = hp.npix2nside(len(prob))
-        # Go one level finer, because the KDE will find more detail.
-        nside *= 2
+    pts = np.transpose(hp.pix2vec(nside, ipix, nest=True))
 
-    if kde:
-        from sky_area.sky_area_clustering import Clustered3DKDEPosterior
-        ra = phi
-        dec = 0.5 * np.pi - theta
-        pts = np.column_stack((ra, dec, dist))
-        # Pass a random subset of 1000 points to the KDE, to save time.
-        pts = np.random.permutation(pts)[:1000, :]
-        prob = Clustered3DKDEPosterior(pts).as_healpix(nside)
+    datasets = [kde.dataset for kde in ckde.kdes]
+    inverse_covariances = [kde.inv_cov for kde in ckde.kdes]
+    weights = ckde.weights
+
+    # Compute marginal probability, conditional mean, and conditional
+    # standard deviation in all directions.
+    probdensity, distmean, diststd = np.transpose([distance.cartesian_kde_to_moments(
+        pt, datasets, inverse_covariances, weights)
+        for pt in pts])
 
     # Optionally save posterior sample chain to file.
     # Read back in with np.load().
     if chain_dump:
         # Undo numerical conditioning of distances; convert back to Mpc
-        chain[:, 2] *= max_horizon
         names = 'ra sin_dec distance cos_inclination twopsi time'.split()[:ndim]
         np.save(chain_dump, np.rec.fromrecords(chain, names=names))
 
     # Done!
-    return prob
+    return Table(
+        [uniq, probdensity, distmean, diststd],
+        names='UNIQ PROBDENSITY DISTMEAN DISTSTD'.split())
 
 
 def ligolw_sky_map(
         sngl_inspirals, waveform, f_low,
         min_distance=None, max_distance=None, prior_distance_power=None,
-        method="toa_phoa_snr", psds=None, nside=-1, chain_dump=None,
-        phase_convention='antifindchirp', snr_series=None,
+        cosmology=False, method='toa_phoa_snr', psds=None, nside=-1,
+        chain_dump=None, phase_convention='antifindchirp', snr_series=None,
         enable_snr_series=False):
     """Convenience function to produce a sky map from LIGO-LW rows. Note that
     min_distance and max_distance should be in Mpc.
@@ -164,7 +162,8 @@ def ligolw_sky_map(
     ifos = [sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals]
 
     # Extract SNRs from table.
-    snrs = np.asarray([sngl_inspiral.snr
+    snrs = np.ma.asarray([
+        np.ma.masked if sngl_inspiral.snr is None else sngl_inspiral.snr
         for sngl_inspiral in sngl_inspirals])
 
     # Look up physical parameters for detector.
@@ -191,29 +190,35 @@ def ligolw_sky_map(
     horizons = np.asarray([signal_model.get_horizon_distance()
         for signal_model in signal_models])
 
-    weights = [1/np.square(signal_model.get_crb_toa_uncert(snr))
-        for signal_model, snr in zip(signal_models, snrs)]
+    weights = np.ma.asarray([
+        1 / np.square(signal_model.get_crb_toa_uncert(snr))
+        for signal_model, snr in zip(signal_models, snrs)])
 
     # Center detector array.
-    locations -= np.average(locations, weights=weights, axis=0)
+    locations -= np.sum(locations * weights.reshape(-1, 1), axis=0) / np.sum(weights)
+
+    if cosmology:
+        log.warn('Enabling cosmological prior. '
+                 'This feature is UNREVIEWED.')
 
     if enable_snr_series:
-        log.warn('Enabling input of SNR time series. This feature is UNREVIEWED.')
+        log.warn('Enabling input of SNR time series. '
+                 'This feature is UNREVIEWED.')
     else:
         snr_series = None
+
+    # Maximum barycentered arrival time error:
+    # |distance from array barycenter to furthest detector| / c + 5 ms.
+    # For LHO+LLO, this is 15.0 ms.
+    # For an arbitrary terrestrial detector network, the maximum is 26.3 ms.
+    max_abs_t = np.max(
+        np.sqrt(np.sum(np.square(locations / lal.C_SI), axis=1))) + 0.005
 
     if snr_series is None:
         log.warn("No SNR time series found, so we are creating a zero-noise "
                  "SNR time series from the whitened template's autocorrelation "
                  "sequence. The sky localization uncertainty may be "
                  "underestimated.")
-
-        # Maximum barycentered arrival time error:
-        # |distance from array barycenter to furthest detector| / c + 5 ms.
-        # For LHO+LLO, this is 15.0 ms.
-        # For an arbitrary terrestrial detector network, the maximum is 26.3 ms.
-        max_abs_t = np.max(
-            np.sqrt(np.sum(np.square(locations / lal.C_SI), axis=1))) + 0.005
 
         acors, sample_rates = zip(
             *[filter.autocorrelation(_, max_abs_t) for _ in HS])
@@ -247,20 +252,37 @@ def ligolw_sky_map(
     deltaT = snr_series[0].deltaT
     sample_rate = 1 / deltaT
     if any(deltaT != series.deltaT for series in snr_series):
-        raise ValueError('BAYESTAR does not yet support SNR time series with mixed sample rates')
+        raise ValueError('BAYESTAR does not yet support SNR time series with '
+                         'mixed sample rates')
+
+    # Ensure that all of the SNR time series have odd lengths.
+    if any(len(series.data.data) % 2 == 0 for series in snr_series):
+        raise ValueError('SNR time series must have odd lengths')
+
+    # Trim time series to the desired length.
+    max_abs_n = int(np.ceil(max_abs_t * sample_rate))
+    desired_length = 2 * max_abs_n - 1
+    for i, series in enumerate(snr_series):
+        length = len(series.data.data)
+        if length > desired_length:
+            snr_series[i] = lal.CutCOMPLEX8TimeSeries(
+                series, length // 2 + 1 - max_abs_n, desired_length)
 
     # FIXME: for now, the Python wrapper expects all of the SNR time sries to
     # also be the same length.
     nsamples = len(snr_series[0].data.data)
     if any(nsamples != len(series.data.data) for series in snr_series):
-        raise ValueError('BAYESTAR does not yet support SNR time series of mixed lengths')
+        raise ValueError('BAYESTAR does not yet support SNR time series of '
+                         'mixed lengths')
 
     # Perform sanity checks that the middle sample of the SNR time series match
-    # the sngl_inspiral records.
+    # the sngl_inspiral records. Relax valid interval slightly from
+    # +/- 0.5 deltaT to +/- 0.6 deltaT for floating point roundoff error.
     for sngl_inspiral, series in zip(sngl_inspirals, snr_series):
         if np.abs(0.5 * (nsamples - 1) * series.deltaT
-                  + float(series.epoch - sngl_inspiral.end)) >= 0.5 * deltaT:
-            raise ValueError('BAYESTAR expects the SNR time series to be centered on the sngl_inspiral end times')
+                  + float(series.epoch - sngl_inspiral.end)) >= 0.6 * deltaT:
+            raise ValueError('BAYESTAR expects the SNR time series to be '
+                             'centered on the sngl_inspiral end times')
 
     # Extract the TOAs in GPS nanoseconds from the SNR time series, assuming
     # that the trigger happened in the middle.
@@ -269,10 +291,6 @@ def ligolw_sky_map(
 
     # Collect all of the SNR series in one array.
     snr_series = np.vstack([series.data.data for series in snr_series])
-
-    # Fudge factor for excess estimation error in gstlal_inspiral.
-    fudge = 0.83
-    snr_series *= fudge
 
     # If using 'findchirp' phase convention rather than gstlal/mbta,
     # then flip signs of phases.
@@ -288,7 +306,9 @@ def ligolw_sky_map(
     # initial datatype.
     epoch = sum(toas_ns) // len(toas_ns)
     toas = 1e-9 * (np.asarray(toas_ns) - epoch)
-    mean_toa = np.average(toas, weights=weights, axis=0)
+    # FIXME: np.average does not yet support masked arrays.
+    # Replace with np.average when numpy 1.13.0 is available.
+    mean_toa = np.sum(toas * weights) / np.sum(weights)
     toas -= mean_toa
     epoch += int(np.round(1e9 * mean_toa))
     epoch = lal.LIGOTimeGPS(0, int(epoch))
@@ -311,84 +331,77 @@ def ligolw_sky_map(
     if prior_distance_power is None:
         prior_distance_power = 2
 
-    # Raise an exception if 0 Mpc is the minimum effective distance and the prior
-    # is of the form r**k for k<0
+    # Raise an exception if 0 Mpc is the minimum effective distance and the
+    # prior is of the form r**k for k<0
     if min_distance == 0 and prior_distance_power < 0:
-        raise ValueError(("Prior is a power law r^k with k={}, "
-            + "undefined at min_distance=0").format(prior_distance_power))
-
-    # Rescale distances to horizon distance of most sensitive detector.
-    max_horizon = np.max(horizons)
-    horizons /= max_horizon
-    min_distance /= max_horizon
-    max_distance /= max_horizon
-
-    # Use KDE for density estimation?
-    if method.endswith('_kde'):
-        method = method[:-4]
-        kde = True
-    else:
-        kde = False
+        raise ValueError(('Prior is a power law r^k with k={}, '
+                          'undefined at min_distance=0')
+                          .format(prior_distance_power))
 
     # Time and run sky localization.
     log.debug('starting computationally-intensive section')
-    start_time = time.time()
-    if method == "toa_phoa_snr":
-        skymap = _sky_map.toa_phoa_snr(
-            min_distance, max_distance, prior_distance_power, gmst, sample_rate,
-            toas, snr_series, responses, locations, horizons)
-        distmu, distsigma, distnorm = distance.moments_to_parameters(
-            skymap['DISTMEAN'], skymap['DISTSTD'])
-        skymap = np.rec.fromarrays(
-            [skymap['UNIQ'], skymap['PROBDENSITY'], distmu, distsigma, distnorm],
-            names='UNIQ,PROBDENSITY,DISTMU,DISTSIGMA,DISTNORM')
-        skymap = rasterize(skymap)
-        prob = [4 * np.pi / len(skymap) * skymap['PROBDENSITY'], skymap['DISTMU'], skymap['DISTSIGMA'], skymap['DISTNORM']]
-    elif method == "toa_phoa_snr_mcmc":
-        # prob = emcee_sky_map(
-        #     logl=_sky_map.log_likelihood_toa_phoa_snr,
-        #     loglargs=(gmst, sample_rate, toas, snr_series, responses, locations,
-        #         horizons),
-        #     logp=toa_phoa_snr_log_prior,
-        #     logpargs=(min_distance, max_distance, prior_distance_power,
-        #         max_abs_t),
-        #     xmin=[0, -1, min_distance, -1, 0, 0],
-        #     xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi, 2 * max_abs_t],
-        #     nside=nside, kde=kde, chain_dump=chain_dump,
-        #     max_horizon=max_horizon)
-        raise NotImplemented('Working on porting this to new MOC format')
+    start_time = lal.GPSTimeNow()
+    if method == 'toa_phoa_snr':
+        skymap, log_bci, log_bsn = _sky_map.toa_phoa_snr(
+            min_distance, max_distance, prior_distance_power, cosmology, gmst,
+            sample_rate, toas, snr_series, responses, locations, horizons)
+        skymap = Table(skymap)
+        skymap.meta['log_bci'] = log_bci
+        skymap.meta['log_bsn'] = log_bsn
+    elif method == 'toa_phoa_snr_mcmc':
+        skymap = emcee_sky_map(
+            logl=_sky_map.log_likelihood_toa_phoa_snr,
+            loglargs=(gmst, sample_rate, toas, snr_series, responses, locations,
+                horizons),
+            logp=toa_phoa_snr_log_prior,
+            logpargs=(min_distance, max_distance, prior_distance_power,
+                max_abs_t),
+            xmin=[0, -1, min_distance, -1, 0, 0],
+            xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi, 2 * max_abs_t],
+            nside=nside, chain_dump=chain_dump)
     else:
-        raise ValueError("Unrecognized method: %s" % method)
-    prob[1] *= max_horizon * fudge
-    prob[2] *= max_horizon * fudge
-    prob[3] /= np.square(max_horizon * fudge)
-    end_time = time.time()
+        raise ValueError('Unrecognized method: %s' % method)
+
+    # Convert distance moments to parameters
+    distmean = skymap.columns.pop('DISTMEAN')
+    diststd = skymap.columns.pop('DISTSTD')
+    skymap['DISTMU'], skymap['DISTSIGMA'], skymap['DISTNORM'] = \
+        distance.moments_to_parameters(distmean, diststd)
+
+    # Add marginal distance moments
+    good = np.isfinite(distmean) & np.isfinite(diststd)
+    prob = (moc.uniq2pixarea(skymap['UNIQ']) * skymap['PROBDENSITY'])[good]
+    distmean = distmean[good]
+    diststd = diststd[good]
+    rbar = (prob * distmean).sum()
+    r2bar = (prob * (np.square(diststd) + np.square(distmean))).sum()
+    skymap.meta['distmean'] = rbar
+    skymap.meta['diststd'] = np.sqrt(r2bar - np.square(rbar))
+
+    end_time = lal.GPSTimeNow()
     log.debug('finished computationally-intensive section')
 
-    # Find elapsed run time.
-    elapsed_time = end_time - start_time
+    # Fill in metadata and return.
+    skymap.meta['creator'] = 'BAYESTAR'
+    skymap.meta['origin'] = 'LIGO/Virgo'
+    skymap.meta['vcs_info'] = vcs_info
+    skymap.meta['gps_time'] = float(epoch)
+    skymap.meta['runtime'] = float(end_time - start_time)
+    skymap.meta['instruments'] = {sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals}
+    skymap.meta['gps_creation_time'] = end_time
 
-    # Done!
-    return prob, epoch, elapsed_time
+    return skymap
 
 
 def gracedb_sky_map(
         coinc_file, psd_file, waveform, f_low, min_distance=None,
-        max_distance=None, prior_distance_power=None,
-        method="toa_phoa_snr", nside=-1, chain_dump=None,
+        max_distance=None, prior_distance_power=None, cosmology=False,
+        method='toa_phoa_snr', nside=-1, chain_dump=None,
         f_high_truncate=1.0, enable_snr_series=False):
     # Read input file.
     log.debug('reading coinc file')
     xmldoc, _ = ligolw_utils.load_fileobj(
         coinc_file, contenthandler=ligolw.LSCTablesAndSeriesContentHandler)
-
-    # Locate the tables that we need.
-    coinc_inspiral_table = ligolw_table.get_table(xmldoc,
-        lsctables.CoincInspiralTable.tableName)
-    coinc_map_table = ligolw_table.get_table(xmldoc,
-        lsctables.CoincMapTable.tableName)
-    sngl_inspiral_table = ligolw_table.get_table(xmldoc,
-        lsctables.SnglInspiralTable.tableName)
 
     # Attempt to determine phase convention from process table.
     try:
@@ -404,13 +417,9 @@ def gracedb_sky_map(
         phase_convention = 'antifindchirp'
 
     # Locate the sngl_inspiral rows that we need.
-    coinc_inspiral = coinc_inspiral_table[0]
-    coinc_event_id = coinc_inspiral.coinc_event_id
-    event_ids = [coinc_map.event_id for coinc_map in coinc_map_table
-        if coinc_map.coinc_event_id == coinc_event_id]
-    sngl_inspirals = [next((sngl_inspiral for sngl_inspiral in sngl_inspiral_table
-        if sngl_inspiral.event_id == event_id)) for event_id in event_ids]
-    instruments = {sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals}
+    sngl_inspirals, = ligolw.coinc_and_sngl_inspirals_for_xmldoc(
+        xmldoc, coinc_def=None).values()
+    sngl_inspirals = list(sngl_inspirals)
 
     # Try to load complex SNR time series.
     snrs = ligolw.snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc)
@@ -435,13 +444,37 @@ def gracedb_sky_map(
         for psd in psds]
 
     # Run sky localization
-    prob, epoch, elapsed_time = ligolw_sky_map(sngl_inspirals, waveform, f_low,
-        min_distance, max_distance, prior_distance_power, method=method,
-        nside=nside, psds=psds, phase_convention=phase_convention,
-        chain_dump=chain_dump, snr_series=snrs,
-        enable_snr_series=enable_snr_series)
+    return ligolw_sky_map(sngl_inspirals, waveform, f_low,
+        min_distance, max_distance, prior_distance_power, cosmology,
+        method=method, nside=nside, psds=psds,
+        phase_convention=phase_convention, chain_dump=chain_dump,
+        snr_series=snrs, enable_snr_series=enable_snr_series)
 
-    return prob, epoch, elapsed_time, instruments
+
+def rasterize(skymap):
+    skymap = Table(moc.rasterize(skymap), meta=skymap.meta)
+    skymap.rename_column('PROBDENSITY', 'PROB')
+    skymap['PROB'] *= 4 * np.pi / len(skymap)
+    skymap['PROB'].unit = u.pixel ** -1
+    return skymap
+
+
+def derasterize(skymap):
+    skymap.rename_column('PROB', 'PROBDENSITY')
+    skymap['PROBDENSITY'] *= len(skymap) / (4 * np.pi)
+    skymap['PROBDENSITY'].unit = u.steradian ** -1
+    nside, _, ipix, _, _, value = zip(
+        *healpix_tree.reconstruct_nested(skymap))
+    nside = np.asarray(nside)
+    ipix = np.asarray(ipix)
+    value = np.stack(value)
+    uniq = (4 * np.square(nside) + ipix).astype(np.uint64)
+    old_units = [column.unit for column in skymap.columns.values()]
+    skymap = Table(value, meta=skymap.meta)
+    for old_unit, column in zip(old_units, skymap.columns.values()):
+        column.unit = old_unit
+    skymap.add_column(Column(uniq, name='UNIQ'), 0)
+    return skymap
 
 
 def test():

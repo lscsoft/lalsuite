@@ -12,16 +12,16 @@ Source: %{name}-%{version}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: ldas-tools-framecpp-c-devel
+BuildRequires: ldas-tools-framecpp-c-devel >= @MIN_FRAMECPPC_VERSION@
 BuildRequires: libframe-devel
 BuildRequires: numpy
 BuildRequires: octave-devel
 BuildRequires: python-devel
-BuildRequires: swig
+BuildRequires: swig >= 3.0.7
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 BuildRequires: lal-python >= @MIN_LAL_VERSION@
-Requires: ldas-tools-framecpp-c
+Requires: ldas-tools-framecpp-c >= @MIN_FRAMECPPC_VERSION@
 Requires: libframe
 Requires: lal >= @MIN_LAL_VERSION@
 Prefix: %{_prefix}
@@ -35,7 +35,7 @@ that use the LAL Frame library.
 Summary: Files and documentation needed for compiling programs that use LAL Frame
 Group: LAL
 Requires: %{name} = %{version}
-Requires: ldas-tools-framecpp-c-devel
+Requires: ldas-tools-framecpp-c-devel >= @MIN_FRAMECPPC_VERSION@
 Requires: libframe-devel
 Requires: lal-devel >= @MIN_LAL_VERSION@
 %description devel
@@ -113,6 +113,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.4.3-1
+- O2 release
+
 * Mon Sep 26 2016 Adam Mercer <adam.mercer@ligo.org> 1.4.2-1
 - ER10 release
 
