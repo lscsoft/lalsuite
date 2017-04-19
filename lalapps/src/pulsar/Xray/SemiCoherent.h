@@ -111,7 +111,7 @@ extern "C" {
 #define NFREQMAX 4                    /* the max dimensionality of the frequency derivitive grid */
 #define NBINMAX 4                        /* the number of binary parameter dimensions */
 #define NBINS 4                       /* the number of bins to add to each side of the fft for safety */
-#define BINS_FACTOR 0.05              /* the percentage of bins to add to each side of the fft for safety */
+#define BINS_FACTOR 0.075             /* the percentage of bins to add to each side of the fft for safety */
 #define WINGS_FACTOR 2                /* the safety factor in reading extra frequency from SFTs */
 #define MAXNTSERIES 1073741824        /* the max number of samples in a timeseries at one time */
 
