@@ -682,14 +682,13 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
                               REAL8Space *space,                        /**< [in] the orbital parameter space */
                               REAL8 tmid,                               /**< [in] the segment mid point */
                               REAL8 Tseg,                               /**< [in] the segment length */
-                              REAL8 mu                                  /**< [in] the required mismatch */
+                              REAL8 mu,                                 /**< [in] the required mismatch */
+                              INT4 *ndim                                /**< [in] the number of spin derivitive dimensions required */
                               )
 {
   UINT4 i,j,k,l;                         /* counters */
   INT4 n;                                /* counter */
   REAL8 fnmin[NFREQMAX],fnmax[NFREQMAX]; /* min and max values of spin derivitives */
-  INT4 dim[NFREQMAX];                    /* flag indicating whether a dimension has width */
-  INT4 ndim = -1;                        /* the number of spin derivitive dimensions required */
   Template fdots;                        /* template for an instance of spin parameters */
   Template bintemp;                      /* template for instance of binary parameters */
   UINT4 ngrid = 100;                     /* the number of grid points per omega and tasc to search for finding true fdot spans per sft */
@@ -785,22 +784,25 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
 
    /* compute the required dimensionality of the frequency derivitive grid */
    /* we check the width of a 1-D template across each dimension span */
-   for (n=0;n<NFREQMAX;n++) {
-     REAL8 gnn = pow(LAL_PI,2.0)*pow(Tseg,2*n+2)/(pow(2.0,2*n)*(2*n+3.0));
-     REAL8 deltafn = 2.0*sqrt(mu/gnn);
-     REAL8 span = fnmax[n] - fnmin[n];
-     dim[n] = 0;
-     if (span > deltafn) dim[n] = 1;
-     LogPrintf(LOG_DEBUG,"%s : single template span for %d'th derivitive = %e.\n",__func__,n,deltafn);
-   }
-   n = NFREQMAX-1;
-   while ( (n>=0) && (ndim == -1) ) {
-     if (dim[n] > 0) ndim = n+1;
-     n--;
-   }
-   if (ndim < 0) {
-      LogPrintf(LOG_CRITICAL,"%s: dimensionality of frequency space < 0.  No templates required.\n",__func__);
-      return XLAL_EINVAL;
+   if ((*ndim) < 0) {
+     INT4 dim[NFREQMAX];                    /* flag indicating whether a dimension has width */
+     for (n=0;n<NFREQMAX;n++) {
+       REAL8 gnn = pow(LAL_PI,2.0)*pow(Tseg,2*n+2)/(pow(2.0,2*n)*(2*n+3.0));
+       REAL8 deltafn = 2.0*sqrt(mu/gnn);
+       REAL8 span = fnmax[n] - fnmin[n];
+       dim[n] = 0;
+       if (span > deltafn) dim[n] = 1;
+       LogPrintf(LOG_DEBUG,"%s : single template span for %d'th derivitive = %e.\n",__func__,n,deltafn);
+     }
+     n = NFREQMAX-1;
+     while ( (n>=0) && ((*ndim) == -1) ) {
+       if (dim[n] > 0) (*ndim) = n+1;
+       n--;
+     }
+     if ((*ndim) < 0) {
+       LogPrintf(LOG_CRITICAL,"%s: dimensionality of frequency space < 0.  No templates required.\n",__func__);
+       return XLAL_EINVAL;
+     }
    }
 
    /* allocate memory to the output */
@@ -808,15 +810,15 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
      LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for gridparams->grid.\n",__func__);
      return XLAL_ENOMEM;
    }
-   (*gridparams)->ndim = ndim;
+   (*gridparams)->ndim = (*ndim);
    LogPrintf(LOG_DEBUG,"%s : allocated memory for the output grid parameters.\n",__func__);
 
    /* Compute the grid spacing, grid start and span for each spin derivitive dimension */
-   for (n=0;n<ndim;n++) {
+   for (n=0;n<(*ndim);n++) {
 
      /* compute diagonal metric element and corresponding spacing */
      REAL8 gnn = pow(LAL_PI,2.0)*pow(Tseg,2*n+2)/(pow(2.0,2*n)*(2*n+3.0));
-     REAL8 deltafn = 2.0*sqrt(mu/(ndim*gnn));
+     REAL8 deltafn = 2.0*sqrt(mu/((*ndim)*gnn));
 
      /* compute number of grid points in this dimension and enforce a grid centered on the middle of the parameter space */
      INT4 length = (INT4)ceil((fnmax[n]-fnmin[n])/deltafn);
@@ -840,7 +842,7 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
      LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for Template structure.\n",__func__);
      return XLAL_ENOMEM;
    }
-   (*gridparams)->ndim = ndim;
+   (*gridparams)->ndim = (*ndim);
    (*gridparams)->mismatch = mu;
    (*gridparams)->max = 1;
    for (k=0;k<(*gridparams)->ndim;k++) (*gridparams)->max *= (*gridparams)->grid[k].length;
@@ -897,13 +899,14 @@ int XLALComputeFreqGridParamsVector(GridParametersVector **freqgridparams,    /*
   (*freqgridparams)->length = sftvec->length;
 
   /* loop over each SFT */
+  INT4 ndim = -1;
   for (i=0;i<sftvec->length;i++) {
 
     REAL8 t0 = XLALGPSGetREAL8(&(sftvec->data[i].epoch));
     REAL8 tsft = 1.0/sftvec->data[i].deltaF;
     REAL8 tmid = t0 + 0.5*tsft;
 
-    if (XLALComputeFreqGridParams(&((*freqgridparams)->segment[i]),space,tmid,tsft,mu)) {
+    if (XLALComputeFreqGridParams(&((*freqgridparams)->segment[i]),space,tmid,tsft,mu,&ndim)) {
       LogPrintf(LOG_CRITICAL,"%s: XLALComputeFreqGridParams() failed with error = %d\n",__func__,xlalErrno);
       XLAL_ERROR(XLAL_EINVAL);
     }

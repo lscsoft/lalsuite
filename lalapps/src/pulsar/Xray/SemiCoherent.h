@@ -230,7 +230,7 @@ extern "C" {
 
   int XLALReadSFTs(SFTVector**,CHAR *,REAL8,REAL8,INT4,INT4,INT4);
   int XLALComputeFreqGridParamsVector(GridParametersVector**,REAL8Space*,SFTVector*,REAL8);
-  int XLALComputeFreqGridParams(GridParameters **freqgridparams,REAL8Space *pspace, REAL8 tmid,REAL8 tsft, REAL8 mu);
+  int XLALComputeFreqGridParams(GridParameters **freqgridparams,REAL8Space *pspace, REAL8 tmid,REAL8 tsft, REAL8 mu, INT4 *ndim);
   int XLALSFTVectorToCOMPLEX8TimeSeriesArray(COMPLEX8TimeSeriesArray **dstimevec, SFTVector *sftvec);
   int XLALSFTToCOMPLEX8TimeSeries(COMPLEX8TimeSeries **ts, COMPLEX8FrequencySeries *sft,COMPLEX8FFTPlan **plan);
   int XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **fs,const COMPLEX8TimeSeries *ts,GridParameters **gridparams);
