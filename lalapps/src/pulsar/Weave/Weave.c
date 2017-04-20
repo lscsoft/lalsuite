@@ -1282,15 +1282,15 @@ int main( int argc, char *argv[] )
     // Write average number of semicoherent templates per each dimension
     {
       char keyword[64];
-      double avg_points_denom = 1;
+      UINT8 avg_points_denom = 1;
       for ( size_t i = 0; i < ndim; ++i ) {
         const LatticeTilingStats *semi_stats = XLALLatticeTilingStatistics( tiling[isemi], i );
         XLAL_CHECK_MAIN( semi_stats != NULL, XLAL_EFUNC );
         XLAL_CHECK_MAIN( semi_stats->name != NULL, XLAL_EFUNC );
         XLAL_CHECK_MAIN( semi_stats->total_points > 0, XLAL_EFUNC );
-        UINT4 avg_points = lround( semi_stats->total_points / avg_points_denom );
+        double avg_points = semi_stats->total_points / avg_points_denom;
         snprintf( keyword, sizeof( keyword ), "semiavg %s", semi_stats->name );
-        XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, keyword, avg_points, "average number of templates in dimension" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, keyword, avg_points, "average number of templates in dimension" ) == XLAL_SUCCESS, XLAL_EFUNC );
         avg_points_denom = semi_stats->total_points;
       }
     }

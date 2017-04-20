@@ -11,7 +11,7 @@ for setup in short mid long; do
 
         mid)
             weave_setup_options="--segment-count=2 --segment-gap=11130000"
-            weave_search_options="--alpha=0.9/0.4 --delta=-1.2/1.3 --freq=55.5/1e-4 --f1dot=-1.5e-9,0 --semi-max-mismatch=7 --coh-max-mismatch=0.4"
+            weave_search_options="--alpha=0.9/0.6 --delta=-1.2/1.5 --freq=55.5/1e-4 --f1dot=-1.5e-9,0 --semi-max-mismatch=7 --coh-max-mismatch=0.4"
             ;;
 
         long)
@@ -54,8 +54,8 @@ for setup in short mid long; do
     set -x
     for dim in SSKYA SSKYB NU0DOT NU1DOT; do
         ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" "SEMIAVG ${dim}" > tmp
-        semi_avg_dim=`cat tmp | xargs printf "%d"`
-        expr ${semi_avg_dim} '>' 1
+        semi_avg_dim=`cat tmp | xargs printf "%g"`
+        awk "BEGIN { exit ( ${semi_avg_dim} > 1 ? 0 : 1 ) }"
     done
     set +x
     echo
