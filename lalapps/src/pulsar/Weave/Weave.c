@@ -1015,6 +1015,7 @@ int main( int argc, char *argv[] )
     // - XLALNextLatticeTilingPoint() returns mid-point in non-iterated dimensions
     const int itr_retn = XLALNextLatticeTilingPoint( semi_itr, semi_rssky );
     XLAL_CHECK_MAIN( itr_retn >= 0, XLAL_EFUNC );
+    freq_block_index = XLALCurrentLatticeTilingIndex( semi_itr );
     if ( itr_retn == 0 ) {
 
       // Move to the next partition
@@ -1046,61 +1047,58 @@ int main( int argc, char *argv[] )
     PulsarDopplerParams XLAL_INIT_DECL( semi_phys );
     UINT4 semi_nfreqs = 0;
     XLAL_CHECK_MAIN( XLALWeaveCacheQueriesFinal( queries, partition_index, &semi_phys, dfreq, &semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
-    if ( semi_nfreqs > 0 ) {
-
-      // Initialise partial semicoherent results
-      XLAL_CHECK_MAIN( XLALWeaveSemiPartialsInit( &semi_parts, simulation_level, ndetectors, nsegments, &semi_phys, dfreq, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      // Start timing
-      double cpu_timing_tic = cpu_time();
-      double cpu_timing_toc = 0;
-
-      // Retrieve coherent results from each segment
-      const WeaveCohResults *XLAL_INIT_DECL( coh_res, [nsegments] );
-      UINT4 XLAL_INIT_DECL( coh_offset, [nsegments] );
-      for ( size_t i = 0; i < nsegments; ++i ) {
-        XLAL_CHECK_MAIN( XLALWeaveCacheRetrieve( coh_cache[i], queries, i, &coh_res[i], &coh_offset[i], &coh_nfbk, &coh_nres, &per_seg_info[i].coh_n1comp, &per_seg_info[i].coh_nrecomp ) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK_MAIN( coh_res[i] != NULL, XLAL_EFUNC );
-      }
-
-      // Time computation of coherent results
-      cpu_timing_toc = cpu_time();
-      cpu_timing_coh_res += cpu_timing_toc - cpu_timing_tic;
-      cpu_timing_tic = cpu_timing_toc;
-
-      // Add coherent results to partial semicoherent results
-      for ( size_t i = 0; i < nsegments; ++i ) {
-        XLAL_CHECK_MAIN( XLALWeaveSemiPartialsAdd( semi_parts, coh_res[i], coh_offset[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
-      }
-
-      // Time computation of partial semicoherent results
-      cpu_timing_toc = cpu_time();
-      cpu_timing_semi_parts += cpu_timing_toc - cpu_timing_tic;
-      cpu_timing_tic = cpu_timing_toc;
-
-      // Compute final semicoherent results
-      XLAL_CHECK_MAIN( XLALWeaveSemiResultsCompute( &semi_res, semi_parts ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      // Time computation of final semicoherent results
-      cpu_timing_toc = cpu_time();
-      cpu_timing_semi_res += cpu_timing_toc - cpu_timing_tic;
-      cpu_timing_tic = cpu_timing_toc;
-
-      // Add semicoherent results to output
-      XLAL_CHECK_MAIN( XLALWeaveOutputResultsAdd( out, semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      // Time output of semicoherent results
-      cpu_timing_toc = cpu_time();
-      cpu_timing_output += cpu_timing_toc - cpu_timing_tic;
-      cpu_timing_tic = cpu_timing_toc;
-
-      // Increment number of computed semicoherent results
-      semi_nres += semi_nfreqs;
-
+    if ( semi_nfreqs == 0 ) {
+      continue;
     }
 
-    // Increment semicoherent frequency block index
-    ++freq_block_index;
+    // Initialise partial semicoherent results
+    XLAL_CHECK_MAIN( XLALWeaveSemiPartialsInit( &semi_parts, simulation_level, ndetectors, nsegments, &semi_phys, dfreq, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Start timing
+    double cpu_timing_tic = cpu_time();
+    double cpu_timing_toc = 0;
+
+    // Retrieve coherent results from each segment
+    const WeaveCohResults *XLAL_INIT_DECL( coh_res, [nsegments] );
+    UINT4 XLAL_INIT_DECL( coh_offset, [nsegments] );
+    for ( size_t i = 0; i < nsegments; ++i ) {
+      XLAL_CHECK_MAIN( XLALWeaveCacheRetrieve( coh_cache[i], queries, i, &coh_res[i], &coh_offset[i], &coh_nfbk, &coh_nres, &per_seg_info[i].coh_n1comp, &per_seg_info[i].coh_nrecomp ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( coh_res[i] != NULL, XLAL_EFUNC );
+    }
+
+    // Time computation of coherent results
+    cpu_timing_toc = cpu_time();
+    cpu_timing_coh_res += cpu_timing_toc - cpu_timing_tic;
+    cpu_timing_tic = cpu_timing_toc;
+
+    // Add coherent results to partial semicoherent results
+    for ( size_t i = 0; i < nsegments; ++i ) {
+      XLAL_CHECK_MAIN( XLALWeaveSemiPartialsAdd( semi_parts, coh_res[i], coh_offset[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+    // Time computation of partial semicoherent results
+    cpu_timing_toc = cpu_time();
+    cpu_timing_semi_parts += cpu_timing_toc - cpu_timing_tic;
+    cpu_timing_tic = cpu_timing_toc;
+
+    // Compute final semicoherent results
+    XLAL_CHECK_MAIN( XLALWeaveSemiResultsCompute( &semi_res, semi_parts ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Time computation of final semicoherent results
+    cpu_timing_toc = cpu_time();
+    cpu_timing_semi_res += cpu_timing_toc - cpu_timing_tic;
+    cpu_timing_tic = cpu_timing_toc;
+
+    // Add semicoherent results to output
+    XLAL_CHECK_MAIN( XLALWeaveOutputResultsAdd( out, semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Time output of semicoherent results
+    cpu_timing_toc = cpu_time();
+    cpu_timing_output += cpu_timing_toc - cpu_timing_tic;
+    cpu_timing_tic = cpu_timing_toc;
+
+    // Increment number of computed semicoherent results
+    semi_nres += semi_nfreqs;
 
     // Progress index and percentage complete
     const UINT8 prog_index = partition_index * freq_block_count + freq_block_index;
