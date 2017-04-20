@@ -1205,15 +1205,11 @@ void get_amplitude_model( PulsarParameters *pars, LALInferenceIFOModel *ifo ){
       }
       else{ /* just have to calculate the values to multiply the pre-summed data */
         /* for tensor-only models (e.g. the default of GR) calculate the two components of
-         * the single model value - things multplied by a(t) and things multiplied by b(t)
-         * (both these will have real and imaginary components:
-         * h(t) = a(t)*(Cplus*cos(2psi) - Ccross*sin(2psi)) +
-         *        b(t)*(Cplus*sin(2psi) + Ccross*cos(2psi))
-         *
-         * For scalar and vector modes also calculate the four addiational components:
-         * h(t)^V = aV(t)*(Cx*cos(psi) - Cy*sin(psi)) +
-         *          bV(t)*(Cy*sin(psi) + Cy*cos(psi)),
-         * h(t)^S = aS(t)*Cb + bS(t)*Cl.
+         * the single model value - things multiplied by a(t) and things multiplied by b(t)
+         * (both these will have real and imaginary components). NOTE: the values input into
+         * ifo->compTimeSignal->data->data are not supposed to be identical to the above
+         * relationships between the amplitudes and polarisation angles, as these are the
+         * multiplicative coefficients of the a(t) and b(t) summations.
          */
 
         /* put multiples of a(t) in first value and b(t) in second */
