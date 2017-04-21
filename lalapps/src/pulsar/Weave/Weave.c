@@ -305,7 +305,7 @@ int main( int argc, char *argv[] )
     );
   XLALRegisterUvarMember(
     ckpt_output_period, REAL8, 'z', DEVELOPER,
-    "Write checkpoints of output results after this time period, in CPU seconds, has elapsed. "
+    "Write checkpoints of output results after this time period (in seconds) has elapsed. "
     );
   XLALRegisterUvarMember(
     ckpt_output_exit, REAL8, 0, DEVELOPER,
@@ -979,8 +979,8 @@ int main( int argc, char *argv[] )
     [CT_OUTPUT]     = { "cpu output", "CPU time taken by output of semicoherent results" },
   };
 
-  // CPU time at which search was last checkpointed
-  double cpu_ckpt_output = cpu_zero;
+  // Wall time at which search was last checkpointed
+  double wall_ckpt_output = wall_zero;
 
   // Wall time at which progress was last printed, and interval at which to print progress
   double wall_prog = wall_zero;
@@ -1123,7 +1123,7 @@ int main( int argc, char *argv[] )
     if ( UVAR_SET( ckpt_output_file ) ) {
 
       // Decide whether to checkpoint output results
-      const BOOLEAN do_ckpt_output_period = UVAR_SET( ckpt_output_period ) && cpu_now - cpu_ckpt_output >= uvar->ckpt_output_period;
+      const BOOLEAN do_ckpt_output_period = UVAR_SET( ckpt_output_period ) && wall_now - wall_ckpt_output >= uvar->ckpt_output_period;
       const BOOLEAN do_ckpt_output_exit = UVAR_SET( ckpt_output_exit ) && prog_per_cent >= 100.0 * uvar->ckpt_output_exit;
       if ( do_ckpt_output_period || do_ckpt_output_exit ) {
 
@@ -1163,8 +1163,8 @@ int main( int argc, char *argv[] )
           break;
         }
 
-        // Update CPU time at which search was last checkpointed
-        cpu_ckpt_output = cpu_now;
+        // Update wall time at which search was last checkpointed
+        wall_ckpt_output = wall_now;
 
       }
 
