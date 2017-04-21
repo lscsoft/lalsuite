@@ -708,7 +708,7 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
 
   transientWindow_t win_mn;
   win_mn.type = windowRange.type;
-  ret->maxF = 0;	// keep track of loudest F-stat point
+  ret->maxF = -1.0;	// keep track of loudest F-stat point. Initializing to a negative value ensures that we always update at least once and hence return sane t0_d_ML, tau_d_ML even if there is only a single bin where F=0 happens.
   UINT4 m, n;
   /* ----- OUTER loop over start-times [t0,t0+t0Band] ---------- */
   for ( m = 0; m < N_t0Range; m ++ ) /* m enumerates 'binned' t0 start-time indices  */
