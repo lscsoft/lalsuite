@@ -20,7 +20,6 @@ export builddir=$(cd ${LAL_TEST_BUILDDIR} && pwd)
 export injdir=$(cd ${builddir}/../Injections && pwd)
 export sftdir=$(cd ${builddir}/../SFTTools && pwd)
 export fitsdir=$(cd ${builddir}/../FITSTools && pwd)
-export fstatdir=$(cd ${builddir}/../Fstatistic && pwd)
 
 # Test script name and location
 scriptname=$(expr "X$1" : "X.*/\([^/]*\)\.sh$")

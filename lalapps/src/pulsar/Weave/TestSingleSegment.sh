@@ -69,29 +69,9 @@ expr ${coh_nrecomp} '=' 0
 set +x
 echo
 
-echo "=== Extract segment start/end times from WeaveSetup.fits ==="
-set -x
-${fitsdir}/lalapps_fits_table_list "WeaveSetup.fits[segments][col start_s; start_ns][#row == 1]" > tmp
-start_time=`cat tmp | sed "/^#/d" | xargs printf "%d.%09d"`
-${fitsdir}/lalapps_fits_table_list "WeaveSetup.fits[segments][col end_s; end_ns][#row == 1]" > tmp
-end_time=`cat tmp | sed "/^#/d" | xargs printf "%d.%09d"`
-set +x
-echo
-
-echo "=== Extract template bank and F-statistics from WeaveOut.fits as ASCII table ==="
-set -x
-${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0]" > WeaveBank.txt
-${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean2F,-999)]" > WeaveFstats.txt
-${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean2F_H1,-999)]" > WeaveFstatsH1.txt
-${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean2F_L1,-999)]" > WeaveFstatsL1.txt
-set +x
-echo
-
 echo "=== Compare F-statistics from lalapps_Weave to reference results ==="
 set -x
-${fstatdir}/lalapps_compareFstats --tol-param=1e-4 --Fname1=WeaveFstats.txt --Fname2=RefFstats.txt
-${fstatdir}/lalapps_compareFstats --tol-param=1e-4 --Fname1=WeaveFstatsH1.txt --Fname2=RefFstatsH1.txt
-${fstatdir}/lalapps_compareFstats --tol-param=1e-4 --Fname1=WeaveFstatsL1.txt --Fname2=RefFstatsL1.txt
+env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" ${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits
 set +x
 echo
 

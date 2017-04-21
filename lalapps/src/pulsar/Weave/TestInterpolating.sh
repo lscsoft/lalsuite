@@ -61,64 +61,17 @@ for seg in 1 2 3; do
     set +x
     echo
 
-    echo "=== Segment #${seg}: Extract segment start/end times from WeaveSetup.fits ==="
-    set -x
-    ${fitsdir}/lalapps_fits_table_list "WeaveSetup.fits[segments][col start_s; start_ns][#row == ${seg}]" > tmp
-    start_time=`cat tmp | sed "/^#/d" | xargs printf "%d.%09d"`
-    ${fitsdir}/lalapps_fits_table_list "WeaveSetup.fits[segments][col end_s; end_ns][#row == ${seg}]" > tmp
-    end_time=`cat tmp | sed "/^#/d" | xargs printf "%d.%09d"`
-    set +x
-    echo
-
-    echo "=== Segment #${seg}: Extract coherent template bank from WeaveOut.fits as ASCII table ==="
-    set -x
-    ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=freq_seg[${seg}]; c2=alpha_seg[${seg}]; c3=delta_seg[${seg}]; c4=f1dot_seg[${seg}]; c5=0; c6=0]" > WeaveSeg${seg}CohBank.txt
-    set +x
-    echo
-
-    echo "=== Segment #${seg}: Extract coherent template bank and coherent F-statistics from WeaveOut.fits as ASCII table ==="
-    set -x
-    ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=freq_seg[${seg}]; c2=alpha_seg[${seg}]; c3=delta_seg[${seg}]; c4=f1dot_seg[${seg}]; c5=0; c6=0; c7=DEFNULL(coh2F_seg[${seg}],-999)]" > WeaveSeg${seg}CohBankCohFstats.txt
-    ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=freq_seg[${seg}]; c2=alpha_seg[${seg}]; c3=delta_seg[${seg}]; c4=f1dot_seg[${seg}]; c5=0; c6=0; c7=DEFNULL(coh2F_H1_seg[${seg}],-999)]" > WeaveSeg${seg}CohBankCohFstatsH1.txt
-    ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=freq_seg[${seg}]; c2=alpha_seg[${seg}]; c3=delta_seg[${seg}]; c4=f1dot_seg[${seg}]; c5=0; c6=0; c7=DEFNULL(coh2F_L1_seg[${seg}],-999)]" > WeaveSeg${seg}CohBankCohFstatsL1.txt
-    set +x
-    echo
-
-    echo "=== Segment #${seg}: Compare coherent F-statistics from lalapps_Weave to reference results ==="
-    set -x
-    ${fstatdir}/lalapps_compareFstats --tol-param=1e-4 --Fname1=WeaveSeg${seg}CohBankCohFstats.txt --Fname2=RefSeg${seg}Fstats.txt
-    ${fstatdir}/lalapps_compareFstats --tol-param=1e-4 --Fname1=WeaveSeg${seg}CohBankCohFstatsH1.txt --Fname2=RefSeg${seg}FstatsH1.txt
-    ${fstatdir}/lalapps_compareFstats --tol-param=1e-4 --Fname1=WeaveSeg${seg}CohBankCohFstatsL1.txt --Fname2=RefSeg${seg}FstatsL1.txt
-    set +x
-    echo
-
 done
-
-echo "=== Extract semicoherent template bank from WeaveOut.fits as ASCII table ==="
-set -x
-${fitsdir}/lalapps_fits_table_list -n "WeaveOut.fits[mean2F_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0]" > WeaveSemiBank.txt
-set +x
-echo
-
-echo "=== Extract semicoherent F-statistics from WeaveOut.fits as ASCII table ==="
-set -x
-${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean2F,-999)]" > WeaveSemiFstats.txt
-${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean2F_H1,-999)]" > WeaveSemiFstatsH1.txt
-${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean2F_L1,-999)]" > WeaveSemiFstatsL1.txt
-set +x
-echo
 
 echo "=== Compare semicoherent F-statistics from lalapps_Weave to reference results ==="
 set -x
-${fstatdir}/lalapps_compareFstats --tol-param=1e-4 --Fname1=WeaveSemiFstats.txt --Fname2=RefSemiFstats.txt
-${fstatdir}/lalapps_compareFstats --tol-param=1e-4 --Fname1=WeaveSemiFstatsH1.txt --Fname2=RefSemiFstatsH1.txt
-${fstatdir}/lalapps_compareFstats --tol-param=1e-4 --Fname1=WeaveSemiFstatsL1.txt --Fname2=RefSemiFstatsL1.txt
+env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" ${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits
 set +x
 echo
 
 echo "=== Compare F-statistic at exact injected signal parameters with loudest F-statistic found by lalapps_Weave ==="
 set -x
-coh2F_exact=`cat RefAllSegExact.txt | sed -n '/^[^%]/{p;q}' | awk '{print ($7 + $16 + $25) / 3}'`
+coh2F_exact=`paste RefSeg1Exact.txt RefSeg2Exact.txt RefSeg3Exact.txt | sed -n '/^[^%]/p' | sed -n '1p' | awk '{print ($7 + $16 + $25) / 3}'`
 ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=mean2F][#row == 1]" > tmp
 coh2F_loud=`cat tmp | sed "/^#/d" | xargs printf "%g"`
 # Value of 'mean_mu' was calculated by:
