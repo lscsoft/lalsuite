@@ -111,7 +111,7 @@ extern "C" {
 #define NFREQMAX 4                    /* the max dimensionality of the frequency derivitive grid */
 #define NBINMAX 4                        /* the number of binary parameter dimensions */
 #define NBINS 4                       /* the number of bins to add to each side of the fft for safety */
-#define BINS_FACTOR 0.075             /* the percentage of bins to add to each side of the fft for safety */
+#define BINS_FACTOR 0.075             /* the default percentage of bins to add to each side of the fft for safety */
 #define WINGS_FACTOR 2                /* the safety factor in reading extra frequency from SFTs */
 #define MAXNTSERIES 1073741824        /* the max number of samples in a timeseries at one time */
 
@@ -228,9 +228,9 @@ extern "C" {
     gsl_rng *r;
   } BinaryToSFTparams;
 
-  int XLALReadSFTs(SFTVector**,CHAR *,REAL8,REAL8,INT4,INT4,INT4);
-  int XLALComputeFreqGridParamsVector(GridParametersVector**,REAL8Space*,SFTVector*,REAL8);
-  int XLALComputeFreqGridParams(GridParameters **freqgridparams,REAL8Space *pspace, REAL8 tmid,REAL8 tsft, REAL8 mu, INT4 *ndim);
+  int XLALReadSFTs(SFTVector**,CHAR *,REAL8,REAL8,INT4,INT4,INT4,REAL8);
+  int XLALComputeFreqGridParamsVector(GridParametersVector**,REAL8Space*,SFTVector*,REAL8,REAL8);
+  int XLALComputeFreqGridParams(GridParameters **freqgridparams,REAL8Space *pspace, REAL8 tmid,REAL8 tsft, REAL8 mu, INT4 *ndim, REAL8 bins_factor);
   int XLALSFTVectorToCOMPLEX8TimeSeriesArray(COMPLEX8TimeSeriesArray **dstimevec, SFTVector *sftvec);
   int XLALSFTToCOMPLEX8TimeSeries(COMPLEX8TimeSeries **ts, COMPLEX8FrequencySeries *sft,COMPLEX8FFTPlan **plan);
   int XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **fs,const COMPLEX8TimeSeries *ts,GridParameters **gridparams);

@@ -683,7 +683,8 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
                               REAL8 tmid,                               /**< [in] the segment mid point */
                               REAL8 Tseg,                               /**< [in] the segment length */
                               REAL8 mu,                                 /**< [in] the required mismatch */
-                              INT4 *ndim                                /**< [in] the number of spin derivitive dimensions required */
+                              INT4 *ndim,                               /**< [in] the number of spin derivitive dimensions required */
+                              REAL8 bins_factor                         /**< [in] the percentage of bins to add to each side of the fft for safety */
                               )
 {
   UINT4 i,j,k,l;                         /* counters */
@@ -822,7 +823,7 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
 
      /* compute number of grid points in this dimension and enforce a grid centered on the middle of the parameter space */
      INT4 length = (INT4)ceil((fnmax[n]-fnmin[n])/deltafn);
-     length += 2*MYMAX( NBINS, (INT4)ceil(BINS_FACTOR*length) );                      /* add bins at each end for safety */
+     length += 2*MYMAX( NBINS, (INT4)ceil(bins_factor*length) );                      /* add bins at each end for safety */
      REAL8 minfn = 0.5*(fnmin[n]+fnmax[n]) - 0.5*(length-1)*deltafn;
 
      (*gridparams)->grid[n].delta = deltafn;
@@ -864,7 +865,8 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
 int XLALComputeFreqGridParamsVector(GridParametersVector **freqgridparams,    /**< [out] the gridding parameters */
                                     REAL8Space *space,                        /**< [in] the orbital parameter space */
                                     SFTVector *sftvec,                        /**< [in] the input SFTs */
-                                    REAL8 mu                                  /**< [in] the required mismatch */
+                                    REAL8 mu,                                 /**< [in] the required mismatch */
+                                    REAL8 bins_factor                         /**< [in] the percentage of bins to add to each side of the fft for safety */
                                     )
 {
   UINT4 i;                              /* counter */
@@ -906,7 +908,7 @@ int XLALComputeFreqGridParamsVector(GridParametersVector **freqgridparams,    /*
     REAL8 tsft = 1.0/sftvec->data[i].deltaF;
     REAL8 tmid = t0 + 0.5*tsft;
 
-    if (XLALComputeFreqGridParams(&((*freqgridparams)->segment[i]),space,tmid,tsft,mu,&ndim)) {
+    if (XLALComputeFreqGridParams(&((*freqgridparams)->segment[i]),space,tmid,tsft,mu,&ndim,bins_factor)) {
       LogPrintf(LOG_CRITICAL,"%s: XLALComputeFreqGridParams() failed with error = %d\n",__func__,xlalErrno);
       XLAL_ERROR(XLAL_EINVAL);
     }
@@ -1060,7 +1062,8 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
                  REAL8 freqband,            /**< [in] the bandwidth to read */
                  INT4 start,                /**< [in] the min GPS time of the input data */
                  INT4 end,                  /**< [in] the max GPS time of the input data*/
-                 INT4 tsft		/**< UNDOCUMENTED */
+                 INT4 tsft,                 /**< UNDOCUMENTED */
+                 REAL8 bins_factor          /**< [in] the percentage of bins to add to each side of the fft for safety */
                  )
 {
   static SFTConstraints constraints;
@@ -1118,7 +1121,7 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
   {
     REAL8 deltafn = catalog->data[0].header.deltaF;
     INT4 length = (INT4)ceil((freqmax-freqmin)/deltafn);
-    INT4 safety_bins = MYMAX( NBINS, (INT4)ceil(BINS_FACTOR*length) );
+    INT4 safety_bins = MYMAX( NBINS, (INT4)ceil(bins_factor*length) );
     freqmin -= safety_bins*deltafn;
     freqmax += safety_bins*deltafn;
   }

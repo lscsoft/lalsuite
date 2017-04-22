@@ -89,6 +89,7 @@ typedef struct {
   INT4 seed;                        /**< fix the random number generator seed */
   REAL8 coverage;                   /**< random template bank coverage */
   INT4 blocksize;                  /**< the running median blocksize */
+  REAL8 bins_factor;                /**< the percentage of bins to add to each side of the fft for safety */
   INT4 ntoplist;                   /**< the number of results to record */
   INT4 tsft;                       /**< the length of the input sfts */
   CHAR *comment;
@@ -236,7 +237,7 @@ int main( int argc, char *argv[] )  {
   /**********************************************************************************/
 
   /* load in the SFTs - also fill in the segment parameters structure */
-  if (XLALReadSFTs(&sftvec,uvar.sftbasename,fmin_read,fband_read,uvar.gpsstart,uvar.gpsend,uvar.tsft)) {
+  if (XLALReadSFTs(&sftvec,uvar.sftbasename,fmin_read,fband_read,uvar.gpsstart,uvar.gpsend,uvar.tsft,uvar.bins_factor)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALReadSFTs() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
@@ -304,7 +305,7 @@ int main( int argc, char *argv[] )  {
   /**********************************************************************************/
 
   /* compute the grid parameters for all SFTs */
-  if (XLALComputeFreqGridParamsVector(&freqgridparams,pspace.space,sftvec,uvar.mismatch)) {
+  if (XLALComputeFreqGridParamsVector(&freqgridparams,pspace.space,sftvec,uvar.mismatch,uvar.bins_factor)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALComputeFreqGridParams() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
@@ -459,6 +460,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->ntoplist = 10;
   uvar->coverage = -1;
   uvar->blocksize = 100;
+  uvar->bins_factor = BINS_FACTOR;
   uvar->tsft = 256;
   uvar->seed = 1;
   uvar->tempdir = NULL;
@@ -489,6 +491,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   XLALRegisterUvarMember(mismatch,              REAL8, 'm', OPTIONAL, "The grid mismatch (0->1)");
   XLALRegisterUvarMember(coverage,              REAL8, 'c', OPTIONAL, "The random template coverage (0->1)");
   XLALRegisterUvarMember(blocksize,             INT4, 'r', OPTIONAL, "The running median block size");
+  XLALRegisterUvarMember(bins_factor,           REAL8, 'R', OPTIONAL, "The percentage of bins to add to each side of the fft for safety");
   XLALRegisterUvarMember(tsft,                    INT4, 'S', OPTIONAL, "The length of the input SFTs in seconds");
   XLALRegisterUvarMember(ntoplist,                INT4, 'x', OPTIONAL, "output the top N results");
   XLALRegisterUvarMember(seed,                    INT4, 'X', OPTIONAL, "The random number seed (0 = clock)");
