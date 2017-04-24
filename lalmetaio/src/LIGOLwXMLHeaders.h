@@ -122,7 +122,7 @@ fputs( "      <Stream Name=\"process:table\" Type=\"Local\" Delimiter=\",\">\n",
 #define PRINT_LIGOLW_XML_PROCESS_PARAMS(fp) ( \
 fputs( "   <Table Name=\"process_params:table\">\n", fp ) == EOF || \
 fputs( "      <Column Name=\"process_params:program\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"process_params:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"process_params:param\" Type=\"lstring\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"process_params:type\" Type=\"lstring\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"process_params:value\" Type=\"lstring\"/>\n", fp ) == EOF || \
@@ -133,7 +133,7 @@ fputs( "      <Stream Name=\"process_params:table\" Type=\"Local\" Delimiter=\",
 
 #define PRINT_LIGOLW_XML_SEARCH_SUMMARY(fp) ( \
 fputs( "   <Table Name=\"search_summary:table\">\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summary:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"search_summary:shared_object\" Type=\"lstring\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"search_summary:lalwrapper_cvs_tag\" Type=\"lstring\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"search_summary:lal_cvs_tag\" Type=\"lstring\"/>\n", fp ) == EOF || \
@@ -156,7 +156,7 @@ fputs( "      <Stream Name=\"search_summary:table\" Type=\"Local\" Delimiter=\",
 
 #define PRINT_LIGOLW_XML_SEARCH_SUMMVARS(fp) (  \
 fputs( "   <Table Name=\"search_summvars:table\">\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summvars:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"search_summvars:name\" Type=\"lstring\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"search_summvars:string\" Type=\"lstring\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"search_summvars:value\" Type=\"real_8\"/>\n", fp ) == EOF || \
@@ -168,7 +168,7 @@ fputs( "      <Stream Name=\"search_summvars:table\" Type=\"Local\" Delimiter=\"
 
 #define PRINT_LIGOLW_XML_SNGL_RINGDOWN(fp) ( \
 fputs( "   <Table Name=\"sngl_ringdown:table\">\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdown:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_ringdown:ifo\" Type=\"lstring\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_ringdown:channel\" Type=\"lstring\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_ringdown:start_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
@@ -199,7 +199,7 @@ fputs( "      <Stream Name=\"sngl_ringdown:table\" Type=\"Local\" Delimiter=\",\
 
 #define PRINT_LIGOLW_XML_SIM_RINGDOWN(fp) ( \
 fputs( "   <Table Name=\"sim_ringdown:table\">\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdown:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF ||  \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF ||  \
 fputs( "      <Column Name=\"sim_ringdown:waveform\" Type=\"lstring\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdown:coordinates\" Type=\"lstring\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdown:geocent_start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
@@ -239,7 +239,7 @@ fputs( "      <Stream Name=\"sim_ringdown:table\" Type=\"Local\" Delimiter=\",\"
 #define PRINT_LIGOLW_XML_SUMM_VALUE(fp) ( \
 fputs( "   <Table Name=\"summ_value:table\">\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"summ_value:program\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"summ_value:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"summ_value:start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"summ_value:start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"summ_value:end_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
@@ -267,7 +267,7 @@ fputs( "      <Stream Name=\"sim_inst_params:table\" Type=\"Local\" Delimiter=\"
 
 #define PRINT_LIGOLW_XML_STOCHASTIC(fp) ( \
 fputs( "   <Table Name=\"stochastic:table\">\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochastic:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"stochastic:ifo_one\" Type=\"lstring\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"stochastic:ifo_two\" Type=\"lstring\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"stochastic:channel_one\" Type=\"lstring\"/>\n" , fp ) == EOF || \
@@ -287,7 +287,7 @@ fputs( "      <Stream Name=\"stochastic:table\" Type=\"Local\" Delimiter=\",\">\
 
 #define PRINT_LIGOLW_XML_STOCH_SUMM(fp) ( \
 fputs( "   <Table Name=\"stochsumm:table\">\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochsumm:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"stochsumm:ifo_one\" Type=\"lstring\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"stochsumm:ifo_two\" Type=\"lstring\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"stochsumm:channel_one\" Type=\"lstring\"/>\n" , fp ) == EOF || \
@@ -307,7 +307,7 @@ fputs( "      <Stream Name=\"stochsumm:table\" Type=\"Local\" Delimiter=\",\">\n
 
 #define PRINT_LIGOLW_XML_EXT_TRIGGERS(fp) ( \
 fputs( " <Table Name=\"external_trigger:table\">\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"external_trigger:det_alts\" Type=\"lstring\" />\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"external_trigger:det_band\" Type=\"lstring\" />\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"external_trigger:det_fluence\" Type=\"lstring\" />\n" , fp ) == EOF || \

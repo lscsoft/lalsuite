@@ -68,7 +68,7 @@ extern "C" {
 
 #define PRINT_LIGOLW_XML_SNGL_INSPIRAL(fp) ( \
 fputs( "   <Table Name=\"sngl_inspiral:table\">\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_inspiral:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiral:ifo\" Type=\"lstring\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiral:search\" Type=\"lstring\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiral:channel\" Type=\"lstring\"/>\n", fp ) == EOF || \
@@ -139,7 +139,7 @@ fputs( "      <Stream Name=\"sngl_inspiral:table\" Type=\"Local\" Delimiter=\",\
 
 #define PRINT_LIGOLW_XML_SNGL_INSPIRAL_BNS(fp) ( \
 fputs( "   <Table Name=\"sngl_inspiral:table\">\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_inspiral:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiral:ifo\" Type=\"lstring\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiral:search\" Type=\"lstring\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiral:channel\" Type=\"lstring\"/>\n", fp ) == EOF || \
@@ -174,7 +174,7 @@ fputs( "      <Stream Name=\"sngl_inspiral:table\" Type=\"Local\" Delimiter=\",\
 
 #define PRINT_LIGOLW_XML_SNGL_INSPIRAL_BCV(fp) ( \
 fputs( "   <Table Name=\"sngl_inspiral:table\">\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_inspiral:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiral:ifo\" Type=\"lstring\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiral:search\" Type=\"lstring\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiral:channel\" Type=\"lstring\"/>\n", fp ) == EOF || \
@@ -206,7 +206,7 @@ fputs( "      <Stream Name=\"sngl_inspiral:table\" Type=\"Local\" Delimiter=\",\
 
 #define PRINT_LIGOLW_XML_MULTI_INSPIRAL(fp) ( \
 fputs( "   <Table Name=\"multi_inspiral:table\">\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"multi_inspiral:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"multi_inspiral:ifos\" Type=\"lstring\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"multi_inspiral:search\" Type=\"lstring\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"multi_inspiral:end_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
@@ -318,7 +318,7 @@ fputs( "      <Column Name=\"multi_inspiral:autoCorrNullSq\"  Type=\"real_4\"/>\
 fputs( "      <Column Name=\"multi_inspiral:crossCorrNullSq\"  Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"multi_inspiral:ampMetricEigenVal1\"  Type=\"real_8\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"multi_inspiral:ampMetricEigenVal2\"  Type=\"real_8\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"multi_inspiral:time_slide_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"time_slide:time_slide_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
 fputs( "      <Stream Name=\"multi_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define MULTI_INSPIRAL_ROW \
@@ -326,7 +326,7 @@ fputs( "      <Stream Name=\"multi_inspiral:table\" Type=\"Local\" Delimiter=\",
 
 #define PRINT_LIGOLW_XML_SIM_INSPIRAL(fp) ( \
 fputs( "   <Table Name=\"sim_inspiral:table\">\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_inspiral:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF ||  \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF ||  \
 fputs( "      <Column Name=\"sim_inspiral:waveform\" Type=\"lstring\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_inspiral:geocent_end_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_inspiral:geocent_end_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
