@@ -75,8 +75,9 @@ opts = parser.parse_args()
 
 import os
 import sys
-from lalinference.bayestar.sky_map import gracedb_sky_map, rasterize
+from lalinference.bayestar.sky_map import localize, rasterize
 from lalinference.io import fits
+from lalinference.io import events
 import ligo.gracedb.logging
 import ligo.gracedb.rest
 
@@ -103,7 +104,7 @@ tags = ("sky_loc",)
 if not opts.no_tag:
     tags += ("lvem",)
 
-for graceid in graceids:
+for graceid, event in events.gracedb.open(gracedb, graceids).items():
 
     # Send log messages to GraceDb too
     if not opts.dry_run:
@@ -115,20 +116,14 @@ for graceid in graceids:
     log.info('by your command...')
 
     try:
-        # download coinc.xml
-        coinc_file = gracedb.files(graceid, "coinc.xml")
-
-        # download psd.xml.gz
-        psd_file = gracedb.files(graceid, "psd.xml.gz")
-
         # perform sky localization
         log.info("starting sky localization")
-        sky_map = rasterize(gracedb_sky_map(
-            coinc_file, psd_file, opts.waveform, opts.f_low, opts.min_distance,
+        sky_map = rasterize(localize(
+            event, opts.waveform, opts.f_low, opts.min_distance,
             opts.max_distance, opts.prior_distance_power, opts.cosmology,
-            nside=opts.nside, f_high_truncate=opts.f_high_truncate,
-            method=opts.method, chain_dump=chain_dump,
-            enable_snr_series=opts.enable_snr_series))
+            method=opts.method, nside=opts.nside,
+            chain_dump=chain_dump, enable_snr_series=opts.enable_snr_series,
+            f_high_truncate=opts.f_high_truncate))
         sky_map.meta['objid'] = str(graceid)
         sky_map.meta['url'] = 'https://gracedb.ligo.org/events/{0}'.format(
             graceid)

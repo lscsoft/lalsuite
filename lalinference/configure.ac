@@ -19,6 +19,7 @@ AC_CONFIG_FILES([ \
   python/lalinference/__init__.py \
   python/lalinference/bayestar/Makefile \
   python/lalinference/io/Makefile \
+  python/lalinference/io/events/Makefile \
   python/lalinference/rapid_pe/Makefile \
   python/lalinference/imrtgr/Makefile \
   python/lalinference/tiger/Makefile \
@@ -30,7 +31,9 @@ AC_CONFIG_FILES([ \
   src/version.c \
   swig/Makefile \
   test/Makefile \
-  test/baseline/Makefile
+  test/baseline/Makefile \
+  test/data/Makefile \
+  test/data/gstlal_reference_psd/Makefile
 ])
 AM_INIT_AUTOMAKE([ \
   1.11 \

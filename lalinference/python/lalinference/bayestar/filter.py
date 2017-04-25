@@ -363,18 +363,18 @@ def get_f_lso(mass1, mass2):
     return 1 / (6 ** 1.5 * np.pi * (mass1 + mass2) * lal.MTSUN_SI)
 
 
-def sngl_inspiral_psd(sngl, waveform, f_min=10, f_max=2048, f_ref=0):
+def sngl_inspiral_psd(waveform, mass1, mass2, f_min=10, f_max=2048, f_ref=0, **kwargs):
     # FIXME: uberbank mass criterion. Should find a way to get this from
     # pipeline output metadata.
     if waveform == 'o1-uberbank':
         log.warn('Template is unspecified; using ER8/O1 uberbank criterion')
-        if sngl.mass1 + sngl.mass2 < 4:
+        if mass1 + mass2 < 4:
             waveform = 'TaylorF2threePointFivePN'
         else:
             waveform = 'SEOBNRv2_ROM_DoubleSpin'
     elif waveform == 'o2-uberbank':
         log.warn('Template is unspecified; using ER10/O2 uberbank criterion')
-        if sngl.mass1 + sngl.mass2 < 4:
+        if mass1 + mass2 < 4:
             waveform = 'TaylorF2threePointFivePN'
         else:
             waveform = 'SEOBNRv4_ROM'
@@ -386,13 +386,13 @@ def sngl_inspiral_psd(sngl, waveform, f_min=10, f_max=2048, f_ref=0):
     lalsimulation.SimInspiralWaveformParamsInsertPNPhaseOrder(params, phaseo)
     lalsimulation.SimInspiralWaveformParamsInsertPNAmplitudeOrder(params, ampo)
     hplus, hcross = lalsimulation.SimInspiralFD(
-        m1=float(sngl.mass1) * lal.MSUN_SI, m2=float(sngl.mass2) * lal.MSUN_SI,
-        S1x=float(getattr(sngl, 'spin1x', 0) or 0),
-        S1y=float(getattr(sngl, 'spin1y', 0) or 0),
-        S1z=float(getattr(sngl, 'spin1z', 0) or 0),
-        S2x=float(getattr(sngl, 'spin2x', 0) or 0),
-        S2y=float(getattr(sngl, 'spin2y', 0) or 0),
-        S2z=float(getattr(sngl, 'spin2z', 0) or 0),
+        m1=float(mass1) * lal.MSUN_SI, m2=float(mass2) * lal.MSUN_SI,
+        S1x=float(kwargs.get('spin1x') or 0),
+        S1y=float(kwargs.get('spin1y') or 0),
+        S1z=float(kwargs.get('spin1z') or 0),
+        S2x=float(kwargs.get('spin2x') or 0),
+        S2y=float(kwargs.get('spin2y') or 0),
+        S2z=float(kwargs.get('spin2z') or 0),
         distance=1e6*lal.PC_SI, inclination=0, phiRef=0,
         longAscNodes=0, eccentricity=0, meanPerAno=0,
         deltaF=0, f_min=f_min, f_max=f_max, f_ref=f_ref,
@@ -411,7 +411,7 @@ def sngl_inspiral_psd(sngl, waveform, f_min=10, f_max=2048, f_ref=0):
         lalsimulation.TaylorF2RedSpinTidal,
         lalsimulation.SpinTaylorT4Fourier)
     if approx in inspiral_only_waveforms:
-        h[abscissa(hplus) >= get_f_lso(sngl.mass1, sngl.mass2)] = 0
+        h[abscissa(hplus) >= get_f_lso(mass1, mass2)] = 0
 
     # Drop Nyquist frequency.
     if len(h) % 2:
