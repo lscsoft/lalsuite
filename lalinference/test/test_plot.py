@@ -79,4 +79,4 @@ def test_astro_mollweide_axes():
 
 
 if __name__ == '__main__':
-    raise SystemExit(pytest.main(['-v', '--mpl', __file__]))
+    raise SystemExit(pytest.main(['-vv', '--mpl', __file__]))

@@ -130,8 +130,8 @@ class SignalModel(object):
     Create signal model:
     >>> from . import filter
     >>> sngl = lambda: None
-    >>> sngl.mass1 = sngl.mass2 = 1.4
-    >>> H = filter.sngl_inspiral_psd(sngl, 'TaylorF2threePointFivePN')
+    >>> H = filter.sngl_inspiral_psd(
+    ...     'TaylorF2threePointFivePN', mass1=1.4, mass2=1.4)
     >>> S = get_noise_psd_func('H1')
     >>> W = filter.signal_psd_series(H, S)
     >>> sm = SignalModel(W)

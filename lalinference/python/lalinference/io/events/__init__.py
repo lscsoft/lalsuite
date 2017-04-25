@@ -1,4 +1,4 @@
-# Copyright (C) 2016  Leo Singer
+# Copyright (C) 2017  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -14,10 +14,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-from . import events
-from . import fits
-from . import hdf5
-from .events import *
-from .fits import *
-from .hdf5 import *
-__all__ = events.__all__ + fits.__all__ + hdf5.__all__
+from . import base, ligolw, gracedb, hdf, magic
+from .base import *
+from .ligolw import *
+from .gracedb import *
+from .hdf import *
+from .magic import *
+from .magic import open
+__all__ = (base.__all__ + ligolw.__all__ + gracedb.__all__ + hdf.__all__ +
+           magic.__all__)

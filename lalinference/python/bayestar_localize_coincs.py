@@ -62,15 +62,18 @@ parser.add_argument(
 parser.add_argument(
     'input', metavar='INPUT.xml[.gz]', default='-', nargs='+',
     type=argparse.FileType('rb'),
-    help='Input LIGO-LW XML file [default: stdin] or PyCBC HDF5 files. If '
-    'PyCBC files, must be bank file, coinc file, and trigger files, in that '
-    'order.')
+    help='Input LIGO-LW XML file [default: stdin] or PyCBC HDF5 files. '
+         'For PyCBC, you must supply the coincidence file '
+         '(e.g. "H1L1-HDFINJFIND.hdf" or "H1L1-STATMAP.hdf"), '
+         'the template bank file (e.g. H1L1-BANK2HDF.hdf), '
+         'the single-detector merged PSD files '
+         '(e.g. "H1-MERGE_PSDS.hdf" and "L1-MERGE_PSDS.hdf"), '
+         'and the single-detector merged trigger files '
+         '(e.g. "H1-HDF_TRIGGER_MERGE.hdf" and "L1-HDF_TRIGGER_MERGE.hdf"), '
+         'in any order.')
 parser.add_argument(
     '--pycbc-sample', default='foreground',
     help='sample population [PyCBC only; default: %(default)s]')
-parser.add_argument(
-    '--psd-files', nargs='*',
-    help='pycbc-style merged HDF5 PSD files')
 parser.add_argument(
     '--coinc-event-id', type=int, nargs='*',
     help='run on only these specified events')
@@ -90,42 +93,18 @@ import logging
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('BAYESTAR')
 
-# LIGO-LW XML imports.
-import lal.series
-from glue.ligolw import utils as ligolw_utils
-
 # BAYESTAR imports.
-from lalinference.bayestar.decorator import memoized
-from lalinference.io import fits
-from lalinference.bayestar import ligolw as ligolw_bayestar
-from lalinference.bayestar import filter
-from lalinference.bayestar import timing
-from lalinference.bayestar.sky_map import ligolw_sky_map
+from lalinference.io import fits, events
+from lalinference.bayestar.sky_map import localize
 
 # Other imports.
 import os
+from collections import OrderedDict
 import sys
-import numpy as np
-import h5py
 
 # Read coinc file.
 log.info('%s:reading input files', ','.join(file.name for file in opts.input))
-if os.path.splitext(opts.input[0].name)[1] in {'.hdf', '.hdf5', '.h5'}:
-    hdf5files = [h5py.File(file.name, 'r') for file in opts.input]
-
-    snr_dict = {}
-
-    coinc_and_sngl_inspirals = ligolw_bayestar.coinc_and_sngl_inspirals_for_hdf(
-        *hdf5files, sample=opts.pycbc_sample)
-else:
-    infile, = opts.input
-    xmldoc, _ = ligolw_utils.load_fileobj(
-        infile,
-        contenthandler=ligolw_bayestar.LSCTablesAndSeriesContentHandler)
-
-    snr_dict = ligolw_bayestar.snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc)
-
-    coinc_and_sngl_inspirals = ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc(xmldoc)
+event_source = events.open(*opts.input, sample=opts.pycbc_sample)
 
 command.mkpath(opts.output)
 
@@ -144,100 +123,19 @@ if opts.condor_submit:
            'arguments="-B ' + ' '.join(arg for arg in sys.argv
                if arg != '--condor-submit') + ' --coinc-event-id $(CoincEventId)"',
            '-append', 'queue CoincEventId in ' + ' '.join(
-               str(coinc_event_id) for coinc_event_id in coinc_and_sngl_inspirals),
+               str(coinc_event_id) for coinc_event_id in event_source),
            '/dev/null']
     os.execvp('condor_submit', cmd)
 
-if opts.psd_files:  # read pycbc psds here
-    import lal
-    from glue.segments import segment, segmentlist
-    import h5py
-
-    class psd_segment(segment):
-
-        def __new__(cls, psd, *args):
-            return segment.__new__(cls, *args)
-
-        def __init__(self, psd, *args):
-            self.psd = psd
-
-    psdseglistdict = {}
-    for psd_file in opts.psd_files:
-        (ifo, group), = h5py.File(psd_file, 'r').items()
-        psd = [group['psds'][str(i)] for i in range(len(group['psds']))]
-        psdseglistdict[ifo] = segmentlist(
-            psd_segment(*segargs) for segargs in zip(
-                psd, group['start_time'], group['end_time']))
-
-    def reference_psd_for_sngl(sngl):
-        psd = psdseglistdict[sngl.ifo]
-        try:
-            psd = psd[psd.find(sngl.end)].psd
-        except ValueError:
-            raise ValueError(
-                'No PSD found for detector {0} at GPS time {1}'.format(
-                    sngl.ifo, sngl.end))
-
-        flow = psd.file.attrs['low_frequency_cutoff']
-        df = psd.attrs['delta_f']
-        kmin = int(flow / df)
-
-        fseries = lal.CreateREAL8FrequencySeries(
-            'psd', 0, kmin * df, df,
-            lal.StrainUnit**2 / lal.HertzUnit, len(psd.value) - kmin)
-        fseries.data.data = psd.value[kmin:] / np.square(
-            ligolw_bayestar.PYCBC_DYN_RANGE_FAC)
-
-        return timing.InterpolatedPSD(
-            filter.abscissa(fseries), fseries.data.data,
-            f_high_truncate=opts.f_high_truncate)
-
-    def reference_psds_for_sngls(sngl_inspirals):
-        return [reference_psd_for_sngl(sngl) for sngl in sngl_inspirals]
-else:
-    reference_psd_filenames_by_process_id = ligolw_bayestar.psd_filenames_by_process_id_for_xmldoc(xmldoc)
-
-    @memoized
-    def reference_psds_for_filename(filename):
-        xmldoc = ligolw_utils.load_filename(
-            filename, contenthandler=lal.series.PSDContentHandler)
-        psds = lal.series.read_psd_xmldoc(xmldoc, root_name=None)
-        return {
-            key: timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data,
-                f_high_truncate=opts.f_high_truncate)
-            for key, psd in psds.items() if psd is not None}
-
-    def reference_psd_for_ifo_and_filename(ifo, filename):
-        return reference_psds_for_filename(filename)[ifo]
-
-    def reference_psds_for_sngls(sngl_inspirals):
-        return tuple(
-            reference_psd_for_ifo_and_filename(sngl_inspiral.ifo,
-            reference_psd_filenames_by_process_id[sngl_inspiral.process_id])
-            for sngl_inspiral in sngl_inspirals)
+# Loop over all coinc_event <-> sim_inspiral coincs.
+if opts.coinc_event_id:
+    event_source = OrderedDict(
+        (key, event_source[key]) for key in opts.coinc_event_id)
 
 count_sky_maps_failed = 0
 
-# Loop over all coinc_event <-> sim_inspiral coincs.
-if opts.coinc_event_id:
-    coinc_and_sngl_inspirals = {
-        coinc_event_id: coinc_and_sngl_inspirals[coinc_event_id]
-        for coinc_event_id in opts.coinc_event_id}
-
-for int_coinc_event_id, sngl_inspirals in coinc_and_sngl_inspirals.items():
+for int_coinc_event_id, event in event_source.items():
     coinc_event_id = 'coinc_event:coinc_event_id:{}'.format(int_coinc_event_id)
-
-    instruments = {sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals}
-
-    # Look up PSDs
-    log.info('%s:reading PSDs', coinc_event_id)
-    psds = reference_psds_for_sngls(sngl_inspirals)
-
-    # Look up SNR time series
-    try:
-        snrs = [snr_dict[sngl.event_id] for sngl in sngl_inspirals]
-    except KeyError:
-        snrs = None
 
     # Loop over sky localization methods
     for method in opts.method:
@@ -247,12 +145,12 @@ for int_coinc_event_id, sngl_inspirals in coinc_and_sngl_inspirals.items():
         else:
             chain_dump = None
         try:
-            sky_map = ligolw_sky_map(
-                sngl_inspirals, opts.waveform, opts.f_low, opts.min_distance,
+            sky_map = localize(
+                event, opts.waveform, opts.f_low, opts.min_distance,
                 opts.max_distance, opts.prior_distance_power, opts.cosmology,
-                psds=psds, method=method, nside=opts.nside,
-                chain_dump=chain_dump, phase_convention=opts.phase_convention,
-                snr_series=snrs, enable_snr_series=opts.enable_snr_series)
+                method=method, nside=opts.nside, chain_dump=chain_dump,
+                enable_snr_series=opts.enable_snr_series,
+                f_high_truncate=opts.f_high_truncate)
             sky_map.meta['objid'] = coinc_event_id
         except (ArithmeticError, ValueError):
             log.exception(
@@ -268,7 +166,6 @@ for int_coinc_event_id, sngl_inspirals in coinc_and_sngl_inspirals.items():
             filename = '%d.%s.fits' % (int_coinc_event_id, method)
             fits.write_sky_map(
                 os.path.join(opts.output, filename), sky_map, nest=True)
-
 
 if count_sky_maps_failed > 0:
     raise RuntimeError("{0} sky map{1} did not converge".format(
