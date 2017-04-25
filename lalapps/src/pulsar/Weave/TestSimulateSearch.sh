@@ -50,12 +50,14 @@ for setup in short mid long; do
     set +x
     echo
 
-    echo "=== Setup '${setup}': Check average number of semicoherent templates per dimension ==="
+    echo "=== Setup '${setup}': Check for non-singular semicoherent dimensions ==="
     set -x
-    for dim in SSKYA SSKYB NU0DOT NU1DOT; do
-        ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" "SEMIAVG ${dim}" > tmp
-        semi_avg_dim=`cat tmp | xargs printf "%g"`
-        awk "BEGIN { exit ( ${semi_avg_dim} > 1 ? 0 : 1 ) }"
+    semi_ntmpl_prev=1
+    for dim in SSKYA SSKYB NU1DOT NU0DOT; do
+        ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" "NSEMITMPL ${dim}" > tmp
+        semi_ntmpl=`cat tmp | xargs printf "%d"`
+        expr ${semi_ntmpl} '>' ${semi_ntmpl_prev}
+        semi_ntmpl_prev=${semi_ntmpl}
     done
     set +x
     echo

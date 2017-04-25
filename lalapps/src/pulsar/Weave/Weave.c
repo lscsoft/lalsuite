@@ -1279,20 +1279,15 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, keyword, maxspins[s], comment ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
-    // Write average number of semicoherent templates per each dimension
-    {
+    // Write cumulative number of semicoherent templates in each dimension
+    for ( size_t i = 0; i < ndim; ++i ) {
       char keyword[64];
-      UINT8 avg_points_denom = 1;
-      for ( size_t i = 0; i < ndim; ++i ) {
-        const LatticeTilingStats *semi_stats = XLALLatticeTilingStatistics( tiling[isemi], i );
-        XLAL_CHECK_MAIN( semi_stats != NULL, XLAL_EFUNC );
-        XLAL_CHECK_MAIN( semi_stats->name != NULL, XLAL_EFUNC );
-        XLAL_CHECK_MAIN( semi_stats->total_points > 0, XLAL_EFUNC );
-        double avg_points = semi_stats->total_points / avg_points_denom;
-        snprintf( keyword, sizeof( keyword ), "semiavg %s", semi_stats->name );
-        XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, keyword, avg_points, "average number of templates in dimension" ) == XLAL_SUCCESS, XLAL_EFUNC );
-        avg_points_denom = semi_stats->total_points;
-      }
+      const LatticeTilingStats *semi_stats = XLALLatticeTilingStatistics( tiling[isemi], i );
+      XLAL_CHECK_MAIN( semi_stats != NULL, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( semi_stats->name != NULL, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( semi_stats->total_points > 0, XLAL_EFUNC );
+      snprintf( keyword, sizeof( keyword ), "nsemitmpl %s", semi_stats->name );
+      XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, keyword, semi_stats->total_points, "cumulative number of semicoherent templates" ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
     // Write number of computed coherent and semicoherent results
