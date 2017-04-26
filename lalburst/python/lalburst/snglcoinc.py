@@ -24,6 +24,9 @@
 #
 
 
+from __future__ import print_function
+
+
 """
 Generic coincidence engine for use with time-based event lists in LIGO
 Light Weight XML documents.
@@ -63,8 +66,8 @@ from glue.text_progress_bar import ProgressBar
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from git_version import date as __date__
-from git_version import version as __version__
+from .git_version import date as __date__
+from .git_version import version as __version__
 
 
 #
@@ -354,7 +357,7 @@ class TimeSlideGraphNode(object):
 
 		if self.coincs is not None:
 			if verbose:
-				print >>sys.stderr, "\treusing %s" % str(self.offset_vector)
+				print("\treusing %s" % str(self.offset_vector), file=sys.stderr)
 			return self.coincs
 
 		#
@@ -363,7 +366,7 @@ class TimeSlideGraphNode(object):
 
 		if self.components is None:
 			if verbose:
-				print >>sys.stderr, "\tconstructing %s ..." % str(self.offset_vector)
+				print("\tconstructing %s ..." % str(self.offset_vector), file=sys.stderr)
 
 			#
 			# sanity check input
@@ -400,7 +403,7 @@ class TimeSlideGraphNode(object):
 
 		if len(self.components) == 1:
 			if verbose:
-				print >>sys.stderr, "\tcopying from %s ..." % str(self.components[0].offset_vector)
+				print("\tcopying from %s ..." % str(self.components[0].offset_vector), file=sys.stderr)
 			self.coincs = self.components[0].get_coincs(eventlists, thresholds, verbose = verbose)
 			if self.keep_unused:
 				# don't copy reference, always do in-place
@@ -453,7 +456,7 @@ class TimeSlideGraphNode(object):
 			self.unused_coincs.clear()
 
 		if verbose:
-			print >>sys.stderr, "\tassembling %s ..." % str(self.offset_vector)
+			print("\tassembling %s ..." % str(self.offset_vector), file=sys.stderr)
 		# magic:  we can form all n-instrument coincs by knowing
 		# just three sets of the (n-1)-instrument coincs no matter
 		# what n is (n > 2).  note that we pass verbose=False
@@ -562,7 +565,7 @@ class TimeSlideGraph(object):
 		#
 
 		if verbose:
-			print >>sys.stderr, "constructing coincidence assembly graph for %d target offset vectors ..." % len(offset_vector_dict)
+			print("constructing coincidence assembly graph for %d target offset vectors ..." % len(offset_vector_dict), file=sys.stderr)
 		self.head = tuple(TimeSlideGraphNode(offset_vector, time_slide_id = time_slide_id, keep_unused = len(offset_vector) > min_instruments) for time_slide_id, offset_vector in sorted(offset_vector_dict.items()))
 
 		#
@@ -630,21 +633,21 @@ class TimeSlideGraph(object):
 		#
 
 		if verbose:
-			print >>sys.stderr, "graph contains:"
+			print("graph contains:", file=sys.stderr)
 			for n in sorted(self.generations):
-				print >>sys.stderr,"\t%d %d-insrument offset vectors (%s)" % (len(self.generations[n]), n, ("to be constructed directly" if n == 2 else "to be constructed indirectly"))
-			print >>sys.stderr, "\t%d offset vectors total" % sum(len(self.generations[n]) for n in self.generations)
+				print("\t%d %d-insrument offset vectors (%s)" % (len(self.generations[n]), n, ("to be constructed directly" if n == 2 else "to be constructed indirectly")), file=sys.stderr)
+			print("\t%d offset vectors total" % sum(len(self.generations[n]) for n in self.generations), file=sys.stderr)
 
 
 	def get_coincs(self, eventlists, thresholds, verbose = False):
 		if verbose:
-			print >>sys.stderr, "constructing coincs for target offset vectors ..."
+			print("constructing coincs for target offset vectors ...", file=sys.stderr)
 		# don't do attribute look-ups in the loop
 		sngl_index = eventlists.idx
 		min_instruments = self.min_instruments
 		for n, node in enumerate(self.head, start = 1):
 			if verbose:
-				print >>sys.stderr, "%d/%d: %s" % (n, len(self.head), str(node.offset_vector))
+				print("%d/%d: %s" % (n, len(self.head), str(node.offset_vector)), file=sys.stderr)
 			# the contents of .unused_coincs must be iterated
 			# over after the call to .get_coincs() because the
 			# former is populated as a side effect of the
@@ -668,17 +671,17 @@ class TimeSlideGraph(object):
 		Write a DOT graph representation of the time slide graph to
 		fileobj.
 		"""
-		print >>fileobj, "digraph \"Time Slides\" {"
+		print("digraph \"Time Slides\" {", file=fileobj)
 		for node in itertools.chain(*self.generations.values()):
-			print >>fileobj, "\t\"%s\" [shape=box];" % node.name
+			print("\t\"%s\" [shape=box];" % node.name, file=fileobj)
 			if node.components is not None:
 				for component in node.components:
-					print >>fileobj, "\t\"%s\" -> \"%s\";" % (component.name, node.name)
+					print("\t\"%s\" -> \"%s\";" % (component.name, node.name), file=fileobj)
 		for node in self.head:
-			print >>fileobj, "\t\"%s\" [shape=ellipse];" % node.name
+			print("\t\"%s\" [shape=ellipse];" % node.name, file=fileobj)
 			for component in node.components:
-				print >>fileobj, "\t\"%s\" -> \"%s\";" % (component.name, node.name)
-		print >>fileobj, "}"
+				print("\t\"%s\" -> \"%s\";" % (component.name, node.name), file=fileobj)
+		print("}", file=fileobj)
 
 
 #
@@ -1132,7 +1135,7 @@ class CoincSynthesizer(object):
 		coinc_rate = dict.fromkeys(rates, 0.0)
 		# iterate over probabilities in order for better numerical
 		# accuracy
-		for on_instruments, P_on_instruments in sorted(self.P_live.items(), key = lambda (ignored, P): P):
+		for on_instruments, P_on_instruments in sorted(self.P_live.items(), key = lambda ignored_P: ignored_P[1]):
 			# short cut
 			if not P_on_instruments:
 				continue
