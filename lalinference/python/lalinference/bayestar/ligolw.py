@@ -35,20 +35,12 @@ from glue.ligolw import table as ligolw_table
 from glue.ligolw import lsctables
 import lal
 import lal.series
+from lalinspiral.thinca import InspiralCoincDef
+from lalinspiral.inspinjfind import InspiralSCExactCoincDef
 
 # Third-party imports.
 import numpy as np
 from astropy.table import Table
-
-
-# FIXME: Copied from pylal.ligolw_thinca to avoid dependency.
-# Should be moved to lalinspiral.
-InspiralCoincDef = lsctables.CoincDef(search = u"inspiral", search_coinc_type = 0, description = u"sngl_inspiral<-->sngl_inspiral coincidences")
-
-
-# FIXME: Copied from pylal.ligolw_inspinjfind to avoid dependency.
-# Should be moved to lalinspiral.
-InspiralSCExactCoincDef = lsctables.CoincDef(search = u"inspiral", search_coinc_type = 3, description = u"sim_inspiral<-->coinc_event coincidences (exact)")
 
 
 # FIXME: This should be imported from pycbc, or even better, embedded in the
