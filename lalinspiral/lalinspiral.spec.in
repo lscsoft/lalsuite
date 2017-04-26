@@ -21,6 +21,7 @@ BuildRequires: swig >= 3.0.7
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 BuildRequires: lal-python >= @MIN_LAL_VERSION@
+BuildRequires: lalburst-python
 BuildRequires: lalframe-devel >= @MIN_LALFRAME_VERSION@
 BuildRequires: lalframe-octave >= @MIN_LALFRAME_VERSION@
 BuildRequires: lalframe-python >= @MIN_LALFRAME_VERSION@
@@ -67,6 +68,7 @@ Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
 Requires: lal-python >= @MIN_LAL_VERSION@
+Requires: lalburst-python
 Requires: lalframe-python >= @MIN_LALFRAME_VERSION@
 Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 Requires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
