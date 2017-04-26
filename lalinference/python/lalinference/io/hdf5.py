@@ -184,9 +184,8 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
         table.add_column(Column([value] * len(table), name=key,
                          meta={'vary': FIXED}))
 
-    # Delete table attributes.
-    for key in table.meta:
-        del table.meta[key]
+    # Delete remaining table attributes.
+    table.meta.clear()
 
     # Normalize column names.
     _remap_colnames(table)
