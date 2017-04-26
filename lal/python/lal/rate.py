@@ -1285,7 +1285,7 @@ class NDBins(tuple):
 	#
 
 	xml_bins_name_mapping = dict((cls.xml_bins_name, cls) for cls in (LinearBins, LinearPlusOverflowBins, LogarithmicBins, LogarithmicPlusOverflowBins, ATanBins, ATanLogarithmicBins, Categories, HashableBins))
-	xml_bins_name_mapping.update(zip(xml_bins_name_mapping.values(), xml_bins_name_mapping.keys()))
+	xml_bins_name_mapping.update(list(zip(xml_bins_name_mapping.values(), xml_bins_name_mapping.keys())))
 
 	def to_xml(self, elem):
 		"""
