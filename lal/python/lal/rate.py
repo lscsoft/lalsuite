@@ -36,6 +36,7 @@ smoothing contour plots.
 
 
 from bisect import bisect_right
+from functools import reduce
 try:
 	from fpconst import PosInf, NegInf
 except ImportError:
