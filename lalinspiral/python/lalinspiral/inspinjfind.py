@@ -24,6 +24,9 @@
 #
 
 
+from __future__ import division
+
+
 """
 Inspiral injection identification library.  Contains code providing the
 capacity to search a list of sngl_inspiral candidates for events
@@ -50,8 +53,8 @@ from . import thinca
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from git_version import date as __data__
-from git_version import version as __version__
+from .git_version import date as __data__
+from .git_version import version as __version__
 
 
 #
@@ -223,7 +226,7 @@ class DocContents(object):
 		# this it is *impossible* for them to match one another.
 		#
 
-                self.end_time_bisect_window = lsctables.LIGOTimeGPS(end_time_bisect_window)
+		self.end_time_bisect_window = lsctables.LIGOTimeGPS(end_time_bisect_window)
 
 
 	def inspirals_near_endtime(self, t):
@@ -394,7 +397,7 @@ def ligolw_inspinjfind(xmldoc, process, search, snglcomparefunc, nearcoinccompar
 	#
 
 	if verbose:
-		print >>sys.stderr, "indexing ..."
+		print("indexing ...", file=sys.stderr)
 
 	bbdef = {"inspiral": thinca.InspiralCoincDef}[search]
 	sbdef = {"inspiral": InspiralSICoincDef}[search]
@@ -440,7 +443,7 @@ def ligolw_inspinjfind(xmldoc, process, search, snglcomparefunc, nearcoinccompar
 	#
 
 	if verbose:
-		print >>sys.stderr, "finishing ..."
+		print("finishing ...", file=sys.stderr)
 	contents.sort_triggers_by_id()
 
 	#
@@ -465,7 +468,7 @@ def revert(xmldoc, program, verbose = False):
 	#
 
 	if verbose:
-		print >>sys.stderr, "removing process metadata ..."
+		print("removing process metadata ...", file=sys.stderr)
 	process_table = lsctables.ProcessTable.get_table(xmldoc)
 	# IDs of things to delete
 	process_ids = process_table.get_ids_by_program(program)
@@ -477,7 +480,7 @@ def revert(xmldoc, program, verbose = False):
 	#
 
 	if verbose:
-		print >>sys.stderr, "removing coincs ..."
+		print("removing coincs ...", file=sys.stderr)
 	coinc_event_table = lsctables.CoincTable.get_table(xmldoc)
 	# IDs of things to delete
 	coinc_ids = frozenset(row.coinc_event_id for row in coinc_event_table if row.process_id in process_ids)
@@ -492,7 +495,7 @@ def revert(xmldoc, program, verbose = False):
 	#
 
 	if verbose:
-		print >>sys.stderr, "removing coinc metadata ..."
+		print("removing coinc metadata ...", file=sys.stderr)
 	# coinc types to delete
 	coinc_defs = frozenset((row.search, row.search_coinc_type) for row in (InspiralSICoincDef, InspiralSCNearCoincDef, InspiralSCExactCoincDef))
 	iterutils.inplace_filter((lambda row: row.process_id not in process_ids or row.time_slide_id in time_slide_ids), lsctables.TimeSlideTable.get_table(xmldoc))
