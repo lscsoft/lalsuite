@@ -24,6 +24,7 @@
 #
 
 
+from __future__ import print_function
 from bisect import bisect_left, bisect_right
 import itertools
 import math
@@ -39,8 +40,8 @@ from lalburst import snglcoinc
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from git_version import date as __date__
-from git_version import version as __version__
+from .git_version import date as __date__
+from .git_version import version as __version__
 
 
 #
@@ -367,7 +368,7 @@ def ligolw_thinca(
 	#
 
 	if verbose:
-		print >>sys.stderr, "indexing ..."
+		print("indexing ...", file=sys.stderr)
 	coinc_tables = InspiralCoincTables(xmldoc, vetoes = veto_segments, program = trigger_program, likelihood_func = likelihood_func, likelihood_params_func = likelihood_params_func)
 	coinc_def_id = ligolw_coincs.get_coinc_def_id(xmldoc, coinc_definer_row.search, coinc_definer_row.search_coinc_type, create_new = True, description = coinc_definer_row.description)
 	instruments = set(coinc_tables.time_slide_table.getColumnByName("instrument"))
