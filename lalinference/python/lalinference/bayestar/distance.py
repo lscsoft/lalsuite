@@ -49,7 +49,7 @@ def _add_newdoc_ufunc(func, doc):
     try:
         np.lib.add_newdoc_ufunc(func, doc)
     except ValueError as e:
-        if e.message == 'Cannot change docstring of ufunc with non-NULL docstring':
+        if e.args[0] == 'Cannot change docstring of ufunc with non-NULL docstring':
             pass
 
 
