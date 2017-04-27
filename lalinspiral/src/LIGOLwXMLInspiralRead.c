@@ -842,7 +842,7 @@ LALSnglInspiralTableFromLIGOLw (
         {
           if ( tableDir[j].pos > 0 )
           {
-            thisEvent->event_id = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "sngl_inspiral", "process_id");
+            thisEvent->event_id = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "sngl_inspiral", "event_id");
             if ( thisEvent->event_id < 0 )
               return -1;
           }
