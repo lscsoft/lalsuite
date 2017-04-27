@@ -246,7 +246,7 @@ int main( int argc, char *argv[] )
   //   metrics can later be rescaled by search code
   LogPrintf( LOG_NORMAL, "Computing reduced supersky metrics ...\n" );
   const double fiducial_freq = 100.0;
-  setup.metrics = XLALComputeSuperskyMetrics( uvar->spindowns, &setup.ref_time, setup.segments, fiducial_freq, &detector_info, NULL, detector_motion, setup.ephemerides );
+  setup.metrics = XLALComputeSuperskyMetrics( SUPERSKY_METRIC_TYPE, uvar->spindowns, &setup.ref_time, setup.segments, fiducial_freq, &detector_info, NULL, detector_motion, setup.ephemerides );
   XLAL_CHECK_MAIN( setup.metrics != NULL, XLAL_EFUNC );
   LogPrintf( LOG_NORMAL, "Finished computing reduced supersky metrics\n" );
 
