@@ -556,6 +556,7 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
 
   /* loop over each segment */
   const double coarse_t0 = XLALGetCPUTime();
+  double prog_t0 = coarse_t0;
   UINT8 num_coarse = 0;
   for (i=0;i<dsdata->length;i++) {
 
@@ -644,6 +645,13 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
 
       /* free memory */
       XLALDestroyCOMPLEX8FrequencySeries(fs);
+
+      const double prog_t = XLALGetCPUTime();
+      if ( prog_t - prog_t0 > 90.0 ) {
+        LogPrintf(LOG_NORMAL, "%s : computing demodulated frequency series for SFT %d/%d, template %"LAL_UINT8_FORMAT"/%"LAL_UINT8_FORMAT" ...\n",
+                  __func__, i+1, dsdata->length, spintemp->currentidx, tempgrid.max);
+        prog_t0 = prog_t;
+      }
 
     } /* end loop over spin derivitive templates */
     LogPrintf(LOG_NORMAL,"%s : computed demodulated frequency series for SFT %d/%d\n",__func__,i+1,dsdata->length);
