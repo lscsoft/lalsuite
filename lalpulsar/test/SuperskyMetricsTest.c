@@ -338,7 +338,7 @@ int main( void )
   {
     const LIGOTimeGPS ref_time = REF_TIME;
     const MultiLALDetector detectors = { .length = 1, .sites = { lalCachedDetectors[LAL_LLO_4K_DETECTOR] } };
-    metrics = XLALComputeSuperskyMetrics( 1, &ref_time, &segments, FIDUCIAL_FREQ, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat );
+    metrics = XLALComputeSuperskyMetrics( SUPERSKY_METRIC_TYPE, 1, &ref_time, &segments, FIDUCIAL_FREQ, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat );
   }
   XLAL_CHECK_MAIN( metrics != NULL, XLAL_EFUNC );
 

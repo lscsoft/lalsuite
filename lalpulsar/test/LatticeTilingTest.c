@@ -652,7 +652,7 @@ static int SuperskyTests(
                                             TEST_DATA_DIR "sun00-19-DE405.dat.gz" );
   XLAL_CHECK( edat != NULL, XLAL_EFUNC );
   const double freq_max = 40.0;
-  SuperskyMetrics *metrics = XLALComputeSuperskyMetrics( 1, &ref_time, &segments, freq_max, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat );
+  SuperskyMetrics *metrics = XLALComputeSuperskyMetrics( SUPERSKY_METRIC_TYPE, 1, &ref_time, &segments, freq_max, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat );
   XLAL_CHECK( metrics != NULL, XLAL_EFUNC );
   XLAL_CHECK( metrics->num_segments == segments.length, XLAL_EFAILED );
 
