@@ -45,6 +45,14 @@ extern "C" {
 typedef struct tagSuperskyTransformData SuperskyTransformData;
 
 ///
+/// Type of supersky metric to compute.
+///
+typedef enum tagSuperskyMetricType {
+  SUPERSKY_METRIC_TYPE,                         ///< Metric for all-sky searches
+  MAX_METRIC_TYPE
+} SuperskyMetricType;
+
+///
 /// Computed supersky metrics, returned by XLALComputeSuperskyMetrics().
 ///
 #ifdef SWIG // SWIG interface directives
@@ -71,6 +79,7 @@ typedef struct tagSuperskyMetrics {
 /// Compute the supersky metrics, which are returned in a #SuperskyMetrics struct.
 ///
 SuperskyMetrics *XLALComputeSuperskyMetrics(
+  const SuperskyMetricType type,                ///< [in] Type of supersky metric to compute
   const size_t spindowns,                       ///< [in] Number of frequency+spindown coordinates
   const LIGOTimeGPS *ref_time,                  ///< [in] Reference time for the metrics
   const LALSegList *segments,                   ///< [in] List of segments to compute metrics over

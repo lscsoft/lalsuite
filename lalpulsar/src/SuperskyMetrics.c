@@ -568,6 +568,7 @@ static int SM_ComputeReducedSuperskyMetric(
 }
 
 SuperskyMetrics *XLALComputeSuperskyMetrics(
+  const SuperskyMetricType type,
   const size_t spindowns,
   const LIGOTimeGPS *ref_time,
   const LALSegList *segments,
@@ -580,6 +581,7 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
 {
 
   // Check input
+  XLAL_CHECK_NULL( type < MAX_METRIC_TYPE, XLAL_EINVAL );
   XLAL_CHECK_NULL( spindowns <= 4, XLAL_EINVAL );
   XLAL_CHECK_NULL( ref_time != NULL, XLAL_EFAULT );
   XLAL_CHECK_NULL( segments != NULL, XLAL_EFAULT );
