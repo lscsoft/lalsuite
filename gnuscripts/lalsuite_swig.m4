@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 98
+# serial 99
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -54,7 +54,7 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
     # C++ is required to build Octave wrappings
     LALSUITE_REQUIRE_CXX
   ])
-  LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[false],[
+  LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[true],[
     # Python is required to configure Python wrappings
     LALSUITE_REQUIRE_PYTHON([2.6])
   ])
@@ -115,7 +115,8 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
       _LALSUITE_CHECK_SWIG_VERSION([${SWIG}])
       LALSUITE_VERSION_COMPARE([${swig_version}],[<],[${swig_min_version}],[
         AC_MSG_RESULT([no (${swig_version})])
-        AC_MSG_ERROR([SWIG version ${swig_min_version} or later is required ${swig_min_version_info}])
+        AC_MSG_ERROR([[SWIG version ${swig_min_version} or later is required ${swig_min_version_info}
+SWIG support can be disabled by using the --disable-swig configure option]])
       ])
       AC_MSG_RESULT([yes (${swig_version})])
     ],[
@@ -131,7 +132,8 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
           AC_MSG_RESULT([no (${swig_version})])
         ])
       ],[
-        AC_MSG_ERROR([SWIG version ${swig_min_version} or later is required ${swig_min_version_info}])
+        AC_MSG_ERROR([[SWIG version ${swig_min_version} or later is required ${swig_min_version_info}
+SWIG support can be disabled by using the --disable-swig configure option]])
       ])
       SWIG="${ac_cv_path_SWIG}"
     ])
