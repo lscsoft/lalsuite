@@ -114,6 +114,15 @@ void inject_signal( LALInferenceRunState *runState ){
       }
     }
 
+    /* check if Q22, DIST and F0 are set, but not H0 */
+    if( !PulsarCheckParam( injpars, "H0" ) && PulsarCheckParam( injpars, "Q22" ) && PulsarCheckParam( injpars, "DIST" ) && PulsarCheckParam( injpars, "F" ) ){
+      REAL8 f0val = PulsarGetREAL8VectorParamIndividual( injpars, "F0" );
+      REAL8 distval = PulsarGetREAL8Param( injpars, "DIST" );
+      REAL8 q22val = PulsarGetREAL8Param( injpars, "Q22" );
+      REAL8 h0val = q22val*sqrt(8.*LAL_PI/15.)*16.*LAL_PI*LAL_PI*LAL_G_SI*f0val*f0val/(LAL_C_SI*LAL_C_SI*LAL_C_SI*LAL_C_SI*distval);
+      PulsarAddParam( injpars, "H0", &h0val, PULSARTYPE_REAL8_t );
+    }
+
     /* make sure that we have parameters in terms of amplitude and phase parameters */
     invert_source_params( injpars );
   }
