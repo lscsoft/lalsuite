@@ -69,11 +69,8 @@ opts = parser.parse_args()
 # Late imports
 #
 
-import itertools
 import os
-import shutil
 import sys
-import tempfile
 from lalinference.bayestar.sky_map import gracedb_sky_map, rasterize
 from lalinference.io import fits
 import ligo.gracedb.logging
