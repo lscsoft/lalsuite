@@ -28,15 +28,13 @@ import logging
 import numpy as np
 import math
 from scipy import optimize
-try:
-    from functools import lru_cache
-except ImportError:
-    # FIXME: remove when we drop support for Python < 3.2
-    from backports.functools_lru_cache import lru_cache
 
 # LAL imports
 import lal
 import lalsimulation
+
+# My own imports
+from .decorator import memoized
 
 
 log = logging.getLogger('BAYESTAR')
@@ -48,10 +46,10 @@ unitInverseSqrtHertz = lal.Unit('s^1/2')
 
 
 # Memoize FFT plans
-CreateForwardCOMPLEX16FFTPlan = lru_cache(maxsize=None)(lal.CreateForwardCOMPLEX16FFTPlan)
-CreateForwardREAL8FFTPlan = lru_cache(maxsize=None)(lal.CreateForwardREAL8FFTPlan)
-CreateReverseCOMPLEX16FFTPlan = lru_cache(maxsize=None)(lal.CreateReverseCOMPLEX16FFTPlan)
-CreateReverseREAL8FFTPlan = lru_cache(maxsize=None)(lal.CreateReverseREAL8FFTPlan)
+CreateForwardCOMPLEX16FFTPlan = memoized(lal.CreateForwardCOMPLEX16FFTPlan)
+CreateForwardREAL8FFTPlan = memoized(lal.CreateForwardREAL8FFTPlan)
+CreateReverseCOMPLEX16FFTPlan = memoized(lal.CreateReverseCOMPLEX16FFTPlan)
+CreateReverseREAL8FFTPlan = memoized(lal.CreateReverseREAL8FFTPlan)
 
 
 def ceil_pow_2(n):

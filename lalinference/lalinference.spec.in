@@ -15,7 +15,6 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: chealpix-devel >= 3.30.0
 BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
-BuildRequires: python-backports-functools_lru_cache
 BuildRequires: healpy >= 1.9.1
 BuildRequires: python-matplotlib >= 1.2.0
 BuildRequires: python-shapely
@@ -91,7 +90,6 @@ library.
 Summary: Python Bindings for LALInference
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python-backports-functools_lru_cache
 Requires: healpy >= 1.9.1
 Requires: python-shapely
 Requires: numpy >= 1.7
