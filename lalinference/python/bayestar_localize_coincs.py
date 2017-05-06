@@ -86,7 +86,6 @@ import lal.series
 from glue.ligolw import utils as ligolw_utils
 
 # BAYESTAR imports.
-from lalinference.bayestar.decorator import memoized
 from lalinference.io import fits
 from lalinference.bayestar import ligolw as ligolw_bayestar
 from lalinference.bayestar import filter
@@ -94,6 +93,11 @@ from lalinference.bayestar import timing
 from lalinference.bayestar.sky_map import ligolw_sky_map, rasterize
 
 # Other imports.
+try:
+    from functools import lru_cache
+except ImportError:
+    # FIXME: remove when we drop support for Python < 3.2
+    from backports.functools_lru_cache import lru_cache
 import os
 import sys
 import numpy as np
@@ -184,7 +188,7 @@ if opts.psd_files: # read pycbc psds here
 else:
     reference_psd_filenames_by_process_id = ligolw_bayestar.psd_filenames_by_process_id_for_xmldoc(xmldoc)
 
-    @memoized
+    @lru_cache(maxsize=None)
     def reference_psds_for_filename(filename):
         xmldoc = ligolw_utils.load_filename(
             filename, contenthandler=lal.series.PSDContentHandler)
