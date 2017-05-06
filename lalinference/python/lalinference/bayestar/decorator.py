@@ -19,45 +19,12 @@
 Collection of Python decorators.
 """
 __author__ = "Leo Singer <leo.singer@ligo.org>"
-__all__ = ('memoized', 'with_numpy_random_seed')
+__all__ = ('with_numpy_random_seed', 'as_dict')
 
 
 from functools import wraps
 from collections import Hashable
 from astropy.utils.misc import NumpyRNGContext
-
-
-def memoized(func):
-    """Memoize a function or class by caching its return values for any given
-    arguments."""
-    cache = {}
-
-    # FIXME: In Python 3.4, use inspect.getcallargs to bind function arguments.
-    # This will allow us to handle default arguments better.
-    # (Though inspect.getcallargs was added in Python 2.7, it won't work with
-    # built-in functions or functions from C extensions until Python 3.4.
-    # See https://bugs.python.org/issue17481.)
-
-    @wraps(func)
-    def memo(*args, **kwargs):
-        # Create a key out of the arguments.
-        key = (args, frozenset(kwargs.items()))
-
-        if isinstance(args, Hashable): # The key is immutable.
-            try:
-                # Look up the return value for these arguments.
-                ret = cache[key]
-            except KeyError:
-                # Not found; invoke function and store return value.
-                ret = cache[key] = func(*args, **kwargs)
-        else: # The key is mutable. We can't cache it.
-            ret = func(*args, **kwargs)
-
-        # Done!
-        return ret
-
-    # Return wrapped function.
-    return memo
 
 
 def with_numpy_random_seed(func, seed=0):
