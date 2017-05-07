@@ -205,7 +205,7 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
                 ax5.add_series(data['searched_prob_distance'], label=label)
 
     # Finish and save plot 1.
-    pb.update(i * 4)
+    pb.update(i * 5)
     # Only plot target confidence band if all datasets have the same number
     # of samples, because the confidence band depends on the number of samples.
     ax1.add_diagonal()
@@ -218,26 +218,26 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
     fig1.savefig('searched_prob.pdf')
 
     # Finish and save plot 2.
-    pb.update(i * 4 + 1)
+    pb.update(i * 5 + 1)
     ax2.grid()
     fig2.savefig('searched_area_hist.pdf')
 
     # Finish and save plot 3.
+    pb.update(i * 5 + 2)
     if have_offset:
-        pb.update(i * 4 + 2)
         ax3.grid()
         fig3.savefig('offset_hist.pdf')
 
     # Finish and save plot 4.
+    pb.update(i * 5 + 3)
     if have_runtime:
-        pb.update(i * 4 + 3)
         ax4.grid()
         fig4.savefig('runtime_hist.pdf')
         plt.close()
 
     # Finish and save plot 4.
+    pb.update(i * 5 + 4)
     if have_searched_prob_distance:
-        pb.update(i * 4 + 4)
         # Only plot target confidence band if all datasets have the same number
         # of samples, because the confidence band depends on the number of samples.
         ax5.add_diagonal()
