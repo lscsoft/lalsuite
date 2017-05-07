@@ -39,7 +39,8 @@ terminal, or redirected from a fifo):
 from lalinference.bayestar import command
 import logging
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
+logging.basicConfig(
+    level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 log = logging.getLogger('BAYESTAR')
 
 methods = '''
@@ -51,15 +52,19 @@ command.skymap_parser.add_argument(
     '--method', choices=methods, default=default_method,
     help='Sky localization method [default: %(default)s]')
 parser = command.ArgumentParser(
-    parents=[command.waveform_parser, command.prior_parser, command.skymap_parser])
-parser.add_argument('-N', '--dry-run', default=False, action='store_true',
+    parents=[
+        command.waveform_parser, command.prior_parser, command.skymap_parser])
+parser.add_argument(
+    '-N', '--dry-run', default=False, action='store_true',
     help='Dry run; do not update GraceDB entry [default: %(default)s]')
-parser.add_argument('--no-tag', default=False, action='store_true',
+parser.add_argument(
+    '--no-tag', default=False, action='store_true',
     help='Do not set lvem tag for GraceDB entry [default: %(default)s]')
-parser.add_argument('-o', '--output', metavar='FILE.fits[.gz]',
-    default='bayestar.fits.gz',
+parser.add_argument(
+    '-o', '--output', metavar='FILE.fits[.gz]', default='bayestar.fits.gz',
     help='Name for uploaded file [default: %(default)s]')
-parser.add_argument('graceid', metavar='G123456', nargs='*',
+parser.add_argument(
+    'graceid', metavar='G123456', nargs='*',
     help='Run on this GraceDB ID [default: listen to lvalert]')
 opts = parser.parse_args()
 
@@ -85,11 +90,12 @@ graceids = opts.graceid if opts.graceid else command.iterlines(sys.stdin)
 # environment variable GRACEDB_SERVICE_URL overrides the default service URL.
 # It would be nice to get this behavior into the gracedb package itself.
 gracedb = ligo.gracedb.rest.GraceDb(
-    os.environ.get('GRACEDB_SERVICE_URL',
-    ligo.gracedb.rest.DEFAULT_SERVICE_URL))
+    os.environ.get(
+        'GRACEDB_SERVICE_URL', ligo.gracedb.rest.DEFAULT_SERVICE_URL))
 
 if opts.chain_dump:
-    chain_dump = opts.output.replace('.fits.gz', '').replace('.fits', '') + '.chain.npy'
+    chain_dump = opts.output.replace('.fits.gz', '').replace('.fits', '') + \
+        '.chain.npy'
 else:
     chain_dump = None
 
@@ -124,7 +130,8 @@ for graceid in graceids:
             method=opts.method, chain_dump=chain_dump,
             enable_snr_series=opts.enable_snr_series))
         sky_map.meta['objid'] = str(graceid)
-        sky_map.meta['url'] = 'https://gracedb.ligo.org/events/{0}'.format(graceid)
+        sky_map.meta['url'] = 'https://gracedb.ligo.org/events/{0}'.format(
+            graceid)
         log.info("sky localization complete")
 
         # upload FITS file

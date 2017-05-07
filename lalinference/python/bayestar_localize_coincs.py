@@ -54,21 +54,31 @@ command.skymap_parser.add_argument(
     '--method', choices=methods, default=[default_method], nargs='*',
     help='Sky localization methods [default: %(default)s]')
 parser = command.ArgumentParser(
-    parents=[command.waveform_parser, command.prior_parser, command.skymap_parser])
-parser.add_argument('--keep-going', '-k', default=False, action='store_true',
+    parents=[
+        command.waveform_parser, command.prior_parser, command.skymap_parser])
+parser.add_argument(
+    '--keep-going', '-k', default=False, action='store_true',
     help='Keep processing events if a sky map fails to converge [default: no]')
-parser.add_argument('input', metavar='INPUT.xml[.gz]', default='-', nargs='+',
+parser.add_argument(
+    'input', metavar='INPUT.xml[.gz]', default='-', nargs='+',
     type=argparse.FileType('rb'),
-    help='Input LIGO-LW XML file [default: stdin] or PyCBC HDF5 files. If PyCBC files, must be bank file, coinc file, and trigger files, in that order.')
-parser.add_argument('--pycbc-sample', default='foreground',
+    help='Input LIGO-LW XML file [default: stdin] or PyCBC HDF5 files. If '
+    'PyCBC files, must be bank file, coinc file, and trigger files, in that '
+    'order.')
+parser.add_argument(
+    '--pycbc-sample', default='foreground',
     help='sample population [PyCBC only; default: %(default)s]')
-parser.add_argument('--psd-files', nargs='*',
+parser.add_argument(
+    '--psd-files', nargs='*',
     help='pycbc-style merged HDF5 PSD files')
-parser.add_argument('--coinc-event-id', type=int, nargs='*',
+parser.add_argument(
+    '--coinc-event-id', type=int, nargs='*',
     help='run on only these specified events')
-parser.add_argument('--output', '-o', default='.',
+parser.add_argument(
+    '--output', '-o', default='.',
     help='output directory [default: current directory]')
-parser.add_argument('--condor-submit', action='store_true',
+parser.add_argument(
+    '--condor-submit', action='store_true',
     help='submit to Condor instead of running locally')
 opts = parser.parse_args()
 
@@ -90,7 +100,7 @@ from lalinference.io import fits
 from lalinference.bayestar import ligolw as ligolw_bayestar
 from lalinference.bayestar import filter
 from lalinference.bayestar import timing
-from lalinference.bayestar.sky_map import ligolw_sky_map, rasterize
+from lalinference.bayestar.sky_map import ligolw_sky_map
 
 # Other imports.
 import os
@@ -137,14 +147,16 @@ if opts.condor_submit:
            '/dev/null']
     os.execvp('condor_submit', cmd)
 
-if opts.psd_files: # read pycbc psds here
+if opts.psd_files:  # read pycbc psds here
     import lal
     from glue.segments import segment, segmentlist
     import h5py
 
     class psd_segment(segment):
+
         def __new__(cls, psd, *args):
             return segment.__new__(cls, *args)
+
         def __init__(self, psd, *args):
             self.psd = psd
 
@@ -154,7 +166,7 @@ if opts.psd_files: # read pycbc psds here
         psd = [group['psds'][str(i)] for i in range(len(group['psds']))]
         psdseglistdict[ifo] = segmentlist(
             psd_segment(*segargs) for segargs in zip(
-            psd, group['start_time'], group['end_time']))
+                psd, group['start_time'], group['end_time']))
 
     def reference_psd_for_sngl(sngl):
         psd = psdseglistdict[sngl.ifo]
@@ -163,7 +175,7 @@ if opts.psd_files: # read pycbc psds here
         except ValueError:
             raise ValueError(
                 'No PSD found for detector {0} at GPS time {1}'.format(
-                sngl.ifo, sngl.end))
+                    sngl.ifo, sngl.end))
 
         flow = psd.file.attrs['low_frequency_cutoff']
         df = psd.attrs['delta_f']
@@ -172,7 +184,8 @@ if opts.psd_files: # read pycbc psds here
         fseries = lal.CreateREAL8FrequencySeries(
             'psd', 0, kmin * df, df,
             lal.StrainUnit**2 / lal.HertzUnit, len(psd.value) - kmin)
-        fseries.data.data = psd.value[kmin:] / np.square(ligolw_bayestar.PYCBC_DYN_RANGE_FAC)
+        fseries.data.data = psd.value[kmin:] / np.square(
+            ligolw_bayestar.PYCBC_DYN_RANGE_FAC)
 
         return timing.InterpolatedPSD(
             filter.abscissa(fseries), fseries.data.data,
@@ -241,15 +254,19 @@ for int_coinc_event_id, sngl_inspirals in coinc_and_sngl_inspirals.items():
                 snr_series=snrs, enable_snr_series=opts.enable_snr_series)
             sky_map.meta['objid'] = coinc_event_id
         except (ArithmeticError, ValueError):
-            log.exception("%s:method '%s':sky localization failed", coinc_event_id, method)
+            log.exception(
+                "%s:method '%s':sky localization failed",
+                coinc_event_id, method)
             count_sky_maps_failed += 1
             if not opts.keep_going:
                 raise
         else:
-            log.info("%s:method '%s':saving sky map", coinc_event_id, method)
+            log.info(
+                "%s:method '%s':saving sky map",
+                coinc_event_id, method)
             filename = '%d.%s.fits' % (int_coinc_event_id, method)
-            fits.write_sky_map(os.path.join(opts.output, filename),
-                sky_map, nest=True)
+            fits.write_sky_map(
+                os.path.join(opts.output, filename), sky_map, nest=True)
 
 
 if count_sky_maps_failed > 0:
