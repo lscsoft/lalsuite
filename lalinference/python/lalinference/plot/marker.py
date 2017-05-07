@@ -17,11 +17,11 @@
 """
 Specialized markers
 """
-__all__ = ('earth', 'reticle')
-
 
 from matplotlib.path import Path
 import numpy as np
+
+__all__ = ('earth', 'reticle')
 
 
 """The Earth symbol (circle and cross)."""

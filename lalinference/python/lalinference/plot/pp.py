@@ -18,14 +18,14 @@
 Axes subclass for making P--P plots
 """
 from __future__ import division
-__all__ = ('PPPlot',)
-
 
 import matplotlib
 from matplotlib import axes
 from matplotlib.projections import projection_registry
 import scipy.stats
 import numpy as np
+
+__all__ = ('PPPlot',)
 
 
 class PPPlot(axes.Axes):
@@ -107,8 +107,8 @@ class PPPlot(axes.Axes):
             on the vertical axis.
 
             If an entry in the list is two-dimensional, then the first subarray
-            is plotted on the horizontal axis and the second subarray is plotted
-            on the vertical axis.
+            is plotted on the horizontal axis and the second subarray is
+            plotted on the vertical axis.
 
         drawstyle: ``steps`` or ``lines`` or ``default``
             Plotting style. If ``steps``, then plot steps to represent a
@@ -214,7 +214,8 @@ class PPPlot(axes.Axes):
         # Plot series
         return self.add_series(*args, **kwargs)
 
-    def add_confidence_band(self, nsamples, alpha=0.95, annotate=True, **kwargs):
+    def add_confidence_band(
+            self, nsamples, alpha=0.95, annotate=True, **kwargs):
         """Add a target confidence band.
 
         Parameters
@@ -232,7 +233,8 @@ class PPPlot(axes.Axes):
         Other parameters
         ----------------
 
-        kwargs: optional extra arguments to `~matplotlib.axes.Axes.fill_betweenx`
+        kwargs: optional extra arguments to
+                `~matplotlib.axes.Axes.fill_betweenx`
         """
         n = nsamples
         k = np.arange(0, n + 1)

@@ -18,7 +18,6 @@
 """
 Multi-order coverage (MOC) HEALPix indexing.
 """
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 import numpy as np
@@ -44,7 +43,8 @@ def _add_newdoc_ufunc(func, doc):
     try:
         np.lib.add_newdoc_ufunc(func, doc)
     except ValueError as e:
-        if e.args[0] == 'Cannot change docstring of ufunc with non-NULL docstring':
+        msg = 'Cannot change docstring of ufunc with non-NULL docstring'
+        if e.args[0] == msg:
             pass
 
 

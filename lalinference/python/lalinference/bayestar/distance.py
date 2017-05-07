@@ -18,9 +18,8 @@
 """
 Distance ansatz functions.
 """
-from __future__ import division
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
+from __future__ import division
 
 import numpy as np
 import healpy as hp
@@ -38,8 +37,8 @@ from ._distance import *
 
 
 __all__ = tuple(_ for _ in _distance.__dict__ if not _.startswith('_')) + (
-    'ud_grade', 'conditional_kde', 'cartesian_kde_to_moments', 'principal_axes',
-    'parameters_to_moments')
+    'ud_grade', 'conditional_kde', 'cartesian_kde_to_moments',
+    'principal_axes', 'parameters_to_moments')
 
 
 def _add_newdoc_ufunc(func, doc):
@@ -49,7 +48,8 @@ def _add_newdoc_ufunc(func, doc):
     try:
         np.lib.add_newdoc_ufunc(func, doc)
     except ValueError as e:
-        if e.args[0] == 'Cannot change docstring of ufunc with non-NULL docstring':
+        msg = 'Cannot change docstring of ufunc with non-NULL docstring'
+        if e.args[0] == msg:
             pass
 
 
@@ -133,7 +133,8 @@ Test against numerical estimate:
 >>> distsigma = 5.0
 >>> distnorm = 1.0
 >>> p = 0.16  # "one-sigma" lower limit
->>> expected_r16 = scipy.optimize.brentq(lambda r: conditional_cdf(r, distmu, distsigma, distnorm) - p, 0.0, 100.0)
+>>> expected_r16 = scipy.optimize.brentq(
+... lambda r: conditional_cdf(r, distmu, distsigma, distnorm) - p, 0.0, 100.0)
 >>> r16 = conditional_ppf(p, distmu, distsigma, distnorm)
 >>> np.testing.assert_almost_equal(expected_r16, r16)
 """)
@@ -376,7 +377,8 @@ def _conditional_kde(n, X, Cinv, W):
 
 
 def conditional_kde(n, datasets, inverse_covariances, weights):
-    return [_conditional_kde(n, X, Cinv, W)
+    return [
+        _conditional_kde(n, X, Cinv, W)
         for X, Cinv, W in zip(datasets, inverse_covariances, weights)]
 
 

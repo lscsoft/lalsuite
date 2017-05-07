@@ -18,13 +18,12 @@
 """
 Collection of Python decorators.
 """
-__author__ = "Leo Singer <leo.singer@ligo.org>"
-__all__ = ('memoized', 'with_numpy_random_seed', 'as_dict')
-
 
 from functools import wraps
 from collections import Hashable
 from astropy.utils.misc import NumpyRNGContext
+
+__all__ = ('memoized', 'with_numpy_random_seed', 'as_dict')
 
 
 try:
@@ -41,14 +40,14 @@ except ImportError:
             # Create a key out of the arguments.
             key = (args, frozenset(kwargs.items()))
 
-            if isinstance(args, Hashable): # The key is immutable.
+            if isinstance(args, Hashable):  # The key is immutable.
                 try:
                     # Look up the return value for these arguments.
                     ret = cache[key]
                 except KeyError:
                     # Not found; invoke function and store return value.
                     ret = cache[key] = func(*args, **kwargs)
-            else: # The key is mutable. We can't cache it.
+            else:  # The key is mutable. We can't cache it.
                 ret = func(*args, **kwargs)
 
             # Done!

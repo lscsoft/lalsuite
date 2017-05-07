@@ -18,7 +18,6 @@
 Plot a volumetric posterior in three-projection view.
 """
 from __future__ import division
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Command line interface
@@ -55,7 +54,8 @@ parser.add_argument(
     default='-', nargs='?', help='Input FITS file [default: stdin]')
 parser.add_argument(
     '--align-to', metavar='SKYMAP.fits[.gz]', type=argparse.FileType('rb'),
-    help='Align to the principal axes of this sky map [default: input sky map]')
+    help='Align to the principal axes of this sky map '
+    '[default: input sky map]')
 parser.set_defaults(figure_width='3.5', figure_height='3.5')
 opts = parser.parse_args()
 
@@ -135,7 +135,8 @@ for iface, (axis0, axis1, (sp0, sp1)) in enumerate((
         prob, mu, sigma, norm).reshape(xx.shape)
 
     # Plot heat map
-    ax = fig.add_subplot(gs[0, 0] if opts.projection else gs[sp0, sp1], aspect=1)
+    ax = fig.add_subplot(
+        gs[0, 0] if opts.projection else gs[sp0, sp1], aspect=1)
     ax.imshow(
         density, origin='lower',
         extent=[-max_distance, max_distance, -max_distance, max_distance],
@@ -150,7 +151,8 @@ for iface, (axis0, axis1, (sp0, sp1)) in enumerate((
         cumsum[indices] = cs / cs[-1] * 100
         cumsum = np.reshape(cumsum, density.shape)
         u, v = np.meshgrid(s, s)
-        contourset = ax.contour(u, v, cumsum, levels=opts.contour, linewidths=0.5)
+        contourset = ax.contour(
+            u, v, cumsum, levels=opts.contour, linewidths=0.5)
 
     # Mark locations
     for (ra, dec, dist), color in zip(opts.radecdist, colors[1:]):
@@ -188,9 +190,11 @@ if opts.contour:
 
 if not opts.projection:
     # Add scale bar, 1/4 width of the plot
-    ax.plot([0.0625, 0.3125], [0.0625, 0.0625],
+    ax.plot(
+        [0.0625, 0.3125], [0.0625, 0.0625],
         color='black', linewidth=1, transform=ax.transAxes)
-    ax.text(0.0625, 0.0625,
+    ax.text(
+        0.0625, 0.0625,
         '{0:d} Mpc'.format(int(np.round(0.5 * max_distance))),
         fontsize=8, transform=ax.transAxes, verticalalignment='bottom')
 
@@ -201,8 +205,8 @@ if not opts.projection:
 
     # Plot marginal distance distribution, integrated over the whole sky.
     d = np.linspace(0, max_distance)
-    ax.fill_between(d, marginal_pdf(d, prob, mu, sigma, norm),
-        alpha=0.5, color=colors[0])
+    ax.fill_between(
+        d, marginal_pdf(d, prob, mu, sigma, norm), alpha=0.5, color=colors[0])
 
     # Plot conditional distance distribution at true position
     # and mark true distance.
@@ -218,12 +222,13 @@ if not opts.projection:
             [dist], [-0.15], marker=truth_marker, markeredgecolor=color,
             markerfacecolor='none', markeredgewidth=1, clip_on=False,
             transform=transforms.blended_transform_factory(
-            ax.transData, ax.transAxes))
+                ax.transData, ax.transAxes))
         ax.axvline(dist, color='black', linewidth=0.5)
 
     # Scale axes
     ax.set_xticks([0, max_distance])
-    ax.set_xticklabels(['0', "{0:d}\nMpc".format(int(np.round(max_distance)))], fontsize=9)
+    ax.set_xticklabels(
+        ['0', "{0:d}\nMpc".format(int(np.round(max_distance)))], fontsize=9)
     ax.set_yticks([])
     ax.set_xlim(0, max_distance)
     ax.set_ylim(0, ax.get_ylim()[1])
