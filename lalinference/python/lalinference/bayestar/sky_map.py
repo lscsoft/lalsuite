@@ -19,8 +19,6 @@
 Convenience function to produce a sky map from LIGO-LW rows.
 """
 from __future__ import division
-__author__ = 'Leo Singer <leo.singer@ligo.org>'
-
 
 import itertools
 import logging
