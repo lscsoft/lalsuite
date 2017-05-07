@@ -20,7 +20,6 @@ Create summary plots for sky maps of found injections, binned cumulatively by
 false alarm rate.
 """
 from __future__ import division
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 # Command line interface.
 import argparse
@@ -29,10 +28,12 @@ from lalinference.bayestar import command
 parser = command.ArgumentParser()
 parser.add_argument('--cumulative', action='store_true')
 parser.add_argument('--normed', action='store_true')
-parser.add_argument('--group-by', choices=('far', 'snr'), metavar='far|snr',
+parser.add_argument(
+    '--group-by', choices=('far', 'snr'), metavar='far|snr',
     help='Group plots by false alarm rate (FAR) or ' +
     'signal to noise ratio (SNR) [default: do not group]')
-parser.add_argument('--pp-confidence-interval', type=float, metavar='PCT',
+parser.add_argument(
+    '--pp-confidence-interval', type=float, metavar='PCT',
     default=95, help='If all inputs files have the same number of '
     'samples, overlay binomial confidence bands for this percentage on '
     'the P--P plot [default: %(default)s]')
@@ -189,7 +190,7 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
 
     # Plot a histogram from each dataset onto each of the 5 figures.
     for (data, label) in zip(datasets, labels):
-        if len(data): # Skip if data is empty
+        if len(data):  # Skip if data is empty
             try:
                 searched_prob = data['searched_prob']
             except ValueError:
@@ -239,7 +240,8 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
     pb.update(i * 5 + 4)
     if have_searched_prob_distance:
         # Only plot target confidence band if all datasets have the same number
-        # of samples, because the confidence band depends on the number of samples.
+        # of samples, because the confidence band depends on the number of
+        # samples.
         ax5.add_diagonal()
         if len(nsamples) == 1:
             n, = nsamples

@@ -64,7 +64,7 @@ def test_pp_plot_default():
 def test_mollweide_axes():
     """Test HEALPix heat map on 'mollweide' axes"""
     fig = plt.figure(figsize=(6, 4), dpi=72)
-    ax = fig.add_subplot(111, projection='mollweide')
+    fig.add_subplot(111, projection='mollweide')
     lalinference.plot.healpix_heatmap(np.arange(12), nest=True)
     return fig
 
@@ -73,7 +73,7 @@ def test_mollweide_axes():
 def test_astro_mollweide_axes():
     """Test HEALPix heat map on 'astro hours mollweide' axes"""
     fig = plt.figure(figsize=(6, 4), dpi=72)
-    ax = fig.add_subplot(111, projection='astro hours mollweide')
+    fig.add_subplot(111, projection='astro hours mollweide')
     lalinference.plot.healpix_heatmap(np.arange(12), nest=True)
     return fig
 

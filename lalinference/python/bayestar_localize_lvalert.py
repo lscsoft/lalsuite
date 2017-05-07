@@ -30,7 +30,6 @@ terminal, or redirected from a fifo):
     $ tail -F /var/run/bayestar | bayestar_localize_lvalert &
     $ echo T90713 > /var/run/bayestar
 """
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 #

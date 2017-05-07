@@ -60,7 +60,8 @@ for module in modules:
     # Find doctests in the module
     tests += finder.find(module)
     # Find doctests in Numpy external C ufuncs
-    for ufunc in set(_ for _ in module.__dict__.values() if isinstance(_, np.ufunc)):
+    for ufunc in {
+            _ for _ in module.__dict__.values() if isinstance(_, np.ufunc)}:
         tests += finder.find(ufunc, module=module)
 
 total_failures = 0

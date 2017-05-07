@@ -39,7 +39,6 @@ where X is the LIGO-LW row id of the coinc and "toa" or "toa_phoa_snr"
 identifies whether the sky map accounts for times of arrival (TOA),
 PHases on arrival (PHOA), and amplitudes on arrival (SNR).
 """
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Command line interface.

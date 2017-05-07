@@ -24,7 +24,6 @@ __author__ = 'Leo Singer <leo.singer@ligo.org>'
 
 import itertools
 import logging
-import time
 import numpy as np
 import healpy as hp
 from astropy.table import Column, Table
@@ -33,7 +32,6 @@ from .decorator import with_numpy_random_seed
 from . import distance
 from . import ligolw
 from . import filter
-from . import postprocess
 from . import timing
 from . import moc
 from .. import healpix_tree
@@ -47,7 +45,8 @@ except ImportError:
         'without HEALPix support. Please install CHEALPix '
         '(https://sourceforge.net/projects/healpix/files/Healpix_3.30/'
         'chealpix-3.30.0.tar.gz), rebuild LALInference, and try again.')
-import lal, lalsimulation
+import lal
+import lalsimulation
 from glue.ligolw import table as ligolw_table
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import lsctables

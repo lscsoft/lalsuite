@@ -17,9 +17,6 @@
 """
 Reading HDF5 posterior sample chain HDF5 files.
 """
-__author__ = "Leo Singer <leo.singer@ligo.org>"
-__all__ = ('read_samples', 'write_samples')
-
 
 import numpy as np
 import h5py
@@ -31,14 +28,16 @@ from lalinference import LALINFERENCE_PARAM_CIRCULAR as CIRCULAR
 from lalinference import LALINFERENCE_PARAM_FIXED as FIXED
 from lalinference import LALINFERENCE_PARAM_OUTPUT as OUTPUT
 
+__all__ = ('read_samples', 'write_samples')
+
 
 _colname_map = (('rightascension', 'ra'),
                 ('declination', 'dec'),
                 ('distance', 'dist'),
-                ('polarisation','psi'),
+                ('polarisation', 'psi'),
                 ('chirpmass', 'mc'),
                 ('a_spin1', 'a1'),
-                ('a_spin2','a2'),
+                ('a_spin2', 'a2'),
                 ('tilt_spin1', 'tilt1'),
                 ('tilt_spin2', 'tilt2'))
 
@@ -165,9 +164,9 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
     ['uvw', 'opq', 'lmn', 'ijk', 'def', 'abc', 'rst', 'ghi']
     """
     with h5py.File(filename, 'r') as f:
-        if path is not None: # Look for a given path
+        if path is not None:  # Look for a given path
             table = f[path]
-        else: # Look for a given table name
+        else:  # Look for a given table name
             table = _find_table(f, tablename)
         table = Table.read(table)
 
@@ -231,7 +230,8 @@ def write_samples(table, filename, metadata=None, **kwargs):
     ...     Column(np.arange(10), name='baz', meta={'vary': OUTPUT})
     ... ])
     >>> with TemporaryDirectory() as dir:
-    ...     write_samples(table, os.path.join(dir, 'test.hdf5'), path='bat/baz')
+    ...     write_samples(
+    ...         table, os.path.join(dir, 'test.hdf5'), path='bat/baz')
     """
     # Copy the table so that we do not modify the original.
     table = table.copy()
@@ -257,4 +257,4 @@ def write_samples(table, filename, metadata=None, **kwargs):
                     except KeyError:
                         raise KeyError(
                             'Unable to set metadata {0}[{1}] = {2}'.format(
-                            internal_path, key, value))
+                                internal_path, key, value))
