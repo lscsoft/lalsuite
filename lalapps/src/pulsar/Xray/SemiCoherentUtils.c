@@ -1354,7 +1354,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
   REAL4 dummy;                                  /* dummy variable */
   if ((binfp = fopen(filename,"r")) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : failed to open binary input file %s\n",__func__,filename);
-    return 1;
+    return XLAL_FAILURE;
   }
   i = 0;
   while (fread(&dummy,sizeof(REAL4),1,binfp)) i++;
@@ -1365,13 +1365,13 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
   /* return if file has no length */
   if (N==0) {
     LogPrintf(LOG_CRITICAL,"%s : found no time samples in file %s.\n",__func__,filename);
-    return XLAL_SUCCESS;
+    return XLAL_FAILURE;
   }
 
   /* open the file for reading */
   if ((binfp = fopen(filename,"r")) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : failed to open binary input file %s\n",__func__,filename);
-    return 1;
+    return XLAL_FAILURE;
   }
 
   /* NOTE: a timeseries of length N*dT has no timestep at N*dT !! (convention) */
@@ -1397,7 +1397,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
   /* check for zero data */
   if (sum == 0) {
     LogPrintf(LOG_CRITICAL,"%s : found no photons in file %s.\n",__func__,filename);
-    return XLAL_SUCCESS;
+    return XLAL_FAILURE;
   }
   fprintf(stdout,"---> the total number of photons in the binary file = %" LAL_INT8_FORMAT "\n",sum);
 
@@ -1427,7 +1427,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
   fprintf(stdout,"---> requested time span = %d sec\n",tspan);
   if (tspan<0) {
     LogPrintf(LOG_CRITICAL,"%s : requested sft start time after end of data!\n",__func__);
-    return XLAL_SUCCESS;
+    return XLAL_FAILURE;
   }
   INT4 maxsft = (INT4)floor((REAL8)tspan/par->tsft);        /* compute the max number of SFTs */
   timestamps.length = maxsft;
