@@ -284,7 +284,7 @@ int main( int argc, char *argv[] )  {
   /* for (i=0;i<sftvec->length;i++) {
     for (j=0;j<sftvec->data[i].data->length;j++) {
       if (isnan(crealf(sftvec->data[i].data->data[j]))||isinf(crealf(sftvec->data[i].data->data[j]))||isnan(cimagf(sftvec->data[i].data->data[j]))||isinf(cimagf(sftvec->data[i].data->data[j]))) {
-        fprintf(stdout,"SFT %d : %f %e %e\n",i,sftvec->data[i].f0 + j*sftvec->data[i].deltaF,crealf(sftvec->data[i].data->data[j]),cimagf(sftvec->data[i].data->data[j]));
+        LogPrintf(LOG_DEBUG,"SFT %d : %f %e %e\n",i,sftvec->data[i].f0 + j*sftvec->data[i].deltaF,crealf(sftvec->data[i].data->data[j]),cimagf(sftvec->data[i].data->data[j]));
       }
     }
   } */

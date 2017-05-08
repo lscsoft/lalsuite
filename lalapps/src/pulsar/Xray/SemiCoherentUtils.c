@@ -258,7 +258,7 @@ int XLALGetNextRandomBinaryTemplate(Template **temp,                        /**<
     REAL8 temp4 = gsl_ran_flat((gsl_rng*)r,0,1);
     Om = O2*pow((pow(O1/O2,5.0) + (1.0 - pow(O1/O2,5.0))*temp4),1.0/5.0);
 
-    /* fprintf(stdout,"%f (%f %f) %f (%f %f) %f (%f %f) %f (%f %f)\n",nu,n1,n2,a,a1,a2,tasc,t1,t2,Om,O1,O2); */
+    /* LogPrintf(LOG_DEBUG,"%f (%f %f) %f (%f %f) %f (%f %f) %f (%f %f)\n",nu,n1,n2,a,a1,a2,tasc,t1,t2,Om,O1,O2); */
 
     if ((nu>n1)&&(nu<n2)&&(a>a1)&&(a<a2)&&(tasc>t1)&&(tasc<t2)&&(Om>O1)&&(Om<O2)) flag = 1;
 
@@ -1338,7 +1338,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
 
   INT4 i,k;
   static const LALUnit empty_LALUnit;
-  fprintf(stdout,"---> working on file %s\n",filename);
+  LogPrintf(LOG_DEBUG,"working on file %s\n",filename);
 
   /* initialise results vector */
   if ((*SFTvect)==NULL) {
@@ -1360,7 +1360,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
   while (fread(&dummy,sizeof(REAL4),1,binfp)) i++;
   INT8 N = i;
   fclose(binfp);
-  fprintf(stdout,"---> %s : counted %" LAL_UINT8_FORMAT " samples in the file.\n",__func__,N);
+  LogPrintf(LOG_DEBUG,"%s : counted %" LAL_UINT8_FORMAT " samples in the file.\n",__func__,N);
 
   /* return if file has no length */
   if (N==0) {
@@ -1377,14 +1377,14 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
   /* NOTE: a timeseries of length N*dT has no timestep at N*dT !! (convention) */
   REAL8 dt = par->tsamp;
   LIGOTimeGPS startTimeGPS, endTimeGPS;                     /* the start and end time of the observation */
-  fprintf(stdout,"---> the filestart time is %d %d\n",fileStart->gpsSeconds,fileStart->gpsNanoSeconds);
+  LogPrintf(LOG_DEBUG,"the filestart time is %d %d\n",fileStart->gpsSeconds,fileStart->gpsNanoSeconds);
   memcpy(&startTimeGPS,fileStart,sizeof(LIGOTimeGPS));
   memcpy(&endTimeGPS,&startTimeGPS,sizeof(LIGOTimeGPS));
   XLALGPSAdd(&endTimeGPS,N*dt);
-  fprintf(stdout,"---> input binary file has start and end [%d %d - %d %d]\n",startTimeGPS.gpsSeconds,startTimeGPS.gpsNanoSeconds,endTimeGPS.gpsSeconds,endTimeGPS.gpsNanoSeconds);
-  fprintf(stdout,"---> input binary file has length %.12f sec\n",N*dt);
+  LogPrintf(LOG_DEBUG,"input binary file has start and end [%d %d - %d %d]\n",startTimeGPS.gpsSeconds,startTimeGPS.gpsNanoSeconds,endTimeGPS.gpsSeconds,endTimeGPS.gpsNanoSeconds);
+  LogPrintf(LOG_DEBUG,"input binary file has length %.12f sec\n",N*dt);
   REAL4TimeSeries *Tseries = XLALCreateREAL4TimeSeries ( "X1", &(startTimeGPS), 0, dt, &empty_LALUnit, N);
-  fprintf(stdout,"---> made timeseries with length %f sec\n",Tseries->deltaT*Tseries->data->length);
+  LogPrintf(LOG_DEBUG,"made timeseries with length %f sec\n",Tseries->deltaT*Tseries->data->length);
   INT8 sum = 0;
 
   /* read in the data to the timeseries - max of MAXNTSERIES values */
@@ -1399,11 +1399,11 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
     LogPrintf(LOG_CRITICAL,"%s : found no photons in file %s.\n",__func__,filename);
     return XLAL_FAILURE;
   }
-  fprintf(stdout,"---> the total number of photons in the binary file = %" LAL_INT8_FORMAT "\n",sum);
+  LogPrintf(LOG_DEBUG,"the total number of photons in the binary file = %" LAL_INT8_FORMAT "\n",sum);
 
   /* inject signal if requested */
   if (par->amp_inj>0) {
-    fprintf(stdout,"%s : injecting signal into the data with fractional amplitude %f.\n",__func__,par->amp_inj);
+    LogPrintf(LOG_DEBUG,"%s : injecting signal into the data with fractional amplitude %f.\n",__func__,par->amp_inj);
     REAL8 Om = LAL_TWOPI/par->P_inj;
     REAL8 bg = (REAL8)sum/(REAL8)N;
     for (i=0;i<N;i++) {
@@ -1415,23 +1415,23 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
       REAL8 phase = par->phi_inj + LAL_TWOPI*par->f_inj*(tmtref - par->asini_inj*sin(Om*tmtasc));
       REAL8 x = bg*(1.0 + par->amp_inj*sin(phase));
       Tseries->data->data[i] = (REAL4)gsl_ran_poisson(par->r,x);
-      /* fprintf(stdout,"%d %d %.12f %.12f %.12f %.12f %d %.2f\n",t.gpsSeconds,t.gpsNanoSeconds,tmtref,tmtasc,phase,x,y,Tseries->data->data[i]); */
+      /* LogPrintf(LOG_DEBUG,"%d %d %.12f %.12f %.12f %.12f %d %.2f\n",t.gpsSeconds,t.gpsNanoSeconds,tmtref,tmtasc,phase,x,y,Tseries->data->data[i]); */
     }
   }
 
   /**********************************************************************************/
   /* make timestamps */
   LIGOTimeGPSVector timestamps;
-  fprintf(stdout,"---> requested starttime = %d %d endtime = %d %d\n",par->tstart.gpsSeconds,par->tstart.gpsNanoSeconds,endTimeGPS.gpsSeconds,endTimeGPS.gpsNanoSeconds);
+  LogPrintf(LOG_DEBUG,"requested starttime = %d %d endtime = %d %d\n",par->tstart.gpsSeconds,par->tstart.gpsNanoSeconds,endTimeGPS.gpsSeconds,endTimeGPS.gpsNanoSeconds);
   INT4 tspan = (INT4)XLALGPSDiff(&endTimeGPS,&(par->tstart));
-  fprintf(stdout,"---> requested time span = %d sec\n",tspan);
+  LogPrintf(LOG_DEBUG,"requested time span = %d sec\n",tspan);
   if (tspan<0) {
     LogPrintf(LOG_CRITICAL,"%s : requested sft start time after end of data!\n",__func__);
     return XLAL_FAILURE;
   }
   INT4 maxsft = (INT4)floor((REAL8)tspan/par->tsft);        /* compute the max number of SFTs */
   timestamps.length = maxsft;
-  fprintf(stdout,"---> initial estimate of %d SFTs will be made\n",maxsft);
+  LogPrintf(LOG_DEBUG,"initial estimate of %d SFTs will be made\n",maxsft);
   *np = XLALCreateINT8Vector(maxsft);
 
   /* if we have one or more SFTs to make */
@@ -1440,7 +1440,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
     INT4 cnt = 0;
     INT4 Nsft = 0;
     INT4 Ndt = (INT4)(par->tsft/par->tsamp);
-    fprintf(stdout,"---> number of samples per SFT = %d\n",Ndt);
+    LogPrintf(LOG_DEBUG,"number of samples per SFT = %d\n",Ndt);
     timestamps.data = XLALCalloc(maxsft,sizeof(LIGOTimeGPS));
     for (i=0;i<maxsft;i++) {
 
@@ -1448,13 +1448,13 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
       sum = 0;
       INT4 j;
       for (j=0;j<Ndt;j++) sum += (INT8)Tseries->data->data[cnt++];
-      fprintf(stdout,"---> the photon sum for the current SFT is %" LAL_INT8_FORMAT "\n",sum);
+      LogPrintf(LOG_DEBUG,"the photon sum for the current SFT is %" LAL_INT8_FORMAT "\n",sum);
       if (sum > 0) {
         memcpy(&(timestamps.data[Nsft]),&(par->tstart),sizeof(LIGOTimeGPS));
-        fprintf(stdout,"---> about to add %f to %d %d\n",(REAL8)(i*par->tsft),timestamps.data[Nsft].gpsSeconds,timestamps.data[Nsft].gpsNanoSeconds);
+        LogPrintf(LOG_DEBUG,"about to add %f to %d %d\n",(REAL8)(i*par->tsft),timestamps.data[Nsft].gpsSeconds,timestamps.data[Nsft].gpsNanoSeconds);
         XLALGPSAdd(&(timestamps.data[Nsft]),(REAL8)(i*par->tsft));
         (*np)->data[Nsft] = sum;
-        fprintf(stdout,"np->data[%d] = %" LAL_INT8_FORMAT "\n",Nsft,(*np)->data[Nsft]);
+        LogPrintf(LOG_DEBUG,"np->data[%d] = %" LAL_INT8_FORMAT "\n",Nsft,(*np)->data[Nsft]);
         Nsft++;
       }
 
@@ -1468,8 +1468,8 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
       (*np)->data = XLALRealloc((*np)->data,Nsft*sizeof(INT8));
       (*np)->length = Nsft;
       *R = XLALCreateREAL8Vector(Nsft);
-      fprintf(stdout,"---> start SFT [%d %d - %d %d]\n",timestamps.data[0].gpsSeconds,timestamps.data[0].gpsNanoSeconds,timestamps.data[0].gpsSeconds+par->tsft,timestamps.data[0].gpsNanoSeconds);
-      fprintf(stdout,"---> end SFT [%d %d - %d %d]\n",timestamps.data[Nsft-1].gpsSeconds,timestamps.data[Nsft-1].gpsNanoSeconds,timestamps.data[Nsft-1].gpsSeconds+par->tsft,timestamps.data[Nsft-1].gpsNanoSeconds);
+      LogPrintf(LOG_DEBUG,"start SFT [%d %d - %d %d]\n",timestamps.data[0].gpsSeconds,timestamps.data[0].gpsNanoSeconds,timestamps.data[0].gpsSeconds+par->tsft,timestamps.data[0].gpsNanoSeconds);
+      LogPrintf(LOG_DEBUG,"end SFT [%d %d - %d %d]\n",timestamps.data[Nsft-1].gpsSeconds,timestamps.data[Nsft-1].gpsNanoSeconds,timestamps.data[Nsft-1].gpsSeconds+par->tsft,timestamps.data[Nsft-1].gpsNanoSeconds);
 
       /**********************************************************************************/
       /* define the high pass filter params and high pass filter the data */
@@ -1482,7 +1482,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
       filterpar.f1    = -1.0;
       filterpar.a1    = -1.0;
       XLALButterworthREAL4TimeSeries(Tseries, &filterpar);
-      fprintf(stdout,"---> Filtered time-series now has length %f sec\n",Tseries->deltaT*Tseries->data->length);
+      LogPrintf(LOG_DEBUG,"Filtered time-series now has length %f sec\n",Tseries->deltaT*Tseries->data->length);
 
       /**********************************************************************************/
       /* compute SFTs from timeseries */
@@ -1492,7 +1492,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
       sftParams.noiseSFTs = NULL;       // not used here any more!
       sftParams.window = NULL;
       SFTVector *sftvect = NULL;
-      fprintf(stdout,"---> timeseries prior to making SFTs has length %f sec\n",Tseries->deltaT*Tseries->data->length);
+      LogPrintf(LOG_DEBUG,"timeseries prior to making SFTs has length %f sec\n",Tseries->deltaT*Tseries->data->length);
       XLAL_CHECK ( (sftvect = XLALSignalToSFTs (Tseries, &sftParams)) != NULL, XLAL_EFUNC );
 
       /**********************************************************************************/
@@ -1506,7 +1506,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
         XLALAppendSFT2Vector((*SFTvect),&(tempSFTvect->data[k]));
         XLALNormalizeSFTMedian(&(tempSFTvect->data[k]),&((*R)->data[k]),0);
       }
-      fprintf(stdout,"---> appended SFTs\n");
+      LogPrintf(LOG_DEBUG,"appended SFTs\n");
 
       /**********************************************************************************/
 
@@ -1520,7 +1520,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
   }
 
   fclose(binfp);
-  fprintf(stdout,"---> completed analysis of file %s\n",filename);
+  LogPrintf(LOG_DEBUG,"completed analysis of file %s\n",filename);
 
   return XLAL_SUCCESS;
 
