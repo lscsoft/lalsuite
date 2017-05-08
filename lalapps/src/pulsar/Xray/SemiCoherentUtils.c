@@ -1356,14 +1356,13 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
     LogPrintf(LOG_CRITICAL,"%s : failed to open binary input file %s\n",__func__,filename);
     return XLAL_FAILURE;
   }
-  i = 0;
-  while (fread(&dummy,sizeof(REAL4),1,binfp)) i++;
-  INT8 N = i;
+  INT8 Nfile = 0;
+  while (fread(&dummy,sizeof(REAL4),1,binfp)) Nfile++;
   fclose(binfp);
-  LogPrintf(LOG_DEBUG,"%s : counted %" LAL_UINT8_FORMAT " samples in the file.\n",__func__,N);
+  LogPrintf(LOG_DEBUG,"%s : counted %" LAL_UINT8_FORMAT " samples in the file.\n",__func__,Nfile);
 
   /* return if file has no length */
-  if (N==0) {
+  if (Nfile==0) {
     LogPrintf(LOG_CRITICAL,"%s : found no time samples in file %s.\n",__func__,filename);
     return XLAL_FAILURE;
   }
@@ -1372,6 +1371,12 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
   if ((binfp = fopen(filename,"r")) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : failed to open binary input file %s\n",__func__,filename);
     return XLAL_FAILURE;
+  }
+
+  /* zero-pad input time series to get at least 1 SFT */
+  INT8 N = MYMAX( Nfile, (INT8)ceil(par->tsft / par->tsamp) );
+  if ( N > Nfile ) {
+    LogPrintf(LOG_DEBUG,"zero-padding input time series from %" LAL_INT8_FORMAT " to %" LAL_INT8_FORMAT " samples to get at least 1 SFT", Nfile, N);
   }
 
   /* NOTE: a timeseries of length N*dT has no timestep at N*dT !! (convention) */
@@ -1384,11 +1389,12 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
   LogPrintf(LOG_DEBUG,"input binary file has start and end [%d %d - %d %d]\n",startTimeGPS.gpsSeconds,startTimeGPS.gpsNanoSeconds,endTimeGPS.gpsSeconds,endTimeGPS.gpsNanoSeconds);
   LogPrintf(LOG_DEBUG,"input binary file has length %.12f sec\n",N*dt);
   REAL4TimeSeries *Tseries = XLALCreateREAL4TimeSeries ( "X1", &(startTimeGPS), 0, dt, &empty_LALUnit, N);
+  memset(Tseries->data->data, 0, sizeof(Tseries->data->data[0]) * Tseries->data->length);
   LogPrintf(LOG_DEBUG,"made timeseries with length %f sec\n",Tseries->deltaT*Tseries->data->length);
-  INT8 sum = 0;
 
-  /* read in the data to the timeseries - max of MAXNTSERIES values */
-  for (i=0;i<N;i++) {
+  /* read in the data to the timeseries */
+  INT8 sum = 0;
+  for (i=0;i<Nfile;i++) {
     fread(&dummy,sizeof(REAL4),1,binfp);
     Tseries->data->data[i] = (REAL4)dummy;
     sum += (INT8)Tseries->data->data[i];
@@ -1430,6 +1436,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
     return XLAL_FAILURE;
   }
   INT4 maxsft = (INT4)floor((REAL8)tspan/par->tsft);        /* compute the max number of SFTs */
+  XLAL_CHECK( maxsft >= 1, XLAL_EFAILED, "Expected maxsft = 1, got %i", maxsft );
   timestamps.length = maxsft;
   LogPrintf(LOG_DEBUG,"initial estimate of %d SFTs will be made\n",maxsft);
   *np = XLALCreateINT8Vector(maxsft);
