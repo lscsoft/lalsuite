@@ -530,6 +530,9 @@ data!\n");
 
           if( XLALFileEOF(fpin) || rc == 0 ) break;
 
+          /* check that data is finite and not NaN */
+          if ( !isfinite(reVal) && !isfinite(imVal) ){ continue; }
+
           if(inputParams.scaleFac > 1.0){
             reVal *= inputParams.scaleFac;
             imVal *= inputParams.scaleFac;
@@ -569,6 +572,9 @@ data!\n");
             // skip this line
             continue;
           }
+
+          /* check that data is finite and not NaN */
+          if ( !isfinite(reVal) && !isfinite(imVal) ){ continue; }
 
           if( inputParams.scaleFac > 1.0 ){
             reVal *= inputParams.scaleFac;
@@ -2237,6 +2243,8 @@ INT4 remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times,
       j++;
     }
   }
+
+  XLAL_CHECK( j > 0, XLAL_EFUNC, "Error... thresholding has rejected all the data!" );
 
   /* resize data and times */
   if( (data = XLALResizeCOMPLEX16TimeSeries(data, 0, j)) == NULL ||
