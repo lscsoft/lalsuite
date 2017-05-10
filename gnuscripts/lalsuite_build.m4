@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 139
+# serial 140
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1398,6 +1398,8 @@ double volatile d = round(c);
 
     ])
 
+    m4_popdef([option])
+    m4_popdef([symbol])
   ])
 
   # string listing all the SIMD extensions supported by the compiler
