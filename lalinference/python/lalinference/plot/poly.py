@@ -20,8 +20,7 @@ Plotting tools for drawing polygons
 """
 from __future__ import division
 
-# FIXME: should be a module-level import
-# from shapely import geometry
+from shapely import geometry
 import numpy as np
 import healpy as hp
 
@@ -94,9 +93,6 @@ def cut_prime_meridian(vertices):
 
     This routine is not meant to cover all possible cases; it will only work
     for convex polygons that extend over less than a hemisphere."""
-
-    # FIXME: should be a module-level import
-    from shapely import geometry
 
     # Ensure that the list of vertices does not contain a repeated endpoint.
     if (vertices[0] == vertices[-1]).all():
