@@ -108,6 +108,9 @@ int XLALFITSWriteSuperskyMetrics(
 ///
 /// Read a #SuperskyMetrics struct from a FITS file.
 ///
+#ifdef SWIG // SWIG interface directives
+SWIGLAL( INOUT_STRUCTS( SuperskyMetrics **, metrics ) );
+#endif
 int XLALFITSReadSuperskyMetrics(
   FITSFile *file,                               ///< [in] FITS file pointer
   SuperskyMetrics **metrics                     ///< [out] Supersky metrics struct
