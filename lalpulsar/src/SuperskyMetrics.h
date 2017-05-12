@@ -124,23 +124,6 @@ int XLALSuperskyMetricsDimensions(
   size_t *spindowns                             ///< [out] Number of spindown dimensions
   );
 
-#ifdef SWIG // SWIG interface directives
-SWIGLAL( COPYINOUT_ARRAYS( gsl_matrix, rssky_metric, rssky_transf ) );
-#endif // SWIG
-
-///
-/// Scale a given supersky metric and its coordinate transform data to a new fiducial frequency.
-///
-int XLALScaleSuperskyMetricFiducialFreq(
-  gsl_matrix *rssky_metric,                     ///< [in] Reduced supersky metric
-  SuperskyTransformData *rssky_transf,          ///< [in] Reduced supersky metric coordinate transform data
-  const double new_fiducial_freq                ///< [in] New fiducial frequency
-  );
-
-#ifdef SWIG // SWIG interface directives
-SWIGLAL_CLEAR( COPYINOUT_ARRAYS( gsl_matrix, rssky_metric, rssky_transf ) );
-#endif // SWIG
-
 ///
 /// Scale all supersky metrics and their coordinate transform data to a new fiducial frequency.
 ///
