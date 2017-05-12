@@ -856,10 +856,13 @@ int XLALSuperskyMetricsDimensions(
 
 }
 
-int XLALScaleSuperskyMetricFiducialFreq(
-  gsl_matrix *rssky_metric,
-  SuperskyTransformData *rssky_transf,
-  const double new_fiducial_freq
+///
+/// Scale a given supersky metric and its coordinate transform data to a new fiducial frequency.
+///
+static int SM_ScaleSuperskyMetricFiducialFreq(
+  gsl_matrix *rssky_metric,                     ///< [in] Reduced supersky metric
+  SuperskyTransformData *rssky_transf,          ///< [in] Reduced supersky metric coordinate transform data
+  const double new_fiducial_freq                ///< [in] New fiducial frequency
   )
 {
 
@@ -898,9 +901,9 @@ int XLALScaleSuperskyMetricsFiducialFreq(
 
   // Rescale all metrics to 'new_fiducial_freq'
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
-    XLAL_CHECK( XLALScaleSuperskyMetricFiducialFreq( metrics->coh_rssky_metric[n], metrics->coh_rssky_transf[n], new_fiducial_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( SM_ScaleSuperskyMetricFiducialFreq( metrics->coh_rssky_metric[n], metrics->coh_rssky_transf[n], new_fiducial_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
-  XLAL_CHECK( XLALScaleSuperskyMetricFiducialFreq( metrics->semi_rssky_metric, metrics->semi_rssky_transf, new_fiducial_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( SM_ScaleSuperskyMetricFiducialFreq( metrics->semi_rssky_metric, metrics->semi_rssky_transf, new_fiducial_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
