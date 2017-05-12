@@ -53,6 +53,9 @@ int XLALFITSWriteSegmentList(
 ///
 /// Read a segment list from a FITS file
 ///
+#ifdef SWIG // SWIG interface directives
+SWIGLAL( INOUT_STRUCTS( LALSegList **, segments ) );
+#endif
 int XLALFITSReadSegmentList(
   FITSFile *file,                       ///< [in] FITS file pointer
   const CHAR *name,                     ///< [in] Name of FITS table to read segment list from
@@ -70,6 +73,9 @@ int XLALFITSWriteEphemerisData(
 ///
 /// Read ephemeris data from a FITS file
 ///
+#ifdef SWIG // SWIG interface directives
+SWIGLAL( INOUT_STRUCTS( EphemerisData **, ephemerides ) );
+#endif
 int XLALFITSReadEphemerisData(
   FITSFile *file,                       ///< [in] FITS file pointer
   EphemerisData **ephemerides           ///< [out] Ephemeris data
