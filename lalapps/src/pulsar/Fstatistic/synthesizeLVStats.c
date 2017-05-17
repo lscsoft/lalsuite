@@ -349,7 +349,7 @@ int main(int argc,char *argv[])
 
       /* ----- if requested, output transient-cand statistics */
       if ( fpStats && write_BSGL_candidate_to_fp ( fpStats, &synthStats, uvar.IFOs, &injParamsDrawn, uvar.computeBSGL ) != XLAL_SUCCESS ) {
-        XLALPrintError ( "%s: write_transientCandidate_to_fp() failed.\n", __func__ );
+        XLALPrintError ( "%s: write_BSGL_candidate_to_fp() failed.\n", __func__ );
         XLAL_ERROR ( XLAL_EFUNC );
       }
 

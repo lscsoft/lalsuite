@@ -37,7 +37,6 @@ from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
 from lalburst import git_version
 from lalburst import burca
-from pylal import snglcoinc
 
 
 @lsctables.use_in

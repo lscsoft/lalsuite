@@ -33,6 +33,7 @@ from glue.ligolw import ligolw
 from glue.ligolw import array as ligolw_array
 from glue.ligolw import param as ligolw_param
 import lal
+import six
 import numpy as np
 
 
@@ -49,7 +50,7 @@ Attributes = ligolw.sax.xmlreader.AttributesImpl
 
 
 def _build_series(series, dim_names, comment, delta_name, delta_unit):
-    elem = ligolw.LIGO_LW(Attributes({u"Name": unicode(series.__class__.__name__)}))
+    elem = ligolw.LIGO_LW(Attributes({u"Name": six.text_type(series.__class__.__name__)}))
     if comment is not None:
         elem.appendChild(ligolw.Comment()).pcdata = comment
     elem.appendChild(ligolw.Time.from_gps(series.epoch, u"epoch"))

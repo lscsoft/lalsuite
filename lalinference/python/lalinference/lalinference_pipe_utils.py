@@ -1829,6 +1829,10 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     # For LALInferenceNest demand only 1 thread (to be tuned later)
     if self.engine=='lalinferencenest':
             self.add_condor_cmd('environment','OMP_NUM_THREADS=1')
+    if cp.has_option('condor','notification'):
+        self.set_notification(cp.get('condor','notification'))
+        if cp.has_option('resultspage','email'):
+            self.add_condor_cmd('notify_user',cp.get('resultspage','email'))
 
   def set_grid_site(self,site=None):
     """

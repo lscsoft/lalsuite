@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2014, 2015 Karl Wette
+// Copyright (C) 2014--2017 Karl Wette
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ typedef struct tagSuperskyMetrics {
 #endif // SWIG
   gsl_matrix **coh_rssky_metric;                ///< Coherent reduced supersky metric (2-dimensional sky) for each segment
 #ifdef SWIG // SWIG interface directives
-  SWIGLAL( ARRAY_1D( SuperskyMetrics, gsl_matrix *, coh_rssky_transf, size_t, num_segments ) );
+  SWIGLAL( ARRAY_1D( SuperskyMetrics, SuperskyTransformData *, coh_rssky_transf, size_t, num_segments ) );
 #endif // SWIG
   SuperskyTransformData **coh_rssky_transf;     ///< Coherent reduced supersky metric coordinate transform data for each segment
 
@@ -108,6 +108,9 @@ int XLALFITSWriteSuperskyMetrics(
 ///
 /// Read a #SuperskyMetrics struct from a FITS file.
 ///
+#ifdef SWIG // SWIG interface directives
+SWIGLAL( INOUT_STRUCTS( SuperskyMetrics **, metrics ) );
+#endif
 int XLALFITSReadSuperskyMetrics(
   FITSFile *file,                               ///< [in] FITS file pointer
   SuperskyMetrics **metrics                     ///< [out] Supersky metrics struct
@@ -120,23 +123,6 @@ int XLALSuperskyMetricsDimensions(
   const SuperskyMetrics *metrics,               ///< [in] Supersky metrics struct
   size_t *spindowns                             ///< [out] Number of spindown dimensions
   );
-
-#ifdef SWIG // SWIG interface directives
-SWIGLAL( COPYINOUT_ARRAYS( gsl_matrix, rssky_metric, rssky_transf ) );
-#endif // SWIG
-
-///
-/// Scale a given supersky metric and its coordinate transform data to a new fiducial frequency.
-///
-int XLALScaleSuperskyMetricFiducialFreq(
-  gsl_matrix *rssky_metric,                     ///< [in] Reduced supersky metric
-  SuperskyTransformData *rssky_transf,          ///< [in] Reduced supersky metric coordinate transform data
-  const double new_fiducial_freq                ///< [in] New fiducial frequency
-  );
-
-#ifdef SWIG // SWIG interface directives
-SWIGLAL_CLEAR( COPYINOUT_ARRAYS( gsl_matrix, rssky_metric, rssky_transf ) );
-#endif // SWIG
 
 ///
 /// Scale all supersky metrics and their coordinate transform data to a new fiducial frequency.

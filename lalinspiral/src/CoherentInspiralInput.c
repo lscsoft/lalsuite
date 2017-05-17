@@ -73,7 +73,6 @@ LALFindChirpCreateCoherentInput(
 {
   COMPLEX8TimeSeries      *cohInputData = NULL;
   LIGOTimeGPS              end_time;
-  UINT8                    UNUSED eventID = 0;
   INT4                     numPoints = 0;
   REAL4                    cohSegLength = 0.0;
   INT4                     inputEpochSeconds = 0;
@@ -122,7 +121,6 @@ LALFindChirpCreateCoherentInput(
   /* Get necessary info from input structures */
 
   end_time = templt->end;
-  eventID  = templt->event_id->id;
   numPoints = input->data->length;
   cohSegLength = coherentSegmentLength;
   inputEpochSeconds = input->epoch.gpsSeconds;

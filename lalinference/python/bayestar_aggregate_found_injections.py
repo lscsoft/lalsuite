@@ -16,8 +16,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 """
-Match sky maps with injections in an inspinjfind-style sqlite database and print
-summary values for each sky map:
+Match sky maps with injections in an inspinjfind-style sqlite database and
+print summary values for each sky map:
 
  * event ID
  * false alarm rate
@@ -25,14 +25,13 @@ summary values for each sky map:
  * searched posterior probability
  * angle between true sky location and maximum a posteriori estimate
  * runtime in seconds
- * (optional) areas of and numbers of modes within specified probability contours
+ * (optional) areas and numbers of modes within specified probability contours
 
 The filenames of the sky maps may be provided as positional command line
 arguments, and may also be provided as globs (such as '*.fits.gz').
 """
 from __future__ import division
 from __future__ import print_function
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Command line interface.
@@ -48,7 +47,8 @@ if __name__ == '__main__':
         '-j', '--jobs', type=int, default=1, const=None, nargs='?',
         help='Number of threads [default: %(default)s]')
     parser.add_argument(
-        '-p', '--contour', default=[], nargs='+', type=float, metavar='PERCENT',
+        '-p', '--contour', default=[], nargs='+', type=float,
+        metavar='PERCENT',
         help='Report the area of the smallest contour and the number of modes '
         'containing this much probability.')
     parser.add_argument(
@@ -91,7 +91,8 @@ def process(fitsfilename):
     except KeyError:
         runtime = float('nan')
 
-    row = db.execute("""
+    row = db.execute(
+        """
         SELECT DISTINCT sim.simulation_id AS simulation_id,
         sim.longitude AS ra, sim.latitude AS dec, sim.distance AS distance,
         ci.combined_far AS far, ci.snr AS snr
@@ -100,12 +101,12 @@ def process(fitsfilename):
         INNER JOIN sim_inspiral AS sim ON (cem1.event_id = sim.simulation_id)
         INNER JOIN coinc_inspiral AS ci ON (cem2.event_id = ci.coinc_event_id)
         WHERE cem1.table_name = 'sim_inspiral'
-        AND cem2.table_name = 'coinc_event' AND cem2.event_id = ?""",
-        (coinc_event_id,)).fetchone()
+        AND cem2.table_name = 'coinc_event' AND cem2.event_id = ?
+        """, (coinc_event_id,)).fetchone()
     if row is None:
         raise ValueError(
             "No database record found for event '{0}' in '{1}'".format(
-            coinc_event_id, command.sqlite_get_filename(db)))
+                coinc_event_id, command.sqlite_get_filename(db)))
     simulation_id, true_ra, true_dec, true_dist, far, snr = row
     searched_area, searched_prob, offset, searched_modes, contour_areas, area_probs, contour_modes = postprocess.find_injection(
         prob, true_ra, true_dec, contours=[0.01 * p for p in contours],

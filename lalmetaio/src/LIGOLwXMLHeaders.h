@@ -98,255 +98,255 @@ fputs( "      </Stream>\n", fp ) == EOF || \
 fputs( "   </Table>\n", fp ) )
 
 #define PRINT_LIGOLW_XML_PROCESS(fp) ( \
-fputs( "   <Table Name=\"processgroup:process:table\">\n", fp ) == EOF || \
-fputs( "      <Column Name=\"processgroup:process:program\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"processgroup:process:version\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"processgroup:process:cvs_repository\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"processgroup:process:cvs_entry_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"processgroup:process:comment\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"processgroup:process:is_online\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"processgroup:process:node\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"processgroup:process:username\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"processgroup:process:unix_procid\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"processgroup:process:start_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"processgroup:process:end_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"processgroup:process:jobid\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"processgroup:process:domain\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"processgroup:process:ifos\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"processgroup:process:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
-fputs( "      <Stream Name=\"processgroup:process:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
+fputs( "   <Table Name=\"process:table\">\n", fp ) == EOF || \
+fputs( "      <Column Name=\"program\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"version\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"cvs_repository\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"cvs_entry_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"comment\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"is_online\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"node\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"username\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"unix_procid\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"start_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"end_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"jobid\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"domain\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"ifos\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
+fputs( "      <Stream Name=\"process:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define PROCESS_ROW \
 "         \"%s\",\"%s\",\"%s\",%d,\"%s\",%d,\"%s\",\"%s\",%d,%d,%d,%d,\"%s\",\"%s\",\"process:process_id:0\""
 
 #define PRINT_LIGOLW_XML_PROCESS_PARAMS(fp) ( \
-fputs( "   <Table Name=\"process_paramsgroup:process_params:table\">\n", fp ) == EOF || \
-fputs( "      <Column Name=\"process_paramsgroup:process_params:program\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"process_paramsgroup:process_params:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"process_paramsgroup:process_params:param\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"process_paramsgroup:process_params:type\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"process_paramsgroup:process_params:value\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Stream Name=\"process_paramsgroup:process_params:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
+fputs( "   <Table Name=\"process_params:table\">\n", fp ) == EOF || \
+fputs( "      <Column Name=\"program\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"param\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"type\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"value\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Stream Name=\"process_params:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define PROCESS_PARAMS_ROW \
 "         \"%s\",\"process:process_id:0\",\"%s\",\"%s\",\"%s\""
 
 #define PRINT_LIGOLW_XML_SEARCH_SUMMARY(fp) ( \
-fputs( "   <Table Name=\"search_summarygroup:search_summary:table\">\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summarygroup:search_summary:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summarygroup:search_summary:shared_object\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summarygroup:search_summary:lalwrapper_cvs_tag\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summarygroup:search_summary:lal_cvs_tag\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summarygroup:search_summary:comment\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summarygroup:search_summary:ifos\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summarygroup:search_summary:in_start_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summarygroup:search_summary:in_start_time_ns\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summarygroup:search_summary:in_end_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summarygroup:search_summary:in_end_time_ns\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summarygroup:search_summary:out_start_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summarygroup:search_summary:out_start_time_ns\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summarygroup:search_summary:out_end_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summarygroup:search_summary:out_end_time_ns\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summarygroup:search_summary:nevents\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summarygroup:search_summary:nnodes\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Stream Name=\"search_summarygroup:search_summary:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
+fputs( "   <Table Name=\"search_summary:table\">\n", fp ) == EOF || \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"shared_object\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"lalwrapper_cvs_tag\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"lal_cvs_tag\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"comment\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"ifos\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"in_start_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"in_start_time_ns\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"in_end_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"in_end_time_ns\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"out_start_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"out_start_time_ns\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"out_end_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"out_end_time_ns\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"nevents\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"nnodes\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Stream Name=\"search_summary:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SEARCH_SUMMARY_ROW \
 "         \"process:process_id:0\",\"standalone\",\"\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d"
 
 #define PRINT_LIGOLW_XML_SEARCH_SUMMVARS(fp) (  \
-fputs( "   <Table Name=\"search_summvarsgroup:search_summvars:table\">\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summvarsgroup:search_summvars:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summvarsgroup:search_summvars:name\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summvarsgroup:search_summvars:string\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summvarsgroup:search_summvars:value\" Type=\"real_8\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"search_summvarsgroup:search_summvars:search_summvar_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
-fputs( "      <Stream Name=\"search_summvarsgroup:search_summvars:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
+fputs( "   <Table Name=\"search_summvars:table\">\n", fp ) == EOF || \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"name\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"string\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"value\" Type=\"real_8\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"search_summvar_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
+fputs( "      <Stream Name=\"search_summvars:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SEARCH_SUMMVARS_ROW \
 "         \"process:process_id:0\",\"%s\",\"%s\",%22.16e,\"search_summvars:search_summvar_id:%" LAL_UINT8_FORMAT "\""
 
 #define PRINT_LIGOLW_XML_SNGL_RINGDOWN(fp) ( \
-fputs( "   <Table Name=\"sngl_ringdowngroup:sngl_ringdown:table\">\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:ifo\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:channel\" Type=\"lstring\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:start_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:start_time_ns\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:start_time_gmst\" Type=\"real_8\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:frequency\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:quality\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:phase\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:mass\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:spin\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:epsilon\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:num_clust_trigs\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:ds2_H1H2\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:ds2_H1L1\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:ds2_H1V1\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:ds2_H2L1\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:ds2_H2V1\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:ds2_L1V1\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:amplitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:snr\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:eff_dist\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:sigma_sq\" Type=\"real_8\"/>\n", fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:event_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
-fputs( "      <Stream Name=\"sngl_ringdowngroup:sngl_ringdown:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
+fputs( "   <Table Name=\"sngl_ringdown:table\">\n", fp ) == EOF || \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"ifo\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"channel\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"start_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"start_time_ns\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"start_time_gmst\" Type=\"real_8\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"frequency\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"quality\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"phase\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"mass\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"spin\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"epsilon\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"num_clust_trigs\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"ds2_H1H2\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"ds2_H1L1\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"ds2_H1V1\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"ds2_H2L1\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"ds2_H2V1\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"ds2_L1V1\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"amplitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"snr\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"eff_dist\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sigma_sq\" Type=\"real_8\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"event_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
+fputs( "      <Stream Name=\"sngl_ringdown:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SNGL_RINGDOWN_ROW \
 "         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%d,%e,%e,%e,%e,%e,%e,%e,%e,%e,%22.16e,\"sngl_ringdown:event_id:%" LAL_UINT8_FORMAT "\""
 
 #define PRINT_LIGOLW_XML_SIM_RINGDOWN(fp) ( \
-fputs( "   <Table Name=\"sim_ringdowngroup:sim_ringdown:table\">\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF ||  \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:waveform\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:coordinates\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:geocent_start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:geocent_start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:h_start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:h_start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:l_start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:l_start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:v_start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:v_start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:start_time_gmst\" Type=\"real_8\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:longitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:latitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:distance\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:inclination\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:polarization\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:frequency\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:quality\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:phase\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:mass\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:spin\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:epsilon\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:amplitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:eff_dist_h\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:eff_dist_l\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:eff_dist_v\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:hrss\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:hrss_h\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:hrss_l\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:hrss_v\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:simulation_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
-fputs( "      <Stream Name=\"sim_ringdowngroup:sim_ringdown:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
+fputs( "   <Table Name=\"sim_ringdown:table\">\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF ||  \
+fputs( "      <Column Name=\"waveform\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"coordinates\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"geocent_start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"geocent_start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"h_start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"h_start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"l_start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"l_start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"v_start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"v_start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"start_time_gmst\" Type=\"real_8\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"longitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"latitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"distance\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"inclination\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"polarization\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"frequency\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"quality\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"phase\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"mass\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"spin\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"epsilon\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"amplitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"eff_dist_h\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"eff_dist_l\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"eff_dist_v\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"hrss\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"hrss_h\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"hrss_l\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"hrss_v\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"simulation_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
+fputs( "      <Stream Name=\"sim_ringdown:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SIM_RINGDOWN_ROW \
   "         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,\"sim_ringdown:simulation_id:%" LAL_UINT8_FORMAT "\""
 
 #define PRINT_LIGOLW_XML_SUMM_VALUE(fp) ( \
-fputs( "   <Table Name=\"summ_valuegroup:summ_value:table\">\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"summ_valuegroup:summ_value:program\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"summ_valuegroup:summ_value:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"summ_valuegroup:summ_value:start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"summ_valuegroup:summ_value:start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"summ_valuegroup:summ_value:end_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"summ_valuegroup:summ_value:end_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"summ_valuegroup:summ_value:ifo\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"summ_valuegroup:summ_value:name\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"summ_valuegroup:summ_value:value\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"summ_valuegroup:summ_value:comment\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"summ_valuegroup:summ_value:summ_value_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
-fputs( "      <Stream Name=\"summ_valuegroup:summ_value:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
+fputs( "   <Table Name=\"summ_value:table\">\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"program\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"end_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"end_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"ifo\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"name\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"value\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"comment\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"summ_value_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
+fputs( "      <Stream Name=\"summ_value:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SUMM_VALUE_ROW \
 "         \"%s\",\"process:process_id:0\",%d,%d,%d,%d,\"%s\",\"%s\",%e,\"%s\",\"summ_value:summ_value_id:%" LAL_UINT8_FORMAT "\""
 
 #define PRINT_LIGOLW_XML_SIM_INST_PARAMS(fp) ( \
-fputs( "   <Table Name=\"sim_inst_paramsgroup:sim_inst_params:table\">\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_inst_paramsgroup:sim_inst_params:simulation_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_inst_paramsgroup:sim_inst_params:name\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_inst_paramsgroup:sim_inst_params:comment\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_inst_paramsgroup:sim_inst_params:value\" Type=\"real_8\"/>\n" , fp ) == EOF || \
-fputs( "      <Stream Name=\"sim_inst_paramsgroup:sim_inst_params:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
+fputs( "   <Table Name=\"sim_inst_params:table\">\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"simulation_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"name\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"comment\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"value\" Type=\"real_8\"/>\n" , fp ) == EOF || \
+fputs( "      <Stream Name=\"sim_inst_params:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SIM_INST_PARAMS_ROW \
 "         \"sim_inst:simulation_id:0\",\"%s\",\"%s\",%22.16e"
 
 #define PRINT_LIGOLW_XML_STOCHASTIC(fp) ( \
-fputs( "   <Table Name=\"stochasticgroup:stochastic:table\">\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochasticgroup:stochastic:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochasticgroup:stochastic:ifo_one\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochasticgroup:stochastic:ifo_two\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochasticgroup:stochastic:channel_one\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochasticgroup:stochastic:channel_two\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochasticgroup:stochastic:start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochasticgroup:stochastic:start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochasticgroup:stochastic:duration\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochasticgroup:stochastic:duration_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochasticgroup:stochastic:f_min\" Type=\"real_8\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochasticgroup:stochastic:f_max\" Type=\"real_8\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochasticgroup:stochastic:cc_stat\" Type=\"real_8\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochasticgroup:stochastic:cc_sigma\" Type=\"real_8\"/>\n" , fp ) == EOF || \
-fputs( "      <Stream Name=\"stochasticgroup:stochastic:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
+fputs( "   <Table Name=\"stochastic:table\">\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"ifo_one\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"ifo_two\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"channel_one\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"channel_two\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"duration\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"duration_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"f_min\" Type=\"real_8\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"f_max\" Type=\"real_8\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"cc_stat\" Type=\"real_8\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"cc_sigma\" Type=\"real_8\"/>\n" , fp ) == EOF || \
+fputs( "      <Stream Name=\"stochastic:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define STOCHASTIC_ROW \
 "         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%.2f,%.2f,%22.16e,%22.16e"
 
 #define PRINT_LIGOLW_XML_STOCH_SUMM(fp) ( \
-fputs( "   <Table Name=\"stochsummgroup:stochsumm:table\">\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochsummgroup:stochsumm:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochsummgroup:stochsumm:ifo_one\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochsummgroup:stochsumm:ifo_two\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochsummgroup:stochsumm:channel_one\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochsummgroup:stochsumm:channel_two\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochsummgroup:stochsumm:start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochsummgroup:stochsumm:start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochsummgroup:stochsumm:end_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochsummgroup:stochsumm:end_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochsummgroup:stochsumm:f_min\" Type=\"real_8\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochsummgroup:stochsumm:f_max\" Type=\"real_8\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochsummgroup:stochsumm:y_opt\" Type=\"real_8\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"stochsummgroup:stochsumm:error\" Type=\"real_8\"/>\n" , fp ) == EOF || \
-fputs( "      <Stream Name=\"stochsummgroup:stochsumm:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
+fputs( "   <Table Name=\"stochsumm:table\">\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"ifo_one\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"ifo_two\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"channel_one\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"channel_two\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"end_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"end_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"f_min\" Type=\"real_8\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"f_max\" Type=\"real_8\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"y_opt\" Type=\"real_8\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"error\" Type=\"real_8\"/>\n" , fp ) == EOF || \
+fputs( "      <Stream Name=\"stochsumm:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define STOCH_SUMM_ROW \
 "         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%.2f,%.2f,%22.16e,%22.16e"
 
 #define PRINT_LIGOLW_XML_EXT_TRIGGERS(fp) ( \
 fputs( " <Table Name=\"external_trigger:table\">\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:det_alts\" Type=\"lstring\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:det_band\" Type=\"lstring\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:det_fluence\" Type=\"lstring\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:det_fluence_int\" Type=\"lstring\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:det_name\" Type=\"lstring\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:det_peak\" Type=\"lstring\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:det_peak_int\" Type=\"lstring\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:det_snr\" Type=\"lstring\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:email_time\" Type=\"int_4s\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:event_dec\" Type=\"real_4\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:event_dec_err\" Type=\"real_4\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:event_epoch\" Type=\"lstring\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:event_err_type\" Type=\"lstring\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:event_ra\" Type=\"real_4\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:event_ra_err\" Type=\"real_4\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:start_time\" Type=\"int_4s\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:start_time_ns\" Type=\"int_4s\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:event_type\" Type=\"lstring\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:event_z\" Type=\"real_4\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:event_z_err\" Type=\"real_4\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:notice_comments\" Type=\"lstring\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:notice_id\" Type=\"lstring\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:notice_sequence\" Type=\"lstring\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:notice_time\" Type=\"int_4s\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:notice_type\" Type=\"lstring\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:notice_url\" Type=\"lstring\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:obs_fov_dec\" Type=\"real_4\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:obs_fov_dec_width\" Type=\"real_4\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:obs_fov_ra\" Type=\"real_4\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:obs_fov_ra_width\" Type=\"real_4\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:obs_loc_ele\" Type=\"real_4\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:obs_loc_lat\" Type=\"real_4\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:obs_loc_long\" Type=\"real_4\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:ligo_fave_lho\" Type=\"real_4\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:ligo_fave_llo\" Type=\"real_4\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:ligo_delay\" Type=\"real_4\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:event_number_gcn\" Type=\"int_4s\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:event_number_grb\" Type=\"lstring\" />\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"external_trigger:event_status\" Type=\"int_4s\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"det_alts\" Type=\"lstring\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"det_band\" Type=\"lstring\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"det_fluence\" Type=\"lstring\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"det_fluence_int\" Type=\"lstring\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"det_name\" Type=\"lstring\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"det_peak\" Type=\"lstring\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"det_peak_int\" Type=\"lstring\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"det_snr\" Type=\"lstring\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"email_time\" Type=\"int_4s\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"event_dec\" Type=\"real_4\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"event_dec_err\" Type=\"real_4\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"event_epoch\" Type=\"lstring\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"event_err_type\" Type=\"lstring\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"event_ra\" Type=\"real_4\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"event_ra_err\" Type=\"real_4\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"start_time\" Type=\"int_4s\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"start_time_ns\" Type=\"int_4s\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"event_type\" Type=\"lstring\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"event_z\" Type=\"real_4\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"event_z_err\" Type=\"real_4\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"notice_comments\" Type=\"lstring\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"notice_id\" Type=\"lstring\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"notice_sequence\" Type=\"lstring\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"notice_time\" Type=\"int_4s\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"notice_type\" Type=\"lstring\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"notice_url\" Type=\"lstring\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"obs_fov_dec\" Type=\"real_4\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"obs_fov_dec_width\" Type=\"real_4\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"obs_fov_ra\" Type=\"real_4\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"obs_fov_ra_width\" Type=\"real_4\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"obs_loc_ele\" Type=\"real_4\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"obs_loc_lat\" Type=\"real_4\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"obs_loc_long\" Type=\"real_4\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"ligo_fave_lho\" Type=\"real_4\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"ligo_fave_llo\" Type=\"real_4\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"ligo_delay\" Type=\"real_4\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"event_number_gcn\" Type=\"int_4s\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"event_number_grb\" Type=\"lstring\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"event_status\" Type=\"int_4s\" />\n" , fp ) == EOF || \
 fputs( "      <Stream Name=\"external_trigger:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 

@@ -19,13 +19,11 @@
 Postprocessing utilities for HEALPix sky maps
 """
 from __future__ import division
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 import numpy as np
 import healpy as hp
 import collections
-import itertools
 import lal
 import lalsimulation
 from ..healpix_tree import *
@@ -79,10 +77,13 @@ def indicator(n, i):
 
 
 def cos_angle_distance(theta0, phi0, theta1, phi1):
-    """Cosine of angular separation in radians between two points on the unit sphere."""
-    cos_angle_distance = (np.cos(phi1 - phi0) * np.sin(theta0) * np.sin(theta1)
+    """Cosine of angular separation in radians between two points on the
+    unit sphere."""
+    cos_angle_distance = (
+        np.cos(phi1 - phi0) * np.sin(theta0) * np.sin(theta1)
         + np.cos(theta0) * np.cos(theta1))
     return np.clip(cos_angle_distance, -1, 1)
+
 
 def angle_distance(theta0, phi0, theta1, phi1):
     """Angular separation in radians between two points on the unit sphere."""
@@ -90,11 +91,14 @@ def angle_distance(theta0, phi0, theta1, phi1):
 
 
 # Class to hold return value of find_injection method
-FoundInjection = collections.namedtuple('FoundInjection',
-    'searched_area searched_prob offset searched_modes contour_areas area_probs contour_modes')
+FoundInjection = collections.namedtuple(
+    'FoundInjection',
+    'searched_area searched_prob offset searched_modes contour_areas '
+    'area_probs contour_modes')
 
 
-def find_injection(sky_map, true_ra, true_dec, contours=(), areas=(), modes=False, nest=False):
+def find_injection(sky_map, true_ra, true_dec, contours=(), areas=(),
+                   modes=False, nest=False):
     """
     Given a sky map and the true right ascension and declination (in radians),
     find the smallest area in deg^2 that would have to be searched to find the
@@ -152,13 +156,15 @@ def find_injection(sky_map, true_ra, true_dec, contours=(), areas=(), modes=Fals
         np.round(np.asarray(areas) / deg2perpix).astype(np.intp)].tolist()
 
     # Find the angular offset between the mode and true locations.
-    offset = np.rad2deg(angle_distance(true_theta, true_phi,
-        mode_theta, mode_phi))
+    offset = np.rad2deg(
+        angle_distance(true_theta, true_phi, mode_theta, mode_phi))
 
     if modes:
         # Count up the number of modes in each of the given contours.
-        searched_modes = count_modes(indicator(npix, indices[:idx+1]), nest=nest)
-        contour_modes = [count_modes(indicator(npix, indices[:i+1]), nest=nest)
+        searched_modes = count_modes(
+            indicator(npix, indices[:idx+1]), nest=nest)
+        contour_modes = [
+            count_modes(indicator(npix, indices[:i+1]), nest=nest)
             for i in ipix]
     else:
         searched_modes = None
@@ -222,7 +228,7 @@ def contour(m, levels, nest=False, degrees=False, simplify=True):
     # faces is an npix X 4 array mapping HEALPix faces to their vertices.
     # neighbors is an npix X 4 array mapping faces to their nearest neighbors.
     faces = np.ascontiguousarray(
-            np.rollaxis(hp.boundaries(nside, np.arange(npix), nest=nest), 2, 1))
+        np.rollaxis(hp.boundaries(nside, np.arange(npix), nest=nest), 2, 1))
     dtype = faces.dtype
     faces = faces.view(np.dtype((np.void, dtype.itemsize * 3)))
     vertices, faces = np.unique(faces.ravel(), return_inverse=True)
@@ -244,12 +250,14 @@ def contour(m, levels, nest=False, degrees=False, simplify=True):
             for ipix2 in ipix2:
                 # Determine if we have already considered this pair of faces.
                 new_face_pair = frozenset((ipix1, ipix2))
-                if new_face_pair in face_pairs: continue
+                if new_face_pair in face_pairs:
+                    continue
                 face_pairs.add(new_face_pair)
 
                 # Determine if this pair of faces are on a boundary of the
                 # credible level.
-                if indicator[ipix1] == indicator[ipix2]: continue
+                if indicator[ipix1] == indicator[ipix2]:
+                    continue
 
                 # Add all common edges of this pair of faces.
                 i1 = np.concatenate((faces[ipix1], [faces[ipix1][0]]))
@@ -262,7 +270,8 @@ def contour(m, levels, nest=False, degrees=False, simplify=True):
 
         # Record a closed path for each cycle in the graph.
         cycles = [
-            np.take(vertices, cycle, axis=0) for cycle in nx.cycle_basis(graph)]
+            np.take(vertices, cycle, axis=0)
+            for cycle in nx.cycle_basis(graph)]
 
         # Simplify paths if requested
         if simplify:
@@ -470,8 +479,9 @@ def polar_profile(m, nest=False):
         m = hp.reorder(m, n2r=True)
 
     theta = np.arccos(costheta)
-    m_int = np.asarray([m[i:i+j].sum() * stheta * 0.5 * npix / j
-        for i, j, stheta in zip(startpix, ringpix, sintheta)])
+    m_int = np.asarray(
+        [m[i:i+j].sum() * stheta * 0.5 * npix / j
+         for i, j, stheta in zip(startpix, ringpix, sintheta)])
 
     return theta, m_int
 

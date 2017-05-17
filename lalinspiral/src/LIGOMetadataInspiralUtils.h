@@ -285,12 +285,6 @@ LALCompareSnglInspiralByTime (
     const void *b
     );
 
-int
-LALCompareSnglInspiralByID (
-     const void *a,
-     const void *b
-     );
-
 void
 LALCompareSnglInspiral (
     LALStatus                *status,
@@ -498,53 +492,6 @@ XLALAddSnglInspiralCData(
 
 /* coinc inspiral */
 void
-LALCreateTwoIFOCoincList(
-    LALStatus                  *status,
-    CoincInspiralTable        **coincOutput,
-    SnglInspiralTable          *snglInput,
-    InspiralAccuracyList       *accuracyParams
-    );
-
-void
-LALCreateNIFOCoincList(
-    LALStatus                  *status,
-    CoincInspiralTable        **coincHead,
-    InspiralAccuracyList       *accuracyParams,
-    INT4                        N
-    );
-
-void
-LALRemoveRepeatedCoincs(
-    LALStatus                  *status,
-    CoincInspiralTable        **coincHead
-    );
-
-void
-LALFreeCoincInspiral(
-    LALStatus                  *status,
-    CoincInspiralTable        **coincPtr
-    );
-
-int
-XLALFreeCoincInspiral(
-    CoincInspiralTable        **coincPtr
-    );
-
-
-void
-LALAddSnglInspiralToCoinc(
-    LALStatus                  *status,
-    CoincInspiralTable        **coincPtr,
-    SnglInspiralTable          *snglInspiral
-    );
-
-CoincInspiralTable *
-XLALAddSnglInspiralToCoinc(
-    CoincInspiralTable         *coincInspiral,
-    SnglInspiralTable          *snglInspiral
-    );
-
-void
 XLALSnglInspiralCoincTest(
     CoincInspiralTable         *coincInspiral,
     SnglInspiralTable          *snglInspiral,
@@ -559,99 +506,10 @@ LALSnglInspiralCoincTest(
     InspiralAccuracyList       *accuracyParams
     );
 
-void
-XLALInspiralPsi0Psi3CutBCVC(
-    CoincInspiralTable        **coincInspiral
-    );
-
-void
-XLALInspiralIotaCutBCVC(
-    CoincInspiralTable        **coincInspiral,
-    InspiralAccuracyList       *accuracyParams
-    );
-
-void
-LALInspiralDistanceCutCleaning(
-    LALStatus                  *status,
-    CoincInspiralTable        **coincInspiral,
-    InspiralAccuracyList       *accuracyParams,
-    REAL4 			snrThreshold,
-    SummValueTable             *summValueList,
-    LALSegList                 *vetoSegsH1,
-    LALSegList                 *vetoSegsH2
-    );
-
-void
-XLALInspiralDistanceCutBCVC(
-    CoincInspiralTable        **coincInspiral,
-    InspiralAccuracyList       *accuracyParams
-    );
-
-void
-XLALInspiralDistanceCut(
-    CoincInspiralTable        **coincInspiral,
-    InspiralAccuracyList       *accuracyParams
-    );
-
-void
-XLALInspiralSNRCutBCV2(
-    CoincInspiralTable        **coincInspiral
-    );
-
-SnglInspiralTable *
-XLALExtractSnglInspiralFromCoinc(
-    CoincInspiralTable         *coincInspiral,
-    LIGOTimeGPS                *gpsStartTime,
-    INT4                        slideNum
-    );
-
-void
-LALExtractSnglInspiralFromCoinc(
-    LALStatus                  *status,
-    SnglInspiralTable         **snglPtr,
-    CoincInspiralTable         *coincInspiral,
-    LIGOTimeGPS                *gpsStartTime,
-    INT4                        slideNum
-    );
-
 int
 XLALCreateCoincSlideTable(
     CoincInspiralSlideTable   **slideTableHead,
     INT4                        numSlides
-    );
-
-REAL4
-XLALSetupCoincSlideTable(
-    CoincInspiralSlideTable    *slideTableHead,
-    CoincInspiralTable         *coincSlideHead,
-    char                       *timeAnalyzedFileName,
-    REAL4                       timeModifier,
-    INT4                        numSlides
-    );
-
-int
-XLALRecreateCoincFromSngls(
-    CoincInspiralTable        **coincPtr,
-    SnglInspiralTable         **snglInspiral
-    );
-
-void
-LALCoincCutSnglInspiral(
-    LALStatus                  *status,
-    SnglInspiralTable         **snglPtr
-    );
-
-int
-XLALGenerateCoherentBank(
-    SnglInspiralTable         **coherentBank,
-    CoincInspiralTable         *coincInput,
-    CohbankRunType              runType,
-    INT8                        ringStartNS,
-    INT8                        ringEndNS,
-    int                         numSlides,
-    REAL8                       slideStep[LAL_NUM_IFO],
-    REAL4                       eff_snrsq_threshold,
-    CHAR                       *ifos
     );
 
 INT8
@@ -669,14 +527,6 @@ XLALCoincInspiralStat(
 int XLALComputeAndStoreEffectiveSNR(   	CoincInspiralTable *head,
 					CoincInspiralStatistic *stat,
 					CoincInspiralStatParams *par
-    );
-
-int
-XLALClusterCoincInspiralTable (
-    CoincInspiralTable        **coincList,
-    INT8                        dtimeNS,
-    CoincInspiralStatistic      coincStat,
-    CoincInspiralStatParams *bittenLParams
     );
 
 int
@@ -719,37 +569,6 @@ XLALCoincInspiralIfos (
     );
 
 int
-XLALCoincInspiralIfosCut(
-    CoincInspiralTable **coincHead,
-    const char                *ifos
-    );
-
-int
-XLALCoincInspiralIfosDiscard(
-    CoincInspiralTable **coincHead,
-    const char          *ifos
-    );
-
-UINT8
-XLALCoincInspiralIdNumber (
-    CoincInspiralTable  *coincInspiral
-    );
-
-CoincInspiralTable *
-XLALCoincInspiralSlideCut(
-    CoincInspiralTable **coincHead,
-    int                  slideNum
-    );
-
-CoincInspiralTable *
-XLALStatCutCoincInspiral (
-    CoincInspiralTable         *eventHead,
-    CoincInspiralStatistic      coincStat,
-    CoincInspiralStatParams    *bittenLParams,
-    REAL4                       statCut
-    );
-
-int
 XLALCalcExpFitNLoudestBackground (
     CoincInspiralTable         *coincSlideHead,
     int                         fitNum,
@@ -783,37 +602,6 @@ XLALRateErrorCalcCoincInspiral (
     REAL4                       fitStat,
     REAL4                       fitA,
     REAL4                       fitB
-    );
-
-CoincInspiralTable *
-XLALRateStatCutCoincInspiral (
-    CoincInspiralTable         *eventZeroHead,
-    CoincInspiralStatistic      coincStat,
-    CoincInspiralStatParams    *bittenLParams,
-    REAL4                       statCut,
-    REAL4                       rateCut
-    );
-
-SnglInspiralTable *
-XLALCompleteCoincInspiral (
-    CoincInspiralTable         *eventHead,
-    int                         ifoList[LAL_NUM_IFO]
-    );
-
-CoincInspiralTable *
-XLALPlayTestCoincInspiral(
-    CoincInspiralTable         *eventHead,
-    LALPlaygroundDataMask      *dataType
-    );
-
-CoincInspiralTable *
-XLALMeanMassCut(
-    CoincInspiralTable         *eventHead,
-    char                       *massCut,
-    REAL4                       massRangeLow,
-    REAL4                       massRangeHigh,
-    REAL4                       mass2RangeLow,
-    REAL4                       mass2RangeHigh
     );
 
 SnglInspiralTable *
@@ -911,23 +699,6 @@ XLALReturnSimInspiralEndTime (
     CHAR             *ifo
     );
 
-int
-XLALSnglSimInspiralTest (
-    SimInspiralTable  **simHead,
-    SnglInspiralTable **eventHead,
-    SimInspiralTable  **missedSimHead,
-    SnglInspiralTable **missedSnglHead,
-    INT8                injectWindowNS
-    );
-
-int
-XLALCoincSimInspiralTest (
-    SimInspiralTable   **simHead,
-    CoincInspiralTable **coincHead,
-    SimInspiralTable   **missedSimHead,
-    CoincInspiralTable **missedCoincHead
-   );
-
 /* multi inspiral */
 
 void
@@ -1012,17 +783,6 @@ MultiInspiralTable *
 XLALMultiInspiralSlideCut(
     MultiInspiralTable **eventHead,
     int               extractSlide
-    );
-
-int XLALClusterInEventID(
-    SnglInspiralTable          **inspiralList,
-    SnglInspiralClusterChoice    clusterchoice
-    );
-
-int XLALCoincSegCutSnglInspiral(
-    INT4                         startTime,
-    INT4                         endTime,
-    SnglInspiralTable          **inspiralList
     );
 
 

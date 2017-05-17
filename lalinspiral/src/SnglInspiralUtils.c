@@ -85,12 +85,6 @@
  * "loudest" trigger, as determined by the selected algorithm, within each time
  * window is returned.
  *
- * <tt>XLALClusterInEventID</tt> clusters single inspiral triggers with the
- * same event ID. The triggers are compared by the clustering choice specified.
- *
- * <tt>XLALCoincSegCutSnglInspiral</tt> keeps only those single inspiral triggers
- * in the input list that are within the specified time interval.
- *
  * <tt>LALTimeCutSingleInspiral()</tt> and
  * <tt>XLALTimeCutSingleInspiral()</tt>takes in a linked list of single inspiral
  * tables and returns only those which occur after the given \c startTime
@@ -221,28 +215,6 @@ XLALFreeSnglInspiral (
     )
 
 {
-  EventIDColumn        *eventId;
-  CoincInspiralTable   *thisCoinc;
-  InterferometerNumber  ifoNumber;
-
-  while ( (eventId = (*eventHead)->event_id) )
-  {
-    /* free any associated event_id's */
-    (*eventHead)->event_id = (*eventHead)->event_id->next;
-
-    if( (thisCoinc = eventId->coincInspiralTable) )
-    {
-      /* this Sngl is still part of a coinc, set pointer to NULL */
-      for ( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
-      {
-        if ( *eventHead == thisCoinc->snglInspiral[ifoNumber] )
-        {
-          thisCoinc->snglInspiral[ifoNumber] = NULL;
-        }
-      }
-    }
-    LALFree( eventId );
-  }
   LALFree( *eventHead );
 
   return (0);
@@ -408,31 +380,6 @@ LALCompareSnglInspiralByTime (
     return 1;
   }
   else if ( ta < tb )
-  {
-    return -1;
-  }
-  else
-  {
-    return 0;
-  }
-}
-
-
-int
-LALCompareSnglInspiralByID (
-    const void *a,
-    const void *b
-    )
-
-{
-  const SnglInspiralTable *aPtr = *((const SnglInspiralTable * const *)a);
-  const SnglInspiralTable *bPtr = *((const SnglInspiralTable * const *)b);
-
-  if ( aPtr->event_id->id > bPtr->event_id->id )
-  {
-    return 1;
-  }
-  else if ( aPtr->event_id->id < bPtr->event_id->id )
   {
     return -1;
   }
@@ -888,161 +835,6 @@ XLALClusterSnglInspiralTable (
   if ( ! (*inspiralList) )
   {
     *inspiralList = thisEvent;
-  }
-  ++numSnglClust;
-
-  return(numSnglClust);
-}
-
-
-int XLALCoincSegCutSnglInspiral(
-    INT4                        startTimeS,
-    INT4                        endTimeS,
-    SnglInspiralTable         **inspiralList
-    )
-
-{
-  SnglInspiralTable     *thisEvent=NULL;
-  SnglInspiralTable     *prevEvent=NULL;
-  SnglInspiralTable     *nextEvent=NULL;
-
-  int                    numSnglClust = 0;
-  UINT8                  timeExtract  = 1000000000L;
-  INT4 timeCheck=0;
-  if ( !inspiralList )
-  {
-    XLALPrintInfo(
-      "XLALCoincSegCutSnglInspiral: Empty trigger list passed as input\n" );
-    return( 0 );
-  }
-
-  if ( ! *inspiralList )
-  {
-    XLALPrintInfo(
-      "XLALCoincSegCutSnglInspiral: Empty trigger list passed as input\n" );
-    return( 0 );
-  }
-
-  thisEvent = *inspiralList;
-  *inspiralList = NULL;
-
-  while ( thisEvent ) {
-    fprintf(stdout, "This event's END TIME NS is %" LAL_INT4_FORMAT "\n",thisEvent->end.gpsNanoSeconds);
-    fprintf(stdout, "This event's id is %" LAL_UINT8_FORMAT "\n",thisEvent->event_id->id);
-    timeCheck = floor(thisEvent->event_id->id/timeExtract);
-    fprintf(stdout, "This event's gps-start time is %" LAL_INT4_FORMAT "\n",
-            timeCheck);
-
-    /* find events in the same coinc-segment */
-    if ( !( (timeCheck >= startTimeS) && (timeCheck <= endTimeS) ) ) {
-      /* displace this event in cluster */
-      nextEvent = thisEvent->next;
-      if( prevEvent )
-      {
-         prevEvent->next = nextEvent;
-      }
-      XLALFreeSnglInspiral( &thisEvent );
-      thisEvent = nextEvent;
-      nextEvent = thisEvent->next;
-    }
-    else {
-      /* otherwise we keep this unique event trigger */
-      if ( ! *inspiralList )
-	{
-	  *inspiralList = thisEvent;
-	}
-      prevEvent = thisEvent;
-      thisEvent = thisEvent->next;
-      if ( !thisEvent )
-        nextEvent = thisEvent->next;
-      ++numSnglClust;
-    }
-  }
-
-  fprintf(stdout, "This last time-check is %" LAL_INT4_FORMAT "\n", timeCheck);
-
-  return(numSnglClust);
-}
-
-
-int XLALClusterInEventID(
-    SnglInspiralTable         **inspiralList,
-    SnglInspiralClusterChoice   clusterchoice
-    )
-
-{
-  SnglInspiralTable     *thisEvent=NULL;
-  SnglInspiralTable     *prevEvent=NULL;
-  SnglInspiralTable     *nextEvent=NULL;
-
-  int                    numSnglClust = 0;
-
-  if ( !inspiralList )
-  {
-    XLALPrintInfo(
-      "XLALClusterInEventID: Empty trigger list passed as input\n" );
-    return( 0 );
-  }
-
-  if ( ! *inspiralList )
-  {
-    XLALPrintInfo(
-      "XLALClusterInEventID: Empty trigger list passed as input\n" );
-    return( 0 );
-  }
-
-  thisEvent = *inspiralList;
-  nextEvent = (*inspiralList)->next;
-  *inspiralList = NULL;
-
-  while ( nextEvent ) {
-    /* find events with the same eventID in the same IFO */
-    if ( (thisEvent->event_id->id == nextEvent->event_id->id )
-	 && !strcmp(thisEvent->ifo,nextEvent->ifo ) ) {
-      REAL4 thisStat = XLALSnglInspiralStat( thisEvent, clusterchoice );
-      REAL4 nextStat = XLALSnglInspiralStat( nextEvent, clusterchoice );
-
-      fprintf(stdout, "Next event's id is %" LAL_UINT8_FORMAT "\n",nextEvent->event_id->id);
-      fprintf(stdout, "Next-statistic is %e\n",nextStat);
-      fprintf(stdout, "Next IFO is %s\n",nextEvent->ifo);
-
-
-      if ( nextStat > thisStat ) {
-        /* displace previous event in cluster */
-        if( prevEvent )
-	  {
-	    prevEvent->next = nextEvent;
-	  }
-        XLALFreeSnglInspiral( &thisEvent );
-        thisEvent = nextEvent;
-        nextEvent = thisEvent->next;
-      }
-      else
-	{
-	  /* otherwise just dump next event from cluster */
-	  thisEvent->next = nextEvent->next;
-	  XLALFreeSnglInspiral ( &nextEvent );
-	  nextEvent = thisEvent->next;
-	}
-    }
-    else
-      {
-	/* otherwise we keep this unique event trigger */
-	if ( ! *inspiralList )
-	  {
-	    *inspiralList = thisEvent;
-	  }
-	prevEvent = thisEvent;
-	thisEvent = thisEvent->next;
-	nextEvent = thisEvent->next;
-	++numSnglClust;
-      }
-  }
-
-  /* store the last event */
-  if ( ! (*inspiralList) )
-    {
-      *inspiralList = thisEvent;
   }
   ++numSnglClust;
 

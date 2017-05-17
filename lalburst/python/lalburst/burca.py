@@ -32,7 +32,7 @@ import sys
 from glue.ligolw import lsctables
 from glue.ligolw.utils import coincs as ligolw_coincs
 from glue.ligolw.utils import process as ligolw_process
-from pylal import snglcoinc
+from . import snglcoinc
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"

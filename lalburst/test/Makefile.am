@@ -6,7 +6,8 @@ include $(top_srcdir)/gnuscripts/lalsuite_test.am
 # Add shell, Python, etc. test scripts to this variable
 if SWIG_BUILD_PYTHON
 test_scripts += \
-	date_verify.py
+	date_verify.py \
+	snglcoinc_verify.py
 endif
 
 # Add any helper programs required by tests to this variable
