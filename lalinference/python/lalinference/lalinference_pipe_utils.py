@@ -28,8 +28,12 @@ class Event():
   Represents a unique event to run on
   """
   new_id=itertools.count().next
-  def __init__(self,trig_time=None,SimInspiral=None,SimBurst=None,SnglInspiral=None,CoincInspiral=None,event_id=None,timeslide_dict=None,GID=None,ifos=None, duration=None,srate=None,trigSNR=None,fhigh=None,horizon_distance=None):
+  def __init__(self,trig_time=None,trigger_mchirp=None,roq_force_flow=None,roq_paths=None,SimInspiral=None,SimBurst=None,SnglInspiral=None,CoincInspiral=None,event_id=None,timeslide_dict=None,GID=None,ifos=None, duration=None,srate=None,trigSNR=None,fhigh=None,horizon_distance=None):
+    self.engine_opts={}
     self.trig_time=trig_time
+    self.trigger_mchirp=trigger_mchirp
+    self.roq_paths=roq_paths
+    self.roq_basis_name=None
     self.injection=SimInspiral
     self.burstinjection=SimBurst
     self.sngltrigger=SnglInspiral
@@ -47,6 +51,7 @@ class Event():
     self.srate = srate
     self.trigSNR = trigSNR
     self.fhigh = fhigh
+    self.flow = None
     self.horizon_distance = horizon_distance
     if event_id is not None:
         self.event_id=event_id
@@ -65,7 +70,17 @@ class Event():
         self.trig_time=self.coinctrigger.end_time + 1.0e-9 * self.coinctrigger.end_time_ns
     if self.GID is not None:
         self.event_id=int(''.join(i for i in self.GID if i.isdigit()))
-    self.engine_opts={}
+    if self.roq_paths is not None:
+        if self.trigger_mchirp is None:
+            assert len(roq_paths)==1
+        roq_constraints=get_roq_constraints(roq_paths=self.roq_paths,trigger_mchirp=self.trigger_mchirp,event_id=self.event_id,roq_force_flow=roq_force_flow)
+        self.srate=float(roq_constraints.pop('srate'))
+        self.duration=float(roq_constraints.pop('seglen'))
+        self.flow=float(roq_constraints.pop('flow'))
+        self.roq_b_matrix_directory=roq_constraints.pop('roq_b_matrix_directory')
+        self.roq_basis_name='-'+os.path.basename(self.roq_b_matrix_directory)
+        self.engine_opts.update(roq_constraints)
+
   def set_engine_option(self,opt,val):
     """
     Can set event-specific options for the engine nodes
@@ -75,7 +90,7 @@ class Event():
 
 dummyCacheNames=['LALLIGO','LALVirgo','LALAdLIGO','LALAdVirgo']
 
-def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath="./",downloadpsd=True,roq=False):
+def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath="./",downloadpsd=True,roq_paths=None,trigger_mchirp=None,roq_force_flow=None):
   """
   Parse LV alert file, containing coinc, sngl, coinc_event_map.
   and create a list of Events as input for pipeline
@@ -123,9 +138,11 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
     dur=[]
     srate=[]
     horizon_distance=[]
+    mass1 = []
+    mass2 = []
     for e in these_sngls:
       # Review: Replace this with a call to LALSimulation function at some point
-      if roq==False:
+      if roq_paths==None:
         try:
           p=Popen(["lalapps_chirplen","--flow",str(flow),"-m1",str(e.mass1),"-m2",str(e.mass2)],stdout=PIPE, stderr=PIPE, stdin=PIPE)
           strlen = p.stdout.read()
@@ -134,6 +151,9 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
         except:
           print "WARNING: lalapps_chirplen --flow",str(flow),"-m1",str(e.mass1),"-m2",str(e.mass2)," failed."
           print "WARNING: make sure you have set manually seglen and srate in the .ini file."
+      else:
+        mass1.append(e.mass1)
+        mass2.append(e.mass2)
       snr = e.snr
       eff_dist = e.eff_distance
       if threshold_snr is not None:
@@ -155,8 +175,13 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
     else:
       duration = None
     horizon_distance = max(horizon_distance) if len(horizon_distance) > 0 else None
+    if roq_paths is not None and trigger_mchirp is None:
+        assert len(set(mass1)) == 1
+        assert len(set(mass2)) == 1
+        trigger_mchirp = (mass1[0]*mass2[0])**(3./5.) / ( (mass1[0] + mass2[0])**(1./5.) )
     ev=Event(CoincInspiral=coinc, GID=gid, ifos = ifos, duration = duration, srate = srate,
-             trigSNR = trigSNR, fhigh = fhigh, horizon_distance=horizon_distance)
+             trigSNR = trigSNR, fhigh = fhigh, horizon_distance=horizon_distance,
+             trigger_mchirp=trigger_mchirp,roq_paths=roq_paths,roq_force_flow=roq_force_flow)
     output.append(ev)
 
   print "Found %d coinc events in table." % len(coinc_events)
@@ -453,51 +478,11 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
     out[ifo]=os.path.join(outpath,ifo+'_psd_'+time+'.txt')
   return out
 
-def get_trigger_chirpmass(gid=None,gracedb="gracedb"):
-  from glue.ligolw import lsctables
-  from glue.ligolw import ligolw
-  from glue.ligolw import utils
-  class PSDContentHandler(ligolw.LIGOLWContentHandler):
-    pass
-  lsctables.use_in(PSDContentHandler)
-  import subprocess
+def get_roq_mchirp_priors(roq_paths, roq_params, key):
 
-  cwd=os.getcwd()
-  subprocess.call([gracedb,"download", gid ,"coinc.xml"])
-  xmldoc=utils.load_filename("coinc.xml",contenthandler = PSDContentHandler)
-  coinctable = lsctables.CoincInspiralTable.get_table(xmldoc)
-  coinc_events = [event for event in coinctable]
-  sngltable = lsctables.SnglInspiralTable.get_table(xmldoc)
-  sngl_events = [event for event in sngltable]
-  coinc_map = lsctables.CoincMapTable.get_table(xmldoc)
-  mass1 = []
-  mass2 = []
-  for coinc in coinc_events:
-    these_sngls = [e for e in sngl_events if e.event_id in [c.event_id for c in coinc_map if c.coinc_event_id == coinc.coinc_event_id] ]
-    for e in these_sngls:
-      mass1.append(e.mass1)
-      mass2.append(e.mass2)
-  # check that trigger masses are identical in each IFO
-  assert len(set(mass1)) == 1
-  assert len(set(mass2)) == 1
-
-  mchirp = (mass1[0]*mass2[0])**(3./5.) / ( (mass1[0] + mass2[0])**(1./5.) )
-  os.remove("coinc.xml")
-
-  return mchirp
-
-def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=None,sim_inspiral=None):
-
-  ## XML and GID cannot be given at the same time
-  ## sim_inspiral must already point at the right row
   mc_priors = {}
-
-  if gid is not None and sim_inspiral is not None:
-    print "Error in get_roq_mchirp_priors, cannot use both gid and sim_inspiral\n"
-    sys.exit(1)
-
-  for roq in roq_paths:
-    params=os.path.join(path,roq,'params.dat')
+  for roq,roq_path in zip([os.path.basename(roq_path) for roq_path in roq_paths],roq_paths):
+    params=os.path.join(roq_path,'params.dat')
     roq_params[roq]=np.genfromtxt(params,names=True)
     mc_priors[roq]=[float(roq_params[roq]['chirpmassmin']),float(roq_params[roq]['chirpmassmax'])]
   ordered_roq_paths=[item[0] for item in sorted(roq_params.items(), key=key)][::-1]
@@ -511,40 +496,21 @@ def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=None,sim_inspira
     if i<len(roq_paths)-1:
       mc_priors[roq][1]-= (mc_priors[roq][1]- mc_priors[ordered_roq_paths[i+1]][0])/2.
     i+=1'''
-  if gid is not None:
-  	trigger_mchirp = get_trigger_chirpmass(gid)
-  elif sim_inspiral is not None:
-        trigger_mchirp = sim_inspiral.mchirp
-  else:
-	trigger_mchirp = None
 
-  return mc_priors, trigger_mchirp
+  return mc_priors
 
-def get_roq_component_mass_priors(path, roq_paths, roq_params, key, gid=None,sim_inspiral=None):
+def get_roq_component_mass_priors(path, roq_paths, roq_params, key):
 
-  ## XML and GID cannot be given at the same time
-  ## sim_inspiral must already point at the right row
   m1_priors = {}
   m2_priors = {}
 
-  if gid is not None and sim_inspiral is not None:
-    print "Error in get_roq_mchirp_priors, cannot use both gid and sim_inspiral\n"
-    sys.exit(1)
-
-  for roq in roq_paths:
-    params=os.path.join(path,roq,'params.dat')
+  for roq,roq_path in zip([os.path.basename(roq_path) for roq_path in roq_paths],roq_paths):
+    params=os.path.join(roq_path,'params.dat')
     roq_params[roq]=np.genfromtxt(params,names=True)
     m1_priors[roq]=[float(roq_params[roq]['mass1min']),float(roq_params[roq]['mass1max'])]
     m2_priors[roq]=[float(roq_params[roq]['mass2min']),float(roq_params[roq]['mass2max'])]
 
-  if gid is not None:
-    trigger_mchirp = get_trigger_chirpmass(gid)
-  elif sim_inspiral is not None:
-    trigger_mchirp = sim_inspiral.mchirp
-  else:
-    trigger_mchirp = None
-
-  return m1_priors, m2_priors, trigger_mchirp
+  return m1_priors, m2_priors,
 
 def get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp, force_flow=None):
   mc_priors_keys_int = map(lambda k : int(k[:-1]), mc_priors.keys())
@@ -562,17 +528,100 @@ def get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp, force_flow=None):
      scale_factor = 20./force_flow
   return scale_factor
 
+def get_roq_constraints(roq_paths,trigger_mchirp=None,event_id=None,roq_force_flow=None):
+    # Here, either we have been given trigger_mchirp, or roq_paths is a list of one.
+    # either way, the contraints returned is for a single basis.
+
+    roq_constraints={}
+    roq_params={}
+    def key(item): # to order the ROQ bases
+        return float(item[1]['seglen'])
+
+    roq_bounds = Query_ROQ_Bounds_Type(roq_paths[0])
+    if roq_bounds == 'chirp_mass_q':
+        mc_priors = get_roq_mchirp_priors(roq_paths, roq_params, key)
+    elif roq_bounds == 'component_mass':
+        # get component mass bounds, then compute the chirp mass that can be safely covered
+        # further below we pass along the component mass bounds to the sampler, not the tighter chirp-mass, q bounds
+        m1_priors, m2_priors = get_roq_component_mass_priors(roq_paths, roq_params, key)
+        mc_priors = {}
+        for (roq,m1_prior), (roq2,m2_prior) in zip(m1_priors.items(), m2_priors.items()):
+            mc_priors[roq] = sorted([pipe_utils.mchirp_from_components(m1_prior[1], m2_prior[0]), pipe_utils.mchirp_from_components(m1_prior[0], m2_prior[1])])
+
+    roq_mass_freq_scale_factor = get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp, roq_force_flow)
+    if roq_mass_freq_scale_factor != 1.:
+        print 'WARNING: Rescaling ROQ basis for event %s, please ensure it is allowed with the model used.'%event_id
+
+    if trigger_mchirp is not None:
+
+        for mc_prior in mc_priors:
+            mc_priors[mc_prior] = np.array(mc_priors[mc_prior])
+        # find mass bin containing the trigger
+        trigger_bin = None
+        for roq in [os.path.basename(roq_path) for roq_path in roq_paths]:
+            if mc_priors[roq][0]*roq_mass_freq_scale_factor <= trigger_mchirp <= mc_priors[roq][1]*roq_mass_freq_scale_factor:
+                trigger_bins = append(trigger_bins, roq)
+
+        # Now select the roq bin with the widest prior around the trigger chirp mass
+        # We'll pick the bin where the smallest distance between the trigger and mc boundary is largest
+        max_mc_dist = 0.
+        for trigger_bin in trigger_bins:
+            mc_dist = min(trigger_mchirp - mc_priors[trigger_bin][0]*roq_mass_freq_scale_factor, mc_priors[trigger_bin][1]*roq_mass_freq_scale_factor - trigger_mchirp)
+            if mc_dist > max_mc_dist:
+                max_mc_dist = mc_dist
+                best_trigger_bin = trigger_bin
+        print 'Prior in Mchirp will be ['+str(mc_priors[best_trigger_bin][0]*roq_mass_freq_scale_factor)+','+str(mc_priors[best_trigger_bin][1]*roq_mass_freq_scale_factor)+'] to contain the trigger Mchirp '+str(trigger_mchirp)
+        roq_paths = [os.path.join(os.path.dirname(roq_paths[0]),best_trigger_bin)]
+
+    else:
+        for mc_prior in mc_priors:
+            mc_priors[mc_prior] = np.array(mc_priors[mc_prior])*roq_mass_freq_scale_factor
+
+    for roq in [os.path.basename(roq_path) for roq_path in roq_paths]:
+
+        roq_constraints['roq_b_matrix_directory']=os.path.join(os.path.dirname(roq_paths[0]),roq)
+        flow=roq_params[roq]['flow'] / roq_mass_freq_scale_factor
+        roq_srate=2.*roq_params[roq]['fhigh'] / roq_mass_freq_scale_factor
+        if roq_srate > 8192:
+            roq_srate = 8192
+        seglen=roq_params[roq]['seglen'] * roq_mass_freq_scale_factor
+        roq_constraints['flow']=str(flow)
+        roq_constraints['srate']=str(roq_srate)
+        roq_constraints['seglen']=str(seglen)
+
+        if roq_bounds == 'chirp_mass_q':
+            mc_min=mc_priors[roq][0]*roq_mass_freq_scale_factor
+            mc_max=mc_priors[roq][1]*roq_mass_freq_scale_factor
+            # params.dat uses the convention q>1 so our q_min is the inverse of their qmax
+            q_min=1./float(roq_params[roq]['qmax'])
+            roq_constraints['chirpmass-min']=str(mc_min)
+            roq_constraints['chirpmass-max']=str(mc_max)
+            roq_constraints['q-min']=str(q_min)
+            roq_constraints['comp-min']=str(max(roq_params[roq]['compmin'] * roq_mass_freq_scale_factor, mc_min * pow(1+q_min, 1./5.) * pow(q_min, 2./5.)))
+            roq_constraints['comp-max']=str(mc_max * pow(1+q_min, 1./5.) * pow(q_min, -3./5.))
+        elif roq_bounds == 'component_mass':
+            m1_min = m1_priors[roq][0]
+            m1_max = m1_priors[roq][1]
+            m2_min = m2_priors[roq][0]
+            m2_max = m2_priors[roq][1]
+            roq_constraints['mass1-min']=str(m1_min)
+            roq_constraints['mass1-max']=str(m1_max)
+            roq_constraints['mass2-min']=str(m2_min)
+            roq_constraints['mass2-max']=str(m2_max)
+
+    return roq_constraints
+
+
 def create_pfn_tuple(filename,protocol='file://',site='local'):
     return( (os.path.basename(filename),protocol+os.path.abspath(filename),site) )
 
 def mchirp_from_components(m1, m2):
   return (m1*m2)**(3.0/5.0) / (m1+m2)**(1.0/5.0)
 
-def Query_ROQ_Bounds_Type(path, roq_paths):
+def Query_ROQ_Bounds_Type(roq_path):
   # Assume that parametrization of ROQ bounds is independent of seglen; just look at first one
   import numpy as np
-  roq = roq_paths[0]
-  params = os.path.join(path,roq,'params.dat')
+  params = os.path.join(roq_path,'params.dat')
   roq_params0 = np.genfromtxt(params,names=True)
   roq_names_set = set(roq_params0.dtype.names)
   component_mass_bounds_set = set(['mass1min', 'mass1max', 'mass2min', 'mass2max'])
@@ -773,7 +822,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     """
     #psdlength = self.config.getint('input','max-psd-length')
     padding=self.config.getint('input','padding')
-    if self.config.has_option('engine','seglen') or self.config.has_option('lalinference','seglen'):
+    if (self.config.has_option('engine','seglen') or self.config.has_option('lalinference','seglen')) and not self.config.has_option('condor','computeroqweights'):
       if self.config.has_option('engine','seglen'):
         seglen = int(np.ceil(self.config.getfloat('engine','seglen')))
       if self.config.has_option('lalinference','seglen'):
@@ -809,8 +858,38 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     """
     Generate a DAG from a list of times
     """
+    trigger_mchirp=None
+    if self.config.has_option('lalinference','trigger_mchirp'):
+        trigger_mchirp=self.config.getfloat('lalinference','trigger_mchirp')
+    roq_paths=None
+    roq_force_flow=None
+    if self.config.has_option('condor','computeroqweights'):
+        if self.config.has_option('paths','roq_b_matrix_directory'):
+            path=self.config.get('paths','roq_b_matrix_directory')
+            if not os.path.isdir(path):
+              print "The ROQ directory %s does not seem to exist\n"%path
+              sys.exit(1)
+        else:
+            print "Check that roq_b_matrix_directory= in section [paths] is correct."
+            sys.exit(1)
+        roq_paths=[os.path.join(path,roq) for roq in os.listdir(path)]
+        roq_bounds = Query_ROQ_Bounds_Type(roq_paths[0])
+        if roq_bounds == 'chirp_mass_q':
+            print 'WARNING: Overwriting user choice of flow, srate, seglen, mc_min, mc_max and q-min'
+        elif roq_bounds == 'component_mass':
+            print 'WARNING: Overwriting user choice of flow, srate, seglen, and mass1_min, mass1_max, mass2_min, mass2_max'
+        if self.config.has_option('lalinference','roq_force_flow'):
+            roq_force_flow = cp.getfloat('lalinference','roq_force_flow')
+            print "WARNING: Forcing the f_low to ", str(roq_force_flow), "Hz"
     for time in self.times:
-      self.add_full_analysis(Event(trig_time=time))
+      if roq_paths is not None and trigger_mchirp is None:
+        events=[Event(trig_time=time,trigger_mchirp=trigger_mchirp,roq_paths=[roq_path],roq_force_flow=roq_force_flow) for roq_path in roq_paths]
+        for event in events:
+            self.add_full_analysis(event)
+      else:
+        self.add_full_analysis(Event(trig_time=time,trigger_mchirp=trigger_mchirp,roq_paths=roq_paths,roq_force_flow=roq_force_flow))
+
+
 
   def select_events(self):
     """
@@ -873,6 +952,30 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         analytic_test = True
     else:
         analytic_test = False
+    trigger_mchirp=None
+    if self.config.has_option('lalinference','trigger_mchirp'):
+        trigger_mchirp=self.config.getfloat('lalinference','trigger_mchirp')
+
+    roq_paths=None
+    roq_force_flow=None
+    if self.config.has_option('condor','computeroqweights'):
+        if self.config.has_option('paths','roq_b_matrix_directory'):
+            path=self.config.get('paths','roq_b_matrix_directory')
+            if not os.path.isdir(path):
+              print "The ROQ directory %s does not seem to exist\n"%path
+              sys.exit(1)
+        else:
+            print "Check that roq_b_matrix_directory= in section [paths] is correct."
+            sys.exit(1)
+        roq_paths=[os.path.join(path,roq) for roq in os.listdir(path)]
+        roq_bounds = Query_ROQ_Bounds_Type(roq_paths[0])
+        if roq_bounds == 'chirp_mass_q':
+            print 'WARNING: Overwriting user choice of flow, srate, seglen, mc_min, mc_max and q-min'
+        elif roq_bounds == 'component_mass':
+            print 'WARNING: Overwriting user choice of flow, srate, seglen, and mass1_min, mass1_max, mass2_min, mass2_max'
+        if self.config.has_option('lalinference','roq_force_flow'):
+            roq_force_flow = cp.getfloat('lalinference','roq_force_flow')
+            print "WARNING: Forcing the f_low to ", str(roq_force_flow), "Hz"
 
     # No input file given, analyse the entire time stretch between gpsstart and gpsend
     if self.config.has_option('input','analyse-all-time') and self.config.getboolean('input','analyse-all-time')==True:
@@ -893,16 +996,20 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         t=gpsstart
         events=[]
         while(t<gpsend):
-            ev=Event(trig_time=t+seglen-2)
-            ev.set_engine_option('segment-start',str(t-overlap))
-            if not analytic_test:
-                ev.set_engine_option('time-min',str(t))
-            tMax=t + seglen - overlap
-            if tMax>=gpsend:
-                tMax=gpsend
-            if not analytic_test:
-                ev.set_engine_option('time-max',str(tMax))
-            events.append(ev)
+            if roq_paths is not None and trigger_mchirp is None:
+                ev=[Event(trig_time=t+seglen-2,trigger_mchirp=trigger_mchirp,roq_paths=[roq_path],roq_force_flow=roq_force_flow) for roq_path in roq_paths]
+            else:
+                ev=[Event(trig_time=t+seglen-2,trigger_mchirp=trigger_mchirp,roq_paths=roq_paths,roq_force_flow=roq_force_flow)]
+            for event in ev:
+                ev.set_engine_option('segment-start',str(t-overlap))
+                if not analytic_test:
+                    ev.set_engine_option('time-min',str(t))
+                tMax=t + seglen - overlap
+                if tMax>=gpsend:
+                    tMax=gpsend
+                if not analytic_test:
+                    ev.set_engine_option('time-max',str(tMax))
+            events+=ev
             t=tMax
         return events
 
@@ -933,14 +1040,25 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
               timeslides[this_time]={}
               for this_ifo,ifo in enumerate(self.ifos):
                 timeslides[this_time][ifo]=data[this_time,this_ifo]
-        events=[Event(trig_time=time,timeslide_dict=timeslides[i_time]) for i_time,time in enumerate(times)]
+        if roq_paths is not None and trigger_mchirp is None:
+            events=[Event(trig_time=time,timeslide_dict=timeslides[i_time],trigger_mchirp=trigger_mchirp,roq_paths=[roq_path],roq_force_flow=roq_force_flow) for i_time,time in enumerate(times) for roq_path in roq_paths]
+        else:
+            events=[Event(trig_time=time,timeslide_dict=timeslides[i_time],trigger_mchirp=trigger_mchirp,roq_paths=roq_paths,roq_force_flow=roq_force_flow) for i_time,time in enumerate(times)]
       else:
-        events=[Event(trig_time=time) for time in times]
+        if roq_paths is not None and trigger_mchirp is None:
+          events=[Event(trig_time=time,trigger_mchirp=trigger_mchirp,roq_paths=[roq_path],roq_force_flow=roq_force_flow) for time in times for roq_path in roq_paths]
+        else:
+          events=[Event(trig_time=time,trigger_mchirp=trigger_mchirp,roq_paths=roq_paths,roq_force_flow=roq_force_flow) for time in times]
     # Siminspiral Table
     if self.config.has_option('input','injection-file'):
       from pylal import SimInspiralUtils
       injTable=SimInspiralUtils.ReadSimInspiralFromFiles([self.config.get('input','injection-file')])
-      events=[Event(SimInspiral=inj) for inj in injTable]
+      if(selected_events is not None):
+          injTable=[injTable[i] for i in selected_events]
+      if trigger_mchirp is None:
+          events=[Event(SimInspiral=inj,trigger_mchirp=inj.mchirp,roq_paths=roq_paths,roq_force_flow=roq_force_flow) for inj in injTable]
+      else:
+          events=[Event(SimInspiral=inj,trigger_mchirp=trigger_mchirp,roq_paths=roq_paths,roq_force_flow=roq_force_flow) for inj in injTable]
       self.add_pfn_cache([create_pfn_tuple(self.config.get('input','injection-file'))])
     # SimBurst Table
     if self.config.has_option('input','burst-injection-file'):
@@ -953,18 +1071,33 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 	pass
       lsctables.use_in(PSDContentHandler)
       injTable=lsctables.SimBurstTable.get_table(utils.load_filename(injfile,contenthandler = PSDContentHandler))
-      events=[Event(SimBurst=inj) for inj in injTable]
+      if(selected_events is not None):
+        injTable=[injTable[i] for i in selected_events]
+      if roq_paths is not None and trigger_mchirp is None:
+        events=[Event(SimBurst=inj,trigger_mchirp=trigger_mchirp,roq_paths=[roq_path],roq_force_flow=roq_force_flow) for inj in injTable for roq_path in roq_paths]
+      else:
+        events=[Event(SimBurst=inj,trigger_mchirp=trigger_mchirp,roq_paths=roq_paths,roq_force_flow=roq_force_flow) for inj in injTable]
       self.add_pfn_cache([create_pfn_tuple(self.config.get('input','burst-injection-file'))])
     # SnglInspiral Table
     if self.config.has_option('input','sngl-inspiral-file'):
       from pylal import SnglInspiralUtils
       trigTable=SnglInspiralUtils.ReadSnglInspiralFromFiles([self.config.get('input','sngl-inspiral-file')])
-      events=[Event(SnglInspiral=trig) for trig in trigTable]
+      if(selected_events is not None):
+        trigTable=[trigTable[i] for i in selected_events]
+      if roq_paths is not None and trigger_mchirp is None:
+        events=[Event(SnglInspiral=trig,trigger_mchirp=trigger_mchirp,roq_paths=[roq_path],roq_force_flow=roq_force_flow) for trig in trigTable for roq_path in roq_paths]
+      else:
+        events=[Event(SnglInspiral=trig,trigger_mchirp=trigger_mchirp,roq_paths=roq_paths,roq_force_flow=roq_force_flow) for trig in trigTable]
       self.add_pfn_cache([create_pfn_tuple(self.config.get('input','sngl-inspiral-file'))])
     if self.config.has_option('input','coinc-inspiral-file'):
       from pylal import CoincInspiralUtils
       coincTable = CoincInspiralUtils.readCoincInspiralFromFiles([self.config.get('input','coinc-inspiral-file')])
-      events = [Event(CoincInspiral=coinc) for coinc in coincTable]
+      if(selected_events is not None):
+        coincTable=[coincTable[i] for i in selected_events]
+      if roq_paths is not None and trigger_mchirp is None:
+        events = [Event(CoincInspiral=coinc,trigger_mchirp=trigger_mchirp,roq_paths=[roq_path],roq_force_flow=roq_force_flow) for coinc in coincTable for roq_path in roq_paths]
+      else:
+        events = [Event(CoincInspiral=coinc,trigger_mchirp=trigger_mchirp,roq_paths=roq_paths,roq_force_flow=roq_force_flow) for coinc in coincTable]
       self.add_pfn_cache([create_pfn_tuple(self.config.get('input','coinc-inspiral-file'))])
     # LVAlert CoincInspiral Table
     if self.config.has_option('input','gid'):
@@ -980,7 +1113,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       if not self.config.has_option('engine','distance-max') and self.config.has_option('input','threshold-snr'):
         threshold_snr=self.config.getfloat('input','threshold-snr')
       events = readLValert(gid=gid,flow=flow,gracedb=self.config.get('condor','gracedb'),basepath=self.basepath,downloadpsd=downloadgracedbpsd,
-                           threshold_snr=threshold_snr,roq=self.config.has_option('condor','computeroqweights'))
+                           threshold_snr=threshold_snr,roq_paths=roq_paths,trigger_mchirp=trigger_mchirp,roq_force_flow=roq_force_flow)
     else: gid=None
     # pipedown-database
     if self.config.has_option('input','gstlal-db'):
@@ -1009,13 +1142,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 	events=get_timeslides_pipedown(db_connection, gpsstart=gpsstart, gpsend=gpsend,dumpfile=timeslidedump,max_cfar=maxcfar)
       else:
 	events=queryfunc(db_connection, gpsstart=gpsstart, gpsend=gpsend, dumpfile=timeslidedump,max_cfar=maxcfar,min_cfar=mincfar)
-    if(selected_events is not None):
-        used_events=[]
-        for i in selected_events:
-            e=events[i]
-            e.event_id=i
-            used_events.append(e)
-        events=used_events
     if gpsstart is not None:
         events = filter(lambda e: not e.trig_time<gpsstart, events)
     if gpsend is not None:
@@ -1027,9 +1153,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     Generate an end-to-end analysis of a given event (Event class)
     For LALinferenceNest code. Uses parallel runs if specified
     """
-    evstring=str(event.event_id)
+    evstring=str(event.event_id)+event.roq_basis_name
     if event.trig_time is not None:
-        evstring=str(event.trig_time)+'-'+str(event.event_id)
+        evstring=str(event.trig_time)+'-'+str(event.event_id)+event.roq_basis_name
     if self.config.has_option('analysis','nparallel'):
         Npar=self.config.getint('analysis','nparallel')
     else:
@@ -1149,9 +1275,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     Generate an end-to-end analysis of a given event
     For LALInferenceMCMC.
     """
-    evstring=str(event.event_id)
+    evstring=str(event.event_id)+event.roq_basis_name
     if event.trig_time is not None:
-        evstring=str(event.trig_time)+'-'+str(event.event_id)
+        evstring=str(event.trig_time)+'-'+str(event.event_id)+event.roq_basis_name
     if self.config.has_option('analysis','nparallel'):
         Npar=self.config.getint('analysis','nparallel')
     else:
@@ -1177,7 +1303,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
        input_file = combinenodes[i].get_parent_posfile(enginenodes[i])
        input_file_split_index = input_file.find('lalinferencemcmc-')
        combinenodes[i].set_pos_output_file(input_file[:input_file_split_index]+'combine_'+input_file[input_file_split_index:])
-       combinenodes[i].add_var_arg(input_file)
        number_of_mpi_jobs = self.config.getint('mpi','mpi_task_count')
        for j in xrange(1,number_of_mpi_jobs):
           combinenodes[i].add_var_arg(input_file+".%02d" % j)
@@ -1211,9 +1336,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     Generate an end-to-end analysis of a given event
     For LALInferenceBAMBI.
     """
-    evstring=str(event.event_id)
+    evstring=str(event.event_id)+event.roq_basis_name
     if event.trig_time is not None:
-        evstring=str(event.trig_time)+'-'+str(event.event_id)
+        evstring=str(event.trig_time)+'-'+str(event.event_id)+event.roq_basis_name
     enginenodes=[]
     bwpsdnodes={}
     for i in range(Npar):
@@ -1301,9 +1426,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if ifos is None:
       ifos=self.ifos
     end_time=event.trig_time
-    if self.config.has_option('lalinference','seglen'):
+    if self.config.has_option('lalinference','seglen') and not self.config.has_option('condor','computeroqweights'):
       seglen=self.config.getfloat('lalinference','seglen')
-    elif self.config.has_option('engine','seglen'):
+    elif self.config.has_option('engine','seglen') and not self.config.has_option('condor','computeroqweights'):
       seglen=self.config.getfloat('engine','seglen')
     else:
       seglen=event.duration
@@ -1324,9 +1449,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     bayeswavepsdnode=bwpsd
     prenode=LALInferenceDataDumpNode(self.preengine_job)
     node=self.EngineNode(self.engine_jobs[tuple(ifos)])
-    roqeventpath=os.path.join(self.preengine_job.roqpath,str(event.event_id)+'/')
+    predataeventpath=os.path.join(self.preengine_job.predatapath,str(event.event_id)+event.roq_basis_name+'/')
     if self.config.has_option('condor','bayesline') or self.config.has_option('condor','bayeswave') or self.config.has_option('condor','computeroqweights'):
-      mkdirs(roqeventpath)
+      mkdirs(predataeventpath)
     node.set_trig_time(end_time)
     prenode.set_trig_time(end_time)
     randomseed=random.randint(1,2**31)
@@ -1336,9 +1461,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     srate=0
     if event.srate:
       original_srate=event.srate
-    if self.config.has_option('lalinference','srate'):
+    if self.config.has_option('lalinference','srate') and not self.config.has_option('condor','computeroqweights'):
       original_srate=self.config.getfloat('lalinference','srate')
-    elif self.config.has_option('engine','srate'):
+    elif self.config.has_option('engine','srate') and not self.config.has_option('condor','computeroqweights'):
       original_srate=self.config.getfloat('engine','srate')
     if (np.log2(original_srate)%1):
       print 'The srate given,'+str(original_srate)+' Hz, is not a power of 2.'
@@ -1398,9 +1523,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         prenode.psds=get_xml_psds(psdpath,ifos,os.path.join(self.basepath,'PSDs'),end_time=None)
     for ifo in ifos:
       prenode.flows[ifo]=str(20.0)
-    if self.config.has_option('lalinference','flow'):
+    if self.config.has_option('lalinference','flow') and not self.config.has_option('condor','computeroqweights'):
       node.flows=ast.literal_eval(self.config.get('lalinference','flow'))
       prenode.flows=ast.literal_eval(self.config.get('lalinference','flow'))
+    elif event.flow:
+      for ifo in ifos:
+        node.flows[ifo]=str(event.flow)
+        prenode.flows[ifo]=str(event.flow)
     if event.fhigh:
       for ifo in ifos:
         node.fhighs[ifo]=str(event.fhigh)
@@ -1411,23 +1540,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     prenode.set_max_psdlength(self.config.getint('input','max-psd-length'))
     prenode.set_padding(self.config.getint('input','padding'))
     #prenode[ifo].set_output_file('/dev/null')
-    prenode.add_var_arg('--outfile '+roqeventpath+'data-dump')
+    prenode.add_var_arg('--outfile '+predataeventpath+'data-dump')
     prenode.add_var_arg('--data-dump')
-    if self.config.has_option('lalinference','seglen'):
-      p_seglen=self.config.getfloat('lalinference','seglen')
-    elif self.config.has_option('engine','seglen'):
-      p_seglen=self.config.getfloat('engine','seglen')
-    else:
-      p_seglen=event.duration
+    p_seglen=seglen
     prenode.set_seglen(p_seglen)
     if self.config.has_option('condor','bayeswave'):
       prenode.set_psdlength(p_seglen)
-      if self.config.has_option('lalinference','seglen'):
-        bw_seglen = self.config.getfloat('lalinference','seglen')
-      elif self.config.has_option('engine','seglen'):
-        bw_seglen = self.config.getfloat('engine','seglen')
-      else:
-        bw_seglen = event.duration
+      bw_seglen = seglen
       if (np.log2(bw_seglen)%1):
         print 'BayesWave only supports seglengths which are powers of 2, you have specified a seglength of '+str(bw_seglen)+' seconds.'
         print 'Instead, a seglenth of '+str(np.power(2., np.ceil(np.log2(bw_seglen))))+'s will be used for the BayesWave PSD estimation.'
@@ -1453,9 +1572,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                   bayeswavepsdnode[ifo].add_var_arg('--bayesLine')
                   bayeswavepsdnode[ifo].add_var_arg('--cleanOnly')
                   bayeswavepsdnode[ifo].add_var_arg('--checkpoint')
-                  bayeswavepsdnode[ifo].add_var_arg('--outputDir '+roqeventpath)
+                  bayeswavepsdnode[ifo].add_var_arg('--outputDir '+predataeventpath)
                   bayeswavepsdnode[ifo].add_var_arg('--runName BayesWave_PSD_'+ifo)
-                  bayeswavepsdnode[ifo].add_output_file(os.path.join(roqeventpath,'BayesWave_PSD_'+ifo+'_IFO0_psd.dat'))
+                  bayeswavepsdnode[ifo].add_output_file(os.path.join(predataeventpath,'BayesWave_PSD_'+ifo+'_IFO0_psd.dat'))
                   bayeswavepsdnode[ifo].set_trig_time(end_time)
                   bayeswavepsdnode[ifo].set_seglen(bw_seglen)
                   bayeswavepsdnode[ifo].set_psdlength(bw_seglen)
@@ -1493,28 +1612,28 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
               self.add_node(prenode)
               for ifo in ifos:
                 if self.config.has_option('condor','computeroqweights'):
-                  computeroqweightsnode[ifo]=self.add_rom_weights_node(ifo,prenode)
+                  computeroqweightsnode[ifo]=self.add_rom_weights_node(ifo,event.roq_b_matrix_directory,prenode)
                 #self.add_node(computeroqweightsnode[ifo])
                 if self.config.has_option('input','injection-file'):
-                  freqDataFile=os.path.join(roqeventpath,'data-dump'+ifo+'-freqDataWithInjection.dat')
+                  freqDataFile=os.path.join(predataeventpath,'data-dump'+ifo+'-freqDataWithInjection.dat')
                 else:
-                  freqDataFile=os.path.join(roqeventpath,'data-dump'+ifo+'-freqData.dat')
+                  freqDataFile=os.path.join(predataeventpath,'data-dump'+ifo+'-freqData.dat')
                 prenode.add_output_file(freqDataFile)
-                prenode.add_output_file(os.path.join(roqeventpath,'data-dump'+ifo+'-PSD.dat'))
+                prenode.add_output_file(os.path.join(predataeventpath,'data-dump'+ifo+'-PSD.dat'))
                 if self.config.has_option('condor','bayesline'):
                   bayeslinenode[ifo]=self.add_bayesline_node(ifo,prenode)
                   bayeslinenode[ifo].add_var_arg('-i '+freqDataFile)
                   bayeslinenode[ifo].add_input_file(freqDataFile)
-                  bayeslinenode[ifo].add_var_arg('-o '+os.path.join(roqeventpath,'BayesLine_PSD_'+ifo+'.dat'))
-                  bayeslinenode[ifo].add_output_file(os.path.join(roqeventpath,'BayesLine_PSD_'+ifo+'.dat'))
+                  bayeslinenode[ifo].add_var_arg('-o '+os.path.join(predataeventpath,'BayesLine_PSD_'+ifo+'.dat'))
+                  bayeslinenode[ifo].add_output_file(os.path.join(predataeventpath,'BayesLine_PSD_'+ifo+'.dat'))
                 if self.config.has_option('condor','computeroqweights'):
                   computeroqweightsnode[ifo].add_var_arg('--fHigh '+str(prenode.fhighs[ifo]))
                   computeroqweightsnode[ifo].add_var_arg('--data '+freqDataFile)
                   computeroqweightsnode[ifo].add_input_file(freqDataFile)
-                  computeroqweightsnode[ifo].add_var_arg('--psd '+os.path.join(roqeventpath,'data-dump'+ifo+'-PSD.dat'))
-                  computeroqweightsnode[ifo].add_input_file(os.path.join(roqeventpath,'data-dump'+ifo+'-PSD.dat'))
-                  computeroqweightsnode[ifo].add_var_arg('--out '+roqeventpath)
-                  computeroqweightsnode[ifo].add_output_file(os.path.join(roqeventpath,'weights_quadratic_'+ifo+'.dat'))
+                  computeroqweightsnode[ifo].add_var_arg('--psd '+os.path.join(predataeventpath,'data-dump'+ifo+'-PSD.dat'))
+                  computeroqweightsnode[ifo].add_input_file(os.path.join(predataeventpath,'data-dump'+ifo+'-PSD.dat'))
+                  computeroqweightsnode[ifo].add_var_arg('--out '+predataeventpath)
+                  computeroqweightsnode[ifo].add_output_file(os.path.join(predataeventpath,'weights_quadratic_'+ifo+'.dat'))
               #self.prenodes[seg.id()]=(prenode,computeroqweightsnode)
               if self.config.has_option('condor','bayesline'):
                   self.prenodes[event.event_id]=(prenode,bayeslinenode)
@@ -1547,12 +1666,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('input','burst-injection-file'):
        node.set_injection(self.config.get('input','burst-injection-file'),event.event_id)
        prenode.set_injection(self.config.get('input','burst-injection-file'),event.event_id)
-    if self.config.has_option('lalinference','seglen'):
-      node.set_seglen(self.config.getfloat('lalinference','seglen'))
-    elif self.config.has_option('engine','seglen'):
-      node.set_seglen(self.config.getfloat('engine','seglen'))
-    else:
-      node.set_seglen(event.duration)
+    node.set_seglen(seglen)
     if self.config.has_option('condor','bayeswave') and bayeswavepsdnode:
       node.set_psdlength(bw_seglen)
     if self.config.has_option('input','psd-length'):
@@ -1573,33 +1687,33 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
            bayeswavepsdnode[ifo].set_padding(self.config.getint('input','padding'))
     out_dir=os.path.join(self.basepath,'engine')
     mkdirs(out_dir)
-    node.set_output_file(os.path.join(out_dir,node.engine+'-'+str(event.event_id)+'-'+node.get_ifos()+'-'+str(node.get_trig_time())+'-'+str(node.id)))
+    node.set_output_file(os.path.join(out_dir,node.engine+'-'+str(event.event_id)+event.roq_basis_name+'-'+node.get_ifos()+'-'+str(node.get_trig_time())+'-'+str(node.id)))
     if self.config.has_option('condor','computeroqweights'):
       for ifo in ifos:
-        node.add_var_arg('--'+ifo+'-roqweightsLinear '+os.path.join(roqeventpath,'weights_linear_'+ifo+'.dat'))
-        node.add_input_file(os.path.join(roqeventpath,'weights_linear_'+ifo+'.dat'))
-        node.add_var_arg('--'+ifo+'-roqweightsQuadratic '+os.path.join(roqeventpath,'weights_quadratic_'+ifo+'.dat'))
-        node.add_input_file(os.path.join(roqeventpath,'weights_quadratic_'+ifo+'.dat'))
-      node.add_var_arg('--roqtime_steps '+os.path.join(roqeventpath,'roq_sizes.dat'))
-      node.add_input_file(os.path.join(roqeventpath,'roq_sizes.dat'))
-      node.add_var_arg('--roq-times '+os.path.join(roqeventpath,'tcs.dat'))
-      node.add_input_file(os.path.join(roqeventpath,'tcs.dat'))
-      node.add_var_arg('--roqnodesLinear '+os.path.join(roqeventpath,'fnodes_linear.dat'))
-      node.add_input_file(os.path.join(roqeventpath,'fnodes_linear.dat'))
-      node.add_var_arg('--roqnodesQuadratic '+os.path.join(roqeventpath,'fnodes_quadratic.dat'))
-      node.add_input_file(os.path.join(roqeventpath,'fnodes_quadratic.dat'))
+        node.add_var_arg('--'+ifo+'-roqweightsLinear '+os.path.join(predataeventpath,'weights_linear_'+ifo+'.dat'))
+        node.add_input_file(os.path.join(predataeventpath,'weights_linear_'+ifo+'.dat'))
+        node.add_var_arg('--'+ifo+'-roqweightsQuadratic '+os.path.join(predataeventpath,'weights_quadratic_'+ifo+'.dat'))
+        node.add_input_file(os.path.join(predataeventpath,'weights_quadratic_'+ifo+'.dat'))
+      node.add_var_arg('--roqtime_steps '+os.path.join(predataeventpath,'roq_sizes.dat'))
+      node.add_input_file(os.path.join(predataeventpath,'roq_sizes.dat'))
+      node.add_var_arg('--roq-times '+os.path.join(predataeventpath,'tcs.dat'))
+      node.add_input_file(os.path.join(predataeventpath,'tcs.dat'))
+      node.add_var_arg('--roqnodesLinear '+os.path.join(predataeventpath,'fnodes_linear.dat'))
+      node.add_input_file(os.path.join(predataeventpath,'fnodes_linear.dat'))
+      node.add_var_arg('--roqnodesQuadratic '+os.path.join(predataeventpath,'fnodes_quadratic.dat'))
+      node.add_input_file(os.path.join(predataeventpath,'fnodes_quadratic.dat'))
     if self.config.has_option('condor','bayesline'):
       for ifo in ifos:
-        node.psds[ifo]=os.path.join(roqeventpath,'BayesLine_PSD_'+ifo+'.dat')
-        node.add_input_file(os.path.join(roqeventpath,'BayesLine_PSD_'+ifo+'.dat'))
-        prenode.psds[ifo]=os.path.join(roqeventpath,'BayesLine_PSD_'+ifo+'.dat')
-        prenode.add_input_file(os.path.join(roqeventpath,'BayesLine_PSD_'+ifo+'.dat'))
+        node.psds[ifo]=os.path.join(predataeventpath,'BayesLine_PSD_'+ifo+'.dat')
+        node.add_input_file(os.path.join(predataeventpath,'BayesLine_PSD_'+ifo+'.dat'))
+        prenode.psds[ifo]=os.path.join(predataeventpath,'BayesLine_PSD_'+ifo+'.dat')
+        prenode.add_input_file(os.path.join(predataeventpath,'BayesLine_PSD_'+ifo+'.dat'))
     if self.config.has_option('condor','bayeswave') and bayeswavepsdnode:
       for ifo in ifos:
-        node.psds[ifo]=os.path.join(roqeventpath,'BayesWave_PSD_'+ifo+'_IFO0_psd.dat')
-        node.add_input_file(os.path.join(roqeventpath,'BayesWave_PSD_'+ifo+'_IFO0_psd.dat'))
-        prenode.psds[ifo]=os.path.join(roqeventpath,'BayesWave_PSD_'+ifo+'_IFO0_psd.dat')
-        prenode.add_input_file(os.path.join(roqeventpath,'BayesWave_PSD_'+ifo+'_IFO0_psd.dat'))
+        node.psds[ifo]=os.path.join(predataeventpath,'BayesWave_PSD_'+ifo+'_IFO0_psd.dat')
+        node.add_input_file(os.path.join(predataeventpath,'BayesWave_PSD_'+ifo+'_IFO0_psd.dat'))
+        prenode.psds[ifo]=os.path.join(predataeventpath,'BayesWave_PSD_'+ifo+'_IFO0_psd.dat')
+        prenode.add_input_file(os.path.join(predataeventpath,'BayesWave_PSD_'+ifo+'_IFO0_psd.dat'))
     for (opt,arg) in event.engine_opts.items():
         node.add_var_opt(opt,arg)
     if self.config.has_option('condor','bayeswave') and self.engine is not 'bayeswave':
@@ -1699,11 +1813,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
               nodes.append(node)
     return nodes
 
-  def add_rom_weights_node(self,ifo,parent=None):
+  def add_rom_weights_node(self,ifo,roq_b_matrix_directory,parent=None):
     #try:
     #node=self.computeroqweightsnodes[ifo]
         #except KeyError:
-    node=ROMNode(self.computeroqweights_job,ifo,parent.seglen,parent.flows[ifo])
+    node=ROMNode(self.computeroqweights_job,ifo,parent.seglen,parent.flows[ifo],roq_b_matrix_directory)
     self.computeroqweightsnode[ifo]=node
     if parent is not None:
       node.add_parent(parent)
@@ -1732,9 +1846,9 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     self.engine=engine
     basepath=cp.get('paths','basedir')
     if ispreengine is True:
-      roqpath=os.path.join(basepath,'ROQdata')
-      self.roqpath=roqpath
-      mkdirs(roqpath)
+      predatapath=os.path.join(basepath,'predata')
+      self.predatapath=predatapath
+      mkdirs(predatapath)
       exe=cp.get('condor',self.engine)
       universe='vanilla'
     else:
@@ -2599,35 +2713,40 @@ class ROMJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     self.set_stdout_file(os.path.join(logdir,'computeroqweights-$(cluster)-$(process).out'))
     self.set_stderr_file(os.path.join(logdir,'computeroqweights-$(cluster)-$(process).err'))
     self.add_condor_cmd('getenv','True')
-    self.add_arg('-B '+str(cp.get('paths','roq_b_matrix_directory')))
     if cp.has_option('engine','dt'):
       dt=cp.get('engine','dt')
     self.add_arg('-t '+str(dt))
     if cp.has_option('engine','time_step'):
       time_step=cp.get('engine','time_step')
     self.add_arg('-T '+str(time_step))
+    self.computeroqweights_memory=None
     if cp.has_option('condor','computeroqweights_memory'):
-      computeroqweights_memory=str(cp.get('condor','computeroqweights_memory'))
+      self.computeroqweights_memory=str(cp.get('condor','computeroqweights_memory'))
     else:
-      params = np.genfromtxt(str(cp.get('paths','roq_b_matrix_directory')+'/params.dat'), names=True)
-      computeroqweights_memory=str(int(
-      os.path.getsize(str(cp.get('paths','roq_b_matrix_directory')+'/B_linear.npy'))/(1024*1024)
-      + 3*((params['fhigh']-params['flow'])*params['seglen'])*(float(dt+0.05)*2/float(time_step))*2*8/(1024*1024)
-      + os.path.getsize(str(cp.get('paths','roq_b_matrix_directory')+'/B_quadratic.npy'))/(1024*1024)
-      ) + 4096) # add 4gb of memory due to how matrix-copying is handled in lalapps_compute_roq_weights.py/numpy
-      print 'Requesting '+computeroqweights_memory+' of memory for computeroqweights.'
-    self.add_condor_cmd('request_memory',computeroqweights_memory)
+      self.time_width=((float(dt)+0.05)*2/float(time_step))
 
 class ROMNode(pipeline.CondorDAGNode):
   """
   Run the ROM compute weights script
   """
-  def __init__(self,computeroqweights_job,ifo,seglen,flow):
+  def __init__(self,computeroqweights_job,ifo,seglen,flow,roq_b_matrix_directory):
     pipeline.CondorDAGNode.__init__(self,computeroqweights_job)
     self.__finalized=False
     self.add_var_arg('--seglen '+str(seglen))
     self.add_var_arg('--fLow '+str(flow))
     self.add_var_arg('--ifo '+ifo)
+    self.add_var_arg('-B '+roq_b_matrix_directory)
+    if computeroqweights_job.computeroqweights_memory is None:
+      params = np.genfromtxt(roq_b_matrix_directory+'/params.dat', names=True)
+      computeroqweights_memory=str(int(
+      os.path.getsize(roq_b_matrix_directory+'/B_linear.npy')/(1024*1024)
+      + 3*((params['fhigh']-params['flow'])*params['seglen'])*computeroqweights_job.time_width*2*8/(1024*1024)
+      + os.path.getsize(roq_b_matrix_directory+'/B_quadratic.npy')/(1024*1024)
+      ) + 4096) # add 4gb of memory due to how matrix-copying is handled in lalapps_compute_roq_weights.py/numpy
+      print 'Requesting '+computeroqweights_memory+' of memory for computeroqweights.'
+    else:
+      computeroqweights_memory=computeroqweights_job.computeroqweights_memory
+    self.add_var_condor_cmd('request_memory',computeroqweights_memory)
 
   def finalize(self):
     if self.__finalized:
