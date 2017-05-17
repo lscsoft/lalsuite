@@ -18,8 +18,6 @@
 """
 LIGO-LW convenience functions.
 """
-__author__ = "Leo Singer <leo.singer@ligo.org>"
-
 
 # Python standard library imports.
 import itertools
@@ -35,25 +33,16 @@ from glue.ligolw import table as ligolw_table
 from glue.ligolw import lsctables
 import lal
 import lal.series
+from lalinspiral.thinca import InspiralCoincDef
+from lalinspiral.inspinjfind import InspiralSCExactCoincDef
 
 # Third-party imports.
 import numpy as np
-from astropy.table import Table
-
-
-# FIXME: Copied from pylal.ligolw_thinca to avoid dependency.
-# Should be moved to lalinspiral.
-InspiralCoincDef = lsctables.CoincDef(search = u"inspiral", search_coinc_type = 0, description = u"sngl_inspiral<-->sngl_inspiral coincidences")
-
-
-# FIXME: Copied from pylal.ligolw_inspinjfind to avoid dependency.
-# Should be moved to lalinspiral.
-InspiralSCExactCoincDef = lsctables.CoincDef(search = u"inspiral", search_coinc_type = 3, description = u"sim_inspiral<-->coinc_event coincidences (exact)")
 
 
 # FIXME: This should be imported from pycbc, or even better, embedded in the
 # pycbc PSD files.
-PYCBC_DYN_RANGE_FAC =  5.9029581035870565e+20
+PYCBC_DYN_RANGE_FAC = 5.9029581035870565e+20
 
 
 def get_template_bank_f_low(xmldoc):
@@ -63,17 +52,18 @@ def get_template_bank_f_low(xmldoc):
     line for the low-frequency cutoff; instead, it is recorded in a row
     of the search_summvars table."""
     try:
-        template_bank_f_low, = ligolw_process.get_process_params(xmldoc,
-            'tmpltbank', '--low-frequency-cutoff')
+        template_bank_f_low, = ligolw_process.get_process_params(
+            xmldoc, 'tmpltbank', '--low-frequency-cutoff')
     except ValueError:
         try:
-            template_bank_f_low, = ligolw_process.get_process_params(xmldoc,
-                'lalapps_cbc_sbank', '--flow')
+            template_bank_f_low, = ligolw_process.get_process_params(
+                xmldoc, 'lalapps_cbc_sbank', '--flow')
         except ValueError:
             try:
-                search_summvars_table = ligolw_table.get_table(xmldoc,
-                    lsctables.SearchSummVarsTable.tableName)
-                template_bank_f_low, = (search_summvars.value
+                search_summvars_table = ligolw_table.get_table(
+                    xmldoc, lsctables.SearchSummVarsTable.tableName)
+                template_bank_f_low, = (
+                    search_summvars.value
                     for search_summvars in search_summvars_table
                     if search_summvars.name == 'low-frequency cutoff')
             except ValueError:
@@ -83,13 +73,17 @@ def get_template_bank_f_low(xmldoc):
 
 def sim_coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
     """Retrieve (as a generator) all of the
-    (sim_inspiral, coinc_event, (sngl_inspiral, sngl_inspiral, ... sngl_inspiral)
-    tuples from found coincidences in a LIGO-LW XML document."""
+    (sim_inspiral, coinc_event, (sngl_inspiral, sngl_inspiral,
+    ... sngl_inspiral) tuples from found coincidences in a LIGO-LW XML
+    document."""
 
     # Look up necessary tables.
-    coinc_table = ligolw_table.get_table(xmldoc, lsctables.CoincTable.tableName)
-    coinc_def_table = ligolw_table.get_table(xmldoc, lsctables.CoincDefTable.tableName)
-    coinc_map_table = ligolw_table.get_table(xmldoc, lsctables.CoincMapTable.tableName)
+    coinc_table = ligolw_table.get_table(
+        xmldoc, lsctables.CoincTable.tableName)
+    coinc_def_table = ligolw_table.get_table(
+        xmldoc, lsctables.CoincDefTable.tableName)
+    coinc_map_table = ligolw_table.get_table(
+        xmldoc, lsctables.CoincMapTable.tableName)
 
     # Look up coinc_def ids.
     sim_coinc_def_id = coinc_def_table.get_coinc_def_id(
@@ -100,7 +94,8 @@ def sim_coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
     def events_for_coinc_event_id(coinc_event_id):
         for coinc_map in coinc_map_table:
             if coinc_map.coinc_event_id == coinc_event_id:
-                for row in ligolw_table.get_table(xmldoc, coinc_map.table_name):
+                for row in ligolw_table.get_table(
+                        xmldoc, coinc_map.table_name):
                     column_name = coinc_map.event_id.column_name
                     if getattr(row, column_name) == coinc_map.event_id:
                         yield coinc_map.event_id, row
@@ -115,20 +110,28 @@ def sim_coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
         # Locate the sim_inspiral and coinc events.
         sim_inspiral = None
         coinc = None
-        for event_id, event in events_for_coinc_event_id(sim_coinc.coinc_event_id):
-            if event_id.table_name == ligolw_table.Table.TableName(lsctables.SimInspiralTable.tableName):
+        for event_id, event in events_for_coinc_event_id(
+                sim_coinc.coinc_event_id):
+            if event_id.table_name == ligolw_table.Table.TableName(
+                    lsctables.SimInspiralTable.tableName):
                 if sim_inspiral is not None:
-                    raise RuntimeError("Found more than one matching sim_inspiral entry")
+                    raise RuntimeError(
+                        'Found more than one matching sim_inspiral entry')
                 sim_inspiral = event
-            elif event_id.table_name == ligolw_table.Table.TableName(lsctables.CoincTable.tableName):
+            elif event_id.table_name == ligolw_table.Table.TableName(
+                    lsctables.CoincTable.tableName):
                 if coinc is not None:
-                    raise RuntimeError("Found more than one matching coinc entry")
+                    raise RuntimeError(
+                        'Found more than one matching coinc entry')
                 coinc = event
             else:
-                raise RuntimeError("Did not expect coincidence to contain an event of type '%s'" % event_id.table_name)
+                raise RuntimeError(
+                    "Did not expect coincidence to contain an event of "
+                    "type '{}'".format(event_id.table_name))
 
-        sngl_inspirals = tuple(event
-            for event_id, event in events_for_coinc_event_id(coinc.coinc_event_id))
+        sngl_inspirals = tuple(
+            event for event_id, event in events_for_coinc_event_id(
+                coinc.coinc_event_id))
 
         yield sim_inspiral, coinc, sngl_inspirals
 
@@ -145,7 +148,10 @@ class coinc_and_sngl_inspirals_for_hdf(collections.Mapping):
             if key.startswith(key_prefix)))
 
         coinc_group = coinc_file[sample]
+        self.timeslide_interval = coinc_file.attrs.get('timeslide_interval', 0)
         self.template_ids = coinc_group['template_id']
+        self.timeslide_ids = coinc_group.get(
+            'timeslide_id', np.zeros(len(self.template_ids)))
         self.trigger_ids = [
             coinc_group['trigger_id' + template_num]
             for template_num in template_nums]
@@ -158,11 +164,13 @@ class coinc_and_sngl_inspirals_for_hdf(collections.Mapping):
         self.triggers = tuple(triggers[ifo] for ifo in self.ifos)
 
         # Declare types for ersatz CoincEventTable and SnglInspiralTable rows.
-        self.SnglInspiral = collections.namedtuple('SnglInspiral',
-            ['event_id', 'ifo', 'snr', 'coa_phase', 'end'] + bank_file.keys())
+        self.SnglInspiral = collections.namedtuple(
+            'SnglInspiral', ['event_id', 'ifo', 'snr', 'coa_phase', 'end']
+            + bank_file.keys())
 
     def __getitem__(self, coinc_id):
         template_id = self.template_ids[coinc_id]
+        timeslide_id = self.timeslide_ids[coinc_id]
         template = [col[template_id] for col in self.bank]
 
         trigger_ids = [
@@ -172,9 +180,11 @@ class coinc_and_sngl_inspirals_for_hdf(collections.Mapping):
             self.SnglInspiral(
                 trigger_id, ifo,
                 triggers[0][trigger_id], triggers[1][trigger_id],
-                lal.LIGOTimeGPS(triggers[2][trigger_id]), *template
-            ) for trigger_id, ifo, triggers
-            in zip(trigger_ids, self.ifos, self.triggers)
+                lal.LIGOTimeGPS(triggers[2][trigger_id] +
+                    (timeslide_id * self.timeslide_interval if i == 0 else 0)),
+                *template
+            ) for i, (trigger_id, ifo, triggers)
+            in enumerate(zip(trigger_ids, self.ifos, self.triggers))
         ]
 
     def __iter__(self):
@@ -239,9 +249,11 @@ class coinc_and_sngl_inspirals_for_xmldoc(collections.Mapping):
 
 def psd_filenames_by_process_id_for_xmldoc(xmldoc):
     """Retrieve a dictionary mapping process_ids to reference PSD filenames."""
-    return {process_param.process_id: process_param.value
+    return {
+        process_param.process_id: process_param.value
         for process_param
-        in ligolw_table.get_table(xmldoc, lsctables.ProcessParamsTable.tableName)
+        in ligolw_table.get_table(
+            xmldoc, lsctables.ProcessParamsTable.tableName)
         if process_param.param == '--reference-psd'}
 
 
@@ -250,7 +262,6 @@ def _snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc):
         try:
             if elem.Name != lal.COMPLEX8TimeSeries.__name__:
                 continue
-            array_elem = ligolw_array.get_array(elem, 'snr')
             event_id = ligolw_param.get_pyvalue(elem, 'event_id')
             if not isinstance(event_id, lsctables.SnglInspiralID):
                 continue
@@ -266,7 +277,7 @@ def snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc):
 
 @lsctables.use_in
 class LSCTablesContentHandler(ligolw.LIGOLWContentHandler):
-	"""Content handler for reading LIGO-LW XML files with LSC table schema."""
+    """Content handler for reading LIGO-LW XML files with LSC table schema."""
 
 
 @ligolw_array.use_in

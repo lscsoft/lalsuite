@@ -1585,8 +1585,10 @@ int main(int argc, char**argv) {
     } /* if DEBUG_LEVEL_FNAME file found */
 
   {
-    char buf[8];
-    if (setenv("LAL_DEBUG_LEVEL", myultoa(eah_lal_debug_level, buf, 8), 1)) {
+    char buf[16+8];
+    strcpy(buf, "LAL_DEBUG_LEVEL=");
+    myultoa(eah_lal_debug_level, buf+16, 8);
+    if (putenv(buf)) {
       LogPrintf(LOG_CRITICAL,"ERROR: couldn't set LAL_DEBUG_LEVEL env: %d\n", errno);
     }
   }

@@ -23,24 +23,30 @@ deepest resolution of the tree.
 If an input filename is specified, then the posterior samples are read from it.
 If no input filename is provided, then input is read from stdin.
 """
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
-# Command line interface
-
+# Command line interface.
 from lalinference.bayestar import command
 parser = command.ArgumentParser()
-parser.add_argument('--nside', '-n', type=int, default=-1,
-    help='Write final sky map at this HEALPix lateral resolution [default: auto]')
-parser.add_argument('--max-nside', '-m', type=int, default=-1,
-    help='Stop subdivision at this maximum HEALPix lateral resolution [default: max 64-bit]')
-parser.add_argument('--samples-per-bin', type=int, default=30,
+parser.add_argument(
+    '--nside', '-n', type=int, default=-1,
+    help='Write final sky map at this HEALPix lateral resolution '
+    '[default: auto]')
+parser.add_argument(
+    '--max-nside', '-m', type=int, default=-1,
+    help='Stop subdivision at this maximum HEALPix lateral resolution '
+    '[default: max 64-bit]')
+parser.add_argument(
+    '--samples-per-bin', type=int, default=30,
     help='Samples per bin [default: %(default)s]')
-parser.add_argument('--objid',
+parser.add_argument(
+    '--objid',
     help='Event ID to be stored in FITS header [default: %(default)s]')
-parser.add_argument('input', metavar='INPUT.dat', default='-',
+parser.add_argument(
+    'input', metavar='INPUT.dat', default='-',
     help='name of input posterior samples file [default: stdin]')
-parser.add_argument('-o', '--output', metavar='OUTPUT.fits[.gz]', required=True,
+parser.add_argument(
+    '-o', '--output', metavar='OUTPUT.fits[.gz]', required=True,
     help='name of output FITS file [required]')
 opts = parser.parse_args()
 
@@ -59,6 +65,6 @@ p = lalinference.bayestar.postprocess.adaptive_healpix_histogram(
     nside=opts.nside, max_nside=opts.max_nside)
 
 # Write output to FITS file.
-fits.write_sky_map(opts.output, p,
-    creator=parser.prog, objid=opts.objid,
-    gps_time=samples['time'].mean())
+fits.write_sky_map(
+    opts.output, p,
+    creator=parser.prog, objid=opts.objid, gps_time=samples['time'].mean())

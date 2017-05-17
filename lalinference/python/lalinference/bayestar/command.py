@@ -15,16 +15,13 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-from __future__ import print_function
 """
 Functions that support the command line interface.
 """
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
-
+from __future__ import print_function
 import argparse
 import contextlib
-import copy
 from distutils.dir_util import mkpath
 from distutils.errors import DistutilsFileError
 import errno
@@ -76,12 +73,15 @@ group = waveform_parser.add_argument_group(
     'waveform options', 'Options that affect template waveform generation')
 # FIXME: The O1 uberbank high-mass template, SEOBNRv2_ROM_DoubleSpin, does
 # not support frequencies less than 30 Hz.
-group.add_argument('--f-low', type=float, metavar='Hz', default=30,
+group.add_argument(
+    '--f-low', type=float, metavar='Hz', default=30,
     help='Low frequency cutoff [default: %(default)s]')
-group.add_argument('--f-high-truncate', type=float, default=0.95,
+group.add_argument(
+    '--f-high-truncate', type=float, default=0.95,
     help='Truncate waveform at this fraction of the maximum frequency of the '
     'PSD [default: %(default)s]')
-group.add_argument('--waveform', default='o2-uberbank',
+group.add_argument(
+    '--waveform', default='o2-uberbank',
     help='Template waveform approximant (e.g., TaylorF2threePointFivePN) '
     '[default: O2 uberbank mass-dependent waveform]')
 del group
@@ -90,36 +90,46 @@ del group
 prior_parser = argparse.ArgumentParser(add_help=False)
 group = prior_parser.add_argument_group(
     'prior options', 'Options that affect the BAYESTAR likelihood')
-group.add_argument('--phase-convention', default='antifindchirp',
+group.add_argument(
+    '--phase-convention', default='antifindchirp',
     choices=('findchirp', 'antifindchirp'),
     help='Phase convention [default: %(default)s]')
-group.add_argument('--min-distance', type=float, metavar='Mpc',
+group.add_argument(
+    '--min-distance', type=float, metavar='Mpc',
     help='Minimum distance of prior in megaparsecs '
     '[default: infer from effective distance]')
-group.add_argument('--max-distance', type=float, metavar='Mpc',
+group.add_argument(
+    '--max-distance', type=float, metavar='Mpc',
     help='Maximum distance of prior in megaparsecs '
     '[default: infer from effective distance]')
-group.add_argument('--prior-distance-power', type=int, metavar='-1|2',
-    default=2, help='Distance prior '
+group.add_argument(
+    '--prior-distance-power', type=int, metavar='-1|2', default=2,
+    help='Distance prior '
     '[-1 for uniform in log, 2 for uniform in volume, default: %(default)s]')
-group.add_argument('--cosmology', default=False, action='store_true',
-    help='Apply cosmological comoving volume correction [default: %(default)s]')
-group.add_argument('--enable-snr-series', default=False, action='store_true',
-    help='Enable input of SNR time series (WARNING: UNREVIEWED!) [default: no]')
+group.add_argument(
+    '--cosmology', default=False, action='store_true',
+    help='Use cosmological comoving volume prior [default: %(default)s]')
+group.add_argument(
+    '--enable-snr-series', default=False, action='store_true',
+    help='Enable input of SNR time series (WARNING: UNREVIEWED!) '
+    '[default: no]')
 del group
 
 
 skymap_parser = argparse.ArgumentParser(add_help=False)
 group = skymap_parser.add_argument_group(
     'sky map output options', 'Options that affect sky map output')
-group.add_argument('--nside', '-n', type=int, default=-1,
+group.add_argument(
+    '--nside', '-n', type=int, default=-1,
     help='HEALPix resolution [default: auto]')
-group.add_argument('--chain-dump', default=False, action='store_true',
+group.add_argument(
+    '--chain-dump', default=False, action='store_true',
     help='For MCMC methods, dump the sample chain to disk [default: no]')
 del group
 
 
 class MatplotlibFigureType(argparse.FileType):
+
     def __init__(self):
         super(MatplotlibFigureType, self).__init__('wb')
 
@@ -144,7 +154,9 @@ class MatplotlibFigureType(argparse.FileType):
             self.string = string
             return self.__save
 
+
 class HelpChoicesAction(argparse.Action):
+
     def __init__(self,
                  option_strings,
                  choices=(),
@@ -166,6 +178,7 @@ class HelpChoicesAction(argparse.Action):
             print(choice)
         parser.exit()
 
+
 def type_with_sideeffect(type):
     def decorator(sideeffect):
         def func(value):
@@ -175,30 +188,36 @@ def type_with_sideeffect(type):
         return func
     return decorator
 
+
 @type_with_sideeffect(str)
 def colormap(value):
     from matplotlib import rcParams
     rcParams['image.cmap'] = value
+
 
 @type_with_sideeffect(float)
 def figwidth(value):
     from matplotlib import rcParams
     rcParams['figure.figsize'][0] = float(value)
 
+
 @type_with_sideeffect(float)
 def figheight(value):
     from matplotlib import rcParams
     rcParams['figure.figsize'][1] = float(value)
+
 
 @type_with_sideeffect(int)
 def dpi(value):
     from matplotlib import rcParams
     rcParams['figure.dpi'] = rcParams['savefig.dpi'] = float(value)
 
+
 @type_with_sideeffect(int)
 def transparent(value):
     from matplotlib import rcParams
     rcParams['savefig.transparent'] = bool(value)
+
 
 figure_parser = argparse.ArgumentParser(add_help=False)
 colormap_choices = sorted(cm.cmap_d.keys())
@@ -369,13 +388,17 @@ def rm_f(filename):
 
 def register_to_xmldoc(xmldoc, parser, opts, **kwargs):
     from glue.ligolw.utils import process
-    return process.register_to_xmldoc(
-        xmldoc, parser.prog,
-        {key: (value.name if hasattr(value, 'read') else value)
-        for key, value in opts.__dict__.items()})
+    params = {key: value.name if hasattr(value, 'read') else value
+              for key, value in opts.__dict__.items()}
+    return process.register_to_xmldoc(xmldoc, parser.prog, params)
 
 
-def iterlines(file, start_message='Waiting for input on stdin. Type control-D followed by a newline to terminate.', stop_message='Reached end of file. Exiting.'):
+start_msg = '\
+Waiting for input on stdin. Type control-D followed by a newline to terminate.'
+stop_msg = 'Reached end of file. Exiting.'
+
+
+def iterlines(file, start_message=start_msg, stop_message=stop_msg):
     """Iterate over non-emtpy lines in a file."""
     is_tty = os.isatty(file.fileno())
 

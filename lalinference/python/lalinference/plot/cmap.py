@@ -15,16 +15,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 """Register some extra Matplotlib color maps"""
-__all__ = ()
-
 
 from matplotlib import cm
 from matplotlib import colors
 import pkg_resources
 import numpy as np
-import errno
-import os
 import warnings
+
+__all__ = ()
 
 
 for name in ['cylon']:
@@ -47,7 +45,7 @@ for name in ['cylon']:
     name += '_r'
     data = data[::-1]
     cmap = colors.LinearSegmentedColormap.from_list(name, data)
-    # Assign in module.    
+    # Assign in module.
     locals().update({name: cmap})
     # Register with Matplotlib.
     cm.register_cmap(cmap=cmap)

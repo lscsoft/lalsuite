@@ -24,6 +24,7 @@ pymodule_PYTHON = \
 	SimBurstUtils.py \
 	SnglBurstUtils.py \
 	snglcluster.py \
+	snglcoinc.py \
 	stringutils.py \
 	timeslides.py \
 	$(END_OF_LIST)

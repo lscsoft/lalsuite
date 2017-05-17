@@ -42,7 +42,7 @@ from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
 from glue.offsetvector import offsetvector
-from pylal import snglcoinc
+from . import snglcoinc
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"

@@ -18,17 +18,18 @@
 Overplot contours for a large number of sky maps, in geographical coordinates.
 This can reveal patterns due to the priors (i.e., the network antenna pattern).
 """
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Command line interface
 
 from lalinference.bayestar import command
 parser = command.ArgumentParser(parents=[command.figure_parser])
-parser.add_argument('--contour', metavar='PERCENT', type=float, default=90,
+parser.add_argument(
+    '--contour', metavar='PERCENT', type=float, default=90,
     help='plot contour enclosing this percentage of'
     ' probability mass [default: %(default)s]')
-parser.add_argument('--alpha', metavar='ALPHA', type=float, default=0.1,
+parser.add_argument(
+    '--alpha', metavar='ALPHA', type=float, default=0.1,
     help='alpha blending for each sky map [default: %(default)s]')
 parser.add_argument(
     'fitsfilenames', metavar='GLOB.fits[.gz]', nargs='+', action='glob',
@@ -63,7 +64,8 @@ if opts.colormap is None:
 else:
     colors = matplotlib.cm.get_cmap(opts.colormap)
     colors = colors(np.linspace(0, 1, len(opts.fitsfilenames)))
-for count_records, (color, fitsfilename) in enumerate(zip(colors, opts.fitsfilenames)):
+for count_records, (color, fitsfilename) in enumerate(
+        zip(colors, opts.fitsfilenames)):
     progress.update(count_records, fitsfilename)
     skymap, metadata = fits.read_sky_map(fitsfilename, nest=None)
     nside = hp.npix2nside(len(skymap))
@@ -74,7 +76,8 @@ for count_records, (color, fitsfilename) in enumerate(zip(colors, opts.fitsfilen
     region[indices] = 100 * np.cumsum(skymap[indices])
     plot.healpix_contour(
         region, nest=metadata['nest'], dlon=-gmst,
-        colors=[color], linewidths=0.5, levels=[opts.contour], alpha=opts.alpha)
+        colors=[color], linewidths=0.5, levels=[opts.contour],
+        alpha=opts.alpha)
 
 progress.update(-1, 'saving figure')
 

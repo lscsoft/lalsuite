@@ -20,7 +20,6 @@ Remove all entries from a template bank except those that lie within a 1-sigma
 error ellipse of a (mass1, mass2, chi=0) at a given SNR. Uses
 TaylorF2ReducedSpin metric.
 """
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Command line interface.
@@ -73,8 +72,8 @@ process = command.register_to_xmldoc(xmldoc, parser, opts)
 f_low = ligolw_bayestar.get_template_bank_f_low(xmldoc)
 
 # Get the SnglInspiral table.
-sngl_inspiral_table = ligolw_table.get_table(xmldoc,
-    lsctables.SnglInspiralTable.tableName)
+sngl_inspiral_table = ligolw_table.get_table(
+    xmldoc, lsctables.SnglInspiralTable.tableName)
 
 # Determine central values of intrinsic parameters.
 mchirp0 = lalinspiral.sbank.tau0tau3.m1m2_to_mchirp(opts.mass1, opts.mass2)
@@ -89,11 +88,13 @@ thetas_0 = lalsimulation.SimInspiralTaylorF2RedSpinChirpTimesFromMchirpEtaChi(
 f_high = 2048
 df = 0.1
 S = lal.CreateREAL8Vector(int(f_high // df))
-S.data = [lalsimulation.SimNoisePSDaLIGOZeroDetHighPower(i * df)
+S.data = [
+    lalsimulation.SimNoisePSDaLIGOZeroDetHighPower(i * df)
     for i in range(len(S.data))]
 
 # Allocate noise moments.
-moments = [lal.CreateREAL8Vector(int((f_high - f_low) // df)) for _ in range(29)]
+moments = [
+    lal.CreateREAL8Vector(int((f_high - f_low) // df)) for _ in range(29)]
 
 # Compute noise moments.
 lalsimulation.SimInspiralTaylorF2RedSpinComputeNoiseMoments(
@@ -111,9 +112,9 @@ I *= np.square(opts.snr)
 
 # Blockwise separation of Fisher matrix. Parameters are in the following order:
 # theta0, theta3, theta3S, t0, phi0
-IA = I[0:3, 0:3] # intrinsic block
-IB = I[0:3, 3:5] # cross block
-ID = I[3:5, 3:5] # extrinsic block
+IA = I[0:3, 0:3]  # intrinsic block
+IB = I[0:3, 3:5]  # cross block
+ID = I[3:5, 3:5]  # extrinsic block
 metric = IA - np.dot(IB, linalg.solve(ID, IB.T, sym_pos=True))
 
 
@@ -137,5 +138,6 @@ ligolw_process.set_process_end_time(process)
 
 # Write output.
 with ligolw_utils.SignalsTrap():
-    ligolw_utils.write_fileobj(xmldoc, opts.output,
+    ligolw_utils.write_fileobj(
+        xmldoc, opts.output,
         gz=(os.path.splitext(opts.output.name)[-1] == '.gz'))

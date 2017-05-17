@@ -30,6 +30,7 @@ from colormath.color_objects import LabColor, sRGBColor
 from scipy.interpolate import interp1d
 import numpy as np
 
+
 def lab_to_rgb(*args):
     """Convert Lab color to sRGB, with components clipped to (0, 1)."""
     Lab = LabColor(*args)

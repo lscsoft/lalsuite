@@ -25,7 +25,6 @@ Public-domain cartographic data is courtesy of Natural Earth
 (http://www.naturalearthdata.com) and processed with MapShaper
 (http://www.mapshaper.org).
 """
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Command line interface
@@ -80,7 +79,8 @@ skymap, metadata = fits.read_sky_map(opts.input.name, nest=None)
 nside = hp.npix2nside(len(skymap))
 
 if opts.geo:
-    dlon = -lal.GreenwichMeanSiderealTime(lal.LIGOTimeGPS(metadata['gps_time'])) % (2*np.pi)
+    dlon = -lal.GreenwichMeanSiderealTime(
+        lal.LIGOTimeGPS(metadata['gps_time'])) % (2*np.pi)
 else:
     dlon = 0
 
@@ -109,8 +109,8 @@ if opts.contour:
 
 # Add continents.
 if opts.geo:
-    geojson_filename = os.path.join(os.path.dirname(plot.__file__),
-        'ne_simplified_coastline.json')
+    geojson_filename = os.path.join(
+        os.path.dirname(plot.__file__), 'ne_simplified_coastline.json')
     with open(geojson_filename, 'r') as geojson_file:
         geojson = json.load(geojson_file)
     for shape in geojson['geometries']:
@@ -137,7 +137,9 @@ for ra, dec in radecs:
         ra = plot.reference_angle(ra + dlon)
     else:
         ra = plot.wrapped_angle(ra + dlon)
-    ax.plot(ra, dec, '*', markerfacecolor='white', markeredgecolor='black', markersize=10)
+    ax.plot(
+        ra, dec, '*',
+        markerfacecolor='white', markeredgecolor='black', markersize=10)
 
 # Add a white outline to all text to make it stand out from the background.
 plot.outline_text(ax)

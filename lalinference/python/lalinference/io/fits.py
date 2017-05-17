@@ -56,11 +56,7 @@ CREATOR = 'fits.py '           / Program that created this file
 RUNTIME =                 21.5 / Runtime in seconds of the CREATOR program
 END
 """
-__author__ = "Leo Singer <leo.singer@ligo.org>"
-__all__ = ("read_sky_map", "write_sky_map")
 
-
-import os
 import math
 import healpy as hp
 import numpy as np
@@ -74,17 +70,16 @@ import six
 from astropy.table import Table
 from ..bayestar import moc
 
-
 # FIXME: Remove this after all Astropy monkeypatches are obsolete.
 import astropy
 import distutils.version
 astropy_version = distutils.version.StrictVersion(astropy.__version__)
 
+__all__ = ("read_sky_map", "write_sky_map")
 
 
 def gps_to_iso8601(gps_time):
-    """
-    Convert a floating-point GPS time in seconds to an ISO 8601 date string.
+    """Convert a floating-point GPS time in seconds to an ISO 8601 date string.
 
     Parameters
     ----------
@@ -122,7 +117,8 @@ def gps_to_iso8601(gps_time):
         assert gps_seconds_fraction[0] == '0'
     assert gps_seconds_fraction[1] == '.'
     gps_seconds_fraction = gps_seconds_fraction[1:]
-    year, month, day, hour, minute, second, _, _, _ = lal.GPSToUTC(int(gps_seconds))
+    year, month, day, hour, minute, second, _, _, _ = lal.GPSToUTC(
+        int(gps_seconds))
     return '{0:04d}-{1:02d}-{2:02d}T{3:02d}:{4:02d}:{5:02d}{6:s}'.format(
         year, month, day, hour, minute, second, gps_seconds_fraction)
 
@@ -204,23 +200,39 @@ DEFAULT_NUNIQ_UNITS = (u.steradian**-1, u.Mpc, u.Mpc, u.Mpc**-2)
 DEFAULT_NESTED_NAMES = ('PROB', 'DISTMU', 'DISTSIGMA', 'DISTNORM')
 DEFAULT_NESTED_UNITS = (u.pix**-1, u.Mpc, u.Mpc, u.Mpc**-2)
 FITS_META_MAPPING = (
-    ('objid', 'OBJECT', 'Unique identifier for this event', identity, identity),
+    ('objid', 'OBJECT', 'Unique identifier for this event',
+     identity, identity),
     ('url', 'REFERENC', 'URL of this event', identity, identity),
-    ('instruments', 'INSTRUME', 'Instruments that triggered this event', instruments_to_fits, instruments_from_fits),
-    ('gps_time', 'DATE-OBS', 'UTC date of the observation', gps_to_iso8601, iso8601_to_gps),
-    ('gps_time', 'MJD-OBS', 'modified Julian date of the observation', gps_to_mjd, None),
-    ('gps_creation_time', 'DATE', 'UTC date of file creation', gps_to_iso8601, iso8601_to_gps),
-    ('creator', 'CREATOR', 'Program that created this file', identity, identity),
-    ('origin', 'ORIGIN', 'Organization responsible for this FITS file', identity, identity),
-    ('runtime', 'RUNTIME', 'Runtime in seconds of the CREATOR program', identity, identity),
-    ('distmean', 'DISTMEAN', 'Posterior mean distance in Mpc', identity, identity),
-    ('diststd', 'DISTSTD', 'Posterior standard deviation of distance in Mpc', identity, identity),
-    ('log_bci', 'LOGBCI', 'Log Bayes factor: coherent vs. incoherent', identity, identity),
-    ('log_bsn', 'LOGBSN', 'Log Bayes factor: signal vs. noise', identity, identity),
-    ('vcs_info', 'VCSVERS', 'Software version', lambda _: _.name + ' ' + _.version, None),
-    ('vcs_info', 'VCSSTAT', 'Software version control status', lambda _: _.vcsStatus, None),
-    ('vcs_info', 'VCSID', 'Software git commit hash', lambda _: _.vcsId, None),
-    ('vcs_info', 'DATE-BLD', 'Software build date', lambda _: _.buildDate, None))
+    ('instruments', 'INSTRUME', 'Instruments that triggered this event',
+     instruments_to_fits, instruments_from_fits),
+    ('gps_time', 'DATE-OBS', 'UTC date of the observation',
+     gps_to_iso8601, iso8601_to_gps),
+    ('gps_time', 'MJD-OBS', 'modified Julian date of the observation',
+     gps_to_mjd, None),
+    ('gps_creation_time', 'DATE', 'UTC date of file creation',
+     gps_to_iso8601, iso8601_to_gps),
+    ('creator', 'CREATOR', 'Program that created this file',
+     identity, identity),
+    ('origin', 'ORIGIN', 'Organization responsible for this FITS file',
+     identity, identity),
+    ('runtime', 'RUNTIME', 'Runtime in seconds of the CREATOR program',
+     identity, identity),
+    ('distmean', 'DISTMEAN', 'Posterior mean distance in Mpc',
+     identity, identity),
+    ('diststd', 'DISTSTD', 'Posterior standard deviation of distance in Mpc',
+     identity, identity),
+    ('log_bci', 'LOGBCI', 'Log Bayes factor: coherent vs. incoherent',
+     identity, identity),
+    ('log_bsn', 'LOGBSN', 'Log Bayes factor: signal vs. noise',
+     identity, identity),
+    ('vcs_info', 'VCSVERS', 'Software version',
+     lambda _: _.name + ' ' + _.version, None),
+    ('vcs_info', 'VCSSTAT', 'Software version control status',
+     lambda _: _.vcsStatus, None),
+    ('vcs_info', 'VCSID', 'Software git commit hash',
+     lambda _: _.vcsId, None),
+    ('vcs_info', 'DATE-BLD', 'Software build date',
+     lambda _: _.buildDate, None))
 
 
 def write_sky_map(filename, m, **kwargs):
@@ -331,20 +343,29 @@ def write_sky_map(filename, m, **kwargs):
         default_names = DEFAULT_NUNIQ_NAMES
         default_units = DEFAULT_NUNIQ_UNITS
         extra_header = [
-            ('PIXTYPE', 'HEALPIX', 'HEALPIX pixelisation'),
-            ('ORDERING', 'NUNIQ', 'Pixel ordering scheme: RING, NESTED, or NUNIQ'),
-            ('COORDSYS', 'C', 'Ecliptic, Galactic or Celestial (equatorial)'),
-            ('MOCORDER', moc.uniq2order(m['UNIQ'].max()), 'MOC resolution (best order)')]
+            ('PIXTYPE', 'HEALPIX',
+             'HEALPIX pixelisation'),
+            ('ORDERING', 'NUNIQ',
+             'Pixel ordering scheme: RING, NESTED, or NUNIQ'),
+            ('COORDSYS', 'C',
+             'Ecliptic, Galactic or Celestial (equatorial)'),
+            ('MOCORDER', moc.uniq2order(m['UNIQ'].max()),
+             'MOC resolution (best order)')]
     else:
         default_names = DEFAULT_NESTED_NAMES
         default_units = DEFAULT_NESTED_UNITS
         ordering = 'NESTED' if m.meta.pop('nest', False) else 'RING'
         extra_header = [
-            ('PIXTYPE', 'HEALPIX', 'HEALPIX pixelisation'),
-            ('ORDERING', ordering, 'Pixel ordering scheme: RING, NESTED, or NUNIQ'),
-            ('COORDSYS', 'C', 'Ecliptic, Galactic or Celestial (equatorial)'),
-            ('NSIDE', hp.npix2nside(len(m)), 'Resolution parameter of HEALPIX'),
-            ('INDXSCHM', 'IMPLICIT', 'Indexing: IMPLICIT or EXPLICIT')]
+            ('PIXTYPE', 'HEALPIX',
+             'HEALPIX pixelisation'),
+            ('ORDERING', ordering,
+             'Pixel ordering scheme: RING, NESTED, or NUNIQ'),
+            ('COORDSYS', 'C',
+             'Ecliptic, Galactic or Celestial (equatorial)'),
+            ('NSIDE', hp.npix2nside(len(m)),
+             'Resolution parameter of HEALPIX'),
+            ('INDXSCHM', 'IMPLICIT',
+             'Indexing: IMPLICIT or EXPLICIT')]
 
     for key, rows in itertools.groupby(FITS_META_MAPPING, lambda row: row[0]):
         try:
@@ -355,7 +376,8 @@ def write_sky_map(filename, m, **kwargs):
             for row in rows:
                 _, fits_key, fits_comment, to_fits, _ = row
                 if to_fits is not None:
-                    extra_header.append((fits_key, to_fits(value), fits_comment))
+                    extra_header.append(
+                        (fits_key, to_fits(value), fits_comment))
 
     for default_name, default_unit in zip(default_names, default_units):
         try:
@@ -447,11 +469,13 @@ def read_sky_map(filename, nest=False, distances=False, moc=False):
     m = Table.read(filename, format='fits')
 
     # Remove some keys that we do not need
-    for key in ('PIXTYPE', 'EXTNAME', 'NSIDE', 'FIRSTPIX', 'LASTPIX', 'INDXSCHM'):
-      m.meta.pop(key, None)
+    for key in (
+            'PIXTYPE', 'EXTNAME', 'NSIDE', 'FIRSTPIX', 'LASTPIX', 'INDXSCHM'):
+        m.meta.pop(key, None)
 
     if m.meta.pop('COORDSYS', 'C') != 'C':
-        raise ValueError('LALInference only reads and writes sky maps in equatorial coordinates.')
+        raise ValueError('LALInference only reads and writes sky maps in '
+                         'equatorial coordinates.')
 
     try:
         value = m.meta.pop('ORDERING')
@@ -468,7 +492,8 @@ def read_sky_map(filename, nest=False, distances=False, moc=False):
             raise ValueError(
                 'ORDERING card in header has unknown value: {0}'.format(value))
 
-    for fits_key, rows in itertools.groupby(FITS_META_MAPPING, lambda row: row[1]):
+    for fits_key, rows in itertools.groupby(
+            FITS_META_MAPPING, lambda row: row[1]):
         try:
             value = m.meta.pop(fits_key)
         except KeyError:
@@ -507,7 +532,8 @@ def read_sky_map(filename, nest=False, distances=False, moc=False):
     if moc:
         return m
     elif distances:
-        return tuple(np.asarray(m[name]) for name in DEFAULT_NESTED_NAMES), m.meta
+        return tuple(
+            np.asarray(m[name]) for name in DEFAULT_NESTED_NAMES), m.meta
     else:
         return np.asarray(m[DEFAULT_NESTED_NAMES[0]]), m.meta
 
@@ -519,7 +545,8 @@ if __name__ == '__main__':
     prob = np.random.random(npix)
     prob /= sum(prob)
 
-    write_sky_map('test.fits.gz', prob,
+    write_sky_map(
+        'test.fits.gz', prob,
         objid='FOOBAR 12345',
         gps_time=1049492268.25,
         creator=os.path.basename(__file__),

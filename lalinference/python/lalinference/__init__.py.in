@@ -1,2 +1,4 @@
 # Import SWIG wrappings, if available
 @SWIG_BUILD_PYTHON_TRUE@from .lalinference import *
+
+__version__ = "@PACKAGE_VERSION@"

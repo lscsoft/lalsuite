@@ -374,8 +374,10 @@ if not opts.dax:
 if opts.condor_submit:
   import subprocess
   from subprocess import Popen
-
-  x = subprocess.Popen(['condor_submit_dag',outerdag.get_dag_file()])
+  if cp.has_option('condor','notification'):
+    x = subprocess.Popen(['condor_submit_dag','-dont_suppress_notification',outerdag.get_dag_file()])
+  else:
+    x = subprocess.Popen(['condor_submit_dag',outerdag.get_dag_file()])
   x.wait()
   if x.returncode==0:
     print 'Submitted DAG file'
