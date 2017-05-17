@@ -66,7 +66,7 @@ typedef struct tagSuperskyMetrics {
 #endif // SWIG
   gsl_matrix **coh_rssky_metric;                ///< Coherent reduced supersky metric (2-dimensional sky) for each segment
 #ifdef SWIG // SWIG interface directives
-  SWIGLAL( ARRAY_1D( SuperskyMetrics, gsl_matrix *, coh_rssky_transf, size_t, num_segments ) );
+  SWIGLAL( ARRAY_1D( SuperskyMetrics, SuperskyTransformData *, coh_rssky_transf, size_t, num_segments ) );
 #endif // SWIG
   SuperskyTransformData **coh_rssky_transf;     ///< Coherent reduced supersky metric coordinate transform data for each segment
 
