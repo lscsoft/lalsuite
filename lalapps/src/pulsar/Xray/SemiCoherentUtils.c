@@ -874,6 +874,7 @@ int XLALComputeFreqGridParamsVector(GridParametersVector **freqgridparams,    /*
                                     REAL8Space *space,                        /**< [in] the orbital parameter space */
                                     SFTVector *sftvec,                        /**< [in] the input SFTs */
                                     REAL8 mu,                                 /**< [in] the required mismatch */
+                                    INT4 *ndim,                               /**< [in] the number of spin derivitive dimensions required */
                                     REAL8 bins_factor                         /**< [in] the percentage of bins to add to each side of the fft for safety */
                                     )
 {
@@ -909,14 +910,13 @@ int XLALComputeFreqGridParamsVector(GridParametersVector **freqgridparams,    /*
   (*freqgridparams)->length = sftvec->length;
 
   /* loop over each SFT */
-  INT4 ndim = -1;
   for (i=0;i<sftvec->length;i++) {
 
     REAL8 t0 = XLALGPSGetREAL8(&(sftvec->data[i].epoch));
     REAL8 tsft = 1.0/sftvec->data[i].deltaF;
     REAL8 tmid = t0 + 0.5*tsft;
 
-    if (XLALComputeFreqGridParams(&((*freqgridparams)->segment[i]),space,tmid,tsft,mu,&ndim,bins_factor)) {
+    if (XLALComputeFreqGridParams(&((*freqgridparams)->segment[i]),space,tmid,tsft,mu,ndim,bins_factor)) {
       LogPrintf(LOG_CRITICAL,"%s: XLALComputeFreqGridParams() failed with error = %d\n",__func__,xlalErrno);
       XLAL_ERROR(XLAL_EINVAL);
     }

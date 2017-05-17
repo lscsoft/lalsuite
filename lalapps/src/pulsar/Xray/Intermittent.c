@@ -305,7 +305,8 @@ int main( int argc, char *argv[] )  {
         /**********************************************************************************/
 
         /* compute the grid parameters for all SFTs */
-        if (XLALComputeFreqGridParamsVector(&freqgridparams,pspace.space,sftvec,uvar.mismatch,BINS_FACTOR)) {
+        INT4 ndim = -1;
+        if (XLALComputeFreqGridParamsVector(&freqgridparams,pspace.space,sftvec,uvar.mismatch,&ndim,BINS_FACTOR)) {
           LogPrintf(LOG_CRITICAL,"%s : XLALComputeFreqGridParams() failed with error = %d\n",__func__,xlalErrno);
           return 1;
         }
