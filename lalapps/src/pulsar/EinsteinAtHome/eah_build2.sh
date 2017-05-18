@@ -511,7 +511,13 @@ else
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install
-    log_and_do "$SOURCE/$fftw/configure" $fftw_copts_single --enable-single "$shared_copt" "$cross_copt" --prefix="$INSTALL"
+    if test ".$CC" = ".gcc-mp-4.8" &&
+        echo $fftw_copts_single | fgrep -e "--enable-avx" >/dev/null; then
+	# on OSX with AVX use the clang assembler
+	log_and_do "$SOURCE/$fftw/configure" CFLAGS="$CFLAGS -Wa,-q" $fftw_copts_single --enable-single "$shared_copt" "$cross_copt" --prefix="$INSTALL"
+    else
+	log_and_do "$SOURCE/$fftw/configure" $fftw_copts_single --enable-single "$shared_copt" "$cross_copt" --prefix="$INSTALL"
+    fi
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install
