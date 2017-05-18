@@ -2027,7 +2027,7 @@ int XLALComputePhysicalSkyEqualAreaPatch(
 static double PhysicalSpinBound(
   const void *data,
   const size_t dim UNUSED,
-  const gsl_matrix *cache UNUSED,
+  const gsl_matrix *cache,
   const gsl_vector *point UNUSED
   )
 {
