@@ -135,6 +135,7 @@ if opts.condor_submit:
     cmd = ['condor_submit', 'accounting_group=ligo.dev.o3.cbc.pe.bayestar',
            'on_exit_remove = (ExitBySignal == False) && (ExitCode == 0)',
            'on_exit_hold = (ExitBySignal == True) || (ExitCode != 0)',
+           'on_exit_hold_reason = (ExitBySignal == True ? strcat("The job exited with signal ", ExitSignal) : strcat("The job exited with signal ", ExitCode))',
            'request_memory = 1000 MB',
            'universe=vanilla', 'getenv=true', 'executable=' + sys.executable,
            'JobBatchName=BAYESTAR', 'environment="OMP_NUM_THREADS=1"',
