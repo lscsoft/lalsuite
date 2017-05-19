@@ -2127,23 +2127,32 @@ int XLALSetSuperskyCoordinateSpinBound(
 
 }
 
-int XLALSuperskyLatticePulsarSpinRange(
-  PulsarSpinRange *spin_range,
+int XLALSuperskyLatticePhysicalRange(
+  PulsarDopplerParams* min_range,
+  PulsarDopplerParams* max_range,
   LatticeTiling *tiling,
   const SuperskyTransformData *rssky_transf
   )
 {
 
   // Check input
-  XLAL_CHECK( spin_range != NULL, XLAL_EFAULT );
+  XLAL_CHECK( min_range != NULL, XLAL_EFAULT );
+  XLAL_CHECK( max_range != NULL, XLAL_EFAULT );
   XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
   XLAL_CHECK( CHECK_RSSKY_TRANSF( rssky_transf ), XLAL_EINVAL );
 
-  // Create arrays for minimum/maximum physical frequency/spindowns
-  PulsarSpins fkdotMin, fkdotMax;
+  // Initialise memory
+  XLAL_INIT_MEM( *min_range );
+  XLAL_INIT_MEM( *max_range );
+
+  // Set reference times of physical ranges
+  min_range->refTime = max_range->refTime = rssky_transf->ref_time;
+
+  // Initialise physical ranges
+  min_range->Alpha = GSL_POSINF; max_range->Alpha = GSL_NEGINF;
+  min_range->Delta = GSL_POSINF; max_range->Delta = GSL_NEGINF;
   for ( size_t s = 0; s <= rssky_transf->SMAX; ++s ) {
-    fkdotMin[s] = GSL_POSINF;
-    fkdotMax[s] = GSL_NEGINF;
+    min_range->fkdot[s] = GSL_POSINF; max_range->fkdot[s] = GSL_NEGINF;
   }
 
   // Get frequency step size
@@ -2167,28 +2176,22 @@ int XLALSuperskyLatticePulsarSpinRange(
     INT4 left = 0, right = 0;
     XLAL_CHECK( XLALCurrentLatticeTilingBlock( itr, rssky_transf->ndim - 1, &left, &right ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Store minimum/maximum physical frequency
-    fkdotMin[0] = GSL_MIN( fkdotMin[0], out_phys.fkdot[0] + dfreq * left );
-    fkdotMax[0] = GSL_MAX( fkdotMax[0], out_phys.fkdot[0] + dfreq * right );
+    // Store minimum/maximum sky position
+    min_range->Alpha = GSL_MIN( min_range->Alpha, out_phys.Alpha );
+    max_range->Alpha = GSL_MAX( max_range->Alpha, out_phys.Alpha );
+    min_range->Delta = GSL_MIN( min_range->Delta, out_phys.Delta );
+    max_range->Delta = GSL_MAX( max_range->Delta, out_phys.Delta );
 
-    // Store minimum/maximum physical spindowns
-    for ( size_t s = 0; s <= rssky_transf->SMAX; ++s ) {
-      fkdotMin[s] = GSL_MIN( fkdotMin[s], out_phys.fkdot[s] );
-      fkdotMax[s] = GSL_MAX( fkdotMax[s], out_phys.fkdot[s] );
+    // Store minimum/maximum frequency
+    min_range->fkdot[0] = GSL_MIN( min_range->fkdot[0], out_phys.fkdot[0] + dfreq * left );
+    max_range->fkdot[0] = GSL_MAX( max_range->fkdot[0], out_phys.fkdot[0] + dfreq * right );
+
+    // Store minimum/maximum spindowns
+    for ( size_t s = 1; s <= rssky_transf->SMAX; ++s ) {
+      min_range->fkdot[s] = GSL_MIN( min_range->fkdot[s], out_phys.fkdot[s] );
+      max_range->fkdot[s] = GSL_MAX( max_range->fkdot[s], out_phys.fkdot[s] );
     }
 
-  }
-
-  // Initialise 'spin_range' to zero
-  XLAL_INIT_MEM( *spin_range );
-
-  // Set reference time of 'spin_range' to that of coordinate transform data
-  spin_range->refTime = rssky_transf->ref_time;
-
-  // Set spindown range
-  for ( size_t s = 0; s <= rssky_transf->SMAX; ++s ) {
-    spin_range->fkdot[s] = fkdotMin[s];
-    spin_range->fkdotBand[s] = fkdotMax[s] - fkdotMin[s];
   }
 
   // Cleanup
