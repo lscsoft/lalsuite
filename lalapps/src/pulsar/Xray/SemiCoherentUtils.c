@@ -1376,7 +1376,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
   /* zero-pad input time series to get at least 1 SFT */
   INT8 N = MYMAX( Nfile, (INT8)ceil(par->tsft / par->tsamp) );
   if ( N > Nfile ) {
-    LogPrintf(LOG_DEBUG,"zero-padding input time series from %" LAL_INT8_FORMAT " to %" LAL_INT8_FORMAT " samples to get at least 1 SFT", Nfile, N);
+    LogPrintf(LOG_DEBUG,"zero-padding input time series from %" LAL_INT8_FORMAT " to %" LAL_INT8_FORMAT " samples to get at least 1 SFT\n", Nfile, N);
   }
 
   /* NOTE: a timeseries of length N*dT has no timestep at N*dT !! (convention) */
