@@ -551,6 +551,7 @@ XLALInspiralChooseModel(
 		 case SpinQuadTaylor:
          case IMRPhenomA:
          case IMRPhenomB:
+         case IMRPhenomD:
          case IMRPhenomFA:
          case IMRPhenomFB:
             ak->vn = ak->vlso = vlso = ak->vlsoT0;
@@ -604,6 +605,7 @@ XLALInspiralChooseModel(
 		 case SpinQuadTaylor:
          case IMRPhenomA:
          case IMRPhenomB:
+         case IMRPhenomD:
          case IMRPhenomFA:
          case IMRPhenomFB:
 
@@ -654,6 +656,7 @@ XLALInspiralChooseModel(
 		 case SpinQuadTaylor:
          case IMRPhenomA:
          case IMRPhenomB:
+         case IMRPhenomD:
          case IMRPhenomFA:
          case IMRPhenomFB:
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
@@ -724,6 +727,7 @@ XLALInspiralChooseModel(
          case EOBNRv2HM:
          case IMRPhenomA:
          case IMRPhenomB:
+         case IMRPhenomD:
          case IMRPhenomFA:
          case IMRPhenomFB:
          case TaylorEt:
@@ -781,6 +785,7 @@ XLALInspiralChooseModel(
          case EOBNRv2HM:
          case IMRPhenomA:
          case IMRPhenomB:
+         case IMRPhenomD:
          case IMRPhenomFA:
          case IMRPhenomFB:
          case TaylorEt:
@@ -838,6 +843,7 @@ XLALInspiralChooseModel(
          case EOBNRv2HM:
          case IMRPhenomA:
          case IMRPhenomB:
+         case IMRPhenomD:
          case IMRPhenomFA:
          case IMRPhenomFB:
          case TaylorEt:
@@ -891,6 +897,7 @@ XLALInspiralChooseModel(
          case EOBNRv2HM:
          case IMRPhenomA:
          case IMRPhenomB:
+         case IMRPhenomD:
          case IMRPhenomFA:
          case IMRPhenomFB:
          case TaylorEt:
@@ -927,6 +934,7 @@ XLALInspiralChooseModel(
          case EOBNR:
          case IMRPhenomA:
          case IMRPhenomB:
+         case IMRPhenomD:
          case IMRPhenomFA:
          case IMRPhenomFB:
             ak->vn = ak->vlso = vlso = ak->vlsoP6;
@@ -1029,6 +1037,7 @@ XLALInspiralChooseModel(
          break;
       case IMRPhenomA:
       case IMRPhenomB:
+      case IMRPhenomD:
       case IMRPhenomFA:
       case IMRPhenomFB:
       case EOBNRv2:
