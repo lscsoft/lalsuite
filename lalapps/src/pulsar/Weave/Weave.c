@@ -822,15 +822,18 @@ int main( int argc, char *argv[] )
       LALStringVector *sft_catalog_seg_i_detectors = XLALListIFOsInCatalog( &sft_catalog_seg[i] );
       XLAL_CHECK_MAIN( sft_catalog_seg_i_detectors != NULL, XLAL_EFUNC );
 
-      // Get spindown range covered by parameter-space tiling of 'i'th segment
-      PulsarSpinRange XLAL_INIT_DECL( spin_range );
-      XLAL_CHECK_MAIN( XLALSuperskyLatticePulsarSpinRange( &spin_range, tiling[i], rssky_transf[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+      // Get physical ranges covered by parameter-space tiling of 'i'th segment
+      PulsarDopplerParams XLAL_INIT_DECL( min_range );
+      PulsarDopplerParams XLAL_INIT_DECL( max_range );
+      XLAL_CHECK_MAIN( XLALSuperskyLatticePhysicalRange( &min_range, &max_range, tiling[i], rssky_transf[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Compute frequency range covered by spindown range over 'i'th segment
       LIGOTimeGPS sft_start = sft_catalog_seg[i].data[0].header.epoch;
       LIGOTimeGPS sft_end = sft_catalog_seg[i].data[sft_catalog_seg[i].length - 1].header.epoch;
       const double sft_end_timebase = 1.0 / sft_catalog_seg[i].data[sft_catalog_seg[i].length - 1].header.deltaF;
       XLALGPSAdd( &sft_end, sft_end_timebase );
+      PulsarSpinRange XLAL_INIT_DECL( spin_range );
+      XLAL_CHECK( XLALInitPulsarSpinRangeFromSpins( &spin_range, &min_range.refTime, min_range.fkdot, max_range.fkdot ) == XLAL_SUCCESS, XLAL_EFUNC );
       double sft_min_cover_freq = 0, sft_max_cover_freq = 0;
       XLAL_CHECK_MAIN( XLALCWSignalCoveringBand( &sft_min_cover_freq, &sft_max_cover_freq, &sft_start, &sft_end, &spin_range, 0, 0, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
       per_seg_info[i].sft_min_cover_freq = sft_min_cover_freq;

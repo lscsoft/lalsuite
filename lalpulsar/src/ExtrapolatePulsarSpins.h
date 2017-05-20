@@ -76,6 +76,8 @@ extern "C" {
 /*@{*/
 
 /*---------- exported prototypes [API] ----------*/
+int XLALInitPulsarSpinRangeFromSpins ( PulsarSpinRange *range, const LIGOTimeGPS *refTime, const PulsarSpins fkdot1, const PulsarSpins fkdot2 );
+
 int XLALExtrapolatePulsarSpinRange(  PulsarSpinRange *range1, const PulsarSpinRange *range0, const REAL8 dtau );
 
 #ifdef SWIG // SWIG interface directives

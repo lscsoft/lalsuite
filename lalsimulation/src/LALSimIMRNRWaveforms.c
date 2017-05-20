@@ -589,7 +589,8 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
         UNUSED REAL8 s2x,                      /**< initial value of S2x */
         UNUSED REAL8 s2y,                      /**< initial value of S2y */
         UNUSED REAL8 s2z,                      /**< initial value of S2z */
-        UNUSED const char *NRDataFile          /**< Location of NR HDF file */
+        UNUSED const char *NRDataFile,         /**< Location of NR HDF file */
+        UNUSED INT4 Lmax                       /**< Maximum ell multipole number used to generated waveform. Default: LAL_SIM_INSPIRAL_MODES_CHOICE_ALL */
         )
 {
   #ifndef LAL_HDF5_ENABLED
@@ -773,7 +774,26 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   distance_scale_fac = (m1 + m2) * LAL_MRSUN_SI / r;
 
   /* Generate the waveform */
-  for (model=2; model < 9 ; model++)
+  /* NOTE: We assume that for a given ell mode, all m modes are present */
+  INT4 NRLmax;
+  XLALH5FileQueryScalarAttributeValue(&NRLmax, file, "Lmax");
+
+  if (Lmax == LAL_SIM_INSPIRAL_MODES_CHOICE_ALL)
+  {/* Default behaviour: Generate all available modes */
+      Lmax = NRLmax;
+  }
+  else if (Lmax > NRLmax)
+  {/* User has requested more modes than exist in the NR data - Error and exit */
+      XLAL_ERROR(XLAL_EDOM, "User has requested to generated modes upto Lmax = %i but the NR metadata for this waveform says it only has upto Lmax = %i",
+                  Lmax, NRLmax);
+  }
+  else if (Lmax < 2)
+  {/* Only Lmax >= 2 makes sense physically and hence not supported */
+      XLAL_ERROR(XLAL_EDOM, "User has requested Lmax = %i. Only Lmax >= 2 is supported.", Lmax);
+  }
+  /* else use what the user input */
+
+  for (model=2; model < (Lmax + 1) ; model++)
   {
     for (modem=-model; modem < (model+1); modem++)
     {

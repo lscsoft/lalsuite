@@ -128,7 +128,7 @@ static hid_t XLALH5TypeFromLALType(LALTYPECODE dtype)
 			/* anything else is not */
 			XLAL_ERROR(XLAL_ETYPE, "Unsupported LALTYPECODE value 0%o", (unsigned int)dtype);
 	}
-	
+
 	if ((dtype & LAL_CMPLX_TYPE_FLAG)) {
 		/* complex numbers are treated as compound types */
 		switch (size) {
@@ -489,7 +489,7 @@ LALH5File * XLALH5GroupOpen(LALH5File UNUSED *file, const char UNUSED *name)
 		}
     		group->file_id = H5Gcreate2(file->file_id, name, gcpl, H5P_DEFAULT, H5P_DEFAULT);
 		H5Pclose(gcpl);
-	} else 
+	} else
 		XLAL_ERROR_NULL(XLAL_EINVAL, "Corrupted file structure");
 	if (group->file_id < 0) {
 		LALFree(group);
@@ -516,52 +516,14 @@ LALH5File * XLALH5GroupOpen(LALH5File UNUSED *file, const char UNUSED *name)
 int XLALH5FileCheckGroupExists(const LALH5File UNUSED *file, const char UNUSED *name)
 {
 #ifndef HAVE_HDF5
-        XLAL_ERROR_VAL(0, XLAL_EFAILED, "HDF5 support not implemented");
+    XLAL_ERROR_VAL(0, XLAL_EFAILED, "HDF5 support not implemented");
 #else
-	H5G_info_t group_info;
-	hsize_t i;
-
-	if (file == NULL || name == NULL)
-		XLAL_ERROR_VAL(0, XLAL_EFAULT);
-
-	if (H5Gget_info(file->file_id, &group_info) < 0)
-		XLAL_ERROR_VAL(0, XLAL_EIO, "Could not read group info");
-
-	for (i = 0; i < group_info.nlinks; ++i) {
-		H5O_info_t obj_info;
-		if (H5Oget_info_by_idx(file->file_id, ".", H5_INDEX_NAME, H5_ITER_INC, i, &obj_info, H5P_DEFAULT) < 0)
-			XLAL_ERROR_VAL(0, XLAL_EIO, "Could not read object info");
-		if (obj_info.type == H5O_TYPE_GROUP) {
-			char *base;
-			hid_t obj_id;
-			int n;
-			obj_id = H5Oopen_by_addr(file->file_id, obj_info.addr);
-			if (obj_id < 0)
-				XLAL_ERROR_VAL(0, XLAL_EIO, "Could not open object");
-			n = H5Iget_name(obj_id, NULL, 0);
-			if (n < 0) {
-				H5Oclose(obj_id);
-				XLAL_ERROR_VAL(0, XLAL_EIO, "Could not read object");
-			}
-			char group_name[n + 1];
-			n = H5Iget_name(obj_id, group_name, n + 1);
-			if (n < 0) {
-				H5Oclose(obj_id);
-				XLAL_ERROR_VAL(0, XLAL_EIO, "Could not read object");
-			}
-			/* get basename */
-			if ((base = strrchr(group_name, '/')))
-				++base;
-			else
-				base = group_name;
-
-			if (strcmp(name, base) == 0)
-				return 1; /* found it */
-		}
-	}
-
-	/* no matching group found */
-	return 0;
+    if (file == NULL || name == NULL)
+        XLAL_ERROR_VAL(0, XLAL_EFAULT);
+    H5G_info_t info;
+    if (H5Gget_info_by_name(file->file_id, name, &info, H5P_DEFAULT) < 0)
+        return 0;
+    return 1;
 #endif
 }
 
@@ -1108,7 +1070,7 @@ LALH5Dataset * XLALH5DatasetAlloc1D(LALH5File UNUSED *file, const char UNUSED *n
 		LALFree(dset);
 		XLAL_ERROR_NULL(XLAL_EIO, "Could not create dataset `%s'", name);
 	}
-	
+
 	/* record name of dataset and parent id */
 	snprintf(dset->name, namelen + 1, "%s", name);
 	dset->parent_id = file->file_id;
@@ -1604,7 +1566,7 @@ int XLALH5AttributeAddScalar(LALH5Generic UNUSED object, const char UNUSED *key,
 		H5Tclose(dtype_id);
 		XLAL_ERROR(XLAL_EIO, "Could not write attribute `%s'", key);
 	}
-	
+
 	H5Aclose(attr_id);
 	H5Tclose(dtype_id);
 	return 0;
@@ -1665,7 +1627,7 @@ int XLALH5AttributeAddString(LALH5Generic UNUSED object, const char UNUSED *key,
 		H5Tclose(dtype_id);
 		XLAL_ERROR(XLAL_EIO, "Could not write attribute `%s'", key);
 	}
-	
+
 	H5Aclose(attr_id);
 	H5Tclose(dtype_id);
 	return 0;
@@ -1721,7 +1683,7 @@ int XLALH5AttributeAddLIGOTimeGPS(LALH5Generic UNUSED object, const char UNUSED 
 		H5Tclose(dtype_id);
 		XLAL_ERROR(XLAL_EIO, "Could not write attribute `%s'", key);
 	}
-	
+
 	H5Aclose(attr_id);
 	H5Tclose(dtype_id);
 	return 0;
@@ -1736,7 +1698,7 @@ int XLALH5AttributeAddLIGOTimeGPS(LALH5Generic UNUSED object, const char UNUSED 
  * #LALH5Dataset @p object.
  * The names and values of the @p nenum enumeration constants are provided
  * in the arrays @p enumnames and @p enumvals respectively.
- * 
+ *
  * @param object Pointer to a #LALH5File or #LALH5Dataset to which the
  * attribute will be added.
  * @param enumnames Pointer to an array of names of the enum constants.
@@ -1791,7 +1753,7 @@ int XLALH5AttributeAddEnumArray1D(LALH5Generic UNUSED object, const char UNUSED 
 		H5Tclose(adtype_id);
 		XLAL_ERROR(XLAL_EIO, "Could not write attribute `%s'", key);
 	}
-	
+
 	H5Aclose(attr_id);
 	H5Tclose(adtype_id);
 	return 0;
@@ -2226,7 +2188,7 @@ size_t XLALH5AttributeQueryEnumArray1DLength(const LALH5Generic UNUSED object, c
  * is sufficient to hold the value in the attribute.
  * The routine XLALH5AttributeQueryEnumArray1DLength() will yield the
  * length that this array must have.
- * 
+ *
  * @param value Pointer to an array where then enum values will be stored.
  * @param object Pointer to a #LALH5File or #LALH5Dataset to be queried.
  * @param key Pointer to a string with the name of the attribute to query.
@@ -2564,7 +2526,7 @@ int XLALH5AttributeQueryEnumValue(const LALH5Generic UNUSED object, const char U
  *
  * @deprecated
  * Use XLALH5AttributeAddScalar() instead.
- * 
+ *
  * @param file Pointer to a #LALH5File to which the attribute will be added.
  * @param key Pointer to a string with the name of the new attribute.
  * @param value Pointer to the value of the scalar attribute to be added.
@@ -2849,7 +2811,7 @@ LIGOTimeGPS * XLALH5FileQueryLIGOTimeGPSAttributeValue(LIGOTimeGPS UNUSED *value
  *
  * @deprecated
  * Use XLALH5AttributeAddScalar() instead.
- * 
+ *
  * @param dset Pointer to a #LALH5Dataset to which the attribute will be added.
  * @param key Pointer to a string with the name of the new attribute.
  * @param value Pointer to the value of the scalar attribute to be added.
@@ -3083,7 +3045,7 @@ LIGOTimeGPS * XLALH5DatasetQueryLIGOTimeGPSAttributeValue(LIGOTimeGPS UNUSED *va
  * a #LALH5Dataset structure associated with the dataset.  The type
  * of data to be stored are table data comprised of rows of size
  * @p rowsz; each row having @p ncols columns with names @p cols, types @p
- * types, and offsets @p offsets.  
+ * types, and offsets @p offsets.
 
  * with the #LALH5Dataset @p dset and stores the data in the buffer @p data.
  * This buffer should be sufficiently large to hold the requested rows
@@ -3153,7 +3115,7 @@ LALH5Dataset * XLALH5TableAlloc(LALH5File UNUSED *file, const char UNUSED *name,
 	status = H5TBmake_table(name, file->file_id, name, ncols, 0, rowsz, cols, offsets, dtype_id, chunk_size, NULL, 0, NULL);
 	for (col = 0; col < ncols; ++col)
 		H5Tclose(dtype_id[col]);
-	
+
 	if (status < 0)
 		XLAL_ERROR_NULL(XLAL_EIO);
 

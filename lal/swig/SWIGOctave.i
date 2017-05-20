@@ -553,6 +553,16 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 %#endif
 %#endif
 
+      // Print array.
+%#if SWIG_OCTAVE_PREREQ(4,0,0)
+      void print(std::ostream &os, bool pr_as_read_syntax = false)
+%#else
+      void print(std::ostream &os, bool pr_as_read_syntax = false) const
+%#endif
+      {
+        return sloav_array_out().print(os, pr_as_read_syntax);
+      }
+
       // The following methods override virtual const-methods in octave_base_value.  These methods
       // are mapped to the equivalent method of the octave_base_value-derived class of the array
       // view class.
@@ -746,7 +756,6 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       SLOAV_OBV_METH_FROM_ARRAY_2(int_value, int, bool, bool);
       SLOAV_OBV_METH_FROM_ARRAY_2(long_value, long int, bool, bool);
       SLOAV_OBV_METH_FROM_ARRAY_2(permute, octave_value, const Array<int>&, bool);
-      SLOAV_OBV_METH_FROM_ARRAY_2(print, void, std::ostream&, bool);
       SLOAV_OBV_METH_FROM_ARRAY_2(print_info, void, std::ostream&, bool);
       SLOAV_OBV_METH_FROM_ARRAY_2(print_raw, void, std::ostream&, bool);
       SLOAV_OBV_METH_FROM_ARRAY_2(resize, octave_value, const dim_vector&, bool);

@@ -258,11 +258,12 @@ int XLALSetSuperskyCoordinateSpinBound(
   );
 
 ///
-/// Fill a PulsarSpinRange with the physical frequency/spindown ranges covered by a reduced supersky
+/// Fill two #PulsarDopplerParams structs with the physical ranges covered by a reduced supersky
 /// lattice tiling.
 ///
-int XLALSuperskyLatticePulsarSpinRange(
-  PulsarSpinRange *spin_range,                  ///< [in,out] Physical frequency/spindown range
+int XLALSuperskyLatticePhysicalRange(
+  PulsarDopplerParams* min_range,               ///< [in,out] Minima of physical ranges
+  PulsarDopplerParams* max_range,               ///< [in,out] Maxima of physical ranges
   LatticeTiling *tiling,                        ///< [in] Lattice tiling
   const SuperskyTransformData *rssky_transf     ///< [in] Reduced supersky coordinate transform data
   );
