@@ -58,6 +58,26 @@
 /*---------- main functions ---------- */
 
 /**
+ * Initialise a #PulsarSpinRange struct from two #PulsarSpins structs
+ */
+int XLALInitPulsarSpinRangeFromSpins ( PulsarSpinRange *range,		/**< [out] output spin range */
+                                       const LIGOTimeGPS *refTime,	/**< [in] reference time */
+                                       const PulsarSpins fkdot1,	/**< [in] input spins */
+                                       const PulsarSpins fkdot2		/**< [in] input spins */
+  )
+{
+  XLAL_CHECK( range != NULL, XLAL_EFAULT );
+  XLAL_CHECK( refTime != NULL, XLAL_EFAULT );
+  XLAL_INIT_MEM( *range );
+  range->refTime = *refTime;
+  for ( size_t k = 0; k < PULSAR_MAX_SPINS; ++k ) {
+    range->fkdot[k] = MYMIN( fkdot1[k], fkdot2[k] );
+    range->fkdotBand[k] = fabs( fkdot1[k] - fkdot2[k] );
+  }
+  return XLAL_SUCCESS;
+}
+
+/**
  * General pulsar-spin extrapolation function: given a "spin-range" (ie spins + spin-bands) \c range0
  * at time \f$\tau_0\f$, propagate the whole spin-range to time \f$\tau_1\f$.
  *
