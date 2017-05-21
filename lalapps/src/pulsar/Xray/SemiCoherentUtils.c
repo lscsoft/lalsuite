@@ -554,6 +554,10 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
   }
   (*power)->length = dsdata->length;
 
+  /* show memory usage */
+  const REAL8 mem0 = XLALGetPeakHeapUsageMB();
+  LogPrintf(LOG_NORMAL, "%s : peak memory %0.1fMB\n", __func__, mem0);
+
   /* loop over each segment */
   const double coarse_t0 = XLALGetCPUTime();
   double prog_t0 = coarse_t0;
@@ -656,6 +660,10 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
     } /* end loop over spin derivitive templates */
     LogPrintf(LOG_NORMAL,"%s : computed demodulated frequency series for SFT %d/%d\n",__func__,i+1,dsdata->length);
 
+    /* show memory usage */
+    LogPrintf(LOG_NORMAL, "%s : peak memory %0.1fMB; predicted grid memory %0.1fMB\n", __func__, XLALGetPeakHeapUsageMB(),
+              mem0 + ((REAL8)num_coarse) / ((REAL8)i + 1) * ((REAL8)dsdata->length) * 4.0 / (1024.0 * 1024.0));
+
     /* output loudest segment candidate - normalise to be a chi-squared variable */
     if (fp!=NULL) {
       fprintf(fp,"%d\t%d\t%d\t",ts->epoch.gpsSeconds,ts->epoch.gpsNanoSeconds,(INT4)floor(ts->deltaT*ts->data->length+0.5));
@@ -673,6 +681,9 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
 
   LogPrintf(LOG_NORMAL,"%s : time to compute coarse grid points = %0.12e\n",__func__, XLALGetCPUTime() - coarse_t0);
   LogPrintf(LOG_NORMAL,"%s : number of coarse grid points = %"LAL_UINT8_FORMAT"\n",__func__, num_coarse);
+
+  /* show memory usage */
+  LogPrintf(LOG_NORMAL, "%s : peak memory %0.1fMB\n", __func__, XLALGetPeakHeapUsageMB());
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
