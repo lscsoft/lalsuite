@@ -223,7 +223,17 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
     u2 = np.square(u)
 
     # Signal models for each detector.
-    H = filter.sngl_inspiral_psd(sim_inspiral, waveform, f_low)
+    H = filter.sngl_inspiral_psd(
+        waveform,
+        mass1=sim_inspiral.mass1,
+        mass2=sim_inspiral.mass2,
+        spin1x=sim_inspiral.spin1x,
+        spin1y=sim_inspiral.spin1y,
+        spin1z=sim_inspiral.spin1z,
+        spin2x=sim_inspiral.spin2x,
+        spin2y=sim_inspiral.spin2y,
+        spin2z=sim_inspiral.spin2z,
+        f_min=f_low)
     W = [filter.signal_psd_series(H, psds[ifo]) for ifo in opts.detector]
     signal_models = [timing.SignalModel(_) for _ in W]
 
