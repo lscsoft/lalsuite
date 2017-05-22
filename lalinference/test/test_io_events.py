@@ -44,7 +44,7 @@ def test_ligolw():
             967328914.866107842)
     psd = event.singles[0].psd
     assert psd.f0 == 0.0
-    assert psd.deltaF == 16.0
+    assert psd.deltaF == 0.125
     assert event.singles[1].instrument == 'L1'
     assert event.singles[1].snr == 10.36818
     assert event.singles[1].phase == 1.9740163
@@ -52,7 +52,7 @@ def test_ligolw():
             967328914.866513726)
     psd = event.singles[0].psd
     assert psd.f0 == 0.0
-    assert psd.deltaF == 16.0
+    assert psd.deltaF == 0.125
     assert event.template_args == {
         'mass1': 1.56687,
         'mass2': 1.474779,
@@ -81,7 +81,7 @@ def test_gracedb():
                     1135136350.647757924)
             psd = event.singles[0].psd
             assert psd.f0 == 0.0
-            assert psd.deltaF == 16.0
+            assert psd.deltaF == 0.125
             assert event.singles[1].instrument == 'L1'
             assert event.singles[1].snr == 7.3947201
             assert event.singles[1].phase == -2.7356486
@@ -89,7 +89,7 @@ def test_gracedb():
                     1135136350.646883043)
             psd = event.singles[1].psd
             assert psd.f0 == 0.0
-            assert psd.deltaF == 16.0
+            assert psd.deltaF == 0.125
             assert event.template_args == {
                 'mass1': 19.924686,
                 'mass2': 6.4254546,
@@ -110,7 +110,7 @@ def test_gracedb():
                     1128678900.444335938)
             psd = event.singles[0].psd
             assert psd.f0 == 30.0
-            assert psd.deltaF == 16.0
+            assert psd.deltaF == 0.125
             assert event.singles[1].instrument == 'L1'
             assert event.singles[1].snr == 6.8389997
             assert event.singles[1].phase == -1.0297496
@@ -118,7 +118,7 @@ def test_gracedb():
                     1128678900.445068359)
             psd = event.singles[1].psd
             assert psd.f0 == 30.0
-            assert psd.deltaF == 16.0
+            assert psd.deltaF == 0.125
             assert event.template_args == {
                 'mass1': 32.064007,
                 'mass2': 14.607587,
