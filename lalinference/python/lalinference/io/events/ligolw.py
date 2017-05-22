@@ -87,7 +87,8 @@ class LigoLWEventSource(OrderedDict, EventSource):
 
     _invert_phases = {
         'pycbc': False,
-        'gstlal_inspiral': True
+        'gstlal_inspiral': True,
+        'bayestar_realize_coincs': True
     }
 
     @classmethod
