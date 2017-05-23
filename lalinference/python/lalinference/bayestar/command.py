@@ -66,6 +66,32 @@ class GlobAction(argparse._StoreAction):
         if values:
             super(GlobAction, self).__call__(
                 parser, namespace, values, *args, **kwargs)
+        nvalues = getattr(namespace, self.dest)
+        nvalues = 0 if nvalues is None else len(nvalues)
+        if self.nargs == argparse.OPTIONAL:
+            if nvalues > 1:
+                msg = 'expected at most one file'
+            else:
+                msg = None
+        elif self.nargs == argparse.ONE_OR_MORE:
+            if nvalues < 1:
+                msg = 'expected at least one file'
+            else:
+                msg = None
+        elif self.nargs == argparse.ZERO_OR_MORE:
+            msg = None
+        elif int(self.nargs) != nvalues:
+            msg = 'expected exactly %s file' % self.nargs
+            if self.nargs != 1:
+                msg += 's'
+        else:
+            msg = None
+        if msg is not None:
+            msg += ', but found '
+            msg += '{} file'.format(nvalues)
+            if nvalues != 1:
+                msg += 's'
+            raise argparse.ArgumentError(self, msg)
 
 
 waveform_parser = argparse.ArgumentParser(add_help=False)
