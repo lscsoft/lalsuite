@@ -65,7 +65,8 @@ parser.add_argument(
     help='Name for uploaded file [default: %(default)s]')
 parser.add_argument(
     'graceid', metavar='G123456', nargs='*',
-    help='Run on this GraceDB ID [default: listen to lvalert]')
+    help='Run on these GraceDB IDs. If no GraceDB IDs are listed on the '
+    'command line, then read newline-separated GraceDB IDs from stdin.')
 opts = parser.parse_args()
 
 
