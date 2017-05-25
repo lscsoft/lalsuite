@@ -26,6 +26,8 @@ import healpy as hp
 import collections
 import lal
 import lalsimulation
+from scipy.interpolate import interp1d
+from . import moc
 from ..healpix_tree import *
 
 
@@ -66,6 +68,15 @@ def count_modes(m, nest=False):
         else:
             break
     return nmodes
+
+
+def count_modes_moc(uniq, i):
+    n = len(uniq)
+    mask = np.concatenate((np.ones(i + 1, dtype=bool),
+                           np.zeros(n - i - 1, dtype=bool)))
+    sky_map = np.rec.fromarrays((uniq, mask), names=('UNIQ', 'MASK'))
+    sky_map = moc.rasterize(sky_map)['MASK']
+    return count_modes(sky_map, nest=True)
 
 
 def indicator(n, i):
@@ -166,6 +177,90 @@ def find_injection(sky_map, true_ra, true_dec, contours=(), areas=(),
         contour_modes = [
             count_modes(indicator(npix, indices[:i+1]), nest=nest)
             for i in ipix]
+    else:
+        searched_modes = None
+        contour_modes = None
+
+    # Done.
+    return FoundInjection(
+        searched_area, searched_prob, offset, searched_modes, contour_areas,
+        area_probs, contour_modes)
+
+
+def find_injection_moc(sky_map, true_ra, true_dec, contours=(), areas=(),
+                       modes=False, nest=False):
+    """
+    Given a sky map and the true right ascension and declination (in radians),
+    find the smallest area in deg^2 that would have to be searched to find the
+    source, the smallest posterior mass, and the angular offset in degrees from
+    the true location to the maximum (mode) of the posterior. Optionally, also
+    compute the areas of and numbers of modes within the smallest contours
+    containing a given total probability.
+    """
+
+    # Sort the pixels by descending posterior probability.
+    sky_map = np.flipud(np.sort(sky_map, order='PROBDENSITY'))
+
+    # Find the pixel that contains the injection.
+    order, ipix = moc.uniq2nest(sky_map['UNIQ'])
+    max_order = np.max(order)
+    max_nside = hp.order2nside(max_order)
+    max_ipix = ipix << np.uint64(2 * (max_order - order))
+    ipix = ipix.astype(np.int64)
+    max_ipix = max_ipix.astype(np.int64)
+    true_theta = 0.5 * np.pi - true_dec
+    true_phi = true_ra
+    true_pix = hp.ang2pix(max_nside, true_theta, true_phi, nest=True)
+    # At this point, we could sort the dataset by max_ipix and then do a binary
+    # (e.g., np.searchsorted) to find true_pix in max_ipix. However, would be
+    # slower than the linear search below because the sort would be N log N.
+    i = np.flatnonzero(max_ipix <= true_pix)
+    true_idx = i[np.argmax(max_ipix[i])]
+
+    # Find the angular offset between the mode and true locations.
+    mode_theta, mode_phi = hp.pix2ang(
+        hp.order2nside(order[0]), ipix[0].astype(np.int64), nest=True)
+    offset = np.rad2deg(
+        angle_distance(true_theta, true_phi, mode_theta, mode_phi))
+
+    # Calculate the cumulative area in deg2 and the cumulative probability.
+    area = moc.uniq2pixarea(sky_map['UNIQ'])
+    prob = np.cumsum(sky_map['PROBDENSITY'] * area)
+    area = np.cumsum(area) * np.square(180 / np.pi)
+
+    # Construct linear interpolants to map between probability and area.
+    # This allows us to compute more accurate contour areas and probabilities
+    # under the approximation that the pixels have constant probability
+    # density.
+    prob_padded = np.concatenate(([0], prob))
+    area_padded = np.concatenate(([0], area))
+    prob_for_area = interp1d(area_padded, prob_padded, assume_sorted=True)
+    area_for_prob = interp1d(prob_padded, area_padded, assume_sorted=True)
+
+    # Find the smallest area that would have to be searched to find
+    # the true location.
+    searched_area = area[true_idx]
+
+    # Find the smallest posterior mass that would have to be searched to find
+    # the true location.
+    searched_prob = prob[true_idx]
+
+    # Find the contours of the given credible levels.
+    contour_idxs = np.searchsorted(prob, contours)
+
+    # For each of the given confidence levels, compute the area of the
+    # smallest region containing that probability.
+    contour_areas = area_for_prob(contours).tolist()
+
+    # For each listed area, find the probability contained within the
+    # smallest credible region of that area.
+    area_probs = prob_for_area(areas).tolist()
+
+    if modes:
+        # Count up the number of modes in each of the given contours.
+        searched_modes = count_modes_moc(sky_map['UNIQ'], true_idx)
+        contour_modes = [
+            count_modes_moc(sky_map['UNIQ'], i) for i in contour_idxs]
     else:
         searched_modes = None
         contour_modes = None
