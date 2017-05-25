@@ -54,13 +54,13 @@ opts = parser.parse_args()
 # Late imports.
 import numpy as np
 from lalinference.io import fits
-import lalinference.bayestar.postprocess
+from lalinference.healpix_tree import adaptive_healpix_histogram
 
 samples = np.recfromtxt(opts.input, names=True)
 theta = 0.5*np.pi - samples['dec']
 phi = samples['ra']
 
-p = lalinference.bayestar.postprocess.adaptive_healpix_histogram(
+p = adaptive_healpix_histogram(
     theta, phi, opts.samples_per_bin,
     nside=opts.nside, max_nside=opts.max_nside)
 
