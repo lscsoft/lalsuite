@@ -52,17 +52,58 @@ opts = parser.parse_args()
 
 
 # Late imports.
+import healpy as hp
 import numpy as np
+from astropy.table import Table
 from lalinference.io import fits
+from lalinference.bayestar import distance
+from lalinference.bayestar import moc
+from lalinference.bayestar.sky_map import derasterize
 from lalinference.healpix_tree import adaptive_healpix_histogram
 
-samples = np.recfromtxt(opts.input, names=True)
+samples = Table.read(opts.input, format='ascii')
 theta = 0.5*np.pi - samples['dec']
 phi = samples['ra']
+if 'distance' in samples.colnames:
+    samples.rename_column('distance', 'dist')
 
 p = adaptive_healpix_histogram(
     theta, phi, opts.samples_per_bin,
     nside=opts.nside, max_nside=opts.max_nside, nest=True)
+
+
+def diststats(samples, max_nside, nside, ipix):
+    step = (max_nside // nside) ** 2
+    i0 = np.searchsorted(samples['ipix'], step * ipix)
+    i1 = np.searchsorted(samples['ipix'], step * (ipix + 1))
+    if i0 == i1:
+        return np.inf, 0.0
+    else:
+        dist = samples['dist'][i0:i1]
+        return np.mean(dist), np.std(dist)
+
+if 'dist' in samples.colnames:
+    p = derasterize(Table([p], names=['PROB']))
+    order, ipix = moc.uniq2nest(p['UNIQ'])
+    nside = hp.order2nside(order.astype(int))
+    max_order = order.max().astype(int)
+    max_nside = hp.order2nside(max_order)
+    samples['ipix'] = hp.ang2pix(max_nside, theta, phi, nest=True)
+    samples.sort('ipix')
+    distmean, diststd = np.transpose([diststats(samples, max_nside, n, i) for n, i in zip(nside, ipix)])
+
+    p['DISTMU'], p['DISTSIGMA'], p['DISTNORM'] = \
+        distance.moments_to_parameters(distmean, diststd)
+
+    # Add marginal distance moments
+    good = np.isfinite(distmean) & np.isfinite(diststd)
+    prob = (moc.uniq2pixarea(p['UNIQ']) * p['PROBDENSITY'])[good]
+    distmean = distmean[good]
+    diststd = diststd[good]
+    rbar = (prob * distmean).sum()
+    r2bar = (prob * (np.square(diststd) + np.square(distmean))).sum()
+    p.meta['distmean'] = rbar
+    p.meta['diststd'] = np.sqrt(r2bar - np.square(rbar))
 
 # Write output to FITS file.
 fits.write_sky_map(
