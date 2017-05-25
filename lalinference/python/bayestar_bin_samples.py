@@ -62,9 +62,9 @@ phi = samples['ra']
 
 p = adaptive_healpix_histogram(
     theta, phi, opts.samples_per_bin,
-    nside=opts.nside, max_nside=opts.max_nside)
+    nside=opts.nside, max_nside=opts.max_nside, nest=True)
 
 # Write output to FITS file.
 fits.write_sky_map(
-    opts.output, p,
+    opts.output, p, nest=True,
     creator=parser.prog, objid=opts.objid, gps_time=samples['time'].mean())
