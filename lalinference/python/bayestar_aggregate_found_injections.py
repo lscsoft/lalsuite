@@ -70,7 +70,7 @@ if __name__ == '__main__':
 # Imports.
 import sqlite3
 from lalinference.io import fits
-from lalinference.bayestar import distance, postprocess
+from lalinference.bayestar import distance, moc, postprocess
 
 
 def startup(dbfilename, opts_contour, opts_modes, opts_area):
@@ -82,12 +82,11 @@ def startup(dbfilename, opts_contour, opts_modes, opts_area):
 
 
 def process(fitsfilename):
-    (prob, distmu, distsigma, distnorm), metadata = fits.read_sky_map(
-        fitsfilename, nest=None, distances=True)
+    sky_map = fits.read_sky_map(fitsfilename, moc=True)
 
-    coinc_event_id = metadata['objid']
+    coinc_event_id = sky_map.meta['objid']
     try:
-        runtime = metadata['runtime']
+        runtime = sky_map.meta['runtime']
     except KeyError:
         runtime = float('nan')
 
@@ -108,20 +107,22 @@ def process(fitsfilename):
             "No database record found for event '{0}' in '{1}'".format(
                 coinc_event_id, command.sqlite_get_filename(db)))
     simulation_id, true_ra, true_dec, true_dist, far, snr = row
-    searched_area, searched_prob, offset, searched_modes, contour_areas, area_probs, contour_modes = postprocess.find_injection(
-        prob, true_ra, true_dec, contours=[0.01 * p for p in contours],
-        areas=areas, modes=modes, nest=metadata['nest'])
+    searched_area, searched_prob, offset, searched_modes, contour_areas, \
+        area_probs, contour_modes = postprocess.find_injection_moc(
+            sky_map, true_ra, true_dec, contours=[0.01 * p for p in contours],
+            areas=areas, modes=modes)
     searched_prob_distance = distance.marginal_cdf(
-        true_dist, prob, distmu, distsigma, distnorm)
+        true_dist, sky_map['PROBDENSITY'] * moc.uniq2pixarea(sky_map['UNIQ']),
+        sky_map['DISTMU'], sky_map['DISTSIGMA'], sky_map['DISTNORM'])
 
     if snr is None:
         snr = float('nan')
     if far is None:
         far = float('nan')
-    distmean = metadata.get('distmean', float('nan'))
-    diststd = metadata.get('diststd', float('nan'))
-    log_bci = metadata.get('log_bci', float('nan'))
-    log_bsn = metadata.get('log_bsn', float('nan'))
+    distmean = sky_map.meta.get('distmean', float('nan'))
+    diststd = sky_map.meta.get('diststd', float('nan'))
+    log_bci = sky_map.meta.get('log_bci', float('nan'))
+    log_bsn = sky_map.meta.get('log_bsn', float('nan'))
 
     ret = [coinc_event_id, simulation_id, far, snr, searched_area,
            searched_prob, searched_prob_distance, offset, runtime, distmean,

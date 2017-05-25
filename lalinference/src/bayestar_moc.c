@@ -78,17 +78,32 @@ void pix2ang_uniq64(uint64_t uniq, double *theta, double *phi)
 
 void *moc_rasterize64(const void *pixels, size_t offset, size_t itemsize, size_t len, size_t *npix)
 {
+    /* Calculate pixel size. */
     const size_t pixelsize = offset + itemsize;
-    const void *pixel = (const char *) pixels + (len - 1) * pixelsize;
-    const int8_t max_order = uniq2order64(*(const uint64_t *) pixel);
+
+    /* Find maximum order. Note: normally MOC datasets are stored in order
+     * of ascending MOC index, so the last pixel should have the highest order.
+     * However, our rasterization algorithm doesn't depend on this sorting,
+     * so let's just do a linear search for the maximum order. */
+    int8_t max_order = -1;
+    for (size_t i = 0; i < len; i ++)
+    {
+        const void *pixel = (const char *) pixels + i * pixelsize;
+        int8_t order = uniq2order64(*(const uint64_t *) pixel);
+        if (order > max_order)
+            max_order = order;
+    }
+
+    /* Allocate output. */
     *npix = 12 * ((size_t) 1 << 2 * max_order);
     void *ret = calloc(*npix, itemsize);
     if (!ret)
         XLAL_ERROR_NULL(XLAL_ENOMEM, "not enough memory to allocate image");
 
+    /* Paint pixels into output. */
     for (size_t i = 0; i < len; i ++)
     {
-        pixel = (const char *) pixels + i * pixelsize;
+        const void *pixel = (const char *) pixels + i * pixelsize;
         uint64_t nest;
         const int8_t order = uniq2nest64(*(const uint64_t *) pixel, &nest);
         const size_t reps = (size_t) 1 << 2 * (max_order - order);
