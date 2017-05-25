@@ -234,8 +234,11 @@ def find_injection_moc(sky_map, true_ra, true_dec, contours=(), areas=(),
     # density.
     prob_padded = np.concatenate(([0], prob))
     area_padded = np.concatenate(([0], area))
-    prob_for_area = interp1d(area_padded, prob_padded, assume_sorted=True)
-    area_for_prob = interp1d(prob_padded, area_padded, assume_sorted=True)
+    # FIXME: we should use the assume_sorted=True argument below, but
+    # it was added in Scipy 0.14.0, and our Scientific Linux 7 clusters
+    # only have Scipy 0.12.1.
+    prob_for_area = interp1d(area_padded, prob_padded)
+    area_for_prob = interp1d(prob_padded, area_padded)
 
     # Find the smallest area that would have to be searched to find
     # the true location.
