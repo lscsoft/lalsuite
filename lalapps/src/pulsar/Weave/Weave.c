@@ -582,10 +582,9 @@ int main( int argc, char *argv[] )
 
   // Set sky parameter-space bounds
   {
-    for ( size_t i = 0; i < ncohtiles; ++i ) {
+    for ( size_t i = 0; i < ntiles; ++i ) {
       XLAL_CHECK_MAIN( XLALSetSuperskyPhysicalSkyBounds( tiling[i], rssky_metric[i], rssky_transf[i], minalpha, maxalpha, mindelta, maxdelta ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
-    XLAL_CHECK_MAIN( XLALSetSuperskyPhysicalSkyBounds( tiling[isemi], rssky_metric[isemi], rssky_transf[isemi], minalpha, maxalpha, mindelta, maxdelta ) == XLAL_SUCCESS, XLAL_EFUNC );
     if ( UVAR_SET( sky_patch_count ) ) {
       LogPrintf( LOG_NORMAL, "Search sky parameter space = sky patch %u of %u\n", uvar->sky_patch_index, uvar->sky_patch_count );
     }
@@ -595,10 +594,9 @@ int main( int argc, char *argv[] )
 
   // Set frequency/spindown parameter-space bounds
   for ( size_t s = 0; s <= nmetricspins; ++s ) {
-    for ( size_t i = 0; i < ncohtiles; ++i ) {
+    for ( size_t i = 0; i < ntiles; ++i ) {
       XLAL_CHECK_MAIN( XLALSetSuperskyPhysicalSpinBound( tiling[i], rssky_transf[i], s, minspins[s], maxspins[s] ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
-    XLAL_CHECK_MAIN( XLALSetSuperskyPhysicalSpinBound( tiling[isemi], rssky_transf[isemi], s, minspins[s], maxspins[s] ) == XLAL_SUCCESS, XLAL_EFUNC );
     if ( s == 0 ) {
       LogPrintf( LOG_NORMAL, "Search frequency parameter space = [%.15g, %.15g] Hz\n", minspins[s], maxspins[s] );
     } else {
