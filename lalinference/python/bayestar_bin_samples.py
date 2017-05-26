@@ -96,14 +96,8 @@ if 'dist' in samples.colnames:
         distance.moments_to_parameters(distmean, diststd)
 
     # Add marginal distance moments
-    good = np.isfinite(distmean) & np.isfinite(diststd)
-    prob = (moc.uniq2pixarea(p['UNIQ']) * p['PROBDENSITY'])[good]
-    distmean = distmean[good]
-    diststd = diststd[good]
-    rbar = (prob * distmean).sum()
-    r2bar = (prob * (np.square(diststd) + np.square(distmean))).sum()
-    p.meta['distmean'] = rbar
-    p.meta['diststd'] = np.sqrt(r2bar - np.square(rbar))
+    p.meta['distmean'] = np.mean(samples['dist'])
+    p.meta['diststd'] = np.std(samples['dist'])
 
 # Write output to FITS file.
 fits.write_sky_map(
