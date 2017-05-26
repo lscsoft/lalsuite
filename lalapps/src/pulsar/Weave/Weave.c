@@ -531,15 +531,9 @@ int main( int argc, char *argv[] )
   // Equalise metric frequency spacing, given the specified maximum mismatches
   XLAL_CHECK_MAIN( XLALEqualizeReducedSuperskyMetricsFreqSpacing( setup.metrics, coh_max_mismatch, semi_max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Set variables/arrays defining parameter-space ranges
-  // - If using sky patches, set the sky parameter-space ranges from the sky patch index/count
-  double minalpha = uvar->alpha[0], maxalpha = uvar->alpha[1];
-  double mindelta = uvar->delta[0], maxdelta = uvar->delta[1];
+  // Set arrays defining frequency/spindown parameter-space ranges
   const double minspins[] = { uvar->freq[0], uvar->f1dot[0], uvar->f2dot[0], uvar->f3dot[0], uvar->f4dot[0] };
   const double maxspins[] = { uvar->freq[1], uvar->f1dot[1], uvar->f2dot[1], uvar->f3dot[1], uvar->f4dot[1] };
-  if ( UVAR_SET( sky_patch_count ) ) {
-    XLAL_CHECK_MAIN( XLALComputePhysicalSkyEqualAreaPatch( &minalpha, &maxalpha, &mindelta, &maxdelta, uvar->sky_patch_count, uvar->sky_patch_index ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
 
   // Check that metrics computed in setup file have sufficient spindown dimensions to cover user input
   size_t nmetricspins = 0;
@@ -581,15 +575,19 @@ int main( int argc, char *argv[] )
   rssky_transf[isemi] = setup.metrics->semi_rssky_transf;
 
   // Set sky parameter-space bounds
-  {
+  if ( UVAR_SET( sky_patch_count ) ) {
     for ( size_t i = 0; i < ntiles; ++i ) {
+      double minalpha = 0, maxalpha = 0, mindelta = 0, maxdelta = 0;
+      XLAL_CHECK_MAIN( XLALComputePhysicalSkyEqualAreaPatch( &minalpha, &maxalpha, &mindelta, &maxdelta, uvar->sky_patch_count, uvar->sky_patch_index ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLALSetSuperskyPhysicalSkyBounds( tiling[i], rssky_metric[i], rssky_transf[i], minalpha, maxalpha, mindelta, maxdelta ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
-    if ( UVAR_SET( sky_patch_count ) ) {
-      LogPrintf( LOG_NORMAL, "Search sky parameter space = sky patch %u of %u\n", uvar->sky_patch_index, uvar->sky_patch_count );
+    LogPrintf( LOG_NORMAL, "Search sky parameter space sky patch = %u of %u\n", uvar->sky_patch_index, uvar->sky_patch_count );
+  } else {
+    for ( size_t i = 0; i < ntiles; ++i ) {
+      XLAL_CHECK_MAIN( XLALSetSuperskyPhysicalSkyBounds( tiling[i], rssky_metric[i], rssky_transf[i], uvar->alpha[0], uvar->alpha[1], uvar->delta[0], uvar->delta[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
-    LogPrintf( LOG_NORMAL, "Search sky parameter space right ascension = [%.15g, %.15g] rad\n", minalpha, maxalpha );
-    LogPrintf( LOG_NORMAL, "Search sky parameter space declination = [%.15g, %.15g] rad\n", mindelta, maxdelta );
+    LogPrintf( LOG_NORMAL, "Search sky parameter space right ascension = [%.15g, %.15g] rad\n", uvar->alpha[0], uvar->alpha[1] );
+    LogPrintf( LOG_NORMAL, "Search sky parameter space declination = [%.15g, %.15g] rad\n", uvar->delta[0], uvar->delta[1] );
   }
 
   // Set frequency/spindown parameter-space bounds
@@ -632,14 +630,6 @@ int main( int argc, char *argv[] )
   // Get frequency spacing used by parameter-space tiling
   // - XLALEqualizeReducedSuperskyMetricsFreqSpacing() ensures this is the same for all segments
   const double dfreq = XLALLatticeTilingStepSizes( tiling[isemi], ndim - 1 );
-
-  // Count approximate number of semicoherent templates
-  {
-    LogPrintf( LOG_NORMAL, "Counting approximate number of semicoherent templates ...\n" );
-    const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling[isemi], ndim - 1 );
-    XLAL_CHECK_MAIN( stats != NULL, XLAL_EFUNC );
-    LogPrintf( LOG_NORMAL, "Counted ~%" LAL_UINT8_FORMAT " semicoherent templates\n", stats->total_points );
-  }
 
   ////////// Load input data //////////
 
@@ -891,9 +881,21 @@ int main( int argc, char *argv[] )
   //   always operate over a block of frequencies at once. Since the frequency spacing is always
   //   equal over all tilings due to XLALEqualizeReducedSuperskyMetricsFreqSpacing(), operations
   //   such as nearest point finding can be performed once per frequency block instead of per bin.
+  // - Get physical range covered by semicoherent tiling
+  // - Count approximate number of semicoherent templates
+  LogPrintf( LOG_NORMAL, "Setting up iterator over semicoherent parameter space ...\n" );
   LatticeTilingIterator *semi_itr = XLALCreateLatticeTilingIterator( tiling[isemi], ndim - 1 );
   XLAL_CHECK_MAIN( semi_itr != NULL, XLAL_EFUNC );
   gsl_vector *GAVEC_MAIN( semi_rssky, ndim );
+  PulsarDopplerParams XLAL_INIT_DECL( semi_min_range );
+  PulsarDopplerParams XLAL_INIT_DECL( semi_max_range );
+  XLAL_CHECK_MAIN( XLALSuperskyLatticePhysicalRange( &semi_min_range, &semi_max_range, tiling[isemi], rssky_transf[isemi] ) == XLAL_SUCCESS, XLAL_EFUNC );
+  LogPrintf( LOG_NORMAL, "Finished setting up iterator over semicoherent parameter space\n" );
+  {
+    const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling[isemi], ndim - 1 );
+    XLAL_CHECK_MAIN( stats != NULL, XLAL_EFUNC );
+    LogPrintf( LOG_NORMAL, "Counted ~%" LAL_UINT8_FORMAT " semicoherent templates\n", stats->total_points );
+  }
 
   // Create storage for cache queries for coherent results in each segment
   WeaveCacheQueries *queries = XLALWeaveCacheQueriesCreate( tiling[isemi], setup.phys_to_latt, setup.latt_to_phys, rssky_transf[isemi], nsegments, uvar->freq_partitions );
@@ -1263,21 +1265,21 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "dfreq", dfreq, "frequency spacing" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Write physical parameter-space ranges
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "minrng alpha [rad]", minalpha, "minimum right ascension range" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "maxrng alpha [rad]", maxalpha, "maximum right ascension range" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "minrng delta [rad]", mindelta, "minimum declination range" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "maxrng delta [rad]", maxdelta, "maximum declination range" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "minrng freq [Hz]", minspins[0], "minimum frequency range" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "maxrng freq [Hz]", maxspins[0], "maximum frequency range" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "minrng alpha [rad]", semi_min_range.Alpha, "minimum right ascension range" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "maxrng alpha [rad]", semi_max_range.Alpha, "maximum right ascension range" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "minrng delta [rad]", semi_min_range.Delta, "minimum declination range" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "maxrng delta [rad]", semi_max_range.Delta, "maximum declination range" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "minrng freq [Hz]", semi_min_range.fkdot[0], "minimum frequency range" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "maxrng freq [Hz]", semi_max_range.fkdot[0], "maximum frequency range" ) == XLAL_SUCCESS, XLAL_EFUNC );
     for ( size_t s = 1; s <= ninputspins; ++s ) {
       char keyword[64];
       char comment[64];
       snprintf( keyword, sizeof( keyword ), "minrng f%zudot [Hz/s^%zu]", s, s );
       snprintf( comment, sizeof( comment ), "minimum %zu-order spindown range", s );
-      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, keyword, minspins[s], comment ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, keyword, semi_min_range.fkdot[s], comment ) == XLAL_SUCCESS, XLAL_EFUNC );
       snprintf( keyword, sizeof( keyword ), "maxrng f%zudot [Hz/s^%zu]", s, s );
       snprintf( comment, sizeof( comment ), "maximum %zu-order spindown range", s );
-      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, keyword, maxspins[s], comment ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, keyword, semi_max_range.fkdot[s], comment ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
     // Write cumulative number of semicoherent templates in each dimension
