@@ -90,7 +90,8 @@ if 'dist' in samples.colnames:
     max_nside = hp.order2nside(max_order)
     samples['ipix'] = hp.ang2pix(max_nside, theta, phi, nest=True)
     samples.sort('ipix')
-    distmean, diststd = np.transpose([diststats(samples, max_nside, n, i) for n, i in zip(nside, ipix)])
+    distmean, diststd = np.transpose(
+        [diststats(samples, max_nside, n, i) for n, i in zip(nside, ipix)])
 
     p['DISTMU'], p['DISTSIGMA'], p['DISTNORM'] = \
         distance.moments_to_parameters(distmean, diststd)
