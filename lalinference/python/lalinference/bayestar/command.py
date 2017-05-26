@@ -47,6 +47,12 @@ else:
     matplotlib.use('Template', warn=False, force=True)
 
 
+# FIXME: Remove this after all Matplotlib monkeypatches are obsolete.
+import matplotlib
+import distutils.version
+mpl_version = distutils.version.LooseVersion(matplotlib.__version__)
+
+
 @contextlib.contextmanager
 def TemporaryDirectory(suffix='', prefix='tmp', dir=None, delete=True):
     try:
@@ -264,9 +270,12 @@ group.add_argument(
 group.add_argument(
     '--dpi', metavar='PIXELS', type=dpi, default=300,
     help='resolution of figure in dots per inch [default: %(default)s]')
-group.add_argument(
-    '--transparent', const='1', default='0', nargs='?', type=transparent,
-    help='Save image with transparent background [default: false]')
+# FIXME: the savefig.transparent rcparam was added in Matplotlib 1.4,
+# but we have to support Matplotlib 1.2 for Scientific Linux 7.
+if mpl_version >= '1.4':
+    group.add_argument(
+        '--transparent', const='1', default='0', nargs='?', type=transparent,
+        help='Save image with transparent background [default: false]')
 del colormap_choices
 del group
 
