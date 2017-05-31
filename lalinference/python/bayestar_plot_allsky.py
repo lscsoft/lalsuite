@@ -145,15 +145,21 @@ for ra, dec in radecs:
 plot.outline_text(ax)
 
 if opts.annotate:
-    text = 'event ID: {}'.format(metadata['objid'])
-    text += '\nFITS file: {}'.format(opts.input.name)
+    text = []
+    try:
+        objid = metadata['objid']
+    except KeyError:
+        pass
+    else:
+        text.append('event ID: {}'.format(objid))
+    text.append('FITS file: {}'.format(opts.input.name))
     if opts.contour:
         pp = np.round(opts.contour).astype(int)
         ii = np.round(np.searchsorted(np.sort(cls), opts.contour) *
                       deg2perpix).astype(int)
         for i, p in zip(ii, pp):
-            text += '\n{:d}% area: {:d} deg$^2$'.format(p, i, grouping=True)
-    ax.text(1, 1, text, transform=ax.transAxes, horizontalalignment='right')
+            text.append('{:d}% area: {:d} deg$^2$'.format(p, i, grouping=True))
+    ax.text(1, 1, '\n'.join(text), transform=ax.transAxes, ha='right')
 
 # Show or save output.
 opts.output()
