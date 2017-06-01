@@ -1276,6 +1276,25 @@ int XLALConvertSuperskyToPhysicalPoints(
 
 }
 
+static void SkyBoundCache(
+  const size_t dim UNUSED,
+  const gsl_vector *point,
+  gsl_vector* cache
+  )
+{
+
+  // Convert from 2-dimensional reduced supersky coordinates to 3-dimensional aligned sky coordinates
+  const double A = gsl_vector_get( point, 0 );
+  double as[3];
+  SM_ReducedToAligned( as, point, A );
+
+  // Store aligned sky position in cache
+  for ( size_t i = 0; i < 3; ++i ) {
+    gsl_vector_set( cache, i, as[i] );
+  }
+
+}
+
 typedef struct {
   double max_A;
   int type;
@@ -1361,25 +1380,6 @@ static double PhysicalSkyBound(
 
 }
 
-static void PhysicalSkyBoundCache(
-  const size_t dim UNUSED,
-  const gsl_vector *point,
-  gsl_vector* cache
-  )
-{
-
-  // Convert from 2-dimensional reduced supersky coordinates to 3-dimensional aligned sky coordinates
-  const double A = gsl_vector_get( point, 0 );
-  double as[3];
-  SM_ReducedToAligned( as, point, A );
-
-  // Store aligned sky position in cache
-  for ( size_t i = 0; i < 3; ++i ) {
-    gsl_vector_set( cache, i, as[i] );
-  }
-
-}
-
 int XLALSetSuperskyPhysicalSkyBounds(
   LatticeTiling *tiling,
   gsl_matrix *rssky_metric,
@@ -1435,7 +1435,7 @@ int XLALSetSuperskyPhysicalSkyBounds(
     for ( size_t dim = 0; dim < 2; ++dim ) {
       XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, dim, rssky_point[dim], rssky_point[dim] ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
-    XLAL_CHECK( XLALSetLatticeTilingBoundCacheFunction( tiling, 1, PhysicalSkyBoundCache ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALSetLatticeTilingBoundCacheFunction( tiling, 1, SkyBoundCache ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     return XLAL_SUCCESS;
 
@@ -1468,7 +1468,7 @@ int XLALSetSuperskyPhysicalSkyBounds(
     // Set the parameter-space bounds on reduced supersky sky coordinates A and B
     XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, data_lower.min_A, data_lower.max_A ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, PhysicalSkyBound, sizeof( data_lower ), &data_lower, &data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLALSetLatticeTilingBoundCacheFunction( tiling, 1, PhysicalSkyBoundCache ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALSetLatticeTilingBoundCacheFunction( tiling, 1, SkyBoundCache ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     return XLAL_SUCCESS;
 
@@ -1940,85 +1940,298 @@ int XLALSetSuperskyPhysicalSkyBounds(
   // Set the parameter-space bounds on reduced supersky sky coordinates A and B
   XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, data_lower.min_A, data_lower.max_A ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, PhysicalSkyBound, sizeof( data_lower ), &data_lower, &data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetLatticeTilingBoundCacheFunction( tiling, 1, PhysicalSkyBoundCache ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingBoundCacheFunction( tiling, 1, SkyBoundCache ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
 }
 
-int XLALComputePhysicalSkyEqualAreaPatch(
-  double *alpha1,
-  double *alpha2,
-  double *delta1,
-  double *delta2,
+static double EqualAreaSkyBound(
+  const void *data,
+  const size_t dim UNUSED,
+  const gsl_matrix *cache UNUSED,
+  const gsl_vector *point
+  )
+{
+
+  // Get bounds data
+  const double bound = *( ( const double * ) data );
+
+  // Decode the reduced supersky coordinates to get
+  //   na = as[0] = Q_na . n
+  const double A = gsl_vector_get( point, 0 );
+  const double rssky[2] = { A, 0 };
+  gsl_vector_const_view rssky_view = gsl_vector_const_view_array( rssky, 2 );
+  double as[3];
+  SM_ReducedToAligned( as, &rssky_view.vector, A );
+  const double na = as[0];
+
+  // Absolute limiting bound on 'nb = +/- sqrt(1 - na^2)'
+  const double limit = RE_SQRT( 1 - SQR( na ) );
+
+  return GSL_MAX( -limit, GSL_MIN( bound, limit ) );
+
+}
+
+static double EqualAreaSkyBoundSolverA(
+  double A1,
+  void *params
+  )
+{
+
+  // Get parameters
+  const double target_area = ( ( double* ) params )[0];
+
+  // Compute area of unit disk to the left of 'A1'
+  const double area = LAL_PI_2 + A1*RE_SQRT( 1 - SQR( A1 ) ) + asin( A1 );
+
+  return area - target_area;
+
+}
+
+static double EqualAreaSkyBoundSolverB(
+  double B1,
+  void *params
+  )
+{
+
+  // Get parameters
+  const double target_area = ( ( double* ) params )[0];
+  double A0 = ( ( double* ) params )[1];
+  double A1 = ( ( double* ) params )[2];
+
+  // Compute area of unit disk between 'A0' and 'A1'
+  const double max_area = A1*RE_SQRT( 1 - SQR( A1 ) ) - A0*RE_SQRT( 1 - SQR( A0 ) ) + asin( A1 ) - asin( A0 );
+
+  // Work out where '-|B1| = const' line intersects unit disk boundary
+  const double Ai = RE_SQRT( 1 - SQR( B1 ) );
+
+  // Restrict range '[A0, A1]' if '-|B1| = const' line intersects unit disk boundary within it
+  if ( A0 < -Ai ) {
+    A0 = -Ai;
+  }
+  if ( A1 > Ai ) {
+    A1 = Ai;
+  }
+
+  // Compute area of unit disk between 'A0' and 'A1' and below '-|B1|'
+  double area = -fabs( B1 )*( A1 - A0 ) + 0.5*( A1*RE_SQRT( 1 - SQR( A1 ) ) - A0*RE_SQRT( 1 - SQR( A0 ) ) + asin( A1 ) - asin( A0 ) );
+
+  // For positive B, substract 'area' from 'max_area'
+  if ( B1 > 0 ) {
+    area = max_area - area;
+  }
+
+  return area - target_area;
+
+}
+
+int XLALSetSuperskyEqualAreaSkyBounds(
+  LatticeTiling *tiling,
   const UINT4 patch_count,
   const UINT4 patch_index
   )
 {
 
   // Check input
-  XLAL_CHECK( alpha1 != NULL, XLAL_EFAULT );
-  XLAL_CHECK( alpha2 != NULL, XLAL_EFAULT );
-  XLAL_CHECK( delta1 != NULL, XLAL_EFAULT );
-  XLAL_CHECK( delta2 != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
   XLAL_CHECK( patch_count > 0, XLAL_EINVAL );
   XLAL_CHECK( patch_index < patch_count, XLAL_EINVAL );
 
-  // Number of patch divisions in 'alpha'; for less than 4 patches, divide only in 'alpha' to prevent
-  // 'alpha' range in [pi,2*pi], which XLALSetSuperskyPhysicalSkyBounds() cannot handle
-  const UINT4 alpha_count = ( patch_count < 4 ) ? patch_count : ( ( UINT4 ) ceil( sqrt( patch_count ) ) );
+  // Set parameter-space bound names
+  XLAL_CHECK( XLALSetLatticeTilingBoundName( tiling, 0, "sskyA" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingBoundName( tiling, 1, "sskyB" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Mininum number of patch divisions in 'sin(delta)'; note integer division equivalent to floor()
-  const UINT4 min_sdelta_count = patch_count / alpha_count;
+  // Parameter-space bounds on reduced supersky sky coordinates A and B
+  double A_bound[2] = {GSL_NAN, GSL_NAN};
+  double B_bound[2] = {-1, 1};
 
-  // Excess number of patches, which must be added on to get 'patch_count'
-  INT4 patch_excess = patch_count - alpha_count * min_sdelta_count;
-  XLAL_CHECK( patch_excess >= 0, XLAL_EFAILED );
+  // Handle special cases of 1 and 2 patches
+  if ( patch_count <= 2 ) {
+    A_bound[0] = -2 + 4 * ( ( double ) patch_index ) / ( ( double ) patch_count );
+    A_bound[1] = A_bound[0] + 4 / ( ( double ) patch_count );
+  } else {
 
-  // Initialise number of patch divisions in 'sin(delta)'; if there are excess patches, add an extra patch
-  UINT4 sdelta_count = min_sdelta_count;
-  if ( patch_excess > 0 ) {
-    ++sdelta_count;
-  }
+    // Number of patches per hemisphere; rounded down for odd number of patches
+    const UINT4 hemi_patch_count = patch_count / 2;
 
-  // Calculate range of indices in 'alpha', and number of patch divisions and index in 'sin(delta)'.
-  // The divisions in 'alpha' are set in proportion to the range of 'alpha_index', i.e. the number of
-  // divisions in 'sin(delta)' for that range of 'alpha_index'. This is so that, if 'patch_excess' is
-  // not zero, and therefore the number of divisions in 'sin(delta)' is not constant, patch areas should
-  // still be equal. Example:
-  //   patch_count=7 patch_index=0 | alpha_index=0--3 sdelta_count=3 sdelta_index=0
-  //   patch_count=7 patch_index=1 | alpha_index=0--3 sdelta_count=3 sdelta_index=1
-  //   patch_count=7 patch_index=2 | alpha_index=0--3 sdelta_count=3 sdelta_index=2
-  //   patch_count=7 patch_index=3 | alpha_index=3--5 sdelta_count=2 sdelta_index=0
-  //   patch_count=7 patch_index=4 | alpha_index=3--5 sdelta_count=2 sdelta_index=1
-  //   patch_count=7 patch_index=5 | alpha_index=5--7 sdelta_count=2 sdelta_index=0
-  //   patch_count=7 patch_index=6 | alpha_index=5--7 sdelta_count=2 sdelta_index=1
-  UINT4 alpha_index1 = 0, alpha_index2 = sdelta_count, sdelta_index = patch_index;
-  while ( sdelta_index >= sdelta_count ) {
+    // Index of patch within hemisphere; increases to 'hemi_patch_count' then decreases to zero
+    const UINT4 hemi_patch_index = patch_index < hemi_patch_count ? patch_index : patch_count - patch_index - 1;
 
-    // Decrease index in 'sin(delta)'; we are done when 'sdelta_index' < 'sdelta_count'
-    sdelta_index -= sdelta_count;
+    // Number of patch divisions in supersky coordinate A within one hemisphere
+    const UINT4 A_count = ceil( sqrt( hemi_patch_count ) );
 
-    // Decrease number of excess patches; if zero, subtract extra patch from patch divisions in 'sin(delta)'
-    --patch_excess;
-    if ( patch_excess == 0 ) {
-      --sdelta_count;
+    // Minimum number of patch divisions in supersky coordinate B
+    const UINT4 min_B_count = hemi_patch_count / A_count;
+
+    // Excess number of patches, which must be added on to get 'hemi_patch_count'
+    INT4 patch_excess = hemi_patch_count - A_count * min_B_count;
+    XLAL_CHECK( patch_excess >= 0, XLAL_EFAILED );
+
+    // Initialise number of patch divisions in 'B'; if there are excess patches, add an extra patch
+    UINT4 B_count = min_B_count;
+    if ( patch_excess > 0 ) {
+      ++B_count;
     }
 
-    // Store the current last 'alpha' index in 'alpha_index1', and increase
-    // 'alpha_index2' by the current number of patch divisions in 'sin(delta)'
-    alpha_index1 = alpha_index2;
-    alpha_index2 += sdelta_count;
+    // Calculate range of indices in 'A', and number of patch divisions and index in 'B'.
+    UINT4 A_index[2] = {0, B_count};
+    UINT4 B_index = hemi_patch_index;
+    if ( hemi_patch_index == hemi_patch_count ) {
+
+      // For odd number of patches, one patch will straddle both hemispheres
+      A_index[0] = A_index[1] = hemi_patch_count;
+      B_index = 0;
+      B_count = 1;
+
+    } else {
+
+      // The divisions in 'A' are set in proportion to the range of 'A_index', i.e. the number of
+      // divisions in 'B' for that range of 'A_index'. This is so that, if 'patch_excess' is
+      // not zero, and therefore the number of divisions in 'B' is not constant, patch areas should
+      // still be equal. Example:
+      //   hemi_patch_count=7 hemi_patch_index=0 | A_index=0--3 B_count=3 B_index=0
+      //   hemi_patch_count=7 hemi_patch_index=1 | A_index=0--3 B_count=3 B_index=1
+      //   hemi_patch_count=7 hemi_patch_index=2 | A_index=0--3 B_count=3 B_index=2
+      //   hemi_patch_count=7 hemi_patch_index=3 | A_index=3--5 B_count=2 B_index=0
+      //   hemi_patch_count=7 hemi_patch_index=4 | A_index=3--5 B_count=2 B_index=1
+      //   hemi_patch_count=7 hemi_patch_index=5 | A_index=5--7 B_count=2 B_index=0
+      //   hemi_patch_count=7 hemi_patch_index=6 | A_index=5--7 B_count=2 B_index=1
+      while ( B_index >= B_count ) {
+
+        // Decrease index in 'B'; we are done when 'B_index' < 'B_count'
+        B_index -= B_count;
+
+        // Decrease number of excess patches; if zero, subtract extra patch from patch divisions in 'B'
+        --patch_excess;
+        if ( patch_excess == 0 ) {
+          --B_count;
+        }
+
+        // Store the current last 'A' index in 'A_index[0]', and increase
+        // 'A_index[1]' by the current number of patch divisions in 'B'
+        A_index[0] = A_index[1];
+        A_index[1] += B_count;
+
+      }
+
+    }
+
+    // Allocate a GSL root solver
+    gsl_root_fsolver *fs = gsl_root_fsolver_alloc( gsl_root_fsolver_brent );
+    XLAL_CHECK( fs != NULL, XLAL_ENOMEM );
+
+    // Find bounds on 'A' corresponding to the computed indexes
+    for ( size_t i = 0; i < 2; ++i ) {
+      const UINT4 A_index_i = A_index[i];
+
+      // Handle boundaries as special cases
+      if ( A_index_i == 0 ) {
+        A_bound[i] = -1;
+      } else if ( A_index_i == hemi_patch_count && patch_count % 2 == 0 ) {
+        A_bound[i] = 1;
+      } else {
+
+        // Calculate the target area of unit disk
+        const double target_area = LAL_PI * ( ( double ) A_index_i ) / ( ( ( double ) patch_count ) / 2 );
+
+        // Set up GSL root solver
+        double params[] = { target_area };
+        gsl_function F = { .function = EqualAreaSkyBoundSolverA, .params = params };
+        double A_lower = -1, A_upper = 1;
+        XLAL_CHECK( gsl_root_fsolver_set( fs, &F, A_lower, A_upper ) == 0, XLAL_EFAILED );
+
+        // Try to find root
+        int status = 0, iter = 0;
+        do {
+          XLAL_CHECK( gsl_root_fsolver_iterate( fs ) == 0, XLAL_EFAILED );
+          A_lower = gsl_root_fsolver_x_lower( fs );
+          A_upper = gsl_root_fsolver_x_upper( fs );
+          status = gsl_root_test_interval( A_lower, A_upper, 1e-5, 1e-5 );
+        } while (status == GSL_CONTINUE && ++iter < 1000);
+        XLAL_CHECK( status == GSL_SUCCESS, XLAL_EMAXITER, "Could not find bound for A_index[%zu]=%i; best guess [%g, %g]", i, A_index_i, A_lower, A_upper );
+
+        // Store bound
+        A_bound[i] = gsl_root_fsolver_root( fs );
+
+      }
+
+    }
+
+    // Find bounds on 'B' corresponding to the computed indexes
+    for ( size_t i = 0; i < 2; ++i ) {
+      const UINT4 B_index_i = B_index + i;
+
+      // Maximum possible value of 'B' within the region bound by 'A_bound'
+      const double B_max = RE_SQRT( 1 - GSL_MIN( SQR( A_bound[0] ), SQR( A_bound[1] ) ) );
+
+      // Handle boundaries as special cases
+      if ( B_index_i == 0 ) {
+        B_bound[i] = -B_max;
+      } else if ( B_index_i == B_count ) {
+        B_bound[i] = B_max;
+      } else {
+
+        // Calculate the target area of unit disk
+        const double A0 = A_bound[0];
+        const double A1 = A_bound[1];
+        const double target_area = ( A1*RE_SQRT( 1 - SQR( A1 ) ) - A0*RE_SQRT( 1 - SQR( A0 ) ) + asin( A1 ) - asin( A0 ) ) * ( ( double ) B_index_i ) / ( ( double ) B_count );
+
+        // Set up GSL root solver
+        double params[] = { target_area, A0, A1 };
+        gsl_function F = { .function = EqualAreaSkyBoundSolverB, .params = params };
+        double B_lower = -B_max, B_upper = B_max;
+        XLAL_CHECK( gsl_root_fsolver_set( fs, &F, B_lower, B_upper ) == 0, XLAL_EFAILED );
+
+        // Try to find root
+        int status = 0, iter = 0;
+        do {
+          XLAL_CHECK( gsl_root_fsolver_iterate( fs ) == 0, XLAL_EFAILED );
+          B_lower = gsl_root_fsolver_x_lower( fs );
+          B_upper = gsl_root_fsolver_x_upper( fs );
+          status = gsl_root_test_interval( B_lower, B_upper, 1e-5, 1e-5 );
+        } while (status == GSL_CONTINUE && ++iter < 1000);
+        XLAL_CHECK( status == GSL_SUCCESS, XLAL_EMAXITER, "Could not find bound for B_index[%zu]=%i; best guess [%g, %g]", i, B_index_i, B_lower, B_upper );
+
+        // Store bound
+        B_bound[i] = gsl_root_fsolver_root( fs );
+
+      }
+
+    }
+
+    // Restrict range 'A' if 'B = const' bounds intersect unit disk boundary within it
+    {
+      const double Ai = RE_SQRT( 1 - GSL_MIN( SQR( B_bound[0] ), SQR( B_bound[1] ) ) );
+      if ( A_bound[0] < -Ai ) {
+        A_bound[0] = -Ai;
+      }
+      if ( A_bound[1] > Ai ) {
+        A_bound[1] = Ai;
+      }
+    }
+
+    // Shift bounds on 'A' into the correct hemisphere, and put in correct order
+    if ( hemi_patch_index == hemi_patch_count ) {     // This patch straddles both hemispheres
+      A_bound[0] = A_bound[0] - 1;
+      A_bound[1] = -A_bound[1] + 1;
+    } else if ( patch_index < hemi_patch_count ) {    // This patch is in the left hemisphere
+      A_bound[0] = A_bound[0] - 1;
+      A_bound[1] = A_bound[1] - 1;
+    } else {                                          // This patch is in the left hemisphere
+      A_bound[0] = -A_bound[0] + 1;
+      A_bound[1] = -A_bound[1] + 1;
+    }
+
+    // Cleanup
+    gsl_root_fsolver_free( fs );
 
   }
 
-  // Compute range of 'alpha' to bound
-  *alpha1 = LAL_TWOPI * ( ( double ) alpha_index1 ) / ( ( double ) patch_count );
-  *alpha2 = LAL_TWOPI * ( ( double ) alpha_index2 ) / ( ( double ) patch_count );
-
-  // Compute range of 'delta' to bound
-  *delta1 = asin( -1 + 2 * ( ( double ) sdelta_index ) / ( ( double ) sdelta_count ) );
-  *delta2 = asin( -1 + 2 * ( ( double ) sdelta_index + 1 ) / ( ( double ) sdelta_count ) );
+  // Set the parameter-space bounds on reduced supersky sky coordinates A and B
+  XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, A_bound[0], A_bound[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, EqualAreaSkyBound, sizeof( B_bound[0] ), &B_bound[0], &B_bound[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingBoundCacheFunction( tiling, 1, SkyBoundCache ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
