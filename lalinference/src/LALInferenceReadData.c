@@ -2329,6 +2329,11 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
 
   COMPLEX16FrequencySeries *hptilde=NULL, *hctilde=NULL;
 
+  XLALSimInspiralWaveformParamsInsertTidalLambda1(LALpars,lambda1);
+  XLALSimInspiralWaveformParamsInsertTidalLambda2(LALpars,lambda2);
+  XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(LALpars,amp_order);
+  XLALSimInspiralWaveformParamsInsertPNPhaseOrder(LALpars,phase_order);
+
   XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, inj_table->mass1*LAL_MSUN_SI, inj_table->mass2*LAL_MSUN_SI,
 				  inj_table->spin1x, inj_table->spin1y, inj_table->spin1z,
 				  inj_table->spin2x, inj_table->spin2y, inj_table->spin2z,
