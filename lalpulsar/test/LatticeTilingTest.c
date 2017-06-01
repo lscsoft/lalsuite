@@ -670,9 +670,8 @@ static int SuperskyTests(
   XLAL_CHECK( semi_tiling != NULL, XLAL_EFUNC );
 
   // Add bounds
-  double alpha1 = 0, alpha2 = 0, delta1 = 0, delta2 = 0;
+  const double alpha1 = 0, alpha2 = LAL_PI, delta1 = -LAL_PI_2, delta2 = LAL_PI_2;
   const double freq_min = freq_max - 5e-5, f1dot = -5e-9;
-  XLAL_CHECK( XLALComputePhysicalSkyEqualAreaPatch( &alpha1, &alpha2, &delta1, &delta2, 2, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
     XLAL_CHECK( XLALSetSuperskyPhysicalSkyBounds( coh_tiling[n], metrics->coh_rssky_metric[n], metrics->coh_rssky_transf[n], alpha1, alpha2, delta1, delta2 ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( coh_tiling[n], metrics->coh_rssky_transf[n], 0, freq_min, freq_max ) == XLAL_SUCCESS, XLAL_EFUNC );
