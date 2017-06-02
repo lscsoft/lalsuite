@@ -458,8 +458,11 @@ int XLALSimBlackHoleRingdownModeEigenvaluesLeaver(COMPLEX16 * A,
     if (XLALSimBlackHoleRingdownModeEigenvalueSolveSchwarzschild(omega, l, m, s) < 0)
         XLAL_ERROR(XLAL_EFUNC);
 
+    if (a < 1e-15) /* we have the Schwarzschild solution */
+        return 0;
+
     /* step towards requested value of a */
-    for (atry = 0; atry < a; atry += 0.1 * (0.5 - atry))
+    for (atry = 1e-15; atry < a; atry += 0.1 * (0.5 - atry))
         if (XLALSimBlackHoleRingdownModeEigenvalueSolveKerr(A, omega, atry, l, m, s) < 0)
             XLAL_ERROR(XLAL_EFUNC);
 
