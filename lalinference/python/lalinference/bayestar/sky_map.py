@@ -142,12 +142,16 @@ def localize(
     Returns a 'NESTED' ordering HEALPix image as a Numpy array.
     """
 
-    ifos = [single.instrument for single in event.singles]
+    singles = event.singles
+    if not enable_snr_series:
+        singles = [single for single in singles if single.snr is not None]
+
+    ifos = [single.instrument for single in singles]
 
     # Extract SNRs from table.
     snrs = np.ma.asarray([
         np.ma.masked if single.snr is None else single.snr
-        for single in event.singles])
+        for single in singles])
 
     # Look up physical parameters for detector.
     detectors = [lalsimulation.DetectorPrefixToLALDetector(str(ifo))
@@ -156,7 +160,7 @@ def localize(
     locations = np.asarray([det.location for det in detectors])
 
     # Power spectra for each detector.
-    psds = [single.psd for single in event.singles]
+    psds = [single.psd for single in singles]
     psds = [timing.InterpolatedPSD(filter.abscissa(psd),
                                    psd.data.data,
                                    f_high_truncate=f_high_truncate)
@@ -190,7 +194,7 @@ def localize(
     if enable_snr_series:
         log.warn('Enabling input of SNR time series. '
                  'This feature is UNREVIEWED.')
-        snr_series = [single.snr_series for single in event.singles]
+        snr_series = [single.snr_series for single in singles]
         if all(s is None for s in snr_series):
             snr_series = None
     else:
@@ -219,7 +223,7 @@ def localize(
         nsamples = nsamples * 2 - 1
 
         snr_series = []
-        for acor, single in zip(acors, event.singles):
+        for acor, single in zip(acors, singles):
             series = lal.CreateCOMPLEX8TimeSeries(
                 'fake SNR', 0, 0, deltaT, lal.StrainUnit, nsamples)
             series.epoch = single.time - 0.5 * (nsamples - 1) * deltaT
@@ -259,7 +263,7 @@ def localize(
     # Perform sanity checks that the middle sample of the SNR time series match
     # the sngl_inspiral records. Relax valid interval slightly from
     # +/- 0.5 deltaT to +/- 0.6 deltaT for floating point roundoff error.
-    for single, series in zip(event.singles, snr_series):
+    for single, series in zip(singles, snr_series):
         if np.abs(0.5 * (nsamples - 1) * series.deltaT
                   + float(series.epoch - single.time)) >= 0.6 * deltaT:
             raise ValueError('BAYESTAR expects the SNR time series to be '
@@ -359,7 +363,7 @@ def localize(
     skymap.meta['vcs_info'] = vcs_info
     skymap.meta['gps_time'] = float(epoch)
     skymap.meta['runtime'] = float(end_time - start_time)
-    skymap.meta['instruments'] = {single.instrument for single in event.singles}
+    skymap.meta['instruments'] = {single.instrument for single in singles}
     skymap.meta['gps_creation_time'] = end_time
 
     return skymap
