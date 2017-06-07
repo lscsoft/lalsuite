@@ -25,7 +25,10 @@ __all__ = ('GraceDBEventSource',)
 
 class GraceDBEventSource(EventSource):
 
-    def __init__(self, client, graceids):
+    def __init__(self, graceids, client=None):
+        if client is None:
+            from ligo.gracedb.rest import GraceDb
+            client = GraceDb()
         self._client = client
         self._graceids = graceids
 

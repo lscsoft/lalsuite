@@ -67,7 +67,7 @@ def test_ligolw():
 def test_gracedb():
     """Test reading events from GraceDB records."""
     client = MockGraceDb()
-    source = events.gracedb.open(client, ['G211117', 'G197392'])
+    source = events.gracedb.open(['G211117', 'G197392'], client)
     assert len(source) == 2
     for i, (event_id, event) in enumerate(source.items()):
         if i == 0:

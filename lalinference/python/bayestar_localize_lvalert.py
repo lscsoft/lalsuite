@@ -105,7 +105,7 @@ tags = ("sky_loc",)
 if not opts.no_tag:
     tags += ("lvem",)
 
-for graceid, event in events.gracedb.open(gracedb, graceids).items():
+for graceid, event in events.gracedb.open(graceids, gracedb).items():
 
     # Send log messages to GraceDb too
     if not opts.dry_run:
