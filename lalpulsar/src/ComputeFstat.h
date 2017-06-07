@@ -26,6 +26,7 @@
 #include <lal/LALComputeAM.h>
 #include <lal/SSBtimes.h>
 #include <lal/CWMakeFakeData.h>
+#include <lal/LFTandTSutils.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -297,6 +298,7 @@ const MultiNoiseWeights* XLALGetFstatInputNoiseWeights ( const FstatInput* input
 const MultiDetectorStateSeries* XLALGetFstatInputDetectorStates ( const FstatInput* input );
 int XLALGetFstatTiming ( const FstatInput* input, REAL8 *tauF1Buf, REAL8 *tauF1NoBuf );
 int AppendFstatTimingInfo2File ( const FstatInput* input, FILE *fp, BOOLEAN printHeader );
+int  XLALExtractResampledTimeseries ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, const FstatInput *input );
 
 #ifdef SWIG // SWIG interface directives
 SWIGLAL(INOUT_STRUCTS(FstatResults**, Fstats));

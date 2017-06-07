@@ -1132,3 +1132,18 @@ XLALGetFFTPlanHints ( int * planMode,
   *planGenTimeoutSeconds=fft_plan_timeout;
 } // XLALGetFFTPlanHints
 
+
+int
+XLALExtractResampledTimeseries_intern ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, const void* method_data )
+{
+  XLAL_CHECK ( method_data != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( ( multiTimeSeries_SRC_a != NULL ) && ( multiTimeSeries_SRC_b != NULL ) , XLAL_EINVAL );
+  XLAL_CHECK ( method_data != NULL, XLAL_EINVAL );
+
+  const ResampMethodData *resamp = (const ResampMethodData *) method_data;
+  *multiTimeSeries_SRC_a = resamp->multiTimeSeries_SRC_a;
+  *multiTimeSeries_SRC_b = resamp->multiTimeSeries_SRC_b;
+
+  return XLAL_SUCCESS;
+
+} // XLALExtractResampledTimeseries_intern()
