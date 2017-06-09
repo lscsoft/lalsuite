@@ -31,21 +31,26 @@ from lalinference import LALINFERENCE_PARAM_OUTPUT as OUTPUT
 __all__ = ('read_samples', 'write_samples')
 
 
-_colname_map = (('rightascension', 'ra'),
-                ('declination', 'dec'),
-                ('distance', 'dist'),
-                ('polarisation', 'psi'),
-                ('chirpmass', 'mc'),
-                ('a_spin1', 'a1'),
-                ('a_spin2', 'a2'),
-                ('tilt_spin1', 'tilt1'),
-                ('tilt_spin2', 'tilt2'))
+def _identity(x):
+    return x
+
+
+_colname_map = (('rightascension', 'ra', _identity),
+                ('declination', 'dec', _identity),
+                ('logdistance', 'dist', np.exp),
+                ('distance', 'dist', _identity),
+                ('polarisation', 'psi', _identity),
+                ('chirpmass', 'mc', _identity),
+                ('a_spin1', 'a1', _identity),
+                ('a_spin2', 'a2', _identity),
+                ('tilt_spin1', 'tilt1', _identity),
+                ('tilt_spin2', 'tilt2', _identity))
 
 
 def _remap_colnames(table):
-    for old_name, new_name in _colname_map:
+    for old_name, new_name, func in _colname_map:
         if old_name in table.colnames:
-            table.rename_column(old_name, new_name)
+            table[new_name] = func(table.columns.pop(old_name))
 
 
 def _find_table(group, tablename):
