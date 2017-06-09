@@ -417,9 +417,20 @@ def rm_f(filename):
             raise
 
 
+def _sanitize_arg_value_for_xmldoc(value):
+    if hasattr(value, 'read'):
+        return value.name
+    elif isinstance(value, tuple):
+        return tuple(_sanitize_arg_value_for_xmldoc(v) for v in value)
+    elif isinstance(value, list):
+        return [_sanitize_arg_value_for_xmldoc(v) for v in value]
+    else:
+        return value
+
+
 def register_to_xmldoc(xmldoc, parser, opts, **kwargs):
     from glue.ligolw.utils import process
-    params = {key: value.name if hasattr(value, 'read') else value
+    params = {key: _sanitize_arg_value_for_xmldoc(value)
               for key, value in opts.__dict__.items()}
     return process.register_to_xmldoc(xmldoc, parser.prog, params, **kwargs)
 
