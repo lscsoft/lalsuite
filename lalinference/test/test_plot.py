@@ -26,7 +26,7 @@ def pp_plot():
     return fig, ax, p_values
 
 
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(remove_text=True)
 def test_pp_plot_steps():
     """Test P--P plot with drawstyle='steps'."""
     fig, ax, p_values = pp_plot()
@@ -37,7 +37,7 @@ def test_pp_plot_steps():
     return fig
 
 
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(remove_text=True)
 def test_pp_plot_lines():
     """Test P--P plot with drawstyle='steps'."""
     fig, ax, p_values = pp_plot()
@@ -49,7 +49,7 @@ def test_pp_plot_lines():
     return fig
 
 
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(remove_text=True)
 def test_pp_plot_default():
     """Test P--P plot with drawstyle='steps'."""
     fig, ax, p_values = pp_plot()
