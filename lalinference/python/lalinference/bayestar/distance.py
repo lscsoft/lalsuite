@@ -108,7 +108,7 @@ Test against numerical integral of pdf:
 """)
 
 
-_add_newdoc_ufunc(conditional_cdf, """\
+_add_newdoc_ufunc(conditional_ppf, """\
 Point percent function (inverse cdf) of distribution of distance (ansatz).
 
 Parameters
