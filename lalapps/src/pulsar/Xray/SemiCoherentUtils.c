@@ -1081,7 +1081,7 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
                  REAL8 freqband,            /**< [in] the bandwidth to read */
                  INT4 start,                /**< [in] the min GPS time of the input data */
                  INT4 end,                  /**< [in] the max GPS time of the input data*/
-                 INT4 tsft,                 /**< UNDOCUMENTED */
+                 REAL8 tsft,                /**< [in] the length of the SFTs */
                  REAL8 bins_factor          /**< [in] the percentage of bins to add to each side of the fft for safety */
                  )
 {
@@ -1486,8 +1486,18 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
       (*np)->data = XLALRealloc((*np)->data,Nsft*sizeof(INT8));
       (*np)->length = Nsft;
       *R = XLALCreateREAL8Vector(Nsft);
-      LogPrintf(LOG_DEBUG,"start SFT [%d %d - %d %d]\n",timestamps.data[0].gpsSeconds,timestamps.data[0].gpsNanoSeconds,timestamps.data[0].gpsSeconds+par->tsft,timestamps.data[0].gpsNanoSeconds);
-      LogPrintf(LOG_DEBUG,"end SFT [%d %d - %d %d]\n",timestamps.data[Nsft-1].gpsSeconds,timestamps.data[Nsft-1].gpsNanoSeconds,timestamps.data[Nsft-1].gpsSeconds+par->tsft,timestamps.data[Nsft-1].gpsNanoSeconds);
+      {
+        LIGOTimeGPS t0 = timestamps.data[0];
+        LIGOTimeGPS t1 = t0;
+        XLALGPSAdd(&t1, par->tsft);
+        LogPrintf(LOG_DEBUG,"start SFT [%d %d - %d %d]\n",t0.gpsSeconds,t0.gpsNanoSeconds,t1.gpsSeconds,t1.gpsNanoSeconds);
+      }
+      {
+        LIGOTimeGPS t0 = timestamps.data[Nsft-1];
+        LIGOTimeGPS t1 = t0;
+        XLALGPSAdd(&t1, par->tsft);
+        LogPrintf(LOG_DEBUG,"end SFT [%d %d - %d %d]\n",t0.gpsSeconds,t0.gpsNanoSeconds,t1.gpsSeconds,t1.gpsNanoSeconds);
+      }
 
       /**********************************************************************************/
       /* define the high pass filter params and high pass filter the data */

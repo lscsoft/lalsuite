@@ -71,7 +71,7 @@ typedef struct {
   CHAR *outputdir;                  /**< the output directory */
   CHAR *cachefile;                  /**< the name of the input cache file */
   REAL8 tsamp;                      /**< the sampling time of the data */
-  INT4 tsft;                        /**< the length of the SFTs */
+  REAL8 tsft;                       /**< the length of the SFTs */
   REAL8 freq;                       /**< the starting frequency */
   REAL8 freqband;                   /**< the band width */
   REAL8 highpassf;                  /**< the high pass filter frequency */
@@ -267,7 +267,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   XLALRegisterUvarMember(cachefile,             STRING, 'i', REQUIRED, "The input binary file name");
   XLALRegisterUvarMember(freq,                   REAL8, 'f', OPTIONAL, "The starting frequency (Hz)");
   XLALRegisterUvarMember(freqband,              REAL8, 'b', OPTIONAL, "The frequency band (Hz)");
-  XLALRegisterUvarMember(tsft,                    INT4, 't', OPTIONAL, "The length of SFTs (sec)");
+  XLALRegisterUvarMember(tsft,                   REAL8, 't', OPTIONAL, "The length of SFTs (sec)");
   XLALRegisterUvarMember(tsamp,                 REAL8, 's', OPTIONAL, "The sampling time (sec)");
   XLALRegisterUvarMember(highpassf,             REAL8, 'p', OPTIONAL, "The high pass filter frequency");
   XLALRegisterUvarMember(outSingleSFT,           BOOLEAN, 'S', OPTIONAL, "Write a single concatenated SFT file instead of individual files" );

@@ -92,7 +92,7 @@ typedef struct {
   INT4 ndim;                        /**< the number of spin derivitive dimensions required (default: automatic) */
   REAL8 bins_factor;                /**< the percentage of bins to add to each side of the fft for safety */
   INT4 ntoplist;                   /**< the number of results to record */
-  INT4 tsft;                       /**< the length of the input sfts */
+  REAL8 tsft;                       /**< the length of the input sfts */
   CHAR *comment;
   CHAR *tempdir;                    /**< a temporary directory for keeping the results */
   BOOLEAN with_xbins;               /**< enable fast summing of extra bins */
@@ -495,7 +495,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   XLALRegisterUvarMember(blocksize,             INT4, 'r', OPTIONAL, "The running median block size");
   XLALRegisterUvarMember(ndim,                  INT4, 'n', OPTIONAL, "The number of spin derivitive dimensions required (default: automatic)");
   XLALRegisterUvarMember(bins_factor,           REAL8, 'R', OPTIONAL, "The percentage of bins to add to each side of the fft for safety");
-  XLALRegisterUvarMember(tsft,                    INT4, 'S', OPTIONAL, "The length of the input SFTs in seconds");
+  XLALRegisterUvarMember(tsft,                   REAL8, 'S', OPTIONAL, "The length of the input SFTs in seconds");
   XLALRegisterUvarMember(ntoplist,                INT4, 'x', OPTIONAL, "output the top N results");
   XLALRegisterUvarMember(seed,                    INT4, 'X', OPTIONAL, "The random number seed (0 = clock)");
   XLALRegisterUvarMember(gpsstart,                INT4, 's', OPTIONAL, "The minimum start time (GPS sec)");
