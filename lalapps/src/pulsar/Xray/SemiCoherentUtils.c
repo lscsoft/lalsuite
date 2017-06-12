@@ -1525,8 +1525,12 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
 
       /**********************************************************************************/
       /* extract effective band from this, if neccessary (ie if faster-sampled output SFTs) */
-      SFTVector *tempSFTvect = XLALExtractBandFromSFTVector ( sftvect, par->freq, par->freqband-1.0/par->tsft );    /* the last bin has to be avoided */
+      REAL8 sftvect_df = sftvect->data[0].deltaF;
+      REAL8 extr_freq = lround( par->freq / sftvect_df ) * sftvect_df;
+      REAL8 extr_freqband = ( lround( par->freqband / sftvect_df ) - 1 ) * sftvect_df;    /* the last bin has to be avoided */
+      SFTVector *tempSFTvect = XLALExtractBandFromSFTVector ( sftvect, extr_freq, extr_freqband );
       XLALDestroySFTVector(sftvect);
+      LogPrintf(LOG_DEBUG, "extracted freq %g(%g), band %g(%g)\n", extr_freq, extr_freq / sftvect_df, extr_freqband, extr_freqband / sftvect_df);
 
       /**********************************************************************************/
       /* append these SFTs to the full list of SFTs */
