@@ -73,10 +73,12 @@ def heatmap(func, *args, **kwargs):
         #   * https://github.com/matplotlib/matplotlib/issues/7903
         aximg = plt.imshow(
             zz.reshape(xx.shape), aspect=ax.get_aspect(),
+            interpolation='nearest',
             origin='upper', extent=(xmin, xmax, ymax, ymin), *args, **kwargs)
     else:
         aximg = plt.imshow(
             zz.reshape(xx.shape), aspect=ax.get_aspect(),
+            interpolation='nearest',
             origin='upper', extent=(0, 1, 1, 0), transform=ax.transAxes,
             *args, **kwargs)
 
