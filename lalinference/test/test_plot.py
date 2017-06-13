@@ -65,7 +65,7 @@ def test_pp_plot_default():
     return fig
 
 
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(remove_text=True)
 def test_mollweide_axes():
     """Test HEALPix heat map on 'mollweide' axes"""
     fig = plt.figure(figsize=(6, 4), dpi=72)
@@ -74,7 +74,7 @@ def test_mollweide_axes():
     return fig
 
 
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(remove_text=True)
 def test_astro_mollweide_axes():
     """Test HEALPix heat map on 'astro hours mollweide' axes"""
     fig = plt.figure(figsize=(6, 4), dpi=72)
