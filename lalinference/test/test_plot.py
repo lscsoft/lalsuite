@@ -14,6 +14,11 @@ except (ImportError, DistributionNotFound, VersionConflict):
     print('these tests require pytest and pytest-mpl', file=sys.stderr)
     raise SystemExit(77)
 
+# FIXME: remove this check once fixed with matplotlib >= 2.0.2
+if matplotlib.__version__ >= '2.0.2':
+    print('these tests currently break with matplotlib >= 2.0.2', file=sys.stderr)
+    raise SystemExit(77)
+
 import lalinference.plot
 
 
