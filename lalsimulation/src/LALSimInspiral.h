@@ -203,6 +203,7 @@ extern "C" {
  * @defgroup LALSimInspiralWaveformFlags_c         Module LALSimInspiralWaveformFlags.c
  * @defgroup LALSimInspiralTestGRParams_c          Module LALSimInspiralTestGRParams.c
  * @defgroup LALSimInspiralWaveformTaper_c         Module LALSimInspiralWaveformTaper.c
+ * @defgroup LALSimInspiralNRSur4d2s_c             Module LALSimInspiralNRSur4d2s.c
  * @}
  *
  * @addtogroup LALSimInspiral_h
@@ -376,7 +377,8 @@ typedef enum tagApproximant {
    SpinDominatedWf,     /**< Time domain, inspiral only, 1 spin, precessing waveform, Tapai et al, arXiv: 1209.1722
                          * @remarks Implemented in lalsimulation (time domain). */
    NR_hdf5,              /**< Time domain, NR waveform from HDF file. From INSERT LINKS HERE */
-   NumApproximants	/**< Number of elements in enum, useful for checking bounds */
+   NRSur4d2s,
+   NumApproximants,	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 
 /** Enum of various frequency functions */
@@ -781,6 +783,10 @@ void XLALSimInspiralTaylorF2RedSpinChirpTimesFromMchirpEtaChi(double *theta0, do
 void XLALSimInspiralTaylorF2RedSpinMchirpEtaChiFromChirpTimes(double *mc, double *eta, double *chi, double theta0, double theta3, double theta3s, double fLow);
 
 REAL8 XLALSimInspiralfLow2fStart(REAL8 fLow, INT4 ampOrder, INT4 approximant);
+
+/* NRSur4d2s functions */
+int XLALSimNRSur4d2s(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, REAL8 phiRef, REAL8 deltaF, REAL8 fLow, REAL8 fHigh, REAL8 distance, REAL8 inclination, REAL8 m1SI, REAL8 m2SI, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z);
+int XLALSimNRSur4d2sFrequencySequence(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, const REAL8Sequence *freqs, REAL8 phiRef, REAL8 distance, REAL8 inclination, REAL8 m1SI, REAL8 m2SI, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z);
 
 /* waveform tapering routines */
 /* in module LALSimInspiralWaveformTaper.c */

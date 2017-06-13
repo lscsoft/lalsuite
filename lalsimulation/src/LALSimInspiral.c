@@ -153,6 +153,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(SpinTaylorT4Fourier),
     INITIALIZE_NAME(SpinTaylorT2Fourier),
     INITIALIZE_NAME(SpinDominatedWf),
+    INITIALIZE_NAME(NRSur4d2s),
     INITIALIZE_NAME(NR_hdf5),
 };
 #undef INITIALIZE_NAME
@@ -263,6 +264,7 @@ static double fixReferenceFrequency(const double f_ref, const double f_min, cons
         case SpinTaylorF2:
         case IMRPhenomP:
         case IMRPhenomPv2:
+        case NRSur4d2s:
             return f_min;
         default:
             break;
@@ -1485,6 +1487,13 @@ int XLALSimInspiralChooseFDWaveform(
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
 
+
+            case NRSur4d2s:
+
+                ret = XLALSimNRSur4d2s(hptilde, hctilde,
+                phiRef, deltaF, f_min, f_max, distance, inclination, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z);
+                if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            break;
 
         default:
             XLALPrintError("FD version of approximant not implemented in lalsimulation\n");
@@ -4452,6 +4461,7 @@ int XLALSimInspiralImplementedFDApproximants(
         case TaylorF2RedSpinTidal:
         case SpinTaylorT4Fourier:
         case SpinTaylorT2Fourier:
+        case NRSur4d2s:
             return 1;
 
         default:
@@ -4842,6 +4852,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case SEOBNRv3_opt:
     case SEOBNRv3_opt_rk4:
     case NR_hdf5:
+    case NRSur4d2s:
       spin_support=LAL_SIM_INSPIRAL_PRECESSINGSPIN;
       break;
     case SpinTaylorF2:
@@ -4966,8 +4977,9 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case TaylorT4:
     case TaylorN:
     case SpinDominatedWf:
-    case NumApproximants:
     case NR_hdf5:
+    case NRSur4d2s:
+    case NumApproximants:
       testGR_accept=LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS;
       break;
     case TaylorF2:
@@ -5428,6 +5440,7 @@ double XLALSimInspiralGetFinalFreq(
         case SpinTaylorF2:
         /* NR waveforms */
         case NR_hdf5:
+        case NRSur4d2s:
             XLALPrintError("I don't know how to calculate final freq. for this approximant, sorry!\n");
             XLAL_ERROR(XLAL_EINVAL);
             break;
