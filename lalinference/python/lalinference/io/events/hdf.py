@@ -89,8 +89,8 @@ class HDFEventSource(EventSource):
         self._bank = bank_file
 
         key_prefix = 'detector_'
-        template_nums, self._ifos = zip(
-            *((key[len(key_prefix):], value)
+        detector_nums, self._ifos = zip(
+            *sorted((int(key[len(key_prefix):]), value)
                 for key, value in coinc_file.attrs.items()
                 if key.startswith(key_prefix)))
 
@@ -101,8 +101,8 @@ class HDFEventSource(EventSource):
         self._timeslide_ids = coinc_group.get(
             'timeslide_id', np.zeros(len(self)))
         self._trigger_ids = [
-            coinc_group['trigger_id' + template_num]
-            for template_num in template_nums]
+            coinc_group['trigger_id{}'.format(detector_num)]
+            for detector_num in detector_nums]
 
         triggers = {}
         for f in trigger_files:
@@ -186,9 +186,18 @@ class HDFSingleEvent(SingleEvent):
     @property
     def time(self):
         value = self.zerolag_time
+
+        # PyCBC does not specify which detector is time-shifted in time slides.
+        # Since PyCBC's coincidence format currently supports only two
+        # detectors, we arbitrarily apply half of the time slide to each
+        # detector.
+        shift = self._timeslide_ids[self._coinc_id] * self._timeslide_interval
         if self._detector_num == 0:
-            timeslide_id = self._timeslide_ids[self._coinc_id]
-            value += self._timeslide_interval * timeslide_id
+            value -= 0.5 * shift
+        elif self._detector_num == 1:
+            value += 0.5 * shift
+        else:
+            raise RuntimeError('This line should not be reached')
         return value
 
     @property
