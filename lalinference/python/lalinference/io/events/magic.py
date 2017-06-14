@@ -17,6 +17,7 @@
 """
 Read events from either HDF or LIGO-LW files.
 """
+import os
 from subprocess import check_output
 
 import h5py
@@ -32,9 +33,11 @@ def _get_file_type(f):
     try:
         f.read
     except AttributeError:
-        filetype = check_output(['file', f])
+        filetype = check_output(
+            ['file', f], env=dict(os.environ, POSIXLY_CORRECT='1'))
     else:
-        filetype = check_output(['file', '-'], stdin=f)
+        filetype = check_output(
+            ['file', '-'], env=dict(os.environ, POSIXLY_CORRECT='1'), stdin=f)
         f.seek(0)
     _, _, filetype = filetype.partition(b': ')
     return filetype.strip()
