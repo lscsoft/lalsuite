@@ -101,6 +101,7 @@ from lalinference.bayestar.sky_map import localize
 import os
 from collections import OrderedDict
 import sys
+import six
 
 # Read coinc file.
 log.info('%s:reading input files', ','.join(file.name for file in opts.input))
@@ -134,7 +135,7 @@ if opts.coinc_event_id:
 
 count_sky_maps_failed = 0
 
-for int_coinc_event_id, event in event_source.items():
+for int_coinc_event_id, event in six.iteritems(event_source.items):
     coinc_event_id = 'coinc_event:coinc_event_id:{}'.format(int_coinc_event_id)
 
     # Loop over sky localization methods
