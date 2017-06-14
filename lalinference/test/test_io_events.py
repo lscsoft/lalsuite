@@ -184,7 +184,8 @@ def test_hdf(tmpdir):
             assert single.snr == i + coinc_id * np.pi
             assert single.phase == i + coinc_id * np.pi**2
             assert single.time == (
-                single.zerolag_time + coinc_id * 10 * np.e * (i == 0))
+                single.zerolag_time +
+                coinc_id * 10 * np.e * (-0.5 if i == 0 else +0.5))
             assert single.zerolag_time == i + coinc_id * np.pi**3
             assert single.psd.f0 == 10.0
             assert single.psd.deltaF == 2.0
