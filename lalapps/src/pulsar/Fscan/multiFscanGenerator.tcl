@@ -1,15 +1,6 @@
 #!/bin/sh
-#
-# multiFscanGenerator.tcl, started by Greg Mendell April 09,2009
-#
-# Runs the fscan DAG generator, fscanDriver.py, for a list of channels.
-#
-# Don't change these lines - they are executed only by bash, not Tcl \
-if [ -z "${LIGOTOOLS}" ]; then \
-  echo "Shell variable LIGOTOOLS undefined - please \"eval \`<ligotools path>/bin/use_ligotools\`\" and try again"; \
-  exit 1; \
-fi; \
-exec tclshexe "$0" "$@"
+# the next line starts using tclsh \
+exec tclsh "$0" "$@"
 
 proc SendMail { subject msg } {
   if {$::notifyList > ""} {
@@ -71,8 +62,10 @@ proc getColumn {Line ColNum} {
 
 proc getLSCsegFindsegs {typeLSCsegFind startTime endTime segFile} {
   if {[string match "*ligolw_segment_query*" $::segFindCmdAndPath]} {
-   set segCommand "exec $::segFindCmdAndPath --database --query-segments --include-segments $typeLSCsegFind --gps-start-time  $startTime --gps-end-time $endTime | $::grepCommandAndPath -v \"0, 0\" | $::ligolwPrintCommandAndPath -t segment:table -c start_time -c end_time -d \" \" > $segFile"
+   #set segCommand "exec $::segFindCmdAndPath --database --query-segments --include-segments $typeLSCsegFind --gps-start-time  $startTime --gps-end-time $endTime | $::grepCommandAndPath -v \"0, 0\" | $::ligolwPrintCommandAndPath -t segment:table -c start_time -c end_time -d \" \" > $segFile"
    #set segCommand "exec $segFindCmdAndPath --server $segFindServer --type $typeLSCsegFind --interferometer $thisIfoList2 --gps-start-time $startTime --gps-end-time $endTime";
+   #set segCommand "exec $::segFindCmdAndPath --segment-url=https://dqsegdb5.phy.syr.edu --query-segments --include-segments $typeLSCsegFind --gps-start-time  $startTime --gps-end-time $endTime | $::grepCommandAndPath -v \"0, 0\" | $::ligolwPrintCommandAndPath -t segment:table -c start_time -c end_time -d \" \" > $segFile"
+   set segCommand "exec $::segFindCmdAndPath --segment-url=https://segments.ligo.org --query-segments --include-segments $typeLSCsegFind --gps-start-time  $startTime --gps-end-time $endTime | $::grepCommandAndPath -v \"0, 0\" | $::ligolwPrintCommandAndPath -t segment:table -c start_time -c end_time -d \" \" > $segFile"
    puts "segCommand = $segCommand";
    if { [catch {eval $segCommand} tmpLSCsegFindsegs] } {
       puts "Error finding segments: $tmpLSCsegFindsegs"
@@ -222,8 +215,8 @@ proc moveSFTs {originalDir moveSFTsFromDirList moveSFTsFromSuffix moveSFTstoDir 
 
 ##### SET DEFAULT VALUES AND SOURCE FILES #####
 
-package require tconvert
-#source tconvert.tcl;
+#package require tconvert
+source tconvert.tcl;
 
 set startingPWD [exec pwd];
 
