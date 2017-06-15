@@ -87,7 +87,7 @@ int main(int argc, char **argv)
     
     /* these varibales are for converting GPS seconds into UTC time and date*/
     struct tm         date;
-    CHARVector        *timestamp = NULL;
+    /*CHARVector        *timestamp = NULL; */ /* 06/15/2017 gam; not used  */
     CHARVector	     *year_date = NULL;
     REAL8Vector     *timestamps=NULL;
     
@@ -195,9 +195,9 @@ int main(int argc, char **argv)
             avg = 0.0;/*cg; the vairable avg is reset each time.*/
             if (i+NumBinsAvg>numBins) {printf("Error\n");return(2);}/*cg; error is detected, to prevent referencing data past the end of sft_vect.*/
             for (k=0;k<NumBinsAvg;k++)/*cg; for each bin, k goes trhough each entry from 0 to 180.*/
-                avg += sqrt(2*(crealf(sft_vect->data[j].data->data[i+k])*crealf(sft_vect->data[j].data->data[i+k]) + 
-                cimagf(sft_vect->data[j].data->data[i+k])*cimagf(sft_vect->data[j].data->data[i+k]))/timebaseline);/*cg; re amd im are real and imaginary parts of SFT, duh!*/
-            fprintf(fp,"%e\t",avg/NumBinsAvg);
+                avg += 2.0*(crealf(sft_vect->data[j].data->data[i+k])*crealf(sft_vect->data[j].data->data[i+k]) +
+                cimagf(sft_vect->data[j].data->data[i+k])*cimagf(sft_vect->data[j].data->data[i+k]))/timebaseline;/* 06/15/2017 gam; avg power */
+            fprintf(fp,"%e\t",sqrt(avg/NumBinsAvg)); /* 06/15/2017 gam; then take sqrt here. */
         }
         fprintf(fp,"\n");
         /*------------------------------*/
@@ -260,7 +260,8 @@ int main(int argc, char **argv)
         f = sft_vect->data->f0 + ((REAL4)i)*sft_vect->data->deltaF;
 	PWR=timeavg[i]/((REAL4)nSFT);
 	SNR=(PWR-1)*(sqrt(((REAL4)nSFT)));
-        fprintf(fp3,"%16.8f %g %g\n",f, PWR, SNR);
+        /*fprintf(fp3,"%16.8f %g %g\n",f, PWR, SNR); */ /* 06/15/2017 gam; Let's not include SNR and print with fewer decimal places */
+        fprintf(fp3,"%16.6f %16.3f \n",f, PWR); 
     } 
 /*------------------------------------------------------------------------------------------------------------------------*/ 
 /*End of normal spec_avg code, the remaining code is for crab freq calc.*/
@@ -488,7 +489,7 @@ int main(int argc, char **argv)
 
 
     /*release a;; the allocaeted memory*/
-    LALCHARDestroyVector(&status, &timestamp);
+    /*LALCHARDestroyVector(&status, &timestamp); */ /* 06/15/2017 gam; not used */ 
     LALCHARDestroyVector(&status, &year_date);
     XLALDestroySFTVector ( sft_vect );
 
