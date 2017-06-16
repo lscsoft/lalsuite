@@ -229,7 +229,7 @@ FITS_META_MAPPING = (
      lambda _: _.name + ' ' + _.version, None),
     ('vcs_info', 'VCSSTAT', 'Software version control status',
      lambda _: _.vcsStatus, None),
-    ('vcs_info', 'VCSID', 'Software git commit hash',
+    ('vcs_info', 'VCSREV', 'Software revision (git hash)',
      lambda _: _.vcsId, None),
     ('vcs_info', 'DATE-BLD', 'Software build date',
      lambda _: _.buildDate, None))
@@ -296,7 +296,7 @@ def write_sky_map(filename, m, **kwargs):
     INDXSCHM= 'IMPLICIT'           / Indexing: IMPLICIT or EXPLICIT
     VCSVERS = 'LALInference ...' / Software version
     VCSSTAT = '...: ...' / Software version control status
-    VCSID   = '...' / Software git commit hash
+    VCSREV  = '...' / Software revision (git hash)
     DATE-BLD= '...' / Software build date
 
     >>> uniq = moc.nest2uniq(np.uint8(order), np.arange(npix, dtype=np.uint64))
@@ -327,7 +327,7 @@ def write_sky_map(filename, m, **kwargs):
     MOCORDER=                    9 / MOC resolution (best order)
     VCSVERS = 'LALInference ...' / Software version
     VCSSTAT = '...: ...' / Software version control status
-    VCSID   = '...' / Software git commit hash
+    VCSREV  = '...' / Software revision (git hash)
     DATE-BLD= '...' / Software build date
     """
 
