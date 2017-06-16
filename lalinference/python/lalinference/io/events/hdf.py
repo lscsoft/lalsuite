@@ -89,10 +89,10 @@ class HDFEventSource(EventSource):
         self._bank = bank_file
 
         key_prefix = 'detector_'
-        detector_nums, self._ifos = zip(
-            *sorted((int(key[len(key_prefix):]), value)
-                for key, value in coinc_file.attrs.items()
-                if key.startswith(key_prefix)))
+        detector_nums, self._ifos = zip(*sorted(
+            (int(key[len(key_prefix):]), value)
+            for key, value in coinc_file.attrs.items()
+            if key.startswith(key_prefix)))
 
         coinc_group = coinc_file[sample]
         self._timeslide_interval = coinc_file.attrs.get(
