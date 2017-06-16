@@ -270,7 +270,7 @@ class LigoLWSingleEvent(SingleEvent):
         value = self._snr_series
         if self._invert_phases and value is not None:
             value = lal.CutCOMPLEX8TimeSeries(value, 0, len(value.data.data))
-            value.data.data *= -1
+            value.data.data = value.data.data.conj()
         return value
 
 
