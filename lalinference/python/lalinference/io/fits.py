@@ -327,7 +327,7 @@ def write_sky_map(filename, m, **kwargs):
     MOCORDER=                    9 / MOC resolution (best order)
     VCSVERS = 'LALInference ...' / Software version
     VCSSTAT = '...: ...' / Software version control status
-    VCSREV  = '...' / Software revision (git hash)
+    VCSREV  = '...' / Software revision (Git)
     DATE-BLD= '...' / Software build date
     """
 
