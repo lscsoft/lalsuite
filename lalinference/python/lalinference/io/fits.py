@@ -296,7 +296,7 @@ def write_sky_map(filename, m, **kwargs):
     INDXSCHM= 'IMPLICIT'           / Indexing: IMPLICIT or EXPLICIT
     VCSVERS = 'LALInference ...' / Software version
     VCSSTAT = '...: ...' / Software version control status
-    VCSREV  = '...' / Software revision (git hash)
+    VCSREV  = '...' / Software revision (Git)
     DATE-BLD= '...' / Software build date
 
     >>> uniq = moc.nest2uniq(np.uint8(order), np.arange(npix, dtype=np.uint64))
