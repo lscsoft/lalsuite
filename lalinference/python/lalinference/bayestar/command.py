@@ -138,9 +138,9 @@ group.add_argument(
     '--cosmology', default=False, action='store_true',
     help='Use cosmological comoving volume prior [default: %(default)s]')
 group.add_argument(
-    '--enable-snr-series', default=False, action='store_true',
-    help='Enable input of SNR time series (WARNING: UNREVIEWED!) '
-    '[default: no]')
+    '--disable-snr-series', dest='enable_snr_series', action='store_false',
+    help='Disable input of SNR time series (WARNING: UNREVIEWED!) '
+    '[default: enabled]')
 del group
 
 
