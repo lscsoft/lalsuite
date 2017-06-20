@@ -132,10 +132,10 @@ def localize_emcee(
 
 
 def localize(
-        event, waveform, f_low,
+        event, waveform='o2-uberbank', f_low=30.0,
         min_distance=None, max_distance=None, prior_distance_power=None,
         cosmology=False, method='toa_phoa_snr', nside=-1, chain_dump=None,
-        enable_snr_series=False, f_high_truncate=1.0):
+        enable_snr_series=True, f_high_truncate=0.95):
     """Convenience function to produce a sky map from LIGO-LW rows. Note that
     min_distance and max_distance should be in Mpc.
 
