@@ -152,7 +152,6 @@ if opts.annotate:
         pass
     else:
         text.append('event ID: {}'.format(objid))
-    text.append('FITS file: {}'.format(opts.input.name))
     if opts.contour:
         pp = np.round(opts.contour).astype(int)
         ii = np.round(np.searchsorted(np.sort(cls), opts.contour) *

@@ -245,7 +245,6 @@ if not opts.projection:
             pass
         else:
             text.append('event ID: {}'.format(objid))
-        text.append('file: {}'.format(opts.input.name))
         try:
             distmean = metadata['distmean']
             diststd = metadata['diststd']
