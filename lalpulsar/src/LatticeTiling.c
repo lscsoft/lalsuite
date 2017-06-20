@@ -2027,12 +2027,11 @@ int XLALSaveLatticeTilingIterator(
     UINT4 state = itr->state;
     XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "state", state, "iterator state" ) == XLAL_SUCCESS, XLAL_EFUNC );
   } {
-    UINT8 indx = itr->index;
-    XLAL_CHECK( XLALFITSHeaderWriteUINT8( file, "index", indx, "index of current lattice tiling point" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  } {
     UINT8 count = XLALTotalLatticeTilingPoints( itr );
     XLAL_CHECK( count > 0, XLAL_EFUNC );
     XLAL_CHECK( XLALFITSHeaderWriteUINT8( file, "count", count, "total number of lattice tiling points" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    UINT8 indx = itr->index;
+    XLAL_CHECK( XLALFITSHeaderWriteUINT8( file, "index", indx, "index of current lattice tiling point" ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   return XLAL_SUCCESS;
@@ -2099,16 +2098,16 @@ int XLALRestoreLatticeTilingIterator(
     XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "state", &state ) == XLAL_SUCCESS, XLAL_EFUNC );
     itr->state = state;
   } {
-    UINT8 indx;
-    XLAL_CHECK( XLALFITSHeaderReadUINT8( file, "index", &indx ) == XLAL_SUCCESS, XLAL_EFUNC );
-    itr->index = indx;
-  } {
     UINT8 count;
     XLAL_CHECK( XLALFITSHeaderReadUINT8( file, "count", &count ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK( count > 0, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
     UINT8 count_ref = XLALTotalLatticeTilingPoints( itr );
     XLAL_CHECK( count_ref > 0, XLAL_EFUNC );
     XLAL_CHECK( count == count_ref, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+    UINT8 indx;
+    XLAL_CHECK( XLALFITSHeaderReadUINT8( file, "index", &indx ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( indx < count_ref, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+    itr->index = indx;
   }
 
   // Read FITS records from table
