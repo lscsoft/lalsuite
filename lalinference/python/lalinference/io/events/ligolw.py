@@ -184,7 +184,7 @@ class LigoLWEventSource(OrderedDict, EventSource):
             singles = tuple(LigoLWSingleEvent(
                 self, sngl.ifo, sngl.snr, sngl.coa_phase,
                 float(sngl.end + offsets[sngl.ifo]), float(sngl.end),
-                psd_filenames_by_process_id.get(sngl.process_id) or psd_file,
+                psd_file or psd_filenames_by_process_id.get(sngl.process_id),
                 snr_dict.get(sngl.event_id), invert_phases)
                 for sngl in sngls)
 
