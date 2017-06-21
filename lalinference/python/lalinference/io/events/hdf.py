@@ -76,15 +76,21 @@ class HDFEventSource(EventSource):
 
         try:
             coinc_file, = files['coincs']
-        except ValueError:
+        except (KeyError, ValueError):
             raise ValueError('You must provide exactly one coinc file.')
         try:
             bank_file, = files['bank']
-        except ValueError:
+        except (KeyError, ValueError):
             raise ValueError(
                 'You must provide exactly one template bank file.')
-        psd_files = files['psds']
-        trigger_files = files['triggers']
+        try:
+            psd_files = files['psds']
+        except KeyError:
+            raise ValueError('You must provide PSD files.')
+        try:
+            trigger_files = files['triggers']
+        except KeyError:
+            raise ValueError('You must provide trigger files.')
 
         self._bank = bank_file
 
