@@ -577,9 +577,7 @@ int main( int argc, char *argv[] )
   // Set sky parameter-space bounds
   if ( UVAR_SET( sky_patch_count ) ) {
     for ( size_t i = 0; i < ntiles; ++i ) {
-      double minalpha = 0, maxalpha = 0, mindelta = 0, maxdelta = 0;
-      XLAL_CHECK_MAIN( XLALComputePhysicalSkyEqualAreaPatch( &minalpha, &maxalpha, &mindelta, &maxdelta, uvar->sky_patch_count, uvar->sky_patch_index ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLALSetSuperskyPhysicalSkyBounds( tiling[i], rssky_metric[i], rssky_transf[i], minalpha, maxalpha, mindelta, maxdelta ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALSetSuperskyEqualAreaSkyBounds( tiling[i], uvar->sky_patch_count, uvar->sky_patch_index ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
     LogPrintf( LOG_NORMAL, "Search sky parameter space sky patch = %u of %u\n", uvar->sky_patch_index, uvar->sky_patch_count );
   } else {

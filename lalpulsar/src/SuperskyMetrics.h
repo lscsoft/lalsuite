@@ -216,14 +216,12 @@ int XLALSetSuperskyPhysicalSkyBounds(
   );
 
 ///
-/// Divide the physical sky into \p patch_count equal-area patches, and return physical sky position
-/// bounds \f$(\alpha, \delta)\f$ for the patch indexed by \p patch_index.
+/// Divide the reduced supersky parameter space into \p patch_count equal-area patches, and
+/// set parameter-space bounds on the reduced supersky coordinates \f$(n_a,n_b)\f$ for the
+/// patch indexed by \p patch_index.
 ///
-int XLALComputePhysicalSkyEqualAreaPatch(
-  double *alpha1,                               ///< [out] First bound on sky position right ascension
-  double *alpha2,                               ///< [out] Second bound on sky position right ascension
-  double *delta1,                               ///< [out] First bound on sky position declination
-  double *delta2,                               ///< [out] Second bound on sky position declination
+int XLALSetSuperskyEqualAreaSkyBounds(
+  LatticeTiling *tiling,                        ///< [in] Lattice tiling
   const UINT4 patch_count,                      ///< [in] Number of equal-area patches to divide sky into
   const UINT4 patch_index                       ///< [in] Index of the patch for which to compute bounds
   );
