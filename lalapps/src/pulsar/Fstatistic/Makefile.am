@@ -12,6 +12,7 @@ bin_PROGRAMS = \
 	lalapps_synthesizeBstatMC \
 	lalapps_synthesizeTransientStats \
 	lalapps_synthesizeLVStats \
+	lalapps_ComputeFstatBenchmark \
 	$(END_OF_LIST)
 
 EXTRA_PROGRAMS = \
@@ -55,6 +56,8 @@ lalapps_synthesizeBstatMC_SOURCES = synthesizeBstatMC.c
 lalapps_synthesizeTransientStats_SOURCES = synthesizeTransientStats.c
 
 lalapps_synthesizeLVStats_SOURCES = synthesizeLVStats.c
+
+lalapps_ComputeFstatBenchmark_SOURCES = ComputeFstatBenchmark.c
 
 lalapps_CFSv3_SOURCES = CFSv3.c
 

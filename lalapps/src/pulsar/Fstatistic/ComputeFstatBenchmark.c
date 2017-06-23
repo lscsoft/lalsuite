@@ -48,6 +48,9 @@ typedef struct
   INT4 numTrials;
 
   // ----- developer options
+  CHAR *ephemEarth;		/**< Earth ephemeris file to use */
+  CHAR *ephemSun;		/**< Sun ephemeris file to use */
+
   REAL8 Tsft;
   BOOLEAN reuseInput;   // only useful for checking workspace management
   BOOLEAN resampFFTPowerOf2;
@@ -81,6 +84,9 @@ main ( int argc, char *argv[] )
   uvar->resampFFTPowerOf2 = 1;
   uvar->Dterms = 8;
 
+  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+
   XLAL_CHECK ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) != NULL, XLAL_EFUNC );
   uvar->outputInfo = NULL;
 
@@ -101,6 +107,10 @@ main ( int argc, char *argv[] )
   XLAL_CHECK ( XLALRegisterUvarMember ( reuseInput,     BOOLEAN,        0, DEVELOPER, "Re-use FstatInput from previous setups (only useful for checking workspace management)" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( resampFFTPowerOf2, BOOLEAN,     0, DEVELOPER, "For Resampling methods: enforce FFT length to be a power of two (by rounding up)" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( Dterms,    	INT4,           0, OPTIONAL,  "Number of kernel terms (single-sided) to use in\na) Dirichlet kernel if FstatMethod=Demod*\nb) sinc-interpolation kernel if FstatMethod=Resamp*" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+
+  XLAL_CHECK ( XLALRegisterUvarMember(ephemEarth, 	 STRING, 0,  DEVELOPER, "Earth ephemeris file to use") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember(ephemSun, 	 STRING, 0,  DEVELOPER, "Sun ephemeris file to use") == XLAL_SUCCESS, XLAL_EFUNC );
 
   BOOLEAN should_exit = 0;
   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -142,7 +152,7 @@ main ( int argc, char *argv[] )
   XLAL_CHECK ( XLALParseFstatMethodString ( &FstatMethod, uvar->FstatMethod ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   EphemerisData *ephem;
-  XLAL_CHECK ( (ephem = XLALInitBarycenter ( TEST_DATA_DIR "earth00-19-DE405.dat.gz", TEST_DATA_DIR "sun00-19-DE405.dat.gz" )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( (ephem = XLALInitBarycenter ( uvar->ephemEarth, uvar->ephemSun )) != NULL, XLAL_EFUNC );
   REAL8 memBase = XLALGetCurrentHeapUsageMB();
 
   UINT4 numDetectors = uvar->IFOs->length;
