@@ -264,7 +264,7 @@ The conditional distance distribution should be a chi distribution with
 >>> from scipy.stats import norm, chi
 >>> r = np.linspace(0, 10.0)
 >>> actual = conditional_pdf(r, distmu[0], distsigma[0], distnorm[0])
->>> expected = chi(df=3).pdf(r)
+>>> expected = chi(3).pdf(r)
 >>> np.testing.assert_almost_equal(expected, actual)
 
 Next, run the volume renderer.
