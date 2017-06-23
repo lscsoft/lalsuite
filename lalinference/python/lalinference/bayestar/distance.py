@@ -249,6 +249,46 @@ Returns
 -------
 image : `numpy.ndarray`
     Rendered image
+
+Test volume rendering of a normal unit sphere...
+First, set up the 3D sky map.
+>>> nside = 32
+>>> npix = hp.nside2npix(nside)
+>>> prob = np.ones(npix) / npix
+>>> distmu = np.zeros(npix)
+>>> distsigma = np.ones(npix)
+>>> distnorm = np.ones(npix) * 2.0
+
+The conditional distance distribution should be a chi distribution with
+3 degrees of freedom.
+>>> from scipy.stats import norm, chi
+>>> r = np.linspace(0, 10.0)
+>>> actual = conditional_pdf(r, distmu[0], distsigma[0], distnorm[0])
+>>> expected = chi(df=3).pdf(r)
+>>> np.testing.assert_almost_equal(expected, actual)
+
+Next, run the volume renderer.
+>>> dmax = 4.0
+>>> n = 64
+>>> s = np.logspace(-dmax, dmax, n)
+>>> x, y = np.meshgrid(s, s)
+>>> R = np.eye(3)
+>>> P = volume_render(x, y, dmax, 0, 1, R, False,
+...                   prob, distmu, distsigma, distnorm)
+
+Next, integrate analytically.
+>>> P_expected = norm.pdf(x) * norm.pdf(y) * (norm.cdf(dmax) - norm.cdf(-dmax))
+
+Compare the two.
+>>> np.testing.assert_almost_equal(P, P_expected, decimal=4)
+
+Last, check that we don't have a coordinate singularity at the origin.
+>>> x = np.concatenate(([0], np.logspace(1 - n, 0, n) * dmax))
+>>> y = 0.0
+>>> P = volume_render(x, y, dmax, 0, 1, R, False,
+...                   prob, distmu, distsigma, distnorm)
+>>> P_expected = norm.pdf(x) * norm.pdf(y) * (norm.cdf(dmax) - norm.cdf(-dmax))
+>>> np.testing.assert_allclose(P, P_expected, rtol=1e-4)
 """)
 
 
