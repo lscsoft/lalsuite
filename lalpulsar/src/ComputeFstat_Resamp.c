@@ -461,6 +461,11 @@ XLALComputeFstatResamp ( FstatResults* Fstats,
     toc = XLALGetCPUTime();
     ti->Tau.bBary = (toc-tic);
   }
+
+  if ( whatToCompute == FSTATQ_NONE ) {
+    return XLAL_SUCCESS;
+  }
+
   MultiCOMPLEX8TimeSeries *multiTimeSeries_SRC_a = resamp->multiTimeSeries_SRC_a;
   MultiCOMPLEX8TimeSeries *multiTimeSeries_SRC_b = resamp->multiTimeSeries_SRC_b;
 

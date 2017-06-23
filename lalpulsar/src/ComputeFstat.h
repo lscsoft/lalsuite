@@ -84,13 +84,13 @@ typedef struct tagFstatInputVector {
 /// Not all options are supported by all \f$\mathcal{F}\f$-statistic methods.
 ///
 typedef enum tagFstatQuantities {
-  FSTATQ_NONE           = 0x00,
+  FSTATQ_NONE           = 0x00,		///< Dont compute F-statistic, still compute buffered quantities
   FSTATQ_2F             = 0x01,         ///< Compute multi-detector \f$2\mathcal{F}\f$.
   FSTATQ_FAFB           = 0x02,         ///< Compute multi-detector \f$F_a\f$ and \f$F_b\f$.
   FSTATQ_2F_PER_DET     = 0x04,         ///< Compute \f$2\mathcal{F}\f$ for each detector.
   FSTATQ_FAFB_PER_DET   = 0x08,         ///< Compute \f$F_a\f$ and \f$F_b\f$ for each detector.
   FSTATQ_ATOMS_PER_DET  = 0x10,         ///< Compute per-SFT \f$\mathcal{F}\f$-statistic atoms for each detector (\a Demod only).
-  FSTATQ_LAST           = 0x20
+  FSTATQ_LAST           = 0x11
 } FstatQuantities;
 
 ///
