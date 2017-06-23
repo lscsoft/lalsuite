@@ -207,8 +207,7 @@ main ( int argc, char *argv[] )
   FstatInputVector *inputs;
   FstatQuantities whatToCompute = (FSTATQ_2F | FSTATQ_2F_PER_DET);
   FstatResults *results = NULL;
-  REAL8 tauF1NoBuf = 0;
-  REAL8 tauF1Buf = 0;
+
 #define drawFromREAL8Range(range) (range[0] + (range[1] - range[0]) * rand() / RAND_MAX )
 #define drawFromINT4Range(range)  (range[0] + (INT4)round(1.0*(range[1] - range[0]) * rand() / RAND_MAX) )
   // ---------- main loop over repeated trials: randomize uniformly over input ranges  ----------
@@ -294,26 +293,15 @@ main ( int argc, char *argv[] )
       XLALFree ( catalogs );
 
       // ----- compute Fstatistics over segments
-      REAL8 tauF1NoBuf_i = 0;
-      REAL8 tauF1Buf_i = 0;
       for ( INT4 l = 0; l < uvar->numSegments; l ++ )
         {
           XLAL_CHECK_MAIN ( XLALComputeFstat ( &results, inputs->data[l], &Doppler_i, numFreqBins_i, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-          REAL8 Fstat_tauF1Buf, Fstat_tauF1NoBuf;
-          XLAL_CHECK_MAIN ( XLALGetFstatTiming ( inputs->data[l], &Fstat_tauF1Buf, &Fstat_tauF1NoBuf ) == XLAL_SUCCESS, XLAL_EFUNC );
-          tauF1NoBuf_i += Fstat_tauF1NoBuf;
-          tauF1Buf_i   += Fstat_tauF1Buf;
           // ----- output timing details to file if requested
           if ( timingLogFILE != NULL ) {
-            XLAL_CHECK_MAIN ( AppendFstatTimingInfo2File ( inputs->data[l], timingLogFILE, (l == 0) && (i==0)) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK_MAIN ( XLALAppendFstatTiming2File ( inputs->data[l], timingLogFILE, (l == 0) && (i==0)) == XLAL_SUCCESS, XLAL_EFUNC );
           }
         } // for l < numSegments
-
-      tauF1NoBuf_i /= uvar->numSegments;
-      tauF1Buf_i   /= uvar->numSegments;
-      tauF1Buf     += tauF1Buf_i;
-      tauF1NoBuf   += tauF1NoBuf_i;
 
       REAL8 memEnd = XLALGetCurrentHeapUsageMB();
       REAL8 memUsage = memEnd - memBase;
@@ -327,15 +315,9 @@ main ( int argc, char *argv[] )
                     );
         }
 
-      fprintf (stderr, "%-15s: tauF1Buf = %8.2g s, tauF1NoBuf = %8.2g s, memResamp = %6.1f MB\n",
-               FmethodName, tauF1Buf_i, tauF1NoBuf_i, memEnd - memBase );
+      fprintf (stderr, "%-15s: memoryUsage = %6.1f MB\n", FmethodName, memEnd - memBase );
       XLALDestroyFstatInputVector ( inputs );
     } // for i < numTrials
-
-  tauF1Buf   /= uvar->numTrials;
-  tauF1NoBuf /= uvar->numTrials;
-
-  fprintf (stderr, "\nAveraged timings: <tauF1Buf> = %.2g s, <tauF1NoBuf> = %.2g s\n", tauF1Buf, tauF1NoBuf );
 
   // ----- free memory ----------
   if ( timingLogFILE != NULL ) {

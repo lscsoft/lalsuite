@@ -1566,7 +1566,7 @@ int MAIN( int argc, char *argv[]) {
                     return xlalErrno;
                   }
                   if ( usefulParams.timingDetailsFP != NULL ) {
-                    XLAL_CHECK ( AppendFstatTimingInfo2File ( usefulParams.Fstat_in_vec->data[k], usefulParams.timingDetailsFP, printHeader ) == XLAL_SUCCESS, XLAL_EFUNC );
+                    XLAL_CHECK ( XLALAppendFstatTiming2File ( usefulParams.Fstat_in_vec->data[k], usefulParams.timingDetailsFP, printHeader ) == XLAL_SUCCESS, XLAL_EFUNC );
                   }
                   /* if single-only flag is given, add +4 to F-statistic */
                   if ( uvar_SignalOnly ) {

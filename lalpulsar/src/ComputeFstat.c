@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <math.h>
 
+#define _COMPUTE_FSTAT_C
 #include "ComputeFstat_internal.h"
 
 #include <lal/LALString.h>
@@ -77,10 +78,6 @@ const FstatOptionalArgs FstatOptionalArgsDefaults = {
   .collectTiming = 0,
   .resampFFTPowerOf2 = 1
 };
-
-// hidden global variables used to pass timings to test/benchmark programs
-REAL8 Fstat_tauF1Buf = 0.0;
-REAL8 Fstat_tauF1NoBuf = 0.0;
 
 // ==================== Function definitions =================== //
 
@@ -626,7 +623,7 @@ XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of
               (*Fstats)->FaPerDet[X] = XLALRealloc ( (*Fstats)->FaPerDet[X], numFreqBins*sizeof((*Fstats)->FaPerDet[X][0]) );
               XLAL_CHECK( (*Fstats)->FaPerDet[X] != NULL, XLAL_EINVAL, "Failed to (re)allocate (*Fstats)->FaPerDet[%u] to length %u", X, numFreqBins );
               (*Fstats)->FbPerDet[X] = XLALRealloc ( (*Fstats)->FbPerDet[X], numFreqBins*sizeof((*Fstats)->FbPerDet[X][0]) );
-              XLAL_CHECK( (*Fstats)->FbPerDet[X] != NULL, XLAL_EINVAL, "Fbiled to (re)allocate (*Fstats)->FbPerDet[%u] to length %u", X, numFreqBins );
+              XLAL_CHECK( (*Fstats)->FbPerDet[X] != NULL, XLAL_EINVAL, "Failed to (re)allocate (*Fstats)->FbPerDet[%u] to length %u", X, numFreqBins );
             }
         }
 
@@ -983,41 +980,73 @@ XLALFstatMethodChoices ( void )
   return (const UserChoices *) &choices;
 } // XLALFstatMethodChoices()
 
+/// Return measured values and details about generic F-statistic timing and method-specific timing model,
+// including static pointers to help-string documenting the generic F-stat timing, and the method-specific timing model.
+/// See also https://dcc.ligo.org/LIGO-T1600531-v4 for details about the timing model.
 int
-XLALGetFstatTiming ( const FstatInput* input, REAL8 *tauF1Buf, REAL8 *tauF1NoBuf )
+XLALGetFstatTiming ( const FstatInput* input, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel )
 {
   XLAL_CHECK ( input != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( (tauF1Buf != NULL) && (tauF1NoBuf != NULL), XLAL_EINVAL );
+  XLAL_CHECK ( timingGeneric != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( timingModel != NULL, XLAL_EINVAL );
 
-  if ( input->method < FMETHOD_RESAMP_GENERIC )
+  if ( input->method >= FMETHOD_DEMOD_GENERIC && input->method <= FMETHOD_DEMOD_BEST)
     {
-      XLAL_CHECK ( XLALGetFstatTiming_Demod ( input->method_data, tauF1Buf, tauF1NoBuf ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALGetFstatTiming_Demod ( input->method_data, timingGeneric, timingModel ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+  else if ( input->method >= FMETHOD_RESAMP_GENERIC && input->method <= FMETHOD_RESAMP_BEST)
+    {
+      XLAL_CHECK ( XLALGetFstatTiming_Resamp ( input->method_data, timingGeneric, timingModel ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   else
     {
-      XLAL_CHECK ( XLALGetFstatTiming_Resamp ( input->method_data, tauF1Buf, tauF1NoBuf ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_ERROR ( XLAL_EINVAL, "Unsupported F-stat method '%s'\n", FstatMethodNames [ input->method ] );
     }
 
+  timingGeneric->help = FstatTimingGenericHelp;	// set static help-string pointer (not used or set otherwise)
+
   return XLAL_SUCCESS;
+
 } // XLALGetFstatTiming()
 
 int
-AppendFstatTimingInfo2File ( const FstatInput* input, FILE *fp, BOOLEAN printHeader )
+XLALAppendFstatTiming2File ( const FstatInput* input, FILE *fp, BOOLEAN printHeader )
 {
   XLAL_CHECK ( input != NULL, XLAL_EINVAL );
   XLAL_CHECK ( fp != NULL, XLAL_EINVAL );
 
-  if ( input->method < FMETHOD_RESAMP_GENERIC )
+  FstatTimingGeneric XLAL_INIT_DECL ( tiGen);
+  FstatTimingModel XLAL_INIT_DECL ( tiModel );
+  XLAL_CHECK ( XLALGetFstatTiming ( input, &tiGen, &tiModel ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  if ( printHeader )
     {
-      XLAL_CHECK ( AppendFstatTimingInfo2File_Demod ( input->method_data, fp, printHeader ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-  else
-    {
-      XLAL_CHECK ( AppendFstatTimingInfo2File_Resamp ( input->method_data, fp, printHeader ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
+      fprintf ( fp, "%s\n", tiGen.help );
+      fprintf ( fp, "%s\n", tiModel.help );
+      // generic F-stat timing header line
+      fprintf ( fp, "%%%%%8s %10s %4s %10s %10s %11s %10s ", "NCalls", "NFbin", "Ndet", "tauF_eff", "tauF_core", "tauF_buffer", "b");
+      // method-specific F-stat timing model header line
+      fprintf (fp, "|");
+      for ( UINT4 i = 0; i < tiModel.numVariables; i ++ ) {
+        fprintf (fp, " %13s", tiModel.names[i] );
+      }
+      fprintf (fp, "\n");
+    } // if (printHeader)
+
+  // generic F-stat timing values
+  fprintf (fp, "%10.0f %10d %4d %10.2e %10.2e %11.2e %10.2e ",
+           tiGen.NCalls, tiGen.NFbin, tiGen.Ndet, tiGen.tauF_eff, tiGen.tauF_core, tiGen.tauF_buffer, tiGen.NBufferMisses/tiGen.NCalls );
+
+  // method-specific F-stat timing model values
+  fprintf (fp, " "); // for '|'
+  for ( UINT4 i = 0; i < tiModel.numVariables; i ++ ) {
+    fprintf (fp, " %13g", tiModel.values[i] );
+  }
+  fprintf (fp, "\n");
 
   return XLAL_SUCCESS;
-} // AppendFstatTimingInfo2File()
+
+} // AppendFstatTiming2File()
 
 ///
 /// Extracts the resampled timeseries from a given FstatInput structure (must have been initialized previously by XLALCreateFstatInput() and a call to XLALComputeFstat()).

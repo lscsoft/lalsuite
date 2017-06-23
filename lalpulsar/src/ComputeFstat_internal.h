@@ -38,6 +38,7 @@
 
 // ---------- Shared struct definitions ---------- //
 
+
 // Common input data for F-statistic methods
 typedef struct {
   LIGOTimeGPS midTime;                                  // Mid-time of SFT data
@@ -51,6 +52,7 @@ typedef struct {
   void *workspace;					// F-statistic method workspace
 } FstatCommon;
 
+
 // Pointers to function pointers which perform method-specific operations
 typedef struct {
   int (*compute_func) (					// F-statistic method computation function
@@ -61,11 +63,9 @@ typedef struct {
 } FstatMethodFuncs;
 
 // ---------- Shared internal functions ---------- //
-int XLALGetFstatTiming_Demod ( const void* method_data, REAL8 *tauF1Buf, REAL8 *tauF1NoBuf );
-int XLALGetFstatTiming_Resamp ( const void* method_data, REAL8 *tauF1Buf, REAL8 *tauF1NoBuf );
-int AppendFstatTimingInfo2File_Demod ( const void* method_data, FILE *fp, BOOLEAN printHeader );
-int AppendFstatTimingInfo2File_Resamp ( const void *method_data, FILE *fp, BOOLEAN printHeader );
 int XLALExtractResampledTimeseries_intern ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, const void* method_data );
+int XLALGetFstatTiming_Demod  ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
+int XLALGetFstatTiming_Resamp ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
 
 static inline REAL4
 XLALComputeFstatFromFaFb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4 B, REAL4 C, REAL4 E, REAL4 Dinv )
