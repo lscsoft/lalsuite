@@ -927,8 +927,6 @@ int XLALSimIMRSpinEOBWaveformAll(
       REAL8Array              *dynamicsHi   = NULL;
       REAL8Array              *dynamicsV2   = NULL;
       REAL8Array              *dynamicsV2Hi   = NULL;
-      REAL8Array              *dynamicsV2EOMLo   = NULL;
-      REAL8Array              *dynamicsV2EOMHi  = NULL;
       REAL8Array              *dynamicsEOMLo    = NULL; //OPTV3: For Sparse Amp/Phase Calcualtion
       REAL8Array              *dynamicsEOMHi    = NULL;
       INT4                    retLenEOMLow = 0, retLenEOMHi = 0;
@@ -2339,13 +2337,6 @@ int XLALSimIMRSpinEOBWaveformAll(
     //OPTV3: Interpolate the WF solutions to the desired times
     SEOBNRv3OptimizedInterpolatorGeneral(hVecEOM->data,0., deltaT/mTScaled, retLenEOMLow, &hVec,2);
 
-    REAL8Vector phaseVecEOMLo;
-    phaseVecEOMLo.length = retLenEOMLow;
-    phaseVecEOMLo.data = hVecEOM->data+2*retLenEOMLow;
-    //ZACH SAYS: David, we must figure out why XLALREAL8VectorUnwrapAngleByMonotonicity sometimes misbehaves.
-    //XLALREAL8VectorUnwrapAngleByMonotonicity(&phaseVecEOMLo,&phaseVecEOMLo);
-    XLALREAL8VectorUnwrapAngle(&phaseVecEOMLo,&phaseVecEOMLo);
-
     if ( !(tlist = XLALCreateREAL8Vector( retLenLow ))
          || !(tlistRDPatch = XLALCreateREAL8Vector( retLenLow + retLenRDPatchLow )) )
       {
@@ -2358,6 +2349,8 @@ int XLALSimIMRSpinEOBWaveformAll(
       tlist->data[i] = i * deltaT/mTScaled;
       tlistRDPatch->data[i] = i * deltaT/mTScaled;
     }
+    if( hVecEOM != NULL ) XLALDestroyREAL8Vector( hVecEOM );
+    if( tlist != NULL ) XLALDestroyREAL8Vector( tlist );
     // END OPTIMIZED CODE CHUNK
   } else {
     // START UNOPTIMIZED CODE CHUNK
@@ -3810,6 +3803,7 @@ int XLALSimIMRSpinEOBWaveformAll(
         hPlusTS->data->data[i]  = amp0*hVec->data[i+retLenLow];
         hCrossTS->data->data[i] = -amp0*hVec->data[i+2*retLenLow];
       }
+      if( hVec != NULL ) XLALDestroyREAL8Array( hVec );
     }
 
   /* Point the output pointers to the relevant time series and return */
@@ -3871,12 +3865,6 @@ int XLALSimIMRSpinEOBWaveformAll(
     }
     if ( dynamicsEOMHi != NULL ) {
       XLALDestroyREAL8Array( dynamicsEOMHi );
-    }
-    if ( dynamicsV2EOMLo != NULL ) {
-      XLALDestroyREAL8Array( dynamicsV2EOMLo );
-    }
-    if ( dynamicsV2EOMHi != NULL ) {
-      XLALDestroyREAL8Array( dynamicsV2EOMHi );
     }
 
   /* FIXME: Temporary code to convert REAL8Array to REAL8Vector because SWIG
