@@ -850,7 +850,7 @@ int XLALSimInspiralChooseTDWaveform(
             /* Call the waveform driver routine */
             ret = XLALSimInspiralNRWaveformGetHplusHcross(hplus, hcross,
                     phiRef, inclination, deltaT, m1, m2, distance, f_min, f_ref, S1x, S1y, S1z,
-                    S2x, S2y, S2z, XLALSimInspiralWaveformParamsLookupNumRelData(LALparams), XLALSimInspiralWaveformParamsLookupLmax(LALparams));
+                    S2x, S2y, S2z, XLALSimInspiralWaveformParamsLookupNumRelData(LALparams), XLALSimInspiralWaveformParamsLookupModeArray(LALparams));
             break;
 
 
@@ -6188,7 +6188,7 @@ int XLALSimInspiralChooseTDWaveformOLD(
 			/* Call the waveform driver routine */
 			ret = XLALSimInspiralNRWaveformGetHplusHcross(hplus, hcross,
 					phiRef, inclination, deltaT, m1, m2, distance, f_min, f_ref, S1x, S1y, S1z,
-					S2x, S2y, S2z, numrel_data_path, LAL_SIM_INSPIRAL_MODES_CHOICE_ALL);
+					S2x, S2y, S2z, numrel_data_path, NULL);
 			XLALFree(numrel_data_path);
 			break;
 

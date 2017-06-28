@@ -246,7 +246,7 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
         REAL8 s2y,                      /**< initial value of S2y */
         REAL8 s2z,                      /**< initial value of S2z */
         const char *NRDataFile,         /**< Location of NR HDF file */
-        INT4 Lmax                       /**< Maximum ell multipole number used to generated waveform. Default: LAL_SIM_INSPIRAL_MODES_CHOICE_ALL */
+        LALValue* ModeArray             /**< Container for the ell and m modes to generate. To generate all available modes pass NULL */
         );
 
 #if 0
