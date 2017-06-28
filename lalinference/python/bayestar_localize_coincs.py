@@ -135,7 +135,7 @@ if opts.coinc_event_id:
 
 count_sky_maps_failed = 0
 
-for int_coinc_event_id, event in six.iteritems(event_source.items):
+for int_coinc_event_id, event in six.iteritems(event_source):
     coinc_event_id = 'coinc_event:coinc_event_id:{}'.format(int_coinc_event_id)
 
     # Loop over sky localization methods
