@@ -2886,7 +2886,8 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
       assert(thisData->roq->weightsFileLinear!=NULL);
       thisData->roq->weightsLinear = (double complex*)malloc(n_basis_linear*time_steps*(sizeof(double complex)));
 
-      thisData->roq->time_weights_width = 2*dt + 2*0.026;
+      //0.045 comes from the diameter of the earth in light seconds: the maximum time-delay between earth-based observatories
+      thisData->roq->time_weights_width = 2*dt + 2*0.045;
       thisData->roq->time_step_size = thisData->roq->time_weights_width/time_steps;
       thisData->roq->n_time_steps = time_steps;
 
