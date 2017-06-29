@@ -385,7 +385,7 @@ def derasterize(skymap):
         *healpix_tree.reconstruct_nested(skymap))
     nside = np.asarray(nside)
     ipix = np.asarray(ipix)
-    value = np.row_stack(value)
+    value = np.stack(value)
     uniq = (4 * np.square(nside) + ipix).astype(np.uint64)
     old_units = [column.unit for column in skymap.columns.values()]
     skymap = Table(value, meta=skymap.meta)
