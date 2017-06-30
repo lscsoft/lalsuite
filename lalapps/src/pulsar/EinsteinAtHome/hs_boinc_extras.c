@@ -1434,6 +1434,19 @@ static int worker (void) {
 #endif
       }
 
+#define APP_WISDOM_FILENAME "CW-wisdom.dat"
+      /* if there is a wisdom file, point environment variable FFTWF_WISDOM_FILENAME to it */
+      {
+        char resolved_name[MAX_PATH_LEN];
+        if (boinc_file_exists(APP_WISDOM_FILENAME)) {
+          strncpy(resolved_name, "FFTWF_WISDOM_FILENAME=", MAX_PATH_LEN);
+          boinc_resolve_filename(APP_WISDOM_FILENAME, resolved_name+strlen(resolved_name), MAX_PATH_LEN-strlen(resolved_name));
+          putenv(resolved_name);
+          fprintf(stderr, "INFO: Set %s\n", resolved_name);
+        } else
+          fprintf(stderr, "WARNING: Wisdom file '" APP_WISDOM_FILENAME "' not found in CWD\n");
+      }
+
       /* CALL WORKER's MAIN()
        */
       res = MAIN(rargc,rrargv);
@@ -1695,6 +1708,7 @@ int main(int argc, char**argv) {
       }
     } /* GDB DEBUGGING */
 #endif // GNUC
+
 
 
 
