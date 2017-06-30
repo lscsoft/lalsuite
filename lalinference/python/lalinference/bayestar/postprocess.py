@@ -108,8 +108,8 @@ FoundInjection = collections.namedtuple(
     'area_probs contour_modes')
 
 
-def find_injection(sky_map, true_ra, true_dec, contours=(), areas=(),
-                   modes=False, nest=False):
+def find_injection(sky_map, true_ra=None, true_dec=None,
+                   contours=(), areas=(), modes=False, nest=False):
     """
     Given a sky map and the true right ascension and declination (in radians),
     find the smallest area in deg^2 that would have to be searched to find the
@@ -124,14 +124,14 @@ def find_injection(sky_map, true_ra, true_dec, contours=(), areas=(),
     nside = hp.npix2nside(npix)
     deg2perpix = hp.nside2pixarea(nside, degrees=True)
 
-    # Convert from ra, dec to conventional spherical polar coordinates.
-    true_theta = 0.5 * np.pi - true_dec
-    true_phi = true_ra
-
     # Find the HEALPix pixel index of the mode of the posterior and of the
     # true sky location.
     mode_pix = np.argmax(sky_map)
-    true_pix = hp.ang2pix(nside, true_theta, true_phi, nest=nest)
+    if true_ra is not None:
+        # Convert from ra, dec to conventional spherical polar coordinates.
+        true_theta = 0.5 * np.pi - true_dec
+        true_phi = true_ra
+        true_pix = hp.ang2pix(nside, true_theta, true_phi, nest=nest)
 
     # Compute spherical polar coordinates of true location.
     mode_theta, mode_phi = hp.pix2ang(nside, mode_pix, nest=nest)
@@ -142,17 +142,20 @@ def find_injection(sky_map, true_ra, true_dec, contours=(), areas=(),
     cum_sky_map = np.cumsum(sky_map[indices])
 
     # Find the index of the true location in the cumulative distribution.
-    idx = next((i for i, pix in enumerate(indices) if pix == true_pix))
+    if true_ra is None:
+        searched_area = searched_prob = None
+    else:
+        idx = next((i for i, pix in enumerate(indices) if pix == true_pix))
 
-    # Find the smallest area that would have to be searched to find
-    # the true location. Note that 1 is added to the index because we want
-    # the **length** of the array up to and including the idx'th element,
-    # not the index itself.
-    searched_area = (idx + 1) * deg2perpix
+        # Find the smallest area that would have to be searched to find
+        # the true location. Note that 1 is added to the index because we want
+        # the **length** of the array up to and including the idx'th element,
+        # not the index itself.
+        searched_area = (idx + 1) * deg2perpix
 
-    # Find the smallest posterior mass that would have to be searched to find
-    # the true location.
-    searched_prob = cum_sky_map[idx]
+        # Find the smallest posterior mass that would have to be searched to find
+        # the true location.
+        searched_prob = cum_sky_map[idx]
 
     # Get the total number of pixels that lie inside each contour.
     ipix = np.searchsorted(cum_sky_map, contours)
@@ -167,13 +170,19 @@ def find_injection(sky_map, true_ra, true_dec, contours=(), areas=(),
         np.round(np.asarray(areas) / deg2perpix).astype(np.intp)].tolist()
 
     # Find the angular offset between the mode and true locations.
-    offset = np.rad2deg(
-        angle_distance(true_theta, true_phi, mode_theta, mode_phi))
+    if true_ra is None:
+        offset = None
+    else:
+        offset = np.rad2deg(
+            angle_distance(true_theta, true_phi, mode_theta, mode_phi))
 
     if modes:
         # Count up the number of modes in each of the given contours.
-        searched_modes = count_modes(
-            indicator(npix, indices[:idx+1]), nest=nest)
+        if true_ra is None:
+            searched_modes = None
+        else:
+            searched_modes = count_modes(
+                indicator(npix, indices[:idx+1]), nest=nest)
         contour_modes = [
             count_modes(indicator(npix, indices[:i+1]), nest=nest)
             for i in ipix]
@@ -187,8 +196,8 @@ def find_injection(sky_map, true_ra, true_dec, contours=(), areas=(),
         area_probs, contour_modes)
 
 
-def find_injection_moc(sky_map, true_ra, true_dec, contours=(), areas=(),
-                       modes=False, nest=False):
+def find_injection_moc(sky_map, true_ra=None, true_dec=None,
+                       contours=(), areas=(), modes=False, nest=False):
     """
     Given a sky map and the true right ascension and declination (in radians),
     find the smallest area in deg^2 that would have to be searched to find the
@@ -208,20 +217,25 @@ def find_injection_moc(sky_map, true_ra, true_dec, contours=(), areas=(),
     max_ipix = ipix << np.uint64(2 * (max_order - order))
     ipix = ipix.astype(np.int64)
     max_ipix = max_ipix.astype(np.int64)
-    true_theta = 0.5 * np.pi - true_dec
-    true_phi = true_ra
-    true_pix = hp.ang2pix(max_nside, true_theta, true_phi, nest=True)
-    # At this point, we could sort the dataset by max_ipix and then do a binary
-    # (e.g., np.searchsorted) to find true_pix in max_ipix. However, would be
-    # slower than the linear search below because the sort would be N log N.
-    i = np.flatnonzero(max_ipix <= true_pix)
-    true_idx = i[np.argmax(max_ipix[i])]
+    if true_ra is not None:
+        true_theta = 0.5 * np.pi - true_dec
+        true_phi = true_ra
+        true_pix = hp.ang2pix(max_nside, true_theta, true_phi, nest=True)
+        # At this point, we could sort the dataset by max_ipix and then do a
+        # binary search (e.g., np.searchsorted) to find true_pix in max_ipix.
+        # However, would be slower than the linear search below because the
+        # sort would be N log N.
+        i = np.flatnonzero(max_ipix <= true_pix)
+        true_idx = i[np.argmax(max_ipix[i])]
 
     # Find the angular offset between the mode and true locations.
     mode_theta, mode_phi = hp.pix2ang(
         hp.order2nside(order[0]), ipix[0].astype(np.int64), nest=True)
-    offset = np.rad2deg(
-        angle_distance(true_theta, true_phi, mode_theta, mode_phi))
+    if true_ra is None:
+        offset = None
+    else:
+        offset = np.rad2deg(
+            angle_distance(true_theta, true_phi, mode_theta, mode_phi))
 
     # Calculate the cumulative area in deg2 and the cumulative probability.
     area = moc.uniq2pixarea(sky_map['UNIQ'])
@@ -240,13 +254,16 @@ def find_injection_moc(sky_map, true_ra, true_dec, contours=(), areas=(),
     prob_for_area = interp1d(area_padded, prob_padded)
     area_for_prob = interp1d(prob_padded, area_padded)
 
-    # Find the smallest area that would have to be searched to find
-    # the true location.
-    searched_area = area[true_idx]
+    if true_ra is None:
+        searched_area = searched_prob = None
+    else:
+        # Find the smallest area that would have to be searched to find
+        # the true location.
+        searched_area = area[true_idx]
 
-    # Find the smallest posterior mass that would have to be searched to find
-    # the true location.
-    searched_prob = prob[true_idx]
+        # Find the smallest posterior mass that would have to be searched to find
+        # the true location.
+        searched_prob = prob[true_idx]
 
     # Find the contours of the given credible levels.
     contour_idxs = np.searchsorted(prob, contours)
@@ -260,8 +277,11 @@ def find_injection_moc(sky_map, true_ra, true_dec, contours=(), areas=(),
     area_probs = prob_for_area(areas).tolist()
 
     if modes:
-        # Count up the number of modes in each of the given contours.
-        searched_modes = count_modes_moc(sky_map['UNIQ'], true_idx)
+        if true_ra is None:
+            searched_modes = None
+        else:
+            # Count up the number of modes in each of the given contours.
+            searched_modes = count_modes_moc(sky_map['UNIQ'], true_idx)
         contour_modes = [
             count_modes_moc(sky_map['UNIQ'], i) for i in contour_idxs]
     else:
