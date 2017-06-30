@@ -25,7 +25,7 @@
  * https://www.lsc-group.phys.uwm.edu/twiki/pub/CW/HierarchicalSearchReview/meeting_20090513.txt
  *
  * If you want to modify any existing functions in this file, please submit
- * your patch for review to pulgroup@gravity.phys.uwm.edu
+ * your patch for review to https://bugs.ligo.org/redmine/projects/lalsuite-lalpulsar
  * ================================================================================
  */
 
