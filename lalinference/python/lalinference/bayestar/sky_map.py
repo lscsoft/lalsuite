@@ -141,6 +141,7 @@ def localize(
 
     Returns a 'NESTED' ordering HEALPix image as a Numpy array.
     """
+    start_time = lal.GPSTimeNow()
 
     singles = event.singles
     if not enable_snr_series:
@@ -316,7 +317,6 @@ def localize(
 
     # Time and run sky localization.
     log.debug('starting computationally-intensive section')
-    start_time = lal.GPSTimeNow()
     if method == 'toa_phoa_snr':
         skymap, log_bci, log_bsn = _sky_map.toa_phoa_snr(
             min_distance, max_distance, prior_distance_power, cosmology, gmst,
@@ -354,8 +354,8 @@ def localize(
     skymap.meta['distmean'] = rbar
     skymap.meta['diststd'] = np.sqrt(r2bar - np.square(rbar))
 
-    end_time = lal.GPSTimeNow()
     log.debug('finished computationally-intensive section')
+    end_time = lal.GPSTimeNow()
 
     # Fill in metadata and return.
     skymap.meta['creator'] = 'BAYESTAR'
