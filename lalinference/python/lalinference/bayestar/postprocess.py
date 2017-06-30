@@ -119,6 +119,9 @@ def find_injection(sky_map, true_ra=None, true_dec=None,
     containing a given total probability.
     """
 
+    if (true_ra is None) ^ (true_dec is None):
+        raise ValueError('Both true_ra and true_dec must be provided or None')
+
     # Compute the HEALPix lateral resolution parameter for this sky map.
     npix = len(sky_map)
     nside = hp.npix2nside(npix)
@@ -206,6 +209,9 @@ def find_injection_moc(sky_map, true_ra=None, true_dec=None,
     compute the areas of and numbers of modes within the smallest contours
     containing a given total probability.
     """
+
+    if (true_ra is None) ^ (true_dec is None):
+        raise ValueError('Both true_ra and true_dec must be provided or None')
 
     # Sort the pixels by descending posterior probability.
     sky_map = np.flipud(np.sort(sky_map, order='PROBDENSITY'))
