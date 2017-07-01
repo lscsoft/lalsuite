@@ -39,8 +39,7 @@ terminal, or redirected from a fifo):
 from lalinference.bayestar import command
 import logging
 
-logging.basicConfig(
-    level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
+logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s')
 log = logging.getLogger('BAYESTAR')
 
 methods = '''
