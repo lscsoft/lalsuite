@@ -162,8 +162,7 @@ def localize(
 
     # Power spectra for each detector.
     psds = [single.psd for single in singles]
-    psds = [timing.InterpolatedPSD(filter.abscissa(psd),
-                                   psd.data.data,
+    psds = [timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data,
                                    f_high_truncate=f_high_truncate)
                                    for psd in psds]
 
