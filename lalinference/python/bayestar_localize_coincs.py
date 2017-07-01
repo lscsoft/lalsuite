@@ -102,6 +102,10 @@ from collections import OrderedDict
 import sys
 import six
 
+# Squelch annoying and uniformative LAL log messages.
+import lal
+lal.ClobberDebugLevel(lal.LALNDEBUG)
+
 # Read coinc file.
 log.info('%s:reading input files', ','.join(file.name for file in opts.input))
 event_source = events.open(*opts.input, sample=opts.pycbc_sample)
