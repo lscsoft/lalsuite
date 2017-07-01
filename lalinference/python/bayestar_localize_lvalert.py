@@ -82,6 +82,10 @@ from lalinference.io import events
 import ligo.gracedb.logging
 import ligo.gracedb.rest
 
+# Squelch annoying and uniformative LAL log messages.
+import lal
+lal.ClobberDebugLevel(lal.LALNDEBUG)
+
 
 # If no GraceDB IDs were specified on the command line, then read them
 # from stdin line-by-line.
