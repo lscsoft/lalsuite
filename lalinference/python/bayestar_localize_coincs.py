@@ -90,7 +90,6 @@ opts = parser.parse_args()
 #
 
 import logging
-logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('BAYESTAR')
 
 # BAYESTAR imports.

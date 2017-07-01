@@ -28,6 +28,7 @@ import errno
 import glob
 import inspect
 import itertools
+import logging
 import os
 import shutil
 import sys
@@ -289,6 +290,29 @@ class VersionAction(argparse._VersionAction):
             parser, namespace, values, option_string)
 
 
+@type_with_sideeffect(str)
+def loglevel_type(value):
+    try:
+        value = int(value)
+    except ValueError:
+        value = value.upper()
+    logging.basicConfig(level=value)
+
+
+class LogLevelAction(argparse._StoreAction):
+
+    def __init__(
+            self, option_strings, dest, nargs=None, const=None, default=None,
+            type=None, choices=None, required=False, help=None, metavar=None):
+        metavar = '|'.join(
+            _ for _ in logging._levelNames.keys() if isinstance(_, str))
+        type = loglevel_type
+        super(LogLevelAction, self).__init__(
+            option_strings, dest, nargs=nargs, const=const, default=default,
+            type=type, choices=choices, required=required, help=help,
+            metavar=metavar)
+
+
 class ArgumentParser(argparse.ArgumentParser):
     """
     An ArgumentParser subclass with some sensible defaults.
@@ -337,8 +361,11 @@ class ArgumentParser(argparse.ArgumentParser):
                  argument_default=argument_default,
                  conflict_handler=conflict_handler,
                  add_help=add_help)
-        self.add_argument('--version', action=VersionAction)
         self.register('action', 'glob', GlobAction)
+        self.register('action', 'loglevel', LogLevelAction)
+        self.register('action', 'version', VersionAction)
+        self.add_argument('--version', action='version')
+        self.add_argument('-l', '--loglevel', action='loglevel', default='INFO')
 
 
 class DirType(object):
