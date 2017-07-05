@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 135
+# serial 140
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -43,6 +43,11 @@ AC_DEFUN([AC_OUTPUT],[
   m4_foreach_w([uvar],uvar_list,[
     AC_SUBST(AM_[]uvar,"${AM_[]uvar} ${sys_[]uvar}")
     uvar="${uvar_prefix[]uvar}"
+  ])
+  # append extra values for user variables to be added after configuration
+  m4_foreach_w([uvar],uvar_list,[
+    AC_ARG_VAR([POSTCONFIG_]uvar,[Extra ]uvar[ to be added after configuration])
+    uvar="${uvar} ${POSTCONFIG_[]uvar}"
   ])
   # call original AC_OUTPUT
   lalsuite_AC_OUTPUT
@@ -499,24 +504,32 @@ AC_DEFUN([LALSUITE_MULTILIB_LIBTOOL_HACK],[
 AC_DEFUN([LALSUITE_DISTCHECK_CONFIGURE_FLAGS],[
   # $0: store configure flags for 'make distcheck'
   DISTCHECK_CONFIGURE_FLAGS=
-  for arg in ${ac_configure_args}; do
-    case ${arg} in
-      (\'--enable-*\'|\'--disable-*\')
+  eval set x "${ac_configure_args}"
+  shift
+  for arg
+  do
+    AS_CASE(["${arg}"],
+      [--enable-*|--disable-*],[
         # save any --enable/--disable arguments
-        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} ${arg}";;
-      (\'--with-*\'|\'--without-*\')
+        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} '${arg}'"
+      ],
+      [--with-*|--without-*],[
         # save any --with/--without arguments
-        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} ${arg}";;
-      (\'--*\')
+        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} '${arg}'"
+      ],
+      [--*],[
         # skip all other ./configure arguments
-        : ;;
-      (\'DISTCHECK_CONFIGURE_FLAGS=*\')
+        :
+      ],
+      [DISTCHECK_CONFIGURE_FLAGS=*],[
         # append value of DISTCHECK_CONFIGURE_FLAGS
-        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} "`expr "X${arg}" : "X'DISTCHECK_CONFIGURE_FLAGS=\(.*\)'"`;;
-      (\'*=*\')
+        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} '`expr "X${arg}" : "XDISTCHECK_CONFIGURE_FLAGS=\(.*\)"`'"
+      ],
+      [*=*],[
         # save any environment variables given to ./configure
-        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} ${arg}";;
-    esac
+        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} '${arg}'"
+      ]
+    )
   done
   AC_SUBST(DISTCHECK_CONFIGURE_FLAGS)
   # end $0
@@ -691,10 +704,24 @@ AC_DEFUN([LALSUITE_CHECK_LIBRARY_FOR_SUPPORT],[
   save_CPPFLAGS="${CPPFLAGS}"
   LALSUITE_CLEAR_UVARS
   CPPFLAGS="${save_CPPFLAGS}"
+  AS_IF([test "x${LALSUITE_BUILD}" = xtrue],[
+    for arg in ${lalsuite_libs}; do
+      AS_CASE([${arg}],
+        [lalsupport],[:],[
+          CPPFLAGS="-I${ac_pwd}/../${arg}/src ${CPPFLAGS}"
+        ]
+      )
+    done
+    CPPFLAGS="-DLALSUITE_BUILD ${CPPFLAGS}"
+  ])
   AC_MSG_CHECKING([whether $1 has been compiled with $2 support])
   AC_COMPILE_IFELSE([
     AC_LANG_SOURCE([[
+#ifdef LALSUITE_BUILD
+#include "$1Config.h"
+#else
 #include <lal/$1Config.h>
+#endif
 #ifndef ]uppercase[_$2_ENABLED
 #error ]uppercase[_$2_ENABLED is not defined
 #endif
@@ -945,12 +972,59 @@ AC_DEFUN([LALSUITE_ENABLE_BOINC],[
 ])
 
 AC_DEFUN([LALSUITE_CHECK_BOINC],[
-  # $0: check for BOINC support
+  # $0: check for BOINC, and modify compiler for lal library checks
   AS_IF([test "${boinc}" = "true"],[
-    LALSUITE_CHECK_LIBRARY_FOR_SUPPORT([LAL],[BOINC],[:],[
-      AC_MSG_ERROR([BOINC was enabled but LAL was not compiler with BOINC support])
-    ])
+
+    # do compilation checks with c++
+    AC_LANG_PUSH([C++])
+
+    # check for BOINC libraries
+    AC_SUBST([BOINC_CFLAGS],[""])
+    AC_SUBST([BOINC_LIBS],["-lboinc_api -lboinc"])
+    LALSUITE_ADD_FLAGS([C],[${BOINC_CFLAGS}],[${BOINC_LIBS}])
+    AC_CHECK_LIB([boinc],[boinc_fopen],[:],[AC_MSG_ERROR([could not find the boinc library])])
+    AC_CHECK_LIB([boinc_api],[boinc_finish],[:],[AC_MSG_ERROR([could not find the boinc_api library])])
+
+    # check for BOINC headers
+    AC_CHECK_HEADERS([boinc/boinc_api.h],[:],[AC_MSG_ERROR([could not find the boinc_api.h header])])
+
   ])
+  # end $0
+])
+
+AC_DEFUN([LALSUITE_END_CHECK_BOINC],[
+  # $0: finish BOINC checks, and restore compiler after lal library checks
+  m4_pushdef([lowercase],m4_translit(AC_PACKAGE_NAME, [A-Z], [a-z]))
+  AC_REQUIRE([LALSUITE_CHECK_BOINC])
+  AS_IF([test "${boinc}" = "true"],[
+
+    m4_if(lowercase,[lal],[
+
+      # if LAL, define macro to indicate BOINC support
+      AC_DEFINE([LAL_BOINC_ENABLED],[1],[Define if using BOINC library])
+
+    ],[
+
+      # if not LAL, check LAL was compiled with BOINC support
+      LALSUITE_CHECK_LIBRARY_FOR_SUPPORT([LAL],[BOINC],[:],[
+        AC_MSG_ERROR([BOINC enabled but LAL not compiled with BOINC support])
+      ])
+
+    ])
+
+    # go back to c
+    AC_LANG_POP([C++])
+
+    # force automake to use c++ compiler for linking
+    AC_MSG_WARN([using C++ compiler for linking (forced by BOINC)])
+    AC_SUBST([CCLD],['$(CXX)'])
+    AC_SUBST([am__v_CCLD_0],['@echo "  CXXLD(B)" $][@;'])
+
+  ],[
+    AC_SUBST([CCLD],['$(CC)'])
+    AC_SUBST([am__v_CCLD_0],['@echo "  CCLD    " $][@;'])
+  ])
+  m4_popdef([lowercase])
   # end $0
 ])
 
@@ -1324,6 +1398,8 @@ double volatile d = round(c);
 
     ])
 
+    m4_popdef([option])
+    m4_popdef([symbol])
   ])
 
   # string listing all the SIMD extensions supported by the compiler

@@ -1,4 +1,5 @@
 # Copyright (C) 2011  Nickolas Fotopoulos
+# Copyright (C) 2012-2017 Stephen Privitera
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -178,7 +179,8 @@ class AlignedSpinTemplate(object):
         self.m2 = float(m2)
         self.spin1z = float(spin1z)
         self.spin2z = float(spin2z)
-        self.chieff = lalsim.SimIMRPhenomBComputeChi(m1, m2, spin1z, spin2z)
+        self.chieff = lalsim.SimIMRPhenomBComputeChi(self.m1, self.m2,
+                                                     self.spin1z, self.spin2z)
         self.bank = bank
 
         if flow is None:
@@ -193,7 +195,7 @@ class AlignedSpinTemplate(object):
         self._metric = None
         self.sigmasq = 0.
         self._mchirp = compute_mchirp(m1, m2)
-        self.tau0 = compute_tau0(self._mchirp, self.flow)
+        self.tau0 = compute_tau0(self._mchirp, bank.flow)
         self._dur = duration
         self._f_final = None
         self._fhigh_max = bank.fhigh_max
@@ -569,9 +571,6 @@ class TaylorF2Template(InspiralAlignedSpinTemplate):
     def _compute_waveform(self, df, f_final):
         phi0 = 0  # This is a reference phase, and not an intrinsic parameter
         LALpars=lal.CreateDict()
-        lalsim.SimInspiralWaveformParamsInsertPNAmplitudeOrder(LALpars, 0)
-        lalsim.SimInspiralWaveformParamsInsertPNPhaseOrder(LALpars, 7)
-        lalsim.SimInspiralWaveformParamsInsertPNSpinOrder(LALpars, 5)
         approx = lalsim.GetApproximantFromString( self.approx_name )
         hplus_fd, hcross_fd = lalsim.SimInspiralChooseFDWaveform(
                 self.m1*MSUN_SI, self.m2*MSUN_SI,
@@ -609,18 +608,18 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
 
         AlignedSpinTemplate.__init__(self, m1, m2, spin1z, spin2z, bank,
                                      flow=flow, duration=duration)
-        self.spin1x = spin1x
-        self.spin1y = spin1y
-        self.spin2x = spin2x
-        self.spin2y = spin2y
+        self.spin1x = float(spin1x)
+        self.spin1y = float(spin1y)
+        self.spin2x = float(spin2x)
+        self.spin2y = float(spin2y)
 
-        self.theta = theta
-        self.phi = phi
-        self.iota = iota
-        self.psi = psi
-        self.orb_phase = orb_phase
+        self.theta = float(theta)
+        self.phi = float(phi)
+        self.iota = float(iota)
+        self.psi = float(psi)
+        self.orb_phase = float(orb_phase)
 
-        self.chieff, self.chipre = lalsim.SimIMRPhenomPCalculateModelParameters(self.m1, self.m2, self.flow, np.sin(iota), float(0), np.cos(iota), spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, 1)[:2]
+        self.chieff, self.chipre = lalsim.SimIMRPhenomPCalculateModelParametersFromSourceFrame(self.m1, self.m2, self.flow, self.orb_phase, self.iota, self.spin1x, self.spin1y, self.spin1z, self.spin2x, self.spin2y, self.spin2z, lalsim.IMRPhenomPv2_V)[:2]
 
         self._wf = {}
         self._metric = None
@@ -635,7 +634,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
     def from_sim(cls, sim, bank):
         # theta = polar angle wrt overhead
         #       = pi/2 - latitude (which is 0 on the horizon)
-        return cls(sim.mass1, sim.mass2, sim.spin1x, sim.spin1y, sim.spin1z, sim.spin2x, sim.spin2y, sim.spin2z, np.pi/2 - sim.latitude, sim.longitude, sim.inclination, sim.polarization, sim.orb_phase, bank)
+        return cls(sim.mass1, sim.mass2, sim.spin1x, sim.spin1y, sim.spin1z, sim.spin2x, sim.spin2y, sim.spin2z, np.pi/2 - sim.latitude, sim.longitude, sim.inclination, sim.polarization, sim.coa_phase, bank)
 
     def _compute_waveform_comps(self, df, f_final):
         approx = lalsim.GetApproximantFromString( self.approximant )

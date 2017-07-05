@@ -25,10 +25,8 @@
 
 
 """
-This module is a wrapper of the xlal.date module, supplementing the C code
-in that module with additional features that are more easily implemented in
-Python.  It is recommended that you import this module rather than
-importing xlal.date directly.
+This module provides a few time-related utilities that have been used in
+burst searches in the past.
 """
 
 
@@ -37,12 +35,11 @@ import math
 
 from glue import segments
 import lal
-from . import git_version
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-__date__ = "git id %s" % git_version.id
-__version__ = git_version.date
+from git_version import date as __date__
+from git_version import version as __version__
 
 
 #

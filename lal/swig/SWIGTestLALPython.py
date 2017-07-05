@@ -7,10 +7,6 @@ import datetime
 import numpy
 expected_exception = False
 
-# FIXME: delete this when we can depend on swig >= 3.0.9,
-# which fixed https://github.com/swig/swig/pull/617
-swig_division_coercion_works = sys.version_info.major <= 2 or lal.swig_version >= 0x030009
-
 # return if 'x' has both value 'v' and type 't'
 def is_value_and_type(x, v, t):
     return x == v and type(x) is t
@@ -26,6 +22,10 @@ from lal import globalvar as lalglobalvar
 lal_c_si = lal.C_SI
 lal_180_pi = lal.LAL_180_PI
 print("PASSED module load")
+
+# FIXME: delete this when we can depend on swig >= 3.0.9,
+# which fixed https://github.com/swig/swig/pull/617
+swig_division_coercion_works = sys.version_info.major <= 2 or lal.swig_version >= 0x030009
 
 # check memory allocation
 print("checking memory allocation ...")

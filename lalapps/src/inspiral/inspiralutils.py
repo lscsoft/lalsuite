@@ -1433,7 +1433,7 @@ def determine_sieve_patterns(cp, plot_name, ifotag, usertag=None):
     >>> from ConfigParser import ConfigParser
     >>> cp = ConfigParser()
     >>> cp.read("plot_hipe.ini")
-    >>> print determine_sieve_patterns(cp, "plotinspiral", "H1")
+    >>> print(determine_sieve_patterns(cp, "plotinspiral", "H1"))
     {'bank-pattern': 'TRIGBANK_H1*_PLAYGROUND', 'missed-pattern':
      'SIRE_H1*_INJ*', 'trig-pattern': 'SIRE_H1*_PLAYGROUND'}
     

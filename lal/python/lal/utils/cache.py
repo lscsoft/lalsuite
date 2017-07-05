@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+from __future__ import print_function
 
 """Modules extending the Cache file functionality from LAL
 """
@@ -21,6 +22,7 @@
 import os
 import re
 import tempfile
+from functools import total_ordering
 from six.moves import urllib
 
 from glue import segments
@@ -60,6 +62,7 @@ def lalcache_from_gluecache(cache):
 #
 
 
+@total_ordering
 class CacheEntry(object):
     """
     A Python object representing one line in a LAL cache file.
@@ -92,11 +95,6 @@ class CacheEntry(object):
     object describing the interval spanned by the file.  Any of these
     attributes except the URL is allowed to be None.
 
-    This module also provides a Cache class, which some codes use to
-    represent an entire LAL cache file.  However, for most use cases a
-    simple Python list or set of CacheEntry objects is sufficient for
-    representing a LAL cache file.
-
     Example (parse a string):
 
     >>> c = CacheEntry("H1 S5 815901601 576.5 file://localhost/home/kipp/tmp/1/H1-815901601-576.xml")
@@ -113,7 +111,7 @@ class CacheEntry(object):
     >>> inname = os.path.join(os.environ.get("LAL_TEST_SRCDIR", "."), filename)
     >>> cache = map(CacheEntry, open(inname))
     >>> f = open(filename + ".new", "w")
-    >>> for cacheentry in cache: print >>f, str(cacheentry)
+    >>> for cacheentry in cache: print(str(cacheentry), file=f)
 
     Example (extract segmentlist dictionary from LAL cache):
 
@@ -165,14 +163,14 @@ class CacheEntry(object):
         Example:
 
         >>> c = CacheEntry("H1", "S5", segments.segment(815901601, 815902177.5), "file://localhost/home/kipp/tmp/1/H1-815901601-576.xml")
-        >>> print c.segment
+        >>> print(c.segment)
         [815901601 ... 815902177.5)
-        >>> print str(c)
+        >>> print(str(c))
         H1 S5 815901601 576.5 file://localhost/home/kipp/tmp/1/H1-815901601-576.xml
         >>> c = CacheEntry("H1 S5 815901601 576.5 file://localhost/home/kipp/tmp/1/H1-815901601-576.xml")
-        >>> print c.segment
+        >>> print(c.segment)
         [815901601 ... 815902177.5)
-        >>> print CacheEntry("H1 S5 815901601 576.5 file://localhost/home/kipp/tmp/1/H1-815901601-576.xml", coltype = float).segment
+        >>> print(CacheEntry("H1 S5 815901601 576.5 file://localhost/home/kipp/tmp/1/H1-815901601-576.xml", coltype = float).segment)
         [815901601.0 ... 815902177.5)
 
         See also the .from_T050017() class method for an
@@ -235,7 +233,7 @@ class CacheEntry(object):
             duration = "-"
         return "%s %s %s %s %s" % (self.observatory or "-", self.description or "-", start, duration, self.url)
 
-    def __cmp__(self, other):
+    def __lt__(self, other):
         """
         Compare two CacheEntry objects by observatory, then description,
         then segment.  CacheEntry objects that have different URLs but for
@@ -250,7 +248,24 @@ class CacheEntry(object):
         """
         if not isinstance(other, CacheEntry):
             raise TypeError("can only compare CacheEntry to CacheEntry")
-        return cmp((self.observatory, self.description, self.segment), (other.observatory, other.description, other.segment))
+        return (self.observatory, self.description, self.segment) < (other.observatory, other.description, other.segment)
+
+    def __eq__(self, other):
+        """
+        Compare two CacheEntry objects by observatory, then description,
+        then segment.  CacheEntry objects that have different URLs but for
+        which all other metadata are the same are considered to be
+        equivalent.  If two entries differ only by their URL, they are
+        considered to be redundant copies of the same data, and by
+        comparing them as equal the Python sort operation (which is a
+        stable sort) will preserve their relative order.  By preserving the
+        order of redundant copies, we allow the preference for the order in
+        which redundant copies are to be attempted to be conveyed by their
+        order in the list, and preserved.
+        """
+        if not isinstance(other, CacheEntry):
+            raise TypeError("can only compare CacheEntry to CacheEntry")
+        return (self.observatory, self.description, self.segment) == (other.observatory, other.description, other.segment)
 
     def __hash__(self):
         """
@@ -285,25 +300,25 @@ class CacheEntry(object):
 
         Example:
 
-        >>> c = CacheEntry(u"H1 S5 815901601 576.5 file://localhost/home/kipp/tmp/1/H1-815901601-576.xml")
-        >>> c.segmentlistdict
-        {u'H1': [segment(LIGOTimeGPS(815901601, 0), LIGOTimeGPS(815902177, 500000000))]}
+        >>> c = CacheEntry("H1 S5 815901601 576.5 file://localhost/home/kipp/tmp/1/H1-815901601-576.xml")
+        >>> c.segmentlistdict['H1']
+        [segment(LIGOTimeGPS(815901601, 0), LIGOTimeGPS(815902177, 500000000))]
 
         The \"observatory\" column of the cache entry, which is frequently
         used to store instrument names, is parsed into instrument names for
         the dictionary keys using the same rules as
-        glue.ligolw.lsctables.instrument_set_from_ifos().
+        glue.ligolw.lsctables.instrumentsproperty.get().
 
         Example:
 
-        >>> c = CacheEntry(u"H1H2, S5 815901601 576.5 file://localhost/home/kipp/tmp/1/H1H2-815901601-576.xml")
-        >>> c.segmentlistdict
-        {u'H1H2': [segment(LIGOTimeGPS(815901601, 0), LIGOTimeGPS(815902177, 500000000))]}
+        >>> c = CacheEntry("H1H2, S5 815901601 576.5 file://localhost/home/kipp/tmp/1/H1H2-815901601-576.xml")
+        >>> c.segmentlistdict['H1H2']
+        [segment(LIGOTimeGPS(815901601, 0), LIGOTimeGPS(815902177, 500000000))]
         """
         # the import has to be done here to break the cyclic
         # dependancy
-        from glue.ligolw.lsctables import instrument_set_from_ifos
-        instruments = instrument_set_from_ifos(self.observatory) or (None,)
+        from glue.ligolw.lsctables import instrumentsproperty
+        instruments = instrumentsproperty.get(self.observatory) or (None,)
         return segments.segmentlistdict((instrument, segments.segmentlist(self.segment is not None and [self.segment] or [])) for instrument in instruments)
 
     @classmethod

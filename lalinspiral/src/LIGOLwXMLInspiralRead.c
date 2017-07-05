@@ -653,7 +653,6 @@ LALSnglInspiralTableFromLIGOLw (
       /* parse the contents of the row into the InspiralTemplate structure */
       for ( j = 0; tableDir[j].name; ++j )
       {
-        enum METAIO_Type column_type = env->ligo_lw.table.col[tableDir[j].pos].data_type;
         REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
         REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8;
         INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
@@ -843,21 +842,9 @@ LALSnglInspiralTableFromLIGOLw (
         {
           if ( tableDir[j].pos > 0 )
           {
-            INT8 i8colData;
-            if ( column_type == METAIO_TYPE_INT_8S )
-              i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
-            else
-            {
-              i8colData = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "sngl_inspiral", "event_id");
-              if ( i8colData < 0 )
-                return -1;
-            }
-            if ( i8colData )
-            {
-              thisEvent->event_id = LALCalloc( 1, sizeof(*thisEvent->event_id) );
-              thisEvent->event_id->id = i8colData;
-              thisEvent->event_id->snglInspiralTable = thisEvent;
-            }
+            thisEvent->event_id = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "sngl_inspiral", "event_id");
+            if ( thisEvent->event_id < 0 )
+              return -1;
           }
         }
         else if ( tableDir[j].idx == 45 )
@@ -1443,6 +1430,8 @@ SimInspiralTableFromLIGOLw (
     {"amp_order",           -1, 53},
     {"taper",               -1, 54},
     {"bandpass",            -1, 55},
+    {"process_id",          -1, 56},
+    {"simulation_id",       -1, 57},
     {NULL,                   0, 0}
   };
 
@@ -1730,22 +1719,32 @@ SimInspiralTableFromLIGOLw (
 	}
         else if ( tableDir[j].idx == 53 )
         {
-            thisSim->amp_order = i4colData;
+          thisSim->amp_order = i4colData;
         }
         else if ( tableDir[j].idx == 54 )
         {
-            snprintf(thisSim->taper, LIGOMETA_INSPIRALTAPER_MAX * sizeof(CHAR),
-                    "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
+          snprintf(thisSim->taper, LIGOMETA_INSPIRALTAPER_MAX * sizeof(CHAR),
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
         }
         else if ( tableDir[j].idx == 55 )
         {
-            thisSim->bandpass = i4colData;
+          thisSim->bandpass = i4colData;
         }
         else if ( tableDir[j].idx == 56 ) {
-        	thisSim->qmParameter1 = r4colData;
+          if ( tableDir[j].pos > 0 )
+          {
+            thisSim->process_id = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "process", "process_id");
+            if ( thisSim->process_id < 0 )
+              return -1;
+          }
         }
         else if ( tableDir[j].idx == 57 ) {
-        	thisSim->qmParameter2 = r4colData;
+          if ( tableDir[j].pos > 0 )
+          {
+            thisSim->simulation_id = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "sim_inspiral", "simulation_id");
+            if ( thisSim->simulation_id < 0 )
+              return -1;
+          }
         }
         else
         {

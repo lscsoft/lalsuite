@@ -312,8 +312,7 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
 
   /* If we have tilt angles zero, then the spins are aligned and we just set the z component */
   /* However, if the waveform supports precession then we still need to get the right coordinate components */
-  SpinSupport spin_support=XLALSimInspiralGetSpinSupportFromApproximant(approximant);
-  if(tilt1==0.0 && tilt2==0.0 && (spin_support==LAL_SIM_INSPIRAL_SPINLESS || spin_support==LAL_SIM_INSPIRAL_ALIGNEDSPIN))
+  if(tilt1==0.0 && tilt2==0.0)
   {
       spin1z=a_spin1;
       spin2z=a_spin2;
@@ -730,8 +729,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 
   /* If we have tilt angles zero, then the spins are aligned and we just set the z component */
   /* However, if the waveform supports precession then we still need to get the right coordinate components */
-  SpinSupport spin_support=XLALSimInspiralGetSpinSupportFromApproximant(approximant);
-  if(tilt1==0.0 && tilt2==0.0 && (spin_support==LAL_SIM_INSPIRAL_SPINLESS || spin_support==LAL_SIM_INSPIRAL_ALIGNEDSPIN))
+  if(tilt1==0.0 && tilt2==0.0)
   {
       spin1z=a_spin1;
       spin2z=a_spin2;
@@ -1206,8 +1204,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
 
     /* If we have tilt angles zero, then the spins are aligned and we just set the z component */
     /* However, if the waveform supports precession then we still need to get the right coordinate components */
-    SpinSupport spin_support=XLALSimInspiralGetSpinSupportFromApproximant(approximant);
-    if(tilt1==0.0 && tilt2==0.0 && (spin_support==LAL_SIM_INSPIRAL_SPINLESS || spin_support==LAL_SIM_INSPIRAL_ALIGNEDSPIN))
+    if(tilt1==0.0 && tilt2==0.0)
     {
         spin1z=a_spin1;
         spin2z=a_spin2;

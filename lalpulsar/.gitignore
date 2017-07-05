@@ -5,6 +5,7 @@
 *.pc
 *.pyc
 *.pyo
+__pycache__
 .deps
 .libs
 /_build/
@@ -108,6 +109,8 @@ test/XLALComputeAMTest
 test/XLALMultiNoiseWeightsTest
 test/outputsft_v1.sft
 test/outputsft_v2.sft
+test/outputsftv2_r1.sft
+test/outputsftv2_r2.sft
 test/outputsftv2_v1.sft
 test/outputsftv2_v2.sft
 test/testLFTandTSutils-LFT.sft

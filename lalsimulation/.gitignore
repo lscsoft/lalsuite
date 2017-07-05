@@ -6,6 +6,7 @@
 *.pc
 *.pyc
 *.pyo
+__pycache__
 .deps
 .libs
 /_build/

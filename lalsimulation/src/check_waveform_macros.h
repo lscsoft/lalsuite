@@ -88,6 +88,17 @@ XLAL_ERROR(XLAL_EINVAL);\
 } while (0)
 
 /*
+ * Macro procedure for aborting if non-zero transverse spin
+ * components given to a SpinTaylor approximant with spinO>5
+ */
+#define ABORT_NONZERO_TRANSVERSE_SPINS_HIGH_SPINO(LALparams)\
+do {\
+XLALDestroyDict(LALparams);\
+XLALPrintError("XLAL Error - %s: Non-zero transverse spins were given with spinOrder %d, but this spins dynamics is not implemented to this order for precessing spins.\n", __func__, XLALSimInspiralWaveformParamsLookupPNSpinOrder(LALparams)); \
+XLAL_ERROR(XLAL_EINVAL);\
+} while (0)
+
+/*
  * Macro procedure for aborting if non-zero tidal parameters
  * given to an approximant with no tidal corrections
  */

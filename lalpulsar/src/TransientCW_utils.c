@@ -41,10 +41,9 @@
 
 #include <lal/ProbabilityDensity.h>
 #include <lal/TransientCW_utils.h>
-
+#include "ComputeFstat_internal.h"
 
 /* ----- MACRO definitions ---------- */
-#define SQ(x) ((x)*(x))
 
 /* ----- module-local fast lookup-table handling of negative exponentials ----- */
 /**
@@ -709,7 +708,7 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
 
   transientWindow_t win_mn;
   win_mn.type = windowRange.type;
-  ret->maxF = 0;	// keep track of loudest F-stat point
+  ret->maxF = -1.0;	// keep track of loudest F-stat point. Initializing to a negative value ensures that we always update at least once and hence return sane t0_d_ML, tau_d_ML even if there is only a single bin where F=0 happens.
   UINT4 m, n;
   /* ----- OUTER loop over start-times [t0,t0+t0Band] ---------- */
   for ( m = 0; m < N_t0Range; m ++ ) /* m enumerates 'binned' t0 start-time indices  */
@@ -822,20 +821,13 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
 
 
           /* generic F-stat calculation from A,B,C, Fa, Fb */
-          REAL4 DdInv = 1.0f / ( Ad * Bd - Cd * Cd );
-          REAL4 F;
-          { // function body copied from XLALComputeFstatFromFaFb()
-            REAL4 Fa_re = creal(Fa);
-            REAL4 Fa_im = cimag(Fa);
-            REAL4 Fb_re = creal(Fb);
-            REAL4 Fb_im = cimag(Fb);
-
-            F = DdInv * (  Bd * ( SQ(Fa_re) + SQ(Fa_im) )
-                           + Ad * ( SQ(Fb_re) + SQ(Fb_im) )
-                           - 2.0 * Cd * (   Fa_re * Fb_re + Fa_im * Fb_im )
-                           );
+          REAL4 Dd = ( Ad * Bd - Cd * Cd );
+          REAL4 DdInv = 0;
+          if ( Dd > 0 ) { /* safety catch as in XLALWeightMultiAMCoeffs(): make it so that in the end F=0 instead of -nan */
+            DdInv = 1.0f / Dd;
           }
-
+          REAL4 twoF = XLALComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, 0, DdInv );
+          REAL4 F = 0.5 * twoF;
           /* keep track of loudest F-stat value encountered over the m x n matrix */
           if ( F > ret->maxF )
             {
@@ -962,7 +954,7 @@ XLALmergeMultiFstatAtomsBinned ( const MultiFstatAtomVector *multiAtoms, UINT4 d
  *
  */
 int
-write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand )
+write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand, const char timeUnit )
 {
   /* sanity checks */
   if ( !fp ) {
@@ -973,7 +965,72 @@ write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand 
 
   if ( thisCand == NULL )	/* write header-line comment */
     {
-      fprintf (fp, "%%%% Freq[Hz]            Alpha[rad]          Delta[rad]          fkdot[1]  fkdot[2]  fkdot[3]    t0_ML[d]      tau_ML[d]    maxTwoF        logBstat      t0_MP[d]      tau_MP[d]\n");
+      fprintf (fp, "%%%% Freq[Hz]            Alpha[rad]          Delta[rad]          fkdot[1]  fkdot[2]  fkdot[3]  t0_ML[%c]    tau_ML[%c]  maxTwoF     logBstat   t0_MP[%c]        tau_MP[%c]\n", timeUnit, timeUnit, timeUnit, timeUnit);
+    }
+  else
+    {
+      if ( !thisCand->FstatMap ) {
+        XLALPrintError ("%s: incomplete: transientCand->FstatMap == NULL!\n", __func__ );
+        XLAL_ERROR ( XLAL_EINVAL );
+      }
+
+      REAL8 maxTwoF = 2.0 *  thisCand->FstatMap->maxF;
+      fprintf (fp, "  %- 18.16f %- 19.16f %- 19.16f %- 9.6g %- 9.5g %- 9.5g",
+               thisCand->doppler.fkdot[0], thisCand->doppler.Alpha, thisCand->doppler.Delta,
+               thisCand->doppler.fkdot[1], thisCand->doppler.fkdot[2], thisCand->doppler.fkdot[3]
+              );
+      if ( timeUnit == 's' )
+        {
+           fprintf (fp, " %10d %10d %- 11.8g %- 11.8g %15.4f %15.4f\n",
+                    thisCand->FstatMap->t0_ML, thisCand->FstatMap->tau_ML,
+                    maxTwoF, thisCand->logBstat,
+                    thisCand->t0_MP, thisCand->tau_MP
+                   );
+        }
+      else if ( timeUnit == 'd' )
+        {
+           UINT4 t0 = thisCand->windowRange.t0;
+           REAL8 t0_d_ML = 1.0 * (thisCand->FstatMap->t0_ML - t0) / DAY24;
+           REAL8 tau_d_ML= 1.0 *  thisCand->FstatMap->tau_ML / DAY24;
+           REAL8 t0_d_MP = 1.0 * ( thisCand->t0_MP - t0 ) / DAY24;
+           REAL8 tau_d_MP= 1.0 * thisCand->tau_MP / DAY24;
+           fprintf (fp, "    %-8.5f      %-8.5f    %- 11.8g    %- 11.8g    %-8.5f      %8.5f\n",
+                    t0_d_ML, tau_d_ML,
+                    maxTwoF, thisCand->logBstat,
+                    t0_d_MP, tau_d_MP
+           );
+        }
+      else
+        {
+           XLALPrintError ( "%s: Unknown time unit '%c'!\n", __func__, timeUnit );
+           XLAL_ERROR ( XLAL_EINVAL );
+        }
+    }
+
+  return XLAL_SUCCESS;
+
+} /* write_transientCandidate_to_fp() */
+
+
+/**
+ * Write full set of t0 and tau grid points for given transient CW candidate into output file.
+ *
+ * NOTE: if input thisCand == NULL, we write a header comment-line explaining the fields
+ *
+ */
+int
+write_transientCandidateAll_to_fp ( FILE *fp, const transientCandidate_t *thisCand )
+{
+  /* sanity checks */
+  if ( !fp ) {
+    XLALPrintError ( "%s: invalid NULL filepointer input.\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
+  }
+
+
+  if ( thisCand == NULL )	/* write header-line comment */
+    {
+      fprintf (fp, "%%%% Freq[Hz]            Alpha[rad]          Delta[rad]          fkdot[1]  fkdot[2]  fkdot[3]  t0[s]      tau[s]      twoF\n");
     }
   else
     {
@@ -982,24 +1039,30 @@ write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand 
         XLAL_ERROR ( XLAL_EINVAL );
       }
       UINT4 t0 = thisCand->windowRange.t0;
-      REAL8 t0_d_ML = 1.0 * (thisCand->FstatMap->t0_ML - t0) / DAY24;
-      REAL8 tau_d_ML= 1.0 *  thisCand->FstatMap->tau_ML / DAY24;
-      REAL8 maxTwoF = 2.0 *  thisCand->FstatMap->maxF;
-      REAL8 t0_d_MP = 1.0 * ( thisCand->t0_MP - t0 ) / DAY24;
-      REAL8 tau_d_MP= 1.0 * thisCand->tau_MP / DAY24;
 
-      fprintf (fp, "  %- 18.16f %- 19.16f %- 19.16f %- 9.6g %- 9.5g %- 9.5g    %-8.5f      %-8.5f    %- 11.8g    %- 11.8g    %-8.5f      %8.5f\n",
-               thisCand->doppler.fkdot[0], thisCand->doppler.Alpha, thisCand->doppler.Delta,
-               thisCand->doppler.fkdot[1], thisCand->doppler.fkdot[2], thisCand->doppler.fkdot[3],
-               t0_d_ML, tau_d_ML, maxTwoF,
-               thisCand->logBstat,
-               t0_d_MP, tau_d_MP
-               );
+      UINT4 N_t0Range  = (UINT4) floor ( thisCand->windowRange.t0Band / thisCand->windowRange.dt0 ) + 1;
+      UINT4 N_tauRange = (UINT4) floor ( thisCand->windowRange.tauBand / thisCand->windowRange.dtau ) + 1;
+      LogPrintf ( LOG_DETAIL, "N_t0Range=%d, N_tauRange=%d\n", N_t0Range, N_tauRange);
+      /* ----- OUTER loop over start-times [t0,t0+t0Band] ---------- */
+      for ( UINT4 m = 0; m < N_t0Range; m ++ ) /* m enumerates 'binned' t0 start-time indices  */
+        {
+         UINT4 this_t0 = t0 + m * thisCand->windowRange.dt0;
+          /* ----- INNER loop over timescale-parameter tau ---------- */
+          for ( UINT4 n = 0; n < N_tauRange; n ++ )
+            {
+              UINT4 this_tau = thisCand->windowRange.tau + n * thisCand->windowRange.dtau;
+              fprintf (fp, "  %- 18.16f %- 19.16f %- 19.16f %- 9.6g %- 9.5g %- 9.5g %10d %10d %- 11.8g\n",
+                       thisCand->doppler.fkdot[0], thisCand->doppler.Alpha, thisCand->doppler.Delta,
+                       thisCand->doppler.fkdot[1], thisCand->doppler.fkdot[2], thisCand->doppler.fkdot[3],
+                       this_t0, this_tau, 2.0 * gsl_matrix_get ( thisCand->FstatMap->F_mn, m, n )
+                      );
+            }
+        }
     }
 
   return XLAL_SUCCESS;
 
-} /* write_TransCandidate_to_fp() */
+} /* write_transientCandidateAll_to_fp() */
 
 
 /**

@@ -143,7 +143,7 @@ static void XLALEOBSpinPrecCalcHModes(
     *h0  = 0.0;
 }
 
-static void XLALEOBSpinPrecCalcAmpPhase(
+static void XLALEOBSpinPrecCalcHplusHcross(
                   SpinEOBParams * seobParams, /**<< EOB Parameters */
                   REAL8Vector * values, /**<< Dynamical variables */
                   REAL8 aI2P, /**<< alpha Euler angle from inertial to precessing frame */
@@ -156,8 +156,8 @@ static void XLALEOBSpinPrecCalcAmpPhase(
                   REAL8 JframeEy[3], /**<< y-axis of the total-angular-momentum frame */
                   REAL8 JframeEz[3], /**<< z-axis of the total-angular-momentum frame */
                   COMPLEX16 Y[5], /**<< Spherical Harmonics */
-                  REAL8 * amp, /**<< OUTPUT: Amplitude */
-                  REAL8 * phase /**<< OUTPUT: Phase */
+                  REAL8 * hplus, /**<< OUTPUT: h_+ */
+                  REAL8 * hcross /**<< OUTPUT: h_x */
                   ){
     COMPLEX16 hTSp2, hTSp1, hTS0, hTSm1, hTSm2;
     REAL8 aP2J, bP2J, gP2J;
@@ -226,14 +226,9 @@ static void XLALEOBSpinPrecCalcAmpPhase(
     /* OPTV3: From XLALSimIMRSpinEOBWaveformAll; LALSimIMRSpinPrecEOB.c; line(s): 4022-4028*/
     COMPLEX16 x11 = 0.0+0.0*I;
     for (int i=0; i<2*l+1; i++) x11 += Y[i]*hresult2[i];
-    /** OPTV3: Now, convert the modes into Amp and Phase */
-    *amp  = cabs(x11);
-    *phase = carg(x11);
-    if(*amp == 0.0){
-      printf("c:hNorm=0!!!!!!!!!!!!!!!!\n");
-      XLAL_ERROR_VOID( XLAL_EFUNC );
-      exit(1);
-    }
+    /** OPTV3: Now, evaluate the real & imaginary parts to get hplus & hcross */
+    *hplus  = creal(x11);
+    *hcross = cimag(x11);
 }
 
 static void XLALEOBSpinPrecGenerateHTSModesFromEOMSoln(
@@ -259,8 +254,8 @@ static void XLALEOBSpinPrecGenerateHTSModesFromEOMSoln(
     }
 }
 
-static void XLALEOBSpinPrecGenerateAmpPhaseTSFromEOMSoln(
-                              REAL8Vector * h,              /**<< OUTPUT: Vector containing time, amplitude, and phase */
+static void XLALEOBSpinPrecGenerateHplusHcrossTSFromEOMSoln(
+                              REAL8Vector * h,              /**<< OUTPUT: Vector containing time, hplus, and hcross */
                               int retLen,                   /**<< Length of ODE solution */
                               REAL8Vector * AlphaI2PVec,    /**<< Vector of Euler angle alpha, from Inertial to precessing frame, across time */
                               REAL8Vector * BetaI2PVec,     /**<< Vector of Euler angle beta, from Inertial to precessing frame, across time */
@@ -284,7 +279,7 @@ static void XLALEOBSpinPrecGenerateAmpPhaseTSFromEOMSoln(
         for (int i=1; i<=14; i++)
             values.data[i-1]=dynamics->data[t+i*retLen];
         h->data[t]=dynamics->data[t];
-        XLALEOBSpinPrecCalcAmpPhase(seobParams,&values,AlphaI2PVec->data[t],BetaI2PVec->data[t],GammaI2PVec->data[t], alJtoI,betJtoI,gamJtoI,Jx,Jy,Jz,Y,h->data+t+retLen,h->data+t+2*retLen);
+        XLALEOBSpinPrecCalcHplusHcross(seobParams,&values,AlphaI2PVec->data[t],BetaI2PVec->data[t],GammaI2PVec->data[t], alJtoI,betJtoI,gamJtoI,Jx,Jy,Jz,Y,h->data+t+retLen,h->data+t+2*retLen);
     }
 }
 #endif // _LALSIMIMRSPINPRECEOBWFGEN_C

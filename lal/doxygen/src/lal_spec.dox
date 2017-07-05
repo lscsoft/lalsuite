@@ -3,14 +3,14 @@
 
 \authors Bruce Allen, Kent Blackburn, Duncan Brown, Jolien Creighton, Teviet Creighton, Sam Finn, Albert Lazzarini, Adam Mercer, and Alan Wiseman
 
-\section TODO_s_intro Introduction
+\section lal_spec_introduction Introduction
 
-\subsection TODO_lalspec_7 The LSC Algorithm Library
+\subsection lal_spec_lsc_algorithm_library The LSC Algorithm Library
 
 The LSC Algorithm Library, hereafter LAL, is a library of routines for use in
 gravitational wave data analysis.
 
-\subsection TODO_lalspec_12 The goal of the LAL software specification
+\subsection lal_spec_goal_of_lal_software_specification The goal of the LAL software specification
 
 From the first edition of this guide: The defining purpose of this
 document is to establish a software specification that fosters widespread-use
@@ -51,8 +51,7 @@ document as needed.  Significant changes to the document will be made in
 consultation with the LSC Software Change Control Board.
 </b></p>
 
-
-\subsection TODO_lalspec_54 The elements of the library specification
+\subsection lal_spec_elements_of_library_specification The elements of the library specification
 
 The library specification has the following elements:
 <ol>
@@ -66,8 +65,7 @@ providing a common set of tools for developers to promote uniformity (where
 desired) and collaborative development.</li>
 </ol>
 
-
-\subsection TODO_lalspec_69 The LAL and XLAL interfaces
+\subsection lal_spec_lal_and_xlal_interfaces The LAL and XLAL interfaces
 
 Because the original LAL specification was relatively "heavy-weight,"
 (in that there was significant overhead required for new functions), LAL
@@ -92,10 +90,9 @@ The XLAL functions shall conform to the general rules for functions and to
 the rules specific to XLAL functions.
 </b></p>
 
+\section lal_spec_coding_style_guidelines Coding style guidelines
 
-\section TODO_lalspec_95 Coding style guidelines
-
-\subsection TODO_lalspec_97 Atomic data types
+\subsection lal_spec_atomic_data_types Atomic data types
 
 For historical reasons more than anything I can think of, LAL routines should
 use the LAL-specific atomic data types (\c REAL4 rather than
@@ -121,8 +118,7 @@ to type \c double, e.g., \c modf, can receive a pointer to type
 \c REAL8 instead.  That is, the type \c REAL8 can be assumed to be
 equivalent to the type \c double.
 
-
-\subsection TODO_lalspec_124 Names of functions, variables, etc.
+\subsection lal_spec_names_of_functions,_variables,_etc. Names of functions, variables, etc.
 
 These rules are to define a standard namespace scheme.  They apply to all
 functions with external linkage (i.e., those functions not preceded by the
@@ -166,8 +162,7 @@ LALMyType;
 \endcode
 Note that the structure name is \c tagLALMyType.
 
-
-\subsection TODO_lalspec_169 Header and source file conventions
+\subsection lal_spec_header_and_source_file_conventions Header and source file conventions
 
 The LAL API is defined by the \e installed header files (there may be
 additional header files that are used when compiling LAL that are not
@@ -229,8 +224,8 @@ the following
 NRCSID( LALTHISSOURCEFILEC, "\f$Id\f$" );
 \endcode
 
+\subsection lal_spec_language_requirements Language requirements
 
-\subsection TODO_lalspec_232 Language requirements
 LAL code should all be in "clean C," i.e., that language that is a
 subset of both C and C++.  This is not quite the same as just the C
 programming language.  Only C-style comments should be used and avoid
@@ -241,10 +236,9 @@ names are listed here.  The LAL namespace will assist in making sure
 that no conflicts arise.  But even local variables names must be chosen
 carefully (e.g., so that they aren't the same as a C++ keyword).
 A list of keywords and reserved names, along with those standard C library
-functions that can be used, is found in appendix \ref TODO_a_language.
+functions that can be used, is found in \ref lal_spec_language_issues.
 
-
-\subsection TODO_lalspec_246 Filename conventions
+\subsection lal_spec_filename_conventions Filename conventions
 
 Purely for the sanity of the Librarian, LAL has a rigid directory structure.
 LAL is composed of directories called packages whose names consist of entirely
@@ -262,11 +256,9 @@ organized in \e modules of one or more functions, each module being a
 single \c .c file.  Thus, all the functions with external linkage in a
 \c .c file must be prototyped in the same header file in the same package.
 
+\section lal_spec_common_rules_for_both_lal_and_xlal_functions Common rules for both the LAL and the XLAL functions
 
-\section TODO_lalspec_265 Common rules for both the LAL and the XLAL functions
-
-
-\subsection TODO_lalspec_268 Function arguments
+\subsection lal_spec_function_arguments Function arguments
 
 Function arguments must be one of the following (atomic) types:
 \c CHAR, \c UCHAR, \c INT2, \c UINT2, \c INT4,
@@ -284,8 +276,7 @@ have no arguments (\c void), or a variable number of arguments
 of the above types (...).
 </b></p>
 
-
-\subsection TODO_lalspec_287 Functions should not have any dependence on system environment
+\subsection lal_spec_functions_should_not_have_any_dependence_on_system_environment Functions should not have any dependence on system environment
 
 The first part of this rule is that functions should not do any file I/O
 since there should be no assumptions about the nature of the filesystem.
@@ -306,8 +297,7 @@ as \c system, \c getenv, \c rand, \c srand will not be
 used.
 </b></p>
 
-
-\subsection TODO_lalspec_309 Memory management
+\subsection lal_spec_memory_management Memory management
 
 Memory should always be allocated or freed with one of the LAL custom
 memory managers: \c LALMalloc, \c LALCalloc, \c LALRealloc,
@@ -344,8 +334,7 @@ the user calls...</li>
 the storage in \c foo.</li>
 </ul>
 
-
-\subsection TODO_lalspec_347 Functions must be reentrant and thread-safe
+\subsection lal_spec_functions_must_be_reentrant_and_thread-safe Functions must be reentrant and thread-safe
 
 This rule essentially requires a functions behavior to depend only on its
 arguments.  There should be no state saved in static storage within the
@@ -369,8 +358,7 @@ must be automatic.  No global variables will be used.  Routines such as
 reentrant and threadsafe.
 </b></p>
 
-
-\subsection TODO_lalspec_372 Functions should always return control to the calling program
+\subsection lal_spec_functions_should_always_return_control_to_calling_program Functions should always return control to the calling program
 
 That is, routines should never explicitly raise signals, abort, or call the
 \c exit function, nor should they call functions that might do so.  Also,
@@ -386,10 +374,7 @@ as \c exit, \c atexit, \c raise, \c assert, \c abort
 shall not be used.  Long-jumps shall not be used.
 </b></p>
 
-
-
-
-\section TODO_lalspec_391 Rules for LAL functions
+\section lal_spec_rules_for_lal_functions Rules for LAL functions
 
 All LAL functions must return \c void and have as their first argument
 a pointer to a \c LALStatus structure type.  Any number of arguments may
@@ -491,8 +476,7 @@ structure for use when calling other LAL functions... the status structure
 used must always be one atta(t)ched to the provided status structure (so that
 the function call trace is maintained).
 
-
-\section TODO_lalspec_494 Rules for XLAL functions
+\section lal_spec_rules_for_xlal_functions Rules for XLAL functions
 
 The goal is to have XLAL functions be as flexible as possible in their
 interface while still requiring strict rules on error reporting.  The
@@ -542,7 +526,7 @@ return XLAL functions); a pointer (pointer-type return XLAL functions);
 or no return type (type \c void return XLAL functions).
 </b></p>
 
-\subsection TODO_lalspec_544 Four kinds of XLAL functions
+\subsection lal_spec_four_kinds_of_xlal_functions Four kinds of XLAL functions
 
 XLAL functions will be one of four types based principally on their return
 type, though this is also largely determined by their functional nature.  The
@@ -658,7 +642,7 @@ XLAL_ERROR_VOID( func, errnum ) where \c func is the function name
 string and \c errnum is the XLAL error number (see below).</li>
 </ol>
 
-\subsection TODO_lalspec_660 XLAL error numbers and error handlers
+\subsection lal_spec_xlal_error_numbers_and_error_handlers XLAL error numbers and error handlers
 
 XLAL functions use the modifiable lvalue \c xlalErrno (think of it as
 a global \c int-type variable) to codify the nature of a failure.  It
@@ -673,15 +657,12 @@ determine the nature of the error.  The following table contains the XLAL
 return codes and error numbers.  Note that \c xlalErrno should only be
 set to one of the error numbers (or zero if there is no error).
 
-<table><tr><td>
-
-Code</td><td>Value</td><td>Meaning</td></tr>
-<tr><td>
-Return codes (for XLAL functions that return \c int)</td></tr>
+<table>
+<tr><td>Code</td><td>Value</td><td>Meaning</td></tr>
+<tr><td>Return codes (for XLAL functions that return \c int)</td></tr>
 <tr><td>::XLAL_SUCCESS</td><td>0</td><td>Success</td></tr>
 <tr><td>::XLAL_FAILURE</td><td>\f$-\f$1</td><td>Failure</td></tr>
-<tr><td>
-Error numbers</td></tr>
+<tr><td>Error numbers</td></tr>
 <tr><td><em>Standard error numbers</em></td></tr>
 <tr><td>::XLAL_EIO</td><td>5</td><td>I/O error</td></tr>
 <tr><td>::XLAL_ENOMEM</td><td>12</td><td>Memory allocation error</td></tr>
@@ -708,8 +689,7 @@ Error numbers</td></tr>
 <tr><td>::XLAL_ELOSS</td><td>265</td><td>Loss of accuracy</td></tr>
 <tr><td>Failure from within a function call: "or" error number with this</td></tr>
 <tr><td>::XLAL_EFUNC</td><td>1024</td><td>Internal function call failed</td></tr>
-<tr><td>
-</td></tr></table>
+</table>
 
 Note that the last error number, \c XLAL_EFUNC, corresponds to a bit that
 can be set on the current error number (using a bitwise-or) to indicate that
@@ -749,16 +729,14 @@ the current function and the integer error number.  These macros call
 number.  They also return from the function with the appropriate failure
 return code (depending on which macro was used).
 
-
-\section TODO_lalspec_752 Documentation and unit tests
+\section lal_spec_documentation_and_unit_tests Documentation and unit tests
 
 The conventions for these are not within the scope of this specification;
 they are described in the LAL Software Documentation.  It is a good guide
 that every function with external linkage should have a unit test that can
 be run automatically to make sure it is (and continues to be) sane.
 
-
-\section TODO_lalspec_760 Other libraries required for LAL
+\section lal_spec_other_libraries_required_for_lal Other libraries required for LAL
 
 LAL is not a stand-alone library.  Two other libraries are required to build
 and use LAL.  These are the "Fastest Fourier Transform in the West (version
@@ -783,8 +761,7 @@ the error handler used by the \c gsl function call, and (ii) report
 any error conditions reported by the \c gsl function in the LAL
 status structure \c status.
 
-
-\section TODO_lalspec_786 Notable exceptions
+\section lal_spec_notable_exceptions Notable exceptions
 
 <p><b>
 There will be exceptions to (nearly) all of these rules.  Exceptions are
@@ -800,8 +777,7 @@ the specification outlined in this document as much as is practical, but there
 are occasions when violations must be allowed.  In such cases, the violations
 are under strict control of the LAL Librarian.
 
-
-\section TODO_lalspec_803 Beyond LAL... LALSupport, LALMetaIo, LALFrame
+\section lal_spec_beyond_lal..._lalsupport,_lalmetaio,_lalframe Beyond LAL... LALSupport, LALMetaIo, LALFrame
 
 Of the LAL requirements, the most \e functionally limiting is the
 requirement that no I/O is allowed.  This requirement is in place to
@@ -832,43 +808,41 @@ binary "Interferometric Gravitational Wave Detector Data Frame Format"
 or "Frame" format.  Libraries with routines that are specialized for I/O
 with these formats are also available.
 
-
-\subsection TODO_lalspec_835 The \c LALSupport library
+\subsection lal_spec_lalsupport_library The \c LALSupport library
 
 This library provides the basic file I/O routines that are used in conjunction
 with the LAL library.  It is always built and installed along with the LAL
 library.
 
-\subsection TODO_lalspec_841 The \c LALMetaIo library
+\subsection lal_spec_lalmetaio_library The \c LALMetaIo library
 
 This library provides I/O routines that are used to read/write the LIGO
 lightweight data format.  These routines use the \c metaio library
 routines as their engine.  This library is conditionally built and installed
 by LAL if the \c metaio library is available.
 
-\subsection TODO_lalspec_848 The \c LALFrame library
+\subsection lal_spec_lalframe_library The \c LALFrame library
 
 This library provides I/O routines that are used to read/write the Frame
 data format.  These routines use the \c Frame library
 routines as their engine.  This library is conditionally built and installed
 by LAL if the \c Frame library is available.
 
-\section TODO_a_language Language issues
-
+\section lal_spec_language_issues Language issues
 
 The C99 standard specifies certain keywords and standard library functions.
 Only a subset of these are suitable for LAL functions.  However, for maximum
 portability, one should avoid various extensions to the C99 keywords and
 functions.  Here are some guidelines on writing portable LAL code.
 
-\subsection TODO_lalspec_863 Namespace requirements
+\subsection lal_spec_namespace_requirements Namespace requirements
 
 Here is a list of keywords and reserved names.  These should be avoided
 when choosing names of LAL variables, functions, etc.  The LAL namespace
 will help avoid namespace collisions.  The LAL namespace conventions are
 also given.
 
-\subsubsection TODO_lalspec_870 Keywords
+\subsubsection lal_spec_keywords Keywords
 
 The code should avoid any of the following
 keywords that are present in C++ as symbol names:
@@ -905,7 +879,7 @@ Of these there is (almost) no need to use \c auto, \c char,
 \c double, \c float, \c long, \c register, \c short,
 \c signed, \c unsigned, or \c volatile.
 
-\subsubsection TODO_lalspec_907 Reserved names
+\subsubsection lal_spec_reserved_names Reserved names
 
 According to the GNU C library, the following names are reserved (or may be
 reserved in the future) by the C library:
@@ -950,7 +924,7 @@ in \c signal.h.</li>
 in \c termios.h.</li>
 </ul>
 
-\subsubsection TODO_lalspec_952 LAL namespace
+\subsubsection lal_spec_lal_namespace LAL namespace
 
 The LAL namespace will assist in avoiding namespace conflicts.  LAL reserves
 any name that is prefixed with \c LAL, \c LAL_, \c XLAL,
@@ -961,7 +935,7 @@ letter.  In addition LAL reserves names that begin with
 \c COMPLEX8, \c COMPLEX16, and \c LIGO followed by an
 uppercase letter.
 
-\subsection TODO_lalspec_963 Allowed functions from standard C
+\subsection lal_spec_allowed_functions_from_standard_c Allowed functions from standard C
 
 C libraries often have various extensions from the C99 standard C library,
 but for portability purposes only those functions that are specified by the
@@ -1034,10 +1008,9 @@ it in a LAL function.
 <float.h> NONE
 \endcode
 
+\section lal_spec_lal_datatypes LAL Datatypes
 
-\section TODO_lalspec_1037 LAL Datatypes
-
-\subsection TODO_lalspec_1039 Primitive Datatypes
+\subsection lal_spec_primitive_datatypes Primitive Datatypes
 
 The primitive datatypes are defined in a separate header
 \ref LALAtomicDatatypes.h, which is included by
@@ -1051,7 +1024,7 @@ Primitive datatypes are those that conceptually store a single number
 or quantity.  They include both the \e atomic datatypes and the
 complex datatypes.
 
-\subsubsection TODO_lalspec_1053 Atomic Datatypes
+\subsubsection lal_spec_atomic_datatypes Atomic Datatypes
 
 Atomic LAL datatypes are platform-independent datatypes corresponding
 to the basic types in the C/C++ language.  However, since the C/C++
@@ -1061,15 +1034,11 @@ platforms.  The following table lists the LAL atomic datatypes, their
 size and range, and the C/C++ datatype to which they \e usually
 correspond.
 
-
-<table><tr><td>
-
-  Type</td><td>Bits</td><td>Range</td><td>Usual C/C++ type</td></tr>
-<tr><td>
-::CHAR</td><td>8</td><td>'\0' to '\255'</td><td>\c char</td></tr>
+<table>
+<tr><td>  Type</td><td>Bits</td><td>Range</td><td>Usual C/C++ type</td></tr>
+<tr><td>::CHAR</td><td>8</td><td>'\0' to '\255'</td><td>\c char</td></tr>
 <tr><td>::UCHAR</td><td>8</td><td>'\0' to '\255'</td><td>\c unsigned char</td></tr>
-<tr><td>
-::INT2</td><td>16</td><td>\f$-2^{-15}\f$ to \f$2^{15}-1\f$</td><td>\c short</td></tr>
+<tr><td>::INT2</td><td>16</td><td>\f$-2^{-15}\f$ to \f$2^{15}-1\f$</td><td>\c short</td></tr>
 <tr><td>::INT4</td><td>32</td><td>\f$-2^{-31}\f$ to \f$2^{31}-1\f$</td><td>\c int or
                                                 \c long</td></tr>
 <tr><td>::INT8</td><td>64</td><td>\f$-2^{-63}\f$ to \f$2^{63}-1\f$</td><td>\c long long</td></tr>
@@ -1077,13 +1046,9 @@ correspond.
 <tr><td>::UINT4</td><td>32</td><td>0 to \f$2^{32}-1\f$</td><td>unsigned int or
                                                 \c long</td></tr>
 <tr><td>::UINT8</td><td>64</td><td>0 to \f$2^{64}-1\f$</td><td>\c unsigned long long</td></tr>
-<tr><td>
-::REAL4</td><td>32</td><td>\f$-3.4\times10^{38}\f$ to \f$3.4\times10^{38}\f$</td><td>\c float</td></tr>
+<tr><td>::REAL4</td><td>32</td><td>\f$-3.4\times10^{38}\f$ to \f$3.4\times10^{38}\f$</td><td>\c float</td></tr>
 <tr><td>::REAL8</td><td>64</td><td>\f$-1.8\times10^{308}\f$ to \f$1.8\times10^{308}\f$</td><td>\c double</td></tr>
-<tr><td>
-</td></tr></table>
-
-
+</table>
 
 The unsigned character and integer datatypes store their values
 according to the usual binary system.  For signed characters and
@@ -1094,19 +1059,14 @@ values according to the IEEE Standard 754 for Binary Floating-Point
 Arithmetic, which gives them the following precisions and dynamic
 ranges:
 
-
-<table><tr><td>
-
-</td><td>::    REAL4</td><td>::    REAL8</td></tr>
-<tr><td>
-Minimum positive subnormal</td><td>\f$1.4\times10^{-45}\f$</td><td>\f$4.9\times10^{-324}\f$</td></tr>
+<table>
+<tr><td></td><td>::    REAL4</td><td>::    REAL8</td></tr>
+<tr><td>Minimum positive subnormal</td><td>\f$1.4\times10^{-45}\f$</td><td>\f$4.9\times10^{-324}\f$</td></tr>
 <tr><td>Minimum positive normal</td><td>\f$1.2\times10^{-38}\f$</td><td>\f$2.2\times10^{-308}\f$</td></tr>
 <tr><td>Maximum finite normal</td><td>\f$3.4\times10^{38}\f$</td><td>\f$1.8\times10^{308}\f$</td></tr>
 <tr><td>Minimum fractional difference</td><td>\f$6.0\times10^{-8}\f$</td><td>\f$1.1\times10^{-16}\f$</td></tr>
 <tr><td>Significant decimal digits</td><td>6--9</td><td>15--17</td></tr>
-<tr><td>
-</td></tr></table>
-
+</table>
 
 The minimum positive subnormal is the smallest positive representable
 number.  The minimum positive normal is the smallest positive number
@@ -1122,7 +1082,7 @@ the maximum number of digits that are guaranteed not to change upon
 conversion to binary, the second is the number of digits required to
 represent a unique binary quantity.
 
-\subsubsection TODO_lalspec_1124 Complex datatypes
+\subsubsection lal_spec_complex_datatypes Complex datatypes
 
 LAL represents complex numbers as structures with two floating-point
 fields, storing the real and imaginary parts.  These are considered
@@ -1147,8 +1107,7 @@ memory.  The fields are:
 <dt> REAL8 im</dt><dd> The imaginary part.</dd>
 </dl>
 
-\subsection TODO_ss_aggregate_datatypes Aggregate datatypes
-
+\subsection lal_spec_aggregate_datatypes Aggregate datatypes
 
 These datatypes store arbitrarily large sets or collections of
 primitive datatypes.  At this level there is no physical
@@ -1211,7 +1170,6 @@ that is, the index of data[] runs over the internal index of
 each vector element before incrementing to the next vector element.</dd>
 </dl>
 
-
 \par datatype\c ArraySequence:
 This structure stores an ordered set of \f$l\f$ elements of type
 datatype\c Array, where datatype can be any primitive
@@ -1240,8 +1198,7 @@ the index of data[] runs over the internal indecies of each
 array element before incrementing to the next array element.</dd>
 </dl>
 
-\subsection TODO_ss_structured_datatypes Structured datatypes
-
+\subsection lal_spec_structured_datatypes Structured datatypes
 
 These datatypes embed primitive and aggregate datatypes inside
 structures that define their physical meaning.  Most of these
@@ -1267,7 +1224,6 @@ reference time.</dd>
 <dt> INT4 gpsNanoSeconds</dt><dd> The number of nanoseconds since
 the last GPS second.</dd>
 </dl>
-
 
 \par \c LALUnit:
 This structure stores units in the mksA system (plus Kelvin, Strain,
@@ -1320,7 +1276,6 @@ quantity being sampled.</dd>
 <dt> datatypeSequence *data</dt><dd> The sequence of sampled data.</dd>
 </dl>
 
-
 \par datatype\c FrequencySeries:
 This structure represents a frequency spectrum of data of type
 datatype (where datatype can be any primitive
@@ -1337,7 +1292,6 @@ sampled.  The fields are:
 <dt> LALUnit sampleUnits</dt><dd> The physical units of the quantity being sampled.</dd>
 <dt> datatypeSequence *data</dt><dd> The sequence of sampled data.</dd>
 </dl>
-
 
 \par datatype\c ZPGFilter:
 This structure stores the complex frequency response of a filter or
@@ -1371,9 +1325,7 @@ the poles \f$p_k\f$ of the filter.</dd>
 <dt> datatype gain</dt><dd> The gain \f$g\f$ of the filter.</dd>
 </dl>
 
-
-\subsection TODO_ss_status_structure The LAL universal status structure \c LALStatus
-
+\subsection lal_spec_lal_universal_status_structure_lalstatus The LAL universal status structure \c LALStatus
 
 This structure is the means by which LAL functions report their
 success or failure; it provides a useful mechanism for tracking
@@ -1409,13 +1361,12 @@ error.</dd>
 sequence.</dd>
 </dl>
 
-
-\section TODO_lalspec_1412 The \c LALStatus structure
+\section lal_spec_lalstatus_structure The \c LALStatus structure
 
 LAL routines store their current execution status in a linked list of
 structures of type \c LALStatus, with each node in the list
 representing a subroutine in the current calling sequence.  The
-\c LALStatus structure is described in Sec.\ref TODO_ss_status_structure
+\c LALStatus structure is described in \ref lal_spec_lal_universal_status_structure_lalstatus
 of the header \ref LALDatatypes.h, but for completeness, we explain
 its fields below:
 <dl>
@@ -1455,40 +1406,28 @@ various types of error that may be encountered in their routines.
 Additionally, the following following status codes are reserved to
 report certain standard conditions:
 
-
-<table><tr><td>
-
-Code</td><td>Message</td><td>Explanation</td></tr>
+<table>
+<tr><td>Code</td><td>Message</td><td>Explanation</td></tr>
 <tr><td>
-
 0</td><td></td><td>Nominal execution; the function returned
 successfully.</td></tr>
-<tr><td>
--1</td><td>Recursive error</td><td>The function aborted due
+<tr><td>-1</td><td>Recursive error</td><td>The function aborted due
 to failure of a subroutine.</td></tr>
-<tr><td>
--2</td><td>::INITSTATUS: non-null status pointer</td><td>The
+<tr><td>-2</td><td>::INITSTATUS: non-null status pointer</td><td>The
 status structure passed to the function had a non-\c NULL
 \c statusPtr field, which blocks the function from calling
 subroutines (it is symptomatic of something screwy going on in the
 calling routine).</td></tr>
-<tr><td>
--4</td><td>::ATTATCHSTATUSPTR: memory allocation error
+<tr><td>-4</td><td>::ATTATCHSTATUSPTR: memory allocation error
 </td><td>The function was unable to allocate a \c statusPtr field to pass
 down to a subroutine.</td></tr>
-<tr><td>
--8</td><td>::DETATCHSTATUSPTR: null status pointer</td><td>
-
+<tr><td>-8</td><td>::DETATCHSTATUSPTR: null status pointer</td><td>
 The \c statusPtr field could not be deallocated at the end of all
 subroutine calls; one of the subroutines must have lost it or set it
 to \c NULL.</td></tr>
-<tr><td>
+</table>
 
-</td></tr></table>
-
-
-
-\section TODO_lalspec_1490 The \c lalDebugLevel
+\section lal_spec_laldebuglevel The \c lalDebugLevel
 
 The \c lalDebugLevel is a global variable, set at runtime, that
 determines how much and what kind of debugging information will be
@@ -1552,20 +1491,17 @@ Switching on only the most significant bit with
 \c LALMEMDBG activates this code without turning on any other
 error reporting.
 
-\section TODO_lalspec_1576 LAL Constants
+\section lal_spec_lal_constants LAL Constants
 
-\subsection TODO_lalspec_1578 Mathematical Constants
+\subsection lal_spec_mathematical_constants Mathematical Constants
 
 The following constants define the precision and range of
 floating-point arithmetic in LAL.  They are taken from the IEEE
 standard 754 for binary arithmetic.  All numbers are dimensionless.
 
-
-<table><tr><td>
-
-Name</td><td>Value</td><td>Description</td></tr>
-<tr><td>
-::LAL_REAL4_MANT</td><td>24</td><td>
+<table>
+<tr><td>Name</td><td>Value</td><td>Description</td></tr>
+<tr><td>::LAL_REAL4_MANT</td><td>24</td><td>
         Bits in \c REAL4 mantissa</td></tr>
 <tr><td>::LAL_REAL4_MAX</td><td>\f$3.40282347\times10^{38}\f$</td><td>
         Largest \c REAL4</td></tr>
@@ -1573,8 +1509,7 @@ Name</td><td>Value</td><td>Description</td></tr>
         Smallest positive \c REAL4</td></tr>
 <tr><td>::LAL_REAL4_EPS</td><td>\f$1.19209290\times10^{-7}\f$</td><td>
         \f$2^{-(\mathtt{LAL_REAL4_MANT}-1)}\f$</td></tr>
-<tr><td>
-::LAL_REAL8_MANT</td><td>53</td><td>
+<tr><td>::LAL_REAL8_MANT</td><td>53</td><td>
         Bits in \c REAL8 mantissa</td></tr>
 <tr><td>::LAL_REAL8_MAX</td><td>\f$1.7976931348623157\times10^{308}\f$</td><td>
         Largest \c REAL8</td></tr>
@@ -1582,27 +1517,20 @@ Name</td><td>Value</td><td>Description</td></tr>
         Smallest positive \c REAL8</td></tr>
 <tr><td>::LAL_REAL8_EPS</td><td>\f$2.2204460492503131\times10^{-16}\f$</td><td>
         \f$2^{-(\mathtt{LAL_REAL8_MANT}-1)}\f$</td></tr>
-<tr><td>
-</td></tr></table>
-
+</table>
 
 \c LAL_REAL4_EPS and \c LAL_REAL8_EPS can be thought
 of as the difference between 1 and the next representable \c REAL4
 or \c REAL8 number.
-
-
 
 The following are fundamental mathematical constants.  They are mostly
 taken from the GNU C \c math.h header (with the exception of
 \c LAL_TWOPI, which was computed using Maple).  All numbers are
 dimensionless.
 
-
-<table><tr><td>
-
-Name</td><td>Value</td><td>Expression</td></tr>
-<tr><td>
-::LAL_E</td><td>2.7182818284590452353602874713526625</td><td>\f$e\f$</td></tr>
+<table>
+<tr><td>Name</td><td>Value</td><td>Expression</td></tr>
+<tr><td>::LAL_E</td><td>2.7182818284590452353602874713526625</td><td>\f$e\f$</td></tr>
 <tr><td>::LAL_LOG2E</td><td>1.4426950408889634073599246810018922</td><td>\f$\log_2 e\f$</td></tr>
 <tr><td>::LAL_LOG10E</td><td>0.4342944819032518276511289189166051</td><td>\f$\log_{10} e\f$</td></tr>
 <tr><td>::LAL_LN2</td><td>0.6931471805599453094172321214581766</td><td>\f$\log_e 2\f$</td></tr>
@@ -1620,11 +1548,9 @@ Name</td><td>Value</td><td>Expression</td></tr>
 <tr><td>::LAL_PI_180</td><td>1.7453292519943295769236907684886127\f$\times10^{-2}\f$</td><td>
   \f$\pi/180\f$</td></tr>
 <tr><td>::LAL_180_PI</td><td>57.295779513082320876798154814105170</td><td>\f$180/\pi\f$</td></tr>
-<tr><td>
-</td></tr></table>
+</table>
 
-
-\subsection TODO_lalspec_1648 Physical Constants
+\subsection lal_spec_physical_constants Physical Constants
 
 The following physical constants are defined to have exact values.
 The values of \f$c\f$ and \f$g\f$ are taken from \cite Barnet_1996 ,
@@ -1632,12 +1558,9 @@ The values of \f$c\f$ and \f$g\f$ are taken from \cite Barnet_1996 ,
 \f$\mu_0\f$ are computed from \f$c\f$ using exact formulae.  They are given in
 the SI units shown.
 
-
-<table><tr><td>
-
-Name</td><td>Value</td><td>Description</td></tr>
-<tr><td>
-::LAL_C_SI</td><td>\f$299\,792\,458\,\mathrm{m}\,\mathrm{s}^{-1}\f$</td><td>
+<table>
+<tr><td>Name</td><td>Value</td><td>Description</td></tr>
+<tr><td>::LAL_C_SI</td><td>\f$299\,792\,458\,\mathrm{m}\,\mathrm{s}^{-1}\f$</td><td>
         Speed of light \f$c\f$ in free space</td></tr>
 <tr><td>::LAL_EPSILON0_SI</td><td>
         \f$8.8541878176203898505365630317107503\times10^{-12}\,
@@ -1651,20 +1574,15 @@ Name</td><td>Value</td><td>Description</td></tr>
         Standard gravity \f$g\f$</td></tr>
 <tr><td>::LAL_PATM_SI</td><td>\f$101\,325\,\mathrm{Pa}\f$</td><td>
         Standard atmospheric pressure \f$p_\mathrm{atm}\f$</td></tr>
-<tr><td>
-</td></tr></table>
-
+</table>
 
 The following are measured fundamental physical constants, with values
 given in \cite Barnet_1996 .  When not dimensionless, they are given
 in the SI units shown.
 
-
-<table><tr><td>
-
-Name</td><td>Value</td><td>Description</td></tr>
-<tr><td>
-::LAL_G_SI</td><td>\f$6.67259\times10^{-11}\,\mathrm{N}\,\mathrm{m}^{2}
+<table>
+<tr><td>Name</td><td>Value</td><td>Description</td></tr>
+<tr><td>::LAL_G_SI</td><td>\f$6.67259\times10^{-11}\,\mathrm{N}\,\mathrm{m}^{2}
         \mathrm{kg}^{-2}\f$</td><td>Gravitational constant \f$G\f$</td></tr>
 <tr><td>::LAL_H_SI</td><td>\f$6.6260755\times10^{-34}\,\mathrm{J}\,\mathrm{s}\f$</td><td>
         Planck constant \f$h\f$</td></tr>
@@ -1697,12 +1615,9 @@ Name</td><td>Value</td><td>Description</td></tr>
         Bohr magneton \f$\mu_B\f$</td></tr>
 <tr><td>::LAL_MUN_SI</td><td>\f$5.05078658\times10^{-27}\,\mathrm{J}\,\mathrm{T}^{-1}\f$</td><td>
         Nuclear magneton \f$\mu_N\f$</td></tr>
-<tr><td>
-</td></tr></table>
+</table>
 
-
-
-\subsection TODO_lalspec_1726 Astrophysical Parameters
+\subsection lal_spec_astrophysical_parameters Astrophysical Parameters
 
 The following parameters are derived from measured properties of the
 Earth and Sun.  The values are taken from \cite Barnet_1996 , except
@@ -1710,12 +1625,9 @@ for the obliquity of the ecliptic plane and the eccentricity of
 Earth's orbit, which are taken from \cite Lang_1992 .  All values are
 given in the SI units shown.
 
-
-<table><tr><td>
-
-Name</td><td>Value</td><td>Description</td></tr>
-<tr><td>
-::LAL_REARTH_SI</td><td>\f$6.378140\times10^6\,\mathrm{m}\f$</td><td>
+<table>
+<tr><td>Name</td><td>Value</td><td>Description</td></tr>
+<tr><td>::LAL_REARTH_SI</td><td>\f$6.378140\times10^6\,\mathrm{m}\f$</td><td>
         Earth equatorial radius</td></tr>
 <tr><td>::LAL_AWGS84_SI</td><td>\f$6.378137\times10^6\,\mathrm{m}\f$</td><td>
         Semimajor axis of WGS-84 Reference Ellipsoid</td></tr>
@@ -1740,9 +1652,7 @@ Name</td><td>Value</td><td>Description</td></tr>
 <tr><td>::LAL_DAYSID_SI</td><td>\f$86\,164.09053\,\mathrm{s}\f$</td><td>Mean sidereal day</td></tr>
 <tr><td>::LAL_LYR_SI</td><td>\f$9.46052817\times10^{15}\,\mathrm{m}\f$</td><td>
         \f$c\times\f$tropical year (1994)</td></tr>
-<tr><td>
-</td></tr></table>
-
+</table>
 
 The following cosmological parameters are derived from measurements of
 the Hubble expansion rate and of the cosmic microwave background radiation
@@ -1762,12 +1672,9 @@ flatness is given by:
 Current estimates give \f$h_0\f$ a value of around 0.65, which is what is
 assumed below.  All values are in the SI units shown.
 
-
-<table><tr><td>
-
-Name</td><td>Value</td><td>Description</td></tr>
-<tr><td>
-::LAL_H0_SI</td><td>\f$2\times10^{-18}\,\mathrm{s}^{-1}\f$</td><td>
+<table>
+<tr><td>Name</td><td>Value</td><td>Description</td></tr>
+<tr><td>::LAL_H0_SI</td><td>\f$2\times10^{-18}\,\mathrm{s}^{-1}\f$</td><td>
         Approx.\ Hubble constant \f$H_0\f$</td></tr>
 <tr><td>::LAL_H0FAC_SI</td><td>\f$3.2407792903\times10^{-18}\,\mathrm{s}^{-1}\f$</td><td>
         \f$H_0/h_0\f$</td></tr>
@@ -1783,7 +1690,6 @@ Name</td><td>Value</td><td>Description</td></tr>
         Number density of CMB photons</td></tr>
 <tr><td>::LAL_SCMB_SI</td><td>\f$3.993\times10^{-14}\,\mathrm{J}\,\mathrm{K}^{-1}
         \mathrm{m}^{-3}\f$</td><td>Entropy density of CMB</td></tr>
-<tr><td>
-</td></tr></table>
+</table>
 
 */

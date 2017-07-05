@@ -139,18 +139,16 @@ REAL8 interpolate(struct fvec *fvec, REAL8 f);
 REAL8 interpolate(struct fvec *fvec, REAL8 f){
 	int i=0;
 	REAL8 a=0.0; /* fractional distance between bins */
-	REAL8 delta=0.0;
 	if(f<fvec[1].f) return(INFINITY); /* Frequency below minimum */
 	while(fvec[i].f<f && (fvec[i].x!=0.0 )){i++;}; //&& fvec[i].f!=0.0)){i++;};
 	if (fvec[i].f==0.0 && fvec[i].x==0.0) /* Frequency above maximum */
 	{
 		return (INFINITY);
 	}
-//  if(i==0){return (fvec[0].x);}
 	a=(fvec[i].f-f)/(fvec[i].f-fvec[i-1].f);
-	delta=fvec[i].x-fvec[i-1].x;
-	return (fvec[i-1].x + delta*a);
+	return (fvec[i-1].x*a + fvec[i].x*(1.0-a));
 }
+
 void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, ProcessParamsTable *commandLine);
 void enforce_m1_larger_m2(SimInspiralTable* injEvent);
 
@@ -214,26 +212,30 @@ static LALCache *GlobFramesPWD(char *ifo)
             fprintf( stderr, "error: no frame file files found\n");
             exit( 1 );
         }
-    CHAR ifoRegExPattern[6];
-    LALCache *frInCache=NULL;
-    /* sieve out the requested data type */
+        CHAR ifoRegExPattern[6];
+        LALCache *frInCache=NULL;
+        /* sieve out the requested data type */
         snprintf( ifoRegExPattern,
-                XLAL_NUM_ELEM(ifoRegExPattern), ".*%c.*",
-                ifo[0] );
-    {
+                        XLAL_NUM_ELEM(ifoRegExPattern), ".*%c.*",
+                        ifo[0] );
         fprintf(stderr,"GlobFramesPWD : Found unseived src files:\n");
         for(UINT4 i=0;i<frGlobCache->length;i++)
-            fprintf(stderr,"(%s,%s,%s)\n",frGlobCache->list[i].src,frGlobCache->list[i].dsc,frGlobCache->list[i].url);
-    }
-    frInCache = XLALCacheDuplicate(frGlobCache);
-    XLALCacheSieve(frInCache, 0, 0, ifoRegExPattern, NULL, NULL);
-    {
-        fprintf(stderr,"GlobFramesPWD : Sieved frames with pattern %s. Found src files:\n",ifoRegExPattern);
-        for(UINT4 i=0;i<frInCache->length;i++)
-            fprintf(stderr,"(%s,%s,%s)\n",frInCache->list[i].src,frInCache->list[i].dsc,frInCache->list[i].url);
-    }
+                        fprintf(stderr,"(%s,%s,%s)\n",frGlobCache->list[i].src,frGlobCache->list[i].dsc,frGlobCache->list[i].url);
+        frInCache = XLALCacheDuplicate(frGlobCache);
+        XLALCacheSieve(frInCache, 0, 0, ifoRegExPattern, NULL, NULL);
+        if ( ! frGlobCache->length )
+        {
+            fprintf( stderr, "error: no frame file files found after sieving\n");
+            exit( 1 );
+        }
+        else
+        {
+                fprintf(stderr,"GlobFramesPWD : Sieved frames with pattern %s. Found src files:\n",ifoRegExPattern);
+                for(UINT4 i=0;i<frInCache->length;i++)
+                        fprintf(stderr,"(%s,%s,%s)\n",frInCache->list[i].src,frInCache->list[i].dsc,frInCache->list[i].url);
+        }
 
-    return(frGlobCache);
+        return(frGlobCache);
 }
 
 static REAL8TimeSeries *readTseries(LALCache *cache, CHAR *channel, LIGOTimeGPS start, REAL8 length)
@@ -387,8 +389,7 @@ static INT4 getNamedDataOptionsByDetectors(ProcessParamsTable *commandLine, char
       return 0;
 }
 
-void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
-void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine){
+static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine){
 
   LALStatus status;
   memset(&status,0,sizeof(status));
@@ -422,7 +423,7 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
     {
       while(injTable)
       {
-        if(injTable->event_id->id == (UINT4)atoi(procparam->value)) break;
+        if(injTable->simulation_id == (UINT4)atoi(procparam->value)) break;
         else injTable=injTable->next;
       }
       if(!injTable){
@@ -936,14 +937,14 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                 {fprintf(stderr,USAGE); return(NULL);}
 
                 fprintf(stderr,"Estimating PSD for %s using %i segments of %i samples (%lfs)\n",IFOnames[i],nSegs,(int)seglen,SegmentLength);
-                /*LIGOTimeGPS trueGPSstart=GPSstart;
+                LIGOTimeGPS trueGPSstart=GPSstart;
                 if(Ntimeslides) {
                   REAL4 deltaT=-atof(timeslides[i]);
                   XLALGPSAdd(&GPSstart, deltaT);
                   fprintf(stderr,"Slid PSD estimation of %s by %f s from %10.10lf to %10.10lf\n",IFOnames[i],deltaT,trueGPSstart.gpsSeconds+1e-9*trueGPSstart.gpsNanoSeconds,GPSstart.gpsSeconds+1e-9*GPSstart.gpsNanoSeconds);
-                }*/
+                }
                 PSDtimeSeries=readTseries(cache,channels[i],GPSstart,PSDdatalength);
-                //GPSstart=trueGPSstart;
+                GPSstart=trueGPSstart;
                 if(!PSDtimeSeries) {XLALPrintError("Error reading PSD data for %s\n",IFOnames[i]); exit(1);}
                 XLALResampleREAL8TimeSeries(PSDtimeSeries,1.0/SampleRate);
                 PSDtimeSeries=(REAL8TimeSeries *)XLALShrinkREAL8TimeSeries(PSDtimeSeries,(size_t) 0, (size_t) seglen*nSegs);
@@ -1616,6 +1617,9 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       if((ppt=LALInferenceGetProcParamVal(commandLine,"--inj-numreldata"))) {
 	XLALSimInspiralWaveformParamsInsertNumRelData(LALpars, ppt->value);
 	fprintf(stdout,"Injection will use %s.\n",ppt->value);
+      }
+      else if (strlen(injEvent->numrel_data) > 0) {
+        XLALSimInspiralWaveformParamsInsertNumRelData(LALpars, injEvent->numrel_data);
       }
 
       /* Print a line with information about approximant, amporder, phaseorder, tide order and spin order */
@@ -2325,6 +2329,11 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
 
   COMPLEX16FrequencySeries *hptilde=NULL, *hctilde=NULL;
 
+  XLALSimInspiralWaveformParamsInsertTidalLambda1(LALpars,lambda1);
+  XLALSimInspiralWaveformParamsInsertTidalLambda2(LALpars,lambda2);
+  XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(LALpars,amp_order);
+  XLALSimInspiralWaveformParamsInsertPNPhaseOrder(LALpars,phase_order);
+
   XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, inj_table->mass1*LAL_MSUN_SI, inj_table->mass2*LAL_MSUN_SI,
 				  inj_table->spin1x, inj_table->spin1y, inj_table->spin1z,
 				  inj_table->spin2x, inj_table->spin2y, inj_table->spin2z,
@@ -2722,7 +2731,7 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
 	    {
 	      while(injTable)
 	      {
-		if(injTable->event_id->id == (UINT4)atoi(procparam->value)) break;
+		if(injTable->simulation_id == (UINT4)atoi(procparam->value)) break;
 		else injTable=injTable->next;
 	      }
 	      if(!injTable){
@@ -2833,7 +2842,7 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
 	    {
 	      while(injTable)
 	      {
-		if(injTable->event_id->id == (UINT4)atoi(procparam->value)) break;
+		if(injTable->simulation_id == (UINT4)atoi(procparam->value)) break;
 		else injTable=injTable->next;
 	      }
 	      if(!injTable){
@@ -2877,7 +2886,8 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
       assert(thisData->roq->weightsFileLinear!=NULL);
       thisData->roq->weightsLinear = (double complex*)malloc(n_basis_linear*time_steps*(sizeof(double complex)));
 
-      thisData->roq->time_weights_width = 2*dt + 2*0.026;
+      //0.045 comes from the diameter of the earth in light seconds: the maximum time-delay between earth-based observatories
+      thisData->roq->time_weights_width = 2*dt + 2*0.045;
       thisData->roq->time_step_size = thisData->roq->time_weights_width/time_steps;
       thisData->roq->n_time_steps = time_steps;
 
@@ -2988,7 +2998,7 @@ static void LALInferenceSetGPSTrigtime(LIGOTimeGPS *GPStrig, ProcessParamsTable 
                 {
                 while(inspiralTable)
                 {
-                if(inspiralTable->event_id->id == (UINT4)atoi(procparam->value)) break;
+                if(inspiralTable->simulation_id == (UINT4)atoi(procparam->value)) break;
                 else inspiralTable=inspiralTable->next;
                 }
                 if(!inspiralTable){

@@ -20,7 +20,7 @@ doxygen_redir_1 =
 html-local: Makefile $(CONFIG_CLEAN_FILES)
 	$(AM_V_at)set -e; \
 	echo "$(subdir)/Makefile: getting input sources ..."; \
-	( cd $(top_builddir) && make V=$(V) distdir $(doxygen_redir) ); \
+	( cd $(top_builddir) && $(MAKE) V=$(V) distdir $(doxygen_redir) ); \
 	rm -rf in/; \
 	mv "$(top_builddir)/$(PACKAGE)-$(VERSION)/" in/; \
 	rm -rf in/doxygen/; \

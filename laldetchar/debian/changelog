@@ -1,8 +1,8 @@
-laldetchar (0.3.4.1-1) UNRELEASED; urgency=medium
+laldetchar (0.3.5-1) unstable; urgency=low
 
-  * Back to development
+  * LALDetChar 0.3.5
 
- -- Leo Singer <leo@lalsuitedev>  Thu, 13 Oct 2016 20:03:21 -0400
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 07 Feb 2017 23:35:17 -0600
 
 laldetchar (0.3.4-1) unstable; urgency=low
 

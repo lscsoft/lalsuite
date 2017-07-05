@@ -219,10 +219,10 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
     case 4:
       params->wdotcoeff[4]  = XLALSimInspiralTaylorT4wdot_4PNCoeff(params->eta);
       params->Ecoeff[4]     = XLALSimInspiralPNEnergy_4PNCoeff(params->eta);
-      params->wdot4S1S2     = XLALSimInspiralTaylorT4wdot_4PNS1S2Coeff(params->eta);
-      params->wdot4S1OS2O   = XLALSimInspiralTaylorT4wdot_4PNS1S2OCoeff(params->eta);
-      params->E4S1S2      = XLALSimInspiralPNEnergy_4PNS1S2Coeff(params->eta);
-      params->E4S1OS2O    = XLALSimInspiralPNEnergy_4PNS1S2OCoeff(params->eta);
+      params->wdot4S1S2     = XLALSimInspiralTaylorT4wdot_4PNS1S2CoeffAvg(params->eta);
+      params->wdot4S1OS2O   = XLALSimInspiralTaylorT4wdot_4PNS1S2OCoeffAvg(params->eta);
+      params->E4S1S2      = XLALSimInspiralPNEnergy_4PNS1S2CoeffAvg(params->eta);
+      params->E4S1OS2O    = XLALSimInspiralPNEnergy_4PNS1S2OCoeffAvg(params->eta);
       params->wdot4S1S1     = XLALSimInspiralTaylorT4wdot_4PNSelf2SCoeff(params->m1ByM);
       params->wdot4S1OS1O   = XLALSimInspiralTaylorT4wdot_4PNSelf2SOCoeff(params->m1ByM);
       params->wdot4S2S2     = XLALSimInspiralTaylorT4wdot_4PNSelf2SCoeff(params->m2ByM);
@@ -231,14 +231,14 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
       params->wdot4QMS1O    = quadparam1*XLALSimInspiralTaylorT4wdot_4PNQM2SOCoeff(params->m1ByM);
       params->wdot4QMS2     = quadparam2*XLALSimInspiralTaylorT4wdot_4PNQM2SCoeff(params->m2ByM);
       params->wdot4QMS2O    = quadparam2*XLALSimInspiralTaylorT4wdot_4PNQM2SOCoeff(params->m2ByM);
-      params->E4QMS1      = quadparam1*XLALSimInspiralPNEnergy_4PNQM2SCoeff(params->m1ByM);
-      params->E4QMS2      = quadparam2*XLALSimInspiralPNEnergy_4PNQM2SCoeff(params->m2ByM);
-      params->E4QMS1O     = quadparam1*XLALSimInspiralPNEnergy_4PNQM2SOCoeff(params->m1ByM);
-      params->E4QMS2O     = quadparam2*XLALSimInspiralPNEnergy_4PNQM2SOCoeff(params->m2ByM);
-      params->Sdot4S2     = XLALSimInspiralSpinDot_4PNS2Coeff;
-      params->Sdot4S2O    = XLALSimInspiralSpinDot_4PNS2OCoeff;
-      params->S1dot4QMS1O  = quadparam1*XLALSimInspiralSpinDot_4PNQMSOCoeff(params->m1ByM);
-      params->S2dot4QMS2O  = quadparam2*XLALSimInspiralSpinDot_4PNQMSOCoeff(params->m2ByM);
+      params->E4QMS1      = quadparam1*XLALSimInspiralPNEnergy_4PNQM2SCoeffAvg(params->m1ByM);
+      params->E4QMS2      = quadparam2*XLALSimInspiralPNEnergy_4PNQM2SCoeffAvg(params->m2ByM);
+      params->E4QMS1O     = quadparam1*XLALSimInspiralPNEnergy_4PNQM2SOCoeffAvg(params->m1ByM);
+      params->E4QMS2O     = quadparam2*XLALSimInspiralPNEnergy_4PNQM2SOCoeffAvg(params->m2ByM);
+      params->Sdot4S2     = XLALSimInspiralSpinDot_4PNS2CoeffAvg;
+      params->Sdot4S2O    = XLALSimInspiralSpinDot_4PNS2OCoeffAvg;
+      params->S1dot4QMS1O  = quadparam1*XLALSimInspiralSpinDot_4PNQMSOCoeffAvg(params->m1ByM);
+      params->S2dot4QMS2O  = quadparam2*XLALSimInspiralSpinDot_4PNQMSOCoeffAvg(params->m2ByM);
 
     case 3:
       params->Ecoeff[3]      = 0.;

@@ -51,10 +51,13 @@ for detector in lal.CachedDetectors:
     name = detector.frDetector.name
     prefix = detector.frDetector.prefix
     detectors.append(prefix)
-    parser.add_argument('--' + prefix, choices=psd_names, metavar='func',
+    parser.add_argument(
+        '--' + prefix, choices=psd_names, metavar='func',
         help='PSD function for {0} detector [optional]'.format(name))
-    parser.add_argument('--' + prefix + '-scale', type=float, default=1.0,
-        help='Scale range for {0} detector [default: %(default)s]'.format(name))
+    parser.add_argument(
+        '--' + prefix + '-scale', type=float, default=1.0,
+        help='Scale range for {0} detector '
+        '[default: %(default)s]'.format(name))
 
 # Add list of vaild PSD functions.
 parser.description += '''
@@ -87,9 +90,11 @@ for detector in detectors:
     if psd_name is None:
         continue
     func = getattr(lalsimulation, psd_name_prefix + psd_name)
-    series = lal.CreateREAL8FrequencySeries(psd_name, 0, 0, opts.df, lal.SecondUnit, n)
+    series = lal.CreateREAL8FrequencySeries(
+        psd_name, 0, 0, opts.df, lal.SecondUnit, n)
     if '(double f) -> double' in func.__doc__:
-        series.data.data = vectorize_swig_psd_func(psd_name_prefix + psd_name)(f)
+        series.data.data = vectorize_swig_psd_func(
+            psd_name_prefix + psd_name)(f)
     else:
         func(series, 0.0)
 
@@ -100,7 +105,8 @@ for detector in detectors:
         last_nonzero = int(nonzero[-1])
 
         # Truncate
-        series = lal.CutREAL8FrequencySeries(series, first_nonzero, last_nonzero - first_nonzero + 1)
+        series = lal.CutREAL8FrequencySeries(
+            series, first_nonzero, last_nonzero - first_nonzero + 1)
         series.f0 = first_nonzero * series.deltaF
 
         series.name = psd_name
@@ -108,6 +114,6 @@ for detector in detectors:
     psds[detector] = series
 
 with glue.ligolw.utils.SignalsTrap():
-  glue.ligolw.utils.write_fileobj(
-      lal.series.make_psd_xmldoc(psds), opts.output,
-      gz=(os.path.splitext(opts.output.name)[-1]==".gz"))
+    glue.ligolw.utils.write_fileobj(
+        lal.series.make_psd_xmldoc(psds), opts.output,
+        gz=(os.path.splitext(opts.output.name)[-1] == ".gz"))

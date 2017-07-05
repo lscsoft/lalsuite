@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016  Leo Singer
+ * Copyright (C) 2015-2017  Leo Singer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,22 +42,22 @@ void bayestar_distance_parameters_to_moments(
 
 double bayestar_volume_render(
     double x, double y, double max_distance, int axis0, int axis1,
-    const double *R, long nside, int nest,
+    const double *R, long long nside, int nest,
     const double *prob, const double *mu,
     const double *sigma, const double *norm);
 
 double bayestar_distance_marginal_pdf(
-    double r, long npix,
+    double r, long long npix,
     const double *prob, const double *mu,
     const double *sigma, const double *norm);
 
 double bayestar_distance_marginal_cdf(
-    double r, long npix,
+    double r, long long npix,
     const double *prob, const double *mu,
     const double *sigma, const double *norm);
 
 double bayestar_distance_marginal_ppf(
-    double p, long npix,
+    double p, long long npix,
     const double *prob, const double *mu,
     const double *sigma, const double *norm);
 

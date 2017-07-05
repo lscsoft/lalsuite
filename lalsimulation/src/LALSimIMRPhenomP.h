@@ -31,8 +31,18 @@
 #include <lal/LALSimInspiral.h>
 
 
-/* ************************** PhenomP internal function prototypes *****************************/
+/* CONSTANTS */
 
+/**
+ * Tolerance used below which numbers are treated as zero for the calculation of atan2
+ */
+#define MAX_TOL_ATAN 1.0e-15
+
+
+/* ************************** PhenomP internal function prototypes *****************************/
+/* atan2 wrapper that returns 0 when both magnitudes of x and y are below tol, otherwise it returns
+   atan2(x, y) */
+static REAL8 atan2tol(REAL8 x, REAL8 y, REAL8 tol);
 
 /* PhenomC parameters for modified ringdown: Uses final spin formula of Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009 */
 static BBHPhenomCParams *ComputeIMRPhenomCParamsRDmod(

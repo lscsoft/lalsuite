@@ -26,6 +26,7 @@
 #include <lal/LALComputeAM.h>
 #include <lal/SSBtimes.h>
 #include <lal/CWMakeFakeData.h>
+#include <lal/LFTandTSutils.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -83,13 +84,13 @@ typedef struct tagFstatInputVector {
 /// Not all options are supported by all \f$\mathcal{F}\f$-statistic methods.
 ///
 typedef enum tagFstatQuantities {
-  FSTATQ_NONE           = 0x00,
+  FSTATQ_NONE           = 0x00,		///< Dont compute F-statistic, still compute buffered quantities
   FSTATQ_2F             = 0x01,         ///< Compute multi-detector \f$2\mathcal{F}\f$.
   FSTATQ_FAFB           = 0x02,         ///< Compute multi-detector \f$F_a\f$ and \f$F_b\f$.
   FSTATQ_2F_PER_DET     = 0x04,         ///< Compute \f$2\mathcal{F}\f$ for each detector.
   FSTATQ_FAFB_PER_DET   = 0x08,         ///< Compute \f$F_a\f$ and \f$F_b\f$ for each detector.
   FSTATQ_ATOMS_PER_DET  = 0x10,         ///< Compute per-SFT \f$\mathcal{F}\f$-statistic atoms for each detector (\a Demod only).
-  FSTATQ_LAST           = 0x20
+  FSTATQ_LAST           = 0x11
 } FstatQuantities;
 
 ///
@@ -133,6 +134,7 @@ typedef struct tagFstatOptionalArgs {
   MultiNoiseFloor *assumeSqrtSX;  	///< Single-sided PSD values to be used for computing SFT noise weights instead of from a running median of the SFTs themselves.
   FstatInput *prevInput;		///< An \c FstatInput structure from a previous call to XLALCreateFstatInput(); may contain common workspace data than can be re-used to save memory.
   BOOLEAN collectTiming;		///< a flag to turn on/off the collection of F-stat-method-specific timing-data
+  BOOLEAN resampFFTPowerOf2;		///< \a Resamp: round up FFT lengths to next power of 2; see #FstatMethodType.
 } FstatOptionalArgs;
 
 ///
@@ -296,6 +298,7 @@ const MultiNoiseWeights* XLALGetFstatInputNoiseWeights ( const FstatInput* input
 const MultiDetectorStateSeries* XLALGetFstatInputDetectorStates ( const FstatInput* input );
 int XLALGetFstatTiming ( const FstatInput* input, REAL8 *tauF1Buf, REAL8 *tauF1NoBuf );
 int AppendFstatTimingInfo2File ( const FstatInput* input, FILE *fp, BOOLEAN printHeader );
+int  XLALExtractResampledTimeseries ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, const FstatInput *input );
 
 #ifdef SWIG // SWIG interface directives
 SWIGLAL(INOUT_STRUCTS(FstatResults**, Fstats));

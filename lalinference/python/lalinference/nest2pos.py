@@ -29,15 +29,20 @@ def compute_weights(data, Nlive):
     log_wts=zeros(data.shape[0])
 
     log_vols_start=cumsum(ones(len(start_data)+1)*log1p(-1./Nlive))-log1p(-1./Nlive)
-    log_vols_end=log_vols_start[-1]+concatenate((log(linspace(1,0,len(end_data)+1)[1:-1]),[np.NINF]))
+    log_vols_end=np.zeros(len(end_data))
+    log_vols_end[-1]=np.NINF
+    log_vols_end[0]=log_vols_start[-1]+np.log1p(-1.0/Nlive)
+    for i in range(len(end_data)-1):
+        log_vols_end[i+1]=log_vols_end[i]+np.log1p(-1.0/(Nlive-i))
 
     log_likes = concatenate((start_data,end_data,[end_data[-1]]))
 
     log_vols=concatenate((log_vols_start,log_vols_end))
+
     log_ev = log_integrate_log_trap(log_likes, log_vols)
 
     log_dXs = logsubexp(log_vols[:-1], log_vols[1:])
-    log_wts = log_likes[1:-1] + log_vols[1:-1]  #(log(0.5) + logaddexp(log_dXs[:-1], log_dXs[1:]))
+    log_wts = log_likes[1:-1] + log_dXs[:-1]
 
     log_wts -= log_ev
 

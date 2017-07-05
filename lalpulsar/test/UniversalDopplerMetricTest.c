@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2017 Arunava Mukherjee
  * Copyright (C) 2015 Karl Wette
  * Copyright (C) 2009 Reinhard Prix
  *
@@ -466,10 +467,43 @@ test_XLALComputeDopplerMetrics ( void )
     XLAL_CHECK ( (diff = XLALCompareMetrics ( metric_ScoX1->g_ij, g0_ij )) < tolScoX1, XLAL_ETOL, "Error(gNum,gAn)= %g exceeds tolerance of %g\n", diff, tolScoX1 );
     XLALPrintWarning ("diff_Num_An = %e\n", diff );
 
+
+    XLALPrintWarning("\n---------- ROUND 7: directed binary orbital metric -- comparison between 'old' and 'new' coords  ----------\n");
+    // ----- 2nd part of the test: compare ScoX1 metric in new coordinates against old one
+    DopplerMetricParams pars_ScoX1_newCoords = pars_ScoX1;
+    const DopplerCoordinateSystem coordSysScoX1_newCoords = { 6, { DOPPLERCOORD_FREQ, DOPPLERCOORD_ASINI, DOPPLERCOORD_DASC, DOPPLERCOORD_VP, DOPPLERCOORD_KAPPAP, DOPPLERCOORD_ETAP } };
+    pars_ScoX1_newCoords.coordSys = coordSysScoX1_newCoords;
+
+    DopplerPhaseMetric *metric_ScoX1_newCoords;
+    XLAL_CHECK ( (metric_ScoX1_newCoords = XLALComputeDopplerPhaseMetric ( &pars_ScoX1_newCoords, edat )) != NULL, XLAL_EFUNC );
+
+    // apply coordinate transformation
+    gsl_matrix *Trnf_ij;   /* This is the matrix for co-ordinate transformation from old to new */
+    XLAL_CHECK ( (Trnf_ij = gsl_matrix_calloc ( 6, 6 )) != NULL, XLAL_ENOMEM, "Failed to gsl_calloc a 6x6 matrix\n");
+    gsl_matrix_set ( Trnf_ij, 0, 0, 1.0 );
+    gsl_matrix_set ( Trnf_ij, 1, 1, 1.0 );
+    gsl_matrix_set ( Trnf_ij, 2, 2, asini * Omega );
+    gsl_matrix_set ( Trnf_ij, 3, 3, -1.0 * asini * pow ( Omega, 2 )/(2 * LAL_PI) );
+    gsl_matrix_set ( Trnf_ij, 4, 4, asini );
+    gsl_matrix_set ( Trnf_ij, 5, 5, asini );
+
+    XLAL_CHECK ( XLALInverseTransformMetric( &metric_ScoX1->g_ij, Trnf_ij, metric_ScoX1->g_ij) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // output metrics
+    GPMAT ( metric_ScoX1->g_ij, "%0.4e" );
+    GPMAT ( metric_ScoX1_newCoords->g_ij, "%0.4e" );
+
+    // compare metrics
+    REAL8 Coord_diff, tolCoordScoX1 = 1e-10;	// should be purely numerical differences
+    XLAL_CHECK ( (Coord_diff = XLALCompareMetrics ( metric_ScoX1_newCoords->g_ij, metric_ScoX1->g_ij )) < tolCoordScoX1, XLAL_ETOL, "Error(gNum,gAn)= %g exceeds tolerance of %g\n", Coord_diff, tolCoordScoX1 );
+    XLALPrintWarning ("rel diff old vs new coords = %e\n", Coord_diff );
+
+    // free memory
     gsl_matrix_free ( g0_ij );
     XLALDestroyDopplerPhaseMetric ( metric_ScoX1 );
+    XLALDestroyDopplerPhaseMetric ( metric_ScoX1_newCoords );
     XLALSegListClear ( &segListScoX1 );
-  }
+  } // end: Round 6 + 7 (binary orbital metrics)
 
 
   // ----- clean up memory

@@ -1,10 +1,11 @@
-lalapps (6.20.0.1-1) UNRELEASED; urgency=medium
+lalapps (6.21.0-1) unstable; urgency=low
 
-  * Back to development
+  * LALApps 6.21.0
+  * O2 release
 
- -- Leo Singer <leo@lalsuitedev>  Thu, 13 Oct 2016 20:02:49 -0400
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 07 Feb 2017 10:35:00 -0600
 
-lalapps (6.20.0-1) unstable; urgency=medium
+lalapps (6.20.0-1) unstable; urgency=low
 
   * LALApps 6.20.0
   * ER10 release

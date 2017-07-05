@@ -39,7 +39,7 @@ import sys
 
 
 from lalburst import git_version
-from lalburst import ligolw_burca_tailor
+from lalburst import burca_tailor
 from lalburst import SnglBurstUtils
 
 
@@ -138,7 +138,7 @@ def add_to_dtplot(axes, red, black, blue, gmst, plottype = "LR"):
 
 
 #
-# distributions is a ligolw_burca_tailor.BurcaCoincParamsDistributions instance
+# distributions is a burca_tailor.BurcaCoincParamsDistributions instance
 #
 
 
@@ -154,7 +154,7 @@ def plot_coinc_params(distributions, gmst, plottype = "LR", with_zero_lag = Fals
 	# How many instrument pairs are there?
 	#
 
-	pairs = set(tuple(name.split("_")[:2]) for name in distributions.background_pdf.keys() if "_" in name)
+	pairs = set(tuple(name.split("_")[:2]) for name in distributions.denominator.densities if "_" in name)
 
 	#
 	# How many plots in each row?
@@ -222,19 +222,19 @@ def plot_coinc_params(distributions, gmst, plottype = "LR", with_zero_lag = Fals
 		prefix = "%s_%s_" % pair
 
 		for axes, suffix in zip((df_axes, dh_axes, dband_axes, ddur_axes), ("df", "dh", "dband", "ddur")):
-			red = distributions.injection_pdf[prefix + suffix]
-			black = distributions.background_pdf[prefix + suffix]
+			red = distributions.numerator.densities[prefix + suffix]
+			black = distributions.denominator.densities[prefix + suffix]
 			if with_zero_lag:
-				blue = distributions.zero_lag_pdf[prefix + suffix]
+				blue = distributions.candidates.densities[prefix + suffix]
 			else:
 				blue = None
 			add_to_plot(axes, red, black, blue, gmst, plottype = plottype)
 
 		suffix = "dt"
-		red = distributions.injection_pdf[prefix + suffix]
-		black = distributions.background_pdf[prefix + suffix]
+		red = distributions.numerator.densities[prefix + suffix]
+		black = distributions.denominator.densities[prefix + suffix]
 		if with_zero_lag:
-			blue = distributions.zero_lag_pdf[prefix + suffix]
+			blue = distributions.candidates.densities[prefix + suffix]
 		else:
 			blue = None
 		add_to_dtplot(dt_axes, red, black, blue, gmst, plottype = plottype)
@@ -259,7 +259,7 @@ options, filenames = parse_command_line()
 filenames.sort()
 
 
-distributions, seglists = ligolw_burca_tailor.EPGalacticCoreCoincParamsDistributions.from_filenames(filenames, u"ligolw_burca_tailor", verbose = options.verbose)
+distributions, seglists = burca_tailor.EPGalacticCoreCoincParamsDistributions.from_filenames(filenames, u"lalapps_burca_tailor", verbose = options.verbose)
 if options.verbose:
 	print >>sys.stderr, "applying filters ..."
 distributions.finish()

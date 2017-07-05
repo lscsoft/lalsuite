@@ -16,6 +16,8 @@ int XLALSimInspiralWaveformParamsInsertFrameAxis(LALDict *params, INT4 value);
 int XLALSimInspiralWaveformParamsInsertSideband(LALDict *params, INT4 value);
 int XLALSimInspiralWaveformParamsInsertNumRelData(LALDict *params, const char * value);
 
+int XLALSimInspiralWaveformParamsInsertModeArray(LALDict *params,  LALValue *value);
+
 int XLALSimInspiralWaveformParamsInsertPNPhaseOrder(LALDict *params, INT4 value);
 int XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(LALDict *params, INT4 value);
 int XLALSimInspiralWaveformParamsInsertPNEccentricityOrder(LALDict *params, INT4 value);
@@ -79,10 +81,21 @@ int XLALSimInspiralWaveformParamsInsertNonGRBetaPPE6(LALDict *params, REAL8 valu
 int XLALSimInspiralWaveformParamsInsertNonGRAlphaPPE7(LALDict *params, REAL8 value);
 int XLALSimInspiralWaveformParamsInsertNonGRBetaPPE7(LALDict *params, REAL8 value);
 
+/* NLTides parameters */
+/* used within LALSimInspiralTaylorF2NLTides.c */
+int XLALSimInspiralWaveformParamsInsertNLTidesA1(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertNLTidesN1(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertNLTidesF1(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertNLTidesA2(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertNLTidesN2(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertNLTidesF2(LALDict *params, REAL8 value);
+
 INT4 XLALSimInspiralWaveformParamsLookupModesChoice(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsLookupFrameAxis(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsLookupSideband(LALDict *params);
 const char * XLALSimInspiralWaveformParamsLookupNumRelData(LALDict *params);
+
+LALValue* XLALSimInspiralWaveformParamsLookupModeArray(LALDict *params);
 
 INT4 XLALSimInspiralWaveformParamsLookupPNPhaseOrder(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(LALDict *params);
@@ -146,10 +159,21 @@ REAL8 XLALSimInspiralWaveformParamsLookupNonGRBetaPPE6(LALDict *params);
 REAL8 XLALSimInspiralWaveformParamsLookupNonGRAlphaPPE7(LALDict *params);
 REAL8 XLALSimInspiralWaveformParamsLookupNonGRBetaPPE7(LALDict *params);
 
+/* NLTides parameters */
+/* used within LALSimInspiralTaylorF2NLTides.c */
+REAL8 XLALSimInspiralWaveformParamsLookupNLTidesA1(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupNLTidesN1(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupNLTidesF1(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupNLTidesA2(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupNLTidesN2(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupNLTidesF2(LALDict *params);
+
 int XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsSidebandIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsNumRelDataIsDefault(LALDict *params);
+
+int XLALSimInspiralWaveformParamsModeArrayIsDefault(LALDict *params);
 
 int XLALSimInspiralWaveformParamsPNPhaseOrderIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsPNAmplitudeOrderIsDefault(LALDict *params);

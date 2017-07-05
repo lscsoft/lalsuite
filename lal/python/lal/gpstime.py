@@ -46,7 +46,8 @@ except ImportError:
     raise ImportError("LAL SWIG-wrappings are not available, you must install "
                       "these to use the gpstime module")
 
-import git_version
+from . import git_version
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = git_version.verbose_msg
 __date__ = git_version.date

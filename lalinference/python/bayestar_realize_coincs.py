@@ -18,10 +18,10 @@
 """
 Synthesize triggers for simulated sources by realizing Gaussian measurement
 errors in SNR and time of arrival. The input file (or stdin if the input file
-is omitted) should be an optionally gzip-compressed LIGO-LW XML file of the form
-produced by lalapps_inspinj. The output file (or stdout if omitted) will be an
-optionally gzip-compressed LIGO-LW XML file containing single-detector triggers
-and coincidences.
+is omitted) should be an optionally gzip-compressed LIGO-LW XML file of the
+form produced by lalapps_inspinj. The output file (or stdout if omitted) will
+be an optionally gzip-compressed LIGO-LW XML file containing single-detector
+triggers and coincidences.
 
 The root-mean square measurement error depends on the SNR of the signal, so
 there is a choice for how to generate perturbed time and phase measurements:
@@ -32,7 +32,6 @@ there is a choice for how to generate perturbed time and phase measurements:
    that perturbed SNR to compute covariance of time and phase errors
 """
 from __future__ import division
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Determine list of known detectors for command line arguments.
@@ -54,28 +53,36 @@ parser.add_argument(
 parser.add_argument(
     '--detector', metavar='|'.join(available_ifos), nargs='+',
     help='Detectors to use [required].', choices=available_ifos, required=True)
-parser.add_argument('--waveform',
+parser.add_argument(
+    '--waveform',
     help='Waveform to use for injections (overrides values in '
     'sim_inspiral table)')
-parser.add_argument('--snr-threshold', type=float, default=4.,
+parser.add_argument(
+    '--snr-threshold', type=float, default=4.,
     help='Single-detector SNR threshold [default: %(default)s]')
-parser.add_argument('--net-snr-threshold', type=float, default=12.,
+parser.add_argument(
+    '--net-snr-threshold', type=float, default=12.,
     help='Network SNR threshold [default: %(default)s]')
-parser.add_argument('--keep-subthreshold', action='store_true',
+parser.add_argument(
+    '--keep-subthreshold', action='store_true',
     help='Keep sub-threshold triggers that do not contribute to network SNR '
     '[default: %(default)s]')
-parser.add_argument('--min-triggers', type=int, default=2,
+parser.add_argument(
+    '--min-triggers', type=int, default=2,
     help='Emit coincidences only when at least this many triggers '
     'are found [default: %(default)s]')
 parser.add_argument(
-    '--measurement-error',
+    '--measurement-error', default='zero-noise',
     choices=('zero-noise', 'from-truth', 'from-measurement'),
-    default='zero-noise',
     help='How to compute the measurement error [default: %(default)s]')
+parser.add_argument(
+    '--enable-snr-series', default=False, action='store_true',
+    help='Enable output of SNR time series (WARNING: UNREVIEWED!) [default: no]')
 parser.add_argument(
     '--reference-psd', metavar='PSD.xml[.gz]', type=argparse.FileType('rb'),
     required=True, help='Name of PSD file [required]')
-parser.add_argument('--f-low', type=float,
+parser.add_argument(
+    '--f-low', type=float,
     help='Override low frequency cutoff found in sim_inspiral table')
 opts = parser.parse_args()
 
@@ -99,6 +106,7 @@ import glue.lal
 import lal
 import lal.series
 import lalsimulation
+from lalinspiral.thinca import InspiralCoincDef
 from glue.text_progress_bar import ProgressBar
 
 # BAYESTAR imports.
@@ -127,14 +135,14 @@ all_time = segments.segment(
     [glue.lal.LIGOTimeGPS(0), glue.lal.LIGOTimeGPS(2e9)])
 search_summary_table = lsctables.New(lsctables.SearchSummaryTable)
 out_xmldoc.childNodes[0].appendChild(search_summary_table)
-summary = ligolw_search_summary.append_search_summary(out_xmldoc, process,
-    inseg=all_time, outseg=all_time)
+summary = ligolw_search_summary.append_search_summary(
+    out_xmldoc, process, inseg=all_time, outseg=all_time)
 
 # Read PSDs.
 progress.update(-1, 'reading ' + opts.reference_psd.name)
 xmldoc, _ = ligolw_utils.load_fileobj(
     opts.reference_psd, contenthandler=lal.series.PSDContentHandler)
-psds = lal.series.read_psd_xmldoc(xmldoc)
+psds = lal.series.read_psd_xmldoc(xmldoc, root_name=None)
 psds = {
     key: timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data)
     for key, psd in psds.items() if psd is not None}
@@ -145,8 +153,8 @@ xmldoc, _ = ligolw_utils.load_fileobj(
     opts.input, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
 
 # Extract simulation table from injection file.
-sim_inspiral_table = ligolw_table.get_table(xmldoc,
-    lsctables.SimInspiralTable.tableName)
+sim_inspiral_table = ligolw_table.get_table(
+    xmldoc, lsctables.SimInspiralTable.tableName)
 
 # Create a SnglInspiral table and initialize its row ID counter.
 sngl_inspiral_table = lsctables.New(lsctables.SnglInspiralTable)
@@ -163,7 +171,7 @@ time_slide_id = time_slide_table.get_time_slide_id(
 # sngl_inspiral <-> sngl_inspiral coincidences.
 coinc_def_table = lsctables.New(lsctables.CoincDefTable)
 out_xmldoc.childNodes[0].appendChild(coinc_def_table)
-coinc_def = ligolw_bayestar.InspiralCoincDef
+coinc_def = InspiralCoincDef
 coinc_def_id = coinc_def_table.get_next_id()
 coinc_def.coinc_def_id = coinc_def_id
 coinc_def_table.append(coinc_def)
@@ -181,8 +189,8 @@ coinc_inspiral_table = lsctables.New(lsctables.CoincInspiralTable)
 out_xmldoc.childNodes[0].appendChild(coinc_inspiral_table)
 
 # Precompute values that are common to all simulations.
-detectors = [lalsimulation.DetectorPrefixToLALDetector(ifo)
-    for ifo in opts.detector]
+detectors = [
+    lalsimulation.DetectorPrefixToLALDetector(ifo) for ifo in opts.detector]
 responses = [det.response for det in detectors]
 locations = [det.location for det in detectors]
 
@@ -201,7 +209,8 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
     epoch = lal.LIGOTimeGPS(
         sim_inspiral.geocent_end_time, sim_inspiral.geocent_end_time_ns)
     gmst = lal.GreenwichMeanSiderealTime(epoch)
-    waveform = sim_inspiral.waveform if opts.waveform is None else opts.waveform
+    waveform = (sim_inspiral.waveform if opts.waveform is None
+                else opts.waveform)
 
     # FIXME: Set tranverse spin components to 0
     sim_inspiral.spin1x = 0
@@ -214,12 +223,23 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
     u2 = np.square(u)
 
     # Signal models for each detector.
-    H = filter.sngl_inspiral_psd(sim_inspiral, waveform, f_low)
+    H = filter.sngl_inspiral_psd(
+        waveform,
+        mass1=sim_inspiral.mass1,
+        mass2=sim_inspiral.mass2,
+        spin1x=sim_inspiral.spin1x,
+        spin1y=sim_inspiral.spin1y,
+        spin1z=sim_inspiral.spin1z,
+        spin2x=sim_inspiral.spin2x,
+        spin2y=sim_inspiral.spin2y,
+        spin2z=sim_inspiral.spin2z,
+        f_min=f_low)
     W = [filter.signal_psd_series(H, psds[ifo]) for ifo in opts.detector]
     signal_models = [timing.SignalModel(_) for _ in W]
 
     # Get SNR=1 horizon distances for each detector.
-    horizons = np.asarray([signal_model.get_horizon_distance()
+    horizons = np.asarray(
+        [signal_model.get_horizon_distance()
         for signal_model in signal_models])
 
     # Get antenna factors for each detector.
@@ -228,8 +248,9 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
         for response in responses]).T
 
     # Compute TOAs at each detector.
-    toas = np.asarray([lal.TimeDelayFromEarthCenter(location, ra, dec,
-        epoch) for location in locations])
+    toas = np.asarray(
+        [lal.TimeDelayFromEarthCenter(location, ra, dec, epoch)
+         for location in locations])
 
     # Compute SNR in each detector.
     snrs = (0.5 * (1 + u2) * Fplus + 1j * u * Fcross) * horizons / DL
@@ -240,13 +261,14 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
     if opts.measurement_error == 'zero-noise':
         pass
     elif opts.measurement_error == 'from-truth':
-        # If user asked, apply noise to amplitudes /before/ adding noise to TOAs and phases.
+        # If user asked, apply noise to amplitudes /before/ adding noise to
+        # TOAs and phases.
 
         # Add noise to SNR estimates.
         abs_snrs += np.random.randn(len(abs_snrs))
 
         for i, signal_model in enumerate(signal_models):
-            arg_snrs[i], toas[i]  = np.random.multivariate_normal(
+            arg_snrs[i], toas[i] = np.random.multivariate_normal(
                 [arg_snrs[i], toas[i]], signal_model.get_cov(abs_snrs[i]))
 
         snrs = abs_snrs * np.exp(1j * arg_snrs)
@@ -254,7 +276,7 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
         # Otherwise, by defualt, apply noise to TOAs and phases first.
 
         for i, signal_model in enumerate(signal_models):
-            arg_snrs[i], toas[i]  = np.random.multivariate_normal(
+            arg_snrs[i], toas[i] = np.random.multivariate_normal(
                 [arg_snrs[i], toas[i]], signal_model.get_cov(abs_snrs[i]))
 
         # Add noise to SNR estimates.
@@ -314,7 +336,8 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
     if net_snr < opts.net_snr_threshold:
         continue
 
-    weights = [1/np.square(signal_model.get_crb_toa_uncert(snr))
+    weights = [
+        1 / np.square(signal_model.get_crb_toa_uncert(snr))
         for signal_model, snr in zip(used_signal_models, used_abs_snrs)]
 
     # Center detector array.
@@ -340,16 +363,16 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
     # Add CoincInspiral table entry.
     coinc_inspiral = lsctables.CoincInspiral()
     coinc_inspiral.coinc_event_id = coinc.coinc_event_id
-    coinc_inspiral.ifos = lsctables.ifos_from_instrument_set(
+    coinc_inspiral.ifos = lsctables.instrumentsproperty.set(
         sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals)
     coinc_inspiral.end = lal.LIGOTimeGPS(
         sum(sngl_inspiral.end.ns() for sngl_inspiral in sngl_inspirals)
-        // len(sngl_inspirals) * 1e-9) # FIXME: should only be detected sngls
+        // len(sngl_inspirals) * 1e-9)  # FIXME: should only be detected sngls
     coinc_inspiral.mass = sim_inspiral.mass1 + sim_inspiral.mass2
     coinc_inspiral.mchirp = sim_inspiral.mchirp
-    coinc_inspiral.combined_far = 0.0 # Not provided
-    coinc_inspiral.false_alarm_rate = 0.0 # Not provided
-    coinc_inspiral.minimum_duration = None # Not provided
+    coinc_inspiral.combined_far = 0.0  # Not provided
+    coinc_inspiral.false_alarm_rate = 0.0  # Not provided
+    coinc_inspiral.minimum_duration = None  # Not provided
     coinc_inspiral.snr = net_snr
     coinc_inspiral_table.append(coinc_inspiral)
 
@@ -359,18 +382,20 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
         sngl_inspiral.event_id = sngl_inspiral_table.get_next_id()
         sngl_inspiral_table.append(sngl_inspiral)
 
-        snr, sample_rate = filter.autocorrelation(W, max_abs_t)
-        dt = 1 / sample_rate
-        epoch = sngl_inspiral.end - (len(snr) - 1) / sample_rate
-        snr = np.concatenate((snr[:0:-1].conj(), snr))
-        snr *= sngl_inspiral.snr * np.exp(1j * sngl_inspiral.coa_phase)
-        snr_series = lal.CreateCOMPLEX16TimeSeries(
-            'snr', epoch, 0, dt, lal.StrainUnit, len(snr))
-        snr_series.data.data[:] = snr
-        elem = lal.series.build_COMPLEX16TimeSeries(snr_series)
-        elem.appendChild(
-            ligolw_param.Param.from_pyvalue(u'event_id', sngl_inspiral.event_id))
-        out_xmldoc.childNodes[0].appendChild(elem)
+        if opts.enable_snr_series:
+            snr, sample_rate = filter.autocorrelation(W, max_abs_t)
+            dt = 1 / sample_rate
+            epoch = sngl_inspiral.end - (len(snr) - 1) / sample_rate
+            snr = np.concatenate((snr[:0:-1].conj(), snr))
+            snr *= sngl_inspiral.snr * np.exp(1j * sngl_inspiral.coa_phase)
+            snr_series = lal.CreateCOMPLEX16TimeSeries(
+                'snr', epoch, 0, dt, lal.StrainUnit, len(snr))
+            snr_series.data.data[:] = snr
+            elem = lal.series.build_COMPLEX16TimeSeries(snr_series)
+            elem.appendChild(
+                ligolw_param.Param.from_pyvalue(
+                    u'event_id', sngl_inspiral.event_id))
+            out_xmldoc.childNodes[0].appendChild(elem)
 
         # Add CoincMap entry.
         coinc_map = lsctables.CoincMap()
@@ -386,5 +411,6 @@ ligolw_process.set_process_end_time(process)
 
 # Write output file.
 with ligolw_utils.SignalsTrap():
-  ligolw_utils.write_fileobj(out_xmldoc, opts.output,
-      gz=(os.path.splitext(opts.output.name)[-1]==".gz"))
+    ligolw_utils.write_fileobj(
+        out_xmldoc, opts.output,
+        gz=(os.path.splitext(opts.output.name)[-1] == ".gz"))

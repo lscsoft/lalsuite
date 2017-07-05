@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011, 2014 David Keitel
+ * Copyright (C) 2017 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -73,6 +74,9 @@ XLALCheckBSGLDifferences ( const REAL4 diff,
 			   const REAL4 tolerance,
 			   const CHAR *casestring
 			);
+
+int
+XLALCheckBSGLVectorFunctions (void);
 
 /* ###################################  MAIN  ################################### */
 
@@ -168,6 +172,10 @@ int main( int argc, char *argv[]) {
   XLALDestroyREAL4Vector(sumTwoFX);
   XLALDestroyREAL4Vector(maxTwoFX);
 
+
+  // check vector versions of B*SGL* function
+  XLAL_CHECK_MAIN ( XLALCheckBSGLVectorFunctions() == XLAL_SUCCESS, XLAL_EFUNC );
+
   LALCheckMemoryLeaks();
 
   return XLAL_SUCCESS;
@@ -222,7 +230,7 @@ XLALCompareBSGLComputations ( const REAL4 TwoF,			/**< multi-detector  Fstat */
       break;
   }
   XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeBSGL() failed with xlalErrno = %d\n", xlalErrno );
-  XLALFree ( setup_noLogCorrection ); setup_noLogCorrection = NULL;
+  XLALDestroyBSGLSetup ( setup_noLogCorrection ); setup_noLogCorrection = NULL;
 
   /* more precise version: use all terms of the BSGL denominator sum */
   BSGLSetup *setup_withLogCorrection;
@@ -245,7 +253,7 @@ XLALCompareBSGLComputations ( const REAL4 TwoF,			/**< multi-detector  Fstat */
         printf("log correction not implemented for GLtL denominator, skipping full-precision test for this LRS variant.\n");
   }
   XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "%s() failed with xlalErrno = %d\n", funcname, xlalErrno );
-  XLALFree ( setup_withLogCorrection ); setup_withLogCorrection = NULL;
+  XLALDestroyBSGLSetup ( setup_withLogCorrection ); setup_withLogCorrection = NULL;
 
   /* compute relative deviations */
   REAL4 diff_allterms = 0.0;
@@ -387,3 +395,145 @@ XLALCheckBSGLDifferences ( const REAL4 diff,
   return XLAL_SUCCESS;
 
 } /* XLALCheckBSGLDifferences() */
+
+int
+XLALCheckBSGLVectorFunctions ( void )
+{
+#define VEC_LEN 5
+#define NUM_SEGS 3
+
+  REAL4 cohFstar0 = 4.37; // 10% false-alarm: invFalseAlarm_chi2 ( 0.1, 4 * 3 ) / 3
+  UINT4 numDet = 3;
+  REAL4 oLtLGX[3] = {0.1, 0.8, 1.5}; /* per-IFO prior odds ratio for line vs. Gaussian noise */
+
+  BSGLSetup *setup_noLogCorr;
+  BSGLSetup *setup_withLogCorr;
+  XLAL_CHECK ( (setup_noLogCorr   = XLALCreateBSGLSetup ( numDet, NUM_SEGS*cohFstar0, oLtLGX, FALSE, NUM_SEGS )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( (setup_withLogCorr = XLALCreateBSGLSetup ( numDet, NUM_SEGS*cohFstar0, oLtLGX, TRUE,  NUM_SEGS )) != NULL, XLAL_EFUNC );
+
+  // generate some 'reasonable' fake Fstat numbers
+  // trying to span some range of 'favoring noise' to 'favoring signal'
+  REAL4 twoFPerDet0[PULSAR_MAX_DETECTORS][VEC_LEN] = { 				 // printf ( "{%f, %f, %f, %f, %f},\n", 3 * unifrnd ( 4, 8, [3,5] ) )
+    {14.333578, 18.477274, 19.765395, 18.754920, 22.048903},
+    {14.180436, 15.754341, 17.745453, 14.727934, 18.460679},
+    {21.988492, 15.632081, 18.439836, 19.492070, 16.174584},
+    {0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0}
+  };
+  REAL4 twoF[VEC_LEN]; XLAL_INIT_MEM ( twoF );
+  REAL4 attenuate[VEC_LEN] = { 0.1, 0.3, 0.5, 0.7, 0.9 };
+  for ( UINT4 i = 0; i < VEC_LEN; i ++ ) {
+    for ( UINT4 X = 0; X < PULSAR_MAX_DETECTORS; X ++ ) {
+      twoF[i] += twoFPerDet0[X][i];
+    }
+    twoF[i] *= attenuate[i];
+  }
+
+  const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS];
+  for ( UINT4 X = 0; X < PULSAR_MAX_DETECTORS; X ++ ) {
+    twoFPerDet[X] = twoFPerDet0[X];
+  }
+
+  REAL4 maxTwoFSeg[VEC_LEN] = {4.585174, 13.221874, 13.005110, 34.682062, 48.968980}; 	// maxTwoFSeg = unifrnd ( twoF ./ 3, twoF ); printf ( "{%f, %f, %f, %f, %f};\n", maxTwoFSeg );
+  REAL4 maxTwoFSegPerDet0[PULSAR_MAX_DETECTORS][VEC_LEN] = { 				// maxTwoFSegPerDet = unifrnd ( twoFPerDet ./ 3, twoFPerDet ); printf ( "{%f, %f, %f, %f, %f},\n", maxTwoFSegPerDet );
+    {12.341489, 9.090180, 16.084636, 14.056626, 11.450930},
+    {14.006959, 8.774348, 9.584360, 18.157686, 11.551223},
+    {7.490141, 18.599300, 9.724949, 15.562138, 10.512018},
+    {0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0}
+  };
+  const REAL4 *maxTwoFSegPerDet[PULSAR_MAX_DETECTORS];
+  for ( UINT4 X = 0; X < PULSAR_MAX_DETECTORS; X ++ ) {
+    maxTwoFSegPerDet[X] = maxTwoFSegPerDet0[X];
+  }
+
+  REAL4 outBSGL_log[VEC_LEN];
+  REAL4 outBSGL_nolog[VEC_LEN];
+  REAL4 outBSGLtL[VEC_LEN];
+  REAL4 outBtSGLtL[VEC_LEN];
+
+  XLAL_CHECK ( XLALVectorComputeBSGL ( outBSGL_log, twoF, twoFPerDet, VEC_LEN, setup_withLogCorr ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALVectorComputeBSGL ( outBSGL_nolog, twoF, twoFPerDet, VEC_LEN, setup_noLogCorr ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLAL_CHECK ( XLALVectorComputeBSGLtL ( outBSGLtL, twoF, twoFPerDet, maxTwoFSegPerDet, VEC_LEN, setup_noLogCorr ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALVectorComputeBtSGLtL (outBtSGLtL, maxTwoFSeg, twoFPerDet, maxTwoFSegPerDet, VEC_LEN, setup_noLogCorr ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  printf ("\nBSGL_log = {" );
+  for ( UINT4 i = 0; i < VEC_LEN; i ++ ) { printf ( "%f%s ", outBSGL_log[i], (i<VEC_LEN-1)? "," : "}" ); }
+  printf ("\n");
+  printf ("\nBSGL_nolog = {" );
+  for ( UINT4 i = 0; i < VEC_LEN; i ++ ) { printf ( "%f%s ", outBSGL_nolog[i], (i<VEC_LEN-1)? "," : "}" ); }
+  printf ("\n");
+  printf ("\nBSGLtL = {" );
+  for ( UINT4 i = 0; i < VEC_LEN; i ++ ) { printf ( "%f%s ", outBSGLtL[i], (i<VEC_LEN-1)? "," : "}" ); }
+  printf ("\n");
+  printf ("\nBtSGLtL = {" );
+  for ( UINT4 i = 0; i < VEC_LEN; i ++ ) { printf ( "%f%s ", outBtSGLtL[i], (i<VEC_LEN-1)? "," : "}" ); }
+  printf ("\n");
+
+  // compute these alternatively with the single-value function versions
+  REAL4 errBSGL_log = 0;
+  REAL4 errBSGL_nolog = 0;
+  REAL4 errBSGLtL = 0;
+  REAL4 errBtSGLtL = 0;
+
+  for ( UINT4 i = 0; i < VEC_LEN; i ++ )
+    {
+      REAL4 twoFX[PULSAR_MAX_DETECTORS];
+      REAL4 maxTwoFXl[PULSAR_MAX_DETECTORS];
+      for ( UINT4 X = 0; X < PULSAR_MAX_DETECTORS; X ++ )
+        {
+          twoFX[X] = twoFPerDet[X][i];
+          maxTwoFXl[X] = maxTwoFSegPerDet[X][i];
+        }
+      REAL4 cmp;
+      // BSGL_log
+      cmp = XLALComputeBSGL ( twoF[i], twoFX, setup_withLogCorr );
+      XLAL_CHECK ( xlalErrno == XLAL_SUCCESS, XLAL_EFUNC, "XLALComputeBSGL() failed.\n" );
+      errBSGL_log = fmaxf ( errBSGL_log, fabsf ( cmp - outBSGL_log[i] ) );
+      printf ("i = %d: err = %g\n", i, errBSGL_log );
+
+      // BSGL_nolog
+      cmp = XLALComputeBSGL ( twoF[i], twoFX, setup_noLogCorr );
+      XLAL_CHECK ( xlalErrno == XLAL_SUCCESS, XLAL_EFUNC, "XLALComputeBSGL() failed.\n" );
+      errBSGL_nolog = fmaxf ( errBSGL_nolog, fabsf ( cmp - outBSGL_nolog[i] ) );
+      printf ("i = %d: err = %g\n", i, errBSGL_nolog );
+
+      // BSGLtL
+      cmp = XLALComputeBSGLtL ( twoF[i], twoFX, maxTwoFXl, setup_noLogCorr );
+      XLAL_CHECK ( xlalErrno == XLAL_SUCCESS, XLAL_EFUNC, "XLALComputeBSGLtL() failed.\n" );
+      errBSGLtL = fmaxf ( errBSGLtL, fabsf ( cmp - outBSGLtL[i] ) );
+      printf ("i = %d: err = %g\n", i,errBSGLtL );
+
+      // BtSGLtL
+      cmp = XLALComputeBtSGLtL ( maxTwoFSeg[i], twoFX, maxTwoFXl, setup_noLogCorr );
+      XLAL_CHECK ( xlalErrno == XLAL_SUCCESS, XLAL_EFUNC, "XLALComputeBtSGLtL() failed.\n" );
+      errBtSGLtL = fmaxf ( errBtSGLtL, fabsf ( cmp - outBtSGLtL[i] ) );
+      printf ("i = %d: err = %g\n", i, errBtSGLtL );
+
+    } // for i < VECL_LEN
+
+  REAL4 tolerance = 5 * LAL_REAL4_EPS;
+  XLAL_CHECK ( errBSGL_log <= tolerance, XLAL_ETOL, "Error in vector BSGL with log-correction exceeds tolerance, %g > %g\n", errBSGL_log, tolerance );
+  XLAL_CHECK ( errBSGL_nolog <= tolerance, XLAL_ETOL, "Error in vector BSGL without log-correction exceeds tolerance, %g > %g\n", errBSGL_nolog, tolerance );
+  XLAL_CHECK ( errBSGLtL <= tolerance, XLAL_ETOL, "Error in vector BSGLtL exceeds tolerance, %g > %g\n", errBSGLtL, tolerance );
+  XLAL_CHECK ( errBtSGLtL <= tolerance, XLAL_ETOL, "Error in vector BtSGLtL exceeds tolerance, %g > %g\n", errBtSGLtL, tolerance );
+
+  printf ("%s: success!\n", __func__ );
+
+  XLALDestroyBSGLSetup ( setup_noLogCorr );
+  XLALDestroyBSGLSetup ( setup_withLogCorr );
+
+  return XLAL_SUCCESS;
+
+} // XLALCheckBSGLVectorFunctions()

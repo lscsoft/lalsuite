@@ -21,7 +21,6 @@ from an initial (mass1, mass2), with lattice points spaced according to the
 metric at the initial point.
 """
 from __future__ import division
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Command line interface.
@@ -29,13 +28,19 @@ import argparse
 from lalinference.bayestar import command
 
 parser = command.ArgumentParser()
-parser.add_argument('--initial-mass1', metavar='Msun', type=float, default=1.4,
-    help='Mass of first component of an initial lattice point [default: %(default)s]')
-parser.add_argument('--initial-mass2', metavar='Msun', type=float, default=1.4,
-    help='Mass of second component of an initial lattice point [default: %(default)s]')
-parser.add_argument('--min-mass', metavar='Msun', type=float, default=1.,
+parser.add_argument(
+    '--initial-mass1', metavar='Msun', type=float, default=1.4,
+    help='Mass of first component of an initial lattice point '
+    '[default: %(default)s]')
+parser.add_argument(
+    '--initial-mass2', metavar='Msun', type=float, default=1.4,
+    help='Mass of second component of an initial lattice point '
+    '[default: %(default)s]')
+parser.add_argument(
+    '--min-mass', metavar='Msun', type=float, default=1.,
     help='Minimum component mass [default: %(default)s]')
-parser.add_argument('--max-mass', metavar='Msun', type=float, default=3.,
+parser.add_argument(
+    '--max-mass', metavar='Msun', type=float, default=3.,
     help='Maximum component mass [default: %(default)s]')
 parser.add_argument(
     '-o', '--output', metavar='OUT.xml[.gz]', type=argparse.FileType('wb'),
@@ -55,7 +60,7 @@ from glue.ligolw import lsctables
 # glue and LAL imports.
 from glue.text_progress_bar import ProgressBar
 import lal
-import lalinspiral.sbank.tau0tau3
+from lalinspiral.sbank.tau0tau3 import m1m2_to_mchirp
 import lalsimulation
 
 # BAYESTAR imports.
@@ -82,8 +87,9 @@ f_low = 10.
 f_high = 2048.
 df = 0.1
 
-initial_mchirp = lalinspiral.sbank.tau0tau3.m1m2_to_mchirp(opts.initial_mass1, opts.initial_mass2)
-initial_eta = opts.initial_mass1 * opts.initial_mass2 / (opts.initial_mass1 + opts.initial_mass2)**2
+initial_mchirp = m1m2_to_mchirp(opts.initial_mass1, opts.initial_mass2)
+initial_mtotal = opts.initial_mass1 + opts.initial_mass2
+initial_eta = opts.initial_mass1 * opts.initial_mass2 / initial_mtotal**2
 initial_chi = 0.
 initial_chirp_times = lalsimulation.SimInspiralTaylorF2RedSpinChirpTimesFromMchirpEtaChi(initial_mchirp, initial_eta, initial_chi, f_low)
 initial_theta0_theta3 = initial_chirp_times[:2]
@@ -91,10 +97,11 @@ initial_theta0_theta3 = initial_chirp_times[:2]
 # Sampled PSD.
 S = lal.CreateREAL8Vector(int(f_high // df))
 S.data = [lalsimulation.SimNoisePSDaLIGOZeroDetHighPower(i * df)
-    for i in range(len(S.data))]
+          for i in range(len(S.data))]
 
 # Allocate noise moments.
-moments = [lal.CreateREAL8Vector(int((f_high - f_low) // df)) for _ in range(29)]
+moments = [lal.CreateREAL8Vector(int((f_high - f_low) // df))
+           for _ in range(29)]
 
 # Compute noise moments.
 lalsimulation.SimInspiralTaylorF2RedSpinComputeNoiseMoments(
@@ -109,9 +116,9 @@ I = lalsimulation.SimInspiralTaylorF2RedSpinFisherMatrixChirpTimes(
 
 # Blockwise separation of Fisher matrix. Parameters are in the following order:
 # theta0, theta3, theta3S, t0, phi0
-IA = I[0:2, 0:2] # (theta0, theta3) block
-IB = I[0:2, 3:5] # cross block
-ID = I[3:5, 3:5] # (time, phase) block
+IA = I[0:2, 0:2]  # (theta0, theta3) block
+IB = I[0:2, 3:5]  # cross block
+ID = I[3:5, 3:5]  # (time, phase) block
 
 # Metric. We are dropping the theta3S terms completely and projecting out
 # time and phase.
@@ -122,7 +129,8 @@ metric_eigenvalues, metric_eigenvectors = np.linalg.eigh(metric)
 
 # Shift between adjacent lattice points.
 # FIXME: square root or no?
-delta_theta0_theta3 = np.dot(metric_eigenvectors, np.diag(1 / np.sqrt(metric_eigenvalues)))
+delta_theta0_theta3 = np.dot(metric_eigenvectors,
+                             np.diag(1 / np.sqrt(metric_eigenvalues)))
 
 # FIXME: Determine appropriate boundaries to looping over lots of points that
 # we are going to skip.
@@ -192,5 +200,6 @@ ligolw_process.set_process_end_time(process)
 
 # Write output file.
 with ligolw_utils.SignalsTrap():
-  ligolw_utils.write_fileobj(xmldoc, opts.output,
-      gz=(os.path.splitext(opts.output.name)[-1]==".gz"))
+    ligolw_utils.write_fileobj(
+        xmldoc, opts.output,
+        gz=(os.path.splitext(opts.output.name)[-1] == ".gz"))

@@ -1,6 +1,8 @@
 # Import SWIG wrappings, if available
 @SWIG_BUILD_PYTHON_TRUE@from .laldetchar import *
 
+__version__ = "@PACKAGE_VERSION@"
+
 ## \addtogroup laldetchar_python
 """This package provides a variety of tools for manipulating data for
 detector charaterisation purposes.

@@ -177,8 +177,8 @@ int main(int argc, char *argv[]){
   BOOLEAN uvar_weighAM, uvar_weighNoise, uvar_printLog, uvar_fast;
   INT4    uvar_blocksRngMed, uvar_nh0, uvar_nMCloop, uvar_AllSkyFlag;
   INT4    uvar_nfSizeCylinder, uvar_maxBinsClean, uvar_Dterms;
-  REAL8   uvar_f0, uvar_fSearchBand, uvar_peakThreshold, uvar_h0Min, uvar_h0Max;
-  REAL8   uvar_alpha, uvar_delta, uvar_patchSizeAlpha, uvar_patchSizeDelta;
+  REAL8   uvar_f0, uvar_fSearchBand, uvar_peakThreshold, uvar_h0Min, uvar_h0Max, uvar_maxSpin, uvar_minSpin;
+  REAL8   uvar_alpha, uvar_delta, uvar_patchSizeAlpha, uvar_patchSizeDelta, uvar_pixelFactor;
   CHAR   *uvar_earthEphemeris=NULL;
   CHAR   *uvar_sunEphemeris=NULL;
   CHAR   *uvar_sftDir=NULL;
@@ -215,6 +215,10 @@ int main(int argc, char *argv[]){
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_maxBinsClean = 100;
   uvar_Dterms = DTERMS;
+
+  uvar_pixelFactor = PIXELFACTOR;
+  uvar_maxSpin = 1e-9;
+  uvar_minSpin = -1e-8;
 
   uvar_patchSizeAlpha = PATCHSIZEX;
   uvar_patchSizeDelta = PATCHSIZEY; 
@@ -267,6 +271,9 @@ int main(int argc, char *argv[]){
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_nfSizeCylinder, "nfSizeCylinder", INT4,         0,   OPTIONAL, "Size of cylinder of PHMDs") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_maxBinsClean,   "maxBinsClean",   INT4,         0,   OPTIONAL, "Maximum number of bins in cleaning") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_Dterms,         "Dterms",         INT4,         0,   OPTIONAL, "Number of f-bins in MC injection") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_pixelFactor,    "pixelfactor",    REAL8,        0,   OPTIONAL, "Pixelfactor used for sky resolution") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_maxSpin,        "MaxSpin",        REAL8,        0,   OPTIONAL, "Maximum Spin in PHMDs") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_minSpin,        "MinSpin",        REAL8,        0,   OPTIONAL, "Minimum Spin in PHMDs") == XLAL_SUCCESS, XLAL_EFUNC);
 
   /******************************************************************/ 
   /* read all command line variables */
@@ -290,6 +297,11 @@ int main(int argc, char *argv[]){
  
   if ( uvar_peakThreshold < 0 ) {
     fprintf(stderr, "peak selection threshold must be positive\n");
+    exit(1);
+  }
+
+  if ( uvar_maxSpin < uvar_minSpin ) {
+    fprintf(stderr, "Maximum frequency derivative must be greater than minimum frequency derivative\n");
     exit(1);
   }
   
@@ -484,19 +496,20 @@ int main(int argc, char *argv[]){
   /******************************************************************/ 
   /* get detector velocities and timestamps */
   /******************************************************************/ 
-  
-  {
-    UINT4   iIFO, iSFT, numsft, j;
+    
+    {
+      UINT4   iIFO, iSFT, numsft, j;
 
-    XLAL_CHECK_MAIN( ( edat = XLALInitBarycenter( uvar_earthEphemeris, uvar_sunEphemeris ) ) != NULL, XLAL_EFUNC);
+      XLAL_CHECK_MAIN( ( edat = XLALInitBarycenter( uvar_earthEphemeris, uvar_sunEphemeris ) ) != NULL, XLAL_EFUNC);  
     
     /* get information about all detectors including velocity and timestamps */
     /* note that this function returns the velocity at the 
        mid-time of the SFTs --CAREFULL later on with the time stamps!!! velocity
        is ok */
+    
     const REAL8 tOffset = 0.5 / inputSFTs->data[0]->data[0].deltaF;
     XLAL_CHECK_MAIN ( ( mdetStates = XLALGetMultiDetectorStatesFromMultiSFTs ( inputSFTs, edat, tOffset ) ) != NULL, XLAL_EFUNC);
-    
+
     /* copy the timestamps and velocity vector */
     for (j = 0, iIFO = 0; iIFO < numifo; iIFO++ ) {
       numsft = mdetStates->data[iIFO]->length;      
@@ -585,13 +598,17 @@ int main(int argc, char *argv[]){
   injectPar.delta = uvar_delta;
   injectPar.patchSizeAlpha = uvar_patchSizeAlpha; /* patch size if not full sky */
   injectPar.patchSizeDelta = uvar_patchSizeDelta; 
-  injectPar.pixelFactor = PIXELFACTOR;
+  injectPar.pixelFactor = uvar_pixelFactor;
   injectPar.vTotC = VTOT;
   injectPar.timeObs =tObs;  
   injectPar.spnFmax.data = NULL; 
   injectPar.spnFmax.length=msp;   /*only 1 spin */
   injectPar.spnFmax.data = (REAL8 *)LALMalloc(msp*sizeof(REAL8));
-  injectPar.spnFmax.data[0] = -(uvar_nfSizeCylinder/2) *deltaF/tObs;
+  injectPar.spnFmax.data[0] = uvar_maxSpin;
+  injectPar.spnFmin.data = NULL;
+  injectPar.spnFmin.length=msp;   /*only 1 spin */
+  injectPar.spnFmin.data = (REAL8 *)LALMalloc(msp*sizeof(REAL8));
+  injectPar.spnFmin.data[0] = uvar_minSpin;
   
   pulsarInject.spindown.length = msp;
   pulsarTemplate.spindown.length = msp; 
@@ -662,7 +679,7 @@ int main(int argc, char *argv[]){
        MCloopId  I.f0 H.f0 I.f1 H.f1 I.alpha H.alpha I.delta H.delta I.phi0  I.psi
        (not cos iota)  */
 
-    fprintf(fpPar," %d %f %f %g %g %f %f %f %f %f %f %f", 
+    fprintf(fpPar,"%d %f %f %g %g %f %f %f %f %f %f %f\n", 
 	    MCloopId, pulsarInject.f0, pulsarTemplate.f0,
 	    pulsarInject.spindown.data[0], pulsarTemplate.spindown.data[0],
 	    pulsarInject.longitude, pulsarTemplate.longitude,
@@ -885,7 +902,7 @@ int main(int argc, char *argv[]){
   
 	
 	/* normalize sfts */
-	XLAL_CHECK_MAIN( ( multPSD = XLALNormalizeMultiSFTVect(  sumSFTs, uvar_blocksRngMed, NULL ) ) != NULL, XLAL_EFUNC);
+        XLAL_CHECK_MAIN( ( multPSD = XLALNormalizeMultiSFTVect(  sumSFTs, uvar_blocksRngMed, NULL ) ) != NULL, XLAL_EFUNC);
 	
 	/* compute multi noise weights */ 
 	if ( uvar_weighNoise ) {
@@ -1251,7 +1268,7 @@ void GenerateInjectParams(LALStatus   *status,
     
     /* first spin-down parameter, (only spin-down) */	    
     TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
-    spink=params->spnFmax.data[0]* randval;
+    spink=randval*(params->spnFmax.data[0] - params->spnFmin.data[0]) + params->spnFmin.data[0];
     
     injectPulsar->spindown.data[0]= spink;
     templatePulsar->spindown.data[0] = floor(spink/deltaFk +0.5)*deltaFk;
@@ -1458,7 +1475,7 @@ void GenerateInjectParamsNoVeto(LALStatus   *status,
     
     /* first spin-down parameter, (only spin-down) */	    
     TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
-    spink=params->spnFmax.data[0]* randval;
+    spink=randval*(params->spnFmax.data[0] - params->spnFmin.data[0]) + params->spnFmin.data[0];    
     
     injectPulsar->spindown.data[0]= spink;
     templatePulsar->spindown.data[0] = floor(spink/deltaFk +0.5)*deltaFk;

@@ -19,14 +19,19 @@
 Plotting tools for drawing polygons
 """
 from __future__ import division
+
+from shapely import geometry
+import numpy as np
+import healpy as hp
+
+# FIXME: Remove this after all Matplotlib monkeypatches are obsolete.
+import matplotlib
+import distutils.version
+mpl_version = distutils.version.LooseVersion(matplotlib.__version__)
+
 __all__ = ('wrapped_angle', 'wrapped_angle_deg', 'reference_angle',
            'reference_angle_deg', 'subdivide_vertices', 'cut_dateline',
            'cut_prime_meridian', 'make_rect_poly')
-
-
-# FIXME: should be a module-level import
-# from shapely import geometry
-import numpy as np
 
 
 def wrapped_angle(a):
@@ -55,9 +60,14 @@ def subdivide_vertices(vertices, subdivisions):
     """Subdivide a list of vertices by inserting subdivisions additional vertices
     between each original pair of vertices using linear interpolation."""
     subvertices = np.empty((subdivisions * len(vertices), vertices.shape[1]))
-    frac = np.atleast_2d(np.arange(subdivisions + 1, dtype=float) / subdivisions).T.repeat(vertices.shape[1], 1)
+    frac = np.atleast_2d(
+        np.arange(subdivisions + 1, dtype=float) / subdivisions).T.repeat(
+            vertices.shape[1], 1)
     for i in range(len(vertices)):
-        subvertices[i*subdivisions:(i+1)*subdivisions] = frac[:0:-1, :] * np.expand_dims(vertices[i-1, :], 0).repeat(subdivisions, 0)  + frac[:-1, :] * np.expand_dims(vertices[i, :], 0).repeat(subdivisions, 0)
+        subvertices[i*subdivisions:(i+1)*subdivisions] = frac[:0:-1, :] * \
+            np.expand_dims(vertices[i-1, :], 0).repeat(subdivisions, 0) + \
+            frac[:-1, :] * \
+            np.expand_dims(vertices[i, :], 0).repeat(subdivisions, 0)
     return subvertices
 
 
@@ -83,9 +93,6 @@ def cut_prime_meridian(vertices):
 
     This routine is not meant to cover all possible cases; it will only work
     for convex polygons that extend over less than a hemisphere."""
-
-    # FIXME: should be a module-level import
-    from shapely import geometry
 
     # Ensure that the list of vertices does not contain a repeated endpoint.
     if (vertices[0] == vertices[-1]).all():
@@ -121,8 +128,8 @@ def cut_prime_meridian(vertices):
         # Find the latitude at which the meridian crossing occurs by
         # linear interpolation.
         delta_lon = abs(reference_angle(v1[0] - v0[0]))
-        lat = abs(reference_angle(v0[0])) / delta_lon * v0[1] + \
-              abs(reference_angle(v1[0])) / delta_lon * v1[1]
+        lat = (abs(reference_angle(v0[0])) / delta_lon * v0[1] +
+               abs(reference_angle(v1[0])) / delta_lon * v1[1])
 
         # FIXME: Use this simple heuristic to decide which pole to enclose.
         sign_lat = np.sign(np.sum(vertices[:, 1]))

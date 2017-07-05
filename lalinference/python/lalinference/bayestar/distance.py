@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2016  Leo Singer
+# Copyright (C) 2017  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -18,20 +18,27 @@
 """
 Distance ansatz functions.
 """
-from __future__ import division
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
+from __future__ import division
 
 import numpy as np
 import healpy as hp
 import scipy.special
-from . import _distance
+try:
+    from . import _distance
+except ImportError:
+    raise ImportError(
+        'Could not import the lalinference.bayestar._distance Python C '
+        'extension module. This probably means that LALInfernece was built '
+        'without HEALPix support. Please install CHEALPix '
+        '(https://sourceforge.net/projects/healpix/files/Healpix_3.30/'
+        'chealpix-3.30.0.tar.gz), rebuild LALInference, and try again.')
 from ._distance import *
 
 
 __all__ = tuple(_ for _ in _distance.__dict__ if not _.startswith('_')) + (
-    'ud_grade', 'conditional_kde', 'cartesian_kde_to_moments', 'principal_axes',
-    'parameters_to_moments', 'find_injection_distance')
+    'ud_grade', 'conditional_kde', 'cartesian_kde_to_moments',
+    'principal_axes', 'parameters_to_moments')
 
 
 def _add_newdoc_ufunc(func, doc):
@@ -41,7 +48,8 @@ def _add_newdoc_ufunc(func, doc):
     try:
         np.lib.add_newdoc_ufunc(func, doc)
     except ValueError as e:
-        if e.message == 'Cannot change docstring of ufunc with non-NULL docstring':
+        msg = 'Cannot change docstring of ufunc with non-NULL docstring'
+        if e.args[0] == msg:
             pass
 
 
@@ -100,7 +108,7 @@ Test against numerical integral of pdf:
 """)
 
 
-_add_newdoc_ufunc(conditional_cdf, """\
+_add_newdoc_ufunc(conditional_ppf, """\
 Point percent function (inverse cdf) of distribution of distance (ansatz).
 
 Parameters
@@ -125,7 +133,8 @@ Test against numerical estimate:
 >>> distsigma = 5.0
 >>> distnorm = 1.0
 >>> p = 0.16  # "one-sigma" lower limit
->>> expected_r16 = scipy.optimize.brentq(lambda r: conditional_cdf(r, distmu, distsigma, distnorm) - p, 0.0, 100.0)
+>>> expected_r16 = scipy.optimize.brentq(
+... lambda r: conditional_cdf(r, distmu, distsigma, distnorm) - p, 0.0, 100.0)
 >>> r16 = conditional_ppf(p, distmu, distsigma, distnorm)
 >>> np.testing.assert_almost_equal(expected_r16, r16)
 """)
@@ -240,6 +249,46 @@ Returns
 -------
 image : `numpy.ndarray`
     Rendered image
+
+Test volume rendering of a normal unit sphere...
+First, set up the 3D sky map.
+>>> nside = 32
+>>> npix = hp.nside2npix(nside)
+>>> prob = np.ones(npix) / npix
+>>> distmu = np.zeros(npix)
+>>> distsigma = np.ones(npix)
+>>> distnorm = np.ones(npix) * 2.0
+
+The conditional distance distribution should be a chi distribution with
+3 degrees of freedom.
+>>> from scipy.stats import norm, chi
+>>> r = np.linspace(0, 10.0)
+>>> actual = conditional_pdf(r, distmu[0], distsigma[0], distnorm[0])
+>>> expected = chi(3).pdf(r)
+>>> np.testing.assert_almost_equal(expected, actual)
+
+Next, run the volume renderer.
+>>> dmax = 4.0
+>>> n = 64
+>>> s = np.logspace(-dmax, dmax, n)
+>>> x, y = np.meshgrid(s, s)
+>>> R = np.eye(3)
+>>> P = volume_render(x, y, dmax, 0, 1, R, False,
+...                   prob, distmu, distsigma, distnorm)
+
+Next, integrate analytically.
+>>> P_expected = norm.pdf(x) * norm.pdf(y) * (norm.cdf(dmax) - norm.cdf(-dmax))
+
+Compare the two.
+>>> np.testing.assert_almost_equal(P, P_expected, decimal=4)
+
+Last, check that we don't have a coordinate singularity at the origin.
+>>> x = np.concatenate(([0], np.logspace(1 - n, 0, n) * dmax))
+>>> y = 0.0
+>>> P = volume_render(x, y, dmax, 0, 1, R, False,
+...                   prob, distmu, distsigma, distnorm)
+>>> P_expected = norm.pdf(x) * norm.pdf(y) * (norm.cdf(dmax) - norm.cdf(-dmax))
+>>> np.testing.assert_allclose(P, P_expected, rtol=1e-4)
 """)
 
 
@@ -368,7 +417,8 @@ def _conditional_kde(n, X, Cinv, W):
 
 
 def conditional_kde(n, datasets, inverse_covariances, weights):
-    return [_conditional_kde(n, X, Cinv, W)
+    return [
+        _conditional_kde(n, X, Cinv, W)
         for X, Cinv, W in zip(datasets, inverse_covariances, weights)]
 
 
@@ -544,8 +594,3 @@ def parameters_to_marginal_moments(prob, distmu, distsigma):
     rbar = (prob * distmean).sum()
     r2bar = (prob * (np.square(diststd) + np.square(distmean))).sum()
     return rbar, np.sqrt(r2bar - np.square(rbar))
-
-
-def find_injection_distance(true_dist, prob, distmu, distsigma, distnorm):
-    return np.sum(prob * conditional_cdf(
-        true_dist, distmu, distsigma, distnorm))

@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALBurst],[1.4.3.1],[lal-discuss@ligo.org])
+AC_INIT([LALBurst],[1.4.4.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALBurstConfig.h])
 AC_CONFIG_SRCDIR([src/EPSearch.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -36,9 +36,9 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="6.17.0"
-MIN_LALMETAIO_VERSION="1.3.0"
-MIN_LALSIMULATION_VERSION="1.6.1"
+MIN_LAL_VERSION="6.18.0"
+MIN_LALMETAIO_VERSION="1.3.1"
+MIN_LALSIMULATION_VERSION="1.7.0"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALMETAIO_VERSION])
 AC_SUBST([MIN_LALSIMULATION_VERSION])
@@ -115,17 +115,6 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 # check for Python
 LALSUITE_CHECK_PYTHON([2.6])
 AX_PYTHON_DEVEL()
-
-# check for NumPy
-AX_PYTHON_MODULE(numpy, fatal)
-NUMPY_CFLAGS=-I`$PYTHON -c "import numpy;print (numpy.get_include());"`
-old_CFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS ${PYTHON_CPPFLAGS} ${NUMPY_CFLAGS}"
-AC_CHECK_HEADER([numpy/arrayobject.h],
-  [PYTHON_CPPFLAGS="${PYTHON_CPPFLAGS} ${NUMPY_CFLAGS}"],
-  [AC_MSG_ERROR([Numpy extension header not found])],
-  [#include "Python.h"])
-CFLAGS="$old_CFLAGS"
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])

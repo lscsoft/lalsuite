@@ -134,6 +134,24 @@ XLALPrintStringValueOfSTRING ( CHAR **valSTRING )
 
 } // XLALPrintStringValueOfSTRING()
 
+/// Return 'string value' (allocated here) of a INT4Range, as parseable by XLALParseStringValueAsINT4Range()
+char *
+XLALPrintStringValueOfINT4Range(const INT4Range *int4Range) {
+  XLAL_CHECK_NULL(int4Range != NULL, XLAL_EFAULT);
+  char *part0 = XLALPrintStringValueOfINT4(&(*int4Range)[0]);
+  XLAL_CHECK_NULL(part0 != NULL, XLAL_EFUNC);
+  char *part1 = XLALPrintStringValueOfINT4(&(*int4Range)[1]);
+  XLAL_CHECK_NULL(part1 != NULL, XLAL_EFUNC);
+  char *retn = XLALMalloc(sizeof(*retn) * (strlen(part0) + 1 + strlen(part1) + 1));
+  XLAL_CHECK_NULL(retn != NULL, XLAL_ENOMEM);
+  strcpy(retn, part0);
+  strcat(retn, ",");
+  strcat(retn, part1);
+  XLALFree(part0);
+  XLALFree(part1);
+  return retn;
+}
+
 
 /// Return 'string value' (allocated here) of a REAL8Range, as parseable by XLALParseStringValueAsREAL8Range()
 char *

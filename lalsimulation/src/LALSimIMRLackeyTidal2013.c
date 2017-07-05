@@ -278,7 +278,7 @@ int LackeyTidal2013SEOBNRv2ROMCore(
 }
 
 /**
- * @addtogroup LALSimIMRTIDAL_c
+ * @addtogroup LALSimIMRTidal_c
  *
  * @{
  *

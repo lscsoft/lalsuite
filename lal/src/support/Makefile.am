@@ -48,8 +48,6 @@ liblalsupport_la_SOURCES = \
 	StreamSeriesInput.c \
 	StreamSeriesOutput.c \
 	StreamSequenceInput.c \
-	StreamGridInput.c \
-	StreamGridOutput.c \
 	StreamVectorInput.c \
 	StreamVectorSequenceInput.c \
 	TranslateAngles.c \
@@ -60,10 +58,9 @@ liblalsupport_la_SOURCES = \
 	LALgetopt.c \
 	$(END_OF_LIST)
 
-liblalsupport_la_LIBADD = ../liblal.la $(ZLIB_LIBS) $(HDF5_LIBS)
 liblalsupport_la_CFLAGS = $(AM_CFLAGS) $(ZLIB_CFLAGS) $(HDF5_CFLAGS)
 liblalsupport_la_CPPFLAGS = $(AM_CPPFLAGS) $(HDF5_CPPFLAGS) $(PAGER_CPPFLAGS)
-liblalsupport_la_LDFLAGS = $(AM_LDFLAGS) $(HDF5_LDFLAGS) -version-info $(LIBVERSION_SUPPORT)
+liblalsupport_la_LDFLAGS = ../liblal.la $(AM_LDFLAGS) $(HDF5_LDFLAGS) $(ZLIB_LIBS) $(HDF5_LIBS) -version-info $(LIBVERSION_SUPPORT)
 
 noinst_HEADERS = \
 	H5FileIOArrayHL_source.c \
@@ -78,8 +75,6 @@ noinst_HEADERS = \
 	PrintVector_source.c \
 	ReadFrequencySeries_source.c \
 	ReadTimeSeries_source.c \
-	StreamGridInput_source.c \
-	StreamGridOutput_source.c \
 	StreamSequenceInput_source.c \
 	StreamSequenceInputComplex_source.c \
 	StreamSeriesInput_source.c \

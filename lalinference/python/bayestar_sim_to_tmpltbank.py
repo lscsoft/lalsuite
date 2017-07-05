@@ -21,7 +21,6 @@ sngl_inspiral record for each unique set of intrinsic parameters
 (mass1, mass2, spin1z, spin2z) described by the sim_inspiral rows in the
 injection file.
 """
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Command line interface.
@@ -29,7 +28,8 @@ import argparse
 from lalinference.bayestar import command
 
 parser = command.ArgumentParser()
-parser.add_argument('--f-low', type=float, dest='low_frequency_cutoff',
+parser.add_argument(
+    '--f-low', type=float, dest='low_frequency_cutoff',
     help='Override low frequency cutoff found in sim_inspiral table.')
 parser.add_argument(
     'input', metavar='IN.xml[.gz]', type=argparse.FileType('rb'),
@@ -61,6 +61,7 @@ from lalinference.bayestar import filter
 
 _fields = 'mass1 mass2 mchirp eta spin1z spin2z'
 
+
 class TaylorF2RedSpinIntrinsicParams(namedtuple('intrinsic_params', _fields)):
     """Immutable container for just the intrinsic parameters belonging to a
     sim_inspiral record."""
@@ -68,11 +69,12 @@ class TaylorF2RedSpinIntrinsicParams(namedtuple('intrinsic_params', _fields)):
     def __new__(cls, sim_inspiral):
         for attr in 'spin1x spin1y spin2x spin2y'.split():
             if getattr(sim_inspiral, attr):
-                raise NotImplementedError('sim_inspiral:{} column is nonzero,'
-                'but only aligned-spin templates are supported'.format(attr))
-        return super(TaylorF2RedSpinIntrinsicParams, cls).__new__(cls,
-            *(getattr(sim_inspiral, field) for field in cls._fields)
-        )
+                raise NotImplementedError(
+                    'sim_inspiral:{} column is nonzero, but only aligned-spin '
+                    'templates are supported'.format(attr))
+        return super(
+            TaylorF2RedSpinIntrinsicParams, cls).__new__(
+                cls, *(getattr(sim_inspiral, field) for field in cls._fields))
 
     @property
     def chi(self):
@@ -85,11 +87,12 @@ xmldoc, _ = ligolw_utils.load_fileobj(
     opts.input, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
 
 # Extract simulation table from injection file.
-sim_inspiral_table = ligolw_table.get_table(xmldoc,
-    lsctables.SimInspiralTable.tableName)
+sim_inspiral_table = ligolw_table.get_table(
+    xmldoc, lsctables.SimInspiralTable.tableName)
 
 # Get just the intrinsic parameters from the sim_inspiral table.
-sim_inspiral_intrinsic_params = {TaylorF2RedSpinIntrinsicParams(sim_inspiral)
+sim_inspiral_intrinsic_params = {
+    TaylorF2RedSpinIntrinsicParams(sim_inspiral)
     for sim_inspiral in sim_inspiral_table}
 
 if opts.low_frequency_cutoff is None:
@@ -146,7 +149,8 @@ for sim_inspiral_intrinsic_param in sim_inspiral_intrinsic_params:
     sngl_inspiral.mtotal = sngl_inspiral.mass1 + sngl_inspiral.mass2
     sngl_inspiral.mchirp = sim_inspiral_intrinsic_param.mchirp
     sngl_inspiral.eta = sim_inspiral_intrinsic_param.eta
-    sngl_inspiral.f_final = filter.get_f_lso(sngl_inspiral.mass1, sngl_inspiral.mass2)
+    sngl_inspiral.f_final = filter.get_f_lso(
+        sngl_inspiral.mass1, sngl_inspiral.mass2)
     sngl_inspiral.chi = sim_inspiral_intrinsic_param.chi
 
     # Add the row to the table in the document.
@@ -157,5 +161,6 @@ ligolw_process.set_process_end_time(process)
 
 # Write output file.
 with ligolw_utils.SignalsTrap():
-  ligolw_utils.write_fileobj(out_xmldoc, opts.output,
-      gz=(os.path.splitext(opts.output.name)[-1]==".gz"))
+    ligolw_utils.write_fileobj(
+        out_xmldoc, opts.output,
+        gz=(os.path.splitext(opts.output.name)[-1] == ".gz"))

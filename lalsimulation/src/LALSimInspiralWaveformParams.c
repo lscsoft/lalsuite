@@ -56,6 +56,11 @@ DEFINE_INSERT_FUNC(FrameAxis, INT4, "axis", LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_
 DEFINE_INSERT_FUNC(Sideband, INT4, "sideband", 0)
 DEFINE_INSERT_FUNC(NumRelData, String, "numreldata", NULL)
 
+int XLALSimInspiralWaveformParamsInsertModeArray(LALDict *params, LALValue *value)
+{
+	return XLALDictInsertValue(params, "ModeArray", value);
+}
+
 DEFINE_INSERT_FUNC(PNPhaseOrder, INT4, "phaseO", -1)
 DEFINE_INSERT_FUNC(PNAmplitudeOrder, INT4, "ampO", -1)
 DEFINE_INSERT_FUNC(PNEccentricityOrder, INT4, "eccO", -1)
@@ -120,12 +125,33 @@ DEFINE_INSERT_FUNC(NonGRBetaPPE6, REAL8, "betaPPE6", 0)
 DEFINE_INSERT_FUNC(NonGRAlphaPPE7, REAL8, "alphaPPE7", 0)
 DEFINE_INSERT_FUNC(NonGRBetaPPE7, REAL8, "betaPPE7", 0)
 
+/* NLTides parameters */
+/* used within LALSimInspiralTaylorF2NLTides.c */
+DEFINE_INSERT_FUNC(NLTidesA1, REAL8, "nlTidesA1", 0)
+DEFINE_INSERT_FUNC(NLTidesN1, REAL8, "nlTidesN1", 0)
+DEFINE_INSERT_FUNC(NLTidesF1, REAL8, "nlTidesF1", 0)
+DEFINE_INSERT_FUNC(NLTidesA2, REAL8, "nlTidesA2", 0)
+DEFINE_INSERT_FUNC(NLTidesN2, REAL8, "nlTidesN2", 0)
+DEFINE_INSERT_FUNC(NLTidesF2, REAL8, "nlTidesF2", 0)
+
 /* LOOKUP FUNCTIONS */
 
 DEFINE_LOOKUP_FUNC(ModesChoice, INT4, "modes", LAL_SIM_INSPIRAL_MODES_CHOICE_ALL)
 DEFINE_LOOKUP_FUNC(FrameAxis, INT4, "axis", LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L)
 DEFINE_LOOKUP_FUNC(Sideband, INT4, "sideband", 0)
 DEFINE_LOOKUP_FUNC(NumRelData, String, "numreldata", NULL)
+
+LALValue* XLALSimInspiralWaveformParamsLookupModeArray(LALDict *params)
+{
+	/* Initialise and set Default to NULL */
+	LALValue * value = NULL;
+	if (params && XLALDictContains(params, "ModeArray"))
+	{
+		LALDictEntry * entry = XLALDictLookup(params, "ModeArray");
+		value = XLALValueDuplicate(XLALDictEntryGetValue(entry));
+	}
+	return value;
+}
 
 DEFINE_LOOKUP_FUNC(PNPhaseOrder, INT4, "phaseO", -1)
 DEFINE_LOOKUP_FUNC(PNAmplitudeOrder, INT4, "ampO", -1)
@@ -190,12 +216,26 @@ DEFINE_LOOKUP_FUNC(NonGRBetaPPE6, REAL8, "betaPPE6", 0)
 DEFINE_LOOKUP_FUNC(NonGRAlphaPPE7, REAL8, "alphaPPE7", 0)
 DEFINE_LOOKUP_FUNC(NonGRBetaPPE7, REAL8, "betaPPE7", 0)
 
+/* NLTides parameters */
+/* used within LALSimInspiralTaylorF2NLTides.c */
+DEFINE_LOOKUP_FUNC(NLTidesA1, REAL8, "nlTidesA1", 0)
+DEFINE_LOOKUP_FUNC(NLTidesN1, REAL8, "nlTidesN1", 0)
+DEFINE_LOOKUP_FUNC(NLTidesF1, REAL8, "nlTidesF1", 0)
+DEFINE_LOOKUP_FUNC(NLTidesA2, REAL8, "nlTidesA2", 0)
+DEFINE_LOOKUP_FUNC(NLTidesN2, REAL8, "nlTidesN2", 0)
+DEFINE_LOOKUP_FUNC(NLTidesF2, REAL8, "nlTidesF2", 0)
+
 /* ISDEFAULT FUNCTIONS */
 
 DEFINE_ISDEFAULT_FUNC(ModesChoice, INT4, "modes", LAL_SIM_INSPIRAL_MODES_CHOICE_ALL)
 DEFINE_ISDEFAULT_FUNC(FrameAxis, INT4, "axis", LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L)
 DEFINE_ISDEFAULT_FUNC(Sideband, INT4, "sideband", 0)
 DEFINE_ISDEFAULT_FUNC(NumRelData, String, "numreldata", NULL)
+
+int XLALSimInspiralWaveformParamsModeArrayIsDefault(LALDict *params)
+{
+	return XLALSimInspiralWaveformParamsLookupModeArray(params) == NULL;
+}
 
 DEFINE_ISDEFAULT_FUNC(PNPhaseOrder, INT4, "phaseO", -1)
 DEFINE_ISDEFAULT_FUNC(PNAmplitudeOrder, INT4, "ampO", -1)

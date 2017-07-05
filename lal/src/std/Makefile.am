@@ -1,7 +1,6 @@
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
 pkginclude_HEADERS = \
-	Grid.h \
 	LALAtomicDatatypes.h \
 	LALConstants.h \
 	LALDatatypes.h \
@@ -24,7 +23,6 @@ pkginclude_HEADERS = \
 noinst_LTLIBRARIES = libstd.la
 
 libstd_la_SOURCES = \
-	Grid.c \
 	LALDebugLevel.c \
 	LALError.c \
 	LALGSL.c \
@@ -35,10 +33,6 @@ libstd_la_SOURCES = \
 	StringConvert.c \
 	StringToken.c \
 	XLALError.c \
-	$(END_OF_LIST)
-
-noinst_HEADERS = \
-	Grid_source.c \
 	$(END_OF_LIST)
 
 EXTRA_DIST = \

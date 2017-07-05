@@ -66,16 +66,42 @@ XLALCreateBSGLSetup ( const UINT4 numDetectors,
 void
 XLALDestroyBSGLSetup ( BSGLSetup * setup );
 
+int
+XLALParseLinePriors ( REAL4 oLGX[PULSAR_MAX_DETECTORS],
+		      const LALStringVector *oLGX_string
+);
+
+// ---------- vector BSGL functions ----------
+int
+XLALVectorComputeBSGL ( REAL4 *outBSGL,
+                        const REAL4 *twoF,
+                        const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS],
+                        const UINT4 len,
+                        const BSGLSetup *setup
+                        );
+
+int
+XLALVectorComputeBSGLtL ( REAL4 *outBSGLtL,
+                          const REAL4 *twoF,
+                          const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS],
+                          const REAL4 *maxTwoFSegPerDet[PULSAR_MAX_DETECTORS],
+                          const UINT4 len,
+                          const BSGLSetup *setup
+                          );
+int
+XLALVectorComputeBtSGLtL ( REAL4 *outBtSGLtL,
+                           const REAL4 *maxTwoFSeg,
+                           const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS],
+                           const REAL4 *maxTwoFSegPerDet[PULSAR_MAX_DETECTORS],
+                           const UINT4 len,
+                           const BSGLSetup *setup
+                           );
+
+// ---------- single-bin BSGL function wrappers ----------
 REAL4
 XLALComputeBSGL ( const REAL4 twoF,
                   const REAL4 twoFX[PULSAR_MAX_DETECTORS],
                   const BSGLSetup *setup
-);
-
-REAL4
-XLALComputeGLtLDenominator ( const REAL4 twoFX[PULSAR_MAX_DETECTORS],
-                    const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],
-                    const BSGLSetup *setup
 );
 
 REAL4
@@ -98,11 +124,6 @@ XLALComputeBStSGLtL ( const REAL4 twoF,
                       const REAL4 twoFX[PULSAR_MAX_DETECTORS],
                       const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],
                       const BSGLSetup *setup
-);
-
-int
-XLALParseLinePriors ( REAL4 oLGX[PULSAR_MAX_DETECTORS],
-		      const LALStringVector *oLGX_string
 );
 
 

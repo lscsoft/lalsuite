@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2015-2016  Leo Singer
+# Copyright (C) 2015-2017  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -53,14 +53,15 @@ modules = [
 
 
 finder = doctest.DocTestFinder()
-runner = doctest.DocTestRunner()
+runner = doctest.DocTestRunner(optionflags=doctest.ELLIPSIS)
 tests = []
 
 for module in modules:
     # Find doctests in the module
     tests += finder.find(module)
     # Find doctests in Numpy external C ufuncs
-    for ufunc in set(_ for _ in module.__dict__.values() if isinstance(_, np.ufunc)):
+    for ufunc in {
+            _ for _ in module.__dict__.values() if isinstance(_, np.ufunc)}:
         tests += finder.find(ufunc, module=module)
 
 total_failures = 0

@@ -20,7 +20,6 @@ from __future__ import division
 """
 Functions for predicting timing accuracy of matched filters.
 """
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 import logging
@@ -29,7 +28,6 @@ import lal
 import lalsimulation
 from scipy import interpolate
 from scipy import linalg
-from .filter import CreateForwardREAL8FFTPlan
 
 
 log = logging.getLogger('BAYESTAR')
@@ -94,13 +92,15 @@ class InterpolatedPSD(interpolate.interp1d):
         # FIXME: This is a hack to fix an issue with the detection pipeline's
         # PSD conditioning. Remove this when the issue is fixed upstream.
         if f_high_truncate < 1.0:
-            log.warn('Truncating PSD at %g of maximum frequency to suppress '
+            log.warn(
+                'Truncating PSD at %g of maximum frequency to suppress '
                 'rolloff artifacts. This option may be removed in the future.',
                 f_high_truncate)
             keep = (f <= f_high_truncate * max(f))
             f = f[keep]
             S = S[keep]
-        super(InterpolatedPSD, self).__init__(np.log(f), np.log(S),
+        super(InterpolatedPSD, self).__init__(
+            np.log(f), np.log(S),
             kind='linear', bounds_error=False, fill_value=np.inf)
         self._f_min = min(f)
         self._f_max = max(f)
@@ -109,10 +109,14 @@ class InterpolatedPSD(interpolate.interp1d):
         f_min = np.min(f)
         f_max = np.max(f)
         if f_min < self._f_min:
-            log.warn("Assuming PSD is infinite at %g Hz because PSD is only sampled down to %g Hz", f_min, self._f_min)
+            log.warn('Assuming PSD is infinite at %g Hz because PSD is only '
+                     'sampled down to %g Hz', f_min, self._f_min)
         if f_max > self._f_max:
-            log.warn("Assuming PSD is infinite at %g Hz because PSD is only sampled up to %g Hz", f_max, self._f_max)
-        return np.where((f > f_min) & (f < f_max), np.exp(super(InterpolatedPSD, self).__call__(np.log(f))), np.inf)
+            log.warn('Assuming PSD is infinite at %g Hz because PSD is only '
+                     'sampled up to %g Hz', f_max, self._f_max)
+        return np.where(
+            (f >= self._f_min) & (f <= self._f_max),
+            np.exp(super(InterpolatedPSD, self).__call__(np.log(f))), np.inf)
 
 
 class SignalModel(object):
@@ -126,8 +130,8 @@ class SignalModel(object):
     Create signal model:
     >>> from . import filter
     >>> sngl = lambda: None
-    >>> sngl.mass1 = sngl.mass2 = 1.4
-    >>> H = filter.sngl_inspiral_psd(sngl, 'TaylorF2threePointFivePN')
+    >>> H = filter.sngl_inspiral_psd(
+    ...     'TaylorF2threePointFivePN', mass1=1.4, mass2=1.4)
     >>> S = get_noise_psd_func('H1')
     >>> W = filter.signal_psd_series(H, S)
     >>> sm = SignalModel(W)
@@ -183,7 +187,8 @@ class SignalModel(object):
     def get_sn_average(self, func):
         """Get the average of a function of angular frequency, weighted by the
         signal to noise per unit angular frequency."""
-        return np.trapz(func(self.w) * self.denom_integrand, dx=self.dw) / self.den
+        num = np.trapz(func(self.w) * self.denom_integrand, dx=self.dw)
+        return num / self.den
 
     def get_sn_moment(self, power):
         """Get the average of angular frequency to the given power, weighted by
@@ -198,10 +203,11 @@ class SignalModel(object):
         I = np.asarray(((1, -w1), (-w1, w2)))
         return linalg.inv(I) / np.square(snr)
 
-    # FIXME: np.vectorize doesn't work on unbound instance methods. The excluded
-    # keyword, added in Numpy 1.7, could be used here to exclude the zeroth
-    # argument, self.
+    # FIXME: np.vectorize doesn't work on unbound instance methods. The
+    # excluded keyword, added in Numpy 1.7, could be used here to exclude the
+    # zeroth argument, self.
     def __get_crb_toa_uncert(self, snr):
         return np.sqrt(self.get_crb(snr)[1, 1])
+
     def get_crb_toa_uncert(self, snr):
         return np.frompyfunc(self.__get_crb_toa_uncert, 1, 1)(snr)

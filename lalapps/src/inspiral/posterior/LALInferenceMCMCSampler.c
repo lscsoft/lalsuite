@@ -456,6 +456,8 @@ void record_likelihoods(LALInferenceThreadState *thread) {
     LALInferenceAddVariable(thread->currentParams, "logprior", &(thread->currentPrior), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddVariable(thread->currentParams, "logl", &(thread->currentLikelihood), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddVariable(thread->currentParams, "deltalogl", &deltalogl, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(thread->currentParams, "temperature", &(thread->temperature), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(thread->currentParams, "nullLogL", &(thread->nullLikelihood), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
 
     LALInferenceIFOData *headIFO = thread->parent->data;
     char name[256];
@@ -1883,4 +1885,45 @@ void LALInferenceMCMCResumeRead(LALInferenceThreadState *thread, FILE *resumeFil
     thread->currentParams = LALInferenceReadVariablesBinary(resumeFile);
 
     return;
+}
+
+void LALInferenceAddPTMCMCMetaInfo(LALInferenceRunState *runState) {
+    UINT4  nIFO = 0;
+    INT4 i, MPIsize, n_local_threads, ntemps, randomseed;
+    REAL8 seglen, epoch;
+    LALInferenceIFOData *ifodata1;
+    LALInferenceThreadState *thread;
+
+    MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+
+    n_local_threads = runState->nthreads;
+    ntemps = MPIsize*n_local_threads;
+
+    randomseed = LALInferenceGetINT4Variable(runState->algorithmParams, "random_seed");
+
+    ifodata1 = runState->data;
+    while(ifodata1){
+        nIFO++;
+        ifodata1 = ifodata1->next;
+    }
+
+    REAL8 SampleRate = 4096.0; //default value of the sample rate from LALInferenceReadData()
+    if(LALInferenceGetProcParamVal(runState->commandLine, "--srate"))
+        SampleRate = atof(LALInferenceGetProcParamVal(runState->commandLine, "--srate")->value);
+
+    seglen = atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value);
+    epoch = XLALGPSGetREAL8(&(runState->data->epoch));
+
+    for (i=0; i<runState->nthreads; i++) {
+
+        thread = runState->threads[i];
+
+        LALInferenceAddVariable(thread->currentParams, "nIFO", &nIFO, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceAddVariable(thread->currentParams, "nLocalTemps", &n_local_threads, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceAddVariable(thread->currentParams, "nTemps", &ntemps, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceAddVariable(thread->currentParams, "randomSeed", &randomseed, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceAddVariable(thread->currentParams, "sampleRate", &SampleRate, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceAddVariable(thread->currentParams, "segmentLength", &seglen, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceAddVariable(thread->currentParams, "segmentStart", &epoch, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    }
 }

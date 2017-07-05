@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2016  Leo Singer
+# Copyright (C) 2013-2017  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -18,9 +18,8 @@
 """
 Functions that support the command line interface.
 """
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
-
+from __future__ import print_function
 import argparse
 import contextlib
 from distutils.dir_util import mkpath
@@ -29,10 +28,9 @@ import errno
 import glob
 import inspect
 import itertools
+import logging
 import os
-from select import select
 import shutil
-import stat
 import sys
 import tempfile
 import matplotlib
@@ -50,6 +48,12 @@ else:
     matplotlib.use('Template', warn=False, force=True)
 
 
+# FIXME: Remove this after all Matplotlib monkeypatches are obsolete.
+import matplotlib
+import distutils.version
+mpl_version = distutils.version.LooseVersion(matplotlib.__version__)
+
+
 @contextlib.contextmanager
 def TemporaryDirectory(suffix='', prefix='tmp', dir=None, delete=True):
     try:
@@ -60,9 +64,41 @@ def TemporaryDirectory(suffix='', prefix='tmp', dir=None, delete=True):
             shutil.rmtree(dir)
 
 
-def chainglob(patterns):
-    """Generate a list of all files matching a list of globs."""
-    return itertools.chain.from_iterable(glob.iglob(s) for s in patterns)
+class GlobAction(argparse._StoreAction):
+    """Generate a list of filenames from a list of filenames and globs."""
+
+    def __call__(self, parser, namespace, values, *args, **kwargs):
+        values = list(
+            itertools.chain.from_iterable(glob.iglob(s) for s in values))
+        if values:
+            super(GlobAction, self).__call__(
+                parser, namespace, values, *args, **kwargs)
+        nvalues = getattr(namespace, self.dest)
+        nvalues = 0 if nvalues is None else len(nvalues)
+        if self.nargs == argparse.OPTIONAL:
+            if nvalues > 1:
+                msg = 'expected at most one file'
+            else:
+                msg = None
+        elif self.nargs == argparse.ONE_OR_MORE:
+            if nvalues < 1:
+                msg = 'expected at least one file'
+            else:
+                msg = None
+        elif self.nargs == argparse.ZERO_OR_MORE:
+            msg = None
+        elif int(self.nargs) != nvalues:
+            msg = 'expected exactly %s file' % self.nargs
+            if self.nargs != 1:
+                msg += 's'
+        else:
+            msg = None
+        if msg is not None:
+            msg += ', but found '
+            msg += '{} file'.format(nvalues)
+            if nvalues != 1:
+                msg += 's'
+            raise argparse.ArgumentError(self, msg)
 
 
 waveform_parser = argparse.ArgumentParser(add_help=False)
@@ -70,12 +106,15 @@ group = waveform_parser.add_argument_group(
     'waveform options', 'Options that affect template waveform generation')
 # FIXME: The O1 uberbank high-mass template, SEOBNRv2_ROM_DoubleSpin, does
 # not support frequencies less than 30 Hz.
-group.add_argument('--f-low', type=float, metavar='Hz', default=30,
+group.add_argument(
+    '--f-low', type=float, metavar='Hz', default=30,
     help='Low frequency cutoff [default: %(default)s]')
-group.add_argument('--f-high-truncate', type=float, default=0.95,
+group.add_argument(
+    '--f-high-truncate', type=float, default=0.95,
     help='Truncate waveform at this fraction of the maximum frequency of the '
     'PSD [default: %(default)s]')
-group.add_argument('--waveform', default='o2-uberbank',
+group.add_argument(
+    '--waveform', default='o2-uberbank',
     help='Template waveform approximant (e.g., TaylorF2threePointFivePN) '
     '[default: O2 uberbank mass-dependent waveform]')
 del group
@@ -84,34 +123,42 @@ del group
 prior_parser = argparse.ArgumentParser(add_help=False)
 group = prior_parser.add_argument_group(
     'prior options', 'Options that affect the BAYESTAR likelihood')
-group.add_argument('--phase-convention', default='antifindchirp',
-    choices=('findchirp', 'antifindchirp'),
-    help='Phase convention [default: %(default)s]')
-group.add_argument('--min-distance', type=float, metavar='Mpc',
+group.add_argument(
+    '--min-distance', type=float, metavar='Mpc',
     help='Minimum distance of prior in megaparsecs '
     '[default: infer from effective distance]')
-group.add_argument('--max-distance', type=float, metavar='Mpc',
+group.add_argument(
+    '--max-distance', type=float, metavar='Mpc',
     help='Maximum distance of prior in megaparsecs '
     '[default: infer from effective distance]')
-group.add_argument('--prior-distance-power', type=int, metavar='-1|2',
-    default=2, help='Distance prior '
+group.add_argument(
+    '--prior-distance-power', type=int, metavar='-1|2', default=2,
+    help='Distance prior '
     '[-1 for uniform in log, 2 for uniform in volume, default: %(default)s]')
-group.add_argument('--enable-snr-series', default=False, action='store_true',
-    help='Enable input of SNR time series (WARNING: UNREVIEWED!) [default: no]')
+group.add_argument(
+    '--cosmology', default=False, action='store_true',
+    help='Use cosmological comoving volume prior [default: %(default)s]')
+group.add_argument(
+    '--disable-snr-series', dest='enable_snr_series', action='store_false',
+    help='Disable input of SNR time series (WARNING: UNREVIEWED!) '
+    '[default: enabled]')
 del group
 
 
 skymap_parser = argparse.ArgumentParser(add_help=False)
 group = skymap_parser.add_argument_group(
     'sky map output options', 'Options that affect sky map output')
-group.add_argument('--nside', '-n', type=int, default=-1,
+group.add_argument(
+    '--nside', '-n', type=int, default=-1,
     help='HEALPix resolution [default: auto]')
-group.add_argument('--chain-dump', default=False, action='store_true',
+group.add_argument(
+    '--chain-dump', default=False, action='store_true',
     help='For MCMC methods, dump the sample chain to disk [default: no]')
 del group
 
 
 class MatplotlibFigureType(argparse.FileType):
+
     def __init__(self):
         super(MatplotlibFigureType, self).__init__('wb')
 
@@ -136,7 +183,9 @@ class MatplotlibFigureType(argparse.FileType):
             self.string = string
             return self.__save
 
+
 class HelpChoicesAction(argparse.Action):
+
     def __init__(self,
                  option_strings,
                  choices=(),
@@ -158,6 +207,7 @@ class HelpChoicesAction(argparse.Action):
             print(choice)
         parser.exit()
 
+
 def type_with_sideeffect(type):
     def decorator(sideeffect):
         def func(value):
@@ -167,25 +217,36 @@ def type_with_sideeffect(type):
         return func
     return decorator
 
+
 @type_with_sideeffect(str)
 def colormap(value):
     from matplotlib import rcParams
     rcParams['image.cmap'] = value
+
 
 @type_with_sideeffect(float)
 def figwidth(value):
     from matplotlib import rcParams
     rcParams['figure.figsize'][0] = float(value)
 
+
 @type_with_sideeffect(float)
 def figheight(value):
     from matplotlib import rcParams
     rcParams['figure.figsize'][1] = float(value)
 
+
 @type_with_sideeffect(int)
 def dpi(value):
     from matplotlib import rcParams
     rcParams['figure.dpi'] = rcParams['savefig.dpi'] = float(value)
+
+
+@type_with_sideeffect(int)
+def transparent(value):
+    from matplotlib import rcParams
+    rcParams['savefig.transparent'] = bool(value)
+
 
 figure_parser = argparse.ArgumentParser(add_help=False)
 colormap_choices = sorted(cm.cmap_d.keys())
@@ -210,6 +271,12 @@ group.add_argument(
 group.add_argument(
     '--dpi', metavar='PIXELS', type=dpi, default=300,
     help='resolution of figure in dots per inch [default: %(default)s]')
+# FIXME: the savefig.transparent rcparam was added in Matplotlib 1.4,
+# but we have to support Matplotlib 1.2 for Scientific Linux 7.
+if mpl_version >= '1.4':
+    group.add_argument(
+        '--transparent', const='1', default='0', nargs='?', type=transparent,
+        help='Save image with transparent background [default: false]')
 del colormap_choices
 del group
 
@@ -217,10 +284,33 @@ del group
 # Defer loading SWIG bindings until version string is needed.
 class VersionAction(argparse._VersionAction):
     def __call__(self, parser, namespace, values, option_string=None):
-        from .. import InferenceVCSVersion
-        self.version = 'LALInference ' + InferenceVCSVersion
+        from .. import InferenceVCSInfo
+        self.version = 'LALInference ' + InferenceVCSInfo.version
         super(VersionAction, self).__call__(
             parser, namespace, values, option_string)
+
+
+@type_with_sideeffect(str)
+def loglevel_type(value):
+    try:
+        value = int(value)
+    except ValueError:
+        value = value.upper()
+    logging.basicConfig(level=value)
+
+
+class LogLevelAction(argparse._StoreAction):
+
+    def __init__(
+            self, option_strings, dest, nargs=None, const=None, default=None,
+            type=None, choices=None, required=False, help=None, metavar=None):
+        metavar = '|'.join(
+            _ for _ in logging._levelNames.keys() if isinstance(_, str))
+        type = loglevel_type
+        super(LogLevelAction, self).__init__(
+            option_strings, dest, nargs=nargs, const=const, default=default,
+            type=type, choices=choices, required=required, help=help,
+            metavar=metavar)
 
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -271,7 +361,11 @@ class ArgumentParser(argparse.ArgumentParser):
                  argument_default=argument_default,
                  conflict_handler=conflict_handler,
                  add_help=add_help)
-        self.add_argument('--version', action=VersionAction)
+        self.register('action', 'glob', GlobAction)
+        self.register('action', 'loglevel', LogLevelAction)
+        self.register('action', 'version', VersionAction)
+        self.add_argument('--version', action='version')
+        self.add_argument('-l', '--loglevel', action='loglevel', default='INFO')
 
 
 class DirType(object):
@@ -341,37 +435,52 @@ def rename(src, dst):
             raise
 
 
+def rm_f(filename):
+    """Remove a file, or be silent if the file does not exist, like `rm -f`."""
+    try:
+        os.remove(filename)
+    except OSError as e:
+        if e.errno != errno.ENOENT:
+            raise
+
+
+def _sanitize_arg_value_for_xmldoc(value):
+    if hasattr(value, 'read'):
+        return value.name
+    elif isinstance(value, tuple):
+        return tuple(_sanitize_arg_value_for_xmldoc(v) for v in value)
+    elif isinstance(value, list):
+        return [_sanitize_arg_value_for_xmldoc(v) for v in value]
+    else:
+        return value
+
+
 def register_to_xmldoc(xmldoc, parser, opts, **kwargs):
     from glue.ligolw.utils import process
-    return process.register_to_xmldoc(
-        xmldoc, parser.prog,
-        {key: (value.name if hasattr(value, 'read') else value)
-        for key, value in opts.__dict__.items()})
+    params = {key: _sanitize_arg_value_for_xmldoc(value)
+              for key, value in opts.__dict__.items()}
+    return process.register_to_xmldoc(xmldoc, parser.prog, params, **kwargs)
 
 
-def iterlines(file):
-    """Safely iterate over non-emtpy lines in a file. Works around buffering
-    issues with `for line in sys.stdin`. Also works around early closing of
-    fifos (named pipes)."""
-    fd = file.fileno()
-    # Determine if the file is a FIFO (named pipe).
-    is_fifo = stat.S_ISFIFO(os.fstat(fd).st_mode)
+start_msg = '\
+Waiting for input on stdin. Type control-D followed by a newline to terminate.'
+stop_msg = 'Reached end of file. Exiting.'
+
+
+def iterlines(file, start_message=start_msg, stop_message=stop_msg):
+    """Iterate over non-emtpy lines in a file."""
+    is_tty = os.isatty(file.fileno())
+
+    if is_tty:
+        print(start_message, file=sys.stderr)
 
     while True:
-        # Wait until some data is available for reading.
-        rlist, _, _ = select([fd], [], [])
-        assert len(rlist) == 1 and rlist[0] == fd
-
         # Read a line.
         line = file.readline()
 
         if not line:
-            if is_fifo:
-                # If we reached EOF, and this is a FIFO, then just keep reading.
-                continue
-            else:
-                # If we reached EOF, and this is not a FIFO, then exit.
-                break
+            # If we reached EOF, then exit.
+            break
 
         # Strip off the trailing newline and any whitespace.
         line = line.strip()
@@ -379,3 +488,6 @@ def iterlines(file):
         # Emit the line if it is not empty.
         if line:
             yield line
+
+    if is_tty:
+        print(stop_message, file=sys.stderr)

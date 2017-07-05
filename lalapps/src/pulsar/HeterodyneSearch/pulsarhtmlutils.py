@@ -222,7 +222,10 @@ def sigfig(x, sf):
 def dec_or_exp(f, dp=2, horl='html'):
   fv = float(f)
   if np.abs(fv) > 0.01 and np.abs(fv) < 1000.:
-    return repr(round(fv, dp))
+    if horl == 'html':
+      return repr(round(fv, dp))
+    else:
+      return '$%s$' % repr(round(fv, dp))
   else:
     return exp_str(fv, dp, otype=horl)
 

@@ -6,13 +6,6 @@
 #
 # \
 exec tclsh "$0" "$@"
-# Don't change these lines - they are executed only by bash, not Tcl \
-if [ -z "${LIGOTOOLS}" ]; then \
-  echo "Shell variable LIGOTOOLS undefined - please \"eval \`<ligotools path>/bin/use_ligotools\`\" and try again"; \
-  exit 1; \
-fi; \
-exec tclshexe "$0" "$@"
-
 
 # Base names of html output files (written as .tmp and moved to .html).
 set ::outputFscanNavigationHTMLFile "fscanNavigation";

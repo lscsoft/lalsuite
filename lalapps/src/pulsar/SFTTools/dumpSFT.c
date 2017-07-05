@@ -33,6 +33,7 @@
 #include <lal/SFTfileIO.h>
 #include <lal/SFTutils.h>
 #include <lal/PulsarDataTypes.h>
+#include <lal/LALString.h>
 
 /*---------- DEFINES ----------*/
 
@@ -47,13 +48,17 @@ typedef struct
 {
   CHAR *SFTfiles;
   BOOLEAN headerOnly;
-  BOOLEAN noHeader;
+  BOOLEAN dataOnly;
+  BOOLEAN timestampsOnly;
+
+  BOOLEAN noHeader;	// deprecated, use --dataOnly instead
 } UserVariables_t;
 
 /*---------- internal prototypes ----------*/
 int XLALprintDescriptor ( const SFTDescriptor *ptr );
 int XLALprintHeader ( const SFTtype *header );
 int XLALprintData ( const SFTtype *sft );
+int XLALprintTimestamps ( const SFTCatalog *catalog );
 
 int XLALReadUserInput ( int argc, char *argv[], UserVariables_t *uvar );
 
@@ -75,7 +80,7 @@ main(int argc, char *argv[])
   SFTCatalog *catalog;
   XLAL_CHECK ( (catalog = XLALSFTdataFind ( uvar.SFTfiles, &constraints )) != NULL, XLAL_EFUNC, "No SFTs matched your --SFTfiles query\n" );
 
-  if ( uvar.headerOnly )
+  if ( uvar.headerOnly  )
     {
       for ( UINT4 i=0; i < catalog->length; i ++ )
         {
@@ -85,8 +90,12 @@ main(int argc, char *argv[])
           XLALprintDescriptor ( ptr );
 
         } // for i < catalog->length
-    } // if header
-  else
+    } // if --headerOnly
+  else if ( uvar.timestampsOnly )
+    {
+      XLAL_CHECK ( XLALprintTimestamps ( catalog ) == XLAL_SUCCESS, XLAL_EFUNC );
+    } // if --timestampsOnly
+  else // if --dataOnly or data+headers [default]
     {
       SFTVector *sfts;
       XLAL_CHECK ( (sfts = XLALLoadSFTs ( catalog, -1, -1 )) != NULL, XLAL_EFUNC );
@@ -96,7 +105,7 @@ main(int argc, char *argv[])
         segmentedSFTs = 1;
         printf ("\n");
         printf ("%%%% Frequency-segmented SFTs: len(catalog) = %d, len(sft-vector) = %d\n", catalog->length, sfts->length );
-        if ( !uvar.noHeader ) {
+        if ( !uvar.dataOnly ) {
           printf ("%%%% For segmented SFTS we can't output SFT 'descriptors' + data. Use --headerOnly if you need the descriptor fields\n\n");
         }
       } // if we're dealing with 'segmented SFTs': currently can't map them to catalog-descriptors
@@ -105,7 +114,7 @@ main(int argc, char *argv[])
         {
           SFTtype *sft_i = &(sfts->data[i]);;
 
-          if ( !uvar.noHeader ) {
+          if ( !uvar.dataOnly ) {
             XLALprintHeader ( sft_i );
             if ( !segmentedSFTs ) {	// skip descriptor fields for segmented SFTs (as we can't map them to SFTs)
               XLALprintDescriptor ( &(catalog->data[i]) );
@@ -177,13 +186,51 @@ XLALprintData ( const SFTtype *sft )
 
 } // XLALprintData()
 
+// output timestamps in a format parseable by XLALReadTimestampsFile(), ie.
+// "The timestamps file is of the format: <repeated lines of the form "seconds nano-seconds">
+// allowing for '%#' as comments, which are ignored."
+int
+XLALprintTimestamps ( const SFTCatalog *catalog )
+{
+  XLAL_CHECK ( (catalog != NULL) && (catalog->data != NULL), XLAL_EINVAL );
+
+  // print fully descriptive commented header-log for reproducibility:
+  char *version;
+  XLAL_CHECK_MAIN ( (version = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
+  char *cmdline;
+  XLAL_CHECK ( (cmdline = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE )) != NULL, XLAL_EFUNC );
+
+  char *logstr = NULL;
+  XLAL_CHECK ( (logstr = XLALStringAppend ( logstr, version )) != NULL, XLAL_EFUNC );
+  XLALFree ( version );
+  XLAL_CHECK ( (logstr = XLALStringAppend ( logstr, "%% cmdline: " )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( (logstr = XLALStringAppend ( logstr, cmdline )) != NULL, XLAL_EFUNC );
+  XLALFree ( cmdline );
+  XLAL_CHECK ( (logstr = XLALStringAppend ( logstr, "\n" )) != NULL, XLAL_EFUNC );
+  printf ( "%s", logstr );
+  XLALFree ( logstr );
+
+  // print timestamps
+  printf ( "%%%% Timestamps: seconds nano-seconds\n" );
+  for ( UINT4 i=0; i < catalog->length; i ++ )
+    {
+      const SFTtype *header = &(catalog->data[i].header);
+      printf ( "%10d %09d\n", header->epoch.gpsSeconds, header->epoch.gpsNanoSeconds );
+    }
+
+  return XLAL_SUCCESS;
+
+} // XLALprintTimestamps()
 
 int
 XLALReadUserInput ( int argc, char *argv[], UserVariables_t *uvar )
 {
-  XLALRegisterUvarMember(	SFTfiles,	STRING, 'i', REQUIRED, "File-pattern for input SFTs");
-  XLALRegisterUvarMember(	headerOnly,	BOOLEAN, 'H', OPTIONAL, "Output only header-info");
-  XLALRegisterUvarMember(	noHeader,	BOOLEAN, 'n', OPTIONAL, "Output only data, no header");
+  XLALRegisterUvarMember(	SFTfiles,	STRING,  'i', REQUIRED, "File-pattern for input SFTs");
+  XLALRegisterUvarMember(	headerOnly,	BOOLEAN, 'H', OPTIONAL, "Output only SFT headers");
+  XLALRegisterUvarMember(	dataOnly,	BOOLEAN, 'd', OPTIONAL, "Output only SFT data, no header info");
+  XLALRegisterUvarMember(	timestampsOnly,	BOOLEAN, 't', OPTIONAL, "Output only timestamps, in timestamps-file format");
+
+  XLALRegisterUvarMember(	noHeader,	BOOLEAN, 'n', DEPRECATED, "DEPRECATED: user --dataOnly instead");
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
@@ -192,7 +239,16 @@ XLALReadUserInput ( int argc, char *argv[], UserVariables_t *uvar )
     exit (1);
   }
 
-  XLAL_CHECK ( !(uvar->headerOnly && uvar->noHeader), XLAL_EINVAL, "Contradictory input --headerOnly --noHeader\n" );
+  // ---------- sanity input checks ----------
+  // deal with deprecated --noHeader option by mapping it 1:1 onto --dataOnly
+  XLAL_CHECK ( UVAR_SET2( noHeader, dataOnly ) <= 1, XLAL_EINVAL, "Use at most one of --dataOnly or --noHeader [deprecated]\n");
+  if ( XLALUserVarWasSet( &uvar->noHeader ) ) {
+    uvar->dataOnly = uvar->noHeader;
+    uvar->noHeader = 0;
+  }
+
+  XLAL_CHECK ( UVAR_SET3( headerOnly, dataOnly, timestampsOnly ) <= 1, XLAL_EINVAL, "Contradictory input: at most *one* of --headerOnly, --dataOnly or --timestampsOnly allowed\n" );
 
   return XLAL_SUCCESS;
-}
+
+} // XLALReadUserInput()

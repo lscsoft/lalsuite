@@ -47,7 +47,7 @@
 
 
 /*
- * Copyright (C) 2013-2016  Leo Singer
+ * Copyright (C) 2013-2017  Leo Singer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -77,13 +77,22 @@
 #include <sys/types.h>
 
 
+typedef struct {
+    unsigned long long uniq;
+    double value[3];
+} bayestar_pixel;
+
+
 /* Perform sky localization based on TDOAs, PHOAs, and amplitude. */
-double (*bayestar_sky_map_toa_phoa_snr(
-    long *npix,
+bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
+    size_t *out_len,                /* Number of returned pixels */
+    double *out_log_bci,            /* log Bayes factor: coherent vs. incoherent */
+    double *out_log_bsn,            /* log Bayes factor: signal vs. noise */
     /* Prior */
     double min_distance,            /* Minimum distance */
     double max_distance,            /* Maximum distance */
     int prior_distance_power,       /* Power of distance in prior */
+    int cosmology,                  /* Set to nonzero to include comoving volume correction */
     /* Data */
     double gmst,                    /* GMST (rad) */
     unsigned int nifos,             /* Number of detectors */
@@ -94,7 +103,7 @@ double (*bayestar_sky_map_toa_phoa_snr(
     const float (**responses)[3],   /* Detector responses */
     const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
     const double *horizons          /* SNR=1 horizon distances for each detector */
-))[4];
+);
 
 double bayestar_log_likelihood_toa_phoa_snr(
     /* Parameters */

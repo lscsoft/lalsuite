@@ -7,7 +7,7 @@ import os
 #####################################################################
 
 def _block_slices(dim_size, block_size):
-    """Generator that yields slice objects for indexing into 
+    """Generator that yields slice objects for indexing into
     sequential blocks of an array along a particular axis
     """
     count = 0
@@ -19,8 +19,8 @@ def _block_slices(dim_size, block_size):
 
 def blockwise_dot(A, B, deltaF, max_elements=int(2**27), out=None):
     """
-    Computes the dot product of two matrices in a block-wise fashion. 
-    Only blocks of `A` with a maximum size of `max_elements` will be 
+    Computes the dot product of two matrices in a block-wise fashion.
+    Only blocks of `A` with a maximum size of `max_elements` will be
     processed simultaneously.
     """
 
@@ -61,7 +61,7 @@ data_dir = './'
 parser = OptionParser(usage="usage: %prog [options]",
                           version="%prog")
 parser.add_option("-d", "--data", type='string',
-                      action="append", 
+                      action="append",
                       dest="data_file",
                       help="data file",)
 parser.add_option("-p", "--psd", type='string',
@@ -73,17 +73,21 @@ parser.add_option("-t", "--time_prior", type=float,
                       dest="dt",
                       help="width of time prior",)
 parser.add_option("-i", "--ifo", type='string',
-                      action="append", 
+                      action="append",
                       dest="IFOs",
                       help="list of ifos",)
 parser.add_option("-s", "--seglen", type=float,
-                      action="store", 
+                      action="store",
                       dest="seglen",
                       help="segment length",)
 parser.add_option("-f", "--fLow", type=float,
                       action="store",
                       dest="fLow",
                       help="low frequency cut off",)
+parser.add_option("-u", "--fHigh", type=float,
+                      action="store",
+                      dest="fHigh",
+                      help="high frequency cut off",)
 parser.add_option("-T", "--delta_tc", type=float,
                       action="store",
                       dest="delta_tc",
@@ -107,9 +111,9 @@ basis_params = np.loadtxt(options.b_matrix_directory + "/params.dat").T
 def BuildWeights(data, B, deltaF):
 
         ''' for a data array and reduced basis compute roq weights
-        
+
         B: (reduced basis element)*invV (the inverse Vandermonde matrix)
-        data: data set 
+        data: data set
         PSD: detector noise power spectral density (must be same shape as data)
         deltaF: integration element df
 
@@ -119,9 +123,9 @@ def BuildWeights(data, B, deltaF):
         return weights
 ##################################
 
-relative_tc_shift = options.seglen - 2. 
+relative_tc_shift = options.seglen - 2.
 
-# loop over ifos 
+# loop over ifos
 
 i=0
 scale_factor = 0
@@ -131,24 +135,24 @@ for ifo in options.IFOs:
 	dat_file = np.column_stack( np.loadtxt(options.data_file[i]) )
 	data = dat_file[1] + 1j*dat_file[2]
 	fseries = dat_file[0]
-        deltaF = fseries[1] - fseries[0]
-	fHigh = fseries[-1]
-	fHigh_index = fHigh / deltaF
+	deltaF = fseries[1] - fseries[0]
+	if options.fHigh:
+ 		fHigh = options.fHigh
+	else:
+		fHigh = fseries[-1]
+	fHigh_index = int(fHigh / deltaF)
 
-	
-	if options.fLow: 
+	if options.fLow:
 		fLow = options.fLow
 		scale_factor = basis_params[0] / fLow
 
-	else:
+ 	else:
 		fLow = basis_params[0]
-
-
 		assert fHigh == basis_params[1]
-		
-	fseries = fseries[int(fLow/deltaF):fHigh_index]
-	data = data[int(fLow/deltaF):fHigh_index]
+ 	fLow_index = int(fLow / deltaF)
 
+	fseries = fseries[fLow_index:fHigh_index]
+	data = data[fLow_index:fHigh_index]
 
 	psdfile = np.column_stack( np.loadtxt(options.psd_file[i]) )
 	psd = psdfile[1]
@@ -159,25 +163,25 @@ for ifo in options.IFOs:
 	data /= psd
 
 	# only get frequency components up to fHigh
-	B_linear = B_linear.T[0:(fHigh_index - fLow/deltaF)][:].T
-	B_quadratic = B_quadratic.T[0:(fHigh_index-fLow/deltaF)][:].T
-	print B_linear.shape[1], B_quadratic.shape[1], len(data), len(psd) 
+	B_linear = B_linear.T[0:(fHigh_index - fLow_index)][:].T
+	B_quadratic = B_quadratic.T[0:(fHigh_index-fLow_index)][:].T
+	print B_linear.shape[1], B_quadratic.shape[1], len(data), len(psd)
 	assert len(data) == len(psd) == B_linear.shape[1] == B_quadratic.shape[1]
 
 
 
 	#for the dot product, it's convenient to work with transpose of B:
-	B_linear = B_linear.T 
+	B_linear = B_linear.T
 	B_quadratic = B_quadratic.T
 
 	for k in range(len(data)):
 		if np.isnan(data[k].real):
 			data[k] = 0+0j
 
+	#0.045 comes from the diameter of the earth in light seconds: the maximum time-delay between earth-based observatories
+	tcs = np.linspace(relative_tc_shift - options.dt - 0.045, relative_tc_shift + options.dt + 0.045, ceil(2.*(options.dt+0.045) / options.delta_tc) )# array of relative time shifts to be applied to the data
 
-	tcs = np.linspace(relative_tc_shift - options.dt - 0.026, relative_tc_shift + options.dt + 0.026, ceil(2.*(options.dt+0.026) / options.delta_tc) )# array of relative time shifts to be applied to the data
 
-	
 	tc_shifted_data = np.zeros([len(tcs), len(fseries)], dtype=complex)  # array to be filled with data, shifted by discrete time tc
 
 	print "time steps = "+str(len(tcs))
@@ -197,7 +201,7 @@ for ifo in options.IFOs:
 	print "Computing weights for "+ifo
 	weights_path_linear = os.path.join(options.outpath,"weights_linear_%s.dat"%ifo)
 	weights_file_linear = open(weights_path_linear, "wb")
-	
+
 	max_block_gigabytes = 4
 	max_elements = int((max_block_gigabytes * 2 ** 30) / 8) # max number of double complex elements
 
@@ -208,7 +212,7 @@ for ifo in options.IFOs:
 
 	del tc_shifted_data
 
-	#*************************************************************************** #	
+	#*************************************************************************** #
 	weights_path_quadratic = os.path.join(options.outpath,"weights_quadratic_%s.dat"%ifo)
         weights_file_quadratic = open(weights_path_quadratic, "wb")
 	weights_quadratic = (BuildWeights(1./psd, B_quadratic, deltaF).T).real
@@ -218,10 +222,10 @@ for ifo in options.IFOs:
 	size_file_path = os.path.join(options.outpath,"roq_sizes.dat")
 
 	#*************************************************************************** #
-	
+
 	B_linear = B_linear.T
 	B_quadratic = B_quadratic.T
-	
+
         np.savetxt(size_file_path,np.array((len(tcs),B_linear.shape[0],B_quadratic.shape[0],B_linear.shape[1])),fmt='%u')
 	print "Weights have been computed for "+ifo
 

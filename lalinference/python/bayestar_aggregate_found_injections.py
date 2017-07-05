@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2016  Leo Singer
+# Copyright (C) 2013-2017  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -16,8 +16,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 """
-Match sky maps with injections in an inspinjfind-style sqlite database and print
-summary values for each sky map:
+Match sky maps with injections in an inspinjfind-style sqlite database and
+print summary values for each sky map:
 
  * event ID
  * false alarm rate
@@ -25,14 +25,13 @@ summary values for each sky map:
  * searched posterior probability
  * angle between true sky location and maximum a posteriori estimate
  * runtime in seconds
- * (optional) areas of and numbers of modes within specified probability contours
+ * (optional) areas and numbers of modes within specified probability contours
 
 The filenames of the sky maps may be provided as positional command line
 arguments, and may also be provided as globs (such as '*.fits.gz').
 """
 from __future__ import division
 from __future__ import print_function
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Command line interface.
@@ -48,7 +47,8 @@ if __name__ == '__main__':
         '-j', '--jobs', type=int, default=1, const=None, nargs='?',
         help='Number of threads [default: %(default)s]')
     parser.add_argument(
-        '-p', '--contour', default=[], nargs='+', type=float, metavar='PERCENT',
+        '-p', '--contour', default=[], nargs='+', type=float,
+        metavar='PERCENT',
         help='Report the area of the smallest contour and the number of modes '
         'containing this much probability.')
     parser.add_argument(
@@ -62,7 +62,7 @@ if __name__ == '__main__':
         'db', type=command.SQLiteType('r'), metavar='DB.sqlite',
         help='Input SQLite database from search pipeline')
     parser.add_argument(
-        'fitsfileglobs', metavar='GLOB.fits[.gz]', nargs='+',
+        'fitsfilenames', metavar='GLOB.fits[.gz]', nargs='+', action='glob',
         help='Input FITS filenames and/or globs')
     opts = parser.parse_args()
 
@@ -70,7 +70,7 @@ if __name__ == '__main__':
 # Imports.
 import sqlite3
 from lalinference.io import fits
-from lalinference.bayestar import postprocess
+from lalinference.bayestar import distance, moc, postprocess
 
 
 def startup(dbfilename, opts_contour, opts_modes, opts_area):
@@ -82,41 +82,51 @@ def startup(dbfilename, opts_contour, opts_modes, opts_area):
 
 
 def process(fitsfilename):
-    sky_map, metadata = fits.read_sky_map(fitsfilename, nest=None)
+    sky_map = fits.read_sky_map(fitsfilename, moc=True)
 
-    coinc_event_id = metadata['objid']
+    coinc_event_id = sky_map.meta['objid']
     try:
-        runtime = metadata['runtime']
+        runtime = sky_map.meta['runtime']
     except KeyError:
         runtime = float('nan')
 
-    row = db.execute("""
-        SELECT DISTINCT sim.simulation_id AS simulation_id, sim.longitude AS ra, sim.latitude AS dec,
+    row = db.execute(
+        """
+        SELECT DISTINCT sim.simulation_id AS simulation_id,
+        sim.longitude AS ra, sim.latitude AS dec, sim.distance AS distance,
         ci.combined_far AS far, ci.snr AS snr
         FROM coinc_event_map AS cem1 INNER JOIN coinc_event_map AS cem2
         ON (cem1.coinc_event_id = cem2.coinc_event_id)
         INNER JOIN sim_inspiral AS sim ON (cem1.event_id = sim.simulation_id)
         INNER JOIN coinc_inspiral AS ci ON (cem2.event_id = ci.coinc_event_id)
         WHERE cem1.table_name = 'sim_inspiral'
-        AND cem2.table_name = 'coinc_event' AND cem2.event_id = ?""",
-        (coinc_event_id,)).fetchone()
+        AND cem2.table_name = 'coinc_event' AND cem2.event_id = ?
+        """, (coinc_event_id,)).fetchone()
     if row is None:
         raise ValueError(
             "No database record found for event '{0}' in '{1}'".format(
-            coinc_event_id, command.sqlite_get_filename(db)))
-    simulation_id, true_ra, true_dec, far, snr = row
-    searched_area, searched_prob, offset, searched_modes, contour_areas, area_probs, contour_modes = postprocess.find_injection(
-        sky_map, true_ra, true_dec, contours=[0.01 * p for p in contours],
-        areas=areas, modes=modes, nest=metadata['nest'])
+                coinc_event_id, command.sqlite_get_filename(db)))
+    simulation_id, true_ra, true_dec, true_dist, far, snr = row
+    searched_area, searched_prob, offset, searched_modes, contour_areas, \
+        area_probs, contour_modes = postprocess.find_injection_moc(
+            sky_map, true_ra, true_dec, contours=[0.01 * p for p in contours],
+            areas=areas, modes=modes)
+    searched_prob_distance = distance.marginal_cdf(
+        true_dist, sky_map['PROBDENSITY'] * moc.uniq2pixarea(sky_map['UNIQ']),
+        sky_map['DISTMU'], sky_map['DISTSIGMA'], sky_map['DISTNORM'])
 
     if snr is None:
         snr = float('nan')
     if far is None:
         far = float('nan')
-    distmean = metadata.get('distmean', float('nan'))
-    diststd = metadata.get('diststd', float('nan'))
+    distmean = sky_map.meta.get('distmean', float('nan'))
+    diststd = sky_map.meta.get('diststd', float('nan'))
+    log_bci = sky_map.meta.get('log_bci', float('nan'))
+    log_bsn = sky_map.meta.get('log_bsn', float('nan'))
 
-    ret = [coinc_event_id, simulation_id, far, snr, searched_area, searched_prob, offset, runtime, distmean, diststd] + contour_areas + area_probs
+    ret = [coinc_event_id, simulation_id, far, snr, searched_area,
+           searched_prob, searched_prob_distance, offset, runtime, distmean,
+           diststd, log_bci, log_bsn] + contour_areas + area_probs
     if modes:
         ret += [searched_modes] + contour_modes
     return ret
@@ -144,21 +154,20 @@ if __name__ == '__main__':
             (command.sqlite_get_filename(db), contours, modes, areas)
             ).imap_unordered
 
-    progress.update(-1, 'obtaining filenames of sky maps')
-    fitsfilenames = tuple(command.chainglob(opts.fitsfileglobs))
-
     colnames = (
         ['coinc_event_id', 'simulation_id', 'far', 'snr', 'searched_area',
-        'searched_prob', 'offset', 'runtime', 'distmean', 'diststd'] +
-        ["area({0:g})".format(p) for p in contours] +
-        ["prob({0:g})".format(a) for a in areas])
+         'searched_prob', 'searched_prob_distance', 'offset', 'runtime',
+         'distmean', 'diststd', 'log_bci', 'log_bsn'] +
+        ['area({0:g})'.format(p) for p in contours] +
+        ['prob({0:g})'.format(a) for a in areas])
     if modes:
-        colnames += ['searched_modes'] + ["modes({0:g})".format(p) for p in contours]
+        colnames += ['searched_modes']
+        colnames += ["modes({0:g})".format(p) for p in contours]
     print(*colnames, sep="\t", file=opts.output)
 
     count_records = 0
-    progress.max = len(fitsfilenames)
-    for record in map(process, fitsfilenames):
+    progress.max = len(opts.fitsfilenames)
+    for record in map(process, opts.fitsfilenames):
         count_records += 1
         progress.update(count_records, record[0])
         print(*record, sep="\t", file=opts.output)

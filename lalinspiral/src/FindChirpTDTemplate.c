@@ -241,8 +241,20 @@ LALFindChirpTDTemplate (
       * which again produces a correct template norm     */
       tmplt->distance      = tmplt->totalMass*LAL_MRSUN_SI;
     }
+    else if ( params->approximant==IMRPhenomD )
+    {
+      /* 1Mpc standard distance - not clear if this produces correct norm */
+      tmplt->distance      = 1.0;
+    }
     else if ( (params->approximant==IMRPhenomB) || (params->approximant==IMRPhenomC) )
     {
+      XLALPrintError("**** LALFindChirpTDTemplate ERROR ****\n");
+      XLALPrintError("Old IMRPhenom approximant requested!  Please switch to IMRPhenomD.\n");
+      XLALPrintError("If an approximant that precedes IMRPhenomD MUST be used, then\n");
+      XLALPrintError("comment out lines 251-257 in lalinspiral/src/FindChirpTDTemplate.c,\n");
+      XLALPrintError("recompile, and rerun.\n");
+      XLALPrintError("**************************************\n");
+      XLAL_ERROR_VOID(XLAL_EFUNC);
       /* 1Mpc standard distance - not clear if this produces correct norm */
       tmplt->distance      = 1.0;
       tmplt->spin1[2]      = 2 * tmplt->chi/(1. + sqrt(1.-4.*tmplt->eta));

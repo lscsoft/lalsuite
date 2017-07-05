@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALApps],[6.20.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALApps],[6.21.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/lalapps/lalapps.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -59,16 +59,16 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="6.17.0"
-MIN_LALFRAME_VERSION="1.4.2"
-MIN_LALMETAIO_VERSION="1.3.0"
-MIN_LALXML_VERSION="1.2.3"
-MIN_LALSIMULATION_VERSION="1.6.1"
-MIN_LALBURST_VERSION="1.4.3"
-MIN_LALINSPIRAL_VERSION="1.7.6"
-MIN_LALPULSAR_VERSION="1.15.0"
-MIN_LALINFERENCE_VERSION="1.8.0"
-MIN_LALSTOCHASTIC_VERSION="1.1.19"
+MIN_LAL_VERSION="6.18.0"
+MIN_LALFRAME_VERSION="1.4.3"
+MIN_LALMETAIO_VERSION="1.3.1"
+MIN_LALXML_VERSION="1.2.4"
+MIN_LALSIMULATION_VERSION="1.7.0"
+MIN_LALBURST_VERSION="1.4.4"
+MIN_LALINSPIRAL_VERSION="1.7.7"
+MIN_LALPULSAR_VERSION="1.16.0"
+MIN_LALINFERENCE_VERSION="1.9.0"
+MIN_LALSTOCHASTIC_VERSION="1.1.20"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALFRAME_VERSION])
 AC_SUBST([MIN_LALMETAIO_VERSION])
@@ -370,10 +370,8 @@ fi
 AM_CONDITIONAL([HAVE_BAMBI],[${hbf}])
 AM_CONDITIONAL([HAVE_BAMBI_MPI],[${bambimpi}])
 
-# use c++ mode for boinc build
-if test "${boinc}" = "true" ; then
-   AC_LANG_PUSH([C++])
-fi
+# check for boinc, and modify compiler for lal library checks
+LALSUITE_CHECK_BOINC
 
 # check for lal libararies and headers
 LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
@@ -388,13 +386,8 @@ LALSUITE_CHECK_OPT_LIB([LALPulsar],[${MIN_LALPULSAR_VERSION}],[XLALComputeFstat]
 LALSUITE_CHECK_OPT_LIB([LALInference],[${MIN_LALINFERENCE_VERSION}],[LALInferenceAddVariable],[lal/LALInference.h])
 LALSUITE_CHECK_OPT_LIB([LALStochastic],[${MIN_LALSTOCHASTIC_VERSION}],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
 
-# check that lal was built with BOINC support, if required
-LALSUITE_CHECK_BOINC
-
-# back to c mode
-if test "${boinc}" = "true" ; then
-   AC_LANG_POP([C++])
-fi
+# finish boinc checks, and restore compiler after lal library checks
+LALSUITE_END_CHECK_BOINC
 
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN
@@ -463,7 +456,7 @@ LALApps has now been successfully configured:
 * LALStochastic library support is $LALSTOCHASTIC_ENABLE_VAL
 * LALPulsar library support is $LALPULSAR_ENABLE_VAL
 * LALInference library support is $LALINFERENCE_ENABLE_VAL
-* FITS library support is $CFITSIO_ENABLE_VAL
+* CFITSIO library support is $CFITSIO_ENABLE_VAL
 * PSS library support is $PSS_ENABLE_VAL
 * BAMBI library support is $BAMBI_ENABLE_VAL
 * Condor support is $CONDOR_ENABLE_VAL

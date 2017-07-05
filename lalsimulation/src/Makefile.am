@@ -178,6 +178,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralOptimizedCoefficientsEccentricityFD.c \
 	LALSimInspiralTaylorEt.c \
 	LALSimInspiralTaylorF2.c \
+	LALSimInspiralTaylorF2NLTides.c \
 	LALSimInspiralTaylorF2ReducedSpin.c \
 	LALSimInspiralTaylorF2ReducedSpinMetric.c \
 	LALSimInspiralTaylorF2ReducedSpinTidal.c \
@@ -191,6 +192,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralTaylorLength.c \
 	LALSimInspiralWaveformCache.c \
 	LALSimInspiralWaveformTaper.c \
+  LALSimInspiralTEOBResumROM.c \
 	LALSimIMRNRWaveforms.c \
 	LALSimulation.c \
 	LALSimNeutronStarEOS.c \
@@ -210,7 +212,8 @@ liblalsimulation_la_SOURCES = \
 	unicorn.xpm \
 	LALSimInspiralHGimri.c \
 	LALSimFindAttachTime.c \
-	LALSimIMRSpinEOB.c
+	LALSimIMRSpinEOB.c \
+	LALSimIMRNRSur4d2s.c
 
 nodist_liblalsimulation_la_SOURCES = \
 	LALSimulationBuildInfoHeader.h \

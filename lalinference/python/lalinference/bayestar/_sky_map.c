@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2016  Leo Singer
+ * Copyright (C) 2013-2017  Leo Singer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,12 +19,16 @@
 
 #include "config.h"
 #include <Python.h>
+/* Ignore warnings in Numpy API itself */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 #include <numpy/arrayobject.h>
+#pragma GCC diagnostic pop
 #include <chealpix.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_nan.h>
 #include <lal/bayestar_sky_map.h>
-#include <assert.h>
+#include <stddef.h>
 #include "six.h"
 
 
@@ -80,15 +84,39 @@ static void capsule_free(PyObject *self)
     INPUT_VECTOR_NIFOS(double, NAME, NPY_DOUBLE)
 
 
+static PyArray_Descr *sky_map_descr;
+
+
+static PyArray_Descr *sky_map_create_descr(void)
+{
+    PyArray_Descr *dtype = NULL;
+    PyObject *dtype_dict = Py_BuildValue("{s(ssss)s(cccc)s(IIII)}",
+        "names", "UNIQ", "PROBDENSITY", "DISTMEAN", "DISTSTD",
+        "formats", NPY_ULONGLONGLTR, NPY_DOUBLELTR, NPY_DOUBLELTR, NPY_DOUBLELTR,
+        "offsets",
+        (unsigned int) offsetof(bayestar_pixel, uniq),
+        (unsigned int) offsetof(bayestar_pixel, value[0]),
+        (unsigned int) offsetof(bayestar_pixel, value[1]),
+        (unsigned int) offsetof(bayestar_pixel, value[2]));
+
+    if (dtype_dict)
+    {
+        PyArray_DescrConverter(dtype_dict, &dtype);
+        Py_DECREF(dtype_dict);
+    }
+
+    return dtype;
+}
+
+
 static PyObject *sky_map_toa_phoa_snr(
     PyObject *NPY_UNUSED(module), PyObject *args, PyObject *kwargs)
 {
     /* Input arguments */
-    long nside = -1;
-    long npix;
     double min_distance;
     double max_distance;
     int prior_distance_power;
+    int cosmology;
     double gmst;
     unsigned int nifos;
     unsigned long nsamples = 0;
@@ -101,27 +129,18 @@ static PyObject *sky_map_toa_phoa_snr(
 
     /* Names of arguments */
     static const char *keywords[] = {"min_distance", "max_distance",
-        "prior_distance_power", "gmst", "sample_rate", "epochs", "snrs",
-        "responses", "locations", "horizons", "nside", NULL};
+        "prior_distance_power", "cosmology", "gmst", "sample_rate", "epochs",
+        "snrs", "responses", "locations", "horizons", NULL};
 
     /* Parse arguments */
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ddiddOOOOO|l",
-        keywords, &min_distance, &max_distance, &prior_distance_power, &gmst,
-        &sample_rate, &epochs_obj, &snrs_obj, &responses_obj, &locations_obj,
-        &horizons_obj, &nside)) return NULL;
-
-    /* Determine HEALPix resolution, if specified */
-    if (nside == -1)
-    {
-        npix = -1;
-    } else {
-        npix = nside2npix(nside);
-        if (npix == -1)
-        {
-            PyErr_SetString(PyExc_ValueError, "nside must be a power of 2");
-            return NULL;
-        }
-    }
+    /* FIXME: PyArg_ParseTupleAndKeywords should expect keywords to be const */
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ddiiddOOOOO",
+        keywords, &min_distance, &max_distance, &prior_distance_power,
+        &cosmology, &gmst, &sample_rate, &epochs_obj, &snrs_obj,
+        &responses_obj, &locations_obj, &horizons_obj)) return NULL;
+    #pragma GCC diagnostic pop
 
     /* Determine number of detectors */
     {
@@ -132,6 +151,7 @@ static PyObject *sky_map_toa_phoa_snr(
 
     /* Return value */
     PyObject *out = NULL;
+    double log_bci, log_bsn;
 
     /* Numpy array objects */
     PyArrayObject *epochs_npy = NULL, *snrs_npy[nifos], *responses_npy[nifos],
@@ -178,28 +198,35 @@ static PyObject *sky_map_toa_phoa_snr(
 
     /* Call function */
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
-    double (*ret)[4] = bayestar_sky_map_toa_phoa_snr(&npix, min_distance,
-        max_distance, prior_distance_power, gmst, nifos, nsamples, sample_rate,
-        epochs, snrs, responses, locations, horizons);
+    size_t len;
+    bayestar_pixel *pixels;
+    Py_BEGIN_ALLOW_THREADS
+    pixels = bayestar_sky_map_toa_phoa_snr(&len, &log_bci, &log_bsn,
+        min_distance, max_distance, prior_distance_power, cosmology, gmst,
+        nifos, nsamples, sample_rate, epochs, snrs, responses, locations,
+        horizons);
+    Py_END_ALLOW_THREADS
     gsl_set_error_handler(old_handler);
 
-    if (!ret)
+    if (!pixels)
         goto fail;
 
     /* Prepare output object */
-    PyObject *capsule = PyCapsule_New(ret, NULL, capsule_free);
+    PyObject *capsule = PyCapsule_New(pixels, NULL, capsule_free);
     if (!capsule)
         goto fail;
 
-    npy_intp dims[] = {npix, 4};
-    out = PyArray_SimpleNewFromData(2, dims, NPY_DOUBLE, ret);
+    npy_intp dims[] = {len};
+    Py_INCREF(sky_map_descr);
+    out = PyArray_NewFromDescr(&PyArray_Type,
+        sky_map_descr, 1, dims, NULL, pixels, NPY_ARRAY_DEFAULT, NULL);
     if (!out)
     {
         Py_DECREF(capsule);
         goto fail;
     }
 
-    if (PyArray_SetBaseObject(out, capsule))
+    if (PyArray_SetBaseObject((PyArrayObject *) out, capsule))
     {
         Py_DECREF(out);
         out = NULL;
@@ -212,6 +239,9 @@ fail: /* Cleanup */
     FREE_INPUT_LIST_OF_ARRAYS(responses)
     FREE_INPUT_LIST_OF_ARRAYS(locations)
     Py_XDECREF(horizons_npy);
+    if (out) {
+        out = Py_BuildValue("Ndd", out, log_bci, log_bsn);
+    }
     return out;
 };
 
@@ -241,10 +271,14 @@ static PyObject *log_likelihood_toa_phoa_snr(
         "snrs", "responses", "locations", "horizons", NULL};
 
     /* Parse arguments */
+    /* FIXME: PyArg_ParseTupleAndKeywords should expect keywords to be const */
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "(dddddd)ddOOOOO",
         keywords, &ra, &sin_dec, &distance, &u, &twopsi, &t, &gmst,
         &sample_rate, &epochs_obj, &snrs_obj, &responses_obj, &locations_obj,
         &horizons_obj)) return NULL;
+    #pragma GCC diagnostic pop
 
     /* Determine number of detectors */
     {
@@ -322,8 +356,11 @@ fail: /* Cleanup */
 static PyObject *test(
     PyObject *NPY_UNUSED(module), PyObject *NPY_UNUSED(arg))
 {
+    int ret;
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
-    int ret = bayestar_test();
+    Py_BEGIN_ALLOW_THREADS
+    ret = bayestar_test();
+    Py_END_ALLOW_THREADS
     gsl_set_error_handler(old_handler);
     return PyLong_FromLong(ret);
 }
@@ -342,7 +379,8 @@ static PyMethodDef methods[] = {
 
 static PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
-    "_sky_map", NULL, -1, methods
+    "_sky_map", NULL, -1, methods,
+    NULL, NULL, NULL, NULL
 };
 
 
@@ -351,7 +389,12 @@ PyMODINIT_FUNC PyInit__sky_map(void)
 {
     PyObject *module = NULL;
 
+    gsl_set_error_handler_off();
     import_array();
+
+    sky_map_descr = sky_map_create_descr();
+    if (!sky_map_descr)
+        goto done;
 
     module = PyModule_Create(&moduledef);
     if (!module)

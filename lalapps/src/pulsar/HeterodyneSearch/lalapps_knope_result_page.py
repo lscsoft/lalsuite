@@ -30,7 +30,6 @@ import sys
 import ast
 import numpy as np
 import re
-import urllib2
 import copy
 import os
 import fnmatch
@@ -170,47 +169,6 @@ function toggle(id) {{
 </body>
 </html>
 """
-
-
-def get_atnf_info(psr):
-  """
-  Get the pulsar (psr) distance (DIST in kpc), proper motion corrected period derivative (P1_I) and any association
-  (ASSOC e.g. GC) from the ATNF catalogue.
-  """
-
-  psrname = re.sub('\+', '%2B', psr) # switch '+' for unicode character
-
-  atnfversion = '1.54' # the latest ATNF version
-  atnfurl = 'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=' + atnfversion
-  atnfurl += '&Dist=Dist&Assoc=Assoc&P1_i=P1_i' # set parameters to get
-  atnfurl += '&startUserDefined=true&c1_val=&c2_val=&c3_val=&c4_val=&sort_attr=jname&sort_order=asc&condition=&pulsar_names=' + psrname
-  atnfurl += '&ephemeris=selected&submit_ephemeris=Get+Ephemeris&coords_unit=raj%2Fdecj&radius=&coords_1=&coords_2='
-  atnfurl += '&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=linear&y_axis=&y_scale=linear&state=query'
-
-  try:
-    urldat = urllib2.urlopen(atnfurl).read() # read ATNF url
-    predat = re.search(r'<pre[^>]*>([^<]+)</pre>', urldat) # to extract data within pre environment (without using BeautifulSoup) see e.g. http://stackoverflow.com/a/3369000/1862861 and http://stackoverflow.com/a/20046030/1862861
-    pdat = predat.group(1).strip().split('\n') # remove preceeding and trailing new lines and split lines
-  except:
-    print("Warning... could not get information from ATNF pulsar catalogue.")
-    return None
-
-  # check whether information could be found and get distance, age and association from data
-  dist = None
-  p1_I = None
-  assoc = None
-  for line in pdat:
-    if 'WARNING' in line or 'not in catalogue' in line:
-      return None
-    vals = line.split()
-    if 'DIST' in vals[0]:
-      dist = float(vals[1])
-    if 'P1_I' in vals[0]:
-      age = float(vals[1])
-    if 'ASSOC' in vals[0]:
-      assoc = vals[1]
-
-  return (dist, p1_I, assoc)
 
 
 def set_spin_down(p1_I, assoc, f0, f1, n=5.):
@@ -1849,13 +1807,32 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
   dist = p1_I = assoc = sdlim = f1sd = None
   atnfurl = None
   if not injection:
-    pinfo = get_atnf_info(pname)
-    if pinfo != None:
-      dist, p1_I, assoc = pinfo # unpack values
-      atnfversion = '1.54'
-      atnfurl = 'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=' + atnfversion
-      atnfurl += '&startUserDefined=true&pulsar_names=' + re.sub('\+', '%2B', pname)
-      atnfurl += '&ephemeris=long&submit_ephemeris=Get+Ephemeris&state=query'
+    # set ATNF URL where pulsar can be found
+    atnfurl = 'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=' + ATNF_VERSION
+    atnfurl += '&startUserDefined=true&pulsar_names=' + re.sub('\+', '%2B', pname)
+    atnfurl += '&ephemeris=long&submit_ephemeris=Get+Ephemeris&state=query'
+
+    # try getting information already parsed from ATNF catalogue by lalapps_knope pipeline setup
+    jsonfile = os.path.join(outdir, pname+'.json')
+    tryatnf = True
+    if os.path.isfile(jsonfile):
+      try:
+        fp = open(jsonfile, 'r')
+        info = json.load(fp)
+        fp.close()
+
+        # extract distance, intrinsic period derivative, pulsar association and required URL
+        dist = info['Pulsar data']['DIST']
+        p1_I = info['Pulsar data']['P1_I']
+        assoc = info['Pulsar data']['ASSOC']
+        tryatnf = False
+      except:
+        print("Warning... could not read in JSON file '%s'." % jsonfile, file=sys.stderr)
+
+    if tryatnf: # try getting ATNF info now
+      pinfo = get_atnf_info(pname)
+      if pinfo is not None:
+        dist, p1_I, assoc, atnfurlref = pinfo # unpack values
 
     # if distance is in the par file use that instead
     if par['DIST']:
@@ -1865,7 +1842,7 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
     f1sd = set_spin_down(p1_I, assoc, f0, f1)
 
     # get spin-down limit
-    if f1sd != None and dist != None:
+    if f1sd is not None and dist is not None:
       sdlim = spin_down_limit(f0, f1sd, dist)
 
   # check whether to only include results from a joint (multi-detector) analysis
