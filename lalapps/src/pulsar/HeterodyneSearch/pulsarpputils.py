@@ -1955,7 +1955,10 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
             'T1': lal.LALDetectorIndexTAMA300DIFF, \
             'AL1': lal.LALDetectorIndexLLODIFF, \
             'AH1': lal.LALDetectorIndexLHODIFF, \
-            'AV1': lal.LALDetectorIndexVIRGODIFF}
+            'AV1': lal.LALDetectorIndexVIRGODIFF, \
+            'E1': lal.LALDetectorIndexE1Diff, \
+            'E2': lal.LALDetectorIndexE2Diff, \
+            'E3': lal.LALDetectorIndexE3Diff}
 
   try:
     detector=detMap[det]
@@ -2577,7 +2580,7 @@ def marginalise(like, pname, pnames, ranges):
 
 
 # return the log marginal posterior on a given parameter (if 'all' marginalise over all parameters)
-def marginal(lnlike, pname, pnames, ranges):
+def marginal(lnlike, pname, pnames, ranges, multflatprior=False):
   from copy import deepcopy
 
   # make copies of everything
@@ -2587,7 +2590,10 @@ def marginal(lnlike, pname, pnames, ranges):
 
   for name in pnames:
     if name != pname:
-      lnliketmp = marginalise(lnliketmp, name, pnamestmp, rangestmp)
+      if multflatprior: # multiply by flat prior range
+        lnliketmp = marginalise(lnliketmp + np.log(1./(rangestmp[name][-1]-rangestmp[name][0])), name, pnamestmp, rangestmp)
+      else:
+        lnliketmp = marginalise(lnliketmp, name, pnamestmp, rangestmp)
 
   return lnliketmp
 
@@ -2737,7 +2743,7 @@ def pulsar_estimate_h0_from_snr(snr, source, det, tstart, duration, Sn, dt=600):
 
 
 def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, datachunks=30, chunkmin=5,
-                          ngrid=50):
+                          ngrid=50, outputlike=False):
   """
   A function to calculate the 4-parameter posterior probability density for a continuous wave signal
   given a set of processed data from a set of detectors.
@@ -2761,16 +2767,18 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
                 (default: 5)
         ngrid - the number of grid points to use for each dimension of the likelihood calculation. This
                 is used if the values are not specified in the paramranges argument (default: 50)
+   outputlike - output the log likelihoods rather than posteriors (default: False)
 
   Returns
   -------
-  L           - The 4d posterior over all parameters
+  L           - The 4d posterior (or likelihood) over all parameters
   h0pdf       - The 1d marginal posterior for h0
   phi0pdf     - The 1d marginal posterior for phi0 (the rotation frequency, not GW frequency)
   psipdf      - The 1d marginal posterior for psi
   cosiotapdf  - The 1d marginal posterior for cosiota
   lingrids    - A dictionary of the grid points for each parameter
-  evrat       - The log odds ratio for a signal versus Gaussian noise
+  sigev       - The log evidence for the signal model
+  noiseev     - The log evidence for the noise model
 
   An example would be:
   # set the detectors
@@ -2781,7 +2789,7 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
   data = {}
   for det in dets:
     ts[det] = np.arange(900000000., 921000843., 60.)
-    data[det] = np.random.randn(len(ts[det]))
+    data[det] = np.random.randn(len(ts[det])) + 1j*np.random.randn(len(ts[det]))
 
   # set the parameter ranges
   ra = 0.2
@@ -2792,13 +2800,14 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
   paramranges['phi0'] = (0., np.pi, 50)
   paramranges['cosiota'] = (-1., 1., 50)
 
-  L, h0pdf, phi0pdf, psipdf, cosiotapdf, grid, evrat = pulsar_posterior_grid(dets, ts, data, ra, dec,
-                                                                             paramranges=paramranges)
+  L, h0pdf, phi0pdf, psipdf, cosiotapdf, grid, sigev, noiseev = pulsar_posterior_grid(dets, ts, data, ra, dec,
+                                                                                      paramranges=paramranges)
   """
 
   # import numpy
   import numpy as np
   import sys
+  from scipy.special import gammaln
 
   # set the likelihood to either Student's or Gaussian
   if sigmas == None:
@@ -2965,10 +2974,14 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
 
       if liketype == 'gaussian':
         like -= 0.5*(chiSq)
+        like -= (cl*np.log(2.*np.pi)) + 2.*np.sum(np.log(nstd[startidx:endidx]))
         noiselike -= 0.5*(dd1real + dd1imag)
+        noiselike -= (cl*np.log(2.*np.pi)) + 2.*np.sum(np.log(nstd[startidx:endidx]))
       else:
         like -= float(cl)*np.log(chiSq)
+        like += (gammaln(cl) - np.log(2.) - cl*np.log(np.pi))
         noiselike -= float(cl)*np.log(dd1real + dd1imag)
+        noiselike += (gammaln(cl) - np.log(2.) - cl*np.log(np.pi))
 
       startidx += cl # updated start index
 
@@ -2979,17 +2992,23 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
   sigev = marginal(like, 'all', params, lingrids)
 
   # normalise posterior
-  like -= sigev
+  if not outputlike:
+    like -= sigev
+  else:
+    like -= logprior # remove prior if outputting likelihood
 
   # get marginal posteriors for each parameter
   posts = {}
   for p in params:
-    posts[p] = np.exp(marginal(like, p, params, lingrids))
+    if not outputlike:
+      posts[p] = np.exp(marginal(like, p, params, lingrids))
+    else:
+      posts[p] = marginal(like, p, params, lingrids, multflatprior=True) # output individual log likelihoods
 
   # odds ratio for signal versus noise
   evrat = sigev - noiselike
 
-  return like, posts['h0'], posts['phi0'], posts['psi'], posts['cosiota'], lingrids, evrat
+  return like, posts['h0'], posts['phi0'], posts['psi'], posts['cosiota'], lingrids, sigev, noiselike
 
 
 # current version of the ATNF pulsar catalogue
