@@ -2211,7 +2211,11 @@ class BinnedLnPDF(BinnedDensity):
 		accounted for in the normalization although the density
 		reported for those bins will be 0.
 		"""
-		self.norm = math.log(self.array.sum())
+		self.norm = self.array.sum()
+		try:
+			self.norm = math.log(self.norm)
+		except ValueError:
+			self.norm = NegInf
 
 	def to_xml(self, *args, **kwargs):
 		elem = super(BinnedLnPDF, self).to_xml(*args, **kwargs)
