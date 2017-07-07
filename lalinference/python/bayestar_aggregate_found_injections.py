@@ -134,10 +134,10 @@ def process(fitsfilename):
         snr = float('nan')
     if far is None:
         far = float('nan')
-    distmean = sky_map.meta.get('distmean', float('nan'))
-    diststd = sky_map.meta.get('diststd', float('nan'))
-    log_bci = sky_map.meta.get('log_bci', float('nan'))
-    log_bsn = sky_map.meta.get('log_bsn', float('nan'))
+    distmean = sky_map.meta.get('distmean', np.nan)
+    diststd = sky_map.meta.get('diststd', np.nan)
+    log_bci = sky_map.meta.get('log_bci', np.nan)
+    log_bsn = sky_map.meta.get('log_bsn', np.nan)
 
     ret = [coinc_event_id, simulation_id, far, snr, searched_area,
            searched_prob, searched_prob_distance, offset, runtime, distmean,
