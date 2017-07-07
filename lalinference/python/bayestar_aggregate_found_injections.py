@@ -115,16 +115,20 @@ def process(fitsfilename):
             sky_map, true_ra, true_dec, contours=contour_pvalues,
             areas=areas, modes=modes)
 
-    prob = sky_map['PROBDENSITY'] * moc.uniq2pixarea(sky_map['UNIQ'])
-    marginal_args = (
-        prob, sky_map['DISTMU'], sky_map['DISTSIGMA'], sky_map['DISTNORM'])
-    searched_prob_distance = distance.marginal_cdf(true_dist, *marginal_args)
-    lo, hi = distance.marginal_ppf(
-        np.row_stack((
-            0.5 * (1 - contour_pvalues),
-            0.5 * (1 + contour_pvalues)
-        )), *marginal_args)
-    contour_distances = (hi - lo).tolist()
+    if 'DISTMU' in sky_map.columns:
+        prob = sky_map['PROBDENSITY'] * moc.uniq2pixarea(sky_map['UNIQ'])
+        args = (
+            prob, sky_map['DISTMU'], sky_map['DISTSIGMA'], sky_map['DISTNORM'])
+        searched_prob_distance = distance.marginal_cdf(true_dist, *args)
+        lo, hi = distance.marginal_ppf(
+            np.row_stack((
+                0.5 * (1 - contour_pvalues),
+                0.5 * (1 + contour_pvalues)
+            )), *args)
+        contour_distances = (hi - lo).tolist()
+    else:
+        searched_prob_distance = np.nan
+        contour_distances = [np.nan] * len(contours)
 
     if snr is None:
         snr = float('nan')
