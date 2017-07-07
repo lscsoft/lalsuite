@@ -163,7 +163,9 @@ void initialise_algorithm( LALInferenceRunState *runState )
     LALInferenceAddVariable( runState->algorithmParams,"Nlive", &tmpi, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
   }
   else{
-   XLAL_ERROR_VOID(XLAL_EIO, "Error... Number of live point must be specified.");
+    if ( !LALInferenceGetProcParamVal( commandLine, "--inject-only" ) ){
+      XLAL_ERROR_VOID(XLAL_EIO, "Error... Number of live point must be specified.");
+    }
   }
 
   /* Number of points in MCMC chain */
