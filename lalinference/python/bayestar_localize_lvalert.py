@@ -37,10 +37,6 @@ terminal, or redirected from a fifo):
 #
 
 from lalinference.bayestar import command
-import logging
-
-logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s')
-log = logging.getLogger('BAYESTAR')
 
 methods = '''
     toa_phoa_snr
@@ -73,6 +69,7 @@ opts = parser.parse_args()
 # Late imports
 #
 
+import logging
 import os
 import sys
 import six
@@ -86,6 +83,8 @@ import ligo.gracedb.rest
 import lal
 lal.ClobberDebugLevel(lal.LALNDEBUG)
 
+logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s')
+log = logging.getLogger('BAYESTAR')
 
 # If no GraceDB IDs were specified on the command line, then read them
 # from stdin line-by-line.
