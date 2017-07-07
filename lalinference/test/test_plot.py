@@ -26,7 +26,7 @@ def pp_plot():
     return fig, ax, p_values
 
 
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(remove_text=True, tolerance=10)
 def test_pp_plot_steps():
     """Test P--P plot with drawstyle='steps'."""
     fig, ax, p_values = pp_plot()
@@ -37,7 +37,7 @@ def test_pp_plot_steps():
     return fig
 
 
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(remove_text=True, tolerance=10)
 def test_pp_plot_lines():
     """Test P--P plot with drawstyle='steps'."""
     fig, ax, p_values = pp_plot()
@@ -49,7 +49,7 @@ def test_pp_plot_lines():
     return fig
 
 
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(remove_text=True, tolerance=10)
 def test_pp_plot_default():
     """Test P--P plot with drawstyle='steps'."""
     fig, ax, p_values = pp_plot()
@@ -60,23 +60,23 @@ def test_pp_plot_default():
     return fig
 
 
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(remove_text=True, tolerance=10)
 def test_mollweide_axes():
     """Test HEALPix heat map on 'mollweide' axes"""
     fig = plt.figure(figsize=(6, 4), dpi=72)
-    ax = fig.add_subplot(111, projection='mollweide')
+    fig.add_subplot(111, projection='mollweide')
     lalinference.plot.healpix_heatmap(np.arange(12), nest=True)
     return fig
 
 
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(remove_text=True, tolerance=10)
 def test_astro_mollweide_axes():
     """Test HEALPix heat map on 'astro hours mollweide' axes"""
     fig = plt.figure(figsize=(6, 4), dpi=72)
-    ax = fig.add_subplot(111, projection='astro hours mollweide')
+    fig.add_subplot(111, projection='astro hours mollweide')
     lalinference.plot.healpix_heatmap(np.arange(12), nest=True)
     return fig
 
 
 if __name__ == '__main__':
-    raise SystemExit(pytest.main(['-v', '--mpl', __file__]))
+    raise SystemExit(pytest.main(['-vv', '--mpl', __file__]))

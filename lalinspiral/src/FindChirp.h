@@ -653,19 +653,6 @@ LALFindChirpStoreEvent (
     );
 
 void
-LALFindChirpClusterEvents (
-    LALStatus                  *status,
-    SnglInspiralTable         **eventList,
-    FindChirpFilterInput       *input,
-    FindChirpFilterParams      *params,
-    FindChirpBankVetoData      *bankVetoData,
-    UINT4                       subBankIndex,
-    int                         writeCData,
-    InspiralTemplate           *bankCurrent
-    );
-
-
-void
 LALFindChirpFilterOutputVeto(
     LALStatus                          *status,
     SnglInspiralTable                 **eventList,

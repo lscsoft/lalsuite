@@ -423,7 +423,7 @@ static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, Pro
     {
       while(injTable)
       {
-        if(injTable->event_id->id == (UINT4)atoi(procparam->value)) break;
+        if(injTable->simulation_id == (UINT4)atoi(procparam->value)) break;
         else injTable=injTable->next;
       }
       if(!injTable){
@@ -2329,6 +2329,11 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
 
   COMPLEX16FrequencySeries *hptilde=NULL, *hctilde=NULL;
 
+  XLALSimInspiralWaveformParamsInsertTidalLambda1(LALpars,lambda1);
+  XLALSimInspiralWaveformParamsInsertTidalLambda2(LALpars,lambda2);
+  XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(LALpars,amp_order);
+  XLALSimInspiralWaveformParamsInsertPNPhaseOrder(LALpars,phase_order);
+
   XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, inj_table->mass1*LAL_MSUN_SI, inj_table->mass2*LAL_MSUN_SI,
 				  inj_table->spin1x, inj_table->spin1y, inj_table->spin1z,
 				  inj_table->spin2x, inj_table->spin2y, inj_table->spin2z,
@@ -2726,7 +2731,7 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
 	    {
 	      while(injTable)
 	      {
-		if(injTable->event_id->id == (UINT4)atoi(procparam->value)) break;
+		if(injTable->simulation_id == (UINT4)atoi(procparam->value)) break;
 		else injTable=injTable->next;
 	      }
 	      if(!injTable){
@@ -2837,7 +2842,7 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
 	    {
 	      while(injTable)
 	      {
-		if(injTable->event_id->id == (UINT4)atoi(procparam->value)) break;
+		if(injTable->simulation_id == (UINT4)atoi(procparam->value)) break;
 		else injTable=injTable->next;
 	      }
 	      if(!injTable){
@@ -2881,7 +2886,8 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
       assert(thisData->roq->weightsFileLinear!=NULL);
       thisData->roq->weightsLinear = (double complex*)malloc(n_basis_linear*time_steps*(sizeof(double complex)));
 
-      thisData->roq->time_weights_width = 2*dt + 2*0.026;
+      //0.045 comes from the diameter of the earth in light seconds: the maximum time-delay between earth-based observatories
+      thisData->roq->time_weights_width = 2*dt + 2*0.045;
       thisData->roq->time_step_size = thisData->roq->time_weights_width/time_steps;
       thisData->roq->n_time_steps = time_steps;
 
@@ -2992,7 +2998,7 @@ static void LALInferenceSetGPSTrigtime(LIGOTimeGPS *GPStrig, ProcessParamsTable 
                 {
                 while(inspiralTable)
                 {
-                if(inspiralTable->event_id->id == (UINT4)atoi(procparam->value)) break;
+                if(inspiralTable->simulation_id == (UINT4)atoi(procparam->value)) break;
                 else inspiralTable=inspiralTable->next;
                 }
                 if(!inspiralTable){

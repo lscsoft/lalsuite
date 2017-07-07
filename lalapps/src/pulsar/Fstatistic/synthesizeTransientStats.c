@@ -222,7 +222,7 @@ int main(int argc,char *argv[])
 	  XLAL_ERROR ( XLAL_EIO );
 	}
       fprintf (fpTransientStats, "%s", cfg.logString );		/* write search log comment */
-      if ( write_transientCandidate_to_fp ( fpTransientStats, NULL ) != XLAL_SUCCESS ) { /* write header-line comment */
+      if ( write_transientCandidate_to_fp ( fpTransientStats, NULL, 'd' ) != XLAL_SUCCESS ) { /* write header-line comment */
         XLAL_ERROR ( XLAL_EFUNC );
       }
     } /* if outputStats */
@@ -445,7 +445,7 @@ int main(int argc,char *argv[])
 
 
       /* ----- if requested, output transient-cand statistics */
-      if ( fpTransientStats && write_transientCandidate_to_fp ( fpTransientStats, &cand ) != XLAL_SUCCESS ) {
+      if ( fpTransientStats && write_transientCandidate_to_fp ( fpTransientStats, &cand, 'd' ) != XLAL_SUCCESS ) {
         XLALPrintError ( "%s: write_transientCandidate_to_fp() failed.\n", __func__ );
         XLAL_ERROR ( XLAL_EFUNC );
       }

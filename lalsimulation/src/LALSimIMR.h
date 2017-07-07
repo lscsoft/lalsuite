@@ -245,7 +245,8 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
         REAL8 s2x,                      /**< initial value of S2x */
         REAL8 s2y,                      /**< initial value of S2y */
         REAL8 s2z,                      /**< initial value of S2z */
-        const char *NRDataFile          /**< Location of NR HDF file */
+        const char *NRDataFile,         /**< Location of NR HDF file */
+        LALValue* ModeArray             /**< Container for the ell and m modes to generate. To generate all available modes pass NULL */
         );
 
 #if 0

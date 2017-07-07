@@ -51,7 +51,7 @@ import sys
 
 
 from lalburst import git_version
-from pylal import snglcoinc
+from lalburst import snglcoinc
 from lalburst import stringutils
 
 

@@ -1329,10 +1329,38 @@ static int worker (void) {
   if(test_sqrt)
     fprintf(stderr,"NaN:%f\n", sqrt(-1));
 
-  if(!bundle_size && (fp = boinc_fopen(resultfile,"r"))) {
-    fclose(fp);
-    LogPrintf (LOG_NORMAL, "WARNING: Resultfile '%s' present - doing nothing\n", resultfile);
-    resultfile_present = 1;
+  if(!bundle_size) {
+    int curresultfile, nresultfiles = 1;
+    char*lastchar = &resultfile[strlen(resultfile)-1];
+    char*filenums = "0123";
+
+    if (*lastchar == '0') { // boinc_resove()d result name
+
+      resultfile_present = 1; // assume all are present until we know better
+
+      if (second_outfile)
+        nresultfiles = 2;
+      else if (bsgl_outfiles)
+        nresultfiles = 3;
+
+      for (curresultfile = 0; curresultfile < nresultfiles; curresultfile++) {
+        *lastchar = filenums[curresultfile];
+        if (!boinc_file_exists(resultfile)) {
+          resultfile_present = 0;
+          break;
+        }
+      }
+      *lastchar = '0';
+      if(resultfile_present) {
+        LogPrintf (LOG_NORMAL, "WARNING: Resultfile '%s' present - doing nothing\n", resultfile);
+      }
+
+    } else if (boinc_file_exists(resultfile)) {
+
+      resultfile_present = 1;
+      LogPrintf (LOG_NORMAL, "WARNING: Resultfile '%s' present - doing nothing\n", resultfile);
+
+    }
   }
 
 #ifdef BOINC_APIV6
@@ -1585,8 +1613,10 @@ int main(int argc, char**argv) {
     } /* if DEBUG_LEVEL_FNAME file found */
 
   {
-    char buf[8];
-    if (setenv("LAL_DEBUG_LEVEL", myultoa(eah_lal_debug_level, buf, 8), 1)) {
+    char buf[16+8];
+    strcpy(buf, "LAL_DEBUG_LEVEL=");
+    myultoa(eah_lal_debug_level, buf+16, 8);
+    if (putenv(buf)) {
       LogPrintf(LOG_CRITICAL,"ERROR: couldn't set LAL_DEBUG_LEVEL env: %d\n", errno);
     }
   }

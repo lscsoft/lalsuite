@@ -116,17 +116,6 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 LALSUITE_CHECK_PYTHON([2.6])
 AX_PYTHON_DEVEL()
 
-# check for NumPy
-AX_PYTHON_MODULE(numpy, fatal)
-NUMPY_CFLAGS=-I`$PYTHON -c "import numpy;print (numpy.get_include());"`
-old_CFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS ${PYTHON_CPPFLAGS} ${NUMPY_CFLAGS}"
-AC_CHECK_HEADER([numpy/arrayobject.h],
-  [PYTHON_CPPFLAGS="${PYTHON_CPPFLAGS} ${NUMPY_CFLAGS}"],
-  [AC_MSG_ERROR([Numpy extension header not found])],
-  [#include "Python.h"])
-CFLAGS="$old_CFLAGS"
-
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 LALSUITE_ADD_FLAGS([C],[${GSL_CFLAGS}],[${GSL_LIBS}])

@@ -77,7 +77,6 @@ liblalinspiral_la_SOURCES = \
 	FindChirpBankVeto.c \
 	FindChirpChisq.c \
 	FindChirpChisqInit.c \
-	FindChirpClusterEvents.c \
 	FindChirpData.c \
 	FindChirpFilter.c \
 	FindChirpFilterInit.c \
@@ -85,7 +84,6 @@ liblalinspiral_la_SOURCES = \
 	FindChirpIMRSimulation.c \
 	FindChirpLinkedList.c \
 	FindChirpMemory.c \
-	FindChirpPTFFilter.c \
 	FindChirpPTFTemplate.c \
 	FindChirpPTFWaveform.c \
 	FindChirpPhenomWaveform.c \

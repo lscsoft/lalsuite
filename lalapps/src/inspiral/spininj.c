@@ -40,6 +40,7 @@
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
+#include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXML.h>
@@ -313,7 +314,8 @@ void LALSimInspiralTablePopulate(LALStatus        *status,
                                  MetadataTable     injections, 
                                  SimInspiralTable *this_inj)
 {
-  
+  XLALSimInspiralAssignIDs ( injections.simInspiralTable, 0, 0 );
+
   LAL_CALL( LALBeginLIGOLwXMLTable( status, &xmlfp, sim_inspiral_table ), 
             status );
   LAL_CALL( LALWriteLIGOLwXMLTable( status, &xmlfp, injections, 
@@ -324,7 +326,7 @@ void LALSimInspiralTablePopulate(LALStatus        *status,
     {
       this_inj = injections.simInspiralTable;
       injections.simInspiralTable = injections.simInspiralTable->next;
-      LALFree( this_inj );
+      XLALFreeSimInspiral( &this_inj );
     }
 }
 

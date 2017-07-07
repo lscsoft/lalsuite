@@ -56,6 +56,11 @@ DEFINE_INSERT_FUNC(FrameAxis, INT4, "axis", LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_
 DEFINE_INSERT_FUNC(Sideband, INT4, "sideband", 0)
 DEFINE_INSERT_FUNC(NumRelData, String, "numreldata", NULL)
 
+int XLALSimInspiralWaveformParamsInsertModeArray(LALDict *params, LALValue *value)
+{
+	return XLALDictInsertValue(params, "ModeArray", value);
+}
+
 DEFINE_INSERT_FUNC(PNPhaseOrder, INT4, "phaseO", -1)
 DEFINE_INSERT_FUNC(PNAmplitudeOrder, INT4, "ampO", -1)
 DEFINE_INSERT_FUNC(PNEccentricityOrder, INT4, "eccO", -1)
@@ -136,6 +141,18 @@ DEFINE_LOOKUP_FUNC(FrameAxis, INT4, "axis", LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_
 DEFINE_LOOKUP_FUNC(Sideband, INT4, "sideband", 0)
 DEFINE_LOOKUP_FUNC(NumRelData, String, "numreldata", NULL)
 
+LALValue* XLALSimInspiralWaveformParamsLookupModeArray(LALDict *params)
+{
+	/* Initialise and set Default to NULL */
+	LALValue * value = NULL;
+	if (params && XLALDictContains(params, "ModeArray"))
+	{
+		LALDictEntry * entry = XLALDictLookup(params, "ModeArray");
+		value = XLALValueDuplicate(XLALDictEntryGetValue(entry));
+	}
+	return value;
+}
+
 DEFINE_LOOKUP_FUNC(PNPhaseOrder, INT4, "phaseO", -1)
 DEFINE_LOOKUP_FUNC(PNAmplitudeOrder, INT4, "ampO", -1)
 DEFINE_LOOKUP_FUNC(PNEccentricityOrder, INT4, "eccO", -1)
@@ -214,6 +231,11 @@ DEFINE_ISDEFAULT_FUNC(ModesChoice, INT4, "modes", LAL_SIM_INSPIRAL_MODES_CHOICE_
 DEFINE_ISDEFAULT_FUNC(FrameAxis, INT4, "axis", LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L)
 DEFINE_ISDEFAULT_FUNC(Sideband, INT4, "sideband", 0)
 DEFINE_ISDEFAULT_FUNC(NumRelData, String, "numreldata", NULL)
+
+int XLALSimInspiralWaveformParamsModeArrayIsDefault(LALDict *params)
+{
+	return XLALSimInspiralWaveformParamsLookupModeArray(params) == NULL;
+}
 
 DEFINE_ISDEFAULT_FUNC(PNPhaseOrder, INT4, "phaseO", -1)
 DEFINE_ISDEFAULT_FUNC(PNAmplitudeOrder, INT4, "ampO", -1)

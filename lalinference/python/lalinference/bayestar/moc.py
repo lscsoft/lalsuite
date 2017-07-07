@@ -18,7 +18,6 @@
 """
 Multi-order coverage (MOC) HEALPix indexing.
 """
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 import numpy as np
@@ -44,7 +43,8 @@ def _add_newdoc_ufunc(func, doc):
     try:
         np.lib.add_newdoc_ufunc(func, doc)
     except ValueError as e:
-        if e.message == 'Cannot change docstring of ufunc with non-NULL docstring':
+        msg = 'Cannot change docstring of ufunc with non-NULL docstring'
+        if e.args[0] == msg:
             pass
 
 
@@ -110,3 +110,22 @@ order : `numpy.ndarray`
 ipix : `numpy.ndarray`
     NESTED pixel index
 """)
+
+
+def rasterize(moc_data):
+    """Convert a multi-order HEALPix dataset to fixed-order NESTED ordering.
+
+    Parameters
+    ----------
+    moc_data : `numpy.ndarray`
+    A multi-order HEALPix dataset stored as a Numpy record array whose first
+    column is called UNIQ and contains the NUNIQ pixel index. Every point on
+    the unit sphere must be contained in exactly one pixel in the dataset.
+
+    Returns
+    -------
+    nested_data : `numpy.ndarray`
+        A fixed-order, NESTED-ordering HEALPix dataset with all of the columns
+        that were in moc_data, with the exception of the UNIQ column.
+    """
+    return _moc.rasterize(moc_data)

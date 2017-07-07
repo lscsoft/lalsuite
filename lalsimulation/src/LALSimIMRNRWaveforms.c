@@ -589,7 +589,8 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
         UNUSED REAL8 s2x,                      /**< initial value of S2x */
         UNUSED REAL8 s2y,                      /**< initial value of S2y */
         UNUSED REAL8 s2z,                      /**< initial value of S2z */
-        UNUSED const char *NRDataFile          /**< Location of NR HDF file */
+        UNUSED const char *NRDataFile,         /**< Location of NR HDF file */
+        UNUSED LALValue* ModeArray             /**< Container for the ell and m modes to generate. To generate all available modes pass NULL */
         )
 {
   #ifndef LAL_HDF5_ENABLED
@@ -773,10 +774,35 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   distance_scale_fac = (m1 + m2) * LAL_MRSUN_SI / r;
 
   /* Generate the waveform */
-  for (model=2; model < 9 ; model++)
+  /* NOTE: We assume that for a given ell mode, all m modes are present */
+  INT4 NRLmax;
+  XLALH5FileQueryScalarAttributeValue(&NRLmax, file, "Lmax");
+
+  if ( ModeArray == NULL )
+  {/* Default behaviour: Generate all modes upto NRLmax */
+    ModeArray = XLALSimInspiralCreateModeArray();
+    for (int ell=2; ell<=NRLmax; ell++)
+    {
+        XLALSimInspiralModeArrayActivateAllModesAtL(ModeArray, ell);
+    }
+  }
+  /* else Use the ModeArray given */
+
+  for (model=2; model < (NRLmax + 1) ; model++)
   {
     for (modem=-model; modem < (model+1); modem++)
     {
+
+      /* first check if (l,m) mode is 'activated' in the ModeArray */
+      /* if activated then generate the mode, else skip this mode. */
+      if (XLALSimInspiralModeArrayIsModeActive(ModeArray, model, modem) != 1)
+      {
+          XLAL_PRINT_INFO("SKIPPING model = %i modem = %i\n", model, modem);
+          continue;
+      }
+      XLAL_PRINT_INFO("generateing model = %i modem = %i\n", model, modem);
+
+
       snprintf(amp_key, sizeof(amp_key), "amp_l%d_m%d", model, modem);
       snprintf(phase_key, sizeof(phase_key), "phase_l%d_m%d", model, modem);
 
@@ -840,6 +866,7 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   XLALDestroyREAL8TimeSeries(hplus_corr);
   XLALDestroyREAL8TimeSeries(hcross_corr);
   XLALH5FileClose(file);
+  XLALDestroyValue(ModeArray);
 
   return XLAL_SUCCESS;
   #endif

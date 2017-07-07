@@ -19,7 +19,6 @@ Create a contours for the credible levels of an all-sky probability map.
 The input is a HEALPix probability map.
 The output is a GeoJSON FeatureCollection (http://geojson.org/).
 """
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Command line interface
@@ -41,7 +40,8 @@ parser.add_argument(
 parser.add_argument(
     '-s', '--simplify', default=False, action='store_true',
     help='simplify contour paths [default: %(default)s]')
-parser.add_argument('-n', '--nside', metavar='NSIDE', type=int,
+parser.add_argument(
+    '-n', '--nside', metavar='NSIDE', type=int,
     help='optionally resample to the specified resolution '
     ' before generating contours [default: no downsampling]')
 parser.add_argument(

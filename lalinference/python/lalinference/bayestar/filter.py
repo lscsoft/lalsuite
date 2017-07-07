@@ -16,12 +16,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-from __future__ import division
 """
 Functions related to matched filtering.
 """
-__author__ = "Leo Singer <leo.singer@ligo.org>"
 
+from __future__ import division
 
 # General imports
 import logging
@@ -105,7 +104,8 @@ def fftfilt(b, x):
 
 
 def abscissa(series):
-    """Produce the independent variable for a lal TimeSeries or FrequencySeries."""
+    """Produce the independent variable for a lal TimeSeries or
+    FrequencySeries."""
     try:
         delta = series.deltaT
         x0 = float(series.epoch)
@@ -117,18 +117,20 @@ def abscissa(series):
 
 def colored_noise(epoch, duration, sample_rate, psd):
     """Generate a REAL8TimeSeries containing duration seconds of colored
-    Gaussian noise at the given sample rate, with the start time given by epoch.
-    psd should be an instance of REAL8FrequencySeries containing a discretely
-    sample power spectrum with f0=0, deltaF=1/duration, and a length of
-    ((duration * sample_rate) // 2 + 1) samples.
+    Gaussian noise at the given sample rate, with the start time given by
+    epoch. psd should be an instance of REAL8FrequencySeries containing a
+    discretely sample power spectrum with f0=0, deltaF=1/duration, and a length
+    of ((duration * sample_rate) // 2 + 1) samples.
     """
     data_length = duration * sample_rate
     plan = CreateReverseREAL8FFTPlan(data_length, 0)
-    x = lal.CreateREAL8TimeSeries(None, lal.LIGOTimeGPS(0), 0, 0,
-        lal.DimensionlessUnit, data_length)
-    xf = lal.CreateCOMPLEX16FrequencySeries(None, epoch, 0, 1 / duration,
+    x = lal.CreateREAL8TimeSeries(
+        None, lal.LIGOTimeGPS(0), 0, 0, lal.DimensionlessUnit, data_length)
+    xf = lal.CreateCOMPLEX16FrequencySeries(
+        None, epoch, 0, 1 / duration,
         lal.DimensionlessUnit, data_length // 2 + 1)
-    white_noise = (np.random.randn(len(xf.data.data)) + np.random.randn(len(xf.data.data)) * 1j)
+    white_noise = (np.random.randn(len(xf.data.data)) +
+                   np.random.randn(len(xf.data.data)) * 1j)
 
     # On line 1288 of lal's AverageSpectrum.c, in the code comments for
     # XLALWhitenCOMPLEX8FrequencySeries, it says that according to the LAL
@@ -156,7 +158,8 @@ def colored_noise(epoch, duration, sample_rate, psd):
 
 def add_quadrature_phase(rseries):
     rseries_len = len(rseries.data.data)
-    cseries = lal.CreateCOMPLEX16FrequencySeries(rseries.name, rseries.epoch,
+    cseries = lal.CreateCOMPLEX16FrequencySeries(
+        rseries.name, rseries.epoch,
         rseries.f0 - rseries.deltaF * (rseries_len - 1), rseries.deltaF,
         rseries.sampleUnits, 2 * (rseries_len - 1))
     cseries.data.data[:rseries_len] = 0
@@ -165,8 +168,10 @@ def add_quadrature_phase(rseries):
 
 
 def matched_filter_real_fd(template, psd):
-    fdfilter = lal.CreateCOMPLEX16FrequencySeries(template.name, template.epoch,
-        template.f0, template.deltaF, template.sampleUnits, len(template.data.data))
+    fdfilter = lal.CreateCOMPLEX16FrequencySeries(
+        template.name, template.epoch,
+        template.f0, template.deltaF, template.sampleUnits,
+        len(template.data.data))
     fdfilter.data.data = template.data.data
     fdfilter = lal.WhitenCOMPLEX16FrequencySeries(fdfilter, psd)
     fdfilter.data.data /= np.sqrt(np.sum(np.abs(fdfilter.data.data)**2))
@@ -179,7 +184,8 @@ def matched_filter_spa(template, psd):
     template and a PSD."""
     fdfilter = matched_filter_real_fd(template, psd)
     fdfilter2 = add_quadrature_phase(fdfilter)
-    tdfilter = lal.CreateCOMPLEX16TimeSeries(None, lal.LIGOTimeGPS(0), 0, 0,
+    tdfilter = lal.CreateCOMPLEX16TimeSeries(
+        None, lal.LIGOTimeGPS(0), 0, 0,
         lal.DimensionlessUnit, len(fdfilter2.data.data))
     plan = CreateReverseCOMPLEX16FFTPlan(len(fdfilter2.data.data), 0)
     lal.COMPLEX16FreqTimeFFT(tdfilter, fdfilter2, plan)
@@ -188,7 +194,8 @@ def matched_filter_spa(template, psd):
 
 def matched_filter_real(template, psd):
     fdfilter = matched_filter_real_fd(template, psd)
-    tdfilter = lal.CreateREAL8TimeSeries(None, lal.LIGOTimeGPS(0), 0, 0,
+    tdfilter = lal.CreateREAL8TimeSeries(
+        None, lal.LIGOTimeGPS(0), 0, 0,
         lal.DimensionlessUnit, 2 * (len(fdfilter.data.data) - 1))
     plan = CreateReverseREAL8FFTPlan(len(tdfilter.data.data), 0)
     lal.REAL8FreqTimeFFT(tdfilter, fdfilter, plan)
@@ -282,21 +289,21 @@ def truncated_ifft(y, nsamples_out=None):
     True
     >>> truncated_ifft(y, 1025)
     Traceback (most recent call last):
-        ...
-    ValueError: Input is too short: you gave me an input of length 1024,
-    but you asked for an IFFT of length 1025.
+      ...
+    ValueError: Input is too short: you gave me an input of length 1024, but you asked for an IFFT of length 1025.
     """
     nsamples = len(y)
     if nsamples_out is None:
         nsamples_out = nsamples
     elif nsamples_out > nsamples:
         raise ValueError(
-            ('Input is too short: you gave me an input of length {0},\n'
-            'but you asked for an IFFT of length {1}.').format(
-            nsamples, nsamples_out))
+            'Input is too short: you gave me an input of length {0}, '
+            'but you asked for an IFFT of length {1}.'.format(
+                nsamples, nsamples_out))
     elif nsamples & (nsamples - 1):
         raise NotImplementedError(
-            'I am too lazy to implement for nsamples that is not a power of 2.')
+            'I am too lazy to implement for nsamples that is '
+            'not a power of 2.')
 
     # Find number of FFTs.
     # FIXME: only works if nsamples is a power of 2.
@@ -314,12 +321,12 @@ def truncated_ifft(y, nsamples_out=None):
     j = c - 1
     input_workspace.data = y[j::c]
     lal.COMPLEX16VectorFFT(output_workspace, input_workspace, plan)
-    x = output_workspace.data.copy() # Make sure this is a deep copy
+    x = output_workspace.data.copy()  # Make sure this is a deep copy
 
     for j in range(c-2, -1, -1):
         input_workspace.data = y[j::c]
         lal.COMPLEX16VectorFFT(output_workspace, input_workspace, plan)
-        x *= twiddle # FIXME: check stability of this recurrence relation.
+        x *= twiddle  # FIXME: check stability of this recurrence relation.
         x += output_workspace.data
 
     # Now need to truncate remaining samples.
@@ -333,8 +340,8 @@ def get_approximant_and_orders_from_string(s):
     """Determine the approximant, amplitude order, and phase order for a string
     of the form "TaylorT4threePointFivePN". In this example, the waveform is
     "TaylorT4" and the phase order is 7 (twice 3.5). If the input contains the
-    substring "restricted" or "Restricted", then the amplitude order is taken to
-    be 0. Otherwise, the amplitude order is the same as the phase order."""
+    substring "restricted" or "Restricted", then the amplitude order is taken
+    to be 0. Otherwise, the amplitude order is the same as the phase order."""
     # SWIG-wrapped functions apparently do not understand Unicode, but
     # often the input argument will come from a Unicode XML file.
     s = str(s)
@@ -351,22 +358,23 @@ def get_approximant_and_orders_from_string(s):
 
 
 def get_f_lso(mass1, mass2):
-    """Calculate the GW frequency during the last stable orbit of a compact binary."""
+    """Calculate the GW frequency during the last stable orbit of a compact
+    binary."""
     return 1 / (6 ** 1.5 * np.pi * (mass1 + mass2) * lal.MTSUN_SI)
 
 
-def sngl_inspiral_psd(sngl, waveform, f_min=10, f_max=2048, f_ref=0):
+def sngl_inspiral_psd(waveform, mass1, mass2, f_min=10, f_max=2048, f_ref=0, **kwargs):
     # FIXME: uberbank mass criterion. Should find a way to get this from
     # pipeline output metadata.
     if waveform == 'o1-uberbank':
         log.warn('Template is unspecified; using ER8/O1 uberbank criterion')
-        if sngl.mass1 + sngl.mass2 < 4:
+        if mass1 + mass2 < 4:
             waveform = 'TaylorF2threePointFivePN'
         else:
             waveform = 'SEOBNRv2_ROM_DoubleSpin'
     elif waveform == 'o2-uberbank':
         log.warn('Template is unspecified; using ER10/O2 uberbank criterion')
-        if sngl.mass1 + sngl.mass2 < 4:
+        if mass1 + mass2 < 4:
             waveform = 'TaylorF2threePointFivePN'
         else:
             waveform = 'SEOBNRv4_ROM'
@@ -378,13 +386,13 @@ def sngl_inspiral_psd(sngl, waveform, f_min=10, f_max=2048, f_ref=0):
     lalsimulation.SimInspiralWaveformParamsInsertPNPhaseOrder(params, phaseo)
     lalsimulation.SimInspiralWaveformParamsInsertPNAmplitudeOrder(params, ampo)
     hplus, hcross = lalsimulation.SimInspiralFD(
-        m1=float(sngl.mass1) * lal.MSUN_SI, m2=float(sngl.mass2) * lal.MSUN_SI,
-        S1x=float(getattr(sngl, 'spin1x', 0) or 0),
-        S1y=float(getattr(sngl, 'spin1y', 0) or 0),
-        S1z=float(getattr(sngl, 'spin1z', 0) or 0),
-        S2x=float(getattr(sngl, 'spin2x', 0) or 0),
-        S2y=float(getattr(sngl, 'spin2y', 0) or 0),
-        S2z=float(getattr(sngl, 'spin2z', 0) or 0),
+        m1=float(mass1) * lal.MSUN_SI, m2=float(mass2) * lal.MSUN_SI,
+        S1x=float(kwargs.get('spin1x') or 0),
+        S1y=float(kwargs.get('spin1y') or 0),
+        S1z=float(kwargs.get('spin1z') or 0),
+        S2x=float(kwargs.get('spin2x') or 0),
+        S2y=float(kwargs.get('spin2y') or 0),
+        S2z=float(kwargs.get('spin2z') or 0),
         distance=1e6*lal.PC_SI, inclination=0, phiRef=0,
         longAscNodes=0, eccentricity=0, meanPerAno=0,
         deltaF=0, f_min=f_min, f_max=f_max, f_ref=f_ref,
@@ -403,7 +411,7 @@ def sngl_inspiral_psd(sngl, waveform, f_min=10, f_max=2048, f_ref=0):
         lalsimulation.TaylorF2RedSpinTidal,
         lalsimulation.SpinTaylorT4Fourier)
     if approx in inspiral_only_waveforms:
-        h[abscissa(hplus) >= get_f_lso(sngl.mass1, sngl.mass2)] = 0
+        h[abscissa(hplus) >= get_f_lso(mass1, mass2)] = 0
 
     # Drop Nyquist frequency.
     if len(h) % 2:
@@ -470,18 +478,20 @@ def autocorrelation(H, out_duration):
     return acor, float(sample_rate)
 
 
-def generate_template(mass1, mass2, S, f_low, sample_rate, template_duration, approximant, amplitude_order, phase_order):
+def generate_template(mass1, mass2, S, f_low, sample_rate, template_duration,
+                      approximant, amplitude_order, phase_order):
     template_length = sample_rate * template_duration
     if approximant == lalsimulation.TaylorF2:
-        zf, _ = lalsimulation.SimInspiralChooseFDWaveform(0,
-            1 / template_duration,
+        zf, _ = lalsimulation.SimInspiralChooseFDWaveform(
+            0, 1 / template_duration,
             mass1 * lal.MSUN_SI, mass2 * lal.MSUN_SI,
             0, 0, 0, 0, 0, 0, f_low, 0, 0, 1e6 * lal.PC_SI,
             0, 0, 0, None, None, amplitude_order, phase_order, approximant)
         lal.ResizeCOMPLEX16FrequencySeries(zf, 0, template_length // 2 + 1)
 
         # Generate over-whitened template
-        psd = lal.CreateREAL8FrequencySeries(None, zf.epoch, zf.f0, zf.deltaF,
+        psd = lal.CreateREAL8FrequencySeries(
+            None, zf.epoch, zf.f0, zf.deltaF,
             lal.DimensionlessUnit, len(zf.data.data))
         psd.data.data = S(abscissa(psd))
         zW = matched_filter_spa(zf, psd)
@@ -498,15 +508,20 @@ def generate_template(mass1, mass2, S, f_low, sample_rate, template_duration, ap
             phase_order,
             approximant)
 
-        ht = lal.CreateREAL8TimeSeries(None, lal.LIGOTimeGPS(-template_duration), hplus.f0, hplus.deltaT, hplus.sampleUnits, template_length)
-        hf = lal.CreateCOMPLEX16FrequencySeries(None, lal.LIGOTimeGPS(0), 0, 0, lal.DimensionlessUnit, template_length // 2 + 1)
+        ht = lal.CreateREAL8TimeSeries(
+            None, lal.LIGOTimeGPS(-template_duration), hplus.f0, hplus.deltaT,
+            hplus.sampleUnits, template_length)
+        hf = lal.CreateCOMPLEX16FrequencySeries(
+            None, lal.LIGOTimeGPS(0), 0, 0, lal.DimensionlessUnit,
+            template_length // 2 + 1)
         plan = CreateForwardREAL8FFTPlan(template_length, 0)
 
         ht.data.data[:-len(hplus.data.data)] = 0
         ht.data.data[-len(hplus.data.data):] = hplus.data.data
         lal.REAL8TimeFreqFFT(hf, ht, plan)
 
-        psd = lal.CreateREAL8FrequencySeries(None, hf.epoch, hf.f0, hf.deltaF,
+        psd = lal.CreateREAL8FrequencySeries(
+            None, hf.epoch, hf.f0, hf.deltaF,
             lal.DimensionlessUnit, len(hf.data.data))
         psd.data.data = S(abscissa(psd))
 
@@ -518,11 +533,14 @@ def generate_template(mass1, mass2, S, f_low, sample_rate, template_duration, ap
         lal.REAL8TimeFreqFFT(hf, ht, plan)
         zWimag = matched_filter_real(hf, psd)
 
-        zW = lal.CreateCOMPLEX16TimeSeries(None, zWreal.epoch, zWreal.f0, zWreal.deltaT, zWreal.sampleUnits, len(zWreal.data.data))
+        zW = lal.CreateCOMPLEX16TimeSeries(
+            None, zWreal.epoch, zWreal.f0, zWreal.deltaT, zWreal.sampleUnits,
+            len(zWreal.data.data))
         zW.data.data = zWreal.data.data + zWimag.data.data * 1j
     else:
         raise ValueError("unrecognized approximant")
-    return zW.data.data[::-1].conj() * np.sqrt(2) * template_duration / sample_rate / 2
+    return (zW.data.data[::-1].conj() * np.sqrt(2)
+            * template_duration / sample_rate / 2)
 
 
 def abs2(y):
@@ -553,10 +571,11 @@ def lanczos_interpolant_utility_func(t, y):
 
 
 def interpolate_max_lanczos(imax, y, window_length):
-    """Find the time and maximum absolute value of a time series by Lanczos interpolation."""
+    """Find the time and maximum absolute value of a time series by Lanczos
+    interpolation."""
     yi = y[imax-window_length:imax+window_length+1]
-    tmax = optimize.fminbound(lanczos_interpolant_utility_func,
-        -1., 1., (yi,), xtol=1e-5)
+    tmax = optimize.fminbound(
+        lanczos_interpolant_utility_func, -1., 1., (yi,), xtol=1e-5)
     tmax = np.asscalar(tmax)
     ymax = np.asscalar(lanczos_interpolant(tmax, yi))
     return imax + tmax, ymax
@@ -578,7 +597,8 @@ def poly_catmull_rom(y):
 
 def interpolate_max_catmull_rom_even(y):
 
-    # Construct Catmull-Rom interpolating polynomials for real and imaginary parts
+    # Construct Catmull-Rom interpolating polynomials for
+    # real and imaginary parts
     poly_re = poly_catmull_rom(y.real)
     poly_im = poly_catmull_rom(y.imag)
 
@@ -599,7 +619,8 @@ def interpolate_max_catmull_rom_even(y):
         y_max = new_y_max
         y_max_abs2 = new_y_max_abs2
 
-    # Find any real root in (0, 1) that has a magnitude greater than the greatest endpoint
+    # Find any real root in (0, 1) that has a magnitude greater than the
+    # greatest endpoint
     for root in roots:
         if np.isreal(root) and 0 < root < 1:
             new_t_max = root
@@ -619,7 +640,8 @@ def interpolate_max_catmull_rom(imax, y, window_length):
     y_max_abs2 = abs2(y_max)
     t_max = t_max - 1
 
-    new_t_max, new_y_max = interpolate_max_catmull_rom_even(y[imax - 1:imax + 3])
+    new_t_max, new_y_max = interpolate_max_catmull_rom_even(
+        y[imax - 1:imax + 3])
     new_y_max_abs2 = abs2(new_y_max)
 
     if new_y_max_abs2 > y_max_abs2:
@@ -636,7 +658,8 @@ def interpolate_max_catmull_rom(imax, y, window_length):
 
 
 def interpolate_max_quadratic_fit(imax, y, window_length):
-    """Quadratic fit to absolute value of y. Note that this one does not alter the value at the maximum."""
+    """Quadratic fit to absolute value of y. Note that this one does not alter
+    the value at the maximum."""
 
     poly = np.polyfit(
         np.arange(-window_length, window_length + 1.),
@@ -657,7 +680,8 @@ def interpolate_max_quadratic_fit(imax, y, window_length):
         y_max = new_y_max
         y_max_abs2 = new_y_max_abs2
 
-    # Determine if the global extremum of the polynomial is a local maximum in (-1, 1)
+    # Determine if the global extremum of the polynomial is a
+    # local maximum in (-1, 1)
     A, B, C = poly
     new_t_max = -0.5 * B / A
     new_y_max_abs2 = np.square(np.polyval(poly, new_t_max))

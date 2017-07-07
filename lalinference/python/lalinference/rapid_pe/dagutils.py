@@ -108,7 +108,7 @@ def write_integrate_likelihood_extrinsic_sub(tag='integrate', exe=None, log_dir=
                 ile_job.add_arg("--%s %s" % (opt.replace("_", "-"), str(p)))
         elif param is True:
             ile_job.add_opt(opt.replace("_", "-"), '')
-        elif param is None:
+        elif not param:
             continue
         else:
             ile_job.add_opt(opt.replace("_", "-"), str(param))

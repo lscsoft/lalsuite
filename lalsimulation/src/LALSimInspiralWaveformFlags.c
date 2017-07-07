@@ -18,6 +18,10 @@
 
 #include <stdio.h>
 #include <lal/LALString.h>
+#include <lal/LALValue.h>
+#include <lal/LALStdlib.h>
+#include <limits.h>
+#include <string.h>
 #include <lal/LALSimInspiralWaveformFlags.h>
 #include <lal/LALSimInspiralWaveformParams.h>
 
@@ -292,7 +296,7 @@ bool XLALSimInspiralFrameAxisIsDefault(
 {
     if( axisChoice == LAL_SIM_INSPIRAL_FRAME_AXIS_DEFAULT )
         return true;
-    else 
+    else
         return false;
 }
 
@@ -332,7 +336,7 @@ bool XLALSimInspiralModesChoiceIsDefault(
 {
     if( modesChoice == LAL_SIM_INSPIRAL_MODES_CHOICE_DEFAULT )
         return true;
-    else 
+    else
         return false;
 }
 
@@ -369,6 +373,138 @@ char* XLALSimInspiralGetNumrelDataOLD(
     {
         return NULL;
     }
+}
+
+
+static char empty_modes[((LAL_SIM_L_MAX_MODE_ARRAY + 1) * (LAL_SIM_L_MAX_MODE_ARRAY + 1)) / CHAR_BIT + 2] = { '\0' };
+
+/**
+ * Create a LALValue pointer to store the mode array.
+ */
+
+LALValue * XLALSimInspiralCreateModeArray(void)
+{
+	return XLALCreateValue(empty_modes, sizeof(empty_modes), LAL_CHAR_TYPE_CODE);
+}
+
+LALValue * XLALSimInspiralModeArrayActivateMode(LALValue *modes, unsigned l, int m)
+{
+	char *data;
+	unsigned bit = l * l + l + m;
+	unsigned byte = bit / CHAR_BIT;
+	bit %= CHAR_BIT;
+
+	/* sanity checks on l and m */
+	XLAL_CHECK_NULL(l <= LAL_SIM_L_MAX_MODE_ARRAY, XLAL_EINVAL, "Invalid value of l=%u must not be greater than %u", l, LAL_SIM_L_MAX_MODE_ARRAY);
+	XLAL_CHECK_NULL((unsigned)abs(m) <= l, XLAL_EINVAL, "Invalid value of m=%d for l=%u", m, l);
+
+	/* sanity checks on modes */
+	data = (char *)(intptr_t)XLALValueGetString(modes);
+	XLAL_CHECK_NULL(data, XLAL_EFUNC);
+	XLAL_CHECK_NULL(XLALValueGetSize(modes) == sizeof(empty_modes), XLAL_EINVAL, "Invalid data size for modes");
+
+	data[byte] |= (1 << bit);
+	return modes;
+}
+
+LALValue * XLALSimInspiralModeArrayDeactivateMode(LALValue *modes, unsigned l, int m)
+{
+	char *data;
+	unsigned bit = l * l + l + m;
+	unsigned byte = bit / CHAR_BIT;
+	bit %= CHAR_BIT;
+
+	/* sanity checks on l and m */
+	XLAL_CHECK_NULL(l <= LAL_SIM_L_MAX_MODE_ARRAY, XLAL_EINVAL, "Invalid value of l=%u must not be greater than %u", l, LAL_SIM_L_MAX_MODE_ARRAY);
+	XLAL_CHECK_NULL((unsigned)abs(m) <= l, XLAL_EINVAL, "Invalid value of m=%d for l=%u", m, l);
+
+	/* sanity checks on modes */
+	data = (char *)(intptr_t)XLALValueGetString(modes);
+	XLAL_CHECK_NULL(data, XLAL_EFUNC);
+	XLAL_CHECK_NULL(XLALValueGetSize(modes) == sizeof(empty_modes), XLAL_EINVAL, "Invalid data size for modes");
+
+	data[byte] &= ~(1 << bit);
+	return modes;
+}
+
+LALValue * XLALSimInspiralModeArrayActivateAllModes(LALValue *modes)
+{
+	char *data;
+	data = (char *)(intptr_t)XLALValueGetString(modes);
+	XLAL_CHECK_NULL(data, XLAL_EFUNC);
+	XLAL_CHECK_NULL(XLALValueGetSize(modes) == sizeof(empty_modes), XLAL_EINVAL, "Invalid data size for modes");
+	memset(data, ~0, sizeof(empty_modes) - 1);
+
+    /* Deactivate the unphysical modes: (l,m) = ((0,0), (1,-1), (1,0), (1,1)) */
+    XLALSimInspiralModeArrayDeactivateMode(modes, 0, 0);
+    XLALSimInspiralModeArrayDeactivateMode(modes, 1, -1);
+    XLALSimInspiralModeArrayDeactivateMode(modes, 1, 0);
+    XLALSimInspiralModeArrayDeactivateMode(modes, 1, 1);
+
+	return modes;
+}
+
+LALValue * XLALSimInspiralModeArrayDeactivateAllModes(LALValue *modes)
+{
+	char *data;
+	data = (char *)(intptr_t)XLALValueGetString(modes);
+	XLAL_CHECK_NULL(data, XLAL_EFUNC);
+	XLAL_CHECK_NULL(XLALValueGetSize(modes) == sizeof(empty_modes), XLAL_EINVAL, "Invalid data size for modes");
+	memset(data, 0, sizeof(empty_modes) - 1);
+	return modes;
+}
+
+int XLALSimInspiralModeArrayIsModeActive(LALValue *modes, unsigned l, int m)
+{
+	const char *data;
+	unsigned bit = l * l + l + m;
+	unsigned byte = bit / CHAR_BIT;
+	// unsigned bit;
+	// unsigned byte;
+	// positionOfModeInString(&bit, &byte, l, m);
+	bit %= CHAR_BIT;
+
+	/* sanity checks on l and m */
+	XLAL_CHECK(l <= LAL_SIM_L_MAX_MODE_ARRAY, XLAL_EINVAL, "Invalid value of l=%u must not be greater than %u", l, LAL_SIM_L_MAX_MODE_ARRAY);
+	XLAL_CHECK((unsigned)abs(m) <= l, XLAL_EINVAL, "Invalid value of m=%d for l=%u", m, l);
+
+	/* sanity checks on modes */
+	data = XLALValueGetString(modes);
+	XLAL_CHECK(data, XLAL_EFUNC);
+	XLAL_CHECK(XLALValueGetSize(modes) == sizeof(empty_modes), XLAL_EINVAL, "Invalid data size for modes");
+
+	return (data[byte] & (1 << bit)) != 0;
+}
+
+
+LALValue * XLALSimInspiralModeArrayActivateAllModesAtL(LALValue *modes, unsigned l)
+{
+	for(int m =-l; m <= (int) l; ++m)
+	{
+		XLALSimInspiralModeArrayActivateMode(modes, l, m);
+	}
+	return modes;
+}
+
+LALValue * XLALSimInspiralModeArrayDeactivateAllModesAtL(LALValue *modes, unsigned l)
+{
+	for(int m =-l; m <= (int) l; ++m)
+	{
+		XLALSimInspiralModeArrayDeactivateMode(modes, l, m);
+	}
+	return modes;
+}
+
+int XLALSimInspiralModeArrayPrintModes(LALValue *modes)
+{
+	int l;
+	for (l = 0; l <= LAL_SIM_L_MAX_MODE_ARRAY; ++l) {
+		int m;
+		for (m = -l; m <= l; ++m)
+			printf("(%u,%+d) : %d\n", l, m, XLALSimInspiralModeArrayIsModeActive(modes, l, m));
+		printf("\n");
+	}
+	return 0;
 }
 
 /** @} */

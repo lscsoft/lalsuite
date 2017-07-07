@@ -491,13 +491,9 @@ LALWriteLIGOLwXMLTable (
     case sngl_inspiral_table:
       while( tablePtr.snglInspiralTable )
       {
-        UINT8 id = 0;
-        if ( tablePtr.snglInspiralTable->event_id )
-        {
-          id = tablePtr.snglInspiralTable->event_id->id;
-        }
         FIRST_TABLE_ROW
           fprintf( xml->fp, SNGL_INSPIRAL_ROW,
+              tablePtr.snglInspiralTable->process_id,
               tablePtr.snglInspiralTable->ifo,
               tablePtr.snglInspiralTable->search,
               tablePtr.snglInspiralTable->channel,
@@ -560,7 +556,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglInspiralTable->spin2x,
               tablePtr.snglInspiralTable->spin2y,
               tablePtr.snglInspiralTable->spin2z,
-              id );
+              tablePtr.snglInspiralTable->event_id );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
         ++(xml->rowCount);
       }
@@ -857,7 +853,7 @@ LALWriteLIGOLwXMLTable (
 	      tablePtr.simInspiralTable->amp_order,
 	      tablePtr.simInspiralTable->taper,
 	      tablePtr.simInspiralTable->bandpass,
-              xml->rowCount
+	      tablePtr.simInspiralTable->simulation_id
               );
         tablePtr.simInspiralTable = tablePtr.simInspiralTable->next;
         ++(xml->rowCount);
@@ -1416,7 +1412,7 @@ int XLALWriteLIGOLwXMLSnglInspiralTable(
 	/* rows */
 
 	for(; sngl_inspiral; sngl_inspiral = sngl_inspiral->next) {
-		if( fprintf(xml->fp,"%s\"process:process_id:%ld\",\"%s\",\"%s\",\"%s\",%d,%d,%.16g,%d,%d,%.16g,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%u,%.8g,%u,%.8g,%u,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_inspiral:event_id:0\"",
+		if( fprintf(xml->fp,"%s\"process:process_id:%ld\",\"%s\",\"%s\",\"%s\",%d,%d,%.16g,%d,%d,%.16g,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%u,%.8g,%u,%.8g,%u,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_inspiral:event_id:%ld\"",
 			   row_head,
 			   sngl_inspiral->process_id,
 			   sngl_inspiral->ifo,
@@ -1480,7 +1476,8 @@ int XLALWriteLIGOLwXMLSnglInspiralTable(
 			   sngl_inspiral->spin1z,
 			   sngl_inspiral->spin2x,
 			   sngl_inspiral->spin2y,
-			   sngl_inspiral->spin2z  ) < 0)
+			   sngl_inspiral->spin2z,
+			   sngl_inspiral->event_id ) < 0)
 			XLAL_ERROR(XLAL_EFUNC);
 		row_head = ",\n\t\t\t";
 	}

@@ -747,7 +747,7 @@ int XLALSimIMRSpinEOBWaveformAll(
     * posVeczEOM = &posVeczEOMv, * tVecEOM = &tVecEOMv;
 
   posVecxEOMv.data = posVecyEOMv.data = posVeczEOMv.data = tVecEOMv.data = NULL;
-  posVecxEOMv.length = posVecyEOMv.length = posVeczEOMv.length = tVecEOMv.length = 0; /* OPTV3: Initialize to avoid GCC warnings like "‘posVecyEOMv.length’ may be used uninitialized in this function" */
+  //posVecxEOMv.length = posVecyEOMv.length = posVeczEOMv.length = tVecEOMv.length = 0; /* OPTV3: Initialize to avoid GCC warnings like "‘posVecyEOMv.length’ may be used uninitialized in this function" */
   /* OPTV3 END */
 
   /* Cartesian vectors needed to calculate Hamiltonian */
@@ -927,8 +927,6 @@ int XLALSimIMRSpinEOBWaveformAll(
       REAL8Array              *dynamicsHi   = NULL;
       REAL8Array              *dynamicsV2   = NULL;
       REAL8Array              *dynamicsV2Hi   = NULL;
-      REAL8Array              *dynamicsV2EOMLo   = NULL;
-      REAL8Array              *dynamicsV2EOMHi  = NULL;
       REAL8Array              *dynamicsEOMLo    = NULL; //OPTV3: For Sparse Amp/Phase Calcualtion
       REAL8Array              *dynamicsEOMHi    = NULL;
       INT4                    retLenEOMLow = 0, retLenEOMHi = 0;
@@ -1727,35 +1725,7 @@ int XLALSimIMRSpinEOBWaveformAll(
     }
     if(debugPK) { XLAL_PRINT_INFO("\n\n FINISHED THE EVOLUTION\n\n"); fflush(NULL);  }
 
-    if (debugPK && use_optimized) {
-        /* Write the dynamics to file */
-        out = fopen( "seobDynamics.dat", "w" );
-        for ( i = 0; i < retLenEOMLow; i++ )
-        {
-            //YP: output orbital phase and phase modulation separately, instead of their sum
-            fprintf( out, "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",
-                    dynamicsEOMLo->data[i],
-                    dynamicsEOMLo->data[retLenEOMLow+i],
-                    dynamicsEOMLo->data[2*retLenEOMLow+i],
-                    dynamicsEOMLo->data[3*retLenEOMLow+i],
-                    dynamicsEOMLo->data[4*retLenEOMLow+i],
-                    dynamicsEOMLo->data[5*retLenEOMLow+i],
-                    dynamicsEOMLo->data[6*retLenEOMLow+i],
-                    dynamicsEOMLo->data[7*retLenEOMLow+i],
-                    dynamicsEOMLo->data[8*retLenEOMLow+i],
-                    dynamicsEOMLo->data[9*retLenEOMLow+i],
-                    dynamicsEOMLo->data[10*retLenEOMLow+i],
-                    dynamicsEOMLo->data[11*retLenEOMLow+i],
-                    dynamicsEOMLo->data[12*retLenEOMLow+i],
-                    dynamicsEOMLo->data[13*retLenEOMLow+i],
-                    dynamicsEOMLo->data[14*retLenEOMLow+i]
-                    );
-        }
-        fclose( out );
-        fflush(NULL);
-    }
-
-  if (debugPK && !use_optimized) {
+  if (debugPK) {
     /* Write the dynamics to file */
     out = fopen( "seobDynamics.dat", "w" );
     for ( i = 0; i < retLenLow; i++ )
@@ -2367,13 +2337,6 @@ int XLALSimIMRSpinEOBWaveformAll(
     //OPTV3: Interpolate the WF solutions to the desired times
     SEOBNRv3OptimizedInterpolatorGeneral(hVecEOM->data,0., deltaT/mTScaled, retLenEOMLow, &hVec,2);
 
-    REAL8Vector phaseVecEOMLo;
-    phaseVecEOMLo.length = retLenEOMLow;
-    phaseVecEOMLo.data = hVecEOM->data+2*retLenEOMLow;
-    //ZACH SAYS: David, we must figure out why XLALREAL8VectorUnwrapAngleByMonotonicity sometimes misbehaves.
-    //XLALREAL8VectorUnwrapAngleByMonotonicity(&phaseVecEOMLo,&phaseVecEOMLo);
-    XLALREAL8VectorUnwrapAngle(&phaseVecEOMLo,&phaseVecEOMLo);
-
     if ( !(tlist = XLALCreateREAL8Vector( retLenLow ))
          || !(tlistRDPatch = XLALCreateREAL8Vector( retLenLow + retLenRDPatchLow )) )
       {
@@ -2386,9 +2349,10 @@ int XLALSimIMRSpinEOBWaveformAll(
       tlist->data[i] = i * deltaT/mTScaled;
       tlistRDPatch->data[i] = i * deltaT/mTScaled;
     }
+    if( hVecEOM != NULL ) XLALDestroyREAL8Vector( hVecEOM );
+    if( tlist != NULL ) XLALDestroyREAL8Vector( tlist );
     // END OPTIMIZED CODE CHUNK
-  }
-  else {
+  } else {
     // START UNOPTIMIZED CODE CHUNK
     /* Create time-series containers for euler angles and hlm harmonics */
     if ( !(alphaI2PTS = XLALCreateREAL8TimeSeries( "alphaI2P", &tc, 0.0, deltaT, &lalStrainUnit, retLenLow )) + !(betaI2PTS = XLALCreateREAL8TimeSeries(  "betaI2P", &tc, 0.0, deltaT, &lalStrainUnit, retLenLow )) + !(gammaI2PTS = XLALCreateREAL8TimeSeries( "gammaI2P", &tc, 0.0, deltaT, &lalStrainUnit, retLenLow )) + !(alphaP2JTS = XLALCreateREAL8TimeSeries( "alphaP2J", &tc, 0.0, deltaT, &lalStrainUnit, retLenLow )) + !(betaP2JTS = XLALCreateREAL8TimeSeries(  "betaP2J", &tc, 0.0, deltaT, &lalStrainUnit, retLenLow )) + !(gammaP2JTS = XLALCreateREAL8TimeSeries( "gammaP2J", &tc, 0.0, deltaT, &lalStrainUnit, retLenLow )) ) {
@@ -2616,8 +2580,7 @@ int XLALSimIMRSpinEOBWaveformAll(
     }
 
     // END OPTIMIZED CODE CHUNK
-  }
-  else {
+  } else {
     // START UNOPTIMIZED CODE CHUNK (straight from LALSuite master, Nov 14, 2016). CONTINUES ALL THE WAY TO START OF STEP 6!
     /* Main loop for quasi-nonprecessing waveform generation */
     // Generating modes for coarsely sampled portion
@@ -3597,7 +3560,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   *hIMRlmJTSHiOutput = hIMRlmJTSHi;
   if (debugPK){
     out = fopen( "JIMRWavesHi.dat", "w" );
-    for ( i = 0; i < (INT4) hIMR22JTSHi->data->length; i++ )
+    for ( i = 0; i < retLenHi + retLenRDPatchHi; i++ )
     {
       fprintf( out,
         "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",
@@ -3618,52 +3581,35 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   /*** attach hi sampling part and resample  */
   if(use_optimized) { // David: making big, similar sections conditional here to avoid placing conditionals in for-loops and slowing down the program
-    for (i = 0; i< retLenLow; i++){
-      if (i*deltaT/mTScaled > rdMatchPoint->data[1]+HiSRstart) break;//Andrea
-    }
-    idxRD = i; //Andrea //OPTV3: Resampling begins at idxRD
-    hIMRJTS = XLALCreateCOMPLEX16TimeSeries( "HMRJLO2K", &tc, 0.0, deltaT, &lalStrainUnit, retLenLow + retLenRDPatchLow-idxRD );
+    hIMRJTS = XLALCreateCOMPLEX16TimeSeries( "HMRJLO2K", &tc, 0.0, deltaT, &lalStrainUnit, retLenLow + retLenRDPatchLow );
     *hIMRlmJTSHiOutput = hIMRlmJTSHi;
   }
+
   for ( k = 2; k > -3; k-- ) {
     hIMRJTS2mHi = XLALSphHarmTimeSeriesGetMode( hIMRlmJTSHi, 2, k );
-    if (use_optimized) {
       for ( i = 0; i < retLenHi + retLenRDPatchHi; i++ )
         {
           sigReHi->data[i] = creal(hIMRJTS2mHi->data->data[i]);
           sigImHi->data[i] = cimag(hIMRJTS2mHi->data->data[i]);
         }
-    } else {
-      for ( i = 0; i < (int)sigReHi->length; i++ )
-        {
-          sigReHi->data[i] = creal(hIMRJTS2mHi->data->data[i]);
-          sigImHi->data[i] = cimag(hIMRJTS2mHi->data->data[i]);
-        }
-    }
     /* recycling h20PTS */
-    if(!use_optimized) {
+    if(use_optimized) {
+      for (i = 0; i< retLenLow; i++){
+        if (i*deltaT/mTScaled > HiSRstart) break;//Andrea
+        hIMRJTS->data->data[i] = 0.;
+      }
+    }else{
       hJTS = XLALSphHarmTimeSeriesGetMode( hlmPTS, 2, k );
       for (i = 0; i< retLenLow; i++){
         if (i*deltaT/mTScaled > HiSRstart) break;//Andrea
         hIMRJTS->data->data[i] = hJTS->data->data[i];
       }
-      idxRD = i;
     }
+    idxRD = i;
+
     spline = gsl_spline_alloc( gsl_interp_cspline, retLenHi + retLenRDPatchHi);
     acc    = gsl_interp_accel_alloc();
     gsl_spline_init( spline, tlistRDPatchHi->data, sigReHi->data, retLenHi + retLenRDPatchHi);
-    if (use_optimized) {
-      for (i = idxRD; i< retLenLow+retLenRDPatchLow; i++){
-        if( i*deltaT/mTScaled <= tlistRDPatchHi->data[ retLenHi + retLenRDPatchHi- 1]) {
-          /* OPTV3: If the end of the high sampling+RD data is not reached then
-           * evaluate the high sampling spline at the desired times */
-          hIMRJTS->data->data[i-idxRD] = gsl_spline_eval( spline, tlistRDPatch->data[i], acc );
-        }
-        else {
-          hIMRJTS->data->data[i-idxRD] = 0.;
-        }
-      }
-    }else{
       for (i = idxRD; i< retLenLow+retLenRDPatchLow; i++){
         if( i*deltaT/mTScaled <= tlistRDPatchHi->data[ retLenHi + retLenRDPatchHi- 1]) {
           hIMRJTS->data->data[i] = gsl_spline_eval( spline, tlistRDPatch->data[i], acc );
@@ -3672,31 +3618,19 @@ int XLALSimIMRSpinEOBWaveformAll(
           hIMRJTS->data->data[i] = 0.;
         }
       }
-    }
+
     gsl_spline_free(spline);
     gsl_interp_accel_free(acc);
 
     spline = gsl_spline_alloc( gsl_interp_cspline, retLenHi + retLenRDPatchHi);
     acc    = gsl_interp_accel_alloc();
-    gsl_spline_init( spline,
-                     tlistRDPatchHi->data, sigImHi->data, retLenHi + retLenRDPatchHi);
-    if (use_optimized) {
-      for (i = idxRD; i< retLenLow+retLenRDPatchLow; i++){
-        if( i*deltaT/mTScaled <= tlistRDPatchHi->data[ retLenHi + retLenRDPatchHi- 1]) {
-          hIMRJTS->data->data[i-idxRD] += I * gsl_spline_eval( spline, tlistRDPatch->data[i], acc );
-        }
-        else {
-          hIMRJTS->data->data[i-idxRD] += I*0.;
-        }
+    gsl_spline_init( spline, tlistRDPatchHi->data, sigImHi->data, retLenHi + retLenRDPatchHi);
+    for (i = idxRD; i< retLenLow+retLenRDPatchLow; i++){
+      if( i*deltaT/mTScaled <= tlistRDPatchHi->data[ retLenHi + retLenRDPatchHi- 1]) {
+        hIMRJTS->data->data[i] += I * gsl_spline_eval( spline, tlistRDPatch->data[i], acc );
       }
-    } else {
-      for (i = idxRD; i< retLenLow+retLenRDPatchLow; i++){
-        if( i*deltaT/mTScaled <= tlistRDPatchHi->data[ retLenHi + retLenRDPatchHi- 1]) {
-          hIMRJTS->data->data[i] += I * gsl_spline_eval( spline, tlistRDPatch->data[i], acc );
-        }
-        else {
-          hIMRJTS->data->data[i] += I*0.;
-        }
+      else {
+        hIMRJTS->data->data[i] += I*0.;
       }
     }
     gsl_spline_free(spline);
@@ -3719,7 +3653,7 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   if (debugPK){
      out = fopen( "JIMRWaves.dat", "w" );
-     for ( i = 0; i < (INT4) hIMR22JTS->data->length; i++ )
+     for ( i = 0; i < retLenLow + retLenRDPatchLow; i++ )
      {
         fprintf( out,
           "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",
@@ -3759,60 +3693,14 @@ int XLALSimIMRSpinEOBWaveformAll(
     fflush(NULL);
   }
 
-  if(use_optimized) {
-    alpI        = XLALCreateREAL8TimeSeries( "alphaJ2I", &tc, 0.0, deltaT, &lalStrainUnit, retLenLow + retLenRDPatchLow -idxRD );
-    betI        = XLALCreateREAL8TimeSeries( "betaJ2I", &tc, 0.0, deltaT, &lalStrainUnit, retLenLow + retLenRDPatchLow -idxRD );
-    gamI        = XLALCreateREAL8TimeSeries( "gammaJ2I", &tc, 0.0, deltaT, &lalStrainUnit, retLenLow + retLenRDPatchLow -idxRD );
-  } else {
     alpI        = XLALCreateREAL8TimeSeries( "alphaJ2I", &tc, 0.0, deltaT, &lalStrainUnit, retLenLow + retLenRDPatchLow );
     betI        = XLALCreateREAL8TimeSeries( "betaJ2I", &tc, 0.0, deltaT, &lalStrainUnit, retLenLow + retLenRDPatchLow );
     gamI        = XLALCreateREAL8TimeSeries( "gammaJ2I", &tc, 0.0, deltaT, &lalStrainUnit, retLenLow + retLenRDPatchLow );
-  }
 
   /** NOTE we are making again transformation between notations of Arun et. al adopted here and
    * Wiegner matrix (active rotation) coded up in LAL */
-  if (use_optimized) {
-    for (i=0; i< retLenLow + retLenRDPatchLow -idxRD; i++){
-      alpI->data->data[i] = -alJtoI;
-      betI->data->data[i] = betJtoI;
-      gamI->data->data[i] = -gamJtoI;
-    }
 
-    //OPTV3: Rotate Hi modes
-    if ( XLALSimInspiralPrecessionRotateModes( hIMRlmJTS,
-                                               alpI, betI, gamI ) == XLAL_FAILURE )
-      {
-        XLAL_ERROR( XLAL_EFUNC );
-      }
-
-    //OPTV3: copy over the low sampling part
-    for ( i = 0; i < idxRD; i++ )
-      {
-        hPlusTS->data->data[i]  =  amp0*hVec->data[i+retLenLow];
-        hCrossTS->data->data[i] = -amp0*hVec->data[i+2*retLenLow];
-      }
-
-    XLALDestroyREAL8Array(hVec);
-    XLALDestroyREAL8Vector(timeIFull);
-    XLALDestroyREAL8Vector(tlist);
-
-    /**OPTV3: Convert Highly sampled modes to hplus & hcross. Then append.**/
-    hIMR22ITS  = XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, 2 );
-    hIMR21ITS  = XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, 1 );
-    hIMR20ITS  = XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, 0 );
-    hIMR2m1ITS = XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, -1);
-    hIMR2m2ITS = XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, -2);
-
-    //OPTV3: Put the waveform in hIMRoutput
-    *hIMRoutput = XLALSphHarmTimeSeriesAddMode( *hIMRoutput, hIMR22ITS, 2, 2 );
-    *hIMRoutput = XLALSphHarmTimeSeriesAddMode( *hIMRoutput, hIMR21ITS, 2, 1 );
-    *hIMRoutput = XLALSphHarmTimeSeriesAddMode( *hIMRoutput, hIMR20ITS, 2, 0 );
-    *hIMRoutput = XLALSphHarmTimeSeriesAddMode( *hIMRoutput, hIMR2m1ITS, 2, -1 );
-    *hIMRoutput = XLALSphHarmTimeSeriesAddMode( *hIMRoutput, hIMR2m2ITS, 2, -2 );
-    XLALSphHarmTimeSeriesSetTData( *hIMRoutput, tlistRDPatch );
-  } else {
-
-    for (i=0; i< retLenLow + retLenRDPatchLow; i++){
+ for (i=0; i< retLenLow + retLenRDPatchLow; i++){
       alpI->data->data[i] = -alJtoI;
       betI->data->data[i] = betJtoI;
       gamI->data->data[i] = -gamJtoI;
@@ -3849,22 +3737,21 @@ int XLALSimIMRSpinEOBWaveformAll(
   *hIMRoutput = XLALSphHarmTimeSeriesAddMode( *hIMRoutput, hIMR2m1ITS, 2, -1 );
   *hIMRoutput = XLALSphHarmTimeSeriesAddMode( *hIMRoutput, hIMR2m2ITS, 2, -2 );
   XLALSphHarmTimeSeriesSetTData( *hIMRoutput, tlistRDPatch );
-  }
 
     if (debugPK){
-        out = fopen( "IWaves.dat", "w" );
-        for ( i = 0; i < (INT4) hIMR22ITS->data->length; i++ )
+      out = fopen( "IWaves.dat", "w" );
+      for ( i = 0; i < retLenLow + retLenRDPatchLow; i++ )
         {
-            fprintf( out,
-                    "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",
-                    tlistRDPatch->data[i],
-                    creal(hIMR22ITS->data->data[i]), cimag(hIMR22ITS->data->data[i]),
-                    creal(hIMR21ITS->data->data[i]), cimag(hIMR21ITS->data->data[i]),
-                    creal(hIMR20ITS->data->data[i]), cimag(hIMR20ITS->data->data[i]),
-                    creal(hIMR2m1ITS->data->data[i]), cimag(hIMR2m1ITS->data->data[i]),
-                    creal(hIMR2m2ITS->data->data[i]), cimag(hIMR2m2ITS->data->data[i]) );
+          fprintf( out,
+                   "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",
+                   tlistRDPatch->data[i],
+                   creal(hIMR22ITS->data->data[i]), cimag(hIMR22ITS->data->data[i]),
+                   creal(hIMR21ITS->data->data[i]), cimag(hIMR21ITS->data->data[i]),
+                   creal(hIMR20ITS->data->data[i]), cimag(hIMR20ITS->data->data[i]),
+                   creal(hIMR2m1ITS->data->data[i]), cimag(hIMR2m1ITS->data->data[i]),
+                   creal(hIMR2m2ITS->data->data[i]), cimag(hIMR2m2ITS->data->data[i]) );
         }
-        fclose( out );
+      fclose( out );
     }
 
 /* *********************************************************************************
@@ -3901,25 +3788,23 @@ int XLALSimIMRSpinEOBWaveformAll(
 
     if(debugPK){ XLAL_PRINT_INFO("Ylm %e %e %e %e %e %e %e %e %e %e \n", creal(Y22), cimag(Y22), creal(Y2m2), cimag(Y2m2), creal(Y21), cimag(Y21), creal(Y2m1), cimag(Y2m1), creal(Y20), cimag (Y20)); fflush(NULL); }
   }
-  if (use_optimized) {
-    for ( i = 0; i < (INT4)hIMR22ITS->data->length; i++ )
+  for ( i = 0; i < (INT4)hIMR22ITS->data->length; i++ )
+    {
+      x11 = Y22*hIMR22ITS->data->data[i] + Y21*hIMR21ITS->data->data[i]
+        + Y20*hIMR20ITS->data->data[i] + Y2m1*hIMR2m1ITS->data->data[i]
+        + Y2m2*hIMR2m2ITS->data->data[i];
+      hPlusTS->data->data[i]  = amp0*creal(x11);
+      hCrossTS->data->data[i] = -amp0*cimag(x11);
+    }
+  if(use_optimized)
+    {
+      for ( i = 0; i < idxRD; i++ )
       {
-        x11 = Y22*hIMR22ITS->data->data[i] + Y21*hIMR21ITS->data->data[i]
-          + Y20*hIMR20ITS->data->data[i] + Y2m1*hIMR2m1ITS->data->data[i]
-          + Y2m2*hIMR2m2ITS->data->data[i];
-        hPlusTS->data->data[i+idxRD]  = amp0*creal(x11);
-        hCrossTS->data->data[i+idxRD] = -amp0*cimag(x11);
+        hPlusTS->data->data[i]  = amp0*hVec->data[i+retLenLow];
+        hCrossTS->data->data[i] = -amp0*hVec->data[i+2*retLenLow];
       }
-  } else {
-    for ( i = 0; i < (INT4)hIMR22ITS->data->length; i++ )
-      {
-        x11 = Y22*hIMR22ITS->data->data[i] + Y21*hIMR21ITS->data->data[i]
-          + Y20*hIMR20ITS->data->data[i] + Y2m1*hIMR2m1ITS->data->data[i]
-          + Y2m2*hIMR2m2ITS->data->data[i];
-        hPlusTS->data->data[i]  = amp0*creal(x11);
-        hCrossTS->data->data[i] = -amp0*cimag(x11);
-      }
-  }
+      if( hVec != NULL ) XLALDestroyREAL8Array( hVec );
+    }
 
   /* Point the output pointers to the relevant time series and return */
   (*hplus)  = hPlusTS;
@@ -3981,12 +3866,6 @@ int XLALSimIMRSpinEOBWaveformAll(
     if ( dynamicsEOMHi != NULL ) {
       XLALDestroyREAL8Array( dynamicsEOMHi );
     }
-    if ( dynamicsV2EOMLo != NULL ) {
-      XLALDestroyREAL8Array( dynamicsV2EOMLo );
-    }
-    if ( dynamicsV2EOMHi != NULL ) {
-      XLALDestroyREAL8Array( dynamicsV2EOMHi );
-    }
 
   /* FIXME: Temporary code to convert REAL8Array to REAL8Vector because SWIG
    *        doesn't seem to like REAL8Array */
@@ -4010,5 +3889,6 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   return XLAL_SUCCESS;
   }
+
 #undef FREE_EVERYTHING
 #endif

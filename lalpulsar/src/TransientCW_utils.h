@@ -107,7 +107,9 @@ int XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights
                                             const MultiLIGOTimeGPSVector *multiTS,
                                             transientWindow_t TransientWindowParams );
 
-int write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisTransCand );
+int write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisTransCand, const char timeUnit );
+
+int write_transientCandidateAll_to_fp ( FILE *fp, const transientCandidate_t *thisTransCand );
 
 
 transientFstatMap_t *XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms,

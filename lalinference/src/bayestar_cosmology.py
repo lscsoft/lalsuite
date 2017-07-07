@@ -35,6 +35,7 @@ args = parser.parse_args()
 cosmo = astropy.cosmology.default_cosmology.get_cosmology_from_string(
     args.cosmology)
 
+
 def dVC_dVL_for_z(z):
     """Ratio between the comoving volume element dVC and a
     DL**2 prior at redshift z."""
@@ -47,28 +48,33 @@ def dVC_dVL_for_z(z):
         ret = 1.0
     elif Ok0 > 0.0:
         ret = np.cosh(np.sqrt(Ok0) * DC_by_DH)
-    else: # Ok0 < 0.0 or Ok0 is nan
+    else:  # Ok0 < 0.0 or Ok0 is nan
         ret = np.cos(np.sqrt(-Ok0) * DC_by_DH)
     ret *= zplus1
     ret += DM_by_DH * cosmo.efunc(z)
     ret *= np.square(zplus1)
     return 1.0 / ret
 
+
 @np.vectorize
 def z_for_DL(DL):
     return astropy.cosmology.z_at_value(
         cosmo.luminosity_distance, DL * u.Mpc)
 
+
 def dVC_dVL_for_DL(DL):
     return dVC_dVL_for_z(z_for_DL(DL))
+
 
 DL = np.logspace(0, 6, 32)
 log_DL = np.log(DL)
 dVC_dVL = dVC_dVL_for_DL(DL)
 log_dVC_dVL = np.log(dVC_dVL)
 
+
 def func(x):
     return np.log(dVC_dVL_for_DL(np.exp(x)))
+
 
 high_z_x0 = np.log(1e6)
 high_z_y0 = func(high_z_x0)
@@ -89,6 +95,7 @@ print('static const double dVC_dVL_high_z_slope = {:.15f};'.format(
 print('static const double dVC_dVL_high_z_intercept = {:.15f};'.format(
       high_z_intercept))
 
+
 def exact_dVC_dVL(DL):
     """An alternate expression of dVC_dVL_for_DL."""
     z = z_for_DL(DL)
@@ -103,7 +110,7 @@ def exact_dVC_dVL(DL):
         dDM_dDC = 1.0
     elif Ok0 > 0.0:
         dDM_dDC = np.cosh(np.sqrt(Ok0) * DC / DH)
-    else: # Ok0 < 0.0 or Ok0 is nan
+    else:  # Ok0 < 0.0 or Ok0 is nan
         dDM_dDC = np.cos(np.sqrt(-Ok0) * DC / DH)
 
     dDC_dz = DH * cosmo.inv_efunc(z)
@@ -111,6 +118,7 @@ def exact_dVC_dVL(DL):
     dVL_dz = np.square(DL) * dDL_dz / u.sr
 
     return dVC_dz / dVL_dz
+
 
 DL = np.logspace(-2, 6, 1000)
 dVC_dVL = exact_dVC_dVL(DL)

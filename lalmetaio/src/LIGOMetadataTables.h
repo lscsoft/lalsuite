@@ -169,12 +169,10 @@ tagEventIDColumn
   UINT8  id;
   CHAR   textId[LIGOMETA_UNIQUE_MAX];
   UCHAR  dbUniqueId[LIGOMETA_DBUNIQUE_MAX];
-  struct tagSnglInspiralTable   *snglInspiralTable;
   struct tagSnglRingdownTable   *snglRingdownTable;
   struct tagSummValueTable      *summValueTable;
   struct tagMultiInspiralTable  *multiInspiralTable;
   struct tagSnglTransdataTable  *snglTransdataTable;
-  struct tagSimInspiralTable    *simInspiralTable;
   struct tagSimRingdownTable    *simRingdownTable;
   struct tagCoincInspiralTable  *coincInspiralTable;
   struct tagCoincRingdownTable  *coincRingdownTable;
@@ -327,7 +325,7 @@ tagSnglInspiralTable
   REAL4         spin2x;
   REAL4         spin2y;
   REAL4         spin2z;
-  EventIDColumn *event_id;
+  long          event_id;
 }
 SnglInspiralTable;
 
@@ -562,7 +560,7 @@ tagSimInspiralTable
   REAL4          eff_dist_v;
   REAL4	         qmParameter1;
   REAL4		 qmParameter2;
-  EventIDColumn  *event_id;
+  long           simulation_id;
   INT4           numrel_mode_min;
   INT4           numrel_mode_max;
   CHAR           numrel_data[LIGOMETA_STRING_MAX];

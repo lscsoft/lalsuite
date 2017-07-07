@@ -99,6 +99,7 @@ Requires: python-matplotlib >= 1.2.0
 Requires: python-six
 Requires: python-seaborn
 Requires: glue >= @MIN_GLUE_VERSION@
+Requires: ligo-gracedb
 Requires: lal-python >= @MIN_LAL_VERSION@
 Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 Requires: lalxml-python >= @MIN_LALXML_VERSION@

@@ -1,11 +1,12 @@
-BUILT_SOURCES = bayestar_cosmology.h
+BUILT_SOURCES =
+# BUILT_SOURCES = bayestar_cosmology.h
 MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
-bayestar_cosmology.h: bayestar_cosmology.py
-	$(AM_V_GEN)$(PYTHON) $< > $@
+# bayestar_cosmology.h: bayestar_cosmology.py
+# 	$(AM_V_GEN)$(PYTHON) $< > $@
 
 if HAVE_CHEALPIX
 BAYESTARHDR = bayestar_sky_map.h bayestar_distance.h bayestar_moc.h

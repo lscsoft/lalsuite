@@ -7,6 +7,7 @@
 *.pyc
 *.pyman
 *.pyo
+__pycache__
 .deps
 .libs
 /_build/
@@ -86,13 +87,9 @@ src/inspiral/lalapps_check_hipe_times
 src/inspiral/lalapps_cohPTF_hipe
 src/inspiral/lalapps_coh_PTF_post_processing
 src/inspiral/lalapps_coherent_inspiral
-src/inspiral/lalapps_coherentbank
-src/inspiral/lalapps_cohire
 src/inspiral/lalapps_coinext
 src/inspiral/lalapps_coinj
-src/inspiral/lalapps_coire
 src/inspiral/lalapps_compare_ini
-src/inspiral/lalapps_corse
 src/inspiral/lalapps_flag_triggers
 src/inspiral/lalapps_followup0_page
 src/inspiral/lalapps_followup0_pipe
@@ -107,7 +104,7 @@ src/inspiral/lalapps_inca
 src/inspiral/lalapps_injcut
 src/inspiral/lalapps_inspfrinj
 src/inspiral/lalapps_inspinj
-src/inspiral/lalapps_inspiral
+src/inspiral/lalapps_inspinjfind
 src/inspiral/lalapps_inspiral_hipe
 src/inspiral/lalapps_inspiral_online_pipe
 src/inspiral/lalapps_inspiral_online_pipe_inject
@@ -120,13 +117,10 @@ src/inspiral/lalapps_minj
 src/inspiral/lalapps_multi_hipe
 src/inspiral/lalapps_ninja
 src/inspiral/lalapps_plot_hipe
-src/inspiral/lalapps_populate_chisq
 src/inspiral/lalapps_randombank
 src/inspiral/lalapps_siminspiral_to_frame
-src/inspiral/lalapps_sire
 src/inspiral/lalapps_siva
 src/inspiral/lalapps_skymap
-src/inspiral/lalapps_sned
 src/inspiral/lalapps_spininj
 src/inspiral/lalapps_splitbank
 src/inspiral/lalapps_thinca
