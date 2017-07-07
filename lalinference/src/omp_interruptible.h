@@ -26,13 +26,18 @@
 
 
 static __thread int *omp_interruptible_flag_ptr = NULL;
-static __thread void (*omp_interruptible_old_handler)(int) = NULL;
+
+
+static __thread struct sigaction omp_interruptible_old_action = {
+    .sa_handler = NULL
+};
 
 
 static void omp_interruptible_restore_handler(int sig)
 {
-    signal(sig, omp_interruptible_old_handler);
-    omp_interruptible_old_handler = NULL;
+    int ret = sigaction(sig, &omp_interruptible_old_action, NULL);
+    (void)ret; /* FIXME: should probably do something with this return value */
+    omp_interruptible_old_action = (struct sigaction) {.sa_handler = NULL};
     omp_interruptible_flag_ptr = NULL;
 }
 
@@ -46,11 +51,18 @@ static void omp_interruptible_handler(int sig)
 }
 
 
+static const struct sigaction omp_interruptible_action = {
+    .sa_handler = omp_interruptible_handler
+};
+
+
 static void omp_interruptible_set_handler(int sig, int *flag_ptr)
 {
     omp_interruptible_flag_ptr = flag_ptr;
     *omp_interruptible_flag_ptr = 0;
-    omp_interruptible_old_handler = signal(sig, omp_interruptible_handler);
+    int ret = sigaction(
+        sig, &omp_interruptible_action, &omp_interruptible_old_action);
+    (void)ret; /* FIXME: should probably do something with this return value */
 }
 
 
