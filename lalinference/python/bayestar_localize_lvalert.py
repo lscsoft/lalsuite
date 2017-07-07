@@ -108,7 +108,15 @@ tags = ("sky_loc",)
 if not opts.no_tag:
     tags += ("lvem",)
 
-for graceid, event in six.iteritems(events.gracedb.open(graceids, gracedb)):
+event_source = events.gracedb.open(graceids, gracedb)
+
+for graceid in six.iterkeys(event_source):
+
+    try:
+        event = event_source[graceid]
+    except:
+        log.exception('failed to read event %s from GraceDB', graceid)
+        continue
 
     # Send log messages to GraceDb too
     if not opts.dry_run:
