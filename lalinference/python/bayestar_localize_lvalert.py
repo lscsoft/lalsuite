@@ -153,8 +153,13 @@ for graceid in six.iterkeys(event_source):
                     graceid, "BAYESTAR rapid sky localization ready",
                     filename=fitspath, tagname=tags)
             log.debug('uploaded FITS file')
+    except KeyboardInterrupt:
+        # Produce log message and then exit if we receive SIGINT (ctrl-C).
+        log.exception("sky localization failed")
+        raise
     except:
-        # Produce log message for any otherwise uncaught exception
+        # Produce log message for any otherwise uncaught exception.
+        # Unless we are in dry-run mode, keep going.
         log.exception("sky localization failed")
         if opts.dry_run:
             # Then re-raise the exception if we are in dry-run mode
