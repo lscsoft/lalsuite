@@ -25,7 +25,7 @@
 #include <stdlib.h>
 
 
-static __thread int *omp_interruptible_flag_ptr = 0;
+static __thread int *omp_interruptible_flag_ptr = NULL;
 static __thread void (*omp_interruptible_old_handler)(int) = NULL;
 
 
@@ -33,7 +33,7 @@ static void omp_interruptible_restore_handler(int sig)
 {
     signal(sig, omp_interruptible_old_handler);
     omp_interruptible_old_handler = NULL;
-    omp_interruptible_flag_ptr = 0;
+    omp_interruptible_flag_ptr = NULL;
 }
 
 

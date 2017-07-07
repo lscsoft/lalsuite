@@ -362,8 +362,8 @@ static const size_t default_log_radial_integrator_size = 400;
 static log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, int cosmology, double pmax, size_t size)
 {
     log_radial_integrator *integrator;
-    bicubic_interp *region0;
-    cubic_interp *region1, *region2;
+    bicubic_interp *region0 = NULL;
+    cubic_interp *region1 = NULL, *region2 = NULL;
     const double alpha = 4;
     const double p0 = 0.5 * (k >= 0 ? r2 : r1);
     const double xmax = log(pmax);
@@ -377,11 +377,16 @@ static log_radial_integrator *log_radial_integrator_init(double r1, double r2, i
     double z0[size][size], z1[size], z2[size];
     /* const double umax = xmax - vmax; */ /* unused */
 
+    int interrupted;
+    OMP_BEGIN_INTERRUPTIBLE
     integrator = malloc(sizeof(*integrator));
 
     #pragma omp parallel for
     for (size_t i = 0; i < size * size; i ++)
     {
+        if (OMP_WAS_INTERRUPTED)
+            OMP_EXIT_LOOP_EARLY;
+
         const size_t ix = i / size;
         const size_t iy = i % size;
         const double x = xmin + ix * d;
@@ -392,6 +397,10 @@ static log_radial_integrator *log_radial_integrator_init(double r1, double r2, i
         /* Note: using this where p > r0; could reduce evaluations by half */
         z0[ix][iy] = log_radial_integral(r1, r2, p, b, k, cosmology);
     }
+
+    if (OMP_WAS_INTERRUPTED)
+        goto done;
+
     region0 = bicubic_interp_init(*z0, size, size, xmin, ymin, d, d);
 
     for (size_t i = 0; i < size; i ++)
@@ -402,7 +411,11 @@ static log_radial_integrator *log_radial_integrator_init(double r1, double r2, i
         z2[i] = z0[i][size - 1 - i];
     region2 = cubic_interp_init(z2, size, umin, d);
 
-    if (!(integrator && region0 && region1 && region2))
+done:
+    interrupted = OMP_WAS_INTERRUPTED;
+    OMP_END_INTERRUPTIBLE
+
+    if (interrupted || !(integrator && region0 && region1 && region2))
     {
         free(integrator);
         free(region0);
