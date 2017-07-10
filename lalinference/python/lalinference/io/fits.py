@@ -73,7 +73,7 @@ from ..bayestar import moc
 # FIXME: Remove this after all Astropy monkeypatches are obsolete.
 import astropy
 import distutils.version
-astropy_version = distutils.version.StrictVersion(astropy.__version__)
+astropy_version = distutils.version.LooseVersion(astropy.__version__)
 
 __all__ = ("read_sky_map", "write_sky_map")
 
