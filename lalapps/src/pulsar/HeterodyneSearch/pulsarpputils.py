@@ -1956,9 +1956,9 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
             'AL1': lal.LALDetectorIndexLLODIFF, \
             'AH1': lal.LALDetectorIndexLHODIFF, \
             'AV1': lal.LALDetectorIndexVIRGODIFF, \
-            'E1': lal.LALDetectorIndexE1Diff, \
-            'E2': lal.LALDetectorIndexE2Diff, \
-            'E3': lal.LALDetectorIndexE3Diff}
+            'E1': lal.LALDetectorIndexE1DIFF, \
+            'E2': lal.LALDetectorIndexE2DIFF, \
+            'E3': lal.LALDetectorIndexE3DIFF}
 
   try:
     detector=detMap[det]
@@ -1971,19 +1971,19 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
 
   # check if ra and dec are floats or strings (if strings in hh/dd:mm:ss.s format then convert to rads)
   if not isinstance(ra, float):
-    if isinstance(ra, str):
-      if len(ra.split(':')) == 3:
+    if isinstance(ra, basestring):
+      try:
         ra = ra_to_rad(ra)
-      else:
+      except:
         raise ValueError, "Right ascension string '%s' not formatted properly" % ra
     else:
       raise ValueError, "Right ascension must be a 'float' in radians or a string of the format 'hh:mm:ss.s'"
 
   if not isinstance(dec, float):
-    if isinstance(dec, str):
-      if len(dec.split(':')) == 3:
+    if isinstance(dec, basestring):
+      try:
         dec = dec_to_rad(dec)
-      else:
+      except:
         raise ValueError, "Declination string '%s' not formatted properly" % ra
     else:
       raise ValueError, "Declination must be a 'float' in radians or a string of the format 'dd:mm:ss.s'"
