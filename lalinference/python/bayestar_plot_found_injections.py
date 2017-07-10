@@ -68,7 +68,8 @@ min_searched_area = np.min(combined)
 max_searched_area = np.max(combined)
 have_offset = all('offset' in dataset.dtype.names for dataset in datasets_)
 have_runtime = all('runtime' in dataset.dtype.names for dataset in datasets_)
-have_searched_prob_distance = all('searched_prob_distance' in dataset.dtype.names for dataset in datasets_)
+have_searched_prob_dist = all('searched_prob_dist' in dataset.dtype.names for dataset in datasets_)
+have_searched_prob_vol = all('searched_prob_vol' in dataset.dtype.names for dataset in datasets_)
 if have_offset:
     have_offset = True
     combined = np.concatenate([dataset['offset'] for dataset in datasets_])
@@ -101,7 +102,7 @@ else:
 
 # Set maximum range of progress bar: one tick for each of 5 figures, for each
 # false alarm rate bin.
-pb.max = len(bin_edges) * 5
+pb.max = len(bin_edges) * 6
 
 if opts.cumulative:
     histlabel = 'cumulative '
@@ -181,12 +182,20 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
         ax4.set_ylabel(histlabel)
 
     # Set up figure 5.
-    if have_searched_prob_distance:
+    if have_searched_prob_dist:
         fig5 = plt.figure(figsize=(6, 6))
         ax5 = fig5.add_subplot(111, projection='pp_plot')
         fig5.subplots_adjust(bottom=0.15)
         ax5.set_xlabel('distance CDF at true distance')
         ax5.set_ylabel('cumulative fraction of injections')
+
+    # Set up figure 5.
+    if have_searched_prob_vol:
+        fig6 = plt.figure(figsize=(6, 6))
+        ax6 = fig6.add_subplot(111, projection='pp_plot')
+        fig6.subplots_adjust(bottom=0.15)
+        ax6.set_xlabel('searched volumetric probability')
+        ax6.set_ylabel('cumulative fraction of injections')
 
     # Plot a histogram from each dataset onto each of the 5 figures.
     for (data, label) in zip(datasets, labels):
@@ -202,11 +211,13 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
             if have_runtime:
                 if np.any(np.isfinite(data['runtime'])):
                     ax4.hist(data['runtime'], histtype='step', bins=np.logspace(np.log10(min_runtime), np.log10(max_runtime), 20), cumulative=opts.cumulative, normed=opts.normed)
-            if have_searched_prob_distance:
-                ax5.add_series(data['searched_prob_distance'], label=label)
+            if have_searched_prob_dist:
+                ax5.add_series(data['searched_prob_dist'], label=label)
+            if have_searched_prob_vol:
+                ax6.add_series(data['searched_prob_vol'], label=label)
 
     # Finish and save plot 1.
-    pb.update(i * 5)
+    pb.update(i * 6)
     # Only plot target confidence band if all datasets have the same number
     # of samples, because the confidence band depends on the number of samples.
     ax1.add_diagonal()
@@ -219,26 +230,26 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
     fig1.savefig('searched_prob.pdf')
 
     # Finish and save plot 2.
-    pb.update(i * 5 + 1)
+    pb.update(i * 6 + 1)
     ax2.grid()
     fig2.savefig('searched_area_hist.pdf')
 
     # Finish and save plot 3.
-    pb.update(i * 5 + 2)
+    pb.update(i * 6 + 2)
     if have_offset:
         ax3.grid()
         fig3.savefig('offset_hist.pdf')
 
     # Finish and save plot 4.
-    pb.update(i * 5 + 3)
+    pb.update(i * 6 + 3)
     if have_runtime:
         ax4.grid()
         fig4.savefig('runtime_hist.pdf')
         plt.close()
 
-    # Finish and save plot 4.
-    pb.update(i * 5 + 4)
-    if have_searched_prob_distance:
+    # Finish and save plot 5.
+    pb.update(i * 6 + 4)
+    if have_searched_prob_dist:
         # Only plot target confidence band if all datasets have the same number
         # of samples, because the confidence band depends on the number of
         # samples.
@@ -249,7 +260,23 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
         ax5.grid()
         if len(datasets) > 1:
             ax5.legend(loc='lower right')
-        fig5.savefig('searched_prob_distance.pdf')
+        fig5.savefig('searched_prob_dist.pdf')
+        plt.close()
+
+    # Finish and save plot 6.
+    pb.update(i * 6 + 5)
+    if have_searched_prob_vol:
+        # Only plot target confidence band if all datasets have the same number
+        # of samples, because the confidence band depends on the number of
+        # samples.
+        ax6.add_diagonal()
+        if len(nsamples) == 1:
+            n, = nsamples
+            ax6.add_confidence_band(n, 0.01 * opts.pp_confidence_interval)
+        ax6.grid()
+        if len(datasets) > 1:
+            ax6.legend(loc='lower right')
+        fig6.savefig('searched_prob_vol.pdf')
         plt.close()
 
     # Go back to starting directory.
