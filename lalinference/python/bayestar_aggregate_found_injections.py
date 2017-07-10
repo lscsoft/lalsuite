@@ -71,7 +71,7 @@ if __name__ == '__main__':
 import sqlite3
 import numpy as np
 from lalinference.io import fits
-from lalinference.bayestar import distance, moc, postprocess
+from lalinference.bayestar.postprocess import find_injection_moc
 
 
 def startup(dbfilename, opts_contour, opts_modes, opts_area):
@@ -111,38 +111,24 @@ def process(fitsfilename):
                 coinc_event_id, command.sqlite_get_filename(db)))
     simulation_id, true_ra, true_dec, true_dist, far, snr = row
     searched_area, searched_prob, offset, searched_modes, contour_areas, \
-        area_probs, contour_modes = postprocess.find_injection_moc(
-            sky_map, true_ra, true_dec, contours=contour_pvalues,
+        area_probs, contour_modes, searched_prob_dist, contour_dists, \
+        searched_vol, searched_prob_vol, contour_vols = find_injection_moc(
+            sky_map, true_ra, true_dec, true_dist, contours=contour_pvalues,
             areas=areas, modes=modes)
 
-    if 'DISTMU' in sky_map.columns:
-        prob = sky_map['PROBDENSITY'] * moc.uniq2pixarea(sky_map['UNIQ'])
-        args = (
-            prob, sky_map['DISTMU'], sky_map['DISTSIGMA'], sky_map['DISTNORM'])
-        searched_prob_distance = distance.marginal_cdf(true_dist, *args)
-        lo, hi = distance.marginal_ppf(
-            np.row_stack((
-                0.5 * (1 - contour_pvalues),
-                0.5 * (1 + contour_pvalues)
-            )), *args)
-        contour_distances = (hi - lo).tolist()
-    else:
-        searched_prob_distance = np.nan
-        contour_distances = [np.nan] * len(contours)
-
     if snr is None:
-        snr = float('nan')
+        snr = np.nan
     if far is None:
-        far = float('nan')
+        far = np.nan
     distmean = sky_map.meta.get('distmean', np.nan)
     diststd = sky_map.meta.get('diststd', np.nan)
     log_bci = sky_map.meta.get('log_bci', np.nan)
     log_bsn = sky_map.meta.get('log_bsn', np.nan)
 
     ret = [coinc_event_id, simulation_id, far, snr, searched_area,
-           searched_prob, searched_prob_distance, offset, runtime, distmean,
-           diststd, log_bci, log_bsn] \
-          + contour_areas + area_probs + contour_distances
+           searched_prob, searched_prob_dist, searched_vol, searched_prob_vol,
+           offset, runtime, distmean, diststd, log_bci, log_bsn] \
+          + contour_areas + area_probs + contour_dists + contour_vols
     if modes:
         ret += [searched_modes] + contour_modes
     return ret
@@ -172,11 +158,13 @@ if __name__ == '__main__':
 
     colnames = (
         ['coinc_event_id', 'simulation_id', 'far', 'snr', 'searched_area',
-         'searched_prob', 'searched_prob_dist', 'offset', 'runtime',
-         'distmean', 'diststd', 'log_bci', 'log_bsn'] +
+         'searched_prob', 'searched_prob_dist', 'searched_vol',
+         'searched_prob_vol', 'offset', 'runtime', 'distmean', 'diststd',
+         'log_bci', 'log_bsn'] +
         ['area({0:g})'.format(_) for _ in contours] +
         ['prob({0:g})'.format(_) for _ in areas] +
-        ['dist({0:g})'.format(_) for _ in contours])
+        ['dist({0:g})'.format(_) for _ in contours] +
+        ['vol({0:g})'.format(_) for _ in contours])
     if modes:
         colnames += ['searched_modes']
         colnames += ["modes({0:g})".format(p) for p in contours]
