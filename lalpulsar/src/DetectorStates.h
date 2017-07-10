@@ -159,8 +159,8 @@ typedef struct tagMultiDetectorStateSeries
 #endif /* SWIG */
   UINT4 length;			/**< number of detectors */
   DetectorStateSeries **data;	/**< vector of pointers to DetectorStateSeries */
-  LIGOTimeGPS startTime;	/**< (earliest) startTime of the observation */
-  REAL8 Tspan;			/**< total spanned duration of the observation */
+  // LIGOTimeGPS startTime;	/**< (earliest) startTime of the observation */
+  //REAL8 Tspan;			/**< total spanned duration of the observation */
 } MultiDetectorStateSeries;
 
 /*---------- exported Global variables ----------*/
