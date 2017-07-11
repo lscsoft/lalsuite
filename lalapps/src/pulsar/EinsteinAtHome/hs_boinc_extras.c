@@ -1437,7 +1437,7 @@ static int worker (void) {
 #define APP_WISDOM_FILENAME "CW-wisdom.dat"
       /* if there is a wisdom file, point environment variable FFTWF_WISDOM_FILENAME to it */
       {
-        char resolved_name[MAX_PATH_LEN];
+        static char resolved_name[MAX_PATH_LEN];
         if (boinc_file_exists(APP_WISDOM_FILENAME)) {
           strncpy(resolved_name, "FFTWF_WISDOM_FILENAME=", MAX_PATH_LEN);
           boinc_resolve_filename(APP_WISDOM_FILENAME, resolved_name+strlen(resolved_name), MAX_PATH_LEN-strlen(resolved_name));
