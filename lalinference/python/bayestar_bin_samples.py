@@ -98,9 +98,9 @@ if opts.two_step:
         ranking_samples, samples = np.array_split(
             np.random.permutation(samples), 2)
     ranking_samples = Table(ranking_samples)
-    samples = Table(samples)
+    hist_samples = Table(samples)
 else:
-    ranking_samples = samples
+    ranking_samples = hist_samples = samples
 
 # Place the histogram bins.
 theta = 0.5*np.pi - hist_samples['dec']
@@ -121,7 +121,7 @@ result = np.transpose(
     [pixstats(ranking_samples, max_nside, n, i) for n, i in zip(nside, ipix)])
 
 # Add distance info if necessary.
-if 'dist' in samples.colnames:
+if 'dist' in ranking_samples.colnames:
     p['PROBDENSITY'], distmean, diststd = result
     p['DISTMU'], p['DISTSIGMA'], p['DISTNORM'] = \
         distance.moments_to_parameters(distmean, diststd)
