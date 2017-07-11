@@ -17,6 +17,7 @@
 *  MA  02111-1307  USA
 */
 
+#include <lalapps.h>
 #include <lal/XLALError.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
@@ -36,144 +37,155 @@ REAL8 XLALGetCurrentHeapUsageMB ( void );
 typedef struct
 {
   CHAR *FstatMethod;		//!< select which method/algorithm to use to compute the F-statistic
-  REAL8 Freq;
-  REAL8 f1dot;
-  REAL8 f2dot;
-  REAL8Vector *FreqResolution;
-  INT4Vector *numFreqBins;
-  REAL8 Tseg;
+  REAL8Range Alpha;
+  REAL8Range Delta;
+  REAL8Range Freq;
+  REAL8Range f1dot;
+  REAL8Range f2dot;
+  REAL8Range FreqResolution;
+  INT4Range numFreqBins;
+  INT4Range Tseg;
   INT4 numSegments;
   LALStringVector *IFOs;
   CHAR *outputInfo;
   INT4 numTrials;
+  LIGOTimeGPS startTime;
 
   // ----- developer options
   CHAR *ephemEarth;		/**< Earth ephemeris file to use */
   CHAR *ephemSun;		/**< Sun ephemeris file to use */
 
   REAL8 Tsft;
-  BOOLEAN reuseInput;   // only useful for checking workspace management
+  BOOLEAN sharedWorkspace;   	// useful for checking workspace sharing for Resampling
+  BOOLEAN perSegmentSFTs;     	// Weave vs GCT convention: GCT loads SFT frequency ranges globally, Weave loads them per segment (more efficient)
   BOOLEAN resampFFTPowerOf2;
   INT4 Dterms;
+  INT4 randSeed;
+
+  BOOLEAN version;	// output code version
 } UserInput_t;
 
 // ---------- main ----------
 int
 main ( int argc, char *argv[] )
 {
+
+  CHAR *VCSInfoString;
+  XLAL_CHECK_MAIN ( (VCSInfoString = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
+
   // ---------- handle user input ----------
   UserInput_t XLAL_INIT_DECL(uvar_s);
   UserInput_t *uvar = &uvar_s;
 
   uvar->FstatMethod = XLALStringDuplicate("ResampBest");
-  uvar->Freq = 100;
-  uvar->f1dot = -3e-9;
-  uvar->f2dot = 0;
-  uvar->FreqResolution = XLALCreateREAL8Vector ( 2 );
-  uvar->FreqResolution->data[0] = 0.1;
-  uvar->FreqResolution->data[1] = 1;
-  uvar->numFreqBins = XLALCreateINT4Vector ( 2 );
-  uvar->numFreqBins->data[0] = 1000;
-  uvar->numFreqBins->data[1] = 100000;
-  uvar->Tseg = 60 * 3600;
+  uvar->Alpha[0] = 0;
+  uvar->Alpha[1] = LAL_TWOPI;
+  uvar->Delta[0] = -LAL_PI/2;
+  uvar->Delta[1] =  LAL_PI/2;
+  uvar->Freq[0] = 100;
+  uvar->Freq[1] = 1000;
+  uvar->f1dot[0] = -3e-9;
+  uvar->f1dot[1] = 0;
+  uvar->f2dot[0] = 0;
+  uvar->f2dot[1] = 1e-16;
+  uvar->FreqResolution[0] = 0.1;
+  uvar->FreqResolution[1] = 1;
+  uvar->numFreqBins[0] = 1000;
+  uvar->numFreqBins[1] = 100000;
+  uvar->Tseg[0] = 10 * 3600;
+  uvar->Tseg[1] = 250 * 3600;
+
   uvar->numSegments = 90;
   uvar->numTrials = 1;
-
+  uvar->startTime.gpsSeconds = 711595934;
   uvar->Tsft = 1800;
-  uvar->reuseInput = 1;
+  uvar->sharedWorkspace = 1;
   uvar->resampFFTPowerOf2 = 1;
+  uvar->perSegmentSFTs = 1;
+
   uvar->Dterms = 8;
 
   uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+  uvar->randSeed = 1;
 
-  XLAL_CHECK ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) != NULL, XLAL_EFUNC );
   uvar->outputInfo = NULL;
 
-  XLAL_CHECK ( XLALRegisterUvarMember ( FstatMethod,    STRING,         0, OPTIONAL,  "F-statistic method to use. Available methods: %s", XLALFstatMethodHelpString() ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember ( Freq,           REAL8,          0, OPTIONAL,  "Search frequency in Hz" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember ( f1dot,          REAL8,          0, OPTIONAL,  "Search 1st spindown f1dot in Hz/s" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember ( f2dot,          REAL8,          0, OPTIONAL,  "Search 2nd spindown f2dot in Hz/s^2" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember ( FreqResolution, REAL8Vector,    0, OPTIONAL,  "Frequency resolution 'R' in natural units 1/Tseg such that: dFreq = R/Tseg) [range]" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember ( Tseg,           REAL8,          0, OPTIONAL,  "Coherent segment length" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember ( numSegments,    INT4,           0, OPTIONAL,  "Number of semi-coherent segments" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember ( numFreqBins,    INT4Vector,     0, OPTIONAL,  "Number of frequency bins to search [range]" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember ( IFOs,    	STRINGVector,   0, OPTIONAL,  "IFOs to use [list]" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember ( numTrials,    	INT4,           0, OPTIONAL,  "Number of repeated trials to run (with potentially randomized parameters)" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( FstatMethod,    STRING,         0, OPTIONAL,  "F-statistic method to use. Available methods: %s", XLALFstatMethodHelpString() ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  XLAL_CHECK ( XLALRegisterUvarMember ( outputInfo,     STRING,         0, OPTIONAL,  "Append Resampling internal info into this file") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( Alpha,          RAJRange,       0, OPTIONAL,  "Skyposition [drawn isotropically]: Range in 'Alpha' = right ascension)" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( Delta,          DECJRange,      0, OPTIONAL,  "Skyposition [drawn isotropically]: Range in 'Delta' = declination" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( Freq,           REAL8Range,     0, OPTIONAL,  "Search frequency in Hz [range to draw from]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( f1dot,          REAL8Range,     0, OPTIONAL,  "Search 1st spindown f1dot in Hz/s [range to draw from]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( f2dot,          REAL8Range,     0, OPTIONAL,  "Search 2nd spindown f2dot in Hz/s^2 [range to draw from]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( FreqResolution, REAL8Range,     0, OPTIONAL,  "Frequency resolution 'R' in natural units 1/Tseg such that: dFreq = R/Tseg) [range to draw from]" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  XLAL_CHECK ( XLALRegisterUvarMember ( Tsft,           REAL8,          0, DEVELOPER, "SFT length" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember ( reuseInput,     BOOLEAN,        0, DEVELOPER, "Re-use FstatInput from previous setups (only useful for checking workspace management)" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember ( resampFFTPowerOf2, BOOLEAN,     0, DEVELOPER, "For Resampling methods: enforce FFT length to be a power of two (by rounding up)" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember ( Dterms,    	INT4,           0, OPTIONAL,  "Number of kernel terms (single-sided) to use in\na) Dirichlet kernel if FstatMethod=Demod*\nb) sinc-interpolation kernel if FstatMethod=Resamp*" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( startTime,      EPOCH,          0, OPTIONAL,  "Start time of first segment" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( Tseg,           INT4Range,      0, OPTIONAL,  "Coherent segment length in seconds [range to draw from]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( numSegments,    INT4,           0, OPTIONAL,  "Number of semi-coherent segments" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( numFreqBins,    INT4Range,      0, OPTIONAL,  "Number of frequency bins to search [range to draw from]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( IFOs,           STRINGVector,   0, OPTIONAL,  "IFOs to use [list]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( numTrials,      INT4,           0, OPTIONAL,  "Number of repeated trials to run (with randomized parameters drawn from ranges)" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( sharedWorkspace,BOOLEAN,        0, OPTIONAL,  "Use workspace sharing across segments (only used in Resampling)" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( perSegmentSFTs, BOOLEAN,        0, OPTIONAL,  "Weave vs GCT: GCT determines and loads SFT frequency ranges globally, Weave does that per segment (more efficient)" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( resampFFTPowerOf2, BOOLEAN,     0, OPTIONAL,  "For Resampling methods: enforce FFT length to be a power of two (by rounding up)" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  XLAL_CHECK ( XLALRegisterUvarMember(ephemEarth, 	 STRING, 0,  DEVELOPER, "Earth ephemeris file to use") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember(ephemSun, 	 STRING, 0,  DEVELOPER, "Sun ephemeris file to use") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( Dterms,         INT4,           0, OPTIONAL,  "Number of kernel terms (single-sided) in\na) Dirichlet kernel if FstatMethod=Demod*\nb) sinc-interpolation if FstatMethod=Resamp*" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( outputInfo,     STRING,         0, OPTIONAL,  "Append Resampling internal info into this file") == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( Tsft,           REAL8,          0, DEVELOPER, "SFT length" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( ephemEarth,     STRING,         0, DEVELOPER, "Earth ephemeris file to use") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( ephemSun,       STRING,         0, DEVELOPER, "Sun ephemeris file to use") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( randSeed,       INT4,           0, DEVELOPER, "Random seed to use for rand() to draw randomized parameters.") == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember(  version,	     BOOLEAN, 	    'V', SPECIAL,  "Output version information") == XLAL_SUCCESS, XLAL_EFUNC );
 
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     return EXIT_FAILURE;
   }
+
+  if ( uvar->version )
+    {
+      printf ( "%s\n", VCSInfoString );
+      XLALFree ( VCSInfoString );
+      exit (0);
+    }
+
+  // produce log-string (for output-file headers)
+  CHAR *logstring = NULL;
+  XLAL_CHECK_MAIN ( (logstring = XLALStringAppend ( logstring, "%% cmdline: " )) != NULL, XLAL_EFUNC );
+  CHAR *cmdline;
+  XLAL_CHECK_MAIN ( (cmdline = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( (logstring = XLALStringAppend ( logstring, cmdline )) != NULL, XLAL_EFUNC );
+  XLALFree ( cmdline );
+  XLAL_CHECK_MAIN ( (logstring = XLALStringAppend ( logstring, "\n" )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( (logstring = XLALStringAppend ( logstring, VCSInfoString )) != NULL, XLAL_EFUNC );
+
   // check user input
-  XLAL_CHECK ( uvar->numSegments >= 1, XLAL_EINVAL );
-  XLAL_CHECK ( (uvar->FreqResolution->length == 1) || (uvar->FreqResolution->length == 2), XLAL_EINVAL );
-  XLAL_CHECK ( uvar->FreqResolution->data[0] > 0, XLAL_EINVAL );
-  REAL8 FreqResolutionMin, FreqResolutionMax;
-  FreqResolutionMin = FreqResolutionMax = uvar->FreqResolution->data[0];
-  if ( uvar->FreqResolution->length == 2 )
-    {
-      XLAL_CHECK ( uvar->FreqResolution->data[1] > 0, XLAL_EINVAL );
-      XLAL_CHECK ( uvar->FreqResolution->data[1] > uvar->FreqResolution->data[0], XLAL_EINVAL );
-      FreqResolutionMax = uvar->FreqResolution->data[1];
-    }
-
-  XLAL_CHECK ( uvar->Freq > 0, XLAL_EINVAL );
-  XLAL_CHECK ( uvar->Tseg > uvar->Tsft, XLAL_EINVAL );
-  XLAL_CHECK ( uvar->Tsft > 1, XLAL_EINVAL );
-  XLAL_CHECK ( (uvar->numFreqBins->length == 1) || (uvar->numFreqBins->length == 2), XLAL_EINVAL );
-  XLAL_CHECK ( uvar->numFreqBins->data[0] > 0, XLAL_EINVAL );
-  UINT4 numFreqBinsMax, numFreqBinsMin;
-  numFreqBinsMin = numFreqBinsMax = uvar->numFreqBins->data[0];
-  if ( uvar->numFreqBins->length == 2 )
-    {
-      XLAL_CHECK ( uvar->numFreqBins->data[1] > 0, XLAL_EINVAL );
-      XLAL_CHECK ( uvar->numFreqBins->data[1] > uvar->numFreqBins->data[0], XLAL_EINVAL );
-      numFreqBinsMax = uvar->numFreqBins->data[1];
-    }
-
-  XLAL_CHECK ( uvar->numTrials >= 1, XLAL_EINVAL );
+  XLAL_CHECK_MAIN ( uvar->numSegments >= 1, XLAL_EINVAL );
+  XLAL_CHECK_MAIN ( uvar->Tsft > 1, XLAL_EINVAL );
+  XLAL_CHECK_MAIN ( uvar->numTrials >= 1, XLAL_EINVAL );
   // ---------- end: handle user input ----------
+  srand( uvar->randSeed );	// set random seed
 
   // common setup over repeated trials
   FstatMethodType FstatMethod;
-  XLAL_CHECK ( XLALParseFstatMethodString ( &FstatMethod, uvar->FstatMethod ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALParseFstatMethodString ( &FstatMethod, uvar->FstatMethod ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   EphemerisData *ephem;
-  XLAL_CHECK ( (ephem = XLALInitBarycenter ( uvar->ephemEarth, uvar->ephemSun )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( (ephem = XLALInitBarycenter ( uvar->ephemEarth, uvar->ephemSun )) != NULL, XLAL_EFUNC );
   REAL8 memBase = XLALGetCurrentHeapUsageMB();
 
   UINT4 numDetectors = uvar->IFOs->length;
   // ----- setup injection and data parameters
-  LIGOTimeGPS startTime = {711595934, 0};
-  LIGOTimeGPS startTime_l = startTime;
-  LIGOTimeGPS endTime_l;
-  SFTCatalog **catalogs;
-  XLAL_CHECK ( (catalogs = XLALCalloc ( uvar->numSegments, sizeof( catalogs[0] ))) != NULL, XLAL_ENOMEM );
-
-  for ( INT4 l = 0; l < uvar->numSegments; l ++ )
-    {
-      endTime_l = startTime_l;
-      XLALGPSAdd( &endTime_l, uvar->Tseg );
-      MultiLIGOTimeGPSVector *multiTimestamps;
-      XLAL_CHECK ( (multiTimestamps = XLALMakeMultiTimestamps ( startTime_l, uvar->Tseg, uvar->Tsft, 0, numDetectors )) != NULL, XLAL_EFUNC );
-      XLAL_CHECK ( (catalogs[l] = XLALMultiAddToFakeSFTCatalog ( NULL, uvar->IFOs, multiTimestamps )) != NULL, XLAL_EFUNC );
-      XLALDestroyMultiTimestamps ( multiTimestamps );
-      startTime_l = endTime_l;
-    } // for l < numSegments
-  LIGOTimeGPS endTime = endTime_l;
+  LIGOTimeGPSVector *startTime_l, *endTime_l;
+  XLAL_CHECK_MAIN ( (startTime_l = XLALCreateTimestampVector ( uvar->numSegments )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( (endTime_l = XLALCreateTimestampVector ( uvar->numSegments )) != NULL, XLAL_EFUNC );
 
   // ----- setup optional Fstat arguments
   FstatOptionalArgs optionalArgs = FstatOptionalArgsDefaults;
@@ -189,85 +201,125 @@ main ( int argc, char *argv[] )
   optionalArgs.Dterms = uvar->Dterms;
 
   FILE *timingLogFILE = NULL;
+  FILE *timingParFILE = NULL;
   if ( uvar->outputInfo != NULL )
     {
-      FILE *tmp;
-      if ( (tmp = fopen ( uvar->outputInfo, "r" )) == NULL ) {
-      } else {
-        fclose (tmp );
-      }
-      XLAL_CHECK ( (timingLogFILE = fopen (uvar->outputInfo, "ab")) != NULL, XLAL_ESYS, "Failed to open '%s' for appending\n", uvar->outputInfo );
+      char *parFname = NULL;
+      XLAL_CHECK_MAIN ( (parFname = XLALStringAppend ( parFname, uvar->outputInfo )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK_MAIN ( (parFname = XLALStringAppend ( parFname, ".pars" )) != NULL, XLAL_EFUNC );
+
+      XLAL_CHECK_MAIN ( (timingLogFILE = fopen (uvar->outputInfo, "ab")) != NULL, XLAL_ESYS, "Failed to open '%s' for appending\n", uvar->outputInfo );
+      XLAL_CHECK_MAIN ( (timingParFILE = fopen (parFname, "ab"))         != NULL, XLAL_ESYS, "Failed to open '%s' for appending\n", parFname );
+      XLALFree ( parFname );
+      fprintf ( timingLogFILE, "%s\n", logstring );
+      fprintf ( timingParFILE, "%s\n", logstring );
+      fprintf ( timingParFILE, "%%%%%8s %10s %12s %12s %12s %12s %12s %12s %12s %12s\n",
+                "Nseg", "Tseg", "Freq", "FreqBand", "dFreq", "f1dot", "f2dot", "Alpha", "Delta", "memUsageMB" );
     }
   FstatInputVector *inputs;
   FstatQuantities whatToCompute = (FSTATQ_2F | FSTATQ_2F_PER_DET);
   FstatResults *results = NULL;
   REAL8 tauF1NoBuf = 0;
   REAL8 tauF1Buf = 0;
-  // ---------- main loop over repeated trials ----------
+#define drawFromREAL8Range(range) (range[0] + (range[1] - range[0]) * rand() / RAND_MAX )
+#define drawFromINT4Range(range)  (range[0] + (INT4)round(1.0*(range[1] - range[0]) * rand() / RAND_MAX) )
+  // ---------- main loop over repeated trials: randomize uniformly over input ranges  ----------
   for ( INT4 i = 0; i < uvar->numTrials; i ++ )
     {
-      PulsarSpinRange XLAL_INIT_DECL(spinRange);
-      LIGOTimeGPS refTime = { startTime.gpsSeconds + 0.5 * uvar->Tseg, 0 };
-      spinRange.refTime = refTime;
-      spinRange.fkdot[0] = uvar->Freq;
-      spinRange.fkdot[1] = uvar->f1dot;
-      spinRange.fkdot[2] = uvar->f2dot;
-      spinRange.fkdotBand[1] = 0;
-      REAL8 asini = 0, Period = 0, ecc = 0;
-      REAL8 minCoverFreq, maxCoverFreq;
+      UINT4 Tseg_i        = drawFromINT4Range ( uvar->Tseg );
 
-      PulsarDopplerParams XLAL_INIT_DECL(Doppler);
-      Doppler.refTime = refTime;
-      Doppler.Alpha = 0.5;
-      Doppler.Delta = 0.5;
-      memcpy ( &Doppler.fkdot, &spinRange.fkdot, sizeof(Doppler.fkdot) );;
-      Doppler.period = Period;
-      Doppler.ecc = ecc;
-      Doppler.asini = asini;
+      SFTCatalog **catalogs;
+      XLAL_CHECK_MAIN ( (catalogs = XLALCalloc ( uvar->numSegments, sizeof( catalogs[0] ))) != NULL, XLAL_ENOMEM );
+      for ( INT4 l = 0; l < uvar->numSegments; l ++ )
+        {
+          startTime_l->data[l] = (l==0)? uvar->startTime : endTime_l->data[l-1];
+          endTime_l->data[l]   = startTime_l->data[l];
+          endTime_l->data[l].gpsSeconds += Tseg_i;
 
-      // randomize numFreqBins
-      UINT4 numFreqBins_i = numFreqBinsMin + (UINT4)round ( 1.0 * (numFreqBinsMax - numFreqBinsMin) * rand() / RAND_MAX );
-      // randomize FreqResolution
-      REAL8 FreqResolution_i = FreqResolutionMin + ( FreqResolutionMax - FreqResolutionMin ) * rand() / RAND_MAX;
+          MultiLIGOTimeGPSVector *multiTimestamps;
+          XLAL_CHECK_MAIN ( (multiTimestamps = XLALMakeMultiTimestamps ( startTime_l->data[l], Tseg_i, uvar->Tsft, 0, numDetectors )) != NULL, XLAL_EFUNC );
+          XLAL_CHECK_MAIN ( (catalogs[l] = XLALMultiAddToFakeSFTCatalog ( NULL, uvar->IFOs, multiTimestamps )) != NULL, XLAL_EFUNC );
+          XLALDestroyMultiTimestamps ( multiTimestamps );
+          startTime_l->data[l] = endTime_l->data[l];
+        } // for l < numSegments
 
-      XLAL_CHECK ( (inputs = XLALCreateFstatInputVector ( uvar->numSegments )) != NULL, XLAL_EFUNC );
+      PulsarSpinRange XLAL_INIT_DECL(spinRange_i);
 
-      REAL8 dFreq = FreqResolution_i / uvar->Tseg;
+      LIGOTimeGPS refTime = { uvar->startTime.gpsSeconds + 0.5 * uvar->numSegments * Tseg_i, 0 };
+      spinRange_i.refTime = refTime;
+      spinRange_i.fkdot[0] = drawFromREAL8Range ( uvar->Freq );
+      spinRange_i.fkdot[1] = drawFromREAL8Range ( uvar->f1dot );
+      spinRange_i.fkdot[2] = drawFromREAL8Range ( uvar->f2dot );
+      REAL8 asini = 0, period = 0, ecc = 0, argp = 0;
+      LIGOTimeGPS XLAL_INIT_DECL(tp);
 
-      REAL8 FreqBand = numFreqBins_i * dFreq;
-      fprintf ( stderr, "trial %d/%d: Tseg = %.1f d, numSegments = %d, Freq = %.1f Hz, f1dot = %.1e Hz/s, f2dot = %.1e Hz/s^2, FreqResolution R = %.2f, numFreqBins = %d [dFreq = %.2e Hz, FreqBand = %.2e Hz]\n",
-                i+1, uvar->numTrials, uvar->Tseg / 86400.0, uvar->numSegments, uvar->Freq, uvar->f1dot, uvar->f2dot, FreqResolution_i, numFreqBins_i, dFreq, FreqBand );
+      PulsarDopplerParams XLAL_INIT_DECL(Doppler_i);
+      Doppler_i.refTime = refTime;
+      Doppler_i.Alpha = drawFromREAL8Range ( uvar->Alpha );
+      REAL8Range sDeltaRange;
+      sDeltaRange[0] = sin ( uvar->Delta[0] );
+      sDeltaRange[1] = sin ( uvar->Delta[1] );
+      Doppler_i.Delta = asin ( drawFromREAL8Range ( sDeltaRange ) );
+      memcpy ( &Doppler_i.fkdot, &spinRange_i.fkdot, sizeof(Doppler_i.fkdot) );;
+      // not allowing to randomize or control binary-orbital parameters yet
+      Doppler_i.period = period;
+      Doppler_i.ecc = ecc;
+      Doppler_i.asini = asini;
+      Doppler_i.tp = tp;
+      Doppler_i.argp = argp;
 
-      spinRange.fkdotBand[0] = FreqBand;
-      XLAL_CHECK ( XLALCWSignalCoveringBand ( &minCoverFreq, &maxCoverFreq, &startTime, &endTime, &spinRange, asini, Period, ecc ) == XLAL_SUCCESS, XLAL_EFUNC );
+      UINT4 numFreqBins_i    = drawFromINT4Range ( uvar->numFreqBins );
+      REAL8 FreqResolution_i = drawFromREAL8Range ( uvar->FreqResolution );
+
+      REAL8 dFreq_i          = FreqResolution_i / Tseg_i;
+      REAL8 FreqBand_i       = numFreqBins_i * dFreq_i;
+
+      XLAL_CHECK_MAIN ( (inputs = XLALCreateFstatInputVector ( uvar->numSegments )) != NULL, XLAL_EFUNC );
+
+      fprintf ( stderr, "trial %d/%d: Tseg = %.1f d, numSegments = %d, Alpha = %.2f rad, Delta = %.2f rad, Freq = %.6f Hz, f1dot = %.1e Hz/s, f2dot = %.1e Hz/s^2, R = %.2f, numFreqBins = %d [dFreq = %.2e Hz, FreqBand = %.2e Hz]\n",
+                i+1, uvar->numTrials, Tseg_i / 86400.0, uvar->numSegments, Doppler_i.Alpha, Doppler_i.Delta, Doppler_i.fkdot[0], Doppler_i.fkdot[1], Doppler_i.fkdot[2], FreqResolution_i, numFreqBins_i, dFreq_i, FreqBand_i );
+
+      spinRange_i.fkdotBand[0] = FreqBand_i;
+      REAL8 minCoverFreq_il, maxCoverFreq_il;
+      // GCT convention: determine global SFT frequency band for all segments
+      if ( ! uvar->perSegmentSFTs ) {
+        XLAL_CHECK_MAIN ( XLALCWSignalCoveringBand ( &minCoverFreq_il, &maxCoverFreq_il, &startTime_l->data[0], &endTime_l->data[uvar->numSegments-1], &spinRange_i, Doppler_i.asini, Doppler_i.period, Doppler_i.ecc ) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
 
       // create per-segment input structs
       for ( INT4 l = 0; l < uvar->numSegments; l ++ )
         {
-          if ( uvar->reuseInput && l > 0 ) {
+          if ( uvar->sharedWorkspace && l > 0 ) {
             optionalArgs.prevInput = inputs->data[0];
           } else {
             optionalArgs.prevInput = NULL;
           }
-          XLAL_CHECK ( (inputs->data[l] = XLALCreateFstatInput ( catalogs[l], minCoverFreq, maxCoverFreq, dFreq, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
+          // Weave convention: determine per-segment SFT frequency band
+          if ( uvar->perSegmentSFTs ) {
+            XLAL_CHECK_MAIN ( XLALCWSignalCoveringBand ( &minCoverFreq_il, &maxCoverFreq_il, &startTime_l->data[l], &endTime_l->data[l], &spinRange_i, Doppler_i.asini, Doppler_i.period, Doppler_i.ecc ) == XLAL_SUCCESS, XLAL_EFUNC );
+          }
+          XLAL_CHECK_MAIN ( (inputs->data[l] = XLALCreateFstatInput ( catalogs[l], minCoverFreq_il, maxCoverFreq_il, dFreq_i, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
         }
+      for ( INT4 l = 0; l < uvar->numSegments; l ++ ) {
+        XLALDestroySFTCatalog ( catalogs[l] );
+      }
+      XLALFree ( catalogs );
 
       // ----- compute Fstatistics over segments
       REAL8 tauF1NoBuf_i = 0;
       REAL8 tauF1Buf_i = 0;
       for ( INT4 l = 0; l < uvar->numSegments; l ++ )
         {
-          XLAL_CHECK ( XLALComputeFstat ( &results, inputs->data[l], &Doppler, numFreqBins_i, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK_MAIN ( XLALComputeFstat ( &results, inputs->data[l], &Doppler_i, numFreqBins_i, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
 
           REAL8 Fstat_tauF1Buf, Fstat_tauF1NoBuf;
-          XLAL_CHECK ( XLALGetFstatTiming ( inputs->data[l], &Fstat_tauF1Buf, &Fstat_tauF1NoBuf ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK_MAIN ( XLALGetFstatTiming ( inputs->data[l], &Fstat_tauF1Buf, &Fstat_tauF1NoBuf ) == XLAL_SUCCESS, XLAL_EFUNC );
           tauF1NoBuf_i += Fstat_tauF1NoBuf;
           tauF1Buf_i   += Fstat_tauF1Buf;
           // ----- output timing details to file if requested
           if ( timingLogFILE != NULL ) {
-            XLAL_CHECK ( AppendFstatTimingInfo2File ( inputs->data[l], timingLogFILE, (l == 0) && (i==0)) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK_MAIN ( AppendFstatTimingInfo2File ( inputs->data[l], timingLogFILE, (l == 0) && (i==0)) == XLAL_SUCCESS, XLAL_EFUNC );
           }
-
         } // for l < numSegments
 
       tauF1NoBuf_i /= uvar->numSegments;
@@ -276,7 +328,16 @@ main ( int argc, char *argv[] )
       tauF1NoBuf   += tauF1NoBuf_i;
 
       REAL8 memEnd = XLALGetCurrentHeapUsageMB();
+      REAL8 memUsage = memEnd - memBase;
       const char *FmethodName = XLALGetFstatInputMethodName ( inputs->data[0] );
+      fprintf (stderr, "%-15s: memoryUsage = %6.1f MB\n", FmethodName, memUsage );
+
+      if ( timingParFILE != NULL )
+        {
+          fprintf ( timingParFILE, "%10d %10d %12g %12g %12g %12g %12g %12g %12g %12g\n",
+                    uvar->numSegments, Tseg_i, Doppler_i.fkdot[0], FreqBand_i, dFreq_i, Doppler_i.fkdot[1], Doppler_i.fkdot[2], Doppler_i.Alpha, Doppler_i.Delta, memUsage
+                    );
+        }
 
       fprintf (stderr, "%-15s: tauF1Buf = %8.2g s, tauF1NoBuf = %8.2g s, memResamp = %6.1f MB\n",
                FmethodName, tauF1Buf_i, tauF1NoBuf_i, memEnd - memBase );
@@ -292,15 +353,17 @@ main ( int argc, char *argv[] )
   if ( timingLogFILE != NULL ) {
     fclose ( timingLogFILE );
   }
+  if ( timingParFILE != NULL ) {
+    fclose ( timingParFILE );
+  }
 
-  for ( INT4 l = 0; l < uvar->numSegments; l ++ )
-    {
-      XLALDestroySFTCatalog ( catalogs[l] );
-    }
-  XLALFree ( catalogs );
   XLALDestroyFstatResults ( results );
   XLALDestroyUserVars();
   XLALDestroyEphemerisData ( ephem );
+  XLALFree ( VCSInfoString );
+  XLALFree ( logstring );
+  XLALDestroyTimestampVector ( startTime_l );
+  XLALDestroyTimestampVector ( endTime_l );
 
   LALCheckMemoryLeaks();
 

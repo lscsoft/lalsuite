@@ -208,6 +208,8 @@ static PyObject *sky_map_toa_phoa_snr(
     Py_END_ALLOW_THREADS
     gsl_set_error_handler(old_handler);
 
+    PyErr_CheckSignals();
+
     if (!pixels)
         goto fail;
 

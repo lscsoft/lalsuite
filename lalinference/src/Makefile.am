@@ -77,7 +77,7 @@ nodist_liblalinference_la_SOURCES = \
 	LALInferenceVCSInfo.c \
 	$(END_OF_LIST)
 
-noinst_HEADERS = six.h bayestar_cosmology.h
+noinst_HEADERS = six.h bayestar_cosmology.h omp_interruptible.h
 
 liblalinference_la_CFLAGS = $(AM_CFLAGS) $(HDF5_CFLAGS)
 liblalinference_la_CPPFLAGS = $(AM_CPPFLAGS) $(HDF5_CPPFLAGS)
