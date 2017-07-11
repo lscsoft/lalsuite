@@ -81,7 +81,7 @@ def pixstats(samples, max_nside, nside, ipix):
         else:
             return 0.0
     else:
-        probdensity = n / len(samples) * hp.nside2pixarea(nside)
+        probdensity = n / len(samples) / hp.nside2pixarea(nside)
         if 'dist' in samples.colnames:
             dist = samples['dist'][i0:i1]
             return probdensity, np.mean(dist), np.std(dist)
