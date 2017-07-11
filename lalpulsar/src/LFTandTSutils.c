@@ -580,22 +580,22 @@ XLALDuplicateMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes )
  * Allocates memory and copies contents.
  */
 COMPLEX8TimeSeries *
-XLALDuplicateCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *times )
+XLALDuplicateCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *ttimes )
 {
-  XLAL_CHECK_NULL ( times != NULL, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( (times->data != NULL) && (times->data->length > 0) && ( times->data->data != NULL ), XLAL_EINVAL );
+  XLAL_CHECK_NULL ( ttimes != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( (ttimes->data != NULL) && (ttimes->data->length > 0) && ( ttimes->data->data != NULL ), XLAL_EINVAL );
 
   COMPLEX8TimeSeries *out;
   XLAL_CHECK_NULL ( (out = XLALCalloc ( 1, sizeof(*out) )) != NULL, XLAL_ENOMEM );
 
   // copy header info [including data-pointer, will be reset]
-  memcpy ( out, times, sizeof(*times) );
+  memcpy ( out, ttimes, sizeof(*ttimes) );
 
-  UINT4 numBins = times->data->length;
+  UINT4 numBins = ttimes->data->length;
   XLAL_CHECK_NULL ( (out->data = XLALCreateCOMPLEX8Vector ( numBins )) != NULL, XLAL_EFUNC );
 
   // copy contents of COMPLEX8 vector
-  memcpy ( out->data->data, times->data->data, numBins * sizeof(times->data->data[0]) );
+  memcpy ( out->data->data, ttimes->data->data, numBins * sizeof(ttimes->data->data[0]) );
 
   return out;
 
