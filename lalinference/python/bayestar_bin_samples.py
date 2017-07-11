@@ -115,6 +115,8 @@ order, ipix = moc.uniq2nest(p['UNIQ'])
 nside = hp.order2nside(order.astype(int))
 max_order = order.max().astype(int)
 max_nside = hp.order2nside(max_order)
+theta = 0.5*np.pi - ranking_samples['dec']
+phi = ranking_samples['ra']
 ranking_samples['ipix'] = hp.ang2pix(max_nside, theta, phi, nest=True)
 ranking_samples.sort('ipix')
 result = np.transpose(
