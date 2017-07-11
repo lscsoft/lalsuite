@@ -3640,7 +3640,7 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
   def set_ephem_time(self,et):
     # set time correction ephemeris file
-    self.add_var_opt('ephem-time',et)
+    self.add_var_opt('ephem-timecorr',et)
     self.__ephem_time = et
 
   def set_harmonics(self,h):
