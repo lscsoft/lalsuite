@@ -41,7 +41,7 @@ parser.add_argument(
     '--samples-per-bin', type=int, default=30,
     help='Samples per bin [default: %(default)s]')
 parser.add_argument(
-    '--two-step', type=bool, action='store_true', default=False,
+    '--two-step', action='store_true', default=False,
     help='Partition the samples into one sub-population for laying out bin '
     'boundaries and one sub-population for evaluating densities instead of '
     'using the whole population for both steps')
