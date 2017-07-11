@@ -164,7 +164,6 @@ void read_pulsar_data( LALInferenceRunState *runState ){
     modelFreqFactors->data[i] = atof(harmval);
   }
   XLALFree( tmpharms );
-  XLALFree( tmpharm );
   XLALFree( harmonics );
 
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--par-file" );
@@ -205,6 +204,7 @@ void read_pulsar_data( LALInferenceRunState *runState ){
       fprintf(stderr, "Error... too many detectors specified. Increase MAXDETS to be greater than %d if necessary.\n", MAXDETS);
       exit(0);
     }
+
     /*------------------------------------------------------------------------*/
     /* get noise psds if specified */
     ppt = LALInferenceGetProcParamVal(commandLine,"--fake-psd");
@@ -775,6 +775,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
     ppte = LALInferenceGetProcParamVal( commandLine, "--ephem-earth" );
     ppts = LALInferenceGetProcParamVal( commandLine, "--ephem-sun" );
     pptt = LALInferenceGetProcParamVal( commandLine, "--ephem-timecorr" );
+
     if( ppte && ppts ){
       efile = XLALStringDuplicate( ppte->value );
       sfile = XLALStringDuplicate( ppts->value );
