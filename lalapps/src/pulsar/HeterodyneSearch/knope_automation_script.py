@@ -137,6 +137,19 @@ A configuration .ini file is required.
     print("Error... could not read run configuration '.ini' file", file=sys.stderr)
     sys.exit(1)
 
+  # get the time increment for re-running the pipeline on (can be "hourly", "daily", "weekly" or "monthly")
+  if cp.has_option('times', 'steps'):
+    timestep = cp.get('times', 'steps')
+
+    if timestep not in ['hourly', 'daily', 'weekly', 'monthly']:
+      errmsg = "Error... 'steps' value in '[times'] must be 'hourly', 'daily', 'weekly' or 'monthly'"
+      print(errmsg, file=sys.stderr)
+      sys.exit(1)
+  else:
+    errmsg = "Error... must specify a time step 'steps' value in '[times]'"
+    print(errmsg, file=sys.stderr)
+    sys.exit(1)
+
   # try getting email address information (for notifications of e.g. job failures, re-running rescue DAGs, etc)
   email = None
   server = None
@@ -317,27 +330,6 @@ A configuration .ini file is required.
   # check end time is after start time
   if endtime <= starttime:
     errmsg = "Error... start time is after end time!"
-    print(errmsg, file=sys.stderr)
-    if not startcron: remove_cron(cronid) # remove cron job
-    if email != None:
-      subject = sys.argv[0] + ': Error message'
-      send_email(FROM, email, subject, errmsg, server)
-    sys.exit(1)
-
-  # get the time increment for re-running the pipeline on (can be "hourly", "daily", "weekly" or "monthly")
-  if cp.has_option('times', 'steps'):
-    timestep = cp.get('times', 'steps')
-
-    if timestep not in ['hourly', 'daily', 'weekly', 'monthly']:
-      errmsg = "Error... 'steps' value in '[times'] must be 'hourly', 'daily', 'weekly' or 'monthly'"
-      print(errmsg, file=sys.stderr)
-      if not startcron: remove_cron(cronid) # remove cron job
-      if email != None:
-        subject = sys.argv[0] + ': Error message'
-        send_email(FROM, email, subject, errmsg, server)
-      sys.exit(1)
-  else:
-    errmsg = "Error... must specify a time step 'steps' value in '[times]'"
     print(errmsg, file=sys.stderr)
     if not startcron: remove_cron(cronid) # remove cron job
     if email != None:
