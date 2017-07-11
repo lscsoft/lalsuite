@@ -63,6 +63,7 @@ import numpy as np
 from astropy.table import Table
 from astropy.utils.misc import NumpyRNGContext
 from lalinference.io import fits
+from lalinference.io import hdf5
 from lalinference.bayestar import distance
 from lalinference.bayestar import moc
 from lalinference.bayestar.sky_map import derasterize
@@ -88,10 +89,8 @@ def pixstats(samples, max_nside, nside, ipix):
             return probdensity
 
 
-# Read samples and normalize column names if necessary.
-samples = Table.read(opts.input, format='ascii')
-if 'distance' in samples.colnames:
-    samples.rename_column('distance', 'dist')
+# Read samples.
+samples = hdf5.read_samples(opts.input)
 
 # If two-step binning is requested, then randomly partition the samples.
 if opts.two_step:
