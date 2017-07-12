@@ -217,6 +217,7 @@ src/pulsar/Fstatistic/lalapps_compareFstats
 src/pulsar/Fstatistic/lalapps_synthesizeBstatMC
 src/pulsar/Fstatistic/lalapps_synthesizeLVStats
 src/pulsar/Fstatistic/lalapps_synthesizeTransientStats
+src/pulsar/Fstatistic/lalapps_ComputeFstatBenchmark
 src/pulsar/GCT/lalapps_HierarchSearchGCT
 src/pulsar/HeterodyneSearch/lalapps_CrabTNHeterodyne
 src/pulsar/HeterodyneSearch/lalapps_SplInter
