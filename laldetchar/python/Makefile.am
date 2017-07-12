@@ -36,6 +36,8 @@ pybin_scripts = \
 	laldetchar-idq-gst-relay \
 	laldetchar-idq-gst-listener \
 	laldetchar-idq-gdb-local-performance \
+        laldetchar-ovl-train \
+        laldetchar-ovl-evaluate \
 	$(END_OF_LIST)
 
 endif
