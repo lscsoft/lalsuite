@@ -53,6 +53,18 @@ def _add_newdoc_ufunc(func, doc):
             pass
 
 
+def require_contiguous(func):
+    def wrapper(*args, **kwargs):
+        n = func.nin
+        args = [arg if i >= n or np.isscalar(arg)
+                else np.ascontiguousarray(arg)
+                for i, arg in enumerate(args)]
+        return func(*args, **kwargs)
+    wrapper.__name__ = func.__name__
+    wrapper.__doc__ = func.__doc__
+    return wrapper
+
+
 _add_newdoc_ufunc(conditional_pdf, """\
 Conditional distance probability density function (ansatz).
 
@@ -290,6 +302,7 @@ Last, check that we don't have a coordinate singularity at the origin.
 >>> P_expected = norm.pdf(x) * norm.pdf(y) * (norm.cdf(dmax) - norm.cdf(-dmax))
 >>> np.testing.assert_allclose(P, P_expected, rtol=1e-4)
 """)
+volume_render = require_contiguous(volume_render)
 
 
 _add_newdoc_ufunc(marginal_pdf, """\
@@ -313,6 +326,7 @@ Returns
 pdf : `numpy.ndarray`
     Marginal probability density according to ansatz.
 """)
+marginal_pdf = require_contiguous(marginal_pdf)
 
 
 _add_newdoc_ufunc(marginal_cdf, """\
@@ -336,6 +350,7 @@ Returns
 cdf : `numpy.ndarray`
     Marginal cumulative probability according to ansatz.
 """)
+marginal_cdf = require_contiguous(marginal_cdf)
 
 
 _add_newdoc_ufunc(marginal_ppf, """\
@@ -360,6 +375,7 @@ Returns
 r : `numpy.ndarray`
     Distance at which the cdf is equal to `p`.
 """)
+marginal_ppf = require_contiguous(marginal_ppf)
 
 
 def ud_grade(prob, distmu, distsigma, *args, **kwargs):
