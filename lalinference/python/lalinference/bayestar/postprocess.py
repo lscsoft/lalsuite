@@ -231,7 +231,7 @@ def find_injection_moc(sky_map, true_ra=None, true_dec=None, true_dist=None,
             contour_dists = (hi - lo).tolist()
 
         # Set up distance grid.
-        n_r = 200
+        n_r = 1000
         max_r = 6 * distmean
         d_r = max_r / n_r
         r = d_r * np.arange(1, n_r)
