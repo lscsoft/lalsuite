@@ -205,7 +205,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
         neff = atoi(ppt->value);
 
     /* Print sample every skip iterations */
-    INT4 skip = 500;
+    INT4 skip = 2000;
     ppt = LALInferenceGetProcParamVal(command_line, "--skip");
     if (ppt)
         skip = atoi(ppt->value);
@@ -698,8 +698,8 @@ int main(int argc, char *argv[]){
       LALInferenceInjectInspiralSignal(data, runState->commandLine);
     }
 
-    /* Simulate calibration errors. 
-     * NOTE: this must be called after both ReadData and (if relevant) 
+    /* Simulate calibration errors.
+     * NOTE: this must be called after both ReadData and (if relevant)
      * injectInspiralTD/FD are called! */
     LALInferenceApplyCalibrationErrors(data, procParams);
 

@@ -1287,6 +1287,9 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
         LALH5Dataset *prop_arg_group = XLALH5DatasetRead(chain_group, "proposal_arguments");
         LALInferenceH5DatasetToVariablesArray(prop_arg_group, &propArgs, &n);
         LALInferenceCopyVariables(propArgs[0], thread->proposalArgs);
+        for (i=0;i<n;i++)
+            LALInferenceClearVariables(propArgs[i]);
+        XLALFree(propArgs);
 
         /* We don't save strings, so we can't tell which parameter was last updated with adaptation.
          * So we'll treat the last step as non-adaptable */
@@ -1299,6 +1302,9 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
         LALH5Dataset *current_param_group = XLALH5DatasetRead(chain_group, "current_parameters");
         LALInferenceH5DatasetToVariablesArray(current_param_group, &currentParams, &n);
         LALInferenceCopyVariables(currentParams[0], thread->currentParams);
+        for (i=0;i<n;i++)
+            LALInferenceClearVariables(currentParams[i]);
+        XLALFree(currentParams);
 
         /* Recalculate the likelihood and prior for the restored parameters */
         thread->currentPrior = runState->prior(runState,
@@ -1352,8 +1358,11 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
         LALInferenceVariables **input_array;
         UINT4 j, N;
         LALInferenceH5DatasetToVariablesArray(chain_dataset, &input_array, &N);
-        for (j=0; j<N; j++)
+        for (j=0; j<N; j++){
             LALInferenceLogSampleToArray(thread->algorithmParams, input_array[j]);
+            LALInferenceClearVariables(input_array[j]);
+        }
+        XLALFree(input_array);
 
         /* TODO: Write metadata */
         XLALH5DatasetFree(chain_dataset);
