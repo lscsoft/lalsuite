@@ -82,14 +82,16 @@ fig = plt.figure(figsize=(6, 6))
 ax = fig.add_subplot(111, projection='pp_plot')
 ax.add_diagonal()
 ax.add_series(result.searched_prob, label='R.A., Dec.')
-ax.add_series(result.searched_prob_dist, label='Distance')
-ax.add_series(result.searched_prob_vol, label='Volume')
+if 'DISTMU' in skymap.colnames:
+    ax.add_series(result.searched_prob_dist, label='Distance')
+    ax.add_series(result.searched_prob_vol, label='Volume')
 for p, area, vol in zip(
         args.contour, result.contour_areas, result.contour_vols):
+    text = '{:g}%\n{} deg$^2$'.format(p, fmt(area, 2))
+    if 'DISTMU' in skymap.colnames:
+        text += '\n{} Mpc$^3$'.format(fmt(vol, 2, force_scientific=True))
     ax.annotate(
-        '{:g}%\n{} deg$^2$\n{} Mpc$^3$'.format(
-            p, fmt(area, 2), fmt(vol, 2, force_scientific=True)),
-        (1e-2 * p, 1e-2 * p), (0, -150),
+        text, (1e-2 * p, 1e-2 * p), (0, -150),
         xycoords='data', textcoords='offset points',
         horizontalalignment='right', backgroundcolor='white',
         arrowprops=dict(connectionstyle='bar,angle=0,fraction=0',
