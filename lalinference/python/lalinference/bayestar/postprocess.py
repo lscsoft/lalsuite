@@ -126,7 +126,7 @@ def find_injection_moc(sky_map, true_ra=None, true_dec=None, true_dist=None,
 
     contours = np.asarray(contours)
 
-    distmean = sky_map.meta['distmean']
+    distmean = sky_map.meta.get('distmean', np.nan)
 
     # Sort the pixels by descending posterior probability.
     sky_map = np.flipud(np.sort(sky_map, order='PROBDENSITY'))
