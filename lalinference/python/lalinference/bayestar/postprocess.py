@@ -153,7 +153,7 @@ def find_injection_moc(sky_map, true_ra=None, true_dec=None, true_dist=None,
     mode_theta, mode_phi = hp.pix2ang(
         hp.order2nside(order[0]), ipix[0].astype(np.int64), nest=True)
     if true_ra is None:
-        offset = None
+        offset = np.nan
     else:
         offset = np.rad2deg(
             angle_distance(true_theta, true_phi, mode_theta, mode_phi))
@@ -177,7 +177,7 @@ def find_injection_moc(sky_map, true_ra=None, true_dec=None, true_dist=None,
     area_for_prob = interp1d(prob_padded, area_padded)
 
     if true_ra is None:
-        searched_area = searched_prob = None
+        searched_area = searched_prob = np.nan
     else:
         # Find the smallest area that would have to be searched to find
         # the true location.
@@ -200,15 +200,15 @@ def find_injection_moc(sky_map, true_ra=None, true_dec=None, true_dist=None,
 
     if modes:
         if true_ra is None:
-            searched_modes = None
+            searched_modes = np.nan
         else:
             # Count up the number of modes in each of the given contours.
             searched_modes = count_modes_moc(sky_map['UNIQ'], true_idx)
         contour_modes = [
             count_modes_moc(sky_map['UNIQ'], i) for i in contour_idxs]
     else:
-        searched_modes = None
-        contour_modes = None
+        searched_modes = np.nan
+        contour_modes = np.nan
 
     # Distance stats now...
     if 'DISTMU' in sky_map.dtype.names:
