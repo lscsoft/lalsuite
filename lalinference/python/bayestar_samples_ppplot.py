@@ -30,11 +30,23 @@ parser.add_argument(
 parser.add_argument(
     'samples', metavar='SAMPLES.hdf5', type=FileType('rb'),
     help='HDF5 posterior sample chain file')
+parser.add_argument(
+    '-m', '--max-points', type=int,
+    help='Maximum number of posterior sample points [default: all of them]')
+parser.add_argument(
+    '-p', '--contour', default=[], nargs='+', type=float,
+    metavar='PERCENT',
+    help='Report the areas and volumes within the smallest contours '
+    'containing this much probability.')
 args = parser.parse_args()
 
 
 # Late imports.
+import re
+from astropy.table import Table
+from astropy.utils.misc import NumpyRNGContext
 from matplotlib import pyplot as plt
+import numpy as np
 from lalinference import io
 import lalinference.plot
 from lalinference.bayestar.postprocess import find_injection_moc
@@ -44,8 +56,25 @@ from lalinference.bayestar.postprocess import find_injection_moc
 skymap = io.read_sky_map(args.skymap.name, moc=True)
 chain = io.read_samples(args.samples.name)
 
+# If required, downselect to a smaller number of posterior samples.
+if args.max_points is not None:
+    chain = Table(np.random.permutation(chain)[:args.max_points])
+
 # Calculate P-P plot.
-result = find_injection_moc(skymap, chain['ra'], chain['dec'], chain['dist'])
+contours = np.asarray(args.contour)
+result = find_injection_moc(skymap, chain['ra'], chain['dec'], chain['dist'],
+                            contours=1e-2 * contours)
+
+
+def fmt(x, sigfigs, force_scientific=False):
+    """Round and format a number in scientific notation."""
+    places = sigfigs - int(np.floor(np.log10(x)))
+    x_rounded = np.around(x, places)
+    if places <= 0 and not force_scientific:
+        return '{:d}'.format(int(x_rounded))
+    else:
+        s = ('{:.' + str(sigfigs) + 'e}').format(x_rounded)
+        return re.sub(r'^(.*)e\+?(-?)0*(\d+)$', r'$\1 \\times 10^{\2\3}$', s)
 
 
 # Make Matplotlib figure.
@@ -55,6 +84,16 @@ ax.add_diagonal()
 ax.add_series(result.searched_prob, label='R.A., Dec.')
 ax.add_series(result.searched_prob_dist, label='Distance')
 ax.add_series(result.searched_prob_vol, label='Volume')
+for p, area, vol in zip(
+        args.contour, result.contour_areas, result.contour_vols):
+    ax.annotate(
+        '{:g}%\n{} deg$^2$\n{} Mpc$^3$'.format(
+            p, fmt(area, 2), fmt(vol, 2, force_scientific=True)),
+        (1e-2 * p, 1e-2 * p), (0, -150),
+        xycoords='data', textcoords='offset points',
+        horizontalalignment='right', backgroundcolor='white',
+        arrowprops=dict(connectionstyle='bar,angle=0,fraction=0',
+                        arrowstyle='-|>', linewidth=2, color='black'))
 ax.set_xlabel('searched probability')
 ax.set_ylabel('cumulative fraction of posterior samples')
 ax.set_title(args.skymap.name)
