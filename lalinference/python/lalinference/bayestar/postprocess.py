@@ -143,7 +143,7 @@ def find_injection_moc(sky_map, true_ra=None, true_dec=None, true_dist=None,
         true_phi = true_ra
         true_pix = hp.ang2pix(max_nside, true_theta, true_phi, nest=True)
         i = np.argsort(max_ipix)
-        true_idx = i[np.searchsorted(max_ipix[i], true_pix)]
+        true_idx = i[np.digitize(true_pix, max_ipix[i]) - 1]
 
     # Find the angular offset between the mode and true locations.
     mode_theta, mode_phi = hp.pix2ang(
@@ -184,7 +184,7 @@ def find_injection_moc(sky_map, true_ra=None, true_dec=None, true_dist=None,
         searched_prob = prob[true_idx]
 
     # Find the contours of the given credible levels.
-    contour_idxs = np.searchsorted(prob, contours)
+    contour_idxs = np.digitize(contours, prob) - 1
 
     # For each of the given confidence levels, compute the area of the
     # smallest region containing that probability.
@@ -266,7 +266,7 @@ def find_injection_moc(sky_map, true_ra=None, true_dec=None, true_dist=None,
             searched_vol = searched_prob_vol = np.nan
         else:
             i_radec = true_idx
-            i_dist = np.searchsorted(r, true_dist)
+            i_dist = np.digitize(true_dist, r) - 1
             searched_prob_vol = P[i_radec, i_dist]
             searched_vol = V[i_radec, i_dist]
     else:
