@@ -142,12 +142,8 @@ def find_injection_moc(sky_map, true_ra=None, true_dec=None, true_dist=None,
         true_theta = 0.5 * np.pi - true_dec
         true_phi = true_ra
         true_pix = hp.ang2pix(max_nside, true_theta, true_phi, nest=True)
-        # At this point, we could sort the dataset by max_ipix and then do a
-        # binary search (e.g., np.searchsorted) to find true_pix in max_ipix.
-        # However, would be slower than the linear search below because the
-        # sort would be N log N.
-        i = np.flatnonzero(max_ipix <= true_pix)
-        true_idx = i[np.argmax(max_ipix[i])]
+        i = np.argsort(max_ipix)
+        true_idx = i[np.searchsorted(max_ipix[i], true_pix)]
 
     # Find the angular offset between the mode and true locations.
     mode_theta, mode_phi = hp.pix2ang(
