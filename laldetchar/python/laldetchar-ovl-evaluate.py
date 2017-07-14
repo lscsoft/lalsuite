@@ -8,6 +8,7 @@ import os
 
 import numpy as np
 
+from laldetchar.idq import ovl
 from laldetchar.idq import idq
 from laldetchar.idq import event
 
@@ -105,6 +106,9 @@ if opts.output_filename:
 else:
     datfile = os.path.basename(patfile).replace(".pat", ".ovldat")
     output_dir = os.path.dirname(patfile)
+
+if not output_dir: ### an empty string, meaning it is in the current directory
+    output_dir = '.'
 
 ### actually run the evaluation
 idq.ovl_evaluate(
