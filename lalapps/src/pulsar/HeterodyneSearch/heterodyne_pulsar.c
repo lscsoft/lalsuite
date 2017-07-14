@@ -1881,6 +1881,12 @@ INT4 heterodyneflag){
       linecount++;
   }
 
+  /* if segment list is empty exit with a warning */
+  if ( linecount == 0 ){
+    fprintf(stderr, "Warning... segment list file was empty, so no heterodyne will be performed\n");
+    exit(0);
+  }
+
   /* allocate memory for vectors */
   if( (starts = XLALResizeINT4Vector( starts, linecount )) == NULL ||
       (stops = XLALResizeINT4Vector( stops, linecount )) == NULL )
