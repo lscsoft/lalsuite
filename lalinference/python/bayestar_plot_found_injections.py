@@ -205,12 +205,12 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
             except ValueError:
                 searched_prob = data['p_value']
             ax1.add_series(searched_prob, label=label)
-            ax2.hist(data['searched_area'], histtype='step', label=label, bins=np.logspace(np.log10(min_searched_area), np.log10(max_searched_area), 20), cumulative=opts.cumulative, normed=opts.normed)
+            ax2.hist(data['searched_area'], histtype='step', label=label, bins=np.logspace(np.log10(min_searched_area), np.log10(max_searched_area), 1000 if opts.cumulative else 20), cumulative=opts.cumulative, normed=opts.normed)
             if have_offset:
-                ax3.hist(data['offset'], histtype='step', label=label, bins=np.logspace(np.log10(min_offset), np.log10(max_offset), 20), cumulative=opts.cumulative, normed=opts.normed)
+                ax3.hist(data['offset'], histtype='step', label=label, bins=np.logspace(np.log10(min_offset), np.log10(max_offset), 1000 if opts.cumulative else 20), cumulative=opts.cumulative, normed=opts.normed)
             if have_runtime:
                 if np.any(np.isfinite(data['runtime'])):
-                    ax4.hist(data['runtime'], histtype='step', bins=np.logspace(np.log10(min_runtime), np.log10(max_runtime), 20), cumulative=opts.cumulative, normed=opts.normed)
+                    ax4.hist(data['runtime'], histtype='step', bins=np.logspace(np.log10(min_runtime), np.log10(max_runtime), 1000 if opts.cumulative else 20), cumulative=opts.cumulative, normed=opts.normed)
             if have_searched_prob_dist:
                 ax5.add_series(data['searched_prob_dist'], label=label)
             if have_searched_prob_vol:
