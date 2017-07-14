@@ -69,8 +69,11 @@ if not submitdag:
 
 # Create DAG from ConfigParser object
 dag = knope.knopeDAG(cp, inifile, pulsarlist=opts.pulsarlist)
-if dag.error_code != 0: # check for any errors that occured
-  print("Error... their was an error creating the DAG file", file=sys.stderr)
+if dag.error_code != 0: # check for any errors that occurred
+  if dag.error_code in knope.KNOPE_ERROR.keys():
+    print(knope.KNOPE_ERROR[dag.error_code], file=sys.stderr)
+  else:
+    print("Error... unrecognised error code!", file=sys.stderr)
   sys.exit(dag.error_code)
 
 # write out DAG and submit files

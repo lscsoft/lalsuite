@@ -31,6 +31,19 @@ from collections import OrderedDict
 
 from lalapps import pulsarpputils as pppu
 
+# set some specific error codes and messages
+KNOPE_ERROR_GENERAL = -1
+KNOPE_ERROR_NO_SEGMENTS = 2
+
+KNOPE_ERROR_GENERAL_MSG = "Error... an error has occurred during DAG creation"
+KNOPE_ERROR_NO_SEGMENTS_MSG = "No required data segments were available to perform the analysis"
+
+# dictionary of error code/message pairs
+KNOPE_ERROR = {KNOPE_ERROR_GENERAL:     KNOPE_ERROR_GENERAL_MSG,
+               KNOPE_ERROR_NO_SEGMENTS: KNOPE_ERROR_NO_SEGMENTS_MSG}
+
+#set some specific warning codes
+KNOPE_WARNING_NO_SEGMENTS = 102
 
 """
 Class for setting up the DAG for the whole known pulsar search pipeline
@@ -43,14 +56,15 @@ class knopeDAG(pipeline.CondorDAG):
     If an error occurs the error_code variables will be set to -1. The value will stay as 0 on success.
     """
 
-    self.error_code = 0 # set error_code to -1 following any failures
+    self.error_code = 0   # set error_code to KNOPE_ERROR_GENERAL following any failures
+    self.warning_code = 0
     self.config = cp
     if pulsarlist is not None:
       if isinstance(pulsarlist, list):
         self.pulsarlist = pulsarlist
       else:
         print("Error... 'pulsarlist' argument must be 'None' or a list.")
-        self.error_code = 1
+        self.error_code = KNOPE_ERROR_GENERAL
         return
 
     # if just re-doing post-processing try reading in previuos analysis pickle file
@@ -61,7 +75,7 @@ class knopeDAG(pipeline.CondorDAG):
 
       if preprocessed_pickle == None:
         print("Error... trying post-processing only, but no previous pickle file is given", file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return
       else:
         try:
@@ -70,7 +84,7 @@ class knopeDAG(pipeline.CondorDAG):
           fp.close()
         except:
           print("Error... trying post-processing only, but previous pickle file '%s' cannot be read in" % preprocessed_pickle, file=sys.stderr)
-          self.error_code = -1
+          self.error_code = KNOPE_ERROR_GENERAL
           return
 
     # Get run directory
@@ -88,14 +102,14 @@ class knopeDAG(pipeline.CondorDAG):
     for ifo in self.ifos:
       if ifo not in allowed_ifos:
         print("Error... you have specified an unknown IFO '%s'" % ifo, file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return
 
     if self.postonly: # check that this analysis uses the same, or a subset of, the previous IFOs
       for ifo in self.ifos:
         if ifo not in prevdag.ifos:
           print("Error... for 'post-processing-only' the current IFOs must be a subset of those in the previous run", file=sys.stderr)
-          self.error_code = -1
+          self.error_code = KNOPE_ERROR_GENERAL
           return
 
     # Get frequency factors (e.g. 1f and 2f) for analysis (default to twice the rotation frequency)
@@ -116,7 +130,7 @@ class knopeDAG(pipeline.CondorDAG):
       for ff in self.freq_factors:
         if ff not in prevdag.freq_factors:
           print("Error... for 'post-processing-only' the current frequency factors must be a subset of those in the previous run", file=sys.stderr)
-          self.error_code = -1
+          self.error_code = KNOPE_ERROR_GENERAL
           return
 
     # Get the base directory for the preprocessing analysis
@@ -146,11 +160,11 @@ class knopeDAG(pipeline.CondorDAG):
       for ifo in self.ifos:
         if ifo not in self.starttime:
           print("Error... 'starttime' either be a single 'int' value or a dictionary containing all detectors.", file=sys.stderr)
-          self.error_code = -1
+          self.error_code = KNOPE_ERROR_GENERAL
           return
     else:
       print("Error... 'starttime' either be a single 'int' value or a dictionary containing all detectors.", file=sys.stderr)
-      self.error_code = -1
+      self.error_code = KNOPE_ERROR_GENERAL
       return
 
     self.endtime = self.get_config_option('analysis', 'endtime')
@@ -165,11 +179,11 @@ class knopeDAG(pipeline.CondorDAG):
       for ifo in self.ifos:
         if ifo not in self.endtime:
           print("Error... 'endtime' either be a single 'int' value or a dictionary containing all detectors.", file=sys.stderr)
-          self.error_code = -1
+          self.error_code = KNOPE_ERROR_GENERAL
           return
     else:
       print("Error... 'endtime' either be a single 'int' value or a dictionary containing all detectors.", file=sys.stderr)
-      self.error_code = -1
+      self.error_code = KNOPE_ERROR_GENERAL
       return
 
     # Get the pre-processing engine (heterodyne or SplInter - default to heterodyne)
@@ -198,7 +212,7 @@ class knopeDAG(pipeline.CondorDAG):
 
     if 'cw.targeted.bayesian' not in self.accounting_group:
       print("Error... the 'accounting_group' should contain 'cw.targeted.bayesian'", file=sys.stderr)
-      self.error_code = -1
+      self.error_code = KNOPE_ERROR_GENERAL
       return
 
     if cp.has_option('condor', 'accounting_group_user'):
@@ -253,13 +267,13 @@ class knopeDAG(pipeline.CondorDAG):
     self.pulsar_param_dir = self.get_config_option('analysis', 'pulsar_param_dir')
     if not os.path.isdir(self.pulsar_param_dir) and not os.path.isfile(self.pulsar_param_dir):
       print("Error... pulsar parameter file/directory '%s' does not exist!" % self.pulsar_param_dir, file=sys.stderr)
-      self.error_code = -1
+      self.error_code = KNOPE_ERROR_GENERAL
       return
 
     if self.postonly:
       if prevdag.pulsar_param_dir != self.pulsar_param_dir:
         print("Error... for 'post-processing-only' the pulsar parameter directory must be that same as in the previous run", file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return
 
     self.unmodified_pulsars = [] # a list of pulsar .par files that have not been modified since the last run
@@ -272,7 +286,7 @@ class knopeDAG(pipeline.CondorDAG):
 
       if len(self.param_files) == 0:
         print("Error... no pulsar parameter files found in '%s'" % self.pulsar_param_dir, file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return
 
       self.param_files.sort() # sort the files into alphabetical order
@@ -280,7 +294,7 @@ class knopeDAG(pipeline.CondorDAG):
       self.param_files = [self.pulsar_param_dir]
     else:
       print("Error... pulsar parameter file or directory '%s' does not exist" % self.pulsar_param_dir, file=sys.stderr)
-      self.error_code = -1
+      self.error_code = KNOPE_ERROR_GENERAL
       return
 
     self.analysed_pulsars = {} # dictionary keyed by PSRJ and containing the .par file path for all analysed pulsars
@@ -361,7 +375,7 @@ class knopeDAG(pipeline.CondorDAG):
       if pulsarlist is not None:
         if len(self.analysed_pulsars) == 0:
           print("Could not find any of the listed pulsars '[%s]' in the .par file directory '%s'." % (', '.join(pulsarlist), self.pulsar_param_dir))
-          self.error_code = 1
+          self.error_code = KNOPE_ERROR_GENERAL
           return
 
     self.segment_file_update = [] # to contain a list of pairs of segment files - the former to be concatenated into the latter if required
@@ -388,7 +402,7 @@ class knopeDAG(pipeline.CondorDAG):
         for psrl in pulsarlist:
           if psrl not in prevdag.analysed_pulsars:
             print("Error... specified pulsar '%s' could not be found in previous run pickle file '%s'." % (psrl, preprocessed_pickle))
-            self.error_code = 1
+            self.error_code = KNOPE_ERROR_GENERAL
             return
 
           if psrl in prevdag.unmodified_pulsars:
@@ -504,7 +518,7 @@ class knopeDAG(pipeline.CondorDAG):
 
       if resultexec == None:
         print("Error... could not find 'lalapps_knope_result_page' in 'PATH'", file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return
       else:
         self.results_exec = resultexec
@@ -518,7 +532,7 @@ class knopeDAG(pipeline.CondorDAG):
 
       if collateexec == None:
         print("Error... could not find 'lalapps_knope_collate_results' in 'PATH'", file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return
       else:
         self.collate_exec = collateexec
@@ -594,7 +608,7 @@ class knopeDAG(pipeline.CondorDAG):
       fp.close()
     except:
       print("Error... could not write configuration file '%s' for results collation page" % cinifile, file=sys.stderr)
-      self.error_code = -1
+      self.error_code = KNOPE_ERROR_GENERAL
       return
 
     # loop through pulsars
@@ -817,7 +831,7 @@ class knopeDAG(pipeline.CondorDAG):
         fp.close()
       except:
         print("Error... could not write configuration file '%s' for results page" % inifile, file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return
 
       # create dag node
@@ -881,7 +895,7 @@ class knopeDAG(pipeline.CondorDAG):
 
       if peexec == None:
         print("Error... could not find 'lalapps_pulsar_parameter_estimation_nested' in 'PATH'", file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return
       else:
         self.pe_exec = peexec
@@ -922,7 +936,7 @@ class knopeDAG(pipeline.CondorDAG):
     if self.pe_num_background != 0:
       if self.pe_output_background_basedir == None:
         print("Error... no background analysis directory has been set", file=sys.stderr)
-        self.error_code = -1;
+        self.error_code = KNOPE_ERROR_GENERAL;
         return
       else:
         self.mkdirs(self.pe_output_background_basedir)
@@ -976,7 +990,7 @@ class knopeDAG(pipeline.CondorDAG):
     if self.pe_premade_prior_file != None:
       if not os.path.isfile(self.pe_premade_prior_file):
         print("Error... pre-made prior file '%s' does not exist!" % self.pe_premade_prior_file, file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return
 
     self.pe_derive_amplitude_prior = self.get_config_option('pe', 'derive_amplitude_prior', cftype='boolean', default=False)
@@ -1019,7 +1033,7 @@ class knopeDAG(pipeline.CondorDAG):
 
       if pen2pexec == None:
         print("Error... could not find 'lalapps_nest2pos' in 'PATH'", file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return
       else:
         self.pe_n2p_exec = pen2pexec
@@ -1027,7 +1041,7 @@ class knopeDAG(pipeline.CondorDAG):
     self.pe_posterior_basedir = self.get_config_option('pe', 'n2p_output_dir')
     if self.pe_posterior_basedir == None:
       print("Error... no 'n2p_output_dir' specified in '[pe]' giving path for posterior sample outputs", file=sys.stderr)
-      self.error_code = -1
+      self.error_code = KNOPE_ERROR_GENERAL
       return
     self.mkdirs(self.pe_posterior_basedir)
     if self.error_code != 0: return
@@ -1036,7 +1050,7 @@ class knopeDAG(pipeline.CondorDAG):
       self.pe_posterior_background_basedir = self.get_config_option('pe', 'n2p_output_dir_background')
       if self.pe_posterior_background_basedir == None:
         print("Error... no 'n2p_output_dir_background' specified in '[pe]' giving path for posterior sample outputs", file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return
       self.mkdirs(self.pe_posterior_background_basedir)
       if self.error_code != 0: return
@@ -1245,12 +1259,18 @@ class knopeDAG(pipeline.CondorDAG):
                     penode.add_parent(self.concat_nodes[pname][det][ff])
                   else:
                     if self.engine == 'heterodyne':
-                      penode.add_parent(self.fine_heterodyne_nodes[pname][det][ff])
+                      try: # fine heterodyne nodes might not exist if (in automated mode) no new segments were found, but previous data was available
+                        penode.add_parent(self.fine_heterodyne_nodes[pname][det][ff])
+                      except:
+                        pass
                     if self.engine == 'splinter':
-                      if pname in self.splinter_modified_pars:
-                        penode.add_parent(self.splinter_nodes_modified[det][ff])
-                      elif pname in self.splinter_unmodified_pars:
-                        penode.add_parent(self.splinter_nodes_unmodified[det][ff])
+                      try: # splinter nodes might not exist if (in automated mode) no new segments were found, but previous data was available
+                        if pname in self.splinter_modified_pars:
+                          penode.add_parent(self.splinter_nodes_modified[det][ff])
+                        elif pname in self.splinter_unmodified_pars:
+                          penode.add_parent(self.splinter_nodes_unmodified[det][ff])
+                      except:
+                        pass
 
             # if using ROQ add first PE node as parent to the rest
             if self.pe_roq:
@@ -1332,7 +1352,7 @@ class knopeDAG(pipeline.CondorDAG):
         os.symlink(self.pe_premade_prior_file, outfile)
       except:
         print("Error... could not create symbolic link to prior file '%s'" % self.pe_premade_prior_file, file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
       return outfile
 
     # check if requiring to add parameters with errors in the .par file to the prior options
@@ -1411,7 +1431,7 @@ class knopeDAG(pipeline.CondorDAG):
             posteriorfile = self.pe_previous_posterior_files[pname]
           except:
             print("Error... could not open file '%s' listing previous posterior files." % self.pe_previous_posteriors_file, file=sys.stderr)
-            self.error_code = -1
+            self.error_code = KNOPE_ERROR_GENERAL
             return outfile
       else:
         # check if current pulsar has a previous posterior sample file to use as prior
@@ -1423,18 +1443,18 @@ class knopeDAG(pipeline.CondorDAG):
         fp = open(outfile, 'w')
       except:
         print("Error... could not open prior file '%s'" % outfile, file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return outfile
 
       # write out any priors that have been given
       for prioritem in prior_options:
         if 'priortype' not in prior_options[prioritem]:
           print("Error... no 'priortype' given for parameter '%s'" % prioritem, file=sys.stderr)
-          self.error_code = -1
+          self.error_code = KNOPE_ERROR_GENERAL
           return outfile
         if 'ranges' not in prior_options[prioritem]:
           print("Error... no 'ranges' given for parameter '%s'" % prioritem, file=sys.stderr)
-          self.error_code = -1
+          self.error_code = KNOPE_ERROR_GENERAL
           return outfile
 
         ptype = prior_options[prioritem]['priortype']
@@ -1442,7 +1462,7 @@ class knopeDAG(pipeline.CondorDAG):
 
         if len(rangevals) != 2:
           print("Error... 'ranges' for parameter '%s' must be a list or tuple with two entries" % prioritem, file=sys.stderr)
-          self.error_code = -1
+          self.error_code = KNOPE_ERROR_GENERAL
           return outfile
 
         # ignore cosiota if using previous posterior file as prior
@@ -1476,7 +1496,7 @@ class knopeDAG(pipeline.CondorDAG):
 
       if len(requls) == 0:
         print("Error... unknown frequency factors or model type in configuration file.", file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return outfile
 
       # try and get the file containing previous upper limits
@@ -1489,7 +1509,7 @@ class knopeDAG(pipeline.CondorDAG):
             fpp.close()
           except:
             print("Error... could not parse prior file '%s'." % self.pe_amplitude_prior_file, file=sys.stderr)
-            self.error_code = -1
+            self.error_code = KNOPE_ERROR_GENERAL
             return outfile
 
         # see if pulsar is in prior file
@@ -1524,24 +1544,24 @@ class knopeDAG(pipeline.CondorDAG):
           for dk in asdfiles: # read in all the ASD files
             if dk not in obstimes:
               print("Error... no corresponding observation times for detector '%s'" % dk, file=sys.stderr)
-              self.error_code = -1
+              self.error_code = KNOPE_ERROR_GENERAL
               return outfile
             else:
               if not isinstance(obstimes[dk], float) and not isinstance(obstimes[dk], int):
                 print("Error... observation time must be a float or int.", file=sys.stderr)
-                self.error_code = -1
+                self.error_code = KNOPE_ERROR_GENERAL
                 return outfile
               if dk not in self.pe_prior_asds:
                 if not os.path.isfile(asdfiles[dk]):
                   print("Error... ASD file '%s' does not exist." % asdfiles[dk], file=sys.stderr)
-                  self.error_code = -1
+                  self.error_code = KNOPE_ERROR_GENERAL
                   return outfile
                 else:
                   try:
                     self.pe_prior_asds[dk] = np.loadtxt(asdfiles[dk], comments=['%', '#'])
                   except:
                     print("Error... could not load file '%s'." % asdfiles[dk], file=sys.stderr)
-                    self.error_code = -1
+                    self.error_code = KNOPE_ERROR_GENERAL
                     return outfile
 
               asd = self.pe_prior_asds[dk]
@@ -1557,7 +1577,7 @@ class knopeDAG(pipeline.CondorDAG):
                 asdlist.append(np.array(asdv)**2/(obstimes[dk]*86400.))
               else:
                 print("Error... frequency range in ASD file does not span pulsar frequency.", file=sys.stderr)
-                self.error_code = -1
+                self.error_code = KNOPE_ERROR_GENERAL
                 return outfile
 
           # get upper limit spectrum (harmonic mean of all the weighted spectra)
@@ -1592,7 +1612,7 @@ class knopeDAG(pipeline.CondorDAG):
       # get amplitude prior type
       if self.pe_amplitude_prior_type not in ['fermidirac', 'uniform'] and posteriorfile is None:
         print("Error... prior type must be 'fermidirac' or 'uniform'", file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return outfile
 
       if posteriorfile is None:
@@ -1600,7 +1620,7 @@ class knopeDAG(pipeline.CondorDAG):
         for ult in requls:
           if requls[ult] == None:
             print("Error... a required upper limit for '%s' is not available." % ult, file=sys.stderr)
-            self.error_code = -1
+            self.error_code = KNOPE_ERROR_GENERAL
             return outfile
           else:
             if self.pe_amplitude_prior_type == 'fermidirac':
@@ -1608,7 +1628,7 @@ class knopeDAG(pipeline.CondorDAG):
                 b, a = self.fermidirac_rsigma(requls[ult])
               except:
                 print("Error... problem deriving the Fermi-Dirac prior for '%s'." % ult, file=sys.stderr)
-                self.error_code = -1
+                self.error_code = KNOPE_ERROR_GENERAL
                 return outfile
             else:
               a = 0. # uniform prior bound at 0
@@ -1644,7 +1664,7 @@ class knopeDAG(pipeline.CondorDAG):
         fp = open(outfile, 'w')
       except:
         print("Error... could not write prior file '%s'" % outfile, file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return outfile
 
       for prioritem in prior_options:
@@ -1652,7 +1672,7 @@ class knopeDAG(pipeline.CondorDAG):
         rangevals = prior_options[prioritem]['ranges']
         if len(rangevals) != 2:
           print("Error... the ranges in the prior for '%s' are not set properly" % prioritem, file=sys.stderr)
-          self.error_code = -1
+          self.error_code = KNOPE_ERROR_GENERAL
           return outfile
         fp.write("%s\t%s\t%.16e\t%.16e\n" % (prioritem, ptype, rangevals[0], rangevals[1]))
       fp.close()
@@ -1724,7 +1744,7 @@ class knopeDAG(pipeline.CondorDAG):
 
     if not isinstance(pardict, OrderedDict):
       print('Error... Input must be an ordered dictionary', file=sys.stderr)
-      self.error_code = -1
+      self.error_code = KNOPE_ERROR_GENERAL
       return means, covs, weights, None
 
     npars = len(pardict)
@@ -1736,7 +1756,7 @@ class knopeDAG(pipeline.CondorDAG):
         # get samples from posterior sample hdf5 file
         if not os.path.isfile(prevpostfile):
           print("Error... previous posterior sample file '%s' does not exist" % prevpostfile, file=sys.stderr)
-          self.error_code = -1
+          self.error_code = KNOPE_ERROR_GENERAL
           return means, covs, weights, None
 
         possamps, B, N = pppu.pulsar_nest_to_posterior(prevpostfile)
@@ -1748,11 +1768,11 @@ class knopeDAG(pipeline.CondorDAG):
             allsamples.append(prevpostfile[:,i].reshape(len(prevpostfile), 1))
         else:
           print('Error... input numpy array does not contain correct number of parameters', file=sys.stderr)
-          self.error_code = -1
+          self.error_code = KNOPE_ERROR_GENERAL
           return means, covs, weights, None
     except:
       print("Error... could not extract posterior samples from file or numpy array", file=sys.stderr)
-      self.error_code = -1
+      self.error_code = KNOPE_ERROR_GENERAL
       return means, covs, weights, None
 
     # reflect and duplicate samples if required for all parameters (for each reflection add to ncomp)
@@ -1841,7 +1861,7 @@ class knopeDAG(pipeline.CondorDAG):
 
     if len(means) == 0:
         print("Error... no GMM components returned", file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
 
     return means, covs, weights, allsamplesnp
 
@@ -1862,7 +1882,7 @@ class knopeDAG(pipeline.CondorDAG):
 
       if hetexec == None:
         print("Error... could not find 'lalapps_heterodyne_pulsar' in 'PATH'", file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return
       else:
         self.heterodyne_exec = hetexec
@@ -1927,7 +1947,7 @@ class knopeDAG(pipeline.CondorDAG):
       self.processed_files[pname] = {}
 
       # loop through detectors and set up directory structure and get science segments on first pass
-      for ifo in self.ifos:
+      for ifo in self.ifos[:]: # use self.ifos[:] to create a copy of the IFOs list, so that removal can be done if required https://stackoverflow.com/a/8544571/1862861
         psrdir = os.path.join(self.preprocessing_base_dir[ifo], pname)
         self.mkdirs(psrdir)
         if self.error_code != 0: return
@@ -1951,13 +1971,14 @@ class knopeDAG(pipeline.CondorDAG):
           if getmodsciencesegs[ifo]:
             self.modified_pulsars_segment_list_tmp[ifo] = os.path.join(self.preprocessing_base_dir[ifo], 'segments_tmp.txt')
             self.find_data_segments(self.initial_start[ifo], self.endtime[ifo], ifo, self.modified_pulsars_segment_list_tmp[ifo])
+            if self.error_code != 0: return
 
           # copy segment list into pulsar directories
           try:
             shutil.copy2(self.modified_pulsars_segment_list_tmp[ifo], segfiles[ifo])
           except:
             print("Error... could not copy segment list into pulsar directory", file=sys.stderr)
-            self.error_code = -1
+            self.error_code = KNOPE_ERROR_GENERAL
             return
 
           if getmodsciencesegs[ifo]: getmodsciencesegs[ifo] = False
@@ -1988,7 +2009,7 @@ class knopeDAG(pipeline.CondorDAG):
                 self.starttime[ifo] = int(p.split()[1])
               else:
                 print("Error... could not get end time out of previous segment file '%s'" % segfile, file=sys.stderr)
-                self.error_code = -1
+                self.error_code = KNOPE_ERROR_GENERAL
                 return
 
           # check if a segment file for the given start time has already been created, and if so use that
@@ -1999,6 +2020,18 @@ class knopeDAG(pipeline.CondorDAG):
 
             # create new segment file
             self.find_data_segments(self.starttime[ifo], self.endtime[ifo], ifo, segfiles[ifo])
+            if self.error_code != 0: return
+
+        # check if generated data segment file contains any segments and not in autonomous mode
+        if self.warning_code == KNOPE_WARNING_NO_SEGMENTS and not self.autonomous:
+          self.ifo.remove(ifo) # remove IFO for which no segments exist
+          if len(self.ifo) == 0:
+            print("Error... no segments were available for any required IFOs", file=sys.stderr)
+            self.error_code = KNOPE_ERROR_NO_SEGMENTS
+            return
+          else:
+            self.warning_code = 0
+            continue
 
         self.fine_heterodyne_nodes[pname][ifo] = {}
         self.processed_files[pname][ifo] = {}
@@ -2018,87 +2051,90 @@ class knopeDAG(pipeline.CondorDAG):
           if self.error_code != 0: return
 
           # create output files
-          if self.coarse_heterodyne_binary_output:
-            coarseoutput = os.path.join(freqfacdircoarse, 'coarse-%s-%d-%d.bin' % (ifo, int(self.starttime[ifo]), int(self.endtime[ifo])))
-          else:
-            coarseoutput = os.path.join(freqfacdircoarse, 'coarse-%s-%d-%d.txt' % (ifo, int(self.starttime[ifo]), int(self.endtime[ifo])))
+          if self.warning_code != KNOPE_WARNING_NO_SEGMENTS: # only add coarse heterodyne if there is segment data
+            if self.coarse_heterodyne_binary_output:
+              coarseoutput = os.path.join(freqfacdircoarse, 'coarse-%s-%d-%d.bin' % (ifo, int(self.starttime[ifo]), int(self.endtime[ifo])))
+            else:
+              coarseoutput = os.path.join(freqfacdircoarse, 'coarse-%s-%d-%d.txt' % (ifo, int(self.starttime[ifo]), int(self.endtime[ifo])))
 
-          # create coarse heterodyne node
-          coarsenode = heterodyneNode(chetjob)
+            # create coarse heterodyne node
+            coarsenode = heterodyneNode(chetjob)
 
-          # add data find parent to coarse job
-          if self.datafind_nodes is not None:
-            coarsenode.add_parent(self.datafind_nodes[ifo])
+            # add data find parent to coarse job
+            if self.datafind_nodes is not None:
+              coarsenode.add_parent(self.datafind_nodes[ifo])
 
-          # set data, segment location, channel and output location
-          coarsenode.set_data_file(self.cache_files[ifo])
-          coarsenode.set_seg_list(segfiles[ifo])
-          coarsenode.set_channel(self.coarse_heterodyne_channels[ifo])
-          coarsenode.set_output_file(coarseoutput)
-          if self.coarse_heterodyne_binary_output:
-            coarsenode.set_binoutput()
-          if self.coarse_heterodyne_gzip_output:
-            coarsenode.set_gzip_output()
+            # set data, segment location, channel and output location
+            coarsenode.set_data_file(self.cache_files[ifo])
+            coarsenode.set_seg_list(segfiles[ifo])
+            coarsenode.set_channel(self.coarse_heterodyne_channels[ifo])
+            coarsenode.set_output_file(coarseoutput)
+            if self.coarse_heterodyne_binary_output:
+              coarsenode.set_binoutput()
+            if self.coarse_heterodyne_gzip_output:
+              coarsenode.set_gzip_output()
 
-          # set some coarse heterodyne info
-          coarsenode.set_ifo(ifo)         # detector
-          coarsenode.set_het_flag(0)      # perform coarse heterodyne
-          coarsenode.set_pulsar(pname)    # pulsar name
-          coarsenode.set_param_file(par)  # pulsar parameter file
-          coarsenode.set_filter_knee(self.coarse_heterodyne_filter_knee)
-          coarsenode.set_sample_rate(self.coarse_heterodyne_sample_rate)
-          coarsenode.set_resample_rate(self.coarse_heterodyne_resample_rate)
-          coarsenode.set_freq_factor(freqfactor) # multiplicative factor for the rotation frequency
+            # set some coarse heterodyne info
+            coarsenode.set_ifo(ifo)         # detector
+            coarsenode.set_het_flag(0)      # perform coarse heterodyne
+            coarsenode.set_pulsar(pname)    # pulsar name
+            coarsenode.set_param_file(par)  # pulsar parameter file
+            coarsenode.set_filter_knee(self.coarse_heterodyne_filter_knee)
+            coarsenode.set_sample_rate(self.coarse_heterodyne_sample_rate)
+            coarsenode.set_resample_rate(self.coarse_heterodyne_resample_rate)
+            coarsenode.set_freq_factor(freqfactor) # multiplicative factor for the rotation frequency
 
-          self.add_node(coarsenode)
+            self.add_node(coarsenode)
 
-          # create fine heterodyne node
-          finenode = heterodyneNode(fhetjob)
+          if self.warning_code != KNOPE_WARNING_NO_SEGMENTS: # only add fine heterodyne if there is segment data
+            # create fine heterodyne node
+            finenode = heterodyneNode(fhetjob)
 
-          # add coarse parent to fine job
-          finenode.add_parent(coarsenode)
+            # add coarse parent to fine job
+            finenode.add_parent(coarsenode)
 
-          # create output files
-          fineoutput = os.path.join(freqfacdirfine, 'fine-%s-%d-%d.txt' % (ifo, int(self.starttime[ifo]), int(self.endtime[ifo])))
+            # create output files
+            fineoutput = os.path.join(freqfacdirfine, 'fine-%s-%d-%d.txt' % (ifo, int(self.starttime[ifo]), int(self.endtime[ifo])))
 
-          # set data, segment location and output location
-          if self.coarse_heterodyne_gzip_output:
-            finenode.set_data_file(coarseoutput+'.gz')
-          else:
-            finenode.set_data_file(coarseoutput)
+            # set data, segment location and output location
+            if self.coarse_heterodyne_gzip_output:
+              finenode.set_data_file(coarseoutput+'.gz')
+            else:
+              finenode.set_data_file(coarseoutput)
 
-          if self.coarse_heterodyne_binary_output:
-            finenode.set_bininput()
+            if self.coarse_heterodyne_binary_output:
+              finenode.set_bininput()
 
-          finenode.set_seg_list(segfiles[ifo])
-          finenode.set_output_file(fineoutput)
+            finenode.set_seg_list(segfiles[ifo])
+            finenode.set_output_file(fineoutput)
 
-          # set fine heterodyne info
-          finenode.set_ifo(ifo)
-          finenode.set_het_flag(1)      # perform fine heterodyne
-          finenode.set_pulsar(pname)    # pulsar name
-          finenode.set_param_file(par)  # pulsar parameter file
-          finenode.set_sample_rate(self.coarse_heterodyne_resample_rate) # use resample rate from coarse heterodyne
-          finenode.set_resample_rate(self.fine_heterodyne_resample_rate)
-          finenode.set_filter_knee(self.coarse_heterodyne_filter_knee)
-          finenode.set_freq_factor(freqfactor)
-          finenode.set_stddev_thresh(self.fine_heterodyne_stddev_thresh)
-          finenode.set_ephem_earth_file(earthfile)
-          finenode.set_ephem_sun_file(sunfile)
-          finenode.set_ephem_time_file(timefile)
+            # set fine heterodyne info
+            finenode.set_ifo(ifo)
+            finenode.set_het_flag(1)      # perform fine heterodyne
+            finenode.set_pulsar(pname)    # pulsar name
+            finenode.set_param_file(par)  # pulsar parameter file
+            finenode.set_sample_rate(self.coarse_heterodyne_resample_rate) # use resample rate from coarse heterodyne
+            finenode.set_resample_rate(self.fine_heterodyne_resample_rate)
+            finenode.set_filter_knee(self.coarse_heterodyne_filter_knee)
+            finenode.set_freq_factor(freqfactor)
+            finenode.set_stddev_thresh(self.fine_heterodyne_stddev_thresh)
+            finenode.set_ephem_earth_file(earthfile)
+            finenode.set_ephem_sun_file(sunfile)
+            finenode.set_ephem_time_file(timefile)
 
-          if self.fine_heterodyne_gzip_output:
-            finenode.set_gzip_output()
+            if self.fine_heterodyne_gzip_output:
+              finenode.set_gzip_output()
 
-          self.add_node(finenode)
+            self.add_node(finenode)
 
-          # record fine nodes and files
-          self.fine_heterodyne_nodes[pname][ifo][freqfactor] = finenode
-          if self.fine_heterodyne_gzip_output:
-            fineoutput = fineoutput + '.gz' # append .gz to recorded file name
+            # record fine nodes and files
+            self.fine_heterodyne_nodes[pname][ifo][freqfactor] = finenode
+            if self.fine_heterodyne_gzip_output:
+              fineoutput = fineoutput + '.gz' # append .gz to recorded file name
 
           if modified_pulsar:
-            self.processed_files[pname][ifo][freqfactor] = [fineoutput]
+            if self.warning_code != KNOPE_WARNING_NO_SEGMENTS:
+              self.processed_files[pname][ifo][freqfactor] = [fineoutput]
           elif unmodified_pulsar:
             # check for other fine heterodyned files already in the directory
             hetfilescheck = [os.path.join(freqfacdirfine, hf) for hf in os.listdir(freqfacdirfine) if 'fine' in hf]
@@ -2112,8 +2148,8 @@ class knopeDAG(pipeline.CondorDAG):
                   p = sp.Popen("gzip " + hf, shell=True)
                   out, err = p.communicate()
                   if p.returncode != 0:
-                    print("Error... could not gzip previous fine heterdyned file '%s': %s, %s" % (hf, out, err), file=sys.stderr)
-                    self.error_code = -1
+                    print("Error... could not gzip previous fine heterodyned file '%s': %s, %s" % (hf, out, err), file=sys.stderr)
+                    self.error_code = KNOPE_ERROR_GENERAL
                     return
 
                   hetfilescheck[i] = hf + '.gz' # add .gz suffix
@@ -2124,11 +2160,22 @@ class knopeDAG(pipeline.CondorDAG):
                   p = sp.Popen("gunzip " + hf, shell=True)
                   out, err = p.communicate()
                   if p.returncode != 0:
-                    print("Error... could not gunzip previous fine heterdyned file '%s': %s, %s" % (hf, out, err), file=sys.stderr)
-                    self.error_code = -1
+                    print("Error... could not gunzip previous fine heterodyned file '%s': %s, %s" % (hf, out, err), file=sys.stderr)
+                    self.error_code = KNOPE_ERROR_GENERAL
                     return
 
             self.processed_files[pname][ifo][freqfactor] = hetfilescheck
+            if self.warning_code == KNOPE_WARNING_NO_SEGMENTS: # if there are no segment this time, and also no previous fine heterodyned data then ignore this IFO
+              if len(hetfilescheck) == 0:
+                self.ifo.remove(ifo) # remove IFO for which no segments exist
+                if len(self.ifo) == 0:
+                  print("Error... no segments were available for any required IFOs", file=sys.stderr)
+                  self.error_code = KNOPE_ERROR_NO_SEGMENTS
+                  return
+              else:
+                self.warning_code = 0
+                continue
+
             self.processed_files[pname][ifo][freqfactor].append(fineoutput) # append new file
 
     # remove temporary segment file
@@ -2167,7 +2214,7 @@ class knopeDAG(pipeline.CondorDAG):
 
       if splexec == None:
         print("Error... could not find 'lalapps_SplInter' in 'PATH'", file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return
       else:
         self.splinter_exec = splexec
@@ -2200,7 +2247,7 @@ class knopeDAG(pipeline.CondorDAG):
     if len(self.modified_pulsars) > 0: modpars = True
     if len(self.unmodified_pulsars) > 0: unmodpars = True
 
-    for ifo in self.ifos:
+    for ifo in self.ifos[:]: # iterate over copy of self.ifos as may need to remove IFOs if no segments found
       # Create splinter base directory to contain data products and par file directories
       self.splinter_dir = os.path.join(self.preprocessing_base_dir[ifo], 'splinter')
       self.mkdirs(self.splinter_dir)
@@ -2293,6 +2340,17 @@ class knopeDAG(pipeline.CondorDAG):
       if modpars:
         modsegfile = os.path.join(self.preprocessing_base_dir[ifo], 'segments_modified.txt')
         self.find_data_segments(self.initial_start[ifo], self.endtime[ifo], ifo, modsegfile)
+        if self.error_code != 0: return
+
+        if self.warning_code == KNOPE_WARNING_NO_SEGMENTS:
+          self.ifo.remove(ifo) # remove current IFO from job
+          if len(self.ifos) == 0:
+            print("Error... no segments could were available for any required IFOs", file=sys.stderr)
+            self.error_code = KNOPE_ERROR_NO_SEGMENTS
+            return
+          else:
+            self.warning_code = 0
+            continue
 
       # Create segment list for unmodified pulsars
       unmodsegfile = None
@@ -2309,11 +2367,22 @@ class knopeDAG(pipeline.CondorDAG):
               self.starttime[ifo] = int(p.split()[1])
             else:
               print("Error... could not get end time out of previous segment file '%s'" % unmodsegfile, file=sys.stderr)
-              self.error_code = -1
+              self.error_code = KNOPE_ERROR_GENERAL
               return
 
         # create new segment file
         self.find_data_segments(self.starttime[ifo], self.endtime[ifo], ifo, unmodsegfile)
+        if self.error_code != 0: return
+
+        if self.warning_code == KNOPE_WARNING_NO_SEGMENTS:
+          self.ifo.remove(ifo) # remove current IFO from job
+          if len(self.ifos) == 0:
+            print("Error... no segments were available for any required IFOs", file=sys.stderr)
+            self.error_code = KNOPE_ERROR_NO_SEGMENTS
+            return
+          else:
+            self.warning_code = 0
+            continue
 
         # append segments to file containing all previously analysed segments
         # get filename for list containing all previous segments
@@ -2385,17 +2454,17 @@ class knopeDAG(pipeline.CondorDAG):
 
     if not os.path.isfile(earthfile):
       print("Error... Earth ephemeris file '%s' does not exist" % earthfile, file=sys.stderr)
-      self.error_code = -1
+      self.error_code = KNOPE_ERROR_GENERAL
       return
 
     if not os.path.isfile(sunfile):
       print("Error... Sun ephemeris file '%s' does not exist" % sunfile, file=sys.stderr)
-      self.error_code = -1
+      self.error_code = KNOPE_ERROR_GENERAL
       return
 
     if not os.path.isfile(timefile):
       print("Error... time ephemeris file '%s' does not exist" % timefile, file=sys.stderr)
-      self.error_code = -1
+      self.error_code = KNOPE_ERROR_GENERAL
       return
 
     return earthfile, sunfile, timefile
@@ -2449,7 +2518,10 @@ class knopeDAG(pipeline.CondorDAG):
                 newfinefile = newfinefile + '.gz'
 
               catfiles = finefiles
-              parent = self.fine_heterodyne_nodes[pitem][pifo][ff] # add equivalent fine heterodyned node as parent
+              try: # fine heterodyne node may not exist if (in autonomous mode) no new segments were found, but previous data did exist
+                parent = self.fine_heterodyne_nodes[pitem][pifo][ff] # add equivalent fine heterodyned node as parent
+              except:
+                parent = None
 
               # create new concat job for each case (each one uses it's own sub file)
               subloc = os.path.join(os.path.dirname(finefiles[0]), 'concat.sub')
@@ -2459,7 +2531,7 @@ class knopeDAG(pipeline.CondorDAG):
 
             if len(prevfile) > 1:
               print("Error... more than one previous Splinter file in directory '%s'" % self.splinter_data_location[pitem][pifo][ff])
-              self.error_code = -1
+              self.error_code = KNOPE_ERROR_GENERAL
               return
 
             if pitem in self.splinter_modified_pars: # for modified pulsars set start time (for file name) from run values
@@ -2477,7 +2549,10 @@ class knopeDAG(pipeline.CondorDAG):
                 catfiles = [os.path.join(self.splinter_data_location[pitem][pifo][ff], prevfile[0]), finefiles]
               else:
                 startname = str(self.starttime[ifo])
-              parent = self.splinter_nodes_unmodified[pifo][ff]
+              try: # splinter node may not exist if (in autonomous mode) no new segments were found, but previous data did exist
+                parent = self.splinter_nodes_unmodified[pifo][ff]
+              except:
+                parent = None
 
             endname = str(self.endtime[ifo])
 
@@ -2495,7 +2570,8 @@ class knopeDAG(pipeline.CondorDAG):
             concatjob = concatJob(subfile=subloc, output=newfinefile, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir)
             concatnode = concatNode(concatjob)
             concatnode.set_files(catfiles)
-            concatnode.add_parent(parent)
+            if parent is not None:
+              concatnode.add_parent(parent)
             self.add_node(concatnode)
 
             self.concat_nodes[pitem][pifo][ff] = concatnode
@@ -2531,7 +2607,7 @@ class knopeDAG(pipeline.CondorDAG):
         if not allownone:
           if not isinstance(default, str):
             print("Error... could not parse '%s' option from '[%s]' section." % (option, section), file=sys.stderr)
-            self.error_code = -1
+            self.error_code = KNOPE_ERROR_GENERAL
           else:
             print("Warning... could not parse '%s' option from '[%s]' section. Defaulting to %s." % (option, section, default))
             value = default
@@ -2542,7 +2618,7 @@ class knopeDAG(pipeline.CondorDAG):
         if not allownone:
           if not isinstance(default, float):
             print("Error... could not parse '%s' float option from '[%s]' section." % (option, section), file=sys.stderr)
-            self.error_code = -1
+            self.error_code = KNOPE_ERROR_GENERAL
           else:
             print("Warning... could not parse '%s' float option from '[%s]' section. Defaulting to %f." % (option, section, default))
             value = default
@@ -2553,7 +2629,7 @@ class knopeDAG(pipeline.CondorDAG):
         if not allownone:
           if not isinstance(default, bool):
             print("Error... could not parse '%s' boolean option from '[%s]' section." % (option, section), file=sys.stderr)
-            self.error_code = -1
+            self.error_code = KNOPE_ERROR_GENERAL
           else:
             print("Warning... could not parse '%s' boolean option from '[%s]' section. Defaulting to %r." % (option, section, default))
             value = default
@@ -2564,7 +2640,7 @@ class knopeDAG(pipeline.CondorDAG):
         if not allownone:
           if not isinstance(default, int):
             print("Error... could not parse '%s' int option from '[%s]' section." % (option, section), file=sys.stderr)
-            self.error_code = -1
+            self.error_code = KNOPE_ERROR_GENERAL
           else:
             print("Warning... could not parse '%s' int option from '[%s]' section. Defaulting to %d." % (option, section, default))
             value = default
@@ -2577,7 +2653,7 @@ class knopeDAG(pipeline.CondorDAG):
         if not allownone:
           if not instance(default, list):
             print("Error... could not parse '%s' list option from '[%s]' section." % (option, section), file=sys.stderr)
-            self.error_code = -1
+            self.error_code = KNOPE_ERROR_GENERAL
           else:
             print("Warning... could not parse '%s' list option from '[%s]' section. Defaulting to [%s]." % (option, section, ', '.join(default)))
             value = default
@@ -2591,20 +2667,20 @@ class knopeDAG(pipeline.CondorDAG):
         elif not isinstance(value, dict) and not isinstance(default, dict):
           if not allownone:
             print("Error... could not parse '%s' dictionary option from '[%s]' section." % (option, section), file=sys.stderr)
-            self.error_code = -1
+            self.error_code = KNOPE_ERROR_GENERAL
           else:
             value = None
       except:
         if not allownone:
           if not isinstance(default, dict):
             print("Error... could not parse '%s' dictionary option from '[%s]' section." % (option, section), file=sys.stderr)
-            self.error_code = -1
+            self.error_code = KNOPE_ERROR_GENERAL
           else:
             print("Warning... could not parse '%s' dictionary option from '[%s]' section. Defaulting to %s." % (option, section, str(default)))
             value = default
     else:
       print("Error... unknown trying to get unknown type '%s' from configuration file" % cftype, file=sys.stderr)
-      self.error_code = -1
+      self.error_code = KNOPE_ERROR_GENERAL
 
     return value
 
@@ -2639,7 +2715,7 @@ class knopeDAG(pipeline.CondorDAG):
             datafindexec = self.find_exec_file('gw_data_find')
             if datafindexec is None:
               print("Error... could not find 'gw_data_find' in your 'PATH'", file=sys.stderr)
-              self.error_code = -1
+              self.error_code = KNOPE_ERROR_GENERAL
               return
             else:
               self.config.set('condor', 'datafind', datafindexec) # set value in config file parser
@@ -2649,7 +2725,7 @@ class knopeDAG(pipeline.CondorDAG):
               datafindexec = self.find_exec_file('gw_data_find')
               if datafindexec is None:
                 print("Error... could not find 'gw_data_find' in your 'PATH'", file=sys.stderr)
-                self.error_code = -1
+                self.error_code = KNOPE_ERROR_GENERAL
                 return
               else:
                 self.config.set('condor', 'datafind', datafindexec) # set value in config file parser
@@ -2669,7 +2745,7 @@ class knopeDAG(pipeline.CondorDAG):
           datafindexec = self.find_exec_file('gw_data_find')
           if datafindexec is None:
             print("Error... could not find 'gw_data_find' in your 'PATH'", file=sys.stderr)
-            self.error_code = -1
+            self.error_code = KNOPE_ERROR_GENERAL
             return
           else:
             cp.set('condor', 'datafind', datafindexec) # set value in config file parser
@@ -2679,7 +2755,7 @@ class knopeDAG(pipeline.CondorDAG):
       datafindexec = self.find_exec_file('gw_data_find')
       if datafindexec is None:
         print("Error... could not find 'gw_data_find' in your 'PATH'", file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return
       else:
         self.config.set('condor', 'datafind', datafindexec) # set value in config file parser
@@ -2713,17 +2789,17 @@ class knopeDAG(pipeline.CondorDAG):
 
       if not isinstance(frtypes, dict):
         print("Error... the data find 'types' must be a dictionary of values for each detector", file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return
     else:
       print("Error... no frame 'type' specified for data find", file=sys.stderr)
-      self.error_code = -1
+      self.error_code = KNOPE_ERROR_GENERAL
       return
 
     for ifo in self.ifos:
       if not ifo in frtypes:
         print("Error... no data find type for %s" % ifo, file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return
 
       # check if cache file is already set for the given detector
@@ -2757,7 +2833,7 @@ class knopeDAG(pipeline.CondorDAG):
       if segfiles is not None:
         if ifo not in segfiles:
           print("Error... No segment file given for '%s'" % ifo)
-          self.error_code = -1
+          self.error_code = KNOPE_ERROR_GENERAL
           return
         else:
           segfile = segfiles[ifo]
@@ -2765,7 +2841,7 @@ class knopeDAG(pipeline.CondorDAG):
           # check segment file exists
           if not os.path.isfile(segfile):
             print("Error... segment file '%s' does not exist." % segfile)
-            self.error_code = -1
+            self.error_code = KNOPE_ERROR_GENERAL
             return
           else:
             # copy segment file to the 'outfile' location
@@ -2773,7 +2849,7 @@ class knopeDAG(pipeline.CondorDAG):
               shutil.copyfile(segfile, outfile)
             except:
               print("Error... could not copy segment file to location of '%s'." % outfile)
-              self.error_code = -1
+              self.error_code = KNOPE_ERROR_GENERAL
             return # exit function
 
     # otherwise try and get the segment list
@@ -2786,7 +2862,7 @@ class knopeDAG(pipeline.CondorDAG):
 
       if segfind is None:
         print("Error... could not find 'ligolw_segment_query_dqsegdb' in 'PATH'", file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return
 
     # get server
@@ -2801,7 +2877,7 @@ class knopeDAG(pipeline.CondorDAG):
     # check segment types dictionary contains type for the given detector
     if ifo not in segmenttypes:
       print("Error... No segment type for %s" % ifo, file=sys.stderr)
-      self.error_code = -1
+      self.error_code = KNOPE_ERROR_GENERAL
       return
 
     segFindCall = ' '.join([segfind, '--segment-url', server,
@@ -2824,7 +2900,7 @@ class knopeDAG(pipeline.CondorDAG):
 
       if ligolwprint is None:
         print("Error... could not find 'ligolw_print' in 'PATH'", file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
         return
 
     xmlToTxtCall = ' '.join([ligolwprint,
@@ -2842,8 +2918,14 @@ class knopeDAG(pipeline.CondorDAG):
       print("Error... could not generate segment list. Call returned with error:", file=sys.stderr)
       print("\tstdout: %s" % out, file=sys.stderr)
       print("\tstderr: %s" % err, file=sys.stderr)
-      self.error_code = -1
+      self.error_code = KNOPE_ERROR_GENERAL
       return
+
+    # check whether the segment file contains any segments
+    p = sp.check_output('wc -l {}'.format(outfile), shell=True)
+    if int(p.split()[0]) == 0:
+      print("Warning... no segments found for {}", file=sys.stderr)
+      self.warning_code = KNOPE_WARNING_NO_SEGMENTS
 
 
   def find_exec_file(self, filename):
@@ -2874,7 +2956,7 @@ class knopeDAG(pipeline.CondorDAG):
         os.makedirs(path)
       except:
         print("Error... cannot make directory '%s'" % path, file=sys.stderr)
-        self.error_code = -1
+        self.error_code = KNOPE_ERROR_GENERAL
 
 
 
