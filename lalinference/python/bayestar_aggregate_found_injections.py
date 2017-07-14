@@ -154,7 +154,7 @@ if __name__ == '__main__':
         map = Pool(
             opts.jobs, startup,
             (command.sqlite_get_filename(db), contours, modes, areas)
-            ).imap_unordered
+            ).imap
 
     colnames = (
         ['coinc_event_id', 'simulation_id', 'far', 'snr', 'searched_area',
