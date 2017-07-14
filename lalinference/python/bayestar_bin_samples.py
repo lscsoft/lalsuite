@@ -71,6 +71,7 @@ from lalinference.healpix_tree import adaptive_healpix_histogram
 
 
 def pixstats(samples, max_nside, nside, ipix):
+    # Reticulating splines.
     step = (max_nside // nside) ** 2
     i0 = np.searchsorted(samples['ipix'], step * ipix)
     i1 = np.searchsorted(samples['ipix'], step * (ipix + 1))
