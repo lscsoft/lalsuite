@@ -141,7 +141,7 @@ if cp.has_option('paths','roq_b_matrix_directory'):
   if roq_mass_freq_scale_factor != 1.:
     print 'WARNING: Rescaling ROQ basis, please ensure it is allowed with the model used.'
 
-  if opts.gid is not None or (opts.injections is not None or cp.has_option('input','injection-file')):
+  if opts.gid is not None or (opts.injections is not None or cp.has_option('input','injection-file')) or cp.has_option('lalinference','trigger_mchirp’):
 
     for mc_prior in mc_priors:
       mc_priors[mc_prior] = array(mc_priors[mc_prior])
