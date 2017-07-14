@@ -1244,7 +1244,7 @@ void LALInferenceCheckpointMCMC(LALInferenceRunState *runState) {
 void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
     //ProcessParamsTable *ppt;
     INT4 i, t, n_local_threads;
-    UINT4 n;
+    UINT4 n,k;
     LALH5File *resume_file = NULL;
     LALH5File *output = NULL;
     LALInferenceThreadState *thread;
@@ -1287,8 +1287,8 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
         LALH5Dataset *prop_arg_group = XLALH5DatasetRead(chain_group, "proposal_arguments");
         LALInferenceH5DatasetToVariablesArray(prop_arg_group, &propArgs, &n);
         LALInferenceCopyVariables(propArgs[0], thread->proposalArgs);
-        for (i=0;i<n;i++)
-            LALInferenceClearVariables(propArgs[i]);
+        for (k=0;k<n;k++)
+            LALInferenceClearVariables(propArgs[k]);
         XLALFree(propArgs);
 
         /* We don't save strings, so we can't tell which parameter was last updated with adaptation.
@@ -1302,8 +1302,8 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
         LALH5Dataset *current_param_group = XLALH5DatasetRead(chain_group, "current_parameters");
         LALInferenceH5DatasetToVariablesArray(current_param_group, &currentParams, &n);
         LALInferenceCopyVariables(currentParams[0], thread->currentParams);
-        for (i=0;i<n;i++)
-            LALInferenceClearVariables(currentParams[i]);
+        for (k=0;k<n;k++)
+            LALInferenceClearVariables(currentParams[k]);
         XLALFree(currentParams);
 
         /* Recalculate the likelihood and prior for the restored parameters */
