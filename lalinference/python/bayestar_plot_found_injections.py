@@ -80,6 +80,11 @@ if have_runtime:
     if np.any(np.isfinite(combined)):
         min_runtime = np.nanmin(combined)
         max_runtime = np.nanmax(combined)
+if have_searched_prob_vol:
+    combined = np.concatenate([dataset['searched_vol'] for dataset in datasets_])
+    if np.any(np.isfinite(combined)):
+        min_searched_vol = np.min(combined[np.isfinite(combined)])
+        max_searched_vol = np.max(combined[np.isfinite(combined)])
 if opts.group_by == 'far':
     combined = np.concatenate([dataset['far'] for dataset in datasets_])
     log10_min_far = int(np.ceil(np.log10(np.min(combined))))
@@ -189,13 +194,23 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
         ax5.set_xlabel('distance CDF at true distance')
         ax5.set_ylabel('cumulative fraction of injections')
 
-    # Set up figure 5.
+    # Set up figure 6.
     if have_searched_prob_vol:
         fig6 = plt.figure(figsize=(6, 6))
         ax6 = fig6.add_subplot(111, projection='pp_plot')
         fig6.subplots_adjust(bottom=0.15)
         ax6.set_xlabel('searched volumetric probability')
         ax6.set_ylabel('cumulative fraction of injections')
+
+    # Set up figure 7.
+    if have_searched_prob_vol:
+        fig7 = plt.figure(figsize=(6, 4.5))
+        ax7 = fig7.add_subplot(111)
+        fig7.subplots_adjust(bottom=0.15)
+        ax7.set_xscale('log')
+        ax7.set_xlabel('searched volume (Mpc$^{-3}$)')
+        ax7.set_ylabel(histlabel)
+        ax7.set_title(title)
 
     # Plot a histogram from each dataset onto each of the 5 figures.
     for (data, label) in zip(datasets, labels):
@@ -204,20 +219,23 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
                 searched_prob = data['searched_prob']
             except ValueError:
                 searched_prob = data['p_value']
-            ax1.add_series(searched_prob, label=label)
-            ax2.hist(data['searched_area'], histtype='step', label=label, bins=np.logspace(np.log10(min_searched_area), np.log10(max_searched_area), 1000 if opts.cumulative else 20), cumulative=opts.cumulative, normed=opts.normed)
+            lines, = ax1.add_series(searched_prob, label=label)
+            color = lines.get_color()
+            ax2.hist(data['searched_area'], histtype='step', label=label, bins=np.logspace(np.log10(min_searched_area), np.log10(max_searched_area), 1000 if opts.cumulative else 20), cumulative=opts.cumulative, normed=opts.normed, color=color)
             if have_offset:
-                ax3.hist(data['offset'], histtype='step', label=label, bins=np.logspace(np.log10(min_offset), np.log10(max_offset), 1000 if opts.cumulative else 20), cumulative=opts.cumulative, normed=opts.normed)
+                ax3.hist(data['offset'], histtype='step', label=label, bins=np.logspace(np.log10(min_offset), np.log10(max_offset), 1000 if opts.cumulative else 20), cumulative=opts.cumulative, normed=opts.normed, color=color)
             if have_runtime:
                 if np.any(np.isfinite(data['runtime'])):
-                    ax4.hist(data['runtime'], histtype='step', bins=np.logspace(np.log10(min_runtime), np.log10(max_runtime), 1000 if opts.cumulative else 20), cumulative=opts.cumulative, normed=opts.normed)
+                    ax4.hist(data['runtime'], histtype='step', bins=np.logspace(np.log10(min_runtime), np.log10(max_runtime), 1000 if opts.cumulative else 20), cumulative=opts.cumulative, normed=opts.normed, color=color)
             if have_searched_prob_dist:
-                ax5.add_series(data['searched_prob_dist'], label=label)
+                ax5.add_series(data['searched_prob_dist'], label=label, color=color)
             if have_searched_prob_vol:
-                ax6.add_series(data['searched_prob_vol'], label=label)
+                ax6.add_series(data['searched_prob_vol'], label=label, color=color)
+                if np.any(np.isfinite(data['searched_vol'])):
+                    ax7.hist(data['searched_vol'], histtype='step', label=label, bins=np.logspace(np.log10(min_searched_vol), np.log10(max_searched_vol), 1000 if opts.cumulative else 20), cumulative=opts.cumulative, normed=opts.normed, color=color)
 
     # Finish and save plot 1.
-    pb.update(i * 6)
+    pb.update(i * 7)
     # Only plot target confidence band if all datasets have the same number
     # of samples, because the confidence band depends on the number of samples.
     ax1.add_diagonal()
@@ -230,25 +248,25 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
     fig1.savefig('searched_prob.pdf')
 
     # Finish and save plot 2.
-    pb.update(i * 6 + 1)
+    pb.update(i * 7 + 1)
     ax2.grid()
     fig2.savefig('searched_area_hist.pdf')
 
     # Finish and save plot 3.
-    pb.update(i * 6 + 2)
+    pb.update(i * 7 + 2)
     if have_offset:
         ax3.grid()
         fig3.savefig('offset_hist.pdf')
 
     # Finish and save plot 4.
-    pb.update(i * 6 + 3)
+    pb.update(i * 7 + 3)
     if have_runtime:
         ax4.grid()
         fig4.savefig('runtime_hist.pdf')
         plt.close()
 
     # Finish and save plot 5.
-    pb.update(i * 6 + 4)
+    pb.update(i * 7 + 4)
     if have_searched_prob_dist:
         # Only plot target confidence band if all datasets have the same number
         # of samples, because the confidence band depends on the number of
@@ -264,7 +282,7 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
         plt.close()
 
     # Finish and save plot 6.
-    pb.update(i * 6 + 5)
+    pb.update(i * 7 + 5)
     if have_searched_prob_vol:
         # Only plot target confidence band if all datasets have the same number
         # of samples, because the confidence band depends on the number of
@@ -278,6 +296,11 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
             ax6.legend(loc='lower right')
         fig6.savefig('searched_prob_vol.pdf')
         plt.close()
+
+    # Finish and save plot 7.
+    pb.update(i * 7 + 6)
+    ax7.grid()
+    fig7.savefig('searched_vol_hist.pdf')
 
     # Go back to starting directory.
     os.chdir(cwd)
