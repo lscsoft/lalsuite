@@ -312,9 +312,10 @@ def get_doubles(eventlists, instruments, thresholds, unused):
 	# with it from the set.
 
 	offset_a = eventlista.offset
+	eventlistb_get_coincs = eventlistb.get_coincs
 	for eventa in eventlista:
 		eventa_id = id(eventa)
-		matches = eventlistb.get_coincs(eventa, offset_a, dt, threshold_data)
+		matches = eventlistb_get_coincs(eventa, offset_a, dt, threshold_data)
 		if matches:
 			for eventb in matches:
 				eventb_id = id(eventb)
