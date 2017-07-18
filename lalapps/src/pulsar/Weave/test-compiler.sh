@@ -46,7 +46,8 @@ echo
 echo "--- Running test ${script} ---"
 echo
 cd "${testdir}"
-time -p ${SHELL} -c "set -e; source ${script}; echo '--- Successfully ran test ${script} ---'"
+export TIMEFORMAT=$'real %R\nuser %R\nsys  %R'
+time ${SHELL} -c "set -e; source ${script}; echo '--- Successfully ran test ${script} ---'"
 echo
 cd "${builddir}"
 
