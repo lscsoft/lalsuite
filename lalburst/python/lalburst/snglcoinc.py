@@ -48,6 +48,7 @@ import numpy
 import random
 from scipy.constants import c as speed_of_light
 import scipy.optimize
+from scipy import spatial
 import sys
 import warnings
 
@@ -1104,6 +1105,59 @@ class CoincSynthesizer(object):
 
 		# done
 		return self._coincidence_rate_factors
+
+		# FIXME:  commented-out implementation that requires scipy
+		# >= 0.19.  saving it for later.  NOTE:  untested
+
+		# the half-space instersection code assumes constraints of
+		# the form
+		#
+		#	A x + b <= 0,
+		#
+		# where A has size (n constraints x m dimensions), where
+		# for N instruments m = N-1.  each coincidence window
+		# between an instrument, i, and the anchor imposes two
+		# constraints of the form
+		#
+		#	+/-t_{i} - \tau_{1i} <= 0
+		#
+		# for a total of 2*(N-1) constraints.  each coincidence
+		# window between a pair of (non-anchor) instruments imposes
+		# two constraints of the form
+		#
+		#	+/-(t_{i} - t_{j}) - \tau_{ij} <= 0
+		#
+		# for a total (N-1)*(N-2) constraints.  altogether there
+		# are
+		#
+		#	(N-1)^2 + (N-1)
+		#
+		# constraints
+		#	if len(instruments) > 1:
+		#		dimensions = len(instruments)	# anchor not included
+		#		halfspaces = numpy.zeros((dimensions * (dimensions + 1), dimensions + 1), dtype = "double")
+		#		# anchor constraints
+		#		for i, instrument in enumerate(instruments):
+		#			j = i
+		#			i *= 2
+		#			halfspaces[i, j] = +1.
+		#			halfspaces[i + 1, j] = -1.
+		#			halfspaces[i, -1] = halfspaces[i + 1, -1] = -self.tau[frozenset((anchor, instrument))]
+		#		# non-anchor constraints
+		#		for i, ((j1, a), (j2, b)) in enumerate(itertools.combinations(enumerate(instruments), 2), dimensions):
+		#			i *= 2
+		#			halfspaces[i, j1] = +1.
+		#			halfspaces[i, j2] = -1.
+		#			halfspaces[i + 1, j1] = -1.
+		#			halfspaces[i + 1, j2] = +1.
+		#			halfspaces[i, -1] = halfspaces[i + 1, -1] = -self.tau[frozenset((a, b))]
+		#		# the origin is in the interior
+		#		interior = numpy.zeros((len(instruments),), dtype = "double")
+		#		# compute volume
+		#		self._coincidence_rate_factors[key] *= spatial.ConvexHull(spatial.HalfspaceIntersection(halfspaces, interior).intersections).volume
+		#	else:
+		#		# 1-D case (qhull barfs, but who needs it)
+		#		self._coincidence_rate_factors[key] *= 2. * self.tau[frozenset((anchor, instruments[0]))]
 
 
 	@property
