@@ -1015,23 +1015,45 @@ class CoincSynthesizer(object):
 		# \mu_{1} * \mu_{2} ... \mu_{N} * 2 * \tau_{12} * 2 *
 		# \tau_{13} ... 2 * \tau_{1N}.  this is the rate at which
 		# events from instrument 1 are coincident with events from
-		# all of instruments 2...N.  later, we will multiply this
-		# by the probability that events from instruments 2...N
-		# known to be coincident with an event from instrument 1
-		# are themselves mutually coincident.  the factor of 2 is
-		# because to be coincident the time difference can be
-		# anywhere in [-tau, +tau], so the size of the coincidence
-		# window is 2 tau.  here we compute the part of the
-		# expression with the \mu factors removed.
+		# all of instruments 2...N.  the factors of 2 are because
+		# to be coincident the time difference can be anywhere in
+		# [-tau, +tau], so the size of the coincidence window is 2
+		# tau.  removing the factor of
+		#
+		#	\prod_{i} \mu_{i}
+		#
+		# leaves
+		#
+		#	\prod_{i} 2 \tau_{1i}.
+		#
+		# in the N-1 dimensional space defined by the time
+		# differences between each instrument and the anchor
+		# instrument, the coincidence windows between instruments
+		# define pairs of half-space boundaries.  for the
+		# coincidence windows between each instrument and the
+		# anchor instrument these boundaries are perpendicular to
+		# co-ordinate axes, while for other pairs of instruments
+		# the coincidence windows correspond to planes angled at 45
+		# degrees in various orientations.  altogether they define
+		# a convex polyhedron containing the origin.
+		#
+		# the product of taus, above, is the volume of the
+		# rectangular polyhedron defined by the anchor instrument
+		# constraints alone.  it's aparent that the final quantity
+		# we seek here is the volume of the convex polyhedron
+		# defined by all of the constraints.  this can be computed
+		# using the qhull library's half-space intersection
+		# implementation, but the Python interface is not available
+		# in scipy versions below 0.19, therefore we give up in
+		# frustration and do the following:  we first compute the
+		# volume of the rectangular polyhedron defined by the
+		# anchor instrument constraints, and then use
+		# stone-throwing to estimate the ratio of the desired
+		# volume to that volume and multiply by that factor.
 			for instrument in instruments:
 				self._coincidence_rate_factors[key] *= 2. * self.tau[frozenset((anchor, instrument))]
-
-		# if there are more than two instruments, correct for the
-		# probability of full N-way coincidence by computing the
-		# volume of the allowed parameter space by stone throwing.
-		# FIXME:  it might be practical to solve this with some
-		# sort of computational geometry library and convex hull
-		# volume calculator.
+		# compute the ratio of the desired volume to that volume by
+		# stone throwing.
 			if len(instruments) > 1:
 		# for each instrument 2...N, the interval within which an
 		# event is coincident with instrument 1
@@ -1658,7 +1680,8 @@ class LnLRDensity(object):
 		from the distribution density.  Some subclasses might
 		choose not to implement this, and those that do might
 		choose to use an MCMC-style sample generator and so the
-		samples should not assumed to be statistically independent.
+		samples should not be assumed to be statistically
+		independent.
 		"""
 		raise NotImplementedError
 
