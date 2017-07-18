@@ -79,7 +79,7 @@ echo
 
 echo "=== Compare F-statistic at exact injected signal parameters with loudest F-statistic found by lalapps_Weave ==="
 set -x
-coh2F_exact=`cat RefExact.txt | sed -n '/^[^%]/{p;q}' | awk '{print $7}'`
+coh2F_exact=`cat RefExact.txt | sed -n '/^[^%]/p' | awk '{print $7}'`
 ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=mean2F][#row == 1]" > tmp
 coh2F_loud=`cat tmp | sed "/^#/d" | xargs printf "%g"`
 # Value of 'mean_mu' was calculated by:
