@@ -201,7 +201,7 @@ main ( int argc, char *argv[] )
       XLALFree ( parFname );
       fprintf ( timingLogFILE, "%s\n", logstring );
       fprintf ( timingParFILE, "%s\n", logstring );
-      fprintf ( timingParFILE, "%%%%%8s %10s %12s %12s %12s %12s %12s %12s %12s %12s\n",
+      fprintf ( timingParFILE, "%%%%%8s %20s %20s %20s %20s %20s %20s %20s %20s %12s\n",
                 "Nseg", "Tseg", "Freq", "FreqBand", "dFreq", "f1dot", "f2dot", "Alpha", "Delta", "memUsageMB" );
     }
   FstatInputVector *inputs;
@@ -214,7 +214,7 @@ main ( int argc, char *argv[] )
   for ( INT4 i = 0; i < uvar->numTrials; i ++ )
     {
       UINT4 Tseg_i        = drawFromINT4Range ( uvar->Tseg );
-
+      Tseg_i = (UINT4) uvar->Tsft * ceil ( Tseg_i / uvar->Tsft );
       SFTCatalog **catalogs;
       XLAL_CHECK_MAIN ( (catalogs = XLALCalloc ( uvar->numSegments, sizeof( catalogs[0] ))) != NULL, XLAL_ENOMEM );
       for ( INT4 l = 0; l < uvar->numSegments; l ++ )
@@ -227,7 +227,6 @@ main ( int argc, char *argv[] )
           XLAL_CHECK_MAIN ( (multiTimestamps = XLALMakeMultiTimestamps ( startTime_l->data[l], Tseg_i, uvar->Tsft, 0, numDetectors )) != NULL, XLAL_EFUNC );
           XLAL_CHECK_MAIN ( (catalogs[l] = XLALMultiAddToFakeSFTCatalog ( NULL, uvar->IFOs, multiTimestamps )) != NULL, XLAL_EFUNC );
           XLALDestroyMultiTimestamps ( multiTimestamps );
-          startTime_l->data[l] = endTime_l->data[l];
         } // for l < numSegments
 
       PulsarSpinRange XLAL_INIT_DECL(spinRange_i);
@@ -272,7 +271,6 @@ main ( int argc, char *argv[] )
       if ( ! uvar->perSegmentSFTs ) {
         XLAL_CHECK_MAIN ( XLALCWSignalCoveringBand ( &minCoverFreq_il, &maxCoverFreq_il, &startTime_l->data[0], &endTime_l->data[uvar->numSegments-1], &spinRange_i, Doppler_i.asini, Doppler_i.period, Doppler_i.ecc ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
-
       // create per-segment input structs
       for ( INT4 l = 0; l < uvar->numSegments; l ++ )
         {
@@ -284,6 +282,9 @@ main ( int argc, char *argv[] )
           // Weave convention: determine per-segment SFT frequency band
           if ( uvar->perSegmentSFTs ) {
             XLAL_CHECK_MAIN ( XLALCWSignalCoveringBand ( &minCoverFreq_il, &maxCoverFreq_il, &startTime_l->data[l], &endTime_l->data[l], &spinRange_i, Doppler_i.asini, Doppler_i.period, Doppler_i.ecc ) == XLAL_SUCCESS, XLAL_EFUNC );
+            // fprintf ( stderr, "minCoverFreq = %.16g, maxCoverFreq = %.16g: startTime = %d, Tseg = %d, FreqMax = %.16g, f1dot = %.16g, f2dot = %.16g, refTime = %d = %d + %d\n",
+            // minCoverFreq_il, maxCoverFreq_il, startTime_l->data[l].gpsSeconds, Tseg_i, spinRange_i.fkdot[0] + spinRange_i.fkdotBand[0], spinRange_i.fkdot[1], spinRange_i.fkdot[2],
+            // refTime.gpsSeconds, startTime_l->data[l].gpsSeconds, refTime.gpsSeconds - startTime_l->data[l].gpsSeconds );
           }
           XLAL_CHECK_MAIN ( (inputs->data[l] = XLALCreateFstatInput ( catalogs[l], minCoverFreq_il, maxCoverFreq_il, dFreq_i, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
         }
@@ -310,7 +311,7 @@ main ( int argc, char *argv[] )
 
       if ( timingParFILE != NULL )
         {
-          fprintf ( timingParFILE, "%10d %10d %12g %12g %12g %12g %12g %12g %12g %12g\n",
+          fprintf ( timingParFILE, "%10d %20d %20.16g %20.16g %20.16g %20.16g %20.16g %20.16g %20.16g %12g\n",
                     uvar->numSegments, Tseg_i, Doppler_i.fkdot[0], FreqBand_i, dFreq_i, Doppler_i.fkdot[1], Doppler_i.fkdot[2], Doppler_i.Alpha, Doppler_i.Delta, memUsage
                     );
         }
