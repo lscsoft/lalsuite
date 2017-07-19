@@ -50,6 +50,7 @@ import numpy as np
 from lalinference import io
 import lalinference.plot
 from lalinference.bayestar.postprocess import find_injection_moc
+from scipy.interpolate import interp1d
 
 
 # Read input.
@@ -82,9 +83,15 @@ fig = plt.figure(figsize=(6, 6))
 ax = fig.add_subplot(111, projection='pp_plot')
 ax.add_diagonal()
 ax.add_series(result.searched_prob, label='R.A., Dec.')
+searched_area_func = interp1d(np.linspace(0, 1, len(chain)),
+                              np.sort(result.searched_area),
+                              bounds_error=False)
 if 'DISTMU' in skymap.colnames:
     ax.add_series(result.searched_prob_dist, label='Distance')
     ax.add_series(result.searched_prob_vol, label='Volume')
+    searched_vol_func = interp1d(np.linspace(0, 1, len(chain)),
+                                 np.sort(result.searched_vol),
+                                 bounds_error=False)
 for p, area, vol in zip(
         args.contour, result.contour_areas, result.contour_vols):
     text = '{:g}%\n{} deg$^2$'.format(p, fmt(area, 2))
@@ -94,6 +101,18 @@ for p, area, vol in zip(
         text, (1e-2 * p, 1e-2 * p), (0, -150),
         xycoords='data', textcoords='offset points',
         horizontalalignment='right', backgroundcolor='white',
+        arrowprops=dict(connectionstyle='bar,angle=0,fraction=0',
+                        arrowstyle='-|>', linewidth=2, color='black'))
+    area = searched_area_func(1e-2 * p)
+    text = '{:g}%\n{} deg$^2$'.format(p, fmt(area, 2))
+    if 'DISTMU' in skymap.colnames:
+        vol = searched_vol_func(1e-2 * p)
+        text += '\n{} Mpc$^3$'.format(fmt(vol, 2, force_scientific=True))
+    ax.annotate(
+        text, (1e-2 * p, 1e-2 * p), (-75, 0),
+        xycoords='data', textcoords='offset points',
+        horizontalalignment='right', verticalalignment='center',
+        backgroundcolor='white',
         arrowprops=dict(connectionstyle='bar,angle=0,fraction=0',
                         arrowstyle='-|>', linewidth=2, color='black'))
 ax.set_xlabel('searched probability')
