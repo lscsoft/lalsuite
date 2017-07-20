@@ -530,8 +530,8 @@ data!\n");
 
           if( XLALFileEOF(fpin) || rc == 0 ) break;
 
-          /* check that data is finite and not NaN */
-          if ( !isfinite(reVal) && !isfinite(imVal) ){ continue; }
+          /* check that data is finite (and not unrealistically large) and not NaN */
+          if ( !isfinite(reVal) || !isfinite(imVal) || fabs(reVal) > 1. || fabs(imVal) > 1. ){ continue; }
 
           if(inputParams.scaleFac > 1.0){
             reVal *= inputParams.scaleFac;
@@ -573,8 +573,8 @@ data!\n");
             continue;
           }
 
-          /* check that data is finite and not NaN */
-          if ( !isfinite(reVal) && !isfinite(imVal) ){ continue; }
+          /* check that data is finite (and not unrealistically large) and not NaN */
+          if ( !isfinite(reVal) || !isfinite(imVal) || fabs(reVal) > 1. || fabs(imVal) > 1. ){ continue; }
 
           if( inputParams.scaleFac > 1.0 ){
             reVal *= inputParams.scaleFac;
