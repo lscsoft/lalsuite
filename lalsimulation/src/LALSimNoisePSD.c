@@ -72,6 +72,9 @@ static LALUnit strainSquaredPerHertzUnit = { 0, { 0, 0, 1, 0, 0, 2, 0}, { 0, 0, 
 /* prefix for noise psd files provided by LIGO-P1200087 */
 #define P1200087 "LIGO-P1200087-v18-"
 
+/* prefix for noise psd files provided by LIGO-P1600143 */
+#define P1600143 "LIGO-P1600143-v18-"
+
 /* prefix for noise psd files provided by LIGO-T1600593 */
 #define T1600593 "LIGO-T1600593-v1-"
 
@@ -1389,6 +1392,65 @@ int XLALSimNoisePSDAdVBNSOptimizedSensitivityP1200087(
 {
 	return XLALSimNoisePSDFromFile(psd, flow,
 		P1200087 "AdV_BNS_OPTIMIZED.txt");
+}
+
+/** @} */
+
+/**
+ * @name Noise PSDs from LIGO-P1600143
+ * @{
+ */
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to Cosmic Explorer in LIGO-P1600143.
+ */
+int XLALSimNoisePSDCosmicExplorerP1600143(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1600143 "CE.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to Cosmic Explorer (pessimistic) in LIGO-P1600143.
+ */
+int XLALSimNoisePSDCosmicExplorerPessimisticP1600143(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1600143 "CE_Pessimistic.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to Cosmic Explorer (wideband) in LIGO-P1600143.
+ */
+int XLALSimNoisePSDCosmicExplorerWidebandP1600143(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1600143 "CE_Wideband.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to Einstein Telescope in LIGO-P1600143.
+ */
+int XLALSimNoisePSDEinsteinTelescopeP1600143(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1600143 "ET_D.txt");
 }
 
 /** @} */

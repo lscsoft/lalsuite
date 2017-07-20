@@ -167,6 +167,15 @@ int XLALSimNoisePSDAdVDesignSensitivityP1200087(REAL8FrequencySeries *psd, doubl
 int XLALSimNoisePSDAdVBNSOptimizedSensitivityP1200087(REAL8FrequencySeries *psd, double flow);
 
 /*
+ * NOISE PSDs FROM LIGO-P1600143
+ */
+
+int XLALSimNoisePSDCosmicExplorerP1600143(REAL8FrequencySeries *psd, double flow);
+int XLALSimNoisePSDCosmicExplorerPessimisticP1600143(REAL8FrequencySeries *psd, double flow);
+int XLALSimNoisePSDCosmicExplorerWidebandP1600143(REAL8FrequencySeries *psd, double flow);
+int XLALSimNoisePSDEinsteinTelescopeP1600143(REAL8FrequencySeries *psd, double flow);
+
+/*
  * NOISE PSDs FROM LIGO-T1600593
  */
 
