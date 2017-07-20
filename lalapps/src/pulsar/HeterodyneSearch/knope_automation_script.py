@@ -113,7 +113,7 @@ A configuration .ini file is required.
   if not cp.has_option('times', 'previous_endtimes'): # make sure to start the crontab job
     startcron = True
 
-  # open and parse the run configuation file
+  # open and parse the run configuration file
   if cp.has_option('configuration', 'file'):
     runconfig = cp.get('configuration', 'file') # Get main configuration ini template for the run
 
@@ -187,6 +187,7 @@ A configuration .ini file is required.
 
   # check for DAG completion in previous analyses
   prevdags = None
+  rescuedags = None
   try:
     rundir = cprun.get('analysis', 'run_dir') # get run directory where DAG will have been created
   except:
@@ -237,11 +238,19 @@ A configuration .ini file is required.
           send_email(FROM, email, subject, errmsg, server)
         sys.exit(1)
 
+    # get any previous rescue DAGs - held in a dictionary and keyed to the original DAG name
+    try:
+      rescuedags = ast.literal_eval(cp.get('configuration', 'rescue_dags'))
+      Nrescues = rescuedags[prevdags[-1]] # get previous number of rescue DAGs
+    except:
+      rescuedags = None
+      Nrescues = 0 # previous number of rescues
+
     # check if there is a rescue DAG, and if so run it, and wait
     rescuefile = prevdags[-1] + '.rescue'
-    if os.path.basename(rescuefile+'001') in os.listdir(os.path.dirname(prevdags[-1])):
+    if os.path.basename(rescuefile+'%03d' % (Nrescues+1)) in os.listdir(os.path.dirname(prevdags[-1])):
       # if more than 2 rescue DAGs have already been run then just abort as there's probably some problem
-      if os.path.basename(rescuefile+'003') in os.listdir(os.path.dirname(prevdags[-1])):
+      if Nrescues == 2:
         errmsg = "Error... rescue DAG has been run twice and there are still failures. Automation code is aborting. Fix the problem and then retry"
         print(errmsg, file=sys.stderr)
         remove_cron(cronid) # remove cron job
@@ -249,6 +258,11 @@ A configuration .ini file is required.
           subject = sys.argv[0] + ': Error message'
           send_email(FROM, email, subject, errmsg, server)
         sys.exit(1)
+
+      # update number of previous rescues
+      if Nrescues == 0:
+        rescuedags = {}
+      rescuedags[prevdags[-1]] = Nrescues + 1
 
       # run rescue DAG
       from subprocess import Popen
@@ -262,11 +276,19 @@ A configuration .ini file is required.
           send_email(FROM, email, subject, errmsg, server)
         sys.exit(1)
 
+      # add number of rescue DAGs to configuration file
+      cp.set('configuration', 'rescue_dags', str(rescuedags))
+
+      # Write out updated configuration file
+      fc = open(inifile, 'w')
+      cp.write(fc)
+      fc.close()
+
       # wait until re-running
       try:
         # reset to run again later
         if timestep in ['hourly', 'daily']: # if hourly or daily just wait until the next run
-          print("Previous DAG not finished. Re-running later")
+          print("Running rescue DAG")
           sys.exit(0)
         else: # add a day to the crontab job and re-run then
           cron = CronTab(user=True)
