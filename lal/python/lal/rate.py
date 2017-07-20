@@ -2049,7 +2049,7 @@ class BinnedLnPDF(BinnedDensity):
 	"""
 	def __init__(self, *args, **kwargs):
 		super(BinnedLnPDF, self).__init__(*args, **kwargs)
-		self.norm = 0.0
+		self.normalize()
 
 	def __getitem__(self, coords):
 		return numpy.log(super(BinnedLnPDF, self).__getitem__(coords)) - self.norm
