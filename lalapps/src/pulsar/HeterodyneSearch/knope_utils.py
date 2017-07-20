@@ -2008,7 +2008,7 @@ class knopeDAG(pipeline.CondorDAG):
               if len(p) != 0:
                 self.starttime[ifo] = int(p.split()[1])
               else:
-                print("Error... could not get end time out of previous segment file '%s'" % segfile, file=sys.stderr)
+                print("Error... could not get end time out of previous segment file '%s'" % segfiles[ifo], file=sys.stderr)
                 self.error_code = KNOPE_ERROR_GENERAL
                 return
 
