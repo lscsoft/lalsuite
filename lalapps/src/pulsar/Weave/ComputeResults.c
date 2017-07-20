@@ -132,7 +132,7 @@ WeaveCohInput *XLALWeaveCohInputCreate(
 
   // If computing per-detector quantities, map detectors in F-statistic data to their index in the
   // coherent results. This is important when segments contain data from a subset of detectors.
-  if ( per_detectors != NULL ) {
+  if ( (per_detectors != NULL) && !(simulation_level & WEAVE_SIMULATE_MIN_MEM) ) {
 
     // Get detectors in F-statistic data
     const MultiLALDetector *detector_info = XLALGetFstatInputDetectors( Fstat_input );
