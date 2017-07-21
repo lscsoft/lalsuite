@@ -49,7 +49,7 @@ class DetectorDisabledEvent(Event):
     def singles(self):
         disabled_detectors = self.source.disabled_detectors
         if self.source.raises:
-            detectors = {s.instrument for s in self.base_event.singles}
+            detectors = {s.detector for s in self.base_event.singles}
             if not detectors & disabled_detectors:
                 raise ValueError(
                     'Disabling detectors {{{}}} would have no effect on this '
@@ -63,7 +63,7 @@ class DetectorDisabledEvent(Event):
                         ' '.join(disabled_detectors),
                         ' '.join(detectors)))
         return tuple(s for s in self.base_event.singles
-                     if s.instrument not in disabled_detectors)
+                     if s.detector not in disabled_detectors)
 
     @property
     def template_args(self):

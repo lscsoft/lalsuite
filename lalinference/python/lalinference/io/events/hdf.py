@@ -166,9 +166,9 @@ class HDFEvent(Event):
 class HDFSingleEvent(SingleEvent):
 
     def __init__(
-            self, instrument, _coinc_id, _detector_num, _trigger_id,
+            self, detector, _coinc_id, _detector_num, _trigger_id,
             _timeslide_interval, _triggers, _timeslide_ids, _psds):
-        self._instrument = instrument
+        self._detector = detector
         self._coinc_id = _coinc_id
         self._detector_num = _detector_num
         self._trigger_id = _trigger_id
@@ -178,8 +178,8 @@ class HDFSingleEvent(SingleEvent):
         self._psds = _psds
 
     @property
-    def instrument(self):
-        return self._instrument
+    def detector(self):
+        return self._detector
 
     @property
     def snr(self):
@@ -217,7 +217,7 @@ class HDFSingleEvent(SingleEvent):
         except ValueError:
             raise ValueError(
                 'No PSD found for detector {} at zero-lag GPS time {}'.format(
-                    self.instrument, self.zerolag_time))
+                    self.detector, self.zerolag_time))
 
         dyn_range_fac = psd.file.attrs['dynamic_range_factor']
         flow = psd.file.attrs['low_frequency_cutoff']
