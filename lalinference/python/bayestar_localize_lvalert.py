@@ -50,6 +50,9 @@ parser = command.ArgumentParser(
     parents=[
         command.waveform_parser, command.prior_parser, command.skymap_parser])
 parser.add_argument(
+    '-d', '--disable-detector', metavar='X1', type=str, nargs='+',
+    help='disable certain detectors [default: enable all]')
+parser.add_argument(
     '-N', '--dry-run', default=False, action='store_true',
     help='Dry run; do not update GraceDB entry [default: %(default)s]')
 parser.add_argument(
@@ -109,6 +112,10 @@ if not opts.no_tag:
     tags += ("lvem",)
 
 event_source = events.gracedb.open(graceids, gracedb)
+
+if opts.disable_detector:
+    event_source = events.detector_disabled.open(
+        event_source, opts.disable_detector)
 
 for graceid in six.iterkeys(event_source):
 
