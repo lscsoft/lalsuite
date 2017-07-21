@@ -147,7 +147,7 @@ def localize(
     if not enable_snr_series:
         singles = [single for single in singles if single.snr is not None]
 
-    ifos = [single.instrument for single in singles]
+    ifos = [single.detector for single in singles]
 
     # Extract SNRs from table.
     snrs = np.ma.asarray([
@@ -362,7 +362,7 @@ def localize(
     skymap.meta['vcs_info'] = vcs_info
     skymap.meta['gps_time'] = float(epoch)
     skymap.meta['runtime'] = float(end_time - start_time)
-    skymap.meta['instruments'] = {single.instrument for single in singles}
+    skymap.meta['instruments'] = {single.detector for single in singles}
     skymap.meta['gps_creation_time'] = end_time
 
     return skymap

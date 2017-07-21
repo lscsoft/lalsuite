@@ -78,7 +78,7 @@ class SingleEvent(six.with_metaclass(ABCMeta)):
     """Abstraction of a single-detector trigger."""
 
     @abstractproperty
-    def instrument(self):
+    def detector(self):
         """Instrument name (e.g. 'H1')"""
         raise NotImplementedError
 
@@ -113,7 +113,7 @@ class SingleEvent(six.with_metaclass(ABCMeta)):
         """SNR time series (COMPLEX8TimeSeries)"""
         return None
 
-    __str_keys = ('instrument', 'snr', 'phase', 'time')
+    __str_keys = ('detector', 'snr', 'phase', 'time')
 
     def __str__(self):
         keys = self.__str_keys

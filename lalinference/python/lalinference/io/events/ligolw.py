@@ -226,10 +226,10 @@ class LigoLWEvent(Event):
 
 class LigoLWSingleEvent(SingleEvent):
 
-    def __init__(self, source, instrument, snr, phase, time, zerolag_time,
+    def __init__(self, source, detector, snr, phase, time, zerolag_time,
                  psd_file, snr_series, invert_phases):
         self._source = source
-        self._instrument = instrument
+        self._detector = detector
         self._snr = snr
         self._phase = phase
         self._time = time
@@ -239,8 +239,8 @@ class LigoLWSingleEvent(SingleEvent):
         self._invert_phases = invert_phases
 
     @property
-    def instrument(self):
-        return self._instrument
+    def detector(self):
+        return self._detector
 
     @property
     def snr(self):
@@ -263,7 +263,7 @@ class LigoLWSingleEvent(SingleEvent):
 
     @property
     def psd(self):
-        return self._source._psds_for_file(self._psd_file)[self._instrument]
+        return self._source._psds_for_file(self._psd_file)[self._detector]
 
     @property
     def snr_series(self):
