@@ -72,28 +72,27 @@ int main( int argc, char *argv[] )
   lalUserVarHelpOptionSubsection = "Tolerances";
   XLALRegisterUvarMember(
     param_tol_mism, REAL8, 'm', OPTIONAL,
-    "Allowed tolerance on mismatch between parameter-space points. "
-    "Must be strictly positive. "
+    "Allowed tolerance on mismatch between parameter-space points (must be >=0). "
     );
   XLALRegisterUvarMember(
     result_tol_L1, REAL8, 'r', OPTIONAL,
     "Allowed tolerance on relative error between mismatch between result vectors using L1 (sum of absolutes) norm. "
-    "Must be within range (0,2]. "
+    "Must be within range [0,2]. "
     );
   XLALRegisterUvarMember(
     result_tol_L2, REAL8, 's', OPTIONAL,
     "Allowed tolerance on relative error between mismatch between result vectors using L2 (root of sum of squares) norm. "
-    "Must be within range (0,2]. "
+    "Must be within range [0,2]. "
     );
   XLALRegisterUvarMember(
     result_tol_angle, REAL8, 'a', OPTIONAL,
     "Allowed tolerance on angle between result vectors, in radians. "
-    "Must be within range (0,PI]. "
+    "Must be within range [0,PI]. "
     );
   XLALRegisterUvarMember(
     result_tol_at_max, REAL8, 'x', OPTIONAL,
     "Allowed tolerance on relative errors at maximum component of each result vector. "
-    "Must be within range (0,2]. "
+    "Must be within range [0,2]. "
     );
 
   // Parse user input
@@ -110,20 +109,20 @@ int main( int argc, char *argv[] )
   // - Tolerances
   //
   XLALUserVarCheck( &should_exit,
-                    0 < uvar->param_tol_mism,
-                    UVAR_STR( mismatch_tol ) " must be strictly positive" );
+                    0 <= uvar->param_tol_mism,
+                    UVAR_STR( mismatch_tol ) " must be >=0" );
   XLALUserVarCheck( &should_exit,
-                    0 < uvar->result_tol_L1 && uvar->result_tol_L1 <= 2,
-                    UVAR_STR( result_tol_L1 ) " must be within range (0,2]" );
+                    0 <= uvar->result_tol_L1 && uvar->result_tol_L1 <= 2,
+                    UVAR_STR( result_tol_L1 ) " must be within range [0,2]" );
   XLALUserVarCheck( &should_exit,
-                    0 < uvar->result_tol_L2 && uvar->result_tol_L2 <= 2,
-                    UVAR_STR( result_tol_L2 ) " must be within range (0,2]" );
+                    0 <= uvar->result_tol_L2 && uvar->result_tol_L2 <= 2,
+                    UVAR_STR( result_tol_L2 ) " must be within range [0,2]" );
   XLALUserVarCheck( &should_exit,
-                    0 < uvar->result_tol_angle && uvar->result_tol_angle <= LAL_PI,
-                    UVAR_STR( result_tol_angle ) " must be within range (0,PI]" );
+                    0 <= uvar->result_tol_angle && uvar->result_tol_angle <= LAL_PI,
+                    UVAR_STR( result_tol_angle ) " must be within range [0,PI]" );
   XLALUserVarCheck( &should_exit,
-                    0 < uvar->result_tol_at_max && uvar->result_tol_at_max <= 2,
-                    UVAR_STR( result_tol_at_max ) " must be within range (0,2]" );
+                    0 <= uvar->result_tol_at_max && uvar->result_tol_at_max <= 2,
+                    UVAR_STR( result_tol_at_max ) " must be within range [0,2]" );
 
   // Exit if required
   if ( should_exit ) {

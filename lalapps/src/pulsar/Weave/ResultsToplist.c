@@ -264,7 +264,7 @@ int compare_templates(
   XLAL_CHECK( equal != NULL, XLAL_EINVAL );
   XLAL_CHECK( loc_str != NULL, XLAL_EINVAL );
   XLAL_CHECK( tmpl_str != NULL, XLAL_EINVAL );
-  XLAL_CHECK( param_tol_mism > 0, XLAL_EINVAL );
+  XLAL_CHECK( param_tol_mism >= 0, XLAL_EINVAL );
   XLAL_CHECK( phys_to_latt != NULL, XLAL_EFAULT );
   XLAL_CHECK( metric != NULL, XLAL_EFAULT );
   XLAL_CHECK( transf_data != NULL, XLAL_EFAULT );
@@ -621,7 +621,7 @@ int XLALWeaveResultsToplistCompare(
   // Check input
   XLAL_CHECK( equal != NULL, XLAL_EFAULT );
   XLAL_CHECK( setup != NULL, XLAL_EFAULT );
-  XLAL_CHECK( param_tol_mism > 0, XLAL_EINVAL );
+  XLAL_CHECK( param_tol_mism >= 0, XLAL_EINVAL );
   XLAL_CHECK( result_tol != NULL, XLAL_EFAULT );
   XLAL_CHECK( toplist_1 != NULL, XLAL_EFAULT );
   XLAL_CHECK( toplist_2 != NULL, XLAL_EFAULT );

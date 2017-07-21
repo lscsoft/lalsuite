@@ -312,7 +312,7 @@ int XLALWeaveOutputResultsCompare(
   // Check input
   XLAL_CHECK( equal != NULL, XLAL_EFAULT );
   XLAL_CHECK( setup != NULL, XLAL_EFAULT );
-  XLAL_CHECK( param_tol_mism > 0, XLAL_EINVAL );
+  XLAL_CHECK( param_tol_mism >= 0, XLAL_EINVAL );
   XLAL_CHECK( result_tol != NULL, XLAL_EFAULT );
   XLAL_CHECK( out_1 != NULL, XLAL_EFAULT );
   XLAL_CHECK( out_2 != NULL, XLAL_EFAULT );
