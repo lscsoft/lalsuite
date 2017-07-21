@@ -670,7 +670,9 @@ XLALCompareCOMPLEX8Vectors ( VectorComparison *result,		///< [out] return compar
   XLAL_CHECK ( x->length == y->length, XLAL_EINVAL );
 
   REAL8 x_L1 = 0, x_L2 = 0;
+  REAL8 x_L2sq = 0;
   REAL8 y_L1 = 0, y_L2 = 0;
+  REAL8 y_L2sq = 0;
   REAL8 diff_L1 = 0, diff_L2 = 0;
   COMPLEX16 scalar = 0;
 
@@ -678,15 +680,18 @@ XLALCompareCOMPLEX8Vectors ( VectorComparison *result,		///< [out] return compar
   COMPLEX8 x_atMaxAbsx = 0, y_atMaxAbsx = 0;
   COMPLEX8 x_atMaxAbsy = 0, y_atMaxAbsy = 0;
 
+
   UINT4 numSamples = x->length;
   for ( UINT4 i = 0; i < numSamples; i ++ )
     {
-      COMPLEX8 x_i = x->data[i];
-      COMPLEX8 y_i = y->data[i];
-      REAL8 xAbs_i = cabs ( x_i );
-      REAL8 yAbs_i = cabs ( y_i );
-      XLAL_CHECK ( isfinite ( xAbs_i ), XLAL_EFPINVAL, "non-finite element: x(%d) = %g + I %g\n", i, crealf(x_i), cimagf(x_i) );
-      XLAL_CHECK ( isfinite ( yAbs_i ), XLAL_EFPINVAL, "non-finite element: y(%d) = %g + I %g\n", i, crealf(y_i), cimagf(y_i) );
+      COMPLEX16 x_i = x->data[i];
+      COMPLEX16 y_i = y->data[i];
+      REAL8 xAbs2_i = x_i * conj( x_i );
+      REAL8 yAbs2_i = y_i * conj( y_i );
+      REAL8 xAbs_i  = sqrt ( xAbs2_i );
+      REAL8 yAbs_i  = sqrt ( yAbs2_i );
+      XLAL_CHECK ( isfinite ( xAbs_i ), XLAL_EFPINVAL, "non-finite element: x(%d) = %g + I %g\n", i, creal(x_i), cimag(x_i) );
+      XLAL_CHECK ( isfinite ( yAbs_i ), XLAL_EFPINVAL, "non-finite element: y(%d) = %g + I %g\n", i, creal(y_i), cimag(y_i) );
 
       REAL8 absdiff = cabs ( x_i - y_i );
       diff_L1 += absdiff;
@@ -694,8 +699,8 @@ XLALCompareCOMPLEX8Vectors ( VectorComparison *result,		///< [out] return compar
 
       x_L1 += xAbs_i;
       y_L1 += yAbs_i;
-      x_L2 += SQ(xAbs_i);
-      y_L2 += SQ(yAbs_i);
+      x_L2sq += xAbs2_i;
+      y_L2sq += yAbs2_i;
 
       scalar += x_i * conj(y_i);
 
@@ -713,15 +718,17 @@ XLALCompareCOMPLEX8Vectors ( VectorComparison *result,		///< [out] return compar
     } // for i < numSamples
 
   // complete L2 norms by taking sqrt
-  x_L2 = sqrt ( x_L2 );
-  y_L2 = sqrt ( y_L2 );
+  x_L2 = sqrt ( x_L2sq );
+  y_L2 = sqrt ( y_L2sq );
   diff_L2 = sqrt ( diff_L2 );
+  REAL8 sinAngle2 = (x_L2sq * y_L2sq - scalar * conj(scalar)) / (x_L2sq * y_L2sq);
+  REAL8 angle = asin ( sqrt( fabs(sinAngle2) ) );
 
   // compute and return comparison results
   result->relErr_L1 = diff_L1 / ( 0.5 * (x_L1 + y_L1 ) );
   result->relErr_L2 = diff_L2 / ( 0.5 * (x_L2 + y_L2 ) );
-  REAL8 cosTheta = fmin ( 1, creal ( scalar ) / (x_L2 * y_L2) );
-  result->angleV = acos ( cosTheta );
+  result->angleV = angle;
+
   result->relErr_atMaxAbsx = cRELERR ( x_atMaxAbsx, y_atMaxAbsx );
   result->relErr_atMaxAbsy = cRELERR ( x_atMaxAbsy, y_atMaxAbsy );;
 
@@ -749,7 +756,9 @@ XLALCompareREAL4Vectors ( VectorComparison *result,	///< [out] return comparison
   XLAL_CHECK ( x->length == y->length, XLAL_EINVAL );
 
   REAL8 x_L1 = 0, x_L2 = 0;
+  REAL8 x_L2sq = 0;
   REAL8 y_L1 = 0, y_L2 = 0;
+  REAL8 y_L2sq = 0;
   REAL8 diff_L1 = 0, diff_L2 = 0;
   REAL8 scalar = 0;
 
@@ -760,12 +769,14 @@ XLALCompareREAL4Vectors ( VectorComparison *result,	///< [out] return comparison
   UINT4 numSamples = x->length;
   for ( UINT4 i = 0; i < numSamples; i ++ )
     {
-      REAL4 x_i = x->data[i];
-      REAL4 y_i = y->data[i];
+      REAL8 x_i = x->data[i];
+      REAL8 y_i = y->data[i];
       XLAL_CHECK ( isfinite ( x_i ), XLAL_EFPINVAL, "non-finite element: x(%d) = %g\n", i, x_i );
       XLAL_CHECK ( isfinite ( y_i ), XLAL_EFPINVAL, "non-finite element: y(%d) = %g\n", i, y_i );
-      REAL4 xAbs_i = fabs ( x_i );
-      REAL4 yAbs_i = fabs ( y_i );
+      REAL8 xAbs_i = fabs ( x_i );
+      REAL8 yAbs_i = fabs ( y_i );
+      REAL8 xAbs2_i = SQ( x_i );
+      REAL8 yAbs2_i = SQ( y_i );
 
       REAL8 absdiff = fabs ( x_i - y_i );
       diff_L1 += absdiff;
@@ -773,8 +784,8 @@ XLALCompareREAL4Vectors ( VectorComparison *result,	///< [out] return comparison
 
       x_L1 += xAbs_i;
       y_L1 += yAbs_i;
-      x_L2 += SQ(xAbs_i);
-      y_L2 += SQ(yAbs_i);
+      x_L2sq += xAbs2_i;
+      y_L2sq += yAbs2_i;
 
       scalar += x_i * y_i;
 
@@ -792,15 +803,15 @@ XLALCompareREAL4Vectors ( VectorComparison *result,	///< [out] return comparison
     } // for i < numSamples
 
   // complete L2 norms by taking sqrt
-  x_L2 = sqrt ( x_L2 );
-  y_L2 = sqrt ( y_L2 );
+  x_L2 = sqrt ( x_L2sq );
+  y_L2 = sqrt ( y_L2sq );
   diff_L2 = sqrt ( diff_L2 );
 
   // compute and return comparison results
   result->relErr_L1 = diff_L1 / ( 0.5 * (x_L1 + y_L1 ) );
   result->relErr_L2 = diff_L2 / ( 0.5 * (x_L2 + y_L2 ) );
-  REAL8 cosTheta = fmin ( 1, scalar / (x_L2 * y_L2) );
-  result->angleV = acos ( cosTheta );
+  REAL8 sinAngle2 = (x_L2sq * y_L2sq - SQ(scalar) ) / ( x_L2sq * y_L2sq );
+  result->angleV = asin ( sqrt ( fabs ( sinAngle2 ) ) );
   result->relErr_atMaxAbsx = fRELERR ( x_atMaxAbsx, y_atMaxAbsx );
   result->relErr_atMaxAbsy = fRELERR ( x_atMaxAbsy, y_atMaxAbsy );;
 
