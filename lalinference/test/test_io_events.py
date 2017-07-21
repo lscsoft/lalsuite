@@ -11,6 +11,7 @@ import h5py
 import numpy as np
 import errno
 import gzip
+import re
 from lalinference.io import events
 
 
@@ -28,6 +29,10 @@ class MockGraceDb(object):
             if e.errno != errno.ENOENT:
                 raise
             return gzip.GzipFile(path + '.gz', 'rb')
+
+
+def raises(expected_exception, msg):
+    return pytest.raises(expected_exception, match='^' + re.escape(msg) + '$')
 
 
 def test_ligolw():
@@ -129,6 +134,45 @@ def test_gracedb():
                 'spin2y': 0.0,
                 'spin2z': -0.53029484}
 
+
+def test_detector_disabled():
+    """Test reading from event sources with certain detectors disabled."""
+    client = MockGraceDb()
+    graceids = ('G211117', 'G197392')
+    base_source = events.gracedb.open(graceids, client)
+
+    source = events.detector_disabled.open(base_source, ['H1'])
+    assert len(source) == 2
+    for graceid, (event_id, event) in zip(graceids, source.items()):
+        assert event_id == graceid
+        assert len(event.singles) == 1
+        assert event.singles[0].instrument == 'L1'
+
+    # Now test that exceptions are raised when they are called for.
+    expected_message = ('Disabling detectors {H1, L1} would have no effect on '
+                        'this event with detectors {H1 L1}')
+    nonraising_source = events.detector_disabled.open(
+        base_source, ['H1, L1'], raises=False)
+    raising_source = events.detector_disabled.open(
+        base_source, ['H1, L1'])
+    for event in nonraising_source.values():
+        event.singles
+    for event in raising_source.values():
+        with raises(ValueError, expected_message):
+            event.singles
+
+    # Now test that exceptions are raised when they are called for.
+    expected_message = ('Disabling detectors {V1} would have no effect on '
+                        'this event with detectors {H1 L1}')
+    nonraising_source = events.detector_disabled.open(
+        base_source, ['V1'], raises=False)
+    raising_source = events.detector_disabled.open(
+        base_source, ['V1'])
+    for event in nonraising_source.values():
+        event.singles
+    for event in raising_source.values():
+        with raises(ValueError, expected_message):
+            event.singles
 
 def test_hdf(tmpdir):
     """Test reading events from HDF5 files."""
