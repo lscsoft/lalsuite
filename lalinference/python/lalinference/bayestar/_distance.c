@@ -29,6 +29,7 @@
 #pragma GCC diagnostic pop
 #include <lal/bayestar_distance.h>
 #include "six.h"
+#include "omp_interruptible.h"
 
 
 static void conditional_pdf_loop(
@@ -165,9 +166,12 @@ static void volume_render_loop(
 
     /* FIXME: Check that array arguments are stored contiguously */
 
+    OMP_BEGIN_INTERRUPTIBLE
     #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
     {
+        if (OMP_WAS_INTERRUPTED)
+            OMP_EXIT_LOOP_EARLY
         /* FIXME: args must be void ** to avoid alignment warnings */
         #pragma GCC diagnostic push
         #pragma GCC diagnostic ignored "-Wcast-align"
@@ -186,6 +190,7 @@ static void volume_render_loop(
              (double *)   &args[10][i * steps[10]]);
         #pragma GCC diagnostic pop
     }
+    OMP_END_INTERRUPTIBLE
 
     gsl_set_error_handler(old_handler);
 }
