@@ -19,7 +19,11 @@ Modify events by artificially disabling specified detectors.
 """
 from .base import *
 
-__all__ = ('DetectorDisabledEventSource',)
+__all__ = ('DetectorDisabledEventSource', 'DetectorDisabledError')
+
+
+class DetectorDisabledError(ValueError):
+    pass
 
 
 class DetectorDisabledEventSource(EventSource):
@@ -51,13 +55,13 @@ class DetectorDisabledEvent(Event):
         if self.source.raises:
             detectors = {s.detector for s in self.base_event.singles}
             if not detectors & disabled_detectors:
-                raise ValueError(
+                raise DetectorDisabledError(
                     'Disabling detectors {{{}}} would have no effect on this '
                     'event with detectors {{{}}}'.format(
                         ' '.join(disabled_detectors),
                         ' '.join(detectors)))
             if not detectors - disabled_detectors:
-                raise ValueError(
+                raise DetectorDisabledError(
                     'Disabling detectors {{{}}} would exclude all data for '
                     'this event with detectors {{{}}}'.format(
                         ' '.join(disabled_detectors),
