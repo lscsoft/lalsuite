@@ -158,7 +158,7 @@ def test_detector_disabled():
     for event in nonraising_source.values():
         event.singles
     for event in raising_source.values():
-        with raises(ValueError, expected_message):
+        with raises(events.DetectorDisabledError, expected_message):
             event.singles
 
     # Now test that exceptions are raised when they are called for.
@@ -171,7 +171,7 @@ def test_detector_disabled():
     for event in nonraising_source.values():
         event.singles
     for event in raising_source.values():
-        with raises(ValueError, expected_message):
+        with raises(events.DetectorDisabledError, expected_message):
             event.singles
 
 def test_hdf(tmpdir):
