@@ -63,6 +63,8 @@ python/laldetchar-idq-summary
 python/laldetchar-idq-svm-evaluate
 python/laldetchar-idq-svm-train
 python/laldetchar-idq-train
+python/laldetchar-ovl-evaluate
+python/laldetchar-ovl-train
 python/laldetchar-segments-from-data
 python/laldetchar/__init__.py
 python/laldetchar/_laldetchar*
