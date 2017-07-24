@@ -1,5 +1,7 @@
 # Perform a non-interpolating search, and compare F-statistics to reference results
 
+export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE
+
 echo "=== Create search setup with 3 segments spanning ~3.6 days ==="
 set -x
 ${builddir}/lalapps_WeaveSetup --ref-time=1122334444 --first-segment=1122332211/88000 --segment-count=3 --segment-gap=25000 --detectors=H1,L1 --output-file=WeaveSetup.fits
@@ -36,7 +38,7 @@ echo "=== Perform non-interpolating search ==="
 set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
     --toplists=mean2F --toplist-limit=2321 --per-detector --per-segment --misc-info \
-    --setup-file=WeaveSetup.fits --sft-files='*.sft' --Fstat-method=DemodBest \
+    --setup-file=WeaveSetup.fits --sft-files='*.sft' \
     --alpha=2.3/0.9 --delta=-1.2/2.3 --freq=45.5~1e-4 --f1dot=-1e-9,0 --semi-max-mismatch=7 --interpolation=no
 set +x
 echo

@@ -1,5 +1,7 @@
 # Perform an interpolating search without/with frequency partitions, and check for consistent results
 
+export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE
+
 echo "=== Create search setup with 3 segments ==="
 set -x
 ${builddir}/lalapps_WeaveSetup --first-segment=1122332211/90000 --segment-count=3 --detectors=H1,L1 --output-file=WeaveSetup.fits

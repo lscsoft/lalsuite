@@ -1,5 +1,7 @@
 # Perform a fully-coherent search of a single segment, and compare F-statistics to reference results
 
+export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE
+
 echo "=== Create single-segment search setup ==="
 set -x
 ${builddir}/lalapps_WeaveSetup --first-segment=1122332211/90000 --detectors=H1,L1 --output-file=WeaveSetup.fits
@@ -36,7 +38,7 @@ echo "=== Perform fully-coherent search ==="
 set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
     --toplists=mean2F --toplist-limit=0 --per-detector --misc-info \
-    --setup-file=WeaveSetup.fits --sft-files='*.sft' --Fstat-method=DemodBest \
+    --setup-file=WeaveSetup.fits --sft-files='*.sft' \
     --freq=55.5~1e-4 --f1dot=-2e-9,0 --semi-max-mismatch=9
 set +x
 echo
