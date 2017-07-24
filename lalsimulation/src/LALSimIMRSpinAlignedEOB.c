@@ -62,6 +62,124 @@
 #define UNUSED
 #endif
 
+/**< Generic form of universal relation */
+REAL8 XLALSimUniversalRelation( REAL8 x, REAL8 coeffs[] ) {
+    return coeffs[0] + coeffs[1] * x + coeffs[2] * x * x + coeffs[3] * x * x * x + coeffs[4] * x *x * x * x;
+}
+
+/**< Eq. (60) with coeffs from 1st row of Table I of  https://arxiv.org/pdf/1311.0872.pdf */
+/*    Gives the dimensionless l=3 tidal deformability: lambda3bar = 2/15 k3 C^7
+      where k3 is the l=3 Love number and C is the compactness. It is a
+      function the dimensionless l=2 tidal deformability: lambda2bar = 2/3 k2 C^5.
+      Compared to NR for 1 <= lambda2bar <= 3000
+ */
+UNUSED REAL8 XLALSimUniversalRelationlambda3TidalVSlambda2Tidal(
+                                        REAL8 lambda2bar /**< l=2 dimensionless tidal defomability */
+)
+{
+    REAL8 coeffs[] = {-1.15, 1.18, 2.51e-2, -1.31e-3, 2.52e-5};
+    REAL8 lnx;
+    if ( lambda2bar < 0. ) {
+        XLAL_ERROR (XLAL_EFUNC);
+    }
+    else if ( 0. <= lambda2bar && lambda2bar  < 0.01 ) {
+        /* This is a function fitted to the universal relation in the range
+         0.00001 <= lambda2hat <= 0.01 with the requirements that it goes to 0 at
+         lambda2hat=0 and is exactly equal to the universal relation at lambda2hat=0.01 */
+        return 0.4406491912035266*lambda2bar - 34.63232296075433*lambda2bar*lambda2bar
+        + 1762.112913125107*lambda2bar*lambda2bar*lambda2bar;
+    }
+    else {
+        lnx = log( lambda2bar );
+    }
+    REAL8 lny = XLALSimUniversalRelation( lnx, coeffs );
+    return exp(lny);
+}
+
+/**< Eq. (3.5) with coeffs from 1st column of Table I of https://arxiv.org/pdf/1408.3789.pdf */
+/*    Gives the l=2 f-mode frequency M_{NS}omega_{02}
+      as a function the dimensionless l=2 tidal deformability: lambda2bar = 2/3 k2 C^5
+      where k2 is the l=2 Love number and C is the compactness.
+      Compared to NR for 0 <= log(lambda2bar) <= 9, that is
+      1 <= lambda2bar <= 8100
+ */
+UNUSED REAL8 XLALSimUniversalRelationomega02TidalVSlambda2Tidal(
+                                                                REAL8 lambda2bar /**< l=2 dimensionless tidal defomability */
+)
+{
+    REAL8 coeffs[] = {1.82e-1, -6.836e-3, -4.196e-3, 5.215e-4, -1.857e-5};
+    REAL8 lnx;
+    if ( lambda2bar < 0. ) {
+        XLAL_ERROR (XLAL_EFUNC);
+    }
+    else if ( 0. <= lambda2bar && lambda2bar < 1. ) {
+        lnx = 0.;
+    }
+    else if ( 1. <= lambda2bar && lambda2bar < exp(9.) ) {
+        lnx = log( lambda2bar );
+    }
+    else {
+        lnx = 9.;
+    }
+    return XLALSimUniversalRelation( lnx, coeffs );
+}
+
+/**< Eq. (3.5) with coeffs from 2nd column of Table I of https://arxiv.org/pdf/1408.3789.pdf */
+/*    Gives the l=3 f-mode frequency M_{NS}omega_{03}
+      as a function the dimensionless l=3 tidal deformability: lambda3bar = 2/15 k3 C^5
+      where k3 is the l=3 Love number and C is the compactness.
+      Compared to NR for -1 <= log(lambda3bar) <= 10, that is
+      0.37 <= lambda3bar <= 20000
+ */
+UNUSED REAL8 XLALSimUniversalRelationomega03TidalVSlambda3Tidal(
+                                                           REAL8 lambda3bar /**< l=3 dimensionless tidal defomability */
+)
+{
+    REAL8 coeffs[] = {2.245e-1, -1.5e-2, -1.412e-3, 1.832e-4, -5.561e-6};
+    REAL8 lnx;
+    if ( lambda3bar < 0. ) {
+        XLAL_ERROR (XLAL_EFUNC);
+    }
+    else if ( 0. <= lambda3bar && lambda3bar < exp(-1.) ) {
+        lnx = -1.;
+    }
+    else if ( exp(-1.) <= lambda3bar && lambda3bar < exp(10.) ) {
+        lnx = log( lambda3bar );
+    }
+    else {
+        lnx = 10.;
+    }
+    return XLALSimUniversalRelation( lnx, coeffs );
+}
+
+/**
+ * NR fit to the geometric GW frequency M_{total}omega_{22} of a BNS merger,
+ * defined by the time when the (2,2) amplitude peaks
+ * See Eq.(2) in https://arxiv.org/pdf/1504.01764.pdf with coefficients
+ * given by the 3rd row of Table II therein. Compared to NR for 0 <= kappa2T <= 500
+ */
+static UNUSED REAL8 XLALSimNSNSMergerFreq(
+                                       TidalEOBParams *tidal1, /**< Tidal parameters of body 1 */
+                                       TidalEOBParams *tidal2  /**< Tidal parameters of body 2 */
+)
+{
+    REAL8 X1 = tidal1->mByM;
+    REAL8 X2 = tidal2->mByM;
+    REAL8 lambda1 = tidal1->lambda2Tidal; // Dimensionless quadrupolar tidal deformability normalized to M^5
+    REAL8 lambda2 = tidal2->lambda2Tidal; // Dimensionless quadrupolar tidal deformability normalized to M^5
+    REAL8 kappa2T = 1.5*(X2/X1*lambda1 + X1/X2*lambda2);
+//    printf("kappa2T, freq %.16e %.16e\n", kappa2T, 0.3596*(1. + 0.024384*kappa2T - 0.000017167*kappa2T*kappa2T)/(1. + 0.068865*kappa2T));
+    if ( kappa2T < 0. ) {
+        XLAL_ERROR (XLAL_EFUNC);
+    }
+    else {
+        if ( kappa2T > 500. ) {
+            kappa2T = 500.;
+        }
+        return 0.3596*(1. + 0.024384*kappa2T - 0.000017167*kappa2T*kappa2T)/(1. + 0.068865*kappa2T);
+    }
+}
+
 static int UNUSED
 XLALEOBSpinStopCondition (double UNUSED t,/**<< UNUSED */
 			  const double values[],  /**<< Dynamical variables */
@@ -94,7 +212,7 @@ XLALEOBSpinStopCondition (double UNUSED t,/**<< UNUSED */
 }
 
 
-/*
+/**
  * Stopping condition for the regular resolution EOB orbital evolution
  * -- stop when reaching max orbital frequency in strong field.
  * At each test,
@@ -116,9 +234,9 @@ XLALEOBSpinAlignedStopCondition (double UNUSED t, /**< UNUSED */
   r = values[0];
   omega = dvalues[1];
 
-  //printf("function 1: r = %.16e, omega = %.16e, pr = %.16e, dpr = %.16e, t = %.16e \n",values[0],dvalues[1],values[2],dvalues[2],t);
+//  printf("function 1: r = %.16e, omega = %.16e, pr = %.16e, dpr = %.16e, t = %.16e \n",values[0],dvalues[1],values[2],dvalues[2],t);
   //if ( omega < params->eobParams->omega )
-  if (r < 6. && (omega < params->eobParams->omega || dvalues[2] >= 0))
+  if (r < 6 && (omega < params->eobParams->omega || dvalues[2] >= 0))
     {
       params->eobParams->omegaPeaked = 0;
       return 1;
@@ -152,8 +270,7 @@ XLALSpinAlignedHiSRStopCondition (double UNUSED t, /**< UNUSED */
 }
 
 /**
- * This function defines the stopping criteria for the high-sample-rate
- * portion of the EOB trajectory for SEOBNRv4
+ * This function defines the stopping criteria for the tidal EOB model
  * Note that here
  * values[0] = r
  * values[1] = phi
@@ -165,7 +282,7 @@ XLALSpinAlignedHiSRStopCondition (double UNUSED t, /**< UNUSED */
  * dvalues[3] = dpphi/dt = omega
  */
 static int
-XLALSpinAlignedHiSRStopConditionV4 (double UNUSED t, /**< UNUSED */
+XLALSpinAlignedNSNSStopCondition (double UNUSED t, /**< UNUSED */
 				    const double UNUSED values[],
 							       /**< dynamical variable values */
 				    double dvalues[],	/**< dynamical variable time derivative values */
@@ -175,26 +292,83 @@ XLALSpinAlignedHiSRStopConditionV4 (double UNUSED t, /**< UNUSED */
   REAL8 omega, r;
   UINT4 counter;
   SpinEOBParams *params = (SpinEOBParams *) funcParams;
+  TidalEOBParams *tidal1 = params->seobCoeffs->tidal1;
+  TidalEOBParams *tidal2 = params->seobCoeffs->tidal2;
+  REAL8 omegaMerger = XLALSimNSNSMergerFreq( tidal1, tidal2 );
+  REAL8 rMerger = pow ( omegaMerger/2., -2./3. );
+//  printf("omegaMerger %.16e\n", omegaMerger);
   r = values[0];
   omega = dvalues[1];
   counter = params->eobParams->omegaPeaked;
-  //printf("function 2: r = %.16e, omega = %.16e, pr = %.16e, dpr = %.16e, count = %.16u \n",values[0],dvalues[1],values[2],dvalues[2],counter);
-  if (r < 6. && omega < params->eobParams->omega)
+//    printf("function NSNS: r = %.16e, omega = %.16e, pr = %.16e, dpr = %.16e, count = %.16u \n",values[0],dvalues[1],values[2],dvalues[2],counter);
+//  printf("%.16e %.16e %.16e %.16e\n",values[0],dvalues[1],values[2],dvalues[2]);
+  if (r < 2.*rMerger && omega < params->eobParams->omega)
     {
-//        printf("Peak detection %.16e %.16e\n", omega, params->eobParams->omega);
+      if (debugOutput) printf("Peak detection %.16e %.16e\n", omega, params->eobParams->omega);
       params->eobParams->omegaPeaked = counter + 1;
     }
-  if (dvalues[2] >= 0. || params->eobParams->omegaPeaked == 5
-      || isnan (dvalues[3]) || isnan (dvalues[2]) || isnan (dvalues[1])
-      || isnan (dvalues[0]))
-    {
-//        if ( dvalues[2] >= 0 ) printf("dvalues[2] >= 0\n");
-//        if ( params->eobParams->omegaPeaked == 5 ) printf("params->eobParams->omegaPeaked == 5\n");
-//        if ( isnan( dvalues[3] ) || isnan (dvalues[2]) || isnan (dvalues[1]) || isnan (dvalues[0]) ) printf("%.16e %.16e %.16e %.16e\n", dvalues[0], dvalues[1], dvalues[2], dvalues[3]);
+  if ( omega >= omegaMerger/2. ) {
+      if (debugOutput) printf("Stop at Tim's freq at r=%.16e\n", r);
       return 1;
+  }
+   if ( r < 2.*rMerger && values[2] >= 0 ) {
+        if (debugOutput) printf("Stop at pr >= 0 at r=%.16e\n", r);
+        return 1;
+   }
+    if ( r < 2.*rMerger && dvalues[0] >= 0 ) {
+        if (debugOutput) printf("Stop at dr/dt >= 0 at r=%.16e\n", r);
+        return 1;
+    }
+   if ( r < 2.*rMerger && dvalues[2] >= 0 ) {
+       params->eobParams->omegaPeaked = counter + 1;
+       if (debugOutput) printf("Stop at dpr/dt >= 0 at r=%.16e\n", r);
+       // return 1;
+  }
+  if (r < 2.*rMerger && params->eobParams->omegaPeaked == 3 )
+    {
+     params->eobParams->omegaPeaked = 0;
+     if (debugOutput) printf("params->eobParams->omegaPeaked == 3 at r=%.16e\n", r);
+     return 1;
+  }
+    if (  isnan (dvalues[3]) || isnan (dvalues[2]) || isnan (dvalues[1]) || isnan (dvalues[0]) ) {
+        if (debugOutput) printf("Stop at nan's at r=%.16e\n", r);
+        return 1;
     }
   params->eobParams->omega = omega;
   return GSL_SUCCESS;
+}
+
+static int
+XLALSpinAlignedHiSRStopConditionV4 (double UNUSED t, /**< UNUSED */
+                                    const double UNUSED values[],
+                                    /**< dynamical variable values */
+                                    double dvalues[],	/**< dynamical variable time derivative values */
+                                    void UNUSED * funcParams   /**< physical parameters */
+)
+{
+    REAL8 omega, r;
+    UINT4 counter;
+    SpinEOBParams *params = (SpinEOBParams *) funcParams;
+    r = values[0];
+    omega = dvalues[1];
+    counter = params->eobParams->omegaPeaked;
+    //printf("function 2: r = %.16e, omega = %.16e, pr = %.16e, dpr = %.16e, count = %.16u \n",values[0],dvalues[1],values[2],dvalues[2],counter);
+    if (r < 6. && omega < params->eobParams->omega)
+    {
+        //        printf("Peak detection %.16e %.16e\n", omega, params->eobParams->omega);
+        params->eobParams->omegaPeaked = counter + 1;
+    }
+    if (dvalues[2] >= 0. || params->eobParams->omegaPeaked == 5
+        || isnan (dvalues[3]) || isnan (dvalues[2]) || isnan (dvalues[1])
+        || isnan (dvalues[0]))
+    {
+        //        if ( dvalues[2] >= 0 ) printf("dvalues[2] >= 0\n");
+        //        if ( params->eobParams->omegaPeaked == 5 ) printf("params->eobParams->omegaPeaked == 5\n");
+        //        if ( isnan( dvalues[3] ) || isnan (dvalues[2]) || isnan (dvalues[1]) || isnan (dvalues[0]) ) printf("%.16e %.16e %.16e %.16e\n", dvalues[0], dvalues[1], dvalues[2], dvalues[3]);
+        return 1;
+    }
+    params->eobParams->omega = omega;
+    return GSL_SUCCESS;
 }
 
 /**
@@ -313,6 +487,8 @@ XLALSimIMRSpinAlignedEOBPeakFrequency (REAL8 m1SI,
   return retFreq;
 }
 
+
+
 int
 XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +-polarization waveform */
 				  REAL8TimeSeries ** hcross,	     /**<< OUTPUT, x-polarization waveform */
@@ -325,32 +501,78 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
 				  const REAL8 inc,		     /**<< inclination angle */
 				  const REAL8 spin1z,		     /**<< z-component of spin-1, dimensionless */
 				  const REAL8 spin2z,		      /**<< z-component of spin-2, dimensionless */
-				  UINT4 SpinAlignedEOBversion		      /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4 */
+				  UINT4 SpinAlignedEOBversion,		      /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4 */
+                  LALDict *LALParams /**<< Dictionary of additional wf parameters, including tidal and nonGR */
   )
 {
   int ret;
-  REAL8 comp1 = 0.;
-  REAL8 k2Tidal1 = 0.;
-  REAL8 omega02Tidal1 = 0.;
-  REAL8 k3Tidal1 = 0.;
-  REAL8 omega03Tidal1 = 0.;
-  REAL8 comp2 = 0.;
-  REAL8 k2Tidal2 = 0.;
-  REAL8 omega02Tidal2 = 0.;
-  REAL8 k3Tidal2 = 0.;
-  REAL8 omega03Tidal2 = 0.;
+
+  REAL8 lambda2Tidal1 = 0;
+  REAL8 omega02Tidal1 = 0;
+  REAL8 lambda3Tidal1 = 0;
+  REAL8 omega03Tidal1 = 0;
+  REAL8 lambda2Tidal2 = 0;
+  REAL8 omega02Tidal2 = 0;
+  REAL8 lambda3Tidal2 = 0;
+  REAL8 omega03Tidal2 = 0;
+
+  lambda2Tidal1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALParams);
+  lambda2Tidal2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALParams);
+  if ( lambda2Tidal1 != 0. ) {
+      omega02Tidal1 = XLALSimInspiralWaveformParamsLookupTidalQuadrupolarFMode1(LALParams);
+      if ( omega02Tidal1 == 0. ) {
+          XLALPrintError ("XLAL Error - %s: Tidal parameters are not set correctly! Always provide non-zero f-mode frequency when lambda2 is non-zero!\n", __func__);
+          XLAL_ERROR (XLAL_EDOM);
+      }
+      lambda3Tidal1 = XLALSimInspiralWaveformParamsLookupTidalOctupolarLambda1(LALParams);
+      omega03Tidal1 = XLALSimInspiralWaveformParamsLookupTidalOctupolarFMode1(LALParams);
+      if ( lambda3Tidal1 != 0. && omega03Tidal1 == 0. ) {
+          XLALPrintError ("XLAL Error - %s: Tidal parameters are not set correctly! Always provide non-zero octupolar f-mode frequency when lambda3 is non-zero!\n", __func__);
+          XLAL_ERROR (XLAL_EDOM);
+      }
+  }
+  if ( lambda2Tidal2 != 0. ) {
+      omega02Tidal2 = XLALSimInspiralWaveformParamsLookupTidalQuadrupolarFMode2(LALParams);
+      if ( omega02Tidal2 == 0. ) {
+          XLALPrintError ("XLAL Error - %s: Tidal parameters are not set correctly! Always provide non-zero  f-mode frequency when lambda2 is non-zero!\n", __func__);
+          XLAL_ERROR (XLAL_EDOM);
+      }
+      lambda3Tidal2 = XLALSimInspiralWaveformParamsLookupTidalOctupolarLambda2(LALParams);
+      omega03Tidal2 = XLALSimInspiralWaveformParamsLookupTidalOctupolarFMode2(LALParams);
+      if ( lambda3Tidal2 != 0. && omega03Tidal2 == 0. ) {
+          XLALPrintError ("XLAL Error - %s: Tidal parameters are not set correctly! Always provide non-zero octupolar f-mode frequency when lambda3 is non-zero!\n", __func__);
+          XLAL_ERROR (XLAL_EDOM);
+      }
+    }
+
+
   REAL8Vector   *tVec = NULL;
   REAL8Vector   *rVec = NULL;
   REAL8Vector   *phiVec = NULL;
   REAL8Vector   *prVec = NULL;
   REAL8Vector   *pPhiVec = NULL;
-  ret =
-    XLALSimIMRSpinAlignedEOBWaveformAll (hplus, hcross, tVec, rVec, phiVec, prVec, pPhiVec,
-                     phiC, deltaT, m1SI, m2SI, fMin, r, inc, spin1z, spin2z, SpinAlignedEOBversion,
-					 comp1, comp2, k2Tidal1, k2Tidal2,
-					 omega02Tidal1, omega02Tidal2,
-					 k3Tidal1, k3Tidal2, omega03Tidal1, omega03Tidal2);
-    
+  REAL8Vector *nqcCoeffsInput = XLALCreateREAL8Vector(10);
+  INT4 nqcFlag = 0;
+
+
+  if ( SpinAlignedEOBversion == 4 && ( lambda2Tidal1 != 0. || lambda2Tidal2 != 0 ) ) {
+      nqcFlag = 1;
+      REAL8 m1BH, m2BH;
+      m1BH = m1SI / (m1SI + m2SI) * 50. * LAL_MSUN_SI;
+      m2BH = m2SI / (m1SI + m2SI) * 50. * LAL_MSUN_SI;
+      ret = XLALSimIMRSpinAlignedEOBWaveformAll (hplus, hcross, tVec, rVec, phiVec, prVec, pPhiVec,
+                     phiC, deltaT, m1BH, m2BH, 2*pow(10.,-1.5)/(2.*LAL_PI)/((m1BH + m2BH)*LAL_MTSUN_SI/LAL_MSUN_SI), r, inc, spin1z, spin2z, 400,
+					 0, 0, 0, 0, 0, 0, 0, 0, nqcCoeffsInput, nqcFlag);
+      nqcFlag = 2;
+  }
+  ret = XLALSimIMRSpinAlignedEOBWaveformAll (hplus, hcross, tVec, rVec, phiVec, prVec, pPhiVec,
+                                           phiC, deltaT, m1SI, m2SI, fMin, r, inc, spin1z, spin2z, SpinAlignedEOBversion,
+                                           lambda2Tidal1, lambda2Tidal2,
+                                           omega02Tidal1, omega02Tidal2,
+                                           lambda3Tidal1, lambda3Tidal2,
+                                           omega03Tidal1, omega03Tidal2,
+                                           nqcCoeffsInput, nqcFlag);
+
   if( tVec )
         XLALDestroyREAL8Vector( tVec );
   if( rVec )
@@ -361,6 +583,8 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
         XLALDestroyREAL8Vector( prVec );
   if( pPhiVec )
         XLALDestroyREAL8Vector( pPhiVec );
+  if ( nqcCoeffsInput )
+       XLALDestroyREAL8Vector( nqcCoeffsInput );
   return ret;
 }
 
@@ -419,31 +643,48 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 				      /**<< z-component of spin-2, dimensionless */
                      UINT4 SpinAlignedEOBversion,
                      /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4 */
-				     const REAL8 comp1,
-                     /**<< compactness of body 1 (for NS) */
-				     const REAL8 comp2,
-                     /**<< compactness of body 2 (for NS) */
-				     const REAL8 k2Tidal1,
-                     /**<< adiabatic quadrupole Love number for body 1 (for NS) */
-				     const REAL8 k2Tidal2,
-                     /**<< adiabatic quadrupole Love number for body 2 (for NS) */
+				     const REAL8 lambda2Tidal1,
+                     /**<< dimensionless adiabatic quadrupole tidal deformability for body 1 (2/3 k2/C^5) */
+				     const REAL8 lambda2Tidal2,
+                     /**<< dimensionless adiabatic quadrupole tidal deformability for body 2 (2/3 k2/C^5) */
 				     const REAL8 omega02Tidal1,
-                     /**<< quadrupole f-mode freq for body 1 (for NS) */
+                     /**<< quadrupole f-mode angular freq for body 1 m_1*omega_{02,1}*/
 				     const REAL8 omega02Tidal2,
-                     /**<< quadrupole f-mode freq for body 2 (for NS) */
-				     const REAL8 k3Tidal1,
-                     /**<< adiabatic octupole Love number for body 1 (for NS) */
-				     const REAL8 k3Tidal2,
-                     /**<< adiabatic octupole Love number for body 2 (for NS) */
+                      /**<< quadrupole f-mode angular freq for body 2 m_2*omega_{02,2}*/
+				     const REAL8 lambda3Tidal1,
+                     /**<< dimensionless adiabatic octupole tidal deformability for body 1 (2/15 k3/C^7) */
+				     const REAL8 lambda3Tidal2,
+                     /**<< dimensionless adiabatic octupole tidal deformability for body 2 (2/15 k3/C^7) */
 				     const REAL8 omega03Tidal1,
-                     /**<< octupole f-mode freq for body 1 (for NS) */
-				     const REAL8 omega03Tidal2
-                     /**<< octupole f-mode freq for body 2 (for NS) */
+                     /**<< octupole f-mode angular freq for body 1 m_1*omega_{03,1}*/
+				     const REAL8 omega03Tidal2,
+                     /**<< octupole f-mode angular freq for body 2 m_2*omega_{03,2}*/
+                    REAL8Vector *nqcCoeffsInput,
+                     /**<< Input NQC coeffs */
+                    const INT4 nqcFlag
+                     /**<< Flag to tell the code to use the NQC coeffs input thorugh nqcCoeffsInput */
   )
 {
   INT4 use_tidal = 0;
-  if (k2Tidal1 != 0. || k2Tidal2 != 0.)
+  if ( (lambda3Tidal1 != 0. && lambda2Tidal1 == 0.) || (lambda3Tidal2 != 0. && lambda2Tidal2 == 0.) ) {
+      XLALPrintError ("XLAL Error - %s: Tidal parameters are not set correctly! You must have a non-zero lambda2 if you provide a non-zero lambda3!\n",
+                      __func__);
+      XLAL_ERROR (XLAL_EDOM);
+  }
+  if (lambda2Tidal1 != 0. || lambda2Tidal2 != 0.)
     {
+        if ( (lambda2Tidal1 != 0. && omega02Tidal1 == 0.)
+            || (lambda2Tidal2 != 0. && omega02Tidal2 == 0.) ) {
+            XLALPrintError ("XLAL Error - %s: Tidal parameters are not set correctly! Always provide non-zero compactness and f-mode frequency when lambda2 is non-zero!\n",
+                 __func__);
+            XLAL_ERROR (XLAL_EDOM);
+        }
+        if ( (lambda3Tidal1 != 0. && omega03Tidal1 == 0.)
+            || (lambda3Tidal2 != 0. && omega03Tidal2 == 0.) ) {
+            XLALPrintError ("XLAL Error - %s: Tidal parameters are not set correctly! Always provide non-zero compactness and f-mode frequency when lambda3 is non-zero!\n",
+                            __func__);
+            XLAL_ERROR (XLAL_EDOM);
+        }
       use_tidal = 1;
     }
 
@@ -555,7 +796,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   REAL8 cartPosData[3], cartMomData[3];
 
   /* Signal mode */
-  COMPLEX16 hLM;
+  COMPLEX16 hLM, hT;
   REAL8Vector *sigReVec = NULL, *sigImVec = NULL;
 
   /* Non-quasicircular correction */
@@ -739,13 +980,13 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
     }
 
   /* If Nyquist freq < 220 QNM freq, exit */
-  if (deltaT > LAL_PI / creal (modeFreq))
+  if (use_tidal == 0 && deltaT > LAL_PI / creal (modeFreq))
     {
       XLALPrintError
 	("XLAL Error - %s: Ringdown frequency > Nyquist frequency!\nAt present this situation is not supported.\n",
 	 __func__);
       XLALDestroyREAL8Vector (values);
-      XLAL_ERROR (XLAL_EDOM);
+     XLAL_ERROR (XLAL_EDOM);
     }
 
   if (!(sigmaStar = XLALCreateREAL8Vector (3)))
@@ -760,29 +1001,26 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
       XLALDestroyREAL8Vector (values);
       XLAL_ERROR (XLAL_ENOMEM);
     }
-
-  if (use_tidal == 1)
-    {
-      tidal1.mass = m1SI / (m1SI + m2SI);
-      tidal1.comp = comp1;
-      tidal1.k2Tidal = k2Tidal1;
-      tidal1.omega02Tidal = omega02Tidal1;
-      tidal1.k3Tidal = k3Tidal1;
-      tidal1.omega03Tidal = omega03Tidal1;
     
-      tidal2.mass = m2SI / (m1SI + m2SI);
-      tidal2.comp = comp2;
-      tidal2.k2Tidal = k2Tidal2;
-      tidal2.omega02Tidal = omega02Tidal2;
-      tidal2.k3Tidal = k3Tidal2;
-      tidal2.omega03Tidal = omega03Tidal2;
-      
-      seobCoeffs.tidal1 = &tidal1;
-      seobCoeffs.tidal2 = &tidal2;
+// Rescale tidal polarizabilites by powers of mNS/M
+// Rescale f-mode freqs by M/mNS
+  tidal1.mByM = m1SI / (m1SI + m2SI);
+  tidal1.lambda2Tidal = lambda2Tidal1 * pow(tidal1.mByM,5);
+  tidal1.omega02Tidal = omega02Tidal1 / tidal1.mByM;
+  tidal1.lambda3Tidal = lambda3Tidal1 * pow(tidal1.mByM,7);
+  tidal1.omega03Tidal = omega03Tidal1 / tidal1.mByM;
 
-      hCoeffs.tidal1 = &tidal1;
-      hCoeffs.tidal2 = &tidal2;
-    }
+  tidal2.mByM = m2SI / (m1SI + m2SI);
+  tidal2.lambda2Tidal = lambda2Tidal2 * pow(tidal2.mByM,5);
+  tidal2.omega02Tidal = omega02Tidal2 / tidal2.mByM;
+  tidal2.lambda3Tidal = lambda3Tidal2 * pow(tidal2.mByM,7);
+  tidal2.omega03Tidal = omega03Tidal2 / tidal2.mByM;
+
+  seobCoeffs.tidal1 = &tidal1;
+  seobCoeffs.tidal2 = &tidal2;
+
+  hCoeffs.tidal1 = &tidal1;
+  hCoeffs.tidal2 = &tidal2;
 
   seobParams.alignedSpins = 1;
   seobParams.tortoise = 1;
@@ -969,7 +1207,6 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   /* We set inc zero here to make it easier to go from Cartesian to spherical coords */
   /* No problem setting inc to zero in solving spin-aligned initial conditions. */
   /* inc is not zero in generating the final h+ and hx */
-
   if (XLALSimIMRSpinEOBInitialConditions
       (tmpValues, m1, m2, fStart, 0, s1Data, s2Data, &seobParams,
        use_optimized_v2_or_v4) == XLAL_FAILURE)
@@ -981,16 +1218,16 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
       XLAL_ERROR (XLAL_EFUNC);
     }
 
-  /*fprintf( stderr, "ICs = %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n", tmpValues->data[0], tmpValues->data[1], tmpValues->data[2],
-     tmpValues->data[3], tmpValues->data[4], tmpValues->data[5], tmpValues->data[6], tmpValues->data[7], tmpValues->data[8],
-     tmpValues->data[9], tmpValues->data[10], tmpValues->data[11] ); */
+//  printf( "ICs = %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n", tmpValues->data[0], tmpValues->data[1], tmpValues->data[2],
+//     tmpValues->data[3], tmpValues->data[4], tmpValues->data[5], tmpValues->data[6], tmpValues->data[7], tmpValues->data[8],
+//     tmpValues->data[9], tmpValues->data[10], tmpValues->data[11] );
 
   /* Taken from Andrea's code */
 /*  memset( tmpValues->data, 0, tmpValues->length*sizeof(tmpValues->data[0]));*/
 #if 0
-  tmpValues->data[0] = 19.9996712714;
-  tmpValues->data[3] = -0.00016532905477;
-  tmpValues->data[4] = 4.77661989696 / tmpValues->data[0];	// q=8 chi1=0.5
+  tmpValues->data[0] = 20;
+  tmpValues->data[3] = -0.0001008684225106323/eta;
+  tmpValues->data[4] = 1.16263606988612/eta / tmpValues->data[0];	// q=8 chi1=0.5
 #endif
 
   /* Now convert to Spherical */
@@ -1012,30 +1249,46 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
    */
 
   /* Now we have the initial conditions, we can initialize the adaptive integrator */
-  if (use_optimized_v2_or_v4)
-    {
-      if (!
-	  (integrator =
-	   XLALAdaptiveRungeKutta4InitEighthOrderInstead (4,
+#if debugOutput
+    printf("Begin integration\n");
+#endif
+    if ( use_tidal == 1 ) {
+        if (!
+            (integrator =
+             XLALAdaptiveRungeKutta4Init (4, XLALSpinAlignedHcapDerivative,
+                                          XLALSpinAlignedNSNSStopCondition,
+                                          EPS_ABS, EPS_REL)))
+        {
+            XLALDestroyREAL8Vector (values);
+            XLAL_ERROR (XLAL_EFUNC);
+        }
+    }
+    else {
+        if (use_optimized_v2_or_v4)
+        {
+            if (!
+                (integrator =
+                 XLALAdaptiveRungeKutta4InitEighthOrderInstead (4,
 							  XLALSpinAlignedHcapDerivativeOptimized,
 							  XLALEOBSpinAlignedStopCondition,
 							  EPS_ABS, EPS_REL)))
-	{
-	  XLALDestroyREAL8Vector (values);
-	  XLAL_ERROR (XLAL_EFUNC);
-	}
-    }
-  else
-    {
-      if (!
-	  (integrator =
-	   XLALAdaptiveRungeKutta4Init (4, XLALSpinAlignedHcapDerivative,
+            {
+                XLALDestroyREAL8Vector (values);
+                XLAL_ERROR (XLAL_EFUNC);
+            }
+        }
+        else
+        {
+            if (!
+                (integrator =
+                 XLALAdaptiveRungeKutta4Init (4, XLALSpinAlignedHcapDerivative,
 					XLALEOBSpinAlignedStopCondition,
 					EPS_ABS, EPS_REL)))
-	{
-	  XLALDestroyREAL8Vector (values);
-	  XLAL_ERROR (XLAL_EFUNC);
-	}
+            {
+                XLALDestroyREAL8Vector (values);
+                XLAL_ERROR (XLAL_EFUNC);
+            }
+        }
     }
 
   integrator->stopontestonly = 1;
@@ -1119,10 +1372,10 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   deltaTHigh = deltaT / (REAL8) resampFac;
 
 #if debugOutput
-  fprintf (stderr,
+  printf (
 	   "Stepping back %d points - we expect %d points at high SR\n",
 	   nStepBack, nStepBack * resampFac);
-  fprintf (stderr,
+  printf (
 	   "Commencing high SR integration... from %.16e %.16e %.16e %.16e %.16e\n",
 	   (dynamics->data)[hiSRndx], rVec.data[hiSRndx],
 	   phiVec.data[hiSRndx], prVec.data[hiSRndx], pPhiVec.data[hiSRndx]);
@@ -1138,6 +1391,9 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   if (SpinAlignedEOBversion == 4)
     {
       integrator->stop = XLALSpinAlignedHiSRStopConditionV4;
+    }
+  if ( use_tidal == 1 ) {
+      integrator->stop = XLALSpinAlignedNSNSStopCondition;
     }
 
   if (use_optimized_v2_or_v4)
@@ -1172,7 +1428,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
       XLAL_ERROR (XLAL_EFUNC);
     }
 
-  //fprintf( stderr, "We got %d points at high SR\n", retLen );
+//  fprintf( stderr, "We got %d points at high SR\n", retLen );
 
   /* Set up pointers to the dynamics */
   rHi.length = phiHi.length = prHi.length = pPhiHi.length = timeHi.length =
@@ -1240,6 +1496,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 	  omega =
 	    XLALSimIMRSpinAlignedEOBCalcOmega (values->data, &seobParams);
 	}
+
       if (omega < 1.0e-15)
 	omega = 1.0e-9;		//YPnote: make sure omega>0 during very-late evolution when numerical errors are huge.
       omegaHi->data[i] = omega;	//YPnote: omega<0 is extremely rare and had only happenned after relevant time interval.
@@ -1272,13 +1529,13 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 					  seobParams.tortoise, &seobCoeffs);
 	}
 
-      if (XLALSimIMRSpinEOBGetSpinFactorizedWaveform
-	  (&hLM, values, v, ham, 2, 2, &seobParams,
-	   use_optimized_v2_or_v4) == XLAL_FAILURE)
-	{
-	  /* TODO: Clean-up */
-	  XLAL_ERROR (XLAL_EFUNC);
-	}
+        if (XLALSimIMRSpinEOBGetSpinFactorizedWaveform
+            (&hLM, values, v, ham, 2, 2, &seobParams,
+             use_optimized_v2_or_v4) == XLAL_FAILURE)
+        {
+            XLAL_ERROR (XLAL_EFUNC);
+        }
+
 
       ampNQC->data[i] = cabs (hLM);
       sigReHi->data[i] = (REAL4) (amp0 * creal (hLM));
@@ -1356,29 +1613,15 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
     }
   while (time2 - time1 > 1.0e-5);
 
+//    if (use_tidal == 1)
+//        timePeak = dynamicsHi->data[retLen-1];
+
   /*gsl_spline_free( spline );
      gsl_interp_accel_free( acc );
    */
 
   //XLALPrintInfo( "Estimation of the peak is now at time %.16e\n", timePeak );
 
-  /* Having located the peak of orbital frequency, we set time and phase of coalescence */
-  XLALGPSAdd (&tc, -mTScaled * (dynamics->data[hiSRndx] + timePeak));
-  gsl_spline_init (spline, dynamicsHi->data, phiHi.data, retLen);
-  sSub = 0*gsl_spline_eval (spline, timePeak, acc) - phiC;
-  gsl_spline_free (spline);
-  gsl_interp_accel_free (acc);
-  /* Apply phiC to hi-sampling waveforms */
-  REAL8 thisReHi, thisImHi;
-  REAL8 csSub2 = cos (2.0 * sSub);
-  REAL8 ssSub2 = sin (2.0 * sSub);
-  for (i = 0; i < retLen; i++)
-    {
-      thisReHi = sigReHi->data[i];
-      thisImHi = sigImHi->data[i];
-      sigReHi->data[i] = thisReHi * csSub2 - thisImHi * ssSub2;
-      sigImHi->data[i] = thisReHi * ssSub2 + thisImHi * csSub2;
-    }
 
   /*
    * STEP 5) Calculate NQC correction using hi-sampling data
@@ -1412,30 +1655,58 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   printf ("timePeak %.16e\n", timePeak);
 #endif
   /* Calculate phase NQC coefficients */
-  if (SpinAlignedEOBversion == 2)
-    {
-      if (XLALSimIMRSpinEOBCalculateNQCCoefficients
-	  (ampNQC, phaseNQC, &rHi, &prHi, omegaHi, 2, 2, timePeak,
-	   deltaTHigh / mTScaled, m1, m2, a, chiA, chiS, &nqcCoeffs,
-	   SpinAlignedEOBversion) == XLAL_FAILURE)
-	{
-	  XLAL_ERROR (XLAL_EFUNC);
-	}
-    }
+//  if (SpinAlignedEOBversion == 2)
+//    {
+//      if (XLALSimIMRSpinEOBCalculateNQCCoefficients
+//	  (ampNQC, phaseNQC, &rHi, &prHi, omegaHi, 2, 2, timePeak,
+//	   deltaTHigh / mTScaled, m1, m2, a, chiA, chiS, &nqcCoeffs,
+//	   SpinAlignedEOBversion) == XLAL_FAILURE)
+//	{
+//	  XLAL_ERROR (XLAL_EFUNC);
+//	}
+//    }
   if (SpinAlignedEOBversion == 4)
     {
-      if (XLALSimIMRSpinEOBCalculateNQCCoefficientsV4
-	  (ampNQC, phaseNQC, &rHi, &prHi, omegaHi, 2, 2, timePeak,
-	   deltaTHigh / mTScaled, m1, m2, a, chiA, chiS, &nqcCoeffs,
-	   SpinAlignedEOBversion) == XLAL_FAILURE)
-	{
-	  XLAL_ERROR (XLAL_EFUNC);
-	}
+        if ( use_tidal == 1 && nqcFlag == 2 ) {
+            nqcCoeffs.a1 = nqcCoeffsInput->data[0];
+            nqcCoeffs.a2 = nqcCoeffsInput->data[1];
+            nqcCoeffs.a3 = nqcCoeffsInput->data[2];
+            nqcCoeffs.a3S = nqcCoeffsInput->data[3];
+            nqcCoeffs.a4 = nqcCoeffsInput->data[4];
+            nqcCoeffs.a5 = nqcCoeffsInput->data[5];
+            nqcCoeffs.b1 = nqcCoeffsInput->data[6];
+            nqcCoeffs.b2 = nqcCoeffsInput->data[7];
+            nqcCoeffs.b3 = nqcCoeffsInput->data[8];
+            nqcCoeffs.b4 = nqcCoeffsInput->data[9];
+        }
+        else {
+
+            if (XLALSimIMRSpinEOBCalculateNQCCoefficientsV4
+                (ampNQC, phaseNQC, &rHi, &prHi, omegaHi, 2, 2, timePeak,
+                 deltaTHigh / mTScaled, m1, m2, a, chiA, chiS, &nqcCoeffs,
+                 SpinAlignedEOBversion) == XLAL_FAILURE)
+            {
+                XLAL_ERROR (XLAL_EFUNC);
+            }
+        }
+    }
+    if ( SpinAlignedEOBversion == 4 && nqcFlag == 1 ) {
+        nqcCoeffsInput->data[0] = nqcCoeffs.a1;
+        nqcCoeffsInput->data[1] = nqcCoeffs.a2;
+        nqcCoeffsInput->data[2] = nqcCoeffs.a3;
+        nqcCoeffsInput->data[3] = nqcCoeffs.a3S;
+        nqcCoeffsInput->data[4] = nqcCoeffs.a4;
+        nqcCoeffsInput->data[5] = nqcCoeffs.a5;
+        nqcCoeffsInput->data[6] = nqcCoeffs.b1;
+        nqcCoeffsInput->data[7] = nqcCoeffs.b2;
+        nqcCoeffsInput->data[8] = nqcCoeffs.b3;
+        nqcCoeffsInput->data[9] = nqcCoeffs.b4;
+        return XLAL_SUCCESS;
     }
 
 #if debugOutput
   printf
-    ("Only spin NQC should be 0 here: %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",
+    ("Only spin NQC should not be 0 here: %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",
      nqcCoeffs.a1, nqcCoeffs.a2, nqcCoeffs.a3, nqcCoeffs.a3S, nqcCoeffs.a4,
      nqcCoeffs.a5, nqcCoeffs.b1, nqcCoeffs.b2, nqcCoeffs.b3, nqcCoeffs.b4);
 #endif
@@ -1458,6 +1729,9 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 	 __func__);
       XLAL_ERROR (XLAL_EINVAL);
       break;
+    }
+    if (use_tidal == 1) {
+        timewavePeak = 0.;
     }
 
   /* Apply to the high sampled part */
@@ -1486,6 +1760,14 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 #endif
 
       hLM *= hNQC;
+        if ( (lambda2Tidal1 != 0. && omega02Tidal1 != 0.) || (lambda2Tidal2 != 0. && omega02Tidal2 != 0.) ) {
+            if (XLALSimIMRSpinEOBWaveformTidal
+                (&hT, values, cbrt(omegaHi->data[i]), 2, 2, &seobParams) )
+            {
+                XLAL_ERROR (XLAL_EFUNC);
+            }
+            hLM += amp0*hT;
+        }
 
       sigReHi->data[i] = (REAL4) creal (hLM);
       sigImHi->data[i] = (REAL4) cimag (hLM);
@@ -1569,6 +1851,62 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
       XLALPrintError ("The comb size looks to be too big!!!\n");
     }
 
+    if (use_tidal == 1) {
+        timeshiftPeak = 0.;
+        UINT4 indAmax = 0;
+        REAL8 Anew, Aval = sqrt( sigReHi->data[0]*sigReHi->data[0] +sigImHi->data[0]*sigImHi->data[0] );
+        for (i = 0; i < (INT4) timeHi.length; i++) {
+            Anew = sqrt( sigReHi->data[i]*sigReHi->data[i] +sigImHi->data[i]*sigImHi->data[i]);
+            if ( Anew >= Aval ) {
+                    indAmax = i;
+                    Aval = Anew;
+            }
+        }
+
+        UINT4 indOmax = 0;
+        REAL8 dt = timeHi.data[1] - timeHi.data[0];
+        REAL8 re = sigReHi->data[0], im = sigImHi->data[0];
+        REAL8 red = ( sigReHi->data[1] - sigReHi->data[0] ) / dt, imd = ( sigImHi->data[1] - sigImHi->data[0] ) / dt;
+        REAL8 Onew, Oval = - (imd*re - red*im) / (re*re + im*im);
+
+        for (i = 1; i < (INT4) timeHi.length-1; i++) {
+            re = sigReHi->data[i];
+            im = sigImHi->data[i];
+            red = ( sigReHi->data[i+1] - sigReHi->data[i] ) / dt;
+            imd = ( sigImHi->data[i+1] - sigImHi->data[i] ) / dt;
+            Onew = - (imd*re - red*im) / (re*re + im*im);
+            if ( Onew >= Oval ) {
+                indOmax = i;
+                Oval = Onew;
+            }
+        }
+
+        if ( timeHi.data[indAmax] <= timeHi.data[indOmax] ) {
+            timePeak = timeHi.data[indAmax] ;
+        }
+        else {
+            timePeak = timeHi.data[indOmax];
+        }
+    }
+
+    /* Having located the peak of orbital frequency, we set time and phase of coalescence */
+    XLALGPSAdd (&tc, -mTScaled * (dynamics->data[hiSRndx] + timePeak));
+    gsl_spline_init (spline, dynamicsHi->data, phiHi.data, retLen);
+    sSub = 0*gsl_spline_eval (spline, timePeak, acc) - phiC;
+    gsl_spline_free (spline);
+    gsl_interp_accel_free (acc);
+    /* Apply phiC to hi-sampling waveforms */
+    REAL8 thisReHi, thisImHi;
+    REAL8 csSub2 = cos (2.0 * sSub);
+    REAL8 ssSub2 = sin (2.0 * sSub);
+    for (i = 0; i < retLen; i++)
+    {
+        thisReHi = sigReHi->data[i];
+        thisImHi = sigImHi->data[i];
+        sigReHi->data[i] = thisReHi * csSub2 - thisImHi * ssSub2;
+        sigImHi->data[i] = thisReHi * ssSub2 + thisImHi * csSub2;
+    }
+
   rdMatchPoint->data[0] =
     combSize <
     timePeak - timeshiftPeak ? timePeak - timeshiftPeak - combSize : 0;
@@ -1583,31 +1921,45 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
     fmod (rdMatchPoint->data[0], deltaTHigh / mTScaled);
   rdMatchPoint->data[1] -=
     fmod (rdMatchPoint->data[1], deltaTHigh / mTScaled);
-  if (SpinAlignedEOBversion == 1 || SpinAlignedEOBversion == 2)
-    {
-      if (XLALSimIMREOBHybridAttachRingdown (sigReHi, sigImHi, 2, 2,
+    if ( use_tidal == 1 ) {
+        if (XLALSimIMREOBTaper (sigReHi, sigImHi, 2, 2,
+                                            deltaTHigh, m1, m2, spin1[0],
+                                            spin1[1], spin1[2], spin2[0],
+                                            spin2[1], spin2[2], &timeHi,
+                                            rdMatchPoint,
+                                            SpinAlignedEOBapproximant) ==
+            XLAL_FAILURE)
+        {
+            XLAL_ERROR (XLAL_EFUNC);
+        }
+    }
+    else {
+        if (SpinAlignedEOBversion == 1 || SpinAlignedEOBversion == 2)
+        {
+            if (XLALSimIMREOBHybridAttachRingdown (sigReHi, sigImHi, 2, 2,
 					     deltaTHigh, m1, m2, spin1[0],
 					     spin1[1], spin1[2], spin2[0],
 					     spin2[1], spin2[2], &timeHi,
 					     rdMatchPoint,
 					     SpinAlignedEOBapproximant) ==
-	  XLAL_FAILURE)
-	{
-	  XLAL_ERROR (XLAL_EFUNC);
-	}
-    }
-  else if (SpinAlignedEOBversion == 4)
-    {
-      if (XLALSimIMREOBAttachFitRingdown (sigReHi, sigImHi, 2, 2,
+                XLAL_FAILURE)
+            {
+                XLAL_ERROR (XLAL_EFUNC);
+            }
+        }
+        else if (SpinAlignedEOBversion == 4)
+        {
+            if (XLALSimIMREOBAttachFitRingdown (sigReHi, sigImHi, 2, 2,
 					  deltaTHigh, m1, m2, spin1[0],
 					  spin1[1], spin1[2], spin2[0],
 					  spin2[1], spin2[2], &timeHi,
 					  rdMatchPoint,
 					  SpinAlignedEOBapproximant) ==
-	  XLAL_FAILURE)
-	{
-	  XLAL_ERROR (XLAL_EFUNC);
-	}
+                XLAL_FAILURE)
+            {
+                XLAL_ERROR (XLAL_EFUNC);
+            }
+        }
     }
 
   /*
@@ -1705,6 +2057,16 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 	      XLAL_ERROR (XLAL_EFUNC);
 	    }
 
+        hT = 0.;
+        if ( (lambda2Tidal1 != 0. && omega02Tidal1 != 0.) || (lambda2Tidal2 != 0. && omega02Tidal2 != 0.) ) {
+            if (XLALSimIMRSpinEOBWaveformTidal
+                (&hT, values, v, 2, 2, &seobParams)
+                == XLAL_FAILURE)
+            {
+                XLAL_ERROR (XLAL_EFUNC);
+            }
+        }
+
 	  if (XLALSimIMREOBNonQCCorrection (&hNQC, values, omega, &nqcCoeffs)
 	      == XLAL_FAILURE)
 	    {
@@ -1712,6 +2074,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 	    }
 
 	  hLM *= hNQC;
+      hLM += hT;
 
 	  sigReVec->data[i] = amp0 * creal (hLM);
 	  sigImVec->data[i] = amp0 * cimag (hLM);
@@ -1846,7 +2209,6 @@ XLALGPSAdd (&tc, deltaT * (REAL8) kMin);
   XLALDestroyREAL8Vector (sigReHi);
   XLALDestroyREAL8Vector (sigImHi);
   XLALDestroyREAL8Vector (omegaHi);
-
   return XLAL_SUCCESS;
 }
 

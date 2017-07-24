@@ -26,6 +26,12 @@ int XLALSimInspiralWaveformParamsInsertPNTidalOrder(LALDict *params, INT4 value)
 
 int XLALSimInspiralWaveformParamsInsertTidalLambda1(LALDict *params, REAL8 value);
 int XLALSimInspiralWaveformParamsInsertTidalLambda2(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertTidalOctupolarLambda1(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertTidalOctupolarLambda2(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertTidalQuadrupolarFMode1(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertTidalQuadrupolarFMode2(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode1(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode2(LALDict *params, REAL8 value);
 int XLALSimInspiralWaveformParamsInsertdQuadMon1(LALDict *params, REAL8 value);
 int XLALSimInspiralWaveformParamsInsertdQuadMon2(LALDict *params, REAL8 value);
 int XLALSimInspiralWaveformParamsInsertRedshift(LALDict *params, REAL8 value);
@@ -105,9 +111,16 @@ INT4 XLALSimInspiralWaveformParamsLookupPNTidalOrder(LALDict *params);
 
 REAL8 XLALSimInspiralWaveformParamsLookupTidalLambda1(LALDict *params);
 REAL8 XLALSimInspiralWaveformParamsLookupTidalLambda2(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupTidalOctupolarLambda1(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupTidalOctupolarLambda2(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupTidalQuadrupolarFMode1(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupTidalQuadrupolarFMode2(LALDict *params);;
+REAL8 XLALSimInspiralWaveformParamsLookupTidalOctupolarFMode1(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupTidalOctupolarFMode2(LALDict *params);
 REAL8 XLALSimInspiralWaveformParamsLookupdQuadMon1(LALDict *params);
 REAL8 XLALSimInspiralWaveformParamsLookupdQuadMon2(LALDict *params);
 REAL8 XLALSimInspiralWaveformParamsLookupRedshift(LALDict *params);
+
 REAL8 XLALSimInspiralWaveformParamsLookupNonGRPhi1(LALDict *params);
 REAL8 XLALSimInspiralWaveformParamsLookupNonGRPhi2(LALDict *params);
 REAL8 XLALSimInspiralWaveformParamsLookupNonGRPhi3(LALDict *params);
@@ -183,6 +196,12 @@ int XLALSimInspiralWaveformParamsPNTidalOrderIsDefault(LALDict *params);
 
 int XLALSimInspiralWaveformParamsTidalLambda1IsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsTidalLambda2IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsTidalOctupolarLambda1IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsTidalOctupolarLambda2IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsTidalQuadrupolarFMode1IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsTidalQuadrupolarFMode2IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsTidalOctupolarFMode1IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsTidalOctupolarFMode2IsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsdQuadMon1IsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsdQuadMon2IsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsRedshiftIsDefault(LALDict *params);
