@@ -51,7 +51,8 @@ src/lalburst_version
 src/stamp-h1
 src/stamp-h2
 src/version.c
-swig/swiglal*
+swig/swiglalburst.i*
+swig/swiglal_*
 test/CLRTest
 test/CLRoutdata.asc
 test/TfrPswvTest

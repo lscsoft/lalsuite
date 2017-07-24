@@ -52,7 +52,8 @@ src/lalinspiral_version
 src/stamp-h1
 src/stamp-h2
 src/version.c
-swig/swiglal*
+swig/swiglalinspiral.i*
+swig/swiglal_*
 test/BCVTemplates
 test/BCVTemplates.out
 test/BasicInjectTest
