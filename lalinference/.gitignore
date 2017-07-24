@@ -84,7 +84,8 @@ src/lalinference_version
 src/stamp-h1
 src/stamp-h2
 src/version.c
-swig/swiglal*
+swig/swiglalinference.i*
+swig/swiglal_*
 test/.cache
 test/LALInferenceGenerateROQTest
 test/LALInferenceHDF5Test
