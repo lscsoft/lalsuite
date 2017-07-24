@@ -66,7 +66,7 @@ class Event(six.with_metaclass(ABCMeta)):
         """Dictionary of template parameters."""
         raise NotImplementedError
 
-    __str_keys = ('singles', 'template_args')
+    __str_keys = ('singles',)
 
     def __str__(self):
         return _fmt(self, self.__str_keys)
