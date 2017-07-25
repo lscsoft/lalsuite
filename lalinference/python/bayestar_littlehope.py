@@ -109,7 +109,7 @@ import glue.lal
 import lal
 import lalsimulation
 import lal.series
-from lalinspiral.thinca import InspiralCoincDef
+from lalinference.bayestar.ligolw import InspiralCoincDef
 
 # BAYESTAR imports.
 from lalinference.bayestar import timing

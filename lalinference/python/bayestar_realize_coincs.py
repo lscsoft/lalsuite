@@ -106,7 +106,7 @@ import glue.lal
 import lal
 import lal.series
 import lalsimulation
-from lalinspiral.thinca import InspiralCoincDef
+from lalinference.bayestar.ligolw import InspiralCoincDef
 from glue.text_progress_bar import ProgressBar
 
 # BAYESTAR imports.

@@ -27,7 +27,7 @@ from itertools import groupby
 import six
 import lal
 import lal.series
-from lalinspiral.thinca import InspiralCoincDef
+from ...bayestar.ligolw import InspiralCoincDef
 from glue.ligolw import array, lsctables, param
 from glue.ligolw.ligolw import Element, LIGOLWContentHandler, LIGO_LW
 from glue.ligolw.lsctables import (
