@@ -5,7 +5,7 @@ pkginclude_HEADERS = \
 	FindRoot.h \
 	Integrate.h \
 	Interpolate.h \
-	LALAdaptiveRungeKutta4.h \
+	LALAdaptiveRungeKuttaIntegrator.h \
 	LALHashFunc.h \
 	LALHashTbl.h \
 	LALHeap.h \
@@ -28,7 +28,7 @@ libutilities_la_SOURCES = \
 	InsertionSort.c \
 	Integrate.c \
 	Interpolate.c \
-	LALAdaptiveRungeKutta4.c \
+	LALAdaptiveRungeKuttaIntegrator.c \
 	LALCityHash.c \
 	LALHashTbl.c \
 	LALHeap.c \

@@ -1,5 +1,5 @@
-#ifndef _LALADAPTIVERUNGEKUTTA4_H
-#define _LALADAPTIVERUNGEKUTTA4_H
+#ifndef _LALADAPTIVERUNGEKUTTAINTEGRATOR_H
+#define _LALADAPTIVERUNGEKUTTAINTEGRATOR_H
 
 #include <gsl/gsl_odeiv.h>
 #include <gsl/gsl_spline.h>
@@ -14,24 +14,24 @@ extern "C" {
 #endif
 
 /**
- * \defgroup LALAdaptiveRungeKutta4_h Header LALAdaptiveRungeKutta4.h
+ * \defgroup LALAdaptiveRungeKuttaIntegrator_h Header LALAdaptiveRungeKuttaIntegrator.h
  * \ingroup lal_utilities
  * \author Vallisneri, M.
  * \brief Adaptive Runge-Kutta4
  *
  * <ul>
- * <li> \c integrator Integration structure (quasi-class). Created using <tt>XLALAdaptiveRungeKutta4Init()</tt>.
+ * <li> \c integrator Integration structure (quasi-class). Created using <tt>XLALAdaptiveRungeKuttaIntegratorInit()</tt>.
  * ...</li>
  * </ul>
  *
  * ### Description ###
  *
- * The code \ref LALAdaptiveRungeKutta4.c evolves a system of \f$n\f$ coupled first--order differential equations.
+ * The code \ref LALAdaptiveRungeKuttaIntegrator.c evolves a system of \f$n\f$ coupled first--order differential equations.
  * Internally, it uses GSL routines to perform adaptive-step evolution, and then interpolates the resulting
  * trajectories to a fixed step size.
  *
  * Prior to evolving a system using <tt>XLALAdaptiveRungeKutta4()</tt>, it is necessary to create an integrator structure using
- * <tt>XLALAdaptiveRungeKutta4Init()</tt>. Once you are done with the integrator, free it with <tt>XLALAdaptiveRungeKutta4Free()</tt>.
+ * <tt>XLALAdaptiveRungeKuttaIntegratorInit()</tt>. Once you are done with the integrator, free it with <tt>XLALAdaptiveRungeKuttaIntegratorFree()</tt>.
  *
  * ### Algorithm ###
  *
@@ -48,7 +48,7 @@ extern "C" {
  */
 /*@{*/
 
-typedef struct tagLALAdaptiveRungeKutta4Integrator
+typedef struct tagLALAdaptiveRungeKuttaIntegrator
 {
   gsl_odeiv_step    *step;
   gsl_odeiv_control *control;
@@ -63,43 +63,49 @@ typedef struct tagLALAdaptiveRungeKutta4Integrator
   int stopontestonly;	/* stop only on test, use tend to size buffers only */
 
   int returncode;
-} LALAdaptiveRungeKutta4Integrator;
+} LALAdaptiveRungeKuttaIntegrator;
 
-LALAdaptiveRungeKutta4Integrator *XLALAdaptiveRungeKutta4Init( int dim,
+LALAdaptiveRungeKuttaIntegrator *XLALAdaptiveRungeKutta4Init( int dim,
                              int (* dydt) (double t, const double y[], double dydt[], void * params),
                              int (* stop) (double t, const double y[], double dydt[], void * params),
                              double eps_abs, double eps_rel
                              );
 
 /* OPTIMIZED */
-LALAdaptiveRungeKutta4Integrator *XLALAdaptiveRungeKutta4InitEighthOrderInstead( int dim,
+/**
+ * Eighth-order Runge-Kutta ODE integrator using Runge-Kutta-Fehlberg steps
+ * with adaptive step size control.  Intended for use in time domain
+ * waveform generation routines based on SEOBNRv2,3,4 models.
+ */
+
+LALAdaptiveRungeKuttaIntegrator *XLALAdaptiveRungeKutta4InitEighthOrderInstead( int dim,
                              int (* dydt) (double t, const double y[], double dydt[], void * params),
                              int (* stop) (double t, const double y[], double dydt[], void * params),
                              double eps_abs, double eps_rel
                              );
 /* END OPTIMIZED */
-/* OPTV3 */
-int XLALAdaptiveRungeKutta4_no_interpolate_SaveD(
-                            LALAdaptiveRungeKutta4Integrator * integrator,
-                            void * params, REAL8 * yinit, REAL8 tinit, REAL8 tend, REAL8 deltat_or_h0,
-                            REAL8Array ** t_and_y_out
-                            );
-/* END OPTV3 */
-void XLALAdaptiveRungeKutta4Free( LALAdaptiveRungeKutta4Integrator *integrator );
 
-int XLALAdaptiveRungeKutta4( LALAdaptiveRungeKutta4Integrator *integrator,
+void XLALAdaptiveRungeKuttaFree( LALAdaptiveRungeKuttaIntegrator *integrator );
+
+int XLALAdaptiveRungeKutta4( LALAdaptiveRungeKuttaIntegrator *integrator,
                          void *params,
                          REAL8 *yinit,
                          REAL8 tinit, REAL8 tend, REAL8 deltat,
                          REAL8Array **yout
                          );
 /* OPTIMIZED */
-int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKutta4Integrator * integrator,
+/**
+ * Fourth-order Runge-Kutta ODE integrator using Runge-Kutta-Fehlberg steps
+ * with adaptive step size control.  Intended for use in time domain
+ * waveform generation routines based on SEOBNRv2,3,4 models.  This method
+ * does not includes any interpolation.
+ */
+int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKuttaIntegrator * integrator,
          void * params, REAL8 * yinit, REAL8 tinit, REAL8 tend, REAL8 deltat_or_h0,
-         REAL8Array ** t_and_yout);
+					 REAL8Array ** t_and_yout,INT4 EOBversion);
 /* END OPTIMIZED */
 
-int XLALAdaptiveRungeKutta4Hermite( LALAdaptiveRungeKutta4Integrator *integrator,
+int XLALAdaptiveRungeKutta4Hermite( LALAdaptiveRungeKuttaIntegrator *integrator,
                                     void *params,
                                     REAL8 *yinit,
                                     REAL8 tinit,
@@ -107,7 +113,6 @@ int XLALAdaptiveRungeKutta4Hermite( LALAdaptiveRungeKutta4Integrator *integrator
                                     REAL8 deltat,
                                     REAL8Array **yout
                                     );
-
 
 /**
  * Fourth-order Runge-Kutta ODE integrator using Runge-Kutta-Fehlberg (RKF45)
@@ -125,7 +130,7 @@ int XLALAdaptiveRungeKutta4Hermite( LALAdaptiveRungeKutta4Integrator *integrator
  *
  * Memory is allocated in steps of LAL_MAX_RK4_STEPS.
  */
-int XLALAdaptiveRungeKutta4IrregularIntervals( LALAdaptiveRungeKutta4Integrator *integrator,      /**< struct holding dydt, stopping test, stepper, etc. */
+int XLALAdaptiveRungeKutta4IrregularIntervals( LALAdaptiveRungeKuttaIntegrator *integrator,      /**< struct holding dydt, stopping test, stepper, etc. */
                                     void *params,                       /**< params struct used to compute dydt and stopping test */
                                     REAL8 *yinit,                       /**< pass in initial values of all variables - overwritten to final values */
                                     REAL8 tinit,                        /**< integration start time */
@@ -141,4 +146,4 @@ int XLALAdaptiveRungeKutta4IrregularIntervals( LALAdaptiveRungeKutta4Integrator 
 }
 #endif
 
-#endif /* _LALADAPTIVERUNGEKUTTA4_H */
+#endif /* _LALADAPTIVERUNGEKUTTAINTEGRATOR_H */

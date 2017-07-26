@@ -29,7 +29,7 @@
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
 #include <lal/XLALError.h>
-#include <lal/LALAdaptiveRungeKutta4.h>
+#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
 #include <lal/LALSimInspiralWaveformParams.h>
 
 /* internal storage is in SI units! */

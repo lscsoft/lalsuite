@@ -25,7 +25,7 @@
 #include <gsl/gsl_odeiv.h>
 
 #include <lal/LALSimInspiral.h>
-#include <lal/LALAdaptiveRungeKutta4.h>
+#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
 #include <lal/TimeSeries.h>
@@ -303,7 +303,7 @@ int XLALSimInspiralTaylorT1PNEvolveOrbit(
 	double lengths, VRef = 0.;
 	int len, intreturn, idx, idxRef = 0;
 	XLALSimInspiralTaylorT1PNEvolveOrbitParams params;
-	LALAdaptiveRungeKutta4Integrator *integrator = NULL;
+	LALAdaptiveRungeKuttaIntegrator *integrator = NULL;
 	expnFuncTaylorT1 expnfunc;
 	expnCoeffsTaylorT1 ak;
 
@@ -343,7 +343,7 @@ int XLALSimInspiralTaylorT1PNEvolveOrbit(
 	len = XLALAdaptiveRungeKutta4Hermite(integrator, (void *) &params, yinit, 0.0, lengths, deltaT, &yout);
 
 	intreturn = integrator->returncode;
-	XLALAdaptiveRungeKutta4Free(integrator);
+	XLALAdaptiveRungeKuttaFree(integrator);
 
 	if (!len) 
 	{

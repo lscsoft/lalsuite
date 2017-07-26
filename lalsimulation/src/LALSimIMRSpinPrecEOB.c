@@ -36,7 +36,7 @@
 #include <lal/Date.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
-#include <lal/LALAdaptiveRungeKutta4.h>
+#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
 #include <lal/SphericalHarmonics.h>
 #include <gsl/gsl_sf_gamma.h>
 #include <gsl/gsl_integration.h>
@@ -150,7 +150,7 @@ XLALDestroyCOMPLEX16TimeSeries(h2m2TSHi); \
 XLALDestroyCOMPLEX16TimeSeries(hIMRJTS); \
 XLALDestroyCOMPLEX16TimeSeries(hIMRJTSHi); \
 \
-XLALAdaptiveRungeKutta4Free(integrator); \
+XLALAdaptiveRungeKuttaFree(integrator); \
 \
 XLALDestroyREAL8TimeSeries(hPlusTS); \
 XLALDestroyREAL8TimeSeries(hCrossTS);
@@ -436,7 +436,7 @@ int XLALSimIMRSpinEOBWaveform(
         const REAL8     inc, /**<< inclination angle */
         const REAL8     INspin1[],  /**<< spin1 */
         const REAL8     INspin2[], /**<< spin2 */
-        const UINT4     PrecEOBversion /**<< Precessing EOB waveform generator model */ // David new
+        const UINT4     PrecEOBversion /**<< Precessing EOB waveform generator model */
      )
 
 {
@@ -453,7 +453,7 @@ int XLALSimIMRSpinEOBWaveform(
     SphHarmTimeSeries *hIMR = NULL;
 
     ret = XLALSimIMRSpinEOBWaveformAll(hplus, hcross, &dynamicsHi, &hlmPTSout, &hlmPTSHi, &hIMRlmJTSHi, &hIMR, &AttachPars,
-                                       phiC, deltaT, m1SI, m2SI, fMin, r, inc, INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2], PrecEOBversion); // David new
+                                       phiC, deltaT, m1SI, m2SI, fMin, r, inc, INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2], PrecEOBversion);
     if (ret == XLAL_SUCCESS){
         if (*hplus == NULL || *hcross == NULL){
              XLALPrintError("Houston-2, we've got a problem SOS, SOS, SOS, the waveform generator returns NULL!!!... m1 = %.18e, m2 = %.18e, fMin = %.18e, inclination = %.18e,   spin1 = {%.18e, %.18e, %.18e},   spin2 = {%.18e, %.18e, %.18e} \n", 
@@ -545,7 +545,7 @@ int XLALSimIMRSpinEOBWaveformAll(
         const REAL8     INspin2x,   /**<< spin2 x-component */
         const REAL8     INspin2y,   /**<< spin2 y-component */
         const REAL8     INspin2z,    /**<< spin2 z-component */
-        const UINT4     PrecEOBversion /**<< Precessing EOB waveform generator model */ // David new
+        const UINT4     PrecEOBversion /**<< Precessing EOB waveform generator model */
      )
 
 {
@@ -922,7 +922,7 @@ int XLALSimIMRSpinEOBWaveformAll(
       REAL8 JframeEx[3] = {0,0,0}, JframeEy[3] = {0,0,0}, JframeEz[3] = {0,0,0};
 
       /* Variables for the integrator */
-      LALAdaptiveRungeKutta4Integrator       *integrator = NULL;
+      LALAdaptiveRungeKuttaIntegrator       *integrator = NULL;
       REAL8Array              *dynamics   = NULL;
       REAL8Array              *dynamicsHi   = NULL;
       REAL8Array              *dynamicsV2   = NULL;
@@ -1006,7 +1006,10 @@ int XLALSimIMRSpinEOBWaveformAll(
   /* Initialize amplitude scaling parameter */
   amp0 = mTotal * LAL_MRSUN_SI / r;
 
-  /* OPTV3: Define the SpinEOBH coefficients constants of calculation */
+  /**
+   * OPTV3: Define the SpinEOBH coefficients constants of Hamiltonian spin
+   * derivative calculation.
+   */
   SEOBHCoeffConstants seobCoeffConsts;
   if(use_optimized) seobCoeffConsts = XLALEOBSpinPrecCalcSEOBHCoeffConstants(eta);
 
@@ -1022,7 +1025,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   }
 
   /* Calculate the time we will need to step back for ringdown */
-    /* Stepping back 150M in time is very conservative: the attachment point usually lies in the last 20M of the trajectory */
+  /* Stepping back 150M in time is very conservative: the attachment point usually lies in the last 20M of the trajectory */
   tStepBack = 150. * mTScaled;
   nStepBack = ceil( tStepBack / deltaT );
 
@@ -1310,31 +1313,22 @@ int XLALSimIMRSpinEOBWaveformAll(
   if(debugPK)XLAL_PRINT_INFO("\nReached the point where LN is to be calculated\n");
 
   memset( dvalues->data, 0, 14 * sizeof(REAL8) );
-  if (use_optimized) {
-    if( XLALSpinPrecHcapRvecDerivative_exact( 0, values->data, dvalues->data, (void*) &seobParams) == XLAL_FAILURE )
-      {
-        XLALDestroyREAL8Vector( sigmaKerr );
-        XLALDestroyREAL8Vector( sigmaStar );
-        XLALDestroyREAL8Vector( values );
-        XLALDestroyREAL8Vector( dvalues );
-        XLALDestroyREAL8Vector( rdMatchPoint );
-        XLALPrintError("XLALSpinPrecHcapRvecDerivative_exact failed!\n");
-        PRINT_PARAMS
-          XLAL_ERROR( XLAL_EDOM );
-      }
-  } else{
-    if( XLALSpinPrecHcapRvecDerivative( 0, values->data, dvalues->data, (void*) &seobParams) == XLAL_FAILURE )
-      {
-        XLALDestroyREAL8Vector( sigmaKerr );
-        XLALDestroyREAL8Vector( sigmaStar );
-        XLALDestroyREAL8Vector( values );
-        XLALDestroyREAL8Vector( dvalues );
-        XLALDestroyREAL8Vector( rdMatchPoint );
-        XLALPrintError("XLALSpinPrecHcapRvecDerivative failed!\n");
-        PRINT_PARAMS
-          XLAL_ERROR( XLAL_EDOM );
-      }
-  }
+
+  int failure_flag=0;
+  if (use_optimized) failure_flag = XLALSpinPrecHcapRvecDerivative_exact( 0, values->data, dvalues->data, (void*) &seobParams);
+  else failure_flag = XLALSpinPrecHcapRvecDerivative( 0, values->data, dvalues->data, (void*) &seobParams);
+  if(failure_flag == XLAL_FAILURE )
+    {
+      XLALDestroyREAL8Vector( sigmaKerr );
+      XLALDestroyREAL8Vector( sigmaStar );
+      XLALDestroyREAL8Vector( values );
+      XLALDestroyREAL8Vector( dvalues );
+      XLALDestroyREAL8Vector( rdMatchPoint );
+      XLALPrintError("XLALSpinPrecHcapRvecDerivative failed!\n");
+      PRINT_PARAMS
+        XLAL_ERROR( XLAL_EDOM );
+    }
+
   if(debugPK)XLAL_PRINT_INFO("\nCalculated Rdot\n");
 
   /* Calculate r cross rDot */
@@ -1674,10 +1668,11 @@ int XLALSimIMRSpinEOBWaveformAll(
 
     } else {
       if(use_optimized){
-        retLenEOMLow = XLALAdaptiveRungeKutta4_no_interpolate_SaveD(integrator, &seobParams, values->data, 0., 20./mTScaled, deltaT/mTScaled, &dynamicsEOMLo );
+	//        retLenEOMLow = XLALAdaptiveRungeKutta4_no_interpolate_SaveD(integrator, &seobParams, values->data, 0., 20./mTScaled, deltaT/mTScaled, &dynamicsEOMLo );
+        retLenEOMLow = XLALAdaptiveRungeKutta4NoInterpolate(integrator, &seobParams, values->data, 0., 20./mTScaled, deltaT/mTScaled, &dynamicsEOMLo, 3);/* Last parameter added when functions were combined in LALAdaptiveRungeKuttaIntegrator.c */
         if ( retLenEOMLow == XLAL_FAILURE )
           {
-            XLALPrintError("XLALAdaptiveRungeKutta4_no_interpolate_SaveD failed!\n");
+            XLALPrintError("XLALAdaptiveRungeKutta4NoInterpolate failed!\n");
             PRINT_PARAMS
               XLAL_ERROR( XLAL_EFAILED );
           }
@@ -1869,7 +1864,8 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   }else{
     if(use_optimized) {
-      retLenEOMHi = XLALAdaptiveRungeKutta4_no_interpolate_SaveD(integrator, &seobParams, values->data, 0., 20./mTScaled, deltaTHigh/mTScaled, &dynamicsEOMHi);
+      //      retLenEOMHi = XLALAdaptiveRungeKutta4_no_interpolate_SaveD(integrator, &seobParams, values->data, 0., 20./mTScaled, deltaTHigh/mTScaled, &dynamicsEOMHi);
+      retLenEOMHi = XLALAdaptiveRungeKutta4NoInterpolate(integrator, &seobParams, values->data, 0., 20./mTScaled, deltaTHigh/mTScaled, &dynamicsEOMHi, 3);/* Last parameter added when functions were combined in LALAdaptiveRungeKuttaIntegrator.c */
       retLenHi = (int)(dynamicsEOMHi->data[retLenEOMHi-1] / (deltaTHigh/mTScaled))+ 1;
       SEOBNRv3OptimizedInterpolatorGeneral(dynamicsEOMHi->data,0., deltaTHigh/mTScaled, retLenEOMHi, &dynamicsHi,14);
     } else {
@@ -2138,25 +2134,19 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   /* Calculate dr/dt */
   memset( dvalues->data, 0, 14*sizeof(dvalues->data[0]));
-  if (use_optimized) {
-    if( XLALSpinPrecHcapRvecDerivative_exact( 0, values->data, dvalues->data, &seobParams) != XLAL_SUCCESS )  {
+
+  failure_flag=0;
+  if (use_optimized) failure_flag = XLALSpinPrecHcapRvecDerivative_exact( 0, values->data, dvalues->data, &seobParams);
+  else failure_flag = XLALSpinPrecHcapRvecDerivative( 0, values->data, dvalues->data, &seobParams);
+  if(failure_flag != XLAL_SUCCESS )
+    {
       XLAL_PRINT_INFO( " Calculation of dr/dt at t = tPeakOmega \n");
       FREE_EVERYTHING
         FREE_SPHHARM
-        XLALPrintError("XLALSpinPrecHcapRvecDerivative_exact failed!\n");
+        XLALPrintError("XLALSpinPrecHcapRvecDerivative failed!\n");
       PRINT_PARAMS
         XLAL_ERROR( XLAL_EDOM );
     }
-  } else {
-    if( XLALSpinPrecHcapRvecDerivative( 0, values->data, dvalues->data, &seobParams) != XLAL_SUCCESS )  {
-      XLAL_PRINT_INFO( " Calculation of dr/dt at t = tPeakOmega \n");
-      FREE_EVERYTHING
-      FREE_SPHHARM
-      XLALPrintError("XLALSpinPrecHcapRvecDerivative failed!\n");
-      PRINT_PARAMS
-        XLAL_ERROR( XLAL_EDOM );
-    }
-  }
 
   /* Calculate Omega = r x dr/dt */
   memcpy( rdotvec, dvalues->data, 3*sizeof(REAL8));
@@ -2309,7 +2299,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   if (use_optimized) {
     // START OPTIMIZED CODE CHUNK
     REAL8Vector *hVecEOM = NULL;
-    if ( !(hVecEOM = XLALCreateREAL8Vector( 3*retLenLow ) ) )
+    if ( !(hVecEOM = XLALCreateREAL8Vector( 3*retLenEOMLow ) ) )
       {
         XLALPrintError("Failed to allocate REAL8Vector hVecEOM!\n");
         PRINT_PARAMS
@@ -3847,7 +3837,7 @@ int XLALSimIMRSpinEOBWaveformAll(
     XLALDestroyREAL8Vector( sigmaKerr );
     XLALDestroyREAL8Vector( sigReHi );
     XLALDestroyREAL8Vector( sigImHi );
-    XLALAdaptiveRungeKutta4Free(integrator);
+    XLALAdaptiveRungeKuttaFree(integrator);
     XLALDestroyREAL8Array( dynamics );
     XLALDestroyREAL8Vector( Alpha );
     XLALDestroyREAL8Vector( Beta );

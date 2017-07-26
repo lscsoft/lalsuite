@@ -70,9 +70,19 @@ static REAL8 XLALSpinPrecHcapExactDerivativeWrapper(const REAL8 * values, SpinEO
   memcpy(s1VecData, values + 6, 3 * sizeof(REAL8));
   memcpy(s2VecData, values + 9, 3 * sizeof(REAL8));
 
+  /**
+   * Loop to calculate normalized spin of the deformed-Kerr background (sigmaKerr)
+   * and normalized spin of the test particle (sigmaStarr) in SEOBNR.
+   * Eqs. 5.2 and 5.3 of Barausse and Buonanno PRD 81, 084024 (2010).
+   */
+
+  REAL8 m1m2_inv = 1.0/(mass1*mass2);
+  REAL8 m2overm1 = mass2*mass2*m1m2_inv;
+  REAL8 m1overm2 = mass1*mass1*m1m2_inv;
+
   for(int i=0; i<3; i++){
-    sigmaKerrData[i] = s1VecData[i]+s2VecData[i];
-    sigmaStarData[i] = (mass2/mass1)*s1VecData[i]+(mass1/mass2)*s2VecData[i];
+    sigmaKerrData[i] = s1VecData[i] + s2VecData[i];
+    sigmaStarData[i] = m2overm1*s1VecData[i] + m1overm2*s2VecData[i];
   }
 
   SEOBHCoeffConstants * seobCoeffConsts = params->seobCoeffConsts;
@@ -80,7 +90,7 @@ static REAL8 XLALSpinPrecHcapExactDerivativeWrapper(const REAL8 * values, SpinEO
   return deriv;
 }
 
-/*
+/**
  * Call a particular derivative
  */
 static REAL8 XLALSpinPrecHcapExactDerivativeNoWrap(
@@ -98,28 +108,21 @@ static REAL8 XLALSpinPrecHcapExactDerivativeNoWrap(
               REAL8 mass2                           /**<< mass 2 */
               )
 {
+    REAL8 a2 = sigmaKerr->data[0] * sigmaKerr->data[0] + sigmaKerr->data[1] * sigmaKerr->data[1] +  sigmaKerr->data[2] * sigmaKerr->data[2];
+    REAL8 a = sqrt(a2);
 
-//    if(coeffs->updateHCoeffs) UpdateCoeffs(coeffs,sigmaKerr,eta);
-//    if(true){
     if(coeffs->updateHCoeffs){
-    SpinEOBHCoeffs tmpCoeffs;
-    REAL8 tmpa;
+      SpinEOBHCoeffs tmpCoeffs;
 
-    tmpa = sqrt(sigmaKerr->data[0]*sigmaKerr->data[0]
-                + sigmaKerr->data[1]*sigmaKerr->data[1]
-                + sigmaKerr->data[2]*sigmaKerr->data[2]);
+      if ( XLALSimIMRCalculateSpinPrecEOBHCoeffs( &tmpCoeffs, eta, a/* tmpa */, coeffs->SpinAlignedEOBversion ) == XLAL_FAILURE )
+	{
+	  XLAL_ERROR( XLAL_EFUNC );
+	}
 
-    if ( XLALSimIMRCalculateSpinPrecEOBHCoeffs( &tmpCoeffs, eta, tmpa, coeffs->SpinAlignedEOBversion ) == XLAL_FAILURE )
-    {
-      XLAL_ERROR( XLAL_EFUNC );
-    }
+      tmpCoeffs.SpinAlignedEOBversion = coeffs->SpinAlignedEOBversion;
+      tmpCoeffs.updateHCoeffs = coeffs->updateHCoeffs;
 
-    tmpCoeffs.SpinAlignedEOBversion = coeffs->SpinAlignedEOBversion;
-    tmpCoeffs.updateHCoeffs = coeffs->updateHCoeffs;
-
-    coeffs = &tmpCoeffs;
-
-
+      coeffs = &tmpCoeffs;
     }
 
     REAL8 deriv, e3_x, e3_y, e3_z;
@@ -131,17 +134,14 @@ static REAL8 XLALSpinPrecHcapExactDerivativeNoWrap(
     xVec.data = xData;
     pVec.data = pData;
 
-	REAL8Vector * x;
-	REAL8Vector * p;
+    REAL8Vector * x;
+    REAL8Vector * p;
 
     x=&xVec;
     p=&pVec;
 
     memcpy(xVec.data,values,3*sizeof(REAL8));
-	memcpy(pVec.data,values+3,3*sizeof(REAL8));
-
-    REAL8 a2 = sigmaKerr->data[0] * sigmaKerr->data[0] + sigmaKerr->data[1] * sigmaKerr->data[1] +  sigmaKerr->data[2] * sigmaKerr->data[2];
-    REAL8 a = sqrt(a2);
+    memcpy(pVec.data,values+3,3*sizeof(REAL8));
 
     INT4 divby0 = 0;
 
@@ -165,9 +165,11 @@ static REAL8 XLALSpinPrecHcapExactDerivativeNoWrap(
     const REAL8 invr = 1./sqrt(xData[0]*xData[0]+xData[1]*xData[1]+xData[2]*xData[2]);
 
     if (1. - fabs(e3_x*(xData[0]*invr) + e3_y*(xData[1]*invr) + e3_z*(xData[2]*invr)) <= 1.e-8) {
+      /** Prevent the source frame basis vectors from becoming too short, which may
+       * cause denominators to become zero in exact derivative expressions.
+       */
       e3_x = e3_x+0.1;
       e3_y = e3_y+0.1;
-      e3_z = e3_z+0.1; /* ZACH ADDED */
       const REAL8 invnorm = 1./sqrt(e3_x*e3_x + e3_y*e3_y + e3_z*e3_z);
       e3_x = e3_x*invnorm;
       e3_y = e3_y*invnorm;
@@ -176,8 +178,8 @@ static REAL8 XLALSpinPrecHcapExactDerivativeNoWrap(
     }
 
     if(divby0) {
-      /* s1 & s2Vec's cannot all be zero when taking spin derivatives, because naturally
-         some s1Vec's & s2Vec's appear in denominators of exact deriv expressions.
+      /* Vector sum of s1 & s2 cannot be zero when taking spin derivatives, because
+       * vecotor sum components appear in denominators of exact derivative expressions.
       */
       const double epsilon_spin=1e-14;
       if(fabs(s1Vec->data[0] + s2Vec->data[0])<epsilon_spin &&
@@ -192,6 +194,9 @@ static REAL8 XLALSpinPrecHcapExactDerivativeNoWrap(
       }
     }
 
+    /** In v3opt, m1PlusEtaKK is common to all derivative expressions and is therefore
+     * defined outside individual derivative files.
+     */
     REAL8 m1PlusEtaKK = coeffs->KK*eta-1.0;
 
     //OPTV3: Must define the seob coeffs constants for spin derivatives
@@ -206,6 +211,11 @@ static REAL8 XLALSpinPrecHcapExactDerivativeNoWrap(
     REAL8 c1k5 = seobCoeffConsts->a1k5;
     REAL8 c2k5 = seobCoeffConsts->a2k5;
 
+    /** variedParam specifies which partial derivative to compute,
+     * and derivatives must be split by both tortoise value and
+     * divby0 status.  Space derivatives have tortoise value 2 while
+     * momentum and spin derivatives have tortoise value 1.
+     */
     if(variedParam <= 5 || !divby0 ){
         switch(tortoise){
         case 1:

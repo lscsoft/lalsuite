@@ -26,7 +26,7 @@
 #include <lal/Date.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
-#include <lal/LALAdaptiveRungeKutta4.h>
+#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
 #include <lal/SphericalHarmonics.h>
 #include <gsl/gsl_sf_gamma.h>
 
@@ -836,7 +836,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   REAL8 y_1, y_2, z1, z2;
 
   /* Variables for the integrator */
-  LALAdaptiveRungeKutta4Integrator *integrator = NULL;
+  LALAdaptiveRungeKuttaIntegrator *integrator = NULL;
   REAL8Array *dynamics = NULL;
   REAL8Array *dynamicsHi = NULL;
 
@@ -1302,7 +1302,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 					      values->data, 0.,
 					      20. / mTScaled,
 					      deltaT / mTScaled,
-					      &dynamicstmp);
+					      &dynamicstmp,2);/* Last parameter added when funcions were combined in LALAdaptiveRungeKuttaIntegrator.c*/
       if (retLen_fromOptStep2 == XLAL_FAILURE || !dynamicstmp)
         {
           XLAL_ERROR (XLAL_EFUNC);
@@ -1404,7 +1404,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 					      values->data, 0.,
 					      20. / mTScaled,
 					      deltaTHigh / mTScaled,
-					      &dynamicsHitmp);
+					      &dynamicsHitmp,2);/* Last parameter added when funcions were combined in LALAdaptiveRungeKuttaIntegrator.c*/
       if (retLen_fromOptStep3 == XLAL_FAILURE || !dynamicsHitmp)
         {
           XLAL_ERROR (XLAL_EFUNC);
@@ -2193,7 +2193,7 @@ XLALGPSAdd (&tc, deltaT * (REAL8) kMin);
   XLALDestroyREAL8Vector (phaseNQC);
   XLALDestroyREAL8Vector (sigReVec);
   XLALDestroyREAL8Vector (sigImVec);
-  XLALAdaptiveRungeKutta4Free (integrator);
+  XLALAdaptiveRungeKuttaFree (integrator);
   XLALDestroyREAL8Array (dynamics);
   XLALDestroyREAL8Array (dynamicsHi);
 

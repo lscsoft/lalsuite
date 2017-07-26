@@ -96,7 +96,7 @@
  *//*@{*/
 
 #include <lal/LALPSpinInspiralRD.h>
-#include <lal/LALAdaptiveRungeKutta4.h>
+#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
 
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
@@ -1781,7 +1781,7 @@ static int XLALSpinInspiralAdaptiveEngine(
 
   REAL8Array *yout=NULL;
   //yout=malloc(sizeof(REAL8Array));
-  LALAdaptiveRungeKutta4Integrator *integrator=NULL;
+  LALAdaptiveRungeKuttaIntegrator *integrator=NULL;
   //integrator=malloc(sizeof(LALAdaptiveRungeKutta4Integrator));
  //memset(&integrator,0,sizeof(LALAdaptiveRungeKutta4Integrator)+1);
 
@@ -1839,7 +1839,7 @@ static int XLALSpinInspiralAdaptiveEngine(
   intlen = XLALAdaptiveRungeKutta4Hermite(integrator,(void *)mparams,yin,0.0,mparams->lengths/Mass,dt/Mass,&yout);
 
   intreturn = integrator->returncode;
-  XLALAdaptiveRungeKutta4Free(integrator);
+  XLALAdaptiveRungeKuttaFree(integrator);
 
   /* End integration*/
 
