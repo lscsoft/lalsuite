@@ -98,6 +98,7 @@ functions = dict()
 structs = dict()
 tdstruct_names = dict()
 tdstructs = dict()
+typedefs = dict()
 variable_names = dict()
 variables = dict()
 for header_name in headers:
@@ -139,12 +140,19 @@ for header_name in headers:
             functions[cdecl_name] = cdecl
             function_names[cdecl_name] = cdecl_name
 
-        # typedefs to structs
-        elif cdecl_kind == 'typedef' and cdecl_type.startswith('struct '):
-            if cdecl_name in tdstructs:
-                fail("duplicate struct typedef '%s' in header '%s'" % (cdecl_name, header_name))
-            tdstruct_names[cdecl_name] = cdecl_type[7:]
-            tdstructs[cdecl_name] = cdecl
+        # typedefs
+        elif cdecl_kind == 'typedef':
+
+            # typedefs to structs
+            if cdecl_type.startswith('struct '):
+                if cdecl_name in tdstructs:
+                    fail("duplicate struct typedef '%s' in header '%s'" % (cdecl_name, header_name))
+                tdstruct_names[cdecl_name] = cdecl_type[7:]
+                tdstructs[cdecl_name] = cdecl
+
+            # other typedefs
+            else:
+                typedefs[cdecl_name] = cdecl_type
 
         # variables
         if cdecl_kind == 'variable' and not cdecl_type in ['SWIGLAL', 'SWIGLAL_CLEAR']:
@@ -273,6 +281,10 @@ for function_name in functions:
         continue
     dtor_struct_name = dtor_decl_match.group(1)
 
+    # resolve any nested typedefs
+    while dtor_struct_name in typedefs:
+        dtor_struct_name = typedefs[dtor_struct_name]
+
     # function argument must be a struct name
     if not dtor_struct_name in tdstructs:
         continue
@@ -282,9 +294,15 @@ for function_name in functions:
     if not dtor_retn_type in ['void', 'int']:
         fail("destructor function '%s' has invalid return type '%s'" % (function_name, dtor_retn_type))
 
-    # struct must not already have a destructor; fail otherwise
+    # if struct already has a destructor, prefer the destructor containing the struct name, otherwise fail
     if dtor_struct_name in dtor_functions:
-        fail("struct typedef '%s' has duplicate destructors '%s' and '%s'" % (dtor_struct_name, function_name, dtor_functions[dtor_struct_name]))
+        if dtor_struct_name in function_name:
+            if dtor_struct_name in dtor_functions[dtor_struct_name]:
+                fail("struct typedef '%s' has duplicate destructors '%s' and '%s'" % (dtor_struct_name, function_name, dtor_functions[dtor_struct_name]))
+        else:
+            if dtor_struct_name in dtor_functions[dtor_struct_name]:
+                continue
+            fail("struct typedef '%s' has duplicate destructors '%s' and '%s'" % (dtor_struct_name, function_name, dtor_functions[dtor_struct_name]))
 
     # save destructor name
     dtor_functions[dtor_struct_name] = function_name
