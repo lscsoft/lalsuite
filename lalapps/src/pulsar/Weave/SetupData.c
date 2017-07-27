@@ -47,7 +47,7 @@ void XLALWeaveSetupDataClear(
     XLALDestroySuperskyMetrics( setup->metrics );
     XLALDestroyEphemerisData( setup->ephemerides );
   }
-}
+} // XLALWeaveSetupDataClear()
 
 ///
 /// Write setup data to a FITS file
@@ -83,7 +83,7 @@ int XLALWeaveSetupDataWrite(
 
   return XLAL_SUCCESS;
 
-}
+} // XLALWeaveSetupDataWrite()
 
 ///
 /// Read setup data from a FITS file
@@ -126,7 +126,7 @@ int XLALWeaveSetupDataRead(
 
   return XLAL_SUCCESS;
 
-}
+} // XLALWeaveSetupDataRead()
 
 // Local Variables:
 // c-file-style: "linux"

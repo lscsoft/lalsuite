@@ -1169,7 +1169,7 @@ int main( int argc, char *argv[] )
 
       }
 
-    }
+    } // if ( UVAR_SET( ckpt_output_file ) )
 
     // Print iteration progress, if required
     if ( wall_now - wall_prog >= wall_prog_period ) {
@@ -1405,7 +1405,7 @@ int main( int argc, char *argv[] )
 
   return EXIT_SUCCESS;
 
-}
+} // main()
 
 // Local Variables:
 // c-file-style: "linux"

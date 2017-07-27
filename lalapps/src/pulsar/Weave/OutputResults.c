@@ -121,7 +121,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   return out;
 
-}
+} // XLALWeaveOutputResultsCreate()
 
 ///
 /// Free output results
@@ -138,7 +138,7 @@ void XLALWeaveOutputResultsDestroy(
     }
     XLALFree( out );
   }
-}
+} // XLALWeaveOutputResultsDestroy()
 
 ///
 /// Add semicoherent results to output
@@ -161,7 +161,7 @@ int XLALWeaveOutputResultsAdd(
 
   return XLAL_SUCCESS;
 
-}
+} // XLALWeaveOutputResultsAdd()
 
 ///
 /// Write output results to a FITS file
@@ -203,7 +203,7 @@ int XLALWeaveOutputResultsWrite(
 
   return XLAL_SUCCESS;
 
-}
+} // XLALWeaveOutputResultsWrite()
 
 ///
 /// Read results from a FITS file and append to new/existing output results
@@ -294,7 +294,7 @@ int XLALWeaveOutputResultsReadAppend(
 
   return XLAL_SUCCESS;
 
-}
+} // XLALWeaveOutputResultsReadAppend()
 
 ///
 /// Compare two output results and return whether they are equal
@@ -375,7 +375,7 @@ int XLALWeaveOutputResultsCompare(
 
   return XLAL_SUCCESS;
 
-}
+} // XLALWeaveOutputResultsCompare()
 
 // Local Variables:
 // c-file-style: "linux"

@@ -109,7 +109,7 @@ WeaveResultsToplistItem *toplist_item_create(
 
   return item;
 
-}
+} // toplist_item_create()
 
 ///
 /// Destroy a toplist item
@@ -130,7 +130,7 @@ void toplist_item_destroy(
     }
     XLALFree( item );
   }
-}
+} // toplist_item_destroy()
 
 ///
 /// Compare toplist items
@@ -146,7 +146,7 @@ int toplist_item_compare(
   const WeaveResultsToplistItem *iy = ( const WeaveResultsToplistItem * ) y;
   WEAVE_COMPARE_BY( item_get_rank_stat_fcn( iy ), item_get_rank_stat_fcn( ix ) );   // Compare in descending order
   return 0;
-}
+} // toplist_item_compare()
 
 ///
 /// Initialise a FITS table for writing/reading a toplist
@@ -207,7 +207,7 @@ int toplist_fits_table_init(
 
   return XLAL_SUCCESS;
 
-}
+} // toplist_fits_table_init()
 
 ///
 /// Visitor function for writing a toplist to a FITS table
@@ -220,7 +220,7 @@ int toplist_fits_table_write_visitor(
   FITSFile *file = ( FITSFile * ) param;
   XLAL_CHECK( XLALFITSTableWriteRow( file, x ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
-}
+} // toplist_fits_table_write_visitor()
 
 ///
 /// Sort toplist items by physical coordinates of semicoherent template.
@@ -242,7 +242,7 @@ int toplist_item_sort_by_semi_phys(
   }
   WEAVE_COMPARE_BY( ix->semi_fkdot[0], iy->semi_fkdot[0] );   // Compare in ascending order
   return 0;
-}
+} // toplist_item_sort_by_semi_phys()
 
 ///
 /// Compute two template parameters
@@ -328,7 +328,7 @@ int compare_templates(
 
   return XLAL_SUCCESS;
 
-}
+} // compare_templates()
 
 ///
 /// Compare two vectors of results
@@ -349,7 +349,7 @@ int compare_vectors(
     XLAL_ERROR( XLAL_EFUNC );
   }
   return XLAL_SUCCESS;
-}
+} // compare_vectors()
 
 ///
 /// Create results toplist
@@ -396,7 +396,7 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
 
   return toplist;
 
-}
+} // XLALWeaveResultsToplistCreate()
 
 ///
 /// Free results toplist
@@ -412,7 +412,7 @@ void XLALWeaveResultsToplistDestroy(
     toplist_item_destroy( toplist->saved_item );
     XLALFree( toplist );
   }
-}
+} // XLALWeaveResultsToplistDestroy()
 
 ///
 /// Add semicoherent results to toplist
@@ -526,11 +526,11 @@ int XLALWeaveResultsToplistAdd(
       }
     }
 
-  }
+  } // for i < n_maybe_add
 
   return XLAL_SUCCESS;
 
-}
+} // XLALWeaveResultsToplistAdd()
 
 ///
 /// Write results toplist to a FITS file
@@ -560,7 +560,7 @@ int XLALWeaveResultsToplistWrite(
 
   return XLAL_SUCCESS;
 
-}
+} // XLALWeaveResultsToplistWrite
 
 ///
 /// Read results from a FITS file and append to existing results toplist
@@ -603,7 +603,7 @@ int XLALWeaveResultsToplistReadAppend(
 
   return XLAL_SUCCESS;
 
-}
+} // XLALWeaveResultsToplistReadAppend()
 
 ///
 /// Compare two results toplists and return whether they are equal
@@ -789,7 +789,7 @@ int XLALWeaveResultsToplistCompare(
 
   return XLAL_SUCCESS;
 
-}
+} // XLALWeaveResultsToplistCompare()
 
 // Local Variables:
 // c-file-style: "linux"

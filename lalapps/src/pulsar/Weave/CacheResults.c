@@ -140,7 +140,7 @@ void cache_item_destroy(
     XLALWeaveCohResultsDestroy( ix->coh_res );
     XLALFree( ix );
   }
-}
+} // cache_item_destroy()
 
 ///
 /// Compare cache items by partition index, then relevance
@@ -155,7 +155,7 @@ int cache_item_compare_by_relevance(
   WEAVE_COMPARE_BY( ix->partition_index, iy->partition_index );   // Compare in ascending order
   WEAVE_COMPARE_BY( ix->relevance, iy->relevance );   // Compare in ascending order
   return 0;
-}
+} // cache_item_compare_by_relevance()
 
 ///
 /// Compare cache items by partition index, then locator index
@@ -170,7 +170,7 @@ int cache_item_compare_by_coh_index(
   WEAVE_COMPARE_BY( ix->partition_index, iy->partition_index );   // Compare in ascending order
   WEAVE_COMPARE_BY( ix->coh_index, iy->coh_index );   // Compare in ascending order
   return 0;
-}
+} // cache_item_compare_by_coh_index()
 
 ///
 /// Hash cache items by partition index and locator index
@@ -184,7 +184,7 @@ UINT8 cache_item_hash(
   XLALPearsonHash( &hval, sizeof( hval ), &ix->partition_index, sizeof( ix->partition_index ) );
   XLALPearsonHash( &hval, sizeof( hval ), &ix->coh_index, sizeof( ix->coh_index ) );
   return hval;
-}
+} // cache_item_hash()
 
 ///
 /// Create a cache
@@ -301,7 +301,7 @@ WeaveCache *XLALWeaveCacheCreate(
 
   return cache;
 
-}
+} // XLALWeaveCacheCreate()
 
 ///
 /// Destroy a cache
@@ -318,7 +318,7 @@ void XLALWeaveCacheDestroy(
     XLALHashTblDestroy( cache->coh_computed_hash );
     XLALFree( cache );
   }
-}
+} // XLALWeaveCacheDestroy()
 
 ///
 /// Create storage for a series of cache queries
@@ -379,7 +379,7 @@ WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
 
   return queries;
 
-}
+} // XLALWeaveCacheQueriesCreate()
 
 ///
 /// Destroy storage for a series of cache queries
@@ -396,7 +396,7 @@ void XLALWeaveCacheQueriesDestroy(
     XLALFree( queries->coh_relevance );
     XLALFree( queries );
   }
-}
+} // XLALWeaveCacheQueriesDestroy()
 
 ///
 /// Initialise a series of cache queries
@@ -427,7 +427,7 @@ int XLALWeaveCacheQueriesInit(
 
   return XLAL_SUCCESS;
 
-}
+} // XLALWeaveCacheQueriesInit()
 
 ///
 /// Query a cache for the results nearest to a given coherent point
@@ -493,7 +493,7 @@ int XLALWeaveCacheQuery(
 
   return XLAL_SUCCESS;
 
-}
+} // XLALWeaveCacheQuery()
 
 ///
 /// Finalise a series of cache queries
@@ -576,7 +576,7 @@ int XLALWeaveCacheQueriesFinal(
 
   return XLAL_SUCCESS;
 
-}
+} // XLALWeaveCacheQueriesFinal()
 
 ///
 /// Retrieve coherent results for a given query, or compute new coherent results if not found
@@ -730,7 +730,7 @@ int XLALWeaveCacheRetrieve(
 
   return XLAL_SUCCESS;
 
-}
+} // XLALWeaveCacheRetrieve()
 
 // Local Variables:
 // c-file-style: "linux"

@@ -224,7 +224,7 @@ XLAL_FAIL:
   // Indicate an error preventing result files from being compared
   return 2;
 
-}
+} // main()
 
 // Local Variables:
 // c-file-style: "linux"

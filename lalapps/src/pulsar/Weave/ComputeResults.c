@@ -152,7 +152,7 @@ WeaveCohInput *XLALWeaveCohInputCreate(
 
   return coh_input;
 
-}
+} // XLALWeaveCohInputCreate()
 
 ///
 /// Destroy coherent input data
@@ -165,7 +165,7 @@ void XLALWeaveCohInputDestroy(
     XLALDestroyFstatInput( coh_input->Fstat_input );
     XLALFree( coh_input );
   }
-}
+} // XLALWeaveCohInputDestroy()
 
 ///
 /// Create and compute coherent results
@@ -255,7 +255,7 @@ int XLALWeaveCohResultsCompute(
 
   return XLAL_SUCCESS;
 
-}
+} // XLALWeaveCohResultsCompute()
 
 ///
 /// Destroy coherent results
@@ -271,7 +271,7 @@ void XLALWeaveCohResultsDestroy(
     }
     XLALFree( coh_res );
   }
-}
+} // XLALWeaveCohResultsDestroy()
 
 ///
 /// Create and initialise partial semicoherent results
@@ -336,7 +336,7 @@ int XLALWeaveSemiPartialsInit(
 
   return XLAL_SUCCESS;
 
-}
+} // XLALWeaveSemiPartialsInit()
 
 ///
 /// Destroy partial semicoherent results
@@ -375,7 +375,7 @@ int semi_parts_sum_2F(
     return XLAL_SUCCESS;
   }
   return XLALVectorAddREAL4( sum2F, sum2F, coh2F, nfreqs );
-}
+} // semi_parts_sum_2F()
 
 ///
 /// Add a new set of coherent results to the partial semicoherent results
@@ -430,7 +430,7 @@ int XLALWeaveSemiPartialsAdd(
 
   return XLAL_SUCCESS;
 
-}
+} // XLALWeaveSemiPartialsAdd()
 
 ///
 /// Create and compute final semicoherent results
@@ -490,7 +490,7 @@ int XLALWeaveSemiResultsCompute(
 
   return XLAL_SUCCESS;
 
-}
+} // XLALWeaveSemiResultsCompute()
 
 ///
 /// Destroy final semicoherent results
@@ -506,7 +506,8 @@ void XLALWeaveSemiResultsDestroy(
     }
     XLALFree( semi_res );
   }
-}
+
+} // XLALWeaveSemiResultsDestroy()
 
 // Local Variables:
 // c-file-style: "linux"
