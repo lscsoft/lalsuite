@@ -39,8 +39,9 @@
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 #define SQ(x) ((x)*(x))
 
-#define cRELERR(x,y) ( cabsf( (x) - (y) ) / ( 0.5 * (cabsf(x) + cabsf(y)) ) )
-#define fRELERR(x,y) ( fabsf( (x) - (y) ) / ( 0.5 * (fabsf(x) + fabsf(y)) ) )
+#define FINITE_OR_ONE(x)  (((x) != 0) ? (x) : 1.0)
+#define cRELERR(x,y) ( cabsf( (x) - (y) ) / FINITE_OR_ONE( 0.5 * (cabsf(x) + cabsf(y)) ) )
+#define fRELERR(x,y) ( fabsf( (x) - (y) ) / FINITE_OR_ONE( 0.5 * (fabsf(x) + fabsf(y)) ) )
 #define OOTWOPI         (1.0 / LAL_TWOPI)      // 1/2pi
 #define OOPI         (1.0 / LAL_PI)      // 1/pi
 #define LD_SMALL4       (2.0e-4)                // "small" number for REAL4: taken from Demod()
@@ -721,12 +722,12 @@ XLALCompareCOMPLEX8Vectors ( VectorComparison *result,		///< [out] return compar
   x_L2 = sqrt ( x_L2sq );
   y_L2 = sqrt ( y_L2sq );
   diff_L2 = sqrt ( diff_L2 );
-  REAL8 sinAngle2 = (x_L2sq * y_L2sq - scalar * conj(scalar)) / (x_L2sq * y_L2sq);
+  REAL8 sinAngle2 = (x_L2sq * y_L2sq - scalar * conj(scalar)) / FINITE_OR_ONE(x_L2sq * y_L2sq);
   REAL8 angle = asin ( sqrt( fabs(sinAngle2) ) );
 
   // compute and return comparison results
-  result->relErr_L1 = diff_L1 / ( 0.5 * (x_L1 + y_L1 ) );
-  result->relErr_L2 = diff_L2 / ( 0.5 * (x_L2 + y_L2 ) );
+  result->relErr_L1 = diff_L1 / FINITE_OR_ONE( 0.5 * (x_L1 + y_L1 ) );
+  result->relErr_L2 = diff_L2 / FINITE_OR_ONE( 0.5 * (x_L2 + y_L2 ) );
   result->angleV = angle;
 
   result->relErr_atMaxAbsx = cRELERR ( x_atMaxAbsx, y_atMaxAbsx );
@@ -808,9 +809,9 @@ XLALCompareREAL4Vectors ( VectorComparison *result,	///< [out] return comparison
   diff_L2 = sqrt ( diff_L2 );
 
   // compute and return comparison results
-  result->relErr_L1 = diff_L1 / ( 0.5 * (x_L1 + y_L1 ) );
-  result->relErr_L2 = diff_L2 / ( 0.5 * (x_L2 + y_L2 ) );
-  REAL8 sinAngle2 = (x_L2sq * y_L2sq - SQ(scalar) ) / ( x_L2sq * y_L2sq );
+  result->relErr_L1 = diff_L1 / FINITE_OR_ONE( 0.5 * (x_L1 + y_L1 ) );
+  result->relErr_L2 = diff_L2 / FINITE_OR_ONE( 0.5 * (x_L2 + y_L2 ) );
+  REAL8 sinAngle2 = (x_L2sq * y_L2sq - SQ(scalar) ) / FINITE_OR_ONE( x_L2sq * y_L2sq );
   result->angleV = asin ( sqrt ( fabs ( sinAngle2 ) ) );
   result->relErr_atMaxAbsx = fRELERR ( x_atMaxAbsx, y_atMaxAbsx );
   result->relErr_atMaxAbsy = fRELERR ( x_atMaxAbsy, y_atMaxAbsy );;
