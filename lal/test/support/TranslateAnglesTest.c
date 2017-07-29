@@ -65,7 +65,29 @@ test_HMS_RAD ( void )
 
   XLAL_CHECK ( (hms = XLALTranslateRADtoHMS ( rads )) != NULL, XLAL_EFUNC );
   XLAL_CHECK ( strcmp ( hms, hmsRef ) == 0, XLAL_ETOL, "Returned hms string '%s' differs from input '%s'\n", hms, hmsRef );
-  XLALPrintInfo ("Translateed HMS '%s' into %.16g rad, and back into '%s'\n", hmsRef, rads, hms );
+  XLALPrintInfo ("Translated HMS '%s' into %.16g rad, and back into '%s'\n", hmsRef, rads, hms );
+  XLALFree ( hms );
+
+  /* test with form HH:MM */
+  hmsRef = "06:52";
+  radsRef = 1.797689129554159;  // pulsarpputils.ra_to_rad ( "06:52" )
+  XLAL_CHECK ( XLALTranslateHMStoRAD ( &rads, hmsRef ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( (diff=fabs(rads - radsRef)) < tol, XLAL_ETOL, "Result XLALTranslateHMStoRAD(%s)=%.16g differs from reference '%.16g' by %g > tolerance %g\n", hmsRef, rads, radsRef, diff, tol );
+
+  XLAL_CHECK ( (hms = XLALTranslateRADtoHMS ( rads )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( strcmp ( hms, "06:52:00.0000000" ) == 0, XLAL_ETOL, "Returned hms string '%s' differs from input '%s'\n", hms, hmsRef );
+  XLALPrintInfo ("Translated HMS '%s' into %.16g rad, and back into '%s'\n", hmsRef, rads, hms );
+  XLALFree ( hms );
+
+  /* test with form HH */
+  hmsRef = "06";
+  radsRef = 1.570796326794897;  // pulsarpputils.ra_to_rad ( "06" )
+  XLAL_CHECK ( XLALTranslateHMStoRAD ( &rads, hmsRef ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( (diff=fabs(rads - radsRef)) < tol, XLAL_ETOL, "Result XLALTranslateHMStoRAD(%s)=%.16g differs from reference '%.16g' by %g > tolerance %g\n", hmsRef, rads, radsRef, diff, tol );
+
+  XLAL_CHECK ( (hms = XLALTranslateRADtoHMS ( rads )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( strcmp ( hms, "06:00:00.0000000" ) == 0, XLAL_ETOL, "Returned hms string '%s' differs from input '%s'\n", hms, hmsRef );
+  XLALPrintInfo ("Translated HMS '%s' into %.16g rad, and back into '%s'\n", hmsRef, rads, hms );
   XLALFree ( hms );
 
   hmsRef = "00:52:16.8753234";
@@ -75,7 +97,29 @@ test_HMS_RAD ( void )
 
   XLAL_CHECK ( (hms = XLALTranslateRADtoHMS ( rads )) != NULL, XLAL_EFUNC );
   XLAL_CHECK ( strcmp ( hms, hmsRef ) == 0, XLAL_ETOL, "Returned hms string '%s' differs from input '%s'\n", hms, hmsRef );
-  XLALPrintInfo ("Translateed HMS '%s' into %.16g rad, and back into '%s'\n", hmsRef, rads, hms );
+  XLALPrintInfo ("Translated HMS '%s' into %.16g rad, and back into '%s'\n", hmsRef, rads, hms );
+  XLALFree ( hms );
+
+  /* test with form HH:MM */
+  hmsRef = "00:52";
+  radsRef = 0.226892802759263;	// pulsarpputils.ra_to_rad ( "00:52" )
+  XLAL_CHECK ( XLALTranslateHMStoRAD ( &rads, hmsRef ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( (diff=fabs(rads - radsRef)) < tol, XLAL_ETOL, "Result XLALTranslateHMStoRAD(%s)=%.16g differs from reference '%.16g' by %g > tolerance %g\n", hmsRef, rads, radsRef, diff, tol );
+
+  XLAL_CHECK ( (hms = XLALTranslateRADtoHMS ( rads )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( strcmp ( hms, "00:52:00.0000000" ) == 0, XLAL_ETOL, "Returned hms string '%s' differs from input '%s'\n", hms, hmsRef );
+  XLALPrintInfo ("Translated HMS '%s' into %.16g rad, and back into '%s'\n", hmsRef, rads, hms );
+  XLALFree ( hms );
+
+  /* test with form HH */
+  hmsRef = "00";
+  radsRef = 0.0;	// pulsarpputils.ra_to_rad ( "00" )
+  XLAL_CHECK ( XLALTranslateHMStoRAD ( &rads, hmsRef ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( (diff=fabs(rads - radsRef)) < tol, XLAL_ETOL, "Result XLALTranslateHMStoRAD(%s)=%.16g differs from reference '%.16g' by %g > tolerance %g\n", hmsRef, rads, radsRef, diff, tol );
+
+  XLAL_CHECK ( (hms = XLALTranslateRADtoHMS ( rads )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( strcmp ( hms, "00:00:00.0000000" ) == 0, XLAL_ETOL, "Returned hms string '%s' differs from input '%s'\n", hms, hmsRef );
+  XLALPrintInfo ("Translated HMS '%s' into %.16g rad, and back into '%s'\n", hmsRef, rads, hms );
   XLALFree ( hms );
 
   return XLAL_SUCCESS;
@@ -99,7 +143,29 @@ test_DMS_RAD ( void )
 
   XLAL_CHECK ( (dms = XLALTranslateRADtoDMS ( rads )) != NULL, XLAL_EFUNC );
   XLAL_CHECK ( strcmp ( dms, dmsRef ) == 0, XLAL_ETOL, "Returned dms string '%s' differs from input '%s'\n", dms, dmsRef );
-  XLALPrintInfo ("Translateed DMS '%s' into %.16g rad, and back into '%s'\n", dmsRef, rads, dms );
+  XLALPrintInfo ("Translated DMS '%s' into %.16g rad, and back into '%s'\n", dmsRef, rads, dms );
+  XLALFree ( dms );
+
+  /* test with form DD:MM */
+  dmsRef = "-06:52";
+  radsRef = -0.119845941970277;	// pulsarpputils.ra_to_rad ( "-06:52" )
+  XLAL_CHECK ( XLALTranslateDMStoRAD ( &rads, dmsRef ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( (diff=fabs(rads - radsRef)) < tol, XLAL_ETOL, "Result XLALTranslateDMStoRAD(%s)=%.16g differs from reference '%.16g' by %g > tolerance %g\n", dmsRef, rads, radsRef, diff, tol );
+
+  XLAL_CHECK ( (dms = XLALTranslateRADtoDMS ( rads )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( strcmp ( dms, "-06:52:00.00000" ) == 0, XLAL_ETOL, "Returned dms string '%s' differs from input '%s'\n", dms, dmsRef );
+  XLALPrintInfo ("Translated DMS '%s' into %.16g rad, and back into '%s'\n", dmsRef, rads, dms );
+  XLALFree ( dms );
+
+  /* test with form DD */
+  dmsRef = "-06";
+  radsRef = -0.104719755119660;	// pulsarpputils.ra_to_rad ( "-06" )
+  XLAL_CHECK ( XLALTranslateDMStoRAD ( &rads, dmsRef ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( (diff=fabs(rads - radsRef)) < tol, XLAL_ETOL, "Result XLALTranslateDMStoRAD(%s)=%.16g differs from reference '%.16g' by %g > tolerance %g\n", dmsRef, rads, radsRef, diff, tol );
+
+  XLAL_CHECK ( (dms = XLALTranslateRADtoDMS ( rads )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( strcmp ( dms, "-06:00:00.00000" ) == 0, XLAL_ETOL, "Returned dms string '%s' differs from input '%s'\n", dms, dmsRef );
+  XLALPrintInfo ("Translated DMS '%s' into %.16g rad, and back into '%s'\n", dmsRef, rads, dms );
   XLALFree ( dms );
 
   dmsRef = "+00:52:16.87532";
@@ -109,7 +175,29 @@ test_DMS_RAD ( void )
 
   XLAL_CHECK ( (dms = XLALTranslateRADtoDMS ( rads )) != NULL, XLAL_EFUNC );
   XLAL_CHECK ( strcmp ( dms, dmsRef ) == 0, XLAL_ETOL, "Returned dms string '%s' differs from input '%s'\n", dms, dmsRef );
-  XLALPrintInfo ("Translateed DMS '%s' into %.16g rad, and back into '%s'\n", dmsRef, rads, dms );
+  XLALPrintInfo ("Translated DMS '%s' into %.16g rad, and back into '%s'\n", dmsRef, rads, dms );
+  XLALFree ( dms );
+
+  /* test with form DD:MM */
+  dmsRef = "+00:52";
+  radsRef = 0.015126186850618;	// pulsarpputils.ra_to_rad ( "+00:52" )
+  XLAL_CHECK ( XLALTranslateDMStoRAD ( &rads, dmsRef ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( (diff=fabs(rads - radsRef)) < tol, XLAL_ETOL, "Result XLALTranslateDMStoRAD(%s)=%.16g differs from reference '%.16g' by %g > tolerance %g\n", dmsRef, rads, radsRef, diff, tol );
+
+  XLAL_CHECK ( (dms = XLALTranslateRADtoDMS ( rads )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( strcmp ( dms, "+00:52:00.00000" ) == 0, XLAL_ETOL, "Returned dms string '%s' differs from input '%s'\n", dms, dmsRef );
+  XLALPrintInfo ("Translated DMS '%s' into %.16g rad, and back into '%s'\n", dmsRef, rads, dms );
+  XLALFree ( dms );
+
+  /* test with form DD:MM */
+  dmsRef = "+00";
+  radsRef = 0.0;	// pulsarpputils.ra_to_rad ( "+00" )
+  XLAL_CHECK ( XLALTranslateDMStoRAD ( &rads, dmsRef ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( (diff=fabs(rads - radsRef)) < tol, XLAL_ETOL, "Result XLALTranslateDMStoRAD(%s)=%.16g differs from reference '%.16g' by %g > tolerance %g\n", dmsRef, rads, radsRef, diff, tol );
+
+  XLAL_CHECK ( (dms = XLALTranslateRADtoDMS ( rads )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( strcmp ( dms, "+00:00:00.00000" ) == 0, XLAL_ETOL, "Returned dms string '%s' differs from input '%s'\n", dms, dmsRef );
+  XLALPrintInfo ("Translated DMS '%s' into %.16g rad, and back into '%s'\n", dmsRef, rads, dms );
   XLALFree ( dms );
 
   return XLAL_SUCCESS;

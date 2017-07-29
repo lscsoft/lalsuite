@@ -645,6 +645,7 @@ int main( int argc, char *argv[] )
   }
 
   /* write the sim_inspiral table */
+  XLALSimInspiralAssignIDs ( injections.simInspiralTable, 0, 0 );
   if ( injections.simInspiralTable )
   {
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_inspiral_table ), 
@@ -657,7 +658,7 @@ int main( int argc, char *argv[] )
   {
     this_inj = injections.simInspiralTable;
     injections.simInspiralTable = injections.simInspiralTable->next;
-    LALFree( this_inj );
+    XLALFreeSimInspiral( &this_inj );
   }
 
   /* close the injection file */

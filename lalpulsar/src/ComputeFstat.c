@@ -576,7 +576,7 @@ XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of
   XLAL_CHECK ( doppler->asini >= 0, XLAL_EINVAL);
   XLAL_CHECK ( numFreqBins > 0, XLAL_EINVAL);
   XLAL_CHECK ( !input->singleFreqBin || numFreqBins == 1, XLAL_EINVAL, "numFreqBins must be 1 if XLALCreateFstatInput() was passed zero dFreq" );
-  XLAL_CHECK ( 0 < whatToCompute && whatToCompute < FSTATQ_LAST, XLAL_EINVAL);
+  XLAL_CHECK ( whatToCompute < FSTATQ_LAST, XLAL_EINVAL);
 
   // Allocate results struct, if needed
   if ( (*Fstats) == NULL ) {
@@ -1018,3 +1018,26 @@ AppendFstatTimingInfo2File ( const FstatInput* input, FILE *fp, BOOLEAN printHea
 
   return XLAL_SUCCESS;
 } // AppendFstatTimingInfo2File()
+
+///
+/// Extracts the resampled timeseries from a given FstatInput structure (must have been initialized previously by XLALCreateFstatInput() and a call to XLALComputeFstat()).
+///
+/// \note This function only returns a pointer to the time-series that are still part of the FstatInput structure, and will by managed by F-statistic API calls.
+/// Therefore do *not* free the resampled timeseries with XLALDestroyMultiCOMPLEX8TimeSeries(), only
+/// free the complete Fstat input structure with XLALDestroyFstatInputVector() at the end once its no longer needed.
+///
+int
+XLALExtractResampledTimeseries ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, ///< [out] \c multi-detector SRC-frame timeseries, multiplied by AM function a(t).
+                                 MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, ///< [out] \c multi-detector SRC-frame timeseries, multiplied by AM function b(t).
+                                 const FstatInput *input ///< [in] \c FstatInput structure.
+                                 )
+{
+  XLAL_CHECK ( input != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( ( multiTimeSeries_SRC_a != NULL ) && ( multiTimeSeries_SRC_b != NULL ) , XLAL_EINVAL );
+  XLAL_CHECK ( (input->method >= FMETHOD_RESAMP_GENERIC) && (input->method <= FMETHOD_RESAMP_BEST), XLAL_EINVAL,
+               "%s() only works for resampling-Fstat methods, not with '%s'\n", __func__, XLALGetFstatInputMethodName ( input ) );
+
+  XLAL_CHECK ( XLALExtractResampledTimeseries_intern ( multiTimeSeries_SRC_a, multiTimeSeries_SRC_b, input->method_data ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  return XLAL_SUCCESS;
+} // XLALExtractResampledTimeseries()

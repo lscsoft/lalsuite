@@ -195,7 +195,7 @@ startFreq = 48.0
 freqBand = 50.0
 freqSubBand = 10.0
 plotOutputPath = None
-accountingGroup = "ligo.prod.o1.detchar.linefind.fscan"
+accountingGroup = "ligo.prod.o2.detchar.linefind.fscan"
 accountingGroupUser = "gregory.mendell"
 maxJobs = 2
 windowType = 3
@@ -522,7 +522,8 @@ if (createSFTs):
   if intersectData:
     # Get the segments the data exist from gw_data_find
     dataFindSegmentFile = 'tmpDataFindSegs%stmp.txt' % tagString 
-    dataFindCommand = "gw_data_find -s %d -e %d -o %s -t %s -u file --lal-cache --show-times > %s" % (analysisStartTime,analysisEndTime,site,inputDataType,dataFindSegmentFile)
+    #dataFindCommand = "gw_data_find -s %d -e %d -o %s -t %s -u file --lal-cache --show-times > %s" % (analysisStartTime,analysisEndTime,site,inputDataType,dataFindSegmentFile)
+    dataFindCommand = "gw_data_find -s %d -e %d -o %s -t %s -u file --lal-cache --show-times | /bin/grep -v seg | /bin/awk '{print $2 \" \" $3}' > %s" % (analysisStartTime,analysisEndTime,site,inputDataType,dataFindSegmentFile)
     print >> sys.stdout,"Trying: ",dataFindCommand,"\n"
     try:
       dataFindExit = os.system(dataFindCommand)
@@ -869,8 +870,8 @@ while (thisEndFreq <= endFreq):
     htmlFID.write('  <td style="vertical-align: top;">\n')
     htmlFID.write('    SFT Timestamps: <a href="%s_timestamps">%s_timestamps</a><br>\n' % (inputFileName,inputFileName))
     htmlFID.write('    Spectrogram data: <a href="%s">%s</a><br>\n' % (inputFileName,inputFileName))
-    htmlFID.write('    Freq. vs Power, SNR: <a href="%s.txt">%s.txt</a><br>\n' % (inputFileName,inputFileName))
-    htmlFID.write('    Freq. vs Power, SNR (Sorted): <a href="%s_sorted.txt">%s_sorted.txt</a><br>\n' % (inputFileName,inputFileName))
+    htmlFID.write('    Freq. vs Power: <a href="%s.txt">%s.txt</a><br>\n' % (inputFileName,inputFileName))
+    htmlFID.write('    Freq. vs Power (Sorted): <a href="%s_sorted.txt">%s_sorted.txt</a><br>\n' % (inputFileName,inputFileName))
     htmlFID.write('    List of found combs : <a href="%s_combs.txt">%s_combs.txt</a><br>\n' % (inputFileName,inputFileName))
     htmlFID.write('    Kurtosis test output: <a href="%s_kurtosis">%s_kurtosis</a><br>\n' % (inputFileName,inputFileName))
     if (htmlReferenceDir != None) and (thresholdSNR > 0):
@@ -898,8 +899,8 @@ while (thisEndFreq <= endFreq):
         htmlFID.write('  <td style="vertical-align: top;">\n')
         htmlFID.write('    SFT Timestamps: <a href="%s_timestamps">%s_timestamps</a><br>\n' % (referenceFileName,referenceFileName))
 	htmlFID.write('    Spectrogram data: <a href="%s">%s</a><br>\n' % (referenceFileName,referenceFileName))
-        htmlFID.write('    Freq. vs Power, SNR: <a href="%s.txt">%s.txt</a><br>\n' % (referenceFileName,referenceFileName))
-        htmlFID.write('    Freq. vs Power, SNR (Sorted): <a href="%s_sorted.txt">%s_sorted.txt</a><br>\n' % (referenceFileName,referenceFileName))
+        htmlFID.write('    Freq. vs Power: <a href="%s.txt">%s.txt</a><br>\n' % (referenceFileName,referenceFileName))
+        htmlFID.write('    Freq. vs Power (Sorted): <a href="%s_sorted.txt">%s_sorted.txt</a><br>\n' % (referenceFileName,referenceFileName))
         htmlFID.write('    List of found combs : <a href="%s_combs.txt">%s_combs.txt</a><br>\n' % (inputFileName,inputFileName))
         htmlFID.write('  </td>\n')
     htmlFID.write('  </tr>\n')
@@ -932,8 +933,8 @@ if (htmlFilename != None):
     htmlFID.write('  <td>\n')
     htmlFID.write('    SFT Timestamps: <a href="' + thisSeg + '_timestamps">' + thisSeg + '_timestamps</a><br>')
     htmlFID.write('    Spectrogram data: <a href="' + thisSeg + '">' + thisSeg + '</a><br>')
-    htmlFID.write('    Freq. vs Power, SNR: <a href="' + thisSeg + '.txt">' + thisSeg + '.txt</a><br>')
-    htmlFID.write('    Freq. vs Power, SNR (Sorted): <a href="' + thisSeg + '_sorted.txt">' + thisSeg + '_sorted.txt</a><br>')
+    htmlFID.write('    Freq. vs Power: <a href="' + thisSeg + '.txt">' + thisSeg + '.txt</a><br>')
+    htmlFID.write('    Freq. vs Power (Sorted): <a href="' + thisSeg + '_sorted.txt">' + thisSeg + '_sorted.txt</a><br>')
     htmlFID.write('    List of found combs : <a href="%s_combs.txt">%s_combs.txt</a><br>\n' % (inputFileName,inputFileName))
     htmlFID.write('    Kurtosis test output: <a href="' + thisSeg + '_kurtosis">' + thisSeg + '_kurtosis</a><br>')
     htmlFID.write('  </td>\n')

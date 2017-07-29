@@ -167,6 +167,11 @@ test_XLALSFTVectorToLFT ( void )
   } // end: debug output
 
   // ========== compare resulting LFTs ==========
+  VectorComparison XLAL_INIT_DECL(tol0);
+  XLALPrintInfo ("Comparing LFT with itself: should give 0 for all measures\n");
+  XLAL_CHECK ( XLALCompareSFTs ( lftR4, lftR4, &tol0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALCompareSFTs ( lftSFTs, lftSFTs, &tol0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   VectorComparison XLAL_INIT_DECL(tol);
   tol.relErr_L1 	= 4e-2;
   tol.relErr_L2		= 5e-2;

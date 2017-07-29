@@ -1431,6 +1431,7 @@ SimInspiralTableFromLIGOLw (
     {"taper",               -1, 54},
     {"bandpass",            -1, 55},
     {"process_id",          -1, 56},
+    {"simulation_id",       -1, 57},
     {NULL,                   0, 0}
   };
 
@@ -1734,6 +1735,14 @@ SimInspiralTableFromLIGOLw (
           {
             thisSim->process_id = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "process", "process_id");
             if ( thisSim->process_id < 0 )
+              return -1;
+          }
+        }
+        else if ( tableDir[j].idx == 57 ) {
+          if ( tableDir[j].pos > 0 )
+          {
+            thisSim->simulation_id = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "sim_inspiral", "simulation_id");
+            if ( thisSim->simulation_id < 0 )
               return -1;
           }
         }

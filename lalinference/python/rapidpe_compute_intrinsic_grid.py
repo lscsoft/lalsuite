@@ -251,7 +251,7 @@ pts = amrlib.apply_transform(pts, intr_prms, opts.distance_coordinates)
 # assumes the first N points are from the bank in question. That's okay for now
 # but we're getting increasingly complex in how we do construction, so we should
 # be more sophisticated by matching template IDs instead.
-tree = BallTree(pts[:,:ovrlp.shape[0]])
+tree = BallTree(pts[:ovrlp.shape[0]])
 
 #
 # Step 3: Get the row of the overlap matrix to work with
@@ -259,7 +259,7 @@ tree = BallTree(pts[:,:ovrlp.shape[0]])
 m_idx, pt = find_olap_index(tree, intr_prms, not opts.no_exact_match, **intr_pt)
 
 # Save the template for later use as well
-t1 = tmplt_bank[m_idx]
+#t1 = tmplt_bank[m_idx]
 
 #
 # Rearrange data to correspond to input point

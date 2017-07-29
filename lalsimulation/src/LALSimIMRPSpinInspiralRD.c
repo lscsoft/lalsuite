@@ -31,7 +31,7 @@
 #include <lal/SeqFactories.h>
 #include <lal/RealFFT.h>
 #include <lal/SphericalHarmonics.h>
-#include <lal/LALAdaptiveRungeKutta4.h>
+#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
 #include <lal/LALSimSphHarmMode.h>
@@ -906,7 +906,7 @@ static INT4 XLALSimInspiralSpinTaylorT4Engine(REAL8TimeSeries **omega,      /**<
   REAL8 S1x0,S1y0,S1z0,S2x0,S2y0,S2z0;  /** Used to store initial spin values */
   REAL8Array *yout;                     /** Used to store integration output */
 
-  LALAdaptiveRungeKutta4Integrator *integrator;
+  LALAdaptiveRungeKuttaIntegrator *integrator;
 
   /* allocate the integrator */
   if (approx == PhenSpinTaylor)
@@ -936,7 +936,7 @@ static INT4 XLALSimInspiralSpinTaylorT4Engine(REAL8TimeSeries **omega,      /**<
   intLen    = XLALAdaptiveRungeKutta4Hermite(integrator,(void *)params,yin,0.0,length,params->dt/params->M,&yout);
 
   intReturn = integrator->returncode;
-  XLALAdaptiveRungeKutta4Free(integrator);
+  XLALAdaptiveRungeKuttaFree(integrator);
 
   if (intReturn == XLAL_FAILURE) {
     XLALPrintError("** LALSimIMRPSpinInspiralRD Error **: Adaptive Integrator\n");

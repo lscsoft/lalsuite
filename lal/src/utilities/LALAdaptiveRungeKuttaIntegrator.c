@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-#include <lal/LALAdaptiveRungeKutta4.h>
+#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
 
 #define XLAL_BEGINGSL \
         { \
@@ -28,215 +28,13 @@
           gsl_set_error_handler( saveGSLErrorHandler_ ); \
         }
 
-/* OPTV3 */
-int XLALAdaptiveRungeKutta4_no_interpolate_SaveD(LALAdaptiveRungeKutta4Integrator * integrator,
-         void * params, REAL8 * yinit, REAL8 tinit, REAL8 tend, REAL8 deltat_or_h0,
-         REAL8Array ** t_and_y_out)
-{
-
-    int errnum = 0;
-    int status; /* used throughout */
-
-    /* needed for the integration */
-    size_t dim, outputlength = 0, bufferlength, retries;
-    REAL8 t, tnew, h0;
-    REAL8Array *buffers = NULL;
-    REAL8 *temp = NULL, *y, *y0, *dydt_in, *dydt_in0, *dydt_out, *yerr; /* aliases */
-
-    /* note: for speed, this replaces the single CALLGSL wrapper applied before each GSL call */
-    XLAL_BEGINGSL;
-
-    /* allocate the buffers!
-     * note: REAL8Array has a field dimLength (UINT4Vector) with dimensions, and a field data that points to a single memory block;
-     * dimLength itself has fields length and data */
-    dim = integrator->sys->dimension;
-    bufferlength = (int)((tend - tinit) / deltat_or_h0) + 2;   /* allow for the initial value and possibly a final semi-step */
-    //buffers = XLALCreateREAL8ArrayL(2, dim + 1, bufferlength); /* 2-dimensional array, ((dim+1)) x bufferlength */
-    buffers = XLALCreateREAL8ArrayL(2, dim + 4, bufferlength); /* 2-dimensional array, ((dim+4)) x bufferlength */ //OPTV3: Include dx, dy, dz
-    temp = LALCalloc(6 * dim, sizeof(REAL8));
-    if (!temp) {
-        errnum = XLAL_ENOMEM;
-        printf("MEMORY ERROR!\n");
-        goto bail_out;
-    }
-
-    y = temp;
-    y0 = temp + dim;
-    dydt_in = temp + 2 * dim;
-    dydt_in0 = temp + 3 * dim;
-    dydt_out = temp + 4 * dim;
-    yerr = temp + 5 * dim;      /* aliases */
-
-    /* set up to get started */
-    integrator->sys->params = params;
-
-    integrator->returncode = 0;
-
-    retries = integrator->retries;
-
-    t = tinit;
-    h0 = deltat_or_h0;
-    memcpy(y, yinit, dim * sizeof(REAL8));
-
-    /* store the first data point */
-    buffers->data[0] = t;
-    for (unsigned int i = 1; i <= dim; i++)
-        buffers->data[i * bufferlength] = y[i - 1];
-
-    /* compute derivatives at the initial time (dydt_in), bail out if impossible */
-    if ((status = integrator->dydt(t, y, dydt_in, params)) != GSL_SUCCESS) {
-        integrator->returncode = status;
-        errnum = XLAL_EFAILED;
-        goto bail_out;
-    }
-
-    for (unsigned int i = 1; i <= 3; i++) //OPTV3: include the initial derivatives
-        buffers->data[(dim+i)*bufferlength] = dydt_in[i-1];
-
-    while (1) {
-
-        if (!integrator->stopontestonly && t >= tend) {
-            break;
-        }
-
-        if (integrator->stop) {
-            if ((status = integrator->stop(t, y, dydt_in, params)) != GSL_SUCCESS) {
-                integrator->returncode = status;
-                break;
-            }
-        }
-
-        /* ready to try stepping! */
-      try_step:
-
-        /* if we would be stepping beyond the final time, stop there instead... */
-        if (!integrator->stopontestonly && t + h0 > tend)
-            h0 = tend - t;
-
-        memcpy(y0, y, dim * sizeof(REAL8));     /* save y to y0, dydt_in to dydt_in0 */
-        memcpy(dydt_in0, dydt_in, dim * sizeof(REAL8));
-
-        /* call the GSL stepper function */
-        status = gsl_odeiv_step_apply(integrator->step, t, h0, y, yerr, dydt_in, dydt_out, integrator->sys);
-        /* note: If the user-supplied functions defined in the system dydt return a status other than GSL_SUCCESS,
-         * the step will be aborted. In this case, the elements of y will be restored to their pre-step values,
-         * and the error code from the user-supplied function will be returned. */
-
-        /* did the stepper report a derivative-evaluation error? */
-        if (status != GSL_SUCCESS) {
-            if (retries--) {
-                h0 = h0 / 10.0; /* if we have singularity retries left, reduce the timestep and try again */
-                goto try_step;
-            } else {
-                integrator->returncode = status;
-                break;  /* otherwise exit the loop */
-            }
-        } else {
-            retries = integrator->retries;      /* we stepped successfully, reset the singularity retries */
-        }
-
-        tnew = t + h0;
-
-        /* call the GSL error-checking function */
-        status = gsl_odeiv_control_hadjust(integrator->control, integrator->step, y, yerr, dydt_out, &h0);
-
-        /* did the error-checker reduce the stepsize?
-         * note: other possible return codes are GSL_ODEIV_HADJ_INC if it was increased,
-         * GSL_ODEIV_HADJ_NIL if it was unchanged */
-        if (status == GSL_ODEIV_HADJ_DEC) {
-            memcpy(y, y0, dim * sizeof(REAL8)); /* if so, undo the step, and try again */
-            memcpy(dydt_in, dydt_in0, dim * sizeof(REAL8));
-            goto try_step;
-        }
-
-        /* update the current time and input derivatives */
-        t = tnew;
-        memcpy(dydt_in, dydt_out, dim * sizeof(REAL8));
-
-        outputlength++;
-
-        /* check if interpolation buffers need to be extended */
-        if (outputlength >= bufferlength) {
-            REAL8Array *rebuffers;
-
-            /* sadly, we cannot use ResizeREAL8Array, because it would only work if we extended the first array dimension,
-             * so we need to copy everything over and switch the buffers. Oh well. */
-//            if (!(rebuffers = XLALCreateREAL8ArrayL(2, dim + 1, 2 * bufferlength))) {
-        if (!(rebuffers = XLALCreateREAL8ArrayL(2, dim + 4, 2 * bufferlength))) {//OPTV3: Include derivatives
-                errnum = XLAL_ENOMEM;   /* ouch, that hurt */
-                goto bail_out;
-            } else {
-                //for (unsigned int i = 0; i <= dim; i++)
-                for (unsigned int i = 0; i <= dim+3; i++) //OPTV3: Include 3 derivatives
-                    memcpy(&rebuffers->data[i * 2 * bufferlength], &buffers->data[i * bufferlength], outputlength * sizeof(REAL8));
-                XLALDestroyREAL8Array(buffers);
-                buffers = rebuffers;
-                bufferlength *= 2;
-            }
-        }
-
-        /* copy time and state into output buffers */
-        buffers->data[outputlength] = t;
-        for (unsigned int i = 1; i <= dim; i++)
-            buffers->data[i * bufferlength + outputlength] = y[i - 1];   /* y does not have time */
-        for (unsigned int i = 1; i <= 3; i++)
-            buffers->data[(dim+i) * bufferlength + outputlength] = dydt_out[i - 1];  //OPTV3: Include 3 derivatives
-    }
-
-
-    /* copy the final state into yinit */
-
-    memcpy(yinit, y, dim * sizeof(REAL8));
-
-    /* if we have completed at least one step, allocate the GSL interpolation object and the output array */
-    if (outputlength == 0)
-        goto bail_out;
-
-    outputlength++; //OPTV3: BUGFIX - The original RK routine keeps variables at this last time step.
-
-    //(*t_and_y_out) = XLALCreateREAL8ArrayL(2,(dim + 1),outputlength);
-    (*t_and_y_out) = XLALCreateREAL8ArrayL(2,(dim + 4),outputlength); //OPTV3: Include derivatives
-
-    if (!(*t_and_y_out)) {
-        errnum = XLAL_ENOMEM;   /* ouch again, ran out of memory */
-        if (*t_and_y_out)
-            XLALDestroyREAL8Array(*t_and_y_out);
-        outputlength = 0;
-        goto bail_out;
-    }
-
-    for(UINT8 j=0;j<outputlength;j++) {
-      (*t_and_y_out)->data[j] = buffers->data[j];
-//      for(UINT8 i=1;i<=dim;i++) {
-      for(UINT8 i=1;i<=dim+3;i++) { //OPTV3: Include derivatives
-        (*t_and_y_out)->data[i*outputlength + j] = buffers->data[i*bufferlength + j];
-      }
-    }
-    /* deallocate stuff and return */
-  bail_out:
-
-    XLAL_ENDGSL;
-
-    if (buffers) // David this line (and line immediately below this) added to fix memory leaks
-      XLALDestroyREAL8Array(buffers); /* let's be careful, although all these checks may not be needed */
-
-    if (temp)
-        LALFree(temp);
-
-    if (errnum)
-        XLAL_ERROR(errnum);
-
-    return outputlength;
-}
-/* END OPTV3 */
-
-LALAdaptiveRungeKutta4Integrator *XLALAdaptiveRungeKutta4Init(int dim, int (*dydt) (double t, const double y[], double dydt[], void *params),   /* These are XLAL functions! */
+LALAdaptiveRungeKuttaIntegrator *XLALAdaptiveRungeKutta4Init(int dim, int (*dydt) (double t, const double y[], double dydt[], void *params),   /* These are XLAL functions! */
     int (*stop) (double t, const double y[], double dydt[], void *params), double eps_abs, double eps_rel)
 {
-    LALAdaptiveRungeKutta4Integrator *integrator;
+    LALAdaptiveRungeKuttaIntegrator *integrator;
 
     /* allocate our custom integrator structure */
-    if (!(integrator = (LALAdaptiveRungeKutta4Integrator *) LALCalloc(1, sizeof(LALAdaptiveRungeKutta4Integrator)))) {
+    if (!(integrator = (LALAdaptiveRungeKuttaIntegrator *) LALCalloc(1, sizeof(LALAdaptiveRungeKuttaIntegrator)))) {
         XLAL_ERROR_NULL(XLAL_ENOMEM);
     }
 
@@ -251,7 +49,7 @@ LALAdaptiveRungeKutta4Integrator *XLALAdaptiveRungeKutta4Init(int dim, int (*dyd
 
     /* if something failed to be allocated, bail out */
     if (!(integrator->step) || !(integrator->control) || !(integrator->evolve) || !(integrator->sys)) {
-        XLALAdaptiveRungeKutta4Free(integrator);
+        XLALAdaptiveRungeKuttaFree(integrator);
         XLAL_ERROR_NULL(XLAL_ENOMEM);
     }
 
@@ -269,13 +67,13 @@ LALAdaptiveRungeKutta4Integrator *XLALAdaptiveRungeKutta4Init(int dim, int (*dyd
     return integrator;
 }
 
-LALAdaptiveRungeKutta4Integrator *XLALAdaptiveRungeKutta4InitEighthOrderInstead(int dim, int (*dydt) (double t, const double y[], double dydt[], void *params),   /* These are XLAL functions! */
+LALAdaptiveRungeKuttaIntegrator *XLALAdaptiveRungeKutta4InitEighthOrderInstead(int dim, int (*dydt) (double t, const double y[], double dydt[], void *params),   /* These are XLAL functions! */
     int (*stop) (double t, const double y[], double dydt[], void *params), double eps_abs, double eps_rel)
 {
-    LALAdaptiveRungeKutta4Integrator *integrator;
+    LALAdaptiveRungeKuttaIntegrator *integrator;
 
     /* allocate our custom integrator structure */
-    if (!(integrator = (LALAdaptiveRungeKutta4Integrator *) LALCalloc(1, sizeof(LALAdaptiveRungeKutta4Integrator)))) {
+    if (!(integrator = (LALAdaptiveRungeKuttaIntegrator *) LALCalloc(1, sizeof(LALAdaptiveRungeKuttaIntegrator)))) {
         XLAL_ERROR_NULL(XLAL_ENOMEM);
     }
 
@@ -289,7 +87,7 @@ LALAdaptiveRungeKutta4Integrator *XLALAdaptiveRungeKutta4InitEighthOrderInstead(
 
     /* if something failed to be allocated, bail out */
     if (!(integrator->step) || !(integrator->control) || !(integrator->evolve) || !(integrator->sys)) {
-        XLALAdaptiveRungeKutta4Free(integrator);
+        XLALAdaptiveRungeKuttaFree(integrator);
         XLAL_ERROR_NULL(XLAL_ENOMEM);
     }
 
@@ -307,7 +105,7 @@ LALAdaptiveRungeKutta4Integrator *XLALAdaptiveRungeKutta4InitEighthOrderInstead(
     return integrator;
 }
 
-void XLALAdaptiveRungeKutta4Free(LALAdaptiveRungeKutta4Integrator * integrator)
+void XLALAdaptiveRungeKuttaFree(LALAdaptiveRungeKuttaIntegrator * integrator)
 {
     if (!integrator)
         return;
@@ -418,7 +216,7 @@ typedef struct {
  * This method is functionally equivalent to XLALAdaptiveRungeKutta4,
  * but is nearly always faster due to the improved interpolation.
  */
-int XLALAdaptiveRungeKutta4Hermite(LALAdaptiveRungeKutta4Integrator * integrator,       /**< struct holding dydt, stopping test, stepper, etc. */
+int XLALAdaptiveRungeKutta4Hermite(LALAdaptiveRungeKuttaIntegrator * integrator,       /**< struct holding dydt, stopping test, stepper, etc. */
     void *params,                                                       /**< params struct used to compute dydt and stopping test */
     REAL8 * yinit,                                                      /**< pass in initial values of all variables - overwritten to final values */
     REAL8 tinit,                                                        /**< integration start time */
@@ -603,9 +401,9 @@ int XLALAdaptiveRungeKutta4Hermite(LALAdaptiveRungeKutta4Integrator * integrator
     return outputlen;
 }
 
-int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKutta4Integrator * integrator,
+int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKuttaIntegrator * integrator,
          void * params, REAL8 * yinit, REAL8 tinit, REAL8 tend, REAL8 deltat_or_h0,
-         REAL8Array ** t_and_y_out)
+					 REAL8Array ** t_and_y_out, INT4 EOBversion)
 {
     int errnum = 0;
     int status; /* used throughout */
@@ -615,7 +413,6 @@ int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKutta4Integrator * inte
     REAL8 t, tnew, h0;
     REAL8Array *buffers = NULL;
     REAL8 *temp = NULL, *y, *y0, *dydt_in, *dydt_in0, *dydt_out, *yerr; /* aliases */
-    REAL8Array *output = NULL; /* This is where we'll store the pointer for the output. */
 
     /* note: for speed, this replaces the single CALLGSL wrapper applied before each GSL call */
     XLAL_BEGINGSL;
@@ -625,7 +422,13 @@ int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKutta4Integrator * inte
      * dimLength itself has fields length and data */
     dim = integrator->sys->dimension;
     bufferlength = (int)((tend - tinit) / deltat_or_h0) + 2;   /* allow for the initial value and possibly a final semi-step */
-    buffers = XLALCreateREAL8ArrayL(2, dim + 1, bufferlength); /* 2-dimensional array, ((dim+1)) x bufferlength */
+
+    UINT4 dimn;/* Variable for different loop indices below */
+    if(EOBversion==2) dimn = dim + 1;
+    else dimn = dim + 4;//v3opt: Include three derivatives
+
+    buffers = XLALCreateREAL8ArrayL(2, dimn/*dim + 1*/, bufferlength); /* 2-dimensional array, ((dim+1)) x bufferlength */
+
     temp = LALCalloc(6 * dim, sizeof(REAL8));
 
     if (!buffers || !temp) {
@@ -662,6 +465,15 @@ int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKutta4Integrator * inte
         errnum = XLAL_EFAILED;
         goto bail_out;
     }
+
+    if(EOBversion==3){
+      for (unsigned int i = 1; i <= 3; i++) //OPTV3: include the initial derivatives
+	buffers->data[(dim+i)*bufferlength] = dydt_in[i-1];
+    }
+
+    UINT4 loop;/*variable for different loop indices below. */
+    if(EOBversion==2) loop = dim;
+    else loop = dim + 3;
 
     while (1) {
 
@@ -730,11 +542,11 @@ int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKutta4Integrator * inte
 
             /* sadly, we cannot use ResizeREAL8Array, because it would only work if we extended the first array dimension,
              * so we need to copy everything over and switch the buffers. Oh well. */
-            if (!(rebuffers = XLALCreateREAL8ArrayL(2, dim + 1, 2 * bufferlength))) {
+            if (!(rebuffers = XLALCreateREAL8ArrayL(2, dimn, 2 * bufferlength))) {
                 errnum = XLAL_ENOMEM;   /* ouch, that hurt */
                 goto bail_out;
             } else {
-                for (unsigned int i = 0; i <= dim; i++)
+	      for (unsigned int i = 0; i <= loop /* dim */; i++)
                     memcpy(&rebuffers->data[i * 2 * bufferlength], &buffers->data[i * bufferlength], outputlength * sizeof(REAL8));
                 XLALDestroyREAL8Array(buffers);
                 buffers = rebuffers;
@@ -744,8 +556,12 @@ int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKutta4Integrator * inte
 
         /* copy time and state into output buffers */
         buffers->data[outputlength] = t;
-        for (unsigned int i = 1; i <= dim; i++)
+        for (unsigned int i = 1; i <= loop; i++)
             buffers->data[i * bufferlength + outputlength] = y[i - 1];   /* y does not have time */
+        if(EOBversion==3){
+	  for (unsigned int i = 1; i <= 3; i++)
+            buffers->data[(dim+i) * bufferlength + outputlength] = dydt_out[i - 1];  //OPTV3: Include 3 derivatives
+	}
     }
 
     /* copy the final state into yinit */
@@ -756,20 +572,25 @@ int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKutta4Integrator * inte
     if (outputlength == 0)
         goto bail_out;
 
-    output = XLALCreateREAL8ArrayL(2,(dim + 3),outputlength); // dim=4 by default (4 evolved variables) plus one for time, plus two for amp&phase.
+    if(EOBversion==3){
+      outputlength++;
+      (*t_and_y_out) = XLALCreateREAL8ArrayL(2,(dim + 4),outputlength);//OPTV3: Include derivatives
+    }else{
+      (*t_and_y_out) = XLALCreateREAL8ArrayL(2,(dim + 3),outputlength); //OPTV3: Include derivatives
+    }
 
-    if (!output) {
+      if (!(*t_and_y_out)) {
         errnum = XLAL_ENOMEM;   /* ouch again, ran out of memory */
-        if (output)
-            XLALDestroyREAL8Array(output);
+        if (*t_and_y_out)
+	  XLALDestroyREAL8Array(*t_and_y_out);
         outputlength = 0;
         goto bail_out;
     }
 
     for(UINT8 j=0;j<outputlength;j++) {
-      output->data[j] = buffers->data[j];
-      for(UINT8 i=1;i<=dim;i++) {
-        output->data[i*outputlength + j] = buffers->data[i*bufferlength + j];
+      (*t_and_y_out)->data[j] = buffers->data[j];
+      for(UINT8 i=1;i<=loop;i++) {
+        (*t_and_y_out)->data[i*outputlength + j] = buffers->data[i*bufferlength + j];
       }
     }
     /* deallocate stuff and return */
@@ -785,12 +606,11 @@ int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKutta4Integrator * inte
     if (errnum)
         XLAL_ERROR(errnum);
 
-    *t_and_y_out = output;
     return outputlength;
 }
 
 
-int XLALAdaptiveRungeKutta4(LALAdaptiveRungeKutta4Integrator * integrator,
+int XLALAdaptiveRungeKutta4(LALAdaptiveRungeKuttaIntegrator * integrator,
     void *params, REAL8 * yinit, REAL8 tinit, REAL8 tend, REAL8 deltat, REAL8Array ** yout)
 {
     int errnum = 0;
@@ -1015,7 +835,7 @@ int XLALAdaptiveRungeKutta4(LALAdaptiveRungeKutta4Integrator * integrator,
  * XLALAdaptiveRungeKutta4Hermite, but does not includes any interpolation.
  *
  */
-int XLALAdaptiveRungeKutta4IrregularIntervals(LALAdaptiveRungeKutta4Integrator * integrator,      /**< struct holding dydt, stopping test, stepper, etc. */
+int XLALAdaptiveRungeKutta4IrregularIntervals(LALAdaptiveRungeKuttaIntegrator * integrator,      /**< struct holding dydt, stopping test, stepper, etc. */
     void *params,                                                       /**< params struct used to compute dydt and stopping test */
     REAL8 * yinit,                                                      /**< pass in initial values of all variables - overwritten to final values */
     REAL8 tinit,                                                        /**< integration start time */

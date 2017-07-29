@@ -31,7 +31,8 @@
 // ==================== function definitions ====================
 
 ///
-/// Translate a string representing an angle in the form "degrees:minutues:seconds" into radians.
+/// Translate a string representing an angle in the form "degrees:minutes:seconds" into radians. The string
+/// could also just contain "degrees:minutes" or "degrees", where the absent parts are set to zero.
 ///
 /// It requires that the minutes and seconds values are between 0 to 60. Degrees are allowed to be a
 /// positive or negative integer between [-360, 360].
@@ -44,12 +45,13 @@ XLALTranslateDMStoRAD ( REAL8 *radians, const CHAR *dms )
   XLAL_CHECK ( radians != NULL, XLAL_EINVAL );
 
   XLAL_CHECK ( !isspace(dms[0]), XLAL_EINVAL, "No initial whitespace allowed in input string '%s'\n", dms );
+  XLAL_CHECK ( dms[strlen(dms)-1] != ':', XLAL_EINVAL, "No trailing colons allowed in input string '%s'\n", dms );
 
-  REAL8 s;
-  INT4 d, m;
+  REAL8 s = 0.;
+  INT4 d = 0, m = 0;
   int numitems = sscanf(dms, "%d:%d:%lf", &d, &m, &s);
 
-  XLAL_CHECK ( numitems == 3, XLAL_EINVAL, "Angle input string '%s' not in format 'degs:mins:secs'", dms );
+  XLAL_CHECK ( numitems == 3 || numitems == 2 || numitems == 1, XLAL_EINVAL, "Angle input string '%s' not in format 'degs:mins:secs'", dms );
   XLAL_CHECK ( d >= -360 && d <= 360, XLAL_EDOM, "Degrees '%d' outside of valid range of [-360,360] deg\n", d );
   XLAL_CHECK ( m >= 0 && m < 60, XLAL_EDOM, "Minutes '%d' outside of the valid range of [0, 59] mins", m );
   XLAL_CHECK ( s >= 0 && s < 60, XLAL_EDOM, "Seconds '%lf' outside of the valid range of [0, 60) secs", s );
@@ -69,7 +71,8 @@ XLALTranslateDMStoRAD ( REAL8 *radians, const CHAR *dms )
 } // XLALTranslateDMStoRAD()
 
 ///
-/// Translate a string representing an angle in the form "hours:minutes:seconds" into radians.
+/// Translate a string representing an angle in the form "hours:minutes:seconds" into radians. The string
+/// could also just contain "hours:minutes" or "hours", where the absent parts are set to zero.
 ///
 /// It requires that the hours value to be within [0, 23] hours, and the minutes and seconds values are within [0, 60).
 /// An example would be: XLALTranslateHMStoRAD( &radians, "12:05:07.765" );
@@ -80,11 +83,13 @@ XLALTranslateHMStoRAD ( REAL8 *radians, const CHAR *hms )
   XLAL_CHECK_REAL8( hms != NULL, XLAL_EINVAL, "Angle input string 'hms' is NULL" );
   XLAL_CHECK ( radians != NULL, XLAL_EINVAL );
 
-  REAL8 s;
-  INT4 h, m;
+  XLAL_CHECK ( hms[strlen(hms)-1] != ':', XLAL_EINVAL, "No trailing colons allowed in input string '%s'\n", hms );
+
+  REAL8 s = 0.;
+  INT4 h = 0, m = 0;
   int numitems = sscanf(hms, "%d:%d:%lf", &h, &m, &s);
 
-  XLAL_CHECK_REAL8 ( numitems == 3, XLAL_EINVAL, "Angle input string '%s' not in format 'hours:mins:secs'\n", hms );
+  XLAL_CHECK_REAL8 ( numitems == 3 || numitems == 2 || numitems == 1, XLAL_EINVAL, "Angle input string '%s' not in format 'hours:mins:secs'\n", hms );
   XLAL_CHECK_REAL8 ( h >= 0 && h < 24, XLAL_EDOM, "Hours value '%d' must be within [0, 23]\n", h );
   XLAL_CHECK_REAL8 ( m >= 0 && m < 60, XLAL_EDOM, "Minutes value '%d' must be within [0 to 59]\n", m );
   XLAL_CHECK_REAL8 ( s >= 0 && s < 60, XLAL_EDOM, "Seconds value '%lf' must be within [0,60)\n", s );

@@ -203,6 +203,7 @@ extern "C" {
  * @defgroup LALSimInspiralWaveformFlags_c         Module LALSimInspiralWaveformFlags.c
  * @defgroup LALSimInspiralTestGRParams_c          Module LALSimInspiralTestGRParams.c
  * @defgroup LALSimInspiralWaveformTaper_c         Module LALSimInspiralWaveformTaper.c
+ * @defgroup LALSimInspiralNRSur4d2s_c             Module LALSimInspiralNRSur4d2s.c
  * @}
  *
  * @addtogroup LALSimInspiral_h
@@ -327,6 +328,10 @@ typedef enum tagApproximant {
                          * @remarks Implemented in lalsimulation (time domain). */
    SEOBNRv4_opt,	/**< Optimized Spin-aligned EOBNR model v4
                          * @remarks Implemented in lalsimulation (time domain). */
+   TEOBv2,	/**< Tidal EOB model
+                     * @remarks Implemented in lalsimulation (time domain). */
+   TEOBv4,	/**< Tidal EOB model
+             * @remarks Implemented in lalsimulation (time domain). */
    SEOBNRv1_ROM_EffectiveSpin, /**< Single-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv1 See [Purrer:2014fza]
                                 * @remarks Implemented in lalsimulation (frequency domain). */
    SEOBNRv1_ROM_DoubleSpin, /**< Double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv1 See [Purrer:2014fza]
@@ -376,7 +381,9 @@ typedef enum tagApproximant {
    SpinDominatedWf,     /**< Time domain, inspiral only, 1 spin, precessing waveform, Tapai et al, arXiv: 1209.1722
                          * @remarks Implemented in lalsimulation (time domain). */
    NR_hdf5,              /**< Time domain, NR waveform from HDF file. From INSERT LINKS HERE */
-   NumApproximants	/**< Number of elements in enum, useful for checking bounds */
+   NRSur4d2s,
+   NRSur7dq2,           /**< Time domain, fully precessing NR surrogate model with up to ell=4 modes, arxiv: 1705.07089 */
+   NumApproximants,	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 
 /** Enum of various frequency functions */
@@ -782,6 +789,10 @@ void XLALSimInspiralTaylorF2RedSpinMchirpEtaChiFromChirpTimes(double *mc, double
 
 REAL8 XLALSimInspiralfLow2fStart(REAL8 fLow, INT4 ampOrder, INT4 approximant);
 
+/* NRSur4d2s functions */
+int XLALSimNRSur4d2s(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, REAL8 phiRef, REAL8 deltaF, REAL8 fLow, REAL8 fHigh, REAL8 distance, REAL8 inclination, REAL8 m1SI, REAL8 m2SI, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z);
+int XLALSimNRSur4d2sFrequencySequence(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, const REAL8Sequence *freqs, REAL8 phiRef, REAL8 distance, REAL8 inclination, REAL8 m1SI, REAL8 m2SI, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z);
+
 /* waveform tapering routines */
 /* in module LALSimInspiralWaveformTaper.c */
 
@@ -791,6 +802,12 @@ int XLALSimInspiralREAL8WaveTaper(REAL8Vector *signalvec, LALSimInspiralApplyTap
 /* in module LALSimInspiralTEOBResumROM.c */
 
 int XLALSimInspiralTEOBResumROM(REAL8TimeSeries **hPlus, REAL8TimeSeries **hCross, REAL8 phiRef, REAL8 deltaT, REAL8 fLow, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1SI, REAL8 m2SI, REAL8 lambda1, REAL8 lambda2);
+
+REAL8 XLALSimUniversalRelation( REAL8 x, REAL8 coeffs[] );
+REAL8 XLALSimUniversalRelationlambda3TidalVSlambda2Tidal( REAL8 lambda2Tidal );
+REAL8 XLALSimUniversalRelationomega02TidalVSlambda2Tidal( REAL8 lambda2Tidal );
+REAL8 XLALSimUniversalRelationomega03TidalVSlambda3Tidal( REAL8 lambda3Tidal );
+
 
 #if 0
 { /* so that editors will match succeeding brace */

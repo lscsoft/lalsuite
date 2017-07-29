@@ -502,6 +502,43 @@ int XLALParseStringValueAsREAL8Range(
 
 }
 
+///
+/// Parse a string representing a range of INT4 values into a INT4Range. Possible formats
+/// are <tt>start</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>start~plusminus</tt>.
+/// Output range is always <tt>low,high</tt> with <tt>range[0] = low; range[1] = high</tt>.
+///
+int XLALParseStringValueAsINT4Range(
+  INT4Range *int4Range,		///< [out] output range of INT4 values
+  const char *valString			///< [in] input string
+  )
+{
+
+  // Check input
+  XLAL_CHECK(int4Range != NULL, XLAL_EFAULT);
+  XLAL_CHECK(valString != NULL, XLAL_EFAULT);
+  XLAL_CHECK(strlen(valString) > 0, XLAL_EINVAL);
+
+  // Parse range
+  char part[2][256];
+  int T[2][2];
+  XLAL_CHECK( SplitStringIntoRange(valString, part, T) == XLAL_SUCCESS, XLAL_EFUNC );
+  INT4 val[2];
+  XLAL_CHECK( XLALParseStringValueAsINT4(&val[0], part[0]) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALParseStringValueAsINT4(&val[1], part[1]) == XLAL_SUCCESS, XLAL_EFUNC );
+  (*int4Range)[0] = T[0][0] * val[0] + T[0][1] * val[1];
+  (*int4Range)[1] = T[1][0] * val[0] + T[1][1] * val[1];
+
+  // Check range ordering
+  if ((*int4Range)[0] > (*int4Range)[1]) {
+    const INT4 tmp = (*int4Range)[0];
+    (*int4Range)[0] = (*int4Range)[1];
+    (*int4Range)[1] = tmp;
+  }
+
+  return XLAL_SUCCESS;
+
+} // XLALParseStringValueAsINT4Range()
+
 
 ///
 /// Parse a string representing a range of LIGOTimeGPS values into a LIGOTimeGPSRange. Possible formats

@@ -809,7 +809,6 @@ InitCode ( ConfigVariables *cfg,
   XLAL_CHECK ( (cfg->multiDetStates->data = XLALCalloc (numDet, sizeof( *(cfg->multiDetStates->data)))) != NULL, XLAL_ENOMEM );
 
   cfg->multiDetStates->length = numDet;
-  cfg->multiDetStates->Tspan = duration;
 
   for ( UINT4 X=0; X < numDet; X ++ )
     {

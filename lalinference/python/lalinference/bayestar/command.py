@@ -28,6 +28,7 @@ import errno
 import glob
 import inspect
 import itertools
+import logging
 import os
 import shutil
 import sys
@@ -45,6 +46,12 @@ if 'matplotlib.pyplot' in sys.modules:
     plt.switch_backend('Template')
 else:
     matplotlib.use('Template', warn=False, force=True)
+
+
+# FIXME: Remove this after all Matplotlib monkeypatches are obsolete.
+import matplotlib
+import distutils.version
+mpl_version = distutils.version.LooseVersion(matplotlib.__version__)
 
 
 @contextlib.contextmanager
@@ -66,6 +73,32 @@ class GlobAction(argparse._StoreAction):
         if values:
             super(GlobAction, self).__call__(
                 parser, namespace, values, *args, **kwargs)
+        nvalues = getattr(namespace, self.dest)
+        nvalues = 0 if nvalues is None else len(nvalues)
+        if self.nargs == argparse.OPTIONAL:
+            if nvalues > 1:
+                msg = 'expected at most one file'
+            else:
+                msg = None
+        elif self.nargs == argparse.ONE_OR_MORE:
+            if nvalues < 1:
+                msg = 'expected at least one file'
+            else:
+                msg = None
+        elif self.nargs == argparse.ZERO_OR_MORE:
+            msg = None
+        elif int(self.nargs) != nvalues:
+            msg = 'expected exactly %s file' % self.nargs
+            if self.nargs != 1:
+                msg += 's'
+        else:
+            msg = None
+        if msg is not None:
+            msg += ', but found '
+            msg += '{} file'.format(nvalues)
+            if nvalues != 1:
+                msg += 's'
+            raise argparse.ArgumentError(self, msg)
 
 
 waveform_parser = argparse.ArgumentParser(add_help=False)
@@ -91,10 +124,6 @@ prior_parser = argparse.ArgumentParser(add_help=False)
 group = prior_parser.add_argument_group(
     'prior options', 'Options that affect the BAYESTAR likelihood')
 group.add_argument(
-    '--phase-convention', default='antifindchirp',
-    choices=('findchirp', 'antifindchirp'),
-    help='Phase convention [default: %(default)s]')
-group.add_argument(
     '--min-distance', type=float, metavar='Mpc',
     help='Minimum distance of prior in megaparsecs '
     '[default: infer from effective distance]')
@@ -110,9 +139,9 @@ group.add_argument(
     '--cosmology', default=False, action='store_true',
     help='Use cosmological comoving volume prior [default: %(default)s]')
 group.add_argument(
-    '--enable-snr-series', default=False, action='store_true',
-    help='Enable input of SNR time series (WARNING: UNREVIEWED!) '
-    '[default: no]')
+    '--disable-snr-series', dest='enable_snr_series', action='store_false',
+    help='Disable input of SNR time series (WARNING: UNREVIEWED!) '
+    '[default: enabled]')
 del group
 
 
@@ -242,9 +271,12 @@ group.add_argument(
 group.add_argument(
     '--dpi', metavar='PIXELS', type=dpi, default=300,
     help='resolution of figure in dots per inch [default: %(default)s]')
-group.add_argument(
-    '--transparent', const='1', default='0', nargs='?', type=transparent,
-    help='Save image with transparent background [default: false]')
+# FIXME: the savefig.transparent rcparam was added in Matplotlib 1.4,
+# but we have to support Matplotlib 1.2 for Scientific Linux 7.
+if mpl_version >= '1.4':
+    group.add_argument(
+        '--transparent', const='1', default='0', nargs='?', type=transparent,
+        help='Save image with transparent background [default: false]')
 del colormap_choices
 del group
 
@@ -256,6 +288,29 @@ class VersionAction(argparse._VersionAction):
         self.version = 'LALInference ' + InferenceVCSInfo.version
         super(VersionAction, self).__call__(
             parser, namespace, values, option_string)
+
+
+@type_with_sideeffect(str)
+def loglevel_type(value):
+    try:
+        value = int(value)
+    except ValueError:
+        value = value.upper()
+    logging.basicConfig(level=value)
+
+
+class LogLevelAction(argparse._StoreAction):
+
+    def __init__(
+            self, option_strings, dest, nargs=None, const=None, default=None,
+            type=None, choices=None, required=False, help=None, metavar=None):
+        metavar = '|'.join(
+            _ for _ in logging._levelNames.keys() if isinstance(_, str))
+        type = loglevel_type
+        super(LogLevelAction, self).__init__(
+            option_strings, dest, nargs=nargs, const=const, default=default,
+            type=type, choices=choices, required=required, help=help,
+            metavar=metavar)
 
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -306,8 +361,11 @@ class ArgumentParser(argparse.ArgumentParser):
                  argument_default=argument_default,
                  conflict_handler=conflict_handler,
                  add_help=add_help)
-        self.add_argument('--version', action=VersionAction)
         self.register('action', 'glob', GlobAction)
+        self.register('action', 'loglevel', LogLevelAction)
+        self.register('action', 'version', VersionAction)
+        self.add_argument('--version', action='version')
+        self.add_argument('-l', '--loglevel', action='loglevel', default='INFO')
 
 
 class DirType(object):
@@ -386,11 +444,22 @@ def rm_f(filename):
             raise
 
 
+def _sanitize_arg_value_for_xmldoc(value):
+    if hasattr(value, 'read'):
+        return value.name
+    elif isinstance(value, tuple):
+        return tuple(_sanitize_arg_value_for_xmldoc(v) for v in value)
+    elif isinstance(value, list):
+        return [_sanitize_arg_value_for_xmldoc(v) for v in value]
+    else:
+        return value
+
+
 def register_to_xmldoc(xmldoc, parser, opts, **kwargs):
     from glue.ligolw.utils import process
-    params = {key: value.name if hasattr(value, 'read') else value
+    params = {key: _sanitize_arg_value_for_xmldoc(value)
               for key, value in opts.__dict__.items()}
-    return process.register_to_xmldoc(xmldoc, parser.prog, params)
+    return process.register_to_xmldoc(xmldoc, parser.prog, params, **kwargs)
 
 
 start_msg = '\

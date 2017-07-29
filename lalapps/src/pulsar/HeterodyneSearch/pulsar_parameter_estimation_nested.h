@@ -216,10 +216,10 @@ extern "C" {
 " --randomise         Set this, with an INT seed, to randomise the data (through permutations\n\
                      of the time stamps) for use in Monte-Carlo studies. NOTE: this will not\n\
                      work if using the code to create injections\n"\
-" --truncate-time     maximum GPS time to be analyzed (discards data with larger \n\
-                      timestamp\n"\
+" --truncate-time     maximum GPS time to be analyzed (discards data with larger\n\
+                     timestamp\n"\
 " --truncate-samples  maximum sample number to be analyzed (analyzes only first\n\
-                      datapoints and discards rest)\n"\
+                     datapoints and discards rest)\n"\
 "\n"\
 " --truncate-fraction fraction of data samples to be analyzed (0<f<=1)\n"\
 "\n"\
@@ -284,6 +284,11 @@ extern "C" {
 " --inject-only       do not perform nested sampling on a created injection\n\
                      provided that injection has been output (i.e. exit the code\n\
                      after creation of and writing out of the injection).\n"\
+" --inject-coarse     create an injected signal as if it has only been \"coarse\n\
+                     heterodyned\", i.e., the orbital modulation effects have not\n\
+                     been removed from the signal. This will only work when using\n\
+                     the code to just create and output an injection with the\n\
+                     \"--inject-only\" flag set.\n"\
 " --fake-data         a list of IFO's for which fake data will be generated\n\
                      e.g. H1,L1 (delimited by commas). Unless the --fake-psd\n\
                      flag is set the power spectral density for the data will\n\

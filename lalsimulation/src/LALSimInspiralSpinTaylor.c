@@ -21,7 +21,7 @@
 #include <lal/Units.h>
 #include <lal/LALConstants.h>
 #include <lal/LALSimInspiral.h>
-#include <lal/LALAdaptiveRungeKutta4.h>
+#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
 #include <lal/TimeSeries.h>
 #include <lal/FrequencySeries.h>
 #include "check_series_macros.h"
@@ -2976,7 +2976,7 @@ static int XLALSimInspiralSpinTaylorPNEvolveOrbitIrregularIntervals(
 {
     INT4 intreturn;
     void * params;
-    LALAdaptiveRungeKutta4Integrator *integrator = NULL;     /* GSL integrator object */
+    LALAdaptiveRungeKuttaIntegrator *integrator = NULL;     /* GSL integrator object */
     REAL8 yinit[LAL_NUM_ST4_VARIABLES];       /* initial values of parameters */
     REAL8Array *y;    /* time series of variables returned from integrator */
     /* intermediate variables */
@@ -3115,7 +3115,7 @@ static int XLALSimInspiralSpinTaylorPNEvolveOrbitIrregularIntervals(
             0.0, lengths/Msec, &y);
 
     intreturn = integrator->returncode;
-    XLALAdaptiveRungeKutta4Free(integrator);
+    XLALAdaptiveRungeKuttaFree(integrator);
 
     if (!len)
     {
@@ -3678,7 +3678,7 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
 {
     INT4 intreturn;
     void * params;
-    LALAdaptiveRungeKutta4Integrator *integrator = NULL;     /* GSL integrator object */
+    LALAdaptiveRungeKuttaIntegrator *integrator = NULL;     /* GSL integrator object */
     REAL8 yinit[LAL_NUM_ST4_VARIABLES];       /* initial values of parameters */
     REAL8Array *yout;	 /* time series of variables returned from integrator */
     /* intermediate variables */
@@ -3840,7 +3840,7 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
     }
 
     intreturn = integrator->returncode;
-    XLALAdaptiveRungeKutta4Free(integrator);
+    XLALAdaptiveRungeKuttaFree(integrator);
 
     if (!len) 
     {

@@ -286,7 +286,7 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
   LALSTPNparams mparams;
 
 	/* needed for integration */
-  LALAdaptiveRungeKutta4Integrator *integrator;
+  LALAdaptiveRungeKuttaIntegrator *integrator;
 	unsigned int len;
 	int intreturn;
 	REAL8 yinit[11];
@@ -350,7 +350,7 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
 	len = XLALAdaptiveRungeKutta4(integrator,(void *)&mparams,yinit,0.0,lengths/m,dt/m,&yout);
 
 	intreturn = integrator->returncode;
-	XLALAdaptiveRungeKutta4Free(integrator);
+	XLALAdaptiveRungeKuttaFree(integrator);
 
 	if (!len) {
     if (XLALClearErrno() == XLAL_ENOMEM) {

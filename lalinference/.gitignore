@@ -52,6 +52,7 @@ python/bayestar_plot_volume
 python/bayestar_prune_neighborhood_tmpltbank
 python/bayestar_realize_coincs
 python/bayestar_sample_model_psd
+python/bayestar_samples_ppplot
 python/bayestar_sim_to_tmpltbank
 python/imrtgr_imr_consistency_test
 python/lalinference/__init__.py
@@ -84,7 +85,8 @@ src/lalinference_version
 src/stamp-h1
 src/stamp-h2
 src/version.c
-swig/swiglal*
+swig/swiglalinference.i*
+swig/swiglal_*
 test/.cache
 test/LALInferenceGenerateROQTest
 test/LALInferenceHDF5Test

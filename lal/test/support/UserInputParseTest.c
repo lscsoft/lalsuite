@@ -205,6 +205,51 @@ test_ParseStringValue ( void )
                valString, valGPS.gpsSeconds, valGPS.gpsNanoSeconds, valGPSRef.gpsSeconds, valGPSRef.gpsNanoSeconds );
 
   // ---------- XLALParseStringValueAsREAL8Range() ----------
+  INT4Range int4Range, int4RangeRef;
+
+  valString = "100";
+  int4RangeRef[0] = 100; int4RangeRef[1] = 100;
+  XLAL_CHECK( XLALParseStringValueAsINT4Range(&int4Range, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( int4Range[0] == int4RangeRef[0] && int4Range[1] == int4RangeRef[1] && int4Range[0] <= int4Range[1],
+              XLAL_ETOL, "XLALParseStringValueAsINT4Range(%s) failed, return = {%d,%d}\n", valString, int4Range[0], int4Range[1] );
+
+  valString = "150/5";
+  int4RangeRef[0] = 150; int4RangeRef[1] = 155;
+  XLAL_CHECK( XLALParseStringValueAsINT4Range(&int4Range, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( int4Range[0] == int4RangeRef[0] && int4Range[1] == int4RangeRef[1] && int4Range[0] <= int4Range[1],
+              XLAL_ETOL, "XLALParseStringValueAsINT4Range(%s) failed, return = {%d,%d}\n", valString, int4Range[0], int4Range[1] );
+
+  valString = "150/-5";
+  int4RangeRef[0] = 145; int4RangeRef[1] = 150;
+  XLAL_CHECK( XLALParseStringValueAsINT4Range(&int4Range, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( int4Range[0] == int4RangeRef[0] && int4Range[1] == int4RangeRef[1] && int4Range[0] <= int4Range[1],
+              XLAL_ETOL, "XLALParseStringValueAsINT4Range(%s) failed, return = {%d,%d}\n", valString, int4Range[0], int4Range[1] );
+
+  valString = "200,201";
+  int4RangeRef[0] = 200; int4RangeRef[1] = 201;
+  XLAL_CHECK( XLALParseStringValueAsINT4Range(&int4Range, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( int4Range[0] == int4RangeRef[0] && int4Range[1] == int4RangeRef[1] && int4Range[0] <= int4Range[1],
+              XLAL_ETOL, "XLALParseStringValueAsINT4Range(%s) failed, return = {%d,%d}\n", valString, int4Range[0], int4Range[1] );
+
+  valString = "203,202";
+  int4RangeRef[0] = 202; int4RangeRef[1] = 203;
+  XLAL_CHECK( XLALParseStringValueAsINT4Range(&int4Range, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( int4Range[0] == int4RangeRef[0] && int4Range[1] == int4RangeRef[1] && int4Range[0] <= int4Range[1],
+              XLAL_ETOL, "XLALParseStringValueAsINT4Range(%s) failed, return = {%d,%d}\n", valString, int4Range[0], int4Range[1] );
+
+  valString = "-203,-202";
+  int4RangeRef[0] = -203; int4RangeRef[1] = -202;
+  XLAL_CHECK( XLALParseStringValueAsINT4Range(&int4Range, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( int4Range[0] == int4RangeRef[0] && int4Range[1] == int4RangeRef[1] && int4Range[0] <= int4Range[1],
+              XLAL_ETOL, "XLALParseStringValueAsINT4Range(%s) failed, return = {%d,%d}\n", valString, int4Range[0], int4Range[1] );
+
+  valString = "250~5";
+  int4RangeRef[0] = 245; int4RangeRef[1] = 255;
+  XLAL_CHECK( XLALParseStringValueAsINT4Range(&int4Range, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( int4Range[0] == int4RangeRef[0] && int4Range[1] == int4RangeRef[1] && int4Range[0] <= int4Range[1],
+              XLAL_ETOL, "XLALParseStringValueAsINT4Range(%s) failed, return = {%d,%d}\n", valString, int4Range[0], int4Range[1] );
+
+  // ---------- XLALParseStringValueAsREAL8Range() ----------
   REAL8Range real8Range, real8RangeRef;
 
   valString = "100";

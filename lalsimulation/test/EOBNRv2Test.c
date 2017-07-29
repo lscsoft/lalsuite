@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #include <lal/Units.h>
-#include <lal/LALAdaptiveRungeKutta4.h>
+#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
 #include <lal/FindRoot.h>
 #include <lal/SeqFactories.h>
 #include <lal/LALSimInspiral.h>

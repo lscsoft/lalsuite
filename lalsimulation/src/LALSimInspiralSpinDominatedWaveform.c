@@ -29,7 +29,7 @@
 #include <lal/Units.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
-#include <lal/LALAdaptiveRungeKutta4.h>
+#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
 
 #define LAL_SDW_ABSOLUTE_TOLERANCE 1.e-12
 #define LAL_SDW_RELATIVE_TOLERANCE 1.e-12
@@ -1371,7 +1371,7 @@ REAL8 polarizationangle /**< Angle to rotate the radiaton frame to the default L
         XLAL_ERROR(XLAL_EDOM);
     }
     /* set up the integrator*/
-    LALAdaptiveRungeKutta4Integrator *integrator = XLALAdaptiveRungeKutta4Init(LAL_SDW_NUM_VARIABLES,
+    LALAdaptiveRungeKuttaIntegrator *integrator = XLALAdaptiveRungeKutta4Init(LAL_SDW_NUM_VARIABLES,
             XLALSpinDominatedWaveformDerivatives, XLALSpinDominatedWaveformStoppingTest, LAL_SDW_ABSOLUTE_TOLERANCE,
             LAL_SDW_RELATIVE_TOLERANCE);
     if (!integrator) {
@@ -1408,7 +1408,7 @@ REAL8 polarizationangle /**< Angle to rotate the radiaton frame to the default L
             * pow(G_CP2 * params.totalmass / LAL_C_SI, -5. / 3.);
     INT4 intLen = XLALAdaptiveRungeKutta4Hermite(integrator, (void *) &params, yin, 0.0, length, deltaT, &yout);
     UNUSED INT4 intReturn = integrator->returncode;
-    XLALAdaptiveRungeKutta4Free(integrator);
+    XLALAdaptiveRungeKuttaFree(integrator);
     REAL8TimeSeries *phin = XLALCreateREAL8TimeSeries("PHI_N", &tStart, 0., deltaT, &lalDimensionlessUnit, intLen);
     REAL8TimeSeries *omega = XLALCreateREAL8TimeSeries("OMEGA", &tStart, 0., deltaT, &lalDimensionlessUnit, intLen);
     REAL8TimeSeries *psi = XLALCreateREAL8TimeSeries("ORBITAL_PHASE", &tStart, 0., deltaT, &lalDimensionlessUnit,

@@ -28,7 +28,7 @@
 #include <lal/FrequencySeries.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/XLALError.h>
-#include <lal/LALAdaptiveRungeKutta4.h>
+#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
 
 #define UNUSED(expr) do { (void)(expr); } while (0)
 

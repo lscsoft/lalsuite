@@ -65,7 +65,7 @@ static PyObject *cs_gamma_finddRdz(PyObject *self, PyObject *args)
   PyArrayObject *Numpy_zofA;
   PyObject *Numpy_dRdz;
   double Gmu, alpha, f, Gamma, *zofA, *dRdz;
-  int Namp;
+  long int Namp;
   cs_cosmo_functions_t cosmofns;
   int j;
   (void)self;	/* silence unused parameter warning */
@@ -126,13 +126,13 @@ static PyObject *cs_gamma_findzofA(PyObject *self, PyObject *args)
   PyArrayObject *Numpy_amp;
   PyObject *Numpy_zofA;
   double Gmu, alpha, *zofA, *amp;
-  int Namp;
+  unsigned long int Namp;
   (void)self;	/* silence unused parameter warning */
 
   double z_min = 1e-20, z_max = 1e10;
   double dlnz = 0.05;
   unsigned numz = floor( (log(z_max) - log(z_min)) / dlnz );
-  int i;
+  unsigned long int i;
   cs_cosmo_functions_t cosmofns;
   double *fz,*z;
   double a;
@@ -163,11 +163,11 @@ static PyObject *cs_gamma_findzofA(PyObject *self, PyObject *args)
 
   /* first compute the function that relates A and z */
   /* invert order; b/c fz is a monotonically decreasing func of z */
-  for ( i = cosmofns.n-1 ; i >= 0; i-- )
+  for ( i = cosmofns.n ; i > 0; i-- )
     {
-      int j = cosmofns.n-1 - i;
-      z[j] = cosmofns.z[i];
-      fz[j] = pow(cosmofns.phit[i], 2.0/3.0) * pow(1+z[j], -1.0/3.0) / cosmofns.phiA[i];
+      unsigned long int j = cosmofns.n - i;
+      z[j] = cosmofns.z[i-1];
+      fz[j] = pow(cosmofns.phit[i-1], 2.0/3.0) * pow(1+z[j], -1.0/3.0) / cosmofns.phiA[i-1];
     }
 
   gsl_interp_init (zofa_interp, fz, z, cosmofns.n);

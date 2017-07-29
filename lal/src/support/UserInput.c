@@ -82,6 +82,7 @@ typedef enum {
   UVAR_TYPE_DECJ,    		// sky equatorial latitude (aka declination or DEC), in either radians or degrees:minutes:seconds format, translated into radians
   UVAR_TYPE_STRING, 		// normal string
 
+  UVAR_TYPE_INT4Range,		// range of INT4 values
   UVAR_TYPE_REAL8Range,		// range of REAL8 values
   UVAR_TYPE_EPOCHRange,		// range of LIGOTimeGPS values
   UVAR_TYPE_RAJRange,		// range of RAJ values
@@ -133,6 +134,7 @@ DEFN_REGISTER_UVAR(DECJ,REAL8);
 DEFN_REGISTER_UVAR(EPOCH,LIGOTimeGPS);
 DEFN_REGISTER_UVAR(STRING,CHAR*);
 
+DEFN_REGISTER_UVAR(INT4Range,INT4Range);
 DEFN_REGISTER_UVAR(REAL8Range,REAL8Range);
 DEFN_REGISTER_UVAR(EPOCHRange,LIGOTimeGPSRange);
 DEFN_REGISTER_UVAR(RAJRange,REAL8Range);
@@ -218,6 +220,7 @@ static const struct
   REGULAR_MAP_ENTRY ( RAJ, NULL, "=<radians>|<hours>:<minutes>:<seconds>" ),
   REGULAR_MAP_ENTRY ( DECJ, NULL, "=<radians>|<degrees>:<minutes>:<seconds>" ),
 
+  REGULAR_MAP_ENTRY ( INT4Range, NULL, "=<start>[,<end>|/<band>|~<plus-minus>] where <>=<4-byte signed integer>" ),
   REGULAR_MAP_ENTRY ( REAL8Range, NULL, "=<start>[,<end>|/<band>|~<plus-minus>] where <>=<8-byte real>" ),
   REGULAR_MAP_ENTRY ( EPOCHRange, NULL, "=<start>[,<end>|/<band>|~<plus-minus>] where <>=<seconds>[.<frac-seconds>][GPS] | <days>[.<frac-days>]MJD" ),
   REGULAR_MAP_ENTRY ( RAJRange, NULL, "=<start>[,<end>|/<band>|~<plus-minus>] where <>=<radians>|<hours>:<minutes>:<seconds>" ),

@@ -48,6 +48,7 @@ import numpy
 import random
 from scipy.constants import c as speed_of_light
 import scipy.optimize
+from scipy import spatial
 import sys
 import warnings
 
@@ -312,9 +313,10 @@ def get_doubles(eventlists, instruments, thresholds, unused):
 	# with it from the set.
 
 	offset_a = eventlista.offset
+	eventlistb_get_coincs = eventlistb.get_coincs
 	for eventa in eventlista:
 		eventa_id = id(eventa)
-		matches = eventlistb.get_coincs(eventa, offset_a, dt, threshold_data)
+		matches = eventlistb_get_coincs(eventa, offset_a, dt, threshold_data)
 		if matches:
 			for eventb in matches:
 				eventb_id = id(eventb)
@@ -1014,23 +1016,45 @@ class CoincSynthesizer(object):
 		# \mu_{1} * \mu_{2} ... \mu_{N} * 2 * \tau_{12} * 2 *
 		# \tau_{13} ... 2 * \tau_{1N}.  this is the rate at which
 		# events from instrument 1 are coincident with events from
-		# all of instruments 2...N.  later, we will multiply this
-		# by the probability that events from instruments 2...N
-		# known to be coincident with an event from instrument 1
-		# are themselves mutually coincident.  the factor of 2 is
-		# because to be coincident the time difference can be
-		# anywhere in [-tau, +tau], so the size of the coincidence
-		# window is 2 tau.  here we compute the part of the
-		# expression with the \mu factors removed.
+		# all of instruments 2...N.  the factors of 2 are because
+		# to be coincident the time difference can be anywhere in
+		# [-tau, +tau], so the size of the coincidence window is 2
+		# tau.  removing the factor of
+		#
+		#	\prod_{i} \mu_{i}
+		#
+		# leaves
+		#
+		#	\prod_{i} 2 \tau_{1i}.
+		#
+		# in the N-1 dimensional space defined by the time
+		# differences between each instrument and the anchor
+		# instrument, the coincidence windows between instruments
+		# define pairs of half-space boundaries.  for the
+		# coincidence windows between each instrument and the
+		# anchor instrument these boundaries are perpendicular to
+		# co-ordinate axes, while for other pairs of instruments
+		# the coincidence windows correspond to planes angled at 45
+		# degrees in various orientations.  altogether they define
+		# a convex polyhedron containing the origin.
+		#
+		# the product of taus, above, is the volume of the
+		# rectangular polyhedron defined by the anchor instrument
+		# constraints alone.  it's aparent that the final quantity
+		# we seek here is the volume of the convex polyhedron
+		# defined by all of the constraints.  this can be computed
+		# using the qhull library's half-space intersection
+		# implementation, but the Python interface is not available
+		# in scipy versions below 0.19, therefore we give up in
+		# frustration and do the following:  we first compute the
+		# volume of the rectangular polyhedron defined by the
+		# anchor instrument constraints, and then use
+		# stone-throwing to estimate the ratio of the desired
+		# volume to that volume and multiply by that factor.
 			for instrument in instruments:
 				self._coincidence_rate_factors[key] *= 2. * self.tau[frozenset((anchor, instrument))]
-
-		# if there are more than two instruments, correct for the
-		# probability of full N-way coincidence by computing the
-		# volume of the allowed parameter space by stone throwing.
-		# FIXME:  it might be practical to solve this with some
-		# sort of computational geometry library and convex hull
-		# volume calculator.
+		# compute the ratio of the desired volume to that volume by
+		# stone throwing.
 			if len(instruments) > 1:
 		# for each instrument 2...N, the interval within which an
 		# event is coincident with instrument 1
@@ -1081,6 +1105,59 @@ class CoincSynthesizer(object):
 
 		# done
 		return self._coincidence_rate_factors
+
+		# FIXME:  commented-out implementation that requires scipy
+		# >= 0.19.  saving it for later.  NOTE:  untested
+
+		# the half-space instersection code assumes constraints of
+		# the form
+		#
+		#	A x + b <= 0,
+		#
+		# where A has size (n constraints x m dimensions), where
+		# for N instruments m = N-1.  each coincidence window
+		# between an instrument, i, and the anchor imposes two
+		# constraints of the form
+		#
+		#	+/-t_{i} - \tau_{1i} <= 0
+		#
+		# for a total of 2*(N-1) constraints.  each coincidence
+		# window between a pair of (non-anchor) instruments imposes
+		# two constraints of the form
+		#
+		#	+/-(t_{i} - t_{j}) - \tau_{ij} <= 0
+		#
+		# for a total (N-1)*(N-2) constraints.  altogether there
+		# are
+		#
+		#	(N-1)^2 + (N-1)
+		#
+		# constraints
+		#	if len(instruments) > 1:
+		#		dimensions = len(instruments)	# anchor not included
+		#		halfspaces = numpy.zeros((dimensions * (dimensions + 1), dimensions + 1), dtype = "double")
+		#		# anchor constraints
+		#		for i, instrument in enumerate(instruments):
+		#			j = i
+		#			i *= 2
+		#			halfspaces[i, j] = +1.
+		#			halfspaces[i + 1, j] = -1.
+		#			halfspaces[i, -1] = halfspaces[i + 1, -1] = -self.tau[frozenset((anchor, instrument))]
+		#		# non-anchor constraints
+		#		for i, ((j1, a), (j2, b)) in enumerate(itertools.combinations(enumerate(instruments), 2), dimensions):
+		#			i *= 2
+		#			halfspaces[i, j1] = +1.
+		#			halfspaces[i, j2] = -1.
+		#			halfspaces[i + 1, j1] = -1.
+		#			halfspaces[i + 1, j2] = +1.
+		#			halfspaces[i, -1] = halfspaces[i + 1, -1] = -self.tau[frozenset((a, b))]
+		#		# the origin is in the interior
+		#		interior = numpy.zeros((len(instruments),), dtype = "double")
+		#		# compute volume
+		#		self._coincidence_rate_factors[key] *= spatial.ConvexHull(spatial.HalfspaceIntersection(halfspaces, interior).intersections).volume
+		#	else:
+		#		# 1-D case (qhull barfs, but who needs it)
+		#		self._coincidence_rate_factors[key] *= 2. * self.tau[frozenset((anchor, instruments[0]))]
 
 
 	@property
@@ -1657,7 +1734,8 @@ class LnLRDensity(object):
 		from the distribution density.  Some subclasses might
 		choose not to implement this, and those that do might
 		choose to use an MCMC-style sample generator and so the
-		samples should not assumed to be statistically independent.
+		samples should not be assumed to be statistically
+		independent.
 		"""
 		raise NotImplementedError
 

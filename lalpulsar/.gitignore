@@ -51,9 +51,9 @@ src/lalpulsar_version
 src/stamp-h1
 src/stamp-h2
 src/version.c
-swig/swiglal*
+swig/swiglalpulsar.i*
+swig/swiglal_*
 test/BinarySSBTimesTest
-test/ComputeFstatBenchmark
 test/ComputeFstatTest
 test/ConstructPLUTTest
 test/DopplerScanTest

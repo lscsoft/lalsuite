@@ -1138,6 +1138,7 @@ XLALrefineCOMPLEX8Vector ( const COMPLEX8Vector *in,
  * <tt>\%</tt> or <tt>#</tt>) of one of the following forms:
  * - <tt>startGPS endGPS</tt>
  * - <tt>startGPS endGPS NumSFTs</tt> (NumSFTs must be a positive integer)
+ * - <tt>startGPS endGPS duration NumSFTs</tt> (\b DEPRECATED, duration is ignored)
  *
  * \note We (ab)use the integer \p id field in LALSeg to carry the total number of SFTs
  * contained in that segment if <tt>NumSFTs</tt> was provided in the segment file.
@@ -1171,6 +1172,9 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
     case 2:
     case 3:
       break;
+    case 4:
+      XLALPrintError( "\n%s: WARNING: segment file '%s' is in DEPRECATED 4-column (startGPS endGPS duration NumSFTs, duration is ignored)\n", __func__, fname );
+      break;
     default:
       XLAL_ERROR_NULL( XLAL_EIO, "%s: segment file '%s' contains an unknown %i-column format", __func__, fname, ncol );
     }
@@ -1181,7 +1185,7 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
     {
 
       /* parse line of segment file, depending on determined number of columns */
-      REAL8 start = 0, end = 0;
+      REAL8 start = 0, end = 0, duration = 0;
       INT4 NumSFTs = 0;
       int ret;
       switch (ncol) {
@@ -1193,6 +1197,10 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
         ret = sscanf( flines->lines->tokens[iSeg], "%lf %lf %i", &start, &end, &NumSFTs );
         XLAL_CHECK_NULL( ret == 3, XLAL_EIO, "%s: number of columns in segment file '%s' is inconsistent (line 1: %i, line %u: %i)", __func__, fname, ncol, iSeg+1, ret );
         XLAL_CHECK_NULL( NumSFTs > 0, XLAL_EIO, "%s: number of SFTs (3rd column) in segment file '%s' must be a positive integer if given (line %u: %i)", __func__, fname, iSeg+1, NumSFTs );
+        break;
+      case 4:
+        ret = sscanf( flines->lines->tokens[iSeg], "%lf %lf %lf %i", &start, &end, &duration, &NumSFTs );
+        XLAL_CHECK_NULL( ret == 4, XLAL_EIO, "%s: number of columns in segment file '%s' is inconsistent (line 1 = %i, line %u = %i)", __func__, fname, ncol, iSeg+1, ret );
         break;
       default:
         XLAL_ERROR_NULL( XLAL_EFAILED, "Unexpected error!" );
@@ -1821,10 +1829,23 @@ int XLALSFTCatalogTimeslice(
   // Check input
   XLAL_CHECK( slice != NULL, XLAL_EFAULT );
   XLAL_CHECK( catalog != NULL, XLAL_EFAULT );
+  XLAL_CHECK( minStartGPS != NULL && maxStartGPS != NULL, XLAL_EFAULT );
   XLAL_CHECK( catalog->length > 0, XLAL_EINVAL );
+  XLAL_CHECK( XLALGPSCmp( minStartGPS, maxStartGPS ) < 1 , XLAL_EINVAL , "minStartGPS (%"LAL_GPS_FORMAT") is greater than maxStartGPS (%"LAL_GPS_FORMAT")\n",
+              LAL_GPS_PRINT(*minStartGPS), LAL_GPS_PRINT(*maxStartGPS) );
 
   // Initialise timeslice of SFT catalog
   XLAL_INIT_MEM(*slice);
+
+  //Check if 'catalog' span of SFT startimes overlaps with ['minStartGPS', 'maxStartGPS') at all
+  if ( ( XLALCWGPSinRange( catalog->data[0].header.epoch, minStartGPS, maxStartGPS ) == 1 ) || ( XLALCWGPSinRange( catalog->data[catalog->length - 1].header.epoch, minStartGPS, maxStartGPS ) == -1 ) )
+    {
+      XLALPrintWarning ("Returning empty timeslice: catalog SFT starttimes-span [%"LAL_GPS_FORMAT", %"LAL_GPS_FORMAT "] has no overlap with given range [%"LAL_GPS_FORMAT", %"LAL_GPS_FORMAT").\n" ,
+                        LAL_GPS_PRINT(catalog->data[0].header.epoch), LAL_GPS_PRINT(catalog->data[catalog->length - 1].header.epoch),
+                        LAL_GPS_PRINT(*minStartGPS), LAL_GPS_PRINT(*maxStartGPS)
+                        );
+      return XLAL_SUCCESS;
+    }
 
   // Find start and end of timeslice
   UINT4 iStart = 0, iEnd = catalog->length - 1;
@@ -1834,9 +1855,18 @@ int XLALSFTCatalogTimeslice(
   while (iStart <= iEnd && XLALCWGPSinRange( catalog->data[iEnd].header.epoch, minStartGPS, maxStartGPS ) > 0 ) {
     --iEnd;
   }
-  if (iStart > iEnd) {
-    return XLAL_SUCCESS;
-  }
+  // note: iStart >=0, iEnd >= 0 is now guaranteed due to previous range overlap-check
+
+  // check if there is any timestamps found witin the interval, ie if iStart <= iEnd
+  if ( iStart > iEnd )
+    {
+      XLALPrintWarning ( "Returning empty timeslice: no catalog sfttimes fall within given GPS range [%"LAL_GPS_FORMAT", %"LAL_GPS_FORMAT"). Closest timestamps are: %"LAL_GPS_FORMAT" and %"LAL_GPS_FORMAT"\n",
+                         LAL_GPS_PRINT(*minStartGPS), LAL_GPS_PRINT(*maxStartGPS),
+                         LAL_GPS_PRINT(catalog->data[iEnd].header.epoch),
+                         LAL_GPS_PRINT(catalog->data[iStart].header.epoch)
+                         );
+      return XLAL_SUCCESS;
+    }
 
   // Set timeslice of SFT catalog
   slice->length = iEnd - iStart + 1;

@@ -428,14 +428,11 @@ elif test -z "$noupdate"; then
 fi
 
 if test ."$build_zlib" = ."true"; then
-    if test -z "$rebuild" -a -d "$zlib"; then
+    if test -z "$rebuild" -a -f "$zlib.tar.gz"; then
         log_and_show "using existing zlib source"
     elif test -z "$noupdate"; then
         log_and_show "retrieving $zlib"
         download $zlib.tar.gz
-        log_and_do cd "$BUILD"
-        log_and_do tar xzf "$SOURCE/$zlib.tar.gz"
-        log_and_do cd "$SOURCE"
     fi
 fi
 
@@ -488,7 +485,9 @@ if test ."$build_zlib" = ."true"; then
         log_and_show "using existing zlib"
     else
         log_and_show "compiling zlib"
-        log_and_do cd "$BUILD/$zlib"
+        log_and_do cd "$BUILD"
+        log_and_do tar xzf "$SOURCE/$zlib.tar.gz"
+        log_and_do cd "$zlib"
         if [ "$zlib_shared" = "--shared" -a "$zlib" = "zlib-1.2.3" ] && echo "$CFLAGS" | grep -w -e -m64 >/dev/null; then
             CC="gcc -m64" log_and_do "./configure" $zlib_shared --prefix="$INSTALL"
         else
@@ -511,7 +510,13 @@ else
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install
-    log_and_do "$SOURCE/$fftw/configure" $fftw_copts_single --enable-single "$shared_copt" "$cross_copt" --prefix="$INSTALL"
+    if test ".$CC" = ".gcc-mp-4.8" &&
+        echo $fftw_copts_single | fgrep -e "--enable-avx" >/dev/null; then
+	# on OSX with AVX use the clang assembler
+	log_and_do "$SOURCE/$fftw/configure" CFLAGS="$CFLAGS -Wa,-q" $fftw_copts_single --enable-single "$shared_copt" "$cross_copt" --prefix="$INSTALL"
+    else
+	log_and_do "$SOURCE/$fftw/configure" $fftw_copts_single --enable-single "$shared_copt" "$cross_copt" --prefix="$INSTALL"
+    fi
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install

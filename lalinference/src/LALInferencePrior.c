@@ -2689,7 +2689,7 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
     /* use the inverse sampling transform to draw a new sample */
     do { /* numerical issues mean that the analytic solution to this equation can go negative, so make sure that is not the case */
       cp = gsl_rng_uniform( rdm ); /* draw a point uniformly between 0 and 1 */
-      tmp = log(-exp(-r) + pow(1. + exp(r), -cp) + exp(1.-r)*pow(1. + exp(r), -cp));
+      tmp = log(-exp(-r) + pow(1. + exp(r), -cp) + exp(-r)*pow(1. + exp(r), -cp));
       tmp *= -sigma;
     } while ( tmp < 0. );
   }

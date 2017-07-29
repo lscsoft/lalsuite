@@ -61,6 +61,7 @@ char *XLALPrintStringValueOfREAL4 ( const REAL4 *valREAL4 );
 char *XLALPrintStringValueOfREAL8 ( const REAL8 *valREAL8 );
 char *XLALPrintStringValueOfEPOCH ( const LIGOTimeGPS *valGPS );
 
+char *XLALPrintStringValueOfINT4Range ( const INT4Range *int4Range );
 char *XLALPrintStringValueOfREAL8Range ( const REAL8Range *real8Range );
 char *XLALPrintStringValueOfEPOCHRange ( const LIGOTimeGPSRange *gpsRange );
 

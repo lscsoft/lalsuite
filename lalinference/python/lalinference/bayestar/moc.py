@@ -110,3 +110,22 @@ order : `numpy.ndarray`
 ipix : `numpy.ndarray`
     NESTED pixel index
 """)
+
+
+def rasterize(moc_data):
+    """Convert a multi-order HEALPix dataset to fixed-order NESTED ordering.
+
+    Parameters
+    ----------
+    moc_data : `numpy.ndarray`
+    A multi-order HEALPix dataset stored as a Numpy record array whose first
+    column is called UNIQ and contains the NUNIQ pixel index. Every point on
+    the unit sphere must be contained in exactly one pixel in the dataset.
+
+    Returns
+    -------
+    nested_data : `numpy.ndarray`
+        A fixed-order, NESTED-ordering HEALPix dataset with all of the columns
+        that were in moc_data, with the exception of the UNIQ column.
+    """
+    return _moc.rasterize(moc_data)

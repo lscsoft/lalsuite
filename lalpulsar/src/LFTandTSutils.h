@@ -85,7 +85,7 @@ int XLALFrequencyShiftCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *x, const REAL8 sh
 
 int XLALSpinDownCorrectionMultiTS ( MultiCOMPLEX8TimeSeries *multiTS, const PulsarDopplerParams *doppler );
 
-COMPLEX8TimeSeries *XLALDuplicateCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *times );
+COMPLEX8TimeSeries *XLALDuplicateCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *ttimes );
 MultiCOMPLEX8TimeSeries *XLALDuplicateMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes );
 int XLALCopyMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimesOut, MultiCOMPLEX8TimeSeries *multiTimesIn );
 int XLALCopyCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *ts_out, COMPLEX8TimeSeries *ts_in );

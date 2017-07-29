@@ -20,7 +20,7 @@
 #include <math.h>
 #include <lal/Units.h>
 #include <lal/LALConstants.h>
-#include <lal/LALAdaptiveRungeKutta4.h>
+#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
 #include <lal/TimeSeries.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/VectorOps.h>
@@ -188,7 +188,7 @@ int XLALSimInspiralSpinTaylorT5 (
 	LIGOTimeGPS tStart = LIGOTIMEGPSZERO;
 	REAL8TimeSeries *orbPhase=NULL, *V=NULL, *LNhxVec=NULL, *LNhyVec=NULL, *LNhzVec=NULL; 
 	REAL8TimeSeries *S1xVec=NULL, *S1yVec=NULL, *S1zVec=NULL, *S2xVec=NULL, *S2yVec=NULL, *S2zVec=NULL;
-	LALAdaptiveRungeKutta4Integrator *integrator = NULL;     /* GSL integrator object */
+	LALAdaptiveRungeKuttaIntegrator *integrator = NULL;     /* GSL integrator object */
     SpinTaylorT5Params *mParams;
     SpinTaylorT5Params SpinTaylorParameters;
     REAL8 LNh[3], S1[3], S2[3], J[3], Jh[3], Lmag, Jmag, v; 
@@ -280,7 +280,7 @@ int XLALSimInspiralSpinTaylorT5 (
             0.0, dataLength*deltaT, deltaT, &yout);
 
     intStatus = integrator->returncode;
-    XLALAdaptiveRungeKutta4Free(integrator);
+    XLALAdaptiveRungeKuttaFree(integrator);
 
     if (!lenReturn) {
         XLALPrintError("XLAL Error - %s: integration failed with errorcode %d.\n", __func__, intStatus);

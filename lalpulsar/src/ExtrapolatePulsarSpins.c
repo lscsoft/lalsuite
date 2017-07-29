@@ -25,7 +25,7 @@
  * https://www.lsc-group.phys.uwm.edu/twiki/pub/CW/HierarchicalSearchReview/meeting_20090513.txt
  *
  * If you want to modify any existing functions in this file, please submit
- * your patch for review to pulgroup@gravity.phys.uwm.edu
+ * your patch for review to https://bugs.ligo.org/redmine/projects/lalsuite-lalpulsar
  * ================================================================================
  */
 
@@ -261,16 +261,30 @@ XLALCWSignalCoveringBand ( REAL8 *minCoverFreq,                          /**< [o
   XLAL_CHECK( (binaryMaxAsini > 0)  || ((binaryMinPeriod == 0) && (binaryMaxEcc == 0)), XLAL_EINVAL );	// if isolated: required P=0 and e=0
   XLAL_CHECK( (binaryMaxAsini == 0) || ((binaryMinPeriod > 0) && (binaryMaxEcc >= 0) && (binaryMaxEcc<1)), XLAL_EINVAL );	// if binary: P>0, 0<=e<1
 
-  // Extrapolate frequency and spindown range to each end of GPS time range
-  PulsarSpinRange spin1, spin2;
-  const REAL8 DeltaT1 = XLALGPSDiff(time1, &spinRange->refTime);
-  const REAL8 DeltaT2 = XLALGPSDiff(time2, &spinRange->refTime);
-  XLAL_CHECK( XLALExtrapolatePulsarSpinRange(&spin1, spinRange, DeltaT1) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALExtrapolatePulsarSpinRange(&spin2, spinRange, DeltaT2) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // Determine the minimum and maximum frequencies covered
-  *minCoverFreq = MYMIN( spin1.fkdot[0], spin2.fkdot[0] );
-  *maxCoverFreq = MYMAX( spin1.fkdot[0] + spin1.fkdotBand[0], spin2.fkdot[0] + spin2.fkdotBand[0] );
+  // Track instantaneous SRC-frame frequency through the observing interval in steps of 'dT' and record maximal extents in frequency
+  // This is safer than just extrapolating to the beginning and end of the observing interval, in case
+  // the frequency evolution has a local minimum or maximum (not physically probable, but still possible in test cases)
+  REAL8 t1 = XLALGPSGetREAL8 ( time1 );
+  REAL8 t2 = XLALGPSGetREAL8 ( time2 );
+  REAL8 tStart = MYMIN ( t1, t2 );
+  REAL8 tEnd   = MYMAX ( t1, t2 );
+  REAL8 Tspan   = tEnd - tStart; // >=0
+  REAL8 dT = LAL_DAYSID_SI;	// steps of ~1day (should be safely short enough)
+  UINT4 numSteps = (UINT4)ceil ( (Tspan + 1e-9) / dT ) + 1;	// minimum of 2 steps: [beginning, end] // add 1ns for special case Tspan=0
+  dT = Tspan / (numSteps-1);	// re-adjust step-size so we exactly end at the end-time at i=(numSteps-1)
+  REAL8 refTime = XLALGPSGetREAL8 ( &spinRange->refTime );
+  REAL8 minFreq = LAL_REAL8_MAX;
+  REAL8 maxFreq = 0;
+  for ( UINT4 i = 0; i < numSteps; i ++ )
+    {
+      REAL8 t_i = tStart + i * dT;
+      REAL8 DeltaT_i = t_i - refTime;
+      PulsarSpinRange spin_i;
+      XLAL_CHECK( XLALExtrapolatePulsarSpinRange ( &spin_i, spinRange, DeltaT_i ) == XLAL_SUCCESS, XLAL_EFUNC );
+      // keep track of the minimum and maximum frequencies covered
+      minFreq = MYMIN( minFreq, spin_i.fkdot[0] );
+      maxFreq = MYMAX( maxFreq, spin_i.fkdot[0] + spin_i.fkdotBand[0] );
+    } // for i < numSteps
 
   // Extra frequency range needed due to detector motion, per unit frequency
   // * Maximum value of the time derivative of the diurnal and (Ptolemaic) orbital phase, plus 5% for luck
@@ -286,8 +300,8 @@ XLALCWSignalCoveringBand ( REAL8 *minCoverFreq,                          /**< [o
   }
 
   // Expand frequency range
-  (*minCoverFreq) *= 1.0 - extraPerFreq;
-  (*maxCoverFreq) *= 1.0 + extraPerFreq;
+  (*minCoverFreq) = minFreq * (1.0 - extraPerFreq);
+  (*maxCoverFreq) = maxFreq * (1.0 + extraPerFreq);
 
   return XLAL_SUCCESS;
 

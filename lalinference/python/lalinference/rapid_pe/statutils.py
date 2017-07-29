@@ -16,7 +16,7 @@
 import math
 
 import numpy
-from pylal.rate import BinnedArray, NDBins, IrregularBins, LinearBins
+from lal.rate import BinnedDensity, NDBins, IrregularBins, LinearBins
 
 __author__ = "Chris Pankow <chris.pankow@ligo.org>"
 
@@ -75,7 +75,7 @@ def neff_frac(weights, ntotal):
 def get_adaptive_binning(samples, edges, nbins=100, bintype='linear'):
 
     if bintype == "linear":
-        return BinnedArray(NDBins((LinearBins(edges[0], edges[-1], nbins),)))
+        return BinnedDensity(NDBins((LinearBins(edges[0], edges[-1], nbins),)))
 
     ordering = numpy.argsort(samples)
     stride = len(samples) / nbins

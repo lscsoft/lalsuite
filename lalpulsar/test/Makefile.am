@@ -37,7 +37,6 @@ test_programs += UniversalDopplerMetricTest
 test_programs += VelocityTest
 test_programs += XLALComputeAMTest
 test_programs += XLALMultiNoiseWeightsTest
-test_programs += ComputeFstatBenchmark
 
 if LALXML
 test_programs += LALPulsarXMLTest
