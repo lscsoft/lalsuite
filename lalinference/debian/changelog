@@ -1,3 +1,16 @@
+lalinference (1.9.4-1) unstable; urgency=low
+
+  * bayestar_plot_volume: work around broken fonts in SL7
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 27 Jul 2017 12:30:16 -0500
+
+lalinference (1.9.3-1) unstable; urgency=low
+
+  * LALInference 1.9.3
+  * BAYESTAR and sky map post-processing updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 26 Jul 2017 14:44:53 -0500
+
 lalinference (1.9.2-1) unstable; urgency=low
 
   * LALInference 1.9.2
