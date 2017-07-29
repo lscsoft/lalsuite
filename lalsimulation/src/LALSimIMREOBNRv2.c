@@ -20,7 +20,7 @@
 
 #include <complex.h>
 #include <lal/Units.h>
-#include <lal/LALAdaptiveRungeKutta4.h>
+#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
 #include <lal/FindRoot.h>
 #include <lal/SeqFactories.h>
 #include <lal/LALSimInspiral.h>
@@ -776,7 +776,7 @@ XLALSimIMREOBNRv2Generator(
    LIGOTimeGPS             epoch = LIGOTIMEGPSZERO;
 
    /* Variables for the integrator */
-   LALAdaptiveRungeKutta4Integrator       *integrator = NULL;
+   LALAdaptiveRungeKuttaIntegrator       *integrator = NULL;
    REAL8Array              *dynamics   = NULL;
    REAL8Array              *dynamicsHi = NULL;
    INT4                    retLen;
@@ -1225,7 +1225,7 @@ XLALSimIMREOBNRv2Generator(
    tVecHi.data    = dynamicsHi->data;
 
    /* We are now finished with the adaptive RK, so we can free its resources */
-   XLALAdaptiveRungeKutta4Free( integrator );
+   XLALAdaptiveRungeKuttaFree( integrator );
    integrator = NULL;
 
    /* Now we have the dynamics, we tweak the factorized coefficients for the waveform */

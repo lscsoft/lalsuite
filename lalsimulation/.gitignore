@@ -64,7 +64,8 @@ src/lalsimulation_version
 src/stamp-h1
 src/stamp-h2
 src/version.c
-swig/swiglal*
+swig/swiglalsimulation.i*
+swig/swiglal_*
 test/EOBNRv2Test
 test/GRFlagsTest
 test/GenerateSimulation

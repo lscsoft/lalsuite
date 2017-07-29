@@ -188,18 +188,36 @@ XLALInspiralSpinFactorizedFlux (REAL8Vector * values,	/**< dynamical variables *
 	}
     }
 
+    COMPLEX16 hT= 0.;
 //  printf( "v = %.16e\n", v );
   for (l = 2; l <= lMax; l++)
     {
       for (m = 1; m <= l; m++)
 	{
 	  INT4 use_optimized_v2 = 0;
-	  if (XLALSimIMRSpinEOBFluxGetSpinFactorizedWaveform
-	      (&hLM, values, v, H, l, m, ak, use_optimized_v2,
-	       NULL) == XLAL_FAILURE)
-	    {
-	      XLAL_ERROR_REAL8 (XLAL_EFUNC);
-	    }
+        if ( (ak->seobCoeffs->tidal1->lambda2Tidal != 0. && ak->seobCoeffs->tidal1->omega02Tidal != 0.) || (ak->seobCoeffs->tidal2->lambda2Tidal != 0. && ak->seobCoeffs->tidal2->omega02Tidal != 0.) ) {
+            if (XLALSimIMRSpinEOBGetSpinFactorizedWaveform
+                (&hLM, values, v, H, l, m, ak, use_optimized_v2
+                 ) == XLAL_FAILURE)
+            {
+                XLAL_ERROR_REAL8 (XLAL_EFUNC);
+            }
+            if (XLALSimIMRSpinEOBWaveformTidal
+                (&hT, values, v, l, m, ak
+                 ) == XLAL_FAILURE)
+            {
+                XLAL_ERROR_REAL8 (XLAL_EFUNC);
+            }
+        }
+        else {
+            if (XLALSimIMRSpinEOBFluxGetSpinFactorizedWaveform
+                (&hLM, values, v, H, l, m, ak, use_optimized_v2,
+                 NULL) == XLAL_FAILURE)
+            {
+                XLAL_ERROR_REAL8 (XLAL_EFUNC);
+            }
+        }
+
 	  /* For the 2,2 mode, we apply NQC correction to the flux */
 	  if (l == 2 && m == 2)
 	    {
@@ -222,6 +240,8 @@ XLALInspiralSpinFactorizedFlux (REAL8Vector * values,	/**< dynamical variables *
 	      /* Eq. 16 */
 	      hLM *= hNQC;
 	    }
+        hLM += hT;
+
 	  //printf( "l = %d, m = %d, mag(hLM) = %.17e, omega = %.16e\n", l, m, sqrt(creal(hLM)*creal(hLM)+cimag(hLM)*cimag(hLM)), omega );
 	  /* Eq. 13 */
 	  flux +=

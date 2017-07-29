@@ -1020,8 +1020,8 @@ XLALSimIMRSpinEOBGetPrecSpinFactorizedWaveform_exact(
  * this rotation includes the spins.
  *
  * Second, \f$\vec{r}\f$ and \f$\vec{p}\f$ are converted to polar coordinates
- * (and not the spins). As L is along the y-axis, \f$\theta\f$ defined as the
- * angle between L and the y-axis is 0, which is a cyclic coordinate now and
+ * (and not the spins). As L is along the y-axis, \f$\theta\f$ (defined as the
+ * angle between L and the y-axis) is 0, which is a cyclic coordinate now and
  * that fixes
  * \f$p_\theta = 0\f$.
  *
@@ -1120,7 +1120,7 @@ static REAL8 XLALSimIMRSpinPrecEOBCalcOmega_exact(
       }
   }
 
-  /* Calculate LN = r cross rDot */
+  /* Calculate LN by computing r cross rDot and normalizing */
   cross_product( rvec, rdotvec, rcrossrdot );
   REAL8 rcrossrdotNorm = sqrt(inner_product( rcrossrdot, rcrossrdot ));
   for( i = 0; i < 3; i++ )
@@ -1133,8 +1133,12 @@ static REAL8 XLALSimIMRSpinPrecEOBCalcOmega_exact(
   /* this rotation includes the spins. */
   /* ********************************************************************* */
 
-  // For Now , set first rotation matrix to identity
-  // Check if LNhat and Xhat are too aligned, in which case rotate LNhat
+  /* For now, set first rotation matrix to identity.  If LNhat and Xhat are
+     too closely aligned, rotate LNhat by pi/4 in the x,y plane.  Then
+     LNhat determines Xprime, Yprime is the normalized cross product of
+     Xprime and Xhat, and Zprime is the normalized cross product of Xprime
+     and Zprime.
+  */
   if( inner_product(LNhat, Xhat) < 0.9 )
   {
 	  Rot1[0][0] = 1.; Rot1[0][1] = 0; Rot1[0][2] = 0;
@@ -1142,16 +1146,6 @@ static REAL8 XLALSimIMRSpinPrecEOBCalcOmega_exact(
 	  Rot1[2][0] = 0.; Rot1[2][1] = 0; Rot1[2][2] = 1;
 
 	  memcpy(Xprime, LNhat, 3 * sizeof(REAL8));
-	  cross_product( Xprime, Xhat, Yprime );
-	  tmpvar = sqrt(inner_product(Yprime, Yprime));
-
-	  for( i=0; i<3; i++)
-      Yprime[i] /= tmpvar;
-
-    cross_product(Xprime, Yprime, Zprime);
-	  tmpvar = sqrt(inner_product(Zprime, Zprime));
-	  for( i=0; i<3; i++)
-      Zprime[i] /= tmpvar;
   }
   else
   {
@@ -1161,21 +1155,20 @@ static REAL8 XLALSimIMRSpinPrecEOBCalcOmega_exact(
 	  LNhatTmp[0] = LNhatTmp[1] = LNhatTmp[2] = 0.;
 
 	  for(i=0; i<3; i++)
-      for(j=0; j<3; j++)
-        LNhatTmp[i] += Rot1[i][j]*LNhat[j];
+	    for(j=0; j<3; j++)
+	      LNhatTmp[i] += Rot1[i][j]*LNhat[j];
 
 	  memcpy(Xprime, LNhatTmp, 3*sizeof(REAL8));
-	  cross_product(Xprime, Xhat, Yprime);
-	  tmpvar = sqrt(inner_product(Yprime, Yprime));
-
-	  for( i=0; i<3; i++)
-      Yprime[i] /= tmpvar;
-
-    cross_product(Xprime, Yprime, Zprime);
-	  tmpvar = sqrt(inner_product(Zprime, Zprime));
-	  for( i=0; i<3; i++)
-      Zprime[i] /= tmpvar;
   }
+
+  cross_product( Xprime, Xhat, Yprime );
+  tmpvar = sqrt(inner_product(Yprime, Yprime));
+
+  for( i=0; i<3; i++) Yprime[i] /= tmpvar;
+
+  cross_product(Xprime, Yprime, Zprime);
+  tmpvar = sqrt(inner_product(Zprime, Zprime));
+  for( i=0; i<3; i++) Zprime[i] /= tmpvar;
 
   Rot2[0][0] = Xprime[0]; Rot2[0][1] = Xprime[1]; Rot2[0][2] = Xprime[2];
   Rot2[1][0] = Yprime[0]; Rot2[1][1] = Yprime[1]; Rot2[1][2] = Yprime[2];
@@ -1220,17 +1213,19 @@ static REAL8 XLALSimIMRSpinPrecEOBCalcOmega_exact(
   /* ********************************************************************* */
   /* Second, \f$\vec{r}\f$ and \f$\vec{p}\f$ are converted to polar
    * coordinates (and not the spins).
-   * As L is along the y-axis, \f$\theta\f$ defined as the angle between
-   * L and the y-axis is 0, which is a cyclic coordinate now and that fixes
+   * As L is along the y-axis, \f$\theta\f$ (defined as the angle between
+   * L and the y-axis) is 0, which is a cyclic coordinate now and that fixes
    * \f$p_\theta = 0\f$. */
   /* ********************************************************************* */
 
-  /** the polarvalues, respectively, are
-   * \f${r, \theta, \phi, p_r, p_\theta, p_\phi}\f$ */
+  /** The polarvalues, respectively, are
+   * \f${r, \theta, \phi, p_r, p_\theta, p_\phi}\f$.
+   * Below we transform \f$\vec{r}\f$ and \f$\vec{p}\f$ to the six
+   * corresponding polar coordinates. */
   polarvalues[0] = sqrt(inner_product(rvecprime,rvecprime));
   polarvalues[1] = acos(rvecprime[0] / polarvalues[0]);
   polarvalues[2] = atan2(-rvecprime[1], rvecprime[2]);
-  //polarvalues[3] = inner_product(rvecprime, pvecprime) / polarvalues[0];
+
   /* FIX p_r = 0 */
   polarvalues[3] = 0;
 
@@ -1243,7 +1238,8 @@ static REAL8 XLALSimIMRSpinPrecEOBCalcOmega_exact(
   polarvalues[5] = -inner_product(rvecprime_x_xhat, pvecprime);
 
 
-  /* ********************************************************************* */  /* Finally, Differentiate Hamiltonian w.r.t. p_\phi, keeping p_r = 0 */
+  /* ********************************************************************* */
+  /* Finally, Differentiate Hamiltonian w.r.t. p_\phi, keeping p_r = 0 */
   /* ********************************************************************* */
 
   /* Populate the vector specifying the dynamical variables in mixed frames */
@@ -1312,6 +1308,8 @@ XLALSimIMRSpinPrecEOBNonKeplerCoeff_exact(
     XLAL_ERROR_REAL8( XLAL_EFUNC );
   }
 
+  /* inner_product operates on the first three entries of the vector
+   * passed to it, and therefore inner_product(values,values) = r^2 */
   r3 = pow(inner_product(values, values), 3./2.);
   return 1.0/(omegaCirc*omegaCirc*r3);
 }

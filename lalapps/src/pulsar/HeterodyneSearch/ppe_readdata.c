@@ -1030,7 +1030,7 @@ void setup_from_par_file( LALInferenceRunState *runState )
   LALInferenceIFOModel *ifo_model = runState->threads[0]->model->ifo;
   while( data ){
     REAL8Vector *freqFactors = NULL;
-    UINT4 j = 0;
+    UINT4 j = 0, k = 0;
     REAL8 dt = XLALGPSGetREAL8( &ifo_model->times->data[ifo_model->times->length-1] ) - XLALGPSGetREAL8( &ifo_model->times->data[0] );
 
     if ( dt > DeltaT ){ DeltaT = dt; }
@@ -1059,10 +1059,22 @@ void setup_from_par_file( LALInferenceRunState *runState )
 
       if ( glitches ){ LALInferenceAddVariable( ifo_model->params, "GLITCHES", &glitches, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED ); }
 
-      dts = get_ssb_delay( pulsar, ifo_model->times, ifo_model->ephem, ifo_model->tdat, ifo_model->ttype, data->detector );
-      LALInferenceAddVariable( ifo_model->params, "ssb_delays", &dts, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+      if ( LALInferenceGetProcParamVal( runState->commandLine, "--inject-only" ) && LALInferenceGetProcParamVal( runState->commandLine, "--inject-coarse" ) ){
+        /* use this if just wanting to create an injection that has only been "coarse heterodyned" */
+        dts = XLALCreateREAL8Vector( ifo_model->times->length );
+        if ( binarymodel != NULL ) { bdts = XLALCreateREAL8Vector( ifo_model->times->length ); }
+        /* set the time delays to zero, so they do not get removed during the injected signal generation */
+        for ( k = 0; k < dts->length; k++ ){
+          dts->data[k] = 0.;
+          if ( binarymodel != NULL ) { bdts->data[k] = 0.; }
+        }
+      }
+      else{
+        dts = get_ssb_delay( pulsar, ifo_model->times, ifo_model->ephem, ifo_model->tdat, ifo_model->ttype, data->detector );
+        bdts = get_bsb_delay( pulsar, ifo_model->times, dts, ifo_model->ephem );
+      }
 
-      bdts = get_bsb_delay( pulsar, ifo_model->times, dts, ifo_model->ephem );
+      LALInferenceAddVariable( ifo_model->params, "ssb_delays", &dts, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
       if ( bdts != NULL ){ LALInferenceAddVariable( ifo_model->params, "bsb_delays", &bdts, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED ); }
 
       data = data->next;

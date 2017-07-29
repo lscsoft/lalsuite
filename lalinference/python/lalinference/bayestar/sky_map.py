@@ -20,15 +20,17 @@ Convenience function to produce a sky map from LIGO-LW rows.
 """
 from __future__ import division
 
+import inspect
 import itertools
 import logging
+import os
+import sys
 import numpy as np
 import healpy as hp
 from astropy.table import Column, Table
 from astropy import units as u
 from .decorator import with_numpy_random_seed
 from . import distance
-from . import ligolw
 from . import filter
 from . import timing
 from . import moc
@@ -45,9 +47,6 @@ except ImportError:
         'chealpix-3.30.0.tar.gz), rebuild LALInference, and try again.')
 import lal
 import lalsimulation
-from glue.ligolw import table as ligolw_table
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw import lsctables
 
 log = logging.getLogger('BAYESTAR')
 
@@ -67,7 +66,7 @@ def toa_phoa_snr_log_prior(
 
 
 @with_numpy_random_seed
-def emcee_sky_map(
+def localize_emcee(
         logl, loglargs, logp, logpargs, xmin, xmax,
         nside=-1, chain_dump=None):
     # Set up sampler
@@ -135,33 +134,30 @@ def emcee_sky_map(
         names='UNIQ PROBDENSITY DISTMEAN DISTSTD'.split())
 
 
-def ligolw_sky_map(
-        sngl_inspirals, waveform, f_low,
+def localize(
+        event, waveform='o2-uberbank', f_low=30.0,
         min_distance=None, max_distance=None, prior_distance_power=None,
-        cosmology=False, method='toa_phoa_snr', psds=None, nside=-1,
-        chain_dump=None, phase_convention='antifindchirp', snr_series=None,
-        enable_snr_series=False):
+        cosmology=False, method='toa_phoa_snr', nside=-1, chain_dump=None,
+        enable_snr_series=True, f_high_truncate=0.95):
     """Convenience function to produce a sky map from LIGO-LW rows. Note that
     min_distance and max_distance should be in Mpc.
 
     Returns a 'NESTED' ordering HEALPix image as a Numpy array.
     """
+    frame = inspect.currentframe()
+    argstr = inspect.formatargvalues(*inspect.getargvalues(frame))
+    start_time = lal.GPSTimeNow()
 
-    # Ensure that sngl_inspiral is either a single template or a list of
-    # identical templates
-    for key in 'mass1 mass2 spin1x spin1y spin1z spin2x spin2y spin2z'.split():
-        if hasattr(sngl_inspirals[0], key):
-            value = getattr(sngl_inspirals[0], key)
-            if any(value != getattr(_, key) for _ in sngl_inspirals):
-                raise ValueError(
-                    '{0} field is not the same for all detectors'.format(key))
+    singles = event.singles
+    if not enable_snr_series:
+        singles = [single for single in singles if single.snr is not None]
 
-    ifos = [sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals]
+    ifos = [single.detector for single in singles]
 
     # Extract SNRs from table.
     snrs = np.ma.asarray([
-        np.ma.masked if sngl_inspiral.snr is None else sngl_inspiral.snr
-        for sngl_inspiral in sngl_inspirals])
+        np.ma.masked if single.snr is None else single.snr
+        for single in singles])
 
     # Look up physical parameters for detector.
     detectors = [lalsimulation.DetectorPrefixToLALDetector(str(ifo))
@@ -170,11 +166,13 @@ def ligolw_sky_map(
     locations = np.asarray([det.location for det in detectors])
 
     # Power spectra for each detector.
-    if psds is None:
-        psds = [timing.get_noise_psd_func(ifo) for ifo in ifos]
+    psds = [single.psd for single in singles]
+    psds = [timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data,
+                                   f_high_truncate=f_high_truncate)
+                                   for psd in psds]
 
     log.debug('calculating templates')
-    H = filter.sngl_inspiral_psd(sngl_inspirals[0], waveform, f_min=f_low)
+    H = filter.sngl_inspiral_psd(waveform, f_min=f_low, **event.template_args)
 
     log.debug('calculating noise PSDs')
     HS = [filter.signal_psd_series(H, S) for S in psds]
@@ -201,6 +199,9 @@ def ligolw_sky_map(
     if enable_snr_series:
         log.warn('Enabling input of SNR time series. '
                  'This feature is UNREVIEWED.')
+        snr_series = [single.snr_series for single in singles]
+        if all(s is None for s in snr_series):
+            snr_series = None
     else:
         snr_series = None
 
@@ -227,20 +228,12 @@ def ligolw_sky_map(
         nsamples = nsamples * 2 - 1
 
         snr_series = []
-        for acor, sngl in zip(acors, sngl_inspirals):
+        for acor, single in zip(acors, singles):
             series = lal.CreateCOMPLEX8TimeSeries(
                 'fake SNR', 0, 0, deltaT, lal.StrainUnit, nsamples)
-            series.epoch = sngl.end - 0.5 * (nsamples - 1) * deltaT
+            series.epoch = single.time - 0.5 * (nsamples - 1) * deltaT
             acor = np.concatenate((np.conj(acor[:0:-1]), acor))
-            if phase_convention.lower() == 'antifindchirp':
-                # The matched filter phase convention does NOT affect the
-                # template autocorrelation sequence; however it DOES affect
-                # the maximum-likelihood phase estimate AND the SNR time series.
-                # So if we are going to apply the anti-findchirp phase
-                # correction later, we'll have to apply a complex conjugate to
-                # the autocorrelation sequence to cancel it here.
-                acor = np.conj(acor)
-            series.data.data = sngl.snr * filter.exp_i(sngl.coa_phase) * acor
+            series.data.data = single.snr * filter.exp_i(single.phase) * acor
             snr_series.append(series)
 
     # Ensure that all of the SNR time series have the same sample rate.
@@ -275,11 +268,11 @@ def ligolw_sky_map(
     # Perform sanity checks that the middle sample of the SNR time series match
     # the sngl_inspiral records. Relax valid interval slightly from
     # +/- 0.5 deltaT to +/- 0.6 deltaT for floating point roundoff error.
-    for sngl_inspiral, series in zip(sngl_inspirals, snr_series):
+    for single, series in zip(singles, snr_series):
         if np.abs(0.5 * (nsamples - 1) * series.deltaT
-                  + float(series.epoch - sngl_inspiral.end)) >= 0.6 * deltaT:
+                  + float(series.epoch - single.time)) >= 0.6 * deltaT:
             raise ValueError('BAYESTAR expects the SNR time series to be '
-                             'centered on the sngl_inspiral end times')
+                             'centered on the single-detector trigger times')
 
     # Extract the TOAs in GPS nanoseconds from the SNR time series, assuming
     # that the trigger happened in the middle.
@@ -288,15 +281,6 @@ def ligolw_sky_map(
 
     # Collect all of the SNR series in one array.
     snr_series = np.vstack([series.data.data for series in snr_series])
-
-    # If using 'findchirp' phase convention rather than gstlal/mbta,
-    # then flip signs of phases.
-    if phase_convention.lower() == 'antifindchirp':
-        log.warn('Using anti-FINDCHIRP phase convention; inverting phases. '
-                 'This is currently the default and it is appropriate for '
-                 'gstlal and MBTA but not pycbc as of observing run 1 ("O1"). '
-                 'The default setting is likely to change in the future.')
-        snr_series = np.conj(snr_series)
 
     # Center times of arrival and compute GMST at mean arrival time.
     # Pre-center in integer nanoseconds to preserve precision of
@@ -337,7 +321,6 @@ def ligolw_sky_map(
 
     # Time and run sky localization.
     log.debug('starting computationally-intensive section')
-    start_time = lal.GPSTimeNow()
     if method == 'toa_phoa_snr':
         skymap, log_bci, log_bsn = _sky_map.toa_phoa_snr(
             min_distance, max_distance, prior_distance_power, cosmology, gmst,
@@ -346,7 +329,7 @@ def ligolw_sky_map(
         skymap.meta['log_bci'] = log_bci
         skymap.meta['log_bsn'] = log_bsn
     elif method == 'toa_phoa_snr_mcmc':
-        skymap = emcee_sky_map(
+        skymap = localize_emcee(
             logl=_sky_map.log_likelihood_toa_phoa_snr,
             loglargs=(gmst, sample_rate, toas, snr_series, responses, locations,
                 horizons),
@@ -375,77 +358,27 @@ def ligolw_sky_map(
     skymap.meta['distmean'] = rbar
     skymap.meta['diststd'] = np.sqrt(r2bar - np.square(rbar))
 
-    end_time = lal.GPSTimeNow()
     log.debug('finished computationally-intensive section')
+    end_time = lal.GPSTimeNow()
 
     # Fill in metadata and return.
+    program, _ = os.path.splitext(os.path.basename(sys.argv[0]))
     skymap.meta['creator'] = 'BAYESTAR'
     skymap.meta['origin'] = 'LIGO/Virgo'
     skymap.meta['vcs_info'] = vcs_info
     skymap.meta['gps_time'] = float(epoch)
     skymap.meta['runtime'] = float(end_time - start_time)
-    skymap.meta['instruments'] = {sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals}
+    skymap.meta['instruments'] = {single.detector for single in singles}
     skymap.meta['gps_creation_time'] = end_time
+    skymap.meta['history'] = [
+        '',
+        'Generated by calling the following Python function:',
+        '{}.{}{}'.format(__name__, frame.f_code.co_name, argstr),
+        '',
+        'This was the command line that started the program:',
+        ' '.join([program] + sys.argv[1:])]
 
     return skymap
-
-
-def gracedb_sky_map(
-        coinc_file, psd_file, waveform, f_low, min_distance=None,
-        max_distance=None, prior_distance_power=None, cosmology=False,
-        method='toa_phoa_snr', nside=-1, chain_dump=None,
-        f_high_truncate=1.0, enable_snr_series=False):
-    # Read input file.
-    log.debug('reading coinc file')
-    xmldoc, _ = ligolw_utils.load_fileobj(
-        coinc_file, contenthandler=ligolw.LSCTablesAndSeriesContentHandler)
-
-    # Attempt to determine phase convention from process table.
-    try:
-        process_table = ligolw_table.get_table(xmldoc,
-            lsctables.ProcessTable.tableName)
-        process, = process_table
-        process_name = process.program.lower()
-    except ValueError:
-        process_name = ''
-    if 'pycbc' in process_name:
-        phase_convention = 'findchirp'
-    else:
-        phase_convention = 'antifindchirp'
-
-    # Locate the sngl_inspiral rows that we need.
-    sngl_inspirals, = ligolw.coinc_and_sngl_inspirals_for_xmldoc(
-        xmldoc, coinc_def=None).values()
-    sngl_inspirals = list(sngl_inspirals)
-
-    # Try to load complex SNR time series.
-    snrs = ligolw.snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc)
-    try:
-        snrs = [snrs[sngl.event_id] for sngl in sngl_inspirals]
-    except KeyError:
-        snrs = None
-
-    # Read PSDs.
-    log.debug('reading PSDs time series')
-    xmldoc, _ = ligolw_utils.load_fileobj(
-        psd_file, contenthandler=lal.series.PSDContentHandler)
-    psds = lal.series.read_psd_xmldoc(xmldoc, root_name=None)
-
-    # Rearrange PSDs into the same order as the sngl_inspirals.
-    psds = [psds[sngl_inspiral.ifo] for sngl_inspiral in sngl_inspirals]
-
-    # Interpolate PSDs.
-    log.debug('constructing PSD interpolants')
-    psds = [timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data,
-            f_high_truncate=f_high_truncate)
-        for psd in psds]
-
-    # Run sky localization
-    return ligolw_sky_map(sngl_inspirals, waveform, f_low,
-        min_distance, max_distance, prior_distance_power, cosmology,
-        method=method, nside=nside, psds=psds,
-        phase_convention=phase_convention, chain_dump=chain_dump,
-        snr_series=snrs, enable_snr_series=enable_snr_series)
 
 
 def rasterize(skymap):
@@ -464,7 +397,9 @@ def derasterize(skymap):
         *healpix_tree.reconstruct_nested(skymap))
     nside = np.asarray(nside)
     ipix = np.asarray(ipix)
-    value = np.stack(value)
+    # FIXME: replace with np.stack() when Numpy 1.10.0 is on all
+    # of the LIGO Data Grid clusters
+    value = np.hstack(value)
     uniq = (4 * np.square(nside) + ipix).astype(np.uint64)
     old_units = [column.unit for column in skymap.columns.values()]
     skymap = Table(value, meta=skymap.meta)

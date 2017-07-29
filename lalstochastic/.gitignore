@@ -51,7 +51,8 @@ src/lalstochastic_version
 src/stamp-h1
 src/stamp-h2
 src/version.c
-swig/swiglal*
+swig/swiglalstochastic.i*
+swig/swiglal_*
 test/??_714382918*.dat
 test/AstroOmegaTest
 test/CCoarseGrainFrequencySeriesTest

@@ -70,6 +70,7 @@
 #include "bayestar_sky_map.h"
 #include "bayestar_distance.h"
 #include "bayestar_moc.h"
+#include "omp_interruptible.h"
 
 #include <assert.h>
 #include <float.h>
@@ -361,8 +362,8 @@ static const size_t default_log_radial_integrator_size = 400;
 static log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, int cosmology, double pmax, size_t size)
 {
     log_radial_integrator *integrator;
-    bicubic_interp *region0;
-    cubic_interp *region1, *region2;
+    bicubic_interp *region0 = NULL;
+    cubic_interp *region1 = NULL, *region2 = NULL;
     const double alpha = 4;
     const double p0 = 0.5 * (k >= 0 ? r2 : r1);
     const double xmax = log(pmax);
@@ -376,11 +377,16 @@ static log_radial_integrator *log_radial_integrator_init(double r1, double r2, i
     double z0[size][size], z1[size], z2[size];
     /* const double umax = xmax - vmax; */ /* unused */
 
+    int interrupted;
+    OMP_BEGIN_INTERRUPTIBLE
     integrator = malloc(sizeof(*integrator));
 
     #pragma omp parallel for
     for (size_t i = 0; i < size * size; i ++)
     {
+        if (OMP_WAS_INTERRUPTED)
+            OMP_EXIT_LOOP_EARLY;
+
         const size_t ix = i / size;
         const size_t iy = i % size;
         const double x = xmin + ix * d;
@@ -391,6 +397,10 @@ static log_radial_integrator *log_radial_integrator_init(double r1, double r2, i
         /* Note: using this where p > r0; could reduce evaluations by half */
         z0[ix][iy] = log_radial_integral(r1, r2, p, b, k, cosmology);
     }
+
+    if (OMP_WAS_INTERRUPTED)
+        goto done;
+
     region0 = bicubic_interp_init(*z0, size, size, xmin, ymin, d, d);
 
     for (size_t i = 0; i < size; i ++)
@@ -401,7 +411,11 @@ static log_radial_integrator *log_radial_integrator_init(double r1, double r2, i
         z2[i] = z0[i][size - 1 - i];
     region2 = cubic_interp_init(z2, size, umin, d);
 
-    if (!(integrator && region0 && region1 && region2))
+done:
+    interrupted = OMP_WAS_INTERRUPTED;
+    OMP_END_INTERRUPTIBLE
+
+    if (interrupted || !(integrator && region0 && region1 && region2))
     {
         free(integrator);
         free(region0);
@@ -880,6 +894,8 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
     }
     const unsigned long npix0 = len;
 
+    OMP_BEGIN_INTERRUPTIBLE
+
     /* At the lowest order, compute both the coherent probability map and the
      * incoherent evidence. */
     const double log_norm = -log(2 * (2 * M_PI) * (4 * M_PI) * ntwopsi * nsamples) - log_radial_integrator_eval(integrators[0], 0, 0, -INFINITY, -INFINITY);
@@ -890,6 +906,9 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
         #pragma omp parallel for
         for (unsigned long i = 0; i < npix0; i ++)
         {
+            if (OMP_WAS_INTERRUPTED)
+                OMP_EXIT_LOOP_EARLY;
+
             bayestar_sky_map_toa_phoa_snr_pixel(integrators, 1, pixels[i].uniq,
                 pixels[i].value, gmst, nifos, nsamples, sample_rate, epochs,
                 snrs, responses, locations, horizons);
@@ -902,6 +921,9 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
                     &locations[iifo], &horizons[iifo]);
             }
         }
+
+        if (OMP_WAS_INTERRUPTED)
+            goto done;
 
         const double log_weight = log_norm + log(uniq2pixarea64(pixels[0].uniq));
 
@@ -917,19 +939,21 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
         /* Adaptively refine the pixels that contain the most probability. */
         pixels = bayestar_pixels_refine(pixels, &len, npix0 / 4);
         if (!pixels)
-        {
-            for (unsigned char k = 0; k < 3; k ++)
-                log_radial_integrator_free(integrators[k]);
-            return NULL;
-        }
+            goto done;
 
         #pragma omp parallel for
         for (unsigned long i = len - npix0; i < len; i ++)
         {
+            if (OMP_WAS_INTERRUPTED)
+                OMP_EXIT_LOOP_EARLY;
+
             bayestar_sky_map_toa_phoa_snr_pixel(integrators, 1, pixels[i].uniq,
                 pixels[i].value, gmst, nifos, nsamples, sample_rate, epochs,
                 snrs, responses, locations, horizons);
         }
+
+        if (OMP_WAS_INTERRUPTED)
+            goto done;
 
         /* Sort pixels by ascending posterior probability. */
         bayestar_pixels_sort_prob(pixels, len);
@@ -939,61 +963,77 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
     #pragma omp parallel for
     for (unsigned long i = 0; i < len; i ++)
     {
+        if (OMP_WAS_INTERRUPTED)
+            OMP_EXIT_LOOP_EARLY;
+
         bayestar_sky_map_toa_phoa_snr_pixel(&integrators[1], 2, pixels[i].uniq,
             &pixels[i].value[1], gmst, nifos, nsamples, sample_rate, epochs,
             snrs, responses, locations, horizons);
     }
 
+done:
     for (unsigned char k = 0; k < 3; k ++)
         log_radial_integrator_free(integrators[k]);
 
-    /* Rescale so that log(max) = 0. */
-    const double max_logp = pixels[len - 1].value[0];
-    for (ssize_t i = (ssize_t)len - 1; i >= 0; i --)
-        for (unsigned char k = 0; k < 3; k ++)
-            pixels[i].value[k] -= max_logp;
-
-    /* Determine normalization of map. */
-    double norm = 0;
-    for (ssize_t i = (ssize_t)len - 1; i >= 0; i --)
+    if (OMP_WAS_INTERRUPTED)
     {
-        const double dA = uniq2pixarea64(pixels[i].uniq);
-        const double dP = gsl_sf_exp_mult(pixels[i].value[0], dA);
-        if (dP <= 0)
-            break; /* We have reached underflow. */
-        norm += dP;
+        free(pixels);
+        pixels = NULL;
     }
-    log_evidence_coherent = log(norm) + max_logp + log_norm;
-    norm = 1 / norm;
 
-    /* Rescale, normalize, and prepare output. */
-    for (ssize_t i = (ssize_t)len - 1; i >= 0; i --)
+    if (pixels)
     {
-        const double prob = gsl_sf_exp_mult(pixels[i].value[0], norm);
-        double rmean = exp(pixels[i].value[1] - pixels[i].value[0]);
-        double rstd = exp(pixels[i].value[2] - pixels[i].value[0]) - gsl_pow_2(rmean);
-        if (rstd >= 0)
+        /* Rescale so that log(max) = 0. */
+        const double max_logp = pixels[len - 1].value[0];
+        for (ssize_t i = (ssize_t)len - 1; i >= 0; i --)
+            for (unsigned char k = 0; k < 3; k ++)
+                pixels[i].value[k] -= max_logp;
+
+        /* Determine normalization of map. */
+        double norm = 0;
+        for (ssize_t i = (ssize_t)len - 1; i >= 0; i --)
         {
-            rstd = sqrt(rstd);
-        } else {
-            rmean = INFINITY;
-            rstd = 1;
+            const double dA = uniq2pixarea64(pixels[i].uniq);
+            const double dP = gsl_sf_exp_mult(pixels[i].value[0], dA);
+            if (dP <= 0)
+                break; /* We have reached underflow. */
+            norm += dP;
         }
-        pixels[i].value[0] = prob;
-        pixels[i].value[1] = rmean;
-        pixels[i].value[2] = rstd;
+        log_evidence_coherent = log(norm) + max_logp + log_norm;
+        norm = 1 / norm;
+
+        /* Rescale, normalize, and prepare output. */
+        for (ssize_t i = (ssize_t)len - 1; i >= 0; i --)
+        {
+            const double prob = gsl_sf_exp_mult(pixels[i].value[0], norm);
+            double rmean = exp(pixels[i].value[1] - pixels[i].value[0]);
+            double rstd = exp(pixels[i].value[2] - pixels[i].value[0]) - gsl_pow_2(rmean);
+            if (rstd >= 0)
+            {
+                rstd = sqrt(rstd);
+            } else {
+                rmean = INFINITY;
+                rstd = 1;
+            }
+            pixels[i].value[0] = prob;
+            pixels[i].value[1] = rmean;
+            pixels[i].value[2] = rstd;
+        }
+
+        /* Sort pixels by ascending NUNIQ index. */
+        bayestar_pixels_sort_uniq(pixels, len);
+
+        /* Calculate log Bayes factor. */
+        *out_log_bci = *out_log_bsn = log_evidence_coherent;
+        for (unsigned int i = 0; i < nifos; i ++)
+            *out_log_bci -= log_evidence_incoherent[i];
+
+        /* Done! */
+        *out_len = len;
     }
 
-    /* Sort pixels by ascending NUNIQ index. */
-    bayestar_pixels_sort_uniq(pixels, len);
+    OMP_END_INTERRUPTIBLE
 
-    /* Calculate log Bayes factor. */
-    *out_log_bci = *out_log_bsn = log_evidence_coherent;
-    for (unsigned int i = 0; i < nifos; i ++)
-        *out_log_bci -= log_evidence_incoherent[i];
-
-    /* Done! */
-    *out_len = len;
     return pixels;
 }
 

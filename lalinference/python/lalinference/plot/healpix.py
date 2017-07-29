@@ -21,7 +21,7 @@ from __future__ import division
 
 import functools
 import matplotlib
-from distutils.version import StrictVersion
+from distutils.version import LooseVersion
 from matplotlib import text
 from matplotlib import ticker
 from matplotlib import patheffects
@@ -65,7 +65,7 @@ def heatmap(func, *args, **kwargs):
     zz[mask] = func(lons[mask], lats[mask])
 
     # Plot bitmap using imshow.
-    if StrictVersion(matplotlib.__version__) < StrictVersion('2.0'):
+    if LooseVersion(matplotlib.__version__) < LooseVersion('2.0'):
         # FIXME: workaround for old behavior of imshow().
         # Remove this once we require matplotlib >= 2.0.
         # See also:
@@ -73,10 +73,12 @@ def heatmap(func, *args, **kwargs):
         #   * https://github.com/matplotlib/matplotlib/issues/7903
         aximg = plt.imshow(
             zz.reshape(xx.shape), aspect=ax.get_aspect(),
+            interpolation='nearest',
             origin='upper', extent=(xmin, xmax, ymax, ymin), *args, **kwargs)
     else:
         aximg = plt.imshow(
             zz.reshape(xx.shape), aspect=ax.get_aspect(),
+            interpolation='nearest',
             origin='upper', extent=(0, 1, 1, 0), transform=ax.transAxes,
             *args, **kwargs)
 

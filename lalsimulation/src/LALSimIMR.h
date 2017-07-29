@@ -48,6 +48,7 @@ extern "C" {
  * @defgroup LALSimIMRSEOBNRv2ChirpTime_c        LALSimIMRSEOBNRv2ChirpTime.c
  * @defgroup LALSimIMRPSpinInspiralRD_c          LALSimIMRPSpinInspiralRD.c
  * @defgroup LALSimIMRTidal_c                    LALSimIMRLackeyTidal2013.c
+ * @defgroup LALSimNRSur7dq2_c                   LALSimIMRNRSur7dq2.c
  * @}
  *
  * @addtogroup LALSimIMR_h
@@ -103,8 +104,8 @@ SphHarmTimeSeries *XLALSimIMREOBNRv2Modes(const REAL8 phiRef, const REAL8 deltaT
 /* in module LALSimIMRSpinAlignedEOB.c */
 
 double XLALSimIMRSpinAlignedEOBPeakFrequency(REAL8 m1SI, REAL8 m2SI, const REAL8 spin1z, const REAL8 spin2z, UINT4 SpinAlignedEOBversion);
-int XLALSimIMRSpinAlignedEOBWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1z, const REAL8 spin2z, UINT4 SpinAlignedEOBversion);
-int XLALSimIMRSpinAlignedEOBWaveformAll(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8Vector * tVec, REAL8Vector * rVec, REAL8Vector * phiVec, REAL8Vector * prVec, REAL8Vector * pphiVec, const REAL8 phiC, REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1z, const REAL8 spin2z, UINT4 SpinAlignedEOBversion, const REAL8 comp1, const REAL8 comp2, const REAL8 k2Tidal1, const REAL8 k2Tidal2, const REAL8 omega02Tidal1, const REAL8 omega02Tidal2, const REAL8 k3Tidal1, const REAL8 k3Tidal2, const REAL8 omega03Tidal1, const REAL8 omega03Tidal2);
+int XLALSimIMRSpinAlignedEOBWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1z, const REAL8 spin2z, UINT4 SpinAlignedEOBversion, LALDict *LALparams);
+int XLALSimIMRSpinAlignedEOBWaveformAll(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8Vector * tVec, REAL8Vector * rVec, REAL8Vector * phiVec, REAL8Vector * prVec, REAL8Vector * pphiVec, const REAL8 phiC, REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1z, const REAL8 spin2z, UINT4 SpinAlignedEOBversion, const REAL8 lambda2Tidal1, const REAL8 lambda2Tidal2, const REAL8 omega02Tidal1, const REAL8 omega02Tidal2, const REAL8 lambda3Tidal1, const REAL8 lambda3Tidal2, const REAL8 omega03Tidal1, const REAL8 omega03Tidal2, REAL8Vector *nqcCoeffsInput, const INT4 nqcFlag);
 /*int XLALSimIMRSpinEOBWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, const REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1[], const REAL8 spin2[]);
  */
 
@@ -246,8 +247,40 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
         REAL8 s2y,                      /**< initial value of S2y */
         REAL8 s2z,                      /**< initial value of S2z */
         const char *NRDataFile,         /**< Location of NR HDF file */
-        INT4 Lmax                       /**< Maximum ell multipole number used to generated waveform. Default: LAL_SIM_INSPIRAL_MODES_CHOICE_ALL */
+        LALValue* ModeArray             /**< Container for the ell and m modes to generate. To generate all available modes pass NULL */
         );
+
+/* in module LALSimIMRNRSur7dq2.c */
+
+int XLALSimInspiralNRSur7dq2Polarizations(
+        REAL8TimeSeries **hplus,        /**< OUTPUT h_+ vector */
+        REAL8TimeSeries **hcross,       /**< OUTPUT h_x vector */
+        REAL8 phiRef,                   /**< orbital phase at reference pt. */
+        REAL8 inclination,              /**< inclination angle */
+        REAL8 deltaT,                   /**< sampling interval (s) */
+        REAL8 m1,                       /**< mass of companion 1 (kg) */
+        REAL8 m2,                       /**< mass of companion 2 (kg) */
+        REAL8 distnace,                 /**< distance of source (m) */
+        REAL8 fMin,                     /**< start GW frequency (Hz) */
+        REAL8 fRef,                     /**< reference GW frequency (Hz) */
+        REAL8 s1x,                      /**< reference value of S1x */
+        REAL8 s1y,                      /**< reference value of S1y */
+        REAL8 s1z,                      /**< reference value of S1z */
+        REAL8 s2x,                      /**< reference value of S2x */
+        REAL8 s2y,                      /**< reference value of S2y */
+        REAL8 s2z                       /**< reference value of S2z */
+);
+
+SphHarmTimeSeries *XLALSimInspiralNRSur7dq2Modes(
+        REAL8 phiRef,                   /**< orbital phase at reference pt. */
+        REAL8 deltaT,                   /**< sampling interval (s) */
+        REAL8 m1,                       /**< mass of companion 1 (kg) */
+        REAL8 m2,                       /**< mass of companion 2 (kg) */
+        REAL8 fMin,                     /**< start GW frequency (Hz) */
+        REAL8 fRef,                     /**< reference GW frequency (Hz) */
+        REAL8 distnace,                 /**< distance of source (m) */
+        int lmax                        /**< Evaluates (l, m) modes with l <= lmax */
+);
 
 #if 0
 { /* so that editors will match succeeding brace */

@@ -1,6 +1,6 @@
 #include <lal/LALSTPNWaveformFrameless.h>
 #include <lal/LALSTPNWaveformErrors.h>
-#include <lal/LALAdaptiveRungeKutta4.h>
+#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
 #include <stdio.h>
 
 #define UNUSED(expr) do { (void)(expr); } while (0)
@@ -545,7 +545,7 @@ int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
   LALSTPNparams mparams;
 
   /* needed for integration */
-  LALAdaptiveRungeKutta4Integrator *integrator;
+  LALAdaptiveRungeKuttaIntegrator *integrator;
   unsigned int len;
   int intreturn;
   REAL8 yinit[14];
@@ -611,7 +611,7 @@ int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
       lengths/m, dt/m, &yout);
 
   intreturn = integrator->returncode;
-  XLALAdaptiveRungeKutta4Free(integrator);
+  XLALAdaptiveRungeKuttaFree(integrator);
 
   if (!len) 
   {

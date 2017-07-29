@@ -31,8 +31,6 @@ static int SEOBNRv3OptimizedInterpolatorGeneral(
     interp = gsl_spline_alloc(gsl_interp_cspline, num_input_times);
     accel = gsl_interp_accel_alloc();
 
-    //printf("heya?\n");
-
     outputlen = (int)(yin[num_input_times-1] / deltat) + 1;
 
     output = XLALCreateREAL8ArrayL(2, dim+1, outputlen);/* Original (dim+1)*/

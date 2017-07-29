@@ -2539,8 +2539,7 @@ def patfile_to_GPStimes(auxmvc_pat, skip_lines=1):
     pat_lines = open(auxmvc_pat).readlines()
     pat_lines = pat_lines[skip_lines:]
 
-    variables = dict([(line, i) for (i, line) in
-                     enumerate(pat_lines[0].split())])
+    variables = dict([(line, i) for (i, line) in enumerate(pat_lines[0].split())])
 
     GPStimes = []
     if variables.has_key('i'):
@@ -2548,13 +2547,21 @@ def patfile_to_GPStimes(auxmvc_pat, skip_lines=1):
             line = line.strip().split()
             GPStimes.append([float(line[variables['GPS_s']])
                             + float(line[variables['GPS_ms']]) * 1e-3,
-                            int(line[variables['i']])])
+                            int(int(line[variables['i']]))])
+
+    elif variables.has_key('unclean'):
+        for line in pat_lines[1:]:
+            line = line.strip().split()
+            GPStimes.append([float(line[variables['GPS_s']])
+                            + float(line[variables['GPS_ms']]) * 1e-3,
+                            int(float(line[variables['unclean']]))])
+
     else:
         for line in pat_lines[1:]:
             line = line.strip().split()
             GPStimes.append([float(line[variables['GPS_s']])
                             + float(line[variables['GPS_ms']]) * 1e-3,
-                            int(line[-1])])  # glitch/clean stored in line[-1]
+                            int(float(line[-1]))]) # class stored in the last column. This may be buggy...
 
     return GPStimes
 

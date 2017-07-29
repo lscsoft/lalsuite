@@ -1829,10 +1829,23 @@ int XLALSFTCatalogTimeslice(
   // Check input
   XLAL_CHECK( slice != NULL, XLAL_EFAULT );
   XLAL_CHECK( catalog != NULL, XLAL_EFAULT );
+  XLAL_CHECK( minStartGPS != NULL && maxStartGPS != NULL, XLAL_EFAULT );
   XLAL_CHECK( catalog->length > 0, XLAL_EINVAL );
+  XLAL_CHECK( XLALGPSCmp( minStartGPS, maxStartGPS ) < 1 , XLAL_EINVAL , "minStartGPS (%"LAL_GPS_FORMAT") is greater than maxStartGPS (%"LAL_GPS_FORMAT")\n",
+              LAL_GPS_PRINT(*minStartGPS), LAL_GPS_PRINT(*maxStartGPS) );
 
   // Initialise timeslice of SFT catalog
   XLAL_INIT_MEM(*slice);
+
+  //Check if 'catalog' span of SFT startimes overlaps with ['minStartGPS', 'maxStartGPS') at all
+  if ( ( XLALCWGPSinRange( catalog->data[0].header.epoch, minStartGPS, maxStartGPS ) == 1 ) || ( XLALCWGPSinRange( catalog->data[catalog->length - 1].header.epoch, minStartGPS, maxStartGPS ) == -1 ) )
+    {
+      XLALPrintWarning ("Returning empty timeslice: catalog SFT starttimes-span [%"LAL_GPS_FORMAT", %"LAL_GPS_FORMAT "] has no overlap with given range [%"LAL_GPS_FORMAT", %"LAL_GPS_FORMAT").\n" ,
+                        LAL_GPS_PRINT(catalog->data[0].header.epoch), LAL_GPS_PRINT(catalog->data[catalog->length - 1].header.epoch),
+                        LAL_GPS_PRINT(*minStartGPS), LAL_GPS_PRINT(*maxStartGPS)
+                        );
+      return XLAL_SUCCESS;
+    }
 
   // Find start and end of timeslice
   UINT4 iStart = 0, iEnd = catalog->length - 1;
@@ -1842,9 +1855,18 @@ int XLALSFTCatalogTimeslice(
   while (iStart <= iEnd && XLALCWGPSinRange( catalog->data[iEnd].header.epoch, minStartGPS, maxStartGPS ) > 0 ) {
     --iEnd;
   }
-  if (iStart > iEnd) {
-    return XLAL_SUCCESS;
-  }
+  // note: iStart >=0, iEnd >= 0 is now guaranteed due to previous range overlap-check
+
+  // check if there is any timestamps found witin the interval, ie if iStart <= iEnd
+  if ( iStart > iEnd )
+    {
+      XLALPrintWarning ( "Returning empty timeslice: no catalog sfttimes fall within given GPS range [%"LAL_GPS_FORMAT", %"LAL_GPS_FORMAT"). Closest timestamps are: %"LAL_GPS_FORMAT" and %"LAL_GPS_FORMAT"\n",
+                         LAL_GPS_PRINT(*minStartGPS), LAL_GPS_PRINT(*maxStartGPS),
+                         LAL_GPS_PRINT(catalog->data[iEnd].header.epoch),
+                         LAL_GPS_PRINT(catalog->data[iStart].header.epoch)
+                         );
+      return XLAL_SUCCESS;
+    }
 
   // Set timeslice of SFT catalog
   slice->length = iEnd - iStart + 1;

@@ -1616,7 +1616,7 @@ XLALGetLogString ( const ConfigVariables *cfg )
   struct tm startTimeUTC = *XLALGPSToUTC ( &startTimeUTC, startTimeSeconds );
   {
     CHAR *startTimeUTCString = XLALStringDuplicate ( asctime(&startTimeUTC) );
-    startTimeUTCString[strlen(startTimeUTCString)-2] = 0;	// kill trailing newline
+    startTimeUTCString[strlen(startTimeUTCString)-1] = 0;	// kill trailing newline
     XLAL_CHECK_NULL ( snprintf ( buf, BUFLEN, "%%%% GPS starttime         = %d (%s GMT)\n", startTimeSeconds, startTimeUTCString ) < BUFLEN, XLAL_EBADLEN );
     XLALFree ( startTimeUTCString );
   }

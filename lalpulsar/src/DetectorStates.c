@@ -488,10 +488,8 @@ XLALGetMultiDetectorStates( const MultiLIGOTimeGPSVector *multiTS, /**< [in] mul
   }
   ret->length = numDetectors;
 
-  REAL8 t0=LAL_REAL4_MAX;
-  REAL8 t1=0;
   REAL8 deltaT = multiTS->data[0]->deltaT;
-  LIGOTimeGPS startTime = {0, 0};
+
   /* loop over detectors */
   UINT4 X;
   for ( X=0; X < numDetectors; X ++ )
@@ -514,21 +512,7 @@ XLALGetMultiDetectorStates( const MultiLIGOTimeGPSVector *multiTS, /**< [in] mul
         XLAL_ERROR_NULL ( XLAL_EFUNC );
       }
 
-      /* keep track of earliest/latest timestamp in order to determine total Tspan */
-      UINT4 numTS = tsX->length;
-      REAL8 t0_X = XLALGPSGetREAL8( &tsX->data[0] );
-      REAL8 t1_X = XLALGPSGetREAL8( &tsX->data[numTS-1] );
-
-      if ( t0_X < t0 ) {
-        t0 = t0_X;
-        startTime = tsX->data[0];
-      }
-      if ( t1_X > t1 ) t1 = t1_X;
-
     } /* for X < numDetectors */
-
-  ret->Tspan = t1 - t0 + deltaT;	/* total time spanned by all SFTs */
-  ret->startTime = startTime;		/* earliest start-time of observation */
 
   return ret;
 

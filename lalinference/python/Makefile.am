@@ -23,6 +23,7 @@ pybin_scripts = \
 	bayestar_prune_neighborhood_tmpltbank \
 	bayestar_realize_coincs \
 	bayestar_sample_model_psd \
+	bayestar_samples_ppplot \
 	bayestar_sim_to_tmpltbank \
 	bayestar_littlehope \
 	rapidpe_integrate_extrinsic_likelihood \

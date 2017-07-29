@@ -708,7 +708,7 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
 
   transientWindow_t win_mn;
   win_mn.type = windowRange.type;
-  ret->maxF = 0;	// keep track of loudest F-stat point
+  ret->maxF = -1.0;	// keep track of loudest F-stat point. Initializing to a negative value ensures that we always update at least once and hence return sane t0_d_ML, tau_d_ML even if there is only a single bin where F=0 happens.
   UINT4 m, n;
   /* ----- OUTER loop over start-times [t0,t0+t0Band] ---------- */
   for ( m = 0; m < N_t0Range; m ++ ) /* m enumerates 'binned' t0 start-time indices  */
@@ -1013,6 +1013,75 @@ write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand,
 
 
 /**
+ * Write full set of t0 and tau grid points (assumed at fixed Doppler parameters) into output file.
+ *
+ * NOTE: if input FstatMap == NULL, we write a header comment-line explaining the fields
+ *
+ * if doppler = NULL, we skip those columns
+ *
+ */
+int write_transientFstatMap_to_fp ( FILE *fp, const transientFstatMap_t *FstatMap, const transientWindowRange_t *windowRange, const PulsarDopplerParams *doppler )
+{
+
+  /* sanity checks */
+  if ( !fp ) {
+    XLALPrintError ( "%s: invalid NULL filepointer input.\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
+  }
+
+  if ( !FstatMap )	/* write header-line comment */
+    {
+      if ( !doppler )
+        {
+          fprintf (fp, "%%%% t0[s]      tau[s]      twoF\n");
+        }
+      else
+        {
+          fprintf (fp, "%%%% Freq[Hz]            Alpha[rad]          Delta[rad]          fkdot[1]  fkdot[2]  fkdot[3]  t0[s]      tau[s]      twoF\n");
+        }
+    }
+  else
+    {
+      if ( !windowRange ) {
+        XLALPrintError ( "%s: invalid NULL windowRange input.\n", __func__ );
+        XLAL_ERROR ( XLAL_EINVAL );
+      }
+      UINT4 t0 = windowRange->t0;
+      UINT4 N_t0Range  = (UINT4) floor ( windowRange->t0Band / windowRange->dt0 ) + 1;
+      UINT4 N_tauRange = (UINT4) floor ( windowRange->tauBand / windowRange->dtau ) + 1;
+
+      /* ----- OUTER loop over start-times [t0,t0+t0Band] ---------- */
+      for ( UINT4 m = 0; m < N_t0Range; m ++ ) /* m enumerates 'binned' t0 start-time indices  */
+        {
+         UINT4 this_t0 = t0 + m * windowRange->dt0;
+          /* ----- INNER loop over timescale-parameter tau ---------- */
+          for ( UINT4 n = 0; n < N_tauRange; n ++ )
+            {
+              UINT4 this_tau = windowRange->tau + n * windowRange->dtau;
+              if ( !doppler )
+                {
+                  fprintf (fp, "  %10d %10d %- 11.8g\n",
+                           this_t0, this_tau, 2.0 * gsl_matrix_get ( FstatMap->F_mn, m, n )
+                          );
+                }
+               else
+                {
+                  fprintf (fp, "  %- 18.16f %- 19.16f %- 19.16f %- 9.6g %- 9.5g %- 9.5g %10d %10d %- 11.8g\n",
+                           doppler->fkdot[0], doppler->Alpha, doppler->Delta,
+                           doppler->fkdot[1], doppler->fkdot[2], doppler->fkdot[3],
+                           this_t0, this_tau, 2.0 * gsl_matrix_get ( FstatMap->F_mn, m, n )
+                          );
+                }
+            }
+        }
+    }
+
+  return XLAL_SUCCESS;
+
+} /* write_transientFstatMap_to_fp() */
+
+
+/**
  * Write full set of t0 and tau grid points for given transient CW candidate into output file.
  *
  * NOTE: if input thisCand == NULL, we write a header comment-line explaining the fields
@@ -1021,44 +1090,23 @@ write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand,
 int
 write_transientCandidateAll_to_fp ( FILE *fp, const transientCandidate_t *thisCand )
 {
+
   /* sanity checks */
   if ( !fp ) {
     XLALPrintError ( "%s: invalid NULL filepointer input.\n", __func__ );
     XLAL_ERROR ( XLAL_EINVAL );
   }
 
-
-  if ( thisCand == NULL )	/* write header-line comment */
-    {
-      fprintf (fp, "%%%% Freq[Hz]            Alpha[rad]          Delta[rad]          fkdot[1]  fkdot[2]  fkdot[3]  t0[s]      tau[s]      twoF\n");
-    }
-  else
-    {
-      if ( !thisCand->FstatMap ) {
-        XLALPrintError ("%s: incomplete: transientCand->FstatMap == NULL!\n", __func__ );
-        XLAL_ERROR ( XLAL_EINVAL );
-      }
-      UINT4 t0 = thisCand->windowRange.t0;
-
-      UINT4 N_t0Range  = (UINT4) floor ( thisCand->windowRange.t0Band / thisCand->windowRange.dt0 ) + 1;
-      UINT4 N_tauRange = (UINT4) floor ( thisCand->windowRange.tauBand / thisCand->windowRange.dtau ) + 1;
-      LogPrintf ( LOG_DETAIL, "N_t0Range=%d, N_tauRange=%d\n", N_t0Range, N_tauRange);
-      /* ----- OUTER loop over start-times [t0,t0+t0Band] ---------- */
-      for ( UINT4 m = 0; m < N_t0Range; m ++ ) /* m enumerates 'binned' t0 start-time indices  */
-        {
-         UINT4 this_t0 = t0 + m * thisCand->windowRange.dt0;
-          /* ----- INNER loop over timescale-parameter tau ---------- */
-          for ( UINT4 n = 0; n < N_tauRange; n ++ )
-            {
-              UINT4 this_tau = thisCand->windowRange.tau + n * thisCand->windowRange.dtau;
-              fprintf (fp, "  %- 18.16f %- 19.16f %- 19.16f %- 9.6g %- 9.5g %- 9.5g %10d %10d %- 11.8g\n",
-                       thisCand->doppler.fkdot[0], thisCand->doppler.Alpha, thisCand->doppler.Delta,
-                       thisCand->doppler.fkdot[1], thisCand->doppler.fkdot[2], thisCand->doppler.fkdot[3],
-                       this_t0, this_tau, 2.0 * gsl_matrix_get ( thisCand->FstatMap->F_mn, m, n )
-                      );
-            }
-        }
-    }
+  if ( thisCand == NULL ) {
+    /* still pass a pointer empty doppler struct,
+     * so that the output file header will have all column names
+     */
+    PulsarDopplerParams XLAL_INIT_DECL(emptyDoppler);
+    XLAL_CHECK( write_transientFstatMap_to_fp ( fp, NULL, NULL, &emptyDoppler ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed to write transient-FstatMap file header." );
+  }
+  else {
+    XLAL_CHECK( write_transientFstatMap_to_fp ( fp, thisCand->FstatMap, &thisCand->windowRange, &thisCand->doppler ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed to write transient-FstatMap file body." );
+  }
 
   return XLAL_SUCCESS;
 

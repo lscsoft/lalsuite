@@ -129,6 +129,8 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(SEOBNRv3_opt_rk4),
     INITIALIZE_NAME(SEOBNRv4),
     INITIALIZE_NAME(SEOBNRv4_opt),
+    INITIALIZE_NAME(TEOBv2),
+    INITIALIZE_NAME(TEOBv4),
     INITIALIZE_NAME(SEOBNRv1_ROM_EffectiveSpin),
     INITIALIZE_NAME(SEOBNRv1_ROM_DoubleSpin),
     INITIALIZE_NAME(SEOBNRv2_ROM_EffectiveSpin),
@@ -153,6 +155,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(SpinTaylorT4Fourier),
     INITIALIZE_NAME(SpinTaylorT2Fourier),
     INITIALIZE_NAME(SpinDominatedWf),
+    INITIALIZE_NAME(NRSur4d2s),
     INITIALIZE_NAME(NR_hdf5),
 };
 #undef INITIALIZE_NAME
@@ -263,6 +266,7 @@ static double fixReferenceFrequency(const double f_ref, const double f_min, cons
         case SpinTaylorF2:
         case IMRPhenomP:
         case IMRPhenomPv2:
+        case NRSur4d2s:
             return f_min;
         default:
             break;
@@ -764,7 +768,7 @@ int XLALSimInspiralChooseTDWaveform(
             /* Call the waveform driver routine */
             SpinAlignedEOBversion = 1;
             ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
-                    deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion);
+                    deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion, LALparams);
             break;
 
         case SEOBNRv2_opt:
@@ -782,7 +786,7 @@ int XLALSimInspiralChooseTDWaveform(
             SpinAlignedEOBversion = 2;
             if(approximant==SEOBNRv2_opt) SpinAlignedEOBversion = 200;
             ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
-                    deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion);
+                    deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion, LALparams);
             break;
 
         case SEOBNRv4_opt:
@@ -800,7 +804,7 @@ int XLALSimInspiralChooseTDWaveform(
             SpinAlignedEOBversion = 4;
             if(approximant==SEOBNRv4_opt) SpinAlignedEOBversion = 400;
             ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
-                                                   deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion);
+                                                   deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion, LALparams);
             break;
 
         case SEOBNRv3_opt_rk4:
@@ -833,7 +837,35 @@ int XLALSimInspiralChooseTDWaveform(
             }
             break;
 
-	case HGimri:
+        case TEOBv2:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+                ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
+            if( f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+            /* Call the waveform driver routine */
+            SpinAlignedEOBversion = 2;
+            ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
+                                                   deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion, LALparams);
+            break;
+
+        case TEOBv4:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+                ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
+            if( f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+            /* Call the waveform driver routine */
+            SpinAlignedEOBversion = 4;
+            ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
+                                                   deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion, LALparams);
+            break;
+
+        case HGimri:
 	     /* Waveform-specific sanity checks */
 	     if( !checkTidesZero(lambda1, lambda2) )
 		 ABORT_NONZERO_TIDES(LALparams);
@@ -848,9 +880,16 @@ int XLALSimInspiralChooseTDWaveform(
             /* Call the waveform driver routine */
             ret = XLALSimInspiralNRWaveformGetHplusHcross(hplus, hcross,
                     phiRef, inclination, deltaT, m1, m2, distance, f_min, f_ref, S1x, S1y, S1z,
-                    S2x, S2y, S2z, XLALSimInspiralWaveformParamsLookupNumRelData(LALparams), XLALSimInspiralWaveformParamsLookupLmax(LALparams));
+                    S2x, S2y, S2z, XLALSimInspiralWaveformParamsLookupNumRelData(LALparams), XLALSimInspiralWaveformParamsLookupModeArray(LALparams));
             break;
 
+        case NRSur7dq2:
+            /* Waveform-specific sanity checks */
+            /* Call the waveform driver routine */
+            ret = XLALSimInspiralNRSur7dq2Polarizations(hplus, hcross,
+                    phiRef, inclination, deltaT, m1, m2, distance, f_min, f_ref,
+                    S1x, S1y, S1z, S2x, S2y, S2z);
+            break;
 
         default:
             XLALPrintError("TD version of approximant not implemented in lalsimulation\n");
@@ -1485,6 +1524,13 @@ int XLALSimInspiralChooseFDWaveform(
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
 
+
+            case NRSur4d2s:
+
+                ret = XLALSimNRSur4d2s(hptilde, hctilde,
+                phiRef, deltaF, f_min, f_max, distance, inclination, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z);
+                if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            break;
 
         default:
             XLALPrintError("FD version of approximant not implemented in lalsimulation\n");
@@ -2328,6 +2374,13 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
                     XLALDestroyCOMPLEX16TimeSeries( tmpmode );
                 }
             }
+            break;
+
+        case NRSur7dq2:
+            /* Waveform-specific sanity checks */
+            /* Call the waveform driver routine */
+            hlm = XLALSimInspiralNRSur7dq2Modes(phiRef, deltaT, m1, m2, f_min,
+                    f_ref, r, lmax);
             break;
 
         default:
@@ -4408,7 +4461,10 @@ int XLALSimInspiralImplementedTDApproximants(
         case SEOBNRv3_opt_rk4:
         case SEOBNRv4:
         case SEOBNRv4_opt:
+        case TEOBv2:
+        case TEOBv4:
         case NR_hdf5:
+        case NRSur7dq2:
         case TEOBResum_ROM:
             return 1;
 
@@ -4452,6 +4508,7 @@ int XLALSimInspiralImplementedFDApproximants(
         case TaylorF2RedSpinTidal:
         case SpinTaylorT4Fourier:
         case SpinTaylorT2Fourier:
+        case NRSur4d2s:
             return 1;
 
         default:
@@ -4842,6 +4899,8 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case SEOBNRv3_opt:
     case SEOBNRv3_opt_rk4:
     case NR_hdf5:
+    case NRSur4d2s:
+    case NRSur7dq2:
       spin_support=LAL_SIM_INSPIRAL_PRECESSINGSPIN;
       break;
     case SpinTaylorF2:
@@ -4860,6 +4919,8 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case SEOBNRv4:
     case SEOBNRv2_opt:
     case SEOBNRv4_opt:
+    case TEOBv2:
+    case TEOBv4:
     case SEOBNRv1_ROM_EffectiveSpin:
     case SEOBNRv1_ROM_DoubleSpin:
     case SEOBNRv2_ROM_EffectiveSpin:
@@ -4948,6 +5009,8 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case SEOBNRv3_opt_rk4:
     case SEOBNRv4:
     case SEOBNRv4_opt:
+    case TEOBv2:
+    case TEOBv4:
     case SEOBNRv1_ROM_EffectiveSpin:
     case SEOBNRv1_ROM_DoubleSpin:
     case SEOBNRv2_ROM_EffectiveSpin:
@@ -4966,8 +5029,10 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case TaylorT4:
     case TaylorN:
     case SpinDominatedWf:
-    case NumApproximants:
     case NR_hdf5:
+    case NRSur4d2s:
+    case NRSur7dq2:
+    case NumApproximants:
       testGR_accept=LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS;
       break;
     case TaylorF2:
@@ -5428,6 +5493,7 @@ double XLALSimInspiralGetFinalFreq(
         case SpinTaylorF2:
         /* NR waveforms */
         case NR_hdf5:
+        case NRSur4d2s:
             XLALPrintError("I don't know how to calculate final freq. for this approximant, sorry!\n");
             XLAL_ERROR(XLAL_EINVAL);
             break;
@@ -5653,6 +5719,7 @@ int XLALSimInspiralChooseTDWaveformOLD(
     const Approximant approximant               /**< post-Newtonian approximant to use for waveform production */
     )
 {
+    LALDict *LALparams = NULL;
     REAL8 LNhatx, LNhaty, LNhatz, E1x, E1y, E1z;
     char *numrel_data_path;
     //REAL8 tmp1, tmp2;
@@ -6075,7 +6142,7 @@ int XLALSimInspiralChooseTDWaveformOLD(
             /* Call the waveform driver routine */
             SpinAlignedEOBversion = 1;
             ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
-                    deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion);
+                    deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion, LALparams);
             break;
 
         case SEOBNRv2:
@@ -6091,7 +6158,7 @@ int XLALSimInspiralChooseTDWaveformOLD(
             /* Call the waveform driver routine */
             SpinAlignedEOBversion = 2;
             ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
-                    deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion);
+                    deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion, LALparams);
             break;
 
         case SEOBNRv4:
@@ -6107,7 +6174,7 @@ int XLALSimInspiralChooseTDWaveformOLD(
             /* Call the waveform driver routine */
             SpinAlignedEOBversion = 4;
             ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
-                                                   deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion);
+                                                   deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion, LALparams);
             break;
 
         case SEOBNRv2_opt:
@@ -6123,7 +6190,7 @@ int XLALSimInspiralChooseTDWaveformOLD(
              /* Call the waveform driver routine */
              SpinAlignedEOBversion = 200;
              ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
-                     deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion);
+                     deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion, LALparams);
              break;
 
         case SEOBNRv3:
@@ -6156,7 +6223,7 @@ int XLALSimInspiralChooseTDWaveformOLD(
             /* Call the waveform driver routine */
             SpinAlignedEOBversion = 400;
             ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
-                                                   deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion);
+                                                   deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion, LALparams);
             break;
 
 	case HGimri:
@@ -6175,7 +6242,7 @@ int XLALSimInspiralChooseTDWaveformOLD(
 			/* Call the waveform driver routine */
 			ret = XLALSimInspiralNRWaveformGetHplusHcross(hplus, hcross,
 					phiRef, inclination, deltaT, m1, m2, distance, f_min, f_ref, S1x, S1y, S1z,
-					S2x, S2y, S2z, numrel_data_path, LAL_SIM_INSPIRAL_MODES_CHOICE_ALL);
+					S2x, S2y, S2z, numrel_data_path, NULL);
 			XLALFree(numrel_data_path);
 			break;
 

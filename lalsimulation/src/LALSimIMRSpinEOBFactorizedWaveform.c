@@ -91,6 +91,109 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs *
  *------------------------------------------------------------------------------------------
  */
 /**
+ * Function to compute PN corrections to the tidal term that enters the (2,2) amplitude
+ */
+static REAL8 XLALTEOBbeta221( REAL8 X /**<< NS mass */ ) {
+    return (-202. + 560.*X - 340.*X*X + 45.*X*X*X) / (42.*(3. - 2.*X));
+}
+
+/**
+ * Function to compute the dynamical enhancement of the quadrupolar Love number
+ * that enters the tidal corrections to the mode amplitudes
+ */
+static REAL8 XLALSimIMRTEOBk2effMode (
+                            REAL8 Omega, /**<< Orbital frequency */
+                            REAL8 k2TidaleffHam, /**<< Dynamical enhancement of k2Tidal that enters the Hamiltonian */
+                            REAL8 omega02Tidal, /**<< f-mode frequency */
+                            REAL8 XCompanion /**<< Mass of NS companion divided by M */
+)
+{
+    return ((-1. + k2TidaleffHam)*omega02Tidal*omega02Tidal + 6.*k2TidaleffHam*XCompanion*Omega*Omega) / (1. + 2*XCompanion) / (3.*Omega*Omega);
+}
+
+/**
+ * Function to compute the tidal correction to the mode amplitudes
+ */
+static COMPLEX16 XLALhTidal(
+                            INT4 l, /**<< Mode index */
+                            INT4 m, /**<< Mode index */
+                            REAL8 phase, /**<< Orbutal phase */
+                            REAL8 v, /**<< Orbital speed^2 */
+                            REAL8 eta, /**<< Symmetric mass ratio */
+                            TidalEOBParams *tidal1, /**<< Tidal parameters of body 1 */
+                            TidalEOBParams *tidal2 /**<< Tidal parameters of body 2 */
+)
+{
+    COMPLEX16 hNewtonTidal = 0;
+    COMPLEX16 hhatTidal = 0;
+    REAL8 v2 = v*v;
+    REAL8 Omega = v*v*v;
+    REAL8 v10 = v2*v2*v2*v2*v2;
+    REAL8 X1 = tidal1->mByM;
+    REAL8 X2 = tidal2->mByM;
+    REAL8 lambda1 = tidal1->lambda2Tidal;
+    REAL8 lambda2 = tidal2->lambda2Tidal;
+    REAL8 omega02Tidal1 = tidal1->omega02Tidal;
+    REAL8 omega02Tidal2 = tidal2->omega02Tidal;
+    REAL8 k2Tidal1effHam = 0.;
+    REAL8 k2Tidal2effHam = 0.;
+    REAL8 k2Tidal1eff = 0.;
+    REAL8 k2Tidal2eff = 0.;
+    REAL8 u = 1./pow(Omega,-2./3);
+    if ( lambda1 != 0.) {
+        k2Tidal1effHam = XLALSimIMRTEOBk2eff(u, eta, tidal1);
+        k2Tidal1eff = XLALSimIMRTEOBk2effMode (Omega,  k2Tidal1effHam, omega02Tidal1, X2);
+    }
+    if ( lambda2 != 0.) {
+        k2Tidal2effHam = XLALSimIMRTEOBk2eff(u, eta, tidal2);
+        k2Tidal2eff = XLALSimIMRTEOBk2effMode (Omega,  k2Tidal2effHam, omega02Tidal2, X1);
+    }
+    REAL8 q = X2/X1;
+    switch (l) {
+        case 2:
+            switch (m) {
+                case 2:
+                    hNewtonTidal = -8. * v2 * sqrt(LAL_PI/5.);
+                    hhatTidal = (3.*q*lambda1*(X1/X2 + 3.)*(1. + XLALTEOBbeta221(X1)*v2)*k2Tidal1eff
+                                    +  3./q*lambda2*(X2/X1 + 3.)*(1. + XLALTEOBbeta221(X2)*v2)*k2Tidal2eff) * v10;
+                    break;
+                case 1:
+                    hNewtonTidal = 8./3. * I * v*v2 * sqrt(LAL_PI/5.);
+                    hhatTidal = (-3*q*lambda1*(4.5 - 6.*X1) - (-3./q*lambda2*(4.5 - 6.*X2))) * v10;
+                    break;
+                default:
+                    return 0.;
+                    break;
+            }
+            break;
+        case 3:
+            hhatTidal = -18.*(X2*q*lambda1 - X1/q*lambda2) * v10;
+            switch (m) {
+                case 3:
+                    hNewtonTidal = -3. * I * v*v2 * sqrt(6.*LAL_PI/7.);
+                    break;
+                case 2:
+                    hNewtonTidal = -8./3. * v2*v2 * sqrt(LAL_PI/7.);
+                    break;
+                case 1:
+                    hNewtonTidal = 1./3. * I * v*v2 * sqrt(2.*LAL_PI/35.);
+                    break;
+                case 0:
+                    return 0.;
+                    break;
+                default:
+                    return 0.;
+                    break;
+            }
+            break;
+        default:
+            return 0.;
+            break;
+    }
+    return eta*hNewtonTidal*hhatTidal*( cos(-m*phase) + I * sin(-m*phase) );
+}
+
+/**
  * This function calculates hlm mode factorized-resummed waveform
  * for given dynamical variables. This is optimized for flux calculation,
  * by ignoring complex arguments and keeping only absolute values.
@@ -610,6 +713,7 @@ XLALSimIMRSpinEOBFluxGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
      } */
   return XLAL_SUCCESS;
 }
+
 
 /*--------------------------------------------------------------*/
 /**
@@ -1870,6 +1974,54 @@ XLALSimIMRSpinEOBGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
      printf("YP::FullWave: Reh = %.16e, Imh = %.16e, hAmp = %.16e, hPhi = %.16e\n",creal(*hlm),cimag(*hlm),cabs(*hlm),carg(*hlm));
      } */
   return XLAL_SUCCESS;
+}
+
+/**
+ * This function calculates tidal correction to the hlm mode factorized-resummed waveform
+ * for given dynamical variables.
+ */
+static INT4
+XLALSimIMRSpinEOBWaveformTidal (COMPLEX16 * restrict hlm,
+                                            /**< OUTPUT, hlm waveforms */
+                                            REAL8Vector * restrict values,
+                                            /**< dyanmical variables */
+                                            const REAL8 v,
+                                            /**< velocity */
+                                            const INT4 l,
+                                            /**< l mode index */
+                                            const INT4 m,
+                                            /**< m mode index */
+                                            SpinEOBParams * restrict params
+                                            /**< Spin EOB parameters */
+)
+{
+    REAL8 eta;
+    if (abs (m) > (INT4) l)
+    {
+        XLAL_ERROR (XLAL_EINVAL);
+    }
+    if (m == 0)
+    {
+        XLAL_ERROR (XLAL_EINVAL);
+    }
+
+    eta = params->eobParams->eta;
+
+    /* Check our eta was sensible */
+    if (eta > 0.25 && eta < 0.25 +1e-4) {
+        eta = 0.25;
+    }
+    if (eta > 0.25)
+    {
+        XLALPrintError
+        ("XLAL Error - %s: Eta seems to be > 0.25 - this isn't allowed!\n",
+         __func__);
+        XLAL_ERROR (XLAL_EINVAL);
+    }
+
+    COMPLEX16 hTidal = XLALhTidal( l, m, values->data[1], v, eta, params->seobCoeffs->tidal1, params->seobCoeffs->tidal2 );
+    *hlm = hTidal;
+    return XLAL_SUCCESS;
 }
 
 #endif /* _LALSIMIMRSPINEOBFACTORIZEDWAVEFORM */

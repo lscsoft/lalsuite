@@ -212,7 +212,9 @@ liblalsimulation_la_SOURCES = \
 	unicorn.xpm \
 	LALSimInspiralHGimri.c \
 	LALSimFindAttachTime.c \
-	LALSimIMRSpinEOB.c
+	LALSimIMRSpinEOB.c \
+	LALSimIMRNRSur4d2s.c \
+	LALSimIMRNRSur7dq2.c
 
 nodist_liblalsimulation_la_SOURCES = \
 	LALSimulationBuildInfoHeader.h \

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015-2017  Leo Singer
 #
@@ -32,6 +33,9 @@ seaborn.set_style("white")
 import argparse
 from lalinference.bayestar import command
 parser = command.ArgumentParser(parents=[command.figure_parser])
+parser.add_argument(
+    '--annotate', default=False, action='store_true',
+    help='annotate plot with information about the event')
 parser.add_argument(
     '--max-distance', metavar='Mpc', type=float,
     help='maximum distance of plot in Mpc [default: auto]')
@@ -232,6 +236,25 @@ if not opts.projection:
     ax.set_yticks([])
     ax.set_xlim(0, max_distance)
     ax.set_ylim(0, ax.get_ylim()[1])
+
+    if opts.annotate:
+        text = []
+        try:
+            objid = metadata['objid']
+        except KeyError:
+            pass
+        else:
+            text.append('event ID: {}'.format(objid))
+        try:
+            distmean = metadata['distmean']
+            diststd = metadata['diststd']
+        except KeyError:
+            pass
+        else:
+            text.append(u'distance: {}±{} Mpc'.format(
+                        int(np.round(distmean)), int(np.round(diststd))))
+        ax.text(0, 1, '\n'.join(text), transform=ax.transAxes, fontsize=7,
+                 ha='left', va='bottom', clip_on=False)
 
 progress.update(-1, 'Saving')
 opts.output()

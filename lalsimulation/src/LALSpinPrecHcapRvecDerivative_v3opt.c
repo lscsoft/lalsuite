@@ -30,12 +30,6 @@ static int XLALSpinPrecHcapRvecDerivative_exact(
           XLALPrintError( "XLAL Error - %s: nan in input values \n", __func__);
           XLAL_ERROR( XLAL_EINVAL );
         }
-
-      if( isnan(dvalues[i]) ) {
-        XLAL_PRINT_INFO("XLALSpinPrecHcapRvecDerivative_exact::dvalues %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f\n", dvalues[0], dvalues[1], dvalues[2], dvalues[3], dvalues[4], dvalues[5], dvalues[6], dvalues[7], dvalues[8], dvalues[9], dvalues[10], dvalues[11]);
-          XLALPrintError( "XLAL Error - %s: nan in the input dvalues \n", __func__);
-          XLAL_ERROR( XLAL_EINVAL );
-        }
     }
   //}
     SpinEOBParams * seobParams = (SpinEOBParams *)funcParams;
@@ -120,18 +114,6 @@ static int XLALSpinPrecHcapRvecDerivative_exact(
             s1Data[i] *= (mass1+mass2)*(mass1+mass2);
             s2Data[i] *= (mass1+mass2)*(mass1+mass2);
         }
-        /* Calculate the polar data: NOT USED. */
-        /*
-        // Calculate the orbital angular momentum
-        Lx = values[1]*values[5] - values[2]*values[4];
-        Ly = values[2]*values[3] - values[0]*values[5];
-        Lz = values[0]*values[4] - values[1]*values[3];
-        magL = sqrt( Lx*Lx + Ly*Ly + Lz*Lz );
-        polData[0] = sqrt( values[0]*values[0] + values[1]*values[1]+ values[2]*values[2] );
-        polData[1] = 0;
-        polData[2] = (values[0]*values[3] + values[1]*values[4]+ values[2]*values[5]) / polData[0];
-        polData[3] = magL; // <- BUG IN THIS LINE: polData has only 3 elements. Trying to set the fourth here.
-        */
 
         /*Compute \vec{L_N} = \vec{r} \times \.{\vec{r}}, \vec{S_i} \dot \vec{L_N} and chiS and chiA */
         rcrossrDot[0] = values[1]*tmpDValues[5] - values[2]*tmpDValues[4];
@@ -157,6 +139,17 @@ static int XLALSpinPrecHcapRvecDerivative_exact(
       for( int j = 0.; j < 3; j++ )
           dvalues[i] += tmpDValues[j+3]*Tmatrix[i][j];
     }
+
+    /* Now check for NaNs in the dvalues[] output array; only elements 0, 1, and 2 are set */
+    for(int i = 0; i < 3; i++ ){
+      if( isnan(dvalues[i]) ) {
+        XLAL_PRINT_INFO("XLALSpinPrecHcapRvecDerivative_exact::dvalues %3.10f %3.10f %3.10f\n", dvalues[0], dvalues[1], dvalues[2]);
+	XLALPrintError( "XLAL Error - %s: nan in the output dvalues \n", __func__);
+	XLAL_ERROR( XLAL_EINVAL );
+      }
+    }
+
+
     return XLAL_SUCCESS;
 }
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2011-2017  Leo Singer
 #
@@ -145,15 +146,22 @@ for ra, dec in radecs:
 plot.outline_text(ax)
 
 if opts.annotate:
-    text = 'event ID: {}'.format(metadata['objid'])
-    text += '\nFITS file: {}'.format(opts.input.name)
+    text = []
+    try:
+        objid = metadata['objid']
+    except KeyError:
+        pass
+    else:
+        text.append('event ID: {}'.format(objid))
     if opts.contour:
         pp = np.round(opts.contour).astype(int)
         ii = np.round(np.searchsorted(np.sort(cls), opts.contour) *
                       deg2perpix).astype(int)
         for i, p in zip(ii, pp):
-            text += '\n{:d}% area: {:d} deg$^2$'.format(p, i, grouping=True)
-    ax.text(1, 1, text, transform=ax.transAxes, horizontalalignment='right')
+            # FIXME: use Unicode symbol instead of TeX '$^2$'
+            # because of broken fonts on Scientific Linux 7.
+            text.append(u'{:d}% area: {:d} deg²'.format(p, i, grouping=True))
+    ax.text(1, 1, '\n'.join(text), transform=ax.transAxes, ha='right')
 
 # Show or save output.
 opts.output()

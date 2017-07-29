@@ -109,6 +109,8 @@ int XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights
 
 int write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisTransCand, const char timeUnit );
 
+int write_transientFstatMap_to_fp ( FILE *fp, const transientFstatMap_t *FstatMap, const transientWindowRange_t *windowRange, const PulsarDopplerParams *doppler );
+
 int write_transientCandidateAll_to_fp ( FILE *fp, const transientCandidate_t *thisTransCand );
 
 

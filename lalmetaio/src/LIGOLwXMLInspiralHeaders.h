@@ -387,7 +387,7 @@ fputs( "      <Column Name=\"simulation_id\" Type=\"ilwd:char\"/>\n" , fp ) == E
 fputs( "      <Stream Name=\"sim_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SIM_INSPIRAL_ROW \
-"         \"process:process_id:%ld\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%22.16e,\"%s\",%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%d,\"%s\",%d,\"%s\",%d,\"sim_inspiral:simulation_id:%" LAL_INT8_FORMAT "\""
+"         \"process:process_id:%ld\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%22.16e,\"%s\",%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%d,\"%s\",%d,\"%s\",%d,\"sim_inspiral:simulation_id:%ld\""
 
 #if 0
 { /* so that editors will match succeeding brace */

@@ -2049,7 +2049,7 @@ class BinnedLnPDF(BinnedDensity):
 	"""
 	def __init__(self, *args, **kwargs):
 		super(BinnedLnPDF, self).__init__(*args, **kwargs)
-		self.norm = 0.0
+		self.normalize()
 
 	def __getitem__(self, coords):
 		return numpy.log(super(BinnedLnPDF, self).__getitem__(coords)) - self.norm
@@ -2211,7 +2211,8 @@ class BinnedLnPDF(BinnedDensity):
 		accounted for in the normalization although the density
 		reported for those bins will be 0.
 		"""
-		self.norm = math.log(self.array.sum())
+		self.norm = self.array.sum()
+		self.norm = math.log(self.norm) if self.norm != 0. else NegInf
 
 	def to_xml(self, *args, **kwargs):
 		elem = super(BinnedLnPDF, self).to_xml(*args, **kwargs)

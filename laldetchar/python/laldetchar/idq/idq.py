@@ -2066,7 +2066,7 @@ def build_auxmvc_vectors( trigger_dict, main_channel, time_window, signif_thresh
     trigger_dict.include([[gps_start_time, gps_end_time]], channels=[main_channel])
 
     # keep only triggers from the science segments if given........
-    if science_segments:
+    if science_segments!=None:
         science_segments = event.andsegments([[gps_start_time - time_window, gps_end_time + time_window]], science_segments)
         trigger_dict.include(science_segments)
 
@@ -2086,7 +2086,7 @@ def build_auxmvc_vectors( trigger_dict, main_channel, time_window, signif_thresh
         if clean_samples_rate:
 
             # generate random times for clean samples
-            if science_segments:
+            if science_segments!=None:
                 clean_times = event.randomrate(clean_samples_rate,
                         event.andsegments([[gps_start_time
                         + time_window, gps_end_time - time_window]],

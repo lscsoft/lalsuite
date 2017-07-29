@@ -1028,7 +1028,7 @@ int main( int argc, char *argv[] )
     {
       thisInj = injections;
       injections = injections->next;
-      LALFree( thisInj );
+      XLALFreeSimInspiral( &thisInj );
     }
   }
 

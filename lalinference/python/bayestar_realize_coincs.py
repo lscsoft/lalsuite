@@ -106,6 +106,7 @@ import glue.lal
 import lal
 import lal.series
 import lalsimulation
+from lalinspiral.thinca import InspiralCoincDef
 from glue.text_progress_bar import ProgressBar
 
 # BAYESTAR imports.
@@ -170,7 +171,7 @@ time_slide_id = time_slide_table.get_time_slide_id(
 # sngl_inspiral <-> sngl_inspiral coincidences.
 coinc_def_table = lsctables.New(lsctables.CoincDefTable)
 out_xmldoc.childNodes[0].appendChild(coinc_def_table)
-coinc_def = ligolw_bayestar.InspiralCoincDef
+coinc_def = InspiralCoincDef
 coinc_def_id = coinc_def_table.get_next_id()
 coinc_def.coinc_def_id = coinc_def_id
 coinc_def_table.append(coinc_def)
@@ -222,7 +223,17 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
     u2 = np.square(u)
 
     # Signal models for each detector.
-    H = filter.sngl_inspiral_psd(sim_inspiral, waveform, f_low)
+    H = filter.sngl_inspiral_psd(
+        waveform,
+        mass1=sim_inspiral.mass1,
+        mass2=sim_inspiral.mass2,
+        spin1x=sim_inspiral.spin1x,
+        spin1y=sim_inspiral.spin1y,
+        spin1z=sim_inspiral.spin1z,
+        spin2x=sim_inspiral.spin2x,
+        spin2y=sim_inspiral.spin2y,
+        spin2z=sim_inspiral.spin2z,
+        f_min=f_low)
     W = [filter.signal_psd_series(H, psds[ifo]) for ifo in opts.detector]
     signal_models = [timing.SignalModel(_) for _ in W]
 

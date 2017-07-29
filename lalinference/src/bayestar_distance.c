@@ -287,6 +287,39 @@ void bayestar_distance_parameters_to_moments(
 }
 
 
+static double bayestar_volume_render_inner(
+    double x, double y, double z, int axis0, int axis1, int axis2,
+    const double *R, long long nside, int nest, const double *prob, const
+    double *mu, const double *sigma, const double *norm)
+{
+    double ret;
+    double xyz[3];
+    xyz[axis0] = x;
+    xyz[axis1] = y;
+    xyz[axis2] = z;
+
+   /* Transform from screen-aligned cube to celestial coordinates before
+    * looking up pixel indices. */
+    double vec[3];
+    cblas_dgemv(
+        CblasRowMajor, CblasNoTrans, 3, 3, 1, R, 3, xyz, 1, 0, vec, 1);
+    int64_t ipix;
+    if (nest)
+        vec2pix_nest64(nside, vec, &ipix);
+    else
+        vec2pix_ring64(nside, vec, &ipix);
+    double r = sqrt(gsl_pow_2(x) + gsl_pow_2(y) + gsl_pow_2(z));
+
+    if (isfinite(mu[ipix]))
+        ret = gsl_sf_exp_mult(
+            -0.5 * gsl_pow_2((r - mu[ipix]) / sigma[ipix]),
+            prob[ipix] * norm[ipix] / sigma[ipix]);
+    else
+        ret = 0;
+    return ret;
+}
+
+
 double bayestar_volume_render(
     double x, double y, double max_distance, int axis0, int axis1,
     const double *R, long long nside, int nest,
@@ -312,39 +345,41 @@ double bayestar_volume_render(
     const double theta_max = atan2(max_distance, a);
     const double dtheta = 0.5 * M_PI / nside / 4;
 
-    /* Construct regular grid from -theta_max to +theta_max */
     double ret = 0;
-    for (double theta = -theta_max; theta <= theta_max; theta += dtheta)
+
+    /* Far from the center of the image, we integrate in theta so that we
+     * step through HEALPix pixels at an approximately uniform rate.
+     *
+     * In the central 10% of the image, we integrate in z to avoid the
+     * coordinate singularity in theta.
+     */
+    if (a / max_distance >= 5e-2)
     {
-        /* Differential z = a tan(theta),
-         * dz = dz/dtheta dtheta = a tan'(theta) dtheta = a sec^2(theta) dtheta,
-         * and dtheta = const */
-        const double dz_dtheta = a / gsl_pow_2(cos(theta));
-        const double z = a * tan(theta);
-        double xyz[3];
-        xyz[axis0] = x;
-        xyz[axis1] = y;
-        xyz[axis2] = z;
-
-       /* Transform from screen-aligned cube to celestial coordinates before
-        * looking up pixel indices. */
-        double vec[3];
-        cblas_dgemv(
-            CblasRowMajor, CblasNoTrans, 3, 3, 1, R, 3, xyz, 1, 0, vec, 1);
-        int64_t ipix;
-        if (nest)
-            vec2pix_nest64(nside, vec, &ipix);
-        else
-            vec2pix_ring64(nside, vec, &ipix);
-        double r = sqrt(gsl_pow_2(x) + gsl_pow_2(y) + gsl_pow_2(z));
-
-        if (isfinite(mu[ipix]))
-            ret += gsl_sf_exp_mult(
-                -0.5 * gsl_pow_2((r - mu[ipix]) / sigma[ipix]),
-                prob[ipix] / sigma[ipix] * norm[ipix] * dz_dtheta);
+        /* Construct regular grid from -theta_max to +theta_max */
+        for (double theta = -theta_max; theta <= theta_max; theta += dtheta)
+        {
+            /* Differential z = a tan(theta),
+             * dz = dz/dtheta dtheta
+             *    = a tan'(theta) dtheta
+             *    = a sec^2(theta) dtheta,
+             * and dtheta = const */
+            const double dz_dtheta = a / gsl_pow_2(cos(theta));
+            const double z = a * tan(theta);
+            ret += bayestar_volume_render_inner(x, y, z, axis0, axis1, axis2,
+                R, nside, nest, prob, mu, sigma, norm) * dz_dtheta;
+        }
+        ret *= dtheta;
+    } else {
+        const double dz = max_distance * dtheta / theta_max;
+        for (double z = -max_distance; z <= max_distance; z += dz)
+        {
+            ret += bayestar_volume_render_inner(x, y, z, axis0, axis1, axis2,
+                R, nside, nest, prob, mu, sigma, norm);
+        }
+        ret *= dz;
     }
-
-    return ret / (M_SQRT2 * M_SQRTPI);
+    ret *= nside2npix64(nside) / (4 * M_PI * sqrt(2 * M_PI));
+    return ret;
 }
 
 

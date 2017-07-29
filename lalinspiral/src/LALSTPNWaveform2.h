@@ -7,7 +7,7 @@
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>
 
-#include <lal/LALAdaptiveRungeKutta4.h>
+#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
 
 #ifdef  __cplusplus
 extern "C" {

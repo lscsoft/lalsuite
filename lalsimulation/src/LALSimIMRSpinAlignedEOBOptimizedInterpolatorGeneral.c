@@ -28,12 +28,6 @@
 
 #include "LALSimIMRSpinEOB.h"
 
-/* static size_t optimized_gsl_interp_bsearch(const double x_array[], double x, size_t index_lo, size_t index_hi); */
-/* static inline size_t optimized_gsl_interp_accel_find(gsl_interp_accel * a, const double xa[], size_t len, double x); */
-/* static inline void optimized_coeff_calc (const double c_array[], double dy, double dx, size_t index, double * b, double * c, double * d); */
-/* static int optimized_cspline_eval (const void * vstate, const double x_array[], const double y_array[], size_t size, double x, gsl_interp_accel * a, double *y,unsigned int *index_old, double *x_lo_old,double *y_lo_old,double *b_i_old,double *c_i_old,double *d_i_old); */
-/* static int optimized_gsl_spline_eval_e(const gsl_spline * spline, double interptime, gsl_interp_accel * accel, double * output,unsigned int *index_old, double *x_lo_old,double *y_lo_old,double *b_i_old,double *c_i_old,double *d_i_old){ */
-
 typedef struct
 {
   double * c;
@@ -42,6 +36,11 @@ typedef struct
   double * offdiag;
 } cspline_state_t;
 
+/**
+ * Return the index ilo of x_array such that
+ * x_array[ilo] <= x < x_array[ilo+1]
+ * in the range [index_lo,index_hi].
+ */
 static size_t optimized_gsl_interp_bsearch(const double x_array[], double x, size_t index_lo, size_t index_hi)
 {
   size_t ilo = index_lo;
@@ -57,6 +56,10 @@ static size_t optimized_gsl_interp_bsearch(const double x_array[], double x, siz
   return ilo;
 }
 
+/**
+ * Return the index cache of xa such that
+ * xa[cache] <= x < xa[cache+1].
+ */
 static inline size_t optimized_gsl_interp_accel_find(gsl_interp_accel * a, const double xa[], size_t len, double x)
 {
   size_t x_index = a->cache;
@@ -75,7 +78,10 @@ static inline size_t optimized_gsl_interp_accel_find(gsl_interp_accel * a, const
   return a->cache;
 }
 
-
+/**
+ * Return the coefficients of cubic spline interpolation between points
+ * c_array[index] and c_array[index+1].
+ */
 static inline void optimized_coeff_calc (const double c_array[], double dy, double dx, size_t index, double * b, double * c, double * d)
 {
   const double c_i = c_array[index];
@@ -85,6 +91,9 @@ static inline void optimized_coeff_calc (const double c_array[], double dy, doub
   *d = (c_ip1 - c_i) / (3.0 * dx);
 }
 
+/**
+ * Perform cubic spline interpolation at point x from data in x_array.
+ */
 static int optimized_cspline_eval (const void * vstate, const double x_array[], const double y_array[], size_t size, double x, gsl_interp_accel * a, double *y,unsigned int *index_old, double *x_lo_old,double *y_lo_old,double *b_i_old,double *c_i_old,double *d_i_old)
 {
   const cspline_state_t *state = (const cspline_state_t *) vstate;
@@ -121,6 +130,10 @@ static int optimized_cspline_eval (const void * vstate, const double x_array[], 
   return GSL_SUCCESS;
 }
 
+/**
+ * Perform cubic spline interpolation to achieve evenly-sampled data from that
+ * input data.
+ */
 static int optimized_gsl_spline_eval_e(const gsl_spline * spline, double interptime, gsl_interp_accel * accel, double * output,unsigned int *index_old, double *x_lo_old,double *y_lo_old,double *b_i_old,double *c_i_old,double *d_i_old){
   return optimized_cspline_eval(spline->interp->state, spline->x, spline->y, spline->interp->size, interptime, accel, output,index_old,x_lo_old,y_lo_old,b_i_old,c_i_old,d_i_old);
 }

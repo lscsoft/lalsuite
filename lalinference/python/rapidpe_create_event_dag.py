@@ -163,7 +163,6 @@ ile_job_type, ile_sub_name = dagutils.write_integrate_likelihood_extrinsic_sub(
         n_eff=opts.n_eff,
         n_max=opts.n_max,
         ncopies=opts.n_copies,
-        save_deltalnL=opts.save_deltalnL,
         save_P=opts.save_P,
         n_chunk=opts.n_chunk,
         adapt_floor_level=opts.adapt_floor_level,

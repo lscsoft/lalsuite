@@ -523,7 +523,7 @@ class MCSampler(object):
                 for pt, w in zip(points, weights):
                     self._hist[p][pt,] += w
                 self._hist[p].array += self._hist[p].array.mean()
-                rate.to_moving_mean_density(self._hist[p], rate.tophat_window(3))
+                rate.filter_array(self._hist[p].array, rate.tophat_window(3))
                 norm = numpy.sum(self._hist[p].array * self._hist[p].bins.volumes())
                 self._hist[p].array /= norm
                 # FIXME: Stupid pet trick while numpy version is lacking

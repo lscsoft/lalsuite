@@ -799,36 +799,25 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   /* ---------- for SFT output: calculate effective fmin and Band ---------- */
   if ( XLALUserVarWasSet( &uvar->outSFTbname ) )
     {
-      UINT4 imin, imax;
-      volatile REAL8 dFreq = 1.0 / uvar->Tsft;
-      volatile REAL8 tmp;
-      REAL8 fMax, fMin_eff;
-
-      /* calculate "effective" fmin from uvar->fmin: following makefakedata_v2, we
+      UINT4 firstBin, numBins;
+      /* calculate "effective" fmin from uvar->fmin:
        * make sure that fmin_eff * Tsft = integer, such that freqBinIndex corresponds
        * to a frequency-index of the non-heterodyned signal.
        */
-      tmp = uvar->fmin / dFreq;	/* NOTE: don't "simplify" this: we try to make sure
-				 * the result of this will be guaranteed to be IEEE-compliant,
-				 * and identical to other locations, such as in SFT-IO
-				 */
-      imin = (UINT4) floor( tmp );
-      fMin_eff = (REAL8)imin * dFreq;
 
-      fMax = uvar->fmin + uvar->Band;
-      tmp = fMax / dFreq;
-      imax = (UINT4) ceil (tmp);
+      XLAL_CHECK ( XLALFindCoveringSFTBins ( &firstBin, &numBins, uvar->fmin, uvar->Band, uvar->Tsft ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-      /* Increase Band correspondingly. */
-      cfg->fmin_eff = fMin_eff;
-      cfg->fBand_eff = 1.0 * (imax - imin) * dFreq;
+      /* Adjust Band correspondingly */
+      REAL8 dFreq = 1.0 / uvar->Tsft;
+      cfg->fmin_eff  = firstBin * dFreq;
+      cfg->fBand_eff = (numBins-1) * dFreq;
 
       if ( lalDebugLevel )
 	{
 	  if ( fabs(cfg->fmin_eff - uvar->fmin)> LAL_REAL8_EPS
 	       || fabs(cfg->fBand_eff - uvar->Band) > LAL_REAL8_EPS )
 	    printf("\nWARNING: for SFT-creation we had to adjust (fmin,Band) to"
-		   " fmin_eff=%.20g and Band_eff=%.20g\n\n", cfg->fmin_eff, cfg->fBand_eff);
+		   " fmin_eff=%.15g and Band_eff=%.15g\n\n", cfg->fmin_eff, cfg->fBand_eff);
 	}
 
     } /* END: SFT-specific corrections to fmin and Band */
