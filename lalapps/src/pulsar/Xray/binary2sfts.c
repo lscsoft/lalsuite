@@ -39,6 +39,7 @@
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
 #include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include <lal/BandPassTimeSeries.h>
 
 #include <lal/LALDatatypes.h>
@@ -70,11 +71,12 @@ typedef struct {
   CHAR *outputdir;                  /**< the output directory */
   CHAR *cachefile;                  /**< the name of the input cache file */
   REAL8 tsamp;                      /**< the sampling time of the data */
-  INT4 tsft;                        /**< the length of the SFTs */
+  REAL8 tsft;                       /**< the length of the SFTs */
   REAL8 freq;                       /**< the starting frequency */
   REAL8 freqband;                   /**< the band width */
   REAL8 highpassf;                  /**< the high pass filter frequency */
   BOOLEAN outSingleSFT;             /**< use to output a single concatenated SFT */
+  BOOLEAN outNoiseStr;              /**< output noise string in SFT comment */
   REAL8 amp_inj;                    /**< if set we inject a fake signal with this fractional amplitude */
   INT4 seed;
   REAL8 f_inj;
@@ -179,10 +181,12 @@ int main( int argc, char *argv[] )  {
     if ((np!=NULL) && (R!=NULL)) {
       for (k=0;k<np->length;k++) {
         ntot += np->data[k];
-        char temp[64];
-        sprintf(temp,"%d %e %e\n",SFTvect->data[oldlen+k].epoch.gpsSeconds,(REAL8)np->data[k]*norm1,R->data[k]*norm2);
-        noisestr = (char *)XLALRealloc(noisestr,sizeof(char)*(1+strlen(noisestr)+strlen(temp)));
-        strcat(noisestr,temp);
+        if (uvar.outNoiseStr) {
+          char temp[64];
+          sprintf(temp,"%d %e %e\n",SFTvect->data[oldlen+k].epoch.gpsSeconds,(REAL8)np->data[k]*norm1,R->data[k]*norm2);
+          noisestr = (char *)XLALRealloc(noisestr,sizeof(char)*(1+strlen(noisestr)+strlen(temp)));
+          strcat(noisestr,temp);
+        }
       }
       XLALDestroyINT8Vector(np);
       XLALDestroyREAL8Vector(R);
@@ -196,8 +200,8 @@ int main( int argc, char *argv[] )  {
 
   /**********************************************************************************/
   /* generate comment string */
-  char *VCSInfoString = XLALGetVersionString(0);
-  XLAL_CHECK ( VCSInfoString != NULL, XLAL_EFUNC, "XLALGetVersionString(0) failed.\n" );
+  char *VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ");
+  XLAL_CHECK ( VCSInfoString != NULL, XLAL_EFUNC, "XLALVCSInfoString() failed.\n" );
   CHAR *logstr;
   size_t len;
   XLAL_CHECK ( (logstr = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE )) != NULL, XLAL_EFUNC );
@@ -248,6 +252,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->freqband = 1;
   uvar->highpassf = 40;
   uvar->outSingleSFT = 0;
+  uvar->outNoiseStr = 0;
   uvar->amp_inj = 0;
   uvar->f_inj = 550.2;
   uvar->asini_inj = 2.0;
@@ -262,10 +267,11 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   XLALRegisterUvarMember(cachefile,             STRING, 'i', REQUIRED, "The input binary file name");
   XLALRegisterUvarMember(freq,                   REAL8, 'f', OPTIONAL, "The starting frequency (Hz)");
   XLALRegisterUvarMember(freqband,              REAL8, 'b', OPTIONAL, "The frequency band (Hz)");
-  XLALRegisterUvarMember(tsft,                    INT4, 't', OPTIONAL, "The length of SFTs (sec)");
+  XLALRegisterUvarMember(tsft,                   REAL8, 't', OPTIONAL, "The length of SFTs (sec)");
   XLALRegisterUvarMember(tsamp,                 REAL8, 's', OPTIONAL, "The sampling time (sec)");
   XLALRegisterUvarMember(highpassf,             REAL8, 'p', OPTIONAL, "The high pass filter frequency");
   XLALRegisterUvarMember(outSingleSFT,           BOOLEAN, 'S', OPTIONAL, "Write a single concatenated SFT file instead of individual files" );
+  XLALRegisterUvarMember(outNoiseStr,           BOOLEAN, 'N', OPTIONAL, "Output noise string in SFT comment" );
   XLALRegisterUvarMember(amp_inj,               REAL8, 'I', OPTIONAL, "Fractional amplitude of injected signal");
   XLALRegisterUvarMember(f_inj,                 REAL8, 'A', OPTIONAL, "frequency of injected signal");
   XLALRegisterUvarMember(asini_inj,             REAL8, 'B', OPTIONAL, "projected semi-major axis of injected signal");
