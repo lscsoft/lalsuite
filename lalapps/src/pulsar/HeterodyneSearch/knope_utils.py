@@ -2165,7 +2165,7 @@ class knopeDAG(pipeline.CondorDAG):
                     return
 
             self.processed_files[pname][ifo][freqfactor] = hetfilescheck
-            if self.warning_code == KNOPE_WARNING_NO_SEGMENTS: # if there are no segment this time, and also no previous fine heterodyned data then ignore this IFO
+            if self.warning_code == KNOPE_WARNING_NO_SEGMENTS: # if there are no segments this time, and also no previous fine heterodyned data then ignore this IFO
               if len(hetfilescheck) == 0:
                 self.ifo.remove(ifo) # remove IFO for which no segments exist
                 if len(self.ifo) == 0:

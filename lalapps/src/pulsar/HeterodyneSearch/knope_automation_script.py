@@ -249,8 +249,8 @@ A configuration .ini file is required.
     # check if there is a rescue DAG, and if so run it, and wait
     rescuefile = prevdags[-1] + '.rescue'
     if os.path.basename(rescuefile+'%03d' % (Nrescues+1)) in os.listdir(os.path.dirname(prevdags[-1])):
-      # if more than 2 rescue DAGs have already been run then just abort as there's probably some problem
-      if Nrescues == 2:
+      # if 2 rescue DAGs have already been run then just abort as there's probably some problem
+      if Nrescues == 3:
         errmsg = "Error... rescue DAG has been run twice and there are still failures. Automation code is aborting. Fix the problem and then retry"
         print(errmsg, file=sys.stderr)
         remove_cron(cronid) # remove cron job
