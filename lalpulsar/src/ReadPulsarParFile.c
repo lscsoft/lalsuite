@@ -1004,6 +1004,7 @@ PulsarParameters *XLALReadTEMPOParFileNew( const CHAR *pulsarAndPath ){
   /* open file */
   if((fp = fopen(pulsarAndPath, "r")) == NULL){
     XLAL_PRINT_ERROR("Error... Cannot open .par file %s\n", pulsarAndPath);
+    XLALFree( par );
     XLAL_ERROR_NULL( XLAL_EIO );
   }
 
@@ -1047,6 +1048,8 @@ PulsarParameters *XLALReadTEMPOParFileNew( const CHAR *pulsarAndPath ){
       }
       else{
         XLAL_PRINT_ERROR("Error... KIN not set in .par file %s\n", pulsarAndPath);
+        PulsarClearParams( par );
+        XLALFree( par );
         XLAL_ERROR_NULL( XLAL_EIO );
       }
     }
@@ -1185,7 +1188,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->pepochErr=0.0;
 
   output->startTime=0.0;
-  output->finishTime=1./0.;
+  output->finishTime=INFINITY;
 
   output->xpbdotErr=0.0;  /* (10^-12) */
 
