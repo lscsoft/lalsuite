@@ -172,7 +172,7 @@ void read_pulsar_data( LALInferenceRunState *runState ){
   parFile = ppt->value;
 
   /* get the pulsar parameters to give a value of f */
-  pulsar = XLALReadTEMPOParFileNew( parFile );
+  pulsar = XLALReadTEMPOParFile( parFile );
 
   /* get the detectors - must */
   ppt = LALInferenceGetProcParamVal( commandLine, "--detectors" );
@@ -984,7 +984,7 @@ void setup_from_par_file( LALInferenceRunState *runState )
   CHAR *parFile = ppt->value;
 
   /* get the pulsar parameters */
-  pulsar = XLALReadTEMPOParFileNew( parFile );
+  pulsar = XLALReadTEMPOParFile( parFile );
 
   REAL8 ra = 0.;
   if ( PulsarCheckParam( pulsar, "RA" ) ) { ra = PulsarGetREAL8Param( pulsar, "RA" ); }

@@ -96,7 +96,7 @@ int main(int argc, char *argv[]){
 
   npoints = floor((REAL8)inputs.timespan/(REAL8)inputs.deltat);
 
-  params = XLALReadTEMPOParFileNew( inputs.parfile );
+  params = XLALReadTEMPOParFile( inputs.parfile );
 
   /* set up ephemerises */
   det = *XLALGetSiteInfo( inputs.det ); /* just set site as LHO */

@@ -106,7 +106,7 @@ int main(int argc, char *argv[]){
   input.filename = argv[5]; /* ephemeris file */
 
   /* read in Crab pulsar parameters used in heterodyning */
-  XLALReadTEMPOParFile(&pulsarParams, psrInput);
+  XLALReadTEMPOParFileOrig(&pulsarParams, psrInput);
 
   /* allocate memory for crab ephemeris */
   crabEphemerisData.f1 = NULL;

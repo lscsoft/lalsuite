@@ -346,7 +346,7 @@ void setup_lookup_tables( LALInferenceRunState *runState, LALSource *source ){
  * from a .par file and passed in via the \c pars variable will be set.
  *
  * \param ini [in] A pointer to a \c LALInferenceVariables type that will be filled in with pulsar parameters
- * \param pars [in] A \c BinaryPulsarParams type containing pulsar parameters read in from a TEMPO-style .par file
+ * \param pars [in] A \c PulsarParameters type containing pulsar parameters read in from a TEMPO-style .par file
  */
 void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars ){
   /* amplitude model parameters for l=m=2 harmonic emission */

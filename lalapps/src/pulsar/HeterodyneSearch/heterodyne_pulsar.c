@@ -105,7 +105,7 @@ int main(int argc, char *argv[]){
   hetParams.heterodyneflag = inputParams.heterodyneflag; /* set type of heterodyne */
 
   /* read in pulsar data */
-  hetParams.het = XLALReadTEMPOParFileNew( inputParams.paramfile );
+  hetParams.het = XLALReadTEMPOParFile( inputParams.paramfile );
   hetParams.hetUpdate = NULL;
 
   /* set pulsar name - take from par file if available, or if not get from command line args */
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]){
   if(verbose){  fprintf(stderr, "I've set the detector location for %s.\n", inputParams.ifo); }
 
   if(inputParams.heterodyneflag == 2 || inputParams.heterodyneflag == 4){ /* if updating parameters read in updated par file */
-    hetParams.hetUpdate = XLALReadTEMPOParFileNew( inputParams.paramfileupdate );
+    hetParams.hetUpdate = XLALReadTEMPOParFile( inputParams.paramfileupdate );
 
     /* if there is an epoch given manually (i.e. not from the pulsar parameter
        file) then set it here and overwrite any other value */
