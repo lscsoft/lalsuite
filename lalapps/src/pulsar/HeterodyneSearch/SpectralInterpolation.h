@@ -1,10 +1,10 @@
+#ifndef _SPLINTER_PULSAR_H
+#define _SPLINTER_PULSAR_H
+
 #define _GNU_SOURCE   /* for alphasort() and scandir() */
 
 #include <sys/time.h>
-#include <lalapps.h>
-#include <lal/LALConstants.h>
 
-#include <lal/BinaryPulsarTiming.h>
 #include <complex.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,12 +17,13 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <dirent.h>
-#include <lal/BinaryPulsarTiming.h>
 #include <gsl/gsl_sort_double.h>
 #include <gsl/gsl_statistics_double.h>
+#include <gsl/gsl_sf_gamma.h>
 
 /* LAL headers */
+#include <lal/BinaryPulsarTiming.h>
+#include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALDatatypes.h>
@@ -32,7 +33,6 @@
 #include <lal/SkyCoordinates.h>
 #include <lal/DetectorSite.h>
 #include <lal/DetResponse.h>
-#include <lal/BandPassTimeSeries.h>
 #include <lal/FrequencySeries.h>
 #include <lal/SFTutils.h>
 #include <lal/LALString.h>
@@ -42,10 +42,6 @@
 #include <lal/SFTfileIO.h>
 /* lalapps header */
 #include <lalapps.h>
-
-/* frame headers */
-#include <FrIO.h>
-#include <lal/LALFrameL.h>
 
 /* Usage format string. */
  #define USAGE \
@@ -72,9 +68,9 @@
                              End are the start and end of the segments in the seg-file. \n"\
 " \nThe following are not required but are set to defaults if not specified:\n\n"\
 " --starttime (-s)         start time of the analysis \n\
-                             (default 0 - i.e. whenever parfile(s) are applicable)\n"\
+                             (default 0 - i.e. from the start of the available data/segment list)\n"\
 " --finishtime (-f)        finish time of the analysis \n\
-                             (default Infinity - i.e. whenever parfile(s) are applicable)\n"\
+                             (default Infinity - i.e. to the end of the available data/segment list)\n"\
 " --psr-name (-N)          set the name of the pulsar for the output file.\n\
                              This option will overwrite any name set in the parfile.\n\
                              The name is only set if the param-file option is used.\n\
@@ -102,12 +98,13 @@
 #define XLAL_FRESNEL_FPMIN 1.0e-30
 #define XLAL_FRESNEL_XMIN 1.5
 
+#define FILENAME_MAXLEN 1024
 
 typedef struct tagInputParams{
   CHAR ifo[3];
 
-  CHAR pulsarDir[256];
-  CHAR paramfile[256];
+  CHAR pulsarDir[FILENAME_MAXLEN];
+  CHAR paramfile[FILENAME_MAXLEN];
 
   CHAR PSRname [12];
   UINT4 nameset;
@@ -118,21 +115,21 @@ typedef struct tagInputParams{
   REAL8 stddevthresh;
   REAL8 minSegLength;
 
-  CHAR ephemdir[256];
+  CHAR ephemdir[FILENAME_MAXLEN];
 
-  CHAR filePattern[256];
+  CHAR filePattern[FILENAME_MAXLEN];
 
-  CHAR outputdir[256];
-  CHAR segfile[256];
+  CHAR outputdir[FILENAME_MAXLEN];
+  CHAR segfile[FILENAME_MAXLEN];
 
   REAL8 freqfactor;
   REAL8 bandwidth;
 
   UINT4 geocentre;
   UINT4 baryFlag;
-  UINT4	Timing;
-  UINT4	cacheDir;
-  UINT4	cacheFile;
+  UINT4 Timing;
+  UINT4 cacheDir;
+  UINT4 cacheFile;
 
   REAL8 startF;
   REAL8 endF;
@@ -145,14 +142,12 @@ typedef struct tagInputParams{
 typedef struct tagSplInterParams{
   LALDetector detector;
 
-  CHAR timefile[256];
-  CHAR earthfile[256];
-  CHAR sunfile[256];
+  CHAR timefile[FILENAME_MAXLEN];
+  CHAR earthfile[FILENAME_MAXLEN];
+  CHAR sunfile[FILENAME_MAXLEN];
 }SplInterParams;
 
 void get_input_args(InputParams *inputParam, int argc, char *argv[]);
-
-INT4 get_segment_list(INT4Vector *start, INT4Vector *stop, REAL8 minDur, REAL8 startSegs, REAL8 endSegs, CHAR *seglistfile);
 
 INT4 remove_outliers_using_running_median_data(REAL8Vector *redata, REAL8Vector *imdata,  REAL8Vector *rermdata,
   REAL8Vector *imrmdata, REAL8Vector *times, REAL8 stddevthresh);
@@ -160,3 +155,5 @@ INT4 remove_outliers_using_running_median_data(REAL8Vector *redata, REAL8Vector 
 REAL8Vector *subtract_running_median( REAL8Vector *data, REAL8Vector *timeStamp , UINT4 npoints);
 
 INT4 XLALFresnel(REAL8 *C, REAL8 *S, REAL8 x);
+
+#endif /* _SPLINTER_PULSAR_H */
