@@ -114,7 +114,7 @@ int main( void ){
   fclose(fp);
 
   /* read in par file */
-  pars = XLALReadTEMPOParFileNew( PARFILE );
+  pars = XLALReadTEMPOParFile( PARFILE );
 
   /* check read-in parameters against originals */
   for ( i=0; i<NUMPARS; i++ ){

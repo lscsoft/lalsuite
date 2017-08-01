@@ -122,7 +122,7 @@ int main( int argc, char **argv ){
 
   /* count number of pulsars with valid frequencies, and read in parameters */
   for(h=0; h<numfiles; h++){
-    PulsarParameters *tmppar = XLALReadTEMPOParFileNew( parfiles->data[h] );
+    PulsarParameters *tmppar = XLALReadTEMPOParFile( parfiles->data[h] );
 
     /* check if par file was read in successfully */
     if ( !tmppar ){
@@ -166,7 +166,7 @@ int main( int argc, char **argv ){
     }
 
     // re-read in file
-    pulparams[numpulsars] = XLALReadTEMPOParFileNew( parfiles->data[h] );
+    pulparams[numpulsars] = XLALReadTEMPOParFile( parfiles->data[h] );
 
     /* get pulsar name */
     if ( inputParams.nameset )

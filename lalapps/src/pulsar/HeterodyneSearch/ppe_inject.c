@@ -91,7 +91,7 @@ void inject_signal( LALInferenceRunState *runState ){
     }
 
     /* read in injection parameter file */
-    injpars = XLALReadTEMPOParFileNew( injectfile );
+    injpars = XLALReadTEMPOParFile( injectfile );
     XLALFree( injectfile );
 
     /* check RA and DEC are set (if only RAJ and DECJ are given in the par file) */

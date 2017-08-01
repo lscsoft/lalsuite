@@ -138,11 +138,11 @@ int main(int argc, char *argv[]){
 
   npoints = inputs.timespan/inputs.deltat;
 
-  XLALReadTEMPOParFile( &params, inputs.parfile );
-  XLALReadTEMPOParFile( &deltaparams, inputs.parfile );
+  XLALReadTEMPOParFileOrig( &params, inputs.parfile );
+  XLALReadTEMPOParFileOrig( &deltaparams, inputs.parfile );
 
   if( strstr(inputs.parfile2, ".par") != NULL )
-    XLALReadTEMPOParFile( &params2, inputs.parfile2 );
+    XLALReadTEMPOParFileOrig( &params2, inputs.parfile2 );
 
   /* set up ephemerises */
   det = *XLALGetSiteInfo( inputs.det ); /* just set site as LHO */

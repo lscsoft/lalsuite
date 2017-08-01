@@ -603,8 +603,8 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   /* read in par file parameters if given */
    if (have_parfile)
      {
-       XLALReadTEMPOParFile( &pulparams, uvar->parfile);
-       XLAL_CHECK ( xlalErrno == XLAL_SUCCESS, XLAL_EFUNC, "XLALReadTEMPOParFile() failed for parfile = '%s', xlalErrno = %d\n", uvar->parfile, xlalErrno );
+       XLALReadTEMPOParFileOrig( &pulparams, uvar->parfile);
+       XLAL_CHECK ( xlalErrno == XLAL_SUCCESS, XLAL_EFUNC, "XLALReadTEMPOParFileOrig() failed for parfile = '%s', xlalErrno = %d\n", uvar->parfile, xlalErrno );
        XLAL_CHECK ( pulparams.f0 > 0, XLAL_EINVAL, "Invalid .par file values, need f0 > 0!\n" );
        XLAL_CHECK ( (pulparams.pepoch > 0) || (pulparams.posepoch > 0), XLAL_EINVAL, "Invalid .par file values, need PEPOCH or POSEPOCH!\n");
      }
@@ -1138,7 +1138,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
   /* ----- set "pulsar reference time", i.e. SSB-time at which pulsar params are defined ---------- */
   if (XLALUserVarWasSet (&uvar->parfile)) {
-    XLALGPSSetREAL8( &(uvar->refTime), pulparams.pepoch ); /*XLALReadTEMPOParFile converted pepoch to REAL8 */
+    XLALGPSSetREAL8( &(uvar->refTime), pulparams.pepoch ); /*XLALReadTEMPOParFileOrig converted pepoch to REAL8 */
     XLALGPSSetREAL8( &(cfg->pulsar.Doppler.refTime), pulparams.pepoch);
   }
   else if (XLALUserVarWasSet(&uvar->refTime))
