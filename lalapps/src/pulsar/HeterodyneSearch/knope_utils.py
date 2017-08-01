@@ -1735,7 +1735,7 @@ class knopeDAG(pipeline.CondorDAG):
       from sklearn import mixture
     except:
       print('Error... could not import scikit-learn.', file=sys.stderr)
-      self.errpr_code = -1
+      self.error_code = KNOPE_ERROR_GENERAL
       return None, None, None, None
 
     means = None
