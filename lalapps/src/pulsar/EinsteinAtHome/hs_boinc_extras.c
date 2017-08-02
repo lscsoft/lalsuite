@@ -726,7 +726,7 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
     /* boinc_resove() returned the same filename, so filename wasn't a softlink */
 
     strncpy(buf,filename,sizeof(buf));
-    strncat(buf,LINKED_EXT,sizeof(buf));
+    strncat(buf,LINKED_EXT,sizeof(buf)-1-strlen(buf));
     /* f**king BOINC's new symlink behavior returns no error if the link file doesn't,
        exist, so we need to check it manually */
     if((fp=fopen(buf,"r"))) {
@@ -1404,7 +1404,7 @@ static int worker (void) {
 	  n = current_config_file;
 	strcpy(&wu_result_file[rlen-1], myltoa(n, buf, 20));
 	*config_file_arg = config_files[current_config_file];
-	if (fp = boinc_fopen(wu_result_file,"r")) {
+	if ((fp = boinc_fopen(wu_result_file,"r"))) {
 	  fclose(fp);
 	  LogPrintf (LOG_NORMAL, "WARNING: Resultfile '%s' present - skipping subWU#%d\n", wu_result_file, current_config_file);
 	  current_config_file ++;
@@ -1797,7 +1797,7 @@ int main(int argc, char**argv) {
   set_boinc_options();
   boinc_init();
   int ret = worker();
-  if ( (ret == HS_BOINC_EXIT_MEM) ) {
+  if (ret == HS_BOINC_EXIT_MEM) {
     DeferExecution(); // calls boinc_temporary_exit() and ends the program
   }
   else {
