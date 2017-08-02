@@ -21,7 +21,7 @@ inference_progs = \
 	lalapps_pulsar_frequency_evolution
 endif
 endif
-bin_PROGRAMS = $(frame_progs) $(inference_progs) lalapps_CrabTNHeterodyne lalapps_ssbtodetector
+bin_PROGRAMS = $(frame_progs) $(inference_progs) lalapps_ssbtodetector
 
 lalapps_ssbtodetector_SOURCES = ssbtodetector.c
 
@@ -62,11 +62,6 @@ lalapps_pulsar_parameter_estimation_nested_SOURCES = \
 
 lalapps_create_pulsar_signal_frame_SOURCES = \
 	create_pulsar_signal_frame.c
-
-lalapps_CrabTNHeterodyne_SOURCES = \
-	CrabTNHeterodyne.c \
-	HeterodyneCrabPulsar.c \
-	HeterodyneCrabPulsar.h
 
 lalapps_SplInter_SOURCES = \
 	SpectralInterpolation.c \
