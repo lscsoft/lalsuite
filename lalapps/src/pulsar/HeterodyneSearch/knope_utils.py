@@ -193,7 +193,6 @@ class knopeDAG(pipeline.CondorDAG):
 
       if self.engine not in ['heterodyne', 'splinter']:
         print("Warning... 'preprocessing_engine' value '%s' not recognised. Defaulting to 'heterodyne'." % (self.engine))
-      else:
         self.engine = 'heterodyne'
     else:
       self.engine = prevdag.engine
@@ -2024,8 +2023,8 @@ class knopeDAG(pipeline.CondorDAG):
 
         # check if generated data segment file contains any segments and not in autonomous mode
         if self.warning_code == KNOPE_WARNING_NO_SEGMENTS and not self.autonomous:
-          self.ifo.remove(ifo) # remove IFO for which no segments exist
-          if len(self.ifo) == 0:
+          self.ifos.remove(ifo) # remove IFO for which no segments exist
+          if len(self.ifos) == 0:
             print("Error... no segments were available for any required IFOs", file=sys.stderr)
             self.error_code = KNOPE_ERROR_NO_SEGMENTS
             return
@@ -2167,8 +2166,8 @@ class knopeDAG(pipeline.CondorDAG):
             self.processed_files[pname][ifo][freqfactor] = hetfilescheck
             if self.warning_code == KNOPE_WARNING_NO_SEGMENTS: # if there are no segments this time, and also no previous fine heterodyned data then ignore this IFO
               if len(hetfilescheck) == 0:
-                self.ifo.remove(ifo) # remove IFO for which no segments exist
-                if len(self.ifo) == 0:
+                self.ifos.remove(ifo) # remove IFO for which no segments exist
+                if len(self.ifos) == 0:
                   print("Error... no segments were available for any required IFOs", file=sys.stderr)
                   self.error_code = KNOPE_ERROR_NO_SEGMENTS
                   return
@@ -2237,9 +2236,13 @@ class knopeDAG(pipeline.CondorDAG):
     # create splinter nodes (one for unmodified pulsars and one for modified pulsars)
     self.splinter_nodes_modified = {}
     self.splinter_nodes_unmodified = {}
+    self.splinter_modified_pulsar_dir = None
+    self.splinter_unmodified_pulsar_dir = None
 
     # set location for SplInter data to eventually be copied to
     self.splinter_data_location = {}
+
+    self.processed_files = {} # dictionary of processed (splinter) files
 
     # check for whether there are any modified or unmodified pulsars
     modpars = False
@@ -2301,7 +2304,7 @@ class knopeDAG(pipeline.CondorDAG):
             self.splinter_data_location[pname][ifo] = {}
 
             # create directory for the output file to eventually moved into
-            psrdir = os.path.join(preprocessing_base_dir[ifo], pname)
+            psrdir = os.path.join(self.preprocessing_base_dir[ifo], pname)
             self.mkdirs(psrdir)
             if self.error_code != 0: return
 
@@ -2343,7 +2346,7 @@ class knopeDAG(pipeline.CondorDAG):
         if self.error_code != 0: return
 
         if self.warning_code == KNOPE_WARNING_NO_SEGMENTS:
-          self.ifo.remove(ifo) # remove current IFO from job
+          self.ifos.remove(ifo) # remove current IFO from job
           if len(self.ifos) == 0:
             print("Error... no segments could were available for any required IFOs", file=sys.stderr)
             self.error_code = KNOPE_ERROR_NO_SEGMENTS
@@ -2375,7 +2378,7 @@ class knopeDAG(pipeline.CondorDAG):
         if self.error_code != 0: return
 
         if self.warning_code == KNOPE_WARNING_NO_SEGMENTS:
-          self.ifo.remove(ifo) # remove current IFO from job
+          self.ifos.remove(ifo) # remove current IFO from job
           if len(self.ifos) == 0:
             print("Error... no segments were available for any required IFOs", file=sys.stderr)
             self.error_code = KNOPE_ERROR_NO_SEGMENTS
@@ -2411,11 +2414,12 @@ class knopeDAG(pipeline.CondorDAG):
 
             splnode.add_parent(self.datafind_nodes[ifo])
 
-            splnode.set_output_dir(splinterdir)     # output directory
-            splnode.set_param_dir(splpardirs[idx])  # pulsar parameter file directory
-            splnode.set_seg_list(splsegfiles[idx])  # science segment list file
-            splnode.set_freq_factor(freqfactor)     # frequency scaling factor
-            splnode.set_ifo(ifo)                    # detector
+            splnode.set_sft_lalcache(self.cache_files[ifo]) # SFT cache file
+            splnode.set_output_dir(splinterdir)             # output directory
+            splnode.set_param_dir(splpardirs[idx])          # pulsar parameter file directory
+            splnode.set_seg_list(splsegfiles[idx])          # science segment list file
+            splnode.set_freq_factor(freqfactor)             # frequency scaling factor
+            splnode.set_ifo(ifo)                            # detector
 
             splnode.set_bandwidth(self.splinter_bandwidth)            # bandwidth of data to use
             splnode.set_min_seg_length(self.splinter_min_seg_length)  # minimum length of usable science segments
@@ -2496,6 +2500,7 @@ class knopeDAG(pipeline.CondorDAG):
           subloc = None
           prevfile = None
           newfinefile = None
+          catfiles = None
 
           # check for more than one file
           if self.engine == 'heterodyne': # do this for heterodyned data
@@ -2543,30 +2548,29 @@ class knopeDAG(pipeline.CondorDAG):
                 try:
                   startname = os.path.basename(prevfile).split('-')[1]
                 except:
-                  print("Warning... could not get previous start time from Splinter file name '%s'. Using start time from this run: '%d'" % (prevfile, self.starttime[ifo]))
-                  startname = str(self.starttime[ifo])
+                  print("Warning... could not get previous start time from Splinter file name '%s'. Using start time from this run: '%d'" % (prevfile, self.starttime[pifo]))
+                  startname = str(self.starttime[pifo])
 
                 catfiles = [os.path.join(self.splinter_data_location[pitem][pifo][ff], prevfile[0]), finefiles]
               else:
-                startname = str(self.starttime[ifo])
+                startname = str(self.starttime[pifo])
               try: # splinter node may not exist if (in autonomous mode) no new segments were found, but previous data did exist
                 parent = self.splinter_nodes_unmodified[pifo][ff]
               except:
                 parent = None
 
-            endname = str(self.endtime[ifo])
+            endname = str(self.endtime[pifo])
 
             # create new file name containing analysis time stamps
-            newfinefile = os.path.join(self.splinter_data_location[pitem][pifo][ff], '%s-%s-%s.txt' % ((os.path.basename(finefiles)).strip('.gz'), startname, self.endname))
+            newfinefile = os.path.join(self.splinter_data_location[pitem][pifo][ff], '%s-%s-%s.txt' % ((os.path.basename(finefiles[0])).strip('.gz'), startname, endname))
             if self.splinter_gzip_output:
               newfinefile = newfinefile + '.gz'
 
             # create new concat job for each case (each one uses it's own sub file)
             subloc = os.path.join(self.splinter_data_location[pitem][pifo][ff], 'concat.sub')
-            finefiles = [finefiles] # make into a list (for rmnode below)
 
           # create new concat job for each case (each one uses it's own sub file)
-          if subloc is not None:
+          if subloc is not None and catfiles is not None:
             concatjob = concatJob(subfile=subloc, output=newfinefile, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir)
             concatnode = concatNode(concatjob)
             concatnode.set_files(catfiles)
@@ -2587,7 +2591,8 @@ class knopeDAG(pipeline.CondorDAG):
               finefiles.append(os.path.join(self.splinter_data_location[pitem][pifo][ff], prevfile[0]))
 
             rmnode.set_files(finefiles)
-            rmnode.add_parent(concatnode) # only do after concatenation
+            if subloc is not None and catfiles is not None:
+              rmnode.add_parent(concatnode) # only do after concatenation
             self.add_node(rmnode)
 
 
@@ -2703,6 +2708,7 @@ class knopeDAG(pipeline.CondorDAG):
     # Create data find job
     self.cache_files = {}
     self.datafind_job = None
+
     if self.config.has_option('condor', 'datafind'):
       # check if a dictionary of ready made cache files has been given
       datafind = self.get_config_option('condor', 'datafind', cftype='dict', allownone=True)
@@ -2762,10 +2768,10 @@ class knopeDAG(pipeline.CondorDAG):
         self.datafind_job = pipeline.LSCDataFindJob(self.preprocessing_base_dir.values()[0], self.log_dir, self.config)
 
     # add additional options to data find job
-    if self.datafind_job != None:
+    if self.datafind_job is not None:
       self.datafind_job.add_condor_cmd('accounting_group', self.accounting_group)
 
-      if self.accounting_group_user != None:
+      if self.accounting_group_user is not None:
         self.datafind_job.add_condor_cmd('accounting_group_user', self.accounting_group_user)
 
       # reset the sub file location
@@ -2830,27 +2836,26 @@ class knopeDAG(pipeline.CondorDAG):
     # check if segment file(s) given (as a dictionary)
     segfiles = self.get_config_option('segmentfind', 'segfind', cftype='dict', allownone=True)
     if segfiles is not None: # check if it is a dictionary
-      if segfiles is not None:
-        if ifo not in segfiles:
-          print("Error... No segment file given for '%s'" % ifo)
+      if ifo not in segfiles:
+        print("Error... No segment file given for '%s'" % ifo)
+        self.error_code = KNOPE_ERROR_GENERAL
+        return
+      else:
+        segfile = segfiles[ifo]
+
+        # check segment file exists
+        if not os.path.isfile(segfile):
+          print("Error... segment file '%s' does not exist." % segfile)
           self.error_code = KNOPE_ERROR_GENERAL
           return
         else:
-          segfile = segfiles[ifo]
-
-          # check segment file exists
-          if not os.path.isfile(segfile):
-            print("Error... segment file '%s' does not exist." % segfile)
+          # copy segment file to the 'outfile' location
+          try:
+            shutil.copyfile(segfile, outfile)
+          except:
+            print("Error... could not copy segment file to location of '%s'." % outfile)
             self.error_code = KNOPE_ERROR_GENERAL
-            return
-          else:
-            # copy segment file to the 'outfile' location
-            try:
-              shutil.copyfile(segfile, outfile)
-            except:
-              print("Error... could not copy segment file to location of '%s'." % outfile)
-              self.error_code = KNOPE_ERROR_GENERAL
-            return # exit function
+          return # exit function
 
     # otherwise try and get the segment list
     segfind = self.get_config_option('segmentfind', 'segfind', default='ligolw_segment_query_dqsegdb')
@@ -3209,6 +3214,7 @@ class splinterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__seg_list = None
     self.__sft_cache = None
     self.__sft_loc = None
+    self.__sft_lalcache = None
     self.__output_dir = None
     self.__stddev_thresh = None
     self.__bandwidth = None
@@ -3231,6 +3237,11 @@ class splinterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set file containing list of SFTs
     self.add_var_opt('sft-cache', f)
     self.__sft_cache = f
+
+  def set_sft_lalcache(self, f):
+    # set file containing list of SFTs in LALCache format
+    self.add_var_opt('sft-lalcache', f)
+    self.__sft_lalcache = f
 
   def set_sft_loc(self, f):
     # set directory of files containing list of SFTs
@@ -3284,7 +3295,7 @@ class splinterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
   def set_stddev_thresh(self, f):
     # set standard deviation threshold at which to remove outliers
-    self.add_var_opt('stddev-thresh', f)
+    self.add_var_opt('stddevthresh', f)
     self.__stddev_thresh = f
 
   def set_gzip_output(self): # need to add this to Splinter
