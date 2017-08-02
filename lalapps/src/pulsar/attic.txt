@@ -367,3 +367,5 @@ git commit --amend
 # 2016-10-21 lalapps/src/pulsar/Hough/scripts/L1_freqbands.c
 # 2016-10-21 lalapps/src/pulsar/Hough/scripts/makeangles.c
 # 2016-10-21 lalapps/src/pulsar/Hough/scripts/skypatches.c
+# 2017-08-01 lalapps/src/pulsar/HeterodyneSearch/README
+# 2017-08-01 lalapps/src/pulsar/HeterodyneSearch/README.crab
