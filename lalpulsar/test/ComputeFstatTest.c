@@ -34,7 +34,7 @@
 // *available* Fstat methods against each other
 
 static int compareFstatResults ( const FstatResults *result1, const FstatResults *result2 );
-
+static int printFstatResults2File ( const FstatResults *results, const char * MethodName, const INT4 iSky, const INT4 if1dot, const INT4 iPeriod, FstatQuantities whatToCompute );
 // ---------- main ----------
 int
 main ( int argc, char *argv[] )
@@ -168,6 +168,7 @@ main ( int argc, char *argv[] )
       XLAL_CHECK ( (input_seg2[iMethod] = XLALCreateFstatInput ( catalog, minCoverFreq - 0.01, maxCoverFreq + 0.01, dFreq, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
     }
 
+
   FstatQuantities whatToCompute = (FSTATQ_2F | FSTATQ_FAFB);
   // ----- loop over all templates {sky, f1dot, period}
   for ( UINT4 iSky = 0; iSky < numSkyPoints; iSky ++ )
@@ -195,26 +196,7 @@ main ( int argc, char *argv[] )
 
                   if ( lalDebugLevel & LALINFOBIT )
                     {
-                      FILE *fp;
-                      char fname[1024]; XLAL_INIT_MEM ( fname );
-                      snprintf ( fname, sizeof(fname)-1, "twoF%s-iSky%02d-if1dot%02d-iPeriod%02d.dat", XLALGetFstatInputMethodName(input_seg1[iMethod]), iSky, if1dot, iPeriod );
-                      XLAL_CHECK ( (fp = fopen ( fname, "wb" )) != NULL, XLAL_EFUNC );
-                      for ( UINT4 k = 0; k < results_seg1[iMethod]->numFreqBins; k ++ )
-                        {
-                          REAL8 Freq0 = results_seg1[iMethod]->doppler.fkdot[0];
-                          REAL8 Freq_k = Freq0 + k * results_seg1[iMethod]->dFreq;
-                          if ( whatToCompute & FSTATQ_FAFB ) {
-                            fprintf ( fp, "%20.16g %10.4g   %10.4g %10.4g   %10.4g %10.4g\n",
-                                      Freq_k, results_seg1[iMethod]->twoF[k],
-                                      crealf(results_seg1[iMethod]->Fa[k]), cimagf(results_seg1[iMethod]->Fa[k]),
-                                      crealf(results_seg1[iMethod]->Fb[k]), cimagf(results_seg1[iMethod]->Fb[k])
-                                      );
-                          } else {
-                            fprintf ( fp, "%20.16g %10.4g\n",
-                                      Freq_k, results_seg1[iMethod]->twoF[k] );
-                          }
-                        } // for k < numFreqBins
-                      fclose(fp);
+                      printFstatResults2File ( results_seg1[iMethod], XLALGetFstatInputMethodName(input_seg1[iMethod]), iSky, if1dot, iPeriod, whatToCompute );
                     } // if info
 
                   // compare to first result
@@ -333,3 +315,30 @@ compareFstatResults ( const FstatResults *result1, const FstatResults *result2 )
   return XLAL_SUCCESS;
 
 } // compareFstatResults()
+
+static int
+printFstatResults2File ( const FstatResults *results, const char * MethodName, const INT4 iSky, const INT4 if1dot, const INT4 iPeriod, FstatQuantities whatToCompute )
+{
+  FILE *fp;
+  char fname[1024]; XLAL_INIT_MEM ( fname );
+  snprintf ( fname, sizeof(fname)-1, "twoF%s-iSky%02d-if1dot%02d-iPeriod%02d.dat", MethodName, iSky, if1dot, iPeriod );
+  XLAL_CHECK ( (fp = fopen ( fname, "wb" )) != NULL, XLAL_EFUNC );
+  for ( UINT4 k = 0; k < results->numFreqBins; k ++ )
+  {
+    REAL8 Freq0 = results->doppler.fkdot[0];
+    REAL8 Freq_k = Freq0 + k * results->dFreq;
+    if ( whatToCompute & FSTATQ_FAFB ) {
+      fprintf ( fp, "%20.16g %10.4g   %10.4g %10.4g   %10.4g %10.4g\n",
+                Freq_k, results->twoF[k],
+                crealf(results->Fa[k]), cimagf(results->Fa[k]),
+                crealf(results->Fb[k]), cimagf(results->Fb[k])
+                );
+    } else {
+      fprintf ( fp, "%20.16g %10.4g\n",
+                Freq_k, results->twoF[k] );
+    }
+  } // for k < numFreqBins
+  fclose(fp);
+
+  return XLAL_SUCCESS;
+} // printFstatResults2File()
