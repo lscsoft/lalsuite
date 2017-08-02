@@ -169,6 +169,7 @@ main ( int argc, char *argv[] )
     }
 
 
+
   FstatQuantities whatToCompute = (FSTATQ_2F | FSTATQ_FAFB);
   // ----- loop over all templates {sky, f1dot, period}
   for ( UINT4 iSky = 0; iSky < numSkyPoints; iSky ++ )
@@ -229,6 +230,53 @@ main ( int argc, char *argv[] )
 
     } // for iSky < numSkyPoints
 
+  // ----- test XLALFstatInputTimeslice()
+  // setup optional Fstat arguments
+  optionalArgs.FstatMethod = FMETHOD_DEMOD_BEST; // only use demod best
+  optionalArgs.prevInput = NULL;
+  // find overlap of all detectors
+  LIGOTimeGPS startTime_slice  = multiTimestamps->data[0]->data[0];
+  LIGOTimeGPS endTime_slice  = multiTimestamps->data[0]->data[multiTimestamps->data[0]->length-1];
+  for (UINT4 X=1; X < numDetectors; X++ )
+    {
+      if ( XLALGPSCmp ( &startTime_slice, &multiTimestamps->data[X]->data[0] ) == -1 )
+        {
+          startTime_slice = multiTimestamps->data[X]->data[0];
+        }
+      if ( XLALGPSCmp ( &endTime_slice, &multiTimestamps->data[X]->data[multiTimestamps->data[X]->length-1] ) == 1 )
+        {
+          endTime_slice = multiTimestamps->data[X]->data[multiTimestamps->data[X]->length-1];
+        }
+    } // for X < numDetectors
+
+  // ----- prepare input data with XLALFstatInputTimeslice and XLALSFTCatalogTimeslice
+  FstatResults *results_input_slice = NULL , *results_sft_slice = NULL;
+  FstatInput *input_sft_slice = NULL, *input_slice = NULL;
+  // slice catalog and create FstatInput structure
+  SFTCatalog *catalog_slice = NULL;
+  XLAL_CHECK ( ( catalog_slice = XLALCalloc(1, sizeof(*catalog) ) ) != NULL ,XLAL_ENOMEM );
+  XLAL_CHECK ( ( XLALSFTCatalogTimeslice ( catalog_slice, catalog, &startTime_slice, &endTime_slice ) ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( ( input_sft_slice = XLALCreateFstatInput ( catalog_slice, minCoverFreq, maxCoverFreq, dFreq, ephem, &optionalArgs ) ) != NULL, XLAL_EFUNC );
+  // generate a timeslice of the FstatInput structure from previous test
+  XLAL_CHECK ( ( XLALFstatInputTimeslice ( &input_slice, input_seg1[FMETHOD_DEMOD_BEST] , &startTime_slice, &endTime_slice ) ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Compute Fstatistic for both
+  XLAL_CHECK ( XLALComputeFstat ( &results_sft_slice, input_sft_slice, &Doppler, numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALComputeFstat ( &results_input_slice, input_slice, &Doppler, numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  if ( lalDebugLevel & LALINFOBIT )
+    {
+      printFstatResults2File ( results_input_slice, "FstatInputTimeslice", numSkyPoints, numf1dotPoints, numPeriodPoints, whatToCompute );
+      printFstatResults2File ( results_sft_slice, "SFTCatalogTimeslice", numSkyPoints, numf1dotPoints, numPeriodPoints, whatToCompute );
+    } // if info
+
+  XLALPrintInfo ( "Comparing results between SFTCatalogTimeslice and FstatInputTimeslice\n" );
+  if ( compareFstatResults ( results_sft_slice, results_input_slice ) != XLAL_SUCCESS )
+    {
+      XLALPrintError ( "Comparison between SFTCatalogTimeslice and FstatInputTimeslice failed\n" );
+      XLAL_ERROR ( XLAL_EFUNC );
+    }
+
   // free remaining memory
   for ( UINT4 iMethod=FMETHOD_START; iMethod < FMETHOD_END; iMethod ++ )
     {
@@ -240,6 +288,12 @@ main ( int argc, char *argv[] )
       XLALDestroyFstatResults ( results_seg1[iMethod] );
       XLALDestroyFstatResults ( results_seg2[iMethod] );
     } // for i < FMETHOD_END
+
+  XLALDestroyFstatInput ( input_slice );
+  XLALDestroyFstatInput ( input_sft_slice );
+  XLALDestroyFstatResults ( results_input_slice );
+  XLALDestroyFstatResults ( results_sft_slice );
+  XLALFree( catalog_slice );
 
   XLALDestroyPulsarParamsVector ( injectSources );
   XLALDestroySFTCatalog ( catalog );
