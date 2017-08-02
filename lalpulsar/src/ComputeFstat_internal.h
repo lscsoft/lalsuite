@@ -45,7 +45,7 @@ typedef struct {
   REAL8 dFreq;						// Requested spacing of \f$\mathcal{F}\f$-statistic frequency bins.
   MultiLALDetector detectors;				// List of detectors
   MultiLIGOTimeGPSVector *multiTimestamps;		// Multi-detector list of SFT timestamps
-  MultiNoiseWeights *multiNoiseWeights;			// Multi-detector noise weights
+  MultiNoiseWeights *multiNoiseWeights;                 // Multi-detector noise weights: stored unnormalized (divide by Sinv_Tsft to get normalized version)
   MultiDetectorStateSeries *multiDetectorStates;	// Multi-detector state series
   const EphemerisData *ephemerides;			// Ephemerides for the time-span of the SFTs
   SSBprecision SSBprec;					// Barycentric transformation precision

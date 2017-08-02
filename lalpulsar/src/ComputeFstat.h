@@ -347,7 +347,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog, const REAL8 minCoverFreq, c
 const CHAR *XLALGetFstatInputMethodName ( const FstatInput* input );
 const MultiLALDetector* XLALGetFstatInputDetectors ( const FstatInput* input );
 const MultiLIGOTimeGPSVector* XLALGetFstatInputTimestamps ( const FstatInput* input );
-const MultiNoiseWeights* XLALGetFstatInputNoiseWeights ( const FstatInput* input );
+MultiNoiseWeights* XLALGetFstatInputNoiseWeights ( const FstatInput* input );
 const MultiDetectorStateSeries* XLALGetFstatInputDetectorStates ( const FstatInput* input );
 int  XLALExtractResampledTimeseries ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, const FstatInput *input );
 int XLALGetFstatTiming ( const FstatInput* input, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );

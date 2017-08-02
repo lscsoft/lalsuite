@@ -31,6 +31,7 @@
 #include <lal/LALSIMD.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/ExtrapolatePulsarSpins.h>
+#include <lal/VectorMath.h>
 
 // ---------- Internal struct definitions ---------- //
 
@@ -454,6 +455,14 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   // Calculate SFT noise weights from PSD
   XLAL_CHECK_NULL ( (common->multiNoiseWeights = XLALComputeMultiNoiseWeights ( runningMedian, optArgs.runningMedianWindow, 0 )) != NULL, XLAL_EFUNC );
 
+  // for use within this modul: remove the normalization from the noise-weights: the normalisation factor is saved separately
+  // in the struct, and this allows us to use and extract subsets of the noise-weights without having to re-normalize them
+  for ( UINT4 X = 0; X < common->detectors.length; ++X )
+    {
+      XLAL_CHECK_NULL ( XLALVectorScaleREAL8 ( common->multiNoiseWeights->data[X]->data, common->multiNoiseWeights->Sinv_Tsft, common->multiNoiseWeights->data[X]->data, common->multiNoiseWeights->data[X]->length) == XLAL_SUCCESS, XLAL_EFUNC);
+    }
+  common->multiNoiseWeights->isNotNormalized = (1 == 1);
+
   // at this point we're done with running-median noise estimation and can 'trim' the SFTs back to
   // the width actually required by the Fstat-methods *methods*.
   // NOTE: this is especially relevant for resampling, where the frequency-band determines the sampling
@@ -529,15 +538,33 @@ XLALGetFstatInputTimestamps ( const FstatInput* input   ///< [in] \c FstatInput 
 
 ///
 /// Returns the multi-detector noise weights stored in a \c FstatInput structure.
+/// Note: the returned object is allocated here and needs to be free'ed by caller.
 ///
-const MultiNoiseWeights*
+MultiNoiseWeights*
 XLALGetFstatInputNoiseWeights ( const FstatInput* input     ///< [in] \c FstatInput structure.
                                 )
 {
   // Check input
   XLAL_CHECK_NULL ( input != NULL, XLAL_EINVAL );
 
-  return input->common.multiNoiseWeights;
+  // copy and rescale data to a new allocated MultiNoiseWeights structure
+  UINT4 numIFOs = input->common.multiNoiseWeights->length;
+  MultiNoiseWeights *ret = NULL;
+  XLAL_CHECK_NULL ( ( ret = XLALCalloc(1, sizeof(*ret) ) ) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL ( ( ret->data = XLALCalloc ( numIFOs, sizeof(ret->data[0]) ) ) != NULL, XLAL_ENOMEM );
+  ret->length = numIFOs;
+  ret->Sinv_Tsft = input->common.multiNoiseWeights->Sinv_Tsft;
+  REAL8 ooSinv_Tsft = 1.0 / input->common.multiNoiseWeights->Sinv_Tsft;
+  for ( UINT4 X = 0; X < numIFOs; X++ )
+    {
+      UINT4 length = input->common.multiNoiseWeights->data[X]->length;
+      XLAL_CHECK_NULL ( ( ret->data[X] = XLALCreateREAL8Vector ( length ) ) != NULL, XLAL_EFUNC );
+      // ComputeFstat stores *un-normalized* weights internally, so re-normalize them for returning them
+      XLAL_CHECK_NULL ( input->common.multiNoiseWeights->isNotNormalized, XLAL_EERR, "BUG: noise weights stored in FstatInput must be unnormalized!\n" );
+      XLAL_CHECK_NULL ( XLALVectorScaleREAL8 ( ret->data[X]->data, ooSinv_Tsft, input->common.multiNoiseWeights->data[X]->data, length) == XLAL_SUCCESS, XLAL_EFUNC);
+    }
+
+  return ret;
 
 } // XLALGetFstatInputNoiseWeights()
 
