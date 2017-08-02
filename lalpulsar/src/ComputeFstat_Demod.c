@@ -467,3 +467,87 @@ XLALGetFstatTiming_Demod ( const void *method_data, FstatTimingGeneric *timingGe
 
   return XLAL_SUCCESS;
 } // XLALGetFstatTiming_Demod()
+
+// Generates an FstatInput Timeslice based on minStartGPS and maxStartGPS according to XLALCWGPSinRange().
+void *
+XLALFstatInputTimeslice_Demod ( const void *method_data,
+                                const UINT4 iStart[PULSAR_MAX_DETECTORS],
+                                const UINT4 iEnd[PULSAR_MAX_DETECTORS]
+                                )
+{
+  XLAL_CHECK_NULL ( method_data != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( iStart != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( iEnd != NULL, XLAL_EINVAL );
+
+  const DemodMethodData *demod_input = (const DemodMethodData *)method_data;
+
+  // allocate memory and copy the input method_data struct
+  DemodMethodData *demod_slice;
+  XLAL_CHECK_NULL ( ( demod_slice = XLALCalloc ( 1, sizeof(*demod_input) ) ) != NULL, XLAL_ENOMEM );
+  memcpy ( demod_slice, demod_input, sizeof(*demod_input) );
+
+  UINT4 numIFOs = demod_input->multiSFTs->length;
+
+  // prepare MultiSFTs struct
+  MultiSFTVector *multiSFTs;
+  XLAL_CHECK_NULL ( ( multiSFTs = XLALCalloc( 1, sizeof(*multiSFTs) ) ) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL ( ( multiSFTs->data = XLALCalloc( numIFOs, sizeof(*multiSFTs->data) ) ) != NULL, XLAL_ENOMEM );
+  multiSFTs->length = numIFOs;
+
+  // loop over all detectors
+  for ( UINT4 X = 0; X < numIFOs; X ++ )
+    {
+      XLAL_CHECK_NULL ( ( multiSFTs->data[X] = XLALCalloc ( 1, sizeof(*multiSFTs->data[X]) ) ) !=NULL, XLAL_EFUNC );
+
+      if ( iStart[X] > iEnd[X] ) {
+        continue; 	// empty slice
+      }
+      UINT4 sliceLength =  iEnd[X] - iStart[X] + 1; // guaranteed >= 1
+      multiSFTs->data[X]->length = sliceLength;
+      multiSFTs->data[X]->data   = &(demod_input->multiSFTs->data[X]->data[iStart[X]]);
+
+    } // for loop over all detectors
+
+  demod_slice->multiSFTs = multiSFTs;
+
+  // empty all buffering quantities
+  demod_slice->prevAlpha = 0;
+  demod_slice->prevDelta = 0;
+  XLAL_INIT_MEM(demod_slice->prevRefTime);
+  demod_slice->prevMultiSSBtimes = NULL;
+  demod_slice->prevMultiAMcoef = NULL;
+
+  // reset timing counters
+  XLAL_INIT_MEM(demod_slice->timingGeneric);
+  XLAL_INIT_MEM(demod_slice->timingDemod);
+
+  return demod_slice;
+
+} // XLALFstatInputTimeslice_Demod()
+
+///
+/// Free all memory not needed by the orginal FstatInput structure
+///
+void
+XLALDestroyFstatInputTimeslice_Demod ( void *method_data )
+{
+  if ( !method_data ) {
+    return;
+  }
+
+  DemodMethodData *demod = (DemodMethodData*) method_data;
+
+  XLALDestroyMultiSSBtimes  ( demod->prevMultiSSBtimes );
+  XLALDestroyMultiAMCoeffs  ( demod->prevMultiAMcoef );
+
+  for ( UINT4 X=0; X < demod->multiSFTs->length; X ++ ) {
+    XLALFree ( demod->multiSFTs->data[X] );
+  }
+
+  XLALFree ( demod->multiSFTs->data );
+  XLALFree ( demod->multiSFTs );
+  XLALFree ( demod );
+
+  return;
+
+} // XLALDestroyFstatInputTimeslice_Demod()

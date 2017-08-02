@@ -352,6 +352,7 @@ const MultiDetectorStateSeries* XLALGetFstatInputDetectorStates ( const FstatInp
 int  XLALExtractResampledTimeseries ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, const FstatInput *input );
 int XLALGetFstatTiming ( const FstatInput* input, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
 int XLALAppendFstatTiming2File ( const FstatInput* input, FILE *fp, BOOLEAN printHeader );
+int XLALFstatInputTimeslice ( FstatInput** slice, const FstatInput* input, const LIGOTimeGPS *minStartGPS, const LIGOTimeGPS *maxStartGPS);
 
 #ifdef SWIG // SWIG interface directives
 SWIGLAL(INOUT_STRUCTS(FstatResults**, Fstats));
