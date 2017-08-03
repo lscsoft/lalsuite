@@ -40,6 +40,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/XLALError.h>
 #include <lal/SFTfileIO.h>
+#include <lal/LALCache.h>
 /* lalapps header */
 #include <lalapps.h>
 
@@ -130,6 +131,7 @@ typedef struct tagInputParams{
   UINT4 Timing;
   UINT4 cacheDir;
   UINT4 cacheFile;
+  UINT4 lalcacheFile;
 
   REAL8 startF;
   REAL8 endF;

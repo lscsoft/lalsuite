@@ -301,6 +301,22 @@ int main( int argc, char **argv ){
 
   UINT4 TotalNSFTs = 0;
   REAL8 TotalInterTime = 0., TotalCatalogTime = 0., TotalLoadTime = 0.;
+
+  /* input a list of SFTs from a LALcache format file if provided */
+  LALCache *sftlalcache = NULL;
+  if ( inputParams.lalcacheFile && !inputParams.cacheFile && !inputParams.cacheDir ){
+    sftlalcache = XLALCacheImport( inputParams.filePattern );
+    if ( sftlalcache == NULL ){
+      XLALPrintError("Error... there's a problem loading the SFT LALCache file");
+      exit(1);
+    }
+    XLAL_CHECK( XLALCacheUniq(sftlalcache) == 0, XLAL_EFUNC, "Error... problem getting unique values from SFT LALCache file" );
+  }
+  else{
+    XLALPrintError("Error... must specify either --sft-cache, --sft-lalcache, or --sft-loc");
+    exit(1);
+  }
+
   /* --------------------------------------- */
   /* --- BIT THAT DOES THE INTERPOLATION --- */
   /* --------------------------------------- */
@@ -365,33 +381,58 @@ int main( int argc, char **argv ){
     if(inputParams.Timing) gettimeofday(&timeCatalogStart, NULL);
 
     /* Set up SFT cache filename and cache opening string */
-    CHAR cacheFile[FILENAME_MAXLEN], cacheFileCheck[FILENAME_MAXLEN];
-    if(inputParams.cacheDir){
-      sprintf(cacheFile,"list:%s/Segment_%d-%d.sftcache",inputParams.filePattern,(INT4)ROUND(startt),(INT4)ROUND(endt));
-      sprintf(cacheFileCheck,"%s/Segment_%d-%d.sftcache",inputParams.filePattern,(INT4)ROUND(startt),(INT4)ROUND(endt));
+    if ( sftlalcache == NULL ){
+      CHAR cacheFile[FILENAME_MAXLEN], cacheFileCheck[FILENAME_MAXLEN];
+      if(inputParams.cacheDir){
+        sprintf(cacheFile,"list:%s/Segment_%d-%d.sftcache",inputParams.filePattern,(INT4)ROUND(startt),(INT4)ROUND(endt));
+        sprintf(cacheFileCheck,"%s/Segment_%d-%d.sftcache",inputParams.filePattern,(INT4)ROUND(startt),(INT4)ROUND(endt));
+      }
+      else{
+        sprintf(cacheFile,"%s",inputParams.filePattern);
+        CHAR *rmlist=inputParams.filePattern;
+        rmlist+=5;
+        sprintf(cacheFileCheck,"%s",rmlist);
+      }
+
+      /* Check SFT cache file exists and is not empty*/
+      struct stat fileStat;
+      if(stat(cacheFileCheck,&fileStat) < 0){
+        segcount++;
+        fprintf(stderr," SFT cache file %s does not exist.\n", cacheFileCheck);
+        continue;
+      }
+
+      if(fileStat.st_size==0){
+        segcount++;
+        fprintf(stderr," SFT cache file %s is empty.\n", cacheFileCheck);
+        continue;
+      }
+
+      catalog = XLALSFTdataFind(cacheFile, &constraints);
     }
     else{
-      sprintf(cacheFile,"%s",inputParams.filePattern);
-      CHAR *rmlist=inputParams.filePattern;
-      rmlist+=5;
-      sprintf(cacheFileCheck,"%s",rmlist);
-    }
+      /* find required SFTs for the segment from the cache file and create a catalog */
+      CHAR *cacheFile = NULL;
+      LALCache *sievesfts = XLALCacheDuplicate( sftlalcache ); /* duplicate of full cache that can be sieved */
+      XLAL_CHECK( XLALCacheSieve(sievesfts, (INT4)startt, (INT4)endt, NULL, NULL, NULL) == 0, XLAL_EFUNC, "Warning... problem sieving SFTs");
 
-    /* Check SFT cache file exists and is not empty*/
-    struct stat fileStat;
-    if(stat(cacheFileCheck,&fileStat) < 0){
-      segcount++;
-      fprintf(stderr," SFT cache file %s does not exist.\n", cacheFileCheck);
-      continue;
-    }
+      if ( sievesfts->length == 0 ){
+        segcount++;
+        fprintf(stderr," no SFTs for this period.\n");
+        continue;
+      }
 
-    if(fileStat.st_size==0){
-      segcount++;
-      fprintf(stderr," SFT cache file %s is empty.\n", cacheFileCheck);
-      continue;
-    }
+      /* make cache into a ; separated list of file */
+      for ( h=0; h < sievesfts->length; h++ ){
+        cacheFile = XLALStringAppend(cacheFile, sievesfts->list[h].url);
+        if ( h < sievesfts->length-1 ){ cacheFile = XLALStringAppend(cacheFile, ";"); }
+      }
 
-    catalog = XLALSFTdataFind(cacheFile, &constraints);
+      catalog = XLALSFTdataFind(cacheFile, &constraints);
+
+      XLALFree( cacheFile );
+      XLALDestroyCache( sievesfts );
+    }
 
     if(inputParams.Timing){
       gettimeofday(&timeCatalogEnd, NULL);
@@ -986,6 +1027,8 @@ int main( int argc, char **argv ){
 
   XLALSegListFree( seglist );
 
+  if ( sftlalcache != NULL ){ XLALDestroyCache( sftlalcache ); } // destroy lalcache of SFTs
+
   REAL8 tPre =0. , tPul =0.;
   if(inputParams.Timing){
     tPre  = (REAL8)timePreEnd.tv_usec*1.e-6 + (REAL8)timePreEnd.tv_sec - (REAL8)timePreStart.tv_usec*1.e-6 - (REAL8)timePreStart.tv_sec;
@@ -1156,6 +1199,7 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "help",                     no_argument,        0, 'h' },
     { "ifo",                      required_argument,  0, 'i' },
     { "sft-cache",                required_argument,  0, 'F' },
+    { "sft-lalcache",             required_argument,  0, 'C' },
     { "sft-loc",                  required_argument,  0, 'L' },
     { "param-dir",                required_argument,  0, 'd' },
     { "param-file",               required_argument,  0, 'P' },
@@ -1177,7 +1221,7 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { 0, 0, 0, 0 }
   };
 
-  char args[] = "hi:F:L:d:P:N:o:e:l:S:E:m:b:M:s:f:T:ntgB";
+  char args[] = "hi:F:C:L:d:P:N:o:e:l:S:E:m:b:M:s:f:T:ntgB";
 
   /* set defaults */
   inputParams->freqfactor = 2.0;    /* default is to look for gws at twice the pulsar spin frequency */
@@ -1189,12 +1233,13 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
   inputParams->startF=0.;           /* in order to check if the start frequency is set*/
   inputParams->parfileflag=0.;      /* in order to check if the Parfile is set */
   inputParams->pardirflag=0.;       /* in order to check if the Parfile directory is set*/
-  inputParams->nameset=0.;          /* flag in order to check if pulsar name is set*/
+  inputParams->nameset=0;          /* flag in order to check if pulsar name is set*/
   inputParams->startTime = 0.;      /* Start time not set - use zero */
   inputParams->endTime = INFINITY;  /* end time not set - use infinity */
   inputParams->Timing=0.;           /* default not to output timing info to stderr */
-  inputParams->cacheDir=0.;         /* default is that directory flag is zero */
-  inputParams->cacheFile=0.;        /* default that file flag is zero */
+  inputParams->cacheDir=0;         /* default is that directory flag is zero */
+  inputParams->cacheFile=0;        /* default that file flag is zero */
+  inputParams->lalcacheFile=0;     /* default that that lalcache file flag is zero */
   inputParams->stddevthresh=0.;     /* default not to do outlier removal */
 
   /* get input arguments */
@@ -1251,6 +1296,11 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
         snprintf(inputParams->filePattern, sizeof(inputParams->filePattern), "%s",
           optarg);
         inputParams->cacheFile=1;
+        break;
+      case 'C': /* file path to lalcache file containing SFTs */
+        snprintf(inputParams->filePattern, sizeof(inputParams->filePattern), "%s",
+          optarg);
+        inputParams->lalcacheFile=1;
         break;
       case 'L': /* filepath to SFTcache directory */
         snprintf(inputParams->filePattern, sizeof(inputParams->filePattern), "%s",
