@@ -72,7 +72,7 @@ from git_version import version as __version__
 
 def sngl_burst___cmp__(self, other):
 	# compare self's peak time to the LIGOTimeGPS instance other
-	return cmp(self.peak_time, other.seconds) or cmp(self.peak_time_ns, other.nanoseconds)
+	return cmp(self.peak, other)
 
 
 lsctables.SnglBurst.__cmp__ = sngl_burst___cmp__
