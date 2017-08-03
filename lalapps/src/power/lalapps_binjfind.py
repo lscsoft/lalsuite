@@ -148,7 +148,7 @@ for n, filename in enumerate(filenames):
 	if options.verbose:
 		print >>sys.stderr, "%d/%d:" % (n + 1, len(filenames)),
 	xmldoc = utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw.LIGOLWContentHandler)
-	binjfind.table.InterningRowBuilder.strings.clear()
+	binjfind.lsctables.table.InterningRowBuilder.strings.clear()
 
 	#
 	# have we already procesed it?
