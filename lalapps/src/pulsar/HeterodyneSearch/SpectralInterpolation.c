@@ -424,7 +424,13 @@ int main( int argc, char **argv ){
 
       /* make cache into a ; separated list of file */
       for ( h=0; h < sievesfts->length; h++ ){
-        cacheFile = XLALStringAppend(cacheFile, sievesfts->list[h].url);
+        CHAR *sftptr = sievesfts->list[h].url;        
+
+        /* remove file://localhost if present (this confused XLALFindFiles) */
+        if (strncmp(sftptr, "file://localhost/", strlen("file://localhost/")) == 0) {
+          sftptr += strlen("file://localhost/") - 1;
+        }
+        cacheFile = XLALStringAppend(cacheFile, sftptr);
         if ( h < sievesfts->length-1 ){ cacheFile = XLALStringAppend(cacheFile, ";"); }
       }
 
