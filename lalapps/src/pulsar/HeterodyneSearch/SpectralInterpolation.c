@@ -311,7 +311,7 @@ int main( int argc, char **argv ){
     }
     XLAL_CHECK( XLALCacheUniq(sftlalcache) == 0, XLAL_EFUNC, "Error... problem getting unique values from SFT LALCache file" );
   }
-  else{
+  else if (!inputParams.cacheFile && !inputParams.cacheDir) {
     XLALPrintError("Error... must specify either --sft-cache, --sft-lalcache, or --sft-loc");
     exit(1);
   }
@@ -432,7 +432,7 @@ int main( int argc, char **argv ){
 
       /* make cache into a ; separated list of file */
       for ( h=0; h < sievesfts->length; h++ ){
-        CHAR *sftptr = sievesfts->list[h].url;        
+        CHAR *sftptr = sievesfts->list[h].url;
 
         /* remove file://localhost if present (this confused XLALFindFiles) */
         if (strncmp(sftptr, "file://localhost/", strlen("file://localhost/")) == 0) {
@@ -1067,11 +1067,10 @@ int main( int argc, char **argv ){
     for(h=0;h<numpulsars;h++){
 
       char BkFilename[FILENAME_MAXLEN];
-      CHAR *parName=NULL;
+
       /* -------- Set up file for output -------- */
       /* create filename */
-      parName = XLALStringDuplicate( PulsarGetStringParam( pulparams[h], "NAME") );
-      sprintf(BkFilename, "%s/SplInter_%s_%s",inputParams.outputdir ,parName,
+      sprintf(BkFilename, "%s/SplInter_%s_%s", inputParams.outputdir, PulsarGetStringParam( pulparams[h], "NAME"),
             splParams.detector.frDetector.prefix);
 
       FILE *BkFile=NULL;
@@ -1196,6 +1195,22 @@ int main( int argc, char **argv ){
     }
   }
 
+  if ( inputParams.gzip ){
+    /* gzip the output files */
+    for ( h = 0; h < numpulsars; h++ ){
+      CHAR BkFilename[FILENAME_MAXLEN];
+
+      /* -------- Set up file for output -------- */
+      /* create filename */
+      sprintf(BkFilename, "%s/SplInter_%s_%s", inputParams.outputdir, PulsarGetStringParam(pulparams[h], "NAME"),
+            splParams.detector.frDetector.prefix);
+
+      if ( XLALGzipTextFile(BkFilename) != XLAL_SUCCESS ){ // gzip it
+        XLALPrintError("Error... problem gzipping the output file.\n");
+      }
+    }
+  }
+
   for(h=0;h<numpulsars;h++){
     // free par files
     PulsarClearParams( pulparams[h] );
@@ -1238,10 +1253,11 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "output-timing",            no_argument,     NULL, 't' },
     { "geocentreFlag",            no_argument,     NULL, 'g' },
     { "baryFlag",                 no_argument,     NULL, 'B' },
+    { "gzip",                     no_argument,     NULL, 'G' },
     { 0, 0, 0, 0 }
   };
 
-  char args[] = "hi:F:C:L:d:P:N:o:e:l:S:E:m:b:M:Z:s:f:T:ntgB";
+  char args[] = "hi:F:C:L:d:P:N:o:e:l:S:E:m:b:M:Z:s:f:T:ntgBG";
 
   /* set defaults */
   inputParams->freqfactor = 2.0;        /* default is to look for gws at twice the pulsar spin frequency */
@@ -1262,6 +1278,7 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
   inputParams->cacheFile=0;             /* default that file flag is zero */
   inputParams->lalcacheFile=0;          /* default that that lalcache file flag is zero */
   inputParams->stddevthresh=0.;         /* default not to do outlier removal */
+  inputParams->gzip = 0;                /* default not to gzip the output files */
 
   /* get input arguments */
   while(1){
@@ -1356,6 +1373,9 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
         break;
       case 't': /* write timing values to stderr */
         inputParams->Timing = 1;
+        break;
+      case 'G': /* gzip the output files */
+        inputParams->gzip = 1;
         break;
       case '?':
         fprintf(stderr, "unknown error while parsing options\n" );

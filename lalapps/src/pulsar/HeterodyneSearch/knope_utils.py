@@ -420,7 +420,7 @@ class knopeDAG(pipeline.CondorDAG):
         fm.write(pitem['time'])
         fm.close()
 
-      # output ammended segment list files
+      # output amended segment list files
       for sfs in self.segment_file_update:
         p = sp.Popen("cat " + sfs[0] + " >> " + sfs[1], shell=True)
         p.communicate()
@@ -2332,6 +2332,8 @@ class knopeDAG(pipeline.CondorDAG):
 
               # the name of the file that will be output by lalapps_Splinter
               self.processed_files[pname][ifo][freqfactor] = [os.path.join(splinterdir, 'Splinter_%s_%s' % (pname, ifo))]
+              if self.splinter_gzip_output:
+                self.processed_files[pname][ifo][freqfactor][0] += '.gz' # add gz suffix for gzipped files
 
               # the location to move that file to
               self.mkdirs(ffdir)
@@ -2434,6 +2436,8 @@ class knopeDAG(pipeline.CondorDAG):
             splnode.set_end_freq(self.splinter_freq_range[1])         # high frequency cut-off to read from SFTs
             splnode.set_stddev_thresh(self.splinter_stddev_thresh)    # threshold for vetoing data
             splnode.set_ephem_dir(self.ephem_path)                    # path to solar system ephemeris files
+            if self.splinter_gzip_output:
+              splnode.set_gzip_output()                               # gzip the output files
 
             if idx == 0: self.splinter_nodes_modified[ifo][freqfactor] = splnode
             else: self.splinter_nodes_unmodified[ifo][freqfactor] = splnode
@@ -3311,9 +3315,9 @@ class splinterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_var_opt('stddevthresh', f)
     self.__stddev_thresh = f
 
-  def set_gzip_output(self): # need to add this to Splinter
+  def set_gzip_output(self):
     # set gzipped output file flag
-    self.add_var_opt('gzip-output', '') # no variable required
+    self.add_var_opt('gzip', '') # no variable required
     self.__gzip = True
 
   def set_starttime(self, f):

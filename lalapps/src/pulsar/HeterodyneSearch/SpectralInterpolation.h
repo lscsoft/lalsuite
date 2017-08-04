@@ -48,14 +48,14 @@
 #define USAGE \
 "Usage: lalapps_SplInter [options]\n\n"\
 " --help (-h)           display this message\n"\
-" \nRequired Input Variables:\n\n"\
+"\nRequired Input Variables:\n\n"\
 " --ifo (-i)            name of ifo e.g. L1, H1, H2, G1\n"\
 " --start-freq (-S)     Start frequency of the SFTs\n"\
 " --end-freq (-E)       End frequency of the SFTs\n"\
 " --ephem-dir (-e)      directory containing the ephemeris files\n"\
 " --output-dir (-o)     directory for output data files\n"\
 " --seg-file (-l)       name of file containing science segment list\n"\
-"\n Plus one of the following:\n\n"\
+"\nPlus one of the following:\n\n"\
 " --param-file (-P)     name of file containing initial pulsar\n\
                         parameters when using just one file as input\n\
                         (.par file)\n"\
@@ -97,6 +97,8 @@ specified:\n\n"\
 " --max-seg-length (-Z) Maximum length of segments (default INFINITY).\n\
                         Use this to reduce memory requirement if\n\
                         trying to read in SFTs for long segement.\n"\
+" --gzip (-G)           If this flag is set then the output files will\n\
+                        be gzipped\n"\
 "\nThe following flags are used in testing only, but are included here\n\
 for completeness (defaults for all are not to set the flag) \n"\
 " --geocentreFlag (-g)  Flag to set the position of the ifo to be at\n\
@@ -125,6 +127,8 @@ typedef struct tagInputParams{
 
   UINT4 parfileflag;
   UINT4 pardirflag;
+
+  UINT4 gzip;
 
   REAL8 stddevthresh;
   REAL8 minSegLength;
