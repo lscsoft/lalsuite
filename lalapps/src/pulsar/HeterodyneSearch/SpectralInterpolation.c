@@ -33,7 +33,6 @@
 static LIGOTimeGPS empty_LIGOTimeGPS;
 static SFTConstraints empty_SFTConstraints;
 
-
 int main( int argc, char **argv ){
 
   InputParams inputParams;
@@ -90,7 +89,6 @@ int main( int argc, char **argv ){
   /* Initialise variables for use throughout */
   LIGOTimeGPS minStartTimeGPS = empty_LIGOTimeGPS;
   LIGOTimeGPS maxEndTimeGPS = empty_LIGOTimeGPS;
-  CHAR *psrname=NULL;
   UINT4 segcount=0;
   CHAR outputFilename[FILENAME_MAXLEN];
   EmissionTime emit, emitS, emitE;
@@ -122,6 +120,7 @@ int main( int argc, char **argv ){
 
   /* count number of pulsars with valid frequencies, and read in parameters */
   for(h=0; h<numfiles; h++){
+    CHAR *psrname = NULL;
     PulsarParameters *tmppar = XLALReadTEMPOParFile( parfiles->data[h] );
 
     /* check if par file was read in successfully */
@@ -345,6 +344,13 @@ int main( int argc, char **argv ){
       continue; // skip segment
     }
 
+    // check whether segment exceeds maximum length, and if so truncate it
+    if ( (endt-startt) > inputParams.maxSegLength ){
+      endt = startt + inputParams.maxSegLength;
+      XLALGPSSetREAL8( &seglist->segs[segcount].start, endt ); // update segment start time
+      segcount--; // reduce segcount, so this segment in the list gets redone with updated values
+    }
+
     fprintf(stderr, "Segment %.0lf-%.0lf",startt,endt);
 
     for (h=0; h<numpulsars;h++){
@@ -419,6 +425,8 @@ int main( int argc, char **argv ){
       if ( sievesfts->length == 0 ){
         segcount++;
         fprintf(stderr," no SFTs for this period.\n");
+        XLALFree( cacheFile );
+        XLALDestroyCache( sievesfts );
         continue;
       }
 
@@ -552,6 +560,14 @@ int main( int argc, char **argv ){
         baryInput.site.location[1] = splParams.detector.location[1]/LAL_C_SI;
         baryInput.site.location[2] = splParams.detector.location[2]/LAL_C_SI;
 
+        baryInputE.site.location[0] = splParams.detector.location[0]/LAL_C_SI;
+        baryInputE.site.location[1] = splParams.detector.location[1]/LAL_C_SI;
+        baryInputE.site.location[2] = splParams.detector.location[2]/LAL_C_SI;
+
+        baryInputS.site.location[0] = splParams.detector.location[0]/LAL_C_SI;
+        baryInputS.site.location[1] = splParams.detector.location[1]/LAL_C_SI;
+        baryInputS.site.location[2] = splParams.detector.location[2]/LAL_C_SI;
+
         /* get sky position and inverse distance from previously calculated values */
         baryInput.delta = baryDelta[h];
         baryInput.alpha = baryAlpha[h];
@@ -580,9 +596,6 @@ int main( int argc, char **argv ){
           ttype=TIMECORRECTION_ORIGINAL;
           tdat=NULL;
         }
-
-        /* create pulsar name */
-        psrname = XLALStringDuplicate( PulsarGetStringParam(pulparams[h], "NAME") );
 
         /* set up which ephemeris type is being used for this source */
         if( PulsarCheckParam(pulparams[h], "EPHEM" ) ) {
@@ -719,7 +732,7 @@ int main( int argc, char **argv ){
 
         if((fnew < inputParams.startF) || (fnew > inputParams.endF)){
           fprintf(stderr,"Pulsar %s has frequency %.4f outside of the frequency range %f-%f at time %.0f\n",
-              psrname, fnew, inputParams.startF, inputParams.endF, timestamp);
+              PulsarGetStringParam(pulparams[h], "NAME"), fnew, inputParams.startF, inputParams.endF, timestamp);
           continue;
         }
 
@@ -1218,6 +1231,7 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "freq-factor",              required_argument,  0, 'm' },
     { "bandwidth",                required_argument,  0, 'b' },
     { "min-seg-length",           required_argument,  0, 'M' },
+    { "max-seg-length",           required_argument,  0, 'Z' },
     { "starttime",                required_argument,  0, 's' },
     { "finishtime",               required_argument,  0, 'f' },
     { "stddevthresh",             required_argument,  0, 'T' },
@@ -1227,26 +1241,27 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { 0, 0, 0, 0 }
   };
 
-  char args[] = "hi:F:C:L:d:P:N:o:e:l:S:E:m:b:M:s:f:T:ntgB";
+  char args[] = "hi:F:C:L:d:P:N:o:e:l:S:E:m:b:M:Z:s:f:T:ntgB";
 
   /* set defaults */
-  inputParams->freqfactor = 2.0;    /* default is to look for gws at twice the pulsar spin frequency */
-  inputParams->bandwidth = 0.3;     /* Default is a 0.3Hz bandwidth search */
-  inputParams->geocentre = 0;       /* Default is not to look at the geocentre */
-  inputParams->minSegLength = 1800; /* Default minimum segment length is 1800s */
-  inputParams->baryFlag = 0;        /* Default is to perform barycentring routine */
-  inputParams->endF=0.;             /* in order to check if the end frequency is set */
-  inputParams->startF=0.;           /* in order to check if the start frequency is set*/
-  inputParams->parfileflag=0.;      /* in order to check if the Parfile is set */
-  inputParams->pardirflag=0.;       /* in order to check if the Parfile directory is set*/
-  inputParams->nameset=0;          /* flag in order to check if pulsar name is set*/
-  inputParams->startTime = 0.;      /* Start time not set - use zero */
-  inputParams->endTime = INFINITY;  /* end time not set - use infinity */
-  inputParams->Timing=0.;           /* default not to output timing info to stderr */
-  inputParams->cacheDir=0;         /* default is that directory flag is zero */
-  inputParams->cacheFile=0;        /* default that file flag is zero */
-  inputParams->lalcacheFile=0;     /* default that that lalcache file flag is zero */
-  inputParams->stddevthresh=0.;     /* default not to do outlier removal */
+  inputParams->freqfactor = 2.0;        /* default is to look for gws at twice the pulsar spin frequency */
+  inputParams->bandwidth = 0.3;         /* Default is a 0.3Hz bandwidth search */
+  inputParams->geocentre = 0;           /* Default is not to look at the geocentre */
+  inputParams->minSegLength = 1800;     /* Default minimum segment length is 1800s */
+  inputParams->maxSegLength = INFINITY; /* Default maximum segment length is INFINITY */
+  inputParams->baryFlag = 0;            /* Default is to perform barycentring routine */
+  inputParams->endF=0.;                 /* in order to check if the end frequency is set */
+  inputParams->startF=0.;               /* in order to check if the start frequency is set*/
+  inputParams->parfileflag=0.;          /* in order to check if the Parfile is set */
+  inputParams->pardirflag=0.;           /* in order to check if the Parfile directory is set*/
+  inputParams->nameset=0;               /* flag in order to check if pulsar name is set*/
+  inputParams->startTime = 0.;          /* Start time not set - use zero */
+  inputParams->endTime = INFINITY;      /* end time not set - use infinity */
+  inputParams->Timing=0.;               /* default not to output timing info to stderr */
+  inputParams->cacheDir=0;              /* default is that directory flag is zero */
+  inputParams->cacheFile=0;             /* default that file flag is zero */
+  inputParams->lalcacheFile=0;          /* default that that lalcache file flag is zero */
+  inputParams->stddevthresh=0.;         /* default not to do outlier removal */
 
   /* get input arguments */
   while(1){
@@ -1335,6 +1350,9 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
         break;
       case 'M': /* Minimum Segment Length Allowed */
         inputParams->minSegLength = atof(optarg);
+        break;
+      case 'Z': /* Maximum segment length allowed (use to stop too may SFTs being read at once) */
+        inputParams->maxSegLength = atof(optarg);
         break;
       case 't': /* write timing values to stderr */
         inputParams->Timing = 1;
