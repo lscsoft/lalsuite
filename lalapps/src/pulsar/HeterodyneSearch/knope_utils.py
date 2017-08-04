@@ -2450,6 +2450,8 @@ class knopeDAG(pipeline.CondorDAG):
               pname = psr['PSRJ']
               mvnode = moveNode(mvjob)
               splinterfile = os.path.join(splinterdir, 'SplInter_%s_%s' % (pname, ifo))
+              if self.splinter_gzip_output:
+                splinterfile += '.gz'
               mvnode.set_source(splinterfile)
               mvnode.set_destination(self.processed_files[pname][ifo][freqfactor][0])
               mvnode.add_parent(splnode)
