@@ -2331,8 +2331,8 @@ class knopeDAG(pipeline.CondorDAG):
               else: # for non-integers use 2 d.p. for dir name
                 ffdir = os.path.join(splintercpydir, '%.3ff' % int(freqfactor))
 
-              # the name of the file that will be output by lalapps_Splinter
-              self.processed_files[pname][ifo][freqfactor] = [os.path.join(ffdir, 'Splinter_%s_%s' % (pname, ifo))]
+              # the name of the file that will be output by lalapps_SplInter
+              self.processed_files[pname][ifo][freqfactor] = [os.path.join(ffdir, 'SplInter_%s_%s' % (pname, ifo))]
               if self.splinter_gzip_output:
                 self.processed_files[pname][ifo][freqfactor][0] += '.gz' # add gz suffix for gzipped files
 
@@ -2449,7 +2449,7 @@ class knopeDAG(pipeline.CondorDAG):
               psr = pppu.psr_par(par)
               pname = psr['PSRJ']
               mvnode = moveNode(mvjob)
-              splinterfile = os.path.join(splinterdir, 'Splinter_%s_%s' % (pname, ifo))
+              splinterfile = os.path.join(splinterdir, 'SplInter_%s_%s' % (pname, ifo))
               mvnode.set_source(splinterfile)
               mvnode.set_destination(self.processed_files[pname][ifo][freqfactor][0])
               mvnode.add_parent(splnode)
