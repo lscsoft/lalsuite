@@ -2230,8 +2230,14 @@ class knopeDAG(pipeline.CondorDAG):
     self.splinter_freq_range = self.get_config_option('splinter', 'freq_range', 'list', [30., 2000.])
     self.splinter_stddev_thresh = self.get_config_option('splinter', 'stddev_thresh', 'float', 3.5)
     self.splinter_min_seg_length = self.get_config_option('splinter', 'min_seg_length', 'int', 1800)
+    self.splinter_max_seg_length = self.get_config_option('splinter', 'max_seg_length', 'int', 21600) # max seg length defaults to 1/4 day
     self.splinter_gzip_output = self.get_config_option('splinter', 'gzip_output', 'boolean', False)
     if self.error_code != 0: return
+
+    if self.splinter_min_seg_length > self.splinter_max_seg_length:
+      print("Error... minimum segment length ({}) for SplInter is larger than maximum segment length ({})".format(self.splinter_min_seg_length, self.splinter_max_seg_length), file=sys.stderr)
+      self.error_code = KNOPE_ERROR_GENERAL
+      return
 
     # create splinter nodes (one for unmodified pulsars and one for modified pulsars)
     self.splinter_nodes_modified = {}
@@ -2423,6 +2429,7 @@ class knopeDAG(pipeline.CondorDAG):
 
             splnode.set_bandwidth(self.splinter_bandwidth)            # bandwidth of data to use
             splnode.set_min_seg_length(self.splinter_min_seg_length)  # minimum length of usable science segments
+            splnode.set_max_seg_length(self.splinter_max_seg_length)  # maximum segment length (use to stop too many SFTs being read in at once and eating all the memory)
             splnode.set_start_freq(self.splinter_freq_range[0])       # low frequency cut-off to read from SFTs
             splnode.set_end_freq(self.splinter_freq_range[1])         # high frequency cut-off to read from SFTs
             splnode.set_stddev_thresh(self.splinter_stddev_thresh)    # threshold for vetoing data
@@ -3219,6 +3226,7 @@ class splinterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__stddev_thresh = None
     self.__bandwidth = None
     self.__min_seg_length = None
+    self.__max_seg_length = None
     self.__starttime = None
     self.__endtime = None
     self.__ephem_dir = None
@@ -3287,6 +3295,11 @@ class splinterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set the minimum science segment length to use
     self.add_var_opt('min-seg-length', f)
     self.__min_seg_length = f
+
+  def set_max_seg_length(self, f):
+    # set the maximum length of a science segment to use
+    self.add_var_opt('max-seg-length', f)
+    self.__max_seg_length = f
 
   def set_ephem_dir(self, f):
     # set the directory containing the solar system ephemeris files
