@@ -2328,13 +2328,11 @@ class knopeDAG(pipeline.CondorDAG):
             for freqfactor in self.freq_factors:
               if not freqfactor%1.: # for integers just output director as e.g. 2f
                 ffdir = os.path.join(splintercpydir, '%df' % int(freqfactor))
-                splinterdir = os.path.join(self.splinter_dir, '%df' % int(freqfactor))
               else: # for non-integers use 2 d.p. for dir name
                 ffdir = os.path.join(splintercpydir, '%.3ff' % int(freqfactor))
-                splinterdir = os.path.join(self.splinter_dir, '%.2ff' % freqfactor)
 
               # the name of the file that will be output by lalapps_Splinter
-              self.processed_files[pname][ifo][freqfactor] = [os.path.join(splinterdir, 'Splinter_%s_%s' % (pname, ifo))]
+              self.processed_files[pname][ifo][freqfactor] = [os.path.join(ffdir, 'Splinter_%s_%s' % (pname, ifo))]
               if self.splinter_gzip_output:
                 self.processed_files[pname][ifo][freqfactor][0] += '.gz' # add gz suffix for gzipped files
 
