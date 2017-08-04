@@ -116,7 +116,7 @@ int main( int argc, char **argv ){
   UINT4 h=0;
 
   PulsarParameters **pulparams = (PulsarParameters **)XLALMalloc(sizeof(PulsarParameters*)*1);
-  FILE **fpout = (FILE **)XLALMalloc(sizeof(FILE*)*1);
+  LALStringVector *outputfilenames = NULL;
 
   /* count number of pulsars with valid frequencies, and read in parameters */
   for(h=0; h<numfiles; h++){
@@ -161,7 +161,6 @@ int main( int argc, char **argv ){
     // allocate more memory for array holding pulsar parameters
     if (numpulsars > 0){
       pulparams = XLALRealloc(pulparams, sizeof(PulsarParameters*)*(numpulsars+1));
-      fpout = XLALRealloc(fpout, sizeof(FILE*)*(numpulsars+1));
     }
 
     // re-read in file
@@ -184,16 +183,15 @@ int main( int argc, char **argv ){
 
     sprintf(outputFilename, "%s/SplInter_%s_%s",inputParams.outputdir,psrname,
       splParams.detector.frDetector.prefix);
+    outputfilenames = XLALAppendString2Vector(outputfilenames, outputFilename);
 
-    if( (fpout[numpulsars] = fopen(outputFilename,"w"))==NULL){
+    /* check output files can be opened/clear any previous file */
+    FILE *fp = NULL;
+    if( (fp = fopen(outputFilename,"w"))==NULL){
       fprintf(stderr, "Error... can't open output file %s!\n", outputFilename);
       return 0;
     }
-
-    /* buffer the output, so that file system is not overloaded when outputing */
-    if( setvbuf(fpout[numpulsars], NULL, _IOFBF, 0x10000) ){
-      fprintf(stderr, "Warning: Unable to set output file buffer!");
-    }
+    fclose(fp);
 
     /* If position epoch is not set but epoch is set position epoch to be epoch */
     if ( !PulsarCheckParam( pulparams[numpulsars], "POSEPOCH" ) && PulsarCheckParam( pulparams[numpulsars], "PEPOCH" ) ){
@@ -315,6 +313,8 @@ int main( int argc, char **argv ){
     XLALPrintError("Error... must specify either --sft-cache, --sft-lalcache, or --sft-loc");
     exit(1);
   }
+
+  FILE *fpout[numpulsars];
 
   /* --------------------------------------- */
   /* --- BIT THAT DOES THE INTERPOLATION --- */
@@ -524,6 +524,20 @@ int main( int argc, char **argv ){
 
     /* start interpolation clock */
     if(inputParams.Timing) gettimeofday(&timeInterpolateStart, NULL);
+
+    /* re-open the output files */
+    for (h=0; h<numpulsars;h++){
+      fpout[h] = NULL;
+      if( (fpout[h] = fopen(outputfilenames->data[h],"a"))==NULL){
+        fprintf(stderr, "Error... can't open output file %s!\n", outputfilenames->data[h]);
+        return 0;
+      }
+
+      /* buffer the output, so that file system is not overloaded when outputing */
+      if( setvbuf(fpout[h], NULL, _IOFBF, 0x10000) ){
+        fprintf(stderr, "Warning: Unable to set output file buffer!");
+      }
+    }
 
     /* Loop through each SFT */
     for (sftnum=0; sftnum<(SFTdat->length); sftnum++){
@@ -1035,14 +1049,12 @@ int main( int argc, char **argv ){
       fprintf(stderr," done.\n");
     }
 
+    /* close all the output files */
+    for(h=0;h<numpulsars;h++){ fclose(fpout[h]); }
+
     XLALDestroySFTVector(SFTdat);
     segcount++; /* move to next segment */
   }/* close segment loop */
-
-  /* close all the output files */
-  for(h=0;h<numpulsars;h++){
-    fclose(fpout[h]);
-  }
 
   XLALSegListFree( seglist );
 
@@ -1065,16 +1077,8 @@ int main( int argc, char **argv ){
     if(inputParams.Timing) gettimeofday(&timeORStart, NULL);
 
     for(h=0;h<numpulsars;h++){
-
-      char BkFilename[FILENAME_MAXLEN];
-
-      /* -------- Set up file for output -------- */
-      /* create filename */
-      sprintf(BkFilename, "%s/SplInter_%s_%s", inputParams.outputdir, PulsarGetStringParam( pulparams[h], "NAME"),
-            splParams.detector.frDetector.prefix);
-
       FILE *BkFile=NULL;
-      BkFile = fopen(BkFilename,"r");
+      BkFile = fopen(outputfilenames->data[h],"r");
       if(BkFile == NULL){
         XLALPrintError("Error opening file");
       }
@@ -1110,7 +1114,7 @@ int main( int argc, char **argv ){
       fclose(BkFile);
 
       FILE *BkFileOut=NULL;
-      BkFileOut = fopen(BkFilename,"w");
+      BkFileOut = fopen(outputfilenames->data[h],"w");
       UINT4 p=0;
       UINT4 startlen=ReData->length;
       REAL8 meanNoiseEst = 0, meanAbsValue = 0.;
@@ -1198,14 +1202,7 @@ int main( int argc, char **argv ){
   if ( inputParams.gzip ){
     /* gzip the output files */
     for ( h = 0; h < numpulsars; h++ ){
-      CHAR BkFilename[FILENAME_MAXLEN];
-
-      /* -------- Set up file for output -------- */
-      /* create filename */
-      sprintf(BkFilename, "%s/SplInter_%s_%s", inputParams.outputdir, PulsarGetStringParam(pulparams[h], "NAME"),
-            splParams.detector.frDetector.prefix);
-
-      if ( XLALGzipTextFile(BkFilename) != XLAL_SUCCESS ){ // gzip it
+      if ( XLALGzipTextFile(outputfilenames->data[h]) != XLAL_SUCCESS ){ // gzip it
         XLALPrintError("Error... problem gzipping the output file.\n");
       }
     }
@@ -1216,6 +1213,8 @@ int main( int argc, char **argv ){
     PulsarClearParams( pulparams[h] );
   }
   XLALFree(pulparams);
+
+  XLALDestroyStringVector( outputfilenames );
 
   if(inputParams.Timing){
     gettimeofday(&timeEndTot, NULL);
