@@ -2225,6 +2225,9 @@ class knopeDAG(pipeline.CondorDAG):
     # create splinter job
     spljob = splinterJob(self.splinter_exec, univ=self.splinter_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
 
+    # create job for moving splinter output files
+    mvjob = moveJob(accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
+
     # get splinter options
     self.splinter_bandwidth = self.get_config_option('splinter', 'bandwidth', 'float', 0.3)
     self.splinter_freq_range = self.get_config_option('splinter', 'freq_range', 'list', [30., 2000.])
@@ -2442,6 +2445,17 @@ class knopeDAG(pipeline.CondorDAG):
             if idx == 0: self.splinter_nodes_modified[ifo][freqfactor] = splnode
             else: self.splinter_nodes_unmodified[ifo][freqfactor] = splnode
             self.add_node(splnode) # add node to DAG
+
+            # move all created files into the required directory structure
+            for par in parlist:
+              psr = pppu.psr_par(par)
+              pname = psr['PSRJ']
+              mvnode = moveNode(mvjob)
+              splinterfile = os.path.join(splinterdir, 'Splinter_%s_%s' % (pname, ifo))
+              mvnode.set_source(splinterfile)
+              mvnode.set_destination(self.processed_files[pname][ifo][freqfactor][0])
+              mvnode.add_parent(splnode)
+              self.add_node(mvnode)
 
 
   def get_ephemeris(self, psr):
