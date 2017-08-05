@@ -52,7 +52,7 @@ void inject_signal( LALInferenceRunState *runState ){
   ProcessParamsTable *ppt;
   ProcessParamsTable *commandLine = runState->commandLine;
 
-  PulsarParameters *injpars = XLALCalloc(sizeof(*injpars),1);;
+  PulsarParameters *injpars = XLALCalloc(sizeof(*injpars),1);
 
   FILE *fpsnr = NULL; /* output file for SNRs */
   INT4 ndats = 0, j = 1;
@@ -91,7 +91,7 @@ void inject_signal( LALInferenceRunState *runState ){
     }
 
     /* read in injection parameter file */
-    injpars = XLALReadTEMPOParFileNew( injectfile );
+    injpars = XLALReadTEMPOParFile( injectfile );
     XLALFree( injectfile );
 
     /* check RA and DEC are set (if only RAJ and DECJ are given in the par file) */

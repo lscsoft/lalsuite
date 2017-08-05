@@ -79,6 +79,28 @@ local_cmple_ps ( __m128 in1, __m128 in2 )
 
 // ========== internal generic SSSE3 functions ==========
 
+//
+// The general idea behind the algorithm in the following functions is as follows:
+// * Iterate over the data vectors, i.e. 'in1' and 'in2' in blocks of the size of the SIMD register, i.e. 4,
+//   and keep a pointer into the current position in the index vector, i.e. 'out'
+// * Load data vectors into SIMD registers X and Y, e.g. X = [1.1, 3.2, 4.5, 6.5], Y = [0.7, 5.3, 2.4, 7.3]
+// * Compute pred(X, Y), e.g. pred(X, Y) = (X <= Y)? = [false, true, false, true]
+// * Make the result of pred(X, Y) into a bitmask, e.g. pred(X, Y) = 0101
+// * Use the bitmask as an index to look up a permutation which will rearrange the entries of X and Y
+//   such that entries where pred(X, Y) are true appear before entries where pred(X, Y) is false, e.g.:
+//   X => [3.2, 6.5, 1.1, 4.5], Y => [5.3, 7.3, 0.7, 2.4], pred(X, Y) => [true, true, false, false]
+// * Apply this permutation instead to a SIMD register of indexes I = [i, i+1, i+2, i+3] where i is the index
+//   of the first entry of X and Y in their respective data vectors, e.g. I => [i+i, i+3, i, i+2]
+// * Copy I back to the index vector recording which items in the data vectors satisfy the predicate
+// * Use the bitmask to look up the number of bits set in the bitmask (known as its population count), i.e. 2
+// * Advance the pointer into the index vector, e.g. in this case 2 bits were set, so the pointer into the index
+//   vector is advanced by 2, preserving the first two entries [i+1, i+3] which satisfied the predicate, while the
+//   remaining two entries (which did not satisfy the predicate) will be overwritten in the next loop iteration
+// * Increase the count of the number of valid indexes by the same amount, i.e. by 2
+// * At the end of the loop, the first 'count' entries of 'out' will contain the indexes into 'in1' and 'in2'
+//   where 'pred' was satisfied
+//
+
 // ---------- generic SSSE3 operator with 2 REAL4 vector inputs to 1 UINT4 scalar and 1 UINT4 vector output (SS2uU) ----------
 static inline int
 XLALVectorMath_SS2uU_SSSE3 ( UINT4* count, UINT4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len, __m128 (*pred)(__m128, __m128) )

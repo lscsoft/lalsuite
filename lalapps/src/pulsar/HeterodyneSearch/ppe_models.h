@@ -52,10 +52,6 @@ REAL8Vector *get_ssb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes
 REAL8Vector *get_bsb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes, REAL8Vector *dts,
                             EphemerisData *ephem );
 
-void get_triaxial_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo );
-
-void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo );
-
 void get_amplitude_model( PulsarParameters *pars, LALInferenceIFOModel *ifo );
 
 REAL8 get_phase_mismatch( REAL8Vector *phi1, REAL8Vector *phi2, LIGOTimeGPSVector *ts );

@@ -159,7 +159,7 @@ int main(int argc, char **argv){
   UINT4 h=0;
 
   CHAR parname[256];
-  BinaryPulsarParams pulparams[numpulsars];
+  PulsarParameters *pulparams[numpulsars];
 
   for(h=2; h<numpulsars; h++){
     if(strstr(pulsars[h]->d_name,".par") == NULL){
@@ -176,7 +176,8 @@ int main(int argc, char **argv){
         XLAL_ERROR ( XLAL_EIO );
       }
 
-      XLALReadTEMPOParFile( &pulparams[h], parname );
+      pulparams[h] = XLALReadTEMPOParFile( parname );
+
       fclose( inject );
     }
   }
@@ -229,22 +230,56 @@ int main(int argc, char **argv){
         XLAL_ERROR ( XLAL_EFUNC );
       }
 
-      if (pulparams[h].posepoch == 0.0 )
-        pulparams[h].posepoch = pulparams[h].pepoch;
-      INT4 dtpos = epoch.gpsSeconds - (INT4)pulparams[h].posepoch;
+      INT4 dtpos = 0;
+      if ( PulsarCheckParam(pulparams[h], "POSEPOCH") )
+        dtpos = epoch.gpsSeconds - (INT4)PulsarGetREAL8Param(pulparams[h], "POSEPOCH");
+      else
+        dtpos = epoch.gpsSeconds - (INT4)PulsarGetREAL8Param(pulparams[h], "PEPOCH");
 
-      params.pulsar.position.latitude = pulparams[h].dec + dtpos * pulparams[h].pmdec;
-      params.pulsar.position.longitude = pulparams[h].ra +dtpos * pulparams[h].pmra / cos(params.pulsar.position.latitude);
+      REAL8 ra = 0., dec = 0.;
+      if ( PulsarCheckParam( pulparams[h], "RAJ" ) ) {
+        ra = PulsarGetREAL8Param( pulparams[h], "RAJ" );
+      }
+      else if ( PulsarCheckParam( pulparams[h], "RA" ) ){
+        ra = PulsarGetREAL8Param( pulparams[h], "RA" );
+      }
+      else{
+        XLALPrintError("No right ascension found");
+        XLAL_ERROR ( XLAL_EFUNC );
+      }
+      if ( PulsarCheckParam( pulparams[h], "DECJ" ) ) {
+        dec = PulsarGetREAL8Param( pulparams[h], "DECJ" );
+      }
+      else if ( PulsarCheckParam( pulparams[h], "DEC" ) ){
+        dec = PulsarGetREAL8Param( pulparams[h], "DEC" );
+      }
+      else{
+        XLALPrintError("No declination found");
+        XLAL_ERROR ( XLAL_EFUNC );
+      }
+
+      params.pulsar.position.latitude = dec + (REAL8)dtpos * PulsarGetREAL8ParamOrZero(pulparams[h], "PMDEC");
+      params.pulsar.position.longitude = ra + (REAL8)dtpos * PulsarGetREAL8ParamOrZero(pulparams[h], "PMRA") / cos(params.pulsar.position.latitude);
       params.pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
 
-      params.pulsar.f0 = 2.*pulparams[h].f0;
-      params.pulsar.spindown->data[0] = 2.*pulparams[h].f1;
-      if (( XLALGPSSetREAL8(&(params.pulsar.refTime), pulparams[h].pepoch) ) == NULL )
+      REAL8Vector *fs = PulsarGetREAL8VectorParam(pulparams[h], "F");
+      if ( fs->length == 0 ){
+        XLALPrintError("No frequencies found");
         XLAL_ERROR ( XLAL_EFUNC );
-      params.pulsar.psi = pulparams[h].psi;
-      params.pulsar.phi0 = pulparams[h].phi0;
-      params.pulsar.aPlus = 0.5 * pulparams[h].h0 * (1. + pulparams[h].cosiota * pulparams[h].cosiota );
-      params.pulsar.aCross = pulparams[h].h0 * pulparams[h].cosiota;
+      }
+
+      params.pulsar.f0 = 2.*fs->data[0];
+      if ( fs->length > 1 ){
+        params.pulsar.spindown->data[0] = 2.*fs->data[1];
+      }
+      if (( XLALGPSSetREAL8(&(params.pulsar.refTime), PulsarGetREAL8Param(pulparams[h], "PEPOCH")) ) == NULL )
+        XLAL_ERROR ( XLAL_EFUNC );
+      params.pulsar.psi = PulsarGetREAL8ParamOrZero(pulparams[h], "PSI");
+      params.pulsar.phi0 = PulsarGetREAL8ParamOrZero(pulparams[h], "PHI0");
+      REAL8 cosiota = PulsarGetREAL8ParamOrZero(pulparams[h], "COSIOTA");
+      REAL8 h0 = PulsarGetREAL8ParamOrZero(pulparams[h], "H0");
+      params.pulsar.aPlus = 0.5 * h0 * (1. + cosiota * cosiota );
+      params.pulsar.aCross = h0 * cosiota;
 
       /*Add binary later if needed!*/
 

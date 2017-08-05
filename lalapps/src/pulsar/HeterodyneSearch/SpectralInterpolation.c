@@ -26,11 +26,10 @@
 #include "SpectralInterpolation.h"
 
 /* Define some commonly used macros*/
-#define INFTY 1./0.;
 #define ROUND(x) (floor(x+0.5))
 #define SINC(x)  (sin(LAL_PI*x)/(LAL_PI*x))
 
-static BinaryPulsarParams empty_BinaryPulsarParams;
+
 static LIGOTimeGPS empty_LIGOTimeGPS;
 static SFTConstraints empty_SFTConstraints;
 
@@ -39,7 +38,6 @@ int main( int argc, char **argv ){
 
   InputParams inputParams;
   SplInterParams splParams;
-
 
   /* Take variables as input from command line */
   get_input_args(&inputParams, argc, argv);
@@ -93,163 +91,146 @@ int main( int argc, char **argv ){
   LIGOTimeGPS minStartTimeGPS = empty_LIGOTimeGPS;
   LIGOTimeGPS maxEndTimeGPS = empty_LIGOTimeGPS;
   CHAR *psrname=NULL;
-  INT4 segcount=0, numSegs=0;
-  INT4Vector *starts=NULL, *stops=NULL;
-  char outputFilename[256];
+  UINT4 segcount=0;
+  CHAR outputFilename[FILENAME_MAXLEN];
   EmissionTime emit, emitS, emitE;
-  CHAR timefileTDB[256], timefileTE405[256], sunfile200[256],
-       earthfile200[256],sunfile405[256], earthfile405[256],
-       sunfile414[256], earthfile414[256];
-  EphemerisData *edat200=NULL,  *edat405=NULL, *edat414=NULL;
+  CHAR timefileTDB[FILENAME_MAXLEN], timefileTE405[FILENAME_MAXLEN], sunfile200[FILENAME_MAXLEN],
+       earthfile200[FILENAME_MAXLEN],sunfile405[FILENAME_MAXLEN], earthfile405[FILENAME_MAXLEN],
+       sunfile414[FILENAME_MAXLEN], earthfile414[FILENAME_MAXLEN], earthfile421[FILENAME_MAXLEN], sunfile421[FILENAME_MAXLEN];
+  EphemerisData *edat200=NULL,  *edat405=NULL, *edat414=NULL, *edat421=NULL;
   TimeCorrectionData *tdatTDB=NULL,  *tdatTE405=NULL;
 
   /* Read in pulsar data either from directory or individual file. */
-  /* (Possibly change this to use XLALFindFiles in the future) */
-  struct dirent **pulsars;
-  INT4 n = 0;
-  if (inputParams.pardirflag==1 && inputParams.parfileflag==0){
-    /* Scan pulsar directory for parfiles and read in the data */
-    n=scandir(inputParams.pulsarDir, &pulsars, 0, alphasort);
-
-    if ( n < 0){
-      XLALPrintError("scandir failed\n");
-      XLAL_ERROR(XLAL_EIO);
+  LALStringVector *parfiles = NULL; /* return a list of pulsar parameter files in the given directory */
+  if ( inputParams.pardirflag ){
+    CHAR *globstring = XLALStringDuplicate(inputParams.pulsarDir);
+    globstring = XLALStringAppend(globstring, "/*.par"); /* search for files with the ".par" suffix */
+    parfiles = XLALFindFiles(globstring);
+    if ( !parfiles ){
+      XLALPrintError("Error... failed to find any pulsar parameter files in \"%s\"", inputParams.pulsarDir);
     }
   }
+  else{
+    parfiles = XLALAppendString2Vector( NULL, inputParams.paramfile );
+  }
 
-
-  UINT4 numnonpar = (UINT4)0; /* counts number of non-parfiles in directory */
-  UINT4 numpulsars = (UINT4)n;
+  UINT4 numpulsars = 0, numfiles = parfiles->length;
   UINT4 h=0;
 
-  if (inputParams.pardirflag==0 && inputParams.parfileflag==1){
-    numpulsars = 3;
-  }
+  PulsarParameters **pulparams = (PulsarParameters **)XLALMalloc(sizeof(PulsarParameters*)*1);
+  FILE **fpout = (FILE **)XLALMalloc(sizeof(FILE*)*1);
 
+  /* count number of pulsars with valid frequencies, and read in parameters */
+  for(h=0; h<numfiles; h++){
+    PulsarParameters *tmppar = XLALReadTEMPOParFile( parfiles->data[h] );
 
-  CHAR parname[256];
-
-  BinaryPulsarParams pulparams[numpulsars-2];
-
-  /* set pulparams to be zero to begin with */
-  /* using h=2 means that the "." and ".." directories are ignored */
-  for(h=2; h<numpulsars; h++){
-    pulparams[h-2] = empty_BinaryPulsarParams;
-  }
-
-  if (inputParams.pardirflag==1 && inputParams.parfileflag==0){
-    XLALFree(pulsars[0]);
-    XLALFree(pulsars[1]);
-  }
-
-  REAL8 barydInv[numpulsars];
-  REAL8 startF=sqrt(-1), endF=sqrt(-1); /* Set to be NaN so that the first comparison always gives the source frequency */
-  if(inputParams.Timing){ gettimeofday(&timePulStart, NULL);}
-
-
-
-  FILE *fpout[numpulsars];
-
-  for(h=2; h<numpulsars; h++){
-
-    if (inputParams.pardirflag==1 && inputParams.parfileflag==0){
-      /* ignores any files that don't end in ".par"*/
-      if(strstr(pulsars[h]->d_name,".par") == NULL){
-        XLALFree(pulsars[h]);
-        numnonpar++;
-        continue;
-      }
+    /* check if par file was read in successfully */
+    if ( !tmppar ){
+      fprintf(stderr, "Warning... could not read in \"%s\". Skipping this pulsars.", parfiles->data[h]);
+      continue;
     }
 
-    /* read parfile */
-    if (inputParams.pardirflag==1 && inputParams.parfileflag==0){
-      sprintf(parname,"%s/%s",inputParams.pulsarDir, pulsars[h]->d_name);
-    }
-    else if (inputParams.pardirflag==0 && inputParams.parfileflag==1){
-      sprintf(parname,"%s",inputParams.paramfile);
+    /* check that a frequency is given in the par file */
+    if ( !PulsarCheckParam( tmppar, "F" ) ){
+      fprintf(stderr, "Warning... no frequency given in \"%s\". Skipping this pulsars.", parfiles->data[h]);
+      continue;
     }
 
-    UINT4 ParNumber = h - numnonpar - 2;
+    /* check frequency is within the range of the SFTs */
+    REAL8 f0 = PulsarGetREAL8VectorParamIndividual( tmppar, "F0" );
 
-    XLALReadTEMPOParFile( &pulparams[ParNumber], parname);
-
-    if (pulparams[ParNumber].f0==empty_BinaryPulsarParams.f0 ){
-
-      fprintf(stderr,"Parnumber %d out of %d\t",ParNumber,numpulsars-numnonpar-2);
-      XLALPrintError("Error... Could not open source parameter file %s!", parname);
-      return 0;
+    if ( f0*inputParams.freqfactor < inputParams.startF || f0*inputParams.freqfactor > inputParams.endF){
+      fprintf(stderr, "Warning... the GW frequency (%lf Hz) given in \"%s\" lies outside of SFT boundaries (%f to %f Hz).\n", f0*inputParams.freqfactor, parfiles->data[h], inputParams.startF, inputParams.endF);
+      continue;
     }
 
-    if (inputParams.pardirflag==1 && inputParams.parfileflag==0){
-      /* ignore anything with frequency outside the SFT range */
-      if ((pulparams[ParNumber].f0*inputParams.freqfactor)<inputParams.startF
-           || (pulparams[ParNumber].f0*inputParams.freqfactor)>inputParams.endF){
-        fprintf(stderr,"For pulsar %s, the GW frequency (%f Hz) lies outside of SFT boundaries (%f to %f Hz).\n",
-                     pulparams[ParNumber].jname,pulparams[ParNumber].f0*inputParams.freqfactor, inputParams.startF,inputParams.endF);
-        numnonpar++;
-        continue;
-      }
+    /* check RA and DEC are specified for pulsar */
+    if ( !PulsarCheckParam( tmppar, "RA" ) && !PulsarCheckParam( tmppar, "RAJ" ) ) {
+      fprintf(stderr, "Warning... no source right ascension specified in \"%s!\". Skipping this pulsar.", parfiles->data[h]);
+      continue;
     }
 
+    if ( !PulsarCheckParam( tmppar, "DEC" ) && !PulsarCheckParam( tmppar, "DECJ" ) ) {
+      fprintf(stderr, "Warning... no source declination specified in \"%s!\". Skipping this pulsar.", parfiles->data[h]);
+      continue;
+    }
 
-    /* create pulsar name */
+    // free temporary read of file
+    PulsarClearParams( tmppar );
+    XLALFree( tmppar );
+
+    // allocate more memory for array holding pulsar parameters
+    if (numpulsars > 0){
+      pulparams = XLALRealloc(pulparams, sizeof(PulsarParameters*)*(numpulsars+1));
+      fpout = XLALRealloc(fpout, sizeof(FILE*)*(numpulsars+1));
+    }
+
+    // re-read in file
+    pulparams[numpulsars] = XLALReadTEMPOParFile( parfiles->data[h] );
+
+    /* get pulsar name */
     if ( inputParams.nameset )
       psrname = XLALStringDuplicate(inputParams.PSRname);
-    else if (pulparams[ParNumber].jname)
-      psrname = XLALStringDuplicate(pulparams[ParNumber].jname);
-    else if ( pulparams[ParNumber].bname )
-      psrname= XLALStringDuplicate( pulparams[ParNumber].bname );
-    else if ( pulparams[ParNumber].name )
-      psrname= XLALStringDuplicate( pulparams[ParNumber].name );
+    else if ( PulsarCheckParam( pulparams[numpulsars], "PSRJ" ) )
+      psrname = XLALStringDuplicate(PulsarGetStringParam(pulparams[numpulsars], "PSRJ"));
+    else if ( PulsarCheckParam( pulparams[numpulsars], "PSR" ) )
+      psrname = XLALStringDuplicate(PulsarGetStringParam(pulparams[numpulsars], "PSR"));
+    else if ( PulsarCheckParam( pulparams[numpulsars], "PSRB" ) )
+      psrname = XLALStringDuplicate(PulsarGetStringParam(pulparams[numpulsars], "PSRB"));
+    else if ( PulsarCheckParam( pulparams[numpulsars], "NAME" ) )
+      psrname = XLALStringDuplicate(PulsarGetStringParam(pulparams[numpulsars], "NAME"));
 
+    // add "NAME" attribute
+    PulsarAddParam( pulparams[numpulsars], "NAME", psrname, PULSARTYPE_string_t );
 
     sprintf(outputFilename, "%s/SplInter_%s_%s",inputParams.outputdir,psrname,
       splParams.detector.frDetector.prefix);
 
-
-    if( (fpout[ParNumber] = fopen(outputFilename,"w"))==NULL){
-        fprintf(stderr, "Error... can't open output file %s!\n", outputFilename);
-        return 0;
-      }
+    if( (fpout[numpulsars] = fopen(outputFilename,"w"))==NULL){
+      fprintf(stderr, "Error... can't open output file %s!\n", outputFilename);
+      return 0;
+    }
 
     /* buffer the output, so that file system is not overloaded when outputing */
-    if( setvbuf(fpout[ParNumber], NULL, _IOFBF, 0x10000) )
-        fprintf(stderr, "Warning: Unable to set output file buffer!");
-
-
-
-    startF=fmaxf(fminf(startF, pulparams[ParNumber].f0*inputParams.freqfactor),inputParams.startF+1.5);
-    endF=fminf(fmaxf(endF, pulparams[ParNumber].f0*inputParams.freqfactor),inputParams.endF-1.5);
-
+    if( setvbuf(fpout[numpulsars], NULL, _IOFBF, 0x10000) ){
+      fprintf(stderr, "Warning: Unable to set output file buffer!");
+    }
 
     /* If position epoch is not set but epoch is set position epoch to be epoch */
-    if(pulparams[ParNumber].posepoch == 0. && pulparams[ParNumber].pepoch != 0.)
-        pulparams[ParNumber].posepoch = pulparams[ParNumber].pepoch;
-
-    /* Give distance to pulsar from parameter files to barycenter routine */
-    /* Use parallax or distance value given - use parallax first. In 1/s. */
-    if( pulparams[ParNumber].px != 0. ){
-      barydInv[ParNumber] = ( 3600. / LAL_PI_180 )*pulparams[ParNumber].px /
-        (LAL_C_SI*LAL_PC_SI/LAL_LYR_SI);
+    if ( !PulsarCheckParam( pulparams[numpulsars], "POSEPOCH" ) && PulsarCheckParam( pulparams[numpulsars], "PEPOCH" ) ){
+      REAL8 pepoch = PulsarGetREAL8Param( pulparams[numpulsars], "PEPOCH" );
+      PulsarAddParam( pulparams[numpulsars], "POSEPOCH", &pepoch, PULSARTYPE_REAL8_t );
     }
-    else if( pulparams[ParNumber].dist != 0. ){
-      barydInv[ParNumber] = 1./(pulparams[ParNumber].dist*1e3*LAL_C_SI*LAL_PC_SI/LAL_LYR_SI);
-    }
-    else
-      barydInv[ParNumber] = 0.; /* no parallax */
 
+    if ( !PulsarCheckParam( pulparams[numpulsars], "PEPOCH" ) && PulsarCheckParam( pulparams[numpulsars], "POSEPOCH" ) ){
+      REAL8 posepoch = PulsarGetREAL8Param( pulparams[numpulsars], "POSEPOCH" );
+      PulsarAddParam( pulparams[numpulsars], "PEPOCH", &posepoch, PULSARTYPE_REAL8_t );
+    }
+
+    if ( PulsarCheckParam( pulparams[numpulsars], "RAJ" ) ) {
+      REAL8 ra = PulsarGetREAL8Param( pulparams[numpulsars], "RAJ" );
+      PulsarAddParam( pulparams[numpulsars], "RA", &ra, PULSARTYPE_REAL8_t ); // make sure RA is in "RA" parameter
+    }
+
+    if ( PulsarCheckParam( pulparams[numpulsars], "DECJ" ) ) {
+      REAL8 dec = PulsarGetREAL8Param( pulparams[numpulsars], "DECJ" );
+      PulsarAddParam( pulparams[numpulsars], "DEC", &dec, PULSARTYPE_REAL8_t ); // make sure DEC is in "DEC" parameter
+    }
+
+    numpulsars++;
   }
 
-  numpulsars = numpulsars-numnonpar-2; /* reset numpulsars to be the actual number of pulsars instead of number of files */
+  REAL8 startF=NAN, endF=NAN; /* Set to be NaN so that the first comparison always gives the source frequency */
+  if(inputParams.Timing){ gettimeofday(&timePulStart, NULL);}
 
+  XLALDestroyStringVector( parfiles );
 
   if(inputParams.Timing) gettimeofday(&timePulEnd, NULL);
   /* if timing, then stop the clock on pulsar parameter load time. */
 
   if (inputParams.pardirflag==1 && inputParams.parfileflag==0){
-    fprintf(stderr, "Number of Pulsars with frequencies within the SFT boundaries: %d\n", numpulsars);
+    fprintf(stderr, "Number of valid Pulsars with frequencies within the SFT boundaries: %d\n", numpulsars);
   }
-
 
   /* load all types of ephemeris files, as uses little RAM/computational effort, and different parfiles may use a combination */
   sprintf(earthfile200, "%s/earth00-19-DE200.dat.gz",inputParams.ephemdir);
@@ -258,10 +239,13 @@ int main( int argc, char **argv ){
   sprintf(sunfile405, "%s/sun00-19-DE405.dat.gz",inputParams.ephemdir);
   sprintf(earthfile414, "%s/earth00-19-DE414.dat.gz",inputParams.ephemdir);
   sprintf(sunfile414, "%s/sun00-19-DE414.dat.gz",inputParams.ephemdir);
+  sprintf(earthfile421, "%s/earth00-19-DE421.dat.gz",inputParams.ephemdir);
+  sprintf(sunfile421, "%s/sun00-19-DE421.dat.gz",inputParams.ephemdir);
 
   edat200 = XLALMalloc(sizeof(*edat200));
   edat405 = XLALMalloc(sizeof(*edat405));
   edat414 = XLALMalloc(sizeof(*edat414));
+  edat421 = XLALMalloc(sizeof(*edat421));
 
   /* Load time correction files. */
   sprintf(timefileTDB,"%s/tdb_2000-2019.dat.gz",inputParams.ephemdir);
@@ -271,9 +255,10 @@ int main( int argc, char **argv ){
   edat200 = XLALInitBarycenter(earthfile200, sunfile200);
   edat405 = XLALInitBarycenter(earthfile405, sunfile405);
   edat414 = XLALInitBarycenter(earthfile414, sunfile414);
+  edat421 = XLALInitBarycenter(earthfile421, sunfile421);
 
   /* check it worked */
-  if (edat200==NULL || edat405==NULL || edat414==NULL){
+  if (edat200==NULL || edat405==NULL || edat414==NULL || edat421==NULL){
     XLALPrintError("Error, could not read sun and earth ephemeris files - check that the ephemeris directory is correct");
     exit(1);
   }
@@ -288,62 +273,31 @@ int main( int argc, char **argv ){
     exit(1);
   }
 
-
   /* ------ Set up Science segment list ------ */
-  /* Initialise memory for starts and stops vectors - beginning and end of segments */
-  if( (starts = XLALCreateINT4Vector(1)) == NULL ||
-      (stops = XLALCreateINT4Vector(1)) == NULL ){
-    XLALPrintError("Error, allocating segment list memory.\n");
-    exit(1);
-  }
 
-  if(pulparams[0].finishTime==0) pulparams[0].finishTime=INFTY; 
   /* Set finish time to infinity if default value is used */
-
   REAL8 segmentsStart = 0., segmentsEnd = 0;
-  if (inputParams.pardirflag){
-    /* If using directory, segment start and end are either input from command line of defaulted to be or all time */
-    segmentsStart=inputParams.startTime;
-    segmentsEnd = inputParams.endTime;
-  }
-  else {
-    if ((inputParams.startTime > pulparams[0].finishTime && pulparams[0].finishTime !=0) || inputParams.endTime < pulparams[0].startTime){
-      XLALPrintError("Specified start and end times are outside of the parameter file time range.");
-      exit(1);
-    }
-    else {
-      /* If times not specified, use times from parfile or if they don't exist, use all time */
-      segmentsStart=fmaxf(pulparams[0].startTime, inputParams.startTime);
-      segmentsEnd=fminf(inputParams.endTime, pulparams[0].finishTime);
-    }
-  }
+  /* If using directory, segment start and end are either input from command line of defaulted to be or all time */
+  segmentsStart = inputParams.startTime;
+  segmentsEnd = inputParams.endTime;
 
-  /* if the lenght of data is not enough for minimum segment length specified then exit */
+  /* if the length of data is not enough for minimum segment length specified then exit */
   if(segmentsEnd-segmentsStart < inputParams.minSegLength){
     XLALPrintError("Applicable length of segment list, %.0f to %.0f is less than specified minimum duration of data, %.0f\n",segmentsStart, segmentsEnd, inputParams.minSegLength);
     exit(1);
   }
 
-  numSegs = get_segment_list(starts, stops, inputParams.minSegLength,segmentsStart,segmentsEnd, inputParams.segfile);
+  // Read in science segment list
+  LALSegList *seglist = XLALReadSegmentsFromFile( inputParams.segfile );
 
-  /* if no segments are longer than the minumum segment time set then exit */
-  if( numSegs == 0 ){
-    fprintf(stderr, "Applicable length of segment list is less than specified minimum duration of data.\n");
-    exit(1);
-  }
-
-
-  /* Resize memory according to how many segments there are*/
-  if( (starts = XLALResizeINT4Vector(starts, numSegs)) == NULL ||
-      (stops = XLALResizeINT4Vector(stops, numSegs)) == NULL ){
-    XLALPrintError("Error, re-allocating segment list memory.\n");
+  /* if no segments are longer than the minimum segment time set then exit */
+  if( seglist->length == 0 ){
+    fprintf(stderr, "No segments found in segment file.\n");
     exit(1);
   }
 
   /* stop clock for pre-loop things*/
   if(inputParams.Timing) gettimeofday(&timePreEnd, NULL);
-
-
 
   UINT4 TotalNSFTs = 0;
   REAL8 TotalInterTime = 0., TotalCatalogTime = 0., TotalLoadTime = 0.;
@@ -351,72 +305,54 @@ int main( int argc, char **argv ){
   /* --- BIT THAT DOES THE INTERPOLATION --- */
   /* --------------------------------------- */
   /* Loop Through each segment */
-  while(segcount<numSegs){
+  while(segcount<seglist->length){
 
-
-    UINT4 startt = 0, endt = 0;
-    REAL8 baryAlpha[numpulsars], baryDelta[numpulsars];
+    REAL8 startt = 0., endt = 0.;
+    REAL8 baryAlpha[numpulsars], baryDelta[numpulsars], barydInv[numpulsars];
     SFTConstraints constraints = empty_SFTConstraints;
 
-    startt=starts->data[segcount];
-    endt=stops->data[segcount];
+    startt = XLALGPSGetREAL8( &seglist->segs[segcount].start );
+    endt = XLALGPSGetREAL8( &seglist->segs[segcount].end );
 
-    fprintf(stderr, "Segment %.0d-%.0d",startt,endt);
-
-    /* If using directory, check whether the segment is included in any of the pulsar parameter file times*/
-    /* relTime is simply whether ANY of the parfiles are relevant, if one is then the segment will be read*/
-    if (inputParams.pardirflag){
-      UINT4 relTime=0;
-      for (h=0; h<numpulsars;h++){
-        if (relTime==1) continue; /* if the segment has been flagged as relevant for any pulsar already, then continue */
-        if ( pulparams[h].startTime!=0 && pulparams[h].finishTime !=0 ){ /* if parfile has start & end times specified */
-          if ( (pulparams[h].startTime > endt) || (pulparams[h].finishTime < startt)) {
-      /* Segment entirely below parfile bounds || segment entirely above parfile bounds */
-            relTime=0.;
-          }
-          else relTime=1.; /* segment is relevant as (at least some) of it is within the parfile boundaries */
-        }
-        else relTime=1.; /* segment is relevant as the parfile is applicable forever and ever and ever */
-      }
-      for (h=0; h<numpulsars;h++){
-        /* also for each pulsar, calculate alpha and delta as approx the same over the segment */
-        REAL8 dtpos = 0.;
-
-        dtpos = (startt+endt)/2. - pulparams[h].posepoch;
-        /* calculate new sky position including proper motion */
-        baryDelta[h] = pulparams[h].dec + dtpos*pulparams[h].pmdec;
-        baryAlpha[h] = pulparams[h].ra + dtpos*pulparams[h].pmra/cos(baryDelta[h]);
-      }
-      if ( relTime == 0 ){
-        segcount++;
-        fprintf(stderr," is not relevant for any parfiles.\n");
-        continue;
-      }
+    // check whether segment is in the required time range
+    if ( startt > segmentsEnd || endt < segmentsStart ){
+      segcount++;
+      continue; // skip segment
     }
 
-    if (inputParams.parfileflag){
-      if ( pulparams[0].startTime!=0 && pulparams[0].finishTime !=0 ){ /* if parfile has start & end times specified */
-        if ( (pulparams[0].startTime > endt) || (pulparams[0].finishTime < startt)) {
-    /* Segment entirely below parfile bounds || segment entirely above parfile bounds */
-          fprintf(stderr," is not relevant for specified parfile.\n");
-          segcount++;
-          continue;
-        }
-      }
+    if ( startt < segmentsStart ){ startt = segmentsStart; }
+    if ( endt > segmentsEnd ){ endt = segmentsEnd; }
+
+    // check whether segment is long enough
+    if ( (endt-startt) < inputParams.minSegLength ){
+      segcount++;
+      continue; // skip segment
+    }
+
+    fprintf(stderr, "Segment %.0lf-%.0lf",startt,endt);
+
+    for (h=0; h<numpulsars;h++){
+      /* for each pulsar, calculate alpha and delta as approx the same over the segment */
       REAL8 dtpos = 0.;
 
-      dtpos = (startt+endt)/2 - pulparams[0].posepoch;
-      baryDelta[0] = pulparams[0].dec + dtpos*pulparams[0].pmdec;
-      baryAlpha[0] = pulparams[0].ra + dtpos*pulparams[0].pmra/cos(baryDelta[0]);
+      dtpos = (startt+endt)/2. - PulsarGetREAL8ParamOrZero( pulparams[h], "POSEPOCH" );
+      /* calculate new sky position including proper motion */
+      baryDelta[h] = PulsarGetREAL8Param(pulparams[h], "DEC") + dtpos*PulsarGetREAL8ParamOrZero(pulparams[h], "PMDEC");
+      baryAlpha[h] = PulsarGetREAL8Param(pulparams[h], "RA") + dtpos*PulsarGetREAL8ParamOrZero(pulparams[h], "PMRA")/cos(baryDelta[h]);
 
+      /* Give distance to pulsar from parameter files to barycenter routine */
+      if ( PulsarGetREAL8ParamOrZero( pulparams[h], "PX" ) != 0. ){
+        barydInv[h] = PulsarGetREAL8Param( pulparams[h], "PX" )*(LAL_C_SI/LAL_AU_SI);
+      }
+      else { barydInv[h] = 0.; } // no parallax
     }
 
     struct timeval timeCatalogStart, timeCatalogEnd,timeLoadStart, timeLoadEnd,timeInterpolateStart, timeInterpolateEnd;
     REAL8 tInterpolate=0., tLoad=0., tCatalog=0.;
 
     /* Use segment times to set up constraints of times for SFTs  */
-    XLALGPSSetREAL8( &minStartTimeGPS, (REAL8)startt );
-    XLALGPSSetREAL8( &maxEndTimeGPS, (REAL8)endt );
+    XLALGPSSetREAL8( &minStartTimeGPS, startt );
+    XLALGPSSetREAL8( &maxEndTimeGPS, endt );
 
     constraints.minStartTime = &minStartTimeGPS;
     constraints.maxStartTime = &maxEndTimeGPS;
@@ -429,10 +365,10 @@ int main( int argc, char **argv ){
     if(inputParams.Timing) gettimeofday(&timeCatalogStart, NULL);
 
     /* Set up SFT cache filename and cache opening string */
-    CHAR cacheFile[256], cacheFileCheck[256];
+    CHAR cacheFile[FILENAME_MAXLEN], cacheFileCheck[FILENAME_MAXLEN];
     if(inputParams.cacheDir){
-      sprintf(cacheFile,"list:%s/Segment_%d-%d.sftcache",inputParams.filePattern,startt,endt);
-      sprintf(cacheFileCheck,"%s/Segment_%d-%d.sftcache",inputParams.filePattern,startt,endt);
+      sprintf(cacheFile,"list:%s/Segment_%d-%d.sftcache",inputParams.filePattern,(INT4)ROUND(startt),(INT4)ROUND(endt));
+      sprintf(cacheFileCheck,"%s/Segment_%d-%d.sftcache",inputParams.filePattern,(INT4)ROUND(startt),(INT4)ROUND(endt));
     }
     else{
       sprintf(cacheFile,"%s",inputParams.filePattern);
@@ -463,7 +399,6 @@ int main( int argc, char **argv ){
       TotalCatalogTime += tCatalog;
     }
 
-
     if ( !catalog ){
       XLALPrintError ("\nCATALOG READ ROUTINE FAILED\n");
       segcount++;
@@ -480,7 +415,6 @@ int main( int argc, char **argv ){
 
     /* add number of SFTs in current catalogue to total*/
     TotalNSFTs +=(catalog->length);
-
 
     SFTVector *SFTdat = NULL;
     UINT4 sftnum=0;
@@ -502,26 +436,19 @@ int main( int argc, char **argv ){
     else if (inputParams.parfileflag){
      /* If taking single pulsar input, approximate the frequency and load a 3Hz band around this*/
 
-      REAL8 tAv=0., tAv2=0., fAp=0.;
+      REAL8 tAv=0., fAp=0., dtpow = 1.;
 
       /* Approximate the frequency for the time at the middle of the segment, */
       /* this doesn't take relative motion effects into account */
 
-      tAv=((REAL8)endt+(REAL8)startt)/2. - pulparams[0].pepoch;
+      tAv=((REAL8)endt+(REAL8)startt)/2. - PulsarGetREAL8ParamOrZero(pulparams[0], "PEPOCH");
+      REAL8Vector *freqs = PulsarGetREAL8VectorParam(pulparams[0], "F");
 
-      tAv2=tAv*tAv;
-      fAp=inputParams.freqfactor*(
-               pulparams[0].f0
-               + pulparams[0].f1*tAv
-               + (1./2.)*pulparams[0].f2*tAv2
-               + (1./6.)*pulparams[0].f3*tAv2*tAv
-               + (1./24.)*pulparams[0].f4*tAv2*tAv2
-               + (1./120.)*pulparams[0].f5*tAv2*tAv2*tAv
-               + (1./720.)*pulparams[0].f6*tAv2*tAv2*tAv2
-               + (1./5040.)*pulparams[0].f7*tAv2*tAv2*tAv2*tAv
-               + (1./40320.)*pulparams[0].f8*tAv2*tAv2*tAv2*tAv2
-               + (1./362880.)*pulparams[0].f9*tAv2*tAv2*tAv2*tAv2*tAv);
-
+      for ( h=0; h<freqs->length; h++ ){
+        fAp += (freqs->data[h]*dtpow)/gsl_sf_fact(h);
+        dtpow *= tAv;
+      }
+      fAp *= inputParams.freqfactor;
 
       /* Load the SFTs */
       SFTdat = XLALLoadSFTs( catalog, fAp-1.5, fAp+1.5);
@@ -552,32 +479,17 @@ int main( int argc, char **argv ){
       REAL8 timestamp=0;
       timestamp=XLALGPSGetREAL8(&SFTdat->data[sftnum].epoch);
 
-
       for (h=0; h<numpulsars;h++){
-        /* Check if the pulsar has been ruled out of analysis entirely previously */
-        if (pulparams[h].f0==empty_BinaryPulsarParams.f0){
-          continue;
-        }
-
-        /* Check if the pulsar parameter file given is not relevant for this SFT. */
-        /* Due to previous checks, this will be the case when multiple parfiles  */
-        /* are used but this SFT is only relevant for one or more of the others. */
-        if ( pulparams[h].startTime!=0 && pulparams[h].finishTime !=0 ){
-          if ( pulparams[h].startTime > timestamp || pulparams[h].finishTime < timestamp ){
-            continue;
-          }
-        }
-
-        /* Initialise variables whihc change for each SFT */
+        /* Initialise variables that change for each SFT */
         REAL8 InterpolatedImagValue=0., InterpolatedRealValue=0.,
               UnnormalisedInterpolatedImagValue=0., UnnormalisedInterpolatedRealValue=0.,
               AbsSquaredWeightSum=0;
         INT4 datapoint=0;
         EarthState earth, earthS, earthE;
         REAL8 phaseShift = 0., fnew = 0., f1new = 0., sqrtf1new = 0.;
-        REAL8 tdt = 0., tdt2 = 0.;
-        REAL8 tdtS = 0., tdtS2 = 0.;
-        REAL8 tdtE = 0., tdtE2 = 0.;
+        REAL8 tdt = 0.;
+        REAL8 tdtS = 0.;
+        REAL8 tdtE = 0.;
         EphemerisData *edat=NULL;
         TimeCorrectionData *tdat=NULL;
         TimeCorrectionType ttype;
@@ -607,8 +519,8 @@ int main( int argc, char **argv ){
         baryInputS.dInv = barydInv[h];
 
         /* check the time correction and ephemeris types*/
-        if (pulparams[h].units!=NULL){
-          if (!strcmp(pulparams[h].units, "TDB")) {
+        if (PulsarCheckParam(pulparams[h], "UNITS")){
+          if (!strcmp(PulsarGetStringParam(pulparams[h], "UNITS"), "TDB")) {
             tdat=tdatTDB;
             ttype=TIMECORRECTION_TDB;
           }
@@ -623,20 +535,15 @@ int main( int argc, char **argv ){
         }
 
         /* create pulsar name */
-        if ( inputParams.nameset )
-          psrname = XLALStringDuplicate(inputParams.PSRname);
-        else if (pulparams[h].jname)
-          psrname = XLALStringDuplicate(pulparams[h].jname);
-        else if ( pulparams[h].bname )
-          psrname= XLALStringDuplicate( pulparams[h].bname );
-        else if ( pulparams[h].name )
-          psrname= XLALStringDuplicate( pulparams[h].name );
+        psrname = XLALStringDuplicate( PulsarGetStringParam(pulparams[h], "NAME") );
 
         /* set up which ephemeris type is being used for this source */
-        if(pulparams[h].ephem!=empty_BinaryPulsarParams.ephem) {
-          if (!strcmp(pulparams[h].ephem, "DE405")) { edat=edat405; }
-          else if (!strcmp(pulparams[h].ephem, "DE414")) { edat=edat414; }
-          else if (!strcmp(pulparams[h].ephem, "DE200")) { edat=edat200; }
+        if( PulsarCheckParam(pulparams[h], "EPHEM" ) ) {
+          if (!strcmp(PulsarGetStringParam(pulparams[h], "EPHEM"), "DE405")) { edat=edat405; }
+          else if (!strcmp(PulsarGetStringParam(pulparams[h], "EPHEM"), "DE421")) { edat=edat421; }
+          else if (!strcmp(PulsarGetStringParam(pulparams[h], "EPHEM"), "DE414")) { edat=edat414; }
+          else if (!strcmp(PulsarGetStringParam(pulparams[h], "EPHEM"), "DE200")) { edat=edat200; }
+          else { edat = edat405; } // default to DE405
         }
         else{
           edat=edat405; /* default is that DE405 is used*/
@@ -646,7 +553,7 @@ int main( int argc, char **argv ){
         XLALBarycenterEarthNew(&earth, &baryInput.tgps, edat, tdat, ttype);
         XLALBarycenter(&emit, &baryInput, &earth);
 
-        /* Also erform Barycentering Routine at start and end of SFT, for calculation of frequency derivatives */
+        /* Also perform Barycentering Routine at start and end of SFT, for calculation of frequency derivatives */
 
         XLALGPSSetREAL8( &baryInputE.tgps, timestamp +  1./(deltaf) );
         XLALGPSSetREAL8( &baryInputS.tgps, timestamp );
@@ -671,12 +578,12 @@ int main( int argc, char **argv ){
         REAL8 totaldeltaT = 0., totaldeltaTstart = 0.,totaldeltaTend = 0.;
 
         /* Get binary pulsar corrections if source is a binary pulsar */
-        /* because XLALBinaryPulsarDeltaT only returns delta t, not tdot, we need to */
+        /* because XLALBinaryPulsarDeltaTNew only returns delta t, not tdot, we need to */
         /* calculate above and below the start and end frequencies to find gradient. */
 
         /* These are denoted for start(S)/end(E) and plus(P)/minus(M) 1 second.  */
 
-        if( pulparams[h].model!=empty_BinaryPulsarParams.model ){
+        if( PulsarCheckParam(pulparams[h], "BINARY") ){
           BinaryPulsarInput binInputS, binInputM, binInputE, binInputSP, binInputSM, binInputEP, binInputEM;
           BinaryPulsarOutput binOutputS, binOutputM, binOutputE, binOutputSP, binOutputSM, binOutputEP, binOutputEM;
 
@@ -700,15 +607,14 @@ int main( int argc, char **argv ){
           binInputSM.earth = earthS;
           binInputEM.earth = earthE;
 
-          XLALBinaryPulsarDeltaT( &binOutputS, &binInputS, &pulparams[h] );
-          XLALBinaryPulsarDeltaT( &binOutputE, &binInputE, &pulparams[h] );
-          XLALBinaryPulsarDeltaT( &binOutputM, &binInputM, &pulparams[h] );
+          XLALBinaryPulsarDeltaTNew( &binOutputS, &binInputS, pulparams[h] );
+          XLALBinaryPulsarDeltaTNew( &binOutputE, &binInputE, pulparams[h] );
+          XLALBinaryPulsarDeltaTNew( &binOutputM, &binInputM, pulparams[h] );
 
-          XLALBinaryPulsarDeltaT( &binOutputSM, &binInputSM, &pulparams[h] );
-          XLALBinaryPulsarDeltaT( &binOutputEM, &binInputEM, &pulparams[h] );
-          XLALBinaryPulsarDeltaT( &binOutputSP, &binInputSP, &pulparams[h] );
-          XLALBinaryPulsarDeltaT( &binOutputEP, &binInputEP, &pulparams[h] );
-
+          XLALBinaryPulsarDeltaTNew( &binOutputSM, &binInputSM, pulparams[h] );
+          XLALBinaryPulsarDeltaTNew( &binOutputEM, &binInputEM, pulparams[h] );
+          XLALBinaryPulsarDeltaTNew( &binOutputSP, &binInputSP, pulparams[h] );
+          XLALBinaryPulsarDeltaTNew( &binOutputEP, &binInputEP, pulparams[h] );
 
           /* Add the barycentering and binary terms together to get total deltat */
           totaldeltaT = emit.deltaT + binOutputM.deltaT;
@@ -719,7 +625,6 @@ int main( int argc, char **argv ){
           totaltDot = emit.tDot + (binOutputE.deltaT-binOutputS.deltaT)*deltaf;
           totaltDotend = emitE.tDot + (binOutputEP.deltaT-binOutputEM.deltaT)/2;
           totaltDotstart = emitS.tDot + (binOutputSP.deltaT-binOutputSM.deltaT)/2;
-
         }
         else{
           /* If not a binary, then relative motion effects are only due to detector motion */
@@ -732,79 +637,44 @@ int main( int argc, char **argv ){
           totaltDotstart = emitS.tDot;
         }
 
-
         /* Calculate relevant time difference to epoch for use in calculations */
-        tdt=timestamp - pulparams[h].pepoch + 1./(2.*deltaf) + totaldeltaT;
-        tdtS=timestamp - pulparams[h].pepoch + totaldeltaTstart;
-        tdtE=timestamp - pulparams[h].pepoch + 1./(2.*deltaf) + totaldeltaTend ;
+        REAL8 pepoch = PulsarGetREAL8ParamOrZero( pulparams[h], "PEPOCH" );
+        tdt=timestamp - pepoch + 1./(2.*deltaf) + totaldeltaT;
+        tdtS=timestamp - pepoch + totaldeltaTstart;
+        tdtE=timestamp - pepoch + 1./(2.*deltaf) + totaldeltaTend;
 
         /* SFT start time - parfile epoch + 1/2 SFT length + barycentre timeshift */
 
-        tdt2=tdt*tdt;  /* tdt^2 for /slightly/ faster computation */
-        tdtE2=tdtE*tdtE;  /* tdt^2 for /slightly/ faster computation */
-        tdtS2=tdtS*tdtS;  /* tdt^2 for /slightly/ faster computation */
+        fnew = 0., phaseShift = 0.;
+        REAL8 fstart = 0., fend = 0.;
+        REAL8 dtpow = 1., dtspow = 1., dtepow = 1.;
+        REAL8Vector *freqs = PulsarGetREAL8VectorParam(pulparams[h], "F");
+        for ( UINT4 k=0; k<freqs->length; k++ ){
+          /* calculate frequency at the centre of the SFT */
+          fnew += (freqs->data[k]*dtpow)/gsl_sf_fact(k);
+          dtpow *= tdt;
 
-        /* calculate frequency at the centre of the SFT */
-        fnew=inputParams.freqfactor*totaltDot*(
-               pulparams[h].f0
-               + pulparams[h].f1*tdt
-               + (1./2.)*pulparams[h].f2*tdt2
-               + (1./6.)*pulparams[h].f3*tdt*tdt2
-               + (1./24.)*pulparams[h].f4*tdt2*tdt2
-               + (1./120.)*pulparams[h].f5*tdt2*tdt2*tdt
-               + (1./720.)*pulparams[h].f6*tdt2*tdt2*tdt2
-               + (1./5040.)*pulparams[h].f7*tdt2*tdt2*tdt2*tdt
-               + (1./40320.)*pulparams[h].f8*tdt2*tdt2*tdt2*tdt2
-               + (1./362880.)*pulparams[h].f9*tdt2*tdt2*tdt2*tdt2*tdt2);
+          /* calculate frequency at start of SFT */
+          fstart += (freqs->data[k]*dtspow)/gsl_sf_fact(k);
+          dtspow *= tdtS;
+
+          /* calculate frequency at end of SFT */
+          fend += (freqs->data[k]*dtepow)/gsl_sf_fact(k);
+          dtepow *= tdtE;
+
+          /* Calculate difference in phase between beginning of SFT and the epoch.  */
+          phaseShift += (freqs->data[k]*dtpow)/gsl_sf_fact(k+1);
+        }
+        fnew *= (inputParams.freqfactor*totaltDot);
+        fstart *= (inputParams.freqfactor*totaltDotstart);
+        fend *= (inputParams.freqfactor*totaltDotend);
+        phaseShift = LAL_TWOPI*fmod(inputParams.freqfactor*phaseShift, 1.);
 
         if((fnew < inputParams.startF) || (fnew > inputParams.endF)){
           fprintf(stderr,"Pulsar %s has frequency %.4f outside of the frequency range %f-%f at time %.0f\n",
               psrname, fnew, inputParams.startF, inputParams.endF, timestamp);
           continue;
         }
-
-
-        /* Calculate difference in phase between beginning of SFT and the epoch.  */
-        /* Using fmod means that phaseShift is always between 0 and 2 PI, so that */
-        /* inaccuracies in cos and sin functions are minimised. */
-        phaseShift = 2.*LAL_PI*fmod(inputParams.freqfactor*(
-               pulparams[h].f0*tdt
-               + (1./2.)*pulparams[h].f1*tdt2
-               + (1./6.)*pulparams[h].f2*tdt2*tdt
-               + (1./24.)*pulparams[h].f3*tdt2*tdt2
-               + (1./120.)*pulparams[h].f4*tdt2*tdt2*tdt
-               + (1./720.)*pulparams[h].f5*tdt2*tdt2*tdt2
-               + (1./5040.)*pulparams[h].f6*tdt2*tdt2*tdt2*tdt
-               + (1./40320.)*pulparams[h].f7*tdt2*tdt2*tdt2*tdt2
-               + (1./362880.)*pulparams[h].f8*tdt2*tdt2*tdt2*tdt2*tdt
-               + (1./3628800.)*pulparams[h].f9*tdt2*tdt2*tdt2*tdt2*tdt2),1);
-
-        /* calculate frequency at start of SFT */
-        REAL8 fstart = inputParams.freqfactor*totaltDotstart*(
-               pulparams[h].f0
-               + pulparams[h].f1*tdtS
-               + (1./2.)*pulparams[h].f2*tdtS2
-               + (1./6.)*pulparams[h].f3*tdtS*tdtS2
-               + (1./24.)*pulparams[h].f4*tdtS2*tdtS2
-               + (1./120.)*pulparams[h].f5*tdtS2*tdtS2*tdtS
-               + (1./720.)*pulparams[h].f6*tdtS2*tdtS2*tdtS2
-               + (1./5040.)*pulparams[h].f7*tdtS2*tdtS2*tdtS2*tdtS
-               + (1./40320.)*pulparams[h].f8*tdtS2*tdtS2*tdtS2*tdtS2
-               + (1./362880.)*pulparams[h].f9*tdtS2*tdtS2*tdtS2*tdtS2*tdtS2);
-
-        /* calculate frequency at end of SFT */
-        REAL8 fend = inputParams.freqfactor*totaltDotend*(
-               pulparams[h].f0
-               + pulparams[h].f1*tdtE
-               + (1./2.)*pulparams[h].f2*tdtE2
-               + (1./6.)*pulparams[h].f3*tdtE*tdtE2
-               + (1./24.)*pulparams[h].f4*tdtE2*tdtE2
-               + (1./120.)*pulparams[h].f5*tdtE2*tdtE2*tdtE
-               + (1./720.)*pulparams[h].f6*tdtE2*tdtE2*tdtE2
-               + (1./5040.)*pulparams[h].f7*tdtE2*tdtE2*tdtE2*tdtE
-               + (1./40320.)*pulparams[h].f8*tdtE2*tdtE2*tdtE2*tdtE2
-               + (1./362880.)*pulparams[h].f9*tdtE2*tdtE2*tdtE2*tdtE2*tdtE2);
-
 
         /* calculate effective fdot including the frequency derivative obtained from the barycentering */
         f1new= (fend - fstart)*deltaf;
@@ -839,7 +709,6 @@ int main( int argc, char **argv ){
           exit(1);
         }
 
-
         REAL8 ReStdDev = 0., ImStdDev = 0., StdDev = 0., ReStdDevSum = 0., ImStdDevSum = 0.;
 
         /* Load the data into the ReDp, ImDp vectors and set dataFreqs */
@@ -866,7 +735,6 @@ int main( int argc, char **argv ){
         ImStdDev = sqrt(ImStdDevSum/(dataLength-1));
 
         StdDev = sqrt(ReStdDev*ReStdDev + ImStdDev*ImStdDev)/2;
-
 
         /* if removing outliers, remove any data point whihc is outside of closest 10 datapoints with real or */
         /* imaginary parts above threshold number of standard deviations. */
@@ -961,7 +829,7 @@ int main( int argc, char **argv ){
 
         } /* close 'else is not spread' statement */
 
-        /* At this oint we have now loaded the data, set the model and performed the first outlier removal */
+        /* At this point we have now loaded the data, set the model and performed the first outlier removal */
         /* now we calculate Bk and sigmak, and perform residual outlier removal */
 
         /* initialise and create residual and signal best estimate vectors*/
@@ -975,14 +843,11 @@ int main( int argc, char **argv ){
           exit(1);
         }
 
-
         /* Residual noise value needs to be initialised outside the while loop as it will be outputted */
         REAL8 ResStdDev = 0.;
 
-
         /* repeat the following section until all outliers have been removed */
         UINT4 numReduced = 1; /* i.e. flag to say that the number of datapoints has been reduced */
-
 
         /* Iterate through Bk and sigmak calculation, and residual outlier removal so that */
         /* Bk and sigmak are recalculated if any of the datapoints have been removed. */
@@ -1045,7 +910,6 @@ int main( int argc, char **argv ){
           /* calculate combined standard deviation */
           ResStdDev = sqrt(ResReStdDev*ResReStdDev+ResImStdDev*ResImStdDev)/2;
 
-
           /* Use residual standard deviation to remove datapoints - always keep closest 4 datapoints */
           for(dpNum = 0; dpNum < dataFreqs->length; dpNum++){
 
@@ -1091,7 +955,6 @@ int main( int argc, char **argv ){
         fprintf(fpout[h],"%.0f\t%.6e\t%.6e\t%.6e\n",timestamp+1./(2.*deltaf),InterpolatedRealValue
            ,InterpolatedImagValue, ResStdDev*deltaf*LAL_SQRT2);
 
-
       } /* close pulsar loop */
 
     }/* close SFTnum loop */
@@ -1117,8 +980,11 @@ int main( int argc, char **argv ){
   }/* close segment loop */
 
   /* close all the output files */
-  for(h=0;h<numpulsars;h++) fclose(fpout[h]);
+  for(h=0;h<numpulsars;h++){
+    fclose(fpout[h]);
+  }
 
+  XLALSegListFree( seglist );
 
   REAL8 tPre =0. , tPul =0.;
   if(inputParams.Timing){
@@ -1131,7 +997,6 @@ int main( int argc, char **argv ){
   /* print timing information */
   if(inputParams.Timing) fprintf(stderr,":\nPre-Interpolation things took %.5fs, of which source parameter load time was %.5fs\nTotal Number of SFTs = %d\nTotal catalog time %.5fs\nTotal SFT Load time %.5fs\nTotal Interpolation time %.5fs.\n",tPre,tPul, TotalNSFTs, TotalCatalogTime, TotalLoadTime, TotalInterTime);
 
-
   if(inputParams.stddevthresh != 0){ /* do the Bk outlier removal routine if the threshold has been set */
     fprintf(stderr,"\nPerforming Outlier Removal routine with noise threshold of %.5f",inputParams.stddevthresh);
     struct timeval timeORStart, timeOREnd;
@@ -1139,18 +1004,11 @@ int main( int argc, char **argv ){
 
     for(h=0;h<numpulsars;h++){
 
-      char BkFilename[256];
+      char BkFilename[FILENAME_MAXLEN];
       CHAR *parName=NULL;
       /* -------- Set up file for output -------- */
       /* create filename */
-      if ( inputParams.nameset ) parName=inputParams.PSRname;
-      else if ( pulparams[h].jname ) parName = XLALStringDuplicate( pulparams[h].jname);
-      else if ( pulparams[h].bname ) parName = XLALStringDuplicate( pulparams[h].bname );
-      else if ( pulparams[h].name ) parName= XLALStringDuplicate( pulparams[h].name );
-      else{
-        fprintf(stderr, "No pulsar name specified\n");
-        exit(1);
-      }
+      parName = XLALStringDuplicate( PulsarGetStringParam( pulparams[h], "NAME") );
       sprintf(BkFilename, "%s/SplInter_%s_%s",inputParams.outputdir ,parName,
             splParams.detector.frDetector.prefix);
 
@@ -1161,7 +1019,7 @@ int main( int argc, char **argv ){
       }
 
       long offset;
-      CHAR jnkstr[256]; /* junk string to contain comment lines */
+      CHAR jnkstr[FILENAME_MAXLEN]; /* junk string to contain comment lines */
 
       INT4Vector *timeStamp=NULL;
       REAL8Vector *ReData=NULL, *ImData=NULL, *NData=NULL;
@@ -1274,15 +1132,19 @@ int main( int argc, char **argv ){
       REAL8 tOR  = (REAL8)timeOREnd.tv_usec*1.e-6 + (REAL8)timeOREnd.tv_sec - (REAL8)timeORStart.tv_usec*1.e-6 - (REAL8)timeORStart.tv_sec;
       fprintf(stderr,"Outlier Removal took %.5fs",tOR);
     }
-
   }
+
+  for(h=0;h<numpulsars;h++){
+    // free par files
+    PulsarClearParams( pulparams[h] );
+  }
+  XLALFree(pulparams);
 
   if(inputParams.Timing){
     gettimeofday(&timeEndTot, NULL);
     REAL8 tTot  = (REAL8)timeEndTot.tv_usec*1e-6 + (REAL8)timeEndTot.tv_sec - (REAL8)timePreTot.tv_usec*1e-6 - (REAL8)timePreTot.tv_sec;
     fprintf(stderr,"Total time taken: %.5fs\n",tTot);
   }
-
 
   return 0;
 }
@@ -1318,25 +1180,22 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
   char args[] = "hi:F:L:d:P:N:o:e:l:S:E:m:b:M:s:f:T:ntgB";
 
   /* set defaults */
-  inputParams->freqfactor = 2.0; /* default is to look for gws at twice the
-pulsar spin frequency */
-  inputParams->bandwidth = 0.3; /* Default is a 0.3Hz bandwidth search */
-  inputParams->geocentre = 0; /* Default is not to look at the geocentre */
+  inputParams->freqfactor = 2.0;    /* default is to look for gws at twice the pulsar spin frequency */
+  inputParams->bandwidth = 0.3;     /* Default is a 0.3Hz bandwidth search */
+  inputParams->geocentre = 0;       /* Default is not to look at the geocentre */
   inputParams->minSegLength = 1800; /* Default minimum segment length is 1800s */
-  inputParams->baryFlag = 0; /* Default is to perform barycentring routine */
-  inputParams->endF=0.; /* in order to check if the end frequency is set */
-  inputParams->startF=0.; /* in order to check if the start frequency is set*/
-  inputParams->parfileflag=0.; /* in order to check if the Parfile is set */
-  inputParams->pardirflag=0.; /* in order to check if the Parfile directory is set*/
-  inputParams->nameset=0.; /* flag in order to check if pulsar name is set*/
-  inputParams->startTime = 0.; /* Start time not set - use zero */
-  inputParams->endTime = INFTY; /* end time not set - use infinity */
-  inputParams->Timing=0.; /* default not to output timing info to stderr */
-  inputParams->cacheDir=0.; /* default is that directory flag is zero */
-  inputParams->cacheFile=0.; /* default that file flag is zero */
-  inputParams->stddevthresh=0.; /* default not to do outlier removal */
-
-
+  inputParams->baryFlag = 0;        /* Default is to perform barycentring routine */
+  inputParams->endF=0.;             /* in order to check if the end frequency is set */
+  inputParams->startF=0.;           /* in order to check if the start frequency is set*/
+  inputParams->parfileflag=0.;      /* in order to check if the Parfile is set */
+  inputParams->pardirflag=0.;       /* in order to check if the Parfile directory is set*/
+  inputParams->nameset=0.;          /* flag in order to check if pulsar name is set*/
+  inputParams->startTime = 0.;      /* Start time not set - use zero */
+  inputParams->endTime = INFINITY;  /* end time not set - use infinity */
+  inputParams->Timing=0.;           /* default not to output timing info to stderr */
+  inputParams->cacheDir=0.;         /* default is that directory flag is zero */
+  inputParams->cacheFile=0.;        /* default that file flag is zero */
+  inputParams->stddevthresh=0.;     /* default not to do outlier removal */
 
   /* get input arguments */
   while(1){
@@ -1430,95 +1289,6 @@ pulsar spin frequency */
         fprintf(stderr, "unknown error while parsing options\n" );
     }
   }
-}
-
-/* read in science segment list file - returns the number of segments */
-INT4 get_segment_list(INT4Vector *starts, INT4Vector *stops, REAL8 minDur, REAL8 startSegs , REAL8 endSegs, CHAR *seglistfile){
-  FILE *fp=NULL;
-  INT4 i=0;
-  long offset;
-  CHAR jnkstr[256]; /* junk string to contain comment lines */
-  INT4 linecount=0; /* number of lines in the segment file */
-  INT4 ch=0;
-
-  if ( (endSegs-startSegs) < minDur){
-    fprintf(stderr, "Error... can't get a segment of length %f between times %f and %f.\n", minDur, startSegs, endSegs);
-    exit(1);
-  }
-
-  if((fp=fopen(seglistfile, "r"))==NULL){
-    fprintf(stderr, "Error... can't open science segment list file.\n");
-    exit(1);
-  }
-
-  /* count number of lines in the file */
-  while ( (ch = fgetc(fp)) != EOF ){
-    if ( ch == '\n' ) /* check for return at end of line */
-      linecount++;
-  }
-  
-  /* allocate memory for vectors */
-  if( (starts = XLALResizeINT4Vector( starts, linecount )) == NULL ||
-      (stops = XLALResizeINT4Vector( stops, linecount )) == NULL )
-    {  XLALPrintError("Error resizing segment lists.\n");  }
-
-  /* rewind file pointer */
-  rewind(fp);
-
-  /* segment list files have comment lines starting with a # so want to ignore
-     those lines */
-  while(!feof(fp)){
-    offset = ftell(fp); /* get current position of file stream */
-
-    if(fscanf(fp, "%s", jnkstr) == EOF) /* scan in value and check if == to # */
-      break; /* break if there is an extra line at the end of file containing
-                nothing */
-
-    if(strstr(jnkstr, "#")){
-       /* if == # then skip to the end of the line */
-      if ( fscanf(fp, "%*[^\n]") == EOF ) break;
-      continue;
-    }
-    else{
-      fseek(fp, offset, SEEK_SET); /* if line doesn't start with a # then it is
-                                      data */
-      INT4 starttemp=0, stoptemp=0;
-      INT4 starttemp2=0, stoptemp2=0;
-      if( fscanf(fp, "%d%d", &starttemp, &stoptemp) == EOF ) break;
-      /* format is: starts stops */
-
-      /* perform checks on whether the segment is within or overlapping
-       the segment and then output the correct combination */
-      if ( starttemp > endSegs || stoptemp < startSegs) continue; /* if outside of time range, ignore */
-      else {
-        if ( starttemp < startSegs ){ /* if segment starts before the specified start time */
-          starttemp2 = startSegs; /* Start time is specified start */
-        }
-        else{
-          starttemp2 = starttemp; /* Start time is segment start */
-        }
-        if ( stoptemp > endSegs ){ /* if segment ends after the specified end time */
-          stoptemp2 = endSegs; /* end time is specified end */
-        }
-        else{
-          stoptemp2 = stoptemp; /* end time is segment end */
-        }
-
-        if ( (stoptemp2-starttemp2) < minDur) continue;
-
-        starts->data[i]=starttemp2;
-        stops->data[i]=stoptemp2;
-
-        i++;
-      }
-    }
-  }
-  starts = XLALResizeINT4Vector( starts, i );
-  stops = XLALResizeINT4Vector( stops, i );
-
-  fclose(fp);
-
-  return i;
 }
 
 

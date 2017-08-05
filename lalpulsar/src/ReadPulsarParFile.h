@@ -526,23 +526,18 @@ void ParConvMicrosecToSec( const CHAR *in, void *out );
 /** \brief Read in the parameters from a TEMPO(2) parameter file into a \c PulsarParameters structure
  *
  * This function will read in a TEMPO(2) parameter file into a \c PulsarParameters structure. The structure of this
- * function is similar to those in the TEMPO2 code \c readParfile.C and this is intended to supersede the
- * \c XLALReadTEMPOParFile function.
+ * function is similar to those in the TEMPO2 code \c readParfile.C and this supersedes the
+ * \c XLALReadTEMPOParFileOrig function.
  *
  * \param pulsarAndPath [in] The path to the pulsar parameter file
  */
-PulsarParameters *XLALReadTEMPOParFileNew( const CHAR *pulsarAndPath );
+PulsarParameters *XLALReadTEMPOParFile( const CHAR *pulsarAndPath );
 
 /** function to read in a TEMPO parameter file
  */
 void
-XLALReadTEMPOParFile( BinaryPulsarParams    *output,
-                      CHAR                  *pulsarAndPath );
-
-void
-LALReadTEMPOParFile( LALStatus              *status,
-                     BinaryPulsarParams    *output,
-                     CHAR                  *pulsarAndPath );
+XLALReadTEMPOParFileOrig( BinaryPulsarParams    *output,
+                          CHAR                  *pulsarAndPath );
 
 /** \brief This function will read in a TEMPO-style parameter correlation matrix
  *

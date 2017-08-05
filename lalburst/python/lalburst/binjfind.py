@@ -72,7 +72,7 @@ from git_version import version as __version__
 
 def sngl_burst___cmp__(self, other):
 	# compare self's peak time to the LIGOTimeGPS instance other
-	return cmp(self.peak_time, other.seconds) or cmp(self.peak_time_ns, other.nanoseconds)
+	return cmp(self.peak, other)
 
 
 lsctables.SnglBurst.__cmp__ = sngl_burst___cmp__
@@ -673,7 +673,7 @@ def binjfind(xmldoc, process, search, snglcomparefunc, nearcoinccomparefunc, ver
 	# instrument.  1.25 = add 25% for good luck (we're not being
 	# careful with asphericity here, so a bit of padding is needed
 	# anyway, just make sure it's enough).
-	burst_peak_time_window = lal.LAL_REARTH_SI / lal.LAL_C_SI * 1.25
+	burst_peak_time_window = lal.REARTH_SI / lal.C_SI * 1.25
 
 	# add the duration of the longest burst event (the most a burst
 	# event's peak time could differ from either the start or stop time

@@ -182,7 +182,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
   if(inputs.verbose) verbose = 1;
 
   /* get the pulsar parameters */
-  XLALReadTEMPOParFile(&pulsar, inputs.parFile);
+  XLALReadTEMPOParFileOrig(&pulsar, inputs.parFile);
   inputs.psr.equatorialCoords.longitude = pulsar.ra;
   inputs.psr.equatorialCoords.latitude = pulsar.dec;
   inputs.psr.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
@@ -2072,7 +2072,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   INT4 onlyonce=0; /* use this variable only once */
 
   /* read the TEMPO par file for the pulsar */
-  XLALReadTEMPOParFile( &pulsarParamsFixed, input.parFile );
+  XLALReadTEMPOParFileOrig( &pulsarParamsFixed, input.parFile );
 
   if( verbose ){
     fprintf(stderr, "Performing an MCMC for %s with %d iterations.\n",
