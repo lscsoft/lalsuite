@@ -34,10 +34,14 @@ rm -rf "${testdir}"
 [ ! -d "${testdir}" ]
 mkdir -p "${testdir}"
 
-# Extract any reference results
+# Extract any reference results, and check validity
 reftarball="${srcdir}/${scriptname}.tar.gz"
 if [ -f ${reftarball} ]; then
     tar xf ${reftarball}
+    cd "${testdir}"
+    ( echo *.txt | xargs -n 1 cat | grep UNCLEAN ) && exit 1
+    ( echo *.fits | xargs -n 1 ${fitsdir}/lalapps_fits_header_list | grep UNCLEAN ) && exit 1
+    cd "${builddir}"
 fi
 ls -l "${testdir}"
 echo
