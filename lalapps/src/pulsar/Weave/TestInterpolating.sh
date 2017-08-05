@@ -65,6 +65,13 @@ for seg in 1 2 3; do
 
 done
 
+### Make updating reference results a little easier ###
+mkdir TestInterpolating.testdir
+cp RefSeg1Exact.txt RefSeg2Exact.txt RefSeg3Exact.txt TestInterpolating.testdir/
+cp WeaveOut.fits TestInterpolating.testdir/RefWeaveOut.fits
+tar zcvf TestInterpolating.tar.gz TestInterpolating.testdir/
+rm -rf TestInterpolating.testdir/
+
 echo "=== Compare semicoherent F-statistics from lalapps_Weave to reference results ==="
 set -x
 env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" ${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits

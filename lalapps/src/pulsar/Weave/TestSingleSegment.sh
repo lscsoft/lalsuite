@@ -71,6 +71,13 @@ expr ${coh_nrecomp} '=' 0
 set +x
 echo
 
+### Make updating reference results a little easier ###
+mkdir TestSingleSegment.testdir
+cp RefExact.txt TestSingleSegment.testdir/
+cp WeaveOut.fits TestSingleSegment.testdir/RefWeaveOut.fits
+tar zcvf TestSingleSegment.tar.gz TestSingleSegment.testdir/
+rm -rf TestSingleSegment.testdir/
+
 echo "=== Compare F-statistics from lalapps_Weave to reference results ==="
 set -x
 env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" ${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits
