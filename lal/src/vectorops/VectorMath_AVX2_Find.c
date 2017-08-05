@@ -103,6 +103,10 @@ local_cmple_ps ( __m256 in1, __m256 in2 )
 
 // ========== internal generic AVX2 functions ==========
 
+//
+// See VectorMath_SSSE3_Find.c for a description of the general idea behind the algorithm in the following functions
+//
+
 // ---------- generic AVX2 operator with 2 REAL4 vector inputs to 1 UINT4 scalar and 1 UINT4 vector output (SS2uU) ----------
 static inline int
 XLALVectorMath_SS2uU_AVX2 ( UINT4* count, UINT4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len, __m256 (*pred)(__m256, __m256) )
