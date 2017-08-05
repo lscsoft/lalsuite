@@ -49,6 +49,10 @@
 static REAL8 fudge_up   = 1 + 10 * LAL_REAL8_EPS;	// about ~1 + 2e-15
 static REAL8 fudge_down = 1 - 10 * LAL_REAL8_EPS;	// about ~1 - 2e-15
 
+// XLALReadSegmentsFromFile(): applications which still must support
+// the deprecated 4-column format should set this variable to non-zero
+int XLALReadSegmentsFromFile_support_4column_format = 0;
+
 /*---------- internal prototypes ----------*/
 REAL8 TSFTfromDFreq ( REAL8 dFreq );
 int compareSFTdesc(const void *ptr1, const void *ptr2);     // defined in SFTfileIO.c
@@ -1173,7 +1177,11 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
     case 3:
       break;
     case 4:
-      XLALPrintError( "\n%s: WARNING: segment file '%s' is in DEPRECATED 4-column (startGPS endGPS duration NumSFTs, duration is ignored)\n", __func__, fname );
+      if ( XLALReadSegmentsFromFile_support_4column_format ) {
+        XLALPrintError( "\n%s: WARNING: segment file '%s' is in DEPRECATED 4-column format (startGPS endGPS duration NumSFTs, duration is ignored)\n", __func__, fname );
+      } else {
+        XLAL_ERROR_NULL( XLAL_EIO, "%s: segment file '%s' is in DEPRECATED 4-column format (startGPS endGPS duration NumSFTs)\n", __func__, fname );
+      }
       break;
     default:
       XLAL_ERROR_NULL( XLAL_EIO, "%s: segment file '%s' contains an unknown %i-column format", __func__, fname, ncol );

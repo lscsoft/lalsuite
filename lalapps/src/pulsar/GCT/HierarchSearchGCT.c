@@ -249,6 +249,10 @@ static inline REAL4 findLoudestTwoF ( const FstatResults *in );
 LALStatus *global_status; /* a global pointer to MAIN()s head of the LALStatus structure */
 char *global_column_headings_stringp;
 
+// XLALReadSegmentsFromFile(): applications which still must support
+// the deprecated 4-column format should set this variable to non-zero
+extern int XLALReadSegmentsFromFile_support_4column_format;
+
 /* ###################################  MAIN  ################################### */
 
 int MAIN( int argc, char *argv[]) {
@@ -471,6 +475,9 @@ int MAIN( int argc, char *argv[]) {
 
 #ifdef EAH_LALDEBUGLEVEL
 #endif
+
+  // XLALReadSegmentsFromFile(): continue to support deprecated 4-column format (startGPS endGPS duration NumSFTs, duration is ignored)
+  XLALReadSegmentsFromFile_support_4column_format = 1;
 
   uvar_ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
   uvar_ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
