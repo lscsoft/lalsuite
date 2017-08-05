@@ -67,6 +67,9 @@ EXTRA_DIST = \
 	test-compiler.sh \
 	timestamps-1.txt \
 	timestamps-2.txt \
+	TestSingleSegment.tar.gz \
+	TestInterpolating.tar.gz \
+	TestNonInterpolating.tar.gz \
 	$(END_OF_LIST)
 
 clean-local:
