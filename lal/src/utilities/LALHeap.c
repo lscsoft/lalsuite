@@ -403,6 +403,7 @@ int XLALHeapModify(
 
   /* Remove all elements from original heap */
   h->n = 0;
+  h->add = heap_add_not_full;
 
   /* Extract roots element of internal min-heap, until empty */
   while ( h2->n > 0 ) {

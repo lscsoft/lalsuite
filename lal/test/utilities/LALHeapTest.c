@@ -262,6 +262,34 @@ int main( void )
         XLAL_CHECK_MAIN( XLALHeapVisit( maxh, check_ptr_int, &ref0 ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
     }
+    {
+      XLAL_CHECK( XLALHeapModify( min10h, reverse_ptr_int, &param ) == XLAL_SUCCESS, XLAL_EFUNC );
+      printf( "min10h={" );
+      XLAL_CHECK_MAIN( XLALHeapVisit( min10h, print_ptr_int, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+      printf( " }" );
+      const int r = *( ( const int * ) XLALHeapRoot( min10h ) );
+      const int r_ref = *ref[0];
+      XLAL_CHECK_MAIN( r == r_ref, XLAL_EFAILED, "(root) %i != %i (ref)", r, r_ref );
+      printf( ", root = %i\n", r );
+      {
+        int **ref0 = &ref[0];
+        XLAL_CHECK_MAIN( XLALHeapVisit( min10h, check_ptr_int, &ref0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
+    }
+    {
+      XLAL_CHECK( XLALHeapModify( max10h, reverse_ptr_int, &param ) == XLAL_SUCCESS, XLAL_EFUNC );
+      printf( "max10h={" );
+      XLAL_CHECK_MAIN( XLALHeapVisit( max10h, print_ptr_int, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+      printf( " }" );
+      const int r = *( ( const int * ) XLALHeapRoot( max10h ) );
+      const int r_ref = *ref[99];
+      XLAL_CHECK_MAIN( r == r_ref, XLAL_EFAILED, "(root) %i != %i (ref)", r, r_ref );
+      printf( ", root = %i\n", r );
+      {
+        int **ref0 = &ref[90];
+        XLAL_CHECK_MAIN( XLALHeapVisit( max10h, check_ptr_int, &ref0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
+    }
   }
 
   /* Resize unlimited heaps, and check properties */
