@@ -1525,12 +1525,22 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
 
       /**********************************************************************************/
       /* extract effective band from this, if neccessary (ie if faster-sampled output SFTs) */
-      REAL8 sftvect_df = sftvect->data[0].deltaF;
-      REAL8 extr_freq = lround( par->freq / sftvect_df ) * sftvect_df;
-      REAL8 extr_freqband = ( lround( par->freqband / sftvect_df ) - 1 ) * sftvect_df;    /* the last bin has to be avoided */
-      SFTVector *tempSFTvect = XLALExtractBandFromSFTVector ( sftvect, extr_freq, extr_freqband );
+      REAL8 df = sftvect->data[0].deltaF;
+      long bin0 = lround( ( par->freq                 - sftvect->data[0].f0 ) / df);
+      long bin1 = lround( ( par->freq + par->freqband - sftvect->data[0].f0 ) / df);
+      SFTVector *tempSFTvect = NULL;
+      XLAL_CHECK ( (tempSFTvect = XLALCreateSFTVector ( sftvect->length, 0 )) != NULL, XLAL_EFUNC );
+      for ( UINT4 alpha = 0; alpha < sftvect->length; ++alpha ) {
+        SFTtype *dest = &(tempSFTvect->data[alpha]);
+        SFTtype *src =  &(sftvect->data[alpha]);
+        *dest = *src;
+        dest->f0 += bin0 * df;
+        XLAL_CHECK ( (dest->data = XLALCreateCOMPLEX8Vector ( bin1 - bin0 )) != NULL, XLAL_EFUNC );
+        memcpy( dest->data->data, src->data->data + bin0, ( bin1 - bin0 ) * sizeof(dest->data->data[0]) );
+      }
       XLALDestroySFTVector(sftvect);
-      LogPrintf(LOG_DEBUG, "extracted freq %g(%g), band %g(%g)\n", extr_freq, extr_freq / sftvect_df, extr_freqband, extr_freqband / sftvect_df);
+      LogPrintf(LOG_DEBUG, "extracted frequency band %0.16g to %0.16g, bin %li to %li\n",
+                tempSFTvect->data[0].f0, tempSFTvect->data[0].f0 + tempSFTvect->data[0].deltaF * tempSFTvect->data[0].data->length, bin0, bin1);
 
       /**********************************************************************************/
       /* append these SFTs to the full list of SFTs */
