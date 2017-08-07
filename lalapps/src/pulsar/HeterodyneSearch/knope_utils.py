@@ -2270,14 +2270,14 @@ class knopeDAG(pipeline.CondorDAG):
         pardir = os.path.join(self.splinter_dir, modsuffix)
 
         if modsuffix == 'modified':
-          if modpars > 0:
+          if modpars is True:
             self.splinter_modified_pulsar_dir = pardir
             parlist = self.modified_pulsars
             self.splinter_nodes_modified[ifo] = {}
           else: continue
 
         if modsuffix == 'unmodified':
-          if unmodpars > 0:
+          if unmodpars is True:
             self.splinter_unmodified_pulsar_dir = pardir
             parlist = self.unmodified_pulsars
             self.splinter_nodes_unmodified[ifo] = {}
