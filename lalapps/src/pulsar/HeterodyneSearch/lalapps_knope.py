@@ -82,11 +82,11 @@ if dag.error_code != 0: # check for any errors that occurred
     print("Error... unrecognised error code!", file=sys.stderr)
 
   # only exit if not in autonomous mode and the error message
-  if not automated or dag.error_code != KNOPE_ERROR_NO_SEGMENTS:
+  if not automated or dag.error_code != knope.KNOPE_ERROR_NO_SEGMENTS:
     sys.exit(dag.error_code)
 
 # write out DAG and submit files (unless in automated mode and no new segment files were found)
-if not automated or dag.error_code != KNOPE_ERROR_NO_SEGMENTS:
+if not automated or dag.error_code != knope.KNOPE_ERROR_NO_SEGMENTS:
   dag.write_sub_files()
   dag.write_dag()
 
