@@ -77,7 +77,7 @@ echo
 mkdir TestSingleSegment.testdir
 cp RefExact.txt TestSingleSegment.testdir/
 cp WeaveOut.fits TestSingleSegment.testdir/RefWeaveOut.fits
-tar zcvf TestSingleSegment.tar.gz TestSingleSegment.testdir/
+tar zcf TestSingleSegment.tar.gz TestSingleSegment.testdir/
 rm -rf TestSingleSegment.testdir/
 
 echo "=== Compare F-statistics from lalapps_Weave to reference results ==="

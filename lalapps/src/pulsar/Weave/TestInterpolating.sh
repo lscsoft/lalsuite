@@ -71,7 +71,7 @@ done
 mkdir TestInterpolating.testdir
 cp RefSeg1Exact.txt RefSeg2Exact.txt RefSeg3Exact.txt TestInterpolating.testdir/
 cp WeaveOut.fits TestInterpolating.testdir/RefWeaveOut.fits
-tar zcvf TestInterpolating.tar.gz TestInterpolating.testdir/
+tar zcf TestInterpolating.tar.gz TestInterpolating.testdir/
 rm -rf TestInterpolating.testdir/
 
 echo "=== Compare semicoherent F-statistics from lalapps_Weave to reference results ==="
