@@ -2566,8 +2566,6 @@ class knopeDAG(pipeline.CondorDAG):
 
             if pitem in self.splinter_modified_pars: # for modified pulsars set start time (for file name) from run values
               startname = str(self.starttime[pifo])
-              catfiles = [finefiles] # just cat (in this case essentially just copying) the single file
-              parent = self.splinter_nodes_modified[pifo][ff]
             else: # a previous file exists use the start time from that (for file name)
               if len(prevfile) == 1:
                 try:
