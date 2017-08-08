@@ -261,7 +261,7 @@ XLALPrintStringValueOfUserFlag ( const int *valFlag, const UserChoices *flagData
 
   // Check input
   XLAL_CHECK_NULL(valFlag != NULL, XLAL_EFAULT);
-  XLAL_CHECK_NULL(*valFlag > 0, XLAL_EINVAL);
+  XLAL_CHECK_NULL(*valFlag >= 0, XLAL_EINVAL);
   XLAL_CHECK_NULL(flagData != NULL, XLAL_EFAULT);
 
   // Handle special case of first bitflag with value 0, representing a zero bitflag
