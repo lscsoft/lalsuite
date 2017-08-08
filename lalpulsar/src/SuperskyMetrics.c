@@ -76,11 +76,14 @@ struct tagSuperskyTransformData {
 #define CHECK_RSSKY_METRIC_TRANSF(M, RT) \
   ((M) != NULL && CHECK_RSSKY_TRANSF(RT) && (M)->size1 == (RT)->ndim && (M)->size2 == (RT)->ndim)
 #define CHECK_RSSKY_TRANSF(RT) \
-  ((RT) != NULL && (RT)->ndim > 0 && (RT)->fiducial_freq > 0 && (RT)->nsky_offsets == 1 + (RT)->nspins)
+  ((RT) != NULL && (RT)->ndim > 0 && (RT)->fiducial_freq > 0 && (RT)->nsky_offsets == 1 + (RT)->nspins && CHECK_RSSKY_COORDS(RT) )
+#define CHECK_RSSKY_COORDS(RT) \
+  ( (RT)->coordinate_system == NULL || ((XLALFindDopplerCoordinateInSystem ((RT)->coordinate_system, DOPPLERCOORD_N3OX_ECL ) == 0) && XLALFindDopplerCoordinateInSystem ((RT)->coordinate_system, DOPPLERCOORD_N3OY_ECL) == 1))
 
 // Determine which dimension stores the reduced supersky frequency/spindown of order 's'
 #define RSSKY_FKDOT_OFFSET(RT, S)   (((S) == 0) ? ((RT)->SMAX) : ((size_t)((S) - 1)))
-#define RSSKY_FKDOT_DIM(RT, S)      (2 + RSSKY_FKDOT_OFFSET(RT, S))
+const DopplerCoordinateID smap[] = { DOPPLERCOORD_FREQ, DOPPLERCOORD_F1DOT, DOPPLERCOORD_F2DOT, DOPPLERCOORD_F3DOT, DOPPLERCOORD_F4DOT };
+#define RSSKY_FKDOT_DIM(RT, S)      (XLALFindDopplerCoordinateInSystem ( (RT)->coordinate_system, smap[(S)] ))
 
 ///
 /// Fiducial frequency at which to numerically calculate metrics, which
@@ -1096,10 +1099,20 @@ int XLALConvertPhysicalToSuperskyPoint(
   }
 
   // Create array for intermediate coordinates
-  double intm[4 + rssky_transf->SMAX];
+  double intm[1 + rssky_transf->coordinate_system->dim];	// +1 because using 3 sky coordinates at first
+
   gsl_vector_view intm_sky2 = gsl_vector_view_array( &intm[0], 2 );
   gsl_vector_view intm_sky3 = gsl_vector_view_array( &intm[0], 3 );
-  gsl_vector_view intm_fspin = gsl_vector_view_array( &intm[3], 1 + rssky_transf->SMAX );
+
+  int iSpin2sky = XLALFindDopplerCoordinateInSystem ( rssky_transf -> coordinate_system, DOPPLERCOORD_F1DOT );
+  int iFreq2sky = XLALFindDopplerCoordinateInSystem ( rssky_transf -> coordinate_system, DOPPLERCOORD_FREQ );
+  XLAL_CHECK ( iFreq2sky >= 0, XLAL_EFAULT );
+  if ( iSpin2sky < 0 ) {
+    iSpin2sky = iFreq2sky;
+  }
+  int iSpin3sky = iSpin2sky + 1;	// increase by 1 to account for 3D sky
+  int iFreq3sky = iFreq2sky + 1;	// increase by 1 to account for 3D sky
+  gsl_vector_view intm_fspin = gsl_vector_view_array( &intm[iSpin3sky], 1 + rssky_transf->SMAX );
 
   // Convert right ascension and declination to equatorial coordinates
   {
@@ -1110,9 +1123,9 @@ int XLALConvertPhysicalToSuperskyPoint(
   }
 
   // Copy frequency/spindowns to intermediate array; frequency goes last
-  intm[3 + rssky_transf->SMAX] = in_phys_ref.fkdot[0];
+  intm[iFreq3sky] = in_phys_ref.fkdot[0];
   for ( size_t s = 1; s <= rssky_transf->SMAX; ++s ) {
-    intm[2 + s] = in_phys_ref.fkdot[s];
+    intm[iSpin3sky + s - 1] = in_phys_ref.fkdot[s];
   }
 
   // Apply the alignment transform to the supersky position to produced the aligned sky position:
@@ -1134,7 +1147,7 @@ int XLALConvertPhysicalToSuperskyPoint(
   // Copy intermediate array to output point
   {
     gsl_vector_view out_sky2 = gsl_vector_subvector( out_rssky, 0, 2 );
-    gsl_vector_view out_fspin = gsl_vector_subvector( out_rssky, 2, 1 + rssky_transf->SMAX );
+    gsl_vector_view out_fspin = gsl_vector_subvector( out_rssky, iSpin2sky, 1 + rssky_transf->SMAX );
     gsl_vector_memcpy( &out_sky2.vector, &intm_sky2.vector );
     gsl_vector_memcpy( &out_fspin.vector, &intm_fspin.vector );
   }
