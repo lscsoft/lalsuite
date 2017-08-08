@@ -437,9 +437,17 @@ test_ParseStringValue ( void )
 
   // ---------- XLALParseStringValueAsUserFlag() ----------
   int valFlag;
-  const UserChoices flagData = { { -1, "noflag" }, { 1, "flagA" }, { 2, "flagB" }, { 4, "flagC" }, { 5, "flagAC" } };
+  const UserChoices flagData = { { 0, "none" }, { -1, "noflag" }, { 1, "flagA" }, { 2, "flagB" }, { 4, "flagC" }, { 5, "flagAC" } };
+
+  valString = "none";
+  XLAL_CHECK( XLALParseStringValueAsUserFlag ( &valFlag, &flagData, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( valFlag == 0, XLAL_ETOL, "XLALParseStringValueAsUserFlag(%s), failed, return = %i", valString, valFlag );
 
   valString = "noflag";
+  XLAL_TRY_SILENT( XLALParseStringValueAsUserFlag ( &valFlag, &flagData, valString ), errnum );
+  XLAL_CHECK( errnum != 0, XLAL_EFAILED, "XLALParseStringValueAsUserFlag() failed to catch invalid bitflag value\n" );
+
+  valString = "none,flagA";
   XLAL_TRY_SILENT( XLALParseStringValueAsUserFlag ( &valFlag, &flagData, valString ), errnum );
   XLAL_CHECK( errnum != 0, XLAL_EFAILED, "XLALParseStringValueAsUserFlag() failed to catch invalid bitflag value\n" );
 

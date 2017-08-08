@@ -264,6 +264,11 @@ XLALPrintStringValueOfUserFlag ( const int *valFlag, const UserChoices *flagData
   XLAL_CHECK_NULL(*valFlag > 0, XLAL_EINVAL);
   XLAL_CHECK_NULL(flagData != NULL, XLAL_EFAULT);
 
+  // Handle special case of first bitflag with value 0, representing a zero bitflag
+  if ((*flagData)[0].val == 0 && (*flagData)[0].name != NULL && *valFlag == 0) {
+    return XLALStringDuplicate( (*flagData)[0].name );
+  }
+
   // Deduce bitflag value
   int val = *valFlag;
   CHAR *str = NULL;
@@ -301,7 +306,7 @@ XLALFormatHelpStringOfUserFlag ( const UserChoices *flagData )
         continue;
       }
       if (str == NULL) {
-        str = XLALStringAppendFmt( str, "=[%s", (*flagData)[i].name);
+        str = XLALStringAppendFmt( str, "=(%s", (*flagData)[i].name);
       } else if (prev_val > 0 && prev_val == (*flagData)[i].val ) {
         str = XLALStringAppendFmt( str, "=%s", (*flagData)[i].name);
       } else {
@@ -312,8 +317,14 @@ XLALFormatHelpStringOfUserFlag ( const UserChoices *flagData )
       prev_name = (*flagData)[i].name;
     }
   }
-  str = XLALStringAppendFmt( str, "],...");
+  str = XLALStringAppendFmt( str, ")[,...]");
   XLAL_CHECK_NULL(str != NULL, XLAL_EFUNC);
+  if ((*flagData)[0].val == 0 && (*flagData)[0].name != NULL) {
+    CHAR *old_str = str;
+    str = XLALStringAppendFmt( NULL, "=%s|(%s)", (*flagData)[0].name, old_str + 1);
+    XLAL_CHECK_NULL(str != NULL, XLAL_EFUNC);
+    XLALFree(old_str);
+  }
 
   return str;
 

@@ -88,7 +88,7 @@ main(int argc, char *argv[])
   uvar->argFlag = 0;
 
   const UserChoices enumData = { { -1, "noenum" }, { 1, "enum1" }, { 2, "enum2" }, { 2, "enumB" }, { 0, "enum0" } };
-  const UserChoices flagData = { { -1, "noflag" }, { 1, "flagA" }, { 2, "flagB" }, { 4, "flagC" }, { 5, "flagAC" } };
+  const UserChoices flagData = { { 0, "none" }, { -1, "noflag" }, { 1, "flagA" }, { 2, "flagB" }, { 4, "flagC" }, { 5, "flagAC" } };
 
   lalUserVarHelpBrief = "brief description";
   lalUserVarHelpDescription =

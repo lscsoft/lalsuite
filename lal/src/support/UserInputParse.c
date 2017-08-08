@@ -687,6 +687,8 @@ int XLALParseStringValueAsUserEnum ( int *valEnum,			///< [out] output enumerati
 
 ///
 /// Parse a string representing a user selection of a set of bitflags.
+/// - If the first bitflag choice has a value of zero, it is treated
+//    as a special exclusive case for setting a zero bitflag.
 /// - Bitflag choices with values <= 0 are ignored.
 /// - Bigflag choice names are separated by ',' and are case insensitive.
 ///
@@ -702,6 +704,12 @@ int XLALParseStringValueAsUserFlag ( int *valFlag,			///< [out] output bitflag v
   XLAL_CHECK_FAIL(flagData != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(valString != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(strlen(valString) > 0, XLAL_EINVAL);
+
+  // Handle special case of first bitflag with value 0, representing a zero bitflag
+  if ((*flagData)[0].val == 0 && (*flagData)[0].name != NULL && XLALStringCaseCompare(valString, (*flagData)[0].name) == 0) {
+    *valFlag = 0;
+    return XLAL_SUCCESS;
+  }
 
   // Parse input string into bitflag names
   XLAL_CHECK_FAIL( ( valStringNames = XLALParseStringVector( valString, "," ) ) != NULL, XLAL_EFUNC );
