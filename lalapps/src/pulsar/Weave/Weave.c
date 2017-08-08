@@ -899,8 +899,7 @@ int main( int argc, char *argv[] )
   WeaveCacheQueries *queries = XLALWeaveCacheQueriesCreate( tiling[isemi], setup.phys_to_latt, setup.latt_to_phys, rssky_transf[isemi], nsegments, uvar->freq_partitions );
   XLAL_CHECK_MAIN( queries != NULL, XLAL_EFUNC );
 
-  // Pointer to partial and final semicoherent results
-  WeaveSemiPartials *semi_parts = NULL;
+  // Pointer to final semicoherent results
   WeaveSemiResults *semi_res = NULL;
 
   // Create output results structure
@@ -1067,8 +1066,8 @@ int main( int argc, char *argv[] )
     cpu_timing[CT_QUERY] += cpu_toc - cpu_tic;
     cpu_tic = cpu_toc;
 
-    // Initialise partial semicoherent results
-    XLAL_CHECK_MAIN( XLALWeaveSemiPartialsInit( &semi_parts, simulation_level, ndetectors, nsegments, &semi_phys, dfreq, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    // Initialise semicoherent results
+    XLAL_CHECK_MAIN( XLALWeaveSemiResultsInit( &semi_res, simulation_level, ndetectors, nsegments, &semi_phys, dfreq, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Retrieve coherent results from each segment
     const WeaveCohResults *XLAL_INIT_DECL( coh_res, [nsegments] );
@@ -1083,18 +1082,18 @@ int main( int argc, char *argv[] )
     cpu_timing[CT_COH_RES] += cpu_toc - cpu_tic;
     cpu_tic = cpu_toc;
 
-    // Add coherent results to partial semicoherent results
+    // Add coherent results to semicoherent results
     for ( size_t i = 0; i < nsegments; ++i ) {
-      XLAL_CHECK_MAIN( XLALWeaveSemiPartialsAdd( semi_parts, coh_res[i], coh_offset[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALWeaveSemiResultsAdd( semi_res, coh_res[i], coh_offset[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
-    // Time computation of partial semicoherent results
+    // Time computation of semicoherent results
     cpu_toc = cpu_time();
     cpu_timing[CT_SEMI_PARTS] += cpu_toc - cpu_tic;
     cpu_tic = cpu_toc;
 
     // Compute final semicoherent results
-    XLAL_CHECK_MAIN( XLALWeaveSemiResultsCompute( &semi_res, semi_parts ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALWeaveSemiResultsComplete( semi_res ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Time computation of final semicoherent results
     cpu_toc = cpu_time();
@@ -1363,7 +1362,6 @@ int main( int argc, char *argv[] )
   XLALWeaveOutputResultsDestroy( out );
 
   // Cleanup memory from semicoherent results
-  XLALWeaveSemiPartialsDestroy( semi_parts );
   XLALWeaveSemiResultsDestroy( semi_res );
 
   // Cleanup memory from parameter-space iteration
