@@ -87,8 +87,8 @@ int main( int argc, char *argv[] )
   struct uvar_type {
     BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, per_detector, per_segment, misc_info, simulate_search, statistics_help;
     CHAR *setup_file, *sft_files, *output_file, *ckpt_output_file;
-    LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd;
-    REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit;
+    LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd, *lrs_oLGX;
+    REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit, lrs_Fstar0sc;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
     UINT4 sky_patch_count, sky_patch_index, freq_partitions, Fstat_run_med_window, Fstat_Dterms, toplist_limit, rand_seed, cache_max_size, cache_gc_limit;
     int lattice, Fstat_method, Fstat_SSB_precision, toplists, extra_statistics;
@@ -270,6 +270,20 @@ int main( int argc, char *argv[] )
     Fstat_SSB_precision, UserEnum, &SSBprecisionChoices, 0, DEVELOPER,
     "Precision in calculating the barycentric transformation. "
     );
+
+  //
+  // Line-robust statistics computation
+  //
+  lalUserVarHelpOptionSubsection = "Line-robust statistics (LRS) arguments";
+  XLALRegisterUvarMember(
+    lrs_Fstar0sc, REAL8, 0, OPTIONAL,
+    "(Semi-coherent) transition-scale parameter 'Fstar0sc' (=Nseg*Fstar0coh) for B_S/GL.. family of statistics."
+    );
+  XLALRegisterUvarMember(
+    lrs_oLGX, STRINGVector, 0, OPTIONAL,
+    "Per-detector line-vs-Gauss prior odds 'oLGX' (Defaults to oLGX=1/Ndet) for B_S/GL.. family of statistics."
+    );
+
   //
   // - Output control
   //
@@ -535,6 +549,21 @@ int main( int argc, char *argv[] )
   //  work out dependency-map for different statistics sets: toplist-ranking, output, total set of dependencies in inner/outer loop ...
   XLAL_CHECK_MAIN ( XLALWeaveStatisticsParamsSetDependencyMap( statistics_params, uvar->toplists, all_output_stats ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  // ---------- prepare setup for line-robust statistics if requested ----------
+  if ( statistics_params->statistics_to_compute & (WEAVE_STATISTIC_BSGL|WEAVE_STATISTIC_BSGLtL|WEAVE_STATISTIC_BtSGLtL) ) {
+    REAL4 *oLGX_p = NULL;
+    REAL4 oLGX[PULSAR_MAX_DETECTORS];
+    if ( uvar->lrs_oLGX != NULL ) {
+      XLAL_CHECK_MAIN ( uvar->lrs_oLGX->length == ndetectors, XLAL_EINVAL, "length(lrs-oLGX) = %d must equal number of detectors (%d)'\n", uvar->lrs_oLGX->length, ndetectors );
+      XLAL_CHECK_MAIN ( XLALParseLinePriors ( &oLGX[0], uvar->lrs_oLGX ) == XLAL_SUCCESS, XLAL_EFUNC );
+      oLGX_p = &oLGX[0];
+    } // if uvar_oLGX != NULL
+    const BOOLEAN useLogCorrection = 0;
+    statistics_params->BSGL_setup = XLALCreateBSGLSetup ( ndetectors, uvar->lrs_Fstar0sc, oLGX_p, useLogCorrection, nsegments );
+    XLAL_CHECK_MAIN ( statistics_params->BSGL_setup != NULL, XLAL_EFUNC );
+  } // if BSGL|BSGLtL|BtSGLtL
+
+  ////////// Set up lattice tilings //////////
 
   // Check interpolation/maximum mismatch options are consistent with the type of search being performed
   if ( nsegments == 1 ) {

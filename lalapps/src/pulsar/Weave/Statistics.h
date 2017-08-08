@@ -105,6 +105,9 @@ typedef struct tagWeaveStatisticsParams {
   /// Bitflag: set of "outer-loop" statistics that will be computed only on the final toplist (formerly known as "recalc step")
   WeaveStatisticType outerloop_statistics;
 
+  /// setup for line-robust B_*S/GL* family of statistics
+  BSGLSetup *BSGL_setup;
+
 } WeaveStatisticsParams;
 
 

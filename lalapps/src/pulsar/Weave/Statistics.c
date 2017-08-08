@@ -108,7 +108,7 @@ const WeaveStatisticMap statistic_map[] = {
 };
 
 // total set of current supported statistics
-#define SUPPORTED_STATISTICS (WEAVE_STATISTIC_COH2F | WEAVE_STATISTIC_COH2F_DET | WEAVE_STATISTIC_SUM2F | WEAVE_STATISTIC_SUM2F_DET | WEAVE_STATISTIC_MEAN2F | WEAVE_STATISTIC_MEAN2F_DET)
+#define SUPPORTED_STATISTICS (WEAVE_STATISTIC_COH2F | WEAVE_STATISTIC_COH2F_DET | WEAVE_STATISTIC_SUM2F | WEAVE_STATISTIC_SUM2F_DET | WEAVE_STATISTIC_MEAN2F | WEAVE_STATISTIC_MEAN2F_DET |WEAVE_STATISTIC_BSGL)
 const UserChoices statistic_choices = {
   ENTRY_2_CHOICES(ENTRY_NONE),
   ENTRY_2_CHOICES(ENTRY_COH2F),
@@ -117,15 +117,17 @@ const UserChoices statistic_choices = {
   ENTRY_2_CHOICES(ENTRY_SUM2F_DET),
   ENTRY_2_CHOICES(ENTRY_MEAN2F),
   ENTRY_2_CHOICES(ENTRY_MEAN2F_DET),
+  ENTRY_2_CHOICES(ENTRY_BSGL),
   { SUPPORTED_STATISTICS, "all" }
 
 };
 
 // subset of statistics that are supported as toplist ranking statistics
-#define SUPPORTED_TOPLISTS (WEAVE_STATISTIC_MEAN2F|WEAVE_STATISTIC_SUM2F)
+#define SUPPORTED_TOPLISTS (WEAVE_STATISTIC_MEAN2F|WEAVE_STATISTIC_SUM2F|WEAVE_STATISTIC_BSGL)
 const UserChoices toplist_choices = {
   ENTRY_2_CHOICES(ENTRY_MEAN2F),
   ENTRY_2_CHOICES(ENTRY_SUM2F),
+  ENTRY_2_CHOICES(ENTRY_BSGL),
   {SUPPORTED_TOPLISTS, "all" }
 };
 
@@ -260,6 +262,7 @@ void XLALWeaveStatisticsParamsDestroy(
   }
 
   XLALDestroyStringVector ( statistics_params -> detectors );
+  XLALDestroyBSGLSetup ( statistics_params -> BSGL_setup );
   XLALFree ( statistics_params );
 
   return;

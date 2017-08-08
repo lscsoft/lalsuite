@@ -89,6 +89,9 @@ typedef struct tagWeaveSemiResults {
   REAL4VectorAligned *mean2F;
   /// Mean per-detector F-statistics per frequency
   REAL4VectorAligned *mean2F_det[PULSAR_MAX_DETECTORS];
+
+  /// Line-robust log10(B_S/GL) statistic
+  REAL4VectorAligned *log10BSGL;
 } WeaveSemiResults;
 
 WeaveCohInput *XLALWeaveCohInputCreate(

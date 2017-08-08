@@ -75,6 +75,16 @@ static REAL4 toplist_item_get_mean2F( const WeaveResultsToplistItem *item ) { re
 static void toplist_item_set_mean2F( WeaveResultsToplistItem *item, const REAL4 value ) { item->mean2F = value; }
 
 /// @}
+///
+/// \name Functions for results toplist ranked by line-robust log10(B_S/GL) statistic
+///
+/// @{
+
+static const REAL4 *toplist_results_log10BSGL( const WeaveSemiResults *semi_res ) { return semi_res->log10BSGL->data; }
+static REAL4 toplist_item_get_log10BSGL( const WeaveResultsToplistItem *item ) { return item->log10BSGL; }
+static void toplist_item_set_log10BSGL( WeaveResultsToplistItem *item, const REAL4 value ) { item->log10BSGL = value; }
+
+/// @}
 
 ///
 /// Create output results
@@ -116,6 +126,14 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
   // Create a toplist which ranks results by summed multi-detector F-statistic
   if ( toplist_statistics & WEAVE_STATISTIC_SUM2F ) {
     out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, "sum2F", "summed multi-detector F-statistic", toplist_limit, toplist_results_sum2F, toplist_item_get_sum2F, toplist_item_set_sum2F );
+    XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
+    XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
+    out->ntoplists++;
+  }
+
+  // Create a toplist which ranks results by line-robust log10(B_S/GL) statistic
+  if ( toplist_statistics & WEAVE_STATISTIC_BSGL ) {
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, "log10(B_S/GL)", "line-robust log10(B_S/GL) statistic", toplist_limit, toplist_results_log10BSGL, toplist_item_get_log10BSGL, toplist_item_set_log10BSGL );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
     out->ntoplists++;
@@ -187,7 +205,8 @@ int XLALWeaveOutputResultsOuterLoop (
     WEAVE_STATISTIC_SUM2F      |
     WEAVE_STATISTIC_SUM2F_DET  |
     WEAVE_STATISTIC_MEAN2F     |
-    WEAVE_STATISTIC_MEAN2F_DET
+    WEAVE_STATISTIC_MEAN2F_DET |
+    WEAVE_STATISTIC_BSGL
     );
 
   WeaveStatisticType unsupported = (outerloop_stats & ~supported_outerloop);
@@ -514,6 +533,7 @@ int XLALWeaveOutputResultsCompare(
       return XLAL_SUCCESS;
     }
   }
+
 
   return XLAL_SUCCESS;
 
