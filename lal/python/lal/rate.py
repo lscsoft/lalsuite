@@ -2228,6 +2228,7 @@ class BinnedLnPDF(BinnedDensity):
 		reported for those bins will be 0.
 		"""
 		self.norm = self.array.sum()
+		assert self.norm >= 0.
 		self.norm = math.log(self.norm) if self.norm != 0. else NegInf
 
 	def to_xml(self, *args, **kwargs):
