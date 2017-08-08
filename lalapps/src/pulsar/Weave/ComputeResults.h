@@ -30,6 +30,8 @@
 #include <lal/VectorMath.h>
 #include <lal/ComputeFstat.h>
 
+#include "Statistics.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -55,6 +57,8 @@ typedef struct tagWeaveCohResults WeaveCohResults;
 typedef struct tagWeaveSemiResults {
   /// Bitflag representing search simulation level
   WeaveSimulationLevel simulation_level;
+  /// Struct holding all parameters for which statistics to output and compute, when, and how
+  const WeaveStatisticsParams *statistics_params;
   /// Number of detectors
   UINT4 ndetectors;
   /// Number of segments
@@ -90,7 +94,7 @@ typedef struct tagWeaveSemiResults {
 WeaveCohInput *XLALWeaveCohInputCreate(
   const WeaveSimulationLevel simulation_level,
   FstatInput *Fstat_input,
-  const LALStringVector *per_detectors
+  const WeaveStatisticsParams *statistics_params
   );
 void XLALWeaveCohInputDestroy(
   WeaveCohInput *coh_input
@@ -111,7 +115,8 @@ int XLALWeaveSemiResultsInit(
   const UINT4 nsegments,
   const PulsarDopplerParams *semi_phys,
   const double dfreq,
-  const UINT4 semi_nfreqs
+  const UINT4 semi_nfreqs,
+  const WeaveStatisticsParams *statistics_params
   );
 int XLALWeaveSemiResultsAdd(
   WeaveSemiResults *semi_res,

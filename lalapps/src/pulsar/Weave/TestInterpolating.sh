@@ -40,6 +40,10 @@ ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
     --toplists=mean2F --toplist-limit=2321 --per-detector --per-segment --misc-info \
     --setup-file=WeaveSetup.fits --sft-files='*.sft' \
     --alpha=2.3/0.05 --delta=-1.2/0.1 --freq=50.5~5e-6 --f1dot=-3e-10,0 --semi-max-mismatch=5.5 --coh-max-mismatch=0.3
+${builddir}/lalapps_Weave --output-file=WeaveOut-2.fits \
+    --toplists=mean2F --toplist-limit=2321 --misc-info --extra-statistics="coh2F,coh2F_det,mean2F_det" \
+    --setup-file=WeaveSetup.fits --sft-files='*.sft' \
+    --alpha=2.3/0.05 --delta=-1.2/0.1 --freq=50.5~5e-6 --f1dot=-3e-10,0 --semi-max-mismatch=5.5 --coh-max-mismatch=0.3
 set +x
 echo
 
@@ -77,6 +81,12 @@ rm -rf TestInterpolating.testdir/
 echo "=== Compare semicoherent F-statistics from lalapps_Weave to reference results ==="
 set -x
 env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" ${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits
+set +x
+echo
+
+echo "=== Compare F-statistics from lalapps_Weave with {--per-segment, --per-detector} versus --extra-statistics='mean2F_det|coh2F|coh2F_det' ==="
+set -x
+env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" ${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=WeaveOut-2.fits -m 0 -r 0 -s 0 -a 0 -x 0
 set +x
 echo
 

@@ -63,14 +63,18 @@ typedef struct tagWeaveResultsToplistItem {
   REAL8 semi_fkdot[PULSAR_MAX_SPINS];
   /// Physical frequency and spindowns of coherent templates (only needed for per-segment output)
   REAL8 *coh_fkdot[PULSAR_MAX_SPINS];
-  /// Mean multi-detector F-statistic
-  REAL4 mean2F;
   /// Coherent multi-detector F-statistics (only needed for per-segment output)
   REAL4 *coh2F;
-  /// Mean per-detector F-statistic (only needed for per-detector output)
-  REAL4 mean2F_det[PULSAR_MAX_DETECTORS];
   /// Coherent per-detector F-statistics (only needed for per-detector and per-segment output)
   REAL4 *coh2F_det[PULSAR_MAX_DETECTORS];
+  /// Summed multi-detector F-statistic
+  REAL4 sum2F;
+  /// Summed per-detector F-statistic (only needed for per-detector output)
+  REAL4 sum2F_det[PULSAR_MAX_DETECTORS];
+  /// Mean multi-detector F-statistic
+  REAL4 mean2F;
+  /// Mean per-detector F-statistic (only needed for per-detector output)
+  REAL4 mean2F_det[PULSAR_MAX_DETECTORS];
 } WeaveResultsToplistItem;
 
 ///
@@ -90,8 +94,7 @@ typedef void ( *WeaveResultsToplistItemSetRankStat )( WeaveResultsToplistItem *i
 
 WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   const size_t nspins,
-  const LALStringVector *per_detectors,
-  const UINT4 per_nsegments,
+  const WeaveStatisticsParams *statistics_params,
   const char *stat_name,
   const char *stat_desc,
   const UINT4 toplist_limit,
@@ -106,6 +109,9 @@ int XLALWeaveResultsToplistAdd(
   WeaveResultsToplist *toplist,
   const WeaveSemiResults *semi_res,
   const UINT4 semi_nfreqs
+  );
+int XLALWeaveResultsToplistOuterLoop(
+  WeaveResultsToplist *toplist
   );
 int XLALWeaveResultsToplistWrite(
   FITSFile *file,

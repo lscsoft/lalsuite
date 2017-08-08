@@ -30,6 +30,8 @@ lalapps_Weave_SOURCES = \
 	ResultsToplist.h \
 	SetupData.c \
 	SetupData.h \
+	Statistics.c \
+	Statistics.h \
 	Weave.c \
 	Weave.h \
 	$(END_OF_LIST)
@@ -41,6 +43,8 @@ lalapps_WeaveCompare_SOURCES = \
 	ResultsToplist.h \
 	SetupData.c \
 	SetupData.h \
+	Statistics.c \
+	Statistics.h \
 	Weave.h \
 	WeaveCompare.c \
 	$(END_OF_LIST)

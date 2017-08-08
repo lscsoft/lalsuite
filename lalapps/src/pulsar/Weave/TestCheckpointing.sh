@@ -30,6 +30,16 @@ set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOutNoCkpt.fits \
     --toplists=all --toplist-limit=2321 --per-detector --per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
     --sky-patch-count=3 --sky-patch-index=0 --freq=50/1e-4 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4
+${builddir}/lalapps_Weave --output-file=WeaveOutNoCkpt-perseg.fits \
+    --toplists=all --toplist-limit=2321 --per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
+    --sky-patch-count=3 --sky-patch-index=0 --freq=50/1e-4 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4
+
+${builddir}/lalapps_Weave --output-file=WeaveOutNoCkpt-2.fits \
+    --toplists=all --toplist-limit=2321 --setup-file=WeaveSetup.fits --sft-files='*.sft' --extra-statistics="mean2F_det,sum2F_det,coh2F,coh2F_det" \
+    --sky-patch-count=3 --sky-patch-index=0 --freq=50/1e-4 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4
+${builddir}/lalapps_Weave --output-file=WeaveOutNoCkpt-perseg2.fits \
+    --toplists=all --toplist-limit=2321 --setup-file=WeaveSetup.fits --sft-files='*.sft' --extra-statistics="coh2F" \
+    --sky-patch-count=3 --sky-patch-index=0 --freq=50/1e-4 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4
 set +x
 echo
 
@@ -81,5 +91,12 @@ echo
 echo "=== Compare F-statistics from lalapps_Weave without/with checkpointing ==="
 set -x
 env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" ${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoCkpt.fits --result-file-2=WeaveOutCkpt.fits
+set +x
+echo
+
+echo "=== Compare F-statistics from lalapps_Weave with {--per-segment, --per-detector} versus --extra-statistics='mean2F_det|coh2F|coh2F_det' ==="
+set -x
+env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" ${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoCkpt.fits --result-file-2=WeaveOutNoCkpt-2.fits -m 0 -r 0 -s 0 -a 0 -x 0
+env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" ${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoCkpt-perseg.fits --result-file-2=WeaveOutNoCkpt-perseg2.fits -m 0 -r 0 -s 0 -a 0 -x 0
 set +x
 echo

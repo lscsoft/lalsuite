@@ -85,13 +85,13 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, per_detector, per_segment, misc_info, simulate_search;
+    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, per_detector, per_segment, misc_info, simulate_search, statistics_help;
     CHAR *setup_file, *sft_files, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
     UINT4 sky_patch_count, sky_patch_index, freq_partitions, Fstat_run_med_window, Fstat_Dterms, toplist_limit, rand_seed, cache_max_size, cache_gc_limit;
-    int lattice, Fstat_method, Fstat_SSB_precision, toplists;
+    int lattice, Fstat_method, Fstat_SSB_precision, toplists, extra_statistics;
   } uvar_struct = {
     .Fstat_Dterms = Fstat_opt_args.Dterms,
     .Fstat_SSB_precision = Fstat_opt_args.SSBprec,
@@ -103,7 +103,8 @@ int main( int argc, char *argv[] )
     .interpolation = 1,
     .lattice = TILING_LATTICE_ANSTAR,
     .toplist_limit = 1000,
-    .toplists = WEAVE_TOPLIST_RANKED_MEAN2F,
+    .toplists = WEAVE_STATISTIC_MEAN2F,
+    .extra_statistics = WEAVE_STATISTIC_NONE,
   };
   struct uvar_type *const uvar = &uvar_struct;
 
@@ -273,23 +274,31 @@ int main( int argc, char *argv[] )
   // - Output control
   //
   lalUserVarHelpOptionSubsection = "Output control";
-  XLALRegisterUvarAuxDataMember(
-    toplists, UserFlag, &WeaveToplistTypeChoices, 'L', OPTIONAL,
-    "Sets which combination of toplists to return in the output file given by " UVAR_STR( output_file ) "."
-    );
   XLALRegisterUvarMember(
     toplist_limit, UINT4, 'n', OPTIONAL,
     "Maximum number of candidates to return in an output toplist; if 0, all candidates are returned. "
     );
-  XLALRegisterUvarMember(
-    per_detector, BOOLEAN, 'D', DEVELOPER,
-    "If TRUE, compute and output per-detector quantities, e.g. single-detector F-statistics. "
-    "May be combined with " UVAR_STR( per_segment ) ". "
+
+  XLALRegisterUvarAuxDataMember(
+    toplists, UserFlag, &toplist_choices, 'L', OPTIONAL,
+    "Sets which combination of toplists to return in the output file given by " UVAR_STR( output_file ) "."
+    );
+  XLALRegisterUvarAuxDataMember(
+    extra_statistics, UserFlag, &statistic_choices, 'E', OPTIONAL,
+    "Sets which extra statistics to compute and return in the output file given by " UVAR_STR( output_file ) "."
     );
   XLALRegisterUvarMember(
-    per_segment, BOOLEAN, 'N', DEVELOPER,
-    "If TRUE, compute and output per-segment quantities, e.g. coherent F-statistics in each segment. "
-    "May be combined with " UVAR_STR( per_detector ) ". "
+    statistics_help, BOOLEAN, 0, OPTIONAL,
+    "Output help on all supported statistics (in " UVAR_STR(toplist_choices) " and " UVAR_STR(statistic_choices) "."
+    );
+
+  XLALRegisterUvarMember(
+    per_detector, BOOLEAN, 'D', DEPRECATED,
+    "Compute and output per-detector quantities: Use --extra-statistics instead to select per-detector statistics (eg 'sum2F_det', 'mean2F_det', 'coh2F_det')."
+    );
+  XLALRegisterUvarMember(
+    per_segment, BOOLEAN, 'N', DEPRECATED,
+    "Compute and output per-segment quantities: Use --extra-statistics instead to select per-segment statistics (eg 'coh2F', 'coh2F_det')."
     );
   XLALRegisterUvarMember(
     misc_info, BOOLEAN, 'M', DEVELOPER,
@@ -349,6 +358,14 @@ int main( int argc, char *argv[] )
   //
   // - General
   //
+
+  if ( uvar->statistics_help ) {
+    char *helpstr = XLALWeaveStatisticsHelp();
+    XLAL_CHECK_MAIN ( helpstr != NULL, XLAL_EFUNC );
+    printf ( "%s\n", helpstr );
+    XLALFree ( helpstr );
+    return EXIT_SUCCESS;
+  }
 
   //
   // - SFT input/generation and signal generation
@@ -483,13 +500,41 @@ int main( int argc, char *argv[] )
     per_seg_info[i].segment_end = setup.segments->segs[i].end;
   }
 
-  ////////// Set up lattice tilings //////////
+  ////////// Set up calculation of various requested output statistics //////////
+  WeaveStatisticsParams *statistics_params = XLALCalloc ( 1, sizeof( *statistics_params ) );
+  XLAL_CHECK ( statistics_params != NULL, XLAL_ENOMEM );
 
-  // If outputting per-detector quantities, list of detectors
-  const LALStringVector *per_detectors = uvar->per_detector ? setup.detectors : NULL;
+  statistics_params->detectors             = XLALCopyStringVector( setup.detectors );
+  XLAL_CHECK_MAIN ( statistics_params->detectors != NULL, XLAL_EFUNC );
+  statistics_params->nsegments             = nsegments;
 
-  // Number of per-segment items to output (may be zero)
-  const UINT4 per_nsegments = uvar->per_segment ? nsegments : 0;
+  //
+  // figure out which statistics need to be computed, and when, in order to
+  // produce all the requested toplist-statistics in the "inner loop" and all remaining
+  // extra-statistics in the "outer loop" after the toplist has been computed
+  //
+  WeaveStatisticType all_output_stats = uvar->toplists;
+  all_output_stats |= uvar->extra_statistics;
+
+  // ----- backwards compatible treatment of 'per_detector' and 'per_segment' user-input variables: // FIXME remove once tests have been adapted
+  if ( uvar->per_segment ) {
+    all_output_stats |= WEAVE_STATISTIC_COH2F;
+  } // if --per-segment
+  if ( uvar->per_detector ) {
+    if ( all_output_stats & WEAVE_STATISTIC_COH2F ) {
+      all_output_stats |= WEAVE_STATISTIC_COH2F_DET;
+    }
+    if ( all_output_stats & WEAVE_STATISTIC_SUM2F ) {
+      all_output_stats |= WEAVE_STATISTIC_SUM2F_DET;
+    }
+    if ( all_output_stats & WEAVE_STATISTIC_MEAN2F ) {
+      all_output_stats |= WEAVE_STATISTIC_MEAN2F_DET;
+    }
+  } // if --per-detector
+
+  //  work out dependency-map for different statistics sets: toplist-ranking, output, total set of dependencies in inner/outer loop ...
+  XLAL_CHECK_MAIN ( XLALWeaveStatisticsParamsSetDependencyMap( statistics_params, uvar->toplists, all_output_stats ) == XLAL_SUCCESS, XLAL_EFUNC );
+
 
   // Check interpolation/maximum mismatch options are consistent with the type of search being performed
   if ( nsegments == 1 ) {
@@ -856,10 +901,10 @@ int main( int argc, char *argv[] )
     }
 
     // Load coherent input data for 'i'th segment
-    coh_input[i] = XLALWeaveCohInputCreate( simulation_level, Fstat_input, per_detectors );
+    coh_input[i] = XLALWeaveCohInputCreate( simulation_level, Fstat_input, statistics_params );
     XLAL_CHECK_MAIN( coh_input[i] != NULL, XLAL_EFUNC );
 
-  }
+  } // for i < nsegments
   LogPrintf( LOG_NORMAL, "Finished loading input data for coherent results\n" );
 
   // Create caches to store intermediate results from coherent parameter-space tilings
@@ -903,7 +948,7 @@ int main( int argc, char *argv[] )
   WeaveSemiResults *semi_res = NULL;
 
   // Create output results structure
-  WeaveOutputResults *out = XLALWeaveOutputResultsCreate( &setup.ref_time, ninputspins, per_detectors, per_nsegments, uvar->toplists, uvar->toplist_limit );
+  WeaveOutputResults *out = XLALWeaveOutputResultsCreate( &setup.ref_time, ninputspins, statistics_params, uvar->toplist_limit );
   XLAL_CHECK_MAIN( out != NULL, XLAL_EFUNC );
 
   // Number of times output results have been restored from a checkpoint
@@ -1067,7 +1112,7 @@ int main( int argc, char *argv[] )
     cpu_tic = cpu_toc;
 
     // Initialise semicoherent results
-    XLAL_CHECK_MAIN( XLALWeaveSemiResultsInit( &semi_res, simulation_level, ndetectors, nsegments, &semi_phys, dfreq, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALWeaveSemiResultsInit( &semi_res, simulation_level, ndetectors, nsegments, &semi_phys, dfreq, semi_nfreqs, statistics_params ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Retrieve coherent results from each segment
     const WeaveCohResults *XLAL_INIT_DECL( coh_res, [nsegments] );
@@ -1092,7 +1137,7 @@ int main( int argc, char *argv[] )
     cpu_timing[CT_SEMI_PARTS] += cpu_toc - cpu_tic;
     cpu_tic = cpu_toc;
 
-    // Compute final semicoherent results
+    // Compute all toplist-ranking semicoherent results
     XLAL_CHECK_MAIN( XLALWeaveSemiResultsComplete( semi_res ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Time computation of final semicoherent results
@@ -1234,6 +1279,13 @@ int main( int argc, char *argv[] )
     }
     LogPrintfVerbatim( LOG_NORMAL, ", total %.1f sec, CPU %.1f%%, peak memory %.1fMB\n", wall_total, 100.0 * cpu_total / wall_total, XLALGetPeakHeapUsageMB() );
   }
+
+  //
+  // 'Outer loop': compute all 'extra' statistics that weren't required in the 'inner' hotloop
+  // (formerly known as 'recalc step' in GCT)
+  //
+  XLAL_CHECK_MAIN ( XLALWeaveOutputResultsOuterLoop( out ) == XLAL_SUCCESS, XLAL_EFUNC );
+
 
   ////////// Output search results //////////
 
