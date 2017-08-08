@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 100
+# serial 101
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -226,7 +226,7 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
   # $0: configure SWIG Octave bindings
   LALSUITE_USE_SWIG_LANGUAGE([Octave],[C++],[
 
-    # check for GSL (potentially needed for LAL complex number support)
+    # check for GSL, needed for LAL complex number support in C++
     PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
     LALSUITE_ADD_FLAGS([C],[${GSL_CFLAGS}],[${GSL_LIBS}])
     AC_CHECK_HEADERS([gsl/gsl_complex.h],,[AC_MSG_ERROR([could not find the gsl/gsl_complex.h header])])
