@@ -1514,14 +1514,14 @@ class BinnedArray(object):
 		item retrieval and assignment some additional work might be
 		required to obtain this array.  In those cases, this method
 		is a convenience wrapper to avoid coding the evaluation
-		loop in the calling code.
+		logic in the calling code.
 
 		Because subclasses expect to be able to override this, in
-		almost call cases calling code that wishes to access the
-		internal array directly should probably use this method
-		instead.
+		almost all cases calling code that wishes to access the
+		values stored in the internal array directly should
+		probably use this method to do so.
 
-		Notes:
+		NOTE:
 
 		- The return value might be a newly-constructed object or a
 		  reference to an internal object.
@@ -1548,7 +1548,16 @@ class BinnedArray(object):
 
 	def to_pdf(self):
 		"""
-		Convert into a probability density.
+		Normalize the internal array's contents so that when
+		multiplied by the corresponding bin volumes the result sums
+		to 1 (neglecting bins with infinite volume).
+
+		NOTE:
+
+		- This is a legacy method that has been superceded by the
+		  BinnedDensity and BinnedLnPDF classes.  You also
+		  certainly want to be using those instead of whatever
+		  you're doing that needs this method.
 		"""
 		# zero bins whose volumes are infinite so the rest will
 		# appear to be normalized
@@ -1563,6 +1572,13 @@ class BinnedArray(object):
 		Find bins <= 0, and set them to epsilon, This has the
 		effect of allowing the logarithm of the array to be
 		evaluated without error.
+
+		NOTE:
+
+		- This is a legacy method that has been superceded by the
+		  BinnedDensity and BinnedLnPDF classes.  You also
+		  certainly want to be using those instead of whatever
+		  you're doing that needs this method.
 		"""
 		self.array[self.array <= 0] = epsilon
 		return self
