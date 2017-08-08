@@ -97,7 +97,7 @@ class RateContours(object):
 		self.y_instrument = y_instrument
 		self.tisi_rows = None
 		self.seglists = segments.segmentlistdict()
-		self.bins = None
+		self.counts = None
 
 	def add_contents(self, contents):
 		if self.tisi_rows is None:
@@ -123,7 +123,7 @@ class RateContours(object):
 			nbins = math.ceil((max_offset - min_offset) / time_slide_spacing * 3)
 
 			# construct the binning
-			self.bins = rate.BinnedRatios(rate.NDBins((rate.LinearBins(min_offset, max_offset, nbins), rate.LinearBins(min_offset, max_offset, nbins))))
+			self.counts = rate.BinnedArray(rate.NDBins((rate.LinearBins(min_offset, max_offset, nbins), rate.LinearBins(min_offset, max_offset, nbins))))
 
 		self.seglists |= contents.seglists
 
@@ -142,19 +142,19 @@ WHERE
 	AND ty.instrument == ?
 		""", (contents.bb_definer_id, self.x_instrument, self.y_instrument)):
 			try:
-				self.bins.incnumerator(offsets)
+				self.counts[offsets] += 1
 			except IndexError:
 				# beyond plot boundaries
 				pass
 
 	def finish(self):
+		livetime = rate.BinnedArray(self.counts.bins)
 		for offsets in self.tisi_rows:
 			self.seglists.offsets.update(offsets)
-			self.bins.incdenominator((offsets[self.x_instrument], offsets[self.y_instrument]), float(abs(self.seglists.intersection(self.seglists.keys()))))
-		self.bins.logregularize()
-		zvals = self.bins.ratio()
+			livetime[offsets[self.x_instrument], offsets[self.y_instrument]] += float(abs(self.seglists.intersection(self.seglists.keys())))
+		zvals = self.counts.at_centres() / livetime.at_centres()
 		rate.filter_array(zvals, rate.gaussian_window(3, 3))
-		xcoords, ycoords = self.bins.centres()
+		xcoords, ycoords = self.counts.centres()
 		self.axes.contour(xcoords, ycoords, numpy.transpose(numpy.log(zvals)))
 		for offsets in self.tisi_rows:
 			if any(offsets):
@@ -164,8 +164,8 @@ WHERE
 				# time slide vector is zero-lag
 				self.axes.plot((offsets[self.x_instrument],), (offsets[self.y_instrument],), "r+")
 
-		self.axes.set_xlim([self.bins.bins().min[0], self.bins.bins().max[0]])
-		self.axes.set_ylim([self.bins.bins().min[1], self.bins.bins().max[1]])
+		self.axes.set_xlim([self.counts.bins().min[0], self.counts.bins().max[0]])
+		self.axes.set_ylim([self.counts.bins().min[1], self.counts.bins().max[1]])
 		self.axes.set_title(r"Coincident Event Rate vs. Instrument Time Offset (Logarithmic Rate Contours)")
 
 
