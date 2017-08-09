@@ -415,6 +415,9 @@ int main( void )
                      XLAL_EIO, "Failed to read semi_rssky_metric from FITS file" );
     XLAL_CHECK_MAIN( memcmp( metrics->semi_rssky_transf, metrics_from_fits->semi_rssky_transf, sizeof( *metrics->semi_rssky_transf ) ) == 0,
                      XLAL_EIO, "Failed to read semi_rssky_transf from FITS file" );
+    XLAL_CHECK_MAIN( memcmp ( &(metrics->coordinate_system), &(metrics_from_fits->coordinate_system), sizeof( metrics->coordinate_system ) ) == 0,
+                     XLAL_EIO, "Failed to read coordinate_system from FITS file" );
+
     XLALDestroySuperskyMetrics( metrics_from_fits );
   }
 #endif

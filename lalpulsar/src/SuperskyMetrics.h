@@ -72,7 +72,7 @@ typedef struct tagSuperskyMetrics {
 
   gsl_matrix *semi_rssky_metric;                ///< Semicoherent reduced supersky metric (2-dimensional sky)
   SuperskyTransformData *semi_rssky_transf;     ///< Semicoherent reduced supersky metric coordinate transform data
-
+  DopplerCoordinateSystem coordinate_system;	///< coordinate system of returned metrics
 } SuperskyMetrics;
 
 ///
