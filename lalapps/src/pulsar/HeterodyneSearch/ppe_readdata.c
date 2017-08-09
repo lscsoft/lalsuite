@@ -682,26 +682,24 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
       ifomodel->times = NULL;
       ifomodel->times = XLALCreateTimestampVector( datalength );
 
-      UINT4 epochint = 0; /* index of the earliest time in the data */
-
       /* fill in time stamps as LIGO Time GPS Vector */
-      REAL8 sampledt = INFINITY; /* sample interval */
       for ( k = 0; k < datalength; k++ ) {
         XLALGPSSetREAL8( &ifomodel->times->data[k], temptimes->data[k] );
-
-        if ( k > 0 ){
-          /* get sample interval from the minimum time difference in the data */
-          if ( temptimes->data[k] - temptimes->data[k-1] < sampledt ) {
-            sampledt = temptimes->data[k] - temptimes->data[k-1];
-          }
-        }
-
-        if ( temptimes->data[k] < temptimes->data[epochint] ){ epochint = k; }
       }
 
-      ifodata->compTimeData->epoch = ifomodel->times->data[epochint];
-      ifomodel->compTimeSignal->epoch = ifomodel->times->data[epochint];
-      ifodata->varTimeData->epoch = ifomodel->times->data[epochint];
+      /* sort temporary time vector into ascending order (to get minimum time difference) */
+      gsl_sort(temptimes->data, 1, datalength);
+
+      REAL8 sampledt = temptimes->data[1] - temptimes->data[0]; /* sample interval */
+      for ( k = 2; k < datalength; k++ ){
+        if ( temptimes->data[i] - temptimes->data[i-1] < sampledt ){
+          sampledt = temptimes->data[i] - temptimes->data[i-1];
+        }
+      }
+
+      XLALGPSSetREAL8( &ifodata->compTimeData->epoch, temptimes->data[0] );
+      XLALGPSSetREAL8( &ifomodel->compTimeSignal->epoch, temptimes->data[0] );
+      XLALGPSSetREAL8( &ifodata->varTimeData->epoch, temptimes->data[0] );
 
       /* check whether to randomise the data by shuffling the time stamps (this will preserve the order of
        * the data for working out stationary chunk, but randomise the signal) */
