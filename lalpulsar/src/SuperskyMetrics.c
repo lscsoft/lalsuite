@@ -112,6 +112,9 @@ static gsl_matrix *SM_ComputePhaseMetric(
   XLAL_CHECK_NULL( detector_motion > 0, XLAL_EINVAL );
   XLAL_CHECK_NULL( ephemerides != NULL, XLAL_EINVAL );
 
+  // Supersky metric cannot (reliably) be computed for segment lengths <= ~24 hours
+  XLAL_CHECK_NULL( XLALGPSDiff( end_time, start_time ) >= 81000, XLAL_ERANGE, "Supersky metric cannot be computed for segment lengths <= ~24 hours" );
+
   // Create parameters struct for XLALComputeDopplerPhaseMetric()
   DopplerMetricParams XLAL_INIT_DECL( par );
 
