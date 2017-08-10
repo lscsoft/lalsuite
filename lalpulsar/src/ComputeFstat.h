@@ -275,6 +275,59 @@ typedef struct tagFstatResults {
 
 } FstatResults;
 
+/// Generic F-stat timing coefficients (times in seconds)
+/// [see https://dcc.ligo.org/LIGO-T1600531-v4 for details]
+/// tauF_eff = tauF_core + b * tauF_buffer
+/// where 'b' denotes the fraction of times per call to XLALComputeFstat() the buffer needed to be recomputed
+/// ==> b = NBufferMisses / NCalls\n"
+///
+/// Note: All timing numbers are averaged over repeated calls to XLALComputeFstat(for fixed-setup)
+///
+typedef struct tagFstatTimingGeneric
+{
+  REAL4 tauF_eff;	//< effective total time per F-stat call to XLALComputeFstat() per detector per output frequency
+  REAL4 tauF_core;	//< core time per output frequency bin per detector, excluding time to compute the buffer
+  REAL4 tauF_buffer;	//< time per detector per frequency bin to re-compute all buffered quantities once
+  UINT4 NFbin;		//< (average over F-stat calls) number of F-stat output frequency bins
+  UINT4 Ndet;		//< number of detectors
+  REAL4 NCalls;		//< number of F-stat calls we average over
+  REAL4 NBufferMisses;	//< number of times the buffer needed to be recomputed
+  char *help;		//< (static) string documenting the generic F-stat timing values
+} FstatTimingGeneric;
+
+#ifdef _COMPUTE_FSTAT_C
+static char FstatTimingGenericHelp[] =
+  "%%%% ----- Generic F-stat timing model (all times in seconds) [see https://dcc.ligo.org/LIGO-T1600531-v4 for details] -----\n"
+  "%%%% tauF_eff:       effective total time per F-stat call to XLALComputeFstat() per detector per output frequency bin\n"
+  "%%%% tauF_core:      core time per output frequency bin per detector, excluding time to compute the buffer\n"
+  "%%%% tauF_buffer:    time per detector per frequency bin to re-compute all buffered quantities once\n"
+  "%%%% NFbin:          (average over F-stat calls) number of F-stat output frequency bins\n"
+  "%%%% Ndet:           number of detectors\n"
+  "%%%%\n"
+  "%%%% => generic F-stat timing:\n"
+  "%%%% tauF_eff = tauF_core + b * tauF_buffer\n"
+  "%%%% where 'b' denotes the fraction of times per call to XLALComputeFstat() the buffer needed to be recomputed\n"
+  "%%%%\n"
+  "%%%% NCalls:         number of F-stat calls we average over\n"
+  "%%%% NBufferMisses:  number of times the buffer needed to be recomputed\n"
+  "%%%% ==> b = NBufferMisses / NCalls\n"
+  "%%%% All timing numbers are averaged over repeated calls to XLALComputeFstat(for fixed-setup).\n"
+  "";
+#endif
+
+#define TIMING_MODEL_MAX_VARS 10
+/// Struct to carry the F-statistic method-specific timing *model* in terms of
+/// a list of variable names and corresponding REAL4 values, including a help-string documenting
+/// the timing model variables.
+/// See https://dcc.ligo.org/LIGO-T1600531-v4 for a more detailed discussion of the F-stat timing model.
+typedef struct tagFstatTimingModel
+{
+  UINT4 numVariables;                           //< number of (method-specific) timing model variables
+  const char* names[TIMING_MODEL_MAX_VARS];     //< array of (static) timing-model variable names
+  REAL4 values[TIMING_MODEL_MAX_VARS];          //< array of timing-model variable values
+  char  *help;                            	//< (static) help string documenting the (method-specific) Fstat timing model
+} FstatTimingModel;
+
 // ---------- API function prototypes ----------
 int XLALFstatMethodIsAvailable ( FstatMethodType method );
 const CHAR *XLALFstatMethodName ( FstatMethodType method );
@@ -296,9 +349,9 @@ const MultiLALDetector* XLALGetFstatInputDetectors ( const FstatInput* input );
 const MultiLIGOTimeGPSVector* XLALGetFstatInputTimestamps ( const FstatInput* input );
 const MultiNoiseWeights* XLALGetFstatInputNoiseWeights ( const FstatInput* input );
 const MultiDetectorStateSeries* XLALGetFstatInputDetectorStates ( const FstatInput* input );
-int XLALGetFstatTiming ( const FstatInput* input, REAL8 *tauF1Buf, REAL8 *tauF1NoBuf );
-int AppendFstatTimingInfo2File ( const FstatInput* input, FILE *fp, BOOLEAN printHeader );
 int  XLALExtractResampledTimeseries ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, const FstatInput *input );
+int XLALGetFstatTiming ( const FstatInput* input, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
+int XLALAppendFstatTiming2File ( const FstatInput* input, FILE *fp, BOOLEAN printHeader );
 
 #ifdef SWIG // SWIG interface directives
 SWIGLAL(INOUT_STRUCTS(FstatResults**, Fstats));

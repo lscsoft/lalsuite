@@ -201,21 +201,20 @@ main ( int argc, char *argv[] )
       XLALFree ( parFname );
       fprintf ( timingLogFILE, "%s\n", logstring );
       fprintf ( timingParFILE, "%s\n", logstring );
-      fprintf ( timingParFILE, "%%%%%8s %10s %12s %12s %12s %12s %12s %12s %12s %12s\n",
+      fprintf ( timingParFILE, "%%%%%8s %20s %20s %20s %20s %20s %20s %20s %20s %12s\n",
                 "Nseg", "Tseg", "Freq", "FreqBand", "dFreq", "f1dot", "f2dot", "Alpha", "Delta", "memUsageMB" );
     }
   FstatInputVector *inputs;
   FstatQuantities whatToCompute = (FSTATQ_2F | FSTATQ_2F_PER_DET);
   FstatResults *results = NULL;
-  REAL8 tauF1NoBuf = 0;
-  REAL8 tauF1Buf = 0;
+
 #define drawFromREAL8Range(range) (range[0] + (range[1] - range[0]) * rand() / RAND_MAX )
 #define drawFromINT4Range(range)  (range[0] + (INT4)round(1.0*(range[1] - range[0]) * rand() / RAND_MAX) )
   // ---------- main loop over repeated trials: randomize uniformly over input ranges  ----------
   for ( INT4 i = 0; i < uvar->numTrials; i ++ )
     {
       UINT4 Tseg_i        = drawFromINT4Range ( uvar->Tseg );
-
+      Tseg_i = (UINT4) uvar->Tsft * ceil ( Tseg_i / uvar->Tsft );
       SFTCatalog **catalogs;
       XLAL_CHECK_MAIN ( (catalogs = XLALCalloc ( uvar->numSegments, sizeof( catalogs[0] ))) != NULL, XLAL_ENOMEM );
       for ( INT4 l = 0; l < uvar->numSegments; l ++ )
@@ -228,7 +227,6 @@ main ( int argc, char *argv[] )
           XLAL_CHECK_MAIN ( (multiTimestamps = XLALMakeMultiTimestamps ( startTime_l->data[l], Tseg_i, uvar->Tsft, 0, numDetectors )) != NULL, XLAL_EFUNC );
           XLAL_CHECK_MAIN ( (catalogs[l] = XLALMultiAddToFakeSFTCatalog ( NULL, uvar->IFOs, multiTimestamps )) != NULL, XLAL_EFUNC );
           XLALDestroyMultiTimestamps ( multiTimestamps );
-          startTime_l->data[l] = endTime_l->data[l];
         } // for l < numSegments
 
       PulsarSpinRange XLAL_INIT_DECL(spinRange_i);
@@ -273,7 +271,6 @@ main ( int argc, char *argv[] )
       if ( ! uvar->perSegmentSFTs ) {
         XLAL_CHECK_MAIN ( XLALCWSignalCoveringBand ( &minCoverFreq_il, &maxCoverFreq_il, &startTime_l->data[0], &endTime_l->data[uvar->numSegments-1], &spinRange_i, Doppler_i.asini, Doppler_i.period, Doppler_i.ecc ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
-
       // create per-segment input structs
       for ( INT4 l = 0; l < uvar->numSegments; l ++ )
         {
@@ -285,6 +282,9 @@ main ( int argc, char *argv[] )
           // Weave convention: determine per-segment SFT frequency band
           if ( uvar->perSegmentSFTs ) {
             XLAL_CHECK_MAIN ( XLALCWSignalCoveringBand ( &minCoverFreq_il, &maxCoverFreq_il, &startTime_l->data[l], &endTime_l->data[l], &spinRange_i, Doppler_i.asini, Doppler_i.period, Doppler_i.ecc ) == XLAL_SUCCESS, XLAL_EFUNC );
+            // fprintf ( stderr, "minCoverFreq = %.16g, maxCoverFreq = %.16g: startTime = %d, Tseg = %d, FreqMax = %.16g, f1dot = %.16g, f2dot = %.16g, refTime = %d = %d + %d\n",
+            // minCoverFreq_il, maxCoverFreq_il, startTime_l->data[l].gpsSeconds, Tseg_i, spinRange_i.fkdot[0] + spinRange_i.fkdotBand[0], spinRange_i.fkdot[1], spinRange_i.fkdot[2],
+            // refTime.gpsSeconds, startTime_l->data[l].gpsSeconds, refTime.gpsSeconds - startTime_l->data[l].gpsSeconds );
           }
           XLAL_CHECK_MAIN ( (inputs->data[l] = XLALCreateFstatInput ( catalogs[l], minCoverFreq_il, maxCoverFreq_il, dFreq_i, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
         }
@@ -294,26 +294,15 @@ main ( int argc, char *argv[] )
       XLALFree ( catalogs );
 
       // ----- compute Fstatistics over segments
-      REAL8 tauF1NoBuf_i = 0;
-      REAL8 tauF1Buf_i = 0;
       for ( INT4 l = 0; l < uvar->numSegments; l ++ )
         {
           XLAL_CHECK_MAIN ( XLALComputeFstat ( &results, inputs->data[l], &Doppler_i, numFreqBins_i, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-          REAL8 Fstat_tauF1Buf, Fstat_tauF1NoBuf;
-          XLAL_CHECK_MAIN ( XLALGetFstatTiming ( inputs->data[l], &Fstat_tauF1Buf, &Fstat_tauF1NoBuf ) == XLAL_SUCCESS, XLAL_EFUNC );
-          tauF1NoBuf_i += Fstat_tauF1NoBuf;
-          tauF1Buf_i   += Fstat_tauF1Buf;
           // ----- output timing details to file if requested
           if ( timingLogFILE != NULL ) {
-            XLAL_CHECK_MAIN ( AppendFstatTimingInfo2File ( inputs->data[l], timingLogFILE, (l == 0) && (i==0)) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK_MAIN ( XLALAppendFstatTiming2File ( inputs->data[l], timingLogFILE, (l == 0) && (i==0)) == XLAL_SUCCESS, XLAL_EFUNC );
           }
         } // for l < numSegments
-
-      tauF1NoBuf_i /= uvar->numSegments;
-      tauF1Buf_i   /= uvar->numSegments;
-      tauF1Buf     += tauF1Buf_i;
-      tauF1NoBuf   += tauF1NoBuf_i;
 
       REAL8 memEnd = XLALGetCurrentHeapUsageMB();
       REAL8 memUsage = memEnd - memBase;
@@ -322,20 +311,14 @@ main ( int argc, char *argv[] )
 
       if ( timingParFILE != NULL )
         {
-          fprintf ( timingParFILE, "%10d %10d %12g %12g %12g %12g %12g %12g %12g %12g\n",
+          fprintf ( timingParFILE, "%10d %20d %20.16g %20.16g %20.16g %20.16g %20.16g %20.16g %20.16g %12g\n",
                     uvar->numSegments, Tseg_i, Doppler_i.fkdot[0], FreqBand_i, dFreq_i, Doppler_i.fkdot[1], Doppler_i.fkdot[2], Doppler_i.Alpha, Doppler_i.Delta, memUsage
                     );
         }
 
-      fprintf (stderr, "%-15s: tauF1Buf = %8.2g s, tauF1NoBuf = %8.2g s, memResamp = %6.1f MB\n",
-               FmethodName, tauF1Buf_i, tauF1NoBuf_i, memEnd - memBase );
+      fprintf (stderr, "%-15s: memoryUsage = %6.1f MB\n", FmethodName, memEnd - memBase );
       XLALDestroyFstatInputVector ( inputs );
     } // for i < numTrials
-
-  tauF1Buf   /= uvar->numTrials;
-  tauF1NoBuf /= uvar->numTrials;
-
-  fprintf (stderr, "\nAveraged timings: <tauF1Buf> = %.2g s, <tauF1NoBuf> = %.2g s\n", tauF1Buf, tauF1NoBuf );
 
   // ----- free memory ----------
   if ( timingLogFILE != NULL ) {

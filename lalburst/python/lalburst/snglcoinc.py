@@ -1130,7 +1130,7 @@ class CoincSynthesizer(object):
 		# for a total (N-1)*(N-2) constraints.  altogether there
 		# are
 		#
-		#	(N-1)^2 + (N-1)
+		#	n = (N-1)^2 + (N-1) = m * (m + 1)
 		#
 		# constraints
 		#	if len(instruments) > 1:
