@@ -398,9 +398,9 @@ XLALSetupFstatResamp ( void **method_data,
   wisdom_filename = getenv("FFTWF_WISDOM_FILENAME");
   if (wisdom_filename && !tried_wisdom) {
     if (fftwf_import_wisdom_from_filename(wisdom_filename)) {
-      fprintf(stderr, "INFO: imported wisdom from file '%s'\n", wisdom_filename);
+      XLALPrintInfo("INFO: imported wisdom from file '%s'\n", wisdom_filename);
     } else {
-      fprintf(stderr, "WARNING: Couldn't import wisdom from file '%s'\n", wisdom_filename);
+      XLALPrintWarning("WARNING: Couldn't import wisdom from file '%s'\n", wisdom_filename);
     }
     tried_wisdom = -1;
   }
