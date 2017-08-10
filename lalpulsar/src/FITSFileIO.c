@@ -2311,9 +2311,10 @@ int XLALFITSTableColumnAddBOOLEAN( FITSFile UNUSED *file, const CHAR UNUSED *col
   XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
 #else // defined(HAVE_LIBCFITSIO)
 
+  XLAL_CHECK( sizeof( *field ) == sizeof( char ), XLAL_ESIZE );   // Double-check that size of LAL type matches that of C type used by CFITSIO in e.g. ffgcv()
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, col_name, "", noffsets, offsets, record, record_size, field, field_size, sizeof( BOOLEAN ), 'L', TLOGICAL ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, col_name, "", noffsets, offsets, record, record_size, field, field_size, sizeof( *field ), 'L', TLOGICAL ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 
 #endif // !defined(HAVE_LIBCFITSIO)
@@ -2325,11 +2326,12 @@ int XLALFITSTableColumnAddUINT2( FITSFile UNUSED *file, const CHAR UNUSED *col_n
   XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
 #else // defined(HAVE_LIBCFITSIO)
 
+  XLAL_CHECK( sizeof( *field ) == sizeof( unsigned short ), XLAL_ESIZE );   // Double-check that size of LAL type matches that of C type used by CFITSIO in e.g. ffgcv()
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
   XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( UINT2 ), 'U', TUSHORT ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( *field ), 'U', TUSHORT ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 
 #endif // !defined(HAVE_LIBCFITSIO)
@@ -2341,11 +2343,12 @@ int XLALFITSTableColumnAddUINT4( FITSFile UNUSED *file, const CHAR UNUSED *col_n
   XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
 #else // defined(HAVE_LIBCFITSIO)
 
+  XLAL_CHECK( sizeof( *field ) == sizeof( unsigned int ), XLAL_ESIZE );   // Double-check that size of LAL type matches that of C type used by CFITSIO in e.g. ffgcv()
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
   XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( UINT4 ), 'V', TINT ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( *field ), 'V', TINT ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 
 #endif // !defined(HAVE_LIBCFITSIO)
@@ -2357,11 +2360,12 @@ int XLALFITSTableColumnAddUINT8( FITSFile UNUSED *file, const CHAR UNUSED *col_n
   XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
 #else // defined(HAVE_LIBCFITSIO)
 
+  XLAL_CHECK( sizeof( *field ) == sizeof( LONGLONG ), XLAL_ESIZE );   // Double-check that size of LAL type matches that of C type used by CFITSIO in e.g. ffgcv()
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
   XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( UINT8 ), 'K', TLONGLONG ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( *field ), 'K', TLONGLONG ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 
 #endif // !defined(HAVE_LIBCFITSIO)
@@ -2373,11 +2377,12 @@ int XLALFITSTableColumnAddINT2( FITSFile UNUSED *file, const CHAR UNUSED *col_na
   XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
 #else // defined(HAVE_LIBCFITSIO)
 
+  XLAL_CHECK( sizeof( *field ) == sizeof( short ), XLAL_ESIZE );   // Double-check that size of LAL type matches that of C type used by CFITSIO in e.g. ffgcv()
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
   XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( INT2 ), 'I', TSHORT ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( *field ), 'I', TSHORT ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 
 #endif // !defined(HAVE_LIBCFITSIO)
@@ -2389,11 +2394,12 @@ int XLALFITSTableColumnAddINT4( FITSFile UNUSED *file, const CHAR UNUSED *col_na
   XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
 #else // defined(HAVE_LIBCFITSIO)
 
+  XLAL_CHECK( sizeof( *field ) == sizeof( int ), XLAL_ESIZE );   // Double-check that size of LAL type matches that of C type used by CFITSIO in e.g. ffgcv()
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
   XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( INT4 ), 'J', TINT ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( *field ), 'J', TINT ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 
 #endif // !defined(HAVE_LIBCFITSIO)
@@ -2405,11 +2411,12 @@ int XLALFITSTableColumnAddINT8( FITSFile UNUSED *file, const CHAR UNUSED *col_na
   XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
 #else // defined(HAVE_LIBCFITSIO)
 
+  XLAL_CHECK( sizeof( *field ) == sizeof( LONGLONG ), XLAL_ESIZE );   // Double-check that size of LAL type matches that of C type used by CFITSIO in e.g. ffgcv()
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
   XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( INT8 ), 'K', TLONGLONG ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( *field ), 'K', TLONGLONG ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 
 #endif // !defined(HAVE_LIBCFITSIO)
@@ -2421,11 +2428,12 @@ int XLALFITSTableColumnAddREAL4( FITSFile UNUSED *file, const CHAR UNUSED *col_n
   XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
 #else // defined(HAVE_LIBCFITSIO)
 
+  XLAL_CHECK( sizeof( *field ) == sizeof( float ), XLAL_ESIZE );   // Double-check that size of LAL type matches that of C type used by CFITSIO in e.g. ffgcv()
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
   XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( REAL4 ), 'E', TFLOAT ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( *field ), 'E', TFLOAT ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 
 #endif // !defined(HAVE_LIBCFITSIO)
@@ -2437,11 +2445,12 @@ int XLALFITSTableColumnAddREAL8( FITSFile UNUSED *file, const CHAR UNUSED *col_n
   XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
 #else // defined(HAVE_LIBCFITSIO)
 
+  XLAL_CHECK( sizeof( *field ) == sizeof( double ), XLAL_ESIZE );   // Double-check that size of LAL type matches that of C type used by CFITSIO in e.g. ffgcv()
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
   XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( REAL8 ), 'D', TDOUBLE ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( *field ), 'D', TDOUBLE ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 
 #endif // !defined(HAVE_LIBCFITSIO)
@@ -2453,11 +2462,12 @@ int XLALFITSTableColumnAddCOMPLEX8( FITSFile UNUSED *file, const CHAR UNUSED *co
   XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
 #else // defined(HAVE_LIBCFITSIO)
 
+  XLAL_CHECK( sizeof( *field ) == 2 * sizeof( float ), XLAL_ESIZE );   // Double-check that size of LAL type matches that of C type used by CFITSIO in e.g. ffgcv()
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
   XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( COMPLEX8 ), 'C', TCOMPLEX ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( *field ), 'C', TCOMPLEX ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 
 #endif // !defined(HAVE_LIBCFITSIO)
@@ -2469,11 +2479,12 @@ int XLALFITSTableColumnAddCOMPLEX16( FITSFile UNUSED *file, const CHAR UNUSED *c
   XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
 #else // defined(HAVE_LIBCFITSIO)
 
+  XLAL_CHECK( sizeof( *field ) == 2 * sizeof( double ), XLAL_ESIZE );   // Double-check that size of LAL type matches that of C type used by CFITSIO in e.g. ffgcv()
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
   XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( COMPLEX16 ), 'M', TDBLCOMPLEX ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( *field ), 'M', TDBLCOMPLEX ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 
 #endif // !defined(HAVE_LIBCFITSIO)
@@ -2485,6 +2496,7 @@ int XLALFITSTableColumnAddCHAR( FITSFile UNUSED *file, const CHAR UNUSED *col_na
   XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
 #else // defined(HAVE_LIBCFITSIO)
 
+  XLAL_CHECK( sizeof( CHAR ) == sizeof( char ), XLAL_ESIZE );   // Double-check that size of LAL type matches that of C type used by CFITSIO in e.g. ffgcv()
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   XLAL_CHECK( XLALFITSTableColumnAdd( file, col_name, "", noffsets, offsets, record, record_size, field, field_size, sizeof( CHAR ), 'A', TSTRING ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -2499,6 +2511,8 @@ int XLALFITSTableColumnAddGPSTime( FITSFile UNUSED *file, const CHAR UNUSED *col
   XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
 #else // defined(HAVE_LIBCFITSIO)
 
+  XLAL_CHECK( sizeof( field->gpsSeconds ) == sizeof( int ), XLAL_ESIZE );
+  XLAL_CHECK( sizeof( field->gpsNanoSeconds ) == sizeof( int ), XLAL_ESIZE );
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) + 3 < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   XLAL_CHECK( field_size == sizeof( LIGOTimeGPS ), XLAL_EINVAL, "Array of GPS times is not supported" );
