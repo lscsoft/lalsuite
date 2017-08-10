@@ -944,6 +944,7 @@ int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
   {
     const double semi_gff_d_mu = gsl_matrix_get( metrics->semi_rssky_metric, ifreq, ifreq ) / semi_max_mismatch;
     const double scale = sqrt( max_gff_d_mu / semi_gff_d_mu );
+    XLAL_CHECK( scale >= 1, XLAL_EFAILED );
     {
       gsl_vector_view rssky_metric_f_row = gsl_matrix_row( metrics->semi_rssky_metric, ifreq );
       gsl_vector_scale( &rssky_metric_f_row.vector, scale );
@@ -955,6 +956,7 @@ int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
     const double coh_gff_d_mu = gsl_matrix_get( metrics->coh_rssky_metric[n], ifreq, ifreq ) / coh_max_mismatch;
     const double scale = sqrt( max_gff_d_mu / coh_gff_d_mu );
+    XLAL_CHECK( scale >= 1, XLAL_EFAILED );
     {
       gsl_vector_view rssky_metric_f_row = gsl_matrix_row( metrics->coh_rssky_metric[n], ifreq );
       gsl_vector_scale( &rssky_metric_f_row.vector, scale );
