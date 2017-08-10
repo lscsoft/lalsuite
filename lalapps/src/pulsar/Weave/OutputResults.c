@@ -173,7 +173,7 @@ int XLALWeaveOutputResultsAdd(
   XLAL_CHECK( out != NULL, XLAL_EFAULT );
   XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
 
-  // store inner-loop parameters relevant for outer-loop statistics calculation
+  // store main-loop parameters relevant for completion-loop statistics calculation
   static BOOLEAN firstTime = 1;
   if ( firstTime ) {
     out -> statistics_params -> nsum2F  = semi_res -> nsum2F;
@@ -191,17 +191,17 @@ int XLALWeaveOutputResultsAdd(
 } // XLALWeaveOutputResultsAdd()
 
 ///
-/// Compute all the missing 'outer-loop' statistics for all toplist entries
+/// Compute all the missing 'completion-loop' statistics for all toplist entries
 ///
-int XLALWeaveOutputResultsOuterLoop (
+int XLALWeaveOutputResultsCompletionLoop (
   WeaveOutputResults *out
   )
 {
   // Check input
   XLAL_CHECK( out != NULL, XLAL_EFAULT );
 
-  WeaveStatisticType outerloop_stats = out -> statistics_params -> outerloop_statistics;
-  const WeaveStatisticType supported_outerloop = (
+  WeaveStatisticType completionloop_stats = out -> statistics_params -> completionloop_statistics;
+  const WeaveStatisticType supported_completionloop = (
     WEAVE_STATISTIC_SUM2F      |
     WEAVE_STATISTIC_SUM2F_DET  |
     WEAVE_STATISTIC_MEAN2F     |
@@ -209,22 +209,22 @@ int XLALWeaveOutputResultsOuterLoop (
     WEAVE_STATISTIC_BSGL
     );
 
-  WeaveStatisticType unsupported = (outerloop_stats & ~supported_outerloop);
+  WeaveStatisticType unsupported = (completionloop_stats & ~supported_completionloop);
   if ( unsupported != 0 ) {
     char *unsupported_names = XLALPrintStringValueOfUserFlag( (const int*)&unsupported, &statistic_choices );
-    XLALPrintError ( "BUG: unsupported outer-loop statistics requested: %s", unsupported_names );
+    XLALPrintError ( "BUG: unsupported completion-loop statistics requested: %s", unsupported_names );
     XLALFree ( unsupported_names );
     XLAL_ERROR ( XLAL_EERR );
   }
 
   // Iterate over all toplists
   for ( size_t i = 0; i < out->ntoplists; ++i ) {
-    XLAL_CHECK( XLALWeaveResultsToplistOuterLoop ( out->toplists[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALWeaveResultsToplistCompletionLoop ( out->toplists[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveOutputResultsOuterLoop()
+} // XLALWeaveOutputResultsCompletionLoop()
 
 ///
 /// Write output results to a FITS file

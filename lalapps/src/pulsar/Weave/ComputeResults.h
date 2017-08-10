@@ -126,7 +126,7 @@ int XLALWeaveSemiResultsAdd(
   const WeaveCohResults *coh_res,
   const UINT4 coh_offset
   );
-int XLALWeaveSemiResultsComplete(
+int XLALWeaveSemiResultsComputeMain(
   WeaveSemiResults *semi_res
   );
 void XLALWeaveSemiResultsDestroy(

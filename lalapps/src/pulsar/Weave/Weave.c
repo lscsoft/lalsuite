@@ -524,8 +524,8 @@ int main( int argc, char *argv[] )
 
   //
   // figure out which statistics need to be computed, and when, in order to
-  // produce all the requested toplist-statistics in the "inner loop" and all remaining
-  // extra-statistics in the "outer loop" after the toplist has been computed
+  // produce all the requested toplist-statistics in the "main loop" and all remaining
+  // extra-statistics in the "completion loop" after the toplist has been computed
   //
   WeaveStatisticType all_output_stats = uvar->toplists;
   all_output_stats |= uvar->extra_statistics;
@@ -546,7 +546,7 @@ int main( int argc, char *argv[] )
     }
   } // if --per-detector
 
-  //  work out dependency-map for different statistics sets: toplist-ranking, output, total set of dependencies in inner/outer loop ...
+  //  work out dependency-map for different statistics sets: toplist-ranking, output, total set of dependencies in main/completion loop ...
   XLAL_CHECK_MAIN ( XLALWeaveStatisticsParamsSetDependencyMap( statistics_params, uvar->toplists, all_output_stats ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // ---------- prepare setup for line-robust statistics if requested ----------
@@ -1167,7 +1167,7 @@ int main( int argc, char *argv[] )
     cpu_tic = cpu_toc;
 
     // Compute all toplist-ranking semicoherent results
-    XLAL_CHECK_MAIN( XLALWeaveSemiResultsComplete( semi_res ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALWeaveSemiResultsComputeMain( semi_res ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Time computation of final semicoherent results
     cpu_toc = cpu_time();
@@ -1310,10 +1310,10 @@ int main( int argc, char *argv[] )
   }
 
   //
-  // 'Outer loop': compute all 'extra' statistics that weren't required in the 'inner' hotloop
+  // 'Completion loop': compute all 'extra' statistics that weren't required in the 'main' hotloop
   // (formerly known as 'recalc step' in GCT)
   //
-  XLAL_CHECK_MAIN ( XLALWeaveOutputResultsOuterLoop( out ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALWeaveOutputResultsCompletionLoop( out ) == XLAL_SUCCESS, XLAL_EFUNC );
 
 
   ////////// Output search results //////////

@@ -98,12 +98,12 @@ typedef struct tagWeaveStatisticsParams {
   /// derived from the above: for internal use only [wont read/write these from fits files]
   /// Bitflag: full set of statistics we need compute (toplist + extra + all dependencies)
   WeaveStatisticType statistics_to_compute;
-  /// Bitflag: set of "inner-loop" statistics that need to be computed on the semi-coherent "fine" grid
-  WeaveStatisticType innerloop_statistics;
-  /// Bitflag: subset of "inner-loop" statistics to keep around after innerloop: 1) needed for output, 2) needed for outerloop-stats
-  WeaveStatisticType innerloop_statistics_to_keep;
-  /// Bitflag: set of "outer-loop" statistics that will be computed only on the final toplist (formerly known as "recalc step")
-  WeaveStatisticType outerloop_statistics;
+  /// Bitflag: set of "main-loop" statistics that need to be computed on the semi-coherent "fine" grid
+  WeaveStatisticType mainloop_statistics;
+  /// Bitflag: subset of "main-loop" statistics to keep around after mainloop: either because 1) needed for output, 2) needed for completionloop-stats
+  WeaveStatisticType mainloop_statistics_to_keep;
+  /// Bitflag: set of "completion-loop" statistics that will be computed only on the final toplist
+  WeaveStatisticType completionloop_statistics;
 
   /// setup for line-robust B_*S/GL* family of statistics
   BSGLSetup *BSGL_setup;

@@ -174,50 +174,50 @@ int XLALWeaveStatisticsParamsSetDependencyMap(
   // work out the total set of all statistics we need to compute by
   // expanding the statistics dependencies until converged [tree fully expanded]
   WeaveStatisticType stats_to_compute = stats_to_output;    // start value
-  WeaveStatisticType innerloop_stats  = toplist_stats;      // start value
-  WeaveStatisticType prev_stats_to_compute, prev_innerloop_stats;
+  WeaveStatisticType mainloop_stats  = toplist_stats;      // start value
+  WeaveStatisticType prev_stats_to_compute, prev_mainloop_stats;
   do {
     prev_stats_to_compute = stats_to_compute;
-    prev_innerloop_stats  = innerloop_stats;
+    prev_mainloop_stats  = mainloop_stats;
 
     XLALWeaveStatisticsSetDirectDependencies( &stats_to_compute, stats_to_compute );
-    XLALWeaveStatisticsSetDirectDependencies( &innerloop_stats, innerloop_stats );
+    XLALWeaveStatisticsSetDirectDependencies( &mainloop_stats, mainloop_stats );
 
-  } while ( (prev_stats_to_compute != stats_to_compute) && (prev_innerloop_stats != innerloop_stats) );
+  } while ( (prev_stats_to_compute != stats_to_compute) && (prev_mainloop_stats != mainloop_stats) );
 
-  // special handling of 'coh2F' and 'coh2F_det': these can *only* be computed as "inner-loop" statistics!
+  // special handling of 'coh2F' and 'coh2F_det': these can *only* be computed as "main-loop" statistics!
   // as they are defined to refer to the 'fine grid with (typically) interpolation', while
   // non-interpolating "recalc" 2F-per-segments statistics will be named differently // FIXME: put chosen names
   if ( stats_to_compute & WEAVE_STATISTIC_COH2F ) {
-    innerloop_stats |= WEAVE_STATISTIC_COH2F;
+    mainloop_stats |= WEAVE_STATISTIC_COH2F;
   }
   if ( stats_to_compute & WEAVE_STATISTIC_COH2F_DET ) {
-    innerloop_stats |= WEAVE_STATISTIC_COH2F_DET;
+    mainloop_stats |= WEAVE_STATISTIC_COH2F_DET;
   }
 
-  WeaveStatisticType outerloop_stats = stats_to_compute & (~innerloop_stats);
+  WeaveStatisticType completionloop_stats = stats_to_compute & (~mainloop_stats);
 
-  // figure out which innerloop statistics to keep outside of inner loop: either
+  // figure out which mainloop statistics to keep outside of main loop: either
   // 1) because they have been requested for output, or
-  // 2) they are a _direct_ outerloop dependency,
-  // all other innerloop stats can be thrown away safely after the innerloop.
-  WeaveStatisticType innerloop_stats_to_keep = 0;
+  // 2) they are a _direct_ completionloop dependency,
+  // all other mainloop stats can be thrown away safely after the mainloop.
+  WeaveStatisticType mainloop_stats_to_keep = 0;
 
   // 1) if requested for output:
-  innerloop_stats_to_keep |= (innerloop_stats & stats_to_output);
+  mainloop_stats_to_keep |= (mainloop_stats & stats_to_output);
 
-  // 2) if *direct* outerloop dependencies:
-  WeaveStatisticType outerloop_deps = 0;
-  XLALWeaveStatisticsSetDirectDependencies ( &outerloop_deps, outerloop_stats );
-  innerloop_stats_to_keep |= (innerloop_stats & outerloop_deps);
+  // 2) if *direct* completionloop dependencies:
+  WeaveStatisticType completionloop_deps = 0;
+  XLALWeaveStatisticsSetDirectDependencies ( &completionloop_deps, completionloop_stats );
+  mainloop_stats_to_keep |= (mainloop_stats & completionloop_deps);
 
   // store the resulting statistics logic in the 'statistics_params' struct
   statistics_params -> toplist_statistics           = toplist_stats;
   statistics_params -> statistics_to_output         = stats_to_output;
   statistics_params -> statistics_to_compute        = stats_to_compute;
-  statistics_params -> innerloop_statistics         = innerloop_stats;
-  statistics_params -> innerloop_statistics_to_keep = innerloop_stats_to_keep;
-  statistics_params -> outerloop_statistics         = outerloop_stats;
+  statistics_params -> mainloop_statistics          = mainloop_stats;
+  statistics_params -> mainloop_statistics_to_keep  = mainloop_stats_to_keep;
+  statistics_params -> completionloop_statistics    = completionloop_stats;
 
   return XLAL_SUCCESS;
 

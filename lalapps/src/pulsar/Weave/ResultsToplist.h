@@ -113,7 +113,7 @@ int XLALWeaveResultsToplistAdd(
   const WeaveSemiResults *semi_res,
   const UINT4 semi_nfreqs
   );
-int XLALWeaveResultsToplistOuterLoop(
+int XLALWeaveResultsToplistCompletionLoop(
   WeaveResultsToplist *toplist
   );
 int XLALWeaveResultsToplistWrite(

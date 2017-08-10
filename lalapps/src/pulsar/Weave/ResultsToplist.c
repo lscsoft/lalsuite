@@ -67,7 +67,7 @@ static int toplist_fits_table_write_visitor( void *param, const void *x );
 static int toplist_item_sort_by_semi_phys( const void *x, const void *y );
 static void toplist_item_destroy( WeaveResultsToplistItem *item );
 static int toplist_item_compare( void *param, const void *x, const void *y );
-static int toplist_compute_outer_loop(   void *param, void *x );
+static int toplist_fill_completionloop_stats( void *param, void *x );
 
 /// @}
 
@@ -88,8 +88,8 @@ WeaveResultsToplistItem *toplist_item_create(
 
   const WeaveStatisticsParams *params = toplist-> statistics_params;
   WeaveStatisticType store_per_segment_stats = (params -> statistics_to_output & (WEAVE_STATISTIC_COH2F | WEAVE_STATISTIC_COH2F_DET));
-  WeaveStatisticType store_coh2F             = (params -> innerloop_statistics_to_keep & WEAVE_STATISTIC_COH2F);
-  WeaveStatisticType store_coh2F_det         = (params -> innerloop_statistics_to_keep & WEAVE_STATISTIC_COH2F_DET);
+  WeaveStatisticType store_coh2F             = (params -> mainloop_statistics_to_keep & WEAVE_STATISTIC_COH2F);
+  WeaveStatisticType store_coh2F_det         = (params -> mainloop_statistics_to_keep & WEAVE_STATISTIC_COH2F_DET);
 
   // Allocate memory for per-segment output results
   if ( store_per_segment_stats ) {
@@ -244,9 +244,9 @@ int toplist_fits_table_init(
 } // toplist_fits_table_init()
 
 ///
-/// Function to update given toplist item with missing 'outer loop' statistics
+/// Function to update given toplist item with missing 'completion loop' statistics
 ///
-int toplist_compute_outer_loop(
+int toplist_fill_completionloop_stats(
   void *param,
   void *x
   )
@@ -256,18 +256,18 @@ int toplist_compute_outer_loop(
 
   WeaveResultsToplistItem *item = ( WeaveResultsToplistItem * ) x;
   WeaveStatisticsParams *stats_params = (WeaveStatisticsParams *)param;
-  WeaveStatisticType outerloop_stats = stats_params -> outerloop_statistics;
+  WeaveStatisticType completionloop_stats = stats_params -> completionloop_statistics;
   UINT4 ndetectors = stats_params -> detectors -> length;
   UINT4 nsegments  = stats_params -> nsegments;
 
-  if ( outerloop_stats & WEAVE_STATISTIC_SUM2F ) {
+  if ( completionloop_stats & WEAVE_STATISTIC_SUM2F ) {
     item -> sum2F = 0;
     for ( size_t l = 0; l < nsegments; ++l ) {
       item -> sum2F += item->coh2F[l];
     }
   }
 
-  if ( outerloop_stats & WEAVE_STATISTIC_SUM2F_DET ) {
+  if ( completionloop_stats & WEAVE_STATISTIC_SUM2F_DET ) {
     for ( size_t X = 0; X < ndetectors; ++X ) {
       item -> sum2F_det[X] = 0;
       for ( size_t l = 0; l < nsegments; ++l ) {
@@ -277,23 +277,23 @@ int toplist_compute_outer_loop(
     }
   }
 
-  if ( outerloop_stats & WEAVE_STATISTIC_MEAN2F ) {
+  if ( completionloop_stats & WEAVE_STATISTIC_MEAN2F ) {
     item -> mean2F = item -> sum2F / stats_params->nsum2F;
   }
 
-  if ( outerloop_stats & WEAVE_STATISTIC_MEAN2F_DET ) {
+  if ( completionloop_stats & WEAVE_STATISTIC_MEAN2F_DET ) {
     for ( size_t X = 0; X < ndetectors; ++X ) {
       item -> mean2F_det[X] = item -> sum2F_det[X] / stats_params->nsum2F_det[X];
     }
   }
 
-  if ( outerloop_stats & WEAVE_STATISTIC_BSGL ) {
+  if ( completionloop_stats & WEAVE_STATISTIC_BSGL ) {
     item -> log10BSGL = XLALComputeBSGL ( item -> sum2F, item -> sum2F_det, stats_params -> BSGL_setup );
   }
 
   return XLAL_SUCCESS;
 
-} // toplist_compute_outer_loop()
+} // toplist_fill_completionloop_stats()
 
 ///
 /// Visitor function for writing a toplist to a FITS table
@@ -583,9 +583,9 @@ int XLALWeaveResultsToplistAdd(
     }
 
     //
-    // copy all 'innerloop_statistics_to_keep' statistic values, as they will be needed either 1) for output or 2) computing remaining outer-loop statistics
+    // copy all 'mainloop_statistics_to_keep' statistic values, as they will be needed either 1) for output or 2) computing remaining completion-loop statistics
     //
-    WeaveStatisticType stats_to_keep  = params -> innerloop_statistics_to_keep;
+    WeaveStatisticType stats_to_keep  = params -> mainloop_statistics_to_keep;
 
     if ( stats_to_keep & WEAVE_STATISTIC_COH2F ) {
       for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
@@ -639,20 +639,20 @@ int XLALWeaveResultsToplistAdd(
 ///
 /// Compute all missing 'extra' (non-toplist-ranking) statistics for all toplist entries
 ///
-int XLALWeaveResultsToplistOuterLoop(
+int XLALWeaveResultsToplistCompletionLoop(
   WeaveResultsToplist *toplist
   )
 {
   // Check input
   XLAL_CHECK( toplist != NULL, XLAL_EFAULT );
 
-  // compute all outer-loop statistics on toplist items
+  // compute all completion-loop statistics on toplist items
   WeaveStatisticsParams params = *toplist->statistics_params;	// local copy
-  XLAL_CHECK( XLALHeapModify( toplist->heap, toplist_compute_outer_loop, &params ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALHeapModify( toplist->heap, toplist_fill_completionloop_stats, &params ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveResultsToplistOuterLoop()
+} // XLALWeaveResultsToplistCompletionLoop()
 
 ///
 /// Write results toplist to a FITS file
