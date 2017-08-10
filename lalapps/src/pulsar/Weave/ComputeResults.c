@@ -39,13 +39,11 @@ struct tagWeaveCohInput {
   WeaveSimulationLevel simulation_level;
   /// F-statistic input data
   FstatInput *Fstat_input;
-  /// If computing per-detector quantities, list of detectors
-  const LALStringVector *per_detectors;
   /// What F-statistic quantities to compute
   FstatQuantities what_to_compute;
   /// Number of detectors in F-statistic data
   UINT4 Fstat_ndetectors;
-  /// Map detectors in F-statistic data to coherent results
+  /// Map detectors in F-statistic data in this segment to 'global' detector list across segments in coherent results
   size_t Fstat_res_idx[PULSAR_MAX_DETECTORS];
 };
 
@@ -86,12 +84,11 @@ WeaveCohInput *XLALWeaveCohInputCreate(
   WeaveCohInput *coh_input = XLALCalloc( 1, sizeof( *coh_input ) );
   XLAL_CHECK_NULL( coh_input != NULL, XLAL_ENOMEM );
   XLAL_CHECK_NULL( ( simulation_level & WEAVE_SIMULATE_MIN_MEM ) || ( Fstat_input != NULL ), XLAL_EFAULT );
-  XLAL_CHECK_NULL ( statistics_params != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( statistics_params != NULL, XLAL_EFAULT );
 
   // Set fields
   coh_input->simulation_level = simulation_level;
   coh_input->Fstat_input = Fstat_input;
-  coh_input->per_detectors = statistics_params -> detectors;
 
   WeaveStatisticType mainloop_stats = statistics_params -> mainloop_statistics;
 
@@ -112,14 +109,14 @@ WeaveCohInput *XLALWeaveCohInputCreate(
     coh_input->Fstat_ndetectors = detector_info->length;
 
     // Map entry 'i' in 'detector_info' (F-statistic data) to entry 'idx' in 'detectors' (coherent results)
-    char *per_detectors_string = XLALConcatStringVector( coh_input->per_detectors, "," );
+    char *detectors_string = XLALConcatStringVector( statistics_params->detectors, "," );
     for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
       const char *prefix = detector_info->sites[i].frDetector.prefix;
-      const int idx = XLALFindStringInVector( prefix, coh_input->per_detectors );
-      XLAL_CHECK_NULL( idx >= 0, XLAL_EFAILED, "Detector '%s' from F-statistic data not found in list of detectors '%s'", prefix, per_detectors_string );
+      const int idx = XLALFindStringInVector( prefix, statistics_params->detectors );
+      XLAL_CHECK_NULL( idx >= 0, XLAL_EFAILED, "Detector '%s' from F-statistic data not found in list of detectors '%s'", prefix, detectors_string );
       coh_input->Fstat_res_idx[i] = idx;
     }
-    XLALFree( per_detectors_string );
+    XLALFree( detectors_string );
 
   }
 
@@ -216,14 +213,6 @@ int XLALWeaveCohResultsCompute(
   for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
     const size_t idx = coh_input->Fstat_res_idx[i];
     XLAL_CHECK( Fstat_res->twoFPerDet[i] == ( *coh_res )->coh2F_det[idx]->data, XLAL_EFAILED, "%p vs %p", Fstat_res->twoFPerDet[i], ( *coh_res )->coh2F_det[idx]->data );
-  }
-
-  // Double-check that F-statistic results detectors correctly match up with coherent results detectors
-  for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
-    const size_t idx = coh_input->Fstat_res_idx[i];
-    const char *Fstat_ndetector = Fstat_res->detectorNames[i];
-    const char *res_detector = coh_input->per_detectors->data[idx];
-    XLAL_CHECK( strcmp( Fstat_ndetector, res_detector ) == 0, XLAL_EFAILED, "Detector #%zu in F-statistic results '%s' does not match detector #%zu in coherent results '%s'", i, Fstat_ndetector, idx, res_detector );
   }
 
   return XLAL_SUCCESS;
