@@ -37,11 +37,7 @@ echo
 echo "=== Perform fully-coherent search ==="
 set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
-    --toplists=mean2F --toplist-limit=0 --per-detector --misc-info \
-    --setup-file=WeaveSetup.fits --sft-files='*.sft' \
-    --freq=55.5~1e-4 --f1dot=-2e-9,0 --semi-max-mismatch=9
-${builddir}/lalapps_Weave --output-file=WeaveOut-2.fits \
-    --toplists=mean2F --toplist-limit=0 --misc-info --extra-statistics="mean2F_det" \
+    --toplists=mean2F --toplist-limit=0 --extra-statistics="mean2F_det" --misc-info \
     --setup-file=WeaveSetup.fits --sft-files='*.sft' \
     --freq=55.5~1e-4 --f1dot=-2e-9,0 --semi-max-mismatch=9
 
@@ -90,13 +86,6 @@ set -x
 env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" ${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits
 set +x
 echo
-
-echo "=== Compare F-statistics from lalapps_Weave with --per-detector versus --extra-statistics='mean2F_det' ==="
-set -x
-env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" ${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=WeaveOut-2.fits -m 0 -r 0 -s 0 -a 0 -x 0
-set +x
-echo
-
 
 echo "=== Compare F-statistic at exact injected signal parameters with loudest F-statistic found by lalapps_Weave ==="
 set -x

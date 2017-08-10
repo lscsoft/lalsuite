@@ -85,7 +85,7 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, per_detector, per_segment, misc_info, simulate_search, statistics_help;
+    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, misc_info, simulate_search, statistics_help;
     CHAR *setup_file, *sft_files, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd, *lrs_oLGX;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit, lrs_Fstar0sc;
@@ -305,15 +305,6 @@ int main( int argc, char *argv[] )
     statistics_help, BOOLEAN, 0, OPTIONAL,
     "Output help on all supported statistics (in " UVAR_STR(toplist_choices) " and " UVAR_STR(statistic_choices) "."
     );
-
-  XLALRegisterUvarMember(
-    per_detector, BOOLEAN, 'D', DEPRECATED,
-    "Compute and output per-detector quantities: Use --extra-statistics instead to select per-detector statistics (eg 'sum2F_det', 'mean2F_det', 'coh2F_det')."
-    );
-  XLALRegisterUvarMember(
-    per_segment, BOOLEAN, 'N', DEPRECATED,
-    "Compute and output per-segment quantities: Use --extra-statistics instead to select per-segment statistics (eg 'coh2F', 'coh2F_det')."
-    );
   XLALRegisterUvarMember(
     misc_info, BOOLEAN, 'M', DEVELOPER,
     "If TRUE, output miscellaneous per-segment information: SFT properties, cache usage, etc. "
@@ -530,22 +521,6 @@ int main( int argc, char *argv[] )
   WeaveStatisticType all_output_stats = uvar->toplists;
   all_output_stats |= uvar->extra_statistics;
 
-  // ----- backwards compatible treatment of 'per_detector' and 'per_segment' user-input variables: // FIXME remove once tests have been adapted
-  if ( uvar->per_segment ) {
-    all_output_stats |= WEAVE_STATISTIC_COH2F;
-  } // if --per-segment
-  if ( uvar->per_detector ) {
-    if ( all_output_stats & WEAVE_STATISTIC_COH2F ) {
-      all_output_stats |= WEAVE_STATISTIC_COH2F_DET;
-    }
-    if ( all_output_stats & WEAVE_STATISTIC_SUM2F ) {
-      all_output_stats |= WEAVE_STATISTIC_SUM2F_DET;
-    }
-    if ( all_output_stats & WEAVE_STATISTIC_MEAN2F ) {
-      all_output_stats |= WEAVE_STATISTIC_MEAN2F_DET;
-    }
-  } // if --per-detector
-
   //  work out dependency-map for different statistics sets: toplist-ranking, output, total set of dependencies in main/completion loop ...
   XLAL_CHECK_MAIN ( XLALWeaveStatisticsParamsSetDependencyMap( statistics_params, uvar->toplists, all_output_stats ) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -754,7 +729,7 @@ int main( int argc, char *argv[] )
 
   if ( sft_catalog != NULL ) {
 
-    // Check that all SFT catalog detectors were included in metrics computed in setup file
+    // Check that all SFT catalog detectors were included in setup file
     LALStringVector *sft_catalog_detectors = XLALListIFOsInCatalog( sft_catalog );
     XLAL_CHECK_MAIN( sft_catalog_detectors != NULL, XLAL_EFUNC );
     char *sft_catalog_detectors_string = XLALConcatStringVector( sft_catalog_detectors, "," );

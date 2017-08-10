@@ -245,18 +245,11 @@ int XLALWeaveOutputResultsWrite(
   // Write number of spindowns
   XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "nspins", out->nspins, "number of spindowns" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // which statistics have been requested for output
-  // WeaveStatisticType statistics_to_output = out-> statistics_params -> statistics_to_output;
-
   // Write list of detectors (if outputting per-detector quantities //FIXME: for backwards compatibility)
-  WeaveStatisticType per_detector_stats = ( out->statistics_params->statistics_to_output & (WEAVE_STATISTIC_COH2F_DET | WEAVE_STATISTIC_SUM2F_DET | WEAVE_STATISTIC_MEAN2F_DET ) );
-  if ( per_detector_stats ) {
-    XLAL_CHECK( XLALFITSHeaderWriteStringVector( file, "perdet", out->statistics_params->detectors, "list of detectors" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
+  XLAL_CHECK( XLALFITSHeaderWriteStringVector( file, "detect", out->statistics_params->detectors, "list of detectors" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Write number of per-segment items being output (if outputting per-segment statistics, 0 otherwise //FIXME: for backwards compatibility)
-  WeaveStatisticType per_segment_stats = ( out->statistics_params->statistics_to_output & (WEAVE_STATISTIC_COH2F | WEAVE_STATISTIC_COH2F_DET ) );
-  XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "perseg", per_segment_stats ? out->statistics_params->nsegments : 0, "number of segments to output" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Write number of segments
+  XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "segments", out->statistics_params->nsegments, "number of segments" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Write names of selected toplist types (ie ranking statistics)
   {
@@ -315,16 +308,11 @@ int XLALWeaveOutputResultsReadAppend(
   WeaveStatisticsParams *statistics_params = XLALCalloc ( 1, sizeof( *statistics_params ) );
   XLAL_CHECK ( statistics_params != NULL, XLAL_ENOMEM );
 
-  // Read list of detectors [optional for backwards compatibility]
-  {
-    BOOLEAN exists = 0;
-    XLAL_CHECK( XLALFITSHeaderQueryKeyExists( file, "perdet1", &exists ) == XLAL_SUCCESS, XLAL_EFUNC );
-    if ( exists ) {
-      XLAL_CHECK( XLALFITSHeaderReadStringVector( file, "perdet", &(statistics_params->detectors) ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-  }
+  // Read list of detectors
+  XLAL_CHECK( XLALFITSHeaderReadStringVector( file, "detect", &(statistics_params->detectors) ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   /// Number of segments
-  XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "perseg", &(statistics_params->nsegments) ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "segments", &(statistics_params->nsegments) ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Read names of selected toplist statistics
   char *toplist_stats_names = NULL;

@@ -6,7 +6,7 @@ for setup in short mid long; do
 
         short)
             weave_setup_options="--segment-count=4"
-            weave_search_options="--alpha=0.9/1.4 --delta=-1.2/2.3 --freq=55.5/1e-4 --f1dot=-1.5e-9,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3  --per-detector"
+            weave_search_options="--alpha=0.9/1.4 --delta=-1.2/2.3 --freq=55.5/1e-4 --f1dot=-1.5e-9,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3  --extra-statistics=sum2F_det,mean2F_det"
             ;;
 
         mid)
