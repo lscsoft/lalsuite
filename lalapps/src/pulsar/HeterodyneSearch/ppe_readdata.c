@@ -452,7 +452,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
     LIGOTimeGPS gpstime;
     REAL8 dataValsRe = 0., dataValsIm = 0., sigmaVals = 0.;
     REAL8Vector *temptimes = NULL;
-    INT4 j = 0, k = 0, datalength = 0;
+    UINT4 j = 0, k = 0, datalength = 0;
     ProcessParamsTable *ppte = NULL, *ppts = NULL, *pptt = NULL;
 
     CHAR *filebuf = NULL;
@@ -574,7 +574,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
 
       INT4 nvals = 0; /* number of values in a line */
 
-      for ( k = 0; k < (INT4)tlist->nTokens; k++ ){
+      for ( k = 0; k < tlist->nTokens; k++ ){
         /* search for a comment character in the string */
         if ( strchr(tlist->tokens[k], '#') || strchr(tlist->tokens[k], '%') ){ continue; }
         else{ /* read in data from string */
@@ -604,8 +604,20 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
           }
           /* ignore excessively large spurious values as they can screw things up */
           if ( fabs(dataValsRe) > 1e-18 || fabs(dataValsIm) > 1e-18 ){ continue; }
+
+          /* make sure timestamps are unique */
+          if ( j > 0 ){
+            UINT4 notunique = 0;
+            for ( UINT4 ucount=0; ucount < j; ucount++ ){
+              if ( times == temptimes->data[ucount] ){
+                notunique = 1;
+                break;
+              }
+            }
+            if ( notunique ){ continue; }
+          }
         }
-        /* at this point, wa haven't added this item to the data yet */
+        /* at this point, we haven't added this item to the data yet */
         /* check truncation conditions before doing so */
         if ( LALInferenceGetProcParamVal( commandLine, "--truncate-time" ) ){
           /* assume truncateValue is a GPS time */
@@ -621,7 +633,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
             break;
           }
         }
-        
+
         j++;
 
         /* dynamically allocate more memory */
@@ -631,7 +643,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
 
         temptimes = XLALResizeREAL8Vector( temptimes, j );
 
-        // Note: j-1 because we added to j above (553)
+        /* Note: j-1 because we already added to j above */
         temptimes->data[j-1] = times;
 
         /* reheterodyne data if required */
