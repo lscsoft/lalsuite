@@ -260,13 +260,14 @@ int XLALWeaveSemiResultsInit(
   WeaveStatisticType mainloop_stats = statistics_params->mainloop_statistics;
 
   const WeaveStatisticType supported_mainloop = (
-    WEAVE_STATISTIC_COH2F      |
-    WEAVE_STATISTIC_COH2F_DET  |
-    WEAVE_STATISTIC_SUM2F      |
-    WEAVE_STATISTIC_SUM2F_DET  |
-    WEAVE_STATISTIC_MEAN2F     |
-    WEAVE_STATISTIC_MEAN2F_DET |
-    WEAVE_STATISTIC_BSGL
+    0
+    | WEAVE_STATISTIC_COH2F
+    | WEAVE_STATISTIC_COH2F_DET
+    | WEAVE_STATISTIC_SUM2F
+    | WEAVE_STATISTIC_SUM2F_DET
+    | WEAVE_STATISTIC_MEAN2F
+    | WEAVE_STATISTIC_MEAN2F_DET
+    | WEAVE_STATISTIC_BSGL
     );
 
   WeaveStatisticType unsupported = (mainloop_stats & ~supported_mainloop);

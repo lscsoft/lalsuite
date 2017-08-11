@@ -71,10 +71,10 @@ typedef struct tagWeaveStatisticMap {
     "Bayes factor 'Signal' vs 'Gaussian noise' or 'Line'"
 
 #define ENTRY_BSGLtL            WEAVE_STATISTIC_BSGLtL,         "B_S/GLtL",     WEAVE_STATISTIC_SUM2F|WEAVE_STATISTIC_SUM2F_DET|WEAVE_STATISTIC_MAX2F_DET, \
-    "Bayes factor 'Signal' vs 'Gaussian noise'|'Line'|'transient Line'."
+    "Bayes factor 'Signal' vs 'Gaussian noise' or 'Line' or 'transient Line'."
 
 #define ENTRY_BtSGLtL           WEAVE_STATISTIC_BtSGLtL,        "B_tS/GLtL",    WEAVE_STATISTIC_MAX2F|WEAVE_STATISTIC_SUM2F_DET|WEAVE_STATISTIC_MAX2F_DET, \
-    "Bayes factor 'transient Signal' vs 'Gaussian noise'|'Line'|'transient Line'."
+    "Bayes factor 'transient Signal' vs 'Gaussian noise' or 'Line' or 'transient Line'."
 
 #define ENTRY_NCOUNT            WEAVE_STATISTIC_NCOUNT,         "ncount",       WEAVE_STATISTIC_COH2F,     \
     "Multi-detector 'Hough' number count of 'threshold crossings' heavyside(2F - 2Fth) over segments"
@@ -108,7 +108,16 @@ const WeaveStatisticMap statistic_map[] = {
 };
 
 // total set of current supported statistics
-#define SUPPORTED_STATISTICS (WEAVE_STATISTIC_COH2F | WEAVE_STATISTIC_COH2F_DET | WEAVE_STATISTIC_SUM2F | WEAVE_STATISTIC_SUM2F_DET | WEAVE_STATISTIC_MEAN2F | WEAVE_STATISTIC_MEAN2F_DET |WEAVE_STATISTIC_BSGL)
+#define SUPPORTED_STATISTICS (                                          \
+    0                                                                   \
+    | WEAVE_STATISTIC_COH2F                                             \
+    | WEAVE_STATISTIC_COH2F_DET                                         \
+    | WEAVE_STATISTIC_SUM2F                                             \
+    | WEAVE_STATISTIC_SUM2F_DET                                         \
+    | WEAVE_STATISTIC_MEAN2F                                            \
+    | WEAVE_STATISTIC_MEAN2F_DET                                        \
+    | WEAVE_STATISTIC_BSGL                                              \
+    )
 const UserChoices statistic_choices = {
   ENTRY_2_CHOICES(ENTRY_NONE),
   ENTRY_2_CHOICES(ENTRY_COH2F),
@@ -119,11 +128,15 @@ const UserChoices statistic_choices = {
   ENTRY_2_CHOICES(ENTRY_MEAN2F_DET),
   ENTRY_2_CHOICES(ENTRY_BSGL),
   { SUPPORTED_STATISTICS, "all" }
-
 };
 
 // subset of statistics that are supported as toplist ranking statistics
-#define SUPPORTED_TOPLISTS (WEAVE_STATISTIC_MEAN2F|WEAVE_STATISTIC_SUM2F|WEAVE_STATISTIC_BSGL)
+#define SUPPORTED_TOPLISTS (                            \
+    0                                                   \
+    | WEAVE_STATISTIC_MEAN2F                            \
+    | WEAVE_STATISTIC_SUM2F                             \
+    | WEAVE_STATISTIC_BSGL                              \
+    )
 const UserChoices toplist_choices = {
   ENTRY_2_CHOICES(ENTRY_MEAN2F),
   ENTRY_2_CHOICES(ENTRY_SUM2F),
