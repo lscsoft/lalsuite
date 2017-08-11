@@ -1057,8 +1057,11 @@ class knopeDAG(pipeline.CondorDAG):
     # check whether to remove all the nested sample files after the run
     self.pe_clean_nest_samples = self.get_config_option('pe', 'clean_nest_samples', cftype='boolean', default=False)
 
+    # check if there are memory requirements for the PE jobs
+    self.pe_request_memory = self.get_config_option('pe', 'pe_request_memory', cftype='int', allownone=True)
+
     # create parameter estimation job
-    pejob = ppeJob(self.pe_exec, univ=self.pe_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
+    pejob = ppeJob(self.pe_exec, univ=self.pe_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir, requestmemory=self.pe_request_memory)
 
     # create job to merge nested samples and convert to posterior samples
     n2pjob = nest2posJob(self.pe_n2p_exec, univ='local', accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
@@ -1897,6 +1900,7 @@ class knopeDAG(pipeline.CondorDAG):
     self.coarse_heterodyne_channels = self.get_config_option('heterodyne', 'channels', 'dict')
     self.coarse_heterodyne_binary_output = self.get_config_option('heterodyne', 'binary_output', 'boolean', default=True)
     self.coarse_heterodyne_gzip_output = self.get_config_option('heterodyne', 'gzip_coarse_output', 'boolean', default=False)
+    self.coarse_heterodyne_request_memory = self.get_config_option('heterodyne', 'coarse_request_memory', 'int', allownone=True)
     if self.error_code != 0: return
     if self.coarse_heterodyne_binary_output and self.coarse_heterodyne_gzip_output:
       print("Warning... cannot output coarse heterdyned data as gzip and binary. Defaulting to binary output.")
@@ -1905,15 +1909,13 @@ class knopeDAG(pipeline.CondorDAG):
     self.fine_heterodyne_resample_rate = self.get_config_option('heterodyne', 'fine_resample_rate', 'string', default='1/60')
     self.fine_heterodyne_stddev_thresh = self.get_config_option('heterodyne', 'stddev_thresh', 'float', default=3.5)
     self.fine_heterodyne_gzip_output = self.get_config_option('heterodyne', 'gzip_fine_output', 'boolean', default=True)
+    self.fine_heterodyne_request_memory = self.get_config_option('heterodyne', 'fine_request_memory', 'int', allownone=True)
     if self.error_code != 0: return
 
     # create heterodyne job
     requestmemory = None
-    if self.coarse_heterodyne_gzip_output:
-      # if gzipping output then memory requirements may be an issue so request 2000Mb of memory
-      requestmemory = 2000
-    chetjob = heterodyneJob(self.heterodyne_exec, univ=self.heterodyne_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir, subprefix='coarse', requestmemory=requestmemory)
-    fhetjob = heterodyneJob(self.heterodyne_exec, univ=self.heterodyne_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir, subprefix='fine')
+    chetjob = heterodyneJob(self.heterodyne_exec, univ=self.heterodyne_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir, subprefix='coarse', requestmemory=self.coarse_heterodyne_request_memory)
+    fhetjob = heterodyneJob(self.heterodyne_exec, univ=self.heterodyne_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir, subprefix='fine', requestmemory=self.fine_heterodyne_request_memory)
 
     self.processed_files = {} # dictionary of processed (fine heterodyned files)
     self.fine_heterodyne_nodes = {} # dictionary for fine heterodyne nodes to use as parents to later jobs
@@ -2222,8 +2224,11 @@ class knopeDAG(pipeline.CondorDAG):
     self.splinter_universe = self.get_config_option('splinter', 'universe', default='vanilla')
     if self.error_code != 0: return
 
+    # check any memory requirements for a splinter job
+    self.splinter_request_memory = self.get_config_option('splinter', 'splinter_request_memory', 'int', allownone=True)
+
     # create splinter job
-    spljob = splinterJob(self.splinter_exec, univ=self.splinter_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
+    spljob = splinterJob(self.splinter_exec, univ=self.splinter_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir, requestmemory=self.splinter_request_memory)
 
     # create job for moving splinter output files
     mvjob = moveJob(accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
@@ -3009,7 +3014,7 @@ class heterodyneJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
     if requestmemory is not None:
       if isinstance(requestmemory, int):
-        self.add_condor_cmd('RequestMemory', requestmemory)
+        self.add_condor_cmd('Request_memory', requestmemory)
 
     # set log files for job
     if logdir != None:
@@ -3190,7 +3195,7 @@ class splinterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_SplInter job to process SFT data.
   """
-  def __init__(self, execu, univ='vanilla', accgroup=None, accuser=None, logdir=None, rundir=None):
+  def __init__(self, execu, univ='vanilla', accgroup=None, accuser=None, logdir=None, rundir=None, requestmemory=None):
     self.__executable = execu
     self.__universe = univ
     pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
@@ -3200,6 +3205,10 @@ class splinterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     if accuser != None: self.add_condor_cmd('accounting_group_user', accuser)
 
     self.add_condor_cmd('getenv','True')
+
+    if requestmemory is not None:
+      if isinstance(requestmemory, int):
+        self.add_condor_cmd('Request_memory', requestmemory)
 
     # set log files for job
     if logdir != None:
@@ -3575,7 +3584,7 @@ class ppeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A parameter estimation job
   """
-  def __init__(self, execu, univ='vanilla', accgroup=None, accuser=None, logdir=None, rundir=None):
+  def __init__(self, execu, univ='vanilla', accgroup=None, accuser=None, logdir=None, rundir=None, requestmemory=None):
     self.__executable = execu
     self.__universe = univ
     pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
@@ -3585,6 +3594,10 @@ class ppeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     if accuser != None: self.add_condor_cmd('accounting_group_user', accuser)
 
     self.add_condor_cmd('getenv','True')
+
+    if requestmemory is not None:
+      if isinstance(requestmemory, int):
+        self.add_condor_cmd('Request_memory', requestmemory)
 
     # set log files for job
     if logdir != None:
