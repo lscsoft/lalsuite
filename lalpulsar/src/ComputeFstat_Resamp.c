@@ -918,7 +918,7 @@ XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( ResampMethodData *resamp,		// [
     (resamp->prev_doppler.argp == thisPoint->argp);
 
   Timings_t *Tau = &(resamp->timingResamp.Tau);
-  REAL8 tic, toc;
+  REAL8 tic = 0, toc = 0;
   BOOLEAN collectTiming = resamp->collectTiming;
 
   // if same sky-position *and* same binary, we can simply return as there's nothing to be done here
