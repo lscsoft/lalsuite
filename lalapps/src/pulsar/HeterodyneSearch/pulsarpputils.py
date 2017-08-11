@@ -1331,6 +1331,13 @@ def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeout
       print("Could not open file %s" % Bkdata[ifo], file=sys.stderr)
       sys.exit(-1)
 
+    # sort the array in time
+    Bk = Bk[Bk[:,0].argsort()]
+
+    # make sure times are unique
+    uargs = np.unique(Bk[:,0], return_index=True)[1]
+    Bk = Bk[uargs,:]
+
     # should be three lines in file
     gpstime = []
 
