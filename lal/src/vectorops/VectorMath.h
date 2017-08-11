@@ -148,6 +148,9 @@ int XLALVectorAddREAL4 ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const U
 /** Compute \f$\text{out} = \text{in1} \times \text{in2}\f$ over REAL4 vectors \c in1 and \c in2 with \c len elements */
 int XLALVectorMultiplyREAL4 ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len);
 
+/** Compute \f$\text{out} = max ( \text{in1}, \text{in2} )\f$ over REAL4 vectors \c in1 and \c in2 with \c len elements */
+int XLALVectorMaxREAL4 ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len);
+
 /** @} */
 
 /** \name Vector by Scalar Operations */

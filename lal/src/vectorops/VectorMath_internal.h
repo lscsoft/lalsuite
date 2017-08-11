@@ -71,6 +71,7 @@ DECLARE_VECTORMATH_S2SS(SinCos2Pi, AVX2, AVX, SSE2, SSE)
 
 DECLARE_VECTORMATH_SS2S(Add, AVX2, AVX, SSE2, SSE)
 DECLARE_VECTORMATH_SS2S(Multiply, AVX2, AVX, SSE2, SSE)
+DECLARE_VECTORMATH_SS2S(Max, NONE, NONE, NONE, NONE)
 
 /* declare internal prototypes of SIMD-specific vector math functions with 1 REAL4 scalar and 1 REAL4 vector input to 1 REAL4 vector output (sS2S) */
 #define DECLARE_VECTORMATH_sS2S(NAME, ...) \
