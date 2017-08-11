@@ -120,6 +120,7 @@ DEFINE_VECTORMATH_S2SS(SinCos2Pi, local_sincosf_2pi)
 
 DEFINE_VECTORMATH_SS2S(Add, local_addf)
 DEFINE_VECTORMATH_SS2S(Multiply, local_mulf)
+DEFINE_VECTORMATH_SS2S(Max, fmaxf)
 
 // ---------- define vector math functions with 1 REAL4 scalar and 1 REAL4 vector inputs to 1 REAL4 vector output (sS2S) ----------
 #define DEFINE_VECTORMATH_sS2S(NAME, GEN_OP)                            \
