@@ -222,6 +222,18 @@ int toplist_fits_table_init(
     }
   }
 
+  // Add column for multi-detector max2F statistic
+  if ( statistics_to_output & WEAVE_STATISTIC_MAX2F ) {
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, max2F ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+  // Add columns for per-detector max2F_det statistic
+  if ( statistics_to_output & WEAVE_STATISTIC_MAX2F_DET ) {
+    for ( size_t i = 0; i < params -> detectors->length; ++i ) {
+      snprintf( col_name, sizeof( col_name ), "max2F_%s", params -> detectors->data[i] );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, max2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+  }
+
   // Add column for multi-detector sum2F statistic
   if ( statistics_to_output & WEAVE_STATISTIC_SUM2F ) {
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, sum2F ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -259,6 +271,23 @@ int toplist_fill_completionloop_stats(
   WeaveStatisticType completionloop_stats = stats_params -> completionloop_statistics;
   UINT4 ndetectors = stats_params -> detectors -> length;
   UINT4 nsegments  = stats_params -> nsegments;
+
+  if ( completionloop_stats & WEAVE_STATISTIC_MAX2F ) {
+    item -> max2F = 0;
+    for ( size_t l = 0; l < nsegments; ++l ) {
+      item -> max2F = fmaxf( item -> max2F, item->coh2F[l] );
+    }
+  }
+
+  if ( completionloop_stats & WEAVE_STATISTIC_MAX2F_DET ) {
+    for ( size_t X = 0; X < ndetectors; ++X ) {
+      item -> max2F_det[X] = 0;
+      for ( size_t l = 0; l < nsegments; ++l ) {
+        REAL4 item_Xl = item->coh2F_det[X][l];
+        item -> max2F_det[X] = isnan(item_Xl) ? item -> max2F_det[X] : fmaxf ( item -> max2F_det[X], item_Xl );
+      }
+    }
+  }
 
   if ( completionloop_stats & WEAVE_STATISTIC_SUM2F ) {
     item -> sum2F = 0;

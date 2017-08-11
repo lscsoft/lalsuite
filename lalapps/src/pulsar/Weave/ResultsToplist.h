@@ -67,6 +67,10 @@ typedef struct tagWeaveResultsToplistItem {
   REAL4 *coh2F;
   /// Coherent per-detector F-statistics (only needed for per-detector and per-segment output)
   REAL4 *coh2F_det[PULSAR_MAX_DETECTORS];
+  /// Maximized-over-segments multi-detector F-statistic
+  REAL4 max2F;
+  /// Maximized-over-segments per-detector F-statistic
+  REAL4 max2F_det[PULSAR_MAX_DETECTORS];
   /// Summed multi-detector F-statistic
   REAL4 sum2F;
   /// Summed per-detector F-statistic (only needed for per-detector output)

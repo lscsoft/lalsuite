@@ -115,6 +115,8 @@ const WeaveStatisticMap statistic_map[] = {
     0                                                                   \
     | WEAVE_STATISTIC_COH2F                                             \
     | WEAVE_STATISTIC_COH2F_DET                                         \
+    | WEAVE_STATISTIC_MAX2F                                             \
+    | WEAVE_STATISTIC_MAX2F_DET                                         \
     | WEAVE_STATISTIC_SUM2F                                             \
     | WEAVE_STATISTIC_SUM2F_DET                                         \
     | WEAVE_STATISTIC_MEAN2F                                            \
@@ -125,6 +127,8 @@ const UserChoices WeaveStatisticChoices = {
   ENTRY_2_CHOICES(ENTRY_NONE),
   ENTRY_2_CHOICES(ENTRY_COH2F),
   ENTRY_2_CHOICES(ENTRY_COH2F_DET),
+  ENTRY_2_CHOICES(ENTRY_MAX2F),
+  ENTRY_2_CHOICES(ENTRY_MAX2F_DET),
   ENTRY_2_CHOICES(ENTRY_SUM2F),
   ENTRY_2_CHOICES(ENTRY_SUM2F_DET),
   ENTRY_2_CHOICES(ENTRY_MEAN2F),
@@ -135,6 +139,8 @@ const UserChoices WeaveStatisticChoices = {
 const char *const WeaveStatisticHelpString =
   ENTRY_2_HELPSTR(ENTRY_COH2F)
   ENTRY_2_HELPSTR(ENTRY_COH2F_DET)
+  ENTRY_2_HELPSTR(ENTRY_MAX2F)
+  ENTRY_2_HELPSTR(ENTRY_MAX2F_DET)
   ENTRY_2_HELPSTR(ENTRY_SUM2F)
   ENTRY_2_HELPSTR(ENTRY_SUM2F_DET)
   ENTRY_2_HELPSTR(ENTRY_MEAN2F)

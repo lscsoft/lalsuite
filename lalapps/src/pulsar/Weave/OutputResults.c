@@ -203,6 +203,8 @@ int XLALWeaveOutputResultsCompletionLoop (
   WeaveStatisticType completionloop_stats = out -> statistics_params -> completionloop_statistics;
   const WeaveStatisticType supported_completionloop = (
     0
+    | WEAVE_STATISTIC_MAX2F
+    | WEAVE_STATISTIC_MAX2F_DET
     | WEAVE_STATISTIC_SUM2F
     | WEAVE_STATISTIC_SUM2F_DET
     | WEAVE_STATISTIC_MEAN2F
