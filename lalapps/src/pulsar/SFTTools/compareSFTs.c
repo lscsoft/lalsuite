@@ -204,7 +204,7 @@ initUserVars ( UserInput_t *uvar )
 
   XLALRegisterUvarMember( sftBname1,	STRING, '1', REQUIRED, "Path and basefilename for SFTs1");
   XLALRegisterUvarMember( sftBname2,	STRING, '2', REQUIRED, "Path and basefilename for SFTs2");
-  XLALRegisterUvarMember(  verbose,	BOOLEAN, 'v', OPTIONAL, "Verbose output of differences");
+  XLALRegisterUvarMember(  verbose,	BOOLEAN, 'V', OPTIONAL, "Verbose output of differences");
   XLALRegisterUvarMember( relErrorMax,	REAL8, 'e', OPTIONAL, "Maximal relative error acceptable to 'pass' comparison");
 
   return XLAL_SUCCESS;
