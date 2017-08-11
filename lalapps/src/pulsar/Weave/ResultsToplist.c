@@ -212,12 +212,12 @@ int toplist_fits_table_init(
   }
   // Add column for per-segment coherent multi-detector 2F statistics
   if ( statistics_to_output & WEAVE_STATISTIC_COH2F ) {
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, params -> nsegments, coh2F, "coh2F_seg" ) == XLAL_SUCCESS, XLAL_EFUNC );	// FIXME: rename to 'coh2F'
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, params -> nsegments, coh2F, "coh2F" ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
   // Add columns for per-segment coherent per-detector 2F statistics
   if ( statistics_to_output & WEAVE_STATISTIC_COH2F_DET ) {
     for ( size_t i = 0; i < params -> detectors->length; ++i ) {
-      snprintf( col_name, sizeof( col_name ), "coh2F_%s_seg", params -> detectors->data[i] );	// FIXME: rename to 'coh2F_<det>'
+      snprintf( col_name, sizeof( col_name ), "coh2F_%s", params -> detectors->data[i] );
       XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, params -> nsegments, coh2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   }
