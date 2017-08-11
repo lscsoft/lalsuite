@@ -251,6 +251,11 @@ int toplist_fits_table_init(
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, log10BSGL ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
+  // Add column for BSGL statistic
+  if ( statistics_to_output & WEAVE_STATISTIC_BSGLtL ) {
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, log10BSGLtL ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
   return XLAL_SUCCESS;
 
 } // toplist_fits_table_init()
@@ -318,6 +323,10 @@ int toplist_fill_completionloop_stats(
 
   if ( completionloop_stats & WEAVE_STATISTIC_BSGL ) {
     item -> log10BSGL = XLALComputeBSGL ( item -> sum2F, item -> sum2F_det, stats_params -> BSGL_setup );
+  }
+
+  if ( completionloop_stats & WEAVE_STATISTIC_BSGLtL ) {
+    item -> log10BSGLtL = XLALComputeBSGLtL ( item -> sum2F, item -> sum2F_det, item -> max2F_det, stats_params -> BSGL_setup );
   }
 
   return XLAL_SUCCESS;

@@ -81,7 +81,8 @@ typedef struct tagWeaveResultsToplistItem {
   REAL4 mean2F_det[PULSAR_MAX_DETECTORS];
   /// Line-robust log10(B_S/GL) statistic
   REAL4 log10BSGL;
-
+  /// Line- and transient-line robust log10(B_S/GLtL) statistic
+  REAL4 log10BSGLtL;
 } WeaveResultsToplistItem;
 
 ///

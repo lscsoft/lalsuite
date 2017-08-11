@@ -122,6 +122,7 @@ const WeaveStatisticMap statistic_map[] = {
     | WEAVE_STATISTIC_MEAN2F                                            \
     | WEAVE_STATISTIC_MEAN2F_DET                                        \
     | WEAVE_STATISTIC_BSGL                                              \
+    | WEAVE_STATISTIC_BSGLtL                                            \
     )
 const UserChoices WeaveStatisticChoices = {
   ENTRY_2_CHOICES(ENTRY_NONE),
@@ -134,6 +135,7 @@ const UserChoices WeaveStatisticChoices = {
   ENTRY_2_CHOICES(ENTRY_MEAN2F),
   ENTRY_2_CHOICES(ENTRY_MEAN2F_DET),
   ENTRY_2_CHOICES(ENTRY_BSGL),
+  ENTRY_2_CHOICES(ENTRY_BSGLtL),
   { SUPPORTED_STATISTICS, "all" }
 };
 const char *const WeaveStatisticHelpString =
@@ -146,6 +148,7 @@ const char *const WeaveStatisticHelpString =
   ENTRY_2_HELPSTR(ENTRY_MEAN2F)
   ENTRY_2_HELPSTR(ENTRY_MEAN2F_DET)
   ENTRY_2_HELPSTR(ENTRY_BSGL)
+  ENTRY_2_HELPSTR(ENTRY_BSGLtL)
   ;
 
 // subset of statistics that are supported as toplist ranking statistics
