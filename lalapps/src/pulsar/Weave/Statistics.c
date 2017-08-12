@@ -118,7 +118,7 @@ const WeaveStatisticMap statistic_map[] = {
     | WEAVE_STATISTIC_MEAN2F_DET                                        \
     | WEAVE_STATISTIC_BSGL                                              \
     )
-const UserChoices statistic_choices = {
+const UserChoices WeaveStatisticChoices = {
   ENTRY_2_CHOICES(ENTRY_NONE),
   ENTRY_2_CHOICES(ENTRY_COH2F),
   ENTRY_2_CHOICES(ENTRY_COH2F_DET),
@@ -137,7 +137,7 @@ const UserChoices statistic_choices = {
     | WEAVE_STATISTIC_SUM2F                             \
     | WEAVE_STATISTIC_BSGL                              \
     )
-const UserChoices toplist_choices = {
+const UserChoices WeaveToplistChoices = {
   ENTRY_2_CHOICES(ENTRY_MEAN2F),
   ENTRY_2_CHOICES(ENTRY_SUM2F),
   ENTRY_2_CHOICES(ENTRY_BSGL),

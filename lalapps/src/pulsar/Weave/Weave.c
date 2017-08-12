@@ -291,11 +291,11 @@ int main( int argc, char *argv[] )
     "Maximum number of candidates to return in an output toplist; if 0, all candidates are returned. "
     );
   XLALRegisterUvarAuxDataMember(
-    toplists, UserFlag, &toplist_choices, 'L', OPTIONAL,
+    toplists, UserFlag, &WeaveToplistChoices, 'L', OPTIONAL,
     "Sets which combination of toplists to return in the output file given by " UVAR_STR( output_file ) "."
     );
   XLALRegisterUvarAuxDataMember(
-    extra_statistics, UserFlag, &statistic_choices, 'E', OPTIONAL,
+    extra_statistics, UserFlag, &WeaveStatisticChoices, 'E', OPTIONAL,
     "Sets which extra statistics to compute and return in the output file given by " UVAR_STR( output_file ) "."
     );
   XLALRegisterUvarMember(

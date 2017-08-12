@@ -74,8 +74,15 @@ typedef enum {
   WEAVE_STATISTIC_MAX                                           = BIT(13)
 } WeaveStatisticType;
 
-extern const UserChoices toplist_choices;
-extern const UserChoices statistic_choices;
+///
+/// User input choices for toplist ranking statistics
+///
+extern const UserChoices WeaveToplistChoices;
+
+///
+/// User input choices for all supported statistics
+///
+extern const UserChoices WeaveStatisticChoices;
 
 ///
 /// Struct holding all parameters and status values for computing various statistics

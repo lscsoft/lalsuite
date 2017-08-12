@@ -212,7 +212,7 @@ int XLALWeaveOutputResultsCompletionLoop (
 
   WeaveStatisticType unsupported = (completionloop_stats & ~supported_completionloop);
   if ( unsupported != 0 ) {
-    char *unsupported_names = XLALPrintStringValueOfUserFlag( (const int*)&unsupported, &statistic_choices );
+    char *unsupported_names = XLALPrintStringValueOfUserFlag( (const int*)&unsupported, &WeaveStatisticChoices );
     XLALPrintError ( "BUG: unsupported completion-loop statistics requested: %s", unsupported_names );
     XLALFree ( unsupported_names );
     XLAL_ERROR ( XLAL_EERR );
@@ -254,7 +254,7 @@ int XLALWeaveOutputResultsWrite(
 
   // Write names of selected toplist types (ie ranking statistics)
   {
-    char *toplist_statistics = XLALPrintStringValueOfUserFlag ( (const int*)&(out->statistics_params->toplist_statistics), &toplist_choices );
+    char *toplist_statistics = XLALPrintStringValueOfUserFlag ( (const int*)&(out->statistics_params->toplist_statistics), &WeaveToplistChoices );
     XLAL_CHECK( toplist_statistics != NULL, XLAL_EFUNC );
     XLAL_CHECK( XLALFITSHeaderWriteString( file, "toplists", toplist_statistics, "names of selected toplist statistics" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLALFree ( toplist_statistics );
@@ -266,7 +266,7 @@ int XLALWeaveOutputResultsWrite(
     if ( extras == 0 ) {
       extras = WEAVE_STATISTIC_NONE;
     }
-    char *extras_names = XLALPrintStringValueOfUserFlag ( (const int*)&extras, &statistic_choices );
+    char *extras_names = XLALPrintStringValueOfUserFlag ( (const int*)&extras, &WeaveStatisticChoices );
     XLAL_CHECK( extras_names != NULL, XLAL_EFUNC );
     XLAL_CHECK( XLALFITSHeaderWriteString( file, "extras", extras_names, "names of additional selected output statistics" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLALFree ( extras_names );
@@ -319,7 +319,7 @@ int XLALWeaveOutputResultsReadAppend(
   char *toplist_stats_names = NULL;
   int toplist_stats = 0;
   XLAL_CHECK( XLALFITSHeaderReadString( file, "toplists", &toplist_stats_names ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALParseStringValueAsUserFlag( &toplist_stats, &toplist_choices, toplist_stats_names ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALParseStringValueAsUserFlag( &toplist_stats, &WeaveToplistChoices, toplist_stats_names ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLALFree( toplist_stats_names );
 
   int extra_stats = 0;
@@ -329,7 +329,7 @@ int XLALWeaveOutputResultsReadAppend(
     XLAL_CHECK( XLALFITSHeaderQueryKeyExists( file, "extras", &exists ) == XLAL_SUCCESS, XLAL_EFUNC );
     if ( exists ) {
       XLAL_CHECK( XLALFITSHeaderReadString( file, "extras", &extras_names ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( XLALParseStringValueAsUserFlag( &extra_stats, &statistic_choices, extras_names ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALParseStringValueAsUserFlag( &extra_stats, &WeaveStatisticChoices, extras_names ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLALFree( extras_names );
     } else {
       // deal with 'old-style' fits file without 'extras' field: must infer 'extra_stats' from 'perseg' and 'perdet' fields
@@ -383,9 +383,9 @@ int XLALWeaveOutputResultsReadAppend(
     // Check list of selected toplist statistics
     if ( statistics_params->toplist_statistics != ( *out )->statistics_params->toplist_statistics ) {
       char *toplists1, *toplists2;
-      toplists1 = XLALPrintStringValueOfUserFlag ( (const int*)&(statistics_params->toplist_statistics), &toplist_choices );
+      toplists1 = XLALPrintStringValueOfUserFlag ( (const int*)&(statistics_params->toplist_statistics), &WeaveToplistChoices );
       XLAL_CHECK ( toplists1 != NULL, XLAL_EFUNC );
-      toplists2 = XLALPrintStringValueOfUserFlag ( (const int*)&(( *out )->statistics_params->toplist_statistics), &toplist_choices );
+      toplists2 = XLALPrintStringValueOfUserFlag ( (const int*)&(( *out )->statistics_params->toplist_statistics), &WeaveToplistChoices );
       XLAL_CHECK ( toplists2 != NULL, XLAL_EFUNC );
       XLALPrintError ( "Inconsistent set of toplist statistics: %s != %s", toplists1, toplists2 );
       XLALFree ( toplists1 );
@@ -395,9 +395,9 @@ int XLALWeaveOutputResultsReadAppend(
     // Check list of selected output statistics
     if ( statistics_params->statistics_to_output != ( *out )->statistics_params->statistics_to_output ) {
       char *output1, *output2;
-      output1 = XLALPrintStringValueOfUserFlag ( (const int*)&(statistics_params->statistics_to_output), &statistic_choices );
+      output1 = XLALPrintStringValueOfUserFlag ( (const int*)&(statistics_params->statistics_to_output), &WeaveStatisticChoices );
       XLAL_CHECK ( output1 != NULL, XLAL_EFUNC );
-      output2 = XLALPrintStringValueOfUserFlag ( (const int*)&(( *out )->statistics_params->statistics_to_output), &statistic_choices );
+      output2 = XLALPrintStringValueOfUserFlag ( (const int*)&(( *out )->statistics_params->statistics_to_output), &WeaveStatisticChoices );
       XLAL_CHECK ( output2 != NULL, XLAL_EFUNC );
       XLALPrintError ( "Inconsistent set of output statistics: {%s} != {%s}\n", output1, output2 );
       XLALFree ( output1 );
@@ -491,9 +491,9 @@ int XLALWeaveOutputResultsCompare(
   if ( out_1->statistics_params->toplist_statistics != out_2->statistics_params->toplist_statistics ) {
     *equal = 0;
     char *toplists1, *toplists2;
-    toplists1 = XLALPrintStringValueOfUserFlag ( (const int*)&(out_1->statistics_params->toplist_statistics), &toplist_choices );
+    toplists1 = XLALPrintStringValueOfUserFlag ( (const int*)&(out_1->statistics_params->toplist_statistics), &WeaveToplistChoices );
     XLAL_CHECK ( toplists1 != NULL, XLAL_EFUNC );
-    toplists2 = XLALPrintStringValueOfUserFlag ( (const int*)&(out_2->statistics_params->toplist_statistics), &toplist_choices );
+    toplists2 = XLALPrintStringValueOfUserFlag ( (const int*)&(out_2->statistics_params->toplist_statistics), &WeaveToplistChoices );
     XLAL_CHECK ( toplists2 != NULL, XLAL_EFUNC );
     XLALPrintError ( "%s: Inconsistent set of toplist statistics: {%s} != {%s}\n", __func__, toplists1, toplists2 );
     XLALFree ( toplists1 );
@@ -505,9 +505,9 @@ int XLALWeaveOutputResultsCompare(
   if ( out_1->statistics_params->statistics_to_output != out_2->statistics_params->statistics_to_output ) {
     *equal = 0;
     char *outputs1, *outputs2;
-    outputs1 = XLALPrintStringValueOfUserFlag ( (const int*)&(out_1->statistics_params->statistics_to_output), &statistic_choices );
+    outputs1 = XLALPrintStringValueOfUserFlag ( (const int*)&(out_1->statistics_params->statistics_to_output), &WeaveStatisticChoices );
     XLAL_CHECK ( outputs1 != NULL, XLAL_EFUNC );
-    outputs2 = XLALPrintStringValueOfUserFlag ( (const int*)&(out_2->statistics_params->statistics_to_output), &statistic_choices );
+    outputs2 = XLALPrintStringValueOfUserFlag ( (const int*)&(out_2->statistics_params->statistics_to_output), &WeaveStatisticChoices );
     XLAL_CHECK ( outputs2 != NULL, XLAL_EFUNC );
     XLALPrintError ( "%s: Inconsistent set of ouput statistics: {%s} != {%s}\n", __func__, outputs1, outputs2 );
     XLALFree ( outputs1 );
