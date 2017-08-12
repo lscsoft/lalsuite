@@ -30,9 +30,6 @@ set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOutNoCkpt.fits \
     --toplists=all --toplist-limit=2321 --setup-file=WeaveSetup.fits --sft-files='*.sft' --extra-statistics="mean2F_det,sum2F_det,coh2F,coh2F_det" \
     --sky-patch-count=3 --sky-patch-index=0 --freq=50/1e-4 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4
-${builddir}/lalapps_Weave --output-file=WeaveOutNoCkpt-perseg.fits \
-    --toplists=all --toplist-limit=2321 --setup-file=WeaveSetup.fits --sft-files='*.sft' --extra-statistics="coh2F" \
-    --sky-patch-count=3 --sky-patch-index=0 --freq=50/1e-4 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4
 set +x
 echo
 
