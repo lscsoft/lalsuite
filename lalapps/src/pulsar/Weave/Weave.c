@@ -270,7 +270,6 @@ int main( int argc, char *argv[] )
     Fstat_SSB_precision, UserEnum, &SSBprecisionChoices, 0, DEVELOPER,
     "Precision in calculating the barycentric transformation. "
     );
-
   //
   // Line-robust statistics computation
   //
@@ -283,7 +282,6 @@ int main( int argc, char *argv[] )
     lrs_oLGX, STRINGVector, 0, OPTIONAL,
     "Per-detector line-vs-Gauss prior odds 'oLGX' (Defaults to oLGX=1/Ndet) for B_S/GL.. family of statistics."
     );
-
   //
   // - Output control
   //
@@ -292,7 +290,6 @@ int main( int argc, char *argv[] )
     toplist_limit, UINT4, 'n', OPTIONAL,
     "Maximum number of candidates to return in an output toplist; if 0, all candidates are returned. "
     );
-
   XLALRegisterUvarAuxDataMember(
     toplists, UserFlag, &toplist_choices, 'L', OPTIONAL,
     "Sets which combination of toplists to return in the output file given by " UVAR_STR( output_file ) "."
@@ -506,12 +503,12 @@ int main( int argc, char *argv[] )
   }
 
   ////////// Set up calculation of various requested output statistics //////////
+
   WeaveStatisticsParams *statistics_params = XLALCalloc ( 1, sizeof( *statistics_params ) );
   XLAL_CHECK ( statistics_params != NULL, XLAL_ENOMEM );
-
-  statistics_params->detectors             = XLALCopyStringVector( setup.detectors );
+  statistics_params->detectors = XLALCopyStringVector( setup.detectors );
   XLAL_CHECK_MAIN ( statistics_params->detectors != NULL, XLAL_EFUNC );
-  statistics_params->nsegments             = nsegments;
+  statistics_params->nsegments = nsegments;
 
   //
   // figure out which statistics need to be computed, and when, in order to
@@ -521,7 +518,7 @@ int main( int argc, char *argv[] )
   WeaveStatisticType all_output_stats = uvar->toplists;
   all_output_stats |= uvar->extra_statistics;
 
-  //  work out dependency-map for different statistics sets: toplist-ranking, output, total set of dependencies in main/completion loop ...
+  // work out dependency-map for different statistics sets: toplist-ranking, output, total set of dependencies in main/completion loop ...
   XLAL_CHECK_MAIN ( XLALWeaveStatisticsParamsSetDependencyMap( statistics_params, uvar->toplists, all_output_stats ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // ---------- prepare setup for line-robust statistics if requested ----------

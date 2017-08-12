@@ -122,8 +122,7 @@ int XLALWeaveStatisticsParamsSetDependencyMap(
   const WeaveStatisticType extra_output_stats
   );
 
-char *
-XLALWeaveStatisticsHelp( void );
+char *XLALWeaveStatisticsHelp( void );
 
 void XLALWeaveStatisticsParamsDestroy (
   WeaveStatisticsParams *statistics_params

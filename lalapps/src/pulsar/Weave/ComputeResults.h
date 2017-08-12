@@ -73,7 +73,7 @@ typedef struct tagWeaveSemiResults {
   const REAL4 **coh2F;
   /// Per-segment per-detector F-statistics per frequency (optional)
   const REAL4 **coh2F_det[PULSAR_MAX_DETECTORS];
-    /// Number of coherent results processed thus far
+  /// Number of coherent results processed thus far
   UINT4 ncoh_res;
   /// Semicoherent template parameters of the first frequency bin
   PulsarDopplerParams semi_phys;
@@ -89,7 +89,6 @@ typedef struct tagWeaveSemiResults {
   REAL4VectorAligned *mean2F;
   /// Mean per-detector F-statistics per frequency
   REAL4VectorAligned *mean2F_det[PULSAR_MAX_DETECTORS];
-
   /// Line-robust log10(B_S/GL) statistic
   REAL4VectorAligned *log10BSGL;
 } WeaveSemiResults;
