@@ -505,7 +505,7 @@ int main( int argc, char *argv[] )
   ////////// Set up calculation of various requested output statistics //////////
 
   WeaveStatisticsParams *statistics_params = XLALCalloc ( 1, sizeof( *statistics_params ) );
-  XLAL_CHECK ( statistics_params != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_MAIN ( statistics_params != NULL, XLAL_ENOMEM );
   statistics_params->detectors = XLALCopyStringVector( setup.detectors );
   XLAL_CHECK_MAIN ( statistics_params->detectors != NULL, XLAL_EFUNC );
   statistics_params->nsegments = nsegments;
