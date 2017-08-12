@@ -41,7 +41,6 @@ extern "C" {
 #define BIT(x) 1 << (x)
 ///
 /// Bitflags representing all possible statistics that can be computed or returned by Weave
-/// Note: this is a superset of the toplist ranking statistics in #WeaveToplistType
 ///
 typedef enum {
   WEAVE_STATISTIC_NONE                                          = 0,
