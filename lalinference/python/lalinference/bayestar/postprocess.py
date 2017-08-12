@@ -21,6 +21,7 @@ Postprocessing utilities for HEALPix sky maps
 from __future__ import division
 
 
+import pkg_resources
 import numpy as np
 import healpy as hp
 import collections
@@ -30,6 +31,17 @@ from scipy.interpolate import interp1d
 from . import distance
 from . import moc
 from ..healpix_tree import *
+
+
+# FIXME: in numpy < 1.10.0, the digitize() function only works on 1D arrays.
+# Remove this workaround once we require numpy >= 1.10.0.
+try:
+    pkg_resources.require('numpy >= 1.10.0')
+except pkg_resources.VersionConflict:
+    def digitize(x, *args, **kwargs):
+        return np.digitize(np.ravel(x), *args, **kwargs).reshape(np.shape(x))
+else:
+    digitize = np.digitize
 
 
 def flood_fill(nside, ipix, m, nest=False):
@@ -143,7 +155,7 @@ def find_injection_moc(sky_map, true_ra=None, true_dec=None, true_dist=None,
         true_phi = true_ra
         true_pix = hp.ang2pix(max_nside, true_theta, true_phi, nest=True)
         i = np.argsort(max_ipix)
-        true_idx = i[np.digitize(true_pix, max_ipix[i]) - 1]
+        true_idx = i[digitize(true_pix, max_ipix[i]) - 1]
 
     # Find the angular offset between the mode and true locations.
     mode_theta, mode_phi = hp.pix2ang(
@@ -184,7 +196,7 @@ def find_injection_moc(sky_map, true_ra=None, true_dec=None, true_dist=None,
         searched_prob = prob[true_idx]
 
     # Find the contours of the given credible levels.
-    contour_idxs = np.digitize(contours, prob) - 1
+    contour_idxs = digitize(contours, prob) - 1
 
     # For each of the given confidence levels, compute the area of the
     # smallest region containing that probability.
@@ -267,7 +279,7 @@ def find_injection_moc(sky_map, true_ra=None, true_dec=None, true_dist=None,
             searched_vol = searched_prob_vol = np.nan
         else:
             i_radec = true_idx
-            i_dist = np.digitize(true_dist, r) - 1
+            i_dist = digitize(true_dist, r) - 1
             searched_prob_vol = P[i_radec, i_dist]
             searched_vol = V[i_radec, i_dist]
     else:
