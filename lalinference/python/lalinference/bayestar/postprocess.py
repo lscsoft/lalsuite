@@ -33,13 +33,31 @@ from . import moc
 from ..healpix_tree import *
 
 
-# FIXME: in numpy < 1.10.0, the digitize() function only works on 1D arrays.
-# Remove this workaround once we require numpy >= 1.10.0.
 try:
     pkg_resources.require('numpy >= 1.10.0')
 except pkg_resources.VersionConflict:
+    """FIXME: in numpy < 1.10.0, the digitize() function only works on 1D
+    arrays. Remove this workaround once we require numpy >= 1.10.0.
+
+    Example:
+    >>> digitize([3], np.arange(5))
+    array([4])
+    >>> digitize(3, np.arange(5))
+    array(4)
+    >>> digitize([[3]], np.arange(5))
+    array([[4]])
+    >>> digitize([], np.arange(5))
+    array([], dtype=int64)
+    >>> digitize([[], []], np.arange(5))
+    array([], shape=(2, 0), dtype=int64)
+    """
     def digitize(x, *args, **kwargs):
-        return np.digitize(np.ravel(x), *args, **kwargs).reshape(np.shape(x))
+        x_flat = np.ravel(x)
+        x_shape = np.shape(x)
+        if len(x_flat) == 0:
+            return np.zeros(x_shape, dtype=np.intp)
+        else:
+            return np.digitize(x_flat, *args, **kwargs).reshape(x_shape)
 else:
     digitize = np.digitize
 
