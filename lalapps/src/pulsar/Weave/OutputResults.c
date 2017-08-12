@@ -322,31 +322,12 @@ int XLALWeaveOutputResultsReadAppend(
   XLAL_CHECK( XLALParseStringValueAsUserFlag( &toplist_stats, &WeaveToplistChoices, toplist_stats_names ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLALFree( toplist_stats_names );
 
+  // Read names of selected extra output stats
+  char *extras_names = NULL;
   int extra_stats = 0;
-  { // Read names of selected extra output stats [optional for backwards compatibility]
-    BOOLEAN exists = 0;
-    char *extras_names = NULL;
-    XLAL_CHECK( XLALFITSHeaderQueryKeyExists( file, "extras", &exists ) == XLAL_SUCCESS, XLAL_EFUNC );
-    if ( exists ) {
-      XLAL_CHECK( XLALFITSHeaderReadString( file, "extras", &extras_names ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( XLALParseStringValueAsUserFlag( &extra_stats, &WeaveStatisticChoices, extras_names ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLALFree( extras_names );
-    } else {
-      // deal with 'old-style' fits file without 'extras' field: must infer 'extra_stats' from 'perseg' and 'perdet' fields
-      // however, fortunately only 'mean2F_det,coh2F,coh2F_det' existed back then as possible extras
-      BOOLEAN perdet = (statistics_params->detectors != NULL);
-      BOOLEAN perseg = (statistics_params->nsegments > 0);
-      if ( perseg ) {
-        extra_stats |= WEAVE_STATISTIC_COH2F;
-      }
-      if ( perdet ) {
-        extra_stats |= WEAVE_STATISTIC_MEAN2F_DET;
-      }
-      if ( perseg && perdet ) {
-        extra_stats |= WEAVE_STATISTIC_COH2F_DET;
-      }
-    } // if !exists
-  } // determine extra_stats
+  XLAL_CHECK( XLALFITSHeaderReadString( file, "extras", &extras_names ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALParseStringValueAsUserFlag( &extra_stats, &WeaveStatisticChoices, extras_names ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLALFree( extras_names );
 
   // compute and fill the full stats-dependency map
   XLAL_CHECK ( XLALWeaveStatisticsParamsSetDependencyMap ( statistics_params, toplist_stats, extra_stats ) == XLAL_SUCCESS, XLAL_EFUNC );
