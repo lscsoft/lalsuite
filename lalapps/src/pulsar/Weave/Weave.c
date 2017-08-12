@@ -85,7 +85,7 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, misc_info, simulate_search, statistics_help;
+    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, misc_info, simulate_search;
     CHAR *setup_file, *sft_files, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd, *lrs_oLGX;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit, lrs_Fstar0sc;
@@ -292,15 +292,13 @@ int main( int argc, char *argv[] )
     );
   XLALRegisterUvarAuxDataMember(
     toplists, UserFlag, &WeaveToplistChoices, 'L', OPTIONAL,
-    "Sets which combination of toplists to return in the output file given by " UVAR_STR( output_file ) "."
+    "Sets which combination of toplists to return in the output file given by " UVAR_STR( output_file ) ":\n"
+    "%s", WeaveToplistHelpString
     );
   XLALRegisterUvarAuxDataMember(
     extra_statistics, UserFlag, &WeaveStatisticChoices, 'E', OPTIONAL,
-    "Sets which extra statistics to compute and return in the output file given by " UVAR_STR( output_file ) "."
-    );
-  XLALRegisterUvarMember(
-    statistics_help, BOOLEAN, 0, OPTIONAL,
-    "Output help on all supported statistics (in " UVAR_STR(toplist_choices) " and " UVAR_STR(statistic_choices) "."
+    "Sets which extra statistics to compute and return in the output file given by " UVAR_STR( output_file ) ":\n"
+    "%s", WeaveStatisticHelpString
     );
   XLALRegisterUvarMember(
     misc_info, BOOLEAN, 'M', DEVELOPER,
@@ -360,14 +358,6 @@ int main( int argc, char *argv[] )
   //
   // - General
   //
-
-  if ( uvar->statistics_help ) {
-    char *helpstr = XLALWeaveStatisticsHelp();
-    XLAL_CHECK_MAIN ( helpstr != NULL, XLAL_EFUNC );
-    printf ( "%s\n", helpstr );
-    XLALFree ( helpstr );
-    return EXIT_SUCCESS;
-  }
 
   //
   // - SFT input/generation and signal generation

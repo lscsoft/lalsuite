@@ -80,9 +80,19 @@ typedef enum {
 extern const UserChoices WeaveToplistChoices;
 
 ///
+/// User input help string for toplist ranking statistics
+///
+extern const char *const WeaveToplistHelpString;
+
+///
 /// User input choices for all supported statistics
 ///
 extern const UserChoices WeaveStatisticChoices;
+
+///
+/// User input help string for all supported statistics
+///
+extern const char *const WeaveStatisticHelpString;
 
 ///
 /// Struct holding all parameters and status values for computing various statistics
@@ -131,8 +141,6 @@ int XLALWeaveStatisticsParamsSetDependencyMap(
   const WeaveStatisticType toplist_stats,
   const WeaveStatisticType extra_output_stats
   );
-
-char *XLALWeaveStatisticsHelp( void );
 
 void XLALWeaveStatisticsParamsDestroy (
   WeaveStatisticsParams *statistics_params

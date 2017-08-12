@@ -40,53 +40,56 @@ typedef struct tagWeaveStatisticMap {
 ///
 /// sets of toplists, extra statistics and dependencies handled by this code
 ///
-#define ENTRY_NONE              WEAVE_STATISTIC_NONE,           "none",         0, \
+#define ENTRY_NONE              WEAVE_STATISTIC_NONE,           "none", "         ", 0, \
     "No statistic selected"
 
-#define ENTRY_COH2F             WEAVE_STATISTIC_COH2F,          "coh2F",        0, \
+#define ENTRY_COH2F             WEAVE_STATISTIC_COH2F,          "coh2F", "        ", 0, \
     "Per-segment multi-detector coherent 2F statistic"
 
-#define ENTRY_COH2F_DET         WEAVE_STATISTIC_COH2F_DET,      "coh2F_det",    0, \
+#define ENTRY_COH2F_DET         WEAVE_STATISTIC_COH2F_DET,      "coh2F_det", "    ", 0, \
     "Per-segment per-detector coherent 2F statistic"
 
-#define ENTRY_MAX2F             WEAVE_STATISTIC_MAX2F,          "max2F",        WEAVE_STATISTIC_COH2F,     \
+#define ENTRY_MAX2F             WEAVE_STATISTIC_MAX2F,          "max2F", "        ", WEAVE_STATISTIC_COH2F,     \
     "Maximum over segments multi-detector coherent 2F statistic"
 
-#define ENTRY_MAX2F_DET         WEAVE_STATISTIC_MAX2F_DET,      "max2F_det",    WEAVE_STATISTIC_COH2F_DET, \
+#define ENTRY_MAX2F_DET         WEAVE_STATISTIC_MAX2F_DET,      "max2F_det", "    ", WEAVE_STATISTIC_COH2F_DET, \
     "Maximum over segments per-detector coherent 2F statistic"
 
-#define ENTRY_SUM2F             WEAVE_STATISTIC_SUM2F,          "sum2F",        WEAVE_STATISTIC_COH2F,     \
+#define ENTRY_SUM2F             WEAVE_STATISTIC_SUM2F,          "sum2F", "        ", WEAVE_STATISTIC_COH2F,     \
     "Sum over segments of multi-detector coherent 2F statistic"
 
-#define ENTRY_SUM2F_DET         WEAVE_STATISTIC_SUM2F_DET,      "sum2F_det",    WEAVE_STATISTIC_COH2F_DET, \
+#define ENTRY_SUM2F_DET         WEAVE_STATISTIC_SUM2F_DET,      "sum2F_det", "    ", WEAVE_STATISTIC_COH2F_DET, \
     "Sum over segments of single-detector coherent 2F statistic"
 
-#define ENTRY_MEAN2F            WEAVE_STATISTIC_MEAN2F,         "mean2F",       WEAVE_STATISTIC_SUM2F,     \
+#define ENTRY_MEAN2F            WEAVE_STATISTIC_MEAN2F,         "mean2F", "       ", WEAVE_STATISTIC_SUM2F,     \
     "Average over segments of multi-detector coherent 2F statistic"
 
-#define ENTRY_MEAN2F_DET        WEAVE_STATISTIC_MEAN2F_DET,     "mean2F_det",   WEAVE_STATISTIC_SUM2F_DET, \
+#define ENTRY_MEAN2F_DET        WEAVE_STATISTIC_MEAN2F_DET,     "mean2F_det", "   ", WEAVE_STATISTIC_SUM2F_DET, \
     "Average over segments of single-detector coherent 2F statistic"
 
-#define ENTRY_BSGL              WEAVE_STATISTIC_BSGL,           "B_S/GL",       WEAVE_STATISTIC_SUM2F|WEAVE_STATISTIC_SUM2F_DET, \
+#define ENTRY_BSGL              WEAVE_STATISTIC_BSGL,           "B_S/GL", "       ", WEAVE_STATISTIC_SUM2F|WEAVE_STATISTIC_SUM2F_DET, \
     "Bayes factor 'Signal' vs 'Gaussian noise' or 'Line'"
 
-#define ENTRY_BSGLtL            WEAVE_STATISTIC_BSGLtL,         "B_S/GLtL",     WEAVE_STATISTIC_SUM2F|WEAVE_STATISTIC_SUM2F_DET|WEAVE_STATISTIC_MAX2F_DET, \
+#define ENTRY_BSGLtL            WEAVE_STATISTIC_BSGLtL,         "B_S/GLtL", "     ", WEAVE_STATISTIC_SUM2F|WEAVE_STATISTIC_SUM2F_DET|WEAVE_STATISTIC_MAX2F_DET, \
     "Bayes factor 'Signal' vs 'Gaussian noise' or 'Line' or 'transient Line'."
 
-#define ENTRY_BtSGLtL           WEAVE_STATISTIC_BtSGLtL,        "B_tS/GLtL",    WEAVE_STATISTIC_MAX2F|WEAVE_STATISTIC_SUM2F_DET|WEAVE_STATISTIC_MAX2F_DET, \
+#define ENTRY_BtSGLtL           WEAVE_STATISTIC_BtSGLtL,        "B_tS/GLtL", "    ", WEAVE_STATISTIC_MAX2F|WEAVE_STATISTIC_SUM2F_DET|WEAVE_STATISTIC_MAX2F_DET, \
     "Bayes factor 'transient Signal' vs 'Gaussian noise' or 'Line' or 'transient Line'."
 
-#define ENTRY_NCOUNT            WEAVE_STATISTIC_NCOUNT,         "ncount",       WEAVE_STATISTIC_COH2F,     \
+#define ENTRY_NCOUNT            WEAVE_STATISTIC_NCOUNT,         "ncount", "       ", WEAVE_STATISTIC_COH2F,     \
     "Multi-detector 'Hough' number count of 'threshold crossings' heavyside(2F - 2Fth) over segments"
 
-#define ENTRY_NCOUNT_DET        WEAVE_STATISTIC_NCOUNT_DET,     "ncount_det",   WEAVE_STATISTIC_COH2F_DET, \
+#define ENTRY_NCOUNT_DET        WEAVE_STATISTIC_NCOUNT_DET,     "ncount_det", "   ", WEAVE_STATISTIC_COH2F_DET, \
     "Per-detector 'Hough' number count of 'threshold crossings' heavyside(2F - 2Fth) over segments"
 
 #define ENTRY_2_MAP(X) ENTRY_2_MAP_X(X)
-#define ENTRY_2_MAP_X(v,n,d,h)  { .val = v, .name = n, .dependencies = d, .help = h }
+#define ENTRY_2_MAP_X(v,n,s,d,h)  { .val = v, .name = n, .dependencies = d, .help = h }
 
 #define ENTRY_2_CHOICES(X) ENTRY_2_CHOICES_X(X)
-#define ENTRY_2_CHOICES_X(v,n,d,h) { .val = v, .name = n }
+#define ENTRY_2_CHOICES_X(v,n,s,d,h) { .val = v, .name = n }
+
+#define ENTRY_2_HELPSTR(X) ENTRY_2_HELPSTR_X(X)
+#define ENTRY_2_HELPSTR_X(v,n,s,d,h) " - " n s ": " h ".\n"
 
 ///
 /// (Sparse) array of descriptor structs for all statistics supported by Weave
@@ -129,6 +132,15 @@ const UserChoices WeaveStatisticChoices = {
   ENTRY_2_CHOICES(ENTRY_BSGL),
   { SUPPORTED_STATISTICS, "all" }
 };
+const char *const WeaveStatisticHelpString =
+  ENTRY_2_HELPSTR(ENTRY_COH2F)
+  ENTRY_2_HELPSTR(ENTRY_COH2F_DET)
+  ENTRY_2_HELPSTR(ENTRY_SUM2F)
+  ENTRY_2_HELPSTR(ENTRY_SUM2F_DET)
+  ENTRY_2_HELPSTR(ENTRY_MEAN2F)
+  ENTRY_2_HELPSTR(ENTRY_MEAN2F_DET)
+  ENTRY_2_HELPSTR(ENTRY_BSGL)
+  ;
 
 // subset of statistics that are supported as toplist ranking statistics
 #define SUPPORTED_TOPLISTS (                            \
@@ -143,7 +155,11 @@ const UserChoices WeaveToplistChoices = {
   ENTRY_2_CHOICES(ENTRY_BSGL),
   {SUPPORTED_TOPLISTS, "all" }
 };
-
+const char *const WeaveToplistHelpString =
+  ENTRY_2_HELPSTR(ENTRY_MEAN2F)
+  ENTRY_2_HELPSTR(ENTRY_SUM2F)
+  ENTRY_2_HELPSTR(ENTRY_BSGL)
+  ;
 
 ///
 /// set all bits in 'deps' corresponding to *direct* dependencies of the set of input statistics 'stat'
@@ -235,33 +251,6 @@ int XLALWeaveStatisticsParamsSetDependencyMap(
   return XLAL_SUCCESS;
 
 } // XLALWeaveStatisticsParamsSetDependencyMap()
-
-///
-/// Generate a help string on all currently-supported Weave statistics (allocated here)
-///
-char *
-XLALWeaveStatisticsHelp( void )
-{
-  char *helpstr = NULL;
-  char buf[1024];
-
-  snprintf ( buf, sizeof(buf), "%-15s: %s\n", "Name", "Description" );
-  helpstr = XLALStringAppend ( helpstr, buf );
-  snprintf ( buf, sizeof(buf), "%-15s: %s\n", "---------------", "--------------------------------------------------" );
-  helpstr = XLALStringAppend ( helpstr, buf );
-  for ( size_t i=0; i < XLAL_NUM_ELEM(statistic_map); ++i ) {
-    WeaveStatisticType this_stat = statistic_map[i].val;
-    if ( this_stat & SUPPORTED_STATISTICS ) {
-      snprintf ( buf, sizeof(buf), "%-15s: %s\n", statistic_map[i].name, statistic_map[i].help );
-      buf[sizeof(buf)-1] = 0;
-      helpstr = XLALStringAppend ( helpstr, buf );
-      XLAL_CHECK_NULL ( helpstr != NULL, XLAL_EFUNC );
-    }
-  }
-
-  return helpstr;
-
-} // XLALWeaveStatisticsHelp()
 
 ///
 /// Destroy a StatisticsParams struct
