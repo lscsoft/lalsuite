@@ -726,7 +726,7 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
     /* boinc_resove() returned the same filename, so filename wasn't a softlink */
 
     strncpy(buf,filename,sizeof(buf));
-    strncat(buf,LINKED_EXT,sizeof(buf));
+    strncat(buf,LINKED_EXT,sizeof(buf)-1-strlen(buf));
     /* f**king BOINC's new symlink behavior returns no error if the link file doesn't,
        exist, so we need to check it manually */
     if((fp=fopen(buf,"r"))) {
@@ -1404,7 +1404,7 @@ static int worker (void) {
 	  n = current_config_file;
 	strcpy(&wu_result_file[rlen-1], myltoa(n, buf, 20));
 	*config_file_arg = config_files[current_config_file];
-	if (fp = boinc_fopen(wu_result_file,"r")) {
+	if ((fp = boinc_fopen(wu_result_file,"r"))) {
 	  fclose(fp);
 	  LogPrintf (LOG_NORMAL, "WARNING: Resultfile '%s' present - skipping subWU#%d\n", wu_result_file, current_config_file);
 	  current_config_file ++;
@@ -1432,6 +1432,31 @@ static int worker (void) {
 #if DEBUG_COMMAND_LINE_MANGLING
 	fputs("\n",stderr);
 #endif
+      }
+
+#define APP_WISDOM_FILENAME "CW-wisdom.dat"
+      /* if there is a wisdom file, point environment variable FFTWF_WISDOM_FILENAME to it */
+      {
+        static char resolved_name[MAX_PATH_LEN];
+        strncpy(resolved_name, "FFTWF_WISDOM_FILENAME=", MAX_PATH_LEN);
+        char*path = resolved_name+strlen(resolved_name);
+
+        strncat(resolved_name, eah_projectdir, MAX_PATH_LEN-strlen(resolved_name)-1);
+#ifdef _WIN32
+#define PATH_DELIM "\\"
+#else
+#define PATH_DELIM "/"
+#endif
+        strncat(resolved_name, PATH_DELIM APP_WISDOM_FILENAME, MAX_PATH_LEN-strlen(resolved_name));
+        if (boinc_file_exists(path)) {
+          putenv(resolved_name);
+          fprintf(stderr, "INFO: Set %s\n", resolved_name);
+
+        } else if (boinc_file_exists(APP_WISDOM_FILENAME)) {
+          boinc_resolve_filename(APP_WISDOM_FILENAME, path, MAX_PATH_LEN-strlen(resolved_name)-1);
+          putenv(resolved_name);
+          fprintf(stderr, "INFO: Set %s\n", resolved_name);
+        }
       }
 
       /* CALL WORKER's MAIN()
@@ -1698,6 +1723,7 @@ int main(int argc, char**argv) {
 
 
 
+
   /* install signal handler */
 
   /* the previous boinc_init_diagnostics() call should have installed boinc_catch_signal() for
@@ -1771,7 +1797,7 @@ int main(int argc, char**argv) {
   set_boinc_options();
   boinc_init();
   int ret = worker();
-  if ( (ret == HS_BOINC_EXIT_MEM) ) {
+  if (ret == HS_BOINC_EXIT_MEM) {
     DeferExecution(); // calls boinc_temporary_exit() and ends the program
   }
   else {

@@ -107,7 +107,7 @@ for i; do
 	    rebuild=true
 	    release=true
 	    CFLAGS="-O3 $CFLAGS"
-	    LDFLAGS="-static-libgcc $LDFLAGS"
+#	    LDFLAGS="-static-libgcc $LDFLAGS"
 	    shared_copt="--disable-shared"  ;;
 	--appname=*)
 	    appname=`echo "$i" | sed 's/--appname=//'` ;;

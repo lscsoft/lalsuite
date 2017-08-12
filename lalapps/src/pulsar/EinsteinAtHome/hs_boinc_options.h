@@ -48,7 +48,7 @@ extern int setup_shmem(void);
 extern void set_boinc_options(void);
 
 extern int eah_userid, eah_hostid;
-extern char*eah_hostcpid, *eah_username;
+extern char*eah_hostcpid, *eah_username, *eah_projectdir;
 
 extern int eah_temporary_exit(int delay, const char* reason);
 

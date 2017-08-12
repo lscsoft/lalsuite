@@ -400,8 +400,20 @@ XLALSetupFstatResamp ( void **method_data,
   // ----- compute and buffer FFT plan ----------
   int fft_plan_flags=FFTW_MEASURE;
   double fft_plan_timeout= FFTW_NO_TIMELIMIT ;
+  char *wisdom_filename;
+  static int tried_wisdom = 0;
 
   LAL_FFTW_WISDOM_LOCK;
+  // if FFTWF_WISDOM_FILENAME is set, try to import that wisdom
+  wisdom_filename = getenv("FFTWF_WISDOM_FILENAME");
+  if (wisdom_filename && !tried_wisdom) {
+    if (fftwf_import_wisdom_from_filename(wisdom_filename)) {
+      XLALPrintInfo("INFO: imported wisdom from file '%s'\n", wisdom_filename);
+    } else {
+      XLALPrintWarning("WARNING: Couldn't import wisdom from file '%s'\n", wisdom_filename);
+    }
+    tried_wisdom = -1;
+  }
   XLALGetFFTPlanHints (& fft_plan_flags , & fft_plan_timeout);
   fftw_set_timelimit( fft_plan_timeout );
   XLAL_CHECK ( (resamp->fftplan = fftwf_plan_dft_1d ( resamp->numSamplesFFT, ws->TS_FFT, ws->FabX_Raw, FFTW_FORWARD, fft_plan_flags )) != NULL, XLAL_EFAILED, "fftwf_plan_dft_1d() failed\n");
@@ -906,7 +918,7 @@ XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( ResampMethodData *resamp,		// [
     (resamp->prev_doppler.argp == thisPoint->argp);
 
   Timings_t *Tau = &(resamp->timingResamp.Tau);
-  REAL8 tic, toc;
+  REAL8 tic = 0, toc = 0;
   BOOLEAN collectTiming = resamp->collectTiming;
 
   // if same sky-position *and* same binary, we can simply return as there's nothing to be done here

@@ -38,7 +38,7 @@ using namespace std;
 BOINC_OPTIONS eah_boinc_options;
 APP_INIT_DATA eah_app_init_data;
 int eah_userid, eah_hostid;
-char*eah_hostcpid, *eah_username;
+char*eah_hostcpid, *eah_username, *eah_projectdir;
 
 /* BOINC APIv6 stuff */
 
@@ -138,6 +138,7 @@ void set_boinc_options(void) {
   eah_username = eah_app_init_data.user_name;
   eah_hostid   = eah_app_init_data.hostid;
   eah_hostcpid = eah_app_init_data.host_info.host_cpid;
+  eah_projectdir = eah_app_init_data.project_dir;
   boinc_options_defaults(eah_boinc_options);
 }
 
