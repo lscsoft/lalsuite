@@ -33,6 +33,10 @@
 extern "C" {
 #endif
 
+///
+/// \name Functions which define statistics that can be computed and their parameters
+///
+/// @{
 
 #define BIT(x) 1 << (x)
 ///
@@ -127,6 +131,8 @@ char *XLALWeaveStatisticsHelp( void );
 void XLALWeaveStatisticsParamsDestroy (
   WeaveStatisticsParams *statistics_params
   );
+
+/// @}
 
 #ifdef __cplusplus
 }
