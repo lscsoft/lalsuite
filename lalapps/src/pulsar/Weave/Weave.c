@@ -819,7 +819,7 @@ int main( int argc, char *argv[] )
       const double sft_end_timebase = 1.0 / sft_catalog_seg[i].data[sft_catalog_seg[i].length - 1].header.deltaF;
       XLALGPSAdd( &sft_end, sft_end_timebase );
       PulsarSpinRange XLAL_INIT_DECL( spin_range );
-      XLAL_CHECK( XLALInitPulsarSpinRangeFromSpins( &spin_range, &min_range.refTime, min_range.fkdot, max_range.fkdot ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALInitPulsarSpinRangeFromSpins( &spin_range, &min_range.refTime, min_range.fkdot, max_range.fkdot ) == XLAL_SUCCESS, XLAL_EFUNC );
       double sft_min_cover_freq = 0, sft_max_cover_freq = 0;
       XLAL_CHECK_MAIN( XLALCWSignalCoveringBand( &sft_min_cover_freq, &sft_max_cover_freq, &sft_start, &sft_end, &spin_range, 0, 0, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
       per_seg_info[i].sft_min_cover_freq = sft_min_cover_freq;
@@ -1323,31 +1323,31 @@ int main( int argc, char *argv[] )
     if ( uvar->misc_info ) {
 
       // Begin FITS table
-      XLAL_CHECK( XLALFITSTableOpenWrite( file, "per_seg_info", "miscellaneous per-segment information" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSTableOpenWrite( file, "per_seg_info", "miscellaneous per-segment information" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Describe FITS table
       char col_name[64];
       XLAL_FITS_TABLE_COLUMN_BEGIN( misc_per_seg_info );
-      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, segment_start ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, segment_end ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, segment_start ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, segment_end ) == XLAL_SUCCESS, XLAL_EFUNC );
       if ( sft_catalog != NULL ) {
         for ( size_t i = 0; i < setup.detectors->length; ++i ) {
           snprintf( col_name, sizeof( col_name ), "sft_first_%s", setup.detectors->data[i] );
-          XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, GPSTime, sft_first[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, GPSTime, sft_first[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
           snprintf( col_name, sizeof( col_name ), "sft_last_%s", setup.detectors->data[i] );
-          XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, GPSTime, sft_last[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, GPSTime, sft_last[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
           snprintf( col_name, sizeof( col_name ), "sft_count_%s", setup.detectors->data[i] );
-          XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, UINT4, sft_count[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, UINT4, sft_count[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
         }
-        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_min_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_max_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_min_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_max_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
-      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, UINT4, coh_n1comp ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, UINT4, coh_nrecomp ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, UINT4, coh_n1comp ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, UINT4, coh_nrecomp ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Write FITS table
       for ( size_t i = 0; i < nsegments; ++i ) {
-        XLAL_CHECK( XLALFITSTableWriteRow( file, &per_seg_info[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALFITSTableWriteRow( file, &per_seg_info[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
 
     }
