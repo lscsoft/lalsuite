@@ -272,6 +272,7 @@ int XLALWeaveSemiResultsInit(
     | WEAVE_STATISTIC_MEAN2F_DET
     | WEAVE_STATISTIC_BSGL
     | WEAVE_STATISTIC_BSGLtL
+    | WEAVE_STATISTIC_BtSGLtL
     );
 
   WeaveStatisticType unsupported = (mainloop_stats & ~supported_mainloop);
@@ -391,6 +392,14 @@ int XLALWeaveSemiResultsInit(
     if ( ( *semi_res )->log10BSGLtL == NULL || ( *semi_res )->log10BSGLtL->length < ( *semi_res )->nfreqs ) {
       ( *semi_res )->log10BSGLtL = XLALResizeREAL4VectorAligned( ( *semi_res )->log10BSGLtL, ( *semi_res )->nfreqs, alignment );
       XLAL_CHECK( ( *semi_res )->log10BSGLtL != NULL, XLAL_ENOMEM );
+    }
+  }
+
+  // (Re-)allocate vectors of transient-signal line-robust log10(B_tS/GLtL) statistic IFF used as a toplist statistic
+  if ( mainloop_stats & WEAVE_STATISTIC_BtSGLtL ) {
+    if ( ( *semi_res )->log10BtSGLtL == NULL || ( *semi_res )->log10BtSGLtL->length < ( *semi_res )->nfreqs ) {
+      ( *semi_res )->log10BtSGLtL = XLALResizeREAL4VectorAligned( ( *semi_res )->log10BtSGLtL, ( *semi_res )->nfreqs, alignment );
+      XLAL_CHECK( ( *semi_res )->log10BtSGLtL != NULL, XLAL_ENOMEM );
     }
   }
 
@@ -553,12 +562,12 @@ int XLALWeaveSemiResultsComputeMain(
   // various line-robust statistics
   const REAL4 *sum2F_det[PULSAR_MAX_DETECTORS];
   const REAL4 *max2F_det[PULSAR_MAX_DETECTORS];
-  if ( mainloop_stats & ( WEAVE_STATISTIC_BSGL | WEAVE_STATISTIC_BSGLtL ) ) {
+  if ( mainloop_stats & ( WEAVE_STATISTIC_BSGL | WEAVE_STATISTIC_BSGLtL |  WEAVE_STATISTIC_BtSGLtL ) ) {
     for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
       sum2F_det[i] = semi_res->sum2F_det[i]->data;
     }
   }
-  if ( mainloop_stats & WEAVE_STATISTIC_BSGLtL ) {
+  if ( mainloop_stats & (WEAVE_STATISTIC_BSGLtL | WEAVE_STATISTIC_BtSGLtL) ) {
     for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
       max2F_det[i] = semi_res->max2F_det[i]->data;
     }
@@ -572,6 +581,11 @@ int XLALWeaveSemiResultsComputeMain(
   // transient-line-robust log10(B_S/GL) statistic per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_BSGLtL ) {
     XLAL_CHECK ( XLALVectorComputeBSGLtL ( semi_res->log10BSGLtL->data, semi_res->sum2F->data, sum2F_det, max2F_det, semi_res->nfreqs, semi_res->statistics_params->BSGL_setup ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  // transient-signal line-robust log10(B_tS/GL) statistic per frequency
+  if ( mainloop_stats & WEAVE_STATISTIC_BtSGLtL ) {
+    XLAL_CHECK ( XLALVectorComputeBtSGLtL ( semi_res->log10BtSGLtL->data, semi_res->max2F->data, sum2F_det, max2F_det, semi_res->nfreqs, semi_res->statistics_params->BSGL_setup ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   return XLAL_SUCCESS;
@@ -604,6 +618,7 @@ void XLALWeaveSemiResultsDestroy(
   }
   XLALDestroyREAL4VectorAligned( semi_res->log10BSGL );
   XLALDestroyREAL4VectorAligned( semi_res->log10BSGLtL );
+  XLALDestroyREAL4VectorAligned( semi_res->log10BtSGLtL );
 
   XLALFree( semi_res );
   return;

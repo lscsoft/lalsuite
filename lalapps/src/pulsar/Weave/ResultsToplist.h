@@ -83,6 +83,8 @@ typedef struct tagWeaveResultsToplistItem {
   REAL4 log10BSGL;
   /// Line- and transient-line robust log10(B_S/GLtL) statistic
   REAL4 log10BSGLtL;
+  /// Transient- signal and line robust log10(B_tS/GLtL) statistic
+  REAL4 log10BtSGLtL;
 } WeaveResultsToplistItem;
 
 ///

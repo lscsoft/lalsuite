@@ -95,6 +95,16 @@ static REAL4 toplist_item_get_log10BSGLtL( const WeaveResultsToplistItem *item )
 static void toplist_item_set_log10BSGLtL( WeaveResultsToplistItem *item, const REAL4 value ) { item->log10BSGLtL = value; }
 
 /// @}
+///
+/// \name Functions for results toplist ranked by transient-signal line-robust log10(B_tS/GLtL) statistic
+///
+/// @{
+
+static const REAL4 *toplist_results_log10BtSGLtL( const WeaveSemiResults *semi_res ) { return semi_res->log10BtSGLtL->data; }
+static REAL4 toplist_item_get_log10BtSGLtL( const WeaveResultsToplistItem *item ) { return item->log10BtSGLtL; }
+static void toplist_item_set_log10BtSGLtL( WeaveResultsToplistItem *item, const REAL4 value ) { item->log10BtSGLtL = value; }
+
+/// @}
 
 ///
 /// Create output results
@@ -152,6 +162,14 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
   // Create a toplist which ranks results by transient-line-robust log10(B_S/GLtL) statistic
   if ( toplist_statistics & WEAVE_STATISTIC_BSGLtL ) {
     out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, "log10(B_S/GLtL)", "transient line-robust log10(B_S/GLtL) statistic", toplist_limit, toplist_results_log10BSGLtL, toplist_item_get_log10BSGLtL, toplist_item_set_log10BSGLtL );
+    XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
+    XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
+    out->ntoplists++;
+  }
+
+  // Create a toplist which ranks results by transient-signal line-robust log10(B_tS/GLtL) statistic
+  if ( toplist_statistics & WEAVE_STATISTIC_BtSGLtL ) {
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, "log10(B_tS/GLtL)", "transient signal line-robust log10(B_S/GLtL) statistic", toplist_limit, toplist_results_log10BtSGLtL, toplist_item_get_log10BtSGLtL, toplist_item_set_log10BtSGLtL );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
     out->ntoplists++;
@@ -229,6 +247,7 @@ int XLALWeaveOutputResultsCompletionLoop (
     | WEAVE_STATISTIC_MEAN2F_DET
     | WEAVE_STATISTIC_BSGL
     | WEAVE_STATISTIC_BSGLtL
+    | WEAVE_STATISTIC_BtSGLtL
     );
 
   WeaveStatisticType unsupported = (completionloop_stats & ~supported_completionloop);

@@ -256,6 +256,11 @@ int toplist_fits_table_init(
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, log10BSGLtL ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
+  // Add column for BtSGLtL statistic
+  if ( statistics_to_output & WEAVE_STATISTIC_BtSGLtL ) {
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, log10BtSGLtL ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
   return XLAL_SUCCESS;
 
 } // toplist_fits_table_init()
@@ -327,6 +332,10 @@ int toplist_fill_completionloop_stats(
 
   if ( completionloop_stats & WEAVE_STATISTIC_BSGLtL ) {
     item -> log10BSGLtL = XLALComputeBSGLtL ( item -> sum2F, item -> sum2F_det, item -> max2F_det, stats_params -> BSGL_setup );
+  }
+
+  if ( completionloop_stats & WEAVE_STATISTIC_BtSGLtL ) {
+    item -> log10BtSGLtL = XLALComputeBtSGLtL ( item -> max2F, item -> sum2F_det, item -> max2F_det, stats_params -> BSGL_setup );
   }
 
   return XLAL_SUCCESS;
@@ -679,6 +688,10 @@ int XLALWeaveResultsToplistAdd(
       item->log10BSGLtL = semi_res->log10BSGLtL->data[freq_idx];
     }
 
+    if ( stats_to_keep & WEAVE_STATISTIC_BtSGLtL ) {
+      item->log10BtSGLtL = semi_res->log10BtSGLtL->data[freq_idx];
+    }
+
   } // for i < n_maybe_add
 
   return XLAL_SUCCESS;
@@ -1023,7 +1036,7 @@ int XLALWeaveResultsToplistCompare(
 
       // Compare transient line-robust BSGLtL statistic
       if ( stats_to_output & WEAVE_STATISTIC_BSGLtL ) {
-        XLALPrintInfo( "%s: comparing line-robust B_S/GLtL statistic ...\n", __func__ );
+        XLALPrintInfo( "%s: comparing transient line-robust B_S/GLtL statistic ...\n", __func__ );
         for ( size_t i = 0; i < n; ++i ) {
           res_1->data[i] = items_1[i]->log10BSGLtL;
           res_2->data[i] = items_2[i]->log10BSGLtL;
@@ -1033,6 +1046,20 @@ int XLALWeaveResultsToplistCompare(
           break;
         }
       }
+
+      // Compare transient signal line-robust BtSGLtL statistic
+      if ( stats_to_output & WEAVE_STATISTIC_BtSGLtL ) {
+        XLALPrintInfo( "%s: comparing transient signal line-robust B_tS/GLtL statistic ...\n", __func__ );
+        for ( size_t i = 0; i < n; ++i ) {
+          res_1->data[i] = items_1[i]->log10BtSGLtL;
+          res_2->data[i] = items_2[i]->log10BtSGLtL;
+        }
+        XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+        if ( !*equal ) {
+          break;
+        }
+      }
+
 
     } while (0);
 
