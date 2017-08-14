@@ -85,6 +85,10 @@ typedef struct tagWeaveResultsToplistItem {
   REAL4 log10BSGLtL;
   /// Transient- signal and line robust log10(B_tS/GLtL) statistic
   REAL4 log10BtSGLtL;
+  /// 'Hough' multi-detector number count statistic
+  REAL4 ncount;
+  /// 'Hough' per-detector number count statistic
+  REAL4 ncount_det[PULSAR_MAX_DETECTORS];
 } WeaveResultsToplistItem;
 
 ///

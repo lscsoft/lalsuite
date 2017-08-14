@@ -248,6 +248,8 @@ int XLALWeaveOutputResultsCompletionLoop (
     | WEAVE_STATISTIC_BSGL
     | WEAVE_STATISTIC_BSGLtL
     | WEAVE_STATISTIC_BtSGLtL
+    | WEAVE_STATISTIC_NCOUNT
+    | WEAVE_STATISTIC_NCOUNT_DET
     );
 
   WeaveStatisticType unsupported = (completionloop_stats & ~supported_completionloop);

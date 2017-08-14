@@ -125,8 +125,12 @@ typedef struct tagWeaveStatisticsParams {
   /// Bitflag: set of "completion-loop" statistics that will be computed only on the final toplist
   WeaveStatisticType completionloop_statistics;
 
+  /// ---------- input parameters for various statistics
   /// setup for line-robust B_*S/GL* family of statistics
   BSGLSetup *BSGL_setup;
+
+  /// per-segment 2F threshold for computing 'Hough' number counts
+  REAL4 nc_2Fth;
 
 } WeaveStatisticsParams;
 

@@ -261,6 +261,18 @@ int toplist_fits_table_init(
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, log10BtSGLtL ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
+  // Add column for multi-detector number-count statistic
+  if ( statistics_to_output & WEAVE_STATISTIC_NCOUNT ) {
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, ncount ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+  // Add column for per-detector number-count statistics
+  if ( statistics_to_output & WEAVE_STATISTIC_NCOUNT_DET ) {
+    for ( size_t i = 0; i < params -> detectors->length; ++i ) {
+      snprintf( col_name, sizeof( col_name ), "ncount_%s", params -> detectors->data[i] );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, ncount_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+  }
+
   return XLAL_SUCCESS;
 
 } // toplist_fits_table_init()
@@ -336,6 +348,24 @@ int toplist_fill_completionloop_stats(
 
   if ( completionloop_stats & WEAVE_STATISTIC_BtSGLtL ) {
     item -> log10BtSGLtL = XLALComputeBtSGLtL ( item -> max2F, item -> sum2F_det, item -> max2F_det, stats_params -> BSGL_setup );
+  }
+
+  if ( completionloop_stats & WEAVE_STATISTIC_NCOUNT ) {
+    item -> ncount = 0;
+    for ( size_t l = 0; l < nsegments; ++l ) {
+      item -> ncount += ( item->coh2F[l] > stats_params->nc_2Fth ) ? 1 : 0;
+    }
+  }
+
+  if ( completionloop_stats & WEAVE_STATISTIC_NCOUNT_DET ) {
+    for ( size_t X = 0; X < ndetectors; ++X ) {
+      item -> ncount_det[X] = 0;
+      for ( size_t l = 0; l < nsegments; ++l ) {
+        REAL4 item_Xl = item->coh2F_det[X][l];
+        if ( isnan(item_Xl) ) { continue; }
+        item -> ncount_det[X] += ( item_Xl > stats_params->nc_2Fth ) ? 1 : 0;
+      }
+    }
   }
 
   return XLAL_SUCCESS;
@@ -1060,6 +1090,32 @@ int XLALWeaveResultsToplistCompare(
         }
       }
 
+      // Compare 'Hough' multi-detector line statistics
+      if ( stats_to_output & WEAVE_STATISTIC_NCOUNT ) {
+        XLALPrintInfo( "%s: comparing 'Hough' multi-detector number count statistic ...\n", __func__ );
+        for ( size_t i = 0; i < n; ++i ) {
+          res_1->data[i] = items_1[i]->ncount;
+          res_2->data[i] = items_2[i]->ncount;
+        }
+        XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+        if ( !*equal ) {
+          break;
+        }
+      }
+      // Compare 'Hough' per-detector line statistics
+      if ( stats_to_output & WEAVE_STATISTIC_NCOUNT_DET ) {
+        for ( size_t k = 0; k < params -> detectors->length; ++k ) {
+          XLALPrintInfo( "%s: comparing 'Hough' per-detector number-count statistic for detector '%s'...\n", __func__, params -> detectors->data[k] );
+          for ( size_t i = 0; i < n; ++i ) {
+            res_1->data[i] = items_1[i]->ncount_det[k];
+            res_2->data[i] = items_2[i]->ncount_det[k];
+          }
+          XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+          if ( !*equal ) {
+            break;
+          }
+        }
+      }
 
     } while (0);
 
