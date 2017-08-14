@@ -251,7 +251,7 @@ int toplist_fits_table_init(
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, log10BSGL ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
-  // Add column for BSGL statistic
+  // Add column for BSGLtL statistic
   if ( statistics_to_output & WEAVE_STATISTIC_BSGLtL ) {
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, log10BSGLtL ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
@@ -675,6 +675,9 @@ int XLALWeaveResultsToplistAdd(
       item->log10BSGL = semi_res->log10BSGL->data[freq_idx];
     }
 
+    if ( stats_to_keep & WEAVE_STATISTIC_BSGLtL ) {
+      item->log10BSGLtL = semi_res->log10BSGLtL->data[freq_idx];
+    }
 
   } // for i < n_maybe_add
 
@@ -1011,6 +1014,19 @@ int XLALWeaveResultsToplistCompare(
         for ( size_t i = 0; i < n; ++i ) {
           res_1->data[i] = items_1[i]->log10BSGL;
           res_2->data[i] = items_2[i]->log10BSGL;
+        }
+        XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+        if ( !*equal ) {
+          break;
+        }
+      }
+
+      // Compare transient line-robust BSGLtL statistic
+      if ( stats_to_output & WEAVE_STATISTIC_BSGLtL ) {
+        XLALPrintInfo( "%s: comparing line-robust B_S/GLtL statistic ...\n", __func__ );
+        for ( size_t i = 0; i < n; ++i ) {
+          res_1->data[i] = items_1[i]->log10BSGLtL;
+          res_2->data[i] = items_2[i]->log10BSGLtL;
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
         if ( !*equal ) {

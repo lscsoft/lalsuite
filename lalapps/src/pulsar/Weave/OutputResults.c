@@ -85,6 +85,16 @@ static REAL4 toplist_item_get_log10BSGL( const WeaveResultsToplistItem *item ) {
 static void toplist_item_set_log10BSGL( WeaveResultsToplistItem *item, const REAL4 value ) { item->log10BSGL = value; }
 
 /// @}
+///
+/// \name Functions for results toplist ranked by transient-line-robust log10(B_S/GLtL) statistic
+///
+/// @{
+
+static const REAL4 *toplist_results_log10BSGLtL( const WeaveSemiResults *semi_res ) { return semi_res->log10BSGLtL->data; }
+static REAL4 toplist_item_get_log10BSGLtL( const WeaveResultsToplistItem *item ) { return item->log10BSGLtL; }
+static void toplist_item_set_log10BSGLtL( WeaveResultsToplistItem *item, const REAL4 value ) { item->log10BSGLtL = value; }
+
+/// @}
 
 ///
 /// Create output results
@@ -134,6 +144,14 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
   // Create a toplist which ranks results by line-robust log10(B_S/GL) statistic
   if ( toplist_statistics & WEAVE_STATISTIC_BSGL ) {
     out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, "log10(B_S/GL)", "line-robust log10(B_S/GL) statistic", toplist_limit, toplist_results_log10BSGL, toplist_item_get_log10BSGL, toplist_item_set_log10BSGL );
+    XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
+    XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
+    out->ntoplists++;
+  }
+
+  // Create a toplist which ranks results by transient-line-robust log10(B_S/GLtL) statistic
+  if ( toplist_statistics & WEAVE_STATISTIC_BSGLtL ) {
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, "log10(B_S/GLtL)", "transient line-robust log10(B_S/GLtL) statistic", toplist_limit, toplist_results_log10BSGLtL, toplist_item_get_log10BSGLtL, toplist_item_set_log10BSGLtL );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
     out->ntoplists++;

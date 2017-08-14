@@ -157,17 +157,20 @@ const char *const WeaveStatisticHelpString =
     | WEAVE_STATISTIC_MEAN2F                            \
     | WEAVE_STATISTIC_SUM2F                             \
     | WEAVE_STATISTIC_BSGL                              \
+    | WEAVE_STATISTIC_BSGLtL                            \
     )
 const UserChoices WeaveToplistChoices = {
   ENTRY_2_CHOICES(ENTRY_MEAN2F),
   ENTRY_2_CHOICES(ENTRY_SUM2F),
   ENTRY_2_CHOICES(ENTRY_BSGL),
+  ENTRY_2_CHOICES(ENTRY_BSGLtL),
   {SUPPORTED_TOPLISTS, "all" }
 };
 const char *const WeaveToplistHelpString =
   ENTRY_2_HELPSTR(ENTRY_MEAN2F)
   ENTRY_2_HELPSTR(ENTRY_SUM2F)
   ENTRY_2_HELPSTR(ENTRY_BSGL)
+  ENTRY_2_HELPSTR(ENTRY_BSGLtL)
   ;
 
 ///
