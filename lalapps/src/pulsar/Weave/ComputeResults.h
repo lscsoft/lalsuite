@@ -77,6 +77,14 @@ typedef struct tagWeaveSemiResults {
   UINT4 ncoh_res;
   /// Semicoherent template parameters of the first frequency bin
   PulsarDopplerParams semi_phys;
+  /// Maximized-over-segments multi-detector F-statistics per frequency
+  REAL4VectorAligned *max2F;
+  /// Number of max-comparison of multi-detector F-statistics thus far
+  UINT4 nmax2F;
+  /// Maximized-over-segments per-detector F-statistics per frequency
+  REAL4VectorAligned *max2F_det[PULSAR_MAX_DETECTORS];
+  /// Number of max-comparison to per-detector F-statistics thus far
+  UINT4 nmax2F_det[PULSAR_MAX_DETECTORS];
   /// Summed multi-detector F-statistics per frequency
   REAL4VectorAligned *sum2F;
   /// Number of additions to multi-detector F-statistics thus far

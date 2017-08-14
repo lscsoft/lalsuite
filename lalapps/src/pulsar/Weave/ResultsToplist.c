@@ -635,13 +635,21 @@ int XLALWeaveResultsToplistAdd(
       }
     }
 
+    if ( stats_to_keep & WEAVE_STATISTIC_MAX2F ) {
+      item->max2F = semi_res->max2F->data[freq_idx];
+    }
+    if ( stats_to_keep & WEAVE_STATISTIC_MAX2F_DET ) {
+      for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
+        item->max2F_det[i]  = semi_res->max2F_det[i]->data[freq_idx];
+      }
+    }
+
     if ( stats_to_keep & WEAVE_STATISTIC_SUM2F ) {
       item->sum2F = semi_res->sum2F->data[freq_idx];
     }
     if ( stats_to_keep & WEAVE_STATISTIC_SUM2F_DET ) {
       for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
         item->sum2F_det[i]  = semi_res->sum2F_det[i]->data[freq_idx];
-
       }
     }
 
@@ -930,6 +938,34 @@ int XLALWeaveResultsToplistCompare(
       }
       if ( !*equal ) {
         break;
+      }
+
+      // Compare segment-max multi-detector F-statistics
+      if ( stats_to_output & WEAVE_STATISTIC_MAX2F ) {
+        XLALPrintInfo( "%s: comparing max multi-detector F-statistics ...\n", __func__ );
+        for ( size_t i = 0; i < n; ++i ) {
+          res_1->data[i] = items_1[i]->max2F;
+          res_2->data[i] = items_2[i]->max2F;
+        }
+        XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+        if ( !*equal ) {
+          break;
+        }
+      }
+
+      // Compare segment-max per-detector F-statistic
+      if ( stats_to_output & WEAVE_STATISTIC_MAX2F_DET ) {
+        for ( size_t k = 0; k < params -> detectors->length; ++k ) {
+          XLALPrintInfo( "%s: comparing max per-detector F-statistics for detector '%s'...\n", __func__, params -> detectors->data[k] );
+          for ( size_t i = 0; i < n; ++i ) {
+            res_1->data[i] = items_1[i]->max2F_det[k];
+            res_2->data[i] = items_2[i]->max2F_det[k];
+          }
+          XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+        }
+        if ( !*equal ) {
+          break;
+        }
       }
 
       // Compare summed multi-detector F-statistics
