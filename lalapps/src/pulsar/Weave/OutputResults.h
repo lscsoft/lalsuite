@@ -42,21 +42,6 @@ extern "C" {
 /// @{
 
 ///
-/// Bitflags representing possible output toplist types
-///
-typedef enum {
-  /// Toplist ranked by mean multi-detector F-statistic
-  WEAVE_TOPLIST_RANKED_MEAN2F           = 0001,
-  /// Must be exactly one more than maximum possible bitflag value
-  WEAVE_TOPLIST_MAX                     = 0002,
-} WeaveToplistType;
-
-///
-/// Static array of all #WeaveToplistType choices, for use by the UserInput module parsing functions
-///
-extern const UserChoices WeaveToplistTypeChoices;
-
-///
 /// Output results from a search
 ///
 typedef struct tagWeaveOutputResults WeaveOutputResults;
@@ -64,9 +49,7 @@ typedef struct tagWeaveOutputResults WeaveOutputResults;
 WeaveOutputResults *XLALWeaveOutputResultsCreate(
   const LIGOTimeGPS *ref_time,
   const size_t nspins,
-  const LALStringVector *per_detectors,
-  const UINT4 per_nsegments,
-  const WeaveToplistType toplist_types,
+  WeaveStatisticsParams *statistics_params,
   const UINT4 toplist_limit
   );
 void XLALWeaveOutputResultsDestroy(
@@ -76,6 +59,9 @@ int XLALWeaveOutputResultsAdd(
   WeaveOutputResults *out,
   const WeaveSemiResults *semi_res,
   const UINT4 semi_nfreqs
+  );
+int XLALWeaveOutputResultsCompletionLoop (
+  WeaveOutputResults *out
   );
 int XLALWeaveOutputResultsWrite(
   FITSFile *file,

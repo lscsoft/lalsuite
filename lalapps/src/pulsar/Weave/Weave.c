@@ -85,13 +85,13 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, per_detector, per_segment, misc_info, simulate_search;
+    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, misc_info, simulate_search, statistics_help;
     CHAR *setup_file, *sft_files, *output_file, *ckpt_output_file;
-    LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd;
-    REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit;
+    LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd, *lrs_oLGX;
+    REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit, lrs_Fstar0sc;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
     UINT4 sky_patch_count, sky_patch_index, freq_partitions, Fstat_run_med_window, Fstat_Dterms, toplist_limit, rand_seed, cache_max_size, cache_gc_limit;
-    int lattice, Fstat_method, Fstat_SSB_precision, toplists;
+    int lattice, Fstat_method, Fstat_SSB_precision, toplists, extra_statistics;
   } uvar_struct = {
     .Fstat_Dterms = Fstat_opt_args.Dterms,
     .Fstat_SSB_precision = Fstat_opt_args.SSBprec,
@@ -103,7 +103,8 @@ int main( int argc, char *argv[] )
     .interpolation = 1,
     .lattice = TILING_LATTICE_ANSTAR,
     .toplist_limit = 1000,
-    .toplists = WEAVE_TOPLIST_RANKED_MEAN2F,
+    .toplists = WEAVE_STATISTIC_MEAN2F,
+    .extra_statistics = WEAVE_STATISTIC_NONE,
   };
   struct uvar_type *const uvar = &uvar_struct;
 
@@ -269,27 +270,40 @@ int main( int argc, char *argv[] )
     Fstat_SSB_precision, UserEnum, &SSBprecisionChoices, 0, DEVELOPER,
     "Precision in calculating the barycentric transformation. "
     );
+
+  //
+  // Line-robust statistics computation
+  //
+  lalUserVarHelpOptionSubsection = "Line-robust statistics (LRS) arguments";
+  XLALRegisterUvarMember(
+    lrs_Fstar0sc, REAL8, 0, OPTIONAL,
+    "(Semi-coherent) transition-scale parameter 'Fstar0sc' (=Nseg*Fstar0coh) for B_S/GL.. family of statistics."
+    );
+  XLALRegisterUvarMember(
+    lrs_oLGX, STRINGVector, 0, OPTIONAL,
+    "Per-detector line-vs-Gauss prior odds 'oLGX' (Defaults to oLGX=1/Ndet) for B_S/GL.. family of statistics."
+    );
+
   //
   // - Output control
   //
   lalUserVarHelpOptionSubsection = "Output control";
-  XLALRegisterUvarAuxDataMember(
-    toplists, UserFlag, &WeaveToplistTypeChoices, 'L', OPTIONAL,
-    "Sets which combination of toplists to return in the output file given by " UVAR_STR( output_file ) "."
-    );
   XLALRegisterUvarMember(
     toplist_limit, UINT4, 'n', OPTIONAL,
     "Maximum number of candidates to return in an output toplist; if 0, all candidates are returned. "
     );
-  XLALRegisterUvarMember(
-    per_detector, BOOLEAN, 'D', DEVELOPER,
-    "If TRUE, compute and output per-detector quantities, e.g. single-detector F-statistics. "
-    "May be combined with " UVAR_STR( per_segment ) ". "
+
+  XLALRegisterUvarAuxDataMember(
+    toplists, UserFlag, &toplist_choices, 'L', OPTIONAL,
+    "Sets which combination of toplists to return in the output file given by " UVAR_STR( output_file ) "."
+    );
+  XLALRegisterUvarAuxDataMember(
+    extra_statistics, UserFlag, &statistic_choices, 'E', OPTIONAL,
+    "Sets which extra statistics to compute and return in the output file given by " UVAR_STR( output_file ) "."
     );
   XLALRegisterUvarMember(
-    per_segment, BOOLEAN, 'N', DEVELOPER,
-    "If TRUE, compute and output per-segment quantities, e.g. coherent F-statistics in each segment. "
-    "May be combined with " UVAR_STR( per_detector ) ". "
+    statistics_help, BOOLEAN, 0, OPTIONAL,
+    "Output help on all supported statistics (in " UVAR_STR(toplist_choices) " and " UVAR_STR(statistic_choices) "."
     );
   XLALRegisterUvarMember(
     misc_info, BOOLEAN, 'M', DEVELOPER,
@@ -349,6 +363,14 @@ int main( int argc, char *argv[] )
   //
   // - General
   //
+
+  if ( uvar->statistics_help ) {
+    char *helpstr = XLALWeaveStatisticsHelp();
+    XLAL_CHECK_MAIN ( helpstr != NULL, XLAL_EFUNC );
+    printf ( "%s\n", helpstr );
+    XLALFree ( helpstr );
+    return EXIT_SUCCESS;
+  }
 
   //
   // - SFT input/generation and signal generation
@@ -483,13 +505,40 @@ int main( int argc, char *argv[] )
     per_seg_info[i].segment_end = setup.segments->segs[i].end;
   }
 
+  ////////// Set up calculation of various requested output statistics //////////
+  WeaveStatisticsParams *statistics_params = XLALCalloc ( 1, sizeof( *statistics_params ) );
+  XLAL_CHECK ( statistics_params != NULL, XLAL_ENOMEM );
+
+  statistics_params->detectors             = XLALCopyStringVector( setup.detectors );
+  XLAL_CHECK_MAIN ( statistics_params->detectors != NULL, XLAL_EFUNC );
+  statistics_params->nsegments             = nsegments;
+
+  //
+  // figure out which statistics need to be computed, and when, in order to
+  // produce all the requested toplist-statistics in the "main loop" and all remaining
+  // extra-statistics in the "completion loop" after the toplist has been computed
+  //
+  WeaveStatisticType all_output_stats = uvar->toplists;
+  all_output_stats |= uvar->extra_statistics;
+
+  //  work out dependency-map for different statistics sets: toplist-ranking, output, total set of dependencies in main/completion loop ...
+  XLAL_CHECK_MAIN ( XLALWeaveStatisticsParamsSetDependencyMap( statistics_params, uvar->toplists, all_output_stats ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // ---------- prepare setup for line-robust statistics if requested ----------
+  if ( statistics_params->statistics_to_compute & (WEAVE_STATISTIC_BSGL|WEAVE_STATISTIC_BSGLtL|WEAVE_STATISTIC_BtSGLtL) ) {
+    REAL4 *oLGX_p = NULL;
+    REAL4 oLGX[PULSAR_MAX_DETECTORS];
+    if ( uvar->lrs_oLGX != NULL ) {
+      XLAL_CHECK_MAIN ( uvar->lrs_oLGX->length == ndetectors, XLAL_EINVAL, "length(lrs-oLGX) = %d must equal number of detectors (%d)'\n", uvar->lrs_oLGX->length, ndetectors );
+      XLAL_CHECK_MAIN ( XLALParseLinePriors ( &oLGX[0], uvar->lrs_oLGX ) == XLAL_SUCCESS, XLAL_EFUNC );
+      oLGX_p = &oLGX[0];
+    } // if uvar_oLGX != NULL
+    const BOOLEAN useLogCorrection = 0;
+    statistics_params->BSGL_setup = XLALCreateBSGLSetup ( ndetectors, uvar->lrs_Fstar0sc, oLGX_p, useLogCorrection, nsegments );
+    XLAL_CHECK_MAIN ( statistics_params->BSGL_setup != NULL, XLAL_EFUNC );
+  } // if BSGL|BSGLtL|BtSGLtL
+
   ////////// Set up lattice tilings //////////
-
-  // If outputting per-detector quantities, list of detectors
-  const LALStringVector *per_detectors = uvar->per_detector ? setup.detectors : NULL;
-
-  // Number of per-segment items to output (may be zero)
-  const UINT4 per_nsegments = uvar->per_segment ? nsegments : 0;
 
   // Check interpolation/maximum mismatch options are consistent with the type of search being performed
   if ( nsegments == 1 ) {
@@ -680,7 +729,7 @@ int main( int argc, char *argv[] )
 
   if ( sft_catalog != NULL ) {
 
-    // Check that all SFT catalog detectors were included in metrics computed in setup file
+    // Check that all SFT catalog detectors were included in setup file
     LALStringVector *sft_catalog_detectors = XLALListIFOsInCatalog( sft_catalog );
     XLAL_CHECK_MAIN( sft_catalog_detectors != NULL, XLAL_EFUNC );
     char *sft_catalog_detectors_string = XLALConcatStringVector( sft_catalog_detectors, "," );
@@ -856,10 +905,10 @@ int main( int argc, char *argv[] )
     }
 
     // Load coherent input data for 'i'th segment
-    coh_input[i] = XLALWeaveCohInputCreate( simulation_level, Fstat_input, per_detectors );
+    coh_input[i] = XLALWeaveCohInputCreate( simulation_level, Fstat_input, statistics_params );
     XLAL_CHECK_MAIN( coh_input[i] != NULL, XLAL_EFUNC );
 
-  }
+  } // for i < nsegments
   LogPrintf( LOG_NORMAL, "Finished loading input data for coherent results\n" );
 
   // Create caches to store intermediate results from coherent parameter-space tilings
@@ -899,12 +948,11 @@ int main( int argc, char *argv[] )
   WeaveCacheQueries *queries = XLALWeaveCacheQueriesCreate( tiling[isemi], setup.phys_to_latt, setup.latt_to_phys, rssky_transf[isemi], nsegments, uvar->freq_partitions );
   XLAL_CHECK_MAIN( queries != NULL, XLAL_EFUNC );
 
-  // Pointer to partial and final semicoherent results
-  WeaveSemiPartials *semi_parts = NULL;
+  // Pointer to final semicoherent results
   WeaveSemiResults *semi_res = NULL;
 
   // Create output results structure
-  WeaveOutputResults *out = XLALWeaveOutputResultsCreate( &setup.ref_time, ninputspins, per_detectors, per_nsegments, uvar->toplists, uvar->toplist_limit );
+  WeaveOutputResults *out = XLALWeaveOutputResultsCreate( &setup.ref_time, ninputspins, statistics_params, uvar->toplist_limit );
   XLAL_CHECK_MAIN( out != NULL, XLAL_EFUNC );
 
   // Number of times output results have been restored from a checkpoint
@@ -1067,8 +1115,8 @@ int main( int argc, char *argv[] )
     cpu_timing[CT_QUERY] += cpu_toc - cpu_tic;
     cpu_tic = cpu_toc;
 
-    // Initialise partial semicoherent results
-    XLAL_CHECK_MAIN( XLALWeaveSemiPartialsInit( &semi_parts, simulation_level, ndetectors, nsegments, &semi_phys, dfreq, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    // Initialise semicoherent results
+    XLAL_CHECK_MAIN( XLALWeaveSemiResultsInit( &semi_res, simulation_level, ndetectors, nsegments, &semi_phys, dfreq, semi_nfreqs, statistics_params ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Retrieve coherent results from each segment
     const WeaveCohResults *XLAL_INIT_DECL( coh_res, [nsegments] );
@@ -1083,18 +1131,18 @@ int main( int argc, char *argv[] )
     cpu_timing[CT_COH_RES] += cpu_toc - cpu_tic;
     cpu_tic = cpu_toc;
 
-    // Add coherent results to partial semicoherent results
+    // Add coherent results to semicoherent results
     for ( size_t i = 0; i < nsegments; ++i ) {
-      XLAL_CHECK_MAIN( XLALWeaveSemiPartialsAdd( semi_parts, coh_res[i], coh_offset[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALWeaveSemiResultsAdd( semi_res, coh_res[i], coh_offset[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
-    // Time computation of partial semicoherent results
+    // Time computation of semicoherent results
     cpu_toc = cpu_time();
     cpu_timing[CT_SEMI_PARTS] += cpu_toc - cpu_tic;
     cpu_tic = cpu_toc;
 
-    // Compute final semicoherent results
-    XLAL_CHECK_MAIN( XLALWeaveSemiResultsCompute( &semi_res, semi_parts ) == XLAL_SUCCESS, XLAL_EFUNC );
+    // Compute all toplist-ranking semicoherent results
+    XLAL_CHECK_MAIN( XLALWeaveSemiResultsComputeMain( semi_res ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Time computation of final semicoherent results
     cpu_toc = cpu_time();
@@ -1236,6 +1284,13 @@ int main( int argc, char *argv[] )
     LogPrintfVerbatim( LOG_NORMAL, ", total %.1f sec, CPU %.1f%%, peak memory %.1fMB\n", wall_total, 100.0 * cpu_total / wall_total, XLALGetPeakHeapUsageMB() );
   }
 
+  //
+  // 'Completion loop': compute all 'extra' statistics that weren't required in the 'main' hotloop
+  // (formerly known as 'recalc step' in GCT)
+  //
+  XLAL_CHECK_MAIN ( XLALWeaveOutputResultsCompletionLoop( out ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+
   ////////// Output search results //////////
 
   if ( search_complete ) {
@@ -1363,7 +1418,6 @@ int main( int argc, char *argv[] )
   XLALWeaveOutputResultsDestroy( out );
 
   // Cleanup memory from semicoherent results
-  XLALWeaveSemiPartialsDestroy( semi_parts );
   XLALWeaveSemiResultsDestroy( semi_res );
 
   // Cleanup memory from parameter-space iteration

@@ -30,6 +30,8 @@
 #include <lal/VectorMath.h>
 #include <lal/ComputeFstat.h>
 
+#include "Statistics.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -50,16 +52,13 @@ typedef struct tagWeaveCohInput WeaveCohInput;
 typedef struct tagWeaveCohResults WeaveCohResults;
 
 ///
-/// Partial results of a semicoherent computation in progress
-///
-typedef struct tagWeaveSemiPartials WeaveSemiPartials;
-
-///
 /// Final results of a semicoherent computation over many segments
 ///
 typedef struct tagWeaveSemiResults {
   /// Bitflag representing search simulation level
   WeaveSimulationLevel simulation_level;
+  /// Struct holding all parameters for which statistics to output and compute, when, and how
+  const WeaveStatisticsParams *statistics_params;
   /// Number of detectors
   UINT4 ndetectors;
   /// Number of segments
@@ -69,23 +68,36 @@ typedef struct tagWeaveSemiResults {
   /// Number of frequencies
   UINT4 nfreqs;
   /// Per-segment coherent template parameters of the first frequency bin (optional)
-  const PulsarDopplerParams *coh_phys;
+  PulsarDopplerParams *coh_phys;
   /// Per-segment multi-detector F-statistics per frequency (optional)
-  const REAL4 *const *coh2F;
+  const REAL4 **coh2F;
   /// Per-segment per-detector F-statistics per frequency (optional)
-  const REAL4 *const *coh2F_det[PULSAR_MAX_DETECTORS];
+  const REAL4 **coh2F_det[PULSAR_MAX_DETECTORS];
+    /// Number of coherent results processed thus far
+  UINT4 ncoh_res;
   /// Semicoherent template parameters of the first frequency bin
   PulsarDopplerParams semi_phys;
+  /// Summed multi-detector F-statistics per frequency
+  REAL4VectorAligned *sum2F;
+  /// Number of additions to multi-detector F-statistics thus far
+  UINT4 nsum2F;
+  /// Summed per-detector F-statistics per frequency
+  REAL4VectorAligned *sum2F_det[PULSAR_MAX_DETECTORS];
+  /// Number of additions to per-detector F-statistics thus far
+  UINT4 nsum2F_det[PULSAR_MAX_DETECTORS];
   /// Mean multi-detector F-statistics per frequency
   REAL4VectorAligned *mean2F;
   /// Mean per-detector F-statistics per frequency
   REAL4VectorAligned *mean2F_det[PULSAR_MAX_DETECTORS];
+
+  /// Line-robust log10(B_S/GL) statistic
+  REAL4VectorAligned *log10BSGL;
 } WeaveSemiResults;
 
 WeaveCohInput *XLALWeaveCohInputCreate(
   const WeaveSimulationLevel simulation_level,
   FstatInput *Fstat_input,
-  const LALStringVector *per_detectors
+  const WeaveStatisticsParams *statistics_params
   );
 void XLALWeaveCohInputDestroy(
   WeaveCohInput *coh_input
@@ -99,26 +111,23 @@ int XLALWeaveCohResultsCompute(
 void XLALWeaveCohResultsDestroy(
   WeaveCohResults *coh_res
   );
-int XLALWeaveSemiPartialsInit(
-  WeaveSemiPartials **semi_parts,
+int XLALWeaveSemiResultsInit(
+  WeaveSemiResults **semi_res,
   const WeaveSimulationLevel simulation_level,
   const UINT4 ndetectors,
   const UINT4 nsegments,
   const PulsarDopplerParams *semi_phys,
   const double dfreq,
-  const UINT4 semi_nfreqs
+  const UINT4 semi_nfreqs,
+  const WeaveStatisticsParams *statistics_params
   );
-void XLALWeaveSemiPartialsDestroy(
-  WeaveSemiPartials *semi_parts
-  );
-int XLALWeaveSemiPartialsAdd(
-  WeaveSemiPartials *semi_parts,
+int XLALWeaveSemiResultsAdd(
+  WeaveSemiResults *semi_res,
   const WeaveCohResults *coh_res,
   const UINT4 coh_offset
   );
-int XLALWeaveSemiResultsCompute(
-  WeaveSemiResults **semi_res,
-  const WeaveSemiPartials *semi_parts
+int XLALWeaveSemiResultsComputeMain(
+  WeaveSemiResults *semi_res
   );
 void XLALWeaveSemiResultsDestroy(
   WeaveSemiResults *semi_res
