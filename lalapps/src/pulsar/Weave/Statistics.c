@@ -216,7 +216,7 @@ int XLALWeaveStatisticsParamsSetDependencyMap(
 
   // special handling of 'coh2F' and 'coh2F_det': these can *only* be computed as "main-loop" statistics!
   // as they are defined to refer to the 'fine grid with (typically) interpolation', while
-  // non-interpolating "recalc" 2F-per-segments statistics will be named differently // FIXME: put chosen names
+  // non-interpolating "recalc" 2F-per-segments statistics will be named differently
   if ( stats_to_compute & WEAVE_STATISTIC_COH2F ) {
     mainloop_stats |= WEAVE_STATISTIC_COH2F;
   }

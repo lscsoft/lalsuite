@@ -246,7 +246,7 @@ int XLALWeaveOutputResultsWrite(
   // Write number of spindowns
   XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "nspins", out->nspins, "number of spindowns" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Write list of detectors (if outputting per-detector quantities //FIXME: for backwards compatibility)
+  // Write list of detectors (if outputting per-detector quantities
   XLAL_CHECK( XLALFITSHeaderWriteStringVector( file, "detect", out->statistics_params->detectors, "list of detectors" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Write number of segments
