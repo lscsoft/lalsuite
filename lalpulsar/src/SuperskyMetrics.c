@@ -2168,7 +2168,8 @@ int XLALSetSuperskyEqualAreaSkyBounds(
       const UINT4 B_index_i = B_index + i;
 
       // Maximum possible value of 'B' within the region bound by 'A_bound'
-      const double B_max = RE_SQRT( 1 - GSL_MIN( SQR( A_bound[0] ), SQR( A_bound[1] ) ) );
+      // - For 4 patches or fewer, 'B' must span the entire unit disk
+      const double B_max = ( B_count <= 4 ) ? 1 : RE_SQRT( 1 - GSL_MIN( SQR( A_bound[0] ), SQR( A_bound[1] ) ) );
 
       // Handle boundaries as special cases
       if ( B_index_i == 0 ) {
@@ -2206,7 +2207,9 @@ int XLALSetSuperskyEqualAreaSkyBounds(
     }
 
     // Restrict range 'A' if 'B = const' bounds intersect unit disk boundary within it
-    {
+    // - Only start to do this when there are 3 patches in 'B' direction
+    // - Do not do this for the middle 'B' patch which straddles 'B = 0'
+    if ( patch_count >= 14 && B_index != (B_count-1)/2 ) {
       const double Ai = RE_SQRT( 1 - GSL_MIN( SQR( B_bound[0] ), SQR( B_bound[1] ) ) );
       if ( A_bound[0] < -Ai ) {
         A_bound[0] = -Ai;
