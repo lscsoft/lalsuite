@@ -411,6 +411,34 @@ void PulsarAddParam( PulsarParameters *pars, const CHAR *name, void *value, Puls
 }
 
 
+void PulsarAddREAL8Param(PulsarParameters *pars, const CHAR * name, REAL8 value)
+/* Typed version of PulsarAddParam for REAL8 values.*/
+{
+  PulsarAddParam(pars, name, (void*)&value, PULSARTYPE_REAL8_t);
+}
+
+
+void PulsarAddUINT4Param(PulsarParameters *pars, const CHAR * name, UINT4 value)
+/* Typed version of PulsarAddParam for UINT4 values.*/
+{
+  PulsarAddParam(pars, name, (void*)&value, PULSARTYPE_UINT4_t);
+}
+
+
+void PulsarAddREAL8VectorParam(PulsarParameters *pars, const CHAR * name, REAL8Vector *value)
+/* Typed version of PulsarAddParam for REAL8Vector values.*/
+{
+  PulsarAddParam(pars, name, (void*)&value, PULSARTYPE_REAL8Vector_t);
+}
+
+
+void PulsarAddstringParam(PulsarParameters *pars, const CHAR * name, CHAR *value)
+/* Typed version of PulsarAddParam for string values.*/
+{
+  PulsarAddParam(pars, name, (void*)&value, PULSARTYPE_string_t);
+}
+
+
 /* Check for existance of name */
 int PulsarCheckParam( const PulsarParameters *pars, const CHAR *name ){
   /* convert name to uppercase */

@@ -450,6 +450,18 @@ REAL8 PulsarGetREAL8VectorParamIndividual( const PulsarParameters *pars, const C
  */
 void PulsarAddParam( PulsarParameters *pars, const CHAR *name, void *value, PulsarParamType type );
 
+/** \brief Add a \c REAL8 parameter to the \c PulsarParameters structure */
+void PulsarAddREAL8Param(PulsarParameters *pars, const CHAR * name, REAL8 value);
+
+/** \brief Add a \c UINT4 parameter to the \c PulsarParameters structure */
+void PulsarAddUINT4Param(PulsarParameters *pars, const CHAR * name, UINT4 value);
+
+/** \brief Add a \c REAL8Vector parameter to the \c PulsarParameters structure */
+void PulsarAddREAL8VectorParam(PulsarParameters *pars, const CHAR * name, REAL8Vector *value);
+
+/** \brief Add a string parameter to the \c PulsarParameters structure */
+void PulsarAddstringParam(PulsarParameters *pars, const CHAR * name, CHAR *value);
+
 /** \brief Free all the parameters from a \c PulsarParameters structure */
 void PulsarClearParams( PulsarParameters *pars );
 
