@@ -120,7 +120,7 @@ class RateContours(object):
 
 			# use an average of 3 bins per time slide in each
 			# direction, but round to an odd integer
-			nbins = math.ceil((max_offset - min_offset) / time_slide_spacing * 3)
+			nbins = int(math.ceil((max_offset - min_offset) / time_slide_spacing * 3))
 
 			# construct the binning
 			self.counts = rate.BinnedArray(rate.NDBins((rate.LinearBins(min_offset, max_offset, nbins), rate.LinearBins(min_offset, max_offset, nbins))))
@@ -225,7 +225,7 @@ EXCEPT
 	WHERE
 		sc_coinc_event.coinc_def_id == ?
 		AND sc_coinc_event.time_slide_id == bb_coinc_event.time_slide_id
-	""", (contents.bb_definer_id, contents.sb_definer_id, contents.sc_definer_id)):
+	""", (contents.bb_definer_id, contents.sb_definer_id, contents.scn_definer_id)):
 		yield contents.coinc_table.row_from_cols(values)
 
 
@@ -288,7 +288,7 @@ FROM
 WHERE
 	coinc_event.coinc_def_id == ?
 		""", (contents.bb_definer_id,)):
-			coinc = contents.coinc_event_table.row_from_cols(values)
+			coinc = contents.coinc_table.row_from_cols(values)
 			not_zero_lag = values[-1]
 			if not_zero_lag:
 				self.n_foreground += 1
@@ -307,7 +307,7 @@ WHERE
 				except IndexError:
 					# not on plot axes
 					pass
-		if contents.sc_definer_id:
+		if contents.sce_definer_id is not None:
 			# this query assumes each injection can match at
 			# most 1 coinc
 			for values in contents.connection.cursor().execute("""
@@ -324,7 +324,7 @@ FROM
 	)
 WHERE
 	sim_coinc.coinc_def_id == ?
-			""", (contents.sc_definer_id,)):
+			""", (contents.sce_definer_id,)):
 				coinc = contents.coinc_event_table.row_from_cols(values)
 				self.n_injections += 1
 				try:
@@ -355,29 +355,29 @@ WHERE
 
 		# plot background contours
 		max_density = math.log(self.background_bins.array.max())
-		self.axes.contour(xcoords, ycoords, numpy.transpose(numpy.log(self.background_bins.array)), [max_density - n for n in xrange(0, 10, 1)], cmap = matplotlib.cm.Greys)
+		self.axes.contour(xcoords, ycoords, numpy.transpose(numpy.log(self.background_bins.array)), sorted(max_density - n for n in xrange(0, 10, 1)), cmap = matplotlib.cm.Greys)
 
 		# plot foreground (zero-lag) contours
 		max_density = math.log(self.foreground_bins.array.max())
-		self.axes.contour(xcoords, ycoords, numpy.transpose(numpy.log(self.foreground_bins.array)), [max_density - n for n in xrange(0, 10, 1)], cmap = matplotlib.cm.Reds)
+		self.axes.contour(xcoords, ycoords, numpy.transpose(numpy.log(self.foreground_bins.array)), sorted(max_density - n for n in xrange(0, 10, 1)), cmap = matplotlib.cm.Reds)
 		#self.axes.plot(self.foreground_x, self.foreground_y, "r+")
 
 		# plot coincident injection contours
 		max_density = math.log(self.coinc_injection_bins.array.max())
-		self.axes.contour(xcoords, ycoords, numpy.transpose(numpy.log(self.coinc_injection_bins.array)), [max_density - n for n in xrange(0, 10, 1)], cmap = matplotlib.cm.Blues)
+		self.axes.contour(xcoords, ycoords, numpy.transpose(numpy.log(self.coinc_injection_bins.array)), sorted(max_density - n for n in xrange(0, 10, 1)), cmap = matplotlib.cm.Blues)
 
 		# plot incomplete coincident injection contours
 		max_density = math.log(self.incomplete_coinc_injection_bins.array.max())
-		self.axes.contour(xcoords, ycoords, numpy.transpose(numpy.log(self.incomplete_coinc_injection_bins.array)), [max_density - n for n in xrange(0, 10, 1)], cmap = matplotlib.cm.Greens)
+		self.axes.contour(xcoords, ycoords, numpy.transpose(numpy.log(self.incomplete_coinc_injection_bins.array)), sorted(max_density - n for n in xrange(0, 10, 1)), cmap = matplotlib.cm.Greens)
 
 		# add diagonal line
-		lower = max(self.background_bins.bins.min)
-		upper = min(self.background_bins.bins.max)
+		lower = max(binning.min for binning in self.background_bins.bins)
+		upper = min(binning.max for binning in self.background_bins.bins)
 		self.axes.plot([lower, upper], [lower, upper], "k:")
 
 		# fix axes limits
-		self.axes.set_xlim([self.background_bins.bins.min[0], self.background_bins.bins.max[0]])
-		self.axes.set_ylim([self.background_bins.bins.min[1], self.background_bins.bins.max[1]])
+		self.axes.set_xlim([self.background_bins.bins[0].min, self.background_bins.bins[0].max])
+		self.axes.set_ylim([self.background_bins.bins[1].min, self.background_bins.bins[1].max])
 
 
 class ConfidenceContourProjection(object):
@@ -425,7 +425,7 @@ FROM
 WHERE
 	coinc_event.coinc_def_id == ?
 		""", (contents.bb_definer_id,)):
-			coinc = contents.coinc_event_table.row_from_cols(values)
+			coinc = contents.coinc_table.row_from_cols(values)
 			not_zero_lag = values[-1]
 			x, y = self.coords(contents, coinc.coinc_event_id)
 			if not_zero_lag:
@@ -444,7 +444,7 @@ WHERE
 				except IndexError:
 					# not on plot axes
 					pass
-		if contents.sc_definer_id:
+		if contents.sce_definer_id is not None:
 			# this query assumes each injection can match at
 			# most 1 coinc
 			for values in contents.connection.cursor().execute("""
@@ -461,7 +461,7 @@ FROM
 	)
 WHERE
 	sim_coinc.coinc_def_id == ?
-			""", (contents.sc_definer_id,)):
+			""", (contents.sce_definer_id,)):
 				coinc = contents.coinc_event_table.row_from_cols(values)
 				self.n_injections += 1
 				try:
@@ -539,7 +539,7 @@ class RateVsConfidence(object):
 			else:
 				bins = self.foreground
 				self.foreground_segs.append(contents.seglists[self.instrument])
-			bins.extend(contents.connection.cursor().execute("SELECT sngl_burst.confidence FROM coinc_event JOIN coinc_event_map ON (coinc_event_map.coinc_event_id == coinc_event.coinc_event_id) JOIN sngl_burst ON (coinc_event_map.table_name == 'sngl_burst' AND coinc_event_map.event_id == sngl_burst.event_id WHERE coinc_event.time_slide_id == ? AND coinc_event.coinc_def_id == ? AND sngl_burst.ifo == ?""", (time_slide_id, contents.bb_definer_id, self.instrument)))
+			bins.extend(contents.connection.cursor().execute("SELECT sngl_burst.confidence FROM coinc_event JOIN coinc_event_map ON (coinc_event_map.coinc_event_id == coinc_event.coinc_event_id) JOIN sngl_burst ON (coinc_event_map.table_name == 'sngl_burst' AND coinc_event_map.event_id == sngl_burst.event_id) WHERE coinc_event.time_slide_id == ? AND coinc_event.coinc_def_id == ? AND sngl_burst.ifo == ?""", (time_slide_id, contents.bb_definer_id, self.instrument)))
 
 	def finish(self):
 		self.axes.set_title("Cummulative Coincident Event Rate vs. Confidence in %s" % self.instrument)
