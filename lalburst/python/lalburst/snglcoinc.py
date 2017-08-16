@@ -267,7 +267,8 @@ def get_doubles(eventlists, instruments, thresholds, unused):
 	sequence.
 
 	NOTE:  the instruments sequence must contain exactly two
-	instruments.
+	instruments;  it may be a generator, it will be iterated over only
+	once.
 
 	NOTE:  the "unused" parameter passed to this function must be a set
 	or set-like object.  It will be cleared by invoking .clear(), then
