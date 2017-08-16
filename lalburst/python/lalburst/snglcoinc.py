@@ -243,12 +243,12 @@ def get_doubles(eventlists, instruments, thresholds, unused):
 	Given an instance of an EventListDict, an iterable (e.g., a list)
 	of instruments, and a dictionary mapping instrument pair to
 	threshold data for use by the event comparison test defined by the
-	EventListDict, generate a sequence of tuples of Python IDs of
-	mutually coincident events, and populate a set (unused) of
-	1-element tuples of the Python IDs of the events that did not
-	participate in coincidences.
+	EventListDict (or None if this feature is not used), generate a
+	sequence of tuples of Python IDs of mutually coincident events, and
+	populate a set (unused) of 1-element tuples of the Python IDs of
+	the events that did not participate in coincidences.
 
-	The thresholds dictionary should look like
+	If not set to None, the thresholds dictionary should look like
 
 	{("H1", "L1"): 10.0, ("L1", "H1"): -10.0}
 
@@ -296,7 +296,7 @@ def get_doubles(eventlists, instruments, thresholds, unused):
 	# be swapped).
 
 	try:
-		threshold_data = thresholds[instruments]
+		threshold_data = thresholds[instruments] if thresholds is not None else None
 	except KeyError as e:
 		raise KeyError("no coincidence thresholds provided for instrument pair %s, %s" % e.args[0])
 	dt = light_travel_time(*instruments)
