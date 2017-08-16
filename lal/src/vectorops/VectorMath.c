@@ -86,6 +86,7 @@ void XLALDestroy##TYPE##VectorAligned ( TYPE##VectorAligned *in )       \
   return;                                                               \
 } /* XLALDestroy\<TYPE\>VectorAligned() */
 
+DEFINE_ALIGNED_VECT_API(UINT4);
 DEFINE_ALIGNED_VECT_API(REAL4);
 DEFINE_ALIGNED_VECT_API(REAL8);
 DEFINE_ALIGNED_VECT_API(COMPLEX8);

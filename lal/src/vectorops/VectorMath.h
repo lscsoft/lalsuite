@@ -50,6 +50,22 @@ extern "C" {
 /** \name Failsafe Aligned Memory Handling */
 /** @{ */
 
+/** A special #UINT4Vector with n-byte aligned memory \c data array */
+typedef struct tagUINT4VectorAligned {
+  UINT4 length;		/**< number of 'usable' array entries (fully aligned) */
+  UINT4 *data;		/**< start of aligned memory block */
+  UINT4 *data0;		/**< actual physical start of memory block, possibly not aligned */
+} UINT4VectorAligned;
+
+/** Create a new #UINT4VectorAligned struct with length \c length and alignment \c align */
+UINT4VectorAligned *XLALCreateUINT4VectorAligned ( const UINT4 length, const UINT4 align );
+
+/** Resize an existing #UINT4VectorAligned struct to length \c length and alignment \c align */
+UINT4VectorAligned *XLALResizeUINT4VectorAligned ( UINT4VectorAligned *in, const UINT4 length, const UINT4 align );
+
+/** Free a #UINT4VectorAligned struct */
+void XLALDestroyUINT4VectorAligned ( UINT4VectorAligned *in );
+
 /** A special #REAL4Vector with n-byte aligned memory \c data array */
 typedef struct tagREAL4VectorAligned {
   UINT4 length;		/**< number of 'usable' array entries (fully aligned) */
