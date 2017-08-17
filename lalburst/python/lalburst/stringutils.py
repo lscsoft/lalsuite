@@ -110,7 +110,7 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 		for instrument in instruments:
 			self.densities["%s_snr2_chi2" % instrument] = rate.BinnedLnPDF(rate.NDBins((rate.ATanLogarithmicBins(10, 1e7, 801), rate.ATanLogarithmicBins(.1, 1e4, 801))))
 		for pair in itertools.combinations(sorted(instruments), 2):
-			dt = 0.005 + snglcoinc.light_travel_time(instrument1, instrument2)	# seconds
+			dt = 0.005 + snglcoinc.light_travel_time(*pair)	# seconds
 			self.densities["%s_%s_dt" % pair] = rate.BinnedLnPDF(rate.NDBins((rate.ATanBins(-dt, +dt, 801),)))
 			self.densities["%s_%s_dA" % pair] = rate.BinnedLnPDF(rate.NDBins((rate.ATanBins(-0.5, +0.5, 801),)))
 			self.densities["%s_%s_df" % pair] = rate.BinnedLnPDF(rate.NDBins((rate.ATanBins(-0.2, +0.2, 501),)))
@@ -252,7 +252,7 @@ class StringCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
 		#
 
 		for event in events:
-			params["%s_snr2_chi2" % evemt.ifo] = (event.snr**2.0, event.chisq / event.chisq_dof)
+			params["%s_snr2_chi2" % event.ifo] = (event.snr**2.0, event.chisq / event.chisq_dof)
 
 		#
 		# two-instrument parameters.  note that events are sorted by
