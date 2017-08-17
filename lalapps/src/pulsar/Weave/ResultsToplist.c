@@ -704,11 +704,6 @@ int XLALWeaveResultsToplistAdd(
     if ( stats_to_keep & WEAVE_STATISTIC_MEAN2F ) {
       item->mean2F = semi_res->mean2F->data[freq_idx];
     }
-    if ( stats_to_keep & WEAVE_STATISTIC_MEAN2F_DET ) {
-      for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
-        item->mean2F_det[i]  = semi_res->mean2F_det[i]->data[freq_idx];
-      }
-    }
 
     if ( stats_to_keep & WEAVE_STATISTIC_BSGL ) {
       item->log10BSGL = semi_res->log10BSGL->data[freq_idx];

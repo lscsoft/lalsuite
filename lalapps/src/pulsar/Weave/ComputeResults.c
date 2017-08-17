@@ -269,7 +269,6 @@ int XLALWeaveSemiResultsInit(
     | WEAVE_STATISTIC_SUM2F
     | WEAVE_STATISTIC_SUM2F_DET
     | WEAVE_STATISTIC_MEAN2F
-    | WEAVE_STATISTIC_MEAN2F_DET
     | WEAVE_STATISTIC_BSGL
     | WEAVE_STATISTIC_BSGLtL
     | WEAVE_STATISTIC_BtSGLtL
@@ -366,16 +365,6 @@ int XLALWeaveSemiResultsInit(
     if ( ( *semi_res )->mean2F == NULL || ( *semi_res )->mean2F->length < ( *semi_res )->nfreqs ) {
       ( *semi_res )->mean2F = XLALResizeREAL4VectorAligned( ( *semi_res )->mean2F, ( *semi_res )->nfreqs, alignment );
       XLAL_CHECK( ( *semi_res )->mean2F != NULL, XLAL_ENOMEM );
-    }
-  }
-
-  // If we need mean2F_det in "main loop": Reallocate per-detector vectors per frequency
-  if ( mainloop_stats & WEAVE_STATISTIC_MEAN2F_DET ) {
-    for ( size_t i = 0; i < ( *semi_res )->ndetectors; ++i ) {
-      if ( ( *semi_res )->mean2F_det[i] == NULL || ( *semi_res )->mean2F_det[i]->length < ( *semi_res )->nfreqs ) {
-        ( *semi_res )->mean2F_det[i] = XLALResizeREAL4VectorAligned( ( *semi_res )->mean2F_det[i], ( *semi_res )->nfreqs, alignment );
-        XLAL_CHECK( ( *semi_res )->mean2F_det[i] != NULL, XLAL_ENOMEM );
-      }
     }
   }
 
@@ -551,14 +540,6 @@ int XLALWeaveSemiResultsComputeMain(
     XLAL_CHECK( XLALVectorScaleREAL4( semi_res->mean2F->data, 1.0 / semi_res->nsum2F, semi_res->sum2F->data, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
-  // mean per-detector F-statistics per frequency:
-  if ( mainloop_stats & WEAVE_STATISTIC_MEAN2F_DET ) {
-    for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
-      XLAL_CHECK( XLALVectorScaleREAL4( semi_res->mean2F_det[i]->data, 1.0 / semi_res->nsum2F_det[i], semi_res->sum2F_det[i]->data, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-  }
-
-
   // various line-robust statistics
   const REAL4 *sum2F_det[PULSAR_MAX_DETECTORS];
   const REAL4 *max2F_det[PULSAR_MAX_DETECTORS];
@@ -614,7 +595,6 @@ void XLALWeaveSemiResultsDestroy(
     XLALFree( semi_res->coh2F_det[i] );
     XLALDestroyREAL4VectorAligned( semi_res->max2F_det[i] );
     XLALDestroyREAL4VectorAligned( semi_res->sum2F_det[i] );
-    XLALDestroyREAL4VectorAligned( semi_res->mean2F_det[i] );
   }
   XLALDestroyREAL4VectorAligned( semi_res->log10BSGL );
   XLALDestroyREAL4VectorAligned( semi_res->log10BSGLtL );
