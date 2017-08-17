@@ -1351,8 +1351,8 @@ int XLALComputeBinaryGridParams(GridParameters **binarygridparams,  /**< [out] t
 
     (*binarygridparams)->Nr = (UINT8)ceil( (1.0/Vn) * log(1.0/(1.0-coverage)) * Vsr );
 
-    LogPrintf(LOG_DEBUG,"%s : computed the number of random binary templates to be %"LAL_UINT8_FORMAT".\n",__func__,(*binarygridparams)->Nr);
-    LogPrintf(LOG_DEBUG,"%s : to be compared to the total number of cubic templates %"LAL_UINT8_FORMAT" (%.6f).\n", __func__, (*binarygridparams)->max, (REAL8)(*binarygridparams)->max/(REAL8)(*binarygridparams)->Nr);
+    LogPrintf(LOG_NORMAL,"%s : computed the number of random binary templates to be %"LAL_UINT8_FORMAT".\n",__func__,(*binarygridparams)->Nr);
+    LogPrintf(LOG_NORMAL,"%s : to be compared to the total number of cubic templates %"LAL_UINT8_FORMAT" (%.6f).\n", __func__, (*binarygridparams)->max, (REAL8)(*binarygridparams)->max/(REAL8)(*binarygridparams)->Nr);
 
   }
 
