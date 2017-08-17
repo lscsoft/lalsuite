@@ -1313,17 +1313,44 @@ int XLALComputeBinaryGridParams(GridParameters **binarygridparams,  /**< [out] t
   (*binarygridparams)->coverage = coverage;
   if ((*binarygridparams)->coverage>0) {
 
+    ndim = 4;
     REAL8 Vn = pow(LAL_PI,ndim/2.0)/gsl_sf_gamma(1.0+ndim/2.0);
+    REAL8 Vsr = 1;
 
     REAL8 G11 = pow(LAL_PI,2.0)*DT*DT/3;
+    REAL8 fmin = space->data[0].min;
+    REAL8 fmax = space->data[0].max;
+    REAL8 fmid = 0.5*(fmin + fmax);
+    fmin = MYMIN(fmin, fmid - sqrt(mu/G11));
+    fmax = MYMAX(fmax, fmid + sqrt(mu/G11));
+    Vsr *= sqrt(G11/mu) * (pow(fmax,4.0) - pow(fmin,4.0)) / 4.0;
+
     REAL8 G22 = pow(LAL_PI,2.0)*DT*DT/6;
+    REAL8 amin = space->data[1].min;
+    REAL8 amax = space->data[1].max;
+    REAL8 amid = 0.5*(amin + amax);
+    amin = MYMIN(amin, amid - sqrt(mu/G22));
+    amax = MYMAX(amax, amid + sqrt(mu/G22));
+    Vsr *= sqrt(G22/mu) * (pow(amax,3.0) - pow(amin,3.0)) / 3.0;
+
     REAL8 G33 = pow(LAL_PI,2.0)*DT*DT/6;
+    REAL8 tascmin = space->data[2].min;
+    REAL8 tascmax = space->data[2].max;
+    REAL8 tascmid = 0.5*(tascmin + tascmax);
+    tascmin = MYMIN(tascmin, tascmid - sqrt(mu/G33));
+    tascmax = MYMAX(tascmax, tascmid + sqrt(mu/G33));
+    Vsr *= sqrt(G33/mu) * (tascmax - tascmin);
+
     REAL8 G44 = pow(LAL_PI,2.0)*DT*DT*T*T/72;
+    REAL8 omegamin = space->data[3].min;
+    REAL8 omegamax = space->data[3].max;
+    REAL8 omegamid = 0.5*(omegamin + omegamax);
+    omegamin = MYMIN(omegamin, omegamid - sqrt(mu/G44));
+    omegamax = MYMAX(omegamax, omegamid + sqrt(mu/G44));
+    Vsr *= sqrt(G44/mu) * (pow(omegamax,5.0) - pow(omegamin,5.0)) / 5.0;
 
-    REAL8 dVr = sqrt(G11*G22*G33*G44);
-    REAL8 Vsr = dVr*space->data[2].span*(1.0/60.0)*(pow(space->data[3].max,5.0)-pow(space->data[3].min,5.0))*(pow(space->data[0].max,4.0)-pow(space->data[0].min,4.0))*(pow(space->data[1].max,3.0)-pow(space->data[1].min,3.0));
+    (*binarygridparams)->Nr = (UINT8)ceil( (1.0/Vn) * log(1.0/(1.0-coverage)) * Vsr );
 
-    (*binarygridparams)->Nr = (UINT8)ceil((1.0/Vn)*log(1.0/(1.0-coverage))*(pow(mu,-ndim/2.0))*Vsr);
     LogPrintf(LOG_DEBUG,"%s : computed the number of random binary templates to be %"LAL_UINT8_FORMAT".\n",__func__,(*binarygridparams)->Nr);
     LogPrintf(LOG_DEBUG,"%s : to be compared to the total number of cubic templates %"LAL_UINT8_FORMAT" (%.6f).\n", __func__, (*binarygridparams)->max, (REAL8)(*binarygridparams)->max/(REAL8)(*binarygridparams)->Nr);
 
