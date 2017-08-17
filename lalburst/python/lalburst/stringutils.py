@@ -482,23 +482,24 @@ def time_slides_livetime_for_instrument_combo(seglists, time_slides, instruments
 #
 
 
-def create_recovered_likelihood_table(connection, coinc_def_id):
+def create_recovered_ln_likelihood_ratio_table(connection, coinc_def_id):
 	"""
-	Create a temporary table named "recovered_likelihood" containing
-	two columns:  "simulation_id", the simulation_id of an injection,
-	and "likelihood", the highest likelihood ratio at which that
-	injection was recovered by a coincidence of type coinc_def_id.
+	Create a temporary table named "recovered_ln_likelihood_ratio"
+	containing two columns:  "simulation_id", the simulation_id of an
+	injection, and "ln_likelihood_ratio", the highest log likelihood
+	ratio at which that injection was recovered by a coincidence of
+	type coinc_def_id.
 	"""
 	cursor = connection.cursor()
 	cursor.execute("""
-CREATE TEMPORARY TABLE recovered_likelihood (simulation_id TEXT PRIMARY KEY, likelihood REAL)
+CREATE TEMPORARY TABLE recovered_ln_likelihood_ratio (simulation_id TEXT PRIMARY KEY, ln_likelihood_ratio REAL)
 	""")
 	cursor.execute("""
 INSERT OR REPLACE INTO
-	recovered_likelihood
+	recovered_ln_likelihood_ratio
 SELECT
 	sim_burst.simulation_id AS simulation_id,
-	MAX(coinc_event.likelihood) AS likelihood
+	MAX(coinc_event.likelihood) AS ln_likelihood_ratio
 FROM
 	sim_burst
 	JOIN coinc_event_map AS a ON (
