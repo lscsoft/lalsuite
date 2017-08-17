@@ -177,7 +177,6 @@ segs = segments.segmentlistdict()
 xmldoc = ligolw.Document()
 xmldoc.appendChild(ligolw.LIGO_LW())
 process = ligolw_process.register_to_xmldoc(xmldoc, program = u"lalapps_string_meas_likelihood", paramdict = paramdict, version = __version__, cvs_repository = "lscsoft", cvs_entry_time = __date__, comment = u"")
-distributions.process_id = process.process_id
 
 
 #

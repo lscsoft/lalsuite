@@ -107,7 +107,7 @@ options, filenames = parse_command_line()
 coincparamsdistributions, likelihood_seglists = stringutils.load_likelihood_data(options.likelihood_filenames, verbose = options.verbose)
 if options.verbose:
 	print >>sys.stderr, "computing event densities ..."
-coincparamsdistributions.finish(verbose = options.verbose)
+coincparamsdistributions.finish()
 
 
 #
