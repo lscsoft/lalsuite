@@ -250,17 +250,17 @@ int XLALGetNextRandomBinaryTemplate(Template **temp,                        /**<
   while (!flag) {
 
     REAL8 temp1 = gsl_ran_flat((gsl_rng*)r,0,1);
-    nu = n2*pow((pow(n1/n2,4.0) + (1.0 - pow(n1/n2,4.0))*temp1),1.0/4.0);
+    nu = (n1 < n2) ? n2*pow((pow(n1/n2,4.0) + (1.0 - pow(n1/n2,4.0))*temp1),1.0/4.0) : n1;
     REAL8 temp2 = gsl_ran_flat((gsl_rng*)r,0,1);
-    a = a2*pow((pow(a1/a2,3.0) + (1.0 - pow(a1/a2,3.0))*temp2),1.0/3.0);
+    a = (a1 < a2) ? a2*pow((pow(a1/a2,3.0) + (1.0 - pow(a1/a2,3.0))*temp2),1.0/3.0) : a1;
     REAL8 temp3 = gsl_ran_flat((gsl_rng*)r,0,1);
-    tasc = t1 + (t2-t1)*temp3;
+    tasc = (t1 < t2) ? t1 + (t2-t1)*temp3 : t1;
     REAL8 temp4 = gsl_ran_flat((gsl_rng*)r,0,1);
-    Om = O2*pow((pow(O1/O2,5.0) + (1.0 - pow(O1/O2,5.0))*temp4),1.0/5.0);
+    Om = (O1 < O2) ? O2*pow((pow(O1/O2,5.0) + (1.0 - pow(O1/O2,5.0))*temp4),1.0/5.0) : O1;
 
     /* LogPrintf(LOG_DEBUG,"%f (%f %f) %f (%f %f) %f (%f %f) %f (%f %f)\n",nu,n1,n2,a,a1,a2,tasc,t1,t2,Om,O1,O2); */
 
-    if ((nu>n1)&&(nu<n2)&&(a>a1)&&(a<a2)&&(tasc>t1)&&(tasc<t2)&&(Om>O1)&&(Om<O2)) flag = 1;
+    if ((nu>=n1)&&(nu<=n2)&&(a>=a1)&&(a<=a2)&&(tasc>=t1)&&(tasc<=t2)&&(Om>=O1)&&(Om<=O2)) flag = 1;
 
   }
 
