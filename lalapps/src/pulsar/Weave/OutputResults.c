@@ -213,7 +213,7 @@ int XLALWeaveOutputResultsCompletionLoop (
   WeaveStatisticType unsupported = (completionloop_stats & ~supported_completionloop);
   if ( unsupported != 0 ) {
     char *unsupported_names = XLALPrintStringValueOfUserFlag( (const int*)&unsupported, &WeaveStatisticChoices );
-    XLALPrintError ( "BUG: unsupported completion-loop statistics requested: %s", unsupported_names );
+    XLALPrintError ( "BUG: unsupported completion-loop statistics requested: %s\n", unsupported_names );
     XLALFree ( unsupported_names );
     XLAL_ERROR ( XLAL_EERR );
   }
@@ -368,7 +368,7 @@ int XLALWeaveOutputResultsReadAppend(
       XLAL_CHECK ( toplists1 != NULL, XLAL_EFUNC );
       toplists2 = XLALPrintStringValueOfUserFlag ( (const int*)&(( *out )->statistics_params->toplist_statistics), &WeaveToplistChoices );
       XLAL_CHECK ( toplists2 != NULL, XLAL_EFUNC );
-      XLALPrintError ( "Inconsistent set of toplist statistics: %s != %s", toplists1, toplists2 );
+      XLALPrintError ( "Inconsistent set of toplist statistics: %s != %s\n", toplists1, toplists2 );
       XLALFree ( toplists1 );
       XLALFree ( toplists2 );
       XLAL_ERROR ( XLAL_EIO );

@@ -273,7 +273,7 @@ int XLALWeaveSemiResultsInit(
   WeaveStatisticType unsupported = (mainloop_stats & ~supported_mainloop);
   if ( unsupported != 0 ) {
     char *unsupported_names = XLALPrintStringValueOfUserFlag( (const int*)&unsupported, &WeaveStatisticChoices );
-    XLALPrintError ( "BUG: unsupported main-loop statistics requested: %s", unsupported_names );
+    XLALPrintError ( "BUG: unsupported main-loop statistics requested: %s\n", unsupported_names );
     XLALFree ( unsupported_names );
     XLAL_ERROR ( XLAL_EERR );
   }
