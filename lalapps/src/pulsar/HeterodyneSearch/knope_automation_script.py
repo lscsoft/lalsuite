@@ -212,7 +212,7 @@ A configuration .ini file is required.
         # reset to run again later
         if timestep in ['hourly', 'daily']: # if hourly or daily just wait until the next run
           print("Previous DAG not finished. Re-running later")
-          sys.exit(0)
+          os._exit(0) # don't use sys.exit(0) as this throws an exception that is caught by "except": https://stackoverflow.com/a/173323/1862861
         else: # add a day to the crontab job and re-run then
           cron = CronTab(user=True)
           for job in cron.find_comment(cronid):
@@ -228,7 +228,7 @@ A configuration .ini file is required.
           else:
             thisjob.day.on(newcrontime.datetime.day) # get new month of the year
           cron.write()
-          sys.exit(0)
+          os._exit(0) # don't use sys.exit(0) as this throws an exception that is caught by "except": https://stackoverflow.com/a/173323/1862861
       except:
         errmsg = "Error... could not reset the crontab to wait for DAG completion."
         print(errmsg, file=sys.stderr)
@@ -289,7 +289,7 @@ A configuration .ini file is required.
         # reset to run again later
         if timestep in ['hourly', 'daily']: # if hourly or daily just wait until the next run
           print("Running rescue DAG")
-          sys.exit(0)
+          os._exit(0) # don't use sys.exit(0) as this throws an exception that is caught by "except": https://stackoverflow.com/a/173323/1862861
         else: # add a day to the crontab job and re-run then
           cron = CronTab(user=True)
           for job in cron.find_comment(cronid):
@@ -305,7 +305,7 @@ A configuration .ini file is required.
           else:
             thisjob.day.on(newcrontime.datetime.day) # get new month of the year
           cron.write()
-          sys.exit(0)
+          os._exit(0) # don't use sys.exit(0) as this throws an exception that is caught by "except": https://stackoverflow.com/a/173323/1862861
       except:
         errmsg = "Error... could not reset the crontab to wait for rescue DAG completion."
         print(errmsg, file=sys.stderr)
