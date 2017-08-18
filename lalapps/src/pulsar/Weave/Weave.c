@@ -53,7 +53,7 @@ int main( int argc, char *argv[] )
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit, lrs_Fstar0sc, nc_2Fth;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
     UINT4 sky_patch_count, sky_patch_index, freq_partitions, f1dot_partitions, Fstat_run_med_window, Fstat_Dterms, toplist_limit, rand_seed, cache_max_size;
-    int lattice, Fstat_method, Fstat_SSB_precision, toplists, extra_statistics;
+    int lattice, Fstat_method, Fstat_SSB_precision, toplists, extra_statistics, recalc_statistics;
   } uvar_struct = {
     .Fstat_Dterms = Fstat_opt_args.Dterms,
     .Fstat_SSB_precision = Fstat_opt_args.SSBprec,
@@ -68,6 +68,7 @@ int main( int argc, char *argv[] )
     .toplist_limit = 1000,
     .toplists = WEAVE_STATISTIC_MEAN2F,
     .extra_statistics = WEAVE_STATISTIC_NONE,
+    .recalc_statistics = WEAVE_STATISTIC_NONE,
     .nc_2Fth = 5.2,
   };
   struct uvar_type *const uvar = &uvar_struct;
@@ -271,9 +272,15 @@ int main( int argc, char *argv[] )
     );
   XLALRegisterUvarAuxDataMember(
     extra_statistics, UserFlag, &WeaveStatisticChoices, 'E', OPTIONAL,
-    "Sets which extra statistics to compute and return in the output file given by " UVAR_STR( output_file ) ":\n"
+    "Sets which ('stage 0') extra statistics to compute and return in the output file given by " UVAR_STR( output_file ) ":\n"
     "%s", WeaveStatisticHelpString
     );
+
+  XLALRegisterUvarAuxDataMember(
+    recalc_statistics, UserFlag, &WeaveStatisticChoices, 'R', OPTIONAL,
+    "Sets which extra *recalc* statistics to compute on final toplist without interpolation. See " UVAR_STR ( extra_statistics ) " for statistics descriptions.\n"
+    );
+
   XLALRegisterUvarMember(
     segment_info, BOOLEAN, 'M', DEVELOPER,
     "Output various information regarding the segment list, e.g. number of SFTs within each segment. "
@@ -483,15 +490,15 @@ int main( int argc, char *argv[] )
   // figure out which statistics need to be computed, and when, in order to
   // produce all the requested toplist-statistics in the "main loop" and all remaining
   // extra-statistics in the "completion loop" after the toplist has been computed
-  //
-  WeaveStatisticType all_output_stats = uvar->toplists;
-  all_output_stats |= uvar->extra_statistics;
-
   // work out dependency-map for different statistics sets: toplist-ranking, output, total set of dependencies in main/completion loop ...
-  XLAL_CHECK_MAIN ( XLALWeaveStatisticsParamsSetDependencyMap( statistics_params, uvar->toplists, all_output_stats ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALWeaveStatisticsParamsSetDependencyMap( statistics_params, uvar->toplists, uvar->extra_statistics, uvar->recalc_statistics ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // prepare memory for coherent F-stat argument setups
+  statistics_params->coh_input = XLALCalloc ( nsegments, sizeof (statistics_params->coh_input[0]) );
+  XLAL_CHECK_MAIN ( statistics_params->coh_input != NULL, XLAL_ENOMEM );
 
   // ---------- prepare setup for line-robust statistics if requested ----------
-  if ( statistics_params->statistics_to_compute & (WEAVE_STATISTIC_BSGL|WEAVE_STATISTIC_BSGLtL|WEAVE_STATISTIC_BtSGLtL) ) {
+  if ( statistics_params->all_statistics_to_compute & (WEAVE_STATISTIC_BSGL|WEAVE_STATISTIC_BSGLtL|WEAVE_STATISTIC_BtSGLtL) ) {
     REAL4 *oLGX_p = NULL;
     REAL4 oLGX[PULSAR_MAX_DETECTORS];
     if ( uvar->lrs_oLGX != NULL ) {
@@ -801,14 +808,15 @@ int main( int argc, char *argv[] )
   Fstat_opt_args.collectTiming = uvar->time_search;
 
   // Load input data required for computing coherent results
-  WeaveCohInput *XLAL_INIT_DECL( coh_input, [nsegments] );
+  const LALStringVector *sft_noise_psd = UVAR_SET( sft_noise_psd ) ? uvar->sft_noise_psd : NULL;
+  const LALStringVector *Fstat_assume_psd = UVAR_SET( Fstat_assume_psd ) ? uvar->Fstat_assume_psd : NULL;
   LogPrintf( LOG_NORMAL, "Loading input data for coherent results ...\n" );
   for ( size_t i = 0; i < nsegments; ++i ) {
-    const LALStringVector *sft_noise_psd = UVAR_SET( sft_noise_psd ) ? uvar->sft_noise_psd : NULL;
-    const LALStringVector *Fstat_assume_psd = UVAR_SET( Fstat_assume_psd ) ? uvar->Fstat_assume_psd : NULL;
-    coh_input[i] = XLALWeaveCohInputCreate( setup.detectors, simulation_level, sft_catalog, i, &setup.segments->segs[i], min_phys[i], max_phys[i], dfreq, setup.ephemerides, sft_noise_psd, Fstat_assume_psd, &Fstat_opt_args, statistics_params );
-    XLAL_CHECK_MAIN( coh_input[i] != NULL, XLAL_EFUNC );
+    statistics_params->coh_input[i] = XLALWeaveCohInputCreate( setup.detectors, simulation_level, sft_catalog, i, &setup.segments->segs[i], min_phys[i], max_phys[i], dfreq, setup.ephemerides, sft_noise_psd, Fstat_assume_psd, &Fstat_opt_args, statistics_params, 0 );
+    XLAL_CHECK_MAIN( statistics_params->coh_input[i] != NULL, XLAL_EFUNC );
   }
+  statistics_params->ref_time = setup.ref_time;
+
   LogPrintf( LOG_NORMAL, "Finished loading input data for coherent results\n" );
 
   // Create caches to store intermediate results from coherent parameter-space tilings
@@ -817,7 +825,7 @@ int main( int argc, char *argv[] )
   for ( size_t i = 0; i < nsegments; ++i ) {
     const size_t cache_max_size = interpolation ? uvar->cache_max_size : 1;
     const BOOLEAN cache_all_gc = interpolation ? uvar->cache_all_gc : 0;
-    coh_cache[i] = XLALWeaveCacheCreate( tiling[i], interpolation, rssky_transf[i], rssky_transf[isemi], coh_input[i], cache_max_size, cache_all_gc );
+    coh_cache[i] = XLALWeaveCacheCreate( tiling[i], interpolation, rssky_transf[i], rssky_transf[isemi], statistics_params->coh_input[i], cache_max_size, cache_all_gc );
     XLAL_CHECK_MAIN( coh_cache[i] != NULL, XLAL_EFUNC );
   }
 
@@ -1074,6 +1082,20 @@ int main( int argc, char *argv[] )
   // Switch timing section
   XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_OTHER, WEAVE_SEARCH_TIMING_OUTPUT ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  // Prepare completion-loop calculations:
+  // if any 'recalc' (= 'stage 1') statistics have been requested: we'll need 'Demod' Fstatistic setups
+  // so if the 'stage 0' calculation used Demod => nothing to do, if it used 'Resamp' then re-compute the setups
+  if ( (uvar->recalc_statistics != WEAVE_STATISTIC_NONE) ) {
+    statistics_params->coh_input_recalc = XLALCalloc ( nsegments, sizeof (statistics_params->coh_input_recalc[0]) );
+    XLAL_CHECK_MAIN ( statistics_params->coh_input_recalc != NULL, XLAL_ENOMEM );
+    FstatOptionalArgs Fstat_opt_args_recalc = Fstat_opt_args;
+    Fstat_opt_args_recalc.FstatMethod = FMETHOD_DEMOD_BEST;
+    for ( size_t i = 0; i < nsegments; ++i ) {
+      statistics_params->coh_input_recalc[i] = XLALWeaveCohInputCreate( setup.detectors, simulation_level, sft_catalog, i, &setup.segments->segs[i], min_phys[i], max_phys[i], 0, setup.ephemerides, sft_noise_psd, Fstat_assume_psd, &Fstat_opt_args_recalc, statistics_params, 1 );
+      XLAL_CHECK_MAIN ( statistics_params->coh_input_recalc[i] != NULL, XLAL_EFUNC );
+    }
+  }
+
   // Completion loop: compute all extra statistics that weren't required in the main loop
   XLAL_CHECK_MAIN ( XLALWeaveOutputResultsCompletionLoop( out ) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -1150,7 +1172,7 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( XLALWeaveSearchTimingWriteInfo( file, tim, queries ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Write various information from coherent input data
-    XLAL_CHECK_MAIN( XLALWeaveCohInputWriteInfo( file, nsegments, coh_input ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALWeaveCohInputWriteInfo( file, nsegments, statistics_params->coh_input ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Write search results, unless search is being simulated
     if ( simulation_level == 0 ) {
@@ -1159,7 +1181,7 @@ int main( int argc, char *argv[] )
 
     // Write various segment information from coherent input data
     if ( uvar->segment_info ) {
-      XLAL_CHECK_MAIN( XLALWeaveCohInputWriteSegInfo( file, nsegments, coh_input ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALWeaveCohInputWriteSegInfo( file, nsegments, statistics_params->coh_input ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
     // Close output file
@@ -1181,13 +1203,10 @@ int main( int argc, char *argv[] )
   // Cleanup memory from parameter-space iteration
   XLALWeaveSearchIteratorDestroy( main_loop_itr );
 
-  // Cleanup memory from computing coherent results
+  // Cleanup memory from computing 'stage 0' coherent results
   XLALWeaveCacheQueriesDestroy( queries );
   for ( size_t i = 0; i < nsegments; ++i ) {
     XLALWeaveCacheDestroy( coh_cache[i] );
-  }
-  for ( size_t i = 0; i < nsegments; ++i ) {
-    XLALWeaveCohInputDestroy( coh_input[i] );
   }
 
   // Cleanup memory from loading input data

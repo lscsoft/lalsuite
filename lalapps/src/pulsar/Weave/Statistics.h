@@ -117,28 +117,69 @@ struct tagWeaveStatisticsParams {
   /// ---------- statistics dependency map
   /// Bitflag: set of toplist-ranking statistics
   WeaveStatisticType toplist_statistics;
-  /// Bitflag: full set of statistics requested for output (toplist + extra-statistics)
-  WeaveStatisticType statistics_to_output;
+  /// Bitflag: full set of statistics requested for output. [0] = 'stage0' = toplist + extra-statistics, [1] = 'stage 1' = recalc
+  WeaveStatisticType statistics_to_output[2];
 
-  /// derived from the above: for internal use only [wont read/write these from fits files]
-  /// Bitflag: full set of statistics we need compute (toplist + extra + all dependencies)
-  WeaveStatisticType statistics_to_compute;
+  /// ----- derived from the above: for internal use only [wont read/write these from fits files]
+
   /// Bitflag: set of "main-loop" statistics that need to be computed on the semi-coherent "fine" grid
   WeaveStatisticType mainloop_statistics;
   /// Bitflag: subset of "main-loop" statistics to keep around after mainloop: either because 1) needed for output, 2) needed for completionloop-stats
   WeaveStatisticType mainloop_statistics_to_keep;
   /// Bitflag: set of "completion-loop" statistics that will be computed only on the final toplist
-  WeaveStatisticType completionloop_statistics;
+  /// [0] = 'stage 0' statistics that are potentially interpolating, [1] = 'stage 1' = recalc using non-interpolating statistics
+  WeaveStatisticType completionloop_statistics[2];
+
+  /// Bitflag: full set of all statistics we'll need to compute (toplist + extra + recalc + all dependencies)
+  WeaveStatisticType all_statistics_to_compute;
 
   /// ---------- input parameters for various statistics
+  /// reference time for phase-evolution parameters
+  LIGOTimeGPS ref_time;
   /// setup for line-robust B_*S/GL* family of statistics
   BSGLSetup *BSGL_setup;
+
+  /// array of coherent setups over segments for 'stage 0' = main-loop calculation of 2F value over segments
+  WeaveCohInput **coh_input;
+  /// array of coherent setups over segments for 'stage 1' = recalc calculation of 2F value over segments
+  WeaveCohInput **coh_input_recalc;
+
+  /// temporary 'workspace' storage for recalc'ed coherent 2F results over segments
+  WeaveCohResults *coh_res;
 
   /// per-segment 2F threshold for computing 'Hough' number counts
   REAL4 nc_2Fth;
 
 };
 
+struct tagWeaveStatisticsValues {
+  /// Coherent multi-detector F-statistics (only needed for per-segment output)
+  REAL4 *coh2F;
+  /// Coherent per-detector F-statistics (only needed for per-detector and per-segment output)
+  REAL4 *coh2F_det[PULSAR_MAX_DETECTORS];
+  /// Maximized-over-segments multi-detector F-statistic
+  REAL4 max2F;
+  /// Maximized-over-segments per-detector F-statistic
+  REAL4 max2F_det[PULSAR_MAX_DETECTORS];
+  /// Summed multi-detector F-statistic
+  REAL4 sum2F;
+  /// Summed per-detector F-statistic (only needed for per-detector output)
+  REAL4 sum2F_det[PULSAR_MAX_DETECTORS];
+  /// Mean multi-detector F-statistic
+  REAL4 mean2F;
+  /// Mean per-detector F-statistic (only needed for per-detector output)
+  REAL4 mean2F_det[PULSAR_MAX_DETECTORS];
+  /// Line-robust log10(B_S/GL) statistic
+  REAL4 log10BSGL;
+  /// Line- and transient-line robust log10(B_S/GLtL) statistic
+  REAL4 log10BSGLtL;
+  /// Transient- signal and line robust log10(B_tS/GLtL) statistic
+  REAL4 log10BtSGLtL;
+  /// 'Hough' multi-detector number count statistic
+  REAL4 ncount;
+  /// 'Hough' per-detector number count statistic
+  REAL4 ncount_det[PULSAR_MAX_DETECTORS];
+};
 
 int XLALWeaveStatisticsSetDirectDependencies(
   WeaveStatisticType *deps,
@@ -148,7 +189,8 @@ int XLALWeaveStatisticsSetDirectDependencies(
 int XLALWeaveStatisticsParamsSetDependencyMap(
   WeaveStatisticsParams *statistics_params,
   const WeaveStatisticType toplist_stats,
-  const WeaveStatisticType extra_output_stats
+  const WeaveStatisticType extra_output_stats,
+  const WeaveStatisticType recalc_stats
   );
 
 void XLALWeaveStatisticsParamsDestroy (

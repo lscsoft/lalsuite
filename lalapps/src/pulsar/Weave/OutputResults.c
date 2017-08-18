@@ -63,8 +63,8 @@ struct tagWeaveOutputResults {
 /// @{
 
 static const REAL4 *toplist_results_sum2F( const WeaveSemiResults *semi_res ) { return semi_res->sum2F->data; }
-static REAL4 toplist_item_get_sum2F( const WeaveResultsToplistItem *item ) { return item->sum2F; }
-static void toplist_item_set_sum2F( WeaveResultsToplistItem *item, const REAL4 value ) { item->sum2F = value; }
+static REAL4 toplist_item_get_sum2F( const WeaveResultsToplistItem *item ) { return item->stage[0].sum2F; }
+static void toplist_item_set_sum2F( WeaveResultsToplistItem *item, const REAL4 value ) { item->stage[0].sum2F = value; }
 
 /// @}
 ///
@@ -73,8 +73,8 @@ static void toplist_item_set_sum2F( WeaveResultsToplistItem *item, const REAL4 v
 /// @{
 
 static const REAL4 *toplist_results_mean2F( const WeaveSemiResults *semi_res ) { return semi_res->mean2F->data; }
-static REAL4 toplist_item_get_mean2F( const WeaveResultsToplistItem *item ) { return item->mean2F; }
-static void toplist_item_set_mean2F( WeaveResultsToplistItem *item, const REAL4 value ) { item->mean2F = value; }
+static REAL4 toplist_item_get_mean2F( const WeaveResultsToplistItem *item ) { return item->stage[0].mean2F; }
+static void toplist_item_set_mean2F( WeaveResultsToplistItem *item, const REAL4 value ) { item->stage[0].mean2F = value; }
 
 /// @}
 ///
@@ -83,8 +83,8 @@ static void toplist_item_set_mean2F( WeaveResultsToplistItem *item, const REAL4 
 /// @{
 
 static const REAL4 *toplist_results_log10BSGL( const WeaveSemiResults *semi_res ) { return semi_res->log10BSGL->data; }
-static REAL4 toplist_item_get_log10BSGL( const WeaveResultsToplistItem *item ) { return item->log10BSGL; }
-static void toplist_item_set_log10BSGL( WeaveResultsToplistItem *item, const REAL4 value ) { item->log10BSGL = value; }
+static REAL4 toplist_item_get_log10BSGL( const WeaveResultsToplistItem *item ) { return item->stage[0].log10BSGL; }
+static void toplist_item_set_log10BSGL( WeaveResultsToplistItem *item, const REAL4 value ) { item->stage[0].log10BSGL = value; }
 
 /// @}
 ///
@@ -93,8 +93,8 @@ static void toplist_item_set_log10BSGL( WeaveResultsToplistItem *item, const REA
 /// @{
 
 static const REAL4 *toplist_results_log10BSGLtL( const WeaveSemiResults *semi_res ) { return semi_res->log10BSGLtL->data; }
-static REAL4 toplist_item_get_log10BSGLtL( const WeaveResultsToplistItem *item ) { return item->log10BSGLtL; }
-static void toplist_item_set_log10BSGLtL( WeaveResultsToplistItem *item, const REAL4 value ) { item->log10BSGLtL = value; }
+static REAL4 toplist_item_get_log10BSGLtL( const WeaveResultsToplistItem *item ) { return item->stage[0].log10BSGLtL; }
+static void toplist_item_set_log10BSGLtL( WeaveResultsToplistItem *item, const REAL4 value ) { item->stage[0].log10BSGLtL = value; }
 
 /// @}
 ///
@@ -103,8 +103,8 @@ static void toplist_item_set_log10BSGLtL( WeaveResultsToplistItem *item, const R
 /// @{
 
 static const REAL4 *toplist_results_log10BtSGLtL( const WeaveSemiResults *semi_res ) { return semi_res->log10BtSGLtL->data; }
-static REAL4 toplist_item_get_log10BtSGLtL( const WeaveResultsToplistItem *item ) { return item->log10BtSGLtL; }
-static void toplist_item_set_log10BtSGLtL( WeaveResultsToplistItem *item, const REAL4 value ) { item->log10BtSGLtL = value; }
+static REAL4 toplist_item_get_log10BtSGLtL( const WeaveResultsToplistItem *item ) { return item->stage[0].log10BtSGLtL; }
+static void toplist_item_set_log10BtSGLtL( WeaveResultsToplistItem *item, const REAL4 value ) { item->stage[0].log10BtSGLtL = value; }
 
 /// @}
 
@@ -284,7 +284,7 @@ int XLALWeaveOutputResultsWrite(
 
   // Write names of all selected 'extra' output statistics
   {
-    WeaveStatisticType extras = (out->statistics_params->statistics_to_output & ~out->statistics_params->toplist_statistics);
+    WeaveStatisticType extras = (out->statistics_params->statistics_to_output[0] & ~out->statistics_params->toplist_statistics);
     if ( extras == 0 ) {
       extras = WEAVE_STATISTIC_NONE;
     }
@@ -292,6 +292,13 @@ int XLALWeaveOutputResultsWrite(
     XLAL_CHECK( extras_names != NULL, XLAL_EFUNC );
     XLAL_CHECK( XLALFITSHeaderWriteString( file, "extras", extras_names, "names of additional selected output statistics" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLALFree ( extras_names );
+  }
+  // Write names of all requested 'recalc' statistics
+  {
+    char *recalc_names = XLALPrintStringValueOfUserFlag ( (const int*)&out->statistics_params->statistics_to_output[1], &WeaveStatisticChoices );
+    XLAL_CHECK( recalc_names != NULL, XLAL_EFUNC );
+    XLAL_CHECK( XLALFITSHeaderWriteString( file, "recalc", recalc_names, "names of selected recalc statistics" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLALFree ( recalc_names );
   }
 
   // Write maximum size of toplists
@@ -354,8 +361,19 @@ int XLALWeaveOutputResultsReadAppend(
   XLAL_CHECK( XLALParseStringValueAsUserFlag( &extra_stats, &WeaveStatisticChoices, extras_names ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLALFree( extras_names );
 
+  // Read names of selected recalc stats
+  int recalc_stats = 0;
+  BOOLEAN exists = 0;
+  XLAL_CHECK( XLALFITSHeaderQueryKeyExists( file, "recalc" , &exists ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( exists ) {
+    char *recalc_names = NULL;
+    XLAL_CHECK( XLALFITSHeaderReadString( file, "recalc", &recalc_names ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALParseStringValueAsUserFlag( &recalc_stats, &WeaveStatisticChoices, recalc_names ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLALFree( recalc_names );
+  }
+
   // compute and fill the full stats-dependency map
-  XLAL_CHECK ( XLALWeaveStatisticsParamsSetDependencyMap ( statistics_params, toplist_stats, extra_stats ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALWeaveStatisticsParamsSetDependencyMap ( statistics_params, toplist_stats, extra_stats, recalc_stats ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Read maximum size of toplists
   UINT4 toplist_limit = 0;
@@ -364,7 +382,7 @@ int XLALWeaveOutputResultsReadAppend(
   // Read whether to output semicoherent/coherent template indexes
   BOOLEAN toplist_tmpl_idx = 0;
   {
-    BOOLEAN exists = 0;
+    exists = 0;
     XLAL_CHECK( XLALFITSHeaderQueryKeyExists( file, "toptmpli", &exists ) == XLAL_SUCCESS, XLAL_EFUNC );
     if ( exists ) {
       XLAL_CHECK( XLALFITSHeaderReadBOOLEAN( file, "toptmpli", &toplist_tmpl_idx ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -409,11 +427,11 @@ int XLALWeaveOutputResultsReadAppend(
       XLAL_ERROR ( XLAL_EIO );
     }
     // Check list of selected output statistics
-    if ( statistics_params->statistics_to_output != ( *out )->statistics_params->statistics_to_output ) {
+    if ( statistics_params->statistics_to_output[0] != ( *out )->statistics_params->statistics_to_output[0] ) {
       char *output1, *output2;
-      output1 = XLALPrintStringValueOfUserFlag ( (const int*)&(statistics_params->statistics_to_output), &WeaveStatisticChoices );
+      output1 = XLALPrintStringValueOfUserFlag ( (const int*)&(statistics_params->statistics_to_output[0]), &WeaveStatisticChoices );
       XLAL_CHECK ( output1 != NULL, XLAL_EFUNC );
-      output2 = XLALPrintStringValueOfUserFlag ( (const int*)&(( *out )->statistics_params->statistics_to_output), &WeaveStatisticChoices );
+      output2 = XLALPrintStringValueOfUserFlag ( (const int*)&(( *out )->statistics_params->statistics_to_output[0]), &WeaveStatisticChoices );
       XLAL_CHECK ( output2 != NULL, XLAL_EFUNC );
       XLALPrintError ( "Inconsistent set of output statistics: {%s} != {%s}\n", output1, output2 );
       XLALFree ( output1 );
@@ -521,12 +539,12 @@ int XLALWeaveOutputResultsCompare(
   }
 
   // Compare statistics_to_output
-  if ( out_1->statistics_params->statistics_to_output != out_2->statistics_params->statistics_to_output ) {
+  if ( out_1->statistics_params->statistics_to_output[0] != out_2->statistics_params->statistics_to_output[0] ) {
     *equal = 0;
     char *outputs1, *outputs2;
-    outputs1 = XLALPrintStringValueOfUserFlag ( (const int*)&(out_1->statistics_params->statistics_to_output), &WeaveStatisticChoices );
+    outputs1 = XLALPrintStringValueOfUserFlag ( (const int*)&(out_1->statistics_params->statistics_to_output[0]), &WeaveStatisticChoices );
     XLAL_CHECK ( outputs1 != NULL, XLAL_EFUNC );
-    outputs2 = XLALPrintStringValueOfUserFlag ( (const int*)&(out_2->statistics_params->statistics_to_output), &WeaveStatisticChoices );
+    outputs2 = XLALPrintStringValueOfUserFlag ( (const int*)&(out_2->statistics_params->statistics_to_output[0]), &WeaveStatisticChoices );
     XLAL_CHECK ( outputs2 != NULL, XLAL_EFUNC );
     XLALPrintError ( "%s: Inconsistent set of ouput statistics: {%s} != {%s}\n", __func__, outputs1, outputs2 );
     XLALFree ( outputs1 );
