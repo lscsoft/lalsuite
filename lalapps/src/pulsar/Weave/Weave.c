@@ -1011,16 +1011,17 @@ int main( int argc, char *argv[] )
   const double cpu_zero = cpu_time();
   const double wall_zero = wall_time();
 
-  // CPU time taken during various sections of the main search loop
-  enum { CT_LATTICE, CT_QUERY, CT_COH_RES, CT_SEMI_PARTS, CT_SEMI_RES, CT_OUTPUT, CT_MAX };
+  // CPU time taken during various sections
+  enum { CT_LATTICE, CT_QUERY, CT_COH, CT_SEMI_ADD, CT_SEMI_MAIN, CT_OUTPUT, CT_SEMI_CMPL, CT_MAX };
   double XLAL_INIT_DECL( cpu_timing, [CT_MAX] );
   const char* cpu_timing_key_comment[CT_MAX][2] = {
     [CT_LATTICE]    = { "cpu lattice", "CPU time taken by lattice tiling iteration" },
     [CT_QUERY]      = { "cpu query", "CPU time talen by coherent result cache queries" },
-    [CT_COH_RES]    = { "cpu cohres", "CPU time taken by computation/retrieval of coherent results" },
-    [CT_SEMI_PARTS] = { "cpu semiparts", "CPU time taken by computation of partial semicoherent results" },
-    [CT_SEMI_RES]   = { "cpu semires", "CPU time taken by computation of final semicoherent results" },
+    [CT_COH]        = { "cpu coh", "CPU time taken by computation/retrieval of coherent results" },
+    [CT_SEMI_ADD]   = { "cpu semiadd", "CPU time taken by addition of coherent results to semicoherent results" },
+    [CT_SEMI_MAIN]  = { "cpu semimain", "CPU time taken by computation of main-loop semicoherent results" },
     [CT_OUTPUT]     = { "cpu output", "CPU time taken by output of semicoherent results" },
+    [CT_SEMI_CMPL]  = { "cpu semicmpl", "CPU time taken by computation of completion-loop semicoherent results" },
   };
 
   // Wall time at which search was last checkpointed
@@ -1123,7 +1124,7 @@ int main( int argc, char *argv[] )
 
     // Time computation/retrieval of coherent results
     cpu_toc = cpu_time();
-    cpu_timing[CT_COH_RES] += cpu_toc - cpu_tic;
+    cpu_timing[CT_COH] += cpu_toc - cpu_tic;
     cpu_tic = cpu_toc;
 
     // Add coherent results to semicoherent results
@@ -1131,17 +1132,17 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( XLALWeaveSemiResultsAdd( semi_res, coh_res[i], coh_offset[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
-    // Time computation of semicoherent results
+    // Time addition of coherent results to semicoherent results
     cpu_toc = cpu_time();
-    cpu_timing[CT_SEMI_PARTS] += cpu_toc - cpu_tic;
+    cpu_timing[CT_SEMI_ADD] += cpu_toc - cpu_tic;
     cpu_tic = cpu_toc;
 
     // Compute all toplist-ranking semicoherent results
     XLAL_CHECK_MAIN( XLALWeaveSemiResultsComputeMain( semi_res ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Time computation of final semicoherent results
+    // Time computation of main-loop semicoherent results
     cpu_toc = cpu_time();
-    cpu_timing[CT_SEMI_RES] += cpu_toc - cpu_tic;
+    cpu_timing[CT_SEMI_MAIN] += cpu_toc - cpu_tic;
     cpu_tic = cpu_toc;
 
     // Add semicoherent results to output
@@ -1279,12 +1280,31 @@ int main( int argc, char *argv[] )
     LogPrintfVerbatim( LOG_NORMAL, ", total %.1f sec, CPU %.1f%%, peak memory %.1fMB\n", wall_total, 100.0 * cpu_total / wall_total, XLALGetPeakHeapUsageMB() );
   }
 
-  //
-  // 'Completion loop': compute all 'extra' statistics that weren't required in the 'main' hotloop
-  // (formerly known as 'recalc step' in GCT)
-  //
-  XLAL_CHECK_MAIN ( XLALWeaveOutputResultsCompletionLoop( out ) == XLAL_SUCCESS, XLAL_EFUNC );
+#ifdef WEAVE_CALLGRIND   // Set when compiling lalapps_Weave_Callgrind
+  // Start profiling before post-main search loop
+  CALLGRIND_START_INSTRUMENTATION;
+  CALLGRIND_ZERO_STATS;
+#endif
 
+  {
+    // Start timing
+    double cpu_tic = cpu_time();
+    double cpu_toc = 0;
+
+    // Completion loop: compute all extra statistics that weren't required in the main search loop
+    XLAL_CHECK_MAIN ( XLALWeaveOutputResultsCompletionLoop( out ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Time computation of completion-loop semicoherent results
+    cpu_toc = cpu_time();
+    cpu_timing[CT_SEMI_CMPL] += cpu_toc - cpu_tic;
+    cpu_tic = cpu_toc;
+  }
+
+#ifdef WEAVE_CALLGRIND   // Set when compiling lalapps_Weave_Callgrind
+  // Stop profiling and dump statistics after post-main search loop
+  CALLGRIND_STOP_INSTRUMENTATION;
+  CALLGRIND_DUMP_STATS_AT("post-main search loop");
+#endif
 
   ////////// Output search results //////////
 
