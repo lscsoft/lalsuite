@@ -37,6 +37,7 @@ from lal.utils import CacheEntry
 
 from glue import segments
 from glue.ligolw import dbtables
+from glue.ligolw import ligolw
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw.utils import search_summary as ligolw_search_summary
@@ -163,7 +164,8 @@ options, filenames, paramdict = parse_command_line()
 #
 
 
-distributions = stringutils.StringCoincParamsDistributions()
+# FIXME:  don't hard-code instruments
+distributions = stringutils.StringCoincParamsDistributions(["H1", "L1", "V1"])
 segs = segments.segmentlistdict()
 
 
@@ -175,7 +177,6 @@ segs = segments.segmentlistdict()
 xmldoc = ligolw.Document()
 xmldoc.appendChild(ligolw.LIGO_LW())
 process = ligolw_process.register_to_xmldoc(xmldoc, program = u"lalapps_string_meas_likelihood", paramdict = paramdict, version = __version__, cvs_repository = "lscsoft", cvs_entry_time = __date__, comment = u"")
-distributions.process_id = process.process_id
 
 
 #
@@ -265,4 +266,4 @@ if options.T010150:
 	filename = "%s.xml.gz" % T010150_basename(segs.keys(), options.T010150, segs.extent_all())
 else:
 	filename = options.output
-ligolw_utils.write_filename(xmldoc, filename, verbose = verbose, gz = (filename or "stdout").endswith(".gz"))
+ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = (filename or "stdout").endswith(".gz"))

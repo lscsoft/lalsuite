@@ -110,7 +110,7 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 		for instrument in instruments:
 			self.densities["%s_snr2_chi2" % instrument] = rate.BinnedLnPDF(rate.NDBins((rate.ATanLogarithmicBins(10, 1e7, 801), rate.ATanLogarithmicBins(.1, 1e4, 801))))
 		for pair in itertools.combinations(sorted(instruments), 2):
-			dt = 0.005 + snglcoinc.light_travel_time(instrument1, instrument2)	# seconds
+			dt = 0.005 + snglcoinc.light_travel_time(*pair)	# seconds
 			self.densities["%s_%s_dt" % pair] = rate.BinnedLnPDF(rate.NDBins((rate.ATanBins(-dt, +dt, 801),)))
 			self.densities["%s_%s_dA" % pair] = rate.BinnedLnPDF(rate.NDBins((rate.ATanBins(-0.5, +0.5, 801),)))
 			self.densities["%s_%s_df" % pair] = rate.BinnedLnPDF(rate.NDBins((rate.ATanBins(-0.2, +0.2, 501),)))
@@ -126,14 +126,17 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 		except AttributeError:
 			self.mkinterps()
 			interps = self.interps
-		return sum(interps[param](value) for param, value in params.items())
+		return sum(interps[param](*value) for param, value in params.items())
 
 	def __iadd__(self, other):
 		if type(self) != type(other) or set(self.densities) != set(other.densities):
 			raise TypeError("cannot add %s and %s" % (type(self), type(other)))
 		for key, pdf in self.densities.items():
 			pdf += other.densities[key]
-		del self.interps
+		try:
+			del self.interps
+		except AttributeError:
+			pass
 		return self
 
 	def increment(self, params, weight = 1.0):
@@ -147,7 +150,7 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 		return new
 
 	def mkinterps(self):
-		self.interps = dict((key, pdf.mkinterp()) for key, pdf in self.densities.items())
+		self.interps = dict((key, pdf.mkinterp()) for key, pdf in self.densities.items() if "rss_timing_residual" not in key)
 
 	def finish(self):
 		for key, pdf in self.densities.items():
@@ -236,23 +239,22 @@ class StringCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
 		#
 
 		ignored, ignored, ignored, rss_timing_residual = triangulators[instruments](tuple(event.peak + offsetvector[event.ifo] for event in events))
-		# FIXME:  rss_timing_residual is forced to 0 to disable this
-		# feature.  all the code to compute it properly is still here and
+		# FIXME:  rss_timing_residual is disabled.
+		# all the code to compute it properly is still here and
 		# given suitable initializations, the distribution data is still
 		# two-dimensional and has a suitable filter applied to it, but all
 		# events are forced into the RSS_{\Delta t} = 0 bin, in effect
 		# removing that dimension from the data.  We can look at this again
 		# sometime in the future if we're curious why it didn't help.  Just
 		# delete the next line and you're back in business.
-		rss_timing_residual = 0.0
-		params["instrumentgroup,rss_timing_residual"] = (frozenset(instruments), rss_timing_residual)
+		#params["instrumentgroup,rss_timing_residual"] = (frozenset(instruments), rss_timing_residual)
 
 		#
 		# one-instrument parameters
 		#
 
 		for event in events:
-			params["%s_snr2_chi2" % evemt.ifo] = (event.snr**2.0, event.chisq / event.chisq_dof)
+			params["%s_snr2_chi2" % event.ifo] = (event.snr**2.0, event.chisq / event.chisq_dof)
 
 		#
 		# two-instrument parameters.  note that events are sorted by
@@ -390,9 +392,9 @@ def load_likelihood_data(filenames, verbose = False):
 	for n, filename in enumerate(filenames, 1):
 		if verbose:
 			print >>sys.stderr, "%d/%d:" % (n, len(filenames)),
-		xmldoc = ligolw_utils.load_filename(filename, verbose = verbose, contenthandler = StringCoincParamsDistributions.contenthandler)
+		xmldoc = ligolw_utils.load_filename(filename, verbose = verbose, contenthandler = StringCoincParamsDistributions.LIGOLWContentHandler)
 		this_coinc_params = StringCoincParamsDistributions.from_xml(xmldoc, u"string_cusp_likelihood")
-		this_seglists = lsctables.SearchSummaryTable.get_table(xmldoc).get_out_segmentlistdict(set([this_coinc_params.process_id])).coalesce()
+		this_seglists = lsctables.SearchSummaryTable.get_table(xmldoc).get_out_segmentlistdict(lsctables.ProcessTable.get_table(xmldoc).get_ids_by_program(u"lalapps_string_meas_likelihood")).coalesce()
 		xmldoc.unlink()
 		if coinc_params is None:
 			coinc_params = this_coinc_params
@@ -480,23 +482,24 @@ def time_slides_livetime_for_instrument_combo(seglists, time_slides, instruments
 #
 
 
-def create_recovered_likelihood_table(connection, coinc_def_id):
+def create_recovered_ln_likelihood_ratio_table(connection, coinc_def_id):
 	"""
-	Create a temporary table named "recovered_likelihood" containing
-	two columns:  "simulation_id", the simulation_id of an injection,
-	and "likelihood", the highest likelihood ratio at which that
-	injection was recovered by a coincidence of type coinc_def_id.
+	Create a temporary table named "recovered_ln_likelihood_ratio"
+	containing two columns:  "simulation_id", the simulation_id of an
+	injection, and "ln_likelihood_ratio", the highest log likelihood
+	ratio at which that injection was recovered by a coincidence of
+	type coinc_def_id.
 	"""
 	cursor = connection.cursor()
 	cursor.execute("""
-CREATE TEMPORARY TABLE recovered_likelihood (simulation_id TEXT PRIMARY KEY, likelihood REAL)
+CREATE TEMPORARY TABLE recovered_ln_likelihood_ratio (simulation_id TEXT PRIMARY KEY, ln_likelihood_ratio REAL)
 	""")
 	cursor.execute("""
 INSERT OR REPLACE INTO
-	recovered_likelihood
+	recovered_ln_likelihood_ratio
 SELECT
 	sim_burst.simulation_id AS simulation_id,
-	MAX(coinc_event.likelihood) AS likelihood
+	MAX(coinc_event.likelihood) AS ln_likelihood_ratio
 FROM
 	sim_burst
 	JOIN coinc_event_map AS a ON (

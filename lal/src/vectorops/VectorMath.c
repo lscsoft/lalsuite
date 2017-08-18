@@ -86,6 +86,7 @@ void XLALDestroy##TYPE##VectorAligned ( TYPE##VectorAligned *in )       \
   return;                                                               \
 } /* XLALDestroy\<TYPE\>VectorAligned() */
 
+DEFINE_ALIGNED_VECT_API(UINT4);
 DEFINE_ALIGNED_VECT_API(REAL4);
 DEFINE_ALIGNED_VECT_API(REAL8);
 DEFINE_ALIGNED_VECT_API(COMPLEX8);
@@ -142,6 +143,7 @@ EXPORT_VECTORMATH_S2SS(SinCos2Pi, AVX2, AVX, SSE2, SSE)
 
 EXPORT_VECTORMATH_SS2S(Add, AVX2, AVX, SSE2, SSE)
 EXPORT_VECTORMATH_SS2S(Multiply, AVX2, AVX, SSE2, SSE)
+EXPORT_VECTORMATH_SS2S(Max, NONE, NONE, NONE, NONE)
 
 // ---------- define exported vector math functions with 1 REAL4 scalar, 1 REAL4 vector inputs to 1 REAL4 vector output (sS2S) ----------
 #define EXPORT_VECTORMATH_sS2S(NAME, ...)                                    \

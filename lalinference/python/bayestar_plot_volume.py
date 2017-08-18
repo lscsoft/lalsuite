@@ -75,7 +75,7 @@ from matplotlib import transforms
 from lalinference import io
 from lalinference.plot import marker
 from lalinference.bayestar.distance import (
-    principal_axes, volume_render, marginal_pdf, marginal_ppf)
+    parameters_to_marginal_moments, principal_axes, volume_render, marginal_pdf)
 import healpy as hp
 import numpy as np
 import scipy.stats
@@ -95,7 +95,8 @@ else:
     (prob2, mu2, sigma2, norm2), _ = io.read_sky_map(
         opts.align_to.name, distances=True)
 if opts.max_distance is None:
-    max_distance = 2.5 * marginal_ppf(0.5, prob2, mu2, sigma2, norm2)
+    mean, std = parameters_to_marginal_moments(prob2, mu2, sigma2)
+    max_distance = mean + 2.5 * std
 else:
     max_distance = opts.max_distance
 R = np.ascontiguousarray(principal_axes(prob2, mu2, sigma2))

@@ -31,6 +31,7 @@ String cusp search final output rendering tool.
 
 
 import bisect
+import copy_reg
 import heapq
 import itertools
 from optparse import OptionParser
@@ -53,6 +54,7 @@ from glue import segments
 from glue import segmentsUtils
 from glue.ligolw import dbtables
 from glue.ligolw.utils import process as ligolwprocess
+import lal
 from lal import rate
 from lal.utils import CacheEntry
 from lalburst import git_version
@@ -64,6 +66,7 @@ from lalburst import stringutils
 
 SnglBurstUtils.matplotlib.rcParams.update({
 	"font.size": 10.0,
+	"text.usetex": True,
 	"axes.titlesize": 10.0,
 	"axes.labelsize": 10.0,
 	"xtick.labelsize": 8.0,
@@ -76,6 +79,9 @@ SnglBurstUtils.matplotlib.rcParams.update({
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 __version__ = "git id %s" % git_version.id
 __date__ = git_version.date
+
+
+copy_reg.pickle(lal.LIGOTimeGPS, lambda gps: (lal.LIGOTimeGPS, (gps.gpsSeconds, gps.gpsNanoSeconds)))
 
 
 #
@@ -102,8 +108,8 @@ def parse_command_line():
 	parser.add_option("-o", "--open-box", action = "store_true", help = "Perform open-box analysis.  In a closed-box analysis (the default), information about the events seen at zero-lag is concealed:  the rate vs. threshold plot only shows the rate of events seen in the background, the detection threshold used to measure the efficiency curves is obtained from n-th loudest background event where n is (the integer closest to) the ratio of background livetime to zero-lag livetime, and messages to stdout and stderr that contain information about event counts at zero-lag are silenced.")
 	parser.add_option("-t", "--tmp-space", metavar = "path", help = "Path to a directory suitable for use as a work area while manipulating the database file.  The database file will be worked on in this directory, and then moved to the final location when complete.  This option is intended to improve performance when running in a networked environment, where there might be a local disk with higher bandwidth than is available to the filesystem on which the final output will reside.")
 	parser.add_option("--vetoes-name", metavar = "name", help = "Set the name of the segment lists to use as vetoes (default = do not apply vetoes).")
-	parser.add_option("--detection-threshold", metavar = "likelihood", type = "float", help = "Override the detection threshold.  Only injection files will be processed, and the efficiency curve measured.")
-	parser.add_option("--record-background", metavar = "N", type = "int", default = 10000000, help = "Set the number of background likelihood ratios to hold in memory for producing the rate vs. threshold plot (default = 10000000).")
+	parser.add_option("--detection-threshold", metavar = "log likelihood ratio", type = "float", help = "Override the detection threshold.  Only injection files will be processed, and the efficiency curve measured.")
+	parser.add_option("--record-background", metavar = "N", type = "int", default = 10000000, help = "Set the number of background log likelihood ratios to hold in memory for producing the rate vs. threshold plot (default = 10000000).")
 	parser.add_option("--record-candidates", metavar = "N", type = "int", default = 100, help = "Set the number of highest-ranked zero-lag candidates to dump to the candidate file (default = 100).")
 	parser.add_option("--threads", metavar = "N", type = "int", default = 1, help = "Set the maximum number of parallel threads to use for processing files (default = 1).  Contention for the global Python interpreter lock will throttle the true number that can run.  The number of threads will be automatically adjusted downwards if the number requested exceeds the number of input files.")
 	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
@@ -229,7 +235,7 @@ class RateVsThreshold(object):
 		# count events
 		#
 
-		for likelihood_ratio, instruments, coinc_event_id, peak_time, is_background in contents.connection.cursor().execute("""
+		for ln_likelihood_ratio, instruments, coinc_event_id, peak_time, is_background in contents.connection.cursor().execute("""
 SELECT
 	coinc_event.likelihood,
 	coinc_event.instruments,
@@ -261,8 +267,8 @@ WHERE
 		""", (contents.bb_definer_id,)):
 			# likelihood ratio must be listed first to
 			# act as the sort key
-			record = (likelihood_ratio, contents.filename, coinc_event_id, dbtables.lsctables.instrumentsproperty.get(instruments), peak_time)
-			if likelihood_ratio is None:
+			record = (ln_likelihood_ratio, contents.filename, coinc_event_id, dbtables.lsctables.instrumentsproperty.get(instruments), peak_time)
+			if ln_likelihood_ratio is None:
 				# coinc got vetoed (unable to compute
 				# likelihood)
 				pass
@@ -270,16 +276,16 @@ WHERE
 				# non-vetoed background
 				self.n_background += 1
 				if len(self.background) < self.record_background:
-					heapq.heappush(self.background, likelihood_ratio)
+					heapq.heappush(self.background, ln_likelihood_ratio)
 				else:
-					heapq.heappushpop(self.background, likelihood_ratio)
+					heapq.heappushpop(self.background, ln_likelihood_ratio)
 				if len(self.most_significant_background) < self.record_candidates:
 					heapq.heappush(self.most_significant_background, record)
 				else:
 					heapq.heappushpop(self.most_significant_background, record)
 			else:
 				# non-vetoed zero lag
-				self.zero_lag.append(likelihood_ratio)
+				self.zero_lag.append(ln_likelihood_ratio)
 				if len(self.candidates) < self.record_candidates:
 					heapq.heappush(self.candidates, record)
 				else:
@@ -297,23 +303,23 @@ WHERE
 		f = file("string_most_significant_background.txt", "w")
 		print >>f, "Highest-Ranked Background Events"
 		print >>f, "================================"
-		for likelihood_ratio, filename, coinc_event_id, instruments, peak_time in self.most_significant_background:
+		for ln_likelihood_ratio, filename, coinc_event_id, instruments, peak_time in self.most_significant_background:
 			print >>f
 			print >>f, "%s in %s:" % (str(coinc_event_id), filename)
 			print >>f, "Recovered in: %s" % ", ".join(sorted(instruments or []))
 			print >>f, "Mean peak time:  %.16g s GPS" % peak_time
-			print >>f, "\\Lambda:  %.16g" % likelihood_ratio
+			print >>f, "\\log \\Lambda:  %.16g" % ln_likelihood_ratio
 
 		f = file("string_candidates.txt", "w")
 		print >>f, "Highest-Ranked Zero-Lag Events"
 		print >>f, "=============================="
 		if self.open_box:
-			for likelihood_ratio, filename, coinc_event_id, instruments, peak_time in self.candidates:
+			for ln_likelihood_ratio, filename, coinc_event_id, instruments, peak_time in self.candidates:
 				print >>f
 				print >>f, "%s in %s:" % (str(coinc_event_id), filename)
 				print >>f, "Recovered in: %s" % ", ".join(sorted(instruments or []))
 				print >>f, "Mean peak time:  %.16g s GPS" % peak_time
-				print >>f, "\\Lambda:  %.16g" % likelihood_ratio
+				print >>f, "\\log \\Lambda:  %.16g" % ln_likelihood_ratio
 		else:
 			print >>f
 			print >>f, "List suppressed:  box is closed"
@@ -369,15 +375,15 @@ WHERE
 		# start the rate vs. threshold plot
 		#
 
-		ratefig, axes = SnglBurstUtils.make_burst_plot(r"Likelihood Ratio Threshold $\Lambda$", "Event Rate (Hz)", width = 108.0)
-		axes.loglog()
+		ratefig, axes = SnglBurstUtils.make_burst_plot(r"Ranking Statistic Threshold, $\log \Lambda$", "Event Rate (Hz)", width = 108.0)
+		axes.semilogy()
 		axes.set_position([0.125, 0.15, 0.83, 0.75])
 		axes.xaxis.grid(True, which = "major,minor")
 		axes.yaxis.grid(True, which = "major,minor")
 		if self.open_box:
-			axes.set_title(r"Event Rate vs.\ Likelihood Ratio Threshold")
+			axes.set_title(r"Event Rate vs.\ Ranking Statistic Threshold")
 		else:
-			axes.set_title(r"Event Rate vs.\ Likelihood Ratio Threshold (Closed Box)")
+			axes.set_title(r"Event Rate vs.\ Ranking Statistic Threshold (Closed Box)")
 
 		# warning:  the error bar polygon is not *really* clipped
 		# to the axes' bounding box, the result will be incorrect
@@ -387,9 +393,9 @@ WHERE
 		poly_x = numpy.concatenate((background_x, background_x[::-1]))
 		poly_y = numpy.concatenate((background_y + 1 * background_yerr, (background_y - 1 * background_yerr)[::-1]))
 		axes.add_patch(patches.Polygon(zip(poly_x, numpy.clip(poly_y, minY, maxY)), edgecolor = "k", facecolor = "k", alpha = 0.3))
-		line1, = axes.loglog(background_x.repeat(2)[:-1], background_y.repeat(2)[1:], color = "k", linestyle = "--")
+		line1, = axes.semilogy(background_x.repeat(2)[:-1], background_y.repeat(2)[1:], color = "k", linestyle = "--")
 		if self.open_box:
-			line2, = axes.loglog(self.zero_lag.repeat(2)[:-1], zero_lag_y.repeat(2)[1:], color = "k", linestyle = "-", linewidth = 2)
+			line2, = axes.semilogy(self.zero_lag.repeat(2)[:-1], zero_lag_y.repeat(2)[1:], color = "k", linestyle = "-", linewidth = 2)
 			axes.legend((line1, line2), (r"Expected background", r"Zero-lag"), loc = "lower left")
 		else:
 			axes.legend((line1,), (r"Expected background",), loc = "lower left")
@@ -401,19 +407,18 @@ WHERE
 		# start the count residual vs. threshold plot
 		#
 
-		residualfig, axes = SnglBurstUtils.make_burst_plot(r"Likelihood Ratio Threshold $\Lambda$", r"Event Count Residual / $\sqrt{N}$", width = 108.0)
-		axes.semilogx()
+		residualfig, axes = SnglBurstUtils.make_burst_plot(r"Ranking Statistic Threshold, $\log \Lambda$", r"Event Count Residual / $\sqrt{N}$", width = 108.0)
 		axes.set_position([0.125, 0.15, 0.83, 0.75])
 		axes.xaxis.grid(True, which = "major,minor")
 		axes.yaxis.grid(True, which = "major,minor")
 		if self.open_box:
-			axes.set_title(r"Event Count Residual vs.\ Likelihood Ratio Threshold")
+			axes.set_title(r"Event Count Residual vs.\ Ranking Statistic Threshold")
 		else:
-			axes.set_title(r"Event Count Residual vs.\ Likelihood Ratio Threshold (Closed Box)")
+			axes.set_title(r"Event Count Residual vs.\ Ranking Statistic Threshold (Closed Box)")
 
 		axes.add_patch(patches.Polygon(((minX, -1), (maxX, -1), (maxX, +1), (minX, +1)), edgecolor = "k", facecolor = "k", alpha = 0.3))
 		if self.open_box:
-			line1, = axes.semilogx(self.zero_lag, zero_lag_residual, color = "k", linestyle = "-", linewidth = 2)
+			line1, = axes.plot(self.zero_lag, zero_lag_residual, color = "k", linestyle = "-", linewidth = 2)
 
 		axes.set_xlim((minX, maxX))
 
@@ -474,33 +479,33 @@ def render_data_from_bins(dump_file, axes, efficiency_num, efficiency_den, cal_u
 	# extract array of x co-ordinates, and the factor by which x
 	# increases from one sample to the next.
 	(x,) = efficiency_den.centres()
-	x_factor_per_sample = efficiency_den.bins()[0].delta
+	x_factor_per_sample = efficiency_den.bins[0].delta
 
 	# compute the efficiency, the slope (units = efficiency per
 	# sample), the y uncertainty (units = efficiency) due to binomial
 	# counting fluctuations, and the x uncertainty (units = samples)
 	# due to the width of the smoothing filter.
-	eff = efficiency_num.array / efficency_den.array
+	eff = efficiency_num.array / efficiency_den.array
 	dydx = slope(numpy.arange(len(x), dtype = "double"), eff)
-	yerr = numpy.sqrt(eff * (1 - eff) / efficiency_den.array)
-	xerr = numpy.array([filter_width / 2] * len(yerr))
+	yerr = numpy.sqrt(eff * (1. - eff) / efficiency_den.array)
+	xerr = numpy.array([filter_width / 2.] * len(yerr))
 
 	# compute the net y err (units = efficiency) by (i) multiplying the
 	# x err by the slope, (ii) dividing the calibration uncertainty
 	# (units = percent) by the fractional change in x per sample and
 	# multiplying by the slope, (iii) adding the two in quadradure with
 	# the y err.
-	net_yerr = numpy.sqrt((xerr * dydx)**2 + yerr**2 + (cal_uncertainty / x_factor_per_sample * dydx)**2)
+	net_yerr = numpy.sqrt((xerr * dydx)**2. + yerr**2. + (cal_uncertainty / x_factor_per_sample * dydx)**2.)
 
 	# compute net xerr (units = percent) by dividing yerr by slope and
 	# then multiplying by the fractional change in x per sample.
 	net_xerr = net_yerr / dydx * x_factor_per_sample
 
 	# write the efficiency data to file
-	write_efficiency(dump_file, efficiency_den.bins(), eff, net_yerr)
+	write_efficiency(dump_file, efficiency_den.bins, eff, net_yerr)
 
 	# plot the efficiency curve and uncertainty region
-	patch = patches.Polygon(zip(numpy.concatenate((x, x[::-1])), numpy.concatenate((eff + upper_err(eff, yerr, filter_width / 2), (eff - lower_err(eff, yerr, filter_width / 2))[::-1]))), edgecolor = colour, facecolor = colour, alpha = erroralpha)
+	patch = patches.Polygon(zip(numpy.concatenate((x, x[::-1])), numpy.concatenate((eff + upper_err(eff, yerr, filter_width / 2.), (eff - lower_err(eff, yerr, filter_width / 2.))[::-1]))), edgecolor = colour, facecolor = colour, alpha = erroralpha)
 	axes.add_patch(patch)
 	line, = axes.plot(x, eff, colour + linestyle)
 
@@ -511,9 +516,9 @@ def render_data_from_bins(dump_file, axes, efficiency_num, efficiency_den, cal_u
 	# mark 50% point on graph
 	#axes.axvline(A50, color = colour, linestyle = linestyle)
 
-	# print some analysis
+	# print some analysis FIXME:  this calculation needs attention
 	num_injections = efficiency_den.array.sum()
-	num_samples = len(efficiency_den)
+	num_samples = len(efficiency_den.array)
 	print >>sys.stderr, "Bins were %g samples wide, ideal would have been %g" % (filter_width, (num_samples / num_injections / interpolate.interp1d(x, dydx)(A50)**2.0)**(1.0/3.0))
 	print >>sys.stderr, "Average number of injections in each bin = %g" % efficiency_den.array.mean()
 
@@ -563,30 +568,30 @@ class Efficiency(object):
 		# injection or null if no burst coincs matched the
 		# injection
 		offsetvectors = contents.time_slide_table.as_dict()
-		stringutils.create_recovered_likelihood_table(contents.connection, contents.bb_definer_id)
+		stringutils.create_recovered_ln_likelihood_ratio_table(contents.connection, contents.bb_definer_id)
 		for values in contents.connection.cursor().execute("""
 SELECT
 	sim_burst.*,
-	recovered_likelihood.likelihood
+	recovered_ln_likelihood_ratio.ln_likelihood_ratio
 FROM
 	sim_burst
-	LEFT JOIN recovered_likelihood ON (
-		recovered_likelihood.simulation_id == sim_burst.simulation_id
+	LEFT JOIN recovered_ln_likelihood_ratio ON (
+		recovered_ln_likelihood_ratio.simulation_id == sim_burst.simulation_id
 	)
 		"""):
 			sim = contents.sim_burst_table.row_from_cols(values[:-1])
-			likelihood_ratio = values[-1]
-			found = likelihood_ratio is not None
+			ln_likelihood_ratio = values[-1]
+			found = ln_likelihood_ratio is not None
 			# were at least 2 instruments on when the injection
 			# was made?
 			if len(SimBurstUtils.on_instruments(sim, seglists, offsetvectors[sim.time_slide_id])) >= 2:
 				# yes
 				self.all.append(sim)
-				if found and likelihood_ratio > self.detection_threshold:
+				if found and ln_likelihood_ratio > self.detection_threshold:
 					self.found.append(sim)
 					# 1/amplitude needs to be first so
 					# that it acts as the sort key
-					record = (1.0 / sim.amplitude, sim, offsetvectors[sim.time_slide_id], contents.filename, likelihood_ratio)
+					record = (1.0 / sim.amplitude, sim, offsetvectors[sim.time_slide_id], contents.filename, ln_likelihood_ratio)
 					if len(self.quietest_found) < self.n_diagnostics:
 						heapq.heappush(self.quietest_found, record)
 					else:
@@ -594,7 +599,7 @@ FROM
 				else:
 					# amplitude needs to be first so
 					# that it acts as the sort key
-					record = (sim.amplitude, sim, offsetvectors[sim.time_slide_id], contents.filename, likelihood_ratio)
+					record = (sim.amplitude, sim, offsetvectors[sim.time_slide_id], contents.filename, ln_likelihood_ratio)
 					if len(self.loudest_missed) < self.n_diagnostics:
 						heapq.heappush(self.loudest_missed, record)
 					else:
@@ -635,22 +640,22 @@ FROM
 		# requires us to know the counts for the bins
 		windowfunc = rate.gaussian_window(self.filter_width)
 		windowfunc /= windowfunc[len(windowfunc) / 2 + 1]
-		rate.filter_binned_array(efficiency_num, windowfunc)
-		rate.filter_binned_array(efficiency_den, windowfunc)
+		rate.filter_array(efficiency_num.array, windowfunc)
+		rate.filter_array(efficiency_den.array, windowfunc)
 
 		# regularize:  adjust unused bins so that the efficiency is
 		# 0, not NaN
-		assert (efficiency_num <= efficiency_den).all()
-		efficiency_den[efficiency_num == 0 & efficiency_den == 0] = 1
+		assert (efficiency_num.array <= efficiency_den.array).all()
+		efficiency_den.array[(efficiency_num.array == 0) & (efficiency_den.array == 0)] = 1
 
 		line1, A50, A50_err = render_data_from_bins(file("string_efficiency.dat", "w"), axes, efficiency_num, efficiency_den, self.cal_uncertainty, self.filter_width, colour = "k", linestyle = "-", erroralpha = 0.2)
 		print >>sys.stderr, "Pipeline's 50%% efficiency point for all detections = %g +/- %g%%\n" % (A50, A50_err * 100)
 
 		# add a legend to the axes
-		axes.legend((line1,), (r"\noindent Injections recovered with $\Lambda > %s$" % SnglBurstUtils.latexnumber("%.2e" % self.detection_threshold),), loc = "lower right")
+		axes.legend((line1,), (r"\noindent Injections recovered with $\log \Lambda > %.2f$" % self.detection_threshold,), loc = "lower right")
 
 		# adjust limits
-		axes.set_xlim([1e-21, 2e-18])
+		axes.set_xlim([3e-22, 3e-19])
 		axes.set_ylim([0.0, 1.0])
 
 		#
@@ -664,13 +669,13 @@ FROM
 		f = file("string_loud_missed_injections.txt", "w")
 		print >>f, "Highest Amplitude Missed Injections"
 		print >>f, "==================================="
-		for amplitude, sim, offsetvector, filename, likelihood_ratio in self.loudest_missed:
+		for amplitude, sim, offsetvector, filename, ln_likelihood_ratio in self.loudest_missed:
 			print >>f
 			print >>f, "%s in %s:" % (str(sim.simulation_id), filename)
-			if likelihood_ratio is None:
+			if ln_likelihood_ratio is None:
 				print >>f, "Not recovered"
 			else:
-				print >>f, "Recovered with \\Lambda = %.16g, detection threshold was %.16g" % (likelihood_ratio, self.detection_threshold)
+				print >>f, "Recovered with \\log \\Lambda = %.16g, detection threshold was %.16g" % (ln_likelihood_ratio, self.detection_threshold)
 			for instrument in self.seglists:
 				print >>f, "In %s:" % instrument
 				print >>f, "\tInjected amplitude:\t%.16g" % SimBurstUtils.string_amplitude_in_instrument(sim, instrument, offsetvector)
@@ -684,13 +689,13 @@ FROM
 		f = file("string_quiet_found_injections.txt", "w")
 		print >>f, "Lowest Amplitude Found Injections"
 		print >>f, "================================="
-		for inv_amplitude, sim, offsetvector, filename, likelihood_ratio in self.quietest_found:
+		for inv_amplitude, sim, offsetvector, filename, ln_likelihood_ratio in self.quietest_found:
 			print >>f
 			print >>f, "%s in %s:" % (str(sim.simulation_id), filename)
-			if likelihood_ratio is None:
+			if ln_likelihood_ratio is None:
 				print >>f, "Not recovered"
 			else:
-				print >>f, "Recovered with \\Lambda = %.16g, detection threshold was %.16g" % (likelihood_ratio, self.detection_threshold)
+				print >>f, "Recovered with \\log \\Lambda = %.16g, detection threshold was %.16g" % (ln_likelihood_ratio, self.detection_threshold)
 			for instrument in self.seglists:
 				print >>f, "In %s:" % instrument
 				print >>f, "\tInjected amplitude:\t%.16g" % SimBurstUtils.string_amplitude_in_instrument(sim, instrument, offsetvector)
@@ -970,16 +975,15 @@ if options.detection_threshold is None:
 		detection_threshold = rate_vs_threshold.zero_lag[-1]
 		print >>sys.stderr, "Likelihood ratio for highest-ranked zero-lag survivor: %.9g" % detection_threshold
 	else:
-		# the ranking statistic values are stored in decreasing
-		# order.  if the background and zero-lag live times are
-		# identical, then the loudest zero-lag event is simulated
-		# by the loudest background event so we want entry 0 in the
-		# list; if the background livetime is twice the zero-lag
-		# live time then the loudest zero-lag event is simulated by
-		# the next-to-loudest background event so we want entry 1
-		# in the list.
-		detection_threshold = rate_vs_threshold.background[int(round(rate_vs_threshold.background_time / rate_vs_threshold.zero_lag_time)) - 1]
-		print >>sys.stderr, "Simulated likelihood ratio for highest-ranked zero-lag survivor: %.9g" % detection_threshold
+		# if the background and zero-lag live times are identical,
+		# then the loudest zero-lag event is simulated by the
+		# loudest background event so we want entry -1 in the
+		# sorted list; if the background livetime is twice the
+		# zero-lag live time then the loudest zero-lag event is
+		# simulated by the next-to-loudest background event so we
+		# want entry -2 in the sorted list.
+		detection_threshold = sorted(rate_vs_threshold.background)[-int(round(rate_vs_threshold.background_time / rate_vs_threshold.zero_lag_time))]
+		print >>sys.stderr, "Simulated \\log \\Lambda for highest-ranked zero-lag survivor: %.9g" % detection_threshold
 else:
 	detection_threshold = options.detection_threshold
 	print >>sys.stderr, "Likelihood ratio for highest-ranked zero-lag survivor from command line: %.9g" % detection_threshold
