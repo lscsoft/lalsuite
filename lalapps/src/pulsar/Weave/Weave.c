@@ -88,7 +88,7 @@ int main( int argc, char *argv[] )
     BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, misc_info, simulate_search;
     CHAR *setup_file, *sft_files, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd, *lrs_oLGX;
-    REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit, lrs_Fstar0sc;
+    REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit, lrs_Fstar0sc, nc_2Fth;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
     UINT4 sky_patch_count, sky_patch_index, freq_partitions, Fstat_run_med_window, Fstat_Dterms, toplist_limit, rand_seed, cache_max_size, cache_gc_limit;
     int lattice, Fstat_method, Fstat_SSB_precision, toplists, extra_statistics;
@@ -105,6 +105,7 @@ int main( int argc, char *argv[] )
     .toplist_limit = 1000,
     .toplists = WEAVE_STATISTIC_MEAN2F,
     .extra_statistics = WEAVE_STATISTIC_NONE,
+    .nc_2Fth = 5.2,
   };
   struct uvar_type *const uvar = &uvar_struct;
 
@@ -271,9 +272,9 @@ int main( int argc, char *argv[] )
     "Precision in calculating the barycentric transformation. "
     );
   //
-  // Line-robust statistics computation
+  // Various statistics input arguments
   //
-  lalUserVarHelpOptionSubsection = "Line-robust statistics (LRS) arguments";
+  lalUserVarHelpOptionSubsection = "Various statistics input arguments";
   XLALRegisterUvarMember(
     lrs_Fstar0sc, REAL8, 0, OPTIONAL,
     "(Semi-coherent) transition-scale parameter 'Fstar0sc' (=Nseg*Fstar0coh) for B_S/GL.. family of statistics."
@@ -282,6 +283,11 @@ int main( int argc, char *argv[] )
     lrs_oLGX, STRINGVector, 0, OPTIONAL,
     "Per-detector line-vs-Gauss prior odds 'oLGX' (Defaults to oLGX=1/Ndet) for B_S/GL.. family of statistics."
     );
+  XLALRegisterUvarMember(
+    nc_2Fth, REAL8, 0, OPTIONAL,
+    "Number count: per-segment 2F threshold value."
+    );
+
   //
   // - Output control
   //
@@ -524,6 +530,8 @@ int main( int argc, char *argv[] )
     statistics_params->BSGL_setup = XLALCreateBSGLSetup ( ndetectors, uvar->lrs_Fstar0sc, oLGX_p, useLogCorrection, nsegments );
     XLAL_CHECK_MAIN ( statistics_params->BSGL_setup != NULL, XLAL_EFUNC );
   } // if BSGL|BSGLtL|BtSGLtL
+  // set number-count threshold
+  statistics_params->nc_2Fth = uvar->nc_2Fth;
 
   ////////// Set up lattice tilings //////////
 

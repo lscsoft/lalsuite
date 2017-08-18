@@ -222,6 +222,18 @@ int toplist_fits_table_init(
     }
   }
 
+  // Add column for multi-detector max2F statistic
+  if ( statistics_to_output & WEAVE_STATISTIC_MAX2F ) {
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, max2F ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+  // Add columns for per-detector max2F_det statistic
+  if ( statistics_to_output & WEAVE_STATISTIC_MAX2F_DET ) {
+    for ( size_t i = 0; i < params -> detectors->length; ++i ) {
+      snprintf( col_name, sizeof( col_name ), "max2F_%s", params -> detectors->data[i] );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, max2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+  }
+
   // Add column for multi-detector sum2F statistic
   if ( statistics_to_output & WEAVE_STATISTIC_SUM2F ) {
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, sum2F ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -237,6 +249,28 @@ int toplist_fits_table_init(
   // Add column for BSGL statistic
   if ( statistics_to_output & WEAVE_STATISTIC_BSGL ) {
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, log10BSGL ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  // Add column for BSGLtL statistic
+  if ( statistics_to_output & WEAVE_STATISTIC_BSGLtL ) {
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, log10BSGLtL ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  // Add column for BtSGLtL statistic
+  if ( statistics_to_output & WEAVE_STATISTIC_BtSGLtL ) {
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, log10BtSGLtL ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  // Add column for multi-detector number-count statistic
+  if ( statistics_to_output & WEAVE_STATISTIC_NCOUNT ) {
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, ncount ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+  // Add column for per-detector number-count statistics
+  if ( statistics_to_output & WEAVE_STATISTIC_NCOUNT_DET ) {
+    for ( size_t i = 0; i < params -> detectors->length; ++i ) {
+      snprintf( col_name, sizeof( col_name ), "ncount_%s", params -> detectors->data[i] );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, ncount_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
   }
 
   return XLAL_SUCCESS;
@@ -259,6 +293,23 @@ int toplist_fill_completionloop_stats(
   WeaveStatisticType completionloop_stats = stats_params -> completionloop_statistics;
   UINT4 ndetectors = stats_params -> detectors -> length;
   UINT4 nsegments  = stats_params -> nsegments;
+
+  if ( completionloop_stats & WEAVE_STATISTIC_MAX2F ) {
+    item -> max2F = 0;
+    for ( size_t l = 0; l < nsegments; ++l ) {
+      item -> max2F = fmaxf( item -> max2F, item->coh2F[l] );
+    }
+  }
+
+  if ( completionloop_stats & WEAVE_STATISTIC_MAX2F_DET ) {
+    for ( size_t X = 0; X < ndetectors; ++X ) {
+      item -> max2F_det[X] = 0;
+      for ( size_t l = 0; l < nsegments; ++l ) {
+        REAL4 item_Xl = item->coh2F_det[X][l];
+        item -> max2F_det[X] = isnan(item_Xl) ? item -> max2F_det[X] : fmaxf ( item -> max2F_det[X], item_Xl );
+      }
+    }
+  }
 
   if ( completionloop_stats & WEAVE_STATISTIC_SUM2F ) {
     item -> sum2F = 0;
@@ -289,6 +340,32 @@ int toplist_fill_completionloop_stats(
 
   if ( completionloop_stats & WEAVE_STATISTIC_BSGL ) {
     item -> log10BSGL = XLALComputeBSGL ( item -> sum2F, item -> sum2F_det, stats_params -> BSGL_setup );
+  }
+
+  if ( completionloop_stats & WEAVE_STATISTIC_BSGLtL ) {
+    item -> log10BSGLtL = XLALComputeBSGLtL ( item -> sum2F, item -> sum2F_det, item -> max2F_det, stats_params -> BSGL_setup );
+  }
+
+  if ( completionloop_stats & WEAVE_STATISTIC_BtSGLtL ) {
+    item -> log10BtSGLtL = XLALComputeBtSGLtL ( item -> max2F, item -> sum2F_det, item -> max2F_det, stats_params -> BSGL_setup );
+  }
+
+  if ( completionloop_stats & WEAVE_STATISTIC_NCOUNT ) {
+    item -> ncount = 0;
+    for ( size_t l = 0; l < nsegments; ++l ) {
+      item -> ncount += ( item->coh2F[l] > stats_params->nc_2Fth ) ? 1 : 0;
+    }
+  }
+
+  if ( completionloop_stats & WEAVE_STATISTIC_NCOUNT_DET ) {
+    for ( size_t X = 0; X < ndetectors; ++X ) {
+      item -> ncount_det[X] = 0;
+      for ( size_t l = 0; l < nsegments; ++l ) {
+        REAL4 item_Xl = item->coh2F_det[X][l];
+        if ( isnan(item_Xl) ) { continue; }
+        item -> ncount_det[X] += ( item_Xl > stats_params->nc_2Fth ) ? 1 : 0;
+      }
+    }
   }
 
   return XLAL_SUCCESS;
@@ -606,29 +683,39 @@ int XLALWeaveResultsToplistAdd(
       }
     }
 
+    if ( stats_to_keep & WEAVE_STATISTIC_MAX2F ) {
+      item->max2F = semi_res->max2F->data[freq_idx];
+    }
+    if ( stats_to_keep & WEAVE_STATISTIC_MAX2F_DET ) {
+      for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
+        item->max2F_det[i]  = semi_res->max2F_det[i]->data[freq_idx];
+      }
+    }
+
     if ( stats_to_keep & WEAVE_STATISTIC_SUM2F ) {
       item->sum2F = semi_res->sum2F->data[freq_idx];
     }
     if ( stats_to_keep & WEAVE_STATISTIC_SUM2F_DET ) {
       for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
         item->sum2F_det[i]  = semi_res->sum2F_det[i]->data[freq_idx];
-
       }
     }
 
     if ( stats_to_keep & WEAVE_STATISTIC_MEAN2F ) {
       item->mean2F = semi_res->mean2F->data[freq_idx];
     }
-    if ( stats_to_keep & WEAVE_STATISTIC_MEAN2F_DET ) {
-      for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
-        item->mean2F_det[i]  = semi_res->mean2F_det[i]->data[freq_idx];
-      }
-    }
 
     if ( stats_to_keep & WEAVE_STATISTIC_BSGL ) {
       item->log10BSGL = semi_res->log10BSGL->data[freq_idx];
     }
 
+    if ( stats_to_keep & WEAVE_STATISTIC_BSGLtL ) {
+      item->log10BSGLtL = semi_res->log10BSGLtL->data[freq_idx];
+    }
+
+    if ( stats_to_keep & WEAVE_STATISTIC_BtSGLtL ) {
+      item->log10BtSGLtL = semi_res->log10BtSGLtL->data[freq_idx];
+    }
 
   } // for i < n_maybe_add
 
@@ -903,6 +990,34 @@ int XLALWeaveResultsToplistCompare(
         break;
       }
 
+      // Compare segment-max multi-detector F-statistics
+      if ( stats_to_output & WEAVE_STATISTIC_MAX2F ) {
+        XLALPrintInfo( "%s: comparing max multi-detector F-statistics ...\n", __func__ );
+        for ( size_t i = 0; i < n; ++i ) {
+          res_1->data[i] = items_1[i]->max2F;
+          res_2->data[i] = items_2[i]->max2F;
+        }
+        XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+        if ( !*equal ) {
+          break;
+        }
+      }
+
+      // Compare segment-max per-detector F-statistic
+      if ( stats_to_output & WEAVE_STATISTIC_MAX2F_DET ) {
+        for ( size_t k = 0; k < params -> detectors->length; ++k ) {
+          XLALPrintInfo( "%s: comparing max per-detector F-statistics for detector '%s'...\n", __func__, params -> detectors->data[k] );
+          for ( size_t i = 0; i < n; ++i ) {
+            res_1->data[i] = items_1[i]->max2F_det[k];
+            res_2->data[i] = items_2[i]->max2F_det[k];
+          }
+          XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+        }
+        if ( !*equal ) {
+          break;
+        }
+      }
+
       // Compare summed multi-detector F-statistics
       if ( stats_to_output & WEAVE_STATISTIC_SUM2F ) {
         XLALPrintInfo( "%s: comparing sum multi-detector F-statistics ...\n", __func__ );
@@ -941,6 +1056,59 @@ int XLALWeaveResultsToplistCompare(
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
         if ( !*equal ) {
           break;
+        }
+      }
+
+      // Compare transient line-robust BSGLtL statistic
+      if ( stats_to_output & WEAVE_STATISTIC_BSGLtL ) {
+        XLALPrintInfo( "%s: comparing transient line-robust B_S/GLtL statistic ...\n", __func__ );
+        for ( size_t i = 0; i < n; ++i ) {
+          res_1->data[i] = items_1[i]->log10BSGLtL;
+          res_2->data[i] = items_2[i]->log10BSGLtL;
+        }
+        XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+        if ( !*equal ) {
+          break;
+        }
+      }
+
+      // Compare transient signal line-robust BtSGLtL statistic
+      if ( stats_to_output & WEAVE_STATISTIC_BtSGLtL ) {
+        XLALPrintInfo( "%s: comparing transient signal line-robust B_tS/GLtL statistic ...\n", __func__ );
+        for ( size_t i = 0; i < n; ++i ) {
+          res_1->data[i] = items_1[i]->log10BtSGLtL;
+          res_2->data[i] = items_2[i]->log10BtSGLtL;
+        }
+        XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+        if ( !*equal ) {
+          break;
+        }
+      }
+
+      // Compare 'Hough' multi-detector line statistics
+      if ( stats_to_output & WEAVE_STATISTIC_NCOUNT ) {
+        XLALPrintInfo( "%s: comparing 'Hough' multi-detector number count statistic ...\n", __func__ );
+        for ( size_t i = 0; i < n; ++i ) {
+          res_1->data[i] = items_1[i]->ncount;
+          res_2->data[i] = items_2[i]->ncount;
+        }
+        XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+        if ( !*equal ) {
+          break;
+        }
+      }
+      // Compare 'Hough' per-detector line statistics
+      if ( stats_to_output & WEAVE_STATISTIC_NCOUNT_DET ) {
+        for ( size_t k = 0; k < params -> detectors->length; ++k ) {
+          XLALPrintInfo( "%s: comparing 'Hough' per-detector number-count statistic for detector '%s'...\n", __func__, params -> detectors->data[k] );
+          for ( size_t i = 0; i < n; ++i ) {
+            res_1->data[i] = items_1[i]->ncount_det[k];
+            res_2->data[i] = items_2[i]->ncount_det[k];
+          }
+          XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+          if ( !*equal ) {
+            break;
+          }
         }
       }
 

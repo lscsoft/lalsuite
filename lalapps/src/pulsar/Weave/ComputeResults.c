@@ -67,6 +67,7 @@ struct tagWeaveCohResults {
 /// @{
 
 static int semi_res_sum_2F( UINT4 *nsum, REAL4 *sum2F, const REAL4 *coh2F, const UINT4 nfreqs );
+static int semi_res_max_2F( UINT4 *nmax, REAL4 *max2F, const REAL4 *coh2F, const UINT4 nfreqs );
 
 /// @}
 
@@ -263,17 +264,20 @@ int XLALWeaveSemiResultsInit(
     0
     | WEAVE_STATISTIC_COH2F
     | WEAVE_STATISTIC_COH2F_DET
+    | WEAVE_STATISTIC_MAX2F
+    | WEAVE_STATISTIC_MAX2F_DET
     | WEAVE_STATISTIC_SUM2F
     | WEAVE_STATISTIC_SUM2F_DET
     | WEAVE_STATISTIC_MEAN2F
-    | WEAVE_STATISTIC_MEAN2F_DET
     | WEAVE_STATISTIC_BSGL
+    | WEAVE_STATISTIC_BSGLtL
+    | WEAVE_STATISTIC_BtSGLtL
     );
 
   WeaveStatisticType unsupported = (mainloop_stats & ~supported_mainloop);
   if ( unsupported != 0 ) {
     char *unsupported_names = XLALPrintStringValueOfUserFlag( (const int*)&unsupported, &WeaveStatisticChoices );
-    XLALPrintError ( "BUG: unsupported main-loop statistics requested: %s", unsupported_names );
+    XLALPrintError ( "BUG: unsupported main-loop statistics requested: %s\n", unsupported_names );
     XLALFree ( unsupported_names );
     XLAL_ERROR ( XLAL_EERR );
   }
@@ -315,10 +319,30 @@ int XLALWeaveSemiResultsInit(
   // Initialise number of coherent results
   ( *semi_res )->ncoh_res = 0;
 
+
+  // Initialise number of max-over-segments to multi- and per-detector F-statistics
+  ( *semi_res )->nmax2F = 0;
+  XLAL_INIT_MEM( ( *semi_res )->nmax2F_det );
+  // If we need max2F in "main loop": Reallocate vector of max-over-segments of multi-detector F-statistics per frequency
+  if ( mainloop_stats & WEAVE_STATISTIC_MAX2F ) {
+    if ( ( *semi_res )->max2F == NULL || ( *semi_res )->max2F->length < ( *semi_res )->nfreqs ) {
+      ( *semi_res )->max2F = XLALResizeREAL4VectorAligned( ( *semi_res )->max2F, ( *semi_res )->nfreqs, alignment );
+      XLAL_CHECK( ( *semi_res )->max2F != NULL, XLAL_ENOMEM );
+    }
+  }
+  // If we need max2F_det in "main loop": Reallocate vector of max-over-segments of per-detector F-statistics per frequency
+  if ( mainloop_stats & WEAVE_STATISTIC_MAX2F_DET ) {
+    for ( size_t i = 0; i < ( *semi_res )->ndetectors; ++i ) {
+      if ( ( *semi_res )->max2F_det[i] == NULL || ( *semi_res )->max2F_det[i]->length < ( *semi_res )->nfreqs ) {
+        ( *semi_res )->max2F_det[i] = XLALResizeREAL4VectorAligned( ( *semi_res )->max2F_det[i], ( *semi_res )->nfreqs, alignment );
+        XLAL_CHECK( ( *semi_res )->max2F_det[i] != NULL, XLAL_ENOMEM );
+      }
+    }
+  }
+
   // Initialise number of additions to multi- and per-detector F-statistics
   ( *semi_res )->nsum2F = 0;
   XLAL_INIT_MEM( ( *semi_res )->nsum2F_det );
-
   // If we need sum2F in "main loop": Reallocate vector of sum of multi-detector F-statistics per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_SUM2F ) {
     if ( ( *semi_res )->sum2F == NULL || ( *semi_res )->sum2F->length < ( *semi_res )->nfreqs ) {
@@ -326,7 +350,6 @@ int XLALWeaveSemiResultsInit(
       XLAL_CHECK( ( *semi_res )->sum2F != NULL, XLAL_ENOMEM );
     }
   }
-
   // If we need sum2F_det in "main loop": Reallocate vector of sum of per-detector F-statistics per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_SUM2F_DET ) {
     for ( size_t i = 0; i < ( *semi_res )->ndetectors; ++i ) {
@@ -345,21 +368,27 @@ int XLALWeaveSemiResultsInit(
     }
   }
 
-  // If we need mean2F_det in "main loop": Reallocate per-detector vectors per frequency
-  if ( mainloop_stats & WEAVE_STATISTIC_MEAN2F_DET ) {
-    for ( size_t i = 0; i < ( *semi_res )->ndetectors; ++i ) {
-      if ( ( *semi_res )->mean2F_det[i] == NULL || ( *semi_res )->mean2F_det[i]->length < ( *semi_res )->nfreqs ) {
-        ( *semi_res )->mean2F_det[i] = XLALResizeREAL4VectorAligned( ( *semi_res )->mean2F_det[i], ( *semi_res )->nfreqs, alignment );
-        XLAL_CHECK( ( *semi_res )->mean2F_det[i] != NULL, XLAL_ENOMEM );
-      }
-    }
-  }
-
   // (Re-)allocate vectors of line-robust log10(B_S/GL) statistic IFF used as a toplist statistic
   if ( mainloop_stats & WEAVE_STATISTIC_BSGL ) {
     if ( ( *semi_res )->log10BSGL == NULL || ( *semi_res )->log10BSGL->length < ( *semi_res )->nfreqs ) {
       ( *semi_res )->log10BSGL = XLALResizeREAL4VectorAligned( ( *semi_res )->log10BSGL, ( *semi_res )->nfreqs, alignment );
       XLAL_CHECK( ( *semi_res )->log10BSGL != NULL, XLAL_ENOMEM );
+    }
+  }
+
+  // (Re-)allocate vectors of transient-line-robust log10(B_S/GLtL) statistic IFF used as a toplist statistic
+  if ( mainloop_stats & WEAVE_STATISTIC_BSGLtL ) {
+    if ( ( *semi_res )->log10BSGLtL == NULL || ( *semi_res )->log10BSGLtL->length < ( *semi_res )->nfreqs ) {
+      ( *semi_res )->log10BSGLtL = XLALResizeREAL4VectorAligned( ( *semi_res )->log10BSGLtL, ( *semi_res )->nfreqs, alignment );
+      XLAL_CHECK( ( *semi_res )->log10BSGLtL != NULL, XLAL_ENOMEM );
+    }
+  }
+
+  // (Re-)allocate vectors of transient-signal line-robust log10(B_tS/GLtL) statistic IFF used as a toplist statistic
+  if ( mainloop_stats & WEAVE_STATISTIC_BtSGLtL ) {
+    if ( ( *semi_res )->log10BtSGLtL == NULL || ( *semi_res )->log10BtSGLtL->length < ( *semi_res )->nfreqs ) {
+      ( *semi_res )->log10BtSGLtL = XLALResizeREAL4VectorAligned( ( *semi_res )->log10BtSGLtL, ( *semi_res )->nfreqs, alignment );
+      XLAL_CHECK( ( *semi_res )->log10BtSGLtL != NULL, XLAL_ENOMEM );
     }
   }
 
@@ -370,7 +399,7 @@ int XLALWeaveSemiResultsInit(
 ///
 /// Add F-statistic array 'coh2F' to summed array 'sum2F', and keep track of the number of summations 'nsum'
 ///
-int semi_res_sum_2F(
+static int semi_res_sum_2F(
   UINT4 *nsum,
   REAL4 *sum2F,
   const REAL4 *coh2F,
@@ -384,6 +413,24 @@ int semi_res_sum_2F(
   }
   return XLALVectorAddREAL4( sum2F, sum2F, coh2F, nfreqs );
 } // semi_res_sum_2F()
+
+///
+/// Track maximum between F-statistic array 'coh2F' and 'max2F', and keep track of the number of maximum-comparisons 'nmax'
+///
+static int semi_res_max_2F(
+  UINT4 *nmax,
+  REAL4 *max2F,
+  const REAL4 *coh2F,
+  const UINT4 nfreqs
+  )
+{
+  if ( (*nmax)++ == 0 ) {
+    // If this is the first max-comparison, just use memcpy()
+    memcpy( max2F, coh2F, sizeof( *max2F ) * nfreqs );
+    return XLAL_SUCCESS;
+  }
+  return XLALVectorMaxREAL4( max2F, max2F, coh2F, nfreqs );
+} // semi_res_max_2F()
 
 ///
 /// Add a new set of coherent results to the semicoherent results
@@ -429,13 +476,26 @@ int XLALWeaveSemiResultsAdd(
       semi_res->coh2F_det[i][j] = ( coh_res->coh2F_det[i] != NULL ) ? coh_res->coh2F_det[i]->data + coh_offset : NULL;
     } // for i < ndetectors
   }
+
+  // Add to max-over-segments multi-detector F-statistics per frequency
+  if ( mainloop_stats & WEAVE_STATISTIC_MAX2F ) {
+    XLAL_CHECK( semi_res_max_2F( &semi_res->nmax2F, semi_res->max2F->data, coh_res->coh2F->data + coh_offset, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+  // Add to max-over-segments per-detector F-statistics per frequency
+  if ( mainloop_stats & WEAVE_STATISTIC_MAX2F_DET ) {
+    for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
+      if ( coh_res->coh2F_det[i] != NULL ) {
+        XLAL_CHECK( semi_res_max_2F( &semi_res->nmax2F_det[i], semi_res->max2F_det[i]->data, coh_res->coh2F_det[i]->data + coh_offset, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
+    }
+  }
+
   // Add to summed multi-detector F-statistics per frequency, and increment number of additions thus far
   if ( mainloop_stats & WEAVE_STATISTIC_SUM2F ) {
     XLAL_CHECK( semi_res_sum_2F( &semi_res->nsum2F, semi_res->sum2F->data, coh_res->coh2F->data + coh_offset, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
   } else {
     semi_res->nsum2F ++;             // even if not summing here: count number of 2F summands for (potential) completion-loop usage
   }
-
   // Add to summed per-detector F-statistics per frequency, and increment number of additions thus far
   for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
     if ( coh_res->coh2F_det[i] != NULL ) {
@@ -446,8 +506,6 @@ int XLALWeaveSemiResultsAdd(
       }
     }
   }
-  // FIXME: here we'll add max_over_segments and number-count statistics
-  // ...
 
   return XLAL_SUCCESS;
 
@@ -482,20 +540,33 @@ int XLALWeaveSemiResultsComputeMain(
     XLAL_CHECK( XLALVectorScaleREAL4( semi_res->mean2F->data, 1.0 / semi_res->nsum2F, semi_res->sum2F->data, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
-  // mean per-detector F-statistics per frequency:
-  if ( mainloop_stats & WEAVE_STATISTIC_MEAN2F_DET ) {
+  // various line-robust statistics
+  const REAL4 *sum2F_det[PULSAR_MAX_DETECTORS];
+  const REAL4 *max2F_det[PULSAR_MAX_DETECTORS];
+  if ( mainloop_stats & ( WEAVE_STATISTIC_BSGL | WEAVE_STATISTIC_BSGLtL |  WEAVE_STATISTIC_BtSGLtL ) ) {
     for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
-      XLAL_CHECK( XLALVectorScaleREAL4( semi_res->mean2F_det[i]->data, 1.0 / semi_res->nsum2F_det[i], semi_res->sum2F_det[i]->data, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+      sum2F_det[i] = semi_res->sum2F_det[i]->data;
+    }
+  }
+  if ( mainloop_stats & (WEAVE_STATISTIC_BSGLtL | WEAVE_STATISTIC_BtSGLtL) ) {
+    for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
+      max2F_det[i] = semi_res->max2F_det[i]->data;
     }
   }
 
   // line-robust log10(B_S/GL) statistic per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_BSGL ) {
-    const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS];	// FIXME: check if this is an efficiency problem
-    for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
-      twoFPerDet[i] = semi_res->sum2F_det[i]->data;
-    }
-    XLAL_CHECK ( XLALVectorComputeBSGL ( semi_res->log10BSGL->data, semi_res->sum2F->data, twoFPerDet, semi_res->nfreqs, semi_res->statistics_params->BSGL_setup ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALVectorComputeBSGL ( semi_res->log10BSGL->data, semi_res->sum2F->data, sum2F_det, semi_res->nfreqs, semi_res->statistics_params->BSGL_setup ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  // transient-line-robust log10(B_S/GL) statistic per frequency
+  if ( mainloop_stats & WEAVE_STATISTIC_BSGLtL ) {
+    XLAL_CHECK ( XLALVectorComputeBSGLtL ( semi_res->log10BSGLtL->data, semi_res->sum2F->data, sum2F_det, max2F_det, semi_res->nfreqs, semi_res->statistics_params->BSGL_setup ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  // transient-signal line-robust log10(B_tS/GL) statistic per frequency
+  if ( mainloop_stats & WEAVE_STATISTIC_BtSGLtL ) {
+    XLAL_CHECK ( XLALVectorComputeBtSGLtL ( semi_res->log10BtSGLtL->data, semi_res->max2F->data, sum2F_det, max2F_det, semi_res->nfreqs, semi_res->statistics_params->BSGL_setup ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   return XLAL_SUCCESS;
@@ -516,15 +587,18 @@ void XLALWeaveSemiResultsDestroy(
   XLALFree( semi_res->coh_phys );
   XLALFree( semi_res->coh2F );
 
+  XLALDestroyREAL4VectorAligned( semi_res->max2F );
   XLALDestroyREAL4VectorAligned( semi_res->sum2F );
   XLALDestroyREAL4VectorAligned( semi_res->mean2F );
 
   for ( size_t i = 0; i < PULSAR_MAX_DETECTORS; ++i ) {
     XLALFree( semi_res->coh2F_det[i] );
+    XLALDestroyREAL4VectorAligned( semi_res->max2F_det[i] );
     XLALDestroyREAL4VectorAligned( semi_res->sum2F_det[i] );
-    XLALDestroyREAL4VectorAligned( semi_res->mean2F_det[i] );
   }
   XLALDestroyREAL4VectorAligned( semi_res->log10BSGL );
+  XLALDestroyREAL4VectorAligned( semi_res->log10BSGLtL );
+  XLALDestroyREAL4VectorAligned( semi_res->log10BtSGLtL );
 
   XLALFree( semi_res );
   return;
