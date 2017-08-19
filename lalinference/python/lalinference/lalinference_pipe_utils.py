@@ -1563,7 +1563,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
            bayeswavepsdnode[ifo].set_psdlength(self.config.getint('input','psd-length'))
     if self.config.has_option('input','psd-start-time'):
       node.set_psdstart(self.config.getfloat('input','psd-start-time'))
-      prenode.set_psdlength(self.config.getint('input','psd-start-time'))
+      prenode.set_psdstart(self.config.getfloat('input','psd-start-time'))
       if self.config.has_option('condor','bayeswave') and bayeswavepsdnode:
          for ifo in ifos:
            bayeswavepsdnode[ifo].set_psdstart(self.config.getfloat('input','psd-start-time'))
