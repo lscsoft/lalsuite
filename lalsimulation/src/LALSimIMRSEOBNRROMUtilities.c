@@ -51,8 +51,6 @@ UNUSED static int read_matrix(const char dir[], const char fname[], gsl_matrix *
 UNUSED static int CheckVectorFromHDF5(LALH5File *file, const char name[], const double *v, size_t n);
 UNUSED static int ReadHDF5RealVectorDataset(LALH5File *file, const char *name, gsl_vector **data);
 UNUSED static int ReadHDF5RealMatrixDataset(LALH5File *file, const char *name, gsl_matrix **data);
-UNUSED static int ReadHDF5LongVectorDataset(LALH5File *file, const char *name, gsl_vector_long **data);
-UNUSED static int ReadHDF5LongMatrixDataset(LALH5File *file, const char *name, gsl_matrix_long **data);
 UNUSED static void PrintInfoStringAttribute(LALH5File *file, const char attribute[]);
 UNUSED static int ROM_check_version_number(LALH5File *file, 	INT4 version_major_in, INT4 version_minor_in, INT4 version_micro_in);
 #endif
@@ -247,111 +245,6 @@ static int ReadHDF5RealMatrixDataset(LALH5File *file, const char *name, gsl_matr
 	else if ((*data)->size1 != n1 || (*data)->size2 != n2) {
 		XLALH5DatasetFree(dset);
 		XLAL_ERROR(XLAL_EINVAL, "Expected gsl_matrix `%s' of size %zu x %zu", name, n1, n2);
-	}
-
-  // Now read the data
-	if (XLALH5DatasetQueryData((*data)->data, dset) < 0) {
-		XLALH5DatasetFree(dset);
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-
-	XLALH5DatasetFree(dset);
-	return 0;
-}
-
-static int ReadHDF5LongVectorDataset(LALH5File *file, const char *name, gsl_vector_long **data) {
-	LALH5Dataset *dset;
-	UINT4Vector *dimLength;
-	size_t n;
-
-	if (file == NULL || name == NULL || data == NULL)
-		XLAL_ERROR(XLAL_EFAULT);
-
-	dset = XLALH5DatasetRead(file, name);
-	if (dset == NULL)
-		XLAL_ERROR(XLAL_EFUNC);
-
-	if (XLALH5DatasetQueryType(dset) != LAL_I8_TYPE_CODE) {
-		XLALH5DatasetFree(dset);
-		XLAL_ERROR(XLAL_ETYPE, "Dataset `%s' is wrong type", name);
-	}
-
-	dimLength = XLALH5DatasetQueryDims(dset);
-	if (dimLength == NULL) {
-		XLALH5DatasetFree(dset);
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-	if (dimLength->length != 1) {
-		XLALH5DatasetFree(dset);
-		XLAL_ERROR(XLAL_EDIMS, "Dataset `%s' must be 1-dimensional", name);
-	}
-
-	n = dimLength->data[0];
-	XLALDestroyUINT4Vector(dimLength);
-
-	if (*data == NULL) {
-		*data = gsl_vector_long_alloc(n);
-		if (*data == NULL) {
-			XLALH5DatasetFree(dset);
-			XLAL_ERROR(XLAL_ENOMEM, "gsl_vector_long_alloc(%zu) failed", n);
-		}
-	}
-	else if ((*data)->size != n) {
-		XLALH5DatasetFree(dset);
-		XLAL_ERROR(XLAL_EINVAL, "Expected gsl_vector `%s' of size %zu", name, n);
-	}
-
-  // Now read the data
-	if (XLALH5DatasetQueryData((*data)->data, dset) < 0) {
-		XLALH5DatasetFree(dset);
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-
-	XLALH5DatasetFree(dset);
-	return 0;
-}
-
-static int ReadHDF5LongMatrixDataset(LALH5File *file, const char *name, gsl_matrix_long **data) {
-	LALH5Dataset *dset;
-	UINT4Vector *dimLength;
-	size_t n1, n2;
-
-	if (file == NULL || name == NULL || data == NULL)
-		XLAL_ERROR(XLAL_EFAULT);
-
-	dset = XLALH5DatasetRead(file, name);
-	if (dset == NULL)
-		XLAL_ERROR(XLAL_EFUNC);
-
-	if (XLALH5DatasetQueryType(dset) != LAL_I8_TYPE_CODE) {
-		XLALH5DatasetFree(dset);
-		XLAL_ERROR(XLAL_ETYPE, "Dataset `%s' is wrong type", name);
-	}
-
-	dimLength = XLALH5DatasetQueryDims(dset);
-	if (dimLength == NULL) {
-		XLALH5DatasetFree(dset);
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-	if (dimLength->length != 2) {
-		XLALH5DatasetFree(dset);
-		XLAL_ERROR(XLAL_EDIMS, "Dataset `%s' must be 2-dimensional", name);
-	}
-
-	n1 = dimLength->data[0];
-	n2 = dimLength->data[1];
-	XLALDestroyUINT4Vector(dimLength);
-
-	if (*data == NULL) {
-		*data = gsl_matrix_long_alloc(n1, n2);
-		if (*data == NULL) {
-			XLALH5DatasetFree(dset);
-			XLAL_ERROR(XLAL_ENOMEM, "gsl_matrix_long_alloc(%zu, %zu) failed", n1, n2);
-		}
-	}
-	else if ((*data)->size1 != n1 || (*data)->size2 != n2) {
-		XLALH5DatasetFree(dset);
-		XLAL_ERROR(XLAL_EINVAL, "Expected gsl_matrix_long `%s' of size %zu x %zu", name, n1, n2);
 	}
 
   // Now read the data
