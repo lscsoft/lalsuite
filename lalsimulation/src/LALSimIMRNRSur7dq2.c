@@ -888,8 +888,8 @@ static int NRSur7dq2_Init(NRSur7dq2Data *data, LALH5File *file) {
 
     // Load coorbital waveform surrogate data
     WaveformFixedEllModeData **coorbital_mode_data = malloc( (NRSUR7DQ2_LMAX - 1) * sizeof(*coorbital_mode_data) );
-    for (int ell_idx=0; ell_idx < NRSUR7DQ2_LMAX-1; ell_idx++) {
-        NRSur7dq2_LoadCoorbitalEllModes(coorbital_mode_data, file, ell_idx);
+    for (i=0; i < NRSUR7DQ2_LMAX-1; i++) {
+        NRSur7dq2_LoadCoorbitalEllModes(coorbital_mode_data, file, i);
     }
     data->coorbital_mode_data = coorbital_mode_data;
 
