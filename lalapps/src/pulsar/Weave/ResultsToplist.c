@@ -631,7 +631,8 @@ int XLALWeaveResultsToplistAdd(
     // Set all semicoherent template parameters
     item->semi_alpha = semi_res->semi_phys.Alpha;
     item->semi_delta = semi_res->semi_phys.Delta;
-    for ( size_t k = 0; k <= toplist->nspins; ++k ) {
+    item->semi_fkdot[0] = semi_res->semi_phys.fkdot[0] + freq_idx * semi_res->dfreq;
+    for ( size_t k = 1; k <= toplist->nspins; ++k ) {
       item->semi_fkdot[k] = semi_res->semi_phys.fkdot[k];
     }
 
@@ -640,17 +641,10 @@ int XLALWeaveResultsToplistAdd(
       for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
         item->coh_alpha[j] = semi_res->coh_phys[j].Alpha;
         item->coh_delta[j] = semi_res->coh_phys[j].Delta;
-        for ( size_t k = 0; k <= toplist->nspins; ++k ) {
+        item->coh_fkdot[0][j] = semi_res->coh_phys[j].fkdot[0] + freq_idx * semi_res->dfreq;
+        for ( size_t k = 1; k <= toplist->nspins; ++k ) {
           item->coh_fkdot[k][j] = semi_res->coh_phys[j].fkdot[k];
         }
-      }
-    }
-
-    // Update semicoherent and coherent template frequency
-    item->semi_fkdot[0] = semi_res->semi_phys.fkdot[0] + freq_idx * semi_res->dfreq;
-    if ( per_seg_coords ) {
-      for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
-        item->coh_fkdot[0][j] = semi_res->coh_phys[j].fkdot[0] + freq_idx * semi_res->dfreq;
       }
     }
 
