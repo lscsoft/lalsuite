@@ -51,6 +51,10 @@ typedef struct tagWeaveResultsToplist WeaveResultsToplist;
 /// Toplist item
 ///
 typedef struct tagWeaveResultsToplistItem {
+  /// Index of semicoherent template
+  UINT8 semi_index;
+  /// Index of coherent templates (only needed for per-segment output)
+  UINT8 *coh_index;
   /// Physical right ascension of semicoherent template
   REAL8 semi_alpha;
   /// Physical right ascension of coherent templates (only needed for per-segment output)
