@@ -186,6 +186,10 @@ int toplist_fits_table_init(
   const WeaveStatisticsParams *params = toplist -> statistics_params;
   WeaveStatisticType statistics_to_output = params -> statistics_to_output;
 
+  //
+  // Add columns for operation-over-segment statistics
+  //
+
   // Add column for mean multi-detector F-statistic
   if ( statistics_to_output & WEAVE_STATISTIC_MEAN2F ) {
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, mean2F ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -195,30 +199,6 @@ int toplist_fits_table_init(
     for ( size_t i = 0; i < params -> detectors -> length; ++i ) {
       snprintf( col_name, sizeof( col_name ), "mean2F_%s", params -> detectors -> data[i] );
       XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, mean2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-  }
-
-  // We tie the output of per-segment coordinates to the output of any per-segment statistics
-  WeaveStatisticType per_segment_stats = (statistics_to_output & (WEAVE_STATISTIC_COH2F | WEAVE_STATISTIC_COH2F_DET));
-  // Add columns for coherent template parameters
-  if ( per_segment_stats ) {
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params -> nsegments, coh_alpha, "alpha_seg [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params -> nsegments, coh_delta, "delta_seg [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params -> nsegments, coh_fkdot[0], "freq_seg [Hz]" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    for ( size_t k = 1; k <= toplist->nspins; ++k ) {
-      snprintf( col_name, sizeof( col_name ), "f%zudot_seg [Hz/s^%zu]", k, k );
-      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params -> nsegments, coh_fkdot[k], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-  }
-  // Add column for per-segment coherent multi-detector 2F statistics
-  if ( statistics_to_output & WEAVE_STATISTIC_COH2F ) {
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, params -> nsegments, coh2F, "coh2F" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
-  // Add columns for per-segment coherent per-detector 2F statistics
-  if ( statistics_to_output & WEAVE_STATISTIC_COH2F_DET ) {
-    for ( size_t i = 0; i < params -> detectors->length; ++i ) {
-      snprintf( col_name, sizeof( col_name ), "coh2F_%s", params -> detectors->data[i] );
-      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, params -> nsegments, coh2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   }
 
@@ -270,6 +250,35 @@ int toplist_fits_table_init(
     for ( size_t i = 0; i < params -> detectors->length; ++i ) {
       snprintf( col_name, sizeof( col_name ), "ncount_%s", params -> detectors->data[i] );
       XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, ncount_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+  }
+
+  //
+  // Add columns for per-segment statistics
+  //
+
+  // We tie the output of per-segment coordinates to the output of any per-segment statistics
+  WeaveStatisticType per_segment_stats = (statistics_to_output & (WEAVE_STATISTIC_COH2F | WEAVE_STATISTIC_COH2F_DET));
+  // Add columns for coherent template parameters
+  if ( per_segment_stats ) {
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params -> nsegments, coh_alpha, "alpha_seg [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params -> nsegments, coh_delta, "delta_seg [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params -> nsegments, coh_fkdot[0], "freq_seg [Hz]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    for ( size_t k = 1; k <= toplist->nspins; ++k ) {
+      snprintf( col_name, sizeof( col_name ), "f%zudot_seg [Hz/s^%zu]", k, k );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params -> nsegments, coh_fkdot[k], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+  }
+
+  // Add column for per-segment coherent multi-detector 2F statistics
+  if ( statistics_to_output & WEAVE_STATISTIC_COH2F ) {
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, params -> nsegments, coh2F, "coh2F" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+  // Add columns for per-segment coherent per-detector 2F statistics
+  if ( statistics_to_output & WEAVE_STATISTIC_COH2F_DET ) {
+    for ( size_t i = 0; i < params -> detectors->length; ++i ) {
+      snprintf( col_name, sizeof( col_name ), "coh2F_%s", params -> detectors->data[i] );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, params -> nsegments, coh2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   }
 
