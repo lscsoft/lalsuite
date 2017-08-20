@@ -244,6 +244,7 @@ int XLALWeaveSemiResultsInit(
   const WeaveSimulationLevel simulation_level,
   const UINT4 ndetectors,
   const UINT4 nsegments,
+  const UINT8 semi_index,
   const PulsarDopplerParams *semi_phys,
   const double dfreq,
   const UINT4 semi_nfreqs,
@@ -287,6 +288,10 @@ int XLALWeaveSemiResultsInit(
     *semi_res = XLALCalloc( 1, sizeof( **semi_res ) );
     XLAL_CHECK( *semi_res != NULL, XLAL_ENOMEM );
 
+    // Allocate array for per-segment index
+    ( *semi_res )->coh_index = XLALCalloc( nsegments, sizeof( *( *semi_res )->coh_index ) );
+    XLAL_CHECK( ( *semi_res )->coh_index != NULL, XLAL_ENOMEM );
+
     // allocate array for per-segment coordinates
     ( *semi_res )->coh_phys = XLALCalloc( nsegments, sizeof( *( *semi_res )->coh_phys ) );
     XLAL_CHECK( ( *semi_res )->coh_phys != NULL, XLAL_ENOMEM );
@@ -313,12 +318,12 @@ int XLALWeaveSemiResultsInit(
   ( *semi_res )->nsegments = nsegments;
   ( *semi_res )->dfreq = dfreq;
   ( *semi_res )->nfreqs = semi_nfreqs;
+  ( *semi_res )->semi_index = semi_index;
   ( *semi_res )->semi_phys = *semi_phys;
   ( *semi_res )->statistics_params = statistics_params;
 
   // Initialise number of coherent results
   ( *semi_res )->ncoh_res = 0;
-
 
   // Initialise number of max-over-segments to multi- and per-detector F-statistics
   ( *semi_res )->nmax2F = 0;
@@ -438,6 +443,7 @@ static int semi_res_max_2F(
 int XLALWeaveSemiResultsAdd(
   WeaveSemiResults *semi_res,
   const WeaveCohResults *coh_res,
+  const UINT8 coh_index,
   const UINT4 coh_offset
   )
 {
@@ -456,6 +462,9 @@ int XLALWeaveSemiResultsAdd(
   // Increment number of processed coherent results
   const size_t j = semi_res->ncoh_res;
   ++semi_res->ncoh_res;
+
+  // Store per-segment coherent template index
+  semi_res->coh_index[j] = coh_index;
 
   // Store per-segment coherent template parameters
   semi_res->coh_phys[j] = coh_res->coh_phys;
@@ -584,6 +593,7 @@ void XLALWeaveSemiResultsDestroy(
     return;
   }
 
+  XLALFree( semi_res->coh_index );
   XLALFree( semi_res->coh_phys );
   XLALFree( semi_res->coh2F );
 

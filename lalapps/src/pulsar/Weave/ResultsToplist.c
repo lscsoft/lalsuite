@@ -60,7 +60,7 @@ struct tagWeaveResultsToplist {
 /// @{
 
 static WeaveResultsToplistItem *toplist_item_create( const WeaveResultsToplist *toplist );
-static int compare_templates( BOOLEAN *equal, const char *loc_str, const char *tmpl_str, const REAL8 param_tol_mism, const WeavePhysicalToLattice phys_to_latt, const gsl_matrix *metric, const void *transf_data, const PulsarDopplerParams *phys_1, const PulsarDopplerParams *phys_2 );
+static int compare_templates( BOOLEAN *equal, const char *loc_str, const char *tmpl_str, const REAL8 param_tol_mism, const WeavePhysicalToLattice phys_to_latt, const gsl_matrix *metric, const void *transf_data, const UINT8 index_1, const UINT8 index_2, const PulsarDopplerParams *phys_1, const PulsarDopplerParams *phys_2 );
 static int compare_vectors( BOOLEAN *equal, const VectorComparison *result_tol, const REAL4Vector *res_1, const REAL4Vector *res_2 );
 static int toplist_fits_table_init( FITSFile *file, const WeaveResultsToplist *toplist );
 static int toplist_fits_table_write_visitor( void *param, const void *x );
@@ -93,6 +93,8 @@ WeaveResultsToplistItem *toplist_item_create(
 
   // Allocate memory for per-segment output results
   if ( store_per_segment_stats ) {
+    item->coh_index = XLALCalloc( params -> nsegments, sizeof( *item->coh_index ) );
+    XLAL_CHECK_NULL( item->coh_index != NULL, XLAL_ENOMEM );
     item->coh_alpha = XLALCalloc( params -> nsegments, sizeof( *item->coh_alpha ) );
     XLAL_CHECK_NULL( item->coh_alpha != NULL, XLAL_ENOMEM );
     item->coh_delta = XLALCalloc( params -> nsegments, sizeof( *item->coh_delta ) );
@@ -127,6 +129,7 @@ void toplist_item_destroy(
   )
 {
   if ( item != NULL ) {
+    XLALFree( item->coh_index );
     XLALFree( item->coh_alpha );
     XLALFree( item->coh_delta );
     for ( size_t k = 0; k < PULSAR_MAX_SPINS; ++k ) {
@@ -174,6 +177,7 @@ int toplist_fits_table_init(
   XLAL_FITS_TABLE_COLUMN_BEGIN( WeaveResultsToplistItem );
 
   // Add columns for semicoherent template parameters
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, UINT8, semi_index, "index" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, semi_alpha, "alpha [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, semi_delta, "delta [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, semi_fkdot[0], "freq [Hz]" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -261,6 +265,7 @@ int toplist_fits_table_init(
   WeaveStatisticType per_segment_stats = (statistics_to_output & (WEAVE_STATISTIC_COH2F | WEAVE_STATISTIC_COH2F_DET));
   // Add columns for coherent template parameters
   if ( per_segment_stats ) {
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, UINT8, params -> nsegments, coh_index, "index_seg" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params -> nsegments, coh_alpha, "alpha_seg [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params -> nsegments, coh_delta, "delta_seg [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params -> nsegments, coh_fkdot[0], "freq_seg [Hz]" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -427,6 +432,8 @@ int compare_templates(
   const WeavePhysicalToLattice phys_to_latt,
   const gsl_matrix *metric,
   const void *transf_data,
+  const UINT8 index_1,
+  const UINT8 index_2,
   const PulsarDopplerParams *phys_1,
   const PulsarDopplerParams *phys_2
   )
@@ -474,13 +481,15 @@ int compare_templates(
   if ( mism > param_tol_mism ) {
     *equal = 0;
     XLALPrintInfo( "%s: at %s, mismatch between %s template parameters exceeds tolerance: %g > %g\n", __func__, loc_str, tmpl_str, mism, param_tol_mism );
+    XLALPrintInfo( "%s:     index 1 = %"LAL_UINT8_FORMAT"\n", __func__, index_1 );
+    XLALPrintInfo( "%s:     index 2 = %"LAL_UINT8_FORMAT"\n", __func__, index_2 );
     const PulsarDopplerParams *phys[2] = { phys_1, phys_2 };
     gsl_vector *latt[2] = { latt_1, latt_2 };
     for ( size_t i = 0; i < 2; ++i ) {
-      XLALPrintInfo( "%s:     physical %zu = {%.15g,%.15g,%.15g,%.15g}\n", __func__, i, phys[i]->Alpha, phys[i]->Delta, phys[i]->fkdot[0], phys[i]->fkdot[1] );
+      XLALPrintInfo( "%s:     physical %zu = {%.15g,%.15g,%.15g,%.15g}\n", __func__, i+1, phys[i]->Alpha, phys[i]->Delta, phys[i]->fkdot[0], phys[i]->fkdot[1] );
     }
     for ( size_t i = 0; i < 2; ++i ) {
-      XLALPrintInfo( "%s:     lattice %zu = ", __func__, i );
+      XLALPrintInfo( "%s:     lattice %zu = ", __func__, i+1 );
       for ( size_t j = 0; j < latt[i]->size; ++j ) {
         XLALPrintInfo( "%c%.15g", j == 0 ? '{' : ',', gsl_vector_get( latt[i], j ) );
       }
@@ -638,6 +647,7 @@ int XLALWeaveResultsToplistAdd(
     }
 
     // Set all semicoherent template parameters
+    item->semi_index = semi_res->semi_index;
     item->semi_alpha = semi_res->semi_phys.Alpha;
     item->semi_delta = semi_res->semi_phys.Delta;
     item->semi_fkdot[0] = semi_res->semi_phys.fkdot[0] + freq_idx * semi_res->dfreq;
@@ -648,6 +658,7 @@ int XLALWeaveResultsToplistAdd(
     // Set all coherent template parameters if outputting per-segment statistics
     if ( per_seg_coords ) {
       for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
+        item->coh_index[j] = semi_res->coh_index[j];
         item->coh_alpha[j] = semi_res->coh_phys[j].Alpha;
         item->coh_delta[j] = semi_res->coh_phys[j].Delta;
         item->coh_fkdot[0][j] = semi_res->coh_phys[j].fkdot[0] + freq_idx * semi_res->dfreq;
@@ -893,6 +904,8 @@ int XLALWeaveResultsToplistCompare(
         // Compare semicoherent template parameters
         {
           snprintf( loc_str, sizeof(loc_str), "toplist item %zu", i );
+          const UINT8 semi_index_1 = items_1[i]->semi_index;
+          const UINT8 semi_index_2 = items_2[i]->semi_index;
           PulsarDopplerParams XLAL_INIT_DECL( semi_phys_1 );
           PulsarDopplerParams XLAL_INIT_DECL( semi_phys_2 );
           semi_phys_1.Alpha = items_1[i]->semi_alpha;
@@ -903,13 +916,15 @@ int XLALWeaveResultsToplistCompare(
             semi_phys_1.fkdot[k] = items_1[i]->semi_fkdot[k];
             semi_phys_2.fkdot[k] = items_2[i]->semi_fkdot[k];
           };
-          XLAL_CHECK( compare_templates( equal, loc_str, "semicoherent", param_tol_mism, setup->phys_to_latt, setup->metrics->semi_rssky_metric, setup->metrics->semi_rssky_transf, &semi_phys_1, &semi_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK( compare_templates( equal, loc_str, "semicoherent", param_tol_mism, setup->phys_to_latt, setup->metrics->semi_rssky_metric, setup->metrics->semi_rssky_transf, semi_index_1, semi_index_2, &semi_phys_1, &semi_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
         }
 
         // Compare coherent template parameters
         if ( stats_to_output & (WEAVE_STATISTIC_COH2F|WEAVE_STATISTIC_COH2F_DET) ) {
           for ( size_t j = 0; j < params -> nsegments; ++j ) {
             snprintf( loc_str, sizeof(loc_str), "toplist item %zu, segment %zu", i, j );
+            const UINT8 coh_index_1 = items_1[i]->coh_index[j];
+            const UINT8 coh_index_2 = items_2[i]->coh_index[j];
             PulsarDopplerParams XLAL_INIT_DECL( coh_phys_1 );
             PulsarDopplerParams XLAL_INIT_DECL( coh_phys_2 );
             coh_phys_1.Alpha = items_1[i]->coh_alpha[j];
@@ -920,7 +935,7 @@ int XLALWeaveResultsToplistCompare(
               coh_phys_1.fkdot[k] = items_1[i]->coh_fkdot[k][j];
               coh_phys_2.fkdot[k] = items_2[i]->coh_fkdot[k][j];
             };
-            XLAL_CHECK( compare_templates( equal, loc_str, "coherent", param_tol_mism, setup->phys_to_latt, setup->metrics->coh_rssky_metric[j], setup->metrics->coh_rssky_transf[j], &coh_phys_1, &coh_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK( compare_templates( equal, loc_str, "coherent", param_tol_mism, setup->phys_to_latt, setup->metrics->coh_rssky_metric[j], setup->metrics->coh_rssky_transf[j], coh_index_1, coh_index_2, &coh_phys_1, &coh_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
           }
         } // if output per-segment coordinates
 

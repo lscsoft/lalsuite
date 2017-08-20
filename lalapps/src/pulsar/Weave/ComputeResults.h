@@ -67,6 +67,8 @@ typedef struct tagWeaveSemiResults {
   double dfreq;
   /// Number of frequencies
   UINT4 nfreqs;
+  /// Per-segment coherent template index (optional)
+  UINT8 *coh_index;
   /// Per-segment coherent template parameters of the first frequency bin (optional)
   PulsarDopplerParams *coh_phys;
   /// Per-segment multi-detector F-statistics per frequency (optional)
@@ -75,6 +77,8 @@ typedef struct tagWeaveSemiResults {
   const REAL4 **coh2F_det[PULSAR_MAX_DETECTORS];
   /// Number of coherent results processed thus far
   UINT4 ncoh_res;
+  /// Semicoherent template index
+  UINT8 semi_index;
   /// Semicoherent template parameters of the first frequency bin
   PulsarDopplerParams semi_phys;
   /// Maximized-over-segments multi-detector F-statistics per frequency
@@ -126,6 +130,7 @@ int XLALWeaveSemiResultsInit(
   const WeaveSimulationLevel simulation_level,
   const UINT4 ndetectors,
   const UINT4 nsegments,
+  const UINT8 semi_index,
   const PulsarDopplerParams *semi_phys,
   const double dfreq,
   const UINT4 semi_nfreqs,
@@ -134,6 +139,7 @@ int XLALWeaveSemiResultsInit(
 int XLALWeaveSemiResultsAdd(
   WeaveSemiResults *semi_res,
   const WeaveCohResults *coh_res,
+  const UINT8 coh_index,
   const UINT4 coh_offset
   );
 int XLALWeaveSemiResultsComputeMain(

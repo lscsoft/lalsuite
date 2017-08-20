@@ -586,6 +586,7 @@ int XLALWeaveCacheRetrieve(
   WeaveCacheQueries *queries,
   const UINT4 query_index,
   const WeaveCohResults **coh_res,
+  UINT8 *coh_index,
   UINT4 *coh_offset,
   UINT8 *coh_nfbk,
   UINT8 *coh_nres,
@@ -724,6 +725,9 @@ int XLALWeaveCacheRetrieve(
 
   // Return coherent results from cache
   *coh_res = find_item->coh_res;
+
+  // Return index of coherent result
+  *coh_index = find_item->coh_index;
 
   // Return offset at which coherent results should be combined with semicoherent results
   *coh_offset = queries->semi_left - queries->coh_left[query_index];
