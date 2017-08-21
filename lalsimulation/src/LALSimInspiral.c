@@ -156,6 +156,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(SpinTaylorT2Fourier),
     INITIALIZE_NAME(SpinDominatedWf),
     INITIALIZE_NAME(NRSur4d2s),
+    INITIALIZE_NAME(NRSur7dq2),
     INITIALIZE_NAME(NR_hdf5),
 };
 #undef INITIALIZE_NAME
