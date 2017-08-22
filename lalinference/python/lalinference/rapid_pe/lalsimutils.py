@@ -109,6 +109,9 @@ class ChooseWaveformParams:
         for k, p in ChooseWaveformParams._LAL_DICT_PARAMS.iteritems():
             typfunc = ChooseWaveformParams._LAL_DICT_PTYPE[k]
             typfunc(extra_params, k, getattr(self, p))
+        # Properly add tidal parammeters
+        lalsim.SimInspiralWaveformParamsInsertTidalLambda1(extra_params, self.lambda1)
+        lalsim.SimInspiralWaveformParamsInsertTidalLambda2(extra_params, self.lambda2)
         return extra_params
 
     def copy(self):
