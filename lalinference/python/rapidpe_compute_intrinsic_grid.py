@@ -109,6 +109,11 @@ def write_to_xml(cells, intr_prms, pin_prms={}, fvals=None, fname=None, verbose=
     process.append_process_params(xmldoc, procrow, process.process_params_from_dict(opts.__dict__))
 
     rows = ["simulation_id", "process_id", "numrel_data"]
+    # Override eff_lambda to with psi0, its shoehorn column
+    if "eff_lambda" in intr_prms:
+        intr_prms[intr_prms.index("eff_lambda")] = "psi0"
+    if "deff_lambda" in intr_prms:
+        intr_prms[intr_prms.index("deff_lambda")] = "psi3"
     rows += list(intr_prms)
     rows += list(pin_prms)
     if fvals is not None:
