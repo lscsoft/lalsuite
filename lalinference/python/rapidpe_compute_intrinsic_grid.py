@@ -42,9 +42,9 @@ from glue.ligolw.utils import process
 import lalsimulation
 from lalinference.rapid_pe import amrlib, lalsimutils, common_cl
 
-def get_cr_from_grid(cells, weight, cr_thr=0.9):
+def get_cr_from_grid(cells, weight, cr_thr=0.9, min_n=None, max_n=None):
     """
-    Given a set of cells and the weight of that cell, calculate a N% CR including cells which contribute to that probability mass.
+    Given a set of cells and the weight of that cell, calculate a N% CR including cells which contribute to that probability mass. If n is set, cr_thr is ignored and instead this many points are taken.
     """
     if cr_thr == 0.0:
         return numpy.empty((0,))
@@ -57,8 +57,13 @@ def get_cr_from_grid(cells, weight, cr_thr=0.9):
     cell_sort[:,0] = cell_sort[:,0].cumsum()
     cell_sort[:,0] /= cell_sort[-1,0]
 
-    # find the CR probability
     idx = cell_sort[:,0].searchsorted(1-cr_thr)
+    n_select = cell_sort.shape[0] - idx
+    if min_n is not None:
+        n_select = max(n_select, min_n)
+    if max_n is not None:
+        n_select = min(n_select, max_n)
+    idx = cell_sort.shape[0] - n_select
 
     return cell_sort[idx:,1:]
 
@@ -188,6 +193,8 @@ grid_section.add_argument("-P", "--prerefine", help="Refine this initial grid ba
 refine_section = argp.add_argument_group("refine options", "Options for refining a pre-existing grid.")
 refine_section.add_argument("--refine", help="Refine a prexisting grid. Pass this option the grid points from previous levels (or the --setup) option.")
 refine_section.add_argument("-r", "--result-file", help="XML file containing newest result to refine.")
+refine_section.add_argument("-M", "--max-n-points", help="Refine *at most* this many points, can override confidence region thresholds.")
+refine_section.add_argument("-m", "--min-n-points", help="Refine *at least* this many points, can override confidence region thresholds.")
 
 opts = argp.parse_args()
 
@@ -375,7 +382,7 @@ if opts.result_file is not None:
 
     if opts.refine:
         # FIXME: We use overlap threshold as a proxy for confidence level
-        selected = get_cr_from_grid(selected, results, cr_thr=opts.overlap_threshold)
+        selected = get_cr_from_grid(selected, results, cr_thr=opts.overlap_threshold, min_n=opts.min_n_poiunts, max_n=opts.max_n_points)
         print "Selected %d cells from %3.2f%% confidence region" % (len(selected), opts.overlap_threshold*100)
 
 if opts.prerefine:
