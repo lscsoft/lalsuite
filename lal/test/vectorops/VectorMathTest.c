@@ -36,6 +36,7 @@
 // ---------- Macros ----------
 #define frand() (rand() / (REAL4)RAND_MAX)
 #define Relerr(dx,x) (fabsf(x)>0 ? fabsf((dx)/(x)) : fabsf(dx) )
+#define Relerrd(dx,x) (fabs(x)>0 ? fabs((dx)/(x)) : fabs(dx) )
 
 // ----- test and benchmark operators with 1 REAL4 vector input and 1 REAL4 vector output (S2S) ----------
 #define TESTBENCH_VECTORMATH_S2S(name,in)                               \
@@ -137,8 +138,8 @@
     maxErr = maxRelerr = 0;                                             \
     for ( UINT4 i = 0; i < Ntrials; i ++ )                              \
     {                                                                   \
-      REAL8 err = fabsf ( xOutD[i] - xOutRefD[i] );                      \
-      REAL8 relerr = Relerr ( err, xOutRefD[i] );                       \
+      REAL8 err = fabs ( xOutD[i] - xOutRefD[i] );                      \
+      REAL8 relerr = Relerrd ( err, xOutRefD[i] );                       \
       maxErr    = fmax ( err, maxErr );                                \
       maxRelerr = fmax ( relerr, maxRelerr );                          \
     }                                                                   \
