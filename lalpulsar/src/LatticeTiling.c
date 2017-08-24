@@ -70,10 +70,7 @@ typedef struct tagLT_StatsContainer {
 /// FITS record for for saving and restoring a lattice tiling iterator.
 ///
 typedef struct tagLT_FITSRecord {
-  BOOLEAN is_tiled;                     ///< True if the dimension is tiled, false if it is a single point
-  INT4 data_hash;                       ///< Checksum of arbitrary data describing parameter-space bounds
-  REAL8 phys_bbox;                      ///< Metric ellipse bounding box
-  REAL8 phys_origin;                    ///< Parameter-space origin in physical coordinates
+  INT4 checksum;                        ///< Checksum of various data describing parameter-space bounds
   REAL8 phys_point;                     ///< Current lattice point in physical coordinates
   INT4 int_point;                       ///< Current lattice point in generating integers
   INT4 int_lower;                       ///< Current lower parameter-space bound in generating integers
@@ -361,10 +358,7 @@ static INT4 LT_FastForwardIterator(
 static int LT_InitFITSRecordTable( FITSFile *file )
 {
   XLAL_FITS_TABLE_COLUMN_BEGIN( LT_FITSRecord );
-  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, BOOLEAN, is_tiled ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, data_hash ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, phys_bbox ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, phys_origin ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, checksum ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, phys_point ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, int_point ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, int_lower ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -884,7 +878,7 @@ int XLALSetLatticeTilingBound(
   XLAL_CHECK( tiling->bounds[dim].func == NULL, XLAL_EINVAL, "Lattice tiling dimension #%zu is already bounded", dim );
 
   // Determine if this dimension is tiled
-  const bool is_tiled = ( memcmp( data_lower, data_upper, data_len ) != 0 );
+  const BOOLEAN is_tiled = ( memcmp( data_lower, data_upper, data_len ) != 0 ) ? 1 : 0;
 
   // Set the parameter-space bound
   tiling->bounds[dim].is_tiled = is_tiled;
@@ -2004,11 +1998,14 @@ int XLALSaveLatticeTilingIterator(
 
     // Fill record
     LT_FITSRecord XLAL_INIT_DECL( record );
-    record.is_tiled = itr->tiling->bounds[i].is_tiled;
-    XLAL_CHECK( XLALPearsonHash( &record.data_hash, sizeof( record.data_hash ), itr->tiling->bounds[i].data_lower, itr->tiling->bounds[i].data_len ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLALPearsonHash( &record.data_hash, sizeof( record.data_hash ), itr->tiling->bounds[i].data_upper, itr->tiling->bounds[i].data_len ) == XLAL_SUCCESS, XLAL_EFUNC );
-    record.phys_bbox = gsl_vector_get( itr->tiling->phys_bbox, i );
-    record.phys_origin = gsl_vector_get( itr->tiling->phys_origin, i );
+    {
+      INT4 checksum = 0;
+      XLAL_CHECK( XLALPearsonHash( &checksum, sizeof( checksum ), &itr->tiling->bounds[i].is_tiled, sizeof( itr->tiling->bounds[i].is_tiled ) ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALPearsonHash( &checksum, sizeof( checksum ), &itr->tiling->bounds[i].data_len, sizeof( itr->tiling->bounds[i].data_len ) ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALPearsonHash( &checksum, sizeof( checksum ), itr->tiling->bounds[i].data_lower, itr->tiling->bounds[i].data_len ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALPearsonHash( &checksum, sizeof( checksum ), itr->tiling->bounds[i].data_upper, itr->tiling->bounds[i].data_len ) == XLAL_SUCCESS, XLAL_EFUNC );
+      record.checksum = checksum;
+    }
     record.phys_point = gsl_vector_get( itr->phys_point, i );
     if ( itr->tiling->bounds[i].is_tiled ) {
       record.int_point = itr->int_point[ti];
@@ -2141,15 +2138,14 @@ int XLALRestoreLatticeTilingIterator(
     // Read and check record
     LT_FITSRecord XLAL_INIT_DECL( record );
     XLAL_CHECK( XLALFITSTableReadRow( file, &record, &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( !record.is_tiled == !itr->tiling->bounds[i].is_tiled, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
     {
-      INT4 data_hash = 0;
-      XLAL_CHECK( XLALPearsonHash( &data_hash, sizeof( data_hash ), itr->tiling->bounds[i].data_lower, itr->tiling->bounds[i].data_len ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( XLALPearsonHash( &data_hash, sizeof( data_hash ), itr->tiling->bounds[i].data_upper, itr->tiling->bounds[i].data_len ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( record.data_hash == data_hash, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+      INT4 checksum = 0;
+      XLAL_CHECK( XLALPearsonHash( &checksum, sizeof( checksum ), &itr->tiling->bounds[i].is_tiled, sizeof( itr->tiling->bounds[i].is_tiled ) ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALPearsonHash( &checksum, sizeof( checksum ), &itr->tiling->bounds[i].data_len, sizeof( itr->tiling->bounds[i].data_len ) ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALPearsonHash( &checksum, sizeof( checksum ), itr->tiling->bounds[i].data_lower, itr->tiling->bounds[i].data_len ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALPearsonHash( &checksum, sizeof( checksum ), itr->tiling->bounds[i].data_upper, itr->tiling->bounds[i].data_len ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( record.checksum == checksum, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
     }
-    XLAL_CHECK( record.phys_bbox == gsl_vector_get( itr->tiling->phys_bbox, i ), XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
-    XLAL_CHECK( record.phys_origin == gsl_vector_get( itr->tiling->phys_origin, i ), XLAL_EIO, "Could not restore iterator; invalid HDU '%s': %g, %g", name, record.phys_origin, gsl_vector_get( itr->tiling->phys_origin, i ) );
     LT_SetPhysPoint( itr->tiling, itr->phys_point_cache, itr->phys_point, i, record.phys_point );
     if ( itr->tiling->bounds[i].is_tiled ) {
       itr->int_point[ti] = record.int_point;
