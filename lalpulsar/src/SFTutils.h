@@ -166,6 +166,7 @@ SFTCatalog *XLALMultiAddToFakeSFTCatalog( SFTCatalog *catalog, const LALStringVe
 int XLALCopySFT ( SFTtype *dest, const SFTtype *src );
 
 int XLALSFTCatalogTimeslice( SFTCatalog *slice, const SFTCatalog *catalog, const LIGOTimeGPS *minStartGPS, const LIGOTimeGPS *maxStartGPS );
+int XLALFindTimesliceBounds ( UINT4 *iStart, UINT4 *iEnd, const LIGOTimeGPSVector *timestamps, const LIGOTimeGPS *minStartGPS, const LIGOTimeGPS *maxStartGPS );
 
 SFTVector *XLALExtractSFTVectorWithTimestamps ( const SFTVector *sfts, const LIGOTimeGPSVector *timestamps );
 MultiSFTVector *XLALExtractMultiSFTVectorWithMultiTimestamps ( const MultiSFTVector *multiSFTs, const MultiLIGOTimeGPSVector *multiTimestamps );
