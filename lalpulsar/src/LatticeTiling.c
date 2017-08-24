@@ -832,6 +832,14 @@ LatticeTiling *XLALCreateLatticeTiling(
   tiling->padding = 1;
   tiling->lattice = TILING_LATTICE_MAX;
 
+  // Allocate and initialise vectors and matrices
+  GAVEC_NULL( tiling->phys_bbox, ndim );
+  GAVEC_NULL( tiling->phys_origin, ndim );
+  GAMAT_NULL( tiling->int_from_phys, ndim, ndim );
+  gsl_matrix_set_identity( tiling->int_from_phys );
+  GAMAT_NULL( tiling->phys_from_int, ndim, ndim );
+  gsl_matrix_set_identity( tiling->phys_from_int );
+
   return tiling;
 
 }
@@ -1065,14 +1073,6 @@ int XLALSetTilingLatticeAndMetric(
       ++tiling->tiled_ndim;
     }
   }
-
-  // Allocate and initialise vectors and matrices
-  GAVEC( tiling->phys_bbox, n );
-  GAVEC( tiling->phys_origin, n );
-  GAMAT( tiling->int_from_phys, n, n );
-  gsl_matrix_set_identity( tiling->int_from_phys );
-  GAMAT( tiling->phys_from_int, n, n );
-  gsl_matrix_set_identity( tiling->phys_from_int );
 
   // If no parameter-space dimensions are tiled, we're done
   if ( tiling->tiled_ndim == 0 ) {
