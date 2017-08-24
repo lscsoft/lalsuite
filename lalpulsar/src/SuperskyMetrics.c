@@ -1947,6 +1947,10 @@ int XLALSetSuperskyPhysicalSkyBounds(
   XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, PhysicalSkyBound, sizeof( data_lower ), &data_lower, &data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALSetLatticeTilingBoundCacheFunction( tiling, 1, SkyBoundCache ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  // Set the parameter-space origin on reduced supersky sky coordinates A and B
+  XLAL_CHECK( XLALSetLatticeTilingOrigin( tiling, 0, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingOrigin( tiling, 1, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   return XLAL_SUCCESS;
 
 }
@@ -2240,6 +2244,10 @@ int XLALSetSuperskyEqualAreaSkyBounds(
   XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, A_bound[0], A_bound[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, EqualAreaSkyBound, sizeof( B_bound[0] ), &B_bound[0], &B_bound[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALSetLatticeTilingBoundCacheFunction( tiling, 1, SkyBoundCache ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Set the parameter-space origin on reduced supersky sky coordinates A and B
+  XLAL_CHECK( XLALSetLatticeTilingOrigin( tiling, 0, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingOrigin( tiling, 1, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
