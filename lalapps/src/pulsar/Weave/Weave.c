@@ -587,8 +587,8 @@ int main( int argc, char *argv[] )
   const size_t ninputspins = UVAR_SET4( f1dot, f2dot, f3dot, f4dot );
   XLAL_CHECK_MAIN( ninputspins <= nmetricspins, XLAL_EINVAL, "Number of spindowns from user input (%zu) must be <= number of spindowns from metrics (%zu) computed in setup file '%s'", ninputspins, nmetricspins, uvar->setup_file );
 
-  // Number of parameter-space dimensions:
-  const size_t ndim = setup.metrics->coordinate_system.dim;
+  // Number of parameter-space dimensions: 2 for sky + 1 for frequency + 'nmetricspins' for spindowns
+  const size_t ndim = 2 + 1 + nmetricspins;
 
   // Number of coherent parameter-space tilings
   // - If performing a fully-coherent search (i.e. of a single segment), we only need the semicoherent
