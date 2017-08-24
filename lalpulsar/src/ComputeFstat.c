@@ -1142,48 +1142,9 @@ XLALFstatInputTimeslice ( FstatInput ** slice,                ///< [out] Address
   const MultiLIGOTimeGPSVector *mTS = common->multiTimestamps;
   UINT4 XLAL_INIT_DECL ( iStart, [PULSAR_MAX_DETECTORS] );
   UINT4 XLAL_INIT_DECL ( iEnd, [PULSAR_MAX_DETECTORS] );
-  for ( UINT4 X = 0; X < numIFOs; X ++ )
-    {
-      iStart[X] = 0;
-      iEnd[X]   = mTS->data[X]->length - 1;
-
-      // check if there's any timestamps for this detector are falling into the requested timeslice at all
-      if( ( ( XLALCWGPSinRange( mTS->data[X]->data[0], minStartGPS, maxStartGPS ) == 1 ) || ( XLALCWGPSinRange( mTS->data[X]->data[iEnd[X]], minStartGPS, maxStartGPS ) == -1 ) ) )
-        {
-          // if not: set an emtpy index interval in this case
-          iEnd[X] = 0;
-          iStart[X] = 1;
-          XLALPrintInfo ("Returning empty timeslice for detector %d: Timestamps span [%"LAL_GPS_FORMAT", %"LAL_GPS_FORMAT "]"
-                         " has no overlap with requested timeslice range [%"LAL_GPS_FORMAT", %"LAL_GPS_FORMAT").\n",
-                         X,
-                         LAL_GPS_PRINT(mTS->data[X]->data[0]), LAL_GPS_PRINT(mTS->data[X]->data[iEnd[X]]),
-                         LAL_GPS_PRINT(*minStartGPS), LAL_GPS_PRINT(*maxStartGPS)
-                         );
-          continue;
-        }
-
-      while (iStart[X] <= iEnd[X] && XLALCWGPSinRange ( mTS->data[X]->data[iStart[X]], minStartGPS, maxStartGPS ) < 0 ) {
-        ++iStart[X];
-      }
-      while (iStart[X] <= iEnd[X] && XLALCWGPSinRange ( mTS->data[X]->data[iEnd[X]], minStartGPS, maxStartGPS ) > 0 ) {
-        --iEnd[X];
-      }
-      // note: iStart[X] >=0, iEnd[X] >= 0 is now guaranteed due to previous range overlap-check
-
-      // check if there is any timestamps found witin the interval, ie if iStart <= iEnd
-      if ( iStart[X] > iEnd[X] )
-        {
-          XLALPrintInfo ( "Returning empty timeslice for detector %d: no sfttimes fall within given GPS range [%"LAL_GPS_FORMAT", %"LAL_GPS_FORMAT"). "
-                          "Closest timestamps are: %"LAL_GPS_FORMAT" and %"LAL_GPS_FORMAT"\n",
-                          X,
-                          LAL_GPS_PRINT(*minStartGPS), LAL_GPS_PRINT(*maxStartGPS),
-                          LAL_GPS_PRINT(mTS->data[X]->data[iEnd[X]]), LAL_GPS_PRINT(mTS->data[X]->data[iStart[X]])
-                          );
-          iEnd[X] = 0;
-          iStart[X] = 1;
-          continue;
-        }
-    } // for X < numIFOs
+  for ( UINT4 X = 0; X < numIFOs; X ++ ) {
+    XLAL_CHECK ( XLALFindTimesliceBounds ( &(iStart[X]), &(iEnd[X]), input->common.multiTimestamps->data[X], minStartGPS, maxStartGPS ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
 
   // ----- prepare new top-level 'containers' for the timeslices in the 'common' part of FstatInput:
   MultiLIGOTimeGPSVector *multiTimestamps = NULL;
