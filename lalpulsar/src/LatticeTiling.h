@@ -174,6 +174,16 @@ int XLALSetLatticeTilingPadding(
   );
 
 ///
+/// Set the physical parameter-space origin of the lattice tiling in the given dimension.
+/// This is an optional setting and should generally not be used unless specifically required.
+///
+int XLALSetLatticeTilingOrigin(
+  LatticeTiling *tiling,                ///< [in] Lattice tiling
+  const size_t dim,                     ///< [in] Dimension on which bound applies
+  const double origin                   ///< [in] First bound on dimension
+  );
+
+///
 /// Offset the physical parameter-space origin of the lattice tiling by a random fraction of the
 /// lattice step size in tiled dimensions. This is important when performing mismatch studies to
 /// ensure that the mismatch distribution is fully sampled.

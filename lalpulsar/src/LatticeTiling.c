@@ -835,6 +835,7 @@ LatticeTiling *XLALCreateLatticeTiling(
   // Allocate and initialise vectors and matrices
   GAVEC_NULL( tiling->phys_bbox, ndim );
   GAVEC_NULL( tiling->phys_origin, ndim );
+  gsl_vector_set_all( tiling->phys_origin, GSL_NAN );
   GAMAT_NULL( tiling->int_from_phys, ndim, ndim );
   gsl_matrix_set_identity( tiling->int_from_phys );
   GAMAT_NULL( tiling->phys_from_int, ndim, ndim );
@@ -1006,6 +1007,26 @@ int XLALSetLatticeTilingPadding(
 
 }
 
+int XLALSetLatticeTilingOrigin(
+  LatticeTiling *tiling,
+  const size_t dim,
+  const double origin
+  )
+{
+
+  // Check input
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tiling->lattice == TILING_LATTICE_MAX, XLAL_EINVAL );
+  XLAL_CHECK( dim < tiling->ndim, XLAL_ESIZE );
+  XLAL_CHECK( isfinite( origin ), XLAL_EINVAL );
+
+  // Set physical parameter-space origin
+  gsl_vector_set( tiling->phys_origin, dim, origin );
+
+  return XLAL_SUCCESS;
+
+}
+
 int XLALSetLatticeTilingRandomOriginOffsets(
   LatticeTiling *tiling,
   RandomParams *rng
@@ -1074,6 +1095,19 @@ int XLALSetTilingLatticeAndMetric(
     }
   }
 
+  // Set physical parameter-space origin to mid-point of parameter-space bounds
+  gsl_matrix *GAMAT( phys_origin_cache, n, LT_CACHE_MAX_SIZE );
+  gsl_matrix_set_all( phys_origin_cache, GSL_NAN );
+  for ( size_t i = 0; i < n; ++i ) {
+    double phys_origin_i = gsl_vector_get( tiling->phys_origin, i );
+    if ( !isfinite( phys_origin_i ) ) {
+      double phys_lower = 0.0, phys_upper = 0.0;
+      LT_CallBoundFunc( tiling, i, phys_origin_cache, tiling->phys_origin, &phys_lower, &phys_upper );
+      phys_origin_i = 0.5 * ( phys_lower + phys_upper );
+    }
+    LT_SetPhysPoint( tiling, phys_origin_cache, tiling->phys_origin, i, phys_origin_i );
+  }
+
   // If no parameter-space dimensions are tiled, we're done
   if ( tiling->tiled_ndim == 0 ) {
     return XLAL_SUCCESS;
@@ -1119,15 +1153,6 @@ int XLALSetTilingLatticeAndMetric(
     const size_t i = tiling->tiled_idx[ti];
     const double t_norm_ti = gsl_vector_get( t_norm, ti );
     gsl_vector_set( tiling->phys_bbox, i, gsl_vector_get( t_bbox, ti ) / t_norm_ti );
-  }
-
-  // Set physical parameter-space origin to mid-point of parameter-space bounds
-  gsl_matrix *GAMAT( phys_origin_cache, n, LT_CACHE_MAX_SIZE );
-  gsl_matrix_set_all( phys_origin_cache, GSL_NAN );
-  for ( size_t i = 0; i < n; ++i ) {
-    double phys_lower = 0.0, phys_upper = 0.0;
-    LT_CallBoundFunc( tiling, i, phys_origin_cache, tiling->phys_origin, &phys_lower, &phys_upper );
-    LT_SetPhysPoint( tiling, phys_origin_cache, tiling->phys_origin, i, 0.5 * ( phys_lower + phys_upper ) );
   }
 
   // Compute a lower-triangular basis matrix whose columns are orthonormal with respect to the tiled metric
@@ -2124,7 +2149,7 @@ int XLALRestoreLatticeTilingIterator(
       XLAL_CHECK( record.data_hash == data_hash, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
     }
     XLAL_CHECK( record.phys_bbox == gsl_vector_get( itr->tiling->phys_bbox, i ), XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
-    XLAL_CHECK( record.phys_origin == gsl_vector_get( itr->tiling->phys_origin, i ), XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+    XLAL_CHECK( record.phys_origin == gsl_vector_get( itr->tiling->phys_origin, i ), XLAL_EIO, "Could not restore iterator; invalid HDU '%s': %g, %g", name, record.phys_origin, gsl_vector_get( itr->tiling->phys_origin, i ) );
     LT_SetPhysPoint( itr->tiling, itr->phys_point_cache, itr->phys_point, i, record.phys_point );
     if ( itr->tiling->bounds[i].is_tiled ) {
       itr->int_point[ti] = record.int_point;
