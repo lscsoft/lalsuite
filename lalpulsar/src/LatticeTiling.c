@@ -54,6 +54,8 @@ typedef struct tagLT_Bound {
   char data_lower[LT_DATA_MAX_SIZE];    ///< Arbitrary data describing lower parameter-space bound
   char data_upper[LT_DATA_MAX_SIZE];    ///< Arbitrary data describing upper parameter-space bound
   LatticeTilingBoundCache cache_func;   ///< Parameter space bound cache function
+  UINT4 pad_lower;                      ///< Level of padding to add to lower parameter-space bounds
+  UINT4 pad_upper;                      ///< Level of padding to add to upper parameter-space bounds
 } LT_Bound;
 
 ///
@@ -94,7 +96,6 @@ struct tagLatticeTiling {
   LT_Bound *bounds;                     ///< Array of parameter-space bound info for each dimension
   size_t tiled_ndim;                    ///< Number of tiled parameter-space dimensions
   size_t *tiled_idx;                    ///< Index to tiled parameter-space dimensions
-  UINT4 padding;                        ///< Level of padding added to parameter space bounds
   TilingLattice lattice;                ///< Type of lattice to generate tiling with
   gsl_vector *phys_bbox;                ///< Metric ellipse bounding box
   gsl_vector *phys_origin;              ///< Parameter-space origin in physical coordinates
@@ -823,8 +824,10 @@ LatticeTiling *XLALCreateLatticeTiling(
 
   // Initialise fields
   tiling->ndim = ndim;
-  tiling->padding = 1;
   tiling->lattice = TILING_LATTICE_MAX;
+  for ( size_t i = 0; i < ndim; ++i ) {
+    tiling->bounds[i].pad_lower = tiling->bounds[i].pad_upper = 1;
+  }
 
   // Allocate and initialise vectors and matrices
   GAVEC_NULL( tiling->phys_bbox, ndim );
@@ -985,17 +988,20 @@ int XLALSetLatticeTilingConstantBound(
 
 int XLALSetLatticeTilingPadding(
   LatticeTiling *tiling,
-  const UINT4 padding
+  const size_t dim,
+  const UINT4 pad_lower,
+  const UINT4 pad_upper
   )
 {
 
   // Check input
   XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
   XLAL_CHECK( tiling->lattice == TILING_LATTICE_MAX, XLAL_EINVAL );
-  XLAL_CHECK( padding > 0, XLAL_EINVAL );
+  XLAL_CHECK( dim < tiling->ndim, XLAL_ESIZE );
 
-  // Set level of padding added to parameter space bounds
-  tiling->padding = padding;
+  // Set level of padding added to parameter-space bound
+  tiling->bounds[dim].pad_lower = pad_lower;
+  tiling->bounds[dim].pad_upper = pad_upper;
 
   return XLAL_SUCCESS;
 
@@ -1745,9 +1751,9 @@ int XLALNextLatticeTilingPoint(
 
       // Add padding of (a multiple of) half the extext of the metric ellipse bounding box
       {
-        const double phys_hbbox_i = itr->tiling->padding * 0.5 * gsl_vector_get( itr->tiling->phys_bbox, i );
-        phys_lower -= phys_hbbox_i;
-        phys_upper += phys_hbbox_i;
+        const double phys_hbbox_i = 0.5 * gsl_vector_get( itr->tiling->phys_bbox, i );
+        phys_lower -= bound->pad_lower * phys_hbbox_i;
+        phys_upper += bound->pad_upper * phys_hbbox_i;
       }
 
       // Transform physical point in lower dimensions to generating integer offset
@@ -2004,6 +2010,8 @@ int XLALSaveLatticeTilingIterator(
       XLAL_CHECK( XLALPearsonHash( &checksum, sizeof( checksum ), &itr->tiling->bounds[i].data_len, sizeof( itr->tiling->bounds[i].data_len ) ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( XLALPearsonHash( &checksum, sizeof( checksum ), itr->tiling->bounds[i].data_lower, itr->tiling->bounds[i].data_len ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( XLALPearsonHash( &checksum, sizeof( checksum ), itr->tiling->bounds[i].data_upper, itr->tiling->bounds[i].data_len ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALPearsonHash( &checksum, sizeof( checksum ), &itr->tiling->bounds[i].pad_lower, sizeof( itr->tiling->bounds[i].pad_lower ) ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALPearsonHash( &checksum, sizeof( checksum ), &itr->tiling->bounds[i].pad_upper, sizeof( itr->tiling->bounds[i].pad_upper ) ) == XLAL_SUCCESS, XLAL_EFUNC );
       record.checksum = checksum;
     }
     record.phys_point = gsl_vector_get( itr->phys_point, i );
@@ -2027,9 +2035,6 @@ int XLALSaveLatticeTilingIterator(
   } {
     UINT4 tiled_ndim = itr->tiling->tiled_ndim;
     XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "tiled_ndim", tiled_ndim, "number of tiled parameter-space dimensions" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  } {
-    UINT4 padding = itr->tiling->padding;
-    XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "padding", padding, "amount of padding added to parameter space bounds" ) == XLAL_SUCCESS, XLAL_EFUNC );
   } {
     UINT4 lattice = itr->tiling->lattice;
     XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "lattice", lattice, "type of lattice to generate tiling with" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -2093,10 +2098,6 @@ int XLALRestoreLatticeTilingIterator(
     XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "tiled_ndim", &tiled_ndim ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK( tiled_ndim == itr->tiling->tiled_ndim, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
   } {
-    UINT4 padding;
-    XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "padding", &padding ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( padding == itr->tiling->padding, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
-  } {
     UINT4 lattice;
     XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "lattice", &lattice ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK( lattice == itr->tiling->lattice, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
@@ -2144,6 +2145,8 @@ int XLALRestoreLatticeTilingIterator(
       XLAL_CHECK( XLALPearsonHash( &checksum, sizeof( checksum ), &itr->tiling->bounds[i].data_len, sizeof( itr->tiling->bounds[i].data_len ) ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( XLALPearsonHash( &checksum, sizeof( checksum ), itr->tiling->bounds[i].data_lower, itr->tiling->bounds[i].data_len ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( XLALPearsonHash( &checksum, sizeof( checksum ), itr->tiling->bounds[i].data_upper, itr->tiling->bounds[i].data_len ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALPearsonHash( &checksum, sizeof( checksum ), &itr->tiling->bounds[i].pad_lower, sizeof( itr->tiling->bounds[i].pad_lower ) ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALPearsonHash( &checksum, sizeof( checksum ), &itr->tiling->bounds[i].pad_upper, sizeof( itr->tiling->bounds[i].pad_upper ) ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( record.checksum == checksum, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
     }
     LT_SetPhysPoint( itr->tiling, itr->phys_point_cache, itr->phys_point, i, record.phys_point );
