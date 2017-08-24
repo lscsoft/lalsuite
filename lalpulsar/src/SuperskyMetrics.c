@@ -69,7 +69,6 @@ struct tagSuperskyTransformData {
   REAL8 align_sky[3][3];                        ///< Alignment transform of the supersky metric
   UINT4 nsky_offsets;                           ///< Number of sky offsets
   REAL8 sky_offsets[MAX_SKY_OFFSETS][3];        ///< Sky offsets of the supersky metric
-  const DopplerCoordinateSystem *coordinate_system; ///< coordinate system of returned metrics
 };
 
 // Check reduced supersky coordinate metric and/or transform data
@@ -680,21 +679,6 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
   // Rescale metrics to input fiducial frequency
   XLALScaleSuperskyMetricsFiducialFreq( metrics, fiducial_freq );
 
-  // return the coordinate system used [using 'ocoords']
-  metrics->coordinate_system = ocoords;
-  // apply the coordinate-swapping of frequency to last position as done in SM_ComputeReducedSuperskyMetric()
-#define SWAP_COORDS(array,i,j) do {int tmp = (array)[(j)]; (array)[(j)] = (array)[(i)]; (array)[(i)] = tmp; } while(0)
-  const int ifreq = XLALFindDopplerCoordinateInSystem( &(metrics->coordinate_system), DOPPLERCOORD_FREQ );
-  for ( size_t i = ifreq; i + 1 < metrics->coordinate_system.dim; ++i ) {
-    SWAP_COORDS ( metrics->coordinate_system.coordIDs, i, i + 1 );
-  }
-
-  // keep a reference to the coordinate-system struct in all transform-data sub-structs
-  metrics->semi_rssky_transf->coordinate_system = &(metrics->coordinate_system);
-  for ( size_t n = 0; n < metrics->num_segments; ++n ) {
-    metrics->coh_rssky_transf[n]->coordinate_system = &(metrics->coordinate_system);
-  }
-
   // Cleanup
   GFMAT( ussky_metric_avg, orbital_metric_avg );
 
@@ -784,18 +768,6 @@ int XLALFITSWriteSuperskyMetrics(
     XLAL_CHECK( XLALFITSTableWriteRow( file, metrics->semi_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
-  // Write coordinate system as string-vector
-  {
-    LALStringVector *coordNames = NULL;
-    for ( size_t i=0; i < metrics->coordinate_system.dim; ++i ) {
-      coordNames = XLALAppendString2Vector ( coordNames, XLALDopplerCoordinateName ( metrics->coordinate_system.coordIDs[i] ) );
-      XLAL_CHECK ( coordNames != NULL, XLAL_EFUNC );
-    }
-    XLAL_CHECK ( XLALFITSHeaderWriteStringVector( file, "ocoords", coordNames, "Metric coordinate system (o-coords)" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLALDestroyStringVector ( coordNames );
-  }
-
-
   return XLAL_SUCCESS;
 
 }
@@ -858,20 +830,6 @@ int XLALFITSReadSuperskyMetrics(
     ( *metrics )->semi_rssky_transf = XLALCalloc( 1, sizeof( *( *metrics )->semi_rssky_transf ) );
     XLAL_CHECK( ( *metrics )->semi_rssky_transf != NULL, XLAL_ENOMEM );
     XLAL_CHECK( XLALFITSTableReadRow( file, ( *metrics )->semi_rssky_transf, &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
-
-  // Read coordinate system information back from a FITS array
-  {
-    LALStringVector *coordNames = NULL;
-    XLAL_CHECK( XLALFITSHeaderReadStringVector( file, "ocoords", &coordNames ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLALDopplerCoordinateNames2System( &(( *metrics)->coordinate_system), coordNames ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLALDestroyStringVector ( coordNames );
-  }
-
-  // restore the reference to the coordinate-system struct in all transform-data sub-structs
-  ( *metrics )->semi_rssky_transf->coordinate_system = &( ( *metrics )->coordinate_system);
-  for ( size_t n = 0; n < ( *metrics )->num_segments; ++n ) {
-    ( *metrics )->coh_rssky_transf[n]->coordinate_system = &( ( *metrics )->coordinate_system);
   }
 
   return XLAL_SUCCESS;
