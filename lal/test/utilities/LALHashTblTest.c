@@ -59,11 +59,11 @@ int main( void )
   XLAL_CHECK_MAIN( XLALHashTblSize( ht ) == 0, XLAL_EFAILED );
 
   /* Repeat hash table test a few times */
+  gsl_rng *r = gsl_rng_alloc( gsl_rng_mt19937 );
   for ( int n = 0; n < 4; ++n ) {
 
     /* Add 100 elements with keys in 100*n + [0,99] to table in a random order */
     {
-      gsl_rng *r = gsl_rng_alloc( gsl_rng_mt19937 );
       XLAL_CHECK_MAIN( r != NULL, XLAL_ESYS );
       gsl_permutation *p = gsl_permutation_calloc( 100 );
       XLAL_CHECK_MAIN( p != NULL, XLAL_ESYS );
@@ -73,7 +73,6 @@ int main( void )
         XLAL_CHECK_MAIN( XLALHashTblAdd( ht, new_elem( key, 3*key - n ) ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK_MAIN( XLALHashTblSize( ht ) == 100*n + i + 1, XLAL_EFAILED );
       }
-      gsl_rng_free( r );
       gsl_permutation_free( p );
     }
 
@@ -122,6 +121,7 @@ int main( void )
   }
 
   /* Cleanup */
+  gsl_rng_free( r );
   XLALHashTblDestroy( ht );
 
   /* Check for memory leaks */
