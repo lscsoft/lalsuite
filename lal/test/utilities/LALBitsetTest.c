@@ -62,7 +62,7 @@ int main( void )
   for ( size_t n = 0; n < XLAL_NUM_ELEM( bits ); ++n ) {
     BOOLEAN is_set = 0;
     XLAL_CHECK_MAIN( XLALBitsetGet( bs, n0 + n, &is_set ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( !is_set, XLAL_EFAILED, "Bit still set at index %zu", n0 + n );
+    XLAL_CHECK_MAIN( !is_set, XLAL_EFAILED, "Bit still set at index %"LAL_UINT8_FORMAT, n0 + n );
   }
 
   /* Cleanup */
