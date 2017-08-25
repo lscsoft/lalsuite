@@ -235,7 +235,7 @@ int main( void )
       printf( " }\n" );
     }
     {
-      XLAL_CHECK( XLALHeapModify( minh, reverse_ptr_int, &param ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALHeapModify( minh, reverse_ptr_int, &param ) == XLAL_SUCCESS, XLAL_EFUNC );
       printf( "minh={" );
       XLAL_CHECK_MAIN( XLALHeapVisit( minh, print_ptr_int, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
       printf( " }" );
@@ -249,7 +249,7 @@ int main( void )
       }
     }
     {
-      XLAL_CHECK( XLALHeapModify( maxh, reverse_ptr_int, &param ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALHeapModify( maxh, reverse_ptr_int, &param ) == XLAL_SUCCESS, XLAL_EFUNC );
       printf( "maxh={" );
       XLAL_CHECK_MAIN( XLALHeapVisit( maxh, print_ptr_int, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
       printf( " }" );
@@ -263,7 +263,7 @@ int main( void )
       }
     }
     {
-      XLAL_CHECK( XLALHeapModify( min10h, reverse_ptr_int, &param ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALHeapModify( min10h, reverse_ptr_int, &param ) == XLAL_SUCCESS, XLAL_EFUNC );
       printf( "min10h={" );
       XLAL_CHECK_MAIN( XLALHeapVisit( min10h, print_ptr_int, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
       printf( " }" );
@@ -277,7 +277,7 @@ int main( void )
       }
     }
     {
-      XLAL_CHECK( XLALHeapModify( max10h, reverse_ptr_int, &param ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALHeapModify( max10h, reverse_ptr_int, &param ) == XLAL_SUCCESS, XLAL_EFUNC );
       printf( "max10h={" );
       XLAL_CHECK_MAIN( XLALHeapVisit( max10h, print_ptr_int, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
       printf( " }" );
@@ -316,6 +316,10 @@ int main( void )
       XLALFree( elems );
     }
   }
+
+  /* Clear a heap */
+  XLAL_CHECK_MAIN( XLALHeapClear( minh ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALHeapSize( minh ) == 0, XLAL_EFAILED );
 
   /* Cleanup */
   {

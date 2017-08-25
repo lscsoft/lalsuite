@@ -55,17 +55,15 @@ done
 set +x
 echo
 
-for seg in 1 2 3; do
-
-    echo "=== Segment #${seg}: Check that no results were recomputed ==="
-    set -x
-    ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[per_seg_info][col coh_nrecomp][#row == ${seg}]" > tmp
-    coh_nrecomp=`cat tmp | sed "/^#/d" | xargs printf "%d"`
-    expr ${coh_nrecomp} '=' 0
-    set +x
-    echo
-
-done
+echo "=== Check that no results were recomputed ==="
+set -x
+${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NCOHRES' > tmp
+coh_nres=`cat tmp | xargs printf "%d"`
+${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NCOHTPL' > tmp
+coh_ntmpl=`cat tmp | xargs printf "%d"`
+expr ${coh_nres} '=' ${coh_ntmpl}
+set +x
+echo
 
 ### Make updating reference results a little easier ###
 mkdir TestInterpolating.testdir

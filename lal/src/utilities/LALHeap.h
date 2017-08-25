@@ -95,6 +95,13 @@ void XLALHeapDestroy(
   );
 
 /**
+ * Clear a heap
+ */
+int XLALHeapClear(
+  LALHeap *h                    /**< [in] Pointer to heap */
+  );
+
+/**
  * Return the size of a heap
  */
 int XLALHeapSize(

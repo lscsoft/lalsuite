@@ -145,6 +145,35 @@ void XLALHashTblDestroy(
   }
 }
 
+int XLALHashTblClear(
+  LALHashTbl *ht
+  )
+{
+
+  /* Check input */
+  XLAL_CHECK( ht != NULL, XLAL_EFAULT );
+
+  /* Free hash table elements */
+  if ( ht->data != NULL ) {
+    if ( ht->dtor != NULL ) {
+      for ( int i = 0; i < ht->data_len; ++i ) {
+        if ( ht->data[i] != NULL ) {
+          if ( ht->data[i] != DEL ) {
+            ht->dtor( ht->data[i] );
+          }
+          ht->data[i] = NULL;
+        }
+      }
+    }
+  }
+
+  /* Remove all elements from hash table */
+  ht->n = 0;
+
+  return XLAL_SUCCESS;
+
+}
+
 int XLALHashTblSize(
   const LALHashTbl *ht
   )

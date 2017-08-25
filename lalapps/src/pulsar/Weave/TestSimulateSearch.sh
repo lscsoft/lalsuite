@@ -80,19 +80,6 @@ for setup in short mid long; do
     set +x
     echo
 
-    echo "=== Setup '${setup}': Check number of coherent frequency blocks ==="
-    set -x
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" 'NCOHFBK' > tmp
-    coh_nfbk_no_sim=`cat tmp | xargs printf "%d"`
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutSimFull.fits[0]" 'NCOHFBK' > tmp
-    coh_nfbk_sim_full=`cat tmp | xargs printf "%d"`
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutSimMin.fits[0]" 'NCOHFBK' > tmp
-    coh_nfbk_sim_min=`cat tmp | xargs printf "%d"`
-    expr ${coh_nfbk_no_sim} '=' ${coh_nfbk_sim_full}
-    expr ${coh_nfbk_no_sim} '=' ${coh_nfbk_sim_min}
-    set +x
-    echo
-
     echo "=== Setup '${setup}': Check number of coherent results ==="
     set -x
     ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" 'NCOHRES' > tmp
@@ -106,16 +93,29 @@ for setup in short mid long; do
     set +x
     echo
 
-    echo "=== Setup '${setup}': Check number of semicoherent results ==="
+    echo "=== Setup '${setup}': Check number of coherent templates ==="
     set -x
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" 'NSEMIRES' > tmp
-    semi_nres_no_sim=`cat tmp | xargs printf "%d"`
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutSimFull.fits[0]" 'NSEMIRES' > tmp
-    semi_nres_sim_full=`cat tmp | xargs printf "%d"`
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutSimMin.fits[0]" 'NSEMIRES' > tmp
-    semi_nres_sim_min=`cat tmp | xargs printf "%d"`
-    expr ${semi_nres_no_sim} '=' ${semi_nres_sim_full}
-    expr ${semi_nres_no_sim} '=' ${semi_nres_sim_min}
+    ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" 'NCOHTPL' > tmp
+    coh_ntmpl_no_sim=`cat tmp | xargs printf "%d"`
+    ${fitsdir}/lalapps_fits_header_getval "WeaveOutSimFull.fits[0]" 'NCOHTPL' > tmp
+    coh_ntmpl_sim_full=`cat tmp | xargs printf "%d"`
+    ${fitsdir}/lalapps_fits_header_getval "WeaveOutSimMin.fits[0]" 'NCOHTPL' > tmp
+    coh_ntmpl_sim_min=`cat tmp | xargs printf "%d"`
+    expr ${coh_ntmpl_no_sim} '=' ${coh_ntmpl_sim_full}
+    expr ${coh_ntmpl_no_sim} '=' ${coh_ntmpl_sim_min}
+    set +x
+    echo
+
+    echo "=== Setup '${setup}': Check number of semicoherent templates ==="
+    set -x
+    ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" 'NSEMITPL' > tmp
+    semi_ntmpl_no_sim=`cat tmp | xargs printf "%d"`
+    ${fitsdir}/lalapps_fits_header_getval "WeaveOutSimFull.fits[0]" 'NSEMITPL' > tmp
+    semi_ntmpl_sim_full=`cat tmp | xargs printf "%d"`
+    ${fitsdir}/lalapps_fits_header_getval "WeaveOutSimMin.fits[0]" 'NSEMITPL' > tmp
+    semi_ntmpl_sim_min=`cat tmp | xargs printf "%d"`
+    expr ${semi_ntmpl_no_sim} '=' ${semi_ntmpl_sim_full}
+    expr ${semi_ntmpl_no_sim} '=' ${semi_ntmpl_sim_min}
     set +x
     echo
 

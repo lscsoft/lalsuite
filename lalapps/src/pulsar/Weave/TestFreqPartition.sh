@@ -49,20 +49,20 @@ ${builddir}/lalapps_Weave --freq-partitions=5 --output-file=WeaveOutPart.fits \
 set +x
 echo
 
-for seg in 1 2 3; do
-
-    echo "=== Segment #${seg}: Check that no results were recomputed ==="
-    set -x
-    ${fitsdir}/lalapps_fits_table_list "WeaveOutNoPart.fits[per_seg_info][col coh_nrecomp][#row == ${seg}]" > tmp
-    coh_nrecomp_no_part=`cat tmp | sed "/^#/d" | xargs printf "%d"`
-    expr ${coh_nrecomp_no_part} '=' 0
-    ${fitsdir}/lalapps_fits_table_list "WeaveOutPart.fits[per_seg_info][col coh_nrecomp][#row == ${seg}]" > tmp
-    coh_nrecomp_part=`cat tmp | sed "/^#/d" | xargs printf "%d"`
-    expr ${coh_nrecomp_part} '=' 0
-    set +x
-    echo
-
-done
+echo "=== Check that no results were recomputed ==="
+set -x
+${fitsdir}/lalapps_fits_header_getval "WeaveOutNoPart.fits[0]" 'NCOHRES' > tmp
+coh_nres_no_part=`cat tmp | xargs printf "%d"`
+${fitsdir}/lalapps_fits_header_getval "WeaveOutNoPart.fits[0]" 'NCOHTPL' > tmp
+coh_ntmpl_no_part=`cat tmp | xargs printf "%d"`
+expr ${coh_nres_no_part} '=' ${coh_ntmpl_no_part}
+${fitsdir}/lalapps_fits_header_getval "WeaveOutPart.fits[0]" 'NCOHRES' > tmp
+coh_nres_part=`cat tmp | xargs printf "%d"`
+${fitsdir}/lalapps_fits_header_getval "WeaveOutPart.fits[0]" 'NCOHTPL' > tmp
+coh_ntmpl_part=`cat tmp | xargs printf "%d"`
+expr ${coh_nres_part} '=' ${coh_ntmpl_part}
+set +x
+echo
 
 echo "=== Compare F-statistics from lalapps_Weave without/with frequency partitions ==="
 set -x

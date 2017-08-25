@@ -58,8 +58,7 @@ WeaveCache *XLALWeaveCacheCreate(
   const void *semi_transf_data,
   WeaveCohInput *coh_input,
   const size_t max_size,
-  const size_t gc_limit,
-  const BOOLEAN per_seg_info
+  const size_t gc_limit
   );
 void XLALWeaveCacheDestroy(
   WeaveCache *cache
@@ -100,10 +99,8 @@ int XLALWeaveCacheRetrieve(
   const WeaveCohResults **coh_res,
   UINT8 *coh_index,
   UINT4 *coh_offset,
-  UINT8 *coh_nfbk,
   UINT8 *coh_nres,
-  UINT4 *coh_n1comp,
-  UINT4 *coh_nrecomp
+  UINT8 *coh_ntmpl
   );
 
 /// @}

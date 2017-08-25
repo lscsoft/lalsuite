@@ -55,29 +55,27 @@ done
 set +x
 echo
 
-echo "=== Check computed number of coherent results ==="
+echo "=== Check that no results were recomputed ==="
 set -x
-${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NSEGMENT' > tmp
-nsegments=`cat tmp | xargs printf "%d"`
 ${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NCOHRES' > tmp
 coh_nres=`cat tmp | xargs printf "%d"`
-${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NSEMIRES' > tmp
-semi_nres=`cat tmp | xargs printf "%d"`
-expr ${coh_nres} '=' ${semi_nres} '*' ${nsegments}
+${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NCOHTPL' > tmp
+coh_ntmpl=`cat tmp | xargs printf "%d"`
+expr ${coh_nres} '=' ${coh_ntmpl}
 set +x
 echo
 
-for seg in 1 2 3; do
-
-    echo "=== Segment #${seg}: Check that no results were recomputed ==="
-    set -x
-    ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[per_seg_info][col coh_nrecomp][#row == ${seg}]" > tmp
-    coh_nrecomp=`cat tmp | sed "/^#/d" | xargs printf "%d"`
-    expr ${coh_nrecomp} '=' 0
-    set +x
-    echo
-
-done
+echo "=== Check computed number of coherent and semicoherent templates ==="
+set -x
+${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NSEGMENT' > tmp
+nsegments=`cat tmp | xargs printf "%d"`
+${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NCOHTPL' > tmp
+coh_ntmpl=`cat tmp | xargs printf "%d"`
+${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NSEMITPL' > tmp
+semi_ntmpl=`cat tmp | xargs printf "%d"`
+expr ${coh_ntmpl} '=' ${semi_ntmpl} '*' ${nsegments}
+set +x
+echo
 
 ### Make updating reference results a little easier ###
 mkdir TestNonInterpolating.testdir

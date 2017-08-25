@@ -26,6 +26,7 @@
 
 #include <lal/LALHeap.h>
 #include <lal/LALHashTbl.h>
+#include <lal/LALBitset.h>
 
 ///
 /// Internal definition of an item stored in the cache
@@ -66,10 +67,12 @@ struct tagWeaveCache {
   LALHeap *relevance_heap;
   /// Hash table which looks up cache items by index
   LALHashTbl *coh_index_hash;
+  /// Bitset which records whether an item has ever been computed
+  LALBitset *coh_computed_bitset;
+  /// Partition index for which 'coh_computed_bitset' applies
+  UINT4 coh_computed_bitset_partition_index;
   /// Save an no-longer-used cache item for re-use
   cache_item *saved_item;
-  /// Hash table which records whether an item has been computed
-  LALHashTbl *coh_computed_hash;
   /// Cache garbage collection limit
   size_t gc_limit;
 };
@@ -198,8 +201,7 @@ WeaveCache *XLALWeaveCacheCreate(
   const void *semi_transf_data,
   WeaveCohInput *coh_input,
   const size_t max_size,
-  const size_t gc_limit,
-  const BOOLEAN per_seg_info
+  const size_t gc_limit
   )
 {
 
@@ -290,14 +292,10 @@ WeaveCache *XLALWeaveCacheCreate(
   cache->coh_index_hash = XLALHashTblCreate( NULL, cache_item_hash, cache_item_compare_by_coh_index );
   XLAL_CHECK_NULL( cache->coh_index_hash != NULL, XLAL_EFUNC );
 
-  // If per-segment cache information is requested:
-  if ( per_seg_info ) {
-
-    // Create a hash table which independently records which cache items were computed.
-    cache->coh_computed_hash = XLALHashTblCreate( cache_item_destroy, cache_item_hash, cache_item_compare_by_coh_index );
-    XLAL_CHECK_NULL( cache->coh_computed_hash != NULL, XLAL_EFUNC );
-
-  }
+  // Create a bitset which records which cache items have ever been computed.
+  cache->coh_computed_bitset = XLALBitsetCreate();
+  XLAL_CHECK_NULL( cache->coh_computed_bitset != NULL, XLAL_EFUNC );
+  cache->coh_computed_bitset_partition_index = LAL_UINT4_MAX;
 
   return cache;
 
@@ -315,7 +313,7 @@ void XLALWeaveCacheDestroy(
     XLALHeapDestroy( cache->relevance_heap );
     XLALHashTblDestroy( cache->coh_index_hash );
     cache_item_destroy( cache->saved_item );
-    XLALHashTblDestroy( cache->coh_computed_hash );
+    XLALBitsetDestroy( cache->coh_computed_bitset );
     XLALFree( cache );
   }
 } // XLALWeaveCacheDestroy()
@@ -588,10 +586,8 @@ int XLALWeaveCacheRetrieve(
   const WeaveCohResults **coh_res,
   UINT8 *coh_index,
   UINT4 *coh_offset,
-  UINT8 *coh_nfbk,
   UINT8 *coh_nres,
-  UINT4 *coh_n1comp,
-  UINT4 *coh_nrecomp
+  UINT8 *coh_ntmpl
   )
 {
 
@@ -602,10 +598,14 @@ int XLALWeaveCacheRetrieve(
   XLAL_CHECK( query_index < queries->nqueries, XLAL_EINVAL );
   XLAL_CHECK( coh_res != NULL, XLAL_EFAULT );
   XLAL_CHECK( coh_offset != NULL, XLAL_EFAULT );
-  XLAL_CHECK( coh_nfbk != NULL, XLAL_EFAULT );
   XLAL_CHECK( coh_nres != NULL, XLAL_EFAULT );
-  XLAL_CHECK( coh_n1comp != NULL, XLAL_EFAULT );
-  XLAL_CHECK( coh_nrecomp != NULL, XLAL_EFAULT );
+  XLAL_CHECK( coh_ntmpl != NULL, XLAL_EFAULT );
+
+  // Reset bitset if partition index has changed
+  if ( cache->coh_computed_bitset_partition_index != queries->partition_index ) {
+    XLAL_CHECK( XLALBitsetClear( cache->coh_computed_bitset ) == XLAL_SUCCESS, XLAL_EFUNC );
+    cache->coh_computed_bitset_partition_index = queries->partition_index;
+  }
 
   // See if coherent results are already cached
   const cache_item find_key = { .partition_index = queries->partition_index, .coh_index = queries->coh_index[query_index] };
@@ -633,10 +633,6 @@ int XLALWeaveCacheRetrieve(
 
     // Compute coherent results for the new cache item
     XLAL_CHECK( XLALWeaveCohResultsCompute( &new_item->coh_res, cache->coh_input, &queries->coh_phys[query_index], coh_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    // Increment number of computed coherent results, including results that may have been recomputed
-    *coh_nfbk += 1;
-    *coh_nres += coh_nfreqs;
 
     // Add new cache item to the index hash table
     XLAL_CHECK( XLALHashTblAdd( cache->coh_index_hash, new_item ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -694,30 +690,19 @@ int XLALWeaveCacheRetrieve(
 
     }
 
-    // If per-segment cache information is available:
-    if ( cache->coh_computed_hash != NULL ) {
+    // Increment number of computed coherent results
+    *coh_nres += coh_nfreqs;
 
-      // Check if coherent results have been computed previously
-      const void *computed = NULL;
-      XLAL_CHECK( XLALHashTblFind( cache->coh_computed_hash, &find_key, &computed ) == XLAL_SUCCESS, XLAL_EFUNC );
-      if ( computed == NULL ) {
+    // Check if coherent results have been computed previously
+    BOOLEAN computed = 0;
+    XLAL_CHECK( XLALBitsetGet( cache->coh_computed_bitset, find_key.coh_index, &computed ) == XLAL_SUCCESS, XLAL_EFUNC );
+    if ( !computed ) {
 
-        // Coherent results have not been computed before: increment the number of results computed once
-        *coh_n1comp += coh_nfreqs;
+      // Coherent results have not been computed before: increment the number of coherent templates
+      *coh_ntmpl += coh_nfreqs;
 
-        // Create a copy of the cache item key, and add it to the hash
-        // table to indicate these coherent results have been computed
-        cache_item *new_key = XLALCalloc( 1, sizeof( *new_key ) );
-        XLAL_CHECK( new_key != NULL, XLAL_EINVAL );
-        *new_key = find_key;
-        XLAL_CHECK( XLALHashTblAdd( cache->coh_computed_hash, new_key ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      } else {
-
-        // Coherent results have been computed previously: increment the number of recomputed results
-        *coh_nrecomp += coh_nfreqs;
-
-      }
+      // This coherent result has now been computed
+      XLAL_CHECK( XLALBitsetSet( cache->coh_computed_bitset, find_key.coh_index, 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     }
 

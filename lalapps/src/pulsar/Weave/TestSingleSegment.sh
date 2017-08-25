@@ -56,21 +56,23 @@ done
 set +x
 echo
 
-echo "=== Check computed number of coherent results ==="
+echo "=== Check that no results were recomputed ==="
 set -x
 ${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NCOHRES' > tmp
 coh_nres=`cat tmp | xargs printf "%d"`
-${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NSEMIRES' > tmp
-semi_nres=`cat tmp | xargs printf "%d"`
-expr ${coh_nres} '=' ${semi_nres}
+${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NCOHTPL' > tmp
+coh_ntmpl=`cat tmp | xargs printf "%d"`
+expr ${coh_nres} '=' ${coh_ntmpl}
 set +x
 echo
 
-echo "=== Check that no results were recomputed ==="
+echo "=== Check computed number of coherent and semicoherent templates ==="
 set -x
-${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[per_seg_info][col coh_nrecomp]" > tmp
-coh_nrecomp=`cat tmp | sed "/^#/d" | xargs printf "%d"`
-expr ${coh_nrecomp} '=' 0
+${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NCOHTPL' > tmp
+coh_ntmpl=`cat tmp | xargs printf "%d"`
+${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NSEMITPL' > tmp
+semi_ntmpl=`cat tmp | xargs printf "%d"`
+expr ${coh_ntmpl} '=' ${semi_ntmpl}
 set +x
 echo
 

@@ -55,10 +55,6 @@ typedef struct {
   REAL8 sft_min_cover_freq;
   /// Maximum of frequency range covered by SFTs
   REAL8 sft_max_cover_freq;
-  /// Number of coherent results computed once
-  UINT4 coh_n1comp;
-  /// Number of recomputed coherent results
-  UINT4 coh_nrecomp;
 } misc_per_seg_info;
 
 // Return elapsed wall time in seconds
@@ -912,7 +908,7 @@ int main( int argc, char *argv[] )
   for ( size_t i = 0; i < nsegments; ++i ) {
     const size_t cache_max_size = interpolation ? uvar->cache_max_size : 1;
     const size_t cache_gc_limit = interpolation ? uvar->cache_gc_limit : 0;
-    coh_cache[i] = XLALWeaveCacheCreate( tiling[i], interpolation, setup.phys_to_latt, setup.latt_to_phys, rssky_transf[i], rssky_transf[isemi], coh_input[i], cache_max_size, cache_gc_limit, uvar->misc_info );
+    coh_cache[i] = XLALWeaveCacheCreate( tiling[i], interpolation, setup.phys_to_latt, setup.latt_to_phys, rssky_transf[i], rssky_transf[isemi], coh_input[i], cache_max_size, cache_gc_limit );
     XLAL_CHECK_MAIN( coh_cache[i] != NULL, XLAL_EFUNC );
   }
 
@@ -953,8 +949,8 @@ int main( int argc, char *argv[] )
   // Number of times output results have been restored from a checkpoint
   UINT4 ckpt_output_count = 0;
 
-  // Number of computed coherent and semicoherent results
-  UINT8 coh_nfbk = 0, coh_nres = 0, semi_nres = 0;
+  // Number of computed coherent results, and number of coherent and semicoherent templates
+  UINT8 coh_nres = 0, coh_ntmpl = 0, semi_ntmpl = 0;
 
   // Semicoherent frequency block count and index
   const UINT8 freq_block_count = XLALTotalLatticeTilingPoints( semi_itr );
@@ -984,11 +980,6 @@ int main( int argc, char *argv[] )
       // Read number of times output results have been restored from a checkpoint
       XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT4( file, "ckptcnt", &ckpt_output_count ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( ckpt_output_count > 0, XLAL_EIO, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
-
-      // Read number of computed coherent and semicoherent results
-      XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT8( file, "ncohfbk", &coh_nfbk ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT8( file, "ncohres", &coh_nres ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT8( file, "nsemires", &semi_nres ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Read output results
       XLAL_CHECK_MAIN( XLALWeaveOutputResultsReadAppend( file, &out ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -1124,7 +1115,7 @@ int main( int argc, char *argv[] )
     UINT8 XLAL_INIT_DECL( coh_index, [nsegments] );
     UINT4 XLAL_INIT_DECL( coh_offset, [nsegments] );
     for ( size_t i = 0; i < nsegments; ++i ) {
-      XLAL_CHECK_MAIN( XLALWeaveCacheRetrieve( coh_cache[i], queries, i, &coh_res[i], &coh_index[i], &coh_offset[i], &coh_nfbk, &coh_nres, &per_seg_info[i].coh_n1comp, &per_seg_info[i].coh_nrecomp ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALWeaveCacheRetrieve( coh_cache[i], queries, i, &coh_res[i], &coh_index[i], &coh_offset[i], &coh_nres, &coh_ntmpl ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( coh_res[i] != NULL, XLAL_EFUNC );
     }
 
@@ -1154,8 +1145,8 @@ int main( int argc, char *argv[] )
     // Add semicoherent results to output
     XLAL_CHECK_MAIN( XLALWeaveOutputResultsAdd( out, semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Increment number of computed semicoherent results
-    semi_nres += semi_nfreqs;
+    // Increment number of semicoherent templates
+    semi_ntmpl += semi_nfreqs;
 
     // Time output of semicoherent results
     cpu_toc = cpu_time();
@@ -1186,11 +1177,6 @@ int main( int argc, char *argv[] )
         // Write number of times output results have been restored from a checkpoint
         ++ckpt_output_count;
         XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "ckptcnt", ckpt_output_count, "number of checkpoints" ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-        // Write number of computed coherent and semicoherent results
-        XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "ncohfbk", coh_nfbk, "number of computed coherent frequency blocks" ) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "ncohres", coh_nres, "number of computed coherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "nsemires", semi_nres, "number of computed semicoherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
         // Write output results
         XLAL_CHECK_MAIN( XLALWeaveOutputResultsWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -1366,10 +1352,14 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, keyword, semi_stats->total_points, "cumulative number of semicoherent templates" ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
-    // Write number of computed coherent and semicoherent results
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "ncohfbk", coh_nfbk, "number of computed coherent frequency blocks" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "ncohres", coh_nres, "number of computed coherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "nsemires", semi_nres, "number of computed semicoherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    if ( !UVAR_SET( ckpt_output_file ) ) {   // Unless search is checkpointed...
+
+      // Write number of computed coherent results, and number of coherent and semicoherent templates
+      XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "ncohres", coh_nres, "number of computed coherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "ncohtpl", coh_ntmpl, "number of coherent templates" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "nsemitpl", semi_ntmpl, "number of semicoherent templates" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    }
 
     // Write peak memory usage
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "peakmem [MB]", XLALGetPeakHeapUsageMB(), "peak memory usage" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -1417,8 +1407,6 @@ int main( int argc, char *argv[] )
         XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_min_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_max_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, UINT4, coh_n1comp ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, UINT4, coh_nrecomp ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Write FITS table
       for ( size_t i = 0; i < nsegments; ++i ) {
