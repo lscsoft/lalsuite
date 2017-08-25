@@ -109,7 +109,7 @@ int main( void )
   for ( int i = 0; i < 250; ++i ) {
     elem x = { .key = i };
     XLAL_CHECK_MAIN( XLALHashTblRemove( ht, &x ) == XLAL_SUCCESS, XLAL_EFAILED );
-    XLAL_CHECK( XLALHashTblSize( ht ) == 400 - i - 1, XLAL_EFAILED );
+    XLAL_CHECK_MAIN( XLALHashTblSize( ht ) == 400 - i - 1, XLAL_EFAILED );
   }
 
   /* Try finding the rest of the elements */
