@@ -54,7 +54,7 @@ int main( void )
   for ( size_t n = 0; n < XLAL_NUM_ELEM( bits ); ++n ) {
     BOOLEAN is_set = 0;
     XLAL_CHECK_MAIN( XLALBitsetGet( bs, n0 + n, &is_set ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( !is_set == !bits[n], XLAL_EFAILED, "Inconsistent bit at index %zu: LALBitset=%i, reference=%i", n0 + n, is_set, bits[n] );
+    XLAL_CHECK_MAIN( !is_set == !bits[n], XLAL_EFAILED, "Inconsistent bit at index %"LAL_UINT8_FORMAT": LALBitset=%i, reference=%i", n0 + n, is_set, bits[n] );
   }
 
   /* Clear bitset */
