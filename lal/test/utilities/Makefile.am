@@ -8,6 +8,7 @@ test_programs += EigenTest
 test_programs += FindRootTest
 test_programs += IntegrateTest
 test_programs += InterpolateTest
+test_programs += LALBitsetTest
 test_programs += LALHashFuncTest
 test_programs += LALHashTblTest
 test_programs += LALHeapTest
