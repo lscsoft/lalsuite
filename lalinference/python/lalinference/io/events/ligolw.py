@@ -249,7 +249,7 @@ class LigoLWSingleEvent(SingleEvent):
     @property
     def phase(self):
         value = self._phase
-        if value is not None and self._invert_phases:
+        if self._invert_phases:
             value *= -1
         return value
 

@@ -1947,10 +1947,6 @@ int XLALSetSuperskyPhysicalSkyBounds(
   XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, PhysicalSkyBound, sizeof( data_lower ), &data_lower, &data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALSetLatticeTilingBoundCacheFunction( tiling, 1, SkyBoundCache ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Set the parameter-space origin on reduced supersky sky coordinates A and B
-  XLAL_CHECK( XLALSetLatticeTilingOrigin( tiling, 0, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetLatticeTilingOrigin( tiling, 1, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-
   return XLAL_SUCCESS;
 
 }
@@ -2054,8 +2050,6 @@ int XLALSetSuperskyEqualAreaSkyBounds(
   // Parameter-space bounds on reduced supersky sky coordinates A and B
   double A_bound[2] = {GSL_NAN, GSL_NAN};
   double B_bound[2] = {-1, 1};
-  UINT4 A_pad_lower = 1, A_pad_upper = 1;
-  UINT4 B_pad_lower = 1, B_pad_upper = 1;
 
   // Handle special cases of 1 and 2 patches
   if ( patch_count <= 2 ) {
@@ -2128,12 +2122,6 @@ int XLALSetSuperskyEqualAreaSkyBounds(
 
     }
 
-    // Decide which patches to add padding to
-    A_pad_lower = ( A_index[0] == 0 && patch_index < hemi_patch_count ) ? 1 : 0;
-    A_pad_upper = ( A_index[0] == 0 && patch_index >= hemi_patch_count ) ? 1 : 0;
-    B_pad_lower = ( B_index == 0 ) ? 1 : 0;
-    B_pad_upper = ( B_index + 1 == B_count ) ? 1 : 0;
-
     // Allocate a GSL root solver
     gsl_root_fsolver *fs = gsl_root_fsolver_alloc( gsl_root_fsolver_brent );
     XLAL_CHECK( fs != NULL, XLAL_ENOMEM );
@@ -2180,8 +2168,7 @@ int XLALSetSuperskyEqualAreaSkyBounds(
       const UINT4 B_index_i = B_index + i;
 
       // Maximum possible value of 'B' within the region bound by 'A_bound'
-      // - For 4 patches or fewer, 'B' must span the entire unit disk
-      const double B_max = ( B_count <= 4 ) ? 1 : RE_SQRT( 1 - GSL_MIN( SQR( A_bound[0] ), SQR( A_bound[1] ) ) );
+      const double B_max = RE_SQRT( 1 - GSL_MIN( SQR( A_bound[0] ), SQR( A_bound[1] ) ) );
 
       // Handle boundaries as special cases
       if ( B_index_i == 0 ) {
@@ -2219,9 +2206,7 @@ int XLALSetSuperskyEqualAreaSkyBounds(
     }
 
     // Restrict range 'A' if 'B = const' bounds intersect unit disk boundary within it
-    // - Only start to do this when there are 3 patches in 'B' direction
-    // - Do not do this for the middle 'B' patch which straddles 'B = 0'
-    if ( patch_count >= 14 && B_index != (B_count-1)/2 ) {
+    {
       const double Ai = RE_SQRT( 1 - GSL_MIN( SQR( B_bound[0] ), SQR( B_bound[1] ) ) );
       if ( A_bound[0] < -Ai ) {
         A_bound[0] = -Ai;
@@ -2252,14 +2237,6 @@ int XLALSetSuperskyEqualAreaSkyBounds(
   XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, A_bound[0], A_bound[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, EqualAreaSkyBound, sizeof( B_bound[0] ), &B_bound[0], &B_bound[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALSetLatticeTilingBoundCacheFunction( tiling, 1, SkyBoundCache ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // Set the parameter-space origin on reduced supersky sky coordinates A and B
-  XLAL_CHECK( XLALSetLatticeTilingOrigin( tiling, 0, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetLatticeTilingOrigin( tiling, 1, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // Set the padding to add to parameter-space bounds in reduced supersky sky coordinates A and B
-  XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, 0, A_pad_lower, A_pad_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, 1, B_pad_lower, B_pad_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 

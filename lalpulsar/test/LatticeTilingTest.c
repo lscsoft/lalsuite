@@ -200,9 +200,7 @@ static int BasicTest(
 
   // Set padding level
   printf( "Padding level: %u\n", padding );
-  for ( size_t i = 0; i < n; ++i ) {
-    XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, i, padding, padding ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
+  XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, padding ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Set metric to the Lehmer matrix
   const double max_mismatch = 0.3;

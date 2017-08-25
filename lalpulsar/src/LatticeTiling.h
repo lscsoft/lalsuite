@@ -166,24 +166,11 @@ int XLALSetLatticeTilingConstantBound(
   );
 
 ///
-/// Set the level of padding to add to the lattice tiling parameter-space bounds in the given dimension.
-/// This is an optional setting and should generally not be used unless specifically required.
+/// Set the level of padding added to the lattice tiling parameter space bounds.
 ///
 int XLALSetLatticeTilingPadding(
   LatticeTiling *tiling,                ///< [in] Lattice tiling
-  const size_t dim,                     ///< [in] Dimension on which to set padding
-  const UINT4 pad_lower,                ///< [in] Level of padding to add to lower parameter-space bounds
-  const UINT4 pad_upper                 ///< [in] Level of padding to add to upper parameter-space bounds
-  );
-
-///
-/// Set the physical parameter-space origin of the lattice tiling in the given dimension.
-/// This is an optional setting and should generally not be used unless specifically required.
-///
-int XLALSetLatticeTilingOrigin(
-  LatticeTiling *tiling,                ///< [in] Lattice tiling
-  const size_t dim,                     ///< [in] Dimension in which to set origin
-  const double origin                   ///< [in] Physical parameter-space origin
+  const UINT4 padding                   ///< [in] Level of padding added to parameter space bounds
   );
 
 ///
