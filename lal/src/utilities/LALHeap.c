@@ -206,6 +206,32 @@ void XLALHeapDestroy(
   }
 }
 
+int XLALHeapClear(
+  LALHeap *h
+  )
+{
+
+  /* Check input */
+  XLAL_CHECK( h != NULL, XLAL_EFAULT );
+
+  /* Free heap elements */
+  if ( h->data != NULL ) {
+    if ( h->dtor != NULL ) {
+      for ( int i = 0; i < h->n; ++i ) {
+        h->dtor( h->data[i] );
+        h->data[i] = NULL;
+      }
+    }
+  }
+
+  /* Remove all elements from heap */
+  h->n = 0;
+  h->add = heap_add_not_full;
+
+  return XLAL_SUCCESS;
+
+}
+
 int XLALHeapSize(
   const LALHeap *h
   )

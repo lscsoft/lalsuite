@@ -317,6 +317,10 @@ int main( void )
     }
   }
 
+  /* Clear a heap */
+  XLAL_CHECK_MAIN( XLALHeapClear( minh ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALHeapSize( minh ) == 0, XLAL_EFAILED );
+
   /* Cleanup */
   {
     printf( "\n----- cleanup -----\n" );
