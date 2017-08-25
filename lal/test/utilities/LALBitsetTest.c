@@ -33,7 +33,7 @@ int main( void )
   BOOLEAN XLAL_INIT_DECL( bits, [4096] );
   gsl_rng *r = gsl_rng_alloc( gsl_rng_mt19937 );
   XLAL_CHECK_MAIN( r != NULL, XLAL_ESYS );
-  int nbits;
+  int nbits = 0;
   for ( size_t n = 0; n < XLAL_NUM_ELEM( bits ); ++n ) {
     bits[n] = ( gsl_rng_uniform( r ) > 0.44 );
     nbits += bits[n] ? 1 : 0;
