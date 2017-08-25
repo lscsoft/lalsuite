@@ -93,6 +93,13 @@ void XLALHashTblDestroy(
   );
 
 /**
+ * Clear a hash table
+ */
+int XLALHashTblClear(
+  LALHashTbl *ht                /**< [in] Pointer to hash table */
+  );
+
+/**
  * Return the size of a hash table
  */
 int XLALHashTblSize(

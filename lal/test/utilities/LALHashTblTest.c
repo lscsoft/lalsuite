@@ -60,6 +60,7 @@ int main( void )
 
   /* Repeat hash table test a few times */
   gsl_rng *r = gsl_rng_alloc( gsl_rng_mt19937 );
+  int clear_tested = 0;
   for ( int n = 0; n < 4; ++n ) {
 
     /* Add 100 elements with keys in 100*n + [0,99] to table in a random order */
@@ -99,6 +100,13 @@ int main( void )
       XLAL_CHECK_MAIN( XLALHashTblFind( ht, &x, ( const void ** ) &z ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( z != NULL, XLAL_EFAILED );
       XLAL_CHECK_MAIN( z->value == 3*z->key - n, XLAL_EFAILED );
+    }
+
+    /* Try clearing hash table */
+    if ( !clear_tested && n == 0 ) {
+      XLAL_CHECK_MAIN( XLALHashTblClear( ht ) == XLAL_SUCCESS, XLAL_EFUNC );
+      clear_tested = 1;
+      n = -1;
     }
 
   }
