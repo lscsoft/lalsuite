@@ -86,10 +86,10 @@ LALHashTbl *XLALHashTblCreate2(
   );
 
 /**
- * Destroy a hash table
+ * Destroy a hash table and its elements
  */
 void XLALHashTblDestroy(
-  LALHashTbl *ht
+  LALHashTbl *ht                /**< [in] Pointer to hash table */
   );
 
 /**
