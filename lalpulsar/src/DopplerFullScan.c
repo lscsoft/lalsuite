@@ -386,7 +386,12 @@ XLALNumDopplerTemplates ( DopplerFullScanState *scan)
         case GRID_SPINDOWN_SQUARE: /* square parameter space */
         case GRID_SPINDOWN_AGEBRK: /* age-braking index parameter space */
           LogPrintf(LOG_DEBUG, "Counting spindown lattice templates ... ");
-          scan->numTemplates = (REAL8)XLALTotalLatticeTilingPoints(scan->spindownTilingItr);
+          {
+            const size_t n = XLALTotalLatticeTilingDimensions(scan->spindownTiling);
+            const LatticeTilingStats *stats = XLALRegisterLatticeTilingStats(scan->spindownTiling);
+            XLALPerformLatticeTilingCallbacks(scan->spindownTiling);
+            scan->numTemplates = (REAL8)stats[n-1].total_points;
+          }
           LogPrintfVerbatim(LOG_DEBUG, "%0.0f\n", scan->numTemplates);
           break;
 
