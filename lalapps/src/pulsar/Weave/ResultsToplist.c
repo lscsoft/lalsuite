@@ -27,6 +27,9 @@
 #include <lal/VectorMath.h>
 #include <lal/UserInputPrint.h>
 
+// Compare two quantities, and return a sort order value if they are unequal
+#define COMPARE_BY( x, y ) do { if ( (x) < (y) ) return -1; if ( (x) > (y) ) return +1; } while(0)
+
 ///
 /// Internal definition of toplist of output results
 ///
@@ -155,7 +158,7 @@ int toplist_item_compare(
   WeaveResultsToplistItemGetRankStat item_get_rank_stat_fcn = ( WeaveResultsToplistItemGetRankStat ) param;
   const WeaveResultsToplistItem *ix = ( const WeaveResultsToplistItem * ) x;
   const WeaveResultsToplistItem *iy = ( const WeaveResultsToplistItem * ) y;
-  WEAVE_COMPARE_BY( item_get_rank_stat_fcn( iy ), item_get_rank_stat_fcn( ix ) );   // Compare in descending order
+  COMPARE_BY( item_get_rank_stat_fcn( iy ), item_get_rank_stat_fcn( ix ) );   // Compare in descending order
   return 0;
 } // toplist_item_compare()
 
@@ -412,12 +415,12 @@ int toplist_item_sort_by_semi_phys(
 {
   const WeaveResultsToplistItem *ix = *( const WeaveResultsToplistItem *const * ) x;
   const WeaveResultsToplistItem *iy = *( const WeaveResultsToplistItem *const * ) y;
-  WEAVE_COMPARE_BY( ix->semi_alpha, iy->semi_alpha );   // Compare in ascending order
-  WEAVE_COMPARE_BY( ix->semi_delta, iy->semi_delta );   // Compare in ascending order
+  COMPARE_BY( ix->semi_alpha, iy->semi_alpha );   // Compare in ascending order
+  COMPARE_BY( ix->semi_delta, iy->semi_delta );   // Compare in ascending order
   for ( size_t s = 1; s < XLAL_NUM_ELEM( ix->semi_fkdot ); ++s ) {
-    WEAVE_COMPARE_BY( ix->semi_fkdot[s], iy->semi_fkdot[s] );   // Compare in ascending order
+    COMPARE_BY( ix->semi_fkdot[s], iy->semi_fkdot[s] );   // Compare in ascending order
   }
-  WEAVE_COMPARE_BY( ix->semi_fkdot[0], iy->semi_fkdot[0] );   // Compare in ascending order
+  COMPARE_BY( ix->semi_fkdot[0], iy->semi_fkdot[0] );   // Compare in ascending order
   return 0;
 } // toplist_item_sort_by_semi_phys()
 

@@ -28,6 +28,9 @@
 #include <lal/LALHashTbl.h>
 #include <lal/LALBitset.h>
 
+// Compare two quantities, and return a sort order value if they are unequal
+#define COMPARE_BY( x, y ) do { if ( (x) < (y) ) return -1; if ( (x) > (y) ) return +1; } while(0)
+
 ///
 /// Internal definition of an item stored in the cache
 ///
@@ -155,8 +158,8 @@ int cache_item_compare_by_relevance(
 {
   const cache_item *ix = ( const cache_item * ) x;
   const cache_item *iy = ( const cache_item * ) y;
-  WEAVE_COMPARE_BY( ix->partition_index, iy->partition_index );   // Compare in ascending order
-  WEAVE_COMPARE_BY( ix->relevance, iy->relevance );   // Compare in ascending order
+  COMPARE_BY( ix->partition_index, iy->partition_index );   // Compare in ascending order
+  COMPARE_BY( ix->relevance, iy->relevance );   // Compare in ascending order
   return 0;
 } // cache_item_compare_by_relevance()
 
@@ -170,8 +173,8 @@ int cache_item_compare_by_coh_index(
 {
   const cache_item *ix = ( const cache_item * ) x;
   const cache_item *iy = ( const cache_item * ) y;
-  WEAVE_COMPARE_BY( ix->partition_index, iy->partition_index );   // Compare in ascending order
-  WEAVE_COMPARE_BY( ix->coh_index, iy->coh_index );   // Compare in ascending order
+  COMPARE_BY( ix->partition_index, iy->partition_index );   // Compare in ascending order
+  COMPARE_BY( ix->coh_index, iy->coh_index );   // Compare in ascending order
   return 0;
 } // cache_item_compare_by_coh_index()
 

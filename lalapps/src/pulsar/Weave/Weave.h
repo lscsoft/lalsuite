@@ -53,14 +53,6 @@
 #define UNUSED
 #endif
 
-///
-/// Compare two quantities, and return a sort order value if they are unequal
-///
-#define WEAVE_COMPARE_BY( x, y ) do { \
-    if ( (x) < (y) ) return -1; \
-    if ( (x) > (y) ) return +1; \
-  } while(0)
-
 #ifdef __cplusplus
 extern "C" {
 #endif
