@@ -303,57 +303,6 @@ static void LT_FindBoundExtrema(
 }
 
 ///
-/// Fast-forward a lattice tiling iterator over its highest tiled dimension.
-/// Return the number of points fast-forwarded over.
-///
-static INT4 LT_FastForwardIterator(
-  LatticeTilingIterator *itr            ///< [in] Lattice tiling iterator
-  )
-{
-
-  // Return if there are no tiled dimensions
-  if ( itr->tiled_itr_ndim == 0 ) {
-    return 0;
-  }
-
-  // Get indexes of highest tiled dimension being iterated over
-  const size_t ti = itr->tiled_itr_ndim - 1;
-  const size_t i = itr->tiling->tiled_idx[ti];
-
-  // Get increment from integer point to upper/lower bound, depending on direction
-  const INT4 ff_increment = ( ( itr->direction[ti] > 0 ) ? itr->int_upper[ti] : itr->int_lower[ti] ) - itr->int_point[ti];
-
-  // Set point in highest tiled dimension to upper/lower bound, so that the next call
-  // to XLALNextLatticeTilingPoint() will advance the next-highest tiled dimension
-  itr->int_point[ti] += ff_increment;
-  {
-    const double phys_point_i = gsl_vector_get( itr->phys_point, i );
-    const double phys_from_int_i_i = gsl_matrix_get( itr->tiling->phys_from_int, i, i );
-    LT_SetPhysPoint( itr->tiling, itr->phys_point_cache, itr->phys_point, i, phys_point_i + phys_from_int_i_i * ff_increment );
-  }
-
-  // Get total number of points fast-forwarded over
-  const INT4 ff_total_points = labs( ff_increment );
-
-  // Update iterator index
-  itr->index += ff_total_points;
-
-  // Compute lattice tiling statistics
-  if ( itr->tiling->stats_cntnr->itr == itr && !itr->tiling->stats_cntnr->complete ) {
-    LatticeTilingStats *stats = itr->tiling->stats_cntnr->stats;
-    for ( size_t j = i; j < itr->tiling->ndim; ++j ) {
-      stats[j].total_points += ff_total_points;
-    }
-    const double phys_point_i = gsl_vector_get( itr->phys_point, i );
-    stats[i].min_value = GSL_MIN( stats[i].min_value, phys_point_i );
-    stats[i].max_value = GSL_MAX( stats[i].max_value, phys_point_i );
-  }
-
-  return ff_total_points;
-
-}
-
-///
 /// Initialise FITS table for saving and restoring a lattice tiling iterator
 ///
 static int LT_InitFITSRecordTable( FITSFile *file )
@@ -1445,9 +1394,7 @@ const LatticeTilingStats *XLALLatticeTilingStatistics(
 
     // Iterate over all points, which also computes statistics
     xlalErrno = 0;
-    while ( XLALNextLatticeTilingPoint( itr, NULL ) > 0 ) {
-      LT_FastForwardIterator( itr );
-    }
+    while ( XLALNextLatticeTilingPoint( itr, NULL ) > 0 );
     XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFAILED );
     XLAL_CHECK_NULL( tiling->stats_cntnr->complete, XLAL_EFAILED );
 
@@ -2190,8 +2137,8 @@ LatticeTilingLocator *XLALCreateLatticeTilingLocator(
   // Build index trie to enforce parameter-space bounds
   if ( loc->tiled_ndim > 0 ) {
 
-    // Create iterator over the bounded dimensions
-    LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, tiling->ndim );
+    // Create iterator over the bounded dimensions (except for the highest dimension)
+    LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, tiling->tiled_idx[tiling->tiled_ndim - 1] );
     XLAL_CHECK_NULL( itr != NULL, XLAL_EFUNC );
 
     const size_t tn = itr->tiling->tiled_ndim;
@@ -2267,9 +2214,7 @@ LatticeTilingLocator *XLALCreateLatticeTilingLocator(
       for ( size_t tj = ti; tj < tn; ++tj ) {
         ++indx[tj];
       }
-
-      // Fast-forward iterator over highest tiled dimension.
-      indx[tn - 1] += LT_FastForwardIterator( itr );
+      indx[tn - 1] += itr->int_upper[tn - 1] - itr->int_lower[tn - 1];
 
     }
     XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
