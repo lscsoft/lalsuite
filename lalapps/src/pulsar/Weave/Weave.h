@@ -67,16 +67,6 @@ typedef enum {
   WEAVE_SIMULATE_MIN_MEM                = 0002,
 } WeaveSimulationLevel;
 
-///
-/// Function which transforms a point from physical coordinates to lattice tiling coordinates
-///
-typedef int ( *WeavePhysicalToLattice )( gsl_vector *out_latt, const PulsarDopplerParams *in_phys, const void *transf_data );
-
-///
-/// Function which transforms a point from lattice tiling coordinates to physical coordinates
-///
-typedef int ( *WeaveLatticeToPhysical )( PulsarDopplerParams *out_phys, const gsl_vector *in_latt, const gsl_vector *ref_latt, const void *transf_data );
-
 #ifdef __cplusplus
 }
 #endif

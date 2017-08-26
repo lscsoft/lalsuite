@@ -908,7 +908,7 @@ int main( int argc, char *argv[] )
   for ( size_t i = 0; i < nsegments; ++i ) {
     const size_t cache_max_size = interpolation ? uvar->cache_max_size : 1;
     const size_t cache_gc_limit = interpolation ? uvar->cache_gc_limit : 0;
-    coh_cache[i] = XLALWeaveCacheCreate( tiling[i], interpolation, setup.phys_to_latt, setup.latt_to_phys, rssky_transf[i], rssky_transf[isemi], coh_input[i], cache_max_size, cache_gc_limit );
+    coh_cache[i] = XLALWeaveCacheCreate( tiling[i], interpolation, rssky_transf[i], rssky_transf[isemi], coh_input[i], cache_max_size, cache_gc_limit );
     XLAL_CHECK_MAIN( coh_cache[i] != NULL, XLAL_EFUNC );
   }
 
@@ -936,7 +936,7 @@ int main( int argc, char *argv[] )
   }
 
   // Create storage for cache queries for coherent results in each segment
-  WeaveCacheQueries *queries = XLALWeaveCacheQueriesCreate( tiling[isemi], setup.phys_to_latt, setup.latt_to_phys, rssky_transf[isemi], nsegments, uvar->freq_partitions );
+  WeaveCacheQueries *queries = XLALWeaveCacheQueriesCreate( tiling[isemi], rssky_transf[isemi], nsegments, uvar->freq_partitions );
   XLAL_CHECK_MAIN( queries != NULL, XLAL_EFUNC );
 
   // Pointer to final semicoherent results

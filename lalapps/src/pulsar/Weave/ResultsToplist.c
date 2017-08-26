@@ -63,7 +63,7 @@ struct tagWeaveResultsToplist {
 /// @{
 
 static WeaveResultsToplistItem *toplist_item_create( const WeaveResultsToplist *toplist );
-static int compare_templates( BOOLEAN *equal, const char *loc_str, const char *tmpl_str, const REAL8 param_tol_mism, const WeavePhysicalToLattice phys_to_latt, const gsl_matrix *metric, const void *transf_data, const UINT8 index_1, const UINT8 index_2, const PulsarDopplerParams *phys_1, const PulsarDopplerParams *phys_2 );
+static int compare_templates( BOOLEAN *equal, const char *loc_str, const char *tmpl_str, const REAL8 param_tol_mism, const gsl_matrix *metric, const SuperskyTransformData *rssky_transf, const UINT8 index_1, const UINT8 index_2, const PulsarDopplerParams *phys_1, const PulsarDopplerParams *phys_2 );
 static int compare_vectors( BOOLEAN *equal, const VectorComparison *result_tol, const REAL4Vector *res_1, const REAL4Vector *res_2 );
 static int toplist_fits_table_init( FITSFile *file, const WeaveResultsToplist *toplist );
 static int toplist_fits_table_write_visitor( void *param, const void *x );
@@ -432,9 +432,8 @@ int compare_templates(
   const char *loc_str,
   const char *tmpl_str,
   const REAL8 param_tol_mism,
-  const WeavePhysicalToLattice phys_to_latt,
   const gsl_matrix *metric,
-  const void *transf_data,
+  const SuperskyTransformData *rssky_transf,
   const UINT8 index_1,
   const UINT8 index_2,
   const PulsarDopplerParams *phys_1,
@@ -447,28 +446,27 @@ int compare_templates(
   XLAL_CHECK( loc_str != NULL, XLAL_EINVAL );
   XLAL_CHECK( tmpl_str != NULL, XLAL_EINVAL );
   XLAL_CHECK( param_tol_mism >= 0, XLAL_EINVAL );
-  XLAL_CHECK( phys_to_latt != NULL, XLAL_EFAULT );
   XLAL_CHECK( metric != NULL, XLAL_EFAULT );
-  XLAL_CHECK( transf_data != NULL, XLAL_EFAULT );
+  XLAL_CHECK( rssky_transf != NULL, XLAL_EFAULT );
   XLAL_CHECK( phys_1 != NULL, XLAL_EFAULT );
   XLAL_CHECK( phys_2 != NULL, XLAL_EFAULT );
 
-  // Transform physical point to lattice coordinates
-  double latt_1_array[metric->size1];
-  gsl_vector_view latt_1_view = gsl_vector_view_array( latt_1_array, metric->size1 );
-  gsl_vector *const latt_1 = &latt_1_view.vector;
-  XLAL_CHECK( ( phys_to_latt )( latt_1, phys_1, transf_data ) == XLAL_SUCCESS, XLAL_EFUNC );
-  double latt_2_array[metric->size1];
-  gsl_vector_view latt_2_view = gsl_vector_view_array( latt_2_array, metric->size1 );
-  gsl_vector *const latt_2 = &latt_2_view.vector;
-  XLAL_CHECK( ( phys_to_latt )( latt_2, phys_2, transf_data ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Transform physical point to reduced supersky coordinates
+  double rssky_1_array[metric->size1];
+  gsl_vector_view rssky_1_view = gsl_vector_view_array( rssky_1_array, metric->size1 );
+  gsl_vector *const rssky_1 = &rssky_1_view.vector;
+  XLAL_CHECK( XLALConvertPhysicalToSuperskyPoint( rssky_1, phys_1, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+  double rssky_2_array[metric->size1];
+  gsl_vector_view rssky_2_view = gsl_vector_view_array( rssky_2_array, metric->size1 );
+  gsl_vector *const rssky_2 = &rssky_2_view.vector;
+  XLAL_CHECK( XLALConvertPhysicalToSuperskyPoint( rssky_2, phys_2, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Store difference between lattice coordinates in 'u'
+  // Store difference between reduced supersky coordinates in 'u'
   double u_array[metric->size1];
   gsl_vector_view u_view = gsl_vector_view_array( u_array, metric->size1 );
   gsl_vector *const u = &u_view.vector;
-  gsl_vector_memcpy( u, latt_1 );
-  gsl_vector_sub( u, latt_2 );
+  gsl_vector_memcpy( u, rssky_1 );
+  gsl_vector_sub( u, rssky_2 );
 
   // Multiply 'u' by metric, storing result in 'v'
   double v_array[metric->size1];
@@ -487,18 +485,18 @@ int compare_templates(
     XLALPrintInfo( "%s:     index 1 = %"LAL_UINT8_FORMAT"\n", __func__, index_1 );
     XLALPrintInfo( "%s:     index 2 = %"LAL_UINT8_FORMAT"\n", __func__, index_2 );
     const PulsarDopplerParams *phys[2] = { phys_1, phys_2 };
-    gsl_vector *latt[2] = { latt_1, latt_2 };
+    gsl_vector *rssky[2] = { rssky_1, rssky_2 };
     for ( size_t i = 0; i < 2; ++i ) {
       XLALPrintInfo( "%s:     physical %zu = {%.15g,%.15g,%.15g,%.15g}\n", __func__, i+1, phys[i]->Alpha, phys[i]->Delta, phys[i]->fkdot[0], phys[i]->fkdot[1] );
     }
     for ( size_t i = 0; i < 2; ++i ) {
-      XLALPrintInfo( "%s:     lattice %zu = ", __func__, i+1 );
-      for ( size_t j = 0; j < latt[i]->size; ++j ) {
-        XLALPrintInfo( "%c%.15g", j == 0 ? '{' : ',', gsl_vector_get( latt[i], j ) );
+      XLALPrintInfo( "%s:     reduced supersky %zu = ", __func__, i+1 );
+      for ( size_t j = 0; j < rssky[i]->size; ++j ) {
+        XLALPrintInfo( "%c%.15g", j == 0 ? '{' : ',', gsl_vector_get( rssky[i], j ) );
       }
       XLALPrintInfo( "}\n" );
     }
-    XLALPrintInfo( "%s:     lattice diff = ", __func__ );
+    XLALPrintInfo( "%s:     reduced supersky diff = ", __func__ );
     for ( size_t j = 0; j < u->size; ++j ) {
       XLALPrintInfo( "%c%.15g", j == 0 ? '{' : ',', gsl_vector_get( u, j ) );
     }
@@ -919,7 +917,7 @@ int XLALWeaveResultsToplistCompare(
             semi_phys_1.fkdot[k] = items_1[i]->semi_fkdot[k];
             semi_phys_2.fkdot[k] = items_2[i]->semi_fkdot[k];
           };
-          XLAL_CHECK( compare_templates( equal, loc_str, "semicoherent", param_tol_mism, setup->phys_to_latt, setup->metrics->semi_rssky_metric, setup->metrics->semi_rssky_transf, semi_index_1, semi_index_2, &semi_phys_1, &semi_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK( compare_templates( equal, loc_str, "semicoherent", param_tol_mism, setup->metrics->semi_rssky_metric, setup->metrics->semi_rssky_transf, semi_index_1, semi_index_2, &semi_phys_1, &semi_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
         }
 
         // Compare coherent template parameters
@@ -938,7 +936,7 @@ int XLALWeaveResultsToplistCompare(
               coh_phys_1.fkdot[k] = items_1[i]->coh_fkdot[k][j];
               coh_phys_2.fkdot[k] = items_2[i]->coh_fkdot[k][j];
             };
-            XLAL_CHECK( compare_templates( equal, loc_str, "coherent", param_tol_mism, setup->phys_to_latt, setup->metrics->coh_rssky_metric[j], setup->metrics->coh_rssky_transf[j], coh_index_1, coh_index_2, &coh_phys_1, &coh_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK( compare_templates( equal, loc_str, "coherent", param_tol_mism, setup->metrics->coh_rssky_metric[j], setup->metrics->coh_rssky_transf[j], coh_index_1, coh_index_2, &coh_phys_1, &coh_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
           }
         } // if output per-segment coordinates
 

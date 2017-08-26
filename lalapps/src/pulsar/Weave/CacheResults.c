@@ -54,14 +54,10 @@ struct tagWeaveCache {
   size_t ndim;
   /// Coherent lattice tiling bounding box in dimension 0
   double coh_bound_box_0;
-  /// Physical to lattice coordinate transform
-  WeavePhysicalToLattice phys_to_latt;
-  /// Lattice to physical coordinate transform
-  WeaveLatticeToPhysical latt_to_phys;
-  /// Coordinate transform data for coherent lattice
-  const void *coh_transf_data;
-  /// Coordinate transform data for semicoherent lattice
-  const void *semi_transf_data;
+  /// Reduced supersky transform data for coherent lattice
+  const SuperskyTransformData *coh_rssky_transf;
+  /// Reduced supersky transform data for semicoherent lattice
+  const SuperskyTransformData *semi_rssky_transf;
   /// Input data required for computing coherent results
   WeaveCohInput *coh_input;
   /// Coherent parameter-space tiling locator
@@ -88,12 +84,8 @@ struct tagWeaveCacheQueries {
   size_t ndim;
   /// Semicoherent lattice tiling bounding box in dimension 0
   double semi_bound_box_0;
-  /// Physical to lattice coordinate transform
-  WeavePhysicalToLattice phys_to_latt;
-  /// Lattice to physical coordinate transform
-  WeaveLatticeToPhysical latt_to_phys;
-  /// Coordinate transform data for semicoherent lattice
-  const void *semi_transf_data;
+  /// Reduced supersky transform data for semicoherent lattice
+  const SuperskyTransformData *semi_rssky_transf;
   /// Number of queries for which space is allocated
   UINT4 nqueries;
   /// Sequential indexes for each queried coherent frequency block
@@ -198,10 +190,8 @@ UINT8 cache_item_hash(
 WeaveCache *XLALWeaveCacheCreate(
   const LatticeTiling *coh_tiling,
   const BOOLEAN interpolation,
-  const WeavePhysicalToLattice phys_to_latt,
-  const WeaveLatticeToPhysical latt_to_phys,
-  const void *coh_transf_data,
-  const void *semi_transf_data,
+  const SuperskyTransformData *coh_rssky_transf,
+  const SuperskyTransformData *semi_rssky_transf,
   WeaveCohInput *coh_input,
   const size_t max_size,
   const size_t gc_limit
@@ -210,8 +200,6 @@ WeaveCache *XLALWeaveCacheCreate(
 
   // Check input
   XLAL_CHECK_NULL( coh_tiling != NULL, XLAL_EFAULT );
-  XLAL_CHECK_NULL( phys_to_latt != NULL, XLAL_EFAULT );
-  XLAL_CHECK_NULL( latt_to_phys != NULL, XLAL_EFAULT );
   XLAL_CHECK_NULL( coh_input != NULL, XLAL_EFAULT );
 
   // Allocate memory
@@ -219,10 +207,8 @@ WeaveCache *XLALWeaveCacheCreate(
   XLAL_CHECK_NULL( cache != NULL, XLAL_ENOMEM );
 
   // Set fields
-  cache->phys_to_latt = phys_to_latt;
-  cache->latt_to_phys = latt_to_phys;
-  cache->coh_transf_data = coh_transf_data;
-  cache->semi_transf_data = semi_transf_data;
+  cache->coh_rssky_transf = coh_rssky_transf;
+  cache->semi_rssky_transf = semi_rssky_transf;
   cache->coh_input = coh_input;
   cache->gc_limit = gc_limit;
 
@@ -326,9 +312,7 @@ void XLALWeaveCacheDestroy(
 ///
 WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
   const LatticeTiling *semi_tiling,
-  const WeavePhysicalToLattice phys_to_latt,
-  const WeaveLatticeToPhysical latt_to_phys,
-  const void *semi_transf_data,
+  const SuperskyTransformData *semi_rssky_transf,
   const UINT4 nqueries,
   const UINT4 npartitions
   )
@@ -336,8 +320,6 @@ WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
 
   // Check input
   XLAL_CHECK_NULL( semi_tiling != NULL, XLAL_EFAULT );
-  XLAL_CHECK_NULL( phys_to_latt != NULL, XLAL_EFAULT );
-  XLAL_CHECK_NULL( latt_to_phys != NULL, XLAL_EFAULT );
   XLAL_CHECK_NULL( nqueries > 0, XLAL_EINVAL );
   XLAL_CHECK_NULL( npartitions > 0, XLAL_EINVAL );
 
@@ -356,9 +338,7 @@ WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
   XLAL_CHECK_NULL( queries->coh_relevance != NULL, XLAL_ENOMEM );
 
   // Set fields
-  queries->phys_to_latt = phys_to_latt;
-  queries->latt_to_phys = latt_to_phys;
-  queries->semi_transf_data = semi_transf_data;
+  queries->semi_rssky_transf = semi_rssky_transf;
   queries->nqueries = nqueries;
   queries->npartitions = npartitions;
 
@@ -421,7 +401,7 @@ int XLALWeaveCacheQueriesInit(
   queries->semi_relevance = gsl_vector_get( semi_point, 0 ) - 0.5 * queries->semi_bound_box_0;
 
   // Convert semicoherent point to physical coordinates
-  XLAL_CHECK( ( queries->latt_to_phys )( &queries->semi_phys, semi_point, NULL, queries->semi_transf_data ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &queries->semi_phys, semi_point, NULL, queries->semi_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Get indexes of left/right-most point in current semicoherent frequency block
   XLAL_CHECK( XLALCurrentLatticeTilingBlock( semi_itr, queries->ndim - 1, &queries->semi_left, &queries->semi_right ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -446,12 +426,12 @@ int XLALWeaveCacheQuery(
   XLAL_CHECK( queries != NULL, XLAL_EFAULT );
   XLAL_CHECK( query_index < queries->nqueries, XLAL_EINVAL );
 
-  // Convert semicoherent physical point to coherent lattice tiling coordinates
+  // Convert semicoherent physical point to coherent reduced supersky coordinates
   double coh_point_array[cache->ndim];
   gsl_vector_view coh_point_view = gsl_vector_view_array( coh_point_array, cache->ndim );
-  XLAL_CHECK( ( cache->phys_to_latt )( &coh_point_view.vector, &queries->semi_phys, cache->coh_transf_data ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALConvertPhysicalToSuperskyPoint( &coh_point_view.vector, &queries->semi_phys, cache->coh_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Initialise nearest point to semicoherent point in coherent lattice tiling coordinates
+  // Initialise nearest point to semicoherent point in coherent reduced supersky coordinates
   double coh_near_point_array[cache->ndim];
   gsl_vector_view coh_near_point_view = gsl_vector_view_array( coh_near_point_array, cache->ndim );
   gsl_vector_memcpy( &coh_near_point_view.vector, &coh_point_view.vector );
@@ -475,11 +455,11 @@ int XLALWeaveCacheQuery(
 
   // Convert nearest coherent point to physical coordinates
   XLAL_INIT_MEM( queries->coh_phys[query_index] );
-  XLAL_CHECK( ( cache->latt_to_phys )( &queries->coh_phys[query_index], &coh_near_point_view.vector, &coh_point_view.vector, cache->coh_transf_data ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &queries->coh_phys[query_index], &coh_near_point_view.vector, &coh_point_view.vector, cache->coh_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Compute the relevance of the current coherent frequency block
   // - Add half the coherent lattice tiling bounding box in dimension 0
-  // - Convert coherent point to semicoherent lattice tiling coordinates
+  // - Convert coherent point to semicoherent reduced supersky coordinates
   // - Relevance is semicoherent point coordinate in dimension 0
   {
     double tmp_point_array[cache->ndim];
@@ -487,8 +467,8 @@ int XLALWeaveCacheQuery(
     gsl_vector_memcpy( &tmp_point_view.vector, &coh_near_point_view.vector );
     *gsl_vector_ptr( &tmp_point_view.vector, 0 ) += 0.5 * cache->coh_bound_box_0;
     PulsarDopplerParams XLAL_INIT_DECL( tmp_phys );
-    XLAL_CHECK( ( cache->latt_to_phys )( &tmp_phys, &tmp_point_view.vector, NULL, cache->coh_transf_data ) == XLAL_SUCCESS, XLAL_EINVAL );
-    XLAL_CHECK( ( cache->phys_to_latt )( &tmp_point_view.vector, &tmp_phys, cache->semi_transf_data ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &tmp_phys, &tmp_point_view.vector, NULL, cache->coh_rssky_transf ) == XLAL_SUCCESS, XLAL_EINVAL );
+    XLAL_CHECK( XLALConvertPhysicalToSuperskyPoint( &tmp_point_view.vector, &tmp_phys, cache->semi_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
     queries->coh_relevance[query_index] = gsl_vector_get( &tmp_point_view.vector, 0 );
   }
 

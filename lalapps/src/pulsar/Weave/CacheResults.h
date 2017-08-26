@@ -29,6 +29,7 @@
 #include "ComputeResults.h"
 
 #include <lal/LatticeTiling.h>
+#include <lal/SuperskyMetrics.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,10 +53,8 @@ typedef struct tagWeaveCacheQueries WeaveCacheQueries;
 WeaveCache *XLALWeaveCacheCreate(
   const LatticeTiling *coh_tiling,
   const BOOLEAN interpolation,
-  const WeavePhysicalToLattice phys_to_latt,
-  const WeaveLatticeToPhysical latt_to_phys,
-  const void *coh_transf_data,
-  const void *semi_transf_data,
+  const SuperskyTransformData *coh_rssky_transf,
+  const SuperskyTransformData *semi_rssky_transf,
   WeaveCohInput *coh_input,
   const size_t max_size,
   const size_t gc_limit
@@ -65,9 +64,7 @@ void XLALWeaveCacheDestroy(
   );
 WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
   const LatticeTiling *semi_tiling,
-  const WeavePhysicalToLattice phys_to_latt,
-  const WeaveLatticeToPhysical latt_to_phys,
-  const void *semi_transf_data,
+  const SuperskyTransformData *semi_rssky_transf,
   const UINT4 nqueries,
   const UINT4 npartitions
   );
