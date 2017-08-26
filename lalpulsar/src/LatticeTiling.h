@@ -72,21 +72,6 @@ typedef enum tagTilingLattice {
 extern const UserChoices TilingLatticeChoices;
 
 ///
-/// Statistics related to the number/value of lattice tiling points in a dimension.
-///
-#ifdef SWIG /* SWIG interface directives */
-SWIGLAL(IMMUTABLE_MEMBERS(tagLatticeTilingStats, name));
-#endif /* SWIG */
-typedef struct tagLatticeTilingStats {
-  const char *name;                     ///< Name of parameter-space dimension
-  UINT8 total_points;                   ///< Total number of points up to this dimension
-  UINT4 min_points;                     ///< Minimum number of points in this dimension
-  UINT4 max_points;                     ///< Maximum number of points in this dimension
-  double min_value;                     ///< Minimum value of points in this dimension
-  double max_value;                     ///< Maximum value of points in this dimension
-} LatticeTilingStats;
-
-///
 /// Function which returns a bound on a dimension of the lattice tiling.
 ///
 typedef double( *LatticeTilingBound )(
@@ -104,6 +89,36 @@ typedef void( *LatticeTilingBoundCache )(
   const gsl_vector *point,              ///< [in] Point at which to find bound
   gsl_vector* cache                     ///< [out] Values to cache
   );
+
+///
+/// Callback function which can be used to compute properties of a lattice tiling.
+///
+typedef int( *LatticeTilingCallback )(
+  const bool first_call,                ///< [in] Whether this is the first call to this function
+  const size_t ndim,                    ///< [in] Number of parameter-space dimensions
+  const size_t ichanged,                ///< [in] Index of first dimension to have changed since last call
+  const char *const *bound_names,       ///< [in] Pointer to array of parameter-space bound names
+  const UINT4 *num_points,              ///< [in] Pointer to array of number of points in current iteration block
+  const double *min_point,              ///< [in] Pointer to array of minimum range of points in current iteration block
+  const double *max_point,              ///< [in] Pointer to array of maximum range of points in current iteration block
+  const void *param,                    ///< [in] Arbitrary input data for use by callback function
+  void *out                             ///< [out] Output data to be filled by callback function
+  );
+
+///
+/// Statistics related to the number/value of lattice tiling points in a dimension.
+///
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagLatticeTilingStats, name));
+#endif /* SWIG */
+typedef struct tagLatticeTilingStats {
+  const char *name;                     ///< Name of parameter-space dimension
+  UINT8 total_points;                   ///< Total number of points up to this dimension
+  UINT4 min_points;                     ///< Minimum number of points in this dimension
+  UINT4 max_points;                     ///< Maximum number of points in this dimension
+  double min_value;                     ///< Minimum value of points in this dimension
+  double max_value;                     ///< Maximum value of points in this dimension
+} LatticeTilingStats;
 
 ///
 /// Create a new lattice tiling.
@@ -228,7 +243,7 @@ int XLALIsTiledLatticeTilingDimension(
 ///
 /// Return the step size of the lattice tiling in a given dimension, or 0 for non-tiled dimensions.
 ///
-REAL8 XLALLatticeTilingStepSizes(
+REAL8 XLALLatticeTilingStepSize(
   const LatticeTiling *tiling,          ///< [in] Lattice tiling
   const size_t dim                      ///< [in] Dimension of which to return step size
   );
@@ -243,7 +258,28 @@ REAL8 XLALLatticeTilingBoundingBox(
   );
 
 ///
+/// Register a callback function which can be used to compute properties of a lattice tiling.
+/// Returns a const pointer to the output data to be filled by the callback function.
+///
+const void *XLALRegisterLatticeTilingCallback(
+  LatticeTiling *tiling,                ///< [in] Lattice tiling
+  const LatticeTilingCallback func,     ///< [in] Callback function
+  const size_t param_len,               ///< [in] Length of arbitrary input data for use by callback function
+  const void *param,                    ///< [in] Arbitrary input data for use by callback function
+  const size_t out_len                  ///< [in] Length of output data to be filled by callback function
+  );
+
+///
+/// Perform all registered lattice tiling callbacks.
+///
+int XLALPerformLatticeTilingCallbacks(
+  const LatticeTiling *tiling           ///< [in] Lattice tiling
+  );
+
+///
 /// Return statistics related to the number/value of lattice tiling points in a dimension.
+///
+/// Statistics are computed through a callback function with XLALPerformLatticeTilingCallbacks().
 ///
 const LatticeTilingStats *XLALLatticeTilingStatistics(
   const LatticeTiling *tiling,          ///< [in] Lattice tiling

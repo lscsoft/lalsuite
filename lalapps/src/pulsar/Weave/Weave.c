@@ -667,7 +667,7 @@ int main( int argc, char *argv[] )
 
   // Get frequency spacing used by parameter-space tiling
   // - XLALEqualizeReducedSuperskyMetricsFreqSpacing() ensures this is the same for all segments
-  const double dfreq = XLALLatticeTilingStepSizes( tiling[isemi], ndim - 1 );
+  const double dfreq = XLALLatticeTilingStepSize( tiling[isemi], ndim - 1 );
 
   ////////// Load input data //////////
 
