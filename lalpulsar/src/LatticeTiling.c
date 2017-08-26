@@ -1381,7 +1381,7 @@ int XLALIsTiledLatticeTilingDimension(
 
 }
 
-REAL8 XLALLatticeTilingStepSizes(
+REAL8 XLALLatticeTilingStepSize(
   const LatticeTiling *tiling,
   const size_t dim
   )

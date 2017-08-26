@@ -2397,7 +2397,7 @@ int XLALSuperskyLatticePhysicalRange(
   }
 
   // Get frequency step size
-  const double dfreq = XLALLatticeTilingStepSizes( tiling, rssky_transf->ndim - 1 );
+  const double dfreq = XLALLatticeTilingStepSize( tiling, rssky_transf->ndim - 1 );
 
   // Create iterator over reduced supersky coordinates
   LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, rssky_transf->ndim - 1 );

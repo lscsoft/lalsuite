@@ -241,7 +241,7 @@ int XLALIsTiledLatticeTilingDimension(
 ///
 /// Return the step size of the lattice tiling in a given dimension, or 0 for non-tiled dimensions.
 ///
-REAL8 XLALLatticeTilingStepSizes(
+REAL8 XLALLatticeTilingStepSize(
   const LatticeTiling *tiling,          ///< [in] Lattice tiling
   const size_t dim                      ///< [in] Dimension of which to return step size
   );

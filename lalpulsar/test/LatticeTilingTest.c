@@ -691,9 +691,9 @@ static int SuperskyTests(
 
   // Check lattice step sizes in frequency
   const size_t ifreq = 3;
-  const double semi_dfreq = XLALLatticeTilingStepSizes( semi_tiling, ifreq );
+  const double semi_dfreq = XLALLatticeTilingStepSize( semi_tiling, ifreq );
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
-    const double coh_dfreq = XLALLatticeTilingStepSizes( coh_tiling[n], ifreq );
+    const double coh_dfreq = XLALLatticeTilingStepSize( coh_tiling[n], ifreq );
     const double tol = 1e-8;
     XLAL_CHECK( fabs( coh_dfreq - semi_dfreq ) < tol * semi_dfreq, XLAL_EFAILED, "semi_dfreq=%0.15e, coh_dfreq[%zu]=%0.15e, |coh_dfreq - semi_dfreq| >= %0.5g * semi_dfreq", semi_dfreq, n, coh_dfreq, tol );
   }
