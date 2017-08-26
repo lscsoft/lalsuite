@@ -2192,6 +2192,7 @@ LatticeTilingLocator *XLALCreateLatticeTilingLocator(
 
     // Create iterator over the bounded dimensions
     LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, tiling->ndim );
+    XLAL_CHECK_NULL( itr != NULL, XLAL_EFUNC );
 
     const size_t tn = itr->tiling->tiled_ndim;
 
