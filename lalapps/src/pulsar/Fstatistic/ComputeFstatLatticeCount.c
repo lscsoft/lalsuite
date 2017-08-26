@@ -134,13 +134,8 @@ int main(int argc, char *argv[])
   LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator(tiling, n);
   XLAL_CHECK_MAIN(itr != NULL, XLAL_EFUNC);
 
-  // Compute lattice tiling statistics
-  const LatticeTilingStats *stats = XLALRegisterLatticeTilingStats( tiling );
-  XLAL_CHECK_MAIN( stats != NULL, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( XLALPerformLatticeTilingCallbacks( tiling ) == XLAL_SUCCESS, XLAL_EFUNC );
-
   // Print number of templates
-  UINT8 ntemplates = stats[n-1].total_points;
+  UINT8 ntemplates = XLALTotalLatticeTilingPoints(itr);
   XLAL_CHECK_MAIN(ntemplates > 0, XLAL_EFUNC);
   printf("%" LAL_UINT8_FORMAT "\n", ntemplates);
 

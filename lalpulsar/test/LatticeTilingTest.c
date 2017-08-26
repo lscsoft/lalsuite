@@ -75,7 +75,7 @@ const double A4s_mism_hist[MISM_HIST_BINS] = {
 };
 
 static int SerialisationTest(
-  LatticeTiling UNUSED *tiling,
+  const LatticeTiling UNUSED *tiling,
   const UINT8 UNUSED total_ref,
   const int UNUSED total_tol,
   const UINT8 UNUSED total_ckpt_0,
@@ -94,18 +94,15 @@ static int SerialisationTest(
 
   const UINT8 total_ckpt[4] = {total_ckpt_0, total_ckpt_1, total_ckpt_2, total_ckpt_3};
 
-  // Compute lattice tiling statistics
-  const LatticeTilingStats *stats = XLALRegisterLatticeTilingStats( tiling );
-  XLAL_CHECK( stats != NULL, XLAL_EFUNC );
-  XLAL_CHECK( XLALPerformLatticeTilingCallbacks( tiling ) == XLAL_SUCCESS, XLAL_EFUNC );
-  const UINT8 total = stats[n-1].total_points;
-  XLAL_CHECK( total > 0, XLAL_EFUNC );
-  XLAL_CHECK( imaxabs( total - total_ref ) <= total_tol, XLAL_EFUNC, "|total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", total, total_ref, total_tol );
-
   // Create lattice tiling iterator
   LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, n );
   XLAL_CHECK( itr != NULL, XLAL_EFUNC );
   XLAL_CHECK( XLALSetLatticeTilingAlternatingIterator( itr, true ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Count number of points
+  const UINT8 total = XLALTotalLatticeTilingPoints( itr );
+  XLAL_CHECK( total > 0, XLAL_EFUNC );
+  XLAL_CHECK( imaxabs( total - total_ref ) <= total_tol, XLAL_EFUNC, "|total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", total, total_ref, total_tol );
 
   // Get all points
   gsl_matrix *GAMAT( points, n, total );
@@ -251,11 +248,8 @@ static int BasicTest(
     LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, i+1 );
     XLAL_CHECK( itr != NULL, XLAL_EFUNC );
 
-    // Compute lattice tiling statistics
-    const LatticeTilingStats *stats = XLALRegisterLatticeTilingStats( tiling );
-    XLAL_CHECK( stats != NULL, XLAL_EFUNC );
-    XLAL_CHECK( XLALPerformLatticeTilingCallbacks( tiling ) == XLAL_SUCCESS, XLAL_EFUNC );
-    const UINT8 total = stats[i].total_points;
+    // Count number of points
+    const UINT8 total = XLALTotalLatticeTilingPoints( itr );
     XLAL_CHECK( total > 0, XLAL_EFUNC );
     printf( "Number of lattice points in %zu dimensions: %" LAL_UINT8_FORMAT " (vs %" LAL_UINT8_FORMAT ", tolerance = %i)\n", i+1, total, total_ref[i], total_tol );
     XLAL_CHECK( imaxabs( total - total_ref[i] ) <= total_tol, XLAL_EFUNC, "|total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", i, total, total_ref[i], total_tol );
@@ -268,11 +262,13 @@ static int BasicTest(
     // Check tiling statistics
     printf( "  Check tiling statistics ..." );
     for ( size_t j = 0; j < n; ++j ) {
-      XLAL_CHECK( stats[j].name != NULL, XLAL_EFUNC );
-      XLAL_CHECK( imaxabs( stats[j].total_points - total_ref[j] ) <= total_tol, XLAL_EFAILED, "|total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", j, stats[j].total_points, total_ref[j], total_tol );
-      XLAL_CHECK( stats[j].min_points <= stats[j].max_points, XLAL_EFAILED, "min_points = %" LAL_INT4_FORMAT " > %" LAL_INT4_FORMAT " = max_points", stats[j].min_points, stats[j].max_points );
-      XLAL_CHECK( stats[j].min_value <= stats[j].max_value, XLAL_EFAILED, "min_value = %g > %g = max_value", stats[j].min_value, stats[j].max_value );
-      printf( " %s ...", stats[j].name );
+      const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, j );
+      XLAL_CHECK( stats != NULL, XLAL_EFUNC );
+      XLAL_CHECK( stats->name != NULL, XLAL_EFUNC );
+      XLAL_CHECK( imaxabs( stats->total_points - total_ref[j] ) <= total_tol, XLAL_EFAILED, "|total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", j, stats->total_points, total_ref[j], total_tol );
+      XLAL_CHECK( stats->min_points <= stats->max_points, XLAL_EFAILED, "min_points = %" LAL_INT4_FORMAT " > %" LAL_INT4_FORMAT " = max_points", stats->min_points, stats->max_points );
+      XLAL_CHECK( stats->min_value <= stats->max_value, XLAL_EFAILED, "min_value = %g > %g = max_value", stats->min_value, stats->max_value );
+      printf( " %s ...", stats->name );
     }
     printf( " done\n" );
 
@@ -295,22 +291,24 @@ static int BasicTest(
       XLAL_CHECK( err < 1e-6, XLAL_EFAILED, "err = %e < 1e-6", err );
       XLAL_CHECK( nearest_indexes->data[i] == k, XLAL_EFAILED, "nearest_indexes[%zu] = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", i, nearest_indexes->data[i], k );
       if ( 0 < i ) {
+        const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, i );
         UINT8 nearest_index = 0;
         INT4 nearest_left = 0, nearest_right = 0;
         XLAL_CHECK( XLALNearestLatticeTilingBlock( loc, point, i, nearest, &nearest_index, &nearest_left, &nearest_right ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK( nearest_index == nearest_indexes->data[i-1], XLAL_EFAILED, "nearest_index = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", nearest_index, nearest_indexes->data[i-1] );
         XLAL_CHECK( nearest_left <= nearest_right, XLAL_EFAILED, "invalid [nearest_left, nearest_right] = [%i, %i]\n", nearest_left, nearest_right );
         UINT4 nearest_len = nearest_right - nearest_left + 1;
-        XLAL_CHECK( nearest_len <= stats[i].max_points, XLAL_EFAILED, "nearest_len = %i > %i = stats[%zu]->max_points\n", nearest_len, stats[i].max_points, i );
+        XLAL_CHECK( nearest_len <= stats->max_points, XLAL_EFAILED, "nearest_len = %i > %i = stats[%zu]->max_points\n", nearest_len, stats->max_points, i );
       }
       if ( i+1 < n ) {
+        const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, i+1 );
         UINT8 nearest_index = 0;
         INT4 nearest_left = 0, nearest_right = 0;
         XLAL_CHECK( XLALNearestLatticeTilingBlock( loc, point, i+1, nearest, &nearest_index, &nearest_left, &nearest_right ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK( nearest_index == nearest_indexes->data[i], XLAL_EFAILED, "nearest_index = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", nearest_index, nearest_indexes->data[i] );
         XLAL_CHECK( nearest_left <= nearest_right, XLAL_EFAILED, "invalid [nearest_left, nearest_right] = [%i, %i]\n", nearest_left, nearest_right );
         UINT4 nearest_len = nearest_right - nearest_left + 1;
-        XLAL_CHECK( nearest_len <= stats[i+1].max_points, XLAL_EFAILED, "nearest_len = %i > %i = stats[%zu]->max_points\n", nearest_len, stats[i+1].max_points, i+1 );
+        XLAL_CHECK( nearest_len <= stats->max_points, XLAL_EFAILED, "nearest_len = %i > %i = stats[%zu]->max_points\n", nearest_len, stats->max_points, i+1 );
       }
     }
     printf( " done\n" );
@@ -354,7 +352,7 @@ static int BasicTest(
 }
 
 static int MismatchTest(
-  LatticeTiling *tiling,
+  const LatticeTiling *tiling,
   const gsl_matrix *metric,
   const double max_mismatch,
   const size_t injs_per_point,
@@ -374,11 +372,8 @@ static int MismatchTest(
   LatticeTilingLocator *loc = XLALCreateLatticeTilingLocator( tiling );
   XLAL_CHECK( loc != NULL, XLAL_EFUNC );
 
-  // Compute lattice tiling statistics
-  const LatticeTilingStats *stats = XLALRegisterLatticeTilingStats( tiling );
-  XLAL_CHECK( stats != NULL, XLAL_EFUNC );
-  XLAL_CHECK( XLALPerformLatticeTilingCallbacks( tiling ) == XLAL_SUCCESS, XLAL_EFUNC );
-  const UINT8 total = stats[n-1].total_points;
+  // Count number of points
+  const UINT8 total = XLALTotalLatticeTilingPoints( itr );
   XLAL_CHECK( total > 0, XLAL_EFUNC );
   printf( "Number of lattice points: %" LAL_UINT8_FORMAT " (vs %" LAL_UINT8_FORMAT ", tolerance = %i)\n", total, total_ref, total_tol );
   XLAL_CHECK( imaxabs( total - total_ref ) <= total_tol, XLAL_EFUNC, "|total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", total, total_ref, total_tol );
@@ -705,21 +700,18 @@ static int SuperskyTests(
 
   // Print information on bounds
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
-    const LatticeTilingStats *stats = XLALRegisterLatticeTilingStats( coh_tiling[n] );
-    XLAL_CHECK( stats != NULL, XLAL_EFUNC );
-    XLAL_CHECK( XLALPerformLatticeTilingCallbacks( coh_tiling[n] ) == XLAL_SUCCESS, XLAL_EFUNC );
     for ( size_t i = 0; i < XLALTotalLatticeTilingDimensions( coh_tiling[n] ); ++i ) {
-      XLAL_CHECK( stats[i].name != NULL, XLAL_EFUNC );
-      printf( "Coherent #%zu  bound #%zu: name=%6s, points=[%4u,%4u]\n", n, i, stats[i].name, stats[i].min_points, stats[i].max_points );
+      const LatticeTilingStats *stats = XLALLatticeTilingStatistics( coh_tiling[n], i );
+      XLAL_CHECK( stats != NULL, XLAL_EFUNC );
+      XLAL_CHECK( stats->name != NULL, XLAL_EFUNC );
+      printf( "Coherent #%zu  bound #%zu: name=%6s, points=[%4u,%4u]\n", n, i, stats->name, stats->min_points, stats->max_points );
     }
-  } {
-    const LatticeTilingStats *stats = XLALRegisterLatticeTilingStats( semi_tiling );
+  }
+  for ( size_t i = 0; i < XLALTotalLatticeTilingDimensions( semi_tiling ); ++i ) {
+    const LatticeTilingStats *stats = XLALLatticeTilingStatistics( semi_tiling, i );
     XLAL_CHECK( stats != NULL, XLAL_EFUNC );
-    XLAL_CHECK( XLALPerformLatticeTilingCallbacks( semi_tiling ) == XLAL_SUCCESS, XLAL_EFUNC );
-    for ( size_t i = 0; i < XLALTotalLatticeTilingDimensions( semi_tiling ); ++i ) {
-      XLAL_CHECK( stats[i].name != NULL, XLAL_EFUNC );
-      printf( "Semicoherent bound #%zu: name=%6s, points=[%4u,%4u]\n", i, stats[i].name, stats[i].min_points, stats[i].max_points );
-    }
+    XLAL_CHECK( stats->name != NULL, XLAL_EFUNC );
+    printf( "Semicoherent bound #%zu: name=%6s, points=[%4u,%4u]\n", i, stats->name, stats->min_points, stats->max_points );
   }
   printf( "\n" );
 

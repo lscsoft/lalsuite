@@ -286,15 +286,17 @@ const void *XLALRegisterLatticeTilingCallback(
 /// Perform all registered lattice tiling callbacks.
 ///
 int XLALPerformLatticeTilingCallbacks(
-  LatticeTiling *tiling                 ///< [in] Lattice tiling
+  const LatticeTiling *tiling           ///< [in] Lattice tiling
   );
 
 ///
-/// Register a callback function to compute various statistics over a lattice tiling.
-/// XLALPerformLatticeTilingCallbacks() must be called to compute the statistics.
+/// Return statistics related to the number/value of lattice tiling points in a dimension.
 ///
-const LatticeTilingStats *XLALRegisterLatticeTilingStats(
-  LatticeTiling *tiling                 ///< [in] Lattice tiling
+/// Statistics are computed through a callback function with XLALPerformLatticeTilingCallbacks().
+///
+const LatticeTilingStats *XLALLatticeTilingStatistics(
+  const LatticeTiling *tiling,          ///< [in] Lattice tiling
+  const size_t dim                      ///< [in] Dimension in which to return statistics
   );
 
 ///
@@ -364,6 +366,13 @@ SWIGLAL( INOUT_STRUCTS( gsl_matrix **, points ) );
 int XLALNextLatticeTilingPoints(
   LatticeTilingIterator *itr,           ///< [in] Lattice tiling iterator
   gsl_matrix **points                   ///< [out] Columns are next set of points in lattice tiling
+  );
+
+///
+/// Return the total number of points covered by the lattice tiling iterator.
+///
+UINT8 XLALTotalLatticeTilingPoints(
+  const LatticeTilingIterator *itr      ///< [in] Lattice tiling iterator
   );
 
 ///
