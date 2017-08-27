@@ -104,7 +104,7 @@ struct tagLatticeTiling {
   gsl_matrix *phys_from_int;            ///< Transform to physical coordinates from generating integers
   gsl_matrix *tiled_generator;          ///< Lattice generator matrix in tiled dimensions
   size_t ncallback;                     ///< Number of registered callbacks
-  LT_Callback *callbacks;               ///< Registered callbacks
+  LT_Callback **callbacks;              ///< Registered callbacks
   size_t *ncallback_done;               ///< Pointer to number of successfully performed callbacks (mutable)
   const LatticeTilingStats *stats;      ///< Lattice tiling statistics computed by default callback
 };
@@ -841,6 +841,9 @@ void XLALDestroyLatticeTiling(
   if ( tiling != NULL ) {
     XLALFree( tiling->bounds );
     XLALFree( tiling->tiled_idx );
+    for ( size_t m = 0; m < tiling->ncallback; ++m ) {
+      XLALFree( tiling->callbacks[m] );
+    }
     XLALFree( tiling->callbacks );
     XLALFree( tiling->ncallback_done );
     GFMAT( tiling->int_from_phys, tiling->phys_from_int, tiling->tiled_generator );
@@ -1440,11 +1443,10 @@ const void *XLALRegisterLatticeTilingCallback(
   ++tiling->ncallback;
   tiling->callbacks = XLALRealloc( tiling->callbacks, tiling->ncallback * sizeof( *tiling->callbacks ) );
   XLAL_CHECK_NULL( tiling->callbacks != NULL, XLAL_ENOMEM );
+  LT_Callback *cb = tiling->callbacks[tiling->ncallback - 1] = XLALCalloc( 1, sizeof( *cb ) );
+  XLAL_CHECK_NULL( cb != NULL, XLAL_ENOMEM );
 
-  LT_Callback *cb = &tiling->callbacks[tiling->ncallback - 1];
-
-  // Initialise memory for new callback
-  memset( cb, 0, sizeof( *cb ) );
+  // Set fields
   cb->func = func;
   cb->param_len = param_len;
   if ( param_len > 0 ) {
@@ -1514,7 +1516,7 @@ int XLALPerformLatticeTilingCallbacks(
 
     // Call callback functions
     for ( size_t m = *tiling->ncallback_done; m < tiling->ncallback; ++m ) {
-      LT_Callback *cb = &tiling->callbacks[m];
+      LT_Callback *cb = tiling->callbacks[m];
       XLAL_CHECK( (cb->func)( first_call, n, i, bound_names, num_points, min_point, max_point, cb->param, cb->out ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
     first_call = false;
