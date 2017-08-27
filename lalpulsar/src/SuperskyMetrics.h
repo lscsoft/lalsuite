@@ -251,19 +251,6 @@ int XLALSetSuperskyPhysicalSpinBound(
   );
 
 ///
-/// Set parameter-space bounds on the reduced supersky frequency/spindown coordinates \f$\nu^{(s)}\f$
-/// for a lattice tiling using the reduced supersky metric. These coordinates are related to the
-/// physical frequency/spindowns by \f$\nu^{(s)} = f^{(s)} + \vec\Delta^s \cdot \vec n\f$.
-///
-int XLALSetSuperskyCoordinateSpinBound(
-  LatticeTiling *tiling,                        ///< [in] Lattice tiling.
-  const SuperskyTransformData *rssky_transf,    ///< [in] Reduced supersky coordinate transform data
-  const size_t s,                               ///< [in] Spindown order; 0=frequency, 1=first spindown, etc.
-  const double bound1,                          ///< [in] First bound on frequency/spindown
-  const double bound2                           ///< [in] Second bound on frequency/spindown
-  );
-
-///
 /// Fill two #PulsarDopplerParams structs with the physical ranges covered by a reduced supersky
 /// lattice tiling.
 ///

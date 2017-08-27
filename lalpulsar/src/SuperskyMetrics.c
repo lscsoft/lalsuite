@@ -2350,41 +2350,6 @@ int XLALSetSuperskyPhysicalSpinBound(
 
 }
 
-int XLALSetSuperskyCoordinateSpinBound(
-  LatticeTiling *tiling,
-  const SuperskyTransformData *rssky_transf,
-  const size_t s,
-  const double bound1,
-  const double bound2
-  )
-{
-
-  // Check input
-  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
-  XLAL_CHECK( CHECK_RSSKY_TRANSF( rssky_transf ), XLAL_EINVAL );
-  XLAL_CHECK( isfinite( bound1 ), XLAL_EINVAL );
-  XLAL_CHECK( isfinite( bound2 ), XLAL_EINVAL );
-  XLAL_CHECK( s <= rssky_transf->SMAX, XLAL_ESIZE );
-
-  // Set parameter-space bound name
-  XLAL_CHECK( XLALSetLatticeTilingBoundName( tiling, RSSKY_FKDOT_DIM( rssky_transf, s ), "nu%zudot", s ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // Set the parameter-space bound on reduced supersky frequency/spindown coordinate
-  XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, RSSKY_FKDOT_DIM( rssky_transf, s ), bound1, bound2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // Supersky metric requires searching over spindown if also searching over sky
-  const int tiled_sskyA = XLALIsTiledLatticeTilingDimension( tiling, 0 );
-  XLAL_CHECK( tiled_sskyA != XLAL_FAILURE, XLAL_EFUNC );
-  const int tiled_sskyB = XLALIsTiledLatticeTilingDimension( tiling, 1 );
-  XLAL_CHECK( tiled_sskyB != XLAL_FAILURE, XLAL_EFUNC );
-  const int tiled_fkdot = XLALIsTiledLatticeTilingDimension( tiling, RSSKY_FKDOT_DIM( rssky_transf, s ) );
-  XLAL_CHECK( tiled_fkdot != XLAL_FAILURE, XLAL_EFUNC );
-  XLAL_CHECK( !( tiled_sskyA || tiled_sskyB ) || tiled_fkdot, XLAL_EINVAL, "Must search over %zu-order spindown if also searching over sky", s );
-
-  return XLAL_SUCCESS;
-
-}
-
 int XLALSuperskyLatticePhysicalRange(
   PulsarDopplerParams* min_range,
   PulsarDopplerParams* max_range,
