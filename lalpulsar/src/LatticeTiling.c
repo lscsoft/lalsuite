@@ -1082,14 +1082,6 @@ int XLALSetTilingLatticeAndMetric(
   // Set type of lattice to generate tiling with
   tiling->lattice = lattice;
 
-  // Count number of tiled dimensions
-  tiling->tiled_ndim = 0;
-  for ( size_t i = 0; i < n; ++i ) {
-    if ( tiling->bounds[i].is_tiled ) {
-      ++tiling->tiled_ndim;
-    }
-  }
-
   // Set physical parameter-space origin to mid-point of parameter-space bounds
   gsl_matrix *GAMAT( phys_origin_cache, n, LT_CACHE_MAX_SIZE );
   gsl_matrix_set_all( phys_origin_cache, GSL_NAN );
@@ -1107,7 +1099,13 @@ int XLALSetTilingLatticeAndMetric(
   tiling->stats = XLALRegisterLatticeTilingCallback( tiling, LT_StatsCallback, 0, NULL, tiling->ndim * sizeof( *tiling->stats ) );
   XLAL_CHECK( tiling->stats != NULL, XLAL_EFUNC );
 
-  // If no parameter-space dimensions are tiled, we're done
+  // Count number of tiled dimensions; if no parameter-space dimensions are tiled, we're done
+  tiling->tiled_ndim = 0;
+  for ( size_t i = 0; i < n; ++i ) {
+    if ( tiling->bounds[i].is_tiled ) {
+      ++tiling->tiled_ndim;
+    }
+  }
   if ( tiling->tiled_ndim == 0 ) {
     return XLAL_SUCCESS;
   }
