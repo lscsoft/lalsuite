@@ -641,10 +641,12 @@ int main( int argc, char *argv[] )
   }
 
   // Set parameter-space padding
-  for ( size_t i = 0; i < ncohtiles; ++i ) {
-    XLAL_CHECK_MAIN( XLALSetLatticeTilingPadding( tiling[i], interpolation ? 2 : 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  for ( size_t j = 0; j < ndim; ++j ) {
+    for ( size_t i = 0; i < ncohtiles; ++i ) {
+      XLAL_CHECK_MAIN( XLALSetLatticeTilingPadding( tiling[i], j, interpolation ? 2 : 1, interpolation ? 2 : 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+    XLAL_CHECK_MAIN( XLALSetLatticeTilingPadding( tiling[isemi], j, 1, 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
-  XLAL_CHECK_MAIN( XLALSetLatticeTilingPadding( tiling[isemi], 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Add random offsets to physical origin of lattice tilings, if requested
   if ( UVAR_SET( lattice_rand_offset ) ) {
