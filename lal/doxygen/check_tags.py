@@ -30,4 +30,4 @@ for elem in tree.iter('docanchor'):
         anchors[elem.text] = 1
 for anchor in anchors:
     if anchors[anchor] > 1:
-        print '%s: warning: duplicate anchor %s' % (tagfile, anchor)
+        print('%s: warning: duplicate anchor %s' % (tagfile, anchor))
