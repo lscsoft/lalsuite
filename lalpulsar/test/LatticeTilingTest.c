@@ -486,7 +486,7 @@ static int MismatchTest(
   // Perform 10 injections outside parameter space
   {
     gsl_matrix *GAMAT( injections, n, 10 );
-    gsl_matrix *GAMAT( nearest, n, total );
+    gsl_matrix *GAMAT( nearest, n, 10 );
     RandomParams *rng = XLALCreateRandomParams( total );
     XLAL_CHECK( rng != NULL, XLAL_EFUNC );
 
@@ -499,7 +499,6 @@ static int MismatchTest(
     // Cleanup
     GFMAT( injections, nearest );
     XLALDestroyRandomParams( rng );
-
   }
 
   // Cleanup
