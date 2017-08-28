@@ -199,17 +199,35 @@ int XLALSimInspiralTaylorF2ReducedSpin(
         case 0:
         case 1:
             alpha2 = 0.;
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case 2:
             alpha3 = 0.;
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case 3:
             alpha4 = 0.;
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case 4:
             alpha5 = 0.;
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case 5:
             alpha6 = 0.;
             alpha6L = 0.;
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case 6:
             alpha7 = 0.;
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         default:
             break;
     }
@@ -218,17 +236,35 @@ int XLALSimInspiralTaylorF2ReducedSpin(
         case 0:
         case 1:
             psi2 = 0.;
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case 2:
             psi3 = 0.;
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case 3:
             psi4 = 0.;
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case 4:
             psi5 = 0.;
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case 5:
             psi6 = 0.;
             psi6L = 0.;
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case 6:
             psi7 = 0.;
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         default:
             break;
     }

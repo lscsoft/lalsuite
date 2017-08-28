@@ -629,11 +629,17 @@ static int XLALSimInspiralTaylorT2Setup(
               + XLALSimInspiralTaylorT2Timing_12PNTidalCoeff(eta,chi2,lambda2);
       ak->pva12 =XLALSimInspiralTaylorT2Phasing_12PNTidalCoeff(eta,chi1,lambda1)
               + XLALSimInspiralTaylorT2Phasing_12PNTidalCoeff(eta,chi2,lambda2);
+#if __GNUC__ >= 7
+      __attribute__ ((fallthrough));
+#endif
     case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
       ak->tva10 = XLALSimInspiralTaylorT2Timing_10PNTidalCoeff(chi1,lambda1)
                 + XLALSimInspiralTaylorT2Timing_10PNTidalCoeff(chi2,lambda2);
       ak->pva10 = XLALSimInspiralTaylorT2Phasing_10PNTidalCoeff(chi1,lambda1)
                 + XLALSimInspiralTaylorT2Phasing_10PNTidalCoeff(chi2,lambda2);
+#if __GNUC__ >= 7
+      __attribute__ ((fallthrough));
+#endif
     case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
       break;
     default:

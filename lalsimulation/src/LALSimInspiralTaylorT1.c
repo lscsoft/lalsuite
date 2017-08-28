@@ -195,9 +195,15 @@ XLALSimInspiralTaylorT1Setup(
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
 	    ak->akdEF.ETa6  = lambda1 * XLALSimInspiralPNEnergy_12PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralPNEnergy_12PNTidalCoeff(ak->chi2);
             ak->akdEF.FTa12 = lambda1 * XLALSimInspiralPNFlux_12PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralPNFlux_12PNTidalCoeff(ak->chi2);
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
             ak->akdEF.ETa5  = lambda1 * XLALSimInspiralPNEnergy_10PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralPNEnergy_10PNTidalCoeff(ak->chi2);
             ak->akdEF.FTa10 = lambda1 * XLALSimInspiralPNFlux_10PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralPNFlux_10PNTidalCoeff(ak->chi2);
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
             break;
         default:

@@ -519,25 +519,46 @@ static REAL8 XLALdEnergyByFluxSpinPrec(
 		case 8: 	/* pseudo 4PN */
 		case 7: 	/* 3.5 PN */
 			dEbF7 = params->dEbF7NonSpin; 
+#if __GNUC__ >= 7
+			__attribute__ ((fallthrough));
+#endif
 		case 6: 	/* 3 PN */
 			dEbF6 = params->dEbF6NonSpin; 
 			dEbF6L = params->dEbF6LogNonSpin; 
+#if __GNUC__ >= 7
+			__attribute__ ((fallthrough));
+#endif
 		case 5: 	/* 2.5 PN */
 			dEbF5 = params->dEbF5NonSpin
 					+ chiaDotLNh*delta*(72.71676587301587 + (7*eta)/2.) 
 					+ chisDotLNh*(72.71676587301587 - (1213*eta)/18. - (17*eta_p2)/2.);
+#if __GNUC__ >= 7
+			__attribute__ ((fallthrough));
+#endif
 		case 4: 	/* 2 PN */
 			dEbF4 = params->dEbF4NonSpin
 					+ (233*chisDotChia*delta)/48. - (719*chiaDotLNh*chisDotLNh*delta)/48. 
 					+ chiaSqr*(2.4270833333333335 - 10*eta) + chisDotLNh*chisDotLNh*(-7.489583333333333 - eta/24.) 
 					+ chisSqr*(2.4270833333333335 + (7*eta)/24.) + chiaDotLNh*chiaDotLNh*(-7.489583333333333 + 30*eta);
+#if __GNUC__ >= 7
+			__attribute__ ((fallthrough));
+#endif
 		case 3: 	/* 1.5 PN */
 			dEbF3 = params->dEbF3NonSpin
 					+ (113*chiaDotLNh*delta)/12. + chisDotLNh*(9.416666666666666 - (19*eta)/3.);
+#if __GNUC__ >= 7
+			__attribute__ ((fallthrough));
+#endif
 		case 2: 	/* 1 PN */
 			dEbF2 = params->dEbF2NonSpin; 
+#if __GNUC__ >= 7
+			__attribute__ ((fallthrough));
+#endif
 		case 1: 	/* 0.5 PN */
 			dEbF1 = params->dEbF1NonSpin;
+#if __GNUC__ >= 7
+			__attribute__ ((fallthrough));
+#endif
 		case 0: 	/* Newtonian */
 			dEbF0 = params->dEbF0NonSpin; 
 			break; 
@@ -728,25 +749,46 @@ static int computeOrbitalPhase(
 				case 8: 	/* pseudo 4PN */
 				case 7: 	/* 3.5 PN */
 					phi7 = params->phiOrb7NonSpin; 
+#if __GNUC__ >= 7
+					__attribute__ ((fallthrough));
+#endif
 				case 6: 	/* 3 PN */
 					phi6 = params->phiOrb6NonSpin; 
 					phi6L = params->phiOrb6LogNonSpin; 
+#if __GNUC__ >= 7
+					__attribute__ ((fallthrough));
+#endif
 				case 5: 	/* 2.5 PN */
 					phi5 = params->phiOrb5LogNonSpin
 							+ chiaDotLNh*((-732985*delta)/2016. - (35*delta*eta)/2.) 
 							+ chisDotLNh*(-363.58382936507934 + (6065*eta)/18. + (85*eta_p2)/2.);
+#if __GNUC__ >= 7
+					__attribute__ ((fallthrough));
+#endif
 				case 4: 	/* 2 PN */
 					phi4 = params->phiOrb4NonSpin
 							+ (1165*chisDotChia*delta)/48. - (3595*chiaDotLNh*chisDotLNh*delta)/48. 
 							+ chiaSqr*(12.135416666666666 - 50*eta) + chisDotLNh*chisDotLNh*(-37.447916666666664 - (5*eta)/24.) 
 							+ chisSqr*(12.135416666666666 + (35*eta)/24.) + chiaDotLNh*chiaDotLNh*(-37.447916666666664 + 150*eta);
+#if __GNUC__ >= 7
+					__attribute__ ((fallthrough));
+#endif
 				case 3: 	/* 1.5 PN */
 					phi3 = params->phiOrb3NonSpin
 							+ (565*chiaDotLNh*delta)/24. + chisDotLNh*(23.541666666666668 - (95*eta)/6.);
+#if __GNUC__ >= 7
+					__attribute__ ((fallthrough));
+#endif
 				case 2: 	/* 1 PN */
 					phi2 = params->phiOrb2NonSpin; 
+#if __GNUC__ >= 7
+					__attribute__ ((fallthrough));
+#endif
 				case 1: 	/* 0.5 PN */
 					phi1 = params->phiOrb1NonSpin;
+#if __GNUC__ >= 7
+					__attribute__ ((fallthrough));
+#endif
 				case 0: 	/* Newtonian */
 					phi0 = params->phiOrb0NonSpin; 
 					break; 
