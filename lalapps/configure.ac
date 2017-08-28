@@ -371,10 +371,6 @@ fi
 AM_CONDITIONAL([HAVE_BAMBI],[${hbf}])
 AM_CONDITIONAL([HAVE_BAMBI_MPI],[${bambimpi}])
 
-# check for valgrind/callgrind headers
-AC_CHECK_HEADER([valgrind/callgrind.h],[valgrind_callgrind=true],[valgrind_callgrind=false])
-AM_CONDITIONAL([VALGRIND_CALLGRIND],[test ${valgrind_callgrind} = true])
-
 # check for boinc, and modify compiler for lal library checks
 LALSUITE_CHECK_BOINC
 

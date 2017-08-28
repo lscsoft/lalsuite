@@ -293,7 +293,6 @@ src/pulsar/Weave/*.testdir
 src/pulsar/Weave/lalapps_Weave
 src/pulsar/Weave/lalapps_WeaveCompare
 src/pulsar/Weave/lalapps_WeaveSetup
-src/pulsar/Weave/lalapps_Weave_Callgrind
 src/pulsar/Xray/lalapps_Intermittent
 src/pulsar/Xray/lalapps_SemiCoherentBinary_v2
 src/pulsar/Xray/lalapps_binary2sfts

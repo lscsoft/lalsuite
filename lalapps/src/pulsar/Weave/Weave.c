@@ -33,10 +33,6 @@
 #include <lal/Random.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 
-#ifdef WEAVE_CALLGRIND   // Set when compiling lalapps_Weave_Callgrind
-#include <valgrind/callgrind.h>
-#endif
-
 ///
 /// Internal definition of miscellaneous per-segment information
 ///
@@ -65,11 +61,6 @@ static inline double cpu_time(void) { return XLALGetCPUTime(); }
 
 int main( int argc, char *argv[] )
 {
-
-#ifdef WEAVE_CALLGRIND   // Set when compiling lalapps_Weave_Callgrind
-  // Do not profile setup
-  CALLGRIND_STOP_INSTRUMENTATION;
-#endif
 
   // Set help information
   lalUserVarHelpBrief = "search for gravitational-wave pulsars";
@@ -1042,12 +1033,6 @@ int main( int argc, char *argv[] )
     LogPrintfVerbatim( LOG_NORMAL, ", peak memory %.1fMB\n", XLALGetPeakHeapUsageMB() );
   }
 
-#ifdef WEAVE_CALLGRIND   // Set when compiling lalapps_Weave_Callgrind
-  // Start profiling before main search loop
-  CALLGRIND_START_INSTRUMENTATION;
-  CALLGRIND_ZERO_STATS;
-#endif
-
   // Begin main search loop
   BOOLEAN search_complete = 0;
   while ( !search_complete ) {
@@ -1252,12 +1237,6 @@ int main( int argc, char *argv[] )
 
   }   // End of main search loop
 
-#ifdef WEAVE_CALLGRIND   // Set when compiling lalapps_Weave_Callgrind
-  // Stop profiling and dump statistics after main search loop
-  CALLGRIND_STOP_INSTRUMENTATION;
-  CALLGRIND_DUMP_STATS_AT("main search loop");
-#endif
-
   // Total elapsed CPU and wall times
   const double cpu_total = cpu_time() - cpu_zero;
   const double wall_total = wall_time() - wall_zero;
@@ -1273,12 +1252,6 @@ int main( int argc, char *argv[] )
     LogPrintfVerbatim( LOG_NORMAL, ", total %.1f sec, CPU %.1f%%, peak memory %.1fMB\n", wall_total, 100.0 * cpu_total / wall_total, XLALGetPeakHeapUsageMB() );
   }
 
-#ifdef WEAVE_CALLGRIND   // Set when compiling lalapps_Weave_Callgrind
-  // Start profiling before post-main search loop
-  CALLGRIND_START_INSTRUMENTATION;
-  CALLGRIND_ZERO_STATS;
-#endif
-
   {
     // Start timing
     double cpu_tic = cpu_time();
@@ -1292,12 +1265,6 @@ int main( int argc, char *argv[] )
     cpu_timing[CT_SEMI_CMPL] += cpu_toc - cpu_tic;
     cpu_tic = cpu_toc;
   }
-
-#ifdef WEAVE_CALLGRIND   // Set when compiling lalapps_Weave_Callgrind
-  // Stop profiling and dump statistics after post-main search loop
-  CALLGRIND_STOP_INSTRUMENTATION;
-  CALLGRIND_DUMP_STATS_AT("post-main search loop");
-#endif
 
   ////////// Output search results //////////
 
