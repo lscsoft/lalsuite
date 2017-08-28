@@ -184,6 +184,7 @@ static int BasicTest(
 {
 
   const int total_tol = 1;
+  const double value_tol = 1000 * LAL_REAL8_EPS;
 
   const int bound_on[4] = {bound_on_0, bound_on_1, bound_on_2, bound_on_3};
   const UINT8 total_ref[4] = {total_ref_0, total_ref_1, total_ref_2, total_ref_3};
@@ -276,6 +277,16 @@ static int BasicTest(
     gsl_matrix *GAMAT( points, n, total );
     XLAL_CHECK( XLALNextLatticeTilingPoints( itr, &points ) == ( int )total, XLAL_EFUNC );
     XLAL_CHECK( XLALNextLatticeTilingPoint( itr, NULL ) == 0, XLAL_EFUNC );
+    for ( UINT8 k = 0; k < total; ++k ) {
+      gsl_vector_const_view point_view = gsl_matrix_const_column( points, k );
+      const gsl_vector *point = &point_view.vector;
+      for ( size_t j = 0; j < n; ++j ) {
+        const double point_j = gsl_vector_get( point, j );
+        const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, j );
+        XLAL_CHECK( point_j >= stats->min_value - value_tol, XLAL_EFAILED, "point_j = %.10g < %.10g = stats[%zu]->min_value", point_j, stats->min_value, j );
+        XLAL_CHECK( point_j <= stats->max_value + value_tol, XLAL_EFAILED, "point_j = %.10g > %.10g = stats[%zu]->max_value", point_j, stats->max_value, j );
+      }
+    }
 
     // Get nearest points to each template, check for consistency
     printf( "  Testing XLALNearestLatticeTiling{Point|Block}() ..." );
@@ -286,6 +297,12 @@ static int BasicTest(
       gsl_vector_const_view point_view = gsl_matrix_const_column( points, k );
       const gsl_vector *point = &point_view.vector;
       XLAL_CHECK( XLALNearestLatticeTilingPoint( loc, point, nearest, nearest_indexes ) == XLAL_SUCCESS, XLAL_EFUNC );
+      for ( size_t j = 0; j < n; ++j ) {
+        const double nearest_j = gsl_vector_get( nearest, j );
+        const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, j );
+        XLAL_CHECK( nearest_j >= stats->min_value - value_tol, XLAL_EFAILED, "nearest_j = %.10g < %.10g = stats[%zu]->min_value", nearest_j, stats->min_value, j );
+        XLAL_CHECK( nearest_j <= stats->max_value + value_tol, XLAL_EFAILED, "nearest_j = %.10g > %.10g = stats[%zu]->max_value", nearest_j, stats->max_value, j );
+      }
       gsl_vector_sub( nearest, point );
       double err = gsl_blas_dasum( nearest ) / n;
       XLAL_CHECK( err < 1e-6, XLAL_EFAILED, "err = %e < 1e-6", err );
