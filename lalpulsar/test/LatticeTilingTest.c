@@ -174,7 +174,6 @@ static int BasicTest(
   const int bound_on_1,
   const int bound_on_2,
   const int bound_on_3,
-  const UINT4 padding,
   const TilingLattice lattice,
   const UINT8 total_ref_0,
   const UINT8 total_ref_1,
@@ -197,12 +196,6 @@ static int BasicTest(
   for ( size_t i = 0; i < n; ++i ) {
     XLAL_CHECK( bound_on[i] == 0 || bound_on[i] == 1, XLAL_EFAILED );
     XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, i, 0.0, bound_on[i] * pow( 100.0, 1.0/n ) ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
-
-  // Set padding level
-  printf( "Padding level: %u\n", padding );
-  for ( size_t i = 0; i < n; ++i ) {
-    XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, i, padding, padding ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Set metric to the Lehmer matrix
@@ -785,34 +778,32 @@ int main( void )
   setvbuf( stderr, NULL, _IONBF, 0 );
 
   // Perform basic tests
-  XLAL_CHECK_MAIN( BasicTest( 1, 0, 0, 0, 0, 1, TILING_LATTICE_CUBIC,     1,    1,    1,    1 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 1, 1, 1, 1, 1, 1, TILING_LATTICE_ANSTAR,   93,    0,    0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 1, 1, 1, 1, 1, 1, TILING_LATTICE_CUBIC,    93,    0,    0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 2, 0, 0, 0, 0, 1, TILING_LATTICE_ANSTAR,    1,    1,    1,    1 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 2, 1, 1, 1, 1, 1, TILING_LATTICE_ANSTAR,   12,  144,    0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 2, 1, 1, 1, 1, 1, TILING_LATTICE_CUBIC,    13,  190,    0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 3, 0, 0, 0, 0, 1, TILING_LATTICE_CUBIC,     1,    1,    1,    1 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 3, 1, 1, 1, 1, 1, TILING_LATTICE_ANSTAR,    8,   46,  332,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 3, 1, 1, 1, 1, 1, TILING_LATTICE_CUBIC,     8,   60,  583,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 0, 0, 0, 0, 1, TILING_LATTICE_ANSTAR,    1,    1,    1,    1 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 0, 0, 0, 1, 1, TILING_LATTICE_ANSTAR,    1,    1,    1,    4 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 0, 0, 1, 0, 1, TILING_LATTICE_ANSTAR,    1,    1,    4,    4 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 0, 0, 1, 1, 1, TILING_LATTICE_ANSTAR,    1,    1,    4,   20 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 0, 1, 0, 0, 1, TILING_LATTICE_ANSTAR,    1,    4,    4,    4 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 0, 1, 0, 1, 1, TILING_LATTICE_ANSTAR,    1,    5,    5,   25 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 0, 1, 1, 0, 1, TILING_LATTICE_ANSTAR,    1,    5,   24,   24 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 0, 1, 1, 1, 1, TILING_LATTICE_ANSTAR,    1,    5,   20,  115 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 0, 0, 0, 1, TILING_LATTICE_ANSTAR,    4,    4,    4,    4 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 0, 0, 1, 1, TILING_LATTICE_ANSTAR,    5,    5,    5,   23 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 0, 1, 0, 1, TILING_LATTICE_ANSTAR,    5,    5,   23,   23 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 0, 1, 1, 1, TILING_LATTICE_ANSTAR,    6,    6,   24,  139 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 0, 0, 1, TILING_LATTICE_ANSTAR,    5,   25,   25,   25 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 0, 1, 1, TILING_LATTICE_ANSTAR,    6,   30,   30,  162 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 0, 1, TILING_LATTICE_ANSTAR,    6,   27,  151,  151 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 1, 1, TILING_LATTICE_ANSTAR,    6,   30,  145,  897 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 1, 1, TILING_LATTICE_CUBIC,     7,   46,  287, 2543 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 1, 2, TILING_LATTICE_ANSTAR,    8,   54,  336, 2804 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 1, 2, TILING_LATTICE_CUBIC,     9,   77,  661, 7822 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 1, 0, 0, 0, 0, TILING_LATTICE_CUBIC,     1,    1,    1,    1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 1, 1, 1, 1, 1, TILING_LATTICE_ANSTAR,   93,    0,    0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 1, 1, 1, 1, 1, TILING_LATTICE_CUBIC,    93,    0,    0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 2, 0, 0, 0, 0, TILING_LATTICE_ANSTAR,    1,    1,    1,    1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 2, 1, 1, 1, 1, TILING_LATTICE_ANSTAR,   12,  144,    0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 2, 1, 1, 1, 1, TILING_LATTICE_CUBIC,    13,  190,    0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 3, 0, 0, 0, 0, TILING_LATTICE_CUBIC,     1,    1,    1,    1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 3, 1, 1, 1, 1, TILING_LATTICE_ANSTAR,    8,   46,  332,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 3, 1, 1, 1, 1, TILING_LATTICE_CUBIC,     8,   60,  583,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 0, 0, 0, 0, TILING_LATTICE_ANSTAR,    1,    1,    1,    1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 0, 0, 0, 1, TILING_LATTICE_ANSTAR,    1,    1,    1,    4 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 0, 0, 1, 0, TILING_LATTICE_ANSTAR,    1,    1,    4,    4 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 0, 0, 1, 1, TILING_LATTICE_ANSTAR,    1,    1,    4,   20 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 0, 1, 0, 0, TILING_LATTICE_ANSTAR,    1,    4,    4,    4 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 0, 1, 0, 1, TILING_LATTICE_ANSTAR,    1,    5,    5,   25 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 0, 1, 1, 0, TILING_LATTICE_ANSTAR,    1,    5,   24,   24 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 0, 1, 1, 1, TILING_LATTICE_ANSTAR,    1,    5,   20,  115 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 0, 0, 0, TILING_LATTICE_ANSTAR,    4,    4,    4,    4 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 0, 0, 1, TILING_LATTICE_ANSTAR,    5,    5,    5,   23 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 0, 1, 0, TILING_LATTICE_ANSTAR,    5,    5,   23,   23 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 0, 1, 1, TILING_LATTICE_ANSTAR,    6,    6,   24,  139 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 0, 0, TILING_LATTICE_ANSTAR,    5,   25,   25,   25 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 0, 1, TILING_LATTICE_ANSTAR,    6,   30,   30,  162 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 0, TILING_LATTICE_ANSTAR,    6,   27,  151,  151 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 1, TILING_LATTICE_ANSTAR,    6,   30,  145,  897 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 1, TILING_LATTICE_CUBIC,     7,   46,  287, 2543 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform mismatch tests with a square parameter space
   XLAL_CHECK_MAIN( MismatchSquareTest( TILING_LATTICE_CUBIC,  0.03,     0,     0, 21460,  Z1_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
