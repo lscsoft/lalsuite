@@ -147,6 +147,9 @@ LALFindChirpTemplateInit (
       {
         ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
       }
+#if __GNUC__ >= 7
+      __attribute__ ((fallthrough));
+#endif
 
     case TaylorT1:
     case TaylorT2:
