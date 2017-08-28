@@ -630,8 +630,6 @@ static int SuperskyTests(
   )
 {
 
-  const int total_tol = 15;
-
   const UINT8 coh_total_ref[3] = {coh_total_ref_0, coh_total_ref_1, coh_total_ref_2};
 
   printf( "Performing super-sky metric tests ...\n\n" );
@@ -747,11 +745,11 @@ static int SuperskyTests(
   // Perform mismatch test of coherent and semicoherent tilings
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
     printf( "Coherent #%zu mismatch tests:\n", n );
-    XLAL_CHECK( MismatchTest( coh_tiling[n], metrics->coh_rssky_metric[n], coh_max_mismatch, 0.1, 5e-2, 5e-2, coh_total_ref[n], total_tol, A4s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( MismatchTest( coh_tiling[n], metrics->coh_rssky_metric[n], coh_max_mismatch, 0.1, 5e-2, 5e-2, coh_total_ref[n], lround(1e-5 * coh_total_ref[n]), A4s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
     printf( "\n" );
   }
   printf( "Semicoherent mismatch tests:\n" );
-  XLAL_CHECK( MismatchTest( semi_tiling, metrics->semi_rssky_metric, semi_max_mismatch, 0.0001, 5e-2, 5e-2, semi_total_ref, total_tol, A4s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( MismatchTest( semi_tiling, metrics->semi_rssky_metric, semi_max_mismatch, 0.0001, 5e-2, 5e-2, semi_total_ref, lround(1e-6 * semi_total_ref), A4s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
   printf( "\n" );
 
   // Cleanup
