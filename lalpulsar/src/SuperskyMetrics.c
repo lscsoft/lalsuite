@@ -2054,8 +2054,8 @@ int XLALSetSuperskyEqualAreaSkyBounds(
   // Parameter-space bounds on reduced supersky sky coordinates A and B
   double A_bound[2] = {GSL_NAN, GSL_NAN};
   double B_bound[2] = {-1, 1};
-  UINT4 A_pad_lower = 1, A_pad_upper = 1;
-  UINT4 B_pad_lower = 1, B_pad_upper = 1;
+  LatticeTilingPaddingFlags A_padf = LATTICE_TILING_PAD_LOWER | LATTICE_TILING_PAD_UPPER;
+  LatticeTilingPaddingFlags B_padf = LATTICE_TILING_PAD_LOWER | LATTICE_TILING_PAD_UPPER;
 
   // Handle special cases of 1 and 2 patches
   if ( patch_count <= 2 ) {
@@ -2129,10 +2129,10 @@ int XLALSetSuperskyEqualAreaSkyBounds(
     }
 
     // Decide which patches to add padding to
-    A_pad_lower = ( A_index[0] == 0 && patch_index < hemi_patch_count ) ? 1 : 0;
-    A_pad_upper = ( A_index[0] == 0 && patch_index >= hemi_patch_count ) ? 1 : 0;
-    B_pad_lower = ( B_index == 0 ) ? 1 : 0;
-    B_pad_upper = ( B_index + 1 == B_count ) ? 1 : 0;
+    A_padf = ( ( A_index[0] == 0 && patch_index <  hemi_patch_count ) ? LATTICE_TILING_PAD_LOWER : 0 )
+      |      ( ( A_index[0] == 0 && patch_index >= hemi_patch_count ) ? LATTICE_TILING_PAD_UPPER : 0 );
+    B_padf = ( ( B_index     == 0       ) ? LATTICE_TILING_PAD_LOWER : 0 )
+      |      ( ( B_index + 1 == B_count ) ? LATTICE_TILING_PAD_UPPER : 0 );
 
     // Allocate a GSL root solver
     gsl_root_fsolver *fs = gsl_root_fsolver_alloc( gsl_root_fsolver_brent );
@@ -2257,9 +2257,9 @@ int XLALSetSuperskyEqualAreaSkyBounds(
   XLAL_CHECK( XLALSetLatticeTilingOrigin( tiling, 0, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALSetLatticeTilingOrigin( tiling, 1, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Set the padding to add to parameter-space bounds in reduced supersky sky coordinates A and B
-  XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, 0, A_pad_lower, A_pad_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, 1, B_pad_lower, B_pad_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Set the parameter-space padding control flags for reduced supersky sky coordinates A and B
+  XLAL_CHECK( XLALSetLatticeTilingPaddingFlags( tiling, 0, A_padf, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingPaddingFlags( tiling, 1, B_padf, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 

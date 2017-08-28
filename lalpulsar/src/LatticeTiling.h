@@ -67,6 +67,16 @@ typedef enum tagTilingLattice {
 } TilingLattice;
 
 ///
+/// Lattice tiling parameter-space bound padding control flags.
+///
+typedef enum tagLatticeTilingPaddingFlags {
+  LATTICE_TILING_PAD_LOWER = 0x01,      ///< Add padding to lower parameter-space bounds
+  LATTICE_TILING_PAD_UPPER = 0x02,      ///< Add padding to upper parameter-space bounds
+  LATTICE_TILING_PAD_EXTRA = 0x04,      ///< Add extra padding for rapidly-changing bounds
+  LATTICE_TILING_PAD_MAX   = 0x08,
+} LatticeTilingPaddingFlags;
+
+///
 /// Static array of all #TilingLattice choices, for use by the UserInput module parsing routines
 ///
 extern const UserChoices TilingLatticeChoices;
@@ -179,14 +189,14 @@ int XLALSetLatticeTilingConstantBound(
   );
 
 ///
-/// Set the level of padding to add to the lattice tiling parameter-space bounds in the given dimension.
+/// Set flags which control the padding of lattice tiling parameter-space bounds in the given dimension.
 /// This is an optional setting and should generally not be used unless specifically required.
 ///
-int XLALSetLatticeTilingPadding(
+int XLALSetLatticeTilingPaddingFlags(
   LatticeTiling *tiling,                ///< [in] Lattice tiling
-  const size_t dim,                     ///< [in] Dimension on which to set padding
-  const UINT4 pad_lower,                ///< [in] Level of padding to add to lower parameter-space bounds
-  const UINT4 pad_upper                 ///< [in] Level of padding to add to upper parameter-space bounds
+  const size_t dim,                     ///< [in] Dimension on which to set padding control flags
+  const LatticeTilingPaddingFlags setf, ///< [in] If >0, set these padding control flags
+  const LatticeTilingPaddingFlags addf  ///< [in] If >0, add these padding control flags
   );
 
 ///
