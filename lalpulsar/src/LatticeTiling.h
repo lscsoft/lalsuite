@@ -95,12 +95,10 @@ typedef void( *LatticeTilingBoundCache )(
 ///
 typedef int( *LatticeTilingCallback )(
   const bool first_call,                ///< [in] Whether this is the first call to this function
-  const size_t ndim,                    ///< [in] Number of parameter-space dimensions
-  const size_t ichanged,                ///< [in] Index of first dimension to have changed since last call
-  const char *const *bound_names,       ///< [in] Pointer to array of parameter-space bound names
-  const UINT4 *num_points,              ///< [in] Pointer to array of number of points in current iteration block
-  const double *min_point,              ///< [in] Pointer to array of minimum range of points in current iteration block
-  const double *max_point,              ///< [in] Pointer to array of maximum range of points in current iteration block
+  const LatticeTiling *tiling,          ///< [in] Lattice tiling
+  const LatticeTilingIterator *itr,     ///< [in] Lattice tiling iterator
+  const gsl_vector *point,              ///< [in] Current lattice tiling point
+  const size_t changed_i,               ///< [in] Index of first dimension to have changed since last call
   const void *param,                    ///< [in] Arbitrary input data for use by callback function
   void *out                             ///< [out] Output data to be filled by callback function
   );

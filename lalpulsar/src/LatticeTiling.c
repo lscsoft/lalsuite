@@ -310,12 +310,10 @@ static void LT_FindBoundExtrema(
 ///
 static int LT_StatsCallback(
   const bool first_call,
-  const size_t ndim,
-  const size_t ichanged,
-  const char *const *bound_names,
-  const UINT4 *num_points,
-  const double *min_point,
-  const double *max_point,
+  const LatticeTiling *tiling,
+  const LatticeTilingIterator *itr,
+  const gsl_vector *point,
+  const size_t changed_i,
   const void *param UNUSED,
   void *out
   )
@@ -323,29 +321,35 @@ static int LT_StatsCallback(
 
   LatticeTilingStats *stats = ( LatticeTilingStats * ) out;
 
+  const size_t n = XLALTotalLatticeTilingDimensions( tiling );
+
   // Initialise statistics
   if ( first_call ) {
-    for ( size_t i = 0; i < ndim; ++i ) {
-      stats[i].name = bound_names[i];
+    for ( size_t i = 0; i < n; ++i ) {
+      stats[i].name = XLALLatticeTilingBoundName( tiling, i );
       stats[i].total_points = 0;
       stats[i].min_points = 1;
-      stats[i].max_points = num_points[i];
-      stats[i].min_value = min_point[i];
-      stats[i].max_value = max_point[i];
+      stats[i].max_points = 1;
+      stats[i].min_value = gsl_vector_get( point, i );
+      stats[i].max_value = gsl_vector_get( point, i );
     }
   }
 
   // Update statistics
-  for ( size_t i = ichanged; i < ndim; ++i ) {
-    if ( i + 1 == ndim ) {
-      stats[i].total_points += num_points[i];
-    } else if ( i >= ichanged ) {
+  for ( size_t i = changed_i; i < n; ++i ) {
+    INT4 left = 0, right = 0;
+    XLAL_CHECK( XLALCurrentLatticeTilingBlock( itr, i, &left, &right ) == XLAL_SUCCESS, XLAL_EFUNC );
+    const UINT4 num_points = right - left + 1;
+    if ( i + 1 == n ) {
+      stats[i].total_points += num_points;
+    } else if ( i >= changed_i ) {
       stats[i].total_points += 1;
     }
-    stats[i].min_points = GSL_MIN( stats[i].min_points, num_points[i] );
-    stats[i].max_points = GSL_MAX( stats[i].max_points, num_points[i] );
-    stats[i].min_value = GSL_MIN( stats[i].min_value, min_point[i] );
-    stats[i].max_value = GSL_MAX( stats[i].max_value, max_point[i] );
+    stats[i].min_points = GSL_MIN( stats[i].min_points, num_points );
+    stats[i].max_points = GSL_MAX( stats[i].max_points, num_points );
+    const double step = XLALLatticeTilingStepSize( tiling, i );
+    stats[i].min_value = GSL_MIN( stats[i].min_value, gsl_vector_get( point, i ) + left*step );
+    stats[i].max_value = GSL_MAX( stats[i].max_value, gsl_vector_get( point, i ) + right*step );
   }
 
   return XLAL_SUCCESS;
@@ -1490,47 +1494,18 @@ int XLALPerformLatticeTilingCallbacks(
   LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, n - 1 );
   XLAL_CHECK( itr != NULL, XLAL_EFUNC );
 
-  // Get bound names in each dimension
-  const char *bound_names[n];
-  for ( size_t i = 0; i < n; ++i ) {
-    bound_names[i] = tiling->bounds[i].name;
-  }
-
-  // Get step sizes in each dimension
-  double step[n];
-  for ( size_t i = 0; i < n; ++i ) {
-    step[i] = XLALLatticeTilingStepSize( tiling, i );
-  }
-
   // Iterate over all points
   bool first_call = true;
   int changed_ti_p1;
-  UINT4 num_points[n];
-  double min_point[n];
-  double max_point[n];
-  double point[n];
-  gsl_vector_view point_view = gsl_vector_view_array( point, n );
+  double point_array[n];
+  gsl_vector_view point_view = gsl_vector_view_array( point_array, n );
   while ( ( changed_ti_p1 = XLALNextLatticeTilingPoint( itr, &point_view.vector ) ) > 0 ) {
-
-    // Iterate over all changed dimensions
     const size_t changed_i = ( !first_call && tiling->tiled_ndim > 0 ) ? tiling->tiled_idx[changed_ti_p1 - 1] : 0;
-    for ( size_t j = changed_i; j < n; ++j ) {
-
-      // Get extend of current iteration block in each dimension
-      INT4 left = 0, right = 0;
-      XLAL_CHECK( XLALCurrentLatticeTilingBlock( itr, j, &left, &right ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      // Initialise data for callback functions
-      num_points[j] = right - left + 1;
-      min_point[j] = point[j] + left * step[j];
-      max_point[j] = point[j] + right * step[j];
-
-    }
 
     // Call callback functions
     for ( size_t m = *tiling->ncallback_done; m < tiling->ncallback; ++m ) {
       LT_Callback *cb = tiling->callbacks[m];
-      XLAL_CHECK( (cb->func)( first_call, n, changed_i, bound_names, num_points, min_point, max_point, cb->param, cb->out ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( (cb->func)( first_call, tiling, itr, &point_view.vector, changed_i, cb->param, cb->out ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
     first_call = false;
 
