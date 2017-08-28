@@ -174,11 +174,6 @@ void MetaNoiseFunc(LALStatus *status, REAL8 *psd, REAL8 f, struct fvec *interp, 
 	}
 }
 
-static int FindTimeSeriesStartAndEnd (
-                                      REAL4Vector *signalvec,
-                                      UINT4 *start,
-                                      UINT4 *end
-                                      );
 
 static const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
@@ -1747,65 +1742,6 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
     return;
 }
 
-static int FindTimeSeriesStartAndEnd (
-                                      REAL4Vector *signalvec,
-                                      UINT4 *start,
-                                      UINT4 *end
-                                      )
-{
-  UINT4 i; /* mid, n; indices */
-  UINT4 flag, safe = 1;
-  UINT4 length;
-
-#ifndef LAL_NDEBUG
-  if ( !signalvec )
-    XLAL_ERROR( XLAL_EFAULT );
-
-  if ( !signalvec->data )
-    XLAL_ERROR( XLAL_EFAULT );
-#endif
-
-  length = signalvec->length;
-
-  /* Search for start and end of signal */
-  flag = 0;
-  i = 0;
-  while(flag == 0 && i < length )
-  {
-    if( signalvec->data[i] != 0.)
-    {
-      *start = i;
-      flag = 1;
-    }
-    i++;
-  }
-  if ( flag == 0 )
-  {
-    return flag;
-  }
-
-  flag = 0;
-  i = length - 1;
-  while(flag == 0)
-  {
-    if( signalvec->data[i] != 0.)
-    {
-      *end = i;
-      flag = 1;
-    }
-    i--;
-  }
-
-  /* Check we have more than 2 data points */
-  if(((*end) - (*start)) <= 1)
-  {
-    XLALPrintWarning( "Data less than 3 points in this signal!\n" );
-    safe = 0;
-  }
-
-  return safe;
-
-}
 
 void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, ProcessParamsTable *commandLine)
 ///*-------------- Inject in Frequency domain -----------------*/
