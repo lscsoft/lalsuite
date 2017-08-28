@@ -1504,17 +1504,17 @@ int XLALPerformLatticeTilingCallbacks(
 
   // Iterate over all points
   bool first_call = true;
-  int ti_plus_1;
+  int changed_ti_p1;
   UINT4 num_points[n];
   double min_point[n];
   double max_point[n];
   double point[n];
   gsl_vector_view point_view = gsl_vector_view_array( point, n );
-  while ( ( ti_plus_1 = XLALNextLatticeTilingPoint( itr, &point_view.vector ) ) > 0 ) {
+  while ( ( changed_ti_p1 = XLALNextLatticeTilingPoint( itr, &point_view.vector ) ) > 0 ) {
 
     // Iterate over all changed dimensions
-    const size_t i = ( !first_call && tiling->tiled_ndim > 0 ) ? tiling->tiled_idx[ti_plus_1 - 1] : 0;
-    for ( size_t j = i; j < n; ++j ) {
+    const size_t changed_i = ( !first_call && tiling->tiled_ndim > 0 ) ? tiling->tiled_idx[changed_ti_p1 - 1] : 0;
+    for ( size_t j = changed_i; j < n; ++j ) {
 
       // Get extend of current iteration block in each dimension
       INT4 left = 0, right = 0;
@@ -1530,7 +1530,7 @@ int XLALPerformLatticeTilingCallbacks(
     // Call callback functions
     for ( size_t m = *tiling->ncallback_done; m < tiling->ncallback; ++m ) {
       LT_Callback *cb = tiling->callbacks[m];
-      XLAL_CHECK( (cb->func)( first_call, n, i, bound_names, num_points, min_point, max_point, cb->param, cb->out ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( (cb->func)( first_call, n, changed_i, bound_names, num_points, min_point, max_point, cb->param, cb->out ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
     first_call = false;
 
@@ -2254,12 +2254,12 @@ LatticeTilingLocator *XLALCreateLatticeTilingLocator(
     // Iterate over all points; XLALNextLatticeTilingPoint() returns the index
     // (offset from 1) of the lowest dimension where the current point has changed
     xlalErrno = 0;
-    int ti_plus_1;
-    while ( ( ti_plus_1 = XLALNextLatticeTilingPoint( itr, NULL ) ) > 0 ) {
-      const size_t ti = ti_plus_1 - 1;
+    int changed_ti_p1;
+    while ( ( changed_ti_p1 = XLALNextLatticeTilingPoint( itr, NULL ) ) > 0 ) {
+      const size_t changed_ti = changed_ti_p1 - 1;
 
       // Iterate over all dimensions where the current point has changed
-      for ( size_t tj = ti; tj < tn; ++tj ) {
+      for ( size_t tj = changed_ti; tj < tn; ++tj ) {
 
         // If next index trie pointer is NULL, it needs to be initialised
         if ( next[tj] == NULL ) {
@@ -2311,7 +2311,7 @@ LatticeTilingLocator *XLALCreateLatticeTilingLocator(
       }
 
       // Increment sequential index in every higher dimension
-      for ( size_t tj = ti; tj < tn; ++tj ) {
+      for ( size_t tj = changed_ti; tj < tn; ++tj ) {
         ++indx[tj];
       }
       indx[tn - 1] += itr->int_upper[tn - 1] - itr->int_lower[tn - 1];
