@@ -352,6 +352,7 @@ static int XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspir
 
     case LAL_PNORDER_NUM_ORDER:
       XLALPrintError("*** LALPhenSpinInspiralRD ERROR: NUM_ORDER not a valid PN order\n");
+      break;
 
     default:
       XLALPrintError("*** LALPhenSpinInspiralRD ERROR: Impossible to create waveform with %d order\n",params->order);

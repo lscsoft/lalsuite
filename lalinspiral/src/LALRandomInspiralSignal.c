@@ -483,6 +483,7 @@ void LALRandomInspiralSignal
                     CHECKSTATUSPTR(status);
                     randIn->param.massChoice = fixedPsi;
                     valid = 1;
+                    break;
                 case psi0Andpsi3:
                     /*
                      * the following makes sure that the BCV has
