@@ -50,7 +50,6 @@ pkginclude_HEADERS = \
 	NRWaveIO.h \
 	NRWaveInject.h \
 	RingUtils.h \
-	SimulateInspiral.h \
 	TemplateBankGeneration.h \
 	TrigScanEThincaCommon.h
 
@@ -211,7 +210,6 @@ liblalinspiral_la_SOURCES = \
 	RingUtils.c \
 	SimInspiralUtils.c \
 	SimRingdownUtils.c \
-	SimulateInspiral.c \
 	SnglInspiralUtils.c \
 	SnglRingdownUtils.c \
 	TrigScanEThincaCommon.c \
