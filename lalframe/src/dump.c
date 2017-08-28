@@ -406,6 +406,9 @@ int indent(int n)
     default:
     case 3:
         fputs(tab, stdout);
+#if __GNUC__ >= 7
+        __attribute__ ((fallthrough));
+#endif
     case 2:
         fputs(tab, stdout);
         fputs(tab, stdout);
