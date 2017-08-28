@@ -395,11 +395,6 @@ static int MismatchTest(
   printf( "Number of lattice points: %" LAL_UINT8_FORMAT " (vs %" LAL_UINT8_FORMAT ", tolerance = %i)\n", total, total_ref, total_tol );
   XLAL_CHECK( imaxabs( total - total_ref ) <= total_tol, XLAL_EFUNC, "|total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", total, total_ref, total_tol );
 
-  // Get all points
-  gsl_matrix *GAMAT( points, n, total );
-  XLAL_CHECK( XLALNextLatticeTilingPoints( itr, &points ) == ( int )total, XLAL_EFUNC );
-  XLAL_CHECK( XLALNextLatticeTilingPoint( itr, NULL ) == 0, XLAL_EFUNC );
-
   // Initialise mismatch histogram counts
   double mism_hist[MISM_HIST_BINS] = {0};
   double mism_hist_total = 0, mism_hist_out_of_range = 0;
@@ -504,7 +499,6 @@ static int MismatchTest(
   // Cleanup
   XLALDestroyLatticeTilingIterator( itr );
   XLALDestroyLatticeTilingLocator( loc );
-  GFMAT( points );
 
   return XLAL_SUCCESS;
 
