@@ -352,6 +352,7 @@ static int load_data_sub(
   snprintf(dataset_name, name_length, "NRSurrogate_EIi_%d.dat", i_mode);
   ret |= ReadHDF5RealMatrixDataset(file, dataset_name, &EI_im);
 
+  free(dataset_name);
   return(ret);
 }
 
