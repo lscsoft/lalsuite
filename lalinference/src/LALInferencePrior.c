@@ -313,8 +313,8 @@ static REAL8 LALInferenceGlitchPrior(LALInferenceRunState *runState, LALInferenc
     REAL8 component_max=0.0;
     REAL8 val=0.0;
 
-    char priormin[100];
-    char priormax[100];
+    char priormin[512];
+    char priormax[512];
 
     REAL8 Anorm = *(REAL8 *)LALInferenceGetVariable(priorParams,"glitch_norm");
 

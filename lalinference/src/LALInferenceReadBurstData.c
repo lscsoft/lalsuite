@@ -156,7 +156,7 @@ void LALInferenceInjectBurstSignal(LALInferenceIFOData *IFOdata, ProcessParamsTa
 		memcpy(&bufferStart,&thisData->timeData->epoch,sizeof(LIGOTimeGPS));
 		XLALGPSAdd(&bufferStart,(REAL8) thisData->timeData->data->length * thisData->timeData->deltaT);
 		XLALGPSAdd(&bufferStart,-bufferLength);
-		char series_name[256];
+		char series_name[320];
     sprintf(series_name,"%s:injection",thisData->name);
     REAL8TimeSeries *inj8Wave=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries(series_name,
                                                                            &thisData->timeData->epoch,
@@ -214,7 +214,7 @@ void LALInferenceInjectBurstSignal(LALInferenceIFOData *IFOdata, ProcessParamsTa
     /* Actually inject the waveform */
     for(j=0;j<inj8Wave->data->length;j++) thisData->timeData->data->data[j]+=inj8Wave->data->data[j];
     fprintf(stdout,"Injected SNR in detector %s = %.1f\n",thisData->name,thisData->SNR);
-    char filename[256];
+    char filename[320];
     sprintf(filename,"%s_timeInjection.dat",thisData->name);
     FILE* file=fopen(filename, "w");
     for(j=0;j<inj8Wave->data->length;j++){   
@@ -406,7 +406,7 @@ void InjectBurstFD(LALInferenceIFOData *IFOdata, SimBurst *inj_table, ProcessPar
     dataPtr->fCross = Fcross;
     dataPtr->timeshift = timeshift;
 
-    char InjFileName[50];
+    char InjFileName[320];
     sprintf(InjFileName,"injection_%s.dat",dataPtr->name);
     FILE *outInj=fopen(InjFileName,"w");
 

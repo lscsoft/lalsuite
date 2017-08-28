@@ -1687,7 +1687,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
     /* Actually inject the waveform */
     for(j=0;j<inj8Wave->data->length;j++) thisData->timeData->data->data[j]+=inj8Wave->data->data[j];
       fprintf(stdout,"Injected SNR in detector %s = %g\n",thisData->name,thisData->SNR);
-      char filename[256];
+      char filename[320];
       sprintf(filename,"%s_timeInjection.dat",thisData->name);
       FILE* file=fopen(filename, "w");
       for(j=0;j<inj8Wave->data->length;j++){
@@ -1909,7 +1909,7 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
     dataPtr->fCross = Fcross;
     dataPtr->timeshift = timeshift;
 
-    char InjFileName[50];
+    char InjFileName[320];
     sprintf(InjFileName,"injection_%s.dat",dataPtr->name);
     FILE *outInj=fopen(InjFileName,"w");
 
@@ -2164,7 +2164,7 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
     }
     LALInferenceIFOData *data=runState->data;
     while(data) {
-        char tmpName[50];
+        char tmpName[320];
         REAL8 tmp=model->loglikelihood - data->nullloglikelihood;
         sprintf(tmpName,"deltalogl%s",data->name);
         LALInferenceAddVariable(injparams, tmpName, &tmp, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
@@ -2338,7 +2338,7 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
   float dt=0.1;
   //REAL8 timeMin=0.0,timeMax=0.0;
   FILE *tempfp;
-  char tmp[128];
+  char tmp[320];
 
 	  procparam=LALInferenceGetProcParamVal(commandLine,"--inj");
 	  if(procparam){
