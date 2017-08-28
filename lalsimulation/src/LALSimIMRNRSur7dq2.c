@@ -2541,12 +2541,12 @@ SphHarmTimeSeries *XLALSimInspiralNRSur7dq2Modes(
     COMPLEX16TimeSeries *tmp_mode;
     int ell, m;
     int i=0;
-    char mode_name[20];
+    char mode_name[32];
     for (ell=2; ell<=lmax; ell++) {
         for (m=-ell; m<=ell; m++) {
             gsl_vector_scale(h_inertial->modes_real_part[i], a0);
             gsl_vector_scale(h_inertial->modes_imag_part[i], a0);
-            snprintf(mode_name, 20, "(%d, %d) mode", ell, m);
+            snprintf(mode_name, sizeof(mode_name), "(%d, %d) mode", ell, m);
             tmp_mode = XLALCreateCOMPLEX16TimeSeries(mode_name, &epoch, 0.0,
                     deltaT, &lalStrainUnit, nt);
             gsl_spline *spl_re = gsl_spline_alloc(gsl_interp_cspline, length);

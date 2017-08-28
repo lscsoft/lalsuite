@@ -78,8 +78,9 @@ LALSSInjectTimeSeries( LALStatus       *stat,
 
     ASSERT( XLALUnitCompare( &(signalvec->sampleUnits), &lalADCCountUnit ) == 0, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
     ASSERT( XLALUnitCompare( &(output->sampleUnits), &lalADCCountUnit ) == 0, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
-    snprintf( newName, LALNameLength, "%s plus %s", output->name,
-		 signalvec->name );
+    if(snprintf( newName, LALNameLength, "%s plus %s", output->name,
+		 signalvec->name ) >= LALNameLength)
+      ABORT( stat, INJECTH_ENUL, INJECTH_MSGENUL );
     memcpy( output->name, newName, LALNameLength*sizeof(CHAR) );
   }
 
