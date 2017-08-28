@@ -653,8 +653,8 @@ static int SuperskyTests(
     LALSeg segment;
     {
       LIGOTimeGPS start_time = ref_time, end_time = ref_time;
-      XLALGPSAdd( &start_time, -3 * Tspan );
-      XLALGPSAdd( &end_time, -2 * Tspan );
+      XLALGPSAdd( &start_time, -100 * Tspan );
+      XLALGPSAdd( &end_time, -98 * Tspan );
       XLAL_CHECK( XLALSegSet( &segment, &start_time, &end_time, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( XLALSegListAppend( &segments, &segment ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
@@ -667,8 +667,8 @@ static int SuperskyTests(
     }
     {
       LIGOTimeGPS start_time = ref_time, end_time = ref_time;
-      XLALGPSAdd( &start_time, 2.5 * Tspan );
-      XLALGPSAdd( &end_time, 3.5 * Tspan );
+      XLALGPSAdd( &start_time, 92.5 * Tspan );
+      XLALGPSAdd( &end_time, 93.5 * Tspan );
       XLAL_CHECK( XLALSegSet( &segment, &start_time, &end_time, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( XLALSegListAppend( &segments, &segment ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
@@ -701,7 +701,7 @@ static int SuperskyTests(
 
   // Add bounds
   const double alpha1 = 0, alpha2 = LAL_PI, delta1 = -LAL_PI_2, delta2 = LAL_PI_2;
-  const double freq_min = freq_max - 5e-5, f1dot = -5e-9;
+  const double freq_min = freq_max - 0.05, f1dot = -3e-9;
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
     XLAL_CHECK( XLALSetSuperskyPhysicalSkyBounds( coh_tiling[n], metrics->coh_rssky_metric[n], metrics->coh_rssky_transf[n], alpha1, alpha2, delta1, delta2 ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( coh_tiling[n], metrics->coh_rssky_transf[n], 0, freq_min, freq_max ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -754,11 +754,11 @@ static int SuperskyTests(
   // Perform mismatch test of coherent and semicoherent tilings
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
     printf( "Coherent #%zu mismatch tests:\n", n );
-    XLAL_CHECK( MismatchTest( coh_tiling[n], metrics->coh_rssky_metric[n], coh_max_mismatch, 1, 7e-2, 4e-2, coh_total_ref[n], total_tol, A4s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( MismatchTest( coh_tiling[n], metrics->coh_rssky_metric[n], coh_max_mismatch, 0.1, 5e-2, 5e-2, coh_total_ref[n], total_tol, A4s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
     printf( "\n" );
   }
   printf( "Semicoherent mismatch tests:\n" );
-  XLAL_CHECK( MismatchTest( semi_tiling, metrics->semi_rssky_metric, semi_max_mismatch, 1, 6e-2, 3e-2, semi_total_ref, total_tol, A4s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( MismatchTest( semi_tiling, metrics->semi_rssky_metric, semi_max_mismatch, 0.0001, 5e-2, 5e-2, semi_total_ref, total_tol, A4s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
   printf( "\n" );
 
   // Cleanup
@@ -828,7 +828,7 @@ int main( void )
   XLAL_CHECK_MAIN( MismatchAgeBrakeTest( TILING_LATTICE_ANSTAR, 300, 1.0e-5, 37022, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform a variety of tests with the reduced supersky parameter space and metric
-  XLAL_CHECK_MAIN( SuperskyTests( 60278, 45819, 39437, 292983 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( SuperskyTests( 6886488, 1050134, 932765, 26063227993 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return EXIT_SUCCESS;
 
