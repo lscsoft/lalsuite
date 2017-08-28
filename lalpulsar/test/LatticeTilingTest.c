@@ -372,7 +372,7 @@ static int MismatchTest(
   const LatticeTiling *tiling,
   const gsl_matrix *metric,
   const double max_mismatch,
-  const size_t injs_per_point,
+  const double injs_per_point,
   const double mism_hist_error_tol,
   const double mism_out_of_range_tol,
   const UINT8 total_ref,
@@ -400,20 +400,38 @@ static int MismatchTest(
   double mism_hist_total = 0, mism_hist_out_of_range = 0;
 
   // Perform 'injs_per_point' injections for every template
-  printf( "Injections per point: %zu\n", injs_per_point );
+  printf( "Injections per point: %g\n", injs_per_point );
   {
-    gsl_matrix *GAMAT( injections, n, total );
-    gsl_matrix *GAMAT( nearest, n, total );
-    gsl_matrix *GAMAT( temp, n, total );
+    UINT8 total_injs = llround(total * injs_per_point);
+    const size_t max_injs_per_batch = 100000;
+
+    // Allocate memory
+    gsl_matrix *GAMAT( max_injections, n, max_injs_per_batch );
+    gsl_matrix *max_nearest = NULL;
+    gsl_matrix *GAMAT( max_temp, n, max_injs_per_batch );
+
+    // Allocate random number generator
     RandomParams *rng = XLALCreateRandomParams( total );
     XLAL_CHECK( rng != NULL, XLAL_EFUNC );
-    for ( size_t i = 0; i < injs_per_point; ++i ) {
+
+    while ( total_injs > 0 ) {
+      const size_t injs_per_batch = GSL_MIN( max_injs_per_batch, total_injs );
+      total_injs -= injs_per_batch;
+      printf("  Injections remaining: %" LAL_UINT8_FORMAT "...\n", total_injs);
+
+      // Create matrix views
+      gsl_matrix_view injections_view = gsl_matrix_submatrix( max_injections, 0, 0, n, injs_per_batch );
+      gsl_matrix *const injections = &injections_view.matrix;
+      gsl_matrix_view temp_view = gsl_matrix_submatrix( max_temp, 0, 0, n, injs_per_batch );
+      gsl_matrix *const temp = &temp_view.matrix;
 
       // Generate random injection points
       XLAL_CHECK( XLALRandomLatticeTilingPoints( tiling, 0.0, rng, injections ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Find nearest lattice template points
-      XLAL_CHECK( XLALNearestLatticeTilingPoints( loc, injections, &nearest, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALNearestLatticeTilingPoints( loc, injections, &max_nearest, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+      gsl_matrix_view nearest_view = gsl_matrix_submatrix( max_nearest, 0, 0, n, injs_per_batch );
+      gsl_matrix *const nearest = &nearest_view.matrix;
 
       // Compute mismatch between injections
       gsl_matrix_sub( nearest, injections );
@@ -438,8 +456,8 @@ static int MismatchTest(
     }
 
     // Cleanup
-    GFMAT( injections, nearest, temp );
     XLALDestroyRandomParams( rng );
+    GFMAT( max_injections, max_nearest, max_temp );
 
   }
 
