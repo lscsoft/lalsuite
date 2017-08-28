@@ -1378,6 +1378,21 @@ int XLALIsTiledLatticeTilingDimension(
 
 }
 
+const char *XLALLatticeTilingBoundName(
+  const LatticeTiling *tiling,
+  const size_t dim
+  )
+{
+
+  // Check input
+  XLAL_CHECK_NULL( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( tiling->lattice < TILING_LATTICE_MAX, XLAL_EINVAL );
+  XLAL_CHECK_NULL( dim < tiling->ndim, XLAL_ESIZE );
+
+  return tiling->bounds[dim].name;
+
+}
+
 REAL8 XLALLatticeTilingStepSize(
   const LatticeTiling *tiling,
   const size_t dim
