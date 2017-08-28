@@ -825,7 +825,7 @@ LatticeTiling *XLALCreateLatticeTiling(
   tiling->ndim = ndim;
   tiling->lattice = TILING_LATTICE_MAX;
   for ( size_t i = 0; i < ndim; ++i ) {
-    tiling->bounds[i].padf = LATTICE_TILING_PAD_LOWER | LATTICE_TILING_PAD_UPPER | LATTICE_TILING_PAD_EXTRA;
+    tiling->bounds[i].padf = LATTICE_TILING_PAD_LOWER | LATTICE_TILING_PAD_UPPER;
   }
 
   // Allocate and initialise vectors and matrices
