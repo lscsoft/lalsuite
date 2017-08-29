@@ -557,7 +557,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   INspin2[1] = INspin2y;
   INspin2[2] = INspin2z;
 
-  INT4 debugPK = 0, debugCustomIC = 0, debugNoNQC = 0;
+  INT4 debugPK = 1, debugCustomIC = 0, debugNoNQC = 0;
   INT4 debugRD = 0;
   FILE *out = NULL;
   INT4 i=0;

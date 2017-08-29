@@ -52,7 +52,7 @@
 #include "LALSimIMRSpinAlignedEOBHcapDerivativeOptimized.c"
 /* END OPTIMIZED */
 
-#define debugOutput 0
+#define debugOutput 1
 
 //static int debugPK = 0;
 
@@ -302,7 +302,8 @@ XLALSpinAlignedNSNSStopCondition (double UNUSED t, /**< UNUSED */
   counter = params->eobParams->omegaPeaked;
 //    printf("function NSNS: r = %.16e, omega = %.16e, pr = %.16e, dpr = %.16e, count = %.16u \n",values[0],dvalues[1],values[2],dvalues[2],counter);
 //  printf("%.16e %.16e %.16e %.16e\n",values[0],dvalues[1],values[2],dvalues[2]);
-  if (r < 2.*rMerger && omega < params->eobParams->omega)
+  REAL8 rCheck = 1.5*rMerger;
+  if (r < rCheck && omega < params->eobParams->omega)
     {
       if (debugOutput) printf("Peak detection %.16e %.16e\n", omega, params->eobParams->omega);
       params->eobParams->omegaPeaked = counter + 1;
@@ -311,20 +312,20 @@ XLALSpinAlignedNSNSStopCondition (double UNUSED t, /**< UNUSED */
       if (debugOutput) printf("Stop at Tim's freq at r=%.16e\n", r);
       return 1;
   }
-   if ( r < 2.*rMerger && values[2] >= 0 ) {
+   if ( r < rCheck && values[2] >= 0 ) {
         if (debugOutput) printf("Stop at pr >= 0 at r=%.16e\n", r);
         return 1;
    }
-    if ( r < 2.*rMerger && dvalues[0] >= 0 ) {
+    if ( r < rCheck && dvalues[0] >= 0 ) {
         if (debugOutput) printf("Stop at dr/dt >= 0 at r=%.16e\n", r);
         return 1;
     }
-   if ( r < 2.*rMerger && dvalues[2] >= 0 ) {
+   if ( r < rCheck && dvalues[2] >= 0 ) {
        params->eobParams->omegaPeaked = counter + 1;
        if (debugOutput) printf("Stop at dpr/dt >= 0 at r=%.16e\n", r);
        // return 1;
   }
-  if (r < 2.*rMerger && params->eobParams->omegaPeaked == 3 )
+  if (r < rCheck && params->eobParams->omegaPeaked == 3 )
     {
      params->eobParams->omegaPeaked = 0;
      if (debugOutput) printf("params->eobParams->omegaPeaked == 3 at r=%.16e\n", r);
