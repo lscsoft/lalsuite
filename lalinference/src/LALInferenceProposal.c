@@ -2889,7 +2889,7 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceThreadState *thread, REAL8 targ
     INT4 adapting = 0;
     REAL8 priorMin, priorMax, dprior, s_gamma;
     REAL8 accept, propose, sigma;
-    char *name;
+    const char *name;
 
     LALInferenceVariables *args = thread->proposalArgs;
 
