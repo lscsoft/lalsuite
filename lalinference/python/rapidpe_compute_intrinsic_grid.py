@@ -192,6 +192,7 @@ grid_section.add_argument("--setup", help="Set up the initial grid based on temp
 grid_section.add_argument("-t", "--tmplt-bank", help="XML file with template bank.")
 grid_section.add_argument("-O", "--use-overlap", help="Use overlap information to define 'closeness'.")
 grid_section.add_argument("-T", "--overlap-threshold", type=float, help="Threshold on overlap value.")
+grid_section.add_argument("-s", "--points-per-side", type=int, default=10, help="Number of points per side, default is 10.")
 grid_section.add_argument("-D", "--deactivate", action="store_true", help="Deactivate cells initially which have no template within them.")
 grid_section.add_argument("-P", "--prerefine", help="Refine this initial grid based on overlap values.")
 
@@ -346,7 +347,7 @@ else:
 
     # TODO: Alternatively, check density of points in the region to determine
     # the points to a side
-    grid, spacing = amrlib.create_regular_grid_from_cell(init_region, side_pts=5, return_cells=True)
+    grid, spacing = amrlib.create_regular_grid_from_cell(init_region, side_pts=opts.points_per_side / 2, return_cells=True)
 
     # "Deactivate" cells not close to template points
     # FIXME: This gets more and more dangerous in higher dimensions
