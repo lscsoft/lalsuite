@@ -919,7 +919,7 @@ XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
   REAL8 m2;
   const REAL8 c3 = (REAL8)LAL_C_SI*(REAL8)LAL_C_SI*(REAL8)LAL_C_SI;
 
-  CHAR *model = PulsarGetStringParam(params, "BINARY");
+  const CHAR *model = PulsarGetStringParam(params, "BINARY");
 
   /* Check input arguments */
   if( input == (BinaryPulsarInput *)NULL ){
@@ -945,7 +945,7 @@ XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
      (!strcmp(model, "T2"))){
     XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLBINARYMODEL );
   }
-
+  
   /* convert certain params to SI units */
   w0 = PulsarGetREAL8ParamOrZero(params, "OM");
   wdot = PulsarGetREAL8ParamOrZero(params, "OMDOT"); /* wdot in rads/s */
