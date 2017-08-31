@@ -1972,7 +1972,7 @@ int XLALSetSuperskyPhysicalSkyBounds(
 
 }
 
-static double EqualAreaSkyBound(
+static double ConstantBoundB(
   const void *data,
   const size_t dim UNUSED,
   const gsl_matrix *cache UNUSED,
@@ -2267,7 +2267,7 @@ int XLALSetSuperskyEqualAreaSkyBounds(
 
   // Set the parameter-space bounds on reduced supersky sky coordinates A and B
   XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, A_bound[0], A_bound[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, EqualAreaSkyBound, sizeof( B_bound[0] ), &B_bound[0], &B_bound[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, ConstantBoundB, sizeof( B_bound[0] ), &B_bound[0], &B_bound[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALSetLatticeTilingBoundCacheFunction( tiling, 1, SkyBoundCache ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Set the parameter-space origin on reduced supersky sky coordinates A and B
