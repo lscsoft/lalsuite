@@ -143,6 +143,14 @@ int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
   );
 
 ///
+/// Set the reference time of a physical point to that of the reduced supersky coordinates.
+///
+int XLALSetPhysicalPointSuperskyRefTime(
+  PulsarDopplerParams *out_phys,                ///< [out] Output point in physical coordinates
+  const SuperskyTransformData *rssky_transf     ///< [in] Reduced supersky coordinate transform data
+  );
+
+///
 /// Convert a point from physical to supersky coordinates.
 ///
 int XLALConvertPhysicalToSuperskyPoint(
