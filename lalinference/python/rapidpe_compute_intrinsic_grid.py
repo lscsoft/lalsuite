@@ -388,7 +388,7 @@ if opts.result_file is not None:
 
     if opts.refine:
         # FIXME: We use overlap threshold as a proxy for confidence level
-        selected = get_cr_from_grid(selected, results, cr_thr=opts.overlap_threshold, min_n=opts.min_n_poiunts, max_n=opts.max_n_points)
+        selected = get_cr_from_grid(selected, results, cr_thr=opts.overlap_threshold, min_n=opts.min_n_points, max_n=opts.max_n_points)
         print "Selected %d cells from %3.2f%% confidence region" % (len(selected), opts.overlap_threshold*100)
 
 if opts.prerefine:
