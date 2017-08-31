@@ -50,30 +50,6 @@
 #define TwoToOneThird 1.25992104989487316476721060728
 #define ThreeToOneThird 1.44224957030740838232163831078
 
-///* fresnel_c(x) - Fresnel Cosine Integral
-// * C(x)=fresnel_c(x)=\dint\limits_{0}^{x}\cos (\frac{\pi}{2}t^{2})dt
-// */
-//double fresnel_c(double x);
-///* fresnel_s(x) - Fresnel Sine Integral
-// * S(x)=fresnel_s(x)=\dint\limits_{0}^{x}\sin (\frac{\pi}{2}t^{2})dt
-// */
-//double fresnel_s(double x);
-//
-///* Additional functions*/
-///* fresnel_c1(x)
-// * fresnel_c1(x)=fresnel_c(x*sqrt(2/pi))=
-// * = \sqrt{\frac{2}{\pi }}\dint\limits_{0}^{x}\cos (t^{2})dt
-// */
-//double fresnel_c2(double x);
-///* fresnel_s1(x)
-// * fresnel_s1(x)=fresnel_s(x*sqrt(2/pi))=
-// * = \sqrt{\frac{2}{\pi }}\dint\limits_{0}^{x}\sin (t^{2})dt
-// */
-//double fresnel_s2(double x);
-//
-//double fresnel_s1(double x);
-//double fresnel_c1(double x);
-
 static const double sqrt_pi_2   = 1.2533141373155002512078826424; /* sqrt(pi/2) */
 static const double sqrt_2_pi   = 0.7978845608028653558798921199; /* sqrt(2/pi) */
 static const double _1_sqrt_2pi = 0.3989422804014326779399460599; /* 1/sqrt(2*pi) */
