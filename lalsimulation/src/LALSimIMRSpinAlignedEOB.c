@@ -52,7 +52,7 @@
 #include "LALSimIMRSpinAlignedEOBHcapDerivativeOptimized.c"
 /* END OPTIMIZED */
 
-#define debugOutput 1
+#define debugOutput 0
 
 //static int debugPK = 0;
 
