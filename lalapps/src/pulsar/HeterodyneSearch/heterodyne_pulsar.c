@@ -83,7 +83,7 @@ int main(int argc, char *argv[]){
 
   CHAR outputfile[256]="";
   CHAR channel[128]="";
-  CHAR *psrname = NULL;
+  const CHAR *psrname;
 
   INT4Vector *starts=NULL, *stops=NULL; /* science segment start and stop times */
   INT4 numSegs=0;
@@ -110,18 +110,18 @@ int main(int argc, char *argv[]){
 
   /* set pulsar name - take from par file if available, or if not get from command line args */
   if( PulsarCheckParam( hetParams.het, "PSRJ" ) )
-    psrname = XLALStringDuplicate( PulsarGetStringParam( hetParams.het, "PSRJ" ) );
+    psrname = PulsarGetStringParam( hetParams.het, "PSRJ" );
   else if( PulsarCheckParam( hetParams.het, "PSRB" ) )
-    psrname = XLALStringDuplicate( PulsarGetStringParam( hetParams.het, "PSRB" ) );
+    psrname = PulsarGetStringParam( hetParams.het, "PSRB" );
   else if( PulsarCheckParam( hetParams.het, "NAME" ) )
-    psrname = XLALStringDuplicate( PulsarGetStringParam( hetParams.het, "NAME" ) );
+    psrname = PulsarGetStringParam( hetParams.het, "NAME" );
   else if( PulsarCheckParam( hetParams.het, "PSR" ) )
-    psrname = XLALStringDuplicate( PulsarGetStringParam( hetParams.het, "PSR" ) );
+    psrname = PulsarGetStringParam( hetParams.het, "PSR" );
   else{
     fprintf(stderr, "No pulsar name specified!\n");
     exit(0);
   }
-
+  
   /* if there is an epoch given manually (i.e. not from the pulsar parameter
      file) then set it here and overwrite any other value - this is used, for
      example, with the pulsar hardware injections in which this should be set
