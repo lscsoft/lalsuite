@@ -70,10 +70,12 @@ typedef enum tagTilingLattice {
 /// Lattice tiling parameter-space bound padding control flags.
 ///
 typedef enum tagLatticeTilingPaddingFlags {
-  LATTICE_TILING_PAD_LOWER = 0x01,      ///< Add padding to lower parameter-space bounds
-  LATTICE_TILING_PAD_UPPER = 0x02,      ///< Add padding to upper parameter-space bounds
-  LATTICE_TILING_PAD_EXTRA = 0x04,      ///< Add extra padding for rapidly-changing bounds
-  LATTICE_TILING_PAD_MAX   = 0x08,
+  LATTICE_TILING_PAD_LHBBX = 0x01,      ///< Add half-bounding-box padding to lower physical parameter-space bounds
+  LATTICE_TILING_PAD_UHBBX = 0x02,      ///< Add half-bounding-box padding to upper physical parameter-space bounds
+  LATTICE_TILING_PAD_LINTP = 0x04,      ///< Add integer point padding to lower integer parameter-space bounds
+  LATTICE_TILING_PAD_UINTP = 0x08,      ///< Add integer point padding to upper integer parameter-space bounds
+  LATTICE_TILING_PAD_EXTRA = 0x10,      ///< Add extra padding for rapidly-changing bounds
+  LATTICE_TILING_PAD_MAX   = 0x20,
 } LatticeTilingPaddingFlags;
 
 ///
@@ -195,8 +197,17 @@ int XLALSetLatticeTilingConstantBound(
 int XLALSetLatticeTilingPaddingFlags(
   LatticeTiling *tiling,                ///< [in] Lattice tiling
   const size_t dim,                     ///< [in] Dimension on which to set padding control flags
-  const LatticeTilingPaddingFlags setf, ///< [in] If >0, set these padding control flags
-  const LatticeTilingPaddingFlags addf  ///< [in] If >0, add these padding control flags
+  const LatticeTilingPaddingFlags setf  ///< [in] Padding control flags to set
+  );
+
+///
+/// Add to flags which control the padding of lattice tiling parameter-space bounds in the given dimension.
+/// This is an optional setting and should generally not be used unless specifically required.
+///
+int XLALAddLatticeTilingPaddingFlags(
+  LatticeTiling *tiling,                ///< [in] Lattice tiling
+  const size_t dim,                     ///< [in] Dimension on which to add padding control flags
+  const LatticeTilingPaddingFlags addf  ///< [in] Padding control flags to add
   );
 
 ///

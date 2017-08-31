@@ -825,7 +825,7 @@ LatticeTiling *XLALCreateLatticeTiling(
   tiling->ndim = ndim;
   tiling->lattice = TILING_LATTICE_MAX;
   for ( size_t i = 0; i < ndim; ++i ) {
-    tiling->bounds[i].padf = LATTICE_TILING_PAD_LOWER | LATTICE_TILING_PAD_UPPER;
+    tiling->bounds[i].padf = LATTICE_TILING_PAD_LHBBX | LATTICE_TILING_PAD_UHBBX;
   }
 
   // Allocate and initialise vectors and matrices
@@ -991,8 +991,7 @@ int XLALSetLatticeTilingConstantBound(
 int XLALSetLatticeTilingPaddingFlags(
   LatticeTiling *tiling,
   const size_t dim,
-  const LatticeTilingPaddingFlags setf,
-  const LatticeTilingPaddingFlags addf
+  const LatticeTilingPaddingFlags setf
   )
 {
 
@@ -1001,10 +1000,29 @@ int XLALSetLatticeTilingPaddingFlags(
   XLAL_CHECK( tiling->lattice == TILING_LATTICE_MAX, XLAL_EINVAL );
   XLAL_CHECK( dim < tiling->ndim, XLAL_ESIZE );
   XLAL_CHECK( setf < LATTICE_TILING_PAD_MAX, XLAL_EINVAL );
-  XLAL_CHECK( addf < LATTICE_TILING_PAD_MAX, XLAL_EINVAL );
 
   // Set parameter-space padding control flags
-  tiling->bounds[dim].padf = ( setf > 0 ? setf : tiling->bounds[dim].padf ) | addf;
+  tiling->bounds[dim].padf = setf;
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALAddLatticeTilingPaddingFlags(
+  LatticeTiling *tiling,
+  const size_t dim,
+  const LatticeTilingPaddingFlags addf
+  )
+{
+
+  // Check input
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tiling->lattice == TILING_LATTICE_MAX, XLAL_EINVAL );
+  XLAL_CHECK( dim < tiling->ndim, XLAL_ESIZE );
+  XLAL_CHECK( addf < LATTICE_TILING_PAD_MAX, XLAL_EINVAL );
+
+  // Add to parameter-space padding control flags
+  tiling->bounds[dim].padf |= addf;
 
   return XLAL_SUCCESS;
 
@@ -1826,10 +1844,10 @@ int XLALNextLatticeTilingPoint(
       // Add padding of half the extext of the metric ellipse bounding box, if requested
       {
         const double phys_hbbox_i = 0.5 * gsl_vector_get( itr->tiling->phys_bbox, i );
-        if ( bound->padf & LATTICE_TILING_PAD_LOWER ) {
+        if ( bound->padf & LATTICE_TILING_PAD_LHBBX ) {
           phys_lower -= phys_hbbox_i;
         }
-        if ( bound->padf & LATTICE_TILING_PAD_UPPER ) {
+        if ( bound->padf & LATTICE_TILING_PAD_UHBBX ) {
           phys_upper += phys_hbbox_i;
         }
       }
@@ -1858,6 +1876,14 @@ int XLALNextLatticeTilingPoint(
         // Set integer lower/upper bounds
         itr->int_lower[ti] = int_lower_i;
         itr->int_upper[ti] = GSL_MAX( int_lower_i, int_upper_i );
+
+        // Add padding of one integer point, if requested
+        if ( bound->padf & LATTICE_TILING_PAD_LINTP ) {
+          itr->int_lower[ti] -= 1;
+        }
+        if ( bound->padf & LATTICE_TILING_PAD_UINTP ) {
+          itr->int_upper[ti] += 1;
+        }
       }
       const INT4 int_lower_i = itr->int_lower[ti];
       const INT4 int_upper_i = itr->int_upper[ti];
