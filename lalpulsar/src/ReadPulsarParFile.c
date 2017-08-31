@@ -230,9 +230,12 @@ REAL8 PulsarGetREAL8ParamOrZero( const PulsarParameters *pars, const CHAR *name 
 }
 
 
-CHAR* PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name ){
+const CHAR* PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name ){
   /* check type is a string */
-  if ( PulsarGetParamType( pars, name ) == PULSARTYPE_string_t ){ return (CHAR *)PulsarGetParam( pars, name ); }
+  if ( PulsarGetParamType( pars, name ) == PULSARTYPE_string_t ){
+    CHAR *rvalue = *(CHAR **)PulsarGetParam( pars, name );
+    return rvalue;
+  }
   else{ XLAL_ERROR_NULL( XLAL_EINVAL,"Used wrong type for required parameter"  ); }
 }
 
@@ -361,7 +364,7 @@ REAL8 PulsarGetREAL8VectorParamErrIndividual( const PulsarParameters *pars, cons
 }
 
 
-void PulsarAddParam( PulsarParameters *pars, const CHAR *name, void *value, PulsarParamType type ){
+void PulsarAddParam( PulsarParameters *pars, const CHAR *name, const void *value, PulsarParamType type ){
 /* Add the variable name with type type and value value to pars */
 /* If variable already exists, it will over-write the current value if type compatible*/
   PulsarParam *old = NULL;
@@ -432,10 +435,10 @@ void PulsarAddREAL8VectorParam(PulsarParameters *pars, const CHAR * name, REAL8V
 }
 
 
-void PulsarAddstringParam(PulsarParameters *pars, const CHAR * name, CHAR *value)
+void PulsarAddStringParam(PulsarParameters *pars, const CHAR * name, const CHAR *value)
 /* Typed version of PulsarAddParam for string values.*/
 {
-  PulsarAddParam(pars, name, (void*)&value, PULSARTYPE_string_t);
+  PulsarAddParam(pars, name, &value, PULSARTYPE_string_t);
 }
 
 
@@ -526,7 +529,7 @@ void PulsarRemoveParam( PulsarParameters *pars, const CHAR *name ){
 
 
 /* Set the value of parameter name in the pars structure to value */
-void PulsarSetParam( PulsarParameters* pars, const CHAR *name, void *value ){
+void PulsarSetParam( PulsarParameters* pars, const CHAR *name, const void *value ){
   PulsarParam *item;
 
   /* convert name to uppercase */
@@ -966,10 +969,16 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
         XLALFree( val );
       }
       else{
-        void *val = (void *)XLALMalloc( PulsarTypeSize[pc[i].ptype] );
-        pc[i].convfunc( str1, val );
-        PulsarAddParam( par, pc[i].name, val, pc[i].ptype );
-        XLALFree( val );
+        if ( pc[i].ptype != PULSARTYPE_string_t ){
+          void *val = (void *)XLALMalloc( PulsarTypeSize[pc[i].ptype] );
+          pc[i].convfunc( str1, val );
+          PulsarAddParam( par, pc[i].name, val, pc[i].ptype );
+          XLALFree( val );
+        }
+        else{
+          const CHAR *val = XLALStringDuplicate(str1);
+          PulsarAddStringParam( par, pc[i].name, val );
+        }
       }
 
       /* check for error values */
