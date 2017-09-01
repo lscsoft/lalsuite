@@ -90,7 +90,7 @@ def find_olap_index(tree, intr_prms, exact=True, **kwargs):
     pt = numpy.array([kwargs[k] for k in intr_prms])
 
     # FIXME: Replace with standard function
-    dist, m_idx = tree.query(pt, k=1)
+    dist, m_idx = tree.query(numpy.atleast_2d(pt), k=1)
     dist, m_idx = dist[0][0], int(m_idx[0][0])
 
     # FIXME: There's still some tolerance from floating point conversions
@@ -152,7 +152,7 @@ def get_evidence_grid(points, res_pts, intr_prms, exact=False):
     grid_idx = []
     # Reorder the grid points to match their weight indices
     for res in res_pts:
-        dist, idx = grid_tree.query(res, k=1)
+        dist, idx = grid_tree.query(numpy.atleast_2d(res), k=1)
         # Stupid floating point inexactitude...
         #print res, selected[idx[0][0]]
         #assert numpy.allclose(res, selected[idx[0][0]])
@@ -363,7 +363,7 @@ else:
     if opts.deactivate:
         get_idx = set()
         for pt in pts[idx:]:
-            get_idx.add(tree.query(pt, k=1, return_distance=False)[0][0])
+            get_idx.add(tree.query(numpy.atleast_2d(pt), k=1, return_distance=False)[0][0])
         selected = grid[numpy.array(list(get_idx))]
     else:
         selected = grid
