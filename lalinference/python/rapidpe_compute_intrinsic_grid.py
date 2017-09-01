@@ -193,6 +193,7 @@ grid_section.add_argument("-t", "--tmplt-bank", help="XML file with template ban
 grid_section.add_argument("-O", "--use-overlap", help="Use overlap information to define 'closeness'.")
 grid_section.add_argument("-T", "--overlap-threshold", type=float, help="Threshold on overlap value.")
 grid_section.add_argument("-s", "--points-per-side", type=int, default=10, help="Number of points per side, default is 10.")
+grid_section.add_argument("-I", "--initial-region", action="append", help="Override the initial region with a custom specification. Specify multiple times like, -I mass1=1.0,2.0 -I mass2=1.0,1.5")
 grid_section.add_argument("-D", "--deactivate", action="store_true", help="Deactivate cells initially which have no template within them.")
 grid_section.add_argument("-P", "--prerefine", help="Refine this initial grid based on overlap values.")
 
@@ -339,11 +340,17 @@ if opts.refine or opts.prerefine:
     init_region, region_labels = amrlib.load_init_region(opts.refine or opts.prerefine, get_labels=True)
 else:
     ####### BEGIN INITIAL GRID CODE #########
-    init_region, idx = determine_region(pt, pts, ovrlp, opts.overlap_threshold, expand_prms)
-    region_labels = intr_prms
-    # FIXME: To be reimplemented in a different way
-    #if opts.expand_param is not None:
-        #expand_param(init_region, opts.expand_param)
+    if opts.initial_region is None:
+        init_region, idx = determine_region(pt, pts, ovrlp, opts.overlap_threshold, expand_prms)
+        region_labels = intr_prms
+        # FIXME: To be reimplemented in a different way
+        #if opts.expand_param is not None:
+            #expand_param(init_region, opts.expand_param)
+    else:
+        # Override initial region -- use with care
+        _, init_region = common_cl.parse_param(opts.initial_region)
+        region_labels = init_region.keys()
+        init_region = amrlib.Cell(numpy.vstack(init_region[k] for k in region_labels))
 
     # TODO: Alternatively, check density of points in the region to determine
     # the points to a side
