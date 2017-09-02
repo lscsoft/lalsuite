@@ -251,16 +251,36 @@ int XLALSetSuperskyPhysicalSpinBound(
   );
 
 ///
-/// Set parameter-space bounds on the reduced supersky frequency/spindown coordinates \f$\nu^{(s)}\f$
-/// for a lattice tiling using the reduced supersky metric. These coordinates are related to the
-/// physical frequency/spindowns by \f$\nu^{(s)} = f^{(s)} + \vec\Delta^s \cdot \vec n\f$.
+/// Register a lattice tiling callback function which computes the physical range covered
+/// by a reduced supersky lattice tiling.
 ///
-int XLALSetSuperskyCoordinateSpinBound(
-  LatticeTiling *tiling,                        ///< [in] Lattice tiling.
+int XLALRegisterSuperskyLatticePhysicalRangeCallback(
+  LatticeTiling *tiling,                        ///< [in] Lattice tiling
   const SuperskyTransformData *rssky_transf,    ///< [in] Reduced supersky coordinate transform data
-  const size_t s,                               ///< [in] Spindown order; 0=frequency, 1=first spindown, etc.
-  const double bound1,                          ///< [in] First bound on frequency/spindown
-  const double bound2                           ///< [in] Second bound on frequency/spindown
+  const PulsarDopplerParams **min_phys,         ///< [out] Minimum physical range
+  const PulsarDopplerParams **max_phys          ///< [out] Maximum physical range
+  );
+
+///
+/// Register a lattice tiling callback function which computes the range covered by a
+/// reduced supersky lattice tiling in another set of reduced supersky coordinates.
+///
+int XLALRegisterSuperskyLatticeSuperskyRangeCallback(
+  LatticeTiling *tiling,                        ///< [in] Lattice tiling
+  const SuperskyTransformData *rssky_transf,    ///< [in] Reduced supersky coordinate transform data
+  const SuperskyTransformData *rssky2_transf,   ///< [in] Other reduced supersky coordinate transform data
+  const gsl_vector **min_rssky2,                ///< [out] Minimum range of other reduced supersky coordinates
+  const gsl_vector **max_rssky2                 ///< [out] Maximum range of other reduced supersky coordinates
+  );
+
+///
+/// Set parameter-space bounds on an entire lattice tiling given minimum and maximum
+/// ranges in reduced supersky coordinates.
+///
+int XLALSetSuperskyRangeBounds(
+  LatticeTiling *tiling,                        ///< [in] Lattice tiling
+  const gsl_vector *min_rssky,                  ///< [in] Minimum range of reduced supersky coordinates
+  const gsl_vector *max_rssky                   ///< [in] Maximum range of reduced supersky coordinates
   );
 
 ///
