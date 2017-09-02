@@ -17,7 +17,7 @@ for setup in short long; do
             verb="Simulate"
             weave_setup_options="--segment-count=3 --segment-gap=11130000"
             weave_sft_options=
-            weave_search_options="--simulate-search --alpha=0.9/0.05 --delta=-1.2/0.1 --freq=50.5/1e-5 --f1dot=-5e-11,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3"
+            weave_search_options="--simulate-search --alpha=2.3/0.9 --delta=-1.2/2.3 --freq=50.5/1e-5 --f1dot=-5e-11,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3"
             ;;
 
         *)
@@ -63,7 +63,7 @@ for setup in short long; do
 
     echo "=== Setup '${setup}': ${verb} interpolating search with a maximum cache size ==="
     set -x
-    ${builddir}/lalapps_Weave --cache-max-size=10 --output-file=WeaveOutMax.fits \
+    ${builddir}/lalapps_Weave --cache-max-size=3 --output-file=WeaveOutMax.fits \
         --toplists=all --toplist-limit=2321 --misc-info --setup-file=WeaveSetup.fits \
         ${weave_sft_options} ${weave_search_options}
     set +x

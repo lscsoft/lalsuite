@@ -973,6 +973,23 @@ int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
 
 }
 
+int XLALSetPhysicalPointSuperskyRefTime(
+  PulsarDopplerParams *out_phys,
+  const SuperskyTransformData *rssky_transf
+  )
+{
+
+  // Check input
+  XLAL_CHECK( out_phys != NULL, XLAL_EFAULT );
+  XLAL_CHECK( CHECK_RSSKY_TRANSF( rssky_transf ), XLAL_EFAULT );
+
+  // Set output physical point reference time to that of of coordinate transform data
+  out_phys->refTime = rssky_transf->ref_time;
+
+  return XLAL_SUCCESS;
+
+}
+
 /**
  * Convert from 2-dimensional reduced supersky coordinates to 3-dimensional aligned sky
  * coordinates.
