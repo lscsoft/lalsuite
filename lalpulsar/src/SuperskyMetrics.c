@@ -2530,6 +2530,42 @@ int XLALRegisterSuperskyLatticeSuperskyRangeCallback(
 
 }
 
+int XLALSetSuperskyRangeBounds(
+  LatticeTiling *tiling,
+  const gsl_vector *min_rssky,
+  const gsl_vector *max_rssky
+  )
+{
+
+  // Check input
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  const size_t n = XLALTotalLatticeTilingDimensions( tiling );
+  XLAL_CHECK( min_rssky != NULL, XLAL_EFAULT );
+  XLAL_CHECK( min_rssky->size == n, XLAL_EINVAL );
+  XLAL_CHECK( max_rssky != NULL, XLAL_EFAULT );
+  XLAL_CHECK( max_rssky->size == n, XLAL_EINVAL );
+
+  // Set the parameter-space bounds on reduced supersky sky coordinates A and B
+  double A_bound[2] = { gsl_vector_get( min_rssky, 0 ), gsl_vector_get( max_rssky, 0 ) };
+  double B_bound[2] = { gsl_vector_get( min_rssky, 1 ), gsl_vector_get( max_rssky, 1 ) };
+  XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, A_bound[0], A_bound[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, ConstantBoundB, sizeof( B_bound[0] ), &B_bound[0], &B_bound[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingBoundCacheFunction( tiling, 1, SkyBoundCache ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Set the parameter-space bounds on all other coordinates
+  for ( size_t j = 2; j < n; ++j ) {
+    XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, j, gsl_vector_get( min_rssky, j ), gsl_vector_get( max_rssky, j ) ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  // Add to the parameter-space padding control flags for all coordinates
+  for ( size_t j = 0; j < n; ++j ) {
+    XLAL_CHECK_MAIN( XLALAddLatticeTilingPaddingFlags( tiling, j, LATTICE_TILING_PAD_EXTRA ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
 int XLALSuperskyLatticePhysicalRange(
   PulsarDopplerParams* min_range,
   PulsarDopplerParams* max_range,
