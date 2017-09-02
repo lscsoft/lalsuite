@@ -443,6 +443,10 @@ int main( int argc, char *argv[] )
     LogPrintf( LOG_NORMAL, "Simulating search; no results will be computed\n" );
   }
 
+  // Allocate random number generator
+  RandomParams *rand_par = XLALCreateRandomParams( uvar->rand_seed );
+  XLAL_CHECK_MAIN( rand_par != NULL, XLAL_EFUNC );
+
   ////////// Load setup data //////////
 
   // Initialise setup data
@@ -562,14 +566,18 @@ int main( int argc, char *argv[] )
   // Equalise metric frequency spacing, given the specified maximum mismatches
   XLAL_CHECK_MAIN( XLALEqualizeReducedSuperskyMetricsFreqSpacing( setup.metrics, coh_max_mismatch, semi_max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Set arrays defining frequency/spindown parameter-space ranges
-  const double minspins[] = { uvar->freq[0], uvar->f1dot[0], uvar->f2dot[0], uvar->f3dot[0], uvar->f4dot[0] };
-  const double maxspins[] = { uvar->freq[1], uvar->f1dot[1], uvar->f2dot[1], uvar->f3dot[1], uvar->f4dot[1] };
+  // Store user input spindown ranges in an array for ease of use
+  const double uvarspins[][2] = {
+    { uvar->f1dot[0], uvar->f1dot[1] },
+    { uvar->f2dot[0], uvar->f2dot[1] },
+    { uvar->f3dot[0], uvar->f3dot[1] },
+    { uvar->f4dot[0], uvar->f4dot[1] }
+  };
 
   // Check that metrics computed in setup file have sufficient spindown dimensions to cover user input
   size_t nmetricspins = 0;
   XLAL_CHECK_MAIN( XLALSuperskyMetricsDimensions( setup.metrics, &nmetricspins ) == XLAL_SUCCESS, XLAL_EFUNC );
-  const size_t nuvarspins = XLAL_NUM_ELEM( minspins );
+  const size_t nuvarspins = XLAL_NUM_ELEM( uvarspins );
   XLAL_CHECK_MAIN( nmetricspins <= nuvarspins, XLAL_EINVAL, "Number of spindowns from metrics (%zu) computed in setup file '%s' must be <= %zu", nmetricspins, uvar->setup_file, nuvarspins );
   const size_t ninputspins = UVAR_SET4( f1dot, f2dot, f3dot, f4dot );
   XLAL_CHECK_MAIN( ninputspins <= nmetricspins, XLAL_EINVAL, "Number of spindowns from user input (%zu) must be <= number of spindowns from metrics (%zu) computed in setup file '%s'", ninputspins, nmetricspins, uvar->setup_file );
@@ -605,55 +613,42 @@ int main( int argc, char *argv[] )
   rssky_metric[isemi] = setup.metrics->semi_rssky_metric;
   rssky_transf[isemi] = setup.metrics->semi_rssky_transf;
 
-  // Set sky parameter-space bounds
+  //
+  // Set up semicoherent lattice tiling
+  //
+  LogPrintf( LOG_NORMAL, "Setting up semicoherent lattice tiling ...\n" );
+
+  // Set sky semicoherent parameter-space bounds
   if ( UVAR_SET( sky_patch_count ) ) {
-    for ( size_t i = 0; i < ntiles; ++i ) {
-      XLAL_CHECK_MAIN( XLALSetSuperskyEqualAreaSkyBounds( tiling[i], uvar->sky_patch_count, uvar->sky_patch_index ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
+    XLAL_CHECK_MAIN( XLALSetSuperskyEqualAreaSkyBounds( tiling[isemi], uvar->sky_patch_count, uvar->sky_patch_index ) == XLAL_SUCCESS, XLAL_EFUNC );
     LogPrintf( LOG_NORMAL, "Search sky parameter space sky patch = %u of %u\n", uvar->sky_patch_index, uvar->sky_patch_count );
   } else {
-    for ( size_t i = 0; i < ntiles; ++i ) {
-      XLAL_CHECK_MAIN( XLALSetSuperskyPhysicalSkyBounds( tiling[i], rssky_metric[i], rssky_transf[i], uvar->alpha[0], uvar->alpha[1], uvar->delta[0], uvar->delta[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
+    XLAL_CHECK_MAIN( XLALSetSuperskyPhysicalSkyBounds( tiling[isemi], rssky_metric[isemi], rssky_transf[isemi], uvar->alpha[0], uvar->alpha[1], uvar->delta[0], uvar->delta[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
     LogPrintf( LOG_NORMAL, "Search sky parameter space right ascension = [%.15g, %.15g] rad\n", uvar->alpha[0], uvar->alpha[1] );
     LogPrintf( LOG_NORMAL, "Search sky parameter space declination = [%.15g, %.15g] rad\n", uvar->delta[0], uvar->delta[1] );
   }
 
-  // Set frequency/spindown parameter-space bounds
-  for ( size_t s = 0; s <= nmetricspins; ++s ) {
-    for ( size_t i = 0; i < ntiles; ++i ) {
-      XLAL_CHECK_MAIN( XLALSetSuperskyPhysicalSpinBound( tiling[i], rssky_transf[i], s, minspins[s], maxspins[s] ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-    if ( s == 0 ) {
-      LogPrintf( LOG_NORMAL, "Search frequency parameter space = [%.15g, %.15g] Hz\n", minspins[s], maxspins[s] );
-    } else {
-      LogPrintf( LOG_NORMAL, "Search %zu-order spindown parameter space = [%.15g, %.15g] Hz/s^%zu\n", s, minspins[s], maxspins[s], s );
-    }
+  // Set frequency/spindown semicoherent parameter-space bounds
+  XLAL_CHECK_MAIN( XLALSetSuperskyPhysicalSpinBound( tiling[isemi], rssky_transf[isemi], 0, uvar->freq[0], uvar->freq[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
+  LogPrintf( LOG_NORMAL, "Search frequency parameter space = [%.15g, %.15g] Hz\n", uvar->freq[0], uvar->freq[1] );
+  for ( size_t s = 1; s <= nmetricspins; ++s ) {
+    XLAL_CHECK_MAIN( XLALSetSuperskyPhysicalSpinBound( tiling[isemi], rssky_transf[isemi], s, uvarspins[s-1][0], uvarspins[s-1][1] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    LogPrintf( LOG_NORMAL, "Search %zu-order spindown parameter space = [%.15g, %.15g] Hz/s^%zu\n", s, uvarspins[s-1][0], uvarspins[s-1][1], s );
   }
 
-  // Set parameter-space padding
+  // Set semicoherent parameter-space padding
   for ( size_t j = 0; j < ndim; ++j ) {
-    for ( size_t i = 0; i < ncohtiles; ++i ) {
-      XLAL_CHECK_MAIN( XLALSetLatticeTilingPadding( tiling[i], j, interpolation ? 2 : 1, interpolation ? 2 : 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
     XLAL_CHECK_MAIN( XLALSetLatticeTilingPadding( tiling[isemi], j, 1, 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
-  // Add random offsets to physical origin of lattice tilings, if requested
+  // Add random offsets to physical origin of semicoherent lattice tiling, if requested
   if ( UVAR_SET( lattice_rand_offset ) ) {
-    RandomParams *rand_par = XLALCreateRandomParams( uvar->rand_seed );
-    XLAL_CHECK_MAIN( rand_par != NULL, XLAL_EFUNC );
-    for ( size_t i = 0; i < ntiles; ++i ) {
-      XLAL_CHECK_MAIN( XLALSetLatticeTilingRandomOriginOffsets( tiling[i], rand_par ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-    XLALDestroyRandomParams( rand_par );
+    XLAL_CHECK_MAIN( XLALSetLatticeTilingRandomOriginOffsets( tiling[isemi], rand_par ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
-  // Set parameter-space lattice and metric
-  for ( size_t i = 0; i < ncohtiles; ++i ) {
-    XLAL_CHECK_MAIN( XLALSetTilingLatticeAndMetric( tiling[i], uvar->lattice, rssky_metric[i], coh_max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
+  // Set semicoherent parameter-space lattice and metric
   XLAL_CHECK_MAIN( XLALSetTilingLatticeAndMetric( tiling[isemi], uvar->lattice, rssky_metric[isemi], semi_max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
+  LogPrintf( LOG_NORMAL, "Finished setting up semicoherent parameter space\n" );
 
   // Print number of (tiled) parameter-space dimensions
   LogPrintf( LOG_NORMAL, "Number of (tiled) parameter-space dimensions = %zu (%zu)\n", ndim, XLALTiledLatticeTilingDimensions( tiling[isemi] ) );
@@ -661,6 +656,54 @@ int main( int argc, char *argv[] )
   // Get frequency spacing used by parameter-space tiling
   // - XLALEqualizeReducedSuperskyMetricsFreqSpacing() ensures this is the same for all segments
   const double dfreq = XLALLatticeTilingStepSize( tiling[isemi], ndim - 1 );
+
+  // Create iterator over semicoherent tiling
+  // - The last parameter-space dimension is always frequency and is not iterated over, since we
+  //   always operate over a block of frequencies at once. Since the frequency spacing is always
+  //   equal over all tilings due to XLALEqualizeReducedSuperskyMetricsFreqSpacing(), operations
+  //   such as nearest point finding can be performed once per frequency block instead of per bin.
+  LatticeTilingIterator *semi_itr = XLALCreateLatticeTilingIterator( tiling[isemi], ndim - 1 );
+  {
+    const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling[isemi], ndim - 1 );
+    XLAL_CHECK_MAIN( stats != NULL, XLAL_EFUNC );
+    LogPrintf( LOG_NORMAL, "Number of semicoherent templates = %" LAL_UINT8_FORMAT "\n", stats->total_points );
+  }
+  gsl_vector *GAVEC_MAIN( semi_rssky, ndim );
+
+  //
+  // Set up coherent lattice tilings
+  //
+  LogPrintf( LOG_NORMAL, "Setting up coherent lattice tilings ...\n" );
+  for ( size_t i = 0; i < ncohtiles; ++i ) {
+
+    // Set sky coherent parameter-space bounds
+    if ( UVAR_SET( sky_patch_count ) ) {
+      XLAL_CHECK_MAIN( XLALSetSuperskyEqualAreaSkyBounds( tiling[i], uvar->sky_patch_count, uvar->sky_patch_index ) == XLAL_SUCCESS, XLAL_EFUNC );
+    } else {
+      XLAL_CHECK_MAIN( XLALSetSuperskyPhysicalSkyBounds( tiling[i], rssky_metric[i], rssky_transf[i], uvar->alpha[0], uvar->alpha[1], uvar->delta[0], uvar->delta[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+    // Set frequency/spindown coherent parameter-space bounds
+    XLAL_CHECK_MAIN( XLALSetSuperskyPhysicalSpinBound( tiling[i], rssky_transf[i], 0, uvar->freq[0], uvar->freq[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    for ( size_t s = 1; s <= nmetricspins; ++s ) {
+      XLAL_CHECK_MAIN( XLALSetSuperskyPhysicalSpinBound( tiling[i], rssky_transf[i], s, uvarspins[s-1][0], uvarspins[s-1][1] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+    // Set coherent parameter-space padding
+    for ( size_t j = 0; j < ndim; ++j ) {
+      XLAL_CHECK_MAIN( XLALSetLatticeTilingPadding( tiling[i], j, interpolation ? 2 : 1, interpolation ? 2 : 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+    // Add random offsets to physical origin of coherent lattice tiling, if requested
+    if ( UVAR_SET( lattice_rand_offset ) ) {
+      XLAL_CHECK_MAIN( XLALSetLatticeTilingRandomOriginOffsets( tiling[i], rand_par ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+    // Set coherent parameter-space lattice and metric
+    XLAL_CHECK_MAIN( XLALSetTilingLatticeAndMetric( tiling[i], uvar->lattice, rssky_metric[i], coh_max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  }
+  LogPrintf( LOG_NORMAL, "Finished setting up coherent lattice tilings\n" );
 
   ////////// Load input data //////////
 
@@ -906,27 +949,6 @@ int main( int argc, char *argv[] )
   }
 
   ////////// Perform search //////////
-
-  // Create iterator over semicoherent tiling
-  // - The last parameter-space dimension is always frequency and is not iterated over, since we
-  //   always operate over a block of frequencies at once. Since the frequency spacing is always
-  //   equal over all tilings due to XLALEqualizeReducedSuperskyMetricsFreqSpacing(), operations
-  //   such as nearest point finding can be performed once per frequency block instead of per bin.
-  // - Get physical range covered by semicoherent tiling
-  // - Count approximate number of semicoherent templates
-  LogPrintf( LOG_NORMAL, "Setting up iterator over semicoherent parameter space ...\n" );
-  LatticeTilingIterator *semi_itr = XLALCreateLatticeTilingIterator( tiling[isemi], ndim - 1 );
-  XLAL_CHECK_MAIN( semi_itr != NULL, XLAL_EFUNC );
-  gsl_vector *GAVEC_MAIN( semi_rssky, ndim );
-  PulsarDopplerParams XLAL_INIT_DECL( semi_min_range );
-  PulsarDopplerParams XLAL_INIT_DECL( semi_max_range );
-  XLAL_CHECK_MAIN( XLALSuperskyLatticePhysicalRange( &semi_min_range, &semi_max_range, tiling[isemi], rssky_transf[isemi] ) == XLAL_SUCCESS, XLAL_EFUNC );
-  LogPrintf( LOG_NORMAL, "Finished setting up iterator over semicoherent parameter space\n" );
-  {
-    const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling[isemi], ndim - 1 );
-    XLAL_CHECK_MAIN( stats != NULL, XLAL_EFUNC );
-    LogPrintf( LOG_NORMAL, "Counted ~%" LAL_UINT8_FORMAT " semicoherent templates\n", stats->total_points );
-  }
 
   // Create storage for cache queries for coherent results in each segment
   WeaveCacheQueries *queries = XLALWeaveCacheQueriesCreate( tiling[isemi], rssky_transf[isemi], nsegments, uvar->freq_partitions );
@@ -1293,6 +1315,9 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "dfreq", dfreq, "frequency spacing" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Write physical parameter-space ranges
+    PulsarDopplerParams XLAL_INIT_DECL( semi_min_range );
+    PulsarDopplerParams XLAL_INIT_DECL( semi_max_range );
+    XLAL_CHECK_MAIN( XLALSuperskyLatticePhysicalRange( &semi_min_range, &semi_max_range, tiling[isemi], rssky_transf[isemi] ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "minrng alpha [rad]", semi_min_range.Alpha, "minimum right ascension range" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "maxrng alpha [rad]", semi_max_range.Alpha, "maximum right ascension range" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "minrng delta [rad]", semi_min_range.Delta, "minimum declination range" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -1420,6 +1445,9 @@ int main( int argc, char *argv[] )
   // Cleanup memory from setup data
   XLALWeaveSetupDataClear( &setup );
   XLALFree( setup_detectors_string );
+
+  // Cleanup random number generator
+  XLALDestroyRandomParams( rand_par );
 
   // Cleanup memory from user input
   XLALDestroyUserVars();
