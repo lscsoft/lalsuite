@@ -64,8 +64,8 @@ typedef struct {
 struct tagWeaveCache {
   /// Number of parameter-space dimensions
   size_t ndim;
-  /// Coherent lattice tiling bounding box in dimension 0
-  double coh_bound_box_0;
+  /// Lowest tiled parameter-space dimension
+  size_t dim0;
   /// Reduced supersky transform data for coherent lattice
   const SuperskyTransformData *coh_rssky_transf;
   /// Reduced supersky transform data for semicoherent lattice
@@ -82,6 +82,8 @@ struct tagWeaveCache {
   UINT4 coh_computed_bitset_partition_index;
   /// Heap which ranks cache items by relevance
   LALHeap *relevance_heap;
+  /// Offset used in computation of coherent point relevance
+  double coh_relevance_offset;
   /// Maximum number of cache items to store
   UINT4 max_size;
   /// Additional cache item garbage collection limit
@@ -98,6 +100,8 @@ struct tagWeaveCache {
 struct tagWeaveCacheQueries {
   /// Number of parameter-space dimensions
   size_t ndim;
+  /// Lowest tiled parameter-space dimension
+  size_t dim0;
   /// Number of queries for which space is allocated
   UINT4 nqueries;
   /// Number of partitions to divide semicoherent frequency block into
@@ -116,8 +120,6 @@ struct tagWeaveCacheQueries {
   REAL4 *coh_relevance;
   /// Reduced supersky transform data for semicoherent lattice
   const SuperskyTransformData *semi_rssky_transf;
-  /// Semicoherent lattice tiling bounding box in dimension 0
-  double semi_bound_box_0;
   /// Sequential index for the current semicoherent frequency block
   UINT8 semi_index;
   /// Physical coordinates of the current semicoherent frequency block
@@ -128,6 +130,8 @@ struct tagWeaveCacheQueries {
   INT4 semi_right;
   /// Relevance of the current semicoherent frequency block
   REAL4 semi_relevance;
+  /// Offset used in computation of semicoherent point relevance
+  double semi_relevance_offset;
   /// Maximum number of bins per partition in semicoherent frequency block
   UINT4 max_semi_part_nfreqs;
 };
@@ -140,6 +144,7 @@ struct tagWeaveCacheQueries {
 static UINT8 cache_index_hash_item_hash( const void *x );
 static int cache_index_hash_item_compare_by_index( const void *x, const void *y );
 static int cache_index_hash_item_compare_by_relevance( const void *x, const void *y );
+static int cache_max_semi_bbox_sample_dim0( const WeaveCache *cache, const LatticeTiling *coh_tiling, const size_t i, gsl_vector *coh_bbox_sample, gsl_vector *semi_bbox_sample, double *max_semi_bbox_sample_dim0 );
 static int cache_relevance_heap_item_compare_by_relevance( const void *x, const void *y );
 static void cache_index_hash_item_destroy( void *x );
 static void cache_relevance_heap_item_destroy( void *x );
@@ -230,6 +235,52 @@ int cache_relevance_heap_item_compare_by_relevance(
 } // cache_relevance_heap_item_compare_by_relevance()
 
 ///
+/// Sample points on surface of coherent bounding box, convert to semicoherent supersky
+/// coordinates, and record maximum value of semicoherent coordinate in dimension 'dim0'
+///
+int cache_max_semi_bbox_sample_dim0(
+  const WeaveCache *cache,
+  const LatticeTiling *coh_tiling,
+  const size_t i,
+  gsl_vector *coh_bbox_sample,
+  gsl_vector *semi_bbox_sample,
+  double *max_semi_bbox_sample_dim0
+  )
+{
+
+  if ( i < cache->ndim ) {
+
+    // Get coherent lattice tiling bounding box in dimension 'i'
+    const double coh_bbox_i = XLALLatticeTilingBoundingBox( coh_tiling, i );
+    XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+
+    // Get current value of 'coh_bbox_sample' in dimension 'i'
+    const double coh_bbox_sample_i = gsl_vector_get( coh_bbox_sample, i );
+
+    // Move 'coh_bbox_sample' in dimension 'i' to vertices, edge centres and face centres of bounding box, and proceed to higher dimensions
+    for ( int step = -1; step <= 1; ++ step ) {
+      gsl_vector_set( coh_bbox_sample, i, coh_bbox_sample_i - step * 0.5 * coh_bbox_i );
+      XLAL_CHECK( cache_max_semi_bbox_sample_dim0( cache, coh_tiling, i + 1, coh_bbox_sample, semi_bbox_sample, max_semi_bbox_sample_dim0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+    // Restore current value of 'coh_bbox_sample' in dimension 'i'
+    gsl_vector_set( coh_bbox_sample, i, coh_bbox_sample_i );
+
+  } else {
+
+    // Convert 'coh_bbox_sample' to semicoherent reduced supersky coordinates
+    XLAL_CHECK( XLALConvertSuperskyToSuperskyPoint( semi_bbox_sample, cache->semi_rssky_transf, coh_bbox_sample, cache->coh_rssky_transf ) == XLAL_SUCCESS, XLAL_EINVAL );
+
+    // Record maximum value of semicoherent coordinate in dimension 'dim0'
+    *max_semi_bbox_sample_dim0 = GSL_MAX( *max_semi_bbox_sample_dim0, gsl_vector_get( semi_bbox_sample, cache->dim0 ) );
+
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
+///
 /// Create a cache
 ///
 WeaveCache *XLALWeaveCacheCreate(
@@ -262,9 +313,37 @@ WeaveCache *XLALWeaveCacheCreate(
   cache->ndim = XLALTotalLatticeTilingDimensions( coh_tiling );
   XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
 
-  // Get coherent lattice tiling bounding box in dimension 0
-  cache->coh_bound_box_0 = XLALLatticeTilingBoundingBox( coh_tiling, 0 );
+  // Get lowest tiled parameter-space dimension
+  cache->dim0 = XLALLatticeTilingTiledDimension( coh_tiling, 0 );
   XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
+
+  // Compute offset used in computation of semicoherent point relevance:
+  {
+
+    // Convert a physical point far from any parameter-space boundaries to coherent and semicoherent reduced supersky coordinates
+    PulsarDopplerParams phys_origin = { .Alpha = 0, .Delta = LAL_PI_2, .fkdot = {0} };
+    XLAL_CHECK_NULL( XLALSetPhysicalPointSuperskyRefTime( &phys_origin, cache->coh_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+    double coh_origin_array[cache->ndim];
+    gsl_vector_view coh_origin_view = gsl_vector_view_array( coh_origin_array, cache->ndim );
+    XLAL_CHECK_NULL( XLALConvertPhysicalToSuperskyPoint( &coh_origin_view.vector, &phys_origin, cache->coh_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+    double semi_origin_array[cache->ndim];
+    gsl_vector_view semi_origin_view = gsl_vector_view_array( semi_origin_array, cache->ndim );
+    XLAL_CHECK_NULL( XLALConvertPhysicalToSuperskyPoint( &semi_origin_view.vector, &phys_origin, cache->semi_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+    const double semi_origin_dim0 = gsl_vector_get( &semi_origin_view.vector, cache->dim0 );
+
+    // Sample vertices of bounding box around 'coh_origin', and record maximum vertex in semicoherent reduced supersky coordinates in dimension 'dim0'
+    double coh_bbox_sample_array[cache->ndim];
+    gsl_vector_view coh_bbox_sample_view = gsl_vector_view_array( coh_bbox_sample_array, cache->ndim );
+    gsl_vector_memcpy( &coh_bbox_sample_view.vector, &coh_origin_view.vector );
+    double semi_bbox_sample_array[cache->ndim];
+    gsl_vector_view semi_bbox_sample_view = gsl_vector_view_array( semi_bbox_sample_array, cache->ndim );
+    double max_semi_bbox_sample_dim0 = semi_origin_dim0;
+    XLAL_CHECK_NULL( cache_max_semi_bbox_sample_dim0( cache, coh_tiling, 0, &coh_bbox_sample_view.vector, &semi_bbox_sample_view.vector, &max_semi_bbox_sample_dim0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Subtract off origin of 'semi_origin' to get relevance offset
+    cache->coh_relevance_offset = max_semi_bbox_sample_dim0 - semi_origin_dim0;
+
+  }
 
   // If this is an interpolating search, create a lattice tiling locator
   if ( interpolation ) {
@@ -284,9 +363,9 @@ WeaveCache *XLALWeaveCacheCreate(
   // Create a heap which sorts items by "relevance", a quantity which determines how long
   // cache items are kept. Consider the following scenario:
   //
-  //   +-----> parameter-space dimension 0
+  //   +-----> parameter-space dimension 'dim0'
   //   |
-  //   V other parameter-space dimensions
+  //   V parameter-space dimensions > 'dim0'
   //
   //        :
   //        : R[S1] = relevance of semicoherent point 'S1'
@@ -294,27 +373,29 @@ WeaveCache *XLALWeaveCacheCreate(
   //        +-----+
   //        | /`\ |
   //        || S1||
-  //        | \,/ |  :
-  //        +-----+  : R[S2] = relevance of semicoherent point 'S2'
-  //   +-------+     :
-  //   | /```\ |     +-----+
-  //   |/     \|     | /`\ |
-  //   ||  C  ||     || S2||
-  //   |\     /|     | \,/ |
-  //   | \,,,/ |     +-----+
-  //   +-------+
-  //           :
-  //           : R[C] = relevance of coherent point 'C'
-  //           :
+  //        | \,/ |
+  //        +-----+
+  //      +          :
+  //     / \         : R[S2] = relevance of semicoherent point 'S2'
+  //    /,,,\        :
+  //   /(   \\       +-----+
+  //  + (    \\      | /`\ |
+  //   \\  C  \\     || S2||
+  //    \\    ) +    | \,/ |
+  //     \\   )/:    +-----+
+  //      \```/ :
+  //       \ /  :
+  //        +   : R[C] = relevance of coherent point 'C'
+  //            :
   //
-  // The relevance R[C] of the coherent point 'C' is given by the coordinate in dimension 0 of
+  // The relevance R[C] of the coherent point 'C' is given by the coordinate in dimension 'dim0' of
   // the *rightmost* edge of the bounding box surrounding its metric ellipse. The relevances of
   // two semicoherent points S1 and S2, R[S1] and R[S2], are given by the *leftmost* edges of the
   // bounding box surrounding their metric ellipses.
   //
-  // Note that iteration over the parameter space is ordered such that dimension 0 is the slowest
-  // coordinate, i.e. dimension 0 is passed over only once, therefore coordinates in this dimension
-  // are monotonically increasing, therefore relevances are also monotonically increasing.
+  // Note that iteration over the parameter space is ordered such that dimension 'dim0' is the slowest
+  // (tiled) coordinate, i.e. dimension 'dim0' is passed over only once, therefore coordinates in this
+  // dimension are monotonically increasing, therefore relevances are also monotonically increasing.
   //
   // Suppose S1 is the current point in the semicoherent parameter-space tiling; note that R[C] > R[S1].
   // It is clear that, as iteration progresses, some future semicoherent points will overlap with C.
@@ -397,8 +478,13 @@ WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
   queries->ndim = XLALTotalLatticeTilingDimensions( semi_tiling );
   XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
 
-  // Get semicoherent lattice tiling bounding box in dimension 0
-  queries->semi_bound_box_0 = XLALLatticeTilingBoundingBox( semi_tiling, 0 );
+  // Get lowest tiled parameter-space dimension
+  queries->dim0 = XLALLatticeTilingTiledDimension( semi_tiling, 0 );
+  XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
+
+  // Compute offset used in computation of semicoherent point relevance:
+  // - Negative half of semicoherent lattice tiling bounding box in dimension 'dim0'
+  queries->semi_relevance_offset = -0.5 * XLALLatticeTilingBoundingBox( semi_tiling, queries->dim0 );
   XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
 
   // Get maximum number of bins (per partition) in semicoherent frequency block
@@ -451,15 +537,15 @@ int XLALWeaveCacheQueriesInit(
   // Save current semicoherent sequential index
   queries->semi_index = semi_index;
 
-  // Compute the relevance of the current semicoherent frequency block
-  // - Subtract half the semicoherent lattice tiling bounding box in dimension 0
-  queries->semi_relevance = gsl_vector_get( semi_point, 0 ) - 0.5 * queries->semi_bound_box_0;
-
   // Convert semicoherent point to physical coordinates
   XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &queries->semi_phys, semi_point, NULL, queries->semi_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Get indexes of left/right-most point in current semicoherent frequency block
   XLAL_CHECK( XLALCurrentLatticeTilingBlock( semi_itr, queries->ndim - 1, &queries->semi_left, &queries->semi_right ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Compute the relevance of the current semicoherent frequency block
+  // - Relevance is semicoherent reduced supersky point in dimension 'dim0', plus offset
+  queries->semi_relevance = gsl_vector_get( semi_point, queries->dim0 ) + queries->semi_relevance_offset;
 
   return XLAL_SUCCESS;
 
@@ -478,6 +564,8 @@ int XLALWeaveCacheQuery(
   // Check input
   XLAL_CHECK( cache != NULL, XLAL_EFAULT );
   XLAL_CHECK( queries != NULL, XLAL_EFAULT );
+  XLAL_CHECK( cache->ndim == queries->ndim, XLAL_ESIZE );
+  XLAL_CHECK( cache->dim0 == queries->dim0, XLAL_ESIZE );
   XLAL_CHECK( query_index < queries->nqueries, XLAL_EINVAL );
 
   // Convert semicoherent physical point to coherent reduced supersky coordinates
@@ -511,19 +599,14 @@ int XLALWeaveCacheQuery(
   XLAL_INIT_MEM( queries->coh_phys[query_index] );
   XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &queries->coh_phys[query_index], &coh_near_point_view.vector, &coh_point_view.vector, cache->coh_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Compute the relevance of the current coherent frequency block
-  // - Add half the coherent lattice tiling bounding box in dimension 0
-  // - Convert coherent point to semicoherent reduced supersky coordinates
-  // - Relevance is semicoherent point coordinate in dimension 0
+  // Compute the relevance of the current coherent frequency block:
+  // - Convert nearest coherent point to semicoherent reduced supersky coordinates
+  // - Relevance is nearest coherent point in semicoherent reduced supersky coordinates in dimension 'dim0', plus offset
   {
-    double tmp_point_array[cache->ndim];
-    gsl_vector_view tmp_point_view = gsl_vector_view_array( tmp_point_array, cache->ndim );
-    gsl_vector_memcpy( &tmp_point_view.vector, &coh_near_point_view.vector );
-    *gsl_vector_ptr( &tmp_point_view.vector, 0 ) += 0.5 * cache->coh_bound_box_0;
-    PulsarDopplerParams XLAL_INIT_DECL( tmp_phys );
-    XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &tmp_phys, &tmp_point_view.vector, NULL, cache->coh_rssky_transf ) == XLAL_SUCCESS, XLAL_EINVAL );
-    XLAL_CHECK( XLALConvertPhysicalToSuperskyPoint( &tmp_point_view.vector, &tmp_phys, cache->semi_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
-    queries->coh_relevance[query_index] = gsl_vector_get( &tmp_point_view.vector, 0 );
+    double semi_near_point_array[cache->ndim];
+    gsl_vector_view semi_near_point_view = gsl_vector_view_array( semi_near_point_array, cache->ndim );
+    XLAL_CHECK( XLALConvertSuperskyToSuperskyPoint( &semi_near_point_view.vector, cache->semi_rssky_transf, &coh_near_point_view.vector, cache->coh_rssky_transf ) == XLAL_SUCCESS, XLAL_EINVAL );
+    queries->coh_relevance[query_index] = gsl_vector_get( &semi_near_point_view.vector, cache->dim0 ) + cache->coh_relevance_offset;
   }
 
   return XLAL_SUCCESS;
