@@ -32,19 +32,31 @@
 #define COMPARE_BY( x, y ) do { if ( (x) < (y) ) return -1; if ( (x) > (y) ) return +1; } while(0)
 
 ///
-/// Internal definition of an item stored in the cache
+/// Internal definition of a cache item stored in the index hash table
 ///
 typedef struct {
-  /// Frequency partition index, used both to find items
-  /// in cache and to decide how long to keep items
+  /// Frequency partition index, used to find hash items
   UINT4 partition_index;
-  /// Relevance, used to decide how long to keep items
+  /// Relevance, used to decide how long to keep hash items
   REAL4 relevance;
-  /// Coherent locator index, used to find items in cache
+  /// Coherent locator index, used to find hash items
   UINT8 coh_index;
   /// Results of a coherent computation on a single segment
   WeaveCohResults *coh_res;
-} cache_item;
+} cache_index_hash_item;
+
+///
+/// Internal definition of a cache item stored in the relevance heap
+///
+typedef struct {
+  /// Frequency partition index, to decide how long to keep heap items
+  UINT4 partition_index;
+  /// Relevance, used to decide how long to keep heap items; index hash
+  /// table items record their own relevance so it can be updated
+  REAL4 relevance;
+  /// Coherent locator index, used to find corresponding hash item
+  UINT8 coh_index;
+} cache_relevance_heap_item;
 
 ///
 /// Internal definition of cache
@@ -62,18 +74,22 @@ struct tagWeaveCache {
   WeaveCohInput *coh_input;
   /// Coherent parameter-space tiling locator
   LatticeTilingLocator *coh_locator;
-  /// Heap which ranks cache items by relevance
-  LALHeap *relevance_heap;
   /// Hash table which looks up cache items by index
-  LALHashTbl *coh_index_hash;
+  LALHashTbl *index_hash;
   /// Bitset which records whether an item has ever been computed
   LALBitset *coh_computed_bitset;
   /// Partition index for which 'coh_computed_bitset' applies
   UINT4 coh_computed_bitset_partition_index;
-  /// Save an no-longer-used cache item for re-use
-  cache_item *saved_item;
+  /// Heap which ranks cache items by relevance
+  LALHeap *relevance_heap;
+  /// Maximum number of cache items to store
+  UINT4 max_size;
   /// Additional cache item garbage collection limit
   UINT4 gc_extra;
+  /// Save an no-longer-used index hash item for re-use
+  cache_index_hash_item *saved_hash_item;
+  /// Save an no-longer-used relevance heap item for re-use
+  cache_relevance_heap_item *saved_heap_item;
 };
 
 ///
@@ -121,70 +137,97 @@ struct tagWeaveCacheQueries {
 ///
 /// @{
 
-static UINT8 cache_item_hash( const void *x );
-static int cache_item_compare_by_coh_index( const void *x, const void *y );
-static int cache_item_compare_by_relevance( const void *x, const void *y );
-static void cache_item_destroy( void *x );
+static UINT8 cache_index_hash_item_hash( const void *x );
+static int cache_index_hash_item_compare_by_index( const void *x, const void *y );
+static int cache_index_hash_item_compare_by_relevance( const void *x, const void *y );
+static int cache_relevance_heap_item_compare_by_relevance( const void *x, const void *y );
+static void cache_index_hash_item_destroy( void *x );
+static void cache_relevance_heap_item_destroy( void *x );
 
 /// @}
 
 ///
-/// Destroy a cache item
+/// Destroy a index hash table item
 ///
-void cache_item_destroy(
+void cache_index_hash_item_destroy(
   void *x
   )
 {
   if ( x != NULL ) {
-    cache_item *ix = ( cache_item * ) x;
+    cache_index_hash_item *ix = ( cache_index_hash_item * ) x;
     XLALWeaveCohResultsDestroy( ix->coh_res );
     XLALFree( ix );
   }
-} // cache_item_destroy()
+} // cache_index_hash_item_destroy()
 
 ///
-/// Compare cache items by partition index, then relevance
+/// Compare index hash table items by partition index, then locator index
 ///
-int cache_item_compare_by_relevance(
+int cache_index_hash_item_compare_by_index(
   const void *x,
   const void *y
   )
 {
-  const cache_item *ix = ( const cache_item * ) x;
-  const cache_item *iy = ( const cache_item * ) y;
-  COMPARE_BY( ix->partition_index, iy->partition_index );   // Compare in ascending order
-  COMPARE_BY( ix->relevance, iy->relevance );   // Compare in ascending order
-  return 0;
-} // cache_item_compare_by_relevance()
-
-///
-/// Compare cache items by partition index, then locator index
-///
-int cache_item_compare_by_coh_index(
-  const void *x,
-  const void *y
-  )
-{
-  const cache_item *ix = ( const cache_item * ) x;
-  const cache_item *iy = ( const cache_item * ) y;
+  const cache_index_hash_item *ix = ( const cache_index_hash_item * ) x;
+  const cache_index_hash_item *iy = ( const cache_index_hash_item * ) y;
   COMPARE_BY( ix->partition_index, iy->partition_index );   // Compare in ascending order
   COMPARE_BY( ix->coh_index, iy->coh_index );   // Compare in ascending order
   return 0;
-} // cache_item_compare_by_coh_index()
+} // cache_index_hash_item_compare_by_index()
 
 ///
-/// Hash cache items by partition index and locator index
+/// Compare index hash table items by partition index, then relevance
 ///
-UINT8 cache_item_hash(
+int cache_index_hash_item_compare_by_relevance(
+  const void *x,
+  const void *y
+  )
+{
+  const cache_index_hash_item *ix = ( const cache_index_hash_item * ) x;
+  const cache_index_hash_item *iy = ( const cache_index_hash_item * ) y;
+  COMPARE_BY( ix->partition_index, iy->partition_index );   // Compare in ascending order
+  COMPARE_BY( ix->relevance, iy->relevance );   // Compare in ascending order
+  return 0;
+} // cache_index_hash_item_compare_by_relevance()
+
+///
+/// Hash index hash table items by partition index and locator index
+///
+UINT8 cache_index_hash_item_hash(
   const void *x
   )
 {
-  const cache_item *ix = ( const cache_item * ) x;
+  const cache_index_hash_item *ix = ( const cache_index_hash_item * ) x;
   UINT4 hval = 0;
   XLALPearsonHash( &hval, sizeof( hval ), &ix->partition_index, sizeof( ix->partition_index ) );
   XLALPearsonHash( &hval, sizeof( hval ), &ix->coh_index, sizeof( ix->coh_index ) );
   return hval;
-} // cache_item_hash()
+} // cache_index_hash_item_hash()
+
+///
+/// Destroy a relevance heap item
+///
+void cache_relevance_heap_item_destroy(
+  void *x
+  )
+{
+  XLALFree( x );
+} // cache_relevance_heap_item_destroy()
+
+///
+/// Compare relevance heap items by partition index, then relevance
+///
+int cache_relevance_heap_item_compare_by_relevance(
+  const void *x,
+  const void *y
+  )
+{
+  const cache_relevance_heap_item *ix = ( const cache_relevance_heap_item * ) x;
+  const cache_relevance_heap_item *iy = ( const cache_relevance_heap_item * ) y;
+  COMPARE_BY( ix->partition_index, iy->partition_index );   // Compare in ascending order
+  COMPARE_BY( ix->relevance, iy->relevance );   // Compare in ascending order
+  return 0;
+} // cache_relevance_heap_item_compare_by_relevance()
 
 ///
 /// Create a cache
@@ -212,6 +255,7 @@ WeaveCache *XLALWeaveCacheCreate(
   cache->coh_rssky_transf = coh_rssky_transf;
   cache->semi_rssky_transf = semi_rssky_transf;
   cache->coh_input = coh_input;
+  cache->max_size = max_size;
   cache->gc_extra = gc_extra;
 
   // Get number of parameter-space dimensions
@@ -227,6 +271,15 @@ WeaveCache *XLALWeaveCacheCreate(
     cache->coh_locator = XLALCreateLatticeTilingLocator( coh_tiling );
     XLAL_CHECK_NULL( cache->coh_locator != NULL, XLAL_EFUNC );
   }
+
+  // Create a hash table which looks up cache items by partition and locator index.
+  cache->index_hash = XLALHashTblCreate( cache_index_hash_item_destroy, cache_index_hash_item_hash, cache_index_hash_item_compare_by_index );
+  XLAL_CHECK_NULL( cache->index_hash != NULL, XLAL_EFUNC );
+
+  // Create a bitset which records which cache items have previously been computed.
+  cache->coh_computed_bitset = XLALBitsetCreate();
+  XLAL_CHECK_NULL( cache->coh_computed_bitset != NULL, XLAL_EFUNC );
+  cache->coh_computed_bitset_partition_index = LAL_UINT4_MAX;
 
   // Create a heap which sorts items by "relevance", a quantity which determines how long
   // cache items are kept. Consider the following scenario:
@@ -274,19 +327,14 @@ WeaveCache *XLALWeaveCacheCreate(
   // In short, an item in the cache can be discarded once its relevance falls below the threshold set
   // by the current point semicoherent in the semicoherent parameter-space tiling.
   //
-  // Items removed from the heap are destroyed by calling cache_item_destroy().
-  cache->relevance_heap = XLALHeapCreate( cache_item_destroy, max_size, -1, cache_item_compare_by_relevance );
+  // Relevances should be updated if a coherent point 'C' is accessed by multiple semicoherent points.
+  // Since, however, items in a heap other than the root item cannot be (easily) updated, the relevance
+  // heap items contain pointers to corresponding index hash table items, where the relevance can be
+  // updated. When an item expires from the relevance heap, the pointed-to index hash table item is
+  // examines to see whether it is still relevant, if not then it and the coherent results it points
+  // to are destroyed.
+  cache->relevance_heap = XLALHeapCreate( cache_relevance_heap_item_destroy, 0, -1, cache_relevance_heap_item_compare_by_relevance );
   XLAL_CHECK_NULL( cache->relevance_heap != NULL, XLAL_EFUNC );
-
-  // Create a hash table which looks up cache items by partition and locator index. Items removed
-  // from the hash table are NOT destroyed, since items are shared with 'relevance_heap'.
-  cache->coh_index_hash = XLALHashTblCreate( NULL, cache_item_hash, cache_item_compare_by_coh_index );
-  XLAL_CHECK_NULL( cache->coh_index_hash != NULL, XLAL_EFUNC );
-
-  // Create a bitset which records which cache items have ever been computed.
-  cache->coh_computed_bitset = XLALBitsetCreate();
-  XLAL_CHECK_NULL( cache->coh_computed_bitset != NULL, XLAL_EFUNC );
-  cache->coh_computed_bitset_partition_index = LAL_UINT4_MAX;
 
   return cache;
 
@@ -301,10 +349,11 @@ void XLALWeaveCacheDestroy(
 {
   if ( cache != NULL ) {
     XLALDestroyLatticeTilingLocator( cache->coh_locator );
-    XLALHeapDestroy( cache->relevance_heap );
-    XLALHashTblDestroy( cache->coh_index_hash );
-    cache_item_destroy( cache->saved_item );
+    XLALHashTblDestroy( cache->index_hash );
     XLALBitsetDestroy( cache->coh_computed_bitset );
+    XLALHeapDestroy( cache->relevance_heap );
+    cache_index_hash_item_destroy( cache->saved_hash_item );
+    cache_relevance_heap_item_destroy( cache->saved_heap_item );
     XLALFree( cache );
   }
 } // XLALWeaveCacheDestroy()
@@ -589,118 +638,167 @@ int XLALWeaveCacheRetrieve(
   XLAL_CHECK( coh_nres != NULL, XLAL_EFAULT );
   XLAL_CHECK( coh_ntmpl != NULL, XLAL_EFAULT );
 
+  // Determine the number of points in the coherent frequency block
+  const UINT4 coh_nfreqs = queries->coh_right[query_index] - queries->coh_left[query_index] + 1;
+
   // Reset bitset if partition index has changed
   if ( cache->coh_computed_bitset_partition_index != queries->partition_index ) {
     XLAL_CHECK( XLALBitsetClear( cache->coh_computed_bitset ) == XLAL_SUCCESS, XLAL_EFUNC );
     cache->coh_computed_bitset_partition_index = queries->partition_index;
   }
 
-  // See if coherent results are already cached
-  const cache_item find_key = { .partition_index = queries->partition_index, .coh_index = queries->coh_index[query_index] };
-  const cache_item *find_item = NULL;
-  XLAL_CHECK( XLALHashTblFind( cache->coh_index_hash, &find_key, ( const void ** ) &find_item ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if ( find_item == NULL ) {
+  // Try to extract index hash item containing required coherent results
+  const cache_index_hash_item find_hash_key = { .partition_index = queries->partition_index, .coh_index = queries->coh_index[query_index] };
+  cache_index_hash_item *find_hash_item = NULL;
+  XLAL_CHECK( XLALHashTblExtract( cache->index_hash, &find_hash_key, ( void ** ) &find_hash_item ) == XLAL_SUCCESS, XLAL_EFUNC );
+  const BOOLEAN find_hash_item_found = ( find_hash_item != NULL );
+  if ( !find_hash_item_found ) {
 
-    // Reuse 'saved_item' if possible, otherwise allocate memory for a new cache item
-    if ( cache->saved_item == NULL ) {
-      cache->saved_item = XLALCalloc( 1, sizeof( *cache->saved_item ) );
-      XLAL_CHECK( cache->saved_item != NULL, XLAL_EINVAL );
+    // Reuse 'saved_hash_item' if possible, otherwise allocate memory for a new index hash item
+    if ( cache->saved_hash_item == NULL ) {
+      cache->saved_hash_item = XLALCalloc( 1, sizeof( *cache->saved_hash_item ) );
+      XLAL_CHECK( cache->saved_hash_item != NULL, XLAL_EINVAL );
     }
-    cache_item *new_item = cache->saved_item;
-    find_item = new_item;
+    find_hash_item = cache->saved_hash_item;
+    cache->saved_hash_item = NULL;
 
-    // Set the key of the new cache item for future lookups
-    new_item->partition_index = find_key.partition_index;
-    new_item->coh_index = find_key.coh_index;
+    // Set the key of the new index hash item
+    find_hash_item->partition_index = find_hash_key.partition_index;
+    find_hash_item->coh_index = find_hash_key.coh_index;
 
-    // Set the relevance of the coherent frequency block associated with the new cache item
-    new_item->relevance = queries->coh_relevance[query_index];
+    // Set the relevance of the new index hash item to that of the coherent frequency block
+    find_hash_item->relevance = queries->coh_relevance[query_index];
 
-    // Determine the number of points in the coherent frequency block
-    const UINT4 coh_nfreqs = queries->coh_right[query_index] - queries->coh_left[query_index] + 1;
-
-    // Compute coherent results for the new cache item
-    XLAL_CHECK( XLALWeaveCohResultsCompute( &new_item->coh_res, cache->coh_input, &queries->coh_phys[query_index], coh_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    // Add new cache item to the index hash table
-    XLAL_CHECK( XLALHashTblAdd( cache->coh_index_hash, new_item ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    // Get the item in the cache with the smallest relevance
-    const cache_item *least_relevant_item = ( const cache_item * ) XLALHeapRoot( cache->relevance_heap );
-    XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
-
-    // Create a 'fake' item specifying thresholds for cache item relevance, for comparison with 'least_relevant_item'
-    const cache_item relevance_threshold = { .partition_index = queries->partition_index, .relevance = queries->semi_relevance };
-
-    // If item's relevance has fallen below the threshold relevance, it can be removed from the cache
-    if ( least_relevant_item != NULL && least_relevant_item != new_item && cache_item_compare_by_relevance( least_relevant_item, &relevance_threshold ) < 0 ) {
-
-      // Remove least relevant item from index hash table
-      XLAL_CHECK( XLALHashTblRemove( cache->coh_index_hash, least_relevant_item ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      // Exchange 'saved_item' with the least relevant item in the relevance heap
-      XLAL_CHECK( XLALHeapExchangeRoot( cache->relevance_heap, ( void ** ) &cache->saved_item ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      // Remove any addition items that are no longer relevant, up to a maximum of 'gc_extra'
-      for ( size_t i = 0; i < cache->gc_extra; ++i ) {
-
-        // Get the item in the cache with the smallest relevance
-        least_relevant_item = ( const cache_item * ) XLALHeapRoot( cache->relevance_heap );
-        XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
-
-        // If item's relevance has fallen below the threshold relevance, it can be removed from the cache
-        if ( least_relevant_item != NULL && least_relevant_item != new_item && cache_item_compare_by_relevance( least_relevant_item, &relevance_threshold ) < 0 ) {
-
-          // Remove least relevant item from index hash table
-          XLAL_CHECK( XLALHashTblRemove( cache->coh_index_hash, least_relevant_item ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-          // Remove and destroy least relevant item from the relevance heap
-          XLAL_CHECK( XLALHeapRemoveRoot( cache->relevance_heap ) == XLAL_SUCCESS, XLAL_EINVAL );
-
-        } else {
-
-          // All cache items are still relevant
-          break;
-
-        }
-
-      }
-
-    } else {
-
-      // Add new cache item to the relevance heap; 'saved_item' many now contains an item removed from the heap
-      XLAL_CHECK( XLALHeapAdd( cache->relevance_heap, ( void ** ) &cache->saved_item ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      // If 'saved_item' contains an item removed from the heap, also remove it from the index hash table
-      if ( cache->saved_item != NULL ) {
-        XLAL_CHECK( XLALHashTblRemove( cache->coh_index_hash, cache->saved_item ) == XLAL_SUCCESS, XLAL_EFUNC );
-      }
-
-    }
+    // Compute coherent results for the new index hash item
+    XLAL_CHECK( XLALWeaveCohResultsCompute( &find_hash_item->coh_res, cache->coh_input, &queries->coh_phys[query_index], coh_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Increment number of computed coherent results
     *coh_nres += coh_nfreqs;
 
     // Check if coherent results have been computed previously
     BOOLEAN computed = 0;
-    XLAL_CHECK( XLALBitsetGet( cache->coh_computed_bitset, find_key.coh_index, &computed ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALBitsetGet( cache->coh_computed_bitset, find_hash_key.coh_index, &computed ) == XLAL_SUCCESS, XLAL_EFUNC );
     if ( !computed ) {
 
       // Coherent results have not been computed before: increment the number of coherent templates
       *coh_ntmpl += coh_nfreqs;
 
       // This coherent result has now been computed
-      XLAL_CHECK( XLALBitsetSet( cache->coh_computed_bitset, find_key.coh_index, 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALBitsetSet( cache->coh_computed_bitset, find_hash_key.coh_index, 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     }
 
   }
 
+  // Update the relevance of the found index hash item to that of the coherent frequency block
+  find_hash_item->relevance = GSL_MAX( find_hash_item->relevance, queries->coh_relevance[query_index] );
+
+  // Remove no longer relevant items from the index hash tree
+  UINT4 gc = 0;
+  while ( 1 ) {
+
+    // If the (fixed-size) cache is full, then we must remove a cache item in this iteration
+    const BOOLEAN cache_is_full = ( 0 < cache->max_size ) && ( cache->max_size == (UINT4) XLALHashTblSize( cache->index_hash ) );
+
+    // Get the root item of the relevance heap, which contains the current least relevant item
+    const cache_relevance_heap_item *heap_root = XLALHeapRoot( cache->relevance_heap );
+    XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+    if ( heap_root == NULL ) {
+
+      // Relevance heap is empty
+      break;
+
+    }
+
+    // Check whether relevance heap root item is still relevant, based in current semicoherent point
+    // - Bypassed if cache is full
+    const cache_relevance_heap_item heap_relevance = { .partition_index = queries->partition_index, .relevance = queries->semi_relevance };
+    if ( !cache_is_full && cache_relevance_heap_item_compare_by_relevance( heap_root, &heap_relevance ) >= 0 ) {
+
+      // Cache is not full, and root of relevance heap is still relevant
+      break;
+
+    }
+
+    // Check whether index hash item pointed to by relevance heap root item still exists
+    const cache_index_hash_item heap_root_hash_key = { .partition_index = queries->partition_index, .coh_index = heap_root->coh_index };
+    const cache_index_hash_item* heap_root_hash_item = NULL;
+    XLAL_CHECK( XLALHashTblFind( cache->index_hash, &heap_root_hash_key, ( const void ** ) &heap_root_hash_item ) == XLAL_SUCCESS, XLAL_EFUNC );
+    if ( heap_root_hash_item != NULL ) {
+
+      // Check whether index hash item pointed to by relevance heap root item is still relevant
+      // - Overridden if cache is full
+      const cache_index_hash_item hash_relevance = { .partition_index = queries->partition_index, .relevance = queries->semi_relevance };
+      if ( cache_is_full || cache_index_hash_item_compare_by_relevance( heap_root_hash_item, &hash_relevance ) < 0 ) {
+
+        // Return if garbage collection limit has been reached
+        // - Bypassed if cache is full
+        if ( !cache_is_full && gc == cache->gc_extra ) {
+          break;
+        }
+
+        // Index hash item is no longer relevant, so should be removed
+        // - Save hash item to 'saved_hash_item' if possible, otherwise destroy
+        if ( cache->saved_hash_item == NULL ) {
+          XLAL_CHECK( XLALHashTblExtract( cache->index_hash, heap_root_hash_item, ( void ** ) &cache->saved_hash_item ) == XLAL_SUCCESS, XLAL_EFUNC );
+        } else {
+          XLAL_CHECK( XLALHashTblRemove( cache->index_hash, heap_root_hash_item ) == XLAL_SUCCESS, XLAL_EFUNC );
+        }
+
+        // Increment garbage collection count
+        // - Bypassed if cache is full
+        if ( !cache_is_full ) {
+          ++gc;
+        }
+
+      }
+
+    }
+
+    // Root of relevance heap is no longer relevant, so should be removed
+    // - Save hash item to 'saved_heap_item' if possible, otherwise destroy
+    if ( cache->saved_heap_item == NULL ) {
+      cache->saved_heap_item = XLALHeapExtractRoot( cache->relevance_heap );
+      XLAL_CHECK( cache->saved_heap_item != NULL, XLAL_EFUNC );
+    } else {
+      XLAL_CHECK( XLALHeapRemoveRoot( cache->relevance_heap ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+  }
+
+  // Reinsert index hash item containing required coherent results
+  XLAL_CHECK( XLALHashTblAdd( cache->index_hash, find_hash_item ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Add a new relevance heap item to track index hash item at its current relevance
+  {
+
+    // Reuse 'saved_heap_item' if possible, otherwise allocate memory for a new index heap item
+    if ( cache->saved_heap_item == NULL ) {
+      cache->saved_heap_item = XLALCalloc( 1, sizeof( *cache->saved_heap_item ) );
+      XLAL_CHECK( cache->saved_heap_item != NULL, XLAL_EINVAL );
+    }
+    cache_relevance_heap_item *find_heap_item = cache->saved_heap_item;
+    cache->saved_heap_item = NULL;
+
+    // Set the key of the new relevance heap item
+    find_heap_item->partition_index = find_hash_item->partition_index;
+    find_heap_item->relevance = find_hash_item->relevance;
+
+    // Set the locator index of the heap item to point to the hash item
+    find_heap_item->coh_index = find_hash_item->coh_index;
+
+    // Insert the item into the relevance heap
+    // - 'find_heap_item' should now be NULL since relevance heap has no limit
+    XLAL_CHECK( XLALHeapAdd( cache->relevance_heap, ( void ** ) &find_heap_item ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( find_heap_item == NULL, XLAL_EFAILED );
+
+  }
+
   // Return coherent results from cache
-  *coh_res = find_item->coh_res;
+  *coh_res = find_hash_item->coh_res;
 
   // Return index of coherent result
-  *coh_index = find_item->coh_index;
+  *coh_index = find_hash_item->coh_index;
 
   // Return offset at which coherent results should be combined with semicoherent results
   *coh_offset = queries->semi_left - queries->coh_left[query_index];
