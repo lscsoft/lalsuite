@@ -275,36 +275,22 @@ static void LT_FindBoundExtrema(
     return;
   }
 
-  // Original value of physical point in this dimension
+  // Sample parameter-space bounds at +/0/- half the lattice tiling step size
   const double phys_point_i = gsl_vector_get( phys_point, i );
-
-  // Sample parameter-space bounds at offset 'x' from original physical point
-#define LT_FindBoundExtrema_SAMPLE_BOUNDS(x) { \
-    LT_SetPhysPoint( tiling, phys_point_cache, phys_point, i, phys_point_i + (x) ); \
-    double phys_lower = *phys_lower_minimum; \
-    double phys_upper = *phys_upper_maximum; \
-    LT_FindBoundExtrema( tiling, i + 1, dim, phys_point_cache, phys_point, &phys_lower, &phys_upper ); \
-    *phys_lower_minimum = GSL_MIN( *phys_lower_minimum, phys_lower ); \
-    *phys_upper_maximum = GSL_MAX( *phys_upper_maximum, phys_upper ); \
+  const double phys_hstep_i = 0.5 * gsl_matrix_get( tiling->phys_from_int, i, i );
+  const double phys_point_sample_i[] = {
+    phys_point_i - phys_hstep_i,
+    phys_point_i + phys_hstep_i,
+    phys_point_i   // Must be last to reset physical point to original value
+  };
+  for ( size_t j = 0; j < XLAL_NUM_ELEM( phys_point_sample_i ); ++j ) {
+    LT_SetPhysPoint( tiling, phys_point_cache, phys_point, i, phys_point_sample_i[j] );
+    double phys_lower = *phys_lower_minimum;
+    double phys_upper = *phys_upper_maximum;
+    LT_FindBoundExtrema( tiling, i + 1, dim, phys_point_cache, phys_point, &phys_lower, &phys_upper );
+    *phys_lower_minimum = GSL_MIN( *phys_lower_minimum, phys_lower );
+    *phys_upper_maximum = GSL_MAX( *phys_upper_maximum, phys_upper );
   }
-
-  // Sample parameter-space bounds at original physical point
-  LT_FindBoundExtrema_SAMPLE_BOUNDS( 0 );
-
-  if ( bound->padf & LATTICE_TILING_PAD_EXTRA ) {
-
-    // Sample parameter-space bounds at +/- half the lattice tiling step size
-    const double phys_hstep_i = 0.5 * gsl_matrix_get( tiling->phys_from_int, i, i );
-    LT_FindBoundExtrema_SAMPLE_BOUNDS( -phys_hstep_i );
-    LT_FindBoundExtrema_SAMPLE_BOUNDS( +phys_hstep_i );
-
-  }
-
-  // Clear macro LT_FindBoundExtrema_SAMPLE_BOUNDS()
-#undef LT_FindBoundExtrema_SAMPLE_BOUNDS
-
-  // Reset physical point in this dimension to original value
-  LT_SetPhysPoint( tiling, phys_point_cache, phys_point, i, phys_point_i );
 
 }
 

@@ -2559,11 +2559,6 @@ int XLALSetSuperskyRangeBounds(
     XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, j, gsl_vector_get( min_rssky, j ), gsl_vector_get( max_rssky, j ) ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
-  // Add to the parameter-space padding control flags for all coordinates
-  for ( size_t j = 0; j < n; ++j ) {
-    XLAL_CHECK_MAIN( XLALAddLatticeTilingPaddingFlags( tiling, j, LATTICE_TILING_PAD_EXTRA ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
-
   return XLAL_SUCCESS;
 
 }

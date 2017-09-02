@@ -74,7 +74,6 @@ typedef enum tagLatticeTilingPaddingFlags {
   LATTICE_TILING_PAD_UHBBX = 0x02,      ///< Add half-bounding-box padding to upper physical parameter-space bounds
   LATTICE_TILING_PAD_LINTP = 0x04,      ///< Add integer point padding to lower integer parameter-space bounds
   LATTICE_TILING_PAD_UINTP = 0x08,      ///< Add integer point padding to upper integer parameter-space bounds
-  LATTICE_TILING_PAD_EXTRA = 0x10,      ///< Add extra padding for rapidly-changing bounds
   LATTICE_TILING_PAD_MAX   = 0x20,
 } LatticeTilingPaddingFlags;
 

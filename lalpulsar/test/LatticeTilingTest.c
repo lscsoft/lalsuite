@@ -812,12 +812,12 @@ int main( void )
   XLAL_CHECK_MAIN( MismatchSquareTest( TILING_LATTICE_ANSTAR, 1e-4, -2e-9, 2e-17, 20268, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform mismatch tests with an age--braking index parameter space
-  XLAL_CHECK_MAIN( MismatchAgeBrakeTest( TILING_LATTICE_ANSTAR, 100, 4.0e-5, 37868, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( MismatchAgeBrakeTest( TILING_LATTICE_ANSTAR, 100, 4.0e-5, 37870, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( MismatchAgeBrakeTest( TILING_LATTICE_ANSTAR, 200, 1.5e-5, 37230, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( MismatchAgeBrakeTest( TILING_LATTICE_ANSTAR, 300, 1.0e-5, 37022, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform a variety of tests with the reduced supersky parameter space and metric
-  XLAL_CHECK_MAIN( SuperskyTests( 5241516, 770802, 527943, 24586791553 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( SuperskyTests( 6886488, 1050134, 932765, 26063227993 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return EXIT_SUCCESS;
 
