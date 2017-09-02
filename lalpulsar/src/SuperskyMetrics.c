@@ -90,10 +90,15 @@ const double fiducial_calc_freq = 100.0;
 // Structures for callback functions
 typedef struct tagSM_CallbackParam {
   const SuperskyTransformData *rssky_transf;    ///< Reduced supersky coordinate transform data
+  const SuperskyTransformData *rssky2_transf;   ///< Other reduced supersky coordinate transform data
 } SM_CallbackParam;
 typedef struct tagSM_CallbackOut {
   PulsarDopplerParams min_phys;                 ///< Minimum physical range
   PulsarDopplerParams max_phys;                 ///< Maximum physical range
+  double min_rssky2_array[32];                  ///< Minimum range of other reduced supersky coordinates
+  gsl_vector_view min_rssky2_view;
+  double max_rssky2_array[32];                  ///< Maximum range of other reduced supersky coordinates
+  gsl_vector_view max_rssky2_view;
 } SM_CallbackOut;
 
 ///
@@ -2438,6 +2443,88 @@ int XLALRegisterSuperskyLatticePhysicalRangeCallback(
   // Set output parameters
   *min_phys = &out->min_phys;
   *max_phys = &out->max_phys;
+
+  return XLAL_SUCCESS;
+
+}
+
+static int SM_LatticeSuperskyRangeCallback(
+  const bool first_call,
+  const LatticeTiling *tiling,
+  const LatticeTilingIterator *itr,
+  const gsl_vector *point,
+  const size_t changed_i UNUSED,
+  const void *param,
+  void *out
+  )
+{
+
+  const SM_CallbackParam *cparam = ( ( const SM_CallbackParam * ) param );
+  SM_CallbackOut *cout = ( ( SM_CallbackOut * ) out );
+
+  // Initialise translation data
+  if ( first_call ) {
+    cout->min_rssky2_view = gsl_vector_view_array( cout->min_rssky2_array, cparam->rssky2_transf->ndim );
+    cout->max_rssky2_view = gsl_vector_view_array( cout->max_rssky2_array, cparam->rssky2_transf->ndim );
+    gsl_vector_set_all( &cout->min_rssky2_view.vector, GSL_POSINF );
+    gsl_vector_set_all( &cout->max_rssky2_view.vector, GSL_NEGINF );
+  }
+
+  // Get frequency step size
+  const double dfreq = XLALLatticeTilingStepSize( tiling, cparam->rssky_transf->ndim - 1 );
+
+  // Get indexes of left/right-most point in current frequency block
+  INT4 left = 0, right = 0;
+  XLAL_CHECK( XLALCurrentLatticeTilingBlock( itr, cparam->rssky_transf->ndim - 1, &left, &right ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Convert point from reduced supersky coordinates to other reduced supersky coordinates
+  double rssky2_array[cparam->rssky_transf->ndim];
+  gsl_vector_view rssky2_view = gsl_vector_view_array( rssky2_array, cparam->rssky2_transf->ndim );
+  XLAL_CHECK( XLALConvertSuperskyToSuperskyPoint( &rssky2_view.vector, cparam->rssky2_transf, point, cparam->rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Store minimum/maximum values of other reduced supersky coordinates
+  for ( size_t i = 0; i + 1 < cparam->rssky2_transf->ndim; ++i ) {
+    cout->min_rssky2_array[i] = GSL_MIN( cout->min_rssky2_array[i], rssky2_array[i] );
+    cout->max_rssky2_array[i] = GSL_MAX( cout->max_rssky2_array[i], rssky2_array[i] );
+  } {
+    const size_t i = cparam->rssky2_transf->ndim - 1;
+    cout->min_rssky2_array[i] = GSL_MIN( cout->min_rssky2_array[i], rssky2_array[i] + dfreq*left );
+    cout->max_rssky2_array[i] = GSL_MAX( cout->max_rssky2_array[i], rssky2_array[i] + dfreq*right );
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALRegisterSuperskyLatticeSuperskyRangeCallback(
+  LatticeTiling *tiling,
+  const SuperskyTransformData *rssky_transf,
+  const SuperskyTransformData *rssky2_transf,
+  const gsl_vector **min_rssky2,
+  const gsl_vector **max_rssky2
+  )
+{
+
+  // Check input
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( CHECK_RSSKY_TRANSF( rssky_transf ), XLAL_EINVAL );
+  XLAL_CHECK( CHECK_RSSKY_TRANSF( rssky2_transf ), XLAL_EINVAL );
+  XLAL_CHECK( min_rssky2 != NULL, XLAL_EFAULT );
+  XLAL_CHECK( max_rssky2 != NULL, XLAL_EFAULT );
+
+  // Register callback function
+  const SM_CallbackParam param = {
+    .rssky_transf = rssky_transf,
+    .rssky2_transf = rssky2_transf,
+  };
+  const SM_CallbackOut *out = XLALRegisterLatticeTilingCallback( tiling, SM_LatticeSuperskyRangeCallback, sizeof( param ), &param, sizeof( *out ) );
+  XLAL_CHECK( out != NULL, XLAL_EFUNC );
+  XLAL_CHECK( rssky2_transf->ndim <= XLAL_NUM_ELEM( out->min_rssky2_array ), XLAL_EFAILED );
+  XLAL_CHECK( rssky2_transf->ndim <= XLAL_NUM_ELEM( out->max_rssky2_array ), XLAL_EFAILED );
+
+  // Set output parameters
+  *min_rssky2 = &out->min_rssky2_view.vector;
+  *max_rssky2 = &out->max_rssky2_view.vector;
 
   return XLAL_SUCCESS;
 
