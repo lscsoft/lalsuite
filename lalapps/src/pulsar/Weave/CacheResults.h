@@ -56,8 +56,8 @@ WeaveCache *XLALWeaveCacheCreate(
   const SuperskyTransformData *coh_rssky_transf,
   const SuperskyTransformData *semi_rssky_transf,
   WeaveCohInput *coh_input,
-  const size_t max_size,
-  const size_t gc_limit
+  const UINT4 max_size,
+  const UINT4 gc_extra
   );
 void XLALWeaveCacheDestroy(
   WeaveCache *cache
@@ -74,11 +74,11 @@ void XLALWeaveCacheQueriesDestroy(
 int XLALWeaveCacheQueriesInit(
   WeaveCacheQueries *queries,
   const LatticeTilingIterator *semi_itr,
+  const UINT8 semi_index,
   const gsl_vector *semi_point
   );
 int XLALWeaveCacheQuery(
   const WeaveCache *cache,
-  const UINT8 semi_index,
   WeaveCacheQueries *queries,
   const UINT4 query_index
   );

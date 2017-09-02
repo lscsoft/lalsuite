@@ -77,7 +77,7 @@ int main( int argc, char *argv[] )
     LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd, *lrs_oLGX;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit, lrs_Fstar0sc, nc_2Fth;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
-    UINT4 sky_patch_count, sky_patch_index, freq_partitions, Fstat_run_med_window, Fstat_Dterms, toplist_limit, rand_seed, cache_max_size, cache_gc_limit;
+    UINT4 sky_patch_count, sky_patch_index, freq_partitions, Fstat_run_med_window, Fstat_Dterms, toplist_limit, rand_seed, cache_max_size, cache_gc_extra;
     int lattice, Fstat_method, Fstat_SSB_precision, toplists, extra_statistics;
   } uvar_struct = {
     .Fstat_Dterms = Fstat_opt_args.Dterms,
@@ -336,7 +336,7 @@ int main( int argc, char *argv[] )
     "Has no effect when performing a fully-coherent single-segment search, or a non-interpolating search. "
     );
   XLALRegisterUvarMember(
-    cache_gc_limit, UINT4, 0, DEVELOPER,
+    cache_gc_extra, UINT4, 0, DEVELOPER,
     "By default, whenever an item is added to the internal caches, at most one item that is no longer required is removed. "
     "If non-zero, try to remove at most this number of additional items, providing they are no longer required. "
     "Has no effect when performing a fully-coherent single-segment search, or a non-interpolating search. "
@@ -900,8 +900,8 @@ int main( int argc, char *argv[] )
   WeaveCache *XLAL_INIT_DECL( coh_cache, [nsegments] );
   for ( size_t i = 0; i < nsegments; ++i ) {
     const size_t cache_max_size = interpolation ? uvar->cache_max_size : 1;
-    const size_t cache_gc_limit = interpolation ? uvar->cache_gc_limit : 0;
-    coh_cache[i] = XLALWeaveCacheCreate( tiling[i], interpolation, rssky_transf[i], rssky_transf[isemi], coh_input[i], cache_max_size, cache_gc_limit );
+    const size_t cache_gc_extra = interpolation ? uvar->cache_gc_extra : 0;
+    coh_cache[i] = XLALWeaveCacheCreate( tiling[i], interpolation, rssky_transf[i], rssky_transf[isemi], coh_input[i], cache_max_size, cache_gc_extra );
     XLAL_CHECK_MAIN( coh_cache[i] != NULL, XLAL_EFUNC );
   }
 
@@ -946,15 +946,15 @@ int main( int argc, char *argv[] )
   UINT8 coh_nres = 0, coh_ntmpl = 0, semi_ntmpl = 0;
 
   // Semicoherent frequency block count and index
-  const UINT8 freq_block_count = XLALTotalLatticeTilingPoints( semi_itr );
-  XLAL_CHECK_MAIN( freq_block_count > 0, XLAL_EFUNC );
-  UINT8 freq_block_index = 0;
+  const UINT8 semi_freq_block_count = XLALTotalLatticeTilingPoints( semi_itr );
+  XLAL_CHECK_MAIN( semi_freq_block_count > 0, XLAL_EFUNC );
+  UINT8 semi_freq_block_index = 0;
 
   // Partition index
   UINT4 partition_index = 0;
 
   // Semicoherent iteration count
-  const UINT8 semi_count = uvar->freq_partitions * freq_block_count;
+  const UINT8 semi_count = uvar->freq_partitions * semi_freq_block_count;
 
   // Try to restore output results from a checkpoint file, if given
   if ( UVAR_SET( ckpt_output_file ) ) {
@@ -979,8 +979,8 @@ int main( int argc, char *argv[] )
 
       // Read state of iterator over semicoherent tiling
       XLAL_CHECK_MAIN( XLALRestoreLatticeTilingIterator( semi_itr, file, "semi_itr" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      freq_block_index = XLALCurrentLatticeTilingIndex( semi_itr );
-      XLAL_CHECK_MAIN( freq_block_index < freq_block_count, XLAL_EIO, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
+      semi_freq_block_index = XLALCurrentLatticeTilingIndex( semi_itr );
+      XLAL_CHECK_MAIN( semi_freq_block_index < semi_freq_block_count, XLAL_EIO, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
 
       // Read partition index
       XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT4( file, "partindx", &partition_index ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -1024,7 +1024,7 @@ int main( int argc, char *argv[] )
 
   // Print initial progress in frequency blocks and partitions
   {
-    const UINT8 semi_index = partition_index * freq_block_count + freq_block_index;
+    const UINT8 semi_index = partition_index * semi_freq_block_count + semi_freq_block_index;
     const double prog_per_cent = 100.0 * semi_index / semi_count;
     LogPrintf( LOG_NORMAL, "Starting main search loop at %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " frequency blocks (%.1f%%)", semi_index, semi_count, prog_per_cent );
     if ( uvar->freq_partitions > 1 ) {
@@ -1045,12 +1045,12 @@ int main( int argc, char *argv[] )
     // - XLALNextLatticeTilingPoint() returns mid-point in non-iterated dimensions
     const int itr_retn = XLALNextLatticeTilingPoint( semi_itr, semi_rssky );
     XLAL_CHECK_MAIN( itr_retn >= 0, XLAL_EFUNC );
-    freq_block_index = XLALCurrentLatticeTilingIndex( semi_itr );
+    semi_freq_block_index = XLALCurrentLatticeTilingIndex( semi_itr );
     if ( itr_retn == 0 ) {
 
       // Move to the next partition
       ++partition_index;
-      freq_block_index = 0;
+      semi_freq_block_index = 0;
       if ( partition_index == uvar->freq_partitions ) {
 
         // Search is complete
@@ -1066,7 +1066,7 @@ int main( int argc, char *argv[] )
     }
 
     // Semicoherent iteration index
-    const UINT8 semi_index = partition_index * freq_block_count + freq_block_index;
+    const UINT8 semi_index = partition_index * semi_freq_block_count + semi_freq_block_index;
 
     // Time lattice tiling iteration
     cpu_toc = cpu_time();
@@ -1074,11 +1074,11 @@ int main( int argc, char *argv[] )
     cpu_tic = cpu_toc;
 
     // Initialise cache queries
-    XLAL_CHECK_MAIN( XLALWeaveCacheQueriesInit( queries, semi_itr, semi_rssky ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALWeaveCacheQueriesInit( queries, semi_itr, semi_freq_block_index, semi_rssky ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Query for coherent results for each segment
     for ( size_t i = 0; i < nsegments; ++i ) {
-      XLAL_CHECK_MAIN( XLALWeaveCacheQuery( coh_cache[i], freq_block_index, queries, i ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALWeaveCacheQuery( coh_cache[i], queries, i ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
     // Finalise cache queries
@@ -1178,7 +1178,7 @@ int main( int argc, char *argv[] )
         XLALFITSFileClose( file );
 
         // Print progress
-        LogPrintf( LOG_NORMAL, "Wrote output checkpoint to file '%s' after %.1f time elapsed, %" LAL_UINT8_FORMAT " frequency blocks\n", uvar->ckpt_output_file, wall_now - wall_zero, freq_block_index );
+        LogPrintf( LOG_NORMAL, "Wrote output checkpoint to file '%s' after %.1f time elapsed, %" LAL_UINT8_FORMAT " frequency blocks\n", uvar->ckpt_output_file, wall_now - wall_zero, semi_freq_block_index );
 
         // Exit main search loop, if checkpointing was triggered by 'do_ckpt_output_exit'
         if ( do_ckpt_output_exit ) {
@@ -1243,7 +1243,7 @@ int main( int argc, char *argv[] )
 
   // Print final progress in frequency blocks and partitions
   {
-    const UINT8 semi_index = partition_index * freq_block_count + freq_block_index;
+    const UINT8 semi_index = partition_index * semi_freq_block_count + semi_freq_block_index;
     const double prog_per_cent = 100.0 * semi_index / semi_count;
     LogPrintf( LOG_NORMAL, "Finished main search loop at %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " frequency blocks (%.1f%%)", semi_index, semi_count, prog_per_cent );
     if ( uvar->freq_partitions > 1 ) {

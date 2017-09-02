@@ -72,8 +72,8 @@ struct tagWeaveCache {
   UINT4 coh_computed_bitset_partition_index;
   /// Save an no-longer-used cache item for re-use
   cache_item *saved_item;
-  /// Cache garbage collection limit
-  size_t gc_limit;
+  /// Additional cache item garbage collection limit
+  UINT4 gc_extra;
 };
 
 ///
@@ -82,12 +82,12 @@ struct tagWeaveCache {
 struct tagWeaveCacheQueries {
   /// Number of parameter-space dimensions
   size_t ndim;
-  /// Semicoherent lattice tiling bounding box in dimension 0
-  double semi_bound_box_0;
-  /// Reduced supersky transform data for semicoherent lattice
-  const SuperskyTransformData *semi_rssky_transf;
   /// Number of queries for which space is allocated
   UINT4 nqueries;
+  /// Number of partitions to divide semicoherent frequency block into
+  UINT4 npartitions;
+  /// Index to current partition of semicoherent frequency block
+  UINT4 partition_index;
   /// Sequential indexes for each queried coherent frequency block
   UINT8 *coh_index;
   /// Physical points of each queried coherent frequency block
@@ -98,10 +98,12 @@ struct tagWeaveCacheQueries {
   INT4 *coh_right;
   /// Relevance of each queried coherent frequency block
   REAL4 *coh_relevance;
-  /// Number of partitions to divide semicoherent frequency block into
-  UINT4 npartitions;
-  /// Index to current partition of semicoherent frequency block
-  UINT4 partition_index;
+  /// Reduced supersky transform data for semicoherent lattice
+  const SuperskyTransformData *semi_rssky_transf;
+  /// Semicoherent lattice tiling bounding box in dimension 0
+  double semi_bound_box_0;
+  /// Sequential index for the current semicoherent frequency block
+  UINT8 semi_index;
   /// Physical coordinates of the current semicoherent frequency block
   PulsarDopplerParams semi_phys;
   /// Index of left-most point in current semicoherent frequency block
@@ -193,8 +195,8 @@ WeaveCache *XLALWeaveCacheCreate(
   const SuperskyTransformData *coh_rssky_transf,
   const SuperskyTransformData *semi_rssky_transf,
   WeaveCohInput *coh_input,
-  const size_t max_size,
-  const size_t gc_limit
+  const UINT4 max_size,
+  const UINT4 gc_extra
   )
 {
 
@@ -210,7 +212,7 @@ WeaveCache *XLALWeaveCacheCreate(
   cache->coh_rssky_transf = coh_rssky_transf;
   cache->semi_rssky_transf = semi_rssky_transf;
   cache->coh_input = coh_input;
-  cache->gc_limit = gc_limit;
+  cache->gc_extra = gc_extra;
 
   // Get number of parameter-space dimensions
   cache->ndim = XLALTotalLatticeTilingDimensions( coh_tiling );
@@ -385,6 +387,7 @@ void XLALWeaveCacheQueriesDestroy(
 int XLALWeaveCacheQueriesInit(
   WeaveCacheQueries *queries,
   const LatticeTilingIterator *semi_itr,
+  const UINT8 semi_index,
   const gsl_vector *semi_point
   )
 {
@@ -395,6 +398,9 @@ int XLALWeaveCacheQueriesInit(
 
   // Reset sequential indexes to zero, indicating no query
   memset( queries->coh_index, 0, queries->nqueries * sizeof( queries->coh_index[0] ) );
+
+  // Save current semicoherent sequential index
+  queries->semi_index = semi_index;
 
   // Compute the relevance of the current semicoherent frequency block
   // - Subtract half the semicoherent lattice tiling bounding box in dimension 0
@@ -415,7 +421,6 @@ int XLALWeaveCacheQueriesInit(
 ///
 int XLALWeaveCacheQuery(
   const WeaveCache *cache,
-  const UINT8 semi_index,
   WeaveCacheQueries *queries,
   const UINT4 query_index
   )
@@ -437,7 +442,7 @@ int XLALWeaveCacheQuery(
   gsl_vector_memcpy( &coh_near_point_view.vector, &coh_point_view.vector );
 
   // Initialise values for a non-interpolating search
-  queries->coh_index[query_index] = semi_index;
+  queries->coh_index[query_index] = queries->semi_index;
   queries->coh_left[query_index] = queries->semi_left;
   queries->coh_right[query_index] = queries->semi_right;
 
@@ -636,8 +641,8 @@ int XLALWeaveCacheRetrieve(
       // Exchange 'saved_item' with the least relevant item in the relevance heap
       XLAL_CHECK( XLALHeapExchangeRoot( cache->relevance_heap, ( void ** ) &cache->saved_item ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-      // Remove any addition items that are no longer relevant, up to a maximum of 'gc_limit'
-      for ( size_t i = 0; i < cache->gc_limit; ++i ) {
+      // Remove any addition items that are no longer relevant, up to a maximum of 'gc_extra'
+      for ( size_t i = 0; i < cache->gc_extra; ++i ) {
 
         // Get the item in the cache with the smallest relevance
         least_relevant_item = ( const cache_item * ) XLALHeapRoot( cache->relevance_heap );
