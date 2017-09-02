@@ -251,6 +251,17 @@ int XLALSetSuperskyPhysicalSpinBound(
   );
 
 ///
+/// Register a lattice tiling callback function which computes the physical range covered
+/// by a reduced supersky lattice tiling.
+///
+int XLALRegisterSuperskyLatticePhysicalRangeCallback(
+  LatticeTiling *tiling,                        ///< [in] Lattice tiling
+  const SuperskyTransformData *rssky_transf,    ///< [in] Reduced supersky coordinate transform data
+  const PulsarDopplerParams **min_phys,         ///< [out] Minimum physical range
+  const PulsarDopplerParams **max_phys          ///< [out] Maximum physical range
+  );
+
+///
 /// Fill two #PulsarDopplerParams structs with the physical ranges covered by a reduced supersky
 /// lattice tiling.
 ///

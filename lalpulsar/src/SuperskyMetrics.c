@@ -87,6 +87,15 @@ struct tagSuperskyTransformData {
 ///
 const double fiducial_calc_freq = 100.0;
 
+// Structures for callback functions
+typedef struct tagSM_CallbackParam {
+  const SuperskyTransformData *rssky_transf;    ///< Reduced supersky coordinate transform data
+} SM_CallbackParam;
+typedef struct tagSM_CallbackOut {
+  PulsarDopplerParams min_phys;                 ///< Minimum physical range
+  PulsarDopplerParams max_phys;                 ///< Maximum physical range
+} SM_CallbackOut;
+
 ///
 /// Call XLALComputeDopplerPhaseMetric() to compute the phase metric for a given coordinate system.
 ///
@@ -2345,6 +2354,90 @@ int XLALSetSuperskyPhysicalSpinBound(
   const int tiled_fkdot = XLALIsTiledLatticeTilingDimension( tiling, RSSKY_FKDOT_DIM( rssky_transf, s ) );
   XLAL_CHECK( tiled_fkdot != XLAL_FAILURE, XLAL_EFUNC );
   XLAL_CHECK( !( tiled_sskyA || tiled_sskyB ) || tiled_fkdot, XLAL_EINVAL, "Must search over %zu-order spindown if also searching over sky", s );
+
+  return XLAL_SUCCESS;
+
+}
+
+static int SM_LatticePhysicalRangeCallback(
+  const bool first_call,
+  const LatticeTiling *tiling,
+  const LatticeTilingIterator *itr,
+  const gsl_vector *point,
+  const size_t changed_i UNUSED,
+  const void *param,
+  void *out
+  )
+{
+
+  const SM_CallbackParam *cparam = ( ( const SM_CallbackParam * ) param );
+  SM_CallbackOut *cout = ( ( SM_CallbackOut * ) out );
+
+  // Initialise translation data
+  if ( first_call ) {
+    XLAL_INIT_MEM( cout->min_phys );
+    XLAL_INIT_MEM( cout->max_phys );
+    cout->min_phys.Alpha = GSL_POSINF;
+    cout->max_phys.Alpha = GSL_NEGINF;
+    cout->min_phys.Delta = GSL_POSINF;
+    cout->max_phys.Delta = GSL_NEGINF;
+    for ( size_t s = 0; s <= cparam->rssky_transf->SMAX; ++s ) {
+      cout->min_phys.fkdot[s] = GSL_POSINF;
+      cout->max_phys.fkdot[s] = GSL_NEGINF;
+    }
+  }
+
+  // Get frequency step size
+  const double dfreq = XLALLatticeTilingStepSize( tiling, cparam->rssky_transf->ndim - 1 );
+
+  // Get indexes of left/right-most point in current frequency block
+  INT4 left = 0, right = 0;
+  XLAL_CHECK( XLALCurrentLatticeTilingBlock( itr, cparam->rssky_transf->ndim - 1, &left, &right ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Convert point from reduced supersky coordinates to physical coordinates
+  PulsarDopplerParams XLAL_INIT_DECL( phys );
+  XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &phys, point, NULL, cparam->rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Store minimum/maximum values of physical frequency and spindowns
+  cout->min_phys.Alpha = GSL_MIN( cout->min_phys.Alpha, phys.Alpha );
+  cout->max_phys.Alpha = GSL_MAX( cout->max_phys.Alpha, phys.Alpha );
+  cout->min_phys.Delta = GSL_MIN( cout->min_phys.Delta, phys.Delta );
+  cout->max_phys.Delta = GSL_MAX( cout->max_phys.Delta, phys.Delta );
+  cout->min_phys.fkdot[0] = GSL_MIN( cout->min_phys.fkdot[0], phys.fkdot[0] + dfreq*left );
+  cout->max_phys.fkdot[0] = GSL_MAX( cout->max_phys.fkdot[0], phys.fkdot[0] + dfreq*right );
+  for ( size_t s = 0; s <= cparam->rssky_transf->SMAX; ++s ) {
+    cout->min_phys.fkdot[s] = GSL_MIN( cout->min_phys.fkdot[s], phys.fkdot[s] );
+    cout->max_phys.fkdot[s] = GSL_MAX( cout->max_phys.fkdot[s], phys.fkdot[s] );
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALRegisterSuperskyLatticePhysicalRangeCallback(
+  LatticeTiling *tiling,
+  const SuperskyTransformData *rssky_transf,
+  const PulsarDopplerParams **min_phys,
+  const PulsarDopplerParams **max_phys
+  )
+{
+
+  // Check input
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( CHECK_RSSKY_TRANSF( rssky_transf ), XLAL_EINVAL );
+  XLAL_CHECK( min_phys != NULL, XLAL_EFAULT );
+  XLAL_CHECK( max_phys != NULL, XLAL_EFAULT );
+
+  // Register callback function
+  const SM_CallbackParam param = {
+    .rssky_transf = rssky_transf,
+  };
+  const SM_CallbackOut *out = XLALRegisterLatticeTilingCallback( tiling, SM_LatticePhysicalRangeCallback, sizeof( param ), &param, sizeof( *out ) );
+  XLAL_CHECK( out != NULL, XLAL_EFUNC );
+
+  // Set output parameters
+  *min_phys = &out->min_phys;
+  *max_phys = &out->max_phys;
 
   return XLAL_SUCCESS;
 
