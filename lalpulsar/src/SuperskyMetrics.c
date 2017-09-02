@@ -2382,6 +2382,8 @@ static int SM_LatticePhysicalRangeCallback(
   if ( first_call ) {
     XLAL_INIT_MEM( cout->min_phys );
     XLAL_INIT_MEM( cout->max_phys );
+    cout->min_phys.refTime = cparam->rssky_transf->ref_time;
+    cout->max_phys.refTime = cparam->rssky_transf->ref_time;
     cout->min_phys.Alpha = GSL_POSINF;
     cout->max_phys.Alpha = GSL_NEGINF;
     cout->min_phys.Delta = GSL_POSINF;
@@ -2410,7 +2412,7 @@ static int SM_LatticePhysicalRangeCallback(
   cout->max_phys.Delta = GSL_MAX( cout->max_phys.Delta, phys.Delta );
   cout->min_phys.fkdot[0] = GSL_MIN( cout->min_phys.fkdot[0], phys.fkdot[0] + dfreq*left );
   cout->max_phys.fkdot[0] = GSL_MAX( cout->max_phys.fkdot[0], phys.fkdot[0] + dfreq*right );
-  for ( size_t s = 0; s <= cparam->rssky_transf->SMAX; ++s ) {
+  for ( size_t s = 1; s <= cparam->rssky_transf->SMAX; ++s ) {
     cout->min_phys.fkdot[s] = GSL_MIN( cout->min_phys.fkdot[s], phys.fkdot[s] );
     cout->max_phys.fkdot[s] = GSL_MAX( cout->max_phys.fkdot[s], phys.fkdot[s] );
   }
