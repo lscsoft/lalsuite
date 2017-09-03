@@ -1167,6 +1167,25 @@ int XLALSimIMRSpinEOBWaveformAll(
   eobParams.m2  = m2;
   eobParams.eta = eta;
 
+    TidalEOBParams tidal1, tidal2;
+    tidal1.mByM = m1SI / (m1SI + m2SI);
+    tidal1.lambda2Tidal = 0.;
+    tidal1.omega02Tidal = 0.;
+    tidal1.lambda3Tidal = 0.;
+    tidal1.omega03Tidal = 0.;
+    
+    tidal2.mByM = m2SI / (m1SI + m2SI);
+    tidal2.lambda2Tidal = 0.;
+    tidal2.omega02Tidal = 0.;
+    tidal2.lambda3Tidal = 0.;
+    tidal2.omega03Tidal = 0.;
+    
+    seobCoeffs.tidal1 = &tidal1;
+    seobCoeffs.tidal2 = &tidal2;
+    
+    hCoeffs.tidal1 = &tidal1;
+    hCoeffs.tidal2 = &tidal2;
+
   /* Pre-compute the Hamiltonian coefficients
     double KK; // nonspinning calibration in Hamiltonian (for SEOBNRv2: 1.712 − 1.804eta − 39:77eta^2 + 103.2eta^3)
     double k0; // Delta_i coefficients in the Delta_u potential Eq. 8 of PRD 86, 024011 (2012) and https://dcc.ligo.org/T1400476

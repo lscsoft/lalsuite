@@ -145,7 +145,7 @@ int XLALBitsetGet(
 
   /* Find element corresponding to key */
   const elem x = { .key = key };
-  elem *y = NULL;
+  const elem *y = NULL;
   XLAL_CHECK( XLALHashTblFind( bs->ht, &x, ( const void ** ) &y ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( y == NULL ) {
     *is_set = 0;

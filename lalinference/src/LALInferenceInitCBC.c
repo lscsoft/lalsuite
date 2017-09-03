@@ -553,7 +553,7 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
 					  amp_std = gsl_spline_eval(env->amp_std, logFreq, NULL);
 					  amp_mean = gsl_spline_eval(env->amp_median, logFreq, NULL);
 					  phase_std = gsl_spline_eval(env->phase_std, logFreq, NULL);
-					  phase_mean = gsl_spline_eval(env->phase_std, logFreq, NULL);
+					  phase_mean = gsl_spline_eval(env->phase_median, logFreq, NULL);
 			  }
 			  LALInferenceRegisterGaussianVariableREAL8(runState, currentParams, ampVarName, 0, amp_mean, amp_std, LALINFERENCE_PARAM_LINEAR);
 			  LALInferenceRegisterGaussianVariableREAL8(runState, currentParams, phaseVarName, 0, phase_mean, phase_std, LALINFERENCE_PARAM_LINEAR);

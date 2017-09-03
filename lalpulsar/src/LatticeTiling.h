@@ -67,6 +67,17 @@ typedef enum tagTilingLattice {
 } TilingLattice;
 
 ///
+/// Lattice tiling parameter-space bound padding control flags.
+///
+typedef enum tagLatticeTilingPaddingFlags {
+  LATTICE_TILING_PAD_LHBBX = 0x01,      ///< Add half-bounding-box padding to lower physical parameter-space bounds
+  LATTICE_TILING_PAD_UHBBX = 0x02,      ///< Add half-bounding-box padding to upper physical parameter-space bounds
+  LATTICE_TILING_PAD_LINTP = 0x04,      ///< Add integer point padding to lower integer parameter-space bounds
+  LATTICE_TILING_PAD_UINTP = 0x08,      ///< Add integer point padding to upper integer parameter-space bounds
+  LATTICE_TILING_PAD_MAX   = 0x20,
+} LatticeTilingPaddingFlags;
+
+///
 /// Static array of all #TilingLattice choices, for use by the UserInput module parsing routines
 ///
 extern const UserChoices TilingLatticeChoices;
@@ -95,12 +106,10 @@ typedef void( *LatticeTilingBoundCache )(
 ///
 typedef int( *LatticeTilingCallback )(
   const bool first_call,                ///< [in] Whether this is the first call to this function
-  const size_t ndim,                    ///< [in] Number of parameter-space dimensions
-  const size_t ichanged,                ///< [in] Index of first dimension to have changed since last call
-  const char *const *bound_names,       ///< [in] Pointer to array of parameter-space bound names
-  const UINT4 *num_points,              ///< [in] Pointer to array of number of points in current iteration block
-  const double *min_point,              ///< [in] Pointer to array of minimum range of points in current iteration block
-  const double *max_point,              ///< [in] Pointer to array of maximum range of points in current iteration block
+  const LatticeTiling *tiling,          ///< [in] Lattice tiling
+  const LatticeTilingIterator *itr,     ///< [in] Lattice tiling iterator
+  const gsl_vector *point,              ///< [in] Current lattice tiling point
+  const size_t changed_i,               ///< [in] Index of first dimension to have changed since last call
   const void *param,                    ///< [in] Arbitrary input data for use by callback function
   void *out                             ///< [out] Output data to be filled by callback function
   );
@@ -181,14 +190,23 @@ int XLALSetLatticeTilingConstantBound(
   );
 
 ///
-/// Set the level of padding to add to the lattice tiling parameter-space bounds in the given dimension.
+/// Set flags which control the padding of lattice tiling parameter-space bounds in the given dimension.
 /// This is an optional setting and should generally not be used unless specifically required.
 ///
-int XLALSetLatticeTilingPadding(
+int XLALSetLatticeTilingPaddingFlags(
   LatticeTiling *tiling,                ///< [in] Lattice tiling
-  const size_t dim,                     ///< [in] Dimension on which to set padding
-  const UINT4 pad_lower,                ///< [in] Level of padding to add to lower parameter-space bounds
-  const UINT4 pad_upper                 ///< [in] Level of padding to add to upper parameter-space bounds
+  const size_t dim,                     ///< [in] Dimension on which to set padding control flags
+  const LatticeTilingPaddingFlags setf  ///< [in] Padding control flags to set
+  );
+
+///
+/// Add to flags which control the padding of lattice tiling parameter-space bounds in the given dimension.
+/// This is an optional setting and should generally not be used unless specifically required.
+///
+int XLALAddLatticeTilingPaddingFlags(
+  LatticeTiling *tiling,                ///< [in] Lattice tiling
+  const size_t dim,                     ///< [in] Dimension on which to add padding control flags
+  const LatticeTilingPaddingFlags addf  ///< [in] Padding control flags to add
   );
 
 ///
@@ -251,6 +269,14 @@ size_t XLALLatticeTilingTiledDimension(
 int XLALIsTiledLatticeTilingDimension(
   const LatticeTiling *tiling,          ///< [in] Lattice tiling
   const size_t dim                      ///< [in] Dimension of which to return tiling status
+  );
+
+///
+/// Get the name of a lattice tiling parameter-space dimension.
+///
+const char *XLALLatticeTilingBoundName(
+  const LatticeTiling *tiling,          ///< [in] Lattice tiling
+  const size_t dim                      ///< [in] Dimension for which to get name
   );
 
 ///

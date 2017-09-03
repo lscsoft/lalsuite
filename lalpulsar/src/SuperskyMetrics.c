@@ -87,6 +87,20 @@ struct tagSuperskyTransformData {
 ///
 const double fiducial_calc_freq = 100.0;
 
+// Structures for callback functions
+typedef struct tagSM_CallbackParam {
+  const SuperskyTransformData *rssky_transf;    ///< Reduced supersky coordinate transform data
+  const SuperskyTransformData *rssky2_transf;   ///< Other reduced supersky coordinate transform data
+} SM_CallbackParam;
+typedef struct tagSM_CallbackOut {
+  PulsarDopplerParams min_phys;                 ///< Minimum physical range
+  PulsarDopplerParams max_phys;                 ///< Maximum physical range
+  double min_rssky2_array[32];                  ///< Minimum range of other reduced supersky coordinates
+  gsl_vector_view min_rssky2_view;
+  double max_rssky2_array[32];                  ///< Maximum range of other reduced supersky coordinates
+  gsl_vector_view max_rssky2_view;
+} SM_CallbackOut;
+
 ///
 /// Call XLALComputeDopplerPhaseMetric() to compute the phase metric for a given coordinate system.
 ///
@@ -1964,11 +1978,15 @@ int XLALSetSuperskyPhysicalSkyBounds(
   XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, PhysicalSkyBound, sizeof( data_lower ), &data_lower, &data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALSetLatticeTilingBoundCacheFunction( tiling, 1, SkyBoundCache ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  // Set the parameter-space origin on reduced supersky sky coordinates A and B
+  XLAL_CHECK( XLALSetLatticeTilingOrigin( tiling, 0, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingOrigin( tiling, 1, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   return XLAL_SUCCESS;
 
 }
 
-static double EqualAreaSkyBound(
+static double ConstantBoundB(
   const void *data,
   const size_t dim UNUSED,
   const gsl_matrix *cache UNUSED,
@@ -2067,6 +2085,8 @@ int XLALSetSuperskyEqualAreaSkyBounds(
   // Parameter-space bounds on reduced supersky sky coordinates A and B
   double A_bound[2] = {GSL_NAN, GSL_NAN};
   double B_bound[2] = {-1, 1};
+  LatticeTilingPaddingFlags A_padf = LATTICE_TILING_PAD_LHBBX | LATTICE_TILING_PAD_UHBBX;
+  LatticeTilingPaddingFlags B_padf = LATTICE_TILING_PAD_LHBBX | LATTICE_TILING_PAD_UHBBX;
 
   // Handle special cases of 1 and 2 patches
   if ( patch_count <= 2 ) {
@@ -2139,6 +2159,12 @@ int XLALSetSuperskyEqualAreaSkyBounds(
 
     }
 
+    // Decide which patches to add padding to
+    A_padf = ( ( A_index[0] == 0 && patch_index <  hemi_patch_count ) ? LATTICE_TILING_PAD_LHBBX : 0 )
+      |      ( ( A_index[0] == 0 && patch_index >= hemi_patch_count ) ? LATTICE_TILING_PAD_UHBBX : 0 );
+    B_padf = ( ( B_index     == 0       ) ? LATTICE_TILING_PAD_LHBBX : 0 )
+      |      ( ( B_index + 1 == B_count ) ? LATTICE_TILING_PAD_UHBBX : 0 );
+
     // Allocate a GSL root solver
     gsl_root_fsolver *fs = gsl_root_fsolver_alloc( gsl_root_fsolver_brent );
     XLAL_CHECK( fs != NULL, XLAL_ENOMEM );
@@ -2185,7 +2211,8 @@ int XLALSetSuperskyEqualAreaSkyBounds(
       const UINT4 B_index_i = B_index + i;
 
       // Maximum possible value of 'B' within the region bound by 'A_bound'
-      const double B_max = RE_SQRT( 1 - GSL_MIN( SQR( A_bound[0] ), SQR( A_bound[1] ) ) );
+      // - For 4 patches or fewer, 'B' must span the entire unit disk
+      const double B_max = ( B_count <= 4 ) ? 1 : RE_SQRT( 1 - GSL_MIN( SQR( A_bound[0] ), SQR( A_bound[1] ) ) );
 
       // Handle boundaries as special cases
       if ( B_index_i == 0 ) {
@@ -2223,7 +2250,9 @@ int XLALSetSuperskyEqualAreaSkyBounds(
     }
 
     // Restrict range 'A' if 'B = const' bounds intersect unit disk boundary within it
-    {
+    // - Only start to do this when there are 3 patches in 'B' direction
+    // - Do not do this for the middle 'B' patch which straddles 'B = 0'
+    if ( patch_count >= 14 && B_index != (B_count-1)/2 ) {
       const double Ai = RE_SQRT( 1 - GSL_MIN( SQR( B_bound[0] ), SQR( B_bound[1] ) ) );
       if ( A_bound[0] < -Ai ) {
         A_bound[0] = -Ai;
@@ -2252,8 +2281,16 @@ int XLALSetSuperskyEqualAreaSkyBounds(
 
   // Set the parameter-space bounds on reduced supersky sky coordinates A and B
   XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, A_bound[0], A_bound[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, EqualAreaSkyBound, sizeof( B_bound[0] ), &B_bound[0], &B_bound[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, ConstantBoundB, sizeof( B_bound[0] ), &B_bound[0], &B_bound[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALSetLatticeTilingBoundCacheFunction( tiling, 1, SkyBoundCache ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Set the parameter-space origin on reduced supersky sky coordinates A and B
+  XLAL_CHECK( XLALSetLatticeTilingOrigin( tiling, 0, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingOrigin( tiling, 1, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Set the parameter-space padding control flags for reduced supersky sky coordinates A and B
+  XLAL_CHECK( XLALSetLatticeTilingPaddingFlags( tiling, 0, A_padf ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingPaddingFlags( tiling, 1, B_padf ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
@@ -2327,36 +2364,200 @@ int XLALSetSuperskyPhysicalSpinBound(
 
 }
 
-int XLALSetSuperskyCoordinateSpinBound(
+static int SM_LatticePhysicalRangeCallback(
+  const bool first_call,
+  const LatticeTiling *tiling,
+  const LatticeTilingIterator *itr,
+  const gsl_vector *point,
+  const size_t changed_i UNUSED,
+  const void *param,
+  void *out
+  )
+{
+
+  const SM_CallbackParam *cparam = ( ( const SM_CallbackParam * ) param );
+  SM_CallbackOut *cout = ( ( SM_CallbackOut * ) out );
+
+  // Initialise translation data
+  if ( first_call ) {
+    XLAL_INIT_MEM( cout->min_phys );
+    XLAL_INIT_MEM( cout->max_phys );
+    cout->min_phys.refTime = cparam->rssky_transf->ref_time;
+    cout->max_phys.refTime = cparam->rssky_transf->ref_time;
+    cout->min_phys.Alpha = GSL_POSINF;
+    cout->max_phys.Alpha = GSL_NEGINF;
+    cout->min_phys.Delta = GSL_POSINF;
+    cout->max_phys.Delta = GSL_NEGINF;
+    for ( size_t s = 0; s <= cparam->rssky_transf->SMAX; ++s ) {
+      cout->min_phys.fkdot[s] = GSL_POSINF;
+      cout->max_phys.fkdot[s] = GSL_NEGINF;
+    }
+  }
+
+  // Get frequency step size
+  const double dfreq = XLALLatticeTilingStepSize( tiling, cparam->rssky_transf->ndim - 1 );
+
+  // Get indexes of left/right-most point in current frequency block
+  INT4 left = 0, right = 0;
+  XLAL_CHECK( XLALCurrentLatticeTilingBlock( itr, cparam->rssky_transf->ndim - 1, &left, &right ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Convert point from reduced supersky coordinates to physical coordinates
+  PulsarDopplerParams XLAL_INIT_DECL( phys );
+  XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &phys, point, NULL, cparam->rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Store minimum/maximum values of physical frequency and spindowns
+  cout->min_phys.Alpha = GSL_MIN( cout->min_phys.Alpha, phys.Alpha );
+  cout->max_phys.Alpha = GSL_MAX( cout->max_phys.Alpha, phys.Alpha );
+  cout->min_phys.Delta = GSL_MIN( cout->min_phys.Delta, phys.Delta );
+  cout->max_phys.Delta = GSL_MAX( cout->max_phys.Delta, phys.Delta );
+  cout->min_phys.fkdot[0] = GSL_MIN( cout->min_phys.fkdot[0], phys.fkdot[0] + dfreq*left );
+  cout->max_phys.fkdot[0] = GSL_MAX( cout->max_phys.fkdot[0], phys.fkdot[0] + dfreq*right );
+  for ( size_t s = 1; s <= cparam->rssky_transf->SMAX; ++s ) {
+    cout->min_phys.fkdot[s] = GSL_MIN( cout->min_phys.fkdot[s], phys.fkdot[s] );
+    cout->max_phys.fkdot[s] = GSL_MAX( cout->max_phys.fkdot[s], phys.fkdot[s] );
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALRegisterSuperskyLatticePhysicalRangeCallback(
   LatticeTiling *tiling,
   const SuperskyTransformData *rssky_transf,
-  const size_t s,
-  const double bound1,
-  const double bound2
+  const PulsarDopplerParams **min_phys,
+  const PulsarDopplerParams **max_phys
   )
 {
 
   // Check input
   XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
   XLAL_CHECK( CHECK_RSSKY_TRANSF( rssky_transf ), XLAL_EINVAL );
-  XLAL_CHECK( isfinite( bound1 ), XLAL_EINVAL );
-  XLAL_CHECK( isfinite( bound2 ), XLAL_EINVAL );
-  XLAL_CHECK( s <= rssky_transf->SMAX, XLAL_ESIZE );
+  XLAL_CHECK( min_phys != NULL, XLAL_EFAULT );
+  XLAL_CHECK( max_phys != NULL, XLAL_EFAULT );
 
-  // Set parameter-space bound name
-  XLAL_CHECK( XLALSetLatticeTilingBoundName( tiling, RSSKY_FKDOT_DIM( rssky_transf, s ), "nu%zudot", s ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Register callback function
+  const SM_CallbackParam param = {
+    .rssky_transf = rssky_transf,
+  };
+  const SM_CallbackOut *out = XLALRegisterLatticeTilingCallback( tiling, SM_LatticePhysicalRangeCallback, sizeof( param ), &param, sizeof( *out ) );
+  XLAL_CHECK( out != NULL, XLAL_EFUNC );
 
-  // Set the parameter-space bound on reduced supersky frequency/spindown coordinate
-  XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, RSSKY_FKDOT_DIM( rssky_transf, s ), bound1, bound2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Set output parameters
+  *min_phys = &out->min_phys;
+  *max_phys = &out->max_phys;
 
-  // Supersky metric requires searching over spindown if also searching over sky
-  const int tiled_sskyA = XLALIsTiledLatticeTilingDimension( tiling, 0 );
-  XLAL_CHECK( tiled_sskyA != XLAL_FAILURE, XLAL_EFUNC );
-  const int tiled_sskyB = XLALIsTiledLatticeTilingDimension( tiling, 1 );
-  XLAL_CHECK( tiled_sskyB != XLAL_FAILURE, XLAL_EFUNC );
-  const int tiled_fkdot = XLALIsTiledLatticeTilingDimension( tiling, RSSKY_FKDOT_DIM( rssky_transf, s ) );
-  XLAL_CHECK( tiled_fkdot != XLAL_FAILURE, XLAL_EFUNC );
-  XLAL_CHECK( !( tiled_sskyA || tiled_sskyB ) || tiled_fkdot, XLAL_EINVAL, "Must search over %zu-order spindown if also searching over sky", s );
+  return XLAL_SUCCESS;
+
+}
+
+static int SM_LatticeSuperskyRangeCallback(
+  const bool first_call,
+  const LatticeTiling *tiling,
+  const LatticeTilingIterator *itr,
+  const gsl_vector *point,
+  const size_t changed_i UNUSED,
+  const void *param,
+  void *out
+  )
+{
+
+  const SM_CallbackParam *cparam = ( ( const SM_CallbackParam * ) param );
+  SM_CallbackOut *cout = ( ( SM_CallbackOut * ) out );
+
+  // Initialise translation data
+  if ( first_call ) {
+    cout->min_rssky2_view = gsl_vector_view_array( cout->min_rssky2_array, cparam->rssky2_transf->ndim );
+    cout->max_rssky2_view = gsl_vector_view_array( cout->max_rssky2_array, cparam->rssky2_transf->ndim );
+    gsl_vector_set_all( &cout->min_rssky2_view.vector, GSL_POSINF );
+    gsl_vector_set_all( &cout->max_rssky2_view.vector, GSL_NEGINF );
+  }
+
+  // Get frequency step size
+  const double dfreq = XLALLatticeTilingStepSize( tiling, cparam->rssky_transf->ndim - 1 );
+
+  // Get indexes of left/right-most point in current frequency block
+  INT4 left = 0, right = 0;
+  XLAL_CHECK( XLALCurrentLatticeTilingBlock( itr, cparam->rssky_transf->ndim - 1, &left, &right ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Convert point from reduced supersky coordinates to other reduced supersky coordinates
+  double rssky2_array[cparam->rssky_transf->ndim];
+  gsl_vector_view rssky2_view = gsl_vector_view_array( rssky2_array, cparam->rssky2_transf->ndim );
+  XLAL_CHECK( XLALConvertSuperskyToSuperskyPoint( &rssky2_view.vector, cparam->rssky2_transf, point, cparam->rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Store minimum/maximum values of other reduced supersky coordinates
+  for ( size_t i = 0; i + 1 < cparam->rssky2_transf->ndim; ++i ) {
+    cout->min_rssky2_array[i] = GSL_MIN( cout->min_rssky2_array[i], rssky2_array[i] );
+    cout->max_rssky2_array[i] = GSL_MAX( cout->max_rssky2_array[i], rssky2_array[i] );
+  } {
+    const size_t i = cparam->rssky2_transf->ndim - 1;
+    cout->min_rssky2_array[i] = GSL_MIN( cout->min_rssky2_array[i], rssky2_array[i] + dfreq*left );
+    cout->max_rssky2_array[i] = GSL_MAX( cout->max_rssky2_array[i], rssky2_array[i] + dfreq*right );
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALRegisterSuperskyLatticeSuperskyRangeCallback(
+  LatticeTiling *tiling,
+  const SuperskyTransformData *rssky_transf,
+  const SuperskyTransformData *rssky2_transf,
+  const gsl_vector **min_rssky2,
+  const gsl_vector **max_rssky2
+  )
+{
+
+  // Check input
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( CHECK_RSSKY_TRANSF( rssky_transf ), XLAL_EINVAL );
+  XLAL_CHECK( CHECK_RSSKY_TRANSF( rssky2_transf ), XLAL_EINVAL );
+  XLAL_CHECK( min_rssky2 != NULL, XLAL_EFAULT );
+  XLAL_CHECK( max_rssky2 != NULL, XLAL_EFAULT );
+
+  // Register callback function
+  const SM_CallbackParam param = {
+    .rssky_transf = rssky_transf,
+    .rssky2_transf = rssky2_transf,
+  };
+  const SM_CallbackOut *out = XLALRegisterLatticeTilingCallback( tiling, SM_LatticeSuperskyRangeCallback, sizeof( param ), &param, sizeof( *out ) );
+  XLAL_CHECK( out != NULL, XLAL_EFUNC );
+  XLAL_CHECK( rssky2_transf->ndim <= XLAL_NUM_ELEM( out->min_rssky2_array ), XLAL_EFAILED );
+  XLAL_CHECK( rssky2_transf->ndim <= XLAL_NUM_ELEM( out->max_rssky2_array ), XLAL_EFAILED );
+
+  // Set output parameters
+  *min_rssky2 = &out->min_rssky2_view.vector;
+  *max_rssky2 = &out->max_rssky2_view.vector;
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALSetSuperskyRangeBounds(
+  LatticeTiling *tiling,
+  const gsl_vector *min_rssky,
+  const gsl_vector *max_rssky
+  )
+{
+
+  // Check input
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  const size_t n = XLALTotalLatticeTilingDimensions( tiling );
+  XLAL_CHECK( min_rssky != NULL, XLAL_EFAULT );
+  XLAL_CHECK( min_rssky->size == n, XLAL_EINVAL );
+  XLAL_CHECK( max_rssky != NULL, XLAL_EFAULT );
+  XLAL_CHECK( max_rssky->size == n, XLAL_EINVAL );
+
+  // Set the parameter-space bounds on reduced supersky sky coordinates A and B
+  double A_bound[2] = { gsl_vector_get( min_rssky, 0 ), gsl_vector_get( max_rssky, 0 ) };
+  double B_bound[2] = { gsl_vector_get( min_rssky, 1 ), gsl_vector_get( max_rssky, 1 ) };
+  XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, A_bound[0], A_bound[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, ConstantBoundB, sizeof( B_bound[0] ), &B_bound[0], &B_bound[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingBoundCacheFunction( tiling, 1, SkyBoundCache ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Set the parameter-space bounds on all other coordinates
+  for ( size_t j = 2; j < n; ++j ) {
+    XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, j, gsl_vector_get( min_rssky, j ), gsl_vector_get( max_rssky, j ) ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
 
   return XLAL_SUCCESS;
 

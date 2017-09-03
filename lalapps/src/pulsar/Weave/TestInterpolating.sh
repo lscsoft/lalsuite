@@ -27,7 +27,7 @@ echo
 echo "=== Generate SFTs with injected signal ==="
 set -x
 inject_params="Alpha=2.324; Delta=-1.204; Freq=50.5; f1dot=-1.5e-10"
-${injdir}/lalapps_Makefakedata_v5 --randSeed=3456 --fmin=50.4 --Band=0.2 --Tsft=1800 \
+${injdir}/lalapps_Makefakedata_v5 --randSeed=3456 --fmin=50.3 --Band=0.4 --Tsft=1800 \
     --injectionSources="{refTime=${ref_time}; h0=0.5; cosi=0.7; psi=2.1; phi0=3.1; ${inject_params}}" \
     --outSingleSFT --outSFTdir=. --IFOs=H1,L1 --sqrtSX=1,1 \
     --timestampsFiles=timestamps-1.txt,timestamps-2.txt
