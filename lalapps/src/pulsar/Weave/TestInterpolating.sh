@@ -37,7 +37,9 @@ echo
 echo "=== Perform interpolating search ==="
 set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
-    --toplists=mean2F,B_S/GL,B_S/GLtL,B_tS/GLtL --toplist-limit=2321 --extra-statistics="coh2F,coh2F_det,mean2F_det,ncount,ncount_det" --lrs-Fstar0sc=2000 --lrs-oLGX=4,0.1 --misc-info \
+    --toplists=mean2F,B_S/GL,B_S/GLtL,B_tS/GLtL --toplist-limit=2321 \
+    --extra-statistics="coh2F,coh2F_det,mean2F_det,ncount,ncount_det" --lrs-Fstar0sc=2000 --lrs-oLGX=4,0.1 \
+    --Fstat-timing --misc-info \
     --setup-file=WeaveSetup.fits --sft-files='*.sft' \
     --alpha=2.3/0.05 --delta=-1.2/0.1 --freq=50.5~5e-6 --f1dot=-3e-10,0 --semi-max-mismatch=5.5 --coh-max-mismatch=0.3
 set +x

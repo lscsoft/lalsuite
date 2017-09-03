@@ -139,6 +139,102 @@ void XLALWeaveCohInputDestroy(
 } // XLALWeaveCohInputDestroy()
 
 ///
+/// Write F-statistic method name from coherent input data to a FITS file
+///
+int XLALWeaveCohInputWriteFstatMethod(
+  FITSFile *file,
+  const WeaveCohInput *coh_input
+  )
+{
+
+  // Check input
+  XLAL_CHECK( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK( coh_input != NULL, XLAL_EFAULT );
+
+  // Get method name
+  const char *method_name = XLALGetFstatInputMethodName( coh_input->Fstat_input );
+  XLAL_CHECK( method_name != NULL, XLAL_EFUNC );
+
+  // Write method name
+  XLAL_CHECK( XLALFITSHeaderWriteString( file, "fmethod", method_name, "name of F-statistic method" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  return XLAL_SUCCESS;
+
+}
+
+///
+/// Write F-statistic timing information from coherent input data to a FITS file
+///
+int XLALWeaveCohInputWriteFstatTiming(
+  FITSFile *file,
+  const size_t ncoh_input,
+  WeaveCohInput *const *coh_input
+  )
+{
+
+  // Check input
+  XLAL_CHECK( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK( ncoh_input > 0, XLAL_ESIZE );
+  XLAL_CHECK( coh_input != NULL, XLAL_EFAULT );
+
+  // Get timing information from F-statistic input data
+  REAL4 tauF_eff = 0, tauF_core = 0, tauF_buffer = 0, NCalls = 0, NBufferMisses = 0;
+  UINT4 nmodel = 0;
+  const char *XLAL_INIT_DECL( model_names, [TIMING_MODEL_MAX_VARS] );
+  REAL4 XLAL_INIT_DECL( model_values, [TIMING_MODEL_MAX_VARS] );
+  for ( size_t i = 0; i < ncoh_input; ++i ) {
+
+    // Get timing data
+    FstatTimingGeneric XLAL_INIT_DECL( timing_generic );
+    FstatTimingModel XLAL_INIT_DECL( timing_model );
+    XLAL_CHECK( XLALGetFstatTiming( coh_input[i]->Fstat_input, &timing_generic, &timing_model ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( timing_generic.NCalls > 0, XLAL_EFAILED );
+
+    // Accumulate generic timing constants
+    tauF_eff += timing_generic.tauF_eff;
+    tauF_core += timing_generic.tauF_core;
+    tauF_buffer += timing_generic.tauF_buffer;
+    NCalls += timing_generic.NCalls;
+    NBufferMisses += timing_generic.NBufferMisses;
+
+    // Get names of method-specific timing constants
+    if ( nmodel == 0 ) {
+      nmodel = timing_model.numVariables;
+      for ( size_t j = 0; j < nmodel; ++j ) {
+        model_names[j] = timing_model.names[j];
+      }
+    } else {
+      XLAL_CHECK( nmodel == timing_model.numVariables, XLAL_EFAILED );
+      for ( size_t j = 0; j < nmodel; ++j ) {
+        XLAL_CHECK( strcmp( model_names[j], timing_model.names[j] ) == 0, XLAL_EFAILED );
+      }
+    }
+
+    // Accumulate method-specific timing constants
+    for ( size_t j = 0; j < nmodel; ++j ) {
+      model_values[j] += timing_model.values[j];
+    }
+
+  }
+
+  // Write generic timing constants
+  XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, "ftiming tauF_eff", tauF_eff / ncoh_input, "F-statistic generic timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, "ftiming tauF_core", tauF_core / ncoh_input, "F-statistic generic timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, "ftiming tauF_buffer", tauF_buffer / ncoh_input, "F-statistic generic timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, "ftiming b", NBufferMisses / NCalls, "F-statistic generic timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Write method-specific timing constants
+  for ( size_t j = 0; j < nmodel; ++j ) {
+    char keyword[64];
+    snprintf( keyword, sizeof( keyword ), "ftiming %s", model_names[j] );
+    XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, keyword, model_values[j] / ncoh_input, "F-statistic method-specific timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  return XLAL_SUCCESS;
+
+} // XLALWeaveCohInputWriteTiming()
+
+///
 /// Create and compute coherent results
 ///
 int XLALWeaveCohResultsCompute(

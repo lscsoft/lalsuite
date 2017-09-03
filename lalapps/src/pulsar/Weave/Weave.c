@@ -72,7 +72,7 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, misc_info, simulate_search;
+    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, misc_info, simulate_search, Fstat_timing;
     CHAR *setup_file, *sft_files, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd, *lrs_oLGX;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit, lrs_Fstar0sc, nc_2Fth;
@@ -84,6 +84,7 @@ int main( int argc, char *argv[] )
     .Fstat_SSB_precision = Fstat_opt_args.SSBprec,
     .Fstat_method = FMETHOD_RESAMP_BEST,
     .Fstat_run_med_window = Fstat_opt_args.runningMedianWindow,
+    .Fstat_timing = Fstat_opt_args.collectTiming,
     .alpha = {0, LAL_TWOPI},
     .delta = {-LAL_PI_2, LAL_PI_2},
     .freq_partitions = 1,
@@ -257,6 +258,10 @@ int main( int argc, char *argv[] )
   XLALRegisterUvarAuxDataMember(
     Fstat_SSB_precision, UserEnum, &SSBprecisionChoices, 0, DEVELOPER,
     "Precision in calculating the barycentric transformation. "
+    );
+  XLALRegisterUvarMember(
+    Fstat_timing, BOOLEAN, 0, DEVELOPER,
+    "If TRUE, collect and output F-statistic generic and specific timing constants. "
     );
   //
   // Various statistics input arguments
@@ -810,6 +815,7 @@ int main( int argc, char *argv[] )
   Fstat_opt_args.FstatMethod = uvar->Fstat_method;
   Fstat_opt_args.injectSources = injections;
   Fstat_opt_args.prevInput = NULL;
+  Fstat_opt_args.collectTiming = uvar->Fstat_timing;
 
   // Get timeslices of SFT catalogs restricted to each segment
   SFTCatalog XLAL_INIT_DECL( sft_catalog_seg, [nsegments] );
@@ -876,7 +882,6 @@ int main( int argc, char *argv[] )
 
   // Load input data required for computing coherent results
   WeaveCohInput *XLAL_INIT_DECL( coh_input, [nsegments] );
-  const char *Fstat_method_name = NULL;
   LogPrintf( LOG_NORMAL, "Loading input data for coherent results ...\n" );
   for ( size_t i = 0; i < nsegments; ++i ) {
 
@@ -923,12 +928,6 @@ int main( int argc, char *argv[] )
       Fstat_input = XLALCreateFstatInput( &sft_catalog_seg[i], sft_min_cover_freq, sft_max_cover_freq, dfreq, setup.ephemerides, &Fstat_opt_args );
       XLAL_CHECK_MAIN( Fstat_input != NULL, XLAL_EFUNC );
       Fstat_opt_args.prevInput = Fstat_input;
-
-      // Get F-statistic method name
-      if ( Fstat_method_name == NULL ) {
-        Fstat_method_name = XLALGetFstatInputMethodName( Fstat_input );
-        XLAL_CHECK_MAIN( Fstat_method_name != NULL, XLAL_EFUNC );
-      }
 
       // Cleanup
       XLALDestroyStringVector( sft_catalog_seg_i_detectors );
@@ -1028,13 +1027,13 @@ int main( int argc, char *argv[] )
   enum { CT_LATTICE, CT_QUERY, CT_COH, CT_SEMI_ADD, CT_SEMI_MAIN, CT_OUTPUT, CT_SEMI_CMPL, CT_MAX };
   double XLAL_INIT_DECL( cpu_timing, [CT_MAX] );
   const char* cpu_timing_key_comment[CT_MAX][2] = {
-    [CT_LATTICE]    = { "cpu lattice", "CPU time taken by lattice tiling iteration" },
-    [CT_QUERY]      = { "cpu query", "CPU time talen by coherent result cache queries" },
-    [CT_COH]        = { "cpu coh", "CPU time taken by computation/retrieval of coherent results" },
-    [CT_SEMI_ADD]   = { "cpu semiadd", "CPU time taken by addition of coherent results to semicoherent results" },
-    [CT_SEMI_MAIN]  = { "cpu semimain", "CPU time taken by computation of main-loop semicoherent results" },
-    [CT_OUTPUT]     = { "cpu output", "CPU time taken by output of semicoherent results" },
-    [CT_SEMI_CMPL]  = { "cpu semicmpl", "CPU time taken by computation of completion-loop semicoherent results" },
+    [CT_LATTICE]    = { "lattice", "CPU time taken by lattice tiling iteration" },
+    [CT_QUERY]      = { "query", "CPU time talen by coherent result cache queries" },
+    [CT_COH]        = { "coh", "CPU time taken by computation/retrieval of coherent results" },
+    [CT_SEMI_ADD]   = { "semiadd", "CPU time taken by addition of coherent results to semicoherent results" },
+    [CT_SEMI_MAIN]  = { "semimain", "CPU time taken by computation of main-loop semicoherent results" },
+    [CT_OUTPUT]     = { "output", "CPU time taken by output of semicoherent results" },
+    [CT_SEMI_CMPL]  = { "semicmpl", "CPU time taken by computation of completion-loop semicoherent results" },
   };
 
   // Wall time at which search was last checkpointed
@@ -1362,17 +1361,30 @@ int main( int argc, char *argv[] )
     if ( simulation_level == 0 ) {   // Unless search is being simulated...
 
       // Write F-statistic method name
-      XLAL_CHECK_MAIN( XLALFITSHeaderWriteString( file, "fmethod", Fstat_method_name, "name of F-statistic method" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALWeaveCohInputWriteFstatMethod( file, coh_input[0] ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-      // Write timing information
-      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "wall total", wall_total, "total wall time" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "cpu total", cpu_total, "total CPU time" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      double cpu_timing_other = cpu_total;
-      for ( size_t i = 0; i < CT_MAX; ++i ) {
-        XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, cpu_timing_key_comment[i][0], cpu_timing[i], cpu_timing_key_comment[i][1] ) == XLAL_SUCCESS, XLAL_EFUNC );
-        cpu_timing_other -= cpu_timing[i];
+      if ( !UVAR_SET( ckpt_output_file ) ) {   // Unless search is checkpointed...
+
+        // Write timing information
+        XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "wall total", wall_total, "total wall time" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "timing total", cpu_total, "total CPU time" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        double cpu_timing_other = cpu_total;
+        for ( size_t i = 0; i < CT_MAX; ++i ) {
+          char keyword[64];
+          snprintf( keyword, sizeof( keyword ), "timing %s", cpu_timing_key_comment[i][0] );
+          XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, keyword, cpu_timing[i], cpu_timing_key_comment[i][1] ) == XLAL_SUCCESS, XLAL_EFUNC );
+          cpu_timing_other -= cpu_timing[i];
+        }
+        XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "timing other", cpu_timing_other, "CPU time unaccounted for" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+        if ( uvar->Fstat_timing ) {   // If requested...
+
+          // Write F-statistic timing information
+          XLAL_CHECK_MAIN( XLALWeaveCohInputWriteFstatTiming( file, nsegments, coh_input ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+        }
+
       }
-      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "cpu other", cpu_timing_other, "CPU time unaccounted for" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Write search results
       XLAL_CHECK_MAIN( XLALWeaveOutputResultsWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );

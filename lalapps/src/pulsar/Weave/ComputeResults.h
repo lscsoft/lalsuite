@@ -116,6 +116,15 @@ WeaveCohInput *XLALWeaveCohInputCreate(
 void XLALWeaveCohInputDestroy(
   WeaveCohInput *coh_input
   );
+int XLALWeaveCohInputWriteFstatMethod(
+  FITSFile *file,
+  const WeaveCohInput *coh_input
+  );
+int XLALWeaveCohInputWriteFstatTiming(
+  FITSFile *file,
+  const size_t ncoh_input,
+  WeaveCohInput *const *coh_input
+  );
 int XLALWeaveCohResultsCompute(
   WeaveCohResults **coh_res,
   WeaveCohInput *coh_input,
