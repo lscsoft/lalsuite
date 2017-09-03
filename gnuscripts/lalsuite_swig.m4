@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 101
+# serial 102
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -417,6 +417,19 @@ int main() { std::string s = "a"; return 0; }
 AC_DEFUN([LALSUITE_USE_SWIG_PYTHON],[
   # $0: configure SWIG Python bindings
   LALSUITE_USE_SWIG_LANGUAGE([Python],[C],[
+
+    # check Python version
+    AC_MSG_CHECKING([${PYTHON} version])
+    AS_IF([test "x${PYTHON_VERSION}" = x],[
+      AC_MSG_ERROR([could not determine ${PYTHON} version])
+    ])
+    AC_MSG_RESULT([${PYTHON_VERSION}])
+    LALSUITE_VERSION_COMPARE([${PYTHON_VERSION}],[>=],[3.0.0],[
+      LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[3.0.9],[
+        swig_min_version=3.0.9
+        swig_min_version_info="for Python version ${PYTHON_VERSION}"
+      ])
+    ])
 
     # check for distutils
     AC_MSG_CHECKING([for distutils])
