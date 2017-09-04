@@ -1644,6 +1644,15 @@ if (strides[I-1] == 0) {
 %typemap(freearg) const SWIGTYPE * "";
 
 ///
+/// Struct member assignment typemap for pointer-to-<tt>const</tt> <tt>SWIGTYPE</tt>s. This typemap
+/// overrides the standard SWIG-generated assigment code which casts away \c const on the left-hand,
+/// thereby generating compiler errors.
+///
+%typemap(memberin, noblock=1) const SWIGTYPE * {
+  if (arg1) *($type*)&(arg1)->$name = ($type)arg2;
+}
+
+///
 /// Typemaps for output <tt>SWIGTYPE</tt>s. This typemaps will match either the SWIG-wrapped return
 /// argument from functions (which will have the \c SWIG_POINTER_OWN bit set in <tt>$owner</tt>) or
 /// return a member of a struct through a \c get functions (in which case \c SWIG_POINTER_OWN will
