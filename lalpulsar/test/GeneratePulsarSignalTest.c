@@ -328,7 +328,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   XLAL_CHECK_LAL (status, ( edat = XLALInitBarycenter( earthFile, sunFile ) ) != NULL, XLAL_EFUNC);
 
   /* Allocate memory for PulsarSignalParams and initialize */
-  pPulsarSignalParams = (PulsarSignalParams *)LALMalloc(sizeof(PulsarSignalParams));
+  pPulsarSignalParams = (PulsarSignalParams *)LALCalloc(1, sizeof(PulsarSignalParams));
   pPulsarSignalParams->pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
   pPulsarSignalParams->pulsar.spindown = NULL;
   if (numSpinDown > 0) {

@@ -112,6 +112,7 @@ typedef struct
   /* time-series sampling + heterodyning frequencies */
   REAL8 fmin;		/**< Lowest frequency in output SFT (= heterodyning frequency) */
   REAL8 Band;		/**< bandwidth of output SFT in Hz (= 1/2 sampling frequency) */
+  REAL8 sourceDeltaT;   /**< source-frame sampling period. '0' implies previous internal defaults */
 
   /* SFT params */
   REAL8 Tsft;		        /**< SFT time baseline Tsft */
@@ -194,6 +195,7 @@ main(int argc, char *argv[])
   DataParams.randSeed           = uvar.randSeed;
   DataParams.SFTWindowType      = uvar.SFTWindowType;
   DataParams.SFTWindowBeta      = uvar.SFTWindowBeta;
+  DataParams.sourceDeltaT       = uvar.sourceDeltaT;
   if ( GV.inputMultiTS == NULL )
     {
       DataParams.fMin               = GV.fminOut;
@@ -649,6 +651,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 
   // ----- 'expert-user/developer' options ----- (only shown in help at lalDebugLevel >= warning)
   XLALRegisterUvarMember(   randSeed,             INT4, 0, DEVELOPER, "Specify random-number seed for reproducible noise (0 means use /dev/urandom for seeding).");
+  XLALRegisterUvarMember(  sourceDeltaT,        REAL8,  0, DEVELOPER, "Source-frame sampling period. '0' implies previous internal defaults" );
 
   // ----- deprecated but still supported options [throw warning if used] (only shown in help at lalDebugLevel >= info) ----------
 #ifdef HAVE_LIBLALFRAME

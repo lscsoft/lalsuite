@@ -308,7 +308,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
       if ( signalDuration > 0 )	// only need to do sth if transient-window had finite overlap with output TS
         {
           REAL4TimeSeries *Tseries_i = NULL;
-          XLAL_CHECK ( (Tseries_i = XLALGenerateCWSignalTS ( pulsarParams, site, signalStartGPS, signalDuration, fSamp, fMin, edat )) != NULL, XLAL_EFUNC );
+          XLAL_CHECK ( (Tseries_i = XLALGenerateCWSignalTS ( pulsarParams, site, signalStartGPS, signalDuration, fSamp, fMin, edat, dataParams->sourceDeltaT )) != NULL, XLAL_EFUNC );
 
           XLAL_CHECK ( (Tseries_sum = XLALAddREAL4TimeSeries ( Tseries_sum, Tseries_i )) != NULL, XLAL_EFUNC );
           XLALDestroyREAL4TimeSeries ( Tseries_i );
@@ -380,7 +380,8 @@ XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams,	///< input CW pulsar-
                          REAL8 duration,			///< time-series duration to generate
                          REAL8 fSamp,				///< sampling frequency
                          REAL8 fHet,				///< heterodyning frequency
-                         const EphemerisData *edat		///< ephemeris data
+                         const EphemerisData *edat,		///< ephemeris data
+                         REAL8 sourceDeltaT                     ///< source-frame sampling period (optional: 0 == previous internal defaults)
                          )
 {
   XLAL_CHECK_NULL ( pulsarParams != NULL, XLAL_EINVAL );
@@ -432,6 +433,7 @@ XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams,	///< input CW pulsar-
   params.transfer                  = NULL;
   params.ephemerides               = edat;
   params.fHeterodyne               = fHet;
+  params.sourceDeltaT              = sourceDeltaT;
 
   // detector-specific settings
   params.startTimeGPS              = startTime;

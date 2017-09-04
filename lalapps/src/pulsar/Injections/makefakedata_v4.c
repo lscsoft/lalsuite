@@ -201,6 +201,7 @@ typedef struct
   REAL8 transientStartTime;	/**< GPS start-time of transient window */
   REAL8 transientTauDays;	/**< time-scale in days of transient window */
 
+  REAL8 sourceDeltaT;   /**< source-frame sampling period. '0' implies previous internal defaults */
   // ---------- OBSOLETE & unsupported options [kept for error-reporting] ----------
   INT4 orbitTpSSBsec;
   INT4 orbitTpSSBnan;
@@ -270,6 +271,8 @@ main(int argc, char *argv[])
   params.orbit.asini               = GV.pulsar.Doppler.asini;
   params.orbit.ecc                 = GV.pulsar.Doppler.ecc;
   params.orbit.period              = GV.pulsar.Doppler.period;
+
+  params.sourceDeltaT              = uvar.sourceDeltaT;
 
   /* detector params */
   params.transfer = GV.transfer;	/* detector transfer function (NULL if not used) */
@@ -1278,6 +1281,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember(  transientTauDays,     REAL8, 0, OPTIONAL, "Timescale 'tau' of transient signal window in days.");
 
   /* ----- 'expert-user/developer' and deprecated options ----- */
+  XLALRegisterUvarMember(  sourceDeltaT,        REAL8,  0, DEVELOPER, "Source-frame sampling period. '0' implies previous internal defaults" );
   XLALRegisterUvarMember(   generationMode,       INT4, 0,  DEVELOPER, "How to generate timeseries: 0=all-at-once (faster), 1=per-sft (slower)");
 
   XLALRegisterUvarMember(  hardwareTDD,         BOOLEAN, 'b', DEVELOPER, "Hardware injection: output TDD in binary format (implies generationMode=1)");

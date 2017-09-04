@@ -286,6 +286,7 @@ typedef struct tagPulsarSignalParams {
     REAL8 ecc;              /**< orbital eccentricity */
     REAL8 period;           /**< orbital period (sec) */
   } orbit;
+  REAL8 sourceDeltaT;       /**< source-frame sampling period ('0' means use previous internal defaults) */
 
   /* characterize the detector */
   const COMPLEX8FrequencySeries *transfer;/**< detector transfer function (NULL if not used) */
