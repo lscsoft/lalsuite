@@ -84,6 +84,41 @@ int XLALSimInspiralTaylorF2AlignedPhasing(
     return XLAL_SUCCESS;
 }
 
+int XLALSimInspiralTaylorF2AlignedPhasingArray(
+        REAL8Vector **phasingvals, /**< phasing coefficients (output) */
+        REAL8Vector *mass1, /**< Masses of heavier bodies */
+        REAL8Vector *mass2, /**< Masses of lighter bodies */
+        REAL8Vector *chi1, /**< Aligned spin of body 1 */
+        REAL8Vector *chi2, /**< Aligned spin of body 2 */
+        REAL8Vector *lambda1, /**< Tidal deformation of body 1 */
+        REAL8Vector *lambda2, /**< Tidal deformation of body 2 */
+        REAL8Vector *dquadmon1, /**< Self-spin deformation of body 1 */
+        REAL8Vector *dquadmon2, /**< Self-spin deformation of body 2 */
+        )
+{
+    UINT4 idx;
+    LALDict *a=NULL;
+    a=XLALCreateDict();
+
+    *phasingvals = XLALCreateREAL8Vector(mass1->length * 13 * 3);
+
+    for (idx=0; idx < mass1->length; idx++)
+    {
+        XLALSimInspiralWaveformParamsInsertdQuadMon1(a, dquadmon1->data[idx]);
+        XLALSimInspiralWaveformParamsInsertdQuadMon2(a, dquadmon2->data[idx]);
+        XLALSimInspiralWaveformParamsInsertTidalLambda1(a, lambda1->data[idx]);
+        XLALSimInspiralWaveformParamsInsertTidalLambda1(a, lambda2->data[idx]);
+        curr_phasing = XLALSimInspiralTaylorF2AlignedPhasing
+            (mass1->data[idx], mass2->data[idx], chi1->data[idx],
+             chi2->data[idx], a);
+    }
+
+    XLALDestroyDict(a);
+
+    return XLAL_SUCCESS;
+}
+
+
 int XLALSimInspiralTaylorF2Core(
         COMPLEX16FrequencySeries **htilde_out, /**< FD waveform */
 	const REAL8Sequence *freqs,            /**< frequency points at which to evaluate the waveform (Hz) */
