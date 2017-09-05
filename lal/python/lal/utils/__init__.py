@@ -14,6 +14,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+## \defgroup lal_py_utils Utilities
+## \ingroup lal_python
 """This module provides utilities for generating LAL objects in python
 """
 

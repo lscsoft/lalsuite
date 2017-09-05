@@ -2,3 +2,6 @@
 @SWIG_BUILD_PYTHON_TRUE@from .lalxml import *
 
 __version__ = "@PACKAGE_VERSION@"
+
+## \addtogroup lalxml_python
+"""This package provides Python wrappings and extensions to LALXML"""

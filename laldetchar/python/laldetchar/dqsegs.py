@@ -15,7 +15,8 @@
 #  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #  MA  02111-1307  USA
 
-## \addtogroup laldetchar_py_dqsegs
+## \defgroup laldetchar_py_dqsegs dqsegs
+## \ingroup laldetchar_python
 """Utilities to transform data samples into segment information"""
 #
 # ### Synopsis ###

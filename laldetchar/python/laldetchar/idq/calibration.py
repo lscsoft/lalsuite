@@ -16,7 +16,8 @@
 #
 #
 
-## \addtogroup laldetchar_py_idq
+## \defgroup laldetchar_py_idq_calibration methods used to calibrate output
+## \ingroup laldetchar_py_idq
 ## Synopsis
 # ~~~
 # from laldetchar.idq import calibration

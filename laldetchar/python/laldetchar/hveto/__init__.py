@@ -13,7 +13,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation,.
 
-## \addtogroup laldetchar_py_hveto
+## \defgroup laldetchar_py_hveto hveto utility modules
+## \ingroup laldetchar_python
 """A collection of tools for using, plotting, and interpreting HVeto results
 as produced by the laldetchar-hveto program.
 
