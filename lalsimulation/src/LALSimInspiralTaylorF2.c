@@ -33,6 +33,7 @@
 #include <lal/LALSimInspiral.h>
 #include <lal/Units.h>
 #include <lal/XLALError.h>
+#include <lal/AVFactories.h>
 #include "LALSimInspiralPNCoefficients.c"
 
 #ifndef _OPENMP
@@ -86,31 +87,43 @@ int XLALSimInspiralTaylorF2AlignedPhasing(
 
 int XLALSimInspiralTaylorF2AlignedPhasingArray(
         REAL8Vector **phasingvals, /**< phasing coefficients (output) */
-        REAL8Vector *mass1, /**< Masses of heavier bodies */
-        REAL8Vector *mass2, /**< Masses of lighter bodies */
-        REAL8Vector *chi1, /**< Aligned spin of body 1 */
-        REAL8Vector *chi2, /**< Aligned spin of body 2 */
-        REAL8Vector *lambda1, /**< Tidal deformation of body 1 */
-        REAL8Vector *lambda2, /**< Tidal deformation of body 2 */
-        REAL8Vector *dquadmon1, /**< Self-spin deformation of body 1 */
-        REAL8Vector *dquadmon2, /**< Self-spin deformation of body 2 */
+        REAL8Vector mass1, /**< Masses of heavier bodies */
+        REAL8Vector mass2, /**< Masses of lighter bodies */
+        REAL8Vector chi1, /**< Aligned spin of body 1 */
+        REAL8Vector chi2, /**< Aligned spin of body 2 */
+        REAL8Vector lambda1, /**< Tidal deformation of body 1 */
+        REAL8Vector lambda2, /**< Tidal deformation of body 2 */
+        REAL8Vector dquadmon1, /**< Self-spin deformation of body 1 */
+        REAL8Vector dquadmon2 /**< Self-spin deformation of body 2 */
         )
 {
-    UINT4 idx;
+    UINT4 idx, jdx;
     LALDict *a=NULL;
     a=XLALCreateDict();
 
-    *phasingvals = XLALCreateREAL8Vector(mass1->length * 13 * 3);
+    PNPhasingSeries *curr_phasing=NULL;
+    *phasingvals = XLALCreateREAL8Vector(mass1.length * 
+                                         PN_PHASING_SERIES_MAX_ORDER * 3);
 
-    for (idx=0; idx < mass1->length; idx++)
+    for (idx=0; idx < mass1.length; idx++)
     {
-        XLALSimInspiralWaveformParamsInsertdQuadMon1(a, dquadmon1->data[idx]);
-        XLALSimInspiralWaveformParamsInsertdQuadMon2(a, dquadmon2->data[idx]);
-        XLALSimInspiralWaveformParamsInsertTidalLambda1(a, lambda1->data[idx]);
-        XLALSimInspiralWaveformParamsInsertTidalLambda1(a, lambda2->data[idx]);
-        curr_phasing = XLALSimInspiralTaylorF2AlignedPhasing
-            (mass1->data[idx], mass2->data[idx], chi1->data[idx],
-             chi2->data[idx], a);
+        XLALSimInspiralWaveformParamsInsertdQuadMon1(a, dquadmon1.data[idx]);
+        XLALSimInspiralWaveformParamsInsertdQuadMon2(a, dquadmon2.data[idx]);
+        XLALSimInspiralWaveformParamsInsertTidalLambda1(a, lambda1.data[idx]);
+        XLALSimInspiralWaveformParamsInsertTidalLambda1(a, lambda2.data[idx]);
+        XLALSimInspiralTaylorF2AlignedPhasing
+            (&curr_phasing, mass1.data[idx], mass2.data[idx], chi1.data[idx],
+             chi2.data[idx], a);
+        for (jdx=0; jdx < PN_PHASING_SERIES_MAX_ORDER; jdx++)
+        {
+            phasingvals.data[jdx*mass1.length + idx] = curr_phasing.v[idx];
+            phasingvals.data[mass1.length*PN_PHASING_SERIES_MAX_ORDER +
+                             jdx*mass1.length + idx] = curr_phasing.vlogv[idx];
+            phasingvals.data[mass1.length*PN_PHASING_SERIES_MAX_ORDER*2 + idx +
+                             jdx*mass1.length] = curr_phasing.vlogvsq[idx];
+        }
+        LALFree(curr_phasing);
+        curr_phasing=NULL;
     }
 
     XLALDestroyDict(a);
