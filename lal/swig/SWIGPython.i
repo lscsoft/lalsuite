@@ -438,8 +438,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
                                    npy_intp idx[])
   {
     size_t elemidx = 0;
-    for (int j = 0; j < ndims; ++j) {
-      elemidx += idx[j] * strides[j];
+    for (size_t j = 0; j < ndims; ++j) {
+      elemidx += ((size_t)idx[j]) * strides[j];
     }
     return %reinterpret_cast(%reinterpret_cast(ptr, char*) + elemidx*esize, void*);
   }
@@ -449,8 +449,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
                                 const size_t dims[],
                                 npy_intp idx[])
   {
-    for (int j = ndims-1; j >= 0; --j) {
-      if (++idx[j] < dims[j]) {
+    for (int j = ((int)ndims) - 1; j >= 0; --j) {
+      if (++idx[j] < ((npy_intp)dims[j])) {
         break;
       }
       idx[j] = 0;
@@ -747,13 +747,13 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     }
 
     // Check that NumPy array dimensions are consistent with C array dimensions.
-    if (PyArray_NDIM(nparr) != ndims) {
+    if (((size_t)PyArray_NDIM(nparr)) != ndims) {
       res = SWIG_ValueError;
       goto end;
     }
     size_t nelem = 1;
-    for (int i = 0; i < ndims; ++i) {
-      if (PyArray_DIM(nparr, i) != dims[i]) {
+    for (size_t i = 0; i < ndims; ++i) {
+      if (((size_t)PyArray_DIM(nparr, i)) != dims[i]) {
         res = SWIG_ValueError;
         goto end;
       }
@@ -814,7 +814,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
     // Copy C array dimensions.
     size_t nelem = 1;
-    for (int i = 0; i < ndims; ++i) {
+    for (size_t i = 0; i < ndims; ++i) {
       objdims[i] = dims[i];
       nelem *= dims[i];
     }
@@ -892,12 +892,12 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     }
 
     // Check that the elements of 'nparr' have the correct size.
-    if (PyArray_ITEMSIZE(nparr) != esize) {
+    if (((size_t)PyArray_ITEMSIZE(nparr)) != esize) {
       return SWIG_TypeError;
     }
 
     // Check that 'nparr' has the correct number of dimensions.
-    if (PyArray_NDIM(nparr) != ndims) {
+    if (((size_t)PyArray_NDIM(nparr)) != ndims) {
       return SWIG_ValueError;
     }
 
@@ -937,7 +937,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     npy_intp objstrides[ndims];
 
     // Copy C array dimensions and strides.
-    for (int i = 0; i < ndims; ++i) {
+    for (size_t i = 0; i < ndims; ++i) {
       objdims[i] = dims[i];
       objstrides[i] = strides[i] * esize;
     }

@@ -4,19 +4,4 @@
 __version__ = "@PACKAGE_VERSION@"
 
 ## \addtogroup laldetchar_python
-"""This package provides a variety of tools for manipulating data for
-detector charaterisation purposes.
-"""
-#
-# ### Synopsis ###
-#
-#~~~
-#import laldetchar
-#~~~
-#\author Duncan Macleod (<duncan.macleod@ligo.org>), Chris Pankow (<chris.pankow@ligo.org>)
-#@{
-#	\defgroup laldetchar_py_triggers	Triggers
-#	\defgroup laldetchar_py_hveto		hveto utility modules
-#	\defgroup laldetchar_py_idq		iDQ pipeline
-#	\defgroup laldetchar_py_dqsegs		dqsegs
-#@}
+"""This package provides Python wrappings and extensions to LALDetChar"""

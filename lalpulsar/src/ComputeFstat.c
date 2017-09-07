@@ -31,6 +31,7 @@
 #include <lal/LALSIMD.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/ExtrapolatePulsarSpins.h>
+#include <lal/VectorMath.h>
 
 // ---------- Internal struct definitions ---------- //
 
@@ -454,6 +455,14 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   // Calculate SFT noise weights from PSD
   XLAL_CHECK_NULL ( (common->multiNoiseWeights = XLALComputeMultiNoiseWeights ( runningMedian, optArgs.runningMedianWindow, 0 )) != NULL, XLAL_EFUNC );
 
+  // for use within this modul: remove the normalization from the noise-weights: the normalisation factor is saved separately
+  // in the struct, and this allows us to use and extract subsets of the noise-weights without having to re-normalize them
+  for ( UINT4 X = 0; X < common->detectors.length; ++X )
+    {
+      XLAL_CHECK_NULL ( XLALVectorScaleREAL8 ( common->multiNoiseWeights->data[X]->data, common->multiNoiseWeights->Sinv_Tsft, common->multiNoiseWeights->data[X]->data, common->multiNoiseWeights->data[X]->length) == XLAL_SUCCESS, XLAL_EFUNC);
+    }
+  common->multiNoiseWeights->isNotNormalized = (1 == 1);
+
   // at this point we're done with running-median noise estimation and can 'trim' the SFTs back to
   // the width actually required by the Fstat-methods *methods*.
   // NOTE: this is especially relevant for resampling, where the frequency-band determines the sampling
@@ -529,15 +538,33 @@ XLALGetFstatInputTimestamps ( const FstatInput* input   ///< [in] \c FstatInput 
 
 ///
 /// Returns the multi-detector noise weights stored in a \c FstatInput structure.
+/// Note: the returned object is allocated here and needs to be free'ed by caller.
 ///
-const MultiNoiseWeights*
+MultiNoiseWeights*
 XLALGetFstatInputNoiseWeights ( const FstatInput* input     ///< [in] \c FstatInput structure.
                                 )
 {
   // Check input
   XLAL_CHECK_NULL ( input != NULL, XLAL_EINVAL );
 
-  return input->common.multiNoiseWeights;
+  // copy and rescale data to a new allocated MultiNoiseWeights structure
+  UINT4 numIFOs = input->common.multiNoiseWeights->length;
+  MultiNoiseWeights *ret = NULL;
+  XLAL_CHECK_NULL ( ( ret = XLALCalloc(1, sizeof(*ret) ) ) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL ( ( ret->data = XLALCalloc ( numIFOs, sizeof(ret->data[0]) ) ) != NULL, XLAL_ENOMEM );
+  ret->length = numIFOs;
+  ret->Sinv_Tsft = input->common.multiNoiseWeights->Sinv_Tsft;
+  REAL8 ooSinv_Tsft = 1.0 / input->common.multiNoiseWeights->Sinv_Tsft;
+  for ( UINT4 X = 0; X < numIFOs; X++ )
+    {
+      UINT4 length = input->common.multiNoiseWeights->data[X]->length;
+      XLAL_CHECK_NULL ( ( ret->data[X] = XLALCreateREAL8Vector ( length ) ) != NULL, XLAL_EFUNC );
+      // ComputeFstat stores *un-normalized* weights internally, so re-normalize them for returning them
+      XLAL_CHECK_NULL ( input->common.multiNoiseWeights->isNotNormalized, XLAL_EERR, "BUG: noise weights stored in FstatInput must be unnormalized!\n" );
+      XLAL_CHECK_NULL ( XLALVectorScaleREAL8 ( ret->data[X]->data, ooSinv_Tsft, input->common.multiNoiseWeights->data[X]->data, length) == XLAL_SUCCESS, XLAL_EFUNC);
+    }
+
+  return ret;
 
 } // XLALGetFstatInputNoiseWeights()
 
@@ -689,6 +716,15 @@ XLALDestroyFstatInput ( FstatInput* input       ///< [in] \c FstatInput structur
   if ( input == NULL ) {
     return;
   }
+  if ( input->common.isTimeslice )
+    {
+      XLAL_CHECK_VOID ( input->method < FMETHOD_RESAMP_GENERIC, XLAL_EINVAL,
+                        "Something is wrong: 'isTimeslice==TRUE' for non-LALDemod F-stat method '%s' is not supported!\n", XLALGetFstatInputMethodName(input));
+      XLALDestroyFstatInputTimeslice_common ( &input->common );
+      XLALDestroyFstatInputTimeslice_Demod ( input->method_data);
+      XLALFree ( input );
+      return;
+    }
 
   XLALDestroyMultiTimestamps ( input->common.multiTimestamps );
   XLALDestroyMultiNoiseWeights ( input->common.multiNoiseWeights );
@@ -1070,3 +1106,171 @@ XLALExtractResampledTimeseries ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a
 
   return XLAL_SUCCESS;
 } // XLALExtractResampledTimeseries()
+
+///
+/// Create and return an FstatInput 'timeslice' for given input FstatInput object [must be using LALDemod Fstat method!]
+/// which covers only the time interval  ['minStartGPS','maxStartGPS'), using conventions of XLALCWGPSinRange().
+///
+/// The returned FstatInput structure is equivalent to one that would have been produced for the given time-interval
+/// in the first place, except that it uses "containers" and references the data in the original FstatInput object.
+/// A special flag is set in the FstatInput object to notify the destructor to only free the data-containers.
+///
+/// Note: if a timeslice is empty for any detector, the corresponding timeseries 'container' will be allocated and
+/// will have length==0 and data==NULL.
+///
+int
+XLALFstatInputTimeslice ( FstatInput ** slice,                ///< [out] Address of a pointer to a \c FstatInput structure
+                          const FstatInput* input,            ///< [in] Input data structure
+                          const LIGOTimeGPS *minStartGPS,     ///< [in] Minimum starting GPS time
+                          const LIGOTimeGPS *maxStartGPS      ///< [in] Maximum starting GPS time
+                        )
+{
+  XLAL_CHECK ( input != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( slice != NULL && (*slice) == NULL, XLAL_EINVAL );
+  XLAL_CHECK ( minStartGPS != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( maxStartGPS != NULL, XLAL_EINVAL );
+  XLAL_CHECK( XLALGPSCmp( minStartGPS, maxStartGPS ) < 1 , XLAL_EINVAL , "minStartGPS (%"LAL_GPS_FORMAT") is greater than maxStartGPS (%"LAL_GPS_FORMAT")\n",
+              LAL_GPS_PRINT(*minStartGPS), LAL_GPS_PRINT(*maxStartGPS) );
+
+  // only supported for 'LALDemod' Fstat methods
+  XLAL_CHECK ( input->method < FMETHOD_RESAMP_GENERIC, XLAL_EINVAL, "This function is not avavible for the chosen FstatMethod '%s'!", XLALGetFstatInputMethodName ( input ) );
+
+  const FstatCommon *common = &(input->common);
+  UINT4 numIFOs = common->detectors.length;
+
+  // ---------- Find start- and end- indices of the requested timeslice for all detectors
+  const MultiLIGOTimeGPSVector *mTS = common->multiTimestamps;
+  UINT4 XLAL_INIT_DECL ( iStart, [PULSAR_MAX_DETECTORS] );
+  UINT4 XLAL_INIT_DECL ( iEnd, [PULSAR_MAX_DETECTORS] );
+  for ( UINT4 X = 0; X < numIFOs; X ++ ) {
+    XLAL_CHECK ( XLALFindTimesliceBounds ( &(iStart[X]), &(iEnd[X]), input->common.multiTimestamps->data[X], minStartGPS, maxStartGPS ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  // ----- prepare new top-level 'containers' for the timeslices in the 'common' part of FstatInput:
+  MultiLIGOTimeGPSVector *multiTimestamps = NULL;
+  XLAL_CHECK ( ( multiTimestamps = XLALCalloc ( 1, sizeof(*multiTimestamps) ) ) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK ( ( multiTimestamps->data = XLALCalloc ( numIFOs, sizeof(*multiTimestamps->data) ) ) != NULL, XLAL_ENOMEM );
+  multiTimestamps->length = numIFOs;
+
+  MultiNoiseWeights *multiNoiseWeights = NULL;
+  XLAL_CHECK ( ( multiNoiseWeights = XLALCalloc ( 1, sizeof(*multiNoiseWeights) ) ) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK ( ( multiNoiseWeights->data = XLALCalloc ( numIFOs, sizeof(*multiNoiseWeights->data) ) ) != NULL, XLAL_ENOMEM );
+  multiNoiseWeights->length = numIFOs;
+
+  MultiDetectorStateSeries *multiDetectorStates = NULL;
+  XLAL_CHECK ( ( multiDetectorStates = XLALCalloc ( 1, sizeof(*multiDetectorStates) ) ) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK ( ( multiDetectorStates->data = XLALCalloc ( numIFOs, sizeof(*multiDetectorStates->data) ) ) != NULL, XLAL_ENOMEM );
+  multiDetectorStates->length = numIFOs;
+
+  // determine earliest and latest SFT times of timeslice over all IFOs, in order to correctly set 'FstatCommon->midTime' value
+  LIGOTimeGPS earliest_time = {LAL_INT4_MAX,0};
+  LIGOTimeGPS latest_time = {0,0};
+
+  // for updating noise-normalization factor Sinv_Tsft over timesclie
+  UINT4 numSFTsSlice = 0;
+  REAL8 sumWeightsSlice = 0;
+
+  // ----- loop over detectors, create per-detector containers and set them to the requested timeslice
+  for ( UINT4 X = 0; X < numIFOs; X ++ )
+    {
+      // prepare multiTimestamps
+      XLAL_CHECK ( ( multiTimestamps->data[X] = XLALCalloc ( 1, sizeof(*multiTimestamps->data[X]) ) ) != NULL, XLAL_EFUNC );
+      multiTimestamps->data[X]->deltaT = common->multiTimestamps->data[X]->deltaT;
+
+      // prepare multiNoiseWeights
+      multiNoiseWeights->data[X] = NULL;
+      XLAL_CHECK ( ( multiNoiseWeights->data[X] = XLALCalloc ( 1, sizeof(*multiNoiseWeights->data[X]) ) ) !=NULL, XLAL_EFUNC );
+
+      // prepare multiDetectorStates, copy struct values
+      XLAL_CHECK ( ( multiDetectorStates->data[X] = XLALCalloc ( 1, sizeof(*multiDetectorStates->data[X]) ) ) != NULL, XLAL_EFUNC );
+      multiDetectorStates->data[X]->detector = common->multiDetectorStates->data[X]->detector;
+      multiDetectorStates->data[X]->system   = common->multiDetectorStates->data[X]->system;
+      multiDetectorStates->data[X]->deltaT   = common->multiDetectorStates->data[X]->deltaT;
+
+      //---- set the timeslices
+      if ( iStart[X] > iEnd[X] ) {
+        continue;	// empty slice
+      }
+
+      UINT4 sliceLength =  iEnd[X] - iStart[X] + 1;	// guaranteed >= 1
+
+      // slice multiTimestamps
+      multiTimestamps->data[X]->length = sliceLength;
+      multiTimestamps->data[X]->data   = &( mTS->data[X]->data[iStart[X]] );
+
+      // keep track of earliest and latest SFT times included in timeslice (for computing 'midTime')
+      if ( ( XLALGPSCmp ( &(multiTimestamps->data[X]->data[0]), &earliest_time ) == -1 ) ) {
+        earliest_time = multiTimestamps->data[X]->data[0];
+      }
+      if ( XLALGPSCmp ( &(multiTimestamps->data[X]->data[sliceLength - 1]), &latest_time ) == 1 ) {
+        latest_time = multiTimestamps->data[X]->data[sliceLength - 1];
+      }
+
+      // slice multiNoiseWeights
+      multiNoiseWeights->data[X]->length = sliceLength;
+      multiNoiseWeights->data[X]->data   = &( common->multiNoiseWeights->data[X]->data[iStart[X]] );
+
+      // sum the weights for updating the overall noise-normalisation factor Sinv_Tsft
+      numSFTsSlice += sliceLength;
+      for ( UINT4 alpha = 0; alpha < sliceLength; alpha++ ) {
+        sumWeightsSlice += multiNoiseWeights->data[X]->data[alpha];
+      }
+
+      // slice multiDetectorStates
+      multiDetectorStates->data[X]->length = sliceLength;
+      multiDetectorStates->data[X]->data   = &( common->multiDetectorStates->data[X]->data[iStart[X]] );
+
+    } // for X < numIFOs
+
+  // calculate new data midTime for timeslice
+  XLALGPSAdd ( &latest_time, multiDetectorStates->data[0]->deltaT );
+  REAL8 TspanSlice = XLALGPSDiff( &latest_time, &earliest_time );
+  LIGOTimeGPS midTimeSlice = earliest_time;
+  XLALGPSAdd ( &midTimeSlice, 0.5 * TspanSlice );
+
+  // update noise-weight normalisation factor
+  multiNoiseWeights->Sinv_Tsft = sumWeightsSlice / numSFTsSlice ;
+  multiNoiseWeights->isNotNormalized = (1 == 1);
+
+  // allocate memory and copy the orginal FstatInput struct
+  XLAL_CHECK ( ( (*slice) = XLALCalloc ( 1 , sizeof(*input) ) ) != NULL, XLAL_ENOMEM );
+  memcpy ( (*slice), input, sizeof ( *input ) );
+
+  (*slice)->common.isTimeslice         = (1==1); // This is a timeslice
+  (*slice)->common.midTime             = midTimeSlice;
+  (*slice)->common.multiTimestamps     = multiTimestamps;
+  (*slice)->common.multiDetectorStates = multiDetectorStates;
+  (*slice)->common.multiNoiseWeights   = multiNoiseWeights;
+
+  (*slice)->method_data = XLALFstatInputTimeslice_Demod ( input->method_data, iStart, iEnd );
+  XLAL_CHECK ( (*slice)->method_data != NULL, XLAL_EFUNC );
+
+  return XLAL_SUCCESS;
+
+} // XLALFstatInputTimeslice()
+
+
+void
+XLALDestroyFstatInputTimeslice_common ( FstatCommon *common )
+{
+  if ( !common ) {
+    return;
+  }
+
+  for ( UINT4 X=0; X < common->multiTimestamps->length; X ++ )
+    {
+      XLALFree ( common->multiTimestamps->data[X] );
+      XLALFree ( common->multiDetectorStates->data[X] );
+      XLALFree ( common->multiNoiseWeights->data[X] );
+    }
+
+  XLALFree ( common->multiTimestamps->data );
+  XLALFree ( common->multiDetectorStates->data );
+  XLALFree ( common->multiNoiseWeights->data );
+  XLALFree ( common->multiTimestamps );
+  XLALFree ( common->multiNoiseWeights );
+  XLALFree ( common->multiDetectorStates );
+
+  return;
+
+} // XLALDestroyFstatInputTimeslice_common()

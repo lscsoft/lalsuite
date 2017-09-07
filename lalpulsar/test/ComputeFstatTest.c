@@ -34,7 +34,7 @@
 // *available* Fstat methods against each other
 
 static int compareFstatResults ( const FstatResults *result1, const FstatResults *result2 );
-
+static int printFstatResults2File ( const FstatResults *results, const char * MethodName, const INT4 iSky, const INT4 if1dot, const INT4 iPeriod, FstatQuantities whatToCompute );
 // ---------- main ----------
 int
 main ( int argc, char *argv[] )
@@ -168,6 +168,8 @@ main ( int argc, char *argv[] )
       XLAL_CHECK ( (input_seg2[iMethod] = XLALCreateFstatInput ( catalog, minCoverFreq - 0.01, maxCoverFreq + 0.01, dFreq, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
     }
 
+
+
   FstatQuantities whatToCompute = (FSTATQ_2F | FSTATQ_FAFB);
   // ----- loop over all templates {sky, f1dot, period}
   for ( UINT4 iSky = 0; iSky < numSkyPoints; iSky ++ )
@@ -195,26 +197,7 @@ main ( int argc, char *argv[] )
 
                   if ( lalDebugLevel & LALINFOBIT )
                     {
-                      FILE *fp;
-                      char fname[1024]; XLAL_INIT_MEM ( fname );
-                      snprintf ( fname, sizeof(fname)-1, "twoF%s-iSky%02d-if1dot%02d-iPeriod%02d.dat", XLALGetFstatInputMethodName(input_seg1[iMethod]), iSky, if1dot, iPeriod );
-                      XLAL_CHECK ( (fp = fopen ( fname, "wb" )) != NULL, XLAL_EFUNC );
-                      for ( UINT4 k = 0; k < results_seg1[iMethod]->numFreqBins; k ++ )
-                        {
-                          REAL8 Freq0 = results_seg1[iMethod]->doppler.fkdot[0];
-                          REAL8 Freq_k = Freq0 + k * results_seg1[iMethod]->dFreq;
-                          if ( whatToCompute & FSTATQ_FAFB ) {
-                            fprintf ( fp, "%20.16g %10.4g   %10.4g %10.4g   %10.4g %10.4g\n",
-                                      Freq_k, results_seg1[iMethod]->twoF[k],
-                                      crealf(results_seg1[iMethod]->Fa[k]), cimagf(results_seg1[iMethod]->Fa[k]),
-                                      crealf(results_seg1[iMethod]->Fb[k]), cimagf(results_seg1[iMethod]->Fb[k])
-                                      );
-                          } else {
-                            fprintf ( fp, "%20.16g %10.4g\n",
-                                      Freq_k, results_seg1[iMethod]->twoF[k] );
-                          }
-                        } // for k < numFreqBins
-                      fclose(fp);
+                      printFstatResults2File ( results_seg1[iMethod], XLALGetFstatInputMethodName(input_seg1[iMethod]), iSky, if1dot, iPeriod, whatToCompute );
                     } // if info
 
                   // compare to first result
@@ -247,6 +230,53 @@ main ( int argc, char *argv[] )
 
     } // for iSky < numSkyPoints
 
+  // ----- test XLALFstatInputTimeslice()
+  // setup optional Fstat arguments
+  optionalArgs.FstatMethod = FMETHOD_DEMOD_BEST; // only use demod best
+  optionalArgs.prevInput = NULL;
+  // find overlap of all detectors
+  LIGOTimeGPS startTime_slice  = multiTimestamps->data[0]->data[0];
+  LIGOTimeGPS endTime_slice  = multiTimestamps->data[0]->data[multiTimestamps->data[0]->length-1];
+  for (UINT4 X=1; X < numDetectors; X++ )
+    {
+      if ( XLALGPSCmp ( &startTime_slice, &multiTimestamps->data[X]->data[0] ) == -1 )
+        {
+          startTime_slice = multiTimestamps->data[X]->data[0];
+        }
+      if ( XLALGPSCmp ( &endTime_slice, &multiTimestamps->data[X]->data[multiTimestamps->data[X]->length-1] ) == 1 )
+        {
+          endTime_slice = multiTimestamps->data[X]->data[multiTimestamps->data[X]->length-1];
+        }
+    } // for X < numDetectors
+
+  // ----- prepare input data with XLALFstatInputTimeslice and XLALSFTCatalogTimeslice
+  FstatResults *results_input_slice = NULL , *results_sft_slice = NULL;
+  FstatInput *input_sft_slice = NULL, *input_slice = NULL;
+  // slice catalog and create FstatInput structure
+  SFTCatalog *catalog_slice = NULL;
+  XLAL_CHECK ( ( catalog_slice = XLALCalloc(1, sizeof(*catalog) ) ) != NULL ,XLAL_ENOMEM );
+  XLAL_CHECK ( ( XLALSFTCatalogTimeslice ( catalog_slice, catalog, &startTime_slice, &endTime_slice ) ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( ( input_sft_slice = XLALCreateFstatInput ( catalog_slice, minCoverFreq, maxCoverFreq, dFreq, ephem, &optionalArgs ) ) != NULL, XLAL_EFUNC );
+  // generate a timeslice of the FstatInput structure from previous test
+  XLAL_CHECK ( ( XLALFstatInputTimeslice ( &input_slice, input_seg1[FMETHOD_DEMOD_BEST] , &startTime_slice, &endTime_slice ) ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Compute Fstatistic for both
+  XLAL_CHECK ( XLALComputeFstat ( &results_sft_slice, input_sft_slice, &Doppler, numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALComputeFstat ( &results_input_slice, input_slice, &Doppler, numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  if ( lalDebugLevel & LALINFOBIT )
+    {
+      printFstatResults2File ( results_input_slice, "FstatInputTimeslice", numSkyPoints, numf1dotPoints, numPeriodPoints, whatToCompute );
+      printFstatResults2File ( results_sft_slice, "SFTCatalogTimeslice", numSkyPoints, numf1dotPoints, numPeriodPoints, whatToCompute );
+    } // if info
+
+  XLALPrintInfo ( "Comparing results between SFTCatalogTimeslice and FstatInputTimeslice\n" );
+  if ( compareFstatResults ( results_sft_slice, results_input_slice ) != XLAL_SUCCESS )
+    {
+      XLALPrintError ( "Comparison between SFTCatalogTimeslice and FstatInputTimeslice failed\n" );
+      XLAL_ERROR ( XLAL_EFUNC );
+    }
+
   // free remaining memory
   for ( UINT4 iMethod=FMETHOD_START; iMethod < FMETHOD_END; iMethod ++ )
     {
@@ -258,6 +288,12 @@ main ( int argc, char *argv[] )
       XLALDestroyFstatResults ( results_seg1[iMethod] );
       XLALDestroyFstatResults ( results_seg2[iMethod] );
     } // for i < FMETHOD_END
+
+  XLALDestroyFstatInput ( input_slice );
+  XLALDestroyFstatInput ( input_sft_slice );
+  XLALDestroyFstatResults ( results_input_slice );
+  XLALDestroyFstatResults ( results_sft_slice );
+  XLALFree( catalog_slice );
 
   XLALDestroyPulsarParamsVector ( injectSources );
   XLALDestroySFTCatalog ( catalog );
@@ -333,3 +369,30 @@ compareFstatResults ( const FstatResults *result1, const FstatResults *result2 )
   return XLAL_SUCCESS;
 
 } // compareFstatResults()
+
+static int
+printFstatResults2File ( const FstatResults *results, const char * MethodName, const INT4 iSky, const INT4 if1dot, const INT4 iPeriod, FstatQuantities whatToCompute )
+{
+  FILE *fp;
+  char fname[1024]; XLAL_INIT_MEM ( fname );
+  snprintf ( fname, sizeof(fname)-1, "twoF%s-iSky%02d-if1dot%02d-iPeriod%02d.dat", MethodName, iSky, if1dot, iPeriod );
+  XLAL_CHECK ( (fp = fopen ( fname, "wb" )) != NULL, XLAL_EFUNC );
+  for ( UINT4 k = 0; k < results->numFreqBins; k ++ )
+  {
+    REAL8 Freq0 = results->doppler.fkdot[0];
+    REAL8 Freq_k = Freq0 + k * results->dFreq;
+    if ( whatToCompute & FSTATQ_FAFB ) {
+      fprintf ( fp, "%20.16g %10.4g   %10.4g %10.4g   %10.4g %10.4g\n",
+                Freq_k, results->twoF[k],
+                crealf(results->Fa[k]), cimagf(results->Fa[k]),
+                crealf(results->Fb[k]), cimagf(results->Fb[k])
+                );
+    } else {
+      fprintf ( fp, "%20.16g %10.4g\n",
+                Freq_k, results->twoF[k] );
+    }
+  } // for k < numFreqBins
+  fclose(fp);
+
+  return XLAL_SUCCESS;
+} // printFstatResults2File()

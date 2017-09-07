@@ -111,16 +111,24 @@ XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
       sourceParams.spinEpoch = tmpTime;
     }
 
-  /* sampling-timestep and length for source-parameters */
-  /* in seconds; hardcoded; was 60s in makefakedata_v2,
-   * but for fast binaries (e.g. SCO-X1) we need faster sampling
-   * This does not seem to affect performance a lot (~4% in makefakedata),
-   * but we'll nevertheless make this sampling faster for binaries and slower
-   * for isolated pulsars */
-  if (params->orbit.asini > 0)
-    sourceParams.deltaT = 5;	/* for binaries */
-  else
-    sourceParams.deltaT = 60;	/* for isolated pulsars */
+  if ( params->sourceDeltaT == 0 )	 // backwards-compatible treatment for absence of this parameter
+    {
+      /* sampling-timestep and length for source-parameters */
+      /* in seconds; hardcoded; was 60s in makefakedata_v2,
+       * but for fast binaries (e.g. SCO-X1) we need faster sampling
+       * This does not seem to affect performance a lot (~4% in makefakedata),
+       * but we'll nevertheless make this sampling faster for binaries and slower
+       * for isolated pulsars */
+      if (params->orbit.asini > 0) {
+        sourceParams.deltaT = 5;	/* for binaries */
+      } else {
+        sourceParams.deltaT = 60;	/* for isolated pulsars */
+      }
+    }
+  else	// use the user-defined sampling
+    {
+      sourceParams.deltaT = params->sourceDeltaT;
+    }
 
   /* start-time in SSB time */
   LIGOTimeGPS t0;

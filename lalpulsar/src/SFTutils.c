@@ -1842,47 +1842,86 @@ int XLALSFTCatalogTimeslice(
   XLAL_CHECK( XLALGPSCmp( minStartGPS, maxStartGPS ) < 1 , XLAL_EINVAL , "minStartGPS (%"LAL_GPS_FORMAT") is greater than maxStartGPS (%"LAL_GPS_FORMAT")\n",
               LAL_GPS_PRINT(*minStartGPS), LAL_GPS_PRINT(*maxStartGPS) );
 
+  // get a temporary timestamps vector with SFT epochs so we can call XLALFindTimesliceBounds()
+  LIGOTimeGPSVector timestamps;
+  timestamps.length = catalog->length;
+  XLAL_CHECK ( (timestamps.data = XLALCalloc ( timestamps.length, sizeof(timestamps.data[0]) )) != NULL, XLAL_ENOMEM );
+  for ( UINT4 i = 0; i < timestamps.length; i ++ ) {
+    timestamps.data[i] = catalog->data[i].header.epoch;
+  }
+
+  UINT4 iStart, iEnd;
+  XLAL_CHECK ( XLALFindTimesliceBounds ( &iStart, &iEnd, &timestamps, minStartGPS, maxStartGPS ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLALFree ( timestamps.data );
+
   // Initialise timeslice of SFT catalog
   XLAL_INIT_MEM(*slice);
 
-  //Check if 'catalog' span of SFT startimes overlaps with ['minStartGPS', 'maxStartGPS') at all
-  if ( ( XLALCWGPSinRange( catalog->data[0].header.epoch, minStartGPS, maxStartGPS ) == 1 ) || ( XLALCWGPSinRange( catalog->data[catalog->length - 1].header.epoch, minStartGPS, maxStartGPS ) == -1 ) )
+  // If not empty: set timeslice of SFT catalog
+  if ( iStart < iEnd )
     {
-      XLALPrintWarning ("Returning empty timeslice: catalog SFT starttimes-span [%"LAL_GPS_FORMAT", %"LAL_GPS_FORMAT "] has no overlap with given range [%"LAL_GPS_FORMAT", %"LAL_GPS_FORMAT").\n" ,
-                        LAL_GPS_PRINT(catalog->data[0].header.epoch), LAL_GPS_PRINT(catalog->data[catalog->length - 1].header.epoch),
-                        LAL_GPS_PRINT(*minStartGPS), LAL_GPS_PRINT(*maxStartGPS)
-                        );
-      return XLAL_SUCCESS;
+      slice->length = iEnd - iStart + 1;
+      slice->data = &catalog->data[iStart];
     }
-
-  // Find start and end of timeslice
-  UINT4 iStart = 0, iEnd = catalog->length - 1;
-  while (iStart <= iEnd && XLALCWGPSinRange( catalog->data[iStart].header.epoch, minStartGPS, maxStartGPS ) < 0 ) {
-    ++iStart;
-  }
-  while (iStart <= iEnd && XLALCWGPSinRange( catalog->data[iEnd].header.epoch, minStartGPS, maxStartGPS ) > 0 ) {
-    --iEnd;
-  }
-  // note: iStart >=0, iEnd >= 0 is now guaranteed due to previous range overlap-check
-
-  // check if there is any timestamps found witin the interval, ie if iStart <= iEnd
-  if ( iStart > iEnd )
-    {
-      XLALPrintWarning ( "Returning empty timeslice: no catalog sfttimes fall within given GPS range [%"LAL_GPS_FORMAT", %"LAL_GPS_FORMAT"). Closest timestamps are: %"LAL_GPS_FORMAT" and %"LAL_GPS_FORMAT"\n",
-                         LAL_GPS_PRINT(*minStartGPS), LAL_GPS_PRINT(*maxStartGPS),
-                         LAL_GPS_PRINT(catalog->data[iEnd].header.epoch),
-                         LAL_GPS_PRINT(catalog->data[iStart].header.epoch)
-                         );
-      return XLAL_SUCCESS;
-    }
-
-  // Set timeslice of SFT catalog
-  slice->length = iEnd - iStart + 1;
-  slice->data = &catalog->data[iStart];
 
   return XLAL_SUCCESS;
 
-}
+} // XLALSFTCatalogTimeslice()
+
+// Find index values of first and last timestamp within given timeslice range XLALCWGPSinRange(minStartGPS, maxStartGPS)
+int
+XLALFindTimesliceBounds ( UINT4 *iStart,
+                          UINT4 *iEnd,
+                          const LIGOTimeGPSVector *timestamps,
+                          const LIGOTimeGPS *minStartGPS,
+                          const LIGOTimeGPS *maxStartGPS
+                          )
+{
+  XLAL_CHECK ( (iStart != NULL) && (iEnd != NULL) && (timestamps != NULL) && (minStartGPS != NULL) && (maxStartGPS != NULL), XLAL_EINVAL );
+  XLAL_CHECK( XLALGPSCmp( minStartGPS, maxStartGPS ) < 1 , XLAL_EINVAL , "minStartGPS (%"LAL_GPS_FORMAT") is greater than maxStartGPS (%"LAL_GPS_FORMAT")\n",
+              LAL_GPS_PRINT(*minStartGPS), LAL_GPS_PRINT(*maxStartGPS) );
+
+  UINT4 N = timestamps->length;
+  (*iStart) = 0;
+  (*iEnd)   = N - 1;
+
+  // check if there's any timestamps falling into the requested timeslice at all
+  if( ( ( XLALCWGPSinRange( timestamps->data[0], minStartGPS, maxStartGPS ) == 1 ) || ( XLALCWGPSinRange( timestamps->data[N-1], minStartGPS, maxStartGPS ) == -1 ) ) )
+    {// if not: set an emtpy index interval in this case
+      (*iStart) = 1;
+      (*iEnd)   = 0;
+      XLALPrintInfo ("Returning empty timeslice: Timestamps span [%"LAL_GPS_FORMAT", %"LAL_GPS_FORMAT "]"
+                     " has no overlap with requested timeslice range [%"LAL_GPS_FORMAT", %"LAL_GPS_FORMAT").\n",
+                     LAL_GPS_PRINT(timestamps->data[0]), LAL_GPS_PRINT(timestamps->data[N-1]),
+                     LAL_GPS_PRINT(*minStartGPS), LAL_GPS_PRINT(*maxStartGPS)
+                     );
+      return XLAL_SUCCESS;
+    }
+
+  while ( (*iStart) <= (*iEnd) && XLALCWGPSinRange ( timestamps->data[ (*iStart) ], minStartGPS, maxStartGPS ) < 0 ) {
+    ++ (*iStart);
+  }
+  while ( (*iStart) <= (*iEnd) && XLALCWGPSinRange ( timestamps->data[ (*iEnd) ], minStartGPS, maxStartGPS ) > 0 ) {
+    -- (*iEnd);
+  }
+  // note: *iStart >=0, *iEnd >= 0 is now guaranteed due to previous range overlap-check
+
+  // check if there is any timestamps found witin the interval, ie if iStart <= iEnd
+  if ( (*iStart) > (*iEnd) )
+    {
+      XLALPrintInfo ( "Returning empty timeslice: no sfttimes fall within given GPS range [%"LAL_GPS_FORMAT", %"LAL_GPS_FORMAT"). "
+                      "Closest timestamps are: %"LAL_GPS_FORMAT" and %"LAL_GPS_FORMAT"\n",
+                      LAL_GPS_PRINT(*minStartGPS), LAL_GPS_PRINT(*maxStartGPS),
+                      LAL_GPS_PRINT(timestamps->data[ (*iEnd) ]), LAL_GPS_PRINT(timestamps->data[ (*iStart) ])
+                      );
+      (*iStart) = 1;
+      (*iEnd)   = 0;
+    }
+
+  return XLAL_SUCCESS;
+
+} // XLALFindTimesliceBounds()
+
 
 /**
  * Copy an entire SFT-type into another.

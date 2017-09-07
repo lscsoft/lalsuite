@@ -14,7 +14,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## \addtogroup laldetchar_py_idq
+## \defgroup laldetchar_py_idq_idq iDQ Functions
+## \ingroup laldetchar_py_idq
 ## Synopsis
 # ~~~
 # from laldetchar.idq import idq

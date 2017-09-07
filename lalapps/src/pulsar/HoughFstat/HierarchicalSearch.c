@@ -3270,7 +3270,7 @@ void ComputeStackNoiseWeights( LALStatus *status,
 
   for (k=0; k<nStacks; k++) {
 
-    const MultiNoiseWeights *multNoiseWts = XLALGetFstatInputNoiseWeights(Fstat_in_vec->data[k]);
+    MultiNoiseWeights *multNoiseWts = XLALGetFstatInputNoiseWeights(Fstat_in_vec->data[k]);
     ASSERT ( multNoiseWts != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
 
     numifo = multNoiseWts->length;
@@ -3291,6 +3291,7 @@ void ComputeStackNoiseWeights( LALStatus *status,
 
     }/* loop over ifos in stack */
 
+  XLALDestroyMultiNoiseWeights ( multNoiseWts );
   } /* loop over stacks*/
 
 
@@ -3333,7 +3334,7 @@ void ComputeStackNoiseAndAMWeights( LALStatus *status,
 
   for (iStack=0; iStack<nStacks; iStack++) {
 
-    const MultiNoiseWeights *multNoiseWts = XLALGetFstatInputNoiseWeights(Fstat_in_vec->data[iStack]);
+    MultiNoiseWeights *multNoiseWts = XLALGetFstatInputNoiseWeights(Fstat_in_vec->data[iStack]);
     ASSERT ( multNoiseWts != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
 
     const MultiDetectorStateSeries *multDetStates = XLALGetFstatInputDetectorStates(Fstat_in_vec->data[iStack]);
@@ -3368,6 +3369,7 @@ void ComputeStackNoiseAndAMWeights( LALStatus *status,
     }/* loop over ifos in stack */
 
     XLALDestroyMultiAMCoeffs ( multiAMcoef );
+    XLALDestroyMultiNoiseWeights ( multNoiseWts );
 
   } /* loop over stacks*/
 

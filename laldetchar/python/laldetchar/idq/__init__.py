@@ -13,7 +13,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation,.
 
-## \addtogroup laldetchar_py_idq
+## \defgroup laldetchar_py_idq iDQ pipeline
+## \ingroup laldetchar_python
 """
  Python modules for iDQ pipeline. The pipeline is designed for low-latency detection of transient artifacts in GW data. 
 
@@ -43,21 +44,3 @@ from laldetchar import git_version as version
 __author__ = "Lindy Blackburn (<lindy.blackburn@ligo.org>), Reed Essick (<reed.essick@ligo.org>) and Ruslan Vaulin (<ruslan.vaulin@ligo.org)"
 __version__ = version.id
 __date__ = version.date
-
-## \addtogroup laldetchar_py_idq
-#@{
-# close doxygen
-##
-#       \defgroup       pkg_py_laldetchar_idq_auxmvc   AuxMVC Module
-#       \defgroup       pkg_py_laldetchar_idq_auxmc_utils   AuxMVC Utils
-#       \defgroup       pkg_py_laldetchar_idq_event  Event Module
-#       \defgroup       pkg_py_laldetchar_idq_idq iDQ Functions
-#       \defgroup       pkg_py_laldetchar_idq_idq_summary_plots Plotting Routines
-#       \defgroup       pkg_py_laldetchar_idq_idq_tables_dbutils sqlite utils for iDQ Tables
-#       \defgroup       pkg_py_laldetchar_idq_idq_tables iDQ Tables
-#       \defgroup       pkg_py_laldetchar_idq_ovl OVL Module
-#       \defgroup       pkg_py_laldetchar_idq_pdf_estimation PDF Estimation Module
-#       \defgroup       pkg_py_laldetchar_idq_svmkit SVM Utils
-#       \defgroup       pkg_py_laldetchar_idq_calibration methods used to calibrate output
-#       \defgroup       pkg_py_laldetchar_idq_idq_gdb_utils methods used for GraceDB interface
-#@}

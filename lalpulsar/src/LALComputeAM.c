@@ -222,9 +222,11 @@ XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *
         {
           REAL8Vector *weightsX = multiWeights->data[X];
           UINT4 alpha;	// SFT-index
+          REAL8 ooSinv_Tsft = 1.0 / multiWeights->Sinv_Tsft;
           for(alpha = 0; alpha < numStepsX; alpha++)
             {
-              REAL8 Sqwi = sqrt ( weightsX->data[alpha] );
+              REAL8 weight =  multiWeights->isNotNormalized ? weightsX->data[alpha]*ooSinv_Tsft : weightsX->data[alpha];
+              REAL8 Sqwi = sqrt ( weight );
               /* apply noise-weights, *replace* original a, b by noise-weighed version! */
 	      amcoeX->a->data[alpha] *= Sqwi;
 	      amcoeX->b->data[alpha] *= Sqwi;

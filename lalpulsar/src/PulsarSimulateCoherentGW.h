@@ -261,18 +261,16 @@ extern "C" {
  * \note It is permissible to set only some of the
  * \c REAL4TimeSeries or \c REAL4TimeVectorSeries fields above,
  * but the waveform is treated as being zero except during those times
- * when either \c h, or both \c a and \c phi, are defined.
+ * when both \c a and \c phi are defined.
  * Where \c shift is not specified, it is assumed that \f$\Phi\f$ is
  * zero; where \c f is not specified but \c phi is, \f$f(t)\f$ can be
  * computed as \f$\dot{\phi}(t)/2\pi\f$.  Where \c f and \c phi
- * overlap, or where \c h and any other time series overlap, they
- * must be defined consistently.
+ * overlap, they must be defined consistently.
  *
  */
 typedef struct tagPulsarCoherentGW {
   SkyPosition position;     /**< The location of the source in the sky; this should be in equatorial celestial coordinates, but routines may be able to do the conversion */
   REAL4 psi;                /**< The polarization angle \f$\psi\f$, in radians, as defined in Appendix B of \cite ABCF2001 . */
-  REAL4TimeVectorSeries *h; /**< A time-sampled two-dimensional vector storing the waveforms \f$h_+(t)\f$ and \f$h_\times(t)\f$, in dimensionless strain */
   REAL4TimeVectorSeries *a; /**< A time-sampled two-dimensional vector storing the amplitudes \f$A_1(t)\f$ and \f$A_2(t)\f$, in dimensionless strain */
   REAL4TimeSeries *f;       /**< A time-sampled sequence storing the instantaneous frequency \f$f(t)\f$, in Hz. */
   REAL8TimeSeries *phi;     /**< A time-sampled sequence storing the phase function \f$\phi(t)\f$, in radians */
@@ -285,9 +283,6 @@ typedef struct tagPulsarCoherentGW {
  * This structure contains information required to determine the response
  * of a detector to a gravitational waveform.
  */
-#ifdef SWIG /* SWIG interface directives */
-SWIGLAL(IMMUTABLE_MEMBERS(tagPulsarDetectorResponse, transfer, site, ephemerides));
-#endif /* SWIG */
 typedef struct tagPulsarDetectorResponse {
   const COMPLEX8FrequencySeries *transfer;    /**< The frequency-dependent transfer function of the interferometer, in ADC counts per unit strain amplitude at any given frequency;
                                          * if absent, the response will be given in raw strain rather than ADC output */

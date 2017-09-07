@@ -15,8 +15,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
-## addtogroup pkg_py_laldetchar_idq
+## \defgroup laldetchar_py_idq_idq_tables_dbutils sqlite utils for iDQ Tables
+## \ingroup laldetchar_py_idq
 ## Synopsis
 # ~~~
 # from laldetchar.idq import idq_tables_utils

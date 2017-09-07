@@ -181,6 +181,7 @@ typedef struct {
   UINT4 numFreqBins_FBand;
   REAL8 dFreq;
   CHAR transientOutputTimeUnit; /**< output format for transient times t0,tau: 'd' for days (deprecated) or 's' for seconds */
+  PulsarParamsVector *injectionSources;    /**< Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}') */
 } ConfigVariables;
 
 
@@ -311,6 +312,7 @@ typedef struct {
   int FstatMethod;		//!< select which method/algorithm to use to compute the F-statistic
 
   BOOLEAN resampFFTPowerOf2;	//!< in Resamp: enforce FFT length to be a power of two (by rounding up)
+  LALStringVector *injectionSources;    /**< Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}') */
 
   // ----- deprecated and obsolete variables, kept around for backwards-compatibility -----
   LIGOTimeGPS internalRefTime;   /**< [DEPRECATED] internal reference time. Has no effect, XLALComputeFstat() now always uses midtime anyway ... */
@@ -985,6 +987,7 @@ initUserVars ( UserInput_t *uvar )
   uvar->transient_WindowType = XLALStringDuplicate ( "none" );
   uvar->transient_useFReg = 0;
   uvar->resampFFTPowerOf2 = TRUE;
+  uvar->injectionSources = NULL;
 
   /* ---------- register all user-variables ---------- */
   XLALRegisterUvarMember( 	Alpha, 		RAJ, 'a', OPTIONAL, "Sky: equatorial J2000 right ascension (in radians or hours:minutes:seconds)");
@@ -1110,6 +1113,9 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember(outputTiming,         STRING, 0,  DEVELOPER, "Append timing measurements and parameters into this file");
 
   XLALRegisterUvarMember(resampFFTPowerOf2,  BOOLEAN, 0,  DEVELOPER, "For Resampling methods: enforce FFT length to be a power of two (by rounding up)" );
+
+  /* inject signals into the data being analyzed */
+  XLALRegisterUvarMember(injectionSources,  STRINGVector, 0, DEVELOPER, "CSV list of files containing signal parameters for injection [see mfdv5]");
 
   // ---------- deprecated but still-supported or tolerated options ----------
   XLALRegisterUvarMember ( RA,	STRING, 0, DEPRECATED, "Use --Alpha instead" );
@@ -1277,6 +1283,11 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
 
   } /* get DopplerRegion */
 
+  /*read signal parameters to be injected, if requested by the user*/
+  if ( uvar->injectionSources != NULL ) {
+    XLAL_CHECK_MAIN ( (cfg->injectionSources = XLALPulsarParamsFromUserInput ( uvar->injectionSources, NULL ) ) != NULL, XLAL_EFUNC );
+  }
+
   /* ----- set fixed grid step-sizes from user-input: only used for GRID_FLAT ----- */
   cfg->stepSizes.Alpha = uvar->dAlpha;
   cfg->stepSizes.Delta = uvar->dDelta;
@@ -1380,13 +1391,12 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
     cfg->numFreqBins_FBand = 1;	// number of frequency-bins in the frequency-band used for resampling (1 if not using Resampling)
   }
 
-  PulsarParamsVector *injectSources = NULL;
   MultiNoiseFloor *injectSqrtSX = NULL;
   FstatOptionalArgs optionalArgs = FstatOptionalArgsDefaults;
   optionalArgs.Dterms  = uvar->Dterms;
   optionalArgs.SSBprec = uvar->SSBprecision;
   optionalArgs.runningMedianWindow = uvar->RngMedWindow;
-  optionalArgs.injectSources = injectSources;
+  optionalArgs.injectSources = cfg->injectionSources;
   optionalArgs.injectSqrtSX = injectSqrtSX;
   optionalArgs.assumeSqrtSX = assumeSqrtSX;
   optionalArgs.FstatMethod = uvar->FstatMethod;
@@ -1704,6 +1714,11 @@ Freemem( ConfigVariables *cfg )
   }
 
   XLALFree ( cfg->BSGLsetup );
+
+  /* free source injection if any */
+  if ( cfg->injectionSources ) {
+    XLALDestroyPulsarParamsVector ( cfg->injectionSources );
+  }
 
   return;
 

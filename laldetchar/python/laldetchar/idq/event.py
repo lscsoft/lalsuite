@@ -36,7 +36,8 @@
 #     - added ncoinc and cluster from backup version
 #     - added loadkwm for reading multichannel KW triggers into a dict
 
-## \addtogroup laldetchar_py_idq
+## \defgroup laldetchar_py_idq_event Event Module
+## \ingroup laldetchar_py_idq
 ## Synopsis
 # ~~~
 # from laldetchar.idq import event

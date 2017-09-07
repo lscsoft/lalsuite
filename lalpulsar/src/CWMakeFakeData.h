@@ -79,6 +79,7 @@ typedef struct tagCWMFDataParams
   REAL8 SFTWindowBeta;				//!< 'beta' parameter required for *some* windows [otherwise must be 0]
   UINT4 randSeed;				//!< seed value for random-number generator
   MultiREAL8TimeSeries *inputMultiTS;		//!< [optional] input time-series for signals+noise to be added to
+  REAL8 sourceDeltaT;                           //!< [optional] source-frame sampling period. '0' means to use the previous internal defaults
 } CWMFDataParams;
 
 // ---------- Global variables ----------
@@ -99,7 +100,7 @@ int XLALCWMakeFakeData ( SFTVector **SFTVect, REAL8TimeSeries **Tseries,
                          const PulsarParamsVector *injectionSources, const CWMFDataParams *dataParams, UINT4 detectorIndex, const EphemerisData *edat );
 
 REAL4TimeSeries *
-XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams, const LALDetector *site, LIGOTimeGPS startTime, REAL8 duration, REAL8 fSamp, REAL8 fHet, const EphemerisData *edat );
+XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams, const LALDetector *site, LIGOTimeGPS startTime, REAL8 duration, REAL8 fSamp, REAL8 fHet, const EphemerisData *edat, REAL8 sourceDeltaT );
 SFTVector *
 XLALMakeSFTsFromREAL8TimeSeries ( const REAL8TimeSeries *timeseries, const LIGOTimeGPSVector *timestamps, const char *windowType, REAL8 windowBeta );
 
