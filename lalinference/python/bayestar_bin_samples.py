@@ -64,7 +64,7 @@ from astropy.table import Table
 from astropy.utils.misc import NumpyRNGContext
 from lalinference.io import fits
 from lalinference.io import hdf5
-from lalinference.bayestar import distance
+from lalinference import distance
 from lalinference.bayestar import moc
 from lalinference.bayestar.sky_map import derasterize
 from lalinference.healpix_tree import adaptive_healpix_histogram

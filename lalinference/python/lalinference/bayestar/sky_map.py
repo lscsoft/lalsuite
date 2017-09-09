@@ -30,7 +30,7 @@ import healpy as hp
 from astropy.table import Column, Table
 from astropy import units as u
 from .decorator import with_numpy_random_seed
-from . import distance
+from .. import distance
 from . import filter
 from . import timing
 from . import moc

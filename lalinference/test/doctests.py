@@ -32,7 +32,7 @@ import sys
 import doctest
 import numpy as np
 import lalinference.bayestar.sky_map
-import lalinference.bayestar.distance
+import lalinference.distance
 import lalinference.bayestar.filter
 import lalinference.io.fits
 import lalinference.io.hdf5
@@ -41,7 +41,7 @@ import lalinference.bayestar.timing
 import lalinference.bayestar.postprocess
 
 modules = [
-    lalinference.bayestar.distance,
+    lalinference.distance,
     lalinference.bayestar.filter,
     lalinference.bayestar.sky_map,
     lalinference.io.fits,
