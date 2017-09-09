@@ -23,6 +23,7 @@ pymoduledir = $(pkgpythondir)
 pymodule_PYTHON = \
 	__init__.py \
 	distance.py \
+	eigenframe.py \
 	healpix_tree.py \
 	lalinference_pipe_utils.py \
 	nest2pos.py \
