@@ -2605,7 +2605,7 @@ class ROMJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     self.add_condor_cmd('getenv','True')
     self.add_arg('-B '+str(cp.get('paths','roq_b_matrix_directory')))
     if cp.has_option('engine','dt'):
-      dt=cp.get('engine','dt')
+      dt=cp.getfloat('engine','dt')
     self.add_arg('-t '+str(dt))
     if cp.has_option('engine','time_step'):
       time_step=cp.get('engine','time_step')
