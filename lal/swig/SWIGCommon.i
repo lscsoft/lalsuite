@@ -52,6 +52,12 @@
 %feature("kwargs", 1);
 
 ///
+/// Define macros for interpreting 64-bit integer constants.
+///
+#define INT64_C(c) c ## LL
+#define UINT64_C(c) c ## ULL
+
+///
 /// # Public macros
 ///
 
