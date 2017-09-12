@@ -341,7 +341,7 @@ int XLALRandomLatticeTilingPoints(
 /// Create a new lattice tiling iterator.
 ///
 #ifdef SWIG // SWIG interface directives
-SWIGLAL( OWNED_BY_1ST_ARG( int, XLALCreateLatticeTilingIterator ) );
+SWIGLAL( RETURN_OWNED_BY_1ST_ARG( int, XLALCreateLatticeTilingIterator ) );
 #endif
 LatticeTilingIterator *XLALCreateLatticeTilingIterator(
   const LatticeTiling *tiling,          ///< [in] Lattice tiling
@@ -441,7 +441,7 @@ int XLALRestoreLatticeTilingIterator(
 /// Create a new lattice tiling locator. If there are tiled dimensions, an index trie is internally built.
 ///
 #ifdef SWIG // SWIG interface directives
-SWIGLAL( OWNED_BY_1ST_ARG( int, XLALCreateLatticeTilingLocator ) );
+SWIGLAL( RETURN_OWNED_BY_1ST_ARG( int, XLALCreateLatticeTilingLocator ) );
 #endif
 LatticeTilingLocator *XLALCreateLatticeTilingLocator(
   const LatticeTiling *tiling           ///< [in] Lattice tiling
