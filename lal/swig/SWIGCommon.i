@@ -2046,6 +2046,27 @@ require:
 }
 
 ///
+/// The <b>SWIGLAL(OUTPUT_OWNED_BY_1ST_ARG(...))</b> macro is used when an output-only argument of a
+/// function is an object whose memory is owned by the object supplied as the first argument to the
+/// function.  Typically this occurs when the function is returning some property of its first
+/// argument. The macro applies a typemap which calles \c swiglal_store_parent() to store a
+/// reference to the first argument as the \c parent of the output-only argument, so that the parent
+/// will not be destroyed as long as the output value is in scope.
+///
+%define %swiglal_public_OUTPUT_OWNED_BY_1ST_ARG(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE** SWIGLAL_OUTPUT_OWNED_BY_1ST_ARG, TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_OUTPUT_OWNED_BY_1ST_ARG(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+%typemap(argout, noblock=1) SWIGTYPE** SWIGLAL_OUTPUT_OWNED_BY_1ST_ARG {
+%#ifndef swiglal_no_1starg
+  %swiglal_store_parent(*$1, 0, swiglal_1starg());
+%#endif
+  %append_output(SWIG_NewPointerObj($1 != NULL ? %as_voidptr(*$1) : NULL, $*descriptor, (owner$argnum | %newpointer_flags) | SWIG_POINTER_OWN));
+}
+
+///
 /// The <b>SWIGLAL(OWNS_THIS_ARG(...))</b> macro indicates that a function will acquire
 /// ownership of a particular argument, e.g. by storing that argument in some container, and that
 /// therefore the SWIG object wrapping that argument should no longer own its memory.
