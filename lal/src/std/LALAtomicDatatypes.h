@@ -84,7 +84,7 @@ typedef uint64_t UINT8;		/**< Eight-byte unsigned integer; on some platforms thi
  * const INT8 jan_1_2000_gps_nanosec = LAL_INT8_C(63072001300000000)
  * \endcode
  */
-#define LAL_INT8_C INT64_C
+#define LAL_INT8_C(c) INT64_C(c)
 
 /**
  * \def LAL_UINT8_C(v) (v ## ULL)
@@ -96,7 +96,7 @@ typedef uint64_t UINT8;		/**< Eight-byte unsigned integer; on some platforms thi
  * const UINT8 jan_1_2000_gps_nanosec = LAL_UINT8_C(63072001300000000)
  * \endcode
  */
-#define LAL_UINT8_C UINT64_C
+#define LAL_UINT8_C(c) UINT64_C(c)
 
 /* Real types */
 typedef float REAL4;    /**< Single precision real floating-point number (4 bytes). */

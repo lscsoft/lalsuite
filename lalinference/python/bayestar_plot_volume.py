@@ -74,7 +74,7 @@ from matplotlib import gridspec
 from matplotlib import transforms
 from lalinference import io
 from lalinference.plot import marker
-from lalinference.bayestar.distance import (
+from lalinference.distance import (
     parameters_to_marginal_moments, principal_axes, volume_render, marginal_pdf)
 import healpy as hp
 import numpy as np

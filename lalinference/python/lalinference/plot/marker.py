@@ -32,7 +32,7 @@ earth = Path(verts, codes)
 del verts, codes
 
 
-def reticle(inner=0.5, outer=1.0, angle=0.0):
+def reticle(inner=0.5, outer=1.0, angle=0.0, which='lrtb'):
     """
     Create a reticle (crosshairs) marker.
 
@@ -59,8 +59,9 @@ def reticle(inner=0.5, outer=1.0, angle=0.0):
     x = np.cos(angle)
     y = np.sin(angle)
     R = [[x, y], [-y, x]]
-    codes = [Path.MOVETO, Path.LINETO] * 4
-    verts = [[0, 1], [1, 0], [0, -1], [-1, 0]]
+    vertdict = dict(l=[-1, 0], r=[1, 0], b=[0, -1], t=[0, 1])
+    verts = [vertdict[direction] for direction in which]
+    codes = [Path.MOVETO, Path.LINETO] * len(verts)
     verts = np.dot(verts, R)
     verts = np.swapaxes([inner * verts, outer * verts], 0, 1).reshape(-1, 2)
     return Path(verts, codes)
