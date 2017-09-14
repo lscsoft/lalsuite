@@ -13,12 +13,12 @@ for setup in onefreq short long; do
 
         short)
             weave_setup_options="--segment-count=3"
-            weave_search_options="--alpha=0.9/1.4 --delta=-1.2/2.3 --freq=49.5/1e-3 --f1dot=-1e-9,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3"
+            weave_search_options="--alpha=0.9/1.4 --delta=-1.2/2.3 --freq=49.5/0.01 --f1dot=-1e-9,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3"
             ;;
 
         long)
             weave_setup_options="--segment-count=3 --segment-gap=11130000"
-            weave_search_options="--alpha=0.1/0.5 --delta=-0.2/0.4 --freq=41.5/1e-4 --f1dot=-3e-11,0 --semi-max-mismatch=12 --coh-max-mismatch=0.6"
+            weave_search_options="--alpha=0.1/0.5 --delta=-0.2/0.4 --freq=41.5/0.01 --f1dot=-3e-11,0 --semi-max-mismatch=12 --coh-max-mismatch=0.6"
             ;;
 
         *)
