@@ -867,7 +867,7 @@ int XLALWeaveCacheRetrieve(
 
         // Return if garbage collection limit has been reached
         // - Bypassed if cache is full
-        if ( !cache_is_full && gc == cache->gc_extra ) {
+        if ( !cache_is_full && gc > cache->gc_extra ) {
           break;
         }
 
