@@ -11,6 +11,7 @@ for setup in short long; do
             weave_setup_options="--segment-count=3"
             weave_sft_options="--rand-seed=3456 --sft-timebase=1800 --sft-noise-psd=1,1 --sft-timestamps-files=timestamps-1.txt,timestamps-2.txt"
             weave_search_options="--alpha=0.9/1.4 --delta=-1.2/2.3 --freq=50.5/0.01 --f1dot=-1.5e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.3"
+            weave_cache_max_size=2
             ;;
 
         long)
@@ -18,6 +19,7 @@ for setup in short long; do
             weave_setup_options="--segment-count=3 --segment-gap=11130000"
             weave_sft_options=
             weave_search_options="--simulate-search --alpha=2.3/0.9 --delta=-1.2/2.3 --freq=50.5/0.01 --f1dot=-5e-11,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3"
+            weave_cache_max_size=25
             ;;
 
         *)
@@ -63,13 +65,13 @@ for setup in short long; do
 
     echo "=== Setup '${setup}': ${verb} interpolating search with a maximum cache size ==="
     set -x
-    ${builddir}/lalapps_Weave --cache-max-size=3 --output-file=WeaveOutMax.fits \
+    ${builddir}/lalapps_Weave --cache-max-size=${weave_cache_max_size} --output-file=WeaveOutMax.fits \
         --toplists=all --toplist-limit=2321 --misc-info --setup-file=WeaveSetup.fits \
         ${weave_sft_options} ${weave_search_options}
     set +x
     echo
 
-    echo "=== Check that number of coherent templates are equal ==="
+    echo "=== Setup '${setup}': Check that number of coherent templates are equal ==="
     set -x
     ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoMax.fits[0]" 'NCOHTPL' > tmp
     coh_ntmpl_no_max=`cat tmp | xargs printf "%d"`
@@ -79,19 +81,19 @@ for setup in short long; do
     set +x
     echo
 
-    echo "=== Check that search without a maximum cache size did not recompute results ==="
+    echo "=== Setup '${setup}': Check that without a maximum cache only a small fraction of results were recomputed ==="
     set -x
     ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoMax.fits[0]" 'NCOHRES' > tmp
     coh_nres_no_max=`cat tmp | xargs printf "%d"`
-    expr ${coh_nres_no_max} '=' ${coh_ntmpl_no_max}
+    awk "BEGIN { print recomp = ( ${coh_nres_no_max} - ${coh_ntmpl_no_max} ) / ${coh_ntmpl_no_max}; exit ( recomp < 0.02 ? 0 : 1 ) }"
     set +x
     echo
 
-    echo "=== Check that search with a maximum cache size did recompute results ==="
+    echo "=== Setup '${setup}': Check that with a maximum cache a large fraction of results were recomputed ==="
     set -x
     ${fitsdir}/lalapps_fits_header_getval "WeaveOutMax.fits[0]" 'NCOHRES' > tmp
     coh_nres_max=`cat tmp | xargs printf "%d"`
-    expr ${coh_nres_max} '>' ${coh_ntmpl_max}
+    awk "BEGIN { print recomp = ( ${coh_nres_max} - ${coh_ntmpl_max} ) / ${coh_ntmpl_max}; exit ( recomp > 0.02 ? 0 : 1 ) }"
     set +x
     echo
 

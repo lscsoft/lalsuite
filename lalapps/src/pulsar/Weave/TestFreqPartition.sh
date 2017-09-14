@@ -82,18 +82,18 @@ for setup in onefreq short long; do
     set +x
     echo
 
-    echo "=== Setup '${setup}': Check that no results were recomputed ==="
+    echo "=== Setup '${setup}': Check that only a small fraction of results were recomputed ==="
     set -x
     ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoPart.fits[0]" 'NCOHRES' > tmp
     coh_nres_no_part=`cat tmp | xargs printf "%d"`
     ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoPart.fits[0]" 'NCOHTPL' > tmp
     coh_ntmpl_no_part=`cat tmp | xargs printf "%d"`
-    expr ${coh_nres_no_part} '=' ${coh_ntmpl_no_part}
+    awk "BEGIN { print recomp = ( ${coh_nres_no_part} - ${coh_ntmpl_no_part} ) / ${coh_ntmpl_no_part}; exit ( recomp < 0.02 ? 0 : 1 ) }"
     ${fitsdir}/lalapps_fits_header_getval "WeaveOutPart.fits[0]" 'NCOHRES' > tmp
     coh_nres_part=`cat tmp | xargs printf "%d"`
     ${fitsdir}/lalapps_fits_header_getval "WeaveOutPart.fits[0]" 'NCOHTPL' > tmp
     coh_ntmpl_part=`cat tmp | xargs printf "%d"`
-    expr ${coh_nres_part} '=' ${coh_ntmpl_part}
+    awk "BEGIN { print recomp = ( ${coh_nres_part} - ${coh_ntmpl_part} ) / ${coh_ntmpl_part}; exit ( recomp < 0.02 ? 0 : 1 ) }"
     set +x
     echo
 
