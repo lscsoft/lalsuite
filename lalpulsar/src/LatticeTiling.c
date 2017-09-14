@@ -315,10 +315,13 @@ static int LT_StatsCallback(
   // Initialise statistics
   if ( first_call ) {
     for ( size_t i = 0; i < n; ++i ) {
+      INT4 left = 0, right = 0;
+      XLAL_CHECK( XLALCurrentLatticeTilingBlock( itr, i, &left, &right ) == XLAL_SUCCESS, XLAL_EFUNC );
+      const UINT4 num_points = right - left + 1;
       stats[i].name = XLALLatticeTilingBoundName( tiling, i );
       stats[i].total_points = 0;
-      stats[i].min_points = 1;
-      stats[i].max_points = 1;
+      stats[i].min_points = num_points;
+      stats[i].max_points = num_points;
       stats[i].min_value = gsl_vector_get( point, i );
       stats[i].max_value = gsl_vector_get( point, i );
     }
