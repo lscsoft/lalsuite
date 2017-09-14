@@ -39,7 +39,7 @@ set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
     --toplists=mean2F --toplist-limit=2321 --extra-statistics="mean2F_det,coh2F,coh2F_det" --misc-info \
     --setup-file=WeaveSetup.fits --sft-files='*.sft' \
-    --alpha=2.3/0.9 --delta=-1.2/2.3 --freq=45.5~1e-4 --f1dot=-1e-9,0 --semi-max-mismatch=7 --interpolation=no
+    --alpha=2.3/0.9 --delta=-1.2/2.3 --freq=45.5~0.005 --f1dot=-1e-9,0 --semi-max-mismatch=7 --interpolation=no
 set +x
 echo
 

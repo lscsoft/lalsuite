@@ -126,6 +126,8 @@ struct tagWeaveCacheQueries {
   const SuperskyTransformData *semi_rssky_transf;
   /// Sequential index for the current semicoherent frequency block
   UINT8 semi_index;
+  /// Current semicoherent reduced supersky point in lowest tiled dimension
+  double semi_point_dim0;
   /// Physical coordinates of the current semicoherent frequency block
   PulsarDopplerParams semi_phys;
   /// Index of left-most point in current semicoherent frequency block
@@ -320,6 +322,8 @@ int cache_left_right_offsets(
     }
   }
   *right_offset = *left_offset + part_nfreqs - semi_nfreqs;
+  XLAL_CHECK( *left_offset >= 0, XLAL_EDOM );
+  XLAL_CHECK( *right_offset <= 0, XLAL_EDOM );
 
   return XLAL_SUCCESS;
 
@@ -591,6 +595,9 @@ int XLALWeaveCacheQueriesInit(
   // Save current semicoherent sequential index
   queries->semi_index = semi_index;
 
+  // Save current semicoherent reduced supersky point in dimension 'dim0'
+  queries->semi_point_dim0 = gsl_vector_get( semi_point, queries->dim0 );
+
   // Convert semicoherent point to physical coordinates
   XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &queries->semi_phys, semi_point, NULL, queries->semi_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -598,8 +605,8 @@ int XLALWeaveCacheQueriesInit(
   XLAL_CHECK( XLALCurrentLatticeTilingBlock( semi_itr, queries->ndim - 1, &queries->semi_left, &queries->semi_right ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Compute the relevance of the current semicoherent frequency block
-  // - Relevance is semicoherent reduced supersky point in dimension 'dim0', plus offset
-  queries->semi_relevance = gsl_vector_get( semi_point, queries->dim0 ) + queries->semi_relevance_offset;
+  // - Relevance is current semicoherent reduced supersky point in dimension 'dim0', plus offset
+  queries->semi_relevance = queries->semi_point_dim0 + queries->semi_relevance_offset;
 
   return XLAL_SUCCESS;
 
@@ -657,12 +664,14 @@ int XLALWeaveCacheQuery(
 
   // Compute the relevance of the current coherent frequency block:
   // - Convert nearest coherent point to semicoherent reduced supersky coordinates
-  // - Relevance is nearest coherent point in semicoherent reduced supersky coordinates in dimension 'dim0', plus offset
+  // - Relevance is maximum of: current semicoherent reduced supersky point in dimension 'dim0', or nearest
+  // coherent point in semicoherent reduced supersky coordinates in dimension 'dim0'; plus offset
   {
     double semi_near_point_array[cache->ndim];
     gsl_vector_view semi_near_point_view = gsl_vector_view_array( semi_near_point_array, cache->ndim );
     XLAL_CHECK( XLALConvertSuperskyToSuperskyPoint( &semi_near_point_view.vector, cache->semi_rssky_transf, &coh_near_point_view.vector, cache->coh_rssky_transf ) == XLAL_SUCCESS, XLAL_EINVAL );
-    queries->coh_relevance[query_index] = gsl_vector_get( &semi_near_point_view.vector, cache->dim0 ) + cache->coh_relevance_offset;
+    const double max_semi_point_dim0 = GSL_MAX( queries->semi_point_dim0, gsl_vector_get( &semi_near_point_view.vector, cache->dim0 ) );
+    queries->coh_relevance[query_index] = max_semi_point_dim0 + cache->coh_relevance_offset;
   }
 
   return XLAL_SUCCESS;
@@ -858,7 +867,7 @@ int XLALWeaveCacheRetrieve(
 
         // Return if garbage collection limit has been reached
         // - Bypassed if cache is full
-        if ( !cache_is_full && gc == cache->gc_extra ) {
+        if ( !cache_is_full && gc > cache->gc_extra ) {
           break;
         }
 

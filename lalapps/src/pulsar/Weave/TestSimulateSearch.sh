@@ -6,17 +6,17 @@ for setup in short mid long; do
 
         short)
             weave_setup_options="--segment-count=4"
-            weave_search_options="--alpha=0.9/1.4 --delta=-1.2/2.3 --freq=55.5/1e-4 --f1dot=-1.5e-9,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3  --extra-statistics=sum2F_det,mean2F_det"
+            weave_search_options="--alpha=0.9/1.4 --delta=-1.2/2.3 --freq=55.5/0.01 --f1dot=-1.1e-9,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3  --extra-statistics=sum2F_det,mean2F_det"
             ;;
 
         mid)
             weave_setup_options="--segment-count=2 --segment-gap=11130000"
-            weave_search_options="--alpha=0.9/0.6 --delta=-1.2/1.5 --freq=55.5/1e-4 --f1dot=-1.5e-9,0 --semi-max-mismatch=7 --coh-max-mismatch=0.4"
+            weave_search_options="--alpha=0.9/0.6 --delta=-1.2/1.5 --freq=55.5/0.01 --f1dot=-1.1e-9,0 --semi-max-mismatch=7 --coh-max-mismatch=0.4"
             ;;
 
         long)
             weave_setup_options="--segment-count=2 --segment-gap=22350000"
-            weave_search_options="--alpha=0.9/0.4 --delta=-1.2/1.3 --freq=55.5/1e-4 --f1dot=-1.5e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.2"
+            weave_search_options="--alpha=0.9/0.4 --delta=-1.2/1.3 --freq=55.5/0.01 --f1dot=-1.1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.2"
             ;;
 
         *)
