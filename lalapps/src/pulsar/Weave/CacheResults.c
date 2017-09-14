@@ -320,6 +320,8 @@ int cache_left_right_offsets(
     }
   }
   *right_offset = *left_offset + part_nfreqs - semi_nfreqs;
+  XLAL_CHECK( *left_offset >= 0, XLAL_EDOM );
+  XLAL_CHECK( *right_offset <= 0, XLAL_EDOM );
 
   return XLAL_SUCCESS;
 
