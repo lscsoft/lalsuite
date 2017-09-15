@@ -893,11 +893,6 @@ int main( int argc, char *argv[] )
       LALStringVector *sft_catalog_seg_i_detectors = XLALListIFOsInCatalog( &sft_catalog_seg[i] );
       XLAL_CHECK_MAIN( sft_catalog_seg_i_detectors != NULL, XLAL_EFUNC );
 
-      // Get physical ranges covered by parameter-space tiling of 'i'th segment
-      PulsarDopplerParams XLAL_INIT_DECL( min_range );
-      PulsarDopplerParams XLAL_INIT_DECL( max_range );
-      XLAL_CHECK_MAIN( XLALSuperskyLatticePhysicalRange( &min_range, &max_range, tiling[i], rssky_transf[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
-
       // Compute frequency range covered by spindown range over 'i'th segment
       LIGOTimeGPS sft_start = sft_catalog_seg[i].data[0].header.epoch;
       LIGOTimeGPS sft_end = sft_catalog_seg[i].data[sft_catalog_seg[i].length - 1].header.epoch;

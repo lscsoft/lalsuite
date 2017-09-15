@@ -302,7 +302,7 @@ XLALSpinAlignedNSNSStopCondition (double UNUSED t, /**< UNUSED */
   counter = params->eobParams->omegaPeaked;
 //    printf("function NSNS: r = %.16e, omega = %.16e, pr = %.16e, dpr = %.16e, count = %.16u \n",values[0],dvalues[1],values[2],dvalues[2],counter);
 //  printf("%.16e %.16e %.16e %.16e\n",values[0],dvalues[1],values[2],dvalues[2]);
-  REAL8 rCheck = 1.5*rMerger;
+  REAL8 rCheck = 2*rMerger;
   if (r < rCheck && omega < params->eobParams->omega)
     {
       if (debugOutput) printf("Peak detection %.16e %.16e\n", omega, params->eobParams->omega);
