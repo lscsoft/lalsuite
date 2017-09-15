@@ -291,17 +291,6 @@ int XLALSetSuperskyRangeBounds(
   const gsl_vector *max_rssky                   ///< [in] Maximum range of reduced supersky coordinates
   );
 
-///
-/// Fill two #PulsarDopplerParams structs with the physical ranges covered by a reduced supersky
-/// lattice tiling.
-///
-int XLALSuperskyLatticePhysicalRange(
-  PulsarDopplerParams* min_range,               ///< [in,out] Minima of physical ranges
-  PulsarDopplerParams* max_range,               ///< [in,out] Maxima of physical ranges
-  LatticeTiling *tiling,                        ///< [in] Lattice tiling
-  const SuperskyTransformData *rssky_transf     ///< [in] Reduced supersky coordinate transform data
-  );
-
 /// @}
 
 #ifdef __cplusplus
