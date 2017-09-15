@@ -734,14 +734,6 @@ static int SuperskyTests(
   }
   printf( "\n" );
 
-  // Check computation of spindown range for coherent tilings
-  for ( size_t n = 0; n < metrics->num_segments; ++n ) {
-    PulsarDopplerParams min_range, max_range;
-    XLAL_CHECK( XLALSuperskyLatticePhysicalRange( &min_range, &max_range, coh_tiling[n], metrics->coh_rssky_transf[n] ) == XLAL_SUCCESS, XLAL_EFUNC );
-    printf( "Coherent #%zu spindown range: freq=[%0.5g,%0.5g], f1dot=[%0.5g,%0.5g]\n", n, min_range.fkdot[0], max_range.fkdot[0], min_range.fkdot[1], max_range.fkdot[1] );
-  }
-  printf( "\n" );
-
   // Perform mismatch test of coherent and semicoherent tilings
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
     printf( "Coherent #%zu mismatch tests:\n", n );
