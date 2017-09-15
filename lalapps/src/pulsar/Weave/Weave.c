@@ -625,7 +625,6 @@ int main( int argc, char *argv[] )
   //
   // Set up semicoherent lattice tiling
   //
-  LogPrintf( LOG_NORMAL, "Setting up semicoherent lattice tiling ...\n" );
 
   // Set sky semicoherent parameter-space bounds
   if ( UVAR_SET( sky_patch_count ) ) {
@@ -668,8 +667,9 @@ int main( int argc, char *argv[] )
   }
 
   // Iterate over semicoherent tiling and perform callback actions
+  LogPrintf( LOG_NORMAL, "Setting up semicoherent lattice tiling ...\n" );
   XLAL_CHECK_MAIN( XLALPerformLatticeTilingCallbacks( tiling[isemi] ) == XLAL_SUCCESS, XLAL_EFUNC );
-  LogPrintf( LOG_NORMAL, "Finished setting up semicoherent parameter space\n" );
+  LogPrintf( LOG_NORMAL, "Finished setting up semicoherent lattice tiling\n" );
 
   // Get frequency spacing used by parameter-space tiling
   // - XLALEqualizeReducedSuperskyMetricsFreqSpacing() ensures this is the same for all segments
