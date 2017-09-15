@@ -2369,12 +2369,18 @@ static int SM_LatticePhysicalRangeCallback(
   const LatticeTiling *tiling,
   const LatticeTilingIterator *itr,
   const gsl_vector *point,
-  const size_t changed_i UNUSED,
+  const size_t changed_i,
   const void *param,
   void *out
   )
 {
 
+  // Only care about changes in sky position
+  if ( 2 <= changed_i ) {
+    return XLAL_SUCCESS;
+  }
+
+  // Get callback data
   const SM_CallbackParam *cparam = ( ( const SM_CallbackParam * ) param );
   SM_CallbackOut *cout = ( ( SM_CallbackOut * ) out );
 
@@ -2394,27 +2400,29 @@ static int SM_LatticePhysicalRangeCallback(
     }
   }
 
-  // Get frequency step size
-  const double dfreq = XLALLatticeTilingStepSize( tiling, cparam->rssky_transf->ndim - 1 );
-
-  // Get indexes of left/right-most point in current frequency block
-  INT4 left = 0, right = 0;
-  XLAL_CHECK( XLALCurrentLatticeTilingBlock( itr, cparam->rssky_transf->ndim - 1, &left, &right ) == XLAL_SUCCESS, XLAL_EFUNC );
-
   // Convert point from reduced supersky coordinates to physical coordinates
   PulsarDopplerParams XLAL_INIT_DECL( phys );
   XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &phys, point, NULL, cparam->rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Store minimum/maximum values of physical frequency and spindowns
+  // Store minimum/maximum values of physical sky position
   cout->min_phys.Alpha = GSL_MIN( cout->min_phys.Alpha, phys.Alpha );
   cout->max_phys.Alpha = GSL_MAX( cout->max_phys.Alpha, phys.Alpha );
   cout->min_phys.Delta = GSL_MIN( cout->min_phys.Delta, phys.Delta );
   cout->max_phys.Delta = GSL_MAX( cout->max_phys.Delta, phys.Delta );
-  cout->min_phys.fkdot[0] = GSL_MIN( cout->min_phys.fkdot[0], phys.fkdot[0] + dfreq*left );
-  cout->max_phys.fkdot[0] = GSL_MAX( cout->max_phys.fkdot[0], phys.fkdot[0] + dfreq*right );
-  for ( size_t s = 1; s <= cparam->rssky_transf->SMAX; ++s ) {
-    cout->min_phys.fkdot[s] = GSL_MIN( cout->min_phys.fkdot[s], phys.fkdot[s] );
-    cout->max_phys.fkdot[s] = GSL_MAX( cout->max_phys.fkdot[s], phys.fkdot[s] );
+
+  for ( size_t s = 0; s <= cparam->rssky_transf->SMAX; ++s ) {
+
+    // Get indexes of left/right-most point in current frequency block
+    INT4 left = 0, right = 0;
+    XLAL_CHECK( XLALCurrentLatticeTilingBlock( itr, RSSKY_FKDOT_DIM( cparam->rssky_transf, s ), &left, &right ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Get step size
+    const double step = XLALLatticeTilingStepSize( tiling, RSSKY_FKDOT_DIM( cparam->rssky_transf, s ) );
+
+    // Store minimum/maximum values of physical frequency and spindowns
+    cout->min_phys.fkdot[s] = GSL_MIN( cout->min_phys.fkdot[s], phys.fkdot[s] + step*(left - 0.5) );
+    cout->max_phys.fkdot[s] = GSL_MAX( cout->max_phys.fkdot[s], phys.fkdot[s] + step*(right + 0.5) );
+
   }
 
   return XLAL_SUCCESS;
@@ -2455,12 +2463,18 @@ static int SM_LatticeSuperskyRangeCallback(
   const LatticeTiling *tiling,
   const LatticeTilingIterator *itr,
   const gsl_vector *point,
-  const size_t changed_i UNUSED,
+  const size_t changed_i,
   const void *param,
   void *out
   )
 {
 
+  // Only care about changes in sky position
+  if ( 2 <= changed_i ) {
+    return XLAL_SUCCESS;
+  }
+
+  // Get callback data
   const SM_CallbackParam *cparam = ( ( const SM_CallbackParam * ) param );
   SM_CallbackOut *cout = ( ( SM_CallbackOut * ) out );
 
@@ -2472,26 +2486,30 @@ static int SM_LatticeSuperskyRangeCallback(
     gsl_vector_set_all( &cout->max_rssky2_view.vector, GSL_NEGINF );
   }
 
-  // Get frequency step size
-  const double dfreq = XLALLatticeTilingStepSize( tiling, cparam->rssky_transf->ndim - 1 );
-
-  // Get indexes of left/right-most point in current frequency block
-  INT4 left = 0, right = 0;
-  XLAL_CHECK( XLALCurrentLatticeTilingBlock( itr, cparam->rssky_transf->ndim - 1, &left, &right ) == XLAL_SUCCESS, XLAL_EFUNC );
-
   // Convert point from reduced supersky coordinates to other reduced supersky coordinates
   double rssky2_array[cparam->rssky_transf->ndim];
   gsl_vector_view rssky2_view = gsl_vector_view_array( rssky2_array, cparam->rssky2_transf->ndim );
   XLAL_CHECK( XLALConvertSuperskyToSuperskyPoint( &rssky2_view.vector, cparam->rssky2_transf, point, cparam->rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Store minimum/maximum values of other reduced supersky coordinates
-  for ( size_t i = 0; i + 1 < cparam->rssky2_transf->ndim; ++i ) {
+  // Store minimum/maximum values of other reduced supersky sky coordinates
+  for ( size_t i = 0; i < 2; ++i ) {
     cout->min_rssky2_array[i] = GSL_MIN( cout->min_rssky2_array[i], rssky2_array[i] );
     cout->max_rssky2_array[i] = GSL_MAX( cout->max_rssky2_array[i], rssky2_array[i] );
-  } {
-    const size_t i = cparam->rssky2_transf->ndim - 1;
-    cout->min_rssky2_array[i] = GSL_MIN( cout->min_rssky2_array[i], rssky2_array[i] + dfreq*left );
-    cout->max_rssky2_array[i] = GSL_MAX( cout->max_rssky2_array[i], rssky2_array[i] + dfreq*right );
+  }
+
+  for ( size_t i = 2; i < cparam->rssky2_transf->ndim; ++i ) {
+
+    // Get indexes of left/right-most point in current frequency block
+    INT4 left = 0, right = 0;
+    XLAL_CHECK( XLALCurrentLatticeTilingBlock( itr, i, &left, &right ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Get step size
+    const double step = XLALLatticeTilingStepSize( tiling, i );
+
+    // Store minimum/maximum values of other reduced supersky frequency and spindown coordinates
+    cout->min_rssky2_array[i] = GSL_MIN( cout->min_rssky2_array[i], rssky2_array[i] + step*(left - 0.5) );
+    cout->max_rssky2_array[i] = GSL_MAX( cout->max_rssky2_array[i], rssky2_array[i] + step*(right + 0.5) );
+
   }
 
   return XLAL_SUCCESS;
