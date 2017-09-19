@@ -296,3 +296,4 @@ DEFINE_VECTORMATH_dD2D(Shift, local_add_pd)
   DEFINE_VECTORMATH_ANY( XLALVectorMath_DD2D_SSEx, NAME ## REAL8, ( REAL8 *out, const REAL8 *in1, const REAL8 *in2, const UINT4 len ), ( (out != NULL) && (in1 != NULL) && (in2 != NULL) ), ( out, in1, in2, len, SSE_OP ) )
 
 DEFINE_VECTORMATH_DD2D(Add, local_add_pd)
+DEFINE_VECTORMATH_DD2D(Multiply, local_mul_pd)
