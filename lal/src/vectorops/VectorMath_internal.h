@@ -99,3 +99,9 @@ DECLARE_VECTORMATH_sS2uU(FindScalarLessEqual, AVX2, SSSE3, NONE, NONE)
 
 DECLARE_VECTORMATH_dD2D(Scale, AVX2, AVX, SSE2, SSE)
 DECLARE_VECTORMATH_dD2D(Shift, AVX2, AVX, SSE2, SSE)
+
+/* declare internal prototypes of SIMD-specific vector math functions with 2 REAL8 vector inputs to 1 REAL8 vector output (DD2D) */
+#define DECLARE_VECTORMATH_DD2D(NAME, ...)                                   \
+  DECLARE_VECTORMATH_ANY( NAME ## REAL8, ( REAL8 *out, const REAL8 *in1, const REAL8 *in2, const UINT4 len ), __VA_ARGS__ )
+
+DECLARE_VECTORMATH_DD2D(Add, AVX2, AVX, SSE2, SSE)

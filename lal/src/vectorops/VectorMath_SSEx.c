@@ -219,6 +219,38 @@ XLALVectorMath_dD2D_SSEx ( REAL8 *out, REAL8 scalar, const REAL8 *in, const UINT
 
 } // XLALVectorMath_dD2D_SSEx()
 
+// ---------- generic SSEx operator with 2 REAL8 vector inputs to 1 REAL8 vector output (DD2D) ----------
+static inline int
+XLALVectorMath_DD2D_SSEx ( REAL8 *out, const REAL8 *in1, const REAL8 *in2, const UINT4 len, __m128d (*op)(__m128d, __m128d) )
+{
+
+  // walk through vector in blocks of 2
+  UINT4 i2Max = len - ( len % 2 );
+  for ( UINT4 i2 = 0; i2 < i2Max; i2 += 2 )
+    {
+      __m128d in2p_1 = _mm_loadu_pd(&in1[i2]);
+      __m128d in2p_2 = _mm_loadu_pd(&in2[i2]);
+      __m128d out2p = (*op) ( in2p_1, in2p_2 );
+      _mm_storeu_pd(&out[i2], out2p);
+    }
+
+  // deal with the remaining (<=1) terms separately
+  V2SF in2_1 = {.f={0,0}};
+  V2SF in2_2 = {.f={0,0}};
+  V2SF out2;
+  for ( UINT4 i = i2Max,j=0; i < len; i ++, j++ ) {
+    in2_1.f[j] = in1[i];
+    in2_2.f[j] = in2[i];
+  }
+  out2.v = (*op) ( in2_1.v, in2_2.v );
+  for ( UINT4 i = i2Max,j=0; i < len; i ++, j++ ) {
+    out[i] = out2.f[j];
+  }
+
+  return XLAL_SUCCESS;
+
+} // XLALVectorMath_DD2D_SSEx()
+
 // ========== internal SSEx vector math functions ==========
 
 // ---------- define vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
@@ -258,3 +290,9 @@ DEFINE_VECTORMATH_sS2S(Scale, local_mul_ps)
 
 DEFINE_VECTORMATH_dD2D(Scale, local_mul_pd)
 DEFINE_VECTORMATH_dD2D(Shift, local_add_pd)
+
+// ---------- define vector math functions with 2 REAL8 vector inputs to 1 REAL8 vector output (DD2D) ----------
+#define DEFINE_VECTORMATH_DD2D(NAME, SSE_OP)                            \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_DD2D_SSEx, NAME ## REAL8, ( REAL8 *out, const REAL8 *in1, const REAL8 *in2, const UINT4 len ), ( (out != NULL) && (in1 != NULL) && (in2 != NULL) ), ( out, in1, in2, len, SSE_OP ) )
+
+DEFINE_VECTORMATH_DD2D(Add, local_add_pd)

@@ -171,3 +171,9 @@ EXPORT_VECTORMATH_sS2uU(FindScalarLessEqual, AVX2, SSSE3, NONE, NONE)
 EXPORT_VECTORMATH_dD2D(Scale, AVX2, AVX, SSE2, SSE)
 EXPORT_VECTORMATH_dD2D(Shift, AVX2, AVX, SSE2, SSE)
 
+// ---------- define exported vector math functions with 2 REAL8 vector inputs to 1 REAL8 vector output (DD2D) ----------
+#define EXPORT_VECTORMATH_DD2D(NAME, ...)                                    \
+  EXPORT_VECTORMATH_ANY( NAME ## REAL8, (REAL8 *out, const REAL8 *in1, const REAL8 *in2, const UINT4 len), (out, in1, in2, len), __VA_ARGS__ )
+
+EXPORT_VECTORMATH_DD2D(Add, AVX2, AVX, SSE2, SSE)
+
