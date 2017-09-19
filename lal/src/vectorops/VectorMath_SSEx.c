@@ -48,6 +48,12 @@ local_mul_ps ( __m128 in1, __m128 in2 )
   return _mm_mul_ps ( in1, in2 );
 }
 
+UNUSED static inline __m128
+local_max_ps ( __m128 in1, __m128 in2 )
+{
+  return _mm_max_ps ( in1, in2 );
+}
+
 // ========== internal generic SSEx functions ==========
 
 // ---------- generic SSEx operator with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
@@ -195,6 +201,7 @@ DEFINE_VECTORMATH_S2SS(SinCos2Pi, sincos_ps_2pi)
 
 DEFINE_VECTORMATH_SS2S(Add, local_add_ps)
 DEFINE_VECTORMATH_SS2S(Multiply, local_mul_ps)
+DEFINE_VECTORMATH_SS2S(Max, local_max_ps)
 
 // ---------- define vector math functions with 1 REAL4 scalar and 1 REAL4 vector inputs to 1 REAL4 vector output (sS2S) ----------
 #define DEFINE_VECTORMATH_sS2S(NAME, SSE_OP)                            \
