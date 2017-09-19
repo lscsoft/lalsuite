@@ -50,6 +50,10 @@ static inline REAL4 local_mulf ( REAL4 x, REAL4 y ) {
   return x * y;
 }
 
+static inline REAL8 local_add ( REAL8 x, REAL8 y ) {
+  return x + y;
+}
+
 static inline REAL8 local_mul ( REAL8 x, REAL8 y ) {
   return x * y;
 }
@@ -153,3 +157,4 @@ DEFINE_VECTORMATH_sS2S(Scale, local_mulf)
   DEFINE_VECTORMATH_ANY( XLALVectorMath_dD2D_GEN, NAME ## REAL8, ( REAL8 *out, REAL8 scalar, const REAL8 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, scalar, in, len, GEN_OP ) )
 
 DEFINE_VECTORMATH_dD2D(Scale, local_mul)
+DEFINE_VECTORMATH_dD2D(Shift, local_add)

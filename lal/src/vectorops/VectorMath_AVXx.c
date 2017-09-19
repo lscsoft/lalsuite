@@ -51,6 +51,12 @@ local_max_ps ( __m256 in1, __m256 in2 )
 }
 
 UNUSED static inline __m256d
+local_add_pd ( __m256d in1, __m256d in2 )
+{
+  return _mm256_add_pd ( in1, in2 );
+}
+
+UNUSED static inline __m256d
 local_mul_pd ( __m256d in1, __m256d in2 )
 {
   return _mm256_mul_pd ( in1, in2 );
@@ -247,3 +253,4 @@ DEFINE_VECTORMATH_sS2S(Scale, local_mul_ps)
   DEFINE_VECTORMATH_ANY( XLALVectorMath_dD2D_AVXx, NAME ## REAL8, ( REAL8 *out, REAL8 scalar, const REAL8 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, scalar, in, len, GEN_OP ) )
 
 DEFINE_VECTORMATH_dD2D(Scale, local_mul_pd)
+DEFINE_VECTORMATH_dD2D(Shift, local_add_pd)
