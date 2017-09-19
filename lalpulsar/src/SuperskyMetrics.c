@@ -2420,8 +2420,12 @@ static int SM_LatticePhysicalRangeCallback(
     const double step = XLALLatticeTilingStepSize( tiling, RSSKY_FKDOT_DIM( cparam->rssky_transf, s ) );
 
     // Store minimum/maximum values of physical frequency and spindowns
-    cout->min_phys.fkdot[s] = GSL_MIN( cout->min_phys.fkdot[s], phys.fkdot[s] + step*(left - 1) );
-    cout->max_phys.fkdot[s] = GSL_MAX( cout->max_phys.fkdot[s], phys.fkdot[s] + step*(right + 1) );
+    if ( XLALIsTiledLatticeTilingDimension( tiling, RSSKY_FKDOT_DIM( cparam->rssky_transf, s ) ) ) {
+      cout->min_phys.fkdot[s] = GSL_MIN( cout->min_phys.fkdot[s], phys.fkdot[s] + step*(left - 1) );
+      cout->max_phys.fkdot[s] = GSL_MAX( cout->max_phys.fkdot[s], phys.fkdot[s] + step*(right + 1) );
+    } else {
+      cout->min_phys.fkdot[s] = cout->max_phys.fkdot[s] = phys.fkdot[s];
+    }
 
   }
 
@@ -2507,8 +2511,12 @@ static int SM_LatticeSuperskyRangeCallback(
     const double step = XLALLatticeTilingStepSize( tiling, i );
 
     // Store minimum/maximum values of other reduced supersky frequency and spindown coordinates
-    cout->min_rssky2_array[i] = GSL_MIN( cout->min_rssky2_array[i], rssky2_array[i] + step*(left - 1) );
-    cout->max_rssky2_array[i] = GSL_MAX( cout->max_rssky2_array[i], rssky2_array[i] + step*(right + 1) );
+    if ( XLALIsTiledLatticeTilingDimension( tiling, i ) ) {
+      cout->min_rssky2_array[i] = GSL_MIN( cout->min_rssky2_array[i], rssky2_array[i] + step*(left - 1) );
+      cout->max_rssky2_array[i] = GSL_MAX( cout->max_rssky2_array[i], rssky2_array[i] + step*(right + 1) );
+    } else {
+      cout->min_rssky2_array[i] = cout->max_rssky2_array[i] = rssky2_array[i];
+    }
 
   }
 
