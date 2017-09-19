@@ -176,3 +176,4 @@ DEFINE_VECTORMATH_dD2D(Shift, local_add)
 
 DEFINE_VECTORMATH_DD2D(Add, local_add)
 DEFINE_VECTORMATH_DD2D(Multiply, local_mul)
+DEFINE_VECTORMATH_DD2D(Max, fmax)

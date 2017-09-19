@@ -62,6 +62,12 @@ local_mul_pd ( __m256d in1, __m256d in2 )
   return _mm256_mul_pd ( in1, in2 );
 }
 
+UNUSED static inline __m256d
+local_max_pd ( __m256d in1, __m256d in2 )
+{
+  return _mm256_max_pd ( in1, in2 );
+}
+
 // ========== internal generic AVXx functions ==========
 
 // ---------- generic AVXx operator with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
@@ -293,3 +299,4 @@ DEFINE_VECTORMATH_dD2D(Shift, local_add_pd)
 
 DEFINE_VECTORMATH_DD2D(Add, local_add_pd)
 DEFINE_VECTORMATH_DD2D(Multiply, local_mul_pd)
+DEFINE_VECTORMATH_DD2D(Max, local_max_pd)

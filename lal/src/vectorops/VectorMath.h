@@ -173,6 +173,9 @@ int XLALVectorAddREAL8 ( REAL8 *out, const REAL8 *in1, const REAL8 *in2, const U
 /** Compute \f$\text{out} = \text{in1} \times \text{in2}\f$ over REAL8 vectors \c in1 and \c in2 with \c len elements */
 int XLALVectorMultiplyREAL8 ( REAL8 *out, const REAL8 *in1, const REAL8 *in2, const UINT4 len);
 
+/** Compute \f$\text{out} = max ( \text{in1}, \text{in2} )\f$ over REAL8 vectors \c in1 and \c in2 with \c len elements */
+int XLALVectorMaxREAL8 ( REAL8 *out, const REAL8 *in1, const REAL8 *in2, const UINT4 len);
+
 /** @} */
 
 /** \name Vector by Scalar Operations */
