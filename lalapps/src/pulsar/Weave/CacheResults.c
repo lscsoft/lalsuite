@@ -319,7 +319,11 @@ WeaveCache *XLALWeaveCacheCreate(
   XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
 
   // Get lowest tiled parameter-space dimension
-  cache->dim0 = XLALLatticeTilingTiledDimension( coh_tiling, 0 );
+  if ( XLALTiledLatticeTilingDimensions( coh_tiling ) > 0 ) {
+    cache->dim0 = XLALLatticeTilingTiledDimension( coh_tiling, 0 );
+  } else {
+    cache->dim0 = 0;
+  }
   XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
 
   // Compute offset used in computation of semicoherent point relevance:
@@ -483,7 +487,11 @@ WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
   XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
 
   // Get lowest tiled parameter-space dimension
-  queries->dim0 = XLALLatticeTilingTiledDimension( semi_tiling, 0 );
+  if ( XLALTiledLatticeTilingDimensions( semi_tiling ) > 0 ) {
+    queries->dim0 = XLALLatticeTilingTiledDimension( semi_tiling, 0 );
+  } else {
+    queries->dim0 = 0;
+  }
   XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
 
   // Compute offset used in computation of semicoherent point relevance:
