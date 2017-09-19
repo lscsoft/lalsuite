@@ -93,7 +93,7 @@ echo "=== Compare F-statistic at exact injected signal parameters with loudest F
 set -x
 coh2F_exact=`cat RefExact.txt | sed -n '/^[^%]/p' | awk '{print $7}'`
 ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=mean2F][#row == 1]" > tmp
-coh2F_loud=`cat tmp | sed "/^#/d" | xargs printf "%g"`
+coh2F_loud=`cat tmp | sed "/^#/d" | xargs printf "%.16g"`
 # Value of 'mean_mu' was calculated by:
 #   octapps_run WeaveFstatMismatch --setup-file=TestSingleSegment.testdir/WeaveSetup.fits --spindowns=1 --semi-max-mismatch=9 --coh-max-mismatch=0 --printarg=meanOfHist
 mean_mu=0.58305

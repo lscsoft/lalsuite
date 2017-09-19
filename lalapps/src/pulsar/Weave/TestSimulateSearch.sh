@@ -122,9 +122,9 @@ for setup in short mid long; do
     echo "=== Setup '${setup}': Check peak memory usage ==="
     set -x
     ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" 'PEAKMEM' > tmp
-    peak_mem_no_sim=`cat tmp | xargs printf "%g"`
+    peak_mem_no_sim=`cat tmp | xargs printf "%.16g"`
     ${fitsdir}/lalapps_fits_header_getval "WeaveOutSimFull.fits[0]" 'PEAKMEM' > tmp
-    peak_mem_sim_full=`cat tmp | xargs printf "%g"`
+    peak_mem_sim_full=`cat tmp | xargs printf "%.16g"`
     awk "BEGIN { print x = ${peak_mem_sim_full} / ${peak_mem_no_sim}; exit ( ( 0.9 < x && x < 1.0 ) ? 0 : 1 ) }"
     set +x
     echo
