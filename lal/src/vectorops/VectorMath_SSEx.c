@@ -54,6 +54,12 @@ local_max_ps ( __m128 in1, __m128 in2 )
   return _mm_max_ps ( in1, in2 );
 }
 
+UNUSED static inline __m128d
+local_mul_pd ( __m128d in1, __m128d in2 )
+{
+  return _mm_mul_pd ( in1, in2 );
+}
+
 // ========== internal generic SSEx functions ==========
 
 // ---------- generic SSEx operator with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
@@ -177,6 +183,36 @@ XLALVectorMath_sS2S_SSEx ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT
 
 } // XLALVectorMath_sS2S_SSEx()
 
+// ---------- generic SSEx operator with 1 REAL8 scalar and 1 REAL8 vector inputs to 1 REAL8 vector output (dD2D) ----------
+static inline int
+XLALVectorMath_dD2D_SSEx ( REAL8 *out, REAL8 scalar, const REAL8 *in, const UINT4 len, __m128d (*op)(__m128d, __m128d) )
+{
+  const V2SF scalar2 = {.f={scalar,scalar}};
+
+  // walk through vector in blocks of 2
+  UINT4 i2Max = len - ( len % 2 );
+  for ( UINT4 i2 = 0; i2 < i2Max; i2 += 2 )
+    {
+      __m128d in2p = _mm_loadu_pd(&in[i2]);
+      __m128d out2p = (*op) ( scalar2.v, in2p );
+      _mm_storeu_pd(&out[i2], out2p);
+    }
+
+  // deal with the remaining (<=1) terms separately
+  V2SF in2 = {.f={0,0}};
+  V2SF out2;
+  for ( UINT4 i = i2Max,j=0; i < len; i ++, j++ ) {
+    in2.f[j] = in[i];
+  }
+  out2.v = (*op) ( scalar2.v, in2.v );
+  for ( UINT4 i = i2Max,j=0; i < len; i ++, j++ ) {
+    out[i] = out2.f[j];
+  }
+
+  return XLAL_SUCCESS;
+
+} // XLALVectorMath_dD2D_SSEx()
+
 // ========== internal SSEx vector math functions ==========
 
 // ---------- define vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
@@ -209,3 +245,9 @@ DEFINE_VECTORMATH_SS2S(Max, local_max_ps)
 
 DEFINE_VECTORMATH_sS2S(Shift, local_add_ps)
 DEFINE_VECTORMATH_sS2S(Scale, local_mul_ps)
+
+// ---------- define vector math functions with 1 REAL8 scalar and 1 REAL8 vector inputs to 1 REAL8 vector output (sS2S) ----------
+#define DEFINE_VECTORMATH_dD2D(NAME, SSE_OP)                            \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_dD2D_SSEx, NAME ## REAL8, ( REAL8 *out, REAL8 scalar, const REAL8 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, scalar, in, len, SSE_OP ) )
+
+DEFINE_VECTORMATH_dD2D(Scale, local_mul_pd)

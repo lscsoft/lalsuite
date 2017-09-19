@@ -168,5 +168,5 @@ EXPORT_VECTORMATH_sS2uU(FindScalarLessEqual, AVX2, SSSE3, NONE, NONE)
 #define EXPORT_VECTORMATH_dD2D(NAME, ...)                                    \
   EXPORT_VECTORMATH_ANY( NAME ## REAL8, (REAL8 *out, REAL8 scalar, const REAL8 *in, const UINT4 len), (out, scalar, in, len), __VA_ARGS__ )
 
-EXPORT_VECTORMATH_dD2D(Scale, NONE, NONE, NONE, NONE)
+EXPORT_VECTORMATH_dD2D(Scale, AVX2, AVX, SSE2, SSE)
 
