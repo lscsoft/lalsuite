@@ -39,7 +39,8 @@ set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
     --toplists=mean2F --toplist-limit=2321 --extra-statistics="mean2F_det,coh2F,coh2F_det" --misc-info \
     --setup-file=WeaveSetup.fits --sft-files='*.sft' \
-    --alpha=2.3/0.9 --delta=-1.2/2.3 --freq=45.5~0.005 --f1dot=-1e-9,0 --semi-max-mismatch=7 --interpolation=no
+    --alpha=2.3/0.9 --delta=-1.2/2.3 --freq=45.5~0.005 --f1dot=-1e-9,0 \
+    --semi-max-mismatch=7 --interpolation=no
 set +x
 echo
 
@@ -99,5 +100,25 @@ coh2F_loud=`cat tmp | sed "/^#/d" | xargs printf "%.16g"`
 #   octapps_run WeaveFstatMismatch --setup-file=TestNonInterpolating.testdir/WeaveSetup.fits --spindowns=1 --semi-max-mismatch=7 --coh-max-mismatch=0 --printarg=meanOfHist
 mean_mu=0.53991
 awk "BEGIN { print mu = ( ${coh2F_exact} - ${coh2F_loud} ) / ${coh2F_exact}; exit ( mu < ${mean_mu} ? 0 : 1 ) }"
+set +x
+echo
+
+echo "=== Check that lalapps_Weave can be run at a single point ==="
+set -x
+${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=alpha; c2=delta; c3=freq; c4=f1dot; c5=mean2F][#row == 1]" > tmp
+alpha_loud=`cat tmp | sed "/^#/d" | awk '{print $1}' | xargs printf "%.16g"`
+delta_loud=`cat tmp | sed "/^#/d" | awk '{print $2}' | xargs printf "%.16g"`
+freq_loud=` cat tmp | sed "/^#/d" | awk '{print $3}' | xargs printf "%.16g"`
+f1dot_loud=`cat tmp | sed "/^#/d" | awk '{print $4}' | xargs printf "%.16g"`
+coh2F_loud=`cat tmp | sed "/^#/d" | awk '{print $5}' | xargs printf "%.16g"`
+${builddir}/lalapps_Weave --output-file=WeaveOutSingle.fits \
+    --toplists=mean2F --toplist-limit=2321 --extra-statistics="mean2F_det,coh2F,coh2F_det" --misc-info \
+    --setup-file=WeaveSetup.fits --sft-files='*.sft' \
+    --alpha=${alpha_loud}~0 --delta=${delta_loud}~0 --freq=${freq_loud}~0 --f1dot=${f1dot_loud}~0 \
+    --semi-max-mismatch=7 --interpolation=no
+${fitsdir}/lalapps_fits_table_list "WeaveOutSingle.fits[mean2F_toplist][col c1=mean2F][#row == 1]" > tmp
+coh2F_loud_single=`cat tmp | sed "/^#/d" | xargs printf "%.16g"`
+mean_mu=0.05
+awk "BEGIN { print mu = ( ${coh2F_loud} - ${coh2F_loud_single} ) / ${coh2F_loud}; exit ( mu < ${mean_mu} ? 0 : 1 ) }"
 set +x
 echo
