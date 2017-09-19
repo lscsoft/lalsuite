@@ -130,6 +130,7 @@ tagSpinEOBParams
   Approximant             seobApproximant; /*OPTV3*/
   int                     tortoise;
   int                     ignoreflux;
+  REAL8 deltaT;
 }
 SpinEOBParams;
 

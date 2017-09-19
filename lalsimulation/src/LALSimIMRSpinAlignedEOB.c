@@ -158,7 +158,9 @@ UNUSED REAL8 XLALSimUniversalRelationomega03TidalVSlambda3Tidal(
  * See Eq.(2) in https://arxiv.org/pdf/1504.01764.pdf with coefficients
  * given by the 3rd row of Table II therein. Compared to NR for 0 <= kappa2T <= 500
  */
-static UNUSED REAL8 XLALSimNSNSMergerFreq(
+static REAL8 XLALSimNSNSMergerFreq(
+                                       UNUSED REAL8 spin1z, /**< Spin z of body 1 */
+                                       UNUSED REAL8 spin2z, /**< Spin z  of body 2 */
                                        TidalEOBParams *tidal1, /**< Tidal parameters of body 1 */
                                        TidalEOBParams *tidal2  /**< Tidal parameters of body 2 */
 )
@@ -167,8 +169,34 @@ static UNUSED REAL8 XLALSimNSNSMergerFreq(
     REAL8 X2 = tidal2->mByM;
     REAL8 lambda1 = tidal1->lambda2Tidal; // Dimensionless quadrupolar tidal deformability normalized to M^5
     REAL8 lambda2 = tidal2->lambda2Tidal; // Dimensionless quadrupolar tidal deformability normalized to M^5
-    REAL8 kappa2T = 1.5*(X2/X1*lambda1 + X1/X2*lambda2);
-//    printf("kappa2T, freq %.16e %.16e\n", kappa2T, 0.3596*(1. + 0.024384*kappa2T - 0.000017167*kappa2T*kappa2T)/(1. + 0.068865*kappa2T));
+    
+    UNUSED REAL8 X1v, X2v, spin1zv, spin2zv, lambda1v, lambda2v;
+    if ( X1 >= X2 ) {
+        X1v = X1;
+        X2v = X2;
+        spin1zv = spin1z;
+        spin2zv = spin2z;
+        lambda1v = lambda1;
+        lambda2v = lambda2;
+    }
+    else {
+        X1v = X2;
+        X2v = X1;
+        spin1zv = spin2z;
+        spin2zv = spin1z;
+        lambda1v = lambda2;
+        lambda2v = lambda1;
+    }
+    REAL8 kappa2T = 1.5*(X2v/X1v*lambda1v + X1v/X2v*lambda2v);
+    /*
+    const REAL8 n1 = 3.35411203e-2;
+    const REAL8 n2 = 4.31460284e-5;
+    const REAL8 d1 = 7.54224145e-2;
+    const REAL8 d2 = 2.23626859e-4;
+    REAL8 q = X1v/X2v;
+    REAL8 chi = X1v*spin1zv + X2v*spin2zv;
+    return (0.3586/sqrt(q)*(1. + n1*kappa2T + n2*kappa2T*kappa2T)/(1. + d1*kappa2T + d2*kappa2T*kappa2T))*(1. + 0.23456602*chi);
+     */
     if ( kappa2T < 0. ) {
         XLAL_ERROR (XLAL_EFUNC);
     }
@@ -176,7 +204,7 @@ static UNUSED REAL8 XLALSimNSNSMergerFreq(
         if ( kappa2T > 500. ) {
             kappa2T = 500.;
         }
-        return 0.3596*(1. + 0.024384*kappa2T - 0.000017167*kappa2T*kappa2T)/(1. + 0.068865*kappa2T);
+       return 0.3596*(1. + 0.024384*kappa2T - 0.000017167*kappa2T*kappa2T)/(1. + 0.068865*kappa2T);
     }
 }
 
@@ -294,15 +322,15 @@ XLALSpinAlignedNSNSStopCondition (double UNUSED t, /**< UNUSED */
   SpinEOBParams *params = (SpinEOBParams *) funcParams;
   TidalEOBParams *tidal1 = params->seobCoeffs->tidal1;
   TidalEOBParams *tidal2 = params->seobCoeffs->tidal2;
-  REAL8 omegaMerger = XLALSimNSNSMergerFreq( tidal1, tidal2 );
+  REAL8 omegaMerger = XLALSimNSNSMergerFreq( params->s1Vec->data[2], params->s2Vec->data[2], tidal1, tidal2 );
   REAL8 rMerger = pow ( omegaMerger/2., -2./3. );
-//  printf("omegaMerger %.16e\n", omegaMerger);
+//  printf("rMerger %.16e\n", rMerger);
   r = values[0];
   omega = dvalues[1];
   counter = params->eobParams->omegaPeaked;
-//    printf("function NSNS: r = %.16e, omega = %.16e, pr = %.16e, dpr = %.16e, count = %.16u \n",values[0],dvalues[1],values[2],dvalues[2],counter);
+  if (debugOutput)   printf("function NSNS: r = %.16e, omega = %.16e, pr = %.16e, dpr = %.16e, count = %.16u \n",values[0],dvalues[1],values[2],dvalues[2],counter);
 //  printf("%.16e %.16e %.16e %.16e\n",values[0],dvalues[1],values[2],dvalues[2]);
-  REAL8 rCheck = 2*rMerger;
+  REAL8 rCheck = 1.5*rMerger;
   if (r < rCheck && omega < params->eobParams->omega)
     {
       if (debugOutput) printf("Peak detection %.16e %.16e\n", omega, params->eobParams->omega);
@@ -331,11 +359,20 @@ XLALSpinAlignedNSNSStopCondition (double UNUSED t, /**< UNUSED */
      if (debugOutput) printf("params->eobParams->omegaPeaked == 3 at r=%.16e\n", r);
      return 1;
   }
-    if (  isnan (dvalues[3]) || isnan (dvalues[2]) || isnan (dvalues[1]) || isnan (dvalues[0]) ) {
+    if ( isnan (dvalues[3]) || isnan (dvalues[2]) || isnan (dvalues[1]) || isnan (dvalues[0]) ) {
         if (debugOutput) printf("Stop at nan's at r=%.16e\n", r);
         return 1;
     }
+    if ( fabs(r/params->eobParams->rad - 1.) < 1e-7 && fabs(r/params->eobParams->rad - 1.) > 0.) {
+        if (debugOutput) printf("Radius is stalling at r=%.16e and rad=%.16e\n", r, params->eobParams->rad);
+        return 1;
+    }
   params->eobParams->omega = omega;
+  params->eobParams->rad = r;
+    if( LAL_PI/params->deltaT <= 2.*omega ) {
+        if (debugOutput) printf("Stop at Nyquist at r=%.16e\n", r);
+        return 1;
+    }
   return GSL_SUCCESS;
 }
 
@@ -519,7 +556,7 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
 
   lambda2Tidal1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALParams);
   lambda2Tidal2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALParams);
-  if ( lambda2Tidal1 != 0. ) {
+  if ( (SpinAlignedEOBversion == 201 || SpinAlignedEOBversion == 401) && lambda2Tidal1 != 0. ) {
       omega02Tidal1 = XLALSimInspiralWaveformParamsLookupTidalQuadrupolarFMode1(LALParams);
       if ( omega02Tidal1 == 0. ) {
           XLALPrintError ("XLAL Error - %s: Tidal parameters are not set correctly! Always provide non-zero f-mode frequency when lambda2 is non-zero!\n", __func__);
@@ -532,7 +569,7 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
           XLAL_ERROR (XLAL_EDOM);
       }
   }
-  if ( lambda2Tidal2 != 0. ) {
+  if ( (SpinAlignedEOBversion == 201 || SpinAlignedEOBversion == 401) && lambda2Tidal2 != 0. ) {
       omega02Tidal2 = XLALSimInspiralWaveformParamsLookupTidalQuadrupolarFMode2(LALParams);
       if ( omega02Tidal2 == 0. ) {
           XLALPrintError ("XLAL Error - %s: Tidal parameters are not set correctly! Always provide non-zero  f-mode frequency when lambda2 is non-zero!\n", __func__);
@@ -556,16 +593,22 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
   INT4 nqcFlag = 0;
 
 
-  if ( SpinAlignedEOBversion == 4 && ( lambda2Tidal1 != 0. || lambda2Tidal2 != 0 ) ) {
+  if ( SpinAlignedEOBversion == 401 ) {
       nqcFlag = 1;
       REAL8 m1BH, m2BH;
       m1BH = m1SI / (m1SI + m2SI) * 50. * LAL_MSUN_SI;
       m2BH = m2SI / (m1SI + m2SI) * 50. * LAL_MSUN_SI;
+#if debugOutput
+      printf("First run SEOBNRv4 to compute NQCs\n");
+#endif      
       ret = XLALSimIMRSpinAlignedEOBWaveformAll (hplus, hcross, tVec, rVec, phiVec, prVec, pPhiVec,
                      phiC, deltaT, m1BH, m2BH, 2*pow(10.,-1.5)/(2.*LAL_PI)/((m1BH + m2BH)*LAL_MTSUN_SI/LAL_MSUN_SI), r, inc, spin1z, spin2z, 400,
 					 0, 0, 0, 0, 0, 0, 0, 0, nqcCoeffsInput, nqcFlag);
       nqcFlag = 2;
   }
+#if debugOutput
+    printf("Generate EOB wf\n");
+#endif
   ret = XLALSimIMRSpinAlignedEOBWaveformAll (hplus, hcross, tVec, rVec, phiVec, prVec, pPhiVec,
                                            phiC, deltaT, m1SI, m2SI, fMin, r, inc, spin1z, spin2z, SpinAlignedEOBversion,
                                            lambda2Tidal1, lambda2Tidal2,
@@ -672,7 +715,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
                       __func__);
       XLAL_ERROR (XLAL_EDOM);
   }
-  if (lambda2Tidal1 != 0. || lambda2Tidal2 != 0.)
+  if ( SpinAlignedEOBversion==201 || SpinAlignedEOBversion==401 )
     {
         if ( (lambda2Tidal1 != 0. && omega02Tidal1 == 0.)
             || (lambda2Tidal2 != 0. && omega02Tidal2 == 0.) ) {
@@ -687,6 +730,10 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
             XLAL_ERROR (XLAL_EDOM);
         }
       use_tidal = 1;
+      if ( SpinAlignedEOBversion==201 )
+          SpinAlignedEOBversion=2;
+      if ( SpinAlignedEOBversion==401 )
+          SpinAlignedEOBversion=4;
     }
 
   INT4 use_optimized_v2_or_v4 = 0;
@@ -1023,6 +1070,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   hCoeffs.tidal1 = &tidal1;
   hCoeffs.tidal2 = &tidal2;
 
+  seobParams.deltaT = deltaT /( (m1 + m2) * LAL_MTSUN_SI );
   seobParams.alignedSpins = 1;
   seobParams.tortoise = 1;
   seobParams.sigmaStar = sigmaStar;
@@ -1043,6 +1091,16 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   s2Vec.data = s2Data;
   s1VecOverMtMt.data = s1DataNorm;
   s2VecOverMtMt.data = s2DataNorm;
+    
+    if ( use_tidal == 1 ) {
+        REAL8 omegaMerger = XLALSimNSNSMergerFreq( spin1z, spin2z, &tidal1, &tidal2 );
+        REAL8 rMerger = pow ( omegaMerger/2., -2./3. );
+        if ( pow( fStart*LAL_PI*mTScaled, -2./3. ) <= 2.*rMerger ) {
+            XLALPrintError
+            ("XLAL Error - %s: fmin is too high for a tidal run, it should be at most %.16e Hz\n", __func__, pow (2.*rMerger, -3. / 2.)/(LAL_PI * mTScaled));
+            XLAL_ERROR (XLAL_EINVAL);
+        }
+    }
 
   /* copy the spins into the appropriate vectors, and scale them by the mass */
   memcpy (s1Data, spin1, sizeof (s1Data));
@@ -1242,7 +1300,9 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   values->data[1] = 0.;
   values->data[2] = tmpValues->data[3];
   values->data[3] = tmpValues->data[0] * tmpValues->data[4];
-
+    
+     eobParams.rad = values->data[0];
+     eobParams.omegaPeaked = 0;
   //fprintf( stderr, "Spherical initial conditions: %e %e %e %e\n", values->data[0], values->data[1], values->data[2], values->data[3] );
 
   /*
@@ -1386,6 +1446,10 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   values->data[1] = phiVec.data[hiSRndx];
   values->data[2] = prVec.data[hiSRndx];
   values->data[3] = pPhiVec.data[hiSRndx];
+  eobParams.rad = values->data[0];
+  eobParams.omegaPeaked = 0;
+
+
   /* For HiSR evolution, we stop at a radius 0.3M from the deformed Kerr singularity,
    * or when any derivative of Hamiltonian becomes nan */
   integrator->stop = XLALSpinAlignedHiSRStopCondition;
@@ -1852,30 +1916,72 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
       XLALPrintError ("The comb size looks to be too big!!!\n");
     }
 
+    REAL8Vector *OmVec = NULL;
     if (use_tidal == 1) {
         timeshiftPeak = 0.;
         UINT4 indAmax = 0;
         REAL8 Anew, Aval = sqrt( sigReHi->data[0]*sigReHi->data[0] +sigImHi->data[0]*sigImHi->data[0] );
-        for (i = 0; i < (INT4) timeHi.length; i++) {
+        for (i =  1; i < (INT4) timeHi.length; i++) {
             Anew = sqrt( sigReHi->data[i]*sigReHi->data[i] +sigImHi->data[i]*sigImHi->data[i]);
-            if ( Anew >= Aval ) {
-                    indAmax = i;
-                    Aval = Anew;
+            if ( Aval > Anew ) {
+                indAmax = i-1;
+                break;
+            } else {
+                indAmax = i;
+                Aval = Anew;
             }
         }
-
+#if debugOutput
+        printf("indAmax %d\n",indAmax);
+#endif
+        if ( (INT4)indAmax== (INT4) timeHi.length-1 ) {
+            INT4 peakDet = 0;
+            REAL8 dAnew, dAval;
+            REAL8 Avalp = sqrt( sigReHi->data[1]*sigReHi->data[1] +sigImHi->data[1]*sigImHi->data[1] );
+            REAL8 Avalm = sqrt( sigReHi->data[0]*sigReHi->data[0] +sigImHi->data[0]*sigImHi->data[0] );
+            dAval= Avalp - Avalm;
+            INT4 iSkip = (INT4) 1./(deltaTHigh / mTScaled);
+            for (i=(INT4) timeHi.length/2; i<(INT4) timeHi.length; i=i+iSkip) {
+                Avalm = sqrt( sigReHi->data[i-1]*sigReHi->data[i-1] +sigImHi->data[i-1]*sigImHi->data[i-1]);
+                Avalp = sqrt( sigReHi->data[i]*sigReHi->data[i] +sigImHi->data[i]*sigImHi->data[i]);
+                dAnew = Avalp - Avalm;
+#if debugOutput
+                printf("%.16e %.16e %.16e\n", i*deltaTHigh / mTScaled, dAnew, dAval);
+#endif
+                if ( peakDet==0) {
+                    if ( dAnew<dAval) peakDet++;
+                    dAval = dAnew;
+                }
+                else {
+                    if ( dAnew>dAval ) {
+                        indAmax = i-1;
+                        break;
+                    }
+                    else {
+                        dAval = dAnew;
+                    }
+                }
+            }
+        }
+#if debugOutput
+        printf("indAmax %d\n",indAmax);
+#endif
         UINT4 indOmax = 0;
         REAL8 dt = timeHi.data[1] - timeHi.data[0];
         REAL8 re = sigReHi->data[0], im = sigImHi->data[0];
         REAL8 red = ( sigReHi->data[1] - sigReHi->data[0] ) / dt, imd = ( sigImHi->data[1] - sigImHi->data[0] ) / dt;
         REAL8 Onew, Oval = - (imd*re - red*im) / (re*re + im*im);
 
+        OmVec = XLALCreateREAL8Vector (sigReHi->length);
+        memset (OmVec->data, 0, OmVec->length * sizeof (REAL8));
+        
         for (i = 1; i < (INT4) timeHi.length-1; i++) {
             re = sigReHi->data[i];
             im = sigImHi->data[i];
             red = ( sigReHi->data[i+1] - sigReHi->data[i] ) / dt;
             imd = ( sigImHi->data[i+1] - sigImHi->data[i] ) / dt;
             Onew = - (imd*re - red*im) / (re*re + im*im);
+            OmVec->data[i] = Onew;
             if ( Onew >= Oval ) {
                 indOmax = i;
                 Oval = Onew;
@@ -1923,6 +2029,48 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   rdMatchPoint->data[1] -=
     fmod (rdMatchPoint->data[1], deltaTHigh / mTScaled);
     if ( use_tidal == 1 ) {
+        INT4 kount;
+        REAL8 dtGeom = deltaTHigh / mTScaled;
+        REAL8Vector *ampl, *phtmp;
+        ampl = XLALCreateREAL8Vector (sigReHi->length);
+        memset (ampl->data, 0, ampl->length * sizeof (REAL8));
+        phtmp = XLALCreateREAL8Vector (sigReHi->length);
+        memset (phtmp->data, 0,phtmp->length * sizeof (REAL8));
+        INT4 iEnd= (INT4)rdMatchPoint->data[1]/dtGeom;
+        UINT4 iM = iEnd - 1000;
+        REAL8 omega0 = OmVec->data[iEnd];
+        REAL8 omegaM = OmVec->data[iM];
+        REAL8 omegaMdot = (OmVec->data[iM]-OmVec->data[iM-10])/(10*dtGeom);
+        REAL8 tau = 0.5*LAL_PI/omega0;
+        
+        for (kount=0; kount<iEnd; kount++){
+            ampl->data[kount] = sqrt(sigReHi->data[kount]/amp0*sigReHi->data[kount]/amp0 + sigImHi->data[kount]/amp0*sigImHi->data[kount]/amp0)/(1. + exp((kount*dtGeom-rdMatchPoint->data[1]-15)/tau));
+            phtmp->data[kount] = carg(sigReHi->data[kount] + I * sigImHi->data[kount]);
+        }
+        REAL8 amplEnd = sqrt(sigReHi->data[iEnd]/amp0*sigReHi->data[iEnd]/amp0 + sigImHi->data[iEnd]/amp0*sigImHi->data[iEnd]/amp0);
+        REAL8 amplEndM1 = sqrt(sigReHi->data[iEnd-1]/amp0*sigReHi->data[iEnd-1]/amp0 + sigImHi->data[iEnd-1]/amp0*sigImHi->data[iEnd-1]/amp0);
+        REAL8 ampldotEnd = (amplEnd-amplEndM1)/dtGeom;
+        if ( ampldotEnd < 0. ) ampldotEnd = 0.;
+        for (kount=iEnd;kount<(INT4)(sigReHi->length);kount++){
+            ampl->data[kount] = (amplEnd + ampldotEnd*(kount - iEnd)*dtGeom)/(1. + exp((kount*dtGeom-rdMatchPoint->data[1]-15)/tau));
+        }
+        for (kount=(INT4)iM;kount<(INT4)(sigReHi->length);kount++){
+            phtmp->data[kount] = phtmp->data[iM] - ( omega0*(kount-(INT4)iM)*dtGeom + (omega0-omegaM)*(omega0-omegaM)/omegaMdot*(exp(-(kount-(INT4)iM)*dtGeom/(omega0-omegaM)*omegaMdot) - 1.) );
+        }
+#if debugOutput
+        FILE *testout = fopen ("test.dat", "w");
+        for (kount=0;kount<(INT4)(sigReHi->length);kount++){
+            fprintf(testout, "%.16e %.16e %.16e %.16e %.16e %.16e %.16e\n", kount*dtGeom,ampl->data[kount],phtmp->data[kount],sigReHi->data[kount],sigImHi->data[kount],sqrt(sigReHi->data[kount]/amp0*sigReHi->data[kount]/amp0 + sigImHi->data[kount]/amp0*sigImHi->data[kount]/amp0),carg(sigReHi->data[kount] + I * sigImHi->data[kount]));
+        }
+        fclose(testout);
+#endif
+        for (kount=0;kount<(INT4)(sigReHi->length);kount++){
+            sigReHi->data[kount] = amp0*ampl->data[kount]*cos(phtmp->data[kount]);
+            sigImHi->data[kount] = amp0*ampl->data[kount]*sin(phtmp->data[kount]);
+        }
+        XLALDestroyREAL8Vector(ampl);
+        XLALDestroyREAL8Vector(phtmp);
+                            /*
         if (XLALSimIMREOBTaper (sigReHi, sigImHi, 2, 2,
                                             deltaTHigh, m1, m2, spin1[0],
                                             spin1[1], spin1[2], spin2[0],
@@ -1933,6 +2081,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
         {
             XLAL_ERROR (XLAL_EFUNC);
         }
+                             */
     }
     else {
         if (SpinAlignedEOBversion == 1 || SpinAlignedEOBversion == 2)
@@ -2077,10 +2226,24 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 	  hLM *= hNQC;
       hLM += hT;
 
-	  sigReVec->data[i] = amp0 * creal (hLM);
-	  sigImVec->data[i] = amp0 * cimag (hLM);
+        if (use_tidal==1) {
+            REAL8 dtGeom = deltaTHigh / mTScaled;
+            INT4 iEnd= (INT4)rdMatchPoint->data[1]/dtGeom;
+            REAL8 omega0 = OmVec->data[iEnd];
+            REAL8 tau = 0.5*LAL_PI/omega0;
+            REAL8 dtGeomLow = deltaT / mTScaled;
+            sigReVec->data[i] = amp0 * creal (hLM)/(1.  + exp(( i*dtGeomLow - (rdMatchPoint->data[1]+15 + (dynamics->data)[hiSRndx]) )/tau));
+            sigImVec->data[i] = amp0 * cimag (hLM)/(1. + exp(( i*dtGeomLow - (rdMatchPoint->data[1] +15 + (dynamics->data)[hiSRndx]))/tau));
+        }
+        else {
+            sigReVec->data[i] = amp0 * creal (hLM);
+            sigImVec->data[i] = amp0 * cimag (hLM);
+        }
 	}
     }
+    if ( OmVec )
+        XLALDestroyREAL8Vector(OmVec);
+
 
   /*
    * STEP 8) Generate full IMR modes -- attaching ringdown to inspiral

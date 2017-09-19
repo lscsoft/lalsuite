@@ -865,7 +865,7 @@ int XLALSimInspiralChooseTDWaveform(
             XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode1(LALparams, omega3TidalA_UR);
             XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode2(LALparams, omega3TidalB_UR);
             /* Call the waveform driver routine */
-            SpinAlignedEOBversion = 2;
+            SpinAlignedEOBversion = 201;
             ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
                                                    deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion, LALparams);
             break;
@@ -891,7 +891,7 @@ int XLALSimInspiralChooseTDWaveform(
             XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode1(LALparams, omega3TidalA_UR);
             XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode2(LALparams, omega3TidalB_UR);
             /* Call the waveform driver routine */
-            SpinAlignedEOBversion = 4;
+            SpinAlignedEOBversion = 401;
             ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
                                                    deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion, LALparams);
             break;

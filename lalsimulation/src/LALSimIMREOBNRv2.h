@@ -462,6 +462,7 @@ typedef struct tagEOBParams
   UINT4 omegaPeaked;
   REAL8 m1;
   REAL8 m2;
+  REAL8 rad;
   EOBACoefficients *aCoeffs;
   FacWaveformCoeffs *hCoeffs;
   EOBNonQCCoeffs *nqcCoeffs;
