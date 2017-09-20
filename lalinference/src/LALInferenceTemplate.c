@@ -82,10 +82,10 @@ static int InterpolateWaveform(REAL8Vector *freqs, COMPLEX16FrequencySeries *src
   UINT4 j=ceil(freqs->data[0] / deltaF);
   COMPLEX16 *d=dest->data->data;
   memset(d, 0, sizeof(*(d))*j);
-  
+
   /* Loop over reduced frequency set */
   for(UINT4 i=0;i<freqs->length-1;i++)
-  {  
+  {
     double startpsi = carg(src->data->data[i]);
     double startamp = cabs(src->data->data[i]);
     double endpsi = carg(src->data->data[i+1]);
@@ -95,7 +95,7 @@ static int InterpolateWaveform(REAL8Vector *freqs, COMPLEX16FrequencySeries *src
     double endf=freqs->data[i+1];
 
     double df = endf - startf; /* Big freq step */
-    
+
     /* linear interpolation setup */
     double dpsi = (endpsi - startpsi);
 
@@ -105,12 +105,12 @@ static int InterpolateWaveform(REAL8Vector *freqs, COMPLEX16FrequencySeries *src
      * the phase wrapping around (e.g. TF2 1.4-1.4 srate=4096)
      */
     if (dpsi/df<-LAL_PI ) {dpsi+=LAL_TWOPI;}
-    
+
     double dpsidf = dpsi/df;
     double dampdf = (endamp - startamp)/df;
 
     double damp = dampdf *deltaF;
-    
+
     const double dim = sin(dpsidf*deltaF);
     const double dre = 2.0*sin(dpsidf*deltaF*0.5)*sin(dpsidf*deltaF*0.5);
 
@@ -119,9 +119,9 @@ static int InterpolateWaveform(REAL8Vector *freqs, COMPLEX16FrequencySeries *src
     for(f=j*deltaF,
 	re = cos(startpsi), im = sin(startpsi),
         a = startamp;
-        
+
         f<endf;
-        
+
         j++, f+=deltaF,
         newRe = re - dre*re-dim*im,
         newIm = im + re*dim-dre*im,
@@ -690,7 +690,12 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
     f_low = model->fLow;
 
   f_start = XLALSimInspiralfLow2fStart(f_low, XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(model->LALpars), approximant);
-  f_max = 0.0; /* for freq domain waveforms this will stop at ISCO. Previously found using model->fHigh causes NaNs in waveform (see redmine issue #750)*/
+
+  /* Don't let TaylorF2 generate unphysical inspiral up to Nyquist */
+  if (approximant == TaylorF2)
+      f_max = 0.0; /* this will stop at ISCO */
+  else
+      f_max = model->fHigh; /* this will be the highest frequency used across the network */
 
   /* ==== SPINS ==== */
   /* We will default to spinless signal and then add in the spin components if required */
@@ -1319,8 +1324,8 @@ model->LALpars,%d,model->waveformCache)\n",__func__,
             XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): encountered unallocated 'hctilde'.\n");
             XLAL_ERROR_VOID(XLAL_EFAULT);
         }
-        
-        
+
+
         InterpolateWaveform(frequencies, hptilde, model->freqhPlus);
         InterpolateWaveform(frequencies, hctilde, model->freqhCross);
 

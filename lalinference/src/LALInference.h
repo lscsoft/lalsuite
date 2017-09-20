@@ -453,6 +453,7 @@ typedef struct tagLALInferenceModel
   REAL8*                       ifo_SNRs; /** Array of single-IFO SNRs at *params* */
 
   REAL8                        fLow;   /** Start frequency for waveform generation */
+  REAL8                        fHigh;   /** End frequency for waveform generation */
   REAL8                        deltaT, deltaF;   /** Sampling rate information */
   INT4                         freqLength; /* Length of freq-domain buffer */
 
