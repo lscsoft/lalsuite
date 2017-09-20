@@ -141,6 +141,7 @@ test/utilities/EigenTest
 test/utilities/FindRootTest
 test/utilities/IntegrateTest
 test/utilities/InterpolateTest
+test/utilities/LALBitsetTest
 test/utilities/LALHashFuncTest
 test/utilities/LALHashTblTest
 test/utilities/LALHeapTest
