@@ -770,6 +770,7 @@ def Mceta(m1, m2):
 def tidal_lambda_tilde(mass1, mass2, lambda1, lambda2):
     """
     'Effective' lambda parameters.
+    See https://arxiv.org/pdf/1402.5156.pdf
     """
     mt = mass1 + mass2
     eta = mass1 * mass2 / mt**2
@@ -778,7 +779,7 @@ def tidal_lambda_tilde(mass1, mass2, lambda1, lambda2):
     lt_sym = lt1 + lt2
     lt_asym = lt1 - lt2
 
-    lam_til = (1 + 7*eta - 31*eta**2) * lt_sym - q * (1 + 9*eta - 11*eta**2) * lt_asym
+    lam_til = (1 + 7*eta - 31*eta**2) * lt_sym + q * (1 + 9*eta - 11*eta**2) * lt_asym
     dlam_til = q * (1 - 13272*eta/1319 + 8944*eta**2/1319) * lt_sym + (1 - 15910*eta/1319 + 32850*eta**2/1319 + 3380*eta**3/1319) * lt_asym
     dlam_til *= 0.5
     lam_til *= 8. / 13
