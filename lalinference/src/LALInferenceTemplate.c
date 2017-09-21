@@ -1170,7 +1170,12 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
         f_low = model->fLow;
 
     f_start = XLALSimInspiralfLow2fStart(f_low, XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(model->LALpars), approximant);
-    f_max = 0.0; /* for freq domain waveforms this will stop at ISCO. Previously found using model->fHigh causes NaNs in waveform (see redmine issue #750)*/
+
+    /* Don't let TaylorF2 generate unphysical inspiral up to Nyquist */
+    if (approximant == TaylorF2)
+        f_max = 0.0; /* this will stop at ISCO */
+    else
+        f_max = model->fHigh; /* this will be the highest frequency used across the network */
 
     /* ==== SPINS ==== */
     /* We will default to spinless signal and then add in the spin components if required */
@@ -1568,7 +1573,7 @@ void LALInferenceTemplateXLALSimBurstChooseWaveform(LALInferenceModel *model)
     polar_ecc=*(REAL8*) LALInferenceGetVariable(model->params, "polar_eccentricity");
 
   f_low=0.0; // These are not really used for burst signals.
-  f_max = 0.0; /* for freq domain waveforms this will stop at Nyquist of lower, if the WF allows.*/
+  f_max = model->fHigh; /* this will be the highest frequency used across the network */
 
 
   if (model->timehCross==NULL) {
