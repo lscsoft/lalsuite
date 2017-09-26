@@ -309,6 +309,7 @@ main ( int argc, char *argv[] )
 
   XLALPrintInfo ("\nTesting add,multiply,shift,scale(x,y) for x,y in (-10000, 10000]\n");
   TESTBENCH_VECTORMATH_SS2S(Add,xIn,xIn2);
+  TESTBENCH_VECTORMATH_SS2S(Sub,xIn,xIn2);
   TESTBENCH_VECTORMATH_SS2S(Multiply,xIn,xIn2);
   TESTBENCH_VECTORMATH_SS2S(Max,xIn,xIn2);
 
@@ -316,6 +317,7 @@ main ( int argc, char *argv[] )
   TESTBENCH_VECTORMATH_SS2S(Scale,xIn[0],xIn2);
 
   TESTBENCH_VECTORMATH_DD2D(Add,xInD,xIn2D);
+  TESTBENCH_VECTORMATH_DD2D(Sub,xInD,xIn2D);
   TESTBENCH_VECTORMATH_DD2D(Multiply,xInD,xIn2D);
   TESTBENCH_VECTORMATH_DD2D(Max,xInD,xIn2D);
 

@@ -39,6 +39,12 @@ local_add_ps ( __m256 in1, __m256 in2 )
 }
 
 UNUSED static inline __m256
+local_sub_ps ( __m256 in1, __m256 in2 )
+{
+  return _mm256_sub_ps ( in1, in2 );
+}
+
+UNUSED static inline __m256
 local_mul_ps ( __m256 in1, __m256 in2 )
 {
   return _mm256_mul_ps ( in1, in2 );
@@ -54,6 +60,12 @@ UNUSED static inline __m256d
 local_add_pd ( __m256d in1, __m256d in2 )
 {
   return _mm256_add_pd ( in1, in2 );
+}
+
+UNUSED static inline __m256d
+local_sub_pd ( __m256d in1, __m256d in2 )
+{
+  return _mm256_sub_pd ( in1, in2 );
 }
 
 UNUSED static inline __m256d
@@ -375,6 +387,7 @@ DEFINE_VECTORMATH_S2SS(SinCos2Pi, sincos256_ps_2pi)
   DEFINE_VECTORMATH_ANY( XLALVectorMath_SS2S_AVXx, NAME ## REAL4, ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len ), ( (out != NULL) && (in1 != NULL) && (in2 != NULL) ), ( out, in1, in2, len, AVX_OP ) )
 
 DEFINE_VECTORMATH_SS2S(Add, local_add_ps)
+DEFINE_VECTORMATH_SS2S(Sub, local_sub_ps)
 DEFINE_VECTORMATH_SS2S(Multiply, local_mul_ps)
 DEFINE_VECTORMATH_SS2S(Max, local_max_ps)
 
@@ -397,6 +410,7 @@ DEFINE_VECTORMATH_dD2D(Shift, local_add_pd)
   DEFINE_VECTORMATH_ANY( XLALVectorMath_DD2D_AVXx, NAME ## REAL8, ( REAL8 *out, const REAL8 *in1, const REAL8 *in2, const UINT4 len ), ( (out != NULL) && (in1 != NULL) && (in2 != NULL) ), ( out, in1, in2, len, AVX_OP ) )
 
 DEFINE_VECTORMATH_DD2D(Add, local_add_pd)
+DEFINE_VECTORMATH_DD2D(Sub, local_sub_pd)
 DEFINE_VECTORMATH_DD2D(Multiply, local_mul_pd)
 DEFINE_VECTORMATH_DD2D(Max, local_max_pd)
 

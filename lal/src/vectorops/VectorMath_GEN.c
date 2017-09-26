@@ -46,12 +46,20 @@ static inline REAL4 local_addf ( REAL4 x, REAL4 y ) {
   return x + y;
 }
 
+static inline REAL4 local_subf ( REAL4 x, REAL4 y ) {
+  return x - y;
+}
+
 static inline REAL4 local_mulf ( REAL4 x, REAL4 y ) {
   return x * y;
 }
 
 static inline REAL8 local_add ( REAL8 x, REAL8 y ) {
   return x + y;
+}
+
+static inline REAL8 local_sub ( REAL8 x, REAL8 y ) {
+  return x - y;
 }
 
 static inline REAL8 local_mul ( REAL8 x, REAL8 y ) {
@@ -185,6 +193,7 @@ DEFINE_VECTORMATH_S2SS(SinCos2Pi, local_sincosf_2pi)
   DEFINE_VECTORMATH_ANY( XLALVectorMath_SS2S_GEN, NAME ## REAL4, ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len ), ( (out != NULL) && (in1 != NULL) && (in2 != NULL) ), ( out, in1, in2, len, GEN_OP ) )
 
 DEFINE_VECTORMATH_SS2S(Add, local_addf)
+DEFINE_VECTORMATH_SS2S(Sub, local_subf)
 DEFINE_VECTORMATH_SS2S(Multiply, local_mulf)
 DEFINE_VECTORMATH_SS2S(Max, local_fmaxf)
 
@@ -207,6 +216,7 @@ DEFINE_VECTORMATH_dD2D(Shift, local_add)
   DEFINE_VECTORMATH_ANY( XLALVectorMath_DD2D_GEN, NAME ## REAL8, ( REAL8 *out, const REAL8 *in1, const REAL8 *in2, const UINT4 len ), ( (out != NULL) && (in1 != NULL) && (in2 != NULL) ), ( out, in1, in2, len, GEN_OP ) )
 
 DEFINE_VECTORMATH_DD2D(Add, local_add)
+DEFINE_VECTORMATH_DD2D(Sub, local_sub)
 DEFINE_VECTORMATH_DD2D(Multiply, local_mul)
 DEFINE_VECTORMATH_DD2D(Max, fmax)
 

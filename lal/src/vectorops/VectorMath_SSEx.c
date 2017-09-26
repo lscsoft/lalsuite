@@ -43,6 +43,12 @@ local_add_ps ( __m128 in1, __m128 in2 )
 }
 
 UNUSED static inline __m128
+local_sub_ps ( __m128 in1, __m128 in2 )
+{
+  return _mm_sub_ps ( in1, in2 );
+}
+
+UNUSED static inline __m128
 local_mul_ps ( __m128 in1, __m128 in2 )
 {
   return _mm_mul_ps ( in1, in2 );
@@ -58,6 +64,12 @@ UNUSED static inline __m128d
 local_add_pd ( __m128d in1, __m128d in2 )
 {
   return _mm_add_pd ( in1, in2 );
+}
+
+UNUSED static inline __m128d
+local_sub_pd ( __m128d in1, __m128d in2 )
+{
+  return _mm_sub_pd ( in1, in2 );
 }
 
 UNUSED static inline __m128d
@@ -377,6 +389,7 @@ DEFINE_VECTORMATH_S2SS(SinCos2Pi, sincos_ps_2pi)
   DEFINE_VECTORMATH_ANY( XLALVectorMath_SS2S_SSEx, NAME ## REAL4, ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len ), ( (out != NULL) && (in1 != NULL) && (in2 != NULL) ), ( out, in1, in2, len, SSE_OP ) )
 
 DEFINE_VECTORMATH_SS2S(Add, local_add_ps)
+DEFINE_VECTORMATH_SS2S(Sub, local_sub_ps)
 DEFINE_VECTORMATH_SS2S(Multiply, local_mul_ps)
 DEFINE_VECTORMATH_SS2S(Max, local_max_ps)
 
@@ -399,6 +412,7 @@ DEFINE_VECTORMATH_dD2D(Shift, local_add_pd)
   DEFINE_VECTORMATH_ANY( XLALVectorMath_DD2D_SSEx, NAME ## REAL8, ( REAL8 *out, const REAL8 *in1, const REAL8 *in2, const UINT4 len ), ( (out != NULL) && (in1 != NULL) && (in2 != NULL) ), ( out, in1, in2, len, SSE_OP ) )
 
 DEFINE_VECTORMATH_DD2D(Add, local_add_pd)
+DEFINE_VECTORMATH_DD2D(Sub, local_sub_pd)
 DEFINE_VECTORMATH_DD2D(Multiply, local_mul_pd)
 
 // ---------- define vector math functions with 2 COMPLEX8 vector inputs to 1 COMPLEX8 vector output (CC2C) ----------
