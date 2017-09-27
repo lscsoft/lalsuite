@@ -85,7 +85,8 @@ pkginclude_HEADERS = \
 	LALSimulation.h \
 	LALSimulationConfig.h \
 	LALSimulationVCSInfo.h \
-	LALSimulationVCSInfoHeader.h
+	LALSimulationVCSInfoHeader.h \
+	LALSimUniversalRelations.h
 
 noinst_HEADERS = \
 	LALSimIMRSpinEOBHcapExactDerivativePrec_v3opt.c \
@@ -142,8 +143,8 @@ noinst_HEADERS = \
 	LALSimInspiralPNCoefficients.c \
 	LALSimInspiraldEnergyFlux.c \
 	LALSimNeutronStarEOSPiecewisePolytrope.c \
-	LALSimNeutronStarEOSTabular.c \
-	LALSimIMRSpinEOBHamiltonian.h
+	LALSimNeutronStarEOSTabular.c 
+
 
 lib_LTLIBRARIES = liblalsimulation.la
 
@@ -218,7 +219,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimFindAttachTime.c \
 	LALSimIMRSpinEOB.c \
 	LALSimIMRNRSur4d2s.c \
-	LALSimIMRNRSur7dq2.c
+	LALSimIMRNRSur7dq2.c 
 
 nodist_liblalsimulation_la_SOURCES = \
 	LALSimulationBuildInfoHeader.h \

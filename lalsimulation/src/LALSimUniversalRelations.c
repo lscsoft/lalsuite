@@ -31,7 +31,7 @@ REAL8 XLALSimUniversalRelation( REAL8 x, REAL8 coeffs[] ) {
  function the dimensionless l=2 tidal deformability: lambda2bar = 2/3 k2 C^5.
  Compared to NR for 1 <= lambda2bar <= 3000
  */
-UNUSED REAL8 XLALSimUniversalRelationlambda3TidalVSlambda2Tidal(
+REAL8 XLALSimUniversalRelationlambda3TidalVSlambda2Tidal(
                                                                 REAL8 lambda2bar /**< l=2 dimensionless tidal defomability */
 )
 {
@@ -61,7 +61,7 @@ UNUSED REAL8 XLALSimUniversalRelationlambda3TidalVSlambda2Tidal(
  Compared to NR for 0 <= log(lambda2bar) <= 9, that is
  1 <= lambda2bar <= 8100
  */
-UNUSED REAL8 XLALSimUniversalRelationomega02TidalVSlambda2Tidal(
+REAL8 XLALSimUniversalRelationomega02TidalVSlambda2Tidal(
                                                                 REAL8 lambda2bar /**< l=2 dimensionless tidal defomability */
 )
 {
@@ -89,7 +89,7 @@ UNUSED REAL8 XLALSimUniversalRelationomega02TidalVSlambda2Tidal(
  Compared to NR for -1 <= log(lambda3bar) <= 10, that is
  0.37 <= lambda3bar <= 20000
  */
-UNUSED REAL8 XLALSimUniversalRelationomega03TidalVSlambda3Tidal(
+REAL8 XLALSimUniversalRelationomega03TidalVSlambda3Tidal(
                                                                 REAL8 lambda3bar /**< l=3 dimensionless tidal defomability */
 )
 {
