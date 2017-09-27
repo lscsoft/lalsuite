@@ -43,7 +43,7 @@
 #include "LALSimInspiralPNCoefficients.c"
 #include "check_series_macros.h"
 #include "check_waveform_macros.h"
-#include "LALSimUniversalRelations.c"
+#include "LALSimUniversalRelations.h"
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))

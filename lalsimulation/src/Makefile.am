@@ -220,7 +220,8 @@ liblalsimulation_la_SOURCES = \
 	LALSimFindAttachTime.c \
 	LALSimIMRSpinEOB.c \
 	LALSimIMRNRSur4d2s.c \
-	LALSimIMRNRSur7dq2.c 
+	LALSimIMRNRSur7dq2.c \
+	LALSimUniversalRelations.c
 
 nodist_liblalsimulation_la_SOURCES = \
 	LALSimulationBuildInfoHeader.h \

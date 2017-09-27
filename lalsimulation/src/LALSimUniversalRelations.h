@@ -20,6 +20,9 @@
 #ifndef LALSimUniversalRelations_h
 #define LALSimUniversalRelations_h
 
+#include <lal/LALDatatypes.h>
+#include <lal/LALSimInspiral.h>
+#include <math.h>
 
 REAL8 XLALSimUniversalRelation( REAL8 x, REAL8 coeffs[] );
 REAL8 XLALSimUniversalRelationlambda3TidalVSlambda2Tidal( REAL8 lambda2Tidal );

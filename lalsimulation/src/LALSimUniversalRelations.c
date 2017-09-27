@@ -17,8 +17,7 @@
  *  MA  02111-1307  USA
  */
 
-#include "LALSimUniversalRelations.h"
-
+#include <lal/LALSimUniversalRelations.h>
 
 /**< Generic form of universal relation */
 REAL8 XLALSimUniversalRelation( REAL8 x, REAL8 coeffs[] ) {
