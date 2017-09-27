@@ -38,6 +38,7 @@ from __future__ import (division, print_function)
 import os
 import re
 import math
+import random
 
 try:
     import lal
@@ -145,11 +146,24 @@ class CWSimulator(object):
         self.__detector.site = lal.CachedDetectors[self.__det_index]
         self.__detector.ephemerides = self.__ephemerides
 
-    def get_strain(self, fs):
+    def _simulate_coherent_gw(self, h, noise_sqrt_Sh):
+
+        # generate strain time series
+        lalpulsar.PulsarSimulateCoherentGW(h, self.__waveform, self.__detector)
+
+        # add Gaussian noise, if requested
+        if noise_sqrt_Sh > 0:
+            noise_sigma = math.sqrt(0.5 / h.deltaT) * noise_sqrt_Sh
+            noise_seed = int(math.floor(random.random() * lal.LAL_INT4_MAX))
+            lalpulsar.AddGaussianNoise(h, noise_sigma, noise_seed)
+
+    def get_strain(self, fs, noise_sqrt_Sh=0):
         """
         Generate strain time series of a continuous-wave signal in the detector frame.
 
         @param fs: sampling frequency of strain time series, in Hz
+        @param noise_sqrt_Sh: if >0, add Gaussian noise with square-root single-sided power
+            spectral density given by this value, in Hz^(-1/2)
 
         @return (@b t, @b h), where:
             @b t = start of time strain time series, in GPS seconds;
@@ -161,15 +175,17 @@ class CWSimulator(object):
         h = lal.CreateREAL4TimeSeries("h", self.__gps_t0, 0, 1.0 / fs, lal.DimensionlessUnit, N_h)
 
         # generate strain time series
-        lalpulsar.PulsarSimulateCoherentGW(h, self.__waveform, self.__detector)
+        self._simulate_coherent_gw(h, noise_sqrt_Sh)
         return (h.epoch, h.data.data)
 
-    def get_strain_blocks(self, fs, T_block):
+    def get_strain_blocks(self, fs, T_block, noise_sqrt_Sh=0):
         """
         Generate strain time series of a continuous-wave signal in the detector frame, in contiguous blocks.
 
         @param fs: sampling frequency of strain time series, in Hz
         @param T_block: length of each block, in seconds; should divide evenly into @b T
+        @param noise_sqrt_Sh: if >0, add Gaussian noise with square-root single-sided power
+            spectral density given by this value, in Hz^(-1/2)
 
         @return (@b t, @b h, @b i, @b N), where:
             @b t = start of time strain time series, in GPS seconds;
@@ -196,7 +212,7 @@ class CWSimulator(object):
 
         # generate strain time series in blocks of length 'T_block'
         for i_block in xrange(0, N_block):
-            lalpulsar.PulsarSimulateCoherentGW(h, self.__waveform, self.__detector)
+            self._simulate_coherent_gw(h, noise_sqrt_Sh)
             yield h.epoch, h.data.data, i_block, N_block
             h.epoch += T_block
 
