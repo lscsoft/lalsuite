@@ -64,6 +64,10 @@ def get_universe(config_parser):
 	return config_parser.get("condor", "universe")
 
 
+def get_accounting_group(config_parser):
+	return config_parser.get("condor", "accounting_group")
+
+
 def get_executable(config_parser, name):
 	return config_parser.get("condor", name)
 
@@ -234,6 +238,7 @@ class RMJob(pipeline.CondorDAGJob):
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "rm-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "rm-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
+		self.add_condor_cmd("accounting_group", get_accounting_group(config_parser))
 		self.add_opt("force", "")
 		self.set_sub_file("rm.sub")
 
@@ -279,6 +284,7 @@ class BurstInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
+		self.add_condor_cmd("accounting_group", get_accounting_group(config_parser))
 		self.set_sub_file("lalapps_binj.sub")
 
 		self.output_dir = "."
@@ -369,6 +375,7 @@ class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_power-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_power-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
+		self.add_condor_cmd("accounting_group", get_accounting_group(config_parser))
 		self.set_sub_file("lalapps_power.sub")
 
 		self.output_dir = "."
@@ -507,6 +514,7 @@ class BucutJob(pipeline.CondorDAGJob):
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_bucut-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_bucut-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
+		self.add_condor_cmd("accounting_group", get_accounting_group(config_parser))
 		self.add_condor_cmd("Requirements", "Memory > 1100")
 		self.add_ini_opts(config_parser, "lalapps_bucut")
 
@@ -552,6 +560,7 @@ class BuclusterJob(pipeline.CondorDAGJob):
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_bucluster-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_bucluster-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
+		self.add_condor_cmd("accounting_group", get_accounting_group(config_parser))
 		self.add_condor_cmd("Requirements", "Memory > 1100")
 		self.add_ini_opts(config_parser, "lalapps_bucluster")
 
@@ -607,6 +616,7 @@ class BinjfindJob(pipeline.CondorDAGJob):
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_binjfind-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_binjfind-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
+		self.add_condor_cmd("accounting_group", get_accounting_group(config_parser))
 		self.add_ini_opts(config_parser, "lalapps_binjfind")
 
 		self.files_per_binjfind = get_files_per_binjfind(config_parser)
@@ -651,6 +661,7 @@ class BurcaJob(pipeline.CondorDAGJob):
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_burca-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_burca-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
+		self.add_condor_cmd("accounting_group", get_accounting_group(config_parser))
 		self.add_condor_cmd("Requirements", "Memory >= $(macrominram)")
 		self.add_ini_opts(config_parser, "lalapps_burca")
 
@@ -666,6 +677,7 @@ class Burca2Job(pipeline.CondorDAGJob):
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_burca2-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_burca2-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
+		self.add_condor_cmd("accounting_group", get_accounting_group(config_parser))
 		self.add_ini_opts(config_parser, "lalapps_burca2")
 
 		self.cache_dir = get_cache_dir(config_parser)
@@ -721,6 +733,7 @@ class SQLiteJob(pipeline.CondorDAGJob):
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "ligolw_sqlite-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_sqlite-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
+		self.add_condor_cmd("accounting_group", get_accounting_group(config_parser))
 		self.add_ini_opts(config_parser, "ligolw_sqlite")
 
 
@@ -770,6 +783,7 @@ class BurcaTailorJob(pipeline.CondorDAGJob):
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_burca_tailor-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_burca_tailor-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
+		self.add_condor_cmd("accounting_group", get_accounting_group(config_parser))
 		self.add_ini_opts(config_parser, "lalapps_burca_tailor")
 
 		self.cache_dir = get_cache_dir(config_parser)
@@ -1055,7 +1069,7 @@ def make_lladd_fragment(dag, parents, tag, segment = None, input_cache = None, r
 	[cache_entry] = node.get_output_cache()
 	if segment is None:
 		segment = cache_entry.segment
-	node.set_name("lladd_%s_%s_%d_%d" % (tag, cache_entry.observatory, int(segment[0]), int(abs(segment))))
+	node.set_name("lladd_%s_%d_%d" % (tag, int(segment[0]), int(abs(segment))))
 	node.set_output(os.path.join(node.output_dir, "%s-%s-%d-%d.xml.gz" % (cache_entry.observatory, tag, int(segment[0]), int(abs(segment)))), segment = segment)
 
 	node.set_retry(3)
