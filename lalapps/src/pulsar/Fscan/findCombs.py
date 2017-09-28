@@ -95,7 +95,7 @@ def findCombs2017(threshold,outputName,nround,data):
 
 
 	deltaF = np.around(deltaF,nround) # Need to round again to account for loss of floating point precision in subtraction
-	uniqueDeltaF = np.unique(deltaF) # only need one comb per delta f 
+	uniqueDeltaF = np.unique(deltaF) # only need one comb per delta f
 	uniqueDeltaF = uniqueDeltaF[np.nonzero(uniqueDeltaF)] # no zero delta fs allowed
 	numCombs = len(uniqueDeltaF)
 
@@ -116,7 +116,7 @@ def findCombs2017(threshold,outputName,nround,data):
 	## KEY INSIGHT:
 	## Let's say a particular deltaF has N teeth in a comb.
 	## Then an integer multiple of deltaF can repeat some of these N combs.
-	## The largest integer n that can have repeat combs is 
+	## The largest integer n that can have repeat combs is
 	## the largest n such that 2n < N-1.
 
 	## COUNTING REPEAT COMB STEPS:
@@ -133,7 +133,7 @@ def findCombs2017(threshold,outputName,nround,data):
 		else: # if even number of teeth
 			numRepeatCount = (numTeeth - 2) / 2
 		# Eliminate all integer multiples that repeat
-		for intMult in range(2,numRepeatCount + 1): 
+		for intMult in range(2,numRepeatCount + 1):
 			if sum( abs(uniqueDeltaF - intMult*uniqueDeltaF[combInd]) < epsilon ) > 0 : # If there is a repeat comb
 				repeatInd = np.where(abs( uniqueDeltaF - intMult*uniqueDeltaF[combInd]) < epsilon) # Find repeat comb index
 				repeatInd = int(repeatInd[0]) # make that index an integer
@@ -150,9 +150,9 @@ def findCombs2017(threshold,outputName,nround,data):
 	for i in range(len(uniqueDeltaF)-1) :
 		if len(combList[i]) > len(combList[i+1]) : # Keep as many teeth as possible
 			ind0 = i + 1
-			ind1 = i 
+			ind1 = i
 		else:
-			ind0 = i 
+			ind0 = i
 			ind1 = i + 1
 		if abs( uniqueDeltaF[ind0] - uniqueDeltaF[ind1] ) < 2*epsilon :
 			combList[ind0] = np.setdiff1d( combList[ind0], combList[ind1] )

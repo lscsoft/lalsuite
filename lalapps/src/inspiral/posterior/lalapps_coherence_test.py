@@ -22,7 +22,7 @@ or a test of coherent vs incoherent
 B_{CIN} = Z_co / (Z_1 * Z_2 * Z_3 + N_{123})
 
 or the test of coherent vs ( incoherent signal or noise ) models, i.e.
-B_{CIN} = Z_co / Z_{inc OR noise} 
+B_{CIN} = Z_co / Z_{inc OR noise}
 with Z_{inc OR noise} = sum over all permutations of the signal and noise hypotheses in each detector
 e.g. for 2 detectors:
 Z_{inc OR noise} =

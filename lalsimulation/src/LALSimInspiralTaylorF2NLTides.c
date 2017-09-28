@@ -104,7 +104,7 @@ int XLALSimInspiralTaylorF2NLPhase(
     We compute this from a basic post-newtonian expansion that includes dissipation from the tides as an extra energy sink
     In particular, we assume 0th order gravitational radiation loss and orbital energy and add terms like
         Edot_1 = 2*N1*Y1*Esat1
-    where 
+    where
         N is the number of modes participating
         Y is the growth rate of the instability
         Esat is the energy at which unstable modes saturate

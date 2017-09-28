@@ -117,6 +117,8 @@ typedef struct
 tagBinaryPulsarOutput
 {
   REAL8 deltaT; /**< deltaT to add to TDB in order to account for binary */
+  REAL8 deltaTW1; /**< For BT model output the first curly bracketed term from Eqn. 5 of \cite TaylorWeisberg1989  */
+  REAL8 deltaTW2; /**< For BT model output the velocity part of the second curly bracketed term from Eqn. 5 of \cite TaylorWeisberg1989 */
 }BinaryPulsarOutput;
 
 /**** DEFINE FUNCTIONS ****/

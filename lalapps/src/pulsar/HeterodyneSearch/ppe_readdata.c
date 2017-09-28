@@ -114,7 +114,7 @@ void read_pulsar_data( LALInferenceRunState *runState ){
   REAL8 *fstarts = NULL, *flengths = NULL, *fdt = NULL;
 
   CHAR dets[MAXDETS][256];
-  INT4 numDets = 0, i = 0, numPsds = 0, numLengths = 0, numStarts = 0;
+  INT4 numDets = 1, i = 0, numPsds = 0, numLengths = 0, numStarts = 0;
   INT4 numDt = 0, count = 0;
   UINT4 maxlen = 0;
 
@@ -164,7 +164,6 @@ void read_pulsar_data( LALInferenceRunState *runState ){
     modelFreqFactors->data[i] = atof(harmval);
   }
   XLALFree( tmpharms );
-  XLALFree( tmpharm );
   XLALFree( harmonics );
 
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--par-file" );
@@ -205,6 +204,7 @@ void read_pulsar_data( LALInferenceRunState *runState ){
       fprintf(stderr, "Error... too many detectors specified. Increase MAXDETS to be greater than %d if necessary.\n", MAXDETS);
       exit(0);
     }
+
     /*------------------------------------------------------------------------*/
     /* get noise psds if specified */
     ppt = LALInferenceGetProcParamVal(commandLine,"--fake-psd");
@@ -375,7 +375,6 @@ number of detectors specified (no. dets =%d)\n", ml, ml, numDets);
     else{ /* set default (60 sesonds) */
       for(i = 0; i < ml*numDets; i++) { fdt[i] = 60.; }
     }
-
   }
   /*psds set and timestamps set.*/
   /*====================================================================*/
@@ -453,7 +452,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
     LIGOTimeGPS gpstime;
     REAL8 dataValsRe = 0., dataValsIm = 0., sigmaVals = 0.;
     REAL8Vector *temptimes = NULL;
-    INT4 j = 0, k = 0, datalength = 0;
+    UINT4 j = 0, k = 0, datalength = 0;
     ProcessParamsTable *ppte = NULL, *ppts = NULL, *pptt = NULL;
 
     CHAR *filebuf = NULL;
@@ -575,7 +574,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
 
       INT4 nvals = 0; /* number of values in a line */
 
-      for ( k = 0; k < (INT4)tlist->nTokens; k++ ){
+      for ( k = 0; k < tlist->nTokens; k++ ){
         /* search for a comment character in the string */
         if ( strchr(tlist->tokens[k], '#') || strchr(tlist->tokens[k], '%') ){ continue; }
         else{ /* read in data from string */
@@ -605,8 +604,20 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
           }
           /* ignore excessively large spurious values as they can screw things up */
           if ( fabs(dataValsRe) > 1e-18 || fabs(dataValsIm) > 1e-18 ){ continue; }
+
+          /* make sure timestamps are unique */
+          if ( j > 0 ){
+            UINT4 notunique = 0;
+            for ( UINT4 ucount=0; ucount < j; ucount++ ){
+              if ( times == temptimes->data[ucount] ){
+                notunique = 1;
+                break;
+              }
+            }
+            if ( notunique ){ continue; }
+          }
         }
-        /* at this point, wa haven't added this item to the data yet */
+        /* at this point, we haven't added this item to the data yet */
         /* check truncation conditions before doing so */
         if ( LALInferenceGetProcParamVal( commandLine, "--truncate-time" ) ){
           /* assume truncateValue is a GPS time */
@@ -622,7 +633,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
             break;
           }
         }
-        
+
         j++;
 
         /* dynamically allocate more memory */
@@ -632,7 +643,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
 
         temptimes = XLALResizeREAL8Vector( temptimes, j );
 
-        // Note: j-1 because we added to j above (553)
+        /* Note: j-1 because we already added to j above */
         temptimes->data[j-1] = times;
 
         /* reheterodyne data if required */
@@ -683,26 +694,24 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
       ifomodel->times = NULL;
       ifomodel->times = XLALCreateTimestampVector( datalength );
 
-      UINT4 epochint = 0; /* index of the earliest time in the data */
-
       /* fill in time stamps as LIGO Time GPS Vector */
-      REAL8 sampledt = INFINITY; /* sample interval */
       for ( k = 0; k < datalength; k++ ) {
         XLALGPSSetREAL8( &ifomodel->times->data[k], temptimes->data[k] );
-
-        if ( k > 0 ){
-          /* get sample interval from the minimum time difference in the data */
-          if ( temptimes->data[k] - temptimes->data[k-1] < sampledt ) {
-            sampledt = temptimes->data[k] - temptimes->data[k-1];
-          }
-        }
-
-        if ( temptimes->data[k] < temptimes->data[epochint] ){ epochint = k; }
       }
 
-      ifodata->compTimeData->epoch = ifomodel->times->data[epochint];
-      ifomodel->compTimeSignal->epoch = ifomodel->times->data[epochint];
-      ifodata->varTimeData->epoch = ifomodel->times->data[epochint];
+      /* sort temporary time vector into ascending order (to get minimum time difference) */
+      gsl_sort(temptimes->data, 1, datalength);
+
+      REAL8 sampledt = temptimes->data[1] - temptimes->data[0]; /* sample interval */
+      for ( k = 2; k < datalength; k++ ){
+        if ( temptimes->data[i] - temptimes->data[i-1] < sampledt ){
+          sampledt = temptimes->data[i] - temptimes->data[i-1];
+        }
+      }
+
+      XLALGPSSetREAL8( &ifodata->compTimeData->epoch, temptimes->data[0] );
+      XLALGPSSetREAL8( &ifomodel->compTimeSignal->epoch, temptimes->data[0] );
+      XLALGPSSetREAL8( &ifodata->varTimeData->epoch, temptimes->data[0] );
 
       /* check whether to randomise the data by shuffling the time stamps (this will preserve the order of
        * the data for working out stationary chunk, but randomise the signal) */
@@ -715,8 +724,6 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
       }
 
       /* add data sample interval */
-      ppt = LALInferenceGetProcParamVal( commandLine, "--sample-interval" );
-      if( ppt ){ sampledt = atof( ppt->value ); }
       LALInferenceAddVariable( ifomodel->params, "dt", &sampledt, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 
       XLALDestroyREAL8Vector( temptimes );
@@ -778,6 +785,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
     ppte = LALInferenceGetProcParamVal( commandLine, "--ephem-earth" );
     ppts = LALInferenceGetProcParamVal( commandLine, "--ephem-sun" );
     pptt = LALInferenceGetProcParamVal( commandLine, "--ephem-timecorr" );
+
     if( ppte && ppts ){
       efile = XLALStringDuplicate( ppte->value );
       sfile = XLALStringDuplicate( ppts->value );
@@ -880,6 +888,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
     }
 
     LALInferenceAddVariable( modeltmp->params, "chunkLength", &chunkLength, LALINFERENCE_UINT4Vector_t, LALINFERENCE_PARAM_FIXED );
+    LALInferenceAddVariable( modeltmp->params, "inputSigma", &inputsigma, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
 
     /* compute the variance */
     if( !inputsigma ){ compute_variance( datatmp, modeltmp ); }
@@ -974,7 +983,7 @@ void setup_from_par_file( LALInferenceRunState *runState )
 /* Generates lookup tables also */
 {
   LALSource psr;
-  PulsarParameters *pulsar;
+  PulsarParameters *pulsar = NULL;
   LALInferenceIFOData *data = runState->data;
   ProcessParamsTable *ppt = NULL;
   REAL8 DeltaT = 0.; /* maximum data time span */

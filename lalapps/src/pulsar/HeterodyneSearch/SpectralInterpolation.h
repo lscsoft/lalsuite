@@ -40,57 +40,73 @@
 #include <lal/TimeSeries.h>
 #include <lal/XLALError.h>
 #include <lal/SFTfileIO.h>
+#include <lal/LALCache.h>
 /* lalapps header */
 #include <lalapps.h>
 
 /* Usage format string. */
- #define USAGE \
+#define USAGE \
 "Usage: lalapps_SplInter [options]\n\n"\
-" --help (-h)              display this message\n"\
-" \nRequired Input Variables:\n\n"\
-" --ifo (-i)               name of ifo e.g. L1, H1, H2, G1\n"\
-" --start-freq (-S)        Start frequency of the SFTs\n"\
-" --end-freq (-E)          End frequency of the SFTs\n"\
-" --ephem-dir (-e)         directory containing the ephemeris files\n"\
-" --output-dir (-o)        directory for output data files\n"\
-" --seg-file (-l)          name of file containing science segment list\n"\
-"\n Plus one of the following:\n\n"\
-" --param-file (-P)        name of file containing initial pulsar parameters\n\
-                             when using just one file as input (.par file)\n"\
-" --param-dir (-d)         name of directory containing pulsar parameter files\n\
-                             when using multiple input files (.par files)\n"\
+" --help (-h)           display this message\n"\
+"\nRequired Input Variables:\n\n"\
+" --ifo (-i)            name of ifo e.g. L1, H1, H2, G1\n"\
+" --start-freq (-S)     Start frequency of the SFTs\n"\
+" --end-freq (-E)       End frequency of the SFTs\n"\
+" --ephem-dir (-e)      directory containing the ephemeris files\n"\
+" --output-dir (-o)     directory for output data files\n"\
+" --seg-file (-l)       name of file containing science segment list\n"\
+"\nPlus one of the following:\n\n"\
+" --param-file (-P)     name of file containing initial pulsar\n\
+                        parameters when using just one file as input\n\
+                        (.par file)\n"\
+" --param-dir (-d)      name of directory containing pulsar parameter\n\
+                        files when using multiple input files (.par\n\
+                        files)\n"\
 "\n and one of the following:\n\n"\
-" --sft-cache (-F)         location of list of SFTs for use, can use \n\
-                             list:listsfts.txt or /location/*.sft\n"\
-" --sft-loc (-L)           directory of files containing a list of SFTs for \n\
-                             each segment, located in \n\
-                             /sft-loc/Segment_Start-End.sftcache, where Start and \n\
-                             End are the start and end of the segments in the seg-file. \n"\
-" \nThe following are not required but are set to defaults if not specified:\n\n"\
-" --starttime (-s)         start time of the analysis \n\
-                             (default 0 - i.e. from the start of the available data/segment list)\n"\
-" --finishtime (-f)        finish time of the analysis \n\
-                             (default Infinity - i.e. to the end of the available data/segment list)\n"\
-" --psr-name (-N)          set the name of the pulsar for the output file.\n\
-                             This option will overwrite any name set in the parfile.\n\
-                             The name is only set if the param-file option is used.\n\
-                             (default: not set) \n"\
-" --stddev-thresh (-T)     Set the number of standard deviations to use as the\n\
-                             threshold for removing outliers. Set to zero for no\n\
-                             outlier removal to be performed. (default zero)\n"\
-" --freq-factor (-m)       factor which multiplies the pulsar spin frequency\n\
-                             (default 2.0 i.e. a signal from a triaxial pulsar)\n"\
-" --bandwidth (-b)         width of frequency band around central frequency to\n\
-                             use when performing the interpolation.\n\
-                             (default 0.3Hz)\n"\
-" --min-seg-length (-M)    Minimum length of segments (default 1800s)\n"\
-" \nThe following flags are used in testing only, but are included here for completeness.\n\
-			   (defaults for all are not to set the flag) \n"\
-" --geocentreFlag (-g)     Flag to set the position of the ifo to be \n\
-                             at the geocentre.\n"\
-" --baryFlag (-B)          Flag to set the position of the ifo to be \n\
-                             at the solar system barycentre.\n"\
-" --output-timing (-t)     flags whether to print timing information to stderr\n"\
+" --sft-cache (-F)      location of list of SFTs for use, can use\n\
+                        list:listsfts.txt or /location/*.sft\n"\
+" --sft-loc (-L)        directory of files containing a list of SFTs\n\
+                        for each segment, located in\n\
+                        /sft-loc/Segment_Start-End.sftcache, where\n\
+                        Start and End are the start and end of the\n\
+                        segments in the seg-file.\n"\
+" --sft-lalcache (-C)   file containing a list of SFTs in the LALCache\n\
+                        format.\n"\
+"\nThe following are not required but are set to defaults if not\n\
+specified:\n\n"\
+" --starttime (-s)      start time of the analysis (default 0 i.e. from\n\
+                        the start of the available data/segment list)\n"\
+" --finishtime (-f)     finish time of the analysis (default Infinity\n\
+                        i.e. to the end of the available data/segment\n\
+                        list)\n"\
+" --psr-name (-N)       set the name of the pulsar for the output file.\n\
+                        This option will overwrite any name set in\n\
+                        the parfile. The name is only set if the\n\
+                        param-file option is used. (default: not set)\n"\
+" --stddev-thresh (-T)  Set the number of standard deviations to use as\n\
+                        the threshold for removing outliers. Set to\n\
+                        zero for no outlier removal to be performed.\n\
+                        (default zero)\n"\
+" --freq-factor (-m)    factor which multiplies the pulsar spin\n\
+                        frequency (default 2.0 i.e. a signal from a\n\
+                        triaxial pulsar)\n"\
+" --bandwidth (-b)      width of frequency band around central\n\
+                        frequency to use when performing the\n\
+                        interpolation. (default 0.3Hz)\n"\
+" --min-seg-length (-M) Minimum length of segments (default 1800s)\n"\
+" --max-seg-length (-Z) Maximum length of segments (default INFINITY).\n\
+                        Use this to reduce memory requirement if\n\
+                        trying to read in SFTs for long segement.\n"\
+" --gzip (-G)           If this flag is set then the output files will\n\
+                        be gzipped\n"\
+"\nThe following flags are used in testing only, but are included here\n\
+for completeness (defaults for all are not to set the flag) \n"\
+" --geocentreFlag (-g)  Flag to set the position of the ifo to be at\n\
+                        the geocentre.\n"\
+" --baryFlag (-B)       Flag to set the position of the ifo to be at\n\
+                        the solar system barycentre.\n"\
+" --output-timing (-t)  Flags whether to print timing information to\n\
+                        stderr\n"\
 "\n"
 
 #define XLAL_FRESNEL_EPS 6.0e-8
@@ -112,8 +128,11 @@ typedef struct tagInputParams{
   UINT4 parfileflag;
   UINT4 pardirflag;
 
+  UINT4 gzip;
+
   REAL8 stddevthresh;
   REAL8 minSegLength;
+  REAL8 maxSegLength;
 
   CHAR ephemdir[FILENAME_MAXLEN];
 
@@ -130,6 +149,7 @@ typedef struct tagInputParams{
   UINT4 Timing;
   UINT4 cacheDir;
   UINT4 cacheFile;
+  UINT4 lalcacheFile;
 
   REAL8 startF;
   REAL8 endF;

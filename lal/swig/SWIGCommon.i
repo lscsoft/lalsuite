@@ -2085,6 +2085,25 @@ require:
 %enddef
 
 ///
+/// The <b>SWIGLAL(OWNS_THIS_STRING(...))</b> is a specialisation of the <b>SWIGLAL(OWNS_THIS_ARG(...))</b>
+/// macro for strings, which must be handled differently.
+///
+%typemap(in, noblock=1, fragment="SWIG_AsLALcharPtrAndSize") char * SWIGLAL_OWNS_THIS_STRING (int res, char *str = NULL, int alloc = 0), const char * SWIGLAL_OWNS_THIS_STRING (int res, char *str = NULL, int alloc = 0) {
+  res = SWIG_AsLALcharPtr($input, &str, &alloc);
+  if (!SWIG_IsOK(res)) {
+    %argument_fail(res,"$type",$symname, $argnum);
+  }
+  $1 = %reinterpret_cast(str, $1_ltype);
+}
+%typemap(freearg, noblock=1, match="in") char *SWIGLAL_OWNS_THIS_STRING, const char *SWIGLAL_OWNS_THIS_STRING "";
+%define %swiglal_public_OWNS_THIS_STRING(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, TYPE SWIGLAL_OWNS_THIS_STRING, TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_OWNS_THIS_STRING(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+
+///
 /// The <b>SWIGLAL(EXTERNAL_STRUCT(...))</b> macro can be used to support structs which are not
 /// declared in LALSuite. It treats the struct as opaque, and attaches a destructor function to it.
 ///

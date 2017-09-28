@@ -651,29 +651,6 @@ INT4 count_csv( CHAR *csvline ){
 
 
 /**
- * \brief Checks if a given parameter is recognised
- *
- * This function checks whether a given parameter is one of the defined amplitude (\c amppars), frequency (\c freqpars),
- * sky location (\c skypars), binary system (\c binpars) of glitch (\c glitchpars) parameters given in the header file.
- *
- * \param parname [in] The name of a parameter
- *
- * \return true (1) if the parameter is recognised and false (0) if not
- */
-INT4 recognised_parameter( CHAR *parname ){
-  INT4 i = 0;
-
-  for( i = 0; i < NUMAMPPARS; i++ ) { if (!strcmp(parname, amppars[i])) { return 1; } }
-  for( i = 0; i < NUMFREQPARS; i++ ) { if (!strcmp(parname, freqpars[i])) { return 1; } }
-  for( i = 0; i < NUMSKYPARS; i++ ) { if (!strcmp(parname, skypars[i])) { return 1; } }
-  for( i = 0; i < NUMBINPARS; i++ ) { if (!strcmp(parname, binpars[i])) { return 1; } }
-  for( i = 0; i < NUMGLITCHPARS; i++ ) { if (!strcmp(parname, glitchpars[i])) { return 1; } }
-
-  return 0;
-}
-
-
-/**
  * \brief Automatically set the solar system ephemeris file based on environment variables and data time span
  *
  * This function will attempt to construct the file name for Sun, Earth and time correction ephemeris files

@@ -89,7 +89,7 @@ proc tconvert::tconvert { args } {
 	    }
 	}
     }
-    
+
 
     ;##- If we haven't yet gotten leap-second information, do it now
     if { $gotLeapSeconds == 0 } {
@@ -197,7 +197,7 @@ proc tconvert::tconvert { args } {
     if { [catch {clock scan $timespec -gmt $gmtflag} systime] } {
 	;##- 'clock scan' fails!  There are two special cases to check.
 
-	if {$debug} { 
+	if {$debug} {
 	    puts "Initial 'clock scan' fails.  Checking special cases ..."
 	}
 
@@ -228,7 +228,7 @@ proc tconvert::tconvert { args } {
 	    ;##- See if removing the fractional part makes the string parsable
 	    if { [catch {clock scan "${part1}${digit}${part2}" -gmt $gmtflag} \
 		    systime] } {
-		if {$debug} { 
+		if {$debug} {
 		    puts " found a decimal fraction, but removing it doesn't\
 			    make string parsable"
 		}
@@ -249,7 +249,7 @@ proc tconvert::tconvert { args } {
 	    set systime2 \
 		    [clock scan "${part1}${newdigit}${part2}" -gmt $gmtflag]
 	    if { [expr {abs($systime2-$systime)}] != 1 } {
-		if {$debug} { 
+		if {$debug} {
 		    puts " found a decimal fraction, but it is not on the\
 			    number of seconds"
 		}
@@ -259,7 +259,7 @@ proc tconvert::tconvert { args } {
 
 	    ;##- The fractional part really WAS on the seconds!
 	    ;##- Now we can go on.
-	    if {$debug} { 
+	    if {$debug} {
 		puts " successfully stripped out the fractional part\
 			($fracsec)"
 	    }
@@ -275,7 +275,7 @@ proc tconvert::tconvert { args } {
 	    if { [lsearch -exact $sysLeaps $systime] != -1 } {
 		;##- This is an actual leap second!  We'll need to correct the
 		;##- GPS time we come up with
-		if {$debug} { 
+		if {$debug} {
 		    puts "Verified that this is an actual leap second"
 		}
 		set leapcorr -1
@@ -293,7 +293,7 @@ proc tconvert::tconvert { args } {
 	    $::tcl_platform(os)] } {
 	set inzone [string toupper $inzone]
 	set inzone1 [string index $inzone 0]
-	if {$debug} { 
+	if {$debug} {
 	    puts -nonewline "Checking whether specified time zone ($inzone) is\
 		    valid for this time ..."
 	}
@@ -439,16 +439,16 @@ proc tconvert::GetLeapSeconds { {debug 0} } {
     ;##- First, see if the TCLEAPSDIR environment variable is set
     #if { [info exists ::env(TCLEAPSDIR)] }
     if { 1 } {
-	#if {$debug} { 
+	#if {$debug} {
 	#    puts "Using TCLEAPSDIR environment variable for location\
 	#	    of config dir"
 	#}
 	#set configdir $::env(TCLEAPSDIR)
-        set configdir [pwd] 
+        set configdir [pwd]
     } elseif { [info exists ::env(LIGOTOOLS)] } {
 	;##- Use the LIGOTOOLS environment variable to locate the config dir;
 	;##- then tcleaps.txt is in $LIGOTOOLS/config/public
-	if {$debug} { 
+	if {$debug} {
 	    puts "Using LIGOTOOLS environment variable to determine location\
 		    of config dir"
 	}
@@ -463,14 +463,14 @@ proc tconvert::GetLeapSeconds { {debug 0} } {
                     not writable, so using home directory" }
 	    set configdir $::env(HOME)
 	}
-	
+
     } else {
         ;##- Next, try to do so relative to this script's location
 	set script [ScriptLocation]
 	if {$debug} {puts "Script location is $script"}
 	if { [regexp {^(.+)/packages/dataflow/[^/]+/} $script match ltdir] } {
 	    set configdir "${ltdir}/config/public"
-	    if {$debug} { 
+	    if {$debug} {
 		puts "Using script's location to determine location\
 			of config dir"
 	    }
@@ -481,7 +481,7 @@ proc tconvert::GetLeapSeconds { {debug 0} } {
 	}
     }
 
-    if {$debug} { 
+    if {$debug} {
 	if { $configdir != "" } {
 	    puts "config dir is $configdir"
 	    if { [file isdirectory $configdir] } {
@@ -504,7 +504,7 @@ proc tconvert::GetLeapSeconds { {debug 0} } {
     if { $leapfile != "" && [file readable $leapfile] } {
 	if {$debug} { puts "tcleaps.txt exists and is readable" }
 	set expiration [ReadLeapSecFile $leapfile $debug]
-	
+
 	;##- Check whether the leap-second info has expired
 	if { $timenow > $expiration } {
 	    ;##- The leap-seconds file has expired, so we will have to try to
@@ -557,7 +557,7 @@ proc tconvert::GetLeapSeconds { {debug 0} } {
 	    www.ldas.ligo.caltech.edu \
 	    ldas.mit.edu \
 	    www.ldas-test.ligo.caltech.edu ] {
-	if {$debug} { 
+	if {$debug} {
 	    puts -nonewline "Trying to get leapseconds file from $host ..."
 	    flush stdout
 	}
@@ -597,14 +597,14 @@ proc tconvert::GetLeapSeconds { {debug 0} } {
 
     set pat {^ *((?:19|20)\d\d) +([A-Za-z]{3}) +(\d{1,2})}
     foreach {match year month mdate} \
-	    [regexp -all -inline -line $pat $contents] { 
+	    [regexp -all -inline -line $pat $contents] {
 	set time [clock scan "$month $mdate, $year" -gmt 1]
 	if { $time > $gpsEpoch } {
 	    lappend gpsLeaps [expr {$time-$gpsEpoch+[llength $sysLeaps]}]
 	    lappend sysLeaps $time
 	}
     }
-    if {$debug} { 
+    if {$debug} {
 	puts "Found [llength $gpsLeaps] leap seconds since 6 Jan 1980"
     }
 
@@ -615,7 +615,7 @@ proc tconvert::GetLeapSeconds { {debug 0} } {
     ;##- Finally, check the latest "Bulletin C" from the IERS to see how far
     ;##- in the future we can be sure that this list is valid.
 
-    if {$debug} { 
+    if {$debug} {
 	puts -nonewline "Retrieving latest Bulletin C ..."
 	flush stdout
     }
@@ -647,7 +647,7 @@ proc tconvert::GetLeapSeconds { {debug 0} } {
 		{WriteLeapSecFile $configdir $leapfile $expiration $debug} \
 		msg] } {
 	    ;##- We were unable to write the updated disk file.  If the
-	    ;##- current disk file has expired, print a warning message. 
+	    ;##- current disk file has expired, print a warning message.
 	    if { [info exists sysLeapsExpired] } {
 		puts stderr "tconvert NOTICE: Leap-second info in $leapfile\
 			is no longer certain to be valid; We got valid\
@@ -983,7 +983,7 @@ proc tconvert::ParseBulletinC { contents {debug 0} } {
 	    if { $expir1 > $expiration } { set expiration $expir1 }
 
 	}
-	    
+
     } else {
 	if {$debug} {puts "Unable to find leap date"}
     }

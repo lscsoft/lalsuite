@@ -3912,13 +3912,13 @@ void LALInferenceSetMCMCrunphase_ptrVariable(LALInferenceVariables* vars,const c
   LALInferenceSetVariable(vars,name,(void*)&value);
 }
 
-void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * name, CHAR* value, LALInferenceParamVaryType vary)
+void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * name, const CHAR* value, LALInferenceParamVaryType vary)
 /* Typed version of LALInferenceAddVariable for CHAR values.*/
 {
   LALInferenceAddVariable(vars,name,&value,LALINFERENCE_string_t,vary);
 }
 
-CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * name)
+const CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * name)
 /* Typed version of LALInferenceGetVariable for CHAR values.*/
 {
 
@@ -3931,7 +3931,7 @@ CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * n
   return rvalue;
 }
 
-void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name,CHAR* value){
+void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name, const CHAR* value){
   LALInferenceSetVariable(vars,name,&value);
 }
 
