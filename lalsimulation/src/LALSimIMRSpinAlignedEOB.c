@@ -281,6 +281,7 @@ XLALSpinAlignedNSNSStopCondition (double UNUSED t, /**< UNUSED */
   params->eobParams->rad = r;
     if( LAL_PI/params->deltaT <= 2.*omega ) {
         if (debugOutput) printf("Stop at Nyquist at r=%.16e\n", r);
+        XLAL_PRINT_WARNING ("Waveform will be generated only up to half the sampling frequency, thus discarding any physical higher-frequency contect above that!\n");
         return 1;
     }
   return GSL_SUCCESS;
