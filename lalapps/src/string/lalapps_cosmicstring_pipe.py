@@ -174,6 +174,7 @@ overlap = short_segment_duration / 2 + 2 * pad	# FIXME:  correct?
 #
 
 instruments = lsctables.instrumentsproperty.get(config_parser.get('pipeline','ifos'))
+segments_cache = set([CacheEntry(None, None, None, "file://localhost" + os.path.abspath(options.segments_file))])
 seglists = ligolw_segments.segmenttable_get_by_name(ligolw_utils.load_filename(options.segments_file, contenthandler = ligolw_segments.LIGOLWContentHandler, verbose = options.verbose), options.segments_name).coalesce()
 # remove extra instruments
 for instrument in set(seglists) - instruments:
@@ -338,7 +339,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 				# ligolw_add needs to copy the time slide
 				# document into its output
 				extra_input_cache = tisi_cache | vetoes_cache
-			these_lladd_nodes = power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache, extra_input_cache = extra_input_cache, remove_input = do_injections and clipseg is not None, preserve_cache = binj_cache | tisi_cache | vetoes_cache)
+			these_lladd_nodes = power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache | segments_cache, extra_input_cache = extra_input_cache, remove_input = do_injections and clipseg is not None, preserve_cache = binj_cache | segments_cache | tisi_cache | vetoes_cache)
 			if clipseg is not None:
 				#
 				# this is a fragment of a too-large burca
