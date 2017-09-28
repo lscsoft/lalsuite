@@ -155,6 +155,22 @@ def coord_to_string(h_or_d, m, s):
   else:
     return retstr+"%.2d:%.2d:0%.4f" % (h_or_d, m, s)
 
+def rad_to_string(rad, ra_or_dec):
+  """
+  rad_to_string(rad, ra_or_dec):
+     Convert an angle in radians to hours/degrees, minutes seconds and output
+     it as a string in the format 'hh:mm:ss.ssss' if RA, or 'dd:mm:ss.ssss' if DEC.
+     Whether to use hours or degrees is set by whether ra_or_dec is 'RA' or 'DEC'
+  """
+  if ra_or_dec.upper() == 'RA':
+    v, m, s = rad_to_hms(rad)
+  elif ra_or_dec.upper() == 'DEC':
+    v, m, s = rad_to_dms(rad)
+  else:
+    raise("Unrecognised option: Expected 'ra_or_dec' to be 'RA' or 'DEC'")
+
+  return coord_to_string(v, m, s)
+
 def ra_to_rad(ra_string):
   """
   ra_to_rad(ar_string):
