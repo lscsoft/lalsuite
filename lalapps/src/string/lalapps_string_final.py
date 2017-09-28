@@ -800,6 +800,8 @@ def process_file(filename, products, live_time_program, tmp_path = None, veto_se
 		# as a side-effect, this enforces the rule that
 		# burca has been run on the input file exactly once
 		contents.coincidence_segments, = contents.coincidence_segments
+		# FIXME:  remove when LAL accepts unicode
+		contents.coincidence_segments = contents.coincidence_segments.encode('utf-8')
 		contents.coincidence_segments = segments.segmentlistdict.fromkeys(contents.seglists, segmentsUtils.from_range_strings(contents.coincidence_segments.split(","), boundtype = dbtables.lsctables.LIGOTimeGPS).coalesce())
 	else:
 		contents.coincidence_segments = None
