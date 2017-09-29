@@ -173,7 +173,7 @@ static COMPLEX16 XLALhTidal(
                     hNewtonTidal = -3. * I * v*v2 * sqrt(6.*LAL_PI/7.);
                     break;
                 case 2:
-                    hNewtonTidal = -8./3. * v2*v2 * sqrt(LAL_PI/7.);
+                    return 0.;
                     break;
                 case 1:
                     hNewtonTidal = 1./3. * I * v*v2 * sqrt(2.*LAL_PI/35.);
