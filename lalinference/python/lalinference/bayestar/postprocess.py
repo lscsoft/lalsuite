@@ -24,6 +24,7 @@ import pkg_resources
 
 from astropy.coordinates import (CartesianRepresentation, SkyCoord,
                                  UnitSphericalRepresentation)
+from astropy import units as u
 import healpy as hp
 import lal
 import lalsimulation
