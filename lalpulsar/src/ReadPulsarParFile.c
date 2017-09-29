@@ -364,7 +364,7 @@ REAL8 PulsarGetREAL8VectorParamErrIndividual( const PulsarParameters *pars, cons
 }
 
 
-void PulsarAddParam( PulsarParameters *pars, const CHAR *name, const void *value, PulsarParamType type ){
+void PulsarAddParam( PulsarParameters *pars, const CHAR *name, void *value, PulsarParamType type ){
 /* Add the variable name with type type and value value to pars */
 /* If variable already exists, it will over-write the current value if type compatible*/
   PulsarParam *old = NULL;
@@ -395,6 +395,7 @@ void PulsarAddParam( PulsarParameters *pars, const CHAR *name, const void *value
     new->err = NULL;
     new->fitFlag = (UINT4 *)XLALMalloc( sizeof(UINT4) );
   }
+
   if( new == NULL || new->value == NULL ) {
     XLAL_ERROR_VOID(XLAL_ENOMEM, "Unable to allocate memory for list item.");
   }
@@ -438,7 +439,10 @@ void PulsarAddREAL8VectorParam(PulsarParameters *pars, const CHAR * name, REAL8V
 void PulsarAddStringParam(PulsarParameters *pars, const CHAR * name, const CHAR *value)
 /* Typed version of PulsarAddParam for string values.*/
 {
-  PulsarAddParam(pars, name, &value, PULSARTYPE_string_t);
+  CHAR *sval = NULL;
+  sval = XLALMalloc( PulsarTypeSize[PULSARTYPE_string_t] );
+  XLALStringCopy(sval, value, PulsarTypeSize[PULSARTYPE_string_t]);
+  PulsarAddParam(pars, name, (void *)&sval, PULSARTYPE_string_t);
 }
 
 
@@ -468,6 +472,9 @@ void PulsarClearParams( PulsarParameters *pars ){
     if( this->type == PULSARTYPE_REAL8Vector_t ) {
       if ( this->value ) { XLALDestroyREAL8Vector( *(REAL8Vector **)this->value ); }
       if ( this->err ) { XLALDestroyREAL8Vector( *(REAL8Vector **)this->err ); }
+    }
+    else if ( this->type == PULSARTYPE_string_t ){
+      if ( this->value ) { XLALFree( *(CHAR **)this->value ); }
     }
     XLALFree( this->value );
     XLALFree( this->err );
@@ -515,6 +522,13 @@ void PulsarRemoveParam( PulsarParameters *pars, const CHAR *name ){
   hash_elem elem;
   elem.name = this->name;
   XLALHashTblRemove( pars->hash_table, (void *)&elem );
+  if( this->type == PULSARTYPE_REAL8Vector_t ) {
+    if ( this->value ) { XLALDestroyREAL8Vector( *(REAL8Vector **)this->value ); }
+    if ( this->err ) { XLALDestroyREAL8Vector( *(REAL8Vector **)this->err ); }
+  }
+  else if ( this->type == PULSARTYPE_string_t ){
+    if ( this->value ) { XLALFree( *(CHAR **)this->value ); }
+  }
   XLALFree( this->value );
   XLALFree( this->err );
   XLALFree( this->fitFlag );
@@ -976,8 +990,9 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
           XLALFree( val );
         }
         else{
-          const CHAR *val = XLALStringDuplicate(str1);
-          PulsarAddStringParam( par, pc[i].name, val );
+          CHAR *val = XLALStringDuplicate(str1);
+          PulsarAddStringParam( par, pc[i].name, (const CHAR*)val );
+          XLALFree( val );
         }
       }
 
@@ -1071,7 +1086,7 @@ PulsarParameters *XLALReadTEMPOParFile( const CHAR *pulsarAndPath ){
 
   /* check for linked parameters SINI and KIN */
   if ( PulsarCheckParam( par, "SINI" ) ){
-    CHAR* sini = XLALStringDuplicate(PulsarGetStringParam( par, "SINI" ));
+    CHAR *sini = XLALStringDuplicate(PulsarGetStringParam( par, "SINI" ));
     strtoupper( sini );
 
     REAL8 sinid;
