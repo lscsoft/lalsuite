@@ -19,21 +19,20 @@
 Postprocessing utilities for HEALPix sky maps
 """
 from __future__ import division
-
-
+import collections
 import pkg_resources
+
 from astropy.coordinates import (CartesianRepresentation, SkyCoord,
                                  UnitSphericalRepresentation)
-import numpy as np
 import healpy as hp
-import collections
 import lal
 import lalsimulation
+import numpy as np
 from scipy.interpolate import interp1d
+
 from .. import distance
 from . import moc
 from ..healpix_tree import *
-
 
 try:
     pkg_resources.require('numpy >= 1.10.0')
