@@ -17,9 +17,11 @@
 """
 Plotting classes and methods
 """
-from . import allsky, healpix, poly, pp
+from . import allsky, healpix, marker, poly, pp
 from .allsky import *
 from .healpix import *
+from .marker import *
 from .poly import *
 from .pp import *
-__all__ = allsky.__all__ + healpix.__all__ + poly.__all__ + pp.__all__
+__all__ = (allsky.__all__ + healpix.__all__ + marker.__all__ + poly.__all__
+           + pp.__all__)
