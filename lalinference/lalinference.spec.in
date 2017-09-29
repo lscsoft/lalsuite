@@ -16,6 +16,7 @@ BuildRequires: chealpix-devel >= 3.30.0
 BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
 BuildRequires: healpy >= 1.9.1
+BuildRequires: python-astropy >= 1.1.1
 BuildRequires: python-matplotlib >= 1.2.0
 BuildRequires: python-shapely
 BuildRequires: libmetaio-devel
@@ -95,6 +96,7 @@ Requires: python-shapely
 Requires: numpy >= 1.7
 Requires: python
 Requires: scipy >= 0.8
+Requires: python-astropy >= 1.1.1
 Requires: python-matplotlib >= 1.2.0
 Requires: python-six
 Requires: python-seaborn
