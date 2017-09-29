@@ -220,7 +220,8 @@ XLALSpinAlignedNSNSStopCondition (double UNUSED t, /**< UNUSED */
   r = values[0];
   omega = dvalues[1];
   counter = params->eobParams->omegaPeaked;
-  if (debugOutput)   printf("function NSNS: r = %.16e, omega = %.16e, pr = %.16e, dpr = %.16e, count = %.16u \n",values[0],dvalues[1],values[2],dvalues[2],counter);
+    REAL8 eta = params->eobParams->eta;
+  if (debugOutput)   printf("function NSNS: r = %.16e, omega = %.16e, pr = %.16e, dpr = %.16e, count = %.16u\n",values[0],dvalues[1],values[2],dvalues[2],counter);
 //  printf("%.16e %.16e %.16e %.16e\n",values[0],dvalues[1],values[2],dvalues[2]);
   REAL8 rCheck = 1.5*rMerger;
   if (r < rCheck && omega < params->eobParams->omega)
@@ -255,7 +256,7 @@ XLALSpinAlignedNSNSStopCondition (double UNUSED t, /**< UNUSED */
         if (debugOutput) printf("Stop at nan's at r=%.16e\n", r);
         return 1;
     }
-    if ( fabs(r/params->eobParams->rad - 1.) < 1e-7 && fabs(r/params->eobParams->rad - 1.) > 0.) {
+    if ( fabs(r/params->eobParams->rad - 1.) < 1.e-3*64./5.*eta/(r*r*r*r)*0.02 && fabs(r/params->eobParams->rad - 1.) > 0.) {
         if (debugOutput) printf("Radius is stalling at r=%.16e and rad=%.16e\n", r, params->eobParams->rad);
         return 1;
     }
@@ -495,7 +496,7 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
       printf("First run SEOBNRv4 to compute NQCs\n");
 #endif      
       ret = XLALSimIMRSpinAlignedEOBWaveformAll (hplus, hcross, tVec, rVec, phiVec, prVec, pPhiVec,
-                     phiC, deltaT, m1BH, m2BH, 2*pow(10.,-1.5)/(2.*LAL_PI)/((m1BH + m2BH)*LAL_MTSUN_SI/LAL_MSUN_SI), r, inc, spin1z, spin2z, 400,
+                     phiC, 1./32768, m1BH, m2BH, 2*pow(10.,-1.5)/(2.*LAL_PI)/((m1BH + m2BH)*LAL_MTSUN_SI/LAL_MSUN_SI), r, inc, spin1z, spin2z, 400,
 					 0, 0, 0, 0, 0, 0, 0, 0, nqcCoeffsInput, nqcFlag);
       nqcFlag = 2;
   }
@@ -854,6 +855,8 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
       tStepBack = 150. * mTScaled;
     }
   nStepBack = ceil (tStepBack / deltaT);
+    
+  
 
   /* Calculate the resample factor for attaching the ringdown */
   /* We want it to be a power of 2 */
@@ -1304,13 +1307,12 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 #endif
     
   // Output low sample rate dynamics
-
   tVecOut = &tVec;
   rVecOut = &rVec;
   phiVecOut = &phiVec;
   prVecOut = &prVec;
   pPhiVecOut = &pPhiVec;
-
+    
   if (tStepBack > retLen * deltaT)
     {
       tStepBack = 0.5 * retLen * deltaT;	//YPnote: if 100M of step back > actual time of evolution, step back 50% of the later
@@ -1355,7 +1357,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   if ( use_tidal == 1 ) {
       integrator->stop = XLALSpinAlignedNSNSStopCondition;
     }
-
+    
   if (use_optimized_v2_or_v4)
     {
       /* BEGIN OPTIMIZED: */
@@ -1409,7 +1411,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   fclose (out);
 #endif
 
-  /* Allocate the high sample rate vectors */
+    /* Allocate the high sample rate vectors */
   sigReHi =
     XLALCreateREAL8Vector (retLen +
 			   (UINT4) ceil (20 /
@@ -1829,6 +1831,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 #if debugOutput
         printf("indAmax %d\n",indAmax);
 #endif
+        
         if ( (INT4)indAmax== (INT4) timeHi.length-1 ) {
             INT4 peakDet = 0;
             REAL8 dAnew, dAval;
@@ -1883,7 +1886,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
             }
         }
 
-        if ( timeHi.data[indAmax] <= timeHi.data[indOmax] ) {
+        if ( indAmax>timeHi.length/2 && timeHi.data[indAmax] <= timeHi.data[indOmax] ) {
             timePeak = timeHi.data[indAmax] ;
         }
         else {
