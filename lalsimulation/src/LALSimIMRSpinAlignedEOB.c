@@ -478,16 +478,16 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
     }
 
 
-  REAL8Vector   *tVec = NULL;
-  REAL8Vector   *rVec = NULL;
-  REAL8Vector   *phiVec = NULL;
-  REAL8Vector   *prVec = NULL;
-  REAL8Vector   *pPhiVec = NULL;
   REAL8Vector *nqcCoeffsInput = XLALCreateREAL8Vector(10);
   INT4 nqcFlag = 0;
 
 
-  if ( SpinAlignedEOBversion == 401 ) {
+  if ( SpinAlignedEOBversion == 401 || SpinAlignedEOBversion == 4 ) {
+    REAL8Vector   *tVec = NULL;
+    REAL8Vector   *rVec = NULL;
+    REAL8Vector   *phiVec = NULL;
+    REAL8Vector   *prVec = NULL;
+    REAL8Vector   *pPhiVec = NULL;
       nqcFlag = 1;
       REAL8 m1BH, m2BH;
       m1BH = m1SI / (m1SI + m2SI) * 50. * LAL_MSUN_SI;
@@ -498,31 +498,50 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
       ret = XLALSimIMRSpinAlignedEOBWaveformAll (hplus, hcross, tVec, rVec, phiVec, prVec, pPhiVec,
                      phiC, 1./32768, m1BH, m2BH, 2*pow(10.,-1.5)/(2.*LAL_PI)/((m1BH + m2BH)*LAL_MTSUN_SI/LAL_MSUN_SI), r, inc, spin1z, spin2z, 400,
 					 0, 0, 0, 0, 0, 0, 0, 0, nqcCoeffsInput, nqcFlag);
+
+      if( tVec )
+        XLALDestroyREAL8Vector( tVec );
+      if( rVec )
+        XLALDestroyREAL8Vector( rVec );
+      if( phiVec )
+        XLALDestroyREAL8Vector( phiVec );
+      if( prVec )
+        XLALDestroyREAL8Vector( prVec );
+      if( pPhiVec )
+        XLALDestroyREAL8Vector( pPhiVec );
       nqcFlag = 2;
   }
 #if debugOutput
     printf("Generate EOB wf\n");
 #endif
-  ret = XLALSimIMRSpinAlignedEOBWaveformAll (hplus, hcross, tVec, rVec, phiVec, prVec, pPhiVec,
-                                           phiC, deltaT, m1SI, m2SI, fMin, r, inc, spin1z, spin2z, SpinAlignedEOBversion,
-                                           lambda2Tidal1, lambda2Tidal2,
-                                           omega02Tidal1, omega02Tidal2,
-                                           lambda3Tidal1, lambda3Tidal2,
-                                           omega03Tidal1, omega03Tidal2,
-                                           nqcCoeffsInput, nqcFlag);
-
-  if( tVec )
+    {
+      REAL8Vector   *tVec = NULL;
+      REAL8Vector   *rVec = NULL;
+      REAL8Vector   *phiVec = NULL;
+      REAL8Vector   *prVec = NULL;
+      REAL8Vector   *pPhiVec = NULL;
+      //REAL8Vector *nqcCoeffsInput = XLALCreateREAL8Vector(10);
+      //INT4 nqcFlag = 0;
+      ret = XLALSimIMRSpinAlignedEOBWaveformAll (hplus, hcross, tVec, rVec, phiVec, prVec, pPhiVec,
+                                                 phiC, deltaT, m1SI, m2SI, fMin, r, inc, spin1z, spin2z, SpinAlignedEOBversion,
+                                                 lambda2Tidal1, lambda2Tidal2,
+                                                 omega02Tidal1, omega02Tidal2,
+                                                 lambda3Tidal1, lambda3Tidal2,
+                                                 omega03Tidal1, omega03Tidal2,
+                                                 nqcCoeffsInput, nqcFlag);
+      if( tVec )
         XLALDestroyREAL8Vector( tVec );
-  if( rVec )
+      if( rVec )
         XLALDestroyREAL8Vector( rVec );
-  if( phiVec )
+      if( phiVec )
         XLALDestroyREAL8Vector( phiVec );
-  if( prVec )
+      if( prVec )
         XLALDestroyREAL8Vector( prVec );
-  if( pPhiVec )
+      if( pPhiVec )
         XLALDestroyREAL8Vector( pPhiVec );
-  if ( nqcCoeffsInput )
-       XLALDestroyREAL8Vector( nqcCoeffsInput );
+      if ( nqcCoeffsInput )
+        XLALDestroyREAL8Vector( nqcCoeffsInput );
+    }
   return ret;
 }
 
@@ -1663,6 +1682,36 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
         nqcCoeffsInput->data[7] = nqcCoeffs.b2;
         nqcCoeffsInput->data[8] = nqcCoeffs.b3;
         nqcCoeffsInput->data[9] = nqcCoeffs.b4;
+
+        // FINISHED COMPUTING NQC. NOW MUST FREE ALLOCATED MEMORY!
+        gsl_spline_free (spline);
+        gsl_interp_accel_free (acc);
+
+        XLALDestroyREAL8Vector (tmpValues);
+        XLALDestroyREAL8Vector (sigmaKerr);
+        XLALDestroyREAL8Vector (sigmaStar);
+        XLALDestroyREAL8Vector (values);
+        XLALDestroyREAL8Vector (ampNQC);
+        XLALDestroyREAL8Vector (phaseNQC);
+        XLALDestroyREAL8Vector (sigReVec);
+        XLALDestroyREAL8Vector (sigImVec);
+        XLALAdaptiveRungeKuttaFree (integrator);
+        XLALDestroyREAL8Array (dynamics);
+        XLALDestroyREAL8Array (dynamicsHi);
+
+        if (dynamicstmp)
+          {
+            XLALDestroyREAL8Array (dynamicstmp);
+          }
+        if (dynamicsHitmp)
+          {
+            XLALDestroyREAL8Array (dynamicsHitmp);
+          }
+
+        XLALDestroyREAL8Vector (sigReHi);
+        XLALDestroyREAL8Vector (sigImHi);
+        XLALDestroyREAL8Vector (omegaHi);
+
         return XLAL_SUCCESS;
     }
 
