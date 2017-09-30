@@ -25,6 +25,7 @@ pymodule_PYTHON = \
 	distance.py \
 	eigenframe.py \
 	healpix_tree.py \
+	kde.py \
 	lalinference_pipe_utils.py \
 	nest2pos.py \
 	git_version.py \
