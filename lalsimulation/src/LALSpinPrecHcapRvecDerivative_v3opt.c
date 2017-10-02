@@ -11,7 +11,7 @@
 #include "LALSimIMRSpinEOBFactorizedWaveformCoefficientsPrec.c"
 
 /**
- * Function to calculate numerical derivatives of the spin EOB Hamiltonian,
+ * Function to calculate exact derivatives of the spin EOB Hamiltonian,
  * to get \f$dr/dt\f$, as decribed in Eqs. A4 of PRD 81, 084041 (2010)
  * This function is not used by the spin-aligned SEOBNRv1 model.
  */
@@ -22,8 +22,6 @@ static int XLALSpinPrecHcapRvecDerivative_exact(
                  void             *funcParams /**<< EOB parameters */
                                )
 {
-  //UNUSED int debugPK = 1;
-  //if (debugPK){
     for(int i =0; i < 12; i++){
       if( isnan(values[i]) ) {
         XLAL_PRINT_INFO("XLALSpinPrecHcapRvecDerivative_exact::values %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f\n", values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8], values[9], values[10], values[11]);
@@ -31,7 +29,6 @@ static int XLALSpinPrecHcapRvecDerivative_exact(
           XLAL_ERROR( XLAL_EINVAL );
         }
     }
-  //}
     SpinEOBParams * seobParams = (SpinEOBParams *)funcParams;
 
     REAL8 tmpDValues[12] = {0.}, Tmatrix[3][3]={{0.,0.,0.},{0.,0.,0.},{0.,0.,0.}};
@@ -62,7 +59,7 @@ static int XLALSpinPrecHcapRvecDerivative_exact(
         u5 = u4*u;
         w2 = rMag2 + a2;
 
-        /* Eq. 5.83 of BB1, inverse */
+        /* Eq. 5.83 of Barausse and Buonanno PRD 81, 084024 (2010) (hereafter  BB1), inverse */
         D = 1. + log(1. + 6.*eta*u2 + 2.*(26. - 3.*eta)*eta*u3);
 
         m1PlusetaKK = -1. + eta * coeffs->KK;
@@ -84,14 +81,14 @@ static int XLALSpinPrecHcapRvecDerivative_exact(
         /* Eq. 5.38 of BB1 */
         deltaR = deltaT*D;
 
-        csi = sqrt( fabs(deltaT * deltaR) )/ w2; /* Eq. 28 of Pan et al. PRD 81, 084041 (2010) */
+        csi = sqrt( fabs(deltaT * deltaR) )/ w2; /* Inverse of Eq. 28 of Pan et al. PRD 81, 084041 (2010), so that csi = \xi_a(R) */
 
         XLALSimIMRCalculateSpinPrecEOBHCoeffs( seobParams->seobCoeffs, seobParams->eobParams->eta, sqrt(a2), seobParams->seobCoeffs->SpinAlignedEOBversion );
     }
 
     /* Calculate the T-matrix, required to convert P from tortoise to
     * non-tortoise coordinates, and/or vice-versa. This is given explicitly
-    * in Eq. A3 of 0912.3466 */
+    * in Eq. A3 of Pan et al. PRD 81, 084041 (2010) */
     for( int i = 0; i < 3; i++ ){
         for( int j = 0; j <= i; j++ )
             Tmatrix[i][j] = Tmatrix[j][i] = (values[i]*values[j]/rMag2)* (csi - 1.);
@@ -105,8 +102,8 @@ static int XLALSpinPrecHcapRvecDerivative_exact(
     //OPTV3: The following updates hcoeffs
         REAL8 mass1 = seobParams->eobParams->m1;
         REAL8 mass2 = seobParams->eobParams->m2;
-        REAL8 s1Data[3],s2Data[3],/*magL,polData[3],*/rcrossrDot[3];
-        REAL8 /*Lx,Ly,Lz,*/rcrossrDotMag, s1dotLN, s2dotLN, chiS,chiA, tplspin;
+        REAL8 s1Data[3],s2Data[3], rcrossrDot[3];
+        REAL8 rcrossrDotMag, s1dotLN, s2dotLN, chiS,chiA, tplspin;
         memcpy(s1Data,values+6,3*sizeof(REAL8));
         memcpy(s2Data,values+9,3*sizeof(REAL8));
         for ( int i = 0; i < 3; i++ )
@@ -115,7 +112,7 @@ static int XLALSpinPrecHcapRvecDerivative_exact(
             s2Data[i] *= (mass1+mass2)*(mass1+mass2);
         }
 
-        /*Compute \vec{L_N} = \vec{r} \times \.{\vec{r}}, \vec{S_i} \dot \vec{L_N} and chiS and chiA */
+        /*Compute \vec{L_N} = \vec{r} \times \dot{\vec{r}}, \vec{S_i} \cdot \vec{L_N} and chiS and chiA */
         rcrossrDot[0] = values[1]*tmpDValues[5] - values[2]*tmpDValues[4];
         rcrossrDot[1] = values[2]*tmpDValues[3] - values[0]*tmpDValues[5];
         rcrossrDot[2] = values[0]*tmpDValues[4] - values[1]*tmpDValues[3];
@@ -127,6 +124,7 @@ static int XLALSpinPrecHcapRvecDerivative_exact(
         s2dotLN = (s2Data[0]*rcrossrDot[0] + s2Data[1]*rcrossrDot[1] + s2Data[2]*rcrossrDot[2])/ (mass2*mass2) ;
         chiS = 0.5 * (s1dotLN + s2dotLN);
         chiA = 0.5 * (s1dotLN - s2dotLN);
+	/* Compute the Kerr spin parameter for the test particle; equivalent to Equation 31 of PRD 86, 024011(2012) */
         tplspin = (1.-2.*seobParams->eobParams->eta) * chiS + (mass1 - mass2)/(mass1 + mass2) * chiA;
 
         XLALSimIMREOBCalcSpinPrecFacWaveformCoefficients(seobParams->eobParams->hCoeffs, mass1, mass2, seobParams->eobParams->eta, tplspin,chiS, chiA, 3);
