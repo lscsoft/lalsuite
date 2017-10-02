@@ -4,7 +4,7 @@ include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
 noinst_HEADERS = \
-SEOBNRv3_opt_coeffs-kC-parsedfinal.h  \
+SEOBNRv3_opt_coeffs-kC-parsedfinal.c.generated  \
 SEOBNRv3_opt_dp0_Tortoise-0.h  \
 SEOBNRv3_opt_dp0_Tortoise-1.h  \
 SEOBNRv3_opt_dp0_Tortoise-2.h  \

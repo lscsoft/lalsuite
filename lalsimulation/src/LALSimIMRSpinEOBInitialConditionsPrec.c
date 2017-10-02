@@ -1181,7 +1181,7 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 	}
     UINT4 oldignoreflux = params->ignoreflux;
     params->ignoreflux = 1;
-        status = XLALSpinPrecHcapNumericalDerivative(0, cartValues, tmpDValues, params); //david's: both v3 and v3_opt using numerical derivative until XLALSpinPrecHcapExactDerivative is fixed
+    status = XLALSpinPrecHcapNumericalDerivative(0, cartValues, tmpDValues, params); //david's: both v3 and v3_opt using numerical derivative until XLALSpinPrecHcapExactDerivative is fixed
     params->ignoreflux = oldignoreflux;
 	for (i = 0; i < 3; i++) {
 		cartValues[i + 6] *= mTotal * mTotal;

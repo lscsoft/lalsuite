@@ -76,6 +76,8 @@ static REAL8 XLALSpinPrecHcapExactDerivativeWrapper(const REAL8 * values, SpinEO
    * Eqs. 5.2 and 5.3 of Barausse and Buonanno PRD 81, 084024 (2010).
    */
 
+  /* Constants defined to reduce the number of floating point operations
+     needed to compute sigmaStarData */
   REAL8 m1m2_inv = 1.0/(mass1*mass2);
   REAL8 m2overm1 = mass2*mass2*m1m2_inv;
   REAL8 m1overm2 = mass1*mass1*m1m2_inv;
@@ -114,7 +116,7 @@ static REAL8 XLALSpinPrecHcapExactDerivativeNoWrap(
     if(coeffs->updateHCoeffs){
       SpinEOBHCoeffs tmpCoeffs;
 
-      if ( XLALSimIMRCalculateSpinPrecEOBHCoeffs( &tmpCoeffs, eta, a/* tmpa */, coeffs->SpinAlignedEOBversion ) == XLAL_FAILURE )
+      if ( XLALSimIMRCalculateSpinPrecEOBHCoeffs( &tmpCoeffs, eta, a, coeffs->SpinAlignedEOBversion ) == XLAL_FAILURE )
 	{
 	  XLAL_ERROR( XLAL_EFUNC );
 	}
@@ -178,8 +180,8 @@ static REAL8 XLALSpinPrecHcapExactDerivativeNoWrap(
     }
 
     if(divby0) {
-      /* Vector sum of s1 & s2 cannot be zero when taking spin derivatives, because
-       * vecotor sum components appear in denominators of exact derivative expressions.
+      /** Vector sum of s1 & s2 cannot be zero when taking spin derivatives, because
+       * vector sum components appear in denominators of exact derivative expressions.
       */
       const double epsilon_spin=1e-14;
       if(fabs(s1Vec->data[0] + s2Vec->data[0])<epsilon_spin &&
@@ -194,8 +196,8 @@ static REAL8 XLALSpinPrecHcapExactDerivativeNoWrap(
       }
     }
 
-    /** In v3opt, m1PlusEtaKK is common to all derivative expressions and is therefore
-     * defined outside individual derivative files.
+    /** KK defined in Barausse and Buonanno PRD 81, 084024 (2010)
+     * Equations 6.11 and 6.13.
      */
     REAL8 m1PlusEtaKK = coeffs->KK*eta-1.0;
 
@@ -211,10 +213,10 @@ static REAL8 XLALSpinPrecHcapExactDerivativeNoWrap(
     REAL8 c1k5 = seobCoeffConsts->a1k5;
     REAL8 c2k5 = seobCoeffConsts->a2k5;
 
-    /** variedParam specifies which partial derivative to compute,
-     * and derivatives must be split by both tortoise value and
-     * divby0 status.  Space derivatives have tortoise value 2 while
-     * momentum and spin derivatives have tortoise value 1.
+    /** variedParam specifies which partial derivative to compute;
+     * the following switch structure sorts derivatives both by tortoise
+     * value and divby0 status.  Both tortoise and divby0 act as
+     * parameters that affect partial derivative computations.
      */
     if(variedParam <= 5 || !divby0 ){
         switch(tortoise){

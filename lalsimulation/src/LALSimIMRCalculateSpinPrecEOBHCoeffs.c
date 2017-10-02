@@ -1,6 +1,19 @@
 #ifndef _LALSimIMRCalculateSpinPrecEOBHCoeffs_C
 #define _LALSimIMRCalculateSpinPrecEOBHCoeffs_C
 
+/**
+ * \author Craig Robinson, Yi Pan, Stas Babak, Prayush Kumar, Andrea Taracchini
+ *
+ * This function was originally part of LALSimIMRSpinEOBHamiltonianPrec.c,
+ * and moved here during the development of v3_opt.  Function relocation
+ * implemented by R. Devine, Z. Etienne, D. Buch, and T. Knowles.  In comments,
+ * R.H. refers to Roland Hass.
+ */
+
+#include <stdio.h>
+#include <math.h>
+#include <LALSimIMRSpinEOB.h>
+
 /*------------------------------------------------------------------------------------------
  *
  *          Prototypes of functions defined in this code.
@@ -60,7 +73,7 @@ static int XLALSimIMRCalculateSpinPrecEOBHCoeffs(
         (int) SpinAlignedEOBversion, (int) coeffs->SpinAlignedEOBversion );
     fflush( NULL );
   }
-  /* Constants are fits taken from Eq. 37 */
+  /* Constants are fits taken from PRD 86, 024011 (2012) Eq. 37 */
   static const REAL8 c0  = 1.4467; /* needed to get the correct self-force results */
   static const REAL8 c1  = -1.7152360250654402;
   static const REAL8 c2  = -3.246255899738242;
@@ -90,7 +103,7 @@ static int XLALSimIMRCalculateSpinPrecEOBHCoeffs(
                                c20 + c21*eta + c22*(eta*eta) + c23*(eta*eta)*eta);
   m1PlusEtaKK = -1. + eta*KK;
   const REAL8 invm1PlusEtaKK = 1./m1PlusEtaKK;
-  /* Eqs. 5.77 - 5.81 of BB1 */
+  /* Eqs. 5.77 - 5.81 of PRD 81, 084024 (2010) */
   coeffs->k0 = k0 = KK*(m1PlusEtaKK - 1.);
   coeffs->k1 = k1 = - 2.*(k0 + KK)*m1PlusEtaKK;
   k1p2= k1*k1;
