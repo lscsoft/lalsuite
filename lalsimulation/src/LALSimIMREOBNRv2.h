@@ -464,6 +464,7 @@ typedef struct tagEOBParams
   REAL8 m1;
   REAL8 m2;
   REAL8 rad;
+  INT4 NyquistStop;
   EOBACoefficients *aCoeffs;
   FacWaveformCoeffs *hCoeffs;
   EOBNonQCCoeffs *nqcCoeffs;

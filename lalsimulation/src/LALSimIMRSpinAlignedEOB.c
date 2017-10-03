@@ -263,6 +263,7 @@ XLALSpinAlignedNSNSStopCondition (double UNUSED t, /**< UNUSED */
   params->eobParams->omega = omega;
   params->eobParams->rad = r;
     if( LAL_PI/params->deltaT <= 2.*omega ) {
+        params->eobParams->NyquistStop = 1;
         if (debugOutput) printf("Stop at Nyquist at r=%.16e\n", r);
         XLAL_PRINT_WARNING ("Waveform will be generated only up to half the sampling frequency, thus discarding any physical higher-frequency contect above that!\n");
         return 1;
@@ -1219,6 +1220,8 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   eobParams.rad = values->data[0];
   eobParams.omegaPeaked = 0;
   eobParams.omegaMerger = XLALSimNSNSMergerFreq( &tidal1, &tidal2 );
+  eobParams.NyquistStop = 0;
+
   //fprintf( stderr, "Spherical initial conditions: %e %e %e %e\n", values->data[0], values->data[1], values->data[2], values->data[3] );
 
   /*
@@ -1363,7 +1366,8 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   values->data[3] = pPhiVec.data[hiSRndx];
   eobParams.rad = values->data[0];
   eobParams.omegaPeaked = 0;
-
+  eobParams.NyquistStop = 0;
+ 
 
 
   /* For HiSR evolution, we stop at a radius 0.3M from the deformed Kerr singularity,
@@ -1934,13 +1938,14 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
                 Oval = Onew;
             }
         }
-
+        
         if ( indAmax>timeHi.length/2 && timeHi.data[indAmax] <= timeHi.data[indOmax] ) {
             timePeak = timeHi.data[indAmax] ;
         }
         else {
             timePeak = timeHi.data[indOmax];
         }
+        if ( eobParams.NyquistStop ==1 ) timePeak = timeHi.data[timeHi.length - 1];
     }
 
     /* Having located the peak of orbital frequency, we set time and phase of coalescence */
