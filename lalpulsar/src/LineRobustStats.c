@@ -234,35 +234,7 @@ XLALComputeBSGL ( const REAL4 twoF,				//!< [in] multi-detector F-stat \f$2\F\f$
 
 } // XLALComputeBSGL()
 
-/**
- * \f[
- * \newcommand{\sc}[1]{\widehat{#1}}
- * \newcommand{\cohF}{\coh{\F}}
- * \newcommand{\scF}{\sc{\F}}
- * \newcommand{\denomterm}{\sc{D}}
- * \newcommand{\denommax}{\denomterm_{\mathrm{max}}}
- * \newcommand{\Transline}{{\mathrm{t\Line}}}
- * \newcommand{\cppLX}{\sc{p}_{\Line}^X}
- * \newcommand{\cppTLXk}{\coh{p}_{\Transline}^{X\ell}}
- * \newcommand{\cppLTLsc}{\sc{p}_{\Line\Transline}}
- * \f]
- * Compute the common noise-hypothesis denominator for various semi-coherent 'transient-line-robust statistics'
- * as defined in \cite Keitel2015 .
- *
- * NOTE: In the current implementation, only
- * \c setup->useLogCorrection == FALSE
- * is accepted!
- * In this case, the output is simply the maximum of the set of denominator exponents,
- * \f{equation}{
- * \denommax \equiv \max \left\{ \Nseg\cohFtho + \ln\left( 1-\cppLTLsc \right) ,\,
- *                               \scF^X + \ln\cppLX ,\,
- *                               \cohF^{X\ell} + (\Nseg-1)\cohFtho + \ln\cppTLXk
- *                       \right\} \,,
- * \f}
- * with the simplifying assumption of equal prior odds for persistent and transient lines (with equal odds for all segments), ie.
- * \f$\cppTLXk = \cppLX / \Nseg\f$, therefore \f$\ln\cppTLXk = \ln\cppLX - \ln\Nseg\f$.
- *
- */
+// module-internal function
 int
 XLALVectorComputeGLtLDenominator ( REAL4 *outDenom,					//!< [out] pre-allocated output array of denominator values
                                    const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS],	//!< [in] input vector of semi-coherent sums \f$\{2\scF^X\}\f$ of per-detector F-stats
@@ -299,6 +271,15 @@ XLALVectorComputeGLtLDenominator ( REAL4 *outDenom,					//!< [out] pre-allocated
 
 /**
  * \f[
+ * \newcommand{\sc}[1]{\widehat{#1}}
+ * \newcommand{\cohF}{\coh{\F}}
+ * \newcommand{\scF}{\sc{\F}}
+ * \newcommand{\denomterm}{\sc{D}}
+ * \newcommand{\denommax}{\denomterm_{\mathrm{max}}}
+ * \newcommand{\Transline}{{\mathrm{t\Line}}}
+ * \newcommand{\cppLX}{\sc{p}_{\Line}^X}
+ * \newcommand{\cppTLXk}{\coh{p}_{\Transline}^{X\ell}}
+ * \newcommand{\cppLTLsc}{\sc{p}_{\Line\Transline}}
  * \newcommand{\denomtermset}{\mathcal{\denomterm}}
  * \newcommand{\SGLtL}{{\Signal/\Gauss\Line\Transline}}
  * \newcommand{\OSGLtL}{O_\SGLtL}
@@ -318,7 +299,20 @@ XLALVectorComputeGLtLDenominator ( REAL4 *outDenom,					//!< [out] pre-allocated
  * \f{equation}{
  * \ln \BSGLtL \approx \F - \denommax\,.
  * \f}
- * See the documentation of XLALComputeGLtLDenominator() for the definition of \f$\denommax\f$.
+ *
+ *
+ * NOTE: In the current implementation, only
+ * \c setup->useLogCorrection == FALSE
+ * is accepted!
+ * In this case, the output is simply the maximum of the set of denominator exponents,
+ * \f{equation}{
+ * \denommax \equiv \max \left\{ \Nseg\cohFtho + \ln\left( 1-\cppLTLsc \right) ,\,
+ *                               \scF^X + \ln\cppLX ,\,
+ *                               \cohF^{X\ell} + (\Nseg-1)\cohFtho + \ln\cppTLXk
+ *                       \right\} \,,
+ * \f}
+ * with the simplifying assumption of equal prior odds for persistent and transient lines (with equal odds for all segments), ie.
+ * \f$\cppTLXk = \cppLX / \Nseg\f$, therefore \f$\ln\cppTLXk = \ln\cppLX - \ln\Nseg\f$.
  *
  */
 int
@@ -389,7 +383,7 @@ XLALComputeBSGLtL ( const REAL4 twoF,					//!< [in] semi-coherent sum \f$2\scF\f
  * \ln \BtSGLtL \approx \max_{\ell}\cohF^{\ell} + (\Nseg - 1)\cohFtho - \ln \Nseg - \denommax\,,
  * \f}
  * using the maximum multi-detector, single-segment F-stat value \f$\max\cohF^{\ell}\f$ in the numerator,
- * and the maximum \f$\denommax\f$ of the set of denominator exponents, computed in XLALComputeGLtLDenominator().
+ * and the maximum \f$\denommax\f$ of the set of denominator exponents, see the documentation of XLALVectorComputeBSGLtL() for its definition.
  *
  * NOTE: This implementation also assumes equal prior transient-signal odds for all segments.
  *
@@ -465,10 +459,11 @@ XLALComputeBtSGLtL ( const REAL4 maxtwoFl,				//!< [in] maximum \f$\max\limits_{
  * \f{equation}{
  * \ln \BStSGLtL \approx   \numermax + \ln \left( 1 + e^{\numermin-\numermax} \right) - \denommax \,,
  * \f}
- * with the \f$\denommax\f$ terms defined as in XLALComputeGLtLDenominator() and
+ *
+ * with the \f$\denommax\f$ terms defined in the documentation of XLALVectorComputeBSGLtL(), and
+ *
  * \f$\numermax = \max \left\{  \scF, \max\limits_{\ell}\cohF^\ell + \cohFtho (\Nseg-1) - \ln \Nseg\right\}\f$,
  * where we have assumed prior equal odds between persistent and transient signals and equal odds for all segments.
- *
  *
  */
 REAL4
