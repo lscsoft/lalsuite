@@ -25,6 +25,10 @@ NOISEPSDFILES = \
 	LIGO-P1200087-v18-aLIGO_LATE_LOW.txt \
 	LIGO-P1200087-v18-aLIGO_MID_HIGH.txt \
 	LIGO-P1200087-v18-aLIGO_MID_LOW.txt \
+	LIGO-P1600143-v18-CE.txt \
+	LIGO-P1600143-v18-CE_Pessimistic.txt \
+	LIGO-P1600143-v18-CE_Wideband.txt \
+	LIGO-P1600143-v18-ET_D.txt \
 	LIGO-T0900288-v3-BHBH_20deg.txt \
 	LIGO-T0900288-v3-High_Freq.txt \
 	LIGO-T0900288-v3-NO_SRM.txt \
@@ -81,7 +85,8 @@ pkginclude_HEADERS = \
 	LALSimulation.h \
 	LALSimulationConfig.h \
 	LALSimulationVCSInfo.h \
-	LALSimulationVCSInfoHeader.h
+	LALSimulationVCSInfoHeader.h \
+	LALSimUniversalRelations.h
 
 noinst_HEADERS = \
 	LALSimIMRSpinEOBHcapExactDerivativePrec_v3opt.c \
@@ -140,6 +145,7 @@ noinst_HEADERS = \
 	LALSimNeutronStarEOSPiecewisePolytrope.c \
 	LALSimNeutronStarEOSTabular.c \
 	LALSimIMRSpinEOBHamiltonian.h
+
 
 lib_LTLIBRARIES = liblalsimulation.la
 
@@ -212,9 +218,9 @@ liblalsimulation_la_SOURCES = \
 	unicorn.xpm \
 	LALSimInspiralHGimri.c \
 	LALSimFindAttachTime.c \
-	LALSimIMRSpinEOB.c \
 	LALSimIMRNRSur4d2s.c \
-	LALSimIMRNRSur7dq2.c
+	LALSimIMRNRSur7dq2.c \
+	LALSimUniversalRelations.c
 
 nodist_liblalsimulation_la_SOURCES = \
 	LALSimulationBuildInfoHeader.h \

@@ -419,7 +419,7 @@ def write_sky_map(filename, m, **kwargs):
         hdulist.writeto(filename, clobber=True)
 
 
-def read_sky_map(filename, nest=False, distances=False, moc=False):
+def read_sky_map(filename, nest=False, distances=False, moc=False, **kwargs):
     """
     Read a LIGO/Virgo-type sky map and return a tuple of the HEALPix array
     and a dictionary of metadata from the header.
@@ -466,7 +466,7 @@ def read_sky_map(filename, nest=False, distances=False, moc=False):
     ...     m, meta = read_sky_map(f.name)
     ...     np.testing.assert_array_equal(m, hp.ring2nest(nside, ipix_nest))
     """
-    m = Table.read(filename, format='fits')
+    m = Table.read(filename, format='fits', **kwargs)
 
     # Remove some keys that we do not need
     for key in (

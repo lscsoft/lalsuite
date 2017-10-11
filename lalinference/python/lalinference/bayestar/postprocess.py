@@ -19,19 +19,21 @@
 Postprocessing utilities for HEALPix sky maps
 """
 from __future__ import division
-
-
-import pkg_resources
-import numpy as np
-import healpy as hp
 import collections
+import pkg_resources
+
+from astropy.coordinates import (CartesianRepresentation, SkyCoord,
+                                 UnitSphericalRepresentation)
+from astropy import units as u
+import healpy as hp
 import lal
 import lalsimulation
+import numpy as np
 from scipy.interpolate import interp1d
+
 from .. import distance
 from . import moc
 from ..healpix_tree import *
-
 
 try:
     pkg_resources.require('numpy >= 1.10.0')
@@ -645,3 +647,21 @@ def smooth_ud_grade(m, nside, nest=False):
     theta, phi = hp.pix2ang(nside, np.arange(npix), nest=nest)
     new_m = hp.get_interp_val(m, theta, phi, nest=nest)
     return new_m * len(m) / len(new_m)
+
+
+def posterior_mean(prob, nest=False):
+    npix = len(prob)
+    nside = hp.npix2nside(npix)
+    xyz = hp.pix2vec(nside, np.arange(npix), nest=nest)
+    mean_xyz = np.average(xyz, axis=1, weights=prob)
+    pos = SkyCoord(*mean_xyz, representation=CartesianRepresentation)
+    pos.representation = UnitSphericalRepresentation
+    return pos
+
+
+def posterior_max(prob, nest=False):
+    npix = len(prob)
+    nside = hp.npix2nside(npix)
+    i = np.argmax(prob)
+    return SkyCoord(
+        *hp.pix2ang(nside, i, nest=nest, lonlat=True), unit=u.deg)

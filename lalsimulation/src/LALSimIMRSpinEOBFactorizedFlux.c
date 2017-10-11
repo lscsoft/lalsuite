@@ -57,7 +57,7 @@ static REAL8 XLALInspiralSpinFactorizedFlux (REAL8Vector * values,
 					     const REAL8 omega,
 					     SpinEOBParams * ak,
 					     const REAL8 H,
-					     const INT4 lMax,
+					     const UINT4 lMax,
 					     const UINT4
 					     SpinAlignedEOBversion);
 
@@ -80,11 +80,14 @@ XLALInspiralSpinFactorizedFlux (REAL8Vector * values,	/**< dynamical variables *
 				const REAL8 omega,	/**< orbital frequency */
 				SpinEOBParams * ak,	/**< physical parameters */
 				const REAL8 H,		/**< real Hamiltonian */
-				const INT4 lMax,	/**< upper limit of the summation over l */
-				const UINT4 SpinAlignedEOBversion  /**< 1 for SEOBNRv1, 2 for SEOBNRv2 */
+				const UINT4 lMax,	/**< upper limit of the summation over l */
+				UNUSED const UINT4 SpinAlignedEOBversion  /**< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4 */
   )
 {
 
+  if ( nqcCoeffs==NULL ) {
+      XLAL_ERROR_REAL8 (XLAL_EINVAL);
+    }
   REAL8 flux = 0.0;
   REAL8 v;
   REAL8 omegaSq;
@@ -110,87 +113,9 @@ XLALInspiralSpinFactorizedFlux (REAL8Vector * values,	/**< dynamical variables *
 
   v = cbrt (omega);
 
-  /* Update the factorized multipole coefficients, w.r.t. new spins */
-  if (UsePrec)
-    {
-      /* Assume that initial conditions are available at this point, to
-       * compute the chiS and chiA parameters.
-       * Calculate the values of chiS and chiA, as given in Eq.16 of
-       * Precessing EOB paper. Assuming \vec{L} to be pointing in the
-       * direction of \vec{r}\times\vec{p} */
-      /* TODO: Check the mass scaling of spins */
-      REAL8 rcrossp[3], rcrosspMag, s1dotL, s2dotL;
-      REAL8 chiS, chiA, tplspin;
-
-      rcrossp[0] =
-	values->data[1] * values->data[5] - values->data[2] * values->data[4];
-      rcrossp[1] =
-	values->data[2] * values->data[3] - values->data[0] * values->data[5];
-      rcrossp[2] =
-	values->data[0] * values->data[4] - values->data[1] * values->data[3];
-      rcrosspMag =
-	sqrt (rcrossp[0] * rcrossp[0] + rcrossp[1] * rcrossp[1] +
-	      rcrossp[2] * rcrossp[2]);
-
-      rcrossp[0] /= rcrosspMag;
-      rcrossp[1] /= rcrosspMag;
-      rcrossp[2] /= rcrosspMag;
-
-      s1dotL = values->data[6] * rcrossp[0] + values->data[7] * rcrossp[1]
-	+ values->data[8] * rcrossp[2];
-      s2dotL = values->data[9] * rcrossp[0] + values->data[10] * rcrossp[1]
-	+ values->data[11] * rcrossp[2];
-
-      chiS = 0.5 * (s1dotL + s2dotL);
-      chiA = 0.5 * (s1dotL - s2dotL);
-
-      /* Compute the test-particle limit spin of the deformed-Kerr background */
-      /* TODO: Check this is actually the way it works in LAL */
-      switch (SpinAlignedEOBversion)
-	{
-	case 1:
-	  tplspin = 0.0;
-	  break;
-	case 2:
-	  tplspin = (1. - 2. * ak->eobParams->eta) * chiS + (ak->eobParams->m1
-							     -
-							     ak->eobParams->
-							     m2) /
-	    (ak->eobParams->m1 + ak->eobParams->m2) * chiA;
-	  break;
-	case 4:
-	  tplspin = (1. - 2. * ak->eobParams->eta) * chiS + (ak->eobParams->m1
-							     -
-							     ak->eobParams->
-							     m2) /
-	    (ak->eobParams->m1 + ak->eobParams->m2) * chiA;
-	  break;
-	default:
-	  XLALPrintError
-	    ("XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1 and v2 are available.\n",
-	     __func__);
-	  XLAL_ERROR (XLAL_EINVAL);
-	  break;
-	}
-
-      /* ************************************************* */
-      /* Re-Populate the Waveform structures               */
-      /* ************************************************* */
-
-      /* Re-compute the spinning coefficients for hLM */
-      if (XLALSimIMREOBCalcSpinFacWaveformCoefficients
-	  (ak->eobParams->hCoeffs, ak->eobParams->m1, ak->eobParams->m2,
-	   ak->eobParams->eta, tplspin, chiS, chiA,
-	   SpinAlignedEOBversion) == XLAL_FAILURE)
-	{
-	  XLALDestroyREAL8Vector (values);
-	  XLAL_ERROR (XLAL_EFUNC);
-	}
-    }
-
     COMPLEX16 hT= 0.;
 //  printf( "v = %.16e\n", v );
-  for (l = 2; l <= lMax; l++)
+  for (l = 2; l <= (INT4) lMax; l++)
     {
       for (m = 1; m <= l; m++)
 	{
@@ -222,20 +147,6 @@ XLALInspiralSpinFactorizedFlux (REAL8Vector * values,	/**< dynamical variables *
 	  if (l == 2 && m == 2)
 	    {
 	      COMPLEX16 hNQC;
-	      /*switch ( SpinAlignedEOBversion )
-	         {
-	         case 1:
-	         XLALSimIMRGetEOBCalibratedSpinNQC( &nqcCoeffs, l, m, ak->eobParams->eta, ak->a );
-	         break;
-	         case 2:
-	         // XLALSimIMRGetEOBCalibratedSpinNQCv2( &nqcCoeffs, l, m, ak->eobParams->eta, ak->a );
-	         XLALSimIMRGetEOBCalibratedSpinNQC3D( &nqcCoeffs, l, m, ak->eobParams->eta, ak->a, (ak->chi1 - ak->chi2)/2. );
-	         break;
-	         default:
-	         XLALPrintError( "XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1 and v2 are available.\n", __func__);
-	         XLAL_ERROR( XLAL_EINVAL );
-	         break;
-	         } */
 	      XLALSimIMREOBNonQCCorrection (&hNQC, values, omega, nqcCoeffs);
 	      /* Eq. 16 */
 	      hLM *= hNQC;

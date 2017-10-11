@@ -241,6 +241,13 @@ def write_samples(table, filename, metadata=None, **kwargs):
     # Copy the table so that we do not modify the original.
     table = table.copy()
 
+    # Make sure that all tables have a 'vary' type.
+    for column in table.columns.values():
+        if 'vary' not in column.meta:
+            if np.all(column[0] == column[1:]):
+                column.meta['vary'] = FIXED
+            else:
+                column.meta['vary'] = OUTPUT
     # Reconstruct table attributes.
     for colname, column in tuple(table.columns.items()):
         if column.meta['vary'] == FIXED:

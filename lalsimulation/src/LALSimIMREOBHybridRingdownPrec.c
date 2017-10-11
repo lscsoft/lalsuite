@@ -377,6 +377,26 @@ static INT4 XLALGenerateHybridWaveDerivatives (
 }
 
 /**
+ * Translates the major approximant version into an unsigned integer
+ * to minimize if and or statements throughout the function
+ * XLALSimIMREOBHybridAttachRingdownPrec.  Translation into an
+ * unsigned integer prevents issues with passing the approximant
+ * parameter to other functions.
+ */
+static INT4 get_major_approximant( Approximant approximant /**<<The waveform approximant being used */ )
+{
+  INT4 major_approximant = 0;
+
+  if(approximant == SEOBNRv1) major_approximant = 1;
+  if(approximant == SEOBNRv2) major_approximant = 2;
+  if(approximant == SEOBNRv3 || approximant == SEOBNRv3_opt) major_approximant = 3;
+
+  if(major_approximant == 0) XLAL_PRINT_ERROR("In LALSimIMREOBHybridRingdownPrec.c major_approximant not assigned.\n");
+
+  return major_approximant;
+}
+
+/**
  * The main workhorse function for performing the ringdown attachment for EOB
  * models EOBNRv2 and SEOBNRv1. This is the function which gets called by the
  * code generating the full IMR waveform once generation of the inspiral part
@@ -441,6 +461,8 @@ XLALSimIMREOBHybridAttachRingdownPrec(
 	REAL8		chi1    , chi2, theta1, theta2;
     INT4 mHere = 0;
 
+    INT4 major_approximant = get_major_approximant(approximant);
+
     mTot = (mass1 + mass2) * LAL_MTSUN_SI;
 	eta = mass1 * mass2 / ((mass1 + mass2) * (mass1 + mass2));
 
@@ -459,34 +481,33 @@ XLALSimIMREOBHybridAttachRingdownPrec(
 		XLALDestroyCOMPLEX16Vector(modefreqs);
 		XLAL_ERROR(XLAL_EFUNC);
 	}
-	if (approximant == SEOBNRv3 || approximant == SEOBNRv3_opt) {
-
-        if (JLN > 0){
+	if(major_approximant == 3) {
+	  if (JLN > 0){
             mHere = (int)fabs((REAL8) m);
-        }else{
+	  }else{
             mHere = -(int)fabs((REAL8) m);
-        }
+	  }
 
-		if (XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs, mass1, mass2, spin1, spin2, l, (int)fabs((REAL8) m), nmodes, approximant) == XLAL_FAILURE) {
-			XLALDestroyCOMPLEX16Vector(modefreqs);
-			XLAL_ERROR(XLAL_EFUNC);
-		}
-		// FIXME
-        if (m < 0 && JLN >= 0) {
-			for (j = 0; j < nmodes; j++) {
-				modefreqs->data[j] = conjl(-1.0 * modefreqs->data[j]);
-			}
-		}
-        if (m > 0 && JLN < 0) {
+	  if (XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs, mass1, mass2, spin1, spin2, l, (int)fabs((REAL8) m), nmodes, approximant) == XLAL_FAILURE) {
+	    XLALDestroyCOMPLEX16Vector(modefreqs);
+	    XLAL_ERROR(XLAL_EFUNC);
+	  }
+	  // FIXME
+	  if (m < 0 && JLN >= 0) {
+	    for (j = 0; j < nmodes; j++) {
+	      modefreqs->data[j] = conjl(-1.0 * modefreqs->data[j]);
+	    }
+	  }
+	  if (m > 0 && JLN < 0) {
             for (j = 0; j < nmodes; j++) {
-                modefreqs->data[j] = conjl(-1.0 * modefreqs->data[j]);
+	      modefreqs->data[j] = conjl(-1.0 * modefreqs->data[j]);
             }
-        }
-        if (m == 0) {
-			for (j = 5; j < nmodes; j++) {
-				modefreqs->data[j] = conjl(-1.0 * modefreqs->data[j - 5]);
-			}
-		}
+	  }
+	  if (m == 0) {
+	    for (j = 5; j < nmodes; j++) {
+	      modefreqs->data[j] = conjl(-1.0 * modefreqs->data[j - 5]);
+	    }
+	  }
 	}
 
 	/*
@@ -499,7 +520,7 @@ XLALSimIMREOBHybridAttachRingdownPrec(
 	if (debugout) {
 		XLAL_PRINT_INFO("(Mf, af) = (%3.10f, %3.10f)\n", finalMass, finalSpin);
 	}
-	if (approximant == SEOBNRv1) {
+	if (major_approximant == 1) {
 		/* Replace the last QNM with pQNM */
 		/* We assume aligned/antialigned spins here */
 		a = (spin1[2] + spin2[2]) / 2. * (1.0 - 2.0 * eta) + (spin1[2] - spin2[2]) / 2. * (mass1 - mass2) / (mass1 + mass2);
@@ -512,7 +533,7 @@ XLALSimIMREOBHybridAttachRingdownPrec(
 		modefreqs->data[7] = (NRPeakOmega22 / finalMass + creal(modefreqs->data[0])) / 2.;
 		modefreqs->data[7] += I * 10. / 3. * cimag(modefreqs->data[0]);
 	}
-	if (approximant == SEOBNRv2)
+	if (major_approximant == 2)
 		//See pages 6 to 12 of the dcc document T1400476 - v3 for expressions
 		//	in this block.
 		{
@@ -630,564 +651,564 @@ XLALSimIMREOBHybridAttachRingdownPrec(
 			 * 1./cimag(modefreqs->data[5])/mTot);
 			 */
 		}
-	if (approximant == SEOBNRv3 || approximant == SEOBNRv3_opt) {
-        REAL8 kappa_thr = 0.175;
-        //REAL8 eJL_thr = 7.5e-3;
-        REAL8 eJL_thr = 5.0e-2;
-        //REAL8 eJL_thr = 1.0e-2;
-		chi1 = sqrt(spin1[0] * spin1[0] + spin1[1] * spin1[1] + spin1[2] * spin1[2]);
-		chi2 = sqrt(spin2[0] * spin2[0] + spin2[1] * spin2[1] + spin2[2] * spin2[2]);
-		if (chi1 < 1.0e-15) {
-			theta1 = 0.;
-		} else {
-			theta1 = acos(spin1[2] / chi1);
-		}
-		if (chi2 < 1.0e-15) {
-			theta2 = 0.;
-		} else {
-			theta2 = acos(spin2[2] / chi2);
-		}
-		chi1 = chi1 * cos(theta1);
-		chi2 = chi2 * cos(theta2);
+	if (major_approximant == 3) {
+	  REAL8 kappa_thr = 0.175;
+	  //REAL8 eJL_thr = 7.5e-3;
+	  REAL8 eJL_thr = 5.0e-2;
+	  //REAL8 eJL_thr = 1.0e-2;
+	  chi1 = sqrt(spin1[0] * spin1[0] + spin1[1] * spin1[1] + spin1[2] * spin1[2]);
+	  chi2 = sqrt(spin2[0] * spin2[0] + spin2[1] * spin2[1] + spin2[2] * spin2[2]);
+	  if (chi1 < 1.0e-15) {
+	    theta1 = 0.;
+	  } else {
+	    theta1 = acos(spin1[2] / chi1);
+	  }
+	  if (chi2 < 1.0e-15) {
+	    theta2 = 0.;
+	  } else {
+	    theta2 = acos(spin2[2] / chi2);
+	  }
+	  chi1 = chi1 * cos(theta1);
+	  chi2 = chi2 * cos(theta2);
 
-        /*Compute wf freq at matching point*/
-        double *y;
-        double ry, dy;
-        gsl_interp_accel *acc;
-        gsl_spline     *spline;
-        //UINT4 vecLength = ((mass1 + mass2) * LAL_MTSUN_SI * matchrange->data[2] / dt) + 1;
-        //y = (double *)LALMalloc(vecLength * sizeof(double));
-        y = (double *)LALMalloc(timeVec->length * sizeof(double));
-        double hRe, dhRe, hIm, dhIm;
+	  /*Compute wf freq at matching point*/
+	  double *y;
+	  double ry, dy;
+	  gsl_interp_accel *acc;
+	  gsl_spline     *spline;
+	  //UINT4 vecLength = ((mass1 + mass2) * LAL_MTSUN_SI * matchrange->data[2] / dt) + 1;
+	  //y = (double *)LALMalloc(vecLength * sizeof(double));
+	  y = (double *)LALMalloc(timeVec->length * sizeof(double));
+	  double hRe, dhRe, hIm, dhIm;
 
-        if (!y) {
+	  if (!y) {
             XLAL_ERROR(XLAL_ENOMEM);
-        }
-        //FILE *out1 = fopen( "Andrea1.dat","w");
-        for (j = 0; j < timeVec->length; ++j) {
+	  }
+	  //FILE *out1 = fopen( "Andrea1.dat","w");
+	  for (j = 0; j < timeVec->length; ++j) {
             y[j] = signal1->data[j];
             //fprintf(out1, "%.16e %.16e\n", timeVec->data[j], y[j]);
             //XLAL_PRINT_INFO("%.16e %.16e\n", timeVec->data[j], y[j]);
-        }
-        //fclose(out1);
-        //exit(0);
+	  }
+	  //fclose(out1);
+	  //exit(0);
 
-        XLAL_CALLGSL(acc = (gsl_interp_accel *) gsl_interp_accel_alloc());
-        //XLAL_CALLGSL(spline = (gsl_spline *) gsl_spline_alloc(gsl_interp_cspline, vecLength));
-        XLAL_CALLGSL(spline = (gsl_spline *) gsl_spline_alloc(gsl_interp_cspline, timeVec->length));
-        if (!acc || !spline) {
+	  XLAL_CALLGSL(acc = (gsl_interp_accel *) gsl_interp_accel_alloc());
+	  //XLAL_CALLGSL(spline = (gsl_spline *) gsl_spline_alloc(gsl_interp_cspline, vecLength));
+	  XLAL_CALLGSL(spline = (gsl_spline *) gsl_spline_alloc(gsl_interp_cspline, timeVec->length));
+	  if (!acc || !spline) {
             if (acc)
-                gsl_interp_accel_free(acc);
+	      gsl_interp_accel_free(acc);
             if (spline)
-                gsl_spline_free(spline);
+	      gsl_spline_free(spline);
             LALFree(y);
             XLAL_ERROR(XLAL_ENOMEM);
-        }
+	  }
 
-        //XLAL_PRINT_INFO("here1....  last point %f, match_t %f \n", timeVec->data[timeVec->length-1], matchrange->data[1]);
-        //INT4 gslStatus = gsl_spline_init(spline, timeVec->data, y, vecLength);
-        INT4 gslStatus = gsl_spline_init(spline, timeVec->data, y, timeVec->length);
-        if (gslStatus != GSL_SUCCESS) {
+	  //XLAL_PRINT_INFO("here1....  last point %f, match_t %f \n", timeVec->data[timeVec->length-1], matchrange->data[1]);
+	  //INT4 gslStatus = gsl_spline_init(spline, timeVec->data, y, vecLength);
+	  INT4 gslStatus = gsl_spline_init(spline, timeVec->data, y, timeVec->length);
+	  if (gslStatus != GSL_SUCCESS) {
             gsl_spline_free(spline);
             gsl_interp_accel_free(acc);
             LALFree(y);
             XLAL_ERROR(XLAL_EFUNC);
-        }
-        gslStatus = gsl_spline_eval_e(spline, matchrange->data[1], acc, &ry);
-        //int ind_stas = (int) matchrange->data[1]*(((mass1 + mass2) * LAL_MTSUN_SI / dt));
-        //XLAL_PRINT_INFO("here2.... %f,  %f,  %f, %f \n", ry, timeVec->data[ind_stas], matchrange->data[1], y[ind_stas]);
-        if (gslStatus == GSL_SUCCESS) {
+	  }
+	  gslStatus = gsl_spline_eval_e(spline, matchrange->data[1], acc, &ry);
+	  //int ind_stas = (int) matchrange->data[1]*(((mass1 + mass2) * LAL_MTSUN_SI / dt));
+	  //XLAL_PRINT_INFO("here2.... %f,  %f,  %f, %f \n", ry, timeVec->data[ind_stas], matchrange->data[1], y[ind_stas]);
+	  if (gslStatus == GSL_SUCCESS) {
             gslStatus = gsl_spline_eval_deriv_e(spline, matchrange->data[1], acc, &dy);
             //XLAL_PRINT_INFO("here2.... ");
-        }
-        if (gslStatus != GSL_SUCCESS) {
+	  }
+	  if (gslStatus != GSL_SUCCESS) {
             gsl_spline_free(spline);
             gsl_interp_accel_free(acc);
             LALFree(y);
             XLAL_ERROR(XLAL_EFUNC);
-        }
-        hRe = (REAL8) (ry);
-        dhRe = (REAL8) (dy);
+	  }
+	  hRe = (REAL8) (ry);
+	  dhRe = (REAL8) (dy);
 
-        //XLAL_PRINT_INFO("here hRe = %f, dhRe = %f \n", hRe, dhRe);
+	  //XLAL_PRINT_INFO("here hRe = %f, dhRe = %f \n", hRe, dhRe);
 
-        //FILE *out2 = fopen( "Andrea2.dat","w");
-        //for (j = 0; j < vecLength; ++j) {
-        for (j = 0; j < timeVec->length; ++j) {
+	  //FILE *out2 = fopen( "Andrea2.dat","w");
+	  //for (j = 0; j < vecLength; ++j) {
+	  for (j = 0; j < timeVec->length; ++j) {
             y[j] = signal2->data[j];
             //fprintf(out2, "%.16e %.16e\n", timeVec->data[j], y[j]);
-        }
-        //fclose(out2);
-        //XLAL_CALLGSL(acc = (gsl_interp_accel *) gsl_interp_accel_alloc());
-        //XLAL_CALLGSL(spline = (gsl_spline *) gsl_spline_alloc(gsl_interp_cspline, vecLength));
-        //XLAL_CALLGSL(spline = (gsl_spline *) gsl_spline_alloc(gsl_interp_cspline, signal2->length));
-        if (!acc || !spline) {
+	  }
+	  //fclose(out2);
+	  //XLAL_CALLGSL(acc = (gsl_interp_accel *) gsl_interp_accel_alloc());
+	  //XLAL_CALLGSL(spline = (gsl_spline *) gsl_spline_alloc(gsl_interp_cspline, vecLength));
+	  //XLAL_CALLGSL(spline = (gsl_spline *) gsl_spline_alloc(gsl_interp_cspline, signal2->length));
+	  if (!acc || !spline) {
             if (acc)
-                gsl_interp_accel_free(acc);
+	      gsl_interp_accel_free(acc);
             if (spline)
-                gsl_spline_free(spline);
+	      gsl_spline_free(spline);
             LALFree(y);
             XLAL_ERROR(XLAL_ENOMEM);
-        }
-        //gslStatus = gsl_spline_init(spline, timeVec->data, y, vecLength);
-        gslStatus = gsl_spline_init(spline, timeVec->data, y, timeVec->length);
-        if (gslStatus != GSL_SUCCESS) {
+	  }
+	  //gslStatus = gsl_spline_init(spline, timeVec->data, y, vecLength);
+	  gslStatus = gsl_spline_init(spline, timeVec->data, y, timeVec->length);
+	  if (gslStatus != GSL_SUCCESS) {
             gsl_spline_free(spline);
             gsl_interp_accel_free(acc);
             LALFree(y);
             XLAL_ERROR(XLAL_EFUNC);
-        }
-        gslStatus = gsl_spline_eval_e(spline, matchrange->data[1], acc, &ry);
-        if (gslStatus == GSL_SUCCESS) {
+	  }
+	  gslStatus = gsl_spline_eval_e(spline, matchrange->data[1], acc, &ry);
+	  if (gslStatus == GSL_SUCCESS) {
             gslStatus = gsl_spline_eval_deriv_e(spline, matchrange->data[1], acc, &dy);
-        }
-        if (gslStatus != GSL_SUCCESS) {
+	  }
+	  if (gslStatus != GSL_SUCCESS) {
             gsl_spline_free(spline);
             gsl_interp_accel_free(acc);
             LALFree(y);
             XLAL_ERROR(XLAL_EFUNC);
-        }
-        hIm = (REAL8) (ry);
-        dhIm = (REAL8) (dy);
+	  }
+	  hIm = (REAL8) (ry);
+	  dhIm = (REAL8) (dy);
 
-        //XLAL_PRINT_INFO("Stas, check hRe = %f, dhRe = %f, hIm = %f, dhIm = %f \n", hRe, dhRe, hIm, dhIm);
-        double hNorm2 = hRe*hRe + hIm*hIm;
-        double omegaWavePeak = creal(modefreqs->data[0]);
-        if (hNorm2 != 0.0){
+	  //XLAL_PRINT_INFO("Stas, check hRe = %f, dhRe = %f, hIm = %f, dhIm = %f \n", hRe, dhRe, hIm, dhIm);
+	  double hNorm2 = hRe*hRe + hIm*hIm;
+	  double omegaWavePeak = creal(modefreqs->data[0]);
+	  if (hNorm2 != 0.0){
             omegaWavePeak = ((-dhRe*hIm + dhIm*hRe)/hNorm2) / mTot;
-        }
-        else{
+	  }
+	  else{
             if(debugout) {XLAL_PRINT_INFO("hNorm=0.0 for (l,m)=(%d,%d)\n",l,m);}
 //            XLAL_ERROR(XLAL_EFAILED);
-        }
+	  }
 
 
-		a = (chi1 + chi2) / 2. * (1.0 - 2.0 * eta) + (chi1 - chi2) / 2. * (mass1 - mass2) / (mass1 + mass2);
-        NRPeakOmega22 = fabs(omegaWavePeak);
-//        NRPeakOmega22 = XLALSimIMREOBGetNRSpinPeakOmegav2(l, m, eta, a) / mTot;
-        gsl_spline_free(spline);
-        gsl_interp_accel_free(acc);
-        LALFree(y);
-        // FIXME
-        //NRPeakOmega22 = 0.3;
-		//NRPeakOmega22 = XLALSimIMREOBGetNRSpinPeakOmegav2(l, m, eta, a) / mTot;
-//        NRPeakOmega22 = omegaWavePeak/mTot;
-//        XLAL_PRINT_INFO("(hRe, hIm, dhRe, dhIm)=(%.16e, %.16e, %.16e, %.16e)\n", hRe, hIm, dhRe, dhIm);
-//        XLAL_PRINT_INFO("hNorm %.16e, tmatch %.16e\n",sqrt(hNorm2), matchrange->data[1]);
-//        XLAL_PRINT_INFO("NRPeakOmega22 %.16e, omegaWavePeak %.16e\n",NRPeakOmega22,omegaWavePeak);
-		chi = (chi1 + chi2) / 2. + (chi1 - chi2) / 2. * ((mass1 - mass2) / (mass1 + mass2)) / (1. - 2. * eta);
+	  a = (chi1 + chi2) / 2. * (1.0 - 2.0 * eta) + (chi1 - chi2) / 2. * (mass1 - mass2) / (mass1 + mass2);
+	  NRPeakOmega22 = fabs(omegaWavePeak);
+//          NRPeakOmega22 = XLALSimIMREOBGetNRSpinPeakOmegav2(l, m, eta, a) / mTot;
+	  gsl_spline_free(spline);
+	  gsl_interp_accel_free(acc);
+	  LALFree(y);
+	  // FIXME
+	  //NRPeakOmega22 = 0.3;
+	  //NRPeakOmega22 = XLALSimIMREOBGetNRSpinPeakOmegav2(l, m, eta, a) / mTot;
+//          NRPeakOmega22 = omegaWavePeak/mTot;
+//          XLAL_PRINT_INFO("(hRe, hIm, dhRe, dhIm)=(%.16e, %.16e, %.16e, %.16e)\n", hRe, hIm, dhRe, dhIm);
+//          XLAL_PRINT_INFO("hNorm %.16e, tmatch %.16e\n",sqrt(hNorm2), matchrange->data[1]);
+//          XLAL_PRINT_INFO("NRPeakOmega22 %.16e, omegaWavePeak %.16e\n",NRPeakOmega22,omegaWavePeak);
+	  chi = (chi1 + chi2) / 2. + (chi1 - chi2) / 2. * ((mass1 - mass2) / (mass1 + mass2)) / (1. - 2. * eta);
 
-		sh = 0.;
-		if (chi >= 0.7 && chi < 0.8) {
-			sh = -9. * (eta - 0.25);
-		}
-		if ((eta > 30. / 31. / 31. && eta <= 10. / 121. && chi >= 0.8) || (eta <= 30. / 31. / 31. && chi >= 0.8 && chi < 0.9)) {
-			//This is case 4 in T1400476 - v3
-				sh = -9. * (eta - 0.25) * (1. + 2. * exp(-(chi - 0.85) * (chi - 0.85) / 0.05 / 0.05)) * (1. + 1. / (1. + exp((eta - 0.01) / 0.001)));
-		}
-		if (eta < 30. / 31. / 31. && chi >= 0.9) {
-			//This is case 5 in T1400476 - v3
-				sh = 0.55 - 9. * (eta - 0.25) * (1. + 2. * exp(-(chi - 0.85) * (chi - 0.85) / 0.05 / 0.05)) * (1. + 1. / (1. + exp((eta - 0.01) / 0.001)));
-		}
-		if (eta > 10. / 121. && chi >= 0.8) {
-			//This is case 6 in T1400476 - v3
-				sh = 1. - 9. * (eta - 0.25) * (1. + 2. * exp(-(chi - 0.85) * (chi - 0.85) / 0.05 / 0.05)) * (1. + 1. / (1. + exp((eta - 0.01) / 0.001)));
-		}
-		if ((int)fabs((REAL8) m) == 2 && l == 2) {
-			/* if (m == 2 && l ==2){ */
+	  sh = 0.;
+	  if (chi >= 0.7 && chi < 0.8) {
+	    sh = -9. * (eta - 0.25);
+	  }
+	  if ((eta > 30. / 31. / 31. && eta <= 10. / 121. && chi >= 0.8) || (eta <= 30. / 31. / 31. && chi >= 0.8 && chi < 0.9)) {
+	    //This is case 4 in T1400476 - v3
+	    sh = -9. * (eta - 0.25) * (1. + 2. * exp(-(chi - 0.85) * (chi - 0.85) / 0.05 / 0.05)) * (1. + 1. / (1. + exp((eta - 0.01) / 0.001)));
+	  }
+	  if (eta < 30. / 31. / 31. && chi >= 0.9) {
+	    //This is case 5 in T1400476 - v3
+	    sh = 0.55 - 9. * (eta - 0.25) * (1. + 2. * exp(-(chi - 0.85) * (chi - 0.85) / 0.05 / 0.05)) * (1. + 1. / (1. + exp((eta - 0.01) / 0.001)));
+	  }
+	  if (eta > 10. / 121. && chi >= 0.8) {
+	    //This is case 6 in T1400476 - v3
+	    sh = 1. - 9. * (eta - 0.25) * (1. + 2. * exp(-(chi - 0.85) * (chi - 0.85) / 0.05 / 0.05)) * (1. + 1. / (1. + exp((eta - 0.01) / 0.001)));
+	  }
+	  if ((int)fabs((REAL8) m) == 2 && l == 2) {
+	    /* if (m == 2 && l ==2){ */
 
-			/*
-			 * For extreme chi (>= 0.8), there are scale factors
-			 * in both complex pseudo-QNM frequencies. kk, kt1,
-			 * kt2 describe those factors.
-			 */
-			/*
-			 * XLAL_PRINT_INFO("Stas: a, chi and NRomega in QNM freq:
-			 * %.16e %.16e %.16e %.16e %.16e %.16e\n",
-			 * spin1[2],spin2[2],mTot/LAL_MTSUN_SI,a,chi,NRPeakOme
-			 * ga22*mTot);
-			 */
-			kk = kt1 = kt2 = 1.;
-			if (chi >= 0.8) {
-				kk = 0.7 + 0.3 * exp(100. * (eta - 0.25));
-				kt1 = -0.125 + sqrt(1. + 200. * pow(eta, 2) / 3.) / 2.;
-				kt2 = -0.2 + pow(1. + 200. * pow(eta, 3. / 2.) / 9., 2. / 3.) / 2.;
-			}
-			//Computing pQNMs
+	    /*
+	     * For extreme chi (>= 0.8), there are scale factors
+	     * in both complex pseudo-QNM frequencies. kk, kt1,
+	     * kt2 describe those factors.
+	     */
+	    /*
+	     * XLAL_PRINT_INFO("Stas: a, chi and NRomega in QNM freq:
+	     * %.16e %.16e %.16e %.16e %.16e %.16e\n",
+	     * spin1[2],spin2[2],mTot/LAL_MTSUN_SI,a,chi,NRPeakOme
+	     * ga22*mTot);
+	     */
+	    kk = kt1 = kt2 = 1.;
+	    if (chi >= 0.8) {
+	      kk = 0.7 + 0.3 * exp(100. * (eta - 0.25));
+	      kt1 = -0.125 + sqrt(1. + 200. * pow(eta, 2) / 3.) / 2.;
+	      kt2 = -0.2 + pow(1. + 200. * pow(eta, 3. / 2.) / 9., 2. / 3.) / 2.;
+	    }
+	    //Computing pQNMs
             // FIXME
-			//if (m < 0) {
-			//if (m > 0) {
+	    //if (m < 0) {
+	    //if (m > 0) {
             //printf("Stas: J.L = %f, J.L*m = %f  Re(mode) = %f \n", JLN, JLN*m, creal(modefreqs->data[0]));
             if (JLN*m < 0.0){
-				modefreqs->data[6] = (-3. / 4. * NRPeakOmega22 / finalMass) + (1. / 4. * creal(modefreqs->data[0]));
-				modefreqs->data[7] = (-2. / 3. * NRPeakOmega22 / finalMass) + (1. / 3. * creal(modefreqs->data[0]));
-			} else {
-				modefreqs->data[6] = (3. / 4. * NRPeakOmega22 / finalMass) + (1. / 4. * creal(modefreqs->data[0]));
-				modefreqs->data[7] = (2. / 3. * NRPeakOmega22 / finalMass) + (1. / 3. * creal(modefreqs->data[0]));
-                //XLAL_PRINT_INFO("Stas , here m = %d modes: 0 = %4.10f, 6 = %4.10f, 7 = %4.10f \n", m, creal(modefreqs->data[0])*mTot, creal(modefreqs->data[6])*mTot, creal(modefreqs->data[7])*mTot);
-			}
+	      modefreqs->data[6] = (-3. / 4. * NRPeakOmega22 / finalMass) + (1. / 4. * creal(modefreqs->data[0]));
+	      modefreqs->data[7] = (-2. / 3. * NRPeakOmega22 / finalMass) + (1. / 3. * creal(modefreqs->data[0]));
+	    } else {
+	      modefreqs->data[6] = (3. / 4. * NRPeakOmega22 / finalMass) + (1. / 4. * creal(modefreqs->data[0]));
+	      modefreqs->data[7] = (2. / 3. * NRPeakOmega22 / finalMass) + (1. / 3. * creal(modefreqs->data[0]));
+	      //XLAL_PRINT_INFO("Stas , here m = %d modes: 0 = %4.10f, 6 = %4.10f, 7 = %4.10f \n", m, creal(modefreqs->data[0])*mTot, creal(modefreqs->data[6])*mTot, creal(modefreqs->data[7])*mTot);
+	    }
 
-			modefreqs->data[7] += I * 3.5 / 0.9 * cimag(modefreqs->data[0]);
-			modefreqs->data[6] += I * 3.5 * cimag(modefreqs->data[0]);
+	    modefreqs->data[7] += I * 3.5 / 0.9 * cimag(modefreqs->data[0]);
+	    modefreqs->data[6] += I * 3.5 * cimag(modefreqs->data[0]);
 
-			if ((eta > 30. / 31. / 31. && eta <= 10. / 121. && chi >= 0.8) || (eta <= 30. / 31. / 31. && chi >= 0.8 && chi < 0.9)) {
-				//This is case 4 in T1400476 - v3
-                if (debugout)
-                    XLAL_PRINT_INFO("Stas, this is case4 for pQNM eta = %f, chi = %f \n", eta, chi);
-					sh = -9. * (eta - 0.25) * (1. + 2. * exp(-(chi - 0.85) * (chi - 0.85) / 0.05 / 0.05)) * (1. + 1. / (1. + exp((eta - 0.01) / 0.001)));
-				kk = 0.7 + 0.3 * exp(100. * (eta - 0.25));
-				kt1 = 0.5 * sqrt(1. + 800.0 * eta * eta / 3.0) - 0.125;
-				kt2 = 0.5 * pow(1. + 0.5 * eta * sqrt(eta) / 0.0225, 2. / 3.) - 0.2;
+	    if ((eta > 30. / 31. / 31. && eta <= 10. / 121. && chi >= 0.8) || (eta <= 30. / 31. / 31. && chi >= 0.8 && chi < 0.9)) {
+	      //This is case 4 in T1400476 - v3
+	      if (debugout)
+		XLAL_PRINT_INFO("Stas, this is case4 for pQNM eta = %f, chi = %f \n", eta, chi);
+	      sh = -9. * (eta - 0.25) * (1. + 2. * exp(-(chi - 0.85) * (chi - 0.85) / 0.05 / 0.05)) * (1. + 1. / (1. + exp((eta - 0.01) / 0.001)));
+	      kk = 0.7 + 0.3 * exp(100. * (eta - 0.25));
+	      kt1 = 0.5 * sqrt(1. + 800.0 * eta * eta / 3.0) - 0.125;
+	      kt2 = 0.5 * pow(1. + 0.5 * eta * sqrt(eta) / 0.0225, 2. / 3.) - 0.2;
 
-				modefreqs->data[4] = 0.4 * (1. + kk) * creal(modefreqs->data[6])
-					+ I * cimag(modefreqs->data[6]) / (2.5 * kt2 * exp(-(eta - 0.005) / 0.03));
-				modefreqs->data[5] = 0.4 * (1. + kk) * creal(modefreqs->data[7])
-					+ I * cimag(modefreqs->data[7]) / (1.5 * kt1 * exp(-(eta - 0.005) / 0.03));
-				modefreqs->data[6] = kk * creal(modefreqs->data[6]) + I * cimag(modefreqs->data[6]) / kt2;
-				modefreqs->data[7] = kk * creal(modefreqs->data[7]) + I * cimag(modefreqs->data[7]) / kt1;
-			}
-			if (eta < 30. / 31. / 31. && chi >= 0.9) {
-				//This is case 5 in T1400476 - v3
-                if (debugout)
-                    XLAL_PRINT_INFO("Stas, this is case5 for pQNM eta = %f, chi = %f \n", eta, chi);
-					sh = 0.55 - 9. * (eta - 0.25) * (1. + 2. * exp(-(chi - 0.85) * (chi - 0.85) / 0.05 / 0.05)) * (1. + 1. / (1. + exp((eta - 0.01) / 0.001)));
-				kk = 0.7 + 0.3 * exp(100. * (eta - 0.25));
-				kt1 = 0.5 * sqrt(1. + 800.0 * eta * eta / 3.0) - 0.125;
-				kt2 = 0.5 * pow(1. + 0.5 * eta * sqrt(eta) / 0.0225, 2. / 3.) - 0.2;
-				modefreqs->data[4] = 1.1 * 0.4 * (1. + kk) * creal(modefreqs->data[6])
-					+ I * cimag(modefreqs->data[6]) / (1.05 * 2.5 * kt2 * exp(-(eta - 0.005) / 0.03));
-				modefreqs->data[5] = 0.4 * (1. + kk) * creal(modefreqs->data[7])
-					+ I * cimag(modefreqs->data[7]) / (1.05 * 1.5 * kt1 * exp(-(eta - 0.005) / 0.03));
-				modefreqs->data[6] = kk * creal(modefreqs->data[6]) + I * cimag(modefreqs->data[6]) / kt2;
-				modefreqs->data[7] = kk * creal(modefreqs->data[7]) + I * cimag(modefreqs->data[7]) / kt1;
-			}
-			if (eta > 10. / 121. && chi >= 0.8) {
-				//This is case 6 in T1400476 - v3
-                if (debugout)
-                    XLAL_PRINT_INFO("Stas, this is case6 for pQNM eta = %f, chi = %f \n", eta, chi);
-					sh = 1. - 9. * (eta - 0.25) * (1. + 2. * exp(-(chi - 0.85) * (chi - 0.85) / 0.05 / 0.05)) * (1. + 1. / (1. + exp((eta - 0.01) / 0.001)));
-				kk = 0.7 + 0.3 * exp(100. * (eta - 0.25));
-				kt1 = 0.45 * sqrt(1. + 200.0 * eta * eta / 3.0) - 0.125;
-				kt2 = 0.5 * pow(1. + 0.5 * eta * sqrt(eta) / 0.0225, 2. / 3.) - 0.2;
-				modefreqs->data[6] = kk * creal(modefreqs->data[6]) + I * cimag(modefreqs->data[6]) / 0.95 / kt2;
-				modefreqs->data[7] = kk * creal(modefreqs->data[7]) + I * cimag(modefreqs->data[7]) / kt1;
-			}
+	      modefreqs->data[4] = 0.4 * (1. + kk) * creal(modefreqs->data[6])
+		+ I * cimag(modefreqs->data[6]) / (2.5 * kt2 * exp(-(eta - 0.005) / 0.03));
+	      modefreqs->data[5] = 0.4 * (1. + kk) * creal(modefreqs->data[7])
+		+ I * cimag(modefreqs->data[7]) / (1.5 * kt1 * exp(-(eta - 0.005) / 0.03));
+	      modefreqs->data[6] = kk * creal(modefreqs->data[6]) + I * cimag(modefreqs->data[6]) / kt2;
+	      modefreqs->data[7] = kk * creal(modefreqs->data[7]) + I * cimag(modefreqs->data[7]) / kt1;
+	    }
+	    if (eta < 30. / 31. / 31. && chi >= 0.9) {
+	      //This is case 5 in T1400476 - v3
+	      if (debugout)
+		XLAL_PRINT_INFO("Stas, this is case5 for pQNM eta = %f, chi = %f \n", eta, chi);
+	      sh = 0.55 - 9. * (eta - 0.25) * (1. + 2. * exp(-(chi - 0.85) * (chi - 0.85) / 0.05 / 0.05)) * (1. + 1. / (1. + exp((eta - 0.01) / 0.001)));
+	      kk = 0.7 + 0.3 * exp(100. * (eta - 0.25));
+	      kt1 = 0.5 * sqrt(1. + 800.0 * eta * eta / 3.0) - 0.125;
+	      kt2 = 0.5 * pow(1. + 0.5 * eta * sqrt(eta) / 0.0225, 2. / 3.) - 0.2;
+	      modefreqs->data[4] = 1.1 * 0.4 * (1. + kk) * creal(modefreqs->data[6])
+		+ I * cimag(modefreqs->data[6]) / (1.05 * 2.5 * kt2 * exp(-(eta - 0.005) / 0.03));
+	      modefreqs->data[5] = 0.4 * (1. + kk) * creal(modefreqs->data[7])
+		+ I * cimag(modefreqs->data[7]) / (1.05 * 1.5 * kt1 * exp(-(eta - 0.005) / 0.03));
+	      modefreqs->data[6] = kk * creal(modefreqs->data[6]) + I * cimag(modefreqs->data[6]) / kt2;
+	      modefreqs->data[7] = kk * creal(modefreqs->data[7]) + I * cimag(modefreqs->data[7]) / kt1;
+	    }
+	    if (eta > 10. / 121. && chi >= 0.8) {
+	      //This is case 6 in T1400476 - v3
+	      if (debugout)
+		XLAL_PRINT_INFO("Stas, this is case6 for pQNM eta = %f, chi = %f \n", eta, chi);
+	      sh = 1. - 9. * (eta - 0.25) * (1. + 2. * exp(-(chi - 0.85) * (chi - 0.85) / 0.05 / 0.05)) * (1. + 1. / (1. + exp((eta - 0.01) / 0.001)));
+	      kk = 0.7 + 0.3 * exp(100. * (eta - 0.25));
+	      kt1 = 0.45 * sqrt(1. + 200.0 * eta * eta / 3.0) - 0.125;
+	      kt2 = 0.5 * pow(1. + 0.5 * eta * sqrt(eta) / 0.0225, 2. / 3.) - 0.2;
+	      modefreqs->data[6] = kk * creal(modefreqs->data[6]) + I * cimag(modefreqs->data[6]) / 0.95 / kt2;
+	      modefreqs->data[7] = kk * creal(modefreqs->data[7]) + I * cimag(modefreqs->data[7]) / kt1;
+	    }
             if (debugout)
-                XLAL_PRINT_INFO("Stas, default (if nothing specified above) for pQNM eta = %f, chi = %f chi1 = %f \n", eta, chi,  chi1);
+	      XLAL_PRINT_INFO("Stas, default (if nothing specified above) for pQNM eta = %f, chi = %f chi1 = %f \n", eta, chi,  chi1);
 
-            // FIXME It is not compatible with v2!!!!
-//            if (chi1 >= 0.96){//  && eta < 10.0/11./11.){
+            //FIXME It is not compatible with v2!!!!
+//          if (chi1 >= 0.96){//  && eta < 10.0/11./11.){
 //            //    modefreqs->data[7] += I * 3.5 / 0.9 * cimag(modefreqs->data[0]) - I * cimag(modefreqs->data[7]);
-//                if (debugout){
-//                    XLAL_PRINT_INFO("Stas, the decay time will be modified for pQNM  chi1 = %f, from %f to %f \n", chi1, 1.0/cimag(modefreqs->data[7])/mTot,   1.0/(5.0 * cimag(modefreqs->data[0]))/mTot );
-//                }
-//                  modefreqs->data[7] += I * 5.0 * cimag(modefreqs->data[0]) - I * cimag(modefreqs->data[7]);
+//            if (debugout){
+//              XLAL_PRINT_INFO("Stas, the decay time will be modified for pQNM  chi1 = %f, from %f to %f \n", chi1, 1.0/cimag(modefreqs->data[7])/mTot,   1.0/(5.0 * cimag(modefreqs->data[0]))/mTot );
 //            }
-			//The last line of T1400476 - v3
-//				matchrange->data[0] -= sh;
-//			matchrange->data[1] -= sh;
+//            modefreqs->data[7] += I * 5.0 * cimag(modefreqs->data[0]) - I * cimag(modefreqs->data[7]);
+//          }
+	    //The last line of T1400476 - v3
+//	    matchrange->data[0] -= sh;
+//	    matchrange->data[1] -= sh;
 
-			/*
-			 * This is a v1 of pQNM in RD attachment if (m<0){
-			 * modefreqs->data[7] = (-NRPeakOmega22/finalMass +
-			 * creal(modefreqs->data[0])) / 2.;       } else {
-			 * modefreqs->data[7] = (NRPeakOmega22/finalMass +
-			 * creal(modefreqs->data[0])) / 2.; }
-			 * modefreqs->data[7] += I * 10./3. *
-			 * cimag(modefreqs->data[0]);
-			 */
-//            if(m==-2 || m==-2) {
+	    /*
+	     * This is a v1 of pQNM in RD attachment if (m<0){
+	     * modefreqs->data[7] = (-NRPeakOmega22/finalMass +
+	     * creal(modefreqs->data[0])) / 2.;       } else {
+	     * modefreqs->data[7] = (NRPeakOmega22/finalMass +
+	     * creal(modefreqs->data[0])) / 2.; }
+	     * modefreqs->data[7] += I * 10./3. *
+	     * cimag(modefreqs->data[0]);
+	     */
+//          if(m==-2 || m==-2) {
 //            modefreqs->data[6] = 0.495264/mTot + I/mTot/3.716525;
 //            modefreqs->data[7] = 0.514602/mTot + I/mTot/3.344873;
-//            }
-//            else if (m==-2){
-//                modefreqs->data[6] = -0.495264/mTot + I/mTot/3.716525;
-//                modefreqs->data[7] = -0.514602/mTot + I/mTot/3.344873;
-//            }
-            
-//            XLAL_PRINT_INFO("finalSpin = %f\n",finalSpin);
-//            XLAL_PRINT_INFO("finalMass = %f\n",finalMass);
-//            XLAL_PRINT_INFO("PeakOmega = %f\n",NRPeakOmega22*mTot);
-//            XLAL_PRINT_INFO("w0 = %f, t0 = %f\n",creal(modefreqs->data[0])*mTot, 1./cimag(modefreqs->data[0])/mTot);
-//            XLAL_PRINT_INFO("w1 = %f, t1 = %f\n",creal(modefreqs->data[1])*mTot, 1./cimag(modefreqs->data[1])/mTot);
-//            XLAL_PRINT_INFO("w2 = %f, t2 = %f\n",creal(modefreqs->data[2])*mTot, 1./cimag(modefreqs->data[2])/mTot);
-//            XLAL_PRINT_INFO("w3 = %f, t3 = %f\n",creal(modefreqs->data[3])*mTot, 1./cimag(modefreqs->data[3])/mTot);
-//            XLAL_PRINT_INFO("w4 = %f, t4 = %f\n",creal(modefreqs->data[4])*mTot, 1./cimag(modefreqs->data[4])/mTot);
-//            XLAL_PRINT_INFO("w5 = %f, t5 = %f\n",creal(modefreqs->data[5])*mTot, 1./cimag(modefreqs->data[5])/mTot);
-//            XLAL_PRINT_INFO("w6 = %f, t6 = %f\n",creal(modefreqs->data[6])*mTot, 1./cimag(modefreqs->data[6])/mTot);
-//            XLAL_PRINT_INFO("w7 = %f, t7 = %f\n",creal(modefreqs->data[7])*mTot, 1./cimag(modefreqs->data[7])/mTot);
+//          }
+//          else if (m==-2){
+//            modefreqs->data[6] = -0.495264/mTot + I/mTot/3.716525;
+//            modefreqs->data[7] = -0.514602/mTot + I/mTot/3.344873;
+//          }
 
-    
+//          XLAL_PRINT_INFO("finalSpin = %f\n",finalSpin);
+//          XLAL_PRINT_INFO("finalMass = %f\n",finalMass);
+//          XLAL_PRINT_INFO("PeakOmega = %f\n",NRPeakOmega22*mTot);
+//          XLAL_PRINT_INFO("w0 = %f, t0 = %f\n",creal(modefreqs->data[0])*mTot, 1./cimag(modefreqs->data[0])/mTot);
+//          XLAL_PRINT_INFO("w1 = %f, t1 = %f\n",creal(modefreqs->data[1])*mTot, 1./cimag(modefreqs->data[1])/mTot);
+//          XLAL_PRINT_INFO("w2 = %f, t2 = %f\n",creal(modefreqs->data[2])*mTot, 1./cimag(modefreqs->data[2])/mTot);
+//          XLAL_PRINT_INFO("w3 = %f, t3 = %f\n",creal(modefreqs->data[3])*mTot, 1./cimag(modefreqs->data[3])/mTot);
+//          XLAL_PRINT_INFO("w4 = %f, t4 = %f\n",creal(modefreqs->data[4])*mTot, 1./cimag(modefreqs->data[4])/mTot);
+//          XLAL_PRINT_INFO("w5 = %f, t5 = %f\n",creal(modefreqs->data[5])*mTot, 1./cimag(modefreqs->data[5])/mTot);
+//          XLAL_PRINT_INFO("w6 = %f, t6 = %f\n",creal(modefreqs->data[6])*mTot, 1./cimag(modefreqs->data[6])/mTot);
+//          XLAL_PRINT_INFO("w7 = %f, t7 = %f\n",creal(modefreqs->data[7])*mTot, 1./cimag(modefreqs->data[7])/mTot);
 
-             // FIXME
-             // {{{
+
+
+	    // FIXME
+	    // {{{
             if (debugout) {
-                XLAL_PRINT_INFO("Stas: JLN*eta = %f, \n", JLN*eta);
-                XLAL_PRINT_INFO("NRPeakOmega22 = %3.10f,  %3.10f,  %3.10f,  %3.10f\n", NRPeakOmega22 * mTot /finalMass, NRPeakOmega22 / finalMass,  finalMass,  mTot);
-                for (j = 0; j < nmodes; j++) {
-                    XLAL_PRINT_INFO("QNM frequencies: %d %d %d %3.10f %3.10f\n", l, m, j, creal(modefreqs->data[j]) * mTot, 1. / cimag(modefreqs->data[j]) / mTot);
-                }
+	      XLAL_PRINT_INFO("Stas: JLN*eta = %f, \n", JLN*eta);
+	      XLAL_PRINT_INFO("NRPeakOmega22 = %3.10f,  %3.10f,  %3.10f,  %3.10f\n", NRPeakOmega22 * mTot /finalMass, NRPeakOmega22 / finalMass,  finalMass,  mTot);
+	      for (j = 0; j < nmodes; j++) {
+		XLAL_PRINT_INFO("QNM frequencies: %d %d %d %3.10f %3.10f\n", l, m, j, creal(modefreqs->data[j]) * mTot, 1. / cimag(modefreqs->data[j]) / mTot);
+	      }
             }
 
-             /*if (JLN*m < 0.0){
-				modefreqs->data[5] = (-3. / 4. * NRPeakOmega22 / finalMass) + (1. / 4. * creal(modefreqs->data[0]));
-				modefreqs->data[4] = (-2. / 3. * NRPeakOmega22 / finalMass) + (1. / 3. * creal(modefreqs->data[0]));
-			 } else {
-				modefreqs->data[5] = (3. / 4. * NRPeakOmega22 / finalMass) + (1. / 4. * creal(modefreqs->data[0]));
-				modefreqs->data[4] = (2. / 3. * NRPeakOmega22 / finalMass) + (1. / 3. * creal(modefreqs->data[0]));
-                //XLAL_PRINT_INFO("Stas , here m = %d modes: 0 = %4.10f, 6 = %4.10f, 7 = %4.10f \n", m, creal(modefreqs->data[0])*mTot, creal(modefreqs->data[6])*mTot, creal(modefreqs->data[7])*mTot);
-			 }
-			 modefreqs->data[5] += I * 3.5 / 0.9 * cimag(modefreqs->data[0]);
-			 modefreqs->data[4] += I * 3.5 * cimag(modefreqs->data[0]);*/
+	    /*if (JLN*m < 0.0){
+	      modefreqs->data[5] = (-3. / 4. * NRPeakOmega22 / finalMass) + (1. / 4. * creal(modefreqs->data[0]));
+	      modefreqs->data[4] = (-2. / 3. * NRPeakOmega22 / finalMass) + (1. / 3. * creal(modefreqs->data[0]));
+	    } else {
+	      modefreqs->data[5] = (3. / 4. * NRPeakOmega22 / finalMass) + (1. / 4. * creal(modefreqs->data[0]));
+	      modefreqs->data[4] = (2. / 3. * NRPeakOmega22 / finalMass) + (1. / 3. * creal(modefreqs->data[0]));
+	      //XLAL_PRINT_INFO("Stas , here m = %d modes: 0 = %4.10f, 6 = %4.10f, 7 = %4.10f \n", m, creal(modefreqs->data[0])*mTot, creal(modefreqs->data[6])*mTot, creal(modefreqs->data[7])*mTot);
+	    }
+	    modefreqs->data[5] += I * 3.5 / 0.9 * cimag(modefreqs->data[0]);
+	    modefreqs->data[4] += I * 3.5 * cimag(modefreqs->data[0]);*/
 
-	         COMPLEX16Vector *modefreqs_xtr;
-             modefreqs_xtr = XLALCreateCOMPLEX16Vector(nmodes);
-             if (!modefreqs_xtr) {
-                 XLAL_ERROR(XLAL_ENOMEM);
-             }
-             //modefreqs->data[4] =    ;
-             //modefreqs->data[5] =  0.0;
-             //modefreqs->data[6] =   0.0;
-             //modefreqs->data[7] =  0.0;
-             //XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, 1, nmodes, approximant);
-             //if (m == -2){
-             //    XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, -1, nmodes, approximant);
-             //}
-             //modefreqs->data[4] = modefreqs_xtr->data[0];
-             //modefreqs->data[5] = modefreqs_xtr->data[1];
+	    COMPLEX16Vector *modefreqs_xtr;
+	    modefreqs_xtr = XLALCreateCOMPLEX16Vector(nmodes);
+	    if (!modefreqs_xtr) {
+	      XLAL_ERROR(XLAL_ENOMEM);
+	    }
+	    //modefreqs->data[4] =    ;
+	    //modefreqs->data[5] =  0.0;
+	    //modefreqs->data[6] =   0.0;
+	    //modefreqs->data[7] =  0.0;
+	    //XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, 1, nmodes, approximant);
+	    //if (m == -2){
+	    // XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, -1, nmodes, approximant);
+	    //}
+	    //modefreqs->data[4] = modefreqs_xtr->data[0];
+	    //modefreqs->data[5] = modefreqs_xtr->data[1];
 
-/*
-            XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, -2, nmodes, approximant);
-             if ((JLN > 0.0 && JLN < 0.98) || (eta*JLN < eJL_thr && eta*JLN>0.0)){
-                 modefreqs->data[5] =  modefreqs_xtr->data[0];
-                 if (JLN < kappa_thr || eta*JLN < eJL_thr){
-                     modefreqs->data[6] =  modefreqs_xtr->data[1];
-                 }
-                 if (m == -2){
-                     modefreqs->data[5] =  conjl(-1.0 * modefreqs_xtr->data[0]);
-                     if (JLN < kappa_thr || eta*JLN < eJL_thr){
-                         modefreqs->data[6] =  conjl(-1.0 *  modefreqs_xtr->data[1]);
-                     }
-                 }
-             }
- */
+	    /*
+	      XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, -2, nmodes, approximant);
+	      if ((JLN > 0.0 && JLN < 0.98) || (eta*JLN < eJL_thr && eta*JLN>0.0)){
+	        modefreqs->data[5] =  modefreqs_xtr->data[0];
+	        if (JLN < kappa_thr || eta*JLN < eJL_thr){
+	          modefreqs->data[6] =  modefreqs_xtr->data[1];
+		}
+		if (m == -2){
+		  modefreqs->data[5] =  conjl(-1.0 * modefreqs_xtr->data[0]);
+		  if (JLN < kappa_thr || eta*JLN < eJL_thr){
+		    modefreqs->data[6] =  conjl(-1.0 *  modefreqs_xtr->data[1]);
+		  }
+                }
+              }
+	    */
             if ((JLN > 0.0 && JLN < 0.98) || (eta*JLN < eJL_thr && eta*JLN>0.0)){
-                                 XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, -2, nmodes, approximant);
-                                 modefreqs->data[5] = modefreqs_xtr->data[0];
-                                 if (m == -2){
-                                         modefreqs->data[5] =  conjl(-1.0 * modefreqs_xtr->data[0]);
-                                     }
-                             }
- 
-             if ((JLN < 0.0 && JLN > -0.98) || (eta*JLN > -eJL_thr && eta*JLN<0.0) ){
-                 spin1[0] *= -1;
-                 spin1[1] *= -1;
-                 spin1[2] *= -1;
-                 spin2[0] *= -1;
-                 spin2[1] *= -1;
-                 spin2[2] *= -1;
-                 XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l,  -mHere, nmodes, approximant);
-                 spin1[0] *= -1;
-                 spin1[1] *= -1;
-                 spin1[2] *= -1;
-                 spin2[0] *= -1;
-                 spin2[1] *= -1;
-                 spin2[2] *= -1;
-                 modefreqs->data[5] =  modefreqs_xtr->data[0];
-//                 if (JLN > -1.0*kappa_thr || fabs(eta*JLN) < eJL_thr){
-//                     modefreqs->data[6] =  modefreqs_xtr->data[1];
-//                 }
-                 if (m == -2){
-                     modefreqs->data[5] =  conjl(-1.0 * modefreqs->data[5]);
-//                     if (JLN > -1.0*kappa_thr || fabs(eta*JLN) < eJL_thr){
-//                        modefreqs->data[6] =  conjl(-1.0 * modefreqs_xtr->data[1]);
- //                    }
-                 }
-             }
-             XLALDestroyCOMPLEX16Vector(modefreqs_xtr);
-	if (debugout) {
-            XLAL_PRINT_INFO("l,m = %d %d\n",l,m);
-            XLAL_PRINT_INFO("finalSpin = %f\n",finalSpin);
-            XLAL_PRINT_INFO("finalMass = %f\n",finalMass);
-            XLAL_PRINT_INFO("PeakOmega = %f\n",NRPeakOmega22*mTot);
-            XLAL_PRINT_INFO("w0 = %f, t0 = %f\n",creal(modefreqs->data[0])*mTot, 1./cimag(modefreqs->data[0])/mTot);
-            XLAL_PRINT_INFO("w1 = %f, t1 = %f\n",creal(modefreqs->data[1])*mTot, 1./cimag(modefreqs->data[1])/mTot);
-            XLAL_PRINT_INFO("w2 = %f, t2 = %f\n",creal(modefreqs->data[2])*mTot, 1./cimag(modefreqs->data[2])/mTot);
-            XLAL_PRINT_INFO("w3 = %f, t3 = %f\n",creal(modefreqs->data[3])*mTot, 1./cimag(modefreqs->data[3])/mTot);
-            XLAL_PRINT_INFO("w4 = %f, t4 = %f\n",creal(modefreqs->data[4])*mTot, 1./cimag(modefreqs->data[4])/mTot);
-            XLAL_PRINT_INFO("w5 = %f, t5 = %f\n",creal(modefreqs->data[5])*mTot, 1./cimag(modefreqs->data[5])/mTot);
-            XLAL_PRINT_INFO("w6 = %f, t6 = %f\n",creal(modefreqs->data[6])*mTot, 1./cimag(modefreqs->data[6])/mTot);
-            XLAL_PRINT_INFO("w7 = %f, t7 = %f\n",creal(modefreqs->data[7])*mTot, 1./cimag(modefreqs->data[7])/mTot);
-            XLAL_PRINT_INFO("matchrange %.16e,%.16e,%.16e\n", matchrange->data[0] * mTot / dt, matchrange->data[1] * mTot / dt, matchrange->data[2] * mTot / dt - 2);
-    }
-             /*XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, 1, nmodes, approximant);
+	      XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, -2, nmodes, approximant);
+	      modefreqs->data[5] = modefreqs_xtr->data[0];
+	      if (m == -2){
+		modefreqs->data[5] =  conjl(-1.0 * modefreqs_xtr->data[0]);
+	      }
+	    }
+
+	    if ((JLN < 0.0 && JLN > -0.98) || (eta*JLN > -eJL_thr && eta*JLN<0.0) ){
+	      spin1[0] *= -1;
+	      spin1[1] *= -1;
+	      spin1[2] *= -1;
+	      spin2[0] *= -1;
+	      spin2[1] *= -1;
+	      spin2[2] *= -1;
+	      XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l,  -mHere, nmodes, approximant);
+	      spin1[0] *= -1;
+	      spin1[1] *= -1;
+	      spin1[2] *= -1;
+	      spin2[0] *= -1;
+	      spin2[1] *= -1;
+	      spin2[2] *= -1;
+	      modefreqs->data[5] =  modefreqs_xtr->data[0];
+//            if (JLN > -1.0*kappa_thr || fabs(eta*JLN) < eJL_thr){
+//              modefreqs->data[6] =  modefreqs_xtr->data[1];
+//            }
+	      if (m == -2){
+		modefreqs->data[5] =  conjl(-1.0 * modefreqs->data[5]);
+//              if (JLN > -1.0*kappa_thr || fabs(eta*JLN) < eJL_thr){
+//                modefreqs->data[6] =  conjl(-1.0 * modefreqs_xtr->data[1]);
+//              }
+	      }
+	    }
+	    XLALDestroyCOMPLEX16Vector(modefreqs_xtr);
+	    if (debugout) {
+	      XLAL_PRINT_INFO("l,m = %d %d\n",l,m);
+	      XLAL_PRINT_INFO("finalSpin = %f\n",finalSpin);
+	      XLAL_PRINT_INFO("finalMass = %f\n",finalMass);
+	      XLAL_PRINT_INFO("PeakOmega = %f\n",NRPeakOmega22*mTot);
+	      XLAL_PRINT_INFO("w0 = %f, t0 = %f\n",creal(modefreqs->data[0])*mTot, 1./cimag(modefreqs->data[0])/mTot);
+	      XLAL_PRINT_INFO("w1 = %f, t1 = %f\n",creal(modefreqs->data[1])*mTot, 1./cimag(modefreqs->data[1])/mTot);
+	      XLAL_PRINT_INFO("w2 = %f, t2 = %f\n",creal(modefreqs->data[2])*mTot, 1./cimag(modefreqs->data[2])/mTot);
+	      XLAL_PRINT_INFO("w3 = %f, t3 = %f\n",creal(modefreqs->data[3])*mTot, 1./cimag(modefreqs->data[3])/mTot);
+	      XLAL_PRINT_INFO("w4 = %f, t4 = %f\n",creal(modefreqs->data[4])*mTot, 1./cimag(modefreqs->data[4])/mTot);
+	      XLAL_PRINT_INFO("w5 = %f, t5 = %f\n",creal(modefreqs->data[5])*mTot, 1./cimag(modefreqs->data[5])/mTot);
+	      XLAL_PRINT_INFO("w6 = %f, t6 = %f\n",creal(modefreqs->data[6])*mTot, 1./cimag(modefreqs->data[6])/mTot);
+	      XLAL_PRINT_INFO("w7 = %f, t7 = %f\n",creal(modefreqs->data[7])*mTot, 1./cimag(modefreqs->data[7])/mTot);
+	      XLAL_PRINT_INFO("matchrange %.16e,%.16e,%.16e\n", matchrange->data[0] * mTot / dt, matchrange->data[1] * mTot / dt, matchrange->data[2] * mTot / dt - 2);
+	    }
+	    /*XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, 1, nmodes, approximant);
 
 
 
-             modefreqs->data[6] =  modefreqs_xtr->data[0];
-             modefreqs->data[7] =  modefreqs_xtr->data[1];
-             //modefreqs->data[6] =  conjl(-1.0 * modefreqs->data[0]);
-             //modefreqs->data[7] =  conjl(-1.0 *  modefreqs->data[1]);
-             //modefreqs->data[6] =  conjl(-1.0 * modefreqs_xtr->data[0]);
-             //modefreqs->data[7] =  conjl(-1.0 *  modefreqs_xtr->data[1]);
-             if (m <0) {
-             //    modefreqs->data[6] =  modefreqs_xtr->data[0];
-             //    modefreqs->data[7] =  modefreqs_xtr->data[1];
-                 modefreqs->data[6] =  conjl(-1.0 * modefreqs_xtr->data[0]);
-                 modefreqs->data[7] =  conjl(-1.0 *  modefreqs_xtr->data[1]);
-             }
-             XLALDestroyCOMPLEX16Vector(modefreqs_xtr);*/
+	      modefreqs->data[6] =  modefreqs_xtr->data[0];
+	      modefreqs->data[7] =  modefreqs_xtr->data[1];
+	      //modefreqs->data[6] =  conjl(-1.0 * modefreqs->data[0]);
+	      //modefreqs->data[7] =  conjl(-1.0 *  modefreqs->data[1]);
+	      //modefreqs->data[6] =  conjl(-1.0 * modefreqs_xtr->data[0]);
+	      //modefreqs->data[7] =  conjl(-1.0 *  modefreqs_xtr->data[1]);
+	      if (m <0) {
+	        //modefreqs->data[6] =  modefreqs_xtr->data[0];
+	        //modefreqs->data[7] =  modefreqs_xtr->data[1];
+		modefreqs->data[6] =  conjl(-1.0 * modefreqs_xtr->data[0]);
+		modefreqs->data[7] =  conjl(-1.0 *  modefreqs_xtr->data[1]);
+	      }
+	      XLALDestroyCOMPLEX16Vector(modefreqs_xtr);*/
 
 
 
-             // }}}
+	    // }}}
 
-		} //end if m= 2, l = 2
-        if ((int)fabs((REAL8) m) == 1 && l == 2) {
+	  } //end if m= 2, l = 2
+	  if ((int)fabs((REAL8) m) == 1 && l == 2) {
 
             if (debugout)
-                XLAL_PRINT_INFO("Stas, default (if nothing specified above) for pQNM eta = %f, chi = %f chi1 = %f \n", eta, chi,  chi1);
+	      XLAL_PRINT_INFO("Stas, default (if nothing specified above) for pQNM eta = %f, chi = %f chi1 = %f \n", eta, chi,  chi1);
             if (debugout) {
-                XLAL_PRINT_INFO("Stas: JLN*eta = %f, \n", JLN*eta);
-                XLAL_PRINT_INFO("NRPeakOmega22 = %3.10f,  %3.10f,  %3.10f,  %3.10f\n", NRPeakOmega22 * mTot /finalMass, NRPeakOmega22 / finalMass,  finalMass,  mTot);
-                for (j = 0; j < nmodes; j++) {
-                    XLAL_PRINT_INFO("QNM frequencies: %d %d %d %3.10f %3.10f\n", l, m, j, creal(modefreqs->data[j]) * mTot, 1. / cimag(modefreqs->data[j]) / mTot);
-                }
+	      XLAL_PRINT_INFO("Stas: JLN*eta = %f, \n", JLN*eta);
+	      XLAL_PRINT_INFO("NRPeakOmega22 = %3.10f,  %3.10f,  %3.10f,  %3.10f\n", NRPeakOmega22 * mTot /finalMass, NRPeakOmega22 / finalMass,  finalMass,  mTot);
+	      for (j = 0; j < nmodes; j++) {
+		XLAL_PRINT_INFO("QNM frequencies: %d %d %d %3.10f %3.10f\n", l, m, j, creal(modefreqs->data[j]) * mTot, 1. / cimag(modefreqs->data[j]) / mTot);
+	      }
             }
-            
+
             COMPLEX16Vector *modefreqs_xtr;
             modefreqs_xtr = XLALCreateCOMPLEX16Vector(nmodes);
             if (!modefreqs_xtr) {
-                XLAL_ERROR(XLAL_ENOMEM);
+	      XLAL_ERROR(XLAL_ENOMEM);
             }
-            
+
             if ( 1==1 || (JLN < 0.0 && eta <= 0.1)){
-                spin1[0] *= -1;
-                spin1[1] *= -1;
-                spin1[2] *= -1;
-                spin2[0] *= -1;
-                spin2[1] *= -1;
-                spin2[2] *= -1;
-                XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l,  -mHere, nmodes, approximant);
-                spin1[0] *= -1;
-                spin1[1] *= -1;
-                spin1[2] *= -1;
-                spin2[0] *= -1;
-                spin2[1] *= -1;
-                spin2[2] *= -1;
-                modefreqs->data[7] =  modefreqs_xtr->data[0];
-                modefreqs->data[6] = NRPeakOmega22 + I/mTot/((1./cimag(modefreqs->data[0])/mTot)/2.);
+	      spin1[0] *= -1;
+	      spin1[1] *= -1;
+	      spin1[2] *= -1;
+	      spin2[0] *= -1;
+	      spin2[1] *= -1;
+	      spin2[2] *= -1;
+	      XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l,  -mHere, nmodes, approximant);
+	      spin1[0] *= -1;
+	      spin1[1] *= -1;
+	      spin1[2] *= -1;
+	      spin2[0] *= -1;
+	      spin2[1] *= -1;
+	      spin2[2] *= -1;
+	      modefreqs->data[7] =  modefreqs_xtr->data[0];
+	      modefreqs->data[6] = NRPeakOmega22 + I/mTot/((1./cimag(modefreqs->data[0])/mTot)/2.);
 
-                if (m == -1){
-                    modefreqs->data[6] =  conjl(-1.0 * modefreqs->data[6]);
-                    modefreqs->data[7] =  conjl(-1.0 * modefreqs->data[7]);
-                }
+	      if (m == -1){
+		modefreqs->data[6] =  conjl(-1.0 * modefreqs->data[6]);
+		modefreqs->data[7] =  conjl(-1.0 * modefreqs->data[7]);
+	      }
             }
- //           modefreqs->data[7] = 0.5*(NRPeakOmega22 + modefreqs->data[0]) + I/mTot/((1./cimag(modefreqs->data[0])/mTot)/3.);
+//          modefreqs->data[7] = 0.5*(NRPeakOmega22 + modefreqs->data[0]) + I/mTot/((1./cimag(modefreqs->data[0])/mTot)/3.);
             XLALDestroyCOMPLEX16Vector(modefreqs_xtr);
-	if (debugout) {
-            XLAL_PRINT_INFO("l,m = %d %d\n",l,m);
-            XLAL_PRINT_INFO("finalSpin = %f\n",finalSpin);
-            XLAL_PRINT_INFO("finalMass = %f\n",finalMass);
-            XLAL_PRINT_INFO("PeakOmega = %f\n",NRPeakOmega22*mTot);
-            XLAL_PRINT_INFO("w0 = %f, t0 = %f\n",creal(modefreqs->data[0])*mTot, 1./cimag(modefreqs->data[0])/mTot);
-            XLAL_PRINT_INFO("w1 = %f, t1 = %f\n",creal(modefreqs->data[1])*mTot, 1./cimag(modefreqs->data[1])/mTot);
-            XLAL_PRINT_INFO("w2 = %f, t2 = %f\n",creal(modefreqs->data[2])*mTot, 1./cimag(modefreqs->data[2])/mTot);
-            XLAL_PRINT_INFO("w3 = %f, t3 = %f\n",creal(modefreqs->data[3])*mTot, 1./cimag(modefreqs->data[3])/mTot);
-            XLAL_PRINT_INFO("w4 = %f, t4 = %f\n",creal(modefreqs->data[4])*mTot, 1./cimag(modefreqs->data[4])/mTot);
-            XLAL_PRINT_INFO("w5 = %f, t5 = %f\n",creal(modefreqs->data[5])*mTot, 1./cimag(modefreqs->data[5])/mTot);
-            XLAL_PRINT_INFO("w6 = %f, t6 = %f\n",creal(modefreqs->data[6])*mTot, 1./cimag(modefreqs->data[6])/mTot);
-            XLAL_PRINT_INFO("w7 = %f, t7 = %f\n",creal(modefreqs->data[7])*mTot, 1./cimag(modefreqs->data[7])/mTot);
-            XLAL_PRINT_INFO("matchrange %.16e,%.16e,%.16e\n", matchrange->data[0] * mTot / dt, matchrange->data[1] * mTot / dt, matchrange->data[2] * mTot / dt - 2);
-        }
-        }
-            // FIXME
-            if (1==0 &&(m==1 || m==-1)){
-                /*NRPeakOmega22 *= 0.5;
-                if (JLN*m < 0.0){
-                    modefreqs->data[5] = (-3. / 4. * NRPeakOmega22 / finalMass) + (1. / 4. * creal(modefreqs->data[0]));
-                    modefreqs->data[4] = (-2. / 3. * NRPeakOmega22 / finalMass) + (1. / 3. * creal(modefreqs->data[0]));
-                 } else {
-                    modefreqs->data[5] = (3. / 4. * NRPeakOmega22 / finalMass) + (1. / 4. * creal(modefreqs->data[0]));
-                    modefreqs->data[4] = (2. / 3. * NRPeakOmega22 / finalMass) + (1. / 3. * creal(modefreqs->data[0]));
-                    //XLAL_PRINT_INFO("Stas , here m = %d modes: 0 = %4.10f, 6 = %4.10f, 7 = %4.10f \n", m, creal(modefreqs->data[0])*mTot, creal(modefreqs->data[6])*mTot, creal(modefreqs->data[7])*mTot);
-                 }
-                 modefreqs->data[5] += I * 3.5 / 0.9 * cimag(modefreqs->data[0]);
-                 modefreqs->data[4] += I * 3.5 * cimag(modefreqs->data[0]);*/
+	    if (debugout) {
+	      XLAL_PRINT_INFO("l,m = %d %d\n",l,m);
+	      XLAL_PRINT_INFO("finalSpin = %f\n",finalSpin);
+	      XLAL_PRINT_INFO("finalMass = %f\n",finalMass);
+	      XLAL_PRINT_INFO("PeakOmega = %f\n",NRPeakOmega22*mTot);
+	      XLAL_PRINT_INFO("w0 = %f, t0 = %f\n",creal(modefreqs->data[0])*mTot, 1./cimag(modefreqs->data[0])/mTot);
+	      XLAL_PRINT_INFO("w1 = %f, t1 = %f\n",creal(modefreqs->data[1])*mTot, 1./cimag(modefreqs->data[1])/mTot);
+	      XLAL_PRINT_INFO("w2 = %f, t2 = %f\n",creal(modefreqs->data[2])*mTot, 1./cimag(modefreqs->data[2])/mTot);
+	      XLAL_PRINT_INFO("w3 = %f, t3 = %f\n",creal(modefreqs->data[3])*mTot, 1./cimag(modefreqs->data[3])/mTot);
+	      XLAL_PRINT_INFO("w4 = %f, t4 = %f\n",creal(modefreqs->data[4])*mTot, 1./cimag(modefreqs->data[4])/mTot);
+	      XLAL_PRINT_INFO("w5 = %f, t5 = %f\n",creal(modefreqs->data[5])*mTot, 1./cimag(modefreqs->data[5])/mTot);
+	      XLAL_PRINT_INFO("w6 = %f, t6 = %f\n",creal(modefreqs->data[6])*mTot, 1./cimag(modefreqs->data[6])/mTot);
+	      XLAL_PRINT_INFO("w7 = %f, t7 = %f\n",creal(modefreqs->data[7])*mTot, 1./cimag(modefreqs->data[7])/mTot);
+	      XLAL_PRINT_INFO("matchrange %.16e,%.16e,%.16e\n", matchrange->data[0] * mTot / dt, matchrange->data[1] * mTot / dt, matchrange->data[2] * mTot / dt - 2);
+	    }
+	  }
+	  // FIXME
+	  if (1==0 &&(m==1 || m==-1)){
+	    /*NRPeakOmega22 *= 0.5;
+	      if (JLN*m < 0.0){
+	        modefreqs->data[5] = (-3. / 4. * NRPeakOmega22 / finalMass) + (1. / 4. * creal(modefreqs->data[0]));
+		modefreqs->data[4] = (-2. / 3. * NRPeakOmega22 / finalMass) + (1. / 3. * creal(modefreqs->data[0]));
+              } else {
+                modefreqs->data[5] = (3. / 4. * NRPeakOmega22 / finalMass) + (1. / 4. * creal(modefreqs->data[0]));
+		modefreqs->data[4] = (2. / 3. * NRPeakOmega22 / finalMass) + (1. / 3. * creal(modefreqs->data[0]));
+		//XLAL_PRINT_INFO("Stas , here m = %d modes: 0 = %4.10f, 6 = %4.10f, 7 = %4.10f \n", m, creal(modefreqs->data[0])*mTot, creal(modefreqs->data[6])*mTot, creal(modefreqs->data[7])*mTot);
+	      }
+	      modefreqs->data[5] += I * 3.5 / 0.9 * cimag(modefreqs->data[0]);
+	      modefreqs->data[4] += I * 3.5 * cimag(modefreqs->data[0]);*/
 
-                 COMPLEX16Vector *modefreqs_xtr;
-                 modefreqs_xtr = XLALCreateCOMPLEX16Vector(nmodes);
-                 if (!modefreqs_xtr) {
-                     XLAL_ERROR(XLAL_ENOMEM);
-                 }
-                 //XLAL_PRINT_INFO("Stas, generating QNM freqs... ");
-                 if (JLN > 0.0){
-                     XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, -1, nmodes, approximant);
-                     //XLAL_PRINT_INFO("done\n");
-                     modefreqs->data[5] =  modefreqs_xtr->data[0];
-                     //modefreqs->data[6] =  modefreqs_xtr->data[1];
-                     //modefreqs->data[7] =  modefreqs_xtr->data[2];
-                     if (JLN < kappa_thr || eta*JLN < eJL_thr){
-                         modefreqs->data[6] =  modefreqs_xtr->data[1];
-                         modefreqs->data[7] =  modefreqs_xtr->data[2];
-                     }
-                     if (m == -1){
-                         //XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, -1, nmodes, approximant);
-                         modefreqs->data[5] =  conjl(-1.0 * modefreqs_xtr->data[0]);
-                         //modefreqs->data[6] =  conjl(-1.0 * modefreqs_xtr->data[1]);
-                         //modefreqs->data[7] =  conjl(-1.0 * modefreqs_xtr->data[2]);
-                         if (JLN < kappa_thr || eta*JLN < eJL_thr){
-                             modefreqs->data[6] =  conjl(-1.0 *  modefreqs_xtr->data[1]);
-                             modefreqs->data[7] =  conjl(-1.0 * modefreqs_xtr->data[2]);
-                         }
-                     }
-                 }
-                 //XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, -2, nmodes, approximant);
-                 //if (JLN > 0.0){
-                 //    modefreqs->data[6] =  modefreqs_xtr->data[0];
-                     //modefreqs->data[5] =  modefreqs_xtr->data[1];
-                //     if (m == -1){
-                         //XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, 2, nmodes, approximant);
-                //         modefreqs->data[6] =  conjl(-1.0 * modefreqs_xtr->data[0]);
-                         //modefreqs->data[5] =  conjl(-1.0 *  modefreqs_xtr->data[1]);
-                //     }
-                // }
-                 if (JLN < 0.0){
-                     //modefreqs->data[4] =  conjl(-1.0 * modefreqs->data[4]);
-                     //modefreqs->data[5] =  conjl(-1.0 *  modefreqs->data[5]);
-                     XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, 1, nmodes, approximant);
-                     //XLAL_PRINT_INFO("done\n");
-                     modefreqs->data[5] =  modefreqs_xtr->data[0];
-                     //modefreqs->data[6] =  modefreqs_xtr->data[1];
-                     //modefreqs->data[7] =  modefreqs_xtr->data[2];
-                     if (JLN > -1.0*kappa_thr || fabs(eta*JLN) < eJL_thr){
-                         modefreqs->data[6] =  modefreqs_xtr->data[1];
-                         modefreqs->data[7] =  modefreqs_xtr->data[2];
-                     }
-                     if (m == -1){
-                         //XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, -1, nmodes, approximant);
-                         modefreqs->data[5] =  conjl(-1.0 * modefreqs_xtr->data[0]);
-                         //modefreqs->data[6] =  conjl(-1.0 * modefreqs_xtr->data[1]);
-                         //modefreqs->data[7] =  conjl(-1.0 * modefreqs_xtr->data[2]);
-                         if (JLN > -1.0*kappa_thr || fabs(eta*JLN) < eJL_thr){
-                             modefreqs->data[6] =  conjl(-1.0 *  modefreqs_xtr->data[1]);
-                             modefreqs->data[7] =  conjl(-1.0 * modefreqs_xtr->data[2]);
-                         }
-                     }
-                     //XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, 2, nmodes, approximant);
-                     //modefreqs->data[6] =  modefreqs_xtr->data[0];
-                     //modefreqs->data[5] =  modefreqs_xtr->data[1];
-                     //if (m == -1){
-                         //XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, 2, nmodes, approximant);
-                     //    modefreqs->data[6] =  conjl(-1.0 * modefreqs_xtr->data[0]);
-                         //modefreqs->data[5] =  conjl(-1.0 *  modefreqs_xtr->data[1]);
-                     //}
-                 }
+	    COMPLEX16Vector *modefreqs_xtr;
+	    modefreqs_xtr = XLALCreateCOMPLEX16Vector(nmodes);
+	    if (!modefreqs_xtr) {
+	      XLAL_ERROR(XLAL_ENOMEM);
+	    }
+	    //XLAL_PRINT_INFO("Stas, generating QNM freqs... ");
+	    if (JLN > 0.0){
+	      XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, -1, nmodes, approximant);
+	      //XLAL_PRINT_INFO("done\n");
+	      modefreqs->data[5] =  modefreqs_xtr->data[0];
+	      //modefreqs->data[6] =  modefreqs_xtr->data[1];
+	      //modefreqs->data[7] =  modefreqs_xtr->data[2];
+	      if (JLN < kappa_thr || eta*JLN < eJL_thr){
+		modefreqs->data[6] =  modefreqs_xtr->data[1];
+		modefreqs->data[7] =  modefreqs_xtr->data[2];
+	      }
+	      if (m == -1){
+		//XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, -1, nmodes, approximant);
+		modefreqs->data[5] =  conjl(-1.0 * modefreqs_xtr->data[0]);
+		//modefreqs->data[6] =  conjl(-1.0 * modefreqs_xtr->data[1]);
+		//modefreqs->data[7] =  conjl(-1.0 * modefreqs_xtr->data[2]);
+		if (JLN < kappa_thr || eta*JLN < eJL_thr){
+		  modefreqs->data[6] =  conjl(-1.0 *  modefreqs_xtr->data[1]);
+		  modefreqs->data[7] =  conjl(-1.0 * modefreqs_xtr->data[2]);
+		}
+	      }
+	    }
+	    //XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, -2, nmodes, approximant);
+	    //if (JLN > 0.0){
+	    //  modefreqs->data[6] =  modefreqs_xtr->data[0];
+	    //  modefreqs->data[5] =  modefreqs_xtr->data[1];
+	    //  if (m == -1){
+	    //    XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, 2, nmodes, approximant);
+	    //    modefreqs->data[6] =  conjl(-1.0 * modefreqs_xtr->data[0]);
+            //    modefreqs->data[5] =  conjl(-1.0 *  modefreqs_xtr->data[1]);
+            //  }
+            //}
+	    if (JLN < 0.0){
+	      //modefreqs->data[4] =  conjl(-1.0 * modefreqs->data[4]);
+	      //modefreqs->data[5] =  conjl(-1.0 *  modefreqs->data[5]);
+	      XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, 1, nmodes, approximant);
+	      //XLAL_PRINT_INFO("done\n");
+	      modefreqs->data[5] =  modefreqs_xtr->data[0];
+	      //modefreqs->data[6] =  modefreqs_xtr->data[1];
+	      //modefreqs->data[7] =  modefreqs_xtr->data[2];
+	      if (JLN > -1.0*kappa_thr || fabs(eta*JLN) < eJL_thr){
+		modefreqs->data[6] =  modefreqs_xtr->data[1];
+		modefreqs->data[7] =  modefreqs_xtr->data[2];
+	      }
+	      if (m == -1){
+		//XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, -1, nmodes, approximant);
+		modefreqs->data[5] =  conjl(-1.0 * modefreqs_xtr->data[0]);
+		//modefreqs->data[6] =  conjl(-1.0 * modefreqs_xtr->data[1]);
+		//modefreqs->data[7] =  conjl(-1.0 * modefreqs_xtr->data[2]);
+		if (JLN > -1.0*kappa_thr || fabs(eta*JLN) < eJL_thr){
+		  modefreqs->data[6] =  conjl(-1.0 *  modefreqs_xtr->data[1]);
+		  modefreqs->data[7] =  conjl(-1.0 * modefreqs_xtr->data[2]);
+		}
+	      }
+	      //XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, 2, nmodes, approximant);
+	      //modefreqs->data[6] =  modefreqs_xtr->data[0];
+	      //modefreqs->data[5] =  modefreqs_xtr->data[1];
+	      //if (m == -1){
+	        //XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, 2, nmodes, approximant);
+                //    modefreqs->data[6] =  conjl(-1.0 * modefreqs_xtr->data[0]);
+	        //modefreqs->data[5] =  conjl(-1.0 *  modefreqs_xtr->data[1]);
+	        //}
+	    }
 
 
-                 XLALDestroyCOMPLEX16Vector(modefreqs_xtr);
-            }
-            } //v3
+	    XLALDestroyCOMPLEX16Vector(modefreqs_xtr);
+	  }
+	} //v3
 
         // FIXME !!!!
         //for (j =0; j<nmodes; j++){

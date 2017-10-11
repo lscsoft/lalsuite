@@ -231,7 +231,7 @@ int cache_max_semi_bbox_sample_dim0(
   } else {
 
     // Convert 'coh_bbox_sample' to semicoherent reduced supersky coordinates
-    XLAL_CHECK( XLALConvertSuperskyToSuperskyPoint( semi_bbox_sample, cache->semi_rssky_transf, coh_bbox_sample, cache->coh_rssky_transf ) == XLAL_SUCCESS, XLAL_EINVAL );
+    XLAL_CHECK( XLALConvertSuperskyToSuperskyPoint( semi_bbox_sample, cache->semi_rssky_transf, coh_bbox_sample, coh_bbox_sample, cache->coh_rssky_transf ) == XLAL_SUCCESS, XLAL_EINVAL );
 
     // Record maximum value of semicoherent coordinate in dimension 'dim0'
     *max_semi_bbox_sample_dim0 = GSL_MAX( *max_semi_bbox_sample_dim0, gsl_vector_get( semi_bbox_sample, cache->dim0 ) );
@@ -624,7 +624,7 @@ int XLALWeaveCacheQuery(
   {
     double semi_near_point_array[cache->ndim];
     gsl_vector_view semi_near_point_view = gsl_vector_view_array( semi_near_point_array, cache->ndim );
-    XLAL_CHECK( XLALConvertSuperskyToSuperskyPoint( &semi_near_point_view.vector, cache->semi_rssky_transf, &coh_near_point_view.vector, cache->coh_rssky_transf ) == XLAL_SUCCESS, XLAL_EINVAL );
+    XLAL_CHECK( XLALConvertSuperskyToSuperskyPoint( &semi_near_point_view.vector, cache->semi_rssky_transf, &coh_near_point_view.vector, &coh_point_view.vector, cache->coh_rssky_transf ) == XLAL_SUCCESS, XLAL_EINVAL );
     queries->coh_relevance[query_index] = gsl_vector_get( &semi_near_point_view.vector, cache->dim0 ) + cache->coh_relevance_offset;
   }
 

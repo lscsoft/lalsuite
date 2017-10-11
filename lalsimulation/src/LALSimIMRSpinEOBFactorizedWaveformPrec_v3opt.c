@@ -1137,7 +1137,7 @@ static REAL8 XLALSimIMRSpinPrecEOBCalcOmega_exact(
      too closely aligned, rotate LNhat by pi/4 in the x,y plane.  Then
      LNhat determines Xprime, Yprime is the normalized cross product of
      Xprime and Xhat, and Zprime is the normalized cross product of Xprime
-     and Zprime.
+     and Yprime.
   */
   if( inner_product(LNhat, Xhat) < 0.9 )
   {

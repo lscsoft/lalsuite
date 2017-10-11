@@ -176,6 +176,7 @@ int XLALConvertSuperskyToSuperskyPoint(
   gsl_vector *out_rssky,                        ///< [out] Output point in supersky coordinates
   const SuperskyTransformData *out_rssky_transf,///< [in] Output reduced supersky coordinate transform data
   const gsl_vector *in_rssky,                   ///< [in] Input point in supersky coordinates
+  const gsl_vector *ref_rssky,                  ///< [in,optional] Reference point in supersky coordinates
   const SuperskyTransformData *in_rssky_transf  ///< [in] Input reduced supersky coordinate transform data
   );
 
