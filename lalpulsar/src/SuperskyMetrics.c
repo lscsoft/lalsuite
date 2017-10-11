@@ -1200,6 +1200,7 @@ int XLALConvertSuperskyToSuperskyPoint(
   gsl_vector *out_rssky,
   const SuperskyTransformData *out_rssky_transf,
   const gsl_vector *in_rssky,
+  const gsl_vector *ref_rssky,
   const SuperskyTransformData *in_rssky_transf
   )
 {
@@ -1212,7 +1213,7 @@ int XLALConvertSuperskyToSuperskyPoint(
 
   // Convert input reduced supersky point to physical coordinates
   PulsarDopplerParams XLAL_INIT_DECL( phys );
-  XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &phys, in_rssky, NULL, in_rssky_transf ) == XLAL_SUCCESS, XLAL_EINVAL );
+  XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &phys, in_rssky, ref_rssky, in_rssky_transf ) == XLAL_SUCCESS, XLAL_EINVAL );
 
   // Convert physical point to output reduced supersky coordinates
   XLAL_CHECK( XLALConvertPhysicalToSuperskyPoint( out_rssky, &phys, out_rssky_transf ) == XLAL_SUCCESS, XLAL_EINVAL );
@@ -2493,7 +2494,7 @@ static int SM_LatticeSuperskyRangeCallback(
   // Convert point from reduced supersky coordinates to other reduced supersky coordinates
   double rssky2_array[cparam->rssky_transf->ndim];
   gsl_vector_view rssky2_view = gsl_vector_view_array( rssky2_array, cparam->rssky2_transf->ndim );
-  XLAL_CHECK( XLALConvertSuperskyToSuperskyPoint( &rssky2_view.vector, cparam->rssky2_transf, point, cparam->rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALConvertSuperskyToSuperskyPoint( &rssky2_view.vector, cparam->rssky2_transf, point, point, cparam->rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Store minimum/maximum values of other reduced supersky sky coordinates
   for ( size_t i = 0; i < 2; ++i ) {
