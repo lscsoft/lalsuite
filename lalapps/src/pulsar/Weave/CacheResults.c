@@ -72,10 +72,10 @@ struct tagWeaveCache {
   UINT4 coh_computed_bitset_partition_index;
   /// Offset used in computation of coherent point relevance
   double coh_relevance_offset;
-  /// Maximum number of cache items to store
-  UINT4 max_size;
-  /// Additional cache item garbage collection limit
-  UINT4 gc_extra;
+  /// Whether any garbage collection of results should be used
+  BOOLEAN any_gc;
+  /// Whether garbage collection should remove as many results as possible
+  BOOLEAN all_gc;
   /// Save an no-longer-used cache item for re-use
   cache_item *saved_item;
 };
@@ -298,7 +298,7 @@ WeaveCache *XLALWeaveCacheCreate(
   const SuperskyTransformData *semi_rssky_transf,
   WeaveCohInput *coh_input,
   const UINT4 max_size,
-  const UINT4 gc_extra
+  const BOOLEAN all_gc
   )
 {
 
@@ -314,7 +314,14 @@ WeaveCache *XLALWeaveCacheCreate(
   cache->coh_rssky_transf = coh_rssky_transf;
   cache->semi_rssky_transf = semi_rssky_transf;
   cache->coh_input = coh_input;
-  cache->gc_extra = gc_extra;
+
+  // Set garbage collection mode:
+  // - Garbage collection is not performed for a fixed-size cache (i.e. 'max_size > 0'),
+  //   i.e. the cache will only discard items once the fixed-size cache is full, but not
+  //   try to remove cache items earlier based on their relevances
+  // - Garbage collection is applied to as many items as possible if 'all_gc' is true
+  cache->any_gc = (max_size == 0);
+  cache->all_gc = all_gc;
 
   // Get number of parameter-space dimensions
   cache->ndim = XLALTotalLatticeTilingDimensions( coh_tiling );
@@ -775,8 +782,8 @@ int XLALWeaveCacheRetrieve(
     // Create a 'fake' item specifying thresholds for cache item relevance, for comparison with 'least_relevant_item'
     const cache_item relevance_threshold = { .partition_index = queries->partition_index, .relevance = queries->semi_relevance };
 
-    // If item's relevance has fallen below the threshold relevance, it can be removed from the cache
-    if ( least_relevant_item != NULL && least_relevant_item != new_item && cache_item_compare_by_relevance( least_relevant_item, &relevance_threshold ) < 0 ) {
+    // If garbage collection is enabled, and item's relevance has fallen below the threshold relevance, it can be removed from the cache
+    if ( cache->any_gc && least_relevant_item != NULL && least_relevant_item != new_item && cache_item_compare_by_relevance( least_relevant_item, &relevance_threshold ) < 0 ) {
 
       // Remove least relevant item from index hash table
       XLAL_CHECK( XLALHashTblRemove( cache->coh_index_hash, least_relevant_item ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -784,8 +791,8 @@ int XLALWeaveCacheRetrieve(
       // Exchange 'saved_item' with the least relevant item in the relevance heap
       XLAL_CHECK( XLALHeapExchangeRoot( cache->relevance_heap, ( void ** ) &cache->saved_item ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-      // Remove any addition items that are no longer relevant, up to a maximum of 'gc_extra'
-      for ( size_t i = 0; i < cache->gc_extra; ++i ) {
+      // If maximal garbage collection is enabled, remove as many results as possible
+      while ( cache->all_gc ) {
 
         // Get the item in the cache with the smallest relevance
         least_relevant_item = ( const cache_item * ) XLALHeapRoot( cache->relevance_heap );

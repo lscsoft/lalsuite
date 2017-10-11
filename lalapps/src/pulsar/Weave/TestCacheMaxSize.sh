@@ -20,7 +20,7 @@ for setup in short long; do
             weave_setup_options="--segment-count=3 --segment-gap=11130000"
             weave_sft_options=
             weave_search_options="--simulate-search --alpha=2.3/0.9 --delta=-1.2/2.3 --freq=50.5/0.01 --f1dot=-5e-11,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3"
-            weave_cache_options="--cache-max-size=25"
+            weave_cache_options="--cache-max-size=25 --cache-all-gc"
             weave_recomp_threshold=0.0
             ;;
 

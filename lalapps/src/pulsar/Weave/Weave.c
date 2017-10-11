@@ -72,12 +72,12 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, misc_info, simulate_search, Fstat_timing;
+    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, misc_info, simulate_search, Fstat_timing, cache_all_gc;
     CHAR *setup_file, *sft_files, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd, *lrs_oLGX;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit, lrs_Fstar0sc, nc_2Fth;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
-    UINT4 sky_patch_count, sky_patch_index, freq_partitions, Fstat_run_med_window, Fstat_Dterms, toplist_limit, rand_seed, cache_max_size, cache_gc_extra;
+    UINT4 sky_patch_count, sky_patch_index, freq_partitions, Fstat_run_med_window, Fstat_Dterms, toplist_limit, rand_seed, cache_max_size;
     int lattice, Fstat_method, Fstat_SSB_precision, toplists, extra_statistics;
   } uvar_struct = {
     .Fstat_Dterms = Fstat_opt_args.Dterms,
@@ -341,9 +341,9 @@ int main( int argc, char *argv[] )
     "Has no effect when performing a fully-coherent single-segment search, or a non-interpolating search. "
     );
   XLALRegisterUvarMember(
-    cache_gc_extra, UINT4, 0, DEVELOPER,
-    "By default, whenever an item is added to the internal caches, at most one item that is no longer required is removed. "
-    "If non-zero, try to remove at most this number of additional items, providing they are no longer required. "
+    cache_all_gc, BOOLEAN, 0, DEVELOPER,
+    "By default, whenever an item is added to the internal caches, at most one item that may no longer be required is removed. "
+    "If true, try to instead remove as many items as possible, provided that they are no longer required. "
     "Has no effect when performing a fully-coherent single-segment search, or a non-interpolating search. "
     );
 
@@ -941,8 +941,8 @@ int main( int argc, char *argv[] )
   WeaveCache *XLAL_INIT_DECL( coh_cache, [nsegments] );
   for ( size_t i = 0; i < nsegments; ++i ) {
     const size_t cache_max_size = interpolation ? uvar->cache_max_size : 1;
-    const size_t cache_gc_extra = interpolation ? uvar->cache_gc_extra : 0;
-    coh_cache[i] = XLALWeaveCacheCreate( tiling[i], interpolation, rssky_transf[i], rssky_transf[isemi], coh_input[i], cache_max_size, cache_gc_extra );
+    const BOOLEAN cache_all_gc = interpolation ? uvar->cache_all_gc : 0;
+    coh_cache[i] = XLALWeaveCacheCreate( tiling[i], interpolation, rssky_transf[i], rssky_transf[isemi], coh_input[i], cache_max_size, cache_all_gc );
     XLAL_CHECK_MAIN( coh_cache[i] != NULL, XLAL_EFUNC );
   }
 

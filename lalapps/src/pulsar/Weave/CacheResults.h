@@ -57,7 +57,7 @@ WeaveCache *XLALWeaveCacheCreate(
   const SuperskyTransformData *semi_rssky_transf,
   WeaveCohInput *coh_input,
   const UINT4 max_size,
-  const UINT4 gc_extra
+  const BOOLEAN all_gc
   );
 void XLALWeaveCacheDestroy(
   WeaveCache *cache
