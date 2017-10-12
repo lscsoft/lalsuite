@@ -231,6 +231,8 @@ int XLALSetSuperskyPhysicalSkyBounds(
 ///
 int XLALSetSuperskyEqualAreaSkyBounds(
   LatticeTiling *tiling,                        ///< [in] Lattice tiling
+  const gsl_matrix *rssky_metric,               ///< [in] Reduced supersky metric
+  const double max_mismatch,                    ///< [in] Maximum prescribed mismatch
   const UINT4 patch_count,                      ///< [in] Number of equal-area patches to divide sky into
   const UINT4 patch_index                       ///< [in] Index of the patch for which to compute bounds
   );
