@@ -628,7 +628,7 @@ int main( int argc, char *argv[] )
 
   // Set sky semicoherent parameter-space bounds
   if ( UVAR_SET( sky_patch_count ) ) {
-    XLAL_CHECK_MAIN( XLALSetSuperskyEqualAreaSkyBounds( tiling[isemi], uvar->sky_patch_count, uvar->sky_patch_index ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALSetSuperskyEqualAreaSkyBounds( tiling[isemi], rssky_metric[isemi], semi_max_mismatch, uvar->sky_patch_count, uvar->sky_patch_index ) == XLAL_SUCCESS, XLAL_EFUNC );
     LogPrintf( LOG_NORMAL, "Search sky parameter space sky patch = %u of %u\n", uvar->sky_patch_index, uvar->sky_patch_count );
   } else {
     XLAL_CHECK_MAIN( XLALSetSuperskyPhysicalSkyBounds( tiling[isemi], rssky_metric[isemi], rssky_transf[isemi], uvar->alpha[0], uvar->alpha[1], uvar->delta[0], uvar->delta[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
