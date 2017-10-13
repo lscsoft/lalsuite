@@ -59,7 +59,13 @@ except:
 if opts.runpath is not None:
   cp.set('analysis', 'run_dir', opts.runpath)
 
-# Check is configuration file says to submit the DAG
+# Check if we're running in automated mode or not
+try:
+  automated = cp.getboolean('analysis', 'autonomous')
+except:
+  automated = False
+
+# Check if configuration file says to submit the DAG
 submitdag = opts.condor_submit
 if not submitdag:
   try:
@@ -69,35 +75,44 @@ if not submitdag:
 
 # Create DAG from ConfigParser object
 dag = knope.knopeDAG(cp, inifile, pulsarlist=opts.pulsarlist)
-if dag.error_code != 0: # check for any errors that occured
-  print("Error... their was an error creating the DAG file", file=sys.stderr)
-  sys.exit(dag.error_code)
-
-# write out DAG and submit files
-dag.write_sub_files()
-dag.write_dag()
-
-print("Successfully created DAG file: '%s'" % dag.get_dag_file())
-
-if submitdag:
-  from subprocess import Popen
-  x = Popen(['condor_submit_dag', dag.get_dag_file()])
-  x.wait()
-  if x.returncode == 0:
-    print("Submitted DAG file")
+if dag.error_code != 0: # check for any errors that occurred
+  if dag.error_code in knope.KNOPE_ERROR.keys():
+    print(knope.KNOPE_ERROR[dag.error_code], file=sys.stderr)
   else:
-    print("Unable to submit DAG file")
-else:
-  print("Run 'condor_submit_dag %s' to submit DAG file" % dag.get_dag_file())
+    print("Error... unrecognised error code!", file=sys.stderr)
 
-# output DAG class to pickle file if given
-if cp.has_option('analysis', 'pickle_file'):
-  try:
-    pfile = cp.get('analysis', 'pickle_file')
-    fp = open(pfile, 'wb')
-    pickle.dump(dag, fp)
-    fp.close()
-  except:
-    print("Warning... could not output analysis class to pickle file")
+  # only exit if not in autonomous mode and the error message
+  if not automated or dag.error_code != knope.KNOPE_ERROR_NO_SEGMENTS:
+    sys.exit(dag.error_code)
+
+# write out DAG and submit files (unless in automated mode and no new segment files were found)
+if not automated or dag.error_code != knope.KNOPE_ERROR_NO_SEGMENTS:
+  dag.write_sub_files()
+  dag.write_dag()
+
+  print("Successfully created DAG file: '%s'" % dag.get_dag_file())
+
+  if submitdag:
+    from subprocess import Popen
+    x = Popen(['condor_submit_dag', dag.get_dag_file()])
+    x.wait()
+    if x.returncode == 0:
+      print("Submitted DAG file")
+    else:
+      print("Unable to submit DAG file")
+  else:
+    print("Run 'condor_submit_dag %s' to submit DAG file" % dag.get_dag_file())
+
+  # output DAG class to pickle file if given
+  if cp.has_option('analysis', 'pickle_file'):
+    try:
+      pfile = cp.get('analysis', 'pickle_file')
+      fp = open(pfile, 'wb')
+      pickle.dump(dag, fp)
+      fp.close()
+    except:
+      print("Warning... could not output analysis class to pickle file")
+else:
+  print("No new science segments found in current time frame")
 
 sys.exit(0)

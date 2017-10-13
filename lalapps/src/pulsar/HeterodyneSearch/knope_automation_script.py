@@ -20,6 +20,7 @@ import numpy as np
 import subprocess as sp
 import socket
 import smtplib
+import stat
 
 import argparse
 from ConfigParser import ConfigParser
@@ -66,7 +67,7 @@ def remove_cron(cronid):
 # function to send an email
 def send_email(FROM, TO, SUBJECT, MESSAGE, server, quitserver=True):
   # set a notication email template
-  emailtemplate = "From: {0}\nTo: {1}\nSubject: {3}\n\n{4}"
+  emailtemplate = "From: {0}\nTo: {1}\nSubject: {2}\n\n{3}"
   message = emailtemplate.format(FROM, TO, SUBJECT, MESSAGE)
 
   try:
@@ -92,9 +93,13 @@ A configuration .ini file is required.
 
   inifile = opts.inifile
 
+  # check that inifile contains full absolute path
+  if not os.path.isabs(inifile):
+    print("Error... must supply the full absolute path of the configuration file.", file=sys.stderr)
+    sys.exit(1)
+
   startcron = False # variable to say whether to create the crontab (if this is the first time the script is run then this will be changed to True later)
-  cronid = 'knopeJob' # an ID for the crontab job
-  croncommand = '%s -i {0}' % sys.argv[0] # set the cron command (which will re-run this script)
+  cronid = 'knopeJob' # default ID for the crontab job
 
   # open and parse config file
   cp = ConfigParser()
@@ -108,7 +113,7 @@ A configuration .ini file is required.
   if not cp.has_option('times', 'previous_endtimes'): # make sure to start the crontab job
     startcron = True
 
-  # open and parse the run configuation file
+  # open and parse the run configuration file
   if cp.has_option('configuration', 'file'):
     runconfig = cp.get('configuration', 'file') # Get main configuration ini template for the run
 
@@ -121,11 +126,28 @@ A configuration .ini file is required.
     if startcron: remove_cron(cronid)
     sys.exit(1)
 
+  # check for cron ID
+  if cp.has_option('configuration', 'cronid'):
+    cronid = cp.get('configuration', 'cronid')
+
   cprun = ConfigParser()
   try:
     cprun.read(runconfig)
   except:
     print("Error... could not read run configuration '.ini' file", file=sys.stderr)
+    sys.exit(1)
+
+  # get the time increment for re-running the pipeline on (can be "hourly", "daily", "weekly" or "monthly")
+  if cp.has_option('times', 'steps'):
+    timestep = cp.get('times', 'steps')
+
+    if timestep not in ['hourly', 'daily', 'weekly', 'monthly']:
+      errmsg = "Error... 'steps' value in '[times'] must be 'hourly', 'daily', 'weekly' or 'monthly'"
+      print(errmsg, file=sys.stderr)
+      sys.exit(1)
+  else:
+    errmsg = "Error... must specify a time step 'steps' value in '[times]'"
+    print(errmsg, file=sys.stderr)
     sys.exit(1)
 
   # try getting email address information (for notifications of e.g. job failures, re-running rescue DAGs, etc)
@@ -165,6 +187,7 @@ A configuration .ini file is required.
 
   # check for DAG completion in previous analyses
   prevdags = None
+  rescuedags = None
   try:
     rundir = cprun.get('analysis', 'run_dir') # get run directory where DAG will have been created
   except:
@@ -189,10 +212,10 @@ A configuration .ini file is required.
         # reset to run again later
         if timestep in ['hourly', 'daily']: # if hourly or daily just wait until the next run
           print("Previous DAG not finished. Re-running later")
-          sys.exit(0)
+          os._exit(0) # don't use sys.exit(0) as this throws an exception that is caught by "except": https://stackoverflow.com/a/173323/1862861
         else: # add a day to the crontab job and re-run then
           cron = CronTab(user=True)
-          for job in cron.find_comment(cronid)
+          for job in cron.find_comment(cronid):
             thisjob = job # cron job
 
           # get a detlaT for a day
@@ -205,7 +228,7 @@ A configuration .ini file is required.
           else:
             thisjob.day.on(newcrontime.datetime.day) # get new month of the year
           cron.write()
-          sys.exit(0)
+          os._exit(0) # don't use sys.exit(0) as this throws an exception that is caught by "except": https://stackoverflow.com/a/173323/1862861
       except:
         errmsg = "Error... could not reset the crontab to wait for DAG completion."
         print(errmsg, file=sys.stderr)
@@ -215,11 +238,19 @@ A configuration .ini file is required.
           send_email(FROM, email, subject, errmsg, server)
         sys.exit(1)
 
+    # get any previous rescue DAGs - held in a dictionary and keyed to the original DAG name
+    try:
+      rescuedags = ast.literal_eval(cp.get('configuration', 'rescue_dags'))
+      Nrescues = rescuedags[prevdags[-1]] # get previous number of rescue DAGs
+    except:
+      rescuedags = None
+      Nrescues = 0 # previous number of rescues
+
     # check if there is a rescue DAG, and if so run it, and wait
     rescuefile = prevdags[-1] + '.rescue'
-    if rescuefile in os.listdir(os.path.dirname(prevdags[-1])):
-      # if more than 2 rescue DAGs have already been run then just abort as there's probably some problem
-      if rescuefile+'003' in os.listdir(os.path.dirname(prevdags[-1])):
+    if os.path.basename(rescuefile+'%03d' % (Nrescues+1)) in os.listdir(os.path.dirname(prevdags[-1])):
+      # if 2 rescue DAGs have already been run then just abort as there's probably some problem
+      if Nrescues == 3:
         errmsg = "Error... rescue DAG has been run twice and there are still failures. Automation code is aborting. Fix the problem and then retry"
         print(errmsg, file=sys.stderr)
         remove_cron(cronid) # remove cron job
@@ -227,6 +258,11 @@ A configuration .ini file is required.
           subject = sys.argv[0] + ': Error message'
           send_email(FROM, email, subject, errmsg, server)
         sys.exit(1)
+
+      # update number of previous rescues
+      if Nrescues == 0:
+        rescuedags = {}
+      rescuedags[prevdags[-1]] = Nrescues + 1
 
       # run rescue DAG
       from subprocess import Popen
@@ -240,15 +276,23 @@ A configuration .ini file is required.
           send_email(FROM, email, subject, errmsg, server)
         sys.exit(1)
 
+      # add number of rescue DAGs to configuration file
+      cp.set('configuration', 'rescue_dags', str(rescuedags))
+
+      # Write out updated configuration file
+      fc = open(inifile, 'w')
+      cp.write(fc)
+      fc.close()
+
       # wait until re-running
       try:
         # reset to run again later
         if timestep in ['hourly', 'daily']: # if hourly or daily just wait until the next run
-          print("Previous DAG not finished. Re-running later")
-          sys.exit(0)
+          print("Running rescue DAG")
+          os._exit(0) # don't use sys.exit(0) as this throws an exception that is caught by "except": https://stackoverflow.com/a/173323/1862861
         else: # add a day to the crontab job and re-run then
           cron = CronTab(user=True)
-          for job in cron.find_comment(cronid)
+          for job in cron.find_comment(cronid):
             thisjob = job # cron job
 
           # get a detlaT for a day
@@ -261,7 +305,7 @@ A configuration .ini file is required.
           else:
             thisjob.day.on(newcrontime.datetime.day) # get new month of the year
           cron.write()
-          sys.exit(0)
+          os._exit(0) # don't use sys.exit(0) as this throws an exception that is caught by "except": https://stackoverflow.com/a/173323/1862861
       except:
         errmsg = "Error... could not reset the crontab to wait for rescue DAG completion."
         print(errmsg, file=sys.stderr)
@@ -285,7 +329,7 @@ A configuration .ini file is required.
       sys.exit(1)
 
   # check start time is in the past
-  if startime >= gpsnow:
+  if starttime >= gpsnow:
     errmsg = "Error... start time (%f) must be in the past!" % starttime
     print(errmsg, file=sys.stderr)
     if email != None:
@@ -315,31 +359,10 @@ A configuration .ini file is required.
       send_email(FROM, email, subject, errmsg, server)
     sys.exit(1)
 
-  # get the time increment for re-running the pipeline on (can be "hourly", "daily", "weekly" or "monthly")
-  if cp.has_option('times', 'steps'):
-    timestep = cp.get('times', 'steps')
-
-    if timestep not in ['hourly', 'daily', 'weekly', 'monthly']:
-      errmsg = "Error... 'steps' value in '[times'] must be 'hourly', 'daily', 'weekly' or 'monthly'"
-      print(errmsg, file=sys.stderr)
-      if not startcron: remove_cron(cronid) # remove cron job
-      if email != None:
-        subject = sys.argv[0] + ': Error message'
-        send_email(FROM, email, subject, errmsg, server)
-      sys.exit(1)
-  else:
-    errmsg = "Error... must specify a time step 'steps' value in '[times]'"
-    print(errmsg, file=sys.stderr)
-    if not startcron: remove_cron(cronid) # remove cron job
-    if email != None:
-      subject = sys.argv[0] + ': Error message'
-      send_email(FROM, email, subject, errmsg, server)
-    sys.exit(1)
-
   # get a lag time (this will add a lag to gpsnow - if there is a lag between data creation and replication on the various sites a lag may be required, so that the data exists)
   if cp.has_option('times', 'lag'):
     try:
-      timelag = gp.getint('times', 'lag')
+      timelag = cp.getint('times', 'lag')
     except:
       timelag = 0
   else:
@@ -416,15 +439,15 @@ A configuration .ini file is required.
     cprun.set('analysis', 'submit_dag', 'True')        # set to make sure Condor DAG is submitted
 
     # create file name for DAG
-    dagname = 'automated_run_%s-%s.dag' % (str(newstart), str(newend))
+    dagname = 'automated_run_%s-%s' % (str(newstart), str(newend))
     cprun.set('analysis', 'dag_name', dagname) # add this dag file name to the automation code configuration script (to be used to check for DAG completion)
 
     if prevdags != None:
       # add on new DAG file to list
-      prevdags.append(os.path.join(rundir, dagname))
-      cp.set('configuation', 'previous_dags', '['+', '.join(z for z in prevdags)+']') # output as list
+      prevdags.append(os.path.join(rundir, dagname+'.dag'))
+      cp.set('configuration', 'previous_dags', '['+', '.join(['"%s"' % z for z in prevdags])+']') # output as list
     else: # output DAG file to previous_dags list
-      cp.set('configuation', 'previous_dags', '['+dagname+']')
+      cp.set('configuration', 'previous_dags', '["'+os.path.join(rundir, dagname+'.dag')+'"]')
 
     # add the initial start time
     cprun.set('analysis', 'autonomous_initial_start', str(starttime))
@@ -442,29 +465,55 @@ A configuration .ini file is required.
       send_email(FROM, email, subject, errmsg, server)
     sys.exit(1)
 
-  # Write out updated configuration file
-  fc = open(inifile, 'w')
-  cp.write(fc)
-  fc.close()
-
-  ### RUN ANALYSIS SCRIPT ###
-  p = sp.Popen('{0} -i {1}'.format(runscript, runconfig), shell=True)
-  out, err = p.communicate()
-  if p.returncode != 0:
-    errmsg = "Error... problem running main script '%s'.: %s, %s" % (runscript, out, err)
-    print(errmsg, file=sys.stderr)
-    if not startcron: remove_cron(cronid)
-    if email != None:
-      subject = sys.argv[0] + ': Error message'
-      send_email(FROM, email, subject, errmsg, server)
-    sys.exit(1)
-  ###########################
-
   # create crontab job
   if startcron:
+    # check for a virtual environment to run code under
+    wov = ""
+    if cp.has_option('configuration', 'virtualenv'): # assumes using virtualenvwrapper.sh
+      virtualenv = cp.get('configuration', 'virtualenv')
+      try:
+        woh = os.environ['WORKON_HOME']
+        if not os.path.isdir(os.path.join(woh, virtualenv)):
+          print("Error... if specifying a virtualenv the environment must exist", file=sys.stderr)
+          sys.exit(1)
+        else:
+          wov = "workon " + virtualenv
+      except:
+        print("Error... if specifying a virtualenv the 'WORKON_HOME' environment must exist", file=sys.stderr)
+        sys.exit(1)
+
+    # check for .bash_profile, or similar file, to invoke
+    profile = None
+    if cp.has_option('configuration', 'profile'):
+      profile = cp.get('configuration', 'profile')
+    else:
+      # default to ${HOME}/.bash_profile
+      profile = os.path.join(os.environ['HOME'], '.bash_profile')
+    if not os.path.isfile(profile):
+      print("Error... no profile file is given", file=sys.stderr)
+      sys.exit(1)
+
+    # output wrapper script
+    try:
+      # set the cron wrapper script (which will re-run this script)
+      cronwrapperscript = os.path.splitext(inifile)[0] + '.sh'
+      cronwrapper = """#!/bin/bash
+source {0} # source profile
+{1}        # enable virtual environment (assumes you have virtualenvwrapper.sh)
+%s {2}     # re-run this script
+""" % sys.argv[0]
+
+      fp = open(cronwrapperscript, 'w')
+      fp.write(cronwrapper.format(profile, wov, inifile))
+      fp.close()
+      os.chmod(cronwrapperscript, stat.S_IRWXU | stat.S_IRWXG | stat.S_IXOTH) # make executable
+    except:
+      print("Error... could not output cron wrapper script '%s'." % cronwrapperscript, file=sys.stderr)
+      sys.exit(1)
+
     try:
       cron = CronTab(user=True)
-      job = cron.new(command=croncommand.format(runconfig), comment=cronid)
+      job = cron.new(command=cronwrapperscript, comment=cronid)
 
       # set job time - this will start at the next time step (as we've just run the first step)
       day = now.datetime.day
@@ -499,5 +548,23 @@ A configuration .ini file is required.
         subject = sys.argv[0] + ': Error message'
         send_email(FROM, email, subject, errmsg, server)
       sys.exit(1)
+
+  ### RUN ANALYSIS SCRIPT ###
+  p = sp.Popen('{0} {1}'.format(runscript, runconfig), shell=True)
+  out, err = p.communicate()
+  if p.returncode != 0:
+    errmsg = "Error... problem running main script '%s'.: %s, %s" % (runscript, out, err)
+    print(errmsg, file=sys.stderr)
+    if not startcron: remove_cron(cronid)
+    if email != None:
+      subject = sys.argv[0] + ': Error message'
+      send_email(FROM, email, subject, errmsg, server)
+    sys.exit(1)
+  ###########################
+
+  # Write out updated configuration file
+  fc = open(inifile, 'w')
+  cp.write(fc)
+  fc.close()
 
   sys.exit(0)

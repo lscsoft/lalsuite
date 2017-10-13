@@ -21,6 +21,7 @@
 #include <math.h>
 #include <gsl/gsl_math.h>
 #include "LALSimIMRPhenomD_internals.c"
+#include <lal/Sequence.h>
 UsefulPowers powers_of_pi;	// declared in LALSimIMRPhenomD_internals.c
 
 #ifndef _OPENMP
@@ -34,15 +35,16 @@ UsefulPowers powers_of_pi;	// declared in LALSimIMRPhenomD_internals.c
 
 static int IMRPhenomDGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< [out] FD waveform */
+    const REAL8Sequence *freqs_in,     /**< Frequency points at which to evaluate the waveform (Hz) */
+    double deltaF,                     /**< If deltaF > 0, the frequency points given in freqs are uniformly spaced with
+                                        * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
+                                        * Then we will use deltaF = 0 to create the frequency series we return. */
     const REAL8 phi0,                  /**< phase at fRef */
     const REAL8 fRef,                  /**< reference frequency [Hz] */
-    const REAL8 deltaF,                /**< frequency resolution */
-    const REAL8 m1,                    /**< mass of companion 1 [solar masses] */
-    const REAL8 m2,                    /**< mass of companion 2 [solar masses] */
-    const REAL8 chi1,                  /**< aligned-spin of companion 1 */
-    const REAL8 chi2,                  /**< aligned-spin of companion 2 */
-    const REAL8 f_min,                 /**< start frequency */
-    const REAL8 f_max,                 /**< end frequency */
+    const REAL8 m1_in,                 /**< mass of companion 1 [solar masses] */
+    const REAL8 m2_in,                 /**< mass of companion 2 [solar masses] */
+    const REAL8 chi1_in,               /**< aligned-spin of companion 1 */
+    const REAL8 chi2_in,               /**< aligned-spin of companion 2 */
     const REAL8 distance,              /**< distance to source (m) */
     LALDict *extraParams /**< linked list containing the extra testing GR parameters */
 );
@@ -88,6 +90,12 @@ static int IMRPhenomDGenerateFD(
  * - Coefficients: Eq. 31 and Table V in arXiv:1508.07253
  *
  *  All input parameters should be in SI units. Angles should be in radians.
+ *
+ * Compute waveform in LAL format for the IMRPhenomD model.
+ *
+ * Returns the plus and cross polarizations as a complex frequency series with
+ * equal spacing deltaF and contains zeros from zero frequency to the starting
+ * frequency fLow and zeros beyond the cutoff frequency in the ringdown.
  */
 int XLALSimIMRPhenomDGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< [out] FD waveform */
@@ -143,10 +151,17 @@ int XLALSimIMRPhenomDGenerateFD(
   if (f_max_prime <= f_min)
     XLAL_ERROR(XLAL_EDOM, "f_max <= f_min\n");
 
-  int status = IMRPhenomDGenerateFD(htilde, phi0, fRef, deltaF,
+  // Use fLow, fHigh, deltaF to compute freqs sequence
+  // Instead of building a full sequency we only transfer the boundaries and let
+  // the internal core function do the rest (and properly take care of corner cases).
+  REAL8Sequence *freqs = XLALCreateREAL8Sequence(2);
+  freqs->data[0] = f_min;
+  freqs->data[1] = f_max_prime;
+  int status = IMRPhenomDGenerateFD(htilde, freqs, deltaF, phi0, fRef,
                                     m1, m2, chi1, chi2,
-                                    f_min, f_max_prime, distance, extraParams);
+                                    distance, extraParams);
   XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to generate IMRPhenomD waveform.");
+  XLALDestroyREAL8Sequence(freqs);
 
   if (f_max_prime < f_max) {
     // The user has requested a higher f_max than Mf=fCut.
@@ -160,6 +175,67 @@ int XLALSimIMRPhenomDGenerateFD(
   return XLAL_SUCCESS;
 }
 
+/**
+ * Compute waveform in LAL format at specified frequencies for the IMRPhenomD model.
+ *
+ * XLALSimIMRPhenomDGenerateFD() returns the plus and cross polarizations as a complex
+ * frequency series with equal spacing deltaF and contains zeros from zero frequency
+ * to the starting frequency and zeros beyond the cutoff frequency in the ringdown.
+ *
+ * In contrast, XLALSimIMRPhenomDFrequencySequence() returns a
+ * complex frequency series with entries exactly at the frequencies specified in
+ * the sequence freqs (which can be unequally spaced). No zeros are added.
+ *
+ * If XLALSimIMRPhenomDFrequencySequence() is called with frequencies that
+ * are beyond the maxium allowed geometric frequency for the ROM, zero strain is returned.
+ *
+ * This function is designed as an entry point for reduced order quadratures.
+ */
+int XLALSimIMRPhenomDFrequencySequence(
+    COMPLEX16FrequencySeries **htilde,           /**< [out] FD waveform */
+    const REAL8Sequence *freqs,                  /**< Frequency points at which to evaluate the waveform (Hz) */
+    const REAL8 phi0,                            /**< Orbital phase at fRef (rad) */
+    const REAL8 fRef_in,                         /**< reference frequency (Hz) */
+    const REAL8 m1_SI,                           /**< Mass of companion 1 (kg) */
+    const REAL8 m2_SI,                           /**< Mass of companion 2 (kg) */
+    const REAL8 chi1,                            /**< Aligned-spin parameter of companion 1 */
+    const REAL8 chi2,                            /**< Aligned-spin parameter of companion 2 */
+    const REAL8 distance,                        /**< Distance of source (m) */
+    LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+) {
+  /* external: SI; internal: solar masses */
+  const REAL8 m1 = m1_SI / LAL_MSUN_SI;
+  const REAL8 m2 = m2_SI / LAL_MSUN_SI;
+
+  /* check inputs for sanity */
+  XLAL_CHECK(0 != htilde, XLAL_EFAULT, "htilde is null");
+  if (*htilde) XLAL_ERROR(XLAL_EFAULT);
+  if (!freqs) XLAL_ERROR(XLAL_EFAULT);
+  if (fRef_in < 0) XLAL_ERROR(XLAL_EDOM, "fRef_in must be positive (or 0 for 'ignore')\n");
+  if (m1 <= 0) XLAL_ERROR(XLAL_EDOM, "m1 must be positive\n");
+  if (m2 <= 0) XLAL_ERROR(XLAL_EDOM, "m2 must be positive\n");
+  if (distance <= 0) XLAL_ERROR(XLAL_EDOM, "distance must be positive\n");
+
+  const REAL8 q = (m1 > m2) ? (m1 / m2) : (m2 / m1);
+
+  if (q > MAX_ALLOWED_MASS_RATIO)
+    XLAL_PRINT_WARNING("Warning: The model is not supported for high mass ratio, see MAX_ALLOWED_MASS_RATIO\n");
+
+  if (chi1 > 1.0 || chi1 < -1.0 || chi2 > 1.0 || chi2 < -1.0)
+    XLAL_ERROR(XLAL_EDOM, "Spins outside the range [-1,1] are not supported\n");
+
+  // if no reference frequency given, set it to the starting GW frequency
+  REAL8 fRef = (fRef_in == 0.0) ? freqs->data[0] : fRef_in;
+
+  int status = IMRPhenomDGenerateFD(htilde, freqs, 0, phi0, fRef,
+                                    m1, m2, chi1, chi2,
+                                    distance, extraParams);
+  XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to generate IMRPhenomD waveform.");
+
+  return XLAL_SUCCESS;
+}
+
+
 /** @} */
 
 /** @} */
@@ -171,15 +247,16 @@ int XLALSimIMRPhenomDGenerateFD(
 
 static int IMRPhenomDGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< [out] FD waveform */
+    const REAL8Sequence *freqs_in,     /**< Frequency points at which to evaluate the waveform (Hz) */
+    double deltaF,                     /* If deltaF > 0, the frequency points given in freqs are uniformly spaced with
+                                        * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
+                                        * Then we will use deltaF = 0 to create the frequency series we return. */
     const REAL8 phi0,                  /**< phase at fRef */
     const REAL8 fRef,                  /**< reference frequency [Hz] */
-    const REAL8 deltaF,                /**< frequency resolution */
     const REAL8 m1_in,                 /**< mass of companion 1 [solar masses] */
     const REAL8 m2_in,                 /**< mass of companion 2 [solar masses] */
     const REAL8 chi1_in,               /**< aligned-spin of companion 1 */
     const REAL8 chi2_in,               /**< aligned-spin of companion 2 */
-    const REAL8 f_min,                 /**< start frequency */
-    const REAL8 f_max,                 /**< end frequency */
     const REAL8 distance,              /**< distance to source (m) */
     LALDict *extraParams /**< linked list containing the extra testing GR parameters */
 ) {
@@ -201,6 +278,13 @@ static int IMRPhenomDGenerateFD(
   int status = init_useful_powers(&powers_of_pi, LAL_PI);
   XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to initiate useful powers of pi.");
 
+  /* Find frequency bounds */
+  if (!freqs_in || !freqs_in->data) XLAL_ERROR(XLAL_EFAULT);
+  double f_min = freqs_in->data[0];
+  double f_max = freqs_in->data[freqs_in->length - 1];
+  XLAL_CHECK(f_min > 0, XLAL_EDOM, "Minimum frequency must be positive.\n");
+  XLAL_CHECK(f_max >= 0, XLAL_EDOM, "Maximum frequency must be non-negative.\n");
+
   const REAL8 M = m1 + m2;
   REAL8 eta = m1 * m2 / (M * M);
 
@@ -214,24 +298,41 @@ static int IMRPhenomDGenerateFD(
   /* Compute the amplitude pre-factor */
   const REAL8 amp0 = 2. * sqrt(5. / (64.*LAL_PI)) * M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
 
-  /* Coalesce at t=0 */
-  // shift by overall length in time
-  XLAL_CHECK ( XLALGPSAdd(&ligotimegps_zero, -1. / deltaF), XLAL_EFUNC, "Failed to shift coalescence time to t=0, tried to apply shift of -1.0/deltaF with deltaF=%g.", deltaF);
+  size_t npts = 0;
+  UINT4 offset = 0; // Index shift between freqs and the frequency series
+  REAL8Sequence *freqs = NULL;
+  if (deltaF > 0)  { // freqs contains uniform frequency grid with spacing deltaF; we start at frequency 0
+    /* Set up output array with size closest power of 2 */
+    npts = NextPow2(f_max / deltaF) + 1;
+    /* Coalesce at t=0 */
+    // shift by overall length in time
+    XLAL_CHECK ( XLALGPSAdd(&ligotimegps_zero, -1. / deltaF), XLAL_EFUNC, "Failed to shift coalescence time to t=0, tried to apply shift of -1.0/deltaF with deltaF=%g.", deltaF);
+    *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, npts);
+    XLAL_CHECK ( *htilde, XLAL_ENOMEM, "Failed to allocated waveform COMPLEX16FrequencySeries of length %zu for f_max=%f, deltaF=%g.", npts, f_max, deltaF);
+    // Recreate freqs using only the lower and upper bounds
+    size_t iStart = (size_t) (f_min / deltaF);
+    size_t iStop = (size_t) (f_max / deltaF);
+    XLAL_CHECK ( (iStop<=npts) && (iStart<=iStop), XLAL_EDOM, "minimum freq index %zu and maximum freq index %zu do not fulfill 0<=ind_min<=ind_max<=htilde->data>length=%zu.", iStart, iStop, npts);
+    freqs = XLALCreateREAL8Sequence(iStop - iStart);
+    if (!freqs)
+      XLAL_ERROR(XLAL_EFUNC, "Frequency array allocation failed.");
+    for (UINT4 i=iStart; i<iStop; i++)
+      freqs->data[i-iStart] = i*deltaF;
+    offset = iStart;
+  } else { // freqs contains frequencies with non-uniform spacing; we start at lowest given frequency
+    npts = freqs_in->length;
+    *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &ligotimegps_zero, f_min, deltaF, &lalStrainUnit, npts);
+    XLAL_CHECK ( *htilde, XLAL_ENOMEM, "Failed to allocated waveform COMPLEX16FrequencySeries of length %zu from sequence.", npts);
+    offset = 0;
+    freqs = XLALCreateREAL8Sequence(freqs_in->length);
+    if (!freqs)
+      XLAL_ERROR(XLAL_EFUNC, "Frequency array allocation failed.");
+    for (UINT4 i=0; i<freqs_in->length; i++)
+      freqs->data[i] = freqs_in->data[i];
+  }
 
-  /* Allocate htilde */
-  size_t n = NextPow2(f_max / deltaF) + 1;
-
-  *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &ligotimegps_zero, 0.0,
-      deltaF, &lalStrainUnit, n);
-  XLAL_CHECK ( *htilde, XLAL_ENOMEM, "Failed to allocated waveform COMPLEX16FrequencySeries of length %zu for f_max=%f, deltaF=%g.", n, f_max, deltaF);
-
-  memset((*htilde)->data->data, 0, n * sizeof(COMPLEX16));
+  memset((*htilde)->data->data, 0, npts * sizeof(COMPLEX16));
   XLALUnitMultiply(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
-
-  /* range that will have actual non-zero waveform values generated */
-  size_t ind_min = (size_t) (f_min / deltaF);
-  size_t ind_max = (size_t) (f_max / deltaF);
-  XLAL_CHECK ( (ind_max<=n) && (ind_min<=ind_max), XLAL_EDOM, "minimum freq index %zu and maximum freq index %zu do not fulfill 0<=ind_min<=ind_max<=htilde->data>length=%zu.", ind_min, ind_max, n);
 
   // Calculate phenomenological parameters
   const REAL8 finspin = FinalSpin0815(eta, chi1, chi2); //FinalSpin0815 - 0815 is like a version number
@@ -287,9 +388,9 @@ static int IMRPhenomDGenerateFD(
   int status_in_for = XLAL_SUCCESS;
   /* Now generate the waveform */
   #pragma omp parallel for
-  for (size_t i = ind_min; i < ind_max; i++)
-  {
-    REAL8 Mf = M_sec * i * deltaF; // geometric frequency
+  for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
+    double Mf = M_sec * freqs->data[i];
+    int j = i + offset; // shift index for frequency series if needed
 
     UsefulPowers powers_of_f;
     status_in_for = init_useful_powers(&powers_of_f, Mf);
@@ -298,19 +399,19 @@ static int IMRPhenomDGenerateFD(
       XLALPrintError("init_useful_powers failed for Mf, status_in_for=%d", status_in_for);
       status = status_in_for;
     }
-    else
-    {
+    else {
       REAL8 amp = IMRPhenDAmplitude(Mf, pAmp, &powers_of_f, &amp_prefactors);
       REAL8 phi = IMRPhenDPhase(Mf, pPhi, pn, &powers_of_f, &phi_prefactors);
 
       phi -= t0*(Mf-MfRef) + phi_precalc;
-      ((*htilde)->data->data)[i] = amp0 * amp * cexp(-I * phi);
+      ((*htilde)->data->data)[j] = amp0 * amp * cexp(-I * phi);
     }
   }
 
   LALFree(pAmp);
   LALFree(pPhi);
   LALFree(pn);
+  XLALDestroyREAL8Sequence(freqs);
 
   return status;
 }

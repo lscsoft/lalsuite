@@ -372,4 +372,3 @@ git commit --amend
 # 2017-07-13 lalapps/src/pulsar/Hough/NstarClean.c
 # 2017-08-01 lalapps/src/pulsar/HeterodyneSearch/README
 # 2017-08-01 lalapps/src/pulsar/HeterodyneSearch/README.crab
-

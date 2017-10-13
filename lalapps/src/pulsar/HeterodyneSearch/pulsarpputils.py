@@ -26,7 +26,7 @@
 # Many functions in this a taken from, or derived from equivalents available in
 # the PRESTO pulsar software package http://www.cv.nrao.edu/~sransom/presto/
 
-from __future__ import print_function
+from __future__ import print_function, division
 
 import sys
 import math
@@ -154,6 +154,22 @@ def coord_to_string(h_or_d, m, s):
     return retstr+"%.2d:%.2d:%.4f" % (h_or_d, m, s)
   else:
     return retstr+"%.2d:%.2d:0%.4f" % (h_or_d, m, s)
+
+def rad_to_string(rad, ra_or_dec):
+  """
+  rad_to_string(rad, ra_or_dec):
+     Convert an angle in radians to hours/degrees, minutes seconds and output
+     it as a string in the format 'hh:mm:ss.ssss' if RA, or 'dd:mm:ss.ssss' if DEC.
+     Whether to use hours or degrees is set by whether ra_or_dec is 'RA' or 'DEC'
+  """
+  if ra_or_dec.upper() == 'RA':
+    v, m, s = rad_to_hms(rad)
+  elif ra_or_dec.upper() == 'DEC':
+    v, m, s = rad_to_dms(rad)
+  else:
+    raise("Unrecognised option: Expected 'ra_or_dec' to be 'RA' or 'DEC'")
+
+  return coord_to_string(v, m, s)
 
 def ra_to_rad(ra_string):
   """
@@ -319,10 +335,12 @@ class psr_par:
     for pv in ['RA', 'DEC']:
       if hasattr(self, 'PM'+pv):
         pmv = self['PM'+pv]
+        setattr(self, 'PM'+pv+'_ORIGINAL', pmv) # save original value
         setattr(self, 'PM'+pv , pmv*np.pi/(180.*3600.e3*365.25*86400.))
 
         if hasattr(self, 'PM'+pv+'_ERR'):
           pmve = self['PM'+pv+'_ERR']
+          setattr(self, 'PM'+pv+'_ERR_ORIGINAL', pmv) # save original value
           setattr(self, 'PM'+pv+'_ERR' , pmve*np.pi/(180.*3600.e3*365.25*86400.))
 
     # periods and frequencies
@@ -364,9 +382,11 @@ class psr_par:
       import lalpulsar
       for epoch in ['PEPOCH', 'POSEPOCH', 'DMEPOCH', 'T0', 'TASC', 'T0_2', 'T0_3']:
         if hasattr(self, epoch):
+          setattr(self, epoch+'_ORIGINAL', self[epoch]) # save original value
           setattr(self, epoch, lalpulsar.TTMJDtoGPS(self[epoch]))
 
           if hasattr(self, epoch+'_ERR'): # convert errors from days to seconds
+            setattr(self, epoch+'_ERR_ORIGINAL', self[epoch+'_ERR']) # save original value
             setattr(self, epoch+'_ERR', self[epoch+'_ERR'] * SECPERDAY)
     except:
       print("Could not convert epochs to GPS times. They are all still MJD values.", file=sys.stderr)
@@ -375,10 +395,12 @@ class psr_par:
     convfacs = {'DIST': KPC, 'PX': 1e-3*ARCSECTORAD}
     for item in convfacs:
       if hasattr(self, item): # convert kpc to metres
+        setattr(self, item+'_ORIGINAL', self[item]) # save original value
         setattr(self, item, self[item] * convfacs[item])
 
-      if hasattr(self, item+'_ERR'):
-        setattr(self, item+'_ERR', self[item+'_ERR'] * convfacs[item])
+        if hasattr(self, item+'_ERR'):
+          setattr(self, item+'_ERR_ORIGINAL', self[item+'_ERR']) # save original value
+          setattr(self, item+'_ERR', self[item+'_ERR'] * convfacs[item])
 
     # binary parameters
     # omega (angle of periastron) parameters (or others requiring conversion from degs to rads)
@@ -392,16 +414,20 @@ class psr_par:
     # period
     for pb in ['PB', 'PB_2', 'PB_3']:
       if hasattr(self, pb): # convert PB from days to seconds
+        setattr(self, pb+'_ORIGINAL', self[pb]) # save original value
         setattr(self, pb, self[pb] * SECPERDAY)
 
         if hasattr(self, pb+'_ERR'):
+          setattr(self, pb+'_ERR_ORIGINAL', self[pb+'_ERR']) # save original value
           setattr(self, pb+'_ERR', self[pb+'_ERR'] * SECPERDAY)
 
     # OMDOT
     if hasattr(self, 'OMDOT'): # convert from deg/year to rad/sec
+      setattr(self, 'OMDOT_ORIGINAL', self['OMDOT']) # save original value
       setattr(self, 'OMDOT', self['OMDOT'] / (RADTODEG * 365.25 * SECPERDAY))
 
       if hasattr(self, 'OMDOT_ERR'):
+        setattr(self, 'OMDOT_ERR_ORIGINAL', self['OMDOT_ERR']) # save original value
         setattr(self, 'OMDOT_ERR', self['OMDOT_ERR'] / (RADTODEG * 365.25 * SECPERDAY))
 
     if hasattr(self, 'EPS1') and hasattr(self, 'EPS2'):
@@ -418,6 +444,7 @@ class psr_par:
     # binary unit conversion for small numbers (TEMPO2 checks if these are > 1e-7 and if so then the units are in 1e-12) - errors are not converted
     for binu in ['XDOT', 'PBDOT', 'EDOT', 'EPS1DOT', 'EPS2DOT', 'XPBDOT']:
       if hasattr(self, binu):
+        setattr(self, binu+'_ORIGINAL', self[binu]) # save original value
         if np.abs(self[binu]) > 1e-7:
           setattr(self, binu, self[binu] * 1.0e-12)
 
@@ -428,13 +455,16 @@ class psr_par:
     # masses
     for mass in ['M2', 'MTOT']:
       if hasattr(self, mass): # convert solar masses to kg
+        setattr(self, mass+'_ORIGINAL', self[mass]) # save original value
         setattr(self, mass, self[mass]*MSUN)
 
         if hasattr(self, mass+'_ERR'):
+          setattr(self, mass+'_ERR_ORIGINAL', self[mass+'_ERR']) # save original value
           setattr(self, mass+'_ERR', self[mass+'_ERR'] * MSUN)
 
     # D_AOP
     if hasattr(self, 'D_AOP'): # convert from inverse arcsec to inverse radians
+      setattr(self, 'D_AOP_ORIGINAL', self['D_AOP']) # save original value
       setattr(self, 'D_AOP', self['D_AOP'] * RADTODEG * 3600. )
 
     pf.close()
@@ -1317,6 +1347,13 @@ def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeout
       print("Could not open file %s" % Bkdata[ifo], file=sys.stderr)
       sys.exit(-1)
 
+    # sort the array in time
+    Bk = Bk[Bk[:,0].argsort()]
+
+    # make sure times are unique
+    uargs = np.unique(Bk[:,0], return_index=True)[1]
+    Bk = Bk[uargs,:]
+
     # should be three lines in file
     gpstime = []
 
@@ -1743,7 +1780,7 @@ def heterodyned_triaxial_pulsar(starttime, duration, dt, detector, pardict):
 # injections). Hence, when converting h0, from the conventional model, to C22 a minus sign needs to be
 # introduced. Also, phi0 here is defined as the rotational phase of the source, so when converting to phi22
 # a factor of 2 is needed.
-def heterodyned_pulsar_signal(starttime, duration, dt, detector, pardict):
+def heterodyned_pulsar_signal(pardict, detector, starttime=900000000., duration=86400., dt=60., datatimes=None):
   if 'cosiota' in pardict:
     cosiota = pardict['cosiota']
     iota = math.acos(cosiota)
@@ -1797,29 +1834,19 @@ def heterodyned_pulsar_signal(starttime, duration, dt, detector, pardict):
     freqs = [2.]
 
   for f in freqs:
-    sf = np.array([], dtype=complex)
-    tsf = []
-
-    tmpts = starttime
     i = 0
-    while tmpts < starttime + duration:
-      tsf.append(starttime + (dt*i))
+    if datatimes is None:
+      datatimes = np.arange(starttime, starttime+duration, dt)
 
-      # get the antenna response
-      fp, fc = antenna_response(tsf[i], pardict['ra'], pardict['dec'], pardict['psi'], detector)
+    # get the antenna response
+    fp, fc = antenna_response(datatimes, pardict['ra'], pardict['dec'], pardict['psi'], detector)
 
-      if f == 1.:
-        stmp = -(C21/4.)*ePhi21*siniota*cosiota*fp + 1j*(C21/4.)*ePhi21*siniota*fc
-      elif f == 2.:
-        stmp = -(C22/2.)*ePhi22*(1.+cosiota**2.)*fp + 1j*(C22)*ePhi22*cosiota*fc
+    if f == 1.:
+      sf = -(C21/4.)*ePhi21*siniota*cosiota*fp + 1j*(C21/4.)*ePhi21*siniota*fc
+    elif f == 2.:
+      sf = -(C22/2.)*ePhi22*(1.+cosiota**2.)*fp + 1j*(C22)*ePhi22*cosiota*fc
 
-      sf = np.append(sf, stmp)
-
-      tmpts = tsf[i] + dt
-
-      i = i+1
-
-    ts.append(tsf)
+    ts.append(datatimes)
     s.append(sf)
 
   return ts, s
@@ -2576,7 +2603,7 @@ def marginalise(like, pname, pnames, ranges):
 
 
 # return the log marginal posterior on a given parameter (if 'all' marginalise over all parameters)
-def marginal(lnlike, pname, pnames, ranges):
+def marginal(lnlike, pname, pnames, ranges, multflatprior=False):
   from copy import deepcopy
 
   # make copies of everything
@@ -2586,7 +2613,10 @@ def marginal(lnlike, pname, pnames, ranges):
 
   for name in pnames:
     if name != pname:
-      lnliketmp = marginalise(lnliketmp, name, pnamestmp, rangestmp)
+      if multflatprior: # multiply by flat prior range
+        lnliketmp = marginalise(lnliketmp + np.log(1./(rangestmp[name][-1]-rangestmp[name][0])), name, pnamestmp, rangestmp)
+      else:
+        lnliketmp = marginalise(lnliketmp, name, pnamestmp, rangestmp)
 
   return lnliketmp
 
@@ -2736,7 +2766,7 @@ def pulsar_estimate_h0_from_snr(snr, source, det, tstart, duration, Sn, dt=600):
 
 
 def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, datachunks=30, chunkmin=5,
-                          ngrid=50):
+                          ngrid=50, outputlike=False):
   """
   A function to calculate the 4-parameter posterior probability density for a continuous wave signal
   given a set of processed data from a set of detectors.
@@ -2760,16 +2790,18 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
                 (default: 5)
         ngrid - the number of grid points to use for each dimension of the likelihood calculation. This
                 is used if the values are not specified in the paramranges argument (default: 50)
+   outputlike - output the log likelihoods rather than posteriors (default: False)
 
   Returns
   -------
-  L           - The 4d posterior over all parameters
+  L           - The 4d posterior (or likelihood) over all parameters
   h0pdf       - The 1d marginal posterior for h0
   phi0pdf     - The 1d marginal posterior for phi0 (the rotation frequency, not GW frequency)
   psipdf      - The 1d marginal posterior for psi
   cosiotapdf  - The 1d marginal posterior for cosiota
   lingrids    - A dictionary of the grid points for each parameter
-  evrat       - The log odds ratio for a signal versus Gaussian noise
+  sigev       - The log evidence for the signal model
+  noiseev     - The log evidence for the noise model
 
   An example would be:
   # set the detectors
@@ -2780,7 +2812,7 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
   data = {}
   for det in dets:
     ts[det] = np.arange(900000000., 921000843., 60.)
-    data[det] = np.random.randn(len(ts[det]))
+    data[det] = np.random.randn(len(ts[det])) + 1j*np.random.randn(len(ts[det]))
 
   # set the parameter ranges
   ra = 0.2
@@ -2791,13 +2823,14 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
   paramranges['phi0'] = (0., np.pi, 50)
   paramranges['cosiota'] = (-1., 1., 50)
 
-  L, h0pdf, phi0pdf, psipdf, cosiotapdf, grid, evrat = pulsar_posterior_grid(dets, ts, data, ra, dec,
-                                                                             paramranges=paramranges)
+  L, h0pdf, phi0pdf, psipdf, cosiotapdf, grid, sigev, noiseev = pulsar_posterior_grid(dets, ts, data, ra, dec,
+                                                                                      paramranges=paramranges)
   """
 
   # import numpy
   import numpy as np
   import sys
+  from scipy.special import gammaln
 
   # set the likelihood to either Student's or Gaussian
   if sigmas == None:
@@ -2964,10 +2997,14 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
 
       if liketype == 'gaussian':
         like -= 0.5*(chiSq)
+        like -= (cl*np.log(2.*np.pi)) + 2.*np.sum(np.log(nstd[startidx:endidx]))
         noiselike -= 0.5*(dd1real + dd1imag)
+        noiselike -= (cl*np.log(2.*np.pi)) + 2.*np.sum(np.log(nstd[startidx:endidx]))
       else:
         like -= float(cl)*np.log(chiSq)
+        like += (gammaln(cl) - np.log(2.) - cl*np.log(np.pi))
         noiselike -= float(cl)*np.log(dd1real + dd1imag)
+        noiselike += (gammaln(cl) - np.log(2.) - cl*np.log(np.pi))
 
       startidx += cl # updated start index
 
@@ -2978,21 +3015,27 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
   sigev = marginal(like, 'all', params, lingrids)
 
   # normalise posterior
-  like -= sigev
+  if not outputlike:
+    like -= sigev
+  else:
+    like -= logprior # remove prior if outputting likelihood
 
   # get marginal posteriors for each parameter
   posts = {}
   for p in params:
-    posts[p] = np.exp(marginal(like, p, params, lingrids))
+    if not outputlike:
+      posts[p] = np.exp(marginal(like, p, params, lingrids))
+    else:
+      posts[p] = marginal(like, p, params, lingrids, multflatprior=True) # output individual log likelihoods
 
   # odds ratio for signal versus noise
   evrat = sigev - noiselike
 
-  return like, posts['h0'], posts['phi0'], posts['psi'], posts['cosiota'], lingrids, evrat
+  return like, posts['h0'], posts['phi0'], posts['psi'], posts['cosiota'], lingrids, sigev, noiselike
 
 
 # current version of the ATNF pulsar catalogue
-ATNF_VERSION = '1.55'
+ATNF_VERSION = '1.56'
 
 def get_atnf_info(psr):
   """

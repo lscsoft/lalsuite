@@ -1895,7 +1895,7 @@ static void UpdateWaveletSum(LALInferenceThreadState *thread,
     LALInferenceVariables *args = thread->proposalArgs;
 
     /* FIXME: can't store arrays of REAL8FrequencySeries in LI
-       Variables (any more?) 
+       Variables (any more?)
 
        Need instead Nifo variables called "asdH1", "asdL1", ...
     */
@@ -2889,7 +2889,7 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceThreadState *thread, REAL8 targ
     INT4 adapting = 0;
     REAL8 priorMin, priorMax, dprior, s_gamma;
     REAL8 accept, propose, sigma;
-    char *name;
+    const char *name;
 
     LALInferenceVariables *args = thread->proposalArgs;
 

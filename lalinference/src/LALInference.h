@@ -1153,11 +1153,19 @@ LALInferenceMCMCRunPhase* LALInferenceGetMCMCrunphase_ptrVariable(LALInferenceVa
 
 void LALInferenceSetMCMCrunphase_ptrVariable(LALInferenceVariables* vars,const char* name,LALInferenceMCMCRunPhase* value);
 
-void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * name, CHAR* value, LALInferenceParamVaryType vary);
+#ifdef SWIG   /* SWIG interface directives */
+SWIGLAL(OWNS_THIS_STRING(const CHAR*, value));
+#endif
 
-CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * name);
+void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * name, const CHAR* value, LALInferenceParamVaryType vary);
 
-void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name,CHAR* value);
+const CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name, const CHAR* value);
+
+#ifdef SWIG   /* SWIG interface directives */
+SWIGLAL_CLEAR(OWNS_THIS_STRING(const CHAR*, value));
+#endif
 
 /**
  * Print spline calibration parameter names as tab-separated ASCII

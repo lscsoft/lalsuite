@@ -230,9 +230,12 @@ REAL8 PulsarGetREAL8ParamOrZero( const PulsarParameters *pars, const CHAR *name 
 }
 
 
-CHAR* PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name ){
+const CHAR* PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name ){
   /* check type is a string */
-  if ( PulsarGetParamType( pars, name ) == PULSARTYPE_string_t ){ return (CHAR *)PulsarGetParam( pars, name ); }
+  if ( PulsarGetParamType( pars, name ) == PULSARTYPE_string_t ){
+    CHAR *rvalue = *(CHAR **)PulsarGetParam( pars, name );
+    return rvalue;
+  }
   else{ XLAL_ERROR_NULL( XLAL_EINVAL,"Used wrong type for required parameter"  ); }
 }
 
@@ -392,6 +395,7 @@ void PulsarAddParam( PulsarParameters *pars, const CHAR *name, void *value, Puls
     new->err = NULL;
     new->fitFlag = (UINT4 *)XLALMalloc( sizeof(UINT4) );
   }
+
   if( new == NULL || new->value == NULL ) {
     XLAL_ERROR_VOID(XLAL_ENOMEM, "Unable to allocate memory for list item.");
   }
@@ -432,10 +436,13 @@ void PulsarAddREAL8VectorParam(PulsarParameters *pars, const CHAR * name, REAL8V
 }
 
 
-void PulsarAddstringParam(PulsarParameters *pars, const CHAR * name, CHAR *value)
+void PulsarAddStringParam(PulsarParameters *pars, const CHAR * name, const CHAR *value)
 /* Typed version of PulsarAddParam for string values.*/
 {
-  PulsarAddParam(pars, name, (void*)&value, PULSARTYPE_string_t);
+  CHAR *sval = NULL;
+  sval = XLALMalloc( PulsarTypeSize[PULSARTYPE_string_t] );
+  XLALStringCopy(sval, value, PulsarTypeSize[PULSARTYPE_string_t]);
+  PulsarAddParam(pars, name, (void *)&sval, PULSARTYPE_string_t);
 }
 
 
@@ -465,6 +472,9 @@ void PulsarClearParams( PulsarParameters *pars ){
     if( this->type == PULSARTYPE_REAL8Vector_t ) {
       if ( this->value ) { XLALDestroyREAL8Vector( *(REAL8Vector **)this->value ); }
       if ( this->err ) { XLALDestroyREAL8Vector( *(REAL8Vector **)this->err ); }
+    }
+    else if ( this->type == PULSARTYPE_string_t ){
+      if ( this->value ) { XLALFree( *(CHAR **)this->value ); }
     }
     XLALFree( this->value );
     XLALFree( this->err );
@@ -512,6 +522,13 @@ void PulsarRemoveParam( PulsarParameters *pars, const CHAR *name ){
   hash_elem elem;
   elem.name = this->name;
   XLALHashTblRemove( pars->hash_table, (void *)&elem );
+  if( this->type == PULSARTYPE_REAL8Vector_t ) {
+    if ( this->value ) { XLALDestroyREAL8Vector( *(REAL8Vector **)this->value ); }
+    if ( this->err ) { XLALDestroyREAL8Vector( *(REAL8Vector **)this->err ); }
+  }
+  else if ( this->type == PULSARTYPE_string_t ){
+    if ( this->value ) { XLALFree( *(CHAR **)this->value ); }
+  }
   XLALFree( this->value );
   XLALFree( this->err );
   XLALFree( this->fitFlag );
@@ -526,7 +543,7 @@ void PulsarRemoveParam( PulsarParameters *pars, const CHAR *name ){
 
 
 /* Set the value of parameter name in the pars structure to value */
-void PulsarSetParam( PulsarParameters* pars, const CHAR *name, void *value ){
+void PulsarSetParam( PulsarParameters* pars, const CHAR *name, const void *value ){
   PulsarParam *item;
 
   /* convert name to uppercase */
@@ -966,10 +983,17 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
         XLALFree( val );
       }
       else{
-        void *val = (void *)XLALMalloc( PulsarTypeSize[pc[i].ptype] );
-        pc[i].convfunc( str1, val );
-        PulsarAddParam( par, pc[i].name, val, pc[i].ptype );
-        XLALFree( val );
+        if ( pc[i].ptype != PULSARTYPE_string_t ){
+          void *val = (void *)XLALMalloc( PulsarTypeSize[pc[i].ptype] );
+          pc[i].convfunc( str1, val );
+          PulsarAddParam( par, pc[i].name, val, pc[i].ptype );
+          XLALFree( val );
+        }
+        else{
+          CHAR *val = XLALStringDuplicate(str1);
+          PulsarAddStringParam( par, pc[i].name, (const CHAR*)val );
+          XLALFree( val );
+        }
       }
 
       /* check for error values */
@@ -1062,7 +1086,7 @@ PulsarParameters *XLALReadTEMPOParFile( const CHAR *pulsarAndPath ){
 
   /* check for linked parameters SINI and KIN */
   if ( PulsarCheckParam( par, "SINI" ) ){
-    CHAR* sini = XLALStringDuplicate(PulsarGetStringParam( par, "SINI" ));
+    CHAR *sini = XLALStringDuplicate(PulsarGetStringParam( par, "SINI" ));
     strtoupper( sini );
 
     REAL8 sinid;

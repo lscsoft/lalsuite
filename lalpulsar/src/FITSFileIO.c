@@ -106,6 +106,7 @@ struct tagFITSFile {
     CHAR ttype[FFIO_MAX][FLEN_VALUE];           // Names of columns in table
     CHAR tform[FFIO_MAX][FLEN_VALUE];           // Format of columns in table
     CHAR tunit[FFIO_MAX][FLEN_VALUE];           // Units of columns in table
+    int colnum[FFIO_MAX];                       // Index of columns in table
     int datatype[FFIO_MAX];                     // Datatype of columns in table
     LONGLONG nelements[FFIO_MAX];               // Number of elements in columns in table
     LONGLONG nrows;                             // Number of rows in table
@@ -2266,20 +2267,21 @@ static int UNUSED XLALFITSTableColumnAdd( FITSFile UNUSED *file, const CHAR UNUS
   file->table.datatype[i] = datatype;
   file->table.nelements[i] = ( datatype == TSTRING ) ? 1 : field_size / elem_size;
 
-  if ( !file->write ) {
+  if ( file->write ) {
 
-    // Search for and verify existing column name
-    CHAR ttype_chk[FLEN_VALUE];
-    int i_chk = 0;
-    CALL_FITS( fits_get_colname, file->ff, CASEINSEN, file->table.ttype[i], ttype_chk, &i_chk );
-    XLAL_CHECK_FAIL( i_chk > 0, XLAL_EIO, "Column '%s' does not exist in FITS file", file->table.ttype[i] );
-    XLAL_CHECK_FAIL( i_chk == 1 + i, XLAL_EIO, "Column '%s' is in a diferent position in FITS file", file->table.ttype[i] );
-    XLAL_CHECK_FAIL( strcmp( ttype_chk, file->table.ttype[i] ) == 0, XLAL_EIO, "Inconsistent column #%i name '%s'; should be '%s'", i, ttype_chk, file->table.ttype[i] );
+    // Store column index
+    file->table.colnum[i] = 1 + i;
+
+  } else {
+
+    // Search for existing column and retrieve column index
+    CALL_FITS( fits_get_colnum, file->ff, CASEINSEN, file->table.ttype[i], &file->table.colnum[i] );
+    XLAL_CHECK_FAIL( file->table.colnum[i] > 0, XLAL_EIO );
 
     // Verify existing column format
     int datatype_chk = 0;
     long repeat_chk = 0, width_chk = 0;
-    CALL_FITS( fits_get_coltype, file->ff, 1 + i, &datatype_chk, &repeat_chk, &width_chk );
+    CALL_FITS( fits_get_coltype, file->ff, file->table.colnum[i], &datatype_chk, &repeat_chk, &width_chk );
     if ( datatype_chk == TLONG ) {
       datatype_chk = TINT;
     }
@@ -2573,7 +2575,7 @@ int XLALFITSTableWriteRow( FITSFile UNUSED *file, const void UNUSED *record )
     // Write data in record to table column
     {
       void *pvalue = ( file->table.datatype[i] == TSTRING ) ? ( void * ) &value : value;
-      CALL_FITS( fits_write_col, file->ff, file->table.datatype[i], 1 + i, file->table.irow, 1, file->table.nelements[i], pvalue );
+      CALL_FITS( fits_write_col, file->ff, file->table.datatype[i], file->table.colnum[i], file->table.irow, 1, file->table.nelements[i], pvalue );
     }
 
   }
@@ -2636,7 +2638,7 @@ int XLALFITSTableReadRow( FITSFile UNUSED *file, void UNUSED *record, UINT8 UNUS
     // Read data from table column into temporary buffer
     {
       void *pbuf = ( file->table.datatype[i] == TSTRING ) ? ( void * ) &file->buf : file->buf;
-      CALL_FITS( fits_read_col, file->ff, file->table.datatype[i], 1 + i, file->table.irow, 1, file->table.nelements[i], NULL, pbuf, NULL );
+      CALL_FITS( fits_read_col, file->ff, file->table.datatype[i], file->table.colnum[i], file->table.irow, 1, file->table.nelements[i], NULL, pbuf, NULL );
     }
 
     // Work out pointer to correct place in record

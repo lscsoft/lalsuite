@@ -931,7 +931,7 @@ UINT4 in_range( LALInferenceVariables *priors, LALInferenceVariables *params ){
       if ( !strcmp(item->name, "H0") || !strcmp(item->name, "Q22") || !strcmp(item->name, "DIST") ||
            !strcmp(item->name, "PX") || !strcmp(item->name, "CGW") || !strncmp(item->name, "ECC", sizeof(CHAR)*3) ||
            !strncmp(item->name, "A1", sizeof(CHAR)*2) || !strcmp(item->name, "MTOT") || !strcmp(item->name, "M2") ){
-          return 0;
+        return 0;
       }
     }
 

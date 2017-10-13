@@ -501,13 +501,35 @@ class posteriors:
           if self._usegwphase and priorlinevals[0].lower() == 'phi0': # adjust phi0 priors if using GW phase
             ranges = 2.*ranges
         elif priorlinevals[1] is 'gmm':
-          nmodes = priorlinevals[2]
-          if len(priorlinevals) < 3 + nmodes*3:
-            print("Error... for 'gmm' prior there must be a mean, standard deviation and weight for each %d mode." % nmodes, file=sys.stderr)
-            sys.exit(1)
-          ranges = np.array([float(rv) for rv in priorlinevals[2:]])
-          if self._usegwphase and priorlinevals[0].lower() == 'phi0': # adjust phi0 priors if using GW phase
-            ranges = 2.*ranges[1:]
+          try:
+            ranges = {}
+            ranges['nmodes'] = priorlinevals[2]
+            ranges['means'] = ast.literal_eval(priorlinevals[3])   # means
+            ranges['covs'] = ast.literal_eval(priorlinevals[4])    # covariance matrices
+            ranges['weights'] = ast.literal_eval(priorlinevals[5]) # weights
+            plims = []
+            splitpars = [p.lower() for p in priorlinevals[0].split(':')] # split GMM parameter names
+            npars = len(splitpars)
+            for lims in priorlinevals[6:-1]: # limits for each parameter
+              plims.append(np.array(ast.literal_eval(lims)))
+            ranges['limits'] = plims
+            ranges['npars'] = npars
+            if self._usegwphase and 'phi0' in splitpars:
+              phi0idx = splitpars.index('phi0')
+              # adjust phi0 priors (multiply limits, means and covariances by 2.) if using GW phase
+              for ci in range(ranges['nmodes']):
+                ranges['means'][ci][phi0idx] = 2.*ranges['means'][ci][phi0idx]
+                for ck in range(npars): # this will correctly multiply the variances by 4 when ck == phi0idx
+                  ranges['covs'][ci][phi0idx][ck] = 2.*ranges['covs'][ci][phi0idx][ck]
+                  ranges['covs'][ci][ck][phi0idx] = 2.*ranges['covs'][ci][ck][phi0idx]
+              ranges['limits'][phi0idx] = 2.*ranges['limits'][phi0idx]
+            for sidx, spar in enumerate(splitpars):
+              ranges['pindex'] = sidx
+              self._prior_parameters[spar] = {'gmm': ranges}
+            continue
+          except:
+            # if can't read in GMM prior correctly then just continue
+            continue
 
         self._prior_parameters[priorlinevals[0]] = {priorlinevals[1]: ranges}
 
@@ -995,17 +1017,22 @@ class posteriors:
       vals[indices] = 1./(valrange[indices]*np.log(priorrange[1]/priorrange[0]))
     elif priortype == 'gmm':
       vals = np.zeros(len(valrange))
-      nmodes = priorrange[0]
-      mmeans = priorrange[1:(1+3*nmodes):3]
-      mstddevs = priorrange[2:(1+3*nmodes):3]
-      mweights = priorrange[3:(1+3*nmodes):3]
-      # check if bounds are given
+      nmodes = priorrange['nmodes'] # number of modes in GMM
+      pindex = priorrange['pindex'] # parameter index in GMM prior
+      mmeans = np.array([mm[pindex] for mm in priorrange['means']])  # means
+      mcovs = priorrange['covs']    # covariance matrices
+      mstddevs = []
+      for cov in mcovs:
+        mstddevs.append(np.sqrt(cov[pindex][pindex]))
+      mweights = priorrange['weights']
+      # check bounds
       bmin = -np.inf
       bmax = np.inf
-      if len(priorrange) > 1 + 3*nmodes: # there is a least a lower bound
-        bmin = priorrange[1+3*nmodes]
-        if len(priorrange) > 2 + 3*nmodes: # there is also an upper bound
-          bmax = priorrange[2+3*nmodes]
+      plims = priorrange['limits'][pindex]
+      if np.isfinite(plims[0]):
+        bmin = plims[0]
+      if np.isfinite(plims[1]):
+        bmax = plims[1]
       indices = (valrange >= bmin) & (valrange <= bmax)
 
       # crude (not taking account of wrap-around) shift of phi0 and psi into 0->pi and 0->pi/2 ranges)

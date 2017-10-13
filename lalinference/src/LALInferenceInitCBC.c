@@ -46,15 +46,15 @@ static int checkParamInList(const char *list, const char *param)
   char *post=NULL,*pos=NULL;
   if (list==NULL) return 0;
   if (param==NULL) return 0;
-  
+
   if(!(pos=strstr(list,param))) return 0;
-  
+
   /* The string is a substring. Check that it is a token */
   /* Check the character before and after */
   if(pos!=list)
   if(*(pos-1)!=',')
   return 0;
-  
+
   post=&(pos[strlen(param)]);
   if(*post!='\0')
   if(*post!=',')
@@ -456,9 +456,9 @@ static struct spcal_envelope *initCalibrationEnvelope(char *filename)
     gsl_spline_init(env->amp_std, logfreq, mag_std, Nlines);
     gsl_spline_init(env->phase_median, logfreq, phase_med, Nlines);
     gsl_spline_init(env->phase_std, logfreq, phase_std, Nlines);
-    
+
     free(logfreq); free(mag_med); free(mag_std); free(phase_med); free(phase_std);
-    
+
     return(env);
 }
 
@@ -508,12 +508,12 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
       REAL8 logFMin = log(fMin);
       REAL8 logFMax = log(fMax);
       REAL8 dLogF = (logFMax - logFMin)/(ncal-1);
-      
+
       char amp_uncert_op[VARNAME_MAX];
       char pha_uncert_op[VARNAME_MAX];
       char env_uncert_op[VARNAME_MAX];
       struct spcal_envelope *env=NULL;
-      
+
       snprintf(amp_uncert_op, VARNAME_MAX, "--%s-spcal-amp-uncertainty", ifo->name);
       snprintf(pha_uncert_op, VARNAME_MAX, "--%s-spcal-phase-uncertainty", ifo->name);
       snprintf(env_uncert_op, VARNAME_MAX, "--%s-spcal-envelope",ifo->name);
@@ -624,12 +624,12 @@ void LALInferenceRegisterGaussianVariableREAL8(LALInferenceRunState *state, LALI
   char valopt[VARNAME_MAX+3];
   char fixopt[VARNAME_MAX+7];
   ProcessParamsTable *ppt=NULL;
-  
+
   sprintf(meanopt,"--%s-mean",name);
   sprintf(sigmaopt,"--%s-sigma",name);
   sprintf(valopt,"--%s",name);
   sprintf(fixopt,"--fix-%s",name);
-  
+
   if((ppt=LALInferenceGetProcParamVal(state->commandLine,meanopt))) mean=atof(ppt->value);
   if((ppt=LALInferenceGetProcParamVal(state->commandLine,sigmaopt))) stdev=atof(ppt->value);
   if((ppt=LALInferenceGetProcParamVal(state->commandLine,fixopt)))
@@ -638,7 +638,7 @@ void LALInferenceRegisterGaussianVariableREAL8(LALInferenceRunState *state, LALI
     startval = atof(ppt->value);
   }
   if((ppt=LALInferenceGetProcParamVal(state->commandLine,valopt))) startval=atof(ppt->value);
-  
+
   assert(stdev>0);
   LALInferenceAddVariable(var,name,&startval,LALINFERENCE_REAL8_t,varytype);
   LALInferenceAddGaussianPrior(state->priorArgs, name, &mean, &stdev, LALINFERENCE_REAL8_t);
@@ -1468,7 +1468,7 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence(LALInferenceRunState *sta
     model->ifo_SNRs = XLALCalloc(nifo, sizeof(REAL8));
 
 	i=0;
- 
+
   /* Parameter bounds at ±5 sigma */
   fprintf(stdout,"Setting up priors\n");
   LALInferenceParamVaryType type=LALINFERENCE_PARAM_LINEAR;
@@ -2160,11 +2160,11 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
             if (checkParamInList(ppt->value,bPPEparam)) LALInferenceRegisterUniformVariableREAL8(state, model->params, bPPEparam, 0.0, bppe_min, bppe_max, LALINFERENCE_PARAM_LINEAR);
             sprintf(betaPPEparam, "%s%d","betaPPE",++counters[3]);
             if (checkParamInList(ppt->value,betaPPEparam)) LALInferenceRegisterUniformVariableREAL8(state, model->params, betaPPEparam, 0.0, betappe_min, betappe_max, LALINFERENCE_PARAM_LINEAR);
-            
+
         } while((checkParamInList(ppt->value,aPPEparam))||(checkParamInList(ppt->value,alphaPPEparam))||(checkParamInList(ppt->value,bPPEparam))||(checkParamInList(ppt->value,betaPPEparam)));
         if ((counters[0]!=counters[1])||(counters[2]!=counters[3])) {fprintf(stderr,"Unequal number of PPE parameters detected! Check your command line!\n"); exit(-1);}
     }
-    
+
 }
 
 

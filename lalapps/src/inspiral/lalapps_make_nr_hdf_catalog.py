@@ -15,8 +15,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """
-This program constructs an NR waveform catalog in xml format by reading the relevant NR metadata from the HDF5 file. 
-It also holds the pointers to the NR data directories. Any catalog generated that way can directly be used by 
+This program constructs an NR waveform catalog in xml format by reading the relevant NR metadata from the HDF5 file.
+It also holds the pointers to the NR data directories. Any catalog generated that way can directly be used by
 lalapps_inspinj.
 """
 
@@ -97,7 +97,7 @@ for count, inj in enumerate(inj_list):
     curr_sim.simulation_id = ilwd.ilwdchar("sim_inspiral:simulation_id:%d"\
                                            %(count))
     curr_sim.numrel_data = inj
-    f = h5py.File(inj, 'r')  
+    f = h5py.File(inj, 'r')
     curr_sim.eta = f.attrs['eta']
     if curr_sim.eta > 0.25 and curr_sim.eta < 0.2501:
         curr_sim.eta = 0.25
@@ -120,7 +120,7 @@ for count, inj in enumerate(inj_list):
     # not using them here as they ignore *m* modes.
     #curr_sim.numrel_mode_max = 0
     #curr_sim.numrel_mode_min = 0
-    
+
     sim_table.append(curr_sim)
 
 xmldoc.childNodes[-1].appendChild(sim_table)

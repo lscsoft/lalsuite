@@ -194,9 +194,8 @@ int main( void ){
     }
     /* value is a string */
     else if ( PulsarGetParamType( pars, p[i].name ) == PULSARTYPE_string_t ) {
-      CHAR *out = XLALStringDuplicate(PulsarGetStringParam(pars, p[i].name));
+      const CHAR *out = PulsarGetStringParam(pars, p[i].name);
       sprintf(outval, "%s", out);
-      XLALFree(out);
     }
 
     /* compare returned value with input value */
