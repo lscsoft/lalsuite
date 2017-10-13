@@ -201,7 +201,6 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
     LALSimNeutronStarEOSDataTabular *data;
     size_t i;
     double *hdat;
-    double dhdp;
     double *rhodat;
     double integrand_im1, integrand_i, integral;
 
@@ -221,15 +220,38 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
     eos->dedp_of_p = eos_dedp_of_p_tabular;
     eos->v_of_h = eos_v_of_h_tabular;
 
-    /* compute enthalpy data by integrating (trapezoid rule) */
+    /* compute pseudo-enthalpy h from dhdp */
+    /* Integrate in log space: 
+       dhdp = 1 / [e(p) + p]
+       h(p) = h(p0) + \int_p0^p dhdp dp
+       h(p) = h(p0) + \int_ln(p0)^ln(p) exp[ln(p) + ln(dhdp)] dln(p)
+    */
+    double * integrand;
+    double * log_pdat;
+    log_pdat = XLALCalloc(ndat-1, sizeof(*log_pdat));
+    integrand = LALMalloc((ndat-1) * sizeof(*integrand));
+    for (i = 0; i < ndat-1; ++i) {
+        log_pdat[i] = log(pdat[i+1]);
+        integrand[i] = exp(log_pdat[i] + log(1.0 / (edat[i+1] + pdat[i+1])));
+    }
+
+    gsl_interp_accel * dhdp_of_p_acc_temp = gsl_interp_accel_alloc();
+    gsl_interp * dhdp_of_p_interp_temp = gsl_interp_alloc(gsl_interp_linear, ndat-1);
+    gsl_interp_init(dhdp_of_p_interp_temp, log_pdat, integrand, ndat-1);
+
     hdat = LALMalloc(ndat * sizeof(*hdat));
     hdat[0] = 0.0;
-    dhdp = 1.0 / (edat[1] + pdat[1]);   /* first deriv is at second point */
-    for (i = 1; i < ndat; ++i) {
-        double prev = dhdp;
-        dhdp = 1.0 / (edat[i] + pdat[i]);
-        hdat[i] = hdat[i - 1] + 0.5 * (prev + dhdp) * (pdat[i] - pdat[i - 1]);
+    // Do first point by hand
+    hdat[1] = hdat[0] + 0.5 * (1./(pdat[1]+edat[1])) * (pdat[1] - pdat[0]);
+    for (i = 1; i < ndat-1; ++i) {
+        hdat[i+1] = gsl_interp_eval_integ(dhdp_of_p_interp_temp, log_pdat, integrand,
+          log_pdat[0], log_pdat[i], dhdp_of_p_acc_temp);
     }
+    gsl_interp_free(dhdp_of_p_interp_temp);
+    gsl_interp_accel_free(dhdp_of_p_acc_temp);
+
+    LALFree(log_pdat);
+    LALFree(integrand);
 
     /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
     /*             CALCULATION OF RHO CURRENTLY RETURNS GARBAGE               */
