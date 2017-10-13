@@ -1074,7 +1074,7 @@ class CoincSynthesizer(object):
 		# variance = d p (1 - p) <= d/4 where p is the probability
 		# of a successful outcome.  we quit when the ratio of the
 		# bound on the standard deviation of the number of
-		# successful outcomes (d/4) to the actual number of
+		# successful outcomes (\sqrt{d/4}) to the actual number of
 		# successful outcomes (n) falls below rel accuracy:
 		# \sqrt{d/4} / n < rel accuracy, or
 		#
@@ -1371,7 +1371,7 @@ class CoincSynthesizer(object):
 
 	def plausible_toas(self, instruments):
 		"""
-		Generator that yields dictionaries of random noise event
+		Generator that yields dictionaries of random event
 		time-of-arrival offsets for the given instruments such that
 		the time-of-arrivals are mutually coincident given the
 		maximum allowed inter-instrument \\Delta t's.  The values
@@ -2259,7 +2259,7 @@ class LnLikelihoodRatioMixin(object):
 			# warning
 			if lnP_noise > 0. and lnP_signal > 0.:
 				# both probabilities are +inf.  no correct
-				# answer.  NaN will be returned in thise
+				# answer.  NaN will be returned in this
 				# case, and it helps to have a record in
 				# the log of why that happened.
 				warnings.warn("inf/inf encountered")
