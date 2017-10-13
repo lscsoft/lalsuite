@@ -36,7 +36,7 @@ UsefulPowers powers_of_pi;	// declared in LALSimIMRPhenomD_internals.c
 static int IMRPhenomDGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< [out] FD waveform */
     const REAL8Sequence *freqs_in,     /**< Frequency points at which to evaluate the waveform (Hz) */
-    double deltaF,                     /* If deltaF > 0, the frequency points given in freqs are uniformly spaced with
+    double deltaF,                     /**< If deltaF > 0, the frequency points given in freqs are uniformly spaced with
                                         * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
                                         * Then we will use deltaF = 0 to create the frequency series we return. */
     const REAL8 phi0,                  /**< phase at fRef */
