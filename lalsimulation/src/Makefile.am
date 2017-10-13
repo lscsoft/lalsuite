@@ -118,6 +118,7 @@ noinst_HEADERS = \
 	LALSimIMRPhenomP.c \
 	LALSimIMRPhenomP.h \
 	LALSimIMRSEOBNRROMUtilities.c \
+	LALSimIMRSEOBNRv4ROM_NRTidal.h \
 	LALSimIMRSpinAlignedEOBGSLOptimizedInterpolation.c \
 	LALSimIMRSpinAlignedEOBHcapDerivative.c \
 	LALSimIMRSpinAlignedEOBHcapDerivativeOptimized.c \
