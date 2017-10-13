@@ -72,7 +72,7 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, misc_info, simulate_search, Fstat_timing, cache_all_gc;
+    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, toplist_tmpl_idx, misc_info, simulate_search, Fstat_timing, cache_all_gc;
     CHAR *setup_file, *sft_files, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd, *lrs_oLGX;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit, lrs_Fstar0sc, nc_2Fth;
@@ -292,6 +292,10 @@ int main( int argc, char *argv[] )
     toplists, UserFlag, &WeaveToplistChoices, 'L', OPTIONAL,
     "Sets which combination of toplists to return in the output file given by " UVAR_STR( output_file ) ":\n"
     "%s", WeaveToplistHelpString
+    );
+  XLALRegisterUvarMember(
+    toplist_tmpl_idx, BOOLEAN, 0, DEVELOPER,
+    "If TRUE, output for each toplist item a unique (up to frequency) index identifying its semicoherent and coherent templates. "
     );
   XLALRegisterUvarAuxDataMember(
     extra_statistics, UserFlag, &WeaveStatisticChoices, 'E', OPTIONAL,
@@ -956,7 +960,7 @@ int main( int argc, char *argv[] )
   WeaveSemiResults *semi_res = NULL;
 
   // Create output results structure
-  WeaveOutputResults *out = XLALWeaveOutputResultsCreate( &setup.ref_time, ninputspins, statistics_params, uvar->toplist_limit );
+  WeaveOutputResults *out = XLALWeaveOutputResultsCreate( &setup.ref_time, ninputspins, statistics_params, uvar->toplist_limit, uvar->toplist_tmpl_idx );
   XLAL_CHECK_MAIN( out != NULL, XLAL_EFUNC );
 
   // Number of times output results have been restored from a checkpoint

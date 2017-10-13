@@ -43,6 +43,8 @@ struct tagWeaveResultsToplist {
   const char *stat_name;
   /// Description of ranking statistic
   const char *stat_desc;
+  /// Whether to output semicoherent/coherent template indexes
+  BOOLEAN toplist_tmpl_idx;
   /// Function which returns pointer to array of statistics by which toplist items are ranked
   WeaveResultsToplistRankingStats rank_stats_fcn;
   /// Function which returns the value of the statistic by which toplist items are ranked
@@ -180,7 +182,9 @@ int toplist_fits_table_init(
   XLAL_FITS_TABLE_COLUMN_BEGIN( WeaveResultsToplistItem );
 
   // Add columns for semicoherent template parameters
-  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, UINT8, semi_index, "index" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( toplist->toplist_tmpl_idx ) {
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, UINT8, semi_index, "index" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
   XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, semi_alpha, "alpha [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, semi_delta, "delta [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, semi_fkdot[0], "freq [Hz]" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -268,7 +272,9 @@ int toplist_fits_table_init(
   WeaveStatisticType per_segment_stats = (statistics_to_output & (WEAVE_STATISTIC_COH2F | WEAVE_STATISTIC_COH2F_DET));
   // Add columns for coherent template parameters
   if ( per_segment_stats ) {
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, UINT8, params -> nsegments, coh_index, "index_seg" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    if ( toplist->toplist_tmpl_idx ) {
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, UINT8, params -> nsegments, coh_index, "index_seg" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params -> nsegments, coh_alpha, "alpha_seg [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params -> nsegments, coh_delta, "delta_seg [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params -> nsegments, coh_fkdot[0], "freq_seg [Hz]" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -542,6 +548,7 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   const char *stat_name,
   const char *stat_desc,
   const UINT4 toplist_limit,
+  const BOOLEAN toplist_tmpl_idx,
   WeaveResultsToplistRankingStats toplist_rank_stats_fcn,
   WeaveResultsToplistItemGetRankStat toplist_item_get_rank_stat_fcn,
   WeaveResultsToplistItemSetRankStat toplist_item_set_rank_stat_fcn
@@ -561,6 +568,7 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   toplist->nspins = nspins;
   toplist->stat_name = stat_name;
   toplist->stat_desc = stat_desc;
+  toplist->toplist_tmpl_idx = toplist_tmpl_idx;
   toplist->rank_stats_fcn = toplist_rank_stats_fcn;
   toplist->item_get_rank_stat_fcn = toplist_item_get_rank_stat_fcn;
   toplist->item_set_rank_stat_fcn = toplist_item_set_rank_stat_fcn;
@@ -905,8 +913,8 @@ int XLALWeaveResultsToplistCompare(
         // Compare semicoherent template parameters
         {
           snprintf( loc_str, sizeof(loc_str), "toplist item %zu", i );
-          const UINT8 semi_index_1 = items_1[i]->semi_index;
-          const UINT8 semi_index_2 = items_2[i]->semi_index;
+          const UINT8 semi_index_1 = toplist_1->toplist_tmpl_idx ? items_1[i]->semi_index : 0;
+          const UINT8 semi_index_2 = toplist_2->toplist_tmpl_idx ? items_2[i]->semi_index : 0;
           PulsarDopplerParams XLAL_INIT_DECL( semi_phys_1 );
           PulsarDopplerParams XLAL_INIT_DECL( semi_phys_2 );
           semi_phys_1.Alpha = items_1[i]->semi_alpha;
@@ -924,8 +932,8 @@ int XLALWeaveResultsToplistCompare(
         if ( stats_to_output & (WEAVE_STATISTIC_COH2F|WEAVE_STATISTIC_COH2F_DET) ) {
           for ( size_t j = 0; j < params -> nsegments; ++j ) {
             snprintf( loc_str, sizeof(loc_str), "toplist item %zu, segment %zu", i, j );
-            const UINT8 coh_index_1 = items_1[i]->coh_index[j];
-            const UINT8 coh_index_2 = items_2[i]->coh_index[j];
+            const UINT8 coh_index_1 = toplist_1->toplist_tmpl_idx ? items_1[i]->coh_index[j] : 0;
+            const UINT8 coh_index_2 = toplist_2->toplist_tmpl_idx ? items_2[i]->coh_index[j] : 0;
             PulsarDopplerParams XLAL_INIT_DECL( coh_phys_1 );
             PulsarDopplerParams XLAL_INIT_DECL( coh_phys_2 );
             coh_phys_1.Alpha = items_1[i]->coh_alpha[j];

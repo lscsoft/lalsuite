@@ -50,7 +50,8 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
   const LIGOTimeGPS *ref_time,
   const size_t nspins,
   WeaveStatisticsParams *statistics_params,
-  const UINT4 toplist_limit
+  const UINT4 toplist_limit,
+  const BOOLEAN toplist_tmpl_idx
   );
 void XLALWeaveOutputResultsDestroy(
   WeaveOutputResults *out
