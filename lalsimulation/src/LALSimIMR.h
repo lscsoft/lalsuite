@@ -85,6 +85,7 @@ int XLALSimIMRPhenomCGenerateTD(REAL8TimeSeries **hplus, REAL8TimeSeries **hcros
 
 /* in module LALSimIMRPhenomD.c */
 int XLALSimIMRPhenomDGenerateFD(COMPLEX16FrequencySeries **htilde, const REAL8 phi0, const REAL8 fRef, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 chi1, const REAL8 chi2, const REAL8 f_min, const REAL8 f_max, const REAL8 distance, LALDict *extraParams);
+int XLALSimIMRPhenomDFrequencySequence(COMPLEX16FrequencySeries **htilde, const REAL8Sequence *freqs, const REAL8 phi0, const REAL8 fRef_in, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 chi1, const REAL8 chi2, const REAL8 distance, LALDict *extraParams);
 double XLALIMRPhenomDGetPeakFreq(const REAL8 m1_in, const REAL8 m2_in, const REAL8 chi1_in, const REAL8 chi2_in);
 double XLALSimIMRPhenomDChirpTime(const REAL8 m1_in, const REAL8 m2_in, const REAL8 chi1_in, const REAL8 chi2_in, const REAL8 fHz);
 double XLALSimIMRPhenomDFinalSpin(const REAL8 m1_in, const REAL8 m2_in, const REAL8 chi1_in, const REAL8 chi2_in);
@@ -208,6 +209,10 @@ int XLALSimIMRSEOBNRv4ROMFrequencySequence(struct tagCOMPLEX16FrequencySeries **
 int XLALSimIMRSEOBNRv4ROMTimeOfFrequency(REAL8 *t, REAL8 frequency, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2);
 int XLALSimIMRSEOBNRv4ROMFrequencyOfTime(REAL8 *frequency, REAL8 t, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2);
 
+/* in module LALSimIMRSEOBNRv4ROM_NRTidal.c */
+
+int XLALSimIMRSEOBNRv4ROMNRTidalFrequencySequence(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, const REAL8Sequence *freqs, REAL8 phiRef, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1_SI, REAL8 m2_SI, REAL8 chi1, REAL8 chi2, REAL8 Lambda1, REAL8 Lambda2);
+int XLALSimIMRSEOBNRv4ROMNRTidal(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, REAL8 phiRef, REAL8 deltaF, REAL8 fLow, REAL8 fHigh, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1_SI, REAL8 m2_SI, REAL8 chi1, REAL8 chi2, REAL8 Lambda1, REAL8 Lambda2);
 
 /* in module LALSimIMRPSpinInspiralRD.c */
 
@@ -281,6 +286,35 @@ SphHarmTimeSeries *XLALSimInspiralNRSur7dq2Modes(
         REAL8 distnace,                 /**< distance of source (m) */
         int lmax                        /**< Evaluates (l, m) modes with l <= lmax */
 );
+
+/* in module LALSimNRTunedTides.c */
+double XLALSimNRTunedTidesComputeKappa2T(
+    REAL8 m1_SI, /**< Mass of companion 1 (kg) */
+    REAL8 m2_SI, /**< Mass of companion 2 (kg) */
+    REAL8 lambda1, /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
+    REAL8 lambda2 /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
+);
+
+double XLALSimNRTunedTidesMergerFrequency(
+    const REAL8 mtot_MSUN, /**< total mass of system (solar masses) */
+    const REAL8 kappa2T,   /**< tidal coupling constant. Eq. 2 in arXiv:1706.02969 */
+    const REAL8 q          /**< mass-ratio q >= 1 */
+);
+
+int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
+    const REAL8Sequence *phi_tidal, /**< [out] tidal phase frequency series */
+    const REAL8Sequence *amp_tidal, /**< [out] tidal amplitude frequency series */
+    const REAL8Sequence *fHz, /**< list of input Gravitational wave Frequency in Hz to evaluate */
+    REAL8 m1_SI, /**< Mass of companion 1 (kg) */
+    REAL8 m2_SI, /**< Mass of companion 2 (kg) */
+    REAL8 lambda1, /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
+    REAL8 lambda2 /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
+    );
+
+/* In module LALSimIMRPhenomD_NRTidal.c */
+int XLALSimIMRPhenomDNRTidal(COMPLEX16FrequencySeries **htilde, REAL8 phiRef, REAL8 deltaF, REAL8 fLow, REAL8 fHigh, REAL8 fRef, REAL8 distance, REAL8 m1_SI, REAL8 m2_SI, REAL8 chi1, REAL8 chi2, REAL8 lambda1, REAL8 lambda2, LALDict *extraParams);
+int XLALSimIMRPhenomDNRTidalFrequencySequence(COMPLEX16FrequencySeries **htilde, const REAL8Sequence *freqs, REAL8 phiRef, REAL8 fRef, REAL8 distance, REAL8 m1_SI, REAL8 m2_SI, REAL8 chi1, REAL8 chi2, REAL8 lambda1, REAL8 lambda2, LALDict *extraParams);
+
 
 #if 0
 { /* so that editors will match succeeding brace */
