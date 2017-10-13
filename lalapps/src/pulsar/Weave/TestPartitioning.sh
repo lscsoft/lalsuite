@@ -9,16 +9,19 @@ for setup in onefreq short long; do
         onefreq)
             weave_setup_options="--segment-count=3"
             weave_search_options="--alpha=0.2 --delta=-0.4 --freq=47.7 --f1dot=-1.1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.3"
+            weave_part_options="--freq-partitions=5"
             ;;
 
         short)
             weave_setup_options="--segment-count=3"
             weave_search_options="--alpha=0.9/1.4 --delta=-1.2/2.3 --freq=49.5/0.01 --f1dot=-1e-9,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3"
+            weave_part_options="--freq-partitions=5"
             ;;
 
         long)
             weave_setup_options="--segment-count=3 --segment-gap=11130000"
             weave_search_options="--alpha=0.1/0.5 --delta=-0.2/0.4 --freq=41.5/0.01 --f1dot=-3e-11,0 --semi-max-mismatch=12 --coh-max-mismatch=0.6"
+            weave_part_options="--freq-partitions=5"
             ;;
 
         *)
@@ -44,7 +47,7 @@ for setup in onefreq short long; do
 
     echo "=== Setup '${setup}': Perform interpolating search without frequency partitions ==="
     set -x
-    ${builddir}/lalapps_Weave --freq-partitions=1 --output-file=WeaveOutNoPart.fits \
+    ${builddir}/lalapps_Weave --output-file=WeaveOutNoPart.fits \
         --toplists=all --toplist-limit=2321 --misc-info --setup-file=WeaveSetup.fits \
         --rand-seed=3456 --sft-timebase=1800 --sft-noise-psd=1,1 \
         --sft-timestamps-files=timestamps-1.txt,timestamps-2.txt \
@@ -74,7 +77,7 @@ for setup in onefreq short long; do
 
     echo "=== Setup '${setup}': Perform interpolating search with frequency partitions ==="
     set -x
-    ${builddir}/lalapps_Weave --freq-partitions=5 --output-file=WeaveOutPart.fits \
+    ${builddir}/lalapps_Weave ${weave_part_options} --output-file=WeaveOutPart.fits \
         --toplists=all --toplist-limit=2321 --misc-info --setup-file=WeaveSetup.fits \
         --rand-seed=3456 --sft-timebase=1800 --sft-noise-psd=1,1 \
         --sft-timestamps-files=timestamps-1.txt,timestamps-2.txt \
