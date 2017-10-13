@@ -2311,7 +2311,6 @@ class LnLikelihoodRatioMixin(object):
 		else:
 			lnP_signal_func = sampler_coinc_params.numerator
 			lnP_noise_func = sampler_coinc_params.denominator
-		isinf = math.isinf
 		for params, lnP_params in random_params_seq:
 			lnP_signal = lnP_signal_func(params, **kwargs)
 			lnP_noise = lnP_noise_func(params, **kwargs)
