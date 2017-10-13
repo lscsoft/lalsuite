@@ -723,6 +723,8 @@ static int SuperskyTests(
       const LatticeTilingStats *stats = XLALLatticeTilingStatistics( coh_tiling[n], i );
       XLAL_CHECK( stats != NULL, XLAL_EFUNC );
       XLAL_CHECK( stats->name != NULL, XLAL_EFUNC );
+      const int j = XLALLatticeTilingDimensionByName( coh_tiling[n], stats->name );
+      XLAL_CHECK( j == (int)i, XLAL_EFUNC, "XLALLatticeTilingDimensionByName(..., \"%s\") = %i != %zu", stats->name, j, i );
       printf( "Coherent #%zu  bound #%zu: name=%6s, points=[%4u,%4u]\n", n, i, stats->name, stats->min_points, stats->max_points );
     }
   }
@@ -730,6 +732,8 @@ static int SuperskyTests(
     const LatticeTilingStats *stats = XLALLatticeTilingStatistics( semi_tiling, i );
     XLAL_CHECK( stats != NULL, XLAL_EFUNC );
     XLAL_CHECK( stats->name != NULL, XLAL_EFUNC );
+    const int j = XLALLatticeTilingDimensionByName( semi_tiling, stats->name );
+    XLAL_CHECK( j == (int)i, XLAL_EFUNC, "XLALLatticeTilingDimensionByName(..., \"%s\") = %i != %zu", stats->name, j, i );
     printf( "Semicoherent bound #%zu: name=%6s, points=[%4u,%4u]\n", i, stats->name, stats->min_points, stats->max_points );
   }
   printf( "\n" );

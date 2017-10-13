@@ -1408,6 +1408,27 @@ const char *XLALLatticeTilingBoundName(
 
 }
 
+int XLALLatticeTilingDimensionByName(
+  const LatticeTiling *tiling,
+  const char *bound_name
+  )
+{
+
+  // Check input
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( bound_name != NULL, XLAL_EFAULT );
+
+  // Find and return index of dimension with matching bound name
+  for ( int dim = 0; dim < (int)tiling->ndim; ++dim ) {
+    if ( strcmp( tiling->bounds[dim].name, bound_name ) == 0 ) {
+      return dim;
+    }
+  }
+
+  return XLAL_FAILURE;
+
+}
+
 REAL8 XLALLatticeTilingStepSize(
   const LatticeTiling *tiling,
   const size_t dim

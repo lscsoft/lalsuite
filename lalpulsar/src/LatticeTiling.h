@@ -280,6 +280,14 @@ const char *XLALLatticeTilingBoundName(
   );
 
 ///
+/// Return the index of the lattice tiling dimension which has the given name
+///
+int XLALLatticeTilingDimensionByName(
+  const LatticeTiling *tiling,          ///< [in] Lattice tiling
+  const char *bound_name                ///< [in] Name of bound for which to find index
+  );
+
+///
 /// Return the step size of the lattice tiling in a given dimension, or 0 for non-tiled dimensions.
 ///
 REAL8 XLALLatticeTilingStepSize(
