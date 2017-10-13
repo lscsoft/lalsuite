@@ -618,13 +618,13 @@ class LinearPlusOverflowBins(LoHiCountBins):
 		raise IndexError(x)
 
 	def lower(self):
-		return numpy.concatenate((numpy.array([NegInf]), self.min + self.delta * numpy.arange(len(self) - 2), numpy.array([self.max])))
+		return numpy.concatenate((numpy.array([NegInf]), numpy.linspace(self.min, self.max - self.delta, len(self) - 1)))
 
 	def centres(self):
-		return numpy.concatenate((numpy.array([NegInf]), self.min + self.delta * (numpy.arange(len(self) - 2) + 0.5), numpy.array([PosInf])))
+		return numpy.concatenate((numpy.array([NegInf]), numpy.linspace(self.min + self.delta / 2., self.max - self.delta / 2., len(self) - 2), numpy.array([PosInf])))
 
 	def upper(self):
-		return numpy.concatenate((numpy.array([self.min]), self.min + self.delta * (numpy.arange(len(self) - 2) + 1), numpy.array([PosInf])))
+		return numpy.concatenate((numpy.linspace(self.min + self.delta, self.max, len(self) - 1), numpy.array([PosInf])))
 
 	#
 	# XML I/O related methods and data
