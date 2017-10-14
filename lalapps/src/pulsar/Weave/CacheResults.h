@@ -65,6 +65,7 @@ void XLALWeaveCacheDestroy(
 WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
   const LatticeTiling *semi_tiling,
   const SuperskyTransformData *semi_rssky_transf,
+  const double dfreq,
   const UINT4 nqueries,
   const UINT4 npartitions
   );
@@ -75,7 +76,8 @@ int XLALWeaveCacheQueriesInit(
   WeaveCacheQueries *queries,
   const LatticeTilingIterator *semi_itr,
   const UINT8 semi_index,
-  const gsl_vector *semi_point
+  const gsl_vector *semi_point,
+  const UINT4 partition_index
   );
 int XLALWeaveCacheQuery(
   const WeaveCache *cache,
@@ -84,9 +86,7 @@ int XLALWeaveCacheQuery(
   );
 int XLALWeaveCacheQueriesFinal(
   WeaveCacheQueries *queries,
-  const UINT4 partition_index,
   PulsarDopplerParams *semi_phys,
-  const double dfreq,
   UINT4 *semi_nfreqs
   );
 int XLALWeaveCacheRetrieve(

@@ -88,6 +88,8 @@ struct tagWeaveCacheQueries {
   size_t ndim;
   /// Lowest tiled parameter-space dimension
   size_t dim0;
+  // Frequency spacing used by lattices
+  double dfreq;
   /// Number of queries for which space is allocated
   UINT4 nqueries;
   /// Number of partitions to divide semicoherent frequency block into
@@ -458,6 +460,7 @@ void XLALWeaveCacheDestroy(
 WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
   const LatticeTiling *semi_tiling,
   const SuperskyTransformData *semi_rssky_transf,
+  const double dfreq,
   const UINT4 nqueries,
   const UINT4 npartitions
   )
@@ -465,6 +468,7 @@ WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
 
   // Check input
   XLAL_CHECK_NULL( semi_tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( dfreq >= 0, XLAL_EINVAL );
   XLAL_CHECK_NULL( nqueries > 0, XLAL_EINVAL );
   XLAL_CHECK_NULL( npartitions > 0, XLAL_EINVAL );
 
@@ -488,6 +492,7 @@ WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
 
   // Set fields
   queries->semi_rssky_transf = semi_rssky_transf;
+  queries->dfreq = dfreq;
   queries->nqueries = nqueries;
   queries->npartitions = npartitions;
 
@@ -549,13 +554,16 @@ int XLALWeaveCacheQueriesInit(
   WeaveCacheQueries *queries,
   const LatticeTilingIterator *semi_itr,
   const UINT8 semi_index,
-  const gsl_vector *semi_point
+  const gsl_vector *semi_point,
+  const UINT4 partition_index
   )
 {
 
   // Check input
   XLAL_CHECK( queries != NULL, XLAL_EFAULT );
   XLAL_CHECK( semi_itr != NULL, XLAL_EFAULT );
+  XLAL_CHECK( semi_point != NULL, XLAL_EFAULT );
+  XLAL_CHECK( partition_index < queries->npartitions, XLAL_EINVAL );
 
   // Reset coherent sequential indexes to zero, indicating no query
   memset( queries->coh_index, 0, queries->nqueries * sizeof( queries->coh_index[0] ) );
@@ -568,6 +576,9 @@ int XLALWeaveCacheQueriesInit(
 
   // Convert semicoherent point to physical coordinates
   XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &queries->semi_phys, semi_point, NULL, queries->semi_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Save index to current partition of semicoherent frequency block
+  queries->partition_index = partition_index;
 
   // Get indexes of left/right-most point in current semicoherent frequency block
   XLAL_CHECK( XLALCurrentLatticeTilingBlock( semi_itr, queries->ndim - 1, &queries->semi_left, &queries->semi_right ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -650,22 +661,15 @@ int XLALWeaveCacheQuery(
 ///
 int XLALWeaveCacheQueriesFinal(
   WeaveCacheQueries *queries,
-  const UINT4 partition_index,
   PulsarDopplerParams *semi_phys,
-  const double dfreq,
   UINT4 *semi_nfreqs
   )
 {
 
   // Check input
   XLAL_CHECK( queries != NULL, XLAL_EFAULT );
-  XLAL_CHECK( partition_index < queries->npartitions, XLAL_EINVAL );
   XLAL_CHECK( semi_phys != NULL, XLAL_EFAULT );
-  XLAL_CHECK( dfreq >= 0, XLAL_EINVAL );
   XLAL_CHECK( semi_nfreqs != NULL, XLAL_EFAULT );
-
-  // Save index to current partition of semicoherent frequency block
-  queries->partition_index = partition_index;
 
   // Check that every 'coh_index' is at least 1, i.e. a query was made
   for ( size_t i = 0; i < queries->nqueries; ++i ) {
@@ -702,9 +706,9 @@ int XLALWeaveCacheQueriesFinal(
   }
 
   // Shift physical frequencies to first point in coherent/semicoherent frequency block partition
-  queries->semi_phys.fkdot[0] += dfreq * queries->semi_left;
+  queries->semi_phys.fkdot[0] += queries->dfreq * queries->semi_left;
   for ( size_t i = 0; i < queries->nqueries; ++i ) {
-    queries->coh_phys[i].fkdot[0] += dfreq * queries->coh_left[i];
+    queries->coh_phys[i].fkdot[0] += queries->dfreq * queries->coh_left[i];
   }
 
   // Return first point in semicoherent frequency block partition

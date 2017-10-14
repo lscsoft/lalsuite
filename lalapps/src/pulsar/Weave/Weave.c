@@ -953,7 +953,7 @@ int main( int argc, char *argv[] )
   ////////// Perform search //////////
 
   // Create storage for cache queries for coherent results in each segment
-  WeaveCacheQueries *queries = XLALWeaveCacheQueriesCreate( tiling[isemi], rssky_transf[isemi], nsegments, uvar->freq_partitions );
+  WeaveCacheQueries *queries = XLALWeaveCacheQueriesCreate( tiling[isemi], rssky_transf[isemi], dfreq, nsegments, uvar->freq_partitions );
   XLAL_CHECK_MAIN( queries != NULL, XLAL_EFUNC );
 
   // Pointer to final semicoherent results
@@ -1098,7 +1098,7 @@ int main( int argc, char *argv[] )
     cpu_tic = cpu_toc;
 
     // Initialise cache queries
-    XLAL_CHECK_MAIN( XLALWeaveCacheQueriesInit( queries, semi_itr, semi_freq_block_index, semi_rssky ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALWeaveCacheQueriesInit( queries, semi_itr, semi_freq_block_index, semi_rssky, partition_index ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Query for coherent results for each segment
     for ( size_t i = 0; i < nsegments; ++i ) {
@@ -1108,7 +1108,7 @@ int main( int argc, char *argv[] )
     // Finalise cache queries
     PulsarDopplerParams XLAL_INIT_DECL( semi_phys );
     UINT4 semi_nfreqs = 0;
-    XLAL_CHECK_MAIN( XLALWeaveCacheQueriesFinal( queries, partition_index, &semi_phys, dfreq, &semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALWeaveCacheQueriesFinal( queries, &semi_phys, &semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
     if ( semi_nfreqs == 0 ) {
       continue;
     }
