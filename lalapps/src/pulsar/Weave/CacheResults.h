@@ -67,7 +67,7 @@ WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
   const SuperskyTransformData *semi_rssky_transf,
   const double dfreq,
   const UINT4 nqueries,
-  const UINT4 npartitions
+  const UINT4 nfreq_partitions
   );
 void XLALWeaveCacheQueriesDestroy(
   WeaveCacheQueries *queries
@@ -77,7 +77,7 @@ int XLALWeaveCacheQueriesInit(
   const LatticeTilingIterator *semi_itr,
   const UINT8 semi_index,
   const gsl_vector *semi_point,
-  const UINT4 partition_index
+  const UINT4 freq_partition_index
   );
 int XLALWeaveCacheQuery(
   const WeaveCache *cache,
