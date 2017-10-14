@@ -58,13 +58,14 @@ done
 set +x
 echo
 
-echo "=== Check that only a small fraction of results were recomputed ==="
+weave_recomp_threshold=0.0
+echo "=== Check that number of recomputed results is below tolerance ==="
 set -x
 ${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NCOHRES' > tmp
 coh_nres=`cat tmp | xargs printf "%d"`
 ${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NCOHTPL' > tmp
 coh_ntmpl=`cat tmp | xargs printf "%d"`
-awk "BEGIN { print recomp = ( ${coh_nres} - ${coh_ntmpl} ) / ${coh_ntmpl}; exit ( recomp < 0.02 ? 0 : 1 ) }"
+awk "BEGIN { print recomp = ( ${coh_nres} - ${coh_ntmpl} ) / ${coh_ntmpl}; exit ( recomp <= ${weave_recomp_threshold} ? 0 : 1 ) }"
 expr ${coh_nres} '=' ${coh_ntmpl}
 set +x
 echo
