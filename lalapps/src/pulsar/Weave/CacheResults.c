@@ -116,7 +116,7 @@ struct tagWeaveCacheQueries {
   /// Sequential index for the current semicoherent frequency block
   UINT8 semi_index;
   // Current semicoherent frequency block in dimension 'dim0'
-  double semi_point_dim0;
+  double semi_rssky_dim0;
   /// Physical coordinates of the current semicoherent frequency block
   PulsarDopplerParams semi_phys;
   /// Index of left-most point in current semicoherent frequency block
@@ -556,17 +556,17 @@ void XLALWeaveCacheQueriesDestroy(
 ///
 int XLALWeaveCacheQueriesInit(
   WeaveCacheQueries *queries,
-  const LatticeTilingIterator *semi_itr,
   const UINT8 semi_index,
-  const gsl_vector *semi_point,
+  const gsl_vector *semi_rssky,
+  const INT4 semi_left,
+  const INT4 semi_right,
   const UINT4 freq_partition_index
   )
 {
 
   // Check input
   XLAL_CHECK( queries != NULL, XLAL_EFAULT );
-  XLAL_CHECK( semi_itr != NULL, XLAL_EFAULT );
-  XLAL_CHECK( semi_point != NULL, XLAL_EFAULT );
+  XLAL_CHECK( semi_rssky != NULL, XLAL_EFAULT );
   XLAL_CHECK( freq_partition_index < queries->nfreq_partitions, XLAL_EINVAL );
 
   // Reset coherent sequential indexes to zero, indicating no query
@@ -576,20 +576,21 @@ int XLALWeaveCacheQueriesInit(
   queries->semi_index = semi_index;
 
   // Save current semicoherent frequency block in dimension 'dim0'
-  queries->semi_point_dim0 = gsl_vector_get( semi_point, queries->dim0 );
+  queries->semi_rssky_dim0 = gsl_vector_get( semi_rssky, queries->dim0 );
 
   // Convert semicoherent point to physical coordinates
-  XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &queries->semi_phys, semi_point, NULL, queries->semi_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &queries->semi_phys, semi_rssky, NULL, queries->semi_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Save indexes of left/right-most point in current semicoherent frequency block
+  queries->semi_left = semi_left;
+  queries->semi_right = semi_right;
 
   // Save index to current partition of semicoherent frequency block
   queries->freq_partition_index = freq_partition_index;
 
-  // Get indexes of left/right-most point in current semicoherent frequency block
-  XLAL_CHECK( XLALCurrentLatticeTilingBlock( semi_itr, queries->ndim - 1, &queries->semi_left, &queries->semi_right ) == XLAL_SUCCESS, XLAL_EFUNC );
-
   // Compute the relevance of the current semicoherent frequency block
   // - Relevance is semicoherent reduced supersky point in dimension 'dim0', plus offset
-  queries->semi_relevance = gsl_vector_get( semi_point, queries->dim0 ) + queries->semi_relevance_offset;
+  queries->semi_relevance = gsl_vector_get( semi_rssky, queries->dim0 ) + queries->semi_relevance_offset;
 
   return XLAL_SUCCESS;
 
@@ -631,7 +632,7 @@ int XLALWeaveCacheQuery(
   // - 'coh_near_point' is set to the nearest point to the mid-point of the semicoherent frequency block
   // - 'coh_index' is set to the index of this coherent frequency block, used for cache lookup
   // - 'coh_left' and 'coh_right' are set of number of points to the left/right of 'coh_near_point';
-  //   check that these are sufficient to contain the number of points to the left/right of 'semi_point'
+  //   check that these are sufficient to contain the number of points to the left/right of 'semi_rssky'
   if ( cache->coh_locator != NULL ) {
     XLAL_CHECK( XLALNearestLatticeTilingBlock( cache->coh_locator, &coh_point_view.vector, cache->ndim - 1, &coh_near_point_view.vector, &queries->coh_index[query_index], &queries->coh_left[query_index], &queries->coh_right[query_index] ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK( queries->coh_index[query_index] < cache->coh_max_index, XLAL_EFAILED, "Coherent index %"LAL_UINT8_FORMAT" out of range [0,%"LAL_UINT8_FORMAT") at semicoherent index %"LAL_UINT8_FORMAT", query index %u", queries->coh_index[query_index], cache->coh_max_index, queries->semi_index, query_index );
@@ -654,7 +655,7 @@ int XLALWeaveCacheQuery(
     gsl_vector_view semi_near_point_view = gsl_vector_view_array( semi_near_point_array, cache->ndim );
     XLAL_CHECK( XLALConvertSuperskyToSuperskyPoint( &semi_near_point_view.vector, cache->semi_rssky_transf, &coh_near_point_view.vector, &coh_point_view.vector, cache->coh_rssky_transf ) == XLAL_SUCCESS, XLAL_EINVAL );
     const double semi_near_point_dim0 = gsl_vector_get( &semi_near_point_view.vector, cache->dim0 );
-    queries->coh_relevance[query_index] = GSL_MAX( semi_near_point_dim0, queries->semi_point_dim0 ) + cache->coh_relevance_offset;
+    queries->coh_relevance[query_index] = GSL_MAX( semi_near_point_dim0, queries->semi_rssky_dim0 ) + cache->coh_relevance_offset;
   }
 
   return XLAL_SUCCESS;

@@ -27,6 +27,7 @@
 
 #include "Weave.h"
 #include "ComputeResults.h"
+#include "Iteration.h"
 
 #include <lal/LatticeTiling.h>
 #include <lal/SuperskyMetrics.h>
@@ -74,9 +75,10 @@ void XLALWeaveCacheQueriesDestroy(
   );
 int XLALWeaveCacheQueriesInit(
   WeaveCacheQueries *queries,
-  const LatticeTilingIterator *semi_itr,
   const UINT8 semi_index,
-  const gsl_vector *semi_point,
+  const gsl_vector *semi_rssky,
+  const INT4 semi_left,
+  const INT4 semi_right,
   const UINT4 freq_partition_index
   );
 int XLALWeaveCacheQuery(

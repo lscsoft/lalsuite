@@ -25,6 +25,8 @@ lalapps_Weave_SOURCES = \
 	CacheResults.h \
 	ComputeResults.c \
 	ComputeResults.h \
+	Iteration.c \
+	Iteration.h \
 	OutputResults.c \
 	OutputResults.h \
 	ResultsToplist.c \

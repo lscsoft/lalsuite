@@ -24,6 +24,7 @@
 
 #include "Weave.h"
 #include "SetupData.h"
+#include "Iteration.h"
 #include "ComputeResults.h"
 #include "CacheResults.h"
 #include "OutputResults.h"
@@ -679,22 +680,16 @@ int main( int argc, char *argv[] )
   XLAL_CHECK_MAIN( XLALPerformLatticeTilingCallbacks( tiling[isemi] ) == XLAL_SUCCESS, XLAL_EFUNC );
   LogPrintf( LOG_NORMAL, "Finished setting up semicoherent lattice tiling\n" );
 
-  // Get frequency spacing used by parameter-space tiling
-  // - XLALEqualizeReducedSuperskyMetricsFreqSpacing() ensures this is the same for all segments
-  const double dfreq = XLALLatticeTilingStepSize( tiling[isemi], ndim - 1 );
-
-  // Create iterator over semicoherent tiling
-  // - The last parameter-space dimension is always frequency and is not iterated over, since we
-  //   always operate over a block of frequencies at once. Since the frequency spacing is always
-  //   equal over all tilings due to XLALEqualizeReducedSuperskyMetricsFreqSpacing(), operations
-  //   such as nearest point finding can be performed once per frequency block instead of per bin.
-  LatticeTilingIterator *semi_itr = XLALCreateLatticeTilingIterator( tiling[isemi], ndim - 1 );
+  // Output number of points in semicoherent tiling
   {
     const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling[isemi], ndim - 1 );
     XLAL_CHECK_MAIN( stats != NULL, XLAL_EFUNC );
     LogPrintf( LOG_NORMAL, "Number of semicoherent templates = %" LAL_UINT8_FORMAT "\n", stats->total_points );
   }
-  gsl_vector *GAVEC_MAIN( semi_rssky, ndim );
+
+  // Get frequency spacing used by parameter-space tiling
+  // - XLALEqualizeReducedSuperskyMetricsFreqSpacing() ensures this is the same for all segments
+  const double dfreq = XLALLatticeTilingStepSize( tiling[isemi], ndim - 1 );
 
   //
   // Set up coherent lattice tilings
@@ -956,6 +951,10 @@ int main( int argc, char *argv[] )
 
   ////////// Perform search //////////
 
+  // Create iterator over the main loop search parameter space
+  WeaveIterator *main_loop_itr = XLALWeaveMainLoopIteratorCreate( tiling[isemi], uvar->freq_partitions );
+  XLAL_CHECK_MAIN( main_loop_itr != NULL, XLAL_EFUNC );
+
   // Create storage for cache queries for coherent results in each segment
   WeaveCacheQueries *queries = XLALWeaveCacheQueriesCreate( tiling[isemi], rssky_transf[isemi], dfreq, nsegments, uvar->freq_partitions );
   XLAL_CHECK_MAIN( queries != NULL, XLAL_EFUNC );
@@ -972,14 +971,6 @@ int main( int argc, char *argv[] )
 
   // Number of computed coherent results, and number of coherent and semicoherent templates
   UINT8 coh_nres = 0, coh_ntmpl = 0, semi_ntmpl = 0;
-
-  // Semicoherent iteration count and index
-  const UINT8 semi_count = XLALTotalLatticeTilingPoints( semi_itr );
-  XLAL_CHECK_MAIN( semi_count > 0, XLAL_EFUNC );
-  UINT8 semi_index = 0;
-
-  // Partition index
-  UINT4 partition_index = 0;
 
   // Try to restore output results from a checkpoint file, if given
   if ( UVAR_SET( ckpt_output_file ) ) {
@@ -1000,16 +991,10 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( ckpt_output_count > 0, XLAL_EIO, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
 
       // Read output results
-      XLAL_CHECK_MAIN( XLALWeaveOutputResultsReadAppend( file, &out ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALWeaveOutputResultsReadAppend( file, &out ) == XLAL_SUCCESS, XLAL_EFUNC, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
 
-      // Read state of iterator over semicoherent tiling
-      XLAL_CHECK_MAIN( XLALRestoreLatticeTilingIterator( semi_itr, file, "semi_itr" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      semi_index = XLALCurrentLatticeTilingIndex( semi_itr );
-      XLAL_CHECK_MAIN( semi_index < semi_count, XLAL_EIO, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
-
-      // Read partition index
-      XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT4( file, "partindx", &partition_index ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( partition_index < uvar->freq_partitions, XLAL_EIO, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
+      // Restore state of main loop iterator
+      XLAL_CHECK_MAIN( XLALWeaveIteratorRestore( main_loop_itr, file ) == XLAL_SUCCESS, XLAL_EFUNC, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
 
       // Close output checkpoint file
       XLALFITSFileClose( file );
@@ -1047,15 +1032,8 @@ int main( int argc, char *argv[] )
   BOOLEAN wall_prog_remain_print = 0;
   double wall_prog_total_prev = 0;
 
-  // Progress count
-  const UINT8 prog_count = uvar->freq_partitions * semi_count;
-
   // Print initial progress
-  {
-    const UINT8 prog_index = partition_index * semi_count + semi_index;
-    const double prog_per_cent = 100.0 * prog_index / prog_count;
-    LogPrintf( LOG_NORMAL, "Starting main loop at %.3g%% complete, peak memory %.1fMB\n", prog_per_cent, XLALGetPeakHeapUsageMB() );
-  }
+  LogPrintf( LOG_NORMAL, "Starting main loop at %.3g%% complete, peak memory %.1fMB\n", XLALWeaveIteratorProgress( main_loop_itr ), XLALGetPeakHeapUsageMB() );
 
   // Begin main loop
   BOOLEAN search_complete = 0;
@@ -1065,33 +1043,22 @@ int main( int argc, char *argv[] )
     double cpu_tic = cpu_time();
     double cpu_toc = 0;
 
-    // Get mid-point of the next semicoherent frequency block
-    // - XLALNextLatticeTilingPoint() returns mid-point in non-iterated dimensions
-    const int itr_retn = XLALNextLatticeTilingPoint( semi_itr, semi_rssky );
-    XLAL_CHECK_MAIN( itr_retn >= 0, XLAL_EFUNC );
-    semi_index = XLALCurrentLatticeTilingIndex( semi_itr );
-    if ( itr_retn == 0 ) {
-
-      // Move to the next partition
-      ++partition_index;
-      semi_index = 0;
-      if ( partition_index == uvar->freq_partitions ) {
-
-        // Search is complete
-        search_complete = 1;
-        continue;
-
-      }
-
-      // Expire cache items from previous partitions
+    // Get next semicoherent frequency block
+    // - Exit main loop if iteration is complete
+    // - Expire cache items if requested by iterator
+    BOOLEAN expire_cache = 0;
+    UINT8 semi_index = 0;
+    const gsl_vector *semi_rssky = NULL;
+    INT4 semi_left = 0;
+    INT4 semi_right = 0;
+    UINT4 freq_partition_index = 0;
+    XLAL_CHECK( XLALWeaveIteratorNext( main_loop_itr, &search_complete, &expire_cache, &semi_index, &semi_rssky, &semi_left, &semi_right, &freq_partition_index ) == XLAL_SUCCESS, XLAL_EFUNC );
+    if ( search_complete ) {
+      break;
+    } else if ( expire_cache ) {
       for ( size_t i = 0; i < nsegments; ++i ) {
         XLAL_CHECK_MAIN( XLALWeaveCacheExpire( coh_cache[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
-
-      // Reset iterator over semicoherent tiling
-      XLAL_CHECK_MAIN( XLALResetLatticeTilingIterator( semi_itr ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLALNextLatticeTilingPoint( semi_itr, semi_rssky ) > 0, XLAL_EFUNC );
-
     }
 
     // Time lattice tiling iteration
@@ -1100,7 +1067,7 @@ int main( int argc, char *argv[] )
     cpu_tic = cpu_toc;
 
     // Initialise cache queries
-    XLAL_CHECK_MAIN( XLALWeaveCacheQueriesInit( queries, semi_itr, semi_index, semi_rssky, partition_index ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALWeaveCacheQueriesInit( queries, semi_index, semi_rssky, semi_left, semi_right, freq_partition_index ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Query for coherent results for each segment
     for ( size_t i = 0; i < nsegments; ++i ) {
@@ -1170,9 +1137,8 @@ int main( int argc, char *argv[] )
     const double cpu_now = cpu_tic;
     const double wall_now = wall_time();
 
-    // Progress index and percentage complete
-    const UINT8 prog_index = partition_index * semi_count + semi_index;
-    const double prog_per_cent = 100.0 * prog_index / prog_count;
+    // Main iterator percentage complete
+    const REAL4 prog_per_cent = XLALWeaveIteratorProgress( main_loop_itr );
 
     // Checkpoint output results, if required
     if ( UVAR_SET( ckpt_output_file ) ) {
@@ -1195,11 +1161,8 @@ int main( int argc, char *argv[] )
         // Write output results
         XLAL_CHECK_MAIN( XLALWeaveOutputResultsWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-        // Write state of iterator over semicoherent tiling
-        XLAL_CHECK_MAIN( XLALSaveLatticeTilingIterator( semi_itr, file, "semi_itr" ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-        // Write partition index
-        XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "partindx", partition_index, "partition index" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        // Save state of main loop iterator
+        XLAL_CHECK_MAIN( XLALWeaveIteratorSave( main_loop_itr, file ) == XLAL_SUCCESS, XLAL_EFUNC );
 
         // Close output checkpoint file
         XLALFITSFileClose( file );
@@ -1232,7 +1195,7 @@ int main( int argc, char *argv[] )
       LogPrintfVerbatim( LOG_NORMAL, ", elapsed %.1f sec", wall_now - wall_zero );
 
       // Print remaining time, if it can be reliably predicted
-      const double wall_prog_remain = wall_elapsed * ( prog_count - prog_index ) / prog_index;
+      const double wall_prog_remain = XLALWeaveIteratorRemainingTime( main_loop_itr, wall_elapsed );
       const double wall_prog_total = wall_elapsed + wall_prog_remain;
       if ( wall_prog_remain_print || fabs( wall_prog_total - wall_prog_total_prev ) <= 0.1 * wall_prog_total_prev ) {
         LogPrintfVerbatim( LOG_NORMAL, ", remaining ~%.1f sec", wall_prog_remain );
@@ -1263,11 +1226,7 @@ int main( int argc, char *argv[] )
   const double wall_total = wall_time() - wall_zero;
 
   // Print final progress
-  {
-    const UINT8 prog_index = partition_index * semi_count + semi_index;
-    const double prog_per_cent = 100.0 * prog_index / prog_count;
-    LogPrintf( LOG_NORMAL, "Finished main loop at %.3g%% complete, total %.1f sec, CPU %.1f%%, peak memory %.1fMB\n", prog_per_cent, wall_total, 100.0 * cpu_total / wall_total, XLALGetPeakHeapUsageMB() );
-  }
+  LogPrintf( LOG_NORMAL, "Finished main loop at %.3g%% complete, total %.1f sec, CPU %.1f%%, peak memory %.1fMB\n", XLALWeaveIteratorProgress( main_loop_itr ), wall_total, 100.0 * cpu_total / wall_total, XLALGetPeakHeapUsageMB() );
 
   {
     // Start timing
@@ -1425,7 +1384,7 @@ int main( int argc, char *argv[] )
   XLALWeaveSemiResultsDestroy( semi_res );
 
   // Cleanup memory from parameter-space iteration
-  XLALDestroyLatticeTilingIterator( semi_itr );
+  XLALWeaveIteratorDestroy( main_loop_itr );
 
   // Cleanup memory from computing coherent results
   XLALWeaveCacheQueriesDestroy( queries );
