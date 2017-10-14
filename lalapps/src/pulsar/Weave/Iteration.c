@@ -34,6 +34,16 @@ struct tagWeaveIterator {
   LatticeTilingIterator *semi_itr;
   /// Current lattice tiling point
   gsl_vector *semi_rssky;
+  /// Dimension in which to partition iterator output
+  int partition_dim;
+  /// Maximum number of points in the partitioned dimension
+  UINT4 partition_max;
+  /// Number of points in each partition
+  UINT4 partition_size;
+  /// Number of partitions of iterator output
+  UINT4 partition_count;
+  /// Index of the current iterator output partition
+  UINT4 partition_index;
   /// Number of times to repeat iteration over semicoherent parameter space
   UINT4 repetition_count;
   /// Index of the current repetition
@@ -49,7 +59,8 @@ struct tagWeaveIterator {
 ///
 WeaveIterator *XLALWeaveMainLoopIteratorCreate(
   const LatticeTiling *semi_tiling,
-  const UINT4 freq_partitions
+  const UINT4 freq_partitions,
+  const UINT4 f1dot_partitions
   )
 {
 
@@ -73,6 +84,19 @@ WeaveIterator *XLALWeaveMainLoopIteratorCreate(
 
   // Allocate current lattice tiling point
   GAVEC_NULL( itr->semi_rssky, itr->ndim );
+
+  // Partition iterator output in reduced supersky spindown dimension
+  {
+    itr->partition_count = f1dot_partitions;
+    itr->partition_index = 0;
+    itr->partition_dim = XLALLatticeTilingDimensionByName( semi_tiling, "nu1dot" );
+    XLAL_CHECK_NULL( itr->partition_dim >= 0, XLAL_EFUNC );
+    const LatticeTilingStats *stats = XLALLatticeTilingStatistics( semi_tiling, itr->partition_dim );
+    XLAL_CHECK_NULL( stats != NULL, XLAL_EFUNC );
+    XLAL_CHECK_NULL( stats->max_points > 0, XLAL_ESIZE );
+    itr->partition_max = stats->max_points;
+    itr->partition_size = 1 + ( itr->partition_max - 1 ) / itr->partition_count;
+  }
 
   // Set repetition count and index
   itr->repetition_count = freq_partitions;
@@ -117,6 +141,9 @@ int XLALWeaveIteratorSave(
   // Write state of iterator over semicoherent parameter space
   XLAL_CHECK( XLALSaveLatticeTilingIterator( itr->semi_itr, file, "itrstate" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  // Write partition index
+  XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "partidx", itr->partition_index, "partition index" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   // Write repetition index
   XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "reptidx", itr->repetition_index, "repetition index" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -142,6 +169,10 @@ int XLALWeaveIteratorRestore(
 
   // Read state of iterator over semicoherent parameter space
   XLAL_CHECK( XLALRestoreLatticeTilingIterator( itr->semi_itr, file, "itrstate" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Read partition index
+  XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "partidx", &itr->partition_index ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( itr->partition_index < itr->partition_count, XLAL_EIO );
 
   // Read repetition index
   XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "reptidx", &itr->repetition_index ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -179,28 +210,55 @@ int XLALWeaveIteratorNext(
   *iteration_complete = 0;
   *expire_cache = 0;
 
-  // Get the next frequency block in the semicoherent tiling iterator
-  // - XLALNextLatticeTilingPoint() returns mid-point in non-iterated dimensions
-  const int itr_retn = XLALNextLatticeTilingPoint( itr->semi_itr, itr->semi_rssky );
-  XLAL_CHECK( itr_retn >= 0, XLAL_EFUNC );
-  if ( itr_retn == 0 ) {
+  while ( 1 ) {
 
-    // Move to the next repetition
-    ++itr->repetition_index;
-    if ( itr->repetition_index == itr->repetition_count ) {
+    // Get the next frequency block in the semicoherent tiling iterator
+    // - XLALNextLatticeTilingPoint() returns mid-point in non-iterated dimensions
+    const int itr_retn = XLALNextLatticeTilingPoint( itr->semi_itr, itr->semi_rssky );
+    XLAL_CHECK( itr_retn >= 0, XLAL_EFUNC );
+    if ( itr_retn == 0 ) {
 
-      // Iteration is complete
-      *iteration_complete = 1;
-      return XLAL_SUCCESS;
+      // Move to the next partition
+      ++itr->partition_index;
+      if ( itr->partition_index == itr->partition_count ) {
+        itr->partition_index = 0;
+
+        // Move to the next repetition
+        ++itr->repetition_index;
+        if ( itr->repetition_index == itr->repetition_count ) {
+
+          // Iteration is complete
+          *iteration_complete = 1;
+          return XLAL_SUCCESS;
+
+        }
+
+      }
+
+      // Expire cache items from previous partitions/repetitions
+      *expire_cache = 1;
+
+      // Reset iterator over semicoherent tiling
+      XLAL_CHECK( XLALResetLatticeTilingIterator( itr->semi_itr ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALNextLatticeTilingPoint( itr->semi_itr, itr->semi_rssky ) > 0, XLAL_EFUNC );
 
     }
 
-    // Expire cache items from previous repetitions
-    *expire_cache = 1;
+    // Partition iterator output, if requested
+    if ( itr->partition_count > 1 ) {
+      INT4 current_left = 0, current_right = 0;
+      XLAL_CHECK( XLALCurrentLatticeTilingBlock( itr->semi_itr, itr->partition_dim, &current_left, &current_right ) == XLAL_SUCCESS, XLAL_EINVAL );
+      const UINT4 current_max = current_right - current_left + 1;
+      XLAL_CHECK( current_max <= itr->partition_max, XLAL_ESIZE );
+      const UINT4 current_index = -current_left / itr->partition_size;
+      XLAL_CHECK( current_index < itr->partition_count, XLAL_ESIZE );
+      if ( current_index != itr->partition_index ) {
+        continue;
+      }
+    }
 
-    // Reset iterator over semicoherent tiling
-    XLAL_CHECK( XLALResetLatticeTilingIterator( itr->semi_itr ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLALNextLatticeTilingPoint( itr->semi_itr, itr->semi_rssky ) > 0, XLAL_EFUNC );
+    // Next frequency block has been found
+    break;
 
   }
 

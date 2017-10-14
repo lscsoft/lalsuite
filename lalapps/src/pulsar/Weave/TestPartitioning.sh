@@ -1,4 +1,4 @@
-# Perform an interpolating search without/with frequency partitions, and check for consistent results
+# Perform an interpolating search without/with frequency/spindown partitions, and check for consistent results
 
 export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE
 
@@ -16,9 +16,9 @@ for setup in onefreq short long; do
 
         short)
             weave_setup_options="--segment-count=3"
-            weave_search_options="--alpha=0.9/1.4 --delta=-1.2/2.3 --freq=49.5/0.01 --f1dot=-1e-9,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3"
-            weave_part_options="--freq-partitions=5"
-            weave_recomp_threshold_no_part=0.02
+            weave_search_options="--alpha=1.9/1.4 --delta=-1.2/2.3 --freq=49.5/0.01 --f1dot=-1e-9,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3"
+            weave_part_options="--freq-partitions=5 --f1dot-partitions=2"
+            weave_recomp_threshold_no_part=0.0
             weave_recomp_threshold_part=0.02
             ;;
 
@@ -51,7 +51,7 @@ for setup in onefreq short long; do
     set +x
     echo
 
-    echo "=== Setup '${setup}': Perform interpolating search without frequency partitions ==="
+    echo "=== Setup '${setup}': Perform interpolating search without frequency/spindown partitions ==="
     set -x
     ${builddir}/lalapps_Weave --output-file=WeaveOutNoPart.fits \
         --toplists=mean2F --toplist-limit=2321 --misc-info --setup-file=WeaveSetup.fits \
@@ -81,7 +81,7 @@ for setup in onefreq short long; do
 
     esac
 
-    echo "=== Setup '${setup}': Perform interpolating search with frequency partitions ==="
+    echo "=== Setup '${setup}': Perform interpolating search with frequency/spindown partitions ==="
     set -x
     ${builddir}/lalapps_Weave ${weave_part_options} --output-file=WeaveOutPart.fits \
         --toplists=mean2F --toplist-limit=2321 --misc-info --setup-file=WeaveSetup.fits \
@@ -106,7 +106,7 @@ for setup in onefreq short long; do
     set +x
     echo
 
-    echo "=== Setup '${setup}': Compare F-statistics from lalapps_Weave without/with frequency partitions ==="
+    echo "=== Setup '${setup}': Compare F-statistics from lalapps_Weave without/with frequency/spindown partitions ==="
     set -x
     env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" ${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoPart.fits --result-file-2=WeaveOutPart.fits
     set +x

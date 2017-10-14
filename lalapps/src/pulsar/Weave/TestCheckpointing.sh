@@ -45,7 +45,7 @@ done
 set +x
 echo
 
-for opt in nopart freqpart; do
+for opt in nopart freqpart f1dotpart allpart; do
 
     case ${opt} in
 
@@ -55,6 +55,14 @@ for opt in nopart freqpart; do
 
         freqpart)
             weave_part_options="--freq-partitions=2"
+            ;;
+
+        f1dotpart)
+            weave_part_options="--f1dot-partitions=2"
+            ;;
+
+        allpart)
+            weave_part_options="--freq-partitions=2 --f1dot-partitions=2"
             ;;
 
         *)

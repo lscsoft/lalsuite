@@ -45,7 +45,8 @@ typedef struct tagWeaveIterator WeaveIterator;
 
 WeaveIterator *XLALWeaveMainLoopIteratorCreate(
   const LatticeTiling *semi_tiling,
-  const UINT4 freq_partitions
+  const UINT4 freq_partitions,
+  const UINT4 f1dot_partitions
   );
 void XLALWeaveIteratorDestroy(
   WeaveIterator *itr

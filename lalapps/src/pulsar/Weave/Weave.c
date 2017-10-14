@@ -78,7 +78,7 @@ int main( int argc, char *argv[] )
     LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd, *lrs_oLGX;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit, lrs_Fstar0sc, nc_2Fth;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
-    UINT4 sky_patch_count, sky_patch_index, freq_partitions, Fstat_run_med_window, Fstat_Dterms, toplist_limit, rand_seed, cache_max_size;
+    UINT4 sky_patch_count, sky_patch_index, freq_partitions, f1dot_partitions, Fstat_run_med_window, Fstat_Dterms, toplist_limit, rand_seed, cache_max_size;
     int lattice, Fstat_method, Fstat_SSB_precision, toplists, extra_statistics;
   } uvar_struct = {
     .Fstat_Dterms = Fstat_opt_args.Dterms,
@@ -89,6 +89,7 @@ int main( int argc, char *argv[] )
     .alpha = {0, LAL_TWOPI},
     .delta = {-LAL_PI_2, LAL_PI_2},
     .freq_partitions = 1,
+    .f1dot_partitions = 1,
     .interpolation = 1,
     .lattice = TILING_LATTICE_ANSTAR,
     .toplist_limit = 1000,
@@ -182,12 +183,16 @@ int main( int argc, char *argv[] )
     "Search parameter space in frequency, in Hertz. "
     );
   XLALRegisterUvarMember(
-    freq_partitions, UINT4, 'r', DEVELOPER,
+    freq_partitions, UINT4, 'F', DEVELOPER,
     "Internally divide the frequency parameter space into this number of ~equal-width partitions. "
     );
   XLALRegisterUvarMember(
     f1dot, REAL8Range, '1', OPTIONAL,
     "Search parameter space in first spindown, in Hertz/second. "
+    );
+  XLALRegisterUvarMember(
+    f1dot_partitions, UINT4, '!', DEVELOPER,
+    "Internally divide the first spindown parameter space into this number of ~equal-width partitions. "
     );
   XLALRegisterUvarMember(
     f2dot, REAL8Range, '2', OPTIONAL,
@@ -394,6 +399,9 @@ int main( int argc, char *argv[] )
                     UVAR_STR( sky_patch_index ) " must be positive and strictly less than " UVAR_STR( sky_patch_count ) );
   XLALUserVarCheck( &should_exit,
                     uvar->freq_partitions > 0,
+                    UVAR_STR( freq_partitions ) " must be strictly positive" );
+  XLALUserVarCheck( &should_exit,
+                    uvar->f1dot_partitions > 0,
                     UVAR_STR( freq_partitions ) " must be strictly positive" );
   XLALUserVarCheck( &should_exit,
                     !UVAR_SET( f1dot ) || UVAR_SET( freq ),
@@ -952,7 +960,7 @@ int main( int argc, char *argv[] )
   ////////// Perform search //////////
 
   // Create iterator over the main loop search parameter space
-  WeaveIterator *main_loop_itr = XLALWeaveMainLoopIteratorCreate( tiling[isemi], uvar->freq_partitions );
+  WeaveIterator *main_loop_itr = XLALWeaveMainLoopIteratorCreate( tiling[isemi], uvar->freq_partitions, uvar->f1dot_partitions );
   XLAL_CHECK_MAIN( main_loop_itr != NULL, XLAL_EFUNC );
 
   // Create storage for cache queries for coherent results in each segment
