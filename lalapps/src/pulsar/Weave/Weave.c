@@ -969,16 +969,13 @@ int main( int argc, char *argv[] )
   // Number of computed coherent results, and number of coherent and semicoherent templates
   UINT8 coh_nres = 0, coh_ntmpl = 0, semi_ntmpl = 0;
 
-  // Semicoherent frequency block count and index
-  const UINT8 semi_freq_block_count = XLALTotalLatticeTilingPoints( semi_itr );
-  XLAL_CHECK_MAIN( semi_freq_block_count > 0, XLAL_EFUNC );
-  UINT8 semi_freq_block_index = 0;
+  // Semicoherent iteration count and index
+  const UINT8 semi_count = XLALTotalLatticeTilingPoints( semi_itr );
+  XLAL_CHECK_MAIN( semi_count > 0, XLAL_EFUNC );
+  UINT8 semi_index = 0;
 
   // Partition index
   UINT4 partition_index = 0;
-
-  // Semicoherent iteration count
-  const UINT8 semi_count = uvar->freq_partitions * semi_freq_block_count;
 
   // Try to restore output results from a checkpoint file, if given
   if ( UVAR_SET( ckpt_output_file ) ) {
@@ -1003,8 +1000,8 @@ int main( int argc, char *argv[] )
 
       // Read state of iterator over semicoherent tiling
       XLAL_CHECK_MAIN( XLALRestoreLatticeTilingIterator( semi_itr, file, "semi_itr" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      semi_freq_block_index = XLALCurrentLatticeTilingIndex( semi_itr );
-      XLAL_CHECK_MAIN( semi_freq_block_index < semi_freq_block_count, XLAL_EIO, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
+      semi_index = XLALCurrentLatticeTilingIndex( semi_itr );
+      XLAL_CHECK_MAIN( semi_index < semi_count, XLAL_EIO, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
 
       // Read partition index
       XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT4( file, "partindx", &partition_index ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -1046,15 +1043,14 @@ int main( int argc, char *argv[] )
   BOOLEAN wall_prog_remain_print = 0;
   double wall_prog_total_prev = 0;
 
-  // Print initial progress in frequency blocks and partitions
+  // Progress count
+  const UINT8 prog_count = uvar->freq_partitions * semi_count;
+
+  // Print initial progress
   {
-    const UINT8 semi_index = partition_index * semi_freq_block_count + semi_freq_block_index;
-    const double prog_per_cent = 100.0 * semi_index / semi_count;
-    LogPrintf( LOG_NORMAL, "Starting main search loop at %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " frequency blocks (%.1f%%)", semi_index, semi_count, prog_per_cent );
-    if ( uvar->freq_partitions > 1 ) {
-      LogPrintfVerbatim( LOG_NORMAL, ", partition %i/%i", partition_index, uvar->freq_partitions );
-    }
-    LogPrintfVerbatim( LOG_NORMAL, ", peak memory %.1fMB\n", XLALGetPeakHeapUsageMB() );
+    const UINT8 prog_index = partition_index * semi_count + semi_index;
+    const double prog_per_cent = 100.0 * prog_index / prog_count;
+    LogPrintf( LOG_NORMAL, "Starting main search loop at %.3g%% complete, peak memory %.1fMB\n", prog_per_cent, XLALGetPeakHeapUsageMB() );
   }
 
   // Begin main search loop
@@ -1069,12 +1065,12 @@ int main( int argc, char *argv[] )
     // - XLALNextLatticeTilingPoint() returns mid-point in non-iterated dimensions
     const int itr_retn = XLALNextLatticeTilingPoint( semi_itr, semi_rssky );
     XLAL_CHECK_MAIN( itr_retn >= 0, XLAL_EFUNC );
-    semi_freq_block_index = XLALCurrentLatticeTilingIndex( semi_itr );
+    semi_index = XLALCurrentLatticeTilingIndex( semi_itr );
     if ( itr_retn == 0 ) {
 
       // Move to the next partition
       ++partition_index;
-      semi_freq_block_index = 0;
+      semi_index = 0;
       if ( partition_index == uvar->freq_partitions ) {
 
         // Search is complete
@@ -1094,16 +1090,13 @@ int main( int argc, char *argv[] )
 
     }
 
-    // Semicoherent iteration index
-    const UINT8 semi_index = partition_index * semi_freq_block_count + semi_freq_block_index;
-
     // Time lattice tiling iteration
     cpu_toc = cpu_time();
     cpu_timing[CT_LATTICE] += cpu_toc - cpu_tic;
     cpu_tic = cpu_toc;
 
     // Initialise cache queries
-    XLAL_CHECK_MAIN( XLALWeaveCacheQueriesInit( queries, semi_itr, semi_freq_block_index, semi_rssky, partition_index ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALWeaveCacheQueriesInit( queries, semi_itr, semi_index, semi_rssky, partition_index ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Query for coherent results for each segment
     for ( size_t i = 0; i < nsegments; ++i ) {
@@ -1169,12 +1162,13 @@ int main( int argc, char *argv[] )
     cpu_timing[CT_OUTPUT] += cpu_toc - cpu_tic;
     cpu_tic = cpu_toc;
 
-    // Progress index and percentage complete
-    const double prog_per_cent = 100.0 * semi_index / semi_count;
-
     // Current CPU and wall times
     const double cpu_now = cpu_tic;
     const double wall_now = wall_time();
+
+    // Progress index and percentage complete
+    const UINT8 prog_index = partition_index * semi_count + semi_index;
+    const double prog_per_cent = 100.0 * prog_index / prog_count;
 
     // Checkpoint output results, if required
     if ( UVAR_SET( ckpt_output_file ) ) {
@@ -1207,7 +1201,7 @@ int main( int argc, char *argv[] )
         XLALFITSFileClose( file );
 
         // Print progress
-        LogPrintf( LOG_NORMAL, "Wrote output checkpoint to file '%s' after %.1f time elapsed, %" LAL_UINT8_FORMAT " frequency blocks\n", uvar->ckpt_output_file, wall_now - wall_zero, semi_freq_block_index );
+        LogPrintf( LOG_NORMAL, "Wrote output checkpoint to file '%s' at %.3g%% complete, elapsed %.1f sec\n", uvar->ckpt_output_file, prog_per_cent, wall_now - wall_zero );
 
         // Exit main search loop, if checkpointing was triggered by 'do_ckpt_output_exit'
         if ( do_ckpt_output_exit ) {
@@ -1227,20 +1221,14 @@ int main( int argc, char *argv[] )
       const double wall_elapsed = wall_now - wall_zero;
       const double cpu_elapsed = cpu_now - cpu_zero;
 
-      // Print whether search is being simulated
-      LogPrintf( LOG_NORMAL, "%s", simulation_level & WEAVE_SIMULATE ? "Simulated" : "Searched" );
-
-      // Print progress in frequency blocks and partitions
-      LogPrintfVerbatim( LOG_NORMAL, " %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " frequency blocks (%.1f%%)", semi_index, semi_count, prog_per_cent );
-      if ( uvar->freq_partitions > 1 ) {
-        LogPrintfVerbatim( LOG_NORMAL, ", partition %i/%i", partition_index, uvar->freq_partitions );
-      }
+      // Print progress
+      LogPrintf( LOG_NORMAL, "%s at %.3g%% complete", simulation_level & WEAVE_SIMULATE ? "Simulation" : "Search", prog_per_cent );
 
       // Print elapsed time
       LogPrintfVerbatim( LOG_NORMAL, ", elapsed %.1f sec", wall_now - wall_zero );
 
       // Print remaining time, if it can be reliably predicted
-      const double wall_prog_remain = wall_elapsed * ( semi_count - semi_index ) / semi_index;
+      const double wall_prog_remain = wall_elapsed * ( prog_count - prog_index ) / prog_index;
       const double wall_prog_total = wall_elapsed + wall_prog_remain;
       if ( wall_prog_remain_print || fabs( wall_prog_total - wall_prog_total_prev ) <= 0.1 * wall_prog_total_prev ) {
         LogPrintfVerbatim( LOG_NORMAL, ", remaining ~%.1f sec", wall_prog_remain );
@@ -1270,15 +1258,11 @@ int main( int argc, char *argv[] )
   const double cpu_total = cpu_time() - cpu_zero;
   const double wall_total = wall_time() - wall_zero;
 
-  // Print final progress in frequency blocks and partitions
+  // Print final progress
   {
-    const UINT8 semi_index = partition_index * semi_freq_block_count + semi_freq_block_index;
-    const double prog_per_cent = 100.0 * semi_index / semi_count;
-    LogPrintf( LOG_NORMAL, "Finished main search loop at %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " frequency blocks (%.1f%%)", semi_index, semi_count, prog_per_cent );
-    if ( uvar->freq_partitions > 1 ) {
-      LogPrintfVerbatim( LOG_NORMAL, ", partition %i/%i", partition_index, uvar->freq_partitions );
-    }
-    LogPrintfVerbatim( LOG_NORMAL, ", total %.1f sec, CPU %.1f%%, peak memory %.1fMB\n", wall_total, 100.0 * cpu_total / wall_total, XLALGetPeakHeapUsageMB() );
+    const UINT8 prog_index = partition_index * semi_count + semi_index;
+    const double prog_per_cent = 100.0 * prog_index / prog_count;
+    LogPrintf( LOG_NORMAL, "Finished main search loop at %.3g%% complete, total %.1f sec, CPU %.1f%%, peak memory %.1fMB\n", prog_per_cent, wall_total, 100.0 * cpu_total / wall_total, XLALGetPeakHeapUsageMB() );
   }
 
   {
