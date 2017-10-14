@@ -1054,10 +1054,10 @@ int main( int argc, char *argv[] )
   {
     const UINT8 prog_index = partition_index * semi_count + semi_index;
     const double prog_per_cent = 100.0 * prog_index / prog_count;
-    LogPrintf( LOG_NORMAL, "Starting main search loop at %.3g%% complete, peak memory %.1fMB\n", prog_per_cent, XLALGetPeakHeapUsageMB() );
+    LogPrintf( LOG_NORMAL, "Starting main loop at %.3g%% complete, peak memory %.1fMB\n", prog_per_cent, XLALGetPeakHeapUsageMB() );
   }
 
-  // Begin main search loop
+  // Begin main loop
   BOOLEAN search_complete = 0;
   while ( !search_complete ) {
 
@@ -1207,7 +1207,7 @@ int main( int argc, char *argv[] )
         // Print progress
         LogPrintf( LOG_NORMAL, "Wrote output checkpoint to file '%s' at %.3g%% complete, elapsed %.1f sec\n", uvar->ckpt_output_file, prog_per_cent, wall_now - wall_zero );
 
-        // Exit main search loop, if checkpointing was triggered by 'do_ckpt_output_exit'
+        // Exit main loop, if checkpointing was triggered by 'do_ckpt_output_exit'
         if ( do_ckpt_output_exit ) {
           LogPrintf( LOG_NORMAL, "Exiting main seach loop after writing output checkpoint\n" );
           break;
@@ -1256,7 +1256,7 @@ int main( int argc, char *argv[] )
 
     }
 
-  }   // End of main search loop
+  }   // End of main loop
 
   // Total elapsed CPU and wall times
   const double cpu_total = cpu_time() - cpu_zero;
@@ -1266,7 +1266,7 @@ int main( int argc, char *argv[] )
   {
     const UINT8 prog_index = partition_index * semi_count + semi_index;
     const double prog_per_cent = 100.0 * prog_index / prog_count;
-    LogPrintf( LOG_NORMAL, "Finished main search loop at %.3g%% complete, total %.1f sec, CPU %.1f%%, peak memory %.1fMB\n", prog_per_cent, wall_total, 100.0 * cpu_total / wall_total, XLALGetPeakHeapUsageMB() );
+    LogPrintf( LOG_NORMAL, "Finished main loop at %.3g%% complete, total %.1f sec, CPU %.1f%%, peak memory %.1fMB\n", prog_per_cent, wall_total, 100.0 * cpu_total / wall_total, XLALGetPeakHeapUsageMB() );
   }
 
   {
@@ -1274,7 +1274,7 @@ int main( int argc, char *argv[] )
     double cpu_tic = cpu_time();
     double cpu_toc = 0;
 
-    // Completion loop: compute all extra statistics that weren't required in the main search loop
+    // Completion loop: compute all extra statistics that weren't required in the main loop
     XLAL_CHECK_MAIN ( XLALWeaveOutputResultsCompletionLoop( out ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Time computation of completion-loop semicoherent results
