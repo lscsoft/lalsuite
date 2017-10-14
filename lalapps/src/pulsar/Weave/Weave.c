@@ -1120,9 +1120,6 @@ int main( int argc, char *argv[] )
     cpu_timing[CT_QUERY] += cpu_toc - cpu_tic;
     cpu_tic = cpu_toc;
 
-    // Initialise semicoherent results
-    XLAL_CHECK_MAIN( XLALWeaveSemiResultsInit( &semi_res, simulation_level, ndetectors, nsegments, semi_index, &semi_phys, dfreq, semi_nfreqs, statistics_params ) == XLAL_SUCCESS, XLAL_EFUNC );
-
     // Retrieve coherent results from each segment
     const WeaveCohResults *XLAL_INIT_DECL( coh_res, [nsegments] );
     UINT8 XLAL_INIT_DECL( coh_index, [nsegments] );
@@ -1136,6 +1133,9 @@ int main( int argc, char *argv[] )
     cpu_toc = cpu_time();
     cpu_timing[CT_COH] += cpu_toc - cpu_tic;
     cpu_tic = cpu_toc;
+
+    // Initialise semicoherent results
+    XLAL_CHECK_MAIN( XLALWeaveSemiResultsInit( &semi_res, simulation_level, ndetectors, nsegments, semi_index, &semi_phys, dfreq, semi_nfreqs, statistics_params ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Add coherent results to semicoherent results
     for ( size_t i = 0; i < nsegments; ++i ) {
