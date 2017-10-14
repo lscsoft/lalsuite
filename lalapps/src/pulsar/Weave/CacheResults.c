@@ -35,9 +35,8 @@
 /// Internal definition of an item stored in the cache
 ///
 typedef struct {
-  /// Frequency partition index, used both to find items
-  /// in cache and to decide how long to keep items
-  UINT4 partition_index;
+  /// Generation, used both to find items in cache and to decide how long to keep items
+  UINT4 generation;
   /// Relevance, used to decide how long to keep items
   REAL4 relevance;
   /// Coherent locator index, used to find items in cache
@@ -62,14 +61,16 @@ struct tagWeaveCache {
   WeaveCohInput *coh_input;
   /// Coherent parameter-space tiling locator
   LatticeTilingLocator *coh_locator;
+  /// Maximum value of index from coherent locator
+  UINT8 coh_max_index;
+  /// Current generation of cache items
+  UINT4 generation;
   /// Heap which ranks cache items by relevance
   LALHeap *relevance_heap;
   /// Hash table which looks up cache items by index
   LALHashTbl *coh_index_hash;
   /// Bitset which records whether an item has ever been computed
   LALBitset *coh_computed_bitset;
-  /// Partition index for which 'coh_computed_bitset' applies
-  UINT4 coh_computed_bitset_partition_index;
   /// Offset used in computation of coherent point relevance
   double coh_relevance_offset;
   /// Whether any garbage collection of results should be used
@@ -157,7 +158,7 @@ void cache_item_destroy(
 } // cache_item_destroy()
 
 ///
-/// Compare cache items by partition index, then relevance
+/// Compare cache items by generation, then relevance
 ///
 int cache_item_compare_by_relevance(
   const void *x,
@@ -166,13 +167,13 @@ int cache_item_compare_by_relevance(
 {
   const cache_item *ix = ( const cache_item * ) x;
   const cache_item *iy = ( const cache_item * ) y;
-  COMPARE_BY( ix->partition_index, iy->partition_index );   // Compare in ascending order
+  COMPARE_BY( ix->generation, iy->generation );   // Compare in ascending order
   COMPARE_BY( ix->relevance, iy->relevance );   // Compare in ascending order
   return 0;
 } // cache_item_compare_by_relevance()
 
 ///
-/// Compare cache items by partition index, then locator index
+/// Compare cache items by generation, then locator index
 ///
 int cache_item_compare_by_coh_index(
   const void *x,
@@ -181,13 +182,13 @@ int cache_item_compare_by_coh_index(
 {
   const cache_item *ix = ( const cache_item * ) x;
   const cache_item *iy = ( const cache_item * ) y;
-  COMPARE_BY( ix->partition_index, iy->partition_index );   // Compare in ascending order
+  COMPARE_BY( ix->generation, iy->generation );   // Compare in ascending order
   COMPARE_BY( ix->coh_index, iy->coh_index );   // Compare in ascending order
   return 0;
 } // cache_item_compare_by_coh_index()
 
 ///
-/// Hash cache items by partition index and locator index
+/// Hash cache items by generation and locator index
 ///
 UINT8 cache_item_hash(
   const void *x
@@ -195,7 +196,7 @@ UINT8 cache_item_hash(
 {
   const cache_item *ix = ( const cache_item * ) x;
   UINT4 hval = 0;
-  XLALPearsonHash( &hval, sizeof( hval ), &ix->partition_index, sizeof( ix->partition_index ) );
+  XLALPearsonHash( &hval, sizeof( hval ), &ix->generation, sizeof( ix->generation ) );
   XLALPearsonHash( &hval, sizeof( hval ), &ix->coh_index, sizeof( ix->coh_index ) );
   return hval;
 } // cache_item_hash()
@@ -316,6 +317,7 @@ WeaveCache *XLALWeaveCacheCreate(
   cache->coh_rssky_transf = coh_rssky_transf;
   cache->semi_rssky_transf = semi_rssky_transf;
   cache->coh_input = coh_input;
+  cache->generation = 0;
 
   // Set garbage collection mode:
   // - Garbage collection is not performed for a fixed-size cache (i.e. 'max_size > 0'),
@@ -369,6 +371,9 @@ WeaveCache *XLALWeaveCacheCreate(
   if ( interpolation ) {
     cache->coh_locator = XLALCreateLatticeTilingLocator( coh_tiling );
     XLAL_CHECK_NULL( cache->coh_locator != NULL, XLAL_EFUNC );
+    const LatticeTilingStats *stats = XLALLatticeTilingStatistics( coh_tiling, cache->ndim - 2 );
+    XLAL_CHECK_NULL( stats != NULL, XLAL_EFUNC );
+    cache->coh_max_index = stats->total_points;
   }
 
   // Create a heap which sorts items by "relevance", a quantity which determines how long
@@ -431,7 +436,6 @@ WeaveCache *XLALWeaveCacheCreate(
   // Create a bitset which records which cache items have ever been computed.
   cache->coh_computed_bitset = XLALBitsetCreate();
   XLAL_CHECK_NULL( cache->coh_computed_bitset != NULL, XLAL_EFUNC );
-  cache->coh_computed_bitset_partition_index = LAL_UINT4_MAX;
 
   return cache;
 
@@ -630,6 +634,7 @@ int XLALWeaveCacheQuery(
   //   check that these are sufficient to contain the number of points to the left/right of 'semi_point'
   if ( cache->coh_locator != NULL ) {
     XLAL_CHECK( XLALNearestLatticeTilingBlock( cache->coh_locator, &coh_point_view.vector, cache->ndim - 1, &coh_near_point_view.vector, &queries->coh_index[query_index], &queries->coh_left[query_index], &queries->coh_right[query_index] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( queries->coh_index[query_index] < cache->coh_max_index, XLAL_EFAILED, "Coherent index %"LAL_UINT8_FORMAT" out of range [0,%"LAL_UINT8_FORMAT") at semicoherent index %"LAL_UINT8_FORMAT", query index %u", queries->coh_index[query_index], cache->coh_max_index, queries->semi_index, query_index );
     XLAL_CHECK( queries->coh_left[query_index] <= queries->coh_right[query_index], XLAL_EINVAL );
     XLAL_CHECK( queries->coh_left[query_index] <= queries->semi_left && queries->semi_right <= queries->coh_right[query_index], XLAL_EFAILED, "Range of coherent tiling [%i,%i] does not contain semicoherent tiling [%i,%i] at semicoherent index %"LAL_UINT8_FORMAT", query index %u", queries->coh_left[query_index], queries->coh_right[query_index], queries->semi_left, queries->semi_right, queries->semi_index, query_index );
   }
@@ -743,14 +748,8 @@ int XLALWeaveCacheRetrieve(
   XLAL_CHECK( coh_nres != NULL, XLAL_EFAULT );
   XLAL_CHECK( coh_ntmpl != NULL, XLAL_EFAULT );
 
-  // Reset bitset if partition index has changed
-  if ( cache->coh_computed_bitset_partition_index != queries->partition_index ) {
-    XLAL_CHECK( XLALBitsetClear( cache->coh_computed_bitset ) == XLAL_SUCCESS, XLAL_EFUNC );
-    cache->coh_computed_bitset_partition_index = queries->partition_index;
-  }
-
   // See if coherent results are already cached
-  const cache_item find_key = { .partition_index = queries->partition_index, .coh_index = queries->coh_index[query_index] };
+  const cache_item find_key = { .generation = cache->generation, .coh_index = queries->coh_index[query_index] };
   const cache_item *find_item = NULL;
   XLAL_CHECK( XLALHashTblFind( cache->coh_index_hash, &find_key, ( const void ** ) &find_item ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( find_item == NULL ) {
@@ -764,7 +763,7 @@ int XLALWeaveCacheRetrieve(
     find_item = new_item;
 
     // Set the key of the new cache item for future lookups
-    new_item->partition_index = find_key.partition_index;
+    new_item->generation = find_key.generation;
     new_item->coh_index = find_key.coh_index;
 
     // Set the relevance of the coherent frequency block associated with the new cache item
@@ -784,7 +783,7 @@ int XLALWeaveCacheRetrieve(
     XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
 
     // Create a 'fake' item specifying thresholds for cache item relevance, for comparison with 'least_relevant_item'
-    const cache_item relevance_threshold = { .partition_index = queries->partition_index, .relevance = queries->semi_relevance };
+    const cache_item relevance_threshold = { .generation = cache->generation, .relevance = queries->semi_relevance };
 
     // If garbage collection is enabled, and item's relevance has fallen below the threshold relevance, it can be removed from the cache
     if ( cache->any_gc && least_relevant_item != NULL && least_relevant_item != new_item && cache_item_compare_by_relevance( least_relevant_item, &relevance_threshold ) < 0 ) {
@@ -836,15 +835,16 @@ int XLALWeaveCacheRetrieve(
     *coh_nres += coh_nfreqs;
 
     // Check if coherent results have been computed previously
+    const UINT8 coh_bitset_index = queries->partition_index * cache->coh_max_index + find_key.coh_index;
     BOOLEAN computed = 0;
-    XLAL_CHECK( XLALBitsetGet( cache->coh_computed_bitset, find_key.coh_index, &computed ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALBitsetGet( cache->coh_computed_bitset, coh_bitset_index, &computed ) == XLAL_SUCCESS, XLAL_EFUNC );
     if ( !computed ) {
 
       // Coherent results have not been computed before: increment the number of coherent templates
       *coh_ntmpl += coh_nfreqs;
 
       // This coherent result has now been computed
-      XLAL_CHECK( XLALBitsetSet( cache->coh_computed_bitset, find_key.coh_index, 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALBitsetSet( cache->coh_computed_bitset, coh_bitset_index, 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     }
 
@@ -862,6 +862,25 @@ int XLALWeaveCacheRetrieve(
   return XLAL_SUCCESS;
 
 } // XLALWeaveCacheRetrieve()
+
+///
+/// Expire all items in the cache
+///
+int XLALWeaveCacheExpire(
+  WeaveCache *cache
+  )
+{
+
+  // Check input
+  XLAL_CHECK( cache != NULL, XLAL_EFAULT );
+
+  // Advance current generation of cache items
+  // - Existing items will no longer be accessible, but are still kept for reuse
+  ++cache->generation;
+
+  return XLAL_SUCCESS;
+
+} // XLALWeaveCacheExpire()
 
 // Local Variables:
 // c-file-style: "linux"

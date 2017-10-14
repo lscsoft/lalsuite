@@ -1083,6 +1083,11 @@ int main( int argc, char *argv[] )
 
       }
 
+      // Expire cache items from previous partitions
+      for ( size_t i = 0; i < nsegments; ++i ) {
+        XLAL_CHECK_MAIN( XLALWeaveCacheExpire( coh_cache[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
+
       // Reset iterator over semicoherent tiling
       XLAL_CHECK_MAIN( XLALResetLatticeTilingIterator( semi_itr ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLALNextLatticeTilingPoint( semi_itr, semi_rssky ) > 0, XLAL_EFUNC );

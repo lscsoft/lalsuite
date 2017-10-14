@@ -99,6 +99,9 @@ int XLALWeaveCacheRetrieve(
   UINT8 *coh_nres,
   UINT8 *coh_ntmpl
   );
+int XLALWeaveCacheExpire(
+  WeaveCache *cache
+  );
 
 /// @}
 
