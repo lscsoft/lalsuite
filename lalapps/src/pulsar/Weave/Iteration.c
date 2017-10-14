@@ -141,15 +141,15 @@ int XLALWeaveIteratorRestore(
   XLAL_CHECK( file != NULL, XLAL_EFAULT );
 
   // Read state of iterator over semicoherent parameter space
-  XLAL_CHECK_MAIN( XLALRestoreLatticeTilingIterator( itr->semi_itr, file, "itrstate" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALRestoreLatticeTilingIterator( itr->semi_itr, file, "itrstate" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Read repetition index
-  XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT4( file, "reptidx", &itr->repetition_index ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( itr->repetition_index < itr->repetition_count, XLAL_EIO );
+  XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "reptidx", &itr->repetition_index ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( itr->repetition_index < itr->repetition_count, XLAL_EIO );
 
   // Read progress index
-  XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT8( file, "progidx", &itr->prog_index ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( itr->prog_index < itr->prog_count, XLAL_EIO );
+  XLAL_CHECK( XLALFITSHeaderReadUINT8( file, "progidx", &itr->prog_index ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( itr->prog_index < itr->prog_count, XLAL_EIO );
 
   return XLAL_SUCCESS;
 
@@ -182,7 +182,7 @@ int XLALWeaveIteratorNext(
   // Get the next frequency block in the semicoherent tiling iterator
   // - XLALNextLatticeTilingPoint() returns mid-point in non-iterated dimensions
   const int itr_retn = XLALNextLatticeTilingPoint( itr->semi_itr, itr->semi_rssky );
-  XLAL_CHECK_MAIN( itr_retn >= 0, XLAL_EFUNC );
+  XLAL_CHECK( itr_retn >= 0, XLAL_EFUNC );
   if ( itr_retn == 0 ) {
 
     // Move to the next repetition
@@ -199,8 +199,8 @@ int XLALWeaveIteratorNext(
     *expire_cache = 1;
 
     // Reset iterator over semicoherent tiling
-    XLAL_CHECK_MAIN( XLALResetLatticeTilingIterator( itr->semi_itr ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALNextLatticeTilingPoint( itr->semi_itr, itr->semi_rssky ) > 0, XLAL_EFUNC );
+    XLAL_CHECK( XLALResetLatticeTilingIterator( itr->semi_itr ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALNextLatticeTilingPoint( itr->semi_itr, itr->semi_rssky ) > 0, XLAL_EFUNC );
 
   }
 
