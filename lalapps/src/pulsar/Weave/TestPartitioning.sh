@@ -10,18 +10,24 @@ for setup in onefreq short long; do
             weave_setup_options="--segment-count=3"
             weave_search_options="--alpha=0.2 --delta=-0.4 --freq=47.7 --f1dot=-1.1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.3"
             weave_part_options="--freq-partitions=5"
+            weave_recomp_threshold_no_part=0.0
+            weave_recomp_threshold_part=0.0
             ;;
 
         short)
             weave_setup_options="--segment-count=3"
             weave_search_options="--alpha=0.9/1.4 --delta=-1.2/2.3 --freq=49.5/0.01 --f1dot=-1e-9,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3"
             weave_part_options="--freq-partitions=5"
+            weave_recomp_threshold_no_part=0.02
+            weave_recomp_threshold_part=0.02
             ;;
 
         long)
             weave_setup_options="--segment-count=3 --segment-gap=11130000"
             weave_search_options="--alpha=0.1/0.5 --delta=-0.2/0.4 --freq=41.5/0.01 --f1dot=-3e-11,0 --semi-max-mismatch=12 --coh-max-mismatch=0.6"
             weave_part_options="--freq-partitions=5"
+            weave_recomp_threshold_no_part=0.0
+            weave_recomp_threshold_part=0.0
             ;;
 
         *)
@@ -85,18 +91,18 @@ for setup in onefreq short long; do
     set +x
     echo
 
-    echo "=== Setup '${setup}': Check that only a small fraction of results were recomputed ==="
+    echo "=== Setup '${setup}': Check that number of recomputed results is below tolerance ==="
     set -x
     ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoPart.fits[0]" 'NCOHRES' > tmp
     coh_nres_no_part=`cat tmp | xargs printf "%d"`
     ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoPart.fits[0]" 'NCOHTPL' > tmp
     coh_ntmpl_no_part=`cat tmp | xargs printf "%d"`
-    awk "BEGIN { print recomp = ( ${coh_nres_no_part} - ${coh_ntmpl_no_part} ) / ${coh_ntmpl_no_part}; exit ( recomp < 0.02 ? 0 : 1 ) }"
+    awk "BEGIN { print recomp = ( ${coh_nres_no_part} - ${coh_ntmpl_no_part} ) / ${coh_ntmpl_no_part}; exit ( recomp <= ${weave_recomp_threshold_no_part} ? 0 : 1 ) }"
     ${fitsdir}/lalapps_fits_header_getval "WeaveOutPart.fits[0]" 'NCOHRES' > tmp
     coh_nres_part=`cat tmp | xargs printf "%d"`
     ${fitsdir}/lalapps_fits_header_getval "WeaveOutPart.fits[0]" 'NCOHTPL' > tmp
     coh_ntmpl_part=`cat tmp | xargs printf "%d"`
-    awk "BEGIN { print recomp = ( ${coh_nres_part} - ${coh_ntmpl_part} ) / ${coh_ntmpl_part}; exit ( recomp < 0.02 ? 0 : 1 ) }"
+    awk "BEGIN { print recomp = ( ${coh_nres_part} - ${coh_ntmpl_part} ) / ${coh_ntmpl_part}; exit ( recomp <= ${weave_recomp_threshold_part} ? 0 : 1 ) }"
     set +x
     echo
 
