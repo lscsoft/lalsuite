@@ -631,13 +631,17 @@ int main( int argc, char *argv[] )
   //
 
   // Set sky semicoherent parameter-space bounds
+  // - Compute area of sky semicoherent parameter space for later output
+  double semi_sky_area = 0.0;
   if ( UVAR_SET( sky_patch_count ) ) {
     XLAL_CHECK_MAIN( XLALSetSuperskyEqualAreaSkyBounds( tiling[isemi], rssky_metric[isemi], semi_max_mismatch, uvar->sky_patch_count, uvar->sky_patch_index ) == XLAL_SUCCESS, XLAL_EFUNC );
     LogPrintf( LOG_NORMAL, "Search sky parameter space sky patch = %u of %u\n", uvar->sky_patch_index, uvar->sky_patch_count );
+    semi_sky_area = 4.0 * LAL_PI / uvar->sky_patch_count;
   } else {
     XLAL_CHECK_MAIN( XLALSetSuperskyPhysicalSkyBounds( tiling[isemi], rssky_metric[isemi], rssky_transf[isemi], uvar->alpha[0], uvar->alpha[1], uvar->delta[0], uvar->delta[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
     LogPrintf( LOG_NORMAL, "Search sky parameter space right ascension = [%.15g, %.15g] rad\n", uvar->alpha[0], uvar->alpha[1] );
     LogPrintf( LOG_NORMAL, "Search sky parameter space declination = [%.15g, %.15g] rad\n", uvar->delta[0], uvar->delta[1] );
+    semi_sky_area = ( uvar->alpha[1] - uvar->alpha[0] ) * ( sin( uvar->delta[1] ) - sin( uvar->delta[0] ) );
   }
 
   // Set frequency/spindown semicoherent parameter-space bounds
@@ -1305,22 +1309,19 @@ int main( int argc, char *argv[] )
     // Write frequency spacing
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "dfreq", dfreq, "frequency spacing" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Write physical parameter-space ranges
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "minrng alpha [rad]", min_phys[isemi]->Alpha, "minimum right ascension range" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "maxrng alpha [rad]", max_phys[isemi]->Alpha, "maximum right ascension range" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "minrng delta [rad]", min_phys[isemi]->Delta, "minimum declination range" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "maxrng delta [rad]", max_phys[isemi]->Delta, "maximum declination range" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "minrng freq [Hz]", min_phys[isemi]->fkdot[0], "minimum frequency range" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "maxrng freq [Hz]", max_phys[isemi]->fkdot[0], "maximum frequency range" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    // Write semicoherent parameter-space bounds
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "semiparam skyarea [sr]", semi_sky_area, "area of sky parameter space" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "semiparam minfreq [Hz]", uvar->freq[0], "minimum frequency range" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "semiparam maxfreq [Hz]", uvar->freq[1], "maximum frequency range" ) == XLAL_SUCCESS, XLAL_EFUNC );
     for ( size_t s = 1; s <= ninputspins; ++s ) {
       char keyword[64];
       char comment[64];
-      snprintf( keyword, sizeof( keyword ), "minrng f%zudot [Hz/s^%zu]", s, s );
+      snprintf( keyword, sizeof( keyword ), "semiparam minf%zudot [Hz/s^%zu]", s, s );
       snprintf( comment, sizeof( comment ), "minimum %zu-order spindown range", s );
-      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, keyword, min_phys[isemi]->fkdot[s], comment ) == XLAL_SUCCESS, XLAL_EFUNC );
-      snprintf( keyword, sizeof( keyword ), "maxrng f%zudot [Hz/s^%zu]", s, s );
+      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, keyword, uvarspins[s-1][0], comment ) == XLAL_SUCCESS, XLAL_EFUNC );
+      snprintf( keyword, sizeof( keyword ), "semiparam maxf%zudot [Hz/s^%zu]", s, s );
       snprintf( comment, sizeof( comment ), "maximum %zu-order spindown range", s );
-      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, keyword, max_phys[isemi]->fkdot[s], comment ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, keyword, uvarspins[s-1][1], comment ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
     // Write cumulative number of semicoherent templates in each dimension
