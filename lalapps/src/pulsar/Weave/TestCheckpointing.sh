@@ -45,41 +45,61 @@ done
 set +x
 echo
 
-echo "=== Perform interpolating search with checkpointing ==="
-echo "--- Start to first checkpoint ---"
-set -x
-rm -f WeaveCkpt.fits
-${builddir}/lalapps_Weave --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits --ckpt-output-exit=0.22 \
-    --toplists=all --toplist-limit=2321 --extra-statistics="mean2F_det,sum2F_det,coh2F,coh2F_det" --setup-file=WeaveSetup.fits --sft-files='*.sft' \
-    --sky-patch-count=4 --sky-patch-index=0 --freq=50/0.01 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4
-set +x
-echo "--- First to second checkpoint ---"
-set -x
-${builddir}/lalapps_Weave --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits --ckpt-output-exit=0.63 \
-    --toplists=all --toplist-limit=2321 --extra-statistics="mean2F_det,sum2F_det,coh2F,coh2F_det" --setup-file=WeaveSetup.fits --sft-files='*.sft' \
-    --sky-patch-count=4 --sky-patch-index=0 --freq=50/0.01 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4
-set +x
-echo "--- Second checkpoint to end ---"
-set -x
-${builddir}/lalapps_Weave --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits \
-    --toplists=all --toplist-limit=2321 --extra-statistics="mean2F_det,sum2F_det,coh2F,coh2F_det" --setup-file=WeaveSetup.fits --sft-files='*.sft' \
-    --sky-patch-count=4 --sky-patch-index=0 --freq=50/0.01 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4
-set +x
-echo
+for opt in nopart freqpart; do
 
-echo "=== Check number of times output results have been restored from a checkpoint ==="
-set -x
-${fitsdir}/lalapps_fits_header_getval "WeaveCkpt.fits[0]" CKPTCNT > tmp
-ckpt_count=`cat tmp | xargs printf "%d"`
-expr ${ckpt_count} '=' 2
-${fitsdir}/lalapps_fits_header_getval "WeaveOutCkpt.fits[0]" NUMCKPT > tmp
-num_ckpt=`cat tmp | xargs printf "%d"`
-expr ${num_ckpt} '=' ${ckpt_count}
-set +x
-echo
+    case ${opt} in
 
-echo "=== Compare F-statistics from lalapps_Weave without/with checkpointing ==="
-set -x
-env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" ${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoCkpt.fits --result-file-2=WeaveOutCkpt.fits
-set +x
-echo
+        nopart)
+            weave_part_options=""
+            ;;
+
+        freqpart)
+            weave_part_options="--freq-partitions=2"
+            ;;
+
+        *)
+            echo "$0: unknown options '${opt}'"
+            exit 1
+
+    esac
+
+    echo "=== Options '${opt}': Perform interpolating search with checkpointing ==="
+    echo "--- Start to first checkpoint ---"
+    set -x
+    rm -f WeaveCkpt.fits
+    ${builddir}/lalapps_Weave ${weave_part_options} --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits --ckpt-output-exit=0.22 \
+        --toplists=all --toplist-limit=2321 --extra-statistics="mean2F_det,sum2F_det,coh2F,coh2F_det" --setup-file=WeaveSetup.fits --sft-files='*.sft' \
+        --sky-patch-count=4 --sky-patch-index=0 --freq=50/0.01 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4
+    set +x
+    echo "--- First to second checkpoint ---"
+    set -x
+    ${builddir}/lalapps_Weave ${weave_part_options} --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits --ckpt-output-exit=0.63 \
+        --toplists=all --toplist-limit=2321 --extra-statistics="mean2F_det,sum2F_det,coh2F,coh2F_det" --setup-file=WeaveSetup.fits --sft-files='*.sft' \
+        --sky-patch-count=4 --sky-patch-index=0 --freq=50/0.01 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4
+    set +x
+    echo "--- Second checkpoint to end ---"
+    set -x
+    ${builddir}/lalapps_Weave ${weave_part_options} --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits \
+        --toplists=all --toplist-limit=2321 --extra-statistics="mean2F_det,sum2F_det,coh2F,coh2F_det" --setup-file=WeaveSetup.fits --sft-files='*.sft' \
+        --sky-patch-count=4 --sky-patch-index=0 --freq=50/0.01 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4
+    set +x
+    echo
+
+    echo "=== Options '${opt}': Check number of times output results have been restored from a checkpoint ==="
+    set -x
+    ${fitsdir}/lalapps_fits_header_getval "WeaveCkpt.fits[0]" CKPTCNT > tmp
+    ckpt_count=`cat tmp | xargs printf "%d"`
+    expr ${ckpt_count} '=' 2
+    ${fitsdir}/lalapps_fits_header_getval "WeaveOutCkpt.fits[0]" NUMCKPT > tmp
+    num_ckpt=`cat tmp | xargs printf "%d"`
+    expr ${num_ckpt} '=' ${ckpt_count}
+    set +x
+    echo
+
+    echo "=== Options '${opt}': Compare F-statistics from lalapps_Weave without/with checkpointing ==="
+    set -x
+    env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" ${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoCkpt.fits --result-file-2=WeaveOutCkpt.fits
+    set +x
+    echo
+
+done
