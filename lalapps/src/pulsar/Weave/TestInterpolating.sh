@@ -37,7 +37,7 @@ echo
 echo "=== Perform interpolating search ==="
 set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
-    --toplists=mean2F,B_S/GL,B_S/GLtL,B_tS/GLtL --toplist-limit=2321 \
+    --toplists=mean2F,log10BSGL,log10BSGLtL,log10BtSGLtL --toplist-limit=2321 \
     --extra-statistics="coh2F,coh2F_det,mean2F_det,ncount,ncount_det" --lrs-Fstar0sc=2000 --lrs-oLGX=4,0.1 \
     --toplist-tmpl-idx --misc-info --Fstat-timing \
     --setup-file=WeaveSetup.fits --sft-files='*.sft' \
@@ -104,7 +104,7 @@ freq_loud=` cat tmp | sed "/^#/d" | awk '{print $3}' | xargs printf "%.16g"`
 f1dot_loud=`cat tmp | sed "/^#/d" | awk '{print $4}' | xargs printf "%.16g"`
 coh2F_loud=`cat tmp | sed "/^#/d" | awk '{print $5}' | xargs printf "%.16g"`
 ${builddir}/lalapps_Weave --output-file=WeaveOutSingle.fits \
-    --toplists=mean2F,B_S/GL,B_S/GLtL,B_tS/GLtL --toplist-limit=2321 \
+    --toplists=mean2F,log10BSGL,log10BSGLtL,log10BtSGLtL --toplist-limit=2321 \
     --extra-statistics="coh2F,coh2F_det,mean2F_det,ncount,ncount_det" --lrs-Fstar0sc=2000 --lrs-oLGX=4,0.1 \
     --setup-file=WeaveSetup.fits --sft-files='*.sft' \
     --alpha=${alpha_loud}~0 --delta=${delta_loud}~0 --freq=${freq_loud}~0 --f1dot=${f1dot_loud}~0 \

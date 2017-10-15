@@ -67,13 +67,13 @@ typedef struct tagWeaveStatisticMap {
 #define ENTRY_MEAN2F_DET        WEAVE_STATISTIC_MEAN2F_DET,     "mean2F_det", "   ", WEAVE_STATISTIC_SUM2F_DET, \
     "Average over segments of single-detector coherent 2F statistic"
 
-#define ENTRY_BSGL              WEAVE_STATISTIC_BSGL,           "B_S/GL", "       ", WEAVE_STATISTIC_SUM2F|WEAVE_STATISTIC_SUM2F_DET, \
+#define ENTRY_BSGL              WEAVE_STATISTIC_BSGL,           "log10BSGL", "    ", WEAVE_STATISTIC_SUM2F|WEAVE_STATISTIC_SUM2F_DET, \
     "Bayes factor 'Signal' vs 'Gaussian noise' or 'Line'"
 
-#define ENTRY_BSGLtL            WEAVE_STATISTIC_BSGLtL,         "B_S/GLtL", "     ", WEAVE_STATISTIC_SUM2F|WEAVE_STATISTIC_SUM2F_DET|WEAVE_STATISTIC_MAX2F_DET, \
+#define ENTRY_BSGLtL            WEAVE_STATISTIC_BSGLtL,         "log10BSGLtL", "  ", WEAVE_STATISTIC_SUM2F|WEAVE_STATISTIC_SUM2F_DET|WEAVE_STATISTIC_MAX2F_DET, \
     "Bayes factor 'Signal' vs 'Gaussian noise' or 'Line' or 'transient Line'."
 
-#define ENTRY_BtSGLtL           WEAVE_STATISTIC_BtSGLtL,        "B_tS/GLtL", "    ", WEAVE_STATISTIC_MAX2F|WEAVE_STATISTIC_SUM2F_DET|WEAVE_STATISTIC_MAX2F_DET, \
+#define ENTRY_BtSGLtL           WEAVE_STATISTIC_BtSGLtL,        "log10BtSGLtL", " ", WEAVE_STATISTIC_MAX2F|WEAVE_STATISTIC_SUM2F_DET|WEAVE_STATISTIC_MAX2F_DET, \
     "Bayes factor 'transient Signal' vs 'Gaussian noise' or 'Line' or 'transient Line'."
 
 #define ENTRY_NCOUNT            WEAVE_STATISTIC_NCOUNT,         "ncount", "       ", WEAVE_STATISTIC_COH2F,     \
@@ -81,6 +81,9 @@ typedef struct tagWeaveStatisticMap {
 
 #define ENTRY_NCOUNT_DET        WEAVE_STATISTIC_NCOUNT_DET,     "ncount_det", "   ", WEAVE_STATISTIC_COH2F_DET, \
     "Per-detector 'Hough' number count of 'threshold crossings' heavyside(2F - 2Fth) over segments"
+
+#define ENTRY_2_NAME(X) ENTRY_2_NAME_X(X)
+#define ENTRY_2_NAME_X(v,n,s,d,h)  [v] = n
 
 #define ENTRY_2_MAP(X) ENTRY_2_MAP_X(X)
 #define ENTRY_2_MAP_X(v,n,s,d,h)  { .val = v, .name = n, .dependencies = d, .help = h }
@@ -91,8 +94,24 @@ typedef struct tagWeaveStatisticMap {
 #define ENTRY_2_HELPSTR(X) ENTRY_2_HELPSTR_X(X)
 #define ENTRY_2_HELPSTR_X(v,n,s,d,h) " - " n s ": " h ".\n"
 
+const char *const WeaveStatisticNames[WEAVE_STATISTIC_MAX] = {
+  ENTRY_2_NAME(ENTRY_COH2F),
+  ENTRY_2_NAME(ENTRY_COH2F_DET),
+  ENTRY_2_NAME(ENTRY_MAX2F),
+  ENTRY_2_NAME(ENTRY_MAX2F_DET),
+  ENTRY_2_NAME(ENTRY_SUM2F),
+  ENTRY_2_NAME(ENTRY_SUM2F_DET),
+  ENTRY_2_NAME(ENTRY_MEAN2F),
+  ENTRY_2_NAME(ENTRY_MEAN2F_DET),
+  ENTRY_2_NAME(ENTRY_BSGL),
+  ENTRY_2_NAME(ENTRY_BSGLtL),
+  ENTRY_2_NAME(ENTRY_BtSGLtL),
+  ENTRY_2_NAME(ENTRY_NCOUNT),
+  ENTRY_2_NAME(ENTRY_NCOUNT_DET),
+};
+
 ///
-/// (Sparse) array of descriptor structs for all statistics supported by Weave
+/// Array of descriptor structs for all statistics supported by Weave
 ///
 const WeaveStatisticMap statistic_map[] = {
   ENTRY_2_MAP(ENTRY_COH2F),
