@@ -75,6 +75,11 @@ typedef enum {
 } WeaveStatisticType;
 
 ///
+/// Names of all possible statistics
+///
+extern const char *const WeaveStatisticNames[WEAVE_STATISTIC_MAX];
+
+///
 /// User input choices for toplist ranking statistics
 ///
 extern const UserChoices WeaveToplistChoices;
