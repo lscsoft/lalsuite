@@ -24,7 +24,7 @@
 
 #include "Weave.h"
 #include "SetupData.h"
-#include "Iteration.h"
+#include "SearchIteration.h"
 #include "ComputeResults.h"
 #include "CacheResults.h"
 #include "OutputResults.h"
@@ -960,7 +960,7 @@ int main( int argc, char *argv[] )
   ////////// Perform search //////////
 
   // Create iterator over the main loop search parameter space
-  WeaveIterator *main_loop_itr = XLALWeaveMainLoopIteratorCreate( tiling[isemi], uvar->freq_partitions, uvar->f1dot_partitions );
+  WeaveSearchIterator *main_loop_itr = XLALWeaveMainLoopSearchIteratorCreate( tiling[isemi], uvar->freq_partitions, uvar->f1dot_partitions );
   XLAL_CHECK_MAIN( main_loop_itr != NULL, XLAL_EFUNC );
 
   // Create storage for cache queries for coherent results in each segment
@@ -1002,7 +1002,7 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( XLALWeaveOutputResultsReadAppend( file, &out ) == XLAL_SUCCESS, XLAL_EFUNC, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
 
       // Restore state of main loop iterator
-      XLAL_CHECK_MAIN( XLALWeaveIteratorRestore( main_loop_itr, file ) == XLAL_SUCCESS, XLAL_EFUNC, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
+      XLAL_CHECK_MAIN( XLALWeaveSearchIteratorRestore( main_loop_itr, file ) == XLAL_SUCCESS, XLAL_EFUNC, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
 
       // Close output checkpoint file
       XLALFITSFileClose( file );
@@ -1041,7 +1041,7 @@ int main( int argc, char *argv[] )
   double wall_prog_total_prev = 0;
 
   // Print initial progress
-  LogPrintf( LOG_NORMAL, "Starting main loop at %.3g%% complete, peak memory %.1fMB\n", XLALWeaveIteratorProgress( main_loop_itr ), XLALGetPeakHeapUsageMB() );
+  LogPrintf( LOG_NORMAL, "Starting main loop at %.3g%% complete, peak memory %.1fMB\n", XLALWeaveSearchIteratorProgress( main_loop_itr ), XLALGetPeakHeapUsageMB() );
 
   // Begin main loop
   BOOLEAN search_complete = 0;
@@ -1060,7 +1060,7 @@ int main( int argc, char *argv[] )
     INT4 semi_left = 0;
     INT4 semi_right = 0;
     UINT4 freq_partition_index = 0;
-    XLAL_CHECK( XLALWeaveIteratorNext( main_loop_itr, &search_complete, &expire_cache, &semi_index, &semi_rssky, &semi_left, &semi_right, &freq_partition_index ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALWeaveSearchIteratorNext( main_loop_itr, &search_complete, &expire_cache, &semi_index, &semi_rssky, &semi_left, &semi_right, &freq_partition_index ) == XLAL_SUCCESS, XLAL_EFUNC );
     if ( search_complete ) {
       break;
     } else if ( expire_cache ) {
@@ -1146,7 +1146,7 @@ int main( int argc, char *argv[] )
     const double wall_now = wall_time();
 
     // Main iterator percentage complete
-    const REAL4 prog_per_cent = XLALWeaveIteratorProgress( main_loop_itr );
+    const REAL4 prog_per_cent = XLALWeaveSearchIteratorProgress( main_loop_itr );
 
     // Checkpoint output results, if required
     if ( UVAR_SET( ckpt_output_file ) ) {
@@ -1170,7 +1170,7 @@ int main( int argc, char *argv[] )
         XLAL_CHECK_MAIN( XLALWeaveOutputResultsWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
 
         // Save state of main loop iterator
-        XLAL_CHECK_MAIN( XLALWeaveIteratorSave( main_loop_itr, file ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALWeaveSearchIteratorSave( main_loop_itr, file ) == XLAL_SUCCESS, XLAL_EFUNC );
 
         // Close output checkpoint file
         XLALFITSFileClose( file );
@@ -1203,7 +1203,7 @@ int main( int argc, char *argv[] )
       LogPrintfVerbatim( LOG_NORMAL, ", elapsed %.1f sec", wall_now - wall_zero );
 
       // Print remaining time, if it can be reliably predicted
-      const double wall_prog_remain = XLALWeaveIteratorRemainingTime( main_loop_itr, wall_elapsed );
+      const double wall_prog_remain = XLALWeaveSearchIteratorRemainingTime( main_loop_itr, wall_elapsed );
       const double wall_prog_total = wall_elapsed + wall_prog_remain;
       if ( wall_prog_remain_print || fabs( wall_prog_total - wall_prog_total_prev ) <= 0.1 * wall_prog_total_prev ) {
         LogPrintfVerbatim( LOG_NORMAL, ", remaining ~%.1f sec", wall_prog_remain );
@@ -1234,7 +1234,7 @@ int main( int argc, char *argv[] )
   const double wall_total = wall_time() - wall_zero;
 
   // Print final progress
-  LogPrintf( LOG_NORMAL, "Finished main loop at %.3g%% complete, total %.1f sec, CPU %.1f%%, peak memory %.1fMB\n", XLALWeaveIteratorProgress( main_loop_itr ), wall_total, 100.0 * cpu_total / wall_total, XLALGetPeakHeapUsageMB() );
+  LogPrintf( LOG_NORMAL, "Finished main loop at %.3g%% complete, total %.1f sec, CPU %.1f%%, peak memory %.1fMB\n", XLALWeaveSearchIteratorProgress( main_loop_itr ), wall_total, 100.0 * cpu_total / wall_total, XLALGetPeakHeapUsageMB() );
 
   {
     // Start timing
@@ -1392,7 +1392,7 @@ int main( int argc, char *argv[] )
   XLALWeaveSemiResultsDestroy( semi_res );
 
   // Cleanup memory from parameter-space iteration
-  XLALWeaveIteratorDestroy( main_loop_itr );
+  XLALWeaveSearchIteratorDestroy( main_loop_itr );
 
   // Cleanup memory from computing coherent results
   XLALWeaveCacheQueriesDestroy( queries );

@@ -17,8 +17,8 @@
 // MA 02111-1307 USA
 //
 
-#ifndef _ITERATION_H
-#define _ITERATION_H
+#ifndef _SEARCH_ITERATION_H
+#define _SEARCH_ITERATION_H
 
 ///
 /// \file
@@ -41,26 +41,26 @@ extern "C" {
 ///
 /// Iterator over a search parameter space
 ///
-typedef struct tagWeaveIterator WeaveIterator;
+typedef struct tagWeaveSearchIterator WeaveSearchIterator;
 
-WeaveIterator *XLALWeaveMainLoopIteratorCreate(
+WeaveSearchIterator *XLALWeaveMainLoopSearchIteratorCreate(
   const LatticeTiling *semi_tiling,
   const UINT4 freq_partitions,
   const UINT4 f1dot_partitions
   );
-void XLALWeaveIteratorDestroy(
-  WeaveIterator *itr
+void XLALWeaveSearchIteratorDestroy(
+  WeaveSearchIterator *itr
   );
-int XLALWeaveIteratorSave(
-  const WeaveIterator *itr,
+int XLALWeaveSearchIteratorSave(
+  const WeaveSearchIterator *itr,
   FITSFile *file
   );
-int XLALWeaveIteratorRestore(
-  WeaveIterator *itr,
+int XLALWeaveSearchIteratorRestore(
+  WeaveSearchIterator *itr,
   FITSFile *file
   );
-int XLALWeaveIteratorNext(
-  WeaveIterator *itr,
+int XLALWeaveSearchIteratorNext(
+  WeaveSearchIterator *itr,
   BOOLEAN *iteration_complete,
   BOOLEAN *expire_cache,
   UINT8 *semi_index,
@@ -69,11 +69,11 @@ int XLALWeaveIteratorNext(
   INT4 *semi_right,
   UINT4 *repetition_index
   );
-REAL8 XLALWeaveIteratorProgress(
-  const WeaveIterator *itr
+REAL8 XLALWeaveSearchIteratorProgress(
+  const WeaveSearchIterator *itr
   );
-REAL8 XLALWeaveIteratorRemainingTime(
-  const WeaveIterator *itr,
+REAL8 XLALWeaveSearchIteratorRemainingTime(
+  const WeaveSearchIterator *itr,
   const REAL8 elapsed_time
   );
 
@@ -83,7 +83,7 @@ REAL8 XLALWeaveIteratorRemainingTime(
 }
 #endif
 
-#endif // _ITERATION_H
+#endif // _SEARCH_ITERATION_H
 
 // Local Variables:
 // c-file-style: "linux"

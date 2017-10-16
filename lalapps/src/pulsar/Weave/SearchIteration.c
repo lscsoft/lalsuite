@@ -22,12 +22,12 @@
 /// \ingroup lalapps_pulsar_Weave
 ///
 
-#include "Iteration.h"
+#include "SearchIteration.h"
 
 ///
 /// Internal definition of iterator over a search parameter space
 ///
-struct tagWeaveIterator {
+struct tagWeaveSearchIterator {
   /// Number of parameter-space dimensions
   size_t ndim;
   /// Iterator over semicoherent parameter space
@@ -57,7 +57,7 @@ struct tagWeaveIterator {
 ///
 /// Create iterator over the main loop search parameter space
 ///
-WeaveIterator *XLALWeaveMainLoopIteratorCreate(
+WeaveSearchIterator *XLALWeaveMainLoopSearchIteratorCreate(
   const LatticeTiling *semi_tiling,
   const UINT4 freq_partitions,
   const UINT4 f1dot_partitions
@@ -69,7 +69,7 @@ WeaveIterator *XLALWeaveMainLoopIteratorCreate(
   XLAL_CHECK_NULL( freq_partitions > 0, XLAL_EINVAL );
 
   // Allocate memory
-  WeaveIterator *itr = XLALCalloc( 1, sizeof( *itr ) );
+  WeaveSearchIterator *itr = XLALCalloc( 1, sizeof( *itr ) );
   XLAL_CHECK_NULL( itr != NULL, XLAL_ENOMEM );
 
   // Get number of parameter-space dimensions
@@ -114,8 +114,8 @@ WeaveIterator *XLALWeaveMainLoopIteratorCreate(
 ///
 /// Destroy iterator
 ///
-void XLALWeaveIteratorDestroy(
-  WeaveIterator *itr
+void XLALWeaveSearchIteratorDestroy(
+  WeaveSearchIterator *itr
   )
 {
   if ( itr != NULL ) {
@@ -128,8 +128,8 @@ void XLALWeaveIteratorDestroy(
 ///
 /// Save state of iterator to a FITS file
 ///
-int XLALWeaveIteratorSave(
-  const WeaveIterator *itr,
+int XLALWeaveSearchIteratorSave(
+  const WeaveSearchIterator *itr,
   FITSFile *file
   )
 {
@@ -157,8 +157,8 @@ int XLALWeaveIteratorSave(
 ///
 /// Restore state of iterator from a FITS file
 ///
-int XLALWeaveIteratorRestore(
-  WeaveIterator *itr,
+int XLALWeaveSearchIteratorRestore(
+  WeaveSearchIterator *itr,
   FITSFile *file
   )
 {
@@ -189,8 +189,8 @@ int XLALWeaveIteratorRestore(
 ///
 /// Advance to next state of iterator
 ///
-int XLALWeaveIteratorNext(
-  WeaveIterator *itr,
+int XLALWeaveSearchIteratorNext(
+  WeaveSearchIterator *itr,
   BOOLEAN *iteration_complete,
   BOOLEAN *expire_cache,
   UINT8 *semi_index,
@@ -278,8 +278,8 @@ int XLALWeaveIteratorNext(
 ///
 /// Return progress of iterator as a percentage
 ///
-REAL8 XLALWeaveIteratorProgress(
-  const WeaveIterator *itr
+REAL8 XLALWeaveSearchIteratorProgress(
+  const WeaveSearchIterator *itr
   )
 {
 
@@ -295,8 +295,8 @@ REAL8 XLALWeaveIteratorProgress(
 /// Return estimate of time remaining for iteration to complete,
 /// assuming a equal dstribution in computation cost over time
 ///
-REAL8 XLALWeaveIteratorRemainingTime(
-  const WeaveIterator *itr,
+REAL8 XLALWeaveSearchIteratorRemainingTime(
+  const WeaveSearchIterator *itr,
   const REAL8 elapsed_time
   )
 {

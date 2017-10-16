@@ -27,7 +27,6 @@
 
 #include "Weave.h"
 #include "ComputeResults.h"
-#include "Iteration.h"
 
 #include <lal/LatticeTiling.h>
 #include <lal/SuperskyMetrics.h>
