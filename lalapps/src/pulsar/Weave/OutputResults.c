@@ -173,7 +173,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   // Create a toplist which ranks results by transient-signal line-robust log10(B_tS/GLtL) statistic
   if ( toplist_statistics & WEAVE_STATISTIC_BtSGLtL ) {
-    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WeaveStatisticNames[WEAVE_STATISTIC_BtSGLtL], "transient signal line-robust log10BSGLtL statistic", toplist_limit, toplist_tmpl_idx, toplist_results_log10BtSGLtL, toplist_item_get_log10BtSGLtL, toplist_item_set_log10BtSGLtL );
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WeaveStatisticNames[WEAVE_STATISTIC_BtSGLtL], "transient signal line-robust log10BtSGLtL statistic", toplist_limit, toplist_tmpl_idx, toplist_results_log10BtSGLtL, toplist_item_get_log10BtSGLtL, toplist_item_set_log10BtSGLtL );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
     out->ntoplists++;
