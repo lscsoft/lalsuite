@@ -308,3 +308,8 @@ REAL8 XLALWeaveSearchIteratorRemainingTime(
   return elapsed_time * ( itr->prog_count - itr->prog_index ) / itr->prog_index;
 
 }
+
+// Local Variables:
+// c-file-style: "linux"
+// c-basic-offset: 2
+// End:
