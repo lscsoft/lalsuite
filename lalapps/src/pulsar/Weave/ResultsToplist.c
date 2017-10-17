@@ -894,6 +894,11 @@ int XLALWeaveResultsToplistCompare(
     const WeaveResultsToplistItem **items_2 = ( const WeaveResultsToplistItem ** ) XLALHeapElements( toplist_2->heap );
     XLAL_CHECK( items_2 != NULL, XLAL_EFUNC );
 
+    REAL4 lowest_1 = toplist_1->item_get_rank_stat_fcn ( items_1[n-1] );
+    REAL4 lowest_2 = toplist_2->item_get_rank_stat_fcn ( items_2[n-1] );
+
+    XLALPrintInfo ( "lowest_1 = %.15g, lowest_2 = %.15g\n", lowest_1, lowest_2 );
+
     // Sort toplist items by physical coordinates of semicoherent template
     // - Template coordinates are less likely to suffer from numerical differences
     //   than result values, and therefore provide more stable sort values to ensure
@@ -910,61 +915,119 @@ int XLALWeaveResultsToplistCompare(
     REAL4Vector *res_2 = XLALCreateREAL4Vector( n );
     XLAL_CHECK( res_2 != NULL, XLAL_EFUNC );
 
+    UINT4 *inds_1 = XLALCalloc ( n, sizeof(UINT4) );
+    XLAL_CHECK( inds_1 != NULL, XLAL_EFUNC );
+    UINT4 *inds_2 = XLALCalloc ( n, sizeof(UINT4) );
+    XLAL_CHECK( inds_2 != NULL, XLAL_EFUNC );
+    UINT4 skip_1 = 0, skip_2 = 0;
+    UINT4 i_1 = 0, i_2 = 0;
+
     do {   // So we can use 'break' to skip comparisons on failure
 
       // Compare semicoherent and coherent template parameters
       for ( size_t i = 0; i < n; ++i ) {
         char loc_str[256];
 
+        i_1 = i + skip_1;
+        i_2 = i + skip_2;
+
+        if ( i_1 >= n || i_2 >= n ) {
+          break;
+        }
+
         // Compare semicoherent template parameters
         {
           snprintf( loc_str, sizeof(loc_str), "toplist item %zu", i );
-          const UINT8 semi_index_1 = toplist_1->toplist_tmpl_idx ? items_1[i]->semi_index : 0;
-          const UINT8 semi_index_2 = toplist_2->toplist_tmpl_idx ? items_2[i]->semi_index : 0;
+          const UINT8 semi_index_1 = toplist_1->toplist_tmpl_idx ? items_1[i_1]->semi_index : 0;
+          const UINT8 semi_index_2 = toplist_2->toplist_tmpl_idx ? items_2[i_2]->semi_index : 0;
           PulsarDopplerParams XLAL_INIT_DECL( semi_phys_1 );
           PulsarDopplerParams XLAL_INIT_DECL( semi_phys_2 );
-          semi_phys_1.Alpha = items_1[i]->semi_alpha;
-          semi_phys_2.Alpha = items_2[i]->semi_alpha;
-          semi_phys_1.Delta = items_1[i]->semi_delta;
-          semi_phys_2.Delta = items_2[i]->semi_delta;
+          semi_phys_1.Alpha = items_1[i_1]->semi_alpha;
+          semi_phys_2.Alpha = items_2[i_2]->semi_alpha;
+          semi_phys_1.Delta = items_1[i_1]->semi_delta;
+          semi_phys_2.Delta = items_2[i_2]->semi_delta;
           for ( size_t k = 0; k <= toplist->nspins; ++k ) {
-            semi_phys_1.fkdot[k] = items_1[i]->semi_fkdot[k];
-            semi_phys_2.fkdot[k] = items_2[i]->semi_fkdot[k];
+            semi_phys_1.fkdot[k] = items_1[i_1]->semi_fkdot[k];
+            semi_phys_2.fkdot[k] = items_2[i_2]->semi_fkdot[k];
           };
-          XLAL_CHECK( compare_templates( equal, loc_str, "semicoherent", param_tol_mism, setup->metrics->semi_rssky_metric, setup->metrics->semi_rssky_transf, semi_index_1, semi_index_2, &semi_phys_1, &semi_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+          BOOLEAN equal_semi = 1;
+          XLAL_CHECK ( compare_templates( &equal_semi, loc_str, "semicoherent", param_tol_mism, setup->metrics->semi_rssky_metric, setup->metrics->semi_rssky_transf, semi_index_1, semi_index_2, &semi_phys_1, &semi_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+          if ( ! equal_semi ) {
+            REAL4 rankstat_1 = toplist_1->item_get_rank_stat_fcn ( items_1[i_1] );
+            REAL4 rankstat_2 = toplist_2->item_get_rank_stat_fcn ( items_2[i_2] );
+
+            XLALPrintInfo( "1: index=%15"LAL_UINT8_FORMAT" coord={%20.15g,%20.15g,%20.15g,%20.15g}, ranking statistic = %20.15g\n",
+                           items_1[i_1]->semi_index, items_1[i_1]->semi_alpha, items_1[i_1]->semi_alpha, items_1[i_1]->semi_fkdot[0], items_1[i_1]->semi_fkdot[0], rankstat_1 );
+
+            XLALPrintInfo( "2: index=%15"LAL_UINT8_FORMAT" coord={%20.15g,%20.15g,%20.15g,%20.15g}, ranking statistic = %20.15g\n",
+                           items_2[i_2]->semi_index, items_2[i_2]->semi_alpha, items_2[i_2]->semi_alpha, items_2[i_2]->semi_fkdot[0], items_2[i_2]->semi_fkdot[0], rankstat_2 );
+
+            XLALPrintInfo ( "Mismatched coordinates: check if one of the two ranking statistics was close to the toplist effective 'threshold'\n");
+#define FINITE_OR_ONE(x)  (((x) != 0) ? (x) : 1.0)
+#define fRELERR(x,y) ( fabsf( (x) - (y) ) / FINITE_OR_ONE( 0.5 * (fabsf(x) + fabsf(y)) ) )
+            REAL4 relerr_1 = fRELERR ( rankstat_1, lowest_1 );
+            REAL4 relerr_2 = fRELERR ( rankstat_2, lowest_2 );
+            if ( relerr_1 < result_tol->relErr_atMaxAbsx ) {
+              skip_1 ++;
+              if ( i > 0 ) { i --;}	// try to repeat last loop step
+              XLALPrintInfo ( "Toplist 1 ranking statistics %.15g is within tolerance %g from lowest element %.15g => skipping\n", rankstat_1, result_tol->relErr_atMaxAbsx, lowest_1 );
+              continue;
+            }
+            if ( relerr_2 < result_tol->relErr_atMaxAbsy ) {
+              skip_2 ++;
+              if ( i > 0 ) { i --;}	// try to repeat last loop step
+              XLALPrintInfo ( "Toplist 2 ranking statistics %.15g is within tolerance %g from lowest element %.15g => skipping\n", rankstat_2, result_tol->relErr_atMaxAbsy, lowest_2 );
+              continue;
+            }
+            if ( !equal_semi ) {
+              XLALPrintError ( "Negative: failed comparison\n");
+              (*equal) = 0;	// neither candidate close to threshold ==> comparison failed
+            }
+          } // if !equal_semi
+          else { // keep track of all successfully 'matched' templates for further comparisons
+            inds_1[i] = i_1;
+            inds_2[i] = i_2;
+          }
         }
 
         // Compare coherent template parameters
-        if ( stats_to_output & (WEAVE_STATISTIC_COH2F|WEAVE_STATISTIC_COH2F_DET) ) {
+        if ( (*equal) && (stats_to_output & (WEAVE_STATISTIC_COH2F|WEAVE_STATISTIC_COH2F_DET)) ) {
           for ( size_t j = 0; j < params -> nsegments; ++j ) {
             snprintf( loc_str, sizeof(loc_str), "toplist item %zu, segment %zu", i, j );
-            const UINT8 coh_index_1 = toplist_1->toplist_tmpl_idx ? items_1[i]->coh_index[j] : 0;
-            const UINT8 coh_index_2 = toplist_2->toplist_tmpl_idx ? items_2[i]->coh_index[j] : 0;
+            const UINT8 coh_index_1 = toplist_1->toplist_tmpl_idx ? items_1[i_1]->coh_index[j] : 0;
+            const UINT8 coh_index_2 = toplist_2->toplist_tmpl_idx ? items_2[i_2]->coh_index[j] : 0;
             PulsarDopplerParams XLAL_INIT_DECL( coh_phys_1 );
             PulsarDopplerParams XLAL_INIT_DECL( coh_phys_2 );
-            coh_phys_1.Alpha = items_1[i]->coh_alpha[j];
-            coh_phys_2.Alpha = items_2[i]->coh_alpha[j];
-            coh_phys_1.Delta = items_1[i]->coh_delta[j];
-            coh_phys_2.Delta = items_2[i]->coh_delta[j];
+            coh_phys_1.Alpha = items_1[i_1]->coh_alpha[j];
+            coh_phys_2.Alpha = items_2[i_2]->coh_alpha[j];
+            coh_phys_1.Delta = items_1[i_1]->coh_delta[j];
+            coh_phys_2.Delta = items_2[i_2]->coh_delta[j];
             for ( size_t k = 0; k <= toplist->nspins; ++k ) {
-              coh_phys_1.fkdot[k] = items_1[i]->coh_fkdot[k][j];
-              coh_phys_2.fkdot[k] = items_2[i]->coh_fkdot[k][j];
+              coh_phys_1.fkdot[k] = items_1[i_1]->coh_fkdot[k][j];
+              coh_phys_2.fkdot[k] = items_2[i_2]->coh_fkdot[k][j];
             };
             XLAL_CHECK( compare_templates( equal, loc_str, "coherent", param_tol_mism, setup->metrics->coh_rssky_metric[j], setup->metrics->coh_rssky_transf[j], coh_index_1, coh_index_2, &coh_phys_1, &coh_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
           }
         } // if output per-segment coordinates
 
-      }
+      } // for i < n
+
       if ( !*equal ) {
         break;
       }
 
+      XLAL_CHECK ( skip_1 == skip_2, XLAL_ETOL, "%s: Failed to match up toplists after skipping near-threshold candidates.\n", __func__ ); // sanity check: shouldn't be possible
+      // truncate results vector to length of matched lists
+      UINT4 n_matched = n - skip_1;
+      res_1->length = n_matched;
+      res_2->length = n_matched;
+
       // Compare mean multi-detector F-statistics
       if ( stats_to_output & WEAVE_STATISTIC_MEAN2F ) {
         XLALPrintInfo( "%s: comparing mean multi-detector F-statistics ...\n", __func__ );
-        for ( size_t i = 0; i < n; ++i ) {
-          res_1->data[i] = items_1[i]->mean2F;
-          res_2->data[i] = items_2[i]->mean2F;
+        for ( size_t i = 0; i < n_matched; ++i ) {
+          res_1->data[i] = items_1[inds_1[i]]->mean2F;
+          res_2->data[i] = items_2[inds_2[i]]->mean2F;
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
         if ( !*equal ) {
@@ -976,9 +1039,9 @@ int XLALWeaveResultsToplistCompare(
       if ( stats_to_output & WEAVE_STATISTIC_MEAN2F_DET ) {
         for ( size_t k = 0; k < params -> detectors->length; ++k ) {
           XLALPrintInfo( "%s: comparing mean per-detector F-statistics for detector '%s'...\n", __func__, params -> detectors->data[k] );
-          for ( size_t i = 0; i < n; ++i ) {
-            res_1->data[i] = items_1[i]->mean2F_det[k];
-            res_2->data[i] = items_2[i]->mean2F_det[k];
+          for ( size_t i = 0; i < n_matched; ++i ) {
+            res_1->data[i] = items_1[inds_1[i]]->mean2F_det[k];
+            res_2->data[i] = items_2[inds_2[i]]->mean2F_det[k];
           }
           XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
         }
@@ -991,9 +1054,9 @@ int XLALWeaveResultsToplistCompare(
       if ( stats_to_output & WEAVE_STATISTIC_COH2F ) {
         for ( size_t j = 0; j < params -> nsegments; ++j ) {
           XLALPrintInfo( "%s: comparing coherent multi-detector F-statistics for segment %zu...\n", __func__, j );
-          for ( size_t i = 0; i < n; ++i ) {
-            res_1->data[i] = items_1[i]->coh2F[j];
-            res_2->data[i] = items_2[i]->coh2F[j];
+          for ( size_t i = 0; i < n_matched; ++i ) {
+            res_1->data[i] = items_1[inds_1[i]]->coh2F[j];
+            res_2->data[i] = items_2[inds_2[i]]->coh2F[j];
           }
           XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
         }
@@ -1008,9 +1071,9 @@ int XLALWeaveResultsToplistCompare(
           for ( size_t k = 0; k < params -> detectors->length; ++k ) {
             if ( isfinite( items_1[0]->coh2F_det[k][j] ) || isfinite( items_2[0]->coh2F_det[k][j] ) ) {
               XLALPrintInfo( "%s: comparing per-segment per-detector F-statistics for segment %zu, detector '%s'...\n", __func__, j, params -> detectors->data[k] );
-              for ( size_t i = 0; i < n; ++i ) {
-                res_1->data[i] = items_1[i]->coh2F_det[k][j];
-                res_2->data[i] = items_2[i]->coh2F_det[k][j];
+              for ( size_t i = 0; i < n_matched; ++i ) {
+                res_1->data[i] = items_1[inds_1[i]]->coh2F_det[k][j];
+                res_2->data[i] = items_2[inds_2[i]]->coh2F_det[k][j];
               }
               XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
             } else {
@@ -1026,9 +1089,9 @@ int XLALWeaveResultsToplistCompare(
       // Compare segment-max multi-detector F-statistics
       if ( stats_to_output & WEAVE_STATISTIC_MAX2F ) {
         XLALPrintInfo( "%s: comparing max multi-detector F-statistics ...\n", __func__ );
-        for ( size_t i = 0; i < n; ++i ) {
-          res_1->data[i] = items_1[i]->max2F;
-          res_2->data[i] = items_2[i]->max2F;
+        for ( size_t i = 0; i < n_matched; ++i ) {
+          res_1->data[i] = items_1[inds_1[i]]->max2F;
+          res_2->data[i] = items_2[inds_2[i]]->max2F;
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
         if ( !*equal ) {
@@ -1040,9 +1103,9 @@ int XLALWeaveResultsToplistCompare(
       if ( stats_to_output & WEAVE_STATISTIC_MAX2F_DET ) {
         for ( size_t k = 0; k < params -> detectors->length; ++k ) {
           XLALPrintInfo( "%s: comparing max per-detector F-statistics for detector '%s'...\n", __func__, params -> detectors->data[k] );
-          for ( size_t i = 0; i < n; ++i ) {
-            res_1->data[i] = items_1[i]->max2F_det[k];
-            res_2->data[i] = items_2[i]->max2F_det[k];
+          for ( size_t i = 0; i < n_matched; ++i ) {
+            res_1->data[i] = items_1[inds_1[i]]->max2F_det[k];
+            res_2->data[i] = items_2[inds_2[i]]->max2F_det[k];
           }
           XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
         }
@@ -1054,9 +1117,9 @@ int XLALWeaveResultsToplistCompare(
       // Compare summed multi-detector F-statistics
       if ( stats_to_output & WEAVE_STATISTIC_SUM2F ) {
         XLALPrintInfo( "%s: comparing sum multi-detector F-statistics ...\n", __func__ );
-        for ( size_t i = 0; i < n; ++i ) {
-          res_1->data[i] = items_1[i]->sum2F;
-          res_2->data[i] = items_2[i]->sum2F;
+        for ( size_t i = 0; i < n_matched; ++i ) {
+          res_1->data[i] = items_1[inds_1[i]]->sum2F;
+          res_2->data[i] = items_2[inds_2[i]]->sum2F;
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
         if ( !*equal ) {
@@ -1068,9 +1131,9 @@ int XLALWeaveResultsToplistCompare(
       if ( stats_to_output & WEAVE_STATISTIC_SUM2F_DET ) {
         for ( size_t k = 0; k < params -> detectors->length; ++k ) {
           XLALPrintInfo( "%s: comparing sum per-detector F-statistics for detector '%s'...\n", __func__, params -> detectors->data[k] );
-          for ( size_t i = 0; i < n; ++i ) {
-            res_1->data[i] = items_1[i]->sum2F_det[k];
-            res_2->data[i] = items_2[i]->sum2F_det[k];
+          for ( size_t i = 0; i < n_matched; ++i ) {
+            res_1->data[i] = items_1[inds_1[i]]->sum2F_det[k];
+            res_2->data[i] = items_2[inds_2[i]]->sum2F_det[k];
           }
           XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
         }
@@ -1082,9 +1145,9 @@ int XLALWeaveResultsToplistCompare(
       // Compare line-robust BSGL statistic
       if ( stats_to_output & WEAVE_STATISTIC_BSGL ) {
         XLALPrintInfo( "%s: comparing line-robust B_S/GL statistic ...\n", __func__ );
-        for ( size_t i = 0; i < n; ++i ) {
-          res_1->data[i] = items_1[i]->log10BSGL;
-          res_2->data[i] = items_2[i]->log10BSGL;
+        for ( size_t i = 0; i < n_matched; ++i ) {
+          res_1->data[i] = items_1[inds_1[i]]->log10BSGL;
+          res_2->data[i] = items_2[inds_2[i]]->log10BSGL;
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
         if ( !*equal ) {
@@ -1095,9 +1158,9 @@ int XLALWeaveResultsToplistCompare(
       // Compare transient line-robust BSGLtL statistic
       if ( stats_to_output & WEAVE_STATISTIC_BSGLtL ) {
         XLALPrintInfo( "%s: comparing transient line-robust B_S/GLtL statistic ...\n", __func__ );
-        for ( size_t i = 0; i < n; ++i ) {
-          res_1->data[i] = items_1[i]->log10BSGLtL;
-          res_2->data[i] = items_2[i]->log10BSGLtL;
+        for ( size_t i = 0; i < n_matched; ++i ) {
+          res_1->data[i] = items_1[inds_1[i]]->log10BSGLtL;
+          res_2->data[i] = items_2[inds_2[i]]->log10BSGLtL;
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
         if ( !*equal ) {
@@ -1108,9 +1171,9 @@ int XLALWeaveResultsToplistCompare(
       // Compare transient signal line-robust BtSGLtL statistic
       if ( stats_to_output & WEAVE_STATISTIC_BtSGLtL ) {
         XLALPrintInfo( "%s: comparing transient signal line-robust B_tS/GLtL statistic ...\n", __func__ );
-        for ( size_t i = 0; i < n; ++i ) {
-          res_1->data[i] = items_1[i]->log10BtSGLtL;
-          res_2->data[i] = items_2[i]->log10BtSGLtL;
+        for ( size_t i = 0; i < n_matched; ++i ) {
+          res_1->data[i] = items_1[inds_1[i]]->log10BtSGLtL;
+          res_2->data[i] = items_2[inds_2[i]]->log10BtSGLtL;
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
         if ( !*equal ) {
@@ -1121,9 +1184,9 @@ int XLALWeaveResultsToplistCompare(
       // Compare 'Hough' multi-detector line statistics
       if ( stats_to_output & WEAVE_STATISTIC_NCOUNT ) {
         XLALPrintInfo( "%s: comparing 'Hough' multi-detector number count statistic ...\n", __func__ );
-        for ( size_t i = 0; i < n; ++i ) {
-          res_1->data[i] = items_1[i]->ncount;
-          res_2->data[i] = items_2[i]->ncount;
+        for ( size_t i = 0; i < n_matched; ++i ) {
+          res_1->data[i] = items_1[inds_1[i]]->ncount;
+          res_2->data[i] = items_2[inds_2[i]]->ncount;
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
         if ( !*equal ) {
@@ -1134,9 +1197,9 @@ int XLALWeaveResultsToplistCompare(
       if ( stats_to_output & WEAVE_STATISTIC_NCOUNT_DET ) {
         for ( size_t k = 0; k < params -> detectors->length; ++k ) {
           XLALPrintInfo( "%s: comparing 'Hough' per-detector number-count statistic for detector '%s'...\n", __func__, params -> detectors->data[k] );
-          for ( size_t i = 0; i < n; ++i ) {
-            res_1->data[i] = items_1[i]->ncount_det[k];
-            res_2->data[i] = items_2[i]->ncount_det[k];
+          for ( size_t i = 0; i < n_matched; ++i ) {
+            res_1->data[i] = items_1[inds_1[i]]->ncount_det[k];
+            res_2->data[i] = items_2[inds_2[i]]->ncount_det[k];
           }
           XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
           if ( !*equal ) {
@@ -1152,6 +1215,8 @@ int XLALWeaveResultsToplistCompare(
     XLALFree( items_2 );
     XLALDestroyREAL4Vector( res_1 );
     XLALDestroyREAL4Vector( res_2 );
+    XLALFree ( inds_1 );
+    XLALFree ( inds_2 );
 
     if ( !*equal ) {
       return XLAL_SUCCESS;
