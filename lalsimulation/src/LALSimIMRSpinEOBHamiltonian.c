@@ -48,6 +48,9 @@
 #define TwoToOneThird 1.25992104989487316476721060728
 #define ThreeToOneThird 1.44224957030740838232163831078
 
+static const REAL8 STEP_SIZE_NOTIDES = 1.0e-4;
+static const REAL8 STEP_SIZE_TIDES = 5.0e-4;
+
 static const double sqrt_pi_2   = 1.2533141373155002512078826424; /* sqrt(pi/2) */
 static const double sqrt_2_pi   = 0.7978845608028653558798921199; /* sqrt(2/pi) */
 static const double _1_sqrt_2pi = 0.3989422804014326779399460599; /* 1/sqrt(2*pi) */
@@ -310,7 +313,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonianDeltaT (SpinEOBHCoeffs * coeffs,
 						 const REAL8 a);
 
 static REAL8 XLALSimIMRSpinAlignedEOBCalcOmega (const REAL8 values[],
-						SpinEOBParams * funcParams);
+						SpinEOBParams * funcParams, REAL8 STEP_SIZE);
 
 static REAL8 XLALSimIMRSpinAlignedEOBNonKeplerCoeff (const REAL8 values[],
 						     SpinEOBParams *
@@ -1415,11 +1418,11 @@ XLALSimIMRSpinEOBHamiltonianDeltaR (SpinEOBHCoeffs * coeffs,
  */
 static REAL8
 XLALSimIMRSpinAlignedEOBCalcOmega (const REAL8 values[],/**<< Dynamical variables */
-				   SpinEOBParams * funcParams
+				   SpinEOBParams * funcParams,
 							/**<< EOB parameters */
+                    REAL8 STEP_SIZE /**<< Step size for numerical derivation of H */
   )
 {
-  static const REAL8 STEP_SIZE = 1.0e-4;
 
   HcapDerivParams params;
 
@@ -1478,7 +1481,11 @@ XLALSimIMRSpinAlignedEOBNonKeplerCoeff (const REAL8 values[],
 							/**<< EOB parameters */
   )
 {
-
+  REAL8 STEP_SIZE = STEP_SIZE_NOTIDES;
+  if ( (funcParams->seobCoeffs->tidal1->lambda2Tidal != 0. && funcParams->seobCoeffs->tidal1->omega02Tidal != 0.) || (funcParams->seobCoeffs->tidal2->lambda2Tidal != 0. && funcParams->seobCoeffs->tidal2->omega02Tidal != 0.) ) {
+      STEP_SIZE = STEP_SIZE_TIDES;
+  }
+    
   REAL8 omegaCirc;
 
   REAL8 tmpValues[4];
@@ -1489,7 +1496,7 @@ XLALSimIMRSpinAlignedEOBNonKeplerCoeff (const REAL8 values[],
   memcpy (tmpValues, values, sizeof (tmpValues));
   tmpValues[2] = 0.0;
 
-  omegaCirc = XLALSimIMRSpinAlignedEOBCalcOmega (tmpValues, funcParams);
+  omegaCirc = XLALSimIMRSpinAlignedEOBCalcOmega (tmpValues, funcParams, STEP_SIZE);
   if (XLAL_IS_REAL8_FAIL_NAN (omegaCirc))
     {
       XLAL_ERROR_REAL8 (XLAL_EFUNC);
@@ -1515,6 +1522,11 @@ XLALSimIMRSpinEOBNonKeplerCoeff (const REAL8 values[],	/**<< Dynamical variables
   )
 {
 
+    REAL8 STEP_SIZE = STEP_SIZE_NOTIDES;
+    if ( (funcParams->seobCoeffs->tidal1->lambda2Tidal != 0. && funcParams->seobCoeffs->tidal1->omega02Tidal != 0.) || (funcParams->seobCoeffs->tidal2->lambda2Tidal != 0. && funcParams->seobCoeffs->tidal2->omega02Tidal != 0.) ) {
+        STEP_SIZE = STEP_SIZE_TIDES;
+    }
+    
   REAL8 omegaCirc;
 
   REAL8 tmpValues[4];
@@ -1535,7 +1547,7 @@ XLALSimIMRSpinEOBNonKeplerCoeff (const REAL8 values[],	/**<< Dynamical variables
 		       + (values[1] * values[5] - values[2] * values[4])
 		       * (values[1] * values[5] - values[2] * values[4]));
 
-  omegaCirc = XLALSimIMRSpinAlignedEOBCalcOmega (tmpValues, funcParams);
+  omegaCirc = XLALSimIMRSpinAlignedEOBCalcOmega (tmpValues, funcParams, STEP_SIZE);
   if (XLAL_IS_REAL8_FAIL_NAN (omegaCirc))
     {
       XLAL_ERROR_REAL8 (XLAL_EFUNC);

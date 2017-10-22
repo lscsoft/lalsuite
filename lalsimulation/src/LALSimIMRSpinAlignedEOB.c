@@ -623,6 +623,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
                      /**<< Flag to tell the code to use the NQC coeffs input thorugh nqcCoeffsInput */
   )
 {
+  REAL8 STEP_SIZE = STEP_SIZE_NOTIDES;
   INT4 use_tidal = 0;
   if ( (lambda3Tidal1 != 0. && lambda2Tidal1 == 0.) || (lambda3Tidal2 != 0. && lambda2Tidal2 == 0.) ) {
       XLALPrintError ("XLAL Error - %s: Tidal parameters are not set correctly! You must have a non-zero lambda2 if you provide a non-zero lambda3!\n",
@@ -650,6 +651,9 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
           SpinAlignedEOBversion=4;
     }
 
+    if ( use_tidal == 1 ) {
+        STEP_SIZE = STEP_SIZE_TIDES;
+    }
   INT4 use_optimized_v2_or_v4 = 0;
   /* If we want SEOBNRv2_opt, then reset SpinAlignedEOBversion=2 and set use_optimized_v2_or_v4=1 */
   if (SpinAlignedEOBversion == 200)
@@ -1479,7 +1483,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
       else
 	{
 	  omega =
-	    XLALSimIMRSpinAlignedEOBCalcOmega (values->data, &seobParams);
+	    XLALSimIMRSpinAlignedEOBCalcOmega (values->data, &seobParams, STEP_SIZE);
 	}
 
       if (omega < 1.0e-15)
@@ -1540,6 +1544,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 	}
       omegaOld = omega;
     }
+
   finalIdx = retLen - 1;
   if (!peakIdx)
     peakIdx = finalIdx;
@@ -2136,7 +2141,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 
 	  /* Do not need to add an if(use_optimized_v2_or_v4), since this is strictly unoptimized code (see if(use_optimized_v2_or_v4) above) */
 	  omega =
-        XLALSimIMRSpinAlignedEOBCalcOmega (values->data, &seobParams);
+        XLALSimIMRSpinAlignedEOBCalcOmega (values->data, &seobParams, STEP_SIZE);
     v = cbrt (omega);
 
 	  /* Calculate the value of the Hamiltonian */
