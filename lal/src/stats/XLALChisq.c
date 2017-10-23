@@ -32,7 +32,7 @@
 
 /**
  * Compute the natural logarithm of the complementary cumulative
- * probability function of the chi squared distribution.
+ * probability function of the \f$\chi^{2}\f$ distribution.
  *
  * Returns the natural logarithm of the probability that \f$x_{1}^{2} +
  * \cdots + x_{\mathrm{dof}}^{2} \geq \chi^{2}\f$, where \f$x_{1}, \ldots,
