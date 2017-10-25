@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-import doctest
+import doctest, sys
 from lalburst import snglcoinc
 
 if __name__ == '__main__':
-	doctest.testmod(snglcoinc)
+	sys.exit(bool(doctest.testmod(snglcoinc).failed))
