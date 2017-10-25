@@ -1,4 +1,4 @@
-import doctest
+import doctest, sys
 from lalburst import date
 
-doctest.testmod(date)
+sys.exit(bool(doctest.testmod(date).failed))
