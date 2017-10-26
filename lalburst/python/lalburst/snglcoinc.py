@@ -1531,12 +1531,12 @@ class TOATriangulator(object):
 		...
 		>>> n
 		array([ 0.28747132, -0.37035214,  0.88328904])
-		>>> toa
-		794546669.40874898
-		>>> chi2_per_dof
-		2.7407579727907181
-		>>> dt
-		0.01433725384999875
+		>>> print toa
+		794546669.409
+		>>> print chi2_per_dof
+		2.74075797279
+		>>> print dt
+		0.01433725385
 		"""
 		assert len(ts) == len(self.sigmas)
 
