@@ -235,9 +235,8 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   }
 
   // Check remaining required parameters
-  XLAL_CHECK_NULL ( isfinite(minCoverFreq) && minCoverFreq > 0, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( isfinite(maxCoverFreq) && maxCoverFreq > 0, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( maxCoverFreq > minCoverFreq, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( isfinite(minCoverFreq) && ( minCoverFreq > 0 ) && isfinite(maxCoverFreq) && ( maxCoverFreq > 0 ), XLAL_EINVAL, "Check failed: minCoverFreq=%f and maxCoverFreq=%f must be finite and positive!", minCoverFreq, maxCoverFreq );
+  XLAL_CHECK_NULL ( maxCoverFreq > minCoverFreq, XLAL_EINVAL, "Check failed: maxCoverFreq>minCoverFreq (%f<=%f)!", maxCoverFreq, minCoverFreq );
   XLAL_CHECK_NULL ( ephemerides != NULL, XLAL_EINVAL );
   XLAL_CHECK_NULL ( dFreq >= 0, XLAL_EINVAL);
 
