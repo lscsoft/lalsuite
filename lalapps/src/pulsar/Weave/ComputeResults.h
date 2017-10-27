@@ -157,6 +157,13 @@ void XLALWeaveSemiResultsDestroy(
   WeaveSemiResults *semi_res
   );
 
+int XLALWeaveCohResultsExtract(
+  REAL4Vector **coh2F,
+  REAL4Vector *coh2F_det[PULSAR_MAX_DETECTORS],
+  WeaveCohResults *coh_res,
+  const WeaveCohInput *coh_input
+  );
+
 #ifdef __cplusplus
 }
 #endif

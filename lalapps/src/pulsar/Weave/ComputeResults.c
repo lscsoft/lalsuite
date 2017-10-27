@@ -921,6 +921,32 @@ void XLALWeaveSemiResultsDestroy(
 
 } // XLALWeaveSemiResultsDestroy()
 
+
+/// Simple API function to extract pointers to 2F results from WeaveCohResults
+int XLALWeaveCohResultsExtract(
+  REAL4Vector **coh2F,
+  REAL4Vector *coh2F_det[PULSAR_MAX_DETECTORS],
+  WeaveCohResults *coh_res,
+  const WeaveCohInput *coh_input
+  )
+{
+  XLAL_CHECK ( coh_input != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( coh_res != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( coh_res->nfreqs >= 1, XLAL_EINVAL );
+  XLAL_CHECK ( coh2F != NULL && coh2F_det != NULL, XLAL_EINVAL );
+
+  (*coh2F)     = coh_res->coh2F;
+  // set all pointers to NULL first, the copy only the results from 'active' IFOs
+  memset ( coh2F_det, 0, PULSAR_MAX_DETECTORS * sizeof(coh2F_det[0]) );
+  for ( UINT4 i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
+    const size_t idx = coh_input->Fstat_res_idx[i];
+    coh2F_det[idx]  = coh_res->coh2F_det[idx];
+  }
+
+  return XLAL_SUCCESS;
+} // XLALWeaveCohResultsExtract()
+
+
 // Local Variables:
 // c-file-style: "linux"
 // c-basic-offset: 2
