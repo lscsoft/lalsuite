@@ -240,30 +240,6 @@ int XLALWeaveOutputResultsCompletionLoop (
   // Check input
   XLAL_CHECK( out != NULL, XLAL_EFAULT );
 
-  WeaveStatisticType completionloop_stats = out -> statistics_params -> completionloop_statistics;
-  const WeaveStatisticType supported_completionloop = (
-    0
-    | WEAVE_STATISTIC_MAX2F
-    | WEAVE_STATISTIC_MAX2F_DET
-    | WEAVE_STATISTIC_SUM2F
-    | WEAVE_STATISTIC_SUM2F_DET
-    | WEAVE_STATISTIC_MEAN2F
-    | WEAVE_STATISTIC_MEAN2F_DET
-    | WEAVE_STATISTIC_BSGL
-    | WEAVE_STATISTIC_BSGLtL
-    | WEAVE_STATISTIC_BtSGLtL
-    | WEAVE_STATISTIC_NCOUNT
-    | WEAVE_STATISTIC_NCOUNT_DET
-    );
-
-  WeaveStatisticType unsupported = (completionloop_stats & ~supported_completionloop);
-  if ( unsupported != 0 ) {
-    char *unsupported_names = XLALPrintStringValueOfUserFlag( (const int*)&unsupported, &WeaveStatisticChoices );
-    XLALPrintError ( "BUG: unsupported completion-loop statistics requested: %s\n", unsupported_names );
-    XLALFree ( unsupported_names );
-    XLAL_ERROR ( XLAL_EERR );
-  }
-
   // Iterate over all toplists
   for ( size_t i = 0; i < out->ntoplists; ++i ) {
     XLAL_CHECK( XLALWeaveResultsToplistCompletionLoop ( out->toplists[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -445,7 +421,7 @@ int XLALWeaveOutputResultsReadAppend(
       XLAL_ERROR ( XLAL_EIO );
     }
 
-    XLALWeaveStatisticsParamsDestroy ( statistics_params );
+    XLALWeaveStatisticsParamsDestroy ( statistics_params ); // not creating a new output, so we need to free this
 
     // Check whether to output semicoherent/coherent template indexes
     XLAL_CHECK( !toplist_tmpl_idx == !( *out )->toplist_tmpl_idx, XLAL_EIO, "Inconsistent output template indexes? %i != %i", toplist_tmpl_idx, ( *out )->toplist_tmpl_idx );
