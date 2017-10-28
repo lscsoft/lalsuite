@@ -203,67 +203,67 @@ int toplist_fits_table_init(
 
   // Add column for mean multi-detector F-statistic
   if ( statistics_to_output & WEAVE_STATISTIC_MEAN2F ) {
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, mean2F, WeaveStatisticNames[WEAVE_STATISTIC_MEAN2F] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, mean2F, WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_MEAN2F) ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Add columns for mean per-detector F-statistic
   if ( statistics_to_output & WEAVE_STATISTIC_MEAN2F_DET ) {
     for ( size_t i = 0; i < params -> detectors -> length; ++i ) {
-      snprintf( col_name, sizeof( col_name ), "%s_%s", WeaveStatisticNames[WEAVE_STATISTIC_MEAN2F], params -> detectors -> data[i] );
+      snprintf( col_name, sizeof( col_name ), "%s_%s", WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_MEAN2F), params -> detectors -> data[i] );
       XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, mean2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   }
 
   // Add column for multi-detector max2F statistic
   if ( statistics_to_output & WEAVE_STATISTIC_MAX2F ) {
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, max2F, WeaveStatisticNames[WEAVE_STATISTIC_MAX2F] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, max2F, WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_MAX2F) ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Add columns for per-detector max2F_det statistic
   if ( statistics_to_output & WEAVE_STATISTIC_MAX2F_DET ) {
     for ( size_t i = 0; i < params -> detectors->length; ++i ) {
-      snprintf( col_name, sizeof( col_name ), "%s_%s", WeaveStatisticNames[WEAVE_STATISTIC_MAX2F], params -> detectors->data[i] );
+      snprintf( col_name, sizeof( col_name ), "%s_%s", WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_MAX2F), params -> detectors->data[i] );
       XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, max2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   }
 
   // Add column for multi-detector sum2F statistic
   if ( statistics_to_output & WEAVE_STATISTIC_SUM2F ) {
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, sum2F, WeaveStatisticNames[WEAVE_STATISTIC_SUM2F] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, sum2F, WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_SUM2F) ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Add columns for per-detector sum2F statistic
   if ( statistics_to_output & WEAVE_STATISTIC_SUM2F_DET ) {
     for ( size_t i = 0; i < params -> detectors->length; ++i ) {
-      snprintf( col_name, sizeof( col_name ), "%s_%s", WeaveStatisticNames[WEAVE_STATISTIC_SUM2F], params -> detectors->data[i] );
+      snprintf( col_name, sizeof( col_name ), "%s_%s", WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_SUM2F), params -> detectors->data[i] );
       XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, sum2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   }
 
   // Add column for BSGL statistic
   if ( statistics_to_output & WEAVE_STATISTIC_BSGL ) {
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, log10BSGL, WeaveStatisticNames[WEAVE_STATISTIC_BSGL] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, log10BSGL, WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_BSGL) ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Add column for BSGLtL statistic
   if ( statistics_to_output & WEAVE_STATISTIC_BSGLtL ) {
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, log10BSGLtL, WeaveStatisticNames[WEAVE_STATISTIC_BSGLtL] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, log10BSGLtL, WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_BSGLtL) ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Add column for BtSGLtL statistic
   if ( statistics_to_output & WEAVE_STATISTIC_BtSGLtL ) {
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, log10BtSGLtL, WeaveStatisticNames[WEAVE_STATISTIC_BtSGLtL] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, log10BtSGLtL, WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_BtSGLtL) ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Add column for multi-detector number-count statistic
   if ( statistics_to_output & WEAVE_STATISTIC_NCOUNT ) {
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, ncount, WeaveStatisticNames[WEAVE_STATISTIC_NCOUNT] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, ncount, WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_NCOUNT) ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Add column for per-detector number-count statistics
   if ( statistics_to_output & WEAVE_STATISTIC_NCOUNT_DET ) {
     for ( size_t i = 0; i < params -> detectors->length; ++i ) {
-      snprintf( col_name, sizeof( col_name ), "%s_%s", WeaveStatisticNames[WEAVE_STATISTIC_NCOUNT], params -> detectors->data[i] );
+      snprintf( col_name, sizeof( col_name ), "%s_%s", WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_NCOUNT), params -> detectors->data[i] );
       XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, ncount_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   }
@@ -291,13 +291,13 @@ int toplist_fits_table_init(
 
   // Add column for per-segment coherent multi-detector 2F statistics
   if ( statistics_to_output & WEAVE_STATISTIC_COH2F ) {
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, params -> nsegments, coh2F, WeaveStatisticNames[WEAVE_STATISTIC_COH2F] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, params -> nsegments, coh2F, WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_COH2F) ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Add columns for per-segment coherent per-detector 2F statistics
   if ( statistics_to_output & WEAVE_STATISTIC_COH2F_DET ) {
     for ( size_t i = 0; i < params -> detectors->length; ++i ) {
-      snprintf( col_name, sizeof( col_name ), "%s_%s", WeaveStatisticNames[WEAVE_STATISTIC_COH2F], params -> detectors->data[i] );
+      snprintf( col_name, sizeof( col_name ), "%s_%s", WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_COH2F), params -> detectors->data[i] );
       XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, params -> nsegments, coh2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   }

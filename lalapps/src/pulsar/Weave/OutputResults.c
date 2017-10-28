@@ -141,7 +141,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   // Create a toplist which ranks results by mean multi-detector F-statistic
   if ( toplist_statistics & WEAVE_STATISTIC_MEAN2F ) {
-    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WeaveStatisticNames[WEAVE_STATISTIC_MEAN2F], "average multi-detector F-statistic", toplist_limit, toplist_tmpl_idx, toplist_results_mean2F, toplist_item_get_mean2F, toplist_item_set_mean2F );
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_MEAN2F), "average multi-detector F-statistic", toplist_limit, toplist_tmpl_idx, toplist_results_mean2F, toplist_item_get_mean2F, toplist_item_set_mean2F );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
     out->ntoplists++;
@@ -149,7 +149,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   // Create a toplist which ranks results by summed multi-detector F-statistic
   if ( toplist_statistics & WEAVE_STATISTIC_SUM2F ) {
-    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WeaveStatisticNames[WEAVE_STATISTIC_SUM2F], "summed multi-detector F-statistic", toplist_limit, toplist_tmpl_idx, toplist_results_sum2F, toplist_item_get_sum2F, toplist_item_set_sum2F );
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_SUM2F), "summed multi-detector F-statistic", toplist_limit, toplist_tmpl_idx, toplist_results_sum2F, toplist_item_get_sum2F, toplist_item_set_sum2F );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
     out->ntoplists++;
@@ -157,7 +157,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   // Create a toplist which ranks results by line-robust log10(B_S/GL) statistic
   if ( toplist_statistics & WEAVE_STATISTIC_BSGL ) {
-    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WeaveStatisticNames[WEAVE_STATISTIC_BSGL], "line-robust log10BSGL statistic", toplist_limit, toplist_tmpl_idx, toplist_results_log10BSGL, toplist_item_get_log10BSGL, toplist_item_set_log10BSGL );
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_BSGL), "line-robust log10BSGL statistic", toplist_limit, toplist_tmpl_idx, toplist_results_log10BSGL, toplist_item_get_log10BSGL, toplist_item_set_log10BSGL );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
     out->ntoplists++;
@@ -165,7 +165,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   // Create a toplist which ranks results by transient-line-robust log10(B_S/GLtL) statistic
   if ( toplist_statistics & WEAVE_STATISTIC_BSGLtL ) {
-    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WeaveStatisticNames[WEAVE_STATISTIC_BSGLtL], "transient line-robust log10BSGLtL statistic", toplist_limit, toplist_tmpl_idx, toplist_results_log10BSGLtL, toplist_item_get_log10BSGLtL, toplist_item_set_log10BSGLtL );
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_BSGLtL), "transient line-robust log10BSGLtL statistic", toplist_limit, toplist_tmpl_idx, toplist_results_log10BSGLtL, toplist_item_get_log10BSGLtL, toplist_item_set_log10BSGLtL );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
     out->ntoplists++;
@@ -173,7 +173,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   // Create a toplist which ranks results by transient-signal line-robust log10(B_tS/GLtL) statistic
   if ( toplist_statistics & WEAVE_STATISTIC_BtSGLtL ) {
-    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WeaveStatisticNames[WEAVE_STATISTIC_BtSGLtL], "transient signal line-robust log10BtSGLtL statistic", toplist_limit, toplist_tmpl_idx, toplist_results_log10BtSGLtL, toplist_item_get_log10BtSGLtL, toplist_item_set_log10BtSGLtL );
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_BtSGLtL), "transient signal line-robust log10BtSGLtL statistic", toplist_limit, toplist_tmpl_idx, toplist_results_log10BtSGLtL, toplist_item_get_log10BtSGLtL, toplist_item_set_log10BtSGLtL );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
     out->ntoplists++;

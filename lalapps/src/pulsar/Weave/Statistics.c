@@ -83,7 +83,7 @@ typedef struct tagWeaveStatisticMap {
     "Per-detector 'Hough' number count of 'threshold crossings' heavyside(2F - 2Fth) over segments"
 
 #define ENTRY_2_NAME(X) ENTRY_2_NAME_X(X)
-#define ENTRY_2_NAME_X(v,n,s,d,h)  [v] = n
+#define ENTRY_2_NAME_X(v,n,s,d,h)  [XLAL_BIT2IDX(v)] = n
 
 #define ENTRY_2_MAP(X) ENTRY_2_MAP_X(X)
 #define ENTRY_2_MAP_X(v,n,s,d,h)  { .val = v, .name = n, .dependencies = d, .help = h }
@@ -94,7 +94,7 @@ typedef struct tagWeaveStatisticMap {
 #define ENTRY_2_HELPSTR(X) ENTRY_2_HELPSTR_X(X)
 #define ENTRY_2_HELPSTR_X(v,n,s,d,h) " - " n s ": " h ".\n"
 
-const char *const WeaveStatisticNames[WEAVE_STATISTIC_MAX] = {
+const char *const WeaveStatisticNamesByIndex[XLAL_BIT2IDX(WEAVE_STATISTIC_MAX)] = {
   ENTRY_2_NAME(ENTRY_COH2F),
   ENTRY_2_NAME(ENTRY_COH2F_DET),
   ENTRY_2_NAME(ENTRY_MAX2F),

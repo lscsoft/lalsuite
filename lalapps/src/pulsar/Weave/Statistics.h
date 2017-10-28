@@ -38,46 +38,48 @@ extern "C" {
 ///
 /// @{
 
-#define BIT(x) 1 << (x)
 ///
 /// Bitflags representing all possible statistics that can be computed or returned by Weave
 ///
 typedef enum {
   WEAVE_STATISTIC_NONE                                          = 0,
   /// per segment multi-detector F-statistic
-  WEAVE_STATISTIC_COH2F                                         = BIT(0),
+  WEAVE_STATISTIC_COH2F                                         = XLAL_IDX2BIT(0),
   /// per segment per-detector F-statistic
-  WEAVE_STATISTIC_COH2F_DET                                     = BIT(1),
+  WEAVE_STATISTIC_COH2F_DET                                     = XLAL_IDX2BIT(1),
   // Maximum over segments multi-detector coherent 2F statistic
-  WEAVE_STATISTIC_MAX2F                                         = BIT(2),
+  WEAVE_STATISTIC_MAX2F                                         = XLAL_IDX2BIT(2),
   // Maximum over segments per-detector coherent 2F statistic
-  WEAVE_STATISTIC_MAX2F_DET                                     = BIT(3),
+  WEAVE_STATISTIC_MAX2F_DET                                     = XLAL_IDX2BIT(3),
   /// multi-detector sum (over segments) F-statistic
-  WEAVE_STATISTIC_SUM2F                                         = BIT(4),
+  WEAVE_STATISTIC_SUM2F                                         = XLAL_IDX2BIT(4),
   /// per detector sum F-statistic
-  WEAVE_STATISTIC_SUM2F_DET                                     = BIT(5),
+  WEAVE_STATISTIC_SUM2F_DET                                     = XLAL_IDX2BIT(5),
   /// multi-detector average (over segments) F-statistic
-  WEAVE_STATISTIC_MEAN2F                                        = BIT(6),
+  WEAVE_STATISTIC_MEAN2F                                        = XLAL_IDX2BIT(6),
   /// per detector average F-statistic
-  WEAVE_STATISTIC_MEAN2F_DET                                    = BIT(7),
+  WEAVE_STATISTIC_MEAN2F_DET                                    = XLAL_IDX2BIT(7),
   /// line-robust log10(B_S/GL) statistic
-  WEAVE_STATISTIC_BSGL                                          = BIT(8),
+  WEAVE_STATISTIC_BSGL                                          = XLAL_IDX2BIT(8),
     /// (transient-)line robust log10(B_S/GLtL) statistic
-  WEAVE_STATISTIC_BSGLtL                                        = BIT(9),
+  WEAVE_STATISTIC_BSGLtL                                        = XLAL_IDX2BIT(9),
   /// (transient-)line robust log10(B_tS/GLtL) statistic
-  WEAVE_STATISTIC_BtSGLtL                                       = BIT(10),
+  WEAVE_STATISTIC_BtSGLtL                                       = XLAL_IDX2BIT(10),
   /// Hough number count
-  WEAVE_STATISTIC_NCOUNT                                        = BIT(11),
+  WEAVE_STATISTIC_NCOUNT                                        = XLAL_IDX2BIT(11),
   /// Hough number count per detector
-  WEAVE_STATISTIC_NCOUNT_DET                                    = BIT(12),
+  WEAVE_STATISTIC_NCOUNT_DET                                    = XLAL_IDX2BIT(12),
   /// marker +1 of maximal combined valid statistics value
-  WEAVE_STATISTIC_MAX                                           = BIT(13)
+  WEAVE_STATISTIC_MAX                                           = XLAL_IDX2BIT(13)
 } WeaveStatisticType;
 
 ///
 /// Names of all possible statistics
 ///
-extern const char *const WeaveStatisticNames[WEAVE_STATISTIC_MAX];
+#define WEAVE_STATISTIC_NAME(ws) WeaveStatisticNamesByIndex[XLAL_BIT2IDX(ws)]
+/// \cond DONT_DOXYGEN
+extern const char *const WeaveStatisticNamesByIndex[XLAL_BIT2IDX(WEAVE_STATISTIC_MAX)];
+/// \endcond
 
 ///
 /// User input choices for toplist ranking statistics
