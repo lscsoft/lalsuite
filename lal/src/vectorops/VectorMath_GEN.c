@@ -54,6 +54,10 @@ static inline REAL8 local_mul ( REAL8 x, REAL8 y ) {
   return x * y;
 }
 
+static inline REAL4 local_fmaxf ( REAL4 x, REAL4 y ) {
+  return (x > y) ? x : y;
+}
+
 // ========== internal generic functions ==========
 
 // ---------- generic operator with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
@@ -135,7 +139,7 @@ DEFINE_VECTORMATH_S2SS(SinCos2Pi, local_sincosf_2pi)
 
 DEFINE_VECTORMATH_SS2S(Add, local_addf)
 DEFINE_VECTORMATH_SS2S(Multiply, local_mulf)
-DEFINE_VECTORMATH_SS2S(Max, fmaxf)
+DEFINE_VECTORMATH_SS2S(Max, local_fmaxf)
 
 // ---------- define vector math functions with 1 REAL4 scalar and 1 REAL4 vector inputs to 1 REAL4 vector output (sS2S) ----------
 #define DEFINE_VECTORMATH_sS2S(NAME, GEN_OP)                            \

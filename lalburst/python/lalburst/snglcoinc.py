@@ -1074,7 +1074,7 @@ class CoincSynthesizer(object):
 		# variance = d p (1 - p) <= d/4 where p is the probability
 		# of a successful outcome.  we quit when the ratio of the
 		# bound on the standard deviation of the number of
-		# successful outcomes (d/4) to the actual number of
+		# successful outcomes (\sqrt{d/4}) to the actual number of
 		# successful outcomes (n) falls below rel accuracy:
 		# \sqrt{d/4} / n < rel accuracy, or
 		#
@@ -1371,7 +1371,7 @@ class CoincSynthesizer(object):
 
 	def plausible_toas(self, instruments):
 		"""
-		Generator that yields dictionaries of random noise event
+		Generator that yields dictionaries of random event
 		time-of-arrival offsets for the given instruments such that
 		the time-of-arrivals are mutually coincident given the
 		maximum allowed inter-instrument \\Delta t's.  The values
@@ -1531,12 +1531,12 @@ class TOATriangulator(object):
 		...
 		>>> n
 		array([ 0.28747132, -0.37035214,  0.88328904])
-		>>> toa
-		794546669.40874898
-		>>> chi2_per_dof
-		2.7407579727907181
-		>>> dt
-		0.01433725384999875
+		>>> print(toa)
+		794546669.409
+		>>> print(chi2_per_dof)
+		2.74075797279
+		>>> print(dt)
+		0.01433725385
 		"""
 		assert len(ts) == len(self.sigmas)
 
@@ -2259,7 +2259,7 @@ class LnLikelihoodRatioMixin(object):
 			# warning
 			if lnP_noise > 0. and lnP_signal > 0.:
 				# both probabilities are +inf.  no correct
-				# answer.  NaN will be returned in thise
+				# answer.  NaN will be returned in this
 				# case, and it helps to have a record in
 				# the log of why that happened.
 				warnings.warn("inf/inf encountered")
@@ -2311,7 +2311,6 @@ class LnLikelihoodRatioMixin(object):
 		else:
 			lnP_signal_func = sampler_coinc_params.numerator
 			lnP_noise_func = sampler_coinc_params.denominator
-		isinf = math.isinf
 		for params, lnP_params in random_params_seq:
 			lnP_signal = lnP_signal_func(params, **kwargs)
 			lnP_noise = lnP_noise_func(params, **kwargs)

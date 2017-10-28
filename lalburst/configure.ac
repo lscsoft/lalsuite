@@ -114,7 +114,6 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for Python
 LALSUITE_CHECK_PYTHON([2.6])
-AX_PYTHON_DEVEL()
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])

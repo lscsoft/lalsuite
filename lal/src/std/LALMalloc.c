@@ -79,7 +79,7 @@ void *XLALMallocLong(size_t n, const char *file, int line)
 void *(XLALCalloc) (size_t m, size_t n) {
     void *p;
     p = LALCallocShort(m, n);
-    XLAL_TEST_POINTER(p, m * n);
+    XLAL_TEST_POINTER(p, m && n);
     return p;
 }
 
@@ -87,7 +87,7 @@ void *XLALCallocLong(size_t m, size_t n, const char *file, int line)
 {
     void *p;
     p = LALCallocLong(m, n, file, line);
-    XLAL_TEST_POINTER_LONG(p, m * n, file, line);
+    XLAL_TEST_POINTER_LONG(p, m && n, file, line);
     return p;
 }
 
