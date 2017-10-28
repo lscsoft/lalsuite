@@ -39,6 +39,23 @@ extern "C" {
 /*@{*/
 
 ///
+/// Convert an unsigned long index \c i into a bit, i.e. \f$b = 2^i\f$
+///
+#define XLAL_IDX2BIT(i) (1UL << ((unsigned long)(i)))
+
+///
+/// Convert an unsigned long \e single bit \c b into an index, i.e. \f$i = \log_2 b \f$
+///
+#define XLAL_BIT2IDX(b) ( \
+    (((((unsigned long)(b)) & 0xAAAAAAAAAAAAAAAAUL) != 0)) | \
+    (((((unsigned long)(b)) & 0xCCCCCCCCCCCCCCCCUL) != 0) << 1UL) | \
+    (((((unsigned long)(b)) & 0xF0F0F0F0F0F0F0F0UL) != 0) << 2UL) | \
+    (((((unsigned long)(b)) & 0xFF00FF00FF00FF00UL) != 0) << 3UL) | \
+    (((((unsigned long)(b)) & 0xFFFF0000FFFF0000UL) != 0) << 4UL) | \
+    (((((unsigned long)(b)) & 0xFFFFFFFF00000000UL) != 0) << 5UL) \
+    )
+
+///
 /// A range of REAL8 values; first element is minimum, second element is maximum of range
 ///
 typedef REAL8 REAL8Range[2];
@@ -47,7 +64,6 @@ typedef REAL8 REAL8Range[2];
 /// A range of INT4 values; first element is minimum, second element is maximum of range
 ///
 typedef INT4 INT4Range[2];
-
 
 ///
 /// A range of GPS times; first element is minimum, second element is maximum of range

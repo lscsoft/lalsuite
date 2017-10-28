@@ -43,6 +43,14 @@ int test_ParseREAL8Vector(void);
 // ==================== function definitions ====================
 int main(void)
 {
+
+  // ---------- test XLAL_IDX2BIT()/XLAL_BIT2IDX() macros
+  for ( int i = 0; i < 64; ++i ) {
+    const unsigned long j = XLAL_IDX2BIT( i );
+    const int k = XLAL_BIT2IDX( j );
+    XLAL_CHECK_MAIN( i == k, XLAL_EFAILED, "XLAL_IDX2BIT()/XLAL_BIT2IDX() failed: %i -> %lu -> %i\n", i, j, k );
+  }
+
   // ---------- test various string-value parser functions ----------
   XLAL_CHECK_MAIN ( test_ParseStringValue() == XLAL_SUCCESS, XLAL_EFUNC );
 
