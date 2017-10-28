@@ -156,7 +156,7 @@ int XLALWeaveCohInputWriteFstatMethod(
   XLAL_CHECK( method_name != NULL, XLAL_EFUNC );
 
   // Write method name
-  XLAL_CHECK( XLALFITSHeaderWriteString( file, "fmethod", method_name, "name of F-statistic method" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSHeaderWriteString( file, "fstat method", method_name, "name of F-statistic method" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
@@ -218,15 +218,15 @@ int XLALWeaveCohInputWriteFstatTiming(
   }
 
   // Write generic timing constants
-  XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, "ftiming tauF_eff", tauF_eff / ncoh_input, "F-statistic generic timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, "ftiming tauF_core", tauF_core / ncoh_input, "F-statistic generic timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, "ftiming tauF_buffer", tauF_buffer / ncoh_input, "F-statistic generic timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, "ftiming b", NBufferMisses / NCalls, "F-statistic generic timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, "fstat tauF_eff", tauF_eff / ncoh_input, "F-statistic generic timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, "fstat tauF_core", tauF_core / ncoh_input, "F-statistic generic timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, "fstat tauF_buffer", tauF_buffer / ncoh_input, "F-statistic generic timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, "fstat b", NBufferMisses / NCalls, "F-statistic generic timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Write method-specific timing constants
   for ( size_t j = 0; j < nmodel; ++j ) {
     char keyword[64];
-    snprintf( keyword, sizeof( keyword ), "ftiming %s", model_names[j] );
+    snprintf( keyword, sizeof( keyword ), "fstat %s", model_names[j] );
     XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, keyword, model_values[j] / ncoh_input, "F-statistic method-specific timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
