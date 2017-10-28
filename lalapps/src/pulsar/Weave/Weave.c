@@ -977,9 +977,6 @@ int main( int argc, char *argv[] )
   // Number of times output results have been restored from a checkpoint
   UINT4 ckpt_output_count = 0;
 
-  // Number of computed coherent results, and number of coherent and semicoherent templates
-  UINT8 coh_nres = 0, coh_ntmpl = 0, semi_ntmpl = 0;
-
   // Try to restore output results from a checkpoint file, if given
   if ( UVAR_SET( ckpt_output_file ) ) {
 
@@ -1100,7 +1097,7 @@ int main( int argc, char *argv[] )
     UINT8 XLAL_INIT_DECL( coh_index, [nsegments] );
     UINT4 XLAL_INIT_DECL( coh_offset, [nsegments] );
     for ( size_t i = 0; i < nsegments; ++i ) {
-      XLAL_CHECK_MAIN( XLALWeaveCacheRetrieve( coh_cache[i], queries, i, &coh_res[i], &coh_index[i], &coh_offset[i], &coh_nres, &coh_ntmpl ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALWeaveCacheRetrieve( coh_cache[i], queries, i, &coh_res[i], &coh_index[i], &coh_offset[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( coh_res[i] != NULL, XLAL_EFUNC );
     }
 
@@ -1132,9 +1129,6 @@ int main( int argc, char *argv[] )
 
     // Add semicoherent results to output
     XLAL_CHECK_MAIN( XLALWeaveOutputResultsAdd( out, semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    // Increment number of semicoherent templates
-    semi_ntmpl += semi_nfreqs;
 
     // Time output of semicoherent results
     cpu_toc = cpu_time();
@@ -1302,14 +1296,12 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, keyword, semi_stats->total_points, "cumulative number of semicoherent templates" ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
-    if ( !UVAR_SET( ckpt_output_file ) ) {   // Unless search is checkpointed...
-
-      // Write number of computed coherent results, and number of coherent and semicoherent templates
-      XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "ncohres", coh_nres, "number of computed coherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "ncohtpl", coh_ntmpl, "number of coherent templates" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "nsemitpl", semi_ntmpl, "number of semicoherent templates" ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    }
+    // Write number of computed coherent results, and number of coherent and semicoherent templates
+    UINT8 coh_nres = 0, coh_ntmpl = 0, semi_ntmpl = 0;
+    XLAL_CHECK_MAIN( XLALWeaveCacheQueriesGetCounts( queries, &coh_nres, &coh_ntmpl, &semi_ntmpl ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "ncohres", coh_nres, "number of computed coherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "ncohtpl", coh_ntmpl, "number of coherent templates" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "nsemitpl", semi_ntmpl, "number of semicoherent templates" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Write peak memory usage
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "peakmem [MB]", XLALGetPeakHeapUsageMB(), "peak memory usage" ) == XLAL_SUCCESS, XLAL_EFUNC );

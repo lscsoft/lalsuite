@@ -90,15 +90,19 @@ int XLALWeaveCacheQueriesFinal(
   PulsarDopplerParams *semi_phys,
   UINT4 *semi_nfreqs
   );
+int XLALWeaveCacheQueriesGetCounts(
+  const WeaveCacheQueries *queries,
+  UINT8 *coh_nres,
+  UINT8 *coh_ntmpl,
+  UINT8 *semi_ntmpl
+  );
 int XLALWeaveCacheRetrieve(
   WeaveCache *cache,
   const WeaveCacheQueries *queries,
   const UINT4 query_index,
   const WeaveCohResults **coh_res,
   UINT8 *coh_index,
-  UINT4 *coh_offset,
-  UINT8 *coh_nres,
-  UINT8 *coh_ntmpl
+  UINT4 *coh_offset
   );
 int XLALWeaveCacheExpire(
   WeaveCache *cache

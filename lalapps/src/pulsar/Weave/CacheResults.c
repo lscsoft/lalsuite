@@ -111,6 +111,10 @@ struct tagWeaveCacheQueries {
   INT4 *coh_right;
   /// Relevance of each queried coherent frequency block
   REAL4 *coh_relevance;
+  /// Number of computed coherent results (per query)
+  UINT8 *coh_nres;
+  /// Number of coherent templates (per query)
+  UINT8 *coh_ntmpl;
   /// Reduced supersky transform data for semicoherent lattice
   const SuperskyTransformData *semi_rssky_transf;
   /// Sequential index for the current semicoherent frequency block
@@ -127,6 +131,8 @@ struct tagWeaveCacheQueries {
   REAL4 semi_relevance;
   /// Offset used in computation of semicoherent point relevance
   double semi_relevance_offset;
+  /// Number of semicoherent templates (over all queries)
+  UINT8 semi_ntmpl;
 };
 
 ///
@@ -493,6 +499,10 @@ WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
   XLAL_CHECK_NULL( queries->coh_right != NULL, XLAL_ENOMEM );
   queries->coh_relevance = XLALCalloc( nqueries, sizeof( *queries->coh_relevance ) );
   XLAL_CHECK_NULL( queries->coh_relevance != NULL, XLAL_ENOMEM );
+  queries->coh_nres = XLALCalloc( nqueries, sizeof( *queries->coh_nres ) );
+  XLAL_CHECK_NULL( queries->coh_nres != NULL, XLAL_ENOMEM );
+  queries->coh_ntmpl = XLALCalloc( nqueries, sizeof( *queries->coh_ntmpl ) );
+  XLAL_CHECK_NULL( queries->coh_ntmpl != NULL, XLAL_ENOMEM );
 
   // Set fields
   queries->semi_rssky_transf = semi_rssky_transf;
@@ -547,6 +557,8 @@ void XLALWeaveCacheQueriesDestroy(
     XLALFree( queries->coh_left );
     XLALFree( queries->coh_right );
     XLALFree( queries->coh_relevance );
+    XLALFree( queries->coh_nres );
+    XLALFree( queries->coh_ntmpl );
     XLALFree( queries );
   }
 } // XLALWeaveCacheQueriesDestroy()
@@ -720,9 +732,48 @@ int XLALWeaveCacheQueriesFinal(
   // Return first point in semicoherent frequency block partition
   *semi_phys = queries->semi_phys;
 
+  // Increment number of semicoherent templates
+  queries->semi_ntmpl += *semi_nfreqs;
+
   return XLAL_SUCCESS;
 
 } // XLALWeaveCacheQueriesFinal()
+
+///
+/// Get number of computed coherent results, and number of coherent and semicoherent templates
+///
+int XLALWeaveCacheQueriesGetCounts(
+  const WeaveCacheQueries *queries,
+  UINT8 *coh_nres,
+  UINT8 *coh_ntmpl,
+  UINT8 *semi_ntmpl
+  )
+{
+
+  // Check input
+  XLAL_CHECK( queries != NULL, XLAL_EFAULT );
+  XLAL_CHECK( coh_nres != NULL, XLAL_EFAULT );
+  XLAL_CHECK( coh_ntmpl != NULL, XLAL_EFAULT );
+  XLAL_CHECK( semi_ntmpl != NULL, XLAL_EFAULT );
+
+  // Return number of computed coherent results
+  *coh_nres = 0;
+  for ( size_t i = 0; i < queries->nqueries; ++i ) {
+    *coh_nres += queries->coh_nres[i];
+  }
+
+  // Return number of computed coherent templates
+  *coh_ntmpl = 0;
+  for ( size_t i = 0; i < queries->nqueries; ++i ) {
+    *coh_ntmpl += queries->coh_ntmpl[i];
+  }
+
+  // Write number of semicoherent templates
+  *semi_ntmpl = queries->semi_ntmpl;
+
+  return XLAL_SUCCESS;
+
+}
 
 ///
 /// Retrieve coherent results for a given query, or compute new coherent results if not found
@@ -733,9 +784,7 @@ int XLALWeaveCacheRetrieve(
   const UINT4 query_index,
   const WeaveCohResults **coh_res,
   UINT8 *coh_index,
-  UINT4 *coh_offset,
-  UINT8 *coh_nres,
-  UINT8 *coh_ntmpl
+  UINT4 *coh_offset
   )
 {
 
@@ -746,8 +795,6 @@ int XLALWeaveCacheRetrieve(
   XLAL_CHECK( query_index < queries->nqueries, XLAL_EINVAL );
   XLAL_CHECK( coh_res != NULL, XLAL_EFAULT );
   XLAL_CHECK( coh_offset != NULL, XLAL_EFAULT );
-  XLAL_CHECK( coh_nres != NULL, XLAL_EFAULT );
-  XLAL_CHECK( coh_ntmpl != NULL, XLAL_EFAULT );
 
   // See if coherent results are already cached
   const cache_item find_key = { .generation = cache->generation, .coh_index = queries->coh_index[query_index] };
@@ -833,7 +880,7 @@ int XLALWeaveCacheRetrieve(
     }
 
     // Increment number of computed coherent results
-    *coh_nres += coh_nfreqs;
+    queries->coh_nres[query_index] += coh_nfreqs;
 
     // Check if coherent results have been computed previously
     const UINT8 coh_bitset_index = queries->freq_partition_index * cache->coh_max_index + find_key.coh_index;
@@ -842,7 +889,7 @@ int XLALWeaveCacheRetrieve(
     if ( !computed ) {
 
       // Coherent results have not been computed before: increment the number of coherent templates
-      *coh_ntmpl += coh_nfreqs;
+      queries->coh_ntmpl[query_index] += coh_nfreqs;
 
       // This coherent result has now been computed
       XLAL_CHECK( XLALBitsetSet( cache->coh_computed_bitset, coh_bitset_index, 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
