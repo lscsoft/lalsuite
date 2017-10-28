@@ -105,7 +105,6 @@ typedef struct tagWeaveSemiResults {
   REAL4VectorAligned *log10BSGLtL;
   /// Transient Signal Line-robust log10(B_tS/GLtL) statistic
   REAL4VectorAligned *log10BtSGLtL;
-
 } WeaveSemiResults;
 
 WeaveCohInput *XLALWeaveCohInputCreate(

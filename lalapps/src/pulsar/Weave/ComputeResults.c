@@ -575,6 +575,7 @@ int XLALWeaveSemiResultsAdd(
   if ( mainloop_stats & WEAVE_STATISTIC_COH2F ) {
     semi_res->coh2F[j] = coh_res->coh2F->data + coh_offset;
   }
+
   // Store per-segment per-detector F-statistics per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_COH2F_DET ) {
     for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
@@ -586,6 +587,7 @@ int XLALWeaveSemiResultsAdd(
   if ( mainloop_stats & WEAVE_STATISTIC_MAX2F ) {
     XLAL_CHECK( semi_res_max_2F( &semi_res->nmax2F, semi_res->max2F->data, coh_res->coh2F->data + coh_offset, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
+
   // Add to max-over-segments per-detector F-statistics per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_MAX2F_DET ) {
     for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
@@ -601,6 +603,7 @@ int XLALWeaveSemiResultsAdd(
   } else {
     semi_res->nsum2F ++;             // even if not summing here: count number of 2F summands for (potential) completion-loop usage
   }
+
   // Add to summed per-detector F-statistics per frequency, and increment number of additions thus far
   for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
     if ( coh_res->coh2F_det[i] != NULL ) {
@@ -630,48 +633,47 @@ int XLALWeaveSemiResultsComputeMain(
   XLAL_CHECK( semi_res->ncoh_res == semi_res->nsegments, XLAL_EINVAL );
   XLAL_CHECK( semi_res->statistics_params != NULL, XLAL_EFAULT );
 
+  WeaveStatisticType mainloop_stats = semi_res -> statistics_params -> mainloop_statistics;
+
   // Return now if simulating search
   if ( semi_res->simulation_level & WEAVE_SIMULATE ) {
     return XLAL_SUCCESS;
   }
 
+  // Store results from 'semi_res' in some convenience variables
+  const REAL4 *sum2F = semi_res->sum2F != NULL ? semi_res->sum2F->data : NULL;
+  const REAL4 *sum2F_det[PULSAR_MAX_DETECTORS];
+  for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
+    sum2F_det[i] = semi_res->sum2F_det[i] != NULL ? semi_res->sum2F_det[i]->data : NULL;
+  }
+  const REAL4 *max2F = semi_res->max2F != NULL ? semi_res->max2F->data : NULL;
+  const REAL4 *max2F_det[PULSAR_MAX_DETECTORS];
+  for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
+    max2F_det[i] = semi_res->max2F_det[i] != NULL ? semi_res->max2F_det[i]->data : NULL;
+  }
+
   //
   // Compute any remaining (ie that don't directly depend on coh_2F or coh2F_det) toplist ranking statistics
   //
-  WeaveStatisticType mainloop_stats = semi_res -> statistics_params -> mainloop_statistics;
 
-  // mean multi-detector F-statistics per frequency:
+  // Compute mean multi-detector F-statistics per frequency:
   if ( mainloop_stats & WEAVE_STATISTIC_MEAN2F ) {
-    XLAL_CHECK( XLALVectorScaleREAL4( semi_res->mean2F->data, 1.0 / semi_res->nsum2F, semi_res->sum2F->data, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALVectorScaleREAL4( semi_res->mean2F->data, 1.0 / semi_res->nsum2F, sum2F, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
-  // various line-robust statistics
-  const REAL4 *sum2F_det[PULSAR_MAX_DETECTORS];
-  const REAL4 *max2F_det[PULSAR_MAX_DETECTORS];
-  if ( mainloop_stats & ( WEAVE_STATISTIC_BSGL | WEAVE_STATISTIC_BSGLtL |  WEAVE_STATISTIC_BtSGLtL ) ) {
-    for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
-      sum2F_det[i] = semi_res->sum2F_det[i]->data;
-    }
-  }
-  if ( mainloop_stats & (WEAVE_STATISTIC_BSGLtL | WEAVE_STATISTIC_BtSGLtL) ) {
-    for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
-      max2F_det[i] = semi_res->max2F_det[i]->data;
-    }
-  }
-
-  // line-robust log10(B_S/GL) statistic per frequency
+  // Compute line-robust log10(B_S/GL) statistic per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_BSGL ) {
-    XLAL_CHECK ( XLALVectorComputeBSGL ( semi_res->log10BSGL->data, semi_res->sum2F->data, sum2F_det, semi_res->nfreqs, semi_res->statistics_params->BSGL_setup ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALVectorComputeBSGL ( semi_res->log10BSGL->data, sum2F, sum2F_det, semi_res->nfreqs, semi_res->statistics_params->BSGL_setup ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
-  // transient-line-robust log10(B_S/GL) statistic per frequency
+  // Compute transient-line-robust log10(B_S/GL) statistic per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_BSGLtL ) {
-    XLAL_CHECK ( XLALVectorComputeBSGLtL ( semi_res->log10BSGLtL->data, semi_res->sum2F->data, sum2F_det, max2F_det, semi_res->nfreqs, semi_res->statistics_params->BSGL_setup ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALVectorComputeBSGLtL ( semi_res->log10BSGLtL->data, sum2F, sum2F_det, max2F_det, semi_res->nfreqs, semi_res->statistics_params->BSGL_setup ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
-  // transient-signal line-robust log10(B_tS/GL) statistic per frequency
+  // Compute transient-signal line-robust log10(B_tS/GL) statistic per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_BtSGLtL ) {
-    XLAL_CHECK ( XLALVectorComputeBtSGLtL ( semi_res->log10BtSGLtL->data, semi_res->max2F->data, sum2F_det, max2F_det, semi_res->nfreqs, semi_res->statistics_params->BSGL_setup ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALVectorComputeBtSGLtL ( semi_res->log10BtSGLtL->data, max2F, sum2F_det, max2F_det, semi_res->nfreqs, semi_res->statistics_params->BSGL_setup ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   return XLAL_SUCCESS;
