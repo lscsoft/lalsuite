@@ -44,6 +44,7 @@
 #include <fftw3.h>
 #include <lal/FFTWMutex.h>
 #include <lal/ExtrapolatePulsarSpins.h>
+#include <lal/ConfigFile.h>
 
 // ---------- local defines
 
@@ -57,6 +58,7 @@ const REAL8 eps = 10 * LAL_REAL8_EPS;
 // ---------- local prototypes
 static UINT4 gcd (UINT4 numer, UINT4 denom);
 int XLALcorrect_phase ( SFTtype *sft, LIGOTimeGPS tHeterodyne );
+int XLALCheckConfigFileWasFullyParsed ( const char *fname, const LALParsedDataFile *cfgdata );
 
 // ==================== FUNCTION DEFINITIONS ====================
 
@@ -927,7 +929,7 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
   if ( have_orbitasini || have_orbitEcc || have_orbitPeriod || have_orbitArgp || have_orbitTp )
     {
       XLAL_CHECK ( orbitasini >= 0, XLAL_EDOM );
-      XLAL_CHECK ( (orbitasini == 0) || ( have_orbitEcc && have_orbitPeriod && have_orbitArgp && have_orbitTp ), XLAL_EINVAL );
+      XLAL_CHECK ( (orbitasini == 0) || ( have_orbitPeriod && (orbitPeriod > 0) && have_orbitTp ), XLAL_EINVAL, "If orbitasini>0 then we also need 'orbitPeriod>0' and 'orbitTp'\n" );
       XLAL_CHECK ( (orbitEcc >= 0) && (orbitEcc <= 1), XLAL_EDOM );
 
       /* fill in orbital parameter structure */
@@ -1017,11 +1019,40 @@ XLALPulsarParamsFromFile ( const char *fname, 			///< [in] 'CWsources' config fi
     } // for i < numPulsars
 
   XLALDestroyStringVector ( sections );
+
+  XLAL_CHECK_NULL ( XLALCheckConfigFileWasFullyParsed( fname, cfgdata ) == XLAL_SUCCESS, XLAL_EINVAL );
   XLALDestroyParsedDataFile ( cfgdata );
 
   return sources;
 
 } // XLALPulsarParamsFromFile()
+
+
+// internal helper function: check that config-file was fully parsed (no leftover un-parsed lines),
+// throw error if not and list unparsed entries
+int
+XLALCheckConfigFileWasFullyParsed ( const char *fname, const LALParsedDataFile *cfgdata )
+{
+  XLAL_CHECK ( cfgdata != NULL, XLAL_EINVAL );
+
+  UINT4Vector *n_unread = XLALConfigFileGetUnreadEntries ( cfgdata );
+  XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC );
+
+  if ( n_unread != NULL )
+    {
+      XLALPrintError ( "ERROR: Pulsar params config file '%s' contained '%d' unknown entries:\n", fname, n_unread->length );
+      for ( UINT4 i = 0; i < n_unread->length; i ++ )
+        {
+          XLALPrintError ( "%s'%s'", i > 0 ? ", " : "", cfgdata->lines->tokens[ n_unread->data[i] ] );
+        }
+      XLALPrintError ( "\n" );
+      XLAL_ERROR ( XLAL_EINVAL );
+    }
+
+  return XLAL_SUCCESS;
+
+} // XLALCheckConfigFileWasFullyParsed()
+
 
 /**
  * Function to determine the PulsarParamsVector input from a user-input defining CW sources.
@@ -1079,6 +1110,8 @@ XLALPulsarParamsFromUserInput ( const LALStringVector *UserInput,	///< [in] user
 
           XLAL_CHECK_NULL ( XLALReadPulsarParams ( &addSource->data[0], cfgdata, NULL, refTimeDef ) == XLAL_SUCCESS, XLAL_EFUNC );
           XLAL_CHECK_NULL ( (addSource->data[0].name = XLALStringDuplicate ( "direct-string-input" )) != NULL, XLAL_EFUNC );
+
+          XLAL_CHECK_NULL ( XLALCheckConfigFileWasFullyParsed( "{command-line}", cfgdata ) == XLAL_SUCCESS, XLAL_EINVAL );
           XLALDestroyParsedDataFile ( cfgdata );
 
           XLAL_CHECK_NULL ( (allSources = XLALPulsarParamsVectorAppend ( allSources, addSource )) != NULL, XLAL_EFUNC );
