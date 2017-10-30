@@ -1301,14 +1301,14 @@ int main( int argc, char *argv[] )
     // Write peak memory usage
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "peakmem [MB]", XLALGetPeakHeapUsageMB(), "peak memory usage" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+    // Write F-statistic method name
     if ( simulation_level == 0 ) {   // Unless search is being simulated...
-
-      // Write F-statistic method name
       XLAL_CHECK_MAIN( XLALWeaveCohInputWriteFstatMethod( file, coh_input[0] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
 
+    // Write timing information
+    if ( simulation_level == 0 ) {   // Unless search is being simulated...
       if ( !UVAR_SET( ckpt_output_file ) ) {   // Unless search is checkpointed...
-
-        // Write timing information
         XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "wall total", wall_total, "total wall time" ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "timing total", cpu_total, "total CPU time" ) == XLAL_SUCCESS, XLAL_EFUNC );
         double cpu_timing_other = cpu_total;
@@ -1319,19 +1319,21 @@ int main( int argc, char *argv[] )
           cpu_timing_other -= cpu_timing[i];
         }
         XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "timing other", cpu_timing_other, "CPU time unaccounted for" ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-        if ( uvar->Fstat_timing ) {   // If requested...
-
-          // Write F-statistic timing information
-          XLAL_CHECK_MAIN( XLALWeaveCohInputWriteFstatTiming( file, nsegments, coh_input ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-        }
-
       }
+    }
 
-      // Write search results
+    // Write F-statistic timing information
+    if ( simulation_level == 0 ) {   // Unless search is being simulated...
+      if ( !UVAR_SET( ckpt_output_file ) ) {   // Unless search is checkpointed...
+        if ( uvar->Fstat_timing ) {   // If requested...
+          XLAL_CHECK_MAIN( XLALWeaveCohInputWriteFstatTiming( file, nsegments, coh_input ) == XLAL_SUCCESS, XLAL_EFUNC );
+        }
+      }
+    }
+
+    // Write search results
+    if ( simulation_level == 0 ) {   // Unless search is being simulated...
       XLAL_CHECK_MAIN( XLALWeaveOutputResultsWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
-
     }
 
     // Write miscellaneous per-segment information
