@@ -427,16 +427,18 @@ int XLALWeaveOutputResultsReadAppend(
       XLAL_ERROR ( XLAL_EIO );
     }
     // Check list of selected output statistics
-    if ( statistics_params->statistics_to_output[0] != ( *out )->statistics_params->statistics_to_output[0] ) {
-      char *output1, *output2;
-      output1 = XLALPrintStringValueOfUserFlag ( (const int*)&(statistics_params->statistics_to_output[0]), &WeaveStatisticChoices );
-      XLAL_CHECK ( output1 != NULL, XLAL_EFUNC );
-      output2 = XLALPrintStringValueOfUserFlag ( (const int*)&(( *out )->statistics_params->statistics_to_output[0]), &WeaveStatisticChoices );
-      XLAL_CHECK ( output2 != NULL, XLAL_EFUNC );
-      XLALPrintError ( "Inconsistent set of output statistics: {%s} != {%s}\n", output1, output2 );
-      XLALFree ( output1 );
-      XLALFree ( output2 );
-      XLAL_ERROR ( XLAL_EIO );
+    for ( UINT4 istage = 0; istage < 2; ++ istage ) {
+      if ( statistics_params->statistics_to_output[istage] != ( *out )->statistics_params->statistics_to_output[istage] ) {
+        char *output1, *output2;
+        output1 = XLALPrintStringValueOfUserFlag ( (const int*)&(statistics_params->statistics_to_output[istage]), &WeaveStatisticChoices );
+        XLAL_CHECK ( output1 != NULL, XLAL_EFUNC );
+        output2 = XLALPrintStringValueOfUserFlag ( (const int*)&(( *out )->statistics_params->statistics_to_output[istage]), &WeaveStatisticChoices );
+        XLAL_CHECK ( output2 != NULL, XLAL_EFUNC );
+        XLALPrintError ( "Inconsistent set of stage-%d output statistics: {%s} != {%s}\n", istage, output1, output2 );
+        XLALFree ( output1 );
+        XLALFree ( output2 );
+        XLAL_ERROR ( XLAL_EIO );
+      }
     }
 
     XLALWeaveStatisticsParamsDestroy ( statistics_params ); // not creating a new output, so we need to free this
@@ -539,18 +541,20 @@ int XLALWeaveOutputResultsCompare(
   }
 
   // Compare statistics_to_output
-  if ( out_1->statistics_params->statistics_to_output[0] != out_2->statistics_params->statistics_to_output[0] ) {
-    *equal = 0;
-    char *outputs1, *outputs2;
-    outputs1 = XLALPrintStringValueOfUserFlag ( (const int*)&(out_1->statistics_params->statistics_to_output[0]), &WeaveStatisticChoices );
-    XLAL_CHECK ( outputs1 != NULL, XLAL_EFUNC );
-    outputs2 = XLALPrintStringValueOfUserFlag ( (const int*)&(out_2->statistics_params->statistics_to_output[0]), &WeaveStatisticChoices );
-    XLAL_CHECK ( outputs2 != NULL, XLAL_EFUNC );
-    XLALPrintError ( "%s: Inconsistent set of ouput statistics: {%s} != {%s}\n", __func__, outputs1, outputs2 );
-    XLALFree ( outputs1 );
-    XLALFree ( outputs2 );
-    return XLAL_SUCCESS;
-  }
+  for ( UINT4 istage = 0; istage < 2; ++ istage) {
+    if ( out_1->statistics_params->statistics_to_output[istage] != out_2->statistics_params->statistics_to_output[istage] ) {
+      *equal = 0;
+      char *outputs1, *outputs2;
+      outputs1 = XLALPrintStringValueOfUserFlag ( (const int*)&(out_1->statistics_params->statistics_to_output[istage]), &WeaveStatisticChoices );
+      XLAL_CHECK ( outputs1 != NULL, XLAL_EFUNC );
+      outputs2 = XLALPrintStringValueOfUserFlag ( (const int*)&(out_2->statistics_params->statistics_to_output[istage]), &WeaveStatisticChoices );
+      XLAL_CHECK ( outputs2 != NULL, XLAL_EFUNC );
+      XLALPrintError ( "%s: Inconsistent set of stage-%d ouput statistics: {%s} != {%s}\n", __func__, istage, outputs1, outputs2 );
+      XLALFree ( outputs1 );
+      XLALFree ( outputs2 );
+      return XLAL_SUCCESS;
+    }
+  } // for istage = 0:1
 
   // Compare toplists
   for ( size_t i = 0; i < out_1->ntoplists; ++i ) {
