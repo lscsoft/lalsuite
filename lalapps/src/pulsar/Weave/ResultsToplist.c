@@ -919,7 +919,6 @@ int XLALWeaveResultsToplistCompare(
 
   const WeaveResultsToplist *toplist = toplist_1;
   const WeaveStatisticsParams *params = toplist -> statistics_params;
-  WeaveStatisticType stats_to_output = params->statistics_to_output[0];
 
   // Results toplists are assumed equal until we find otherwise
   *equal = 1;
@@ -1042,7 +1041,7 @@ int XLALWeaveResultsToplistCompare(
         }
 
         // Compare coherent template parameters
-        if ( (*equal) && (stats_to_output & (WEAVE_STATISTIC_COH2F|WEAVE_STATISTIC_COH2F_DET)) ) {
+        if ( (*equal) && (params->statistics_to_output[0] & (WEAVE_STATISTIC_COH2F|WEAVE_STATISTIC_COH2F_DET)) ) {
           for ( size_t j = 0; j < params -> nsegments; ++j ) {
             snprintf( loc_str, sizeof(loc_str), "toplist item %zu, segment %zu", i, j );
             const UINT8 coh_index_1 = toplist_1->toplist_tmpl_idx ? items_1[i_1]->coh_index[j] : 0;
@@ -1073,191 +1072,196 @@ int XLALWeaveResultsToplistCompare(
       res_1->length = n_matched;
       res_2->length = n_matched;
 
-      // Compare mean multi-detector F-statistics
-      if ( stats_to_output & WEAVE_STATISTIC_MEAN2F ) {
-        XLALPrintInfo( "%s: comparing mean multi-detector F-statistics ...\n", __func__ );
-        for ( size_t i = 0; i < n; ++i ) {
-          res_1->data[i] = items_1[inds_1[i]]->stage[0].mean2F;
-          res_2->data[i] = items_2[inds_2[i]]->stage[0].mean2F;
-        }
-        XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        if ( !*equal ) {
-          break;
-        }
-      }
+      // compare statistics values from both stages ('stage 0' = main search, 'stage 1' = recalculation stage ('recalc'))
+      for ( UINT4 istage = 0; istage < 2; ++ istage ) {
+        WeaveStatisticType stats_to_output = params->statistics_to_output[istage];
 
-      // Compare mean per-detector F-statistic
-      if ( stats_to_output & WEAVE_STATISTIC_MEAN2F_DET ) {
-        for ( size_t k = 0; k < params -> detectors->length; ++k ) {
-          XLALPrintInfo( "%s: comparing mean per-detector F-statistics for detector '%s'...\n", __func__, params -> detectors->data[k] );
+        // Compare mean multi-detector F-statistics
+        if ( stats_to_output & WEAVE_STATISTIC_MEAN2F ) {
+          XLALPrintInfo( "%s: comparing mean multi-detector F-statistics ...\n", __func__ );
           for ( size_t i = 0; i < n; ++i ) {
-            res_1->data[i] = items_1[inds_1[i]]->stage[0].mean2F_det[k];
-            res_2->data[i] = items_2[inds_2[i]]->stage[0].mean2F_det[k];
-          }
-          XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        }
-        if ( !*equal ) {
-          break;
-        }
-      }
-
-      // Compare per-segment coherent multi-detector F-statistics
-      if ( stats_to_output & WEAVE_STATISTIC_COH2F ) {
-        for ( size_t j = 0; j < params -> nsegments; ++j ) {
-          XLALPrintInfo( "%s: comparing coherent multi-detector F-statistics for segment %zu...\n", __func__, j );
-          for ( size_t i = 0; i < n; ++i ) {
-            res_1->data[i] = items_1[inds_1[i]]->stage[0].coh2F[j];
-            res_2->data[i] = items_2[inds_2[i]]->stage[0].coh2F[j];
-          }
-          XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        }
-        if ( !*equal ) {
-          break;
-        }
-      }
-
-      // Compare per-segment per-detector F-statistics
-      if ( stats_to_output & WEAVE_STATISTIC_COH2F_DET ) {
-        for ( size_t j = 0; j < params -> nsegments; ++j ) {
-          for ( size_t k = 0; k < params -> detectors->length; ++k ) {
-            if ( isfinite( items_1[0]->stage[0].coh2F_det[k][j] ) || isfinite( items_2[0]->stage[0].coh2F_det[k][j] ) ) {
-              XLALPrintInfo( "%s: comparing per-segment per-detector F-statistics for segment %zu, detector '%s'...\n", __func__, j, params -> detectors->data[k] );
-              for ( size_t i = 0; i < n; ++i ) {
-                res_1->data[i] = items_1[inds_1[i]]->stage[0].coh2F_det[k][j];
-                res_2->data[i] = items_2[inds_2[i]]->stage[0].coh2F_det[k][j];
-              }
-              XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-            } else {
-              XLALPrintInfo( "%s: no per-segment per-detector F-statistics for segment %zu, detector '%s'; skipping comparison\n", __func__, j, params -> detectors->data[k] );
-            }
-          }
-        }
-      }
-      if ( !*equal ) {
-        break;
-      }
-
-      // Compare segment-max multi-detector F-statistics
-      if ( stats_to_output & WEAVE_STATISTIC_MAX2F ) {
-        XLALPrintInfo( "%s: comparing max multi-detector F-statistics ...\n", __func__ );
-        for ( size_t i = 0; i < n; ++i ) {
-          res_1->data[i] = items_1[inds_1[i]]->stage[0].max2F;
-          res_2->data[i] = items_2[inds_2[i]]->stage[0].max2F;
-        }
-        XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        if ( !*equal ) {
-          break;
-        }
-      }
-
-      // Compare segment-max per-detector F-statistic
-      if ( stats_to_output & WEAVE_STATISTIC_MAX2F_DET ) {
-        for ( size_t k = 0; k < params -> detectors->length; ++k ) {
-          XLALPrintInfo( "%s: comparing max per-detector F-statistics for detector '%s'...\n", __func__, params -> detectors->data[k] );
-          for ( size_t i = 0; i < n; ++i ) {
-            res_1->data[i] = items_1[inds_1[i]]->stage[0].max2F_det[k];
-            res_2->data[i] = items_2[inds_2[i]]->stage[0].max2F_det[k];
-          }
-          XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        }
-        if ( !*equal ) {
-          break;
-        }
-      }
-
-      // Compare summed multi-detector F-statistics
-      if ( stats_to_output & WEAVE_STATISTIC_SUM2F ) {
-        XLALPrintInfo( "%s: comparing sum multi-detector F-statistics ...\n", __func__ );
-        for ( size_t i = 0; i < n; ++i ) {
-          res_1->data[i] = items_1[inds_1[i]]->stage[0].sum2F;
-          res_2->data[i] = items_2[inds_2[i]]->stage[0].sum2F;
-        }
-        XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        if ( !*equal ) {
-          break;
-        }
-      }
-
-      // Compare sum per-detector F-statistic
-      if ( stats_to_output & WEAVE_STATISTIC_SUM2F_DET ) {
-        for ( size_t k = 0; k < params -> detectors->length; ++k ) {
-          XLALPrintInfo( "%s: comparing sum per-detector F-statistics for detector '%s'...\n", __func__, params -> detectors->data[k] );
-          for ( size_t i = 0; i < n; ++i ) {
-            res_1->data[i] = items_1[inds_1[i]]->stage[0].sum2F_det[k];
-            res_2->data[i] = items_2[inds_2[i]]->stage[0].sum2F_det[k];
-          }
-          XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        }
-        if ( !*equal ) {
-          break;
-        }
-      }
-
-      // Compare line-robust BSGL statistic
-      if ( stats_to_output & WEAVE_STATISTIC_BSGL ) {
-        XLALPrintInfo( "%s: comparing line-robust B_S/GL statistic ...\n", __func__ );
-        for ( size_t i = 0; i < n; ++i ) {
-          res_1->data[i] = items_1[inds_1[i]]->stage[0].log10BSGL;
-          res_2->data[i] = items_2[inds_2[i]]->stage[0].log10BSGL;
-        }
-        XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        if ( !*equal ) {
-          break;
-        }
-      }
-
-      // Compare transient line-robust BSGLtL statistic
-      if ( stats_to_output & WEAVE_STATISTIC_BSGLtL ) {
-        XLALPrintInfo( "%s: comparing transient line-robust B_S/GLtL statistic ...\n", __func__ );
-        for ( size_t i = 0; i < n; ++i ) {
-          res_1->data[i] = items_1[inds_1[i]]->stage[0].log10BSGLtL;
-          res_2->data[i] = items_2[inds_2[i]]->stage[0].log10BSGLtL;
-        }
-        XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        if ( !*equal ) {
-          break;
-        }
-      }
-
-      // Compare transient signal line-robust BtSGLtL statistic
-      if ( stats_to_output & WEAVE_STATISTIC_BtSGLtL ) {
-        XLALPrintInfo( "%s: comparing transient signal line-robust B_tS/GLtL statistic ...\n", __func__ );
-        for ( size_t i = 0; i < n; ++i ) {
-          res_1->data[i] = items_1[inds_1[i]]->stage[0].log10BtSGLtL;
-          res_2->data[i] = items_2[inds_2[i]]->stage[0].log10BtSGLtL;
-        }
-        XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        if ( !*equal ) {
-          break;
-        }
-      }
-
-      // Compare 'Hough' multi-detector line statistics
-      if ( stats_to_output & WEAVE_STATISTIC_NCOUNT ) {
-        XLALPrintInfo( "%s: comparing 'Hough' multi-detector number count statistic ...\n", __func__ );
-        for ( size_t i = 0; i < n; ++i ) {
-          res_1->data[i] = items_1[inds_1[i]]->stage[0].ncount;
-          res_2->data[i] = items_2[inds_2[i]]->stage[0].ncount;
-        }
-        XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        if ( !*equal ) {
-          break;
-        }
-      }
-      // Compare 'Hough' per-detector line statistics
-      if ( stats_to_output & WEAVE_STATISTIC_NCOUNT_DET ) {
-        for ( size_t k = 0; k < params -> detectors->length; ++k ) {
-          XLALPrintInfo( "%s: comparing 'Hough' per-detector number-count statistic for detector '%s'...\n", __func__, params -> detectors->data[k] );
-          for ( size_t i = 0; i < n; ++i ) {
-            res_1->data[i] = items_1[inds_1[i]]->stage[0].ncount_det[k];
-            res_2->data[i] = items_2[inds_2[i]]->stage[0].ncount_det[k];
+            res_1->data[i] = items_1[inds_1[i]]->stage[istage].mean2F;
+            res_2->data[i] = items_2[inds_2[i]]->stage[istage].mean2F;
           }
           XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
           if ( !*equal ) {
             break;
           }
         }
-      }
+
+        // Compare mean per-detector F-statistic
+        if ( stats_to_output & WEAVE_STATISTIC_MEAN2F_DET ) {
+          for ( size_t k = 0; k < params -> detectors->length; ++k ) {
+            XLALPrintInfo( "%s: comparing mean per-detector F-statistics for detector '%s'...\n", __func__, params -> detectors->data[k] );
+            for ( size_t i = 0; i < n; ++i ) {
+              res_1->data[i] = items_1[inds_1[i]]->stage[istage].mean2F_det[k];
+              res_2->data[i] = items_2[inds_2[i]]->stage[istage].mean2F_det[k];
+            }
+            XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+          }
+          if ( !*equal ) {
+            break;
+          }
+        }
+
+        // Compare per-segment coherent multi-detector F-statistics
+        if ( stats_to_output & WEAVE_STATISTIC_COH2F ) {
+          for ( size_t j = 0; j < params -> nsegments; ++j ) {
+            XLALPrintInfo( "%s: comparing coherent multi-detector F-statistics for segment %zu...\n", __func__, j );
+            for ( size_t i = 0; i < n; ++i ) {
+              res_1->data[i] = items_1[inds_1[i]]->stage[istage].coh2F[j];
+              res_2->data[i] = items_2[inds_2[i]]->stage[istage].coh2F[j];
+            }
+            XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+          }
+          if ( !*equal ) {
+            break;
+          }
+        }
+
+        // Compare per-segment per-detector F-statistics
+        if ( stats_to_output & WEAVE_STATISTIC_COH2F_DET ) {
+          for ( size_t j = 0; j < params -> nsegments; ++j ) {
+            for ( size_t k = 0; k < params -> detectors->length; ++k ) {
+              if ( isfinite( items_1[0]->stage[istage].coh2F_det[k][j] ) || isfinite( items_2[0]->stage[istage].coh2F_det[k][j] ) ) {
+                XLALPrintInfo( "%s: comparing per-segment per-detector F-statistics for segment %zu, detector '%s'...\n", __func__, j, params -> detectors->data[k] );
+                for ( size_t i = 0; i < n; ++i ) {
+                  res_1->data[i] = items_1[inds_1[i]]->stage[istage].coh2F_det[k][j];
+                  res_2->data[i] = items_2[inds_2[i]]->stage[istage].coh2F_det[k][j];
+                }
+                XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+              } else {
+                XLALPrintInfo( "%s: no per-segment per-detector F-statistics for segment %zu, detector '%s'; skipping comparison\n", __func__, j, params -> detectors->data[k] );
+              }
+            }
+          }
+        }
+        if ( !*equal ) {
+          break;
+        }
+
+        // Compare segment-max multi-detector F-statistics
+        if ( stats_to_output & WEAVE_STATISTIC_MAX2F ) {
+          XLALPrintInfo( "%s: comparing max multi-detector F-statistics ...\n", __func__ );
+          for ( size_t i = 0; i < n; ++i ) {
+            res_1->data[i] = items_1[inds_1[i]]->stage[istage].max2F;
+            res_2->data[i] = items_2[inds_2[i]]->stage[istage].max2F;
+          }
+          XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+          if ( !*equal ) {
+            break;
+          }
+        }
+
+        // Compare segment-max per-detector F-statistic
+        if ( stats_to_output & WEAVE_STATISTIC_MAX2F_DET ) {
+          for ( size_t k = 0; k < params -> detectors->length; ++k ) {
+            XLALPrintInfo( "%s: comparing max per-detector F-statistics for detector '%s'...\n", __func__, params -> detectors->data[k] );
+            for ( size_t i = 0; i < n; ++i ) {
+              res_1->data[i] = items_1[inds_1[i]]->stage[istage].max2F_det[k];
+              res_2->data[i] = items_2[inds_2[i]]->stage[istage].max2F_det[k];
+            }
+            XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+          }
+          if ( !*equal ) {
+            break;
+          }
+        }
+
+        // Compare summed multi-detector F-statistics
+        if ( stats_to_output & WEAVE_STATISTIC_SUM2F ) {
+          XLALPrintInfo( "%s: comparing sum multi-detector F-statistics ...\n", __func__ );
+          for ( size_t i = 0; i < n; ++i ) {
+            res_1->data[i] = items_1[inds_1[i]]->stage[istage].sum2F;
+            res_2->data[i] = items_2[inds_2[i]]->stage[istage].sum2F;
+          }
+          XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+          if ( !*equal ) {
+            break;
+          }
+        }
+
+        // Compare sum per-detector F-statistic
+        if ( stats_to_output & WEAVE_STATISTIC_SUM2F_DET ) {
+          for ( size_t k = 0; k < params -> detectors->length; ++k ) {
+            XLALPrintInfo( "%s: comparing sum per-detector F-statistics for detector '%s'...\n", __func__, params -> detectors->data[k] );
+            for ( size_t i = 0; i < n; ++i ) {
+              res_1->data[i] = items_1[inds_1[i]]->stage[istage].sum2F_det[k];
+              res_2->data[i] = items_2[inds_2[i]]->stage[istage].sum2F_det[k];
+            }
+            XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+          }
+          if ( !*equal ) {
+            break;
+          }
+        }
+
+        // Compare line-robust BSGL statistic
+        if ( stats_to_output & WEAVE_STATISTIC_BSGL ) {
+          XLALPrintInfo( "%s: comparing line-robust B_S/GL statistic ...\n", __func__ );
+          for ( size_t i = 0; i < n; ++i ) {
+            res_1->data[i] = items_1[inds_1[i]]->stage[istage].log10BSGL;
+            res_2->data[i] = items_2[inds_2[i]]->stage[istage].log10BSGL;
+          }
+          XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+          if ( !*equal ) {
+            break;
+          }
+        }
+
+        // Compare transient line-robust BSGLtL statistic
+        if ( stats_to_output & WEAVE_STATISTIC_BSGLtL ) {
+          XLALPrintInfo( "%s: comparing transient line-robust B_S/GLtL statistic ...\n", __func__ );
+          for ( size_t i = 0; i < n; ++i ) {
+            res_1->data[i] = items_1[inds_1[i]]->stage[istage].log10BSGLtL;
+            res_2->data[i] = items_2[inds_2[i]]->stage[istage].log10BSGLtL;
+          }
+          XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+          if ( !*equal ) {
+            break;
+          }
+        }
+
+        // Compare transient signal line-robust BtSGLtL statistic
+        if ( stats_to_output & WEAVE_STATISTIC_BtSGLtL ) {
+          XLALPrintInfo( "%s: comparing transient signal line-robust B_tS/GLtL statistic ...\n", __func__ );
+          for ( size_t i = 0; i < n; ++i ) {
+            res_1->data[i] = items_1[inds_1[i]]->stage[istage].log10BtSGLtL;
+            res_2->data[i] = items_2[inds_2[i]]->stage[istage].log10BtSGLtL;
+          }
+          XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+          if ( !*equal ) {
+            break;
+          }
+        }
+
+        // Compare 'Hough' multi-detector line statistics
+        if ( stats_to_output & WEAVE_STATISTIC_NCOUNT ) {
+          XLALPrintInfo( "%s: comparing 'Hough' multi-detector number count statistic ...\n", __func__ );
+          for ( size_t i = 0; i < n; ++i ) {
+            res_1->data[i] = items_1[inds_1[i]]->stage[istage].ncount;
+            res_2->data[i] = items_2[inds_2[i]]->stage[istage].ncount;
+          }
+          XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+          if ( !*equal ) {
+            break;
+          }
+        }
+        // Compare 'Hough' per-detector line statistics
+        if ( stats_to_output & WEAVE_STATISTIC_NCOUNT_DET ) {
+          for ( size_t k = 0; k < params -> detectors->length; ++k ) {
+            XLALPrintInfo( "%s: comparing 'Hough' per-detector number-count statistic for detector '%s'...\n", __func__, params -> detectors->data[k] );
+            for ( size_t i = 0; i < n; ++i ) {
+              res_1->data[i] = items_1[inds_1[i]]->stage[istage].ncount_det[k];
+              res_2->data[i] = items_2[inds_2[i]]->stage[istage].ncount_det[k];
+            }
+            XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+            if ( !*equal ) {
+              break;
+            }
+          }
+        }
+      } // for istage = 0:1
 
     } while (0);
 
