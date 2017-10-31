@@ -23,6 +23,7 @@
 ///
 /// \file
 /// \ingroup lalapps_pulsar_Weave
+/// \brief Module which handles the setup data
 ///
 
 #include "Weave.h"
@@ -34,11 +35,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-///
-/// \name Functions which handle the setup data
-///
-/// @{
 
 ///
 /// Setup data which is computed only once for a given search setup
@@ -67,8 +63,6 @@ int XLALWeaveSetupDataRead(
   FITSFile *file,
   WeaveSetupData *setup
   );
-
-/// @}
 
 #ifdef __cplusplus
 }

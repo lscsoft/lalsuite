@@ -23,6 +23,7 @@
 ///
 /// \file
 /// \ingroup lalapps_pulsar_Weave
+/// \brief Module which defines statistics that can be computed and their parameters
 ///
 
 #include <lal/LineRobustStats.h>
@@ -32,11 +33,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-///
-/// \name Functions which define statistics that can be computed and their parameters
-///
-/// @{
 
 ///
 /// Bitflags representing all possible statistics that can be computed or returned by Weave
@@ -156,8 +152,6 @@ int XLALWeaveStatisticsParamsSetDependencyMap(
 void XLALWeaveStatisticsParamsDestroy (
   WeaveStatisticsParams *statistics_params
   );
-
-/// @}
 
 #ifdef __cplusplus
 }

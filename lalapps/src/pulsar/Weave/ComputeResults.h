@@ -23,6 +23,7 @@
 ///
 /// \file
 /// \ingroup lalapps_pulsar_Weave
+/// \brief Module which computes coherent and semicoherent results
 ///
 
 #include "Weave.h"
@@ -35,11 +36,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-///
-/// \name Functions which compute coherent and semicoherent results
-///
-/// @{
 
 ///
 /// Input data required for computing coherent results
@@ -167,8 +163,6 @@ int XLALWeaveSemiResultsComputeMain(
 void XLALWeaveSemiResultsDestroy(
   WeaveSemiResults *semi_res
   );
-
-/// @}
 
 #ifdef __cplusplus
 }

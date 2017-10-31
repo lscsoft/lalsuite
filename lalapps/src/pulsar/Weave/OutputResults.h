@@ -23,6 +23,7 @@
 ///
 /// \file
 /// \ingroup lalapps_pulsar_Weave
+/// \brief Module which handles the output results
 ///
 
 #include "Weave.h"
@@ -35,11 +36,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-///
-/// \name Functions which handle the output results
-///
-/// @{
 
 ///
 /// Output results from a search
@@ -80,8 +76,6 @@ int XLALWeaveOutputResultsCompare(
   const WeaveOutputResults *out_1,
   const WeaveOutputResults *out_2
   );
-
-/// @}
 
 #ifdef __cplusplus
 }

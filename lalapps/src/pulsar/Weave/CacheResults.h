@@ -23,6 +23,7 @@
 ///
 /// \file
 /// \ingroup lalapps_pulsar_Weave
+/// \brief Module which caches computed coherent results
 ///
 
 #include "Weave.h"
@@ -34,11 +35,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-///
-/// \name Functions which cache computed coherent results
-///
-/// @{
 
 ///
 /// Cache used to store coherent results
@@ -107,8 +103,6 @@ int XLALWeaveCacheRetrieve(
 int XLALWeaveCacheExpire(
   WeaveCache *cache
   );
-
-/// @}
 
 #ifdef __cplusplus
 }

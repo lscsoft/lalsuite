@@ -23,6 +23,7 @@
 ///
 /// \file
 /// \ingroup lalapps_pulsar_Weave
+/// \brief Module which handles toplists of results
 ///
 
 #include "Weave.h"
@@ -36,11 +37,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-///
-/// \name Functions which handle toplists of results
-///
-/// @{
 
 ///
 /// Toplist of output results
@@ -148,8 +144,6 @@ int XLALWeaveResultsToplistCompare(
   const WeaveResultsToplist *toplist_1,
   const WeaveResultsToplist *toplist_2
   );
-
-/// @}
 
 #ifdef __cplusplus
 }

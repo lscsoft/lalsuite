@@ -23,6 +23,7 @@
 ///
 /// \file
 /// \ingroup lalapps_pulsar_Weave
+/// \brief Module which implements iterators over search parameter spaces
 ///
 
 #include "Weave.h"
@@ -32,11 +33,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-///
-/// \name Functions which implement iterators over search parameter spaces
-///
-/// @{
 
 ///
 /// Iterator over a search parameter space
@@ -76,8 +72,6 @@ REAL8 XLALWeaveSearchIteratorRemainingTime(
   const WeaveSearchIterator *itr,
   const REAL8 elapsed_time
   );
-
-/// @}
 
 #ifdef __cplusplus
 }
