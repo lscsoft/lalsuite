@@ -456,11 +456,6 @@ int main( int argc, char *argv[] )
   }
   LogPrintf( LOG_NORMAL, "Parsed user input successfully\n" );
 
-  // Log whether search is being simulated
-  if ( uvar->simulate_search ) {
-    LogPrintf( LOG_NORMAL, "Simulating search; no results will be computed\n" );
-  }
-
   // Allocate random number generator
   RandomParams *rand_par = XLALCreateRandomParams( uvar->rand_seed );
   XLAL_CHECK_MAIN( rand_par != NULL, XLAL_EFUNC );
@@ -808,7 +803,7 @@ int main( int argc, char *argv[] )
   // Decide on search simulation level
   const WeaveSimulationLevel simulation_level = uvar->simulate_search ? ( WEAVE_SIMULATE | ( sft_catalog == NULL ? WEAVE_SIMULATE_MIN_MEM : 0 ) ) : 0;
   if ( simulation_level & WEAVE_SIMULATE ) {
-    LogPrintf( LOG_NORMAL, "Simulating search with %s memory usage\n", simulation_level & WEAVE_SIMULATE_MIN_MEM ? "minimal" : "full" );
+    LogPrintf( LOG_NORMAL, "Simulating search with %s memory usage; no results will be computed\n", simulation_level & WEAVE_SIMULATE_MIN_MEM ? "minimal" : "full" );
   }
 
   // Parse signal injection string
