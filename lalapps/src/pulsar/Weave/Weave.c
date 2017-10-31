@@ -210,7 +210,7 @@ int main( int argc, char *argv[] )
     );
   XLALRegisterUvarMember(
     lattice_rand_offset, BOOLEAN, 'j', DEVELOPER,
-    "If given, offset the physical parameter-space origin of the lattice tilings by a random fraction of the lattice step size. "
+    "Offset the physical parameter-space origin of the lattice tilings by a random fraction of the lattice step size. "
     "This is important when performing mismatch studies to ensure that the mismatch distribution is fully sampled. "
     );
   //
@@ -262,7 +262,6 @@ int main( int argc, char *argv[] )
     nc_2Fth, REAL8, 0, OPTIONAL,
     "Number count: per-segment 2F threshold value."
     );
-
   //
   // - Output control
   //
@@ -278,7 +277,7 @@ int main( int argc, char *argv[] )
     );
   XLALRegisterUvarMember(
     toplist_tmpl_idx, BOOLEAN, 0, DEVELOPER,
-    "If TRUE, output for each toplist item a unique (up to frequency) index identifying its semicoherent and coherent templates. "
+    "Output for each toplist item a unique (up to frequency) index identifying its semicoherent and coherent templates. "
     );
   XLALRegisterUvarAuxDataMember(
     extra_statistics, UserFlag, &WeaveStatisticChoices, 'E', OPTIONAL,
@@ -287,7 +286,7 @@ int main( int argc, char *argv[] )
     );
   XLALRegisterUvarMember(
     segment_info, BOOLEAN, 'M', DEVELOPER,
-    "If TRUE, output various information regarding the segment list, e.g. number of SFTs within each segment. "
+    "Output various information regarding the segment list, e.g. number of SFTs within each segment. "
     );
   //
   // - Checkpointing
@@ -329,8 +328,8 @@ int main( int argc, char *argv[] )
     );
   XLALRegisterUvarMember(
     cache_all_gc, BOOLEAN, 0, DEVELOPER,
-    "By default, whenever an item is added to the internal caches, at most one item that may no longer be required is removed. "
-    "If true, try to instead remove as many items as possible, provided that they are no longer required. "
+    "If TRUE, try to instead remove as many items as possible, provided that they are no longer required. "
+    "If FALSE, whenever an item is added to the internal caches, at most one item that may no longer be required is removed. "
     "Has no effect when performing a fully-coherent single-segment search, or a non-interpolating search. "
     );
 
