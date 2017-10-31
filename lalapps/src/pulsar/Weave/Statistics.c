@@ -30,7 +30,7 @@
 /// struct defining the global 'statistics map' that contains all the defining properties
 /// of the supported statistics
 ///
-typedef struct tagWeaveStatisticMap {
+typedef struct {
   WeaveStatisticType val;		///< bitflag value for this statistic
   const char *const name;		///< internal name of this statistics
   WeaveStatisticType dependencies;      ///< set of *direct* input dependencies of this statistic

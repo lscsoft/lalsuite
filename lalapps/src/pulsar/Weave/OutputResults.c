@@ -29,7 +29,7 @@
 #include <lal/UserInputPrint.h>
 
 ///
-/// Internal definition of output results from a search
+/// Output results from a search
 ///
 struct tagWeaveOutputResults {
   /// Struct holding all parameters for which statistics to output and compute, when, and how

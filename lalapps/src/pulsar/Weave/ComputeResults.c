@@ -33,7 +33,7 @@
 const UINT4 alignment = 32;
 
 ///
-/// Internal definition of input data segment info
+/// Input data segment info
 ///
 typedef struct {
   /// Start time of segment
@@ -53,7 +53,7 @@ typedef struct {
 } segment_info;
 
 ///
-/// Internal definition of input data required for computing coherent results
+/// Input data required for computing coherent results
 ///
 struct tagWeaveCohInput {
   /// List of detector names from setup file
@@ -77,7 +77,7 @@ struct tagWeaveCohInput {
 };
 
 ///
-/// Internal definition of results of a coherent computation on a single segment
+/// Results of a coherent computation on a single segment
 ///
 struct tagWeaveCohResults {
   /// Coherent template parameters of the first frequency bin

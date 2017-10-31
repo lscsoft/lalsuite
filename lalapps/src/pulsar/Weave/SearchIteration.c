@@ -25,7 +25,7 @@
 #include "SearchIteration.h"
 
 ///
-/// Internal definition of iterator over a search parameter space
+/// Iterator over a search parameter space
 ///
 struct tagWeaveSearchIterator {
   /// Number of parameter-space dimensions

@@ -31,7 +31,7 @@
 #define COMPARE_BY( x, y ) do { if ( (x) < (y) ) return -1; if ( (x) > (y) ) return +1; } while(0)
 
 ///
-/// Internal definition of toplist of output results
+/// Toplist of output results
 ///
 struct tagWeaveResultsToplist {
   /// Struct holding all parameters for which statistics to output and compute, when, and how

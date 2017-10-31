@@ -27,30 +27,19 @@
 ///
 
 #include "Weave.h"
+#include "Statistics.h"
 
 #include <lal/VectorMath.h>
 #include <lal/ComputeFstat.h>
-
-#include "Statistics.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 ///
-/// Input data required for computing coherent results
-///
-typedef struct tagWeaveCohInput WeaveCohInput;
-
-///
-/// Results of a coherent computation on a single segment
-///
-typedef struct tagWeaveCohResults WeaveCohResults;
-
-///
 /// Final results of a semicoherent computation over many segments
 ///
-typedef struct tagWeaveSemiResults {
+struct tagWeaveSemiResults {
   /// Bitflag representing search simulation level
   WeaveSimulationLevel simulation_level;
   /// Struct holding all parameters for which statistics to output and compute, when, and how
@@ -101,7 +90,7 @@ typedef struct tagWeaveSemiResults {
   REAL4VectorAligned *log10BSGLtL;
   /// Transient Signal Line-robust log10(B_tS/GLtL) statistic
   REAL4VectorAligned *log10BtSGLtL;
-} WeaveSemiResults;
+};
 
 WeaveCohInput *XLALWeaveCohInputCreate(
   const LALStringVector *setup_detectors,

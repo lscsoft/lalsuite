@@ -36,16 +36,6 @@
 extern "C" {
 #endif
 
-///
-/// Cache used to store coherent results
-///
-typedef struct tagWeaveCache WeaveCache;
-
-///
-/// Storage for a series of cache queries
-///
-typedef struct tagWeaveCacheQueries WeaveCacheQueries;
-
 WeaveCache *XLALWeaveCacheCreate(
   const LatticeTiling *coh_tiling,
   const BOOLEAN interpolation,

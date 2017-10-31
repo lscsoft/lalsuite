@@ -39,14 +39,9 @@ extern "C" {
 #endif
 
 ///
-/// Toplist of output results
-///
-typedef struct tagWeaveResultsToplist WeaveResultsToplist;
-
-///
 /// Toplist item
 ///
-typedef struct tagWeaveResultsToplistItem {
+struct tagWeaveResultsToplistItem {
   /// Index of semicoherent template
   UINT8 semi_index;
   /// Index of coherent templates (only needed for per-segment output)
@@ -89,7 +84,7 @@ typedef struct tagWeaveResultsToplistItem {
   REAL4 ncount;
   /// 'Hough' per-detector number count statistic
   REAL4 ncount_det[PULSAR_MAX_DETECTORS];
-} WeaveResultsToplistItem;
+};
 
 ///
 /// Function which returns pointer to array of statistics by which toplist items are ranked

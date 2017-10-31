@@ -39,7 +39,7 @@ extern "C" {
 ///
 /// Setup data which is computed only once for a given search setup
 ///
-typedef struct {
+struct tagWeaveSetupData {
   /// Reference time at which search is conducted
   LIGOTimeGPS ref_time;
   /// List of detector names for which metrics were computed
@@ -50,7 +50,7 @@ typedef struct {
   SuperskyMetrics *metrics;
   /// Ephemeris data over time-span of segments
   EphemerisData *ephemerides;
-} WeaveSetupData;
+};
 
 void XLALWeaveSetupDataClear(
   WeaveSetupData *setup

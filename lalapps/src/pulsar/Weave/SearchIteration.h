@@ -34,11 +34,6 @@
 extern "C" {
 #endif
 
-///
-/// Iterator over a search parameter space
-///
-typedef struct tagWeaveSearchIterator WeaveSearchIterator;
-
 WeaveSearchIterator *XLALWeaveMainLoopSearchIteratorCreate(
   const LatticeTiling *semi_tiling,
   const UINT4 freq_partitions,

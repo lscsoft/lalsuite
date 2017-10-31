@@ -57,15 +57,30 @@
 extern "C" {
 #endif
 
+typedef enum tagWeaveSimulationLevel WeaveSimulationLevel;
+typedef enum tagWeaveStatisticType WeaveStatisticType;
+
+typedef struct tagWeaveCache WeaveCache;
+typedef struct tagWeaveCacheQueries WeaveCacheQueries;
+typedef struct tagWeaveCohInput WeaveCohInput;
+typedef struct tagWeaveCohResults WeaveCohResults;
+typedef struct tagWeaveOutputResults WeaveOutputResults;
+typedef struct tagWeaveResultsToplist WeaveResultsToplist;
+typedef struct tagWeaveResultsToplistItem WeaveResultsToplistItem;
+typedef struct tagWeaveSearchIterator WeaveSearchIterator;
+typedef struct tagWeaveSemiResults WeaveSemiResults;
+typedef struct tagWeaveSetupData WeaveSetupData;
+typedef struct tagWeaveStatisticsParams WeaveStatisticsParams;
+
 ///
 /// Bitflags representing search simulation levels
 ///
-typedef enum {
+enum tagWeaveSimulationLevel {
   /// Simulate search (implicitly with full memory allocation)
   WEAVE_SIMULATE                        = 0001,
   /// Simulate search with minimal memory allocation
   WEAVE_SIMULATE_MIN_MEM                = 0002,
-} WeaveSimulationLevel;
+};
 
 #ifdef __cplusplus
 }

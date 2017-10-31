@@ -37,11 +37,6 @@
 extern "C" {
 #endif
 
-///
-/// Output results from a search
-///
-typedef struct tagWeaveOutputResults WeaveOutputResults;
-
 WeaveOutputResults *XLALWeaveOutputResultsCreate(
   const LIGOTimeGPS *ref_time,
   const size_t nspins,

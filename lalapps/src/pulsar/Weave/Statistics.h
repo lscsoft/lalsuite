@@ -26,6 +26,8 @@
 /// \brief Module which defines statistics that can be computed and their parameters
 ///
 
+#include "Weave.h"
+
 #include <lal/LineRobustStats.h>
 #include <lal/StringVector.h>
 #include <lal/UserInput.h>
@@ -37,7 +39,7 @@ extern "C" {
 ///
 /// Bitflags representing all possible statistics that can be computed or returned by Weave
 ///
-typedef enum {
+enum tagWeaveStatisticType {
   WEAVE_STATISTIC_NONE                                          = 0,
   /// per segment multi-detector F-statistic
   WEAVE_STATISTIC_COH2F                                         = XLAL_IDX2BIT(0),
@@ -67,7 +69,7 @@ typedef enum {
   WEAVE_STATISTIC_NCOUNT_DET                                    = XLAL_IDX2BIT(12),
   /// marker +1 of maximal combined valid statistics value
   WEAVE_STATISTIC_MAX                                           = XLAL_IDX2BIT(13)
-} WeaveStatisticType;
+};
 
 ///
 /// Names of all possible statistics
@@ -100,7 +102,7 @@ extern const char *const WeaveStatisticHelpString;
 ///
 /// Struct holding all parameters and status values for computing various statistics
 ///
-typedef struct tagWeaveStatisticsParams {
+struct tagWeaveStatisticsParams {
   /// ---------- elements describing output statistics [read/write from fits files]
   /// list of detector names
   LALStringVector *detectors;
@@ -135,7 +137,7 @@ typedef struct tagWeaveStatisticsParams {
   /// per-segment 2F threshold for computing 'Hough' number counts
   REAL4 nc_2Fth;
 
-} WeaveStatisticsParams;
+};
 
 
 int XLALWeaveStatisticsSetDirectDependencies(

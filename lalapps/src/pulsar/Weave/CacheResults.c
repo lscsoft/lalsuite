@@ -32,7 +32,7 @@
 #define COMPARE_BY( x, y ) do { if ( (x) < (y) ) return -1; if ( (x) > (y) ) return +1; } while(0)
 
 ///
-/// Internal definition of an item stored in the cache
+/// Item stored in the cache
 ///
 typedef struct {
   /// Generation, used both to find items in cache and to decide how long to keep items
@@ -46,7 +46,7 @@ typedef struct {
 } cache_item;
 
 ///
-/// Internal definition of cache
+/// Cache used to store coherent results
 ///
 struct tagWeaveCache {
   /// Number of parameter-space dimensions
@@ -82,7 +82,7 @@ struct tagWeaveCache {
 };
 
 ///
-/// Internal definition of results from a series of cache queries
+/// Container for a series of cache queries
 ///
 struct tagWeaveCacheQueries {
   /// Number of parameter-space dimensions
