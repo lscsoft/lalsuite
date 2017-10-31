@@ -28,16 +28,11 @@
 #include "ComputeResults.h"
 #include "CacheResults.h"
 #include "OutputResults.h"
+#include "SearchTiming.h"
 
 #include <lal/LogPrintf.h>
 #include <lal/UserInput.h>
 #include <lal/Random.h>
-
-// Return elapsed wall time in seconds
-static inline double wall_time(void) { return XLALGetTimeOfDay(); }
-
-// Return elapsed CPU time in seconds
-static inline double cpu_time(void) { return XLALGetCPUTime(); }
 
 int main( int argc, char *argv[] )
 {
@@ -52,7 +47,7 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, toplist_tmpl_idx, segment_info, simulate_search, Fstat_timing, cache_all_gc;
+    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, toplist_tmpl_idx, segment_info, simulate_search, time_search, cache_all_gc;
     CHAR *setup_file, *sft_files, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd, *lrs_oLGX;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit, lrs_Fstar0sc, nc_2Fth;
@@ -64,7 +59,6 @@ int main( int argc, char *argv[] )
     .Fstat_SSB_precision = Fstat_opt_args.SSBprec,
     .Fstat_method = FMETHOD_RESAMP_BEST,
     .Fstat_run_med_window = Fstat_opt_args.runningMedianWindow,
-    .Fstat_timing = Fstat_opt_args.collectTiming,
     .alpha = {0, LAL_TWOPI},
     .delta = {-LAL_PI_2, LAL_PI_2},
     .freq_partitions = 1,
@@ -242,10 +236,6 @@ int main( int argc, char *argv[] )
     Fstat_SSB_precision, UserEnum, &SSBprecisionChoices, 0, DEVELOPER,
     "Precision in calculating the barycentric transformation. "
     );
-  XLALRegisterUvarMember(
-    Fstat_timing, BOOLEAN, 0, DEVELOPER,
-    "If TRUE, collect and output F-statistic generic and specific timing constants. "
-    );
   //
   // Various statistics input arguments
   //
@@ -320,6 +310,10 @@ int main( int argc, char *argv[] )
      "If SFT parameters (i.e. " UVAR_STR( sft_files ) " or " UVAR_STR( sft_timebase ) ") are supplied, simulate search with full memory allocation, i.e. with F-statistic input data, cached coherent results, etc. "
      "Otherwise, perform search with minimal memory allocation, i.e. do not allocate memory for any data or results. "
      );
+  XLALRegisterUvarMember(
+    time_search, BOOLEAN, 0, DEVELOPER,
+    "Collect and output detailed timing information from various stages of the search pipeline. "
+    );
   XLALRegisterUvarMember(
     cache_max_size, UINT4, 0, DEVELOPER,
     "Limit the size of the internal caches, used to store intermediate results, to this number of items per segment. "
@@ -425,6 +419,12 @@ int main( int argc, char *argv[] )
   //
   // - Esoterica
   //
+  XLALUserVarCheck( &should_exit,
+                    !UVAR_ALLSET2( time_search, simulate_search ),
+                    UVAR_STR2AND( time_search, simulate_search ) " are mutually exclusive" );
+  XLALUserVarCheck( &should_exit,
+                    !UVAR_ALLSET2( time_search, ckpt_output_file ),
+                    UVAR_STR2AND( time_search, ckpt_output_file ) " are mutually exclusive" );
 
   // Exit if required
   if ( should_exit ) {
@@ -798,7 +798,7 @@ int main( int argc, char *argv[] )
   Fstat_opt_args.FstatMethod = uvar->Fstat_method;
   Fstat_opt_args.injectSources = injections;
   Fstat_opt_args.prevInput = NULL;
-  Fstat_opt_args.collectTiming = uvar->Fstat_timing;
+  Fstat_opt_args.collectTiming = uvar->time_search;
 
   // Load input data required for computing coherent results
   WeaveCohInput *XLAL_INIT_DECL( coh_input, [nsegments] );
@@ -838,6 +838,10 @@ int main( int argc, char *argv[] )
   WeaveOutputResults *out = XLALWeaveOutputResultsCreate( &setup.ref_time, ninputspins, statistics_params, uvar->toplist_limit, uvar->toplist_tmpl_idx );
   XLAL_CHECK_MAIN( out != NULL, XLAL_EFUNC );
 
+  // Create search timing structure
+  WeaveSearchTiming *tim = XLALWeaveSearchTimingCreate( uvar->time_search, statistics_params );
+  XLAL_CHECK_MAIN( tim != NULL, XLAL_EFUNC );
+
   // Number of times output results have been restored from a checkpoint
   UINT4 ckpt_output_count = 0;
 
@@ -873,28 +877,14 @@ int main( int argc, char *argv[] )
 
   }
 
-  // Initial CPU and wall times
-  const double cpu_zero = cpu_time();
-  const double wall_zero = wall_time();
+  // Start timing main search loop
+  XLAL_CHECK_MAIN( XLALWeaveSearchTimingStart( tim ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // CPU time taken during various sections
-  enum { CT_LATTICE, CT_QUERY, CT_COH, CT_SEMI_ADD, CT_SEMI_MAIN, CT_OUTPUT, CT_SEMI_CMPL, CT_MAX };
-  double XLAL_INIT_DECL( cpu_timing, [CT_MAX] );
-  const char* cpu_timing_key_comment[CT_MAX][2] = {
-    [CT_LATTICE]    = { "lattice", "CPU time taken by lattice tiling iteration" },
-    [CT_QUERY]      = { "query", "CPU time talen by coherent result cache queries" },
-    [CT_COH]        = { "coh", "CPU time taken by computation/retrieval of coherent results" },
-    [CT_SEMI_ADD]   = { "semiadd", "CPU time taken by addition of coherent results to semicoherent results" },
-    [CT_SEMI_MAIN]  = { "semimain", "CPU time taken by computation of main-loop semicoherent results" },
-    [CT_OUTPUT]     = { "output", "CPU time taken by output of semicoherent results" },
-    [CT_SEMI_CMPL]  = { "semicmpl", "CPU time taken by computation of completion-loop semicoherent results" },
-  };
+  // Elapsed wall time at which search was last checkpointed
+  double wall_ckpt_elapsed = 0;
 
-  // Wall time at which search was last checkpointed
-  double wall_ckpt_output = wall_zero;
-
-  // Wall time at which progress was last printed, and interval at which to print progress
-  double wall_prog = wall_zero;
+  // Elapsed wall time at which progress was last printed, and interval at which to print progress
+  double wall_prog_elapsed = 0;
   double wall_prog_period = 5.0;
 
   // Whether to print predicted remaining time, and previous prediction for total elapsed time
@@ -908,9 +898,8 @@ int main( int argc, char *argv[] )
   BOOLEAN search_complete = 0;
   while ( !search_complete ) {
 
-    // Start timing
-    double cpu_tic = cpu_time();
-    double cpu_toc = 0;
+    // Switch timing section
+    XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_OTHER, WEAVE_SEARCH_TIMING_ITER ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Get next semicoherent frequency block
     // - Exit main loop if iteration is complete
@@ -923,6 +912,7 @@ int main( int argc, char *argv[] )
     UINT4 freq_partition_index = 0;
     XLAL_CHECK( XLALWeaveSearchIteratorNext( main_loop_itr, &search_complete, &expire_cache, &semi_index, &semi_rssky, &semi_left, &semi_right, &freq_partition_index ) == XLAL_SUCCESS, XLAL_EFUNC );
     if ( search_complete ) {
+      XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_ITER, WEAVE_SEARCH_TIMING_OTHER ) == XLAL_SUCCESS, XLAL_EFUNC );
       break;
     } else if ( expire_cache ) {
       for ( size_t i = 0; i < nsegments; ++i ) {
@@ -930,10 +920,8 @@ int main( int argc, char *argv[] )
       }
     }
 
-    // Time lattice tiling iteration
-    cpu_toc = cpu_time();
-    cpu_timing[CT_LATTICE] += cpu_toc - cpu_tic;
-    cpu_tic = cpu_toc;
+    // Switch timing section
+    XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_ITER, WEAVE_SEARCH_TIMING_QUERY ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Initialise cache queries
     XLAL_CHECK_MAIN( XLALWeaveCacheQueriesInit( queries, semi_index, semi_rssky, semi_left, semi_right, freq_partition_index ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -948,69 +936,97 @@ int main( int argc, char *argv[] )
     UINT4 semi_nfreqs = 0;
     XLAL_CHECK_MAIN( XLALWeaveCacheQueriesFinal( queries, &semi_phys, &semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
     if ( semi_nfreqs == 0 ) {
+      XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_QUERY, WEAVE_SEARCH_TIMING_OTHER ) == XLAL_SUCCESS, XLAL_EFUNC );
       continue;
     }
 
-    // Time coherent result cache queries
-    cpu_toc = cpu_time();
-    cpu_timing[CT_QUERY] += cpu_toc - cpu_tic;
-    cpu_tic = cpu_toc;
+    // Switch timing section
+    XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_QUERY, WEAVE_SEARCH_TIMING_COH ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Retrieve coherent results from each segment
     const WeaveCohResults *XLAL_INIT_DECL( coh_res, [nsegments] );
     UINT8 XLAL_INIT_DECL( coh_index, [nsegments] );
     UINT4 XLAL_INIT_DECL( coh_offset, [nsegments] );
     for ( size_t i = 0; i < nsegments; ++i ) {
-      XLAL_CHECK_MAIN( XLALWeaveCacheRetrieve( coh_cache[i], queries, i, &coh_res[i], &coh_index[i], &coh_offset[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALWeaveCacheRetrieve( coh_cache[i], queries, i, &coh_res[i], &coh_index[i], &coh_offset[i], tim ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( coh_res[i] != NULL, XLAL_EFUNC );
     }
 
-    // Time computation/retrieval of coherent results
-    cpu_toc = cpu_time();
-    cpu_timing[CT_COH] += cpu_toc - cpu_tic;
-    cpu_tic = cpu_toc;
+    // Switch timing section
+    XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_COH, WEAVE_SEARCH_TIMING_SEMISEG ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Initialise semicoherent results
     XLAL_CHECK_MAIN( XLALWeaveSemiResultsInit( &semi_res, simulation_level, ndetectors, nsegments, semi_index, &semi_phys, dfreq, semi_nfreqs, statistics_params ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Add coherent results to semicoherent results
     for ( size_t i = 0; i < nsegments; ++i ) {
-      XLAL_CHECK_MAIN( XLALWeaveSemiResultsAdd( semi_res, coh_res[i], coh_index[i], coh_offset[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALWeaveSemiResultsAdd( semi_res, coh_res[i], coh_index[i], coh_offset[i], tim ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
-    // Time addition of coherent results to semicoherent results
-    cpu_toc = cpu_time();
-    cpu_timing[CT_SEMI_ADD] += cpu_toc - cpu_tic;
-    cpu_tic = cpu_toc;
+    // Switch timing section
+    XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_SEMISEG, WEAVE_SEARCH_TIMING_SEMI ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Compute all toplist-ranking semicoherent results
-    XLAL_CHECK_MAIN( XLALWeaveSemiResultsComputeMain( semi_res ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALWeaveSemiResultsComputeMain( semi_res, tim ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Time computation of main-loop semicoherent results
-    cpu_toc = cpu_time();
-    cpu_timing[CT_SEMI_MAIN] += cpu_toc - cpu_tic;
-    cpu_tic = cpu_toc;
+    // Switch timing section
+    XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_SEMI, WEAVE_SEARCH_TIMING_OUTPUT ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Add semicoherent results to output
     XLAL_CHECK_MAIN( XLALWeaveOutputResultsAdd( out, semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Time output of semicoherent results
-    cpu_toc = cpu_time();
-    cpu_timing[CT_OUTPUT] += cpu_toc - cpu_tic;
-    cpu_tic = cpu_toc;
-
-    // Current CPU and wall times
-    const double cpu_now = cpu_tic;
-    const double wall_now = wall_time();
+    // Switch timing section
+    XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_OUTPUT, WEAVE_SEARCH_TIMING_OTHER ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Main iterator percentage complete
     const REAL4 prog_per_cent = XLALWeaveSearchIteratorProgress( main_loop_itr );
 
+    // Current elapsed wall and CPU times
+    double wall_elapsed = 0, cpu_elapsed = 0;
+    XLAL_CHECK_MAIN( XLALWeaveSearchTimingElapsed( tim, &wall_elapsed, &cpu_elapsed ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Print iteration progress, if required
+    if ( wall_elapsed - wall_prog_elapsed >= wall_prog_period ) {
+
+      // Print progress
+      LogPrintf( LOG_NORMAL, "%s at %.3g%% complete", simulation_level & WEAVE_SIMULATE ? "Simulation" : "Search", prog_per_cent );
+
+      // Print elapsed time
+      LogPrintfVerbatim( LOG_NORMAL, ", elapsed %.1f sec", wall_elapsed );
+
+      // Print remaining time, if it can be reliably predicted
+      const double wall_prog_remain = XLALWeaveSearchIteratorRemainingTime( main_loop_itr, wall_elapsed );
+      const double wall_prog_total = wall_elapsed + wall_prog_remain;
+      if ( wall_prog_remain_print || fabs( wall_prog_total - wall_prog_total_prev ) <= 0.1 * wall_prog_total_prev ) {
+        LogPrintfVerbatim( LOG_NORMAL, ", remaining ~%.1f sec", wall_prog_remain );
+        wall_prog_remain_print = 1;   // Always print remaining time once it can be reliably predicted
+      } else {
+        wall_prog_total_prev = wall_prog_total;
+      }
+
+      // Print CPU usage
+      LogPrintfVerbatim( LOG_NORMAL, ", CPU %.1f%%", 100.0 * cpu_elapsed / wall_elapsed );
+
+      // Print memory usage
+      LogPrintfVerbatim( LOG_NORMAL, ", peak memory %.1fMB", XLALGetPeakHeapUsageMB() );
+
+      // Finish progress printing
+      LogPrintfVerbatim( LOG_NORMAL, "\n" );
+
+      // Update elapsed wall time at which progress was last printed, and increase interval at which to print progress
+      wall_prog_elapsed = wall_elapsed;
+      wall_prog_period = GSL_MIN( 1200, wall_prog_period * 1.5 );
+
+    }
+
     // Checkpoint output results, if required
     if ( UVAR_SET( ckpt_output_file ) ) {
 
+      // Switch timing section
+      XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_OTHER, WEAVE_SEARCH_TIMING_CKPT ) == XLAL_SUCCESS, XLAL_EFUNC );
+
       // Decide whether to checkpoint output results
-      const BOOLEAN do_ckpt_output_period = UVAR_SET( ckpt_output_period ) && wall_now - wall_ckpt_output >= uvar->ckpt_output_period;
+      const BOOLEAN do_ckpt_output_period = UVAR_SET( ckpt_output_period ) && wall_elapsed - wall_ckpt_elapsed >= uvar->ckpt_output_period;
       const BOOLEAN do_ckpt_output_exit = UVAR_SET( ckpt_output_exit ) && prog_per_cent >= 100.0 * uvar->ckpt_output_exit;
       if ( do_ckpt_output_period || do_ckpt_output_exit ) {
 
@@ -1034,79 +1050,42 @@ int main( int argc, char *argv[] )
         XLALFITSFileClose( file );
 
         // Print progress
-        LogPrintf( LOG_NORMAL, "Wrote output checkpoint to file '%s' at %.3g%% complete, elapsed %.1f sec\n", uvar->ckpt_output_file, prog_per_cent, wall_now - wall_zero );
+        LogPrintf( LOG_NORMAL, "Wrote output checkpoint to file '%s' at %.3g%% complete, elapsed %.1f sec\n", uvar->ckpt_output_file, prog_per_cent, wall_elapsed );
 
         // Exit main loop, if checkpointing was triggered by 'do_ckpt_output_exit'
         if ( do_ckpt_output_exit ) {
           LogPrintf( LOG_NORMAL, "Exiting main seach loop after writing output checkpoint\n" );
+          XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_CKPT, WEAVE_SEARCH_TIMING_OTHER ) == XLAL_SUCCESS, XLAL_EFUNC );
           break;
         }
 
-        // Update wall time at which search was last checkpointed
-        wall_ckpt_output = wall_now;
+        // Update elapsed wall time at which search was last checkpointed
+        wall_ckpt_elapsed = wall_elapsed;
 
       }
+
+      // Switch timing section
+      XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_CKPT, WEAVE_SEARCH_TIMING_OTHER ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     } // if ( UVAR_SET( ckpt_output_file ) )
 
-    // Print iteration progress, if required
-    if ( wall_now - wall_prog >= wall_prog_period ) {
-      const double wall_elapsed = wall_now - wall_zero;
-      const double cpu_elapsed = cpu_now - cpu_zero;
-
-      // Print progress
-      LogPrintf( LOG_NORMAL, "%s at %.3g%% complete", simulation_level & WEAVE_SIMULATE ? "Simulation" : "Search", prog_per_cent );
-
-      // Print elapsed time
-      LogPrintfVerbatim( LOG_NORMAL, ", elapsed %.1f sec", wall_now - wall_zero );
-
-      // Print remaining time, if it can be reliably predicted
-      const double wall_prog_remain = XLALWeaveSearchIteratorRemainingTime( main_loop_itr, wall_elapsed );
-      const double wall_prog_total = wall_elapsed + wall_prog_remain;
-      if ( wall_prog_remain_print || fabs( wall_prog_total - wall_prog_total_prev ) <= 0.1 * wall_prog_total_prev ) {
-        LogPrintfVerbatim( LOG_NORMAL, ", remaining ~%.1f sec", wall_prog_remain );
-        wall_prog_remain_print = 1;   // Always print remaining time once it can be reliably predicted
-      } else {
-        wall_prog_total_prev = wall_prog_total;
-      }
-
-      // Print CPU usage
-      LogPrintfVerbatim( LOG_NORMAL, ", CPU %.1f%%", 100.0 * cpu_elapsed / wall_elapsed );
-
-      // Print memory usage
-      LogPrintfVerbatim( LOG_NORMAL, ", peak memory %.1fMB", XLALGetPeakHeapUsageMB() );
-
-      // Finish progress printing
-      LogPrintfVerbatim( LOG_NORMAL, "\n" );
-
-      // Update time at which progress was last printed, and increase interval at which to print progress
-      wall_prog = wall_now;
-      wall_prog_period = GSL_MIN( 1200, wall_prog_period * 1.5 );
-
-    }
-
   }   // End of main loop
 
-  // Total elapsed CPU and wall times
-  const double cpu_total = cpu_time() - cpu_zero;
-  const double wall_total = wall_time() - wall_zero;
+  // Switch timing section
+  XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_OTHER, WEAVE_SEARCH_TIMING_OUTPUT ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Completion loop: compute all extra statistics that weren't required in the main loop
+  XLAL_CHECK_MAIN ( XLALWeaveOutputResultsCompletionLoop( out ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Switch timing section
+  XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_OUTPUT, WEAVE_SEARCH_TIMING_OTHER ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Stop timing main search loop, and get total wall and CPU times
+  double wall_total = 0, cpu_total = 0;
+  XLAL_CHECK_MAIN( XLALWeaveSearchTimingStop( tim, &wall_total, &cpu_total ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Print final progress
   LogPrintf( LOG_NORMAL, "Finished main loop at %.3g%% complete, total %.1f sec, CPU %.1f%%, peak memory %.1fMB\n", XLALWeaveSearchIteratorProgress( main_loop_itr ), wall_total, 100.0 * cpu_total / wall_total, XLALGetPeakHeapUsageMB() );
-
-  {
-    // Start timing
-    double cpu_tic = cpu_time();
-    double cpu_toc = 0;
-
-    // Completion loop: compute all extra statistics that weren't required in the main loop
-    XLAL_CHECK_MAIN ( XLALWeaveOutputResultsCompletionLoop( out ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    // Time computation of completion-loop semicoherent results
-    cpu_toc = cpu_time();
-    cpu_timing[CT_SEMI_CMPL] += cpu_toc - cpu_tic;
-    cpu_tic = cpu_toc;
-  }
 
   ////////// Output search results //////////
 
@@ -1168,26 +1147,13 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "peakmem [MB]", XLALGetPeakHeapUsageMB(), "peak memory usage" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Write timing information
-    if ( simulation_level == 0 ) {   // Unless search is being simulated...
-      if ( !UVAR_SET( ckpt_output_file ) ) {   // Unless search is checkpointed...
-        XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "wall total", wall_total, "total wall time" ) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "timing total", cpu_total, "total CPU time" ) == XLAL_SUCCESS, XLAL_EFUNC );
-        double cpu_timing_other = cpu_total;
-        for ( size_t i = 0; i < CT_MAX; ++i ) {
-          char keyword[64];
-          snprintf( keyword, sizeof( keyword ), "timing %s", cpu_timing_key_comment[i][0] );
-          XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, keyword, cpu_timing[i], cpu_timing_key_comment[i][1] ) == XLAL_SUCCESS, XLAL_EFUNC );
-          cpu_timing_other -= cpu_timing[i];
-        }
-        XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "timing other", cpu_timing_other, "CPU time unaccounted for" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      }
-    }
+    XLAL_CHECK_MAIN( XLALWeaveSearchTimingWriteInfo( file, tim, queries ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Write various information from coherent input data
     XLAL_CHECK_MAIN( XLALWeaveCohInputWriteInfo( file, nsegments, coh_input ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Write search results
-    if ( simulation_level == 0 ) {   // Unless search is being simulated...
+    // Write search results, unless search is being simulated
+    if ( simulation_level == 0 ) {
       XLAL_CHECK_MAIN( XLALWeaveOutputResultsWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
@@ -1202,6 +1168,9 @@ int main( int argc, char *argv[] )
   }
 
   ////////// Cleanup memory and exit //////////
+
+  // Cleanup memory from search timing
+  XLALWeaveSearchTimingDestroy( tim );
 
   // Cleanup memory from output results
   XLALWeaveOutputResultsDestroy( out );

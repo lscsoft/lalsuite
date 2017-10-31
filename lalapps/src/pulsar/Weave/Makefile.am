@@ -31,6 +31,8 @@ lalapps_Weave_SOURCES = \
 	ResultsToplist.h \
 	SearchIteration.c \
 	SearchIteration.h \
+	SearchTiming.c \
+	SearchTiming.h \
 	SetupData.c \
 	SetupData.h \
 	Statistics.c \

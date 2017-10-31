@@ -784,7 +784,8 @@ int XLALWeaveCacheRetrieve(
   const UINT4 query_index,
   const WeaveCohResults **coh_res,
   UINT8 *coh_index,
-  UINT4 *coh_offset
+  UINT4 *coh_offset,
+  WeaveSearchTiming *tim
   )
 {
 
@@ -794,6 +795,7 @@ int XLALWeaveCacheRetrieve(
   XLAL_CHECK( query_index < queries->nqueries, XLAL_EINVAL );
   XLAL_CHECK( coh_res != NULL, XLAL_EFAULT );
   XLAL_CHECK( coh_offset != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tim != NULL, XLAL_EFAULT );
 
   // See if coherent results are already cached
   const cache_item find_key = { .generation = cache->generation, .coh_index = queries->coh_index[query_index] };
@@ -820,7 +822,7 @@ int XLALWeaveCacheRetrieve(
     const UINT4 coh_nfreqs = queries->coh_right[query_index] - queries->coh_left[query_index] + 1;
 
     // Compute coherent results for the new cache item
-    XLAL_CHECK( XLALWeaveCohResultsCompute( &new_item->coh_res, cache->coh_input, &queries->coh_phys[query_index], coh_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALWeaveCohResultsCompute( &new_item->coh_res, cache->coh_input, &queries->coh_phys[query_index], coh_nfreqs, tim ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Add new cache item to the index hash table
     XLAL_CHECK( XLALHashTblAdd( cache->coh_index_hash, new_item ) == XLAL_SUCCESS, XLAL_EFUNC );

@@ -28,6 +28,7 @@
 
 #include "Weave.h"
 #include "Statistics.h"
+#include "SearchTiming.h"
 
 #include <lal/VectorMath.h>
 #include <lal/ComputeFstat.h>
@@ -124,7 +125,8 @@ int XLALWeaveCohResultsCompute(
   WeaveCohResults **coh_res,
   WeaveCohInput *coh_input,
   const PulsarDopplerParams *coh_phys,
-  const UINT4 coh_nfreqs
+  const UINT4 coh_nfreqs,
+  WeaveSearchTiming *tim
   );
 void XLALWeaveCohResultsDestroy(
   WeaveCohResults *coh_res
@@ -144,10 +146,12 @@ int XLALWeaveSemiResultsAdd(
   WeaveSemiResults *semi_res,
   const WeaveCohResults *coh_res,
   const UINT8 coh_index,
-  const UINT4 coh_offset
+  const UINT4 coh_offset,
+  WeaveSearchTiming *tim
   );
 int XLALWeaveSemiResultsComputeMain(
-  WeaveSemiResults *semi_res
+  WeaveSemiResults *semi_res,
+  WeaveSearchTiming *tim
   );
 void XLALWeaveSemiResultsDestroy(
   WeaveSemiResults *semi_res

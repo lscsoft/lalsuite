@@ -413,7 +413,8 @@ int XLALWeaveCohResultsCompute(
   WeaveCohResults **coh_res,
   WeaveCohInput *coh_input,
   const PulsarDopplerParams *coh_phys,
-  const UINT4 coh_nfreqs
+  const UINT4 coh_nfreqs,
+  WeaveSearchTiming *tim
   )
 {
 
@@ -422,6 +423,7 @@ int XLALWeaveCohResultsCompute(
   XLAL_CHECK( coh_input != NULL, XLAL_EFAULT );
   XLAL_CHECK( coh_phys != NULL, XLAL_EFAULT );
   XLAL_CHECK( coh_nfreqs > 0, XLAL_EINVAL );
+  XLAL_CHECK( tim != NULL, XLAL_EFAULT );
 
   // Allocate results struct if required
   if ( *coh_res == NULL ) {
@@ -456,6 +458,9 @@ int XLALWeaveCohResultsCompute(
     return XLAL_SUCCESS;
   }
 
+  // Start timing of coherent results
+  XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_NONE, WEAVE_STATISTIC_COH2F ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   // Use a local F-statistic results structure, since we supply our own memory
   // - The 'internalalloclen' field stores the memory size in elements of the results arrays (e.g. 'coh2F'),
   //   as opposed to 'numFreqBins' which stores how many elements of the result arrays are in use.
@@ -483,6 +488,9 @@ int XLALWeaveCohResultsCompute(
     const size_t idx = coh_input->Fstat_res_idx[i];
     XLAL_CHECK( Fstat_res->twoFPerDet[i] == ( *coh_res )->coh2F_det[idx]->data, XLAL_EFAILED, "%p vs %p", Fstat_res->twoFPerDet[i], ( *coh_res )->coh2F_det[idx]->data );
   }
+
+  // Stop timing of coherent results
+  XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_COH2F, WEAVE_STATISTIC_NONE ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
@@ -712,7 +720,8 @@ int XLALWeaveSemiResultsAdd(
   WeaveSemiResults *semi_res,
   const WeaveCohResults *coh_res,
   const UINT8 coh_index,
-  const UINT4 coh_offset
+  const UINT4 coh_offset,
+  WeaveSearchTiming *tim
   )
 {
 
@@ -721,6 +730,7 @@ int XLALWeaveSemiResultsAdd(
   XLAL_CHECK( semi_res->ncoh_res < semi_res->nsegments, XLAL_EINVAL );
   XLAL_CHECK( coh_res != NULL, XLAL_EFAULT );
   XLAL_CHECK( semi_res->statistics_params != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tim != NULL, XLAL_EFAULT );
 
   // Check that offset does not overrun coherent results arrays
   XLAL_CHECK( coh_offset + semi_res->nfreqs <= coh_res->nfreqs, XLAL_EFAILED, "Coherent offset (%u) + number of semicoherent frequency bins (%u) > number of coherent frequency bins (%u)", coh_offset, semi_res->nfreqs, coh_res->nfreqs );
@@ -755,6 +765,9 @@ int XLALWeaveSemiResultsAdd(
     } // for i < ndetectors
   }
 
+  // Start timing of semicoherent results
+  XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_NONE, WEAVE_STATISTIC_MAX2F ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   // Add to max-over-segments multi-detector F-statistics per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_MAX2F ) {
     XLAL_CHECK( semi_res_max_2F( &semi_res->nmax2F, semi_res->max2F->data, coh_res->coh2F->data + coh_offset, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -768,6 +781,9 @@ int XLALWeaveSemiResultsAdd(
       }
     }
   }
+
+  // Switch timed statistic
+  XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_MAX2F, WEAVE_STATISTIC_SUM2F ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Add to summed multi-detector F-statistics per frequency, and increment number of additions thus far
   if ( mainloop_stats & WEAVE_STATISTIC_SUM2F ) {
@@ -787,6 +803,9 @@ int XLALWeaveSemiResultsAdd(
     }
   }
 
+  // Stop timing of semicoherent results
+  XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_SUM2F, WEAVE_STATISTIC_NONE ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   return XLAL_SUCCESS;
 
 } // XLALWeaveSemiResultsAdd()
@@ -797,13 +816,15 @@ int XLALWeaveSemiResultsAdd(
 /// "completion loop" on the final toplist.
 ///
 int XLALWeaveSemiResultsComputeMain(
-  WeaveSemiResults *semi_res
+  WeaveSemiResults *semi_res,
+  WeaveSearchTiming *tim
   )
 {
   // Check input
   XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
   XLAL_CHECK( semi_res->ncoh_res == semi_res->nsegments, XLAL_EINVAL );
   XLAL_CHECK( semi_res->statistics_params != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tim != NULL, XLAL_EFAULT );
 
   WeaveStatisticType mainloop_stats = semi_res -> statistics_params -> mainloop_statistics;
 
@@ -828,25 +849,40 @@ int XLALWeaveSemiResultsComputeMain(
   // Compute any remaining (ie that don't directly depend on coh_2F or coh2F_det) toplist ranking statistics
   //
 
+  // Start timing of semicoherent results
+  XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_NONE, WEAVE_STATISTIC_MEAN2F ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   // Compute mean multi-detector F-statistics per frequency:
   if ( mainloop_stats & WEAVE_STATISTIC_MEAN2F ) {
     XLAL_CHECK( XLALVectorScaleREAL4( semi_res->mean2F->data, 1.0 / semi_res->nsum2F, sum2F, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
+
+  // Switch timed statistic
+  XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_MEAN2F, WEAVE_STATISTIC_BSGL ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Compute line-robust log10(B_S/GL) statistic per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_BSGL ) {
     XLAL_CHECK ( XLALVectorComputeBSGL ( semi_res->log10BSGL->data, sum2F, sum2F_det, semi_res->nfreqs, semi_res->statistics_params->BSGL_setup ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
+  // Switch timed statistic
+  XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_BSGL, WEAVE_STATISTIC_BSGLtL ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   // Compute transient-line-robust log10(B_S/GL) statistic per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_BSGLtL ) {
     XLAL_CHECK ( XLALVectorComputeBSGLtL ( semi_res->log10BSGLtL->data, sum2F, sum2F_det, max2F_det, semi_res->nfreqs, semi_res->statistics_params->BSGL_setup ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
+  // Switch timed statistic
+  XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_BSGLtL, WEAVE_STATISTIC_BtSGLtL ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   // Compute transient-signal line-robust log10(B_tS/GL) statistic per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_BtSGLtL ) {
     XLAL_CHECK ( XLALVectorComputeBtSGLtL ( semi_res->log10BtSGLtL->data, max2F, sum2F_det, max2F_det, semi_res->nfreqs, semi_res->statistics_params->BSGL_setup ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
+
+  // Stop timing of semicoherent results
+  XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_BtSGLtL, WEAVE_STATISTIC_NONE ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 

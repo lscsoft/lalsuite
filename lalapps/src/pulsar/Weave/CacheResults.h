@@ -28,6 +28,7 @@
 
 #include "Weave.h"
 #include "ComputeResults.h"
+#include "SearchTiming.h"
 
 #include <lal/LatticeTiling.h>
 #include <lal/SuperskyMetrics.h>
@@ -88,7 +89,8 @@ int XLALWeaveCacheRetrieve(
   const UINT4 query_index,
   const WeaveCohResults **coh_res,
   UINT8 *coh_index,
-  UINT4 *coh_offset
+  UINT4 *coh_offset,
+  WeaveSearchTiming *tim
   );
 int XLALWeaveCacheExpire(
   WeaveCache *cache

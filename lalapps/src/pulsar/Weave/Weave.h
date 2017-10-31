@@ -57,6 +57,7 @@
 extern "C" {
 #endif
 
+typedef enum tagWeaveSearchTimingSection WeaveSearchTimingSection;
 typedef enum tagWeaveSimulationLevel WeaveSimulationLevel;
 typedef enum tagWeaveStatisticType WeaveStatisticType;
 
@@ -68,6 +69,7 @@ typedef struct tagWeaveOutputResults WeaveOutputResults;
 typedef struct tagWeaveResultsToplist WeaveResultsToplist;
 typedef struct tagWeaveResultsToplistItem WeaveResultsToplistItem;
 typedef struct tagWeaveSearchIterator WeaveSearchIterator;
+typedef struct tagWeaveSearchTiming WeaveSearchTiming;
 typedef struct tagWeaveSemiResults WeaveSemiResults;
 typedef struct tagWeaveSetupData WeaveSetupData;
 typedef struct tagWeaveStatisticsParams WeaveStatisticsParams;
