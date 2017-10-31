@@ -791,7 +791,6 @@ int XLALWeaveCacheRetrieve(
   // Check input
   XLAL_CHECK( cache != NULL, XLAL_EFAULT );
   XLAL_CHECK( queries != NULL, XLAL_EFAULT );
-  XLAL_CHECK( queries != NULL, XLAL_EFAULT );
   XLAL_CHECK( query_index < queries->nqueries, XLAL_EINVAL );
   XLAL_CHECK( coh_res != NULL, XLAL_EFAULT );
   XLAL_CHECK( coh_offset != NULL, XLAL_EFAULT );
