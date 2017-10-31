@@ -38,7 +38,7 @@ echo "=== Perform non-interpolating search ==="
 set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
     --toplists=mean2F --toplist-limit=2321 --extra-statistics="mean2F_det,coh2F,coh2F_det" \
-    --toplist-tmpl-idx --misc-info \
+    --toplist-tmpl-idx --segment-info \
     --setup-file=WeaveSetup.fits --sft-files='*.sft' \
     --alpha=2.3/0.9 --delta=-1.2/2.3 --freq=45.5~0.005 --f1dot=-1e-9,0 \
     --semi-max-mismatch=7 --interpolation=no

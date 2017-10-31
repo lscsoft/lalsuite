@@ -25,6 +25,7 @@
 #include "ComputeResults.h"
 
 #include <lal/UserInputPrint.h>
+#include <lal/ExtrapolatePulsarSpins.h>
 
 ///
 /// Aligned arrays use maximum required alignment, i.e.\ 32 bytes for AVX
@@ -32,19 +33,47 @@
 const UINT4 alignment = 32;
 
 ///
+/// Internal definition of input data segment info
+///
+typedef struct {
+  /// Start time of segment
+  LIGOTimeGPS segment_start;
+  /// End time of segment
+  LIGOTimeGPS segment_end;
+  /// Timestamp of first SFT from each detector
+  LIGOTimeGPS sft_first[PULSAR_MAX_DETECTORS];
+  /// Timestamp of last SFT from each detector
+  LIGOTimeGPS sft_last[PULSAR_MAX_DETECTORS];
+  /// Number of SFTs from each detector
+  UINT4 sft_count[PULSAR_MAX_DETECTORS];
+  /// Minimum of frequency range covered by SFTs
+  REAL8 sft_min_cover_freq;
+  /// Maximum of frequency range covered by SFTs
+  REAL8 sft_max_cover_freq;
+} segment_info;
+
+///
 /// Internal definition of input data required for computing coherent results
 ///
 struct tagWeaveCohInput {
+  /// List of detector names from setup file
+  const LALStringVector *setup_detectors;
   /// Bitflag representing search simulation level
   WeaveSimulationLevel simulation_level;
+  /// Input data segment info
+  segment_info seg_info;
+  /// Whether input data segment info contains SFT info
+  BOOLEAN seg_info_have_sft_info;
   /// F-statistic input data
   FstatInput *Fstat_input;
   /// What F-statistic quantities to compute
-  FstatQuantities what_to_compute;
+  FstatQuantities Fstat_what_to_compute;
   /// Number of detectors in F-statistic data
   UINT4 Fstat_ndetectors;
   /// Map detectors in F-statistic data in this segment to 'global' detector list across segments in coherent results
   size_t Fstat_res_idx[PULSAR_MAX_DETECTORS];
+  /// Whether F-statistic timing info is being collected
+  BOOLEAN Fstat_collect_timing;
 };
 
 ///
@@ -75,51 +104,145 @@ static int semi_res_max_2F( UINT4 *nmax, REAL4 *max2F, const REAL4 *coh2F, const
 /// Create coherent input data
 ///
 WeaveCohInput *XLALWeaveCohInputCreate(
+  const LALStringVector *setup_detectors,
   const WeaveSimulationLevel simulation_level,
-  FstatInput *Fstat_input,
+  const SFTCatalog *sft_catalog,
+  const UINT4 segment_index,
+  const LALSeg *segment,
+  const PulsarDopplerParams *min_phys,
+  const PulsarDopplerParams *max_phys,
+  const double dfreq,
+  const EphemerisData *ephemerides,
+  const LALStringVector *sft_noise_psd,
+  const LALStringVector *Fstat_assume_psd,
+  FstatOptionalArgs *Fstat_opt_args,
   const WeaveStatisticsParams *statistics_params
   )
 {
 
+  // Check input
+  XLAL_CHECK_NULL( setup_detectors != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( ( simulation_level & WEAVE_SIMULATE_MIN_MEM ) || ( sft_catalog != NULL ), XLAL_EFAULT );
+  XLAL_CHECK_NULL( segment != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( min_phys != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( max_phys != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( dfreq >= 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL( ephemerides != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( Fstat_opt_args != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( statistics_params != NULL, XLAL_EFAULT );
+
   // Allocate memory
   WeaveCohInput *coh_input = XLALCalloc( 1, sizeof( *coh_input ) );
   XLAL_CHECK_NULL( coh_input != NULL, XLAL_ENOMEM );
-  XLAL_CHECK_NULL( ( simulation_level & WEAVE_SIMULATE_MIN_MEM ) || ( Fstat_input != NULL ), XLAL_EFAULT );
-  XLAL_CHECK_NULL( statistics_params != NULL, XLAL_EFAULT );
 
   // Set fields
+  coh_input->setup_detectors = setup_detectors;
   coh_input->simulation_level = simulation_level;
-  coh_input->Fstat_input = Fstat_input;
+  coh_input->seg_info_have_sft_info = ( sft_catalog != NULL );
+  coh_input->Fstat_collect_timing = Fstat_opt_args->collectTiming;
 
-  WeaveStatisticType mainloop_stats = statistics_params -> mainloop_statistics;
+  // Record information from segment
+  coh_input->seg_info.segment_start = segment->start;
+  coh_input->seg_info.segment_end = segment->end;
 
   // Decide what F-statistic quantities to compute
+  WeaveStatisticType mainloop_stats = statistics_params -> mainloop_statistics;
   if ( mainloop_stats & WEAVE_STATISTIC_COH2F ) {
-    coh_input->what_to_compute |= FSTATQ_2F;
+    coh_input->Fstat_what_to_compute |= FSTATQ_2F;
   }
   if ( mainloop_stats & WEAVE_STATISTIC_COH2F_DET ) {
-    coh_input->what_to_compute |= FSTATQ_2F_PER_DET;
+    coh_input->Fstat_what_to_compute |= FSTATQ_2F_PER_DET;
   }
 
-  // Map detectors in F-statistic data in this segment to their index in the coherent results.
-  // This is important when segments contain data from a subset of detectors.
-  if ( !(simulation_level & WEAVE_SIMULATE_MIN_MEM) ) {
+  // Return now if simulating search with minimal memory allocation
+  if ( coh_input->simulation_level & WEAVE_SIMULATE_MIN_MEM ) {
+    return coh_input;
+  }
 
-    // Get detectors in F-statistic data
-    const MultiLALDetector *detector_info = XLALGetFstatInputDetectors( Fstat_input );
-    coh_input->Fstat_ndetectors = detector_info->length;
+  // Get a timeslice of SFT catalog restricted to the given segment
+  SFTCatalog XLAL_INIT_DECL( sft_catalog_seg );
+  XLAL_CHECK_NULL( XLALSFTCatalogTimeslice( &sft_catalog_seg, sft_catalog, &segment->start, &segment->end ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_NULL( sft_catalog_seg.length > 0, XLAL_EINVAL, "No SFTs found in segment %u", segment_index );
 
-    // Map entry 'i' in 'detector_info' (F-statistic data) to entry 'idx' in 'detectors' (coherent results)
-    char *detectors_string = XLALConcatStringVector( statistics_params->detectors, "," );
+  // Check that the number of SFTs in each segment matches the number provided by the segment list in the setup file, if nonzero
+  const UINT4 sft_count = ( UINT4 ) segment->id;
+  XLAL_CHECK_NULL( sft_count == 0 || sft_catalog_seg.length == sft_count, XLAL_EFAILED, "Number of SFTs found for segment %u (%u) is inconsistent with expected number of SFTs given by segment list (%u)", segment_index, sft_catalog_seg.length, sft_count );
+
+  // Get list of detectors of SFT catalog in this segment
+  LALStringVector *sft_catalog_seg_detectors = XLALListIFOsInCatalog( &sft_catalog_seg );
+  XLAL_CHECK_NULL( sft_catalog_seg_detectors != NULL, XLAL_EFUNC );
+
+  // Compute frequency range covered by spindown range over in the given segment
+  LIGOTimeGPS sft_start = sft_catalog_seg.data[0].header.epoch;
+  LIGOTimeGPS sft_end = sft_catalog_seg.data[sft_catalog_seg.length - 1].header.epoch;
+  const double sft_end_timebase = 1.0 / sft_catalog_seg.data[sft_catalog_seg.length - 1].header.deltaF;
+  XLALGPSAdd( &sft_end, sft_end_timebase );
+  PulsarSpinRange XLAL_INIT_DECL( spin_range );
+  XLAL_CHECK_NULL( XLALInitPulsarSpinRangeFromSpins( &spin_range, &min_phys->refTime, min_phys->fkdot, max_phys->fkdot ) == XLAL_SUCCESS, XLAL_EFUNC );
+  double sft_min_cover_freq = 0, sft_max_cover_freq = 0;
+  XLAL_CHECK_NULL( XLALCWSignalCoveringBand( &sft_min_cover_freq, &sft_max_cover_freq, &sft_start, &sft_end, &spin_range, 0, 0, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  coh_input->seg_info.sft_min_cover_freq = sft_min_cover_freq;
+  coh_input->seg_info.sft_max_cover_freq = sft_max_cover_freq;
+
+  // Parse SFT noise PSD string vector for detectors in this segment
+  // - This is important when segments contain data from a subset of detectors
+  MultiNoiseFloor Fstat_injectSqrtSX;
+  if ( sft_noise_psd != NULL ) {
+    XLAL_CHECK_NULL( XLALParseMultiNoiseFloorMapped( &Fstat_injectSqrtSX, sft_catalog_seg_detectors, sft_noise_psd, setup_detectors ) == XLAL_SUCCESS, XLAL_EFUNC );
+    Fstat_opt_args->injectSqrtSX = &Fstat_injectSqrtSX;
+  }
+
+  // Parse F-statistic assumed PSD string vector for detectors in this segment
+  // - This is important when segments contain data from a subset of detectors
+  MultiNoiseFloor Fstat_assumeSqrtSX;
+  if ( Fstat_assume_psd != NULL ) {
+    XLAL_CHECK_NULL( XLALParseMultiNoiseFloorMapped( &Fstat_assumeSqrtSX, sft_catalog_seg_detectors, Fstat_assume_psd, setup_detectors ) == XLAL_SUCCESS, XLAL_EFUNC );
+    Fstat_opt_args->assumeSqrtSX = &Fstat_assumeSqrtSX;
+  }
+
+  // Load F-statistic input data
+  coh_input->Fstat_input = XLALCreateFstatInput( &sft_catalog_seg, sft_min_cover_freq, sft_max_cover_freq, dfreq, ephemerides, Fstat_opt_args );
+  XLAL_CHECK_NULL( coh_input->Fstat_input != NULL, XLAL_EFUNC );
+  Fstat_opt_args->prevInput = coh_input->Fstat_input;
+
+  // Map detectors in F-statistic data in the given segment to their index in the coherent results
+  // - This is important when segments contain data from a subset of detectors
+  // - Map entry 'i' in 'Fstat_detector_info' (F-statistic data) to entry 'idx' in 'detectors' (coherent results)
+  {
+    const MultiLALDetector *Fstat_detector_info = XLALGetFstatInputDetectors( coh_input->Fstat_input );
+    coh_input->Fstat_ndetectors = Fstat_detector_info->length;
+    char *statistics_detectors_string = XLALConcatStringVector( statistics_params->detectors, "," );
     for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
-      const char *prefix = detector_info->sites[i].frDetector.prefix;
+      const char *prefix = Fstat_detector_info->sites[i].frDetector.prefix;
       const int idx = XLALFindStringInVector( prefix, statistics_params->detectors );
-      XLAL_CHECK_NULL( idx >= 0, XLAL_EFAILED, "Detector '%s' from F-statistic data not found in list of detectors '%s'", prefix, detectors_string );
+      XLAL_CHECK_NULL( idx >= 0, XLAL_EFAILED, "Detector '%s' from F-statistic data not found in list of detectors '%s'", prefix, statistics_detectors_string );
       coh_input->Fstat_res_idx[i] = idx;
     }
-    XLALFree( detectors_string );
-
+    XLALFree( statistics_detectors_string );
   }
+
+  // Record information from SFTs in the given segment
+  {
+    MultiSFTCatalogView *sft_catalog_seg_view = XLALGetMultiSFTCatalogView( &sft_catalog_seg );
+    XLAL_CHECK_NULL( sft_catalog_seg_view != NULL, XLAL_EINVAL );
+    for ( size_t j = 0; j < sft_catalog_seg_view->length; ++j ) {
+      XLAL_CHECK_NULL( sft_catalog_seg_view->data[j].length > 0, XLAL_EINVAL );
+      char *detector_name = XLALGetChannelPrefix( sft_catalog_seg_view->data[j].data[0].header.name );
+      XLAL_CHECK_NULL( detector_name != NULL, XLAL_EFUNC );
+      const int k = XLALFindStringInVector( detector_name, sft_catalog_seg_detectors );
+      if ( k >= 0 ) {
+        const UINT4 length = sft_catalog_seg_view->data[j].length;
+        coh_input->seg_info.sft_first[k] = sft_catalog_seg_view->data[j].data[0].header.epoch;
+        coh_input->seg_info.sft_last[k] = sft_catalog_seg_view->data[j].data[length - 1].header.epoch;
+        coh_input->seg_info.sft_count[k] = length;
+      }
+      XLALFree( detector_name );
+    }
+    XLALDestroyMultiSFTCatalogView( sft_catalog_seg_view );
+  }
+
+  // Cleanup
+  XLALDestroyStringVector( sft_catalog_seg_detectors );
 
   return coh_input;
 
@@ -139,33 +262,9 @@ void XLALWeaveCohInputDestroy(
 } // XLALWeaveCohInputDestroy()
 
 ///
-/// Write F-statistic method name from coherent input data to a FITS file
+/// Write various information from coherent input data to a FITS file
 ///
-int XLALWeaveCohInputWriteFstatMethod(
-  FITSFile *file,
-  const WeaveCohInput *coh_input
-  )
-{
-
-  // Check input
-  XLAL_CHECK( file != NULL, XLAL_EFAULT );
-  XLAL_CHECK( coh_input != NULL, XLAL_EFAULT );
-
-  // Get method name
-  const char *method_name = XLALGetFstatInputMethodName( coh_input->Fstat_input );
-  XLAL_CHECK( method_name != NULL, XLAL_EFUNC );
-
-  // Write method name
-  XLAL_CHECK( XLALFITSHeaderWriteString( file, "fstat method", method_name, "name of F-statistic method" ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  return XLAL_SUCCESS;
-
-}
-
-///
-/// Write F-statistic timing information from coherent input data to a FITS file
-///
-int XLALWeaveCohInputWriteFstatTiming(
+int XLALWeaveCohInputWriteInfo(
   FITSFile *file,
   const size_t ncoh_input,
   WeaveCohInput *const *coh_input
@@ -177,62 +276,135 @@ int XLALWeaveCohInputWriteFstatTiming(
   XLAL_CHECK( ncoh_input > 0, XLAL_ESIZE );
   XLAL_CHECK( coh_input != NULL, XLAL_EFAULT );
 
-  // Get timing information from F-statistic input data
-  REAL4 tauF_eff = 0, tauF_core = 0, tauF_buffer = 0, NCalls = 0, NBufferMisses = 0;
-  UINT4 nmodel = 0;
-  const char *XLAL_INIT_DECL( model_names, [TIMING_MODEL_MAX_VARS] );
-  REAL4 XLAL_INIT_DECL( model_values, [TIMING_MODEL_MAX_VARS] );
-  for ( size_t i = 0; i < ncoh_input; ++i ) {
-
-    // Get timing data
-    FstatTimingGeneric XLAL_INIT_DECL( timing_generic );
-    FstatTimingModel XLAL_INIT_DECL( timing_model );
-    XLAL_CHECK( XLALGetFstatTiming( coh_input[i]->Fstat_input, &timing_generic, &timing_model ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( timing_generic.NCalls > 0, XLAL_EFAILED );
-
-    // Accumulate generic timing constants
-    tauF_eff += timing_generic.tauF_eff;
-    tauF_core += timing_generic.tauF_core;
-    tauF_buffer += timing_generic.tauF_buffer;
-    NCalls += timing_generic.NCalls;
-    NBufferMisses += timing_generic.NBufferMisses;
-
-    // Get names of method-specific timing constants
-    if ( nmodel == 0 ) {
-      nmodel = timing_model.numVariables;
-      for ( size_t j = 0; j < nmodel; ++j ) {
-        model_names[j] = timing_model.names[j];
-      }
-    } else {
-      XLAL_CHECK( nmodel == timing_model.numVariables, XLAL_EFAILED );
-      for ( size_t j = 0; j < nmodel; ++j ) {
-        XLAL_CHECK( strcmp( model_names[j], timing_model.names[j] ) == 0, XLAL_EFAILED );
+  // Write total number of SFTs used by search
+  {
+    UINT4 nsfts = 0;
+    for ( size_t i = 0; i < ncoh_input; ++i ) {
+      for ( size_t j = 0; j < PULSAR_MAX_DETECTORS; ++j ) {
+        nsfts += coh_input[i]->seg_info.sft_count[j];
       }
     }
-
-    // Accumulate method-specific timing constants
-    for ( size_t j = 0; j < nmodel; ++j ) {
-      model_values[j] += timing_model.values[j];
-    }
-
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "nsfts", nsfts, "number of SFTs used by search" ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
-  // Write generic timing constants
-  XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, "fstat tauF_eff", tauF_eff / ncoh_input, "F-statistic generic timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, "fstat tauF_core", tauF_core / ncoh_input, "F-statistic generic timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, "fstat tauF_buffer", tauF_buffer / ncoh_input, "F-statistic generic timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, "fstat b", NBufferMisses / NCalls, "F-statistic generic timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Return now if simulating search
+  if ( coh_input[0]->simulation_level & WEAVE_SIMULATE ) {
+    return XLAL_SUCCESS;
+  }
 
-  // Write method-specific timing constants
-  for ( size_t j = 0; j < nmodel; ++j ) {
-    char keyword[64];
-    snprintf( keyword, sizeof( keyword ), "fstat %s", model_names[j] );
-    XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, keyword, model_values[j] / ncoh_input, "F-statistic method-specific timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Write F-statistic method name
+  {
+    const char *method_name = XLALGetFstatInputMethodName( coh_input[0]->Fstat_input );
+    XLAL_CHECK( method_name != NULL, XLAL_EFUNC );
+    XLAL_CHECK( XLALFITSHeaderWriteString( file, "fstat method", method_name, "name of F-statistic method" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  // Write F-statistic timing information
+  if ( coh_input[0]->Fstat_collect_timing ) {
+
+    // Get timing information from F-statistic input data
+    REAL4 tauF_eff = 0, tauF_core = 0, tauF_buffer = 0, NCalls = 0, NBufferMisses = 0;
+    UINT4 nmodel = 0;
+    const char *XLAL_INIT_DECL( model_names, [TIMING_MODEL_MAX_VARS] );
+    REAL4 XLAL_INIT_DECL( model_values, [TIMING_MODEL_MAX_VARS] );
+    for ( size_t i = 0; i < ncoh_input; ++i ) {
+
+      // Get timing data
+      FstatTimingGeneric XLAL_INIT_DECL( timing_generic );
+      FstatTimingModel XLAL_INIT_DECL( timing_model );
+      XLAL_CHECK( XLALGetFstatTiming( coh_input[i]->Fstat_input, &timing_generic, &timing_model ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( timing_generic.NCalls > 0, XLAL_EFAILED );
+
+      // Accumulate generic timing constants
+      tauF_eff += timing_generic.tauF_eff;
+      tauF_core += timing_generic.tauF_core;
+      tauF_buffer += timing_generic.tauF_buffer;
+      NCalls += timing_generic.NCalls;
+      NBufferMisses += timing_generic.NBufferMisses;
+
+      // Get names of method-specific timing constants
+      if ( nmodel == 0 ) {
+        nmodel = timing_model.numVariables;
+        for ( size_t j = 0; j < nmodel; ++j ) {
+          model_names[j] = timing_model.names[j];
+        }
+      } else {
+        XLAL_CHECK( nmodel == timing_model.numVariables, XLAL_EFAILED );
+        for ( size_t j = 0; j < nmodel; ++j ) {
+          XLAL_CHECK( strcmp( model_names[j], timing_model.names[j] ) == 0, XLAL_EFAILED );
+        }
+      }
+
+      // Accumulate method-specific timing constants
+      for ( size_t j = 0; j < nmodel; ++j ) {
+        model_values[j] += timing_model.values[j];
+      }
+
+    }
+
+    // Write generic timing constants
+    XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, "fstat tauF_eff", tauF_eff / ncoh_input, "F-statistic generic timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, "fstat tauF_core", tauF_core / ncoh_input, "F-statistic generic timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, "fstat tauF_buffer", tauF_buffer / ncoh_input, "F-statistic generic timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, "fstat b", NBufferMisses / NCalls, "F-statistic generic timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Write method-specific timing constants
+    for ( size_t j = 0; j < nmodel; ++j ) {
+      char keyword[64];
+      snprintf( keyword, sizeof( keyword ), "fstat %s", model_names[j] );
+      XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, keyword, model_values[j] / ncoh_input, "F-statistic method-specific timing constant" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
   }
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveCohInputWriteTiming()
+} // XLALWeaveCohInputWriteInfo()
+
+///
+/// Write various segment information from coherent input data to a FITS file
+///
+int XLALWeaveCohInputWriteSegInfo(
+  FITSFile *file,
+  const size_t ncoh_input,
+  WeaveCohInput *const *coh_input
+  )
+{
+
+  // Check input
+  XLAL_CHECK( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK( ncoh_input > 0, XLAL_ESIZE );
+  XLAL_CHECK( coh_input != NULL, XLAL_EFAULT );
+
+  // Begin FITS table
+  XLAL_CHECK( XLALFITSTableOpenWrite( file, "segment_info", "segment information" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Describe FITS table
+  char col_name[64];
+  XLAL_FITS_TABLE_COLUMN_BEGIN( segment_info );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, segment_start ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, segment_end ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( coh_input[0]->seg_info_have_sft_info ) {
+    for ( size_t i = 0; i < coh_input[0]->setup_detectors->length; ++i ) {
+      snprintf( col_name, sizeof( col_name ), "sft_first_%s", coh_input[0]->setup_detectors->data[i] );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, GPSTime, sft_first[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+      snprintf( col_name, sizeof( col_name ), "sft_last_%s", coh_input[0]->setup_detectors->data[i] );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, GPSTime, sft_last[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+      snprintf( col_name, sizeof( col_name ), "sft_count_%s", coh_input[0]->setup_detectors->data[i] );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, UINT4, sft_count[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_min_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_max_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  // Write FITS table
+  for ( size_t i = 0; i < ncoh_input; ++i ) {
+    XLAL_CHECK( XLALFITSTableWriteRow( file, &coh_input[i]->seg_info ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  return XLAL_SUCCESS;
+
+} // XLALWeaveCohInputWriteSegInfo()
 
 ///
 /// Create and compute coherent results
@@ -290,7 +462,7 @@ int XLALWeaveCohResultsCompute(
   FstatResults XLAL_INIT_DECL( Fstat_res_struct );
   FstatResults *Fstat_res = &Fstat_res_struct;
   Fstat_res->internalalloclen = ( *coh_res )->nfreqs;
-  if ( coh_input->what_to_compute & FSTATQ_2F_PER_DET ) {
+  if ( coh_input->Fstat_what_to_compute & FSTATQ_2F_PER_DET ) {
     Fstat_res->numDetectors = coh_input->Fstat_ndetectors;
   }
   Fstat_res->twoF = ( *coh_res )->coh2F->data;
@@ -300,12 +472,12 @@ int XLALWeaveCohResultsCompute(
   }
 
   // Compute the F-statistic starting at the point 'coh_phys', with 'nfreqs' frequency bins
-  XLAL_CHECK( XLALComputeFstat( &Fstat_res, coh_input->Fstat_input, coh_phys, ( *coh_res )->nfreqs, coh_input->what_to_compute ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALComputeFstat( &Fstat_res, coh_input->Fstat_input, coh_phys, ( *coh_res )->nfreqs, coh_input->Fstat_what_to_compute ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Sanity check the F-statistic results structure
   XLAL_CHECK( Fstat_res->internalalloclen == ( *coh_res )->nfreqs, XLAL_EFAILED );
   XLAL_CHECK( Fstat_res->numFreqBins == ( *coh_res )->nfreqs, XLAL_EFAILED );
-  XLAL_CHECK( !( coh_input->what_to_compute & FSTATQ_2F_PER_DET ) || ( Fstat_res->numDetectors == coh_input->Fstat_ndetectors ), XLAL_EFAILED );
+  XLAL_CHECK( !( coh_input->Fstat_what_to_compute & FSTATQ_2F_PER_DET ) || ( Fstat_res->numDetectors == coh_input->Fstat_ndetectors ), XLAL_EFAILED );
   XLAL_CHECK( Fstat_res->twoF == ( *coh_res )->coh2F->data, XLAL_EFAILED );
   for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
     const size_t idx = coh_input->Fstat_res_idx[i];

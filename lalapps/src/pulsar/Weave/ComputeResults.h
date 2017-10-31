@@ -108,18 +108,29 @@ typedef struct tagWeaveSemiResults {
 } WeaveSemiResults;
 
 WeaveCohInput *XLALWeaveCohInputCreate(
+  const LALStringVector *setup_detectors,
   const WeaveSimulationLevel simulation_level,
-  FstatInput *Fstat_input,
+  const SFTCatalog *sft_catalog,
+  const UINT4 segment_index,
+  const LALSeg *segment,
+  const PulsarDopplerParams *min_phys,
+  const PulsarDopplerParams *max_phys,
+  const double dfreq,
+  const EphemerisData *ephemerides,
+  const LALStringVector *sft_noise_psd,
+  const LALStringVector *Fstat_assume_psd,
+  FstatOptionalArgs *Fstat_opt_args,
   const WeaveStatisticsParams *statistics_params
   );
 void XLALWeaveCohInputDestroy(
   WeaveCohInput *coh_input
   );
-int XLALWeaveCohInputWriteFstatMethod(
+int XLALWeaveCohInputWriteInfo(
   FITSFile *file,
-  const WeaveCohInput *coh_input
+  const size_t ncoh_input,
+  WeaveCohInput *const *coh_input
   );
-int XLALWeaveCohInputWriteFstatTiming(
+int XLALWeaveCohInputWriteSegInfo(
   FITSFile *file,
   const size_t ncoh_input,
   WeaveCohInput *const *coh_input

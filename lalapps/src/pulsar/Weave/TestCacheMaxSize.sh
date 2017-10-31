@@ -48,7 +48,7 @@ for setup in short long; do
     echo "=== Setup '${setup}': ${verb} interpolating search without a maximum cache size ==="
     set -x
     ${builddir}/lalapps_Weave --cache-max-size=0 --output-file=WeaveOutNoMax.fits \
-        --toplists=all --toplist-limit=2321 --misc-info --setup-file=WeaveSetup.fits \
+        --toplists=all --toplist-limit=2321 --segment-info --setup-file=WeaveSetup.fits \
         ${weave_sft_options} ${weave_search_options}
     set +x
     echo
@@ -68,7 +68,7 @@ for setup in short long; do
     echo "=== Setup '${setup}': ${verb} interpolating search with a maximum cache size ==="
     set -x
     ${builddir}/lalapps_Weave ${weave_cache_options} --output-file=WeaveOutMax.fits \
-        --toplists=all --toplist-limit=2321 --misc-info --setup-file=WeaveSetup.fits \
+        --toplists=all --toplist-limit=2321 --segment-info --setup-file=WeaveSetup.fits \
         ${weave_sft_options} ${weave_search_options}
     set +x
     echo

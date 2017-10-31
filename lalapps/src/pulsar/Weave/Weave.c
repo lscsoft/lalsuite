@@ -32,27 +32,6 @@
 #include <lal/LogPrintf.h>
 #include <lal/UserInput.h>
 #include <lal/Random.h>
-#include <lal/ExtrapolatePulsarSpins.h>
-
-///
-/// Internal definition of miscellaneous per-segment information
-///
-typedef struct {
-  /// Start time of segment
-  LIGOTimeGPS segment_start;
-  /// End time of segment
-  LIGOTimeGPS segment_end;
-  /// Timestamp of first SFT from each detector
-  LIGOTimeGPS sft_first[PULSAR_MAX_DETECTORS];
-  /// Timestamp of last SFT from each detector
-  LIGOTimeGPS sft_last[PULSAR_MAX_DETECTORS];
-  /// Number of SFTs from each detector
-  UINT4 sft_count[PULSAR_MAX_DETECTORS];
-  /// Minimum of frequency range covered by SFTs
-  REAL8 sft_min_cover_freq;
-  /// Maximum of frequency range covered by SFTs
-  REAL8 sft_max_cover_freq;
-} misc_per_seg_info;
 
 // Return elapsed wall time in seconds
 static inline double wall_time(void) { return XLALGetTimeOfDay(); }
@@ -73,7 +52,7 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, toplist_tmpl_idx, misc_info, simulate_search, Fstat_timing, cache_all_gc;
+    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, toplist_tmpl_idx, segment_info, simulate_search, Fstat_timing, cache_all_gc;
     CHAR *setup_file, *sft_files, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd, *lrs_oLGX;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit, lrs_Fstar0sc, nc_2Fth;
@@ -307,8 +286,8 @@ int main( int argc, char *argv[] )
     "%s", WeaveStatisticHelpString
     );
   XLALRegisterUvarMember(
-    misc_info, BOOLEAN, 'M', DEVELOPER,
-    "If TRUE, output miscellaneous per-segment information: SFT properties, cache usage, etc. "
+    segment_info, BOOLEAN, 'M', DEVELOPER,
+    "If TRUE, output various information regarding the segment list, e.g. number of SFTs within each segment. "
     );
   //
   // - Checkpointing
@@ -492,13 +471,6 @@ int main( int argc, char *argv[] )
   LIGOTimeGPS segments_start, segments_end;
   XLAL_CHECK_MAIN( XLALSegListRange( setup.segments, &segments_start, &segments_end ) == XLAL_SUCCESS, XLAL_EFUNC );
   LogPrintf( LOG_NORMAL, "Setup file segment list range = [%" LAL_GPS_FORMAT ", %" LAL_GPS_FORMAT "] GPS, segment count = %u\n", LAL_GPS_PRINT( segments_start ), LAL_GPS_PRINT( segments_end ), nsegments );
-
-  // Create array of miscellaneous per-segment information
-  misc_per_seg_info XLAL_INIT_DECL( per_seg_info, [nsegments] );
-  for ( size_t i = 0; i < nsegments; ++i ) {
-    per_seg_info[i].segment_start = setup.segments->segs[i].start;
-    per_seg_info[i].segment_end = setup.segments->segs[i].end;
-  }
 
   ////////// Set up calculation of various requested output statistics //////////
 
@@ -775,7 +747,6 @@ int main( int argc, char *argv[] )
     XLALDestroyMultiTimestamps( sft_timestamps );
 
   }
-
   if ( sft_catalog != NULL ) {
 
     // Check that all SFT catalog detectors were included in setup file
@@ -830,104 +801,15 @@ int main( int argc, char *argv[] )
   Fstat_opt_args.prevInput = NULL;
   Fstat_opt_args.collectTiming = uvar->Fstat_timing;
 
-  // Get timeslices of SFT catalogs restricted to each segment
-  SFTCatalog XLAL_INIT_DECL( sft_catalog_seg, [nsegments] );
-  UINT4 nsfts = 0;
-  if ( sft_catalog != NULL ) {
-    for ( size_t i = 0; i < nsegments; ++i ) {
-
-      // Get a timeslice of SFT catalog restricted to 'i'th segment
-      const LIGOTimeGPS *segment_start = &setup.segments->segs[i].start;
-      const LIGOTimeGPS *segment_end = &setup.segments->segs[i].end;
-      XLAL_CHECK_MAIN( XLALSFTCatalogTimeslice( &sft_catalog_seg[i], sft_catalog, segment_start, segment_end ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( sft_catalog_seg[i].length > 0, XLAL_EINVAL, "No SFTs found for segment %zu", i );
-
-      // Count total number of SFTs used by search
-      nsfts += sft_catalog_seg[i].length;
-
-      // Record information on SFTs in catalog
-      MultiSFTCatalogView *sft_catalog_seg_i_view = XLALGetMultiSFTCatalogView( &sft_catalog_seg[i] );
-      XLAL_CHECK_MAIN( sft_catalog_seg_i_view != NULL, XLAL_EINVAL );
-      for ( size_t j = 0; j < sft_catalog_seg_i_view->length; ++j ) {
-        XLAL_CHECK_MAIN( sft_catalog_seg_i_view->data[j].length > 0, XLAL_EINVAL, "No SFTs found for segment %zu, detector %zu", i, j );
-        char *detector_name = XLALGetChannelPrefix( sft_catalog_seg_i_view->data[j].data[0].header.name );
-        XLAL_CHECK_MAIN( detector_name != NULL, XLAL_EFUNC );
-        const int k = XLALFindStringInVector( detector_name, setup.detectors );
-        if ( k >= 0 ) {
-          const UINT4 length = sft_catalog_seg_i_view->data[j].length;
-          per_seg_info[i].sft_first[k] = sft_catalog_seg_i_view->data[j].data[0].header.epoch;
-          per_seg_info[i].sft_last[k] = sft_catalog_seg_i_view->data[j].data[length - 1].header.epoch;
-          per_seg_info[i].sft_count[k] = length;
-        }
-        XLALFree( detector_name );
-      }
-
-      // Cleanup
-      XLALDestroyMultiSFTCatalogView( sft_catalog_seg_i_view );
-
-    }
-  }
-
-  // Check that the number of SFTs in each segment matches the number provided by the segment list in the setup file, if nonzero
-  for ( size_t i = 0; i < nsegments; ++i ) {
-    const UINT4 sft_count = ( UINT4 ) setup.segments->segs[i].id;
-    XLAL_CHECK_MAIN( sft_count == 0 || sft_catalog_seg[i].length == sft_count, XLAL_EFAILED, "Number of SFTs found for segment %zu (%u) is inconsistent with expected number of SFTs given by segment list (%u) in setup file '%s'", i, sft_catalog_seg[i].length, sft_count, uvar->setup_file );
-  }
-
   // Load input data required for computing coherent results
   WeaveCohInput *XLAL_INIT_DECL( coh_input, [nsegments] );
   LogPrintf( LOG_NORMAL, "Loading input data for coherent results ...\n" );
   for ( size_t i = 0; i < nsegments; ++i ) {
-
-    // Load F-statistic input data for 'i'th segment
-    FstatInput *Fstat_input = NULL;
-    if ( sft_catalog != NULL ) {
-
-      // Get list of detectors of SFT catalog in 'i'th segment
-      LALStringVector *sft_catalog_seg_i_detectors = XLALListIFOsInCatalog( &sft_catalog_seg[i] );
-      XLAL_CHECK_MAIN( sft_catalog_seg_i_detectors != NULL, XLAL_EFUNC );
-
-      // Compute frequency range covered by spindown range over 'i'th segment
-      LIGOTimeGPS sft_start = sft_catalog_seg[i].data[0].header.epoch;
-      LIGOTimeGPS sft_end = sft_catalog_seg[i].data[sft_catalog_seg[i].length - 1].header.epoch;
-      const double sft_end_timebase = 1.0 / sft_catalog_seg[i].data[sft_catalog_seg[i].length - 1].header.deltaF;
-      XLALGPSAdd( &sft_end, sft_end_timebase );
-      PulsarSpinRange XLAL_INIT_DECL( spin_range );
-      XLAL_CHECK_MAIN( XLALInitPulsarSpinRangeFromSpins( &spin_range, &min_phys[i]->refTime, min_phys[i]->fkdot, max_phys[i]->fkdot ) == XLAL_SUCCESS, XLAL_EFUNC );
-      double sft_min_cover_freq = 0, sft_max_cover_freq = 0;
-      XLAL_CHECK_MAIN( XLALCWSignalCoveringBand( &sft_min_cover_freq, &sft_max_cover_freq, &sft_start, &sft_end, &spin_range, 0, 0, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-      per_seg_info[i].sft_min_cover_freq = sft_min_cover_freq;
-      per_seg_info[i].sft_max_cover_freq = sft_max_cover_freq;
-
-      // Parse SFT noise PSD string vector
-      MultiNoiseFloor sft_noise_psd;
-      if ( UVAR_SET( sft_noise_psd ) ) {
-        XLAL_CHECK_MAIN( XLALParseMultiNoiseFloorMapped( &sft_noise_psd, sft_catalog_seg_i_detectors, uvar->sft_noise_psd, setup.detectors ) == XLAL_SUCCESS, XLAL_EFUNC );
-        Fstat_opt_args.injectSqrtSX = &sft_noise_psd;
-      }
-
-      // Parse F-statistic assumed PSD string vector
-      MultiNoiseFloor Fstat_assume_psd;
-      if ( UVAR_SET( Fstat_assume_psd ) ) {
-        XLAL_CHECK_MAIN( XLALParseMultiNoiseFloorMapped( &Fstat_assume_psd, sft_catalog_seg_i_detectors, uvar->Fstat_assume_psd, setup.detectors ) == XLAL_SUCCESS, XLAL_EFUNC );
-        Fstat_opt_args.assumeSqrtSX = &Fstat_assume_psd;
-      }
-
-      // Load F-statistic input data
-      Fstat_input = XLALCreateFstatInput( &sft_catalog_seg[i], sft_min_cover_freq, sft_max_cover_freq, dfreq, setup.ephemerides, &Fstat_opt_args );
-      XLAL_CHECK_MAIN( Fstat_input != NULL, XLAL_EFUNC );
-      Fstat_opt_args.prevInput = Fstat_input;
-
-      // Cleanup
-      XLALDestroyStringVector( sft_catalog_seg_i_detectors );
-
-    }
-
-    // Load coherent input data for 'i'th segment
-    coh_input[i] = XLALWeaveCohInputCreate( simulation_level, Fstat_input, statistics_params );
+    const LALStringVector *sft_noise_psd = UVAR_SET( sft_noise_psd ) ? uvar->sft_noise_psd : NULL;
+    const LALStringVector *Fstat_assume_psd = UVAR_SET( Fstat_assume_psd ) ? uvar->Fstat_assume_psd : NULL;
+    coh_input[i] = XLALWeaveCohInputCreate( setup.detectors, simulation_level, sft_catalog, i, &setup.segments->segs[i], min_phys[i], max_phys[i], dfreq, setup.ephemerides, sft_noise_psd, Fstat_assume_psd, &Fstat_opt_args, statistics_params );
     XLAL_CHECK_MAIN( coh_input[i] != NULL, XLAL_EFUNC );
-
-  } // for i < nsegments
+  }
   LogPrintf( LOG_NORMAL, "Finished loading input data for coherent results\n" );
 
   // Create caches to store intermediate results from coherent parameter-space tilings
@@ -1247,9 +1129,6 @@ int main( int argc, char *argv[] )
     // Write number of segments
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "nsegment", nsegments, "number of segments" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Write total number of SFTs used by search
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "nsfts", nsfts, "number of SFTs used by search" ) == XLAL_SUCCESS, XLAL_EFUNC );
-
     // Write frequency spacing
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "dfreq", dfreq, "frequency spacing" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -1289,11 +1168,6 @@ int main( int argc, char *argv[] )
     // Write peak memory usage
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "peakmem [MB]", XLALGetPeakHeapUsageMB(), "peak memory usage" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Write F-statistic method name
-    if ( simulation_level == 0 ) {   // Unless search is being simulated...
-      XLAL_CHECK_MAIN( XLALWeaveCohInputWriteFstatMethod( file, coh_input[0] ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-
     // Write timing information
     if ( simulation_level == 0 ) {   // Unless search is being simulated...
       if ( !UVAR_SET( ckpt_output_file ) ) {   // Unless search is checkpointed...
@@ -1310,49 +1184,17 @@ int main( int argc, char *argv[] )
       }
     }
 
-    // Write F-statistic timing information
-    if ( simulation_level == 0 ) {   // Unless search is being simulated...
-      if ( !UVAR_SET( ckpt_output_file ) ) {   // Unless search is checkpointed...
-        if ( uvar->Fstat_timing ) {   // If requested...
-          XLAL_CHECK_MAIN( XLALWeaveCohInputWriteFstatTiming( file, nsegments, coh_input ) == XLAL_SUCCESS, XLAL_EFUNC );
-        }
-      }
-    }
+    // Write various information from coherent input data
+    XLAL_CHECK_MAIN( XLALWeaveCohInputWriteInfo( file, nsegments, coh_input ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Write search results
     if ( simulation_level == 0 ) {   // Unless search is being simulated...
       XLAL_CHECK_MAIN( XLALWeaveOutputResultsWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
-    // Write miscellaneous per-segment information
-    if ( uvar->misc_info ) {
-
-      // Begin FITS table
-      XLAL_CHECK_MAIN( XLALFITSTableOpenWrite( file, "per_seg_info", "miscellaneous per-segment information" ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      // Describe FITS table
-      char col_name[64];
-      XLAL_FITS_TABLE_COLUMN_BEGIN( misc_per_seg_info );
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, segment_start ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, segment_end ) == XLAL_SUCCESS, XLAL_EFUNC );
-      if ( sft_catalog != NULL ) {
-        for ( size_t i = 0; i < setup.detectors->length; ++i ) {
-          snprintf( col_name, sizeof( col_name ), "sft_first_%s", setup.detectors->data[i] );
-          XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, GPSTime, sft_first[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-          snprintf( col_name, sizeof( col_name ), "sft_last_%s", setup.detectors->data[i] );
-          XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, GPSTime, sft_last[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-          snprintf( col_name, sizeof( col_name ), "sft_count_%s", setup.detectors->data[i] );
-          XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, UINT4, sft_count[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-        }
-        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_min_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_max_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
-      }
-
-      // Write FITS table
-      for ( size_t i = 0; i < nsegments; ++i ) {
-        XLAL_CHECK_MAIN( XLALFITSTableWriteRow( file, &per_seg_info[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
-      }
-
+    // Write various segment information from coherent input data
+    if ( uvar->segment_info ) {
+      XLAL_CHECK_MAIN( XLALWeaveCohInputWriteSegInfo( file, nsegments, coh_input ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
     // Close output file

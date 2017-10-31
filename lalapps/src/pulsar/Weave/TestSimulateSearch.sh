@@ -43,7 +43,7 @@ for setup in short mid long; do
     echo "=== Setup '${setup}': Perform interpolating search ==="
     set -x
     ${builddir}/lalapps_Weave --output-file=WeaveOutNoSim.fits \
-        --toplists=all --toplist-limit=2321 --misc-info --setup-file=WeaveSetup.fits \
+        --toplists=all --toplist-limit=2321 --segment-info --setup-file=WeaveSetup.fits \
         --rand-seed=3456 --sft-timebase=1800 --sft-noise-psd=1,1 \
         --sft-timestamps-files=timestamps-1.txt,timestamps-2.txt \
         ${weave_search_options}
@@ -65,7 +65,7 @@ for setup in short mid long; do
     echo "=== Setup '${setup}': Simulate interpolating search with full memory allocation ==="
     set -x
     ${builddir}/lalapps_Weave --simulate-search --output-file=WeaveOutSimFull.fits \
-        --toplists=all --toplist-limit=2321 --misc-info --setup-file=WeaveSetup.fits \
+        --toplists=all --toplist-limit=2321 --segment-info --setup-file=WeaveSetup.fits \
         --rand-seed=3456 --sft-timebase=1800 --sft-noise-psd=1,1 \
         --sft-timestamps-files=timestamps-1.txt,timestamps-2.txt \
         ${weave_search_options}
@@ -75,7 +75,7 @@ for setup in short mid long; do
     echo "=== Setup '${setup}': Simulate interpolating search with minimal memory allocation ==="
     set -x
     ${builddir}/lalapps_Weave --simulate-search --output-file=WeaveOutSimMin.fits \
-        --toplists=all --toplist-limit=2321 --misc-info --setup-file=WeaveSetup.fits \
+        --toplists=all --toplist-limit=2321 --segment-info --setup-file=WeaveSetup.fits \
         ${weave_search_options}
     set +x
     echo
@@ -129,11 +129,11 @@ for setup in short mid long; do
     set +x
     echo
 
-    echo "=== Setup '${setup}': Check miscellaneous per-segment information ==="
+    echo "=== Setup '${setup}': Check various segment information ==="
     set -x
-    ${fitsdir}/lalapps_fits_table_list "WeaveOutNoSim.fits[per_seg_info]" > per_seg_info_no_sim
-    ${fitsdir}/lalapps_fits_table_list "WeaveOutSimFull.fits[per_seg_info]" > per_seg_info_sim_full
-    diff per_seg_info_no_sim per_seg_info_sim_full
+    ${fitsdir}/lalapps_fits_table_list "WeaveOutNoSim.fits[segment_info]" > seg_info_no_sim
+    ${fitsdir}/lalapps_fits_table_list "WeaveOutSimFull.fits[segment_info]" > seg_info_sim_full
+    diff seg_info_no_sim seg_info_sim_full
     set +x
     echo
 
