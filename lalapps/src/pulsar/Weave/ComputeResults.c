@@ -423,7 +423,6 @@ int XLALWeaveCohResultsCompute(
   XLAL_CHECK( coh_input != NULL, XLAL_EFAULT );
   XLAL_CHECK( coh_phys != NULL, XLAL_EFAULT );
   XLAL_CHECK( coh_nfreqs > 0, XLAL_EINVAL );
-  XLAL_CHECK( tim != NULL, XLAL_EFAULT );
 
   // Allocate results struct if required
   if ( *coh_res == NULL ) {
@@ -459,7 +458,9 @@ int XLALWeaveCohResultsCompute(
   }
 
   // Start timing of coherent results
-  XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_NONE, WEAVE_STATISTIC_COH2F ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( tim != NULL ) {
+    XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_NONE, WEAVE_STATISTIC_COH2F ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
 
   // Use a local F-statistic results structure, since we supply our own memory
   // - The 'internalalloclen' field stores the memory size in elements of the results arrays (e.g. 'coh2F'),
@@ -490,7 +491,9 @@ int XLALWeaveCohResultsCompute(
   }
 
   // Stop timing of coherent results
-  XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_COH2F, WEAVE_STATISTIC_NONE ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( tim != NULL ) {
+    XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_COH2F, WEAVE_STATISTIC_NONE ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
 
   return XLAL_SUCCESS;
 
