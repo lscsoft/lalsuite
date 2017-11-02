@@ -48,8 +48,7 @@
 #define TwoToOneThird 1.25992104989487316476721060728
 #define ThreeToOneThird 1.44224957030740838232163831078
 
-static const REAL8 STEP_SIZE_NOTIDES = 1.0e-4;
-static const REAL8 STEP_SIZE_TIDES = 5.0e-4;
+static const REAL8 STEP_SIZE_CALCOMEGA = 1.0e-4;
 
 static const double sqrt_pi_2   = 1.2533141373155002512078826424; /* sqrt(pi/2) */
 static const double sqrt_2_pi   = 0.7978845608028653558798921199; /* sqrt(2/pi) */
@@ -79,7 +78,7 @@ static const double f_data_a[18] =
 };
 
 /* List of coefficients for Fresnel sine function. Note that the final element is initialized
-   to zero for consistency with f_data_a (used for Fresnel cosine function), so that the 
+   to zero for consistency with f_data_a (used for Fresnel cosine function), so that the
    Fresnel sine and cosine can be computed simultaneously
   */
 static const double f_data_b2[18] =
@@ -249,7 +248,7 @@ static void fresnel_sincos_8_inf(double x, double output[2])
         sumP += f_data_e[n]*t2; /*  sumP += f_data_e[n]*ChebyshevT(n,xx) */
         t0 = t1; t1 = t2;
     }
-    
+
     output[0] = 0.5 - _1_sqrt_2pi*(0.5*sumP*sinx*oneoverx + sumQ*cosx)*oneoversqrtx;
     output[1] = 0.5 - _1_sqrt_2pi*(0.5*sumP*cosx*oneoverx - sumQ*sinx)*oneoversqrtx;
 }
@@ -269,6 +268,60 @@ static void fresnel_sc(double x, double output[2])
       output[0] = (x<0.0) ? -output[0] : output[0];
       output[1] = (x<0.0) ? -output[1] : output[1];
     }
+}
+
+/**
+ * Function to compute k2tidal, k3tidal: resonant terms
+ * f(x) with x=omega0l/(m*Omega) (with m=l here) is the sum of first two terms of the bracket in (11) of https://arxiv.org/pdf/1702.02053.pdf (note typo: mOmega^2->(mOmega)^2)
+ */
+/* List of coefficients for the near-resonance expansion of the resonant terms in tidal keff */
+/* Function f(x) - to be used only away from resonance x=1 */
+static double f_keffresonant(double x, double x5_3)
+{
+  double x2 = x*x;
+  return x2*( 1./(x2 - 1.) + 5./6./(1. - x5_3));
+}
+/* Derivative f'(x) - to be used only away from resonance x=1 */
+static double df_keffresonant(double x, double x5_3)
+{
+  double x2 = x*x;
+  return 2.*x*( -1./(x2 - 1.)/(x2 - 1.) + 5./6.*(1. - 1./6.*x5_3)/(1. - x5_3)/(1. - x5_3));
+}
+/* Perturbative expansion for function f(x) near x=1 */
+static const double f_keffresonant_pertdata[5] =
+{
+  -0.0833333333333333,
+  -0.1157407407407407,
+  -0.006944444444444445,
+  0.01122256515775034,
+  -0.007120198902606311
+};
+static double f_keffresonant_pert(REAL8 x)
+{
+  double xi = x - 1.;
+  double f = 0;
+  for(int i=0; i<5; i++) {
+    f = xi*f + f_keffresonant_pertdata[4-i];
+  }
+  return f;
+}
+/* Perturbative expansion for derivative f'(x) near x=1 */
+static const double df_keffresonant_pertdata[5] =
+{
+  -0.1157407407407407,
+  -0.01388888888888889,
+  0.03366769547325102,
+  -0.02848079561042524,
+  0.01919764200071127
+};
+static double df_keffresonant_pert(REAL8 x)
+{
+  double xi = x - 1.;
+  double df = 0;
+  for(int i=0; i<5; i++) {
+    df = xi*df + df_keffresonant_pertdata[4-i];
+  }
+  return df;
 }
 
 /*------------------------------------------------------------------------------------------
@@ -330,127 +383,135 @@ static double GSLSpinAlignedHamiltonianWrapper (double x, void *params);
  */
 
 /**
- * Function to compute the enhancement of k2tidal due to the presence of f-mode resonance
+ * Function to compute the enhancement of kltidal due to the presence of f-mode resonance
+ * Implements (11) of https://arxiv.org/pdf/1702.02053.pdf (note typo: mOmega^2->(mOmega)^2)
+ * f(x) with x=omega0l/(m*Omega) (with m=l here) is the sum of first two terms of the bracket there
+ * Near resonance (x-1<1e-2) f(x) is replaced by a perturbative expansion
+ * Expected numerical precision: |Deltaf/f| normal: 1e-10 | perturbative: 1e-10
  */
-static REAL8 XLALSimIMRTEOBk2eff (
+static REAL8 XLALSimIMRTEOBkleff (
+                                  INT4 l, /**<< Mode number l - the function is valid only for l=2 or l=3 and for m=l */
                                   REAL8 u, /**<< Inverse of radial separation in units of M */
                                   REAL8 eta, /**<< Symmetric mass ratio */
                                   TidalEOBParams * tidal /**<< Tidal parameters */
 )
 {
-    REAL8 w02 = tidal->omega02Tidal;
-    REAL8 eps = 64./5.*TwoToOneThird*pow(w02, 5./3.)*eta;
-    REAL8 bigomega = pow(1./u, 1.5)*w02/2.;
-    REAL8 factorQ = 4. - TwoToOneThird*pow(1./u, 2.5)*pow(w02, 5./3.);
-    REAL8 calR = 1./(bigomega*bigomega - 1.) + 10./3./factorQ;
-    REAL8 yval = sqrt(3./LAL_PI)*factorQ/5./sqrt(eps);
-    REAL8 term = 0.5*LAL_PI*yval*yval;
-    REAL8 costerm = cos(term);
-    REAL8 sinterm = sin(term);
-    REAL8 output[2];
-    fresnel_sc(yval, output);
-    REAL8 fresnelS = output[0];
-    REAL8 fresnelC = output[1];
-    REAL8 k2Tidaleff = 0.25 + 3./4.*bigomega*bigomega*(calR + sqrt(LAL_PI/3.)/sqrt(eps)*((1. + 2.*fresnelS)*costerm - (1. + 2.*fresnelC)*sinterm));
-    return k2Tidaleff;
+    /* Function only valid for l=2 or l=3 and for m=l */
+    REAL8 al, bl, w0l;
+    switch(l) {
+      case 2:
+        al = 1./4.;
+        bl = 3./4.;
+        w0l = tidal->omega02Tidal;
+        break;
+      case 3:
+        al = 3./8.;
+        bl = 5./8.;
+        w0l = tidal->omega03Tidal;
+        break;
+      default:
+        XLALPrintError("XLAL Error - %s: mode number l must be 2 or 3!\n", __func__);
+        XLAL_ERROR (XLAL_EINVAL);
+        break;
+    }
+    /* NOTE: the function is valid only for m=l */
+    INT4 m = l;
+    REAL8 Omega = pow(u, 1.5);
+    REAL8 x = w0l/(m*Omega);
+    REAL8 x2 = x*x;
+    REAL8 x5_3 = pow(x, 5./3.);
+    REAL8 sqrtepsm = sqrt(256./5.*eta*pow(w0l/m, 5./3.));
+    REAL8 that = 8./5./sqrtepsm * (1. - x5_3);
+    REAL8 argcossin = 3./8.*that*that;
+    REAL8 argfresnel = 0.5*sqrt(3./LAL_PI)*that;
+    /* Resonant term, first two terms in the bracket - use perturbative expansion near resonance */
+    REAL8 resonantterm;
+    if(fabs(x-1.)>1e-2) {
+      resonantterm = f_keffresonant(x, x5_3);
+    }
+    else {
+      resonantterm = f_keffresonant_pert(x);
+    }
+    /* Fresnel term, third term featuring Qlm */
+    REAL8 fres[2];
+    fresnel_sc(argfresnel, fres);
+    REAL8 fresnelS = fres[0];
+    REAL8 fresnelC = fres[1];
+    REAL8 fresnelterm = sqrt(LAL_PI/3.)/sqrtepsm * x2*((1. + 2.*fresnelS)*cos(argcossin) - (1. + 2.*fresnelC)*sin(argcossin));
+    REAL8 klTidaleff = al + bl*(resonantterm + fresnelterm);
+    return klTidaleff;
 }
 
 /**
- * Function to compute the enhancement AND u-derivative of the enhancement of k2tidal due to the presence of f-mode resonance
+ * Function to compute the enhancement of kltidal and its u-derivative due to the presence of f-mode resonance
+ * Implements (11) of https://arxiv.org/pdf/1702.02053.pdf (note typo: mOmega^2->(mOmega)^2)
+ * f(x) with x=omega0l/(m*Omega) (with m=l here) is the sum of first two terms of the bracket there
+ * Near resonance (x-1<1e-2) f(x) and f'(x) are replaced by a perturbative expansion
+ * Expected numerical precision: |Deltaf/f| normal: 1e-10 | perturbative: 1e-10
+ * Expected numerical precision: |Deltaf'/f'| normal: 1e-8 | perturbative: 1e-10
  */
-static void XLALSimIMRTEOBk2eff_and_k2eff_u (
+static int XLALSimIMRTEOBkleff_and_kleff_u (
+                                  INT4 l, /**<< Mode number l - the function is valid only for l=2 or l=3 and for m=l */
                                   REAL8 u, /**<< Inverse of radial separation in units of M */
                                   REAL8 eta, /**<< Symmetric mass ratio */
                                   TidalEOBParams * tidal, /**<< Tidal parameters */
                                   REAL8 output[2] /**<< Output array */
 )
 {
-    REAL8 w02 = tidal->omega02Tidal;
-    REAL8 eps = 64./5.*TwoToOneThird*pow(w02, 5./3.)*eta;
-    REAL8 bigomega = pow(1./u, 1.5)*w02/2.;
-    REAL8 bigomega_u = -3./2.*pow(1./u, 2.5)*w02/2.;
-    REAL8 factorQ = 4. - TwoToOneThird*pow(1./u, 2.5)*pow(w02, 5./3.);
-    REAL8 factorQ_u = 2.5*TwoToOneThird*pow(1./u, 3.5)*pow(w02, 5./3.);
-    REAL8 calR = 1./(bigomega*bigomega - 1.) + 10./3./factorQ;
-    REAL8 calR_u = -1./(bigomega*bigomega - 1.)/(bigomega*bigomega - 1.)*2.*bigomega*bigomega_u - 10./3./factorQ/factorQ*factorQ_u;
-    REAL8 yval   = sqrt(3./LAL_PI)*factorQ/5./sqrt(eps);
-    REAL8 yval_u = sqrt(3./LAL_PI)*factorQ_u/5./sqrt(eps);
+    /* Function only valid for l=2 or l=3 and for m=l */
+    REAL8 al, bl, w0l;
+    switch(l) {
+      case 2:
+        al = 1./4.;
+        bl = 3./4.;
+        w0l = tidal->omega02Tidal;
+        break;
+      case 3:
+        al = 3./8.;
+        bl = 5./8.;
+        w0l = tidal->omega03Tidal;
+        break;
+      default:
+        XLALPrintError("XLAL Error - %s: mode number l must be 2 or 3!\n", __func__);
+        XLAL_ERROR (XLAL_EINVAL);
+        break;
+    }
+    /* NOTE: the function is valid only for m=l */
+    INT4 m = l;
+    REAL8 Omega = pow(u, 1.5);
+    REAL8 x = w0l/(m*Omega);
+    REAL8 x_u = -3./2./u*x;
+    REAL8 x2 = x*x;
+    REAL8 x5_3 = pow(x, 5./3.);
+    REAL8 sqrtepsm = sqrt(256./5.*eta*pow(w0l/m, 5./3.));
+    REAL8 that = 8./5./sqrtepsm * (1. - x5_3);
+    REAL8 that_u = -8./3./sqrtepsm * x5_3/x * x_u;
+    REAL8 argcossin = 3./8.*that*that;
+    REAL8 argcossin_u = 3./4.*that*that_u;
+    REAL8 argfresnel = 0.5*sqrt(3./LAL_PI)*that;
+    /* Resonant term, first two terms in the bracket - use perturbative expansion near resonance */
+    REAL8 resonantterm, resonantterm_u;
+    if(fabs(x-1.)>1e-2) {
+      resonantterm = f_keffresonant(x, x5_3);
+      resonantterm_u = x_u * df_keffresonant(x, x5_3);
+    }
+    else {
+      resonantterm = f_keffresonant_pert(x);
+      resonantterm_u = x_u * df_keffresonant_pert(x);
+    }
+    /* Fresnel term, third term featuring Qlm */
     REAL8 fres[2];
-    fresnel_sc(yval, fres);
+    fresnel_sc(argfresnel, fres);
     REAL8 fresnelS = fres[0];
     REAL8 fresnelC = fres[1];
-    REAL8 term = 0.5*LAL_PI*yval*yval;
-    REAL8 costerm = cos(term);
-    REAL8 sinterm = sin(term);
-    REAL8 term_2 = 3./4.*bigomega*(calR + sqrt(LAL_PI/3.)/sqrt(eps)*((1. + 2.*fresnelS)*costerm - (1. + 2.*fresnelC)*sinterm));
-    REAL8 k2Tidaleff = 0.25 + bigomega*term_2;
-    REAL8 k2Tidaleff_u = 2.*bigomega_u*term_2 + 3./4.*bigomega*bigomega*(calR_u - sqrt(LAL_PI/3.)/sqrt(eps)*LAL_PI*yval*yval_u*(costerm*(1. + 2.*fresnelC) + sinterm*(1. + 2.*fresnelS)));
-    output[0] = k2Tidaleff;
-    output[1] = k2Tidaleff_u;
-}
+    REAL8 fresnelterm = sqrt(LAL_PI/3.)/sqrtepsm * x2*((1. + 2.*fresnelS)*cos(argcossin) - (1. + 2.*fresnelC)*sin(argcossin));
+    REAL8 fresnelterm_u = sqrt(LAL_PI/3.)/sqrtepsm * (2.*x*x_u*((1. + 2.*fresnelS)*cos(argcossin) - (1. + 2.*fresnelC)*sin(argcossin)) - x2*argcossin_u*((1. + 2.*fresnelS)*sin(argcossin) + (1. + 2.*fresnelC)*cos(argcossin)));
+    REAL8 klTidaleff = al + bl*(resonantterm + fresnelterm);
+    REAL8 klTidaleff_u = bl*(resonantterm_u + fresnelterm_u);
+    output[0] = klTidaleff;
+    output[1] = klTidaleff_u;
 
-/**
- * Function to compute the enhancement of k3tidal due to the presence of f-mode resonance
- */
-static REAL8 XLALSimIMRTEOBk3eff (
-                                  REAL8 u, /**<< Inverse of radial separation in units of M */
-                                  REAL8 eta, /**<< Symmetric mass ratio */
-                                  TidalEOBParams * tidal /**<< Tidal parameters */
-)
-{
-    REAL8 w03 = tidal->omega03Tidal;
-    REAL8 factorO = 9. - ThreeToOneThird*pow(1./u, 2.5)*pow(w03, 5./3.);
-    REAL8 XX = factorO/(4.*ThreeToOneThird*ThreeToOneThird*sqrt(10.)*pow(w03,5./6.)*sqrt(eta));
-    REAL8 prefactorO = 5.*sqrt(5.*LAL_PI)/u/u/u*pow(w03,7./6.)/(192.*ThreeToOneThird*ThreeToOneThird*sqrt(eta));
-
-    REAL8 output[2];
-    fresnel_sc(sqrt_2_pi*XX, output);
-    REAL8 fresnelS = output[0];
-    REAL8 fresnelC = output[1];
-
-    REAL8 k3Tidaleff = 3./8. + w03*w03/u/u/u*(25./48./factorO + 5./72./(-1. + w03*w03/u/u/u/9.)) + prefactorO*(cos(XX*XX)*(0.5 + fresnelS) - sin(XX*XX)*(0.5 + fresnelC));
-    return k3Tidaleff;
-}
-
-/**
- * Function to compute the enhancement AND u-derivative of the enhancement of k3tidal due to the presence of f-mode resonance
- */
-static void XLALSimIMRTEOBk3eff_and_k3eff_u (
-                                  REAL8 u, /**<< Inverse of radial separation in units of M */
-                                  REAL8 eta, /**<< Symmetric mass ratio */
-                                  TidalEOBParams * tidal, /**<< Tidal parameters */
-                                  REAL8 output[2] /**<< Tidal parameters */
-)
-{
-
-    REAL8 u2 = u*u;
-    REAL8 u3 = u*u2;
-    REAL8 u4 = u*u3;
-    REAL8 w03 = tidal->omega03Tidal;
-    REAL8 factorO = 9. - ThreeToOneThird*pow(1./u, 2.5)*pow(w03, 5./3.);
-    REAL8 factorO_u = -2.5/u*(factorO - 9.);
-    REAL8 XX = factorO/(4.*ThreeToOneThird*ThreeToOneThird*sqrt(10.)*pow(w03,5./6.)*sqrt(eta));
-    REAL8 XX_u = factorO_u*XX/factorO;
-    REAL8 prefactorO = 5.*sqrt(5.*LAL_PI)/u/u/u*pow(w03,7./6.)/(192.*ThreeToOneThird*ThreeToOneThird*sqrt(eta));
-    REAL8 prefactorO_u = -3./u*prefactorO;
-    REAL8 fresnelArg = sqrt_2_pi*XX;
-    REAL8 fres[2];
-    fresnel_sc(fresnelArg, fres);
-    REAL8 fresnelS = fres[0];
-    REAL8 fresnelC = fres[1];
-    REAL8 w03Square = w03*w03;
-    REAL8 sinXXSquare = sin(XX*XX);
-    REAL8 cosXXSquare = cos(XX*XX);
- 
-    REAL8 fresarg2[2];
-    fresnel_sc(sqrt_2_pi*XX, fresarg2);
-    REAL8 fresnelSarg2 = fresarg2[0];
-    REAL8 fresnelCarg2 = fresarg2[1];
-    
-    REAL8 k3Tidaleff = 3./8. + w03*w03/u/u/u*(25./48./factorO + 5./72./(-1. + w03*w03/u/u/u/9.)) + prefactorO*(cosXXSquare*(0.5 + fresnelSarg2) - sinXXSquare*(0.5 + fresnelCarg2));
-    REAL8 k3Tidaleff_u = 1./48.*( (810.*u2*w03Square)/(w03Square - 9.*u3)/(w03*w03 - 9.*u3) + 24.* (cosXXSquare*(1. + 2.*fresnelS) - sinXXSquare*(1. + 2.*fresnelC)) * prefactorO_u - 48. * prefactorO * (cosXXSquare*(1. + 2.*fresnelC) + sinXXSquare*(1. + 2.*fresnelS)) * XX * XX_u -  25.*w03Square*(3.*factorO + u*factorO_u)/(u4*factorO*factorO));
-    output[0] = k3Tidaleff;
-    output[1] = k3Tidaleff_u;
+    return XLAL_SUCCESS;
 }
 
 /**
@@ -507,11 +568,11 @@ static REAL8 XLALSimIMRTEOBdeltaUTidalQuad (
     REAL8 k2Tidal2eff = 0.;
     REAL8 deltaUQ = 0.;
     if ( tidal1->lambda2Tidal != 0.) {
-        k2Tidal1eff = XLALSimIMRTEOBk2eff(u, eta, tidal1);
+        k2Tidal1eff = XLALSimIMRTEOBkleff(2, u, eta, tidal1);
         deltaUQ +=  XLALSimIMRTEOBdeltaUTidalQuadSingleNS(u, u2, u6, tidal1->mByM, tidal2->mByM, tidal1->lambda2Tidal, k2Tidal1eff);
     }
     if ( tidal2->lambda2Tidal != 0.) {
-        k2Tidal2eff = XLALSimIMRTEOBk2eff(u, eta, tidal2);
+        k2Tidal2eff = XLALSimIMRTEOBkleff(2, u, eta, tidal2);
         deltaUQ += XLALSimIMRTEOBdeltaUTidalQuadSingleNS(u, u2, u6, tidal2->mByM, tidal1->mByM, tidal2->lambda2Tidal, k2Tidal2eff);
     }
     return deltaUQ;
@@ -537,14 +598,14 @@ static REAL8 XLALSimIMRTEOBdeltaUTidalQuad_u (
     REAL8 deltaUQ_u = 0.;
     if ( tidal1->lambda2Tidal != 0.) {
       REAL8 k2Tidal1eff_and_k2Tidal1eff[2];
-      XLALSimIMRTEOBk2eff_and_k2eff_u(u, eta, tidal1, k2Tidal1eff_and_k2Tidal1eff);
+      XLALSimIMRTEOBkleff_and_kleff_u(2, u, eta, tidal1, k2Tidal1eff_and_k2Tidal1eff);
       k2Tidal1eff = k2Tidal1eff_and_k2Tidal1eff[0];
       k2Tidal1eff_u = k2Tidal1eff_and_k2Tidal1eff[1];
         deltaUQ_u += XLALSimIMRTEOBdeltaUTidalQuadSingleNS_u(u, u2, u6, tidal1->mByM, tidal2->mByM, tidal1->lambda2Tidal, k2Tidal1eff, k2Tidal1eff_u);
     }
     if ( tidal2->lambda2Tidal != 0.) {
       REAL8 k2Tidal2eff_and_k2Tidal2eff[2];
-      XLALSimIMRTEOBk2eff_and_k2eff_u(u, eta, tidal2, k2Tidal2eff_and_k2Tidal2eff);
+      XLALSimIMRTEOBkleff_and_kleff_u(2, u, eta, tidal2, k2Tidal2eff_and_k2Tidal2eff);
       k2Tidal2eff = k2Tidal2eff_and_k2Tidal2eff[0];
       k2Tidal2eff_u = k2Tidal2eff_and_k2Tidal2eff[1];
       deltaUQ_u += XLALSimIMRTEOBdeltaUTidalQuadSingleNS_u(u, u2, u6, tidal2->mByM, tidal1->mByM, tidal2->lambda2Tidal, k2Tidal2eff, k2Tidal2eff_u);
@@ -606,11 +667,11 @@ static REAL8 XLALSimIMRTEOBdeltaUTidalOctu (
     REAL8 k3Tidal2eff = 0.;
     REAL8 deltaUO = 0.;
     if ( tidal1->lambda3Tidal != 0.) {
-        k3Tidal1eff = XLALSimIMRTEOBk3eff(u, eta, tidal1);
+        k3Tidal1eff = XLALSimIMRTEOBkleff(3, u, eta, tidal1);
         deltaUO += XLALSimIMRTEOBdeltaUTidalOctuSingleNS(u, u2, u8, tidal1->mByM, tidal2->mByM, tidal1->lambda3Tidal, k3Tidal1eff);
     }
     if ( tidal2->lambda3Tidal != 0.) {
-        k3Tidal2eff = XLALSimIMRTEOBk3eff(u, eta, tidal2);
+        k3Tidal2eff = XLALSimIMRTEOBkleff(3, u, eta, tidal2);
        deltaUO += XLALSimIMRTEOBdeltaUTidalOctuSingleNS(u, u2, u8, tidal2->mByM, tidal1->mByM, tidal2->lambda3Tidal, k3Tidal2eff);
     }
     return deltaUO;
@@ -636,7 +697,7 @@ static REAL8 XLALSimIMRTEOBdeltaUTidalOctu_u (
     REAL8 deltaUO_u = 0.;
     if ( tidal1->lambda3Tidal != 0.) {
         REAL8 output[2];
-        XLALSimIMRTEOBk3eff_and_k3eff_u(u, eta, tidal1, output);
+        XLALSimIMRTEOBkleff_and_kleff_u(3, u, eta, tidal1, output);
         k3Tidal1eff = output[0];
         k3Tidal1eff_u = output[1];
 
@@ -644,7 +705,7 @@ static REAL8 XLALSimIMRTEOBdeltaUTidalOctu_u (
     }
     if ( tidal2->lambda3Tidal != 0.) {
         REAL8 output[2];
-        XLALSimIMRTEOBk3eff_and_k3eff_u(u, eta, tidal2, output);
+        XLALSimIMRTEOBkleff_and_kleff_u(3, u, eta, tidal2, output);
         k3Tidal2eff = output[0];
         k3Tidal2eff_u = output[1];
 
@@ -1481,11 +1542,8 @@ XLALSimIMRSpinAlignedEOBNonKeplerCoeff (const REAL8 values[],
 							/**<< EOB parameters */
   )
 {
-  REAL8 STEP_SIZE = STEP_SIZE_NOTIDES;
-  if ( (funcParams->seobCoeffs->tidal1->lambda2Tidal != 0. && funcParams->seobCoeffs->tidal1->omega02Tidal != 0.) || (funcParams->seobCoeffs->tidal2->lambda2Tidal != 0. && funcParams->seobCoeffs->tidal2->omega02Tidal != 0.) ) {
-      STEP_SIZE = STEP_SIZE_TIDES;
-  }
-    
+  REAL8 STEP_SIZE = STEP_SIZE_CALCOMEGA;
+
   REAL8 omegaCirc;
 
   REAL8 tmpValues[4];
@@ -1522,11 +1580,8 @@ XLALSimIMRSpinEOBNonKeplerCoeff (const REAL8 values[],	/**<< Dynamical variables
   )
 {
 
-    REAL8 STEP_SIZE = STEP_SIZE_NOTIDES;
-    if ( (funcParams->seobCoeffs->tidal1->lambda2Tidal != 0. && funcParams->seobCoeffs->tidal1->omega02Tidal != 0.) || (funcParams->seobCoeffs->tidal2->lambda2Tidal != 0. && funcParams->seobCoeffs->tidal2->omega02Tidal != 0.) ) {
-        STEP_SIZE = STEP_SIZE_TIDES;
-    }
-    
+  REAL8 STEP_SIZE = STEP_SIZE_CALCOMEGA;
+
   REAL8 omegaCirc;
 
   REAL8 tmpValues[4];
