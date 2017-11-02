@@ -1079,8 +1079,10 @@ int main( int argc, char *argv[] )
 
   }   // End of main loop
 
-  // Switch timing section
-  XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_OTHER, WEAVE_SEARCH_TIMING_OUTPUT ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Print progress
+  double wall_main = 0, cpu_main = 0;
+  XLAL_CHECK_MAIN ( XLALWeaveSearchTimingElapsed( tim, &wall_main, &cpu_main ) == XLAL_SUCCESS, XLAL_EFUNC );
+  LogPrintf( LOG_NORMAL, "Finished main loop at %.3g%% complete, main-loop time %.1f sec, CPU %.1f%%, peak memory %.1fMB\n", XLALWeaveSearchIteratorProgress( main_loop_itr ), wall_main, 100.0 * cpu_main / wall_main, XLALGetPeakHeapUsageMB() );
 
   // Prepare completion-loop calculations:
   // if any 'recalc' (= 'stage 1') statistics have been requested: we'll need 'Demod' Fstatistic setups
@@ -1090,24 +1092,26 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN ( statistics_params->coh_input_recalc != NULL, XLAL_ENOMEM );
     FstatOptionalArgs Fstat_opt_args_recalc = Fstat_opt_args;
     Fstat_opt_args_recalc.FstatMethod = FMETHOD_DEMOD_BEST;
+    Fstat_opt_args_recalc.prevInput = NULL;
     for ( size_t i = 0; i < nsegments; ++i ) {
       statistics_params->coh_input_recalc[i] = XLALWeaveCohInputCreate( setup.detectors, simulation_level, sft_catalog, i, &setup.segments->segs[i], min_phys[i], max_phys[i], 0, setup.ephemerides, sft_noise_psd, Fstat_assume_psd, &Fstat_opt_args_recalc, statistics_params, 1 );
       XLAL_CHECK_MAIN ( statistics_params->coh_input_recalc[i] != NULL, XLAL_EFUNC );
     }
   }
 
+  // Switch timing section
+  XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_OTHER, WEAVE_SEARCH_TIMING_CMPL ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   // Completion loop: compute all extra statistics that weren't required in the main loop
   XLAL_CHECK_MAIN ( XLALWeaveOutputResultsCompletionLoop( out ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Switch timing section
-  XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_OUTPUT, WEAVE_SEARCH_TIMING_OTHER ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_CMPL, WEAVE_SEARCH_TIMING_OTHER ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Stop timing main search loop, and get total wall and CPU times
   double wall_total = 0, cpu_total = 0;
   XLAL_CHECK_MAIN( XLALWeaveSearchTimingStop( tim, &wall_total, &cpu_total ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // Print final progress
-  LogPrintf( LOG_NORMAL, "Finished main loop at %.3g%% complete, total %.1f sec, CPU %.1f%%, peak memory %.1fMB\n", XLALWeaveSearchIteratorProgress( main_loop_itr ), wall_total, 100.0 * cpu_total / wall_total, XLALGetPeakHeapUsageMB() );
+  LogPrintf( LOG_NORMAL, "Finished completion-loop, total time %.1f sec, CPU %.1f%%, peak memory %.1fMB\n", wall_total, 100.0 * cpu_total / wall_total, XLALGetPeakHeapUsageMB() );
 
   ////////// Output search results //////////
 
@@ -1187,7 +1191,8 @@ int main( int argc, char *argv[] )
     // Close output file
     XLALFITSFileClose( file );
     LogPrintf( LOG_NORMAL, "Closed output file '%s'\n", uvar->output_file );
-  }
+
+  } // if (search_complete)
 
   ////////// Cleanup memory and exit //////////
 

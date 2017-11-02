@@ -93,6 +93,7 @@ const struct {
   [WEAVE_SEARCH_TIMING_SEMI]    = {"semi",      "computing semicoherent results",               WEAVE_SEARCH_DENOM_PSEMI},
   [WEAVE_SEARCH_TIMING_OUTPUT]  = {"output",    "result output",                                WEAVE_SEARCH_DENOM_PSEMI},
   [WEAVE_SEARCH_TIMING_CKPT]    = {"ckpt",      "checkpointing",                                WEAVE_SEARCH_DENOM_PSEMI},
+  [WEAVE_SEARCH_TIMING_CMPL]    = {"cmpl",      "computing completion-loop results",            WEAVE_SEARCH_DENOM_NONE},
   [WEAVE_SEARCH_TIMING_OTHER]   = {"other",     "unaccounted",                                  WEAVE_SEARCH_DENOM_NONE},
 };
 
