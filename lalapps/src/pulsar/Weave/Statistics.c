@@ -23,6 +23,7 @@
 ///
 
 #include "Statistics.h"
+#include "ComputeResults.h"
 
 #include <lal/LALString.h>
 
@@ -232,20 +233,22 @@ int XLALWeaveStatisticsSetDirectDependencies(
 /// Fill StatisticsParams logic for given toplist and extra-output stats
 ///
 int XLALWeaveStatisticsParamsSetDependencyMap(
-  WeaveStatisticsParams *statistics_params,
-  const WeaveStatisticType toplist_stats,
-  const WeaveStatisticType extra_output_stats
+  WeaveStatisticsParams *statistics_params,	///< [out] statstics dependency map
+  const WeaveStatisticType toplist_stats,	///< [in] requested toplist statistics
+  const WeaveStatisticType extra_output_stats,	///< [in] requested 'extra' (stage0) output statistics
+  const WeaveStatisticType recalc_stats		///< [in] requested 'recalc' (stage1) statistics
   )
 {
   XLAL_CHECK ( statistics_params != NULL, XLAL_EFAULT );
   XLAL_CHECK ( (toplist_stats & (~SUPPORTED_TOPLISTS)) == 0, XLAL_EINVAL );
   XLAL_CHECK ( (extra_output_stats & (~SUPPORTED_STATISTICS)) == 0, XLAL_EINVAL );
+  XLAL_CHECK ( (recalc_stats & (~SUPPORTED_STATISTICS)) == 0, XLAL_EINVAL );
 
-  WeaveStatisticType stats_to_output = (toplist_stats | extra_output_stats);
+  WeaveStatisticType stage0_stats_to_output = (toplist_stats | extra_output_stats);
 
   // work out the total set of all statistics we need to compute by
   // expanding the statistics dependencies until converged [tree fully expanded]
-  WeaveStatisticType stats_to_compute = stats_to_output;    // start value
+  WeaveStatisticType stats_to_compute = stage0_stats_to_output;    // start value
   WeaveStatisticType mainloop_stats  = toplist_stats;      // start value
   WeaveStatisticType prev_stats_to_compute, prev_mainloop_stats;
   do {
@@ -257,9 +260,8 @@ int XLALWeaveStatisticsParamsSetDependencyMap(
 
   } while ( (prev_stats_to_compute != stats_to_compute) && (prev_mainloop_stats != mainloop_stats) );
 
-  // special handling of 'coh2F' and 'coh2F_det': these can *only* be computed as "main-loop" statistics!
+  // special handling of stage0 'coh2F' and 'coh2F_det': these can *only* be computed as "main-loop" statistics!
   // as they are defined to refer to the 'fine grid with (typically) interpolation', while
-  // non-interpolating "recalc" 2F-per-segments statistics will be named differently
   if ( stats_to_compute & WEAVE_STATISTIC_COH2F ) {
     mainloop_stats |= WEAVE_STATISTIC_COH2F;
   }
@@ -267,30 +269,43 @@ int XLALWeaveStatisticsParamsSetDependencyMap(
     mainloop_stats |= WEAVE_STATISTIC_COH2F_DET;
   }
 
-  WeaveStatisticType completionloop_stats = stats_to_compute & (~mainloop_stats);
+  WeaveStatisticType completionloop_stats_stage0 = stats_to_compute & (~mainloop_stats);
 
   // figure out which mainloop statistics to keep outside of main loop: either
   // 1) because they have been requested for output, or
-  // 2) they are a _direct_ completionloop dependency,
+  // 2) they are a _direct_ (stage0) completionloop dependency,
   // all other mainloop stats can be thrown away safely after the mainloop.
   WeaveStatisticType mainloop_stats_to_keep = 0;
 
   // 1) if requested for output:
-  mainloop_stats_to_keep |= (mainloop_stats & stats_to_output);
+  mainloop_stats_to_keep |= (mainloop_stats & stage0_stats_to_output);
 
-  // 2) if *direct* completionloop dependencies:
-  WeaveStatisticType completionloop_deps = 0;
-  XLALWeaveStatisticsSetDirectDependencies ( &completionloop_deps, completionloop_stats );
-  mainloop_stats_to_keep |= (mainloop_stats & completionloop_deps);
+  // 2) if *direct* (stage0) completionloop dependencies:
+  WeaveStatisticType completionloop_stage0_deps = 0;
+  XLALWeaveStatisticsSetDirectDependencies ( &completionloop_stage0_deps, completionloop_stats_stage0 );
+  mainloop_stats_to_keep |= (mainloop_stats & completionloop_stage0_deps);
+
+  // 3) determine full recalc-stats dependencies
+  WeaveStatisticType recalc_stats_deps = recalc_stats;
+  WeaveStatisticType prev_recalc_stats_deps;
+  do {
+    prev_recalc_stats_deps = recalc_stats_deps;
+    XLALWeaveStatisticsSetDirectDependencies ( &recalc_stats_deps, recalc_stats_deps );
+  } while ( prev_recalc_stats_deps != recalc_stats_deps );
+
+  stats_to_compute |= recalc_stats_deps;
 
   // store the resulting statistics logic in the 'statistics_params' struct
   statistics_params -> toplist_statistics           = toplist_stats;
-  statistics_params -> statistics_to_output         = stats_to_output;
-  statistics_params -> statistics_to_compute        = stats_to_compute;
+  statistics_params -> statistics_to_output[0]      = stage0_stats_to_output;
+  statistics_params -> statistics_to_output[1]      = recalc_stats;
+
   statistics_params -> mainloop_statistics          = mainloop_stats;
   statistics_params -> mainloop_statistics_to_keep  = mainloop_stats_to_keep;
-  statistics_params -> completionloop_statistics    = completionloop_stats;
+  statistics_params -> completionloop_statistics[0] = completionloop_stats_stage0;
+  statistics_params -> completionloop_statistics[1] = recalc_stats_deps;
 
+  statistics_params -> all_statistics_to_compute    = stats_to_compute;
   return XLAL_SUCCESS;
 
 } // XLALWeaveStatisticsParamsSetDependencyMap()
@@ -308,6 +323,21 @@ void XLALWeaveStatisticsParamsDestroy(
 
   XLALDestroyStringVector ( statistics_params -> detectors );
   XLALDestroyBSGLSetup ( statistics_params -> BSGL_setup );
+  if ( statistics_params->coh_input != NULL ) {
+    for ( size_t i = 0; i < statistics_params->nsegments; ++i ) {
+      XLALWeaveCohInputDestroy( statistics_params->coh_input[i] );
+    }
+    XLALFree ( statistics_params->coh_input );
+  }
+  if ( statistics_params->coh_input_recalc != NULL ) {
+    for ( size_t i = 0; i < statistics_params->nsegments; ++i ) {
+      XLALWeaveCohInputDestroy( statistics_params->coh_input_recalc[i] );
+    }
+    XLALFree ( statistics_params->coh_input_recalc );
+  }
+
+  XLALWeaveCohResultsDestroy ( statistics_params -> coh_res );
+
   XLALFree ( statistics_params );
 
   return;

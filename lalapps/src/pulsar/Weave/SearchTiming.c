@@ -93,6 +93,7 @@ const struct {
   [WEAVE_SEARCH_TIMING_SEMI]    = {"semi",      "computing semicoherent results",               WEAVE_SEARCH_DENOM_PSEMI},
   [WEAVE_SEARCH_TIMING_OUTPUT]  = {"output",    "result output",                                WEAVE_SEARCH_DENOM_PSEMI},
   [WEAVE_SEARCH_TIMING_CKPT]    = {"ckpt",      "checkpointing",                                WEAVE_SEARCH_DENOM_PSEMI},
+  [WEAVE_SEARCH_TIMING_CMPL]    = {"cmpl",      "computing completion-loop results",            WEAVE_SEARCH_DENOM_NONE},
   [WEAVE_SEARCH_TIMING_OTHER]   = {"other",     "unaccounted",                                  WEAVE_SEARCH_DENOM_NONE},
 };
 
@@ -327,7 +328,7 @@ int XLALWeaveSearchTimingStatistic(
   const double cpu_now = cpu_time();
 
   // Stop timing previous statistic
-  if ( prev_statistic & tim->statistics_params->statistics_to_compute ) {
+  if ( prev_statistic & tim->statistics_params->all_statistics_to_compute ) {
     XLAL_CHECK( tim->statistic_section[XLAL_BIT2IDX(prev_statistic)] == tim->curr_section, XLAL_EINVAL );
     tim->statistic_cpu_times[XLAL_BIT2IDX(tim->curr_statistic)] += cpu_now - tim->curr_statistic_cpu_time;
   }
@@ -336,7 +337,7 @@ int XLALWeaveSearchTimingStatistic(
   tim->curr_statistic = next_statistic;
 
   // Start timing next statistic
-  if ( next_statistic & tim->statistics_params->statistics_to_compute ) {
+  if ( next_statistic & tim->statistics_params->all_statistics_to_compute ) {
     tim->statistic_section[XLAL_BIT2IDX(next_statistic)] = tim->curr_section;
     tim->curr_statistic_cpu_time = cpu_now;
   }

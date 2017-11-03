@@ -106,7 +106,8 @@ WeaveCohInput *XLALWeaveCohInputCreate(
   const LALStringVector *sft_noise_psd,
   const LALStringVector *Fstat_assume_psd,
   FstatOptionalArgs *Fstat_opt_args,
-  const WeaveStatisticsParams *statistics_params
+  const WeaveStatisticsParams *statistics_params,
+  BOOLEAN recalc_stage
   );
 void XLALWeaveCohInputDestroy(
   WeaveCohInput *coh_input
@@ -155,6 +156,14 @@ int XLALWeaveSemiResultsComputeMain(
   );
 void XLALWeaveSemiResultsDestroy(
   WeaveSemiResults *semi_res
+  );
+
+int XLALWeaveCohResultsExtract(
+  REAL4Vector **coh2F,
+  REAL4Vector *coh2F_det[PULSAR_MAX_DETECTORS],
+  BOOLEAN *have_coh2F_det,
+  WeaveCohResults *coh_res,
+  const WeaveCohInput *coh_input
   );
 
 #ifdef __cplusplus

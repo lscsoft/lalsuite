@@ -73,6 +73,7 @@ typedef struct tagWeaveSearchTiming WeaveSearchTiming;
 typedef struct tagWeaveSemiResults WeaveSemiResults;
 typedef struct tagWeaveSetupData WeaveSetupData;
 typedef struct tagWeaveStatisticsParams WeaveStatisticsParams;
+typedef struct tagWeaveStatisticsValues WeaveStatisticsValues;
 
 ///
 /// Bitflags representing search simulation levels

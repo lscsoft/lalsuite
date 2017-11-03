@@ -45,6 +45,24 @@ ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
 set +x
 echo
 
+echo "=== Perform non-interpolating search with recalc ==="
+set -x
+${builddir}/lalapps_Weave --output-file=WeaveOutRecalc.fits \
+    --toplists=mean2F --toplist-limit=2321 --extra-statistics=all --recalc-statistics=all --Fstat-method=DemodBest \
+    --toplist-tmpl-idx \
+    --setup-file=WeaveSetup.fits --sft-files='*.sft' \
+    --alpha=2.3/0.9 --delta=-1.2/2.3 --freq=45.5~0.005 --f1dot=-1e-9,0 \
+    --semi-max-mismatch=7 --interpolation=no
+set +x
+echo
+
+echo "=== Check recalc'ed results against original ==="
+set -x
+${fitsdir}/lalapps_fits_table_list -n "WeaveOutRecalc.fits[mean2F_toplist][col coh2F;     coh2F_H1;     coh2F_L1; ]"   > stage0.dat
+${fitsdir}/lalapps_fits_table_list -n "WeaveOutRecalc.fits[mean2F_toplist][col coh2F_rec; coh2F_H1_rec; coh2F_L1_rec]" > stage1.dat
+diff stage0.dat stage1.dat
+set +x
+
 echo "=== Check for non-singular semicoherent dimensions ==="
 set -x
 semi_ntmpl_prev=1

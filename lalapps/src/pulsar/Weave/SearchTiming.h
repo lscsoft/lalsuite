@@ -52,6 +52,8 @@ enum tagWeaveSearchTimingSection {
   WEAVE_SEARCH_TIMING_OUTPUT,
   /// Checkpointing section
   WEAVE_SEARCH_TIMING_CKPT,
+  /// Completion-loop section
+  WEAVE_SEARCH_TIMING_CMPL,
   /// Unaccounted section
   WEAVE_SEARCH_TIMING_OTHER,
   WEAVE_SEARCH_TIMING_MAX

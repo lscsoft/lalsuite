@@ -42,14 +42,19 @@ lalapps_Weave_SOURCES = \
 	$(END_OF_LIST)
 
 lalapps_WeaveCompare_SOURCES = \
+	CacheResults.c \
 	OutputResults.c \
 	OutputResults.h \
 	ResultsToplist.c \
 	ResultsToplist.h \
+	SearchTiming.c \
+	SearchTiming.h \
 	SetupData.c \
 	SetupData.h \
 	Statistics.c \
 	Statistics.h \
+	ComputeResults.c \
+	ComputeResults.h \
 	Weave.h \
 	WeaveCompare.c \
 	$(END_OF_LIST)

@@ -116,7 +116,8 @@ WeaveCohInput *XLALWeaveCohInputCreate(
   const LALStringVector *sft_noise_psd,
   const LALStringVector *Fstat_assume_psd,
   FstatOptionalArgs *Fstat_opt_args,
-  const WeaveStatisticsParams *statistics_params
+  const WeaveStatisticsParams *statistics_params,
+  BOOLEAN recalc_stage
   )
 {
 
@@ -146,11 +147,11 @@ WeaveCohInput *XLALWeaveCohInputCreate(
   coh_input->seg_info.segment_end = segment->end;
 
   // Decide what F-statistic quantities to compute
-  WeaveStatisticType mainloop_stats = statistics_params -> mainloop_statistics;
-  if ( mainloop_stats & WEAVE_STATISTIC_COH2F ) {
+  WeaveStatisticType requested_stats = (recalc_stage) ? statistics_params -> completionloop_statistics[1] : statistics_params -> mainloop_statistics;
+  if ( requested_stats & WEAVE_STATISTIC_COH2F ) {
     coh_input->Fstat_what_to_compute |= FSTATQ_2F;
   }
-  if ( mainloop_stats & WEAVE_STATISTIC_COH2F_DET ) {
+  if ( requested_stats & WEAVE_STATISTIC_COH2F_DET ) {
     coh_input->Fstat_what_to_compute |= FSTATQ_2F_PER_DET;
   }
 
@@ -208,6 +209,7 @@ WeaveCohInput *XLALWeaveCohInputCreate(
   // Map detectors in F-statistic data in the given segment to their index in the coherent results
   // - This is important when segments contain data from a subset of detectors
   // - Map entry 'i' in 'Fstat_detector_info' (F-statistic data) to entry 'idx' in 'detectors' (coherent results)
+  if ( coh_input->Fstat_what_to_compute & FSTATQ_2F_PER_DET )
   {
     const MultiLALDetector *Fstat_detector_info = XLALGetFstatInputDetectors( coh_input->Fstat_input );
     coh_input->Fstat_ndetectors = Fstat_detector_info->length;
@@ -423,7 +425,6 @@ int XLALWeaveCohResultsCompute(
   XLAL_CHECK( coh_input != NULL, XLAL_EFAULT );
   XLAL_CHECK( coh_phys != NULL, XLAL_EFAULT );
   XLAL_CHECK( coh_nfreqs > 0, XLAL_EINVAL );
-  XLAL_CHECK( tim != NULL, XLAL_EFAULT );
 
   // Allocate results struct if required
   if ( *coh_res == NULL ) {
@@ -445,11 +446,13 @@ int XLALWeaveCohResultsCompute(
     ( *coh_res )->coh2F = XLALResizeREAL4Vector( ( *coh_res )->coh2F, ( *coh_res )->nfreqs );
     XLAL_CHECK( ( *coh_res )->coh2F != NULL, XLAL_ENOMEM );
   }
-  for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
-    const size_t idx = coh_input->Fstat_res_idx[i];
-    if ( ( *coh_res )->coh2F_det[idx] == NULL || ( *coh_res )->coh2F_det[idx]->length < ( *coh_res )->nfreqs ) {
-      ( *coh_res )->coh2F_det[idx] = XLALResizeREAL4Vector( ( *coh_res )->coh2F_det[idx], ( *coh_res )->nfreqs );
-      XLAL_CHECK( ( *coh_res )->coh2F_det[idx] != NULL, XLAL_ENOMEM );
+  if ( coh_input->Fstat_what_to_compute & FSTATQ_2F_PER_DET ) {
+    for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
+      const size_t idx = coh_input->Fstat_res_idx[i];
+      if ( ( *coh_res )->coh2F_det[idx] == NULL || ( *coh_res )->coh2F_det[idx]->length < ( *coh_res )->nfreqs ) {
+        ( *coh_res )->coh2F_det[idx] = XLALResizeREAL4Vector( ( *coh_res )->coh2F_det[idx], ( *coh_res )->nfreqs );
+        XLAL_CHECK( ( *coh_res )->coh2F_det[idx] != NULL, XLAL_ENOMEM );
+      }
     }
   }
 
@@ -459,7 +462,9 @@ int XLALWeaveCohResultsCompute(
   }
 
   // Start timing of coherent results
-  XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_NONE, WEAVE_STATISTIC_COH2F ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( tim != NULL ) {
+    XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_NONE, WEAVE_STATISTIC_COH2F ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
 
   // Use a local F-statistic results structure, since we supply our own memory
   // - The 'internalalloclen' field stores the memory size in elements of the results arrays (e.g. 'coh2F'),
@@ -490,7 +495,9 @@ int XLALWeaveCohResultsCompute(
   }
 
   // Stop timing of coherent results
-  XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_COH2F, WEAVE_STATISTIC_NONE ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( tim != NULL ) {
+    XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_COH2F, WEAVE_STATISTIC_NONE ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
 
   return XLAL_SUCCESS;
 
@@ -920,6 +927,38 @@ void XLALWeaveSemiResultsDestroy(
   return;
 
 } // XLALWeaveSemiResultsDestroy()
+
+
+/// Simple API function to extract pointers to 2F results from WeaveCohResults
+int XLALWeaveCohResultsExtract(
+  REAL4Vector **coh2F,
+  REAL4Vector *coh2F_det[PULSAR_MAX_DETECTORS],
+  BOOLEAN *have_coh2F_det,
+  WeaveCohResults *coh_res,
+  const WeaveCohInput *coh_input
+  )
+{
+  XLAL_CHECK ( coh_input != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( coh_res != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( coh_res->nfreqs >= 1, XLAL_EINVAL );
+  XLAL_CHECK ( coh2F != NULL && coh2F_det != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( have_coh2F_det != NULL, XLAL_EINVAL );
+
+  (*coh2F)     = coh_res->coh2F;
+  (*have_coh2F_det) = 0;
+  if ( coh_input->Fstat_what_to_compute & FSTATQ_2F_PER_DET ) {
+    (*have_coh2F_det) = 1;
+    // set all pointers to NULL first, the copy only the results from 'active' IFOs
+    memset ( coh2F_det, 0, PULSAR_MAX_DETECTORS * sizeof(coh2F_det[0]) );
+    for ( UINT4 i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
+      const size_t idx = coh_input->Fstat_res_idx[i];
+      coh2F_det[idx]  = coh_res->coh2F_det[idx];
+    }
+  }
+
+  return XLAL_SUCCESS;
+} // XLALWeaveCohResultsExtract()
+
 
 // Local Variables:
 // c-file-style: "linux"
