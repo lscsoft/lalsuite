@@ -1079,6 +1079,11 @@ int main( int argc, char *argv[] )
 
   }   // End of main loop
 
+  // Clear all cache items from memory
+  for ( size_t i = 0; i < nsegments; ++i ) {
+    XLAL_CHECK_MAIN( XLALWeaveCacheClear( coh_cache[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
   // Print progress
   double wall_main = 0, cpu_main = 0;
   XLAL_CHECK_MAIN ( XLALWeaveSearchTimingElapsed( tim, &wall_main, &cpu_main ) == XLAL_SUCCESS, XLAL_EFUNC );

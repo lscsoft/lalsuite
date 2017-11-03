@@ -825,6 +825,28 @@ int XLALWeaveCacheExpire(
 } // XLALWeaveCacheExpire()
 
 ///
+/// Clear all items in the cache from memory
+///
+int XLALWeaveCacheClear(
+  WeaveCache *cache
+  )
+{
+
+  // Check input
+  XLAL_CHECK( cache != NULL, XLAL_EFAULT );
+
+  // Clear items in the relevance heap and hash table from memory
+  XLAL_CHECK( XLALHeapClear( cache->relevance_heap ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALHashTblClear( cache->coh_index_hash ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Reset current generation of cache items
+  cache->generation = 0;
+
+  return XLAL_SUCCESS;
+
+} // XLALWeaveCacheClear()
+
+///
 /// Retrieve coherent results for a given query, or compute new coherent results if not found
 ///
 int XLALWeaveCacheRetrieve(

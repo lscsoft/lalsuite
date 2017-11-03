@@ -91,6 +91,9 @@ int XLALWeaveCacheWriteInfo(
 int XLALWeaveCacheExpire(
   WeaveCache *cache
   );
+int XLALWeaveCacheClear(
+  WeaveCache *cache
+  );
 int XLALWeaveCacheRetrieve(
   WeaveCache *cache,
   const WeaveCacheQueries *queries,
