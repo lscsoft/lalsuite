@@ -52,6 +52,7 @@
 #include "LALSimIMRSpinAlignedEOBHcapDerivativeOptimized.c"
 /* END OPTIMIZED */
 
+
 #define debugOutput 0
 
 //static int debugPK = 0;
@@ -77,7 +78,7 @@ static REAL8 XLALSimNSNSMergerFreq(
     REAL8 X2 = tidal2->mByM;
     REAL8 lambda1 = tidal1->lambda2Tidal; // Dimensionless quadrupolar tidal deformability normalized to M^5
     REAL8 lambda2 = tidal2->lambda2Tidal; // Dimensionless quadrupolar tidal deformability normalized to M^5
-    
+
     REAL8 X1v, X2v, lambda1v, lambda2v;
     if ( X1 >= X2 ) {
         X1v = X1;
@@ -495,7 +496,7 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
       m2BH = m2SI / (m1SI + m2SI) * 50. * LAL_MSUN_SI;
 #if debugOutput
       printf("First run SEOBNRv4 to compute NQCs\n");
-#endif      
+#endif
       ret = XLALSimIMRSpinAlignedEOBWaveformAll (hplus, hcross, tVec, rVec, phiVec, prVec, pPhiVec,
                      phiC, 1./32768, m1BH, m2BH, 2*pow(10.,-1.5)/(2.*LAL_PI)/((m1BH + m2BH)*LAL_MTSUN_SI/LAL_MSUN_SI), r, inc, spin1z, spin2z, 400,
 					 0, 0, 0, 0, 0, 0, 0, 0, nqcCoeffsInput, nqcFlag);
@@ -561,10 +562,10 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
  * STEP 7) Generate full inspiral waveform using desired sampling frequency
  * STEP 8) Generate full IMR modes -- attaching ringdown to inspiral
  * STEP 9) Generate full IMR hp and hx waveforms
- * Note that sanity checks on merger for SEOBNRv4 have revealed that for 
+ * Note that sanity checks on merger for SEOBNRv4 have revealed that for
  * eta<=0.15 and chi1>0.95 about 0.04% of the waveforms display either
  * very shallow double amplitude peak or slightly negave time-derivative of
- * the GW freq at merger. 
+ * the GW freq at merger.
  */
 int
 XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
@@ -623,7 +624,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
                      /**<< Flag to tell the code to use the NQC coeffs input thorugh nqcCoeffsInput */
   )
 {
-  REAL8 STEP_SIZE = STEP_SIZE_NOTIDES;
+  REAL8 STEP_SIZE = STEP_SIZE_CALCOMEGA;
   INT4 use_tidal = 0;
   if ( (lambda3Tidal1 != 0. && lambda2Tidal1 == 0.) || (lambda3Tidal2 != 0. && lambda2Tidal2 == 0.) ) {
       XLALPrintError ("XLAL Error - %s: Tidal parameters are not set correctly! You must have a non-zero lambda2 if you provide a non-zero lambda3!\n",
@@ -651,9 +652,6 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
           SpinAlignedEOBversion=4;
     }
 
-    if ( use_tidal == 1 ) {
-        STEP_SIZE = STEP_SIZE_TIDES;
-    }
   INT4 use_optimized_v2_or_v4 = 0;
   /* If we want SEOBNRv2_opt, then reset SpinAlignedEOBversion=2 and set use_optimized_v2_or_v4=1 */
   if (SpinAlignedEOBversion == 200)
@@ -879,8 +877,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
       tStepBack = 150. * mTScaled;
     }
   nStepBack = ceil (tStepBack / deltaT);
-    
-  
+
 
   /* Calculate the resample factor for attaching the ringdown */
   /* We want it to be a power of 2 */
@@ -969,7 +966,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
       XLALDestroyREAL8Vector (values);
       XLAL_ERROR (XLAL_ENOMEM);
     }
-    
+
 // Rescale tidal polarizabilites by powers of mNS/M
 // Rescale f-mode freqs by M/mNS
   tidal1.mByM = m1SI / (m1SI + m2SI);
@@ -1011,7 +1008,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   s2Vec.data = s2Data;
   s1VecOverMtMt.data = s1DataNorm;
   s2VecOverMtMt.data = s2DataNorm;
-    
+
     if ( use_tidal == 1 ) {
         REAL8 omegaMerger = XLALSimNSNSMergerFreq( &tidal1, &tidal2 );
         REAL8 rMerger = pow ( omegaMerger/2., -2./3. );
@@ -1102,7 +1099,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   seobParams.chi2 = spin2[2];
 
   /* Now compute the spinning H coefficients and store them in seobCoeffs */
-  if (XLALSimIMRCalculateSpinEOBHCoeffs
+    if (XLALSimIMRCalculateSpinEOBHCoeffs
       (&seobCoeffs, eta, a, SpinAlignedEOBversion) == XLAL_FAILURE)
     {
       XLALDestroyREAL8Vector (sigmaKerr);
@@ -1220,7 +1217,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   values->data[1] = 0.;
   values->data[2] = tmpValues->data[3];
   values->data[3] = tmpValues->data[0] * tmpValues->data[4];
-    
+
   eobParams.rad = values->data[0];
   eobParams.omegaPeaked = 0;
   eobParams.omegaMerger = XLALSimNSNSMergerFreq( &tidal1, &tidal2 );
@@ -1331,14 +1328,14 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
     }
   fclose (out);
 #endif
-    
+
   // Output low sample rate dynamics
   tVecOut = &tVec;
   rVecOut = &rVec;
   phiVecOut = &phiVec;
   prVecOut = &prVec;
   pPhiVecOut = &pPhiVec;
-    
+
   if (tStepBack > retLen * deltaT)
     {
       tStepBack = 0.5 * retLen * deltaT;	//YPnote: if 100M of step back > actual time of evolution, step back 50% of the later
@@ -1371,7 +1368,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   eobParams.rad = values->data[0];
   eobParams.omegaPeaked = 0;
   eobParams.NyquistStop = 0;
- 
+
 
 
   /* For HiSR evolution, we stop at a radius 0.3M from the deformed Kerr singularity,
@@ -1384,7 +1381,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   if ( use_tidal == 1 ) {
       integrator->stop = XLALSpinAlignedNSNSStopCondition;
     }
-    
+
   if (use_optimized_v2_or_v4)
     {
       /* BEGIN OPTIMIZED: */
@@ -1889,7 +1886,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 #if debugOutput
         printf("indAmax %d\n",indAmax);
 #endif
-        
+
         if ( (INT4)indAmax== (INT4) timeHi.length-1 ) {
             INT4 peakDet = 0;
             REAL8 dAnew, dAval;
@@ -1930,7 +1927,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 
         OmVec = XLALCreateREAL8Vector (sigReHi->length);
         memset (OmVec->data, 0, OmVec->length * sizeof (REAL8));
-        
+
         for (i = 1; i < (INT4) timeHi.length-1; i++) {
             re = sigReHi->data[i];
             im = sigImHi->data[i];
@@ -1943,7 +1940,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
                 Oval = Onew;
             }
         }
-        
+
         if ( indAmax>timeHi.length/2 && timeHi.data[indAmax] <= timeHi.data[indOmax] ) {
             timePeak = timeHi.data[indAmax] ;
         }
@@ -1999,7 +1996,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
         REAL8 omegaM = OmVec->data[iM];
         REAL8 omegaMdot = (OmVec->data[iM]-OmVec->data[iM-10])/(10*dtGeom);
         REAL8 tau = 0.5*LAL_PI/omega0;
-        
+
         for (kount=0; kount<iEnd; kount++){
             ampl->data[kount] = sqrt(sigReHi->data[kount]/amp0*sigReHi->data[kount]/amp0 + sigImHi->data[kount]/amp0*sigImHi->data[kount]/amp0)/(1. + exp((kount*dtGeom-rdMatchPoint->data[1]-15)/tau));
             phtmp->data[kount] = carg(sigReHi->data[kount] + I * sigImHi->data[kount]);
@@ -2078,7 +2075,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
       // maybe dynamicstmp and dynamicsHitmp should be called "intermediateDynamics(Hi)" now since they aren't so temporary anymore?
       GenerateAmpPhaseFromEOMSoln (retLen_fromOptStep2, dynamicstmp->data,
 				   &seobParams);
-      /* 
+      /*
        * We used dynamics and dynamicsHi to store solution to equations of motion.
        *   The solution was needed to find, e.g., the time at peak freq (STEP 4).
        *   At this point, the solution to the EOMs is no longer needed, so we
@@ -2264,6 +2261,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
         XLALDestroyREAL8Vector( tmpRe );
         XLALDestroyREAL8Vector( tmpIm );
     }
+
 
   /*
    * STEP 9) Generate full IMR hp and hx waveforms
