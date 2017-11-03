@@ -67,6 +67,8 @@ struct tagWeaveCache {
   UINT4 generation;
   /// Heap which ranks cache items by relevance
   LALHeap *relevance_heap;
+  /// Maximum size obtained by relevance heap
+  UINT4 heap_max_size;
   /// Hash table which looks up cache items by index
   LALHashTbl *coh_index_hash;
   /// Bitset which records whether an item has ever been computed
@@ -463,6 +465,34 @@ void XLALWeaveCacheDestroy(
     XLALFree( cache );
   }
 } // XLALWeaveCacheDestroy()
+
+///
+/// Write various information from caches to a FITS file
+///
+int XLALWeaveCacheWriteInfo(
+  FITSFile *file,
+  const size_t ncache,
+  WeaveCache *const *cache
+  )
+{
+
+  // Check input
+  XLAL_CHECK( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK( ncache > 0, XLAL_ESIZE );
+  XLAL_CHECK( cache != NULL, XLAL_EFAULT );
+
+  // Write total maximum size obtained by relevance heaps
+  {
+    UINT4 heap_max_size = 0;
+    for ( size_t i = 0; i < ncache; ++i ) {
+        heap_max_size += cache[i]->heap_max_size;
+    }
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "cachemax", heap_max_size, "maximum size obtained by cache" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  return XLAL_SUCCESS;
+
+}
 
 ///
 /// Create storage for a series of cache queries
@@ -878,6 +908,12 @@ int XLALWeaveCacheRetrieve(
         XLAL_CHECK( XLALHashTblRemove( cache->coh_index_hash, cache->saved_item ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
 
+    }
+
+    // Update maximum size obtained by relevance heap
+    const UINT4 heap_size = XLALHeapSize( cache->relevance_heap );
+    if ( cache->heap_max_size < heap_size ) {
+      cache->heap_max_size = heap_size;
     }
 
     // Increment number of computed coherent results

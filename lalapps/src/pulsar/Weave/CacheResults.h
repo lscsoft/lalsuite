@@ -49,6 +49,11 @@ WeaveCache *XLALWeaveCacheCreate(
 void XLALWeaveCacheDestroy(
   WeaveCache *cache
   );
+int XLALWeaveCacheWriteInfo(
+  FITSFile *file,
+  const size_t ncache,
+  WeaveCache *const *cache
+  );
 WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
   const LatticeTiling *semi_tiling,
   const SuperskyTransformData *semi_rssky_transf,

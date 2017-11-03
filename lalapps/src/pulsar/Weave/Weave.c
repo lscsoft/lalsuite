@@ -1178,6 +1178,9 @@ int main( int argc, char *argv[] )
     // Write various information from coherent input data
     XLAL_CHECK_MAIN( XLALWeaveCohInputWriteInfo( file, nsegments, statistics_params->coh_input ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+    // Write various information from caches
+    XLAL_CHECK_MAIN( XLALWeaveCacheWriteInfo( file, nsegments, coh_cache ) == XLAL_SUCCESS, XLAL_EFUNC );
+
     // Write search results, unless search is being simulated
     if ( simulation_level == 0 ) {
       XLAL_CHECK_MAIN( XLALWeaveOutputResultsWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
