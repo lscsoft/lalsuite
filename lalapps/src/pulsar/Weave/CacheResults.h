@@ -37,23 +37,6 @@
 extern "C" {
 #endif
 
-WeaveCache *XLALWeaveCacheCreate(
-  const LatticeTiling *coh_tiling,
-  const BOOLEAN interpolation,
-  const SuperskyTransformData *coh_rssky_transf,
-  const SuperskyTransformData *semi_rssky_transf,
-  WeaveCohInput *coh_input,
-  const UINT4 max_size,
-  const BOOLEAN all_gc
-  );
-void XLALWeaveCacheDestroy(
-  WeaveCache *cache
-  );
-int XLALWeaveCacheWriteInfo(
-  FITSFile *file,
-  const size_t ncache,
-  WeaveCache *const *cache
-  );
 WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
   const LatticeTiling *semi_tiling,
   const SuperskyTransformData *semi_rssky_transf,
@@ -88,6 +71,26 @@ int XLALWeaveCacheQueriesGetCounts(
   UINT8 *coh_ntmpl,
   UINT8 *semi_ntmpl
   );
+WeaveCache *XLALWeaveCacheCreate(
+  const LatticeTiling *coh_tiling,
+  const BOOLEAN interpolation,
+  const SuperskyTransformData *coh_rssky_transf,
+  const SuperskyTransformData *semi_rssky_transf,
+  WeaveCohInput *coh_input,
+  const UINT4 max_size,
+  const BOOLEAN all_gc
+  );
+void XLALWeaveCacheDestroy(
+  WeaveCache *cache
+  );
+int XLALWeaveCacheWriteInfo(
+  FITSFile *file,
+  const size_t ncache,
+  WeaveCache *const *cache
+  );
+int XLALWeaveCacheExpire(
+  WeaveCache *cache
+  );
 int XLALWeaveCacheRetrieve(
   WeaveCache *cache,
   const WeaveCacheQueries *queries,
@@ -96,9 +99,6 @@ int XLALWeaveCacheRetrieve(
   UINT8 *coh_index,
   UINT4 *coh_offset,
   WeaveSearchTiming *tim
-  );
-int XLALWeaveCacheExpire(
-  WeaveCache *cache
   );
 
 #ifdef __cplusplus

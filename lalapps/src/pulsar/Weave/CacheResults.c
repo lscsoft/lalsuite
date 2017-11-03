@@ -46,44 +46,6 @@ typedef struct {
 } cache_item;
 
 ///
-/// Cache used to store coherent results
-///
-struct tagWeaveCache {
-  /// Number of parameter-space dimensions
-  size_t ndim;
-  /// Lowest tiled parameter-space dimension
-  size_t dim0;
-  /// Reduced supersky transform data for coherent lattice
-  const SuperskyTransformData *coh_rssky_transf;
-  /// Reduced supersky transform data for semicoherent lattice
-  const SuperskyTransformData *semi_rssky_transf;
-  /// Input data required for computing coherent results
-  WeaveCohInput *coh_input;
-  /// Coherent parameter-space tiling locator
-  LatticeTilingLocator *coh_locator;
-  /// Maximum value of index from coherent locator
-  UINT8 coh_max_index;
-  /// Current generation of cache items
-  UINT4 generation;
-  /// Heap which ranks cache items by relevance
-  LALHeap *relevance_heap;
-  /// Maximum size obtained by relevance heap
-  UINT4 heap_max_size;
-  /// Hash table which looks up cache items by index
-  LALHashTbl *coh_index_hash;
-  /// Bitset which records whether an item has ever been computed
-  LALBitset *coh_computed_bitset;
-  /// Offset used in computation of coherent point relevance
-  double coh_relevance_offset;
-  /// Whether any garbage collection of results should be used
-  BOOLEAN any_gc;
-  /// Whether garbage collection should remove as many results as possible
-  BOOLEAN all_gc;
-  /// Save an no-longer-used cache item for re-use
-  cache_item *saved_item;
-};
-
-///
 /// Container for a series of cache queries
 ///
 struct tagWeaveCacheQueries {
@@ -135,6 +97,44 @@ struct tagWeaveCacheQueries {
   double semi_relevance_offset;
   /// Number of semicoherent templates (over all queries)
   UINT8 semi_ntmpl;
+};
+
+///
+/// Cache used to store coherent results
+///
+struct tagWeaveCache {
+  /// Number of parameter-space dimensions
+  size_t ndim;
+  /// Lowest tiled parameter-space dimension
+  size_t dim0;
+  /// Reduced supersky transform data for coherent lattice
+  const SuperskyTransformData *coh_rssky_transf;
+  /// Reduced supersky transform data for semicoherent lattice
+  const SuperskyTransformData *semi_rssky_transf;
+  /// Input data required for computing coherent results
+  WeaveCohInput *coh_input;
+  /// Coherent parameter-space tiling locator
+  LatticeTilingLocator *coh_locator;
+  /// Maximum value of index from coherent locator
+  UINT8 coh_max_index;
+  /// Current generation of cache items
+  UINT4 generation;
+  /// Heap which ranks cache items by relevance
+  LALHeap *relevance_heap;
+  /// Maximum size obtained by relevance heap
+  UINT4 heap_max_size;
+  /// Hash table which looks up cache items by index
+  LALHashTbl *coh_index_hash;
+  /// Bitset which records whether an item has ever been computed
+  LALBitset *coh_computed_bitset;
+  /// Offset used in computation of coherent point relevance
+  double coh_relevance_offset;
+  /// Whether any garbage collection of results should be used
+  BOOLEAN any_gc;
+  /// Whether garbage collection should remove as many results as possible
+  BOOLEAN all_gc;
+  /// Save an no-longer-used cache item for re-use
+  cache_item *saved_item;
 };
 
 ///
@@ -294,201 +294,6 @@ int cache_left_right_offsets(
   *right_offset = *left_offset + part_nfreqs - semi_nfreqs;
   XLAL_CHECK( *left_offset >= 0, XLAL_EDOM );
   XLAL_CHECK( *right_offset <= 0, XLAL_EDOM );
-
-  return XLAL_SUCCESS;
-
-}
-
-///
-/// Create a cache
-///
-WeaveCache *XLALWeaveCacheCreate(
-  const LatticeTiling *coh_tiling,
-  const BOOLEAN interpolation,
-  const SuperskyTransformData *coh_rssky_transf,
-  const SuperskyTransformData *semi_rssky_transf,
-  WeaveCohInput *coh_input,
-  const UINT4 max_size,
-  const BOOLEAN all_gc
-  )
-{
-
-  // Check input
-  XLAL_CHECK_NULL( coh_tiling != NULL, XLAL_EFAULT );
-  XLAL_CHECK_NULL( coh_input != NULL, XLAL_EFAULT );
-
-  // Allocate memory
-  WeaveCache *cache = XLALCalloc( 1, sizeof( *cache ) );
-  XLAL_CHECK_NULL( cache != NULL, XLAL_ENOMEM );
-
-  // Set fields
-  cache->coh_rssky_transf = coh_rssky_transf;
-  cache->semi_rssky_transf = semi_rssky_transf;
-  cache->coh_input = coh_input;
-  cache->generation = 0;
-
-  // Set garbage collection mode:
-  // - Garbage collection is not performed for a fixed-size cache (i.e. 'max_size > 0'),
-  //   i.e. the cache will only discard items once the fixed-size cache is full, but not
-  //   try to remove cache items earlier based on their relevances
-  // - Garbage collection is applied to as many items as possible if 'all_gc' is true
-  cache->any_gc = (max_size == 0);
-  cache->all_gc = all_gc;
-
-  // Get number of parameter-space dimensions
-  cache->ndim = XLALTotalLatticeTilingDimensions( coh_tiling );
-  XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
-
-  // Get lowest tiled parameter-space dimension
-  if ( XLALTiledLatticeTilingDimensions( coh_tiling ) > 0 ) {
-    cache->dim0 = XLALLatticeTilingTiledDimension( coh_tiling, 0 );
-  } else {
-    cache->dim0 = 0;
-  }
-  XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
-
-  // Compute offset used in computation of semicoherent point relevance:
-  {
-
-    // Convert a physical point far from any parameter-space boundaries to coherent and semicoherent reduced supersky coordinates
-    PulsarDopplerParams phys_origin = { .Alpha = 0, .Delta = LAL_PI_2, .fkdot = {0} };
-    XLAL_CHECK_NULL( XLALSetPhysicalPointSuperskyRefTime( &phys_origin, cache->coh_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
-    double coh_origin_array[cache->ndim];
-    gsl_vector_view coh_origin_view = gsl_vector_view_array( coh_origin_array, cache->ndim );
-    XLAL_CHECK_NULL( XLALConvertPhysicalToSuperskyPoint( &coh_origin_view.vector, &phys_origin, cache->coh_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
-    double semi_origin_array[cache->ndim];
-    gsl_vector_view semi_origin_view = gsl_vector_view_array( semi_origin_array, cache->ndim );
-    XLAL_CHECK_NULL( XLALConvertPhysicalToSuperskyPoint( &semi_origin_view.vector, &phys_origin, cache->semi_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
-    const double semi_origin_dim0 = gsl_vector_get( &semi_origin_view.vector, cache->dim0 );
-
-    // Sample vertices of bounding box around 'coh_origin', and record maximum vertex in semicoherent reduced supersky coordinates in dimension 'dim0'
-    double coh_bbox_sample_array[cache->ndim];
-    gsl_vector_view coh_bbox_sample_view = gsl_vector_view_array( coh_bbox_sample_array, cache->ndim );
-    gsl_vector_memcpy( &coh_bbox_sample_view.vector, &coh_origin_view.vector );
-    double semi_bbox_sample_array[cache->ndim];
-    gsl_vector_view semi_bbox_sample_view = gsl_vector_view_array( semi_bbox_sample_array, cache->ndim );
-    double max_semi_bbox_sample_dim0 = semi_origin_dim0;
-    XLAL_CHECK_NULL( cache_max_semi_bbox_sample_dim0( cache, coh_tiling, 0, &coh_bbox_sample_view.vector, &semi_bbox_sample_view.vector, &max_semi_bbox_sample_dim0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    // Subtract off origin of 'semi_origin' to get relevance offset
-    cache->coh_relevance_offset = max_semi_bbox_sample_dim0 - semi_origin_dim0;
-
-  }
-
-  // If this is an interpolating search, create a lattice tiling locator
-  if ( interpolation ) {
-    cache->coh_locator = XLALCreateLatticeTilingLocator( coh_tiling );
-    XLAL_CHECK_NULL( cache->coh_locator != NULL, XLAL_EFUNC );
-    const LatticeTilingStats *stats = XLALLatticeTilingStatistics( coh_tiling, cache->ndim - 2 );
-    XLAL_CHECK_NULL( stats != NULL, XLAL_EFUNC );
-    cache->coh_max_index = stats->total_points;
-  }
-
-  // Create a heap which sorts items by "relevance", a quantity which determines how long
-  // cache items are kept. Consider the following scenario:
-  //
-  //   +-----> parameter-space dimension 'dim0'
-  //   |
-  //   V parameter-space dimensions > 'dim0'
-  //
-  //        :
-  //        : R[S1] = relevance of semicoherent point 'S1'
-  //        :
-  //        +-----+
-  //        | /`\ |
-  //        || S1||
-  //        | \,/ |
-  //        +-----+
-  //      +          :
-  //     / \         : R[S2] = relevance of semicoherent point 'S2'
-  //    /,,,\        :
-  //   /(   \\       +-----+
-  //  + (    \\      | /`\ |
-  //   \\  C  \\     || S2||
-  //    \\    ) +    | \,/ |
-  //     \\   )/:    +-----+
-  //      \```/ :
-  //       \ /  :
-  //        +   : R[C] = relevance of coherent point 'C'
-  //            :
-  //
-  // The relevance R[C] of the coherent point 'C' is given by the coordinate in dimension 'dim0' of
-  // the *rightmost* edge of the bounding box surrounding its metric ellipse. The relevances of
-  // two semicoherent points S1 and S2, R[S1] and R[S2], are given by the *leftmost* edges of the
-  // bounding box surrounding their metric ellipses.
-  //
-  // Note that iteration over the parameter space is ordered such that dimension 'dim0' is the slowest
-  // (tiled) coordinate, i.e. dimension 'dim0' is passed over only once, therefore coordinates in this
-  // dimension are monotonically increasing, therefore relevances are also monotonically increasing.
-  //
-  // Suppose S1 is the current point in the semicoherent parameter-space tiling; note that R[C] > R[S1].
-  // It is clear that, as iteration progresses, some future semicoherent points will overlap with C.
-  // Therefore C cannot be discarded from the cache, since it will be the closest point for future
-  // semicoherent points. Now suppose that S2 is the current point; note that R[C] < R[S1]. It is clear
-  // that neither S2, nor any future point in the semicoherent parameter-space tiling, can ever overlap
-  // with C. Therefore C can never be the closest point for any future semicoherent points, and therefore
-  // it can safely be discarded from the cache.
-  //
-  // In short, an item in the cache can be discarded once its relevance falls below the threshold set
-  // by the current point semicoherent in the semicoherent parameter-space tiling.
-  //
-  // Items removed from the heap are destroyed by calling cache_item_destroy().
-  cache->relevance_heap = XLALHeapCreate( cache_item_destroy, max_size, -1, cache_item_compare_by_relevance );
-  XLAL_CHECK_NULL( cache->relevance_heap != NULL, XLAL_EFUNC );
-
-  // Create a hash table which looks up cache items by partition and locator index. Items removed
-  // from the hash table are NOT destroyed, since items are shared with 'relevance_heap'.
-  cache->coh_index_hash = XLALHashTblCreate( NULL, cache_item_hash, cache_item_compare_by_coh_index );
-  XLAL_CHECK_NULL( cache->coh_index_hash != NULL, XLAL_EFUNC );
-
-  // Create a bitset which records which cache items have ever been computed.
-  cache->coh_computed_bitset = XLALBitsetCreate();
-  XLAL_CHECK_NULL( cache->coh_computed_bitset != NULL, XLAL_EFUNC );
-
-  return cache;
-
-} // XLALWeaveCacheCreate()
-
-///
-/// Destroy a cache
-///
-void XLALWeaveCacheDestroy(
-  WeaveCache *cache
-  )
-{
-  if ( cache != NULL ) {
-    XLALDestroyLatticeTilingLocator( cache->coh_locator );
-    XLALHeapDestroy( cache->relevance_heap );
-    XLALHashTblDestroy( cache->coh_index_hash );
-    cache_item_destroy( cache->saved_item );
-    XLALBitsetDestroy( cache->coh_computed_bitset );
-    XLALFree( cache );
-  }
-} // XLALWeaveCacheDestroy()
-
-///
-/// Write various information from caches to a FITS file
-///
-int XLALWeaveCacheWriteInfo(
-  FITSFile *file,
-  const size_t ncache,
-  WeaveCache *const *cache
-  )
-{
-
-  // Check input
-  XLAL_CHECK( file != NULL, XLAL_EFAULT );
-  XLAL_CHECK( ncache > 0, XLAL_ESIZE );
-  XLAL_CHECK( cache != NULL, XLAL_EFAULT );
-
-  // Write total maximum size obtained by relevance heaps
-  {
-    UINT4 heap_max_size = 0;
-    for ( size_t i = 0; i < ncache; ++i ) {
-        heap_max_size += cache[i]->heap_max_size;
-    }
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "cachemax", heap_max_size, "maximum size obtained by cache" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
 
   return XLAL_SUCCESS;
 
@@ -806,6 +611,220 @@ int XLALWeaveCacheQueriesGetCounts(
 }
 
 ///
+/// Create a cache
+///
+WeaveCache *XLALWeaveCacheCreate(
+  const LatticeTiling *coh_tiling,
+  const BOOLEAN interpolation,
+  const SuperskyTransformData *coh_rssky_transf,
+  const SuperskyTransformData *semi_rssky_transf,
+  WeaveCohInput *coh_input,
+  const UINT4 max_size,
+  const BOOLEAN all_gc
+  )
+{
+
+  // Check input
+  XLAL_CHECK_NULL( coh_tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( coh_input != NULL, XLAL_EFAULT );
+
+  // Allocate memory
+  WeaveCache *cache = XLALCalloc( 1, sizeof( *cache ) );
+  XLAL_CHECK_NULL( cache != NULL, XLAL_ENOMEM );
+
+  // Set fields
+  cache->coh_rssky_transf = coh_rssky_transf;
+  cache->semi_rssky_transf = semi_rssky_transf;
+  cache->coh_input = coh_input;
+  cache->generation = 0;
+
+  // Set garbage collection mode:
+  // - Garbage collection is not performed for a fixed-size cache (i.e. 'max_size > 0'),
+  //   i.e. the cache will only discard items once the fixed-size cache is full, but not
+  //   try to remove cache items earlier based on their relevances
+  // - Garbage collection is applied to as many items as possible if 'all_gc' is true
+  cache->any_gc = (max_size == 0);
+  cache->all_gc = all_gc;
+
+  // Get number of parameter-space dimensions
+  cache->ndim = XLALTotalLatticeTilingDimensions( coh_tiling );
+  XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
+
+  // Get lowest tiled parameter-space dimension
+  if ( XLALTiledLatticeTilingDimensions( coh_tiling ) > 0 ) {
+    cache->dim0 = XLALLatticeTilingTiledDimension( coh_tiling, 0 );
+  } else {
+    cache->dim0 = 0;
+  }
+  XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
+
+  // Compute offset used in computation of semicoherent point relevance:
+  {
+
+    // Convert a physical point far from any parameter-space boundaries to coherent and semicoherent reduced supersky coordinates
+    PulsarDopplerParams phys_origin = { .Alpha = 0, .Delta = LAL_PI_2, .fkdot = {0} };
+    XLAL_CHECK_NULL( XLALSetPhysicalPointSuperskyRefTime( &phys_origin, cache->coh_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+    double coh_origin_array[cache->ndim];
+    gsl_vector_view coh_origin_view = gsl_vector_view_array( coh_origin_array, cache->ndim );
+    XLAL_CHECK_NULL( XLALConvertPhysicalToSuperskyPoint( &coh_origin_view.vector, &phys_origin, cache->coh_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+    double semi_origin_array[cache->ndim];
+    gsl_vector_view semi_origin_view = gsl_vector_view_array( semi_origin_array, cache->ndim );
+    XLAL_CHECK_NULL( XLALConvertPhysicalToSuperskyPoint( &semi_origin_view.vector, &phys_origin, cache->semi_rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+    const double semi_origin_dim0 = gsl_vector_get( &semi_origin_view.vector, cache->dim0 );
+
+    // Sample vertices of bounding box around 'coh_origin', and record maximum vertex in semicoherent reduced supersky coordinates in dimension 'dim0'
+    double coh_bbox_sample_array[cache->ndim];
+    gsl_vector_view coh_bbox_sample_view = gsl_vector_view_array( coh_bbox_sample_array, cache->ndim );
+    gsl_vector_memcpy( &coh_bbox_sample_view.vector, &coh_origin_view.vector );
+    double semi_bbox_sample_array[cache->ndim];
+    gsl_vector_view semi_bbox_sample_view = gsl_vector_view_array( semi_bbox_sample_array, cache->ndim );
+    double max_semi_bbox_sample_dim0 = semi_origin_dim0;
+    XLAL_CHECK_NULL( cache_max_semi_bbox_sample_dim0( cache, coh_tiling, 0, &coh_bbox_sample_view.vector, &semi_bbox_sample_view.vector, &max_semi_bbox_sample_dim0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Subtract off origin of 'semi_origin' to get relevance offset
+    cache->coh_relevance_offset = max_semi_bbox_sample_dim0 - semi_origin_dim0;
+
+  }
+
+  // If this is an interpolating search, create a lattice tiling locator
+  if ( interpolation ) {
+    cache->coh_locator = XLALCreateLatticeTilingLocator( coh_tiling );
+    XLAL_CHECK_NULL( cache->coh_locator != NULL, XLAL_EFUNC );
+    const LatticeTilingStats *stats = XLALLatticeTilingStatistics( coh_tiling, cache->ndim - 2 );
+    XLAL_CHECK_NULL( stats != NULL, XLAL_EFUNC );
+    cache->coh_max_index = stats->total_points;
+  }
+
+  // Create a heap which sorts items by "relevance", a quantity which determines how long
+  // cache items are kept. Consider the following scenario:
+  //
+  //   +-----> parameter-space dimension 'dim0'
+  //   |
+  //   V parameter-space dimensions > 'dim0'
+  //
+  //        :
+  //        : R[S1] = relevance of semicoherent point 'S1'
+  //        :
+  //        +-----+
+  //        | /`\ |
+  //        || S1||
+  //        | \,/ |
+  //        +-----+
+  //      +          :
+  //     / \         : R[S2] = relevance of semicoherent point 'S2'
+  //    /,,,\        :
+  //   /(   \\       +-----+
+  //  + (    \\      | /`\ |
+  //   \\  C  \\     || S2||
+  //    \\    ) +    | \,/ |
+  //     \\   )/:    +-----+
+  //      \```/ :
+  //       \ /  :
+  //        +   : R[C] = relevance of coherent point 'C'
+  //            :
+  //
+  // The relevance R[C] of the coherent point 'C' is given by the coordinate in dimension 'dim0' of
+  // the *rightmost* edge of the bounding box surrounding its metric ellipse. The relevances of
+  // two semicoherent points S1 and S2, R[S1] and R[S2], are given by the *leftmost* edges of the
+  // bounding box surrounding their metric ellipses.
+  //
+  // Note that iteration over the parameter space is ordered such that dimension 'dim0' is the slowest
+  // (tiled) coordinate, i.e. dimension 'dim0' is passed over only once, therefore coordinates in this
+  // dimension are monotonically increasing, therefore relevances are also monotonically increasing.
+  //
+  // Suppose S1 is the current point in the semicoherent parameter-space tiling; note that R[C] > R[S1].
+  // It is clear that, as iteration progresses, some future semicoherent points will overlap with C.
+  // Therefore C cannot be discarded from the cache, since it will be the closest point for future
+  // semicoherent points. Now suppose that S2 is the current point; note that R[C] < R[S1]. It is clear
+  // that neither S2, nor any future point in the semicoherent parameter-space tiling, can ever overlap
+  // with C. Therefore C can never be the closest point for any future semicoherent points, and therefore
+  // it can safely be discarded from the cache.
+  //
+  // In short, an item in the cache can be discarded once its relevance falls below the threshold set
+  // by the current point semicoherent in the semicoherent parameter-space tiling.
+  //
+  // Items removed from the heap are destroyed by calling cache_item_destroy().
+  cache->relevance_heap = XLALHeapCreate( cache_item_destroy, max_size, -1, cache_item_compare_by_relevance );
+  XLAL_CHECK_NULL( cache->relevance_heap != NULL, XLAL_EFUNC );
+
+  // Create a hash table which looks up cache items by partition and locator index. Items removed
+  // from the hash table are NOT destroyed, since items are shared with 'relevance_heap'.
+  cache->coh_index_hash = XLALHashTblCreate( NULL, cache_item_hash, cache_item_compare_by_coh_index );
+  XLAL_CHECK_NULL( cache->coh_index_hash != NULL, XLAL_EFUNC );
+
+  // Create a bitset which records which cache items have ever been computed.
+  cache->coh_computed_bitset = XLALBitsetCreate();
+  XLAL_CHECK_NULL( cache->coh_computed_bitset != NULL, XLAL_EFUNC );
+
+  return cache;
+
+} // XLALWeaveCacheCreate()
+
+///
+/// Destroy a cache
+///
+void XLALWeaveCacheDestroy(
+  WeaveCache *cache
+  )
+{
+  if ( cache != NULL ) {
+    XLALDestroyLatticeTilingLocator( cache->coh_locator );
+    XLALHeapDestroy( cache->relevance_heap );
+    XLALHashTblDestroy( cache->coh_index_hash );
+    cache_item_destroy( cache->saved_item );
+    XLALBitsetDestroy( cache->coh_computed_bitset );
+    XLALFree( cache );
+  }
+} // XLALWeaveCacheDestroy()
+
+///
+/// Write various information from caches to a FITS file
+///
+int XLALWeaveCacheWriteInfo(
+  FITSFile *file,
+  const size_t ncache,
+  WeaveCache *const *cache
+  )
+{
+
+  // Check input
+  XLAL_CHECK( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK( ncache > 0, XLAL_ESIZE );
+  XLAL_CHECK( cache != NULL, XLAL_EFAULT );
+
+  // Write total maximum size obtained by relevance heaps
+  {
+    UINT4 heap_max_size = 0;
+    for ( size_t i = 0; i < ncache; ++i ) {
+        heap_max_size += cache[i]->heap_max_size;
+    }
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "cachemax", heap_max_size, "maximum size obtained by cache" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
+///
+/// Expire all items in the cache
+///
+int XLALWeaveCacheExpire(
+  WeaveCache *cache
+  )
+{
+
+  // Check input
+  XLAL_CHECK( cache != NULL, XLAL_EFAULT );
+
+  // Advance current generation of cache items
+  // - Existing items will no longer be accessible, but are still kept for reuse
+  ++cache->generation;
+
+  return XLAL_SUCCESS;
+
+} // XLALWeaveCacheExpire()
+
+///
 /// Retrieve coherent results for a given query, or compute new coherent results if not found
 ///
 int XLALWeaveCacheRetrieve(
@@ -947,25 +966,6 @@ int XLALWeaveCacheRetrieve(
   return XLAL_SUCCESS;
 
 } // XLALWeaveCacheRetrieve()
-
-///
-/// Expire all items in the cache
-///
-int XLALWeaveCacheExpire(
-  WeaveCache *cache
-  )
-{
-
-  // Check input
-  XLAL_CHECK( cache != NULL, XLAL_EFAULT );
-
-  // Advance current generation of cache items
-  // - Existing items will no longer be accessible, but are still kept for reuse
-  ++cache->generation;
-
-  return XLAL_SUCCESS;
-
-} // XLALWeaveCacheExpire()
 
 // Local Variables:
 // c-file-style: "linux"
