@@ -42,9 +42,48 @@ NOISEPSDFILES = \
 	LIGO-T1600593-v1-KAGRA_Design.txt
 
 EOSDATAFILES = \
+	LALSimNeutronStarEOS_ALF1.dat \
+	LALSimNeutronStarEOS_ALF2.dat \
+	LALSimNeutronStarEOS_ALF3.dat \
+	LALSimNeutronStarEOS_ALF4.dat \
+	LALSimNeutronStarEOS_AP1.dat \
+	LALSimNeutronStarEOS_AP2.dat \
+	LALSimNeutronStarEOS_AP3.dat \
 	LALSimNeutronStarEOS_AP4.dat \
+	LALSimNeutronStarEOS_BBB2.dat \
+	LALSimNeutronStarEOS_BGN1H1.dat \
+	LALSimNeutronStarEOS_BPAL12.dat \
+	LALSimNeutronStarEOS_BSK19.dat \
+	LALSimNeutronStarEOS_BSK20.dat \
+	LALSimNeutronStarEOS_BSK21.dat \
+	LALSimNeutronStarEOS_ENG.dat \
 	LALSimNeutronStarEOS_FPS.dat \
-	LALSimNeutronStarEOS_SLY4.dat
+	LALSimNeutronStarEOS_GNH3.dat \
+	LALSimNeutronStarEOS_GS1.dat \
+	LALSimNeutronStarEOS_GS2.dat \
+	LALSimNeutronStarEOS_H1.dat \
+	LALSimNeutronStarEOS_H2.dat \
+	LALSimNeutronStarEOS_H3.dat \
+	LALSimNeutronStarEOS_H4.dat \
+	LALSimNeutronStarEOS_H5.dat \
+	LALSimNeutronStarEOS_H6.dat \
+	LALSimNeutronStarEOS_H7.dat \
+	LALSimNeutronStarEOS_MPA1.dat \
+	LALSimNeutronStarEOS_MS1B.dat \
+	LALSimNeutronStarEOS_MS1.dat \
+	LALSimNeutronStarEOS_MS2.dat \
+	LALSimNeutronStarEOS_PAL6.dat \
+	LALSimNeutronStarEOS_PCL2.dat \
+	LALSimNeutronStarEOS_PS.dat \
+	LALSimNeutronStarEOS_QMC700.dat \
+	LALSimNeutronStarEOS_SLY4.dat \
+	LALSimNeutronStarEOS_SLY.dat \
+	LALSimNeutronStarEOS_SQM1.dat \
+	LALSimNeutronStarEOS_SQM2.dat \
+	LALSimNeutronStarEOS_SQM3.dat \
+	LALSimNeutronStarEOS_WFF1.dat \
+	LALSimNeutronStarEOS_WFF2.dat \
+	LALSimNeutronStarEOS_WFF3.dat
 
 LDADD = liblalsimulation.la
 
