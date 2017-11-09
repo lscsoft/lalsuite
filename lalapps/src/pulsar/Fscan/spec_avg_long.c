@@ -139,7 +139,8 @@ SFTVector*
 LALExtractSFT(const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load */
 REAL8 fMin,		   /**< minumum requested frequency (-1 = read from lowest) */
 REAL8 fMax,		   /**< maximum requested frequency (-1 = read up to highest) */
-REAL8 SFTindex
+REAL8 SFTindex		   /**< current file in catalog */
+	   
 );
 
 
@@ -435,10 +436,11 @@ SFTVector*
 LALExtractSFT(const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load */
 REAL8 fMin,		   /**< minumum requested frequency (-1 = read from lowest) */
 REAL8 fMax,		   /**< maximum requested frequency (-1 = read up to highest) */
-REAL8 SFTindex
+REAL8 SFTindex 		   /**< current file in catalog */
+
 )
 {
-	UINT4 catPos = SFTindex;                    /**< current file in catalog */
+	UINT4 catPos = SFTindex;                   /**< current file in catalog */
 	UINT4 firstbin, lastbin;         /**< the first and last bin we want to read */
 	UINT4 minbin, maxbin;            /**< min and max bin of all SFTs in the catalog */
 	UINT4 nSFTs = 1;                 /**< number of SFTs, i.e. different GPS timestamps */
@@ -923,7 +925,7 @@ read_sft_bins_from_fp(SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, UI
   } /* if SFT-v1 */
 
   /* return last bin read */
-//fprintf(stderr,"lastBin2read = %u\n",lastBin2read);
+fprintf(stderr,"lastBin2read = %u\n",lastBin2read);
   return(lastBin2read);
 
 } /* read_sft_bins_from_fp() */
