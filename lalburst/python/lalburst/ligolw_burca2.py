@@ -120,7 +120,7 @@ def assign_likelihood_ratios_xml(xmldoc, coinc_def_id, offset_vectors, vetosegli
 	coinc_event_table = lsctables.CoincTable.get_table(xmldoc)
 
 	if verbose:
-		progressbar = ProgressBar("computing likelihood ratios", max = len(coinc_event_table))
+		progressbar = ProgressBar("computing ln L", max = len(coinc_event_table))
 	else:
 		progressbar = None
 
