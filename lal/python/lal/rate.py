@@ -2011,7 +2011,7 @@ class BinnedLnPDF(BinnedDensity):
 
 	As with the BinnedDensity class, the internal array contains counts
 	(not densities, nor natural logarithms of densities), and the
-	.counts attribute continues to be a BinnedArray interface to those
+	.count attribute continues to be a BinnedArray interface to those
 	counts.  The intention is for the counts themselves to provide an
 	additional degree of freedom apart from the normalized density.
 	For example, see the .__iadd__() method where it is assumed that
@@ -2123,7 +2123,7 @@ class BinnedLnPDF(BinnedDensity):
 		# between them are preserved.  forbidden cases include:
 		# infinite bin size, total count is initially 0.
 		#
-		raise NotImplementedError("item assignment operation not defined.  assign to .counts then invoke .normalize()")
+		raise NotImplementedError("item assignment operation not defined.  assign to .count then invoke .normalize()")
 
 	def mkinterp(self):
 		"""
