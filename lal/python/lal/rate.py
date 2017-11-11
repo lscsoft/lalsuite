@@ -2248,6 +2248,11 @@ class BinnedLnPDF(BinnedDensity):
 			self.norm = other.norm + math.log1p(math.exp(self.norm - other.norm))
 		return self
 
+	def __add__(self, other):
+		self = super(BinnedLnPDF, self).__add__(other)
+		self.normalize()
+		return self
+
 	def copy(self):
 		new = super(BinnedLnPDF, self).copy()
 		new.norm = self.norm
