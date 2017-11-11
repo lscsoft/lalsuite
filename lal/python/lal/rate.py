@@ -1486,10 +1486,47 @@ class BinnedArray(object):
 		"""
 		Add the contents of another BinnedArray object to this one.
 		Both must have identical binnings.
+
+		Example:
+
+		>>> x = BinnedArray(NDBins((LinearBins(-0.5, 1.5, 2), LinearBins(-0.5, 1.5, 2))))
+		>>> x[0, 0] = 0
+		>>> x[0, 1] = 1
+		>>> x[1, 0] = 2
+		>>> x[1, 1] = 4
+		>>> x.at_centres()
+		array([[ 0.,  1.],
+		       [ 2.,  4.]])
+		>>> x += x
+		>>> x.at_centres()
+		array([[ 0.,  2.],
+		       [ 4.,  8.]])
 		"""
 		if self.bins != other.bins:
 			raise TypeError("incompatible binning: %s" % repr(other))
 		self.array += other.array
+		return self
+
+	def __add__(self, other):
+		"""
+		Add two BinnedArray objects together.
+
+		Example:
+
+		>>> x = BinnedArray(NDBins((LinearBins(-0.5, 1.5, 2), LinearBins(-0.5, 1.5, 2))))
+		>>> x[0, 0] = 0
+		>>> x[0, 1] = 1
+		>>> x[1, 0] = 2
+		>>> x[1, 1] = 4
+		>>> x.at_centres()
+		array([[ 0.,  1.],
+		       [ 2.,  4.]])
+		>>> (x + x).at_centres()
+		array([[ 0.,  2.],
+		       [ 4.,  8.]])
+		"""
+		self = self.copy()
+		self += other
 		return self
 
 	def copy(self):
