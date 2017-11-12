@@ -651,10 +651,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.prenodes={}
     self.datafind_job = pipeline.LSCDataFindJob(self.cachepath,self.logpath,self.config,dax=self.is_dax())
     self.datafind_job.add_opt('url-type','file')
-    if cp.has_option('analysis','accounting_group'):
-      self.datafind_job.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
-    if cp.has_option('analysis','accounting_group_user'):
-      self.datafind_job.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
+    if cp.has_option('condor','accounting_group'):
+      self.datafind_job.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
+    if cp.has_option('condor','accounting_group_user'):
+      self.datafind_job.add_condor_cmd('accounting_group_user',cp.get('condor','accounting_group_user'))
     self.datafind_job.set_sub_file(os.path.abspath(os.path.join(self.basepath,'datafind.sub')))
     self.preengine_job = EngineJob(self.config, os.path.join(self.basepath,'prelalinference.sub'),self.logpath,engine='lalinferencedatadump',ispreengine=True,dax=self.is_dax())
     self.preengine_job.set_grid_site('local')
@@ -1755,10 +1755,10 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
 
     pipeline.CondorDAGJob.__init__(self,universe,exe)
     pipeline.AnalysisJob.__init__(self,cp,dax=dax)
-    if cp.has_option('analysis','accounting_group'):
-      self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
-    if cp.has_option('analysis','accounting_group_user'):
-      self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
+    if cp.has_option('condor','accounting_group'):
+      self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
+    if cp.has_option('condor','accounting_group_user'):
+      self.add_condor_cmd('accounting_group_user',cp.get('condor','accounting_group_user'))
     try:
       hostname=socket.gethostbyaddr(socket.gethostname())[0]
     except:
@@ -2177,10 +2177,10 @@ class BayesWavePSDJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp,dax=dax)
     if cp.has_section('bayeswave'):
         self.add_ini_opts(cp,'bayeswave')
-    if cp.has_option('analysis','accounting_group'):
-      self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
-    if cp.has_option('analysis','accounting_group_user'):
-      self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
+    if cp.has_option('condor','accounting_group'):
+      self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
+    if cp.has_option('condor','accounting_group_user'):
+      self.add_condor_cmd('accounting_group_user',cp.get('condor','accounting_group_user'))
     requirements=''
     if cp.has_option('condor','queue'):
       self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
@@ -2211,10 +2211,10 @@ class ResultsPageJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     exe=cp.get('condor','resultspage')
     pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
     pipeline.AnalysisJob.__init__(self,cp,dax=dax) # Job always runs locally
-    if cp.has_option('analysis','accounting_group'):
-      self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
-    if cp.has_option('analysis','accounting_group_user'):
-      self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
+    if cp.has_option('condor','accounting_group'):
+      self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
+    if cp.has_option('condor','accounting_group_user'):
+      self.add_condor_cmd('accounting_group_user',cp.get('condor','accounting_group_user'))
     requirements=''
     if cp.has_option('condor','queue'):
       self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
@@ -2327,10 +2327,10 @@ class CoherenceTestJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       exe=cp.get('condor','coherencetest')
       pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
       pipeline.AnalysisJob.__init__(self,cp,dax=dax)
-      if cp.has_option('analysis','accounting_group'):
-        self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
-      if cp.has_option('analysis','accounting_group_user'):
-        self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
+      if cp.has_option('condor','accounting_group'):
+        self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
+      if cp.has_option('condor','accounting_group_user'):
+        self.add_condor_cmd('accounting_group_user',cp.get('condor','accounting_group_user'))
       requirements=''
       if cp.has_option('condor','queue'):
         self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
@@ -2398,10 +2398,10 @@ class MergeJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         exe=cp.get('condor','mergeNSscript')
       pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
       pipeline.AnalysisJob.__init__(self,cp,dax=dax)
-      if cp.has_option('analysis','accounting_group'):
-        self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
-      if cp.has_option('analysis','accounting_group_user'):
-        self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
+      if cp.has_option('condor','accounting_group'):
+        self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
+      if cp.has_option('condor','accounting_group_user'):
+        self.add_condor_cmd('accounting_group_user',cp.get('condor','accounting_group_user'))
       requirements=''
       if cp.has_option('condor','queue'):
         self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
@@ -2463,10 +2463,10 @@ class CombineMCMCJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       exe=cp.get('condor','combinePTMCMCh5script')
       pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
       pipeline.AnalysisJob.__init__(self,cp,dax=dax)
-      if cp.has_option('analysis','accounting_group'):
-        self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
-      if cp.has_option('analysis','accounting_group_user'):
-        self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
+      if cp.has_option('condor','accounting_group'):
+        self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
+      if cp.has_option('condor','accounting_group_user'):
+        self.add_condor_cmd('accounting_group_user',cp.get('condor','accounting_group_user'))
       self.set_sub_file(os.path.abspath(submitFile))
       self.set_stdout_file(os.path.join(logdir,'combine-$(cluster)-$(process).out'))
       self.set_stderr_file(os.path.join(logdir,'combine-$(cluster)-$(process).err'))
@@ -2507,10 +2507,10 @@ class GraceDBJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       #pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
       pipeline.CondorDAGJob.__init__(self,"scheduler",exe)
       pipeline.AnalysisJob.__init__(self,cp,dax=dax)
-      if cp.has_option('analysis','accounting_group'):
-        self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
-      if cp.has_option('analysis','accounting_group_user'):
-        self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
+      if cp.has_option('condor','accounting_group'):
+        self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
+      if cp.has_option('condor','accounting_group_user'):
+        self.add_condor_cmd('accounting_group_user',cp.get('condor','accounting_group_user'))
       self.set_sub_file(os.path.abspath(submitFile))
       self.set_stdout_file(os.path.join(logdir,'gracedb-$(cluster)-$(process).out'))
       self.set_stderr_file(os.path.join(logdir,'gracedb-$(cluster)-$(process).err'))
@@ -2577,10 +2577,10 @@ class ROMJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     exe=cp.get('condor','computeroqweights')
     pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
     pipeline.AnalysisJob.__init__(self,cp,dax=dax)
-    if cp.has_option('analysis','accounting_group'):
-      self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
-    if cp.has_option('analysis','accounting_group_user'):
-      self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
+    if cp.has_option('condor','accounting_group'):
+      self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
+    if cp.has_option('condor','accounting_group_user'):
+      self.add_condor_cmd('accounting_group_user',cp.get('condor','accounting_group_user'))
     requirements=''
     if cp.has_option('condor','queue'):
       self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
@@ -2638,10 +2638,10 @@ class BayesLineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     exe=cp.get('condor','bayesline')
     pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
     pipeline.AnalysisJob.__init__(self,cp,dax=dax)
-    if cp.has_option('analysis','accounting_group'):
-      self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
-    if cp.has_option('analysis','accounting_group_user'):
-      self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
+    if cp.has_option('condor','accounting_group'):
+      self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
+    if cp.has_option('condor','accounting_group_user'):
+      self.add_condor_cmd('accounting_group_user',cp.get('condor','accounting_group_user'))
     requirements=''
     if cp.has_option('condor','queue'):
       self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
@@ -2721,10 +2721,10 @@ class SkyAreaJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       exe=cp.get('condor','skyarea')
       pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
       pipeline.AnalysisJob.__init__(self,cp,dax=dax)
-      if cp.has_option('analysis','accounting_group'):
-        self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
-      if cp.has_option('analysis','accounting_group_user'):
-        self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
+      if cp.has_option('condor','accounting_group'):
+        self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
+      if cp.has_option('condor','accounting_group_user'):
+        self.add_condor_cmd('accounting_group_user',cp.get('condor','accounting_group_user'))
       requirements=''
       if cp.has_option('condor','queue'):
         self.add_condor_cmd('+'+cp.get('condor','queue'),'True')

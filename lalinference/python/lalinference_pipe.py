@@ -326,22 +326,22 @@ for sampler in samps:
             with open('pegasus.properties','w') as fout:
               for line in lines:
                 fout.write(line)
-        if cp.has_option('analysis','accounting_group'):
+        if cp.has_option('condor','accounting_group'):
           lines=[]
           with open('sites.xml') as fin:
             for line in fin:
               if '<profile namespace="condor" key="getenv">True</profile>' in line:
-                line=line+'    <profile namespace="condor" key="accounting_group">'+cp.get('analysis','accounting_group')+'</profile>\n'
+                line=line+'    <profile namespace="condor" key="accounting_group">'+cp.get('condor','accounting_group')+'</profile>\n'
               lines.append(line)
           with open('sites.xml','w') as fout:
             for line in lines:
               fout.write(line)
-        if cp.has_option('analysis','accounting_group_user'):
+        if cp.has_option('condor','accounting_group_user'):
           lines=[]
           with open('sites.xml') as fin:
             for line in fin:
               if '<profile namespace="condor" key="getenv">True</profile>' in line:
-                line=line+'    <profile namespace="condor" key="accounting_group_user">'+cp.get('analysis','accounting_group_user')+'</profile>\n'
+                line=line+'    <profile namespace="condor" key="accounting_group_user">'+cp.get('condor','accounting_group_user')+'</profile>\n'
               lines.append(line)
           with open('sites.xml','w') as fout:
             for line in lines:
