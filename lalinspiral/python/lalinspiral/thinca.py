@@ -33,7 +33,6 @@ import sys
 
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
-from glue.ligolw.utils import search_summary as ligolw_search_summary
 from glue.ligolw.utils import coincs as ligolw_coincs
 from glue import offsetvector
 from lalburst import snglcoinc
@@ -132,17 +131,8 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 			self.coinc_inspiral_table = lsctables.New(lsctables.CoincInspiralTable)
 			xmldoc.childNodes[0].appendChild(self.coinc_inspiral_table)
 
-		#
-		# extract the coalesced out segment lists from the trigger
-		# generator
-		#
 
-		self.seglists = ligolw_search_summary.segmentlistdict_fromsearchsummary(xmldoc, program = program).coalesce()
-		if vetoes is not None:
-			self.seglists -= vetoes
-
-
-	def coinc_rows(self, process_id, time_slide_id, coinc_def_id, events):
+	def coinc_rows(self, process_id, time_slide_id, coinc_def_id, events, seglists = None):
 		coinc, coincmaps = super(InspiralCoincTables, self).coinc_rows(process_id, time_slide_id, coinc_def_id, events)
 
 		#
@@ -171,11 +161,15 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 
 		#
 		# record the instruments that were on at the time of the
-		# coinc.  note that the start time of the coinc must be
-		# unslid to compare with the instrument segment lists
+		# coinc.  instruments that provide triggers are, by
+		# definition, on.  note that the end time of the coinc
+		# must be unslid to compare with the instrument segment
+		# lists
 		#
 
-		coinc.insts = set(event.ifo for event in events) | set(instrument for instrument, segs in self.seglists.items() if end - offsetvector[instrument] in segs)
+		coinc.insts = set(event.ifo for event in events)
+		if seglists is not None:
+			coinc.insts |= set(instrument for instrument, segs in seglists.items() if end - offsetvector[instrument] in segs)
 
 		#
 		# if a likelihood ratio calculator is available, assign a
@@ -346,6 +340,7 @@ def ligolw_thinca(
 	coinc_definer_row,
 	thresholds,
 	ntuple_comparefunc = InspiralCoincTables.ntuple_comparefunc,
+	seglists = None,
 	veto_segments = None,
 	likelihood_func = None,
 	likelihood_params_func = None,
@@ -387,6 +382,9 @@ def ligolw_thinca(
 	sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)
 	if veto_segments is not None:
 		sngl_inspiral_table = (event for event in sngl_inspiral_table if event.ifo not in veto_segments or event.end not in veto_segments[event.ifo])
+		if seglists is not None:
+			# don't do in-place
+			seglists = seglists - veto_segments
 	eventlists = snglcoinc.EventListDict(InspiralEventList, sngl_inspiral_table, instruments = instruments)
 
 	#
@@ -402,7 +400,7 @@ def ligolw_thinca(
 
 	for node, coinc in time_slide_graph.get_coincs(eventlists, thresholds, verbose = verbose):
 		if not ntuple_comparefunc(coinc, node.offset_vector):
-			coinc, coincmaps, coinc_inspiral = coinc_tables.coinc_rows(process_id, node.time_slide_id, coinc_def_id, coinc)
+			coinc, coincmaps, coinc_inspiral = coinc_tables.coinc_rows(process_id, node.time_slide_id, coinc_def_id, coinc, seglists = seglists)
 			if min_log_L is None or coinc.likelihood >= min_log_L:
 				coinc_tables.append_coinc(coinc, coincmaps, coinc_inspiral)
 
@@ -489,7 +487,6 @@ class sngl_inspiral_coincs(object):
 
 		self.process_table = lsctables.ProcessTable.get_table(xmldoc)
 		self.process_params_table = lsctables.ProcessParamsTable.get_table(xmldoc)
-		self.search_summary_table = lsctables.SearchSummaryTable.get_table(xmldoc)
 		self.sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)
 		self.coinc_def_table = lsctables.CoincDefTable.get_table(xmldoc)
 		self.coinc_event_table = lsctables.CoincTable.get_table(xmldoc)
@@ -498,15 +495,14 @@ class sngl_inspiral_coincs(object):
 		self.time_slide_table = lsctables.TimeSlideTable.get_table(xmldoc)
 
 		#
-		# index the process, process params, search_summary,
-		# sngl_inspiral and time_slide tables
+		# index the process, process params, sngl_inspiral and
+		# time_slide tables
 		#
 
 		self.process_index = dict((row.process_id, row) for row in self.process_table)
 		self.process_params_index = {}
 		for row in self.process_params_table:
 			self.process_params_index.setdefault(row.process_id, []).append(row)
-		self.search_summary_index = dict((row.process_id, row) for row in self.search_summary_table)
 		self.sngl_inspiral_index = dict((row.event_id, row) for row in self.sngl_inspiral_table)
 		self.time_slide_index = {}
 		for row in self.time_slide_table:
@@ -589,7 +585,6 @@ class sngl_inspiral_coincs(object):
 		# subclass, not a DBTable subclass
 		new_process_table = ligolw_elem.appendChild(lsctables.New(lsctables.ProcessTable, self.process_table.columnnames))
 		new_process_params_table = ligolw_elem.appendChild(lsctables.New(lsctables.ProcessParamsTable, self.process_params_table.columnnames))
-		new_search_summary_table = ligolw_elem.appendChild(lsctables.New(lsctables.SearchSummaryTable, self.search_summary_table.columnnames))
 		new_sngl_inspiral_table = ligolw_elem.appendChild(lsctables.New(lsctables.SnglInspiralTable, self.sngl_inspiral_table.columnnames))
 		new_coinc_def_table = ligolw_elem.appendChild(lsctables.New(lsctables.CoincDefTable, self.coinc_def_table.columnnames))
 		new_coinc_event_table = ligolw_elem.appendChild(lsctables.New(lsctables.CoincTable, self.coinc_event_table.columnnames))
@@ -613,11 +608,6 @@ class sngl_inspiral_coincs(object):
 				map(new_process_params_table.append, self.process_params_index[process_id])
 			except KeyError:
 				# process_params rows are optional
-				pass
-			try:
-				new_search_summary_table.append(self.search_summary_index[process_id])
-			except KeyError:
-				# search_summary rows are optional
 				pass
 
 		return newxmldoc

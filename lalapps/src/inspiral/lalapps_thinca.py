@@ -236,6 +236,7 @@ for n, filename in enumerate(filenames, start = 1):
 		coinc_definer_row = thinca.InspiralCoincDef,
 		thresholds = options.threshold,
 		ntuple_comparefunc = ntuple_comparefunc,
+		seglists = None,	# FIXME
 		veto_segments = vetoes,
 		min_instruments = options.min_instruments,
 		verbose = options.verbose
