@@ -99,8 +99,7 @@ def segmentlistdict_normalize(seglistdict, origin):
 	precision.  The modification is done in place.
 	"""
 	for seglist in seglistdict.itervalues():
-		for i, seg in enumerate(seglist):
-			seglist[i] = segments.segment(float(seg[0] - origin), float(seg[1] - origin))
+		seglist[:] = (segments.segment(float(seg[0] - origin), float(seg[1] - origin)) for seg in seglist)
 
 
 def get_coincident_segmentlistdict(seglistdict, offset_vectors):
@@ -173,8 +172,7 @@ def segmentlistdict_unnormalize(seglistdict, origin):
 	done in place.
 	"""
 	for seglist in seglistdict.itervalues():
-		for i, seg in enumerate(seglist):
-			seglist[i] = segments.segment(origin + seg[0], origin + seg[1])
+		seglist[:] = (segments.segment(origin + seg[0], origin + seg[1]) for seg in seglist)
 
 
 #
@@ -302,12 +300,13 @@ class CafePacker(packing.Packer):
 			self.bins.append(new)
 		else:
 			#
-			# put cache entry into first bin that was found to
-			# match.  if cache entry belongs in more than one
-			# bin, merge them.  note that the matching bin
-			# indexes are given in descending order so poping
-			# the bins as we go does not affect the indexes of
-			# the remaining, matching, bins.
+			# put cache entry into earliest bin that was found
+			# to match.  if cache entry belongs in more than
+			# one bin, merge them.  note that the matching bin
+			# indexes are given in descending order so the last
+			# is the earliest bin, and after that popping them
+			# in order does not affet the indexes of the
+			# remaining, matching, bins.
 			#
 
 			dest = self.bins[matching_bins.pop(-1)]
@@ -432,7 +431,7 @@ def split_bins(cafepacker, extentlimit, verbose = False):
 #
 
 
-def write_caches(base, bins, instruments, verbose = False):
+def write_caches(base, bins, instruments = None, verbose = False):
 	filenames = []
 	if len(bins):
 		pattern = "%%s%%0%dd.cache" % int(math.log10(len(bins)) + 1)
@@ -443,14 +442,14 @@ def write_caches(base, bins, instruments, verbose = False):
 			print >>sys.stderr, "writing %s ..." % filename
 		f = open(filename, "w")
 		for cacheentry in bin.objects:
-			if instruments & set(cacheentry.segmentlistdict.keys()):
+			if instruments is None or (instruments & set(cacheentry.segmentlistdict)):
 				print >>f, str(cacheentry)
 	return filenames
 
 
 def write_single_instrument_caches(base, bins, instruments, verbose = False):
 	for instrument in instruments:
-		write_caches("%s%s_" % (base, instrument), bins, [instrument], verbose)
+		write_caches("%s%s_" % (base, instrument), bins, set([instrument]), verbose)
 
 
 #
