@@ -110,7 +110,7 @@ InspiralCoincDef = lsctables.CoincDef(search = u"inspiral", search_coinc_type = 
 
 
 class InspiralCoincTables(snglcoinc.CoincTables):
-	def __init__(self, xmldoc, vetoes = None, program = u"inspiral", likelihood_func = None, likelihood_params_func = None):
+	def __init__(self, xmldoc, likelihood_func = None, likelihood_params_func = None):
 		snglcoinc.CoincTables.__init__(self, xmldoc)
 
 		#
@@ -347,7 +347,6 @@ def ligolw_thinca(
 	thresholds,
 	ntuple_comparefunc = InspiralCoincTables.ntuple_comparefunc,
 	veto_segments = None,
-	trigger_program = u"inspiral",
 	likelihood_func = None,
 	likelihood_params_func = None,
 	min_instruments = 2,
@@ -369,7 +368,7 @@ def ligolw_thinca(
 
 	if verbose:
 		print("indexing ...", file=sys.stderr)
-	coinc_tables = InspiralCoincTables(xmldoc, vetoes = veto_segments, program = trigger_program, likelihood_func = likelihood_func, likelihood_params_func = likelihood_params_func)
+	coinc_tables = InspiralCoincTables(xmldoc, likelihood_func = likelihood_func, likelihood_params_func = likelihood_params_func)
 	coinc_def_id = ligolw_coincs.get_coinc_def_id(xmldoc, coinc_definer_row.search, coinc_definer_row.search_coinc_type, create_new = True, description = coinc_definer_row.description)
 	instruments = set(coinc_tables.time_slide_table.getColumnByName("instrument"))
 
