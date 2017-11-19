@@ -188,6 +188,9 @@ void get_input_args(inputParams_t *inputParams, int argc, char *argv[]){
         else
           fprintf(stderr, "Error passing option %s with argument %s\n",
             long_options[option_index].name, LALoptarg);
+#if __GNUC__ >= 7
+        __attribute__ ((fallthrough));
+#endif
       case 'h': /* help message */
         fprintf(stderr, USAGE, program);
         exit(0);
@@ -207,7 +210,6 @@ void get_input_args(inputParams_t *inputParams, int argc, char *argv[]){
         inputParams->interval = atof(LALoptarg);
         break;
       case '?':
-        fprintf(stderr, "Unknown error while parsing options\n");
       default:
         fprintf(stderr, "Unknown error while parsing options\n");
     }
