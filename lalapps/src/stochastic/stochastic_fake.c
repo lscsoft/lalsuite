@@ -451,6 +451,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         /* signal scale factor */
         scaleFactor = atof(LALoptarg);
         ADD_PROCESS_PARAM("float", "%e", scaleFactor);
+	break;
 
       case 't':
         /* filter spectrum exponent */
