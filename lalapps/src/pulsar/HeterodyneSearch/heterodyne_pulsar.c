@@ -877,6 +877,7 @@ the pulsar parameter file */
         else
           fprintf(stderr, "Error parsing option %s with argument %s\n",
             long_options[option_index].name, LALoptarg );
+		break;
       case 'h': /* help message */
         fprintf(stderr, USAGE, program);
         exit(0);
@@ -1045,8 +1046,10 @@ the pulsar parameter file */
         break;
       case '?':
         fprintf(stderr, "unknown error while parsing options\n" );
+		break;
       default:
         fprintf(stderr, "unknown error while parsing options\n" );
+		break;
     }
   }
 

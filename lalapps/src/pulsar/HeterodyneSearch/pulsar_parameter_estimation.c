@@ -227,7 +227,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
   output.psr = inputs.pulsar;
   output.dob = inputs.dob; /* set degree of belief for UL */
   output.outPost = inputs.outputPost;
-  sprintf(outputFile, "%s/evidence_%s", output.outputDir, output.psr);
+  snprintf(outputFile, sizeof(outputFile), "%s/evidence_%s", output.outputDir, output.psr);
   /*==========================================================================*/
 
   if( inputs.mcmc.doMCMC == 0 ){
@@ -294,7 +294,7 @@ defined!\n");
   for( i = 0 ; i < numDets ; i++ ){
     /*============================ GET DATA ==================================*/
     /* get detector B_ks data file in form finehet_JPSR_DET */
-    sprintf(dataFile, "%s/data%s/finehet_%s_%s", inputs.inputDir, dets[i],
+    snprintf(dataFile, sizeof(dataFile), "%s/data%s/finehet_%s_%s", inputs.inputDir, dets[i],
       inputs.pulsar, dets[i]);
 
     /* open data file */
@@ -758,9 +758,11 @@ W:y:g:G:K:N:X:O:J:M:{:(r:fFR><)[:" ;
         else
           fprintf(stderr, "Error passing option %s with argument %s\n",
             long_options[option_index].name, LALoptarg);
+		break;
       case 'h': /* help message */
         printf("Usage: %s [options]\n\n%s%s\n", program, USAGE1, USAGE2);
         exit(0);
+		break;
       case 'R': /* verbose */
         inputParams->verbose = 1;
         break;
@@ -938,8 +940,10 @@ W:y:g:G:K:N:X:O:J:M:{:(r:fFR><)[:" ;
         break;
       case '?':
         fprintf(stderr, "Unknown error while parsing options\n");
+		break;
       default:
         fprintf(stderr, "Unknown error while parsing options\n");
+		break;
     }
   }
 
@@ -2459,9 +2463,9 @@ paramData ) ) == NULL ){
 
   /* open output file */
   if( input.mcmc.outputBI == 0 )
-    sprintf(outFile, "%s/MCMCchain_%s_%s", input.outputDir, input.pulsar, det);
+    snprintf(outFile, sizeof(outFile), "%s/MCMCchain_%s_%s", input.outputDir, input.pulsar, det);
   else{ /* append number of burn in steps to the file name */
-    sprintf(outFile, "%s/MCMCchain_%s_%s_burn_in_%d", input.outputDir,
+    snprintf(outFile, sizeof(outFile), "%s/MCMCchain_%s_%s_burn_in_%d", input.outputDir,
       input.pulsar, det, input.mcmc.burnIn );
   }
 
