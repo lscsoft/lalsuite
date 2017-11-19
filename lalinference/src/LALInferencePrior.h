@@ -205,7 +205,7 @@ void LALInferenceRemoveGMMPrior( LALInferenceVariables *priorArgs, const char *n
 void LALInferenceGetGMMPrior( LALInferenceVariables *priorArgs, const char *name,
                               REAL8Vector ***mus, REAL8Vector ***sigmas, gsl_matrix ***cors, gsl_matrix ***invcors,
                               REAL8Vector **weights, REAL8Vector **minrange, REAL8Vector **maxrange,
-                              REAL8Vector **dets, UINT4 *idx, CHAR *fullname );
+                              REAL8Vector **dets, UINT4 *idx, CHAR **fullname );
 
 /**
  * \brief Add a log-uniform prior
