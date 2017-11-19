@@ -328,6 +328,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
         LALoptarg_len = strlen( LALoptarg ) + 1;
         frameType = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
         memcpy( frameType, LALoptarg, LALoptarg_len );
+        break;
 
       case 'n':
         /* create storage for the injection set name */
