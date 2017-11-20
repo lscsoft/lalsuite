@@ -1535,12 +1535,12 @@ class LnLRDensity(object):
 	histogram of the candidates observed in a search.
 
 	Typically, the ranking statistic implementation will provide a
-	function to transform a candidate to a "params" object for use with
-	the .__call__() implementation, and so in this way a LnLRDensity
-	object is generally only meaningful in the context of the ranking
+	function to transform a candidate to the arguments to use with the
+	.__call__() implementation, and so in this way a LnLRDensity object
+	is generally only meaningful in the context of the ranking
 	statistic class for which it has been constructed.
 	"""
-	def __call__(self, params):
+	def __call__(self, *args, **kwargs):
 		"""
 		Evaluate.  Return the natural logarithm of the density
 		evaluated at the given parameters.
@@ -1553,10 +1553,10 @@ class LnLRDensity(object):
 		"""
 		raise NotImplementedError
 
-	def increment(self, params, weight = 1.0):
+	def increment(self, *args, **kwargs):
 		"""
-		Increment the counts defining this density by weight
-		(default = 1) at the given parameters.
+		Increment the counts defining this density at the given
+		parameters.
 		"""
 		raise NotImplementedError
 
@@ -2120,7 +2120,7 @@ class LnLikelihoodRatioMixin(object):
 				warnings.warn("inf/inf encountered")
 		return  lnP_signal - lnP_noise
 
-	def ln_lr_samples(self, random_params_seq, sampler_coinc_params = None, **kwargs):
+	def ln_lr_samples(self, random_params_seq, sampler_coinc_params = None):
 		"""
 		Generator that yields an unending sequence of 3-element
 		tuples.  Each tuple's elements are a value of the natural
@@ -2139,15 +2139,16 @@ class LnLikelihoodRatioMixin(object):
 		the two populations.
 
 		random_params_seq is a sequence (generator is OK) yielding
-		2-element tuples whose first element is a choice of
-		parameter values and whose second element is the natural
+		3-element tuples whose first two elements provide the *args
+		and **kwargs values passed to the numerator and denominator
+		density functions, and whose thrid element is the natural
 		logarithm of the probability density from which the
 		parameters have been drawn evaluated at the parameters.
 
-		On each iteration, the sample of parameter values yielded
-		by random_params_seq is passed to our own .__call__()
-		method to evalute the log likelihood ratio at that choice
-		of parameter values.  If sampler_coinc_params is None the
+		On each iteration, the *args and **kwargs values yielded by
+		random_params_seq is passed to our own .__call__() method
+		to evalute the log likelihood ratio at that choice of
+		parameter values.  If sampler_coinc_params is None the
 		parameters are also passed to the .__call__() mehods of the
 		.numerator and .denominator attributes of self to obtain
 		the signal and noise population densities at those
@@ -2166,7 +2167,7 @@ class LnLikelihoodRatioMixin(object):
 		else:
 			lnP_signal_func = sampler_coinc_params.numerator
 			lnP_noise_func = sampler_coinc_params.denominator
-		for params, lnP_params in random_params_seq:
-			lnP_signal = lnP_signal_func(params, **kwargs)
-			lnP_noise = lnP_noise_func(params, **kwargs)
-			yield self(params, **kwargs), lnP_signal - lnP_params, lnP_noise - lnP_params
+		for args, kwargs, lnP_params in random_params_seq:
+			lnP_signal = lnP_signal_func(*args, **kwargs)
+			lnP_noise = lnP_noise_func(*args, **kwargs)
+			yield self(*args, **kwargs), lnP_signal - lnP_params, lnP_noise - lnP_params

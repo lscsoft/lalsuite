@@ -109,17 +109,14 @@ InspiralCoincDef = lsctables.CoincDef(search = u"inspiral", search_coinc_type = 
 
 
 class InspiralCoincTables(snglcoinc.CoincTables):
-	def __init__(self, xmldoc, likelihood_func = None, likelihood_params_func = None):
+	def __init__(self, xmldoc, likelihood_func = None):
 		snglcoinc.CoincTables.__init__(self, xmldoc)
 
 		#
 		# configure the likelihood ratio evaluator
 		#
 
-		if likelihood_func is None and likelihood_params_func is not None or likelihood_func is not None and likelihood_params_func is None:
-			raise ValueError("must provide both a likelihood function and a parameter function or neither")
 		self.likelihood_func = likelihood_func
-		self.likelihood_params_func = likelihood_params_func
 
 		#
 		# find the coinc_inspiral table or create one if not found
@@ -177,7 +174,7 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 		#
 
 		if self.likelihood_func is not None:
-			coinc.likelihood = self.likelihood_func(self.likelihood_params_func(events, offsetvector))
+			coinc.likelihood = self.likelihood_func(events, offsetvector)
 
 		#
 		# done
@@ -343,7 +340,6 @@ def ligolw_thinca(
 	seglists = None,
 	veto_segments = None,
 	likelihood_func = None,
-	likelihood_params_func = None,
 	min_instruments = 2,
 	min_log_L = None,
 	verbose = False
@@ -363,7 +359,7 @@ def ligolw_thinca(
 
 	if verbose:
 		print("indexing ...", file=sys.stderr)
-	coinc_tables = InspiralCoincTables(xmldoc, likelihood_func = likelihood_func, likelihood_params_func = likelihood_params_func)
+	coinc_tables = InspiralCoincTables(xmldoc, likelihood_func = likelihood_func)
 	coinc_def_id = ligolw_coincs.get_coinc_def_id(xmldoc, coinc_definer_row.search, coinc_definer_row.search_coinc_type, create_new = True, description = coinc_definer_row.description)
 	instruments = set(coinc_tables.time_slide_table.getColumnByName("instrument"))
 
