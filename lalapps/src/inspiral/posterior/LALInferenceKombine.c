@@ -97,7 +97,7 @@ INT4 on_your_marks(LALInferenceRunState *run_state) {
         char *infile = ppt->value;
         FILE *input = fopen(infile, "r");
 
-        char params[128][128];
+        char params[128][VARNAME_MAX];
         INT4 *col_order = XLALCalloc(ndim, sizeof(INT4));
         INT4 ncols;
 
