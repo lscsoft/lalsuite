@@ -97,7 +97,7 @@ static REAL8 XLALSpinPrecHcapNumDerivWRTParam(
 )
 {
 	int		debugPK = 0;
-	static const REAL8 STEP_SIZE = 1.0e-4;
+	static const REAL8 STEP_SIZE = 2.0e-4;
 
     /** lMax: l index up to which h_{lm} modes are included in the computation of the GW enegy flux: see Eq. in 13 in PRD 86,  024011 (2012) */
     static const INT4 lMax = 8;
@@ -710,7 +710,7 @@ XLALSpinPrecHcapNumDerivWRTParam(
 			     SpinEOBParams * funcParams	/**<< EOB Parameters */
 )
 {
-	static const REAL8 STEP_SIZE = 1.0e-3;
+	static const REAL8 STEP_SIZE = 2.0e-3;
 
 	HcapDerivParams	params;
 
