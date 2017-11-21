@@ -2203,7 +2203,8 @@ class BinnedLnPDF(BinnedDensity):
 		return InterpBinnedArray(self)
 
 	def at_centres(self):
-		return numpy.log(super(BinnedLnPDF, self).at_centres()) - self.norm
+		with numpy.errstate(divide = "ignore", invalid = "ignore"):
+			return numpy.log(super(BinnedLnPDF, self).at_centres()) - self.norm
 
 	def marginalize(self, dim):
 		new = super(BinnedLnPDF, self).marginalize(dim)
