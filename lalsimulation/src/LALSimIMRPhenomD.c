@@ -55,6 +55,8 @@ static int IMRPhenomDGenerateFD(
     const REAL8 chi1_in,               /**< aligned-spin of companion 1 */
     const REAL8 chi2_in,               /**< aligned-spin of companion 2 */
     const REAL8 distance,              /**< distance to source (m) */
+    const REAL8 quadparam1,
+    const REAL8 quadparam2,
     const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
 );
 
@@ -118,6 +120,8 @@ int XLALSimIMRPhenomDGenerateFD(
     const REAL8 f_min,                 /**< Starting GW frequency (Hz) */
     const REAL8 f_max,                 /**< End frequency; 0 defaults to Mf = \ref f_CUT */
     const REAL8 distance,               /**< Distance of source (m) */
+    const REAL8 quadparam1,
+    const REAL8 quadparam2,
     const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
 ) {
   /* external: SI; internal: solar masses */
@@ -169,7 +173,7 @@ int XLALSimIMRPhenomDGenerateFD(
 
   int status = IMRPhenomDGenerateFD(htilde, freqs, deltaF, phi0, fRef,
                                     m1, m2, chi1, chi2,
-                                    distance, extraParams);
+                                    distance, quadparam1, quadparam2, extraParams);
   XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to generate IMRPhenomD waveform.");
   XLALDestroyREAL8Sequence(freqs);
 
@@ -211,6 +215,8 @@ int XLALSimIMRPhenomDFrequencySequence(
     const REAL8 chi1,                            /**< Aligned-spin parameter of companion 1 */
     const REAL8 chi2,                            /**< Aligned-spin parameter of companion 2 */
     const REAL8 distance,                        /**< Distance of source (m) */
+    const REAL8 quadparam1,
+    const REAL8 quadparam2,
     const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
 ) {
   /* external: SI; internal: solar masses */
@@ -239,7 +245,7 @@ int XLALSimIMRPhenomDFrequencySequence(
 
   int status = IMRPhenomDGenerateFD(htilde, freqs, 0, phi0, fRef,
                                     m1, m2, chi1, chi2,
-                                    distance, extraParams);
+                                    distance, quadparam1, quadparam2, extraParams);
   XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to generate IMRPhenomD waveform.");
 
   return XLAL_SUCCESS;
@@ -267,6 +273,8 @@ static int IMRPhenomDGenerateFD(
     const REAL8 chi1_in,               /**< aligned-spin of companion 1 */
     const REAL8 chi2_in,               /**< aligned-spin of companion 2 */
     const REAL8 distance,              /**< distance to source (m) */
+    const REAL8 quadparam1, 
+    const REAL8 quadparam2,
     const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
 ) {
   LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0, 0}
@@ -360,7 +368,7 @@ static int IMRPhenomDGenerateFD(
   IMRPhenomDPhaseCoefficients *pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi1, chi2, finspin, extraParams);
   if (!pPhi) XLAL_ERROR(XLAL_EFUNC);
   PNPhasingSeries *pn = NULL;
-  XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1, chi2, 1.0, 1.0, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN, extraParams);
+  XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1, chi2, quadparam1, quadparam2, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN, extraParams);
   if (!pn) XLAL_ERROR(XLAL_EFUNC);
 
   // Subtract 3PN spin-spin term below as this is in LAL's TaylorF2 implementation

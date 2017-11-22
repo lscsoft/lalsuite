@@ -19,6 +19,7 @@
 
 #include <math.h>
 #include <lal/LALSimIMR.h>
+#include <lal/LALSimInspiralEOS.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
 #include <lal/Units.h>
@@ -90,6 +91,9 @@ int IMRPhenomD_NRTidal_Core(
     chi2 = chi1temp;
     lambda2 = lambda1temp;
   }
+  REAL8 quadparam1, quadparam2;
+  quadparam1 = XLALSimInspiralEOSQfromLambda(lambda1);
+  quadparam2 = XLALSimInspiralEOSQfromLambda(lambda2);
 
   // Call IMRPhenomD. We call either the FrequencySequence version
   // or the regular LAL version depending on how we've been called.
@@ -103,6 +107,8 @@ int IMRPhenomD_NRTidal_Core(
       chi1, chi2,
       fLow, fHigh,
       distance,
+      quadparam1,
+      quadparam2,
       extraParams);
   else
     ret = XLALSimIMRPhenomDFrequencySequence(
@@ -112,6 +118,8 @@ int IMRPhenomD_NRTidal_Core(
       m1_SI, m2_SI,
       chi1, chi2,
       distance,
+      quadparam1,
+      quadparam2,
       extraParams);
 
   XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to generate IMRPhenomD waveform.");

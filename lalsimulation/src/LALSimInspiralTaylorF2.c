@@ -30,6 +30,7 @@
 #include <lal/LALConstants.h>
 #include <lal/Sequence.h>
 #include <lal/LALDatatypes.h>
+#include <lal/LALSimInspiralEOS.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/Units.h>
 #include <lal/XLALError.h>
@@ -203,9 +204,18 @@ int XLALSimInspiralTaylorF2Core(
      */
     REAL8 pft10 = 0.;
     REAL8 pft12 = 0.;
+    REAL8 pft13 = 0.; 
+    REAL8 pft14 = 0.; 
+    REAL8 pft15 = 0.;
     switch( tideO )
     {
-	    case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
+	case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_75PN:
+            pft15 = pfaN * (lambda2*XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(m2OverM) + lambda1*XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(m1OverM));
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_7PN:
+            pft14 = pfaN * (lambda2*XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(m2OverM) + lambda1*XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(m1OverM));
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_65PN:
+            pft13 = pfaN * (lambda2*XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(m1OverM) + lambda1*XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(m2OverM));
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
 	    pft12 = pfaN * (lambda1*XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m1OverM) + lambda2*XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m2OverM) );
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
@@ -267,6 +277,9 @@ int XLALSimInspiralTaylorF2Core(
         const REAL8 v9ref = vref * v8ref;
         const REAL8 v10ref = vref * v9ref;
         const REAL8 v12ref = v2ref * v10ref;
+        const REAL8 v13ref = vref * v12ref;
+        const REAL8 v14ref = vref * v13ref;
+        const REAL8 v15ref = vref * v14ref;
         ref_phasing += pfa7 * v7ref;
         ref_phasing += (pfa6 + pfl6 * logvref) * v6ref;
         ref_phasing += (pfa5 + pfl5 * logvref) * v5ref;
@@ -277,6 +290,9 @@ int XLALSimInspiralTaylorF2Core(
         ref_phasing += pfaN;
 
         /* Tidal terms in reference phasing */
+        ref_phasing += pft15 * v15ref;
+        ref_phasing += pft14 * v14ref;
+        ref_phasing += pft13 * v13ref;
         ref_phasing += pft12 * v12ref;
         ref_phasing += pft10 * v10ref;
 
@@ -297,6 +313,9 @@ int XLALSimInspiralTaylorF2Core(
         const REAL8 v9 = v * v8;
         const REAL8 v10 = v * v9;
         const REAL8 v12 = v2 * v10;
+        const REAL8 v13 = v * v12;
+        const REAL8 v14 = v * v13;
+        const REAL8 v15 = v * v14;
         REAL8 phasing = 0.;
         REAL8 dEnergy = 0.;
         REAL8 flux = 0.;
@@ -312,6 +331,9 @@ int XLALSimInspiralTaylorF2Core(
         phasing += pfaN;
 
         /* Tidal terms in phasing */
+        phasing += pft15 * v15;
+        phasing += pft14 * v14;
+        phasing += pft13 * v13;
         phasing += pft12 * v12;
         phasing += pft10 * v10;
 
@@ -385,7 +407,7 @@ int XLALSimInspiralTaylorF2(
         const REAL8 S1z,                       /**<  z component of the spin of companion 1 */
         const REAL8 S2z,                       /**<  z component of the spin of companion 2  */
         const REAL8 fStart,                    /**< start GW frequency (Hz) */
-        const REAL8 fEnd,                      /**< highest GW frequency (Hz) of waveform generation - if 0, end at Schwarzschild ISCO */
+        const REAL8 fEnd,                      /**< highest GW frequency (Hz) of waveform generation - if 0, end at Schwarzschild ISCO; if -1, end at minimum of ISCO and contact frequencies*/
         const REAL8 f_ref,                     /**< Reference GW frequency (Hz) - if 0 reference point is coalescence */
         const REAL8 r,                         /**< distance of source (m) */
         const REAL8 quadparam1,                /**< quadrupole deformation parameter of body 1 (dimensionless, 1 for BH) */
@@ -416,6 +438,7 @@ int XLALSimInspiralTaylorF2(
     REAL8Sequence *freqs = NULL;
     LIGOTimeGPS tC = {0, 0};
     int ret;
+    REAL8 fCONT;
 
     COMPLEX16FrequencySeries *htilde = NULL;
 
@@ -429,8 +452,12 @@ int XLALSimInspiralTaylorF2(
     if (r <= 0) XLAL_ERROR(XLAL_EDOM);
 
     /* allocate htilde */
-    if ( fEnd == 0. ) // End at ISCO
+    if (( fEnd == 0. ) && ( tideO == 0 )) // End at ISCO
         f_max = fISCO;
+    else if (( fEnd == 0. ) && ( tideO != 0 )) { // End at the minimum of the contact and ISCO frequencies only when tides are enabled
+        fCONT = XLALSimInspiralContactFrequency(m1, lambda1, m2, lambda2); /* Contact frequency of two compact objects */
+        f_max = (fCONT > fISCO) ? fISCO : fCONT;
+    }
     else // End at user-specified freq.
         f_max = fEnd;
     if (f_max <= fStart) XLAL_ERROR(XLAL_EDOM);

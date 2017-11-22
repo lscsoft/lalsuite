@@ -586,6 +586,35 @@ XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(
   return (-15895./28. + 4595./28.*mByM + 5715./14.*mByM*mByM - 325./7.*mByM*mByM*mByM)*mByM*mByM*mByM*mByM;
 }
 
+static REAL8 UNUSED 
+XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(
+      REAL8 mByM /**< ratio of object mass to total mass */ 
+    )
+{
+  return mByM*mByM*mByM*mByM * 24.L*(12.L - 11.L*mByM)*LAL_PI; 
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(
+      REAL8 mByM /**< ratio of object mass to total mass */ 
+    )
+{
+  REAL8 mByM3 = mByM*mByM*mByM;
+  REAL8 mByM4 = mByM3 * mByM;
+  return - mByM4 * 24.L*(39927845.L/508032.L - 480043345.L/9144576.L*mByM + 9860575.L/127008.L*mByM*mByM - 421821905.L/2286144.L*mByM3 + 4359700.L/35721.L*mByM4 - 10578445.L/285768.L*mByM4*mByM);     
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(
+      REAL8 mByM /**< ratio of object mass to total mass */ 
+    )
+{
+  REAL8 mByM2 = mByM*mByM;
+  REAL8 mByM3 = mByM2*mByM;
+  REAL8 mByM4 = mByM3*mByM;
+  return mByM4 * 1.L/28.L*LAL_PI*(27719.L - 22127.L*mByM + 7022.L*mByM2 - 10232.L*mByM3) ;
+}
+
 /**
  * Computes the PN Coefficients for using in the TaylorT2 phasing equation.
  *

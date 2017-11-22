@@ -20,6 +20,7 @@
 #include <math.h>
 #include <LALSimInspiralWaveformCache.h>
 #include <lal/LALSimInspiral.h>
+#include <lal/LALSimInspiralEOS.h>
 #include <lal/LALSimIMR.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
@@ -947,6 +948,8 @@ int XLALSimInspiralChooseFDWaveformSequence(
     unsigned int j;
     REAL8 pfac, cfac;
     REAL8 quadparam1 = 1., quadparam2 = 1.; /* FIXME: This cannot yet be set in the interface */
+    quadparam1 = XLALSimInspiralEOSQfromLambda(lambda1);
+    quadparam2 = XLALSimInspiralEOSQfromLambda(lambda2);
     REAL8 LNhatx, LNhaty, LNhatz;
 
     /* Support variables for precessing wfs*/
@@ -1153,7 +1156,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomPFrequencySequence(hptilde, hctilde, frequencies,
               chi1_l, chi2_l, chip, thetaJ,
-              m1, m2, r, alpha0, phiRef, f_ref, IMRPhenomPv1_V, nonGRparams);
+              m1, m2, r, quadparam1, quadparam2, alpha0, phiRef, f_ref, IMRPhenomPv1_V, nonGRparams);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
 
@@ -1187,7 +1190,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomPFrequencySequence(hptilde, hctilde, frequencies,
               chi1_l, chi2_l, chip, thetaJ,
-              m1, m2, r, alpha0, phiRef, f_ref, IMRPhenomPv2_V, nonGRparams);
+              m1, m2, r, quadparam1, quadparam2, alpha0, phiRef, f_ref, IMRPhenomPv2_V, nonGRparams);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
 
@@ -1199,7 +1202,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
                 ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
 
             ret = XLALSimIMRPhenomDFrequencySequence(hptilde, frequencies,
-                phiRef, f_ref, m1, m2, S1z, S2z, r, nonGRparams);
+                phiRef, f_ref, m1, m2, S1z, S2z, r, quadparam1, quadparam2, nonGRparams);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             /* Produce both polarizations */
             *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
