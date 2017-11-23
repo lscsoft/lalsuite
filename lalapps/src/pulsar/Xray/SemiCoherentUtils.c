@@ -250,17 +250,17 @@ int XLALGetNextRandomBinaryTemplate(Template **temp,                        /**<
   while (!flag) {
 
     REAL8 temp1 = gsl_ran_flat((gsl_rng*)r,0,1);
-    nu = n2*pow((pow(n1/n2,4.0) + (1.0 - pow(n1/n2,4.0))*temp1),1.0/4.0);
+    nu = (n1 < n2) ? n2*pow((pow(n1/n2,4.0) + (1.0 - pow(n1/n2,4.0))*temp1),1.0/4.0) : n1;
     REAL8 temp2 = gsl_ran_flat((gsl_rng*)r,0,1);
-    a = a2*pow((pow(a1/a2,3.0) + (1.0 - pow(a1/a2,3.0))*temp2),1.0/3.0);
+    a = (a1 < a2) ? a2*pow((pow(a1/a2,3.0) + (1.0 - pow(a1/a2,3.0))*temp2),1.0/3.0) : a1;
     REAL8 temp3 = gsl_ran_flat((gsl_rng*)r,0,1);
-    tasc = t1 + (t2-t1)*temp3;
+    tasc = (t1 < t2) ? t1 + (t2-t1)*temp3 : t1;
     REAL8 temp4 = gsl_ran_flat((gsl_rng*)r,0,1);
-    Om = O2*pow((pow(O1/O2,5.0) + (1.0 - pow(O1/O2,5.0))*temp4),1.0/5.0);
+    Om = (O1 < O2) ? O2*pow((pow(O1/O2,5.0) + (1.0 - pow(O1/O2,5.0))*temp4),1.0/5.0) : O1;
 
     /* LogPrintf(LOG_DEBUG,"%f (%f %f) %f (%f %f) %f (%f %f) %f (%f %f)\n",nu,n1,n2,a,a1,a2,tasc,t1,t2,Om,O1,O2); */
 
-    if ((nu>n1)&&(nu<n2)&&(a>a1)&&(a<a2)&&(tasc>t1)&&(tasc<t2)&&(Om>O1)&&(Om<O2)) flag = 1;
+    if ((nu>=n1)&&(nu<=n2)&&(a>=a1)&&(a<=a2)&&(tasc>=t1)&&(tasc<=t2)&&(Om>=O1)&&(Om<=O2)) flag = 1;
 
   }
 
@@ -1313,19 +1313,46 @@ int XLALComputeBinaryGridParams(GridParameters **binarygridparams,  /**< [out] t
   (*binarygridparams)->coverage = coverage;
   if ((*binarygridparams)->coverage>0) {
 
+    ndim = 4;
     REAL8 Vn = pow(LAL_PI,ndim/2.0)/gsl_sf_gamma(1.0+ndim/2.0);
+    REAL8 Vsr = 1;
 
     REAL8 G11 = pow(LAL_PI,2.0)*DT*DT/3;
+    REAL8 fmin = space->data[0].min;
+    REAL8 fmax = space->data[0].max;
+    REAL8 fmid = 0.5*(fmin + fmax);
+    fmin = MYMIN(fmin, fmid - sqrt(mu/G11));
+    fmax = MYMAX(fmax, fmid + sqrt(mu/G11));
+    Vsr *= sqrt(G11/mu) * (pow(fmax,4.0) - pow(fmin,4.0)) / 4.0;
+
     REAL8 G22 = pow(LAL_PI,2.0)*DT*DT/6;
+    REAL8 amin = space->data[1].min;
+    REAL8 amax = space->data[1].max;
+    REAL8 amid = 0.5*(amin + amax);
+    amin = MYMIN(amin, amid - sqrt(mu/G22));
+    amax = MYMAX(amax, amid + sqrt(mu/G22));
+    Vsr *= sqrt(G22/mu) * (pow(amax,3.0) - pow(amin,3.0)) / 3.0;
+
     REAL8 G33 = pow(LAL_PI,2.0)*DT*DT/6;
+    REAL8 tascmin = space->data[2].min;
+    REAL8 tascmax = space->data[2].max;
+    REAL8 tascmid = 0.5*(tascmin + tascmax);
+    tascmin = MYMIN(tascmin, tascmid - sqrt(mu/G33));
+    tascmax = MYMAX(tascmax, tascmid + sqrt(mu/G33));
+    Vsr *= sqrt(G33/mu) * (tascmax - tascmin);
+
     REAL8 G44 = pow(LAL_PI,2.0)*DT*DT*T*T/72;
+    REAL8 omegamin = space->data[3].min;
+    REAL8 omegamax = space->data[3].max;
+    REAL8 omegamid = 0.5*(omegamin + omegamax);
+    omegamin = MYMIN(omegamin, omegamid - sqrt(mu/G44));
+    omegamax = MYMAX(omegamax, omegamid + sqrt(mu/G44));
+    Vsr *= sqrt(G44/mu) * (pow(omegamax,5.0) - pow(omegamin,5.0)) / 5.0;
 
-    REAL8 dVr = sqrt(G11*G22*G33*G44);
-    REAL8 Vsr = dVr*space->data[2].span*(1.0/60.0)*(pow(space->data[3].max,5.0)-pow(space->data[3].min,5.0))*(pow(space->data[0].max,4.0)-pow(space->data[0].min,4.0))*(pow(space->data[1].max,3.0)-pow(space->data[1].min,3.0));
+    (*binarygridparams)->Nr = (UINT8)ceil( (1.0/Vn) * log(1.0/(1.0-coverage)) * Vsr );
 
-    (*binarygridparams)->Nr = (UINT8)ceil((1.0/Vn)*log(1.0/(1.0-coverage))*(pow(mu,-ndim/2.0))*Vsr);
-    LogPrintf(LOG_DEBUG,"%s : computed the number of random binary templates to be %"LAL_UINT8_FORMAT".\n",__func__,(*binarygridparams)->Nr);
-    LogPrintf(LOG_DEBUG,"%s : to be compared to the total number of cubic templates %"LAL_UINT8_FORMAT" (%.6f).\n", __func__, (*binarygridparams)->max, (REAL8)(*binarygridparams)->max/(REAL8)(*binarygridparams)->Nr);
+    LogPrintf(LOG_NORMAL,"%s : computed the number of random binary templates to be %"LAL_UINT8_FORMAT".\n",__func__,(*binarygridparams)->Nr);
+    LogPrintf(LOG_NORMAL,"%s : to be compared to the total number of cubic templates %"LAL_UINT8_FORMAT" (%.6f).\n", __func__, (*binarygridparams)->max, (REAL8)(*binarygridparams)->max/(REAL8)(*binarygridparams)->Nr);
 
   }
 
@@ -1525,8 +1552,22 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs 
 
       /**********************************************************************************/
       /* extract effective band from this, if neccessary (ie if faster-sampled output SFTs) */
-      SFTVector *tempSFTvect = XLALExtractBandFromSFTVector ( sftvect, par->freq, par->freqband-1.0/par->tsft );    /* the last bin has to be avoided */
+      REAL8 df = sftvect->data[0].deltaF;
+      long bin0 = lround( ( par->freq                 - sftvect->data[0].f0 ) / df);
+      long bin1 = lround( ( par->freq + par->freqband - sftvect->data[0].f0 ) / df);
+      SFTVector *tempSFTvect = NULL;
+      XLAL_CHECK ( (tempSFTvect = XLALCreateSFTVector ( sftvect->length, 0 )) != NULL, XLAL_EFUNC );
+      for ( UINT4 alpha = 0; alpha < sftvect->length; ++alpha ) {
+        SFTtype *dest = &(tempSFTvect->data[alpha]);
+        SFTtype *src =  &(sftvect->data[alpha]);
+        *dest = *src;
+        dest->f0 += bin0 * df;
+        XLAL_CHECK ( (dest->data = XLALCreateCOMPLEX8Vector ( bin1 - bin0 )) != NULL, XLAL_EFUNC );
+        memcpy( dest->data->data, src->data->data + bin0, ( bin1 - bin0 ) * sizeof(dest->data->data[0]) );
+      }
       XLALDestroySFTVector(sftvect);
+      LogPrintf(LOG_DEBUG, "extracted frequency band %0.16g to %0.16g, bin %li to %li\n",
+                tempSFTvect->data[0].f0, tempSFTvect->data[0].f0 + tempSFTvect->data[0].deltaF * tempSFTvect->data[0].data->length, bin0, bin1);
 
       /**********************************************************************************/
       /* append these SFTs to the full list of SFTs */

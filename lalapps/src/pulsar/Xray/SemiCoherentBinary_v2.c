@@ -95,6 +95,7 @@ typedef struct {
   REAL8 tsft;                       /**< the length of the input sfts */
   CHAR *comment;
   CHAR *tempdir;                    /**< a temporary directory for keeping the results */
+  BOOLEAN with_chi2_renorm;         /**< switch on chi^2 renormalisation */
   BOOLEAN with_xbins;               /**< enable fast summing of extra bins */
 } UserInput_t;
 
@@ -113,7 +114,7 @@ extern int vrbflg;              /**< defined in lalapps.c */
 /* define functions */
 int main(int argc,char *argv[]);
 int XLALReadUserVars(int argc,char *argv[],UserInput_t *uvar, CHAR **clargs);
-int XLALComputeSemiCoherentStat(FILE *fp,REAL4DemodulatedPowerVector *power,ParameterSpace *pspace,GridParametersVector *fgrid,GridParameters *bingrid,INT4 ntoplist,BOOLEAN with_xbins);
+int XLALComputeSemiCoherentStat(FILE *fp,REAL4DemodulatedPowerVector *power,ParameterSpace *pspace,GridParametersVector *fgrid,GridParameters *bingrid,INT4 ntoplist,BOOLEAN with_chi2_renorm,BOOLEAN with_xbins);
 int XLALDefineBinaryParameterSpace(REAL8Space **, LIGOTimeGPS, REAL8, UserInput_t *);
 int XLALOpenSemiCoherentResultsFile(FILE **,CHAR *,ParameterSpace *,CHAR *,UserInput_t *);
 int XLALtoplist(REAL4 x,Template *params,toplist *TL);
@@ -369,7 +370,7 @@ int main( int argc, char *argv[] )  {
   /**********************************************************************************/
 
   /* compute the semi-coherent detection statistic on the fine grid */
-  if (XLALComputeSemiCoherentStat(sfp,dmpower,&pspace,freqgridparams,bingridparams,uvar.ntoplist,uvar.with_xbins)) {
+  if (XLALComputeSemiCoherentStat(sfp,dmpower,&pspace,freqgridparams,bingridparams,uvar.ntoplist,uvar.with_chi2_renorm,uvar.with_xbins)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALComputeSemiCoherentStat() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
@@ -464,6 +465,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->tsft = 256;
   uvar->seed = 1;
   uvar->tempdir = NULL;
+  uvar->with_chi2_renorm = 1;
   uvar->with_xbins = 1;
 
   /* initialise all parameter space ranges to zero */
@@ -498,6 +500,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   XLALRegisterUvarMember(seed,                    INT4, 'X', OPTIONAL, "The random number seed (0 = clock)");
   XLALRegisterUvarMember(gpsstart,                INT4, 's', OPTIONAL, "The minimum start time (GPS sec)");
   XLALRegisterUvarMember(gpsend,                INT4, 'e', OPTIONAL, "The maximum end time (GPS sec)");
+  XLALRegisterUvarMember(with_chi2_renorm,       BOOLEAN, 0, OPTIONAL,  "Switch on chi^2 renormalisation");
   XLALRegisterUvarMember(with_xbins,             BOOLEAN, 0, DEVELOPER,  "Enable fast summing of extra bins");
 
   /* do ALL cmdline and cfgfile handling */
@@ -537,6 +540,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
                                 GridParametersVector *fgrid,		/**< UNDOCUMENTED */
                                 GridParameters *bingrid,                 /**< [in] the grid parameters */
                                 INT4 ntoplist,		/**< UNDOCUMENTED */
+                                BOOLEAN with_chi2_renorm,                /**< switch on chi^2 renormalisation */
                                 BOOLEAN with_xbins                       /**< enable fast summing of extra bins */
                                 )
 {
@@ -777,8 +781,10 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   var = var/(REAL8)(Ntemp-1);
   var = (var - mean*mean);
 
-  /* modify toplist to have correct mean and variance */
-  for (i=0;i<(UINT4)TL.n;i++) TL.data[i] = (TL.data[i] - mean)*sqrt(4.0*power->length)/sqrt(var) + 2.0*power->length;
+  if ( with_chi2_renorm ) {
+    /* modify toplist to have correct mean and variance */
+    for (i=0;i<(UINT4)TL.n;i++) TL.data[i] = (TL.data[i] - mean)*sqrt(4.0*power->length)/sqrt(var) + 2.0*power->length;
+  }
 
   /* output toplist to file */
   for (i=0;i<(UINT4)TL.n;i++) {
