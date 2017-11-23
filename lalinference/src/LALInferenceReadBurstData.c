@@ -100,7 +100,7 @@ void LALInferenceInjectBurstSignal(LALInferenceIFOData *IFOdata, ProcessParamsTa
 	LALInferenceIFOData *thisData=IFOdata->next;
 	REAL8 minFlow=IFOdata->fLow;
 	REAL8 MindeltaT=IFOdata->timeData->deltaT;
-  char SNRpath[FILENAME_MAX]="";
+    char SNRpath[FILENAME_MAX+10]="";
 	while(thisData){
           minFlow   = minFlow>thisData->fLow ? thisData->fLow : minFlow;
           MindeltaT = MindeltaT>thisData->timeData->deltaT ? thisData->timeData->deltaT : MindeltaT;
@@ -119,9 +119,9 @@ void LALInferenceInjectBurstSignal(LALInferenceIFOData *IFOdata, ProcessParamsTa
 
   ppt = LALInferenceGetProcParamVal(commandLine,"--outfile");
 	if (ppt)
-	    sprintf(SNRpath, "%s_snr.txt", ppt->value);
+	    snprintf(SNRpath, sizeof(SNRpath), "%s_snr.txt", ppt->value);
 	else
-		sprintf(SNRpath, "snr.txt");
+		snprintf(SNRpath, sizeof(SNRpath), "snr.txt");
 
 	injTable=XLALSimBurstTableFromLIGOLw(LALInferenceGetProcParamVal(commandLine,"--binj")->value,0,0);
 	REPORTSTATUS(&status);
@@ -318,14 +318,14 @@ void InjectBurstFD(LALInferenceIFOData *IFOdata, SimBurst *inj_table, ProcessPar
   LALStatus status;
   memset(&status,0,sizeof(LALStatus));
   INT4 errnum;
-  char SNRpath[FILENAME_MAX];
+  char SNRpath[FILENAME_MAX+16];
   ProcessParamsTable *ppt=NULL;
   ppt = NULL; 
   ppt = LALInferenceGetProcParamVal(commandLine,"--outfile");
   if (ppt)
-    sprintf(SNRpath, "%s_snr.txt", ppt->value);
+    snprintf(SNRpath,sizeof(SNRpath), "%s_snr.txt", ppt->value);
   else
-    sprintf(SNRpath, "snr.txt");
+    snprintf(SNRpath,sizeof(SNRpath), "snr.txt");
   //REAL8 WinNorm = sqrt(IFOdata->window->sumofsquares/IFOdata->window->data->length);
   BurstApproximant approx = XLALGetBurstApproximantFromString(inj_table->waveform);
   

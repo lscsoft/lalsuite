@@ -888,8 +888,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   s=initNSintegralState(Nruns,Nlive);
 
   /* Check for an interrupted run */
-  char resumefilename[FILENAME_MAX];
-  sprintf(resumefilename,"%s_resume",outfile);
+  char resumefilename[FILENAME_MAX+10];
+  snprintf(resumefilename,sizeof(resumefilename),"%s_resume",outfile);
   int retcode=1;
   if(LALInferenceGetProcParamVal(runState->commandLine,"--resume")){
 #ifdef HAVE_HDF5
@@ -986,8 +986,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   if(!HDFOUTPUT)
   {
       FILE *lout=NULL;
-      char param_list[FILENAME_MAX];
-      sprintf(param_list,"%s_params.txt",outfile);
+      char param_list[FILENAME_MAX+16];
+      snprintf(param_list,sizeof(param_list),"%s_params.txt",outfile);
       lout=fopen(param_list,"w");
       LALInferenceFprintParameterHeaders(lout,runState->livePoints[0]);
       fclose(lout);
@@ -1142,7 +1142,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		}
         fclose(fpout);
     
-        char bayesfile[FILENAME_MAX];
+        char bayesfile[FILENAME_MAX+10];
         sprintf(bayesfile,"%s_B.txt",outfile);
         fpout=fopen(bayesfile,"w");
         fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
