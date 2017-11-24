@@ -1033,6 +1033,7 @@ class CoincRates(object):
 		Example:
 
 		>>> coincrates = CoincRates(("H1", "L1", "V1"), 0.005, 1)
+		>>> coincrates.all_instrument_combos
 		(frozenset(['V1']), frozenset(['H1']), frozenset(['L1']), frozenset(['V1', 'H1']), frozenset(['V1', 'L1']), frozenset(['H1', 'L1']), frozenset(['V1', 'H1', 'L1']))
 		>>> coincrates = CoincRates(("H1", "L1", "V1"), 0.005, 2)
 		>>> coincrates.all_instrument_combos
