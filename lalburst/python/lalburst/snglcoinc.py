@@ -844,7 +844,9 @@ class CoincRates(object):
 
 		# fast-path for gstlal-inspiral pipeline:  hard-coded
 		# result for H,L,V network, 5 ms coincidence window, 1 or 2
-		# minimum instruments required
+		# minimum instruments required.  computing using qhull's
+		# half-plane intersection code on a machine where that's
+		# available
 		if self.instruments == set(("H1", "L1", "V1")) and self.delta_t == 0.005:
 			if self.min_instruments == 1:
 				self.rate_factors = {
@@ -854,7 +856,7 @@ class CoincRates(object):
 					frozenset(["H1", "L1"]): 0.030025692304447849,
 					frozenset(["H1", "V1"]): 0.064575959867688451,
 					frozenset(["L1", "V1"]): 0.062896682033452986,
-					frozenset(["H1", "L1", "V1"]): 0.0016876238239802771
+					frozenset(["H1", "L1", "V1"]): 0.0016876366183778862
 				}
 				return
 			elif self.min_instruments == 2:
@@ -862,7 +864,7 @@ class CoincRates(object):
 					frozenset(["H1", "L1"]): 0.030025692304447849,
 					frozenset(["H1", "V1"]): 0.064575959867688451,
 					frozenset(["L1", "V1"]): 0.062896682033452986,
-					frozenset(["H1", "L1", "V1"]): 0.0016876624438056285
+					frozenset(["H1", "L1", "V1"]): 0.0016876366183778862
 				}
 				return
 
@@ -971,7 +973,7 @@ class CoincRates(object):
 		# done computing rate_factors
 
 		# FIXME:  commented-out implementation that requires scipy
-		# >= 0.19.  saving it for later.  NOTE:  untested
+		# >= 0.19.  saving it for later.
 
 		# the half-space instersection code assumes constraints of
 		# the form
@@ -1019,9 +1021,6 @@ class CoincRates(object):
 		#		interior = numpy.zeros((len(instruments),), dtype = "double")
 		#		# compute volume
 		#		self.rate_factors[key] = spatial.ConvexHull(spatial.HalfspaceIntersection(halfspaces, interior).intersections).volume
-		#	else:
-		#		# 1-D case (qhull barfs, but who needs it)
-		#		self.rate_factors[key] = 2. * self.tau[frozenset((anchor, instruments[0]))]
 
 
 	@property
