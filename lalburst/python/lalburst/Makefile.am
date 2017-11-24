@@ -16,10 +16,10 @@ pymodule_PYTHON = \
 	bucluster.py \
 	burca.py \
 	burca_tailor.py \
+	calc_likelihood.py \
 	cafe.py \
 	date.py \
 	git_version.py \
-	ligolw_burca2.py \
 	packing.py \
 	SimBurstUtils.py \
 	SnglBurstUtils.py \
