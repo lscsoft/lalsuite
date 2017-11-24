@@ -34,7 +34,7 @@ from glue.ligolw import dbtables
 from lal.utils import CacheEntry
 from lalburst import git_version
 from lalburst import burca_tailor
-from lalburst import ligolw_burca2
+from lalburst import calc_likelihood
 from lalburst import SnglBurstUtils
 from lalburst.SimBurstUtils import MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD
 
@@ -161,7 +161,7 @@ for n, filename in enumerate(filenames):
 	#
 
 
-	ligolw_burca2.ligolw_burca2(database, distributions, distributions.coinc_params, verbose = options.verbose, params_func_extra_args = (MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD))
+	calc_likelihood.ligolw_burca2(database, distributions, distributions.coinc_params, verbose = options.verbose, params_func_extra_args = (MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD))
 
 
 	#

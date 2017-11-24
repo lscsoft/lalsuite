@@ -584,7 +584,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     if(marginalisationflags==STUDENTT)
     {
       /* extract the element from the "df" vector that carries the current Ifo's name: */
-      CHAR df_variable_name[64];
+      CHAR df_variable_name[320];
       snprintf(df_variable_name,sizeof(df_variable_name),"df_%s",dataPtr->name);
       if(LALInferenceCheckVariable(currentParams,df_variable_name)){
         printf("Found variable %s\n",df_variable_name);
@@ -680,13 +680,13 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
         }
         /*constant*/
         if (constantcal_active){
-          char CA_A[10]="";
+          char CA_A[320];
           sprintf(CA_A,"%s_%s","calamp",dataPtr->name);
           if (LALInferenceCheckVariable(currentParams, CA_A))
             calamp=(*(REAL8*) LALInferenceGetVariable(currentParams, CA_A));
           else
             calamp=0.0;
-          char CP_A[10]="";
+          char CP_A[320];
           sprintf(CP_A,"%s_%s","calpha",dataPtr->name);
           if (LALInferenceCheckVariable(currentParams, CP_A))
             calpha=(*(REAL8*) LALInferenceGetVariable(currentParams, CP_A));

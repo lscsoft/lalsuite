@@ -378,20 +378,41 @@ int XLALSimInspiralSpinTaylorF2(
         case -1:
         case 7:
             pfa7 = pfa.v[7];
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case 6:
             pfa6 = pfa.v[6];
             pfl6 = pfa.vlogv[6];
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case 5:
             pfa5 = pfa.v[5];
             pfl5 = pfa.vlogv[5];
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case 4:
             pfa4 = pfa.v[4];
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case 3:
             pfa3 = pfa.v[3];
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case 2:
             pfa2 = pfa.v[2];
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case 1:
             pfa1 = pfa.v[1];
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case 0:
             pfaN = pfa.v[0];
             break;

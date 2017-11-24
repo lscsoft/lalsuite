@@ -198,6 +198,9 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
     case -1: // Use the highest PN order available.
     case 7:
       params->wdotcoeff[7]  = XLALSimInspiralTaylorT4wdot_7PNCoeff(params->eta);
+#if __GNUC__ >= 7
+      __attribute__ ((fallthrough));
+#endif
 
     case 6:
       params->Ecoeff[6]     = XLALSimInspiralPNEnergy_6PNCoeff(params->eta);
@@ -205,6 +208,9 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
       params->wdotlogcoeff  = XLALSimInspiralTaylorT4wdot_6PNLogCoeff(params->eta);
       params->wdot6S1O   = XLALSimInspiralTaylorT4wdot_6PNSOCoeff(params->m1ByM);
       params->wdot6S2O   = XLALSimInspiralTaylorT4wdot_6PNSOCoeff(params->m2ByM);
+#if __GNUC__ >= 7
+      __attribute__ ((fallthrough));
+#endif
 
     case 5:
       params->Ecoeff[5]     = 0.;
@@ -215,6 +221,9 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
       params->wdot5S2O  = XLALSimInspiralTaylorT4wdot_5PNSOCoeff(params->m2ByM);
       params->S1dot5    = XLALSimInspiralSpinDot_5PNCoeff(params->m1ByM);
       params->S2dot5    = XLALSimInspiralSpinDot_5PNCoeff(params->m2ByM);
+#if __GNUC__ >= 7
+      __attribute__ ((fallthrough));
+#endif
 
     case 4:
       params->wdotcoeff[4]  = XLALSimInspiralTaylorT4wdot_4PNCoeff(params->eta);
@@ -239,6 +248,9 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
       params->Sdot4S2O    = XLALSimInspiralSpinDot_4PNS2OCoeffAvg;
       params->S1dot4QMS1O  = quadparam1*XLALSimInspiralSpinDot_4PNQMSOCoeffAvg(params->m1ByM);
       params->S2dot4QMS2O  = quadparam2*XLALSimInspiralSpinDot_4PNQMSOCoeffAvg(params->m2ByM);
+#if __GNUC__ >= 7
+      __attribute__ ((fallthrough));
+#endif
 
     case 3:
       params->Ecoeff[3]      = 0.;
@@ -249,14 +261,23 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
       params->E3S2O     = XLALSimInspiralPNEnergy_3PNSOCoeff(params->m1ByM);
       params->S1dot3    = XLALSimInspiralSpinDot_3PNCoeff(params->m1ByM);
       params->S2dot3    = XLALSimInspiralSpinDot_3PNCoeff(params->m2ByM);
+#if __GNUC__ >= 7
+      __attribute__ ((fallthrough));
+#endif
 
     case 2:
       params->Ecoeff[2]  = XLALSimInspiralPNEnergy_2PNCoeff(params->eta);
       params->wdotcoeff[2] = XLALSimInspiralTaylorT4wdot_2PNCoeff(params->eta);
+#if __GNUC__ >= 7
+      __attribute__ ((fallthrough));
+#endif
 
     case 1:
       params->Ecoeff[1]  = 0.;
       params->wdotcoeff[1] = phi1;
+#if __GNUC__ >= 7
+      __attribute__ ((fallthrough));
+#endif
 
     case 0:
       params->Ecoeff[0]  = 1.;
@@ -287,6 +308,9 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
       params->wdot6S1O   = 0.;
       params->S1dot6     = 0.;
       params->S2dot6     = 0.;
+#if __GNUC__ >= 7
+      __attribute__ ((fallthrough));
+#endif
 
     case LAL_SIM_INSPIRAL_SPIN_ORDER_15PN:
       /* This keeps only the leading spin-orbit interactions*/
@@ -296,6 +320,9 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
       params->E4QMS2  = 0.;
       params->E4QMS1O = 0.;
       params->E4QMS2O = 0.;
+#if __GNUC__ >= 7
+      __attribute__ ((fallthrough));
+#endif
 
     case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
       /* This kills all spin interaction intervening at 2.5PN order or higher*/
@@ -305,11 +332,17 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
       params->wdot5S2O    = 0.;
       params->S1dot5      = 0.;
       params->S2dot5      = 0.;
+#if __GNUC__ >= 7
+      __attribute__ ((fallthrough));
+#endif
 
     case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
       /* This kills all spin interaction intervening at 3PN order or higher*/
       params->wdot6S1O   = 0.;
       params->wdot6S2O   = 0.;
+#if __GNUC__ >= 7
+      __attribute__ ((fallthrough));
+#endif
 
     case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
     case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
@@ -322,9 +355,15 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
     case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
       params->wdottidal6pn = lambda1 * XLALSimInspiralTaylorT4wdot_12PNTidalCoeff(params->m1ByM) + lambda2 * XLALSimInspiralTaylorT4wdot_12PNTidalCoeff(params->m2ByM);
       params->Etidal6pn =  lambda1*XLALSimInspiralPNEnergy_12PNTidalCoeff(params->m1ByM) + lambda2*XLALSimInspiralPNEnergy_12PNTidalCoeff(params->m2ByM);
+#if __GNUC__ >= 7
+      __attribute__ ((fallthrough));
+#endif
     case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
       params->wdottidal5pn = lambda1 * XLALSimInspiralTaylorT4wdot_10PNTidalCoeff(params->m1ByM) + lambda2 * XLALSimInspiralTaylorT4wdot_10PNTidalCoeff(params->m2ByM);
       params->Etidal5pn = lambda1*XLALSimInspiralPNEnergy_10PNTidalCoeff(params->m1ByM) + lambda2*XLALSimInspiralPNEnergy_10PNTidalCoeff(params->m2ByM);
+#if __GNUC__ >= 7
+      __attribute__ ((fallthrough));
+#endif
     case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
       break;
     default:

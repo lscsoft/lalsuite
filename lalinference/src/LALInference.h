@@ -47,7 +47,7 @@
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
 
-#define VARNAME_MAX 128
+#define VARNAME_MAX 320
 #define VARVALSTRINGSIZE_MAX 128
 
 #include <lal/LALStdlib.h>

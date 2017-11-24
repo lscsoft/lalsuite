@@ -100,7 +100,7 @@ void LALInferenceInjectBurstSignal(LALInferenceIFOData *IFOdata, ProcessParamsTa
 	LALInferenceIFOData *thisData=IFOdata->next;
 	REAL8 minFlow=IFOdata->fLow;
 	REAL8 MindeltaT=IFOdata->timeData->deltaT;
-  char SNRpath[FILENAME_MAX]="";
+    char SNRpath[FILENAME_MAX+10]="";
 	while(thisData){
           minFlow   = minFlow>thisData->fLow ? thisData->fLow : minFlow;
           MindeltaT = MindeltaT>thisData->timeData->deltaT ? thisData->timeData->deltaT : MindeltaT;
@@ -119,9 +119,9 @@ void LALInferenceInjectBurstSignal(LALInferenceIFOData *IFOdata, ProcessParamsTa
 
   ppt = LALInferenceGetProcParamVal(commandLine,"--outfile");
 	if (ppt)
-	    sprintf(SNRpath, "%s_snr.txt", ppt->value);
+	    snprintf(SNRpath, sizeof(SNRpath), "%s_snr.txt", ppt->value);
 	else
-		sprintf(SNRpath, "snr.txt");
+		snprintf(SNRpath, sizeof(SNRpath), "snr.txt");
 
 	injTable=XLALSimBurstTableFromLIGOLw(LALInferenceGetProcParamVal(commandLine,"--binj")->value,0,0);
 	REPORTSTATUS(&status);
@@ -156,7 +156,7 @@ void LALInferenceInjectBurstSignal(LALInferenceIFOData *IFOdata, ProcessParamsTa
 		memcpy(&bufferStart,&thisData->timeData->epoch,sizeof(LIGOTimeGPS));
 		XLALGPSAdd(&bufferStart,(REAL8) thisData->timeData->data->length * thisData->timeData->deltaT);
 		XLALGPSAdd(&bufferStart,-bufferLength);
-		char series_name[256];
+		char series_name[320];
     sprintf(series_name,"%s:injection",thisData->name);
     REAL8TimeSeries *inj8Wave=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries(series_name,
                                                                            &thisData->timeData->epoch,
@@ -214,7 +214,7 @@ void LALInferenceInjectBurstSignal(LALInferenceIFOData *IFOdata, ProcessParamsTa
     /* Actually inject the waveform */
     for(j=0;j<inj8Wave->data->length;j++) thisData->timeData->data->data[j]+=inj8Wave->data->data[j];
     fprintf(stdout,"Injected SNR in detector %s = %.1f\n",thisData->name,thisData->SNR);
-    char filename[256];
+    char filename[320];
     sprintf(filename,"%s_timeInjection.dat",thisData->name);
     FILE* file=fopen(filename, "w");
     for(j=0;j<inj8Wave->data->length;j++){   
@@ -318,14 +318,14 @@ void InjectBurstFD(LALInferenceIFOData *IFOdata, SimBurst *inj_table, ProcessPar
   LALStatus status;
   memset(&status,0,sizeof(LALStatus));
   INT4 errnum;
-  char SNRpath[FILENAME_MAX];
+  char SNRpath[FILENAME_MAX+16];
   ProcessParamsTable *ppt=NULL;
   ppt = NULL; 
   ppt = LALInferenceGetProcParamVal(commandLine,"--outfile");
   if (ppt)
-    sprintf(SNRpath, "%s_snr.txt", ppt->value);
+    snprintf(SNRpath,sizeof(SNRpath), "%s_snr.txt", ppt->value);
   else
-    sprintf(SNRpath, "snr.txt");
+    snprintf(SNRpath,sizeof(SNRpath), "snr.txt");
   //REAL8 WinNorm = sqrt(IFOdata->window->sumofsquares/IFOdata->window->data->length);
   BurstApproximant approx = XLALGetBurstApproximantFromString(inj_table->waveform);
   
@@ -406,7 +406,7 @@ void InjectBurstFD(LALInferenceIFOData *IFOdata, SimBurst *inj_table, ProcessPar
     dataPtr->fCross = Fcross;
     dataPtr->timeshift = timeshift;
 
-    char InjFileName[50];
+    char InjFileName[320];
     sprintf(InjFileName,"injection_%s.dat",dataPtr->name);
     FILE *outInj=fopen(InjFileName,"w");
 

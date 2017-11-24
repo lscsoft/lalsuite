@@ -35,7 +35,7 @@ import sys
 from glue.ligolw import dbtables
 from lal.utils import CacheEntry
 from lalburst import git_version
-from lalburst import ligolw_burca2
+from lalburst import calc_likelihood
 from lalburst import SnglBurstUtils
 from lalburst import stringutils
 
@@ -150,7 +150,7 @@ for n, filename in enumerate(filenames):
 	# Run likelihood ratio calculation.
 	#
 
-	ligolw_burca2.ligolw_burca2(contents, coincparamsdistributions, coincparamsdistributions.coinc_params, verbose = options.verbose, params_func_extra_args = (triangulators,))
+	calc_likelihood.ligolw_burca2(contents, coincparamsdistributions, coincparamsdistributions.coinc_params, verbose = options.verbose, params_func_extra_args = (triangulators,))
 
 	#
 	# Clean up.

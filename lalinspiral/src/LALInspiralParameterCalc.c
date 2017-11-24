@@ -464,6 +464,7 @@ XLALInspiralParameterCalc (
          params->t6 = 0.0;
          params->t7 = 0.0;
          params->tC = params->t0 + params->t2 - params->t3 + params->t4 - params->t5;
+      break;
 
       case LAL_PNORDER_THREE:
          /*check the initialisation and then comment the next line. For now we
@@ -471,6 +472,7 @@ XLALInspiralParameterCalc (
          params->t6 = 0;
          params->t7 = 0.0;
          params->tC = params->t0 + params->t2 - params->t3 + params->t4 - params->t5 + params->t6;
+      break;
 
       case LAL_PNORDER_THREE_POINT_FIVE:
       default:

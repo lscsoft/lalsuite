@@ -2870,6 +2870,9 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         - ci2*486./5.) + eta3*(-3159./40. + ci2*243./5.))
                         + sin(8.*phi)*(-2048./315.*si6*ci*(1. - 7.*eta
                         + 14.*eta2 - 7.*eta3));
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
             /* case LAL_PNORDER_TWO_POINT_FIVE: */
             case 5:
                 hp25 = cos(phi)*si*dm*(1771./5120. - ci2*1667./5120.
@@ -2916,6 +2919,9 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         + eta2*(-100625./4608. + ci2*83125./2304.
                         - ci4*21875./1536.)) + sin(7.*phi)*si5*ci*dm
                         * (117649./23040.*(1. - 4.*eta + 3.*eta2));
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
             /* case LAL_PNORDER_TWO: */
             case 4:
                 hp2 = cos(phi)*LAL_PI*si*dm*(-5./8. - ci2/8.)
@@ -2944,6 +2950,9 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         + eta2*5.*(17. - 12.*ci2))
                         + sin(6.*phi)*ci*(-81./20.*si4
                         * (1. - 5.*eta + 5.*eta2));
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
             /* case LAL_PNORDER_ONE_POINT_FIVE: */
             case 3:
                 hp15 = cos(phi)*si*dm*(19./64. + ci2*5./16. - ci4/192.
@@ -2959,6 +2968,9 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         * (-603./64. + ci2*135./64.
                         + eta*(171./32. - ci2*135./32.))
                         + sin(5.*phi)*si*ci*dm*(625./192.*si2*(1. - 2.*eta));
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
             /* case LAL_PNORDER_ONE: */
             case 2:
                 hp1 = cos(2.*phi)*(19./6. + 3./2.*ci2 - ci4/3.
@@ -2967,11 +2979,17 @@ int XLALSimInspiralPNPolarizationWaveforms(
                 hc1 = sin(2.*phi)*ci*(17./3. - ci2*4./3.
                         + eta*(-13./3. + 4.*ci2))
                         + sin(4.*phi)*ci*si2*(-8./3.*(1. - 3.*eta));
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
             /*case LAL_PNORDER_HALF:*/
             case 1:
                 hp05 = - si*dm*(cos(phi)*(5./8. + ci2/8.)
                         - cos(3.*phi)*(9./8. + 9.*ci2/8.));
                 hc05 = si*ci*dm*(-sin(phi)*3./4. + sin(3.*phi)*9./4.);
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
             case 0:
                 /* below would have a constant memory term of -si2/96.*(17. + ci2) */
                 hp0 = -(1. + ci2)*cos(2.*phi);
@@ -3627,6 +3645,9 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
                         + 12*(lx*nx - ly*ny)*logfac);
                 hcrossTail15 = 4*((lx*ly - nx*ny)*LAL_PI
                         + 6*(ly*nx + lx*ny)*logfac);
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
 
             /*case LAL_PNORDER_ONE:*/
             case 2:
@@ -3648,6 +3669,9 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
                         - nx*((1 + dm)*s1y + (-1 + dm)*s2y))/2.;
                 hcrossSpin1 = (nx*((1 + dm)*s1x + (-1 + dm)*s2x)
                         - ny*((1 + dm)*s1y + (-1 + dm)*s2y))/2.;
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
 
             /*case LAL_PNORDER_HALF:*/
             case 1:
@@ -3656,6 +3680,9 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
                         + 6*lx*nx*nz - 6*ly*ny*nz))/2.;
                 hcross05 = dm*(-2*lx*ly*lz + lz*nx*ny
 					+ 3*ly*nx*nz + 3*lx*ny*nz);
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
             /*case LAL_PNORDER_NEWTONIAN:*/
             case 0:
                 /* Newtonian order polarizations */
@@ -3837,6 +3864,9 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
           *hcross += (2.*fact8)*((-e2xe2y*e2z*fact3 + e1xe2z*e1y*fact2
           - e1z*(e1xe2y + e1ye2x)*fact4) + I*((e1xe2y + e1ye2x)*e2z*fact7
           + (e1xe1y*fact6 - e2xe2y*fact5)*e1z));
+#if __GNUC__ >= 7
+          __attribute__ ((fallthrough));
+#endif
         case 2:
           fact1 = v4*0.25;
 
@@ -3844,6 +3874,9 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
           - a1y)*e2x - (a1x - a2x)*e2y));
           *hcross += fact1*(((a1x - a2x)*e1x - (a1y - a2y)*e1y) + I*((a1x
           - a2x)*e2x - (a1y - a2y)*e2y));
+#if __GNUC__ >= 7
+          __attribute__ ((fallthrough));
+#endif
         case 1:
           fact1 = e1xe2x - e1ye2y;
           fact2 = e1ye1y - e1xe1x;
@@ -3857,6 +3890,9 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
           + I*(e1z*(fact2 + 5.*fact3) - 6.*e2z*fact1));
           *hcross += (2.*fact7)*((3.*e1z*fact4 + e2z*(-5.*fact5 + fact6))
           + I*(e1z*(5.*fact6 - fact5) - 3.*e2z*fact4));
+#if __GNUC__ >= 7
+          __attribute__ ((fallthrough));
+#endif
         case 0:
           break;
         default:
@@ -3899,6 +3935,9 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
           + e1ye2z)*fact2 + 6.*(e1xe2x - e1ye2y)*fact3 + 2.*(e1xe1y
           - e2xe2y)*fact7) + I*(3.*(e1xe1z - e2xe2z)*fact1 - 3.*(e1ye1z
           - e2ye2z)*fact2 - 3.*fact8*fact3 + 2.*(e1ye2x + e1xe2y)*fact7));
+#if __GNUC__ >= 7
+          __attribute__ ((fallthrough));
+#endif
 
         case 2:
           fact5 = -1. + 3.*eta;
@@ -3913,6 +3952,9 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
           - e2ye2y)*fact3 + (e1ye2y - e1xe2x)*fact4));
           *hcross += fact6*((-e1xe1y*fact1 + e2xe2y*fact2) + I*(4.*(e1xe1y
           + e2xe2y)*fact3 - (e1ye2x + e1xe2y)*fact4));
+#if __GNUC__ >= 7
+          __attribute__ ((fallthrough));
+#endif
         case 1:
         case 0:
           *hplus += v2*(0.5*(e1ye1y - e2ye2y + e2xe2x - e1xe1x) + I*(e1ye2y
@@ -3945,6 +3987,9 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
           *hcross += fact1*((2.*(e2xe2y*e2z*fact3 - (e1xe2y + e1ye2x)*e1z*fact4
           - e1xe1y*e2z*fact5)) + I*(2.*(-e1z*e2xe2y*fact7 + e1xe1y*e1z*fact6
           - (e1xe2y + e1ye2x)*e2z*fact4)));
+#if __GNUC__ >= 7
+          __attribute__ ((fallthrough));
+#endif
         case 2:
         case 1:
           fact1 = v3*dm*9./16.;
@@ -3956,6 +4001,9 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
           *hplus += fact1*((e1z*fact2 + e2z*fact3) - I*(e1z*fact3 - e2z*fact2));
           *hcross += fact1*((e1z*fact4 + e2z*fact5) + I*(-e1z*fact5
           + e2z*fact4));
+#if __GNUC__ >= 7
+          __attribute__ ((fallthrough));
+#endif
         case 0:
           break;
         default:
@@ -3981,6 +4029,9 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
           + e1ze2z*fact3));
           *hcross = fact1*((fact4*fact5 - 2.*e1ze2z*fact6) + I*(fact4*fact6
           + 2.*e1ze2z*fact5));
+#if __GNUC__ >= 7
+          __attribute__ ((fallthrough));
+#endif
         case 1:
         case 0:
           break;
@@ -4007,6 +4058,9 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
           + 0.5*fact4*fact3));
           *hcross += (fact1)*((fact4*fact6 - fact5*fact7) - I*(fact4*fact7
           + fact5*fact6));
+#if __GNUC__ >= 7
+          __attribute__ ((fallthrough));
+#endif
         case 2:
         case 1:
         case 0:
@@ -5383,6 +5437,42 @@ double XLALSimInspiralGetFinalFreq(
 {
     FrequencyFunction freqFunc;
 
+    /* input conditions */
+    switch (approximant)
+    {
+        case EccentricTD:
+        case EccentricFD:
+        case EOBNRv2HM:
+        case EOBNRv2:
+        case IMRPhenomA:
+            /* Check that spins are zero */
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+            {
+                XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
+            }
+            break;
+
+        case TaylorF2RedSpinTidal:
+        case SEOBNRv1:
+        case SEOBNRv2:
+        case SEOBNRv2_opt:
+        case SEOBNRv4:
+        case SEOBNRv4_opt:
+        case IMRPhenomB:
+        case IMRPhenomC:
+            /* Check that the transverse spins are zero */
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+            {
+                XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
+            }
+            break;
+
+        default:
+            break;
+    }
+
     /* select the frequency function that is associated with each approximant */
     switch (approximant)
     {
@@ -5393,111 +5483,48 @@ double XLALSimInspiralGetFinalFreq(
         case TaylorT2:
         case TaylorT3:
         case TaylorT4:
-	case EccentricTD:
-	    /* Check that spins are zero */
-	    if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
-	    {
-		XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
-		XLAL_ERROR(XLAL_EINVAL);
-	    }
-	case EccentricFD:
-            /* Check that spins are zero */
-            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
-            {
-                XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
-                XLAL_ERROR(XLAL_EINVAL);
-            }
+        case EccentricTD:
+        case EccentricFD:
         case TaylorF2:
         case TaylorF2NLTides:
         case TaylorF2RedSpin:
         case TaylorF2RedSpinTidal:
-            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-            {
-	            XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
-                XLAL_ERROR(XLAL_EINVAL);
-            }
             /* Schwarzschild ISCO */
             freqFunc = fSchwarzISCO;
             break;
 
         /* IMR models */
         case EOBNRv2HM:
-            /* Check that spins are zero */
-            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
-            {
-                XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
-                XLAL_ERROR(XLAL_EINVAL);
-            }
             freqFunc = fEOBNRv2HMRD;
             break;
 
         case EOBNRv2:
-            /* Check that spins are zero */
-            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
-            {
-                XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
-                XLAL_ERROR(XLAL_EINVAL);
-            }
             freqFunc = fEOBNRv2RD;
             break;
 
         case SEOBNRv1:
-            /* Check that the transverse spins are zero */
-            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-            {
-                XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
-                XLAL_ERROR(XLAL_EINVAL);
-            }
             freqFunc = fSEOBNRv1RD;
             break;
 
         case SEOBNRv2:
         case SEOBNRv2_opt:
-            /* Check that the transverse spins are zero */
-            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-            {
-                XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
-                XLAL_ERROR(XLAL_EINVAL);
-            }
             freqFunc = fSEOBNRv2RD;
             break;
 
         case SEOBNRv4:
         case SEOBNRv4_opt:
-            /* Check that the transverse spins are zero */
-            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-            {
-                XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
-                XLAL_ERROR(XLAL_EINVAL);
-            }
             freqFunc = fSEOBNRv4RD;
             break;
 
         case IMRPhenomA:
-            /* Check that spins are zero */
-            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
-            {
-                XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
-                XLAL_ERROR(XLAL_EINVAL);
-            }
             freqFunc = fIMRPhenomAFinal;
             break;
 
         case IMRPhenomB:
-            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-            {
-                XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
-                XLAL_ERROR(XLAL_EINVAL);
-            }
             freqFunc = fIMRPhenomBFinal;
             break;
 
         case IMRPhenomC:
-            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-            {
-                XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
-                XLAL_ERROR(XLAL_EINVAL);
-            }
             freqFunc = fIMRPhenomCFinal;
             break;
 
@@ -5506,7 +5533,7 @@ double XLALSimInspiralGetFinalFreq(
         case SpinTaylorT2:
         case SpinTaylorT4:
         case SpinTaylorT1:
-	case PhenSpinTaylor:
+        case PhenSpinTaylor:
         /* Spinning with ringdown attachment */
         case PhenSpinTaylorRD:
         /* Spinning inspiral-only frequency domain */
@@ -5517,7 +5544,6 @@ double XLALSimInspiralGetFinalFreq(
             XLALPrintError("I don't know how to calculate final freq. for this approximant, sorry!\n");
             XLAL_ERROR(XLAL_EINVAL);
             break;
-
 
         default:
             XLALPrintError("Unsupported approximant\n");

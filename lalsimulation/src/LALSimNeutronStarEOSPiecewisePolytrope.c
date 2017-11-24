@@ -351,9 +351,13 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSPolytrope(double Gamma,
 
     eos->datatype = LALSIM_NEUTRON_STAR_EOS_DATA_TYPE_PIECEWISE_POLYTROPE;
     eos->data.piecewisePolytrope = data;
-    snprintf(eos->name, sizeof(eos->name),
+    if(snprintf(eos->name, sizeof(eos->name),
 	"Gamma=%g Polytrope (p=%g Pa @ rho=%g kg/m^3)", Gamma,
-	reference_pressure_si, reference_density_si);
+	reference_pressure_si, reference_density_si) >= (signed) sizeof(eos->name)) {
+        LALFree(eos);
+        LALFree(data);
+        XLAL_ERROR_NULL(XLAL_EINVAL, "eos name overflow");
+    }
 
     /* setup function pointers */
     eos->free = eos_free_piecewise_polytrope;
@@ -478,8 +482,9 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(double
 
     eos->datatype = LALSIM_NEUTRON_STAR_EOS_DATA_TYPE_PIECEWISE_POLYTROPE;
     eos->data.piecewisePolytrope = data;
-    snprintf(eos->name, sizeof(eos->name), "4-Piece Polytrope (p1=10^%g Pa,"
-	"Gamma1=%g,Gamma2=%g,Gamma3=%g)", logp1_si, gamma1, gamma2, gamma3);
+    if(snprintf(eos->name, sizeof(eos->name), "4-Piece Polytrope (p1=10^%g Pa,"
+	"Gamma1=%g,Gamma2=%g,Gamma3=%g)", logp1_si, gamma1, gamma2, gamma3) >= (int) sizeof(eos->name))
+        XLAL_ERROR_NULL(XLAL_EINVAL, "eos name overflow");
 
     /* setup function pointers */
     eos->free = eos_free_piecewise_polytrope;

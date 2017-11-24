@@ -308,6 +308,7 @@ typedef struct {
   BOOLEAN transient_useFReg;  	/**< FALSE: use 'standard' e^F for marginalization, TRUE: use e^FReg = (1/D)*e^F */
 
   CHAR *outputTiming;		/**< output timing measurements and parameters into this file [append!]*/
+  CHAR *outputFstatTiming;	/**< output F-statistic timing measurements and parameters into this file [append!]*/
 
   int FstatMethod;		//!< select which method/algorithm to use to compute the F-statistic
 
@@ -793,6 +794,26 @@ int main(int argc,char *argv[])
 
     } /* if timing output requested */
 
+  /* if requested: output F-statistic timings into F-statistic-timing-file */
+  if ( uvar.outputFstatTiming )
+    {
+
+      FILE *fp;
+      if ( (fp = fopen( uvar.outputFstatTiming, "rb" )) != NULL )
+        {
+          fclose(fp);
+          XLAL_CHECK ( (fp = fopen( uvar.outputFstatTiming, "ab" ) ), XLAL_ESYS, "Failed to open existing timing-file '%s' for appending\n", uvar.outputFstatTiming );
+          XLAL_CHECK_MAIN ( XLALAppendFstatTiming2File ( GV.Fstat_in, fp, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+        }
+      else
+        {
+          XLAL_CHECK ( (fp = fopen( uvar.outputFstatTiming, "wb" ) ), XLAL_ESYS, "Failed to open new timing-file '%s' for writing\n", uvar.outputFstatTiming );
+          XLAL_CHECK_MAIN ( XLALAppendFstatTiming2File ( GV.Fstat_in, fp, 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+        }
+      fclose(fp);
+
+    } /* if timing output requested */
+
   /* ----- if using toplist: sort and write it out to file now ----- */
   if ( fpFstat && GV.FstatToplist )
     {
@@ -1111,6 +1132,7 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember(transient_useFReg,   	 BOOLEAN, 0,  DEVELOPER, "FALSE: use 'standard' e^F for marginalization, if TRUE: use e^FReg = (1/D)*e^F (BAD)");
 
   XLALRegisterUvarMember(outputTiming,         STRING, 0,  DEVELOPER, "Append timing measurements and parameters into this file");
+  XLALRegisterUvarMember(outputFstatTiming,    STRING, 0,  DEVELOPER, "Append F-statistic timing measurements and parameters into this file");
 
   XLALRegisterUvarMember(resampFFTPowerOf2,  BOOLEAN, 0,  DEVELOPER, "For Resampling methods: enforce FFT length to be a power of two (by rounding up)" );
 
@@ -1401,6 +1423,7 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   optionalArgs.assumeSqrtSX = assumeSqrtSX;
   optionalArgs.FstatMethod = uvar->FstatMethod;
   optionalArgs.resampFFTPowerOf2 = uvar->resampFFTPowerOf2;
+  optionalArgs.collectTiming = XLALUserVarWasSet ( &uvar->outputFstatTiming );
 
   XLAL_CHECK ( (cfg->Fstat_in = XLALCreateFstatInput( catalog, fCoverMin, fCoverMax, cfg->dFreq, cfg->ephemeris, &optionalArgs )) != NULL, XLAL_EFUNC );
   XLALDestroySFTCatalog(catalog);

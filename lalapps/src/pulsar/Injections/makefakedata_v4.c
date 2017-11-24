@@ -752,8 +752,14 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       {
       case 3:
 	cfg->spindown->data[2] = uvar->f3dot;
+#if __GNUC__ >= 7
+	__attribute__ ((fallthrough));
+#endif
       case 2:
 	cfg->spindown->data[1] = uvar->f2dot;
+#if __GNUC__ >= 7
+	__attribute__ ((fallthrough));
+#endif
       case 1:
 	cfg->spindown->data[0] = uvar->f1dot;
 	break;

@@ -336,8 +336,8 @@ static int load_data_sub(
   // Load H5 data sets for spline coefficients and empirical interpolation matrix
 
   int ret = XLAL_SUCCESS;
-  size_t name_length = 18;
-  if (i_mode > 9) name_length = 19;
+  size_t name_length = 22;
+  if (i_mode > 9) name_length = 23;
   char *dataset_name = malloc(name_length);
 
   snprintf(dataset_name, name_length, "NRSurrogate_cre_%d", i_mode);
@@ -352,6 +352,7 @@ static int load_data_sub(
   snprintf(dataset_name, name_length, "NRSurrogate_EIi_%d.dat", i_mode);
   ret |= ReadHDF5RealMatrixDataset(file, dataset_name, &EI_im);
 
+  free(dataset_name);
   return(ret);
 }
 

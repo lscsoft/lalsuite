@@ -571,7 +571,7 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
       REAL8 zero=0.0;
       dataPtr = runState->data;
       while (dataPtr != NULL){
-        char CA_A[10]="";
+        char CA_A[320];
         sprintf(CA_A,"%s_%s","calamp",dataPtr->name);
         LALInferenceRegisterUniformVariableREAL8(runState, currentParams, CA_A, zero, camp_min_A, camp_max_A, LALINFERENCE_PARAM_LINEAR);
         dataPtr = dataPtr->next;
@@ -594,7 +594,7 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
       dataPtr = runState->data;
       while (dataPtr != NULL)
       {
-        char CP_A[10]="";
+        char CP_A[320];
         sprintf(CP_A,"%s_%s","calpha",dataPtr->name);
         LALInferenceRegisterUniformVariableREAL8(runState, currentParams, CP_A, zero, cpha_min_A, cpha_max_A, LALINFERENCE_PARAM_LINEAR);
         dataPtr = dataPtr->next;

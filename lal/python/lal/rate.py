@@ -2203,7 +2203,8 @@ class BinnedLnPDF(BinnedDensity):
 		return InterpBinnedArray(self)
 
 	def at_centres(self):
-		return numpy.log(super(BinnedLnPDF, self).at_centres()) - self.norm
+		with numpy.errstate(divide = "ignore", invalid = "ignore"):
+			return numpy.log(super(BinnedLnPDF, self).at_centres()) - self.norm
 
 	def marginalize(self, dim):
 		new = super(BinnedLnPDF, self).marginalize(dim)
@@ -2246,6 +2247,11 @@ class BinnedLnPDF(BinnedDensity):
 			self.norm += math.log1p(math.exp(other.norm - self.norm))
 		else:
 			self.norm = other.norm + math.log1p(math.exp(self.norm - other.norm))
+		return self
+
+	def __add__(self, other):
+		self = super(BinnedLnPDF, self).__add__(other)
+		self.normalize()
 		return self
 
 	def copy(self):

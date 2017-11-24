@@ -3534,6 +3534,7 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
 	string = XLALCalloc(sizeof(char), len+1); /* One extra character: '\0' */
 	if(len!=fread(string, sizeof(char), len, stream)) XLAL_ERROR_NULL(XLAL_EIO);
 	LALInferenceAddVariable(vars,name,&string,type,vary);
+	break;
       }
     case LALINFERENCE_MCMCrunphase_ptr_t:
       {

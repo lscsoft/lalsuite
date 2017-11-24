@@ -119,6 +119,7 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
         else
           error( "error parsing option %s with argument %s\n",
               long_options[option_index].name, LALoptarg );
+		  break;
       case 'a': /* gps-start-time */
         localparams.startTime.gpsSeconds = atol( LALoptarg );
         break;
@@ -302,10 +303,13 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
       case 'V': /* version */
         XLALOutputVersionString(stderr, 0);
         exit( 0 );
+		break;
       case '?':
         error( "unknown error while parsing options\n" );
+		break;
       default:
         error( "unknown error while parsing options\n" );
+		break;
     }
   }
 

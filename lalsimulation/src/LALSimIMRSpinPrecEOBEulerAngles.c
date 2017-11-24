@@ -85,11 +85,11 @@ static int EulerAnglesI2P(REAL8Vector *Alpha, /**<< output: alpha Euler angle */
             }
         }
 
-        if( i>0 && Alpha->data[i] - Alpha->data[i-1] > 5. ) {
+        while( i>0 && Alpha->data[i] - Alpha->data[i-1] > 5. ) {
             *phaseCounterA = *phaseCounterA - 1;
             Alpha->data[i] -= LAL_TWOPI;
         }
-        else if ( i && Alpha->data[i] - Alpha->data[i-1] < -5. ) {
+        while( i && Alpha->data[i] - Alpha->data[i-1] < -5. ) {
             *phaseCounterA = *phaseCounterA + 1;
             Alpha->data[i] += LAL_TWOPI;
         }

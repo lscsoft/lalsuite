@@ -610,7 +610,7 @@ void PrintCEtoFile(REAL8* Acoeffs,REAL8* Pcoeffs,LALInferenceIFOData* IFOdata, P
     char *outfile=ppt_order->value;
     
     FILE *calibout;
-    char caliboutname[100];
+    char caliboutname[2048];
     sprintf(caliboutname,"%s_CE_%s.dat",outfile, IFOdata->name);
     calibout=fopen(caliboutname,"w");
     

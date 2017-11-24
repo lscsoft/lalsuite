@@ -353,8 +353,8 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
 
   /* Filters file checksum and cvs info (first 2 lines in filters file) */
   {
-    char buffer[1024];
-    snprintf(buffer, sizeof buffer, "Filters file checksum and header: %s\n%s",
+    char buffer[1280];
+    snprintf(buffer, sizeof(buffer), "Filters file checksum and header: %s\n%s",
              InputData.filter_chksum, InputData.filter_vc_info);
     XLALFrameAddFrHistory(frame, __FILE__, buffer);
   }

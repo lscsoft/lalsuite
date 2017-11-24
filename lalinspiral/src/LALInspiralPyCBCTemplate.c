@@ -51,16 +51,34 @@ void XLALInspiralPyCBCTemplatePhase (COMPLEX8Vector* htilde, REAL4Vector* sincos
             case -1:
             case 7:
                 phasing = pfa7 * v;
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
             case 6:
                 phasing = (phasing + pfa6 + pfl6 * (logv + log4) ) * v;
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
             case 5:
                 phasing = (phasing + pfa5 + pfl5 * (logv - logv0) ) * v;
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
             case 4:
                 phasing = (phasing + pfa4) * v;
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
             case 3:
                 phasing = (phasing + pfa3) * v;
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
             case 2:
                 phasing = (phasing + pfa2) * v * v;
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
             case 0:
                 phasing += 1.;
                 break;

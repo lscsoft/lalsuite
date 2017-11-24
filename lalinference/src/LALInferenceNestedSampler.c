@@ -888,8 +888,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   s=initNSintegralState(Nruns,Nlive);
 
   /* Check for an interrupted run */
-  char resumefilename[FILENAME_MAX];
-  sprintf(resumefilename,"%s_resume",outfile);
+  char resumefilename[FILENAME_MAX+10];
+  snprintf(resumefilename,sizeof(resumefilename),"%s_resume",outfile);
   int retcode=1;
   if(LALInferenceGetProcParamVal(runState->commandLine,"--resume")){
 #ifdef HAVE_HDF5
@@ -986,8 +986,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   if(!HDFOUTPUT)
   {
       FILE *lout=NULL;
-      char param_list[FILENAME_MAX];
-      sprintf(param_list,"%s_params.txt",outfile);
+      char param_list[FILENAME_MAX+16];
+      snprintf(param_list,sizeof(param_list),"%s_params.txt",outfile);
       lout=fopen(param_list,"w");
       LALInferenceFprintParameterHeaders(lout,runState->livePoints[0]);
       fclose(lout);
@@ -1142,7 +1142,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		}
         fclose(fpout);
     
-        char bayesfile[FILENAME_MAX];
+        char bayesfile[FILENAME_MAX+10];
         sprintf(bayesfile,"%s_B.txt",outfile);
         fpout=fopen(bayesfile,"w");
         fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
@@ -1157,11 +1157,11 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       
       LALH5File *h5file=XLALH5FileOpen(outfile, "w");
       // Create group heirarchy 
-      char runID[256]="";
+      char runID[2048];
       if((ppt=LALInferenceGetProcParamVal(runState->commandLine,"--runid")))
-        snprintf(runID,255,"%s_%s","lalinference_nest",ppt->value);
+        snprintf(runID,sizeof(runID),"%s_%s","lalinference_nest",ppt->value);
       else
-        snprintf(runID,255,"lalinference_nest");
+        snprintf(runID,sizeof(runID),"lalinference_nest");
 
       LALH5File *groupPtr = LALInferenceH5CreateGroupStructure(h5file, "lalinference", runID);
       /* Create run identifier group */
@@ -1204,8 +1204,8 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   /* Single threaded here */
   LALInferenceThreadState *threadState = runState->threads[0];
   ProcessParamsTable *ppt=NULL;
-  char chainfilename[128]="";
-  char acf_file_name[128]="";
+  char chainfilename[2048]="";
+  char acf_file_name[2048]="";
   FILE *chainfile=NULL;
   FILE *acffile=NULL;
   UINT4 i,j;
@@ -1534,7 +1534,7 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     LALInferenceIFOData *data=runState->data;
     REAL8 tmp;
     REAL8 Target=0.3;
-    char tmpName[32];
+    char tmpName[320];
     REAL8 logLold=*(REAL8 *)LALInferenceGetVariable(threadState->currentParams,"logL");
     memset(&oldParams,0,sizeof(oldParams));
     LALInferenceCopyVariables(threadState->currentParams,&oldParams);

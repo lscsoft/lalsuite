@@ -181,7 +181,7 @@ int main( int argc, char **argv ){
     // add "NAME" attribute
     PulsarAddParam( pulparams[numpulsars], "NAME", psrname, PULSARTYPE_string_t );
 
-    sprintf(outputFilename, "%s/SplInter_%s_%s",inputParams.outputdir,psrname,
+    snprintf(outputFilename, sizeof(outputFilename), "%s/SplInter_%s_%s",inputParams.outputdir,psrname,
       splParams.detector.frDetector.prefix);
     outputfilenames = XLALAppendString2Vector(outputfilenames, outputFilename);
 
@@ -230,14 +230,14 @@ int main( int argc, char **argv ){
   }
 
   /* load all types of ephemeris files, as uses little RAM/computational effort, and different parfiles may use a combination */
-  sprintf(earthfile200, "%s/earth00-19-DE200.dat.gz",inputParams.ephemdir);
-  sprintf(sunfile200, "%s/sun00-19-DE200.dat.gz",inputParams.ephemdir);
-  sprintf(earthfile405, "%s/earth00-19-DE405.dat.gz",inputParams.ephemdir);
-  sprintf(sunfile405, "%s/sun00-19-DE405.dat.gz",inputParams.ephemdir);
-  sprintf(earthfile414, "%s/earth00-19-DE414.dat.gz",inputParams.ephemdir);
-  sprintf(sunfile414, "%s/sun00-19-DE414.dat.gz",inputParams.ephemdir);
-  sprintf(earthfile421, "%s/earth00-19-DE421.dat.gz",inputParams.ephemdir);
-  sprintf(sunfile421, "%s/sun00-19-DE421.dat.gz",inputParams.ephemdir);
+  snprintf(earthfile200, sizeof(earthfile200), "%s/earth00-19-DE200.dat.gz",inputParams.ephemdir);
+  snprintf(sunfile200, sizeof(sunfile200), "%s/sun00-19-DE200.dat.gz",inputParams.ephemdir);
+  snprintf(earthfile405, sizeof(earthfile405), "%s/earth00-19-DE405.dat.gz",inputParams.ephemdir);
+  snprintf(sunfile405, sizeof(sunfile405), "%s/sun00-19-DE405.dat.gz",inputParams.ephemdir);
+  snprintf(earthfile414, sizeof(earthfile414), "%s/earth00-19-DE414.dat.gz",inputParams.ephemdir);
+  snprintf(sunfile414, sizeof(sunfile414), "%s/sun00-19-DE414.dat.gz",inputParams.ephemdir);
+  snprintf(earthfile421, sizeof(earthfile421), "%s/earth00-19-DE421.dat.gz",inputParams.ephemdir);
+  snprintf(sunfile421, sizeof(sunfile421), "%s/sun00-19-DE421.dat.gz",inputParams.ephemdir);
 
   edat200 = XLALMalloc(sizeof(*edat200));
   edat405 = XLALMalloc(sizeof(*edat405));
@@ -245,8 +245,8 @@ int main( int argc, char **argv ){
   edat421 = XLALMalloc(sizeof(*edat421));
 
   /* Load time correction files. */
-  sprintf(timefileTDB,"%s/tdb_2000-2019.dat.gz",inputParams.ephemdir);
-  sprintf(timefileTE405, "%s/te405_2000-2019.dat.gz",inputParams.ephemdir);
+  snprintf(timefileTDB, sizeof(timefileTDB), "%s/tdb_2000-2019.dat.gz",inputParams.ephemdir);
+  snprintf(timefileTE405, sizeof(timefileTE405), "%s/te405_2000-2019.dat.gz",inputParams.ephemdir);
 
   /*  read in ephemeris files */
   edat200 = XLALInitBarycenter(earthfile200, sunfile200);
@@ -390,8 +390,8 @@ int main( int argc, char **argv ){
     if ( sftlalcache == NULL ){
       CHAR cacheFile[FILENAME_MAXLEN], cacheFileCheck[FILENAME_MAXLEN];
       if(inputParams.cacheDir){
-        sprintf(cacheFile,"list:%s/Segment_%d-%d.sftcache",inputParams.filePattern,(INT4)ROUND(startt),(INT4)ROUND(endt));
-        sprintf(cacheFileCheck,"%s/Segment_%d-%d.sftcache",inputParams.filePattern,(INT4)ROUND(startt),(INT4)ROUND(endt));
+        snprintf(cacheFile, sizeof(cacheFile), "list:%s/Segment_%d-%d.sftcache",inputParams.filePattern,(INT4)ROUND(startt),(INT4)ROUND(endt));
+        snprintf(cacheFileCheck, sizeof(cacheFileCheck), "%s/Segment_%d-%d.sftcache",inputParams.filePattern,(INT4)ROUND(startt),(INT4)ROUND(endt));
       }
       else{
         sprintf(cacheFile,"%s",inputParams.filePattern);
@@ -1378,8 +1378,10 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
         break;
       case '?':
         fprintf(stderr, "unknown error while parsing options\n" );
+		break;
       default:
         fprintf(stderr, "unknown error while parsing options\n" );
+		break;
     }
   }
 }

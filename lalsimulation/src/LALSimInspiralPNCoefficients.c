@@ -692,15 +692,30 @@ XLALSimInspiralPNPhasing_F2(
         case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
         case LAL_SIM_INSPIRAL_SPIN_ORDER_35PN:
             pfa->v[7] += (-8980424995.L/762048.L + 6586595.L*eta/756.L - 305.L*eta*eta/36.L)*SL - (170978035.L/48384.L - 2876425.L*eta/672.L - 4735.L*eta*eta/144.L) * dSigmaL;
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
             pfa->v[6] += LAL_PI * (3760.L*SL + 1490.L*dSigmaL)/3.L + pn_ss3;
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
             pfa->v[5] += -1.L * pn_gamma;
             pfa->vlogv[5] += -3.L * pn_gamma;
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
             pfa->v[4] += -10.L * pn_sigma;
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case LAL_SIM_INSPIRAL_SPIN_ORDER_15PN:
             pfa->v[3] += 188.L*SL/3.L + 25.L*dSigmaL;
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case LAL_SIM_INSPIRAL_SPIN_ORDER_1PN:
         case LAL_SIM_INSPIRAL_SPIN_ORDER_05PN:
         case LAL_SIM_INSPIRAL_SPIN_ORDER_0PN:

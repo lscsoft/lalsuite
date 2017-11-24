@@ -174,19 +174,6 @@ void MetaNoiseFunc(LALStatus *status, REAL8 *psd, REAL8 f, struct fvec *interp, 
 	}
 }
 
-void
-LALInferenceLALFindChirpInjectSignals (
-                                       LALStatus                  *status,
-                                       REAL4TimeSeries            *chan,
-                                       SimInspiralTable           *events,
-                                       COMPLEX8FrequencySeries    *resp,
-                                       LALDetector                *detector
-                                       );
-static int FindTimeSeriesStartAndEnd (
-                                      REAL4Vector *signalvec,
-                                      UINT4 *start,
-                                      UINT4 *end
-                                      );
 
 static const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
@@ -447,7 +434,7 @@ static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, Pro
 
   if (LALInferenceGetProcParamVal(commandLine, "--data-dump")) {
     //pptdatadump=LALInferenceGetProcParamVal(commandLine,"--data-dump");
-    const UINT4 nameLength=FILENAME_MAX;
+    const UINT4 nameLength=FILENAME_MAX+50;
     char filename[nameLength];
     FILE *out;
 
@@ -455,7 +442,8 @@ static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, Pro
 
       ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
       if(ppt) {
-        snprintf(filename, nameLength, "%s%s-timeDataWithInjection.dat", ppt->value, IFOdata[i].name);
+        if((int)nameLength<=snprintf(filename, nameLength, "%s%s-timeDataWithInjection.dat", ppt->value, IFOdata[i].name))
+            XLAL_ERROR_VOID(XLAL_EINVAL, "Output filename too long!");
       }
       //else if(strcmp(pptdatadump->value,"")) {
       //  snprintf(filename, nameLength, "%s/%s-timeDataWithInjection.dat", pptdatadump->value, IFOdata[i].name);
@@ -478,7 +466,7 @@ static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, Pro
 
       ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
       if(ppt) {
-        snprintf(filename, nameLength, "%s%s-freqDataWithInjection.dat", ppt->value, IFOdata[i].name);
+        snprintf(filename, nameLength, "%s%s-freqDataWithInjection.dat", ppt->value, IFOdata[i].name)        ;
       }
       //else if(strcmp(pptdatadump->value,"")) {
       //  snprintf(filename, nameLength, "%s/%s-freqDataWithInjection.dat", pptdatadump->value, IFOdata[i].name);
@@ -1179,7 +1167,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
       for(j=0;j<IFOdata[i].oneSidedNoisePowerSpectrum->data->length;j++)
         IFOdata[i].noiseASD->data->data[j]=sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]);
         /* Save to file the PSDs so that they can be used in the PP pages */
-        const UINT4 nameLength=FILENAME_MAX;
+        const UINT4 nameLength=FILENAME_MAX+100;
         char filename[nameLength];
         FILE *out;
         ppt=LALInferenceGetProcParamVal(commandLine,"--dont-dump-extras");
@@ -1399,7 +1387,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
   REAL8 InjSampleRate=1.0/MindeltaT;
 	REAL4TimeSeries *injectionBuffer=NULL;
   REAL8 padding=0.4; //default, set in LALInferenceReadData()
-  char SNRpath[FILENAME_MAX]="";
+  char SNRpath[FILENAME_MAX+50]="";
 
 	while(thisData){
           minFlow   = minFlow>thisData->fLow ? thisData->fLow : minFlow;
@@ -1700,7 +1688,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
     /* Actually inject the waveform */
     for(j=0;j<inj8Wave->data->length;j++) thisData->timeData->data->data[j]+=inj8Wave->data->data[j];
       fprintf(stdout,"Injected SNR in detector %s = %g\n",thisData->name,thisData->SNR);
-      char filename[256];
+      char filename[320];
       sprintf(filename,"%s_timeInjection.dat",thisData->name);
       FILE* file=fopen(filename, "w");
       for(j=0;j<inj8Wave->data->length;j++){
@@ -1755,479 +1743,6 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
     return;
 }
 
-//temporary? replacement function for FindChirpInjectSignals in order to accept any detector.site and not only the ones in lalCachedDetectors.
-void
-LALInferenceLALFindChirpInjectSignals (
-    LALStatus                  *status,
-    REAL4TimeSeries            *chan,
-    SimInspiralTable           *events,
-    COMPLEX8FrequencySeries    *resp,
-    LALDetector                *LALInference_detector
-    )
-
-{
-  UINT4                 k;
-  DetectorResponse      detector;
-  SimInspiralTable     *thisEvent = NULL;
-  PPNParamStruc         ppnParams;
-  CoherentGW            waveform;
-  INT8                  waveformStartTime;
-  REAL4TimeSeries       signalvec;
-  COMPLEX8Vector       *unity = NULL;
-  CHAR                  warnMsg[512];
-  CHAR                  ifo[LIGOMETA_IFO_MAX];
-  REAL8                 timeDelay;
-  UINT4                  i;
-  REAL8TimeSeries       *hplus=NULL;
-  REAL8TimeSeries       *hcross=NULL;
-  REAL8TimeSeries       *signalvecREAL8=NULL;
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR( status );
-
-  ASSERT( chan, status,
-      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( chan->data, status,
-      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( chan->data->data, status,
-      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-
-  ASSERT( events, status,
-      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-
-  ASSERT( resp, status,
-      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( resp->data, status,
-      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( resp->data->data, status,
-      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-
-
-  /*
-   *
-   * set up structures and parameters needed
-   *
-   */
-
-
-  /* fixed waveform injection parameters */
-  memset( &ppnParams, 0, sizeof(PPNParamStruc) );
-  ppnParams.deltaT   = chan->deltaT;
-  ppnParams.lengthIn = 0;
-  ppnParams.ppn      = NULL;
-
-
-  /*
-   *
-   * compute the transfer function from the given response function
-   *
-   */
-
-
-  /* allocate memory and copy the parameters describing the freq series */
-  memset( &detector, 0, sizeof( DetectorResponse ) );
-  detector.transfer = (COMPLEX8FrequencySeries *)
-    LALCalloc( 1, sizeof(COMPLEX8FrequencySeries) );
-  if ( ! detector.transfer )
-  {
-    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-  }
-  memcpy( &(detector.transfer->epoch), &(resp->epoch),
-      sizeof(LIGOTimeGPS) );
-  detector.transfer->f0 = resp->f0;
-  detector.transfer->deltaF = resp->deltaF;
-
-  detector.site = (LALDetector *) LALMalloc( sizeof(LALDetector) );
-  /* set the detector site */
-
-  detector.site = LALInference_detector;
-  strcpy(ifo, LALInference_detector->frDetector.prefix);
-  printf("computing waveform for %s\n",LALInference_detector->frDetector.name);
-
-  /* set up units for the transfer function */
-  if (XLALUnitDivide( &(detector.transfer->sampleUnits),
-                      &lalADCCountUnit, &lalStrainUnit ) == NULL) {
-    ABORTXLAL(status);
-  }
-
-  /* invert the response function to get the transfer function */
-  LALCCreateVector( status->statusPtr, &( detector.transfer->data ),
-      resp->data->length );
-  CHECKSTATUSPTR( status );
-
-  LALCCreateVector( status->statusPtr, &unity, resp->data->length );
-  CHECKSTATUSPTR( status );
-  for ( k = 0; k < resp->data->length; ++k )
-  {
-    unity->data[k] = 1.0;
-  }
-
-  LALCCVectorDivide( status->statusPtr, detector.transfer->data, unity,
-      resp->data );
-  CHECKSTATUSPTR( status );
-
-  LALCDestroyVector( status->statusPtr, &unity );
-  CHECKSTATUSPTR( status );
-
-
-  /*
-   *
-   * loop over the signals and inject them into the time series
-   *
-   */
-
-
-  for ( thisEvent = events; thisEvent; thisEvent = thisEvent->next )
-  {
-    /*
-     *
-     * generate waveform and inject it into the data
-     *
-     */
-
-
-    /* clear the waveform structure */
-    memset( &waveform, 0, sizeof(CoherentGW) );
-
-    LALGenerateInspiral(status->statusPtr, &waveform, thisEvent, &ppnParams );
-    CHECKSTATUSPTR( status );
-
-    LALInfo( status, ppnParams.termDescription );
-
-    if ( strstr( thisEvent->waveform, "KludgeIMR") ||
-         strstr( thisEvent->waveform, "KludgeRingOnly") )
-     {
-       CoherentGW *wfm;
-       SimRingdownTable *ringEvent;
-       int injectSignalType = LALRINGDOWN_IMR_INJECT;
-
-
-       ringEvent = (SimRingdownTable *)
-         LALCalloc( 1, sizeof(SimRingdownTable) );
-       wfm = XLALGenerateInspRing( &waveform, thisEvent, ringEvent,
-           injectSignalType);
-       LALFree(ringEvent);
-
-       if ( !wfm )
-       {
-         LALInfo( status, "Unable to generate merger/ringdown, "
-             "injecting inspiral only");
-         ABORT( status, FINDCHIRPH_EIMRW, FINDCHIRPH_MSGEIMRW );
-       }
-       waveform = *wfm;
-     }
-
-
-    if ( thisEvent->geocent_end_time.gpsSeconds )
-    {
-      /* get the gps start time of the signal to inject */
-      waveformStartTime = XLALGPSToINT8NS( &(thisEvent->geocent_end_time) );
-      waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
-    }
-    else
-    {
-      LALInfo( status, "Waveform start time is zero: injecting waveform "
-          "into center of data segment" );
-
-      /* center the waveform in the data segment */
-      waveformStartTime = XLALGPSToINT8NS( &(chan->epoch) );
-
-      waveformStartTime += (INT8) ( 1000000000.0 *
-          ((REAL8) (chan->data->length - ppnParams.length) / 2.0) * chan->deltaT
-          );
-    }
-
-    snprintf( warnMsg, XLAL_NUM_ELEM(warnMsg),
-        "Injected waveform timing:\n"
-        "thisEvent->geocent_end_time.gpsSeconds = %d\n"
-        "thisEvent->geocent_end_time.gpsNanoSeconds = %d\n"
-        "ppnParams.tc = %e\n"
-        "waveformStartTime = %" LAL_INT8_FORMAT "\n",
-        thisEvent->geocent_end_time.gpsSeconds,
-        thisEvent->geocent_end_time.gpsNanoSeconds,
-        ppnParams.tc,
-        waveformStartTime );
-    LALInfo( status, warnMsg );
-
-      /* clear the signal structure */
-      memset( &signalvec, 0, sizeof(REAL4TimeSeries) );
-
-      /* set the start time of the signal vector to the appropriate start time of the injection */
-      if ( detector.site )
-      {
-        timeDelay = XLALTimeDelayFromEarthCenter( detector.site->location, thisEvent->longitude,
-          thisEvent->latitude, &(thisEvent->geocent_end_time) );
-        if ( XLAL_IS_REAL8_FAIL_NAN( timeDelay ) )
-        {
-          ABORTXLAL( status );
-        }
-      }
-      else
-      {
-        timeDelay = 0.0;
-      }
-      /* Give a little more breathing space to aid band-passing */
-      XLALGPSSetREAL8( &(signalvec.epoch), (waveformStartTime * 1.0e-9) - 0.25 + timeDelay );
-      /* set the parameters for the signal time series */
-      signalvec.deltaT = chan->deltaT;
-      if ( ( signalvec.f0 = chan->f0 ) != 0 )
-      {
-        ABORT( status, FINDCHIRPH_EHETR, FINDCHIRPH_MSGEHETR );
-      }
-      signalvec.sampleUnits = lalADCCountUnit;
-
-      if(waveform.h == NULL){
-      /* set the start times for injection */
-      XLALINT8NSToGPS( &(waveform.a->epoch), waveformStartTime );
-      /* put a rug on a polished floor? */
-      waveform.f->epoch = waveform.a->epoch;
-      waveform.phi->epoch = waveform.a->epoch;
-      /* you might as well set a man trap */
-      if ( waveform.shift )
-      {
-        waveform.shift->epoch = waveform.a->epoch;
-      }
-      /* and to think he'd just come from the hospital */
-      }else{
-        /* set the start times for injection */
-        XLALINT8NSToGPS( &(waveform.h->epoch), waveformStartTime );
-      }
-      /* simulate the detectors response to the inspiral */
-      LALSCreateVector( status->statusPtr, &(signalvec.data), chan->data->length );
-      CHECKSTATUSPTR( status );
-
-      if(waveform.h == NULL){ //LALSimulateCoherentGW only for waveform generators filling CoherentGW.a and CoherentGW.phi
-        LALSimulateCoherentGW( status->statusPtr, &signalvec, &waveform, &detector );
-      }else{
-      hplus=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries("hplus",
-                                                                &(waveform.h->epoch),
-                                                                0.0,
-                                                                waveform.h->deltaT,
-                                                                &lalDimensionlessUnit,
-                                                                waveform.h->data->length);
-
-      hcross=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries("hcross",
-                                                                  &(waveform.h->epoch),
-                                                                  0.0,
-                                                                  waveform.h->deltaT,
-                                                                  &lalDimensionlessUnit,
-                                                                  waveform.h->data->length);
-      for( i = 0; i < waveform.h->data->length; i++)
-      {
-        hplus->data->data[i] = waveform.h->data->data[2*i];
-        hcross->data->data[i] = waveform.h->data->data[(2*i)+1];
-      }
-
-      signalvecREAL8=XLALSimDetectorStrainREAL8TimeSeries(hplus,
-                                                          hcross,
-                                                          thisEvent->longitude,
-                                                          thisEvent->latitude,
-                                                          thisEvent->polarization,
-                                                          LALInference_detector);
-
-      INT8 offset = ( signalvecREAL8->epoch.gpsSeconds - signalvec.epoch.gpsSeconds ) / signalvec.deltaT;
-      offset += ( signalvecREAL8->epoch.gpsNanoSeconds - signalvec.epoch.gpsNanoSeconds ) * 1.0e-9 / signalvec.deltaT;
-
-
-      int Nnans=0;
-      for (i=0; i<signalvec.data->length; i++){
-        if(i<offset || i>=signalvecREAL8->data->length+offset || isnan(signalvecREAL8->data->data[i-offset])) signalvec.data->data[i]=0.0; //The isnan() condition should not be necessary. To be investigated.
-	else signalvec.data->data[i]=(REAL4) signalvecREAL8->data->data[i-offset];
-	if((i>=offset)&&(i<signalvecREAL8->data->length+offset) && isnan(signalvecREAL8->data->data[i-offset])) Nnans++;
-      }
-      if(Nnans>0) fprintf(stderr,"Trimmed %i NaNs from the injection waveform!\n",Nnans);
-      }
-      CHECKSTATUSPTR( status );
-
-      /* Taper the signal */
-      {
-
-          if ( ! strcmp( "TAPER_START", thisEvent->taper ) )
-          {
-              XLALSimInspiralREAL4WaveTaper( signalvec.data, LAL_SIM_INSPIRAL_TAPER_START );
-          }
-          else if (  ! strcmp( "TAPER_END", thisEvent->taper ) )
-          {
-              XLALSimInspiralREAL4WaveTaper( signalvec.data, LAL_SIM_INSPIRAL_TAPER_END );
-          }
-          else if (  ! strcmp( "TAPER_STARTEND", thisEvent->taper ) )
-          {
-              XLALSimInspiralREAL4WaveTaper( signalvec.data, LAL_SIM_INSPIRAL_TAPER_STARTEND );
-          }
-          else if ( strcmp( "TAPER_NONE", thisEvent->taper ) )
-          {
-              XLALPrintError( "Invalid injection tapering option specified: %s\n",
-                 thisEvent->taper );
-              ABORT( status, LAL_BADPARM_ERR, LAL_BADPARM_MSG );
-          }
-      }
-
-      /* Band pass the signal */
-      if ( thisEvent->bandpass )
-      {
-          UINT4 safeToBandPass = 0;
-          UINT4 start=0, end=0;
-          REAL4Vector *bandpassVec = NULL;
-
-          safeToBandPass = FindTimeSeriesStartAndEnd (
-                  signalvec.data, &start, &end );
-
-          if ( safeToBandPass )
-          {
-              /* Check if we can grab some padding at the extremeties.
-               * This will make the bandpassing better
-               */
-
-              if (((INT4)start - (int)(0.25/chan->deltaT)) > 0 )
-                    start -= (int)(0.25/chan->deltaT);
-              else
-                    start = 0;
-
-              if ((end + (int)(0.25/chan->deltaT)) < signalvec.data->length )
-                    end += (int)(0.25/chan->deltaT);
-              else
-                    end = signalvec.data->length - 1;
-
-              bandpassVec = (REAL4Vector *)
-                      LALCalloc(1, sizeof(REAL4Vector) );
-
-              bandpassVec->length = (end - start + 1);
-              bandpassVec->data = signalvec.data->data + start;
-
-              if ( XLALBandPassInspiralTemplate( bandpassVec,
-                          1.1*thisEvent->f_lower,
-                          1.05*thisEvent->f_final,
-                          1./chan->deltaT) != XLAL_SUCCESS )
-              {
-                  LALError( status, "Failed to Bandpass signal" );
-                  ABORT (status, LALINSPIRALH_EBPERR, LALINSPIRALH_MSGEBPERR);
-              };
-
-              LALFree( bandpassVec );
-          }
-      }
-      /* inject the signal into the data channel */
-      LALSSInjectTimeSeries( status->statusPtr, chan, &signalvec );
-
-      CHECKSTATUSPTR( status );
-
-
-    if ( waveform.shift )
-    {
-      LALSDestroyVector( status->statusPtr, &(waveform.shift->data) );
-      CHECKSTATUSPTR( status );
-      LALFree( waveform.shift );
-    }
-
-    if( waveform.h )
-    {
-      LALSDestroyVectorSequence( status->statusPtr, &(waveform.h->data) );
-      CHECKSTATUSPTR( status );
-      LALFree( waveform.h );
-    }
-    if( waveform.a )
-    {
-      LALSDestroyVectorSequence( status->statusPtr, &(waveform.a->data) );
-      CHECKSTATUSPTR( status );
-      LALFree( waveform.a );
-      /*
-       * destroy the signal only if waveform.h is NULL as otherwise it won't
-       * be created
-       * */
-      if ( waveform.h == NULL )
-      {
-	LALSDestroyVector( status->statusPtr, &(signalvec.data) );
-        CHECKSTATUSPTR( status );
-      }
-    }
-    if( waveform.f )
-    {
-      LALSDestroyVector( status->statusPtr, &(waveform.f->data) );
-      CHECKSTATUSPTR( status );
-      LALFree( waveform.f );
-    }
-    if( waveform.phi )
-    {
-      LALDDestroyVector( status->statusPtr, &(waveform.phi->data) );
-      CHECKSTATUSPTR( status );
-      LALFree( waveform.phi );
-    }
-  }
-
-
-  if(hplus) XLALDestroyREAL8TimeSeries(hplus);
-  if(hcross) XLALDestroyREAL8TimeSeries(hcross);
-  if(signalvecREAL8) XLALDestroyREAL8TimeSeries(signalvecREAL8);
-
-  LALCDestroyVector( status->statusPtr, &( detector.transfer->data ) );
-  CHECKSTATUSPTR( status );
-
-//  if ( detector.site ) LALFree( detector.site );
-  LALFree( detector.transfer );
-
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
-}
-
-static int FindTimeSeriesStartAndEnd (
-                                      REAL4Vector *signalvec,
-                                      UINT4 *start,
-                                      UINT4 *end
-                                      )
-{
-  UINT4 i; /* mid, n; indices */
-  UINT4 flag, safe = 1;
-  UINT4 length;
-
-#ifndef LAL_NDEBUG
-  if ( !signalvec )
-    XLAL_ERROR( XLAL_EFAULT );
-
-  if ( !signalvec->data )
-    XLAL_ERROR( XLAL_EFAULT );
-#endif
-
-  length = signalvec->length;
-
-  /* Search for start and end of signal */
-  flag = 0;
-  i = 0;
-  while(flag == 0 && i < length )
-  {
-    if( signalvec->data[i] != 0.)
-    {
-      *start = i;
-      flag = 1;
-    }
-    i++;
-  }
-  if ( flag == 0 )
-  {
-    return flag;
-  }
-
-  flag = 0;
-  i = length - 1;
-  while(flag == 0)
-  {
-    if( signalvec->data[i] != 0.)
-    {
-      *end = i;
-      flag = 1;
-    }
-    i--;
-  }
-
-  /* Check we have more than 2 data points */
-  if(((*end) - (*start)) <= 1)
-  {
-    XLALPrintWarning( "Data less than 3 points in this signal!\n" );
-    safe = 0;
-  }
-
-  return safe;
-
-}
 
 void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, ProcessParamsTable *commandLine)
 ///*-------------- Inject in Frequency domain -----------------*/
@@ -2236,7 +1751,7 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
   LALStatus status;
   memset(&status,0,sizeof(LALStatus));
   INT4 errnum;
-  char SNRpath[FILENAME_MAX];
+  char SNRpath[FILENAME_MAX+50];
   ProcessParamsTable *ppt=NULL;
 
   ppt = LALInferenceGetProcParamVal(commandLine,"--outfile");
@@ -2395,7 +1910,7 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
     dataPtr->fCross = Fcross;
     dataPtr->timeshift = timeshift;
 
-    char InjFileName[50];
+    char InjFileName[320];
     sprintf(InjFileName,"injection_%s.dat",dataPtr->name);
     FILE *outInj=fopen(InjFileName,"w");
 
@@ -2650,7 +2165,7 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
     }
     LALInferenceIFOData *data=runState->data;
     while(data) {
-        char tmpName[50];
+        char tmpName[320];
         REAL8 tmp=model->loglikelihood - data->nullloglikelihood;
         sprintf(tmpName,"deltalogl%s",data->name);
         LALInferenceAddVariable(injparams, tmpName, &tmp, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
@@ -2824,7 +2339,7 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
   float dt=0.1;
   //REAL8 timeMin=0.0,timeMax=0.0;
   FILE *tempfp;
-  char tmp[128];
+  char tmp[320];
 
 	  procparam=LALInferenceGetProcParamVal(commandLine,"--inj");
 	  if(procparam){
@@ -3178,14 +2693,14 @@ void LALInferenceInjectFromMDC(ProcessParamsTable *commandLine, LALInferenceIFOD
     }
     printf("Injected network SNR %.3f from MDC\n",sqrt(net_snr));
 
-    char SNRpath[FILENAME_MAX];
+    char SNRpath[FILENAME_MAX+100];
     ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
     if(!ppt){
       fprintf(stderr,"Must specify --outfile <filename.dat>\n");
       exit(1);
     }
     char *outfile=ppt->value;
-    sprintf(SNRpath,"%s_snr.txt",outfile);
+    snprintf(SNRpath,sizeof(SNRpath),"%s_snr.txt",outfile);
     ppt=LALInferenceGetProcParamVal(commandLine,"--dont-dump-extras");
     if (!ppt){
       PrintSNRsToFile(IFOdata , SNRpath);

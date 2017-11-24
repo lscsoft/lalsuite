@@ -76,7 +76,6 @@ def parse_command_line():
 	parser.add_option("-t", "--threshold", metavar = "float", type = "float", help = "Set the coincidence threshold (required).  The meaning is defined by the match algorithm.  For --match=exact this sets the Delta t window in seconds.")
 	parser.add_option("--min-instruments", metavar = "number", default = "2", type = "int", help = "Set the minimum number of instruments that must participate in a coincidence (default = 2).  The value must be greater than 0.")
 	parser.add_option("--vetoes-name", metavar = "string", default = "vetoes", help = "From the input document, exatract the segment list having this name to use as the veto segments (default = \"vetoes\").  Warning:  if no segments by this name are found in the document then vetoes will not be applied, this is not an error condition.")
-	parser.add_option("--trigger-program", metavar = "name", default = "inspiral", help = "Set the name of the program that generated the event list as it appears in the process table (default = \"inspiral\").  This is used to identify the search_summary table entries to be used to define instrument on and off times.")
 	parser.add_option("--coinc-end-time-segment", metavar = "seg", help = "The segment of time to retain coincident triggers from. Uses segmentUtils.from_range_strings() format \"START:END\" for an interval of the form [START,END), \"START:\" for an interval of the form [START,INF), and \":END\" for an interval of the form (-INF,END).")
 	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
 	options, filenames = parser.parse_args()
@@ -237,8 +236,8 @@ for n, filename in enumerate(filenames, start = 1):
 		coinc_definer_row = thinca.InspiralCoincDef,
 		thresholds = options.threshold,
 		ntuple_comparefunc = ntuple_comparefunc,
+		seglists = None,	# FIXME
 		veto_segments = vetoes,
-		trigger_program = options.trigger_program,
 		min_instruments = options.min_instruments,
 		verbose = options.verbose
 	)

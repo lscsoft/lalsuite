@@ -713,6 +713,9 @@ static INT4 HGimri_start(REAL8 m, REAL8 M, REAL8 q, REAL8 D, REAL8 Sdotn, REAL8 
 					break;
 
 					}
+#if __GNUC__ >= 7
+				__attribute__ ((fallthrough));
+#endif
 
 			//In all cases...
 			case PLUNGE:

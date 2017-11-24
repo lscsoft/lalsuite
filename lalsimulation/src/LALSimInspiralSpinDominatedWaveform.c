@@ -831,7 +831,9 @@ int idx /**< index of the time dependent variables */) {
                         )//
                 ));
     }
-        /* no break */
+#if __GNUC__ >= 7
+        __attribute__ ((fallthrough)); /* no break */
+#endif
     case (PN10): {
         REAL8 phi1_1 = LAL_PI_2;
         waveampcoeffs[PN10_D + AMPCOEFF_DIM * PLUS_] = chi1_1 / 2. * (    //
@@ -986,7 +988,9 @@ int idx /**< index of the time dependent variables */) {
                         )//
                 );
     }
-        /* no break */
+#if __GNUC__ >= 7
+        __attribute__ ((fallthrough)); /* no break */
+#endif
     case (PN05): {
         waveampcoeffs[PN05_B + AMPCOEFF_DIM * PLUS_] = 1. / 64. * (    //
                 4. * ckp[1] * ctp[1] * stp[2] * (135. * cos(psin[3]) * skp[2] + cos(psin[1]) * (4. - 15. * skp[2])    //
@@ -1081,7 +1085,9 @@ int idx /**< index of the time dependent variables */) {
                         )//
                 );
     }
-        /* no break */
+#if __GNUC__ >= 7
+        __attribute__ ((fallthrough)); /* no break */
+#endif
     case (PN00): {
         waveampcoeffs[PN00_B + AMPCOEFF_DIM * PLUS_] = 0.5 * (s2t * (    //
                 /*  */sin(phin[1] + psin[2]) * params->ccoeff00pn[1 + PN00DIM * PLUS_]
@@ -1125,7 +1131,9 @@ int idx /**< index of the time dependent variables */) {
                     * (waveampcoeffs[PN15_A + AMPCOEFF_DIM * i] + waveampcoeffs[PN15_B + AMPCOEFF_DIM * i]
                             + waveampcoeffs[PN15_C + AMPCOEFF_DIM * i]);
         }
-        /* no break */
+#if __GNUC__ >= 7
+        __attribute__ ((fallthrough)); /* no break */
+#endif
     case (PN10):
         // Since highest order is 1.5 PN and there is no 0.5 PN order correction to eps(omega), leading order eps is enough.
         for (int i = PLUS_; i < PLUS_CROSS_DIM; ++i) {
@@ -1135,7 +1143,9 @@ int idx /**< index of the time dependent variables */) {
                             + params->beta1 * waveampcoeffs[PN10_B + AMPCOEFF_DIM * i]
                             + params->beta1 * waveampcoeffs[PN10_D + AMPCOEFF_DIM * i]);
         }
-        /* no break */
+#if __GNUC__ >= 7
+        __attribute__ ((fallthrough)); /* no break */
+#endif
     case (PN05):
         //The 0.5 PN correction needs to include 1 PN correction of eps(omega) the amplitude is taken to 1.5 PN order
         for (int i = PLUS_; i < PLUS_CROSS_DIM; ++i) {
@@ -1148,7 +1158,9 @@ int idx /**< index of the time dependent variables */) {
                 h[i] +=epssqrt * temp;
             }
         }
-        /* no break */
+#if __GNUC__ >= 7
+        __attribute__ ((fallthrough)); /* no break */
+#endif
     case (PN00):
         // If the amplitude is taken to 1 PN order, the eps(omega) needs to include the 1 PN correction, if amplitude is taken to 1.5 PN order, that eps(omega) needs to include corrections up to 1.5 PN order
         for (int i = PLUS_; i < PLUS_CROSS_DIM; ++i) {
@@ -1511,11 +1523,15 @@ static INT4 XLALSpinDominatedWaveformDerivatives(UNUSED REAL8 t, const REAL8 val
                     * LAL_C_SI * LAL_C_SI * epsP3 * sqrt(params->eps)
                     * (1. - 2. * params->xi * sqrt(params->eps)) * (sinKappa1 * cosKappa1
                             + params->beta1 * cosKappa1 * cosKappa1);
-            /* no break */
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough)); /* no break */
+#endif
         case (PN15):
             dvalues[PHI] += params->chi1 * LAL_C_SI * LAL_C_SI * LAL_C_SI * epsP3 / 2. / LAL_G_SI / params->totalmass
                     * ( 5. * sqrt(params->eps) * params->xi - 4.)*(1. + cosKappa1 * params->beta1 / sinKappa1 );
-            /* no break */
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough)); /* no break */
+#endif
         case (PN10):
             /* no break */
         case (PN05):
@@ -1534,16 +1550,22 @@ static INT4 XLALSpinDominatedWaveformDerivatives(UNUSED REAL8 t, const REAL8 val
         dvalues[OMEGA] += phasecoeff * vP[PN20]
                 * (5. / 2. * params->chi1 * params->chi1 * eta / params->nu * (3. * cosKappa1 * cosKappa1 - 1.)
                         + 1. / 96. * params->chi1 * params->chi1 * eta / params->nu * (6. + sinKappa1 * sinKappa1));
-        /* no break */
+#if __GNUC__ >= 7
+        __attribute__ ((fallthrough)); /* no break */
+#endif
     case (PN15):
         dvalues[OMEGA] += phasecoeff * vP[PN15] * (4. * LAL_PI);
         // SO component
         dvalues[OMEGA] += phasecoeff * vP[PN15]
                 * (-1 / 12. * cosKappa1 * params->chi1 * (113. * eta / params->nu + 75. * eta));
-        /* no break */
+#if __GNUC__ >= 7
+        __attribute__ ((fallthrough)); /* no break */
+#endif
     case (PN10):
         dvalues[OMEGA] += -phasecoeff * vP[PN10] * (743. / 336. + 11. / 4. * eta);
-        /* no break */
+#if __GNUC__ >= 7
+        __attribute__ ((fallthrough)); /* no break */
+#endif
     case (PN05):
         /* no break */
     case (PN00):
@@ -1582,14 +1604,19 @@ UNUSED void *mparams) {
         mecotest += +6. * vP[PN20]
                 * (1. / 8. * (-27. + 19. * eta - eta * eta / 3.)
                         - (3. * cosKappa1 * cosKappa1 - 1.) / 2. * params->chi1 * params->chi1 * eta / params->nu);
-        /* no break */
+#if __GNUC__ >= 7
+        __attribute__ ((fallthrough)); /* no break */
+#endif
     case (PN15):
         mecotest += +5. * vP[PN15] * (8. / 3. * eta / params->nu + 2. * eta) * cosKappa1 * params->chi1;
-        /* no break */
+#if __GNUC__ >= 7
+        __attribute__ ((fallthrough)); /* no break */
+#endif
     case (PN10):
-        /* no break */
         mecotest += -4. * vP[PN10] * (3. + eta / 3.) / 4.;
-        /* no break */
+#if __GNUC__ >= 7
+        __attribute__ ((fallthrough)); /* no break */
+#endif
     case (PN05):
         /* no break */
     case (PN00):

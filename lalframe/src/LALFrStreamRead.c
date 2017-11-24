@@ -470,6 +470,9 @@ REAL8TimeSeries *XLALFrStreamInputREAL8TimeSeries(LALFrStream * stream,
     case LAL_C_TYPE_CODE:
     case LAL_Z_TYPE_CODE:
         XLAL_PRINT_ERROR("Cannot convert complex type to float type");
+#if __GNUC__ >= 7
+	__attribute__ ((fallthrough));
+#endif
     default:
         XLAL_ERROR_NULL(XLAL_ETYPE);
     }
@@ -540,11 +543,13 @@ COMPLEX16TimeSeries *XLALFrStreamInputCOMPLEX16TimeSeries(LALFrStream *
     case LAL_C_TYPE_CODE:
         INPUTTS(series, COMPLEX16, COMPLEX8, S2S, stream, chname, start,
             duration, lengthlimit);
+        break;
     case LAL_Z_TYPE_CODE:
         series = XLALFrStreamReadCOMPLEX16TimeSeries(stream, chname, start,
             duration, lengthlimit);
         if (!series)
             XLAL_ERROR_NULL(XLAL_EFUNC);
+        break;
     default:
         XLAL_ERROR_NULL(XLAL_ETYPE);
     }
@@ -680,6 +685,9 @@ REAL8FrequencySeries *XLALFrStreamInputREAL8FrequencySeries(LALFrStream *
     case LAL_C_TYPE_CODE:
     case LAL_Z_TYPE_CODE:
         XLAL_PRINT_ERROR("Cannot convert complex type to float type");
+#if __GNUC__ >= 7
+	__attribute__ ((fallthrough));
+#endif
     default:
         XLAL_ERROR_NULL(XLAL_ETYPE);
     }
@@ -720,11 +728,13 @@ COMPLEX16FrequencySeries
         break;
     case LAL_C_TYPE_CODE:
         INPUTFS(series, COMPLEX16, COMPLEX8, S2S, stream, chname, epoch);
+        break;
     case LAL_Z_TYPE_CODE:
         series =
             XLALFrStreamReadCOMPLEX16FrequencySeries(stream, chname, epoch);
         if (!series)
             XLAL_ERROR_NULL(XLAL_EFUNC);
+        break;
     default:
         XLAL_ERROR_NULL(XLAL_ETYPE);
     }

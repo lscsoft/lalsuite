@@ -313,8 +313,8 @@ static REAL8 LALInferenceGlitchPrior(LALInferenceRunState *runState, LALInferenc
     REAL8 component_max=0.0;
     REAL8 val=0.0;
 
-    char priormin[100];
-    char priormax[100];
+    char priormin[512];
+    char priormax[512];
 
     REAL8 Anorm = *(REAL8 *)LALInferenceGetVariable(priorParams,"glitch_norm");
 
@@ -1886,8 +1886,8 @@ void LALInferenceRemoveMinMaxPrior(LALInferenceVariables *priorArgs, const char 
 /* Check for a min/max prior set */
 int LALInferenceCheckMinMaxPrior(LALInferenceVariables *priorArgs, const char *name)
 {
-  char minName[VARNAME_MAX];
-  char maxName[VARNAME_MAX];
+  char minName[VARNAME_MAX+4];
+  char maxName[VARNAME_MAX+4];
   sprintf(minName,"%s_min",name);
   sprintf(maxName,"%s_max",name);
 
@@ -1897,8 +1897,8 @@ int LALInferenceCheckMinMaxPrior(LALInferenceVariables *priorArgs, const char *n
 /* Get the min and max values of the prior from the priorArgs list, given a name */
 void LALInferenceGetMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, REAL8 *min, REAL8 *max)
 {
-    char minName[VARNAME_MAX];
-    char maxName[VARNAME_MAX];
+    char minName[VARNAME_MAX+4];
+    char maxName[VARNAME_MAX+4];
     void *ptr=NULL;
     sprintf(minName,"%s_min",name);
     sprintf(maxName,"%s_max",name);
@@ -1916,8 +1916,8 @@ void LALInferenceGetMinMaxPrior(LALInferenceVariables *priorArgs, const char *na
 /* Check for a Gaussian Prior of the standard form */
 int LALInferenceCheckGaussianPrior(LALInferenceVariables *priorArgs, const char *name)
 {
-  char meanName[VARNAME_MAX];
-  char sigmaName[VARNAME_MAX];
+  char meanName[VARNAME_MAX+14];
+  char sigmaName[VARNAME_MAX+15];
   sprintf(meanName,"%s_gaussian_mean",name);
   sprintf(sigmaName,"%s_gaussian_sigma",name);
   return (LALInferenceCheckVariable(priorArgs,meanName) && LALInferenceCheckVariable(priorArgs,sigmaName));
@@ -1927,8 +1927,8 @@ int LALInferenceCheckGaussianPrior(LALInferenceVariables *priorArgs, const char 
 void LALInferenceAddGaussianPrior( LALInferenceVariables *priorArgs,
                                    const char *name, REAL8 *mu, REAL8 *sigma,
                                    LALInferenceVariableType type ){
-  char meanName[VARNAME_MAX];
-  char sigmaName[VARNAME_MAX];
+  char meanName[VARNAME_MAX+14];
+  char sigmaName[VARNAME_MAX+15];
 
   sprintf(meanName,"%s_gaussian_mean",name);
   sprintf(sigmaName,"%s_gaussian_sigma",name);
@@ -2265,7 +2265,7 @@ void LALInferenceAddGMMPrior( LALInferenceVariables *priorArgs, const char *name
 void LALInferenceGetGMMPrior( LALInferenceVariables *priorArgs, const char *name,
                               REAL8Vector ***mus, REAL8Vector ***sigmas, gsl_matrix ***cors, gsl_matrix ***invcors,
                               REAL8Vector **weights, REAL8Vector **minrange, REAL8Vector **maxrange,
-                              REAL8Vector **dets, UINT4 UNUSED *idx, CHAR UNUSED *fullname ){
+                              REAL8Vector **dets, UINT4 *idx, CHAR **fullname ){
   /* find list of GMM parameters that this parameter lives in */
   char gmmParsName[VARNAME_MAX] = "gmm_parameter_lists"; // contains list of ':'-separated lists of GMM parameters
 
@@ -2289,7 +2289,7 @@ void LALInferenceGetGMMPrior( LALInferenceVariables *priorArgs, const char *name
   }
   if ( !found ){ XLAL_ERROR_VOID(XLAL_EFAILED); } // parameter could not be found
 
-  fullname = parLists->data[i];
+  *fullname = parLists->data[i];
 
   char musName[VARNAME_MAX];
   char sigmasName[VARNAME_MAX];
@@ -2765,7 +2765,7 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
     UINT4 idx = 0, dims = 0;
     CHAR *fullname = NULL;
 
-    LALInferenceGetGMMPrior( priorArgs, name, &mus, &sigmas, &cor, &invcor, &weights, &minrange, &maxrange, &dets, &idx, fullname );
+    LALInferenceGetGMMPrior( priorArgs, name, &mus, &sigmas, &cor, &invcor, &weights, &minrange, &maxrange, &dets, &idx, &fullname );
 
     dims = cor[0]->size1;
 
@@ -3383,7 +3383,7 @@ REAL8 LALInferenceGMMPrior(LALInferenceVariables *priorArgs, const char *name, R
   CHAR *fullname = NULL;
 
   /* get GMM parameters */
-  LALInferenceGetGMMPrior( priorArgs, name, &gmmmus, &gmmsigmas, &cor, &invcor, &gmmweights, &gmmlow, &gmmhigh, &gmmdets, &idx, fullname );
+  LALInferenceGetGMMPrior( priorArgs, name, &gmmmus, &gmmsigmas, &cor, &invcor, &gmmweights, &gmmlow, &gmmhigh, &gmmdets, &idx, &fullname );
 
   /* check values are within limits */
   for ( j = 0; j < npars; j++ ){

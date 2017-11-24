@@ -179,6 +179,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
               long_options[option_index].name, timeout);
           exit(1);
         }
+        break;
 
       case 'g':
         /* get filename */

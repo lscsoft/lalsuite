@@ -612,8 +612,8 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
 
   /* These keys follow a strict formulation and cannot be longer than 11
    * characters */
-  char amp_key[20];
-  char phase_key[20];
+  char amp_key[30];
+  char phase_key[30];
   gsl_vector *tmpVector=NULL;
   LALH5File *file, *group;
   LIGOTimeGPS tmpEpoch = LIGOTIMEGPSZERO;
