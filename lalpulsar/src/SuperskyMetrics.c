@@ -700,8 +700,47 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
 
 }
 
+SuperskyMetrics *XLALCopySuperskyMetrics(
+  const SuperskyMetrics *metrics
+  )
+{
+
+  // Check input
+  XLAL_CHECK_NULL( metrics != NULL, XLAL_EFAULT );
+
+  // Allocate memory for copied struct
+  SuperskyMetrics *copy_metrics = XLALCalloc( 1, sizeof( *copy_metrics ) );
+  XLAL_CHECK_NULL( copy_metrics != NULL, XLAL_ENOMEM );
+  copy_metrics->num_segments = metrics->num_segments;
+
+  // Allocate memory for copies of arrays of coherent metrics
+  copy_metrics->coh_rssky_metric = XLALCalloc( copy_metrics->num_segments, sizeof( *copy_metrics->coh_rssky_metric ) );
+  XLAL_CHECK_NULL( copy_metrics->coh_rssky_metric != NULL, XLAL_ENOMEM );
+  copy_metrics->coh_rssky_transf = XLALCalloc( copy_metrics->num_segments, sizeof( *copy_metrics->coh_rssky_transf ) );
+  XLAL_CHECK_NULL( copy_metrics->coh_rssky_transf != NULL, XLAL_ENOMEM );
+
+  // Copy coherent metrics and transform data
+  for ( size_t n = 0; n < metrics->num_segments; ++n ) {
+    GAMAT_NULL( copy_metrics->coh_rssky_metric[n], metrics->coh_rssky_metric[n]->size1, metrics->coh_rssky_metric[n]->size2 );
+    gsl_matrix_memcpy( copy_metrics->coh_rssky_metric[n], metrics->coh_rssky_metric[n] );
+    copy_metrics->coh_rssky_transf[n] = XLALCalloc( 1, sizeof( *copy_metrics->coh_rssky_transf[n] ) );
+    XLAL_CHECK_NULL( copy_metrics->coh_rssky_transf[n] != NULL, XLAL_ENOMEM );
+    memcpy( copy_metrics->coh_rssky_transf[n], metrics->coh_rssky_transf[n], sizeof( *copy_metrics->coh_rssky_transf[n] ) );
+  }
+
+  // Copy semocherent metrics and transform data
+  GAMAT_NULL( copy_metrics->semi_rssky_metric, metrics->semi_rssky_metric->size1, metrics->semi_rssky_metric->size2 );
+  gsl_matrix_memcpy( copy_metrics->semi_rssky_metric, metrics->semi_rssky_metric );
+  copy_metrics->semi_rssky_transf = XLALCalloc( 1, sizeof( *copy_metrics->semi_rssky_transf ) );
+  XLAL_CHECK_NULL( copy_metrics->semi_rssky_transf != NULL, XLAL_ENOMEM );
+  memcpy( copy_metrics->semi_rssky_transf, metrics->semi_rssky_transf, sizeof( *copy_metrics->semi_rssky_transf ) );
+
+  return copy_metrics;
+
+}
+
 void XLALDestroySuperskyMetrics(
-  SuperskyMetrics *metrics                      /// [in] Supersky metrics struct
+  SuperskyMetrics *metrics
   )
 {
   if ( metrics != NULL ) {
