@@ -389,6 +389,23 @@ int main( void )
                      semi_phys_mismatch, 3e-2
                      ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  // Check coherent and semicoherent metrics
+  SuperskyMetrics *copy_metrics = XLALCopySuperskyMetrics( metrics );
+  XLAL_CHECK_MAIN( copy_metrics != NULL, XLAL_EFUNC );
+  for ( size_t n = 0; n < NUM_SEGS; ++n ) {
+    XLAL_CHECK_MAIN( CheckSuperskyMetrics(
+                       copy_metrics->coh_rssky_metric[n], coh_rssky_metric_refs[n],
+                       copy_metrics->coh_rssky_transf[n], &coh_rssky_transf_refs[n],
+                       coh_phys_mismatches[n], 1e-2
+                       ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+  XLAL_CHECK_MAIN( CheckSuperskyMetrics(
+                     copy_metrics->semi_rssky_metric, semi_rssky_metric_ref,
+                     copy_metrics->semi_rssky_transf, &semi_rssky_transf_ref,
+                     semi_phys_mismatch, 3e-2
+                     ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+
   // Check writing/reading SuperskyMetrics to a FITS file
 #if !defined(HAVE_LIBCFITSIO)
   fprintf( stderr, "CFITSIO library is not available; skipping FITS writing/reading test\n" );
@@ -423,6 +440,7 @@ int main( void )
   XLALDestroyEphemerisData( edat );
   XLALSegListClear( &segments );
   XLALDestroySuperskyMetrics( metrics );
+  XLALDestroySuperskyMetrics( copy_metrics );
   LALCheckMemoryLeaks();
 
   return EXIT_SUCCESS;

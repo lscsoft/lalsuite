@@ -91,6 +91,13 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
   );
 
 ///
+/// Copy a #SuperskyMetrics struct.
+///
+SuperskyMetrics *XLALCopySuperskyMetrics(
+  const SuperskyMetrics *metrics                ///< [in] Supersky metrics struct
+  );
+
+///
 /// Destroy a #SuperskyMetrics struct.
 ///
 void XLALDestroySuperskyMetrics(
