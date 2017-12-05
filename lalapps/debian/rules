@@ -1,0 +1,6 @@
+#!/usr/bin/make -f
+CONFIGUREARGS = --enable-swig --enable-cfitsio --enable-openmp --enable-mpi
+include debian/lalsuite.mk
+
+override_dh_auto_install:
+	dh_auto_install --destdir=debian/tmp

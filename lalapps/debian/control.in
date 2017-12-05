@@ -1,0 +1,81 @@
+Source: lalapps
+Section: science
+Priority: optional
+Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
+Build-Depends: bc,
+  debhelper (>= 9),
+  dh-python,
+  help2man,
+  less,
+  libcfitsio3-dev,
+  libfftw3-dev,
+  libframe-dev (>= 8.0),
+  libgsl-dev | libgsl0-dev (>= 1.9),
+  libmetaio-dev (>= 8.2),
+  libopenmpi-dev,
+  pkg-config,
+  python-all-dev,
+  zlib1g-dev,
+  lal-dev (>= @MIN_LAL_VERSION@~),
+  lal-python (>= @MIN_LAL_VERSION@~),
+  lalframe-dev (>= @MIN_LALFRAME_VERSION@~),
+  lalframe-python (>= @MIN_LALFRAME_VERSION@~),
+  lalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
+  lalmetaio-python (>= @MIN_LALMETAIO_VERSION@~),
+  lalxml-dev (>= @MIN_LALXML_VERSION@~),
+  lalxml-python (>= @MIN_LALXML_VERSION@~),
+  lalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
+  lalsimulation-python (>= @MIN_LALSIMULATION_VERSION@~),
+  lalburst-dev (>= @MIN_LALBURST_VERSION@~),
+  lalburst-python (>= @MIN_LALBURST_VERSION@~),
+  lalinspiral-dev (>= @MIN_LALINSPIRAL_VERSION@~),
+  lalinspiral-python (>= @MIN_LALINSPIRAL_VERSION@~),
+  lalpulsar-dev (>= @MIN_LALPULSAR_VERSION@~),
+  lalpulsar-python (>= @MIN_LALPULSAR_VERSION@~),
+  lalstochastic-dev (>= @MIN_LALSTOCHASTIC_VERSION@~),
+  lalstochastic-python (>= @MIN_LALSTOCHASTIC_VERSION@~),
+  lalinference-dev (>= @MIN_LALINFERENCE_VERSION@~),
+  lalinference-python (>= @MIN_LALINFERENCE_VERSION@~)
+X-Python-Version: >= 2.7
+X-Python3-Version: <= 3.0
+Standards-Version: 3.9.8
+
+Package: lalapps
+Architecture: any
+Depends: ${misc:Depends},
+  ${python:Depends},
+  ${shlibs:Depends},
+  less,
+  libframe1 (>= 8.0),
+  libmetaio1 (>= 8.2),
+  python-h5py,
+  python-healpy,
+  python-skyarea,
+  zlib1g,
+  lal (>= @MIN_LAL_VERSION@~),
+  lal-python (>= @MIN_LAL_VERSION@~),
+  lalframe (>= @MIN_LALFRAME_VERSION@~),
+  lalframe-python (>= @MIN_LALFRAME_VERSION@~),
+  lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
+  lalmetaio-python (>= @MIN_LALMETAIO_VERSION@~),
+  lalxml (>= @MIN_LALXML_VERSION@~),
+  lalxml-python (>= @MIN_LALXML_VERSION@~),
+  lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
+  lalsimulation-python (>= @MIN_LALSIMULATION_VERSION@~),
+  lalburst (>= @MIN_LALBURST_VERSION@~),
+  lalburst-python (>= @MIN_LALBURST_VERSION@~),
+  lalinspiral (>= @MIN_LALINSPIRAL_VERSION@~),
+  lalinspiral-python (>= @MIN_LALINSPIRAL_VERSION@~),
+  lalpulsar (>= @MIN_LALPULSAR_VERSION@~),
+  lalpulsar-python (>= @MIN_LALPULSAR_VERSION@~),
+  lalstochastic (>= @MIN_LALSTOCHASTIC_VERSION@~),
+  lalstochastic-python (>= @MIN_LALSTOCHASTIC_VERSION@~),
+  lalinference (>= @MIN_LALINFERENCE_VERSION@~),
+  lalinference-python (>= @MIN_LALINFERENCE_VERSION@~)
+Provides: python-bayestar-localization, python-bayestar
+Conflicts: python-bayestar-localization, python-bayestar
+Replaces: python-bayestar-localization, python-bayestar, pylal (<< 0.13.1)
+Description: LSC Algorithm Library Applications
+ The LSC Algorithm Library Applications for gravitational wave data analysis.
+ This package contains applications that are built on tools in the
+ LSC Algorithm Library.

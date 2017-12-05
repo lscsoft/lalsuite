@@ -1,0 +1,101 @@
+%!PS-Adobe-2.0 EPSF-2.0
+%%Title: Geodetic and geocentric coordinate systems
+%%Creator: Teviet Creighton
+%%CreationDate: Sun Apr 22 02:21:17 2001
+%%Orientation: Portrait
+%%Pages: 0
+%%BoundingBox: 0 0 420 420
+%%EndComments
+
+/outshow {
+  gsave dup false charpath 1 setgray stroke grestore show
+} bind def
+
+% Define some constants.
+/f 0.2 def            % flattening factor of Earth
+/f1 1 f sub def       % 1-f
+/f2 f 2 f sub mul def % f(2-f)
+
+% Define some variables.
+/pa 45 def
+/xp pa cos 100 mul def
+/yp pa sin 100 mul f1 mul def
+/pp xp yp atan def
+/m pa sin pa cos div f1 div def
+/pd m 1 atan def
+
+% Begin drawing.
+210 170 translate
+2 2 scale
+
+% Draw polar axis.
+gsave
+    0.5 0.5 1 setrgbcolor 1 f1 scale 0 -100 moveto 0 100 lineto stroke
+    0 setgray
+    -0.5 100 moveto 0 20 rlineto -1 0 rlineto 1.5 5 rlineto
+    1.5 -5 rlineto -1 0 rlineto 0 -20 rlineto closepath fill
+grestore
+
+% Draw geodetic latitude.
+0.5 0.5 1 setrgbcolor
+0 -200 200 400 rectclip
+-85 5 89 {
+    /pa exch def
+    /xp pa cos 100 mul def
+    /yp pa sin 100 mul f1 mul def
+    /pp xp yp atan def
+    /m pa sin pa cos div f1 div def
+    /pd m 1 atan def
+    gsave xp yp translate pd rotate 0 0 moveto -200 0 rlineto stroke grestore
+} for
+initclip
+0 -200 -200 400 rectclip
+95 5 269 {
+    /pa exch def
+    /xp pa cos 100 mul def
+    /yp pa sin 100 mul f1 mul def
+    /pp xp yp atan def
+    /m pa sin pa cos div f1 div def
+    /pd m 1 atan def
+    gsave xp yp translate pd rotate 0 0 moveto 200 0 rlineto stroke grestore
+} for
+initclip
+
+% Draw ellipsoid and singular points.
+0 setgray
+gsave 1 f1 scale 0 0 100 0 360 arc stroke grestore
+gsave
+    [1] 0 setdash
+    1 1 f1 div scale 0 0 100 f2 mul 0 360 arc closepath stroke
+grestore
+
+1 0 0 setrgbcolor
+0 100 f2 mul f1 div 2 0 360 arc closepath fill
+0 -100 f2 mul f1 div 2 0 360 arc closepath fill
+
+
+% Draw labels.
+
+0 setgray
+/Times-Roman 10 selectfont
+0 125 f1 mul moveto -3 2 rmoveto (N) show
+
+2 setlinewidth
+gsave
+    -35 20 translate 60 rotate
+    -1 1 moveto /Times-Italic 10 selectfont (P) outshow
+    /Times-Roman 10 selectfont ( > 0) outshow
+    -1 -12 moveto /Times-Italic 10 selectfont (P) outshow
+    /Times-Roman 10 selectfont ( < 0) outshow
+grestore
+0 0 0.5 setrgbcolor
+gsave
+    10 25 translate -50 rotate
+    -1 0 moveto /Times-Italic 10 selectfont (D) outshow
+    /Times-Roman 10 selectfont ( > 0) outshow
+    -1 -12 moveto /Times-Italic 10 selectfont (D) outshow
+    /Times-Roman 10 selectfont ( < 0) outshow
+grestore
+
+%showpage
+%%EOF

@@ -1,0 +1,36 @@
+\documentclass{minimal}
+
+% Load packages
+\usepackage{graphicx}
+\usepackage{color}
+% Set papersize
+\usepackage[papersize={230.00bp,70.00bp},text={230.00bp,70.00bp}]{geometry}
+% No page numbers and no paragraph indentation
+\pagestyle{empty}
+\setlength{\parindent}{0bp}%
+
+\begin{document}
+
+\vspace*{-5bp}
+    \begin{picture}(220,60)(-50,0)
+      \put(-50,50){$\ell^{\scriptstyle\textrm{min}}_k-1$}
+      \put(-10,50){\vector(1,0){20}}
+      \put(0,40){\framebox(20,20){}}
+      \put(20,40){\framebox(20,20){$\ell^{\scriptstyle\textrm{min}}_k$}}
+      \put(40,40){\framebox(30,20){$\cdots$}}
+      \put(70,40){\framebox(20,20){$\ell^{\scriptstyle\textrm{max}}_k$}}
+      \put(90,40){\framebox(20,20){}}
+      \put(120,50){\vector(-1,0){20}}
+      \put(130,50){$\ell^{\scriptstyle\textrm{min}}_k+1$}
+      \put(13,20){\framebox(90,20){$k$}}
+      \put(13,0){\framebox(20,20){$\lambda^{\scriptstyle\textrm{min}}_k$}}
+      \put(83,0){\framebox(20,20){$\lambda^{\scriptstyle\textrm{max}}_k$}}
+    \end{picture}
+
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

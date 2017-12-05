@@ -1,0 +1,15 @@
+# StreamInput.dat
+
+# A sample input file for the StreamInputTest program; this file
+# consists of several lines of numbers.  These are first read into a
+# vector sequence, and then printed out again for comparison.
+
+1 2 3 4				% a basic set of numbers
+				% lines with no data are ignored
+5.0 0.6e1 70e-1 8		% a set of numbers with different formats
+9 10				% a short line is padded with zeros
+11	12	13	14	% tabs are whitespace too!
+
+% File ends right here |
+%                      V
+		15.12345

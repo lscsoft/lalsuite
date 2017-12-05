@@ -1,0 +1,85 @@
+#!/bin/bash
+
+# Generate a random inspiral signal at GPS time TIME
+USAGE="Usage: $0 GPSTIME"
+USAGE2="    where GPSTIME is the desired time of the start of the injection"
+
+if [ $# -ne 1 ]
+then
+    echo $USAGE
+    echo $USAGE2
+    exit 1
+fi
+
+STARTTIME=$1
+
+if [ -n $SNR ]
+then
+echo "Using your requested SNR of $SNR"
+fi
+
+OUTFILE=CBC_BLINDINJ_${STARTTIME}.xml
+
+#Fractions are specified as proportion of 32768
+BBHFRAC=11468 # 35%
+BNSFRAC=11468 # 35%
+BHNSFRAC=$[32768 - $BNSFRAC - $BBHFRAC]
+
+R=$RANDOM
+
+if [ $R -le $BNSFRAC ]
+then
+echo "Chose BNS injection"
+SNRMIN=8.5
+SNRMAX=9.5
+INSPINJCOM="lalapps_inspinj --seed $R --taper-injection start --gps-start-time $STARTTIME --gps-end-time $[$STARTTIME+1] --m-distr totalMass --min-mass1 1.0 --min-mass2 1.0 --max-mass1 2 --max-mass2 2 --max-mtotal 4 --min-mtotal 2.0 --d-distr uniform --i-distr uniform --min-distance 1000 --max-distance 30000 --waveform SpinTaylortwoPointFivePN --l-distr random --f-lower 30 --time-step 1 --band-pass-injection --max-spin1 0.2 --min-spin1 0.0 --max-spin2 0.2 --min-spin2 0.0 --enable-spin -o ${OUTFILE}"
+elif [ $R -le $[ $BNSFRAC + $BBHFRAC] ]
+then
+echo "Chose BBH injection"
+SNRMIN=11.0
+SNRMAX=13.0
+INSPINJCOM="lalapps_inspinj --seed $R --taper-injection start --gps-start-time $STARTTIME --gps-end-time $[$STARTTIME+1] --m-distr totalMass --min-mass1 2.0 --min-mass2 2.0 --max-mass1 30 --max-mass2 30 --max-mtotal 35 --min-mtotal 2.0 --d-distr uniform --i-distr uniform --min-distance 1000 --max-distance 30000 --waveform SpinTaylortwoPointFivePN --l-distr random --f-lower 30 --time-step 1 --band-pass-injection --max-spin1 1.0 --min-spin1 0.0 --max-spin2 1.0 --min-spin2 0.0 --enable-spin -o ${OUTFILE}"
+else
+echo "Chose NS-BH injection"
+SNRMIN=9.0
+SNRMAX=10.0
+INSPINJCOM="lalapps_inspinj --seed $R --taper-injection start --gps-start-time $STARTTIME --gps-end-time $[$STARTTIME+1] --m-distr totalMass --min-mass1 2.0 --min-mass2 1.0 --max-mass1 30.0 --max-mass2 2.0 --max-mtotal 35 --min-mtotal 2.0 --d-distr uniform --i-distr uniform --min-distance 1000 --max-distance 30000 --waveform SpinTaylortwoPointFivePN --l-distr random --f-lower 30 --time-step 1 --band-pass-injection --max-spin1 1.0 --min-spin1 0.0 --max-spin2 0.2 --min-spin2 0.0 --enable-spin -o ${OUTFILE}"
+fi
+# Run the inspinj command
+echo $INSPINJCOM
+eval $INSPINJCOM
+
+# Generate the SNR from the specified ranges
+SNR=${SNR:-`echo "$SNRMIN + (${SNRMAX}-${SNRMIN})*${RANDOM}/32768" | bc -l`}
+#echo "Target SNR = ${SNR}"
+# Run coinj to generate the waveforms
+COINJCOM="lalapps_coinj --input $OUTFILE --response-type etmy --frames --SNR ${SNR}"
+echo $COINJCOM
+eval $COINJCOM
+
+echo "Generated waveforms"
+MASS1=`lwtprint -t sim_inspiral -c mass1 $OUTFILE`
+MASS2=`lwtprint -t sim_inspiral -c mass2 $OUTFILE`
+DIST=`lwtprint -t sim_inspiral -c distance $OUTFILE`
+RA=`lwtprint -t sim_inspiral -c longitude $OUTFILE`
+DEC=`lwtprint -t sim_inspiral -c latitude $OUTFILE`
+GCEND=`lwtprint -t sim_inspiral -c geocent_end_time $OUTFILE`
+GCENDNS=`echo "$(lwtprint -t sim_inspiral -c geocent_end_time_ns ${OUTFILE} ) * 0.000000001" | bc -l`
+HEND=`lwtprint -t sim_inspiral -c h_end_time $OUTFILE`
+HENDNS=`echo "$(lwtprint -t sim_inspiral -c h_end_time_ns ${OUTFILE} ) * 0.000000001" | bc -l`
+LEND=`lwtprint -t sim_inspiral -c l_end_time $OUTFILE`
+LENDNS=`echo "$(lwtprint -t sim_inspiral -c l_end_time_ns ${OUTFILE} ) * 0.000000001" | bc -l`
+VEND=`lwtprint -t sim_inspiral -c v_end_time $OUTFILE`
+VENDNS=`echo "$(lwtprint -t sim_inspiral -c v_end_time_ns ${OUTFILE} ) * 0.000000001" | bc -l`
+
+echo ""
+echo "Mass 1 = $MASS1 Msun"
+echo "Mass 2 = $MASS2 Msun"
+echo "Distance = $DIST Mpc"
+echo "Right Ascension = $RA rads"
+echo "Declination = $DEC rads"
+echo "tC at Geocentre = ${GCEND}.${GCENDNS#.}"
+echo "tC at Hanford = ${HEND}.${HENDNS#.}"
+echo "tC at Livingston = ${LEND}.${LENDNS#.}"
+echo "tC at Virgo = ${VEND}.${VENDNS#.}"
+echo "Network SNR = $SNR"

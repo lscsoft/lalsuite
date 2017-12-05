@@ -1,0 +1,53 @@
+.TH LALFR-PRINT 1 "10 June 2013" LALFrame LALFrame
+.SH NAME
+lalfr-print -- prints channel data from frame files
+
+.SH SYNOPSIS
+.B lalfr-print
+[\fIfile\fP ...]
+
+.SH DESCRIPTION
+.PP
+The \fBlalfr-print\fP utility reads the contents of the channels from
+each \fIfile\fP and prints the data to the standard output.
+If \fIfile\fP is a single dash (`\fB-\fP') or absent,
+\fBlalfr-print\fP reads from the standard input.
+
+For each channel contained in \fIfile\fP, the output is written in
+two-column format where the first column is the GPS time of each sample
+and the second column contains the corresponding sample values.  The columns
+are separated by a tab character (``\\t'') and each line is separated by a
+newline character (``\\n'').
+
+Each channel in \fIfile\fP is written sequentially and are separated by a line
+containing a separator consisting of the character ``#'' followed by the name
+of the next channel to be written.
+If more than one file argument is present then the separate files are
+processed sequentially and separated in the output by a line containing
+the separator ``==> \fIfile\fP <=='' where \fIfile\fP is the name of the
+current file being processed.
+
+.SH EXAMPLES
+.PP
+The command:
+.PP
+.RS
+lalfr-print file.gwf
+.RE
+.PP
+prints to standard output all the channels contained in \fIfile.gwf\fP.  If
+there are more than one channel present in that file, they can be split into
+separate files, each containing a single channel's data, with the command:
+.PP
+.RS
+lalfr-print file.gwf | split -p '#' 
+.RE
+.PP
+and the resulting files ``xaa'', ``xab'', etc., contain the data from each
+of the channels in \fIfile.gwf\fP.
+
+.SH SEE ALSO
+lalfr-dump(1), lalfr-fmt(1)
+
+.SH AUTHOR
+Jolien Creighton

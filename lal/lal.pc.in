@@ -1,0 +1,17 @@
+PACKAGE_TARNAME=@PACKAGE_TARNAME@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+datarootdir=@datarootdir@
+docdir=@docdir@
+htmldir=@htmldir@
+LAL_OCTAVE_PATH=@octexecdir@
+LAL_PYTHON_PATH=@pyexecdir@
+
+Name: LAL
+Description: LSC Algorithm Library
+Version: @VERSION@
+Requires: gsl, fftw3, fftw3f
+Libs: -L${libdir} -llal @CUDA_LIBS@ @BOINC_LIBS@ @PTHREAD_LIBS@
+Cflags: -I${includedir} @CUDA_CFLAGS@ @BOINC_CFLAGS@ @PTHREAD_CFLAGS@

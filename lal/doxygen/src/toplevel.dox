@@ -1,0 +1,106 @@
+/* Top-level module organisation for LAL */
+/**
+
+\defgroup lal_spec			LAL Specification and Style Guide
+
+\defgroup lal_general			General Packages
+@{
+
+   \defgroup lal_std				Standard Definitions
+   @{
+      \brief This package contains headers providing basic datatypes,
+      constants, and macros that support the LAL standard.
+   @}
+
+   \defgroup lal_date				Date and Time Routines
+   @{
+      \brief This package provides routines related to date and time
+      manipulations (\ref Date_h). It also provides routines to compute
+      the difference in time of arrival of a signal (\ref TimeDelay_h)
+      at two detector locations, and also between a detector and the
+      center of the Earth-fixed frame.
+   @}
+
+   \defgroup lal_factories			Datatype Factory Routines
+   @{
+      \brief This package provides routines for creating and destroying
+      the LAL aggregate datatypes.
+   @}
+
+   \defgroup lal_tools				General Purpose Tools
+   @{
+      \brief This package contains the general purpose LAL tools.
+   @}
+
+@}
+
+\defgroup lal_math			Math and Signal Analysis Packages
+@{
+   \defgroup lal_vectorops			Vector Manipulation Routines
+   @{
+      \brief This package contains routines for vector manipulation and math.
+   @}
+
+   \defgroup lal_fft				Fast Fourier Transform Routines
+   @{
+      \brief This package contains various routines for performing FFTs.
+   @}
+
+   \defgroup lal_stats				Statistical Routines
+   @{
+      \brief This package containts statistical routines.
+   @}
+
+   \defgroup lal_tdfilter			Time-Domain Filter Routines
+   @{
+      \brief This package covers LAL routines for constructing and
+      applying digital time-domain filters.
+   @}
+
+   \defgroup lal_utilities			Numerical Utilities
+   @{
+      \brief This package contains various numerical utilities for use
+      in LAL.
+   @}
+
+   \defgroup lal_window				Window Routines
+   @{
+      \brief This package contains a function to create a vector
+      containing a window (also called a taper, lag window, or
+      apodization function).
+   @}
+
+   \defgroup lal_inject				Signal Injection Routines
+   @{
+      \brief This package provided routines to simulate gravitational
+      waves and their effect on a detector. Much of its functionality
+      has since been moved to LALSimulation and LALPulsar.
+   @}
+
+   \defgroup lal_noisemodels			Noise Model Routines
+   @{
+      \brief This is a module that generates noisemodels of various
+      interferometers and helps run simple filtering of data simulated
+      with these noise models.  The test codes can easily be generalized
+      to filter data from real detectors.
+   @}
+
+@}
+
+\defgroup lal_support			Support Package
+@{
+   \brief This package covers LAL support routines. These routines do
+   not conform to LAL requirements, and many of them should be used only
+   for debugging and in test code, not in production code. These are
+   compiled and installed as a separate library \c lalsupport.
+@}
+
+\defgroup lal_swig			SWIG Interfaces
+@{
+   \brief This package provides Octave and Python wrappings of LAL
+   functions and data structures generated using SWIG.
+@}
+
+\defgroup lal_python			Python Packages
+
+*/

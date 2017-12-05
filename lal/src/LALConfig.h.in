@@ -1,0 +1,46 @@
+/* only include this file if LAL's config.h has not been included */
+#ifndef LAL_VERSION
+
+/* LAL Version */
+#undef LAL_VERSION
+
+/* LAL Version Major Number  */
+#undef LAL_VERSION_MAJOR
+
+/* LAL Version Minor Number  */
+#undef LAL_VERSION_MINOR
+
+/* LAL Version Micro Number  */
+#undef LAL_VERSION_MICRO
+
+/* LAL Version Devel Number  */
+#undef LAL_VERSION_DEVEL
+
+/* Suppress debugging code */
+#undef LAL_NDEBUG
+
+/* Use functions rather than macros */
+#undef NOLALMACROS
+
+/* Use pthread mutex lock for threadsafety */
+#undef LAL_PTHREAD_LOCK
+
+/* Define if using fftw3 library */
+#undef LAL_FFTW3_ENABLED
+
+/* Define if using fftw3 aligned memory optimizations */
+#undef LAL_FFTW3_MEMALIGN_ENABLED
+
+/* Define if using boinc library */
+#undef LAL_BOINC_ENABLED
+
+/* Define if using CUDA library */
+#undef LAL_CUDA_ENABLED
+
+/* Define if using HDF5 library */
+#undef LAL_HDF5_ENABLED
+
+/* Define if using qthread library */
+#undef LAL_QTHREAD
+
+#endif /* LAL_VERSION */

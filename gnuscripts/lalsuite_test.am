@@ -1,0 +1,50 @@
+AM_CPPFLAGS = -DTEST_DATA_DIR='"$(abs_srcdir)/"' @AM_CPPFLAGS@
+
+TEST_EXTENSIONS = .sh .m .py
+
+## here we should be using OMP_THREAD_LIMIT, instead of OMP_NUM_THREADS,
+## to limit the number of threads used by OpenMP but this is a OpenMP
+## 4.5 feature and not currently supported by the compilers we are
+## currently using. Therefore once we have an OpenMP-4.5 compiler we
+## should switch to using OMP_THREAD_LIMIT instead of OMP_NUM_THREADS
+
+TESTS_ENVIRONMENT = \
+	export LC_ALL; LC_ALL=C; \
+	export OMP_NUM_THREADS; OMP_NUM_THREADS=2; \
+	export LAL_DEBUG_LEVEL; LAL_DEBUG_LEVEL=msglvl1,memdbg; \
+	export LAL_TEST_SRCDIR; LAL_TEST_SRCDIR="$(abs_srcdir)"; \
+	export LAL_TEST_BUILDDIR; LAL_TEST_BUILDDIR="$(abs_builddir)"; \
+	lalsuite_path="$(abs_top_builddir)/octave"; \
+	test "x$(builddir)" = "x$(srcdir)" || lalsuite_path="$${lalsuite_path}:$(abs_top_srcdir)/octave"; \
+	test "x$(LAL_OCTAVE_PATH)" = x || lalsuite_path="$${lalsuite_path}:$(LAL_OCTAVE_PATH)"; \
+	test "x$${OCTAVE_PATH}" = x || lalsuite_path="$${lalsuite_path}:$${OCTAVE_PATH}"; \
+	export OCTAVE_PATH; OCTAVE_PATH="$${lalsuite_path}"; \
+	lalsuite_path="$(abs_top_builddir)/python"; \
+	test "x$(builddir)" = "x$(srcdir)" || lalsuite_path="$${lalsuite_path}:$(abs_top_srcdir)/python"; \
+	test "x$(LAL_PYTHON_PATH)" = x || lalsuite_path="$${lalsuite_path}:$(LAL_PYTHON_PATH)"; \
+	test "x$${PYTHONPATH}" = x || lalsuite_path="$${lalsuite_path}:$${PYTHONPATH}"; \
+	export PYTHONPATH; PYTHONPATH="$${lalsuite_path}"; \
+	$(END_OF_LIST)
+
+test_programs =
+test_scripts =
+test_helpers =
+check_PROGRAMS = $(test_programs) $(test_helpers)
+TESTS = $(test_programs) $(test_scripts)
+EXTRA_DIST += $(test_scripts)
+
+test_script_runner = $(top_srcdir)/gnuscripts/lalsuite_run_uninstalled
+test_script_compiler = $(test_script_runner) --verbose '$(abs_top_builddir)' '$(abs_builddir)' '$(LDADD)'
+EXTRA_DIST += $(test_script_runner)
+
+SH_LOG_COMPILER = $(SHELL)
+M_LOG_COMPILER = $(test_script_compiler) "$(OCTAVE)" -fH
+PY_LOG_COMPILER = $(test_script_compiler) "$(PYTHON)" -u
+
+.PHONY: run-octave
+run-octave: $(octexec_LTLIBRARIES)
+	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(RUNTOOL) "$(OCTAVE)" $(RUNARGS)
+
+.PHONY: run-python
+run-python: $(pkgpyexec_LTLIBRARIES)
+	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(RUNTOOL) "$(PYTHON)" $(RUNARGS)

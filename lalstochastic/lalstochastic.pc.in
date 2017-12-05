@@ -1,0 +1,17 @@
+PACKAGE_TARNAME=@PACKAGE_TARNAME@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+datarootdir=@datarootdir@
+docdir=@docdir@
+htmldir=@htmldir@
+LALSTOCHASTIC_OCTAVE_PATH=@octexecdir@
+LALSTOCHASTIC_PYTHON_PATH=@pyexecdir@
+
+Name: LALStochastic
+Description: LAL Stochastic Library
+Version: @VERSION@
+Requires: lal >= @LAL_VERSION@, libmetaio, lalmetaio >= @LALMETAIO_VERSION@
+Libs: -L${libdir} -llalstochastic
+Cflags: -I${includedir}

@@ -1,0 +1,14 @@
+universe   = vanilla
+executable = /home/badkri/MC_allsky/MCscript.sh
+#input      = in.$(Process)
+output     = out.$(Process)
+error      = err.$(Process)
+log        = log.$(Process)
+initialdir = /home/badkri/MC_allsky
++Prio = "42"
+rank = mips
+notification = Never
+arguments  =  $(Process)
+on_exit_remove = (ExitBySignal == False) || ((ExitBySignal == True) && (ExitSignal != 11))
+requirements = ( ( machine != "merlin.geo600.aei.mpg.de" ) && ( machine  != "morgane.geo600.aei.mpg.de" ) )
+queue 200

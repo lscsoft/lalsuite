@@ -1,0 +1,43 @@
+#!/usr/bin/python
+
+import sys
+import numpy
+import copy
+from pylal import spawaveform
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import table
+from glue.ligolw import utils
+from glue.ligolw import ilwd
+from glue.ligolw import types
+
+xml_file=sys.argv[1]
+xmldoc='Sim_Inspiral' + xml_file
+
+print 'loading' + xml_file
+template_bank_file=utils.load_filename(xml_file)
+SIM_inspiral_table=lsctables.table.get_table(template_bank_file, "sim_inspiral")
+
+output='Injection' + xml_file
+xmldoc = ligolw.Document()
+xmldoc.appendChild(ligolw.LIGO_LW())
+SIMinspiral_table = lsctables.New(lsctables.SimInspiralTable)
+xmldoc.childNodes[0].appendChild(SIMinspiral_table)
+
+mass1=SIM_inspiral_table.get_column('mass1')
+mass2=SIM_inspiral_table.get_column('mass2')
+spin1z=SIM_inspiral_table.get_column('spin1z')
+spin2z=SIM_inspiral_table.get_column('spin2z')
+
+chi=[]
+f_final=[]
+
+for row in SIM_inspiral_table:
+	chi.append(spawaveform.computechi(row.mass1,row.mass2,row.spin1z,row.spin2z))
+	for x in chi:
+		f_final.append(spawaveform.imrffinal(row.mass1,row.mass2,x))
+	SIMinspiral_table.append(copy.deepcopy(row))
+	row.f_final=f_final
+#	print mass1, mass2, spin1z, spin2z, chi, f_final
+
+utils.write_filename(xmldoc, output, verbose = True)	

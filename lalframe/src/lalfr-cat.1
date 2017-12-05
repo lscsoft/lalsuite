@@ -1,0 +1,38 @@
+.TH LALFR-CAT 1 "10 June 2013" LALFrame LALFrame
+.SH NAME
+lalfr-cat -- concatenate frame files
+
+.SH SYNOPSIS
+.B lalfr-cat
+[\fIfile\fP ...]
+
+.SH DESCRIPTION
+.PP
+The \fBlalfr-cat\fP utility cuts reads frame files sequentially, writing them
+to the standard output.  The \fIfile\fP operands are processed in command-line
+order.  If \fIfile\fP is a single dash (`\fB-\fP') or absent, \fBlalfr-cat\fP
+reads from the standard input.
+
+.SH EXAMPLE
+.PP
+The command:
+.PP
+.RS
+lalfr-cat file1.gwf file2.gwf > file3.gwf
+.RE
+will concatenate \fIfile1.gwf\fP and \fIfile2.gwf\fP to the file
+\fIfile3.gwf\fP.
+.PP
+The command:
+.PP
+.RS
+lalfr-cat file1.gwf - file2.gwf
+.RE
+will output to standard output the contents of frame file \fIfile1.gwf\fP, the
+frame file received from standard input, and the contents \fIfile2.gwf\fP.
+
+.SH SEE ALSO
+lalfr-split(1)
+
+.SH AUTHOR
+Jolien Creighton

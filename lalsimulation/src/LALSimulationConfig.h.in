@@ -1,0 +1,19 @@
+/* only include this file if LALSimulation's config.h has not been included */
+#ifndef LALSIMULATION_VERSION
+
+/* LALFrame Version */
+#undef LALSIMULATION_VERSION
+
+/* LALFrame Version Major Number  */
+#undef LALSIMULATION_VERSION_MAJOR
+
+/* LALFrame Version Minor Number  */
+#undef LALSIMULATION_VERSION_MINOR
+
+/* LALFrame Version Micro Number  */
+#undef LALSIMULATION_VERSION_MICRO
+
+/* LALFrame Version Devel Number  */
+#undef LALSIMULATION_VERSION_DEVEL
+
+#endif /* LALSIMULATION_VERSION */

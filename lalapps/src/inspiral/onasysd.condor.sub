@@ -1,0 +1,10 @@
+universe = scheduler
+executable = $ENV(HOME)/local/bin/onasysd
+getenv = True
+notification = never
+
+arguments = --config-file=onasysd.H1.ini --log-file=onasysd.H1.log
+log = onasysd.H1.condor.log
+error = onasysd.H1.condor.stderr
+output = onasysd.H1.condor.stdout
+queue 1

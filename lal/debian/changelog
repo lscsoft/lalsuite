@@ -1,0 +1,313 @@
+lal (6.18.0-1) unstable; urgency=low
+
+  * LAL 6.18.0
+  * O2 release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 07 Feb 2017 15:39:28 -0600
+
+lal (6.17.0-1) unstable; urgency=low
+
+  * LAL 6.17.0
+  * ER10 release
+  * Add python3 package
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 19 Sep 2016 11:41:03 -0500
+
+lal (6.16.1-1) unstable; urgency=low
+
+  * LAL 6.16.1
+  * ER9 release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 21 Jun 2016 18:39:37 -0500
+
+lal (6.16.0-1) unstable; urgency=low
+
+  * LAL 6.16.0
+  * Pre O2 packaging test release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 25 Mar 2016 09:28:21 -0500
+
+lal (6.15.2-1) unstable; urgency=low
+
+  * LAL 6.15.2
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 20 Oct 2015 23:07:33 -0500
+
+lal (6.15.1-1) unstable; urgency=low
+
+  * LAL 6.15.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Sun, 04 Oct 2015 08:57:45 -0500
+
+lal (6.15.0-1) unstable; urgency=low
+
+  * LAL 6.15.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Sat, 01 Aug 2015 19:54:11 -0500
+
+lal (6.14.0-1) unstable; urgency=low
+
+  * LAL 6.14.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 18 May 2015 14:23:05 -0500
+
+lal (6.13.4-1) unstable; urgency=low
+
+  * LAL 6.13.4
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 18 Nov 2014 15:18:59 -0600
+
+lal (6.13.3-1) unstable; urgency=low
+
+  * LAL 6.13.3
+  * more SWIG binding packaging fixes
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 06 Nov 2014 15:25:56 -0600
+
+lal (6.13.2-1) unstable; urgency=low
+
+  * LAL 6.13.2
+  * more SWIG binding packaging fixes
+  * don't ignore --datarootdir in lalsupport.pc.in
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 03 Nov 2014 11:43:23 -0600
+
+lal (6.13.1-1) unstable; urgency=low
+
+  * LAL 6.13.1
+  * correctly package SWIG bindings
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 28 Oct 2014 12:24:42 -0500
+
+lal (6.13.0-1) unstable; urgency=low
+
+  * LAL 6.13.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 27 Oct 2014 15:00:44 -0500
+
+lal (6.12.0-1) unstable; urgency=low
+
+  * LAL 6.12.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 03 Jan 2014 12:04:38 -0600
+
+lal (6.11.0-1) unstable; urgency=low
+
+  * LAL 6.11.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 27 Jun 2013 10:20:09 -0500
+
+lal (6.10.0-1) unstable; urgency=low
+
+  * LAL 6.10.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 11 Mar 2013 12:09:33 -0500
+
+lal (6.9.1-1) unstable; urgency=low
+
+  * LAL 6.9.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 11 Jan 2013 16:22:30 -0600
+
+lal (6.9.0-1) unstable; urgency=low
+
+  * LAL 6.9.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 07 Dec 2012 17:04:45 -0600
+
+lal (6.8.0-1) unstable; urgency=low
+
+  * LAL 6.8.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 02 Nov 2012 13:23:50 -0500
+
+lal (6.7.2-5) unstable; urgency=low
+
+  * convert to source format 3.0 (quilt)
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Wed, 05 Sep 2012 10:45:00 +0200
+
+lal (6.7.2-1) unstable; urgency=low
+
+  * LAL 6.7.2
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 13 Jun 2012 16:55:14 +0100
+
+lal (6.7.1-1) unstable; urgency=low
+
+  * LAL 6.7.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 11 May 2012 11:42:53 -0500
+
+lal (6.7.0-1) unstable; urgency=low
+
+  * LAL 6.7.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 10 Apr 2012 11:24:32 -0500
+
+lal (6.6.2-1) unstable; urgency=low
+
+  * LAL 6.6.2
+  * fix fence post error in Adaptive RK integrator
+  * prevent running geometric mean PSD from getting pinned at zero by zeroes
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 23 Jan 2012 08:40:10 -0600
+
+lal (6.6.1-1) unstable; urgency=low
+
+  * LAL 6.6.1
+  * update to automake-1.11.2
+  * support leap second at end of June 2012
+  * ensure "science" definition of calibration DQ vector follows definition
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 13 Jan 2012 15:42:13 -0600
+
+lal (6.6.0-1) unstable; urgency=low
+
+  * LAL 6.6.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 13 Dec 2011 12:42:59 -0600
+
+lal (6.6.0~rc2-1) unstable; urgency=low
+
+  * LAL 6.6.0 Release Candidate 2
+  * name anonymous enums (fixes issue when built with g++-4.0.1)
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 09 Dec 2011 14:00:07 -0600
+
+lal (6.6.0~rc1-1) unstable; urgency=low
+
+  * LAL 6.6.0 Release Candidate 1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 06 Dec 2011 14:30:51 -0600
+
+lal (6.5.0-1lscsoft1) unstable; urgency=low
+
+  * LAL 6.5.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 5 Jan 2011 16:05:38 -0600
+
+lal (6.4.1-1lscsoft1) unstable; urgency=low
+
+  * LAL 6.4.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 11 May 2010 12:05:33 -0500
+
+lal (6.4.0-1lscsoft1) unstable; urgency=low
+
+  * LAL 6.4.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 5 May 2010 09:48:56 -0500
+
+lal (6.3.2-1lscsoft1) unstable; urgency=low
+
+  * LAL 6.3.2
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 19 Nov 2009 13:19:37 -0600
+
+lal (6.3.1-1lscsoft1) unstable; urgency=low
+
+  * LAL 6.3.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 08 Oct 2009 17:50:41 +0200
+
+lal (6.3-1lscsoft1) unstable; urgency=low
+
+  * LAL 6.3
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Thu, 03 Sep 2009 16:00:00 +0200
+
+lal (6.2-1lscsoft1) unstable; urgency=low
+
+  * LAL 6.2
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 6 Aug 2009 12:02:09 -0600
+
+lal (6.1.1-1lscsoft1) unstable; urgency=low
+
+  * LAL 6.1.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 6 Jul 2009 17:15:07 -0600
+
+lal (6.1-1lscsoft1) unstable; urgency=low
+
+  * LAL 6.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 1 Jul 2009 13:33:17 -0600
+
+lal (6.0.2-1lscsoft1) unstable; urgency=low
+
+  * LAL 6.0.2
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 12 Jun 2009 14:25:26 -0600
+
+lal (6.0.1-1lscsoft1) unstable; urgency=low
+
+  * LAL 6.0.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 10 Jun 2009 20:53:45 -0600
+
+lal (6.0-1lscsoft1) unstable; urgency=low
+
+  * LAL 6.0 (based on branch 9d93e994822c8dc61f2a62233e017d71866564f9)
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Tue, 09 Jun 2009 11:30:00 +0200
+
+lal (5.3-1lscsoft1) unstable; urgency=low
+
+  * LAL 5.3 for Metaio 8.2
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Fri, 21 Nov 2008 12:10:00 +0100
+
+lal (5.2-7lscsoft2) unstable; urgency=low
+
+  * prefix=/opt/lscsoft/lal, some more fixes
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Wed, 05 Nov 2008 11:00:00 +0100
+
+lal (5.2-7lscsoft1) unstable; urgency=low
+
+  * prefix=/opt/lscsoft/lal
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Tue, 04 Nov 2008 12:00:00 +0100
+
+lal (5.2-6) unstable; urgency=low
+
+  * /etc/lal just in case
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Fri, 29 Feb 2008 10:00:00 +0100
+
+lal (5.2-5) unstable; urgency=low
+
+  * reorder package contents, move etc/ to etc/lscsoft/
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Thu, 28 Feb 2008 14:45:00 +0100
+
+lal (5.2-4) unstable; urgency=low
+
+  * fixed build dependencies
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Thu, 21 Feb 2008 13:55:00 +0100
+
+lal (5.2-3) unstable; urgency=low
+
+  * rebuilt with --enable-frame --enable-metaio
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Tue,  6 Nov 2007 15:50:00 +0100
+
+lal (5.2-2) unstable; urgency=low
+
+  * Depend on gsl 1.9 or later
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Thu,  1 Nov 2007 11:15:00 +0100
+
+lal (5.2-1) unstable; urgency=low
+
+  * Initial release
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Fri,  5 Oct 2007 13:09:39 +0200
+

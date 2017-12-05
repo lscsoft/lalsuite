@@ -1,0 +1,12 @@
+Power tasks:
+============
+
+o  Make sure can filter auxilliary channels
+o  Fix injection codes to be able to take arbitrary signals
+        - this is a substantial job,  needs a couple of weeks
+	- could plan to work with h(t) for now
+
+Burst-inspiral coincidence:
+==========================
+
+*  Write code to do burst inspiral coincidence

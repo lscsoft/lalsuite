@@ -1,0 +1,128 @@
+%define _prefix /usr
+%define _mandir %{_prefix}/share/man
+%define _sysconfdir %{_prefix}/etc
+
+Name: @PACKAGE@
+Version: @VERSION@
+Release: 1%{?dist}
+Summary: LSC Algorithm Stochastic Library
+License: GPLv2+
+Group: LAL
+Source: %{name}-%{version}.tar.xz
+URL: https://wiki.ligo.org/DASWG/LALSuite
+Packager: Adam Mercer <adam.mercer@ligo.org>
+BuildRoot: %{_tmppath}/%{name}-%{version}-root
+BuildRequires: libmetaio-devel
+BuildRequires: numpy
+BuildRequires: octave-devel
+BuildRequires: python-devel
+BuildRequires: swig >= 3.0.7
+BuildRequires: lal-devel >= @MIN_LAL_VERSION@
+BuildRequires: lal-octave >= @MIN_LAL_VERSION@
+BuildRequires: lal-python >= @MIN_LAL_VERSION@
+BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
+BuildRequires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
+BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
+Requires: libmetaio
+Requires: lal >= @MIN_LAL_VERSION@
+Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
+Prefix: %{_prefix}
+
+%description
+The LSC Algorithm Stochastic Library for gravitational wave data analysis.
+This package contains the shared-object libraries needed to run applications
+that use the LAL Stochastic library.
+
+%package devel
+Summary: Files and documentation needed for compiling programs that use LAL Stochastic
+Group: LAL
+Requires: %{name} = %{version}
+Requires: libmetaio-devel
+Requires: lal-devel >= @MIN_LAL_VERSION@
+Requires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
+%description devel
+The LSC Algorithm Stochastic Library for gravitational wave data analysis.
+This package contains files needed build applications that use the LAL
+Stochastic library.
+
+%package python
+Summary: Python Bindings for LALStochastic
+Group: LAL
+Requires: %{name} = %{version}
+Requires: numpy
+Requires: python
+Requires: lal-python >= @MIN_LAL_VERSION@
+Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
+%description python
+The LSC Algorithm Library for gravitational wave data analysis.
+This package provides the Python bindings for LALFrame.
+
+%package octave
+Summary: Octave Bindings for LALStochastic
+Group: LAL
+Requires: %{name} = %{version}
+Requires: octave
+Requires: lal-octave >= @MIN_LAL_VERSION@
+Requires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
+%description octave
+The LSC Algorithm Library for gravitational wave data analysis.
+This package provides the Octave bindings for LALStochastic.
+
+%prep
+%setup -q
+
+%check
+%{__make} V=1 check
+
+%build
+%configure --disable-gcc-flags --enable-swig
+%{__make} V=1
+
+%install
+%make_install
+find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
+
+%post
+ldconfig
+
+%postun
+ldconfig
+
+%clean
+[ ${RPM_BUILD_ROOT} != "/" ] && rm -Rf ${RPM_BUILD_ROOT}
+rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
+
+%files
+%defattr(-,root,root)
+%{_bindir}/lalstochastic_version
+%{_libdir}/*.so.*
+%{_sysconfdir}/*
+
+%files devel
+%defattr(-,root,root)
+%{_includedir}/lal
+%{_libdir}/*.a
+%{_libdir}/*.so
+%{_libdir}/pkgconfig/*
+
+%files python
+%defattr(-,root,root)
+%{_libdir}/python*
+
+%files octave
+%defattr(-,root,root)
+%{_prefix}/lib*/octave/*/site/oct/*/lalstochastic.oct*
+
+# dates should be formatted using: 'date +"%a %b %d %Y"'
+%changelog
+* Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.1.20-1
+- O2 release
+
+* Mon Sep 26 2016 Adam Mercer <adam.mercer@ligo.org> 1.1.19-1
+- ER10 release
+
+* Thu Jun 23 2016 Adam Mercer <adam.mercer@ligo.org> 1.1.18-1
+- ER9 release
+
+* Fri Mar 25 2016 Adam Mercer <adam.mercer@ligo.org> 1.1.17-1
+- Pre O2 packaging test release

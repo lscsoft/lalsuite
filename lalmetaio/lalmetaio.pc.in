@@ -1,0 +1,17 @@
+PACKAGE_TARNAME=@PACKAGE_TARNAME@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+datarootdir=@datarootdir@
+docdir=@docdir@
+htmldir=@htmldir@
+LALMETAIO_OCTAVE_PATH=@octexecdir@
+LALMETAIO_PYTHON_PATH=@pyexecdir@
+
+Name: LALMetaIO
+Description: LAL MetaIO Library Support
+Version: @VERSION@
+Requires: lal >= @LAL_VERSION@, libmetaio
+Libs: -L${libdir} -llalmetaio
+Cflags: -I${includedir}

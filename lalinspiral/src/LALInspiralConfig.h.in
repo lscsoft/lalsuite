@@ -1,0 +1,22 @@
+/* only include this file if LALInspiral's config.h has not been included */
+#ifndef LALINSPIRAL_VERSION
+
+/* LALInspiral Version */
+#undef LALINSPIRAL_VERSION
+
+/* LALInspiral Version Major Number  */
+#undef LALINSPIRAL_VERSION_MAJOR
+
+/* LALInspiral Version Minor Number  */
+#undef LALINSPIRAL_VERSION_MINOR
+
+/* LALInspiral Version Micro Number  */
+#undef LALINSPIRAL_VERSION_MICRO
+
+/* LALInspiral Version Devel Number  */
+#undef LALINSPIRAL_VERSION_DEVEL
+
+/* Define if using CUDA library */
+#undef LALINSPIRAL_CUDA_ENABLED
+
+#endif /* LALINSPIRAL_VERSION */

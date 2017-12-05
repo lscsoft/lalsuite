@@ -1,0 +1,127 @@
+SUFFIXES = .py
+
+.PHONY: pymodule-all-local
+.PHONY: pymodule-mostlyclean-local
+.PHONY: pybin-install-exec-local
+.PHONY: pybin-uninstall-local
+.PHONY: pybin-dist-hook
+
+if HAVE_PYTHON
+
+BUILT_SOURCES += $(pymodule_PYTHON) $(pybin_scripts)
+MOSTLYCLEANFILES += $(pybin_scripts)
+
+uninstalled_runner = $(top_srcdir)/gnuscripts/lalsuite_run_uninstalled
+uninstalled_compiler = $(uninstalled_runner) '$(abs_top_builddir)' '$(abs_builddir)' '$(LDADD)'
+EXTRA_DIST += $(uninstalled_runner)
+
+all-local: pymodule-all-local pyscripts-all-local
+pymodule-all-local: pymodule-mostlyclean-local
+	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
+		for file in $(pymodule_PYTHON); do \
+			if test -r "$(srcdir)/$${file}"; then \
+				$(LN_S) "$(srcdir)/$${file}" "$(builddir)/$${file}" || exit 1; \
+			fi; \
+		done; \
+	fi
+pyscripts-all-local: pyscripts-mostlyclean-local
+	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
+		for file in $(pybin_scripts); do \
+			if test -r "$(srcdir)/$${file}.py"; then \
+				cp -p "$(srcdir)/$${file}.py" "$(builddir)/$${file}.py" || exit 1; \
+			fi; \
+		done; \
+	fi
+
+mostlyclean-local: pymodule-mostlyclean-local pyscripts-mostlyclean-local
+pymodule-mostlyclean-local:
+	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
+		for file in $(pymodule_PYTHON); do \
+			if test -r "$(srcdir)/$${file}"; then \
+				rm -f "$(builddir)/$${file}" "$(builddir)/$${file}c" "$(builddir)/$${file}o" || exit 1; \
+			fi; \
+		done; \
+	fi
+pyscripts-mostlyclean-local:
+	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
+		for file in $(pybin_scripts); do \
+			if test -r "$(srcdir)/$${file}.py"; then \
+				rm -f "$(builddir)/$${file}.py" || exit 1; \
+			fi; \
+		done; \
+	fi
+
+$(pybin_scripts): Makefile pyscripts-all-local
+.py:
+	$(AM_V_GEN)shebang='#!'; \
+	rm -f $@ $@.tmp || exit 1; \
+	if test -x $(srcdir)/$@.py; then \
+		printf "\nERROR: $(srcdir)/$@.py must not be executable\n\n" >&2; \
+		exit 1; \
+	fi; \
+	if test "x`$(SED) -n -e /^$${shebang}/p $(srcdir)/$@.py`" != x; then \
+		printf "\nERROR: $(srcdir)/$@.py must not contain a $${shebang} command line\n\n" >&2; \
+		exit 1; \
+	fi; \
+	echo "$${shebang}/bin/sh" > $@.tmp; \
+	echo "PYTHONPATH=\"$(abs_builddir):$(abs_srcdir):$(LAL_PYTHON_PATH):\$${PYTHONPATH}\"" >> $@.tmp; \
+	echo "export PYTHONPATH" >> $@.tmp; \
+	echo "exec $(uninstalled_compiler) $(PYTHON) \"$(abs_builddir)/$@.py\" \"\$$@\"" >> $@.tmp; \
+	echo "exit 1" >> $@.tmp; \
+	chmod +x $@.tmp || exit 1; \
+	mv -f $@.tmp $@
+
+install-exec-local: pybin-install-exec-local
+pybin-install-exec-local:
+	$(AM_V_at)shebang='#!'; \
+	if test "x$(pybin_scripts)" != x; then \
+		pypath="$(pyexecdir)"; \
+		if test "$(pythondir)" != "$(pyexecdir)"; then \
+			pypath="$${pypath}:$(pythondir)"; \
+		fi; \
+		echo " $(MKDIR_P) '$(DESTDIR)$(bindir)'"; \
+		$(MKDIR_P) "$(DESTDIR)$(bindir)" || exit 1; \
+		if test "x$(exec_prefix)" != "x$(python_exec_prefix)"; then \
+			echo " $(MKDIR_P) '$(DESTDIR)$(pkglibexecdir)'"; \
+			$(MKDIR_P) "$(DESTDIR)$(pkglibexecdir)" || exit 1; \
+		fi; \
+		for file in $(pybin_scripts); do \
+			rm -f $${file}.tmp || exit 1; \
+			if test "x$(exec_prefix)" = "x$(python_exec_prefix)"; then \
+				echo "$${shebang}$(PYTHON)" > $${file}.tmp; \
+				cat $(srcdir)/$${file}.py >> $${file}.tmp; \
+			else \
+				sed_regex="s|^PYTHONPATH=.*$$|PYTHONPATH=\"$${pypath}:\$${PYTHONPATH}\"|;s|^exec .*$$|exec $(PYTHON) \"$(pkglibexecdir)/$${file}.py\" \"\$$@\"|"; \
+				$(SED) -e "$${sed_regex}" $${file} > $${file}.tmp || exit 1; \
+				echo " $(INSTALL_DATA) $(srcdir)/$${file}.py '$(DESTDIR)$(pkglibexecdir)/$${file}.py'"; \
+				$(INSTALL_DATA) $(srcdir)/$${file}.py "$(DESTDIR)$(pkglibexecdir)/$${file}.py" || exit 1; \
+			fi; \
+			echo " $(INSTALL_SCRIPT) $${file} '$(DESTDIR)$(bindir)/$${file}'"; \
+			$(INSTALL_SCRIPT) $${file}.tmp "$(DESTDIR)$(bindir)/$${file}" || exit 1; \
+			rm -f $${file}.tmp || exit 1; \
+		done; \
+	fi
+
+uninstall-local: pybin-uninstall-local
+pybin-uninstall-local:
+	-for file in $(pybin_scripts); do \
+		rm -f "$(DESTDIR)$(bindir)/$${file}"; \
+		if test "x$(exec_prefix)" != "x$(python_exec_prefix)"; then \
+			rm -f "$(DESTDIR)$(pkglibexecdir)/$${file}.py"; \
+		fi; \
+	done
+
+dist-hook: pybin-dist-hook
+pybin-dist-hook:
+	for file in $(pybin_scripts); do \
+		cp "$(srcdir)/$${file}.py" "$(distdir)/$${file}.py"; \
+	done
+
+else # !HAVE_PYTHON
+
+pymoduledir =
+pymodule_PYTHON =
+pybin_scripts =
+pkgpython_PYTHON =
+
+endif # HAVE_PYTHON

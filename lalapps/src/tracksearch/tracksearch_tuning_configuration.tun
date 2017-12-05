@@ -1,0 +1,49 @@
+; EXAMPLE TEMPLATE OF TRACKSEARCH TUNING CONFIGURATION FILE
+; AUTHOR: Cristina V. Torres
+;
+; Available sections for this file:
+; all -- (required)
+;        determine the location of the multiple pipelines, master
+;        pipeline configuration file, location of tuning logs/dags, 
+;        segment list revised (real data or otherwise), Lambda
+;        high/low ranges to test, 
+;        and the absolute path to the python pipe building program
+;        lalapps_tracksearch_pipe
+; false-alarm-setup -- (required)
+;                      empty section
+; false-alarm-calculate -- (required)
+;                           holds information setting the integrated
+;                           power and curve length values for each
+;                           lambda pair point given a specified z
+;                           value for the false alarm rate and related
+;                           options.  
+; detection-efficiency-setup -- (required)
+;                                empty section
+; detection-efficiency-calculate -- (required)
+;                                   empty section
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; TEMPLATE CONFIGURATION FILE
+; Use this as a start point to configure your tracksearch pipeline.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[all]
+masterini=/home/user/research.d/src/lalapps/src/tracksearch/tracksearchPipeline_4tun.ini
+tuningHome=/home/user/pipeTest/tuneTests
+tuningLogs=/tmp/user/Logs_tunePipes/
+tuningDags=/tmp/ctorres/DAGS_tunePips/
+seglist=/home/user/pipeTest/segmentsCLIP.txt.revised
+pipeProgram=/home/user/research.d/src/lalapps/src/tracksearch/tracksearch_pipe.py
+iniBatchLabel=_pipeTune_
+LH=3.5;0.1;0.2
+LL=0.9;0.05;0.1
+
+[false-alarm-setup]
+
+[false-alarm-calculate]
+FAR=2.33
+;datfilename=FAR_results.data
+
+[detect-efficiency-setup]
+
+[detect-efficiency-calculate]

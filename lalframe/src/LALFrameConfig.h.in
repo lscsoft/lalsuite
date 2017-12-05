@@ -1,0 +1,28 @@
+/* only include this file if LALFrame's config.h has not been included */
+#ifndef LALFRAME_VERSION
+
+/* LALFrame Version */
+#undef LALFRAME_VERSION
+
+/* LALFrame Version Major Number  */
+#undef LALFRAME_VERSION_MAJOR
+
+/* LALFrame Version Minor Number  */
+#undef LALFRAME_VERSION_MINOR
+
+/* LALFrame Version Micro Number  */
+#undef LALFRAME_VERSION_MICRO
+
+/* LALFrame Version Devel Number  */
+#undef LALFRAME_VERSION_DEVEL
+
+/* Define if you have inotify */
+#undef HAVE_INOTIFY
+
+/* Define to use FrameC */
+#undef USE_FRAMEC
+
+/* Define to use FrameL */
+#undef USE_FRAMEL
+
+#endif /* LALFRAME_VERSION */

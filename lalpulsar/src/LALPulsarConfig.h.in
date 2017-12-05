@@ -1,0 +1,19 @@
+/* only include this file if LALPulsar's config.h has not been included */
+#ifndef LALPULSAR_VERSION
+
+/* LALPulsar Version */
+#undef LALPULSAR_VERSION
+
+/* LALPulsar Version Major Number  */
+#undef LALPULSAR_VERSION_MAJOR
+
+/* LALPulsar Version Minor Number  */
+#undef LALPULSAR_VERSION_MINOR
+
+/* LALPulsar Version Micro Number  */
+#undef LALPULSAR_VERSION_MICRO
+
+/* LALPulsar Version Devel Number  */
+#undef LALPULSAR_VERSION_DEVEL
+
+#endif /* LALPULSAR_VERSION */

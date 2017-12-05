@@ -1,0 +1,46 @@
+%!PS-Adobe-2.0 EPSF-2.0
+%%Title: Eccentric anomaly plot
+%%Creator: Teviet Creighton
+%%CreationDate: Wed Jul 3 16:30:34 2002
+%%Orientation: Portrait
+%%Pages: 0
+%%BoundingBox: 0 0 230 230
+%%EndComments
+
+% Draw bounding box
+%0 0 moveto 230 0 rlineto 0 230 rlineto -230 0 rlineto stroke
+
+% Constants.
+/a 0.3 def
+/b 0.7 def
+/mag 0.5 def
+/radtodeg 57.2957795131 def
+
+% Routines for justifying text.
+/cshow { dup stringwidth pop -0.5 mul 0 rmoveto show } def
+/rshow { dup stringwidth pop -1 mul 0 rmoveto show } def
+
+
+33 37 translate
+
+% Make plot.
+gsave
+  mag mag scale 0 b radtodeg mul moveto
+  1 1 360 { dup dup dup sin a mul exch cos 1 sub b mul add radtodeg
+    mul add lineto } for stroke
+grestore
+
+% Draw axes.
+0 -5 moveto 0 360 mag mul lineto -5 0 rlineto stroke
+-5 0 moveto 360 mag mul 0 lineto 0 -5 rlineto stroke
+
+% Label axes.
+/Symbol findfont 20 scalefont setfont
+0 -25 moveto (0) cshow 360 mag mul -25 moveto (2p) cshow
+-10 -6 moveto (0) rshow -10 360 mag mul 5 sub moveto (2p) rshow
+/Times-Roman findfont 20 scalefont setfont
+180 mag mul -35 moveto (E) cshow
+-20 180 mag mul moveto 90 rotate (x) cshow
+
+%showpage
+%%EOF

@@ -1,0 +1,33 @@
+\documentclass{minimal}
+% Load packages
+\usepackage{graphicx}
+\usepackage{color}
+% Set papersize
+\usepackage[papersize={17cm,13.5cm},text={18cm,14cm}]{geometry}
+% No page numbers and no paragraph indentation
+\pagestyle{empty}
+\setlength{\parindent}{0bp}%
+% Load configuration file
+\InputIfFileExists{gnuplot.cfg}{%
+  \typeout{Using configuration file gnuplot.cfg}%
+}{%
+ \typeout{No configuration file gnuplot.cfg found.}%
+}%
+%
+
+\begin{document}
+
+\vspace*{-0.5cm}
+\begin{center}
+\includegraphics[angle=-90,width=0.49\textwidth]{./LALInspiralBankHm1m2}
+\includegraphics[angle=-90,width=0.49\textwidth]{./LALInspiralBankHtotalMassEta}\\
+\includegraphics[angle=-90,width=0.49\textwidth]{./LALInspiralBankHt0t2}
+\includegraphics[angle=-90,width=0.49\textwidth]{./LALInspiralBankHt0t3}
+\end{center}
+
+\end{document}
+
+%%% Local Variables:
+%%% TeX-PDF-mode: t
+%%% TeX-master: t
+%%% End:

@@ -1,0 +1,3 @@
+#!/usr/bin/make -f
+CONFIGUREARGS = --enable-swig
+include debian/lalsuite.mk

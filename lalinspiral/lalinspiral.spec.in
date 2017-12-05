@@ -1,0 +1,147 @@
+%define _prefix /usr
+%define _mandir %{_prefix}/share/man
+%define _sysconfdir %{_prefix}/etc
+
+Name: @PACKAGE@
+Version: @VERSION@
+Release: 1%{?dist}
+Summary: LSC Algorithm Inspiral Library
+License: GPLv2+
+Group: LAL
+Source: %{name}-%{version}.tar.xz
+URL: https://wiki.ligo.org/DASWG/LALSuite
+Packager: Adam Mercer <adam.mercer@ligo.org>
+BuildRoot: %{_tmppath}/%{name}-%{version}-root
+BuildRequires: gsl-devel
+BuildRequires: libmetaio-devel
+BuildRequires: numpy
+BuildRequires: octave-devel
+BuildRequires: python-devel
+BuildRequires: swig >= 3.0.7
+BuildRequires: lal-devel >= @MIN_LAL_VERSION@
+BuildRequires: lal-octave >= @MIN_LAL_VERSION@
+BuildRequires: lal-python >= @MIN_LAL_VERSION@
+BuildRequires: lalburst-python
+BuildRequires: lalframe-devel >= @MIN_LALFRAME_VERSION@
+BuildRequires: lalframe-octave >= @MIN_LALFRAME_VERSION@
+BuildRequires: lalframe-python >= @MIN_LALFRAME_VERSION@
+BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
+BuildRequires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
+BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
+BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
+Requires: gsl
+Requires: libframe
+Requires: libmetaio
+Requires: lal >= @MIN_LAL_VERSION@
+Requires: lalframe >= @MIN_LALFRAME_VERSION@
+Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
+Requires: lalsimulation >= @MIN_LALSIMULATION_VERSION@
+Prefix: %{_prefix}
+
+%description
+The LSC Algorithm Inspiral Library for gravitational wave data analysis. This
+package contains the shared-object libraries needed to run applications
+that use the LAL Inspiral library.
+
+%package devel
+Summary: Files and documentation needed for compiling programs that use LAL Inspiral
+Group: LAL
+Requires: %{name} = %{version}
+Requires: gsl-devel
+Requires: libframe-devel
+Requires: libmetaio-devel
+Requires: lal-devel >= @MIN_LAL_VERSION@
+Requires: lalframe-devel >= @MIN_LALFRAME_VERSION@
+Requires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
+Requires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
+%description devel
+The LSC Algorithm Inspiral Library for gravitational wave data analysis. This
+package contains files needed build applications that use the LAL Inspiral
+library.
+
+%package python
+Summary: Python bindings for LALInspiral
+Group: LAL
+Requires: %{name} = %{version}
+Requires: numpy
+Requires: python
+Requires: lal-python >= @MIN_LAL_VERSION@
+Requires: lalburst-python
+Requires: lalframe-python >= @MIN_LALFRAME_VERSION@
+Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
+Requires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
+%description python
+This package provides the Python bindings for LALInspiral.
+
+%package octave
+Summary: Octave bindings for LALInspiral
+Group: LAL
+Requires: %{name} = %{version}
+Requires: octave
+Requires: lal-octave >= @MIN_LAL_VERSION@
+Requires: lalframe-octave >= @MIN_LALFRAME_VERSION@
+Requires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
+Requires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
+%description octave
+This package provides the Octave bindings for LALInspiral.
+
+%prep
+%setup -q
+
+%build
+%configure --disable-gcc-flags --enable-swig
+%{__make} V=1
+
+%check
+%{__make} V=1 check
+
+%install
+%make_install
+find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
+
+%post
+ldconfig
+
+%postun
+ldconfig
+
+%clean
+[ ${RPM_BUILD_ROOT} != "/" ] && rm -Rf ${RPM_BUILD_ROOT}
+rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
+
+%files
+%defattr(-,root,root)
+%{_bindir}/lalinspiral_version
+%{_libdir}/*.so.*
+%{_sysconfdir}/*
+
+%files devel
+%defattr(-,root,root)
+%{_includedir}/lal
+%{_libdir}/*.a
+%{_libdir}/*.so
+%{_libdir}/pkgconfig/*
+
+%files python
+%defattr(-,root,root)
+%{_libdir}/python*
+
+%files octave
+%defattr(-,root,root)
+%{_prefix}/lib*/octave/*/site/oct/*/lalinspiral.oct*
+
+# dates should be formatted using: 'date +"%a %b %d %Y"'
+%changelog
+* Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.7.7-1
+- O2 release
+
+* Mon Sep 26 2016 Adam Mercer <adam.mercer@ligo.org> 1.7.6-1
+- ER10 release
+
+* Thu Jun 23 2016 Adam Mercer <adam.mercer@ligo.org> 1.7.5-1
+- ER9 release
+
+* Fri Mar 25 2016 Adam Mercer <adam.mercer@ligo.org> 1.7.4-1
+- Pre O2 packaging test release

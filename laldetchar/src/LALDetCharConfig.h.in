@@ -1,0 +1,19 @@
+/* only include this file if LALDetChar's config.h has not been included */
+#ifndef LALDETCHAR_VERSION
+
+/* LALDetChar Version */
+#undef LALDETCHAR_VERSION
+
+/* LALDetChar Version Major Number  */
+#undef LALDETCHAR_VERSION_MAJOR
+
+/* LALDetChar Version Minor Number  */
+#undef LALDETCHAR_VERSION_MINOR
+
+/* LALDetChar Version Micro Number  */
+#undef LALDETCHAR_VERSION_MICRO
+
+/* LALDetChar Version Devel Number  */
+#undef LALDETCHAR_VERSION_DEVEL
+
+#endif /* LALDETCHAR_VERSION */

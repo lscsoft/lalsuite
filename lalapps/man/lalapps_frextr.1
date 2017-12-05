@@ -1,0 +1,26 @@
+.TH LALAPPS_FREXTR 1 "11 July 2001" LALApps LALApps
+.SH NAME
+lalapps_frextr - extracts specified channels from a frame file
+
+.SH SYNOPSIS
+.B lalapps_frextr
+.IR outfile
+.IR infile
+.IR channels
+
+.SH DESCRIPTION
+.PP
+\fIlalapps_frextr\fP extracts the specified ADC channels from the input frame
+file \fIinfile\fP and writes them to the output frame file \fIoutfile\fP.
+
+.SH EXAMPLE
+.PP
+To extract the channels H1:LSC-AS_Q and H2-LSC-AS_Q from a LIGO level 1 RDS 
+frame file and write to a reduced frame file:
+.PP
+.RS
+fr_extr out.F H-RDS_R_L1-730155504-16.gwf "H1:LSC-AS_Q" "H2:LSC-AS_Q"
+.RE
+
+.SH AUTHOR
+Jolien Creighton

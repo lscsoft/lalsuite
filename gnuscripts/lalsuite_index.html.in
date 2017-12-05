@@ -1,0 +1,21 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+    <title>@PACKAGE_NAME@: Main Page</title>
+    <style type="text/css">
+      html, body { margin: 0; border: 0; width: 100%; height: 100%; }
+      .header { margin: 0; border: 0; width: 100%; height: 18px; font-size: 16px }
+      .content { margin-top: 18px; border: 0; position: absolute; top: 0px; left: 0px; right: 0px; bottom: 0px; }
+      iframe { margin: 0; border: 0; position: absolute; width: 100%; height: 100%; }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <b>@PACKAGE_NAME@</b>:@DOXYGEN_PACKAGE_LINKS@
+    </div>
+    <div class="content">
+      <iframe name="docframe" src="@DOXYGEN_LAST_PACKAGE@"></iframe>
+    </div>
+  </body>
+</html>

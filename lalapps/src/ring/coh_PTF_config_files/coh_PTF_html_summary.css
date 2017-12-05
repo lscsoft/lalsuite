@@ -1,0 +1,432 @@
+/* pylal.dq standard style sheet
+ * Duncan Macleod <duncan.macleod@ligo.org> 
+ * /
+
+/************/
+/* DOCUMENT */
+/************/
+
+html {
+  height: 100%
+}
+
+body {
+  padding: 0;
+  font-family: Arial;
+  font-size: 10pt;
+  width: 100%;
+  height: 100%;
+  margin: 0 auto 0 auto;
+}
+
+#container {
+  position: relative; /* needed for footer positioning*/
+  margin: 0; /* center, not in IE5 */
+  width: 100%;
+  background: transparent;
+  height:100%;
+  height: auto;
+  min-height: 100%;
+  margin-bottom: -50px;
+}
+
+#maintab {
+  font-size: 10pt;
+  position: absolute;
+  top: 0px;
+  left: 2%;
+  width: 96%;
+  background-color: transparent;
+  margin-bottom: 80px;
+}
+
+#content {
+  position: relative:
+  margin-bottom: 40px;
+  height: 100%;
+  height: auto;
+  min-height: 100%;
+}
+
+#header {
+  position: relative;
+  font-family: Garamond;
+  font-weight: bold;
+  color: black;
+  background: white;
+  text-align: center;
+  height: 120px;
+  width: 100%;
+  padding-top: .4em;
+  padding-bottom: .1em;
+}
+
+#menubar {
+  position: absolute;
+  top: 120px;
+  width: 16%;
+  color: black;
+  border-right: solid grey;
+  border-width: 1px;
+  text-align: left;
+  font-size: 10pt;
+  word-wrap: break-word;
+  padding: 0;
+}
+
+#footer {
+  position: relative;
+  clear: both;
+  width: auto;
+  height: 20px;
+  bottom: 0px;
+  background: #E0E0E0;
+  text-align: center;
+  margin: 0;
+  padding: 5px 0 0 0;
+}
+
+#display {
+  text-align: center;
+  display: block;
+  margin: 1em;
+}
+
+/**********/
+/* HEADER */
+/**********/
+
+h1 {
+  font-size: 24pt;
+  padding: 0;
+  margin: 0;
+}
+
+h2 {
+  font-size: 22pt;
+  color: black;
+  width: 100%;
+  display: block;
+  padding: 0;
+  margin: 0;
+}
+
+h3 {
+  font-size: 16pt;
+  color: black;
+  width: 100%;
+  display: block;
+  padding: 0;
+  margin-bottom: .2em;
+}
+
+input.h2 {
+  text-align: left;
+  text-decoration: none;
+  border-left: 2px solid gray;
+  border-bottom: 2px solid gray;
+  border-top: none;
+  border-right: none;
+  font-size: 20pt;
+  font-weight: bold;
+  font-family: Calibri;
+  width: 100%;
+  background-color: inherit;
+  padding-bottom: .1em;
+  margin-top: .5em;
+}
+
+input.h3 {
+  text-align: left;
+  text-decoration: none;
+  color: white;
+  background: gray;
+  border-radius: 10px;
+  -moz-border-radius: 10px;
+  padding-left: .1empx;
+  margin-left: -0.3em;
+  margin-right: -0.3em;
+  margin-top: .2em;
+  margin-bottom: .1em;
+  border-width: .1em;
+  font-size: 20pt;
+  font-weight: bold;
+  font-family: Calibri;
+  width: 100%;
+}
+
+input.h4 {
+  text-align: left;
+  text-decoration: none;
+  color: gray;
+  padding-left: .2em;
+  margin-left: -0.3em;
+  margin-right: -0.3em;
+  margin-bottom: .1em;
+  width: 100%;
+  border: 0;
+  font-size: 16pt;
+  font-weight: bold;
+  background: white;
+  font-family: Calibri;
+}
+
+input.menu {
+  border: 0;
+  display: block;
+  background-color: inherit;
+  padding: 5px 0 5px 0;
+  margin: 0;
+  font-size: inherit;
+  font-family: inherit;
+  width: 100%;
+  border-bottom: solid grey;
+  border-width: 1px;
+  text-align: left;
+  text-decoration: none;
+}
+
+input.menu:hover { color: orange;}
+
+/*********/
+/* LINKS */
+/*********/
+
+a.title {
+  color: inherit;
+}
+
+a:hover.title {
+  color: yellow;
+}
+
+a {
+  color: blue
+  border: 0;
+  text-decoration: none;
+  font-size: inherit;
+}
+
+a.menulink {
+  display: block;
+  text-decoration: none;
+  padding: 5px 0px 5px .2em;
+  border-bottom: solid grey;
+  border-width: 1px;
+}
+
+a.menulink:link { color: black; }
+a.menulink:visited { color: black; }
+a.menulink:hover { color: gray; }
+a.menulink:active { color: black; }
+
+a.inuse {
+  display: block;
+  text-decoration: none;
+  padding: 5px 0px 5px 0px;
+  color: gray;
+  border-bottom: solid grey;
+  border-width: 1px;
+}
+
+a.img {
+  padding: 0;
+  margin: 0;
+}
+
+a.day:link { color: gray; }
+a.day:visited { color: gray; }
+a.day:hover { color: gray; }
+a.day:active { color: gray; }
+
+/**********/
+/* TABLES */
+/**********/
+
+table {
+  text-align: center;
+  width: auto;
+  border-width: medium;
+  border-spacing: 1px;
+  border-style: double;
+  border-color: black;
+  border-collapse: collapse;
+  background-color: white;
+  word-wrap: break-word;
+  margin-top: .1em;
+  margin-bottom: .2em;
+}
+
+table.menu {
+  border-spacing: 1px 5px 1px 0px;
+  padding: 2px 10px 2px 10px;
+  margin-left: auto;
+  margin-right: auto;
+  background-color: #FFCCCC;
+  border-style: solid black;
+  border-width: 1px;
+  border-radius: 10px;
+  -moz-border-radius: 10px;
+  color: black;
+} 
+
+table.menu td {
+  font-weight: bold;
+  font-size: 16pt;
+  padding-right: 10px;
+  width: auto;
+}
+
+table.list {
+  padding: .2em;
+  vertical-align: top;  
+  background-color: white;
+  border: 0;
+}
+
+table.list th {
+  padding-right: .8em;
+  text-align: left;
+  font-weight: bold;
+  background-color: white;
+  border: 0;
+  color: inherit;
+}
+
+table.list td{
+  padding-right: .8em;
+  text-align: left;
+  background-color: white;
+  border: 0;
+}
+
+table th {
+  border-width: 1px;
+  padding: 2px;
+  border-style: solid;
+  border-color: gray;
+  background-color: gray;
+  font-size: 10pt;
+  color: white;
+}
+
+table td {
+  border-width: 1px;
+  padding: 2px;
+  border-style: solid;
+  border-color: gray;
+  background-color: white;
+  margin: 2px;
+}
+
+table.calendar {
+  border: 0;
+}
+
+table.calendar td {
+  border: 0;
+  vertical-align: text-top;
+}
+
+/********/
+/* DIVs */
+/********/
+
+div.menutab a{
+  margin: 0px 0px 0px 8px;
+  padding: 2px 2px 2px 5px;
+  font-size: 10pt;
+  border-bottom: solid grey;
+  border-width: 1px;
+}
+
+/**********************************************************/
+/*                        SECTION                         */
+/**********************************************************/
+
+.section {
+  padding: .0;
+}
+
+/**********************************************************/
+/*                          IMG                           */
+/**********************************************************/
+
+img { 
+  margin: 0%;
+  padding: 0;
+  border: 2;
+  width: 300px;
+}
+
+img.full {
+  width : 96%;
+}
+
+img.half {
+  width : 47%;
+}
+
+img.third {
+  width : 32%;
+}
+
+img.quarter {
+  width: 22%;
+}
+
+/*******/
+/* PRE */
+/*******/
+
+pre {
+  white-space: pre-wrap; /* css-3 */
+  white-space: -moz-pre-wrap; /* Mozilla, since 1999 */
+  white-space: -pre-wrap; /* Opera 4-6 */
+  white-space: -o-pre-wrap; /* Opera 7 */
+  word-wrap: break-word; /* Internet Explorer 5.5+ */
+  /* additional style */
+  background: #eee;
+  border: 1px solid gray;
+  padding: 5px;
+  font-size: 12px;
+  overflow: auto;
+}
+
+* html pre {
+  width: 500px;
+}
+
+pre span {
+	color: #560;
+}
+
+pre span.comment {
+	color: #b30000;
+}
+
+/******/
+/* HR */
+/******/
+
+hr.short {
+  width: 75%;
+  color: gray;
+  background-color: gray;
+  height: 3px;
+}
+
+hr.long {
+  width: 95%;
+  color: gray;
+  background-color: gray;
+  height: 4px;
+}
+
+/*****/
+/* p */
+/*****/
+p {
+  padding: 0;
+  margin: 0;
+}

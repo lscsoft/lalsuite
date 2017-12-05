@@ -1,0 +1,101 @@
+Source: lalburst
+Section: science
+Priority: optional
+Maintainer: Adam Mercer <adam.mercer@ligo.org>
+Build-Depends: debhelper (>= 9),
+  dh-python,
+  libgsl-dev | libgsl0-dev (>= 1.9),
+  libmetaio-dev (>= 8.2),
+  liboctave-dev,
+  pkg-config,
+  python-all-dev,
+  python3-all-dev,
+  swig (>= 3.0.7),
+  zlib1g-dev,
+  lal-dev (>= @MIN_LAL_VERSION@~),
+  lal-octave (>= @MIN_LAL_VERSION@~),
+  lal-python (>= @MIN_LAL_VERSION@~),
+  lal-python3 (>= @MIN_LAL_VERSION@~),
+  lalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
+  lalmetaio-octave (>= @MIN_LALMETAIO_VERSION@~),
+  lalmetaio-python (>= @MIN_LALMETAIO_VERSION@~),
+  lalmetaio-python3 (>= @MIN_LALMETAIO_VERSION@~),
+  lalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
+  lalsimulation-octave (>= @MIN_LALSIMULATION_VERSION@~),
+  lalsimulation-python (>= @MIN_LALSIMULATION_VERSION@~),
+  lalsimulation-python3 (>= @MIN_LALSIMULATION_VERSION@~)
+X-Python-Version: >= 2.7
+X-Python3-Version: >= 3.4
+Standards-Version: 3.9.8
+
+Package: lalburst
+Architecture: any
+Depends: ${misc:Depends},
+  ${shlibs:Depends},
+  libmetaio1 (>= 8.2),
+  zlib1g,
+  lal (>= @MIN_LAL_VERSION@~),
+  lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
+  lalsimulation (>= @MIN_LALSIMULATION_VERSION@)
+Description: LSC Algorithm Library Burst
+ The LSC Algorithm Burst Library for gravitational wave data analysis.
+ This package contains the shared-object libraries needed to run applications
+ that use the LAL Burst library.
+
+Package: lalburst-dev
+Section: libdevel
+Architecture: any
+Depends: ${misc:Depends},
+  ${shlibs:Depends},
+  libgsl-dev | libgsl0-dev (>= 1.9),
+  libmetaio-dev (>= 8.2),
+  zlib1g,
+  lal-dev (>= @MIN_LAL_VERSION@~),
+  lalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
+  lalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@),
+  lalburst (= ${binary:Version})
+Description: LSC Algorithm Library Burst Developers
+ The LSC Algorithm Burst Library for gravitational wave data analysis.
+ This package contains files needed build applications that use the LAL
+ Burst library.
+
+Package: lalburst-python
+Section: python
+Architecture: any
+Depends: ${misc:Depends},
+  ${python:Depends},
+  ${shlibs:Depends},
+  lal-python (>= @MIN_LAL_VERSION@~),
+  lalmetaio-python (>= @MIN_LALMETAIO_VERSION@~),
+  lalsimulation-python (>= @MIN_LALSIMULATION_VERSION@),
+  lalburst (= ${binary:Version})
+Description: Python bindings for LALBurst
+ The LSC Algorithm Burst Library for gravitational wave data analysis.
+ This package contains Python bindings for the LAL Burst library.
+
+Package: lalburst-python3
+Section: python
+Architecture: any
+Depends: ${misc:Depends},
+  ${python3:Depends},
+  ${shlibs:Depends},
+  lal-python3 (>= @MIN_LAL_VERSION@~),
+  lalmetaio-python3 (>= @MIN_LALMETAIO_VERSION@~),
+  lalsimulation-python3 (>= @MIN_LALSIMULATION_VERSION@),
+  lalburst (= ${binary:Version})
+Description: Python 3 bindings foar LALBurst
+ The LSC Algorithm Burst Library for gravitational wave data analysis.
+ This package contains Python 3 bindings for the LAL Burst library.
+
+Package: lalburst-octave
+Architecture: any
+Depends: ${misc:Depends},
+  ${shlibs:Depends},
+  octave,
+  lal-octave (>= @MIN_LAL_VERSION@~),
+  lalmetaio-octave (>= @MIN_LALMETAIO_VERSION@~),
+  lalsimulation-octave (>= @MIN_LALSIMULATION_VERSION@),
+  lalburst (= ${binary:Version})
+Description: Octave bindings for LALBurst
+ The LSC Algorithm Burst Library for gravitational wave data analysis.
+ This package contains Octave bindings for the LAL Burst library.

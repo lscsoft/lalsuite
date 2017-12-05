@@ -1,0 +1,216 @@
+%!PS-Adobe-2.0 EPSF-2.0
+%%Title: Horizon coordinate system
+%%Creator: Teviet Creighton
+%%CreationDate: Mon Apr 23 23:02:53 2001
+%%Orientation: Portrait
+%%Pages: 0
+%%BoundingBox: 20 170 600 640
+%%EndComments
+
+
+% Draw bounding box.
+20 170 moveto 20 640 lineto 600 640 lineto 600 170 lineto
+closepath clip newpath
+
+% Define some constants.
+/a 0.3 def    % squeeze factor of equatorial plane
+/g -35 def    % tilt of observer's meridional ellipse
+/pp 40 def    % latitude of observer
+/gw 40 def    % tilt of prime meridian ellipse
+/pw 51.48 def % latitude of Greenwich
+
+% Derive some constants.
+
+% position N pole
+/az 1 a dup mul sub sqrt def
+
+% squeeze factor of meridional ellipses
+/b g sin abs 1 az div dup mul g cos dup mul sub sqrt div def
+/bw gw sin abs 1 az div dup mul gw cos dup mul sub sqrt div def
+
+% slope of meridional edges
+/m b dup mul 1 sub g sin mul g cos mul
+   b g cos mul dup mul g sin dup mul add div def
+/mw bw dup mul 1 sub gw sin mul gw cos mul
+    bw gw cos mul dup mul gw sin dup mul add div def
+
+% horizon longitude, squeeze factor, and zenith height factor
+/l m a div 1 atan def
+/c l sin def
+/cz l cos def
+
+% prime meridian longitude
+/lw mw a div 1 atan def
+
+% observer and Greenwich position angles
+/poff g sin g cos b mul atan def
+/woff gw sin gw cos bw mul atan def
+/p pp poff add def
+/w pw woff sub def
+
+% observer position and horizon tilt angle
+/xp b neg p cos mul g cos mul p sin g sin mul sub 100 mul def
+/yp p sin g cos mul b p cos mul g sin mul sub 100 mul def
+/gp b p sin mul g sin mul p cos g cos mul add
+    b p sin mul g cos mul p cos g sin mul sub atan def
+
+
+% Start plotting.
+350 300 translate 2 2 scale
+
+
+% Draw shaded arc of horizon and horizon sphere.
+gsave 0.8 setgray xp yp translate gp rotate
+1 c scale 0 0 70 0 180 arc stroke 1 1 c div scale
+0.6 setgray 0 0 70 0 180 arc stroke
+grestore
+
+% Draw unshaded back arc of Earth.
+0 setgray 0 0 100 -180 -90 arc stroke
+
+% Draw shaded arc of Earth and equator.
+gsave 0.6 setgray
+-160 dup m mul 40 sub moveto 0 190 rlineto 280 dup m mul rlineto
+0 -190 rlineto closepath clip newpath
+g rotate 0 0 100 90 270 arc stroke
+g neg rotate 1 a scale 0 0 100 -180 0 arc stroke
+grestore
+
+% Draw twice-shaded arc of Earth and equator.
+gsave xp yp translate gp rotate 0 0 70 0 180 arc 1 c scale
+0 0 70 180 360 arc clip 1 1 c div scale gp neg rotate xp neg yp neg translate
+newpath 0.8 setgray g rotate 0 0 100 90 270 arc stroke
+g neg rotate 1 a scale 0 0 100 -180 0 arc stroke
+grestore
+
+% Draw meridional plane.
+-160 dup m mul 40 sub moveto 0 190 rlineto 280 dup m mul rlineto
+0 -190 rlineto closepath stroke
+gsave 0.9 setgray g rotate 0 0 100 -90 90 arc b 1 scale 0 0 100 90 270 arc
+clip newpath 1 b div 1 scale g neg rotate
+-160 dup m mul 40 sub moveto 280 dup m mul rlineto stroke
+grestore
+
+% Draw axes defining latitude.
+gsave 0.9 setgray 0.5 setlinewidth
+xp yp moveto xp neg dup m mul rlineto 0 az 100 mul lineto stroke
+xp yp translate gp rotate 1 cz scale 0 0 70 0 180 arc 1 1 cz div scale
+1 c scale 0 0 70 180 360 arc clip 1 1 c div scale gp neg rotate
+newpath 0.6 setgray 0 0 moveto -100 dup m mul lineto stroke
+grestore
+
+% Draw latitude arrow.
+/p0 99 def              % head end of arrow stalk
+/p1 pp 90 add 1 sub def % tail end of arrow stalk
+gsave 0.6 setgray 0.5 setlinewidth
+xp yp translate gp rotate 1 cz scale
+0 0 34 p1 p0 arcn 0 -1 rlineto 4 2 rlineto -4 2 rlineto 0 -1 rlineto
+0 0 36 p0 p1 arc closepath gsave 1 setgray fill grestore stroke
+grestore
+
+% Draw intersection of meridian with Earth.
+gsave 0 setgray
+-160 dup m mul 40 sub moveto 0 190 rlineto 280 dup m mul rlineto
+0 -190 rlineto closepath clip newpath
+g rotate b 1 scale 0 0 100 90 270 arc stroke
+grestore
+% shaded portion inside horizon sphere
+gsave xp yp translate gp rotate 0 0 70 0 180 arc 1 c scale
+0 0 70 180 360 arc clip 1 1 c div scale gp neg rotate xp neg yp neg translate
+newpath 0.6 setgray g rotate b 1 scale 0 0 100 90 270 arc stroke
+grestore
+
+% Draw rest of Earth and its equator.
+gsave 0 setgray g rotate 0 0 100 -90 90 arc stroke
+b 1 scale 0 0 100 90 270 arc 300 0 rlineto 0 100 rlineto closepath clip
+newpath 1 b div 1 scale g neg rotate 1 a scale 0 0 100 -180 0 arc stroke
+grestore
+
+% Draw z and x axes.
+gsave xp yp translate gp rotate 1 cz scale 0.6 setgray
+0.5 0 moveto 0 70 rlineto -1 0 rlineto 0 -70 rlineto closepath fill
+0 0.5 moveto 70 0 rlineto 0 -1 rlineto -70 0 rlineto closepath fill
+0 setgray
+0.5 70 moveto 0 10 rlineto 1 0 rlineto -1.5 3 rlineto
+-1.5 -3 rlineto 1 0 rlineto 0 -10 rlineto closepath fill
+70 0.5 moveto 10 0 rlineto 0 1 rlineto 3 -1.5 rlineto
+-3 -1.5 rlineto 0 1 rlineto -10 0 rlineto closepath fill
+grestore
+
+% Draw observation point.
+0.6 setgray xp yp 2 0 360 arc closepath fill
+
+% Draw longitude of observer.
+/dp 0.5 def
+/lpoff 8 def
+/lwoff 3 def
+% draw the unshaded portion
+gsave 1 a scale 0.5 setlinewidth 0 setgray
+0 pp dp add sin 100 mul az a div mul pp dp add cos 100 mul
+lw 360 sub lwoff sub l 180 sub lpoff add arcn
+0 pp dp sub sin 100 mul az a div mul pp dp sub cos 100 mul
+l 180 sub lpoff add lw 360 sub lwoff sub arc 1 1 a div scale
+closepath stroke
+grestore
+% draw the shaded portion
+gsave 0.5 setlinewidth 0.6 setgray
+xp yp translate gp rotate 0 0 70 0 180 arc 1 c scale
+0 0 70 180 360 arc clip 1 1 c div scale gp neg rotate xp neg yp neg translate
+1 a scale newpath
+0 pp dp add sin 100 mul az a div mul pp dp add cos 100 mul
+lw 360 sub lwoff sub l 180 sub lpoff add arcn
+1 1 a div scale g rotate b 1 scale
+0 1 rlineto dp sin -100 mul -1 add dup -4 exch rlineto 4 exch rlineto
+0 1 rlineto 1 b div 1 scale g neg rotate 1 a scale
+0 pp dp sub sin 100 mul az a div mul pp dp sub cos 100 mul
+l 180 sub lpoff add lw 360 sub lwoff sub arc 1 1 a div scale
+closepath gsave 1 setgray fill grestore stroke
+grestore
+
+% Draw intersection of meridian with horizon sphere, and outer horizon.
+gsave 0 setgray xp yp translate gp rotate 1 cz scale
+0 0 70 0 180 arc stroke 1 1 cz div scale 1 c scale
+0 0 70 -180 0 arc stroke
+grestore
+
+% Draw north pole.
+0 setgray
+gsave 1 az scale
+-0.5 100 moveto 0 20 rlineto -1 0 rlineto 1.5 5 rlineto
+1.5 -5 rlineto -1 0 rlineto 0 -20 rlineto closepath fill
+grestore
+
+% Draw prime meridian and Greenwich.
+gsave gw rotate bw 1 scale 0 0 100 0 woff sub 90 woff sub arc stroke
+w cos 100 mul w sin 100 mul 2 0 360 arc closepath fill
+grestore
+
+
+% Labels.
+0 setgray
+/Times-Italic findfont 10 scalefont setfont
+xp yp translate gp rotate -3 88 cz mul moveto gp neg rotate
+xp neg yp neg translate (z) show
+xp yp translate gp rotate 85 1 moveto gp neg rotate
+xp neg yp neg translate (x) show
+
+0.6 setgray
+/Symbol findfont 10 scalefont setfont
+xp yp moveto -44 dup m mul 10 add rmoveto (f) show
+/Times-Italic findfont 7 scalefont setfont
+0 -2 rmoveto (z) show
+/Times-Italic findfont 10 scalefont setfont
+xp yp moveto -3 -12 rmoveto (O) show
+
+0 setgray
+/Symbol findfont 10 scalefont setfont
+0 pp sin az mul pp cos a mul sub 100 mul 10 sub moveto (-l) show
+/Times-Italic findfont 7 scalefont setfont
+0 -2 rmoveto (z) show
+
+/Times-Roman findfont 10 scalefont setfont
+-3 az 127 mul moveto (N) show
+13 61 moveto (Greenwich) show
+
+%showpage
+%%EOF

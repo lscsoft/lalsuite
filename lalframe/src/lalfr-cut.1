@@ -1,0 +1,33 @@
+.TH LALFR-CUT 1 "10 June 2013" LALFrame LALFrame
+.SH NAME
+lalfr-cut -- cut channels from frames in frame files
+
+.SH SYNOPSIS
+.B lalfr-cut
+.IR list
+[\fIfile\fP ...]
+
+.SH DESCRIPTION
+.PP
+The \fBlalfr-cut\fP utility cuts out selected channels (as specified by
+\fIlist\fP) from each \fIfile\fP and writes frames containing these channels
+only to the standard output.
+If no \fIfile\fP argument is specified, or if a file argument is a
+single dash (`\fB-\fP'), \fBlalfr-cut\fP reads from the standard input.
+The channels specified by \fIlist\fP are comma-delimited channel names.
+
+.SH EXAMPLE
+.PP
+To cut the channels ``chan1'' and ``chan2'' from file ``framefile.gwf''
+and output frames to standard output:
+.PP
+.RS
+lalfr-cut chan1,chan2 framefile.gwf
+.RE
+.PP
+
+.SH SEE ALSO
+lalfr-paste(1)
+
+.SH AUTHOR
+Jolien Creighton

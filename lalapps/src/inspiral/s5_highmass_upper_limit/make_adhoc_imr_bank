@@ -1,0 +1,115 @@
+#!/usr/bin/python
+
+import os
+import sys
+import numpy
+import copy
+from optparse import OptionParser
+from pylal import spawaveform
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+from glue.ligolw.utils import process as ligolw_process
+
+def find_upper_limit_on_chi(delta, x1_max=0.85,  x2_min=-0.85):
+	x_max = 0
+	x_max=((1.0+delta)/2) * (x1_max)+((1.0-delta)/2)*x2_min
+	return x_max
+
+def find_lower_limit_on_chi(delta, x1_min=-0.85,  x2_max=0.85):
+	x_min = 0
+	x_min=((1.0+delta)/2)*(x1_min)+((1.0-delta)/2)*x2_max
+	return x_min
+
+
+def calculate_delta(mass1,mass2):
+	delta= (mass1-mass2)/(mass1+mass2)
+	return delta
+
+def calculate_x2(delta,x,x1):
+	x2=2.0*x/(1-delta)-(1+delta)/(1-delta)*x1
+	return x2
+
+def calculate_symmetric_mass_ratio(m1,m2):
+        return (m1*m2)/(m1+m2)**2
+
+x_vector=numpy.linspace(-0.85, 0.85, 15)
+
+def parse_command_line():
+	parser = OptionParser()
+	parser.add_option("-o", "--output-path", metavar = "path", default = ".", help = "Set the path to the directory where output files will be written.  Default is \".\".")
+	parser.add_option("--max-symmetric-mass-ratio", metavar = "value", type = "float", default = 0.084, help = "Set the maximum allowed symmetric mass ratio.  Default = 0.084.")
+	parser.add_option("-n", "--n", metavar = "count", type = "int", help = "Set the number of templates per output file (required).")
+	parser.add_option("-s", "--sort-by", metavar = "{mchirp|ffinal}", help = "Select the template sort order (required).")
+	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
+	options, filenames = parser.parse_args()
+
+	required_options = ("n", "sort_by")
+	missing_options = [option for option in required_options if getattr(options, option) is None]
+	if missing_options:
+		raise ValueError, "missing required option(s) %s" % ", ".join("--%s" % option.replace("_", "-") for option in missing_options)
+
+	if options.sort_by not in ("mchirp", "ffinal"):
+		raise ValueError, "unrecognized --sort-by \"%s\"" % options.sort_by
+
+	if not filenames:
+		raise ValueError, "must provide list of filenames"
+
+	return options, filenames
+
+options, filenames = parse_command_line()
+print options
+options_params=[("--filename","string",filenames),("--output_path","string", options.output_path), ("--max-symmetric-mass-ratio","int",options.max_symmetric_mass_ratio),("--n","int",options.n),("--sort-by","string",options.sort_by)]
+
+xmldoc=utils.load_filename(filenames[0], gz=filenames[0].endswith(".gz"), verbose = options.verbose)
+sngl_inspiral_table=lsctables.SnglInspiralTable.get_table(xmldoc)
+process_params_table = lsctables.ProcessParamsTable.get_table(xmldoc)
+tmpltbank_process_ids = lsctables.ProcessTable.get_table(xmldoc).get_ids_by_program("tmpltbank")
+
+for row in process_params_table:
+	if row.process_id in tmpltbank_process_ids and row.param=='--approximant':
+		print row.process_id
+		print row.param
+		print row.value
+		row.value='IMR' #FIXME: offical appromant name needed
+		print row.value
+#	else:
+#		raise ValueError, "id and/or approximant not in table"
+sngl_inspiral_table[:]=filter(lambda row: row.eta<=options.max_symmetric_mass_ratio, sngl_inspiral_table)
+
+new_rows = []
+for row in sngl_inspiral_table:
+	delta=calculate_delta(row.mass1,row.mass2)
+	x_max=find_upper_limit_on_chi(delta)
+	x_min=find_lower_limit_on_chi(delta)
+	#print x_min, x_max
+	for x in x_vector:
+		row.f_final=spawaveform.imrffinal(row.mass1,row.mass2,x)
+		if x_min <= x <= x_max:
+			new_rows.append(copy.deepcopy(row))
+			row.chi=x
+sngl_inspiral_table[:] = new_rows
+
+output='IMRSA-TMPLATEBANK' + filenames[0]
+utils.write_filename(xmldoc, output, gz = (output or "stdout").endswith(".gz"), verbose = options.verbose)
+
+if options.sort_by=='mchirp':
+	sngl_inspiral_table.sort(lambda a, b: cmp(a.mchirp, b.mchirp))
+elif options.sort_by=='ffinal':
+	sngl_inspiral_table.sort(lambda a, b: cmp(a.f_final, b.f_final))
+else:
+	raise ValueError, "internal error"
+
+sngl_inspiral_table_split = lsctables.table.new_from_template(sngl_inspiral_table)
+sngl_inspiral_table.parentNode.replaceChild(sngl_inspiral_table_split, sngl_inspiral_table)
+
+current_process_id=1 #FIXME: Needs to check what the last id was and add one to it
+
+process_row=ligolw_process.append_process(xmldoc,'make_adhoc_imr_bank','None','None',"%s" %("1999/11/11 11:11:11"),'makes fake IMRSA template banks',0,current_process_id,
+'None','None')#FIXME: Import git version fix timestamp
+ligolw_process.append_process_params(xmldoc,process_row,options_params)
+
+for first_row in range(0, len(sngl_inspiral_table), options.n):
+	sngl_inspiral_table_split[:] = sngl_inspiral_table[first_row:first_row + options.n]
+	output_split = os.path.join(options.output_path, "%d-%s" % (first_row/options.n + 1, output))
+	utils.write_filename(xmldoc, output_split, gz = (output_split or "stdout").endswith(".gz"), verbose = options.verbose)
