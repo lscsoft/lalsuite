@@ -65,7 +65,9 @@ typedef enum {
   /// Per number of semicoherent templates
   WEAVE_SEARCH_DENOM_PSEMI,
   /// Per number of semicoherent templates, per number of segments (minus 1)
-  WEAVE_SEARCH_DENOM_PSEMISEG,
+  WEAVE_SEARCH_DENOM_PSSM1,
+  /// Per number of semicoherent templates, per number of segments
+  WEAVE_SEARCH_DENOM_PSSEG,
   WEAVE_SEARCH_DENOM_MAX,
 } WeaveSearchTimingDenominator;
 
@@ -73,9 +75,10 @@ typedef enum {
 /// Names of denominator to use for timing constants
 ///
 const char *denom_names[WEAVE_SEARCH_DENOM_MAX] = {
-  [WEAVE_SEARCH_DENOM_PCOH]     = "pcoh",
-  [WEAVE_SEARCH_DENOM_PSEMI]    = "psemi",
-  [WEAVE_SEARCH_DENOM_PSEMISEG] = "psemiseg",
+  [WEAVE_SEARCH_DENOM_PCOH]  = "pcoh",
+  [WEAVE_SEARCH_DENOM_PSEMI] = "psemi",
+  [WEAVE_SEARCH_DENOM_PSSM1] = "psemi_psegm1",
+  [WEAVE_SEARCH_DENOM_PSSEG] = "psemi_pseg",
 };
 
 ///
@@ -87,9 +90,9 @@ const struct {
   const WeaveSearchTimingDenominator denom;
 } cpu_sections[WEAVE_SEARCH_TIMING_MAX] = {
   [WEAVE_SEARCH_TIMING_ITER]    = {"iter",      "parameter space iteration",                    WEAVE_SEARCH_DENOM_PSEMI},
-  [WEAVE_SEARCH_TIMING_QUERY]   = {"query",     "cache queries",                                WEAVE_SEARCH_DENOM_PSEMI},
+  [WEAVE_SEARCH_TIMING_QUERY]   = {"query",     "cache queries",                                WEAVE_SEARCH_DENOM_PSSEG},
   [WEAVE_SEARCH_TIMING_COH]     = {"coh",       "computing coherent results",                   WEAVE_SEARCH_DENOM_PCOH},
-  [WEAVE_SEARCH_TIMING_SEMISEG] = {"semiseg",   "computing per-segment semicoherent results",   WEAVE_SEARCH_DENOM_PSEMISEG},
+  [WEAVE_SEARCH_TIMING_SEMISEG] = {"semiseg",   "computing per-segment semicoherent results",   WEAVE_SEARCH_DENOM_PSSM1},
   [WEAVE_SEARCH_TIMING_SEMI]    = {"semi",      "computing semicoherent results",               WEAVE_SEARCH_DENOM_PSEMI},
   [WEAVE_SEARCH_TIMING_OUTPUT]  = {"output",    "result output",                                WEAVE_SEARCH_DENOM_PSEMI},
   [WEAVE_SEARCH_TIMING_CKPT]    = {"ckpt",      "checkpointing",                                WEAVE_SEARCH_DENOM_PSEMI},
@@ -376,9 +379,10 @@ int XLALWeaveSearchTimingWriteInfo(
 
   // Compute denominators for timing constants
   const UINT8 denoms[WEAVE_SEARCH_DENOM_MAX] = {
-    [WEAVE_SEARCH_DENOM_PCOH]       = coh_nres,
-    [WEAVE_SEARCH_DENOM_PSEMI]      = semi_ntmpl,
-    [WEAVE_SEARCH_DENOM_PSEMISEG]   = semi_ntmpl * ( tim->statistics_params->nsegments - 1 ),
+    [WEAVE_SEARCH_DENOM_PCOH]   = coh_nres,
+    [WEAVE_SEARCH_DENOM_PSEMI]  = semi_ntmpl,
+    [WEAVE_SEARCH_DENOM_PSSM1]  = semi_ntmpl * ( tim->statistics_params->nsegments - 1 ),
+    [WEAVE_SEARCH_DENOM_PSSEG]  = semi_ntmpl * tim->statistics_params->nsegments,
   };
 
   for ( WeaveSearchTimingSection i = 0; i < WEAVE_SEARCH_TIMING_MAX; ++i ) {
@@ -403,12 +407,23 @@ int XLALWeaveSearchTimingWriteInfo(
       if ( tim->statistic_section[j] == i && statistic_cpu_time > 0 ) {
         statistics_computed = 1;
 
+        // Get statistics name and determine statistic-specific denominator
+        UINT8 statistic_denom = 1;
+        const char *statistic_name = WEAVE_STATISTIC_NAME(XLAL_IDX2BIT(j));
+        const size_t statistic_name_len = strlen( statistic_name );
+        if ( statistic_name_len > 4 && strcmp( statistic_name + statistic_name_len - 4, "_det") == 0 ) {
+
+          // Normalise per-detector statistics by number of detectors
+          statistic_denom = tim->statistics_params->detectors->length;
+
+        }
+
         // Write CPU time taken to compute statistic
         {
           char keyword[64];
           char comment[1024];
-          snprintf( keyword, sizeof( keyword ), "cpu %s %s", cpu_sections[i].name, WEAVE_STATISTIC_NAME(XLAL_IDX2BIT(j)) );
-          snprintf( comment, sizeof( comment ), "%s CPU time", WEAVE_STATISTIC_NAME(XLAL_IDX2BIT(j)) );
+          snprintf( keyword, sizeof( keyword ), "cpu %s %s", cpu_sections[i].name, statistic_name );
+          snprintf( comment, sizeof( comment ), "%s CPU time", statistic_name );
           XLAL_CHECK( XLALFITSHeaderWriteREAL8( file, keyword, statistic_cpu_time, comment ) == XLAL_SUCCESS, XLAL_EFUNC );
         }
 
@@ -416,9 +431,9 @@ int XLALWeaveSearchTimingWriteInfo(
         if ( section_denom > 0 ) {
           char keyword[64];
           char comment[1024];
-          snprintf( keyword, sizeof( keyword ), "tau %s %s_%s", cpu_sections[i].name, WEAVE_STATISTIC_NAME(XLAL_IDX2BIT(j)), section_denom_name );
-          snprintf( comment, sizeof( comment ), "%s timing constant", WEAVE_STATISTIC_NAME(XLAL_IDX2BIT(j)) );
-          XLAL_CHECK( XLALFITSHeaderWriteREAL8( file, keyword, statistic_cpu_time / section_denom, comment ) == XLAL_SUCCESS, XLAL_EFUNC );
+          snprintf( keyword, sizeof( keyword ), "tau %s %s_%s", cpu_sections[i].name, statistic_name, section_denom_name );
+          snprintf( comment, sizeof( comment ), "%s timing constant", statistic_name );
+          XLAL_CHECK( XLALFITSHeaderWriteREAL8( file, keyword, statistic_cpu_time / section_denom / statistic_denom, comment ) == XLAL_SUCCESS, XLAL_EFUNC );
         }
 
         // Compute remaining CPU time in timing section

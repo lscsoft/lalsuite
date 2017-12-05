@@ -780,6 +780,9 @@ int XLALWeaveSemiResultsAdd(
     XLAL_CHECK( semi_res_max_2F( &semi_res->nmax2F, semi_res->max2F->data, coh_res->coh2F->data + coh_offset, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
+  // Switch timed statistic
+  XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_MAX2F, WEAVE_STATISTIC_MAX2F_DET ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   // Add to max-over-segments per-detector F-statistics per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_MAX2F_DET ) {
     for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
@@ -790,7 +793,7 @@ int XLALWeaveSemiResultsAdd(
   }
 
   // Switch timed statistic
-  XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_MAX2F, WEAVE_STATISTIC_SUM2F ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_MAX2F_DET, WEAVE_STATISTIC_SUM2F ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Add to summed multi-detector F-statistics per frequency, and increment number of additions thus far
   if ( mainloop_stats & WEAVE_STATISTIC_SUM2F ) {
@@ -798,6 +801,9 @@ int XLALWeaveSemiResultsAdd(
   } else {
     semi_res->nsum2F ++;             // even if not summing here: count number of 2F summands for (potential) completion-loop usage
   }
+
+  // Switch timed statistic
+  XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_SUM2F, WEAVE_STATISTIC_SUM2F_DET ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Add to summed per-detector F-statistics per frequency, and increment number of additions thus far
   for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
@@ -811,7 +817,7 @@ int XLALWeaveSemiResultsAdd(
   }
 
   // Stop timing of semicoherent results
-  XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_SUM2F, WEAVE_STATISTIC_NONE ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALWeaveSearchTimingStatistic( tim, WEAVE_STATISTIC_SUM2F_DET, WEAVE_STATISTIC_NONE ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
