@@ -1065,11 +1065,11 @@ class CoincRates(object):
 
 		>>> coincrates = CoincRates(("H1", "L1", "V1"), 0.005, 2)
 		>>> coincrates.coinc_rates(H1 = 0.001, L1 = 0.002, V1 = 0.003)
-		{frozenset(['V1', 'H1']): 1.9372787960306537e-07, frozenset(['V1', 'H1', 'L1']): 1.0125974662833771e-11, frozenset(['H1', 'L1']): 6.00513846088957e-08, frozenset(['V1', 'L1']): 3.77380092200718e-07}
+		{frozenset(['V1', 'H1']): 1.9372787960306537e-07, frozenset(['V1', 'H1', 'L1']): 1.0125819710267318e-11, frozenset(['H1', 'L1']): 6.00513846088957e-08, frozenset(['V1', 'L1']): 3.77380092200718e-07}
 		>>> coincrates.coinc_rates(H1 = 0.001, L1 = 0.002, V1 = 0.002)
-		{frozenset(['V1', 'H1']): 1.291519197353769e-07, frozenset(['V1', 'H1', 'L1']): 6.750649775222514e-12, frozenset(['H1', 'L1']): 6.00513846088957e-08, frozenset(['V1', 'L1']): 2.5158672813381197e-07}
+		{frozenset(['V1', 'H1']): 1.291519197353769e-07, frozenset(['V1', 'H1', 'L1']): 6.750546473511545e-12, frozenset(['H1', 'L1']): 6.00513846088957e-08, frozenset(['V1', 'L1']): 2.5158672813381197e-07}
 		>>> coincrates.coinc_rates(H1 = 0.001, L1 = 0.002, V1 = 0.001)
-		{frozenset(['V1', 'H1']): 6.457595986768845e-08, frozenset(['V1', 'H1', 'L1']): 3.375324887611257e-12, frozenset(['H1', 'L1']): 6.00513846088957e-08, frozenset(['V1', 'L1']): 1.2579336406690598e-07}
+		{frozenset(['V1', 'H1']): 6.457595986768845e-08, frozenset(['V1', 'H1', 'L1']): 3.3752732367557724e-12, frozenset(['H1', 'L1']): 6.00513846088957e-08, frozenset(['V1', 'L1']): 1.2579336406690598e-07}
 		"""
 		if set(rates) != self.instruments:
 			raise ValueError("require event rates for %s, got rates for %s" % (", ".join(sorted(self.instruments)), ", ".join(sorted(rates))))
@@ -1119,11 +1119,11 @@ class CoincRates(object):
 
 		>>> coincrates = CoincRates(("H1", "L1", "V1"), 0.005, 2)
 		>>> coincrates.strict_coinc_rates(H1 = 0.001, L1 = 0.002, V1 = 0.003)
-		{frozenset(['V1', 'H1']): 1.9371775362840254e-07, frozenset(['V1', 'H1', 'L1']): 1.0125974662833771e-11, frozenset(['H1', 'L1']): 6.004125863423287e-08, frozenset(['V1', 'L1']): 3.7736996622605513e-07}
+		{frozenset(['V1', 'H1']): 1.937177537833551e-07, frozenset(['V1', 'H1', 'L1']): 1.0125819710267318e-11, frozenset(['H1', 'L1']): 6.004125878918543e-08, frozenset(['V1', 'L1']): 3.7736996638100773e-07}
 		>>> coincrates.strict_coinc_rates(H1 = 0.001, L1 = 0.002, V1 = 0.002)
-		{frozenset(['V1', 'H1']): 1.2914516908560167e-07, frozenset(['V1', 'H1', 'L1']): 6.750649775222514e-12, frozenset(['H1', 'L1']): 6.004463395912047e-08, frozenset(['V1', 'L1']): 2.5157997748403677e-07}
+		{frozenset(['V1', 'H1']): 1.2914516918890337e-07, frozenset(['V1', 'H1', 'L1']): 6.750546473511545e-12, frozenset(['H1', 'L1']): 6.004463406242219e-08, frozenset(['V1', 'L1']): 2.5157997758733847e-07}
 		>>> coincrates.strict_coinc_rates(H1 = 0.001, L1 = 0.002, V1 = 0.001)
-		{frozenset(['V1', 'H1']): 6.457258454280083e-08, frozenset(['V1', 'H1', 'L1']): 3.375324887611257e-12, frozenset(['H1', 'L1']): 6.004800928400808e-08, frozenset(['V1', 'L1']): 1.2578998874201838e-07}
+		{frozenset(['V1', 'H1']): 6.457258459445168e-08, frozenset(['V1', 'H1', 'L1']): 3.3752732367557724e-12, frozenset(['H1', 'L1']): 6.004800933565894e-08, frozenset(['V1', 'L1']): 1.2578998879366924e-07}
 		"""
 		# initialize from the plain coinc rates
 		strict_coinc_rates = self.coinc_rates(**rates)
@@ -1182,7 +1182,7 @@ class CoincRates(object):
 
 		>>> coincrates = CoincRates(("H1", "L1", "V1"), 0.005, 2)
 		>>> coincrates.lnP_instruments(H1 = 0.001, L1 = 0.002, V1 = 0.003)
-		{frozenset(['V1', 'H1']): -1.1811240675627561, frozenset(['V1', 'H1', 'L1']): -11.04017769668565, frozenset(['H1', 'L1']): -2.3524943192518166, frozenset(['V1', 'L1']): -0.514300240038396}
+		{frozenset(['V1', 'H1']): -1.181124067253893, frozenset(['V1', 'H1', 'L1']): -11.040192999777876, frozenset(['H1', 'L1']): -2.352494317162074, frozenset(['V1', 'L1']): -0.5143002401188091}
 		"""
 		strict_coinc_rates = self.strict_coinc_rates(**rates)
 		total_rate = sum(strict_coinc_rates.values())

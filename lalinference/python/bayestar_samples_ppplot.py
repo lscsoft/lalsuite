@@ -22,7 +22,6 @@ Create a P-P plot to compare a posterior sample chain with a sky map.
 # Command line interface.
 from argparse import FileType
 from lalinference.bayestar import command
-parser = command.ArgumentParser()
 parser = command.ArgumentParser(parents=[command.figure_parser])
 parser.add_argument(
     'skymap', metavar='SKYMAP.fits[.gz]', type=FileType('rb'),

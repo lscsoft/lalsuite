@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
             fp = stdin;
         else
             fp = fopen(fname, "r");
-        if (!output)
+        if (!fp)
             FAILURE("could not open file %s\n", fname);
 
         readdata(&ndim, &dimlen, &data, &channames, &chanunits, fp);
