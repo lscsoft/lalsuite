@@ -82,10 +82,10 @@ static int InterpolateWaveform(REAL8Vector *freqs, COMPLEX16FrequencySeries *src
   UINT4 j=ceil(freqs->data[0] / deltaF);
   COMPLEX16 *d=dest->data->data;
   memset(d, 0, sizeof(*(d))*j);
-
+  
   /* Loop over reduced frequency set */
   for(UINT4 i=0;i<freqs->length-1;i++)
-  {
+  {  
     double startpsi = carg(src->data->data[i]);
     double startamp = cabs(src->data->data[i]);
     double endpsi = carg(src->data->data[i+1]);
@@ -95,7 +95,7 @@ static int InterpolateWaveform(REAL8Vector *freqs, COMPLEX16FrequencySeries *src
     double endf=freqs->data[i+1];
 
     double df = endf - startf; /* Big freq step */
-
+    
     /* linear interpolation setup */
     double dpsi = (endpsi - startpsi);
 
@@ -105,12 +105,12 @@ static int InterpolateWaveform(REAL8Vector *freqs, COMPLEX16FrequencySeries *src
      * the phase wrapping around (e.g. TF2 1.4-1.4 srate=4096)
      */
     if (dpsi/df<-LAL_PI ) {dpsi+=LAL_TWOPI;}
-
+    
     double dpsidf = dpsi/df;
     double dampdf = (endamp - startamp)/df;
 
     double damp = dampdf *deltaF;
-
+    
     const double dim = sin(dpsidf*deltaF);
     const double dre = 2.0*sin(dpsidf*deltaF*0.5)*sin(dpsidf*deltaF*0.5);
 
@@ -119,9 +119,9 @@ static int InterpolateWaveform(REAL8Vector *freqs, COMPLEX16FrequencySeries *src
     for(f=j*deltaF,
 	re = cos(startpsi), im = sin(startpsi),
         a = startamp;
-
+        
         f<endf;
-
+        
         j++, f+=deltaF,
         newRe = re - dre*re-dim*im,
         newIm = im + re*dim-dre*im,
@@ -690,12 +690,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
     f_low = model->fLow;
 
   f_start = XLALSimInspiralfLow2fStart(f_low, XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(model->LALpars), approximant);
-
-  /* Don't let TaylorF2 generate unphysical inspiral up to Nyquist */
-  if (approximant == TaylorF2)
-      f_max = 0.0; /* this will stop at ISCO */
-  else
-      f_max = model->fHigh; /* this will be the highest frequency used across the network */
+  f_max = 0.0; /* for freq domain waveforms this will stop at ISCO. Previously found using model->fHigh causes NaNs in waveform (see redmine issue #750)*/
 
   /* ==== SPINS ==== */
   /* We will default to spinless signal and then add in the spin components if required */
@@ -802,7 +797,36 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
     }
   }
 
+  /* sample NL tides for each mass separately */
+  if(LALInferenceCheckVariable(model->params, "NLTidesN1")&&LALInferenceCheckVariable(model->params, "log10NLTidesA1")&&LALInferenceCheckVariable(model->params, "NLTidesF1")&&LALInferenceCheckVariable(model->params, "NLTidesN2")&&LALInferenceCheckVariable(model->params, "log10NLTidesA2")&&LALInferenceCheckVariable(model->params, "NLTidesF2")){
+    XLALSimInspiralWaveformParamsInsertNLTidesA1(model->LALpars, pow(10.0,*(REAL8 *)LALInferenceGetVariable(model->params, "log10NLTidesA1")));
+    XLALSimInspiralWaveformParamsInsertNLTidesF1(model->LALpars, *(REAL8 *)LALInferenceGetVariable(model->params, "NLTidesF1"));
+    XLALSimInspiralWaveformParamsInsertNLTidesN1(model->LALpars, *(REAL8 *)LALInferenceGetVariable(model->params, "NLTidesN1"));
 
+    XLALSimInspiralWaveformParamsInsertNLTidesA2(model->LALpars, pow(10.0,*(REAL8 *)LALInferenceGetVariable(model->params, "log10NLTidesA2")));
+    XLALSimInspiralWaveformParamsInsertNLTidesF2(model->LALpars, *(REAL8 *)LALInferenceGetVariable(model->params, "NLTidesF2"));
+    XLALSimInspiralWaveformParamsInsertNLTidesN2(model->LALpars, *(REAL8 *)LALInferenceGetVariable(model->params, "NLTidesN2"));
+  } else {
+  /* sample the Taylor expansion of the NL tide params */
+    if(LALInferenceCheckVariable(model->params, "NLTides_N0")&&LALInferenceCheckVariable(model->params, "log10NLTides_A0")&&LALInferenceCheckVariable(model->params, "NLTides_F0")&&LALInferenceCheckVariable(model->params, "NLTides_dNdm")&&LALInferenceCheckVariable(model->params, "NLTides_dlogAdm")&&LALInferenceCheckVariable(model->params, "NLTides_dFdm")){
+      REAL8 N0, dNdm, F0, dFdm, A0, dAdm ;
+      N0 = *(REAL8*) LALInferenceGetVariable(model->params, "NLTides_N0") ;
+      F0 = *(REAL8*) LALInferenceGetVariable(model->params, "NLTides_F0") ;
+      A0 = pow(10, *(REAL8*) LALInferenceGetVariable(model->params, "log10NLTides_A0"));
+      dNdm = *(REAL8*) LALInferenceGetVariable(model->params, "NLTides_dNdm") ;
+      dFdm = *(REAL8*) LALInferenceGetVariable(model->params, "NLTides_dFdm") ;
+      dAdm = *(REAL8*) LALInferenceGetVariable(model->params, "NLTides_dlogAdm") ;
+      dAdm *= A0 ; // convert from dlogAdm to dAdm
+
+      XLALSimInspiralWaveformParamsInsertNLTidesA1(model->LALpars, LALInferenceNonLinearTidesFromTaylor(m1, A0, dAdm));
+      XLALSimInspiralWaveformParamsInsertNLTidesF1(model->LALpars, LALInferenceNonLinearTidesFromTaylor(m1, F0, dFdm));
+      XLALSimInspiralWaveformParamsInsertNLTidesN1(model->LALpars, LALInferenceNonLinearTidesFromTaylor(m1, F0, dNdm));
+
+      XLALSimInspiralWaveformParamsInsertNLTidesA2(model->LALpars, LALInferenceNonLinearTidesFromTaylor(m2, A0, dAdm));
+      XLALSimInspiralWaveformParamsInsertNLTidesF2(model->LALpars, LALInferenceNonLinearTidesFromTaylor(m2, F0, dFdm));
+      XLALSimInspiralWaveformParamsInsertNLTidesN2(model->LALpars, LALInferenceNonLinearTidesFromTaylor(m2, N0, dNdm));
+    }
+  }
 
   /* ==== Call the waveform generator ==== */
   if(model->domain == LAL_SIM_DOMAIN_FREQUENCY) {
@@ -1170,12 +1194,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
         f_low = model->fLow;
 
     f_start = XLALSimInspiralfLow2fStart(f_low, XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(model->LALpars), approximant);
-
-    /* Don't let TaylorF2 generate unphysical inspiral up to Nyquist */
-    if (approximant == TaylorF2)
-        f_max = 0.0; /* this will stop at ISCO */
-    else
-        f_max = model->fHigh; /* this will be the highest frequency used across the network */
+    f_max = 0.0; /* for freq domain waveforms this will stop at ISCO. Previously found using model->fHigh causes NaNs in waveform (see redmine issue #750)*/
 
     /* ==== SPINS ==== */
     /* We will default to spinless signal and then add in the spin components if required */
@@ -1329,8 +1348,8 @@ model->LALpars,%d,model->waveformCache)\n",__func__,
             XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): encountered unallocated 'hctilde'.\n");
             XLAL_ERROR_VOID(XLAL_EFAULT);
         }
-
-
+        
+        
         InterpolateWaveform(frequencies, hptilde, model->freqhPlus);
         InterpolateWaveform(frequencies, hctilde, model->freqhCross);
 
@@ -1573,7 +1592,7 @@ void LALInferenceTemplateXLALSimBurstChooseWaveform(LALInferenceModel *model)
     polar_ecc=*(REAL8*) LALInferenceGetVariable(model->params, "polar_eccentricity");
 
   f_low=0.0; // These are not really used for burst signals.
-  f_max = model->fHigh; /* this will be the highest frequency used across the network */
+  f_max = 0.0; /* for freq domain waveforms this will stop at Nyquist of lower, if the WF allows.*/
 
 
   if (model->timehCross==NULL) {

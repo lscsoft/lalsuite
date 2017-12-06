@@ -67,16 +67,6 @@ void nested_sampling_algorithm_wrapper( LALInferenceRunState *runState ){
     tottime = (REAL8)((time2.tv_sec + time2.tv_usec*1.e-6) - (time1.tv_sec + time1.tv_usec*1.e-6));
     fprintf(timefile, "[%d] %s: %.9le secs\n", timenum, __func__, tottime);
     timenum++;
-    /* get number of likelihood evaluations */
-    UINT4 nlike = 0, ndata = 0;
-    LALInferenceIFOData *tmpdata = runState->data;
-    while ( tmpdata ){
-      nlike += tmpdata->likeli_counter;
-      ndata++;
-      tmpdata = tmpdata->next;
-    }
-    fprintf(timefile, "[%d] Number of likelihood evaluations: %d\n", timenum, nlike/ndata);
-    timenum++;
     check_and_add_fixed_variable( runState->algorithmParams, "timenum", &timenum, LALINFERENCE_UINT4_t );
   }
 }
@@ -163,9 +153,7 @@ void initialise_algorithm( LALInferenceRunState *runState )
     LALInferenceAddVariable( runState->algorithmParams,"Nlive", &tmpi, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
   }
   else{
-    if ( !LALInferenceGetProcParamVal( commandLine, "--inject-only" ) ){
-      XLAL_ERROR_VOID(XLAL_EIO, "Error... Number of live point must be specified.");
-    }
+   XLAL_ERROR_VOID(XLAL_EIO, "Error... Number of live point must be specified.");
   }
 
   /* Number of points in MCMC chain */
@@ -262,7 +250,7 @@ void initialise_algorithm( LALInferenceRunState *runState )
 /**
  * \brief Sets the time angle antenna response lookup table
  *
- * This function sets up an antenna response lookup table in time for each detector from which data
+ * This function sets up an antenna repsonse lookup table in time for each detector from which data
  * exists (either real or fake). The time ranges over one sidereal day. The number of bins for the grid
  * over time can be specified on the command line via \c time-bins, but if this are not given then default
  * values are used. The data times as a fraction of a sidereal day from the start time will also be
@@ -356,7 +344,7 @@ void setup_lookup_tables( LALInferenceRunState *runState, LALSource *source ){
  * from a .par file and passed in via the \c pars variable will be set.
  *
  * \param ini [in] A pointer to a \c LALInferenceVariables type that will be filled in with pulsar parameters
- * \param pars [in] A \c PulsarParameters type containing pulsar parameters read in from a TEMPO-style .par file
+ * \param pars [in] A \c BinaryPulsarParams type containing pulsar parameters read in from a TEMPO-style .par file
  */
 void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars ){
   /* amplitude model parameters for l=m=2 harmonic emission */
@@ -581,10 +569,7 @@ void initialise_prior( LALInferenceRunState *runState )
   CHAR *tempPar = NULL, *tempPrior = NULL;
   REAL8 low, high;
 
-  LALInferenceIFOModel *ifo = NULL;
-  if ( !LALInferenceGetProcParamVal(commandLine, "--test-gaussian-likelihood" ) ){
-    ifo = threadState->model->ifo;
-  }
+  LALInferenceIFOModel *ifo = threadState->model->ifo;
 
   CHAR *filebuf =  NULL; /* buffer to store prior file */
   TokenList *tlist = NULL;
@@ -620,7 +605,7 @@ void initialise_prior( LALInferenceRunState *runState )
     LALInferenceParamVaryType varyType;
 
     /* check for comment line starting with '#' or '%' */
-    if ( tlist->tokens[k][0] == '#' || tlist->tokens[k][0] == '%' ){ continue; }
+    if ( !strcmp(tlist->tokens[k], "#") || !strcmp(tlist->tokens[k], "%") ){ continue; }
 
     /* check the number of values in the line by counting the whitespace separated values */
     nvals = 0;
@@ -809,13 +794,11 @@ void initialise_prior( LALInferenceRunState *runState )
     ifotemp = ifotemp->next;
   }
 
-  if ( !LALInferenceGetProcParamVal(commandLine, "--test-gaussian-likelihood" ) ){
-    REAL8Vector *freqFactors = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "freqfactors" );
+  REAL8Vector *freqFactors = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "freqfactors" );
 
-    if ( nonGR && freqFactors->length != 1 && freqFactors->data[0] != 2. ){
-      fprintf(stderr, "Error... currently can only run with non-GR parameters for l=m=2 harmonic!\n");
-      exit(3);
-    }
+  if ( nonGR && freqFactors->length != 1 && freqFactors->data[0] != 2. ){
+    fprintf(stderr, "Error... currently can only run with non-GR parameters for l=m=2 harmonic!\n");
+    exit(3);
   }
 
   /* now check for a parameter correlation coefficient matrix file */

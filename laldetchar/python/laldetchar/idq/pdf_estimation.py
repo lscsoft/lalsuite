@@ -13,8 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## \defgroup laldetchar_py_idq_pdf_estimation PDF Estimation Module
-## \ingroup laldetchar_py_idq
+## \addtogroup laldetchar_py_idq
 ## Synopsis
 # ~~~
 # from laldetchar.idq import pdf_estimation
@@ -276,14 +275,11 @@ def __point_wise_optimal_s(eval, scale, pdf):
     if s > 0:
         return scale * s**-0.5
 
-    elif s==0:
+    elif s == 0:
         return scale*1e3 ### just return something big
 
-    elif s != s: ### catch NAN returned by interp object, which shouldn't happen but apparently does...
-        return scale ### again, just return something big reasonable (which is what "scale" is supposed to mean)
-
     else:
-        raise ValueError( 'ERROR: pilot_interp pdf is not positive definite. Optimal bandwidth is not defined. This could be caused by a spline interpolation...\npdf(%.6f) = %.6e'%(eval, s) )
+        raise ValueError( 'ERROR: pilot_interp pdf is not positive definite. Optimal bandwidth is not defined. This could be caused by a spline interpolation...' )
 
 #-------------------------------------------------
 

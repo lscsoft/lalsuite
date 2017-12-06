@@ -161,20 +161,20 @@ for n, filename in enumerate(filenames):
 
 	if database.sim_burst_table is None:
 		# iterate over burst<-->burst coincs
-		for is_background, events, offsetvector in database.get_noninjections():
+		for is_background, events, offsetvector in burca_tailor.get_noninjections(database):
 			params = distributions.coinc_params(events, offsetvector, MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD)
 			if params is not None:
 				if is_background:
-					distributions.denominator.increment(params)
+					distributions.add_background(params)
 				else:
-					distributions.candidates.increment(params)
+					distributions.add_zero_lag(params)
 	else:
 		# iterate over burst<-->burst coincs matching injections
 		# "exactly"
-		for sim, events, offsetvector in database.get_injections():
+		for sim, events, offsetvector in burca_tailor.get_injections(database):
 			params = distributions.coinc_params(events, offsetvector, MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD)
 			if params is not None:
-				distributions.numerator.increment(params)
+				distributions.add_injection(params)
 
 	#
 	# Clean up.

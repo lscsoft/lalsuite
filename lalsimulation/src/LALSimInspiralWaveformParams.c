@@ -56,11 +56,6 @@ DEFINE_INSERT_FUNC(FrameAxis, INT4, "axis", LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_
 DEFINE_INSERT_FUNC(Sideband, INT4, "sideband", 0)
 DEFINE_INSERT_FUNC(NumRelData, String, "numreldata", NULL)
 
-int XLALSimInspiralWaveformParamsInsertModeArray(LALDict *params, LALValue *value)
-{
-	return XLALDictInsertValue(params, "ModeArray", value);
-}
-
 DEFINE_INSERT_FUNC(PNPhaseOrder, INT4, "phaseO", -1)
 DEFINE_INSERT_FUNC(PNAmplitudeOrder, INT4, "ampO", -1)
 DEFINE_INSERT_FUNC(PNEccentricityOrder, INT4, "eccO", -1)
@@ -70,12 +65,6 @@ DEFINE_INSERT_FUNC(PNTidalOrder, INT4, "tideO", -1)
 
 DEFINE_INSERT_FUNC(TidalLambda1, REAL8, "lambda1", 0)
 DEFINE_INSERT_FUNC(TidalLambda2, REAL8, "lambda2", 0)
-DEFINE_INSERT_FUNC(TidalOctupolarLambda1, REAL8, "TidalOctupolarLambda1", 0)
-DEFINE_INSERT_FUNC(TidalOctupolarLambda2, REAL8, "TidalOctupolarLambda2", 0)
-DEFINE_INSERT_FUNC(TidalQuadrupolarFMode1, REAL8, "TidalQuadrupolarFMode1", 0)
-DEFINE_INSERT_FUNC(TidalQuadrupolarFMode2, REAL8, "TidalQuadrupolarFMode2", 0)
-DEFINE_INSERT_FUNC(TidalOctupolarFMode1, REAL8, "TidalOctupolarFMode1", 0)
-DEFINE_INSERT_FUNC(TidalOctupolarFMode2, REAL8, "TidalOctupolarFMode2", 0)
 DEFINE_INSERT_FUNC(dQuadMon1, REAL8, "dQuadMon1", 0)
 DEFINE_INSERT_FUNC(dQuadMon2, REAL8, "dQuadMon2", 0)
 DEFINE_INSERT_FUNC(Redshift, REAL8, "redshift", 0)
@@ -147,18 +136,6 @@ DEFINE_LOOKUP_FUNC(FrameAxis, INT4, "axis", LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_
 DEFINE_LOOKUP_FUNC(Sideband, INT4, "sideband", 0)
 DEFINE_LOOKUP_FUNC(NumRelData, String, "numreldata", NULL)
 
-LALValue* XLALSimInspiralWaveformParamsLookupModeArray(LALDict *params)
-{
-	/* Initialise and set Default to NULL */
-	LALValue * value = NULL;
-	if (params && XLALDictContains(params, "ModeArray"))
-	{
-		LALDictEntry * entry = XLALDictLookup(params, "ModeArray");
-		value = XLALValueDuplicate(XLALDictEntryGetValue(entry));
-	}
-	return value;
-}
-
 DEFINE_LOOKUP_FUNC(PNPhaseOrder, INT4, "phaseO", -1)
 DEFINE_LOOKUP_FUNC(PNAmplitudeOrder, INT4, "ampO", -1)
 DEFINE_LOOKUP_FUNC(PNEccentricityOrder, INT4, "eccO", -1)
@@ -167,12 +144,6 @@ DEFINE_LOOKUP_FUNC(PNTidalOrder, INT4, "tideO", -1)
 
 DEFINE_LOOKUP_FUNC(TidalLambda1, REAL8, "lambda1", 0)
 DEFINE_LOOKUP_FUNC(TidalLambda2, REAL8, "lambda2", 0)
-DEFINE_LOOKUP_FUNC(TidalOctupolarLambda1, REAL8, "TidalOctupolarLambda1", 0)
-DEFINE_LOOKUP_FUNC(TidalOctupolarLambda2, REAL8, "TidalOctupolarLambda2", 0)
-DEFINE_LOOKUP_FUNC(TidalQuadrupolarFMode1, REAL8, "TidalQuadrupolarFMode1", 0)
-DEFINE_LOOKUP_FUNC(TidalQuadrupolarFMode2, REAL8, "TidalQuadrupolarFMode2", 0)
-DEFINE_LOOKUP_FUNC(TidalOctupolarFMode1, REAL8, "TidalOctupolarFMode1", 0)
-DEFINE_LOOKUP_FUNC(TidalOctupolarFMode2, REAL8, "TidalOctupolarFMode2", 0)
 DEFINE_LOOKUP_FUNC(dQuadMon1, REAL8, "dQuadMon1", 0)
 DEFINE_LOOKUP_FUNC(dQuadMon2, REAL8, "dQuadMon2", 0)
 DEFINE_LOOKUP_FUNC(Redshift, REAL8, "redshift", 0)
@@ -244,11 +215,6 @@ DEFINE_ISDEFAULT_FUNC(FrameAxis, INT4, "axis", LAL_SIM_INSPIRAL_FRAME_AXIS_ORBIT
 DEFINE_ISDEFAULT_FUNC(Sideband, INT4, "sideband", 0)
 DEFINE_ISDEFAULT_FUNC(NumRelData, String, "numreldata", NULL)
 
-int XLALSimInspiralWaveformParamsModeArrayIsDefault(LALDict *params)
-{
-	return XLALSimInspiralWaveformParamsLookupModeArray(params) == NULL;
-}
-
 DEFINE_ISDEFAULT_FUNC(PNPhaseOrder, INT4, "phaseO", -1)
 DEFINE_ISDEFAULT_FUNC(PNAmplitudeOrder, INT4, "ampO", -1)
 DEFINE_ISDEFAULT_FUNC(PNEccentricityOrder, INT4, "eccO", -1)
@@ -257,12 +223,6 @@ DEFINE_ISDEFAULT_FUNC(PNTidalOrder, INT4, "tideO", -1)
 
 DEFINE_ISDEFAULT_FUNC(TidalLambda1, REAL8, "lambda1", 0)
 DEFINE_ISDEFAULT_FUNC(TidalLambda2, REAL8, "lambda2", 0)
-DEFINE_ISDEFAULT_FUNC(TidalOctupolarLambda1, REAL8, "TidalOctupolarLambda1", 0)
-DEFINE_ISDEFAULT_FUNC(TidalOctupolarLambda2, REAL8, "TidalOctupolarLambda2", 0)
-DEFINE_ISDEFAULT_FUNC(TidalQuadrupolarFMode1, REAL8, "TidalQuadrupolarFMode1", 0)
-DEFINE_ISDEFAULT_FUNC(TidalQuadrupolarFMode2, REAL8, "TidalQuadrupolarFMode2", 0)
-DEFINE_ISDEFAULT_FUNC(TidalOctupolarFMode1, REAL8, "TidalOctupolarFMode1", 0)
-DEFINE_ISDEFAULT_FUNC(TidalOctupolarFMode2, REAL8, "TidalOctupolarFMode2", 0)
 DEFINE_ISDEFAULT_FUNC(dQuadMon1, REAL8, "dQuadMon1", 0)
 DEFINE_ISDEFAULT_FUNC(dQuadMon2, REAL8, "dQuadMon2", 0)
 DEFINE_ISDEFAULT_FUNC(Redshift, REAL8, "redshift", 0)

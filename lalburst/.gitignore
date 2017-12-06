@@ -5,7 +5,6 @@
 *.pc
 *.pyc
 *.pyo
-__pycache__
 .deps
 .libs
 /_build/
@@ -51,8 +50,7 @@ src/lalburst_version
 src/stamp-h1
 src/stamp-h2
 src/version.c
-swig/swiglalburst.i*
-swig/swiglal_*
+swig/swiglal*
 test/CLRTest
 test/CLRoutdata.asc
 test/TfrPswvTest

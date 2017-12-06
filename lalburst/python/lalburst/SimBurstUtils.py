@@ -29,15 +29,16 @@ import sys
 
 
 import lal
-from lal import rate
 
 
+from . import git_version
+from pylal import rate
 from . import SnglBurstUtils
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from git_version import date as __date__
-from git_version import version as __version__
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
 
 
 #

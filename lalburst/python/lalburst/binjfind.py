@@ -47,13 +47,14 @@ from glue.ligolw.utils import coincs as ligolw_coincs
 from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw.utils import search_summary as ligolw_search_summary
 from glue.ligolw.utils import time_slide as ligolw_time_slide
+from . import git_version
 from . import burca
 from . import SimBurstUtils
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from git_version import date as __date__
-from git_version import version as __version__
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
 
 
 #
@@ -72,7 +73,7 @@ from git_version import version as __version__
 
 def sngl_burst___cmp__(self, other):
 	# compare self's peak time to the LIGOTimeGPS instance other
-	return cmp(self.peak, other)
+	return cmp(self.peak_time, other.seconds) or cmp(self.peak_time_ns, other.nanoseconds)
 
 
 lsctables.SnglBurst.__cmp__ = sngl_burst___cmp__
@@ -673,7 +674,7 @@ def binjfind(xmldoc, process, search, snglcomparefunc, nearcoinccomparefunc, ver
 	# instrument.  1.25 = add 25% for good luck (we're not being
 	# careful with asphericity here, so a bit of padding is needed
 	# anyway, just make sure it's enough).
-	burst_peak_time_window = lal.REARTH_SI / lal.C_SI * 1.25
+	burst_peak_time_window = lal.LAL_REARTH_SI / lal.LAL_C_SI * 1.25
 
 	# add the duration of the longest burst event (the most a burst
 	# event's peak time could differ from either the start or stop time

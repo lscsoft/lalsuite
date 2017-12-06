@@ -4,7 +4,7 @@
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>
 
-#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
+#include <lal/LALAdaptiveRungeKutta4.h>
 
 #ifdef  __cplusplus
 extern "C" {

@@ -37,10 +37,10 @@
    found in the TEMPO documentation. Two function are available to extract these
    parameters from the <tt>.par</tt> files:
    <ul>
-   <li>\c XLALReadTEMPOParFileOrig - this will read parameters into a \c BinaryPulsarParams structure and set
+   <li>\c XLALReadTEMPOParFile - this will read parameters into a \c BinaryPulsarParams structure and set
    any unused parameters to zero or \c NULL. To use this you must know the correct parameter name within
-   the structure. This is deprecated in favour of \c XLALReadTEMPOParFile and is no longer maintained</li>
-   <li>\c XLALReadTEMPOParFile - this reads the parameters into a linked list \c PulsarParameters structure, from which the
+   the structure.</li>
+   <li>\c XLALReadTEMPOParFileNew - this reads the parameters into a linked list structure, from which the
    parameters can be accessed using the appropriate access function. These use a hash table to quick look-up.
    The parameters are assigned names, which are used as the hash table keys, which are fully uppercase
    versions of the TEMPO parameter names.
@@ -230,12 +230,9 @@ REAL8 PulsarGetREAL8ParamOrZero( const PulsarParameters *pars, const CHAR *name 
 }
 
 
-const CHAR* PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name ){
+CHAR* PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name ){
   /* check type is a string */
-  if ( PulsarGetParamType( pars, name ) == PULSARTYPE_string_t ){
-    CHAR *rvalue = *(CHAR **)PulsarGetParam( pars, name );
-    return rvalue;
-  }
+  if ( PulsarGetParamType( pars, name ) == PULSARTYPE_string_t ){ return (CHAR *)PulsarGetParam( pars, name ); }
   else{ XLAL_ERROR_NULL( XLAL_EINVAL,"Used wrong type for required parameter"  ); }
 }
 
@@ -395,7 +392,6 @@ void PulsarAddParam( PulsarParameters *pars, const CHAR *name, void *value, Puls
     new->err = NULL;
     new->fitFlag = (UINT4 *)XLALMalloc( sizeof(UINT4) );
   }
-
   if( new == NULL || new->value == NULL ) {
     XLAL_ERROR_VOID(XLAL_ENOMEM, "Unable to allocate memory for list item.");
   }
@@ -412,37 +408,6 @@ void PulsarAddParam( PulsarParameters *pars, const CHAR *name, void *value, Puls
   hash_elem *elem = new_elem( new->name, new );
   XLALHashTblAdd(pars->hash_table, (void *)elem);
   pars->nparams++;
-}
-
-
-void PulsarAddREAL8Param(PulsarParameters *pars, const CHAR * name, REAL8 value)
-/* Typed version of PulsarAddParam for REAL8 values.*/
-{
-  PulsarAddParam(pars, name, (void*)&value, PULSARTYPE_REAL8_t);
-}
-
-
-void PulsarAddUINT4Param(PulsarParameters *pars, const CHAR * name, UINT4 value)
-/* Typed version of PulsarAddParam for UINT4 values.*/
-{
-  PulsarAddParam(pars, name, (void*)&value, PULSARTYPE_UINT4_t);
-}
-
-
-void PulsarAddREAL8VectorParam(PulsarParameters *pars, const CHAR * name, REAL8Vector *value)
-/* Typed version of PulsarAddParam for REAL8Vector values.*/
-{
-  PulsarAddParam(pars, name, (void*)&value, PULSARTYPE_REAL8Vector_t);
-}
-
-
-void PulsarAddStringParam(PulsarParameters *pars, const CHAR * name, const CHAR *value)
-/* Typed version of PulsarAddParam for string values.*/
-{
-  CHAR *sval = NULL;
-  sval = XLALMalloc( PulsarTypeSize[PULSARTYPE_string_t] );
-  XLALStringCopy(sval, value, PulsarTypeSize[PULSARTYPE_string_t]);
-  PulsarAddParam(pars, name, (void *)&sval, PULSARTYPE_string_t);
 }
 
 
@@ -472,9 +437,6 @@ void PulsarClearParams( PulsarParameters *pars ){
     if( this->type == PULSARTYPE_REAL8Vector_t ) {
       if ( this->value ) { XLALDestroyREAL8Vector( *(REAL8Vector **)this->value ); }
       if ( this->err ) { XLALDestroyREAL8Vector( *(REAL8Vector **)this->err ); }
-    }
-    else if ( this->type == PULSARTYPE_string_t ){
-      if ( this->value ) { XLALFree( *(CHAR **)this->value ); }
     }
     XLALFree( this->value );
     XLALFree( this->err );
@@ -522,13 +484,6 @@ void PulsarRemoveParam( PulsarParameters *pars, const CHAR *name ){
   hash_elem elem;
   elem.name = this->name;
   XLALHashTblRemove( pars->hash_table, (void *)&elem );
-  if( this->type == PULSARTYPE_REAL8Vector_t ) {
-    if ( this->value ) { XLALDestroyREAL8Vector( *(REAL8Vector **)this->value ); }
-    if ( this->err ) { XLALDestroyREAL8Vector( *(REAL8Vector **)this->err ); }
-  }
-  else if ( this->type == PULSARTYPE_string_t ){
-    if ( this->value ) { XLALFree( *(CHAR **)this->value ); }
-  }
   XLALFree( this->value );
   XLALFree( this->err );
   XLALFree( this->fitFlag );
@@ -543,7 +498,7 @@ void PulsarRemoveParam( PulsarParameters *pars, const CHAR *name ){
 
 
 /* Set the value of parameter name in the pars structure to value */
-void PulsarSetParam( PulsarParameters* pars, const CHAR *name, const void *value ){
+void PulsarSetParam( PulsarParameters* pars, const CHAR *name, void *value ){
   PulsarParam *item;
 
   /* convert name to uppercase */
@@ -983,17 +938,10 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
         XLALFree( val );
       }
       else{
-        if ( pc[i].ptype != PULSARTYPE_string_t ){
-          void *val = (void *)XLALMalloc( PulsarTypeSize[pc[i].ptype] );
-          pc[i].convfunc( str1, val );
-          PulsarAddParam( par, pc[i].name, val, pc[i].ptype );
-          XLALFree( val );
-        }
-        else{
-          CHAR *val = XLALStringDuplicate(str1);
-          PulsarAddStringParam( par, pc[i].name, (const CHAR*)val );
-          XLALFree( val );
-        }
+        void *val = (void *)XLALMalloc( PulsarTypeSize[pc[i].ptype] );
+        pc[i].convfunc( str1, val );
+        PulsarAddParam( par, pc[i].name, val, pc[i].ptype );
+        XLALFree( val );
       }
 
       /* check for error values */
@@ -1047,7 +995,7 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
 
 
 /* read in the pulsar parameter file */
-PulsarParameters *XLALReadTEMPOParFile( const CHAR *pulsarAndPath ){
+PulsarParameters *XLALReadTEMPOParFileNew( const CHAR *pulsarAndPath ){
   FILE *fp = NULL;
   CHAR str[PULSAR_PARNAME_MAX]; /* string to contain first value on line */
 
@@ -1056,7 +1004,6 @@ PulsarParameters *XLALReadTEMPOParFile( const CHAR *pulsarAndPath ){
   /* open file */
   if((fp = fopen(pulsarAndPath, "r")) == NULL){
     XLAL_PRINT_ERROR("Error... Cannot open .par file %s\n", pulsarAndPath);
-    XLALFree( par );
     XLAL_ERROR_NULL( XLAL_EIO );
   }
 
@@ -1086,7 +1033,7 @@ PulsarParameters *XLALReadTEMPOParFile( const CHAR *pulsarAndPath ){
 
   /* check for linked parameters SINI and KIN */
   if ( PulsarCheckParam( par, "SINI" ) ){
-    CHAR *sini = XLALStringDuplicate(PulsarGetStringParam( par, "SINI" ));
+    CHAR* sini = XLALStringDuplicate(PulsarGetStringParam( par, "SINI" ));
     strtoupper( sini );
 
     REAL8 sinid;
@@ -1100,8 +1047,6 @@ PulsarParameters *XLALReadTEMPOParFile( const CHAR *pulsarAndPath ){
       }
       else{
         XLAL_PRINT_ERROR("Error... KIN not set in .par file %s\n", pulsarAndPath);
-        PulsarClearParams( par );
-        XLALFree( par );
         XLAL_ERROR_NULL( XLAL_EIO );
       }
     }
@@ -1121,11 +1066,9 @@ PulsarParameters *XLALReadTEMPOParFile( const CHAR *pulsarAndPath ){
 /* NOTE: Convert this function to be more like readParfile.C in TEMPO2 - read
  * in a line at a time using fgets and make each parameter a structure */
 void
-XLALReadTEMPOParFileOrig( BinaryPulsarParams *output,
-                          CHAR      *pulsarAndPath )
+XLALReadTEMPOParFile( BinaryPulsarParams *output,
+                      CHAR      *pulsarAndPath )
 {
-  XLAL_PRINT_DEPRECATION_WARNING("XLALReadTEMPOParFile");
-
   FILE *fp=NULL;
   CHAR val[500][40]; /* string array to hold all the read in values
                         500 strings of max 40 characters is enough */
@@ -1242,7 +1185,7 @@ XLALReadTEMPOParFileOrig( BinaryPulsarParams *output,
   output->pepochErr=0.0;
 
   output->startTime=0.0;
-  output->finishTime=INFINITY;
+  output->finishTime=1./0.;
 
   output->xpbdotErr=0.0;  /* (10^-12) */
 

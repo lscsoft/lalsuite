@@ -1,5 +1,4 @@
 /*
- * Copyright (C) 2017 Arunava Mukherjee
  * Copyright (C) 2012--2015 Karl Wette
  * Copyright (C) 2008, 2009 Reinhard Prix
  *
@@ -104,13 +103,11 @@ static const struct {
   [DOPPLERCOORD_F1DOT]    = {"f1dot",   POW2(SCALE_T),    "First spindown [Units: Hz/s]."},
   [DOPPLERCOORD_F2DOT]    = {"f2dot",   POW3(SCALE_T),    "Second spindown [Units: Hz/s^2]."},
   [DOPPLERCOORD_F3DOT]    = {"f3dot",   POW4(SCALE_T),    "Third spindown [Units: Hz/s^3]."},
-  [DOPPLERCOORD_F4DOT]    = {"f4dot",   POW5(SCALE_T),    "Fourth spindown [Units: Hz/s^4]."},
 
   [DOPPLERCOORD_GC_NU0]   = {"gc_nu0",  SCALE_T,          "Global correlation frequency [Units: Hz]."},
   [DOPPLERCOORD_GC_NU1]   = {"gc_nu1",  POW2(SCALE_T),    "Global correlation first spindown [Units: Hz/s]."},
   [DOPPLERCOORD_GC_NU2]   = {"gc_nu2",  POW3(SCALE_T),    "Global correlation second spindown [Units: Hz/s^2]."},
   [DOPPLERCOORD_GC_NU3]   = {"gc_nu3",  POW4(SCALE_T),    "Global correlation third spindown [Units: Hz/s^3]."},
-  [DOPPLERCOORD_GC_NU4]   = {"gc_nu4",  POW5(SCALE_T),    "Global correlation fourth spindown [Units: Hz/s^4]."},
 
   [DOPPLERCOORD_ALPHA]    = {"alpha",   SCALE_R/LAL_C_SI, "Right ascension [Units: radians]."},
   [DOPPLERCOORD_DELTA]    = {"delta",   SCALE_R/LAL_C_SI, "Declination [Units: radians]."},
@@ -139,13 +136,8 @@ static const struct {
   [DOPPLERCOORD_ASINI]    = {"asini",   1,                "Projected semimajor axis of binary orbit in small-eccentricy limit (ELL1 model) [Units: light seconds]."},
   [DOPPLERCOORD_TASC]     = {"tasc",    1,                "Time of ascension (neutron star crosses line of nodes moving away from observer) for binary orbit (ELL1 model) [Units: GPS seconds]."},
   [DOPPLERCOORD_PORB]     = {"porb",    1,                "Period of binary orbit (ELL1 model) [Units: s]."},
-  [DOPPLERCOORD_KAPPA]    = {"kappa",   1,                "Lagrange parameter 'kappa = ecc * cos(argp)', ('ecc' = eccentricity, 'argp' = argument of periapse) of binary orbit (ELL1 model) [Units: none]."},
-  [DOPPLERCOORD_ETA]      = {"eta",     1,                "Lagrange parameter 'eta = ecc * sin(argp) of binary orbit (ELL1 model) [Units: none]."},
-
-  [DOPPLERCOORD_DASC]     = {"dasc",    1,                "Distance traversed on the arc of binary orbit (ELL1 model) 'dasc = 2 * pi * (ap/porb) * tasc' [Units: light second]."},
-  [DOPPLERCOORD_VP]       = {"vp",      1,                "Rescaled (by asini) differential-coordinate 'dvp = asini * dOMEGA', ('OMEGA' = 2 * pi/'porb') of binary orbit (ELL1 model) [Units: (light second)/(GPS second)]."},
-  [DOPPLERCOORD_KAPPAP]   = {"kappap",  1,                "Rescaled (by asini) differential-coordinate 'dkappap = asini * dkappa' [Units: light seconds]."},
-  [DOPPLERCOORD_ETAP]     = {"etap",    1,                "Rescaled (by asini) differential-coordinate 'detap = asini * deta' [Units: light seconds]."}
+  [DOPPLERCOORD_KAPPA]    = {"kappa", 	1,		  "Lagrange parameter 'kappa = ecc * cos(argp)', ('ecc' = eccentricity, 'argp' = argument of periapse) of binary orbit (ELL1 model) [Units: none]."},
+  [DOPPLERCOORD_ETA]      = {"eta",     1,                "Lagrange parameter 'eta = ecc * sin(argp) of binary orbit (ELL1 model) [Units: none]."}
 
 };
 
@@ -638,10 +630,6 @@ CW_Phi_i ( double tt, void *params )
     case DOPPLERCOORD_GC_NU3:		/**< Global correlation third spindown [Units: Hz/s^3]. Activates 'reduced' detector position. */
       ret = LAL_TWOPI * POW4(tau) * LAL_FACT_INV[4];
       break;
-    case DOPPLERCOORD_F4DOT:		/**< Fourth spindown [Units: Hz/s^4]. */
-    case DOPPLERCOORD_GC_NU4:		/**< Global correlation fourth spindown [Units: Hz/s^4]. Activates 'reduced' detector position. */
-      ret = LAL_TWOPI * POW5(tau) * LAL_FACT_INV[5];
-      break;
 
     case DOPPLERCOORD_ALPHA:		/**< Right ascension [Units: radians]. Uses 'reduced' detector position. */
       nDeriv_i[0] = - cosd * sina;
@@ -723,23 +711,6 @@ CW_Phi_i ( double tt, void *params )
       break;
     case DOPPLERCOORD_ETA: /**< Lagrange parameter 'eta = ecc * sin(argp) of binary orbit (ELL1 model) [Units: none] */
       ret = LAL_PI * Freq * orb_asini * cos2Psi;
-      break;
-
-      // --------- rescaled binary orbital parameters for (approximately) flat metric
-    case DOPPLERCOORD_DASC:  /**< Distance traversed on the arc of binary orbit (ELL1 model) 'dasc = 2 * pi * (ap/porb) * tasc' [Units: light second]." */
-      ret = LAL_TWOPI * Freq * ( cosPsi + orb_kappa * cos2Psi + orb_eta * sin2Psi );
-      break;
-
-    case DOPPLERCOORD_VP: /**< Rescaled (by asini) differential-coordinate 'dvp = asini * dOMEGA', ('OMEGA' = 2 * pi/'porb') of binary orbit (ELL1 model) [Units: (light second)/(GPS second)]. */
-      ret = - LAL_TWOPI * Freq * ( orb_phase/orb_Omega ) * ( cosPsi + orb_kappa * cos2Psi + orb_eta * sin2Psi );
-      break;
-
-    case DOPPLERCOORD_KAPPAP: /**< Rescaled (by asini) differential-coordinate 'dkappap = asini * dkappa' [Units: light seconds]. */
-      ret = - LAL_PI * Freq * sin2Psi;
-      break;
-
-    case DOPPLERCOORD_ETAP: /**< Rescaled (by asini) differential-coordinate 'detap = asini * deta' [Units: light seconds]. */
-      ret = LAL_PI * Freq * cos2Psi;
       break;
 
       // ------------------------------------------------
@@ -2588,7 +2559,6 @@ findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys )
       if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_GC_NU1 ) order = 2;
       if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_GC_NU2 ) order = 3;
       if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_GC_NU3 ) order = 4;
-      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_GC_NU4 ) order = 5;
       maxorder = MYMAX ( maxorder, order );
     }
 

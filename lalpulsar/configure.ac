@@ -157,11 +157,16 @@ fi
 # check for cfitsio
 LALSUITE_USE_CFITSIO
 
-# check for boinc, and modify compiler for lal library checks
-LALSUITE_CHECK_BOINC
+# for boinc enabled build do checks for lal in c++ mode
+if test "${boinc}" = "true" ; then
+  AC_LANG_PUSH([C++])
+fi
 
 # check for lal libraries and headers
 LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
+
+# check that lal was built with BOINC support, if required
+LALSUITE_CHECK_BOINC
 
 # check for lalsupport, needed for test suite
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
@@ -169,8 +174,10 @@ LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALC
 # check for lalxml
 LALSUITE_CHECK_OPT_LIB([LALXML],[${MIN_LALXML_VERSION}],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
-# finish boinc checks, and restore compiler after lal library checks
-LALSUITE_END_CHECK_BOINC
+# back to c mode
+if test "${boinc}" = "true" ; then
+  AC_LANG_POP([C++])
+fi
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG
@@ -205,7 +212,7 @@ LALPulsar has now been successfully configured:
 * Python support is $PYTHON_ENABLE_VAL
 * LALXML library support is $LALXML_ENABLE_VAL
 * BOINC support is $BOINC_ENABLE_VAL
-* CFITSIO library support is $CFITSIO_ENABLE_VAL
+* FITS library support is $CFITSIO_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
 * OpenMP acceleration is $OPENMP_ENABLE_VAL

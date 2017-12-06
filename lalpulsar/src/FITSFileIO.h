@@ -75,17 +75,7 @@ int XLALFITSFileWriteUVarCmdLine( FITSFile *file );
 /// @}
 
 ///
-/// \name Query FITS Header-Data Unit
-///
-/// These function perform various queries of the current FITS header-data unit (HDU):
-/// - XLALFITSHeaderQueryKeyExists() checks if the given key exists in the current HDU.
-///
-/// @{
-int XLALFITSHeaderQueryKeyExists( FITSFile *file, const CHAR *key, BOOLEAN *exists );
-/// @}
-
-///
-/// \name Write/Read Key-Value Pairs to/from FITS Header-Data Unit
+/// \name Write/Read Key-Value Pairs To/From FITS Header-Data Unit
 ///
 /// These functions write/read key-value pairs (\p key, \p value) to/from a FITS header-data unit (HDU).
 /// Scalar #BOOLEAN, #UINT2, #UINT4, #UINT8, #INT2, #INT4, #INT8, #REAL4, #REAL8, #COMPLEX8, and #COMPLEX16 values,
@@ -138,7 +128,7 @@ int XLALFITSHeaderReadGPSTime( FITSFile *file, const CHAR *key, LIGOTimeGPS *val
 /// @}
 
 ///
-/// \name Write/Read Array to/from FITS File
+/// \name Write/Read Array To/From FITS File
 ///
 /// These function write/read arbitrary-dimensional array to/from a FITS image extension data
 /// unit. A call to XLALFITSArrayOpenWrite() or XLALFITSArrayOpenRead() is required first to
@@ -178,7 +168,7 @@ int XLALFITSArrayReadGSLMatrix( FITSFile *file, const size_t idx[], gsl_matrix *
 /// @}
 
 ///
-/// \name Write/Read Table to/from FITS File
+/// \name Write/Read Table To/From FITS File
 ///
 /// These functions write/read arbitrary tables to/from a FITS binary table extension data unit.
 /// A call to XLALFITSTableOpenWrite() or XLALFITSTableOpenRead() is required first; the latter
@@ -252,23 +242,11 @@ int XLALFITSTableColumnAddGPSTime( FITSFile *file, const CHAR *col_name, const s
 #define XLAL_FITS_TABLE_COLUMN_ADD_ARRAY_NAMED(file, type, field, col_name) \
   XLALFITSTableColumnAdd ## type (file, col_name, 1, _xlal_fits_offsets_, &_xlal_fits_record_, sizeof(_xlal_fits_record_), &(_xlal_fits_record_.field[0]), sizeof(_xlal_fits_record_.field))
 /// \hideinitializer
-#define XLAL_FITS_TABLE_COLUMN_ADD_ARRAY2(file, type, field) \
-  XLALFITSTableColumnAdd ## type (file, #field, 1, _xlal_fits_offsets_, &_xlal_fits_record_, sizeof(_xlal_fits_record_), &(_xlal_fits_record_.field[0][0]), sizeof(_xlal_fits_record_.field))
-/// \hideinitializer
-#define XLAL_FITS_TABLE_COLUMN_ADD_ARRAY2_NAMED(file, type, field, col_name) \
-  XLALFITSTableColumnAdd ## type (file, col_name, 1, _xlal_fits_offsets_, &_xlal_fits_record_, sizeof(_xlal_fits_record_), &(_xlal_fits_record_.field[0][0]), sizeof(_xlal_fits_record_.field))
-/// \hideinitializer
 #define XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY(file, type, length, field) \
   ( _xlal_fits_record_.field = (void*) &(_xlal_fits_record_.field), _xlal_fits_offsets_[0] = (size_t)(((intptr_t) &(_xlal_fits_record_.field)) - ((intptr_t) &_xlal_fits_record_)), XLALFITSTableColumnAdd ## type (file, #field, 2, _xlal_fits_offsets_, _xlal_fits_record_.field, ( length ) * sizeof(_xlal_fits_record_.field[0]), _xlal_fits_record_.field, ( length ) * sizeof(_xlal_fits_record_.field[0])) )
 /// \hideinitializer
 #define XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED(file, type, length, field, col_name) \
   ( _xlal_fits_record_.field = (void*) &(_xlal_fits_record_.field), _xlal_fits_offsets_[0] = (size_t)(((intptr_t) &(_xlal_fits_record_.field)) - ((intptr_t) &_xlal_fits_record_)), XLALFITSTableColumnAdd ## type (file, col_name, 2, _xlal_fits_offsets_, _xlal_fits_record_.field, ( length ) * sizeof(_xlal_fits_record_.field[0]), _xlal_fits_record_.field, ( length ) * sizeof(_xlal_fits_record_.field[0])) )
-/// \hideinitializer
-#define XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY2(file, type, length, field) \
-  ( _xlal_fits_record_.field = (void*) &(_xlal_fits_record_.field), _xlal_fits_offsets_[0] = (size_t)(((intptr_t) &(_xlal_fits_record_.field)) - ((intptr_t) &_xlal_fits_record_)), XLALFITSTableColumnAdd ## type (file, #field, 2, _xlal_fits_offsets_, _xlal_fits_record_.field, ( length ) * sizeof(_xlal_fits_record_.field[0][0]), _xlal_fits_record_.field, ( length ) * sizeof(_xlal_fits_record_.field[0][0])) )
-/// \hideinitializer
-#define XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY2_NAMED(file, type, length, field, col_name) \
-  ( _xlal_fits_record_.field = (void*) &(_xlal_fits_record_.field), _xlal_fits_offsets_[0] = (size_t)(((intptr_t) &(_xlal_fits_record_.field)) - ((intptr_t) &_xlal_fits_record_)), XLALFITSTableColumnAdd ## type (file, col_name, 2, _xlal_fits_offsets_, _xlal_fits_record_.field, ( length ) * sizeof(_xlal_fits_record_.field[0][0]), _xlal_fits_record_.field, ( length ) * sizeof(_xlal_fits_record_.field[0][0])) )
 /// \hideinitializer
 #define XLAL_FITS_TABLE_COLUMN_PTR_STRUCT_BEGIN(field, ptr_record_type, length) \
   ptr_record_type XLAL_INIT_DECL(_xlal_fits_ptr_record_, [length]); \
@@ -280,9 +258,6 @@ int XLALFITSTableColumnAddGPSTime( FITSFile *file, const CHAR *col_name, const s
 /// \hideinitializer
 #define XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_ARRAY_NAMED(file, index, type, field, col_name) \
   XLALFITSTableColumnAdd ## type (file, col_name, 2, _xlal_fits_offsets_, &_xlal_fits_ptr_record_[0], sizeof(_xlal_fits_ptr_record_), &(_xlal_fits_ptr_record_[index].field[0]), sizeof(_xlal_fits_ptr_record_[index].field))
-/// \hideinitializer
-#define XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_ARRAY2_NAMED(file, index, type, field, col_name) \
-  XLALFITSTableColumnAdd ## type (file, col_name, 2, _xlal_fits_offsets_, &_xlal_fits_ptr_record_[0], sizeof(_xlal_fits_ptr_record_), &(_xlal_fits_ptr_record_[index].field[0][0]), sizeof(_xlal_fits_ptr_record_[index].field))
 
 int XLALFITSTableWriteRow( FITSFile *file, const void *record );
 int XLALFITSTableReadRow( FITSFile *file, void *record, UINT8 *rem_nrows );
@@ -295,8 +270,3 @@ int XLALFITSTableReadRow( FITSFile *file, void *record, UINT8 *rem_nrows );
 #endif
 
 #endif // _FITSFILEIO_H
-
-// Local Variables:
-// c-file-style: "linux"
-// c-basic-offset: 2
-// End:

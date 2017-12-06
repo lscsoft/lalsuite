@@ -50,6 +50,7 @@ pkginclude_HEADERS = \
 	NRWaveIO.h \
 	NRWaveInject.h \
 	RingUtils.h \
+	SimulateInspiral.h \
 	TemplateBankGeneration.h \
 	TrigScanEThincaCommon.h
 
@@ -76,6 +77,7 @@ liblalinspiral_la_SOURCES = \
 	FindChirpBankVeto.c \
 	FindChirpChisq.c \
 	FindChirpChisqInit.c \
+	FindChirpClusterEvents.c \
 	FindChirpData.c \
 	FindChirpFilter.c \
 	FindChirpFilterInit.c \
@@ -83,6 +85,7 @@ liblalinspiral_la_SOURCES = \
 	FindChirpIMRSimulation.c \
 	FindChirpLinkedList.c \
 	FindChirpMemory.c \
+	FindChirpPTFFilter.c \
 	FindChirpPTFTemplate.c \
 	FindChirpPTFWaveform.c \
 	FindChirpPhenomWaveform.c \
@@ -210,6 +213,7 @@ liblalinspiral_la_SOURCES = \
 	RingUtils.c \
 	SimInspiralUtils.c \
 	SimRingdownUtils.c \
+	SimulateInspiral.c \
 	SnglInspiralUtils.c \
 	SnglRingdownUtils.c \
 	TrigScanEThincaCommon.c \

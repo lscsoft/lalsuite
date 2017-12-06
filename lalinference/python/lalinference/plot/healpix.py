@@ -18,18 +18,18 @@
 Plotting tools for drawing HEALPix images
 """
 from __future__ import division
+__all__ = ('heatmap', 'contour', 'contourf', 'healpix_heatmap',
+           'healpix_contour', 'healpix_contourf', 'colorbar', 'outline_text')
+
 
 import functools
 import matplotlib
-from distutils.version import LooseVersion
+from distutils.version import StrictVersion
 from matplotlib import text
 from matplotlib import ticker
 from matplotlib import patheffects
 import numpy as np
 import healpy as hp
-
-__all__ = ('heatmap', 'contour', 'contourf', 'healpix_heatmap',
-           'healpix_contour', 'healpix_contourf', 'colorbar', 'outline_text')
 
 
 def heatmap(func, *args, **kwargs):
@@ -48,37 +48,32 @@ def heatmap(func, *args, **kwargs):
     xmin, xmax = ax.get_xlim()
     ymin, ymax = ax.get_ylim()
 
-    # Retrieve the inverse transform of the current axes (which converts
-    # display coodinates to data coordinates).
+    # Retrieve the inverse transform of the current axes (which converts display
+    # coodinates to data coordinates).
     itrans = ax.transData.inverted()
 
     # Get the longitude and latitude of every point in the bounding box.
     lons, lats = itrans.transform(np.column_stack((xx.ravel(), yy.ravel()))).T
 
-    # Create a mask that selects only the pixels that fall inside the map
-    # boundary.
-    mask = \
-        np.isfinite(lons) & np.isfinite(lats) & (lons >= xmin) & (lons <= xmax)
+    # Create a mask that selects only the pixels that fall inside the map boundary.
+    mask = np.isfinite(lons) & np.isfinite(lats) & (lons >= xmin) & (lons <= xmax)
     zz = np.ma.array(np.empty(lons.shape), mask=~mask)
 
     # Evaluate the function everywhere that the mask is set.
     zz[mask] = func(lons[mask], lats[mask])
 
     # Plot bitmap using imshow.
-    if LooseVersion(matplotlib.__version__) < LooseVersion('2.0'):
+    if StrictVersion(matplotlib.__version__) < StrictVersion('2.0'):
         # FIXME: workaround for old behavior of imshow().
         # Remove this once we require matplotlib >= 2.0.
         # See also:
         #   * https://bugs.ligo.org/redmine/issues/5152
         #   * https://github.com/matplotlib/matplotlib/issues/7903
-        aximg = plt.imshow(
-            zz.reshape(xx.shape), aspect=ax.get_aspect(),
-            interpolation='nearest',
-            origin='upper', extent=(xmin, xmax, ymax, ymin), *args, **kwargs)
+        aximg = plt.imshow(zz.reshape(xx.shape), aspect=ax.get_aspect(),
+            origin='upper', extent=(xmin, xmax, ymax, ymin),
+            *args, **kwargs)
     else:
-        aximg = plt.imshow(
-            zz.reshape(xx.shape), aspect=ax.get_aspect(),
-            interpolation='nearest',
+        aximg = plt.imshow(zz.reshape(xx.shape), aspect=ax.get_aspect(),
             origin='upper', extent=(0, 1, 1, 0), transform=ax.transAxes,
             *args, **kwargs)
 

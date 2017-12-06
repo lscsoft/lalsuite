@@ -107,7 +107,7 @@ for i; do
 	    rebuild=true
 	    release=true
 	    CFLAGS="-O3 $CFLAGS"
-#	    LDFLAGS="-static-libgcc $LDFLAGS"
+	    LDFLAGS="-static-libgcc $LDFLAGS"
 	    shared_copt="--disable-shared"  ;;
 	--appname=*)
 	    appname=`echo "$i" | sed 's/--appname=//'` ;;
@@ -428,11 +428,14 @@ elif test -z "$noupdate"; then
 fi
 
 if test ."$build_zlib" = ."true"; then
-    if test -z "$rebuild" -a -f "$zlib.tar.gz"; then
+    if test -z "$rebuild" -a -d "$zlib"; then
         log_and_show "using existing zlib source"
     elif test -z "$noupdate"; then
         log_and_show "retrieving $zlib"
         download $zlib.tar.gz
+        log_and_do cd "$BUILD"
+        log_and_do tar xzf "$SOURCE/$zlib.tar.gz"
+        log_and_do cd "$SOURCE"
     fi
 fi
 
@@ -485,9 +488,7 @@ if test ."$build_zlib" = ."true"; then
         log_and_show "using existing zlib"
     else
         log_and_show "compiling zlib"
-        log_and_do cd "$BUILD"
-        log_and_do tar xzf "$SOURCE/$zlib.tar.gz"
-        log_and_do cd "$zlib"
+        log_and_do cd "$BUILD/$zlib"
         if [ "$zlib_shared" = "--shared" -a "$zlib" = "zlib-1.2.3" ] && echo "$CFLAGS" | grep -w -e -m64 >/dev/null; then
             CC="gcc -m64" log_and_do "./configure" $zlib_shared --prefix="$INSTALL"
         else
@@ -510,13 +511,7 @@ else
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install
-    if test ".$CC" = ".gcc-mp-4.8" &&
-        echo $fftw_copts_single | fgrep -e "--enable-avx" >/dev/null; then
-	# on OSX with AVX use the clang assembler
-	log_and_do "$SOURCE/$fftw/configure" CFLAGS="$CFLAGS -Wa,-q" $fftw_copts_single --enable-single "$shared_copt" "$cross_copt" --prefix="$INSTALL"
-    else
-	log_and_do "$SOURCE/$fftw/configure" $fftw_copts_single --enable-single "$shared_copt" "$cross_copt" --prefix="$INSTALL"
-    fi
+    log_and_do "$SOURCE/$fftw/configure" $fftw_copts_single --enable-single "$shared_copt" "$cross_copt" --prefix="$INSTALL"
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install
@@ -636,7 +631,7 @@ else
     fi
 fi
 
-lalsuite_copts="--disable-gcc-flags --without-hdf5 --disable-frame --disable-metaio --disable-swig --disable-lalsimulation --disable-lalxml --enable-boinc --disable-silent-rules --disable-pthread-lock $shared_copt $cross_copt --prefix=$INSTALL"
+lalsuite_copts="--disable-gcc-flags --without-hdf5 --disable-frame --disable-metaio --disable-lalsimulation --disable-lalxml --enable-boinc --disable-silent-rules --disable-pthread-lock $shared_copt $cross_copt --prefix=$INSTALL"
 if [ ."$build_win32" = ."true" ] ; then
     export BOINC_EXTRA_LIBS="-lpsapi"
 fi

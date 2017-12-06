@@ -1,6 +1,6 @@
 # lalapps.m4 - lalapps specific autoconf macros
 #
-# serial 16
+# serial 15
 
 AC_DEFUN([LALAPPS_ENABLE_CONDOR], [
   AC_ARG_ENABLE(
@@ -20,7 +20,6 @@ AC_DEFUN([LALAPPS_ENABLE_CONDOR], [
 ])
 
 AC_DEFUN([LALAPPS_ENABLE_STATIC_BINARIES], [
-  AC_REQUIRE([PKG_PROG_PKG_CONFIG])
   AC_REQUIRE([LALAPPS_ENABLE_CONDOR])
   AC_REQUIRE([LALSUITE_ENABLE_BOINC])
   AC_ARG_ENABLE(
@@ -42,11 +41,6 @@ AC_DEFUN([LALAPPS_ENABLE_STATIC_BINARIES], [
   AS_IF([test "x$static_binaries" = "xtrue"], [
     AC_DISABLE_SHARED
     AC_ENABLE_STATIC
-    AS_IF([${PKG_CONFIG} --static --version >/dev/null 2>&1],[
-      PKG_CONFIG="${PKG_CONFIG} --static"
-    ],[
-      AC_MSG_WARN([${PKG_CONFIG} does not support --static])
-    ])
   ])
 ])
 

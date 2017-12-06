@@ -104,7 +104,7 @@ int XLALSimInspiralTaylorF2NLPhase(
     We compute this from a basic post-newtonian expansion that includes dissipation from the tides as an extra energy sink
     In particular, we assume 0th order gravitational radiation loss and orbital energy and add terms like
         Edot_1 = 2*N1*Y1*Esat1
-    where
+    where 
         N is the number of modes participating
         Y is the growth rate of the instability
         Esat is the energy at which unstable modes saturate
@@ -294,41 +294,20 @@ int XLALSimInspiralTaylorF2CoreNLTides(
         case -1:
         case 7:
             pfa7 = pfa.v[7];
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 6:
             pfa6 = pfa.v[6];
             pfl6 = pfa.vlogv[6];
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 5:
             pfa5 = pfa.v[5];
             pfl5 = pfa.vlogv[5];
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 4:
             pfa4 = pfa.v[4];
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 3:
             pfa3 = pfa.v[3];
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 2:
             pfa2 = pfa.v[2];
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 1:
             pfa1 = pfa.v[1];
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 0:
             pfaN = pfa.v[0];
             break;
@@ -371,14 +350,8 @@ int XLALSimInspiralTaylorF2CoreNLTides(
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
 	    pft12 = pfaN * (lambda1*XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m1OverM) + lambda2*XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m2OverM) );
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
             pft10 = pfaN * ( lambda1*XLALSimInspiralTaylorF2Phasing_10PNTidalCoeff(m1OverM) + lambda2*XLALSimInspiralTaylorF2Phasing_10PNTidalCoeff(m2OverM) );
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
             break;
         default:
@@ -514,37 +487,19 @@ int XLALSimInspiralTaylorF2CoreNLTides(
         {
             case 7:
                 flux += FTa7 * v7;
-#if __GNUC__ >= 7
-                __attribute__ ((fallthrough));
-#endif
             case 6:
                 flux += (FTa6 + FTl6*logv) * v6;
                 dEnergy += dETa3 * v6;
-#if __GNUC__ >= 7
-                __attribute__ ((fallthrough));
-#endif
             case 5:
                 flux += FTa5 * v5;
-#if __GNUC__ >= 7
-                __attribute__ ((fallthrough));
-#endif
             case 4:
                 flux += FTa4 * v4;
                 dEnergy += dETa2 * v4;
-#if __GNUC__ >= 7
-                __attribute__ ((fallthrough));
-#endif
             case 3:
                 flux += FTa3 * v3;
-#if __GNUC__ >= 7
-                __attribute__ ((fallthrough));
-#endif
             case 2:
                 flux += FTa2 * v2;
                 dEnergy += dETa1 * v2;
-#if __GNUC__ >= 7
-                __attribute__ ((fallthrough));
-#endif
             case -1: /* Default to no SPA amplitude corrections */
             case 0:
                 flux += 1.;
