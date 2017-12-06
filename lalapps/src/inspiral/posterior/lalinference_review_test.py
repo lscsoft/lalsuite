@@ -285,7 +285,7 @@ def replace_fiducial_bbh(line):
     if 'disable-spin=' in line:
         return '#disable-spin=\n'
     if 'margphi=' in line:
-        return '#margphi=\n'
+        return 'margphi=\n'
     if 'flow=' in line:
         return line.replace('#','').strip()+'\n'
     if 'roq_b_matrix_directory=' in line:

@@ -36,7 +36,6 @@
 #include <lal/LALMalloc.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALError.h>
-#include <lal/XLALError.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -49,7 +48,6 @@ extern const int lalNoDebug;
 #define LAL_EXLAL     16384
 #define LAL_MSGEXLAL  "Failure in an XLAL routine"
 #define ABORTXLAL(sp) ABORT(sp,LAL_EXLAL,LAL_MSGEXLAL)
-#define XLAL_CHECK_LAL(sp, assertion, ...) _XLAL_CHECK_IMPL_(ABORTXLAL(sp), assertion, __VA_ARGS__)
 
 #ifndef NOLALMACROS
 
@@ -112,12 +110,15 @@ extern const int lalNoDebug;
   } while ( 0 )
 
 #define ABORT( statusptr, code, mesg )                                        \
-  do { if ( (statusptr)->statusPtr ) FREESTATUSPTR( statusptr );              \
+  do { if ( 1 )                                                               \
+  {                                                                           \
+    if ( (statusptr)->statusPtr ) FREESTATUSPTR( statusptr );                   \
     SETSTATUS( statusptr, code, mesg );                                       \
     if ( code )                                                               \
       (void) LALError( statusptr, "ABORT:" );                                 \
     (void) LALTrace( statusptr, 1 );                                          \
     return;                                                                   \
+  }                                                                           \
   } while ( 0 )
 
 #ifdef LAL_NDEBUG

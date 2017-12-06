@@ -95,47 +95,14 @@ int SEOBNRv4ROM_NRTidal_Core(
   // XLALSimNRTunedTidesFDTidalPhaseFrequencySeries
 
   int ret = XLAL_SUCCESS;
-  if (deltaF > 0) {
-    // if using a uniform frequency series then we only need to generate
-    // SEOBNRv4_ROM upto a bit beyond the BNS merger frequency.
-    // if asked for a frequency beyond NRTIDAL_FMAX then the
-    // returned waveform contains frequencies up to the input fHigh but
-    // only contains zeros beyond NRTIDAL_FMAX
-    double f_max_nr_tidal = fHigh;
-    /**< tidal coupling constant.*/
-    const double kappa2T = XLALSimNRTunedTidesComputeKappa2T(m1_SI, m2_SI, lambda1, lambda2);
-    /* Prepare tapering of amplitude beyond merger frequency */
-    const double fHz_mrg = XLALSimNRTunedTidesMergerFrequency( (m1_SI+m2_SI)/LAL_MSUN_SI , kappa2T, m1_SI/m2_SI);
-    const double NRTIDAL_FMAX = 1.3*fHz_mrg;
-
-    if ( ( fHigh > NRTIDAL_FMAX ) || ( fHigh == 0.0 ) )
-    {
-        // only generate upto NRTIDAL_FMAX
-        f_max_nr_tidal = NRTIDAL_FMAX;
-    }
-
+  if (deltaF > 0)
     ret = XLALSimIMRSEOBNRv4ROM(
       hptilde, hctilde,
-      phiRef, deltaF, fLow, f_max_nr_tidal, fRef, distance, inclination,
+      phiRef, deltaF, fLow, fHigh, fRef, distance, inclination,
       m1_SI, m2_SI,
       chi1, chi2,
       -1);
-
-      // if uniform sampling and fHigh > NRTIDAL_FMAX then resize htilde
-      // so that it goes up to the user fHigh but is filled with zeros
-      // beyond NRTIDAL_FMAX
-      if (fHigh > NRTIDAL_FMAX)
-      {
-          // resize
-          // n_full is the next power of 2 +1.
-          size_t n_full = (size_t) pow(2,ceil(log2(fHigh / deltaF))) + 1;
-          *hptilde = XLALResizeCOMPLEX16FrequencySeries(*hptilde, 0, n_full);
-          XLAL_CHECK ( *hptilde, XLAL_ENOMEM, "Failed to resize hptilde COMPLEX16FrequencySeries");
-          *hctilde = XLALResizeCOMPLEX16FrequencySeries(*hctilde, 0, n_full);
-          XLAL_CHECK ( *hctilde, XLAL_ENOMEM, "Failed to resize hctilde COMPLEX16FrequencySeries");
-      }
-
-  } else {
+  else
     ret = XLALSimIMRSEOBNRv4ROMFrequencySequence(
       hptilde, hctilde,
       freqs_in,
@@ -143,7 +110,6 @@ int SEOBNRv4ROM_NRTidal_Core(
       m1_SI, m2_SI,
       chi1, chi2,
       -1);
-  }
   XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimIMRSEOBNRv4ROM() failed.");
 
   UINT4 offset;

@@ -3,11 +3,12 @@ EXTRA_DIST = \
 	compat \
 	control \
 	copyright \
+	docs \
+	lalstochastic-dev.dirs \
 	lalstochastic-dev.install \
 	lalstochastic-octave.install \
 	lalstochastic-python.install \
-	lalstochastic-python3.install \
+	lalstochastic.dirs \
 	lalstochastic.install \
 	rules \
-	lalsuite.mk \
 	source/format

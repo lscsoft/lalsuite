@@ -132,7 +132,7 @@ typedef struct {
   PulsarSpinRange spinRange_endTime;   /**< freq and fdot range at end-time of observation */
   PulsarSpinRange spinRange_refTime;   /**< freq and fdot range at the reference time */
   PulsarSpinRange spinRange_midTime;   /**< freq and fdot range at mid-time of observation */
-  EphemerisData *edat;             /**< ephemeris data for XLALBarycenter */
+  EphemerisData *edat;             /**< ephemeris data for LALBarycenter */
   LIGOTimeGPSVector *midTstack;    /**< timestamps vector for mid time of each stack */
   LIGOTimeGPSVector *startTstack;  /**< timestamps vector for start time of each stack */
   LIGOTimeGPSVector *endTstack;    /**< timestamps vector for end time of each stack */
@@ -140,9 +140,7 @@ typedef struct {
   LIGOTimeGPS maxStartTimeGPS;       /**< all sft timestamps must be before this GPS time */
   UINT4 blocksRngMed;              /**< blocksize for running median noise floor estimation */
   UINT4 Dterms;                    /**< size of Dirichlet kernel for Fstat calculation */
-  UINT4 DtermsRecalc;              /**< Recalc: size of Dirichlet kernel for Fstat calculation */
-  LALStringVector* assumeSqrtSX;   /**< Assume stationary Gaussian noise with detector noise-floors sqrt{SX}" */
-  BOOLEAN SignalOnly;              /**< DEPRECATED: ALTERNATIVE switch to assume Sh=1 instead of estimating noise-floors from SFTs */
+  BOOLEAN SignalOnly;              /**< FALSE: estimate noise-floor from data, TRUE: assume Sh=1 */
   /* parameters describing the coherent data-segments */
   REAL8 tStack;                    /**< duration of stacks */
   UINT4 nStacks;                   /**< number of stacks */
@@ -157,7 +155,7 @@ typedef struct {
   UINT4 nf1dot;			/**< number of 1st spindown Fstat bins */
   UINT4 nf2dot;			/**< number of 2nd spindown Fstat bins */
   UINT4 nf3dot;			/**< number of 3rd spindown Fstat bins */
-  int SSBprec;                     /**< SSB transform precision */
+  SSBprecision SSBprec;            /**< SSB transform precision */
   FstatMethodType Fmethod;         //!< which Fstat-method/algorithm to use
   BOOLEAN recalcToplistStats;	   //!< do additional analysis for all toplist candidates, output F, FXvector for postprocessing */
   FstatMethodType FmethodRecalc;   //!< which Fstat-method/algorithm to use for the recalc step
@@ -167,8 +165,7 @@ typedef struct {
   REAL4 NSegmentsInvX[PULSAR_MAX_DETECTORS]; /**< effective inverse number of segments per detector (needed for correct averaging in single-IFO F calculation) */
   FstatInputVector* Fstat_in_vec;	/**< Original wide-parameter search: vector of Fstat input data structures for XLALComputeFstat(), one per stack */
   FstatInputVector* Fstat_in_vec_recalc; /**< Recalculate the toplist: Vector of Fstat input data structures for XLALComputeFstat(), one per stack */
-  PulsarParamsVector *injectionSources; ///< Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}')
-  BOOLEAN collectFstatTiming;		///< flag whether to collect and output F-stat timing info
+  FILE *timingDetailsFP;	// file pointer to write detailed coherent-timing info into
 } UsefulStageVariables;
 
 
@@ -243,15 +240,10 @@ int XLALExtrapolateToplistPulsarSpins ( toplist_t *list,
 					const LIGOTimeGPS finegridRefTime);
 
 static int write_TimingInfo ( const CHAR *fname, const timingInfo_t *ti );
-static inline REAL4 findLoudestTwoF ( const FstatResults *in );
 
 /* ---------- Global variables -------------------- */
 LALStatus *global_status; /* a global pointer to MAIN()s head of the LALStatus structure */
 char *global_column_headings_stringp;
-
-// XLALReadSegmentsFromFile(): applications which still must support
-// the deprecated 4-column format should set this variable to non-zero
-extern int XLALReadSegmentsFromFile_support_4column_format;
 
 /* ###################################  MAIN  ################################### */
 
@@ -378,14 +370,12 @@ int MAIN( int argc, char *argv[]) {
 
   /* user variables */
   BOOLEAN uvar_log = FALSE;     /* logging done if true */
+  INT4 uvar_loglevel = 0;       /* DEPRECATED; used to set logLevel, now set by LAL_DEBUG_LEVEL */
 
   BOOLEAN uvar_printCand1 = FALSE;      /* if 1st stage candidates are to be printed */
   BOOLEAN uvar_printFstat1 = FALSE;
-  BOOLEAN uvar_loudestTwoFPerSeg = FALSE;	// output loudest per-segment Fstat candidates
   BOOLEAN uvar_semiCohToplist = TRUE; /* if overall first stage candidates are to be output */
-
-  LALStringVector* uvar_assumeSqrtSX = NULL;    /* Assume stationary Gaussian noise with detector noise-floors sqrt{SX}" */
-  BOOLEAN uvar_SignalOnly = FALSE;              /* DEPRECATED: ALTERNATIVE switch to assume Sh=1 instead of estimating noise-floors from SFTs */
+  BOOLEAN uvar_SignalOnly = FALSE;     /* if Signal-only case (for SFT normalization) */
 
   BOOLEAN uvar_recalcToplistStats = FALSE; 	/* Do additional analysis for all toplist candidates, output F, FXvector for postprocessing */
   BOOLEAN uvar_loudestSegOutput = FALSE; 	/* output extra info about loudest segment; requires recalcToplistStats */
@@ -430,7 +420,6 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_segmentList = NULL;	/**< ALTERNATIVE: file containing a pre-computed segment list of tuples (startGPS endGPS duration[h] NumSFTs) */
 
   INT4 uvar_Dterms = DTERMS;
-  INT4 uvar_DtermsRecalc = DTERMS;
   INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
   INT4 uvar_gammaRefine = 1;
   INT4 uvar_gamma2Refine = 1;
@@ -448,16 +437,16 @@ int MAIN( int argc, char *argv[]) {
   INT4 uvar_numSkyPartitions = 0;
   INT4 uvar_partitionIndex = 0;
   INT4 uvar_SortToplist = 0;
+  BOOLEAN uvar_version = 0;
 
   CHAR *uvar_outputTiming = NULL;
   CHAR *uvar_outputTimingDetails = NULL;
 
-  int uvar_FstatMethod = FMETHOD_DEMOD_BEST;
-  int uvar_FstatMethodRecalc = FMETHOD_DEMOD_BEST;
+  CHAR helpstr_buf[2048];
+  CHAR *uvar_FstatMethod = XLALStringDuplicate("DemodBest");
+  CHAR *uvar_FstatMethodRecalc = XLALStringDuplicate("DemodBest");
 
   timingInfo_t XLAL_INIT_DECL(timing);
-
-  LALStringVector *uvar_injectionSources = NULL;
 
   // timing values
   REAL8 tic_RecalcToplist, time_RecalcToplist = 0;
@@ -476,9 +465,6 @@ int MAIN( int argc, char *argv[]) {
 #ifdef EAH_LALDEBUGLEVEL
 #endif
 
-  // XLALReadSegmentsFromFile(): continue to support deprecated 4-column format (startGPS endGPS duration NumSFTs, duration is ignored)
-  XLALReadSegmentsFromFile_support_4column_format = 1;
-
   uvar_ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
   uvar_ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
@@ -496,83 +482,80 @@ int MAIN( int argc, char *argv[]) {
 #endif
 
   /* register user input variables */
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_log,                 "log",                 BOOLEAN,      0,   OPTIONAL,   "Write log file") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_semiCohToplist,      "semiCohToplist",      BOOLEAN,      0,   OPTIONAL,   "Print toplist of semicoherent candidates" ) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_DataFiles1,          "DataFiles1",          STRING,       0,   REQUIRED,   "1st SFT file pattern") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_skyRegion,           "skyRegion",           STRING,       0,   OPTIONAL,   "sky-region polygon (or 'allsky')") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_numSkyPartitions,    "numSkyPartitions",    INT4,         0,   OPTIONAL,   "No. of (equi-)partitions to split skygrid into") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_partitionIndex,      "partitionIndex",      INT4,         0,   OPTIONAL,   "Index [0,numSkyPartitions-1] of sky-partition to generate") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_skyGridFile,         "skyGridFile",         STRING,       0,   OPTIONAL,   "sky-grid file") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_dAlpha,              "dAlpha",              REAL8,        0,   OPTIONAL,   "Resolution for flat or isotropic coarse grid") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_dDelta,              "dDelta",              REAL8,        0,   OPTIONAL,   "Resolution for flat or isotropic coarse grid") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_Freq,                "Freq",                REAL8,        'f', OPTIONAL,   "Start search frequency") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_dFreq,               "dFreq",               REAL8,        0,   OPTIONAL,   "Frequency resolution (required if nonzero FreqBand)") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_FreqBand,            "FreqBand",            REAL8,        'b', OPTIONAL,   "Search frequency band") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_f1dot,               "f1dot",               REAL8,        0,   OPTIONAL,   "Spindown parameter") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_df1dot,              "df1dot",              REAL8,        0,   OPTIONAL,   "Spindown resolution (required if nonzero f1dotBand)") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_f1dotBand,           "f1dotBand",           REAL8,        0,   OPTIONAL,   "Spindown Range") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_f2dot,               "f2dot",               REAL8,        0,   OPTIONAL,   "2nd spindown parameter") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_df2dot,              "df2dot",              REAL8,        0,   OPTIONAL,   "2nd spindown resolution (required if nonzero f2dotBand)") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_f2dotBand,           "f2dotBand",           REAL8,        0,   OPTIONAL,   "2nd spindown Range") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_f3dot,               "f3dot",               REAL8,        0,   OPTIONAL,   "3rd spindown parameter") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_df3dot,              "df3dot",              REAL8,        0,   OPTIONAL,   "3rd spindown resolution (required if nonzero f3dotBand)") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_f3dotBand,           "f3dotBand",           REAL8,        0,   OPTIONAL,   "3rd spindown Range") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_ThrF,                "peakThrF",            REAL8,        0,   OPTIONAL,   "Fstat Threshold") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_mismatch1,           "mismatch1",           REAL8,        'm', OPTIONAL,   "1st stage mismatch") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_gridType1,           "gridType1",           INT4,         0,   OPTIONAL,   "0=flat, 1=isotropic, 2=metric, 3=file") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_metricType1,         "metricType1",         INT4,         0,   OPTIONAL,   "0=none, 1=Ptole-analytic, 2=Ptole-numeric, 3=exact") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_gammaRefine,         "gammaRefine",         INT4,         'g', OPTIONAL,   "Refinement of fine grid (default: use segment times)") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_gamma2Refine,        "gamma2Refine",        INT4,         'G', OPTIONAL,   "Refinement of f2dot fine grid (default: use segment times, -1=use gammaRefine)") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fnameout,            "fnameout",            STRING,       'o', OPTIONAL,   "Output filename") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fnameChkPoint,       "fnameChkPoint",       STRING,       0,   OPTIONAL,   "Checkpoint filename") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_nCand1,              "nCand1",              INT4,         'n', OPTIONAL,   "No. of candidates to output") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_printCand1,          "printCand1",          BOOLEAN,      0,   OPTIONAL,   "Print 1st stage candidates") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_refTime,             "refTime",             REAL8,        0,   OPTIONAL,   "Ref. time for pulsar pars [Default: mid-time]") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_ephemEarth,          "ephemEarth",          STRING,       0,   OPTIONAL,   "Location of Earth ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_ephemSun,            "ephemSun",            STRING,       0,   OPTIONAL,   "Location of Sun ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_minStartTime1,       "minStartTime1",       REAL8,        0,   OPTIONAL,   "1st stage: Only use SFTs with timestamps starting from (including) this GPS time") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_maxStartTime1,       "maxStartTime1",       REAL8,        0,   OPTIONAL,   "1st stage: Only use SFTs with timestamps up to (excluding) this GPS time") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_printFstat1,         "printFstat1",         BOOLEAN,      0,   OPTIONAL,   "Print 1st stage Fstat vectors") == XLAL_SUCCESS, XLAL_EFUNC);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",          0,  UVAR_OPTIONAL, "Write log file", &uvar_log), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "semiCohToplist",0, UVAR_OPTIONAL, "Print toplist of semicoherent candidates", &uvar_semiCohToplist ), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles1",   0,  UVAR_REQUIRED, "1st SFT file pattern", &uvar_DataFiles1), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",    0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "numSkyPartitions",0,UVAR_OPTIONAL, "No. of (equi-)partitions to split skygrid into", &uvar_numSkyPartitions), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "partitionIndex",0,UVAR_OPTIONAL, "Index [0,numSkyPartitions-1] of sky-partition to generate", &uvar_partitionIndex), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyGridFile",  0,  UVAR_OPTIONAL, "sky-grid file", &uvar_skyGridFile), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid", &uvar_dAlpha), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid", &uvar_dDelta), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "Freq",        'f', UVAR_OPTIONAL, "Start search frequency", &uvar_Freq), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dFreq",        0,  UVAR_OPTIONAL, "Frequency resolution (required if nonzero FreqBand)", &uvar_dFreq), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "FreqBand",    'b', UVAR_OPTIONAL, "Search frequency band", &uvar_FreqBand), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "f1dot",        0,  UVAR_OPTIONAL, "Spindown parameter", &uvar_f1dot), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "df1dot",       0,  UVAR_OPTIONAL, "Spindown resolution (required if nonzero f1dotBand)", &uvar_df1dot), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "f1dotBand",    0,  UVAR_OPTIONAL, "Spindown Range", &uvar_f1dotBand), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "f2dot",        0,  UVAR_OPTIONAL, "2nd spindown parameter", &uvar_f2dot), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "df2dot",       0,  UVAR_OPTIONAL, "2nd spindown resolution (required if nonzero f2dotBand)", &uvar_df2dot), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "f2dotBand",    0,  UVAR_OPTIONAL, "2nd spindown Range", &uvar_f2dotBand), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "f3dot",        0,  UVAR_OPTIONAL, "3rd spindown parameter", &uvar_f3dot), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "df3dot",       0,  UVAR_OPTIONAL, "3rd spindown resolution (required if nonzero f3dotBand)", &uvar_df3dot), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "f3dotBand",    0,  UVAR_OPTIONAL, "3rd spindown Range", &uvar_f3dotBand), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "peakThrF",     0,  UVAR_OPTIONAL, "Fstat Threshold", &uvar_ThrF), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch1",   'm', UVAR_OPTIONAL, "1st stage mismatch", &uvar_mismatch1), &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "gridType1",    0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric,3=file", &uvar_gridType1),  &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "metricType1",  0,  UVAR_OPTIONAL, "0=none,1=Ptole-analytic,2=Ptole-numeric,3=exact", &uvar_metricType1), &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "gammaRefine", 'g', UVAR_OPTIONAL, "Refinement of fine grid (default: use segment times)", &uvar_gammaRefine), &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "gamma2Refine",'G', UVAR_OPTIONAL, "Refinement of f2dot fine grid (default: use segment times, -1=use gammaRefine)", &uvar_gamma2Refine), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",    'o', UVAR_OPTIONAL, "Output filename", &uvar_fnameout), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameChkPoint",0,  UVAR_OPTIONAL, "Checkpoint filename", &uvar_fnameChkPoint), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",      'n', UVAR_OPTIONAL, "No. of candidates to output", &uvar_nCand1), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand1",   0,  UVAR_OPTIONAL, "Print 1st stage candidates", &uvar_printCand1), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",      0,  UVAR_OPTIONAL, "Ref. time for pulsar pars [Default: mid-time]", &uvar_refTime), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemEarth",   0,  UVAR_OPTIONAL, "Location of Earth ephemeris file", &uvar_ephemEarth),  &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemSun",     0,  UVAR_OPTIONAL, "Location of Sun ephemeris file", &uvar_ephemSun),  &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "minStartTime1",0,  UVAR_OPTIONAL, "1st stage: Only use SFTs with timestamps starting from (including) this GPS time", &uvar_minStartTime1), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "maxStartTime1",0,  UVAR_OPTIONAL, "1st stage: Only use SFTs with timestamps up to (excluding) this GPS time",   &uvar_maxStartTime1),   &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",  0,  UVAR_OPTIONAL, "Print 1st stage Fstat vectors", &uvar_printFstat1), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "SignalOnly",  'S', UVAR_OPTIONAL, "Signal only flag", &uvar_SignalOnly), &status);
 
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_assumeSqrtSX,        "assumeSqrtSX",        STRINGVector, 0,   OPTIONAL,   "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs)") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_SignalOnly,          "SignalOnly",          BOOLEAN,      'S', DEPRECATED, "DEPRECATED ALTERNATIVE: Don't estimate noise-floors but assume sqrtSX=1 instead") == XLAL_SUCCESS, XLAL_EFUNC);
-
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_nStacksMax,          "nStacksMax",          INT4,         0,   OPTIONAL,   "Maximum No. of segments" ) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_tStack,              "tStack",              REAL8,        'T', OPTIONAL,   "Duration of segments (sec)" ) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_segmentList,         "segmentList",         STRING,       0,   OPTIONAL,   "ALTERNATIVE: file containing a segment list: lines of form <startGPS endGPS duration[h] NumSFTs>") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_recalcToplistStats,  "recalcToplistStats",  BOOLEAN,      0,   OPTIONAL,   "Additional analysis for toplist candidates, recalculate 2F, 2FX at finegrid") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_loudestSegOutput,    "loudestSegOutput",    BOOLEAN,      0,   OPTIONAL,   "Output extra info about loudest segment; (requires --recalcToplistStats)") == XLAL_SUCCESS, XLAL_EFUNC);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nStacksMax",   0,  UVAR_OPTIONAL, "Maximum No. of segments", &uvar_nStacksMax ),&status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "tStack",      'T', UVAR_OPTIONAL, "Duration of segments (sec)", &uvar_tStack ),&status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "segmentList",  0, UVAR_OPTIONAL, "ALTERNATIVE: file containing a segment list: lines of form <startGPS endGPS duration[h] NumSFTs>", &uvar_segmentList),  &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "recalcToplistStats", 0, UVAR_OPTIONAL, "Additional analysis for toplist candidates, recalculate 2F, 2FX at finegrid", &uvar_recalcToplistStats), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "loudestSegOutput", 0, UVAR_OPTIONAL, "Output extra info about loudest segment; (requires --recalcToplistStats)", &uvar_loudestSegOutput), &status);
 
   // ----- Line robust stats parameters ----------
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_computeBSGL,         "computeBSGL",         BOOLEAN,      0,   OPTIONAL,   "Compute and output line-robust statistic (BSGL)") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_Fstar0sc,            "Fstar0sc",            REAL8,        0,   OPTIONAL,   "BSGL: semi-coh transition-scale parameter 'Fstar0sc=Nseg*Fstar0coh'" ) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_oLGX,                "oLGX",                STRINGVector, 0,   OPTIONAL,   "BSGL: prior per-detector line-vs-Gauss odds 'oLGX' (Defaults to oLGX=1/Ndet)") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_BSGLlogcorr,         "BSGLlogcorr",         BOOLEAN,      0,   DEVELOPER,  "BSGL: include log-correction terms (slower) or not (faster)") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_getMaxFperSeg,       "getMaxFperSeg",       BOOLEAN,      0,   OPTIONAL,   "Compute and output maximum F and FX over segments") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_SortToplist,         "SortToplist",         INT4,         0,   OPTIONAL,   "Sort toplist by: 0=Fstat, 1=nc, 2=B_S/GL, 3='Fstat + B_S/GL', 4=B_S/GLtL, 5=B_tS/GLtL, 6='B_S/GL + B_S/GLtL + B_tS/GLtL'") == XLAL_SUCCESS, XLAL_EFUNC);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "computeBSGL",   0, UVAR_OPTIONAL, "Compute and output line-robust statistic (BSGL)", &uvar_computeBSGL), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "Fstar0sc",     0, UVAR_OPTIONAL,  "BSGL: semi-coh transition-scale parameter 'Fstar0sc=Nseg*Fstar0coh'", &uvar_Fstar0sc ), &status);
+  LAL_CALL( LALRegisterLISTUserVar(   &status, "oLGX",         0, UVAR_OPTIONAL,  "BSGL: prior per-detector line-vs-Gauss odds 'oLGX' (Defaults to oLGX=1/Ndet)", &uvar_oLGX), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "BSGLlogcorr",  0, UVAR_DEVELOPER, "BSGL: include log-correction terms (slower) or not (faster)", &uvar_BSGLlogcorr), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "getMaxFperSeg",   0, UVAR_OPTIONAL, "Compute and output maximum F and FX over segments", &uvar_getMaxFperSeg), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_OPTIONAL, "Sort toplist by: 0=Fstat, 1=nc, 2=B_S/GL, 3='Fstat + B_S/GL', 4=B_S/GLtL, 5=B_tS/GLtL, 6='B_S/GL + B_S/GLtL + B_tS/GLtL'",  &uvar_SortToplist), &status);
   // --------------------------------------------
 
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvarAuxData( &uvar_FstatMethod, "FstatMethod", UserEnum, XLALFstatMethodChoices(), 0, OPTIONAL, "F-statistic method to use" ) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvarAuxData( &uvar_FstatMethodRecalc, "FstatMethodRecalc", UserEnum, XLALFstatMethodChoices(), 0, OPTIONAL, "F-statistic method to use for recalc" ) == XLAL_SUCCESS, XLAL_EFUNC);
-
+  snprintf( helpstr_buf, sizeof(helpstr_buf), "F-statistic method to use. Available methods: %s", XLALFstatMethodHelpString() );
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "FstatMethod",  0, UVAR_OPTIONAL, helpstr_buf, &uvar_FstatMethod ), &status);
+  snprintf( helpstr_buf, sizeof(helpstr_buf), "F-statistic method to use for recalc. Available methods: %s", XLALFstatMethodHelpString() );
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "FstatMethodRecalc", 0, UVAR_OPTIONAL, helpstr_buf, &uvar_FstatMethodRecalc ), &status);
   /* developer user variables */
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_blocksRngMed,        "blocksRngMed",        INT4,         0,   DEVELOPER,  "RngMed block size") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvarAuxData( &uvar_SSBprecision, "SSBprecision", UserEnum, &SSBprecisionChoices, 0, DEVELOPER, "Precision for SSB transform") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_Dterms,              "Dterms",              INT4,         0,   DEVELOPER,  "Number of kernel terms (single-sided) to use in\na) Dirichlet kernel if FstatMethod=Demod*\nb) sinc-interpolation kernel if FstatMethod=Resamp*" ) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_DtermsRecalc,        "DtermsRecalc",        INT4,         0,   DEVELOPER,  "Same as 'Dterms', applies to 'Recalc' step" ) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_skyPointIndex,       "skyPointIndex",       INT4,         0,   DEVELOPER,  "Only analyze this skypoint in grid" ) == XLAL_SUCCESS, XLAL_EFUNC);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision", 0, UVAR_DEVELOPER, "Precision for SSB transform.", &uvar_SSBprecision),    &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",       0, UVAR_DEVELOPER, "No. of terms to keep in Dirichlet Kernel", &uvar_Dterms ), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "skyPointIndex",0, UVAR_DEVELOPER, "Only analyze this skypoint in grid", &uvar_skyPointIndex ), &status);
 
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outputTiming,        "outputTiming",        STRING,       0,   DEVELOPER,  "Append timing information into this file") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outputTimingDetails, "outputTimingDetails", STRING,       0,   DEVELOPER,  "Append detailed averaged F-stat timing information to this file") == XLAL_SUCCESS, XLAL_EFUNC);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputTiming", 0, UVAR_DEVELOPER, "Append timing information into this file", &uvar_outputTiming), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputTimingDetails", 0, UVAR_DEVELOPER, "Append detailed F-stat timing information to this file", &uvar_outputTimingDetails), &status);
 
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_loudestTwoFPerSeg,   "loudestTwoFPerSeg",   BOOLEAN,      0, DEVELOPER, "Output loudest per-segment Fstat values into file '_loudestTwoFPerSeg'" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  LAL_CALL ( LALRegisterBOOLUserVar(  &status, "version",     'V', UVAR_SPECIAL,  "Output version information", &uvar_version), &status);
 
-  /* inject signals into the data being analyzed */
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar ( &uvar_injectionSources, "injectionSources",      STRINGVector, 0, DEVELOPER,     "CSV list of files containing signal parameters for injection [see mfdv5]") == XLAL_SUCCESS, XLAL_EFUNC );
+  LAL_CALL( LALRegisterINTUserVar(    &status, "logLevel",     0,  UVAR_CATEGORY_DEPRECATED, "DEPRECATED; used to set logLevel, now set by LAL_DEBUG_LEVEL", &uvar_loglevel), &status);
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
+  LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
   if (should_exit)
     return(1);
 
@@ -585,6 +568,12 @@ int MAIN( int argc, char *argv[]) {
 
   LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s\n", VCSInfoString );
   // LogPrintfVerbatim( LOG_DEBUG, "CFS Hotloop variant: %s\n", OptimisedHotloopSource );
+
+  if ( uvar_version )
+    {
+      printf ("%s\n", VCSInfoString );
+      return (0);
+    }
 
   /* some basic sanity checks on user vars */
   if ( uvar_nStacksMax < 1) {
@@ -618,13 +607,10 @@ int MAIN( int argc, char *argv[]) {
     return( HIERARCHICALSEARCH_EBAD );
   }
 
-  if ( uvar_f3dotBand != 0 && ( !XLALUserVarWasSet(&uvar_gammaRefine) || !XLALUserVarWasSet(&uvar_gammaRefine) || uvar_gammaRefine != 1 || uvar_gamma2Refine != 1 )){
+  if ( uvar_f3dotBand != 0 && ( !LALUserVarWasSet(&uvar_gammaRefine) || !LALUserVarWasSet(&uvar_gammaRefine) || uvar_gammaRefine != 1 || uvar_gamma2Refine != 1 )){
 	fprintf(stderr, "Search over 3rd spindown is available only with gammaRefine AND gamma2Refine manually set to 1!\n");
 	return( HIERARCHICALSEARCH_EVAL );
   }
-
-  /* check SignalOnly and assumeSqrtSX */
-  XLAL_CHECK_MAIN ( !uvar_SignalOnly || (uvar_assumeSqrtSX == NULL), XLAL_EINVAL, "Cannot pass --SignalOnly AND --assumeSqrtSX at the same time!\n");
 
   /* 2F threshold for semicoherent stage */
 #ifndef EXP_NO_NUM_COUNT
@@ -639,11 +625,6 @@ int MAIN( int argc, char *argv[]) {
         uvar_SortToplist == SORTBY_BSGLtL || uvar_SortToplist == SORTBY_BtSGLtL ||
         uvar_SortToplist == SORTBY_TRIPLE_BStSGLtL ) && !uvar_computeBSGL ) {
     fprintf(stderr, "Toplist sorting by BSGL only possible if --computeBSGL given.\n");
-    return( HIERARCHICALSEARCH_EBAD );
-  }
-  if ( ( uvar_SortToplist == SORTBY_BSGLtL || uvar_SortToplist == SORTBY_BtSGLtL ||
-        uvar_SortToplist == SORTBY_TRIPLE_BStSGLtL ) && !uvar_getMaxFperSeg ) {
-    fprintf(stderr, "Toplist sorting by B[t]SGLtL only possible if --getMaxFperSeg given.\n");
     return( HIERARCHICALSEARCH_EBAD );
   }
 
@@ -699,7 +680,7 @@ int MAIN( int argc, char *argv[]) {
       }
 
       /* get the log string */
-      XLAL_CHECK_MAIN( ( logstr = XLALUserVarGetLog(UVAR_LOGFMT_CFGFILE) ) != NULL, XLAL_EFUNC);
+      LAL_CALL( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);
 
       fprintf( fpLog, "# Log file for HierarchSearchGCT.c\n\n");
       fprintf( fpLog, "# User Input:\n");
@@ -716,7 +697,16 @@ int MAIN( int argc, char *argv[]) {
     } /* end of logging */
 
   tic_Start = GETTIME();
-  usefulParams.collectFstatTiming = ( uvar_outputTimingDetails != NULL );
+  BOOLEAN printHeader = 0;
+  if ( uvar_outputTimingDetails != NULL ) {
+    FILE *tmp;
+    if ( (tmp = fopen ( uvar_outputTimingDetails, "r" )) == NULL ) {
+      printHeader = 1;
+    } else {
+      fclose (tmp );
+    }
+    XLAL_CHECK ( (usefulParams.timingDetailsFP = fopen ( uvar_outputTimingDetails, "wb" )) != NULL, XLAL_ESYS, "Failed to open '%s' for writing\n", uvar_outputTimingDetails );
+  } // if uvar_outputTimingDetails
 
   /* initializations of coarse and fine grids */
   coarsegrid.TwoF=NULL;
@@ -814,18 +804,17 @@ int MAIN( int argc, char *argv[]) {
   usefulParams.maxStartTimeGPS = maxStartTimeGPS;
   usefulParams.blocksRngMed = uvar_blocksRngMed;
   usefulParams.Dterms = uvar_Dterms;
-  usefulParams.DtermsRecalc = uvar_DtermsRecalc;
-  usefulParams.assumeSqrtSX = uvar_assumeSqrtSX;
   usefulParams.SignalOnly = uvar_SignalOnly;
   usefulParams.SSBprec = uvar_SSBprecision;
-  usefulParams.Fmethod = uvar_FstatMethod;
-  usefulParams.FmethodRecalc = uvar_FstatMethodRecalc;
+
+  XLAL_CHECK_MAIN ( XLALParseFstatMethodString ( &usefulParams.Fmethod, uvar_FstatMethod ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALParseFstatMethodString ( &usefulParams.FmethodRecalc, uvar_FstatMethodRecalc ) == XLAL_SUCCESS, XLAL_EFUNC );
   usefulParams.recalcToplistStats = uvar_recalcToplistStats;
 
   usefulParams.mismatch1 = uvar_mismatch1;
 
   /* set reference time for pulsar parameters */
-  if ( XLALUserVarWasSet(&uvar_refTime))
+  if ( LALUserVarWasSet(&uvar_refTime))
     usefulParams.refTime = uvar_refTime;
   else {
     XLALPrintWarning("Reference time will be set to mid-time of observation time\n");
@@ -833,8 +822,8 @@ int MAIN( int argc, char *argv[]) {
   }
 
   /* set Fstat calculation frequency resolution (coarse grid) */
-  if ( XLALUserVarWasSet(&uvar_FreqBand) ) {
-    if ( XLALUserVarWasSet(&uvar_dFreq) ) {
+  if ( LALUserVarWasSet(&uvar_FreqBand) ) {
+    if ( LALUserVarWasSet(&uvar_dFreq) ) {
       usefulParams.dFreqStack = uvar_dFreq;
     } else {
       XLALPrintError("--dFreq is required if --FreqBand is given\n");
@@ -845,8 +834,8 @@ int MAIN( int argc, char *argv[]) {
   }
 
   /* set Fstat spindown resolution (coarse grid) */
-  if ( XLALUserVarWasSet(&uvar_f1dotBand) ) {
-    if ( XLALUserVarWasSet(&uvar_df1dot) ) {
+  if ( LALUserVarWasSet(&uvar_f1dotBand) ) {
+    if ( LALUserVarWasSet(&uvar_df1dot) ) {
       usefulParams.df1dot = uvar_df1dot;
     } else {
       XLALPrintError("--df1dot is required if --f1dotBand is given\n");
@@ -857,8 +846,8 @@ int MAIN( int argc, char *argv[]) {
   }
 
   /* set Fstat 2nd spindown resolution (coarse grid) */
-  if ( XLALUserVarWasSet(&uvar_f2dotBand) ) {
-    if ( XLALUserVarWasSet(&uvar_df2dot) ) {
+  if ( LALUserVarWasSet(&uvar_f2dotBand) ) {
+    if ( LALUserVarWasSet(&uvar_df2dot) ) {
       usefulParams.df2dot = uvar_df2dot;
     }
     else {
@@ -871,8 +860,8 @@ int MAIN( int argc, char *argv[]) {
   }
   
   /* set Fstat 3rd spindown resolution (coarse grid) */
-  if ( XLALUserVarWasSet(&uvar_f3dotBand) ) {
-    if ( XLALUserVarWasSet(&uvar_df3dot) ) {
+  if ( LALUserVarWasSet(&uvar_f3dotBand) ) {
+    if ( LALUserVarWasSet(&uvar_df3dot) ) {
       usefulParams.df3dot = uvar_df3dot;
     }
     else {
@@ -882,12 +871,6 @@ int MAIN( int argc, char *argv[]) {
   }
   else {
     usefulParams.df3dot = 0;
-  }
-
-  // read signal parameters to be injected, if requested by the user
-
-  if ( uvar_injectionSources != NULL ) {
-    XLAL_CHECK_MAIN ( (usefulParams.injectionSources = XLALPulsarParamsFromUserInput ( uvar_injectionSources, NULL ) ) != NULL, XLAL_EFUNC );
   }
 
   /* for 1st stage: read sfts, calculate detector states */
@@ -907,18 +890,13 @@ int MAIN( int argc, char *argv[]) {
   fprintf(stderr, "%% --- GPS reference time = %.4f ,  GPS data mid time = %.4f\n",
           XLALGPSGetREAL8(&refTimeGPS), XLALGPSGetREAL8(&tMidGPS) );
 
-  REAL4 *loudestTwoFPerSeg = NULL;
-  if ( uvar_loudestTwoFPerSeg )
-    {
-      loudestTwoFPerSeg = XLALCalloc ( nStacks, sizeof(REAL4) );
-    } // if loudestTwoFPerSeg
-
   /* free segment list */
   if ( usefulParams.segmentList )
     if ( XLALSegListClear( usefulParams.segmentList ) != XLAL_SUCCESS )
       XLAL_ERROR ( XLAL_EFUNC );
   XLALFree ( usefulParams.segmentList );
   usefulParams.segmentList = NULL;
+
 
   /*------- set frequency and spindown resolutions and ranges for Fstat and semicoherent steps -----*/
 
@@ -929,7 +907,7 @@ int MAIN( int argc, char *argv[]) {
   LogPrintf(LOG_NORMAL, "dFreqStack = %e, df1dot = %e, df2dot = %e, df3dot = %e\n", dFreqStack, df1dot, df2dot, df3dot);
 
   /* set number of fine-grid spindowns */
-  if ( XLALUserVarWasSet(&uvar_gammaRefine) ) {
+  if ( LALUserVarWasSet(&uvar_gammaRefine) ) {
     gammaRefine = uvar_gammaRefine;
   }
   else {
@@ -945,7 +923,7 @@ int MAIN( int argc, char *argv[]) {
   }
 
   /* set number of fine-grid 2nd spindowns */
-  if ( XLALUserVarWasSet(&uvar_gamma2Refine) ) {
+  if ( LALUserVarWasSet(&uvar_gamma2Refine) ) {
     /* use 1st spindown refinement if user value < 0 */
     if ( uvar_gamma2Refine < 0 ) {
       gamma2Refine = gammaRefine;
@@ -1104,9 +1082,6 @@ int MAIN( int argc, char *argv[]) {
     column_headings_string_length += 6 + 11 + numDetectors*9; /* 6 for " <2Fr>" and 9 per detector for " <2Fr_XY>" */
     if ( uvar_computeBSGL) {
       column_headings_string_length += 11; /* for " log10BSGLr" */
-      if ( uvar_getMaxFperSeg ) {
-        column_headings_string_length += 13; /* for " log10BSGLtLr" */
-      }
     }
     if (XLALUserVarWasSet(&uvar_f3dot)) {
       column_headings_string_length += 1;
@@ -1158,9 +1133,6 @@ int MAIN( int argc, char *argv[]) {
         snprintf ( headingX, sizeof(headingX), " 2Fl_%s", detectorIDs->data[X] );
         strcat ( column_headings_string, headingX );
       }
-    }
-    if ( uvar_computeBSGL && uvar_getMaxFperSeg ) {
-      strcat ( column_headings_string, " log10BSGLtLr" );
     }
   }
   global_column_headings_stringp = column_headings_string;
@@ -1238,7 +1210,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* spool forward if uvar_skyPointIndex is set
      ---This probably doesn't make sense when checkpointing is turned on */
-  if ( XLALUserVarWasSet(&uvar_skyPointIndex)) {
+  if ( LALUserVarWasSet(&uvar_skyPointIndex)) {
     UINT4 count = uvar_skyPointIndex;
     for(skyGridCounter = 0; (skyGridCounter < count)&&(thisScan.state != STATE_FINISHED) ; skyGridCounter++)
       XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
@@ -1563,6 +1535,9 @@ int MAIN( int argc, char *argv[]) {
                     XLALPrintError ("%s: XLALComputeFstat() failed with errno=%d\n", __func__, xlalErrno );
                     return xlalErrno;
                   }
+                  if ( usefulParams.timingDetailsFP != NULL ) {
+                    XLAL_CHECK ( AppendFstatTimingInfo2File ( usefulParams.Fstat_in_vec->data[k], usefulParams.timingDetailsFP, printHeader ) == XLAL_SUCCESS, XLAL_EFUNC );
+                  }
                   /* if single-only flag is given, add +4 to F-statistic */
                   if ( uvar_SignalOnly ) {
                     if (XLALAdd4ToFstatResults(Fstat_res) != XLAL_SUCCESS) {
@@ -1622,12 +1597,6 @@ int MAIN( int argc, char *argv[]) {
                       LAL_CALL( PrintFstatVec ( &status, Fstat_res, fpFstat1, &thisPoint, refTimeGPS, k+1), &status);
                     }
 
-                  // if requested, keep track of loudest candidate from each segment
-                  if ( loudestTwoFPerSeg )
-                    {
-                      REAL4 loudestFstat_k = findLoudestTwoF ( Fstat_res );
-                      loudestTwoFPerSeg[k] = fmaxf ( loudestTwoFPerSeg[k], loudestFstat_k );
-                    }
                   /* --- Holger: This is not needed in U1-only case. Sort the coarse grid in Uindex --- */
                   /* qsort(coarsegrid.list, (size_t)coarsegrid.length, sizeof(CoarseGridPoint), compareCoarseGridUindex); */
 
@@ -1795,7 +1764,7 @@ int MAIN( int argc, char *argv[]) {
 
       /* continue forward till the end if uvar_skyPointIndex is set
          ---This probably doesn't make sense when checkpointing is turned on */
-      if ( XLALUserVarWasSet(&uvar_skyPointIndex) ) {
+      if ( LALUserVarWasSet(&uvar_skyPointIndex) ) {
         while(thisScan.state != STATE_FINISHED) {
           skyGridCounter++;
           XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
@@ -1828,17 +1797,6 @@ int MAIN( int argc, char *argv[]) {
   }
   LogPrintf( LOG_NORMAL, "Finished main analysis.\n");
 
-
-  // output averaged F-stat timing model (--outputTimingDetails)
-  if ( uvar_outputTimingDetails != NULL ) {
-    FILE *fp;
-    XLAL_CHECK ( (fp = fopen ( uvar_outputTimingDetails, "ab" )) != NULL, XLAL_ESYS, "Failed to open '%s' for writing\n", uvar_outputTimingDetails );
-    for (size_t l=0; l < nStacks; l++) {
-      XLAL_CHECK ( XLALAppendFstatTiming2File ( usefulParams.Fstat_in_vec->data[l], fp, (l==0) ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-    fclose ( fp );
-  }
-
   /* Also compute F, FX (for line-robust statistics) for all candidates in final toplist */
   tic_RecalcToplist = GETTIME();
   if ( uvar_recalcToplistStats ) {
@@ -1854,10 +1812,9 @@ int MAIN( int argc, char *argv[]) {
     timing.RecalcMethodStr = XLALGetFstatInputMethodName ( recalcParams.Fstat_in_vec->data[0] );
     recalcParams.detectorIDs		= usefulParams.detectorIDs;
     recalcParams.startTstack		= usefulParams.startTstack;
-    recalcParams.refTimeGPS         = refTimeGPS;
-    recalcParams.BSGLsetup		    = usefulParams.BSGLsetup;
+    recalcParams.refTimeGPS		= refTimeGPS;
+    recalcParams.BSGLsetup		= usefulParams.BSGLsetup;
     recalcParams.loudestSegOutput	= uvar_loudestSegOutput;
-    recalcParams.computeBSGLtL		= uvar_getMaxFperSeg;
     XLAL_CHECK ( XLAL_SUCCESS == XLALComputeExtraStatsForToplist ( semiCohToplist, &recalcParams ),
                  HIERARCHICALSEARCH_EXLAL, "XLALComputeExtraStatsForToplist() failed with xlalErrno = %d.\n\n", xlalErrno
                  );
@@ -1907,22 +1864,6 @@ int MAIN( int argc, char *argv[]) {
       }
     } // if uvar_outputTiming
 
-  // output loudest per-segment candidates
-  if ( loudestTwoFPerSeg )
-    {
-      CHAR *fname = XLALStringDuplicate ( uvar_fnameout );
-      fname = XLALStringAppend ( fname, "_loudestTwoFPerSeg");
-      FILE *fp;
-      if ( (fp = fopen ( fname, "wb" )) == NULL ) {
-        XLALPrintError ( "Unable to open '%s' for writing\n", fname );
-        return(HIERARCHICALSEARCH_EFILE);
-      }
-      for ( UINT4 l = 0; l < nStacks; l ++ ) {
-        fprintf ( fp, "%.6" LAL_REAL4_FORMAT "\n", loudestTwoFPerSeg[l] );
-      }
-      fclose ( fp );
-      XLALFree ( fname );
-    } // if loudestTwoFPerSeg
 
   char t1_suffix[16];
   char t2_suffix[16];
@@ -2011,10 +1952,6 @@ int MAIN( int argc, char *argv[]) {
     LALFree( fnameFstatVec1 );
   }
 
-  if ( usefulParams.injectionSources ) {
-    XLALDestroyPulsarParamsVector ( usefulParams.injectionSources );
-  }
-
   XLALDestroyFstatInputVector(usefulParams.Fstat_in_vec);
   XLALDestroyFstatInputVector(usefulParams.Fstat_in_vec_recalc);
 
@@ -2083,11 +2020,13 @@ int MAIN( int argc, char *argv[]) {
 
   XLALDestroyBSGLSetup ( usefulParams.BSGLsetup );
 
-  XLALDestroyUserVars();
+  LAL_CALL (LALDestroyUserVars(&status), &status);
 
   XLALFree ( VCSInfoString );
 
-  XLALFree ( loudestTwoFPerSeg );
+  if ( usefulParams.timingDetailsFP != NULL ) {
+    fclose ( usefulParams.timingDetailsFP );
+  }
 
   LALCheckMemoryLeaks();
 
@@ -2117,7 +2056,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   SFTCatalogSequence catalogSeq;
   REAL8 midTseg,startTseg,endTseg;
 
-  BOOLEAN crc_check;
+  INT4 sft_check_result = 0;
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
@@ -2125,12 +2064,12 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   /* get sft catalog */
   constraints.minStartTime = &(in->minStartTimeGPS);
   constraints.maxStartTime = &(in->maxStartTimeGPS);
-  XLAL_CHECK_LAL( status, ( catalog = XLALSFTdataFind( in->sftbasename, &constraints) ) != NULL, XLAL_EFUNC);
+  TRY( LALSFTdataFind( status->statusPtr, &catalog, in->sftbasename, &constraints), status);
 
   /* check CRC sums of SFTs */
-  XLAL_CHECK_LAL ( status, XLALCheckCRCSFTCatalog ( &crc_check, catalog ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if (!crc_check) {
-    LogPrintf(LOG_CRITICAL,"SFT validity check failed\n");
+  TRY ( LALCheckSFTCatalog ( status->statusPtr, &sft_check_result, catalog ), status );
+  if (sft_check_result) {
+    LogPrintf(LOG_CRITICAL,"SFT validity check failed (%d)\n", sft_check_result);
     ABORT ( status, HIERARCHICALSEARCH_ESFT, HIERARCHICALSEARCH_MSGESFT );
   }
 
@@ -2247,9 +2186,9 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 
   /* get frequency and fdot bands at start time of sfts by extrapolating from reftime */
   in->spinRange_refTime.refTime = refTimeGPS;
-  XLAL_CHECK_LAL( status, XLALExtrapolatePulsarSpinRange( &in->spinRange_startTime, &in->spinRange_refTime, XLALGPSDiff( &tStartGPS, &(&in->spinRange_refTime)->refTime ) ) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_LAL( status, XLALExtrapolatePulsarSpinRange( &in->spinRange_endTime, &in->spinRange_refTime, XLALGPSDiff( &tEndGPS, &(&in->spinRange_refTime)->refTime ) ) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_LAL( status, XLALExtrapolatePulsarSpinRange( &in->spinRange_midTime, &in->spinRange_refTime, XLALGPSDiff( &tMidGPS, &(&in->spinRange_refTime)->refTime ) ) == XLAL_SUCCESS, XLAL_EFUNC);
+  TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_startTime, tStartGPS, &in->spinRange_refTime), status);
+  TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_endTime, tEndGPS, &in->spinRange_refTime), status);
+  TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_midTime, tMidGPS, &in->spinRange_refTime), status);
 
   /* set Fstat spindown resolution (coarse grid) */
   in->df1dot = HSMIN(in->df1dot, in->spinRange_midTime.fkdotBand[1]);
@@ -2302,8 +2241,11 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   REAL8 freqmax = maxCoverFreq + in->extraBinsFstat * in->dFreqStack;
 
   /* fill detector name vector with all detectors present in any data sements */
-  if ( ( in->detectorIDs = XLALListIFOsInCatalog( catalog ) ) == NULL ) {
-    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  in->detectorIDs = NULL;
+  for (k = 0; k < in->nStacks; k++) {
+    if ( ( in->detectorIDs = XLALGetDetectorIDsFromSFTCatalog ( in->detectorIDs, catalogSeq.data + k ) ) == NULL ) {
+      ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+    }
   }
   const UINT4 numDetectors = in->detectorIDs->length;
 
@@ -2331,8 +2273,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   optionalArgs.Dterms = in->Dterms;
   optionalArgs.runningMedianWindow = in->blocksRngMed;
   optionalArgs.FstatMethod = in->Fmethod;
-  optionalArgs.collectTiming = in->collectFstatTiming;
-  optionalArgs.injectSources = in->injectionSources;
+  optionalArgs.collectTiming = (in->timingDetailsFP != NULL);
 
   FstatOptionalArgs XLAL_INIT_DECL(optionalArgsRecalc);
 
@@ -2348,18 +2289,6 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
         s_assumeSqrtSX.sqrtSn[X] = 1.0;
       }
       optionalArgs.assumeSqrtSX = &s_assumeSqrtSX;
-    } else if ( in->assumeSqrtSX != NULL ) {
-      const SFTCatalog *catalog_k = &(catalogSeq.data[k]);
-      LALStringVector *detectorIDs_k = NULL;
-      if ( ( detectorIDs_k = XLALListIFOsInCatalog( catalog_k ) ) == NULL ) {
-        ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-      }
-      if ( XLALParseMultiNoiseFloorMapped( &s_assumeSqrtSX, detectorIDs_k, in->assumeSqrtSX, in->detectorIDs ) != XLAL_SUCCESS ) {
-        XLALPrintError("%s: XLALParseMultiNoiseFloorMapped() failed with errno=%d", __func__, xlalErrno);
-        ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
-      }
-      optionalArgs.assumeSqrtSX = &s_assumeSqrtSX;
-      XLALDestroyStringVector( detectorIDs_k );
     } else {
       optionalArgs.assumeSqrtSX = NULL;
     }
@@ -2381,7 +2310,6 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
       {
         optionalArgsRecalc = optionalArgs;
         optionalArgsRecalc.FstatMethod = in->FmethodRecalc;
-        optionalArgsRecalc.Dterms = in->DtermsRecalc;
         if ( k == 0 ) {
           optionalArgsRecalc.prevInput = NULL;
         } else {
@@ -2468,7 +2396,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   /*   }  */
 
   /* we don't need the original catalog anymore*/
-  XLALDestroySFTCatalog(catalog );
+  TRY( LALDestroySFTCatalog( status->statusPtr, &catalog ), status);
 
   /* free catalog sequence */
   for (k = 0; k < in->nStacks; k++)
@@ -2671,7 +2599,7 @@ void PrintStackInfo( LALStatus  *status,
 
 /**
  * Get SemiCoh candidates into toplist(s)
- * This function allows for inserting candidates into up to 3 toplists at once, which might be sorted differently!
+ * This function allows for inserting candidates into up to 2 toplists at once, which might be sorted differently!
  */
 void UpdateSemiCohToplistsOptimTriple ( LALStatus *status,
                              toplist_t *list1,
@@ -2735,6 +2663,7 @@ void UpdateSemiCohToplistsOptimTriple ( LALStatus *status,
       XLALPrintError ("%s line %d : XLALComputeBSGL() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
     }
+
     if ( unlikely(line.log10BSGL < -LAL_REAL4_MAX*0.1) ) {
       line.log10BSGL = -LAL_REAL4_MAX*0.1; /* avoid minimum value, needed for output checking in print_gctFstatline_to_str() */
     }
@@ -2744,17 +2673,11 @@ void UpdateSemiCohToplistsOptimTriple ( LALStatus *status,
       XLALPrintError ("%s line %d : XLALComputeBSGLtL() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
     }
-    if ( unlikely(line.log10BSGLtL < -LAL_REAL4_MAX*0.1) ) {
-      line.log10BSGLtL = -LAL_REAL4_MAX*0.1; /* avoid minimum value, needed for output checking in print_gctFstatline_to_str() */
-    }
 
     line.log10BtSGLtL = XLALComputeBtSGLtL ( line.maxTwoFl, sumTwoFX, line.maxTwoFXl, usefulparams->BSGLsetup );
     if ( unlikely(xlalErrno != 0) ) {
       XLALPrintError ("%s line %d : XLALComputeBSGLtL() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
-    }
-    if ( unlikely(line.log10BtSGLtL < -LAL_REAL4_MAX*0.1) ) {
-      line.log10BtSGLtL = -LAL_REAL4_MAX*0.1; /* avoid minimum value, needed for output checking in print_gctFstatline_to_str() */
     }
 
     line.Freq = freq_fg; /* NOTE: this is not the final output frequency! For performance reasons, it will only later get correctly extrapolated for the final toplist */
@@ -2783,7 +2706,6 @@ void UpdateSemiCohToplistsOptimTriple ( LALStatus *status,
     line.numDetectors = in->numDetectors;
     line.avTwoFrecalc = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFstatline_to_str if later overwritten in recalcToplistStats step */
     line.log10BSGLrecalc = -LAL_REAL4_MAX; /* for now, block field with minimal value, needed for output checking in print_gctFstatline_to_str() */
-    line.log10BSGLtLrecalc = -LAL_REAL4_MAX; /* for now, block field with minimal value, needed for output checking in print_gctFstatline_to_str() */
     line.loudestSeg = -1;
     line.twoFloudestSeg = -1.0;
     for (UINT4 X = 0; X < PULSAR_MAX_DETECTORS; X++) { /* initialise single-IFO F-stat arrays to zero */
@@ -2814,7 +2736,7 @@ void UpdateSemiCohToplistsOptimTriple ( LALStatus *status,
 
 /**
  * Get SemiCoh candidates into toplist(s)
- * This function allows for inserting candidates into up to 3 toplists at once, which might be sorted differently!
+ * This function allows for inserting candidates into up to 2 toplists at once, which might be sorted differently!
  */
 void UpdateSemiCohToplists ( LALStatus *status,
                              toplist_t *list1,
@@ -2870,7 +2792,6 @@ void UpdateSemiCohToplists ( LALStatus *status,
     }
     line.avTwoFrecalc = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFstatline_to_str if later overwritten in recalcToplistStats step */
     line.log10BSGLrecalc = -LAL_REAL4_MAX; /* for now, block field with minimal value, needed for output checking in print_gctFstatline_to_str() */
-    line.log10BSGLtLrecalc = -LAL_REAL4_MAX; /* for now, block field with minimal value, needed for output checking in print_gctFstatline_to_str() */
     line.have_f3dot = have_f3dot;
     line.loudestSeg = -1;
     line.twoFloudestSeg = -1.0;
@@ -2915,23 +2836,15 @@ void UpdateSemiCohToplists ( LALStatus *status,
        line.maxTwoFXl[X] = in->maxTwoFXl[FG_FX_INDEX(*in, X, ifreq_fg)];
        line.maxTwoFXlSeg[X] = in->maxTwoFXlIdx[FG_FX_INDEX(*in, X, ifreq_fg)];
       }
-
       line.log10BSGLtL  = XLALComputeBSGLtL ( sumTwoF, sumTwoFX, line.maxTwoFXl, usefulparams->BSGLsetup );
       if ( xlalErrno != 0 ) {
         XLALPrintError ("%s line %d : XLALComputeBSGLtL() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
         ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
       }
-      if ( line.log10BSGLtL < -LAL_REAL4_MAX*0.1 ) {
-        line.log10BSGLtL = -LAL_REAL4_MAX*0.1; /* avoid minimum value, needed for output checking in print_gctFstatline_to_str() */
-      }
-
       line.log10BtSGLtL = XLALComputeBtSGLtL ( line.maxTwoFl, sumTwoFX, line.maxTwoFXl, usefulparams->BSGLsetup );
       if ( xlalErrno != 0 ) {
         XLALPrintError ("%s line %d : XLALComputeBtSGLtL() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
         ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
-      }
-      if ( line.log10BtSGLtL < -LAL_REAL4_MAX*0.1 ) {
-        line.log10BtSGLtL = -LAL_REAL4_MAX*0.1; /* avoid minimum value, needed for output checking in print_gctFstatline_to_str() */
       }
 
     }
@@ -2952,18 +2865,8 @@ void UpdateSemiCohToplists ( LALStatus *status,
 } /* UpdateSemiCohToplists() */
 
 
-// simply return maximal (multi-IFO) Fstat-value over frequency-bins in in->twoF
-static inline REAL4
-findLoudestTwoF ( const FstatResults *in )
-{
-  REAL4 maxTwoF = 0;
-  for ( UINT4 k = 0; k < in->numFreqBins; k ++ )
-    {
-      maxTwoF = fmaxf ( maxTwoF, in->twoF[k] );
-    } // k < numFreqBins
 
-  return maxTwoF;
-} // findLoudestTwoF()
+
 
 
 /** Print Fstat vectors */
@@ -2994,7 +2897,7 @@ void PrintFstatVec (LALStatus *status,
       fkdot[0] = f0 + k*deltaF;
 
       /* propagate fkdot back to reference-time  */
-      XLAL_CHECK_LAL ( status, XLALExtrapolatePulsarSpins( fkdot, fkdot, XLALGPSDiff( &refTime, &thisPoint->refTime  ) ) == XLAL_SUCCESS, XLAL_EFUNC );
+      TRY ( LALExtrapolatePulsarSpins (status->statusPtr, fkdot, refTime, fkdot, thisPoint->refTime ), status );
 
       fprintf(fp, "%d %.13g %.12g %.12g %.13g %.13g %.6g\n",
               stackIndex, fkdot[0], alpha, delta, fkdot[1], fkdot[2], in->twoF[k]);

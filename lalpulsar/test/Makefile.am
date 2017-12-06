@@ -11,9 +11,11 @@ test_programs += DriveNDHoughTest
 test_programs += ExtrapolatePulsarSpinsTest
 test_programs += FITSFileIOTest
 test_programs += FileIOTest
+test_programs += FlatMeshTest
 test_programs += GeneralMeshTest
 test_programs += GeneralMetricTest
 test_programs += GeneratePulsarSignalTest
+test_programs += GetAMCoeffsTest
 test_programs += HoughMapTest
 test_programs += LALBarycenterTest
 test_programs += LFTandTSutilsTest
@@ -23,6 +25,7 @@ test_programs += MetricUtilsTest
 test_programs += NDConstructPLUTTest
 test_programs += NDHoughMapTest
 test_programs += NDPeak2PHMDTest
+test_programs += NewGetAMCoeffsTest
 test_programs += NormalizeSFTRngMedTest
 test_programs += Peak2PHMDTest
 test_programs += PtoleMeshTest
@@ -30,6 +33,8 @@ test_programs += PtoleMetricTest
 test_programs += ReadTEMPOFileTest
 test_programs += SFTfileIOTest
 test_programs += SimulateTaylorCWTest
+test_programs += SkyMetricTest
+test_programs += StackMetricTest
 test_programs += StatisticsTest
 test_programs += SuperskyMetricsTest
 test_programs += TwoDMeshTest
@@ -37,7 +42,10 @@ test_programs += UniversalDopplerMetricTest
 test_programs += VelocityTest
 test_programs += XLALComputeAMTest
 test_programs += XLALMultiNoiseWeightsTest
+test_programs += ComputeFstatBenchmark
 
+#test_programs += XLALLoadSFTsTest
+#test_programs += SFTCleanTest
 if LALXML
 test_programs += LALPulsarXMLTest
 endif
@@ -68,7 +76,6 @@ MOSTLYCLEANFILES = \
 	LatticeTilingTest.fits \
 	OutHistogram.asc \
 	OutHough.asc \
-	SuperskyMetricsTest.fits \
 	TEMPOcomparison.par \
 	TEMPOcomparison.tim \
 	TS_R4.dat \

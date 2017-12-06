@@ -83,7 +83,7 @@ int main(int argc, char *argv[]){
 
   CHAR outputfile[256]="";
   CHAR channel[128]="";
-  const CHAR *psrname;
+  CHAR *psrname = NULL;
 
   INT4Vector *starts=NULL, *stops=NULL; /* science segment start and stop times */
   INT4 numSegs=0;
@@ -105,18 +105,18 @@ int main(int argc, char *argv[]){
   hetParams.heterodyneflag = inputParams.heterodyneflag; /* set type of heterodyne */
 
   /* read in pulsar data */
-  hetParams.het = XLALReadTEMPOParFile( inputParams.paramfile );
+  hetParams.het = XLALReadTEMPOParFileNew( inputParams.paramfile );
   hetParams.hetUpdate = NULL;
 
   /* set pulsar name - take from par file if available, or if not get from command line args */
   if( PulsarCheckParam( hetParams.het, "PSRJ" ) )
-    psrname = PulsarGetStringParam( hetParams.het, "PSRJ" );
+    psrname = XLALStringDuplicate( PulsarGetStringParam( hetParams.het, "PSRJ" ) );
   else if( PulsarCheckParam( hetParams.het, "PSRB" ) )
-    psrname = PulsarGetStringParam( hetParams.het, "PSRB" );
+    psrname = XLALStringDuplicate( PulsarGetStringParam( hetParams.het, "PSRB" ) );
   else if( PulsarCheckParam( hetParams.het, "NAME" ) )
-    psrname = PulsarGetStringParam( hetParams.het, "NAME" );
+    psrname = XLALStringDuplicate( PulsarGetStringParam( hetParams.het, "NAME" ) );
   else if( PulsarCheckParam( hetParams.het, "PSR" ) )
-    psrname = PulsarGetStringParam( hetParams.het, "PSR" );
+    psrname = XLALStringDuplicate( PulsarGetStringParam( hetParams.het, "PSR" ) );
   else{
     fprintf(stderr, "No pulsar name specified!\n");
     exit(0);
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]){
   if(verbose){  fprintf(stderr, "I've set the detector location for %s.\n", inputParams.ifo); }
 
   if(inputParams.heterodyneflag == 2 || inputParams.heterodyneflag == 4){ /* if updating parameters read in updated par file */
-    hetParams.hetUpdate = XLALReadTEMPOParFile( inputParams.paramfileupdate );
+    hetParams.hetUpdate = XLALReadTEMPOParFileNew( inputParams.paramfileupdate );
 
     /* if there is an epoch given manually (i.e. not from the pulsar parameter
        file) then set it here and overwrite any other value */
@@ -507,14 +507,12 @@ data!\n");
 
       fprintf(stderr, "Reading heterodyned data from %s.\n", inputParams.datafile);
 
-      /* read in header info (if not working on legacy files without the header) */
+      /* read in header info */
       CHAR headerdata[HEADERSIZE];
-      if ( !inputParams.legacyinput ){
-        size_t rch = XLALFileRead((void*)&headerdata[0], sizeof(CHAR), HEADERSIZE, fpin);
-        if ( !rch ){
-          fprintf(stderr, "Error... problem reading in header data!\n");
-          exit(1);
-        }
+      size_t rch = XLALFileRead((void*)&headerdata[0], sizeof(CHAR), HEADERSIZE, fpin);
+      if ( !rch ){
+        fprintf(stderr, "Error... problem reading in header data!\n");
+        exit(1);
       }
 
       /* read in file - depends on if file is binary or not */
@@ -529,9 +527,6 @@ data!\n");
           rc = XLALFileRead((void*)&imVal, sizeof(REAL8), 1, fpin);
 
           if( XLALFileEOF(fpin) || rc == 0 ) break;
-
-          /* check that data is finite (and not unrealistically large) and not NaN */
-          if ( !isfinite(reVal) || !isfinite(imVal) || fabs(reVal) > 1. || fabs(imVal) > 1. ){ continue; }
 
           if(inputParams.scaleFac > 1.0){
             reVal *= inputParams.scaleFac;
@@ -572,9 +567,6 @@ data!\n");
             // skip this line
             continue;
           }
-
-          /* check that data is finite (and not unrealistically large) and not NaN */
-          if ( !isfinite(reVal) || !isfinite(imVal) || fabs(reVal) > 1. || fabs(imVal) > 1. ){ continue; }
 
           if( inputParams.scaleFac > 1.0 ){
             reVal *= inputParams.scaleFac;
@@ -823,12 +815,11 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "binary-input",             no_argument,     NULL, 'B' },
     { "binary-output",            no_argument,     NULL, 'b' },
     { "gzip-output",              no_argument,     NULL, 'Z' },
-    { "legacy-input",             no_argument,     NULL, 'L' },
     { "verbose",                  no_argument,     NULL, 'v' },
     { 0, 0, 0, 0 }
   };
 
-  char args[] = "hi:p:z:f:g:k:s:r:d:c:o:e:S:t:l:R:C:F:O:T:m:G:H:M:ABbZLv";
+  char args[] = "hi:p:z:f:g:k:s:r:d:c:o:e:S:t:l:R:C:F:O:T:m:G:H:M:ABbZv";
   char *program = argv[0];
 
   /* set defaults */
@@ -838,8 +829,8 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
   inputParams->samplerate = 0.;
   inputParams->calibrate = 0; /* default is not to calibrate */
   inputParams->verbose = 0; /* default is not to do verbose */
-  inputParams->binaryinput = 0; /* default to NOT read in data from a binary file */
-  inputParams->legacyinput = 0; /* default is that input files are not legacy files without the header information */
+  inputParams->binaryinput = 0; /* default to NOT read in data from a binary
+file */
   inputParams->binaryoutput = 0; /* default is to output data as ASCII text */
   inputParams->gzipoutput = 0; /* default is to not gzip the output */
   inputParams->stddevthresh = 0.; /* default is not to threshold */
@@ -877,7 +868,6 @@ the pulsar parameter file */
         else
           fprintf(stderr, "Error parsing option %s with argument %s\n",
             long_options[option_index].name, LALoptarg );
-		break;
       case 'h': /* help message */
         fprintf(stderr, USAGE, program);
         exit(0);
@@ -1041,15 +1031,10 @@ the pulsar parameter file */
       case 'M':
         inputParams->manualEpoch = atof(LALoptarg);
         break;
-      case 'L':
-        inputParams->legacyinput = 1;
-        break;
       case '?':
         fprintf(stderr, "unknown error while parsing options\n" );
-		break;
       default:
         fprintf(stderr, "unknown error while parsing options\n" );
-		break;
     }
   }
 
@@ -1264,10 +1249,10 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
     }
     /* if doing one single heterodyne i.e. het flag = 3 then just calc phaseCoarse at all times */
     else if(hetParams.heterodyneflag == 3 || hetParams.heterodyneflag == 4 ){
-      /* set up XLALBarycenter */
+      /* set up LALBarycenter */
       dtpos = hetParams.timestamp - posepoch;
 
-      /* set up RA, DEC, and distance variables for XLALBarycenter*/
+      /* set up RA, DEC, and distance variables for LALBarycenter*/
       baryinput.delta = dec + dtpos*pmdec;
       baryinput.alpha = ra + dtpos*pmra/cos(baryinput.delta);
 
@@ -1379,7 +1364,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       REAL8 tWave1 = 0., tWave2 = 0.;
       phaseWave = 0.;
 
-      /* set up XLALBarycenter */
+      /* set up LALBarycenter */
       dtpos = hetParams.timestamp - posepochu;
 
       baryinput.delta = decu + dtpos*pmdecu;
@@ -1884,12 +1869,6 @@ INT4 heterodyneflag){
       linecount++;
   }
 
-  /* if segment list is empty exit with a warning */
-  if ( linecount == 0 ){
-    fprintf(stderr, "Warning... segment list file was empty, so no heterodyne will be performed\n");
-    exit(0);
-  }
-
   /* allocate memory for vectors */
   if( (starts = XLALResizeINT4Vector( starts, linecount )) == NULL ||
       (stops = XLALResizeINT4Vector( stops, linecount )) == NULL )
@@ -2252,8 +2231,6 @@ INT4 remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times,
       j++;
     }
   }
-
-  XLAL_CHECK( j > 0, XLAL_EFUNC, "Error... thresholding has rejected all the data!" );
 
   /* resize data and times */
   if( (data = XLALResizeCOMPLEX16TimeSeries(data, 0, j)) == NULL ||

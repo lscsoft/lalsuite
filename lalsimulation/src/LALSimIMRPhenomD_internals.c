@@ -1118,9 +1118,24 @@ static double sigma4Fit(double eta, double chi) {
  * as comments in the top of this file
  * Defined by Equation 27 and 28 arXiv:1508.07253
  */
-static double PhiInsAnsatzInt(double Mf, UsefulPowers * powers_of_Mf, PhiInsPrefactors * prefactors, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn)
+/**
+ * Now available: generic corrections to the inspiral phasing at -1PN order due to some generic type of dipole radiation
+ * (parametrized with generic coefficient dchi).
+ */
+static double PhiInsAnsatzInt(double Mf, UsefulPowers * powers_of_Mf, PhiInsPrefactors * prefactors, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, const REAL8 m1 /* in M_sol */, const REAL8 m2 /* in M_sol */, const LALSimInspiralTestGRParam *extraParams)
 {
 	XLAL_CHECK(0 != pn, XLAL_EFAULT, "pn is NULL");
+
+  /* Mass parameters required for implementation of dipole radiation contribution */
+  const REAL8 m = m1 + m2;
+  const REAL8 eta = m1 * m2 / (m * m);
+  /* Generic -1PN coefficient (parametrizes strength of dipole correction term in phasing */
+  REAL8 dchi = 0; /* (ZERO by default) */
+    if (extraParams!=NULL)
+    {
+          if (XLALSimInspiralTestGRParamExists(extraParams,"dipolecoeff"))
+                dchi = XLALSimInspiralGetTestGRParam(extraParams,"dipolecoeff");
+    }
 
   // Assemble PN phasing series
   const double v = powers_of_Mf->third * powers_of_pi.third;
@@ -1136,6 +1151,12 @@ static double PhiInsAnsatzInt(double Mf, UsefulPowers * powers_of_Mf, PhiInsPref
   phasing += prefactors->minus_two_thirds / powers_of_Mf->two_thirds;
   phasing += prefactors->minus_one / Mf;
   phasing += prefactors->minus_five_thirds / powers_of_Mf->five_thirds; // * v^0
+
+  /* Now add optional dipole radiation contribution to phasing */
+  /* ZERO by default */
+  const double v2 = v * v;
+  const double v5 = v * v2 * v2;
+  phasing += (3./128.)/(eta*v5) * ( dchi/v2 );
 
   // Now add higher order terms that were calibrated for PhenomD
   phasing += ( prefactors->one * Mf + prefactors->four_thirds * powers_of_Mf->four_thirds
@@ -1180,12 +1201,23 @@ static int init_phi_ins_prefactors(PhiInsPrefactors * prefactors, IMRPhenomDPhas
 /**
  * First frequency derivative of PhiInsAnsatzInt
  */
-static double DPhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn) {
+static double DPhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, const REAL8 m1 /* in M_sol */, const REAL8 m2 /* in M_sol */, const LALSimInspiralTestGRParam *extraParams) {
   double sigma1 = p->sigma1;
   double sigma2 = p->sigma2;
   double sigma3 = p->sigma3;
   double sigma4 = p->sigma4;
   double Pi = LAL_PI;
+
+  /* Mass parameters required for implementation of dipole radiation contribution */
+  const REAL8 m = m1 + m2;
+  const REAL8 eta = m1 * m2 / (m * m);
+  /* Generic -1PN coefficient (parametrizes strength of dipole correction term in phasing */
+  REAL8 dchi = 0; /* (ZERO by default) */
+    if (extraParams!=NULL)
+    {
+          if (XLALSimInspiralTestGRParamExists(extraParams,"dipolecoeff"))
+                dchi = XLALSimInspiralGetTestGRParam(extraParams,"dipolecoeff");
+    }
 
   // Assemble PN phasing series
   const double v = cbrt(Pi*Mf);
@@ -1209,6 +1241,11 @@ static double DPhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p, PNPhas
   Dphasing += -3.0 * pn->v[2] * v2;
   Dphasing += -4.0 * pn->v[1] * v;
   Dphasing += -5.0 * pn->v[0];
+
+  /* Now add optional dipole radiation contribution to Dphasing */
+  /* ZERO by default */
+  Dphasing += -(21./128.)/eta * ( dchi/v2 );
+
   Dphasing /= v8 * 3.0/Pi;
 
   // Now add higher order terms that were calibrated for PhenomD
@@ -1228,7 +1265,7 @@ static double DPhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p, PNPhas
  * A struct containing all the parameters that need to be calculated
  * to compute the phenomenological phase
  */
-static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double eta, double chi1, double chi2, double finspin, LALDict *extraParams) {
+static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double eta, double chi1, double chi2, double finspin, const LALSimInspiralTestGRParam *extraParams) {
 
   IMRPhenomDPhaseCoefficients *p = (IMRPhenomDPhaseCoefficients *) XLALMalloc(sizeof(IMRPhenomDPhaseCoefficients));
 
@@ -1258,18 +1295,21 @@ static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double et
   p->fRD = fring(eta, chi1, chi2, finspin);
   p->fDM = fdamp(eta, chi1, chi2, finspin);
 
-  p->sigma1*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDSigma1(extraParams));
-  p->sigma2*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDSigma2(extraParams));
-  p->sigma3*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDSigma3(extraParams));
-  p->sigma4*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDSigma4(extraParams));
-  p->beta1*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDBeta1(extraParams));
-  p->beta2*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDBeta2(extraParams));
-  p->beta3*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDBeta3(extraParams));
-  p->alpha1*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDAlpha1(extraParams));
-  p->alpha2*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDAlpha2(extraParams));
-  p->alpha3*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDAlpha3(extraParams));
-  p->alpha4*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDAlpha4(extraParams));
-  p->alpha5*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDAlpha5(extraParams));
+  if (extraParams!=NULL)
+    {
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dsigma1")) p->sigma1*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dsigma1"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dsigma2")) p->sigma2*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dsigma2"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dsigma3")) p->sigma3*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dsigma3"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dsigma4")) p->sigma4*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dsigma4"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dbeta1")) p->beta1*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dbeta1"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dbeta2")) p->beta2*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dbeta2"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dbeta3")) p->beta3*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dbeta3"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dalpha1")) p->alpha1*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dalpha1"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dalpha2")) p->alpha2*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dalpha2"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dalpha3")) p->alpha3*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dalpha3"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dalpha4")) p->alpha4*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dalpha4"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dalpha5")) p->alpha5*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dalpha5"));
+    }
 
   return p;
 }
@@ -1279,7 +1319,7 @@ static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double et
  * such that they are c^1 continuous at the transition frequencies
  * Defined in VIII. Full IMR Waveforms arXiv:1508.07253
  */
-static void ComputeIMRPhenDPhaseConnectionCoefficients(IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, PhiInsPrefactors * prefactors)
+static void ComputeIMRPhenDPhaseConnectionCoefficients(IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, PhiInsPrefactors * prefactors, const REAL8 m1 /* in M_sol */, const REAL8 m2 /* in M_sol */, const LALSimInspiralTestGRParam *extraParams)
 {
   double eta = p->eta;
 
@@ -1294,13 +1334,13 @@ static void ComputeIMRPhenDPhaseConnectionCoefficients(IMRPhenomDPhaseCoefficien
   // Joining at fInsJoin
   // PhiIns (fInsJoin)  =   PhiInt (fInsJoin) + C1Int + C2Int fInsJoin
   // PhiIns'(fInsJoin)  =   PhiInt'(fInsJoin) + C2Int
-  double DPhiIns = DPhiInsAnsatzInt(p->fInsJoin, p, pn);
+  double DPhiIns = DPhiInsAnsatzInt(p->fInsJoin, p, pn, m1, m2, extraParams);
   double DPhiInt = DPhiIntAnsatz(p->fInsJoin, p);
   p->C2Int = DPhiIns - DPhiInt;
 
   UsefulPowers powers_of_fInsJoin;
   init_useful_powers(&powers_of_fInsJoin, p->fInsJoin);
-  p->C1Int = PhiInsAnsatzInt(p->fInsJoin, &powers_of_fInsJoin, prefactors, p, pn)
+  p->C1Int = PhiInsAnsatzInt(p->fInsJoin, &powers_of_fInsJoin, prefactors, p, pn, m1, m2, extraParams)
     - 1.0/eta * PhiIntAnsatz(p->fInsJoin, p) - p->C2Int * p->fInsJoin;
 
   // Compute C1MRD and C2MRD coeffs
@@ -1322,7 +1362,7 @@ static void ComputeIMRPhenDPhaseConnectionCoefficients(IMRPhenomDPhaseCoefficien
  * This function computes the IMR phase given phenom coefficients.
  * Defined in VIII. Full IMR Waveforms arXiv:1508.07253
  */
-static double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, UsefulPowers *powers_of_f, PhiInsPrefactors * prefactors)
+static double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, UsefulPowers *powers_of_f, PhiInsPrefactors * prefactors, const REAL8 m1 /* in M_sol */, const REAL8 m2 /* in M_sol */, const LALSimInspiralTestGRParam *extraParams)
 {
   // Defined in VIII. Full IMR Waveforms arXiv:1508.07253
   // The inspiral, intermendiate and merger-ringdown phase parts
@@ -1331,7 +1371,7 @@ static double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p, PNPhasingS
 
   if (!StepFunc_boolean(f, p->fInsJoin))	// Inspiral range
   {
-	  double PhiIns = PhiInsAnsatzInt(f, powers_of_f, prefactors, p, pn);
+	  double PhiIns = PhiInsAnsatzInt(f, powers_of_f, prefactors, p, pn, m1, m2, extraParams);
 	  return PhiIns;
   }
 

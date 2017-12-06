@@ -8,69 +8,66 @@ Name: @PACKAGE@
 Version: @VERSION@
 Release: 1%{?dist}
 Summary: LSC Algorithm Library Applications
-License: GPLv2+
+License: GPL
 Group: LAL
 Source: %{name}-%{version}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
+BuildRequires: openmpi-devel
 BuildRequires: cfitsio-devel
 BuildRequires: fftw-devel
 BuildRequires: gsl-devel
-BuildRequires: less
 BuildRequires: libframe-devel
 BuildRequires: libmetaio-devel
-BuildRequires: openmpi-devel
-BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: lal-python >= @MIN_LAL_VERSION@
-BuildRequires: lalframe-devel >= @MIN_LALFRAME_VERSION@
-BuildRequires: lalframe-python >= @MIN_LALFRAME_VERSION@
-BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalxml-devel >= @MIN_LALXML_VERSION@
-BuildRequires: lalxml-python >= @MIN_LALXML_VERSION@
-BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
-BuildRequires: lalburst-python >= @MIN_LALBURST_VERSION@
-BuildRequires: lalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
-BuildRequires: lalinspiral-python >= @MIN_LALINSPIRAL_VERSION@
-BuildRequires: lalstochastic-devel >= @MIN_LALSTOCHASTIC_VERSION@
-BuildRequires: lalstochastic-python >= @MIN_LALSTOCHASTIC_VERSION@
-BuildRequires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
-BuildRequires: lalpulsar-python >= @MIN_LALPULSAR_VERSION@
-BuildRequires: lalinference-devel >= @MIN_LALINFERENCE_VERSION@
-BuildRequires: lalinference-python >= @MIN_LALINFERENCE_VERSION@
+BuildRequires: lal-devel >= 6.16.1
+BuildRequires: lal-python >= 6.16.1
+BuildRequires: lalframe-devel >= 1.4.1
+BuildRequires: lalframe-python >= 1.4.1
+BuildRequires: lalmetaio-devel >= 1.2.8
+BuildRequires: lalmetaio-python >= 1.2.8
+BuildRequires: lalxml-devel >= 1.2.2
+BuildRequires: lalxml-python >= 1.2.2
+BuildRequires: lalsimulation-devel >= 1.6.0
+BuildRequires: lalsimulation-python >= 1.6.0
+BuildRequires: lalburst-devel >= 1.4.2
+BuildRequires: lalburst-python >= 1.4.2
+BuildRequires: lalinspiral-devel >= 1.7.5
+BuildRequires: lalinspiral-python >= 1.7.5
+BuildRequires: lalstochastic-devel >= 1.1.18
+BuildRequires: lalstochastic-python >= 1.1.18
+BuildRequires: lalpulsar-devel >= 1.14.0
+BuildRequires: lalpulsar-python >= 1.14.0
+BuildRequires: lalinference-devel >= 1.7.0
+BuildRequires: lalinference-python >= 1.7.0
+Requires: openmpi
 Requires: cfitsio
 Requires: fftw
 Requires: gsl
-Requires: h5py
 Requires: healpy
-Requires: less
 Requires: libframe
 Requires: libmetaio
-Requires: openmpi
 Requires: python
-Requires: lal >= @MIN_LAL_VERSION@
-Requires: lal-python >= @MIN_LAL_VERSION@
-Requires: lalframe >= @MIN_LALFRAME_VERSION@
-Requires: lalframe-python >= @MIN_LALFRAME_VERSION@
-Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
-Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
-Requires: lalxml >= @MIN_LALXML_VERSION@
-Requires: lalxml-python >= @MIN_LALXML_VERSION@
-Requires: lalsimulation  >= @MIN_LALSIMULATION_VERSION@
-Requires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
-Requires: lalburst >= @MIN_LALBURST_VERSION@
-Requires: lalburst-python >= @MIN_LALBURST_VERSION@
-Requires: lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-Requires: lalinspiral-python >= @MIN_LALINSPIRAL_VERSION@
-Requires: lalstochastic >= @MIN_LALSTOCHASTIC_VERSION@
-Requires: lalstochastic-python >= @MIN_LALSTOCHASTIC_VERSION@
-Requires: lalpulsar >= @MIN_LALPULSAR_VERSION@
-Requires: lalpulsar-python >= @MIN_LALPULSAR_VERSION@
-Requires: lalinference >= @MIN_LALINFERENCE_VERSION@
-Requires: lalinference-python >= @MIN_LALINFERENCE_VERSION@
+Requires: lal >= 6.16.1
+Requires: lal-python >= 6.16.1
+Requires: lalframe >= 1.4.1
+Requires: lalframe-python >= 1.4.1
+Requires: lalmetaio >= 1.2.8
+Requires: lalmetaio-python >= 1.2.8
+Requires: lalxml >= 1.2.2
+Requires: lalxml-python >= 1.2.2
+Requires: lalsimulation  >= 1.6.0
+Requires: lalsimulation-python >= 1.6.0
+Requires: lalburst >= 1.4.2
+Requires: lalburst-python >= 1.4.2
+Requires: lalinspiral >= 1.7.5
+Requires: lalinspiral-python >= 1.7.5
+Requires: lalstochastic >= 1.1.18
+Requires: lalstochastic-python >= 1.1.18
+Requires: lalpulsar >= 1.14.0
+Requires: lalpulsar-python >= 1.14.0
+Requires: lalinference >= 1.7.0
+Requires: lalinference-python >= 1.7.0
 Requires: skyarea
 Prefix: %{_prefix}
 
@@ -106,19 +103,14 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %files
 %defattr(-,root,root)
 %{_bindir}/*
-%{_datadir}/lalapps/*
-%{_mandir}/man1/*
 %{_pkgpythondir}/*
+%{_mandir}/man1/*
+%{_datadir}/lalapps/*
 %{_sysconfdir}/lalapps-user-env.*
+
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
-* Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 6.21.0-1
-- O2 release
-
-* Mon Sep 26 2016 Adam Mercer <adam.mercer@ligo.org> 6.20.0-1
-- ER10 release
-
 * Thu Jun 23 2016 Adam Mercer <adam.mercer@ligo.org> 6.19.0-1
 - ER9 release
 

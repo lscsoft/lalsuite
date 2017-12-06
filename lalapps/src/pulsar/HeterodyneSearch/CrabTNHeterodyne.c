@@ -106,7 +106,7 @@ int main(int argc, char *argv[]){
   input.filename = argv[5]; /* ephemeris file */
 
   /* read in Crab pulsar parameters used in heterodyning */
-  XLALReadTEMPOParFileOrig(&pulsarParams, psrInput);
+  XLALReadTEMPOParFile(&pulsarParams, psrInput);
 
   /* allocate memory for crab ephemeris */
   crabEphemerisData.f1 = NULL;
@@ -220,7 +220,7 @@ TNInput.f1, TNInput.f2, TNInput.t0);
     baryinput.tgps.gpsSeconds = TNInput.epoch.gpsSeconds;
     baryinput.tgps.gpsNanoSeconds = TNInput.epoch.gpsNanoSeconds;
 
-    /* set up RA, DEC, and distance variables for XLALBarycenter*/
+    /* set up RA, DEC, and distance variables for LALBarycenter*/
     baryinput.delta = pulsarParams.dec + dtpos*pulsarParams.pmdec;
     baryinput.alpha = pulsarParams.ra +
       dtpos*pulsarParams.pmra/cos(baryinput.delta);

@@ -182,7 +182,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
   if(inputs.verbose) verbose = 1;
 
   /* get the pulsar parameters */
-  XLALReadTEMPOParFileOrig(&pulsar, inputs.parFile);
+  XLALReadTEMPOParFile(&pulsar, inputs.parFile);
   inputs.psr.equatorialCoords.longitude = pulsar.ra;
   inputs.psr.equatorialCoords.latitude = pulsar.dec;
   inputs.psr.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
@@ -227,7 +227,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
   output.psr = inputs.pulsar;
   output.dob = inputs.dob; /* set degree of belief for UL */
   output.outPost = inputs.outputPost;
-  snprintf(outputFile, sizeof(outputFile), "%s/evidence_%s", output.outputDir, output.psr);
+  sprintf(outputFile, "%s/evidence_%s", output.outputDir, output.psr);
   /*==========================================================================*/
 
   if( inputs.mcmc.doMCMC == 0 ){
@@ -294,7 +294,7 @@ defined!\n");
   for( i = 0 ; i < numDets ; i++ ){
     /*============================ GET DATA ==================================*/
     /* get detector B_ks data file in form finehet_JPSR_DET */
-    snprintf(dataFile, sizeof(dataFile), "%s/data%s/finehet_%s_%s", inputs.inputDir, dets[i],
+    sprintf(dataFile, "%s/data%s/finehet_%s_%s", inputs.inputDir, dets[i],
       inputs.pulsar, dets[i]);
 
     /* open data file */
@@ -758,11 +758,9 @@ W:y:g:G:K:N:X:O:J:M:{:(r:fFR><)[:" ;
         else
           fprintf(stderr, "Error passing option %s with argument %s\n",
             long_options[option_index].name, LALoptarg);
-		break;
       case 'h': /* help message */
         printf("Usage: %s [options]\n\n%s%s\n", program, USAGE1, USAGE2);
         exit(0);
-		break;
       case 'R': /* verbose */
         inputParams->verbose = 1;
         break;
@@ -940,10 +938,8 @@ W:y:g:G:K:N:X:O:J:M:{:(r:fFR><)[:" ;
         break;
       case '?':
         fprintf(stderr, "Unknown error while parsing options\n");
-		break;
       default:
         fprintf(stderr, "Unknown error while parsing options\n");
-		break;
     }
   }
 
@@ -1346,7 +1342,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
                 sin2psi*data.lookupTable->lookupTable[timebin].plus;
 
         /* create the signal model */
-        XLAL_CHECK( XLALSinCos2PiLUT( &sphi, &cphi, dphi->data[j] ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK( XLALSinCos2PiLUT( &sphi, &cphi, -dphi->data[j] ) == XLAL_SUCCESS, XLAL_EFUNC );
 
         model = ((plus*vars.Xpcosphi_2 + cross*vars.Xcsinphi_2)*cphi +
           (cross*vars.Xccosphi_2 - plus*vars.Xpsinphi_2)*sphi) +
@@ -2076,7 +2072,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   INT4 onlyonce=0; /* use this variable only once */
 
   /* read the TEMPO par file for the pulsar */
-  XLALReadTEMPOParFileOrig( &pulsarParamsFixed, input.parFile );
+  XLALReadTEMPOParFile( &pulsarParamsFixed, input.parFile );
 
   if( verbose ){
     fprintf(stderr, "Performing an MCMC for %s with %d iterations.\n",
@@ -2463,9 +2459,9 @@ paramData ) ) == NULL ){
 
   /* open output file */
   if( input.mcmc.outputBI == 0 )
-    snprintf(outFile, sizeof(outFile), "%s/MCMCchain_%s_%s", input.outputDir, input.pulsar, det);
+    sprintf(outFile, "%s/MCMCchain_%s_%s", input.outputDir, input.pulsar, det);
   else{ /* append number of burn in steps to the file name */
-    snprintf(outFile, sizeof(outFile), "%s/MCMCchain_%s_%s_burn_in_%d", input.outputDir,
+    sprintf(outFile, "%s/MCMCchain_%s_%s_burn_in_%d", input.outputDir,
       input.pulsar, det, input.mcmc.burnIn );
   }
 

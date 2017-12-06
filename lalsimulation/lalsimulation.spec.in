@@ -6,7 +6,7 @@ Name: @PACKAGE@
 Version: @VERSION@
 Release: 1%{?dist}
 Summary: LSC Algorithm Simulation Library
-License: GPLv2+
+License: GPL
 Group: LAL
 Source: %{name}-%{version}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
@@ -16,12 +16,12 @@ BuildRequires: gsl-devel
 BuildRequires: numpy
 BuildRequires: octave-devel
 BuildRequires: python-devel
-BuildRequires: swig >= 3.0.7
-BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: lal-octave >= @MIN_LAL_VERSION@
-BuildRequires: lal-python >= @MIN_LAL_VERSION@
+BuildRequires: swig
+BuildRequires: lal-devel >= 6.16.1
+BuildRequires: lal-python >= 6.16.1
+BuildRequires: lal-octave >= 6.16.1
 Requires: gsl
-Requires: lal >= @MIN_LAL_VERSION@
+Requires: lal >= 6.16.1
 Prefix: %{_prefix}
 
 %description
@@ -34,7 +34,7 @@ Summary: Files and documentation needed for compiling programs that use LAL Simu
 Group: LAL
 Requires: %{name} = %{version}
 Requires: gsl-devel
-Requires: lal-devel >= @MIN_LAL_VERSION@
+Requires: lal-devel >= 6.16.1
 %description devel
 The LSC Algorithm Simulation Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Simulation
@@ -46,7 +46,7 @@ Group: LAL
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
-Requires: lal-python >= @MIN_LAL_VERSION@
+Requires: lal-python >= 6.16.1
 %description python
 This package provides the Python Bindings for LALSimulation.
 
@@ -55,7 +55,7 @@ Summary: Octave bindings for LALSimulation
 Group: LAL
 Requires: %{name} = %{version}
 Requires: octave
-Requires: lal-octave >= @MIN_LAL_VERSION@
+Requires: lal-octave >= 6.16.1
 %description octave
 This package provides the Octave Bindings for LALSimulation.
 
@@ -71,7 +71,8 @@ This package provides the Octave Bindings for LALSimulation.
 
 %install
 %make_install
-find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
+rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
+
 %post
 ldconfig
 
@@ -84,25 +85,25 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
-%{_bindir}/lalsim-*
-%{_bindir}/lalsimulation_version
-%{_datarootdir}/lalsimulation/LALSimNeutronStarEOS_*
-%{_datarootdir}/lalsimulation/LIGO-P1200087*
-%{_datarootdir}/lalsimulation/LIGO-T0900288*
-%{_datarootdir}/lalsimulation/LIGO-T1600593*
-%{_libdir}/*.so.*
+%{_libdir}/*.so*
 %{_sysconfdir}/*
+%{_bindir}/lalsim*
+%{_datarootdir}/lalsimulation/LALSimNeutronStarEOS_*
+%{_datarootdir}/lalsimulation/LIGO-P1200087-v18*
+%{_datarootdir}/lalsimulation/LIGO-T0900288-v3*
 
 %files devel
 %defattr(-,root,root)
-%{_includedir}/lal
 %{_libdir}/*.a
-%{_libdir}/*.so
 %{_libdir}/pkgconfig/*
+%{_includedir}/lal
 
 %files python
 %defattr(-,root,root)
-%{_libdir}/python*
+%{_libdir}/python*/site-packages/lalsimulation/*.py
+%{_libdir}/python*/site-packages/lalsimulation/*.pyc
+%{_libdir}/python*/site-packages/lalsimulation/_lalsimulation.so*
+%exclude %{_libdir}/python*/site-packages/lalsimulation/*.pyo
 
 %files octave
 %defattr(-,root,root)
@@ -110,22 +111,6 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
-* Thu Mar 16 2017 Adam Mercer <adam.mercer@ligo.org> 1.7.3-1
-- fix Ldot equation in SpinTaylor
-
-* Wed Mar 01 2017 Adam Mercer <adam.mercer@ligo.org> 1.7.2-1
-- fix bug in SpinTaylor, spin precession vector had incorrect sign
-
-* Sat Feb 25 2017 Adam Mercer <adam.mercer@ligo.org> 1.7.1-1
-- fix memory leak in SpinTaylor code
-- https://bugs.ligo.org/redmine/issues/5182
-
-* Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.7.0-1
-- O2 release
-
-* Mon Sep 26 2016 Adam Mercer <adam.mercer@ligo.org> 1.6.1-1
-- ER10 release
-
 * Thu Jun 23 2016 Adam Mercer <adam.mercer@ligo.org> 1.6.0-1
 - ER9 release
 

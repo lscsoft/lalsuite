@@ -19,20 +19,37 @@
 Multiresolution HEALPix trees
 """
 from __future__ import division
+__author__ = "Leo Singer <leo.singer@ligo.org>"
+__all__ = ('HEALPIX_MACHINE_ORDER', 'HEALPIX_MACHINE_NSIDE', 'HEALPixTree',
+          'adaptive_healpix_histogram', 'interpolate_nested',
+          'reconstruct_nested')
+
 
 import numpy as np
 import healpy as hp
 import collections
 import itertools
 
-__all__ = ('HEALPIX_MACHINE_ORDER', 'HEALPIX_MACHINE_NSIDE', 'HEALPixTree',
-           'adaptive_healpix_histogram', 'interpolate_nested',
-           'reconstruct_nested')
+
+def _nside2order(nside):
+    """Convert lateral HEALPix resolution to order.
+    FIXME: available as `hp.nside2order` in healpy >= 1.9.0."""
+    order = np.log2(nside)
+    int_order = int(order)
+    if order != int_order:
+        raise ValueError('not a valid value for nside: {0}'.format(nside))
+    return int_order
+
+
+def _order2nside(order):
+    """Convert lateral HEALPix resolution to order.
+    FIXME: available as `hp.order2nside` in healpy >= 1.9.0."""
+    return 1 << order
 
 
 # Maximum 64-bit HEALPix resolution.
 HEALPIX_MACHINE_ORDER = 29
-HEALPIX_MACHINE_NSIDE = hp.order2nside(HEALPIX_MACHINE_ORDER)
+HEALPIX_MACHINE_NSIDE = _order2nside(HEALPIX_MACHINE_ORDER)
 
 
 _HEALPixTreeVisitExtra = collections.namedtuple(
@@ -47,22 +64,17 @@ class HEALPixTree(object):
     """Data structure used internally by the function
     adaptive_healpix_histogram()."""
 
-    def __init__(
-            self, samples, max_samples_per_pixel, max_order,
-            order=0, needs_sort=True):
+    def __init__(self, samples, max_samples_per_pixel, max_order, order=0, needs_sort=True):
         if needs_sort:
             samples = np.sort(samples)
         if len(samples) >= max_samples_per_pixel and order < max_order:
-            # All nodes have 4 children, except for the root node,
-            # which has 12.
+            # All nodes have 4 children, except for the root node, which has 12.
             nchildren = 12 if order == 0 else 4
             self.samples = None
-            self.children = [
-                HEALPixTree(
-                    [], max_samples_per_pixel, max_order, order=order + 1)
-                for i in range(nchildren)]
-            for ipix, samples in itertools.groupby(
-                    samples, self.key_for_order(order)):
+            self.children = [HEALPixTree([], max_samples_per_pixel,
+                max_order, order=order + 1) for i in range(nchildren)]
+            for ipix, samples in itertools.groupby(samples,
+                    self.key_for_order(order)):
                 self.children[np.uint64(ipix % nchildren)] = HEALPixTree(
                     list(samples), max_samples_per_pixel, max_order,
                     order=order + 1, needs_sort=False)
@@ -74,8 +86,7 @@ class HEALPixTree(object):
     @staticmethod
     def key_for_order(order):
         """Create a function that downsamples full-resolution pixel indices."""
-        return lambda ipix: ipix >> np.uint64(
-            2 * (HEALPIX_MACHINE_ORDER - order))
+        return lambda ipix: ipix >> np.uint64(2 * (HEALPIX_MACHINE_ORDER - order))
 
     @property
     def order(self):
@@ -165,21 +176,19 @@ class HEALPixTree(object):
     @property
     def flat_bitmap(self):
         """Return flattened HEALPix representation."""
-        m = np.empty(hp.nside2npix(hp.order2nside(self.order)))
+        m = np.empty(hp.nside2npix(_order2nside(self.order)))
         for nside, full_nside, ipix, ipix0, ipix1, samples in self.visit():
             m[ipix0:ipix1] = len(samples) / hp.nside2pixarea(nside)
         return m
 
 
-def adaptive_healpix_histogram(
-        theta, phi, max_samples_per_pixel, nside=-1, max_nside=-1, nest=False):
+def adaptive_healpix_histogram(theta, phi, max_samples_per_pixel, nside=-1, max_nside=-1, nest=False):
     """Adaptively histogram the posterior samples represented by the
     (theta, phi) points using a recursively subdivided HEALPix tree. Nodes are
     subdivided until each leaf contains no more than max_samples_per_pixel
     samples. Finally, the tree is flattened to a fixed-resolution HEALPix image
     with a resolution appropriate for the depth of the tree. If nside is
-    specified, the result is resampled to another desired HEALPix resolution.
-    """
+    specified, the result is resampled to another desired HEALPix resolution."""
     # Calculate pixel index of every sample, at the maximum 64-bit resolution.
     #
     # At this resolution, each pixel is only 0.2 mas across; we'll use the
@@ -188,18 +197,17 @@ def adaptive_healpix_histogram(
     # call).
     #
     # FIXME: Cast to uint64 needed because Healpy returns signed indices.
-    ipix = hp.ang2pix(
-        HEALPIX_MACHINE_NSIDE, theta, phi, nest=True).astype(np.uint64)
+    ipix = hp.ang2pix(HEALPIX_MACHINE_NSIDE, theta, phi, nest=True).astype(np.uint64)
 
     # Build tree structure.
     if nside == -1 and max_nside == -1:
         max_order = HEALPIX_MACHINE_ORDER
     elif nside == -1:
-        max_order = hp.nside2order(max_nside)
+        max_order = _nside2order(max_nside)
     elif max_nside == -1:
-        max_order = hp.nside2order(nside)
+        max_order = _nside2order(nside)
     else:
-        max_order = hp.nside2order(min(nside, max_nside))
+        max_order = _nside2order(min(nside, max_nside))
     tree = HEALPixTree(ipix, max_samples_per_pixel, max_order)
 
     # Compute a flattened bitmap representation of the tree.
@@ -232,8 +240,8 @@ def _interpolate_level(m):
             (m[0::4] == m[3::4]))
 
         if len(ipix):
-            ipix = 4 * ipix + np.expand_dims(np.arange(4, dtype=np.intp), 1)
-            ipix = ipix.T.ravel()
+            ipix = (4 * ipix +
+                np.expand_dims(np.arange(4, dtype=np.intp), 1)).T.ravel()
 
             nside = hp.npix2nside(npix)
 
@@ -290,8 +298,8 @@ def interpolate_nested(m, nest=False):
         a HEALPix array
 
     nest: bool, default: False
-        Whether the input array is stored in the `NESTED` indexing scheme
-        (True) or the `RING` indexing scheme (False).
+        Whether the input array is stored in the `NESTED` indexing scheme (True)
+        or the `RING` indexing scheme (False).
 
     """
     # Convert to nest indexing if necessary, and make sure that we are working
@@ -312,14 +320,13 @@ def interpolate_nested(m, nest=False):
 
 
 def _reconstruct_nested_breadthfirst(m, extra):
-    m = np.asarray(m)
     max_npix = len(m)
     max_nside = hp.npix2nside(max_npix)
-    max_order = hp.nside2order(max_nside)
+    max_order = _nside2order(max_nside)
     seen = np.zeros(max_npix, dtype=bool)
 
     for order in range(max_order + 1):
-        nside = hp.order2nside(order)
+        nside = _order2nside(order)
         npix = hp.nside2npix(nside)
         skip = max_npix // npix
         if skip > 1:

@@ -63,7 +63,7 @@ int main(int argc, char *argv[]){
     fprintf(stdout,"%s",help);
   }
   /* write down git information */
-  fprintf(stdout,"\n\nLALInference version:%s,%s,%s,%s,%s\n\n", lalInferenceVCSInfo.vcsId,lalInferenceVCSInfo.vcsDate,lalInferenceVCSInfo.vcsBranch,lalInferenceVCSInfo.vcsAuthor,lalInferenceVCSInfo.vcsStatus);
+  fprintf(stdout,"\n\nLALInference version:%s,%s,%s,%s,%s\n\n", lalInferenceVCSId,lalInferenceVCSDate,lalInferenceVCSBranch,lalInferenceVCSAuthor,lalInferenceVCSStatus);
   
   /* initialise runstate based on command line */
   /* This includes reading in the data */
@@ -82,11 +82,11 @@ int main(int argc, char *argv[]){
       }
   }
     char *outfile=ppt->value;
-    char headerfile[FILENAME_MAX+100];
+    char headerfile[FILENAME_MAX];
     FILE *fpout=NULL;
-    snprintf(headerfile,sizeof(headerfile),"%s_header.txt",outfile);
+    sprintf(headerfile,"%s_header.txt",outfile);
     fpout=fopen(headerfile,"w");
-    fprintf(fpout,"LALInference version:%s,%s,%s,%s,%s\n", lalInferenceVCSInfo.vcsId,lalInferenceVCSInfo.vcsDate,lalInferenceVCSInfo.vcsBranch,lalInferenceVCSInfo.vcsAuthor,lalInferenceVCSInfo.vcsStatus);
+    fprintf(fpout,"LALInference version:%s,%s,%s,%s,%s\n", lalInferenceVCSId,lalInferenceVCSDate,lalInferenceVCSBranch,lalInferenceVCSAuthor,lalInferenceVCSStatus);
     fprintf(fpout,"%s\n",LALInferencePrintCommandLine(state->commandLine));
     fclose(fpout);
     }

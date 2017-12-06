@@ -106,6 +106,7 @@
 #include <lal/AVFactories.h>
 #include <lal/LALgetopt.h>
 #include <lal/PtoleMetric.h>
+#include <lal/StackMetric.h>
 #include <lal/TwoDMesh.h>
 
 /** \cond DONT_DOXYGEN */

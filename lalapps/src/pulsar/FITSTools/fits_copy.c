@@ -24,7 +24,6 @@
 
 #include <config.h>
 #include <stdio.h>
-#include <string.h>
 
 #if defined(HAVE_LIBCFITSIO)
 #include <fitsio.h>
@@ -37,9 +36,7 @@ int main(int argc, char *argv[])
   fitsfile *infptr = 0, *outfptr = 0;   /* FITS file pointers defined in fitsio.h */
   int status = 0, ii = 1;       /* status must always be initialized = 0  */
 
-  int printhelp = (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0));
-
-  if (printhelp || argc != 3) {
+  if (argc != 3) {
     fprintf(stderr, "Usage:  %s inputfile outputfile\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "Copy an input file to an output file, optionally filtering\n");
@@ -75,7 +72,7 @@ int main(int argc, char *argv[])
   /* Open the input file */
   if (!fits_open_file(&infptr, argv[1], READONLY, &status)) {
     /* Create the output file */
-    if (!fits_open_file(&outfptr, argv[2], READWRITE, &status)) {
+    if (!fits_create_file(&outfptr, argv[2], &status)) {
       /* Copy every HDU until we get an error */
       while (!fits_movabs_hdu(infptr, ii++, NULL, &status)) {
         fits_copy_hdu(infptr, outfptr, 0, &status);
