@@ -2,7 +2,11 @@
 import scipy
 from scipy import interpolate
 import numpy
-import sqlite3
+try:
+        import sqlite3
+except ImportError:
+        # pre 2.5.x
+        from pysqlite2 import dbapi2 as sqlite3
 from math import *
 import sys
 import glob
@@ -16,7 +20,7 @@ from glue.ligolw import dbtables
 from glue.ligolw import utils
 from pylal import db_thinca_rings
 from pylal import llwapp
-from lal import rate
+from pylal import rate
 from pylal import SimInspiralUtils
 from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
 
@@ -132,7 +136,7 @@ def get_injections(injfnames, FAR, zero_lag_segments, verbose = False):
     connection = sqlite3.connect(working_filename)
     connection.create_function("injection_was_made", 2, injection_was_made)
 
-    make_sim_inspiral = lsctables.SimInspiralTable.get_table(dbtables.get_xml(connection))._row_from_cols
+    make_sim_inspiral = lsctables.table.get_table(dbtables.get_xml(connection), lsctables.SimInspiralTable.tableName)._row_from_cols
 
     for values in connection.cursor().execute("""
 SELECT

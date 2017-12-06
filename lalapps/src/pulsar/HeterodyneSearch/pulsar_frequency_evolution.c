@@ -96,7 +96,7 @@ int main(int argc, char *argv[]){
 
   npoints = floor((REAL8)inputs.timespan/(REAL8)inputs.deltat);
 
-  params = XLALReadTEMPOParFile( inputs.parfile );
+  params = XLALReadTEMPOParFileNew( inputs.parfile );
 
   /* set up ephemerises */
   det = *XLALGetSiteInfo( inputs.det ); /* just set site as LHO */
@@ -319,9 +319,9 @@ void get_freq( REAL8 start, REAL8 deltaT, REAL8 freqharm,
     /* work out frequency (assuming stationary at barycentre) */
     taylorcoeff = 1.;
     tmpdt = DT;
-    freqs->data[i] = fs->data[0];
-    for ( UINT4 k = 1; k < fs->length; k++ ){
-      taylorcoeff /= (REAL8)k;
+    freqs->data[i] = 0.;
+    for ( UINT4 k = 0; k < fs->length; k++ ){
+      taylorcoeff /= (REAL8)(k+1);
       freqs->data[i] += taylorcoeff*fs->data[k]*tmpdt;
       tmpdt *= DT;
     }

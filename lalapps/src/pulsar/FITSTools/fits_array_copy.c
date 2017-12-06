@@ -40,12 +40,10 @@ int main(int argc, char *argv[])
   int hdutype = 0, bitpix = 0, bytepix = 0, naxis = 0, nkeys = 0, datatype = 0, anynul = 0;
   long naxes[9] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
   long first = 0, totpix = 0, npix = 0;
-  double *array = 0, bscale = 1.0, b0 = 0.0, nulval = 0.;
+  double *array = 0, bscale = 1.0, bzero = 0.0, nulval = 0.;
   char card[81];
 
-  int printhelp = (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0));
-
-  if (printhelp || argc != 3) {
+  if (argc != 3) {
     fprintf(stderr, "\n");
     fprintf(stderr, "Usage:  %s inputArray outputArray[compress]\n", argv[0]);
     fprintf(stderr, "\n");
@@ -189,8 +187,8 @@ int main(int argc, char *argv[])
       }
 
       /* turn off any scaling so that we copy the raw pixel values */
-      fits_set_bscale(infptr,  bscale, b0, &status);
-      fits_set_bscale(outfptr, bscale, b0, &status);
+      fits_set_bscale(infptr,  bscale, bzero, &status);
+      fits_set_bscale(outfptr, bscale, bzero, &status);
 
       first = 1;
       while (totpix > 0 && !status) {

@@ -25,7 +25,6 @@
 #include <string.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALError.h>
-#include <lal/LALSimInspiralWaveformParams.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -69,7 +68,7 @@ double XLALSimInspiralGetTestGRParam(const LALSimInspiralTestGRParam *parameter,
 bool XLALSimInspiralTestGRParamExists(const LALSimInspiralTestGRParam *parameter, const char *name);
 int XLALSimInspiralPrintTestGRParam(FILE *fp, LALSimInspiralTestGRParam *parameter);
 void XLALSimInspiralDestroyTestGRParam(LALSimInspiralTestGRParam *parameter);
-int XLALSimInspiralWaveformParamsNonGRAreDefault(LALDict *params);
+
 #if 0
 { /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)

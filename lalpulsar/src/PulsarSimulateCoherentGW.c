@@ -387,9 +387,7 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
 
   /* Check units on input, and set units on output. */
   {
-    if( CWsignal->f ) {
-      ASSERT( XLALUnitCompare( &(CWsignal->f->sampleUnits), &lalHertzUnit ) == 0, stat, SIMULATECOHERENTGWH_EUNIT, SIMULATECOHERENTGWH_MSGEUNIT );
-    }
+    ASSERT( XLALUnitCompare( &(CWsignal->f->sampleUnits), &lalHertzUnit ) == 0, stat, SIMULATECOHERENTGWH_EUNIT, SIMULATECOHERENTGWH_MSGEUNIT );
     ASSERT( XLALUnitCompare( &(CWsignal->phi->sampleUnits), &lalDimensionlessUnit ) == 0, stat, SIMULATECOHERENTGWH_EUNIT, SIMULATECOHERENTGWH_MSGEUNIT );
     if( CWsignal->shift ) {
       ASSERT( XLALUnitCompare( &(CWsignal->shift->sampleUnits), &lalDimensionlessUnit ) == 0, stat, SIMULATECOHERENTGWH_EUNIT, SIMULATECOHERENTGWH_MSGEUNIT );
@@ -401,9 +399,7 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
     } else {
       output->sampleUnits = CWsignal->a->sampleUnits;
     }
-    if (snprintf( output->name, LALNameLength, "response to %s", CWsignal->a->name ) >= LALNameLength ) {
-      LALWarning( stat, "output name truncated" );
-    }
+    snprintf( output->name, LALNameLength, "response to %s", CWsignal->a->name );
   }
 
   /* Define temporary variables to access the data of CWsignal->a,
@@ -468,8 +464,8 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
   if ( detector->site && detector->ephemerides ) {
     LIGOTimeGPS gpsTime;   /* detector time when we compute delay */
     EarthState state;      /* Earth position info at that time */
-    BarycenterInput input; /* input structure to XLALBarycenter() */
-    EmissionTime emit;     /* output structure from XLALBarycenter() */
+    BarycenterInput input; /* input structure to LALBarycenter() */
+    EmissionTime emit;     /* output structure from LALBarycenter() */
 
     /* Arrange nested pointers, and set initial values. */
     gpsTime = input.tgps = output->epoch;
@@ -487,15 +483,15 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
     /* Compute table. */
     for ( i = 0; i < nMax; i++ ) {
       REAL8 tDelay; /* propagation time */
-      if ( XLALBarycenterEarth(&state, &gpsTime,
-                          detector->ephemerides ) != XLAL_SUCCESS ) {
+      LALBarycenterEarth( stat->statusPtr, &state, &gpsTime,
+                          detector->ephemerides );
+      BEGINFAIL( stat )
         TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-        ABORTXLAL( stat );
-      }
-      if ( XLALBarycenter(&emit, &input, &state ) != XLAL_SUCCESS ) {
+      ENDFAIL( stat );
+      LALBarycenter( stat->statusPtr, &emit, &input, &state );
+      BEGINFAIL( stat )
         TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-        ABORTXLAL( stat );
-      }
+      ENDFAIL( stat );
       delayData[i] = tDelay = emit.deltaT/output->deltaT;
       if ( tDelay < delayMin )
         delayMin = tDelay;

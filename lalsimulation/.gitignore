@@ -1,12 +1,10 @@
 *.la
 *.lo
 *.log
-*.man
 *.o
 *.pc
 *.pyc
 *.pyo
-__pycache__
 .deps
 .libs
 /_build/
@@ -16,7 +14,6 @@ AUTHORS
 Makefile
 Makefile.in
 config.lt
-debian/control
 doxygen/autogen.dox
 doxygen/doxygen.cfg
 doxygen/doxygen_objdb_*.tmp
@@ -30,7 +27,6 @@ include/lal/*.i
 include/lal/header-link-stamp
 lalsimulation-*.tar.xz
 lalsimulation-user-env.csh
-lalsimulation-user-env.fish
 lalsimulation-user-env.sh
 lalsimulation-user-env.shell
 lalsimulation.spec
@@ -40,7 +36,7 @@ python/lalsimulation/__init__.py
 python/lalsimulation/_lalsimulation*
 python/lalsimulation/git_version.py
 python/lalsimulation/lalsimulation.py
-src/LALSimulationBuildInfoHeader.h
+src/LALSimulationBuildInfo.c
 src/LALSimulationConfig.h
 src/LALSimulationVCSInfo.c
 src/LALSimulationVCSInfo.h
@@ -60,12 +56,9 @@ src/lalsim-ns-mass-radius
 src/lalsim-ns-params
 src/lalsim-sgwb
 src/lalsim-unicorn
-src/lalsimulation_version
 src/stamp-h1
 src/stamp-h2
-src/version.c
-swig/swiglalsimulation.i*
-swig/swiglal_*
+swig/swiglal*
 test/EOBNRv2Test
 test/GRFlagsTest
 test/GenerateSimulation

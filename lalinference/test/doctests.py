@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2015-2017  Leo Singer
+# Copyright (C) 2015-2016  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -32,7 +32,7 @@ import sys
 import doctest
 import numpy as np
 import lalinference.bayestar.sky_map
-import lalinference.distance
+import lalinference.bayestar.distance
 import lalinference.bayestar.filter
 import lalinference.io.fits
 import lalinference.io.hdf5
@@ -41,7 +41,7 @@ import lalinference.bayestar.timing
 import lalinference.bayestar.postprocess
 
 modules = [
-    lalinference.distance,
+    lalinference.bayestar.distance,
     lalinference.bayestar.filter,
     lalinference.bayestar.sky_map,
     lalinference.io.fits,
@@ -53,15 +53,14 @@ modules = [
 
 
 finder = doctest.DocTestFinder()
-runner = doctest.DocTestRunner(optionflags=doctest.ELLIPSIS)
+runner = doctest.DocTestRunner()
 tests = []
 
 for module in modules:
     # Find doctests in the module
     tests += finder.find(module)
     # Find doctests in Numpy external C ufuncs
-    for ufunc in {
-            _ for _ in module.__dict__.values() if isinstance(_, np.ufunc)}:
+    for ufunc in set(_ for _ in module.__dict__.values() if isinstance(_, np.ufunc)):
         tests += finder.find(ufunc, module=module)
 
 total_failures = 0

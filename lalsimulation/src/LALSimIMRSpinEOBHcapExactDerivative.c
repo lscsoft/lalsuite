@@ -1,7 +1,5 @@
 /*
-*  Copyright (C) 2010 Craig Robinson, Yi Pan, 2016 Zachariah Etienne,
-*                                                  Caleb Devine
-*                                                  David N. Buch
+*  Copyright (C) 2010 Craig Robinson, Yi Pan
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -20,6 +18,16 @@
 */
 
 
+/**
+ * \author Craig Robinson, Yi Pan
+ *
+ * \brief In newer versions of the EOBNR approximant, we
+ * do not have an analytic expression for the derivative of the waveform.
+ * As such, it is necessary to calculate the derivatives numerically. This
+ * function provides the means to do just that.
+ *
+ */
+
 #ifndef _LALSIMIMRSPINEOBHCAPEXACTDERIVATIVE_C
 #define _LALSIMIMRSPINEOBHCAPEXACTDERIVATIVE_C
 
@@ -37,8 +45,9 @@
 #include "LALSimIMRSpinEOB.h"
 
 #include "LALSimIMRSpinEOBAuxFuncs.c"
-//#include "LALSimIMRSpinEOBHamiltonianOptimized.c"
+#include "LALSimIMRSpinEOBHamiltonianOptimized.c"
 
+//int UsePrec = 1;
 
 /*------------------------------------------------------------------------------------------
  *
@@ -47,6 +56,8 @@
  *------------------------------------------------------------------------------------------
  */
 
+
+//static REAL8 GSLSpinHamiltonianWrapperOptimized( REAL8 x, void *params );
 
 static REAL8 XLALSpinHcapExactDerivWRTParam(
                        const INT4 paramIdx,
@@ -91,7 +102,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian_derivs_allatonce(
 							   );
 /*------------------------------------------------------------------------------------------
  *
- *          Definitions of functions.
+ *          Defintions of functions.
  *
  *------------------------------------------------------------------------------------------
  */
@@ -279,12 +290,12 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian_ExactDeriv(
     case 4:
       {
 #include "mathematica_codes/SEOBNRv2_opt_pdata1tortoise.h"
-	return Hreal; /* Returns dH/dpy */
+	return Hreal;
       }
       break;
     default:
       {
-	printf("XLALSimIMRSpinEOBHamiltonian_ExactDeriv(): Derivative option not supported: %d!\n",which_to_vary); exit(1);
+	printf("Option not supported: %d!\n",which_to_vary); exit(1);
 	break;
       }
     }
@@ -293,12 +304,12 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian_ExactDeriv(
     case 4:
       {
 #include "mathematica_codes/SEOBNRv2_opt_pdata1.h"
-	return Hreal; /* Returns dH/dpy */
+	return Hreal;
       }
       break;
     default:
       {
-	printf("XLALSimIMRSpinEOBHamiltonian_ExactDeriv(): Derivative option not supported: %d!\n",which_to_vary); exit(1);
+	printf("Option not supported: %d!\n",which_to_vary); exit(1);
 	break;
       }
     }

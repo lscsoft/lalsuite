@@ -332,13 +332,21 @@ int main( int argc, char **argv )
   {
     PTFSpinTmplt = PTFSpinTmpltHead;
     PTFSpinTmpltHead = PTFSpinTmplt->next;
-    XLALFreeSnglInspiral( &PTFSpinTmplt );
+    if ( PTFSpinTmplt->event_id )
+    {
+      LALFree( PTFSpinTmplt->event_id );
+    }
+    LALFree( PTFSpinTmplt );
   }
   while ( PTFNoSpinTmpltHead )
   {
     PTFNoSpinTmplt = PTFNoSpinTmpltHead;
     PTFNoSpinTmpltHead = PTFNoSpinTmplt->next;
-    XLALFreeSnglInspiral( &PTFNoSpinTmplt );
+    if ( PTFNoSpinTmplt->event_id )
+    {
+      LALFree( PTFNoSpinTmplt->event_id );
+    }
+    LALFree( PTFNoSpinTmplt );
   }
 
   LALCheckMemoryLeaks();

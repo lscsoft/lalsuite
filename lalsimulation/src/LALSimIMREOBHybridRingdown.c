@@ -19,7 +19,7 @@
 */
 
 /**
- * \author Yi Pan, Craig Robinson, Stas Babak, Andrea Taracchini
+ * \author Yi Pan, Craig Robinson
  * \file
  *
  * \brief Module to compute the ring-down waveform as linear combination
@@ -33,8 +33,6 @@
  * between the two models in ring-down waveform is the pseudo-QNM introduced
  * in the latter (see Taracchini et al. PRD 86, 024011 (2012) for more details).
  */
-#ifndef _LALSIMIMREOBHYBRIDRINGDOWN_C
-#define _LALSIMIMREOBHYBRIDRINGDOWN_C
 #include <math.h>
 #include <complex.h>
 #include <stdlib.h>
@@ -49,48 +47,14 @@
 #include "LALSimBlackHoleRingdown.h"
 #include "LALSimIMREOBNQCCorrection.c"
 
+#ifndef _LALSIMIMREOBHYBRIDRINGDOWN_C
+#define _LALSIMIMREOBHYBRIDRINGDOWN_C
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else
 #define UNUSED
 #endif
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* Fit coefficients that enter amplitude and phase of the RD signal of SEOBNRv4 */
-/* Eq. (28) of https://dcc.ligo.org/T1600383 */
-static const REAL8 A1coeff00 = 0.0830664;
-static const REAL8 A1coeff01 = -0.0196758;
-static const REAL8 A1coeff02 = -0.0136459;
-static const REAL8 A1coeff10 = 0.0612892;
-static const REAL8 A1coeff11 = 0.00146142;
-static const REAL8 A1coeff20 = -0.0893454;
-
-/* Eq. (29) of https://dcc.ligo.org/T1600383 */
-static const REAL8 A2coeff00 = -0.623953;
-static const REAL8 A2coeff01 = -0.371365;
-static const REAL8 A2coeff10 = 1.39777;
-static const REAL8 A2coeff11 = 2.40203;
-static const REAL8 A2coeff20 = -1.82173;
-static const REAL8 A2coeff21 = -5.25339;
-
-/* Eq. (36) of https://dcc.ligo.org/T1600383 */
-static const REAL8 P1coeff00 = 0.147584;
-static const REAL8 P1coeff01 = 0.00779176;
-static const REAL8 P1coeff02 = -0.0244358;
-static const REAL8 P1coeff10 = 0.263456;
-static const REAL8 P1coeff11 = -0.120853;
-static const REAL8 P1coeff20 = -0.808987;
-
-/* Eq. (37) of https://dcc.ligo.org/T1600383 */
-static const REAL8 P2coeff00 = 2.46654;
-static const REAL8 P2coeff01 = 3.13067;
-static const REAL8 P2coeff02 = 0.581626;
-static const REAL8 P2coeff10 = -6.99396;
-static const REAL8 P2coeff11 = -9.61861;
-static const REAL8 P2coeff20 = 17.5646;
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-static INT4 XLALSimFindIndexMaxAmpli( UINT4 * indAmax, REAL8Vector * timeVec, REAL8Vector * ampWave, REAL8 * valAmax, REAL8 tofAmax );
 
 /**
  * Generates the ringdown wave associated with the given real
@@ -490,7 +454,7 @@ static UNUSED INT4 XLALSimIMREOBHybridAttachRingdown(REAL8Vector * signal1,
         /* Replace the last QNM with pQNM */
         /* We assume aligned/antialigned spins here */
         a = (spin1[2] + spin2[2]) / 2. * (1.0 - 2.0 * eta) + (spin1[2] - spin2[2]) / 2. * (mass1 - mass2) / (mass1 + mass2);
-        NRPeakOmega22 = XLALSimIMREOBGetNRSpinPeakOmega(l, m, eta, a) / mTot;
+        NRPeakOmega22 = GetNRSpinPeakOmega(l, m, eta, a) / mTot;
         /*printf("a and NRomega in QNM freq: %.16e %.16e %.16e %.16e %.16e\n",spin1[2],spin2[2],
          * mTot/LAL_MTSUN_SI,a,NRPeakOmega22*mTot); */
         modefreqs->data[7] = (NRPeakOmega22 / finalMass + creal(modefreqs->data[0])) / 2.;
@@ -503,7 +467,7 @@ static UNUSED INT4 XLALSimIMREOBHybridAttachRingdown(REAL8Vector * signal1,
         /* We assume aligned/antialigned spins here */
         /* Definitions of a, chi and NRPeakOmega22, where the last one is an approximation of \phi'[tmatch] in T1400476-v3. */
         a = (spin1[2] + spin2[2]) / 2. * (1.0 - 2.0 * eta) + (spin1[2] - spin2[2]) / 2. * (mass1 - mass2) / (mass1 + mass2);
-        NRPeakOmega22 = XLALSimIMREOBGetNRSpinPeakOmegav2(l, m, eta, a) / mTot;
+        NRPeakOmega22 = GetNRSpinPeakOmegav2(l, m, eta, a) / mTot;
 
         /* Define chi */
         chi = (spin1[2] + spin2[2]) / 2. + (spin1[2] - spin2[2]) / 2. * ((mass1 - mass2) / (mass1 + mass2)) / (1. - 2. * eta);
@@ -729,32 +693,6 @@ printf("w4 = %f, t4 = %f\n",creal(modefreqs->data[5])*mTot, 1./cimag(modefreqs->
     return XLAL_SUCCESS;
 }
 
-/* Search for index at which the maximum of the amplitude occurs */
-static INT4 XLALSimFindIndexMaxAmpli( UINT4 * indAmax, REAL8Vector * timeVec, REAL8Vector * ampWave, REAL8 * valAmax, REAL8 tofAmax ) {
-    if ( indAmax == NULL || timeVec == NULL || ampWave == NULL || valAmax == NULL ) {
-        return XLAL_FAILURE;
-    }
-    INT4 debugSB = 0;
-    *indAmax = 0;
-    INT4 found = 0;
-    for (UINT4 i = 0; i < timeVec->length - 1; i++) {
-        if (timeVec->data[i] == tofAmax) {
-            found = 1;
-            *indAmax = i;
-            *valAmax = ampWave->data[i];
-        }
-    }
-    if (found == 0) {
-        return XLAL_FAILURE;
-    }
-    else {
-        if (debugSB) {
-            printf(" found maximum times: %f,   %f \n", timeVec->data[*indAmax], tofAmax );
-        }
-        return XLAL_SUCCESS;
-    }
-}
-
 /**
  * The main  function for performing the ringdown attachment for SEOBNRv4 (and beyond)
  * This is the function which gets called by the code generating the full IMR waveform once
@@ -764,9 +702,9 @@ static INT4 XLALSimFindIndexMaxAmpli( UINT4 * indAmax, REAL8Vector * timeVec, RE
  * STEP 2) Apply the fit function from the attachment time
  * STEP 3) Construct the full RD by applying (factor) of less damped 220 mode
  * STEP 4) Constructing the RD stitched to the inspiral-merger
- * See Section 5.2 of https://dcc.ligo.org/T1600383
  */
 static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
+//static INT4 XLALSimIMREOBAttachFitRingdown(
     REAL8Vector * signal1, /**<< OUTPUT, Real of inspiral waveform to which we attach ringdown */
     REAL8Vector * signal2, /**<< OUTPUT, Imag of inspiral waveform to which we attach ringdown */
     const INT4 l,          /**<< Current mode l */
@@ -785,17 +723,11 @@ static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
                            /**<< Time values chosen as points for performing comb matching */
     Approximant approximant/**<<The waveform approximant being used */
     ) {
-    if ( mass1 <= 0. || mass2 <= 0.
-        || fabs(spin1x) > 1. || fabs(spin1y) > 1. || fabs(spin1z) > 1.
-        || fabs(spin2x) > 1. || fabs(spin2y) > 1. || fabs(spin2z) > 1.
-        || spin1x*spin1x + spin1y*spin1y + spin1z*spin1z > 1.
-        || spin2x*spin2x + spin2y*spin2y + spin2z*spin2z > 1.
-        ) {
-            return XLAL_FAILURE;
-        }
     INT4 debugSB = 0;
+    UINT4 nmodes;
     UINT4 i;
     UNUSED INT4 phasecount;
+    REAL8 finalMass, finalSpin;
     REAL8Vector *ampWave;
     REAL8Vector *phWave;
     REAL8Vector *rdtime;
@@ -816,41 +748,44 @@ static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
 
     Approximant appr;
     appr = approximant;
+//    if ( approximant != SEOBNRv2 ){
+//        // We use here approximant = SEOBNRv2 for computation of the final mass final spin and frequencies
+//        // This should change if other method for final mass/spin are available
+//        appr = SEOBNRv2;
+//    }
 
     if (debugSB) {
         printf("RDfit: we use spin1 %f, spin2 %f, and it should be dimensionless [-1,1] \n", chi1, chi2);
         printf("We use approximant = %d \n", appr);
     }
-    REAL8 chi = 0.5 * (chi1 + chi2) + 0.5 * (chi1 - chi2) * (mass1 - mass2)/(mass1 + mass2) / (1.0 - 2.0 * eta);
+    REAL8 chis = 0.5 * (chi1 + chi2);
+    REAL8 chia = 0.5 * (chi1 - chi2);
+    REAL8 chi = chis + chia * sqrt(fabs(1 - 4. * eta)) / (1.0 - 2.0 * eta);
 
-        
-        
-    /*********************************************************************************************/
-    /*                                          QNMs of the remnant                                        */
-    /*********************************************************************************************/
-    /* Getting  QNMs */
-    modefreqs = XLALCreateCOMPLEX16Vector(1);
-    if (XLALSimIMREOBGenerateQNMFreqV2(modefreqs, mass1, mass2, spin1, spin2, l, m, 1, appr) == XLAL_FAILURE) {
+    /** getting modes */
+
+    nmodes = 8;
+    modefreqs = XLALCreateCOMPLEX16Vector(nmodes);
+    if (XLALSimIMREOBGenerateQNMFreqV2(modefreqs, mass1, mass2, spin1, spin2, l, m, nmodes, appr) == XLAL_FAILURE) {
         XLALDestroyCOMPLEX16Vector(modefreqs);
         XLAL_ERROR(XLAL_EFUNC);
     }
-    /* Least-damped QNM */
+
+    /** Compute final mass final spin */
+    if (XLALSimIMREOBFinalMassSpin(&finalMass, &finalSpin, mass1, mass2, spin1, spin2, appr) == XLAL_FAILURE) {
+        XLAL_ERROR(XLAL_EFUNC);
+    }
+
     COMPLEX16 sigma220;
     //sigma220 = -0.0609 - I*0.8326;
     sigma220 = (-cimag(modefreqs->data[0]) - I * creal(modefreqs->data[0])) * (mtot * LAL_MTSUN_SI);
 
     if (debugSB) {
+        printf("Final mass = %f, final spin = %f\n", finalMass, finalSpin);
         printf("matchpoints are: %f,  %f,   %f \n", matchrange->data[0], matchrange->data[1], matchrange->data[2]);
         printf("the 0-overtone is: %f + i %f \n", creal(sigma220), cimag(sigma220));
     }
-        
-        
-        
-    /*********************************************************************************************/
-    /*                                         Prepare inspiral signal                                         */
-    /*                   This is needed to guarantee continuity with RD signal               */
-    /*********************************************************************************************/
-    /*  Compute amplitude and the unwrapped phase of the inspiral */
+    /*  Compute amplitude and the phase of the data */
     phasecount = 0;
     for (i = 0; i < signal1->length; i++) {
         ampWave->data[i] = 0.0;
@@ -863,7 +798,6 @@ static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
         ampWave->data[i] = sqrt(signal1->data[i] * signal1->data[i] + signal2->data[i] * signal2->data[i]);
         now = atan2(signal2->data[i], signal1->data[i]);
         if (i > 0) {
-            /* Unwrapping */
             corph = now - prev;
             corph = corph > LAL_PI ? corph - LAL_TWOPI : (corph < -LAL_PI ? corph + LAL_TWOPI : corph);
 
@@ -882,65 +816,106 @@ static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
 
         fclose(fout);
     }
-     /* Search for index at which the maximum of the amplitude occurs */
-    REAL8 valAmax = ampWave->data[0];
-    REAL8 tofAmax = matchrange->data[1];
+
+     /** Search for the maximum of the amplitude, which is not necessary (I think), since the rdMatch
+      * tells us where maximum is */
     UINT4 indAmax;
-    if ( XLALSimFindIndexMaxAmpli( &indAmax, timeVec, ampWave, &valAmax, tofAmax ) == XLAL_FAILURE )
-    {
-        XLALPrintError("Time of maximum amplitude is not found .\n");
-        XLALDestroyCOMPLEX16Vector(modefreqs);
-        XLAL_ERROR(XLAL_EFUNC);
+    REAL8 valAmax;
+    REAL8 tofAmax;
+
+    indAmax = 0;
+    valAmax = ampWave->data[0];
+    //tofAmax = timeVec->data[0];
+    tofAmax = matchrange->data[1];
+    //for (i=1; i<ampWave->length-1; i++){
+    INT4 found = 0;
+    for (i = 1; i < timeVec->length - 1; i++) {
+
+        if (timeVec->data[i] == tofAmax) {
+            found = 1;
+            indAmax = i;
+            valAmax = ampWave->data[i];
+        }
+        //if (ampWave->data[i-1] <= ampWave->data[i] && ampWave->data[i] > ampWave->data[i+1]){
+        //    indAmax = i;
+        //    valAmax = ampWave->data[i];
+        //    tofAmax= timeVec->data[i];
+        //    printf("max i=%d  t= %f, amp = %.16e \n", i, timeVec->data[i], ampWave->data[i]);
+        //    break;
+        //}
+    }
+    if (found == 0) {
+        printf(" time of maximum amplitude is not found ");
+        exit(1);
+    } else {
+        if (debugSB) {
+            printf(" found maximum times: %f,   %f \n", timeVec->data[indAmax], matchrange->data[1]);
+        }
     }
     if (debugSB) {
         printf("Check: The maximum of amplitude is %.16e found at t=%f, index = %d (out of %d) \n", valAmax, tofAmax, indAmax, timeVec->length);
+        //printf("compare it to the supplied time of peak: %f %f \n", matchrange->data[0], matchrange->data[1]);
     }
 
+    /* Ringdown signal length: 10 times the decay time of the n=0 mode */
+    //UINT4 Nrdwave = (INT4) (EOB_RD_EFOLDS / (cimag(modefreqs->data[0])*(mtot * LAL_MTSUN_SI)) / dt);
+    UINT4 Nrdwave = (INT4) (EOB_RD_EFOLDS / cimag(modefreqs->data[0]) / dt);
 
+    //printf("Stas Nrdwave %d,  dt = %f", Nrdwave, dt);
+    // FIXME Alejandro started from dt not from 0, is it important?
+    REAL8 dtM = dt / (mtot * LAL_MTSUN_SI);     // go to geometrica units
+    rdtime = XLALCreateREAL8Vector(Nrdwave);
+    for (i = 0; i < Nrdwave; i++) {
+        rdtime->data[i] = i * dtM;      // this time for RD and it starts with 0 (Alejandro's time starts with
+    }
 
-    /*********************************************************************************************/
-    /*                  Constant coefficients entering RD fitting formulas                      */
-    /*********************************************************************************************/
-    /* Computing fit coefficients that enter amplitude and phase of the RD signal */
-    /* Numeircal constants are defined at the top of this file */
-    /* Eq. (28) of https://dcc.ligo.org/T1600383 */
+    /** Computing fit coefficients */
+
+    REAL8 A1coeff00 = 0.0830664;
+    REAL8 A1coeff01 = -0.0196758;
+    REAL8 A1coeff02 = -0.0136459;
+    REAL8 A1coeff10 = 0.0612892;
+    REAL8 A1coeff11 = 0.00146142;
+    REAL8 A1coeff20 = -0.0893454;
     REAL8 ampcf1;
     ampcf1 = A1coeff00 + A1coeff01 * chi + A1coeff02 * chi * chi + A1coeff10 * eta + A1coeff11 * eta * chi + A1coeff20 * eta * eta;
-  
-    /* Eq. (29) of https://dcc.ligo.org/T1600383 */
+
+    REAL8 A2coeff00 = -0.623953;
+    REAL8 A2coeff01 = -0.371365;
+    REAL8 A2coeff10 = 1.39777;
+    REAL8 A2coeff11 = 2.40203;
+    REAL8 A2coeff20 = -1.82173;
+    REAL8 A2coeff21 = -5.25339;
     REAL8 ampcf2;
     ampcf2 = A2coeff00 + A2coeff01 * chi + A2coeff10 * eta + A2coeff11 * eta * chi + A2coeff20 * eta * eta + A2coeff21 * eta * eta * chi;
 
 //    printf("creal(sigma220), 2.*ampcf1*tanh(ampcf2) = %.16e %.16e\n",1./creal(sigma220), 2.*ampcf1*tanh(ampcf2));
-    /* Eqs. (31)-(32) of https://dcc.ligo.org/T1600383 */
     if (creal(sigma220) > 2. * ampcf1 * tanh(ampcf2)) {
         ampcf1 = creal(sigma220) / (2. * tanh(ampcf2));
     }
-        
-    /* Eq. (36) of https://dcc.ligo.org/T1600383 */
+
+    REAL8 P1coeff00 = 0.147584;
+    REAL8 P1coeff01 = 0.00779176;
+    REAL8 P1coeff02 = -0.0244358;
+    REAL8 P1coeff10 = 0.263456;
+    REAL8 P1coeff11 = -0.120853;
+    REAL8 P1coeff20 = -0.808987;
+
     REAL8 phasecf1;
     phasecf1 = P1coeff00 + P1coeff01 * chi + P1coeff02 * chi * chi + P1coeff10 * eta + P1coeff11 * eta * chi + P1coeff20 * eta * eta;
-        
-    /* Eq. (37) of https://dcc.ligo.org/T1600383 */
+
+    REAL8 P2coeff00 = 2.46654;
+    REAL8 P2coeff01 = 3.13067;
+    REAL8 P2coeff02 = 0.581626;
+    REAL8 P2coeff10 = -6.99396;
+    REAL8 P2coeff11 = -9.61861;
+    REAL8 P2coeff20 = 17.5646;
     REAL8 phasecf2;
+
     phasecf2 = P2coeff00 + P2coeff01 * chi + P2coeff02 * chi * chi + P2coeff10 * eta + P2coeff11 * eta * chi + P2coeff20 * eta * eta;
 
-        
-        
-    /*********************************************************************************************/
-    /*                                            RD fitting formulas                                           */
-    /*********************************************************************************************/
-    /* Ringdown signal length: 10 times the decay time of the n=0 mode */
-    UINT4 Nrdwave = (INT4) (EOB_RD_EFOLDS / cimag(modefreqs->data[0]) / dt);
-    //printf("Stas Nrdwave %d,  dt = %f", Nrdwave, dt);
-    REAL8 dtM = dt / (mtot * LAL_MTSUN_SI);     // go to geometric units
-    rdtime = XLALCreateREAL8Vector(Nrdwave);
-    for (i = 0; i < Nrdwave; i++) {
-            rdtime->data[i] = i * dtM;      // this time for RD and it starts with 0
-    }
     REAL8 tcons = 0.;   //attachment point relative to peak; possibility for non zero values not fully implemented
-        
-    /* Rescalings to guarantee continuity with inspiral */
+
     REAL8 Arescaledtcons = valAmax * exp(-creal(sigma220) * tcons) / eta;
     REAL8 dtArescaledtcons = (0. - creal(sigma220) * valAmax) * exp(-creal(sigma220) * tcons) / eta;    // 0 - assumes extermum (max) of peak amplitude
     REAL8 ampcc1 = dtArescaledtcons * pow(cosh(ampcf2), 2) / ampcf1;
@@ -951,11 +926,19 @@ static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
     ampRD = XLALCreateREAL8Vector(Nrdwave);
     phRD = XLALCreateREAL8Vector(Nrdwave);
 
-    /* Construct RD amplitude */
-    /* Eqs. (22)-(23) of https://dcc.ligo.org/T1600383 */
     for (i = 0; i < Nrdwave; i++) {
         ampRD->data[i] = eta * exp(creal(sigma220) * rdtime->data[i]) * (ampcc1 * tanh(ampcf1 * rdtime->data[i] + ampcf2) + ampcc2);
+
     }
+    //if (debugSB){
+    //    fout = fopen("StasAmpRD.dat", "w");
+    //    for (i=0; i<Nrdwave; i++){
+    //        fprintf(fout, "%.16e   %.16e   %.16e   %.16e \n", rdtime->data[i], ampRD->data[i],
+    //                eta*exp( creal(sigma220)* rdtime->data[i] ),
+    //                (ampcc1*tanh(ampcf1*rdtime->data[i]+ampcf2)+ampcc2) );
+    //    }
+    //    fclose(fout);
+    //}
     if (debugSB) {
         fout = fopen("StasAmpRD_full.dat", "w");
         for (i = 0; i < indAmax; i++) {
@@ -967,312 +950,17 @@ static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
         fclose(fout);
     }
 
-    /* Construct RD phase */
+    // check that we have indAmax-1
     REAL8 omegarescaledtcons = (phWave->data[indAmax] - phWave->data[indAmax - 1]) / dtM - cimag(sigma220);
+    //    (phasecutatpeak[-1]-phasecutatpeak[-2])/dt - sigma220.imag
     REAL8 phasecc1 = omegarescaledtcons * (phasecf2 + 1.0) / phasecf2 / phasecf1;
     REAL8 phi0 = phWave->data[indAmax];
     REAL8 logargnum, logargden;
-    /* Eq. (33)-(34) of https://dcc.ligo.org/T1600383 */
+
     for (i = 0; i < Nrdwave; i++) {
         logargnum = 1. + phasecf2 * exp(-phasecf1 * rdtime->data[i]);
         logargden = 1. + phasecf2;
         phRD->data[i] = phi0 - phasecc1 * log(logargnum / logargden) + cimag(sigma220) * rdtime->data[i];
-    }
-    if (debugSB) {
-        fout = fopen("StasPhRD_full.dat", "w");
-        for (i = 0; i < indAmax; i++) {
-            fprintf(fout, "%.16e    %.16e \n", timeVec->data[i], phWave->data[i]);
-        }
-        for (i = 0; i < Nrdwave; i++) {
-            fprintf(fout, "%.16e    %.16e \n", rdtime->data[i] + tofAmax, phRD->data[i]);
-        }
-        fclose(fout);
-
-        // Compute the frequency of the ful signal
-        UINT4 totSz = indAmax + Nrdwave;
-        REAL8Vector *PhFull;
-        PhFull = XLALCreateREAL8Vector(totSz);
-        REAL8Vector *tFull;
-        tFull = XLALCreateREAL8Vector(totSz);
-        REAL8Vector *frFull;
-        frFull = XLALCreateREAL8Vector(totSz);
-
-        for (i = 0; i < indAmax; i++) {
-            tFull->data[i] = timeVec->data[i];
-            PhFull->data[i] = phWave->data[i];
-        }
-        for (i = 0; i < Nrdwave; i++) {
-            tFull->data[i + indAmax] = rdtime->data[i] + tofAmax;
-            PhFull->data[i + indAmax] = phRD->data[i];
-        }
-        fout = fopen("StasPhRD_full2.dat", "w");
-        for (i = 0; i < totSz; i++) {
-            fprintf(fout, "%.16e   %.16e \n", tFull->data[i], PhFull->data[i]);
-        }
-        fclose(fout);
-
-        gsl_spline *spline = NULL;
-        gsl_interp_accel *acc = NULL;
-        spline = gsl_spline_alloc(gsl_interp_cspline, totSz);
-        acc = gsl_interp_accel_alloc();
-        gsl_spline_init(spline, tFull->data, PhFull->data, totSz);
-        for (i = 0; i < totSz; i++) {
-            frFull->data[i] = gsl_spline_eval_deriv(spline, tFull->data[i], acc);
-        }
-        fout = fopen("StasFrRD_full.dat", "w");
-        for (i = 0; i < totSz; i++) {
-            fprintf(fout, "%.16e   %.16e \n", tFull->data[i], frFull->data[i]);
-        }
-        fclose(fout);
-
-        gsl_spline_free(spline);
-        gsl_interp_accel_free(acc);
-
-        XLALDestroyREAL8Vector(PhFull);
-        XLALDestroyREAL8Vector(tFull);
-        XLALDestroyREAL8Vector(frFull);
-
-    }
-
-    /* Construct RD signal */
-    for (i = 0; i < Nrdwave; i++) {
-        signal1->data[i + indAmax] = ampRD->data[i] * cos(phRD->data[i]);
-        signal2->data[i + indAmax] = ampRD->data[i] * sin(phRD->data[i]);
-    }
-
-    XLALDestroyREAL8Vector(ampWave);
-    XLALDestroyREAL8Vector(phWave);
-    XLALDestroyCOMPLEX16Vector(modefreqs);
-    XLALDestroyREAL8Vector(rdtime);
-    XLALDestroyREAL8Vector(ampRD);
-    XLALDestroyREAL8Vector(phRD);
-
-    return XLAL_SUCCESS;
-
-}
-
-
-static UNUSED INT4 XLALSimIMREOBTaper(
-                                                  REAL8Vector * signal1, /**<< OUTPUT, Real of inspiral waveform to which we attach ringdown */
-                                                  REAL8Vector * signal2, /**<< OUTPUT, Imag of inspiral waveform to which we attach ringdown */
-                                                  const INT4 l,          /**<< Current mode l */
-                                                  const INT4 m,          /**<< Current mode m */
-                                                  const REAL8 dt,        /**<< Sample time step (in seconds) */
-                                                  const REAL8 mass1,     /**<< First component mass (in Solar masses) */
-                                                  const REAL8 mass2,     /**<< Second component mass (in Solar masses) */
-                                                  const REAL8 spin1x,    /**<<The spin of the first object;  */
-                                                  const REAL8 spin1y,    /**<<The spin of the first object;  */
-                                                  const REAL8 spin1z,    /**<<The spin of the first object;  */
-                                                  const REAL8 spin2x,    /**<<The spin of the second object; */
-                                                  const REAL8 spin2y,    /**<<The spin of the second object; */
-                                                  const REAL8 spin2z,    /**<<The spin of the second object; */
-                                                  REAL8Vector * timeVec, /**<< Vector containing the time values */
-                                                  REAL8Vector * matchrange,
-                                                  /**<< Time values chosen as points for performing comb matching */
-                                                  Approximant approximant/**<<The waveform approximant being used */
-) {
-    if ( mass1 <= 0. || mass2 <= 0.
-        || fabs(spin1x) > 1. || fabs(spin1y) > 1. || fabs(spin1z) > 1.
-        || fabs(spin2x) > 1. || fabs(spin2y) > 1. || fabs(spin2z) > 1.
-        || spin1x*spin1x + spin1y*spin1y + spin1z*spin1z > 1.
-        || spin2x*spin2x + spin2y*spin2y + spin2z*spin2z > 1.
-        ) {
-        return XLAL_FAILURE;
-    }
-    INT4 debugSB = 0;
-    UINT4 i;
-    UNUSED INT4 phasecount;
-    REAL8Vector *ampWave;
-    REAL8Vector *phWave;
-    REAL8Vector *rdtime;
-    COMPLEX16Vector *modefreqs;
-
-    ampWave = XLALCreateREAL8Vector(signal1->length);
-    phWave = XLALCreateREAL8Vector(signal1->length);
-
-    REAL8 mtot = mass1 + mass2;
-    REAL8 eta = mass1 * mass2 / (mtot * mtot);
-
-    /* Here I assume that the spins were properly projected (is precessing) and only spin1z, spin2z
-     * are relevant, if not we need to add extra function to define what we call chi1, chi2 */
-    REAL8 chi1 = spin1z;
-    REAL8 chi2 = spin2z;
-    REAL8 spin1[3] = { spin1x, spin1y, spin1z };
-    REAL8 spin2[3] = { spin2x, spin2y, spin2z };
-
-    Approximant appr;
-    appr = approximant;
-
-    if (debugSB) {
-        printf("RDfit: we use spin1 %f, spin2 %f, and it should be dimensionless [-1,1] \n", chi1, chi2);
-        printf("We use approximant = %d \n", appr);
-    }
-    REAL8 chi = 0.5 * (chi1 + chi2) + 0.5 * (chi1 - chi2) * (mass1 - mass2)/(mass1 + mass2) / (1.0 - 2.0 * eta);
-
-
-
-    /*********************************************************************************************/
-    /*                                          QNMs of the remnant                                        */
-    /*********************************************************************************************/
-    /* Getting  QNMs */
-    modefreqs = XLALCreateCOMPLEX16Vector(1);
-    if (XLALSimIMREOBGenerateQNMFreqV2(modefreqs, mass1, mass2, spin1, spin2, l, m, 1, appr) == XLAL_FAILURE) {
-        XLALDestroyCOMPLEX16Vector(modefreqs);
-        XLAL_ERROR(XLAL_EFUNC);
-    }
-    /* Least-damped QNM */
-    COMPLEX16 sigma220;
-    //sigma220 = -0.0609 - I*0.8326;
-    sigma220 = (-cimag(modefreqs->data[0]) - I * creal(modefreqs->data[0])) * (mtot * LAL_MTSUN_SI);
-
-    if (debugSB) {
-        printf("matchpoints are: %f,  %f,   %f \n", matchrange->data[0], matchrange->data[1], matchrange->data[2]);
-        printf("the 0-overtone is: %f + i %f \n", creal(sigma220), cimag(sigma220));
-    }
-
-
-
-    /*********************************************************************************************/
-    /*                                         Prepare inspiral signal                                         */
-    /*                   This is needed to guarantee continuity with RD signal               */
-    /*********************************************************************************************/
-    /*  Compute amplitude and the unwrapped phase of the inspiral */
-    phasecount = 0;
-    for (i = 0; i < signal1->length; i++) {
-        ampWave->data[i] = 0.0;
-        phWave->data[i] = 0.0;
-    }
-    REAL8 prev, now, corph;
-    prev = atan2(signal2->data[0], signal1->data[0]);
-    phWave->data[0] = prev;
-    for (i = 0; i < timeVec->length; i++) {
-        ampWave->data[i] = sqrt(signal1->data[i] * signal1->data[i] + signal2->data[i] * signal2->data[i]);
-        now = atan2(signal2->data[i], signal1->data[i]);
-        if (i > 0) {
-            /* Unwrapping */
-            corph = now - prev;
-            corph = corph > LAL_PI ? corph - LAL_TWOPI : (corph < -LAL_PI ? corph + LAL_TWOPI : corph);
-
-            phWave->data[i] = phWave->data[i - 1] + corph;
-            prev = now;
-        }
-        //phWave->data[i] = now;
-    }
-    FILE *fout = NULL;
-    if (debugSB) {
-        fout = fopen("CheckStasAmplPhase.dat", "w");
-        printf("Check the length: time %d, signal %d \n", timeVec->length, signal1->length);
-        for (i = 0; i < timeVec->length; i++) {
-            fprintf(fout, "%f   %.16e   %.16e   %.16e   %.16e  \n", timeVec->data[i], ampWave->data[i], phWave->data[i], signal1->data[i], signal2->data[i]);
-        }
-
-        fclose(fout);
-    }
-
-    /* Search for index at which the maximum of the amplitude occurs */
-    REAL8 valAmax;
-    REAL8 tofAmax = matchrange->data[1];
-    UINT4 indAmax;
-    if ( tofAmax != timeVec->data[timeVec->length-1] ) {
-    if ( XLALSimFindIndexMaxAmpli( &indAmax, timeVec, ampWave, &valAmax, tofAmax ) == XLAL_FAILURE )
-    {
-        XLALPrintError("Time of maximum amplitude is not found .\n");
-        XLALDestroyCOMPLEX16Vector(modefreqs);
-        XLAL_ERROR(XLAL_EFUNC);
-    }
-    }
-    else {
-        indAmax = timeVec->length-1;
-        valAmax = ampWave->data[indAmax];
-    }
-    if (debugSB) {
-        printf("Check: The maximum of amplitude is %.16e found at t=%f, index = %d (out of %d) \n", valAmax, tofAmax, indAmax, timeVec->length);
-    }
-
-
-    /*********************************************************************************************/
-    /*                  Constant coefficients entering RD fitting formulas                      */
-    /*********************************************************************************************/
-    /* Computing fit coefficients that enter amplitude and phase of the RD signal */
-    /* Numeircal constants are defined at the top of this file */
-    /* Eq. (28) of https://dcc.ligo.org/T1600383 */
-    REAL8 ampcf1;
-    ampcf1 = A1coeff00 + A1coeff01 * chi + A1coeff02 * chi * chi + A1coeff10 * eta + A1coeff11 * eta * chi + A1coeff20 * eta * eta;
-
-    /* Eq. (29) of https://dcc.ligo.org/T1600383 */
-    REAL8 ampcf2;
-    ampcf2 = A2coeff00 + A2coeff01 * chi + A2coeff10 * eta + A2coeff11 * eta * chi + A2coeff20 * eta * eta + A2coeff21 * eta * eta * chi;
-
-    //    printf("creal(sigma220), 2.*ampcf1*tanh(ampcf2) = %.16e %.16e\n",1./creal(sigma220), 2.*ampcf1*tanh(ampcf2));
-    /* Eqs. (31)-(32) of https://dcc.ligo.org/T1600383 */
-    if (creal(sigma220) > 2. * ampcf1 * tanh(ampcf2)) {
-        ampcf1 = creal(sigma220) / (2. * tanh(ampcf2));
-    }
-
-    /* Eq. (36) of https://dcc.ligo.org/T1600383 */
-    REAL8 phasecf1;
-    phasecf1 = P1coeff00 + P1coeff01 * chi + P1coeff02 * chi * chi + P1coeff10 * eta + P1coeff11 * eta * chi + P1coeff20 * eta * eta;
-
-    /* Eq. (37) of https://dcc.ligo.org/T1600383 */
-    REAL8 phasecf2;
-    phasecf2 = P2coeff00 + P2coeff01 * chi + P2coeff02 * chi * chi + P2coeff10 * eta + P2coeff11 * eta * chi + P2coeff20 * eta * eta;
-
-
-
-    /*********************************************************************************************/
-    /*                                            RD fitting formulas                                           */
-    /*********************************************************************************************/
-    /* Ringdown signal length: 10 times the decay time of the n=0 mode */
-    UINT4 Nrdwave = (INT4) (EOB_RD_EFOLDS / cimag(modefreqs->data[0]) / dt);
-    //printf("Stas Nrdwave %d,  dt = %f", Nrdwave, dt);
-    REAL8 dtM = dt / (mtot * LAL_MTSUN_SI);     // go to geometric units
-    rdtime = XLALCreateREAL8Vector(Nrdwave);
-    for (i = 0; i < Nrdwave; i++) {
-        rdtime->data[i] = i * dtM;      // this time for RD and it starts with 0
-    }
-    REAL8 tcons = 0.;   //attachment point relative to peak; possibility for non zero values not fully implemented
-
-    /* Rescalings to guarantee continuity with inspiral */
-    REAL8 Arescaledtcons = valAmax * exp(-creal(sigma220) * tcons) / eta;
-    REAL8 dtArescaledtcons = (0. - creal(sigma220) * valAmax) * exp(-creal(sigma220) * tcons) / eta;    // 0 - assumes extermum (max) of peak amplitude
-    REAL8 ampcc1 = dtArescaledtcons * pow(cosh(ampcf2), 2) / ampcf1;
-    REAL8 ampcc2 = (Arescaledtcons * ampcf1 - dtArescaledtcons * cosh(ampcf2) * sinh(ampcf2)) / ampcf1;
-
-    REAL8Vector *ampRD;
-    REAL8Vector *phRD;
-    ampRD = XLALCreateREAL8Vector(Nrdwave);
-    phRD = XLALCreateREAL8Vector(Nrdwave);
-
-    /* Construct RD amplitude */
-    /* Eqs. (22)-(23) of https://dcc.ligo.org/T1600383 */
-//    REAL8 dpar = 0.1;
-    for (i = 0; i < Nrdwave; i++) {
-        ampRD->data[i] = eta * exp(creal(sigma220) * rdtime->data[i]) * (ampcc1 * tanh(ampcf1 * rdtime->data[i] + ampcf2) + ampcc2);
-//        ampRD->data[i] = valAmax/dpar * exp(creal(sigma220) * rdtime->data[i]) * (dpar + tanh(dpar*creal(sigma220) * rdtime->data[i]));
-
-    }
-    if (debugSB) {
-        fout = fopen("StasAmpRD_full.dat", "w");
-        for (i = 0; i < indAmax; i++) {
-            fprintf(fout, "%.16e    %.16e \n", timeVec->data[i], ampWave->data[i]);
-        }
-        for (i = 0; i < Nrdwave; i++) {
-            fprintf(fout, "%.16e    %.16e \n", rdtime->data[i] + tofAmax, ampRD->data[i]);
-        }
-        fclose(fout);
-    }
-
-    /* Construct RD phase */
-    REAL8 omegarescaledtcons = (phWave->data[indAmax] - phWave->data[indAmax - 1]) / dtM - cimag(sigma220);
-    REAL8 phasecc1 = omegarescaledtcons * (phasecf2 + 1.0) / phasecf2 / phasecf1;
-    REAL8 phi0 = phWave->data[indAmax];
-    REAL8 logargnum, logargden;
-    /* Eq. (33)-(34) of https://dcc.ligo.org/T1600383 */
-    for (i = 0; i < Nrdwave; i++) {
-        logargnum = 1. + phasecf2 * exp(-phasecf1 * rdtime->data[i]);
-        logargden = 1. + phasecf2;
-        phRD->data[i] = phi0 - phasecc1 * log(logargnum / logargden) + cimag(sigma220) * rdtime->data[i];
-        phRD->data[i] = phi0 + ((phWave->data[indAmax] - phWave->data[indAmax - 1]) / dtM) * rdtime->data[i];
     }
 
     if (debugSB) {
@@ -1331,7 +1019,8 @@ static UNUSED INT4 XLALSimIMREOBTaper(
 
     }
 
-    /* Construct RD signal */
+    //FIXME check the size of signal1, signal2
+    //FIXME check continuity at the attachment point (max of amplitude)
     for (i = 0; i < Nrdwave; i++) {
         signal1->data[i + indAmax] = ampRD->data[i] * cos(phRD->data[i]);
         signal2->data[i + indAmax] = ampRD->data[i] * sin(phRD->data[i]);

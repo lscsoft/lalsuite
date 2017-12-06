@@ -403,7 +403,7 @@ void SFTtoUCHARPeakGram(LALStatus        *status,
   periodo.data->length = length;
   periodo.data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
 
-  XLAL_CHECK_LAL( status, XLALSFTtoPeriodogram(&periodo, sft) == XLAL_SUCCESS, XLAL_EFUNC);
+  TRY( LALSFTtoPeriodogram( status->statusPtr, &periodo, sft), status);
 
   nPeaks = 0;
   if (length > 0){

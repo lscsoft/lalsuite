@@ -20,7 +20,7 @@
 
 #include <complex.h>
 #include <lal/Units.h>
-#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
+#include <lal/LALAdaptiveRungeKutta4.h>
 #include <lal/FindRoot.h>
 #include <lal/SeqFactories.h>
 #include <lal/LALSimInspiral.h>
@@ -499,7 +499,7 @@ static REAL8 XLALvrP4PN( const REAL8 r,    /**<< Orbital separation (in units of
  * The time returned is in units of M.
  */
 static REAL8
-XLALSimIMREOBGetRingdownAttachCombSize(
+GetRingdownAttachCombSize( 
                          INT4 l, /**<< Mode l */
                          INT4 m  /**<< Mode m */
                          )
@@ -776,7 +776,7 @@ XLALSimIMREOBNRv2Generator(
    LIGOTimeGPS             epoch = LIGOTIMEGPSZERO;
 
    /* Variables for the integrator */
-   LALAdaptiveRungeKuttaIntegrator       *integrator = NULL;
+   LALAdaptiveRungeKutta4Integrator       *integrator = NULL;
    REAL8Array              *dynamics   = NULL;
    REAL8Array              *dynamicsHi = NULL;
    INT4                    retLen;
@@ -1225,7 +1225,7 @@ XLALSimIMREOBNRv2Generator(
    tVecHi.data    = dynamicsHi->data;
 
    /* We are now finished with the adaptive RK, so we can free its resources */
-   XLALAdaptiveRungeKuttaFree( integrator );
+   XLALAdaptiveRungeKutta4Free( integrator );
    integrator = NULL;
 
    /* Now we have the dynamics, we tweak the factorized coefficients for the waveform */
@@ -1363,7 +1363,7 @@ XLALSimIMREOBNRv2Generator(
   t = m * (dynamics->data[hiSRndx] + timePeak - dynamics->data[startIdx]);
   gsl_spline_init( spline, dynamicsHi->data, phiVecHi.data, retLen );
   /* sSub = phiVecHi.data[peakIdx] - phiC/2.; */
-  sSub = 0*gsl_spline_eval( spline, timePeak, acc ) - phiC;
+  sSub = gsl_spline_eval( spline, timePeak, acc ) - phiC;
 
   gsl_spline_free( spline );
   gsl_interp_accel_free( acc );
@@ -1424,7 +1424,6 @@ XLALSimIMREOBNRv2Generator(
      /* If we have an equal mass system, some modes will be zero */
      if ( eta == 0.25 && modeM % 2 )
      {
-       XLALDestroyCOMPLEX16TimeSeries( sigMode );
        continue;
      }
 
@@ -1555,7 +1554,7 @@ XLALSimIMREOBNRv2Generator(
        XLAL_ERROR( XLAL_EFAILED );
      }
 
-     REAL8 combSize = XLALSimIMREOBGetRingdownAttachCombSize( modeL, modeM );
+     REAL8 combSize = GetRingdownAttachCombSize( modeL, modeM );
      REAL8 nrPeakDeltaT = XLALSimIMREOBGetNRPeakDeltaT( modeL, modeM, eta );
 
      if ( combSize > timePeak )

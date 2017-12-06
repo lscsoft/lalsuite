@@ -5,7 +5,6 @@
 *.pc
 *.pyc
 *.pyo
-__pycache__
 .deps
 .libs
 /_build/
@@ -15,7 +14,6 @@ AUTHORS
 Makefile
 Makefile.in
 config.lt
-debian/control
 doxygen/autogen.dox
 doxygen/doxygen.cfg
 doxygen/doxygen_objdb_*.tmp
@@ -29,7 +27,6 @@ include/lal/*.i
 include/lal/header-link-stamp
 lalstochastic-*.tar.xz
 lalstochastic-user-env.csh
-lalstochastic-user-env.fish
 lalstochastic-user-env.sh
 lalstochastic-user-env.shell
 lalstochastic.spec
@@ -39,7 +36,7 @@ python/lalstochastic/__init__.py
 python/lalstochastic/_lalstochastic*
 python/lalstochastic/git_version.py
 python/lalstochastic/lalstochastic.py
-src/LALStochasticBuildInfoHeader.h
+src/LALStochasticBuildInfo.c
 src/LALStochasticConfig.h
 src/LALStochasticVCSInfo.c
 src/LALStochasticVCSInfo.h
@@ -47,19 +44,13 @@ src/LALStochasticVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/git_version
-src/lalstochastic_version
 src/stamp-h1
 src/stamp-h2
-src/version.c
-swig/swiglalstochastic.i*
-swig/swiglal_*
+swig/swiglal*
 test/??_714382918*.dat
 test/AstroOmegaTest
-test/CCoarseGrainFrequencySeriesTest
 test/CZeroPadAndFFTTest
-test/DCoarseGrainFrequencySeriesTest
 test/OverlapReductionFunctionTest
-test/SCoarseGrainFrequencySeriesTest
 test/SZeroPadAndFFTTest
 test/SimulatePopcornTest
 test/SimulateSBTest
@@ -71,4 +62,3 @@ test/StochasticOmegaGWTest
 test/StochasticOptimalFilterNormalizationTest
 test/StochasticOptimalFilterTest
 test/WHITENED-SB?
-test/ZCoarseGrainFrequencySeriesTest

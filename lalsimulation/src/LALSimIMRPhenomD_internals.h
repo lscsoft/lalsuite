@@ -410,13 +410,13 @@ static double sigma1Fit(double eta, double chiPN);
 static double sigma2Fit(double eta, double chiPN);
 static double sigma3Fit(double eta, double chiPN);
 static double sigma4Fit(double eta, double chiPN);
-static double PhiInsAnsatzInt(double f, UsefulPowers * powers_of_Mf, PhiInsPrefactors * prefactors, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn);
-static double DPhiInsAnsatzInt(double ff, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn);
+static double PhiInsAnsatzInt(double f, UsefulPowers * powers_of_Mf, PhiInsPrefactors * prefactors, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, const REAL8 m1 /* in M_sol */, const REAL8 m2 /* in M_sol */, const LALSimInspiralTestGRParam *extraParams);
+static double DPhiInsAnsatzInt(double ff, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, const REAL8 m1 /* in M_sol */, const REAL8 m2 /* in M_sol */, const LALSimInspiralTestGRParam *extraParams);
 
 ////////////////////////////// Phase: glueing function //////////////////////////////
 
-static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double eta, double chi1, double chi2, double finspin, LALDict *extraParams);
-static void ComputeIMRPhenDPhaseConnectionCoefficients(IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, PhiInsPrefactors * prefactors);
-static double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, UsefulPowers *powers_of_f, PhiInsPrefactors * prefactors);
+static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double eta, double chi1, double chi2, double finspin, const LALSimInspiralTestGRParam *extraParams);
+static void ComputeIMRPhenDPhaseConnectionCoefficients(IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, PhiInsPrefactors * prefactors, const REAL8 m1 /* in M_sol */, const REAL8 m2 /* in M_sol */, const LALSimInspiralTestGRParam *extraParams);
+static double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, UsefulPowers *powers_of_f, PhiInsPrefactors * prefactors, const REAL8 m1 /* in M_sol */, const REAL8 m2 /* in M_sol */, const LALSimInspiralTestGRParam *extraParams);
 
 #endif	// of #ifndef _LALSIM_IMR_PHENOMD_INTERNALS_H

@@ -2,6 +2,7 @@
 
 import sys
 from optparse import *
+import exceptions
 from types import *
 
 import matplotlib

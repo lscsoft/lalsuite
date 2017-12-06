@@ -3,8 +3,6 @@ MOSTLYCLEANFILES =
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
-SUBDIRS = events
-
 if HAVE_PYTHON
 
 pymoduledir = $(pkgpythondir)/io

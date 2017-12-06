@@ -1,0 +1,6 @@
+# Transformation matrix from orthonormal coordinates to normalized
+# spindown parameters F[n] (the Taylor coefficients of f/f0 as a
+# function of t/T), where T*f0 = 100000000.000000
+
+2.1123977320e-08	2.1427903820e-08
+2.5536230040e-07	-2.5174032350e-07

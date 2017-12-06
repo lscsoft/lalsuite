@@ -116,6 +116,14 @@ XLALPTFWaveformDerivatives(
               REAL8  dydt[14],
               void  *params );
 
+void
+LALFindChirpPTFFilterSegment (
+    LALStatus                  *status,
+    SnglInspiralTable         **eventList,
+    FindChirpFilterInput       *input,
+    FindChirpFilterParams      *params
+    );
+
 /*@}*/ /* end:FindChirpPTF.h */
 
 #if 0

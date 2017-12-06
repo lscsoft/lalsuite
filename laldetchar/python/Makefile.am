@@ -2,7 +2,6 @@ BUILT_SOURCES =
 MOSTLYCLEANFILES =
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
-include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 SUBDIRS = laldetchar
 
@@ -36,8 +35,6 @@ pybin_scripts = \
 	laldetchar-idq-gst-relay \
 	laldetchar-idq-gst-listener \
 	laldetchar-idq-gdb-local-performance \
-        laldetchar-ovl-train \
-        laldetchar-ovl-evaluate \
 	$(END_OF_LIST)
 
 endif

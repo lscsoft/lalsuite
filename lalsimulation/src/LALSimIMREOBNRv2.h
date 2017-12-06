@@ -19,7 +19,7 @@
 
 
 /**
- * \author Craig Robinson, Andrea Taracchini
+ * \author Craig Robinson
  *
  * \brief File containing most of the structures and prototypes which are
  * used in the generation of the EOBNRv2 waveform. These structures and
@@ -47,24 +47,6 @@ extern "C"
  * The maximum possible l we have
  */
 #define LALEOB_MAX_MULTIPOLE 8
-
-/**
- * Tidal parameters for EOB model of NS:
- * mByM - dimensionless ratio m_{NS}/M
- * lambda2Tidal - dimensionless adiabatic quadrupole tidal deformability normalized by total mass (2/3 k_2 (R_{NS}/M)^5)
- * omega02Tidal - quadrupole f-mode angular freq m_{NS}*omega_{02}
- * lambda3Tidal - dimensionless adiabatic octupole tidal deformability normalized by total mass (2/15 k_3 (R_{NS}/M)^7)
- * omega03Tidal - octupole f-mode angular freq m_{NS}*omega_{03}
- */
-typedef struct tagTidalEOBParams
-{
-    REAL8 mByM;
-    REAL8 lambda2Tidal;
-    REAL8 lambda3Tidal;
-    REAL8 omega02Tidal;
-    REAL8 omega03Tidal;
-}
-TidalEOBParams;
 
 /**
  * Structure containing the coefficients for EOBNRv2 A potential function.
@@ -412,8 +394,18 @@ typedef struct tagFacWaveformCoeffs
   REAL8 rho82v2;
   REAL8 rho81v2;
 
-  TidalEOBParams *tidal1;
-  TidalEOBParams *tidal2;
+  REAL8 m1;
+  REAL8 m2;
+  REAL8 comp1;
+  REAL8 comp2;
+  REAL8 k2Tidal1;
+  REAL8 k2Tidal2;
+  REAL8 omega02Tidal1;
+  REAL8 omega02Tidal2;
+  REAL8 k3Tidal1;
+  REAL8 k3Tidal2;
+  REAL8 omega03Tidal1;
+  REAL8 omega03Tidal2;
 }
 FacWaveformCoeffs;
 
@@ -460,11 +452,8 @@ typedef struct tagEOBParams
   REAL8 eta;
   REAL8 omega;
   UINT4 omegaPeaked;
-  REAL8 omegaMerger;
   REAL8 m1;
   REAL8 m2;
-  REAL8 rad;
-  INT4 NyquistStop;
   EOBACoefficients *aCoeffs;
   FacWaveformCoeffs *hCoeffs;
   EOBNonQCCoeffs *nqcCoeffs;

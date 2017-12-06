@@ -38,9 +38,7 @@ int main(int argc, char *argv[])
   int status = 0;   /* CFITSIO status value MUST be initialized to zero! */
   int hdutype = 0, hdunum = 0, ii = 0;
 
-  int printhelp = (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0));
-
-  if (printhelp || argc != 4) {
+  if (argc != 4) {
     fprintf(stderr, "Usage:  %s infile expression outfile\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "Copy selected rows from the input table to the output file\n");

@@ -13,7 +13,3 @@ SUBDIRS = \
 	noisemodels \
 	support \
 	$(END_OF_LIST)
-
-if SWIG_BUILD_PYTHON
-SUBDIRS += python
-endif

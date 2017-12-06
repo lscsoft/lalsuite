@@ -43,6 +43,7 @@
 
 
 /* user input variables */
+BOOLEAN  uvar_version;     /**< output version information */
 BOOLEAN  uvar_averagePsi;
 BOOLEAN  uvar_averageIota;
 BOOLEAN  uvar_autoCorrelate;
@@ -204,6 +205,8 @@ int main(int argc, char *argv[]){
   static SFTConstraints constraints;
   INT4 sftcounter = 0, slidingcounter = 1, listLength = 0;
 
+  CHAR *VCSInfoString;          /**< LAL + LALapps Git version string */
+
   /* to time the code*/
   time_t t1, t2;
 
@@ -215,9 +218,20 @@ int main(int argc, char *argv[]){
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
+  LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
   if (should_exit)
     exit(1);
+
+
+  if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
+    XLALPrintError("XLALGetVersionString(0) failed.\n");
+    exit(1);
+  }
+
+  if ( uvar_version ) {
+    printf ("%s\n", VCSInfoString );
+    exit (0);
+  }
 
   /* very basic consistency checks on user input */
   if ( uvar_f0 < 0 ) {
@@ -230,17 +244,17 @@ int main(int argc, char *argv[]){
     exit(1);
   }
 
-  if ( XLALUserVarWasSet(&uvar_fResolution) && (uvar_fResolution <= 0)) {
+  if ( LALUserVarWasSet(&uvar_fResolution) && (uvar_fResolution <= 0)) {
     fprintf(stderr, "search frequency resolution must be > 0\n");
     exit(1);
   }
 
-  if (uvar_QCoeffs && (XLALUserVarWasSet(&uvar_fdot) || XLALUserVarWasSet(&uvar_fddot))) {
+  if (uvar_QCoeffs && (LALUserVarWasSet(&uvar_fdot) || LALUserVarWasSet(&uvar_fddot))) {
     fprintf(stderr, "fdot and fddot are not used if useQCoeffs is set\n");
     exit(1);
   }
 
-  if (!uvar_QCoeffs && (XLALUserVarWasSet(&uvar_q1) || XLALUserVarWasSet(&uvar_q1) || XLALUserVarWasSet(&uvar_brakingindex))) {
+  if (!uvar_QCoeffs && (LALUserVarWasSet(&uvar_q1) || LALUserVarWasSet(&uvar_q1) || LALUserVarWasSet(&uvar_brakingindex))) {
     fprintf(stderr, "useQCoeffs must be set in order to search over q1, q2 or braking index\n");
     exit(1);
   }
@@ -250,7 +264,7 @@ int main(int argc, char *argv[]){
     exit(1);
   }
 
-  if ( XLALUserVarWasSet(&uvar_fdotResolution) && (uvar_fdotResolution <= 0)) {
+  if ( LALUserVarWasSet(&uvar_fdotResolution) && (uvar_fdotResolution <= 0)) {
     fprintf(stderr, "frequency derivative resolution must be > 0\n");
     exit(1);
   }
@@ -265,17 +279,17 @@ int main(int argc, char *argv[]){
     exit(1);
   }
 
-  if ( XLALUserVarWasSet(&uvar_fddotResolution) && (uvar_fddotResolution <= 0)) {
+  if ( LALUserVarWasSet(&uvar_fddotResolution) && (uvar_fddotResolution <= 0)) {
     fprintf(stderr, "frequency double derivative resolution must be > 0\n");
     exit(1);
   }
 
-  if (uvar_averagePsi && XLALUserVarWasSet (&uvar_psi)) {
+  if (uvar_averagePsi && LALUserVarWasSet (&uvar_psi)) {
     fprintf(stderr, "if uvar_averagePsi = TRUE, psi will not be used\n");
     exit(1);
   } 
 
-  if (uvar_averageIota && XLALUserVarWasSet (&uvar_cosi)) {
+  if (uvar_averageIota && LALUserVarWasSet (&uvar_cosi)) {
     fprintf(stderr, "if uvar_averageIota = TRUE, cosi will not be used\n");
     exit(1);
   } 
@@ -342,24 +356,25 @@ int main(int argc, char *argv[]){
   XLALGPSSet(&startTimeGPS, 0, 0);
   XLALGPSSet(&endTimeGPS, LAL_INT4_MAX, 0); 
 
-  if ( XLALUserVarWasSet( &uvar_startTime ) ) {
+  if ( LALUserVarWasSet( &uvar_startTime ) ) {
     XLALGPSSetREAL8(&startTimeGPS, uvar_startTime);
 
     constraints.minStartTime = &startTimeGPS;
   }
 
-  if ( XLALUserVarWasSet( &uvar_endTime ) ) {
+  if ( LALUserVarWasSet( &uvar_endTime ) ) {
     XLALGPSSetREAL8(&endTimeGPS, uvar_endTime);
     constraints.maxStartTime = &endTimeGPS;
   }
 
   /* get sft catalog */
   /* note that this code depends very heavily on the fact that the catalog
-     returned by XLALSFTdataFind is time sorted */
+     returned by LALSFTdataFind is time sorted */
 
   time(&t1);
 
-  XLAL_CHECK_MAIN( ( catalog = XLALSFTdataFind( uvar_sftDir, &constraints) ) != NULL, XLAL_EFUNC);
+  LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftDir, &constraints),
+	    &status);
   if ( (catalog == NULL) || (catalog->length == 0) ) {
     fprintf (stderr, "Unable to match any SFTs with pattern '%s'\n",
 	     uvar_sftDir );
@@ -383,7 +398,7 @@ int main(int argc, char *argv[]){
   tObs = XLALGPSDiff( &lastTimeStamp, &firstTimeStamp ) + timeBase;
 
   /*set pulsar reference time */
-  if (XLALUserVarWasSet ( &uvar_refTime )) {
+  if (LALUserVarWasSet ( &uvar_refTime )) {
     XLALGPSSetREAL8(&refTime, uvar_refTime);
   } 
   else {	/*if refTime is not set, set it to midpoint of sfts*/
@@ -391,7 +406,7 @@ int main(int argc, char *argv[]){
   }
 
   /* set frequency resolution defaults if not set by user */
-  if (!(XLALUserVarWasSet (&uvar_fResolution))) {
+  if (!(LALUserVarWasSet (&uvar_fResolution))) {
     uvar_fResolution = 1/tObs;
   }
 
@@ -425,11 +440,11 @@ int main(int argc, char *argv[]){
   /*otherwise just search over f0, fdot, fddot */
   else {
 
-    if (!(XLALUserVarWasSet (&uvar_fdotResolution))) {
+    if (!(LALUserVarWasSet (&uvar_fdotResolution))) {
       uvar_fdotResolution = SQUARE(1/tObs);
     }
 
-    if (!(XLALUserVarWasSet (&uvar_fddotResolution))) {
+    if (!(LALUserVarWasSet (&uvar_fddotResolution))) {
       uvar_fddotResolution = CUBE(1/tObs);
     }
 
@@ -480,7 +495,7 @@ int main(int argc, char *argv[]){
   }
 
   /* polarisation angle */
-  if (XLALUserVarWasSet(&uvar_psi)) { 
+  if (LALUserVarWasSet(&uvar_psi)) { 
     psi = (REAL8 *) LALCalloc(1, sizeof(REAL8));
     *psi = uvar_psi;
   }
@@ -594,8 +609,8 @@ int main(int argc, char *argv[]){
       spinRange_refTime.fkdotBand[2] = uvar_fddotBand;
     }
 
-    XLAL_CHECK_MAIN( XLALExtrapolatePulsarSpinRange( &spinRange_startTime, &spinRange_refTime, XLALGPSDiff( &firstTimeStamp, &spinRange_refTime.refTime ) ) == XLAL_SUCCESS, XLAL_EFUNC); 
-    XLAL_CHECK_MAIN( XLALExtrapolatePulsarSpinRange( &spinRange_endTime, &spinRange_refTime, XLALGPSDiff( &lastTimeStamp, &spinRange_refTime.refTime ) ) == XLAL_SUCCESS, XLAL_EFUNC); 
+    LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_startTime, firstTimeStamp, &spinRange_refTime), &status); 
+    LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_endTime, lastTimeStamp, &spinRange_refTime), &status); 
 
     startTime_freqLo = spinRange_startTime.fkdot[0]; /* lowest search freq at start time */
     startTime_freqHi = startTime_freqLo + spinRange_startTime.fkdotBand[0]; /* highest search freq. at start time*/
@@ -676,8 +691,8 @@ int main(int argc, char *argv[]){
       tmpSFT = &(sftTail->sft);
       tmpPSD = &(psdTail->psd);
     
-      XLAL_CHECK_MAIN( XLALNormalizeSFT (tmpPSD,
-                                         tmpSFT, uvar_blocksRngMed, 0.0) == XLAL_SUCCESS, XLAL_EFUNC);
+      LAL_CALL( LALNormalizeSFT (&status, tmpPSD,
+				 tmpSFT, uvar_blocksRngMed),	&status);
 
       LAL_CALL( AddREAL8toList(&status, &freqHead, &freqTail), &status);
 
@@ -1032,7 +1047,7 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
      fclose (fpdebug);
 
   }
-  XLALDestroySFTCatalog(catalog );
+  LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
 
   XLALDestroyEphemerisData(edat);
 
@@ -1052,6 +1067,9 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
   XLALDestroyREAL8Vector(galphare);
   XLALDestroyREAL8Vector(galphaim);
 
+  if ( VCSInfoString )
+    XLALFree ( VCSInfoString );
+
   if (!uvar_averagePsi) {
     LALFree(psi);
   }
@@ -1069,10 +1087,10 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
   if(sftHead) {
     if (sftHead != sftTail) {
       tmpSFT = &(sftTail->sft);
-      XLALDestroySFT( tmpSFT);
+      LAL_CALL(LALDestroySFTtype(&status, &tmpSFT),&status);
     }
     tmpSFT = &(sftHead->sft);
-    XLALDestroySFT( tmpSFT);
+    LAL_CALL(LALDestroySFTtype(&status, &tmpSFT),&status);
   } 
   if (psdHead) {
     if (psdHead != psdTail) {
@@ -1092,7 +1110,7 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
     XLALFree(freqHead);
   }
 
-  XLALDestroyUserVars();
+  LAL_CALL (LALDestroyUserVars(&status), &status);
 
   LALCheckMemoryLeaks();
 
@@ -1317,6 +1335,9 @@ void GetBeamInfo(LALStatus *status,
   while (sft) {
 
     DetectorStateSeries *detState = NULL;
+    AMcoef = (AMCoeffs *)LALCalloc(1, sizeof(AMCoeffs));
+    AMcoef->a = XLALCreateREAL4Vector(1);
+    AMcoef->b = XLALCreateREAL4Vector(1);
 
     /* get midpoint of sft */
     tgps = sft->sft.epoch;
@@ -1329,11 +1350,12 @@ void GetBeamInfo(LALStatus *status,
        mid-time of the SFTs -- should not make any 
        difference */
 
-    detState = XLALGetDetectorStates ( ts, det, edat, tOffs );
+    LALGetDetectorStates ( status->statusPtr, &detState, ts, det,
+			   edat, tOffs);
 
     detState->detector = *det;
 
-    AMcoef = XLALComputeAMCoeffs ( detState, skypos);
+    LALNewGetAMCoeffs ( status->statusPtr, AMcoef, detState, skypos);
     thisVel.data = detState->data[0].vDetector;
     thisPos.data = detState->data[0].rDetector;
 
@@ -1421,8 +1443,8 @@ void CopySFTFromCatalog(LALStatus *status,
   desc->version = catalog->data[sftindex].version;
   desc->crc64 = catalog->data[sftindex].crc64;
 
-  *sft = XLALLoadSFTs(slidingcat, fMin, fMax);
-  /* XLALDestroySFTCatalog (slidingcat );*/
+  LALLoadSFTs(status->statusPtr, sft, slidingcat, fMin, fMax); 
+  /* LALDestroySFTCatalog ( status->statusPtr, &slidingcat );*/
   XLALFree(slidingcat->data);
   LALFree(slidingcat);
 
@@ -1445,7 +1467,7 @@ void AddSFTtoList(LALStatus *status,
 
   sftList = (SFTListElement *)LALCalloc(1, sizeof(SFTListElement));
 
-  XLAL_CHECK_LAL( status, XLALCopySFT(&(sftList->sft), sft) == XLAL_SUCCESS, XLAL_EFUNC );
+  LALCopySFT(status->statusPtr, &(sftList->sft), sft);
 
   sftList->nextSFT = NULL;
   if (!(*sftHead)) { 
@@ -1560,7 +1582,7 @@ void DeleteSFTHead (LALStatus *status,
   *sftHead = (SFTListElement *)(*sftHead)->nextSFT;
 
   tmpSFT = &(sftList->sft);
-  XLALDestroySFT( tmpSFT);
+  LALDestroySFTtype(status->statusPtr, &tmpSFT);
   sftList = NULL;
 
   DETATCHSTATUSPTR (status);
@@ -1698,6 +1720,7 @@ void initUserVars (LALStatus *status)
 
   uvar_maxlag = 0;
 
+  uvar_version = FALSE;
   uvar_averagePsi = TRUE;
   uvar_averageIota = TRUE;
   uvar_autoCorrelate = FALSE;
@@ -1749,50 +1772,180 @@ void initUserVars (LALStatus *status)
   strcpy(uvar_skyfile,SKYFILE);
 
   /* register user input variables */
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_averagePsi,             "averagePsi",    BOOLEAN, 0,   OPTIONAL, "Use average over psi") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_averageIota,            "averageIota",   BOOLEAN, 0,   OPTIONAL, "Use average over iota") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_autoCorrelate,          "autoCorrelate", BOOLEAN, 0,   OPTIONAL, "Include autocorrelations") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_timingOn,               "timingOn",      BOOLEAN, 0,   OPTIONAL, "Print code timing information") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_f0,                     "f0",            REAL8,   'f', OPTIONAL, "Start search frequency") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_fdot,                   "fdot",          REAL8,   0,   OPTIONAL, "Start search frequency derivative") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_fBand,                  "fBand",         REAL8,   'b', OPTIONAL, "Search frequency band") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_fResolution,            "fRes",          REAL8,   0,   OPTIONAL, "Search frequency resolution. Default: 1/T") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_fdotBand,               "fdotBand",      REAL8,   0,   OPTIONAL, "Search frequency derivative band") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_fdotResolution,         "fdotRes",       REAL8,   'r', OPTIONAL, "Search frequency derivative resolution. Default: 1/T^2") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_fRef,                   "fRef",          REAL8,   0,   OPTIONAL, "Reference frequency") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_fddot,                  "fddot",         REAL8,   0,   OPTIONAL, "Start frequency double derivative") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_fddotBand,              "fddotBand",     REAL8,   0,   OPTIONAL, "Search frequency double derivative band") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_fddotResolution,        "fddotRes",      REAL8,   0,   OPTIONAL, "Search frequency double derivative resolution. Default: 1/T^3") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_startTime,              "startTime",     REAL8,   0,   OPTIONAL, "GPS start time of observation") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_endTime,                "endTime",       REAL8,   0,   OPTIONAL, "GPS end time of observation") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_skyRegion,              "skyRegion",     STRING,  0,   OPTIONAL, "sky-region polygon (or 'allsky')") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_dAlpha,                 "dAlpha",        REAL8,   0,   OPTIONAL, "Sky resolution (flat/isotropic) (rad)") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_dDelta,                 "dDelta",        REAL8,   0,   OPTIONAL, "Sky resolution (flat/isotropic) (rad)") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_psi,                    "psi",           REAL8,   0,   OPTIONAL, "Polarisation angle (rad)") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_skyfile,                "skyfile",       STRING,  0,   OPTIONAL, "Alternative: input skypatch file") == XLAL_SUCCESS, XLAL_EFUNC );
+  LALRegisterBOOLUserVar( status->statusPtr, "version",
+			  'V', UVAR_SPECIAL,
+			  "Output version information",
+			  &uvar_version);
+  LALRegisterBOOLUserVar( status->statusPtr, "averagePsi",
+			  0, UVAR_OPTIONAL,
+			  "Use average over psi",
+			  &uvar_averagePsi);
+  LALRegisterBOOLUserVar( status->statusPtr, "averageIota",
+			  0, UVAR_OPTIONAL,
+			  "Use average over iota",
+			  &uvar_averageIota);
+  LALRegisterBOOLUserVar( status->statusPtr, "autoCorrelate",
+			  0, UVAR_OPTIONAL,
+			  "Include autocorrelations",
+			  &uvar_autoCorrelate);
+  LALRegisterBOOLUserVar( status->statusPtr, "timingOn",
+			  0, UVAR_OPTIONAL,
+			  "Print code timing information",
+			  &uvar_timingOn);
+  LALRegisterREALUserVar( status->statusPtr, "f0",
+			  'f', UVAR_OPTIONAL,
+			  "Start search frequency",
+			  &uvar_f0);
+  LALRegisterREALUserVar( status->statusPtr, "fdot",
+			  0, UVAR_OPTIONAL,
+			  "Start search frequency derivative",
+			  &uvar_fdot);
+  LALRegisterREALUserVar( status->statusPtr, "fBand",
+			  'b', UVAR_OPTIONAL,
+			  "Search frequency band",
+			  &uvar_fBand);
+  LALRegisterREALUserVar( status->statusPtr, "fRes",
+			  0, UVAR_OPTIONAL,
+			  "Search frequency resolution. Default: 1/T",
+			  &uvar_fResolution);
+  LALRegisterREALUserVar( status->statusPtr, "fdotBand",
+			  0, UVAR_OPTIONAL,
+			  "Search frequency derivative band",
+			  &uvar_fdotBand);
+  LALRegisterREALUserVar( status->statusPtr, "fdotRes",
+			  'r', UVAR_OPTIONAL,
+			  "Search frequency derivative resolution. Default: 1/T^2",
+			  &uvar_fdotResolution);
+  LALRegisterREALUserVar( status->statusPtr, "fRef",
+			  0, UVAR_OPTIONAL,
+			  "Reference frequency",
+			  &uvar_fRef);
+  LALRegisterREALUserVar( status->statusPtr, "fddot",
+			  0, UVAR_OPTIONAL,
+			  "Start frequency double derivative",
+			  &uvar_fddot);
+  LALRegisterREALUserVar( status->statusPtr, "fddotBand",
+			  0, UVAR_OPTIONAL,
+			  "Search frequency double derivative band",
+			  &uvar_fddotBand);
+  LALRegisterREALUserVar( status->statusPtr, "fddotRes",
+			  0, UVAR_OPTIONAL,
+			  "Search frequency double derivative resolution. Default: 1/T^3",
+			  &uvar_fddotResolution);
+  LALRegisterREALUserVar( status->statusPtr, "startTime",
+			  0, UVAR_OPTIONAL,
+			  "GPS start time of observation",
+			  &uvar_startTime);
+  LALRegisterREALUserVar( status->statusPtr, "endTime",
+			  0, UVAR_OPTIONAL,
+			  "GPS end time of observation",
+			  &uvar_endTime);
+  LALRegisterSTRINGUserVar( status->statusPtr, "skyRegion",
+			    0, UVAR_OPTIONAL,
+			    "sky-region polygon (or 'allsky')",
+			    &uvar_skyRegion);
+  LALRegisterREALUserVar( status->statusPtr, "dAlpha",
+			  0, UVAR_OPTIONAL,
+			  "Sky resolution (flat/isotropic) (rad)",
+			  &uvar_dAlpha);
+  LALRegisterREALUserVar( status->statusPtr, "dDelta",
+			  0, UVAR_OPTIONAL,
+			  "Sky resolution (flat/isotropic) (rad)",
+			  &uvar_dDelta);
+  LALRegisterREALUserVar( status->statusPtr, "psi",
+			  0, UVAR_OPTIONAL,
+			  "Polarisation angle (rad)",
+			  &uvar_psi);
+  LALRegisterSTRINGUserVar( status->statusPtr, "skyfile",
+			    0, UVAR_OPTIONAL,
+			    "Alternative: input skypatch file",
+			    &uvar_skyfile);
 
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_ephemEarth,             "ephemEarth",    STRING,  0,   OPTIONAL, "Earth ephemeris file to use" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_ephemSun,               "ephemSun",      STRING,  0,   OPTIONAL, "Sun ephemeris file to use" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  LALRegisterSTRINGUserVar( status->statusPtr, "ephemEarth",
+                            0, UVAR_OPTIONAL,
+                            "Earth ephemeris file to use",
+                            &uvar_ephemEarth );
+  LALRegisterSTRINGUserVar( status->statusPtr, "ephemSun",
+                            0, UVAR_OPTIONAL,
+                            "Sun ephemeris file to use",
+                            &uvar_ephemSun );
 
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_sftDir,                 "sftDir",        STRING,  'D', REQUIRED, "SFT filename pattern") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_maxlag,                 "maxlag",        REAL8,   0,   OPTIONAL, "Maximum time lag for correlating sfts") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_dirnameOut,             "dirnameOut",    STRING,  'o', OPTIONAL, "Output directory") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_filenameOut,            "filenameOut",   STRING,  0,   OPTIONAL, "Output filename") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_debugOut,               "debugOut",      STRING,  0,   OPTIONAL, "Debugging output filename") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_blocksRngMed,           "blocksRngMed",  INT4,    0,   OPTIONAL, "Running Median block size") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_detChoice,              "detChoice",     INT4,    0,   OPTIONAL, "0: Correlate SFTs from same IFOs only; 1: different IFOs only; 2: all IFOs") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_refTime,                "refTime",       REAL8,   0,   OPTIONAL, "Pulsar reference time (SSB)") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_cosi,                   "cosi",          REAL8,   0,   OPTIONAL, "cos(iota) inclination angle") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_q1,                     "q1",            REAL8,   0,   OPTIONAL, "Starting Q1 value") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_q1Band,                 "q1Band",        REAL8,   0,   OPTIONAL, "Q1 search band") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_q1Resolution,           "q1Res",         REAL8,   0,   OPTIONAL, "Pulsar ellipticity search resolution") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_q2,                     "q2",            REAL8,   0,   OPTIONAL, "Starting Q2 value") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_q2Band,                 "q2Band",        REAL8,   0,   OPTIONAL, "Q2 search band") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_q2Resolution,           "q2Res",         REAL8,   0,   OPTIONAL, "Q2 search resolution") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_brakingindex,           "braking",       REAL8,   0,   OPTIONAL, "Pulsar electromagnetic braking index") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_brakingindexBand,       "brakingBand",   REAL8,   0,   OPTIONAL, "Pulsar electromagnetic braking index search band") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_brakingindexResolution, "brakingRes",    REAL8,   0,   OPTIONAL, "Pulsar electromagnetic braking index search resolution") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_QCoeffs,                "useQCoeffs",    BOOLEAN, 0,   OPTIONAL, "Search over pulsar spindown parameters instead of frequency derivatives") == XLAL_SUCCESS, XLAL_EFUNC );
+  LALRegisterSTRINGUserVar( status->statusPtr, "sftDir",
+			    'D', UVAR_REQUIRED,
+			    "SFT filename pattern",
+			    &uvar_sftDir);
+  LALRegisterREALUserVar( status->statusPtr, "maxlag",
+			  0,  UVAR_OPTIONAL,
+			  "Maximum time lag for correlating sfts",
+			  &uvar_maxlag);
+  LALRegisterSTRINGUserVar( status->statusPtr, "dirnameOut",
+			    'o', UVAR_OPTIONAL,
+			    "Output directory",
+			    &uvar_dirnameOut);
+  LALRegisterSTRINGUserVar( status->statusPtr, "filenameOut",
+			    0, UVAR_OPTIONAL,
+			    "Output filename",
+			    &uvar_filenameOut);
+  LALRegisterSTRINGUserVar( status->statusPtr, "debugOut",
+			    0, UVAR_OPTIONAL,
+			    "Debugging output filename",
+			    &uvar_debugOut);
+  LALRegisterINTUserVar( status->statusPtr, "blocksRngMed",
+			 0, UVAR_OPTIONAL,
+			 "Running Median block size",
+			 &uvar_blocksRngMed);
+  LALRegisterINTUserVar( status->statusPtr, "detChoice",
+			 0, UVAR_OPTIONAL,
+			 "0: Correlate SFTs from same IFOs only; 1: different IFOs only; 2: all IFOs",
+			 &uvar_detChoice);
+  LALRegisterREALUserVar( status->statusPtr, "refTime",
+			  0, UVAR_OPTIONAL,
+			  "Pulsar reference time (SSB)",
+			  &uvar_refTime);
+  LALRegisterREALUserVar( status->statusPtr, "cosi",
+			  0, UVAR_OPTIONAL,
+			  "cos(iota) inclination angle",
+			  &uvar_cosi); 
+  LALRegisterREALUserVar( status->statusPtr, "q1",
+			  0, UVAR_OPTIONAL,
+			  "Starting Q1 value",
+			  &uvar_q1); 
+  LALRegisterREALUserVar( status->statusPtr, "q1Band",
+			  0, UVAR_OPTIONAL,
+			  "Q1 search band",
+			  &uvar_q1Band); 
+  LALRegisterREALUserVar( status->statusPtr, "q1Res",
+			  0, UVAR_OPTIONAL,
+			  "Pulsar ellipticity search resolution",
+			  &uvar_q1Resolution); 
+  LALRegisterREALUserVar( status->statusPtr, "q2",
+			  0, UVAR_OPTIONAL,
+			  "Starting Q2 value",
+			  &uvar_q2); 
+  LALRegisterREALUserVar( status->statusPtr, "q2Band",
+			  0, UVAR_OPTIONAL,
+			  "Q2 search band",
+			  &uvar_q2Band); 
+  LALRegisterREALUserVar( status->statusPtr, "q2Res",
+			  0, UVAR_OPTIONAL,
+			  "Q2 search resolution",
+			  &uvar_q2Resolution); 
+  LALRegisterREALUserVar( status->statusPtr, "braking",
+			  0, UVAR_OPTIONAL,
+			  "Pulsar electromagnetic braking index",
+			  &uvar_brakingindex); 
+  LALRegisterREALUserVar( status->statusPtr, "brakingBand",
+			  0, UVAR_OPTIONAL,
+			  "Pulsar electromagnetic braking index search band",
+			  &uvar_brakingindexBand); 
+  LALRegisterREALUserVar( status->statusPtr, "brakingRes",
+			  0, UVAR_OPTIONAL,
+			  "Pulsar electromagnetic braking index search resolution",
+			  &uvar_brakingindexResolution); 
+  LALRegisterBOOLUserVar( status->statusPtr, "useQCoeffs",
+			  0, UVAR_OPTIONAL,
+			  "Search over pulsar spindown parameters instead of frequency derivatives",
+			  &uvar_QCoeffs); 
 
 
   DETATCHSTATUSPTR (status);

@@ -3,6 +3,7 @@
 import sys
 import os
 import re
+import exceptions
 import time
 from types import *
 from optparse import OptionParser

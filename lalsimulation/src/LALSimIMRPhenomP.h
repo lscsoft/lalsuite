@@ -31,18 +31,8 @@
 #include <lal/LALSimInspiral.h>
 
 
-/* CONSTANTS */
-
-/**
- * Tolerance used below which numbers are treated as zero for the calculation of atan2
- */
-#define MAX_TOL_ATAN 1.0e-15
-
-
 /* ************************** PhenomP internal function prototypes *****************************/
-/* atan2 wrapper that returns 0 when both magnitudes of x and y are below tol, otherwise it returns
-   atan2(x, y) */
-static REAL8 atan2tol(REAL8 x, REAL8 y, REAL8 tol);
+
 
 /* PhenomC parameters for modified ringdown: Uses final spin formula of Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009 */
 static BBHPhenomCParams *ComputeIMRPhenomCParamsRDmod(
@@ -50,7 +40,7 @@ static BBHPhenomCParams *ComputeIMRPhenomCParamsRDmod(
   const REAL8 m2,   /**< Mass of companion 2 (solar masses) */
   const REAL8 chi,  /**< Reduced aligned spin of the binary chi = (m1*chi1 + m2*chi2)/M */
   const REAL8 chip,  /**< Dimensionless spin in the orbital plane */
-  LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+  const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
 );
 
 typedef struct tagNNLOanglecoeffs {
@@ -98,7 +88,7 @@ static int PhenomPCore(
    * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
    * Then we will use deltaF = 0 to create the frequency series we return. */
   IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD */
-  LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+  const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
 );
 
 /* Internal core function to calculate PhenomP polarizations for a single frequency. */
@@ -124,7 +114,8 @@ static int PhenomPCoreOneFrequency(
   REAL8 *phasing,                         /**< Output: overall phasing */
   const UINT4 IMRPhenomP_version,         /**< Version number: 1 uses IMRPhenomC, 2 uses IMRPhenomD */
   AmpInsPrefactors *amp_prefactors,       /**< pre-calculated (cached for saving runtime) coefficients for amplitude. See LALSimIMRPhenomD_internals.c*/
-  PhiInsPrefactors *phi_prefactors        /**< pre-calculated (cached for saving runtime) coefficients for phase. See LALSimIMRPhenomD_internals.*/
+  PhiInsPrefactors *phi_prefactors,       /**< pre-calculated (cached for saving runtime) coefficients for phase. See LALSimIMRPhenomD_internals.*/
+  const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
 );
 
 /* Simple 2PN version of L, without any spin terms expressed as a function of v */

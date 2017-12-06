@@ -33,6 +33,7 @@ import getopt
 import re
 import string
 import tempfile
+import exceptions
 import random
 import math
 import ConfigParser

@@ -20,7 +20,7 @@ doxygen_redir_1 =
 html-local: Makefile $(CONFIG_CLEAN_FILES)
 	$(AM_V_at)set -e; \
 	echo "$(subdir)/Makefile: getting input sources ..."; \
-	( cd $(top_builddir) && $(MAKE) V=$(V) distdir $(doxygen_redir) ); \
+	( cd $(top_builddir) && make V=$(V) distdir $(doxygen_redir) ); \
 	rm -rf in/; \
 	mv "$(top_builddir)/$(PACKAGE)-$(VERSION)/" in/; \
 	rm -rf in/doxygen/; \
@@ -33,14 +33,6 @@ html-local: Makefile $(CONFIG_CLEAN_FILES)
 			doxygen_version="$${doxygen_version}-$${gitid}$${unclean}"; \
 		fi; \
 	fi; \
-	for tagfile in $(DOXYGEN_TAGFILES); do \
-		tagfile=`echo "$${tagfile}" | $(SED) 's/=.*$$//'`; \
-		if ! test -r "$${tagfile}"; then \
-			echo "$(subdir)/Makefile: ERROR: missing tag file $${tagfile}" >&2; \
-			echo "$(subdir)/Makefile: (hint: you may need to rebuild the Doxygen documentation for the corresponding library)" >&2; \
-			exit 1; \
-		fi; \
-	done; \
 	export doxygen_tagfiles; doxygen_tagfiles="$(DOXYGEN_TAGFILES)"; \
 	export doxygen_quiet; doxygen_quiet="$(doxygen_quiet)"; \
 	export doxygen_exclude; doxygen_exclude=`cat $(abs_srcdir)/exclude.list | tr '\n' ' '`; \
@@ -55,12 +47,10 @@ html-local: Makefile $(CONFIG_CLEAN_FILES)
 	$(MKDIR_P) out/; \
 	$(DOXYGEN) doxygen.cfg $(doxygen_redir) 2>&1; \
 	$(PYTHON) $(abs_srcdir)/check_tags.py $(abs_builddir)/out/$(PACKAGE).tag >> warnings.log; \
-	rm -rf in/; \
-	$(SED) -e 's|^$(abs_top_builddir)/doxygen/in|$(abs_top_srcdir)|g' warnings.log > warnings-tmp.log; \
-	mv -f warnings-tmp.log warnings.log; \
 	$(SED) $(DOXYGEN_WARNING_REGEX) warnings.log > errors.log; \
 	cat errors.log >&2; \
 	test `cat errors.log | wc -l` -eq 0; \
+	rm -rf in/; \
 	echo "$(subdir)/Makefile: Doxygen documentation was built successfully!"; \
 	echo "$(subdir)/Makefile: $(PACKAGE_NAME) main page is at file://$(abs_builddir)/out/index.html"
 
@@ -91,7 +81,7 @@ uninstall-local:
 
 clean-local:
 	-rm -rf in/ out/
-	-rm -f autogen.dox doxygen_objdb_*.tmp doxygen_sqlite3.db errors.log warnings.log warnings-tmp.log test_doxygen.sh
+	-rm -f autogen.dox doxygen_objdb_*.tmp doxygen_sqlite3.db errors.log warnings.log test_doxygen.sh
 
 EXTRA_DIST = \
 	check_tags.py \

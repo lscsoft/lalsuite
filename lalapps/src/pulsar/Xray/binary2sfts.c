@@ -27,6 +27,7 @@
 /***********************************************************************************************/
 /* includes */
 #include "config.h"
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
@@ -39,7 +40,6 @@
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
 #include <lalapps.h>
-#include <LALAppsVCSInfo.h>
 #include <lal/BandPassTimeSeries.h>
 
 #include <lal/LALDatatypes.h>
@@ -71,12 +71,11 @@ typedef struct {
   CHAR *outputdir;                  /**< the output directory */
   CHAR *cachefile;                  /**< the name of the input cache file */
   REAL8 tsamp;                      /**< the sampling time of the data */
-  REAL8 tsft;                       /**< the length of the SFTs */
+  INT4 tsft;                        /**< the length of the SFTs */
   REAL8 freq;                       /**< the starting frequency */
   REAL8 freqband;                   /**< the band width */
   REAL8 highpassf;                  /**< the high pass filter frequency */
-  BOOLEAN outSingleSFT;             /**< use to output a single concatenated SFT */
-  BOOLEAN outNoiseStr;              /**< output noise string in SFT comment */
+  BOOLEAN outSingleSFT;	            /**< use to output a single concatenated SFT */
   REAL8 amp_inj;                    /**< if set we inject a fake signal with this fractional amplitude */
   INT4 seed;
   REAL8 f_inj;
@@ -116,12 +115,15 @@ int main( int argc, char *argv[] )  {
 
   /**********************************************************************************/
   /* read in the cache file */
-  LALParsedDataFile *cache = NULL;
-  if ( XLALParseDataFile( &cache, uvar.cachefile ) != XLAL_SUCCESS ) {
-    LogPrintf(LOG_CRITICAL,"%s : failed to parse cache file %s\n",__func__,uvar.cachefile);
+  FILE *cachefp = NULL;
+  if ((cachefp = fopen(uvar.cachefile,"r")) == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s : failed to open binary input file %s\n",__func__,uvar.cachefile);
     return 1;
   }
-  INT4 Nfiles = cache->lines->nTokens;
+  i = 0;
+  while (fscanf(cachefp,"%*s %*d %*d")!=EOF) i++;
+  INT4 Nfiles = i;
+  fclose(cachefp);
   LogPrintf(LOG_DEBUG,"%s : counted %d files listed in the cache file.\n",__func__,Nfiles);
 
   /* allocate memory */
@@ -130,10 +132,15 @@ int main( int argc, char *argv[] )  {
   fileStart.data = LALCalloc(Nfiles,sizeof(LIGOTimeGPS));
   for (i=0;i<Nfiles;i++) filenames[i] = LALCalloc(512,sizeof(char));
 
-  for (i=0;i<Nfiles;i++) {
-    sscanf(cache->lines->tokens[i],"%s %d %d",filenames[i],&(fileStart.data[i].gpsSeconds),&(fileStart.data[i].gpsNanoSeconds));
+  if ((cachefp = fopen(uvar.cachefile,"r")) == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s : failed to open binary input file %s\n",__func__,uvar.cachefile);
+    return 1;
   }
-  XLALDestroyParsedDataFile( cache );
+
+  for (i=0;i<Nfiles;i++) {
+    fscanf(cachefp,"%s %d %d %*d",filenames[i],&(fileStart.data[i].gpsSeconds),&(fileStart.data[i].gpsNanoSeconds));
+  }
+  fclose(cachefp);
 
   /* initialise the random number generator */
   gsl_rng * r;
@@ -181,12 +188,10 @@ int main( int argc, char *argv[] )  {
     if ((np!=NULL) && (R!=NULL)) {
       for (k=0;k<np->length;k++) {
         ntot += np->data[k];
-        if (uvar.outNoiseStr) {
-          char temp[64];
-          sprintf(temp,"%d %e %e\n",SFTvect->data[oldlen+k].epoch.gpsSeconds,(REAL8)np->data[k]*norm1,R->data[k]*norm2);
-          noisestr = (char *)XLALRealloc(noisestr,sizeof(char)*(1+strlen(noisestr)+strlen(temp)));
-          strcat(noisestr,temp);
-        }
+        char temp[64];
+        sprintf(temp,"%d %e %e\n",SFTvect->data[oldlen+k].epoch.gpsSeconds,(REAL8)np->data[k]*norm1,R->data[k]*norm2);
+        noisestr = (char *)XLALRealloc(noisestr,sizeof(char)*(1+strlen(noisestr)+strlen(temp)));
+        strcat(noisestr,temp);
       }
       XLALDestroyINT8Vector(np);
       XLALDestroyREAL8Vector(R);
@@ -200,8 +205,8 @@ int main( int argc, char *argv[] )  {
 
   /**********************************************************************************/
   /* generate comment string */
-  char *VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ");
-  XLAL_CHECK ( VCSInfoString != NULL, XLAL_EFUNC, "XLALVCSInfoString() failed.\n" );
+  char *VCSInfoString = XLALGetVersionString(0);
+  XLAL_CHECK ( VCSInfoString != NULL, XLAL_EFUNC, "XLALGetVersionString(0) failed.\n" );
   CHAR *logstr;
   size_t len;
   XLAL_CHECK ( (logstr = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE )) != NULL, XLAL_EFUNC );
@@ -236,9 +241,9 @@ int main( int argc, char *argv[] )  {
  *
  */
 int XLALReadUserVars(int argc,            /**< [in] the command line argument counter */
-                     char *argv[],        /**< [in] the command line arguments */
-                     UserInput_t *uvar    /**< [out] the user input structure */
-                     )
+		     char *argv[],        /**< [in] the command line arguments */
+		     UserInput_t *uvar    /**< [out] the user input structure */
+		     )
 {
 
 
@@ -252,7 +257,6 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->freqband = 1;
   uvar->highpassf = 40;
   uvar->outSingleSFT = 0;
-  uvar->outNoiseStr = 0;
   uvar->amp_inj = 0;
   uvar->f_inj = 550.2;
   uvar->asini_inj = 2.0;
@@ -262,27 +266,26 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->seed = 0;
 
   /* ---------- register all user-variables ---------- */
-  XLALRegisterUvarMember(outLabel,              STRING, 'n', REQUIRED, "'misc' entry in SFT-filenames or 'description' entry of frame filenames");
-  XLALRegisterUvarMember(outputdir,             STRING, 'o', REQUIRED, "The output directory name");
-  XLALRegisterUvarMember(cachefile,             STRING, 'i', REQUIRED, "The input binary file name");
+  XLALRegisterUvarMember(outLabel, 	        STRING, 'n', REQUIRED, "'misc' entry in SFT-filenames or 'description' entry of frame filenames");
+  XLALRegisterUvarMember(outputdir, 	        STRING, 'o', REQUIRED, "The output directory name");
+  XLALRegisterUvarMember(cachefile, 	        STRING, 'i', REQUIRED, "The input binary file name");
   XLALRegisterUvarMember(freq,                   REAL8, 'f', OPTIONAL, "The starting frequency (Hz)");
-  XLALRegisterUvarMember(freqband,              REAL8, 'b', OPTIONAL, "The frequency band (Hz)");
-  XLALRegisterUvarMember(tsft,                   REAL8, 't', OPTIONAL, "The length of SFTs (sec)");
-  XLALRegisterUvarMember(tsamp,                 REAL8, 's', OPTIONAL, "The sampling time (sec)");
-  XLALRegisterUvarMember(highpassf,             REAL8, 'p', OPTIONAL, "The high pass filter frequency");
+  XLALRegisterUvarMember(freqband,   	        REAL8, 'b', OPTIONAL, "The frequency band (Hz)");
+  XLALRegisterUvarMember(tsft,                    INT4, 't', OPTIONAL, "The length of SFTs (sec)");
+  XLALRegisterUvarMember(tsamp,           	REAL8, 's', OPTIONAL, "The sampling time (sec)");
+  XLALRegisterUvarMember(highpassf,           	REAL8, 'p', OPTIONAL, "The high pass filter frequency");
   XLALRegisterUvarMember(outSingleSFT,           BOOLEAN, 'S', OPTIONAL, "Write a single concatenated SFT file instead of individual files" );
-  XLALRegisterUvarMember(outNoiseStr,           BOOLEAN, 'N', OPTIONAL, "Output noise string in SFT comment" );
-  XLALRegisterUvarMember(amp_inj,               REAL8, 'I', OPTIONAL, "Fractional amplitude of injected signal");
-  XLALRegisterUvarMember(f_inj,                 REAL8, 'A', OPTIONAL, "frequency of injected signal");
-  XLALRegisterUvarMember(asini_inj,             REAL8, 'B', OPTIONAL, "projected semi-major axis of injected signal");
-  XLALRegisterUvarMember(tasc_inj,              REAL8, 'C', OPTIONAL, "time of ascension of injected signal");
-  XLALRegisterUvarMember(P_inj,                 REAL8, 'D', OPTIONAL, "orbital period of injected signal");
-  XLALRegisterUvarMember(phi_inj,               REAL8, 'E', OPTIONAL, "initial phase of injected signal");
+  XLALRegisterUvarMember(amp_inj,          	REAL8, 'I', OPTIONAL, "Fractional amplitude of injected signal");
+  XLALRegisterUvarMember(f_inj,            	REAL8, 'A', OPTIONAL, "frequency of injected signal");
+  XLALRegisterUvarMember(asini_inj,          	REAL8, 'B', OPTIONAL, "projected semi-major axis of injected signal");
+  XLALRegisterUvarMember(tasc_inj,          	REAL8, 'C', OPTIONAL, "time of ascension of injected signal");
+  XLALRegisterUvarMember(P_inj,           	REAL8, 'D', OPTIONAL, "orbital period of injected signal");
+  XLALRegisterUvarMember(phi_inj,          	REAL8, 'E', OPTIONAL, "initial phase of injected signal");
   XLALRegisterUvarMember(seed,                    INT4, 'r', OPTIONAL, "The random seed");
 
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;
-  if (XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList)) {
+  if (XLALUserVarReadAllInput(&should_exit, argc, argv)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput failed with error = %d\n",__func__,xlalErrno);
     return XLAL_EFAULT;
   }

@@ -176,14 +176,15 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
    }
 
    /* Try to determine a model-less likelihood, if such a thing makes sense */
-   if (runState->likelihood==&LALInferenceUndecomposedFreqDomainLogLikelihood || runState->likelihood==&LALInferenceMarginalisedPhaseLogLikelihood ){
+   if (runState->likelihood==&LALInferenceUndecomposedFreqDomainLogLikelihood){
 
                 nullLikelihood = LALInferenceNullLogLikelihood(runState->data);
 
     }
     else if (runState->likelihood==&LALInferenceFreqDomainStudentTLogLikelihood ||
        runState->likelihood==&LALInferenceMarginalisedTimeLogLikelihood ||
-       runState->likelihood==&LALInferenceMarginalisedTimePhaseLogLikelihood) {
+       runState->likelihood==&LALInferenceMarginalisedTimePhaseLogLikelihood ||
+       runState->likelihood==&LALInferenceMarginalisedPhaseLogLikelihood) {
 
        void *oldtemplate = runState->threads[0]->model->templt;
        if (runState->threads[0]->model->domain == LAL_SIM_DOMAIN_FREQUENCY) {
@@ -394,9 +395,6 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   if (marginalisationflags==MARGTIME || marginalisationflags==MARGTIMEPHI)
     margtime=1;
 
-  if(model->roq_flag && margtime) XLAL_ERROR_REAL8(XLAL_EINVAL,"ROQ does not support time marginalisation");
-
-  
   LALStatus status;
   memset(&status,0,sizeof(status));
 
@@ -584,7 +582,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     if(marginalisationflags==STUDENTT)
     {
       /* extract the element from the "df" vector that carries the current Ifo's name: */
-      CHAR df_variable_name[320];
+      CHAR df_variable_name[64];
       snprintf(df_variable_name,sizeof(df_variable_name),"df_%s",dataPtr->name);
       if(LALInferenceCheckVariable(currentParams,df_variable_name)){
         printf("Found variable %s\n",df_variable_name);
@@ -680,13 +678,13 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
         }
         /*constant*/
         if (constantcal_active){
-          char CA_A[320];
+          char CA_A[10]="";
           sprintf(CA_A,"%s_%s","calamp",dataPtr->name);
           if (LALInferenceCheckVariable(currentParams, CA_A))
             calamp=(*(REAL8*) LALInferenceGetVariable(currentParams, CA_A));
           else
             calamp=0.0;
-          char CP_A[320];
+          char CP_A[10]="";
           sprintf(CP_A,"%s_%s","calpha",dataPtr->name);
           if (LALInferenceCheckVariable(currentParams, CP_A))
             calpha=(*(REAL8*) LALInferenceGetVariable(currentParams, CP_A));
@@ -805,32 +803,11 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 	}
 
 	d_inner_h += creal(this_ifo_d_inner_h);
-        // D gets the factor of 2 inside nullloglikelihood
-        // R gets a factor of 2 later, before entering the Bessel function
-	S += 0.5*this_ifo_s;
-        D += -dataPtr->nullloglikelihood;
-        Rcplx += 0.5*this_ifo_d_inner_h;
-
-        
+	S += this_ifo_s;
 	model->ifo_loglikelihoods[ifo] = creal(this_ifo_d_inner_h) - (0.5*this_ifo_s) + dataPtr->nullloglikelihood;
-    
-    switch(marginalisationflags)
-    {
-    case GAUSSIAN:
-    case STUDENTT:
-      loglikelihood += model->ifo_loglikelihoods[ifo];
-      break;
-    case MARGTIME:
-    case MARGPHI:
-    case MARGTIMEPHI:
-      /* These are non-separable likelihoods, so single IFO log(L)
-	 doesn't make sense. */
-      model->ifo_loglikelihoods[ifo] = 0.0;
-      break;
-    default:
-      break;
-    }
-    
+
+	loglikelihood += model->ifo_loglikelihoods[ifo];
+
 	char varname[VARNAME_MAX];
     	sprintf(varname,"%s_optimal_snr",dataPtr->name);
     	REAL8 this_ifo_snr = sqrt(this_ifo_s);
@@ -1065,6 +1042,10 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 			//fprintf(stdout, "WARNING: sampling a bad region of parameter space; skipping\n");
 		}
         }
+
+	return(loglikelihood); /* The ROQ isn't compatible with the stuff below, so we can just exit here */
+
+
 
   }
 
