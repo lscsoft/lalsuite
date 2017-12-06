@@ -114,7 +114,7 @@ int main( void ){
   fclose(fp);
 
   /* read in par file */
-  pars = XLALReadTEMPOParFile( PARFILE );
+  pars = XLALReadTEMPOParFileNew( PARFILE );
 
   /* check read-in parameters against originals */
   for ( i=0; i<NUMPARS; i++ ){
@@ -194,8 +194,9 @@ int main( void ){
     }
     /* value is a string */
     else if ( PulsarGetParamType( pars, p[i].name ) == PULSARTYPE_string_t ) {
-      const CHAR *out = PulsarGetStringParam(pars, p[i].name);
+      CHAR *out = XLALStringDuplicate(PulsarGetStringParam(pars, p[i].name));
       sprintf(outval, "%s", out);
+      XLALFree(out);
     }
 
     /* compare returned value with input value */

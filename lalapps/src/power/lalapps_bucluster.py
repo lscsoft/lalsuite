@@ -36,7 +36,7 @@ from glue.ligolw import lsctables
 from glue.ligolw import utils
 from glue.ligolw.utils import process as ligolw_process
 from lalburst import git_version
-from lalburst import bucluster
+from lalburst import ligolw_bucluster
 
 
 lsctables.use_in(ligolw.LIGOLWContentHandler)
@@ -110,22 +110,22 @@ options, filenames = parse_command_line()
 
 
 prefunc = {
-	"excesspower": bucluster.ExcessPowerPreFunc
+	"excesspower": ligolw_bucluster.ExcessPowerPreFunc
 }[options.cluster_algorithm]
 postfunc = {
-	"excesspower": bucluster.ExcessPowerPostFunc
+	"excesspower": ligolw_bucluster.ExcessPowerPostFunc
 }[options.cluster_algorithm]
 testfunc = {
-	"excesspower": bucluster.ExcessPowerTestFunc
+	"excesspower": ligolw_bucluster.ExcessPowerTestFunc
 }[options.cluster_algorithm]
 sortfunc = {
-	"excesspower": bucluster.ExcessPowerSortFunc
+	"excesspower": ligolw_bucluster.ExcessPowerSortFunc
 }[options.cluster_algorithm]
 bailoutfunc = {
-	"excesspower": bucluster.ExcessPowerBailoutFunc
+	"excesspower": ligolw_bucluster.ExcessPowerBailoutFunc
 }[options.cluster_algorithm]
 clusterfunc = {
-	"excesspower": bucluster.ExcessPowerClusterFunc
+	"excesspower": ligolw_bucluster.ExcessPowerClusterFunc
 }[options.cluster_algorithm]
 
 
@@ -139,19 +139,19 @@ for filename in filenames:
 
 	# FIXME:  don't do this:  fix lalapps_power's output
 	if options.cluster_algorithm in ("excesspower",):
-		bucluster.add_ms_columns(xmldoc)
+		ligolw_bucluster.add_ms_columns(xmldoc)
 
 	#
 	# Add process information
 	#
 
-	process = bucluster.append_process(xmldoc, cluster_algorithm = options.cluster_algorithm, comment = options.comment)
+	process = ligolw_bucluster.append_process(xmldoc, cluster_algorithm = options.cluster_algorithm, comment = options.comment)
 
 	#
 	# Call clustering library
 	#
 
-	xmldoc, changed = bucluster.bucluster(
+	xmldoc, changed = ligolw_bucluster.ligolw_bucluster(
 		xmldoc,
 		program = options.program,
 		process = process,

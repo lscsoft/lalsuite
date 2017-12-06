@@ -1,18 +1,6 @@
 #ifndef _LALSimIMRCalculateSpinPrecEOBHCoeffs_C
 #define _LALSimIMRCalculateSpinPrecEOBHCoeffs_C
-
-/**
- * \author Craig Robinson, Yi Pan, Stas Babak, Prayush Kumar, Andrea Taracchini
- *
- * This function was originally part of LALSimIMRSpinEOBHamiltonianPrec.c,
- * and moved here during the development of v3_opt.  Function relocation
- * implemented by R. Devine, Z. Etienne, D. Buch, and T. Knowles.  In comments,
- * R.H. refers to Roland Hass.
- */
-
-#include <stdio.h>
-#include <math.h>
-#include <LALSimIMRSpinEOB.h>
+#include "LALSimIMRSpinEOBHamiltonian.h"
 
 /*------------------------------------------------------------------------------------------
  *
@@ -73,7 +61,7 @@ static int XLALSimIMRCalculateSpinPrecEOBHCoeffs(
         (int) SpinAlignedEOBversion, (int) coeffs->SpinAlignedEOBversion );
     fflush( NULL );
   }
-  /* Constants are fits taken from PRD 86, 024011 (2012) Eq. 37 */
+  /* Constants are fits taken from Eq. 37 */
   static const REAL8 c0  = 1.4467; /* needed to get the correct self-force results */
   static const REAL8 c1  = -1.7152360250654402;
   static const REAL8 c2  = -3.246255899738242;
@@ -101,9 +89,22 @@ static int XLALSimIMRCalculateSpinPrecEOBHCoeffs(
   coeffs->KK = KK = ifthenelse(1.5-SpinAlignedEOBversion,
                                c0 + c1*eta + c2*eta*eta,
                                c20 + c21*eta + c22*(eta*eta) + c23*(eta*eta)*eta);
+    REAL8 chi = a / (1. - 2. * eta);
+    REAL8 eta2 = eta * eta, eta3 = eta2 * eta;
+    REAL8 chi2 = chi * chi, chi3 = chi2 * chi;
+    if (SpinAlignedEOBversion == 4)
+    {
+        coeffs->KK = KK =
+        coeff00K + coeff01K * chi + coeff02K * chi2 + coeff03K * chi3 +
+        coeff10K * eta + coeff11K * eta * chi + coeff12K * eta * chi2 +
+        coeff13K * eta * chi3 + coeff20K * eta2 + coeff21K * eta2 * chi +
+        coeff22K * eta2 * chi2 + coeff23K * eta2 * chi3 + coeff30K * eta3 +
+        coeff31K * eta3 * chi + coeff32K * eta3 * chi2 + coeff33K * eta3 * chi3;
+        //      printf("KK %.16e\n", KK);
+    }
   m1PlusEtaKK = -1. + eta*KK;
   const REAL8 invm1PlusEtaKK = 1./m1PlusEtaKK;
-  /* Eqs. 5.77 - 5.81 of PRD 81, 084024 (2010) */
+  /* Eqs. 5.77 - 5.81 of BB1 */
   coeffs->k0 = k0 = KK*(m1PlusEtaKK - 1.);
   coeffs->k1 = k1 = - 2.*(k0 + KK)*m1PlusEtaKK;
   k1p2= k1*k1;
@@ -122,13 +123,42 @@ static int XLALSimIMRCalculateSpinPrecEOBHCoeffs(
                      + ((k1p2*k1p2)-4.*(k1p2*k2)+2.*k2*k2+4.*k1*k3-4.*k4)*0.5*invm1PlusEtaKK+(256./5.)*ln2)
                     );
   coeffs->k5l= k5l= ifthenelsezero(SpinAlignedEOBversion-1.5, (m1PlusEtaKK*m1PlusEtaKK) * (64./5.));
+  if ( SpinAlignedEOBversion == 4 ) {
+      coeffs->k5 = k5 =  m1PlusEtaKK*m1PlusEtaKK
+                                       * (-4237./60.+128./5.*LAL_GAMMA+2275.*LAL_PI*LAL_PI/512.
+                                          - third*(a*a)*(k1p3-3.*(k1*k2)+3.*k3)
+                                          - ((k1p3*k1p2)-5.*(k1p3*k2)+5.*k1*k2*k2+5.*k1p2*k3-5.*k2*k3-5.*k1*k4)*fifth*invm1PlusEtaKK*invm1PlusEtaKK
+                                          + ((k1p2*k1p2)-4.*(k1p2*k2)+2.*k2*k2+4.*k1*k3-4.*k4)*0.5*invm1PlusEtaKK+(256./5.)*ln2  + (41. * LAL_PI * LAL_PI / 32. -
+                                                                                                                                    221. / 6.) * eta );
+      coeffs->k5l= k5l= (m1PlusEtaKK*m1PlusEtaKK) * (64./5.);
+   }
+
 
   /* Now calibrated parameters for spin models */
   coeffs->d1 = ifthenelsezero(1.5-SpinAlignedEOBversion, -69.5);
   coeffs->d1v2 = ifthenelsezero(SpinAlignedEOBversion-1.5, -74.71 - 156.*eta + 627.5*eta*eta);
   coeffs->dheffSS = ifthenelsezero(1.5-SpinAlignedEOBversion, 2.75);
   coeffs->dheffSSv2 = ifthenelsezero(SpinAlignedEOBversion-1.5, 8.127 - 154.2*eta + 830.8*eta*eta);
-
+  if (SpinAlignedEOBversion==4) {
+      coeffs->d1 = 0.;
+      coeffs->dheffSS = 0.;
+      // dSO
+      coeffs->d1v2 =
+      coeff00dSO + coeff01dSO * chi + coeff02dSO * chi2 + coeff03dSO * chi3 +
+      coeff10dSO * eta + coeff11dSO * eta * chi + coeff12dSO * eta * chi2 +
+      coeff13dSO * eta * chi3 + coeff20dSO * eta2 + coeff21dSO * eta2 * chi +
+      coeff22dSO * eta2 * chi2 + coeff23dSO * eta2 * chi3 + coeff30dSO * eta3 +
+      coeff31dSO * eta3 * chi + coeff32dSO * eta3 * chi2 + coeff33dSO * eta3 * chi3;
+      
+      // dSS
+      coeffs->dheffSSv2 =
+      coeff00dSS + coeff01dSS * chi + coeff02dSS * chi2 + coeff03dSS * chi3 +
+      coeff10dSS * eta + coeff11dSS * eta * chi + coeff12dSS * eta * chi2 +
+      coeff13dSS * eta * chi3 + coeff20dSS * eta2 + coeff21dSS * eta2 * chi +
+      coeff22dSS * eta2 * chi2 + coeff23dSS * eta2 * chi3 + coeff30dSS * eta3 +
+      coeff31dSS * eta3 * chi + coeff32dSS * eta3 * chi2 + coeff33dSS * eta3 * chi3;
+      //          printf("dSO %.16e, dSS %.16e\n", coeffs->d1v2,coeffs->dheffSSv2);
+  }
   return XLAL_SUCCESS;
 }
 

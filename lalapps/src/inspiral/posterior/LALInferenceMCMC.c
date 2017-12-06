@@ -205,7 +205,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
         neff = atoi(ppt->value);
 
     /* Print sample every skip iterations */
-    INT4 skip = 2000;
+    INT4 skip = 500;
     ppt = LALInferenceGetProcParamVal(command_line, "--skip");
     if (ppt)
         skip = atoi(ppt->value);
@@ -316,10 +316,6 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
 
     /* Establish the random state across MPI threads */
     init_mpi_randomstate(runState);
-
-    /* Add common fixed parameters to output */
-
-    LALInferenceAddPTMCMCMetaInfo(runState);
 
     /* Give a new set of proposal args to each thread */
     for (i=0; i<runState->nthreads; i++) {
@@ -698,8 +694,8 @@ int main(int argc, char *argv[]){
       LALInferenceInjectInspiralSignal(data, runState->commandLine);
     }
 
-    /* Simulate calibration errors.
-     * NOTE: this must be called after both ReadData and (if relevant)
+    /* Simulate calibration errors. 
+     * NOTE: this must be called after both ReadData and (if relevant) 
      * injectInspiralTD/FD are called! */
     LALInferenceApplyCalibrationErrors(data, procParams);
 

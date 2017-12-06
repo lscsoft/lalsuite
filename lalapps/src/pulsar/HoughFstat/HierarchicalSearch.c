@@ -197,7 +197,7 @@ typedef struct {
   UINT4 blocksRngMed;              /**< blocksize for running median noise floor estimation */
   UINT4 Dterms;                    /**< size of Dirichlet kernel for Fstat calculation */
   REAL8 dopplerMax;                /**< extra sft wings for doppler motion */
-  int SSBprec;                     /**< SSB transform precision */
+  SSBprecision SSBprec;            /**< SSB transform precision */
   REAL8 dFreqStack;		   /**< frequency resolution of Fstat calculation */
 } UsefulStageVariables;
 
@@ -424,6 +424,7 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_DataFiles1 = NULL;
   CHAR *uvar_skyGridFile=NULL;
   INT4 uvar_numSkyPartitions = 0;
+  BOOLEAN uvar_version = 0;
   INT4 uvar_partitionIndex = 0;
 
   BOOLEAN uvar_correctFreqs = TRUE;
@@ -493,7 +494,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* developer user variables */
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_blocksRngMed,     "blocksRngMed",     INT4,    0,   DEVELOPER, "RngMed block size") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvarAuxData( &uvar_SSBprecision, "SSBprecision", UserEnum, &SSBprecisionChoices, 0, DEVELOPER, "Precision for SSB transform") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_SSBprecision,     "SSBprecision",     INT4,    0,   DEVELOPER, "Precision for SSB transform.") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_printMaps,        "printMaps",        BOOLEAN, 0,   DEVELOPER, "Print Hough maps -- for debugging") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_printGrid,        "printGrid",        BOOLEAN, 0,   DEVELOPER, "Print Hough fine grid -- for debugging") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_dumpLUT,          "dumpLUT",          BOOLEAN, 0,   DEVELOPER, "Print Hough look-up-tables -- for debugging") == XLAL_SUCCESS, XLAL_EFUNC);
@@ -506,10 +507,11 @@ int MAIN( int argc, char *argv[]) {
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_df1dotRes,        "df1dotRes",        REAL8,   0,   DEVELOPER, "Resolution in residual fdot values (default=df1dot/nf1dotRes)") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_correctFreqs,     "correctFreqs",     BOOLEAN, 0,   DEVELOPER, "Correct candidate output frequencies (ie fix bug #147). Allows reproducing 'historical results'") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_gpu_device,       "device",           INT4,    0,   DEVELOPER, "GPU device id" ) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN ( XLALRegisterNamedUvar( &uvar_version,         "version",          BOOLEAN, 'V', SPECIAL,   "Output version information") == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     return(1);
 
@@ -521,6 +523,12 @@ int MAIN( int argc, char *argv[]) {
     return( HIERARCHICALSEARCH_EBAD );
   }
   LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s", VCSInfoString );
+
+  if ( uvar_version )
+    {
+      printf ("%s\n", VCSInfoString );
+      return (0);
+    }
 
   if(uvar_gpu_device >= 0)
     gpu_device_id = uvar_gpu_device;
@@ -3270,7 +3278,7 @@ void ComputeStackNoiseWeights( LALStatus *status,
 
   for (k=0; k<nStacks; k++) {
 
-    MultiNoiseWeights *multNoiseWts = XLALGetFstatInputNoiseWeights(Fstat_in_vec->data[k]);
+    const MultiNoiseWeights *multNoiseWts = XLALGetFstatInputNoiseWeights(Fstat_in_vec->data[k]);
     ASSERT ( multNoiseWts != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
 
     numifo = multNoiseWts->length;
@@ -3291,7 +3299,6 @@ void ComputeStackNoiseWeights( LALStatus *status,
 
     }/* loop over ifos in stack */
 
-  XLALDestroyMultiNoiseWeights ( multNoiseWts );
   } /* loop over stacks*/
 
 
@@ -3334,7 +3341,7 @@ void ComputeStackNoiseAndAMWeights( LALStatus *status,
 
   for (iStack=0; iStack<nStacks; iStack++) {
 
-    MultiNoiseWeights *multNoiseWts = XLALGetFstatInputNoiseWeights(Fstat_in_vec->data[iStack]);
+    const MultiNoiseWeights *multNoiseWts = XLALGetFstatInputNoiseWeights(Fstat_in_vec->data[iStack]);
     ASSERT ( multNoiseWts != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
 
     const MultiDetectorStateSeries *multDetStates = XLALGetFstatInputDetectorStates(Fstat_in_vec->data[iStack]);
@@ -3369,7 +3376,6 @@ void ComputeStackNoiseAndAMWeights( LALStatus *status,
     }/* loop over ifos in stack */
 
     XLALDestroyMultiAMCoeffs ( multiAMcoef );
-    XLALDestroyMultiNoiseWeights ( multNoiseWts );
 
   } /* loop over stacks*/
 

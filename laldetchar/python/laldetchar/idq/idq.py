@@ -14,8 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## \defgroup laldetchar_py_idq_idq iDQ Functions
-## \ingroup laldetchar_py_idq
+## \addtogroup laldetchar_py_idq
 ## Synopsis
 # ~~~
 # from laldetchar.idq import idq
@@ -2067,7 +2066,7 @@ def build_auxmvc_vectors( trigger_dict, main_channel, time_window, signif_thresh
     trigger_dict.include([[gps_start_time, gps_end_time]], channels=[main_channel])
 
     # keep only triggers from the science segments if given........
-    if science_segments!=None:
+    if science_segments:
         science_segments = event.andsegments([[gps_start_time - time_window, gps_end_time + time_window]], science_segments)
         trigger_dict.include(science_segments)
 
@@ -2087,7 +2086,7 @@ def build_auxmvc_vectors( trigger_dict, main_channel, time_window, signif_thresh
         if clean_samples_rate:
 
             # generate random times for clean samples
-            if science_segments!=None:
+            if science_segments:
                 clean_times = event.randomrate(clean_samples_rate,
                         event.andsegments([[gps_start_time
                         + time_window, gps_end_time - time_window]],
@@ -2418,7 +2417,7 @@ def timeseries_to_segments(t, ts, thr):
 
         edges = numpy.array(edges)
         segs = numpy.transpose( numpy.array([t[edges[:-1:2]], t[edges[1::2]]]) )
-        return [list(seg) for seg in segs], numpy.min(ts[truth])
+        return segs, numpy.min(ts[truth])
     else:
         return [], None
 

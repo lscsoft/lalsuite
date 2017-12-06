@@ -9,6 +9,7 @@
 //#include <lal/TimeSeries.h>
 //#include <lal/Units.h>
 
+#include <LALSimBlackHoleRingdown.h>
 #include <LALSimBlackHoleRingdownPrec.h>
 
 /* note: use double-precision variables, but demand single-precision accuracy */
@@ -42,6 +43,8 @@ INT4 XLALSimIMREOBFinalMassSpinPrec(
   Approximant     approximant /**<< The waveform approximant being used */
 )
 {
+  REAL8  LISCO,csi,aeff, a_tot_prec,fitpart,alpha,beta,gamma,epsilon_beta,epsilon_gamma;
+  UNUSED REAL8 epsilon_alpha;
   static const REAL8 root9ovr8minus1 = -0.057190958417936644;
   static const REAL8 root12          = 3.4641016151377544;
 
@@ -130,6 +133,7 @@ INT4 XLALSimIMREOBFinalMassSpinPrec(
       //  Precessing spins (Barausse & Rezzolla 2009, Eqs (6-10))
       chi1   = sqrt( spin1[0]*spin1[0] + spin1[1]*spin1[1] + spin1[2]*spin1[2] );
       chi2   = sqrt( spin2[0]*spin2[0] + spin2[1]*spin2[1] + spin2[2]*spin2[2] );
+      
       if ( chi1 < 1.0e-15 )
       { theta1 = 0.; }
       else
@@ -140,7 +144,40 @@ INT4 XLALSimIMREOBFinalMassSpinPrec(
       { theta2 = acos( spin2[2] / chi2 ); }
       phi1   = atan2( spin1[1], spin1[0] );
       phi2   = atan2( spin2[1], spin2[0] );
-      if ( mass1 > mass2 )
+
+
+      alpha = 0.0;
+      beta = 0.0;
+      gamma = 0.0;
+
+      if (chi1>1e-6){
+	beta=acos(spin1[2]/chi1);
+      }
+
+      if (chi2>1e-6){
+        gamma=acos(spin2[2]/chi2);
+      }
+
+     
+          REAL8 tmp = spin1[0]*spin2[0]+spin1[1]*spin2[1]+spin1[2]*spin2[2];
+          tmp /= chi1;
+          tmp /= chi2;
+
+      if (chi1>1e-4 && chi2>1e-4){
+          if ( tmp > 1. && tmp <= 1. + 1e-4) tmp = 1.;
+          if ( tmp < -1. && tmp >= -1. - 1e-4) tmp = -1.;
+        alpha=acos(tmp);
+      }
+
+
+      epsilon_alpha=0.0;
+      epsilon_beta=0.024;
+      epsilon_gamma=0.024;
+      
+      beta = beta+epsilon_beta*sin(beta);
+      gamma = gamma+epsilon_gamma*sin(gamma);
+      
+      if ( mass1 >= mass2 )
       {
         q = mass2 / mass1;
       }
@@ -164,11 +201,38 @@ INT4 XLALSimIMREOBFinalMassSpinPrec(
       eISCO = sqrt( 1. - 2./(3.*rISCO) );
       *finalMass = 1. - ( (1.-eISCO)*eta
                  + 16.*eta*eta*( 0.00258 - 0.0773/(1./((1.+1/q/q)/(1.+1/q)/(1.+1/q))*atl-1.6939) - 0.25*(1.-eISCO)) );
-      *finalSpin = tmpVar + tmpVar*eta*( s9*eta*tmpVar*tmpVar + s8*eta*eta*tmpVar + s7*eta*tmpVar
-                 + s6*tmpVar*tmpVar + s4v2*tmpVar + s5v2*eta + t0v2)
-                 + eta*( 2.*sqrt(3.) + t2v2*eta + t3v2 *eta*eta );
+      q=1./q;
+      csi = 0.474046;
+      a_tot_prec=(chi1*cos(beta)+chi2*cos(gamma)*q*q)/((1.0+q)*(1.0+q));
+      aeff=a_tot_prec+csi*eta*(chi1*cos(beta)+chi2*cos(gamma));
+      rISCO = XLALSimRadiusKerrISCO( aeff );
+      eISCO = XLALSimEnergyKerrISCO( rISCO );
+      LISCO = XLALSimAngMomKerrISCO( rISCO );
+      /* The k00, k01, ... coefficients are defined in LALSimBlackHoleRingdown.h */
+      REAL8 eta4 = eta * eta3;
+
+      if (fabs(aeff) > 0.) {
+	REAL8 aeff2 = aeff * aeff;
+  REAL8 aeff3 = aeff * aeff2;
+  REAL8 aeff4 = aeff * aeff3;
+  fitpart = k00 * eta + k01 * aeff * eta + k02 * aeff2 * eta  + k03 * aeff3 * eta + k04 * aeff4 * eta +
+    k10 * eta2 + k11 * aeff * eta2 + k12 * aeff2 * eta2 + k13 * aeff3 * eta2 +  k14 * aeff4 * eta2 +
+    k20 * eta3 + k21 * aeff * eta3 + k22 * aeff2 * eta3 +  k23 * aeff3 * eta3 + k24 * aeff4 * eta3 +
+    k30 * eta4 +  k31 * aeff * eta4 + k32 * aeff2 * eta4 + k33 * aeff3 * eta4 + k34 * aeff4 * eta4;
 
 
+      } else {
+        fitpart = k00 * eta + k10 * eta2 + k20 * eta3 + k30 * eta4;
+
+      }
+      REAL8 ell_norm=fabs(LISCO-2*a_tot_prec*(eISCO-1.0)+fitpart);
+      REAL8 prefactor=1./((1+q)*(1+q));
+      *finalSpin=prefactor*sqrt(pow(chi1,2)+pow(chi2,2)*pow(q,4)+2*chi1*chi2*pow(q,2)*cos(alpha)+
+				 2*(chi1*cos(beta)+chi2*pow(q,2)*cos(gamma))*ell_norm*q+pow(ell_norm,2)*pow(q,2));
+
+			if (*finalSpin>1){
+				*finalSpin=1-1e-6;
+			}
 
       /* Stas: Below is original Rez.-Bar. implementation,
       Above I use the aligned case fit because spin1 and spin2

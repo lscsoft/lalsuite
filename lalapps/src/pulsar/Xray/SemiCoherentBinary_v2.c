@@ -63,7 +63,6 @@
 #include <lal/LogPrintf.h>
 #include <lal/VectorMath.h>
 #include <lalapps.h>
-#include <LALAppsVCSInfo.h>
 
 #include "SemiCoherent.h"
 
@@ -89,14 +88,12 @@ typedef struct {
   INT4 seed;                        /**< fix the random number generator seed */
   REAL8 coverage;                   /**< random template bank coverage */
   INT4 blocksize;                  /**< the running median blocksize */
-  INT4 ndim;                        /**< the number of spin derivitive dimensions required (default: automatic) */
-  REAL8 bins_factor;                /**< the percentage of bins to add to each side of the fft for safety */
   INT4 ntoplist;                   /**< the number of results to record */
-  REAL8 tsft;                       /**< the length of the input sfts */
+  INT4 tsft;                       /**< the length of the input sfts */
   CHAR *comment;
   CHAR *tempdir;                    /**< a temporary directory for keeping the results */
-  BOOLEAN with_chi2_renorm;         /**< switch on chi^2 renormalisation */
   BOOLEAN with_xbins;               /**< enable fast summing of extra bins */
+  BOOLEAN version;                  /**< output version-info */
 } UserInput_t;
 
 typedef struct {
@@ -114,7 +111,7 @@ extern int vrbflg;              /**< defined in lalapps.c */
 /* define functions */
 int main(int argc,char *argv[]);
 int XLALReadUserVars(int argc,char *argv[],UserInput_t *uvar, CHAR **clargs);
-int XLALComputeSemiCoherentStat(FILE *fp,REAL4DemodulatedPowerVector *power,ParameterSpace *pspace,GridParametersVector *fgrid,GridParameters *bingrid,INT4 ntoplist,BOOLEAN with_chi2_renorm,BOOLEAN with_xbins);
+int XLALComputeSemiCoherentStat(FILE *fp,REAL4DemodulatedPowerVector *power,ParameterSpace *pspace,GridParametersVector *fgrid,GridParameters *bingrid,INT4 ntoplist,BOOLEAN with_xbins);
 int XLALDefineBinaryParameterSpace(REAL8Space **, LIGOTimeGPS, REAL8, UserInput_t *);
 int XLALOpenSemiCoherentResultsFile(FILE **,CHAR *,ParameterSpace *,CHAR *,UserInput_t *);
 int XLALtoplist(REAL4 x,Template *params,toplist *TL);
@@ -156,7 +153,7 @@ int main( int argc, char *argv[] )  {
     LogPrintf(LOG_CRITICAL,"%s : XLALReadUserVars() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_NORMAL,"%s : read in uservars\n",__func__);
+  LogPrintf(LOG_DEBUG,"%s : read in uservars\n",__func__);
 
   /* initialise sin-cosine lookup table */
   XLALSinCosLUTInit();
@@ -224,7 +221,7 @@ int main( int argc, char *argv[] )  {
     fmin_read = MINBAND*floor((uvar.freq - WINGS_FACTOR*uvar.freq*wings - (REAL8)uvar.blocksize/(REAL8)uvar.tsft)/MINBAND);
     fmax_read = MINBAND*ceil((uvar.freq + (REAL8)uvar.blocksize/(REAL8)uvar.tsft + uvar.freqband + WINGS_FACTOR*(uvar.freq + uvar.freqband)*wings)/MINBAND);
     fband_read = fmax_read - fmin_read;
-    LogPrintf(LOG_NORMAL,"%s : reading in SFT frequency band [%f -> %f]\n",__func__,fmin_read,fmax_read);
+    LogPrintf(LOG_DEBUG,"%s : reading in SFT frequency band [%f -> %f]\n",__func__,fmin_read,fmax_read);
   }
 
   /* initialise the random number generator */
@@ -238,18 +235,18 @@ int main( int argc, char *argv[] )  {
   /**********************************************************************************/
 
   /* load in the SFTs - also fill in the segment parameters structure */
-  if (XLALReadSFTs(&sftvec,uvar.sftbasename,fmin_read,fband_read,uvar.gpsstart,uvar.gpsend,uvar.tsft,uvar.bins_factor)) {
+  if (XLALReadSFTs(&sftvec,uvar.sftbasename,fmin_read,fband_read,uvar.gpsstart,uvar.gpsend,uvar.tsft)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALReadSFTs() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_NORMAL,"%s : read in SFTs\n",__func__);
+  LogPrintf(LOG_DEBUG,"%s : read in SFTs\n",__func__);
 
   /* define SFT length and the start and span of the observations plus the definitive segment time */
   pspace.tseg = 1.0/sftvec->data[0].deltaF;
   memcpy(&(pspace.epoch),&(sftvec->data[0].epoch),sizeof(LIGOTimeGPS));
   pspace.span = XLALGPSDiff(&(sftvec->data[sftvec->length-1].epoch),&(sftvec->data[0].epoch)) + pspace.tseg;
-  LogPrintf(LOG_NORMAL,"%s : SFT length = %f seconds\n",__func__,pspace.tseg);
-  LogPrintf(LOG_NORMAL,"%s : entire dataset starts at GPS time %d contains %d SFTS and spans %.0f seconds\n",__func__,pspace.epoch.gpsSeconds,sftvec->length,pspace.span);
+  LogPrintf(LOG_DEBUG,"%s : SFT length = %f seconds\n",__func__,pspace.tseg);
+  LogPrintf(LOG_DEBUG,"%s : entire dataset starts at GPS time %d contains %d SFTS and spans %.0f seconds\n",__func__,pspace.epoch.gpsSeconds,sftvec->length,pspace.span);
 
   /**********************************************************************************/
   /* NORMALISE THE SFTS */
@@ -280,12 +277,12 @@ int main( int argc, char *argv[] )  {
     }
     XLALDestroyREAL8Vector(means);
   }
-  LogPrintf(LOG_NORMAL,"%s : normalised the SFTs\n",__func__);
+  LogPrintf(LOG_DEBUG,"%s : normalised the SFTs\n",__func__);
 
   /* for (i=0;i<sftvec->length;i++) {
     for (j=0;j<sftvec->data[i].data->length;j++) {
       if (isnan(crealf(sftvec->data[i].data->data[j]))||isinf(crealf(sftvec->data[i].data->data[j]))||isnan(cimagf(sftvec->data[i].data->data[j]))||isinf(cimagf(sftvec->data[i].data->data[j]))) {
-        LogPrintf(LOG_DEBUG,"SFT %d : %f %e %e\n",i,sftvec->data[i].f0 + j*sftvec->data[i].deltaF,crealf(sftvec->data[i].data->data[j]),cimagf(sftvec->data[i].data->data[j]));
+        fprintf(stdout,"SFT %d : %f %e %e\n",i,sftvec->data[i].f0 + j*sftvec->data[i].deltaF,crealf(sftvec->data[i].data->data[j]),cimagf(sftvec->data[i].data->data[j]));
       }
     }
   } */
@@ -299,14 +296,14 @@ int main( int argc, char *argv[] )  {
     LogPrintf(LOG_CRITICAL,"%s : XLALDefineBinaryParameterSpace() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_NORMAL,"%s : defined binary parameter prior space\n",__func__);
+  LogPrintf(LOG_DEBUG,"%s : defined binary parameter prior space\n",__func__);
 
   /**********************************************************************************/
   /* COMPUTE THE COARSE GRID ON FREQUENCY DERIVITIVES */
   /**********************************************************************************/
 
   /* compute the grid parameters for all SFTs */
-  if (XLALComputeFreqGridParamsVector(&freqgridparams,pspace.space,sftvec,uvar.mismatch,&uvar.ndim,uvar.bins_factor)) {
+  if (XLALComputeFreqGridParamsVector(&freqgridparams,pspace.space,sftvec,uvar.mismatch)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALComputeFreqGridParams() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
@@ -320,7 +317,7 @@ int main( int argc, char *argv[] )  {
     LogPrintf(LOG_CRITICAL,"%s : XLALComputeBinaryGridParams() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_NORMAL,"%s : computed the binary parameter space grid\n",__func__);
+  LogPrintf(LOG_DEBUG,"%s : computed the binary parameter space grid\n",__func__);
 
   /**********************************************************************************/
   /* CONVERT ALL SFTS TO DOWNSAMPLED TIMESERIES */
@@ -331,7 +328,7 @@ int main( int argc, char *argv[] )  {
     LogPrintf(LOG_CRITICAL,"%s : XLALSFTVectorToCOMPLEX8TimeSeriesArray() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_NORMAL,"%s : converted SFTs to downsampled timeseries\n",__func__);
+  LogPrintf(LOG_DEBUG,"%s : converted SFTs to downsampled timeseries\n",__func__);
 
   /**********************************************************************************/
   /* OPEN INTERMEDIATE RESULTS FILE */
@@ -341,7 +338,7 @@ int main( int argc, char *argv[] )  {
     LogPrintf(LOG_CRITICAL,"%s : XLALOpenCoherentResultsFile() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_NORMAL,"%s : opened coherent results file.\n",__func__); */
+  LogPrintf(LOG_DEBUG,"%s : opened coherent results file.\n",__func__); */
 
    /**********************************************************************************/
   /* COMPUTE THE STATISTICS ON THE COARSE GRID */
@@ -353,7 +350,7 @@ int main( int argc, char *argv[] )  {
     return 1;
   }
   /* fclose(cfp); */
-  LogPrintf(LOG_NORMAL,"%s : computed the demodulated power\n",__func__);
+  LogPrintf(LOG_DEBUG,"%s : computed the demodulated power\n",__func__);
 
   /**********************************************************************************/
   /* OPEN RESULTS FILE */
@@ -363,19 +360,19 @@ int main( int argc, char *argv[] )  {
     LogPrintf(LOG_CRITICAL,"%s : XLALOutputBayesResults() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
-  LogPrintf(LOG_NORMAL,"%s : output results to file.\n",__func__);
+  LogPrintf(LOG_DEBUG,"%s : output results to file.\n",__func__);
 
    /**********************************************************************************/
   /* COMPUTE THE STATISTICS ON THE FINE GRID */
   /**********************************************************************************/
 
   /* compute the semi-coherent detection statistic on the fine grid */
-  if (XLALComputeSemiCoherentStat(sfp,dmpower,&pspace,freqgridparams,bingridparams,uvar.ntoplist,uvar.with_chi2_renorm,uvar.with_xbins)) {
+  if (XLALComputeSemiCoherentStat(sfp,dmpower,&pspace,freqgridparams,bingridparams,uvar.ntoplist,uvar.with_xbins)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALComputeSemiCoherentStat() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
   fclose(sfp);
-  LogPrintf(LOG_NORMAL,"%s : computed the semi-coherent statistic\n",__func__);
+  LogPrintf(LOG_DEBUG,"%s : computed the semi-coherent statistic\n",__func__);
 
   /**********************************************************************************/
   /* CLEAN UP */
@@ -434,7 +431,7 @@ int main( int argc, char *argv[] )  {
   LALCheckMemoryLeaks();
   LogPrintf(LOG_DEBUG,"%s : successfully checked memory leaks.\n",__func__);
 
-  LogPrintf(LOG_NORMAL,"%s : successfully completed.\n",__func__);
+  LogPrintf(LOG_DEBUG,"%s : successfully completed.\n",__func__);
   return 0;
 
 } /* end of main */
@@ -449,6 +446,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
                      CHAR **clargs        /**< [out] the command line args string */
                      )
 {
+  CHAR *version_string;
   INT4 i;
 
   /* initialise user variables */
@@ -460,12 +458,9 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->ntoplist = 10;
   uvar->coverage = -1;
   uvar->blocksize = 100;
-  uvar->ndim = -1;
-  uvar->bins_factor = BINS_FACTOR;
   uvar->tsft = 256;
   uvar->seed = 1;
   uvar->tempdir = NULL;
-  uvar->with_chi2_renorm = 1;
   uvar->with_xbins = 1;
 
   /* initialise all parameter space ranges to zero */
@@ -493,23 +488,32 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   XLALRegisterUvarMember(mismatch,              REAL8, 'm', OPTIONAL, "The grid mismatch (0->1)");
   XLALRegisterUvarMember(coverage,              REAL8, 'c', OPTIONAL, "The random template coverage (0->1)");
   XLALRegisterUvarMember(blocksize,             INT4, 'r', OPTIONAL, "The running median block size");
-  XLALRegisterUvarMember(ndim,                  INT4, 'n', OPTIONAL, "The number of spin derivitive dimensions required (default: automatic)");
-  XLALRegisterUvarMember(bins_factor,           REAL8, 'R', OPTIONAL, "The percentage of bins to add to each side of the fft for safety");
-  XLALRegisterUvarMember(tsft,                   REAL8, 'S', OPTIONAL, "The length of the input SFTs in seconds");
+  XLALRegisterUvarMember(tsft,                    INT4, 'S', OPTIONAL, "The length of the input SFTs in seconds");
   XLALRegisterUvarMember(ntoplist,                INT4, 'x', OPTIONAL, "output the top N results");
   XLALRegisterUvarMember(seed,                    INT4, 'X', OPTIONAL, "The random number seed (0 = clock)");
   XLALRegisterUvarMember(gpsstart,                INT4, 's', OPTIONAL, "The minimum start time (GPS sec)");
   XLALRegisterUvarMember(gpsend,                INT4, 'e', OPTIONAL, "The maximum end time (GPS sec)");
-  XLALRegisterUvarMember(with_chi2_renorm,       BOOLEAN, 0, OPTIONAL,  "Switch on chi^2 renormalisation");
   XLALRegisterUvarMember(with_xbins,             BOOLEAN, 0, DEVELOPER,  "Enable fast summing of extra bins");
+  XLALRegisterUvarMember(version,                BOOLEAN, 'V', SPECIAL,  "Output code version");
 
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;
-  if (XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList)) {
+  if (XLALUserVarReadAllInput(&should_exit, argc, argv)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput failed with error = %d\n",__func__,xlalErrno);
     return XLAL_EFAULT;
   }
   if (should_exit) exit(1);
+
+  if ((version_string = XLALGetVersionString(0)) == NULL) {
+    XLALPrintError("XLALGetVersionString(0) failed.\n");
+    exit(1);
+  }
+
+  if (uvar->version) {
+    printf("%s\n",version_string);
+    exit(0);
+  }
+  XLALFree(version_string);
 
   /* put clargs into string */
   *clargs = XLALCalloc(1,sizeof(CHAR));
@@ -540,7 +544,6 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
                                 GridParametersVector *fgrid,		/**< UNDOCUMENTED */
                                 GridParameters *bingrid,                 /**< [in] the grid parameters */
                                 INT4 ntoplist,		/**< UNDOCUMENTED */
-                                BOOLEAN with_chi2_renorm,                /**< switch on chi^2 renormalisation */
                                 BOOLEAN with_xbins                       /**< enable fast summing of extra bins */
                                 )
 {
@@ -580,7 +583,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   const REAL8 dfreq = fgrid->segment[0]->grid[0].delta;
   for (i=0;i<power->length;i++) {
     if ( dfreq != fgrid->segment[i]->grid[0].delta ) {
-      LogPrintf(LOG_CRITICAL,"%s : inconsistent frequency spacing in segment %u, %.10g != %.10g\n",__func__,i,fgrid->segment[i]->grid[0].delta,dfreq);
+      LogPrintf(LOG_CRITICAL,"%s : inconsistent number of frequency bins %.10g != %.10g\n",__func__,fgrid->segment[i]->grid[0].delta,dfreq);
       XLAL_ERROR(XLAL_EINVAL);
     }
   }
@@ -589,7 +592,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   for (i=0;i<power->length;i++) {
     GridParameters *fdotgrid = fgrid->segment[i];
     if ( fdotgrid->prod[0] != 1 ) {
-      LogPrintf(LOG_CRITICAL,"%s : coherent grid step in segment %u does not equal 1\n",__func__,i);
+      LogPrintf(LOG_CRITICAL,"%s : coherent grid step does not equal 1\n",__func__);
       XLAL_ERROR(XLAL_EINVAL);
     }
   }
@@ -635,23 +638,20 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   LogPrintf(LOG_DEBUG,"%s : computed the threshold as %f\n",__func__,thr); */
 
   int (*getnext)(Template **temp,GridParameters *gridparams, ParameterSpace *space,void *);
-  UINT8 newmax = bingrid->max;
+  INT4 newmax = bingrid->max;
   ParameterSpace *temppspace = NULL;
-  if (bingrid->coverage>0) {
+  if (bingrid->Nr>0) {
     getnext = &XLALGetNextRandomBinaryTemplate;
     newmax = bingrid->Nr;
     temppspace = pspace;
   }
   else getnext = &XLALGetNextTemplate;
 
+  INT4 max_tot_xbins = 0;
+
   REAL4 *logLratiosumvec = NULL;
 
   /* single loop over binary templates */
-  double fine_deriv_t = 0;
-  UINT8 num_fine_deriv = 0;
-  double fine_sum_t = 0;
-  UINT8 num_fine_sum = 0;
-  INT4 max_tot_xbins = 0;
   while (getnext(&bintemp,bingrid,temppspace,r)) {
 
     const REAL8 asini = bintemp->x[1];           /* define asini */
@@ -661,12 +661,10 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
        while keeping correct derivative bins (minus 10% for safety) */
     const INT4 xbins = !with_xbins ? 0 :
       (INT4) floor( 0.45 * dfreq / ( asini * omega ) );
-    XLAL_CHECK( xbins >= 0, XLAL_EDOM, "Invalid xbins=%d\n", xbins );
 
     INT4 left_xbins = xbins, right_xbins = xbins;
 
     /** loop over segments **********************************************************************************/
-    const double fine_deriv_t0 = XLALGetCPUTime();
     for (i=0;i<power->length;i++) {
 
       REAL8 tmid = XLALGPSGetREAL8(&(power->segment[i]->epoch)) + 0.5*pspace->tseg;
@@ -679,24 +677,13 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
       /* find ndim-D indices corresponding to the spin derivitive values for the segment power */
       for (j=0;j<fdots[i].ndim;j++) {
         fdots[i].idx[j] = lround( (fdots[i].x[j] - fdotgrid->grid[j].min)*fdotgrid->grid[j].oneoverdelta );
-
-        /* check that index is in range */
-        if ( fdots[i].idx[j] < 0 || fdots[i].idx[j] >= (INT4)fdotgrid->grid[j].length ) {
-          LogPrintf(LOG_CRITICAL,"%s: stepped outside grid in segment %d, nu=%g, asini=%g, tasc=%g, omega=%g, fdots[%d] = [%g <= %g <= %g, 0 <= %d < %d]\n", __func__, i, bintemp->x[0], bintemp->x[1], bintemp->x[2], bintemp->x[3], j, fdotgrid->grid[j].min, fdots[i].x[j], fdotgrid->grid[j].min + fdotgrid->grid[j].delta*fdotgrid->grid[j].length, fdots[i].idx[j], fdotgrid->grid[j].length);
-          XLAL_ERROR(XLAL_EDOM);
-        }
-
       }
 
       /* ensure number of extra frequency bins do not go out of range of coherent grids */
       left_xbins = GSL_MIN( left_xbins, (INT4)( fdots[i].idx[0] ) );
       right_xbins = GSL_MIN( right_xbins, (INT4)( fdotgrid->grid[0].length - fdots[i].idx[0] - 1 ) );
-      XLAL_CHECK( left_xbins >= 0, XLAL_EDOM, "Invalid left_xbins=%d\n", left_xbins );
-      XLAL_CHECK( right_xbins >= 0, XLAL_EDOM, "Invalid right_xbins=%d\n", right_xbins );
 
     } /* end loop over segments */
-    fine_deriv_t += XLALGetCPUTime() - fine_deriv_t0;
-    num_fine_deriv += power->length;
     /*************************************************************************************/
 
     const INT4 tot_xbins = 1 + left_xbins + right_xbins;
@@ -710,7 +697,6 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
     }
 
     /** loop over segments **********************************************************************************/
-    const double fine_sum_t0 = XLALGetCPUTime();
     for (i=0;i<power->length;i++) {
 
       REAL4DemodulatedPower *currentpower = power->segment[i];
@@ -730,8 +716,6 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
       }
 
     } /* end loop over segments */
-    fine_sum_t += XLALGetCPUTime() - fine_sum_t0;
-    num_fine_sum += ( power->length - 1 ) * tot_xbins;
     /*************************************************************************************/
 
     /* make it a true chi-squared variable */
@@ -762,18 +746,14 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
     /* output status to screen */
     if ( (bintemp->currentidx == 0) || (floor(100.0*(REAL8)bintemp->currentidx/(REAL8)newmax) > (REAL8)percent) ) {
       percent = (UINT4)floor(100*(REAL8)bintemp->currentidx/(REAL8)newmax);
-      LogPrintf(LOG_NORMAL,"%s : completed %d%% (%"LAL_UINT8_FORMAT"/%"LAL_UINT8_FORMAT")\n",__func__,percent,bintemp->currentidx,newmax);
+      LogPrintf(LOG_NORMAL,"%s : completed %d%% (%d/%d)\n",__func__,percent,bintemp->currentidx,newmax);
     }
 
     /* we've computed this number of extra templates */
     bintemp->currentidx += left_xbins + right_xbins;
 
   } /* end loop over templates */
-  LogPrintf(LOG_NORMAL,"%s : time to compute fine grid derivatives = %0.12e\n",__func__, fine_deriv_t);
-  LogPrintf(LOG_NORMAL,"%s : number of fine grid derivatives = %"LAL_UINT8_FORMAT"\n",__func__, num_fine_deriv);
-  LogPrintf(LOG_NORMAL,"%s : time to compute fine summations = %0.12e\n",__func__, fine_sum_t);
-  LogPrintf(LOG_NORMAL,"%s : number of fine grid summations = %"LAL_UINT8_FORMAT"\n",__func__, num_fine_sum);
-  LogPrintf(LOG_NORMAL,"%s : summed up to %d frequency bins at a time\n", __func__, max_tot_xbins);
+  LogPrintf( LOG_NORMAL, "%s : summed up to %d frequency bins at a time\n", __func__, max_tot_xbins );
   /*************************************************************************************/
 
   /* compute mean and variance of results */
@@ -781,10 +761,8 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   var = var/(REAL8)(Ntemp-1);
   var = (var - mean*mean);
 
-  if ( with_chi2_renorm ) {
-    /* modify toplist to have correct mean and variance */
-    for (i=0;i<(UINT4)TL.n;i++) TL.data[i] = (TL.data[i] - mean)*sqrt(4.0*power->length)/sqrt(var) + 2.0*power->length;
-  }
+  /* modify toplist to have correct mean and variance */
+  for (i=0;i<(UINT4)TL.n;i++) TL.data[i] = (TL.data[i] - mean)*sqrt(4.0*power->length)/sqrt(var) + 2.0*power->length;
 
   /* output toplist to file */
   for (i=0;i<(UINT4)TL.n;i++) {
@@ -920,7 +898,13 @@ int XLALOpenSemiCoherentResultsFile(FILE **fp,                  /**< [in] filepo
   }
 
   /* get GIT version information */
-  version_string = XLALVCSInfoString( lalAppsVCSInfoList, 0, "%% " );
+  {
+    CHAR *temp_version = XLALGetVersionString(0);
+    UINT4 n = strlen(temp_version);
+    version_string = XLALCalloc(n,sizeof(CHAR));
+    snprintf(version_string,n-1,"%s",temp_version);
+    XLALFree(temp_version);
+  }
 
   /* output header information */
   fprintf((*fp),"%s \n",version_string);
@@ -1099,11 +1083,11 @@ int XLALDefineBinaryParameterSpace(REAL8Space **space,                 /**< [out
   (*space)->data[3].span = (*space)->data[3].max - (*space)->data[3].min;
 
   /* output boundaries to screen */
-  LogPrintf(LOG_NORMAL,"%s : using flat priors on the following ranges\n",__func__);
-  LogPrintf(LOG_NORMAL,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[0].name,(*space)->data[0].min,(*space)->data[0].max);
-  LogPrintf(LOG_NORMAL,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[1].name,(*space)->data[1].min,(*space)->data[1].max);
-  LogPrintf(LOG_NORMAL,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[2].name,(*space)->data[2].min,(*space)->data[2].max);
-  LogPrintf(LOG_NORMAL,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[3].name,(*space)->data[3].min,(*space)->data[3].max);
+  LogPrintf(LOG_DEBUG,"%s : using flat priors on the following ranges\n",__func__);
+  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[0].name,(*space)->data[0].min,(*space)->data[0].max);
+  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[1].name,(*space)->data[1].min,(*space)->data[1].max);
+  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[2].name,(*space)->data[2].min,(*space)->data[2].max);
+  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[3].name,(*space)->data[3].min,(*space)->data[3].max);
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;

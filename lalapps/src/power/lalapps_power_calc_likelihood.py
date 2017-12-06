@@ -33,9 +33,10 @@ import sqlite3
 from glue.ligolw import dbtables
 from lal.utils import CacheEntry
 from lalburst import git_version
-from lalburst import burca_tailor
-from lalburst import calc_likelihood
+from lalburst import ligolw_burca_tailor
+from lalburst import ligolw_burca2
 from lalburst import SnglBurstUtils
+from pylal import snglcoinc
 from lalburst.SimBurstUtils import MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD
 
 
@@ -113,7 +114,7 @@ options, filenames = parse_command_line()
 
 
 def load_likelihood_data(filenames, verbose = False):
-	distributions, ignored = burca_tailor.EPGalacticCoreCoincParamsDistributions.from_filenames(filenames, u"lalapps_burca_tailor", verbose = verbose)
+	distributions, ignored = ligolw_burca_tailor.EPGalacticCoreCoincParamsDistributions.from_filenames(filenames, u"ligolw_burca_tailor", verbose = verbose)
 	distributions.finish()
 	return distributions
 
@@ -153,6 +154,7 @@ for n, filename in enumerate(filenames):
 		likelihood_files = options.likelihood_data
 	if likelihood_files != cached_likelihood_files:
 		distributions = load_likelihood_data(likelihood_files, verbose = options.verbose)
+		ln_likelihood_ratio = snglcoinc.LnLikelihoodRatio(distributions)
 		cached_likelihood_files = likelihood_files
 
 
@@ -161,7 +163,7 @@ for n, filename in enumerate(filenames):
 	#
 
 
-	calc_likelihood.ligolw_burca2(database, distributions, distributions.coinc_params, verbose = options.verbose, params_func_extra_args = (MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD))
+	ligolw_burca2.ligolw_burca2(database, ln_likelihood_ratio, distributions.coinc_params, verbose = options.verbose, params_func_extra_args = (MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD))
 
 
 	#

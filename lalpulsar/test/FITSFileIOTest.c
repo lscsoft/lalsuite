@@ -28,7 +28,6 @@
 
 #include <lal/FITSFileIO.h>
 #include <lal/LALPulsarVCSInfo.h>
-#include <lal/LALString.h>
 #include <lal/StringVector.h>
 #include <lal/Date.h>
 #include <lal/UserInput.h>
@@ -108,16 +107,13 @@ int main( int argc, char *argv[] )
     }
   }
 
-  // Create a dummy user enviroment and command line, for testing XLALFITSFileWriteUVarCmdLine()
+  // Create a dummy user enviroment, for testing XLALFITSFileWriteUVarCmdLine()
   struct uvar_type { INT4 dummy; } uvar_struct = { .dummy = 0 };
   struct uvar_type *const uvar = &uvar_struct;
   XLAL_CHECK_MAIN( XLALRegisterUvarMember( dummy, INT4, 0, OPTIONAL, "Dummy option" ) == XLAL_SUCCESS, XLAL_EFUNC );
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( argc > 0, XLAL_ESYS );
-  char *my_argv[] = { argv[0], XLALStringDuplicate( "--dummy=3" ) };
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, XLAL_NUM_ELEM( my_argv ), my_argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( !should_exit, XLAL_EFAILED );
-  XLALFree( my_argv[1] );
 
   // Write an example FITS file
   {
@@ -582,16 +578,6 @@ int main( int argc, char *argv[] )
     }
     fprintf( stderr, "PASSED: read and verified a GPS time\n" );
 
-    {
-      const struct { BOOLEAN exists; const CHAR *key; } keys[] = { { 1, "date-obs" }, { 1, "testdbl" }, { 0, "banana" }, { 1, "longstring" } };
-      for ( size_t i = 0; i < XLAL_NUM_ELEM( keys ); ++i ) {
-        BOOLEAN exists = 0;
-        XLAL_CHECK_MAIN( XLALFITSHeaderQueryKeyExists( file, keys[i].key, &exists ) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK_MAIN( exists == keys[i].exists, XLAL_EFAILED, "Failed to query key '%s': %i != %i", keys[i].key, exists, keys[i].exists );
-      }
-    }
-    fprintf( stderr, "PASSED: HDU key queries in read mode\n" );
-
     XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "table1" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array3" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array1" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -612,8 +598,3 @@ int main( int argc, char *argv[] )
 }
 
 #endif // !defined(HAVE_LIBCFITSIO)
-
-// Local Variables:
-// c-file-style: "linux"
-// c-basic-offset: 2
-// End:

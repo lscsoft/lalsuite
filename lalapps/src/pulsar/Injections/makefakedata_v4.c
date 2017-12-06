@@ -194,6 +194,8 @@ typedef struct
   BOOLEAN exactSignal;	/**< generate signal timeseries as exactly as possible (slow) */
   BOOLEAN lineFeature;	/**< generate a monochromatic line instead of a pulsar-signal */
 
+  BOOLEAN version;		/**< output version information */
+
   INT4 randSeed;		/**< allow user to specify random-number seed for reproducible noise-realizations */
 
   CHAR *parfile;             /** option .par file path */
@@ -201,7 +203,6 @@ typedef struct
   REAL8 transientStartTime;	/**< GPS start-time of transient window */
   REAL8 transientTauDays;	/**< time-scale in days of transient window */
 
-  REAL8 sourceDeltaT;   /**< source-frame sampling period. '0' implies previous internal defaults */
   // ---------- OBSOLETE & unsupported options [kept for error-reporting] ----------
   INT4 orbitTpSSBsec;
   INT4 orbitTpSSBnan;
@@ -271,8 +272,6 @@ main(int argc, char *argv[])
   params.orbit.asini               = GV.pulsar.Doppler.asini;
   params.orbit.ecc                 = GV.pulsar.Doppler.ecc;
   params.orbit.period              = GV.pulsar.Doppler.period;
-
-  params.sourceDeltaT              = uvar.sourceDeltaT;
 
   /* detector params */
   params.transfer = GV.transfer;	/* detector transfer function (NULL if not used) */
@@ -591,14 +590,21 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   cfg->VCSInfoString = XLALGetVersionString(0);
   XLAL_CHECK ( cfg->VCSInfoString != NULL, XLAL_EFUNC, "XLALGetVersionString(0) failed.\n" );
 
+  // version info was requested: output then exit
+  if ( uvar->version )
+    {
+      printf ("%s\n", cfg->VCSInfoString );
+      exit (0);
+    }
+
   BOOLEAN have_parfile = XLALUserVarWasSet (&uvar->parfile);
   BinaryPulsarParams pulparams;
 
   /* read in par file parameters if given */
    if (have_parfile)
      {
-       XLALReadTEMPOParFileOrig( &pulparams, uvar->parfile);
-       XLAL_CHECK ( xlalErrno == XLAL_SUCCESS, XLAL_EFUNC, "XLALReadTEMPOParFileOrig() failed for parfile = '%s', xlalErrno = %d\n", uvar->parfile, xlalErrno );
+       XLALReadTEMPOParFile( &pulparams, uvar->parfile);
+       XLAL_CHECK ( xlalErrno == XLAL_SUCCESS, XLAL_EFUNC, "XLALReadTEMPOParFile() failed for parfile = '%s', xlalErrno = %d\n", uvar->parfile, xlalErrno );
        XLAL_CHECK ( pulparams.f0 > 0, XLAL_EINVAL, "Invalid .par file values, need f0 > 0!\n" );
        XLAL_CHECK ( (pulparams.pepoch > 0) || (pulparams.posepoch > 0), XLAL_EINVAL, "Invalid .par file values, need PEPOCH or POSEPOCH!\n");
      }
@@ -752,14 +758,8 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       {
       case 3:
 	cfg->spindown->data[2] = uvar->f3dot;
-#if __GNUC__ >= 7
-	__attribute__ ((fallthrough));
-#endif
       case 2:
 	cfg->spindown->data[1] = uvar->f2dot;
-#if __GNUC__ >= 7
-	__attribute__ ((fallthrough));
-#endif
       case 1:
 	cfg->spindown->data[0] = uvar->f1dot;
 	break;
@@ -808,25 +808,36 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   /* ---------- for SFT output: calculate effective fmin and Band ---------- */
   if ( XLALUserVarWasSet( &uvar->outSFTbname ) )
     {
-      UINT4 firstBin, numBins;
-      /* calculate "effective" fmin from uvar->fmin:
+      UINT4 imin, imax;
+      volatile REAL8 dFreq = 1.0 / uvar->Tsft;
+      volatile REAL8 tmp;
+      REAL8 fMax, fMin_eff;
+
+      /* calculate "effective" fmin from uvar->fmin: following makefakedata_v2, we
        * make sure that fmin_eff * Tsft = integer, such that freqBinIndex corresponds
        * to a frequency-index of the non-heterodyned signal.
        */
+      tmp = uvar->fmin / dFreq;	/* NOTE: don't "simplify" this: we try to make sure
+				 * the result of this will be guaranteed to be IEEE-compliant,
+				 * and identical to other locations, such as in SFT-IO
+				 */
+      imin = (UINT4) floor( tmp );
+      fMin_eff = (REAL8)imin * dFreq;
 
-      XLAL_CHECK ( XLALFindCoveringSFTBins ( &firstBin, &numBins, uvar->fmin, uvar->Band, uvar->Tsft ) == XLAL_SUCCESS, XLAL_EFUNC );
+      fMax = uvar->fmin + uvar->Band;
+      tmp = fMax / dFreq;
+      imax = (UINT4) ceil (tmp);
 
-      /* Adjust Band correspondingly */
-      REAL8 dFreq = 1.0 / uvar->Tsft;
-      cfg->fmin_eff  = firstBin * dFreq;
-      cfg->fBand_eff = (numBins-1) * dFreq;
+      /* Increase Band correspondingly. */
+      cfg->fmin_eff = fMin_eff;
+      cfg->fBand_eff = 1.0 * (imax - imin) * dFreq;
 
       if ( lalDebugLevel )
 	{
 	  if ( fabs(cfg->fmin_eff - uvar->fmin)> LAL_REAL8_EPS
 	       || fabs(cfg->fBand_eff - uvar->Band) > LAL_REAL8_EPS )
 	    printf("\nWARNING: for SFT-creation we had to adjust (fmin,Band) to"
-		   " fmin_eff=%.15g and Band_eff=%.15g\n\n", cfg->fmin_eff, cfg->fBand_eff);
+		   " fmin_eff=%.20g and Band_eff=%.20g\n\n", cfg->fmin_eff, cfg->fBand_eff);
 	}
 
     } /* END: SFT-specific corrections to fmin and Band */
@@ -1138,7 +1149,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
   /* ----- set "pulsar reference time", i.e. SSB-time at which pulsar params are defined ---------- */
   if (XLALUserVarWasSet (&uvar->parfile)) {
-    XLALGPSSetREAL8( &(uvar->refTime), pulparams.pepoch ); /*XLALReadTEMPOParFileOrig converted pepoch to REAL8 */
+    XLALGPSSetREAL8( &(uvar->refTime), pulparams.pepoch ); /*XLALReadTEMPOParFile converted pepoch to REAL8 */
     XLALGPSSetREAL8( &(cfg->pulsar.Doppler.refTime), pulparams.pepoch);
   }
   else if (XLALUserVarWasSet(&uvar->refTime))
@@ -1279,6 +1290,8 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 
   XLALRegisterUvarMember(  lineFeature,          BOOLEAN, 0, OPTIONAL, "Generate a monochromatic 'line' of amplitude h0 and frequency 'Freq'}");
 
+  XLALRegisterUvarMember(  version,             BOOLEAN, 'V', SPECIAL, "Output version information");
+
   XLALRegisterUvarMember(parfile,             STRING, 'p', OPTIONAL, "Directory path for optional .par files");            /*registers .par file in mfd*/
 
   /* transient signal window properties (name, start, duration) */
@@ -1287,7 +1300,6 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember(  transientTauDays,     REAL8, 0, OPTIONAL, "Timescale 'tau' of transient signal window in days.");
 
   /* ----- 'expert-user/developer' and deprecated options ----- */
-  XLALRegisterUvarMember(  sourceDeltaT,        REAL8,  0, DEVELOPER, "Source-frame sampling period. '0' implies previous internal defaults" );
   XLALRegisterUvarMember(   generationMode,       INT4, 0,  DEVELOPER, "How to generate timeseries: 0=all-at-once (faster), 1=per-sft (slower)");
 
   XLALRegisterUvarMember(  hardwareTDD,         BOOLEAN, 'b', DEVELOPER, "Hardware injection: output TDD in binary format (implies generationMode=1)");
@@ -1314,7 +1326,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit )
     exit (1);
 

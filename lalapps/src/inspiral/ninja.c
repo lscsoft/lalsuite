@@ -39,7 +39,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/LALDatatypes.h>
-#include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/AVFactories.h>
@@ -201,7 +200,7 @@ int main(INT4 argc, CHAR *argv[])
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN(XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     exit(1);
 
@@ -353,7 +352,6 @@ int main(INT4 argc, CHAR *argv[])
 
 
   /* and finally the simInspiralTable itself */
-  XLALSimInspiralAssignIDs(injections.simInspiralTable, 0, 0);
   if (injections.simInspiralTable)
   {
     LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlfp, sim_inspiral_table),
@@ -375,7 +373,7 @@ int main(INT4 argc, CHAR *argv[])
   {
     this_inj = injections.simInspiralTable;
     injections.simInspiralTable = injections.simInspiralTable->next;
-    XLALFreeSimInspiral(&this_inj);
+    LALFree(this_inj);
   }
 
 #if 0

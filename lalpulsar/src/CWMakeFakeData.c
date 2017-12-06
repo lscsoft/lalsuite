@@ -43,8 +43,6 @@
 #include <lal/LFTandTSutils.h>
 #include <fftw3.h>
 #include <lal/FFTWMutex.h>
-#include <lal/ExtrapolatePulsarSpins.h>
-#include <lal/ConfigFile.h>
 
 // ---------- local defines
 
@@ -58,7 +56,6 @@ const REAL8 eps = 10 * LAL_REAL8_EPS;
 // ---------- local prototypes
 static UINT4 gcd (UINT4 numer, UINT4 denom);
 int XLALcorrect_phase ( SFTtype *sft, LIGOTimeGPS tHeterodyne );
-int XLALCheckConfigFileWasFullyParsed ( const char *fname, const LALParsedDataFile *cfgdata );
 
 // ==================== FUNCTION DEFINITIONS ====================
 
@@ -186,7 +183,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
   REAL8 Tsft = timestamps->deltaT;
 
   // if SFT output requested: need *effective* fMin and Band consistent with SFT bins
-  if ( SFTvect != NULL )
+  if ( SFTvect )
     {
       UINT4 firstBinEff, numBinsEff;
       XLAL_CHECK ( XLALFindCoveringSFTBins ( &firstBinEff, &numBinsEff, fMin, fBand, Tsft ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -216,7 +213,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
   UINT4 n1_fSamp;
   XLAL_CHECK ( XLALFindSmallestValidSamplingRate ( &n1_fSamp, n0_fSamp, timestamps ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  if ( (SFTvect != NULL) && (n1_fSamp != n0_fSamp) )
+  if ( n1_fSamp != n0_fSamp )
     {
       REAL8 fSamp1 = n1_fSamp / Tsft;	// increased sampling rate to fit all gaps
       XLALPrintWarning ( "GAPS: Initial SFT sampling frequency fSamp0= %d/%.0f = %g had to be increased to fSamp1 = %d/%.0f = %g\n",
@@ -226,28 +223,12 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
     } // if higher effective sampling rate required
 
   // ----- start-time and duration -----
-  LIGOTimeGPS XLAL_INIT_DECL(firstGPS);
-  LIGOTimeGPS XLAL_INIT_DECL(lastGPS);
-  REAL8 duration;
-  // NOTE: use time-interval of timeseries (if given) otherwise timestamps (must be subset of timeseries)
-  if ( dataParams->inputMultiTS != NULL )
-    {
-      const REAL8TimeSeries *ts = dataParams->inputMultiTS->data[detectorIndex];
-      XLAL_CHECK ( ts != NULL, XLAL_EINVAL );
-      firstGPS = ts->epoch;
-      duration = ts->data->length * ts->deltaT;
-      lastGPS = firstGPS;
-      XLALGPSAdd ( &lastGPS, duration );
-    }
-  else // use input timestamps
-    {
-      firstGPS = timestamps->data[0];
-      lastGPS = timestamps->data [ timestamps->length - 1 ];
-      XLALGPSAdd( &lastGPS, Tsft );
-      duration = XLALGPSDiff ( &lastGPS, &firstGPS );
-    }
+  LIGOTimeGPS firstGPS = timestamps->data[0];
   REAL8 firstGPS_REAL8 = XLALGPSGetREAL8 ( &firstGPS );
-  REAL8 lastGPS_REAL8  = XLALGPSGetREAL8 ( &lastGPS );
+  LIGOTimeGPS lastGPS  = timestamps->data [ timestamps->length - 1 ];
+  XLALGPSAdd( &lastGPS, Tsft );
+  REAL8 lastGPS_REAL8 = XLALGPSGetREAL8 ( &lastGPS );
+  REAL8 duration = XLALGPSDiff ( &lastGPS, &firstGPS );
 
   // start with an empty output time-series
   REAL4TimeSeries *Tseries_sum;
@@ -293,24 +274,12 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
       } else {
         signalEndGPS.gpsSeconds = t1;
       }
-
-      REAL8 fCoverMin, fCoverMax;
-      const PulsarSpins *fkdot = &(pulsarParams->Doppler.fkdot);
-      PulsarSpinRange XLAL_INIT_DECL ( spinRange );
-      spinRange.refTime = pulsarParams->Doppler.refTime;
-      memcpy ( spinRange.fkdot, fkdot, sizeof(spinRange.fkdot) );
-      XLAL_INIT_MEM ( spinRange.fkdotBand );
-
-      XLAL_CHECK ( XLALCWSignalCoveringBand ( &fCoverMin, &fCoverMax, &signalStartGPS, &signalEndGPS, &spinRange, pulsarParams->Doppler.asini, pulsarParams->Doppler.period, pulsarParams->Doppler.ecc ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK ( (fCoverMin >= fMin) && (fCoverMax < fMin + fBand), XLAL_EINVAL, "Error: injection signal %d:'%s' needs frequency band [%f,%f]Hz, injecting into [%f,%f]Hz\n",
-                   iInj, pulsarParams->name, fCoverMin, fCoverMax, fMin, fMin + fBand );
-
       REAL8 signalDuration = XLALGPSDiff ( &signalEndGPS, &signalStartGPS );
       XLAL_CHECK ( signalDuration >= 0, XLAL_EFAILED, "Something went wrong, got negative signal duration = %g\n", signalDuration );
       if ( signalDuration > 0 )	// only need to do sth if transient-window had finite overlap with output TS
         {
           REAL4TimeSeries *Tseries_i = NULL;
-          XLAL_CHECK ( (Tseries_i = XLALGenerateCWSignalTS ( pulsarParams, site, signalStartGPS, signalDuration, fSamp, fMin, edat, dataParams->sourceDeltaT )) != NULL, XLAL_EFUNC );
+          XLAL_CHECK ( (Tseries_i = XLALGenerateCWSignalTS ( pulsarParams, site, signalStartGPS, signalDuration, fSamp, fMin, edat )) != NULL, XLAL_EFUNC );
 
           XLAL_CHECK ( (Tseries_sum = XLALAddREAL4TimeSeries ( Tseries_sum, Tseries_i )) != NULL, XLAL_EFUNC );
           XLALDestroyREAL4TimeSeries ( Tseries_i );
@@ -382,8 +351,7 @@ XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams,	///< input CW pulsar-
                          REAL8 duration,			///< time-series duration to generate
                          REAL8 fSamp,				///< sampling frequency
                          REAL8 fHet,				///< heterodyning frequency
-                         const EphemerisData *edat,		///< ephemeris data
-                         REAL8 sourceDeltaT                     ///< source-frame sampling period (optional: 0 == previous internal defaults)
+                         const EphemerisData *edat		///< ephemeris data
                          )
 {
   XLAL_CHECK_NULL ( pulsarParams != NULL, XLAL_EINVAL );
@@ -435,7 +403,6 @@ XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams,	///< input CW pulsar-
   params.transfer                  = NULL;
   params.ephemerides               = edat;
   params.fHeterodyne               = fHet;
-  params.sourceDeltaT              = sourceDeltaT;
 
   // detector-specific settings
   params.startTimeGPS              = startTime;
@@ -929,7 +896,7 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
   if ( have_orbitasini || have_orbitEcc || have_orbitPeriod || have_orbitArgp || have_orbitTp )
     {
       XLAL_CHECK ( orbitasini >= 0, XLAL_EDOM );
-      XLAL_CHECK ( (orbitasini == 0) || ( have_orbitPeriod && (orbitPeriod > 0) && have_orbitTp ), XLAL_EINVAL, "If orbitasini>0 then we also need 'orbitPeriod>0' and 'orbitTp'\n" );
+      XLAL_CHECK ( (orbitasini == 0) || ( have_orbitEcc && have_orbitPeriod && have_orbitArgp && have_orbitTp ), XLAL_EINVAL );
       XLAL_CHECK ( (orbitEcc >= 0) && (orbitEcc <= 1), XLAL_EDOM );
 
       /* fill in orbital parameter structure */
@@ -1019,40 +986,11 @@ XLALPulsarParamsFromFile ( const char *fname, 			///< [in] 'CWsources' config fi
     } // for i < numPulsars
 
   XLALDestroyStringVector ( sections );
-
-  XLAL_CHECK_NULL ( XLALCheckConfigFileWasFullyParsed( fname, cfgdata ) == XLAL_SUCCESS, XLAL_EINVAL );
   XLALDestroyParsedDataFile ( cfgdata );
 
   return sources;
 
 } // XLALPulsarParamsFromFile()
-
-
-// internal helper function: check that config-file was fully parsed (no leftover un-parsed lines),
-// throw error if not and list unparsed entries
-int
-XLALCheckConfigFileWasFullyParsed ( const char *fname, const LALParsedDataFile *cfgdata )
-{
-  XLAL_CHECK ( cfgdata != NULL, XLAL_EINVAL );
-
-  UINT4Vector *n_unread = XLALConfigFileGetUnreadEntries ( cfgdata );
-  XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC );
-
-  if ( n_unread != NULL )
-    {
-      XLALPrintError ( "ERROR: Pulsar params config file '%s' contained '%d' unknown entries:\n", fname, n_unread->length );
-      for ( UINT4 i = 0; i < n_unread->length; i ++ )
-        {
-          XLALPrintError ( "%s'%s'", i > 0 ? ", " : "", cfgdata->lines->tokens[ n_unread->data[i] ] );
-        }
-      XLALPrintError ( "\n" );
-      XLAL_ERROR ( XLAL_EINVAL );
-    }
-
-  return XLAL_SUCCESS;
-
-} // XLALCheckConfigFileWasFullyParsed()
-
 
 /**
  * Function to determine the PulsarParamsVector input from a user-input defining CW sources.
@@ -1110,8 +1048,6 @@ XLALPulsarParamsFromUserInput ( const LALStringVector *UserInput,	///< [in] user
 
           XLAL_CHECK_NULL ( XLALReadPulsarParams ( &addSource->data[0], cfgdata, NULL, refTimeDef ) == XLAL_SUCCESS, XLAL_EFUNC );
           XLAL_CHECK_NULL ( (addSource->data[0].name = XLALStringDuplicate ( "direct-string-input" )) != NULL, XLAL_EFUNC );
-
-          XLAL_CHECK_NULL ( XLALCheckConfigFileWasFullyParsed( "{command-line}", cfgdata ) == XLAL_SUCCESS, XLAL_EINVAL );
           XLALDestroyParsedDataFile ( cfgdata );
 
           XLAL_CHECK_NULL ( (allSources = XLALPulsarParamsVectorAppend ( allSources, addSource )) != NULL, XLAL_EFUNC );

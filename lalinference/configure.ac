@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALInference],[1.9.4.1],[lal-discuss@ligo.org])
+AC_INIT([LALInference],[1.8.2.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALInferenceConfig.h])
 AC_CONFIG_SRCDIR([src/LALInference.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -18,22 +18,18 @@ AC_CONFIG_FILES([ \
   python/lalinference/Makefile \
   python/lalinference/__init__.py \
   python/lalinference/bayestar/Makefile \
-  python/lalinference/imrtgr/Makefile \
   python/lalinference/io/Makefile \
-  python/lalinference/io/events/Makefile \
+  python/lalinference/rapid_pe/Makefile \
+  python/lalinference/imrtgr/Makefile \
+  python/lalinference/tiger/Makefile \
   python/lalinference/plot/Makefile \
   python/lalinference/popprior/Makefile \
-  python/lalinference/rapid_pe/Makefile \
-  python/lalinference/tiger/Makefile \
   src/LALInferenceVCSInfo.c \
   src/LALInferenceVCSInfo.h \
   src/Makefile \
   src/version.c \
   swig/Makefile \
   test/Makefile \
-  test/baseline/Makefile \
-  test/data/Makefile \
-  test/data/gstlal_reference_psd/Makefile
 ])
 AM_INIT_AUTOMAKE([ \
   1.11 \
@@ -47,15 +43,15 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_GLUE_VERSION="1.54.1"
-MIN_LAL_VERSION="6.18.0"
-MIN_LALMETAIO_VERSION="1.3.1"
-MIN_LALFRAME_VERSION="1.4.3"
-MIN_LALSIMULATION_VERSION="1.7.0"
-MIN_LALINSPIRAL_VERSION="1.7.7"
-MIN_LALPULSAR_VERSION="1.16.0"
-MIN_LALBURST_VERSION="1.4.4"
-MIN_LALXML_VERSION="1.2.4"
+MIN_GLUE_VERSION="1.49.1"
+MIN_LAL_VERSION="6.17.0"
+MIN_LALMETAIO_VERSION="1.3.0"
+MIN_LALFRAME_VERSION="1.4.2"
+MIN_LALSIMULATION_VERSION="1.6.1"
+MIN_LALINSPIRAL_VERSION="1.7.6"
+MIN_LALPULSAR_VERSION="1.15.0"
+MIN_LALBURST_VERSION="1.4.3"
+MIN_LALXML_VERSION="1.2.3"
 AC_SUBST([MIN_GLUE_VERSION])
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALMETAIO_VERSION])
@@ -87,9 +83,9 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[14])
+AC_SUBST([LIBCURRENT],[12])
 AC_SUBST([LIBREVISION],[0])
-AC_SUBST([LIBAGE],[1])
+AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # nightly build

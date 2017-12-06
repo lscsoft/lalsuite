@@ -32,12 +32,14 @@ import sqlite3
 import sys
 
 
+from lal.utils import CacheEntry
+
+
 from glue import segments
 from glue.ligolw import dbtables
 from glue.ligolw import utils as ligolw_utils
-from lal import rate
-from lal.utils import CacheEntry
 from lalburst import git_version
+from pylal import rate
 from lalburst import SimBurstUtils
 from lalburst import SnglBurstUtils
 
@@ -216,7 +218,7 @@ class RecoveredTimeOffset(object):
 	class Data(object):
 		def __init__(self, binning):
 			self.found = 0
-			self.offsets = rate.BinnedDensity(binning)
+			self.offsets = rate.BinnedArray(binning)
 
 	def __init__(self, interval, width):
 		# 21 bins per filter width
@@ -254,7 +256,7 @@ FROM
 
 			data.found += 1
 			try:
-				data.offsets.count[float(burst_peak - sim_peak),] += 1.0
+				data.offsets[float(burst_peak - sim_peak),] += 1.0
 			except IndexError:
 				# outside plot range
 				pass
@@ -265,8 +267,9 @@ FROM
 			axes.semilogy()
 			axes.set_title("Trigger Peak Time - Injection Peak Time in %s\n(%d Found Injections)" % (instrument, data.found))
 			# 21 bins per filter width
-			rate.filter_array(data.offsets.array, rate.gaussian_window(21))
-			axes.plot(data.offsets.centres()[0], data.offsets.at_centres(), "k")
+			filter = rate.gaussian_window(21)
+			rate.to_moving_mean_density(data.offsets, filter)
+			axes.plot(data.offsets.centres()[0], data.offsets.array, "k")
 			#axes.legend(["%s residuals" % instrument, "SNR-weighted mean of residuals in all instruments"], loc = "lower right")
 			yield fig
 

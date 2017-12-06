@@ -97,7 +97,7 @@ static REAL8 XLALSpinPrecHcapNumDerivWRTParam(
 )
 {
 	int		debugPK = 0;
-	static const REAL8 STEP_SIZE = 2.0e-4;
+	static const REAL8 STEP_SIZE = 1.0e-4;
 
     /** lMax: l index up to which h_{lm} modes are included in the computation of the GW enegy flux: see Eq. in 13 in PRD 86,  024011 (2012) */
     static const INT4 lMax = 8;
@@ -468,9 +468,10 @@ static REAL8 XLALSpinPrecHcapNumDerivWRTParam(
 		tplspin = 0.0;
 		break;
 	case 2:
+    case 4:
         /* See below Eq. 4 of PRD 89, 061502(R) (2014)*/
 		tplspin = (1. - 2. * eta) * chiS + (mass1 - mass2) / (mass1 + mass2) * chiA;
-		break;
+        break;
 	default:
 		XLALPrintError("XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1 and v2 are available.\n", __func__);
 		XLAL_ERROR(XLAL_EINVAL);
@@ -710,7 +711,7 @@ XLALSpinPrecHcapNumDerivWRTParam(
 			     SpinEOBParams * funcParams	/**<< EOB Parameters */
 )
 {
-	static const REAL8 STEP_SIZE = 2.0e-3;
+	static const REAL8 STEP_SIZE = 1.0e-3;
 
 	HcapDerivParams	params;
 

@@ -117,11 +117,11 @@ XLALSimIMREOBCalcSpinPrecFacWaveformCoefficients(
 //        double chi = (chiS + chiA * dM / (1. - 2. * eta));
 //        coeffs->delta22v6 = eta*(1./4.*(1. - 1080.*chi - sqrt((1. - 1080.*chi)*(1. - 1080*chi) + 8.*(13.5 +270.*chi +13.5*chi*chi))));
         }
-    if (SpinAlignedEOBversion == 3 /*&& chiS + chiA * dM / (1. - 2. * eta) > 0.*/) {
-//        		coeffs->delta22v6 = -540. * eta * (chiS + chiA * dM / (1. - 2. * eta));
-        double chi = (chiS + chiA * dM / (1. - 2. * eta));
-        coeffs->delta22v6 = eta*(1./4.*(1. - 1080.*chi - sqrt((1. - 1080.*chi)*(1. - 1080*chi) + 8.*(13.5 +270.*chi +13.5*chi*chi))));
-    }
+//    if (SpinAlignedEOBversion == 3 /*&& chiS + chiA * dM / (1. - 2. * eta) > 0.*/) {
+////        		coeffs->delta22v6 = -540. * eta * (chiS + chiA * dM / (1. - 2. * eta));
+//        double chi = (chiS + chiA * dM / (1. - 2. * eta));
+//        coeffs->delta22v6 = eta*(1./4.*(1. - 1080.*chi - sqrt((1. - 1080.*chi)*(1. - 1080*chi) + 8.*(13.5 +270.*chi +13.5*chi*chi))));
+//    }
 	coeffs->rho22v2 = -43. / 42. + (55. * eta) / 84.;
 	coeffs->rho22v3 = (-2. * (chiS + chiA * dM - chiS * eta)) / 3.;
 	switch (SpinAlignedEOBversion) {
@@ -143,11 +143,25 @@ XLALSimIMREOBCalcSpinPrecFacWaveformCoefficients(
 		break;
 	}
 	coeffs->rho22v5 = (-34. * a) / 21.;
+    if (SpinAlignedEOBversion == 3)
+    {
+        coeffs->rho22v5 =
+        (-34. / 21. + 49. * eta / 18. + 209. * eta2 / 126.) * chiS +
+        (-34. / 21. - 19. * eta / 42.) * dM * chiA;
+    }
 	coeffs->rho22v6 = 1556919113. / 122245200. + (89. * a2) / 252. - (48993925. * eta) / 9779616.
 		- (6292061. * eta2) / 3259872. + (10620745. * eta3) / 39118464.
 		+ (41. * eta * LAL_PI * LAL_PI) / 192.;
 	coeffs->rho22v6l = -428. / 105.;
 	coeffs->rho22v7 = (18733. * a) / 15876. + a * a2 / 3.;
+    if (SpinAlignedEOBversion == 3)
+    {
+        coeffs->rho22v7 =
+        a3 / 3. + chiA * dM * (18733. / 15876. + (50140. * eta) / 3969. +
+                               (97865. * eta2) / 63504.) +
+        chiS * (18733. / 15876. + (74749. * eta) / 5292. -
+                (245717. * eta2) / 63504. + (50803. * eta3) / 63504.);
+    }
 	switch (SpinAlignedEOBversion) {
 	case 1:
 		coeffs->rho22v8 = eta * (-5.6 - 117.6 * eta) - 387216563023. / 160190110080. + (18353. * a2) / 21168. - a2 * a2 / 8.;
@@ -291,8 +305,7 @@ XLALSimIMREOBCalcSpinPrecFacWaveformCoefficients(
 	coeffs->delta32vh9 = -9112. / 405. + (208. * LAL_PI * LAL_PI) / 63.;
 
 	coeffs->rho32v = (4. * chiS * eta) / (-3. * m1Plus3eta);
-    /** TODO The term proportional to eta^2 a^2 in coeffs->rho32v2 is wrong, but it was used in the calibration of SEOBNRv2 */
-	coeffs->rho32v2 = (-4. * a2 * eta2) / (9. * m1Plus3eta2) + (328. - 1115. * eta
+	coeffs->rho32v2 = (328. - 1115. * eta
 				       + 320. * eta2) / (270. * m1Plus3eta);
 	//coeffs->rho32v3 = (2. * (45. * a * m1Plus3eta3
 	//     - a * eta * (328. - 2099. * eta + 5. * (733. + 20. * a2) * eta2

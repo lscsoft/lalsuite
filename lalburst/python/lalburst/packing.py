@@ -29,9 +29,12 @@ This module provides bin packing utilities.
 """
 
 
+from . import git_version
+
+
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from git_version import date as __date__
-from git_version import version as __version__
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
 
 
 #

@@ -1,9 +1,8 @@
-lalinspiral (1.7.7-1) unstable; urgency=low
+lalinspiral (1.7.6.1-1) UNRELEASED; urgency=medium
 
-  * LALInspiral 1.7.7
-  * O2 release
+  * Back to development
 
- -- Adam Mercer <adam.mercer@ligo.org>  Tue, 07 Feb 2017 23:42:36 -0600
+ -- Leo Singer <leo@lalsuitedev>  Thu, 13 Oct 2016 20:04:05 -0400
 
 lalinspiral (1.7.6-1) unstable; urgency=low
 

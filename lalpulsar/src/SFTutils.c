@@ -49,10 +49,6 @@
 static REAL8 fudge_up   = 1 + 10 * LAL_REAL8_EPS;	// about ~1 + 2e-15
 static REAL8 fudge_down = 1 - 10 * LAL_REAL8_EPS;	// about ~1 - 2e-15
 
-// XLALReadSegmentsFromFile(): applications which still must support
-// the deprecated 4-column format should set this variable to non-zero
-int XLALReadSegmentsFromFile_support_4column_format = 0;
-
 /*---------- internal prototypes ----------*/
 REAL8 TSFTfromDFreq ( REAL8 dFreq );
 int compareSFTdesc(const void *ptr1, const void *ptr2);     // defined in SFTfileIO.c
@@ -383,7 +379,7 @@ XLALMakeTimestamps ( LIGOTimeGPS tStart,	/**< GPS start-time */
   // now we might be covering the end-time several times, if using overlapping SFTs, so
   // let's trim this back down so that end-time is covered exactly once
   UINT4 numSFTs = numSFTsMax;
-  while ( (numSFTs >= 2) && ( (numSFTs - 2) * Tstep + Tsft >= Tspan) ) {
+  while ( (numSFTs >= 2) && ( (numSFTs - 1) * Tstep + Tsft > Tspan) ) {
     numSFTs --;
   }
 
@@ -515,69 +511,32 @@ XLALExtractMultiTimestampsFromSFTs ( const MultiSFTVector *multiSFTs )
 
 
 /**
- * Extract timestamps-vector of *unique* timestamps from the given SFTCatalog
- *
- * NOTE: when dealing with catalogs of frequency-slided SFTs, each timestamp will appear in the
- * catalog multiple times, depending on how many frequency slices have been read in.
- * In such cases this function will return the list of *unique* timestamps.
- *
- * NOTE 2: This function will also enfore the multiplicity of each timestamp to be the
- * same through the whole catalog, corresponding to the case of 'frequency-sliced' SFTs,
- * while non-constant multiplicities would indicate a potential problem somewhere.
+ * Extract timstamps-vector from the given SFTVector
  */
 LIGOTimeGPSVector *
 XLALTimestampsFromSFTCatalog ( const SFTCatalog *catalog )		/**< [in] input SFT-catalog  */
 {
-  // check input consistency
+  /* check input consistency */
   XLAL_CHECK_NULL ( catalog != NULL, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( catalog->length > 0, XLAL_EINVAL );
 
-  UINT4 numEntries = catalog->length;
+  UINT4 numSFTs = catalog->length;
 
-  // create output vector, assuming maximal length, realloc at the end
+  /* create output vector */
   LIGOTimeGPSVector *ret;
-  XLAL_CHECK_NULL ( ( ret = XLALCreateTimestampVector ( numEntries )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( ( ret = XLALCreateTimestampVector ( numSFTs )) != NULL, XLAL_EINVAL, "Failed to XLALCreateTimestampVector ( %d )\n", numSFTs );
 
   REAL8 Tsft0 = 1.0 / catalog->data[0].header.deltaF;
-  if ( fabs ( (Tsft0 - round(Tsft0)) ) / Tsft0 < 10 * LAL_REAL8_EPS ) {	// 10-eps 'snap' to closest integer
+  if ( fabs ( (Tsft0 - round(Tsft0)) ) / Tsft0 < 10 * LAL_REAL8_EPS ) {
     ret->deltaT = round(Tsft0);
   } else {
     ret->deltaT = Tsft0;
   }
 
-  // For dealing with SFTCatalogs corresponding to frequency-sliced input SFTs:
-  // Given the guaranteed GPS-ordering of XLALSFTDataFind(), we can rely on duplicate
-  // timestamps to all be found next to each other, and therefore can easily skip them
-  ret->data[0] = catalog->data[0].header.epoch;
-  UINT4 numUnique = 1;
-  UINT4 stride = 0;
-  for ( UINT4 i = 1; i < numEntries; i ++ )
-    {
-      UINT4 thisStride = 1;
-      const LIGOTimeGPS *ti   = &(catalog->data[i].header.epoch);
-      const LIGOTimeGPS *tim1 = &(catalog->data[i-1].header.epoch);
-      if ( XLALGPSCmp( ti, tim1 ) == 0 ) {
-        thisStride ++;
-        continue;	// skip duplicates
-      }
-      ret->data[numUnique] = catalog->data[i].header.epoch;
-      numUnique ++;
+  for ( UINT4 i = 0; i < numSFTs; i ++ ) {
+    ret->data[i] = catalog->data[i].header.epoch;
+  }
 
-      // keep track of stride, ensure that it's the same for every unique timestamp
-      if ( stride == 0 ) {
-        stride = thisStride;
-      }
-      else {
-        XLAL_CHECK_NULL ( stride == thisStride, XLAL_EINVAL, "Suspicious SFT Catalog with non-constant timestamps multiplicities '%u != %u'\n", stride, thisStride );
-      }
-    } // for i < numEntries
-
-
-  // now truncate output vector to actual length of unique timestamps
-  ret->length = numUnique;
-  XLAL_CHECK_NULL ( (ret->data = XLALRealloc ( ret->data, numUnique * sizeof( (*ret->data) ))) != NULL, XLAL_ENOMEM );
-
-  // done: return Ts-vector
+  /* done: return Ts-vector */
   return ret;
 
 } /* XLALTimestampsFromSFTCatalog() */
@@ -1177,11 +1136,7 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
     case 3:
       break;
     case 4:
-      if ( XLALReadSegmentsFromFile_support_4column_format ) {
-        XLALPrintError( "\n%s: WARNING: segment file '%s' is in DEPRECATED 4-column format (startGPS endGPS duration NumSFTs, duration is ignored)\n", __func__, fname );
-      } else {
-        XLAL_ERROR_NULL( XLAL_EIO, "%s: segment file '%s' is in DEPRECATED 4-column format (startGPS endGPS duration NumSFTs)\n", __func__, fname );
-      }
+      XLALPrintError( "\n%s: WARNING: segment file '%s' is in DEPRECATED 4-column (startGPS endGPS duration NumSFTs, duration is ignored)\n", __func__, fname );
       break;
     default:
       XLAL_ERROR_NULL( XLAL_EIO, "%s: segment file '%s' contains an unknown %i-column format", __func__, fname, ncol );
@@ -1837,91 +1792,30 @@ int XLALSFTCatalogTimeslice(
   // Check input
   XLAL_CHECK( slice != NULL, XLAL_EFAULT );
   XLAL_CHECK( catalog != NULL, XLAL_EFAULT );
-  XLAL_CHECK( minStartGPS != NULL && maxStartGPS != NULL, XLAL_EFAULT );
   XLAL_CHECK( catalog->length > 0, XLAL_EINVAL );
-  XLAL_CHECK( XLALGPSCmp( minStartGPS, maxStartGPS ) < 1 , XLAL_EINVAL , "minStartGPS (%"LAL_GPS_FORMAT") is greater than maxStartGPS (%"LAL_GPS_FORMAT")\n",
-              LAL_GPS_PRINT(*minStartGPS), LAL_GPS_PRINT(*maxStartGPS) );
-
-  // get a temporary timestamps vector with SFT epochs so we can call XLALFindTimesliceBounds()
-  LIGOTimeGPSVector timestamps;
-  timestamps.length = catalog->length;
-  XLAL_CHECK ( (timestamps.data = XLALCalloc ( timestamps.length, sizeof(timestamps.data[0]) )) != NULL, XLAL_ENOMEM );
-  for ( UINT4 i = 0; i < timestamps.length; i ++ ) {
-    timestamps.data[i] = catalog->data[i].header.epoch;
-  }
-
-  UINT4 iStart, iEnd;
-  XLAL_CHECK ( XLALFindTimesliceBounds ( &iStart, &iEnd, &timestamps, minStartGPS, maxStartGPS ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLALFree ( timestamps.data );
 
   // Initialise timeslice of SFT catalog
   XLAL_INIT_MEM(*slice);
 
-  // If not empty: set timeslice of SFT catalog
-  if ( iStart < iEnd )
-    {
-      slice->length = iEnd - iStart + 1;
-      slice->data = &catalog->data[iStart];
-    }
+  // Find start and end of timeslice
+  UINT4 iStart = 0, iEnd = catalog->length - 1;
+  while (iStart <= iEnd && XLALCWGPSinRange( catalog->data[iStart].header.epoch, minStartGPS, maxStartGPS ) < 0 ) {
+    ++iStart;
+  }
+  while (iStart <= iEnd && XLALCWGPSinRange( catalog->data[iEnd].header.epoch, minStartGPS, maxStartGPS ) > 0 ) {
+    --iEnd;
+  }
+  if (iStart > iEnd) {
+    return XLAL_SUCCESS;
+  }
+
+  // Set timeslice of SFT catalog
+  slice->length = iEnd - iStart + 1;
+  slice->data = &catalog->data[iStart];
 
   return XLAL_SUCCESS;
 
-} // XLALSFTCatalogTimeslice()
-
-// Find index values of first and last timestamp within given timeslice range XLALCWGPSinRange(minStartGPS, maxStartGPS)
-int
-XLALFindTimesliceBounds ( UINT4 *iStart,
-                          UINT4 *iEnd,
-                          const LIGOTimeGPSVector *timestamps,
-                          const LIGOTimeGPS *minStartGPS,
-                          const LIGOTimeGPS *maxStartGPS
-                          )
-{
-  XLAL_CHECK ( (iStart != NULL) && (iEnd != NULL) && (timestamps != NULL) && (minStartGPS != NULL) && (maxStartGPS != NULL), XLAL_EINVAL );
-  XLAL_CHECK( XLALGPSCmp( minStartGPS, maxStartGPS ) < 1 , XLAL_EINVAL , "minStartGPS (%"LAL_GPS_FORMAT") is greater than maxStartGPS (%"LAL_GPS_FORMAT")\n",
-              LAL_GPS_PRINT(*minStartGPS), LAL_GPS_PRINT(*maxStartGPS) );
-
-  UINT4 N = timestamps->length;
-  (*iStart) = 0;
-  (*iEnd)   = N - 1;
-
-  // check if there's any timestamps falling into the requested timeslice at all
-  if( ( ( XLALCWGPSinRange( timestamps->data[0], minStartGPS, maxStartGPS ) == 1 ) || ( XLALCWGPSinRange( timestamps->data[N-1], minStartGPS, maxStartGPS ) == -1 ) ) )
-    {// if not: set an emtpy index interval in this case
-      (*iStart) = 1;
-      (*iEnd)   = 0;
-      XLALPrintInfo ("Returning empty timeslice: Timestamps span [%"LAL_GPS_FORMAT", %"LAL_GPS_FORMAT "]"
-                     " has no overlap with requested timeslice range [%"LAL_GPS_FORMAT", %"LAL_GPS_FORMAT").\n",
-                     LAL_GPS_PRINT(timestamps->data[0]), LAL_GPS_PRINT(timestamps->data[N-1]),
-                     LAL_GPS_PRINT(*minStartGPS), LAL_GPS_PRINT(*maxStartGPS)
-                     );
-      return XLAL_SUCCESS;
-    }
-
-  while ( (*iStart) <= (*iEnd) && XLALCWGPSinRange ( timestamps->data[ (*iStart) ], minStartGPS, maxStartGPS ) < 0 ) {
-    ++ (*iStart);
-  }
-  while ( (*iStart) <= (*iEnd) && XLALCWGPSinRange ( timestamps->data[ (*iEnd) ], minStartGPS, maxStartGPS ) > 0 ) {
-    -- (*iEnd);
-  }
-  // note: *iStart >=0, *iEnd >= 0 is now guaranteed due to previous range overlap-check
-
-  // check if there is any timestamps found witin the interval, ie if iStart <= iEnd
-  if ( (*iStart) > (*iEnd) )
-    {
-      XLALPrintInfo ( "Returning empty timeslice: no sfttimes fall within given GPS range [%"LAL_GPS_FORMAT", %"LAL_GPS_FORMAT"). "
-                      "Closest timestamps are: %"LAL_GPS_FORMAT" and %"LAL_GPS_FORMAT"\n",
-                      LAL_GPS_PRINT(*minStartGPS), LAL_GPS_PRINT(*maxStartGPS),
-                      LAL_GPS_PRINT(timestamps->data[ (*iEnd) ]), LAL_GPS_PRINT(timestamps->data[ (*iStart) ])
-                      );
-      (*iStart) = 1;
-      (*iEnd)   = 0;
-    }
-
-  return XLAL_SUCCESS;
-
-} // XLALFindTimesliceBounds()
-
+}
 
 /**
  * Copy an entire SFT-type into another.

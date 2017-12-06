@@ -37,6 +37,7 @@ test_programs += UniversalDopplerMetricTest
 test_programs += VelocityTest
 test_programs += XLALComputeAMTest
 test_programs += XLALMultiNoiseWeightsTest
+test_programs += ComputeFstatBenchmark
 
 if LALXML
 test_programs += LALPulsarXMLTest
@@ -68,7 +69,6 @@ MOSTLYCLEANFILES = \
 	LatticeTilingTest.fits \
 	OutHistogram.asc \
 	OutHough.asc \
-	SuperskyMetricsTest.fits \
 	TEMPOcomparison.par \
 	TEMPOcomparison.tim \
 	TS_R4.dat \

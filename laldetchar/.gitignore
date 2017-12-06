@@ -6,7 +6,6 @@
 *.pyc
 *.pyman
 *.pyo
-__pycache__
 .deps
 .libs
 /_build/
@@ -63,8 +62,6 @@ python/laldetchar-idq-summary
 python/laldetchar-idq-svm-evaluate
 python/laldetchar-idq-svm-train
 python/laldetchar-idq-train
-python/laldetchar-ovl-evaluate
-python/laldetchar-ovl-train
 python/laldetchar-segments-from-data
 python/laldetchar/__init__.py
 python/laldetchar/_laldetchar*
@@ -82,5 +79,4 @@ src/laldetchar_version
 src/stamp-h1
 src/stamp-h2
 src/version.c
-swig/swiglaldetchar.i*
-swig/swiglal_*
+swig/swiglal*

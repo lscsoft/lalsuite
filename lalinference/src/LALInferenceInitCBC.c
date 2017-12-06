@@ -46,15 +46,15 @@ static int checkParamInList(const char *list, const char *param)
   char *post=NULL,*pos=NULL;
   if (list==NULL) return 0;
   if (param==NULL) return 0;
-
+  
   if(!(pos=strstr(list,param))) return 0;
-
+  
   /* The string is a substring. Check that it is a token */
   /* Check the character before and after */
   if(pos!=list)
   if(*(pos-1)!=',')
   return 0;
-
+  
   post=&(pos[strlen(param)]);
   if(*post!='\0')
   if(*post!=',')
@@ -386,7 +386,7 @@ void LALInferenceInitGlitchVariables(LALInferenceRunState *runState, LALInferenc
   LALInferenceAddVariable(currentParams, "morlet_t0" , &mt0,  LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
   LALInferenceAddVariable(currentParams, "morlet_phi", &mphi, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
 
-  LALInferenceAddVariable(currentParams, "glitch_size", &gsize, LALINFERENCE_UINT4Vector_t, LALINFERENCE_PARAM_LINEAR);
+  LALInferenceAddVariable(currentParams, "glitch_size",   &gsize, LALINFERENCE_UINT4Vector_t, LALINFERENCE_PARAM_LINEAR);
   LALInferenceAddVariable(currentParams, "glitchFitFlag", &gflag, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
 
   LALInferenceAddMinMaxPrior(priorArgs, "morlet_Amp_prior", &Amin, &Amax, LALINFERENCE_REAL8_t);
@@ -456,9 +456,9 @@ static struct spcal_envelope *initCalibrationEnvelope(char *filename)
     gsl_spline_init(env->amp_std, logfreq, mag_std, Nlines);
     gsl_spline_init(env->phase_median, logfreq, phase_med, Nlines);
     gsl_spline_init(env->phase_std, logfreq, phase_std, Nlines);
-
+    
     free(logfreq); free(mag_med); free(mag_std); free(phase_med); free(phase_std);
-
+    
     return(env);
 }
 
@@ -508,12 +508,12 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
       REAL8 logFMin = log(fMin);
       REAL8 logFMax = log(fMax);
       REAL8 dLogF = (logFMax - logFMin)/(ncal-1);
-
+      
       char amp_uncert_op[VARNAME_MAX];
       char pha_uncert_op[VARNAME_MAX];
       char env_uncert_op[VARNAME_MAX];
       struct spcal_envelope *env=NULL;
-
+      
       snprintf(amp_uncert_op, VARNAME_MAX, "--%s-spcal-amp-uncertainty", ifo->name);
       snprintf(pha_uncert_op, VARNAME_MAX, "--%s-spcal-phase-uncertainty", ifo->name);
       snprintf(env_uncert_op, VARNAME_MAX, "--%s-spcal-envelope",ifo->name);
@@ -553,7 +553,7 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
 					  amp_std = gsl_spline_eval(env->amp_std, logFreq, NULL);
 					  amp_mean = gsl_spline_eval(env->amp_median, logFreq, NULL);
 					  phase_std = gsl_spline_eval(env->phase_std, logFreq, NULL);
-					  phase_mean = gsl_spline_eval(env->phase_median, logFreq, NULL);
+					  phase_mean = gsl_spline_eval(env->phase_std, logFreq, NULL);
 			  }
 			  LALInferenceRegisterGaussianVariableREAL8(runState, currentParams, ampVarName, 0, amp_mean, amp_std, LALINFERENCE_PARAM_LINEAR);
 			  LALInferenceRegisterGaussianVariableREAL8(runState, currentParams, phaseVarName, 0, phase_mean, phase_std, LALINFERENCE_PARAM_LINEAR);
@@ -571,7 +571,7 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
       REAL8 zero=0.0;
       dataPtr = runState->data;
       while (dataPtr != NULL){
-        char CA_A[320];
+        char CA_A[10]="";
         sprintf(CA_A,"%s_%s","calamp",dataPtr->name);
         LALInferenceRegisterUniformVariableREAL8(runState, currentParams, CA_A, zero, camp_min_A, camp_max_A, LALINFERENCE_PARAM_LINEAR);
         dataPtr = dataPtr->next;
@@ -594,7 +594,7 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
       dataPtr = runState->data;
       while (dataPtr != NULL)
       {
-        char CP_A[320];
+        char CP_A[10]="";
         sprintf(CP_A,"%s_%s","calpha",dataPtr->name);
         LALInferenceRegisterUniformVariableREAL8(runState, currentParams, CP_A, zero, cpha_min_A, cpha_max_A, LALINFERENCE_PARAM_LINEAR);
         dataPtr = dataPtr->next;
@@ -624,12 +624,12 @@ void LALInferenceRegisterGaussianVariableREAL8(LALInferenceRunState *state, LALI
   char valopt[VARNAME_MAX+3];
   char fixopt[VARNAME_MAX+7];
   ProcessParamsTable *ppt=NULL;
-
+  
   sprintf(meanopt,"--%s-mean",name);
   sprintf(sigmaopt,"--%s-sigma",name);
   sprintf(valopt,"--%s",name);
   sprintf(fixopt,"--fix-%s",name);
-
+  
   if((ppt=LALInferenceGetProcParamVal(state->commandLine,meanopt))) mean=atof(ppt->value);
   if((ppt=LALInferenceGetProcParamVal(state->commandLine,sigmaopt))) stdev=atof(ppt->value);
   if((ppt=LALInferenceGetProcParamVal(state->commandLine,fixopt)))
@@ -638,7 +638,7 @@ void LALInferenceRegisterGaussianVariableREAL8(LALInferenceRunState *state, LALI
     startval = atof(ppt->value);
   }
   if((ppt=LALInferenceGetProcParamVal(state->commandLine,valopt))) startval=atof(ppt->value);
-
+  
   assert(stdev>0);
   LALInferenceAddVariable(var,name,&startval,LALINFERENCE_REAL8_t,varytype);
   LALInferenceAddGaussianPrior(state->priorArgs, name, &mean, &stdev, LALINFERENCE_REAL8_t);
@@ -1012,25 +1012,8 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   LALInferenceAddVariable(model->params, "LAL_AMPORDER",     &AmpOrder,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(model->params, "f_ref", &f_ref, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 
-  /* Get frequency bounds */
-  REAL8 fLow = INFINITY; // lowest frequency being analyzed across the network
-  REAL8 fHigh = -INFINITY; // highest frequency being analyzed across the network
-
-  dataPtr = state->data;
-  while (dataPtr != NULL)
-  {
-    if (dataPtr->fLow < fLow)
-        fLow = dataPtr->fLow;
-    if (dataPtr->fHigh > fHigh)
-        fHigh = dataPtr->fHigh;
-
-    dataPtr = dataPtr->next;
-  }
-
-  model->fLow = fLow;
-  model->fHigh = fHigh;
-
-  /* Check if flow is varying */
+  /* flow handling */
+  REAL8 fLow = state->data->fLow;
   ppt=LALInferenceGetProcParamVal(commandLine,"--vary-flow");
   if(ppt){
     REAL8 fLow_min = fLow;
@@ -1468,7 +1451,7 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence(LALInferenceRunState *sta
     model->ifo_SNRs = XLALCalloc(nifo, sizeof(REAL8));
 
 	i=0;
-
+ 
   /* Parameter bounds at ±5 sigma */
   fprintf(stdout,"Setting up priors\n");
   LALInferenceParamVaryType type=LALINFERENCE_PARAM_LINEAR;
@@ -2160,11 +2143,11 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
             if (checkParamInList(ppt->value,bPPEparam)) LALInferenceRegisterUniformVariableREAL8(state, model->params, bPPEparam, 0.0, bppe_min, bppe_max, LALINFERENCE_PARAM_LINEAR);
             sprintf(betaPPEparam, "%s%d","betaPPE",++counters[3]);
             if (checkParamInList(ppt->value,betaPPEparam)) LALInferenceRegisterUniformVariableREAL8(state, model->params, betaPPEparam, 0.0, betappe_min, betappe_max, LALINFERENCE_PARAM_LINEAR);
-
+            
         } while((checkParamInList(ppt->value,aPPEparam))||(checkParamInList(ppt->value,alphaPPEparam))||(checkParamInList(ppt->value,bPPEparam))||(checkParamInList(ppt->value,betaPPEparam)));
         if ((counters[0]!=counters[1])||(counters[2]!=counters[3])) {fprintf(stderr,"Unequal number of PPE parameters detected! Check your command line!\n"); exit(-1);}
     }
-
+    
 }
 
 

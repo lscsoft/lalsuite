@@ -2931,7 +2931,11 @@ UINT8 coh_PTF_add_sngl_triggers(
       if (coh_PTF_trig_time_check(params,currEvent->end,\
                                          currEvent->end))
       {
-        XLALFreeSnglInspiral(&currEvent);
+        if (currEvent->event_id)
+        {
+          LALFree(currEvent->event_id);
+        }
+        LALFree(currEvent);
         continue;
       }
       /* And add the trigger to the lists. IF it passes clustering! */
@@ -2954,7 +2958,11 @@ UINT8 coh_PTF_add_sngl_triggers(
         }
         else
         {
-          XLALFreeSnglInspiral(&currEvent);
+          if (currEvent->event_id)
+          {
+            LALFree(currEvent->event_id);
+          }
+          LALFree(currEvent);
         }
       }
     }
@@ -2985,7 +2993,10 @@ SnglInspiralTable* coh_PTF_create_sngl_event(
   SnglInspiralTable *thisEvent;
   thisEvent = (SnglInspiralTable *)
       LALCalloc(1, sizeof(SnglInspiralTable));
-  thisEvent->event_id = (*eventId)++;
+  thisEvent->event_id = (EventIDColumn *)
+      LALCalloc(1, sizeof(EventIDColumn));
+  thisEvent->event_id->id=*eventId;
+  (*eventId)++;
   /* Set end times */
   trigTime = cohSNR->epoch;
   XLALGPSAdd(&trigTime,currPos*cohSNR->deltaT);
@@ -3090,7 +3101,7 @@ UINT4 coh_PTF_accept_sngl_trig_check(
     if (fabs(XLALGPSDiff(&time1,&time2)) < params->clusterWindow)
     {
       if (thisEvent.snr < currEvent->snr\
-          && (thisEvent.event_id != currEvent->event_id))
+          && (thisEvent.event_id->id != currEvent->event_id->id))
       {
         if ( XLALGPSDiff(&time1,&time2) < 0 )
           loudTrigBefore = 1;
@@ -3173,8 +3184,12 @@ void coh_PTF_cluster_sngl_triggers(
     }
     else
     {
+      if (currEvent->event_id)
+      {
+        LALFree(currEvent->event_id);
+      }
       currEvent2 = currEvent->next;
-      XLALFreeSnglInspiral(&currEvent);
+      LALFree(currEvent);
       currEvent = currEvent2;
     }
     triggerNum+=1;
@@ -3259,7 +3274,11 @@ void coh_PTF_cleanup(
     SnglInspiralTable *thisSnglEvent;
     thisSnglEvent = snglEvents;
     snglEvents = snglEvents->next;
-    XLALFreeSnglInspiral( &thisSnglEvent );
+    if ( thisSnglEvent->event_id )
+    {
+      LALFree( thisSnglEvent->event_id );
+    }
+    LALFree( thisSnglEvent );
   }
 
   while ( PTFbankhead )
@@ -3495,7 +3514,9 @@ SnglInspiralTable *conv_insp_tmpl_to_sngl_table(
 {
   SnglInspiralTable *cnvTemplate;
   cnvTemplate = (SnglInspiralTable *) LALCalloc(1,sizeof(SnglInspiralTable));
-  cnvTemplate->event_id = eventNumber;
+  cnvTemplate->event_id = (EventIDColumn *)
+      LALCalloc(1, sizeof(EventIDColumn) );
+  cnvTemplate->event_id->id=eventNumber;
   cnvTemplate->mass1 = template->mass1;
   cnvTemplate->mass2 = template->mass2;
   cnvTemplate->chi = template->chi;

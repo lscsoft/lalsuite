@@ -1415,6 +1415,7 @@ static int XLALSpinPrecHcapRvecDerivative(
        tplspin = 0.0;
        break;
      case 2:
+     case 4:
        tplspin = (1.-2.*eta) * chiS + (mass1 - mass2)/(mass1 + mass2) * chiA;
        break;
      default:
