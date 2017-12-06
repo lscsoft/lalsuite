@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Reinhard Prix
+ * (C) 2012 Reinhard Prix
 *  Copyright (C) 2007 Badri Krishnan, Reinhard Prix
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -44,18 +44,18 @@
  * ### Uses ###
  *
  * \code
- * XLALSFTtoPeriodogram ()
- * XLALPeriodoToRngmed ()
- * XLALNormalizeSFT ()
- * XLALNormalizeSFTVect ()
- * XLALNormalizeMultiSFTVect ()
+ * LALSFTtoPeriodogram ()
+ * LALPeriodoToRngmed ()
+ * LALNormalizeSFT ()
+ * LALNormalizeSFTVect ()
+ * LALNormalizeMultiSFTVect ()
  * \endcode
  *
- * The function XLALNormalizeSFTVect() takes as input a vector of SFTs and normalizes
- * them.  This function calls the functions XLALNormalizeSFT() which normalizes a
- * single SFT, XLALSFTtoPeriodogram() which calculates the \f$ |\tilde{x}|^2 \f$ and
- * XLALPeriodoToRngmed () which applies the running median algorithm to find a vector
- * of medians.  The function XLALNormalizeMultiSFTVect() normalizes a multi-IFO collection
+ * The function LALNormalizeSFTVect() takes as input a vector of SFTs and normalizes
+ * them.  This function calls the functions LALNormalizeSFT() which normalizes a
+ * single SFT, LALSFTtoPeriodogram() which calculates the \f$ |\tilde{x}|^2 \f$ and
+ * LALPeriodoToRngmed () which applies the running median algorithm to find a vector
+ * of medians.  The function LALNormalizeMultiSFTVect() normalizes a multi-IFO collection
  * of SFT vectors and also returns a collection of power-estimates for these vectors using
  * the Running median method.
  *
@@ -87,13 +87,6 @@ XLALNormalizeSFT ( REAL8FrequencySeries *rngmed, 	/**< [out] rng-median smoothed
     }
   else
     {
-      // copy whole SFT header info to be on the safe side (deltaF definitely needed for Tsft=1/deltaF later)
-      strcpy ( rngmed->name, sft->name );
-      rngmed->epoch 	 = sft->epoch;
-      rngmed->f0 	 = sft->f0;
-      rngmed->deltaF 	 = sft->deltaF;
-      rngmed->sampleUnits= sft->sampleUnits;
-
       /* set PSD to constant value: Tsft * S / 2 = Tsft * (sqrt(S))^2 / 2 */
       const REAL8 Tsft = 1.0 / sft->deltaF;
       const REAL8 assume_Tsft_Sn_b2 = Tsft * assumeSqrtS*assumeSqrtS / 2;
@@ -133,7 +126,7 @@ XLALNormalizeSFTVect ( SFTVector  *sftVect,		/**< [in/out] pointer to a vector o
 
   /* allocate memory for a single rngmed */
   REAL8FrequencySeries *rngmed;
-  XLAL_CHECK ( ( rngmed = XLALCalloc(1, sizeof(*rngmed))) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1,%zu)", sizeof(*rngmed) );
+  XLAL_CHECK ( ( rngmed = XLALCalloc(1, sizeof(*rngmed))) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1,%lu)", sizeof(*rngmed) );
   XLAL_CHECK ( ( rngmed->data = XLALCreateREAL8Vector ( lengthsft ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector ( %d ) failed.", lengthsft );
 
   /* loop over sfts and normalize them */
@@ -175,7 +168,7 @@ XLALNormalizeMultiSFTVect ( MultiSFTVector *multsft,		/**< [in/out] multi-vector
 
   UINT4 numifo = multsft->length;
   multiPSD->length = numifo;
-  XLAL_CHECK_NULL ( ( multiPSD->data = XLALCalloc ( numifo, sizeof(*multiPSD->data))) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc ( %d, %zu)", numifo, sizeof(*multiPSD->data) );
+  XLAL_CHECK_NULL ( ( multiPSD->data = XLALCalloc ( numifo, sizeof(*multiPSD->data))) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc ( %d, %lu)", numifo, sizeof(*multiPSD->data) );
 
   /* loop over ifos */
   for ( UINT4 X = 0; X < numifo; X++ )
@@ -183,10 +176,10 @@ XLALNormalizeMultiSFTVect ( MultiSFTVector *multsft,		/**< [in/out] multi-vector
       UINT4 numsft = multsft->data[X]->length;
 
       /* allocation of psd vector over SFTs for this detector X */
-      XLAL_CHECK_NULL ( (multiPSD->data[X] = XLALCalloc(1, sizeof(*multiPSD->data[X]))) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1, %zu)", sizeof(*multiPSD->data[X]));
+      XLAL_CHECK_NULL ( (multiPSD->data[X] = XLALCalloc(1, sizeof(*multiPSD->data[X]))) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1, %lu)", sizeof(*multiPSD->data[X]));
 
       multiPSD->data[X]->length = numsft;
-      XLAL_CHECK_NULL ( (multiPSD->data[X]->data = XLALCalloc ( numsft, sizeof(*(multiPSD->data[X]->data)))) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc ( %d, %zu)", numsft, sizeof(*(multiPSD->data[X]->data)) );
+      XLAL_CHECK_NULL ( (multiPSD->data[X]->data = XLALCalloc ( numsft, sizeof(*(multiPSD->data[X]->data)))) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc ( %d, %lu)", numsft, sizeof(*(multiPSD->data[X]->data)) );
 
       /* loop over sfts for this IFO X */
       for ( UINT4 j = 0; j < numsft; j++ )
@@ -421,3 +414,156 @@ XLALSFTstoCrossPeriodogram ( REAL8FrequencySeries *periodo,		/**< [out] modulus 
   return XLAL_SUCCESS;
 
 } /* XLALSFTstoCrossPeriodogram() */
+
+
+// ****************************** OBSOLETE + DEPRECATED LAL-INTERFACE FUNCTIONS ******************************
+
+/**
+ * \deprecated use XLALSFTtoPeriodogram() instead
+ * Calculate the "periodogram" of an SFT, ie the modulus-squares of the SFT-data.
+ */
+void
+LALSFTtoPeriodogram (LALStatus    *status,		/**< pointer to LALStatus structure */
+		     REAL8FrequencySeries    *periodo,	/**< [out] mod squares of SFT data */
+		     const COMPLEX8FrequencySeries *SFT	/**< [in] input SFT */
+		     )
+{
+  INITSTATUS(status);
+
+  if ( XLALSFTtoPeriodogram ( periodo, SFT ) != XLAL_SUCCESS )
+    ABORT ( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL );
+
+  /* normal exit */
+  RETURN (status);
+
+} /* end LALSFTtoPeriodogram() */
+
+/**
+ * \deprecated use XLALPeriodoToRngmed() instead
+ */
+void
+LALPeriodoToRngmed (LALStatus  *status,				/**< pointer to LALStatus structure */
+		    REAL8FrequencySeries  *rngmed,		/**< [out] resulting 'smoothed' periodogram */
+		    const REAL8FrequencySeries  *periodo,	/**< [in] input periodogram */
+		    UINT4 blockSize				/**< Running median block size */
+		    )
+{
+  INITSTATUS(status);
+
+  if ( XLALPeriodoToRngmed ( rngmed, periodo, blockSize ) != XLAL_SUCCESS )
+    ABORT ( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL );
+
+  /* normal exit */
+  RETURN (status);
+
+} /* LALPeriodoToRngmed() */
+
+
+/**
+ * \deprecated use XLALSFTtoRngmed() instead
+ */
+void
+LALSFTtoRngmed (LALStatus  *status,		/**< pointer to LALStatus structure */
+		REAL8FrequencySeries  *rngmed,		/**< [out] running-median smoothed periodo [must be allocated!] */
+		const COMPLEX8FrequencySeries *sft,	/**< [in]  input SFT */
+		UINT4 blockSize				/**< Running median block size */
+		)
+{
+  INITSTATUS(status);
+
+  if ( XLALSFTtoRngmed ( rngmed, sft, blockSize ) != XLAL_SUCCESS )
+    ABORT ( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL );
+
+  /* normal exit */
+  RETURN (status);
+
+} /* LALSFTtoRngmed() */
+
+
+/**
+ * \deprecated use XLALNormalizeSFT() instead
+ */
+void
+LALNormalizeSFT (LALStatus           *status,		/**< pointer to LALStatus structure */
+		 REAL8FrequencySeries *rngmed, 	/**< [out] rng-median smoothed periodogram over SFT (Tsft*Sn/2) */
+		 SFTtype              *sft,     /**< SFT to be normalized */
+		 UINT4                blockSize)/**< Running median block size for rngmed calculation */
+{
+  INITSTATUS(status);
+
+  if ( XLALNormalizeSFT ( rngmed, sft, blockSize, 0.0 ) != XLAL_SUCCESS )
+    ABORT ( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL );
+
+  /* normal exit */
+  RETURN (status);
+
+} /* LALNormalizeSFT() */
+
+
+/**
+ * Function for normalizing a vector of SFTs.
+ */
+void
+LALNormalizeSFTVect (LALStatus  *status,		/**< pointer to LALStatus structure */
+		     SFTVector  *sftVect,	/**< [in/out] pointer to a vector of SFTs which will be normalized */
+		     UINT4     blockSize	/**< Running median window size */
+		     )
+{
+  INITSTATUS(status);
+
+  if ( XLALNormalizeSFTVect ( sftVect, blockSize, 0.0 ) != XLAL_SUCCESS )
+    ABORT ( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL );
+
+  /* normal exit */
+  RETURN (status);
+
+} /* LALNormalizeSFTVect() */
+
+
+/**
+ * Function for normalizing a multi vector of SFTs in a multi IFO search and also
+ * returns the running-median estimates of the power.
+ */
+void
+LALNormalizeMultiSFTVect (LALStatus      *status,		/**< pointer to LALStatus structure */
+			  MultiPSDVector **multiRngmed,	/**< [out] multi running-median power estimates of input SFTs */
+			  MultiSFTVector *multsft,	/**< [in/out] multi-vector of SFTs which will be normalized */
+			  UINT4          blockSize	/**< Running median window size */
+			  )
+{
+  INITSTATUS(status);
+
+  if ( multiRngmed == NULL ) ABORT ( status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL );
+  if ( (*multiRngmed) != NULL ) ABORT ( status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+
+  MultiPSDVector *ret;
+  if ( (ret = XLALNormalizeMultiSFTVect ( multsft, blockSize, NULL )) == NULL )
+    ABORT ( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL );
+
+  (*multiRngmed) = ret;
+
+  /* normal exit */
+  RETURN (status);
+
+} /* LALNormalizeMultiSFTVect() */
+
+
+/**
+ * Calculate the cross-correlation periodogram from 2 SFTs.
+ */
+void
+LALSFTstoCrossPeriodogram (LALStatus    *status,		/**< pointer to LALStatus structure */
+			   REAL8FrequencySeries *periodo,	/**< [out] modulus square of SFT data  */
+			   const COMPLEX8FrequencySeries *sft1,	/**< [in] pointer to first SFT  */
+			   const COMPLEX8FrequencySeries *sft2	/**< [in] pointer to second SFT */
+			   )
+{
+  INITSTATUS(status);
+
+  if ( XLALSFTstoCrossPeriodogram ( periodo, sft1, sft2 ) != XLAL_SUCCESS )
+    ABORT ( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL );
+
+  /* normal exit */
+  RETURN (status);
+
+} /* LALSFTstoCrossPeriodogram() */

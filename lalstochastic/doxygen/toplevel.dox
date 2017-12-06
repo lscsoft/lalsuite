@@ -1,0 +1,19 @@
+/* Top-level module organisation for LALStochastic */
+/**
+
+\defgroup lalstochastic_general		General Packages
+
+\defgroup lalstochastic_swig		SWIG Interfaces
+@{
+   \brief This package provides Octave and Python wrappings of
+   LALStochastic functions and data structures generated using SWIG.
+@}
+
+\defgroup lalstochastic_python		Python Packages
+
+*/
+
+/**
+\page lalstochastic_authors		Author List
+\verbinclude AUTHORS
+*/

@@ -65,11 +65,10 @@
 
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/SnglBurstUtils.h>
+#include <lal/LIGOMetadataBurstUtils.h>
 
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLBurstRead.h>
-#include <lal/LIGOLwXMLRead.h>
 
 #include <lal/FrequencySeries.h>
 #include <lal/TimeSeries.h>
@@ -213,7 +212,7 @@ int main(int argc,char *argv[])
   procparams.processParamsTable = NULL;
   process.processTable = XLALCreateProcessTableRow();
   XLALGPSTimeNow(&(process.processTable->start_time));
-  if(XLALPopulateProcessTable(process.processTable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId, lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0))
+  if(XLALPopulateProcessTable(process.processTable, PROGRAM_NAME, lalAppsVCSIdentId, lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0))
     exit(1);
 
   /****** ReadCommandLine ******/
@@ -287,18 +286,20 @@ int main(int argc,char *argv[])
   /****** FindStringBurst ******/
   XLALPrintInfo("FindStringBurst()\n");
   if (FindStringBurst(CommandLineArgs, ht, seg_length, strtemplate, NTemplates, fplan, rplan, &events)) return 12;
+  if(!XLALSortSnglBurst(&events, XLALCompareSnglBurstByExactPeakTime)) return 12;
   XLALDestroyREAL8TimeSeries(ht);
   XLALDestroyREAL8FFTPlan(fplan);
   XLALDestroyREAL8FFTPlan(rplan);
 
   /****** XLALClusterSnglBurstTable ******/
   XLALPrintInfo("XLALClusterSnglBurstTable()\n");
-  if (CommandLineArgs.cluster != 0.0 && events)
+  if (CommandLineArgs.cluster != 0.0 && events){
     XLALClusterSnglBurstTable(&events, XLALCompareStringBurstByTime, XLALCompareStringBurstByTime, XLALStringBurstCluster);
+    XLALSortSnglBurst(&events, XLALCompareSnglBurstByPeakTimeAndSNR);
+  }
 
   /****** XLALSnglBurstAssignIDs ******/
   XLALPrintInfo("XLALSnglBurstAssignIDs()\n");
-  if(!XLALSortSnglBurst(&events, XLALCompareSnglBurstByPeakTimeAndSNR)) return 12;
   XLALSnglBurstAssignIDs(events, process.processTable->process_id, 0);
 
   /****** OutputEvents ******/
@@ -403,12 +404,12 @@ int OutputEvents(const struct CommandLineArgsTag *CLA, ProcessTable *proctable, 
   char ifo[3];
 
   strncpy( ifo, CLA->ChannelName, 2 );
-  XLAL_LAST_ELEM(ifo) = '\0';
+  ifo[sizeof(ifo) - 1] = '\0';
 
   if (!CLA->outputFileName){
     CHAR outfilename[256];
     snprintf(outfilename, sizeof(outfilename)-1, "%s-STRINGSEARCH-%d-%d.xml", ifo, CLA->GPSStart.gpsSeconds, CLA->GPSEnd.gpsSeconds - CLA->GPSEnd.gpsSeconds);
-    XLAL_LAST_ELEM(outfilename) = '\0';
+    outfilename[sizeof(outfilename)-1] = '\0';
     xml = XLALOpenLIGOLwXMLFile(outfilename);
   } else
     xml = XLALOpenLIGOLwXMLFile(CLA->outputFileName);
@@ -640,7 +641,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsi
     if (CLA.printfilterflag){
       CHAR filterfilename[256];
       snprintf(filterfilename, sizeof(filterfilename)-1, "Filter-%d.txt", m);
-      XLAL_LAST_ELEM(filterfilename) = '\0';
+      filterfilename[sizeof(filterfilename)-1] = '\0';
       LALDPrintFrequencySeries( strtemplate[m].StringFilter, filterfilename );
     }
 
@@ -656,7 +657,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsi
       XLALREAL8FreqTimeFFT( vector, vtilde, rplan );
 
       snprintf(filterfilename, sizeof(filterfilename)-1, "FIRFilter-%d.txt", m);
-      XLAL_LAST_ELEM(filterfilename) = '\0';
+      filterfilename[sizeof(filterfilename)-1] = '\0';
       LALDPrintTimeSeries( vector, filterfilename );
     }
   }

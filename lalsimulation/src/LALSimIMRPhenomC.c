@@ -21,12 +21,6 @@
 /* The paper refered to here as the Main paper, is Phys. Rev. D 82, 064016 (2010)
  * */
 
-#ifdef __GNUC__
-#define UNUSED __attribute__ ((unused))
-#else
-#define UNUSED
-#endif
-
 #include <math.h>
 #include <complex.h>
 #include <gsl/gsl_errno.h>
@@ -44,11 +38,8 @@
 
 #include "LALSimIMRPhenomC_internals.c"
 
-#ifndef _OPENMP
-#define omp ignore
-#endif
 
-/*
+/**
  * private function prototypes; all internal functions use solar masses.
  *
  */
@@ -72,13 +63,6 @@ static int apply_inclination(const REAL8TimeSeries *hp, const REAL8TimeSeries *h
 static REAL8 PlanckTaper(const REAL8 t, const REAL8 t1, const REAL8 t2);
 
 /**
- * @addtogroup LALSimIMRPhenom_c
- * @{
- * @name Routines for IMR Phenomenological Model "C"
- * @{
- */
-
-/**
  * Driver routine to compute the spin-aligned, inspiral-merger-ringdown
  * phenomenological waveform IMRPhenomC in the frequency domain.
  *
@@ -97,8 +81,7 @@ int XLALSimIMRPhenomCGenerateFD(
     const REAL8 chi,                   /**< mass-weighted aligned-spin parameter */
     const REAL8 f_min,                 /**< starting GW frequency (Hz) */
     const REAL8 f_max,                 /**< end frequency; 0 defaults to ringdown cutoff freq */
-    const REAL8 distance,              /**< distance of source (m) */
-    LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+    const REAL8 distance               /**< distance of source (m) */
 ) {
   BBHPhenomCParams *params;
   int status;
@@ -132,7 +115,7 @@ int XLALSimIMRPhenomCGenerateFD(
       XLAL_PRINT_WARNING("Warning: The model is only calibrated for m1/m2 <= 4.\n");
 
   /* phenomenological parameters*/
-  params = ComputeIMRPhenomCParams(m1, m2, chi, extraParams);
+  params = ComputeIMRPhenomCParams(m1, m2, chi);
   if (!params) XLAL_ERROR(XLAL_EFUNC);
   if (params->fCut <= f_min)
       XLAL_ERROR(XLAL_EDOM, "(fCut = 0.15M) <= f_min\n");
@@ -148,7 +131,7 @@ int XLALSimIMRPhenomCGenerateFD(
   if (f_max_prime < f_max) {
     // The user has requested a higher f_max than Mf=params->fCut.
     // Resize the frequency series to fill with zeros to fill with zeros beyond the cutoff frequency.
-        size_t n_full = NextPow2_PC(f_max / deltaF) + 1; // we actually want to have the length be a power of 2 + 1 power of 2 + 1
+    size_t n_full = NextPow2(f_max / deltaF) + 1; // we actually want to have the length be a power of 2 + 1
     *htilde = XLALResizeCOMPLEX16FrequencySeries(*htilde, 0, n_full);
   }
 
@@ -156,7 +139,7 @@ int XLALSimIMRPhenomCGenerateFD(
   return status;
 }
 
-/**
+/*
  * Convenience function to quickly find the default final
  * frequency.
  */
@@ -166,8 +149,7 @@ double XLALSimIMRPhenomCGetFinalFreq(
     const REAL8 chi
 ) {
     BBHPhenomCParams *phenomParams;
-    LALDict *extraParams = NULL;
-    phenomParams = ComputeIMRPhenomCParams(m1, m2, chi, extraParams);
+    phenomParams = ComputeIMRPhenomCParams(m1, m2, chi);
     return phenomParams->fCut;
 }
 
@@ -196,8 +178,7 @@ int XLALSimIMRPhenomCGenerateTD(
     const REAL8 f_min,        /**< starting GW frequency (Hz) */
     const REAL8 f_max,        /**< end GW frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance,     /**< distance of source (m) */
-    const REAL8 inclination,   /**< inclination of source (rad) */
-    LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+    const REAL8 inclination   /**< inclination of source (rad) */
 ) {
 	BBHPhenomCParams *params;
 	size_t cut_ind, peak_ind, ind_t0;
@@ -234,7 +215,7 @@ int XLALSimIMRPhenomCGenerateTD(
 		XLAL_PRINT_WARNING("Warning: The model is only calibrated for m1/m2 <= 4.\n");
 
 	/* phenomenological parameters*/
-	params = ComputeIMRPhenomCParams(m1, m2, chi, extraParams);
+	params = ComputeIMRPhenomCParams(m1, m2, chi);
 	if (!params) XLAL_ERROR(XLAL_EFUNC);
 	if (params->fCut <= f_min)
 		XLAL_ERROR(XLAL_EDOM, "(fCut = 0.15M) <= f_min\n");
@@ -291,14 +272,11 @@ int XLALSimIMRPhenomCGenerateTD(
 	return apply_inclination(*hplus, *hcross, inclination);
 }
 
-/** @} */
-/** @} */
 
-
-/* *********************************************************************************/
+/***********************************************************************************/
 /* The following private function generates IMRPhenomC frequency-domain waveforms  */
 /* given coefficients */
-/* *********************************************************************************/
+/***********************************************************************************/
 
 static int IMRPhenomCGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
@@ -313,13 +291,8 @@ static int IMRPhenomCGenerateFD(
     const BBHPhenomCParams *params      /**< from ComputeIMRPhenomCParams */
 ) {
   LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0, 0}
-
-  int errcode = XLAL_SUCCESS;
-  /*
-   We can't call XLAL_ERROR() directly with OpenMP on.
-   Keep track of return codes for each thread and in addition use flush to get out of
-   the parallel for loop as soon as possible if something went wrong in any thread.
-  */
+  size_t i;
+  INT4 errcode;
 
   const REAL8 M = m1 + m2;
   const REAL8 eta = m1 * m2 / (M * M);
@@ -329,12 +302,14 @@ static int IMRPhenomCGenerateFD(
   REAL8 phSPA, phPM, phRD, aPM, aRD;
   REAL8 wPlusf1, wPlusf2, wMinusf1, wMinusf2, wPlusf0, wMinusf0;
   */
+  REAL8 phPhenomC = 0.0;
+  REAL8 aPhenomC = 0.0;
 
   /* compute the amplitude pre-factor */
   REAL8 amp0 = 2. * sqrt(5. / (64.*LAL_PI)) * M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
 
   /* allocate htilde */
-  size_t n = NextPow2_PC(f_max / deltaF) + 1;
+  size_t n = NextPow2(f_max / deltaF) + 1;
   /* coalesce at t=0 */
   XLALGPSAdd(&ligotimegps_zero, -1. / deltaF); // shift by overall length in time
   *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &ligotimegps_zero, 0.0,
@@ -354,25 +329,13 @@ static int IMRPhenomCGenerateFD(
   REAL8 *phis = XLALMalloc(L*sizeof(REAL8));
 
   /* now generate the waveform */
-  #pragma omp parallel for
-  for (size_t i = ind_min; i < ind_max; i++)
+  for (i = ind_min; i < ind_max; i++)
   {
-
-    REAL8 phPhenomC = 0.0;
-    REAL8 aPhenomC = 0.0;
     REAL8 f = i * deltaF;
 
-    int per_thread_errcode;
-    #pragma omp flush(errcode)
-    if (errcode != XLAL_SUCCESS)
-      goto skip;
-
-    per_thread_errcode = IMRPhenomCGenerateAmpPhase( &aPhenomC, &phPhenomC, f, eta, params );
-    if (per_thread_errcode != XLAL_SUCCESS) {
-      errcode = per_thread_errcode;
-      #pragma omp flush(errcode)
-    }
-
+    errcode = IMRPhenomCGenerateAmpPhase( &aPhenomC, &phPhenomC, f, eta, params );
+    if( errcode != XLAL_SUCCESS )
+      XLAL_ERROR(XLAL_EFUNC);
     phPhenomC -= 2.*phi0; // factor of 2 b/c phi0 is orbital phase
 
     freqs[i-ind_min] = f;
@@ -381,13 +344,8 @@ static int IMRPhenomCGenerateFD(
     /* generate the waveform */
     ((*htilde)->data->data)[i] = amp0 * aPhenomC * cos(phPhenomC);
     ((*htilde)->data->data)[i] += -I * amp0 * aPhenomC * sin(phPhenomC);
-
-  skip: /* this statement intentionally left blank */;
-
   }
 
-  if( errcode != XLAL_SUCCESS )
-    XLAL_ERROR(errcode);
 
   /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
   gsl_spline_init(phiI, freqs, phis, L);
@@ -405,7 +363,7 @@ static int IMRPhenomCGenerateFD(
   REAL8 t_corr = gsl_spline_eval_deriv(phiI, f_final, acc) / (2*LAL_PI);
   XLAL_PRINT_INFO("t_corr = %g\n", t_corr);
   /* Now correct phase */
-  for (size_t i = ind_min; i < ind_max; i++) {
+  for (i = ind_min; i < ind_max; i++) {
     REAL8 f = i * deltaF;
     ((*htilde)->data->data)[i] *= cexp(-2*LAL_PI * I * f * t_corr);
   }
@@ -451,7 +409,7 @@ static int IMRPhenomCGenerateFDForTD(
   REAL8 amp0 = 2. * sqrt(5. / (64.*LAL_PI)) * M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
 
   /* allocate htilde */
-  size_t n = NextPow2_PC(f_max / deltaF) + 1;
+  size_t n = NextPow2(f_max / deltaF) + 1;
   if ( n > nf )
     XLAL_ERROR(XLAL_EDOM, "The required length passed as input wont fit the FD waveform\n");
   else
@@ -482,7 +440,7 @@ static int IMRPhenomCGenerateFDForTD(
   return XLAL_SUCCESS;
 }
 
-/*
+/**
  * Private function to generate time-domain waveforms given coefficients
  */
 static int IMRPhenomCGenerateTD(
@@ -509,7 +467,7 @@ static int IMRPhenomCGenerateTD(
 	if (EstimateSafeFMaxForTD(f_max, deltaT) > f_max_wide)
 		XLAL_PRINT_WARNING("Warning: sampling rate (%" LAL_REAL8_FORMAT " Hz) too low for expected spectral content (%" LAL_REAL8_FORMAT " Hz) \n", deltaT, EstimateSafeFMaxForTD(f_max, deltaT));
 
-    const size_t nt = NextPow2_PC(EstimateIMRLength(m1, m2, f_min_wide, deltaT));
+    const size_t nt = NextPow2(EstimateIMRLength(m1, m2, f_min_wide, deltaT));
     const size_t ne = EstimateIMRLength(m1, m2, params->fRingDown, deltaT);
     *ind_t0 = ((nt - EstimateIMRLength(m1, m2, f_min_wide, deltaT)) > (4 * ne)) ? (nt -(2* ne)) : (nt - (1 * ne));
 	deltaF = 1. / (deltaT * (REAL8) nt);
@@ -534,12 +492,12 @@ static int IMRPhenomCGenerateTD(
 	return XLAL_SUCCESS;
 }
 
-/* *********************************************************************************/
+/***********************************************************************************/
 /* The following functions are borrowed as-it-is from LALSimIMRPhenom.c, and used  */
 /* to generate the time-domain version of the frequency domain PhenomC approximant */
-/* *********************************************************************************/
+/***********************************************************************************/
 
-/*
+/**
  * Return tau0, the Newtonian chirp length estimate.
  */
 static REAL8 ComputeTau0(const REAL8 m1, const REAL8 m2, const REAL8 f_min) {
@@ -548,7 +506,7 @@ static REAL8 ComputeTau0(const REAL8 m1, const REAL8 m2, const REAL8 f_min) {
 	return 5. * totalMass * LAL_MTSUN_SI / (256. * eta * pow(LAL_PI * totalMass * LAL_MTSUN_SI * f_min, 8./3.));
 }
 
-/*
+/**
  * Estimate the length of a TD vector that can hold the waveform as the Newtonian
  * chirp time tau0 plus 1000 M.
  */
@@ -556,7 +514,7 @@ static size_t EstimateIMRLength(const REAL8 m1, const REAL8 m2, const REAL8 f_mi
 	return (size_t) floor((ComputeTau0(m1, m2, f_min) + 1000 * (m1 + m2) * LAL_MTSUN_SI) / deltaT);
 }
 
-/*
+/**
  * Find a lower value for f_min (using the definition of Newtonian chirp
  * time) such that the waveform has a minimum length of tau0. This is
  * necessary to avoid FFT artifacts.
@@ -565,7 +523,7 @@ static REAL8 EstimateSafeFMinForTD(const REAL8 m1, const REAL8 m2, const REAL8 f
 	const REAL8 totalMass = m1 + m2;
 	const REAL8 eta = m1 * m2 / (totalMass * totalMass);
 	const REAL8 fISCO = 0.022 / (totalMass * LAL_MTSUN_SI);
-	REAL8 tau0 = deltaT * NextPow2_PC(1.5 * EstimateIMRLength(m1, m2, f_min, deltaT));
+	REAL8 tau0 = deltaT * NextPow2(1.5 * EstimateIMRLength(m1, m2, f_min, deltaT));
 	REAL8 temp_f_min = pow((tau0 * 256. * eta * pow(totalMass * LAL_MTSUN_SI, 5./3.) / 5.), -3./8.) / LAL_PI;
 	if (temp_f_min > f_min) temp_f_min = f_min;
 	if (temp_f_min < 0.5) temp_f_min = 0.5;
@@ -573,7 +531,7 @@ static REAL8 EstimateSafeFMinForTD(const REAL8 m1, const REAL8 m2, const REAL8 f
 	return temp_f_min;
 }
 
-/*
+/**
  * Find a higher value of f_max so that we can safely apply a window later.
  */
 static REAL8 EstimateSafeFMaxForTD(const REAL8 f_max, const REAL8 deltaT) {
@@ -585,7 +543,7 @@ static REAL8 EstimateSafeFMaxForTD(const REAL8 f_max, const REAL8 deltaT) {
 }
 
 
-/*
+/**
  * Window and IFFT a FD waveform to TD, then window in TD.
  * Requires that the FD waveform be generated outside of f_min and f_max.
  * FD waveform is modified.

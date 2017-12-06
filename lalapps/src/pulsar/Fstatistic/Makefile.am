@@ -1,6 +1,5 @@
-MOSTLYCLEANFILES =
+BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
-include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 bin_PROGRAMS = \
 	lalapps_SemiAnalyticF \
@@ -8,12 +7,9 @@ bin_PROGRAMS = \
 	lalapps_PredictFstat \
 	lalapps_ComputeFstatistic_v2 \
 	lalapps_ComputeFstatMCUpperLimit \
-	lalapps_ComputeFstatLatticeCount \
 	lalapps_synthesizeBstatMC \
 	lalapps_synthesizeTransientStats \
-	lalapps_synthesizeLVStats \
-	lalapps_ComputeFstatBenchmark \
-	$(END_OF_LIST)
+	lalapps_synthesizeLVStats
 
 EXTRA_PROGRAMS = \
 	lalapps_CFSv3 \
@@ -36,28 +32,18 @@ lalapps_PredictFstat_SOURCES = PredictFstat.c
 # force linking in C++ mode for E@H
 eah_PredictFstat_SOURCES = \
 	$(lalapps_PredictFstat_SOURCES) \
-	win_lib.cpp
-eah_PredictFstat_CPPFLAGS = \
-	$(AM_CPPFLAGS) \
-	-I$(top_srcdir)/src/pulsar/EinsteinAtHome
+	../EinsteinAtHome/win_lib.cpp
 eah_ComputeFstatistic_v2_SOURCES = \
 	$(ComputeFstatisticV2Sources) \
-	win_lib.cpp
-eah_ComputeFstatistic_v2_CPPFLAGS = \
-	$(AM_CPPFLAGS) \
-	-I$(top_srcdir)/src/pulsar/EinsteinAtHome
+	../EinsteinAtHome/win_lib.cpp
 
 lalapps_ComputeFstatMCUpperLimit_SOURCES = ComputeFstatMCUpperLimit.c
-
-lalapps_ComputeFstatLatticeCount_SOURCES = ComputeFstatLatticeCount.c
 
 lalapps_synthesizeBstatMC_SOURCES = synthesizeBstatMC.c
 
 lalapps_synthesizeTransientStats_SOURCES = synthesizeTransientStats.c
 
 lalapps_synthesizeLVStats_SOURCES = synthesizeLVStats.c
-
-lalapps_ComputeFstatBenchmark_SOURCES = ComputeFstatBenchmark.c
 
 lalapps_CFSv3_SOURCES = CFSv3.c
 
@@ -89,3 +75,7 @@ TESTS += \
 	testCFSv2_resamp.sh \
 	testCFSv2_binary.sh
 endif
+
+TESTS_ENVIRONMENT = \
+	LAL_DEBUG_LEVEL=msglvl1,memdbg; export LAL_DEBUG_LEVEL; \
+	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;

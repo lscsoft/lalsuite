@@ -23,7 +23,7 @@ LALInference tools */
 /**
  * \file
  * \ingroup lalapps_pulsar_HeterodyneSearch
- * \author Matthew Pitkin, John Veitch, Max Isi, Colin Gill
+ * \author Matthew Pitkin, John Veitch, Colin Gill
  *
  * \brief Parameter estimation code for known pulsar searches using the nested sampling algorithm.
  *
@@ -42,11 +42,9 @@ LALInference tools */
  * As input the code requires time domain data that has been heterodyned using the known (or close to) phase evolution of
  * the pulsar. The time domain input should consist of a three column text file containing the GPS time stamp of the data
  * point, the real part of the heterodyned data and the imaginary part of the heterodyned data, e.g.
- * \code
  * 900000000.000000  1.867532e-24  -7.675329e-25
  * 900000060.000000  2.783651e-24  3.654386e-25
  * ...
- * \endcode
  *
  * Most commonly such data will have a sample rate of 1/60 Hz, giving a bandwidth of the same amount, but the code can
  * accept any rate.
@@ -55,7 +53,7 @@ LALInference tools */
  * of the signal parameters can be searched over, including frequency, sky position and binary system parameters, although
  * the bandwidth of the data and search efficiency need to be taken into account.
  *
- * The 'Nested Sampling' algorithm (developed by \cite Skilling2006) used is that defined in \c LALinferenceNestedSampler.c
+ * The 'Nested Sampling' algorithm (developed by \cite Skilling2006) used is that defined in LALinferenceNestedSampler
  * (see \cite VeitchVecchio2010). It is essentially an efficient way to perform the integral
  * \f[
  * Z = \int^{\mathbf{\theta}} p(d|\mathbf{\theta}) p(\mathbf{\theta}) \mathrm{d}\mathbf{\theta},
@@ -72,8 +70,12 @@ LALInference tools */
  * \approx 1/N \f$ coming from the fact that the prior would be normalised to unity and therefore each point should occupy
  * an equal fraction and at each iteration the prior volume will decrease geometrically (for \f$\log{\Delta{}X_0} = 0\f$).
  * A new point is then drawn from the prior with the criterion that it has a higher likelihood than the previous lowest
- * point and substitutes that point. To draw the new point a Markov Chain Monte Carlo (MCMC) procedure is used. The procedure
- * is continued until a stopping criterion is reached, which in this case is that the remaining prior volume is less than the
+ * point and substitutes that point. To draw the new point a Markov Chain Monte Carlo (MCMC) procedure is used - there are
+ * two methods used to sample points within this: i) drawing from a proposal distributions based on the covariance matrix
+ * if the current live points (although to keep things computationally efficient this no updated at every iteration), ii)
+ * picking a point via differential evolution (two random live points are selected and a new point half way between the two
+ * is created). The probability of using either method is currently set at 80\% and 20\% respectively. The procedure is
+ * continued until a stopping criterion is reached, which in this case is that the remaining prior volume is less than the
  * \c tolerance value set (see below). The implementation of this can be seen in \cite VeitchVecchio2010 .
  *
  * ### Usage ###
@@ -83,13 +85,18 @@ LALInference tools */
  * lalapps_pulsar_parameter_estimation_nested --help
  * \endcode
  *
- * An example of running the code to search over the four unknown parameters \f$ h_0 \f$, \f$ \phi_0 \f$, \f$ \psi \f$
+ * An example of running the code on to search over the four unknown parameters \f$ h_0 \f$, \f$ \phi_0 \f$, \f$ \psi \f$
  * and \f$ \cos{\iota} \f$, for pulsar J0534-2200, given heterodyned time domain data from the H1 detector in the file
  * \c finehet_J0534-2200_H1, is:
  * \code
- * lalapps_pulsar_parameter_estimation_nested --detectors H1 --par-file J0534-2200.par --input-files finehet_J0534-2200_H1 --outfile ns_J0534-2200.hdf --prior-file prior_J0534-2200.txt --ephem-earth lscsoft/share/lalpulsar/earth05-09.dat --ephem-sun lscsoft/share/lalpulsar/sun05-09.dat --Nlive 1000 --Nmcmcinitial 0 --tolerance 0.25
+ * lalapps_pulsar_parameter_estimation_nested --detectors H1 --par-file
+ * J0534-2200.par --input-files finehet_J0534-2200_H1 --outfile ns_J0534-2200
+ * --prior-file prior_J0534-2200.txt --ephem-earth
+ * lscsoft/share/lalpulsar/earth05-09.dat --ephem-sun
+ * lscsoft/share/lalpulsar/sun05-09.dat --model-type triaxial --Nlive 1000 --Nmcmc
+ * 100 --Nruns 1 --tolerance 0.25
  * \endcode
- * The \c par-file is a TEMPO(2)-style file containing the parameters of the pulsar used to perform the heterodyne (the
+ * The \c par-file is a TEMPO-style file containing the parameters of the pulsar used to perform the heterodyne (the
  * frequency parameters are the rotation frequency and therefore not necessarily the gravitational wave frequency) e.g.
  * \code
  * RA      12:54:31.87523895
@@ -102,7 +109,7 @@ LALInference tools */
  * PEPOCH 54324.8753
  * \endcode
  * The \c prior-file is a text file containing a list of the parameters to be searched over, the prior type ("uniform" or
- * "gaussian") and their given lower/mean and upper/standard deviation ranges e.g.
+ * "gaussian" and their given lower/mean and upper/standard deviation ranges e.g.
  * \code
  * h0 uniform 0 1e-21
  * phi0 uniform 0 6.283185307179586
@@ -114,13 +121,17 @@ LALInference tools */
  * gravitational waves at 100 Hz (which will be at twice the rotation frequency) if you wanted to search over 99.999 to
  * 100.001 Hz then you should used
  * \code
- * f0 uniform 49.9995 50.0005
+ * f0 49.9995 50.0005
  * \endcode
  *
  * An example of running the code as above, but this time on fake data created using the Advanced LIGO design noise curves
  * and with a signal injected into the data is:
  * \code
- * lalapps_pulsar_parameter_estimation_nested --fake-data AH1 --inject-file fake.par --par-file fake.par --outfile ns_fake.hdf --prior-file prior_fake.txt --ephem-earth lscsoft/share/lalpulsar/earth05-09.dat --ephem-sun lscsoft/share/lalpulsar/sun05-09.dat --Nlive 1000 --Nmcmcinitial 0 --tolerance 0.25
+ * lalapps_pulsar_parameter_estimation_nested --fake-data AH1 --inject-file
+ * fake.par --par-file fake.par --outfile ns_fake --prior-file prior_fake.txt
+ * --ephem-earth lscsoft/share/lalpulsar/earth05-09.dat --ephem-sun
+ * lscsoft/share/lalpulsar/sun05-09.dat --model-type triaxial --Nlive 1000 --Nmcmc
+ * 100 --Nruns 1 --tolerance 0.25
  * \endcode
  * In this case the \c inject-file parameter file must contain the values of \c h0, \c phi0, \c psi and \c cosiota,
  * otherwise these will be set to zero by default. The parameter files given for \c inject-file and \c par-file do not
@@ -129,7 +140,6 @@ LALInference tools */
  * will be output.
  */
 
-#include "config.h"
 #include "pulsar_parameter_estimation_nested.h"
 #include "ppe_utils.h"
 #include "ppe_init.h"
@@ -141,14 +151,14 @@ LALInference tools */
 #include "ppe_roq.h"
 
 /* global variables */
+UINT4 verbose_output = 0;
+
 LALStringVector *corlist = NULL;
 
 INT4 main( INT4 argc, CHAR *argv[] ){
-  ProcessParamsTable *param_table, *testgausslike;
+  ProcessParamsTable *param_table;
   LALInferenceRunState runState;
   REAL8 logZnoise = 0.;
-  struct timeval time1, time2;
-  gettimeofday(&time1, NULL); /* time program */
 
   /* set error handler to abort in main function */
   XLALSetErrorHandler( XLALExitErrorHandler );
@@ -161,93 +171,46 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   /* Include setting up random number generator etc */
   initialise_algorithm( &runState );
 
-  /* check if testing with hardcoded Gaussian likelihood */
-  testgausslike = LALInferenceGetProcParamVal(param_table, "--test-gaussian-likelihood");
-
   /* read in data */
-  if( !testgausslike ){ read_pulsar_data( &runState ); }
-  else{
-    /* initialise some required values if running on test Gaussian likelihood */
-    REAL8 h0val = 0., h0sigma = 2.5e-24, h0mean = 0.;
-    runState.data = NULL;
-    runState.threads[0]->model = XLALCalloc(1, sizeof(LALInferenceModel));
-    runState.data = XLALCalloc( 1, sizeof(LALInferenceIFOData) );
-    runState.data->likeli_counter = 0;
-    runState.data->templa_counter = 0;
-    runState.data->next = NULL;
-    runState.threads[0]->model->ifo = XLALMalloc(sizeof(LALInferenceIFOModel));
-    runState.threads[0]->model->ifo->params = XLALCalloc(1, sizeof(LALInferenceVariables) );
-    runState.threads[0]->model->ifo->next = NULL;
-    runState.threads[0]->model->ifo_loglikelihoods = XLALMalloc( sizeof(REAL8) );
-    runState.threads[0]->model->ifo_SNRs = XLALMalloc( sizeof(REAL8) );
-    runState.threads[0]->currentParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
-
-    /* add parameters of the Gaussian */
-    LALInferenceAddVariable( runState.threads[0]->currentParams, "H0", &h0val, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED ); /* add H0 parameter */
-    if ( LALInferenceGetProcParamVal(param_table, "--test-gaussian-sigma") ){
-      h0sigma = atof(LALInferenceGetProcParamVal(param_table, "--test-gaussian-sigma")->value);
-    }
-    LALInferenceAddVariable( runState.threads[0]->currentParams, "H0SIGMA", &h0sigma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED ); /* add standard deviation */
-    if ( LALInferenceGetProcParamVal(param_table, "--test-gaussian-mean") ){
-      h0mean = atof(LALInferenceGetProcParamVal(param_table, "--test-gaussian-mean")->value);
-    }
-    LALInferenceAddVariable( runState.threads[0]->currentParams, "H0MEAN", &h0mean, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED ); /* add standard deviation */
-  }
+  read_pulsar_data( &runState );
 
   /* set algorithm to use Nested Sampling */
   runState.algorithm = &nested_sampling_algorithm_wrapper;
   runState.evolve = &LALInferenceNestedSamplingOneStep;
 
   /* set likelihood function */
-  if( testgausslike ){
-    runState.likelihood = &test_gaussian_log_likelihood; /* run on a simple test Gaussian likelihood */
-  }
-  else{ runState.likelihood = &pulsar_log_likelihood; }
+  runState.likelihood = &pulsar_log_likelihood;
 
   /* set prior function */
   runState.prior = &priorFunction;
 
-  /* Generate the lookup tables and read parameters from par file */
-  if ( !testgausslike ){ setup_from_par_file( &runState ); }
-
   /* set signal model/template */
-  if ( !testgausslike ){
-    runState.threads[0]->model->templt = &get_pulsar_model;
-  }
+  runState.model->templt = &get_pulsar_model;
+
+  /* Generate the lookup tables and read parameters from par file */
+  setup_from_par_file( &runState );
 
   /* add injections if requested */
-  if( !testgausslike ){
-    inject_signal( &runState );
-  }
+  inject_signal( &runState );
 
   /* Initialise the prior distribution given the command line arguments */
   initialise_prior( &runState );
 
   /* create sum square of the data to speed up the likelihood calculation */
-  if( !testgausslike ){
-    sum_data( &runState );
-  }
+  sum_data( &runState );
 
   /* check whether using reduced order quadrature */
-  if( !testgausslike ){
-    generate_interpolant( &runState );
-  }
+  generate_interpolant( &runState );
 
-  if( !testgausslike ){
-    gridOutput( &runState );
-  }
+  gridOutput( &runState );
 
   /* get noise likelihood and add as variable to runState */
-  if( !testgausslike ){
-    logZnoise = noise_only_likelihood( &runState );
-  }
-  else{ logZnoise = 0.; }
-  LALInferenceAddVariable( runState.algorithmParams, "logZnoise", &logZnoise, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
+  logZnoise = noise_only_likelihood( &runState );
+  LALInferenceAddVariable( runState.algorithmParams, "logZnoise", &logZnoise, LALINFERENCE_REAL8_t,
+                           LALINFERENCE_PARAM_FIXED );
 
   /* Create live points array and fill initial parameters */
-  if( !LALInferenceGetProcParamVal(param_table, "--compare-likelihoods") ){
-    setup_live_points_array_wrapper( &runState );
-  }
+  setup_live_points_array_wrapper( &runState );
 
   /* output the live points sampled from the prior */
   outputPriorSamples( &runState );
@@ -255,33 +218,18 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   /* Initialise the MCMC proposal distribution */
   initialise_proposal( &runState );
 
-  /* Set up threads */
-  initialise_threads( &runState, 1 );
-
-  if( !LALInferenceGetProcParamVal(param_table, "--compare-likelihoods") ){
-    /* Call the nested sampling algorithm */
-    runState.algorithm( &runState );
-  }
-  else{
-    /* compare likelihoods from previous run */
-    compare_likelihoods( &runState );
-    return 0;
-  }
+  /* Call the nested sampling algorithm */
+  runState.algorithm( &runState );
 
   /* get SNR of highest likelihood point */
-  if( !testgausslike ){ get_loudest_snr( &runState ); }
+  get_loudest_snr( &runState );
 
-  /* output log evidence and 95% upper limit of test Gaussian likelihood */
-  if ( testgausslike ){ test_gaussian_output( &runState ); }
+  /* re-read in output samples and rescale appropriately */
+  rescale_output( &runState );
 
   /* close timing file */
   if ( LALInferenceCheckVariable( runState.algorithmParams, "timefile" ) ){
-    gettimeofday(&time2, NULL);
-    REAL8 tottime = (REAL8)((time2.tv_sec + time2.tv_usec*1.e-6) - (time1.tv_sec + time1.tv_usec*1.e-6));
-    FILE *timefile = *(FILE **)LALInferenceGetVariable( runState.algorithmParams, "timefile" );
-    UINT4 timenum = *(UINT4 *)LALInferenceGetVariable( runState.algorithmParams, "timenum" );
-    fprintf(timefile, "[%d] %s: %.9le secs\n", timenum, __func__, tottime);
-    fclose(timefile);
+    fclose(*(FILE**)LALInferenceGetVariable( runState.algorithmParams, "timefile" ));
   }
 
   return 0;

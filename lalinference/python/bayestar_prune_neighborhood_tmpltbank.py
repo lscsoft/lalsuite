@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2016  Leo Singer
+# Copyright (C) 2013  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -20,23 +20,29 @@ Remove all entries from a template bank except those that lie within a 1-sigma
 error ellipse of a (mass1, mass2, chi=0) at a given SNR. Uses
 TaylorF2ReducedSpin metric.
 """
+__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Command line interface.
-import argparse
+from optparse import Option, OptionParser
 from lalinference.bayestar import command
+import sys
 
-parser = command.ArgumentParser()
-parser.add_argument("--mass1", type=float, metavar="MSUN", required=True)
-parser.add_argument("--mass2", type=float, metavar="MSUN", required=True)
-parser.add_argument("--snr", type=float, metavar="SNR", required=True)
-parser.add_argument(
-    'input', metavar='IN.xml[.gz]', type=argparse.FileType('rb'),
-    default='-', help='Name of input file [default: stdin]')
-parser.add_argument(
-    '-o', '--output', metavar='OUT.xml[.gz]', type=argparse.FileType('wb'),
-    default='-', help='Name of output file [default: stdout]')
-opts = parser.parse_args()
+parser = OptionParser(
+    formatter = command.NewlinePreservingHelpFormatter(),
+    description = __doc__,
+    usage = '%prog [options] --mass1 MSUN --mass2 MSUN [INPUT.xml[.gz]] [-o OUTPUT.xml[.gz]]',
+    option_list = [
+        Option("-o", "--output", metavar="OUTPUT.xml[.gz]", default="/dev/stdout",
+            help="Name of output file [default: %default]"),
+        Option("--mass1", type=float, metavar="MSUN"),
+        Option("--mass2", type=float, metavar="MSUN"),
+        Option("--snr", type=float, metavar="SNR")
+    ]
+)
+opts, args = parser.parse_args()
+infilename = command.get_input_filename(parser, args)
+command.check_required_arguments(parser, opts, "mass1", "mass2", "snr")
 
 
 # Python standard library imports.
@@ -58,22 +64,23 @@ import numpy as np
 from scipy import linalg
 
 # BAYESTAR imports.
-from lalinference.bayestar import ligolw as ligolw_bayestar
+from lalinference import bayestar.ligolw
 
 
 # Read input file.
-xmldoc, _ = ligolw_utils.load_fileobj(
-    opts.input, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
+xmldoc = ligolw_utils.load_filename(,
+    infilename, contenthandler=bayestar.ligolw.LSCTablesContentHandler)
 
 # Write process metadata to output file.
-process = command.register_to_xmldoc(xmldoc, parser, opts)
+process = ligolw_process.register_to_xmldoc(xmldoc, parser.get_prog_name(),
+    opts.__dict__)
 
 # Determine the low frequency cutoff from the template bank file.
-f_low = ligolw_bayestar.get_template_bank_f_low(xmldoc)
+f_low = bayestar.ligolw.get_temlate_bank_f_low(xmldoc)
 
 # Get the SnglInspiral table.
-sngl_inspiral_table = ligolw_table.get_table(
-    xmldoc, lsctables.SnglInspiralTable.tableName)
+sngl_inspiral_table = ligolw_table.get_table(xmldoc,
+    lsctables.SnglInspiralTable.tableName)
 
 # Determine central values of intrinsic parameters.
 mchirp0 = lalinspiral.sbank.tau0tau3.m1m2_to_mchirp(opts.mass1, opts.mass2)
@@ -88,13 +95,11 @@ thetas_0 = lalsimulation.SimInspiralTaylorF2RedSpinChirpTimesFromMchirpEtaChi(
 f_high = 2048
 df = 0.1
 S = lal.CreateREAL8Vector(int(f_high // df))
-S.data = [
-    lalsimulation.SimNoisePSDaLIGOZeroDetHighPower(i * df)
+S.data = [lalsimulation.SimNoisePSDaLIGOZeroDetHighPower(i * df)
     for i in range(len(S.data))]
 
 # Allocate noise moments.
-moments = [
-    lal.CreateREAL8Vector(int((f_high - f_low) // df)) for _ in range(29)]
+moments = [lal.CreateREAL8Vector(int((f_high - f_low) // df)) for _ in range(29)]
 
 # Compute noise moments.
 lalsimulation.SimInspiralTaylorF2RedSpinComputeNoiseMoments(
@@ -112,9 +117,9 @@ I *= np.square(opts.snr)
 
 # Blockwise separation of Fisher matrix. Parameters are in the following order:
 # theta0, theta3, theta3S, t0, phi0
-IA = I[0:3, 0:3]  # intrinsic block
-IB = I[0:3, 3:5]  # cross block
-ID = I[3:5, 3:5]  # extrinsic block
+IA = I[0:3, 0:3] # intrinsic block
+IB = I[0:3, 3:5] # cross block
+ID = I[3:5, 3:5] # extrinsic block
 metric = IA - np.dot(IB, linalg.solve(ID, IB.T, sym_pos=True))
 
 
@@ -137,7 +142,5 @@ sngl_inspiral_table.extend(rows_to_keep)
 ligolw_process.set_process_end_time(process)
 
 # Write output.
-with ligolw_utils.SignalsTrap():
-    ligolw_utils.write_fileobj(
-        xmldoc, opts.output,
-        gz=(os.path.splitext(opts.output.name)[-1] == '.gz'))
+ligolw_utils.write_filename(xmldoc, opts.output,
+    gz=(os.path.splitext(opts.output)[-1] == '.gz'))

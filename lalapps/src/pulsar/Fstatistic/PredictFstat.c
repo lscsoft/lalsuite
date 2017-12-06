@@ -97,6 +97,8 @@ ConfigVariables GV;		/**< global container for various derived configuration set
 
 /* ----- User-variables: can be set from config-file or command-line */
 typedef struct {
+  BOOLEAN help;		/**< trigger output of help string */
+
   INT4 RngMedWindow;	/**< running-median window to use for noise-floor estimation */
 
   REAL8 aPlus;		/**< '+' polarization amplitude: aPlus  [alternative to {h0, cosi}: aPlus = 0.5*h0*(1+cosi^2)] */
@@ -108,8 +110,6 @@ typedef struct {
   REAL8 Freq;		/**< GW signal frequency */
   REAL8 Alpha;		/**< sky-position angle 'alpha', which is right ascencion in equatorial coordinates */
   REAL8 Delta;		/**< sky-position angle 'delta', which is declination in equatorial coordinates */
-
-  BOOLEAN PureSignal;   /**< If true, calculate 2F for pure signal, i.e. E[2F] = 2F = rho^2 */
 
   LALStringVector* assumeSqrtSX;/**< Assume stationary Gaussian noise with detector noise-floors sqrt{SX}" */
   BOOLEAN SignalOnly;	/**< DEPRECATED: ALTERNATIVE switch to assume Sh=1 instead of estimating noise-floors from SFTs */
@@ -128,6 +128,8 @@ typedef struct {
   CHAR *transientWindowType;	/**< name of transient window ('rect', 'exp',...) */
   REAL8 transientStartTime;	/**< GPS start-time of transient window */
   REAL8 transientTauDays;	/**< time-scale in days of transient window */
+
+  BOOLEAN version;	/**< output version-info */
 
 } UserInput_t;
 
@@ -163,13 +165,18 @@ int main(int argc,char *argv[])
   XLAL_CHECK_MAIN ( initUserVars( &uvar) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* do ALL cmdline and cfgfile handling */
-  BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if ( should_exit ) {
-    exit (1);
+  XLAL_CHECK_MAIN ( XLALUserVarReadAllInput ( argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  if (uvar.help) {	/* if help was requested, we're done here */
+    exit (0);
   }
 
   XLAL_CHECK_MAIN ( (VCSInfoString = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
+
+  if ( uvar.version ) {
+    printf ("%s\n", VCSInfoString );
+    exit(0);
+  }
 
   /* Initialize code-setup */
   XLAL_CHECK_MAIN ( InitPFS ( &GV, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -189,13 +196,8 @@ int main(int argc,char *argv[])
     rho2 = GV.Mmunu.Sinv_Tsft * (GV.Mmunu.Ad * al1 + GV.Mmunu.Bd * al2 + 2.0 * GV.Mmunu.Cd * al3 );
   }
 
-  /* F-statistic expected mean and standard deviation */
-  const REAL8 twoF_expected = uvar.PureSignal ? ( rho2 ) : ( 4.0 + rho2 );
-  const REAL8 twoF_sigma    = uvar.PureSignal ? (    0 ) : ( sqrt( 8.0 + 4.0 * rho2 ) );
-
-  /* output predicted Fstat-value, if requested */
   if (uvar.printFstat) {
-    fprintf(stdout, "\n%.1f\n", twoF_expected);
+    fprintf(stdout, "\n%.1f\n", 4.0 + rho2);
   }
 
   /* output predicted Fstat-value into file, if requested */
@@ -217,8 +219,8 @@ int main(int argc,char *argv[])
       /* append 'dataSummary' */
       fprintf (fpFstat, "%s", GV.dataSummary );
       /* output E[2F] and std[2F] */
-      fprintf (fpFstat, "twoF_expected = %g;\n", twoF_expected);
-      fprintf (fpFstat, "twoF_sigma    = %g;\n", twoF_sigma);
+      fprintf (fpFstat, "twoF_expected = %g;\n", 4.0 + rho2);
+      fprintf (fpFstat, "twoF_sigma    = %g;\n", sqrt( 4.0 * ( 2.0 + rho2 ) ) );
 
       /* output antenna-pattern matrix MNat_mu_nu = matrix(A, B, C) */
       {
@@ -262,13 +264,12 @@ initUserVars ( UserInput_t *uvar )
   uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
+  uvar->help = 0;
   uvar->outputFstat = NULL;
   uvar->printFstat = 1;
 
   uvar->minStartTime = 0;
   uvar->maxStartTime = LAL_INT4_MAX;
-
-  uvar->PureSignal = 0;
 
   uvar->assumeSqrtSX = NULL;
   uvar->SignalOnly = 0;
@@ -277,39 +278,41 @@ initUserVars ( UserInput_t *uvar )
   uvar->transientWindowType = XLALStringDuplicate ( "none" );
 
   /* register all our user-variables */
-  XLALRegisterUvarMember( aPlus, 	 REAL8, 0 , OPTIONAL, "'Plus' polarization amplitude: aPlus  [alternative to {h0, cosi}");
-  XLALRegisterUvarMember( aCross,  	 REAL8, 0 , OPTIONAL, "'Cross' polarization amplitude: aCross [alternative to {h0, cosi}");
-  XLALRegisterUvarMember( h0,		REAL8, 's', OPTIONAL, "Overall GW amplitude h0 [alternative to {aPlus, aCross}]");
-  XLALRegisterUvarMember( cosi,		REAL8, 'i', OPTIONAL, "Inclination angle of rotation axis cos(iota) [alternative to {aPlus, aCross}]");
+  XLALregBOOLUserStruct ( help, 	'h', UVAR_HELP,     "Print this message");
 
-  XLALRegisterUvarMember( psi,		 REAL8, 0, REQUIRED, "Polarisation angle in radians");
-  XLALRegisterUvarMember( phi0,		 REAL8, 0, OPTIONAL, "Initial GW phase phi0 in radians");
+  XLALregREALUserStruct ( aPlus, 	 0 , UVAR_OPTIONAL, "'Plus' polarization amplitude: aPlus  [alternative to {h0, cosi}");
+  XLALregREALUserStruct ( aCross,  	 0 , UVAR_OPTIONAL, "'Cross' polarization amplitude: aCross [alternative to {h0, cosi}");
+  XLALregREALUserStruct ( h0,		's', UVAR_OPTIONAL, "Overall GW amplitude h0 [alternative to {aPlus, aCross}]");
+  XLALregREALUserStruct ( cosi,		'i', UVAR_OPTIONAL, "Inclination angle of rotation axis cos(iota) [alternative to {aPlus, aCross}]");
 
-  XLALRegisterUvarMember( Alpha,	REAL8, 'a', REQUIRED, "Sky position alpha (equatorial coordinates) in radians");
-  XLALRegisterUvarMember( Delta,	REAL8, 'd', REQUIRED, "Sky position delta (equatorial coordinates) in radians");
-  XLALRegisterUvarMember( Freq,		REAL8, 'F', REQUIRED, "GW signal frequency (only used for noise-estimation in SFTs)");
+  XLALregREALUserStruct ( psi,		 0, UVAR_REQUIRED, "Polarisation angle in radians");
+  XLALregREALUserStruct ( phi0,		 0, UVAR_OPTIONAL, "Initial GW phase phi0 in radians");
 
-  XLALRegisterUvarMember( DataFiles, 	STRING, 'D', REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files");
-  XLALRegisterUvarMember( IFO, 		STRING, 'I', OPTIONAL, "Detector-constraint: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
-  XLALRegisterUvarMember( ephemEarth, 	 STRING, 0,  OPTIONAL, "Earth ephemeris file to use");
-  XLALRegisterUvarMember( ephemSun, 	 STRING, 0,  OPTIONAL, "Sun ephemeris file to use");
-  XLALRegisterUvarMember( outputFstat,     STRING, 0,  OPTIONAL, "Output-file for predicted F-stat value" );
-  XLALRegisterUvarMember( printFstat,	 BOOLEAN, 0,  OPTIONAL, "Print predicted F-stat value to terminal" );
+  XLALregREALUserStruct ( Alpha,	'a', UVAR_REQUIRED, "Sky position alpha (equatorial coordinates) in radians");
+  XLALregREALUserStruct ( Delta,	'd', UVAR_REQUIRED, "Sky position delta (equatorial coordinates) in radians");
+  XLALregREALUserStruct ( Freq,		'F', UVAR_REQUIRED, "GW signal frequency (only used for noise-estimation in SFTs)");
 
-  XLALRegisterUvarMember( minStartTime, 	 INT4, 0,  OPTIONAL, "Only use SFTs with timestamps starting from (including) this GPS time");
-  XLALRegisterUvarMember( maxStartTime, 	 INT4, 0,  OPTIONAL, "Only use SFTs with timestamps up to (excluding) this GPS time");
+  XLALregSTRINGUserStruct ( DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files");
+  XLALregSTRINGUserStruct ( IFO, 		'I', UVAR_OPTIONAL, "Detector-constraint: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
+  XLALregSTRINGUserStruct ( ephemEarth, 	 0,  UVAR_OPTIONAL, "Earth ephemeris file to use");
+  XLALregSTRINGUserStruct ( ephemSun, 	 0,  UVAR_OPTIONAL, "Sun ephemeris file to use");
+  XLALregSTRINGUserStruct ( outputFstat,     0,  UVAR_OPTIONAL, "Output-file for predicted F-stat value" );
+  XLALregBOOLUserStruct ( printFstat,	 0,  UVAR_OPTIONAL, "Print predicted F-stat value to terminal" );
 
-  XLALRegisterUvarMember( PureSignal,	BOOLEAN, 'P', OPTIONAL, "If true, calculate 2F for pure signal, i.e. E[2F] = 2F = rho^2. If false, calculate 2F for signal+noise, i.e. E[2F] = 4 + rho^2.");
+  XLALregINTUserStruct ( minStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps starting from (including) this GPS time");
+  XLALregINTUserStruct ( maxStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps up to (excluding) this GPS time");
 
-  XLALRegisterUvarMember( assumeSqrtSX,	 STRINGVector, 0,  OPTIONAL, "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs)");
-  XLALRegisterUvarMember( SignalOnly,	BOOLEAN, 'S', DEPRECATED,"DEPRECATED ALTERNATIVE: Don't estimate noise-floors but assume sqrtSX=1 instead");
+  XLALregLISTUserStruct ( assumeSqrtSX,	 0,  UVAR_OPTIONAL, "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs)");
+  XLALregBOOLUserStruct ( SignalOnly,	'S', UVAR_DEVELOPER,"DEPRECATED ALTERNATIVE: Don't estimate noise-floors but assume sqrtSX=1 instead");
 
-  XLALRegisterUvarMember( RngMedWindow,	INT4, 'k', DEVELOPER, "Running-Median window size");
+  XLALregBOOLUserStruct ( version,        'V', UVAR_SPECIAL,  "Output code version");
+
+  XLALregINTUserStruct ( RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
 
   /* transient signal window properties (name, start, duration) */
-  XLALRegisterUvarMember( transientWindowType,  STRING, 0, OPTIONAL, "Name of transient signal window to use. ('none', 'rect', 'exp').");
-  XLALRegisterUvarMember( transientStartTime,    REAL8, 0, OPTIONAL, "GPS start-time 't0' of transient signal window.");
-  XLALRegisterUvarMember( transientTauDays,   REAL8, 0, OPTIONAL, "Timescale 'tau' of transient signal window in seconds.");
+  XLALregSTRINGUserStruct ( transientWindowType,  0, UVAR_OPTIONAL, "Name of transient signal window to use. ('none', 'rect', 'exp').");
+  XLALregREALUserStruct ( transientStartTime,    0, UVAR_OPTIONAL, "GPS start-time 't0' of transient signal window.");
+  XLALregREALUserStruct ( transientTauDays,   0, UVAR_OPTIONAL, "Timescale 'tau' of transient signal window in seconds.");
 
   return XLAL_SUCCESS;
 

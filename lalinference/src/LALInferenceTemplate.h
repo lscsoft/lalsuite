@@ -38,9 +38,9 @@ SWIGLAL(
         LALInferenceTemplateNullTimedomain,
         LALInferenceTemplatePSTRD,
         LALInferenceTemplateSinc,
-        LALInferenceTemplateSineGaussian,
         LALInferenceTemplateStatPhase,
-        LALInferenceTemplateXLALSimInspiralChooseWaveform
+        LALInferenceTemplateXLALSimInspiralChooseWaveform,
+        LALInferenceTemplateXLALSimBurstChooseWaveform
     )
 );
 #endif
@@ -70,6 +70,13 @@ SWIGLAL(
  *
  */
 /*@{*/
+
+/**
+ * Function for determining the starting frequency of the (2,2) mode when the highest
+ * order contribution starts at fLow.
+ */
+REAL8 fLow2fStart(REAL8 fLow, INT4 ampOrder, INT4 approximant);
+
 
 /**
  * De-bugging function writing a (frequency-domain) signal template to a CSV file.
@@ -120,9 +127,11 @@ void LALInferenceTemplateNullTimedomain(LALInferenceModel *model);
  * - \c "phase"      (REAL8, phase \f$ \phi \f$ (at time \f$ \mu \f$), radians)
  * - \c "amplitude"  (REAL8, amplitude \f$ a \f$)
  */
-void LALInferenceTemplateSineGaussian(LALInferenceModel *model);
 
-void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferenceModel *model);
+void LALInferenceTemplateROQ(LALInferenceModel *model);
+
+void LALInferenceTemplateROQ_amp_squared(LALInferenceModel *model);
+
 /**
  * Damped Sinusoid template.
  *
@@ -191,14 +200,9 @@ void LALInferenceTemplateASinOmegaT(LALInferenceModel *model);
  *
  */
 void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model);
-
 void LALInferenceTemplateXLALSimBurstChooseWaveform(LALInferenceModel *model);
 
-void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInferenceModel *model);
-
 void LALInferenceTemplateXLALSimBurstSineGaussianF(LALInferenceModel *model);
-
-
 /*@}*/
 
 #endif

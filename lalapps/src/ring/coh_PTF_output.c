@@ -17,7 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-#include "config.h"
 #include "coh_PTF.h"
 
 /*
@@ -236,7 +235,7 @@ ProcessTable *coh_PTF_create_process_table( struct coh_PTF_params *params )
   /* call lalapps routine to populate the process table */
 
   XLALPopulateProcessTable(processTable, params->programName,
-      lalAppsVCSIdentInfo.vcsId,lalAppsVCSIdentInfo.vcsStatus,lalAppsVCSIdentInfo.vcsDate,0);
+      lalAppsVCSIdentId,lalAppsVCSIdentStatus,lalAppsVCSIdentDate,0);
 
   strncpy( processTable->comment, " ", LIGOMETA_COMMENT_MAX );
 

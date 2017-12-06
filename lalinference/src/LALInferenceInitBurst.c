@@ -1,7 +1,7 @@
 /*
- *  LALInferenceBurstInit.c:  Bayesian Followup initialisation routines.
+ *  LALInferenceCBCInit.c:  Bayesian Followup initialisation routines.
  *
- *  Copyright (C) 2012 Vivien Raymond, John Veitch, Salvatore Vitale
+ *  Copyright (C) 2013 James Clark, John Veitch, Salvatore Vitale
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,63 +40,6 @@
 #include <lal/GenerateBurst.h>
 #include <lal/LALSimBurst.h>
 #include <lal/LALInferenceCalibrationErrors.h>
-#include <lal/LALInferenceInit.h>
-
-
-LALInferenceModel *LALInferenceInitModelReviewBurstEvidence_unimod(LALInferenceRunState *state);
-LALInferenceModel *LALInferenceInitModelReviewBurstEvidence_bimod(LALInferenceRunState *state);
-
-
-/*
- * Initialize threads in memory, using LALInferenceInitBurstModel() to init models.
- */
-void LALInferenceInitBurstThreads(LALInferenceRunState *run_state, INT4 nthreads) {
-  LALInferenceThreadState *thread;
-  INT4 t, nifo;
-  LALInferenceIFOData *data = run_state->data;
-  UINT4 randomseed;
-  FILE *devrandom;
-  struct timeval tv;
-  run_state->nthreads = nthreads;
-  run_state->threads = LALInferenceInitThreads(nthreads);
-
-  for (t = 0; t < nthreads; t++) {
-    thread = run_state->threads[t];
-
-    /* Set up CBC model and parameter array */
-    thread->model = LALInferenceInitBurstModel(run_state);
-
-    /* Allocate IFO likelihood holders */
-    nifo = 0;
-    while (data != NULL) {
-        data = data->next;
-        nifo++;
-    }
-    thread->currentIFOLikelihoods = XLALCalloc(nifo, sizeof(REAL8));
-
-    LALInferenceCopyVariables(thread->model->params, thread->currentParams);
-    LALInferenceCopyVariables(run_state->priorArgs,thread->priorArgs);
-    LALInferenceCopyVariables(run_state->proposalArgs,thread->proposalArgs);
-
-    /* Use clocktime if seed isn't provided */
-    ProcessParamsTable *ppt = LALInferenceGetProcParamVal(run_state->commandLine, "--randomseed");
-    if (ppt)
-      randomseed = atoi(ppt->value);
-    else {
-      if ((devrandom = fopen("/dev/urandom","r")) == NULL) {
-        gettimeofday(&tv, 0);
-        randomseed = tv.tv_sec + tv.tv_usec;
-      } else {
-        fread(&randomseed, sizeof(randomseed), 1, devrandom);
-        fclose(devrandom);
-      }
-    }
-    thread->GSLrandom=gsl_rng_alloc(gsl_rng_mt19937);
-    gsl_rng_set(thread->GSLrandom, randomseed + t);
-
-  }
-  return;
-}
 
 LALInferenceTemplateFunction LALInferenceInitBurstTemplate(LALInferenceRunState *runState)
 {
@@ -117,7 +60,7 @@ LALInferenceTemplateFunction LALInferenceInitBurstTemplate(LALInferenceRunState 
     }
     else {
       XLALPrintError("Error: unknown template %s\n",ppt->value);
-      XLALPrintError("%s\n",help);
+      XLALPrintError(help);
       //XLAL_ERROR_VOID(XLAL_EINVAL);
     }
   }
@@ -210,24 +153,15 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
       fprintf(stdout,"%s",help);
       return(NULL);
     }
-  ProcessParamsTable *commandLine=state->commandLine;
 
-  /* Over-ride prior bounds if analytic test */
-  if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood"))
-  {
-    return(LALInferenceInitModelReviewBurstEvidence_unimod(state));
-  }
-  else if (LALInferenceGetProcParamVal(commandLine, "--bimodalGaussianLikelihood"))
-  {
-    return(LALInferenceInitModelReviewBurstEvidence_bimod(state));
-  }
- 
- 
+  
   fprintf(stderr,"Using LALInferenceBurstVariables!\n");
 
   LALStatus status;
   SimBurst *BinjTable=NULL;
   SimInspiralTable *inj_table=NULL;
+	state->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
+	ProcessParamsTable *commandLine=state->commandLine;
 	REAL8 endtime=-1;
 	REAL8 endtime_from_inj=-1;
   ProcessParamsTable *ppt=NULL;
@@ -241,25 +175,16 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
   model->params = XLALCalloc(1, sizeof(LALInferenceVariables));
   memset(model->params, 0, sizeof(LALInferenceVariables));
   LALInferenceVariables *currentParams=model->params;
-
-  UINT4 signal_flag=1;
-  ppt = LALInferenceGetProcParamVal(commandLine, "--noiseonly");
-  if(ppt)signal_flag=0;
-
-  LALInferenceAddVariable(model->params, "signalModelFlag", &signal_flag,  LALINFERENCE_INT4_t,  LALINFERENCE_PARAM_FIXED);
-  if(LALInferenceGetProcParamVal(commandLine,"--malmquistPrior"))
-  {
-    UINT4 malmquistflag=1;
-    LALInferenceAddVariable(model->params, "malmquistPrior",&malmquistflag,LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-  }
-
+  
+  //state->proposal=&NSWrapMCMCSineGaussProposal;
+  
   /* We may have used a CBC injection... test */
   ppt=LALInferenceGetProcParamVal(commandLine,"--trigtime");
   if (ppt)
       endtime=atof(ppt->value);
-  ppt=LALInferenceGetProcParamVal(commandLine,"--binj");
+  ppt=LALInferenceGetProcParamVal(commandLine,"--inj");
   if (ppt) {
-    BinjTable=XLALSimBurstTableFromLIGOLw(LALInferenceGetProcParamVal(commandLine,"--binj")->value,0,0);
+    BinjTable=XLALSimBurstTableFromLIGOLw(LALInferenceGetProcParamVal(commandLine,"--inj")->value,0,0);
     if (BinjTable){
       //burst_inj=1;
       ppt=LALInferenceGetProcParamVal(commandLine,"--event");
@@ -268,11 +193,10 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
         while(i<event) {i++; BinjTable = BinjTable->next;}
       }
       else
-        fprintf(stdout,"WARNING: You did not provide an event number with you --binj. Using default event=0 which may not be what you want!!!!\n");
+        fprintf(stdout,"WARNING: You did not provide an event number with you --inj. Using default event=0 which may not be what you want!!!!\n");
       endtime_from_inj=XLALGPSGetREAL8(&(BinjTable->time_geocent_gps));
     }
-  }
-  else if ((ppt=LALInferenceGetProcParamVal(commandLine,"--inj"))){
+    else{
       SimInspiralTableFromLIGOLw(&inj_table,LALInferenceGetProcParamVal(commandLine,"--inj")->value,0,0);
       if (inj_table){
         ppt=LALInferenceGetProcParamVal(commandLine,"--event");
@@ -286,6 +210,7 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
         else
             fprintf(stdout,"WARNING: You did not provide an event number with you --inj. Using default event=0 which may not be what you want!!!!\n");
       }
+    }
   }
   if(!(BinjTable || inj_table || endtime>=0.0 )){
     printf("Did not provide --trigtime or an xml file and event... Exiting.\n");
@@ -335,10 +260,9 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
     fprintf(stderr,"ERROR. Unknown approximant number %i. Unable to choose time or frequency domain model.",approx);
     exit(1);
   }
-
-    /* Handle, if present, requests for calibration parameters. */
-    LALInferenceInitCalibrationVariables(state, model->params);
   
+  
+ 
     REAL8 psiMin=0.0,psiMax=LAL_PI; 
     REAL8 raMin=0.0,raMax=LAL_TWOPI; 
     REAL8 decMin=-LAL_PI/2.0,decMax=LAL_PI/2.0; 
@@ -349,38 +273,18 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
     REAL8 hrssMin=1.e-23, hrssMax=1.0e-15;
     REAL8 loghrssMin=log(hrssMin),loghrssMax=log(hrssMax);
     REAL8 dt=0.1;
-    REAL8 timeMin=endtime-dt; 
-    REAL8 timeMax=endtime+dt;
     REAL8 zero=0.0;
-    gsl_rng *GSLrandom=state->GSLrandom;
-    REAL8 timeParam = timeMin + (timeMax-timeMin)*gsl_rng_uniform(GSLrandom);
+
+    /* Handle, if present, requests for calibration parameters. */
+    LALInferenceInitCalibrationVariables(state, model->params);
 
     ppt=LALInferenceGetProcParamVal(commandLine,"--dt");
     if (ppt) dt=atof(ppt->value);
-    timeMin=endtime-dt; timeMax=endtime+dt;
-    timeParam = timeMin + (timeMax-timeMin)*gsl_rng_uniform(GSLrandom); 
-    LALInferenceRegisterUniformVariableREAL8(state, model->params, "polarisation", zero, psiMin, psiMax, LALINFERENCE_PARAM_LINEAR);
-
-    /* Option to use the detector-aligned frame */
-    if(LALInferenceGetProcParamVal(commandLine,"--detector-frame"))
-    {
-          printf("Using detector-based sky frame\n");
-          LALInferenceRegisterUniformVariableREAL8(state,model->params,"t0",timeParam,timeMin,timeMax,LALINFERENCE_PARAM_LINEAR);
-          LALInferenceRegisterUniformVariableREAL8(state,model->params,"cosalpha",0,-1,1,LALINFERENCE_PARAM_LINEAR);
-          LALInferenceRegisterUniformVariableREAL8(state,model->params,"azimuth",0.0,0.0,LAL_TWOPI,LALINFERENCE_PARAM_CIRCULAR);
-          /* add the time parameter then remove it so that the prior is set up properly */
-          LALInferenceRegisterUniformVariableREAL8(state, model->params, "time", timeParam, timeMin, timeMax,LALINFERENCE_PARAM_LINEAR);
-          LALInferenceRemoveVariable(model->params,"time");
-          INT4 one=1;
-          LALInferenceAddVariable(model->params,"SKY_FRAME",&one,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
-    }
-    else
-    {
-          LALInferenceRegisterUniformVariableREAL8(state, model->params, "rightascension", zero, raMin, raMax,LALINFERENCE_PARAM_CIRCULAR);
-          LALInferenceRegisterUniformVariableREAL8(state, model->params, "declination", zero, decMin, decMax, LALINFERENCE_PARAM_LINEAR);
-          LALInferenceRegisterUniformVariableREAL8(state, model->params, "time", timeParam, timeMin, timeMax,LALINFERENCE_PARAM_LINEAR);
-     }
-
+    REAL8 timeMin=endtime-0.5*dt;
+    REAL8 timeMax=endtime+0.5*dt;
+ 
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "time", zero, timeMin, timeMax, LALINFERENCE_PARAM_LINEAR);
+    
     /* If we are marginalising over the time, remove that variable from the model (having set the prior above) */
     /* Also set the prior in model->params, since Likelihood can't access the state! (ugly hack) */
     if(LALInferenceGetProcParamVal(commandLine,"--margtime")){
@@ -394,12 +298,17 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
       fprintf(stderr,"ERROR: cannot use margphi or margtimephi with burst approximants. Please use margtime or no marginalization\n");
       exit(1);
     }
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "rightascension", zero, raMin, raMax, LALINFERENCE_PARAM_CIRCULAR);
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "declination", zero, decMin, decMax, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "polarisation", zero, psiMin, psiMax, LALINFERENCE_PARAM_LINEAR);
 
-    ppt=LALInferenceGetProcParamVal(commandLine,"--approx");    
-    if (!strcmp("SineGaussian",ppt->value) || !strcmp("SineGaussianF",ppt->value)|| !strcmp("DampedSinusoid",ppt->value) || !strcmp("DampedSinusoidF",ppt->value)){
+    ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
+    if (!strcmp("SineGaussian",ppt->value) || !strcmp("SineGaussianF",ppt->value)|| !strcmp("SineGaussianFFast",ppt->value)|| !strcmp("DampedSinusoid",ppt->value) || !strcmp("DampedSinusoidF",ppt->value)){
+     
       LALInferenceRegisterUniformVariableREAL8(state, model->params, "frequency",  zero, ffMin, ffMax,   LALINFERENCE_PARAM_LINEAR);
-      LALInferenceRegisterUniformVariableREAL8(state, model->params, "quality",  zero,qMin, qMax,   LALINFERENCE_PARAM_LINEAR);
+     LALInferenceRegisterUniformVariableREAL8(state, model->params, "quality",  zero,qMin, qMax,   LALINFERENCE_PARAM_LINEAR);
       LALInferenceRegisterUniformVariableREAL8(state, model->params,"polar_eccentricity",  zero,0.0,1.0,   LALINFERENCE_PARAM_LINEAR);
+
     }
     else if (!strcmp("Gaussian",ppt->value) || !strcmp("GaussianF",ppt->value)){
       LALInferenceRegisterUniformVariableREAL8(state, model->params,"duration", zero, durMin,durMax, LALINFERENCE_PARAM_LINEAR);
@@ -411,15 +320,54 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
     else
       LALInferenceRegisterUniformVariableREAL8(state, model->params, "loghrss",  zero,loghrssMin, loghrssMax,   LALINFERENCE_PARAM_LINEAR);
     
-    LALInferenceRegisterUniformVariableREAL8(state,model->params, "polar_angle", zero,0.0,2*LAL_PI ,LALINFERENCE_PARAM_CIRCULAR);
+    LALInferenceRegisterUniformVariableREAL8(state,model->params, "alpha", zero,0.0,2.0*LAL_PI ,LALINFERENCE_PARAM_CIRCULAR);
+    ppt=LALInferenceGetProcParamVal(commandLine,"--cross_only");
+    if (ppt){
+      printf("Fixing alpha to Pi/2 in template ---> only cross polarization will be used\n");
+      LALInferenceRegisterUniformVariableREAL8(state,model->params, "alpha", LAL_PI/2.0,0.0,2*LAL_PI ,LALINFERENCE_PARAM_FIXED);
+    }
+    ppt=LALInferenceGetProcParamVal(commandLine,"--plus_only");
+    if (ppt){
+        printf("Fixing alpha to 0 in template ---> only plus polarization will be used\n");
+        LALInferenceRegisterUniformVariableREAL8(state,model->params, "alpha", 0.0,0.0,2*LAL_PI, LALINFERENCE_PARAM_FIXED);
+    }
+
     LALInferenceAddVariable(model->params, "LAL_APPROXIMANT", &approx,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-    
-  /* Store a variable in case we are using a FastSG likelihood */
-  ppt=LALInferenceGetProcParamVal(commandLine,"--fastSineGaussianLikelihood");
-  UINT4 using_sgf=0;
-  if (ppt)
-    using_sgf=1;
-  LALInferenceAddVariable(model->params, "USING_FAST_SGF", &using_sgf,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+
+    INT4 h1_sign=1,l1_sign=1;
+    if (LALInferenceGetProcParamVal(commandLine,"--flip_h1_sign"))
+      h1_sign=-1;
+    if (LALInferenceGetProcParamVal(commandLine,"--flip_l1_sign"))
+      l1_sign=-1;
+
+      LALInferenceAddVariable(model->params, "H1_SIGN", &h1_sign,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(model->params, "L1_SIGN", &l1_sign,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
+
+
+
+
+    /* Needs two condition: must be a burst template and the burst injection must have been provided to do those checks
+    if (BinjTable && burst_inj){
+        
+        if (log(BinjTable->hrss) > loghrssMax || log(BinjTable->hrss) < loghrssMin)
+            fprintf(stdout,"WARNING: The injected value of loghrss (%.4e) lies outside the prior range. That may be ok if your template and injection belong to different WF families\n",log(BinjTable->hrss));
+        if (BinjTable->q > qMax || BinjTable->q < qMin )
+            fprintf(stdout,"WARNING: The injected value of q (%lf) lies outside the prior range\n",BinjTable->q);
+         if (BinjTable->frequency > ffMax || BinjTable->frequency < ffMin )
+            fprintf(stdout,"WARNING: The injected value of centre_frequency (%lf) lies outside the prior range\n",BinjTable->frequency);
+        
+        ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
+        if (!strcmp("Gaussian",ppt->value) || !strcmp("GaussianF",ppt->value)){
+          if (BinjTable->duration >durMax || BinjTable->duration < durMin )
+            fprintf(stdout,"WARNING: The injected value of centre_frequency (%lf) lies outside the prior range\n",BinjTable->frequency);
+        }
+        // Check the max Nyquist frequency for this parameter range
+        if ( (ffmax+ 3.0*ffmax/qmin) > state->data->fHigh){
+            fprintf(stderr,"WARNING, some of the template in your parameter space will be generated at a frequency higher than Nyquist (%lf). This is bound to produce unwanted consequences. Consider increasing the sampling rate, or reducing (increasing) the max (min) value of frequency (Q). With current setting, srate must be higher than %lf\n",state->data->fHigh,2*(ffmax+ 3.0*ffmax/qmin));
+            //exit(1);
+        }
+            
+    }*/
   /* Set model sampling rates to be consistent with data */
   model->deltaT = state->data->timeData->deltaT;
   model->deltaF = state->data->freqData->deltaF;
@@ -471,9 +419,8 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
   /* Initialize waveform cache */
   model->burstWaveformCache = XLALCreateSimBurstWaveformCache();
 
-  return (model);
+  return model;
 }
-
 
 
 LALInferenceModel *LALInferenceInitModelReviewBurstEvidence_unimod(LALInferenceRunState *state)
@@ -583,4 +530,5 @@ LALInferenceModel *LALInferenceInitModelReviewBurstEvidence_bimod(LALInferenceRu
   }
   return(model);
 }
+
 

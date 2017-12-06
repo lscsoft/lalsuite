@@ -38,6 +38,7 @@ extern "C" {
 #include <lal/LALDatatypes.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/PtoleMetric.h>
+#include <lal/StackMetric.h>
 #include <lal/LALBarycenter.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/ComputeFstat.h>
@@ -78,7 +79,7 @@ extern "C" {
 /*---------- external types ----------*/
 
 /** Different 'states' a Doppler-scan can be in */
-typedef enum tagscan_state_t {
+typedef enum {
   STATE_IDLE = 0,   	/**< not initialized yet */
   STATE_READY,		/**< initialized and ready */
   STATE_FINISHED,	/**< all templates have been read */
@@ -86,7 +87,8 @@ typedef enum tagscan_state_t {
 } scan_state_t;
 
 /** different types of grids: */
-typedef enum tagDopplerGridType {
+typedef enum
+{
   /* ----- factored grid-types: sky x f0dot x f1dot x f2dot x f3dot  */
   GRID_FLAT 		= 0,		/**< "flat" sky-grid: fixed step-size (dAlpha,dDelta) */
   GRID_ISOTROPIC	= 1,		/**< approximately isotropic sky-grid */

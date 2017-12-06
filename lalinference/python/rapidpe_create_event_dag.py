@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+#
 # Copyright (C) 2012 Chris Pankow
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -20,7 +22,7 @@ Creates a dag workflow to perform extrinsic marginalization calculation.
 
 import sys
 import os
-from argparse import ArgumentParser
+from optparse import OptionParser, OptionGroup
 
 import numpy as np
 
@@ -43,39 +45,33 @@ __author__ = "Evan Ochsner <evano@gravity.phys.uwm.edu>, Chris Pankow <pankow@gr
 # Option parsing
 #
 
-argp = ArgumentParser()
+optp = OptionParser()
 # Options needed by this program only.
 
-argp.add_argument("-T", "--template-bank-xml", help="Input template bank as a sim_inspiral or sngl_inspiral table. Required.")
-argp.add_argument("-D", "--working-directory", default="./", help="Directory in which to stage DAG components.")
-argp.add_argument("-l", "--log-directory", default="./", help="Directory in which to place condor logs.")
-argp.add_argument("-W", "--web-output", default="./", help="Directory to place web accessible plots and webpages.")
-argp.add_argument("-O", "--output-name", default="marginalize_extrinsic_parameters", help="Filename (without extension) to write DAG to.")
-argp.add_argument("--n-copies", default=1, help="Number of copies of each integrator instance to run per mass point. Default is one.")
-argp.add_argument("--write-script", action="store_true", help="In addition to the DAG, write a script to this filename to execute the workflow.")
-argp.add_argument("--write-eff-lambda", action="store_true", help="Use psi0 column of template bank XML as effective lambda point to calculate in DAG.")
-argp.add_argument("--write-deff-lambda", action="store_true", help="Use psi3 column of template bank XML as delta effective lambda point to calculate in DAG.")
-argp.add_argument("--condor-command", action="append", help="Append these condor commands to the submit files. Useful for account group information.")
+optp.add_option("-T", "--template-bank-xml", help="Input template bank as a sim_inspiral or sngl_inspiral table. Required.")
+optp.add_option("-D", "--working-directory", default="./", help="Directory in which to stage DAG components.")
+optp.add_option("-l", "--log-directory", default="./", help="Directory in which to place condor logs.")
+optp.add_option("-W", "--web-output", default="./", help="Directory to place web accessible plots and webpages.")
+optp.add_option("--disable-ile-postproc", action="store_true", help="Do not plot mass posteriors via plot_like_contours.")
+optp.add_option("--disable-bayes-postproc", action="store_true", help="Do not plot posteriors via cbcBayesPostProc.")
+optp.add_option("--n-copies", default=1, help="Number of copies of each integrator instance to run per mass point. Default is one.")
+optp.add_option("--write-script", action="store_true", help="In addition to the DAG, write a script to this filename to execute the workflow.")
 
 for cat, val in MAXJOBS.iteritems():
     optname = "--maxjobs-%s" % cat.lower().replace("_", "-")
-    argp.add_argument(optname, type=int, default=MAXJOBS[cat], help="Set MAXJOBS in DAGs for category %s. Default is %s" % (cat, str(val)))
+    optp.add_option(optname, type="int", default=MAXJOBS[cat], help="Set MAXJOBS in DAGs for category %s. Default is %s" % (cat, str(val)))
 
 # Options transferred to ILE
-common_cl.add_datasource_params(argp)
-common_cl.add_integration_params(argp)
-common_cl.add_output_params(argp)
-common_cl.add_intrinsic_params(argp)
-common_cl.add_pinnable_params(argp)
+common_cl.add_datasource_params(optp)
+common_cl.add_integration_params(optp)
+common_cl.add_output_params(optp)
+common_cl.add_intrinsic_params(optp)
+common_cl.add_pinnable_params(optp)
 
-opts = argp.parse_args()
+opts, args = optp.parse_args()
 
 if not opts.template_bank_xml:
     exit("Option --template-bank-xml is required.")
-
-condor_commands = None
-if opts.condor_command is not None:
-    condor_commands = dict([c.split("=") for c in opts.condor_command])
 
 #
 # Get trigger information from coinc xml file
@@ -97,6 +93,21 @@ elif opts.event_time is not None:
 else:
     raise ValueError("Either --coinc-xml or --event-time must be provided to parse event time.")
 
+# get masses from sngl_inspiral_table
+if opts.mass1 is not None and opts.mass2 is not None:
+    m1, m2 = opts.mass1, opts.mass2
+elif xmldoc is not None:
+    sngl_inspiral_table = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
+    assert len(sngl_inspiral_table) == len(coinc_row.ifos.split(","))
+    m1, m2 = None, None
+    for sngl_row in sngl_inspiral_table:
+        # NOTE: gstlal is exact match, but other pipelines may not be
+        assert m1 is None or (sngl_row.mass1 == m1 and sngl_row.mass2 == m2)
+        m1, m2 = sngl_row.mass1, sngl_row.mass2
+    event_time = glue.lal.LIGOTimeGPS(opts.event_time)
+else:
+    raise ValueError("Need either --mass1 --mass2 or --coinc-xml to retrieve masses.")
+
 xmldoc, tmplt_bnk = utils.load_filename(opts.template_bank_xml, contenthandler=ligolw.LIGOLWContentHandler), None
 try:
     tmplt_bnk = lsctables.SimInspiralTable.get_table(xmldoc)
@@ -109,9 +120,8 @@ if tmplt_bnk is None:
 #
 # Post processing options
 #
-# FIXME: Remove these entirely
-use_ile_postproc = False
-use_bayespe_postproc = False
+use_ile_postproc = not opts.disable_ile_postproc
+use_bayespe_postproc = not opts.disable_bayes_postproc
 
 # initialize the analysis subdag
 dag = pipeline.CondorDAG(log=os.getcwd())
@@ -128,23 +138,8 @@ ppdag.add_maxjobs_category("PLOT", MAXJOBS["PLOT"])
 if not os.path.exists(opts.log_directory):
     os.makedirs(opts.log_directory) # Make a directory to hold log files of jobs
 
-# All the intrinsic parameters we're gridding in
-intr_prms = set(("mass1", "mass2"))
-for p in ("spin1z", "spin2z"): # FIXME: Add all
-    if hasattr(tmplt_bnk[0], p):
-        intr_prms.add(p)
-
-# These have explicit options because they map to non-standard columns and I
-# want the user to explicity use these columns if they've written them
-if opts.write_eff_lambda:
-    intr_prms.add("eff_lambda")
-if opts.write_deff_lambda:
-    intr_prms.add("deff_lambda")
-
 ile_job_type, ile_sub_name = dagutils.write_integrate_likelihood_extrinsic_sub(
         tag='integrate',
-        condor_commands=condor_commands,
-        intr_prms=intr_prms,
         log_dir=opts.log_directory,
         cache_file=opts.cache_file,
         channel_name=opts.channel_name,
@@ -152,7 +147,6 @@ ile_job_type, ile_sub_name = dagutils.write_integrate_likelihood_extrinsic_sub(
         coinc_xml=opts.coinc_xml,
         reference_freq=opts.reference_freq,
         fmax=opts.fmax,
-        fmin_template=opts.fmin_template,
 		approximant=opts.approximant,
 		amp_order=opts.amp_order,
 		l_max=opts.l_max,
@@ -163,12 +157,13 @@ ile_job_type, ile_sub_name = dagutils.write_integrate_likelihood_extrinsic_sub(
         n_eff=opts.n_eff,
         n_max=opts.n_max,
         ncopies=opts.n_copies,
+        save_deltalnL=opts.save_deltalnL,
         save_P=opts.save_P,
         n_chunk=opts.n_chunk,
+        convergence_tests_on=opts.convergence_tests_on,
         adapt_floor_level=opts.adapt_floor_level,
         adapt_weight_exponent=opts.adapt_weight_exponent,
-        skymap_file=opts.skymap_file,
-        distance_maximum=opts.distance_maximum
+        skymap_file=opts.skymap_file
         )
 ile_job_type.write_sub_file()
 
@@ -199,21 +194,14 @@ sql_job_type, sql_job_name = dagutils.write_result_coalescence_sub(tag="coalesce
 sql_job_type.write_sub_file()
 
 # TODO: Mass index table
-for i, tmplt in enumerate(tmplt_bnk):
+# FIXME: Expanding intrinsic set will require modification here
+for i, (m1, m2) in enumerate([(tmplt.mass1, tmplt.mass2) for tmplt in tmplt_bnk]):
     mass_grouping = "MASS_SET_%d" % i
 
     ile_node = pipeline.CondorDAGNode(ile_job_type)
     ile_node.set_priority(JOB_PRIORITIES["ILE"])
-    ile_node.add_macro("macromass1", tmplt.mass1)
-    ile_node.add_macro("macromass2", tmplt.mass2)
-    if opts.write_eff_lambda:
-        ile_node.add_macro("macroefflambda", tmplt.psi0)
-    if opts.write_deff_lambda:
-        ile_node.add_macro("macrodefflambda", tmplt.psi3)
-    if hasattr(tmplt, "spin1z"):
-        ile_node.add_macro("macrospin1z", tmplt.spin1z)
-    if hasattr(tmplt, "spin2z"):
-        ile_node.add_macro("macrospin2z", tmplt.spin2z)
+    ile_node.add_macro("macromass1", m1)
+    ile_node.add_macro("macromass2", m2)
     if use_bayespe_postproc:
         # If we're using the Bayesian PE post processing script, dump the data
         ile_node.set_post_script(dagutils.which("process_ile_output"))
@@ -258,7 +246,8 @@ for i, tmplt in enumerate(tmplt_bnk):
         # uberdag, this is now dependent on the SQL step
         pos_plot_node.add_parent(sql_node)
 
-dag_name=opts.output_name
+# FIXME: Adjust name on command line
+dag_name="marginalize_extrinsic_parameters"
 dag.set_dag_file(dag_name)
 dag.write_concrete_dag()
 if opts.write_script:
@@ -268,18 +257,12 @@ print "Created a DAG named %s\n" % dag_name
 print "This will run %i instances of %s in parallel\n" % (len(tmplt_bnk), ile_sub_name)
 
 # FIXME: Adjust name on command line
-if use_bayespe_postproc:
-    ppdag_name="posterior_pp"
-    ppdag.set_dag_file(ppdag_name)
-    ppdag.add_maxjobs_category("ANALYSIS", MAXJOBS["ANALYSIS"])
-    ppdag.add_maxjobs_category("POST", MAXJOBS["POST"])
-    ppdag.write_concrete_dag()
-    if opts.write_script:
-        ppdag.write_script()
+ppdag_name="posterior_pp"
+ppdag.set_dag_file(ppdag_name)
+ppdag.add_maxjobs_category("ANALYSIS", MAXJOBS["ANALYSIS"])
+ppdag.add_maxjobs_category("POST", MAXJOBS["POST"])
+ppdag.write_concrete_dag()
+if opts.write_script:
+    ppdag.write_script()
 
-    print "Created a postprocessing DAG named %s\n" % ppdag_name
-
-xmldoc = ligolw.Document()
-xmldoc.appendChild(ligolw.LIGO_LW())
-process.register_to_xmldoc(xmldoc, sys.argv[0], opts.__dict__)
-utils.write_filename(xmldoc, opts.output_name + ".xml.gz", gz=True)
+print "Created a postprocessing DAG named %s\n" % ppdag_name

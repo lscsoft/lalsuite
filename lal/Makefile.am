@@ -7,16 +7,19 @@ include $(top_srcdir)/gnuscripts/lalsuite_library_top.am
 ACLOCAL_AMFLAGS = -I gnuscripts
 
 EXTRA_DIST += \
+	README.bugs \
+	README.contrib \
+	README.install \
 	lal.spec \
 	$(DATA)
 
 SUBDIRS = \
 	debian \
 	include \
-	src \
+	packages \
+	lib \
 	swig \
 	python \
-	test \
 	doxygen \
 	$(END_OF_LIST)
 

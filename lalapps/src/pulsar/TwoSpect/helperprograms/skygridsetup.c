@@ -24,13 +24,13 @@
 #include <lal/UserInput.h>
 #include <lal/LALString.h>
 #include <lal/DopplerScan.h>
-#include <lal/LALInitBarycenter.h>
 
 #include "../antenna.h"
 
 typedef struct
 {
-   REAL8 Tsft;
+   BOOLEAN help;		/**< Print this help/usage message */
+   REAL8 Tcoh;
    REAL8 SFToverlap;
    REAL8 t0;
    REAL8 Tobs;
@@ -87,15 +87,14 @@ int main(int argc, char *argv[])
    EphemerisData *edat = NULL;
    XLAL_CHECK( (edat = XLALInitBarycenter(uvar.ephemEarth, uvar.ephemSun)) != NULL, XLAL_EFUNC );
    
-   //v1: Maximum orbital earth speed in units of c from start of S6 TwoSpect data for 104 weeks total time
-   //else: maximum detector velocity around the time of observation
+   //Maximum orbital earth speed in units of c from start of S6 TwoSpect data for 104 weeks total time
    REAL4 detectorVmax = 0.0;
-   if (uvar.v1) detectorVmax = CompDetectorVmax(931081500.0+uvar.SFToverlap, uvar.Tsft, uvar.SFToverlap, 62899200.0-uvar.SFToverlap, det, edat);
-   else detectorVmax = CompDetectorVmax(uvar.t0-uvar.Tsft, uvar.Tsft, uvar.SFToverlap, uvar.Tobs+2.0*uvar.Tsft, det, edat);
+   if (uvar.v1) detectorVmax = CompDetectorVmax(931081500.0+uvar.SFToverlap, uvar.Tcoh, uvar.SFToverlap, 62899200.0-uvar.SFToverlap, det, edat);
+   else detectorVmax = CompDetectorVmax(uvar.t0-uvar.Tcoh, uvar.Tcoh, uvar.SFToverlap, uvar.Tobs+2.0*uvar.Tcoh, det, edat);
    XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC, "CompDetectorVmax() failed\n" );
    
    //Initialize the sky-grid
-   scanInit.dAlpha = 0.5/((uvar.fmin+0.5*uvar.fspan) * uvar.Tsft * detectorVmax);
+   scanInit.dAlpha = 0.5/((uvar.fmin+0.5*uvar.fspan) * uvar.Tcoh * detectorVmax);
    scanInit.dDelta = scanInit.dAlpha;
    InitDopplerSkyScan(&status, &scan, &scanInit);
    XLAL_CHECK( status.statusCode == 0, XLAL_EFUNC );
@@ -130,26 +129,27 @@ INT4 InitUserVars(UserVariables_t *uvar, int argc, char *argv[])
    uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
    uvar->outfilename = XLALStringDuplicate("skygrid.dat");
    uvar->skyRegion = XLALStringDuplicate("allsky");
-   uvar->Tsft = 1800;
+   uvar->Tcoh = 1800;
    uvar->SFToverlap = 900;
    uvar->fspan = 0.25;
 
-   XLALRegisterUvarMember(  Tsft,        REAL8, 0 , OPTIONAL , "SFT coherence time");
-   XLALRegisterUvarMember(  SFToverlap,  REAL8, 0 , OPTIONAL , "SFT overlap in seconds, usually Tsft/2");
-   XLALRegisterUvarMember(  t0,          REAL8, 0 , OPTIONAL , "GPS start time of the search; not needed if --v1 is specified");
-   XLALRegisterUvarMember(  Tobs,        REAL8, 0 , OPTIONAL , "Duration of the search (in seconds); not needed if --v1 is specified");
-   XLALRegisterUvarMember(  fmin,        REAL8, 0 , OPTIONAL , "Minimum frequency of band");
-   XLALRegisterUvarMember(  fspan,       REAL8, 0 , OPTIONAL , "Frequency span of band");
-   XLALRegisterUvarMember(IFO,         STRING, 0 , REQUIRED , "Interferometer whose data is being analyzed");
-   XLALRegisterUvarMember(outfilename, STRING, 0 , OPTIONAL , "Output filename");
-   XLALRegisterUvarMember(ephemEarth,  STRING, 0 , OPTIONAL , "Earth ephemeris file");
-   XLALRegisterUvarMember(ephemSun,    STRING, 0 , OPTIONAL , "Sun ephemeris file");
-   XLALRegisterUvarMember(skyRegion,   STRING, 0 , OPTIONAL , "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky");
-   XLALRegisterUvarMember(  v1,          BOOLEAN, 0 , DEVELOPER, "Flag to use older style of CompDetectorVmax (for S6/VSR2-3 analysis)");
+   XLALregBOOLUserStruct(  help,       'h', UVAR_HELP     , "Print this help/usage message");
+   XLALregREALUserStruct(  Tcoh,        0 , UVAR_OPTIONAL , "SFT coherence time");
+   XLALregREALUserStruct(  SFToverlap,  0 , UVAR_OPTIONAL , "SFT overlap in seconds, usually Tcoh/2");
+   XLALregREALUserStruct(  t0,          0 , UVAR_OPTIONAL , "GPS start time of the search; not needed if --v1 is specified");
+   XLALregREALUserStruct(  Tobs,        0 , UVAR_OPTIONAL , "Duration of the search (in seconds); not needed if --v1 is specified");
+   XLALregREALUserStruct(  fmin,        0 , UVAR_OPTIONAL , "Minimum frequency of band");
+   XLALregREALUserStruct(  fspan,       0 , UVAR_OPTIONAL , "Frequency span of band");
+   XLALregSTRINGUserStruct(IFO,         0 , UVAR_REQUIRED , "Interferometer of whose data is being analyzed");
+   XLALregSTRINGUserStruct(outfilename, 0 , UVAR_OPTIONAL , "Output filename");
+   XLALregSTRINGUserStruct(ephemEarth,  0 , UVAR_OPTIONAL , "Earth ephemeris file");
+   XLALregSTRINGUserStruct(ephemSun,    0 , UVAR_OPTIONAL , "Sun ephemeris file");
+   XLALregSTRINGUserStruct(skyRegion,   0 , UVAR_OPTIONAL , "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky");
+   XLALregBOOLUserStruct(  v1,          0 , UVAR_DEVELOPER, "Flag to use older style of CompDetectorVmax (for S6/VSR2-3 analysis)");
 
-   BOOLEAN should_exit = 0;
-   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
-   if ( should_exit ) exit (1);
+   XLAL_CHECK( XLALUserVarReadAllInput(argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
+
+   if ( uvar->help ) exit (0);
 
    if (!uvar->v1 && !XLALUserVarWasSet(&uvar->t0)) XLAL_ERROR( XLAL_EINVAL, "Must set t0" );
    if (!uvar->v1 && !XLALUserVarWasSet(&uvar->Tobs)) XLAL_ERROR( XLAL_EINVAL, "Must set Tobs" );

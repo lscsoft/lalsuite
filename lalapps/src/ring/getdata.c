@@ -17,7 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-#include "lalapps.h"
 #include <math.h>
 #include <string.h>
 
@@ -32,6 +31,7 @@
 #include <lal/Units.h>
 #include <lal/LIGOMetadataRingdownUtils.h>
 
+#include "lalapps.h"
 #include "getdata.h"
 #include "errutil.h"
 

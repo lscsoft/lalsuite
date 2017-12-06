@@ -13,8 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## \defgroup laldetchar_py_idq_idq_gdb_utils methods used for GraceDB interface
-## \ingroup laldetchar_py_idq
+## \addtogroup laldetchar_py_idq
 ## Synopsis
 # ~~~
 # from laldetchar.idq import idq_gdb_utils
@@ -30,157 +29,145 @@ __author__ = 'Reed Essick <reed.essick@ligo.org>'
 __version__ = git_version.id
 __date__ = git_version.date
 
-## \addtogroup laldetchar_py_idq_idq_gdb_utils
+## \addtogroup laldetchar_py_idq_auxmvc
 # @{
 
 # Utility functions used for generating iDQ input to GraceDB.
 
-import glob
-
 import numpy as np
 import re as re
-
 from laldetchar.idq import event
-from laldetchar.idq import ovl
-
 from laldetchar.idq import idq
 
-from laldetchar.idq import idq_tables
-from glue.ligolw import ligolw
-from laldetchar.idq import idq_tables_dbutils
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw import lsctables
-from glue.ligolw import dbtables
-from glue.ligolw import table
 
-#===================================================================================================
+def combine_ts(filenames):
+    """ 
+....combine multiple files into a single time-series. Assumes filenames have the standard LIGO naming covention: *-start-dur.suffix
+....Also assumes that filenames are sorted into chronological order
 
-def get_glitch_times(glitch_xmlfiles):
-    """
-    Returns list of (gps,gps_ns) tuples for all events contained in the glitch_xmlfiles.
-    """
-    # load files in database
-    connection, cursor = idq_tables_dbutils.load_xml_files_into_database(glitch_xmlfiles)
+....returns lists of arrays, with each array consisting of only contiguous data
+........return timeseries, times
+...."""
 
-    # get table names from the database
-    tablenames = dbtables.get_table_names(connection)
-    if not tablenames:
-        print "No tables were found in the database."
-        return []
+    t = np.array([])  # the array storing continuous data
+    ts = np.array([])
+    times = []  # a list that will contain stretches of continuous data
+    timeseries = []
 
-    # check if glitch table is present
-    if not idq_tables.IDQGlitchTable.tableName in tablenames:
-        print "No glitch table is found in database."
-        print "Can not perform requested query."
-        return []
+    matchfile = re.compile('.*-([0-9]*)-([0-9]*).*$')
 
-    data = cursor.execute("""SELECT gps, gps_ns FROM """ + \
-        idq_tables.IDQGlitchTable.tableName).fetchall()
-    # close database
-    connection.close()
-    return data
+    end = False
+    for filename in filenames:
+        m = matchfile.match(filename)
+        (_start, _dur) = (int(m.group(1)), int(m.group(2)))
 
-def get_glitch_ovl_snglburst_summary_info(glitch_xmlfiles, glitch_columns, ovl_columns, snglburst_columns):
-    """
-    Generates summary info table for glitch events stored in glitch_xmlfiles.
-    Returns list of (ifo, gps, gps_ns, rank, fap, ovl_channel, trig_type, trig_snr) tuples.
-    Each tuple in the list corresponds to a glitch event.
-    """
-    # load files in database
-    connection, cursor = idq_tables_dbutils.load_xml_files_into_database(glitch_xmlfiles)
+        # ## check to see if we have continuous data
 
-    # get glitch gps times and ovl channels
-    data = idq_tables_dbutils.get_get_glitch_ovl_sngburst_data(\
-        connection, cursor, glitch_columns, ovl_columns, snglburst_columns)
+        if not end or end == _start:  # beginning of data
+            end = _start + _dur
 
-    # close database
-    connection.close()
-    return data
+            _file = event.gzopen(filename)
+            _ts = np.load(_file)
+            _file.close()
 
-def get_glitch_ovl_channels(glitch_xmlfiles):
-    """
-    Gets ovl channels for glitch events from glitch_xmlfiles.
-    Returns list of (gps_seconds, gps_nanonsecons, ovl_channel) tuples.
-    Each tuple in the list corresponds to a glitch event.
-    """
-    # load files in database
-    connection, cursor = idq_tables_dbutils.load_xml_files_into_database(glitch_xmlfiles)
-
-    # get glitch gps times and ovl channels
-    data = idq_tables_dbutils.get_glitch_ovl_data(connection, cursor, \
-        ['gps', 'gps_ns'], ['aux_channel'])
-    # close database
-    connection.close()
-    return data
-
-def extract_ovl_vconfigs( rank_frames, channame, traindir, start, end, metric='eff/dt' ):
-    """
-    returns a dictionary mapping active vconfigs to segments
-    does NOT include "none" channel
-    """
-    vconfigs = []
-    for rnkfr in rank_frames:
-        trained, calib = idq.extract_timeseries_ranges( rnkfr )
-        classifier = idq.extract_fap_name( rnkfr ) 
-
-        vetolist = glob.glob( "%s/%d_%d/ovl/ovl/*vetolist.eval"%(traindir, trained[0], trained[1]) )        
-        if len(vetolist) != 1:
-            raise ValueError( "trouble finding a single vetolist file for : %s"%rnkfr )
-        vetolist=vetolist[0]
-        v = event.loadstringtable( vetolist )
-
-        rankmap = { 0:[(None, None, None, None, 0, 0)] }
-
-        for line in v:
-            metric_exp = float(line[ovl.vD['metric_exp']])
-            if metric == 'eff/dt':
-                rnk = ovl.effbydt_to_rank( metric_exp )
-            elif metric == 'vsig':
-                rnk = ovl.vsig_to_rank( metric_exp )
-            elif metric == 'useP': 
-                rnk = ovl.useP_to_rank( metric_exp )
-            else:
-                raise ValueError("metric=%s not understood"%metric)
-            if rankmap.has_key(rnk):
-                rankmap[rnk].append( (line[ovl.vD['vchan']], float(line[ovl.vD['vthr']]), float(line[ovl.vD['vwin']]), metric, metric_exp, rnk ))
-            else:
-                rankmap[rnk] = [(line[ovl.vD['vchan']], float(line[ovl.vD['vthr']]), float(line[ovl.vD['vwin']]), metric, metric_exp, rnk )]
-
-        for key, value in rankmap.items():
-            rankmap[key] = tuple(value)
-
-        t, ts = idq.combine_gwf( [rnkfr], [channame])
-        t = t[0]
-        truth = (start <= t)*(t <= end)
-        t = t[truth]
-        ts = ts[0][truth]
-        if not len(ts):
-            continue
-
-        configs = rankmap[ts[0]]
-        segStart = t[0]
-        for T, TS in zip(t, ts):
-            if rankmap[TS] != configs:
-                vconfigs.append( (configs, [segStart, T] ) )
-                segStart = T
-                configs = rankmap[TS]
-            else:
-                pass 
-        vconfigs.append( (configs, [segStart, T+t[1]-t[0]] ) )
-
-    configs = {}
-    for vconfig, seg in vconfigs:
-        if configs.has_key( vconfig ):
-            configs[vconfig].append( seg )
+            ts = np.concatenate((ts, _ts))
+            t = np.concatenate((t, np.arange(_start, _start + _dur, 1.0
+                               * _dur / len(_ts))))
         else:
-            configs[vconfig] = [ seg ]
-    for key, value in configs.items():
-        value = event.andsegments( [event.fixsegments( value ), [[start,end]] ] )
-        if event.livetime( value ):
-            configs[key] = event.fixsegments( value )
-        else:
-            raise ValueError("somehow picked up a config with zero livetime...")
 
-    return vconfigs, configs, {"vchan":0, "vthr":1, "vwin":2, "metric":3, "metric_exp":4, "rank":5}
+            # gap in the data!
 
+            times.append(t)  # put old continuous data into lists
+            timeseries.append(ts)
+
+            _file = event.gzopen(filename)  # start new continuous data
+            ts = np.load(_file)
+            _file.close()
+            t = np.arange(_start, _start + _dur, 1.0 * _dur / len(ts))
+            end = _start + _dur
+
+    times.append(t)
+    timeseries.append(ts)
+
+    return (times, timeseries)
+
+
+def stats_ts(ts):
+    """ 
+....compute basic statistics about ts 
+
+....return min(ts), max(ts), mean(ts), stdv(ts)
+...."""
+
+    return (np.min(ts), np.max(ts), np.mean(ts), np.var(ts) ** 0.5)
+
+
+
+def execute_gdb_timeseries(
+    gps_start,
+    gps_end,
+    gps,
+    gracedb_id,
+    ifo,
+    classifier,
+    cp,
+    input_dir,
+    exec_prog,
+    usertag='',
+    gch_xml=[],
+    cln_xml=[],
+    plotting_gps_start=None,
+    plotting_gps_end=None):
+    """ Function that sets up and runs idq-gdb-timeseries script as one of the tasks of idq-gdb-processor."""
+    # form the command line
+    cmd_line = [exec_prog, '-s', gps_start, '-e', gps_end, '--gps', gps,\
+        '-g', gracedb_id, '--ifo', ifo, '-c', classifier, '-i', input_dir,\
+        '-t', usertag]
+	
+    # add extra options from config file
+    if cp.has_option("general","gdb_url"):
+        cmd_line += ["--gdb-url", cp.get("general","gdb_url")]
+    if plotting_gps_start:
+        cmd_line += ["--plotting-gps-start", str(plotting_gps_start)]
+    if plotting_gps_end:
+        cmd_line += ["--plotting-gps-end", str(plotting_gps_end)]
+    for gch in gch_xml:
+        cmd_line += ["--gch-xml", gch]
+    for cln in cln_xml:
+        cmd_line += ["--cln-xml", cln]
+
+    for (option,value) in cp.items('gdb-time-series'):
+        cmd_line.extend([option, value])
+	print cmd_line
+    exit_status = idq.submit_command(cmd_line, 'gdb_timeseries', verbose=True)
+	
+    return exit_status
+	
+	
+	
+def execute_gdb_glitch_tables(
+    gps_start,
+    gps_end,
+    gracedb_id,
+    ifo,
+    classifier,
+    cp,
+    input_dir,
+    exec_prog,
+    usertag=''):
+    """ Function that sets up and runs idq-gdb-timeseries script as one of the tasks of idq-gdb-processor."""
+    # form the command line
+    cmd_line = [exec_prog, '-s', gps_start, '-e', gps_end, '-g', gracedb_id,\
+        '--ifo', ifo, '-c', classifier, '-i', input_dir, '-t', usertag]
+	
+    # add extra options from config file
+    if cp.has_option("general","gdb_url"):
+        cmd_line += ["--gdb-url", cp.get("general","gdb_url")]
+    for (option,value) in cp.items('gdb-glitch-tables'):
+        cmd_line.extend([option, value])
+	print cmd_line
+    exit_status = idq.submit_command(cmd_line, 'gdb_glitch_tables', verbose=True)
+	
+    return exit_status	
 ##@}
+

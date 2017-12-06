@@ -946,7 +946,7 @@ step6()
     echo $ECHO_N "Building Einstein@Home... $ECHO_C"
     log_and_do cd src/lalapps
     log_and_do make LALAppsVCSInfo.h liblalapps.la
-    log_and_do cd ../pulsar/HoughFstat
+    log_and_do cd ../pulsar/hough/src2
     log_and_do make eah_HierarchicalSearch${eah_target_ext}
     echo "done."
 
@@ -1710,7 +1710,7 @@ if [ ${startstep} -le 6 ]; then step6; fi
 
 ## ---------- copy binary into build-dir
 
-f="${BUILD_LOCATION}/lalsuite/lalapps/src/pulsar/HoughFstat/eah_HierarchicalSearch${eah_target_ext}"
+f="${BUILD_LOCATION}/lalsuite/lalapps/src/pulsar/hough/src2/eah_HierarchicalSearch${eah_target_ext}"
 test -f "$f" && cp -f "$f" "${BUILD_LOCATION}/cfsBOINC${eah_target_ext}"
 
 ## ---------- consistency-checks on final binary
@@ -1756,7 +1756,7 @@ if [ -n "${eah_release}" ]; then
     eah_next="tar cf ${eah_canonical_name}.tar ${eah_release_binaries} ${eah_build_log}"
     echo "${eah_next}"
     eval ${eah_next} || fail
-    eah_next="gzip -f ${eah_canonical_name}.tar"
+    eah_next="gzip ${eah_canonical_name}.tar"
     echo ${eah_next}
     eval ${eah_next} || fail 
     ## and move the final release-tar.gz into the 'pwd' where this script was started

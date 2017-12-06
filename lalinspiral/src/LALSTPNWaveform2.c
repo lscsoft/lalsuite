@@ -144,7 +144,7 @@ static int XLALSTPNAdaptiveTest(double t,const double values[],double dvalues[],
 		return LALSTPN_TEST_ENERGY;
 	} else if (dvalues[1] < 0.0) { 									   /* omegadot < 0! */
 		return LALSTPN_TEST_OMEGADOT;
-	} else if (isnan(omega)) {													 /* omega is nan */
+	} else if isnan(omega) {													 /* omega is nan */
 		return LALSTPN_TEST_OMEGANAN;
 	} else {
 		return GSL_SUCCESS;
@@ -286,7 +286,7 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
   LALSTPNparams mparams;
 
 	/* needed for integration */
-  LALAdaptiveRungeKuttaIntegrator *integrator;
+  LALAdaptiveRungeKutta4Integrator *integrator;
 	unsigned int len;
 	int intreturn;
 	REAL8 yinit[11];
@@ -350,7 +350,7 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
 	len = XLALAdaptiveRungeKutta4(integrator,(void *)&mparams,yinit,0.0,lengths/m,dt/m,&yout);
 
 	intreturn = integrator->returncode;
-	XLALAdaptiveRungeKuttaFree(integrator);
+	XLALAdaptiveRungeKutta4Free(integrator);
 
 	if (!len) {
     if (XLALClearErrno() == XLAL_ENOMEM) {

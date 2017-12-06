@@ -31,14 +31,12 @@ import math
 import datetime
 import shelve
 import struct
-import gzip
 from optparse import OptionParser
 import subprocess as sp
 
 #related third party imports
 import numpy as np
 
-# need to set Agg here for use of stuff in pulsarpputils
 import matplotlib
 matplotlib.use("Agg")
 
@@ -49,7 +47,7 @@ from pylal import git_version
 from lalapps import pulsarpputils as pppu
 
 import urllib2
-#from BeautifulSoup import BeautifulSoup as bs
+from BeautifulSoup import BeautifulSoup as bs
 
 __author__="Matthew Pitkin <matthew.pitkin@ligo.org>"
 __version__= "git id %s"%git_version.id
@@ -317,29 +315,30 @@ def get_atnf_info(par):
         if i+1 > len(trynames)/2:
           psrname = psrname + '*'
 
-#        atnfurl = \
-#'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=1.54&Dist=Dist&Assoc=\
-#Assoc&Age_i=Age_i&startUserDefined=true&c1_val=&c2_val=&c3_val=&c4_val=&\
-#sort_attr=&sort_order=asc&condition=&pulsar_names=' + psrname + \
-#'&ephemeris=selected&submit_ephemeris=\
-#Get+Ephemeris&coords_unit=raj%2Fdecj&radius=&coords_1=\
-#&coords_2=&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=\
-#linear&y_axis=&y_scale=linear&state=query'
-
-        atnfurl = 'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=1.54&Dist=Dist&Assoc=Assoc&Age_i=Age_i&startUserDefined=true&c1_val=&c2_val=&c3_val=&c4_val=&sort_attr=jname&sort_order=asc&condition=&pulsar_names=%s&ephemeris=selected&submit_ephemeris=Get+Ephemeris&coords_unit=raj%2Fdecj&radius=&coords_1=&coords_2=&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=linear&y_axis=&y_scale=linear&state=query' % psrname
+        atnfurl = \
+'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=1.47&Dist=Dist&Assoc=\
+Assoc&Age_i=Age_i&startUserDefined=true&c1_val=&c2_val=&c3_val=&c4_val=&\
+sort_attr=&sort_order=asc&condition=&pulsar_names=' + psrname + \
+'&ephemeris=selected&submit_ephemeris=\
+Get+Ephemeris&coords_unit=raj%2Fdecj&radius=&coords_1=\
+&coords_2=&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=\
+linear&y_axis=&y_scale=linear&state=query'
 
         soup = None
         pdat = None
 
-        #soup = bs(urllib2.urlopen(atnfurl).read())
-        #pdat = soup.pre # data exists in the pre html environment
-        urldat = urllib2.urlopen(atnfurl).read()
-        predat = re.search(r'<pre[^>]*>([^<]+)</pre>', urldat) # to extract data within pre environment (without using BeautifulSoup) see e.g. http://stackoverflow.com/a/3369000/1862861 and http://stackoverflow.com/a/20046030/1862861
-        pdat = predat.group(1).strip().split('\n') # remove preceeding and trailing new lines and split lines
+        soup = bs(urllib2.urlopen(atnfurl).read())
+        pdat = soup.pre # data exists in the pre html environment
 
         for line in pdat:
-          if 'WARNING' in line or 'not in catalogue' in line:
-            badurl = True
+          vals = line.split('\n') # split at any new lines
+
+          for row in vals:
+            if 'WARNING' in row or 'not in catalogue' in row:
+              badurl = True
+              break
+
+          if badurl:
             break
 
         if badurl:
@@ -515,13 +514,18 @@ performed for two interferometers (H1 and L1):
 MCMC directory containing chains for each IFO.")
 
   parser.add_option("-N", "--nested", dest="usenested",
-                    help="Input files will be samples from the nested \
-sampling code and pre-converted into posterior samples through lalapps_nest2pos.",
+                    help="Input files will be from the nested sampling code.",
                     action="store_true", default=False)
 
   parser.add_option("-f", "--nestedfiles", dest="nestedfiles",
                     action="append", help="If using nested sampling inputs \
-include one posterior sample file for each IFO.")
+supply a comma separated list of nested sample files for each IFO. [Note: \
+there must be at least one accompanying header file list the parameters, \
+which has the suffix \"_params.txt\"")
+
+  parser.add_option("-l", "--Nlive", dest="nlive",
+                    type="int", help="If using nested sampling inputs \
+supply the number of live points used in their generation.")
 
   # get pulsar .par file
   parser.add_option("-p", "--parfile", dest="parfile", help="An "
@@ -605,6 +609,13 @@ include one posterior sample file for each IFO.")
       sys.exit(0)
     else:
       nestedfiles = opts.nestedfiles
+
+    if not opts.__dict__['nlive']:
+      print >> sys.stderr, "Must specify number of live points."
+      parser.print_help()
+      sys.exit(0)
+    else:
+      nlive = opts.nlive
   else:
     print >> sys.stderr, "Must specify using either the MCMC or nested sampling inputs."
     parser.print_help()
@@ -623,8 +634,10 @@ include one posterior sample file for each IFO.")
   else:
     ifos = opts.ifos
 
-  if opts.__dict__['Bkfiles'] is None:
-    Bkfiles = []
+  if not opts.__dict__['Bkfiles']:
+    print >> sys.stderr, "Must specify the heterodyned data files"
+    parser.print_help()
+    sys.exit(0)
   else:
     Bkfiles = opts.Bkfiles
 
@@ -670,16 +683,10 @@ include one posterior sample file for each IFO.")
       ifos = ifostmp
       nifos = len(ifos)
 
-  # if we only want a Joint output then set this flag to true - this will prevent the code requiring Bk files
-  jointonly = False
-  if nifos == 1 and ifos[0] == 'Joint':
-    jointonly = True
-
   # check that number of ifos is the same as the number of data lists (for MCMC)
-  if not jointonly: # if we only want a Joint output don't perform this check
-    if nifos != ndata:
-      print >> sys.stderr, "Number of IFOs and data lists are not equal"
-      sys.exit(0)
+  if nifos != ndata:
+    print >> sys.stderr, "Number of IFOs and data lists are not equal"
+    sys.exit(0)
 
   # check if parfile is a single file or a directory
   if os.path.isfile(opts.parfile):
@@ -713,15 +720,14 @@ include one posterior sample file for each IFO.")
       sys.exit(0)
 
   # check if heterodyned data exists for this pulsar and each detector
-  if not jointonly:
-    Bkdata = []
-    for i, ifo in enumerate(ifos):
-      Bkdata.append(os.path.join(Bkfiles[i], 'finehet_' + pname + '_' + ifo))
+  Bkdata = []
+  for i, ifo in enumerate(ifos):
+    Bkdata.append(os.path.join(Bkfiles[i], 'finehet_' + pname + '_' + ifo))
 
-      # check files exist if not then skip the pulsar
-      if not os.path.isfile(Bkdata[i]) and not os.path.isfile(Bkdata[i]+'.gz'):
-        print >> sys.stderr, "No heterodyne file %s" % Bkdata[i]
-        sys.exit(0)
+    # check files exist if not then skip the pulsar
+    if not os.path.isfile(Bkdata[i]):
+      print >> sys.stderr, "No heterodyne file %s" % Bkdata[i]
+      sys.exit(0)
 
   # check that MCMC chains exist for this pulsar and each detector (including
   # joint)
@@ -734,15 +740,21 @@ include one posterior sample file for each IFO.")
           print >> sys.stderr, "No MCMC file %s" % cfile
           sys.exit(0)
   if usenested:
+    nfileslist = []
+
     if len(ifosNew) != len(nestedfiles):
       print >> sys.stderr, "Number of nested sampling file lists must be equal to number of IFOs."
       sys.exit(-1)
 
-    # check files exist
-    for nfile in nestedfiles:
-      if not os.path.isfile(nfile):
-        print >> sys.stderr, "No nested sampling file %s" % nfile
-        sys.exit(0)
+    for filelist in nestedfiles:
+      nfiles = filelist.split(',')
+
+      nfileslist.append(nfiles)
+
+      for nfile in nfiles:
+        if not os.path.isfile(nfile):
+          print >> sys.stderr, "No nested sampling file %s" % nfile
+          sys.exit(0)
 
   # check required parameters
   f0 = par['F0']
@@ -752,8 +764,8 @@ include one posterior sample file for each IFO.")
 
   f1 = par['F1']
   if not f1:
-    print >> sys.stderr, "No F1 value in par file %s, setting to zero" % parfile
-    f1 = 0.
+    print >> sys.stderr, "No F1 value in par file %s" % parfile
+    sys.exit(0)
 
   print 'Results for pulsar ' + pname
 
@@ -802,14 +814,17 @@ include one posterior sample file for each IFO.")
       pnameurl = atnfinfo[1]
 
       for line in pdat:
-        vals = line.split() # split at any new lines
+        vals = line.split('\n') # split at any new lines
 
-        if 'DIST' in vals[0]:
-          dists = vals[1]
-        if 'AGE_I' in vals[0]:
-          ages = vals[1]
-        if 'ASSOC' in vals[0]:
-          assoc = vals[1]
+        for row in vals:
+          if 'DIST' in row:
+            dists = row.split() # split row at whitespace
+
+          if 'AGE_I' in row:
+            ages = row.split()
+
+          if 'ASSOC' in row:
+            assoc = row.split()
     else:
       notinatnf = True
       atnfurl = None
@@ -966,47 +981,40 @@ function toggle(id) {
   psrshelf['sdlim'] = sdlim
 
   # get time series and PSD plots
-  if not jointonly:
-    Bkdata = []
-    plotpsds = True
-    plotfscan = True
+  Bkdata = []
+  plotpsds = True
+  plotfscan = True
 
-    for i, ifo in enumerate(ifos):
-      Bkdata.append(Bkfiles[i] + '/finehet_' + pname + '_' + ifo)
-      # check file exists
-      if not os.path.isfile(Bkdata[i]):
-        Bkdata[i] = Bkdata[i]+'.gz' # try gzipped file
-        if not os.path.isfile(Bkdata[i]):
-          print >> sys.stderr, "Error... could not find Bk data file %s" % Bkdata[i]
+  for i, ifo in enumerate(ifos):
+    Bkdata.append(Bkfiles[i] + '/finehet_' + pname + '_' + ifo)
+  asdtime = 14400 # set time over which to produce the asds
 
-    asdtime = 14400 # set time over which to produce the asds
-
-    Bkfigs, psdfigs, fscanfigs, asdlist, sampledt = pppu.plot_Bks_ASDs( Bkdata, ifos, \
+  Bkfigs, psdfigs, fscanfigs, asdlist = pppu.plot_Bks_ASDs( Bkdata, ifos, \
 asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
 
-    if asdlist:
-      psrshelf['ASD'] = dict(zip(ifos, asdlist)) # convert into dictionary
+  if asdlist:
+    psrshelf['ASD'] = dict(zip(ifos, asdlist)) # convert into dictionary
 
-    # output plots of time series and psd
-    Bkfigname = None
-    psdfigname = None
-    fscanfigname = None
+  # output plots of time series and psd
+  Bkfigname = None
+  psdfigname = None
+  fscanfigname = None
 
-    Bkfigname = []
-    psdfigname = []
-    fscanfigname = []
+  Bkfigname = []
+  psdfigname = []
+  fscanfigname = []
 
-    for i, ifo in enumerate(ifos):
-      figname = output_fig(Bkfigs[i], puldir, 'Bk_'+ifo, ftypes)
-      Bkfigname.append(figname)
+  for i, ifo in enumerate(ifos):
+    figname = output_fig(Bkfigs[i], puldir, 'Bk_'+ifo, ftypes)
+    Bkfigname.append(figname)
 
-      if plotpsds:
-        figname = output_fig(psdfigs[i], puldir, 'ASD_'+ifo, ftypes)
-        psdfigname.append(figname)
+    if plotpsds:
+      figname = output_fig(psdfigs[i], puldir, 'ASD_'+ifo, ftypes)
+      psdfigname.append(figname)
 
-        if plotfscan:
-          figname = output_fig(fscanfigs[i], puldir, 'fscan_'+ifo, ftypes)
-          fscanfigname.append(figname)
+      if plotfscan:
+        figname = output_fig(fscanfigs[i], puldir, 'fscan_'+ifo, ftypes)
+        fscanfigname.append(figname)
 
   # loop over detectors
   poslist = []
@@ -1057,8 +1065,8 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
       mcmcgr.append(grr)
 
     if usenested:
-      pos, sigev, noiseev = pppu.pulsar_nest_to_posterior(nestedfiles[i])
-      evidence.append(ev-noiseev)
+      pos, ev = pppu.pulsar_nest_to_posterior(nfileslist[i], nlive)
+      evidence.append(ev)
       mcmcgr = None
     else:
       evidence.append(None)
@@ -1069,14 +1077,6 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
     mv = pos.means # means of posteriors
     md = pos.medians # medians of posteriors
     cc, hn = corrcoef(pos) # correlation coefficients of posteriors
-
-    if hwinj: # use phi0 as GW phase if using hardware injections
-      try:
-        phi0new = bppu.PosteriorOneDPDF('phi0', 2.*pos['phi0'].samples)
-        pos.pop('phi0')
-        pos.append(phi0new)
-      except:
-        print "No PHI0 parameter for hardware injection"
 
     poslist.append(pos) # append posterior object to list
 
@@ -1161,13 +1161,6 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
   parinj = None
   if swinj or hwinj:
     parinj = par
-
-    # if hardware injection set phi0 to be GW phase
-    try:
-      phi0val = 2.*parinj['PHI0']
-      setattr(parinj, 'PHI0', phi0val)
-    except:
-      print "No PHI0 for hardware injection"
 
   # output the MAIN posterior plots
   # h0
@@ -1282,10 +1275,7 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
     psrshelf['confidenceregion'] = dict(zip(ifosNew, confidenceregion))
 
   # phi0
-  if hwinj:
-    bounds = [0., 2.*math.pi] #  use 0 to 2pi range for hardware injection
-  else:
-    bounds = [0, math.pi]
+  bounds = [0, 2*math.pi]
   phi0Fig, ulvals = pppu.plot_posterior_hist( poslist, 'phi0', ifosNew, \
                                         bounds, histbins, \
                                         0, overplot=True, parfile=parinj )
@@ -1299,7 +1289,7 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
   cifigname = output_fig(ciFig[0], puldir, 'cipost', ftypes)
 
   # psi
-  bounds = [0., math.pi/2.]
+  bounds = [-math.pi/4, math.pi/4]
   psiFig, ulvals = pppu.plot_posterior_hist( poslist, 'psi', ifosNew, \
                                        bounds, histbins, \
                                        0, overplot=True, parfile=parinj )
@@ -1397,39 +1387,32 @@ priorh0cifigname['png'], priorcifigname['png'], priorcifigname['png']))
   psrshelf['h0prior'] = h0prior
 
   # get analysis statistics
-  if not jointonly:
-    analysisstatstext = []
-    analysisstatstext.append('<h2>Analysis statistics</h2>')
+  analysisstatstext = []
+  analysisstatstext.append('<h2>Analysis statistics</h2>')
 
-    analysisstatstext.append('<table>')
+  analysisstatstext.append('<table>')
 
-    ulestimatetop = [] # list to contain upper limit estimates based on ASDs and data spans
-    ulestimatebot = []
-    lt = [] # length of the data for an IFO
+  ulestimatetop = [] # list to contain upper limit estimates based on ASDs and data spans
+  ulestimatebot = []
+  lt = [] # length of the data for an IFO
 
-    for i, ifo in enumerate(ifos):
-      # get the start time, end time and length from the heterodyned data file
-      st = et = None
-      if '.gz' not in Bkdata[i]: # just use Popen to get data from heterodyne file
-        st = (sp.Popen(['head', '-1', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0]
-        et = (sp.Popen(['tail', '-1', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0]
-        lt.append(float((sp.Popen(['wc', '-l', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0])*sampledt[i])
-      else: # otherwise if gzipped we'll have to open the file
-        bkd = np.loadtxt(Bkdata[i])
-        st = bkd[0,0]
-        et = bkd[-1,0]
-        lt.append(float(len(bkd))*sampledt[i])
+  for i, ifo in enumerate(ifos):
+    # get the start time, end time and length from the heterodyned data file
+    st = et = None
+    st = (sp.Popen(['head', '-1', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0]
+    et = (sp.Popen(['tail', '-1', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0]
+    lt.append(float((sp.Popen(['wc', '-l', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0])*60)
 
-      # duty cycle
-      dc = 100.*lt[i]/(float(et)-float(st))
+    # duty cycle
+    dc = 100.*lt[i]/(float(et)-float(st))
 
-      # get UL estimate based on h95 ~ 7-20 *sqrt(2) * ASD / sqrt(T) - the sqrt(2) is because
-      # the ASD is calulated from a two-sided PSD
-      if asdlist:
-        ulestimatebot.append(7.*math.sqrt(2.)*np.median(asdlist[i])/math.sqrt(lt[i]))
-        ulestimatetop.append((20./7.)*ulestimatebot[i])
+    # get UL estimate based on h95 ~ 7-20 *sqrt(2) * ASD / sqrt(T) - the sqrt(2) is because
+    # the ASD is calulated from a two-sided PSD
+    if asdlist:
+      ulestimatebot.append(7.*math.sqrt(2.)*np.median(asdlist[i])/math.sqrt(lt[i]))
+      ulestimatetop.append((20./7.)*ulestimatebot[i])
 
-      analysisstatstext.append( \
+    analysisstatstext.append( \
 """
   <tr>
     <td style="text-align: center;">
@@ -1460,8 +1443,8 @@ priorh0cifigname['png'], priorcifigname['png'], priorcifigname['png']))
 """ % (ifo, ifo,int(float(st)), int(float(et)), int(float(et)-float(st)), dc, \
 Bkfigname[i]['png'], Bkfigname[i]['png']) )
 
-      if plotpsds and plotfscan:
-        analysisstatstext.append( \
+    if plotpsds and plotfscan:
+      analysisstatstext.append( \
 """
   <tr>
     <td><a href="%s"><img class="asdplot" src="%s"/></a></td>
@@ -1469,21 +1452,21 @@ Bkfigname[i]['png'], Bkfigname[i]['png']) )
   </tr>
 """ % (psdfigname[i]['png'], psdfigname[i]['png'], fscanfigname[i]['png'], \
 fscanfigname[i]['png']) )
-    analysisstatstext.append('</table>')
+  analysisstatstext.append('</table>')
 
-    # get joint upper limit estimate
-    if asdlist:
-      if len(ifos) > 1:
-        uli = []
-        for i, asdv in enumerate(asdlist):
-          uli.append(lt[i]/np.median(asdv)**2)
+  # get joint upper limit estimate
+  if asdlist:
+    if len(ifos) > 1:
+      uli = []
+      for i, asdv in enumerate(asdlist):
+        uli.append(lt[i]/np.median(asdv)**2)
 
-        ulesttmp = math.sqrt(2.)*math.sqrt(1./sum(uli))
-        ulestimatebot.append(7.*ulesttmp)
-        ulestimatetop.append(20.*ulesttmp)
+      ulesttmp = math.sqrt(2.)*math.sqrt(1./sum(uli))
+      ulestimatebot.append(7.*ulesttmp)
+      ulestimatetop.append(20.*ulesttmp)
 
-    psrshelf['ulestimatebot'] = dict(zip(ifosNew, ulestimatebot))
-    psrshelf['ulestimatetop'] = dict(zip(ifosNew, ulestimatetop))
+  psrshelf['ulestimatebot'] = dict(zip(ifosNew, ulestimatebot))
+  psrshelf['ulestimatetop'] = dict(zip(ifosNew, ulestimatetop))
 
   # output MCMC chains and statistics
   mcmctabletext = None
@@ -1607,11 +1590,8 @@ pdisp) )
       dispfunc = paramdisp2.__dict__['DEFAULT']
 
     if (swinj or hwinj) and parinj:
-      try:
-        poststatstext.append('<td rowspan="%d">%s</td>' % (len(ifosNew), \
+      poststatstext.append('<td rowspan="%d">%s</td>' % (len(ifosNew), \
  dispfunc(str(par[param.upper()]))))
-      except:
-        poststatstext.append('<td rowspan="%d">*</td>' % len(ifosNew))
 
     for i, ifo in enumerate(ifosNew):
       poststatstext.append('<td class="%s">%s</td>' % (ifo, ifo) )

@@ -17,6 +17,27 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \author Jolien D. E. Creighton
+ * \file
+ *
+ * \brief Low-level routines for manipulating frame data streams.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <stdio.h>
+ * #include <lal/LALFrStream.h>
+ * \endcode
+ *
+ * A frame stream is like a file stream except that it streams along the set
+ * of frames in a set of frame files.  These routines are low-level routines
+ * that allow you to extract frame data.  Many of these routines have names
+ * similar to the standard C file stream manipulation routines and perform
+ * similar functions.
+ *
+ */
+
 #include <stdio.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALCache.h>
@@ -31,67 +52,26 @@ extern "C" {
 #if 0
 }       /* so that editors will match preceding brace */
 #endif
-
-/**
- * @defgroup LALFrStream_h Header LALFrStream.h
- * @ingroup lalframe_general
- *
- * \author Jolien D. E. Creighton
- *
- * \brief High-level routines for manipulating frame data streams.
- *
- * ### Synopsis ###
- *
- * \code
- * #include <lal/LALFrStream.h>
- * \endcode
- *
- * ### Description ###
- *
- * A frame stream is like a file stream except that it streams along the set
- * of frames in a set of frame files.  These routines are high-level routines
- * that allow you to extract frame data.  Many of these routines have names
- * similar to the standard C file stream manipulation routines and perform
- * similar functions.  These routines are found in Module LALFrameStream.c.
- *
- * Routines for reading data from a frame stream, either in sequential
- * or random-access mode, are found in Module LALFrameStreamRead.c.
- *
- * @{
- * @defgroup LALFrStream_c     Module LALFrStream.c
- * @defgroup LALFrStreamRead_c Module LALFrStreamRead.c
- * @}
- *
- * @addtogroup LALFrStream_c
- * @{
- */
-
-/** Enum listing different stream states */
-typedef enum tagLALFrStreamState {
-    LAL_FR_STREAM_OK = 0,       /**< nominal */
-    LAL_FR_STREAM_ERR = 1,      /**< error in frame stream */
-    LAL_FR_STREAM_END = 2,      /**< end of frame stream */
-    LAL_FR_STREAM_GAP = 4,      /**< gap in frame stream */
-    LAL_FR_STREAM_URL = 8,      /**< error opening frame URL */
-    LAL_FR_STREAM_TOC = 16      /**< error reading frame TOC */
+typedef enum {
+    LAL_FR_STREAM_OK = 0,       /* nominal */
+    LAL_FR_STREAM_ERR = 1,      /* error in frame stream */
+    LAL_FR_STREAM_END = 2,      /* end of frame stream */
+    LAL_FR_STREAM_GAP = 4,      /* gap in frame stream */
+    LAL_FR_STREAM_URL = 8,      /* error opening frame URL */
+    LAL_FR_STREAM_TOC = 16      /* error reading frame TOC */
 } LALFrStreamState;
 
-/** Enum listing different stream modes */
-typedef enum tagLALFrStreamMode {
-    LAL_FR_STREAM_SILENT_MODE = 0,	/**< silent mode */
-    LAL_FR_STREAM_TIMEWARN_MODE = 1,    /**< display warning for invalid time requests */
-    LAL_FR_STREAM_GAPINFO_MODE = 2,     /**< display info for gaps in data */
-    LAL_FR_STREAM_VERBOSE_MODE = 3,     /**< display warnings and info */
-    LAL_FR_STREAM_IGNOREGAP_MODE = 4,   /**< ignore gaps in data */
-    LAL_FR_STREAM_IGNORETIME_MODE = 8,  /**< ignore invalid times requested */
-    LAL_FR_STREAM_DEFAULT_MODE = 15,    /**< ignore time/gaps but report warnings & info */
-    LAL_FR_STREAM_CHECKSUM_MODE = 16    /**< ensure that file checksums are OK */
+typedef enum {
+    LAL_FR_STREAM_SILENT_MODE = 0,
+    LAL_FR_STREAM_TIMEWARN_MODE = 1,    /* display warning for invalid time requests */
+    LAL_FR_STREAM_GAPINFO_MODE = 2,     /* display info for gaps in data */
+    LAL_FR_STREAM_VERBOSE_MODE = 3,     /* display warnings and info */
+    LAL_FR_STREAM_IGNOREGAP_MODE = 4,   /* ignore gaps in data */
+    LAL_FR_STREAM_IGNORETIME_MODE = 8,  /* ignore invalid times requested */
+    LAL_FR_STREAM_DEFAULT_MODE = 15,    /* ignore time/gaps but report warnings & info */
+    LAL_FR_STREAM_CHECKSUM_MODE = 16    /* ensure that file checksums are OK */
 } LALFrStreamMode;
 
-/**
- * This structure details the state of the frame stream.  The contents are
- * private; you should not tamper with them!
- */
 typedef struct tagLALFrStream {
     LALFrStreamState state;
     INT4 mode;
@@ -101,26 +81,32 @@ typedef struct tagLALFrStream {
     LALFrFile *file;
     INT4 pos;
 } LALFrStream;
+/**
+ * This structure details the state of the frame stream.  The contents are
+ * private; you should not tamper with them!
+ */
 
+typedef struct tagLALFrStreamPos {
+    LIGOTimeGPS epoch;
+    UINT4 fnum;
+    INT4 pos;
+} LALFrStreamPos;
 /**
  * This structure contains a record of the state of a frame stream; this
  * record can be used to restore the stream to the state when the record
- * was made (provided the stream has not been closed).
+ * was made (provided the stream has not been closed).  The fields are:
+ * <dl>
+ * <dt>epoch</dt><dd> the GPS time of the open frame when the record  was made.</dd>
+ * <dt>fnum</dt><dd> the file number of a list of frame files that was open when the record was made.</dd>
+ * <dt>pos</dt><dd> the position within the frame file that was open when the record was made.</dd>
+ * </dl>
  */
-typedef struct tagLALFrStreamPos {
-  LIGOTimeGPS epoch;	/**< the GPS time of the open frame when the record  was made */
-  UINT4 fnum;		/**< the file number of a list of frame files that was open when the record was made */
-  INT4 pos;		/**< the position within the frame file that was open when the record was made */
-} LALFrStreamPos;
-
-/** @} */
 
 LALFrStream *XLALFrStreamCacheOpen(LALCache * cache);
 LALFrStream *XLALFrStreamOpen(const char *dirname, const char *pattern);
 int XLALFrStreamClose(LALFrStream * stream);
 int XLALFrStreamGetMode(LALFrStream * stream);
 int XLALFrStreamSetMode(LALFrStream * stream, int mode);
-
 int XLALFrStreamState(LALFrStream * stream);
 int XLALFrStreamEnd(LALFrStream * stream);
 int XLALFrStreamError(LALFrStream * stream);
@@ -241,11 +227,9 @@ COMPLEX16FrequencySeries
     *XLALFrStreamInputCOMPLEX16FrequencySeries(LALFrStream * stream,
     const char *chname, const LIGOTimeGPS * epoch);
 
+/* LEGACY CODE */
 
-
-/* ---------- LEGACY CODE ---------- */
-
-/*\name Legacy Error Codes */
+/**\name Legacy Error Codes */
 /*@{*/
 #define FRAMESTREAMH_ENULL 00001
 #define FRAMESTREAMH_ENNUL 00002
@@ -277,56 +261,65 @@ COMPLEX16FrequencySeries
 #define FRAMESTREAMH_MSGEDGAP "Gap in the data"
 /*@}*/
 
-typedef enum tagFrChanType {
+typedef enum {
     LAL_ADC_CHAN, LAL_SIM_CHAN, LAL_PROC_CHAN
 } FrChanType;
 
-/* @name for backwards compatability
- *
- * These are the various types of channel that can be specified for read/write.
- * They are "post-processed data" (ProcDataChannel), "ADC data"
- * (ADCDataChannel), and "simulated data" (SimDataChannel).
- */
-/*@{*/
+/* for backwards compatability... */
 #define ChannelType FrChanType
 #define ProcDataChannel LAL_PROC_CHAN
 #define ADCDataChannel  LAL_ADC_CHAN
 #define SimDataChannel  LAL_SIM_CHAN
-/*@}*/
+/**
+ * These are the various types of channel that can be specified for read/write.
+ * They are "post-processed data" (\c ProcDataChannel), "ADC data"
+ * (\c ADCDataChannel), and "simulated data" (\c SimDataChannel).
+ */
 
 #ifdef SWIG /* SWIG interface directives */
 SWIGLAL(IMMUTABLE_MEMBERS(tagFrChanIn, name));
 #endif /* SWIG */
-
-/*
- * This structure specifies the channel to read as input.
- */
 typedef struct tagFrChanIn {
-  const CHAR *name;	/**< the name of the channel */
-  ChannelType type;	/**< the channel type */
+    const CHAR *name;
+    ChannelType type;
 } FrChanIn;
+/**
+ * This structure specifies the channel to read as input.  The fields are:
+ * <dl>
+ * <dt>name</dt><dd> the name of the channel.
+ * </dd><dt>type</dt><dd> the channel type.
+ * </dd></dl>
+ */
 
 #ifdef SWIG /* SWIG interface directives */
 SWIGLAL(IMMUTABLE_MEMBERS(tagFrOutPar, source, description));
 #endif /* SWIG */
-/*
+typedef struct tagFrOutPar {
+    const CHAR *source;
+    const CHAR *description;
+    ChannelType type;
+    UINT4 nframes;
+    UINT4 frame;
+    UINT4 run;
+} FrOutPar;
+/**
  *
  * This structure specifies the parameters for output of data to a frame.
+ * The fields are:
+ * <dl>
+ * <dt>source</dt><dd> the source identifier to attach to the output frame file name.</dd>
+ * <dt>description</dt><dd> the description identifier to attach to the output frame file name.</dd>
+ * <dt>type</dt><dd> the type of channel to create in the output frames.</dd>
+ * <dt>nframes</dt><dd> the number of frames to output in the frame file.</dd>
+ * <dt>frame</dt><dd> the number the first frame of output.</dd>
+ * <dt>run</dt><dd> the number this data run.</dd>
+ * </dl>
  * The output frame file name will be
- * \<source\>-\<description\>-\<GPS start time\>-\<duration\>.gwf
+ * \f$\langle\mbox{source}\rangle\f$<tt>-</tt>\f$\langle\mbox{description}\rangle\f$%
+ * <tt>-</tt>\f$\langle\mbox{GPS start time}\rangle\f$<tt>-</tt>%
+ * \f$\langle\mbox{duration}\rangle\f$<tt>.gwf</tt>.
  */
-typedef struct tagFrOutPar {
-  const CHAR *source;		/**< the source identifier to attach to the output frame file name */
-  const CHAR *description;	/**< the description identifier to attach to the output frame file name */
-  ChannelType type;		/**< the type of channel to create in the output frames */
-  UINT4 nframes;		/**< the number of frames to output in the frame file */
-  UINT4 frame;			/**< the number the first frame of output*/
-  UINT4 run;			/**< the number this data run */
-} FrOutPar;
 
-/* @name Legacy API
- * @{
- */
 void
 LALFrCacheOpen(LALStatus * status, LALFrStream ** output, LALCache * cache);
 
@@ -446,8 +439,6 @@ void LALFrWriteCOMPLEX8FrequencySeries(LALStatus * status,
 
 void LALFrWriteCOMPLEX16FrequencySeries(LALStatus * status,
     COMPLEX16FrequencySeries * series, FrOutPar * params, INT4 subtype);
-/*@}*/
-
 
 #if 0
 {       /* so that editors will match succeeding brace */

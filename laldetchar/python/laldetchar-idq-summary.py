@@ -1,4 +1,4 @@
-# Copyright (C) 2015 Lindy Blackburn, Reed Essick
+# Copyright (C) 2013 Lindy Blackburn, Reed Essick, Ruslan Vaulin
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -14,137 +14,237 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
+import ConfigParser
+from optparse import *
 import sys
 import os
 import glob
 import time
-
+from laldetchar.idq import idq
+from laldetchar.idq import idq_summary_plots as idq_s_p
+from laldetchar.idq import event
+import numpy
 import traceback
 import logging
-import ConfigParser
-from optparse import OptionParser
 
-import numpy as np
-
-from collections import defaultdict
-
-from lal import gpstime
-
-from laldetchar.idq import idq
-from laldetchar.idq import idq_summary_plots as isp
-#from laldetchar.idq import reed as idq
-#from laldetchar.idq import reed_summary_plots as isp 
-from laldetchar.idq import event
-from laldetchar.idq import calibration
-
-from glue.ligolw import ligolw
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw import lsctables
-from glue.ligolw import table
-
-from glue import markup ### an easy way to write html pages. THIS MAY BE REPLACED???
+from glue.ligolw import table, lsctables, utils, ligolw
 
 from laldetchar import git_version
 
 #===================================================================================================
 
-__author__ = 'Lindy Blackburn (<lindy.blackburn@ligo.org>), Reed Essick (<reed.essick@ligo.org>)'
+__author__ = \
+    'Lindy Blackburn (<lindy.blackburn@ligo.org>), Reed Essick (<reed.essick@ligo.org>), Ruslan Vaulin (<ruslan.vaulin@ligo.org>)'
 __version__ = git_version.id
 __date__ = git_version.date
 
-description = """This program generates summary html pages from iDQ pipeline output. The summmary pages provide variety of diagnostic and interpretational plots and data."""
+description = \
+    """This program generates summary html pages from iDQ pipeline output. The summmary pages provide variety of diagnostic and interpretational plots and data."""
+
+#===================================================================================================
+
+def generate_html(
+    path,
+    gpsstart=False,
+    gpsstop=False,
+    gwchannel=False,
+    tot_livetime=False,
+    tot_glitches=False,
+    roc_url=False,
+    vetolist_url=False,
+    ovl_segments=False,
+    ovl_fdt=False,
+    eff_url=False,
+    FAP=False,
+    roc_urls=False,
+    kde_urls=False,
+    chanlist_urls=False,
+    stat_trends_urls=False,
+    eff_trends_urls=False,
+    stat_file=False,
+    chan_trends_urls=False,
+    ):
+    """ writes the standard html summary page given the available information"""
+
+    tzname = time.tzname[0]
+    f = open(path, 'w')
+
+    print >> f, '''<body>
+<h1>iDQ Summary Page</h1>
+<hr />'''
+
+    if gpsstart and gpsstop:
+        gpsstart_date = time.localtime(gpsstart + idq.gpsref
+                + time.timezone)  # RE is not sure this is the correct way to go from gps time to local time
+        gpsstop_date = time.localtime(gpsstop + idq.gpsref
+                + time.timezone)  #
+        print >> f, \
+            '<p>data from : %2d:%2d:%2d %s %2d/%2d/%4d (%d GPSseconds) to %2d:%2d:%2d %s %2d/%2d/%4d (%d GPS seconds)</p>' \
+            % (
+            gpsstart_date.tm_hour,
+            gpsstart_date.tm_min,
+            gpsstart_date.tm_sec,
+            tzname,
+            gpsstart_date.tm_mon,
+            gpsstart_date.tm_mday,
+            gpsstart_date.tm_year,
+            gpsstart,
+            gpsstop_date.tm_hour,
+            gpsstop_date.tm_min,
+            gpsstop_date.tm_sec,
+            tzname,
+            gpsstop_date.tm_mon,
+            gpsstop_date.tm_mday,
+            gpsstop_date.tm_year,
+            gpsstop,
+            )
+    if gwchannel:
+        print >> f, '<p>Target channel : %s</p>' % gwchannel
+    if tot_livetime:
+        print >> f, '<p>total Livetime = %f seconds</p>' % tot_livetime
+    if tot_glitches:
+        print >> f, '<p>total No.glitches = %d events</p>' \
+            % int(tot_glitches)
+    if roc_url:
+        print >> f, '<h2>Receiver Operating Characteristic Curve</h2>'
+        print >> f, \
+            '<img src="%s" alt="ROC curve" title="ROC curve" />' \
+            % roc_url
+    if stat_file:
+        print >> f, \
+            '<p>Basic statistic for each classifier can be found here: '
+        print >> f, '<a href="%s">%s</a>, ' % (stat_file,
+                stat_file.split('/')[-1])
+        print >> f, '</p>'
+    if roc_urls:
+        print >> f, \
+            '<p>Individual-classifier ROC curves can be found here: '
+        for (url, classifier) in roc_urls:
+            if url:
+                print >> f, '<a href="%s">%s</a>, ' % (url, classifier)
+        print >> f, '</p>'
+    if chanlist_urls:
+        print >> f, \
+            '<p>Auxiliary channel performance for each classifier can be found here: '
+        for (url, classifier) in chanlist_urls:
+            if url:
+                print >> f, '<a href="%s">%s<a/>, ' % (url, classifier)
+        print >> f, '</p>'
+    print >> f, '<hr />'
+    if vetolist_url:
+        print >> f, \
+            '<p> Most recent ovl-vetolist can be found <a href="%s">here</a></p>' \
+            % vetolist_url
+    if ovl_segments and ovl_fdt:
+        print >> f, \
+            '<p> Most recent ovl-segments at %f FAP can be found <a href="%s">here</a></p>' \
+            % (ovl_fdt, ovl_segments)
+    if eff_url and FAP:
+        print >> f, \
+            '<h2>Efficiency at False-Alarm-Probability = %f</h2>' % FAP
+        print >> f, \
+            '<img src="%s" alt="EFF at FAP=%f" title="EFF at FAP=%f />' \
+            % (eff_url, FAP, FAP)
+    if kde_urls:
+        print >> f, \
+            '<h2>Estimates of Classifier Probability Density Functions</h2>'
+        print >> f, \
+            '<p>Individual-classifier estimates can be found here: '
+        for (url, classifier) in kde_urls:
+            if url:
+                print >> f, '<a href="%s">%s</a>, ' % (url, classifier)
+        print >> f, '</p>'
+
+    if eff_trends_urls:
+        print >> f, '<h2>Efficiency trends</h2>'
+        for (url, descriptor) in eff_trends_urls:
+            if url:
+                print >> f, \
+                    '<img src="%s" alt="efficiency trend %s" title="efficiency trend %s" />' \
+                    % (url, descriptor, descriptor)
+    if stat_trends_urls:
+        print >> f, '<h2>Other statistical trends</h2>'
+        print >> f, \
+            '<p> Plots of livetime, glitch/clean rates can be found here: '
+        for (url, descriptor) in stat_trends_urls:
+            print >> f, '<a href="%s">%s</a>, ' % (url, descriptor)
+        print >> f, '</p>'
+
+    if chan_trends_urls:
+        print >> f, '<h2>Channel performance trends</h2>'
+        for (url, descriptor) in chan_trends_urls:
+            if url:
+                print >> f, \
+                    '<img src="%s" alt="channel performance trend %s" title="channel performance trend %s" />' \
+                    % (url, descriptor, descriptor)
+
+    print >> f, '<hr />'
+
+    # define current time
+
+    c_time = time.localtime()
+    print >> f, '<p>last updated %d:%d:%d %s %2d/%2d/%4d </p>' % (
+        c_time.tm_hour,
+        c_time.tm_min,
+        c_time.tm_sec,
+        tzname,
+        c_time.tm_mon,
+        c_time.tm_mday,
+        c_time.tm_year,
+        )
+    print >> f, '</body>'
+
+    f.close()
+    return path
+
+###
+def path_to_url(path, base, remove):
+    """ converts a path name to a url by removing all directory reference in "remove" and appending the remainder of "path" to "base" """
+
+    path_list = path.split('/')
+    for p in path_list[:-1]:
+        if p not in remove and p != '':
+            base += p + '/'
+    return base + path_list[-1]
+
 
 #===================================================================================================
 
 parser = OptionParser(version='Name: %%prog\n%s'
                       % git_version.verbose_msg, usage='%prog [options]'
                       , description=description)
-
 parser.add_option('-c', '--config', default='idq.ini', type='string', help='configuration file')
-
-parser.add_option('-k', '--lock-file', dest='lockfile', help='use custom lockfile', metavar='FILE', default=None )
-
-parser.add_option('-s', '--gpsstart', dest="gpsstart", default=False, type='int', help='a GPS start time for the analysis. If default, gpsstart is calculated from the current time.')
-parser.add_option('-e', '--gpsstop', dest="gpsstop", default=False, type='int', help='a GPS stop time for the analysis. If default, gpsstop is calculated from the current time.')
-
-parser.add_option('-b', '--lookback', default='0', type='string', help="Number of seconds to look back and get data for training. Default is zero.\
-        Can be either positive integer or 'infinity'. In the latter case, the lookback will be incremented at every stride and all data after --gps-start will be used in every training.")
-
-parser.add_option('-t', '--trending', default=[], action='append', type='string', help='Number of seconds to look back for trending plots')
-
+parser.add_option('-s', '--gps-start', default=False, type='int',
+                  help='a GPS start time for the analysis. If default, gpsstart is calculated from the current time.')
+parser.add_option('-e', '--gps-stop', default=False, type='int',
+                  help='a GPS stop time for the analysis. If default, gpsstop is calculated from the current time.')
 parser.add_option('-l', '--log-file', default='idq_summary.log', type='string', help='log file')
 
 parser.add_option("", "--ignore-science-segments", default=False, action="store_true")
-
-parser.add_option("", "--dont-cluster", default=False, action="store_true")
 
 parser.add_option('-f','--force',default=False, action='store_true', help="forces *uroc cache file to be updated, even if we have no data. Use with caution.")
 
 parser.add_option("", "--no-robot-cert", default=False, action="store_true")
 
-parser.add_option("", "--no-html", default=False, action="store_true")
-
-parser.add_option('', '--FAPthr', default=[], action="append", type='float', help='check calibration at this FAP value. This argument can be supplied multiple times to check multiple values.')
-
 (opts, args) = parser.parse_args()
 
-if opts.lookback != "infinity":
-    lookback = int(opts.lookback)
-
-if not opts.trending:
-    opts.trending = ['infinity']
-
-for ind, trend in enumerate(opts.trending):
-    if trend != "infinity":
-        opts.trending[ind] = int(trend)
-
-
-
-
-
-
-
-
-
-
-
-### these should be set somewhere else!
-html_width=500
-html_height=500
-
-thumbnail_width=100
-thumbnail_height=100
-
-num_trend_bins = 20
-
-cln_linestyle='dashed' ### FIXME: pull from config file?
-gch_linestyle='solid' 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #===================================================================================================
-### setup logger to record processes
-logger = idq.setup_logger('idq_logger', opts.log_file, sys.stdout, format='%(asctime)s %(message)s')
+### setup logger to record process
+logger = logging.getLogger('idq_logger')
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s %(message)s')
+hdlr1 = logging.StreamHandler(sys.stdout)
+hdlr1.setFormatter(formatter)
+hdlr1.setLevel(logging.INFO)
+logger.addHandler(hdlr1)
+hdlr2 = logging.FileHandler(opts.log_file)
+hdlr2.setFormatter(formatter)
+hdlr2.setLevel(logging.INFO)
+logger.addHandler(hdlr2)
 
+### redirect stdout and stderr into logger
 sys.stdout = idq.LogFile(logger)
-sys.stderr = idq.LogFile(logger)
-
-#===================================================================================================
-### check lockfile
-if opts.lockfile:
-    idq.dieiflocked( opts.lockfile )
+sys.err = idq.LogFile(logger)
 
 #===================================================================================================
 ### read global configuration file
@@ -152,94 +252,69 @@ if opts.lockfile:
 config = ConfigParser.SafeConfigParser()
 config.read(opts.config)
 
-mainidqdir = config.get('general', 'idqdir') ### get the main directory where idq pipeline is going to be running.
+#=================================================
+### generate a dictionary for idq_summary specific options
+
+myconf = dict(config.items('idq_summary'))
+
+stride = int(myconf['stride']) ### summary stride
+delay = int(myconf['delay']) ### delay for summary job
+                             ### provides a buffer for other jobs to finish
+
+lookback = int(myconf['lookback']) ### how many summary strides we include in these plots
+
+cluster_win = float(myconf['cluster_win']) ### used to cluster glitches
+
+FAP = float(myconf['fap']) ### FAP at which we report segments, efficiency trends, etc
+
+min_num_cln = float(myconf['min_num_cln'])
+min_num_gch = float(myconf['min_num_gch'])
+
+### THESE ARE NOT USED. CONSIDER REMOVING?
+#symlink_path = myconf['symlink']
+#url_base = myconf['url_base']
+#url_remove = myconf['url_remove'].split()
+
+gw_thr = float(myconf['gw_thr']) 
+
+classifiers_switch_snr_signif = myconf['switch_snr_signif'].split() ### old "feature" with incorrectly labeled columns
+
+#=================================================
+### pull other parameters from config
+sumdir = config.get('general', 'summarydir')
+realtimedir = config.get('general', 'realtimedir')
+traindir = config.get('general', 'traindir')
 
 usertag = config.get('general', 'usertag')
-if usertag:
-    usertag = "_%s"%usertag
-
-ifo = config.get('general', 'ifo')
-
-channels = config.get('general','selected-channels')
-unsafechannels = config.get('general', 'unsafe-channels')
 
 gwchannel = config.get('general', 'gwchannel')
-gch_kwsignif_thr = config.getfloat('general', 'gw_kwsignif_thr')
-cln_kwsignif_thr = config.getfloat('realtime', 'clean_threshold')
 
-#========================
-# which classifiers
-#========================
-### ensure we have a section for each classifier and fill out dictionary of options
-classifiersD, mla, ovl = idq.config_to_classifiersD( config )
+classifiers = config.get('general', 'classifiers').split()
 
-### get combiners information and add these to classifiersD
-combinersD, referenced_classifiers = idq.config_to_combinersD( config )
-for combiner, value in combinersD.items():
-    classifiersD[combiner] = value
+vetolist_cache = config.get('general', 'ovl_train_cache')
 
-classifiers = sorted(classifiersD.keys())
+unsafe_win = float(config.get('idq_realtime', 'clean_window'))
 
-#if mla:
-#    ### reading parameters from config file needed for mla
-#    auxmvc_coinc_window = config.getfloat('build_auxmvc_vectors','time-window')
-#    auxmc_gw_signif_thr = config.getfloat('build_auxmvc_vectors','signif-threshold')
-#    auxmvc_selected_channels = config.get('general','selected-channels')
-#    auxmvc_unsafe_channels = config.get('general','unsafe-channels')
+columns = config.get('idq_realtime', 'dat_columns').split() + ['rank']
 
-colors = dict( zip( classifiers, 'r b g c m k y'.split() ) )
-if len(colors) < len(classifiers):
-    raise ValueError("ran out of colors for classifiers!")
+kwtrgdir = config.get('general', 'kwtrgdir')
 
-#========================
-# realtime 
-#========================
-realtimedir = config.get('general', 'realtimedir')### output directory for realtime predictions
+kde_num_samples = int(config.get('idq_summary', 'kde_num_samples'))
 
-dat_columns = config.get('realtime', 'dat_columns').split()
-columns = dat_columns[:]
-for c in "GPS i rank".split():
-    if c not in columns:
-        columns.append( c )
-#columns = list(set( dat_columns + "GPS i rank".split() ) )
+### kleineWelle config
+kwconfig = idq.loadkwconfig(config.get('general', 'kwconfig'))
+kwbasename = kwconfig['basename']
 
-#========================
-# summary jobs
-#========================
-summarydir = config.get('general', 'summarydir')
-trenddir = "%s/trending"%(summarydir) ### used to store trending information
+#=================================================
+### set classifier colors and labels
+classifier_colors = [idq_s_p.classifier_colors(classifier) for classifier in classifiers]
+classifier_labels = [idq_s_p.classifier_labels(classifier) for classifier in classifiers]
 
-stride = config.getint('summary', 'stride')
-delay = config.getint('summary', 'delay')
-
-emaillist = config.get('warnings', 'summary') 
-errorthr = config.getfloat('warnings', 'summary_errorthr')
-
-kde_nsamples = config.getint('summary', 'kde_num_samples')
-kde = np.linspace(0, 1, kde_nsamples) ### uniformly spaced ranks used to sample kde
-
-faircoin = kde[:] ### used for ROC plots
-
-cluster_key = config.get('summary', 'cluster_key')
-if cluster_key not in columns:
-    columns.append( cluster_key )
-cluster_win = config.getfloat('summary', 'cluster_win')
-
-#========================
-# data discovery
-#========================
-if not opts.ignore_science_segments:
-    ### load settings for accessing dmt segment files
-#    dmt_segments_location = config.get('get_science_segments', 'xmlurl')
-    dq_name = config.get('get_science_segments', 'include')
-#    dq_name = config.get('get_science_segments', 'include').split(':')[1]
-    segdb_url = config.get('get_science_segments', 'segdb')
-
-#==================================================
+#=================================================
 ### set up ROBOT certificates
 ### IF ligolw_segement_query FAILS, THIS IS A LIKELY CAUSE
 if opts.no_robot_cert:
-    logger.warning("Warning: running without a robot certificate. Your personal certificate may expire and this job may fail")
+    logger.info("Warning: running without a robot certificate. Your personal certificate may expire and this job may fail")
 else:
     ### unset ligo-proxy just in case
     if os.environ.has_key("X509_USER_PROXY"):
@@ -253,1360 +328,593 @@ else:
     os.environ['X509_USER_CERT'] = robot_cert
     os.environ['X509_USER_KEY'] = robot_key
 
-#==================================================
+#=================================================
 ### current time and boundaries
 
 t = int(idq.nowgps())
+if not opts.gps_stop: ### stop time of this analysis
+    print 'computing gpsstop from current time'
+    gpsstop = (t - delay) / stride * stride  # require boundaries to be integer multiples of stride
+else:
+    gpsstop = opts.gps_stop / stride * stride
+#print 'gpsstop = %d' % gpsstop
 
-gpsstop = opts.gpsstop
-if not gpsstop: ### stop time of this analysis
-    logger.info('computing gpsstop from current time')
-    gpsstop = t ### We do not require boundaries to be integer multiples of stride
-
-gpsstart = opts.gpsstart
-if not gpsstart:
-    logger.info('computing gpsstart from gpsstop')
+if not opts.gps_start:
+    print 'computing gpsstart from gpsstop'
     gpsstart = gpsstop - stride
+else:
+    gpsstart = opts.gps_start / stride * stride # require boundaries to be integer mutliples of stride
+#print 'gpsstart = %d' % gpsstart
 
 #===================================================================================================
 #
-# LOOP
+# MAIN
 #
 #===================================================================================================
-logger.info('Begin: summary')
 
-### wait until all jobs are finished
-wait = gpsstart + stride + delay - t
-if wait > 0:
-    logger.info('----------------------------------------------------')
-    logger.info('waiting %.1f seconds to reach gpsstop+delay=%d' % (wait, delay))
-    time.sleep(wait)
+# loop over all data ranges
 
-global_start = gpsstart
-
-### iterate over all ranges
 while gpsstart < gpsstop:
+    logger.info('-----------------------------------------------------------------'
+                )
+    logger.info('summarizing data from %d to %d' % (gpsstart, gpsstart + stride))
 
-    logger.info('----------------------------------------------------')
+    ### output directory for this data
+    this_sumdir = "%s/%d_%d"%(sumdir,gpsstart,gpsstart+stride)
+    if not os.path.exists(this_sumdir):
+        os.makedirs(this_sumdir)
 
-    wait = gpsstart + stride + delay - idq.nowgps()
-    if wait > 0:
-        logger.info('waiting %.1f seconds to reach gpsstart+stride+delay=%d' %(wait, gpsstart+stride+delay))
-        time.sleep(wait)
+    ### attempt to write an index.html
+    index_html = "%s/index.html"%(this_sumdir)
+    index_html_obj = open(index_html, "w")
+    print >> index_html_obj, "attempted to build this page at:"
+    c_time = time.localtime()
+    tzname = time.tzname[0]
+    print >> index_html_obj, '%d:%d:%d %s %2d/%2d/%4d' % (
+        c_time.tm_hour,
+        c_time.tm_min,
+        c_time.tm_sec,
+        tzname,
+        c_time.tm_mon,
+        c_time.tm_mday,
+        c_time.tm_year,
+        )
+    print >> index_html_obj, "Target Channel: %s"%gwchannel
+    index_html_obj.close()
 
-    logger.info('Begin: stride [%d, %d]'%(gpsstart, gpsstart+stride))
-
-    ### directory into which we write data
-    output_dir = "%s/%d_%d/"%(summarydir, gpsstart, gpsstart + stride)
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
-    if opts.lookback=="infinity":
-        lookback = gpsstart - global_start
-
-    for ind, trend in enumerate(opts.trending):
-        if trend == "infinity":
-            opts.trending[ind] = gpsstart - global_start
-
-    ### dictionary to hold onto filenames we want to keep
-    files = {'segs':{}, 'dat':{}, 'kde':{}, 'roc':{}, 'chn':{}}
-
-    ### dictionary to hold data
-    data = {}
-
-    #===============================================================================================
-    # science segments
-    # we query the segdb right now, although that latency may be an issue...
-    #===============================================================================================
+    #=============================================
+    # sciseg query
+    #=============================================
     if opts.ignore_science_segments:
-        logger.info('analyzing data regardless of science segements')
-        scisegs = [[gpsstart-lookback, gpsstart+stride]] ### set segs to be this stride range
-        coveredsegs = [[gpsstart-lookback, gpsstart+stride]] ### set segs to be this stride range
+        logger.info("ignoring science segments")
+        scisegs = [[gpsstart, gpsstart+stride]]
 
     else:
-        logger.info('Begin: querrying science segments')
-
+        logger.info("generating science segments")
         try:
-            ### this returns a string
-            seg_xml_file = idq.segment_query(config, gpsstart - lookback , gpsstart + stride, url=segdb_url)
+            seg_xml_file = idq.segment_query(config, gpsstart, gpsstart+stride, url=config.get("get_science_segments","segdb"))
 
-            ### write seg_xml_file to disk
             lsctables.use_in(ligolw.LIGOLWContentHandler)
-            xmldoc = ligolw_utils.load_fileobj(seg_xml_file, contenthandler=ligolw.LIGOLWContentHandler)[0]
+            xmldoc = utils.load_fileobj(seg_xml_file, contenthandler=ligolw.LIGOLWContentHandler)[0]
 
-            ### science segments xml filename
-            seg_file = idq.segxml(output_dir, "_%s"%dq_name, gpsstart - lookback , lookback+stride)
-            logger.info('writing science segments to file : '+seg_file)
-            ligolw_utils.write_filename(xmldoc, seg_file, gz=seg_file.endswith(".gz"))
-            files['segs']['sci'] = seg_file
+            seg_file = "%s/science_segements-%d-%d.xml.gz"%(this_sumdir, int(gpsstart), int(stride))
+            logger.info("writting science segments to file : %s"%seg_file)
+            utils.write_filename(xmldoc, seg_file, gz=seg_file.endswith(".gz"))
 
-            (scisegs, coveredseg) = idq.extract_dq_segments(seg_file, dq_name) ### read in segments from xml file
+            (scisegs, coveredseg) = idq.extract_dq_segments(seg_file, config.get('get_science_segments', 'include'))
 
         except Exception as e:
             traceback.print_exc()
-            logger.info('ERROR: segment generation failed. Skipping this training period.')
+            logger.info("ERROR: segment generation failed. Skipping this summary period.")
 
-            if opts.force: ### we are require successful training or else we want errors
-                logger.info(traceback.print_exc())
-                raise e
-            else: ### we don't care if any particular training job fails
-                gpsstart += stride
-                continue
-
-    logger.info('finding idq segments')
-    idqsegs = idq.get_idq_segments(realtimedir, gpsstart-lookback, gpsstart+stride, suffix='.dat')
-
-    logger.info('taking intersection between science segments and idq segments')
-    idqsegs = event.andsegments( [scisegs, idqsegs] )
-
-    ### write segment file
-    if opts.ignore_science_segments:
-        idqseg_path = idq.idqsegascii(output_dir, '', gpsstart - lookback, lookback+stride)
-    else:
-        idqseg_path = idq.idqsegascii(output_dir, '_%s'%dq_name, gpsstart - lookback, lookback+stride)
-    f = open(idqseg_path, 'w')
-    for seg in idqsegs:
-        print >> f, seg[0], seg[1]
-    f.close()
-
-    files['segs']['idq'] = idqseg_path
-
-    #===============================================================================================
-    # find data
-    #===============================================================================================
-    ### find all *dat files, bin them according to classifier
-    logger.info('finding all *dat files')
-    datsD = defaultdict( list )
-    for dat in idq.get_all_files_in_range(realtimedir, gpsstart-lookback, gpsstart+stride, pad=0, suffix='.dat' ):
-        datsD[idq.extract_dat_name( dat )].append( dat )
-
-    ### throw away any un-needed files
-    for key in datsD.keys():
-        if key not in classifiers:
-            datsD.pop(key)
-        else: ### throw out files that don't contain any science time
-            datsD[key] = [ dat for dat in datsD[key] if event.livetime(event.andsegments([idqsegs, [idq.extract_start_stop(dat, suffix='.dat')]])) ]
-
-    #===============================================================================================
-    # build plots
-    #===============================================================================================
-    fignames = {'linroc':{}, 'roc':{}, 'hst':{}, 'kde':{}, 'L':{}, 'trg':{}, 'bwh':{}, 'fap':{}, 'fapUL':{}}
-    ### roc -> Receiver Operating Characteristic curves
-    ### hst -> raw histograms of distributions
-    ### kde -> kde smoothed histograms of distributions
-    ### trg -> histograms of gch features
-    ### bwh -> bit-word histograms
-
-    ### axes for overlay plots
-    roc_figax = None
-    hst_figax = None
-    kde_figax = None
-    L_figax = None
-
-    ### bit-word storage
-    gch_bitword = dict( (FAP, {}) for FAP in opts.FAPthr )
-    cln_bitword = dict( (FAP, {}) for FAP in opts.FAPthr )
-
-    #====================
-    # build plots for classifiers separately and add to overlays
-    # only plots that depend on this stride alone!
-    #====================
-    for classifier in classifiers:
-        color = colors[classifier]
-
-        ### write list of dats to cache file
-        cache = idq.cache(output_dir, classifier, "_datcache%s"%usertag)
-        logger.info('writing list of dat files to %s'%cache)
-        f = open(cache, 'w')
-        for dat in datsD[classifier]:
-            print >>f, dat
-        f.close()
-
-        files['dat'][classifier] = cache
-
-        logger.info('building plots for %s'%classifier)
-
-        ### load dat files
-        output = idq.slim_load_datfiles(datsD[classifier], skip_lines=0, columns=columns)
-
-        ### filter times by scisegs -> keep only the ones within scisegs
-        output = idq.filter_datfile_output( output, idqsegs )
-
-        if not opts.dont_cluster:
-            output = idq.cluster_datfile_output( output, cluster_key=cluster_key, cluster_win=cluster_win)
-            cluster_dat = idq.dat(output_dir, classifier, ifo, "clustered", usertag, gpsstart-lookback, lookback+stride)
-            logger.info('  writing %s'%cluster_dat)
-            idq.output_to_datfile( output, cluster_dat )
-        else:
-            cluster_dat = idq.dat(output_dir, classifier, ifo, "unclustered", usertag, gpsstart-lookback, lookback+stride)
-            logger.info('  writing %s'%cluster_dat)
-            idq.output_to_datfile( output, cluster_dat )
-
-
-        ### compute rcg from output
-        r, c, g = idq.dat_to_rcg( output )
-        dc, dg = idq.rcg_to_diff( c, g ) ### get the numbers at each rank
-
-        data[classifier] = {'num_cln':c[-1], 'num_gch':g[-1]}
-
-        ### dump into roc file
-        roc = idq.roc(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
-        logger.info('  writting %s'%roc)
-        idq.rcg_to_file(roc, r, c, g)
-
-        files['roc'][classifier] = roc
-
-        ### generate ROC plot
-        rocfig = isp.rocfig(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
-        fignames['roc'][classifier] = rocfig ### store for reference
-        logger.info('  plotting %s'%rocfig)
-
-        fig, ax = isp.rcg_to_rocFig(c, g, color=color, label=classifier)
-        ax.plot(faircoin, faircoin, 'k--')
-        ax.legend(loc='best')
-
-        fig.savefig(rocfig)
-        isp.close(fig)
-
-        rocfig = isp.rocfig(output_dir, classifier, ifo, "%s_lin"%usertag, gpsstart-lookback, lookback+stride)
-        fignames['linroc'][classifier] = rocfig
-        logger.info('  plotting %s'%rocfig)
-        ax.set_xscale('linear')
-        ax.set_xlim(xmin=0, xmax=1)
-        fig.savefig(rocfig)
-        isp.close(fig)
-
-        roc_figax = isp.rcg_to_rocFig(c, g, color=color, label=classifier, figax=roc_figax) ### for overlay plot
-
-        ### generate histogram, cdf 
-        histfig = isp.histfig(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
-        fignames['hst'][classifier] = histfig ### store for reference
-        logger.info('  plotting %s'%histfig)
-
-        if np.any(dc):
-            fig, axh, axc = isp.stacked_hist(r, dc, color=color, linestyle=cln_linestyle, label="%s cln"%classifier)
-            hst_figax = isp.stacked_hist(r, dc, color=color, linestyle=cln_linestyle, label="%s cln"%classifier, figax=hst_figax) ### for overlay plots
-        if np.any(dg):
-            fig, axh, axc = isp.stacked_hist(r, dg, color=color, linestyle=gch_linestyle, label="%s gch"%classifier, figax=(fig, axh, axc))
-            hst_figax = isp.stacked_hist(r, dg, color=color, linestyle=gch_linestyle, label="%s gch"%classifier, figax=hst_figax)
-        if np.any(dc) or np.any(dg):
-            axh.set_xlim(xmin=0, xmax=1)
-            axc.set_xlim(xmin=0, xmax=1)
-            axc.legend(loc='best')
-            fig.savefig(histfig)
-            isp.close(fig)
-
-        ### compute kde estimates
-        logger.info('  computing kde_pwg estimates')
-        kde_cln = idq.kde_pwg( kde, r, dc )
-        kde_gch = idq.kde_pwg( kde, r, dg )
-
-        ### write kde points to file
-        kde_cln_name = idq.kdename(output_dir, classifier, ifo, "_cln%s"%usertag, gpsstart-lookback, lookback+stride)
-        logger.info('  writing %s'%kde_cln_name)
-        np.save(event.gzopen(kde_cln_name, "w"), (kde, kde_cln))
-
-        kde_gch_name = idq.kdename(output_dir, classifier, ifo, "_gch%s"%usertag, gpsstart-lookback, lookback+stride)
-        logger.info('  writing %s'%kde_gch_name)
-        np.save(event.gzopen(kde_gch_name, "w"), (kde, kde_gch))
-
-        files['kde'][classifier] = {'cln':kde_cln_name, 'gch':kde_gch_name}
-
-        ### generate kde pdf, cdf (above)
-        kdefig = isp.kdefig(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
-        fignames['kde'][classifier] = kdefig ### store for reference
-        logger.info('  plotting %s'%kdefig)
-
-        fig, axh, axc = isp.stacked_kde(kde, kde_cln, color=color, linestyle=cln_linestyle, label="%s cln"%classifier, figax=None)
-        fig, axh, axc = isp.stacked_kde(kde, kde_gch, color=color, linestyle=gch_linestyle, label="%s gch"%classifier, figax=(fig, axh, axc))
-        axc.legend(loc='best')
-
-        fig.savefig(kdefig)
-        isp.close(fig)
-
-        kde_figax = isp.stacked_kde(kde, kde_cln, color=color, linestyle=cln_linestyle, label="%s cln"%classifier, figax=kde_figax) ### for overlay plot
-        kde_figax = isp.stacked_kde(kde, kde_gch, color=color, linestyle=gch_linestyle, label="%s gch"%classifier, figax=kde_figax)
-
-        ### likelihood ratio
-        Lfig = isp.Lfig(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
-        fignames['L'][classifier] = Lfig
-        logger.info('  plotting %s'%Lfig)
-
-        fig, axh, axc = isp.stacked_L(kde, kde_cln, kde_gch, color=color, linestyle='solid', label=classifier, figax=None)
-        axc.legend(loc='best')
-
-        fig.savefig(Lfig)
-        isp.close(fig)
-
-        L_figax = isp.stacked_L(kde, kde_cln, kde_gch, color=color, linestyle='solid', label=classifier, figax=L_figax) ### for overlay plot
-
-        ### figure out which gch and cln are removed below FAP thresholds
-        rankthrs = []
-        for FAP in opts.FAPthr:
-            rankthr = min(r[c<=FAP*c[-1]]) ### smallest rank below FAP
-            rankthrs.append( rankthr )
-            cln_bitword[FAP][classifier], gch_bitword[FAP][classifier] = idq.bin_by_rankthr(rankthr, output, columns=dat_columns)
-                
-        ### generate histograms of glitch parameters
-        for column in dat_columns:
-            paramhist = isp.histfig(output_dir, classifier, ifo, "%s_%s"%(usertag, column), gpsstart-lookback, lookback+stride)
-            fignames['trg'][(classifier, column)] = paramhist
-            logger.info('  plotting %s'%paramhist)
-
-            figax = None
-            for rankthr, FAP in zip(rankthrs, opts.FAPthr):
-                thr = min(r[c<=FAP*c[-1]]) ### smallest rank below FAP
-                x = [float(output[column][i]) for i in xrange(len(output[column])) if output['rank'][i] >= thr]
-                if x: ### will break if x is empty
-                    figax = isp.stacked_hist( x, np.ones_like(x), color=None, label="$FAP\leq%E$"%FAP, bmin=min(x), bmax=max(x), figax=figax)
-            if figax: ### only save if we plotted something...
-                fig, axh, axc = figax
-                axh.set_xlabel(column)
-                axc.set_xlim(axh.get_xlim())
-                axc.legend(loc='best')
-                fig.savefig(paramhist)
-                isp.close(fig)
-
-    #====================
-    # save overlays for this stride
-    #====================
-
-    ### roc overlay
-    rocfig = isp.rocfig(output_dir, "overlay", ifo, usertag, gpsstart-lookback, lookback+stride)
-    fignames['roc']["overlay"] = rocfig ### store for reference
-    logger.info('  plotting %s'%rocfig)
-    fig, ax = roc_figax
-    ax.plot(faircoin, faircoin, 'k--')
-    ax.legend(loc='best')
-    fig.savefig(rocfig)
-    isp.close(fig)
-
-    rocfig = isp.rocfig(output_dir, "overlay", ifo, "%s_lin"%usertag, gpsstart-lookback, lookback+stride)
-    fignames['linroc']['overlay'] = rocfig
-    logger.info('  plotting %s'%rocfig)
-    ax.set_xscale('linear')
-    ax.set_xlim(xmin=0, xmax=1)
-    fig.savefig(rocfig)
-    isp.close(fig)
-
-    ### histogram overlay
-    histfig = isp.histfig(output_dir, "overlay", ifo, usertag, gpsstart-lookback, lookback+stride)
-    fignames['hst']["overlay"] = histfig ### store for reference
-    if hst_figax:
-        logger.info('  plotting %s'%histfig)
-        fig, axh, axc = hst_figax
-        axh.set_xlim(xmin=0, xmax=1)
-        axc.set_xlim(xmin=0, xmax=1)
-        axc.legend(loc='best')
-        fig.savefig(histfig)
-        isp.close(fig)
-
-    ### kde overlay
-    kdefig = isp.kdefig(output_dir, "overlay", ifo, usertag, gpsstart-lookback, lookback+stride)
-    fignames['kde']["overlay"] = kdefig ### store for reference
-    logger.info('  plotting %s'%kdefig)
-    fig, axh, axc = kde_figax
-    axc.legend(loc='best')
-    fig.savefig(kdefig)
-    isp.close(fig)
-
-    ### L overlay
-    Lfig = isp.Lfig(output_dir, "overlay", ifo, usertag, gpsstart-lookback, lookback+stride)
-    fignames['L']["overlay"] = Lfig
-    logger.info('  plotting %s'%Lfig)
-    fig, axh, axc = L_figax
-    axc.legend(loc='best')
-    fig.savefig(Lfig)
-    isp.close(fig)
-
-    #====================
-    # bitword histograms
-    #====================
-
-    ### gch bitword histogram
-    bitfig = isp.bitfig(output_dir, ifo, "%s_gch"%usertag, gpsstart-lookback, lookback+stride)
-    fignames['bwh']['gch'] = bitfig
-    logger.info('  plotting %s'%bitfig)
-
-    figax=None
-    for FAP in opts.FAPthr:
-        figax = isp.bitword( gch_bitword[FAP], classifiers, label="FAP$\leq$%.3e"%FAP, figax=figax )
-    if figax:
-        fig, ax = figax
-        ax.legend(loc='upper center')
-
-        fig.savefig(bitfig)
-        isp.close(fig)
-
-    ### cln bitword histogram
-    bitfig = isp.bitfig(output_dir, ifo, "%s_cln"%usertag, gpsstart-lookback, lookback+stride)
-    fignames['bwh']['cln'] = bitfig
-    logger.info('  plotting %s'%bitfig)
-
-    figax=None
-    for FAP in opts.FAPthr:
-        figax = isp.bitword( cln_bitword[FAP], classifiers, label="FAP$\leq$%.3e"%FAP, figax=figax )
-    if figax:
-        fig, ax = figax
-        ax.legend(loc='upper center')
-
-        fig.savefig(bitfig)
-        isp.close(fig)
-
-    #====================
-    # fap calibration
-    #====================
-    logger.info('checking FAP calibration')
-    ### find all *dat files, bin them according to classifier
-    logger.info('  finding all *fap*npy.gz files')
-    fapsD = defaultdict( list )
-    for npygz in idq.get_all_files_in_range(realtimedir, gpsstart-lookback, gpsstart+stride, pad=0, suffix='.npy.gz' ):
-        if "fap" in npygz:
-            fapsD[idq.extract_fap_name( npygz )].append( npygz )
-
-    ### throw away any un-needed files
-    for key in fapsD.keys():
-        if key not in classifiers:
-            fapsD.pop(key)
-        else: ### throw out files that don't contain any science time
-            fapsD[key] = [ fap for fap in fapsD[key] if event.livetime(event.andsegments([idqsegs, [idq.extract_start_stop(fap, suffix='.npy.gz')]])) ]
-
-    ### check calibration and build figures
-    alerts = {}
-    fap_figax = None
-    fapUL_figax = None
-    for classifier in classifiers:
-
-        _times, timeseries = idq.combine_ts(fapsD[classifier], n=2) ### read in time-series
-
-        times = []
-        faps = []
-        fapsUL = []
-        for t, ts in zip(_times, timeseries):
-            _t, _ts = idq.timeseries_in_segments(t, ts, idqsegs)
-            if len(_ts):
-                times.append( _t )
-                faps.append( _ts[0] )
-                fapsUL.append( _ts[1] )
-
-        ### check point estimate calibration
-        _, deadtimes, statedFAPs, errs = calibration.check_calibration(idqsegs, times, faps, opts.FAPthr)
-#        errs = np.array([ d/F - 1.0 for d, F in zip(deadtimes, statedFAPs) if F ])
-
-        ### check UL estimate calibration
-        _, deadtimesUL, statedFAPsUL, errsUL = calibration.check_calibration(idqsegs, times, fapsUL, opts.FAPthr)
-#        errsUL = np.array([ d/F - 1.0 for d, F in zip(deadtimesUL, statedFAPs) if F ])
-
-        ### write output file
-        calib_check = idq.calib_check(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
-        logger.info('  writing %s'%calib_check)
-
-        file_obj = open(calib_check, "w")
-        print >> file_obj, "livetime = %.3f"%event.livetime(idqsegs)
-        for FAPthr, deadtime, statedFAP, err, deadtimeUL, statedFAPUL, errUL in zip(opts.FAPthr, deadtimes, statedFAPs, errs, deadtimesUL, statedFAPsUL, errsUL):
-                print >> file_obj, calibration.report_str%(FAPthr, statedFAP, deadtime, err , statedFAPUL, deadtimeUL, errUL )
-        file_obj.close()
-
-        if np.any(np.abs(errs) > errorthr) or np.any(np.abs(errsUL) > errorthr):
-            alerts[classifier] = calib_check
-
-        ### build pt. estimate figures
-        color = colors[classifier]
-        fig, ax = isp.calibration_scatter( deadtimes, statedFAPs, color=color, label=classifier, figax=None)
-        figname = isp.calibfig(output_dir, ifo, classifier, usertag, gpsstart-lookback, lookback+stride)
-        logger.info('  plotting %s'%figname)
-        fignames['fap'][classifier] = figname
-        ax.plot(faircoin, faircoin, 'k--')
-        ax.set_xscale('log')
-        ax.set_yscale('log')
-        ax.legend(loc='best')
-        fig.savefig(figname)
-        isp.close(fig)
-
-        ### for overlay
-        fap_figax = isp.calibration_scatter( deadtimes, statedFAPs, color=color, label=classifier, figax=fap_figax)
-
-        ### build upper-limit figures
-        fig, ax = isp.calibration_scatter( deadtimesUL, statedFAPsUL, color=color, label=classifier, figax=None)
-        figname = isp.calibfig(output_dir, ifo, classifier, "%s_UL"%usertag, gpsstart-lookback, lookback+stride)
-        logger.info('  plotting %s'%figname)
-        fignames['fapUL'][classifier] = figname
-        ax.plot(faircoin, faircoin, 'k--')
-        ax.set_xscale('log')
-        ax.set_yscale('log')
-        ax.legend(loc='best')
-        fig.savefig(figname)
-        isp.close(fig)
-
-        fapUL_figax = isp.calibration_scatter( deadtimesUL, statedFAPsUL, color=color, label=classifier, figax=fapUL_figax)
-
-    ### save overlays
-    fig, ax = fap_figax
-    figname = isp.calibfig(output_dir, ifo, 'overlay', usertag, gpsstart-lookback, lookback+stride)
-    logger.info('  plotting %s'%figname)
-    fignames['fap']['overlay'] = figname
-    ax.plot(faircoin, faircoin, 'k--')
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-    ax.legend(loc='best')
-    fig.savefig(figname)
-    isp.close(fig)
-
-    fig, ax = fapUL_figax
-    figname = isp.calibfig(output_dir, ifo, 'overlay', "%s_UL"%usertag, gpsstart-lookback, lookback+stride)
-    logger.info('  plotting %s'%figname)
-    fignames['fapUL']['overlay'] = figname
-    ax.plot(faircoin, faircoin, 'k--')
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-    ax.legend(loc='best')
-    fig.savefig(figname)
-    isp.close(fig)
-
-    ### send alerts if needed
-    if alerts: ### there are some interesting files
-        alerts_keys = sorted(alerts.keys())
-        alerts_keys_str = " ".join(alerts_keys)
-        logger.warning('WARNING: found suspicous historical calibrations for : %s'%alerts_keys_str )
-        if emaillist:
-            email_cmd = "echo \"calibration check summary files are attached for: %s\" | mailx -s \"%s idq%s calibration warning in laldetchar-idq-summary\" %s \"%s\""%(alerts_keys_str, ifo, usertag, " ".join("-a \"%s\""%alerts[key] for key in alerts_keys), emaillist)
-            logger.warning("  %s"%email_cmd)
-            exit_code = os.system( email_cmd )
-            if exit_code:
-                logger.warning("WARNING: failed to send email!")
-
-    #=============================================
-    # compute channel performance for flavor=="ovl"
-    #=============================================
-    for classifier in classifiers:
-        if classifiersD[classifier]['flavor'] != "ovl": ### channel information only available from flavor=='ovl'
+            gpsstart += stride
             continue
 
-        ### load dat files
-        output = idq.slim_load_datfiles(datsD[classifier], skip_lines=0, columns='GPS i vchan'.split()+[cluster_key]) ### specific columns known to be in ovl dat files
+    #=============================================
+    # generating summary datfiles filtered by segments
+    #=============================================
+    ### get all relevant datfiles
+    datfiles = idq.get_all_files_in_range(realtimedir, gpsstart, gpsstart+stride, suffix=".dat")
 
-        ### filter times by scisegs -> keep only the ones within scisegs
-        output = idq.filter_datfile_output( output, idqsegs )
-        if not opts.dont_cluster:
-            output = idq.cluster_datfile_output( output, cluster_key=cluster_key, cluster_win=cluster_win)
-        
-        ### don't re-write clustered dat files here...
+    for classifier in classifiers:
+        ### follow standard datfile naming conventions 
+        summary_dat = "%s/%s_%s_0-0_%sSummary-%d-%d.dat"%(this_sumdir, kwbasename, classifier, usertag, gpsstart, stride)
 
-        ### extract channel performances
-        performance, num_gch, num_cln = idq.dat_to_perf( output )
+        logger.info("generating summary dat file for %s : %s"%(classifier, summary_dat))
 
-        ### write to file!
-        chanperf = idq.chan_perf(output_dir, classifier, ifo, usertag, gpsstart-lookback, lookback+stride)
-        logger.info('  writing : %s'%chanperf)
-        idq.perf_to_file( performance, num_gch, num_cln, chanperf )
+        columns = ['GPS', 'i', 'rank', "signif", "SNR"]
+        if classifier == "ovl":
+            columns += ["vchan", "vthr", "vwin"]
 
-        files['chn'][classifier] = chanperf
+        ### write columns to summary dat
+        file_obj = open(summary_dat, "w")
+        print >> file_obj, " ".join(columns)
 
-    #===============================================================================================
-    # trending plots!
-    # data depends on previous strides as well
-    # we search for and plot data from these periods binned automatically into shorter-scale averages
-    #===============================================================================================
-    logger.info('Begin: Trending')
-    if not os.path.exists(trenddir):
-        os.makedirs(trenddir)
+        for datfile in datfiles:
+            if classifier not in datfile: ### downselect based on classifier
+                continue
 
-    trending = {'sci':[], 
-                'idq':[],
-                'seg':[],
-                'trg_rate':dict( [('overlay',[])] + [(classifier, []) for classifier in classifiers] ), 
-                'effatfap':dict( [('overlay',[])] + [(classifier, []) for classifier in classifiers] ), 
-                'rank':dict( (classifier, []) for classifier in classifiers ),
-                'eff':dict( (classifier, []) for classifier in classifiers ),
-                'fap':dict( (classifier, []) for classifier in classifiers )
-                }
+            ### load only the required columns from datfile 
+            output = idq.slim_load_datfile(datfile, skip_lines=0, columns=columns)
 
-    for trend in opts.trending:
-        ### compute the trending range
-        if trend == "infinity":
-            trend_start = global_start
+            ### convert to list of triggers
+            triggers = [[output[c][i] for c in columns] for i in xrange(len(output["GPS"]))]
+            triggers = [[float(l[0])]+l[1:] for l in triggers]
+
+            ### window triggers with scisegs
+            triggers = event.include( triggers, scisegs, tcent=0 ) ### tcent hard coded according to columns
+
+            ### write surviving triggers to datfile
+            for trigger in triggers:
+                trigger = [str(trigger[0])] + trigger[1:]
+                print >> file_obj, " ".join(trigger)
+
+        file_obj.close()
+        logger.info("Done.")
+   
+    #=============================================
+    # generate *roc files
+    #=============================================
+    ### collect *dat files and merge into *roc files
+    logger.info('generating *.roc files')
+    roc_paths = idq.datfiles_to_roc(
+        gpsstart,
+        gpsstart + stride,
+        columns=columns,
+        classifiers=classifiers,
+        basename=False,
+        source_dir=this_sumdir,
+#        source_dir=realtimedir,
+        output_dir=this_sumdir,
+        cluster_win=cluster_win,
+        unsafe_win=unsafe_win,
+        gw_thr=gw_thr,
+        switch_snr_signif=classifiers_switch_snr_signif,
+        )
+
+    ### generate uniformly sampled ROC files (sampled 100 times)
+    ### these are used for rank->FAP maps in the realtime job
+    logger.info('generating *.uroc files')
+    uroc_paths = []
+    for (roc_path, classifier) in roc_paths:
+        (uniform_ranks, uniform_ccln, uniform_cgch, tcln, tgch) = \
+            idq_s_p.ROC_to_uniformROC(roc_path, num_samples=100)
+
+        uniformROCfilename = roc_path[:-4] + '.uroc'  # suffix is for uniformly-sampled roc file
+
+        uroc_paths.append((idq_s_p.rcg_to_ROC(
+            uniformROCfilename,
+            uniform_ranks,
+            uniform_ccln,
+            uniform_cgch,
+            tcln,
+            tgch,
+            ), classifier, (tcln>=min_num_cln) and (tgch>=min_num_gch)))
+
+    ### update uroc_cachefiles used in realtime job
+    logger.info('updating *_uroc.cache files')
+    for (uroc_path, classifier, include) in uroc_paths:
+        if include or opts.force:
+            logger.info('updating *_uroc.cache file for %s'%classifier)
+
+            uroc_cachefilename = sumdir + '/' + classifier + '_uroc.cache'
+            file = open(uroc_cachefilename, 'a')
+            print >> file, uroc_path
+            file.close()
         else:
-            trend_start = gpsstart - trend
+           logger.info('not enough glitches or cleans were found to justify updating uroc.cache for %s'%classifier)
 
-        logger.info('  Begin: %d - %d'%(trend_start, gpsstart+stride) )
+    #=============================================
+    # generat ROC figures
+    #=============================================
+    logger.info('generating ROC figures')
 
-        bindatas = [] ### store the data for plotting
+    ### generate an individual ROC plot for each classifier
+    roc_fig_paths = []
+    for (ind, roc_path) in enumerate(roc_paths):
+        (path, classifier) = roc_path
+        try:
+            figname = path[:-4] + '_roc'
+            idq_s_p.ROC_to_ROC_plot([path],
+                                    labels=[idq_s_p.classifier_labels(classifier)],
+                                    colors=[idq_s_p.classifier_colors(classifier)],
+                                    figure_name=figname, write=True)
+            roc_fig_paths.append((figname + idq_s_p.fig_type,
+                                 classifier))
+        except:
+            traceback.print_exc()
+            roc_fig_paths.append(('', classifier))
+            logger.info('WARNING: FAILED to build roc figure for '
+                        + classifier)
 
-        ### compute bins for this trend stride
-        bins = np.linspace(trend_start, gpsstart+stride, num_trend_bins+1).astype(int)
-        for s, e in zip(bins[:-1], bins[1:]):
-            logger.info('    Begin: %d - %d'%(s , e) )
+    ### generate a combined ROC plot showing all classifiers
+    try:
+        figname = "%s/all-%d-%d_roc"%(this_sumdir,gpsstart,stride)
+        roc_fig_path = figname + idq_s_p.fig_type
+        idq_s_p.ROC_to_ROC_plot([l[0] for l in roc_paths],
+                                labels=classifier_labels,
+                                colors=classifier_colors,
+                                figure_name=figname, write=True)
+    except:
+        traceback.print_exc()
+        roc_fig_path = False
+        logger.info('WARNING: FAILED to generate combined roc figure')
+    logger.info('Done.')
 
-            bindata = {}
+    #=============================================
+    # basic lists of channels, segments, etc
+    #=============================================
+    ### location of most recent vetolist:
+    logger.info('finding pointers to OVL vetolists')
+    vetolist_link = False
+    try:
+        vetolist_path = open(vetolist_cache, 'r').readlines()[-1].strip('\n')
+        vetolist_link = this_sumdir + '/vetolist.eval'
+        if os.path.lexists(vetolist_link):
+            os.remove(vetolist_link)
+        os.symlink(vetolist_path, vetolist_link)
+    except:
+        traceback.print_exc()
+        logger.info('WARNING: FAILED to find most recent OVL vetolist')
+    logger.info('Done')
 
-            bindata['range'] = (s, e)
+    ### generate segments
+    logger.info('generating OVL vetolist segments')
+    vetolist_seg_path = False
+    ovl_fdt = False
+    try:
+        vetolist_seg_path = this_sumdir + '/' + vetolist_path.split('/'
+                )[-1] + '_FAP_<=' + str(FAP) + '.seg'
+        (vetolist_segs, ovl_fdt) = idq.ovl.vetolist_to_segments(
+            vetolist_path,
+            gpsstart,
+            gpsstart + stride,
+            FAP,
+            trg_dir=kwtrgdir,
+            scisegs=False,
+            output_filename=vetolist_seg_path,
+            )
+    except:
+        traceback.print_exc()
+        logger.info('WARNING: FAILED to generate OVL segments')
+    logger.info('Done')
 
-            output_trenddir = "%s/%d_%d/"%(trenddir, s, e)
+    #=============================================
+    # algorithmic trending 
+    #=============================================
+    ### trending plots
 
-            if not os.path.exists(output_trenddir): ### we need to make this trending information
-                logger.info('    making %s and all required data'%output_trenddir)
-                os.makedirs(output_trenddir)
+    logger.info('generating trending plots')
 
-                #=====================================
-                # science segments
-                # we query the segdb right now, although that latency may be an issue...
-                #=====================================
-                if opts.ignore_science_segments:
-                    logger.info('    analyzing data regardless of science segements')
-                    scisegs = [[gpsstart-lookback, gpsstart+stride]] ### set segs to be this stride range
-                    coveredsegs = [[gpsstart-lookback, gpsstart+stride]] ### set segs to be this stride range
+    ### compute how far in time to look back
+    lookbacktime = gpsstart - lookback * stride
 
-                else:
-                    logger.info('    querrying science segments')
+    ### get stat summary files produced by earlier summary jobs
+    stat_summary_files = idq.get_all_files_in_range(sumdir,
+            lookbacktime, gpsstart + stride, pad=0, suffix='.stat')
 
-                    try:
-                        ### this returns a string
-                        seg_xml_file = idq.segment_query(config, s, e, url=segdb_url)
+    ### get the most recent stat file
+    stat_summary_files.sort()
+    latest_stat_summary_file = stat_summary_files[-1]
 
-                        ### write seg_xml_file to disk
-                        lsctables.use_in(ligolw.LIGOLWContentHandler)
-                        xmldoc = ligolw_utils.load_fileobj(seg_xml_file, contenthandler=ligolw.LIGOLWContentHandler)[0]
+    ### generate trending plots for livetime, glitch and clean samples rates
+    logger.info('generating summary statistic trending plots')
+    try:
+        stat_trends_plot_paths = idq_s_p.stat_to_trends_plot(
+            stat_summary_files,
+            classifiers,
+            labels=classifier_labels,
+            colors=classifier_colors,
+            output_dir=this_sumdir,
+            figure_basename='stat_trending',
+            write=True,
+            )
+    except:
+        traceback.print_exc()
+        stat_trends_plot_paths = []
+        logger.info('WARNING: FAILED to generate summary statistic trending plots.'
+                    )
+    logger.info('Done')
 
-                        ### science segments xml filename
-                        seg_file = idq.segxml(output_trenddir, "_%s"%dq_name, s , e-s)
-                        logger.info('    writing science segments to file : '+seg_file)
-                        ligolw_utils.write_filename(xmldoc, seg_file, gz=seg_file.endswith(".gz"))
+    ### get roc files
+    roc_files_for_trending = idq.get_all_files_in_range(sumdir,
+            lookbacktime, gpsstart + stride, pad=0, suffix='.roc')
 
-                        (scisegs, coveredseg) = idq.extract_dq_segments(seg_file, dq_name) ### read in segments from xml file
- 
-                        bindata['sci'] = scisegs
- 
-                    except Exception as er:
-                        traceback.print_exc()
-                        logger.info('ERROR: segment generation failed. Skipping this trending period.')
+    # define dictionary to hold them
+    roc_files_dict = {}
+    for classifier in classifiers:
+        roc_files_dict[classifier] = []
 
-                        if opts.force: ### we are require successful training or else we want errors
-                            logger.info(traceback.print_exc())
-                            raise er
-                        else: ### we don't care if any particular training job fails
-                            continue
+    for file in roc_files_for_trending:
+        classifier = file.split('/')[-1].split('-')[0]
+        roc_files_dict[classifier].append(file)
 
-                logger.info('    finding idq segments')
-                idqsegs = idq.get_idq_segments(realtimedir, s, e, suffix='.dat')
+    ### generate efficiency trending plot....
+    logger.info('generating effciency trending plot')
+    try:
+        eff_trends_plot_paths = idq_s_p.ROC_to_eff_trends_plot(
+            roc_files_dict,
+            FAP,
+            classifiers=classifiers,
+            labels=classifier_labels,
+            colors=classifier_colors,
+            output_dir=this_sumdir,
+            figure_basename='_trending_',
+            write=True,
+            )
+    except:
+        traceback.print_exc()
+        eff_trends_plot_paths = []
+        logger.info('WARNING: FAILED to generate efficiency trending plot.'
+                    )
+    logger.info('Done')
 
-                logger.info('    taking intersection between science segments and idq segments')
-                idqsegs = event.andsegments( [scisegs, idqsegs] )
+    #=============================================
+    # channel/configuration specific performance
+    #=============================================
+    ### channel statistics
+    logger.info('generating channel statistics')
+    chanlist = []
+    for classifier in classifiers:
+        if classifier not in ['ovl']:
+            logger.info('skipping ' + classifier)
+            continue
+        try:
+            chanlist += idq.datfiles_to_chanlist(
+                gpsstart,
+                gpsstart + stride,
+                columns=columns + ['vchan'],
+                classifiers=[classifier],
+                basename=False,
+                source_dir=this_sumdir,
+#                source_dir=realtimedir,
+                output_dir=this_sumdir,
+                cluster_win=cluster_win,
+                unsafe_win=unsafe_win,
+                gw_thr=gw_thr,
+                switch_snr_signif=classifier
+                    in classifiers_switch_snr_signif,
+                )
+        except:
+            traceback.print_exc()
+            chanlist.append(('', classifier))
+            logger.info('WARNING: FAILED to generate chanlist  for '
+                        + classifier)
+    logger.info('Done')
 
-                bindata['idq'] = idqsegs
-
-                ### write segment file
-                if opts.ignore_science_segments:
-                    idqseg_path = idq.idqsegascii(output_trenddir, '', s, e-s)
-                else:
-                    idqseg_path = idq.idqsegascii(output_trenddir, '_%s'%dq_name, s, e-s)
-                f = open(idqseg_path, 'w')
-                for seg in idqsegs:
-                    print >> f, seg[0], seg[1]
-                f.close()
-
-                #=====================================
-                # find data
-                #=====================================
-                ### find all *dat files, bin them according to classifier
-                logger.info('    finding all *dat files')
-                datsD = defaultdict( list )
-                for dat in idq.get_all_files_in_range(realtimedir, s, e, pad=0, suffix='.dat' ):
-                    datsD[idq.extract_dat_name( dat )].append( dat )
-
-                ### throw away any un-needed files
-                for key in datsD.keys():
-                    if key not in classifiers:
-                        datsD.pop(key)
-                    else: ### throw out files that don't contain any science time
-                        datsD[key] = [ dat for dat in datsD[key] if event.livetime(event.andsegments([idqsegs, [idq.extract_start_stop(dat, suffix='.dat')]])) ]
-
-                bindata['rcg'] = {}
-                bindata['chn'] = {}
-                for classifier in classifiers:
-                    ### write list of dats to cache file
-                    cache = idq.cache(output_trenddir, classifier, "_datcache%s"%usertag)
-                    logger.info('  writing list of dat files to %s'%cache)
-                    f = open(cache, 'w')
-                    for dat in datsD[classifier]:
-                        print >>f, dat
-                    f.close()
-
-                    output = idq.slim_load_datfiles(datsD[classifier], skip_lines=0, columns=columns)
-                    output = idq.filter_datfile_output( output, idqsegs )
-
-                    if not opts.dont_cluster:
-                        output = idq.cluster_datfile_output( output, cluster_key=cluster_key, cluster_win=cluster_win)
-                        cluster_dat = idq.dat(output_trenddir, classifier, ifo, "clustered", usertag, s, e-s)
-                        logger.info('  writing %s'%cluster_dat)
-                        idq.output_to_datfile( output, cluster_dat )
-                    else:
-                        cluster_dat = idq.dat(output_trenddir, classifier, ifo, "unclustered", usertag, gpsstart-lookback, lookback+stride)
-                        logger.info('  writing %s'%cluster_dat)
-                        idq.output_to_datfile( output, cluster_dat )
-
-                    r, c, g = idq.dat_to_rcg( output )
-                    bindata['rcg'][classifier] = (r, c, g, c[-1], g[-1])
-
-                    ### save roc file
-                    roc = idq.roc(output_trenddir, classifier, ifo, usertag, s, e-s)
-                    logger.info('  writing %s'%roc)
-                    idq.rcg_to_file(roc, r, c, g)
-
-                    ### build/save chan-perf files
-                    for classifier in classifiers:
-                        if classifiersD[classifier]['flavor'] != 'ovl':
-                            continue
-
-                        ### load dat files
-                        output = idq.slim_load_datfiles(datsD[classifier], skip_lines=0, columns='GPS i vchan'.split()+[cluster_key]) ### specific columns known to be in ovl dat files
-
-                        ### filter times by scisegs -> keep only the ones within scisegs
-                        output = idq.filter_datfile_output( output, idqsegs )
-                        if not opts.dont_cluster:
-                            output = idq.cluster_datfile_output( output, cluster_key=cluster_key, cluster_win=cluster_win)
-
-                        ### don't re-write clustered dat here...
-
-                        ### extract channel performances!
-                        performance, num_gch, num_cln = idq.dat_to_perf( output )
-
-                        ### write to file!
-                        chanperf = idq.chan_perf(output_trenddir, classifier, ifo, usertag, s, e-s)
-                        logger.info('  writing : %s'%chanperf)
-                        idq.perf_to_file( performance, num_gch, num_cln, chanperf )
-                        bindata['chn'][classifier] = (performance, num_gch, num_cln)
-
-            else: ### information already exists, just read it in
-                logger.info('    %s exists. Reading in existing data'%output_trenddir)
-
-                if not opts.ignore_science_segments:
-                    seg_file = seg_file = idq.segxml(output_trenddir, "_%s"%dq_name, s , e-s)
-                    logger.info('    reading %s'%seg_file)
-                    bindata['sci'] = idq.extract_dq_segments(seg_file, dq_name)[0]
-
-                    idq_file = idq.idqsegascii(output_trenddir, '_%s'%dq_name, s, e-s)
-                else:
-                    idq_file = idq.idqsegascii(output_trenddir, '', s, e-s)
-               
-                logger.info('    reading %s'%idq_file)
-                try:
-                    bindata['idq'] = np.loadtxt( idq_file )
-                except IOError: ### thrown if file was empty
-                    bindata['idq'] = []
- 
-                bindata['rcg'] = {}
-                bindata['chn'] = {}
-                for classifier in classifiers:
-                    roc = idq.roc(output_trenddir, classifier, ifo, usertag, s, e-s)
-                    logger.info('    reading %s'%roc)
-                    bindata['rcg'][classifier] = idq.file_to_rcg( roc )
- 
-                    if classifiersD[classifier]['flavor'] == 'ovl':
-                        chanperf = idq.chan_perf(output_trenddir, classifier, ifo, usertag, s, e-s)
-                        logger.info('    reading %s'%chanperf)
-                        bindata['chn'][classifier] = idq.file_to_perf( chanperf )
-
-            ### store data for plotting!
-            bindatas.append( bindata )
-
-        #=========================================
-        # build figures!
-        #=========================================
-
-        ### idq_seg rates
-        ranges = []
-        values = []
-        for bindata in bindatas:
-            s, e = bindata['range']
-            segs = bindata['idq']
-            uptime = event.livetime( segs )
-            ranges.append( (s, e) )
-            values.append( 1.0*uptime/(e-s) )
-
-        fig, ax = isp.rates( ranges, values, color='b', label='idq-segs', figax=None )
-        ax.set_ylim(ymin=0, ymax=1)
-        ax.set_ylabel('duty cycle')
-        ax.legend(loc='lower left')
-
-        figname = isp.ratefig(output_dir, ifo, "%s_idq-segments"%(usertag), trend_start, gpsstart+stride-trend_start)
-        logger.info('  plotting %s'%figname)
-        fig.savefig(figname)
-        isp.close(fig)
-
-        trending['idq'].append( figname )
-
-        ### plot for overlay
-        uptime_overlay_figax = isp.rates( ranges, values, color='b', label='idq-segs', figax=None )
-
-        if not opts.ignore_science_segments:
-            ranges = []
-            values = []
-            for bindata in bindatas:
-                s, e = bindata['range']
-                segs = bindata['sci']
-                uptime = event.livetime( segs )
-                ranges.append( (s, e) )
-                values.append( 1.0*uptime/(e-s) )
-
-            fig, ax = isp.rates( ranges, values, color='g', label=dq_name.replace("_","\_"), figax=None)
-            ax.set_ylim(ymin=0, ymax=1)
-            ax.set_ylabel('duty cycle')
-            ax.legend(loc='lower left')
-
-            figname = isp.ratefig(output_dir, ifo, "%s_%s"%(usertag, dq_name), trend_start, gpsstart+stride-trend_start)
-            logger.info('  plotting %s'%figname)
-            fig.savefig(figname)
-            isp.close(fig)
-
-            trending['sci'].append( figname )
-
-            ### plot overlay
-            uptime_overlay_figax = isp.rates( ranges, values, color='g', label=dq_name.replace("_","\_"), figax=uptime_overlay_figax )
-
-        fig, ax = uptime_overlay_figax
-        ax.set_ylim(ymin=0, ymax=1)
-        ax.set_ylabel('duty cycle')
-        ax.legend(loc='lower left')
-
-        figname = isp.ratefig(output_dir, ifo, "%s_segments"%(usertag), trend_start, gpsstart+stride-trend_start)
-        logger.info('  plotting %s'%figname)
-        fig.savefig(figname)
-        isp.close(fig)
-
-        trending['seg'].append( figname )
-
-        ### glitch/clean rates and effatfap
-        trg_rate_overlay_figax = None
-        eff_fap_overlay_figax = [None]*len(opts.FAPthr)
+    ### generate channel trending plots
+    logger.info('generating channel performance trending plot')
+    chanlist_trend = []
+    for yvalue in ["rank", "eff", "fap"]:
         for classifier in classifiers:
-            color = colors[classifier]
+            logger.info('%s %s channel performance trending'%(classifier, yvalue))
 
-            ### extract data
-            ranges = []
-            gvalues = []
-            cvalues = []
-            effs = []
-            for bindata in bindatas:
-                s, e = bindata['range']
-                r, c, g, _, _ = bindata['rcg'][classifier]
-                ranges.append( (s, e) )
-                gvalues.append( 1.0*g[-1]/(e-s) )
-                cvalues.append( 1.0*c[-1]/(e-s) )
-
-                if c[-1]:
-                    fap = np.array(c, dtype='float')/c[-1]
-                else:
-                    fap = [0.0]
-                if g[-1]:
-                    eff = np.array(g, dtype='float')/g[-1]
-                else:
-                    eff = [0.0]
-        
-                ### iterate over opts.FAPthr -> efficiencies at these FAPs -> plot!
-                _effs = []
-                for fapthr in opts.FAPthr:
-                    if np.any(fap<=fapthr):
-                        _effs.append( np.max(eff[fap <= fapthr]) )
-                    else:
-                        _effs.append( 0.0 )
-                effs.append( _effs )
-
-            effs = np.array(effs )
-
-            figname = isp.ratefig(output_dir, ifo, "_%s%s_trg"%(classifier, usertag), trend_start, gpsstart+stride-trend_start)
-            trending['trg_rate'][classifier].append( figname )
-            logger.info('  plotting %s'%figname)
-            
-            figax = isp.rates( ranges, cvalues, linestyle=cln_linestyle , color=color, label='%s cln'%classifier, figax=None)
-            fig, ax = isp.rates( ranges, gvalues, linestyle=gch_linestyle , color=color, label='%s gch'%classifier, figax=figax)
-
-            ax.set_ylabel('event rate [Hz]')
-            ax.legend(loc='best')
-
-            fig.savefig(figname)
-            isp.close(fig)
-
-            trg_rate_overlay_figax = isp.rates( ranges, cvalues, linestyle=cln_linestyle , color=color, label='%s cln'%classifier, figax=trg_rate_overlay_figax)
-            trg_rate_overlay_figax = isp.rates( ranges, gvalues, linestyle=gch_linestyle , color=color, label='%s gch'%classifier, figax=trg_rate_overlay_figax)
-
-            ### effatfap
-            figax = None
-            c = 'b g r m c y k'.split()
-            cind = 0
-            for ind, fap in enumerate(opts.FAPthr):
-                figax = isp.rates( ranges, effs[:,ind], color=c[cind], label='%s fap<=%.3e'%(classifier, fap), figax=figax)
-                eff_fap_overlay_figax[ind] = isp.rates( ranges, effs[:,ind], color=color, label=classifier, figax=eff_fap_overlay_figax[ind])
-                cind = (cind+1)%len(c)
-            if figax:
-                fig, ax = figax
-                ax.set_ylim(ymin=0, ymax=1)
-                ax.set_ylabel('Glitch Detection Efficiency')
-                ax.legend(loc='lower left')
-
-            figname = isp.ratefig(output_dir, ifo, "_%s%s_eff"%(classifier, usertag), trend_start, gpsstart+stride-trend_start)
-            trending['effatfap'][classifier].append( figname )
-            logger.info('  plotting %s'%figname)
-            if figax:
-                fig.savefig(figname)
-                isp.close(fig)
-
-        ### clean/glitch rates overlay
-        fig, ax = trg_rate_overlay_figax
-        ax.set_ylabel('event rate [Hz]')
-        ax.legend(loc='best')
-
-        figname = isp.ratefig(output_dir, ifo, "_overlay%s_trg"%(usertag), trend_start, gpsstart+stride-trend_start)
-        trending['trg_rate']['overlay'].append( figname )
-        logger.info('  plotting %s'%figname)
-        fig.savefig( figname )
-        isp.close(fig)
-
-        eff_fap_overlays = []
-        ### effatfap overlay
-        for (fig, ax), fap in zip(eff_fap_overlay_figax, opts.FAPthr):
-            ax.set_ylim(ymin=0, ymax=1)
-            ax.set_ylabel('Glitch Detection Efficiency')
-            ax.legend(loc='lower left')
-
-            figname = isp.ratefig(output_dir, ifo, "_overlay%s_eff-fap<%.3e"%(usertag, fap), trend_start, gpsstart+stride-trend_start)
-            logger.info('  plotting %s'%figname)
-            eff_fap_overlays.append( figname )
-            fig.savefig( figname )
-            isp.close( fig )
-
-        trending['effatfap']['overlay'].append( eff_fap_overlays )
-
-        ### channel performance
-        for classifier in classifiers:
-            if classifiersD[classifier]['flavor'] != 'ovl':
+            if classifier not in ['ovl']:
+                logger.info('skipping ' + classifier)
                 continue
 
-            ranges = []
-            performances = []
-            num_gchs = []
-            num_clns = []
-            vchans = set()
-            for bindata in bindatas:
-                ranges.append( bindata['range'] )
-                performance, gch, cln = bindata['chn'][classifier]
-                for vchan in performance.keys():
-                    vchans.add( vchan )
-                performances.append( performance )
-                num_gchs.append( gch )
-                num_clns.append( cln )
-            vchans = sorted([vchan for vchan in vchans if vchan != "none"])
+            try:
+                figure_name = this_sumdir + '/' + classifier \
+                    + '-%d-%d_channel_performance_%s_trends.png' \
+                    % (lookbacktime, gpsstart + stride, yvalue)
+                chan_perform_png = idq_s_p.chanlist_trending(
+                    lookbacktime,
+                    gpsstart + stride,
+                    sumdir,
+                    classifier=classifier,
+                    figure_name=figure_name,
+                    annotated=False,
+                    yvalue=yvalue
+                    )
+                chanlist_trend.append((chan_perform_png, classifier))
+            except:
+                traceback.print_exc()
+                chanlist_trend.append(('', classifier))
+                logger.info('WARNING: FAILED to generated channel trending plot for '
+                             + classifier)
 
-            (figr, axr), (fige, axe), (figf, axf) = isp.channel_performance( vchans, ranges, performances, num_gchs, num_clns, figax=None, cmap=None)
+    logger.info('Done')
 
-            rnkname = isp.chanfig(output_dir, ifo, classifier, "eff-fap", usertag, trend_start, gpsstart+stride-trend_start)
-            effname = isp.chanfig(output_dir, ifo, classifier, "eff", usertag, trend_start, gpsstart+stride-trend_start)
-            fapname = isp.chanfig(output_dir, ifo, classifier, "fap", usertag, trend_start, gpsstart+stride-trend_start)
+    ### generate config statistics
+    logger.info('generating config statistics')
+    configlist = []
+    for classifier in classifiers:
+        if classifier != 'ovl':
+            logger.info('skipping ' + classifier)
+            continue
+        try:
+            configlist += idq.datfiles_to_configlist(
+                gpsstart,
+                gpsstart + stride,
+                columns=columns + ['vchan', 'vthr', 'vwin'],
+                classifiers=[classifier],
+                basename=False,
+                source_dir=this_sumdir,
+#                source_dir=realtimedir,
+                output_dir=this_sumdir,
+                cluster_win=cluster_win,
+                unsafe_win=unsafe_win,
+                gw_thr=gw_thr,
+                switch_snr_signif=classifier
+                    in classifiers_switch_snr_signif,
+                )
+        except:
+            traceback.print_exc()
+            configlist.append((False, classifier, False))
+            logger.info('WARNING: FAILED to generate config statistics for '
+                         + classifier)
+    logger.info('Done')
 
-            logger.info('  plotting %s'%rnkname)
-            trending['rank'][classifier].append( rnkname )
-            figr.savefig(rnkname)
-            isp.close(figr)
+    #=============================================
+    # mappings from rank to other statistics
+    #=============================================
 
-            logger.info('  plotting %s'%effname)
-            trending['eff'][classifier].append( effname )
-            fige.savefig(effname)
-            isp.close(fige)
+    # generate rank-->GPS maps
+    logger.info('generating rank-->GPS maps')
+    ranklist = []
+    for classifier in classifiers:
+        try:
+            ranklist += idq.datfiles_to_ranklist(
+                gpsstart,
+                gpsstart + stride,
+                columns=columns,
+                classifiers=[classifier],
+                basename=False,
+                source_dir=this_sumdir,
+#                source_dir=realtimedir,
+                output_dir=this_sumdir,
+                cluster_win=cluster_win,
+                unsafe_win=unsafe_win,
+                gw_thr=gw_thr,
+                switch_snr_signif=classifier
+                    in classifiers_switch_snr_signif,
+                )
+        except:
+            traceback.print_exc()
+            ranklist.append((False, classifier, False))
+            logger.info('WARNING: FAILED to generate rank-->GPS map for '
+                         + classifier)
+    logger.info('Done')
 
-            logger.info('  plotting %s'%fapname)
-            trending['fap'][classifier].append( fapname )
-            figf.savefig(fapname)
-            isp.close(figf)
+    ### generate kde overlays (map rank -> p(r|g), p(r|c))
+    logger.info('generating kde overlays')
+    kde_fig_paths = []
+    for (ind, roc_path) in enumerate(roc_paths):
+        (path, classifier) = roc_path
+        try:
+            figname = path[:-4] + '_pwg_kde' + idq_s_p.fig_type
+            fig = idq_s_p.ROC_to_pwg_kde_plot(path, write=False,
+                    num_samples=kde_num_samples)
+            idq_s_p.plt.savefig(figname)
+            idq_s_p.plt.close(fig)
+            kde_fig_paths.append((figname, classifier))
+        except:
+            traceback.print_exc()
+            kde_fig_paths.append(('', classifier))
+            logger.info('WARNING: FAILED to generate kdw plot for '
+                        + classifier)
+    logger.info('Done')
 
 
+    ### glitch rates, glitch parameter histograms, pointers to the craziest glitches?
 
-
-
-
-
-
-
-
-
-
-    """
-TRENDING:
-
-    first and second moment of residuals between historical ROC curves (trending)
-
-    """
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    ### plot residuals between old ROC curve and new ROC curve?
 
     #===============================================================================================
-    # write html page
-    #===============================================================================================
-    if not opts.no_html:
-
-
-
-
-
-
-
-
-
-
-
-
-        """
-REPORT:
-
-vetolist/configuration lists -> make human readable
-segment lists -> a form to request segments?
-
-        """
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        logger.info('writing html for %s'%output_dir)
-
-        title = "idq%s : %d-%d"%(usertag, gpsstart, stride)
-        header = ""
-
-        creation_time = idq.nowgps()
-
-        process_params = __file__ ### the script currently executing
-        for key, value in vars(opts).items():
-            key = key.replace("_","-")
-
-            if isinstance(value, str) and os.path.exists(value):
-                value = os.path.abspath( value )
-            
-            if isinstance(value, list):
-                for v in value:
-                    process_params += " --%s %s"%(key, v)
-            elif isinstance(value, bool):
-                if value:
-                    process_params += " --%s"%(key)
-            else:
-                process_params += " --%s %s"%(key, value)
-
-        footer = "page created on %s (%d) via:<br/>%s"%(gpstime.tconvert(creation_time), creation_time, process_params)
-
-        page = markup.page()
-        page.init( title=title, header=header, footer=footer)
-
-        lensumdir = len(output_dir)
-
-        page.h1( "idq%s : %s (%d) - %s (%d)"%(usertag, gpstime.tconvert( gpsstart-lookback), gpsstart-lookback, gpstime.tconvert(gpsstart+stride), gpsstart+stride ) )
-
-        page.hr( )
-
-        #=========================================
-        # info about parameters
-        #=========================================
-
-        ### copy channels, unsafe_channels into output_dir
-        os.system("cp %s %s"%(channels, output_dir) )
-        os.system("cp %s %s"%(unsafechannels, output_dir) )
-
-        minipage = markup.page()
-        minipage.a( 'AUX channels', href="./%s"%(channels.split('/')[-1]) )
-        minipage.br( )
-        minipage.a( 'unsafe AUX channels', href='./%s'%(unsafechannels.split("/")[-1]) )
-        minipage.br( )
-        minipage.p( ('GW channel : %s'%gwchannel, 'gch_thr : %.1f'%gch_kwsignif_thr, 'cln_thr : %.1f'%cln_kwsignif_thr) )
-
-        page.p( str(minipage) )
-
-        #=========================================
-        # pointers to data
-        #=========================================
-
-        ### pointers to segments!
-        page.hr( )
-
-        minipage = markup.page()
-        if files['segs'].has_key('sci'):
-            minipage.a( dq_name, href="./%s"%files['segs']['sci'][lensumdir:] )
-            minipage.br( )
-        minipage.a( 'idq_segments', href="./%s"%files['segs']['idq'][lensumdir:] )
-
-        page.p( (str(minipage)) )
-
-        ### pointers to data storage
-        page.hr( )
-
-        minipage = markup.page()
-        for classifier in classifiers[:-1]:
-            minipage.a( classifier, href="./%s"%files['dat'][classifier][lensumdir:] )
-            minipage.addcontent( ", " )
-        minipage.a( classifiers[-1], href="./%s"%files['dat'][classifiers[-1]][lensumdir:] )
-
-        page.p( "datfile caches: %s"%str(minipage) )
-
-        minipage = markup.page()
-        for classifier in classifiers[:-1]:
-            minipage.a( classifier, href="./%s"%files['roc'][classifier][lensumdir:] )
-            minipage.addcontent( ", " )
-        minipage.a( classifiers[-1], href="./%s"%files['roc'][classifiers[-1]][lensumdir:] )
-
-        page.p( "rocfiles: %s"%str(minipage) )
-
-        minipage = markup.page()
-        for classifier in classifiers[:-1]:
-            minipage.a( classifier, href="./%s"%files['kde'][classifier]['cln'][lensumdir:] )
-            minipage.addcontent( ", ")
-        minipage.a( classifiers[-1], href="./%s"%files['kde'][classifiers[-1]]['cln'][lensumdir:] )
-
-        page.p( "cln kde files: %s"%str(minipage) )
-
-        minipage = markup.page()
-        for classifier in classifiers[:-1]:
-            minipage.a( classifier, href="./%s"%files['kde'][classifier]['gch'][lensumdir:] )
-            minipage.addcontent( ", ")
-        minipage.a( classifiers[-1], href="./%s"%files['kde'][classifiers[-1]]['gch'][lensumdir:] )
-
-        page.p( "gch kde files: %s"%str(minipage) )
-
-        #=========================================
-        # number of samples for this stride
-        #=========================================
-
-        minipage = markup.page()
-
-        micropage = markup.page()
-        micropage.td( 'classifier' )
-        micropage.td( 'No. cln' )
-        micropage.td( 'No. gch' )
-
-        minipage.tr( str(micropage) )
-
-        for classifier in classifiers:
-
-             micropage = markup.page()
-
-             micropage.td( classifier )
-             micropage.td( "%d"%data[classifier]['num_cln'] )
-             micropage.td( "%d"%data[classifier]['num_gch'] )
-
-             minipage.tr( str(micropage) )
-
-        page.table( str(minipage) )
-
-        #=========================================
-        # images for this stride 
-        #=========================================
-        page.hr( )
-
-        for figflavor in 'linroc roc hst kde L fap fapUL'.split():
-            page.img( width=html_width, height=html_height, alt="%s overlay"%figflavor, src="./%s"%fignames[figflavor]['overlay'][lensumdir:] )
-            page.br( )
-
-            minipage = markup.page()
-            for classifier in classifiers[:-1]:
-                minipage.a( classifier, href="./%s"%fignames[figflavor][classifier][lensumdir:] )
-                minipage.addcontent( ", " )
-            minipage.a( classifiers[-1], href="./%s"%fignames[figflavor][classifiers[-1]][lensumdir:] )
-
-            page.p( "%s figures: %s"%(figflavor, str(minipage)) )
-
-        page.img( width=html_width, height=html_height, alt='bitword cln', src="./%s"%fignames['bwh']['cln'][lensumdir:] )
-        page.img( width=html_width, height=html_height, alt='bitword gch', src="./%s"%fignames['bwh']['gch'][lensumdir:] )
-        page.br( )
-    
-        ### print trg histograms, or at least links!
-        for column in dat_columns:
-            minipage = markup.page()
-            for classifier in classifiers:
-                minipage.a( classifier, href="./%s"%fignames['trg'][(classifier, column)][lensumdir:] )
-                minipage.addcontent( ", " )
-            minipage.a( classifiers[-1], href="./%s"%fignames['trg'][(classifiers[-1], column)][lensumdir:] )
-            
-            page.p( "%s : %s"%(column,str(minipage)) )
-
-        page.hr( )
-
-        ### print channel performance files
-        chn_classifiers = sorted(files['chn'].keys())
-        if chn_classifiers:
-            minipage = markup.page()
-            for classifier in chn_classifiers[:-1]:
-                minipage.a( classifier, href="./%s"%files['chn'][classifier][lensumdir:] )
-                minipage.addcontent( ", ")
-            minipage.a( chn_classifiers[-1], href="./%s"%files['chn'][chn_classifiers[-1]][lensumdir:] )
-
-            page.p( "channel performance : %s"%str(minipage) )
-
-        page.hr( )
-
-        #=========================================
-        # trending images
-        #=========================================
-
-        ### seg trending plots
-        for figname in trending['seg']:
-            page.img( width=html_width, height=html_height, alt="duty cycle trending", src="./%s"%figname[lensumdir:] )
-#        page.br( )
-
-        for segtype in ['idq', 'sci']:
-            if trending[segtype]:
-                minipage = markup.page()
-                for figname in trending[segtype][:-1]:
-                    label = "%d_%d"%tuple(idq.extract_start_stop( figname, suffix=".png" ))
-                    minipage.a( label, href="./%s"%figname[lensumdir:] )    
-                    minipage.addcontent(", ")
-                figname = trending[segtype][-1]
-                label = "%d_%d"%tuple(idq.extract_start_stop( figname, suffix=".png" ))
-                minipage.a( label, href="./%s"%figname[lensumdir:] )
-
-            page.p( "%s : %s"%(segtype, str(minipage)) )
-
-        page.hr( )
-
-        ### trigger rates
-        minipages = dict( (classifier, markup.page()) for classifier in classifiers )
-        N = len(opts.trending)
-        for ind in xrange(N-1):
-            figname = trending['trg_rate']['overlay'][ind]
-            page.img( width=html_width, height=html_height, alt="trigger rates", src="./%s"%figname[lensumdir:] )
-            for classifier in classifiers:
-                figname = trending['trg_rate'][classifier][ind]
-                label = "%d_%d"%tuple(idq.extract_start_stop( figname, suffix=".png" ))
-                minipages[classifier].a( label, href="./%s"%figname[lensumdir:] )
-                minipages[classifier].addcontent(", ")
-        figname = trending['trg_rate']['overlay'][-1]
-        page.img( width=html_width, height=html_height, alt="trigger rates", src="./%s"%figname[lensumdir:] )
-#        page.br( )       
-
-        for classifier in classifiers:
-            figname = trending['trg_rate'][classifier][-1]
-            label = "%d_%d"%tuple(idq.extract_start_stop( figname, suffix=".png" ))
-            minipages[classifier].a( label, href="./%s"%figname[lensumdir:] )
-            page.p( "%s : %s"%(classifier, str(minipages[classifier])) )
-
-        page.hr( )
-
-        ### effatfap
-        for ind, fap in enumerate(opts.FAPthr):
-            minipage = markup.page()
-            minipage.br( )
-            for trendind in xrange(N):
-                figname = trending['effatfap']['overlay'][trendind][ind]
-                minipage.img( width=html_width, height=html_height, alt="efficiency at fixed fap", src="./%s"%figname[lensumdir:] )
-            page.p( "fap <= %.3e : %s"%(fap, str(minipage) ) )
-
-        minipages = dict( (classifier, markup.page()) for classifier in classifiers )
-        for ind in xrange(N-1):
-            for classifier in classifiers:
-                figname = trending['effatfap'][classifier][ind]
-                label = "%d_%d"%tuple(idq.extract_start_stop( figname, suffix=".png" ))
-                minipages[classifier].a( label, href="./%s"%figname[lensumdir:] )
-                minipages[classifier].addcontent(", ")
-        for classifier in classifiers:
-            figname = trending['effatfap'][classifier][-1]
-            label = "%d_%d"%tuple(idq.extract_start_stop( figname, suffix=".png" ))
-            minipages[classifier].a( label, href="./%s"%figname[lensumdir:] )
-            page.p( "%s : %s"%(classifier, str(minipages[classifier])) )
-
-        page.hr( )
-
-        ### channel performance plots
-        for classifier in classifiers:
-            if classifiersD[classifier]['flavor'] != 'ovl':
-                continue
-
-            page.h1( "%s channel performance"%classifier )
-
-            ### rank
-            page.p( "Rank" )
-            for figname in trending['rank'][classifier]:
-                page.img( width=html_width, height=html_height, alt="%s channel rank"%classifier, src="./%s"%figname[lensumdir:] )
-            page.br()
-
-            ### eff
-            page.p( "Glitch Detection Efficiency" )
-            for figname in trending['eff'][classifier]:
-                page.img( width=html_width, height=html_height, alt="%s channel eff"%classifier, src="./%s"%figname[lensumdir:] )
-            page.br( )
-
-            ### fap
-            page.p( "False Alarm Probability" )
-            for figname in trending['fap'][classifier]:
-                page.img( width=html_width, height=html_height, alt="%s channel fap"%classifier, src="./%s"%figname[lensumdir:] )
-#            page.br( )
-
-            page.hr( )
-
-        #=========================================
-        ### write page to disk
-        html = idq.sumhtml( output_dir, usertag, gpsstart-lookback, lookback+stride)
-        logger.info('writing %s'%html)
-        file_obj = open(html, "w")
-        print >> file_obj, page
-        file_obj.close()
-
-        #===========================================================================================
-        # format index.html for summary_dir
-        #===========================================================================================
-
-        logger.info('updating index.html for %s'%summarydir)
-
-        title = "idq%s"%usertag
-
-        index = markup.page()
-        index.init( title=title, header=header, footer=footer )
-
-        ### iterate over existing subdirectories
-        for subdir in sorted(glob.glob("%s/*_*/"%summarydir), reverse=True):
-            sub = subdir.split('/')[-2]
-            subindex = glob.glob("%s/summary-index*html"%subdir)
-            if subindex:
-                index.a( sub, href="./%s"%("/".join(subindex[0].split("/")[-2:])) )
-            else:
-                index.a( sub, href="./%s"%sub )
-            roc = glob.glob("%s/*overlay*_ROC*png"%subdir)
-
-            if roc:
-                index.img( width=thumbnail_width, height=thumbnail_height, alt="%s roc overlay"%sub, src="./%s"%("/".join(roc[0].split('/')[-2:]) ) )
-            index.br( )
-
-        index.hr( )
-
-        ### write page to disk
-        file_obj = open("%s/index.html"%summarydir, "w")
-        print >> file_obj, index
-        file_obj.close()
-
+    # generate html summary page
     #===============================================================================================
 
+    ### generate url for roc figure with all classifiers
+    roc_url = False
+    if roc_fig_path:
+        roc_url = roc_fig_path.split(this_sumdir + '/')[-1]
+
+    ### generate url for vetolist stuff
+    vetolist_url = False
+    if vetolist_link:
+        vetolist_url = vetolist_link.split(this_sumdir + '/')[-1]
+    if vetolist_seg_path:
+        vetolist_seg_url = vetolist_seg_path.split(this_sumdir + '/')[-1]
+
+    ### generate urls for figures for each classifier separately
+    roc_urls = [(path[0].split(this_sumdir + '/')[-1], path[1])
+                for path in roc_fig_paths if path[0]]
+    kde_urls = [(path[0].split(this_sumdir + '/')[-1], path[1])
+                for path in kde_fig_paths if path[0]]
+
+    ### generate url for important channel lists
+    chanlist_urls = [(path[-1].split(this_sumdir + '/')[-1], path[1])
+                     for path in chanlist if path[0]]
+
+    ### construct urls for trending plots
+    stat_trends_urls = [(path[0].split(this_sumdir + '/')[-1], path[1])
+                        for path in stat_trends_plot_paths if path[0]]
+    eff_trends_urls = [(path[0].split(this_sumdir + '/')[-1], path[1])
+                       for path in eff_trends_plot_paths if path[0]]
+
+    ### construct url for stat summary file
+    stat_summary_url = latest_stat_summary_file.split(this_sumdir + '/')[-1]
+
+    ### construct url for channel performance file
+    chanlist_trend_urls = [(path[0].split('/')[-1], path[1])
+                           for path in chanlist_trend if path[0]]
+
+    #=============================================
+    # actuall build the html page
+    #=============================================
+    logger.info('generating html summary page')
+    html_path = this_sumdir + '/' + str(gpsstart) + '_' + str(gpsstart
+            + stride) + '-summary.html'
+    generate_html(
+        html_path,
+        gpsstart=gpsstart,
+        gpsstop=gpsstart + stride,
+        gwchannel=gwchannel,
+        roc_url=roc_url,
+        vetolist_url=vetolist_url,
+        roc_urls=roc_urls,
+        kde_urls=kde_urls,
+        FAP=FAP,
+        ovl_segments=vetolist_seg_url,
+        ovl_fdt=ovl_fdt,
+        chanlist_urls=chanlist_urls,
+        stat_trends_urls=stat_trends_urls,
+        eff_trends_urls=eff_trends_urls,
+        stat_file=stat_summary_url,
+        chan_trends_urls=chanlist_trend_urls,
+        )
+
+    logger.info('Done')
+
+    ### soft link html page to index.html
+    index_html = "%s/index.html"%this_sumdir
+    logger.info("soft linking %s -> %s"%(html_path, index_html))
+    os.system("rm %s"%(index_html))
+    os.system("ln -s %s %s"%(html_path, index_html))
+
+    # update symbolic link
+# ....iif os.path.lexists(symlink_path):
+# ........os.remove(symlink_path)
+# ....os.symlink(html_path, symlink_path)
+
+    ### continue onto the next stride
     gpsstart += stride
 
 #===================================================================================================
-if opts.lockfile:
-    idq.release( opts.lockfile ) ### unlock lockfile
+### (re)write index.html for sumdir once all pages are built
+logger.info("writting top-level index.html page to point to individual directories")
+
+index_html = "%s/index.html"%(sumdir)
+
+file_obj = open(index_html, "w")
+print >> file_obj, "<body>"
+
+print >> file_obj, "<h1>iDQ summary pages Directory</h1>"
+
+sumdirs = [l.strip("index.html") for l in sorted(glob.glob("%s/*_*/index.html"%sumdir))]
+sumdirs.reverse()
+
+for this_sumdir in sumdirs:
+    this_sumdir = this_sumdir.strip("/").split("/")[-1]
+    print >> file_obj, "<p>information about iDQ between %s and %s : "%tuple(this_sumdir.split("_"))
+    print >> file_obj, "<a href=\"%s/\">here</a>"%(this_sumdir)
+    print >> file_obj, "</p>"
+
+print >> file_obj, "<hr />"
+
+### print timestamp
+c_time = time.localtime()
+tzname = time.tzname[0]
+print >> file_obj, '<p>last updated %d:%d:%d %s %2d/%2d/%4d </p>' % (
+    c_time.tm_hour,
+    c_time.tm_min,
+    c_time.tm_sec,
+    tzname,
+    c_time.tm_mon,
+    c_time.tm_mday,
+    c_time.tm_year,
+    )
+
+print >> file_obj, "</body>"
+
+file_obj.close()

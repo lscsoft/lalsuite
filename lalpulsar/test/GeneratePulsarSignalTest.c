@@ -325,10 +325,19 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   }  /* END if (numSpinDown > 0) ELSE ... */
 
   /* Initialize ephemeris data */
-  XLAL_CHECK_LAL (status, ( edat = XLALInitBarycenter( earthFile, sunFile ) ) != NULL, XLAL_EFUNC);
+  edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
+  /* edat->ephiles.sunEphemeris = "../../pulsar/test/sun00-04.dat";
+  edat->ephiles.earthEphemeris = "../../pulsar/test/earth00-04.dat"; */
+  /* 07/30/04 gam; added this line to Makefile.am: TESTS_ENVIRONMENT = LAL_DATA_PATH=$(top_srcdir)/packages/pulsar/test */
+  /* edat->ephiles.sunEphemeris = "sun00-04.dat";
+  edat->ephiles.earthEphemeris = "earth00-04.dat"; */
+  edat->ephiles.sunEphemeris = sunFile;     /* 02/02/05 gam */
+  edat->ephiles.earthEphemeris = earthFile; /* 02/02/05 gam */
+  LALInitBarycenter(status->statusPtr, edat);
+  CHECKSTATUSPTR (status);
 
   /* Allocate memory for PulsarSignalParams and initialize */
-  pPulsarSignalParams = (PulsarSignalParams *)LALCalloc(1, sizeof(PulsarSignalParams));
+  pPulsarSignalParams = (PulsarSignalParams *)LALMalloc(sizeof(PulsarSignalParams));
   pPulsarSignalParams->pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
   pPulsarSignalParams->pulsar.spindown = NULL;
   if (numSpinDown > 0) {
@@ -676,7 +685,8 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
           }
        }
 
-       XLALDestroySFTVector( outputSFTs);
+       LALDestroySFTVector(status->statusPtr, &outputSFTs);
+       CHECKSTATUSPTR (status);
 
        LALFree(signalvec->data->data);
        LALFree(signalvec->data);
@@ -724,7 +734,8 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   LALFree(pPulsarSignalParams);
 
   /* deallocate memory for structs needed by LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs */
-  XLALDestroySFTVector( fastOutputSFTs);
+  LALDestroySFTVector(status->statusPtr, &fastOutputSFTs);
+  CHECKSTATUSPTR (status);
   LALFree(pSkyConstAndZeroPsiAMResponse->fCrossZeroPsi);
   LALFree(pSkyConstAndZeroPsiAMResponse->fPlusZeroPsi);
   LALFree(pSkyConstAndZeroPsiAMResponse->skyConst);
@@ -756,7 +767,9 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   LALFree(timeStamps->data);
   LALFree(timeStamps);
 
-  XLALDestroyEphemerisData(edat);
+  LALFree ( edat->ephemE );
+  LALFree ( edat->ephemS );
+  LALFree ( edat);
 
   CHECKSTATUSPTR (status);
   DETATCHSTATUSPTR (status);

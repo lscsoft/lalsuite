@@ -1,8 +1,8 @@
 # End-to-end LALInference test pipeline
 # (C) 2014 John Veitch
 
-from lalinference import lalinference_pipe_utils as pipe_utils
-from lalinference.lalinference_pipe_utils import mkdirs
+from lalapps import lalinference_pipe_utils as pipe_utils
+from lalapps.lalinference_pipe_utils import mkdirs
 from lalapps import inspiralutils
 from glue import pipeline
 import ConfigParser
@@ -82,10 +82,6 @@ if prior_cp.get('analysis','engine')=='lalinferencenest':
   prior_cp.set('engine','sampleprior',str(20*opts.trials)) # more samples drawn since not all will end up in posterior
   prior_cp.set('engine','zeroLogLike','')
   prior_cp.set('engine','nlive',str(20*opts.trials))
-if prior_cp.get('analysis','engine')=='lalinferenceburst':
-  prior_cp.set('engine','sampleprior',str(20*opts.trials)) # more samples drawn since not all will end up in posterior
-  prior_cp.set('engine','zeroLogLike','')
-  prior_cp.set('engine','nlive',str(20*opts.trials))
 elif prior_cp.get('analysis','engine')=='lalinferencemcmc':
   prior_cp.set('engine','Neff',str(opts.trials))
   prior_cp.set('engine','zeroLogLike','')
@@ -130,12 +126,12 @@ else:
 approx=prior_cp.get('engine','approx')
 prior2injexe=prior_cp.get('condor','pos_to_sim_burst')
 prior2injjob=pipeline.CondorDAGJob('vanilla',prior2injexe)
-if main_cp.has_option('analysis','accounting_group'):
-  prior2injjob.add_condor_cmd('accounting_group',main_cp.get('analysis','accounting_group'))
 prior2injjob.set_sub_file(convertsub)
 prior2injjob.set_stderr_file(converterr)
 prior2injjob.set_stdout_file(convertout)
 prior2injjob.add_condor_cmd('getenv','True')
+if main_cp.has_option('analysis','accounting_group'):
+  prior2injjob.add_condor_cmd('accounting_group',main_cp.get('analysis','accounting_group'))
 prior2injnode=pipeline.CondorDAGNode(prior2injjob)
 prior2injnode.add_var_opt('output',injfile)
 prior2injnode.add_var_opt('num-of-injs',str(opts.trials))
@@ -155,21 +151,6 @@ maindag.config.set('input','burst-injection-file',injfile)
 for i in range(int(opts.trials)):
   ev=pipe_utils.Event(trig_time=trig_time,event_id=i)
   e=maindag.add_full_analysis(ev)
-
-skyarea=False
-if main_cp.has_option('condor','skyarea') and main_cp.has_option('condor','processareas'):
-  skyarea=True
-
-skyoutdir=None
-if skyarea:
-  print "adding sky_area"
-  if main_cp.has_option('ppanalysis','webdir'):
-    outdir=main_cp.get('ppanalysis','webdir')
-  else:
-    outdir=os.path.join(rundir,'ppanalysis')
-  skyoutdir=os.path.join(outdir,'sky_pp')
-  maindag.add_skyarea_followup()
-
 outerdag.add_node(maindagnode)
 
 if not opts.injections:
@@ -180,29 +161,6 @@ if not opts.injections:
 # Get a list of posterior samples files
 resultspagenodes=filter(lambda n: isinstance(n, pipe_utils.ResultsPageNode), maindag.get_nodes())
 posteriorfiles=[n.get_pos_file() for n in resultspagenodes]
-
-## add job for 2D skyarea PP plots
-if skyarea:
-  sasub=os.path.join(rundir,'processareas.sub')
-  saerr=os.path.join(outerlogdir,'processareas-$(cluster)-$(process)-$(node).err')
-  saout=os.path.join(outerlogdir,'processareas-$(cluster)-$(process)-$(node).out')
-  saexe=prior_cp.get('condor','processareas')
-  sajob=pipeline.CondorDAGJob('vanilla',saexe)
-  sajob.set_sub_file(sasub)
-  sajob.set_stderr_file(saerr)
-  sajob.set_stdout_file(saout)
-  sajob.add_condor_cmd('getenv','True')
-  if main_cp.has_option('analysis','accounting_group'):
-    sajob.add_condor_cmd('accounting_group',main_cp.get('analysis','accounting_group'))
-
-  sanode=pipeline.CondorDAGNode(sajob)
-  sanode.add_var_opt('prefix',skyoutdir)
-  mkdirs(skyoutdir)
-  for f in posteriorfiles:
-    f=f.replace('posterior_samples.dat','areas.dat')
-    sanode.add_var_arg(f)
-  sanode.add_parent(maindagnode)
-  outerdag.add_node(sanode)
 
 # Analyse results of injection runs to generate PP plot
 ppsub=os.path.join(rundir,'ppanalysis.sub')
@@ -216,7 +174,6 @@ ppjob.set_stdout_file(ppout)
 ppjob.add_condor_cmd('getenv','True')
 if main_cp.has_option('analysis','accounting_group'):
   ppjob.add_condor_cmd('accounting_group',main_cp.get('analysis','accounting_group'))
-
 ppnode=pipeline.CondorDAGNode(ppjob)
 ppnode.add_var_opt('injXML',injfile)
 if main_cp.has_option('ppanalysis','webdir'):
@@ -228,15 +185,8 @@ mkdirs(outdir)
 ppnode.add_var_opt('outdir',outdir)
 for f in posteriorfiles:
   ppnode.add_var_arg(f)
-
-if skyarea:
-
-  ppnode.add_var_opt('skyPPfolder',os.path.realpath(skyoutdir))
-  ppnode.add_parent(sanode)
-
 ppnode.add_parent(maindagnode)
 outerdag.add_node(ppnode)
-
 
 if(opts.dax):
 # Create a text file with the frames listed

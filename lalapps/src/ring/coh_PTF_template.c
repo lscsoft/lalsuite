@@ -18,7 +18,6 @@
 */
 
 
-#include "config.h"
 #include "coh_PTF.h"
 
 void coh_PTF_template (
@@ -31,7 +30,17 @@ void coh_PTF_template (
   LALStatus status = blank_status;
   switch ( params->approximant )
   {
-    /* Speacial case #1 */
+    case TaylorT1:
+    case TaylorT2:
+    case TaylorT3:
+    case TaylorT4:
+    case GeneratePPN:
+    case PadeT1:
+    case EOB:
+    case EOBNR:
+    case IMRPhenomB:
+      LALFindChirpTDTemplate( &status,fcTmplt,InspTmplt,params );
+      break;
     case FindChirpSP:
       LALFindChirpSPTemplate( &status,fcTmplt,InspTmplt,params );
       for (i=0 ; i < params->xfacVec->length ; i++ )
@@ -39,14 +48,12 @@ void coh_PTF_template (
         fcTmplt->data->data[i] = fcTmplt->data->data[i] * params->PTFphi->data[i];
       }
       break;
-    /* Speacial case #2 */
     case FindChirpPTF:
       coh_PTF_template_PTF(fcTmplt,InspTmplt,params);
       break;
-    /* Otherwise let LALFindChirpTDTemplate handle it */
     default:
-      LALFindChirpTDTemplate( &status,fcTmplt,InspTmplt,params );
-      break;
+      fprintf(stderr,"Waveform approximant not recognized at template generation\n");
+      exit(1);
   }
 }
 

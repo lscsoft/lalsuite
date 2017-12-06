@@ -21,7 +21,7 @@
  * \author Matt Pitkin
  * \date 2013
  * \file
- * \ingroup lalpulsar_general
+ * \ingroup lalpulsar_UNCLASSIFIED
  * \brief Functions to read TEMPO pulsar parameter files
  *
  * Here we define a function to read in pulsar parameters from a standard <tt>TEMPO(2)</tt> parameter
@@ -42,7 +42,6 @@
 #include <lal/StringVector.h>
 #include <lal/LALBarycenter.h>
 #include <lal/Date.h>
-#include <lal/LALHashTbl.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,15 +63,15 @@ extern "C" {
 /* the difference between TDT/TT and the GPS epoch */
 #define GPS_TDT (TDT_TAI + XLAL_EPOCH_GPS_TAI_UTC)
 
-
 /** An enumerated type for denoting the type of a variable. Several LAL types are supported. */
-typedef enum tagPulsarParamType {
+typedef enum {
   PULSARTYPE_UINT4_t = 0,
   PULSARTYPE_REAL8_t,
   PULSARTYPE_REAL8Vector_t,
   PULSARTYPE_string_t,
   PULSARTYPE_void_ptr_t
 } PulsarParamType;
+
 
 extern size_t PulsarTypeSize[5];
 
@@ -102,8 +101,7 @@ typedef struct tagPulsarParam {
 typedef struct tagPulsarParameters {
   PulsarParam       *head;                              /**< A linked list of \c PulsarParam structures */
   INT4              nparams;                            /**< The total number of parameters in the structure */
-  /* PulsarParam       *hash_table[PULSAR_HASHTABLE_SIZE]; */ /**< Hash table of parameters */
-  LALHashTbl        *hash_table;
+  PulsarParam       *hash_table[PULSAR_HASHTABLE_SIZE]; /**< Hash table of parameters */
 } PulsarParameters;
 
 
@@ -133,7 +131,6 @@ tagBinaryPulsarParams
   REAL8 f7;     /**< frequency seventh derivative (Hz/s^7) */
   REAL8 f8;     /**< frequency eighth derivative (Hz/s^8) */
   REAL8 f9;     /**< frequency ninth derivative (Hz/s^9) */
-  REAL8 f10;    /**< frequency tenth derivative (Hz/s^10) */
 
   REAL8 ra;     /**< right ascension (rads) */
   REAL8 dec;    /**< declination (rads) */
@@ -142,9 +139,6 @@ tagBinaryPulsarParams
 
   REAL8 posepoch; /**< position epoch */
   REAL8 pepoch;   /**< period/frequency epoch */
-
-  REAL8 startTime; /**< start of parfile applicable time */
-  REAL8 finishTime;   /**< finish of parfile applicable time */
 
   /* all parameters will be in the same units as used in TEMPO */
 
@@ -222,7 +216,6 @@ tagBinaryPulsarParams
 
   /* gravitational wave parameters */
   REAL8 h0;     /**< gravitational wave amplitude */
-  REAL8 Q22;    /**< gravitational wave l=m=2 mass quadrupole moment */
   REAL8 cosiota;/**< cosine of the pulsars inclination angle */
   REAL8 iota;   /**< inclination angle */
   REAL8 psi;    /**< polarisation angle */
@@ -233,11 +226,9 @@ tagBinaryPulsarParams
   /* scalar-tensor-vector mode amplitude parameters */
   REAL8 hPlus;       /**< amplitude for the tensor plus polarisation */
   REAL8 hCross;      /**< amplitude for the tensor cross polarisation */
-  REAL8 psiTensor;   /**< phase polarisation angle for tensor polarisation mode */
   REAL8 phi0Tensor;  /**< initial phase for tensor modes (to be used instead of phi0 or phi22) */
   REAL8 hScalarB;    /**< amplitude for scalar breathing polarisation mode */
   REAL8 hScalarL;    /**< amplitude for scalar longitudinal polarisation mode */
-  REAL8 psiScalar;   /**< phase polarisation angle for scalar polarisation mode */
   REAL8 phi0Scalar;  /**< initial phase for the scalar modes */
   REAL8 hVectorX;    /**< amplitude for vector "x" polarisation mode */
   REAL8 hVectorY;    /**< amplitude for vector "y" polarisation mode */
@@ -276,7 +267,6 @@ tagBinaryPulsarParams
   REAL8 f7Err;
   REAL8 f8Err;
   REAL8 f9Err;
-  REAL8 f10Err;
 
   REAL8 pepochErr;
   REAL8 posepochErr;
@@ -327,7 +317,6 @@ tagBinaryPulsarParams
 
   /* gravitational wave parameters */
   REAL8 h0Err;
-  REAL8 Q22Err;
   REAL8 cosiotaErr;
   REAL8 iotaErr;
   REAL8 psiErr;
@@ -346,11 +335,9 @@ tagBinaryPulsarParams
 
   REAL8 hPlusErr;
   REAL8 hCrossErr;
-  REAL8 psiScalarErr;
   REAL8 phi0TensorErr;
   REAL8 hScalarBErr;
   REAL8 hScalarLErr;
-  REAL8 psiTensorErr;
   REAL8 phi0ScalarErr;
   REAL8 hVectorXErr;
   REAL8 hVectorYErr;
@@ -416,29 +403,11 @@ PulsarParamType PulsarGetParamType( const PulsarParameters *pars, const char *na
  */
 REAL8 PulsarGetREAL8Param( const PulsarParameters *pars, const CHAR *name );
 
-/** \brief Return a \c REAL8 parameter if it exists, otherwise return zero
- */
-REAL8 PulsarGetREAL8ParamOrZero( const PulsarParameters *pars, const CHAR *name );
-
-#ifdef SWIG   /* SWIG interface directives */
-SWIGLAL(OWNS_THIS_STRING(const CHAR*, value));
-#endif
-
 /** \brief Return a string parameter
  *
  * This function will call \c PulsarGetParam for a string parameter and properly cast it for returning.
- * The return value should be copied e.g. with
- * CHAR *str = XLALStringDuplicate( PulsarGetStringParam(pars, "NAME") );
- * It also needs to be freed afterwards.
  */
-const CHAR *PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name );
-
-/** \brief Add a string parameter to the \c PulsarParameters structure */
-void PulsarAddStringParam(PulsarParameters *pars, const CHAR * name, const CHAR *value);
-
-#ifdef SWIG   /* SWIG interface directives */
-SWIGLAL_CLEAR(OWNS_THIS_STRING(const CHAR*, value));
-#endif
+CHAR *PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name );
 
 /** \brief Return a \c REAL8Vector parameter
  *
@@ -461,15 +430,6 @@ REAL8 PulsarGetREAL8VectorParamIndividual( const PulsarParameters *pars, const C
  */
 void PulsarAddParam( PulsarParameters *pars, const CHAR *name, void *value, PulsarParamType type );
 
-/** \brief Add a \c REAL8 parameter to the \c PulsarParameters structure */
-void PulsarAddREAL8Param(PulsarParameters *pars, const CHAR * name, REAL8 value);
-
-/** \brief Add a \c UINT4 parameter to the \c PulsarParameters structure */
-void PulsarAddUINT4Param(PulsarParameters *pars, const CHAR * name, UINT4 value);
-
-/** \brief Add a \c REAL8Vector parameter to the \c PulsarParameters structure */
-void PulsarAddREAL8VectorParam(PulsarParameters *pars, const CHAR * name, REAL8Vector *value);
-
 /** \brief Free all the parameters from a \c PulsarParameters structure */
 void PulsarClearParams( PulsarParameters *pars );
 
@@ -481,7 +441,7 @@ void PulsarRemoveParam( PulsarParameters *pars, const CHAR *name );
  * Set the value of the parameter given by \c name in the \c PulsarParameters structure. The parameter must already
  * exist in the structure, otherwise it should be added using \c PulsarAddParam().
  */
-void PulsarSetParam( PulsarParameters* pars, const CHAR *name, const void *value );
+void PulsarSetParam( PulsarParameters* pars, const CHAR *name, void *value );
 
 /** \brief Set the value of the error of a parameter in the \c PulsarParameters structure
  *
@@ -494,7 +454,7 @@ void PulsarSetParam( PulsarParameters* pars, const CHAR *name, const void *value
 void PulsarSetParamErr( PulsarParameters* pars, const CHAR *name, void *value, UINT4 fitFlag, UINT4 nfits, UINT4 len );
 
 /** \brief Check for the existence of the parameter \c name in the \c PulsarParameters structure */
-int PulsarCheckParam( const PulsarParameters *pars, const CHAR *name );
+int PulsarCheckParam( PulsarParameters *pars, const CHAR *name );
 
 /** \brief Function to free memory from pulsar parameters */
 void PulsarFreeParams( PulsarParameters *par );
@@ -521,8 +481,6 @@ void ParConvMasToRads( const CHAR *in, void *out );
 void ParConvInvArcsecsToInvRads( const CHAR *in, void *out );
 /** Convert the input string from days to seconds */
 void ParConvDaysToSecs( const CHAR *in, void *out );
-/** Convert the input string from kiloparsecs to metres */
-void ParConvKpcToMetres( const CHAR *in, void *out );
 
 /** Convert the binary system parameter from a string to a double, but  make the check (as performed by TEMPO2)
  * that this is > 1e-7 then it's in units of 1e-12, so needs converting by that factor. It also checks if the
@@ -532,7 +490,7 @@ void ParConvBinaryUnits( const CHAR *in, void *out );
 /** Convert the input string from a TT MJD value into a GPS time */
 void ParConvMJDToGPS( const CHAR *in, void *out );
 /** Convert the input string from degrees per year to radians per second */
-void ParConvDegPerYrToRadPerSec( const CHAR *in, void *out );
+void ParConvDegPerYrToRadParSec( const CHAR *in, void *out );
 /** Convert the input string from solar masses to kilograms */
 void ParConvSolarMassToKg( const CHAR *in, void *out );
 /** Convert a right ascension input string in the format "hh:mm:ss.s" into radians */
@@ -546,18 +504,23 @@ void ParConvMicrosecToSec( const CHAR *in, void *out );
 /** \brief Read in the parameters from a TEMPO(2) parameter file into a \c PulsarParameters structure
  *
  * This function will read in a TEMPO(2) parameter file into a \c PulsarParameters structure. The structure of this
- * function is similar to those in the TEMPO2 code \c readParfile.C and this supersedes the
- * \c XLALReadTEMPOParFileOrig function.
+ * function is similar to those in the TEMPO2 code \c readParfile.C and this is intended to supersede the
+ * \c XLALReadTEMPOParFile function.
  *
  * \param pulsarAndPath [in] The path to the pulsar parameter file
  */
-PulsarParameters *XLALReadTEMPOParFile( const CHAR *pulsarAndPath );
+PulsarParameters *XLALReadTEMPOParFileNew( const CHAR *pulsarAndPath );
 
 /** function to read in a TEMPO parameter file
  */
 void
-XLALReadTEMPOParFileOrig( BinaryPulsarParams    *output,
-                          CHAR                  *pulsarAndPath );
+XLALReadTEMPOParFile( BinaryPulsarParams    *output,
+                      CHAR                  *pulsarAndPath );
+
+void
+LALReadTEMPOParFile( LALStatus              *status,
+                     BinaryPulsarParams    *output,
+                     CHAR                  *pulsarAndPath );
 
 /** \brief This function will read in a TEMPO-style parameter correlation matrix
  *

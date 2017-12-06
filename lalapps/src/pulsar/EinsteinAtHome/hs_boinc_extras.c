@@ -17,6 +17,12 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup lalapps_pulsar_EinsteinAtHome
+ * \author Bernd Machenschalk, Reinhard Prix
+ */
+
 /* Extras for building an Einstein@Home BOINC App from HierarchicalSearch
 */
 
@@ -38,61 +44,6 @@
 
 /** INCLUDES **/
 
-/* Funny thing is: __GLIBC__ is not yet defined here.
-   If you move features.h below where __GLIBC_ is defined, the the Linux build breaks.
-   This seems a problem specific to gcc-4.4 (headers), though, so the workaround is
-   limited to that version. Addendum: still a problem in gcc-4.8 on Ubuntu 6.06 */
-#if defined (__linux__) && defined (__GNUC__) && (__GNUC__ == 4)
-#include <features.h>
-#ifdef __GLIBC__
-#ifndef __USE_BSD
-#define __USE_BSD /* for stack_t */
-#endif
-#ifndef __USE_MISC
-#define __USE_MISC /* for SA_RESTART */
-#endif
-#endif/* __GLIBC__ */
-#endif
-
-#ifndef HIERARCHSEARCHGCT /* used for Hough HierarchicalSearch, not GCT */
-#include "HierarchicalSearch.h"
-#endif
-
-/* probably already included by previous headers, but make sure they are included */
-#include <unistd.h>
-#include <string.h>
-#include <time.h>
-#include <sys/time.h>
-#include <math.h>
-#include <signal.h>
-#include <stdlib.h>
-#include <limits.h>
-
-/* our own win_lib includes patches for chdir() and sleep() */
-#ifdef _WIN32
-#include "win_lib.h"
-#endif
-
-/* for finding out and logging the glibc version */
-#ifdef __GLIBC__
-#define _GNU_SOURCE
-#include <gnu/libc-version.h>
-#endif
-
-#ifdef HAVE_BUILD_INFO_H
-#include "build_info.h"
-#endif
-
-/* our own exception handler / runtime debugger */
-#if HAVE_EXCHNDL
-#include "exchndl.h"
-#endif
-
-/* for Linux extended backtrace */
-#if defined(__GLIBC__) && defined(__i386__) && defined(EXT_STACKTRACE)
-#include "erp_execinfo_plus.h"
-#endif
-
 /* BOINC includes - need to be before the #defines in hs_boinc_extras.h */
 #include "boinc/boinc_api.h"
 #include "boinc/diagnostics.h"
@@ -104,10 +55,47 @@
    #include "app_ipc.h" must be moved outside the C++ section */
 extern int boinc_resolve_filename(const char*, char*, int len);
 
+/* our own win_lib includes patches for chdir() and sleep() */
+#ifdef _WIN32
+#include "win_lib.h"
+#endif
+
+/* probably already included by previous headers, but make sure they are included */
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <sys/time.h>
+
+/* for finding out and logging the glibc version */
+#ifdef __GLIBC__
+#define _GNU_SOURCE
+#include <gnu/libc-version.h>
+#endif
+
+#ifdef HAVE_BUILD_INFO_H
+#include "build_info.h"
+#endif
+
+/* try to dlopen("libgcc_s.so.1") */
+#ifdef DLOPEN_LIBGCC
+#include <dlfcn.h>
+#endif
+
+/* our own exception handler / runtime debugger */
+#if HAVE_EXCHNDL
+#include "exchndl.h"
+#endif
+
 /* headers of our own code */
+#include <lal/LogPrintf.h>
+#include "HierarchicalSearch.h"
 #include "hs_boinc_extras.h"
 #include "hs_boinc_options.h"
-#include <lal/LogPrintf.h>
+
+/* for Linux extended backtrace */
+#if defined(__GLIBC__) && defined(__i386__) && defined(EXT_STACKTRACE)
+#include "erp_execinfo_plus.h"
+#endif
 
 #ifdef __APPLE__
 #include "EaH_Mac_Icon.h" 
@@ -116,13 +104,29 @@ extern int boinc_resolve_filename(const char*, char*, int len);
 
 /*^* MACROS *^*/
 
-/* exit codes from ComputeFStatistic.h and HierarchicalSearch.h */
-#define HS_BOINC_EXIT_FILE            4 /* Could not create output file, was HIERARCHICALSEARCH_EFILE */
-#define HS_BOINC_EXIT_MEM            11 /* Out of memory, was HIERARCHICALSEARCH_EMEM */
-#define HS_BOINC_EXIT_EXLAL          14 /* XLAL function call failed, was HIERARCHICALSEARCH_EXLAL */
-#define HS_BOINC_EXIT_SIGNAL         30 /* Exit code will be 30 + signal number, was COMPUTEFSTAT_EXIT_SIGNAL */
-#define HS_BOINC_EXIT_USER           20 /* user asked for exit, was COMPUTEFSTAT_EXIT_USER */
-#define HS_BOINC_EXIT_LALCALLERROR  100 /* added to LAL status for BOINC exit value, was COMPUTEFSTAT_EXIT_LALCALLERROR */
+/* exit codes from deleted ComputeFStatistic.h */
+#define COMPUTEFSTAT_EXIT_OK              0  /* normal exit */
+#define COMPUTEFSTAT_EXIT_USAGE           7  /* user requested help */
+#define COMPUTEFSTAT_EXIT_READSFTFAIL     8  /* ReadSFT failed */
+#define COMPUTEFSTAT_EXIT_OPENFMAX        9  /* error opening Fmax file */
+#define COMPUTEFSTAT_EXIT_OPENFSTAT      10  /* error opening FStats file */
+#define COMPUTEFSTAT_EXIT_OPENFSTAT2     11  /* error opening FStats file for append (chkpt) */
+#define COMPUTEFSTAT_EXIT_WRITEFSTAT     12  /* error writing FStats file */
+#define COMPUTEFSTAT_EXIT_WRITEFAFB      13  /* writeFaFb failed */
+#define COMPUTEFSTAT_EXIT_ESTSIGPAR      14  /* EstimateSignalParameters failed */
+#define COMPUTEFSTAT_EXIT_NOMEM          15  /* out of memory */
+#define COMPUTEFSTAT_EXIT_CANTZIP        16  /* unable to zip Fstats file */
+#define COMPUTEFSTAT_EXIT_CANTUNZIP      17  /* unable to zip Fstats file */
+#define COMPUTEFSTAT_EXIT_CANTRENAME     18  /* unable to zip Fstats file */
+#define COMPUTEFSTAT_EXIT_NOPOLKADEL     19  /* no // found in command line */
+#define COMPUTEFSTAT_EXIT_USER           20  /* user asked for exit */
+#define COMPUTEFSTAT_EXIT_DEMOD          21  /* error in LAL-Demod */
+#define COMPUTEFSTAT_EXIT_BOINCRESOLVE   23  /* boinc_resolve_filename failed */
+#define COMPUTEFSTAT_EXIT_DLOPEN         24  /* problems with dynamic lib */
+#define COMPUTEFSTAT_EXIT_WORKER         25  /* can't start worker-thread */
+#define COMPUTEFSTAT_EXIT_UPSAMPLESFTFAIL 26 /* UpsampleSFT failed */
+#define COMPUTEFSTAT_EXIT_SIGNAL         30  /* Exit code will be 30 + signal number */
+#define COMPUTEFSTAT_EXIT_LALCALLERROR  100  /* added to LAL status for BOINC exit value */
 
 #ifdef MAXPATHLEN
 #define MAX_PATH_LEN MAXPATHLEN
@@ -132,16 +136,12 @@ extern int boinc_resolve_filename(const char*, char*, int len);
 
 /** don't want to include LAL headers just for PI */
 #define LAL_PI 3.1415926535897932384626433832795029  /**< pi */
-/** copy from lal/src/std/XLALError.h because including caused problems with MinGW builds */
-#define XLAL_ENOMEM 12
 
 #ifndef MIN
 #define MIN(a,b) ((a)<(b)?(a):(b))
 #endif
 
-#ifndef DEBUG_COMMAND_LINE_MANGLING
-#define DEBUG_COMMAND_LINE_MANGLING 0
-#endif
+#define DEBUG_COMMAND_LINE_MANGLING 1
 
 typedef enum gdbcmd { gdb_dump_core, gdb_attach } gdb_cmd;
 
@@ -301,11 +301,12 @@ static UINT4 last_count, last_total;      /**< last template count, see last_rac
 static BOOLEAN do_sync = -1;              /**< sync checkpoint file to disk, default: yes */
 
 
-/**
- * record the status of the last boinc_finish call in case boinc_finish() throws a signal
- * Using INT_MAX as magic value to check if boinc_finish was called in the first place
- */
-static int boinc_finish_status = INT_MAX;
+/** record whether loading libgcc_s.so.1 succeeded */
+static int libgcc_s_loaded = 0;
+
+
+/** record the status of the last boinc_finish call in case boinc_finish() throws a signal */
+static int boinc_finish_status = 0;
 
 
 /*^* LOCAL FUNCTION PROTOTYPES *^*/
@@ -314,7 +315,7 @@ static void sighandler(int, siginfo_t*, void*);
 #else
 static void sighandler(int);
 #endif
-static int worker (void);
+static void worker (void);
 static int is_zipped(const char *);
 static int resolve_and_unzip(const char*, char*, const size_t);
 static void drain_fpu_stack(void);
@@ -388,14 +389,6 @@ int try_load_dlls(const char*dlls, const char*mess) {
 }
 #endif
 
-void DeferExecution() {
-    LogPrintf (LOG_NORMAL, "Sorry, at the moment your system doesn't have enough free CPU/GPU memory to run this task!\n");
-    LogPrintf (LOG_NORMAL, "Returning control to BOINC, delaying next attempt for at least 15 minutes...\n");
-    LogPrintf (LOG_NORMAL, "If this problem persists you should consider aborting this task...\n");
-    /* the call to *_temporary_exit can fail and we end up in the signalhandler, use another magic number to detect this */
-    boinc_finish_status=INT_MIN;
-    eah_temporary_exit(900, "Not enough free CPU/GPU memory available! Delaying next attempt for at least 15 minutes...");
-}
 
 /**
  * LAL's REPORTSTATUS just won't work with any of NDEBUG or
@@ -433,15 +426,8 @@ int BOINC_LAL_ErrHand (LALStatus  *status,
             "\tfile %s, line %d\n",
             id, func, file, line );
     ReportStatus(status);
-    // The GCT code uses the old LAL error handling and reports XLAL errors separately
-    if ( (status->statusCode == HS_BOINC_EXIT_MEM) ||
-         (status->statusCode == HS_BOINC_EXIT_EXLAL && xlalErrno == XLAL_ENOMEM)) {
-        DeferExecution();
-    } else {
-        LogPrintf (LOG_CRITICAL, "BOINC_LAL_ErrHand(): xlalErrno = %d\n", xlalErrno);
-        LogPrintf (LOG_CRITICAL, "BOINC_LAL_ErrHand(): now calling boinc_finish()\n");
-        boinc_finish(boinc_finish_status=HS_BOINC_EXIT_LALCALLERROR+status->statusCode );
-    }
+    LogPrintf (LOG_CRITICAL, "BOINC_LAL_ErrHand(): now calling boinc_finish()\n");
+    boinc_finish(boinc_finish_status= COMPUTEFSTAT_EXIT_LALCALLERROR+status->statusCode );
   }
   /* should this call boinc_finish too?? */
   return 0;
@@ -507,7 +493,7 @@ static void sighandler(int sig)
     killcounter ++;
     if ( killcounter >= 4 ) {
       fputs("App got 4th SIGINT, guess you mean it.\nCalling boinc_finish().\n",stderr);
-      boinc_finish(boinc_finish_status=HS_BOINC_EXIT_USER);
+      boinc_finish(boinc_finish_status=COMPUTEFSTAT_EXIT_USER);
     }
     else
       return;
@@ -516,23 +502,13 @@ static void sighandler(int sig)
   /* A SIGABRT most likely came from a failure to load libgcc_s.so.1,
      which is required for boinc_finish() (calling pthread_exit() calling
      pthread_cancel()) to work properly. In this case take the "emergency
-     exit" with exit(boinc_finish_status). */
-  if ( ( boinc_finish_status != INT_MIN ) && ( boinc_finish_status != INT_MAX ) && ( sig == 6 ) ) {
-    fputs("Program received SIGABRT probably because pthread_exit() failed in boinc_finish()- trying exit(", stderr);
-    sprintf(buf, "%d", boinc_finish_status);
-    fputs(buf, stderr);
-    fputs(")\n", stderr);
+     exit" with exit status 0 - the worst that can happen is that
+     the tasks ends up with "too many exits" error. */
+  if ( ( libgcc_s_loaded == -1 ) && ( sig == 6 ) ) {
+    fputs("Program received SIGABRT probably because libgcc_s.so.1 wasn't loaded - trying exit(0)\n", stderr);
     /* sleep a few seconds to let the OTHER thread(s) catch the signal too... */
     sleep(5);
     exit(boinc_finish_status);
-  }
-  /* This SIGABRT was triggered after calling boinc_temporary_exit() which also calls phtread_exit().
-   * We can safely ignore it and exit with exit(0) */
-  if ( ( boinc_finish_status == INT_MIN ) && ( sig == 6 ) ) {
-    fputs("Program received SIGABRT probably because pthread_exit() failed in boinc_temporary_exit()- trying exit(0)\n", stderr);
-    /* sleep a few seconds to let the OTHER thread(s) catch the signal too... */
-    sleep(5);
-    exit(0);
   }
 
 #ifdef __GLIBC__
@@ -611,7 +587,7 @@ static void sighandler(int sig)
     exit(boinc_finish_status);
   }
   boinc_finish_in_sighabdler = 1;
-  boinc_finish(boinc_finish_status=HS_BOINC_EXIT_SIGNAL + sig);
+  boinc_finish(boinc_finish_status=COMPUTEFSTAT_EXIT_SIGNAL + sig);
   return;
 } /* sighandler */
 
@@ -726,7 +702,7 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
     /* boinc_resove() returned the same filename, so filename wasn't a softlink */
 
     strncpy(buf,filename,sizeof(buf));
-    strncat(buf,LINKED_EXT,sizeof(buf)-1-strlen(buf));
+    strncat(buf,LINKED_EXT,sizeof(buf));
     /* f**king BOINC's new symlink behavior returns no error if the link file doesn't,
        exist, so we need to check it manually */
     if((fp=fopen(buf,"r"))) {
@@ -834,7 +810,7 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
  * The worker() ist called either from main() directly or from boinc_init_graphics
  * (in a separate thread). It does some funny things to the command line (mostly
  * boinc-resolving filenames), then calls MAIN() (from HierarchicalSearch.c), and
- * finally handles the output / result file(s) before returning with an exit code.
+ * finally handles the output / result file(s) before exiting with boinc_finish().
  */
 /**
  * rules for "bundled" workunits
@@ -848,8 +824,8 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
  *   the output file must be specified as a separate argument to the '-o' option,
  *   e.g. '-o outputfile', NOT '--OutputFile=outputfile'
  */
-static int worker (void) {
-  int argc    = global_argc;   /**< as worker is defined int worker(void), ... */
+static void worker (void) {
+  int argc    = global_argc;   /**< as worker is defined void worker(void), ... */
   char**argv  = global_argv;   /**< ...  take argc and argv from global variables */
   char**rargv = NULL;          /**< argv and ... */
   int rargc   = global_argc;   /**< ... argc values for calling the MAIN() function of
@@ -875,7 +851,6 @@ static int worker (void) {
   char wu_result_file[MAX_PATH_LEN];
 
   int second_outfile = 0;        /**< flag: is there a second output file, i.e. --SortToplist=3 */
-  int bsgl_outfiles = 0;
   int resultfile_present = 0;
 
   resultfile[0] = '\0';
@@ -904,7 +879,7 @@ static int worker (void) {
   rargv = (char**)calloc(1,argc*sizeof(char*));
   if(!rargv){
     LogPrintf(LOG_CRITICAL, "Out of memory\n");
-    return(HS_BOINC_EXIT_MEM);
+    boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
   }
 
   /* the program name (argv[0]) remains the same in any case */
@@ -925,7 +900,7 @@ static int worker (void) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	return(HS_BOINC_EXIT_MEM);
+	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
       }
       rargv[rarg][0] = '@';
       if (boinc_resolve_filename(argv[arg]+1,rargv[rarg]+1,MAX_PATH_LEN-1)) {
@@ -935,7 +910,7 @@ static int worker (void) {
 	config_files = realloc(config_files, sizeof(char*) * (current_config_file + 1));
 	if(!config_files){
 	  LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	  return(HS_BOINC_EXIT_MEM);
+	  boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
 	}
 	config_files[current_config_file] = rargv[rarg];
 	if (current_config_file) {
@@ -947,36 +922,16 @@ static int worker (void) {
       }
     }
 
-    /* don't boinc_resolve a 'content' skygrid file */
-    else if (MATCH_START("--skyGridFile={.",argv[arg],l)) {
-      if (argv[arg][strlen(argv[arg])-1] != '}' && argv[arg+1]) {
-	if(argv[arg+1][strlen(argv[arg+1])-1] == '}') {
-	  rargv[rarg] = (char*) malloc (strlen(argv[arg]) + strlen(argv[arg+1]) + 2);
-	  if(!rargv[rarg]) {
-	    LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	    return(HS_BOINC_EXIT_MEM);
-	  }
-	  strcpy(rargv[rarg],argv[arg]);
-	  strcat(rargv[rarg]," ");
-	  arg++;
-	  strcat(rargv[rarg],argv[arg]);
-	  rargc--;
-	}
-      } else {
-	rargv[rarg] = argv[arg];
-      }
-    }
-
     /* boinc_resolve and unzip skygrid file */
     else if (MATCH_START("--skyGridFile=",argv[arg],l)) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	return(HS_BOINC_EXIT_MEM);
+	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
       }
       strncpy(rargv[rarg],argv[arg],l);
       if (resolve_and_unzip(argv[arg]+l, rargv[rarg]+l, MAX_PATH_LEN-l) < 0)
-	res = HS_BOINC_EXIT_FILE;
+	res = HIERARCHICALSEARCH_EFILE;
     }
 
     /* boinc_resolve and unzip segment list */
@@ -984,11 +939,11 @@ static int worker (void) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	return(HS_BOINC_EXIT_MEM);
+	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
       }
       strncpy(rargv[rarg],argv[arg],l);
       if (resolve_and_unzip(argv[arg]+l, rargv[rarg]+l, MAX_PATH_LEN-l) < 0)
-	res = HS_BOINC_EXIT_FILE;
+	res = HIERARCHICALSEARCH_EFILE;
     }
 
     /* boinc_resolve and unzip ephermeris files */
@@ -996,21 +951,21 @@ static int worker (void) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	return(HS_BOINC_EXIT_MEM);
+	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
       }
       strncpy(rargv[rarg],argv[arg],l);
       if (resolve_and_unzip(argv[arg]+l, rargv[rarg]+l, MAX_PATH_LEN-l) < 0)
-	res = HS_BOINC_EXIT_FILE;
+	res = HIERARCHICALSEARCH_EFILE;
     }
     else if (MATCH_START("--ephemS=",argv[arg],l)) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	return(HS_BOINC_EXIT_MEM);
+	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
       }
       strncpy(rargv[rarg],argv[arg],l);
       if (resolve_and_unzip(argv[arg]+l, rargv[rarg]+l, MAX_PATH_LEN-l) < 0)
-	res = HS_BOINC_EXIT_FILE;
+	res = HIERARCHICALSEARCH_EFILE;
     }
 
     /* boinc_resolve SFT files (no unzipping, but dealing with multiple files separated by ';' */
@@ -1021,7 +976,7 @@ static int worker (void) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN + chars, sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	return(HS_BOINC_EXIT_MEM);
+	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
       }
 
       /* copy & skip the "[1|2]=" characters, too */
@@ -1051,7 +1006,7 @@ static int worker (void) {
 	rargv[rarg] = (char*)realloc(rargv[rarg], (MAX_PATH_LEN + chars) * sizeof(char));
 	if(!rargv[rarg]){
 	  LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	  return(HS_BOINC_EXIT_MEM);
+	  boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
 	}
 
 	/* put back the ';' in the original string and skip it for next iteration */
@@ -1106,7 +1061,7 @@ static int worker (void) {
 	  rargv[rarg] = (char*)calloc(s,sizeof(char));
 	  if(!rargv[rarg]){
 	    LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	    return(HS_BOINC_EXIT_MEM);
+	    boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
 	  }
 	  strncpy(rargv[rarg],argv[arg], (startc - argv[arg]));
 	  strncat(rargv[rarg],resultfile,s);
@@ -1115,7 +1070,7 @@ static int worker (void) {
 	{
 	  if(arg + 1 >= argc) {
 	    LogPrintf(LOG_CRITICAL,"ERROR in command line: no argument following %s option\n",argv[arg]);
-	    res = HS_BOINC_EXIT_FILE;
+	    res = HIERARCHICALSEARCH_EFILE;
 	  } else {
 	    rargv[rarg] = argv[arg]; /* copy the "-o" */
 	    arg++;                   /* grab next argument */
@@ -1141,13 +1096,6 @@ static int worker (void) {
     else if (!strcmp("--SortToplist=3",argv[arg])) {
       rargv[rarg] = argv[arg];
       second_outfile = -1;
-    }
-
-    /* record if there will be a second output file */
-    else if (!strcmp("--SortToplist=6",argv[arg])) {
-      rargv[rarg] = argv[arg];
-      LogPrintf(LOG_DEBUG,"BSGL output files\n");
-      bsgl_outfiles = -1;
     }
 
     /* set the "flops estimation" */
@@ -1217,12 +1165,12 @@ static int worker (void) {
   /* sanity checks */
   if (!resultfile[0] && !output_help && !output_version) {
       LogPrintf (LOG_CRITICAL, "ERROR: no result file has been specified\n");
-      res = HS_BOINC_EXIT_FILE;
+      res = HIERARCHICALSEARCH_EFILE;
   }
   if (bundle_size != current_config_file) {
     LogPrintf (LOG_CRITICAL, "ERROR: bundle size %d doesn't match number of config files %d\n",
 	       bundle_size, current_config_file);
-    res = HS_BOINC_EXIT_FILE;
+    res = HIERARCHICALSEARCH_EFILE;
   }
 
   LogPrintf (LOG_DEBUG, "Flags: "
@@ -1292,7 +1240,7 @@ static int worker (void) {
   /* if there already was an error, there is no use in continuing */
   if (res) {
     LogPrintf (LOG_CRITICAL, "ERROR: error %d in command-line parsing\n", res);
-    return(res);
+    boinc_finish(boinc_finish_status=res);
   }
 
   /* test the debugger (and symbol loading) here if we were told to */
@@ -1329,38 +1277,10 @@ static int worker (void) {
   if(test_sqrt)
     fprintf(stderr,"NaN:%f\n", sqrt(-1));
 
-  if(!bundle_size) {
-    int curresultfile, nresultfiles = 1;
-    char*lastchar = &resultfile[strlen(resultfile)-1];
-    char*filenums = "0123";
-
-    if (*lastchar == '0') { // boinc_resove()d result name
-
-      resultfile_present = 1; // assume all are present until we know better
-
-      if (second_outfile)
-        nresultfiles = 2;
-      else if (bsgl_outfiles)
-        nresultfiles = 3;
-
-      for (curresultfile = 0; curresultfile < nresultfiles; curresultfile++) {
-        *lastchar = filenums[curresultfile];
-        if (!boinc_file_exists(resultfile)) {
-          resultfile_present = 0;
-          break;
-        }
-      }
-      *lastchar = '0';
-      if(resultfile_present) {
-        LogPrintf (LOG_NORMAL, "WARNING: Resultfile '%s' present - doing nothing\n", resultfile);
-      }
-
-    } else if (boinc_file_exists(resultfile)) {
-
-      resultfile_present = 1;
-      LogPrintf (LOG_NORMAL, "WARNING: Resultfile '%s' present - doing nothing\n", resultfile);
-
-    }
+  if(!bundle_size && (fp = boinc_fopen(resultfile,"r"))) {
+    fclose(fp);
+    LogPrintf (LOG_NORMAL, "WARNING: Resultfile '%s' present - doing nothing\n", resultfile);
+    resultfile_present = 1;
   }
 
 #ifdef BOINC_APIV6
@@ -1382,7 +1302,7 @@ static int worker (void) {
   char**rrargv = (char**)malloc(rargc * sizeof(char*));
   if(!rrargv){
     LogPrintf(LOG_CRITICAL, "Out of memory\n");
-    return(HS_BOINC_EXIT_MEM);
+    boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
   }
 
   if (output_help || output_version || !resultfile_present) {
@@ -1394,17 +1314,11 @@ static int worker (void) {
       if (bundle_size) {
 	char buf[20];
 	unsigned int rlen = strlen(resultfile);
-        long n;
 	strcpy(wu_result_file, resultfile);
-	if (second_outfile)
-	  n = current_config_file * 2;
-	else if (bsgl_outfiles)
-	  n = current_config_file * 3;
-	else
-	  n = current_config_file;
-	strcpy(&wu_result_file[rlen-1], myltoa(n, buf, 20));
+	strcpy(&wu_result_file[rlen-1], myltoa(second_outfile ? current_config_file * 2 : current_config_file, buf, 20));
 	*config_file_arg = config_files[current_config_file];
-	if ((fp = boinc_fopen(wu_result_file,"r"))) {
+
+	if (fp = boinc_fopen(wu_result_file,"r")) {
 	  fclose(fp);
 	  LogPrintf (LOG_NORMAL, "WARNING: Resultfile '%s' present - skipping subWU#%d\n", wu_result_file, current_config_file);
 	  current_config_file ++;
@@ -1434,31 +1348,6 @@ static int worker (void) {
 #endif
       }
 
-#define APP_WISDOM_FILENAME "CW-wisdom.dat"
-      /* if there is a wisdom file, point environment variable FFTWF_WISDOM_FILENAME to it */
-      {
-        static char resolved_name[MAX_PATH_LEN];
-        strncpy(resolved_name, "FFTWF_WISDOM_FILENAME=", MAX_PATH_LEN);
-        char*path = resolved_name+strlen(resolved_name);
-
-        strncat(resolved_name, eah_projectdir, MAX_PATH_LEN-strlen(resolved_name)-1);
-#ifdef _WIN32
-#define PATH_DELIM "\\"
-#else
-#define PATH_DELIM "/"
-#endif
-        strncat(resolved_name, PATH_DELIM APP_WISDOM_FILENAME, MAX_PATH_LEN-strlen(resolved_name));
-        if (boinc_file_exists(path)) {
-          putenv(resolved_name);
-          fprintf(stderr, "INFO: Set %s\n", resolved_name);
-
-        } else if (boinc_file_exists(APP_WISDOM_FILENAME)) {
-          boinc_resolve_filename(APP_WISDOM_FILENAME, path, MAX_PATH_LEN-strlen(resolved_name)-1);
-          putenv(resolved_name);
-          fprintf(stderr, "INFO: Set %s\n", resolved_name);
-        }
-      }
-
       /* CALL WORKER's MAIN()
        */
       res = MAIN(rargc,rrargv);
@@ -1479,35 +1368,7 @@ static int worker (void) {
 	  }
 	} else {
 	  LogPrintf(LOG_CRITICAL,"ERROR: out of memory, can't allocate lv_file\n");
-	  res = HS_BOINC_EXIT_MEM;
-	}
-      }
-
-      /* if there is a file <wuname>_<instance>_0-LV, rename it to <wuname>_<instance>_1 */
-      if (bsgl_outfiles) {
-	unsigned int len = strlen(resultfile);
-	char*lv_file = (char*)malloc(len+12);
-	if (lv_file) {
-	  LogPrintf(LOG_DEBUG,"resultfile '%s' (len %d), current config file: %d\n", resultfile, len, current_config_file);
-	  strcpy(lv_file, resultfile);
-	  strcat(lv_file, "-BSGLtL");
-	  if (boinc_file_exists(lv_file) && resultfile[len-1]=='0') {
-	    resultfile[len-1]='1';
-	    // myltoa(current_config_file*3+1, &resultfile[len-1], 5);
-	    LogPrintf(LOG_DEBUG,"renaming '%s' to '%s'\n", lv_file, resultfile);
-	    boinc_rename(lv_file,resultfile);
-	  }
-	  lv_file[len]='\0';
-	  strcat(lv_file, "-BtSGLtL");
-	  if (boinc_file_exists(lv_file) && resultfile[len-1]=='1') {
-	    resultfile[len-1]='2';
-	    // myltoa(current_config_file*3+2, &resultfile[len-1], 5);
-	    LogPrintf(LOG_DEBUG,"renaming '%s' to '%s'\n", lv_file, resultfile);
-	    boinc_rename(lv_file,resultfile);
-	  }
-	} else {
-	  LogPrintf(LOG_CRITICAL,"ERROR: out of memory, can't allocate lv_file\n");
-	  res = HS_BOINC_EXIT_MEM;
+	  res = HIERARCHICALSEARCH_EMEM;
 	}
       }
 
@@ -1569,8 +1430,8 @@ static int worker (void) {
   }
 #endif
 
-  LogPrintf (LOG_DEBUG, "worker done. return(%d) to caller\n",res);
-  return(res);
+  LogPrintf (LOG_NORMAL, "done. calling boinc_finish(%d).\n",res);
+  boinc_finish(boinc_finish_status=res);
 } /* worker() */
 
 
@@ -1592,7 +1453,7 @@ int main(int argc, char**argv) {
                          BOINC_DIAG_REDIRECTSTDERR |
                          BOINC_DIAG_TRACETOSTDERR);
 
-  LogSetFile(stderr); /* send all LogPrint output to stderr */
+  LogSetLevel(LOG_DETAIL); /* as long as we are debugging */
 
   LogPrintf(LOG_NORMAL, "This program is published under the GNU General Public License, version 2\n");
   LogPrintf(LOG_NORMAL, "For details see http://einstein.phys.uwm.edu/license.php\n");
@@ -1638,10 +1499,8 @@ int main(int argc, char**argv) {
     } /* if DEBUG_LEVEL_FNAME file found */
 
   {
-    char buf[16+8];
-    strcpy(buf, "LAL_DEBUG_LEVEL=");
-    myultoa(eah_lal_debug_level, buf+16, 8);
-    if (putenv(buf)) {
+    char buf[8];
+    if (setenv("LAL_DEBUG_LEVEL", myultoa(eah_lal_debug_level, buf, 8), 1)) {
       LogPrintf(LOG_CRITICAL,"ERROR: couldn't set LAL_DEBUG_LEVEL env: %d\n", errno);
     }
   }
@@ -1723,7 +1582,6 @@ int main(int argc, char**argv) {
 
 
 
-
   /* install signal handler */
 
   /* the previous boinc_init_diagnostics() call should have installed boinc_catch_signal() for
@@ -1781,6 +1639,19 @@ int main(int argc, char**argv) {
   } /* if !skipsighandler */
 #endif /* WIN32 */
 
+#ifdef DLOPEN_LIBGCC
+  {
+    void *lib_handle = dlopen("libgcc_s.so.1", RTLD_LAZY);
+    if(lib_handle) {
+      LogPrintf (LOG_DEBUG, "Successfully loaded libgcc_s.so.1\n");
+      libgcc_s_loaded = 1;
+    } else {
+      LogPrintf (LOG_DEBUG, "Couldn't load libgcc_s.so.1: %s\n", dlerror());
+      libgcc_s_loaded = -1;
+    }
+  }
+#endif
+
 #ifdef _NO_MSC_VER
   if (try_load_dlls(delayload_dlls, "ERROR: Failed to load %s - terminating\n")) {
     LogPrintf(LOG_NORMAL,"ERROR: Loading of mandantory DLLs failed\n");
@@ -1796,14 +1667,9 @@ int main(int argc, char**argv) {
   /* boinc_init */
   set_boinc_options();
   boinc_init();
-  int ret = worker();
-  if (ret == HS_BOINC_EXIT_MEM) {
-    DeferExecution(); // calls boinc_temporary_exit() and ends the program
-  }
-  else {
-    LogPrintf (LOG_NORMAL, "done. calling boinc_finish(%d).\n", ret);
-    boinc_finish(boinc_finish_status=ret);
-  }
+  worker();
+  LogPrintf (LOG_NORMAL, "done. calling boinc_finish(%d).\n",0);
+  boinc_finish(boinc_finish_status=0);
   /* boinc_finish() ends the program, we never get here */
   return(0);
 }
@@ -1826,7 +1692,7 @@ int main(int argc, char**argv) {
 /**
  * sets a checkpoint.
  */
-int write_boinc_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, toplist_t*t3,UINT4 counter, BOOLEAN do_sync) {
+int write_boinc_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4 counter, BOOLEAN do_sync) {
   int ret;
   /* make sure the exception mask isn't messed up by a badly written device driver etc.,
      so restore it periodically */
@@ -1836,7 +1702,7 @@ int write_boinc_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, 
   if (!(boinc_is_standalone() || boinc_time_to_checkpoint()))
     return 1; /* >0, no checkpoint written, no error */
 #endif
-  ret = write_gct_checkpoint(filename, tl, t2, t3, counter, do_sync);
+  ret = write_gct_checkpoint(filename, tl, t2, counter, do_sync);
   fprintf(stderr,"c\n");
   boinc_checkpoint_completed();
   return(ret);

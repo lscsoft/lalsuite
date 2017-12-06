@@ -21,7 +21,7 @@
  * \author Matt Pitkin, Bernd Machenschalk
  * \date 2007
  * \file
- * \ingroup lalpulsar_general
+ * \ingroup lalpulsar_UNCLASSIFIED
  * \brief Functions to calculate binary system time delays and read TEMPO pulsar parameter files
  *
  * The main function in this code - <tt>XLALBinaryPulsarDeltaT</tt> - is for
@@ -143,10 +143,6 @@ void XLALComputeKopeikinTerms( KopeikinTerms *kop,
                                BinaryPulsarParams *params,
                                BinaryPulsarInput *input );
 
-void XLALComputeKopeikinTermsNew( KopeikinTerms *kop,
-                                  PulsarParameters *params,
-                                  BinaryPulsarInput *input );
-
 /**
  * function to calculate the binary system delay
  */
@@ -154,14 +150,6 @@ void
 XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
                         BinaryPulsarInput    *input,
                         BinaryPulsarParams   *params );
-
-/**
- * function to calculate the binary system delay using new parameter structure
- */
-void
-XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
-                           BinaryPulsarInput    *input,
-                           PulsarParameters     *params );
 
 void
 LALBinaryPulsarDeltaT( LALStatus            *status,

@@ -1,7 +1,5 @@
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
-#include <gsl/gsl_spline.h>
-#include <math.h>
 
 #include "LALSimIMREOBNRv2.h"
 
@@ -14,13 +12,10 @@
 #define UNUSED
 #endif
 
-
-
 /**
  * Set the total number of multipoles
  * */
 #define MAX_NUM_MODES 7
-
 
 struct
 SpinEOBModes
@@ -48,8 +43,6 @@ SpinEOBModes
  * d1v2 - SO calibration parameter of SEOBNRv2
  * dheffSS - SS calibration parameter of SEOBNRv1
  * dheffSSv2 - SS calibration parameter of SEOBNRv2
- * tidal1 - tidal params of body 1
- * tidal2 - tidal params of body 2
  */
 
 typedef struct
@@ -70,34 +63,8 @@ tagSpinEOBHCoeffs
   double dheffSS;
   double dheffSSv2;
   UINT4    SpinAlignedEOBversion;
-  int      updateHCoeffs;
-  TidalEOBParams *tidal1;
-  TidalEOBParams *tidal2;
 }
 SpinEOBHCoeffs;
-
-typedef struct
-tagSEOBHCoeffConstants
-{
-
-  double a0k2; //Coefficient of a^0 in k2
-  double a1k2; //Coefficient of a^1 in k2
-
-  double a0k3; //Coefficient of a^0 in k3
-  double a1k3; //Coefficient of a^1 in k3
-
-  double a0k4; //Coefficient of a^0 in k4
-  double a1k4; //Coefficient of a^1 in k4
-  double a2k4; //Coefficient of a^2 in k4
-
-  double a0k5; //Coefficient of a^0 in k5
-  double a1k5; //Coefficient of a^1 in k5
-  double a2k5; //Coefficient of a^2 in k5
-
-}
-SEOBHCoeffConstants;
-
-SEOBHCoeffConstants XLALEOBSpinPrecCalcSEOBHCoeffConstants(REAL8 eta);
 
 /**
  * Parameters for the spinning EOB model.
@@ -116,7 +83,6 @@ tagSpinEOBParams
 {
   EOBParams               *eobParams;
   SpinEOBHCoeffs          *seobCoeffs;
-  SEOBHCoeffConstants     *seobCoeffConsts;
   EOBNonQCCoeffs          *nqcCoeffs;
   REAL8Vector             *s1Vec;
   REAL8Vector             *s2Vec;
@@ -125,12 +91,8 @@ tagSpinEOBParams
   REAL8                   a;
   REAL8                   chi1;
   REAL8                   chi2;
-  REAL8                   prev_dr;
   int                     alignedSpins;
-  Approximant             seobApproximant; /*OPTV3*/
   int                     tortoise;
-  int                     ignoreflux;
-  REAL8 deltaT;
 }
 SpinEOBParams;
 
@@ -152,30 +114,7 @@ struct tagHcapSphDeriv2Params
   SpinEOBParams   *params;
   UINT4           varyParam1;
   UINT4           varyParam2;
-  INT4            use_optimized;
 }
 HcapSphDeriv2Params;
-
-/* We need to encapsulate the data for the GSL derivative function */
-typedef
-struct tagPrecEulerAnglesIntegration
-{
-   gsl_spline *alpha_spline;
-   gsl_spline *beta_spline;
-   gsl_interp_accel *alpha_acc;
-   gsl_interp_accel *beta_acc;
-}
-PrecEulerAnglesIntegration;
-
-
-
-
-
-
-
-
-
-
-
 
 #endif /* _LALSIMIMRSPINEOB_H */

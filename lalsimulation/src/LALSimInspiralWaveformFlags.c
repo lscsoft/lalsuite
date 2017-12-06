@@ -16,14 +16,7 @@
  *  MA  02111-1307  USA
  */
 
-#include <stdio.h>
-#include <lal/LALString.h>
-#include <lal/LALValue.h>
-#include <lal/LALStdlib.h>
-#include <limits.h>
-#include <string.h>
-#include <lal/LALSimInspiralWaveformFlags.h>
-#include <lal/LALSimInspiralWaveformParams.h>
+#include  <lal/LALSimInspiralWaveformFlags.h>
 
 /**
  * Struct containing several enumerated flags that control specialized behavior
@@ -34,7 +27,6 @@
  *
  * Developers: Do not add anything but enumerated flags to this struct. Avoid
  * adding extra flags whenever possible.
- * DEPRECATED, use LALDict instead.
  */
 struct tagLALSimInspiralWaveformFlags
 {
@@ -42,14 +34,7 @@ struct tagLALSimInspiralWaveformFlags
     LALSimInspiralTidalOrder tideO; /**< PN order of spin effects */
     LALSimInspiralFrameAxis axisChoice; /**< Flag to set frame z-axis convention */
     LALSimInspiralModesChoice modesChoice; /**< Flag to control which modes are included in IMR models */
-    char numreldata[FILENAME_MAX]; /**< Location of NR data file for NR waveforms */
 };
-
-/**
- * @addtogroup LALSimInspiralWaveformFlags_c
- * @brief Routines to manipulate inspiral waveform flags structures.
- * @{
- */
 
 /**
  * Create a new LALSimInspiralWaveformFlags struct
@@ -97,21 +82,7 @@ void XLALSimInspiralDestroyWaveformFlags(
  * Returns true if waveFlags is non-NULL and all of its fields have default
  * value; returns false otherwise.
  */
-bool XLALSimInspiralWaveformParamsFlagsAreDefault(LALDict *params)
-{
-    /* Check every field of WaveformFlags, each returns 1/0 for true/false.
-     * Return true iff waveFlags is non-NULL and all checks are true. */
-  return ( XLALSimInspiralWaveformParamsPNSpinOrderIsDefault(params) &&
-	   XLALSimInspiralWaveformParamsPNTidalOrderIsDefault(params) &&
-	   XLALSimInspiralWaveformParamsFrameAxisIsDefault(params) &&
-	   XLALSimInspiralWaveformParamsModesChoiceIsDefault(params));
-}
-
-/**
- * Returns true if waveFlags is non-NULL and all of its fields have default
- * value; returns false otherwise.
- */
-bool XLALSimInspiralWaveformFlagsIsDefaultOLD(
+bool XLALSimInspiralWaveformFlagsIsDefault(
         LALSimInspiralWaveformFlags *waveFlags
         )
 {
@@ -128,7 +99,7 @@ bool XLALSimInspiralWaveformFlagsIsDefaultOLD(
  * Checks if all flags in two LALSimInspiralWaveformFlags structs are equal.
  * Returns true if all flags are equal. Returns false if one or more differ.
  */
-bool XLALSimInspiralWaveformFlagsEqualOLD(
+bool XLALSimInspiralWaveformFlagsEqual(
         LALSimInspiralWaveformFlags *waveFlags1,
         LALSimInspiralWaveformFlags *waveFlags2
         )
@@ -146,33 +117,6 @@ bool XLALSimInspiralWaveformFlagsEqualOLD(
     axisChoice2 = XLALSimInspiralGetFrameAxis(waveFlags2);
     modesChoice1 = XLALSimInspiralGetModesChoice(waveFlags1);
     modesChoice2 = XLALSimInspiralGetModesChoice(waveFlags2);
-
-    return ( (spinO1==spinO2) && (tideO1==tideO2) && (axisChoice1==axisChoice2)
-            && (modesChoice1==modesChoice2) );
-}
-
-/**
- * Checks if all flags in two LALSimInspiralWaveformFlags structs are equal.
- * Returns true if all flags are equal. Returns false if one or more differ.
- */
-bool XLALSimInspiralWaveformFlagsEqual(
-        LALDict *LALpars1,
-        LALDict *LALpars2
-        )
-{
-    LALSimInspiralSpinOrder spinO1, spinO2;
-    LALSimInspiralTidalOrder tideO1, tideO2;
-    LALSimInspiralFrameAxis axisChoice1, axisChoice2;
-    LALSimInspiralModesChoice modesChoice1, modesChoice2;
-
-    spinO1 = XLALSimInspiralWaveformParamsLookupPNSpinOrder(LALpars1);
-    spinO2 = XLALSimInspiralWaveformParamsLookupPNSpinOrder(LALpars2);
-    tideO1 = XLALSimInspiralWaveformParamsLookupPNTidalOrder(LALpars1);
-    tideO2 = XLALSimInspiralWaveformParamsLookupPNTidalOrder(LALpars2);
-    axisChoice1 = XLALSimInspiralWaveformParamsLookupFrameAxis(LALpars1);
-    axisChoice2 = XLALSimInspiralWaveformParamsLookupFrameAxis(LALpars2);
-    modesChoice1 = XLALSimInspiralWaveformParamsLookupModesChoice(LALpars1);
-    modesChoice2 = XLALSimInspiralWaveformParamsLookupModesChoice(LALpars2);
 
     return ( (spinO1==spinO2) && (tideO1==tideO2) && (axisChoice1==axisChoice2)
             && (modesChoice1==modesChoice2) );
@@ -296,7 +240,7 @@ bool XLALSimInspiralFrameAxisIsDefault(
 {
     if( axisChoice == LAL_SIM_INSPIRAL_FRAME_AXIS_DEFAULT )
         return true;
-    else
+    else 
         return false;
 }
 
@@ -336,175 +280,7 @@ bool XLALSimInspiralModesChoiceIsDefault(
 {
     if( modesChoice == LAL_SIM_INSPIRAL_MODES_CHOICE_DEFAULT )
         return true;
-    else
+    else 
         return false;
 }
 
-/**
- * Set the numreldata string within a LALSimInspiralWaveformFlags struct
- */
-void XLALSimInspiralSetNumrelDataOLD(
-        LALSimInspiralWaveformFlags *waveFlags, /**< Struct whose value will be set */
-        const char* numreldata /**< value to set numreldata to */
-        )
-{
-    XLALStringCopy(waveFlags->numreldata, numreldata, sizeof(waveFlags->numreldata));
-    return;
-}
-
-/**
- * Returns a deepcopy of the pointer of the numeraldata attribute of the
- * waveFlags structure. If this is NULL then NULL will be returned.
- * The returned value is independent of the waveFlags structure and will
- * need to be LALFree-d.
- */
-char* XLALSimInspiralGetNumrelDataOLD(
-        LALSimInspiralWaveformFlags *waveFlags
-        )
-{
-    char *ret_string;
-    if ( waveFlags )
-    {
-        ret_string = XLALMalloc(FILENAME_MAX * sizeof(char));
-        XLALStringCopy(ret_string, waveFlags->numreldata, sizeof(waveFlags->numreldata));
-        return ret_string;
-    }
-    else
-    {
-        return NULL;
-    }
-}
-
-
-static char empty_modes[((LAL_SIM_L_MAX_MODE_ARRAY + 1) * (LAL_SIM_L_MAX_MODE_ARRAY + 1)) / CHAR_BIT + 2] = { '\0' };
-
-/**
- * Create a LALValue pointer to store the mode array.
- */
-
-LALValue * XLALSimInspiralCreateModeArray(void)
-{
-	return XLALCreateValue(empty_modes, sizeof(empty_modes), LAL_CHAR_TYPE_CODE);
-}
-
-LALValue * XLALSimInspiralModeArrayActivateMode(LALValue *modes, unsigned l, int m)
-{
-	char *data;
-	unsigned bit = l * l + l + m;
-	unsigned byte = bit / CHAR_BIT;
-	bit %= CHAR_BIT;
-
-	/* sanity checks on l and m */
-	XLAL_CHECK_NULL(l <= LAL_SIM_L_MAX_MODE_ARRAY, XLAL_EINVAL, "Invalid value of l=%u must not be greater than %u", l, LAL_SIM_L_MAX_MODE_ARRAY);
-	XLAL_CHECK_NULL((unsigned)abs(m) <= l, XLAL_EINVAL, "Invalid value of m=%d for l=%u", m, l);
-
-	/* sanity checks on modes */
-	data = (char *)(intptr_t)XLALValueGetString(modes);
-	XLAL_CHECK_NULL(data, XLAL_EFUNC);
-	XLAL_CHECK_NULL(XLALValueGetSize(modes) == sizeof(empty_modes), XLAL_EINVAL, "Invalid data size for modes");
-
-	data[byte] |= (1 << bit);
-	return modes;
-}
-
-LALValue * XLALSimInspiralModeArrayDeactivateMode(LALValue *modes, unsigned l, int m)
-{
-	char *data;
-	unsigned bit = l * l + l + m;
-	unsigned byte = bit / CHAR_BIT;
-	bit %= CHAR_BIT;
-
-	/* sanity checks on l and m */
-	XLAL_CHECK_NULL(l <= LAL_SIM_L_MAX_MODE_ARRAY, XLAL_EINVAL, "Invalid value of l=%u must not be greater than %u", l, LAL_SIM_L_MAX_MODE_ARRAY);
-	XLAL_CHECK_NULL((unsigned)abs(m) <= l, XLAL_EINVAL, "Invalid value of m=%d for l=%u", m, l);
-
-	/* sanity checks on modes */
-	data = (char *)(intptr_t)XLALValueGetString(modes);
-	XLAL_CHECK_NULL(data, XLAL_EFUNC);
-	XLAL_CHECK_NULL(XLALValueGetSize(modes) == sizeof(empty_modes), XLAL_EINVAL, "Invalid data size for modes");
-
-	data[byte] &= ~(1 << bit);
-	return modes;
-}
-
-LALValue * XLALSimInspiralModeArrayActivateAllModes(LALValue *modes)
-{
-	char *data;
-	data = (char *)(intptr_t)XLALValueGetString(modes);
-	XLAL_CHECK_NULL(data, XLAL_EFUNC);
-	XLAL_CHECK_NULL(XLALValueGetSize(modes) == sizeof(empty_modes), XLAL_EINVAL, "Invalid data size for modes");
-	memset(data, ~0, sizeof(empty_modes) - 1);
-
-    /* Deactivate the unphysical modes: (l,m) = ((0,0), (1,-1), (1,0), (1,1)) */
-    XLALSimInspiralModeArrayDeactivateMode(modes, 0, 0);
-    XLALSimInspiralModeArrayDeactivateMode(modes, 1, -1);
-    XLALSimInspiralModeArrayDeactivateMode(modes, 1, 0);
-    XLALSimInspiralModeArrayDeactivateMode(modes, 1, 1);
-
-	return modes;
-}
-
-LALValue * XLALSimInspiralModeArrayDeactivateAllModes(LALValue *modes)
-{
-	char *data;
-	data = (char *)(intptr_t)XLALValueGetString(modes);
-	XLAL_CHECK_NULL(data, XLAL_EFUNC);
-	XLAL_CHECK_NULL(XLALValueGetSize(modes) == sizeof(empty_modes), XLAL_EINVAL, "Invalid data size for modes");
-	memset(data, 0, sizeof(empty_modes) - 1);
-	return modes;
-}
-
-int XLALSimInspiralModeArrayIsModeActive(LALValue *modes, unsigned l, int m)
-{
-	const char *data;
-	unsigned bit = l * l + l + m;
-	unsigned byte = bit / CHAR_BIT;
-	// unsigned bit;
-	// unsigned byte;
-	// positionOfModeInString(&bit, &byte, l, m);
-	bit %= CHAR_BIT;
-
-	/* sanity checks on l and m */
-	XLAL_CHECK(l <= LAL_SIM_L_MAX_MODE_ARRAY, XLAL_EINVAL, "Invalid value of l=%u must not be greater than %u", l, LAL_SIM_L_MAX_MODE_ARRAY);
-	XLAL_CHECK((unsigned)abs(m) <= l, XLAL_EINVAL, "Invalid value of m=%d for l=%u", m, l);
-
-	/* sanity checks on modes */
-	data = XLALValueGetString(modes);
-	XLAL_CHECK(data, XLAL_EFUNC);
-	XLAL_CHECK(XLALValueGetSize(modes) == sizeof(empty_modes), XLAL_EINVAL, "Invalid data size for modes");
-
-	return (data[byte] & (1 << bit)) != 0;
-}
-
-
-LALValue * XLALSimInspiralModeArrayActivateAllModesAtL(LALValue *modes, unsigned l)
-{
-	for(int m =-l; m <= (int) l; ++m)
-	{
-		XLALSimInspiralModeArrayActivateMode(modes, l, m);
-	}
-	return modes;
-}
-
-LALValue * XLALSimInspiralModeArrayDeactivateAllModesAtL(LALValue *modes, unsigned l)
-{
-	for(int m =-l; m <= (int) l; ++m)
-	{
-		XLALSimInspiralModeArrayDeactivateMode(modes, l, m);
-	}
-	return modes;
-}
-
-int XLALSimInspiralModeArrayPrintModes(LALValue *modes)
-{
-	int l;
-	for (l = 0; l <= LAL_SIM_L_MAX_MODE_ARRAY; ++l) {
-		int m;
-		for (m = -l; m <= l; ++m)
-			printf("(%u,%+d) : %d\n", l, m, XLALSimInspiralModeArrayIsModeActive(modes, l, m));
-		printf("\n");
-	}
-	return 0;
-}
-
-/** @} */

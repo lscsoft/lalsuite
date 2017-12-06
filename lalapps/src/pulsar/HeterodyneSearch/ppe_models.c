@@ -1,34 +1,17 @@
-/*
-*  Copyright (C) 2014 Matthew Pitkin, Colin Gill, 2016 Max Isi
-*
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
-*/
-
-
 /**
  * \file
  * \ingroup lalapps_pulsar_HeterodyneSearch
- * \author Matthew Pitkin, Colin Gill, Max Isi
+ * \author Matthew Pitkin, Colin Gill, John Veitch
  *
  * \brief Pulsar model functions for use in parameter estimation codes for targeted pulsar searches.
  */
 
-#include "config.h"
 #include "ppe_models.h"
 #include <lal/SinCosLUT.h>
+
+#ifndef _OPENMP
+#define omp ignore
+#endif
 
 #define SQUARE(x) ( (x) * (x) )
 
@@ -39,307 +22,180 @@
 /**
  * \brief Defines the pulsar model/template to use
  *
- * This function is the wrapper for functions defining the pulsar model template to be used in the analysis.
- * It places them into a \c PulsarParameters structure.
+ * This function is the wrapper for functions defining the pulsar model template to be used in the analysis. It also
+ * uses \c rescale_parameter to scale any parameters back to their true values for use in the model and places them into
+ * a \c BinaryPulsarParams structure.
  *
  * Note: Any additional models should be added into this function.
  *
  * \param model [in] The model structure hold model information and current parameter info
  *
- * \sa add_pulsar_parameter
+ * \sa rescale_parameter
  * \sa pulsar_model
  */
 void get_pulsar_model( LALInferenceModel *model ){
-  PulsarParameters *pars = XLALCalloc(sizeof(*pars),1);
+  BinaryPulsarParams XLAL_INIT_DECL(pars); /* initialise as empty */
 
   /* set model parameters (including rescaling) */
-  add_pulsar_parameter( model->params, pars, "PSI" );
+  pars.psi = rescale_parameter( model, model->ifo, "PSI" );
+  pars.cgw = 1.; /* need to set this to one otherwise it defaults to zero with the initialisation */
 
-  if( ( LALInferenceCheckVariableNonFixed( model->params, "H0" ) || LALInferenceCheckVariableNonFixed( model->params, "Q22" ) || LALInferenceCheckVariable( model->ifo->params, "source_model" ) ) && !LALInferenceCheckVariable( model->ifo->params, "nonGR" ) ){
-    /* if searching in mass quadrupole, Q22, then check for distance and f0 and convert to h0 */
-    if ( LALInferenceCheckVariableNonFixed( model->params, "Q22" ) && !LALInferenceCheckVariableNonFixed( model->params, "H0" ) ){
-      if ( LALInferenceCheckVariable( model->params, "F0" ) && LALInferenceCheckVariable( model->params, "DIST" ) ){
-        /* convert Q22, distance and frequency into strain h0 using eqn 3 of Aasi et al, Ap. J., 785, 119 (2014) */
-        REAL8 Q22 = LALInferenceGetREAL8Variable( model->params, "Q22" );
-        REAL8 dist = LALInferenceGetREAL8Variable( model->params, "DIST" );
-        REAL8 f0 = LALInferenceGetREAL8Variable( model->params, "F0" );
-        REAL8 h0val = Q22*sqrt(8.*LAL_PI/15.)*16.*LAL_PI*LAL_PI*LAL_G_SI*f0*f0/(LAL_C_SI*LAL_C_SI*LAL_C_SI*LAL_C_SI*dist);
-        PulsarAddParam( pars, "H0", &h0val, PULSARTYPE_REAL8_t );
-      }
-      else{
-        XLAL_ERROR_VOID( XLAL_EINVAL, "Error... using mass quadrupole, Q22, but no distance or frequency given!" );
-      }
-    }
-    else if ( LALInferenceCheckVariableNonFixed( model->params, "Q22" ) && LALInferenceCheckVariableNonFixed( model->params, "H0" ) ) {
-      XLAL_ERROR_VOID( XLAL_EINVAL, "Error... cannot have both h0 and Q22 as variables." );
-    }
-    else if ( LALInferenceCheckVariableNonFixed( model->params, "H0" ) ){
-      add_pulsar_parameter( model->params, pars, "H0" );
-    }
+  if( LALInferenceCheckVariableNonFixed( model->params, "H0" ) || LALInferenceCheckVariable( model->ifo->params, "jones-model" ) ){
+    pars.h0 = rescale_parameter( model, model->ifo, "H0" );
 
     /* use parameterisation from Ian Jones's original model */
-    add_pulsar_parameter( model->params, pars, "I21" );
-    add_pulsar_parameter( model->params, pars, "I31" );
-    add_pulsar_parameter( model->params, pars, "LAMBDA" );
+    pars.I21 = rescale_parameter( model, model->ifo, "I21" );
+    pars.I31 = rescale_parameter( model, model->ifo, "I31" );
+    pars.lambda = rescale_parameter( model, model->ifo, "LAMBDA" );
 
     /* check whether using cos(theta) or theta as the variable (defaulting to cos(theta) being the value that is set */
     if ( LALInferenceCheckVariableNonFixed( model->params, "THETA" ) ){
-      REAL8 costheta = cos(LALInferenceGetREAL8Variable( model->params, "THETA" ));
-      PulsarAddParam( pars, "COSTHETA", &costheta, PULSARTYPE_REAL8_t );
+      pars.costheta = cos(rescale_parameter( model, model->ifo, "THETA" ));
     }
-    else{ add_pulsar_parameter( model->params, pars, "COSTHETA" ); }
-    add_pulsar_parameter( model->params, pars, "PHI0" ); /* note that this is the rotational phase */
-
-    /* check whether using cos(iota) or iota as the variable (defaulting to cos(iota) being the value that is set) */
-    if ( LALInferenceCheckVariableNonFixed( model->params, "IOTA" ) ){
-      REAL8 cosiota = cos(LALInferenceGetREAL8Variable( model->params, "IOTA" ));
-      PulsarAddParam( pars, "COSIOTA", &cosiota, PULSARTYPE_REAL8_t );
-    }
-    else{ add_pulsar_parameter( model->params, pars, "COSIOTA" ); }
-
-    invert_source_params( pars );
-  }
-  else if ( LALInferenceCheckVariable( model->ifo->params, "nonGR" ) ){
-    /* speed of GWs as (1 - fraction of speed of light LAL_C_SI) */
-    add_pulsar_parameter( model->params, pars, "CGW" );
-
-    /* amplitudes for use with non-GR searches */
-    /* tensor modes */
-    add_pulsar_parameter( model->params, pars, "HPLUS" );
-    add_pulsar_parameter( model->params, pars, "HCROSS" );
-    /* scalar modes */
-    add_pulsar_parameter( model->params, pars, "HSCALARB" );
-    add_pulsar_parameter( model->params, pars, "HSCALARL" );
-    /* vector modes */
-    add_pulsar_parameter( model->params, pars, "HVECTORX" );
-    add_pulsar_parameter( model->params, pars, "HVECTORY" );
-
-    add_pulsar_parameter( model->params, pars, "PHI0SCALAR" );
-    add_pulsar_parameter( model->params, pars, "PSISCALAR" );
-    add_pulsar_parameter( model->params, pars, "PHI0VECTOR" );
-    add_pulsar_parameter( model->params, pars, "PSIVECTOR" );
-    add_pulsar_parameter( model->params, pars, "PHI0TENSOR" );
-    add_pulsar_parameter( model->params, pars, "PSITENSOR" );
-
-    /* parameters that might be needed for particular models */
-    add_pulsar_parameter( model->params, pars, "H0" );
-    add_pulsar_parameter( model->params, pars, "IOTA" );
-    add_pulsar_parameter( model->params, pars, "COSIOTA" );
-
-    /* check whether a specific nonGR model was requested */
-    if ( LALInferenceCheckVariable( model->ifo->params, "nonGRmodel" ) ){
-      char* nonGRmodel;
-      nonGRmodel = *(char**)LALInferenceGetVariable( model->ifo->params, "nonGRmodel" );
-      set_nonGR_model_parameters( pars, nonGRmodel );
-    }
-  }
-  else{
-    /* amplitude for usual GR search */
-    add_pulsar_parameter( model->params, pars, "C21" );
-    add_pulsar_parameter( model->params, pars, "C22" );
-    add_pulsar_parameter( model->params, pars, "PHI21" );
+    else{ pars.costheta = rescale_parameter( model, model->ifo, "COSTHETA" ); }
+    pars.phi0 = rescale_parameter( model, model->ifo, "PHI0" ); /* note that this is the rotational phase */
 
     /* check whether using cos(theta) or theta as the variable (defaulting to cos(theta) being the value that is set */
     if ( LALInferenceCheckVariableNonFixed( model->params, "IOTA" ) ){
-      REAL8 cosiota = cos(LALInferenceGetREAL8Variable( model->params, "IOTA" ));
-      PulsarAddParam( pars, "COSIOTA", &cosiota, PULSARTYPE_REAL8_t );
+      pars.cosiota = cos(rescale_parameter( model, model->ifo, "IOTA" ));
     }
-    else{ add_pulsar_parameter( model->params, pars, "COSIOTA" ); }
+    else{ pars.cosiota = rescale_parameter( model, model->ifo, "COSIOTA" ); }
+
+    invert_source_params( &pars );
+  }
+  else if ( LALInferenceCheckVariable( model->ifo->params, "nonGR" ) ){
+    /* speed of GWs as (1 - fraction of speed of light LAL_C_SI) */
+    pars.cgw = rescale_parameter( model, model->ifo, "CGW" );
+
+    /* amplitudes for use with non-GR searches */
+    /* tensor modes */
+    pars.hPlus = rescale_parameter( model, model->ifo, "HPLUS" );
+    pars.hCross = rescale_parameter( model, model->ifo, "HCROSS" );
+    /* scalar modes */
+    pars.hScalarB = rescale_parameter( model, model->ifo, "HSCALARB" );
+    pars.hScalarL = rescale_parameter( model, model->ifo, "HSCALARL" );
+    /* vector modes */
+    pars.hVectorX = rescale_parameter( model, model->ifo, "HVECTORX" );
+    pars.hVectorY = rescale_parameter( model, model->ifo, "HVECTORY" );
+
+    pars.phi0Scalar = rescale_parameter( model, model->ifo, "PHI0SCALAR" );
+    pars.phi0Vector = rescale_parameter( model, model->ifo, "PHI0VECTOR" );
+    pars.psiVector = rescale_parameter( model, model->ifo, "PSIVECTOR" );
+    pars.phi0Tensor = rescale_parameter( model, model->ifo, "PHI0TENSOR" );
+  }
+  else{
+    pars.C21 = rescale_parameter( model, model->ifo, "C21" );
+    pars.C22 = rescale_parameter( model, model->ifo, "C22" );
+    pars.phi21 = rescale_parameter( model, model->ifo, "PHI21" );
+
+    /* check whether using cos(theta) or theta as the variable (defaulting to cos(theta) being the value that is set */
+    if ( LALInferenceCheckVariableNonFixed( model->params, "IOTA" ) ){
+      pars.cosiota = cos(rescale_parameter( model, model->ifo, "IOTA" ));
+    }
+    else{ pars.cosiota = rescale_parameter( model, model->ifo, "COSIOTA" ); }
 
     if( LALInferenceCheckVariable( model->ifo->params, "biaxial" ) ){
       /* use complex amplitude parameterisation, but set up for a biaxial star */
-      REAL8 phi22 = 2.*LALInferenceGetREAL8Variable( model->params, "PHI21" );
-      PulsarAddParam( pars, "PHI22", &phi22, PULSARTYPE_REAL8_t );
+      pars.phi22 = 2.*pars.phi21;
     }
     else{
-      add_pulsar_parameter( model->params, pars, "PHI22" );
+      pars.phi22 = rescale_parameter( model, model->ifo, "PHI22" );
     }
   }
 
   /* set the potentially variable parameters */
-  add_pulsar_parameter( model->params, pars, "PEPOCH" );
-  add_pulsar_parameter( model->params, pars, "POSEPOCH" );
+  pars.pepoch = rescale_parameter( model, model->ifo, "PEPOCH" );
+  pars.posepoch = rescale_parameter( model, model->ifo, "POSEPOCH" );
 
-  add_pulsar_parameter( model->params, pars, "RA" );
-  add_pulsar_parameter( model->params, pars, "PMRA" );
-  add_pulsar_parameter( model->params, pars, "DEC" );
-  add_pulsar_parameter( model->params, pars, "PMDEC" );
-  add_pulsar_parameter( model->params, pars, "PX" );
+  pars.ra = rescale_parameter( model, model->ifo, "RA" );
+  pars.pmra = rescale_parameter( model, model->ifo, "PMRA" );
+  pars.dec = rescale_parameter( model, model->ifo, "DEC" );
+  pars.pmdec = rescale_parameter( model, model->ifo, "PMDEC" );
 
-  /* check the number of frequency and frequency derivative parameters */
-  if ( LALInferenceCheckVariable( model->params, "FREQNUM" ) ){
-    UINT4 freqnum = LALInferenceGetUINT4Variable( model->params, "FREQNUM" );
-    REAL8Vector *freqs = XLALCreateREAL8Vector( freqnum );
-    REAL8Vector *deltafreqs = XLALCreateREAL8Vector( freqnum );
-    for ( UINT4 i = 0; i < freqnum; i++ ){
-      CHAR varname[256];
-      snprintf(varname, sizeof(varname), "F%u", i);
-      REAL8 f0new = LALInferenceGetREAL8Variable( model->params, varname );
-      freqs->data[i] = f0new; /* current frequency (derivative) */
-      snprintf(varname, sizeof(varname), "F%u_FIXED", i);
-      REAL8 f0fixed = LALInferenceGetREAL8Variable( model->params, varname );
-      deltafreqs->data[i] = f0new-f0fixed; /* frequency (derivative) difference */
-    }
-    PulsarAddParam( pars, "F", &freqs, PULSARTYPE_REAL8Vector_t );
-    PulsarAddParam( pars, "DELTAF", &deltafreqs, PULSARTYPE_REAL8Vector_t );
-  }
-
-  /* check if there are glitch parameters */
-  if ( LALInferenceCheckVariable(model->ifo->params, "GLITCHES" ) ){
-    if ( LALInferenceCheckVariable( model->params, "GLNUM" ) ){ /* number of glitches */
-      UINT4 glnum = LALInferenceGetUINT4Variable( model->params, "GLNUM" );
-      for ( UINT4 i = 0; i < NUMGLITCHPARS; i++ ){
-        REAL8Vector *gl = NULL;
-        gl = XLALCreateREAL8Vector( glnum );
-        for ( UINT4 j=0; j < glnum; j++ ){
-          CHAR varname[256];
-          snprintf(varname, sizeof(varname), "%s_%u", glitchpars[i], j+1);
-          if ( LALInferenceCheckVariable( model->params, varname ) ){
-            gl->data[j] = LALInferenceGetREAL8Variable( model->params, varname );
-          }
-          else{ gl->data[j] = 0.; }
-        }
-        PulsarAddParam( pars, glitchpars[i], &gl, PULSARTYPE_REAL8Vector_t );
-      }
-    }
-  }
+  pars.f0 = rescale_parameter( model, model->ifo, "F0" );
+  pars.f1 = rescale_parameter( model, model->ifo, "F1" );
+  pars.f2 = rescale_parameter( model, model->ifo, "F2" );
+  pars.f3 = rescale_parameter( model, model->ifo, "F3" );
+  pars.f4 = rescale_parameter( model, model->ifo, "F4" );
+  pars.f5 = rescale_parameter( model, model->ifo, "F5" );
 
   /* check if there are binary parameters */
-  if( LALInferenceCheckVariable(model->ifo->params, "BINARY") ){
+  if( LALInferenceCheckVariable(model->params, "model") ){
     /* binary system model - NOT pulsar model */
-    CHAR binary[PULSAR_PARNAME_MAX];
-    snprintf(binary, PULSAR_PARNAME_MAX*sizeof(CHAR), "%s", *(CHAR**)LALInferenceGetVariable( model->ifo->params, "BINARY" ));
-    PulsarAddParam( pars, "BINARY", &binary, PULSARTYPE_string_t );
+    pars.model = *(CHAR**)LALInferenceGetVariable( model->params, "model" );
 
-    add_pulsar_parameter( model->params, pars, "ECC" );
-    add_pulsar_parameter( model->params, pars, "OM" );
-    add_pulsar_parameter( model->params, pars, "PB" );
-    add_pulsar_parameter( model->params, pars, "A1" );
-    add_pulsar_parameter( model->params, pars, "T0" );
+    pars.e = rescale_parameter( model, model->ifo, "ECC" );
+    pars.w0 = rescale_parameter( model, model->ifo, "OM" );
+    pars.Pb = rescale_parameter( model, model->ifo, "PB" );
+    pars.x = rescale_parameter( model, model->ifo, "A1" );
+    pars.T0 = rescale_parameter( model, model->ifo, "T0" );
 
-    add_pulsar_parameter( model->params, pars, "ECC_2" );
-    add_pulsar_parameter( model->params, pars, "OM_2" );
-    add_pulsar_parameter( model->params, pars, "PB_2" );
-    add_pulsar_parameter( model->params, pars, "A1_2" );
-    add_pulsar_parameter( model->params, pars, "T0_2" );
+    pars.e2 = rescale_parameter( model, model->ifo, "ECC_2" );
+    pars.w02 = rescale_parameter( model, model->ifo, "OM_2" );
+    pars.Pb2 = rescale_parameter( model, model->ifo, "PB_2" );
+    pars.x2 = rescale_parameter( model, model->ifo, "A1_2" );
+    pars.T02 = rescale_parameter( model, model->ifo, "T0_2" );
 
-    add_pulsar_parameter( model->params, pars, "ECC_3" );
-    add_pulsar_parameter( model->params, pars, "OM_3" );
-    add_pulsar_parameter( model->params, pars, "PB_3" );
-    add_pulsar_parameter( model->params, pars, "A1_3" );
-    add_pulsar_parameter( model->params, pars, "T0_3" );
+    pars.e3 = rescale_parameter( model, model->ifo, "ECC_3" );
+    pars.w03 = rescale_parameter( model, model->ifo, "OM_3" );
+    pars.Pb3 = rescale_parameter( model, model->ifo, "PB_3" );
+    pars.x3 = rescale_parameter( model, model->ifo, "A1_3" );
+    pars.T03 = rescale_parameter( model, model->ifo, "T0_3" );
 
-    add_pulsar_parameter( model->params, pars, "XPBDOT" );
-    add_pulsar_parameter( model->params, pars, "EPS1" );
-    add_pulsar_parameter( model->params, pars, "EPS2" );
-    add_pulsar_parameter( model->params, pars, "EPS1DOT" );
-    add_pulsar_parameter( model->params, pars, "EPS2DOT" );
-    add_pulsar_parameter( model->params, pars, "TASC" );
+    pars.xpbdot = rescale_parameter( model, model->ifo, "XPBDOT" );
+    pars.eps1 = rescale_parameter( model, model->ifo, "EPS1" );
+    pars.eps2 = rescale_parameter( model, model->ifo, "EPS2" );
+    pars.eps1dot = rescale_parameter( model, model->ifo, "EPS1DOT" );
+    pars.eps2dot = rescale_parameter( model, model->ifo, "EPS2DOT" );
+    pars.Tasc = rescale_parameter( model, model->ifo, "TASC" );
 
-    add_pulsar_parameter( model->params, pars, "OMDOT" );
-    add_pulsar_parameter( model->params, pars, "GAMMA" );
-    add_pulsar_parameter( model->params, pars, "PBDOT" );
-    add_pulsar_parameter( model->params, pars, "XDOT" );
-    add_pulsar_parameter( model->params, pars, "EDOT" );
+    pars.wdot = rescale_parameter( model, model->ifo, "OMDOT" );
+    pars.gamma = rescale_parameter( model, model->ifo, "GAMMA" );
+    pars.Pbdot = rescale_parameter( model, model->ifo, "PBDOT" );
+    pars.xdot = rescale_parameter( model, model->ifo, "XDOT" );
+    pars.edot = rescale_parameter( model, model->ifo, "EDOT" );
 
-    add_pulsar_parameter( model->params, pars, "SINI" );
-    add_pulsar_parameter( model->params, pars, "DR" );
-    add_pulsar_parameter( model->params, pars, "DTHETA" );
-    add_pulsar_parameter( model->params, pars, "A0" );
-    add_pulsar_parameter( model->params, pars, "B0" );
+    pars.s = rescale_parameter( model, model->ifo, "SINI" );
+    pars.dr = rescale_parameter( model, model->ifo, "DR" );
+    pars.dth = rescale_parameter( model, model->ifo, "DTHETA" );
+    pars.a0 = rescale_parameter( model, model->ifo, "A0" );
+    pars.b0 = rescale_parameter( model, model->ifo, "B0" );
 
-    add_pulsar_parameter( model->params, pars, "MTOT" );
-    add_pulsar_parameter( model->params, pars, "M2" );
-
-    if ( LALInferenceCheckVariable( model->params, "FBNUM" ) ){
-      UINT4 fbnum = LALInferenceGetUINT4Variable( model->params, "FBNUM" );
-      REAL8Vector *fb = NULL;
-      fb = XLALCreateREAL8Vector( fbnum );
-      for ( UINT4 i=0; i < fbnum; i++ ){
-        CHAR varname[256];
-        snprintf(varname, sizeof(varname), "FB%u", i);
-        fb->data[i] = LALInferenceGetREAL8Variable( model->params, varname );
-      }
-      PulsarAddParam( pars, "FB", &fb, PULSARTYPE_REAL8Vector_t );
-    }
+    pars.M = rescale_parameter( model, model->ifo, "MTOT" );
+    pars.m2 = rescale_parameter( model, model->ifo, "M2" );
   }
 
   pulsar_model( pars, model->ifo );
-
-  PulsarFreeParams( pars ); /* free memory */
-}
-
-/**
- * \brief Set amplitude parameters for specific non-GR models.
- *
- * Turns physical parameters from a particular nonGR model into the corresponding antenna pattern amplitudes and phases. All nonGR models must be included here.
- * \param pars [in] parameter structure
- * \param nonGRmodel [in] name of model requested
- */
-void set_nonGR_model_parameters( PulsarParameters *pars, char* nonGRmodel ){
-  /* determine what model was requested */
-  int isG4v = strcmp(nonGRmodel, "G4v") * strcmp(nonGRmodel, "g4v") * strcmp(nonGRmodel, "G4V");
-  int isEGR = strcmp(nonGRmodel, "enhanced-GR") * strcmp(nonGRmodel, "EGR") * strcmp(nonGRmodel, "egr") * strcmp(nonGRmodel, "eGR");
-  REAL8 h0 = PulsarGetREAL8ParamOrZero( pars, "H0" );
-
-  if( isG4v == 0 ){
-    /* \f$ h_{\rm x} = h_0 \sin \iota~,~\phi_{\rm x} = -\pi/2 \f$ */
-    /* \f$ h_{\rm y} = h_0 \sin \iota \cos \iota~,~\phi_{\rm y} = 0 */
-    REAL8 iota = PulsarGetREAL8ParamOrZero( pars, "IOTA" );
-    REAL8 cosiota = cos(iota);
-    REAL8 siniota = sin(iota);
-
-    REAL8 hVectorX = h0 * siniota;
-    REAL8 hVectorY = h0 * siniota * cosiota;
-    REAL8 psiVector = LAL_PI_2;
-    PulsarAddParam( pars, "HVECTORX", &hVectorX, PULSARTYPE_REAL8_t );
-    PulsarAddParam( pars, "HVECTORY", &hVectorY, PULSARTYPE_REAL8_t );
-    PulsarAddParam( pars, "PSIVECTOR", &psiVector, PULSARTYPE_REAL8_t );
-  }
-  else if( isEGR == 0 ) {
-    /** GR plus an unconstrained non-GR modes
-    * With different priors, this can be used to obtain GR+scalar (i.e.
-    * scalar-tensor), GR+vector, or GR+scalar+vector. Note: this mode used to
-    be called just "ST".*/
-    REAL8 cosiota = PulsarGetREAL8ParamOrZero( pars, "COSIOTA" );
-    REAL8 hPlus = 0.5 * h0 * (1. + cosiota * cosiota);
-    REAL8 hCross = h0 * cosiota;
-    REAL8 psiTensor = -LAL_PI_2;
-    PulsarAddParam( pars, "HPLUS", &hPlus, PULSARTYPE_REAL8_t );
-    PulsarAddParam( pars, "HCROSS", &hCross, PULSARTYPE_REAL8_t );
-    PulsarAddParam( pars, "PSITENSOR", &psiTensor, PULSARTYPE_REAL8_t );
-  } else {
-    XLAL_ERROR_VOID( XLAL_EINVAL, "Unrecognized non-GR model. Currently supported: enhanced GR (EGR), G4v, or no argument for full search." );
-  }
 }
 
 
 /**
- * \brief Add a \c REAL8 parameter from a \c LALInfernceVariable into a \c PulsarParameters variable
- *
- * \param var [in] \c LALInferenceVariable structure
- * \param params [in] \c PulsarParameters structure
- * \param parname [in] name of the parameter
- */
-void add_pulsar_parameter( LALInferenceVariables *var, PulsarParameters *params, const CHAR *parname ){
-  REAL8 par = LALInferenceGetREAL8Variable( var, parname );
-  PulsarAddParam( params, parname, &par, PULSARTYPE_REAL8_t );
-}
-
-
-/**
- * \brief Add a \c REAL8 parameter from a \c PulsarParameters variable into a \c LALInfernceVariable
+ * \brief Rescale parameter back to its true value
  *
  * This function will rescale a parameter to its true value using the scale factor and minimum scale value.
  *
- * \param params [in] \c PulsarParameters structure
- * \param var [in] \c LALInferenceVariable structure
- * \param parname [in] name of the parameter
- * \param vary [in] the parameter \c LALInferenceParamVaryType
+ * \param model [in] model structure containing parameter information
+ * \param ifo [in] ifo model structure containing ifo-dependent parameter information
+ * \param parname [in] name of the parameter requiring rescaling
+ *
+ * \return Rescaled parameter value
  */
-void add_variable_parameter( PulsarParameters *params, LALInferenceVariables *var, const CHAR *parname, LALInferenceParamVaryType vary ){
-  REAL8 par = PulsarGetREAL8ParamOrZero( params, parname );
-  LALInferenceAddVariable( var, parname, &par, LALINFERENCE_REAL8_t, vary );
+REAL8 rescale_parameter( LALInferenceModel *model, LALInferenceIFOModel *ifo, const CHAR *parname ){
+  REAL8 par = 0., scale = 0., offset = 0.;
+  CHAR scaleName[VARNAME_MAX] = "";
+  CHAR offsetName[VARNAME_MAX] = "";
+
+  sprintf(scaleName, "%s_scale", parname);
+  sprintf(offsetName, "%s_scale_min", parname);
+
+  scale = *(REAL8*)LALInferenceGetVariable( ifo->params, scaleName );
+  offset = *(REAL8*)LALInferenceGetVariable( ifo->params, offsetName );
+
+  par = *(REAL8*)LALInferenceGetVariable( model->params, parname );
+
+  par = par*scale + offset;
+
+  return par;
 }
 
 
@@ -355,20 +211,18 @@ void add_variable_parameter( PulsarParameters *params, LALInferenceVariables *va
  * Firstly the time varying amplitude of the signal will be calculated based on the antenna pattern and amplitude
  * parameters. Then, if searching over phase parameters, the phase evolution of the signal will be calculated. The
  * difference between the new phase model, \f$\phi(t)_n\f$, and that used to heterodyne the data, \f$\phi(t)_h\f$,
- * will be calculated and the complex signal model, \f$M\f$, modified accordingly:
+ * (stored in \c ifo->timeData->data) will be calculated and the complex signal model, \f$M\f$, modified accordingly:
  * \f[
- * M'(t) = M(t)\exp{i((\phi(t)_n - \phi(t)_h))}.
+ * M'(t) = M(t)\exp{i(-(\phi(t)_n - \phi(t)_h))}.
  * \f]
- * This does not try to undo the signal modulation in the data, but instead replicates the modulation in the model,
- * hence the positive phase difference rather than a negative phase in the exponential function.
  *
- * \param params [in] A \c PulsarParameters structure containing the model parameters
+ * \param params [in] A \c BinaryPulsarParams structure containing the model parameters
  * \param ifo [in] The ifo model structure containing the detector paramters and buffers
  *
  * \sa get_amplitude_model
  * \sa get_phase_model
  */
-void pulsar_model( PulsarParameters *params, LALInferenceIFOModel *ifo ){
+void pulsar_model( BinaryPulsarParams params, LALInferenceIFOModel *ifo ){
   INT4 i = 0, length = 0;
   UINT4 j = 0;
   LALInferenceIFOModel *ifomodel1 = ifo, *ifomodel2 = ifo;
@@ -387,17 +241,22 @@ void pulsar_model( PulsarParameters *params, LALInferenceIFOModel *ifo ){
     while ( ifomodel2 ){
       for( j = 0; j < freqFactors->length; j++ ){
         REAL8Vector *dphi = NULL;
-        COMPLEX16 M = 0., expp = 0.;
 
         length = ifomodel2->compTimeSignal->data->length;
 
+        /* the timeData vector within the LALIFOModel structure contains the phase calculated using the initial (heterodyne)
+         * values of the phase parameters */
+
         /* reheterodyne with the phase */
         if ( (dphi = get_phase_model( params, ifomodel2, freqFactors->data[j] )) != NULL ){
+          #pragma omp parallel for
           for( i=0; i<length; i++ ){
-            /* phase factor by which to multiply the (almost) DC signal model. NOTE: this does not try to undo
-             * the signal modulation in the data, but instead replicates it in the model, hence the positive
-             * phase rather than a negative phase in the cexp function. */
-            expp = cexp( LAL_TWOPI * I * dphi->data[i] );
+            COMPLEX16 M;
+            REAL8 dphit;
+            COMPLEX16 expp;
+
+            dphit = fmod(dphi->data[i] - ifomodel2->timeData->data->data[i], 1.);
+            expp = cexp( LAL_TWOPI * I * dphit );
 
             M = ifomodel2->compTimeSignal->data->data[i];
 
@@ -418,55 +277,41 @@ void pulsar_model( PulsarParameters *params, LALInferenceIFOModel *ifo ){
 /**
  * \brief The phase evolution of a source
  *
- * This function will calculate the difference in the phase evolution of a source at a particular sky location as
- * observed at Earth compared with that used to heterodyne (or SpectralInterpolate) the data. If the phase
- * evolution is described by a Taylor expansion:
+ * This function will calculate the phase evolution of a source at a particular sky location as observed at Earth. The
+ * phase evolution is described by a Taylor expansion:
  * \f[
  * \phi(T) = \sum_{k=1}^n \frac{f^{(k-1)}}{k!} T^k,
  * \f]
- * where \f$f^(x)\f$ is the xth time derivative of the gravitational wave frequency, and \f$T\f$ is the pulsar proper
- * time, then the phase difference is given by
- * \f[
- * \Delta\phi(t) = \sum_{k=1}^n \left( \frac{\Delta f^{(k-1)}}{k!}(t+\delta t_1)^k + \frac{f^{(k-1)}_2}{k!} \sum_{i=0}^{i<k} \left(\begin{array}{c}k \\ i\end{array}\right) (\Delta t)^{k-i} (t+\delta t_1)^i \right),
- * \f]
- * where \f$t\f$ is the signal arrival time at the detector minus the given pulsar period epoch, \f$\delta t_1\f$ is the barycentring time delay
- * (from both solar system and binary orbital effects) calculated at the heterodyned values, \f$\Delta f^{(x)} = f_2^{(x)}-f1^{(x)}\f$
- * is the diffence in frequency (derivative) between the current value (\f$f_2^{(x)}\f$) and the heterodyne value (\f$\f_1^{(x)}\f$),
- * and \f$\Delta t = \delta t_2 - \delta t_1\f$ is the difference between the barycentring time delay calculated at the
- * current values (\f$\delta t_1\f$) and the heterodyned values.
- * Frequency time derivatives are currently allowed up to the tenth derivative. The pulsar proper time is
+ * where \f$f^x\f$ is the xth time derivative of the gravitational wave frequency, and \f$T\f$ is the pulsar proper
+ * time. Frequency time derivatives are currently allowed up to the fifth derivative. The pulsar proper time is
  * calculated by correcting the time of arrival at Earth, \f$t\f$ to the solar system barycentre and if necessary the
  * binary system barycenter, so \f$T = t + \delta{}t_{\rm SSB} + \delta{}t_{\rm BSB}\f$.
  *
- * In this function the time delay needed to correct to the solar system barycenter is only calculated if
- * required i.e. if an update is required due to a change in the sky position.
- * The same is true for the binary system time delay, which is only calculated if it
+ * In this function the time delay caused needed to correct to the solar system barycenter is only calculated if
+ * required i.e. if it's not been previously calculated and an update is required due to a change in the sky position.
+ * The same is true for the binary system time delay, which is only calculated if it has not previously been obtained or
  * needs updating due to a change in the binary system parameters.
  *
- * \param params [in] A set of pulsar parameters
+ * The solar system barycentre delay does not have to be explicitly computed for every time stamp passed to it, but
+ * instead will just use linear interpolation within a time range set by \c interptime.
+ *
+  * \param params [in] A set of pulsar parameters
  * \param ifo [in] The ifo model structure containing the detector parameters and buffers
  * \param freqFactor [in] the multiplicative factor on the pulsar frequency for a particular model
  *
- * \return A vector of rotational phase difference values
+ * \return A vector of rotational phase values
  *
  * \sa get_ssb_delay
  * \sa get_bsb_delay
  */
-REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *ifo, REAL8 freqFactor ){
-  UINT4 i = 0, j = 0, k = 0, length = 0, isbinary = 0;
+REAL8Vector *get_phase_model( BinaryPulsarParams params, LALInferenceIFOModel *ifo, REAL8 freqFactor ){
+  INT4 i = 0, length = 0;
 
-  REAL8 DT = 0., deltat = 0., deltatpow = 0., deltatpowinner = 1., taylorcoeff = 1., Ddelay = 0., Ddelaypow = 0.;
+  REAL8 T0 = 0., DT = 0., deltat = 0., deltat2 = 0.;
+  REAL8 interptime = 1800.; /* calulate every 30 mins (1800 secs) */
 
-  REAL8Vector *phis = NULL, *dts = NULL, *fixdts = NULL, *bdts = NULL, *fixbdts = NULL;
+  REAL8Vector *phis = NULL, *dts = NULL, *bdts = NULL;
   LIGOTimeGPSVector *datatimes = NULL;
-
-  REAL8 pepoch = PulsarGetREAL8ParamOrZero(params, "PEPOCH"); /* time of ephem info */
-  REAL8 cgw = PulsarGetREAL8ParamOrZero(params, "CGW");
-  REAL8 T0 = pepoch;
-
-  /* glitch parameters */
-  REAL8 *glep = NULL, *glph = NULL, *glf0 = NULL, *glf1 = NULL, *glf2 = NULL, *glf0d = NULL, *gltd = NULL;
-  UINT4 glnum = 0;
 
   /* check if we want to calculate the phase at a the downsampled rate */
   datatimes = ifo->times;
@@ -480,149 +325,47 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
   phis = XLALCreateREAL8Vector( length );
 
   /* get time delays */
-  fixdts = LALInferenceGetREAL8VectorVariable( ifo->params, "ssb_delays" );
-  if( LALInferenceCheckVariable( ifo->params, "varyskypos" ) ){
-    dts = get_ssb_delay( params, datatimes, ifo->ephem, ifo->tdat, ifo->ttype, ifo->detector );
+  if( (dts = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "ssb_delays" )) == NULL ||
+       LALInferenceCheckVariable( ifo->params, "varyskypos" ) ){
+    /* get time delays with an interpolation of interptime (30 mins) */
+    dts = get_ssb_delay( params, datatimes, ifo->ephem, ifo->tdat, ifo->ttype, ifo->detector, interptime );
   }
 
-  if( LALInferenceCheckVariable( ifo->params, "varybinary" ) ){
+  if( (bdts = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "bsb_delays" )) == NULL ||
+       LALInferenceCheckVariable( ifo->params, "varybinary" ) ){
     /* get binary system time delays */
-    if ( dts != NULL ){ bdts = get_bsb_delay( params, datatimes, dts, ifo->ephem ); }
-    else{ bdts = get_bsb_delay( params, datatimes, fixdts, ifo->ephem ); }
-  }
-  if( LALInferenceCheckVariable( ifo->params, "bsb_delays" ) ){
-    fixbdts = LALInferenceGetREAL8VectorVariable( ifo->params, "bsb_delays" );
+    bdts = get_bsb_delay( params, datatimes, dts, ifo->ephem );
   }
 
-  /* get vector of frequencies and frequency differences */
-  REAL8Vector *freqs = PulsarGetREAL8VectorParam( params, "F" );
-  REAL8Vector *deltafs = PulsarGetREAL8VectorParam( params, "DELTAF" );
-
-  if ( PulsarCheckParam( params, "BINARY" ) ){ isbinary = 1; } /* see if pulsar is in binary */
-  if ( PulsarCheckParam( params, "GLEP" ) ){ /* see if pulsar has glitch parameters */
-    REAL8Vector *glpars = NULL;
-    glpars = PulsarGetREAL8VectorParam( params, "GLEP" );
-    glnum = glpars->length;
-
-    /* get epochs */
-    glep = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    for ( i=0; i<glpars->length; i++ ){ glep[i] = glpars->data[i]; }
-
-    /* get phase offsets */
-    glph = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( params, "GLPH" ) ){
-      glpars = PulsarGetREAL8VectorParam( params, "GLPH" );
-      for ( i=0; i<glpars->length; i++ ){ glph[i] = glpars->data[i]; }
-    }
-
-    /* get frequencies offsets */
-    glf0 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( params, "GLF0" ) ){
-      glpars = PulsarGetREAL8VectorParam( params, "GLF0" );
-      for ( i=0; i<glpars->length; i++ ){ glf0[i] = glpars->data[i]; }
-    }
-
-    /* get frequency derivative offsets */
-    glf1 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( params, "GLF1" ) ){
-      glpars = PulsarGetREAL8VectorParam( params, "GLF1" );
-      for ( i=0; i<glpars->length; i++ ){ glf1[i] = glpars->data[i]; }
-    }
-
-    /* get second frequency derivative offsets */
-    glf2 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( params, "GLF2" ) ){
-      glpars = PulsarGetREAL8VectorParam( params, "GLF2" );
-      for ( i=0; i<glpars->length; i++ ){ glf2[i] = glpars->data[i]; }
-    }
-
-    /* get decaying frequency component offset derivative */
-    glf0d = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( params, "GLF0D" ) ){
-      glpars = PulsarGetREAL8VectorParam( params, "GLF0D" );
-      for ( i=0; i<glpars->length; i++ ){ glf0d[i] = glpars->data[i]; }
-    }
-
-    /* get decaying frequency component decay time constant */
-    gltd = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( params, "GLTD" ) ){
-      glpars = PulsarGetREAL8VectorParam( params, "GLTD" );
-      for ( i=0; i<glpars->length; i++ ){ gltd[i] = glpars->data[i]; }
-    }
-  }
-
+  #pragma omp parallel for private(T0, DT, deltat, deltat2)
   for( i=0; i<length; i++){
-    REAL8 deltaphi = 0., innerphi = 0.; /* change in phase */
-    Ddelay = 0.;                        /* change in SSB/BSB delay */
+    REAL8 realT = XLALGPSGetREAL8( &datatimes->data[i] ); /*time of data*/
 
-    REAL8 realT = XLALGPSGetREAL8( &datatimes->data[i] ); /* time of data */
-    DT = realT - T0; /* time diff between data and start of data */
+    T0 = params.pepoch; /*time of ephem info*/
 
-    /* get difference in solar system barycentring time delays */
-    if ( dts != NULL ){ Ddelay += ( dts->data[i] - fixdts->data[i] ); }
-    deltat = DT + fixdts->data[i];
+    DT = realT - T0; /*time diff between data and ephem info*/
 
-    if ( isbinary ){
-      /* get difference in binary system barycentring time delays */
-      if ( bdts != NULL && fixbdts != NULL ) { Ddelay += ( bdts->data[i] - fixbdts->data[i] ); }
-      deltat += fixbdts->data[i];
-    }
+    if ( params.model != NULL ) { deltat = DT + dts->data[i] + bdts->data[i]; }
+    else { deltat = DT + dts->data[i]; }
 
-    /* correct for speed of GW compared to speed of light */
-    if ( cgw > 0.0 && cgw < 1. ) {
-      deltat /= cgw;
-      Ddelay /= cgw;
-    }
+    deltat /= params.cgw; /* correct for speed of GW compared to speed of light */
 
-    /* get the change in phase (compared to the heterodyned phase) */
-    deltatpow = deltat;
-    for ( j=0; j<freqs->length; j++ ){
-      taylorcoeff = gsl_sf_fact(j+1);
-      deltaphi += deltafs->data[j]*deltatpow/taylorcoeff;
-      if ( Ddelay != 0. ){
-        innerphi = 0.;
-        deltatpowinner = 1.; /* this starts as one as it is first raised to the power of zero */
-        Ddelaypow = pow(Ddelay, j+1);
-        for ( k=0; k<j+1; k++ ){
-          innerphi += gsl_sf_choose(j+1, k) * Ddelaypow * deltatpowinner;
-          deltatpowinner *= deltat; /* raise power */
-          Ddelaypow /= Ddelay;      /* reduce power */
-        }
-        deltaphi += innerphi*freqs->data[j]/taylorcoeff;
-      }
-      deltatpow *= deltat;
-    }
-
-    /* check for glitches */
-    if ( glnum > 0 ){
-      /* get glitch phase - based on equations in formResiduals.C of TEMPO2 from Eqn 1 of Yu et al (2013) http://ukads.nottingham.ac.uk/abs/2013MNRAS.429..688Y */
-      for ( j=0; j<glnum; j++ ){
-        if ( deltat >= (glep[j]-T0) ){
-          REAL8 dtg = 0, expd = 1.;
-          dtg = deltat - (glep[j]-T0); /* time since glitch */
-          if ( gltd[j] != 0. ) { expd = exp(-dtg/gltd[j]); } /* decaying part of glitch */
-          deltaphi += glph[j] + glf0[j]*dtg + 0.5*glf1[j]*dtg*dtg + (1./6.)*glf2[j]*dtg*dtg*dtg + glf0d[j]*gltd[j]*(1.-expd);
-        }
-      }
-    }
-
-    deltaphi *= freqFactor; /* multiply by frequency factor */
-    phis->data[i] = deltaphi - floor(deltaphi); /* only need to keep the fractional part of the phase */
+    /* work out phase */
+    deltat2 = deltat*deltat;
+    phis->data[i] = freqFactor*deltat*(params.f0 +
+      0.5*params.f1*deltat +
+      (1./6.)*params.f2*deltat2 +
+      (1./24.)*params.f3*deltat*deltat2 +
+      (1./120.)*params.f4*deltat2*deltat2 +
+      (1./720.)*params.f5*deltat2*deltat2*deltat);
   }
 
   /* free memory */
-  if ( dts != NULL ){ XLALDestroyREAL8Vector( dts ); }
-  if ( bdts != NULL ){ XLALDestroyREAL8Vector( bdts ); }
+  if ( !LALInferenceCheckVariable( ifo->params, "ssb_delays") || LALInferenceCheckVariable( ifo->params, "varyskypos" ) )
+    XLALDestroyREAL8Vector( dts );
 
-  if ( glnum > 0 ){
-    XLALFree( glep );
-    XLALFree( glph );
-    XLALFree( glf0 );
-    XLALFree( glf1 );
-    XLALFree( glf2 );
-    XLALFree( glf0d );
-    XLALFree( gltd );
-  }
+  if ( !LALInferenceCheckVariable( ifo->params, "bsb_delays") || LALInferenceCheckVariable( ifo->params, "varybinary" ) )
+    XLALDestroyREAL8Vector( bdts );
 
   return phis;
 }
@@ -643,6 +386,7 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
  * \param datatimes [in] A vector of GPS times at Earth
  * \param ephem [in] Information on the solar system ephemeris
  * \param detector [in] Information on the detector position on the Earth
+ * \param interptime [in] The time (in seconds) between explicit recalculations of the time delay
  * \param tdat *UNDOCUMENTED*
  * \param ttype *UNDOCUMENTED*
  * \return A vector of time delays in seconds
@@ -650,11 +394,14 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
  * \sa XLALBarycenter
  * \sa XLALBarycenterEarth
  */
-REAL8Vector *get_ssb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes, EphemerisData *ephem,
-                            TimeCorrectionData *tdat, TimeCorrectionType ttype, LALDetector *detector ){
+REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatimes, EphemerisData *ephem,
+                            TimeCorrectionData *tdat, TimeCorrectionType ttype, LALDetector *detector,
+                            REAL8 interptime ){
   INT4 i = 0, length = 0;
+  REAL8 T0 = 0.;
 
-  BarycenterInput bary;
+  BarycenterInput *bary = NULL;
+  UINT4 baryfail = 0;
 
   REAL8Vector *dts = NULL;
 
@@ -662,65 +409,77 @@ REAL8Vector *get_ssb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes
   if( ephem == NULL ) { return NULL; }
 
   /* copy barycenter and ephemeris data */
-  bary.site.location[0] = detector->location[0]/LAL_C_SI;
-  bary.site.location[1] = detector->location[1]/LAL_C_SI;
-  bary.site.location[2] = detector->location[2]/LAL_C_SI;
+  bary = (BarycenterInput*)XLALCalloc( 1, sizeof(BarycenterInput) );
+  memcpy( &bary->site, detector, sizeof(LALDetector) );
 
-  REAL8 ra = 0.;
-  if ( PulsarCheckParam( pars, "RA" ) ) { ra = PulsarGetREAL8Param( pars, "RA" ); }
-  else if ( PulsarCheckParam( pars, "RAJ" ) ) { ra = PulsarGetREAL8Param( pars, "RAJ" ); }
-  else {
-    XLAL_ERROR_NULL( XLAL_EINVAL, "No source right ascension specified!" );
-  }
-  REAL8 dec = 0.;
-  if ( PulsarCheckParam( pars, "DEC" ) ) { dec = PulsarGetREAL8Param( pars, "DEC" ); }
-  else if ( PulsarCheckParam( pars, "DECJ" ) ) { dec = PulsarGetREAL8Param( pars, "DECJ" ); }
-  else {
-    XLAL_ERROR_NULL( XLAL_EINVAL, "No source declination specified!" );
-  }
-  REAL8 pmra = PulsarGetREAL8ParamOrZero( pars, "PMRA" );
-  REAL8 pmdec = PulsarGetREAL8ParamOrZero( pars, "PMDEC" );
-  REAL8 pepoch = PulsarGetREAL8ParamOrZero( pars, "PEPOCH" );
-  REAL8 posepoch = PulsarGetREAL8ParamOrZero( pars, "POSEPOCH" );
-  REAL8 px = PulsarGetREAL8ParamOrZero( pars, "PX" );     /* parallax */
+  bary->site.location[0] /= LAL_C_SI;
+  bary->site.location[1] /= LAL_C_SI;
+  bary->site.location[2] /= LAL_C_SI;
+
+  bary->alpha = pars.ra;
+  bary->delta = pars.dec;
 
    /* set the position and frequency epochs if not already set */
-  if( pepoch == 0. && posepoch != 0.) { pepoch = posepoch; }
-  else if( posepoch == 0. && pepoch != 0. ) { posepoch = pepoch; }
+  if( pars.pepoch == 0. && pars.posepoch != 0.) { pars.pepoch = pars.posepoch; }
+  else if( pars.posepoch == 0. && pars.pepoch != 0. ) { pars.posepoch = pars.pepoch; }
 
   length = datatimes->length;
 
   /* allocate memory for times delays */
   dts = XLALCreateREAL8Vector( length );
 
-  /* set 1/distance if parallax value is given (1/sec) */
-  if( px != 0. ) { bary.dInv = px*(LAL_C_SI/LAL_AU_SI); }
-  else { bary.dInv = 0.; }
+  /* set 1/distance if parallax or distance value is given (1/sec) */
+  if( pars.px != 0. ) { bary->dInv = pars.px*1e-3*LAL_C_SI/LAL_PC_SI; }
+  else if( pars.dist != 0. ) { bary->dInv = LAL_C_SI/(pars.dist*1e3*LAL_PC_SI); }
+  else { bary->dInv = 0.; }
 
-  /* make sure ra and dec are wrapped within 0--2pi and -pi.2--pi/2 respectively */
-  ra = fmod(ra, LAL_TWOPI);
-  REAL8 absdec = fabs(dec);
-  if ( absdec > LAL_PI_2 ){
-    UINT4 nwrap = floor((absdec+LAL_PI_2)/LAL_PI);
-    dec = (dec > 0 ? 1. : -1.)*(nwrap%2 == 1 ? -1. : 1.)*(fmod(absdec + LAL_PI_2, LAL_PI) - LAL_PI_2);
-    ra = fmod(ra + (REAL8)nwrap*LAL_PI, LAL_TWOPI); /* move RA by pi */
-  }
+  T0 = pars.pepoch;
 
-  EarthState earth;
-  EmissionTime emit;
+  #pragma omp parallel for shared(baryfail)
   for( i=0; i<length; i++){
-    REAL8 realT = XLALGPSGetREAL8( &datatimes->data[i] );
+    if ( !baryfail ){ /* need this to quickly exit loop while using openmp (as can't use break statements) */
+      EarthState earth, earth2;
+      EmissionTime emit, emit2;
 
-    bary.tgps = datatimes->data[i];
-    bary.delta = dec + ( realT - posepoch ) * pmdec;
-    bary.alpha = ra + ( realT - posepoch ) * pmra / cos( bary.delta );
+      REAL8 DT = 0., DTplus = 0., realT = XLALGPSGetREAL8( &datatimes->data[i] );
 
-    /* call barycentring routines */
-    XLAL_CHECK_NULL( XLALBarycenterEarthNew( &earth, &bary.tgps, ephem, tdat, ttype ) == XLAL_SUCCESS, XLAL_EFUNC, "Barycentring routine failed" );
-    XLAL_CHECK_NULL( XLALBarycenter( &emit, &bary, &earth ) == XLAL_SUCCESS, XLAL_EFUNC, "Barycentring routine failed" );
+      DT = realT - T0;
 
-    dts->data[i] = emit.deltaT;
+      /* only do call to the barycentring routines once every interptime (unless
+         interptime == 0), otherwise just linearly interpolate between them */
+      if( i == 0 || DT > DTplus || interptime == 0 ){
+        bary->tgps = datatimes->data[i];
+
+        bary->delta = pars.dec + ( realT - pars.posepoch ) * pars.pmdec;
+        bary->alpha = pars.ra + ( realT - pars.posepoch ) * pars.pmra / cos( bary->delta );
+
+        /* call barycentring routines */
+        if ( XLALBarycenterEarthNew( &earth, &bary->tgps, ephem, tdat, ttype ) != XLAL_SUCCESS ){ baryfail = 1; continue; }
+        if ( XLALBarycenter( &emit, bary, &earth ) != XLAL_SUCCESS ){ baryfail = 1; continue; }
+
+        /* add interptime to the time */
+        if ( interptime > 0 ){
+          DTplus = DT + interptime;
+          XLALGPSAdd( &bary->tgps, interptime );
+
+          /* No point in updating the positions as difference will be tiny */
+          if( XLALBarycenterEarthNew( &earth2, &bary->tgps, ephem,tdat, ttype ) != XLAL_SUCCESS ){ baryfail = 1; continue; }
+          if( XLALBarycenter( &emit2, bary, &earth2 ) != XLAL_SUCCESS){ baryfail = 1; continue; }
+        }
+      }
+
+      /* linearly interpolate to get emitdt */
+      if( interptime > 0. ){
+        dts->data[i] = emit.deltaT + (DT - (DTplus - interptime)) * (emit2.deltaT -  emit.deltaT)/interptime;
+      }
+      else { dts->data[i] = emit.deltaT; }
+    }
   }
+
+  /* check that for loop didn't fail early */
+  XLAL_CHECK_NULL( !baryfail, XLAL_EFUNC );
+
+  XLALFree( bary );
 
   return dts;
 }
@@ -742,29 +501,288 @@ REAL8Vector *get_ssb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes
  *
  * \sa XLALBinaryPulsarDeltaT
  */
-REAL8Vector *get_bsb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes, REAL8Vector *dts, EphemerisData *edat ){
+REAL8Vector *get_bsb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatimes, REAL8Vector *dts,
+                            EphemerisData *edat ){
   REAL8Vector *bdts = NULL;
-  BinaryPulsarInput binput;
-  BinaryPulsarOutput boutput;
-  EarthState earth;
 
   INT4 i = 0, length = datatimes->length;
 
-  /* check whether there's a binary model */
-  if ( PulsarCheckParam( pars, "BINARY" ) ){
-    bdts = XLALCreateREAL8Vector( length );
+  bdts = XLALCreateREAL8Vector( length );
 
-    for ( i = 0; i < length; i++ ){
+  #pragma omp parallel for
+  for ( i = 0; i < length; i++ ){
+    /* check whether there's a binary model */
+    if ( pars.model ){
+      BinaryPulsarInput binput;
+      BinaryPulsarOutput boutput;
+      EarthState earth;
+
       binput.tb = XLALGPSGetREAL8( &datatimes->data[i] ) + dts->data[i];
 
       get_earth_pos_vel( &earth, edat, &datatimes->data[i] );
 
       binput.earth = earth; /* current Earth state */
-      XLALBinaryPulsarDeltaTNew( &boutput, &binput, pars );
+      XLALBinaryPulsarDeltaT( &boutput, &binput, &pars );
       bdts->data[i] = boutput.deltaT;
     }
+    else { bdts->data[i] = 0.; }
   }
+
   return bdts;
+}
+
+
+/**
+ * \brief The amplitude model of a complex heterodyned triaxial neutron star
+ *
+ * This function calculates the complex heterodyned time series model for a triaxial neutron star (see
+ * [\cite DupuisWoan2005]). It is defined as:
+ * \f{eqnarray}{
+ * y(t) & = & \frac{h_0}{2} \left( \frac{1}{2}F_+(t,\psi)
+ * (1+\cos^2\iota)\exp{i\phi_0} - iF_{\times}(t,\psi)\cos{\iota}\exp{i\phi_0}
+ * \right),
+ * \f}
+ * where \f$F_+\f$ and \f$F_{\times}\f$ are the antenna response functions for the plus and cross polarisations.
+ *
+ * The antenna pattern functions a(t) and b(t) are contained in a 1D lookup table, so within this function
+ * the correct value for the given time is interpolated from this lookup table using linear interpolation.
+ *
+ * \param pars [in] A set of pulsar parameters
+ * \param ifo [in] The ifo parameters giving information on the data and detector
+ *
+ * DEPRECATED: use \c get_amplitude_model instead.
+ */
+void get_triaxial_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo ){
+  INT4 i = 0, length;
+
+  REAL8 tsteps, tsv;
+  INT4 timebinMin, timebinMax;
+  REAL8 plus, cross, plusT, crossT;
+  REAL8 plus00, plus01, cross00, cross01;
+  REAL8 timeScaled;
+  REAL8 timeMin, timeMax;
+  REAL8 T;
+  REAL8 Xplus, Xcross;
+  COMPLEX16 expiphi, Xpexpphi, Xcexpphi;
+  REAL8 twopsi = 0.;
+  REAL4 c2psi = 0., s2psi = 0.;
+
+  REAL8Vector *LU_Fplus = NULL, *LU_Fcross = NULL;
+  REAL8Vector *sidDayFrac = NULL;
+
+  length = ifo->times->length;
+
+  /* set lookup table parameters */
+  tsteps = *(INT4*)LALInferenceGetVariable( ifo->params, "timeSteps" );
+
+  LU_Fplus = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "a_response" );
+  LU_Fcross = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "b_response" );
+
+  /* get the sidereal time since the initial data point % sidereal day */
+  sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( ifo->params, "siderealDay" );
+
+  expiphi = cexp( I * pars.phi0 );
+
+  /************************* CREATE MODEL *************************************/
+  /* This model is a complex heterodyned time series for a triaxial neutron star emitting at twice its rotation
+   * frequency (as defined in Dupuis and Woan, PRD, 2005):
+   *    h(t) = (h0/2) * ((1/2)*F+(t)*(1+cos(iota)^2)*exp(i*phi0) - i*Fx(t)*cos(iota)*exp(i*phi0))
+   ****************************************************************************/
+  Xplus = 0.25*(1.+pars.cosiota*pars.cosiota)*pars.h0;
+  Xcross = 0.5*pars.cosiota*pars.h0;
+  Xpexpphi = Xplus*expiphi;
+  Xcexpphi = Xcross*expiphi;
+  twopsi = 2.*pars.psi;
+  XLAL_CHECK_VOID( XLALSinCosLUT( &s2psi, &c2psi, twopsi ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  tsv = LAL_DAYSID_SI / tsteps;
+
+  for( i=0; i<length; i++ ){
+    /* set the time bin for the lookup table */
+    /* sidereal day in secs*/
+    T = sidDayFrac->data[i];
+    timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
+    timeMin = timebinMin*tsv;
+    timebinMax = (INT4)fmod( timebinMin + 1, tsteps );
+    timeMax = timeMin + tsv;
+
+    /* get values of matrix for linear interpolation */
+    plus00 = LU_Fplus->data[timebinMin];
+    plus01 = LU_Fplus->data[timebinMax];
+
+    cross00 = LU_Fcross->data[timebinMin];
+    cross01 = LU_Fcross->data[timebinMax];
+
+    /* rescale time for linear interpolation on a unit square */
+    timeScaled = (T - timeMin)/(timeMax - timeMin);
+
+    plus = plus00 + (plus01-plus00)*timeScaled;
+    cross = cross00 + (cross01-cross00)*timeScaled;
+
+    plusT = plus*c2psi + cross*s2psi;
+    crossT = cross*c2psi - plus*s2psi;
+
+    /* create the complex signal amplitude model */
+    ifo->compTimeSignal->data->data[i] = plusT*Xpexpphi - I*crossT*Xcexpphi;
+  }
+}
+
+
+/**
+ * \brief The amplitude model of a complex heterodyned signal from a NS rotating about the pinning axis of its pinned
+ * superfluid component.
+ *
+ * This function calculates the complex heterodyned time series model for a triaxial neutron star rotating about the
+ * pinning axis of its pinned superfluid component.
+ *
+ * Unlike the standard triaxial model, this model has emission at f and 2f, therefore this model function processes two
+ * sets of data per detector. In this model the \f$\phi_0\f$ parameter is the initial phase for the \f$l=m=2\f$ harmonic
+ * (i.e. equivalent to the phase at 2f for the triaxial model).
+ *
+ * As for the standard triaxial model, the antenna pattern functions are contained in a 1D lookup table, so within this
+ * function the correct value for the given time is interpolated from this lookup table using linear
+ * interpolation.
+ *
+ * \param pars [in] A set of pulsar parameters
+ * \param ifo  [in] The ifo model containing detector-specific parameters
+ *
+ * DEPRECATED: use \c get_amplitude_model instead.
+ */
+void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo ){
+  INT4 i = 0, length;
+
+  REAL8 tsteps, tsv;
+  INT4 timebinMin, timebinMax;
+  REAL8 plus00, plus01, cross00, cross01;
+  REAL8 timeScaled;
+  REAL8 timeMin, timeMax;
+  REAL8 plus, cross;
+  REAL8 T;
+  REAL8 Xplusf, Xcrossf, Xplus2f, Xcross2f;
+  REAL8 A21, A22, B21, B22;
+  COMPLEX16 ePhi, e2Phi;
+  REAL8 iota = acos(pars.cosiota), theta = acos(pars.costheta);
+  REAL8 siniota = sin(iota);
+  REAL8 sintheta = sin(theta), sin2theta = sin( 2.*theta );
+  REAL4 coslambda, sinlambda;
+  REAL8 sin2lambda = sin( 2.*pars.lambda );
+  REAL8 f2_r;
+
+  REAL8Vector *LU_Fplus = NULL, *LU_Fcross = NULL;
+  REAL8Vector *sidDayFrac1 = NULL;
+  REAL8Vector *sidDayFrac2 = NULL;
+  REAL8 twopsi = 0., plusT = 0., crossT = 0.;
+  REAL4 c2psi = 0., s2psi = 0.;
+
+  /* set lookup table parameters */
+  tsteps = *(INT4*)LALInferenceGetVariable( ifo->params, "timeSteps" );
+
+  twopsi = 2.*pars.psi;
+  XLAL_CHECK_VOID( XLALSinCosLUT( &s2psi, &c2psi, twopsi ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  LU_Fplus = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "a_response" );
+  LU_Fcross = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "b_response");
+  /* get the sidereal time since the initial data point % sidereal day */
+  sidDayFrac1 = *(REAL8Vector**)LALInferenceGetVariable( ifo->params, "siderealDay" );
+
+  /* phi0 here the GW phase for the l=m=2 mode */
+  ePhi = cexp( 0.5 * pars.phi0 * I );
+  e2Phi = cexp( pars.phi0 * I );
+
+  XLAL_CHECK_VOID( XLALSinCosLUT( &sinlambda, &coslambda, pars.lambda ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  /* f^2 / r */
+  f2_r = pars.f0 * pars.f0 / pars.dist;
+
+  /************************* CREATE MODEL *************************************
+   * This model is a complex heterodyned time series for a pinned superfluid neutron star emitting at its roation
+   * frequency and twice its rotation frequency (as originally defined in Jones 2009, but using Eqns 35-38 of Jones
+   * 2012 LIGO DCC T1200265-v3).
+   ****************************************************************************/
+  Xplusf = -( f2_r / 2. ) * siniota * pars.cosiota;
+  Xcrossf = ( f2_r / 2. ) * siniota;
+  Xplus2f = -f2_r * ( 1. + pars.cosiota * pars.cosiota );
+  Xcross2f = 2. * f2_r * pars.cosiota;
+
+  A21 = pars.I21 * sin2lambda * sintheta;
+  B21 = ( pars.I21 * coslambda * coslambda - pars.I31 ) * sin2theta;
+
+  A22 = pars.I21 * ( sinlambda * sinlambda - coslambda * coslambda * pars.costheta * pars.costheta ) -
+    pars.I31 * sintheta * sintheta;
+  B22 = pars.I21 * sin2lambda * pars.costheta;
+
+  tsv = LAL_DAYSID_SI / tsteps;
+
+  /*--------------------------------------------------------------------------*/
+  /* set model for 1f component */
+  length = ifo->times->length;
+
+  for( i=0; i<length; i++ ){
+    /* set the time bin for the lookup table */
+    /* sidereal day in secs*/
+    T = sidDayFrac1->data[i];
+    timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
+    timeMin = timebinMin*tsv;
+    timebinMax = (INT4)fmod( timebinMin + 1, tsteps );
+    timeMax = timeMin + tsv;
+
+    /* get values of matrix for linear interpolation */
+    plus00 = LU_Fplus->data[timebinMin];
+    plus01 = LU_Fplus->data[timebinMax];
+
+    cross00 = LU_Fcross->data[timebinMin];
+    cross01 = LU_Fcross->data[timebinMax];
+
+    /* rescale time for bilinear interpolation on a unit square */
+    timeScaled = (T - timeMin)/(timeMax - timeMin);
+
+    plus = plus00 + (plus01-plus00)*timeScaled;
+    cross = cross00 + (cross01-cross00)*timeScaled;
+
+    plusT = plus*c2psi + cross*s2psi;
+    crossT = cross*c2psi - plus*s2psi;
+
+    /* create the complex signal amplitude model at f */
+    ifo->compTimeSignal->data->data[i] = ( plusT * Xplusf * ePhi * ( A21 - I * B21 ) ) +
+                                         ( crossT * Xcrossf * ePhi * ( B21 + I * A21 ) );
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /* set model for 2f component */
+  length = ifo->next->times->length;
+
+  sidDayFrac2 = *(REAL8Vector**)LALInferenceGetVariable( ifo->next->params, "siderealDay" );
+
+  for( i=0; i<length; i++ ){
+    /* set the time bin for the lookup table */
+    /* sidereal day in secs*/
+    T = sidDayFrac2->data[i];
+    timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
+    timeMin = timebinMin*tsv;
+    timebinMax = (INT4)fmod( timebinMin + 1, tsteps );
+    timeMax = timeMin + tsv;
+
+    /* get values of matrix for linear interpolation */
+    plus00 = LU_Fplus->data[timebinMin];
+    plus01 = LU_Fplus->data[timebinMax];
+
+    cross00 = LU_Fcross->data[timebinMin];
+    cross01 = LU_Fcross->data[timebinMax];
+
+    /* rescale time for bilinear interpolation on a unit square */
+    timeScaled = (T - timeMin)/(timeMax - timeMin);
+
+    plus = plus00 + (plus01-plus00)*timeScaled;
+    cross = cross00 + (cross01-cross00)*timeScaled;
+
+    plusT = plus*c2psi + cross*s2psi;
+    crossT = cross*c2psi - plus*s2psi;
+
+    /* create the complex signal amplitude model at 2f */
+    ifo->next->compTimeSignal->data->data[i] = ( plusT * Xplus2f * e2Phi * ( A22 - I * B22 ) ) +
+                                               ( crossT * Xcross2f * e2Phi * ( B22 + I * A22 ) );
+  }
+  /*--------------------------------------------------------------------------*/
 }
 
 
@@ -785,12 +803,11 @@ REAL8Vector *get_bsb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes
  * \param ifo  [in] The ifo model containing detector-specific parameters
  *
  */
-void get_amplitude_model( PulsarParameters *pars, LALInferenceIFOModel *ifo ){
+void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo ){
   UINT4 i = 0, j = 0, length;
 
   REAL8 T, twopsi;
-  REAL8 cosiota = PulsarGetREAL8ParamOrZero( pars, "COSIOTA" );
-  REAL8 siniota = sin(acos(cosiota));
+  REAL8 siniota = sin(acos(pars.cosiota));
   REAL8 s2psi = 0., c2psi = 0., spsi = 0., cpsi = 0.;
   UINT4 nonGR = 0;
 
@@ -802,7 +819,7 @@ void get_amplitude_model( PulsarParameters *pars, LALInferenceIFOModel *ifo ){
   if( LALInferenceCheckVariable( ifo->params, "varyphase" ) ){ varyphase = 1; }
   if( LALInferenceCheckVariable( ifo->params, "roq" ) ){ roq = 1; }
 
-  twopsi = 2.*PulsarGetREAL8ParamOrZero( pars, "PSI" );
+  twopsi = 2.*pars.psi;
   s2psi = sin(twopsi);
   c2psi = cos(twopsi);
 
@@ -812,12 +829,13 @@ void get_amplitude_model( PulsarParameters *pars, LALInferenceIFOModel *ifo ){
   }
 
   if ( nonGR == 1 ){
-    spsi = sin(PulsarGetREAL8ParamOrZero( pars, "PSI" ));
-    cpsi = cos(PulsarGetREAL8ParamOrZero( pars, "PSI" ));
+    spsi = sin(pars.psi);
+    cpsi = cos(pars.psi);
   }
 
   if ( nonGR == 1 && freqFactors->length > 1 ){
-    XLAL_ERROR_VOID( XLAL_EFAILED, "Error... currently can only use non-GR parameters for l=m=2 harmonic." );
+    XLALPrintError( "%s: Error... currently can only use non-GR parameters for l=m=2 harmonic.\n", __func__ );
+    XLAL_ERROR_VOID( XLAL_EFAILED );
   }
 
   /* loop over all detectors */
@@ -828,43 +846,43 @@ void get_amplitude_model( PulsarParameters *pars, LALInferenceIFOModel *ifo ){
       COMPLEX16 Cplus = 0., Ccross = 0., Cx = 0., Cy = 0., Cl = 0., Cb = 0.;
 
       if ( !ifo ){
-        XLAL_ERROR_VOID( XLAL_EINVAL, "Error... ifo model not defined." );
+        XLALPrintError( "%s: Error... ifo model not defined.\n", __func__ );
+        XLAL_ERROR_VOID( XLAL_EINVAL );
       }
 
       /* get the amplitude and phase factors */
       if( freqFactors->data[j] == 1. ){
         /* the l=2, m=1 harmonic at the rotation frequency */
-        expPhi = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PHI21" ));
-        Cplus = -0.25 * PulsarGetREAL8ParamOrZero( pars, "C21" ) * siniota * cosiota * expPhi;
-        Ccross = 0.25 * I * PulsarGetREAL8ParamOrZero( pars, "C21" ) * siniota * expPhi;
+        expPhi = cexp( I * pars.phi21 );
+        Cplus = -0.25 * pars.C21 * siniota * pars.cosiota * expPhi;
+        Ccross = 0.25 * I * pars.C21 * siniota * expPhi;
       }
       else if( freqFactors->data[j] == 2. ){
         /* the l=2, m=2 harmonic at twice the rotation frequency */
         if ( nonGR ){ /* amplitude if nonGR is specifiec */
-          COMPLEX16 expPhiTensor, expPsiTensor, expPhiScalar, expPsiScalar, expPhiVector, expPsiVector;
+          COMPLEX16 expPhiTensor, expPhiScalar, expPhiVector, expPsiVector;
 
-          expPhiTensor = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PHI0TENSOR" ) );
-          expPsiTensor = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PSITENSOR" ) );
-          expPhiScalar = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PHI0SCALAR" ) );
-          expPsiScalar = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PSISCALAR" ) );
-          expPhiVector = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PHI0VECTOR" ) );
-          expPsiVector = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PSIVECTOR" ) );
+          expPhiTensor = cexp( I * pars.phi0Tensor );
+          expPhiScalar = cexp( I * pars.phi0Scalar );
+          expPhiVector = cexp( I * pars.phi0Vector );
+          expPsiVector = cexp( I * pars.psiVector );
 
-          Cplus = 0.5 * expPhiTensor * PulsarGetREAL8ParamOrZero( pars, "HPLUS" );
-          Ccross = 0.5 * expPhiTensor * PulsarGetREAL8ParamOrZero( pars, "HCROSS" ) * expPsiTensor;
-          Cx = 0.5 * expPhiVector * PulsarGetREAL8ParamOrZero( pars, "HVECTORX" );
-          Cy = 0.5 * expPhiVector * PulsarGetREAL8ParamOrZero( pars, "HVECTORY" ) * expPsiVector;
-          Cb = 0.5 * expPhiScalar * PulsarGetREAL8ParamOrZero( pars, "HSCALARB" );
-          Cl = 0.5 * expPhiScalar * PulsarGetREAL8ParamOrZero( pars, "HSCALARL" ) * expPsiScalar;
+          Cplus = 0.5 * pars.hPlus * expPhiTensor;
+          Ccross = -0.5 * I * pars.hCross * expPhiTensor;
+          Cx = -0.5 * I * expPhiVector * pars.hVectorX;
+          Cy = -0.5 * I * expPhiVector * pars.hVectorY * expPsiVector;
+          Cb = -0.5 * I * expPhiScalar * pars.hScalarB;
+          Cl = -0.5 * I * expPhiScalar * pars.hScalarL;
         }
         else{ /* just GR tensor mode amplitudes */
-          expPhi = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PHI22" ) );
-          Cplus = -0.5 * PulsarGetREAL8ParamOrZero( pars, "C22" ) * ( 1. + cosiota * cosiota ) * expPhi;
-          Ccross = I * PulsarGetREAL8ParamOrZero( pars, "C22" ) * cosiota * expPhi;
+          expPhi = cexp( I * pars.phi22 );
+          Cplus = -0.5 * pars.C22 * ( 1. + pars.cosiota * pars.cosiota ) * expPhi;
+          Ccross = I * pars.C22 * pars.cosiota * expPhi;
         }
       }
       else{
-        XLAL_ERROR_VOID( XLAL_EINVAL, "Error... currently unknown frequency factor (%.2lf) for models.", freqFactors->data[j] );
+        XLALPrintError("%s: Error... currently unknown frequency factor (%.2lf) for models.\n", __func__, freqFactors->data[j] );
+        XLAL_ERROR_VOID( XLAL_EINVAL );
       }
 
       if ( varyphase || roq ){ /* have to compute the full time domain signal */
@@ -892,6 +910,7 @@ void get_amplitude_model( PulsarParameters *pars, LALInferenceIFOModel *ifo ){
 
         length = ifo->times->length;
 
+        #pragma omp parallel for
         for( i=0; i<length; i++ ){
           REAL8 plus00, plus01, cross00, cross01, plus = 0., cross = 0.;
           REAL8 x00, x01, y00, y01, b00, b01, l00, l01;
@@ -951,11 +970,15 @@ void get_amplitude_model( PulsarParameters *pars, LALInferenceIFOModel *ifo ){
       }
       else{ /* just have to calculate the values to multiply the pre-summed data */
         /* for tensor-only models (e.g. the default of GR) calculate the two components of
-         * the single model value - things multiplied by a(t) and things multiplied by b(t)
-         * (both these will have real and imaginary components). NOTE: the values input into
-         * ifo->compTimeSignal->data->data are not supposed to be identical to the above
-         * relationships between the amplitudes and polarisation angles, as these are the
-         * multiplicative coefficients of the a(t) and b(t) summations.
+         * the single model value - things multplied by a(t) and things multiplied by b(t)
+         * (both these will have real and imaginary components:
+         * h(t) = a(t)*(Cplus*cos(2psi) - Ccross*sin(2psi)) +
+         *        b(t)*(Cplus*sin(2psi) + Ccross*cos(2psi))
+         *
+         * For scalar and vector modes also calculate the four addiational components:
+         * h(t)^V = aV(t)*(Cx*cos(psi) - Cy*sin(psi)) +
+         *          bV(t)*(Cy*sin(psi) + Cy*cos(psi)),
+         * h(t)^S = aS(t)*Cb + bS(t)*Cl.
          */
 
         /* put multiples of a(t) in first value and b(t) in second */
@@ -976,10 +999,10 @@ void get_amplitude_model( PulsarParameters *pars, LALInferenceIFOModel *ifo ){
 
           ifo->compTimeSignal->data->data[0] = (Cplus*c2psi - Ccross*s2psi);
           ifo->compTimeSignal->data->data[1] = (Cplus*s2psi + Ccross*c2psi);
-          ifo->compTimeSignal->data->data[2] = (Cx*cpsi - Cy*spsi);
-          ifo->compTimeSignal->data->data[3] = (Cx*spsi + Cy*cpsi);
-          ifo->compTimeSignal->data->data[4] = Cb;
-          ifo->compTimeSignal->data->data[5] = Cl;
+          ifo->compTimeSignal->data->data[0] = (Cx*cpsi - Cy*spsi);
+          ifo->compTimeSignal->data->data[1] = (Cx*spsi + Cy*cpsi);
+          ifo->compTimeSignal->data->data[0] = Cb;
+          ifo->compTimeSignal->data->data[1] = Cl;
         }
       }
 
@@ -1018,7 +1041,8 @@ REAL8 get_phase_mismatch( REAL8Vector *phi1, REAL8Vector *phi2, LIGOTimeGPSVecto
   T = XLALGPSGetREAL8(&t->data[t->length-1]) - XLALGPSGetREAL8(&t->data[0]);
 
   if ( phi1->length != phi2->length ){
-    XLAL_ERROR_REAL8( XLAL_EBADLEN, "Phase lengths should be equal!" );
+    XLALPrintError("Phase lengths should be equal!\n");
+    XLAL_ERROR_REAL8(XLAL_EFAILED);
   }
 
   /* calculate mismatch - integrate with trapezium rule */
@@ -1065,7 +1089,8 @@ void get_earth_pos_vel( EarthState *earth, EphemerisData *edat, LIGOTimeGPS *tGP
 
   /* check input */
   if ( !earth || !tGPS || !edat || !edat->ephemE || !edat->ephemS ) {
-    XLAL_ERROR_VOID( XLAL_EINVAL, "Invalid NULL input 'earth', 'tGPS', 'edat','edat->ephemE' or 'edat->ephemS'" );
+    XLALPrintError ("%s: invalid NULL input 'earth', 'tGPS', 'edat','edat->ephemE' or 'edat->ephemS'\n", __func__ );
+    XLAL_ERROR_VOID( XLAL_EINVAL );
   }
 
   tgps[0] = (REAL8)tGPS->gpsSeconds; /* convert from INT4 to REAL8 */
@@ -1077,8 +1102,9 @@ void get_earth_pos_vel( EarthState *earth, EphemerisData *edat, LIGOTimeGPS *tGP
   ientryE = ROUND(t0e/edat->dtEtable);  /* finding Earth table entry */
 
   if ( ( ientryE < 0 ) || ( ientryE >=  edat->nentriesE )) {
-    XLAL_ERROR_VOID( XLAL_EDOM, "Input GPS time %f outside of Earth ephem range [%f, %f]\n", tgps[0], tinitE, tinitE +
+    XLALPrintError ("%s: input GPS time %f outside of Earth ephem range [%f, %f]\n", __func__, tgps[0], tinitE, tinitE +
 edat->nentriesE * edat->dtEtable );
+    XLAL_ERROR_VOID( XLAL_EDOM );
   }
 
   /* tdiff is arrival time minus closest Earth table entry; tdiff can be pos. or neg. */
@@ -1131,10 +1157,6 @@ void response_lookup_table( REAL8 t0, LALDetAndSource detNSource, INT4 timeSteps
 
   INT4 j = 0, k = 0, nav = 0;
 
-  /* number of points to average */
-  if ( avedt == 60. ) { nav = 1; }
-  else{ nav = floor(avedt/60.) + 1; }
-
   /* set the polarisation angle to zero to get the a(t) and b(t) antenna pattern functions */
   detNSource.pSource->orientation = 0.0;
 
@@ -1145,6 +1167,9 @@ void response_lookup_table( REAL8 t0, LALDetAndSource detNSource, INT4 timeSteps
     bV->data[j] = 0.;
     aS->data[j] = 0.;
     bS->data[j] = 0.;
+
+    /* number of points to average */
+    nav = floor(avedt/60.) + 1;
 
     /* central time of lookup table point */
     T = t0 + (REAL8)j*LAL_DAYSID_SI / tsteps;
@@ -1195,65 +1220,46 @@ void response_lookup_table( REAL8 t0, LALDetAndSource detNSource, INT4 timeSteps
  * Convert the physical source parameters into the amplitude and phase notation given in Eqns
  * 62-65 of \cite Jones:2015 .
  *
- * Note that \c phi0 is essentially the rotational phase of the pulsar. Also, note that if using \f$h_0\f$,
- * and therefore the convention for a signal as defined in \cite JKS98 , the sign of the waveform model is
- * the opposite of that in \cite Jones:2015 , and therefore a sign flip is required in the amplitudes.
+ * Note that \c phi0 is essentially the rotational phase of the pulsar.
  */
-void invert_source_params( PulsarParameters *params ){
+void invert_source_params( BinaryPulsarParams *params ){
   REAL8 sinlambda, coslambda, sinlambda2, coslambda2, sin2lambda;
-  REAL8 theta, sintheta, costheta2, sintheta2, sin2theta;
-  REAL8 phi0 = PulsarGetREAL8ParamOrZero( params, "PHI0" );
-  REAL8 h0 = PulsarGetREAL8ParamOrZero( params, "H0" );
-  REAL8 I21 = PulsarGetREAL8ParamOrZero( params, "I21" );
-  REAL8 I31 = PulsarGetREAL8ParamOrZero( params, "I31" );
-  REAL8 C21 = PulsarGetREAL8ParamOrZero( params, "C21" );
-  REAL8 C22 = PulsarGetREAL8ParamOrZero( params, "C22" );
-  REAL8 phi21 = PulsarGetREAL8ParamOrZero( params, "PHI21" );
-  REAL8 phi22 = PulsarGetREAL8ParamOrZero( params, "PHI22" );
-  REAL8 lambda = PulsarGetREAL8ParamOrZero( params, "LAMBDA" );
-  REAL8 costheta = PulsarGetREAL8ParamOrZero( params, "COSTHETA" );
+  REAL8 theta, sintheta, costheta, costheta2, sintheta2, sin2theta;
+  REAL8 phi0 = params->phi0;
 
-  if ( h0 != 0.){
-    phi22 = 2.*phi0;
-    phi22 = phi22 - LAL_TWOPI*floor(phi22/LAL_TWOPI);
-    PulsarAddParam( params, "PHI22", &phi22, PULSARTYPE_REAL8_t );
-
-    C22 = -0.5*h0; /* note the change in sign so that the triaxial model conforms to the convertion in JKS98 */
-    PulsarAddParam( params, "C22", &C22, PULSARTYPE_REAL8_t );
+  if ( params->h0 != 0.){
+    params->C22 = 0.5 * params->h0;
+    params->phi22 = 2.*params->phi0;
+    params->phi22 = params->phi22 - LAL_TWOPI*floor(params->phi22/LAL_TWOPI);
   }
-  else if ( ( I21 != 0. || I31 != 0. ) && ( C22 == 0. && C21 == 0. ) ) {
-    sinlambda = sin( lambda );
-    coslambda = cos( lambda );
-    sin2lambda = sin( 2. * lambda );
+  else if ( ( params->I21 != 0. || params->I31 != 0. ) && ( params->C22 == 0. && params->C21 == 0. ) ) {
+    sinlambda = sin( params->lambda );
+    coslambda = cos( params->lambda );
+    sin2lambda = sin( 2. * params->lambda );
     sinlambda2 = SQUARE( sinlambda );
     coslambda2 = SQUARE( coslambda );
 
-    theta = acos( costheta );
+    theta = acos( params->costheta );
     sintheta = sin( theta );
+    costheta = params->costheta;
     sin2theta = sin( 2. * theta );
     sintheta2 = SQUARE( sintheta );
     costheta2 = SQUARE( costheta );
 
-    REAL8 A22 = I21 * ( sinlambda2 - coslambda2 * costheta2 ) - I31 * sintheta2;
-    REAL8 B22 = I21 * sin2lambda * costheta;
+    REAL8 A22 = params->I21 * ( sinlambda2 - coslambda2 * costheta2 ) - params->I31 * sintheta2;
+    REAL8 B22 = params->I21 * sin2lambda * costheta;
     REAL8 A222 = SQUARE( A22 );
     REAL8 B222 = SQUARE( B22 );
 
-    REAL8 A21 = I21 * sin2lambda * sintheta;
-    REAL8 B21 = sin2theta * ( I21 * coslambda2 - I31 );
+    REAL8 A21 = params->I21 * sin2lambda * sintheta;
+    REAL8 B21 = sin2theta * ( params->I21 * coslambda2 - params->I31 );
     REAL8 A212 = SQUARE( A21 );
     REAL8 B212 = SQUARE( B21 );
 
-    C22 = 2.*sqrt( A222 + B222 );
-    C21 = 2.*sqrt( A212 + B212 );
+    params->C22 = 2.*sqrt( A222 + B222 );
+    params->C21 = 2.*sqrt( A212 + B212 );
 
-    PulsarAddParam( params, "C22", &C22, PULSARTYPE_REAL8_t );
-    PulsarAddParam( params, "C21", &C21, PULSARTYPE_REAL8_t );
-
-    phi22 = fmod( 2.*phi0 - atan2( B22, A22 ), LAL_TWOPI );
-    phi21 = fmod( phi0 - atan2( B21, A21 ), LAL_TWOPI );
-
-    PulsarAddParam( params, "PHI22", &phi22, PULSARTYPE_REAL8_t );
-    PulsarAddParam( params, "PHI21", &phi21, PULSARTYPE_REAL8_t );
+    params->phi22 = fmod( 2.*phi0 - atan2( B22, A22 ), LAL_TWOPI );
+    params->phi21 = fmod( phi0 - atan2( B21, A21 ), LAL_TWOPI );
   }
 }

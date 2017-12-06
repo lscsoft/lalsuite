@@ -24,33 +24,38 @@
 #include <lal/AVFactories.h>
 #include <lal/DetectorStates.h>
 #include <lal/PulsarDataTypes.h>
-#include <lal/VectorMath.h>
 
 #include <gsl/gsl_rng.h>
 
-extern FILE *LOG;
+typedef struct
+{
+   REAL4Vector *ffdata;    //Doubly Fourier transformed data
+   REAL8 tfnormalization;
+   REAL8 ffnormalization;
+   INT4 numffts;
+   INT4 numfbins;
+   INT4 numfprbins;
+} ffdataStruct;
 
 typedef struct {
    BOOLEAN help;
    REAL8 Tobs;
-   REAL8 Tsft;
+   REAL8 Tcoh;
    REAL8 SFToverlap;
    REAL8 t0;
    REAL8 fmin;
    REAL8 fspan;
    LALStringVector *IFO;
-   LALStringVector *avesqrtSh;
+   REAL8 avesqrtSh;
    INT4 blksize;
    CHAR *outdirectory;
    CHAR *outfilename;
    CHAR *configCopy;
    CHAR *ULfilename;
-   CHAR *candidatesFilename;
    CHAR *inputSFTs;
    CHAR *ephemEarth;
    CHAR *ephemSun;
    BOOLEAN gaussNoiseWithSFTgaps;
-   CHAR *templatebankfile;
    REAL8 Pmin;
    REAL8 Pmax;
    REAL8 dfmin;
@@ -62,19 +67,11 @@ typedef struct {
    INT4 periodHarmToCheck;
    INT4 periodFracToCheck;
    BOOLEAN templateSearch;
-   BOOLEAN templateSearchFixedDf;
-   LALStringVector *templateSearchDf;
    REAL8 templateSearchP;
    REAL8 templateSearchAsini;
    REAL8 templateSearchAsiniSigma;
    REAL8 assumeNScosi;
    REAL8 assumeNSpsi;
-   REAL8 assumeNSGWfreq;
-   REAL8 assumeNSorbitP;
-   REAL8 assumeNSasini;
-   LIGOTimeGPS assumeNSorbitTp;
-   LIGOTimeGPS assumeNSrefTime;
-   INT4 cosiSignCoherent;
    INT4 ihsfactor;
    REAL8 ihsfar;
    REAL8 ihsfom;
@@ -92,7 +89,8 @@ typedef struct {
    REAL8 lineDetection;
    INT4 FFTplanFlag;
    BOOLEAN fastchisqinv;
-   INT4 vectorMath;
+   BOOLEAN useSSE;
+   BOOLEAN useAVX;
    BOOLEAN followUpOutsideULrange;
    LALStringVector *timestampsFile;
    LALStringVector *segmentFile;
@@ -119,42 +117,66 @@ typedef struct {
    BOOLEAN printSFTtimes;
    BOOLEAN printData;
    BOOLEAN BrentsMethod;
-   CHAR *saveRvalues;
    CHAR *printSignalData;
    CHAR *printMarginalizedSignalData;
    INT4 randSeed;
    BOOLEAN chooseSeed;
 } UserInput_t;
 
-typedef struct {
-   UINT4 length;
-   REAL8 *data;
-   REAL8 *data0;
-} alignedREAL8Vector;
-typedef struct {
-   UINT4 length;
-   alignedREAL8Vector **data;
-} alignedREAL8VectorArray;
-typedef struct {
-   UINT4 length;
-   REAL4VectorAligned **data;
-} REAL4VectorAlignedArray;
-typedef struct {
-   UINT4 length;
-   UINT4 vectorLength;
-   REAL4 *data;
-   REAL4 *data0;
-} alignedREAL4VectorSequence;
-
 typedef struct
 {
-   REAL4VectorAligned *ffdata;    //Doubly Fourier transformed data
-   REAL8 tfnormalization;
-   REAL8 ffnormalization;
-   INT4 numffts;
-   INT4 numfbins;
-   INT4 numfprbins;
-} ffdataStruct;
+   REAL8 fmin;
+   REAL8 fspan;
+   REAL8 Tobs;
+   REAL8 Tcoh;
+   REAL8 SFToverlap;
+   REAL8 searchstarttime;
+   REAL8 Pmin;
+   REAL8 Pmax;
+   REAL8 dfmin;
+   REAL8 dfmax;
+   REAL4 dopplerMultiplier;
+   REAL8 ihsfar;
+   REAL4 ihsfom;
+   REAL8 ihsfomfar;
+   REAL8 templatefar;
+   REAL8 log10templatefar;
+   REAL8 ULfmin;
+   REAL8 ULfspan;
+   REAL8 ULmindf;
+   REAL8 ULmaxdf;
+   REAL8 lineDetection;
+   REAL8 avesqrtSh;
+   INT4 ihsfactor;
+   INT4 harmonicNumToSearch;
+   INT4 keepOnlyTopNumIHS;
+   INT4 blksize;
+   INT4 maxbinshift;
+   INT4 mintemplatelength;
+   INT4 maxtemplatelength;
+   INT4 rootFindingMethod;
+   INT4 numofIFOs;
+   MultiLALDetector *detectors;
+   CHAR *inputSFTs;
+   INT4 markBadSFTs;
+   INT4 FFTplanFlag;
+   INT4 calcRthreshold;
+   INT4 noNotchHarmonics;
+   INT4 antennaOff;
+   INT4 noiseWeightOff;
+   INT4 printAllULvalues;
+   INT4 fastchisqinv;
+   INT4 useSSE;
+   INT4 useAVX;
+   INT4 followUpOutsideULrange;
+   INT4 randSeed;
+   INT4 ULsolver;
+   INT4 signalOnly;
+   INT4 weightedIHS;
+   INT4 periodHarmToCheck;
+   INT4 periodFracToCheck;
+   gsl_rng *rng;
+} inputParamsStruct;
 
 typedef struct
 {
@@ -168,8 +190,6 @@ typedef struct
    REAL8 prob;
    INT4 proberrcode;
    REAL8 normalization;
-   INT4 templateVectorIndex;
-   BOOLEAN lineContamination;
 } candidate;
 
 typedef struct
@@ -178,18 +198,6 @@ typedef struct
    UINT4 length;
    UINT4 numofcandidates;
 } candidateVector;
-
-typedef struct {
-   REAL8 fminimum;
-   REAL8 fmaximum;
-   UINT4 numfsteps;
-   UINT4 numperiodslonger;
-   UINT4 numperiodsshorter;
-   REAL4 periodSpacingFactor;
-   REAL8 dfmin;
-   REAL8 dfmax;
-   UINT4 numdfsteps;
-} TwoSpectParamSpaceSearchVals;
 
 typedef struct
 {
@@ -211,10 +219,10 @@ typedef struct
 
 typedef struct
 {
-   REAL4VectorAligned *maxima;
+   REAL4Vector *maxima;
    INT4Vector *locations;
-   REAL4VectorAligned *foms;
-   REAL4VectorAligned *maximaForEachFbin;
+   REAL4Vector *foms;
+   REAL4Vector *maximaForEachFbin;
    INT4Vector *locationsForEachFbin;
    INT4 rows;
 } ihsMaximaStruct;
@@ -227,13 +235,13 @@ typedef struct
 
 typedef struct
 {
-   REAL4VectorAligned *ihsfar;
-   REAL4VectorAligned *ihsdistMean;
-   REAL4VectorAligned *ihsdistSigma;
-   REAL4VectorAligned *fomfarthresh;
-   REAL4VectorAligned *ihsfomdistMean;
-   REAL4VectorAligned *ihsfomdistSigma;
-   REAL4VectorAligned *expectedIHSVector;
+   REAL4Vector *ihsfar;
+   REAL4Vector *ihsdistMean;
+   REAL4Vector *ihsdistSigma;
+   REAL4Vector *fomfarthresh;
+   REAL4Vector *ihsfomdistMean;
+   REAL4Vector *ihsfomdistSigma;
+   REAL4Vector *expectedIHSVector;
 } ihsfarStruct;
 
 typedef struct
@@ -241,27 +249,21 @@ typedef struct
    REAL4 far;
    REAL4 distMean;
    REAL4 distSigma;
-   REAL4VectorAligned *topRvalues;
+   REAL4Vector *topRvalues;
    INT4 farerrcode;
 } farStruct;
 
 typedef struct
 {
-   REAL4VectorAligned *templatedata;       //weights
+   REAL4Vector *templatedata;       //weights
    INT4Vector *pixellocations;      //pixel locations
+   INT4Vector *firstfftfrequenciesofpixels;  //pixel first frequency values
+   INT4Vector *secondfftfrequencies;   //pixel second frequency values
    REAL8 f0;
    REAL8 period;
    REAL8 moddepth;
-} TwoSpectTemplate;
+} templateStruct;
 
-typedef struct
-{
-   TwoSpectTemplate **data;
-   UINT4 length;
-   REAL8 Tsft;
-   REAL8 SFToverlap;
-   REAL8 Tobs;
-} TwoSpectTemplateVector;
 
 #endif
 

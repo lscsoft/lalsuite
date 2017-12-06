@@ -1,1 +1,0 @@
-../../gnuscripts/ax_compare_version.m4

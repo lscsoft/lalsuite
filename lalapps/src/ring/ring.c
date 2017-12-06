@@ -150,8 +150,6 @@
  * </dl>
  */
 
-#include "lalapps.h"
-
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -166,6 +164,7 @@
 #include <lal/RingUtils.h>
 #include <lal/LALFrStream.h>
 
+#include "lalapps.h"
 #include "getdata.h"
 #include "injsgnl.h"
 #include "getresp.h"

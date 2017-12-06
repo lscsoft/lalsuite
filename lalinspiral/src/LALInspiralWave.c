@@ -126,7 +126,6 @@
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/LALSQTPNWaveformInterface.h>
 #include <lal/TimeSeries.h>
-#include <lal/LALDict.h>
 
 /**
  * Generate the plus and cross polarizations for a waveform
@@ -163,22 +162,24 @@ int XLALSimInspiralChooseWaveformFromSimInspiral(
    REAL8 f_ref = 0.;
    REAL8 r = thisRow->distance * LAL_PC_SI * 1e6;
    REAL8 i = thisRow->inclination;
-   LALDict *LALpars=XLALCreateDict();
-   XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(LALpars, thisRow->amp_order);
+   REAL8 lambda1 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
+   REAL8 lambda2 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
+   LALSimInspiralWaveformFlags *waveFlags=XLALSimInspiralCreateWaveformFlags();
+   LALSimInspiralTestGRParam *nonGRparams = NULL;
+   int amplitudeO = thisRow->amp_order;
 
    /* get approximant */
-   approximant = XLALSimInspiralGetApproximantFromString(thisRow->waveform);
+   approximant = XLALGetApproximantFromString(thisRow->waveform);
    if ( (int) approximant == XLAL_FAILURE)
       XLAL_ERROR(XLAL_EFUNC);
 
    /* get phase PN order; this is an enum such that the value is twice the PN order */
-   order = XLALSimInspiralGetPNOrderFromString(thisRow->waveform);
+   order = XLALGetOrderFromString(thisRow->waveform);
    if ( (int) order == XLAL_FAILURE)
       XLAL_ERROR(XLAL_EFUNC);
-   XLALSimInspiralWaveformParamsInsertPNPhaseOrder(LALpars, order);
 
    /* get taper option */
-   taper = XLALSimInspiralGetTaperFromString(thisRow->taper);
+   taper = XLALGetTaperFromString(thisRow->taper);
    if ( (int) taper == XLAL_FAILURE)
       XLAL_ERROR(XLAL_EFUNC);
 
@@ -187,19 +188,17 @@ int XLALSimInspiralChooseWaveformFromSimInspiral(
    switch(approximant)
    {
       case NumRelNinja2:
-         if (XLALNRInjectionFromSimInspiral(hplus, hcross, thisRow, deltaT) == XLAL_FAILURE) {
-            XLALDestroyDict(LALpars);
+         if (XLALNRInjectionFromSimInspiral(hplus, hcross, thisRow, deltaT) == XLAL_FAILURE)
             XLAL_ERROR(XLAL_EFUNC);
-         }
-         XLALDestroyDict(LALpars);
          break;
 
       default:
-         ret = XLALSimInspiralChooseTDWaveform(hplus, hcross, m1, m2,
-					       S1x, S1y, S1z, S2x, S2y, S2z, r, i,
-					       phi0, 0., 0., 0., deltaT, f_min, f_ref,
-					       LALpars, approximant);
-         XLALDestroyDict(LALpars);
+         ret = XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT,
+               m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i,
+               lambda1, lambda2, waveFlags, nonGRparams, amplitudeO,
+               order, approximant);
+         XLALSimInspiralDestroyWaveformFlags(waveFlags);
+         XLALSimInspiralDestroyTestGRParam(nonGRparams);
          if( ret == XLAL_FAILURE )
             XLAL_ERROR(XLAL_EFUNC);
    }
@@ -243,29 +242,32 @@ int XLALInspiralTDWaveformFromSimInspiral(
    REAL8 S2z = thisRow->spin2z;
    REAL8 f_min = thisRow->f_lower;
    REAL8 f_ref = 0.;
-   REAL8 distance = thisRow->distance * LAL_PC_SI * 1e6;
-   REAL8 inclination = thisRow->inclination;
-   LALDict *params = XLALCreateDict();
-   XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(params, thisRow->amp_order);
+   REAL8 r = thisRow->distance * LAL_PC_SI * 1e6;
+   REAL8 i = thisRow->inclination;
+   REAL8 lambda1 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
+   REAL8 lambda2 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
+   REAL8 z = 0.; /* FIXME:0 means zero redshift, this should be obtained by some other means */
+   LALSimInspiralWaveformFlags *waveFlags=XLALSimInspiralCreateWaveformFlags();
+   LALSimInspiralTestGRParam *nonGRparams = NULL;
+   int amplitudeO = thisRow->amp_order;
 
    /* get approximant */
-   approximant = XLALSimInspiralGetApproximantFromString(thisRow->waveform);
+   approximant = XLALGetApproximantFromString(thisRow->waveform);
    if ( (int) approximant == XLAL_FAILURE)
       XLAL_ERROR(XLAL_EFUNC);
 
    /* get phase PN order; this is an enum such that the value is twice the PN order */
-   order = XLALSimInspiralGetPNOrderFromString(thisRow->waveform);
+   order = XLALGetOrderFromString(thisRow->waveform);
    if ( (int) order == XLAL_FAILURE)
       XLAL_ERROR(XLAL_EFUNC);
-   XLALSimInspiralWaveformParamsInsertPNPhaseOrder(params, order);
 
    /* note: the condition waveform already does tapering... ignore any request to do so get taper option */
    /* taper = XLALGetTaperFromString(thisRow->taper); */
 
    /* generate +,x waveforms */
-   ret = XLALSimInspiralTD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phi0, 0.0, 0.0, 0.0, deltaT, f_min, f_ref, params, approximant);
-
-   XLALDestroyDict(params);
+   ret = XLALSimInspiralTD(hplus, hcross, phi0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, z, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, order, approximant);
+   XLALSimInspiralDestroyWaveformFlags(waveFlags);
+   XLALSimInspiralDestroyTestGRParam(nonGRparams);
    if( ret == XLAL_FAILURE )
      XLAL_ERROR(XLAL_EFUNC);
 
@@ -302,18 +304,20 @@ XLALSimInspiralChooseWaveformFromInspiralTemplate(
   /* Value of 'distance' fed to lalsim is conventional to obtain a correct template norm */
   REAL8 r = params->distance;
   REAL8 i = params->inclination;
-  LALDict *LALpars=XLALCreateDict();
-  XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(LALpars,params->ampOrder);
-  XLALSimInspiralWaveformParamsInsertPNPhaseOrder(LALpars,params->order);
+  REAL8 lambda1 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
+  REAL8 lambda2 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
+  LALSimInspiralWaveformFlags *waveFlags = XLALSimInspiralCreateWaveformFlags();
+  LALSimInspiralTestGRParam *nonGRparams = NULL;
+  LALPNOrder amplitudeO = params->ampOrder;
+  LALPNOrder order = params->order;
   Approximant approximant = params->approximant;
 
   /* generate +,x waveforms */
-  ret = XLALSimInspiralChooseTDWaveform(hplus, hcross, m1, m2,
-					S1x, S1y, S1z, S2x, S2y, S2z, r, i,
-					phi0, 0., 0., 0., deltaT, f_min, f_ref,
-					LALpars, approximant);
-  XLALDestroyDict(LALpars);
-
+  ret = XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2,
+            S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2,
+            waveFlags, nonGRparams, amplitudeO, order, approximant);
+  XLALSimInspiralDestroyWaveformFlags(waveFlags);
+  XLALSimInspiralDestroyTestGRParam(nonGRparams);
   if( ret == XLAL_FAILURE)
     XLAL_ERROR(XLAL_EFUNC);
 
@@ -655,7 +659,7 @@ LALInspiralWaveForInjection(
          XLALDestroyREAL8TimeSeries(hplus);
          XLALDestroyREAL8TimeSeries(hcross);
          LALFree(waveform->h);
-         snprintf( warnMsg, XLAL_NUM_ELEM(warnMsg),
+         snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
              "Memory allocation error when allocating CoherentGW REAL4VectorSequence.\n");
          LALInfo( status, warnMsg );
          ABORT( status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM );

@@ -20,14 +20,9 @@
  */
 
 /**
- * \defgroup lalapps_pulsar_SidebandSearch Sideband Search Application
- * \ingroup lalapps_pulsar_Apps
- */
-
-/*
+ * \author L.Sammut, C. Messenger
  * \file
  * \ingroup lalapps_pulsar_SidebandSearch
- * \author L.Sammut, C. Messenger
  * \brief
  * Calculates the C-statistic for a given parameter-space of GW signals from binary sources with known sky position.
  *
@@ -104,6 +99,8 @@ typedef struct {
  * A structure that stores user input variables
  */
 typedef struct { 
+  BOOLEAN help;		            	/**< trigger to output help string */
+  BOOLEAN version;			/**< output version information */
   BOOLEAN tophat;			/**< tophat template flag */
   CHAR *inputFstat;			/**< filename of Fstat input data file to use */
   CHAR *outputCstat;			/**< filename to output Cstatistic */
@@ -165,6 +162,11 @@ int main(int argc,char *argv[])
 
   vrbflg = 1;					/* verbose error-messages */
 
+
+  /* setup LAL debug level */
+  LogSetLevel(lalDebugLevel);
+  LogPrintf(LOG_DEBUG,"Debug level set to %d \n", lalDebugLevel);
+  
   /* register and read all user-variables */
   if (initUserVars(argc, argv, &uvar)) {
     LogPrintf(LOG_CRITICAL,"%s : initUserVars failed with error = %d\n",fn,xlalErrno);
@@ -258,23 +260,44 @@ int initUserVars(int argc,char *argv[],UserInput_t *uvar)
 {
   const CHAR *fn = __func__;      /* store function name for log output */
   
+  CHAR *version_string;
+
+  /* set a few defaults */
+  uvar->help = FALSE;
+  uvar->version = FALSE;
+
+ 
   /* register all user-variables */
-  XLALRegisterUvarMember(Freq,          REAL8, 'f', REQUIRED, "Starting search frequency in Hz");
-  XLALRegisterUvarMember(FreqBand,      REAL8, 'b', REQUIRED, "Search frequency band in Hz");
-  XLALRegisterUvarMember(orbitPeriod,   REAL8, 'P', REQUIRED, "Orbital period in seconds");
-  XLALRegisterUvarMember(orbitasini,    REAL8, 'A', REQUIRED, "Light travel time of orbital projected semi-major axis, in seconds");
-  XLALRegisterUvarMember(inputFstat,    STRING, 'D', REQUIRED, "Filename specifying input Fstat file");
-  XLALRegisterUvarMember(outputCstat,	STRING, 'C', REQUIRED, "Output-file for C-statistic");
-  XLALRegisterUvarMember(tophat,	BOOLEAN, 't', OPTIONAL, "Perform search with tophat template");
+  XLALregBOOLUserStruct(help, 		'h', UVAR_HELP,     "Print this message"); 
+  XLALregREALUserStruct(Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz"); 
+  XLALregREALUserStruct(FreqBand, 	'b', UVAR_REQUIRED, "Search frequency band in Hz"); 
+  XLALregREALUserStruct(orbitPeriod, 	'P', UVAR_REQUIRED, "Orbital period in seconds");
+  XLALregREALUserStruct(orbitasini, 	'A', UVAR_REQUIRED, "Light travel time of orbital projected semi-major axis, in seconds");
+  XLALregSTRINGUserStruct(inputFstat, 	'D', UVAR_REQUIRED, "Filename specifying input Fstat file"); 
+  XLALregSTRINGUserStruct(outputCstat,	'C', UVAR_REQUIRED, "Output-file for C-statistic");
+  XLALregBOOLUserStruct(tophat,		't', UVAR_OPTIONAL, "Perform search with tophat template");
+  XLALregBOOLUserStruct(version,	'V', UVAR_SPECIAL,  "Output version information");
   
   /* do ALL cmdline and cfgfile handling */
-  BOOLEAN should_exit = 0;
-  if (XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList)) {
+  if (XLALUserVarReadAllInput(argc, argv)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput failed with error = %d\n",fn,xlalErrno);
     return XLAL_EFAULT;
   }
-  if (should_exit) exit(1);
+ 
+  /* if help was requested, we're done here */
+  if (uvar->help) exit(0);
 
+  if ((version_string = XLALGetVersionString(0)) == NULL) {
+    XLALPrintError("XLALGetVersionString(0) failed.\n");
+    exit(1);
+  }
+  
+  if (uvar->version) {
+    printf("%s\n",version_string);
+    exit(0);
+  }
+  XLALFree(version_string);
+ 
   LogPrintf(LOG_DEBUG,"'%s' successfully completed. Leaving. \n",fn); 
   return XLAL_SUCCESS;
 
@@ -654,7 +677,7 @@ int OutputCstats(UserInput_t *uvar, ParamStruct *userParams, VectorStruct *Fstat
   INT4 i;					/* initialise counters */  
 
   /* open output file - also check it is good */
-  if (XLALUserVarWasSet(&uvar->outputCstat)) 	{
+  if (LALUserVarWasSet(&uvar->outputCstat)) 	{
     if ((Cstat_out = fopen(uvar->outputCstat, "wb")) == NULL) 	{
       LogPrintf (LOG_CRITICAL, "%s: Error opening file '%s' for reading.. Error %d\n",fn,uvar->outputCstat,xlalErrno);
       return XLAL_EIO;

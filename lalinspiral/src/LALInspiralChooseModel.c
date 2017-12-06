@@ -546,12 +546,10 @@ XLALInspiralChooseModel(
          case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
-         case SpinTaylorT4:
          case PhenSpinTaylorRD:
 		 case SpinQuadTaylor:
          case IMRPhenomA:
          case IMRPhenomB:
-         case IMRPhenomD:
          case IMRPhenomFA:
          case IMRPhenomFB:
             ak->vn = ak->vlso = vlso = ak->vlsoT0;
@@ -600,12 +598,10 @@ XLALInspiralChooseModel(
          case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
-         case SpinTaylorT4:
          case PhenSpinTaylorRD:
 		 case SpinQuadTaylor:
          case IMRPhenomA:
          case IMRPhenomB:
-         case IMRPhenomD:
          case IMRPhenomFA:
          case IMRPhenomFB:
 
@@ -651,12 +647,10 @@ XLALInspiralChooseModel(
          case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
-         case SpinTaylorT4:
          case PhenSpinTaylorRD:
 		 case SpinQuadTaylor:
          case IMRPhenomA:
          case IMRPhenomB:
-         case IMRPhenomD:
          case IMRPhenomFA:
          case IMRPhenomFB:
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
@@ -705,7 +699,6 @@ XLALInspiralChooseModel(
          case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
-         case SpinTaylorT4:
          case PhenSpinTaylorRD:
 		 case SpinQuadTaylor:
 /*
@@ -727,7 +720,6 @@ XLALInspiralChooseModel(
          case EOBNRv2HM:
          case IMRPhenomA:
          case IMRPhenomB:
-         case IMRPhenomD:
          case IMRPhenomFA:
          case IMRPhenomFB:
          case TaylorEt:
@@ -763,7 +755,6 @@ XLALInspiralChooseModel(
          case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
-         case SpinTaylorT4:
          case PhenSpinTaylorRD:
 		 case SpinQuadTaylor:
 /*
@@ -785,7 +776,6 @@ XLALInspiralChooseModel(
          case EOBNRv2HM:
          case IMRPhenomA:
          case IMRPhenomB:
-         case IMRPhenomD:
          case IMRPhenomFA:
          case IMRPhenomFB:
          case TaylorEt:
@@ -820,7 +810,6 @@ XLALInspiralChooseModel(
          case TaylorF2RedSpin:
          case SpinTaylorFrameless:
          case SpinTaylorT3:
-         case SpinTaylorT4:
          case SpinTaylor:
          case PhenSpinTaylorRD:
 	     case SpinQuadTaylor:
@@ -843,7 +832,6 @@ XLALInspiralChooseModel(
          case EOBNRv2HM:
          case IMRPhenomA:
          case IMRPhenomB:
-         case IMRPhenomD:
          case IMRPhenomFA:
          case IMRPhenomFB:
          case TaylorEt:
@@ -879,7 +867,6 @@ XLALInspiralChooseModel(
          case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
-         case SpinTaylorT4:
          case PhenSpinTaylorRD:
 		 case SpinQuadTaylor:
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
@@ -897,7 +884,6 @@ XLALInspiralChooseModel(
          case EOBNRv2HM:
          case IMRPhenomA:
          case IMRPhenomB:
-         case IMRPhenomD:
          case IMRPhenomFA:
          case IMRPhenomFB:
          case TaylorEt:
@@ -934,7 +920,6 @@ XLALInspiralChooseModel(
          case EOBNR:
          case IMRPhenomA:
          case IMRPhenomB:
-         case IMRPhenomD:
          case IMRPhenomFA:
          case IMRPhenomFB:
             ak->vn = ak->vlso = vlso = ak->vlsoP6;
@@ -951,7 +936,6 @@ XLALInspiralChooseModel(
          case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
-         case SpinTaylorT4:
          case PhenSpinTaylorRD:
          case SpinQuadTaylor:
          case PadeT1:
@@ -989,7 +973,6 @@ XLALInspiralChooseModel(
       case SpinTaylorFrameless:
       case SpinTaylorT3:
       case SpinTaylor:
-      case SpinTaylorT4:
       case PhenSpinTaylorRD:
       case SpinQuadTaylor:
       case TaylorEt:
@@ -1037,7 +1020,6 @@ XLALInspiralChooseModel(
          break;
       case IMRPhenomA:
       case IMRPhenomB:
-      case IMRPhenomD:
       case IMRPhenomFA:
       case IMRPhenomFB:
       case EOBNRv2:

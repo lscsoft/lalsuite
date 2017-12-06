@@ -23,6 +23,7 @@ import re
 import string
 import tempfile
 import ConfigParser
+import exceptions
 
 # import the lalapps pipeline modules
 from glue import pipeline

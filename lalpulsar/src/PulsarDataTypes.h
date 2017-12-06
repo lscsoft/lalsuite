@@ -29,7 +29,7 @@ extern "C" {
  * \author Reinhard Prix
  * \date 2005
  * \defgroup PulsarDataTypes_h Header PulsarDataTypes.h
- * \ingroup lalpulsar_general
+ * \ingroup lalpulsar_common
  * \brief Some common useful data-types for pulsar-searches.
  *
  * ### Synopsis ###
@@ -96,7 +96,7 @@ typedef struct tagPulsarDopplerParams {
 
 // ---------- transient-CW related types ----------
 /** Struct to define parameters of a 'transient window' to be applied to obtain transient signals */
-typedef enum tagtransientWindowType_t {
+typedef enum {
   TRANSIENT_NONE = 0,		/**< Note: in this case the window-parameters will be ignored, and treated as rect={data},
                                  * i.e. a simple rectangular window covering all the data => this should always reproduce the
                                  * standard F-statistic computation. */

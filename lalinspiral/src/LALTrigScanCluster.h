@@ -46,9 +46,7 @@
 /*@{*/
 
 /** UNDOCUMENTED */
-typedef enum
-tagtrigScanType
-{
+typedef enum {
     trigScanNone,	/**< UNDOCUMENTED */
     T0T3Tc,		/**< UNDOCUMENTED */
     Psi0Psi3Tc,		/**< UNDOCUMENTED */
@@ -67,7 +65,6 @@ tagTrigScanCluster
 
 /** UNDOCUMENTED */
 typedef enum
-tagTrigScanStatus
 {
   TRIGSCAN_SUCCESS,	/**< UNDOCUMENTED */
   TRIGSCAN_ERROR,	/**< UNDOCUMENTED */

@@ -1,10 +1,13 @@
-include $(top_srcdir)/gnuscripts/lalapps.am
-
+BUILT_SOURCES =
 MOSTLYCLEANFILES =
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
-include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
+include $(top_srcdir)/gnuscripts/lalapps.am
 
+if FRAME
+if LALFRAME
+if LALMETAIO
+if LALINSPIRAL
 RINGPROG = \
 	lalapps_ring \
 	lalapps_rinj \
@@ -14,9 +17,17 @@ RINGPROG = \
 	lalapps_collatesim \
 	lalapps_coh_PTF_inspiral \
 	lalapps_coh_PTF_spin_checker
+endif
+endif
+endif
+endif
 
 bin_PROGRAMS = $(RINGPROG)
 
+if FRAME
+if LALFRAME
+if LALMETAIO
+if LALINSPIRAL
 GENERAL_SOURCES = \
 	errutil.c \
 	errutil.h \
@@ -59,6 +70,10 @@ lalapps_ringread_SOURCES = ringread.c
 lalapps_rinca_SOURCES = rinca.c
 lalapps_coincringread_SOURCES = coincringread.c
 lalapps_collatesim_SOURCES = collatesim.c
+endif
+endif
+endif
+endif
 
 if HAVE_PYTHON
 pkgpython_PYTHON = ring.py

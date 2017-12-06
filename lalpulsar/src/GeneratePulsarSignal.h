@@ -64,7 +64,7 @@ extern "C" {
  *
  * This module also contains a few more general-purpose helper-functions:
  *
- * - Namely, XLALConvertSSB2GPS() and XLALConvertGPS2SSB()
+ * - Namely, LALConvertSSB2GPS() and LALConvertGPS2SSB()
  * which convert arrival times for a given source (not necessarily a
  * pulsar!) the detector ("GPS") and the solar-system barycenter ("SSB").
  * NOTE: only the source-location (<tt>params-\>pulsar.position</tt>), the
@@ -286,7 +286,6 @@ typedef struct tagPulsarSignalParams {
     REAL8 ecc;              /**< orbital eccentricity */
     REAL8 period;           /**< orbital period (sec) */
   } orbit;
-  REAL8 sourceDeltaT;       /**< source-frame sampling period ('0' means use previous internal defaults) */
 
   /* characterize the detector */
   const COMPLEX8FrequencySeries *transfer;/**< detector transfer function (NULL if not used) */
@@ -354,8 +353,7 @@ int XLALConvertSSB2GPS ( LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSig
 int XLALAddGaussianNoise ( REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed );
 
 void XLALDestroyMultiREAL4TimeSeries ( MultiREAL4TimeSeries *multiTS );
-void XLALDestroyMultiREAL8TimeSeries ( MultiREAL8TimeSeries *multiTS );
-  
+
 // ----- obsolete and deprecated LAL interface
 void LALGeneratePulsarSignal (LALStatus *, REAL4TimeSeries **signalvec, const PulsarSignalParams *params);
 void LALSignalToSFTs (LALStatus *, SFTVector **outputSFTs, const REAL4TimeSeries *signalvec, const SFTParams *params);

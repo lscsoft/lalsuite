@@ -27,16 +27,18 @@ import numpy as np
 from scipy import interpolate, integrate
 from scipy import special
 from itertools import product
-from common_cl import distRef
 
 __author__ = "Evan Ochsner <evano@gravity.phys.uwm.edu>, R. O'Shaughnessy"
+
+# FIXME: BADBADBAD
+distMpcRef = 100 # a fiducial distance for the template source.
 
 #
 # Main driver functions
 #
 def precompute_likelihood_terms(event_time_geo, t_window, P, data_dict,
         psd_dict, Lmax, fMax, analyticPSD_Q=False,
-        inv_spec_trunc_Q=False, T_spec=0., remove_zero=True, verbose=True):
+        inv_spec_trunc_Q=False, T_spec=0., verbose=True):
     """
     Compute < h_lm(t) | d > and < h_lm | h_l'm' >
 
@@ -56,7 +58,7 @@ def precompute_likelihood_terms(event_time_geo, t_window, P, data_dict,
     crossTerms = {}
 
     # Compute hlms at a reference distance, distance scaling is applied later
-    P.dist = distRef
+    P.dist = distMpcRef*1e6*lal.PC_SI
 
     P.print_params()
     # Compute all hlm modes with l <= Lmax
@@ -65,15 +67,6 @@ def precompute_likelihood_terms(event_time_geo, t_window, P, data_dict,
     P.deltaF = data_dict[detectors[0]].deltaF
     hlms_list = lsu.hlmoff(P, Lmax) # a linked list of hlms
     hlms = lsu.SphHarmFrequencySeries_to_dict(hlms_list, Lmax) # a dictionary
-
-    # If the hlm time series is identically zero, remove it
-    zero_modes = []
-    for mode in hlms.iterkeys():
-        if remove_zero and np.sum(np.abs(hlms[mode].data.data)) == 0:
-            zero_modes.append(mode)
-
-    for mode in zero_modes:
-        del hlms[mode]
 
     for det in detectors:
         # This is the event time at the detector
@@ -151,20 +144,15 @@ def factored_log_likelihood(extr_params, rholms_intp, crossTerms, Lmax):
     # Said another way, the m^th harmonic of the waveform should transform as
     # e^{- i m phiref}, but the Ylms go as e^{+ i m phiref}, so we must give
     # - phiref as an argument so Y_lm h_lm has the proper phiref dependence
-    # FIXME: Strictly speaking, this should be inside the detector loop because
-    # there *could* be different l,m pairs for different detectors. This never
-    # happens in practice, so it's pulled out here, and we use the first
-    # detector as a reference.
-    Ylms = compute_spherical_harmonics(Lmax, incl, -phiref, rholms_intp[rholms_intp.keys()[0]])
+    Ylms = compute_spherical_harmonics(Lmax, incl, -phiref)
 
     lnL = 0.
     for det in detectors:
         CT = crossTerms[det]
+        F = complex_antenna_factor(det, RA, DEC, psi, tref)
 
         # This is the GPS time at the detector
         t_det = compute_arrival_time_at_detector(det, RA, DEC, tref)
-        F = complex_antenna_factor(det, RA, DEC, psi, t_det)
-
         det_rholms = {}  # rholms evaluated at time at detector
         for key in rholms_intp[det]:
             func = rholms_intp[det][key]
@@ -174,7 +162,7 @@ def factored_log_likelihood(extr_params, rholms_intp, crossTerms, Lmax):
 
     return lnL
 
-def factored_log_likelihood_time_marginalized(tvals, extr_params, rholms_intp, rholms, crossTerms, det_epochs, Lmax, interpolate=False):
+def factored_log_likelihood_time_marginalized(tvals, extr_params, rholms_intp, rholms, crossTerms, Lmax, interpolate=False):
     """
     Compute the log-likelihood = -1/2 < d - h | d - h > from:
         - extr_params is an object containing values of all extrinsic parameters
@@ -206,18 +194,12 @@ def factored_log_likelihood_time_marginalized(tvals, extr_params, rholms_intp, r
     # Said another way, the m^th harmonic of the waveform should transform as
     # e^{- i m phiref}, but the Ylms go as e^{+ i m phiref}, so we must give
     # - phiref as an argument so Y_lm h_lm has the proper phiref dependence
-    # FIXME: Strictly speaking, this should be inside the detector loop because
-    # there *could* be different l,m pairs for different detectors. This never
-    # happens in practice, so it's pulled out here, and we use the first
-    # detector as a reference.
-    Ylms = compute_spherical_harmonics(Lmax, incl, -phiref, rholms[rholms.keys()[0]])
+    Ylms = compute_spherical_harmonics(Lmax, incl, -phiref)
 
     lnL = 0.
-    delta_t = tvals[1] - tvals[0]
     for det in detectors:
         CT = crossTerms[det]
         F = complex_antenna_factor(det, RA, DEC, psi, tref)
-        rho_epoch = float(det_epochs[det])
 
         # This is the GPS time at the detector
         t_det = compute_arrival_time_at_detector(det, RA, DEC, tref)
@@ -229,16 +211,15 @@ def factored_log_likelihood_time_marginalized(tvals, extr_params, rholms_intp, r
         else:
             # do not interpolate, just use nearest neighbors.
             for key, rhoTS in rholms[det].iteritems():
-	        # PRB: these can be moved outside this loop to after t_det
                 tfirst = float(t_det)+tvals[0]
-                ifirst = int((tfirst - rho_epoch) / delta_t + 0.5)
+                ifirst = int(np.round(( float(tfirst) - float(rhoTS.epoch)) / rhoTS.deltaT) + 0.5)
                 ilast = ifirst + len(tvals)
-                det_rholms[key] = rhoTS[ifirst:ilast]
+                det_rholms[key] = rhoTS.data.data[ifirst:ilast]
 
         lnL += single_detector_log_likelihood(det_rholms, CT, Ylms, F, dist)
 
     maxlnL = np.max(lnL)
-    return maxlnL + np.log(np.sum(np.exp(lnL - maxlnL)) * (tvals[1]-tvals[0]))
+    return maxlnL + np.log(integrate.simps(np.exp(lnL - maxlnL), dx=tvals[1]-tvals[0]))
 
 def single_detector_log_likelihood(rholm_vals, crossTerms, Ylms, F, dist):
     """
@@ -258,28 +239,25 @@ def single_detector_log_likelihood(rholm_vals, crossTerms, Ylms, F, dist):
 
     Outputs: The value of ln L for a single detector given the inputs.
     """
+    distMpc = dist/(lal.PC_SI*1e6)
 
-    invDistMpc = distRef/dist
-    Fstar = np.conj(F)
+    # Eq. 35 of Richard's notes
+    term1 = 0.
+    for mode in rholm_vals:
+        term1 += np.conj(F * Ylms[mode]) * rholm_vals[mode]
+    term1 = np.real(term1) / (distMpc/distMpcRef)
 
-    term1, term20, term21 = 0., 0., 0.
-    # PRB: I think this loop can be vectorized with some work
-    for pair1, Ylm1 in Ylms.iteritems():
-        l1, m1 = pair1
-        n_one_l1 = (-1)**l1
-        Ylm1_conj = np.conj(Ylm1)
-        term1 += Ylm1_conj * rholm_vals[pair1]
-        tmp_term20, tmp_term21 = 0., 0.
-	    # PRB: should also re-pack the crossterms into arrays
-        for pair2, Ylm2 in Ylms.iteritems():
-            tmp_term20 += crossTerms[(pair1, pair2)] * Ylm2
-            tmp_term21 += Ylm2 * crossTerms[((l1, -m1), pair2)]
-        term20 += tmp_term20 * Ylm1_conj
-        term21 += tmp_term21 * n_one_l1 * Ylm1
-    term1 = np.real( Fstar * term1 ) * invDistMpc 
-    term1 += -0.25 * np.real( F * ( Fstar * term20 + F * term21 ) ) * invDistMpc * invDistMpc 
+    # Eq. 26 of Richard's notes
+    term2 = 0.
+    for pair1 in rholm_vals:
+        for pair2 in rholm_vals:
+            term2 += F * np.conj(F) * ( crossTerms[(pair1,pair2)])\
+                    * np.conj(Ylms[pair1]) * Ylms[pair2]\
+                    + F*F*Ylms[pair1]*Ylms[pair2]*((-1)**pair1[0])\
+                    * crossTerms[((pair1[0],-pair1[1]),pair2)]
+    term2 = -np.real(term2) / 4. /(distMpc/distMpcRef)**2
 
-    return term1
+    return term1 + term2
 
 def compute_mode_ip_time_series(hlms, data, psd, fmin, fMax, fNyq,
         N_shift, N_window, analyticPSD_Q=False,
@@ -412,7 +390,7 @@ def complex_antenna_factor(det, RA, DEC, psi, tref):
 
     return Fp + 1j * Fc
 
-def compute_spherical_harmonics(Lmax, theta, phi, selected_modes=None):
+def compute_spherical_harmonics(Lmax, theta, phi):
     """
     Return a dictionary keyed by tuples
     (l,m)
@@ -422,12 +400,9 @@ def compute_spherical_harmonics(Lmax, theta, phi, selected_modes=None):
     l <= Lmax
     -l <= m <= l
     """
-    # PRB: would this be faster if we made it a 2d numpy array?  
     Ylms = {}
     for l in range(2,Lmax+1):
         for m in range(-l,l+1):
-            if selected_modes is not None and (l,m) not in selected_modes:
-                continue
             Ylms[ (l,m) ] = lal.SpinWeightedSphericalHarmonic(theta, phi,-2, l, m)
 
     return Ylms

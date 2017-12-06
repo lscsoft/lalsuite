@@ -29,11 +29,6 @@
 #include <lal/XLALError.h>
 
 /**
- * @addtogroup LALSimInspiralTaylorF2ReducedSpin_c
- * @{
- */
-
-/**
  * Generate the "reduced-spin templates" proposed in http://arxiv.org/abs/1107.1267
  * Add the tidal phase terms from http://arxiv.org/abs/1101.1673 (Eqs. 3.9, 3.10)
  * The chi parameter should be determined from XLALSimInspiralTaylorF2ReducedSpinComputeChi.
@@ -93,7 +88,7 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &tStart, 0.0, deltaF, &lalStrainUnit, n);
     if (!(*htilde)) XLAL_ERROR(XLAL_EFUNC);
     memset((*htilde)->data->data, 0, n * sizeof(COMPLEX16));
-    XLALUnitMultiply(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
+    XLALUnitDivide(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
 
     /* extrinsic parameters */
     amp0 = -pow(m_sec, 5./6.) * sqrt(5. * eta / 24.) / (cbrt(LAL_PI * LAL_PI) * r / LAL_C_SI);
@@ -147,35 +142,17 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
         case 0:
         case 1:
             alpha2 = 0.;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 2:
             alpha3 = 0.;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 3:
             alpha4 = 0.;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 4:
             alpha5 = 0.;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 5:
             alpha6 = 0.;
             alpha6L = 0.;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 6:
             alpha7 = 0.;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         default:
             break;
     }
@@ -184,35 +161,17 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
         case 0:
         case 1:
             psi2 = 0.;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 2:
             psi3 = 0.;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 3:
             psi4 = 0.;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 4:
             psi5 = 0.;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 5:
             psi6 = 0.;
             psi6L = 0.;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 6:
             psi7 = 0.;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         default:
             break;
     }
@@ -257,5 +216,3 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
 
     return XLAL_SUCCESS;
 }
-
-/** @} */

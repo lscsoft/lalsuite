@@ -33,7 +33,13 @@ NEW_DATA_STR = '######### NEW DATASET #############\n'
 defstr = ' [default: %default]'
 parameterInfo = [['domain', 'string', 'TD', 'Generate either a time (TD) or ' +
         'frequency (FD) domain waveform'+defstr , 'DOM'],
-        ['approximant', 'string', 'TaylorT1', 'Approximant name'+defstr, 'APPROX'],
+        ['approximant', 'string', 'TaylorT1', 'Supported TD approximants: ' +
+        'TaylorT1, TaylorT2, TaylorT3, ' +
+        'TaylorT4, TaylorEt, IMRPhenomA, IMRPhenomB, IMRPhenomC, EOBNRv2, ' +
+        'EOBNRv2HM, SEOBNRv1, SpinTaylorT4, SpinTaylorT2, PhenSpinTaylor, ' +
+        'PhenSpinTaylorRD. Supported FD approximants: IMRPhenomA, IMRPhenomB,' +
+        'IMRPhenomC, IMRPhenomP, TaylorF2, TaylorF2RedSpin, ' +
+        'TaylorF2RedSpinTidal, TaylorR2F4, SpinTaylorF2'+defstr, 'APPROX'],
         ['phaseOrder', 'int', -1, 'Twice PN order of phase, [default -1 ' +
         'for highest available order]', 'ORD'],
         ['ampOrder', 'int', -1, 'Twice PN order of amplitude, [default -1 ' +
@@ -69,23 +75,22 @@ parameterInfo = [['domain', 'string', 'TD', 'Generate either a time (TD) or ' +
         ['lambda2', 'float', 0., '(tidal deformability of mass 2) / ' +
         '(mass of body 2)^5 Reasonable values (~128-2560 for NS, 0 for BH)' +
         defstr, 'L2'],
-        ['f_min', 'float', 40., 'Lowest GW frequency in Hz'+defstr, 'FMIN'],
-        ['f_max', 'float', 0., 'Highest GW frequency in Hz - only used by FD ' +
+        ['fmin', 'float', 40., 'Lowest GW frequency in Hz'+defstr, 'FMIN'],
+        ['fmax', 'float', 0., 'Highest GW frequency in Hz - only used by FD ' +
         'waveforms [default 0 (as high as possible)]', 'FMAX'],
-        ['f_ref', 'float', 0., 'Reference GW frequency in Hz at which phase, ' +
+        ['fref', 'float', 0., 'Reference GW frequency in Hz at which phase, ' +
         'binary orientation are defined [default 0 (coalescence)]', 'FREF'],
-        ['phiref', 'float', 1.2, 'Orbital phase at FREF'+defstr, 'PHIREF'],
-        ['longAscNodes', 'float', 0., 'Longitude of ascending nodes', 'LONGASCNODES'],
-        ['eccentricity', 'float', 0., 'eccentricity', 'ECCENTRICITY'],
-        ['meanPerAno', 'float', 0., 'Mean periastron anomaly', 'MEANPERANO'],
-        ['eps', 'float', 1.e-2, 'Tolerance check', 'TOLERANCE']]
+        ['phiref', 'float', 1.2, 'Orbital phase at FREF'+defstr, 'PHIREF']]
 
-paramnames = {'TD': ['m1', 'm2', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y', 'spin2z',
-                     'distance', 'inclination', 'phiref', 'longAscNodes', 'eccentricity', 'meanPerAno',
-                     'deltaT', 'f_min', 'f_ref'],
-              'FD': ['m1', 'm2', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y', 'spin2z',
-                         'distance', 'inclination', 'phiref', 'longAscNodes', 'eccentricity', 'meanPerAno',
-                         'deltaF', 'f_min', 'f_max', 'f_ref']}
+
+paramnames = {'TD': ['phiref', 'deltaT', 'm1', 'm2', 'spin1x', 'spin1y',
+                     'spin1z', 'spin2x', 'spin2y', 'spin2z', 'fmin', 'fref',
+                     'distance', 'inclination', 'lambda1', 'lambda2',
+                     'waveformFlags', 'nonGRparams', 'ampOrder', 'phaseOrder'],
+              'FD': ['phiref', 'deltaF', 'm1', 'm2', 'spin1x', 'spin1y',
+                     'spin1z', 'spin2x', 'spin2y', 'spin2z', 'fmin', 'fmax',
+                     'fref', 'distance', 'inclination', 'lambda1', 'lambda2',
+                     'waveformFlags', 'nonGRparams', 'ampOrder', 'phaseOrder']}
 
 parameterDicts = [{'name': p[0], 'type': p[1], 'default': p[2], 'help': p[3],
         'metavar': p[4]} for p in parameterInfo]
@@ -188,34 +193,25 @@ def generateWfparameters(opts):
     inputpar['distance'] *= (1.e6 * lal.PC_SI)
     inputpar['approximant'] = lalsim.GetApproximantFromString(
         inputpar['approximant'])
+    inputpar.update({'nonGRparams': None, 'waveformFlags': None})
+    # nonGRparams and waveformsFlags currently not supported
 
     if (inputpar['sampleRate'] != defSampleRate):
         inputpar['deltaT'] = 1./inputpar['sampleRate']
         optsDict['deltaT'] = inputpar['deltaT']
 
-    domain = optsDict['domain']
-    wfinputpar=[inputpar[name] for name in paramnames[domain]]
-    LALpars=lal.CreateDict()
-    if (inputpar['lambda1']):
-        lalsim.SimInspiralWaveformParamsInsertTidalLambda1(LALpars,inputpar['lambda1'])
-    if (inputpar['lambda2']):
-        lalsim.SimInspiralWaveformParamsInsertTidalLambda2(LALpars,inputpar['lambda2'])
-    if (inputpar['ampOrder']!=-1):
-        lalsim.SimInspiralWaveformParamsInsertPNAmplitudeOrder(LALpars,inputpar['ampOrder'])
-    if (inputpar['phaseOrder']!=-1):
-        lalsim.SimInspiralWaveformParamsInsertPNPhaseOrder(LALpars,inputpar['phaseOrder'])
-    wfinputpar.append(LALpars)
-    wfinputpar.append(inputpar['approximant'])
-
-    return domain, wfinputpar, optsDict
+    return inputpar, optsDict
 
 
-def generateWaveformData(domain,inputpar):
+def generateWaveformData(inputpar):
     '''Generate waveform data from input parameter dictionary'''
 
+    wfparameters = [inputpar[p] for p in paramnames[inputpar['domain']]]
+    wfparameters.append(inputpar['approximant'])
+
     waveformgenerator={'TD': lalsim.SimInspiralChooseTDWaveform,
-                       'FD': lalsim.SimInspiralChooseFDWaveform}[domain]
-    hp, hc = waveformgenerator(*inputpar)
+                       'FD': lalsim.SimInspiralChooseFDWaveform}[inputpar['domain']]
+    hp, hc = waveformgenerator(*wfparameters)
     assert hp.epoch==hc.epoch
 
     return hp, hc
@@ -236,26 +232,16 @@ def writeData(filename, polarisations, optsDict):
 
     fp.write('\n[auxiliary]\n')
     fp.write('LALSuite-git = ' + git_version.version + '\n')
-    if optsDict['approximant']=="SEOBNRv3":
-        fp.write('EPS = ' + "{:.1e}".format(optsDict['eps']) + '\n')
 
     fp.write('\n[parameters]\n')
 
     formattext = {'float': lambda val: '%.16e' % val, 'string': lambda x: x,
                    'int': lambda val: str(val)}
 
-    # collate parameters that are either (1) standard waveform
-    # interface parameters, or (2) non-standard additional parameters
-    # (e.g., lambda1, ampOrder, ...)
-    outputpars = set(paramnames[optsDict['domain']]).intersection(
-            set(optsDict.keys()))
-    remainingpars = (set(optsDict.keys()) - outputpars).intersection(
-            set(defaultDict.keys()) - {'approximant', 'domain'})
-    non_std_pars = []
-    for par in remainingpars:
-        if optsDict[par] != defaultDict[par]:
-            non_std_pars.append(par)
-    outputpars = list(outputpars) + non_std_pars
+    # make only output parameters that have actually been defined in optsDict
+    # (excluding waveformFlags and nonGRparams)
+    outputpars = list(set(paramnames[optsDict['domain']]).intersection(
+            set(optsDict.keys())))
 
     for p in outputpars:
         line = p + ' = ' + formattext[partypes[p]](optsDict[p]) + '\n'
@@ -303,10 +289,10 @@ if __name__ == '__main__':
         # NOTE: command line options overwrite parameters in input file
         # for every dataset
         for conf in infile.dataset:
-            domain, par, optsdict = generateWfparameters(updateOptions(conf))
-            polarisations = generateWaveformData(domain, par)
+            par, optsdict = generateWfparameters(updateOptions(conf))
+            polarisations = generateWaveformData(par)
             writeData(opts.output, polarisations, optsdict)
     else:
-        domain, par, optsdict = generateWfparameters(opts)
-        polarisations = generateWaveformData(domain, par)
+        par, optsdict = generateWfparameters(opts)
+        polarisations = generateWaveformData(par)
         writeData(opts.output, polarisations, optsdict)

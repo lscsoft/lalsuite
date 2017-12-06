@@ -21,27 +21,54 @@
 #define __TWOSPECT_H__
 
 #include <lal/RealFFT.h>
+#include <lal/LFTandTSutils.h>
 
 #include "TwoSpectTypes.h"
 
-ffdataStruct * createffdata(const UserInput_t *params);
-void destroyffdata(ffdataStruct *data);
+extern FILE *LOG;
 
-INT4Vector * detectLines_simple(const REAL4VectorAligned *TFdata, const ffdataStruct *ffdata, const UserInput_t *params);
-REAL4VectorSequence * trackLines(const INT4Vector *lines, const INT4Vector *binshifts, const REAL4 minfbin, const REAL4 df);
-INT4 cleanLines(REAL4VectorAligned *TFdata, const REAL4VectorAligned *background, const INT4Vector *lines, const UserInput_t *params, const gsl_rng *rng);
-INT4 makeSecondFFT(ffdataStruct *ffdata, REAL4VectorAligned *tfdata, const REAL4FFTPlan *plan);
-INT4 ffPlaneNoise(REAL4VectorAligned *aveNoise, const UserInput_t *params, const INT4Vector *sftexist, const REAL4VectorAligned *aveNoiseInTime, const REAL4VectorAligned *antweights, const REAL4VectorAligned *backgroundScaling, const REAL4FFTPlan *plan, const REAL4VectorAligned *expDistVals, const gsl_rng *rng, REAL8 *normalization);
+inputParamsStruct * new_inputParams(void);
+void free_inputParams(inputParamsStruct *params);
 
-REAL4 avgTFdataBand(const REAL4VectorAligned *backgrnd, UINT4 numfbins, UINT4 numffts, UINT4 binmin, UINT4 binmax);
-REAL4 rmsTFdataBand(const REAL4VectorAligned *backgrnd, UINT4 numfbins, UINT4 numffts, UINT4 binmin, UINT4 binmax);
-REAL4VectorAligned * calcAveTFnoisePerFbinRatio(const REAL4VectorAligned *background, const REAL4VectorAligned *backgroundScaling, const UINT4 numffts);
-INT4 medianBackgroundBandInTime(REAL4VectorAligned *aveNoiseInTime, const REAL4VectorAligned *backgrnd, const INT4Vector *sftexist);
+ffdataStruct * new_ffdata(inputParamsStruct *params);
+void free_ffdata(ffdataStruct *data);
 
-MultiLALDetector * setupMultiLALDetector(LALStringVector *IFO);
+SFTCatalog * findSFTdata(inputParamsStruct *params);
+MultiSFTVector * extractSFTband(inputParamsStruct *params, SFTCatalog *catalog);
+MultiSFTVector * getMultiSFTVector(inputParamsStruct *params);
+REAL4Vector * coherentlyAddSFTs(MultiSFTVector *multiSFTs, MultiSSBtimes *multissb, MultiAMCoeffs *multiAMcoefficients, REAL8 *assumeNScosi, REAL8 *assumeNSpsi, inputParamsStruct *params);
+REAL4Vector * convertSFTdataToPowers(SFTVector *sfts, inputParamsStruct *params, REAL8 normalization);
+REAL4Vector * readInSFTs(inputParamsStruct *params, REAL8 normalization);
 
-INT4 readTwoSpectInputParams(UserInput_t *uvar, int argc, char *argv[]);
-INT4 printREAL4Vector2File(const REAL4Vector *vector, const CHAR *directory, const CHAR *filename);
+MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTCatalog(SFTCatalog *catalog);
+MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTs(MultiSFTVector *multiSFTvector, inputParamsStruct *params);
+MultiLIGOTimeGPSVector * getMultiTimeStampsFromSegmentsFile(LALStringVector *filenames, inputParamsStruct *params);
+
+INT4Vector * markBadSFTs(REAL4Vector *tfdata, inputParamsStruct *params);
+INT4Vector * existingSFTs(REAL4Vector *tfdata, inputParamsStruct *params, INT4 numfbins, INT4 numffts);
+void removeBadSFTs(REAL4Vector *tfdata, INT4Vector *badsfts);
+
+INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, inputParamsStruct *params);
+REAL4VectorSequence * trackLines(INT4Vector *lines, INT4Vector *binshifts, inputParamsStruct *params);
+INT4 cleanLines(REAL4Vector *TFdata, REAL4Vector *background, INT4Vector *lines, inputParamsStruct *params);
+INT4 PhaseShiftSFT(SFTtype *sft, REAL8 shift);
+INT4 slideTFdata(REAL4Vector *output, inputParamsStruct *params, REAL4Vector *tfdata, INT4Vector *binshifts);
+INT4 tfMeanSubtract(REAL4Vector *tfdata, REAL4Vector *rngMeans, INT4 numffts, INT4 numfbins);
+INT4 tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, INT4Vector *indexValuesOfExistingSFTs, inputParamsStruct *params);
+INT4 tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 blksize);
+INT4 makeSecondFFT(ffdataStruct *ffdata, REAL4Vector *tfdata, REAL4FFTPlan *plan);
+INT4 ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *params, INT4Vector *sftexist, REAL4Vector *backgrnd, REAL4Vector *antweights, REAL4FFTPlan *plan, REAL8 *normalization);
+
+REAL8 determineSumOfWeights(REAL4Vector *antweightssq, REAL4Vector *rngMeanssq);
+
+COMPLEX16 DirichletKernelLargeN(REAL8 delta);
+COMPLEX16 DirichletKernelLargeNHann(REAL8 delta);
+
+REAL4 avgTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 binmin, INT4 binmax);
+REAL4 rmsTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 binmin, INT4 binmax);
+
+INT4 readTwoSpectInputParams(inputParamsStruct *params, UserInput_t *uvar, int argc, char *argv[]);
+INT4 printREAL4Vector2File(REAL4Vector *vector, CHAR *filename);
 
 #endif
 

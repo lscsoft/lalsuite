@@ -29,7 +29,7 @@ extern "C" {
 
 /**
  * \defgroup ExtrapolatePulsarSpins_h Header ExtrapolatePulsarSpins.h
- * \ingroup lalpulsar_general
+ * \ingroup lalpulsar_common
  * \brief  Extrapolate the Pulsar spin-paramters
  * \f$\{f^{(k)}\}\equiv\{f, \dot{f},\ddot{f},...\}\f$, and "spin-ranges"
  * \f$\{ f^{(k)}, \Delta f^{(k)} \}\f$ from one SSB epoch to another.
@@ -75,14 +75,36 @@ extern "C" {
  */
 /*@{*/
 
-/*---------- exported prototypes [API] ----------*/
-int XLALInitPulsarSpinRangeFromSpins ( PulsarSpinRange *range, const LIGOTimeGPS *refTime, const PulsarSpins fkdot1, const PulsarSpins fkdot2 );
+/*---------- exported INCLUDES ----------*/
 
+/*---------- exported DEFINES ----------*/
+
+/** \name Error-codes */
+/*@{*/
+#define EXTRAPOLATEPULSARSPINS_ENULL 		1
+#define EXTRAPOLATEPULSARSPINS_ENONULL		2
+#define EXTRAPOLATEPULSARSPINS_EMEM		3
+#define EXTRAPOLATEPULSARSPINS_EINPUT		4
+#define EXTRAPOLATEPULSARSPINS_ELIST		5
+#define EXTRAPOLATEPULSARSPINS_EXLAL		6
+#define EXTRAPOLATEPULSARSPINS_ENUMSPINS	7
+
+#define EXTRAPOLATEPULSARSPINS_MSGENULL 	"Arguments contained an unexpected null pointer"
+#define EXTRAPOLATEPULSARSPINS_MSGENONULL	"Output pointer is not NULL"
+#define EXTRAPOLATEPULSARSPINS_MSGEMEM		"Out of memory"
+#define EXTRAPOLATEPULSARSPINS_MSGEINPUT	"Invald input parameter"
+#define EXTRAPOLATEPULSARSPINS_MSGELIST		"Error occurred in list-handling ..."
+#define EXTRAPOLATEPULSARSPINS_MSGEXLAL		"(X)LAL sub-routine failed"
+#define EXTRAPOLATEPULSARSPINS_MSGENUMSPINS	"Inconsistent number of spins"
+/*@}*/
+
+/*---------- exported TYPES ----------*/
+
+/*---------- exported Global variables ----------*/
+
+/*---------- exported prototypes [API] ----------*/
 int XLALExtrapolatePulsarSpinRange(  PulsarSpinRange *range1, const PulsarSpinRange *range0, const REAL8 dtau );
 
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(OUTPUT_ARRAY_1D(PulsarSpins, fkdot1));
-#endif // SWIG
 int XLALExtrapolatePulsarSpins ( PulsarSpins fkdot1, const PulsarSpins fkdot0, REAL8 dtau );
 
 int XLALExtrapolatePulsarPhase ( REAL8 *phi1, const PulsarSpins fkdot1, const REAL8 phi0, const REAL8 dtau );
@@ -91,6 +113,11 @@ int XLALCWSignalCoveringBand( REAL8 *minCoverFreq, REAL8 *maxCoverFreq, const LI
                               const PulsarSpinRange *spinRange, const REAL8 binaryMaxAsini, const REAL8 binaryMinPeriod, const REAL8 binaryMaxEcc );
 
 /*@}*/
+
+/** \cond DONT_DOXYGEN */
+void LALExtrapolatePulsarSpinRange( LALStatus *, PulsarSpinRange *range1, LIGOTimeGPS epoch1,  const PulsarSpinRange *range0 );
+void LALExtrapolatePulsarSpins (LALStatus *, PulsarSpins fkdot1, LIGOTimeGPS epoch1, const PulsarSpins fkdot0, LIGOTimeGPS epoch0 );
+/** \endcond */
 
 #ifdef  __cplusplus
 }

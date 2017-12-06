@@ -42,19 +42,16 @@ void nested_sampling_algorithm_wrapper(LALInferenceRunState *runState);
 void setup_live_points_array_wrapper( LALInferenceRunState *runState );
 void initialise_algorithm( LALInferenceRunState *runState );
 void setup_lookup_tables(LALInferenceRunState *runState, LALSource *source);
-void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars );
+void add_initial_variables( LALInferenceVariables *ini, LALInferenceVariables *scaleFac, BinaryPulsarParams pars );
+void add_variable_scale( LALInferenceVariables *var, LALInferenceVariables *scale, const char *name, REAL8 value );
 void initialise_prior( LALInferenceRunState *runState );
 void initialise_proposal( LALInferenceRunState *runState );
 void add_correlation_matrix( LALInferenceVariables *ini,
                              LALInferenceVariables *priors, REAL8Array *corMat,
                              LALStringVector *parMat );
 void sum_data( LALInferenceRunState *runState );
-void LogSampleToFile(LALInferenceVariables *algorithmParams, LALInferenceVariables *vars);
-void LogSampleToArray(LALInferenceVariables *algorithmParams, LALInferenceVariables *vars);
-REAL8Vector** parse_gmm_means(CHAR *meanstr, UINT4 npars, UINT4 nmodes);
-gsl_matrix** parse_gmm_covs(CHAR *covstr, UINT4 npars, UINT4 nmodes);
-CHAR* get_bracketed_string(CHAR *dest, const CHAR *bstr, int openbracket, int closebracket);
-void initialise_threads(LALInferenceRunState *state, INT4 nthreads);
+void LogNonFixedSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars);
+void LogNonFixedSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars);
 
 #ifdef __cplusplus
 }

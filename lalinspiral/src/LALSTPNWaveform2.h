@@ -7,12 +7,11 @@
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>
 
-#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
+#include <lal/LALAdaptiveRungeKutta4.h>
 
 #ifdef  __cplusplus
 extern "C" {
-#elif 0
-}       /* so that editors will match preceding brace */
+#pragma }
 #endif
 
 extern int newswitch;
@@ -25,9 +24,8 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
                 							 InspiralTemplate *params,InspiralInit *paramsInit
 														 );
 
-#if 0
-{       /* so that editors will match succeeding brace */
-#elif defined(__cplusplus)
+#ifdef  __cplusplus
+#pragma {
 }
 #endif
 

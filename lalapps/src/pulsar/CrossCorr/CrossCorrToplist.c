@@ -251,7 +251,7 @@ void sort_crossCorrBinary_toplist(toplist_t*l) {
 /* 	return -2; */
 
 /*     /\* make sure the line buffer is terminated correctly *\/ */
-/*     XLAL_LAST_ELEM(line)='\0'; */
+/*     line[sizeof(line)-1]='\0'; */
 
 /*     /\* init the checksum if given *\/ */
 /*     if(checksum) */
@@ -385,7 +385,7 @@ void sort_crossCorrBinary_toplist(toplist_t*l) {
 /* 	return -2; */
 
 /*     /\* make sure the line buffer is terminated correctly *\/ */
-/*     XLAL_LAST_ELEM(line)='\0'; */
+/*     line[sizeof(line)-1]='\0'; */
 
 /*     /\* init the checksum if given *\/ */
 /*     if(checksum) */
@@ -547,7 +547,7 @@ int write_crossCorr_toplist_item_to_fp(CrossCorrOutputEntry fline, FILE*fp, UINT
 	for(i=0;i<length;i++)
 	    *checksum += linebuf[i];
 
-    XLAL_LAST_ELEM(linebuf) = '\0';
+    linebuf[sizeof(linebuf)-1] = '\0';
 
     return(fprintf(fp,"%s",linebuf));
 }
@@ -567,7 +567,7 @@ int write_crossCorrBinary_toplist_item_to_fp(CrossCorrBinaryOutputEntry fline, F
 	for(i=0;i<length;i++)
 	    *checksum += linebuf[i];
 
-    XLAL_LAST_ELEM(linebuf) = '\0';
+    linebuf[sizeof(linebuf)-1] = '\0';
 
     return(fprintf(fp,"%s",linebuf));
 }

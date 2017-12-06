@@ -1,14 +1,14 @@
-MOSTLYCLEANFILES =
+BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
-include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
-progs = lalapps_psinject
-
+if LALFRAME
+frameprogs = lalapps_psinject
 if GDS
-progs += online_psinject
+frameprogs += online_psinject
+endif
 endif
 
-bin_PROGRAMS = $(progs)
+bin_PROGRAMS = $(frameprogs)
 
 lalapps_psinject_SOURCES = psinject.c
 

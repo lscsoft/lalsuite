@@ -9,16 +9,14 @@ pymoduledir = $(pkgpythondir)/rapid_pe
 
 pymodule_PYTHON = \
 	__init__.py \
-	factored_likelihood.py \
-	lalsimutils.py \
-	mcsampler.py \
-	statutils.py \
-	xmlutils.py \
-	amrlib.py \
-	synchlib.py \
-	common_cl.py \
-	dagutils.py \
-	effectiveFisher.py \
+    factored_likelihood.py \
+    lalsimutils.py \
+    mcsampler.py \
+    statutils.py \
+    xmlutils.py \
+    common_cl.py \
+    dagutils.py \
+    effectiveFisher.py \
 	$(END_OF_LIST)
 
 endif

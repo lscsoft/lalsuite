@@ -25,28 +25,29 @@
 
 /* LAL-includes */
 #include <lal/LFTandTSutils.h>
+#include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/LogPrintf.h>
 #include <lal/TimeSeries.h>
 #include <lal/ComplexFFT.h>
 #include <lal/ComputeFstat.h>
 #include <lal/SinCosLUT.h>
-#include <lal/Factorial.h>
-#include <lal/Window.h>
 
 /*---------- DEFINES ----------*/
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 #define SQ(x) ((x)*(x))
 
-#define FINITE_OR_ONE(x)  (((x) != 0) ? (x) : 1.0)
-#define cRELERR(x,y) ( cabsf( (x) - (y) ) / FINITE_OR_ONE( 0.5 * (cabsf(x) + cabsf(y)) ) )
-#define fRELERR(x,y) ( fabsf( (x) - (y) ) / FINITE_OR_ONE( 0.5 * (fabsf(x) + fabsf(y)) ) )
+#define cRELERR(x,y) ( cabsf( (x) - (y) ) / ( 0.5 * (cabsf(x) + cabsf(y)) ) )
+#define fRELERR(x,y) ( fabsf( (x) - (y) ) / ( 0.5 * (fabsf(x) + fabsf(y)) ) )
 #define OOTWOPI         (1.0 / LAL_TWOPI)      // 1/2pi
 #define OOPI         (1.0 / LAL_PI)      // 1/pi
-#define LD_SMALL4       (2.0e-4)                // "small" number for REAL4: taken from Demod()
+
 /*---------- Global variables ----------*/
 static LALUnit emptyLALUnit;
+
+#define NUM_FACT 7
+static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
 
 /* ---------- local prototypes ---------- */
 
@@ -497,7 +498,7 @@ XLALSpinDownCorrectionMultiTS ( MultiCOMPLEX8TimeSeries *multiTimeSeries,       
         {
           tk_pow_jp1 *= tk;
           /* compute fractional number of cycles the spin-derivitive has added since the reftime */
-          cycles_k += LAL_FACT_INV[j+1] * doppler->fkdot[j] * tk_pow_jp1;
+          cycles_k += inv_fact[j+1] * doppler->fkdot[j] * tk_pow_jp1;
         } // for j < nspins
 
       REAL4 cosphase, sinphase;
@@ -581,22 +582,22 @@ XLALDuplicateMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes )
  * Allocates memory and copies contents.
  */
 COMPLEX8TimeSeries *
-XLALDuplicateCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *ttimes )
+XLALDuplicateCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *times )
 {
-  XLAL_CHECK_NULL ( ttimes != NULL, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( (ttimes->data != NULL) && (ttimes->data->length > 0) && ( ttimes->data->data != NULL ), XLAL_EINVAL );
+  XLAL_CHECK_NULL ( times != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( (times->data != NULL) && (times->data->length > 0) && ( times->data->data != NULL ), XLAL_EINVAL );
 
   COMPLEX8TimeSeries *out;
   XLAL_CHECK_NULL ( (out = XLALCalloc ( 1, sizeof(*out) )) != NULL, XLAL_ENOMEM );
 
   // copy header info [including data-pointer, will be reset]
-  memcpy ( out, ttimes, sizeof(*ttimes) );
+  memcpy ( out, times, sizeof(*times) );
 
-  UINT4 numBins = ttimes->data->length;
+  UINT4 numBins = times->data->length;
   XLAL_CHECK_NULL ( (out->data = XLALCreateCOMPLEX8Vector ( numBins )) != NULL, XLAL_EFUNC );
 
   // copy contents of COMPLEX8 vector
-  memcpy ( out->data->data, ttimes->data->data, numBins * sizeof(ttimes->data->data[0]) );
+  memcpy ( out->data->data, times->data->data, numBins * sizeof(times->data->data[0]) );
 
   return out;
 
@@ -671,9 +672,7 @@ XLALCompareCOMPLEX8Vectors ( VectorComparison *result,		///< [out] return compar
   XLAL_CHECK ( x->length == y->length, XLAL_EINVAL );
 
   REAL8 x_L1 = 0, x_L2 = 0;
-  REAL8 x_L2sq = 0;
   REAL8 y_L1 = 0, y_L2 = 0;
-  REAL8 y_L2sq = 0;
   REAL8 diff_L1 = 0, diff_L2 = 0;
   COMPLEX16 scalar = 0;
 
@@ -681,18 +680,15 @@ XLALCompareCOMPLEX8Vectors ( VectorComparison *result,		///< [out] return compar
   COMPLEX8 x_atMaxAbsx = 0, y_atMaxAbsx = 0;
   COMPLEX8 x_atMaxAbsy = 0, y_atMaxAbsy = 0;
 
-
   UINT4 numSamples = x->length;
   for ( UINT4 i = 0; i < numSamples; i ++ )
     {
-      COMPLEX16 x_i = x->data[i];
-      COMPLEX16 y_i = y->data[i];
-      REAL8 xAbs2_i = x_i * conj( x_i );
-      REAL8 yAbs2_i = y_i * conj( y_i );
-      REAL8 xAbs_i  = sqrt ( xAbs2_i );
-      REAL8 yAbs_i  = sqrt ( yAbs2_i );
-      XLAL_CHECK ( isfinite ( xAbs_i ), XLAL_EFPINVAL, "non-finite element: x(%d) = %g + I %g\n", i, creal(x_i), cimag(x_i) );
-      XLAL_CHECK ( isfinite ( yAbs_i ), XLAL_EFPINVAL, "non-finite element: y(%d) = %g + I %g\n", i, creal(y_i), cimag(y_i) );
+      COMPLEX8 x_i = x->data[i];
+      COMPLEX8 y_i = y->data[i];
+      REAL8 xAbs_i = cabs ( x_i );
+      REAL8 yAbs_i = cabs ( y_i );
+      XLAL_CHECK ( isfinite ( xAbs_i ), XLAL_EFPINVAL, "non-finite element: x(%d) = %g + I %g\n", i, crealf(x_i), cimagf(x_i) );
+      XLAL_CHECK ( isfinite ( yAbs_i ), XLAL_EFPINVAL, "non-finite element: y(%d) = %g + I %g\n", i, crealf(y_i), cimagf(y_i) );
 
       REAL8 absdiff = cabs ( x_i - y_i );
       diff_L1 += absdiff;
@@ -700,8 +696,8 @@ XLALCompareCOMPLEX8Vectors ( VectorComparison *result,		///< [out] return compar
 
       x_L1 += xAbs_i;
       y_L1 += yAbs_i;
-      x_L2sq += xAbs2_i;
-      y_L2sq += yAbs2_i;
+      x_L2 += SQ(xAbs_i);
+      y_L2 += SQ(yAbs_i);
 
       scalar += x_i * conj(y_i);
 
@@ -719,17 +715,15 @@ XLALCompareCOMPLEX8Vectors ( VectorComparison *result,		///< [out] return compar
     } // for i < numSamples
 
   // complete L2 norms by taking sqrt
-  x_L2 = sqrt ( x_L2sq );
-  y_L2 = sqrt ( y_L2sq );
+  x_L2 = sqrt ( x_L2 );
+  y_L2 = sqrt ( y_L2 );
   diff_L2 = sqrt ( diff_L2 );
-  REAL8 sinAngle2 = (x_L2sq * y_L2sq - scalar * conj(scalar)) / FINITE_OR_ONE(x_L2sq * y_L2sq);
-  REAL8 angle = asin ( sqrt( fabs(sinAngle2) ) );
 
   // compute and return comparison results
-  result->relErr_L1 = diff_L1 / FINITE_OR_ONE( 0.5 * (x_L1 + y_L1 ) );
-  result->relErr_L2 = diff_L2 / FINITE_OR_ONE( 0.5 * (x_L2 + y_L2 ) );
-  result->angleV = angle;
-
+  result->relErr_L1 = diff_L1 / ( 0.5 * (x_L1 + y_L1 ) );
+  result->relErr_L2 = diff_L2 / ( 0.5 * (x_L2 + y_L2 ) );
+  REAL8 cosTheta = fmin ( 1, creal ( scalar ) / (x_L2 * y_L2) );
+  result->angleV = acos ( cosTheta );
   result->relErr_atMaxAbsx = cRELERR ( x_atMaxAbsx, y_atMaxAbsx );
   result->relErr_atMaxAbsy = cRELERR ( x_atMaxAbsy, y_atMaxAbsy );;
 
@@ -757,9 +751,7 @@ XLALCompareREAL4Vectors ( VectorComparison *result,	///< [out] return comparison
   XLAL_CHECK ( x->length == y->length, XLAL_EINVAL );
 
   REAL8 x_L1 = 0, x_L2 = 0;
-  REAL8 x_L2sq = 0;
   REAL8 y_L1 = 0, y_L2 = 0;
-  REAL8 y_L2sq = 0;
   REAL8 diff_L1 = 0, diff_L2 = 0;
   REAL8 scalar = 0;
 
@@ -770,14 +762,12 @@ XLALCompareREAL4Vectors ( VectorComparison *result,	///< [out] return comparison
   UINT4 numSamples = x->length;
   for ( UINT4 i = 0; i < numSamples; i ++ )
     {
-      REAL8 x_i = x->data[i];
-      REAL8 y_i = y->data[i];
+      REAL4 x_i = x->data[i];
+      REAL4 y_i = y->data[i];
       XLAL_CHECK ( isfinite ( x_i ), XLAL_EFPINVAL, "non-finite element: x(%d) = %g\n", i, x_i );
       XLAL_CHECK ( isfinite ( y_i ), XLAL_EFPINVAL, "non-finite element: y(%d) = %g\n", i, y_i );
-      REAL8 xAbs_i = fabs ( x_i );
-      REAL8 yAbs_i = fabs ( y_i );
-      REAL8 xAbs2_i = SQ( x_i );
-      REAL8 yAbs2_i = SQ( y_i );
+      REAL4 xAbs_i = fabs ( x_i );
+      REAL4 yAbs_i = fabs ( y_i );
 
       REAL8 absdiff = fabs ( x_i - y_i );
       diff_L1 += absdiff;
@@ -785,8 +775,8 @@ XLALCompareREAL4Vectors ( VectorComparison *result,	///< [out] return comparison
 
       x_L1 += xAbs_i;
       y_L1 += yAbs_i;
-      x_L2sq += xAbs2_i;
-      y_L2sq += yAbs2_i;
+      x_L2 += SQ(xAbs_i);
+      y_L2 += SQ(yAbs_i);
 
       scalar += x_i * y_i;
 
@@ -804,15 +794,15 @@ XLALCompareREAL4Vectors ( VectorComparison *result,	///< [out] return comparison
     } // for i < numSamples
 
   // complete L2 norms by taking sqrt
-  x_L2 = sqrt ( x_L2sq );
-  y_L2 = sqrt ( y_L2sq );
+  x_L2 = sqrt ( x_L2 );
+  y_L2 = sqrt ( y_L2 );
   diff_L2 = sqrt ( diff_L2 );
 
   // compute and return comparison results
-  result->relErr_L1 = diff_L1 / FINITE_OR_ONE( 0.5 * (x_L1 + y_L1 ) );
-  result->relErr_L2 = diff_L2 / FINITE_OR_ONE( 0.5 * (x_L2 + y_L2 ) );
-  REAL8 sinAngle2 = (x_L2sq * y_L2sq - SQ(scalar) ) / FINITE_OR_ONE( x_L2sq * y_L2sq );
-  result->angleV = asin ( sqrt ( fabs ( sinAngle2 ) ) );
+  result->relErr_L1 = diff_L1 / ( 0.5 * (x_L1 + y_L1 ) );
+  result->relErr_L2 = diff_L2 / ( 0.5 * (x_L2 + y_L2 ) );
+  REAL8 cosTheta = fmin ( 1, scalar / (x_L2 * y_L2) );
+  result->angleV = acos ( cosTheta );
   result->relErr_atMaxAbsx = fRELERR ( x_atMaxAbsx, y_atMaxAbsx );
   result->relErr_atMaxAbsy = fRELERR ( x_atMaxAbsy, y_atMaxAbsy );;
 
@@ -844,7 +834,7 @@ XLALCheckVectorComparisonTolerances ( const VectorComparison *result,	///< [in] 
 
   if ( failed || (lalDebugLevel & LALINFO) )
     {
-      XLALPrintError( "relErr_L1        = %.1e (%.1e)\n"
+      XLALPrintInfo ( "relErr_L1        = %.1e (%.1e)\n"
                       "relErr_L2        = %.1e (%.1e)\n"
                       "angleV           = %.1e (%.1e)\n"
                       "relErr_atMaxAbsx = %.1e (%.1e)\n"
@@ -866,39 +856,30 @@ XLALCheckVectorComparisonTolerances ( const VectorComparison *result,	///< [in] 
 } // XLALCheckVectorComparisonTolerances()
 
 /** Interpolate a given regularly-spaced COMPLEX8 timeseries 'ts_in = x_in(j * dt)' onto new samples
- *  'y_out(t_out)' using *windowed* Shannon sinc interpolation, windowed to (2*Dterms+1) terms, namely
- * \f[
- * \newcommand{\Dterms}{\mathrm{Dterms}}
- * \f]
+ *  'y_out(t_out)' using Shannon sinc interpolation truncated to (2*Dterms+1) terms, namely
  *
  * \f{equation}{
- * x(t) = \sum_{j = j^* - \Dterms}^{j^* + \Dterms} x_j \, w_j \, \frac{\sin(\pi\delta_j)}{\pi\delta_j}\,,\quad\text{with}\quad
+ * x(t) = \sum_{j = j^* - \Delta j}^{j^* + \Delta j} x_j \,\, \frac{\sin(\pi\delta_j)}{\pi\delta_j}\,,\quad\text{with}\quad
  * \delta_j \equiv \frac{t - t_j}{\Delta t}\,,
  * \f}
- * where \f$j^* \equiv \mathrm{round}(t / \Delta t)\f$, and
- * where \f$w_j\f$ is the window used (here: Hamming)
+ * and where \f$j^* \equiv \mathrm{round}(t / \Delta t)\f$.
  *
  * In order to implement this more efficiently, we observe that \f$\sin(\pi\delta_j) = (-1)^{(j-j0)}\sin(\pi\delta_{j0})\f$ for integer \f$j\f$,
  * and therefore
  *
  * \f{equation}{
- * x(t) = \frac{\sin(\pi\,\delta_{j0})}{\pi} \, \sum_{j = j^* - \Dterms}^{j^* + \Dterms} (-1)^{(j-j0)}\frac{x_j \, w_j}{\delta_j}\,,
+ * x(t) = \frac{\sin(\pi\,\delta_{j0})}{\pi} \, \sum_{j = j^* - \Delta j}^{j^* + \Delta j} (-1)^{(j-j0)}\frac{x_j}{\delta_j}\,,
  * \f}
  *
  * NOTE: Using Dterms=0 corresponds to closest-bin interpolation
  *
  * NOTE2: samples *outside* the original timespan are returned as 0
- *
- * NOTE3: we're using a Hamming window of length L = 2*Dterms + 1, which has a pass-band wiggle of delta_p ~ 0.0022,
- * and a transition bandwidth of (4/L) * Bandwidth.
- * You need to make sure to include sufficient effective sidebands to the input timeseries, so that the transition band can
- * be safely ignored or 'cut out' at the end
  */
 int
 XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector *y_out,		///< [out] output series of interpolated y-values [must be same size as t_out]
                                         const REAL8Vector *t_out,	///< [in] output time-steps to interpolate input to
                                         const COMPLEX8TimeSeries *ts_in,///< [in] regularly-spaced input timeseries
-                                        UINT4 Dterms			///< [in] window sinc kernel sum to +-Dterms around max
+                                        UINT4 Dterms			///< [in] truncate sinc kernel sum to +-Dterms around max
                                         )
 {
   XLAL_CHECK ( y_out != NULL, XLAL_EINVAL );
@@ -910,10 +891,6 @@ XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector *y_out,		///< [out] outpu
   UINT4 numSamplesIn = ts_in->data->length;
   REAL8 dt = ts_in->deltaT;
   REAL8 tmin = XLALGPSGetREAL8 ( &(ts_in->epoch) );	// time of first bin in input timeseries
-
-  REAL8Window *win;
-  UINT4 winLen = 2 * Dterms + 1;
-  XLAL_CHECK ( (win = XLALCreateHammingREAL8Window ( winLen )) != NULL, XLAL_EFUNC );
 
   const REAL8 oodt = 1.0 / dt;
 
@@ -928,21 +905,18 @@ XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector *y_out,		///< [out] outpu
           continue;
         }
 
-      REAL8 t_by_dt = t  * oodt;
-      INT8 jstar = lround ( t_by_dt );		// bin closest to 't', guaranteed to be in [0, numSamples-1]
+      INT8 jstar = lround ( t * oodt );		// bin closest to 't', guaranteed to be in [0, numSamples-1]
 
-      if ( fabs ( t_by_dt - jstar ) < LD_SMALL4 )	// avoid numerical problems near peak
+      if ( fabs ( t - jstar * dt ) < 1e-6 )	// avoid numerical problems near peak
         {
           y_out->data[l] = ts_in->data->data[jstar];	// known analytic solution for exact bin
           continue;
         }
 
-      INT4 jStart0 = jstar - Dterms;
-      UINT4 jEnd0 = jstar + Dterms;
-      UINT4 jStart = MYMAX ( jStart0, 0 );
-      UINT4 jEnd   = MYMIN ( jEnd0, numSamplesIn - 1 );
+      UINT8 jStart = MYMAX ( jstar - Dterms, 0 );
+      UINT8 jEnd = MYMIN ( jstar + Dterms, numSamplesIn - 1 );
 
-      REAL4 delta_jStart = (t_by_dt - jStart);
+      REAL4 delta_jStart = (t - jStart * dt) * oodt;
       REAL4 sin0, cos0;
       XLALSinCosLUT ( &sin0, &cos0, LAL_PI * delta_jStart );
       REAL4 sin0oopi = sin0 * OOPI;
@@ -951,7 +925,7 @@ XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector *y_out,		///< [out] outpu
       REAL8 delta_j = delta_jStart;
       for ( UINT8 j = jStart; j <= jEnd; j ++ )
         {
-          COMPLEX8 Cj = win->data->data[j - jStart0] * sin0oopi / delta_j;
+          COMPLEX8 Cj = sin0oopi / delta_j;
 
           y_l += Cj * ts_in->data->data[j];
 
@@ -963,14 +937,12 @@ XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector *y_out,		///< [out] outpu
 
     } // for l < numSamplesOut
 
-  XLALDestroyREAL8Window ( win );
-
   return XLAL_SUCCESS;
 
 } // XLALSincInterpolateCOMPLEX8TimeSeries()
 
 /** Interpolate a given regularly-spaced COMPLEX8 frequency-series 'fs_in = x_in( k * df)' onto new samples
- *  'y_out(f_out)' using (complex) Sinc interpolation (obtained from Dirichlet kernel in large-N limit), truncated to (2*Dterms+1) terms, namely
+ *  'y_out(f_out)' using Dirichlet interpolation in large-N limit, truncated to (2*Dterms+1) terms, namely
  *
  * \f{equation}{
  * \widetilde{x}(f) = \sum_{k = k^* - \Delta k}^{k^* + \Delta k} \widetilde{x}_k \, \frac{ 1 - e^{-i 2\pi\,\delta_k} }{ i 2\pi\,\delta_k}\,,
@@ -987,10 +959,10 @@ XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector *y_out,		///< [out] outpu
  * NOTE2: frequencies *outside* the original frequency band are returned as 0
  */
 int
-XLALSincInterpolateCOMPLEX8FrequencySeries ( COMPLEX8Vector *y_out,			///< [out] output series of interpolated y-values [must be alloc'ed already]
+XLALDirichletInterpolateCOMPLEX8FrequencySeries ( COMPLEX8Vector *y_out,		///< [out] output series of interpolated y-values [must be alloc'ed already]
                                                   const REAL8Vector *f_out,		///< [in] output frequency-values to interpolate input to
                                                   const COMPLEX8FrequencySeries *fs_in,	///< [in] regularly-spaced input frequency-series
-                                                  UINT4 Dterms				///< [in] truncate interpolation kernel sum to +-Dterms around max
+                                                  UINT4 Dterms				///< [in] truncate Dirichlet kernel sum to +-Dterms around max
                                                   )
 {
   XLAL_CHECK ( y_out != NULL, XLAL_EINVAL );
@@ -1048,19 +1020,19 @@ XLALSincInterpolateCOMPLEX8FrequencySeries ( COMPLEX8Vector *y_out,			///< [out]
 
   return XLAL_SUCCESS;
 
-} // XLALSincInterpolateCOMPLEX8FrequencySeries()
+} // XLALDirichletInterpolateCOMPLEX8FrequencySeries()
 
 
-/** (Complex)Sinc-interpolate an input SFT to an output SFT.
- * This is a simple convenience wrapper to XLALSincInterpolateCOMPLEX8FrequencySeries()
+/** Dirichlet interpolate an input SFT to an output SFT.
+ * This is a simple convenience wrapper to XLALDirichletInterpolateCOMPLEX8FrequencySeries()
  * for the special case of interpolating onto new SFT frequency bins
  */
 SFTtype *
-XLALSincInterpolateSFT ( const SFTtype *sft_in,		///< [in] input SFT
+XLALDirichletInterpolateSFT ( const SFTtype *sft_in,	///< [in] input SFT
                               REAL8 f0Out,		///< [in] new start frequency
                               REAL8 dfOut,		///< [in] new frequency step-size
                               UINT4 numBinsOut,		///< [in] new number of bins
-                              UINT4 Dterms		///< [in] truncate interpolation kernel sum to +-Dterms around max
+                              UINT4 Dterms		///< [in] truncate Dirichlet kernel sum to +-Dterms around max
                               )
 {
   XLAL_CHECK_NULL ( sft_in != NULL, XLAL_EINVAL );
@@ -1081,10 +1053,10 @@ XLALSincInterpolateSFT ( const SFTtype *sft_in,		///< [in] input SFT
   out->deltaF = dfOut;
   XLAL_CHECK_NULL ( (out->data = XLALCreateCOMPLEX8Vector ( numBinsOut )) != NULL, XLAL_EFUNC );
 
-  XLAL_CHECK_NULL ( XLALSincInterpolateCOMPLEX8FrequencySeries ( out->data, f_out, sft_in, Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( XLALDirichletInterpolateCOMPLEX8FrequencySeries ( out->data, f_out, sft_in, Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALDestroyREAL8Vector ( f_out );
 
   return out;
 
-} // XLALSincInterpolateSFT()
+} // XLALDirichletInterpolateSFT()

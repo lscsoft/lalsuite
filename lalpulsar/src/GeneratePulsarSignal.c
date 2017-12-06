@@ -41,7 +41,7 @@
 /* Internal helper functions */
 static int XLALcheck_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIGOTimeGPS t1);
 static int XLALcheckNoiseSFTs ( const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL8 deltaF );
-int XLALcorrect_phase ( SFTtype *sft, LIGOTimeGPS tHeterodyne );
+static int XLALcorrect_phase ( SFTtype *sft, LIGOTimeGPS tHeterodyne );
 
 /*----------------------------------------------------------------------*/
 
@@ -84,7 +84,7 @@ XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
       /*------------------------------------------------------------ */
       /* temporary fix for comparison with Chris' code */
       /*
-	TRY (XLALConvertGPS2SSB (status->statusPtr, &tmpTime, params->orbit->orbitEpoch, params), status);
+	TRY (LALConvertGPS2SSB (status->statusPtr, &tmpTime, params->orbit->orbitEpoch, params), status);
 	sourceParams.orbitEpoch = tmpTime;
       */
       sourceParams.orbitEpoch =  params->orbit.tp;
@@ -111,24 +111,16 @@ XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
       sourceParams.spinEpoch = tmpTime;
     }
 
-  if ( params->sourceDeltaT == 0 )	 // backwards-compatible treatment for absence of this parameter
-    {
-      /* sampling-timestep and length for source-parameters */
-      /* in seconds; hardcoded; was 60s in makefakedata_v2,
-       * but for fast binaries (e.g. SCO-X1) we need faster sampling
-       * This does not seem to affect performance a lot (~4% in makefakedata),
-       * but we'll nevertheless make this sampling faster for binaries and slower
-       * for isolated pulsars */
-      if (params->orbit.asini > 0) {
-        sourceParams.deltaT = 5;	/* for binaries */
-      } else {
-        sourceParams.deltaT = 60;	/* for isolated pulsars */
-      }
-    }
-  else	// use the user-defined sampling
-    {
-      sourceParams.deltaT = params->sourceDeltaT;
-    }
+  /* sampling-timestep and length for source-parameters */
+  /* in seconds; hardcoded; was 60s in makefakedata_v2,
+   * but for fast binaries (e.g. SCO-X1) we need faster sampling
+   * This does not seem to affect performance a lot (~4% in makefakedata),
+   * but we'll nevertheless make this sampling faster for binaries and slower
+   * for isolated pulsars */
+  if (params->orbit.asini > 0)
+    sourceParams.deltaT = 5;	/* for binaries */
+  else
+    sourceParams.deltaT = 60;	/* for isolated pulsars */
 
   /* start-time in SSB time */
   LIGOTimeGPS t0;
@@ -390,12 +382,10 @@ XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
       /* Now window the current time series stretch, if necessary */
       if ( params->window )
         {
-          // the SFT normalization in case of windowing follows the conventions detailed in the SFTv2 specification,
-          // namely LIGO-T040164, and in particular Eqs.(3),(4) and (6) in T010095-00.pdf
-	  const float inv_sigma_win = 1.0 / sqrt ( params->window->sumofsquares / params->window->data->length );
+	  const float A = 1.0 / sqrt(params->window->sumofsquares / params->window->data->length);
 	  for( UINT4 idatabin = 0; idatabin < timeStretchCopy->length; idatabin++ )
             {
-              timeStretchCopy->data[idatabin] *= inv_sigma_win * params->window->data->data[idatabin];
+              timeStretchCopy->data[idatabin] *= A * params->window->data->data[idatabin];
             }
         } // if window
 
@@ -518,7 +508,7 @@ LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,		/**< pointer to LALStatus
 
   /* setup baryinput for LALComputeSky */
   baryinput.site = *(params->pSigParams->site);
-  /* account for a quirk in XLALBarycenter(): -> see documentation of type BarycenterInput */
+  /* account for a quirk in LALBarycenter(): -> see documentation of type BarycenterInput */
   baryinput.site.location[0] /= LAL_C_SI;
   baryinput.site.location[1] /= LAL_C_SI;
   baryinput.site.location[2] /= LAL_C_SI;
@@ -660,7 +650,7 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
 
   /* prepare SFT-vector for return */
   if (*outputSFTs == NULL) {
-    XLAL_CHECK_LAL (status, ( sftvect = XLALCreateSFTVector ( numSFTs, SFTlen) ) != NULL, XLAL_EFUNC);
+    TRY (LALCreateSFTVector (status->statusPtr, &sftvect, numSFTs, SFTlen), status);
     setToZero = 1; /* 09/07/05 gam; allocated memory for the output SFTs, zero bins not within the Dterms loop */
   } else {
     sftvect = *outputSFTs;  /* Assume memory already allocated for SFTs */
@@ -850,7 +840,7 @@ XLALConvertGPS2SSB ( LIGOTimeGPS *SSBout, 		/**< [out] arrival-time in SSB */
 
   BarycenterInput XLAL_INIT_DECL(baryinput);
   baryinput.site = *(params->site);
-  /* account for a quirk in XLALBarycenter(): -> see documentation of type BarycenterInput */
+  /* account for a quirk in LALBarycenter(): -> see documentation of type BarycenterInput */
   baryinput.site.location[0] /= LAL_C_SI;
   baryinput.site.location[1] /= LAL_C_SI;
   baryinput.site.location[2] /= LAL_C_SI;
@@ -994,8 +984,7 @@ XLALGenerateLineFeature ( const PulsarSignalParams *params )
 /**
  * Generate Gaussian noise with standard-deviation sigma, add it to inSeries.
  *
- * \note if seed==0, then an INT4 from /dev/urandom is read and used as random-seed, if
- * this can't be opened or read, an error is returned in this case.
+ * NOTE2: if seed==0, then time(NULL) is used as random-seed!
  *
  */
 int
@@ -1007,26 +996,6 @@ XLALAddGaussianNoise ( REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed )
 
   REAL4Vector *v1;
   XLAL_CHECK ( (v1 = XLALCreateREAL4Vector ( numPoints )) != NULL, XLAL_EFUNC );
-
-  /*
-   * If seed=0, XLALCreateRandomParams() would resort to using time() with seconds-resolution
-   * to generate a seed, which is unsafe and could easily end up producing identical time-series
-   * on repeated or parallel calls on a cluster.
-   * Therefore we try to read an INT4 from /dev/urandom and use that as our seed.
-   * Note: /dev/random can be slow after the first few accesses, which is why we're using urandom instead.
-   * [Cryptographic safety isn't a concern here at all]
-   */
-  if ( seed == 0 )
-    {
-      FILE *devrandom;
-      XLAL_CHECK ( (devrandom = fopen ( "/dev/urandom", "rb" )) != NULL, XLAL_EIO );
-      if ( fread ( (void*)&seed, sizeof(INT4), 1, devrandom ) != 1 )
-        {
-          fclose ( devrandom );
-          XLAL_ERROR ( XLAL_EIO, "Failed to read 4-byte seed from '/dev/urandom'\n\n");
-        }
-      fclose ( devrandom );
-    } // if seed==0
 
   RandomParams *randpar;
   XLAL_CHECK ( (randpar = XLALCreateRandomParams ( seed )) != NULL, XLAL_EFUNC );
@@ -1071,29 +1040,6 @@ XLALDestroyMultiREAL4TimeSeries ( MultiREAL4TimeSeries *multiTS )
   return;
 
 } // XLALDestroyMultiREAL4TimeSeries()
-
-/**
- * Destroy a MultiREAL8TimeSeries, NULL-robust
- */
-void
-XLALDestroyMultiREAL8TimeSeries ( MultiREAL8TimeSeries *multiTS )
-{
-  if ( !multiTS ) {
-    return;
-  }
-
-  UINT4 numDet = multiTS->length;
-  for ( UINT4 X=0; X < numDet; X ++ )
-    {
-      XLALDestroyREAL8TimeSeries ( multiTS->data[X] );
-    }
-
-  XLALFree ( multiTS->data );
-  XLALFree ( multiTS );
-
-  return;
-
-} // XLALDestroyMultiREAL8TimeSeries()
 
 
 /* ***********************************************************************

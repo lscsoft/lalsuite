@@ -85,10 +85,9 @@ typedef struct tagMultiNoiseWeights {
 #ifdef SWIG /* SWIG interface directives */
   SWIGLAL(ARRAY_1D(MultiNoiseWeights, REAL8Vector*, data, UINT4, length));
 #endif /* SWIG */
-  UINT4 length;		/**< number of detectors */
-  REAL8Vector **data;	/**< weights-vector for each detector */
+  UINT4 length;		/**< number of ifos */
+  REAL8Vector **data;	/**< weights-vector for each SFTs */
   REAL8 Sinv_Tsft;	/**< normalization factor used: \f$\mathcal{S}^{-1}\,T_\mathrm{SFT}\f$ (using single-sided PSD!) */
-  BOOLEAN isNotNormalized;  /**< if true: weights are saved unnormalized (divide by Sinv_Tsft to get normalized version). */
 } MultiNoiseWeights;
 
 /*---------- Global variables ----------*/
@@ -99,17 +98,11 @@ typedef struct tagMultiNoiseWeights {
  *----------------------------------------------------------------------*/
 SFTtype* XLALCreateSFT ( UINT4 numBins );
 SFTVector* XLALCreateSFTVector (UINT4 numSFTs, UINT4 numBins );
-MultiSFTVector *XLALCreateMultiSFTVector ( UINT4 length, UINT4Vector *numsft );
-
-int XLALAppendSFT2Vector (SFTVector *vect, const SFTtype *sft );
 
 void XLALDestroySFT (SFTtype *sft);
 void XLALDestroySFTVector (SFTVector *vect);
-void XLALDestroyMultiSFTVector ( MultiSFTVector *multvect );
 
 SFTVector *XLALDuplicateSFTVector ( const SFTVector *sftsIn );
-
-int XLALReorderMultiSFTVector( MultiSFTVector *multiSFTs, const LALStringVector *IFOs);
 
 COMPLEX8Vector *XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in, UINT4 refineby, UINT4 Dterms);
 
@@ -134,7 +127,6 @@ LIGOTimeGPSVector *XLALTimestampsFromSegmentFile( const char *filename, REAL8 Ts
 void XLALDestroyTimestampVector (LIGOTimeGPSVector *vect);
 void XLALDestroyMultiTimestamps ( MultiLIGOTimeGPSVector *multiTS );
 
-char *XLALGetCWDetectorPrefix ( INT4 *lalCachedIndex, const char *name );
 CHAR *XLALGetChannelPrefix ( const CHAR *name );
 LALDetector *XLALGetSiteInfo ( const CHAR *name );
 
@@ -155,23 +147,28 @@ int XLALSFTResizeBand ( SFTtype *SFT, REAL8 f0, REAL8 Band );
 
 // destructors
 void XLALDestroyPSDVector ( PSDVector *vect );
+void XLALDestroyMultiSFTVector ( MultiSFTVector *multvect );
 void XLALDestroyMultiPSDVector ( MultiPSDVector *multvect );
 
 MultiNoiseWeights *XLALComputeMultiNoiseWeights ( const MultiPSDVector *rngmed, UINT4 blocksRngMed, UINT4 excludePercentile);
 
 void XLALDestroyMultiNoiseWeights ( MultiNoiseWeights *weights );
 
+LALStringVector *
+XLALGetDetectorIDsFromSFTCatalog ( LALStringVector *IFOList, const SFTCatalog *SFTcatalog );
+
 SFTCatalog *XLALAddToFakeSFTCatalog( SFTCatalog *catalog, const CHAR *detector, const LIGOTimeGPSVector *timestamps );
 SFTCatalog *XLALMultiAddToFakeSFTCatalog( SFTCatalog *catalog, const LALStringVector *detectors, const MultiLIGOTimeGPSVector *timestamps );
 int XLALCopySFT ( SFTtype *dest, const SFTtype *src );
-
-int XLALSFTCatalogTimeslice( SFTCatalog *slice, const SFTCatalog *catalog, const LIGOTimeGPS *minStartGPS, const LIGOTimeGPS *maxStartGPS );
-int XLALFindTimesliceBounds ( UINT4 *iStart, UINT4 *iEnd, const LIGOTimeGPSVector *timestamps, const LIGOTimeGPS *minStartGPS, const LIGOTimeGPS *maxStartGPS );
 
 SFTVector *XLALExtractSFTVectorWithTimestamps ( const SFTVector *sfts, const LIGOTimeGPSVector *timestamps );
 MultiSFTVector *XLALExtractMultiSFTVectorWithMultiTimestamps ( const MultiSFTVector *multiSFTs, const MultiLIGOTimeGPSVector *multiTimestamps );
 
 /*@}*/
+
+// ---------- obsolete LAL-API was moved into external file
+#include <lal/SFTutils-LAL.h>
+// ------------------------------
 
 #ifdef  __cplusplus
 }

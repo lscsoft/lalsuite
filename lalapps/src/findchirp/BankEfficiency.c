@@ -1771,8 +1771,8 @@ void BankEfficiencyPrintResultsXml(
     XLALGPSTimeNow ( &(templateBank.processTable->start_time)) ;
 
     XLALPopulateProcessTable(templateBank.processTable, \
-        PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId, lalAppsVCSIdentInfo.vcsStatus, \
-        lalAppsVCSIdentInfo.vcsDate, 0);
+        PROGRAM_NAME, lalAppsVCSIdentId, lalAppsVCSIdentStatus, \
+        lalAppsVCSIdentDate, 0);
 
     this_proc_param = processParamsTable.processParamsTable =
       (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
@@ -1908,8 +1908,8 @@ BankEfficiencyPrintProtoXml(
   XLALGPSTimeNow (&(templateBank.processTable->start_time));
 
   XLALPopulateProcessTable(templateBank.processTable, \
-      PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId, lalAppsVCSIdentInfo.vcsStatus, \
-      lalAppsVCSIdentInfo.vcsDate, 0);
+      PROGRAM_NAME, lalAppsVCSIdentId, lalAppsVCSIdentStatus, \
+      lalAppsVCSIdentDate, 0);
 
   this_proc_param = processParamsTable.processParamsTable =
       (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
@@ -2570,8 +2570,8 @@ void BankEfficiencyBankPrintXML(
   XLALGPSTimeNow (&(proctable.processTable->start_time));
 
   XLALPopulateProcessTable(proctable.processTable, \
-      PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId, lalAppsVCSIdentInfo.vcsStatus, \
-      lalAppsVCSIdentInfo.vcsDate, 0);
+      PROGRAM_NAME, lalAppsVCSIdentId, lalAppsVCSIdentStatus, \
+      lalAppsVCSIdentDate, 0);
 
   this_proc_param = processParamsTable.processParamsTable =
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
@@ -3287,11 +3287,14 @@ void BankEfficiencyParseGetInt(
 {
   CHAR *tmp;
   CHAR msg[2048];
+  CHAR *tmp1;
+
+  tmp1 = argv[*bank_index+1];
 
   if ( argv[*bank_index+1] != NULL )
   {
     *data = strtol(argv[*bank_index+1], &tmp  , 10);
-    if (*data==0 && argv[*bank_index+1][0] != '0')
+    if (*data==0 && tmp1[0] != '0')
     {
       sprintf(msg, "Expect a int after option %s (got %s)\n ",
           argv[*bank_index],
@@ -3302,8 +3305,9 @@ void BankEfficiencyParseGetInt(
   }
   else
   {
-    sprintf(msg, "Expect a int after option %s (got NULL)\n ",
-        argv[*bank_index]);
+    sprintf(msg, "Expect a int after option %s (got %s)\n ",
+        argv[*bank_index],
+        argv[*bank_index+1]);
     fprintf(stderr, "%s", msg);
     exit( 1 );
   }
@@ -3334,11 +3338,13 @@ void BankEfficiencyParseGetDouble(
 {
   CHAR *tmp;
   CHAR msg[2048];
+  CHAR *tmp2 ;
+  tmp2 = argv[*bank_index+1];
 
   if (argv[*bank_index+1] != NULL)
   {
     *data = strtod(argv[*bank_index+1], &tmp  );
-    if (*data == 0 && argv[*bank_index+1][0]!='0')
+    if (*data == 0 && tmp2[0]!='0')
     {
       sprintf(msg, "Expect a float after option %s (got %s)\n ",
           argv[*bank_index],
@@ -3348,8 +3354,9 @@ void BankEfficiencyParseGetDouble(
   }
   else
   {
-    sprintf(msg, "Expect a float after option %s (got NULL)\n ",
-        argv[*bank_index]);
+    sprintf(msg, "Expect a float after option %s (got %s)\n ",
+        argv[*bank_index],
+        argv[*bank_index+1]);
     fprintf(stderr, "%s", msg);
   }
   *bank_index =*bank_index + 1;
@@ -3364,6 +3371,10 @@ void BankEfficiencyParseGetDouble2(
 {
   CHAR *tmp;
   CHAR msg[2048];
+  CHAR *tmp2 , *tmp1;
+
+  tmp1 = argv[*bank_index+1];
+  tmp2=  argv[*bank_index+2];
 
   *data1 = 0 ;
   *data2 = 0 ;
@@ -3372,8 +3383,8 @@ void BankEfficiencyParseGetDouble2(
   {
     *data1 = strtod(argv[*bank_index+1], &tmp  );
     *data2 = strtod(argv[*bank_index+2], &tmp  );
-    if ((!(*data1) && argv[*bank_index+1][0]!='0')
-       ||  (!(*data2) && argv[*bank_index+2][0]!='0'))
+    if ((!(*data1) && tmp1[0]!='0')
+       ||  (!(*data2) && tmp2[0]!='0'))
     {
       sprintf(msg, "Expect 2 floats after option %s (got %s and %s)\n ",
           argv[*bank_index],
@@ -3383,8 +3394,9 @@ void BankEfficiencyParseGetDouble2(
   }
   else
   {
-    sprintf(msg, "Expect 2 floats after option %s (got NULL and/or NULL)\n ",
-        argv[*bank_index]);
+    sprintf(msg, "Expect 2 floats after option %s (got %s and %s)\n ",
+        argv[*bank_index],
+        argv[*bank_index+1],argv[*bank_index+2]);
     fprintf(stderr, "%s", msg);
   }
   *bank_index = *bank_index +2 ;
@@ -3729,6 +3741,8 @@ void BankEfficiencyAscii2Xml(void)
 {
   UINT4 countline = 0, nfast_max=0;
 
+  UINT8  id = 0;
+
   ResultIn trigger;
   /* Initialising below variables to 0.0 to stop compilation warnings.
      Are they actually used!? Someone has commented out the lines where
@@ -3817,12 +3831,11 @@ void BankEfficiencyAscii2Xml(void)
       /*      id = inputData->event_id->id;*/
 
         fprintf(output, SNGL_INSPIRAL_ROW,
-          inputData->process_id,
           inputData->ifo,
           inputData->search,
           inputData->channel,
-          inputData->end.gpsSeconds,
-          inputData->end.gpsNanoSeconds,
+          inputData->end_time.gpsSeconds,
+          inputData->end_time.gpsNanoSeconds,
           inputData->end_time_gmst,
           inputData->impulse_time.gpsSeconds,
           inputData->impulse_time.gpsNanoSeconds,
@@ -3880,7 +3893,7 @@ void BankEfficiencyAscii2Xml(void)
           inputData->spin2x,
           inputData->spin2y,
           inputData->spin2z,
-          inputData->event_id);
+          id);
       inputData = inputData->next;
       fprintf(output, "\n");
 

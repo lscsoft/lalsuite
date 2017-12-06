@@ -1,0 +1,22 @@
+
+To run REST API tests:
+
+	PYTHONPATH=. python ligo/gracedb/test/test.py 
+
+(First make sure that there is an empty file at ligo/__init__.py.)
+To run CLI tests:
+
+	PYTHONPATH=. GRACEDB='python bin/gracedb' ligo/gracedb/test/test.sh 
+
+
+Default GraceDB service for tests is at: moe.phys.uwm.edu, a dev box.
+
+To use production servers, set environment for CLI and REST API,
+respectively:
+
+	GRACEDB_SERVICE_URL=https://gracedb.ligo.org/api/ 
+	TEST_SERVICE=https://gracedb.ligo.org/api/
+
+To use custom test data, set TEST_DATA_DIR. (see test.py and test.sh
+for more info about test data)
+

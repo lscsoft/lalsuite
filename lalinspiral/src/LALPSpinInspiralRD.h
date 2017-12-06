@@ -7,12 +7,11 @@
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>
 
-#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
+#include <lal/LALAdaptiveRungeKutta4.h>
 
 #ifdef  __cplusplus
 extern "C" {
-#elif 0
-}       /* so that editors will match preceding brace */
+#pragma }
 #endif
 
 /* use error codes above 1024 to avoid conflicts with GSL */
@@ -23,9 +22,8 @@ extern "C" {
 #define LALPSIRDPN_TEST_OMEGANONPOS     1031
 #define LALPSIRDPN_TEST_OMEGACUT        1032
 
-#if 0
-{       /* so that editors will match succeeding brace */
-#elif defined(__cplusplus)
+#ifdef  __cplusplus
+#pragma {
 }
 #endif
 

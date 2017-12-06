@@ -1,6 +1,6 @@
 # -*- coding: utf-8
 #
-# Copyright (C) 2013-2015  Leo Singer
+# Copyright (C) 2013  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -20,6 +20,7 @@ from __future__ import division
 """
 Functions for predicting timing accuracy of matched filters.
 """
+__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 import logging
@@ -28,45 +29,41 @@ import lal
 import lalsimulation
 from scipy import interpolate
 from scipy import linalg
+from .filter import CreateForwardREAL8FFTPlan
 
 
 log = logging.getLogger('BAYESTAR')
 
 
+def get_f_lso(mass1, mass2):
+    """Calculate the GW frequency during the last stable orbit of a compact binary."""
+    return 1 / (6 ** 1.5 * np.pi * (mass1 + mass2) * lal.MTSUN_SI)
+
+
 _noise_psd_funcs = {}
 
 
-class vectorize_swig_psd_func(object):
+class _vectorize_swig_psd_func(object):
     """Create a vectorized Numpy function from a SWIG-wrapped PSD function.
     SWIG does not provide enough information for Numpy to determine the number
     of input arguments, so we can't just use np.vectorize."""
 
-    def __init__(self, str):
-        self.__func = getattr(lalsimulation, str + 'Ptr')
-        self.__npyfunc = np.frompyfunc(getattr(lalsimulation, str), 1, 1)
+    def __init__(self, func):
+        self._npyfunc = np.frompyfunc(func, 1, 1)
 
     def __call__(self, f):
-        fa = np.asarray(f)
-        df = np.diff(fa)
-        if fa.ndim == 1 and df.size > 1 and np.all(df[0] == df[1:]):
-            fa = np.concatenate((fa, [fa[-1] + df[0]]))
-            ret = lal.CreateREAL8FrequencySeries(
-                None, 0, fa[0], df[0], lal.DimensionlessUnit, fa.size)
-            lalsimulation.SimNoisePSD(ret, 0, self.__func)
-            ret = ret.data.data[:-1]
-        else:
-            ret = self.__npyfunc(f)
+        ret = self._npyfunc(f)
         if not np.isscalar(ret):
             ret = ret.astype(float)
         return ret
 
 
 for _ifos, _func in (
-    (("H1", "H2", "L1", "I1"), 'SimNoisePSDaLIGOZeroDetHighPower'),
-    (("V1",), 'SimNoisePSDAdvVirgo'),
-    (("K1"), 'SimNoisePSDKAGRA')
+    (("H1", "H2", "L1", "I1"), lalsimulation.SimNoisePSDaLIGOZeroDetHighPower),
+    (("V1",), lalsimulation.SimNoisePSDAdvVirgo),
+    (("K1"), lalsimulation.SimNoisePSDKAGRA)
 ):
-    _func = vectorize_swig_psd_func(_func)
+    _func = _vectorize_swig_psd_func(_func)
     for _ifo in _ifos:
         _noise_psd_funcs[_ifo] = _func
 
@@ -80,27 +77,12 @@ class InterpolatedPSD(interpolate.interp1d):
     """Create a (linear in log-log) interpolating function for a discretely
     sampled power spectrum S(f)."""
 
-    def __init__(self, f, S, f_high_truncate=1.0):
-        assert f_high_truncate <= 1.0
-        f = np.asarray(f)
-        S = np.asarray(S)
-
+    def __init__(self, f, S):
         # Exclude DC if present
         if f[0] == 0:
             f = f[1:]
             S = S[1:]
-        # FIXME: This is a hack to fix an issue with the detection pipeline's
-        # PSD conditioning. Remove this when the issue is fixed upstream.
-        if f_high_truncate < 1.0:
-            log.warn(
-                'Truncating PSD at %g of maximum frequency to suppress '
-                'rolloff artifacts. This option may be removed in the future.',
-                f_high_truncate)
-            keep = (f <= f_high_truncate * max(f))
-            f = f[keep]
-            S = S[keep]
-        super(InterpolatedPSD, self).__init__(
-            np.log(f), np.log(S),
+        super(InterpolatedPSD, self).__init__(np.log(f), np.log(S),
             kind='linear', bounds_error=False, fill_value=np.inf)
         self._f_min = min(f)
         self._f_max = max(f)
@@ -109,66 +91,117 @@ class InterpolatedPSD(interpolate.interp1d):
         f_min = np.min(f)
         f_max = np.max(f)
         if f_min < self._f_min:
-            log.warn('Assuming PSD is infinite at %g Hz because PSD is only '
-                     'sampled down to %g Hz', f_min, self._f_min)
+            log.warn("Assuming PSD is infinite at %g Hz because PSD is only sampled down to %g Hz", f_min, self._f_min)
         if f_max > self._f_max:
-            log.warn('Assuming PSD is infinite at %g Hz because PSD is only '
-                     'sampled up to %g Hz', f_max, self._f_max)
-        return np.where(
-            (f >= self._f_min) & (f <= self._f_max),
-            np.exp(super(InterpolatedPSD, self).__call__(np.log(f))), np.inf)
+            log.warn("Assuming PSD is infinite at %g Hz because PSD is only sampled up to %g Hz", f_max, self._f_max)
+        return np.exp(super(InterpolatedPSD, self).__call__(np.log(f)))
+
+
+def sign(x):
+    """Works like np.sign, except that 0 is considered to be positive."""
+    return np.where(np.asarray(x) >= 0, 1, -1)
+
+
+def get_approximant_and_orders_from_string(s):
+    """Determine the approximant, amplitude order, and phase order for a string
+    of the form "TaylorT4threePointFivePN". In this example, the waveform is
+    "TaylorT4" and the phase order is 7 (twice 3.5). If the input contains the
+    substring "restricted" or "Restricted", then the amplitude order is taken to
+    be 0. Otherwise, the amplitude order is the same as the phase order."""
+    # SWIG-wrapped functions apparently do not understand Unicode, but
+    # often the input argument will come from a Unicode XML file.
+    s = str(s)
+    approximant = lalsimulation.GetApproximantFromString(s)
+    try:
+        phase_order = lalsimulation.GetOrderFromString(s)
+    except RuntimeError:
+        phase_order = -1
+    if 'restricted' in s or 'Restricted' in s:
+        amplitude_order = 0
+    else:
+        amplitude_order = phase_order
+    return approximant, amplitude_order, phase_order
 
 
 class SignalModel(object):
     """Class to speed up computation of signal/noise-weighted integrals and
-    Barankin and Cramér-Rao lower bounds on time and phase estimation.
+    Barankin and Cramér-Rao lower bounds on time and phase estimation."""
 
-
-    Note that the autocorrelation series and the moments are related,
-    as shown below.
-
-    Create signal model:
-    >>> from . import filter
-    >>> sngl = lambda: None
-    >>> H = filter.sngl_inspiral_psd(
-    ...     'TaylorF2threePointFivePN', mass1=1.4, mass2=1.4)
-    >>> S = get_noise_psd_func('H1')
-    >>> W = filter.signal_psd_series(H, S)
-    >>> sm = SignalModel(W)
-
-    Compute one-sided autocorrelation function:
-    >>> out_duration = 0.1
-    >>> a, sample_rate = filter.autocorrelation(W, out_duration)
-
-    Restore negative time lags using symmetry:
-    >>> a = np.concatenate((a[:0:-1].conj(), a))
-
-    Compute the first 2 frequency moments by taking derivatives of the
-    autocorrelation sequence using centered finite differences.
-    The nth frequency moment should be given by (-1j)^n a^(n)(t).
-    >>> acor_moments = []
-    >>> for i in range(2):
-    ...     acor_moments.append(a[len(a) // 2])
-    ...     a = -0.5j * sample_rate * (a[2:] - a[:-2])
-    >>> assert np.all(np.isreal(acor_moments))
-    >>> acor_moments = np.real(acor_moments)
-
-    Compute the first 2 frequency moments using this class.
-    >>> quad_moments = [sm.get_sn_moment(i) for i in range(2)]
-
-    Compare them.
-    >>> for i, (am, qm) in enumerate(zip(acor_moments, quad_moments)):
-    ...     assert np.allclose(am, qm, rtol=0.05)
-    """
-
-    def __init__(self, h):
+    def __init__(self, mass1, mass2, S, f_low, approximant, amplitude_order, phase_order):
         """Create a TaylorF2 signal model with the given masses, PSD function
         S(f), PN amplitude order, and low-frequency cutoff."""
 
-        # Find indices of first and last nonzero samples.
-        nonzero = np.flatnonzero(h.data.data)
-        first_nonzero = nonzero[0]
-        last_nonzero = nonzero[-1]
+        if approximant in (
+                    lalsimulation.TaylorF2,
+                    lalsimulation.SpinTaylorT4Fourier,
+                    lalsimulation.SpinTaylorT2Fourier):
+            # Frequency-domain post-Newtonian inspiral waveform.
+            h, _ = lalsimulation.SimInspiralChooseFDWaveform(
+                phiRef=0,
+                deltaF=1,
+                m1=mass1*lal.MSUN_SI,
+                m2=mass2*lal.MSUN_SI,
+                S1x=0,
+                S1y=0,
+                S1z=0,
+                S2x=0,
+                S2y=0,
+                S2z=0,
+                f_min=f_low,
+                f_max=0,
+                f_ref=0,
+                r=1e6 * lal.PC_SI,
+                i=0,
+                lambda1=0,
+                lambda2=0,
+                waveFlags=None,
+                nonGRparams=None,
+                amplitudeO=amplitude_order,
+                phaseO=0,
+                approximant=approximant)
+
+            # Find indices of first and last nonzero samples.
+            nonzero = np.nonzero(h.data.data)[0]
+            first_nonzero = nonzero[0]
+            last_nonzero = nonzero[-1]
+        elif approximant == lalsimulation.TaylorT4:
+            # Time-domain post-Newtonian inspiral waveform.
+            hplus, hcross = lalsimulation.SimInspiralChooseTDWaveform(
+                phiRef=0,
+                deltaT=1/4096,
+                m1=mass1*lal.MSUN_SI,
+                m2=mass2*lal.MSUN_SI,
+                s1x=0,
+                s1y=0,
+                s1z=0,
+                s2x=0,
+                s2y=0,
+                s2z=0,
+                f_min=f_low,
+                f_ref=f_low,
+                r=1e6*lal.PC_SI,
+                i=0,
+                lambda1=0,
+                lambda2=0,
+                waveFlags=None,
+                nonGRparams=None,
+                amplitudeO=amplitude_order,
+                phaseO=phase_order,
+                approximant=approximant)
+
+            hplus.data.data += hcross.data.data
+            hplus.data.data /= np.sqrt(2)
+
+            h = lal.CreateCOMPLEX16FrequencySeries(None, lal.LIGOTimeGPS(0), 0, 0, lal.DimensionlessUnit, len(hplus.data.data) // 2 + 1)
+            plan = CreateForwardREAL8FFTPlan(len(hplus.data.data), 0)
+            lal.REAL8TimeFreqFFT(h, hplus, plan)
+
+            f = h.f0 + len(h.data.data) * h.deltaF
+            first_nonzero = long(np.floor((f_low - h.f0) / h.deltaF))
+            last_nonzero = long(np.ceil((2048 - h.f0) / h.deltaF))
+            last_nonzero = min(last_nonzero, len(h.data.data) - 1)
+        else:
+            raise ValueError("unrecognized approximant")
 
         # Frequency sample points
         self.dw = 2 * np.pi * h.deltaF
@@ -178,7 +211,7 @@ class SignalModel(object):
         # Throw away leading and trailing zeros.
         h = h.data.data[first_nonzero:last_nonzero + 1]
 
-        self.denom_integrand = 4 / (2 * np.pi) * h
+        self.denom_integrand = 4 / (2 * np.pi) * (np.square(h.real) + np.square(h.imag)) / S(f)
         self.den = np.trapz(self.denom_integrand, dx=self.dw)
 
     def get_horizon_distance(self, snr_thresh=1):
@@ -187,8 +220,7 @@ class SignalModel(object):
     def get_sn_average(self, func):
         """Get the average of a function of angular frequency, weighted by the
         signal to noise per unit angular frequency."""
-        num = np.trapz(func(self.w) * self.denom_integrand, dx=self.dw)
-        return num / self.den
+        return np.trapz(func(self.w) * self.denom_integrand, dx=self.dw) / self.den
 
     def get_sn_moment(self, power):
         """Get the average of angular frequency to the given power, weighted by
@@ -203,11 +235,10 @@ class SignalModel(object):
         I = np.asarray(((1, -w1), (-w1, w2)))
         return linalg.inv(I) / np.square(snr)
 
-    # FIXME: np.vectorize doesn't work on unbound instance methods. The
-    # excluded keyword, added in Numpy 1.7, could be used here to exclude the
-    # zeroth argument, self.
+    # FIXME: np.vectorize doesn't work on unbound instance methods. The excluded
+    # keyword, added in Numpy 1.7, could be used here to exclude the zeroth
+    # argument, self.
     def __get_crb_toa_uncert(self, snr):
         return np.sqrt(self.get_crb(snr)[1, 1])
-
     def get_crb_toa_uncert(self, snr):
         return np.frompyfunc(self.__get_crb_toa_uncert, 1, 1)(snr)

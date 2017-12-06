@@ -2,16 +2,14 @@
 
 import argparse, sys, os
 
-parser = argparse.ArgumentParser(description='Script that sets up the condor/dag file for TwoSpect Monte Carlo injections',fromfile_prefix_chars='@')
+parser = argparse.ArgumentParser(description='Script that sets up the condor/dag file for TwoSpect Monte Carlo injections')
 parser.add_argument('--runScript', required=True, type=str, help='Path/file of run script')
 parser.add_argument('--twospectExe', required=True, type=str, help='Path to TwoSpect executable')
 parser.add_argument('--dir', required=True, type=str, help='Base directory where the job subdirectories are located')
 parser.add_argument('--jobs', required=True, type=int, help='Number of jobs, also the base directory/subdirectory path')
-parser.add_argument('--accountingGroup', required=True, type=str, help='Label of accounting group, ex: ligo.sim.s6.cw.allskybinary.twospect')
-parser.add_argument('--logfile', type=str, default='/local/user/egoetz/TwoSpectInjections.log', help='Path/filename of logfile (%(default)s)')
+parser.add_argument('--logfile', required=True, type=str, help='Path/filename of logfile')
 parser.add_argument('--IFO', required=True, type=str, help='Interferometer to use (specify multiple as CSV)')
-parser.add_argument('--sqrtSX', required=True, type=str, help='Noise floor of detectors as sqrt{Sn} (specify multiple as CSV)')
-parser.add_argument('--t0', required=True, type=int, help='GPS start time of search')
+parser.add_argument('--t0', required=True, type=int, help='Start time of search')
 parser.add_argument('--fmin', required=True, type=float, help='Minimum frequency of injection (Hz)')
 parser.add_argument('--inputSFTs', type=str, help='Input SFT files')
 parser.add_argument('--gaussianNoiseWithSFTgaps', action='store_true', help='Input SFT files')
@@ -21,8 +19,9 @@ parser.add_argument('--maxEcc', type=float, default=0, help='Maximum of eccentri
 parser.add_argument('--eccDist', type=int, choices=[-1, 0, 1], default=0, help='Ecc. distribution, 0 = linear, 1 = log, -1 = inv. log (%(default)s)')
 parser.add_argument('--minSpindown', type=float, default=0, help='Minimum spindown of source (%(default)s)')
 parser.add_argument('--maxSpindown', type=float, default=0, help='Maximum spindown of source (%(default)s)')
-parser.add_argument('--Tobs', type=int, default=40551300, help='Observation time of the search in sec (%(default)s)')
-parser.add_argument('--Tsft', type=int, default=1800, help='Coherence length of each SFT in sec (%(default)s)')
+parser.add_argument('--spindownDist', type=int, choices=[0], default=0, help='Spindown distribution, 0 = linear (%(default)s)')
+parser.add_argument('--Tobs', type=int, default=40551300, help='Observation time of the search in seconds (%(default)s)')
+parser.add_argument('--Tsft', type=int, default=1800, help='Coherence length of each SFT (%(default)s)')
 parser.add_argument('--SFToverlap', type=int, default=900, help='Overlap of each SFT in seconds (%(default)s)')
 parser.add_argument('--fspan', type=float, default=0.25, help='Frequency span of injection band (%(default)s Hz)')
 parser.add_argument('--h0min', type=float, help='Minimum strain value to inject')
@@ -46,22 +45,18 @@ parser.add_argument('--scox1', action='store_true', help='Inject Sco X-1 signals
 parser.add_argument('--weightedIHS', action='store_true', help='Use weighted IHS statistic')
 parser.add_argument('--ulonly', action='store_true', help='Only produce ULs from IHS statistic, no follow up')
 parser.add_argument('--templateTest', action='store_true', help='Brute force template test')
-parser.add_argument('--skyposTest', action='store_true', help='Test sky location dependence')
 parser.add_argument('--ihsfar', type=float, default=1.0, help='IHS false alarm rate (%(default)s)')
 parser.add_argument('--ihsfomfar', type=float, default=1.0, help='IHS figure of merit false alarm rate (%(default)s)')
 parser.add_argument('--tmplfar', type=float, default=1.0, help='Template statistic false alarm rate (%(default)s)')
 parser.add_argument('--tmplLength', type=int, default=500, help='Maximum length of a template (%(default)s)')
 parser.add_argument('--markBadSFTs', action='store_true', help='Mark and remove bad SFTs')
 parser.add_argument('--keepOnlyTopNumIHS', type=int, help='Keep only the top N number of IHS outliers')
-parser.add_argument('--useCorrectGWfreq', action='store_true', help='Use the correct GW frequency for the coherent analysis')
 parser.add_argument('--useCorrectNScosi', action='store_true', help='Use the correct NS cosi orientation for coherent analysis')
 parser.add_argument('--useCorrectNSpsi', action='store_true', help='Use the correct NS psi orientation for coherent analysis')
-parser.add_argument('--unrestrictedCosi', action='store_true', help='Marginalize over cosi=[-1,1] for coherent analysis')
 args = parser.parse_args()
 
 IFOList = args.IFO.split(',')
 numIFOs = len(IFOList)
-sqrtSXlist = args.sqrtSX.split(',')
 numberTimestampFiles = 0
 numberSegmentFiles = 0
 if args.timestampsFile:
@@ -71,21 +66,15 @@ if args.segmentFile:
     segmentFileList = args.segmentFile.split(',')
     numberSegmentFiles = len(segmentFileList)
 
-if not os.path.exists(args.runScript): sys.exit('Must provide valid path/to/script')
-if not os.path.exists(args.twospectExe): sys.exit('Must provide valid path to TwoSpect executable')
-if args.jobs<1: sys.exit('--jobs must be >= 1')
-if args.gaussianNoiseWithSFTgaps and not args.inputSFTs: sys.exit('Must provide SFT file when gaussianNoiseWithSFTgaps is specifed')
-if args.inputSFTs and (numberTimestampFiles>0 or numberSegmentFiles>0): sys.exit('Only choose sftFile OR sftFile and gaussianNoiseWithSFTgaps OR timestampsfile OR segmentfile')
-if args.minEcc<0 or args.maxEcc>=1: sys.exit('Eccentricity must be in the range [0,1)')
-if (args.h0min and not args.h0max) or (args.h0max and not args.h0min): sys.exit('Must specify both h0min and h0max')
-if args.h0val and (args.h0min or args.h0max): sys.exit('h0val cannot be specified with h0min or h0max')
-if numberTimestampFiles>0 and numberSegmentFiles>0: sys.exit('Only choose sftFile OR sftFile and gaussianNoiseWithSFTgaps OR timestampsfile OR segmentfile')
+if not args.inputSFTs and args.gaussianNoiseWithSFTgaps: sys.exit('Must provide SFT file when gaussianNoiseWithSFTgaps is specifed')
+if (args.inputSFTs and (numberTimestampFiles>0 or numberSegmentFiles>0)) or (numberTimestampFiles>0 and numberSegmentFiles>0): sys.exit('Only choose sftFile OR sftFile and gaussianNoiseWithSFTgaps OR timestampsfile OR segmentfile')
 if numberTimestampFiles>0 and numIFOs!=numberTimestampFiles: sys.exit('Number of IFOs and timestamp files must be the same')
 if numberSegmentFiles>0 and numIFOs!=numberSegmentFiles: sys.exit('Number of IFOs and segment files must be the same')
+if args.minEcc<0: sys.exit('Minimum eccentricity must be 0 or larger')
+if args.maxEcc>=1: sys.exit('Minimum eccentricity must be 0 or larger')
+if (args.h0min and not args.h0max) or (args.h0max and not args.h0min): sys.exit('Must specify both h0min and h0max')
 if (args.injskyra and not args.injskydec) or (args.injskydec and not args.injskyra): sys.exit('Must specify both injskyra and injskydec')
-if args.injPmin<7200.0: sys.exit('injPmin must be >= 7200.0')
-if args.injPmax>args.Tobs/5.0: sys.exit('injPmax must be < Tobs/5')
-if args.injDfmin<0: sys.exit('injDfmin must be >= 0')
+if args.h0val and (args.h0min or args.h0max): sys.exit('h0val cannot be specified with h0min or h0max')
 if args.skylocations<0: sys.exit('skylocations must be 0 or greater')
 if args.ihsfactor<1: sys.exit('ihsfactor must be 1 or greater')
 if args.injDfExpAllow<1.0: sys.exit('injDfExpAllow must be 1 or greater')
@@ -94,8 +83,8 @@ if args.ihsfomfar>1.0: sys.exit('ihsfomfar must be less than or equal to 1')
 if args.tmplfar>1.0: sys.exit('tmplfar must be less than or equal to 1')
 if args.tmplLength<1: sys.exit('tmplLength must be 1 or greater')
 
-if not os.path.exists(args.dir): os.mkdir(args.dir)
-if not os.path.exists('{}/err'.format(args.dir)): os.mkdir('{}/err'.format(args.dir))
+os.mkdir(args.dir)
+os.mkdir('{}/err'.format(args.dir))
 
 dagfile = open('{}/dag'.format(args.dir),'w')
 for ii in range(0, args.jobs):
@@ -113,10 +102,9 @@ error={}/err/err.$(JOBNUM)
 log={}
 request_memory=2500
 notification=Never
-accounting_group={}
-""".format(args.runScript, args.dir, args.logfile, args.accountingGroup))
+""".format(args.runScript, args.dir, args.logfile))
 
-condorfile.write('arguments=\"--dir={} --twospectExe={} --jobnum=$(JOBNUM) --seed={} --IFO={} --sqrtSX={} --Tobs={} --Tsft={} --SFToverlap={} --fmin={} --fspan={} --injPol={} --t0={}'.format(args.dir, args.twospectExe, args.seed, args.IFO, args.sqrtSX, args.Tobs, args.Tsft, args.SFToverlap, args.fmin, args.fspan, args.injPol, args.t0))
+condorfile.write('arguments=\"--dir={} --twospectExe={} --jobnum=$(JOBNUM) --seed={} --Tobs={} --Tsft={} --SFToverlap={} --fmin={} --fspan={} --injPol={} --t0={}'.format(args.dir, args.twospectExe, args.seed, args.Tobs, args.Tsft, args.SFToverlap, args.fmin, args.fspan, args.injPol, args.t0))
 
 if args.h0val: condorfile.write(' --h0val={}'.format(args.h0val))
 else: condorfile.write(' --h0min={} --h0max={} --h0dist={}'.format(args.h0min, args.h0max, args.h0dist))
@@ -126,7 +114,12 @@ else:
     condorfile.write(' --injPmin={} --injPmax={} --periodDist={} --injDfmin={} --injDfmax={}'.format(args.injPmin, args.injPmax, args.periodDist, args.injDfmin, args.injDfmax))
     if args.injskyra and args.injskydec: condorfile.write(' --injskyra={} --injskydec={}'.format(args.injskyra, args.injskydec))
     if args.maxEcc>0.0: condorfile.write(' --minEcc={} --maxEcc={} --eccDist={}'.format(args.minEcc, args.maxEcc, args.eccDist))
-    if args.minSpindown!=0.0 or args.maxSpindown!=0.0: condorfile.write(' --minSpindown={} --maxSpindown={}'.format(args.minSpindown, args.maxSpindown))
+    if args.minSpindown!=0.0 or args.maxSpindown!=0.0: condorfile.write(' --minSpindown={} --maxSpindown={} --spindownDist={}'.format(args.minSpindown, args.maxSpindown, args.spindownDist))
+
+condorfile.write(' --IFO=')
+for ii in range(0, numIFOs):
+    condorfile.write(IFOList[ii])
+    if ii<numIFOs-1: condorfile.write(',')
 
 if args.timestampsFile:
     condorfile.write(' --timestampsFile=')
@@ -146,7 +139,6 @@ if args.ihsfactor!=5: condorfile.write(' --ihsfactor={}'.format(args.ihsfactor))
 if args.markBadSFTs: condorfile.write(' --markBadSFTs')
 if args.ulonly: condorfile.write(' --ulonly')
 if args.templateTest: condorfile.write(' --templateTest')
-if args.templateTest: condorfile.write(' --skyposTest')
 if args.ihsfar!=1.0: condorfile.write(' --ihsfar={}'.format(args.ihsfar))
 if args.ihsfomfar!=1.0: condorfile.write(' --ihsfomfar={}'.format(args.ihsfomfar))
 if args.tmplfar!=1.0: condorfile.write(' --tmplfar={}'.format(args.tmplfar))
@@ -155,8 +147,6 @@ if args.injDfExpAllow!=1.0: condorfile.write(' --injDfExpAllow={}'.format(args.i
 if args.keepOnlyTopNumIHS>-1: condorfile.write(' --keepOnlyTopNumIHS={}'.format(args.keepOnlyTopNumIHS))
 if args.useCorrectNScosi: condorfile.write(' --useCorrectNScosi')
 if args.useCorrectNSpsi: condorfile.write(' --useCorrectNSpsi')
-if args.unrestrictedCosi: condorfile.write(' --unrestrictedCosi')
-if args.useCorrectGWfreq: condorfile.write(' --useCorrectGWfreq')
 
 condorfile.write('\"\n')
 condorfile.write('queue')

@@ -1,5 +1,4 @@
 # Copyright (C) 2011  Nickolas Fotopoulos
-# Copyright (C) 2014-2017  Stephen Privitera
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -22,12 +21,15 @@ from math import log, ceil
 from numpy import vectorize, arange, seterr, inf, ones_like
 seterr(over="ignore")  # the PSD overflows frequently, but that's OK
 
-from glue.ligolw import param
-from glue.ligolw import utils
-from lal import series as lalseries
+try:
+    from glue.ligolw import param
+    from glue.ligolw import utils
+    from pylal import series as lalseries
+except ImportError:
+    raise ImportError("The sbank subpackage of lalinspiral depends on the glue and pylal packages.")
+
 import lal
 import lalsimulation as lalsim
-
 
 #
 # Analytical PSDs
@@ -81,34 +83,18 @@ def next_pow2(n):
 def prev_pow2(n):
     return 1 << int(log(n, 2))
 
-def get_neighborhood_df_fmax(waveforms, flow):
-    """
-    Return PSD that is optimized for this neighborhood, with small enough
-    df and big enough f_max to cover all waveforms.
-    """
-    max_dur = max(w.dur for w in waveforms)
-    assert 16384 * max_dur > 1   # chirp lasts long enough for one LIGO sample
-    if max_dur >= 1:
-        df = 1 / next_pow2(max_dur)
-    else:
-        df = prev_pow2(1 / max_dur)
-    max_ffinal = max(w.f_final for w in waveforms)
-    f_max = next_pow2(max_ffinal)  # will always be greater than 1
-    assert f_max - flow >= 2 * df  # need a few frequencies at least!
-    return df, f_max
-
 def get_neighborhood_PSD(waveforms, flow, noise_model):
     """
     Return PSD that is optimized for this neighborhood, with small enough
     df and big enough f_max to cover all waveforms.
     """
-    max_dur = max(w.dur for w in waveforms)
+    max_dur = max(w._dur for w in waveforms)
     assert 16384 * max_dur > 1   # chirp lasts long enough for one LIGO sample
     if max_dur >= 1:
         df = 1 / next_pow2(max_dur)
     else:
         df = prev_pow2(1 / max_dur)
-    max_ffinal = max(w.f_final for w in waveforms)
+    max_ffinal = max(w._f_final for w in waveforms)
     f_max = next_pow2(max_ffinal)  # will always be greater than 1
     assert f_max - flow >= 2 * df  # need a few frequencies at least!
     return df, get_PSD(df, flow, f_max, noise_model)
@@ -118,13 +104,13 @@ def get_neighborhood_ASD(waveforms, flow, noise_model):
     Return ASD that is optimized for this neighborhood, with small enough
     df and big enough f_max to cover all waveforms.
     """
-    max_dur = max(w.dur for w in waveforms)
+    max_dur = max(w._dur for w in waveforms)
     assert 16384 * max_dur > 1   # chirp lasts long enough for one LIGO sample
     if max_dur >= 1:
         df = 1 / next_pow2(max_dur)
     else:
         df = prev_pow2(1 / max_dur)
-    max_ffinal = max(w.f_final for w in waveforms)
+    max_ffinal = max(w._f_final for w in waveforms)
     f_max = next_pow2(max_ffinal)  # will always be greater than 1
     assert f_max - flow >= 2 * df  # need a few frequencies at least!
     return df, get_ASD(df, flow, f_max, noise_model)
@@ -145,4 +131,4 @@ def psd_instrument_dict(elem):
     return out
 
 def read_psd(filename, verbose = False):
-    return psd_instrument_dict(utils.load_filename(filename, verbose = verbose, contenthandler=lalseries.PSDContentHandler))
+    return psd_instrument_dict(utils.load_filename(filename, verbose = verbose, contenthandler=lalseries.LIGOLWContentHandler))

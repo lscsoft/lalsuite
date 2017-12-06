@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_Fstatistic
+ * \ingroup lalapps_pulsar_templateBanks
  * \author Reinhard Prix
  * \brief
  * This module deals with calculating various F-statistic metric approximations,
@@ -46,7 +46,7 @@
 #include <lal/AVFactories.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/ComputeFstat.h>
-#include <lal/GetEarthTimes.h>
+#include <lal/PulsarTimes.h>
 #include <lal/SFTutils.h>
 #include <lal/LALString.h>
 
@@ -54,8 +54,8 @@
 #include <lal/LogPrintf.h>
 #include <lal/StringVector.h>
 
+#include <lal/FlatPulsarMetric.h>
 #include <lal/UniversalDopplerMetric.h>
-#include <lal/MetricUtils.h>
 
 #include <lalapps.h>
 
@@ -130,6 +130,8 @@ typedef struct
 
 typedef struct
 {
+  BOOLEAN help;
+
   LALStringVector *IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector*/
   LALStringVector *sqrtSX; 	/**< (string-) list of per-IFO sqrt{Sn} values, \f$\sqrt{S_X}\f$ */
 
@@ -139,11 +141,6 @@ typedef struct
   REAL8 f1dot;		/**< target 1. spindown-value df/dt */
   REAL8 f2dot;		/**< target 2. spindown-value d2f/dt2 */
   REAL8 f3dot;		/**< target 3. spindown-value d3f/dt3 */
-  REAL8 orbitasini;	/**< target projected semimajor axis of binary orbit [Units: light seconds] */
-  REAL8 orbitPeriod;	/**< target period of binary orbit [Units: s]. */
-  LIGOTimeGPS orbitTp;	/**< target time of periapse passage of the CW source in a binary orbit [Units: GPS seconds] */
-  REAL8 orbitArgp;	/**< target argument of periapse of binary orbit [Units: rad] */
-  REAL8 orbitEcc;	/**< target eccentricity of binary orbit [Units: none] */
 
   CHAR *ephemEarth;	/**< Earth ephemeris file to use */
   CHAR *ephemSun;	/**< Sun ephemeris file to use */
@@ -173,6 +170,8 @@ typedef struct
 
   BOOLEAN approxPhase;	/**< use an approximate phase-model, neglecting Roemer delay in spindown coordinates */
 
+  BOOLEAN version;	/**< output code versions */
+
 } UserVariables_t;
 
 /* ---------- global variables ----------*/
@@ -182,7 +181,7 @@ extern int vrbflg;
 int initUserVars (UserVariables_t *uvar);
 int XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *app_name);
 
-int XLALOutputDopplerMetric ( FILE *fp, const DopplerPhaseMetric *Pmetric, const DopplerFstatMetric *Fmetric, const ResultHistory_t *history );
+int XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHistory_t *history );
 
 int XLALDestroyConfig ( ConfigVariables *cfg );
 void XLALDestroyResultHistory ( ResultHistory_t * history );
@@ -204,22 +203,35 @@ main(int argc, char *argv[])
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register user-variables */
+
+  /* set log-level */
+  LogSetLevel ( lalDebugLevel );
+
   if ( initUserVars(&uvar) != XLAL_SUCCESS ) {
     XLALPrintError( "%s(): initUserVars() failed\n", __func__ );
     return EXIT_FAILURE;
   }
 
   /* read cmdline & cfgfile  */
-  BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if ( should_exit )
+  if ( XLALUserVarReadAllInput(argc,argv) != XLAL_SUCCESS ) {
+    XLALPrintError( "%s(): XLALUserVarReadAllInput() failed\n", __func__ );
     return EXIT_FAILURE;
+  }
+
+  if (uvar.help) 	/* help requested: we're done */
+    return 0;
 
   CHAR *VCSInfoString;
   if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
     XLALPrintError("XLALGetVersionString(0) failed.\n");
     exit(1);
   }
+
+  if ( uvar.version ) {
+    printf ( "%s\n", VCSInfoString );
+    return 0;
+  }
+
 
   if ( uvar.coordsHelp )
     {
@@ -245,6 +257,7 @@ main(int argc, char *argv[])
 
   metricParams.segmentList   = config.segmentList;
   metricParams.coordSys      = config.coordSys;
+  metricParams.metricType    = uvar.metricType;
   metricParams.multiIFO      = config.multiIFO;
   metricParams.multiNoiseFloor = config.multiNoiseFloor;
   metricParams.signalParams  = config.signalParams;
@@ -253,19 +266,10 @@ main(int argc, char *argv[])
 
 
   /* ----- compute metric full metric + Fisher matrix ---------- */
-  DopplerPhaseMetric *Pmetric = NULL;
-  if ( uvar.metricType == 0 || uvar.metricType == 2 ) {
-    if ( (Pmetric = XLALComputeDopplerPhaseMetric ( &metricParams, config.edat )) == NULL ) {
-      LogPrintf (LOG_CRITICAL, "Something failed in XLALComputeDopplerPhaseMetric(). xlalErrno = %d\n\n", xlalErrno);
-      return -1;
-    }
-  }
-  DopplerFstatMetric *Fmetric = NULL;
-  if ( uvar.metricType == 1 || uvar.metricType == 2 ) {
-    if ( (Fmetric = XLALComputeDopplerFstatMetric ( &metricParams, config.edat )) == NULL ) {
-      LogPrintf (LOG_CRITICAL, "Something failed in XLALComputeDopplerFstatMetric(). xlalErrno = %d\n\n", xlalErrno);
-      return -1;
-    }
+  DopplerMetric *metric;
+  if ( (metric = XLALDopplerFstatMetric ( &metricParams, config.edat )) == NULL ) {
+    LogPrintf (LOG_CRITICAL, "Something failed in XLALDopplerFstatMetric(). xlalErrno = %d\n\n", xlalErrno);
+    return -1;
   }
 
   /* ---------- output results ---------- */
@@ -278,7 +282,7 @@ main(int argc, char *argv[])
 	return FSTATMETRIC_EFILE;
       }
 
-      if ( XLALOutputDopplerMetric ( fpMetric, Pmetric, Fmetric, config.history ) != XLAL_SUCCESS  ) {
+      if ( XLALOutputDopplerMetric ( fpMetric, metric, config.history ) != XLAL_SUCCESS  ) {
 	LogPrintf (LOG_CRITICAL, "%s: failed to write Doppler metric into output-file '%s'. xlalErrno = %d\n\n",
 		   __func__, uvar.outputMetric, xlalErrno );
 	return FSTATMETRIC_EFILE;
@@ -289,8 +293,7 @@ main(int argc, char *argv[])
     } /* if outputMetric */
 
   /* ----- done: free all memory */
-  XLALDestroyDopplerPhaseMetric ( Pmetric );
-  XLALDestroyDopplerFstatMetric ( Fmetric );
+  XLALDestroyDopplerMetric ( metric );
   if ( XLALDestroyConfig( &config ) != XLAL_SUCCESS ) {
     LogPrintf (LOG_CRITICAL, "%s: XLADestroyConfig() failed, xlalErrno = %d.\n\n", __func__, xlalErrno );
     return FSTATMETRIC_EXLAL;
@@ -308,6 +311,8 @@ initUserVars (UserVariables_t *uvar)
 {
 
   /* set a few defaults */
+  uvar->help = FALSE;
+
   uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
@@ -345,44 +350,41 @@ initUserVars (UserVariables_t *uvar)
 
   /* register all our user-variables */
 
-  XLALRegisterUvarMember(IFOs,		STRINGVector, 'I', OPTIONAL, 	"CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
-  XLALRegisterUvarMember(sqrtSX,	 	 STRINGVector, 0,  OPTIONAL, 	"[for F-metric weights] CSV list of detectors' noise-floors sqrt{Sn}");
-  XLALRegisterUvarMember(Alpha,		RAJ, 'a', OPTIONAL,	"Sky: equatorial J2000 right ascension (in radians or hours:minutes:seconds)");
-  XLALRegisterUvarMember(Delta, 		DECJ, 'd', OPTIONAL,	"Sky: equatorial J2000 declination (in radians or degrees:minutes:seconds)");
-  XLALRegisterUvarMember(Freq, 		REAL8, 'f', OPTIONAL, 	"Target frequency");
-  XLALRegisterUvarMember(f1dot, 		REAL8, 's', OPTIONAL, 	"First spindown-value df/dt");
-  XLALRegisterUvarMember(f2dot, 		 REAL8, 0 , OPTIONAL, 	"Second spindown-value d2f/dt2");
-  XLALRegisterUvarMember(f3dot, 		 REAL8, 0 , OPTIONAL, 	"Third spindown-value d3f/dt3");
+  XLALregBOOLUserStruct(help,		'h', UVAR_HELP,		"Print this help/usage message");
+  XLALregLISTUserStruct(IFOs,		'I', UVAR_OPTIONAL, 	"CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
+  XLALregLISTUserStruct(sqrtSX,	 	 0,  UVAR_OPTIONAL, 	"[for F-metric weights] CSV list of detectors' noise-floors sqrt{Sn}");
+  XLALregRAJUserStruct(Alpha,		'a', UVAR_OPTIONAL,	"Sky: equatorial J2000 right ascension (in radians or hours:minutes:seconds)");
+  XLALregDECJUserStruct(Delta, 		'd', UVAR_OPTIONAL,	"Sky: equatorial J2000 declination (in radians or degrees:minutes:seconds)");
+  XLALregREALUserStruct(Freq, 		'f', UVAR_OPTIONAL, 	"target frequency");
+  XLALregREALUserStruct(f1dot, 		's', UVAR_OPTIONAL, 	"first spindown-value df/dt");
+  XLALregREALUserStruct(f2dot, 		 0 , UVAR_OPTIONAL, 	"second spindown-value d2f/dt2");
+  XLALregREALUserStruct(f3dot, 		 0 , UVAR_OPTIONAL, 	"third spindown-value d3f/dt3");
 
-  XLALRegisterUvarMember ( orbitasini,	REAL8, 0, OPTIONAL, 	"Target projected semimajor axis of binary orbit (Units: light seconds)");
-  XLALRegisterUvarMember ( orbitPeriod,	REAL8, 0, OPTIONAL, 	"Target period of binary orbit (Units: s).");
-  XLALRegisterUvarMember ( orbitTp,	EPOCH, 0, OPTIONAL, 	"Target time of periapse passage of the CW source in a binary orbit (Units: GPS seconds)");
-  XLALRegisterUvarMember ( orbitArgp,	REAL8, 0, OPTIONAL, 	"Target argument of periapse of binary orbit (Units: rad)");
-  XLALRegisterUvarMember ( orbitEcc,	REAL8, 0, OPTIONAL, 	"Target eccentricity of binary orbit (Units: none)");
+  XLALregEPOCHUserStruct(refTime,         0,  UVAR_OPTIONAL, 	"Reference epoch for phase-evolution parameters (format 'xx.yy[GPS|MJD]'). [0=startTime, default=mid-time]");
+  XLALregEPOCHUserStruct(startTime,      't', UVAR_OPTIONAL, 	"Start time of observation (format 'xx.yy[GPS|MJD]')");
 
-  XLALRegisterUvarMember(refTime,         EPOCH, 0,  OPTIONAL, 	"Reference epoch for phase-evolution parameters (format 'xx.yy[GPS|MJD]'). [0=startTime, default=mid-time]");
-  XLALRegisterUvarMember(startTime,      EPOCH, 't', OPTIONAL, 	"Start time of observation (format 'xx.yy[GPS|MJD]')");
+  XLALregREALUserStruct(duration,	'T', UVAR_OPTIONAL,	"Duration of observation in seconds");
+  XLALregINTUserStruct(Nseg,		'N', UVAR_OPTIONAL, 	"Compute semi-coherent metric for this number of segments within 'duration'" );
+  XLALregSTRINGUserStruct(segmentList,   0,  UVAR_OPTIONAL,     "ALTERNATIVE: specify segment file with format: repeated lines <startGPS endGPS duration[h] NumSFTs>");
+  XLALregSTRINGUserStruct( ephemEarth,   0,  UVAR_OPTIONAL,     "Earth ephemeris file to use");
+  XLALregSTRINGUserStruct( ephemSun,     0,  UVAR_OPTIONAL,     "Sun ephemeris file to use");
 
-  XLALRegisterUvarMember(duration,	REAL8, 'T', OPTIONAL,	"Duration of observation in seconds");
-  XLALRegisterUvarMember(Nseg,		INT4, 'N', OPTIONAL, 	"Compute semi-coherent metric for this number of segments within 'duration'" );
-  XLALRegisterUvarMember(segmentList,   STRING, 0,  OPTIONAL,     "ALTERNATIVE: specify segment file with format: repeated lines <startGPS endGPS duration[h] NumSFTs>");
-  XLALRegisterUvarMember( ephemEarth,   STRING, 0,  OPTIONAL,     "Earth ephemeris file to use");
-  XLALRegisterUvarMember( ephemSun,     STRING, 0,  OPTIONAL,     "Sun ephemeris file to use");
+  XLALregREALUserStruct(h0,	 	 0, UVAR_OPTIONAL,	"GW amplitude h0" );
+  XLALregREALUserStruct(cosi,	 	 0, UVAR_OPTIONAL,	"Pulsar orientation-angle cos(iota) [-1,1]" );
+  XLALregREALUserStruct(psi,		 0, UVAR_OPTIONAL,	"Wave polarization-angle psi [0, pi]" );
+  XLALregREALUserStruct(phi0,		 0, UVAR_OPTIONAL,	"GW initial phase phi_0 [0, 2pi]" );
 
-  XLALRegisterUvarMember(h0,	 	 REAL8, 0, OPTIONAL,	"GW amplitude h0" );
-  XLALRegisterUvarMember(cosi,	 	 REAL8, 0, OPTIONAL,	"Pulsar orientation-angle cos(iota) [-1,1]" );
-  XLALRegisterUvarMember(psi,		 REAL8, 0, OPTIONAL,	"Wave polarization-angle psi [0, pi]" );
-  XLALRegisterUvarMember(phi0,		 REAL8, 0, OPTIONAL,	"GW initial phase phi_0 [0, 2pi]" );
+  XLALregINTUserStruct(metricType,	 0,  UVAR_OPTIONAL,	"type of metric to compute: 0=phase-metric, 1=F-metric(s), 2=both" );
+  XLALregSTRINGUserStruct(outputMetric,	'o', UVAR_OPTIONAL,	"Output the metric components (in octave format) into this file.");
+  XLALregINTUserStruct(projection,      0,  UVAR_OPTIONAL,     "Project onto subspace orthogonal to this axis: 0=none, 1=1st-coord, 2=2nd-coord etc");
 
-  XLALRegisterUvarMember(metricType,	 INT4, 0,  OPTIONAL,	"type of metric to compute: 0=phase-metric, 1=F-metric(s), 2=both" );
-  XLALRegisterUvarMember(outputMetric,	STRING, 'o', OPTIONAL,	"Output the metric components (in octave format) into this file.");
-  XLALRegisterUvarMember(projection,      INT4, 0,  OPTIONAL,     "Project onto subspace orthogonal to this axis: 0=none, 1=1st-coord, 2=2nd-coord etc");
+  XLALregLISTUserStruct(coords,		'c', UVAR_OPTIONAL, 	"Doppler-coordinates to compute metric in (see --coordsHelp)");
+  XLALregBOOLUserStruct(coordsHelp,      0,  UVAR_OPTIONAL,     "output help-string explaining all the possible Doppler-coordinate names for --coords");
 
-  XLALRegisterUvarMember(coords,		STRINGVector, 'c', OPTIONAL, 	"Doppler-coordinates to compute metric in (see --coordsHelp)");
-  XLALRegisterUvarMember(coordsHelp,      BOOLEAN, 0,  OPTIONAL,     "output help-string explaining all the possible Doppler-coordinate names for --coords");
+  XLALregSTRINGUserStruct(detMotionStr,  0,  UVAR_DEVELOPER,	"Detector-motion string: S|O|S+O where S=spin|spinz|spinxy and O=orbit|ptoleorbit");
+  XLALregBOOLUserStruct(approxPhase,     0,  UVAR_DEVELOPER,	"Use an approximate phase-model, neglecting Roemer delay in spindown coordinates (or orders >= 1)");
 
-  XLALRegisterUvarMember(detMotionStr,  STRING, 0,  DEVELOPER,	"Detector-motion string: S|O|S+O where S=spin|spinz|spinxy and O=orbit|ptoleorbit");
-  XLALRegisterUvarMember(approxPhase,     BOOLEAN, 0,  DEVELOPER,	"Use an approximate phase-model, neglecting Roemer delay in spindown coordinates (or orders >= 1)");
+  XLALregBOOLUserStruct(version,        'V', UVAR_SPECIAL,      "Output code version");
 
   return XLAL_SUCCESS;
 
@@ -459,17 +461,13 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     PulsarDopplerParams *dop = &(cfg->signalParams.Doppler);
     XLAL_INIT_MEM((*dop));
     dop->refTime = refTimeGPS;
-    dop->Alpha    = uvar->Alpha;
-    dop->Delta    = uvar->Delta;
+    dop->Alpha = uvar->Alpha;
+    dop->Delta = uvar->Delta;
     dop->fkdot[0] = uvar->Freq;
     dop->fkdot[1] = uvar->f1dot;
     dop->fkdot[2] = uvar->f2dot;
     dop->fkdot[3] = uvar->f3dot;
-    dop->asini    = uvar->orbitasini;
-    dop->period   = uvar->orbitPeriod;
-    dop->tp       = uvar->orbitTp;
-    dop->ecc      = uvar->orbitEcc;
-    dop->argp     = uvar->orbitArgp;
+    dop->asini = 0 /* isolated pulsar */;
   }
 
   /* ----- initialize IFOs and (Multi-)DetectorStateSeries  ----- */
@@ -494,7 +492,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     size_t len = strlen ( app_name ) + 1;
 
     if ( (cfg->history = XLALCalloc ( 1, sizeof(*cfg->history))) == NULL ) {
-      LogPrintf (LOG_CRITICAL, "%s: XLALCalloc(1,%zu) failed.\n\n", __func__, sizeof(*cfg->history));
+      LogPrintf (LOG_CRITICAL, "%s: XLALCalloc(1,%lu) failed.\n\n", __func__, sizeof(*cfg->history));
       XLAL_ERROR ( XLAL_ENOMEM );
     }
 
@@ -541,22 +539,27 @@ XLALDestroyConfig ( ConfigVariables *cfg )
 
 
 int
-XLALOutputDopplerMetric ( FILE *fp, const DopplerPhaseMetric *Pmetric, const DopplerFstatMetric *Fmetric, const ResultHistory_t *history )
+XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHistory_t *history )
 {
   UINT4 i;
   REAL8 A, B, C, D;
+  const DopplerMetricParams *meta;
+  const PulsarDopplerParams *doppler;
+  const PulsarAmplitudeParams *Amp;
 
   // ----- input sanity checks
-  XLAL_CHECK ( fp != NULL, XLAL_EFAULT );
-  XLAL_CHECK ( Pmetric != NULL || Fmetric != NULL, XLAL_EFAULT );
-  const DopplerMetricParams *meta = (Pmetric != NULL) ? &(Pmetric->meta) : &(Fmetric->meta);
-  XLAL_CHECK ( XLALSegListIsInitialized ( &(meta->segmentList) ), XLAL_EINVAL, "Got un-initialized segment list in 'metric->meta.segmentList'\n" );
-  UINT4 Nseg = meta->segmentList.length;
+  if ( !fp || !metric ) {
+    LogPrintf (LOG_CRITICAL, "%s: illegal NULL input.\n\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
+  }
+  XLAL_CHECK ( XLALSegListIsInitialized ( &(metric->meta.segmentList) ), XLAL_EINVAL, "Got un-initialized segment list in 'metric->meta.segmentList'\n" );
+  UINT4 Nseg = metric->meta.segmentList.length;
   XLAL_CHECK ( Nseg >= 1, XLAL_EDOM, "Got invalid zero-length segment list 'metric->meta.segmentList'\n" );
 
   /* useful shortcuts */
-  const PulsarDopplerParams *doppler = &(meta->signalParams.Doppler);
-  const PulsarAmplitudeParams *Amp = &(meta->signalParams.Amp);
+  meta = &(metric->meta);
+  doppler = &(meta->signalParams.Doppler);
+  Amp = &(meta->signalParams.Amp);
 
   /* output history info */
   if ( history )
@@ -624,52 +627,52 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerPhaseMetric *Pmetric, const Dop
   fprintf ( fp, "];\n");
 
   /* ----- output phase metric ---------- */
-  if ( Pmetric != NULL )
+  if ( metric->g_ij )
     {
-      fprintf ( fp, "\ng_ij = " ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Pmetric->g_ij );
-      fprintf ( fp, "maxrelerr_gPh = %.2e;\n", Pmetric->maxrelerr );
+      fprintf ( fp, "\ng_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->g_ij );
+      fprintf ( fp, "maxrelerr_gPh = %.2e;\n", metric->maxrelerr_gPh );
 
-      gsl_matrix *gN_ij = NULL;
-      if ( XLALNaturalizeMetric ( &gN_ij, NULL, Pmetric->g_ij, meta ) != XLAL_SUCCESS ) {
+      gsl_matrix *gN_ij;
+      if ( (gN_ij = XLALNaturalizeMetric ( metric->g_ij, meta )) == NULL ) {
         XLALPrintError ("%s: something failed Naturalizing phase metric g_ij!\n", __func__ );
         XLAL_ERROR ( XLAL_EFUNC );
       }
-      fprintf ( fp, "\ngN_ij = " ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  gN_ij );
+      fprintf ( fp, "\ngN_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  gN_ij );
       gsl_matrix_free ( gN_ij );
 
-      gsl_matrix *gDN_ij = NULL;
-      if ( XLALDiagNormalizeMetric ( &gDN_ij, NULL, Pmetric->g_ij ) != XLAL_SUCCESS ) {
+      gsl_matrix *gDN_ij;
+      if ( (gDN_ij = XLALDiagNormalizeMetric ( metric->g_ij )) == NULL ) {
         XLALPrintError ("%s: something failed NormDiagonalizing phase metric g_ij!\n", __func__ );
         XLAL_ERROR ( XLAL_EFUNC );
       }
-      fprintf ( fp, "\ngDN_ij = " ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  gDN_ij );
+      fprintf ( fp, "\ngDN_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  gDN_ij );
       gsl_matrix_free ( gDN_ij );
     }
 
   /* ----- output F-metric (and related matrices ---------- */
-  if ( Fmetric != NULL )
+  if ( metric->gF_ij )
     {
-      fprintf ( fp, "\ngF_ij = " );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->gF_ij );
-      fprintf ( fp, "\ngFav_ij = " ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->gFav_ij );
-      fprintf ( fp, "\nm1_ij = " );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->m1_ij );
-      fprintf ( fp, "\nm2_ij = " );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->m2_ij );
-      fprintf ( fp, "\nm3_ij = " );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->m3_ij );
-      fprintf ( fp, "maxrelerr_gF = %.2e;\n", Fmetric->maxrelerr );
+      fprintf ( fp, "\ngF_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->gF_ij );
+      fprintf ( fp, "\ngFav_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->gFav_ij );
+      fprintf ( fp, "\nm1_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->m1_ij );
+      fprintf ( fp, "\nm2_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->m2_ij );
+      fprintf ( fp, "\nm3_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->m3_ij );
+      fprintf ( fp, "maxrelerr_gF = %.2e;\n", metric->maxrelerr_gF );
     }
 
   /*  ----- output Fisher matrix ---------- */
-  if ( Fmetric != NULL && Fmetric->Fisher_ab != NULL )
+  if ( metric->Fisher_ab )
     {
-      A = gsl_matrix_get ( Fmetric->Fisher_ab, 0, 0 );
-      B = gsl_matrix_get ( Fmetric->Fisher_ab, 1, 1 );
-      C = gsl_matrix_get ( Fmetric->Fisher_ab, 0, 1 );
+      A = gsl_matrix_get ( metric->Fisher_ab, 0, 0 );
+      B = gsl_matrix_get ( metric->Fisher_ab, 1, 1 );
+      C = gsl_matrix_get ( metric->Fisher_ab, 0, 1 );
 
       D = A * B - C * C;
 
       fprintf ( fp, "\nA = %.16g;\nB = %.16g;\nC = %.16g;\nD = %.16g;\n", A, B, C, D );
-      fprintf ( fp, "\nrho2 = %.16g;\n", Fmetric->rho2 );
+      fprintf ( fp, "\nrho2 = %.16g;\n", metric->rho2 );
 
-      fprintf (fp, "\nFisher_ab = " ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->Fisher_ab );
+      fprintf (fp, "\nFisher_ab = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->Fisher_ab );
     }
 
   // ---------- output segment list at the end, as this can potentially become quite long and distracting

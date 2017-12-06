@@ -13,8 +13,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## \defgroup laldetchar_py_idq_auxmvc_utils AuxMVC Utils
-## \ingroup laldetchar_py_idq
+## \addtogroup laldetchar_py_idq
+
 ## Synopsis
 # ~~~
 # from laldetchar.idq import auxmvc_utils

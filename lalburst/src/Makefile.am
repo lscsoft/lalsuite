@@ -4,54 +4,57 @@ include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
 pkginclude_HEADERS = \
+	CLR.h \
 	EPSearch.h \
 	GenerateBurst.h \
 	LALBurstConfig.h \
 	LALBurstVCSInfo.h \
 	LALBurstVCSInfoHeader.h \
 	LIGOLwXMLBurstRead.h \
-	SnglBurstUtils.h \
+	LIGOMetadataBurstUtils.h \
+	TFTransform.h \
+	TSData.h \
+	TSSearch.h \
+	Thresholds.h \
+	TimeFreq.h \
+	TrackSearch.h \
 	cs_cosmo.h \
 	cs_lambda_cosmo.h
 
 lib_LTLIBRARIES = liblalburst.la
-
 liblalburst_la_SOURCES = \
-	EPFilters.c \
+	CleanAll.c \
+	CreateTFPlane.c \
+	CreateTimeFreqParam.c \
+	CreateTimeFreqRep.c \
+	DestroyTimeFreqParam.c \
+	DestroyTimeFreqRep.c \
+	Dwindow.c \
 	EPSearch.c \
+	FreqSeriesToTFPlane.c \
 	GenerateBurst.c \
-	LIGOLwXMLBurstRead.c \
-	SnglBurstUtils.c \
-	cs_lambda_cosmo.c \
-	$(END_OF_LIST)
-
-noinst_HEADERS = six.h
-
-nodist_liblalburst_la_SOURCES = \
-	LALBurstBuildInfoHeader.h \
+	HarmonicFinder.c \
 	LALBurstVCSInfo.c \
-	$(END_OF_LIST)
+	LIGOLwXMLBurstRead.c \
+	RefInterference.c \
+	SnglBurstUtils.c \
+	TSData.c \
+	TfrPswv.c \
+	TfrRsp.c \
+	TfrSp.c \
+	TfrWv.c \
+	Thresholds.c \
+	TrackSearch.c \
+	cs_lambda_cosmo.c
+nodist_liblalburst_la_SOURCES = LALBurstBuildInfo.c
 
 liblalburst_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
 DISTCLEANFILES = config.h
 
-vcs_build_info_source = LALBurstVCSInfo.c
 vcs_info_sources = LALBurstVCSInfoHeader.h
-build_info_source = LALBurstBuildInfoHeader.h
-build_info_dependencies = $(liblalburst_la_DEPENDENCIES)
-
-LDADD = liblalburst.la
-
-bin_PROGRAMS = \
-	lalburst_version \
-	$(END_OF_LIST)
-
-lalburst_version_SOURCES = version.c
-
-TESTS = \
-	lalburst_version \
-	$(END_OF_LIST)
+build_info_source = LALBurstBuildInfo.c
+$(build_info_source): $(liblalburst_la_DEPENDENCIES)
 
 EXTRA_DIST = \
 	LALBurstConfig.h.in \

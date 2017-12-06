@@ -9,20 +9,22 @@ test_programs += DopplerScanTest
 test_programs += DriveHoughTest
 test_programs += DriveNDHoughTest
 test_programs += ExtrapolatePulsarSpinsTest
-test_programs += FITSFileIOTest
 test_programs += FileIOTest
+test_programs += FitToPulsarTest
+test_programs += FlatMeshTest
 test_programs += GeneralMeshTest
 test_programs += GeneralMetricTest
 test_programs += GeneratePulsarSignalTest
+test_programs += GetAMCoeffsTest
 test_programs += HoughMapTest
 test_programs += LALBarycenterTest
 test_programs += LFTandTSutilsTest
 test_programs += LatticeTilingTest
 test_programs += LineRobustStatsTest
-test_programs += MetricUtilsTest
 test_programs += NDConstructPLUTTest
 test_programs += NDHoughMapTest
 test_programs += NDPeak2PHMDTest
+test_programs += NewGetAMCoeffsTest
 test_programs += NormalizeSFTRngMedTest
 test_programs += Peak2PHMDTest
 test_programs += PtoleMeshTest
@@ -30,17 +32,24 @@ test_programs += PtoleMetricTest
 test_programs += ReadTEMPOFileTest
 test_programs += SFTfileIOTest
 test_programs += SimulateTaylorCWTest
+test_programs += SkyMetricTest
+test_programs += StackMetricTest
 test_programs += StatisticsTest
-test_programs += SuperskyMetricsTest
+test_programs += SuperSkyMetricsTest
 test_programs += TwoDMeshTest
 test_programs += UniversalDopplerMetricTest
 test_programs += VelocityTest
 test_programs += XLALComputeAMTest
 test_programs += XLALMultiNoiseWeightsTest
 
+#test_programs += XLALLoadSFTsTest
+#test_programs += SFTCleanTest
 if LALXML
 test_programs += LALPulsarXMLTest
 endif
+
+## special benchmark program for CFS, not run as part of tests
+bin_PROGRAMS = ComputeFstatBenchmark
 
 # Add shell, Python, etc. test scripts to this variable
 test_scripts += pulsar_toa_test.sh
@@ -61,18 +70,15 @@ UniversalDopplerMetricTest_SOURCES = \
 	$(END_OF_LIST)
 
 MOSTLYCLEANFILES = \
-	FITSFileIOTest.fits \
 	H-*_H1*.sft \
 	LFT_C8.dat \
 	LFT_R4.dat \
-	LatticeTilingTest.fits \
 	OutHistogram.asc \
 	OutHough.asc \
-	SuperskyMetricsTest.fits \
-	TEMPOcomparison.par \
-	TEMPOcomparison.tim \
 	TS_R4.dat \
 	outputsft*.sft \
+	TEMPOcomparison.par \
+	TEMPOcomparison.tim \
 	$(END_OF_LIST)
 
 pkgdata_DATA = \
@@ -81,11 +87,9 @@ pkgdata_DATA = \
 	earth00-19-DE200.dat.gz \
 	earth00-19-DE405.dat.gz \
 	earth00-19-DE414.dat.gz \
-	earth00-19-DE421.dat.gz \
 	sun00-19-DE200.dat.gz \
 	sun00-19-DE405.dat.gz \
 	sun00-19-DE414.dat.gz \
-	sun00-19-DE421.dat.gz \
 	tdb_2000-2019.dat.gz \
 	te405_2000-2019.dat.gz \
 	testTimestamps.dat \

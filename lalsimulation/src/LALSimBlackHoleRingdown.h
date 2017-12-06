@@ -32,81 +32,177 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-
-/**
- * @author Jolien Creighton
- * @addtogroup LALSimBlackHoleRingdown_h Header LALSimBlackHoleRingdown.h
- * @ingroup lalsimulation_inspiral
- * @brief Routines to generate black hole ringdown waveforms.
- * @details
- * These routines generate black hole quasinormal modes, spin-weighted
- * spheroidal harmonics, and ringdown gravitational waveforms.
- */
-
 /* LOW-LEVEL ROUTINES (USE LEAVER'S CONVENSIONS G = c = 2M = 1) */
 
-int XLALSimBlackHoleRingdownModeEigenvaluesLeaver(COMPLEX16 *A, COMPLEX16 *omega, double a, int l, int m, int s
+
+/**
+ * Low-level routine that computes the black hole quasinormal mode
+ * eigenefrequency, omega, and angular separation constant A for a given
+ * (l,m) mode and spin-weight s (s=-2 for gravitational perturbations).
+ *
+ * Implements Leaver's method by simultaneously
+ * solving the continued fraction equations Eq. (21) and Eq. (27)
+ * of Leaver (1985):
+ * E. W. Leaver "An analyitic representation for the quasi-normal
+ * modes of Kerr black holes", Proc. R. Soc. Lond. A 402 285-298 (1985).
+ *
+ * \warning The variables are represented in Leaver's conventions
+ * in which G = c = 2M = 1.  In particular this means, |a| < 0.5.
+ *
+ * \todo Extend so that overtones can be computed too.
+ */
+int XLALSimBlackHoleRingdownModeEigenvaluesLeaver(
+	COMPLEX16 *A,		/**< angular separation constant [returned] */
+	COMPLEX16 *omega,		/**< eigenfrequency [returned] */
+	double a,		/**< spin parameter (note: |a| < 0.5) */
+	int l,			/**< mode value l */
+	int m,			/**< mode value m */
+	int s			/**< spin weight (s = -2 for gravitational perturbations) */
 );
-COMPLEX16 XLALSimBlackHoleRingdownSpheroidalWaveFunctionLeaver(double mu, double a, int l, int m, int s, COMPLEX16 A, COMPLEX16 omega);
+
+
+/**
+ * Low-level routine that evaluates the spheroidal wave function at a
+ * specified value of mu = cos(theta) for a given (l,m) mode and
+ * spin-weight s (s=-2 for gravitational perturbations).
+ * Also requires the angular separation constant A and eigenvalue
+ * omega for that mode, which are calculated by the routine
+ * XLALSimBlackHoleRingdownModeEigenvaluesLeaver().
+ *
+ * Implements Leaver's method by simultaneously
+ * solving the continued fraction equations Eq. (21) and Eq. (27)
+ * of Leaver (1985):
+ * E. W. Leaver "An analyitic representation for the quasi-normal
+ * modes of Kerr black holes", Proc. R. Soc. Lond. A 402 285-298 (1985).
+ *
+ * \warning The variables are represented in Leaver's conventions
+ * in which G = c = 2M = 1.  In particular this means, |a| < 0.5.
+ *
+ * \todo Extend so that overtones can be computed too.
+ */
+COMPLEX16 XLALSimBlackHoleRingdownSpheroidalWaveFunctionLeaver(
+	double mu,		/**< cosine of polar angle */
+	double a,		/**< spin parameter (note: |a| < 0.5) */
+	int l,			/**< mode value l */
+	int m,			/**< mode value m */
+	int s,			/**< spin weight (s = -2 for gravitational perturbations) */
+	COMPLEX16 A,		/**< angular separation constant */
+	COMPLEX16 omega		/**< eigenfrequency */
+);
 
 
 /* HIGH-LEVEL ROUTINES */
 
-int XLALSimBlackHoleRingdownMode(double *frequency, double *quality, double mass, double dimensionless_spin, int l, int m, int s);
-COMPLEX16 XLALSimBlackHoleRingdownSpheroidalWaveFunction(double theta, double dimensionless_spin, int l, int m, int s);
-int XLALSimBlackHoleRingdown(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const LIGOTimeGPS *t0, double phi0, double deltaT, double mass, double dimensionless_spin, double fractional_mass_loss, double distance, double inclination, int l, int m);
-INT4 XLALSimIMREOBFinalMassSpin(REAL8 *finalMass, REAL8 *finalSpin, const REAL8 mass1, const REAL8 mass2, const REAL8 spin1[3], const REAL8 spin2[3], Approximant approximant);
-INT4 XLALSimIMREOBGenerateQNMFreqV2(COMPLEX16Vector *modefreqs, const REAL8 mass1, const REAL8 mass2, const REAL8 spin1[3], const REAL8 spin2[3], UINT4 l, INT4 m, UINT4 nmodes, Approximant approximant);
-INT4 XLALSimIMREOBGenerateQNMFreqV2fromFinal(COMPLEX16Vector *modefreqs, const REAL8 finalMass, const REAL8 finalSpin, UINT4 l, INT4 m, UINT4 nmodes);
 
-REAL8 XLALSimRadiusKerrISCO ( REAL8 a );
-REAL8 XLALSimEnergyKerrISCO ( REAL8 rISCO );
-REAL8 XLALSimAngMomKerrISCO ( REAL8 rISCO );
+/**
+ * Computes the frequency and quality factor of a specified quasinormal
+ * mode (l,m) of spin weight s perturbations (s=-2 for gravitational
+ * perturbations) of a black hole of a specified mass and spin.
+ *
+ * Uses the method of Leaver (1985):
+ * E. W. Leaver "An analyitic representation for the quasi-normal
+ * modes of Kerr black holes", Proc. R. Soc. Lond. A 402 285-298 (1985).
+ *
+ * \note The dimensionless spin assumes values between -1 and 1.
+ *
+ * \todo Extend so that overtones can be computed too.
+ */
+int XLALSimBlackHoleRingdownMode(
+	double *frequency,		/**< mode frequency (Hz) [returned] */
+	double *quality,		/**< mode quality factor [returned] */
+	double mass,			/**< black hole mass (kg) */
+	double dimensionless_spin,	/**< black hole dimensionless spin parameter (-1,+1) */
+	int l,				/**< polar mode number */
+	int m,				/**< azimuthal mode number */
+	int s				/**< spin weight (s=-2 for gravitational radiation) */
+);
 
-/* Constants entering the final mass formulas of SEOBNRv2,4 */
-/* See http://arxiv.org/pdf/1206.3803.pdf */
-static const REAL8 p0coeff = 0.04826;
-static const REAL8 p1coeff = 0.01559;
-static const REAL8 p2coeff = 0.00485;
-/* See http://arxiv.org/pdf/0904.2577.pdf */
-static const REAL8 t0coeff = -2.8904;
-static const REAL8 t2coeff = -3.5171;
-static const REAL8 t3coeff = 2.5763;
-static const REAL8 s4coeff = -0.1229;
-static const REAL8 s5coeff = 0.4537;
-/* See https://dcc.ligo.org/T1400476 */
-static const REAL8 s9coeff = 2.763032781169752;
-static const REAL8 s8coeff = -2.6081232221537394;
-static const REAL8 s7coeff = 1.2657111864932808;
-static const REAL8 s6coeff = -0.7835007857591175;
-static const REAL8 s5v2coeff = -0.3264724801557159;
-static const REAL8 s4v2coeff = -0.27506210736300474;
-static const REAL8 t0v2coeff = -2.649826989941522;
-static const REAL8 t3v2coeff = 3.910637513328723;
-static const REAL8 t2v2coeff = -3.850983155206041;
 
-/* Constants entering the final spin formulas of SEOBNRv4 */
-/* Table I of https://arxiv.org/pdf/1605.01938v2.pdf */
-static const REAL8 k00 = -5.977230835551017; // Solving Eq.(11) of https://arxiv.org/pdf/1605.01938v2.pdf
-static const REAL8 k01 = 3.39221;
-static const REAL8 k02 = 4.48865;
-static const REAL8 k03 = -5.77101;
-static const REAL8 k04 = -13.0459;
-static const REAL8 k10 = 35.1278;
-static const REAL8 k11 = -72.9336;
-static const REAL8 k12 = -86.0036;
-static const REAL8 k13 = 93.7371;
-static const REAL8 k14 = 200.975;
-static const REAL8 k20 = - 146.822;
-static const REAL8 k21 = 387.184;
-static const REAL8 k22 = 447.009;
-static const REAL8 k23 = -467.383;
-static const REAL8 k24 = -884.339;
-static const REAL8 k30 = 223.911;
-static const REAL8 k31 = -648.502;
-static const REAL8 k32 = -697.177;
-static const REAL8 k33 = 753.738;
-static const REAL8 k34 = 1166.89;
+/**
+ * Evaluates the value of spheroidal wave function at a given
+ * polar angle theta for a specified mode (l,m) and spin weight s
+ * (s=-2 for gravitational perturbations) and
+ * dimensionless spin parameter.
+ *
+ * Uses the method of Leaver (1985):
+ * E. W. Leaver "An analyitic representation for the quasi-normal
+ * modes of Kerr black holes", Proc. R. Soc. Lond. A 402 285-298 (1985).
+ *
+ * \note The dimensionless spin assumes values between -1 and 1.
+ *
+ * \todo Extend so that overtones can be computed too.
+ */
+COMPLEX16 XLALSimBlackHoleRingdownSpheroidalWaveFunction(
+	double theta,			/**< polar angle (radians) */
+	double dimensionless_spin,	/**< black hole dimensionless spin parameter */
+	int l,				/**< polar mode number */
+	int m,				/**< azimuthal mode number */
+	int s				/**< spin weight (s=-2 for gravitational radiation) */
+);
+
+
+/**
+ * Computes the waveform for the ringdown of a black hole
+ * quasinormal mode (l,m).
+ *
+ * \note The dimensionless spin assumes values between -1 and 1.
+ *
+ * \todo Extend so that overtones can be computed too.
+ */
+int XLALSimBlackHoleRingdown(
+	REAL8TimeSeries **hplus,	/**< plus-polarization waveform [returned] */
+	REAL8TimeSeries **hcross,	/**< cross-polarization waveform [returned] */
+	const LIGOTimeGPS *t0,		/**< start time of ringdown */
+	double phi0,			/**< initial phase of ringdown (rad) */
+	double deltaT,			/**< sampling interval (s) */
+	double mass,			/**< black hole mass (kg) */
+	double dimensionless_spin,	/**< black hole dimensionless spin parameter */
+	double fractional_mass_loss,	/**< fraction of mass radiated in this mode */
+	double distance,		/**< distance to source (m) */
+	double inclination,		/**< inclination of source's spin axis (rad) */
+	int l,				/**< polar mode number */
+	int m				/**< azimuthal mode number */
+);
+
+/**
+ * Computes the final mass and spin of the black hole resulting from merger.
+ * They are given by fittings of NR simulations results. Specifically,
+ * for EOBNR, Table I of Buonanno et al. PRD76, 104049;
+ * for EOBNRv2 and EOBNRv2HM, Eqs. 29a and 29b of Pan et al. PRD84, 124052;
+ * for SEOBNRv1, Eq. 8 of Tichy and Marronetti PRD78, 081501 and
+ * Eqs. 1 and 3 of Barausse and Rezzolla ApJ704, L40.
+ */
+INT4 XLALSimIMREOBFinalMassSpin(
+	REAL8    *finalMass,  /**<< OUTPUT, the final mass (scaled by original total mass) */
+	REAL8    *finalSpin,  /**<< OUTPUT, the final spin (scaled by final mass) */
+  const REAL8     mass1,      /**<< The mass of the 1st component of the system */
+  const REAL8     mass2,      /**<< The mass of the 2nd component of the system */
+  const REAL8     spin1[3],   /**<< The spin of the 1st object; only needed for spin waveforms */
+  const REAL8     spin2[3],   /**<< The spin of the 2nd object; only needed for spin waveforms */
+  Approximant     approximant /**<< The waveform approximant being used */
+);
+
+/**
+ * This function generates the quasinormal mode frequencies for a black
+ * hole ringdown. At present, this function works for the 22, 21, 33, 44
+ * and 55 modes, and includes 8 overtones. The final frequencies are
+ * computed by interpolating the data found on the webpage of
+ * Vitor Cardoso, http://centra.ist.utl.pt/~vitor/?page=ringdown
+ * In this page, frequecy data are given for positive final spins only.
+ * For a negative final spin chi<0 case, the (l,m) mode frequency is given by
+ * the (l,-m) mode frequency of the positive final spin -chi case.
+ */
+INT4 XLALSimIMREOBGenerateQNMFreqV2(
+  COMPLEX16Vector *modefreqs, /**<< OUTPUT, complex freqs of overtones (scaled by total mass) */
+  const REAL8      mass1,     /**<< The mass of the 1st component (in Solar masses) */
+  const REAL8      mass2,     /**<< The mass of the 2nd component (in Solar masses) */
+  const REAL8      spin1[3],  /**<< The spin of the 1st object; only needed for spin waveforms */
+  const REAL8      spin2[3],  /**<< The spin of the 2nd object; only needed for spin waveforms */
+  UINT4            l,         /**<< The l value of the mode in question */
+  INT4             m,         /**<< The m value of the mode in question */
+  UINT4            nmodes,    /**<< The number of overtones that should be included (max 8) */
+  Approximant      approximant/**<< The waveform approximant being used */
+  );
 
 #if 0
 { /* so that editors will match succeeding brace */

@@ -238,6 +238,11 @@ if ( ( (val) <= (lower) ) || ( (val) > (upper) ) )                   \
 }                                                                    \
 while (0)
 
+/* A global pointer for debugging. */
+#ifndef NDEBUG
+char *lalWatch;
+#endif
+
 /* A function to convert INT8 nanoseconds to LIGOTimeGPS. */
 void
 I8ToLIGOTimeGPS( LIGOTimeGPS *output, INT8 input );
@@ -605,6 +610,8 @@ main(int argc, char **argv)
 	   &stat );
       SUB( LALSimulateCoherentGW( &stat, &signalvec, &waveform,
 				  &detector ), &stat );
+      SUB( LALSI2InjectTimeSeries( &stat, &output, &signalvec, params ),
+	   &stat );
       SUB( LALSDestroyVectorSequence( &stat, &( waveform.a->data ) ),
 	   &stat );
       SUB( LALSDestroyVector( &stat, &( waveform.f->data ) ), &stat );

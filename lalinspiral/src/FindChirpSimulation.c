@@ -83,6 +83,7 @@
 #include <lal/GenerateInspiral.h>
 #include <lal/NRWaveInject.h>
 #include <lal/GenerateInspRing.h>
+#include <lal/LALErrno.h>
 #include <math.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALError.h>
@@ -308,7 +309,7 @@ LALFindChirpInjectSignals (
           );
     }
 
-    snprintf( warnMsg, XLAL_NUM_ELEM(warnMsg),
+    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "Injected waveform timing:\n"
         "thisEvent->geocent_end_time.gpsSeconds = %d\n"
         "thisEvent->geocent_end_time.gpsNanoSeconds = %d\n"
@@ -661,7 +662,7 @@ XLALFindChirpTagTemplateAndSegment (
     {
         REAL8    g11, g12, g22;
 
-        tc = XLALGPSToINT8NS( &thisEvent->end );
+        tc = XLALGPSToINT8NS( &thisEvent->end_time );
         flag = 0;
 
         /* Loop over segments */
@@ -781,7 +782,7 @@ XLALFindChirpSetFollowUpSegment (
     thisEvent = *events;
     while (thisEvent)
     {
-      INT8 ta = XLALGPSToINT8NS( &thisEvent->end );
+      INT8 ta = XLALGPSToINT8NS( &thisEvent->end_time );
 
       if ( ta > chanStartTime && ta <= chanEndTime )
       {
@@ -909,7 +910,7 @@ LALFindChirpSetAnalyseTemplate (
         ABORTXLAL(status);
       xlalErrno = oldxlalErrno;
 
-      snprintf (myMsg, XLAL_NUM_ELEM(myMsg),
+      snprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
           "%d Injections, Order = %d, Approx = %d\n\n",
           numInjections, mmFTemplate->order, mmFTemplate->approximant);
       LALInfo (status, myMsg);
@@ -919,7 +920,7 @@ LALFindChirpSetAnalyseTemplate (
       LALInspiralParameterCalc( status->statusPtr, mmFTemplate );
       CHECKSTATUSPTR (status);
 
-      snprintf (myMsg, XLAL_NUM_ELEM(myMsg),
+      snprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
           "%d Injections, t0 = %e, t3 = %e\n",
           numInjections, mmFTemplate->t0, mmFTemplate->t3);
       LALInfo (status, myMsg);
@@ -950,12 +951,12 @@ LALFindChirpSetAnalyseTemplate (
         LALInspiralParameterCalc( status->statusPtr, mmFTemplate );
         CHECKSTATUSPTR (status);
 
-        snprintf (myMsg, XLAL_NUM_ELEM(myMsg),
+        snprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
             "%d Injections, m1 = %e, m2 = %e eta = %e\n",
             numInjections, mmFTemplate->mass1, mmFTemplate->mass2,
             mmFTemplate->eta);
         LALInfo (status, myMsg);
-        snprintf (myMsg, XLAL_NUM_ELEM(myMsg),
+        snprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
             "%d Injections, t0 = %e, t3 = %e\n",
             numInjections, mmFTemplate->t0, mmFTemplate->t3);
         LALInfo (status, myMsg);
@@ -964,7 +965,7 @@ LALFindChirpSetAnalyseTemplate (
             mmFTemplate, &mmFmoments );
         CHECKSTATUSPTR (status);
 
-        snprintf (myMsg, XLAL_NUM_ELEM(myMsg),
+        snprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
             "%d Injections, G00 = %e, G01 = %e, G11 = %e\n\n",
             numInjections, mmFmetric.G00, mmFmetric.G01, mmFmetric.G11);
         LALInfo (status, myMsg);
@@ -997,7 +998,7 @@ LALFindChirpSetAnalyseTemplate (
           /* Advance kj for the next template */
           kj = kj + 1;
 
-          snprintf (myMsg, XLAL_NUM_ELEM(myMsg),
+          snprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
               "%-5d %d %e %e %e %e %e %e %e %e %e %e %e %e %e\n",
               kj-1,
               analyseThisTmplt[kj-1],

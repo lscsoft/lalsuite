@@ -17,12 +17,10 @@
 *  MA  02111-1307  USA
 */
 
-#define _GNU_SOURCE   /* for mkstemp() and strdup() */
-
 #include <config.h>
-#include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -32,10 +30,6 @@
 #include <lal/Date.h>
 #include <lal/XLALError.h>
 #include <lal/LALFrameL.h>
-
-#ifndef P_tmpdir
-#define P_tmpdir "/tmp"
-#endif
 
 #include <FrIO.h>
 
@@ -1089,38 +1083,6 @@ int XLALFrameUFrChanSetTimeOffset_FrameL_(LALFrameUFrChan * channel, double time
 /* helper function to allocate vector in channel */
 int XLALFrameUFrChanVectorAlloc_FrameL_(LALFrameUFrChan * channel, int dtype, size_t ndata)
 {
-    /* make sure we're not trying to allocate too much data:
-     * the frame library is limited to INT_MAX number of bytes */
-    size_t bytes;
-    switch (dtype) {
-    case FR_VECT_C:
-    case FR_VECT_1U:
-        bytes = 1;
-        break;
-    case FR_VECT_2S:
-    case FR_VECT_2U:
-        bytes = 2;
-        break;
-    case FR_VECT_4S:
-    case FR_VECT_4U:
-    case FR_VECT_4R:
-        bytes = 4;
-        break;
-    case FR_VECT_8S:
-    case FR_VECT_8U:
-    case FR_VECT_8R:
-    case FR_VECT_8C:
-        bytes = 8;
-        break;
-    case FR_VECT_16C:
-        bytes = 16;
-        break;
-    default: /* invalid vector type */
-        XLAL_ERROR(XLAL_ETYPE);
-    }
-    if (ndata * bytes > (size_t)INT_MAX)
-        XLAL_ERROR(XLAL_ESIZE, "FrameL cannot create FrVect of size %zu bytes (max size = %d bytes)", ndata * bytes, INT_MAX);
-
     switch (channel->type) {
     case XLAL_FRAMEU_FR_CHAN_TYPE_ADC:
         /* determine bits */

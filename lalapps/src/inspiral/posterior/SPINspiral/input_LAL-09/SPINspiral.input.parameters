@@ -1,0 +1,56 @@
+  #SPINspiral:  MCMC-parameter input file.  The LINE NUMBER for each parameter should not change!!!  For injection parameters, see SPINspiral.input.input
+  
+  #General:
+  #Value:                                  Variable:                Description:
+  4                                        mcmcWaveform             Waveform version used as MCMC template:  1 for 1.5PN 12-parameter Apostolatos, 2 for 12-parameter LAL, 3 for 15-parameter LAL, 4 for non-spinning LAL
+  2.0                                      mcmcPNorder              Post-Newtonian order to use for the MCMC template, e.g. 1.5, 2.0, 3.5.  Will be rounded off to the nearest 0.5.
+  1                                        priorSet                 Set of priors to use
+  1                                        offsetMCMC               Start the MCMC with offset initial parameters: 0-no: use injection parameters, overrules Start below; 1-yes: use Start below
+  10.0                                     offsetX                  Start the MCMC from a Gaussian distribution with a width of (offsetX times Sigma), if Start==2,4 below
+  
+  
+  #Parameters:                                                                 Priors:                                                Description:
+  #Number:     ID:     BestValue:          Fix:     Start:     Sigma:          Type:     BoundLow:           BoundUp:                 
+
+  1            61      2.9943              0        4          0.0250          13        0.500               2.000                    Mc             chirp mass (Mo)
+  2            62      0.1077              0        5          0.0250          11        0.03                0.25                     eta            symmetric mass ratio (-)
+  3            11      894377000.00000     0        4          0.0100          12        -0.05000            0.05000                  t_c            GPS time of coalescence (s)
+  4            22      1.7628              0        4          0.1000          11        -6.9                4.6                      log(d_L)       log of luminosity distance (Mpc)
+  5            31      4.5500              0        5          0.1000          21        0.0                 6.283185                 alpha          right ascension (rad)
+  6            32      0.8800              0        5          0.1000          11        -0.999999           0.999999                 sin(delta)     sin declination (-)
+  7            51      0.605255            0        5          0.1000          11        -0.999999           0.999999                 cos(i)         inclination (-)
+  8            41      1.5000              0        5          0.1000          21        0.0                 6.283185                 phi_c          binary phase at coalescence (rad)
+  9            52      0.2000              0        5          0.1000          22        0.0                 3.141593                 psi            polarisation angle (rad)
+  
+  
+  
+ ###################################################################################################################################################################################
+ Explanation:
+ 
+ Parameter:
+   Number: just to guide the eye in this file?
+   ID: a unique number for a parameter
+   BestValue: best value for the parameter, e.g. from trigger;  use to start from or close to
+   Fix:  fix an MCMC parameter (i.e., keep it constant throughout the MCMC run
+     0: no
+     1: fix to BestValue
+     2: fix to injection value
+   Start:  where to start the markov chains
+     1: start at best value
+     2: start near best value (Gaussian distribution with width sigma)
+     3: start at injection value
+     4: start near injection value (Gaussian distribution with width sigma)
+     5: start randomly from range determined by BoundLow-BoundUp (see prior type)
+   sigma: width of the Gaussian distribution to start from for start=2,4; also used for diagonal of first correlation matrix
+ 
+ Prior:
+   type: 
+     11: general range, BoundLow-BoundUp
+     12: general range, best value+BoundLow - best value+BoundUp;                 BoundLow must be <= 0, BoundUp must be >= 0  
+     13: general range, best value*BoundLow - best value*BoundUp;                 BoundLow must be <= 1, BoundUp must be >= 1  
+     14: general range, injection value+BoundLow - injection value+BoundUp;       BoundLow must be <= 0, BoundUp must be >= 0  
+     15: general range, injection value*BoundLow - injection value*BoundUp;       BoundLow must be <= 1, BoundUp must be >= 1  
+     21: periodic boundaries 0-2pi                                                BoundLow, BoundUp will be ignored
+     22: periodic boundaries 0-pi                                                 BoundLow, BoundUp will be ignored
+   BoundLow,Up: used to determine upper or lower bound, depending on prior type.  Ignored for periodic boundaries
+   

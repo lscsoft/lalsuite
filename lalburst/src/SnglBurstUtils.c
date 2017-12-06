@@ -19,14 +19,36 @@
 
 
 #include <string.h>
-#include <lal/Date.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/SnglBurstUtils.h>
+#include <lal/LIGOMetadataBurstUtils.h>
+#include <lal/Date.h>
 #include <lal/XLALError.h>
+
+/*
+ * A few quickies for convenience.
+ */
+
+
+static INT8 int8_start_time(const SnglBurst *x)
+{
+	return XLALGPSToINT8NS(&x->start_time);
+}
+
+
+static INT8 int8_peak_time(const SnglBurst *x)
+{
+	return XLALGPSToINT8NS(&x->peak_time);
+}
+
+
+static REAL4 lo_freq(const SnglBurst *x)
+{
+	return x->central_freq - x->bandwidth / 2;
+}
 
 
 /**
- * Free a SnglBurst.
+ * Free a sngl_burst
  */
 void XLALDestroySnglBurst(SnglBurst *event)
 {
@@ -48,9 +70,9 @@ void XLALDestroySnglBurstTable(SnglBurst *head)
 
 
 /**
- * Assign event_id values to the entries in a SnglBurst linked list.  All
- * SnglBurst rows in the list will be blamed on the given process_id, and
- * assigned sequential event_ids starting with the given event_id.  The
+ * Assign event_id values to the entries in a sngl_burst linked list.  All
+ * sngl_burst rows in the list will be blamed on the given process_id, and
+ * assigned event_ids in order starting with the given event_id.  The
  * return value is the next event_id after the last one assigned to a row
  * in the list.
  */
@@ -127,31 +149,122 @@ SnglBurst **XLALSortSnglBurst(
 
 
 /**
- * Compare the peak times and SNRs of two SnglBurst events.
+ * Compare the start times of two SnglBurst events.
  */
-
-
-int XLALCompareSnglBurstByPeakTimeAndSNR(
+int XLALCompareSnglBurstByStartTime(
 	const SnglBurst * const *a,
 	const SnglBurst * const *b
 )
 {
-	INT8 ta = XLALGPSToINT8NS(&(*a)->peak_time);
-	INT8 tb = XLALGPSToINT8NS(&(*b)->peak_time);
-	float snra = (*a)->snr;
-	float snrb = (*b)->snr;
+	INT8 ta, tb;
+
+	ta = int8_start_time(*a);
+	tb = int8_start_time(*b);
 
 	if(ta > tb)
 		return 1;
 	if(ta < tb)
 		return -1;
-	/* ta == tb */
-	if(snra > snrb)
-		return 1;
-	if(snra < snrb)
-		return -1;
-	/* snra == snrb */
 	return 0;
+}
+
+
+/**
+ * Compare two sngl_burst events by their peak times, with no slack.
+ */
+
+
+int XLALCompareSnglBurstByExactPeakTime(
+	const SnglBurst * const *a,
+	const SnglBurst * const *b
+)
+{
+	INT8 ta, tb;
+
+	ta = int8_peak_time(*a);
+	tb = int8_peak_time(*b);
+
+	if(ta > tb)
+		return 1;
+	if(ta < tb)
+		return -1;
+	return 0;
+}
+
+
+/**
+ * Compare the SNRs of two SnglBurst events.
+ */
+int XLALCompareSnglBurstBySNR(
+	const SnglBurst * const *a,
+	const SnglBurst * const *b
+)
+{
+	REAL4 snra = (*a)->snr;
+	REAL4 snrb = (*b)->snr;
+
+	if(snra < snrb)
+		return 1;
+	if(snra > snrb)
+		return -1;
+	return 0;
+}
+
+
+/**
+ * Compare the peak times and SNRs of two SnglBurst events.
+ */
+int XLALCompareSnglBurstByPeakTimeAndSNR(
+	const SnglBurst * const *a,
+	const SnglBurst * const *b
+)
+{
+	int result;
+
+	result = XLALCompareSnglBurstByExactPeakTime(a, b);
+	if(!result)
+		result = XLALCompareSnglBurstBySNR(a, b);
+
+	return result;
+}
+
+
+/**
+ * Compare the low frequency limits of two SnglBurst events.
+ */
+int XLALCompareSnglBurstByLowFreq(
+	const SnglBurst * const *a,
+	const SnglBurst * const *b
+)
+{
+	REAL4 flowa, flowb;
+
+	flowa = lo_freq(*a);
+	flowb = lo_freq(*b);
+
+	if(flowa > flowb)
+		return 1;
+	if(flowa < flowb)
+		return -1;
+	return 0;
+}
+
+
+/**
+ * Compare two events first by start time, then by lowest frequency to break
+ * ties.
+ */
+int XLALCompareSnglBurstByStartTimeAndLowFreq(
+	const SnglBurst * const *a,
+	const SnglBurst * const *b
+)
+{
+	int result;
+
+	result = XLALCompareSnglBurstByStartTime(a, b);
+	if(!result)
+		result = XLALCompareSnglBurstByLowFreq(a, b);
+	return result;
 }
 
 
@@ -202,10 +315,11 @@ void XLALClusterSnglBurstTable (
 					prev->next = b->next;
 					XLALDestroySnglBurst(b);
 					did_cluster = 1;
-				} else if(bailoutfunc && bailoutfunc((const SnglBurst * const *) &a, (const SnglBurst * const *) &b))
-					break;
-				else
+				} else {
+					if(bailoutfunc && bailoutfunc((const SnglBurst * const *) &a, (const SnglBurst * const *) &b))
+						break;
 					prev = b;
+				}
 			}
 	} while(did_cluster);
 }

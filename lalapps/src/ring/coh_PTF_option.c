@@ -17,7 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-#include "config.h"
 #include "coh_PTF.h"
 
 /* parse command line arguments using LALgetopt_long to get ring params */
@@ -154,7 +153,6 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         else
           error( "error parsing option %s with argument %s\n",
               long_options[option_index].name, LALoptarg );
-		break;
       case 'a': /* gps-start-time */
         localparams.startTime.gpsSeconds = atol( LALoptarg );
         break;
@@ -210,10 +208,58 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         localparams.highpassFrequency = atof( LALoptarg );
         break;
       case 'C': /* waveform approximant */
-        /* This will directly fail if the approximant is not a valid one.
-           However the user may get to a call to FindChirpTDTemplate and find
-           out only then that the approximant is not supported in there. */
-        localparams.approximant =  XLALSimInspiralGetApproximantFromString(LALoptarg);
+        if ( ! strcmp( "FindChirpSP", LALoptarg ) )
+        {
+          localparams.approximant = FindChirpSP;
+        }
+        else if ( ! strcmp( "FindChirpPTF", LALoptarg ) )
+        {
+          localparams.approximant = FindChirpPTF;
+        }
+        else if ( ! strcmp( "TaylorT1", LALoptarg) )
+        {
+          localparams.approximant = TaylorT1;
+        }
+        else if ( ! strcmp( "TaylorT2", LALoptarg) )
+        {
+          localparams.approximant = TaylorT2;
+        }
+        else if ( ! strcmp( "TaylorT3", LALoptarg) )
+        {
+          localparams.approximant = TaylorT3;
+        }
+        else if ( ! strcmp( "TaylorT4", LALoptarg) )
+        {
+          localparams.approximant = TaylorT4;
+        }
+        else if ( ! strcmp( "GeneratePPN", LALoptarg) )
+        {
+          localparams.approximant = GeneratePPN;
+        }
+        else if ( ! strcmp( "PadeT1", LALoptarg) )
+        {
+          localparams.approximant = PadeT1;
+        }
+        else if ( ! strcmp( "EOB", LALoptarg) )
+        {
+          localparams.approximant = EOB;
+        }
+        else if ( ! strcmp( "EOBNR", LALoptarg) )
+        {
+          localparams.approximant = EOBNR;
+        }
+        else if ( ! strcmp( "IMRPhenomB", LALoptarg) )
+        {
+          localparams.approximant = IMRPhenomB;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown order specified: "
+              "%s (must be either FindChirpSP, FindChirpPTF or TaylorT4)\n",
+              long_options[option_index].name, LALoptarg );
+          exit( 1 );
+        }
         break;
       case '6': /* Simulated data option */
         localparams.simData = 1;
@@ -444,10 +490,8 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         break;
       case '?':
         error( "unknown error while parsing options\n" );
-		break;
       default:
         error( "unknown error while parsing options\n" );
-		break;
     }
   }
 
@@ -504,9 +548,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
   /* For now we stick to only analysing half of each segment */
   localparams.strideDuration = 0.5 * localparams.segmentDuration;
 
-  /* When shifting data from interferometers to 'point' at a sky location, */
-  /* we don't want to let possibly corrupted data to leak in at start/end. */
-  /* This buffer ensures that doesn't happen. Hardcoded to 1s */
+  /* FIXME: Hardcoded to 1s */
   localparams.numBufferPoints = floor(localparams.sampleRate + 0.5);
 
   /* Choose the start and end point of each segment for analysis */
@@ -560,8 +602,8 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
   /* Set the template correction factor */
   if ( localparams.approximant == FindChirpSP)
   {
-    /* Most of this gets stored in fcTmplt->fcTmpltNorm which is computed on
-     * the fly. This is the correction needed to that. */
+    /* Most of this gets stored in fcTmplt->fcTmpltNorm which is computed on th
+     * fly. This is correction needed to that. */
     /* First need to add ( (df)**-7./6. )**2 */
     localparams.tempCorrFac = pow(localparams.segmentDuration,14./6.); 
     /* For some reason FindChirp multiplies by a dt factor, take this out */
@@ -570,9 +612,8 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
   else
   {
     /* Sigmasq factors are not yet available for all approximants */
-    /* Set values to 1 (so this factor has no effect) and warn user */
-    verbose("warning: Sigmasq correction factor is not yet available for this approximant: setting it to 1.\n");
-    localparams.tempCorrFac = 1.0;
+    /* Set values to 0 to avoid confusion in this case */
+    localparams.tempCorrFac = 0;
   }
 
   *params = localparams;

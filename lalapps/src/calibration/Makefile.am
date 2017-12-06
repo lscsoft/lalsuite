@@ -1,9 +1,8 @@
-include $(top_srcdir)/gnuscripts/lalapps.am
-
+BUILT_SOURCES =
 MOSTLYCLEANFILES =
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
-include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
+include $(top_srcdir)/gnuscripts/lalapps.am
 
 lalapps_ComputeStrainDriver_SOURCES = ComputeStrainDriver.c
 lalapps_ComputeFactors_SOURCES = ComputeFactors.c

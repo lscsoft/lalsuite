@@ -328,7 +328,6 @@ INT4 main( INT4 argc, CHAR *argv[] )
         LALoptarg_len = strlen( LALoptarg ) + 1;
         frameType = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
         memcpy( frameType, LALoptarg, LALoptarg_len );
-        break;
 
       case 'n':
         /* create storage for the injection set name */
@@ -905,7 +904,7 @@ static void output_frame(CHAR *ifo,
 {
   CHAR fname[FILENAME_MAX];
   INT4 duration;
-  INT8 detectorFlags;
+  INT4 detectorFlags;
   LALFrameH *frame;
   CHAR creator[HISTORY_COMMENT];
   CHAR channel[LALNameLength];
@@ -980,7 +979,7 @@ static void output_frame_real8(CHAR *ifo,
 {
   CHAR fname[FILENAME_MAX];
   INT4 duration;
-  INT8 detectorFlags;
+  INT4 detectorFlags;
   LALFrameH *frame;
   CHAR creator[HISTORY_COMMENT];
   CHAR channel[LALNameLength];
@@ -1054,7 +1053,7 @@ static void output_multi_channel_frame(INT4 num_ifos,
 {
   CHAR fname[FILENAME_MAX];
   INT4 duration;
-  INT8 detectorFlags;
+  INT4 detectorFlags;
   LALFrameH *frame;
   INT4 i;
   CHAR creator[HISTORY_COMMENT];
@@ -1118,7 +1117,7 @@ static void output_multi_channel_frame_real8(INT4 num_ifos,
 {
   CHAR fname[FILENAME_MAX];
   INT4 duration;
-  INT8 detectorFlags;
+  INT4 detectorFlags;
   LALFrameH *frame;
   INT4 i;
   CHAR creator[HISTORY_COMMENT];

@@ -1,37 +1,49 @@
-LALApps
-================================
+LALApps - LIGO Scientific Collaboration Algorithm Library Applications
 
-Collection of gravitational wave data analysis codes and pipelines
-utilising the LAL libraries.
+Synopsis:
 
-Acknowledgment
---------------------------------
+        A collection of programs and other software for gravitational wave data
+        analysis.
 
-We request that any academic report, publication, or other academic
-disclosure of results derived from the use of this software acknowledge
-the use of the software by an appropriate acknowledgment or citation.
 
-Basic Build Instructions
---------------------------------
+Notice:
 
-     ./configure --prefix=...
-     make
-     make install
+        We request that any academic report, publication, or other
+        academic disclosure of results derived from the use of this
+        software acknowledge the use of the software by an appropriate
+        acknowledgment or citation.
 
-Please read the [LALSuite install how-to][install] for more detailed
-build instructions.
 
-Bug Reporting
---------------------------------
+Consult:
 
-Please visit the [LALSuite bug reporting system][bugs] (LIGO.org
-authentication required).
+        README.bugs             reporting problems with LAL
+        README.contrib          instructions for LAL developers
 
-For More Information
---------------------------------
 
-Please visit the [LALSuite project page][project].
+Installation:
 
-[install]: https://wiki.ligo.org/DASWG/LALSuiteInstall
-[bugs]:    https://bugs.ligo.org/redmine/projects/lalsuite
-[project]: http://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
+        LALApps requires various pieces of software which can be installed
+        by following these directions:
+        http://www.lsc-group.phys.uwm.edu/daswg/docs/howto/lscsoft-install.html
+
+        Binary versions of these software packages, as well as the latest
+        released version of LALApps, can be obtained from:
+        http://www.lsc-group.phys.uwm.edu/daswg/download/repositories.html
+
+        Follow these directions to build both LAL and LALApps from source:
+        http://www.lsc-group.phys.uwm.edu/daswg/docs/howto/lal-install.html
+
+
+Other resources:
+
+        Binary releases of LALApps for various platforms:
+        http://www.lsc-group.phys.uwm.edu/daswg/download/repositories.html
+
+        LAL-Announce: LAL announcements including release announcements.
+        http://www.lsc-group.phys.uwm.edu/mailman/listinfo.cgi/lal-announce
+
+        LAL-Discuss: general LAL discussion forum (not for bug reports)
+        http://www.lsc-group.phys.uwm.edu/mailman/listinfo.cgi/lal-discuss
+
+        Please see the LALApps webpage for more information:
+        http://www.lsc-group.phys.uwm.edu/daswg/projects/lalapps.html

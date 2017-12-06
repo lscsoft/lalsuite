@@ -1,0 +1,106 @@
+#!/bin/sh
+
+# Run Python, etc. test scripts in a correctly set-up environment
+# Author: Karl Wette, 2014
+
+# print and parse command line
+if test $# -lt 2; then
+    echo "$0: insufficient arguments" >&2
+    exit 1
+fi
+printf "\nCommand line:\n%s" "$0"
+printf " '%s'" "$@"
+printf "\n\n"
+libtool="$1"
+shift
+libs="$1"
+shift
+cmd="$1"
+if test "x$1" = x; then
+    cmd=false
+else
+    shift
+    while test "x$1" != x; do
+        cmd="${cmd} '$1'"
+        shift
+    done
+fi
+
+# recursively build unique list of all libtool libraries
+oldlibs="${libs}"
+while :; do
+
+    # store the dependency libraries from 'oldlibs' in 'newlibs'
+    newlibs=
+    for oldlib in ${oldlibs}; do
+
+        # extract 'dependency_libs' value from 'oldlib'
+        if test ! -f "${oldlib}"; then
+            echo "$0: ${oldlib} is not a file" >&2
+            exit 1
+        fi
+        oldlibdeps=`. ${oldlib}; echo ${dependency_libs}`
+
+        # add each dependency library to 'newlibs', excluding system libraries
+        for newlib in ${oldlibdeps}; do
+            case ${newlib} in
+                /lib/*|/usr/*|/opt/*)
+                    ;;
+                *.la)
+                    if test "x${newlibs}" = x; then
+                        newlibs="${newlib}"
+                    else
+                        newlibs="${newlibs} ${newlib}"
+                    fi
+                    ;;
+            esac
+        done
+
+    done
+
+    # if 'newlibs' is empty, no more libraries, so break
+    if test "x${newlibs}" = x; then
+        break
+    fi
+
+    # otherwise, add any library in 'newlibs' to 'libs', ignoring duplicates
+    for newlib in ${newlibs}; do
+        case " ${libs} " in
+            *" ${newlib} "*)
+                ;;
+            *)
+                libs="${libs} ${newlib}"
+                ;;
+        esac
+    done
+
+    # start over by looking for the dependency libraries of 'newlibs'
+    oldlibs="${newlibs}"
+
+done
+
+# build libtool command line
+ltcmd="${libtool} --mode=execute"
+for lib in ${libs}; do
+    ltcmd="${ltcmd} -dlopen ${lib}"
+done
+
+# print environment under libtool command
+echo "Environment:"
+eval "${ltcmd} ${SHELL} -c 'set'" 2>/dev/null | sed -n -e '/PATH=/p;/^LAL/p'
+echo
+
+# print test script command
+echo "Test script command:"
+echo "${ltcmd} ${cmd}"
+echo
+
+# run test script under libtool
+echo "Test script output:"
+eval "${ltcmd} ${cmd}"
+exitval="$?"
+
+# print test script return status
+echo
+echo "Test script returned: ${exitval}"
+exit ${exitval}

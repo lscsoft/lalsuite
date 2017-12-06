@@ -26,6 +26,14 @@
 #include <lal/LALInference.h>
 #include <lal/LALInferenceClusteredKDE.h>
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(
+	FUNCTION_POINTER(
+			 NSWrapMCMCLALProposal
+			 )
+);
+#endif
+
 
 /**
  * \defgroup LALInferenceProposal_h Header LALInferenceProposal.h
@@ -109,13 +117,14 @@ extern const char *const ensembleStretchFullName;
 extern const char *const ensembleStretchIntrinsicName;
 extern const char *const ensembleStretchExtrinsicName;
 extern const char *const drawApproxPriorName;
-extern const char *const drawFlatPriorName;
 extern const char *const skyReflectDetPlaneName;
 extern const char *const skyRingProposalName;
 extern const char *const PSDFitJumpName;
 extern const char *const polarizationPhaseJumpName;
 extern const char *const polarizationCorrPhaseJumpName;
 extern const char *const extrinsicParamProposalName;
+extern const char *const KDNeighborhoodProposalName;
+extern const char *const HrssQJumpName;
 extern const char *const frequencyBinJumpName;
 extern const char *const GlitchMorletJumpName;
 extern const char *const GlitchMorletReverseJumpName;
@@ -124,14 +133,11 @@ extern const char *const ensembleWalkIntrinsicName;
 extern const char *const ensembleWalkExtrinsicName;
 extern const char *const clusteredKDEProposalName;
 
-/** Creates a new proposal object from the given func pointer and name
+/**
+ * The name of the variable that will store the name of the current
+ * proposal function.
  */
-
-LALInferenceProposal *LALInferenceInitProposal(LALInferenceProposalFunction func, const char *name);
-
-
-/** Use a default flag and a check of the command-line to set proposal flags in proposal args */
-void LALInferenceRegisterProposal(LALInferenceVariables *propArgs, const char *name, INT4 *flag, ProcessParamsTable *command_line);
+extern const char *const LALInferenceCurrentProposalName;
 
 /**
  * Adds \a weight copies of the proposal \a prop to the end of the
@@ -141,57 +147,68 @@ void LALInferenceRegisterProposal(LALInferenceVariables *propArgs, const char *n
  * LALInferenceRandomizeProposalCycle() to randomize the order of
  * sub-proposal application.
  */
-void LALInferenceAddProposalToCycle(LALInferenceProposalCycle *cycle, LALInferenceProposal *prop, INT4 weight);
+void
+LALInferenceAddProposalToCycle(LALInferenceRunState *runState, const char *propName, LALInferenceProposalFunction prop, UINT4 weight);
 
 /** Randomizes the order of the proposals in the proposal cycle. */
-void LALInferenceRandomizeProposalCycle(LALInferenceProposalCycle *cycle, gsl_rng *rng);
-
-/** Create a new proposal cycle */
-LALInferenceProposalCycle* LALInferenceInitProposalCycle(void);
-
-/** Go through all logic for deciding proposals to use */
-LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runState);
+void 
+LALInferenceRandomizeProposalCycle(LALInferenceRunState *runState);
 
 /** Proposes a jump from the next proposal in the proposal cycle.*/
-REAL8 LALInferenceCyclicProposal(LALInferenceThreadState *thread,
-                                 LALInferenceVariables *currentParams,
-                                 LALInferenceVariables *proposedParams);
+REAL8
+LALInferenceCyclicProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /** Completely remove the current proposal cycle, freeing the associated memory. */
-void LALInferenceDeleteProposalCycle(LALInferenceProposalCycle *cycle);
+void
+LALInferenceDeleteProposalCycle(LALInferenceRunState *runState);
 
 /**
  * A reasonable default proposal.  Uses adaptation if the --adapt
  * command-line flag active.
  */
-LALInferenceProposalCycle* LALInferenceSetupDefaultInspiralProposalCycle(LALInferenceVariables *propArgs);
+REAL8 LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+
+/**
+ * Proposal for rapid sky localization.  Used when --rapidSkyLoc
+ * is specified.
+ */
+REAL8 LALInferenceRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+
+/** Proposal for after annealing is over. */
+REAL8 LALInferencePostPTProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /**
  * Non-adaptive, sigle-variable update proposal with reasonable
  * widths in each dimension.
  */
-REAL8 LALInferenceSingleProposal(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /**
  * Like LALInferenceSingleProposal() but will use adaptation if the
  * --adapt command-line flag given.
  */
-REAL8 LALInferenceSingleAdaptProposal(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+
+/** Increments the orbital phase by pi. */
+REAL8 LALInferenceOrbitalPhaseJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /** Polarization-phase exact degeneracy. */
-REAL8 LALInferencePolarizationPhaseJump(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferencePolarizationPhaseJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /** Polarization-phase correlation jump */
-REAL8 LALInferenceCorrPolarizationPhaseJump(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceCorrPolarizationPhaseJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /** Choose a random covariance matrix eigenvector to jump along. */
-REAL8 LALInferenceCovarianceEigenvectorJump(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /** Jump around by 0.01 radians in angle on the sky */
-REAL8 LALInferenceSkyLocWanderJump(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceSkyLocWanderJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+
+/* REAL8 LALInferenceAdaptationProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams); */
+/* REAL8 LALInferenceAdaptationSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams); */
 
 /** Differential evolution, on all non-fixed, non-output parameters. */
-REAL8 LALInferenceDifferentialEvolutionFull(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceDifferentialEvolutionFull(LALInferenceRunState *state, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /**
  * Perform differential evolution on the parameters of the given
@@ -199,16 +216,17 @@ REAL8 LALInferenceDifferentialEvolutionFull(LALInferenceThreadState *thread, LAL
  * If names == NULL, then perform a
  * LALInferenceDifferentialEvolutionFull() step.
  */
-REAL8 LALInferenceDifferentialEvolutionNames(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams, const char *names[]);
+
+REAL8 LALInferenceDifferentialEvolutionNames(LALInferenceRunState *state, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams, const char *names[]);
 
 /** Perform differential evolution on only the intrinsic parameters. */
-REAL8 LALInferenceDifferentialEvolutionIntrinsic(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceDifferentialEvolutionIntrinsic(LALInferenceRunState *state, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /**
  * Perform a differential evolution step on only the extrinsic
  * parameters.
  */
-REAL8 LALInferenceDifferentialEvolutionExtrinsic(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceDifferentialEvolutionExtrinsic(LALInferenceRunState *state, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /**
  * Draws from an approximation to the true prior.  Flat in all
@@ -216,28 +234,31 @@ REAL8 LALInferenceDifferentialEvolutionExtrinsic(LALInferenceThreadState *thread
  * in sin(dec), dist^2.
  * WARNING: This seems to break detailed balance for the LALInferenceProposalTest
  */
-REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
-
-
-/**
- * Draws from a flat prior for all variables where are flat prior is specified. Variables
- * that do not have a flat prior are not moved.
- */
-REAL8 LALInferenceDrawFlatPrior(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /**
  * Reflects the sky location through the plane formed by three
  * detectors.  Should only be used when there are exactly three
  * different locations for detectors.
  */
-REAL8 LALInferenceSkyReflectDetPlane(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
-REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);;
+REAL8 LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);;
+
+REAL8 NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /* Noise model proposals. */
-REAL8 LALInferenceGlitchMorletProposal(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
-REAL8 LALInferenceGlitchMorletReverseJump(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
-REAL8 LALInferencePSDFitJump(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceGlitchMorletProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferencePSDFitJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+/**
+ * Uses a kD tree containing the previously-output points to propose
+ * the next sample.  The proposal chooses a stored point at random,
+ * finds the kD cell that contains this point and about 64 others,
+ * and then chooses the proposed point uniformly within the bounding
+ * box of the points contained in this sell.
+ */
+REAL8 LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /**
  * Proposal for the extrinsic parameters. Uses the sky reflection for 3
@@ -245,28 +266,23 @@ REAL8 LALInferencePSDFitJump(LALInferenceThreadState *thread, LALInferenceVariab
  * of polarisation, inclination and distance for the proposed sky location.
  * See Vivien's thesis for the details of the equations implemented.
  */
-REAL8 LALInferenceExtrinsicParamProposal(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /**
  * Proposal to jump in frequency by one frequency bin. The frequency bin size \c df must be
  * given as a (fixed) variable in the \c proposedParams. The frequency parameter is
  * presumed to have the variable name \c f0.
  */
-REAL8 LALInferenceFrequencyBinJump(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
-
-/** Proposal which draws a sample from the distance likelihood function
- * Requires the currentParams to have optimal_snr and matched_filter_snr.
- */
-REAL8 LALInferenceDistanceLikelihoodProposal(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceFrequencyBinJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /* Zero out proposal statistics */
-void LALInferenceZeroProposalStats(LALInferenceProposalCycle *cycle);
+void LALInferenceZeroProposalStats(LALInferenceRunState *runState);
 
 /** Function for updating proposal acceptance rates if tracking. */
-void LALInferenceTrackProposalAcceptance(LALInferenceThreadState *thread);
+void LALInferenceTrackProposalAcceptance(LALInferenceRunState *runState, INT4 accepted);
 
 /** Helper function to update the adaptive steps after each jump. Set accepted=1 if accepted, 0 otherwise */
-void LALInferenceUpdateAdaptiveJumps(LALInferenceThreadState *thread, REAL8 targetAcceptance);
+void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accepted, REAL8 targetAcceptance);
 
 /** Struct to hold clustered-KDE estimates */
 typedef struct
@@ -281,29 +297,26 @@ tagLALInferenceClusteredKDEProposal
 } LALInferenceClusteredKDE;
 
 /* Setup all clustered-KDE proposals with samples read from file. */
-//void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceThreadState *thread);
-
-/* Setup all clustered-KDE proposals with samples read from file. */
-void LALInferenceSetupClusteredKDEProposalsFromASCII(LALInferenceThreadState *thread, FILE *input, INT4 burnin, REAL8 weight, INT4 ptmcmc);
+void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runState);
 
 /* Add a KDE proposal to the KDE proposal set. */
-void LALInferenceAddClusteredKDEProposalToSet(LALInferenceVariables *propArgs, LALInferenceClusteredKDE *kde);
+void LALInferenceAddClusteredKDEProposalToSet(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde);
 
 /* Destroy an existing clustered-KDE proposal. */
 void LALInferenceDestroyClusteredKDEProposal(LALInferenceClusteredKDE *proposal);
 
 /* Setup a clustered-KDE proposal from the differential evolution buffer. */
-void LALInferenceSetupClusteredKDEProposalFromDEBuffer(LALInferenceThreadState *thread);
+void LALInferenceSetupClusteredKDEProposalFromDEBuffer(LALInferenceRunState *runState);
 
 /* Setup a clustered-KDE proposal from the parameters in a run. */
-void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceThreadState *thread, REAL8 *samples, INT4 size, INT4 cyclic_reflective, INT4 ntrials);
+void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState, REAL8 *samples, INT4 size, INT4 cyclic_reflective, INT4 ntrials);
 
 /* A proposal based on the clustered kernal density estimate of a set of samples. */
-REAL8 LALInferenceClusteredKDEProposal(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
-REAL8 LALInferenceStoredClusteredKDEProposal(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams, REAL8 *propDensity);
+REAL8 LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceStoredClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams, REAL8 *propDensity);
 
 /* Initialize a clustered-KDE proposal. */
-void LALInferenceInitClusteredKDEProposal(LALInferenceThreadState *thread, LALInferenceClusteredKDE *kde, REAL8 *array, INT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight, LALInferenceKmeans* (*cluster_method)(gsl_matrix*, INT4, gsl_rng*), INT4 cyclic_reflective, INT4 ntrials);
+void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde, REAL8 *array, INT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight, LALInferenceKmeans* (*cluster_method)(gsl_matrix*, INT4, gsl_rng*), INT4 cyclic_reflective, INT4 ntrials);
 
 /* Dump clustered KDE information to file. */
 void LALInferenceDumpClusteredKDE(LALInferenceClusteredKDE *kde, char *outp_name, REAL8 *array);
@@ -312,43 +325,56 @@ void LALInferenceDumpClusteredKDE(LALInferenceClusteredKDE *kde, char *outp_name
 void LALInferenceDumpClusteredKDEDraws(LALInferenceClusteredKDE *kde, char *outp_name, INT4 nSamps);
 
 /* Compute the maximum ACL from the differential evolution buffer. */
-void LALInferenceComputeMaxAutoCorrLenFromDE(LALInferenceThreadState *thread, INT4* maxACL);
+void LALInferenceComputeMaxAutoCorrLenFromDE(LALInferenceRunState *runState, INT4* maxACL);
 
 /* Compute the maximum single-parameter autocorrelation length. */
 REAL8 LALInferenceComputeMaxAutoCorrLen(REAL8 *array, INT4 nPoints, INT4 nPar);
 
 /* Update the estimatate of the autocorrelation length. */
-void LALInferenceUpdateMaxAutoCorrLen(LALInferenceThreadState *thread);
+void LALInferenceUpdateMaxAutoCorrLen(LALInferenceRunState *runState);
 
 /* Determine the effective sample size based on the DE buffer. */
-INT4 LALInferenceComputeEffectiveSampleSize(LALInferenceThreadState *thread);
+INT4 LALInferenceComputeEffectiveSampleSize(LALInferenceRunState *runState);
 
 /** Helper function to setup the adaptive step proposals before the run */
-void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInferenceVariables *params);
+void LALInferenceSetupAdaptiveProposals(LALInferenceRunState *state);
 
-/** Setup glitch-related stuff */
-void LALInferenceSetupGlitchProposal(LALInferenceIFOData *data, LALInferenceVariables *propArgs);
+void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /** Output proposal tracking header to file *fp */
 int LALInferencePrintProposalTrackingHeader(FILE *fp,LALInferenceVariables *params);
 
 /** Output proposal tracking information to file *fp */
-void LALInferencePrintProposalTracking(FILE *fp, LALInferenceProposalCycle *cycle, LALInferenceVariables *theta, LALInferenceVariables *theta_prime, REAL8 logPropRatio, INT4 accepted);
+void LALInferencePrintProposalTracking(FILE *fp, LALInferenceVariables *propArgs, LALInferenceVariables *theta, LALInferenceVariables *theta_prime, REAL8 logPropRatio, INT4 accepted);
 
+
+REAL8 NSWrapMCMCSineGaussProposal(LALInferenceRunState *runState,   LALInferenceVariables *cp,LALInferenceVariables *proposedParams);
+void LALInferenceSetupSineGaussianProposal(LALInferenceRunState *runState,  LALInferenceVariables *cp,LALInferenceVariables *proposedParams);
+REAL8 LALInferenceHrssQJump(LALInferenceRunState *runState, LALInferenceVariables *cp,LALInferenceVariables *proposedParams);
+REAL8 LALInferenceTimeFreqJump(LALInferenceRunState *runState, LALInferenceVariables *cp,LALInferenceVariables *proposedParams);
+REAL8 LALInferenceTimePhaseFreqJump(LALInferenceRunState *runState,  LALInferenceVariables *cp,LALInferenceVariables *proposedParams);
+REAL8 LALInferenceDifferentialEvolutionSineGaussIntrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp,LALInferenceVariables *pp) ;
+REAL8 LALInferenceDifferentialEvolutionSineGaussExtrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp) ;
+REAL8 LALInferenceBurstSkyRingProposal(LALInferenceRunState *runState,  LALInferenceVariables *cp,LALInferenceVariables *proposedParams);
+
+REAL8 LALInferenceTimeDelaysJump(LALInferenceRunState *runState,LALInferenceVariables *cp, LALInferenceVariables *proposedParams) ;
+REAL8 LALInferenceBurstChangeSkyRingProposal(LALInferenceRunState *runState, LALInferenceVariables *cp,LALInferenceVariables *proposedParams);
+REAL8 LALInferenceBurstEnsembleWalkIntrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp);
+REAL8 LALInferenceBurstEnsembleWalkExtrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp);
+REAL8 LALInferenceBurstEnsembleStretchIntrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp);
+REAL8 LALInferenceBurstEnsembleStretchExtrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp);
 /** Ensemble stretch moves - see http://dx.doi.org/10.2140/camcos.2010.5.65 */
-REAL8 LALInferenceEnsembleStretchFull(LALInferenceThreadState *thread, LALInferenceVariables *cp, LALInferenceVariables *proposedParams);
-REAL8 LALInferenceEnsembleStretchIntrinsic(LALInferenceThreadState *thread, LALInferenceVariables *cp, LALInferenceVariables *pp);
-REAL8 LALInferenceEnsembleStretchExtrinsic(LALInferenceThreadState *thread, LALInferenceVariables *cp, LALInferenceVariables *pp);
-REAL8 LALInferenceEnsembleStretchNames(LALInferenceThreadState *thread, LALInferenceVariables *cpi, LALInferenceVariables *ppi, const char **names);
-
-
-REAL8 LALInferenceEnsembleWalkFull(LALInferenceThreadState *thread, LALInferenceVariables *cp, LALInferenceVariables *proposedParams);
-REAL8 LALInferenceEnsembleWalkIntrinsic(LALInferenceThreadState *thread, LALInferenceVariables *cp, LALInferenceVariables *pp);
-REAL8 LALInferenceEnsembleWalkExtrinsic(LALInferenceThreadState *thread, LALInferenceVariables *cp, LALInferenceVariables *pp);
-REAL8 LALInferenceEnsembleWalkNames(LALInferenceThreadState *thread, LALInferenceVariables *cpi, LALInferenceVariables *ppi, const char **names);
-
+REAL8 LALInferenceEnsembleStretchFull(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceEnsembleStretchIntrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp);
+REAL8 LALInferenceEnsembleStretchExtrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp);
+REAL8 LALInferenceEnsembleStretchNames(LALInferenceRunState *runState, LALInferenceVariables *cpi, LALInferenceVariables *ppi, const char **names);
+REAL8 LALInferenceEnsembleWalkFull(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceEnsembleWalkIntrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp);
+REAL8 LALInferenceEnsembleWalkExtrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp);
+REAL8 LALInferenceEnsembleWalkNames(LALInferenceRunState *runState, LALInferenceVariables *cpi, LALInferenceVariables *ppi, const char **names);
 /** Proposes jumps in the spline calibration parameters, if present. */
-REAL8 LALInferenceSplineCalibrationProposal(LALInferenceThreadState *thread, LALInferenceVariables *cp, LALInferenceVariables *pp);
+REAL8 LALInferenceSplineCalibrationProposal(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp);
 /*@}*/
 
 #endif
+

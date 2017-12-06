@@ -18,16 +18,13 @@
 */
 
 #include <config.h>
-
-#ifdef HAVE_UNISTD_H
-#define _GNU_SOURCE   /* for gethostname() */
-#include <unistd.h>
-#endif
-
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 #include <lal/LALDatatypes.h>
 #include <lal/LALDetectors.h>
@@ -44,12 +41,10 @@
 #define localtime_r(timep, result) memcpy((result), localtime(timep), sizeof(struct tm))
 #endif
 
-/** @cond */
 struct tagLALFrFile {
     LALFrameUFrFile *file;
     LALFrameUFrTOC *toc;
 };
-/** @endcond */
 
 int XLALFrFileClose(LALFrFile * frfile)
 {
@@ -79,7 +74,7 @@ LALFrFile *XLALFrFileOpenURL(const char *url)
     XLAL_CHECK_NULL(strlen(url) < FILENAME_MAX, XLAL_EBADLEN,
         "url %s is too long", url);
 
-    n = sscanf(url, "%[^:]://%[^/]%[^\t\n]", prot, host, path);
+    n = sscanf(url, "%[^:]://%[^/]%s", prot, host, path);
     if (n != 3) {       /* perhaps the hostname has been omitted */
         XLALStringCopy(host, "localhost", sizeof(host));
         if (n != 2) {   /* assume the whole thing is a file path */
@@ -418,7 +413,7 @@ void XLALFrameFree(LALFrameH * frame)
 }
 
 LALFrameH *XLALFrameNew(const LIGOTimeGPS * epoch, double duration,
-    const char *project, int run, int frnum, INT8 detectorFlags)
+    const char *project, int run, int frnum, int detectorFlags)
 {
     LALFrameH *frame = NULL;
     int detind;
@@ -436,7 +431,7 @@ LALFrameH *XLALFrameNew(const LIGOTimeGPS * epoch, double duration,
 
     /* add detectors */
     for (detind = 0; detind < LAL_NUM_DETECTORS; ++detind) {
-        INT8 detflg = 1 << 2 * detind;
+        int detflg = 1 << 2 * detind;
         if ((detflg & detectorFlags))   /* yes, one ampersand! */
             XLALFrameAddFrDetector(frame,
                 &lalCachedDetectors[detind].frDetector);

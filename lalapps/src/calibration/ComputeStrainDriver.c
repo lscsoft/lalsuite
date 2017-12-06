@@ -32,7 +32,6 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #else
 
 #ifdef HAVE_UNISTD_H
-#define _GNU_SOURCE   /* for getdomainname() */
 #include <unistd.h>
 #endif
 #include <sys/types.h>
@@ -72,6 +71,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/ConfigFile.h>
 #include <lal/ReadFiltersFile.h>
 #include <lal/TimeSeries.h>
+#include <lal/LALVersion.h>
 #include <lal/LALFrameIO.h>
 #include <lal/LALDetectors.h>
 #include <lal/Date.h>
@@ -227,7 +227,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   INT4 t0;
   INT4 dt;
   INT4 FrDuration;
-  INT8 detectorFlags;
+  int detectorFlags;
   char hostnameanduser[4096];
   char hostname[1024];
   char domainname[1024];
@@ -323,12 +323,12 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
 
   /* Add lalapps info */
   snprintf( lalappsconfargs, sizeof( lalappsconfargs), "LALApps Info:\n                          LALApps Version: %s\n                          Git Tag: %s\n                          Git ID: %s\n                          Configure Date: %s\n                          Configure Arguments: %s",
-            LALAPPS_VERSION , lalAppsVCSInfo.vcsTag, lalAppsVCSInfo.vcsId, lalAppsVCSInfo.configureDate, lalAppsVCSInfo.configureArgs );
+            LALAPPS_VERSION , lalAppsVCSInfo.vcsTag, lalAppsVCSInfo.vcsId, lalAppsConfigureDate, lalAppsConfigureArgs );
   XLALFrameAddFrHistory( frame, __FILE__, lalappsconfargs);
 
   /* Add lal info */
   snprintf( lalconfargs, sizeof( lalconfargs), "LAL Info:\n                          LAL Version: %s\n                          Git Tag: %s\n                          Git ID: %s\n                          Configure Date: %s\n                          Configure Arguments: %s",
-	       LAL_VERSION , lalVCSInfo.vcsTag, lalVCSInfo.vcsId, lalAppsVCSInfo.configureDate, lalAppsVCSInfo.configureArgs );
+	       LAL_VERSION , lalVCSInfo.vcsTag, lalVCSInfo.vcsId, lalAppsConfigureDate, lalAppsConfigureArgs );
   XLALFrameAddFrHistory( frame, __FILE__, lalconfargs);
 
   /* Create string with all command line arguments and add it to history */
@@ -353,8 +353,8 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
 
   /* Filters file checksum and cvs info (first 2 lines in filters file) */
   {
-    char buffer[1280];
-    snprintf(buffer, sizeof(buffer), "Filters file checksum and header: %s\n%s",
+    char buffer[1024];
+    snprintf(buffer, sizeof buffer, "Filters file checksum and header: %s\n%s",
              InputData.filter_chksum, InputData.filter_vc_info);
     XLALFrameAddFrHistory(frame, __FILE__, buffer);
   }

@@ -19,6 +19,9 @@ A collection of routines to manage Condor workflows (DAGs).
 """
 
 import os
+import numpy as np
+from time import time
+from hashlib import md5
 
 from glue import pipeline
 
@@ -41,8 +44,17 @@ def which(program):
 
     return None
 
+def generate_job_id():
+    """
+    Generate a unique md5 hash for use as a job ID.
+    Borrowed and modified from the LAL code in glue/glue/pipeline.py
+    """
+    t = str( long( time() * 1000 ) )
+    r = str( long( np.random.random() * 100000000000000000L ) )
+    return md5(t + r).hexdigest()
+
 # FIXME: Keep in sync with arguments of integrate_likelihood_extrinsic
-def write_integrate_likelihood_extrinsic_sub(tag='integrate', exe=None, log_dir=None, intr_prms=("mass1", "mass2"), ncopies=1, condor_commands=None, **kwargs):
+def write_integrate_likelihood_extrinsic_sub(tag='integrate', exe=None, log_dir=None, ncopies=1, **kwargs):
     """
     Write a submit file for launching jobs to marginalize the likelihood over
     extrinsic parameters.
@@ -106,10 +118,9 @@ def write_integrate_likelihood_extrinsic_sub(tag='integrate', exe=None, log_dir=
             # NOTE: Hack to get around multiple instances of the same option
             for p in param:
                 ile_job.add_arg("--%s %s" % (opt.replace("_", "-"), str(p)))
-        elif param is True or param is None:
+        elif param is True:
             ile_job.add_opt(opt.replace("_", "-"), '')
-        # Explcitly check for False to turn it off
-        elif param is False:
+        elif param is None:
             continue
         else:
             ile_job.add_opt(opt.replace("_", "-"), str(param))
@@ -119,13 +130,8 @@ def write_integrate_likelihood_extrinsic_sub(tag='integrate', exe=None, log_dir=
     #
     ile_job.add_var_opt("mass1")
     ile_job.add_var_opt("mass2")
-    for p in intr_prms:
-        ile_job.add_var_opt(p.replace("_", "-"))
 
     ile_job.add_condor_cmd('getenv', 'True')
-    if condor_commands is not None:
-        for cmd, value in condor_commands.iteritems():
-            ile_job.add_condor_cmd(cmd, value)
     ile_job.add_condor_cmd('request_memory', '2048')
     
     return ile_job, ile_sub_name

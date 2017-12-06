@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2011--2017 Karl Wette
+// Copyright (C) 2011--2014 Karl Wette
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,9 +20,7 @@
 // SWIG interface code specific to Octave.
 // Author: Karl Wette
 
-//
-// General SWIG directives and interface code
-//
+// # General SWIG directives and interface code
 
 // In SWIG Octave modules, only variables are namespaced, everything else
 // is inserted in the global symbol table, so we rename only variables
@@ -40,8 +38,17 @@ extern "C++" {
 #include <octave/ov-re-mat.h>
 #include <octave/ov-flt-cx-mat.h>
 #include <octave/ov-cx-mat.h>
-#include <octave/Array-util.h>
+#include <octave/toplev.h>
 }
+#if defined(SWIG_OCTAVE_PREREQ)
+# if SWIG_OCTAVE_PREREQ(3,3,52)
+#  define SWIGLAL_OCT_PREREQ_3_3_52
+# endif
+#elif defined(OCTAVE_API_VERSION_NUMBER)
+# if OCTAVE_API_VERSION_NUMBER >= 40
+#  define SWIGLAL_OCT_PREREQ_3_3_52
+# endif
+#endif
 %}
 
 // Name of octave_value containing the SWIG wrapping of the struct whose members are being accessed.
@@ -55,7 +62,8 @@ extern "C++" {
 #define swiglal_1starg()  (args.length() > 0 ? args(0) : octave_value())
 %}
 
-// Return a reference to the supplied octave_value; since Octave handles reference counting, just return it.
+// Return a reference to the supplied octave_value; since Octave handles reference counting, just
+// return it.
 %header %{
 #define swiglal_get_reference(v) (v)
 %}
@@ -65,14 +73,7 @@ extern "C++" {
 #define swiglal_append_output_if_empty(v) if (_outp->length() == 0) _outp = SWIG_Octave_AppendOutput(_outp, v)
 %}
 
-// Evaluates true if an octave_value represents a null pointer, false otherwise.
-%header %{
-#define swiglal_null_ptr(v)  (!(v).is_string() && (v).is_matrix_type() && (v).rows() == 0 && (v).columns() == 0)
-%}
-
-//
-// SWIG directives for operators
-//
+// # SWIG directives for operators
 
 // Unary operators which return a new object, and thus require %newobject to be set.
 %define %swiglal_oct_urn_op(NAME, OCTNAME)
@@ -103,21 +104,7 @@ extern "C++" {
 // Octave __pow__() operator takes 2 arguments, so we ignore the 3rd.
 %typemap(in, numinputs=0) void* SWIGLAL_OP_POW_3RDARG "";
 
-// Comparison operators.
-%typemap(in, numinputs=0, noblock=1) int SWIGLAL_CMP_OP_RETN_HACK "";
-
-//
-// Octave-specific extensions to structs
-//
-
-// Extend a struct TAGNAME.
-%define %swiglal_struct_extend_specific(TAGNAME, OPAQUE, DTORFUNC)
-
-%enddef // %swiglal_struct_extend_specific
-
-//
-// General fragments, typemaps, and macros
-//
+// # General fragments, typemaps, and macros
 
 // SWIG conversion fragments and typemaps for GSL complex numbers.
 %swig_cplxflt_convn(gsl_complex_float, gsl_complex_float_rect, GSL_REAL, GSL_IMAG);
@@ -132,43 +119,44 @@ extern "C++" {
 %typemaps_primitive(%checkcode(CPLXDBL), COMPLEX16);
 
 // Typemaps which convert to/from the C broken-down date/time struct.
-%typemap(in, fragment=SWIG_AsVal_frag(double)) struct tm* (struct tm temptm) {
+%typemap(in) struct tm* (struct tm temptm) {
 
-  // Convert '$input' to an Octave date number 'datenum'
-  octave_value_list datenum_args;
-  if ($input.is_string()) {
-    datenum_args.append($input);
-  } else {
-    dim_vector dims = $input.dims();
-    if (dims.length() == 2 && dims.num_ones() == 1 && 3 <= dims.numel() && dims.numel() <= 6) {
-      RowVector datevec = $input.row_vector_value();
-      for (int i = 0; i < datevec.numel(); ++i) {
-        datenum_args.append(octave_value(datevec(i)));
+  // Set 'tm' struct to zero
+  memset(&temptm, 0, sizeof(temptm));
+
+  if (!$input.is_empty()) {
+
+    // Check that the $input octave_value is a vector of either 6 or 9 integer elements.
+    // Note that the 7th ('tm_wday') and 8th ('tm_yday') elements are ignored; see below.
+    if (!$input.dims().is_vector() || $input.is_complex_type()) {
+      %argument_fail(SWIG_TypeError, "$type (not a non-complex vector)", $symname, $argnum);
+    }
+    RowVector octtm = $input.row_vector_value();
+    if (octtm.numel() != 6 && octtm.numel() != 9) {
+      %argument_fail(SWIG_ValueError, "$type (must have 6 or 9 elements)", $symname, $argnum);
+    }
+    for (int i = 0; i < octtm.numel(); ++i) {
+      if (octtm(i) != int(octtm(i))) {
+        %argument_fail(SWIG_ValueError, "$type (must have integer elements)", $symname, $argnum);
       }
     }
-  }
-  octave_value_list retn;
-  if (datenum_args.length() > 0) {
-    retn = feval("datenum", datenum_args, 1);
-  }
-  if (retn.length() == 0) {
-    %argument_fail(SWIG_ValueError, "$type", $symname, $argnum);
-  }
-  double datenum = 0;
-  int res = SWIG_AsVal(double)(retn(0), &datenum);
-  if (!SWIG_IsOK(res)) {
-    %argument_fail(res, "$type", $symname, $argnum);
-  }
 
-  // Convert 'datenum' to a C time_t 't', using the following:
-  //   1970-01-01 00:00:00 +0000: 'datenum'=719529, 't'=0
-  //   1970-01-02 00:00:00 +0000: 'datenum'=719530, 't'=86400
-  time_t t = (time_t) llround((datenum - 719529) * 86400);
+    // Assign members of 'tm' struct, converting Octave date ranges to 'tm' struct date ranges
+    temptm.tm_year  = int(octtm(0)) - 1900;   // 'tm' struct years start from 1900
+    temptm.tm_mon   = int(octtm(1)) - 1;      // 'tm' struct months start from 0
+    temptm.tm_mday  = int(octtm(2));
+    temptm.tm_hour  = int(octtm(3));
+    temptm.tm_min   = int(octtm(4));
+    temptm.tm_sec   = int(octtm(5));
+    temptm.tm_isdst = octtm.numel() > 8 ? int(octtm(8)) : -1;
 
-  // Convert 't' to a C struct tm 'temptm'
-  memset(&temptm, 0, sizeof(temptm));
-  if (gmtime_r(&t, &temptm) == NULL) {
-    %argument_fail(SWIG_RuntimeError, "$type", $symname, $argnum);
+    // Fill in values for 'tm_wday' and 'tm_yday', and normalise member ranges
+    int errnum = 0;
+    XLAL_TRY( XLALFillBrokenDownTime(&temptm), errnum );
+    if (errnum != XLAL_SUCCESS) {
+      %argument_fail(SWIG_ValueError, "$type (invalid date/time)", $symname, $argnum);
+    }
+
   }
 
   $1 = &temptm;
@@ -177,24 +165,25 @@ extern "C++" {
 %typemap(freearg) struct tm* "";
 %typemap(out) struct tm* {
 
-  // Create an Octave date vector 'datevec'
-  RowVector datevec(6);
+  // Create a 9-element row vector
+  RowVector octtm(9);
 
-  // Assign members 'datevec', converting 'tm' struct date ranges to Octave date ranges
-  datevec(0) = $1->tm_year + 1900;   // Octave stores 4-digit years
-  datevec(1) = $1->tm_mon  + 1;      // Octave months start from 1
-  datevec(2) = $1->tm_mday;
-  datevec(3) = $1->tm_hour;
-  datevec(4) = $1->tm_min;
-  datevec(5) = $1->tm_sec;
+  // Assign members of vector, converting 'tm' struct date ranges to Octave date ranges
+  octtm(0) = $1->tm_year + 1900;   // Octave stores 4-digit years
+  octtm(1) = $1->tm_mon  + 1;      // Octave months start from 1
+  octtm(2) = $1->tm_mday;
+  octtm(3) = $1->tm_hour;
+  octtm(4) = $1->tm_min;
+  octtm(5) = $1->tm_sec;
+  octtm(6) = $1->tm_wday + 1;      // Octave week day starts from 1=Sunday
+  octtm(7) = $1->tm_yday + 1;      // Octave year day should start from 1
+  octtm(8) = $1->tm_isdst;
 
-  $result = octave_value(datevec);
+  $result = octave_value(octtm);
 
 }
 
-//
-// Interface code to track object parents
-//
+// # Interface code to track object parents
 
 // Interface code which tracks the parent structs of SWIG-wrapped struct members, so that the parent
 // struct is not destroyed as long as a SWIG-wrapped object containing any of its members exists.
@@ -261,9 +250,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
 %} // %init
 
-//
-// Fragments and typemaps for arrays
-//
+// # Fragments and typemaps for arrays
 
 // This section implements a series of array view classes, through which arbitrary C array data can
 // be viewed as native Octave matrices, etc.
@@ -524,23 +511,12 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
         return obj.load_binary(is, swap, fmt) && SWIG_IsOK(sloav_array_in(obj));
       }
 
+%#if defined(HAVE_HDF5)
       // Save and load from HDF5.
-%#ifdef HAVE_HDF5
-%#if SWIG_OCTAVE_PREREQ(4,0,0)
-      bool save_hdf5(octave_hdf5_id loc_id, const char *name, bool save_as_floats) {
-        return sloav_array_out().save_hdf5(loc_id, name, save_as_floats);
-      }
-%#else
       bool save_hdf5(hid_t loc_id, const char *name, bool save_as_floats) {
         return sloav_array_out().save_hdf5(loc_id, name, save_as_floats);
       }
-%#endif
-%#if SWIG_OCTAVE_PREREQ(4,0,0)
-      bool load_hdf5(octave_hdf5_id loc_id, const char *name) {
-        octave_value obj = sloav_array_out();
-        return obj.load_hdf5(loc_id, name) && SWIG_IsOK(sloav_array_in(obj));
-      }
-%#elif SWIG_OCTAVE_PREREQ(3,3,52)
+%#if defined(SWIGLAL_OCT_PREREQ_3_3_52)
       bool load_hdf5(hid_t loc_id, const char *name) {
         octave_value obj = sloav_array_out();
         return obj.load_hdf5(loc_id, name) && SWIG_IsOK(sloav_array_in(obj));
@@ -552,16 +528,6 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       }
 %#endif
 %#endif
-
-      // Print array.
-%#if SWIG_OCTAVE_PREREQ(4,0,0)
-      void print(std::ostream &os, bool pr_as_read_syntax = false)
-%#else
-      void print(std::ostream &os, bool pr_as_read_syntax = false) const
-%#endif
-      {
-        return sloav_array_out().print(os, pr_as_read_syntax);
-      }
 
       // The following methods override virtual const-methods in octave_base_value.  These methods
       // are mapped to the equivalent method of the octave_base_value-derived class of the array
@@ -632,15 +598,6 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 #define SLOAV_OBV_METH_FROM_ARRAY_3(N, R, A, B, C) R N(A a, B b, C c) const { return sloav_array_out().N(a, b, c); }
 #define SLOAV_OBV_METH_FROM_ARRAY_4(N, R, A, B, C, D) R N(A a, B b, C c, D d) const { return sloav_array_out().N(a, b, c, d); }
 #define SLOAV_OBV_METH_FROM_ARRAY_5(N, R, A, B, C, D, E) R N(A a, B b, C c, D d, E e) const { return sloav_array_out().N(a, b, c, d, e); }
-%#if SWIG_OCTAVE_PREREQ(4,2,0)
-      SLOAV_OBV_METH_FROM_ARRAY_0(as_double, octave_value);
-      SLOAV_OBV_METH_FROM_ARRAY_0(as_single, octave_value);
-%#endif
-%#if SWIG_OCTAVE_PREREQ(3,3,52)
-      SLOAV_OBV_METH_FROM_ARRAY_0(map_value, octave_map);
-%#else
-      SLOAV_OBV_METH_FROM_ARRAY_0(map_value, Octave_map);
-%#endif
       SLOAV_OBV_METH_FROM_ARRAY_0(abs, octave_value);
       SLOAV_OBV_METH_FROM_ARRAY_0(acos, octave_value);
       SLOAV_OBV_METH_FROM_ARRAY_0(acosh, octave_value);
@@ -683,6 +640,11 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       SLOAV_OBV_METH_FROM_ARRAY_0(log10, octave_value);
       SLOAV_OBV_METH_FROM_ARRAY_0(log1p, octave_value);
       SLOAV_OBV_METH_FROM_ARRAY_0(log2, octave_value);
+%#if defined(SWIGLAL_OCT_PREREQ_3_3_52)
+      SLOAV_OBV_METH_FROM_ARRAY_0(map_value, octave_map);
+%#else
+      SLOAV_OBV_METH_FROM_ARRAY_0(map_value, Octave_map);
+%#endif
       SLOAV_OBV_METH_FROM_ARRAY_0(matrix_type, MatrixType);
       SLOAV_OBV_METH_FROM_ARRAY_0(nnz, octave_idx_type);
       SLOAV_OBV_METH_FROM_ARRAY_0(nzmax, octave_idx_type);
@@ -756,6 +718,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       SLOAV_OBV_METH_FROM_ARRAY_2(int_value, int, bool, bool);
       SLOAV_OBV_METH_FROM_ARRAY_2(long_value, long int, bool, bool);
       SLOAV_OBV_METH_FROM_ARRAY_2(permute, octave_value, const Array<int>&, bool);
+      SLOAV_OBV_METH_FROM_ARRAY_2(print, void, std::ostream&, bool);
       SLOAV_OBV_METH_FROM_ARRAY_2(print_info, void, std::ostream&, bool);
       SLOAV_OBV_METH_FROM_ARRAY_2(print_raw, void, std::ostream&, bool);
       SLOAV_OBV_METH_FROM_ARRAY_2(resize, octave_value, const dim_vector&, bool);
@@ -798,7 +761,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 %fragment(%swiglal_oct_array_view_frag(ACFTYPE), "header",
           fragment=%swiglal_oct_array_view_init_frag(ACFTYPE),
           fragment="swiglal_oct_array_view", fragment=INFRAG, fragment=OUTFRAG)
-%{
+{
 
   extern "C++" {
 
@@ -836,9 +799,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     private:
 
       // Octave type constructs.
-#if !SWIG_OCTAVE_PREREQ(4,0,0)
       DECLARE_OCTAVE_ALLOCATOR;
-#endif
       DECLARE_OV_TYPEID_FUNCTIONS_AND_DATA;
 
     protected:
@@ -867,21 +828,19 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     };
 
     // Octave type constructs.
-#if !SWIG_OCTAVE_PREREQ(4,0,0)
     DEFINE_OCTAVE_ALLOCATOR(%swiglal_oct_array_view_class(ACFTYPE));
-#endif
     DEFINE_OV_TYPEID_FUNCTIONS_AND_DATA(%swiglal_oct_array_view_class(ACFTYPE),
                                         %swiglal_oct_array_view_ovtype(ACFTYPE),
                                         OVCLASS::static_class_name());
 
   } // extern "C++"
 
-%} // %swiglal_oct_array_view_frag()
+} // %swiglal_oct_array_view_frag()
 
 // Input copy conversion fragment for arrays of type ACFTYPE.
 %fragment(%swiglal_array_copyin_frag(ACFTYPE), "header",
           fragment=%swiglal_oct_array_view_frag(ACFTYPE))
-%{
+{
   SWIGINTERN int %swiglal_array_copyin_func(ACFTYPE)(const octave_value& parent,
                                                      octave_value obj,
                                                      void* ptr,
@@ -898,12 +857,12 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     %swiglal_oct_array_view_class(ACFTYPE) arrview(parent, ptr, esize, ndims, dims, strides, isptr, tinfo, tflags);
     return arrview.sloav_array_in(obj);
   }
-%}
+}
 
 // Output copy conversion fragment for arrays of type ACFTYPE.
 %fragment(%swiglal_array_copyout_frag(ACFTYPE), "header",
           fragment=%swiglal_oct_array_view_frag(ACFTYPE))
-%{
+{
   SWIGINTERN octave_value %swiglal_array_copyout_func(ACFTYPE)(const octave_value& parent,
                                                                void* ptr,
                                                                const size_t esize,
@@ -919,12 +878,12 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     %swiglal_oct_array_view_class(ACFTYPE) arrview(parent, ptr, esize, ndims, dims, strides, isptr, tinfo, tflags);
     return arrview.sloav_array_out();
   }
-%}
+}
 
 // Input view conversion fragment for arrays of type ACFTYPE.
 %fragment(%swiglal_array_viewin_frag(ACFTYPE), "header",
           fragment=%swiglal_oct_array_view_frag(ACFTYPE))
-%{
+{
   SWIGINTERN int %swiglal_array_viewin_func(ACFTYPE)(const octave_value& parent,
                                                      octave_value obj,
                                                      void** ptr,
@@ -1027,12 +986,12 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     return SWIG_OK;
 
   }
-%}
+}
 
 // Output view conversion fragment for arrays of type ACFTYPE.
 %fragment(%swiglal_array_viewout_frag(ACFTYPE), "header",
           fragment=%swiglal_oct_array_view_frag(ACFTYPE))
-%{
+{
   SWIGINTERN octave_value %swiglal_array_viewout_func(ACFTYPE)(const octave_value& parent,
                                                                void* ptr,
                                                                const size_t esize,
@@ -1047,7 +1006,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     octave_base_value *objval = new %swiglal_oct_array_view_class(ACFTYPE)(parent, ptr, esize, ndims, dims, strides, isptr, tinfo, tflags);
     return octave_value(objval);
   }
-%}
+}
 
 %enddef // %swiglal_oct_array_frags
 

@@ -52,7 +52,7 @@
 
 typedef struct
 {
-  EphemerisData *edat;			/**< ephemeris data (from XLALInitBarycenter()) */
+  EphemerisData *edat;			/**< ephemeris data (from LALInitBarycenter()) */
   UINT4 numDetectors;			/**< number of detectors */
   MultiDetectorStateSeries *multiDetStates;	/**< detector state time series */
   MultiNoiseWeights *multiNoiseWeights;		/**< per-detector noise weights */
@@ -67,6 +67,8 @@ typedef struct
 
 typedef struct
 {
+  BOOLEAN help;
+
   LALStringVector* IFOs; /**< list of detector-names "H1,H2,L1,.." or single detector*/
 
   REAL8 Alpha;		/**< a single skyposition Alpha: radians, equatorial coords. */
@@ -82,10 +84,11 @@ typedef struct
   INT4 Tsft;			/**< assumed length of SFTs, needed for offset to timestamps when comparing to CFS_v2, PFS etc */
 
   LALStringVector* noiseSqrtShX; /**< per-detector noise PSD sqrt(SX) */
-  BOOLEAN singleIFOweighting;	/**< Normalize single-IFO quantities by single-IFO SX instead of Stot */
 
   CHAR *outab; 			/**< output file for antenna pattern functions a(t), b(t) at each timestamp */
   CHAR *outABCD; 		/**< output file for antenna pattern matrix elements A, B, C, D averaged over timestamps */
+
+  BOOLEAN version;	/**< output code versions */
 
 } UserVariables_t;
 
@@ -113,11 +116,17 @@ main(int argc, char *argv[])
   XLAL_CHECK ( XLALInitUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read cmdline & cfgfile  */
-  BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if ( should_exit ) {
-    exit(1);
+  XLAL_CHECK ( XLALUserVarReadAllInput ( argc,argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  if (uvar.help) { 	/* help requested: we're done */
+    exit(0);
   }
+
+  if ( uvar.version )
+    {
+      XLALOutputVersionString ( stdout, lalDebugLevel );
+      exit(0);
+    }
 
   /* basic setup and initializations */
   XLAL_CHECK ( XLALInitCode( &config, &uvar, argv[0] ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -144,9 +153,7 @@ main(int argc, char *argv[])
       }
       else {
         for ( UINT4 X=0; X < config.numDetectors; X++ ) {
-          char* detectorID;
-          detectorID = config.multiDetStates->data[X]->detector.frDetector.prefix;
-          fprintf(fpOutab, "      a_%s(t)      b_%s(t)", detectorID, detectorID);
+          fprintf(fpOutab, "      a[%d](t)      b[%d](t)", X, X);
         }
       }
       fprintf(fpOutab, "\n");
@@ -169,20 +176,11 @@ main(int argc, char *argv[])
 
       /* write column headings */
       fprintf(fpOutABCD, "%%%% columns:\n%%%% Alpha   Delta");
-      if ( config.numDetectors == 1 ) {
-        char* detectorID;
-        detectorID = config.multiDetStates->data[0]->detector.frDetector.prefix;
-        fprintf(fpOutABCD, "        A_%s         B_%s         C_%s         D_%s", detectorID, detectorID, detectorID, detectorID);
-      }
-      else {
-        fprintf(fpOutABCD, "        A            B            C            D");
-      }
+      fprintf(fpOutABCD, "        A            B            C            D");
       if ( config.numDetectors > 1 ) {
         fprintf(fpOutABCD, "   ");
         for ( UINT4 X=0; X < config.numDetectors; X++ ) {
-          char* detectorID;
-          detectorID = config.multiDetStates->data[X]->detector.frDetector.prefix;
-          fprintf(fpOutABCD, "         A_%s         B_%s         C_%s         D_%s", detectorID, detectorID, detectorID, detectorID);
+          fprintf(fpOutABCD, "         A[%d]         B[%d]         C[%d]         D[%d]", X, X, X, X);
         }
       }
       fprintf(fpOutABCD, "\n");
@@ -205,7 +203,7 @@ main(int argc, char *argv[])
      */
     MultiAMCoeffs *multiAMforSingle = NULL;
     MultiAMCoeffs *multiAMunweighted = NULL;
-    if ( uvar.singleIFOweighting && ( config.numDetectors > 1 ) && ( config.multiNoiseWeights != NULL ) ) {
+    if ( ( config.numDetectors > 1 ) && ( config.multiNoiseWeights != NULL ) ) {
       XLAL_CHECK ( ( multiAMunweighted = XLALComputeMultiAMCoeffs ( config.multiDetStates, NULL, skypos ) ) != NULL, XLAL_EFUNC, "XLALComputeAMCoeffs() failed." );
       multiAMforSingle = multiAMunweighted;
     }
@@ -276,6 +274,8 @@ XLALInitUserVars ( UserVariables_t *uvar )
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL );
 
   /* set a few defaults */
+  uvar->help = 0;
+
   XLAL_CHECK ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) != NULL, XLAL_ENOMEM, "Call to XLALCreateStringVector() failed." );
 
   uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
@@ -289,34 +289,35 @@ XLALInitUserVars ( UserVariables_t *uvar )
   uvar->timeStampsFile = NULL;
   uvar->outab = 0;
   uvar->outABCD = 0;
-  uvar->singleIFOweighting = 0;
   uvar->Tsft = 1800;
 
   uvar->noiseSqrtShX = NULL;
 
   /* register all user-variables */
-  XLALRegisterUvarMember( IFOs,                  STRINGVector, 'I', OPTIONAL, "Comma-separated list of detectors, eg. \"H1,H2,L1,G1, ...\" [only 1 detector supported at the moment] ");
+  XLALregBOOLUserStruct(	help,		'h', UVAR_HELP,		"Print this help/usage message");
+  XLALregLISTUserStruct( IFOs,                  'I', UVAR_OPTIONAL, "Comma-separated list of detectors, eg. \"H1,H2,L1,G1, ...\" [only 1 detector supported at the moment] ");
 
-  XLALRegisterUvarMember(	Alpha,		REAL8, 'a', OPTIONAL,	"single skyposition Alpha in radians, equatorial coords.");
-  XLALRegisterUvarMember(	Delta, 		REAL8, 'd', OPTIONAL,	"single skyposition Delta in radians, equatorial coords.");
+  XLALregREALUserStruct(	Alpha,		'a', UVAR_OPTIONAL,	"single skyposition Alpha in radians, equatorial coords.");
+  XLALregREALUserStruct(	Delta, 		'd', UVAR_OPTIONAL,	"single skyposition Delta in radians, equatorial coords.");
 
-  XLALRegisterUvarMember( skyGridFile,		STRING, 's', OPTIONAL,	"Alternatively: sky-grid file");
+  XLALregSTRINGUserStruct( skyGridFile,		's', UVAR_OPTIONAL,	"Alternatively: sky-grid file");
 
-  XLALRegisterUvarMember( 	timeGPS,        STRINGVector, 't', OPTIONAL, 	"GPS time at which to compute detector states (separate multiple timestamps by commata)");
-  XLALRegisterUvarMember(	timeStampsFiles, STRINGVector, 'T', OPTIONAL,	"Alternative: time-stamps file(s) (comma-separated list per IFO, or one for all)");
-  XLALRegisterUvarMember(		Tsft,		 INT4, 0, OPTIONAL,	"Assumed length of one SFT in seconds; needed for timestamps offset consistency with F-stat based codes");
+  XLALregLISTUserStruct( 	timeGPS,        't', UVAR_OPTIONAL, 	"GPS time at which to compute detector states (separate multiple timestamps by commata)");
+  XLALregLISTUserStruct(	timeStampsFiles, 'T', UVAR_OPTIONAL,	"Alternative: time-stamps file(s) (comma-separated list per IFO, or one for all)");
+  XLALregINTUserStruct(		Tsft,		 0, UVAR_OPTIONAL,	"Assumed length of one SFT in seconds; needed for timestamps offset consistency with F-stat based codes");
 
-  XLALRegisterUvarMember( noiseSqrtShX,		 STRINGVector, 0, OPTIONAL, "Per-detector noise PSD sqrt(SX). Only ratios relevant to compute noise weights. Defaults to 1,1,...");
-  XLALRegisterUvarMember( singleIFOweighting,	 BOOLEAN, 0, OPTIONAL, "Normalize single-IFO quantities by single-IFO SX instead of Stot");
+  XLALregLISTUserStruct ( noiseSqrtShX,		 0, UVAR_OPTIONAL, "Per-detector noise PSD sqrt(SX). Only ratios relevant to compute noise weights. Defaults to 1,1,...");
 
-  XLALRegisterUvarMember(	ephemEarth,	 STRING, 0,  OPTIONAL,	"Earth ephemeris file to use");
-  XLALRegisterUvarMember(	ephemSun,	 STRING, 0,  OPTIONAL,	"Sun ephemeris file to use");
+  XLALregSTRINGUserStruct (	ephemEarth,	 0,  UVAR_OPTIONAL,	"Earth ephemeris file to use");
+  XLALregSTRINGUserStruct (	ephemSun,	 0,  UVAR_OPTIONAL,	"Sun ephemeris file to use");
 
-  XLALRegisterUvarMember(	outab,		STRING, 'o', OPTIONAL,	"output file for antenna pattern functions a(t), b(t) at each timestamp");
-  XLALRegisterUvarMember(	outABCD,	STRING, 'O', OPTIONAL,	"output file for antenna pattern matrix elements A, B, C, D averaged over timestamps");
+  XLALregSTRINGUserStruct(	outab,		'o', UVAR_OPTIONAL,	"output file for antenna pattern functions a(t), b(t) at each timestamp");
+  XLALregSTRINGUserStruct(	outABCD,	'O', UVAR_OPTIONAL,	"output file for antenna pattern matrix elements A, B, C, D averaged over timestamps");
+
+  XLALregBOOLUserStruct(	version,        'V', UVAR_SPECIAL,      "Output code version");
 
   /* developer user variables */
-  XLALRegisterUvarMember(	timeStampsFile,	  STRING, 0, OPTIONAL,	"Alternative: single time-stamps file (deprecated, use --timeStampsFiles instead");
+  XLALregSTRINGUserStruct(	timeStampsFile,	  0, UVAR_OPTIONAL,	"Alternative: single time-stamps file (deprecated, use --timeStampsFiles instead");
 
   return XLAL_SUCCESS;
 
@@ -482,11 +483,11 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
 
     /* create multi noise weights */
     if ( (cfg->multiNoiseWeights = XLALCalloc(1, sizeof(*cfg->multiNoiseWeights))) == NULL ) {
-     XLALPrintError ("%s: failed to XLALCalloc ( 1, %zu )\n", __func__, sizeof(*cfg->multiNoiseWeights) );
+     XLALPrintError ("%s: failed to XLALCalloc ( 1, %lu )\n", __func__, sizeof(*cfg->multiNoiseWeights) );
      XLAL_ERROR ( XLAL_ENOMEM );
     }
     if ( (cfg->multiNoiseWeights->data = XLALCalloc(cfg->numDetectors, sizeof(*cfg->multiNoiseWeights->data))) == NULL ) {
-     XLALPrintError ("%s: failed to XLALCalloc ( %d, %zu )\n", __func__, cfg->numDetectors, sizeof(*cfg->multiNoiseWeights->data) );
+     XLALPrintError ("%s: failed to XLALCalloc ( %d, %lu )\n", __func__, cfg->numDetectors, sizeof(*cfg->multiNoiseWeights->data) );
      XLAL_ERROR ( XLAL_ENOMEM );
     }
     cfg->multiNoiseWeights->length = cfg->numDetectors;

@@ -83,9 +83,9 @@ int main(int argc, char **argv){
 
   /* output header information on lines starting with a # comment */
   fprintf(fp, "# Build information for %s\n", argv[0]);
-  fprintf(fp, "# Author: %s\n", lalAppsVCSInfo.vcsAuthor);
-  fprintf(fp, "# LALApps Commit ID: %s\n", lalAppsVCSInfo.vcsId);
-  fprintf(fp, "# LALApps Commit Date: %s\n", lalAppsVCSInfo.vcsDate);
+  fprintf(fp, "# Author: %s\n", lalAppsVCSAuthor);
+  fprintf(fp, "# LALApps Commit ID: %s\n", lalAppsVCSId);
+  fprintf(fp, "# LALApps Commit Date: %s\n", lalAppsVCSDate);
   fprintf(fp, "#\n# Ephemeris creation command:-\n#\t");
   for( INT4 k=0; k<argc; k++ ) fprintf(fp, "%s ", argv[k]);
   fprintf(fp, "\n");
@@ -188,17 +188,14 @@ void get_input_args(inputParams_t *inputParams, int argc, char *argv[]){
         else
           fprintf(stderr, "Error passing option %s with argument %s\n",
             long_options[option_index].name, LALoptarg);
-#if __GNUC__ >= 7
-        __attribute__ ((fallthrough));
-#endif
       case 'h': /* help message */
         fprintf(stderr, USAGE, program);
         exit(0);
       case 't':
-        inputParams->ephemtype = XLALStringDuplicate(LALoptarg);
+        inputParams->ephemtype = strdup(LALoptarg);
         break;
       case 'o':
-        inputParams->outputpath = XLALStringDuplicate(LALoptarg);
+        inputParams->outputpath = strdup(LALoptarg);
         break;
       case 's':
         inputParams->startT = atof(LALoptarg);
@@ -210,6 +207,7 @@ void get_input_args(inputParams_t *inputParams, int argc, char *argv[]){
         inputParams->interval = atof(LALoptarg);
         break;
       case '?':
+        fprintf(stderr, "Unknown error while parsing options\n");
       default:
         fprintf(stderr, "Unknown error while parsing options\n");
     }

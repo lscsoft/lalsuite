@@ -3,37 +3,43 @@ MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
+if LALXML
+XMLHDR = LALXMLVOTableSerializersPulsar.h
+XMLSRC = LALXMLVOTableSerializersPulsar.c
+endif
+
 pkginclude_HEADERS = \
 	BinaryPulsarTiming.h \
-	CWMakeFakeData.h \
+	ComplexAM.h \
 	ComputeFstat.h \
 	ComputeSky.h \
+	CWMakeFakeData.h \
 	DetectorStates.h \
 	DopplerFullScan.h \
 	DopplerScan.h \
 	EstimateAmplitudeParams.h \
 	ExtrapolatePulsarSpins.h \
-	FITSFileIO.h \
-	FITSPulsarIO.h \
-	GSLHelpers.h \
+	FitToPulsar.h \
+	FlatMesh.h \
+	FlatPulsarMetric.h \
 	GeneratePulsarSignal.h \
 	GenerateSpinOrbitCW.h \
 	GenerateTaylorCW.h \
-	GetEarthTimes.h \
 	HoughMap.h \
 	LALBarycenter.h \
 	LALComputeAM.h \
+	LALDemod.h \
 	LALHough.h \
 	LALInitBarycenter.h \
 	LALPulsarConfig.h \
 	LALPulsarVCSInfo.h \
 	LALPulsarVCSInfoHeader.h \
+	LALXMGRInterface.h \
+	LatticeTiling.h \
 	LFTandTSutils.h \
+	LineRobustStats.h \
 	LISAspecifics.h \
 	LUT.h \
-	LatticeTiling.h \
-	LineRobustStats.h \
-	MetricUtils.h \
 	NormalizeSFTRngMed.h \
 	PHMD.h \
 	ProbabilityDensity.h \
@@ -42,42 +48,45 @@ pkginclude_HEADERS = \
 	PulsarCrossCorr_v2.h \
 	PulsarDataTypes.h \
 	PulsarSimulateCoherentGW.h \
+	PulsarTimes.h \
 	ReadPulsarParFile.h \
 	SFTClean.h \
+	SFTfileIO-LAL.h \
 	SFTfileIO.h \
+	SFTutils-LAL.h \
 	SFTutils.h \
-	SSBtimes.h \
 	SimulatePulsarSignal.h \
 	SinCosLUT.h \
+	SSBtimes.h \
+	StackMetric.h \
 	Statistics.h \
-	SuperskyMetrics.h \
+	SuperSkyMetrics.h \
 	SynthesizeCWDraws.h \
 	TransientCW_utils.h \
 	TwoDMesh.h \
 	UniversalDopplerMetric.h \
 	Velocity.h \
-	$(END_OF_LIST)
+	$(XMLHDR)
 
 lib_LTLIBRARIES = liblalpulsar.la
-
 liblalpulsar_la_SOURCES = \
 	BinaryPulsarTiming.c \
-	CWMakeFakeData.c \
+	CoherentMetric.c \
+	ComplexAM.c \
 	ComputeFstat.c \
-	ComputeFstat_Demod.c \
-	ComputeFstat_DemodHL_Generic.c \
-	ComputeFstat_DemodHL_OptC.c \
-	ComputeFstat_Resamp.c \
 	ComputeSky.c \
 	ConstructPLUT.c \
+	CWMakeFakeData.c \
 	DetectorStates.c \
 	DopplerFullScan.c \
 	DopplerScan.c \
 	DriveHough.c \
+	DTEphemeris.c \
 	EstimateAmplitudeParams.c \
 	ExtrapolatePulsarSpins.c \
-	FITSFileIO.c \
-	FITSPulsarIO.c \
+	FitToPulsar.c \
+	FlatMesh.c \
+	FlatPulsarMetric.c \
 	GenerateEllipticSpinOrbitCW.c \
 	GenerateHyperbolicSpinOrbitCW.c \
 	GenerateParabolicSpinOrbitCW.c \
@@ -88,18 +97,22 @@ liblalpulsar_la_SOURCES = \
 	HoughMap.c \
 	LALBarycenter.c \
 	LALComputeAM.c \
+	LALDemod.c \
+	LALDemodFAST.c \
 	LALInitBarycenter.c \
-	LFTandTSutils.c \
-	LISAspecifics.c \
+	LALPulsarVCSInfo.c \
+	LALXMGRInterface.c \
 	LatticeTiling.c \
+	LFTandTSutils.c \
 	LineRobustStats.c \
-	MetricUtils.c \
+	LISAspecifics.c \
 	NDParamPLUT.c \
 	NormalizeSFTRngMed.c \
 	ParamPLUT.c \
 	PatchGrid.c \
 	Peak2PHMD.c \
 	ProbabilityDensity.c \
+	ProjectMetric.c \
 	PtoleMetric.c \
 	PulsarCrossCorr.c \
 	PulsarCrossCorr_v2.c \
@@ -108,76 +121,47 @@ liblalpulsar_la_SOURCES = \
 	SFTClean.c \
 	SFTfileIO.c \
 	SFTutils.c \
-	SSBtimes.c \
 	SimulatePulsarSignal.c \
 	SinCosLUT.c \
+	SSBtimes.c \
+	StackMetric.c \
 	Statistics.c \
 	Stereographic.c \
-	SuperskyMetrics.c \
+	SuperSkyMetrics.c \
 	SynthesizeCWDraws.c \
+	TBaryPtolemaic.c \
+	TComp.c \
 	TransientCW_utils.c \
+	TSpin.c \
 	TwoDMesh.c \
 	TwoDMeshInternal.c \
+	TwoDMeshMetrics.c \
+	TwoDMeshRanges.c \
 	UniversalDopplerMetric.c \
 	Velocity.c \
-	$(END_OF_LIST)
-
-nodist_liblalpulsar_la_SOURCES = \
-	LALPulsarBuildInfoHeader.h \
-	LALPulsarVCSInfo.c \
-	$(END_OF_LIST)
-
-if LALXML
-pkginclude_HEADERS += LALXMLVOTableSerializersPulsar.h
-liblalpulsar_la_SOURCES += LALXMLVOTableSerializersPulsar.c
-endif
-
-noinst_LTLIBRARIES =
-liblalpulsar_la_LIBADD =
-
-if HAVE_ALTIVEC
-noinst_LTLIBRARIES += libcomputefstat_demodhl_altivec.la
-liblalpulsar_la_LIBADD += libcomputefstat_demodhl_altivec.la
-libcomputefstat_demodhl_altivec_la_SOURCES = ComputeFstat_DemodHL_Altivec.c
-endif
-
-if HAVE_SSE_COMPILER
-noinst_LTLIBRARIES += libcomputefstat_demodhl_sse.la
-liblalpulsar_la_LIBADD += libcomputefstat_demodhl_sse.la
-libcomputefstat_demodhl_sse_la_SOURCES = ComputeFstat_DemodHL_SSE.c
-libcomputefstat_demodhl_sse_la_CFLAGS = $(AM_CFLAGS) $(SSE_CFLAGS)
-endif
+	$(XMLSRC)
+nodist_liblalpulsar_la_SOURCES = LALPulsarBuildInfo.c
 
 EXTRA_liblalpulsar_la_SOURCES = \
-	ComputeFstat_DemodHL_Altivec.i \
-	ComputeFstat_DemodHL_Generic.i \
-	ComputeFstat_DemodHL_OptC.i \
-	ComputeFstat_DemodHL_SSE.i \
-	ComputeFstat_Demod_ComputeFaFb.c \
-	ComputeFstat_internal.h \
-	SinCosLUT.i \
-	$(END_OF_LIST)
+	GSLHelpers.h \
+	SinCosLUT.i 				\
+	ComputeFstat_Demod.c 			\
+	ComputeFstat_Demod_ComputeFaFb.c 	\
+	ComputeFstat_DemodHL_Altivec.i		\
+	ComputeFstat_DemodHL_OptC.i		\
+	ComputeFstat_DemodHL_SSE.i		\
+	ComputeFstat_DemodHL_Generic.i		\
+	ComputeFstat_Resamp.c 			\
+	SFTfileIO-LAL.c 			\
+	SFTutils-LAL.c
 
 liblalpulsar_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
 DISTCLEANFILES = config.h
 
-vcs_build_info_source = LALPulsarVCSInfo.c
 vcs_info_sources = LALPulsarVCSInfoHeader.h
-build_info_source = LALPulsarBuildInfoHeader.h
-build_info_dependencies = $(liblalpulsar_la_DEPENDENCIES)
-
-LDADD = liblalpulsar.la
-
-bin_PROGRAMS = \
-	lalpulsar_version \
-	$(END_OF_LIST)
-
-lalpulsar_version_SOURCES = version.c
-
-TESTS = \
-	lalpulsar_version \
-	$(END_OF_LIST)
+build_info_source = LALPulsarBuildInfo.c
+$(build_info_source): $(liblalpulsar_la_DEPENDENCIES)
 
 EXTRA_DIST = \
 	Eccentric_and_true_anomaly.png \

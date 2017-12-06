@@ -75,6 +75,7 @@ example$ ./lalapps_sw_inj_frames -p /Users/erinmacdonald/lsc/analyses/test_par_f
 
 /* ---------- local type definitions ---------- */
 typedef struct{
+  BOOLEAN help; /* Trigger output of help string*/
 /*    CHAR *out_chan;  Channel output ie. H1_LDAS_C02_L2_CWINJ*/
 /*    CHAR *in_chan;  Channel input from .gwf ie. H1:LDAS-STRAIN*/
   REAL8 srate; /* sample rate -- default 16384*/
@@ -86,7 +87,6 @@ typedef struct{
   CHAR *ephemSun;		/**< Sun ephemeris file to use */
   CHAR *IFO; /*detector */
   CHAR *logDir; /*directory for the log files */
-  CHAR *outputdir;
 } UserInput_t;
 
 UserInput_t uvar_struct;
@@ -108,6 +108,9 @@ int main(int argc, char **argv)
   if ( InitUserVars ( uvar, argc, argv ) != XLAL_SUCCESS ) {
     XLAL_ERROR ( XLAL_EFUNC );
   }
+
+  if ( uvar->help )
+    return 0;
 
   char version[256];
   sprintf(version, "v13"); /*manually change */
@@ -216,8 +219,7 @@ int main(int argc, char **argv)
   UINT4 h=0;
 
   char parname[256];
-  PulsarParameters *pulparams[numParFiles];
-
+  BinaryPulsarParams pulparams[numParFiles];
   /*clear . and .. in directory */
   free(parnamelist[0]);
   free(parnamelist[1]);
@@ -253,9 +255,8 @@ int main(int argc, char **argv)
 	fprintf(stderr,"Error opening file: %s\n", parname);
 	XLAL_ERROR ( XLAL_EIO );
       }
-
-      pulparams[h] = XLALReadTEMPOParFile( parname );
-
+      /*BinaryPulsarParams pulparams[numParFiles];*/
+      XLALReadTEMPOParFile( &pulparams[h], parname );
       fclose( inject );
       /*fprintf(stderr,"You have now read in %s, saved in index %i", parname, h);*/
 
@@ -324,14 +325,14 @@ int main(int argc, char **argv)
 	/** extract epoch and duration from gwf file name **/
 
 	strncpy(strepoch, strchr(gwfnamelist[k]->d_name, '9'), 9 ); /*All epochs in S6 begin with 9... potential problem in future */
-	XLAL_LAST_ELEM(strepoch) = '\0'; /*Null terminate the string*/
+	strepoch[sizeof(strepoch)-1] = '\0'; /*Null terminate the string*/
 	epoch.gpsSeconds = atoi(strepoch);  /* convert to integer from string */
 	epoch.gpsNanoSeconds = 0; /* no nanosecond precision */
 	/*	fprintf(stderr, "epoch = %i\n", epoch.gpsSeconds);*/
 
 	char strdur[4];
 	strncpy(strdur, (strrchr(gwfnamelist[k]->d_name, '-')+1), 3); /* duration is last number in frame file */
-	XLAL_LAST_ELEM(strdur) = '\0';
+	strdur[sizeof(strdur)-1] = '\0';
 	/* assigns duration from .gwf frame */
 	ndata = atoi(strdur);
 
@@ -364,7 +365,7 @@ int main(int argc, char **argv)
             fprintf (frames, "%s\n", gwfnamelist[k]->d_name);
 	    fclose(frames);
           }
-
+          
           /* </failed file> */
           XLALDestroyREAL8TimeSeries( gwfseries );
 	  continue; /*don't exit program if .gwf file fails, continue through*/
@@ -389,7 +390,7 @@ int main(int argc, char **argv)
 
 	/* read in and test generated frame with XLAL function*/
 
-	LALFrameH *outFrame   = NULL;        /* frame data structure */
+	LALFrameH *outFrame   = NULL;        /* frame data structure */     
 
 	if ((outFrame = XLALFrameNew(&epoch,(REAL8)ndata,"CW_INJ",0,0,detflags)) == NULL) {
 	  LogPrintf(LOG_CRITICAL, "%s : XLALFrameNew() failed with error = %d.\n",fn,xlalErrno);
@@ -455,95 +456,66 @@ int main(int argc, char **argv)
 	      XLALPrintError("Out of memory");
 	      XLAL_ERROR ( XLAL_EFUNC );
 	    }
+	    /*read in parameters from .par file */
+	    /*XLALReadTEMPOParFile( &pulparams, pulin);*/
 
-            REAL8Vector *fs = PulsarGetREAL8VectorParam(pulparams[h], "F");
-            fprintf(stderr,"Your f0 is %f\n",fs->data[0]);
+	    fprintf(stderr,"Your f0 is %f\n",pulparams[h].f0);
 
 	    /*Convert location with proper motion */
-            INT4 dtpos = 0;
-            if ( PulsarCheckParam(pulparams[h], "POSEPOCH") )
-              dtpos = epoch.gpsSeconds - (INT4)PulsarGetREAL8Param(pulparams[h], "POSEPOCH"); /*calculate time since posepoch */
-            else
-              dtpos = epoch.gpsSeconds - (INT4)PulsarGetREAL8Param(pulparams[h], "PEPOCH");   /*calculate time since pepoch */
+	    if ( pulparams[h].posepoch == 0.0 )
+	      pulparams[h].posepoch = pulparams[h].pepoch; /*set posepoch to pepoch if position epoch not present */
+	    INT4 dtpos = epoch.gpsSeconds - (INT4)pulparams[h].posepoch; /*calculate time since posepoch */
 
-            REAL8 ra = 0., dec = 0.;
-            if ( PulsarCheckParam( pulparams[h], "RAJ" ) ) {
-              ra = PulsarGetREAL8Param( pulparams[h], "RAJ" );
-            }
-            else if ( PulsarCheckParam( pulparams[h], "RA" ) ){
-              ra = PulsarGetREAL8Param( pulparams[h], "RA" );
-            }
-            else{
-              XLALPrintError("No right ascension found");
-              XLAL_ERROR ( XLAL_EFUNC );
-            }
-            if ( PulsarCheckParam( pulparams[h], "DECJ" ) ) {
-              dec = PulsarGetREAL8Param( pulparams[h], "DECJ" );
-            }
-            else if ( PulsarCheckParam( pulparams[h], "DEC" ) ){
-              dec = PulsarGetREAL8Param( pulparams[h], "DEC" );
-            }
-            else{
-              XLALPrintError("No declination found");
-              XLAL_ERROR ( XLAL_EFUNC );
-            }
-
-	    params.pulsar.position.latitude = dec + (REAL8)dtpos * PulsarGetREAL8ParamOrZero(pulparams[h], "PMDEC");
-	    params.pulsar.position.longitude = ra + (REAL8)dtpos * PulsarGetREAL8ParamOrZero(pulparams[h], "PMRA") / cos(params.pulsar.position.latitude);
+	    params.pulsar.position.latitude = pulparams[h].dec + dtpos * pulparams[h].pmdec;
+	    params.pulsar.position.longitude = pulparams[h].ra + dtpos * pulparams[h].pmra / cos(params.pulsar.position.latitude);
 	    params.pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
 
-	    params.pulsar.f0 = 2.*fs->data[0];
-            for ( UINT4 k = 0; k < 3; k++ ){
-              // set frequency derivaties (up to third derivative)
-              if ( fs->length > k ){ params.pulsar.spindown->data[k] = 2.*fs->data[k+1]; }
-              else { params.pulsar.spindown->data[k] = 0.; }
-            }
-	    if (( XLALGPSSetREAL8(&(params.pulsar.refTime),PulsarGetREAL8Param(pulparams[h], "PEPOCH")) ) == NULL ){
+	    params.pulsar.f0 = 2.*pulparams[h].f0;
+	    params.pulsar.spindown->data[0] = 2.*pulparams[h].f1; /* first frequency derivative */
+	    params.pulsar.spindown->data[1] = 2.*pulparams[h].f2; /* second frequency derivative */
+            params.pulsar.spindown->data[2] = 2.*pulparams[h].f3; /* third frequency derivative */
+	    if (( XLALGPSSetREAL8(&(params.pulsar.refTime),pulparams[h].pepoch) ) == NULL ){
 	      XLAL_ERROR ( XLAL_EFUNC );
 	    }
-	    params.pulsar.psi = PulsarGetREAL8ParamOrZero(pulparams[h], "PSI");
-	    params.pulsar.phi0 = PulsarGetREAL8ParamOrZero(pulparams[h], "PHI0");
+	    params.pulsar.psi = pulparams[h].psi;
+	    params.pulsar.phi0 = pulparams[h].phi0;
 	    /*Conversion from h0 and cosi to plus and cross */
-            REAL8 cosiota = PulsarGetREAL8ParamOrZero(pulparams[h], "COSIOTA");
-            REAL8 h0 = PulsarGetREAL8ParamOrZero(pulparams[h], "H0");
-	    params.pulsar.aPlus = 0.5 * h0 * (1. + cosiota * cosiota );
-	    params.pulsar.aCross = h0 * cosiota;
+	    params.pulsar.aPlus = 0.5 * pulparams[h].h0 * (1. + pulparams[h].cosiota * pulparams[h].cosiota );
+	    params.pulsar.aCross = pulparams[h].h0 * pulparams[h].cosiota;
 
 	    /*if binary */
-	    if (PulsarCheckParam(pulparams[h], "BINARY")) {
+	    if (pulparams[h].model != NULL) {
 	      /*fprintf(stderr, "You have a binary! %s", pulin);*/
-	      params.orbit.asini = PulsarGetREAL8ParamOrZero(pulparams[h], "A1");
-	      params.orbit.period = PulsarGetREAL8ParamOrZero(pulparams[h], "PB")*86400;
+	      params.orbit->asini = pulparams[h].x;
+	      params.orbit->period = pulparams[h].Pb*86400;
 
 	      /*Taking into account ELL1 model option */
-	      if (strstr(PulsarGetStringParam(pulparams[h], "BINARY"),"ELL1") != NULL) {
+	      if (strstr(pulparams[h].model,"ELL1") != NULL) {
 		REAL8 w,e,eps1,eps2;
-		eps1 = PulsarGetREAL8ParamOrZero(pulparams[h], "EPS1");
-		eps2 = PulsarGetREAL8ParamOrZero(pulparams[h], "EPS2");
+		eps1 = pulparams[h].eps1;
+		eps2 = pulparams[h].eps2;
 		w = atan2(eps1,eps2);
 		e = sqrt(eps1*eps1+eps2*eps2);
-		params.orbit.argp = w;
-		params.orbit.ecc = e;
+		params.orbit->argp = w;
+		params.orbit->ecc = e;
 	      }
 	      else {
-		params.orbit.argp = PulsarGetREAL8ParamOrZero(pulparams[h], "OM");
-		params.orbit.ecc = PulsarGetREAL8ParamOrZero(pulparams[h], "ECC");
+		params.orbit->argp = pulparams[h].w0;
+		params.orbit->ecc = pulparams[h].e;
 	      }
-	      if (strstr(PulsarGetStringParam(pulparams[h], "BINARY"),"ELL1") != NULL) {
-		REAL8 fe, uasc, Dt, T0val = 0.;
-		fe = sqrt((1.0-params.orbit.ecc)/(1.0+params.orbit.ecc));
-		uasc = 2.0*atan(fe*tan(params.orbit.argp/2.0));
-		Dt = (params.orbit.period/LAL_TWOPI)*(uasc-params.orbit.ecc*sin(uasc));
-		T0val = PulsarGetREAL8ParamOrZero(pulparams[h], "TASC") + Dt;
-                PulsarAddParam(pulparams[h], "T0", &T0val, PULSARTYPE_REAL8_t );
+	      if (strstr(pulparams[h].model,"ELL1") != NULL) {
+		REAL8 fe, uasc, Dt;
+		fe = sqrt((1.0-params.orbit->ecc)/(1.0+params.orbit->ecc));
+		uasc = 2.0*atan(fe*tan(params.orbit->argp/2.0));
+		Dt = (params.orbit->period/LAL_TWOPI)*(uasc-params.orbit->ecc*sin(uasc));
+		pulparams[h].T0 = pulparams[h].Tasc + Dt;
 	      }
 
-	      params.orbit.tp.gpsSeconds = (UINT4)floor(PulsarGetREAL8ParamOrZero(pulparams[h], "T0"));
-	      params.orbit.tp.gpsNanoSeconds = (UINT4)floor((PulsarGetREAL8ParamOrZero(pulparams[h], "T0") - params.orbit.tp.gpsSeconds)*1e9);
-	    } /* if is a BINARY */
-	    else {
-	      XLAL_INIT_MEM(params.orbit); /*if not a binary pulsar*/
-            }
+	      params.orbit->tp.gpsSeconds = (UINT4)floor(pulparams[h].T0);
+	      params.orbit->tp.gpsNanoSeconds = (UINT4)floor((pulparams[h].T0 - params.orbit->tp.gpsSeconds)*1e9);
+	    } /* if pulparams.model is BINARY */
+	    else
+	      params.orbit = NULL; /*if pulparams.model = NULL -- isolated pulsar*/
 	    params.site = site;
 	    params.ephemerides = edat;
 	    params.startTimeGPS = epoch;
@@ -683,23 +655,23 @@ InitUserVars ( UserInput_t *uvar,      /**< [out] UserInput structure to be fill
   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
   /* Register User Variables*/
-  /*    XLALRegisterUvarMember(out_chan,   STRING, 'o', OPTIONAL, "Output channel i.e. (IFO)_LDAS_C02_L2_CWINJ");*/
-  /*    XLALRegisterUvarMember(in_chan,        STRING, 'i', OPTIONAL, "Input channel from .gwf file, i.e. (IFO):LDAS-STRAIN");*/
-  XLALRegisterUvarMember(srate,            REAL8, 'r', OPTIONAL, "user defined sample rate, default = 16384");
-  /*  XLALRegisterUvarMember(duration,       REAL8, 'd', OPTIONAL, "duration of frame (sec)"); */
-  /*  XLALRegisterUvarMember(start,            REAL8, 's', OPTIONAL, "epoch in GPS Seconds"); */
-  XLALRegisterUvarMember(inputdir,       STRING, 'p', OPTIONAL, "directory for .par files");
-  XLALRegisterUvarMember(gwfdir,     STRING, 'g', OPTIONAL,"directory for .gwf files");
-  XLALRegisterUvarMember(outputdir,  STRING, 'c', OPTIONAL, "directory for CWINJ files");
-  XLALRegisterUvarMember( ephemEarth,   STRING, 0,  OPTIONAL,     "Earth ephemeris file to use");
-  XLALRegisterUvarMember( ephemSun,     STRING, 0,  OPTIONAL,     "Sun ephemeris file to use");
-  XLALRegisterUvarMember( IFO,       STRING, 'I', REQUIRED, "Detector: 'G1', 'L1', 'H1', 'H2', 'V1'...");
-  XLALRegisterUvarMember( logDir, STRING, 'L', OPTIONAL, "Directory to put .log file");
+  XLALregBOOLUserStruct( help,            'h', UVAR_HELP, "Print this message");
+  /*    XLALregSTRINGUserStruct(out_chan,   'o', UVAR_OPTIONAL, "Output channel i.e. (IFO)_LDAS_C02_L2_CWINJ");*/
+  /*    XLALregSTRINGUserStruct(in_chan,        'i', UVAR_OPTIONAL, "Input channel from .gwf file, i.e. (IFO):LDAS-STRAIN");*/
+  XLALregREALUserStruct(srate,            'r', UVAR_OPTIONAL, "user defined sample rate, default = 16384");
+  /*  XLALregREALUserStruct(duration,       'd', UVAR_OPTIONAL, "duration of frame (sec)"); */
+  /*  XLALregREALUserStruct(start,            's', UVAR_OPTIONAL, "epoch in GPS Seconds"); */
+  XLALregSTRINGUserStruct(inputdir,       'p', UVAR_OPTIONAL, "directory for .par files");
+  XLALregSTRINGUserStruct(gwfdir,     'g', UVAR_OPTIONAL,"directory for .gwf files");
+  XLALregSTRINGUserStruct(outputdir,  'c', UVAR_OPTIONAL, "directory for CWINJ files");
+  XLALregSTRINGUserStruct( ephemEarth,   0,  UVAR_OPTIONAL,     "Earth ephemeris file to use");
+  XLALregSTRINGUserStruct( ephemSun,     0,  UVAR_OPTIONAL,     "Sun ephemeris file to use");
+  XLALregSTRINGUserStruct( IFO,       'I', UVAR_REQUIRED, "Detector: 'G1', 'L1', 'H1', 'H2', 'V1'...");
+  XLALregSTRINGUserStruct( logDir, 'L', UVAR_OPTIONAL, "Directory to put .log file");
 
-  BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if ( should_exit ) {
-    exit(1);
+  if (XLALUserVarReadAllInput (argc, argv ) != XLAL_SUCCESS) {
+    XLALPrintError ("%s: XLALUserVarReadAllInput() failed with errno=%d\n", fn, xlalErrno);
+    XLAL_ERROR ( XLAL_EFUNC );
   }
 
   return XLAL_SUCCESS;

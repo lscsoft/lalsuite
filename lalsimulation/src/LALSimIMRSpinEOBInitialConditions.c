@@ -11,10 +11,6 @@
 #include "LALSimIMRSpinEOB.h"
 #include "LALSimIMRSpinEOBHamiltonian.c"
 #include "LALSimIMRSpinEOBHcapNumericalDerivative.c"
-/* OPTIMIZED */
-#include "LALSimIMRSpinEOBHamiltonianOptimized.c"
-#include "LALSimIMRSpinEOBHcapExactDerivative.c"
-/* END OPTIMIZED */
 #include "LALSimIMREOBFactorizedWaveform.c"
 
 #ifndef _LALSIMIMRSPINEOBINITIALCONDITIONS_C
@@ -29,7 +25,6 @@ struct tagSEOBRootParams
   REAL8          values[12]; /**<< Dynamical variables, x, y, z, px, py, pz, S1x, S1y, S1z, S2x, S2y and S2z */
   SpinEOBParams *params;     /**<< Spin EOB parameters -- physical, pre-computed, etc. */
   REAL8          omega;      /**<< Orbital frequency */
-  INT4           use_optimized;
 }
 SEOBRootParams;
 
@@ -316,7 +311,7 @@ XLALFindSphericalOrbit( const gsl_vector *x, /**<< Parameters requested by gsl r
   dHdx = XLALSpinHcapNumDerivWRTParam( 0, rootParams->values, rootParams->params );
   if ( XLAL_IS_REAL8_FAIL_NAN( dHdx ) )
   {
-    XLAL_ERROR( XLAL_EDOM );
+    XLAL_ERROR( XLAL_EFUNC );
   }
   //printf( "dHdx = %.16e\n", dHdx );
 
@@ -325,7 +320,7 @@ XLALFindSphericalOrbit( const gsl_vector *x, /**<< Parameters requested by gsl r
   dHdpy = XLALSpinHcapNumDerivWRTParam( 4, rootParams->values, rootParams->params );
   if ( XLAL_IS_REAL8_FAIL_NAN( dHdpy ) )
   {
-    XLAL_ERROR( XLAL_EDOM );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* dHdPtheta (I think we can use dHdPz in this coord system) */
@@ -333,7 +328,7 @@ XLALFindSphericalOrbit( const gsl_vector *x, /**<< Parameters requested by gsl r
   dHdpz = XLALSpinHcapNumDerivWRTParam( 5, rootParams->values, rootParams->params );
   if ( XLAL_IS_REAL8_FAIL_NAN( dHdpz ) )
   {
-    XLAL_ERROR( XLAL_EDOM );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* Now convert to spherical polars */
@@ -350,64 +345,6 @@ XLALFindSphericalOrbit( const gsl_vector *x, /**<< Parameters requested by gsl r
    //  gsl_vector_get( f, 2 )/*dHdpphi*/ );
 
   return XLAL_SUCCESS;
-}
-
-/**
- * Wrapper for calculating specific derivative of the Hamiltonian in spherical co-ordinates,
- * dH/dr, dH/dptheta and dH/dpphi.
- * It only works for the specific co-ord system we use here
- */
-static double GSLSpinHamiltonianDerivWrapperHybrid( double x,    /**<< Derivative at x */
-						    void  *params /**<< Function parameters */)
-{
-
-  HcapSphDeriv2Params *dParams = (HcapSphDeriv2Params *) params;
-  REAL8 sphValues[12];
-  REAL8 cartValues[12];
-
-  REAL8 dHdr, dHdx, dHdpy, dHdpz;
-  REAL8 r, ptheta, pphi;
-
-  memcpy( sphValues, dParams->sphValues, sizeof( sphValues ) );
-  sphValues[dParams->varyParam1] = x;
-
-  SphericalToCartesian( cartValues, cartValues+3, sphValues, sphValues+3 );
-  memcpy( cartValues+6, sphValues+6, 6*sizeof(REAL8) );
-
-  r      = sphValues[0];
-  ptheta = sphValues[4];
-  pphi   = sphValues[5];
-
-  /* Return the appropriate derivative according to varyParam2 */
-
-  switch ( dParams->varyParam2 )
-    {
-    case 0:
-      /* dHdr */
-      dHdx  = XLALSpinHcapHybDerivWRTParam( 0, cartValues, dParams->params );
-      dHdpy = XLALSpinHcapHybDerivWRTParam( 4, cartValues, dParams->params );
-      dHdpz = XLALSpinHcapHybDerivWRTParam( 5, cartValues, dParams->params );
-
-      dHdr      = dHdx - dHdpy * pphi / (r*r) + dHdpz * ptheta / (r*r);
-      //printf( "dHdr = %.16e\n", dHdr );
-      return dHdr;
-
-      break;
-    case 4:
-      /* dHdptheta */
-      dHdpz = XLALSpinHcapHybDerivWRTParam( 5, cartValues, dParams->params );
-      return - dHdpz / r;
-      break;
-    case 5:
-      /* dHdpphi */
-      dHdpy = XLALSpinHcapHybDerivWRTParam( 4, cartValues, dParams->params );
-      return dHdpy / r;
-      break;
-    default:
-      XLALPrintError( "This option is not supported in the second derivative function!\n" );
-      XLAL_ERROR_REAL8( XLAL_EINVAL );
-      break;
-    }
 }
 
 
@@ -464,43 +401,9 @@ static double GSLSpinHamiltonianDerivWrapper( double x,    /**<< Derivative at x
       break;
     default:
       XLALPrintError( "This option is not supported in the second derivative function!\n" );
-      XLAL_ERROR_REAL8( XLAL_EINVAL );
+      XLAL_ERROR_REAL8( XLAL_EFUNC );
       break;
   }
-}
-
-static REAL8 XLALCalculateSphHamiltonianDeriv2Hybrid(                 const int      idx1,     /**<< Derivative w.r.t. index 1 */
-								      const int      idx2,     /**<< Derivative w.r.t. index 2 */
-								      const REAL8    values[], /**<< Dynamical variables in spherical coordinates */
-								      SpinEOBParams *params    /**<< Spin EOB Parameters */
-								      )
-{
-  static const REAL8 STEP_SIZE = 1.0e-4;
-
-  REAL8 result;
-  REAL8 UNUSED absErr;
-
-  HcapSphDeriv2Params dParams;
-
-  gsl_function F;
-  INT4 UNUSED gslStatus;
-
-  dParams.sphValues  = values;
-  dParams.varyParam1 = idx1;
-  dParams.varyParam2 = idx2;
-  dParams.params     = params;
-
-  F.function = GSLSpinHamiltonianDerivWrapperHybrid;
-  F.params   = &dParams;
-  XLAL_CALLGSL( gslStatus = gsl_deriv_central( &F, values[idx1],
-					       STEP_SIZE, &result, &absErr ) );
-
-  if ( gslStatus != GSL_SUCCESS )
-    {
-      XLALPrintError( "XLAL Error %s - Failure in GSL function\n", __func__ );
-      XLAL_ERROR_REAL8( XLAL_EDOM );
-    }
-  return result;
 }
 
 
@@ -514,7 +417,7 @@ static REAL8 XLALCalculateSphHamiltonianDeriv2(
                  )
 {
 
-  static const REAL8 STEP_SIZE = 1.0e-4;
+  static const REAL8 STEP_SIZE = 1.0e-5;
 
   REAL8 result;
   REAL8 UNUSED absErr;
@@ -553,7 +456,7 @@ static REAL8 XLALCalculateSphHamiltonianDeriv2(
   if ( gslStatus != GSL_SUCCESS )
   {
     XLALPrintError( "XLAL Error %s - Failure in GSL function\n", __func__ );
-    XLAL_ERROR_REAL8( XLAL_EDOM );
+    XLAL_ERROR_REAL8( XLAL_EFUNC );
   }
 
   //printf( "Second deriv abs err = %.16e\n", absErr );
@@ -600,8 +503,7 @@ static int XLALSimIMRSpinEOBInitialConditions(
                       const REAL8    inc,       /**<< Inclination */
                       const REAL8    spin1[],   /**<< Initial spin vector 1 */
                       const REAL8    spin2[],   /**<< Initial spin vector 2 */
-                      SpinEOBParams *params,    /**<< Spin EOB parameters */
-                      INT4 use_optimized_v2     /**<< Use optimized v2? */
+                      SpinEOBParams *params     /**<< Spin EOB parameters */
                       )
 {
 
@@ -839,7 +741,7 @@ static int XLALSimIMRSpinEOBInitialConditions(
       gsl_vector_free( initValues );
       gsl_matrix_free( rotMatrix );
       gsl_matrix_free( invMatrix );
-      XLAL_ERROR( XLAL_EDOM );
+      XLAL_ERROR( XLAL_EFUNC );
     }
 
     XLAL_CALLGSL( gslStatus = gsl_multiroot_test_residual( rootSolver->f, 1.0e-10 ) );
@@ -909,7 +811,7 @@ static int XLALSimIMRSpinEOBInitialConditions(
   ApplyRotationMatrix( rotMatrix2, tmpS2Norm );
   ApplyRotationMatrix( rotMatrix2, qCart );
   ApplyRotationMatrix( rotMatrix2, pCart );
- 
+
   /* STEP 4) In the L0-N0 frame, we calculate (dE/dr)|sph using Eq. (4.14), then initial dr/dt using Eq. (4.10),
    *         and finally pr0 using Eq. (4.15).
    */
@@ -929,18 +831,13 @@ static int XLALSimIMRSpinEOBInitialConditions(
   REAL8 dHdpphi, d2Hdr2, d2Hdrdpphi;
   REAL8 rDot, dHdpr, flux, dEdr;
 
-  if(use_optimized_v2) {
-    /* TODO: Full, analytic derivatives have not been computed yet for d2Hdr2 or d2Hdrdpphi,
-     *       so we use hybrid version. */
-    d2Hdr2      = XLALCalculateSphHamiltonianDeriv2Hybrid( 0, 0, sphValues, params );
-    d2Hdrdpphi  = XLALCalculateSphHamiltonianDeriv2Hybrid( 0, 5, sphValues, params );
-    /* Full analytical version of dHdpphi. */
-    dHdpphi     = XLALSpinHcapExactDerivWRTParam( 4, cartValues, params ) / sphValues[0];
-  } else {
-    d2Hdr2     = XLALCalculateSphHamiltonianDeriv2( 0, 0, sphValues, params );
-    d2Hdrdpphi = XLALCalculateSphHamiltonianDeriv2( 0, 5, sphValues, params );
-    dHdpphi  = XLALSpinHcapNumDerivWRTParam( 4, cartValues, params ) / sphValues[0];
-  }
+  d2Hdr2     = XLALCalculateSphHamiltonianDeriv2( 0, 0, sphValues, params );
+  d2Hdrdpphi = XLALCalculateSphHamiltonianDeriv2( 0, 5, sphValues, params );
+
+  //printf( "d2Hdr2 = %.16e, d2Hdrdpphi = %.16e\n", d2Hdr2, d2Hdrdpphi );
+
+  dHdpphi  = XLALSpinHcapNumDerivWRTParam( 4, cartValues, params ) / sphValues[0];
+  
   dEdr  = - dHdpphi * d2Hdr2 / d2Hdrdpphi;
 
   //printf( "d2Hdr2 = %.16e d2Hdrdpphi = %.16e dHdpphi = %.16e\n", d2Hdr2, d2Hdrdpphi, dHdpphi );
@@ -975,11 +872,8 @@ static int XLALSimIMRSpinEOBInitialConditions(
     a = sqrt(sKerr.data[0]*sKerr.data[0] + sKerr.data[1]*sKerr.data[1] + sKerr.data[2]*sKerr.data[2]);
     //XLALSimIMREOBCalcSpinFacWaveformCoefficients( params->eobParams->hCoeffs, mass1, mass2, eta, /*a*/0.0, chiS, chiA );
     //XLALSimIMRCalculateSpinEOBHCoeffs( params->seobCoeffs, eta, a );
-    if(use_optimized_v2) {
-       ham = XLALSimIMRSpinEOBHamiltonianOptimized( eta, &qCartVec, &pCartVec, &s1VecNorm, &s2VecNorm, &sKerr, &sStar, params->tortoise, params->seobCoeffs );
-    } else {
-       ham = XLALSimIMRSpinEOBHamiltonian( eta, &qCartVec, &pCartVec, &s1VecNorm, &s2VecNorm, &sKerr, &sStar, params->tortoise, params->seobCoeffs );
-    }
+    ham = XLALSimIMRSpinEOBHamiltonian( eta, &qCartVec, &pCartVec, &s1VecNorm, &s2VecNorm, &sKerr, &sStar, params->tortoise, params->seobCoeffs );
+
     //printf( "hamiltonian at this point is %.16e\n", ham );
 
     /* And now, finally, the flux */
@@ -1001,11 +895,9 @@ static int XLALSimIMRSpinEOBInitialConditions(
 
     /* We now need dHdpr - we take it that it is safely linear up to a pr of 1.0e-3 */
     cartValues[3] = 1.0e-3;
-    if(use_optimized_v2) {
-      dHdpr         = XLALSpinHcapExactDerivWRTParam( 3, cartValues, params );
-    } else {
-      dHdpr         = XLALSpinHcapNumDerivWRTParam( 3, cartValues, params );
-    }
+    dHdpr         = XLALSpinHcapNumDerivWRTParam( 3, cartValues, params );
+
+
     /*printf( "Ingredients going into prDot:\n" );
     printf( "flux = %.16e, dEdr = %.16e, dHdpr = %.16e\n", flux, dEdr, dHdpr );*/
 
@@ -1074,12 +966,6 @@ static int XLALSimIMRSpinEOBInitialConditions(
   memcpy( initConds->data+3, pCart, sizeof(pCart) );
   memcpy( initConds->data+6, tmpS1Norm, sizeof(tmpS1Norm) );
   memcpy( initConds->data+9, tmpS2Norm, sizeof(tmpS2Norm) );
-  
-  gsl_matrix_free(rotMatrix2);
-  gsl_matrix_free(invMatrix2);
-  
-  gsl_matrix_free(rotMatrix);
-  gsl_matrix_free(invMatrix);
 
   //printf( "THE FINAL INITIAL CONDITIONS:\n");
   /*printf( " %.16e %.16e %.16e\n%.16e %.16e %.16e\n%.16e %.16e %.16e\n%.16e %.16e %.16e\n", initConds->data[0], initConds->data[1], initConds->data[2],

@@ -98,7 +98,6 @@ functions = dict()
 structs = dict()
 tdstruct_names = dict()
 tdstructs = dict()
-typedefs = dict()
 variable_names = dict()
 variables = dict()
 for header_name in headers:
@@ -140,19 +139,12 @@ for header_name in headers:
             functions[cdecl_name] = cdecl
             function_names[cdecl_name] = cdecl_name
 
-        # typedefs
-        elif cdecl_kind == 'typedef':
-
-            # typedefs to structs
-            if cdecl_type.startswith('struct '):
-                if cdecl_name in tdstructs:
-                    fail("duplicate struct typedef '%s' in header '%s'" % (cdecl_name, header_name))
-                tdstruct_names[cdecl_name] = cdecl_type[7:]
-                tdstructs[cdecl_name] = cdecl
-
-            # other typedefs
-            else:
-                typedefs[cdecl_name] = cdecl_type
+        # typedefs to structs
+        elif cdecl_kind == 'typedef' and cdecl_type.startswith('struct '):
+            if cdecl_name in tdstructs:
+                fail("duplicate struct typedef '%s' in header '%s'" % (cdecl_name, header_name))
+            tdstruct_names[cdecl_name] = cdecl_type[7:]
+            tdstructs[cdecl_name] = cdecl
 
         # variables
         if cdecl_kind == 'variable' and not cdecl_type in ['SWIGLAL', 'SWIGLAL_CLEAR']:
@@ -176,14 +168,11 @@ for header_name in headers:
         constants[constant_name] = constant
         constant_names[constant_name] = constant_name
 
-    # enumerations and enumeration constants
+    # enumeration constants
     for enum in headers[header_name].findall('enum'):
-        enum_name = get_swig_attr(enum, 'name')
-        if get_swig_attr(enum, 'unnamed') != None:
-            fail("enum '%s' in header '%s' has no tag-name" % (enum_name, header_name))
         for enumitem in enum.findall('enumitem'):
             enumitem_name = get_swig_attr(enumitem, 'name')
-            constants[enumitem_name] = enumitem
+            constants[enumitem_name] = cdecl
             constant_names[enumitem_name] = enumitem_name
 
 # function: build renaming map for symbols, using symbol prefix order
@@ -281,10 +270,6 @@ for function_name in functions:
         continue
     dtor_struct_name = dtor_decl_match.group(1)
 
-    # resolve any nested typedefs
-    while dtor_struct_name in typedefs:
-        dtor_struct_name = typedefs[dtor_struct_name]
-
     # function argument must be a struct name
     if not dtor_struct_name in tdstructs:
         continue
@@ -294,15 +279,9 @@ for function_name in functions:
     if not dtor_retn_type in ['void', 'int']:
         fail("destructor function '%s' has invalid return type '%s'" % (function_name, dtor_retn_type))
 
-    # if struct already has a destructor, prefer the destructor containing the struct name, otherwise fail
+    # struct must not already have a destructor; fail otherwise
     if dtor_struct_name in dtor_functions:
-        if dtor_struct_name in function_name:
-            if dtor_struct_name in dtor_functions[dtor_struct_name]:
-                fail("struct typedef '%s' has duplicate destructors '%s' and '%s'" % (dtor_struct_name, function_name, dtor_functions[dtor_struct_name]))
-        else:
-            if dtor_struct_name in dtor_functions[dtor_struct_name]:
-                continue
-            fail("struct typedef '%s' has duplicate destructors '%s' and '%s'" % (dtor_struct_name, function_name, dtor_functions[dtor_struct_name]))
+        fail("struct typedef '%s' has duplicate destructors '%s' and '%s'" % (dtor_struct_name, function_name, dtor_functions[dtor_struct_name]))
 
     # save destructor name
     dtor_functions[dtor_struct_name] = function_name
@@ -356,21 +335,13 @@ for function_name in sorted(functions):
     # apply %newobject to all functions
     f.write('%%newobject %s;\n' % function_name)
 
-    # get function declaration and type
-    func_decl = get_swig_attr(functions[function_name], 'decl')
-    func_type = get_swig_attr(functions[function_name], 'type')
-    func_decl_type = func_decl + func_type
-
-    # apply the SWIGLAL_MAYBE_RETURN_INT typemap to all functions which return 'int';
-    # this causes the 'int' return to be ignored in most cases, unless the typemap
-    # SWIGLAL(RETURN_VALUE(int, ...)) is applies to disable this behaviour
-    if func_type == 'int':
-        f.write('%%apply int SWIGLAL_MAYBE_RETURN_INT { int %s };\n' % function_name)
-
     # indicate if the return type of a function is a pointer type, and matches the
     # type of its first argument; many LAL functions return their first argument
     # after performing some operation on it, but we want to prevent two different
     # SWIG wrapping objects from owning the same LAL memory
+    func_decl = get_swig_attr(functions[function_name], 'decl')
+    func_type = get_swig_attr(functions[function_name], 'type')
+    func_decl_type = func_decl + func_type
     if func_retn_1starg_regexp.match(func_decl_type) != None:
         f.write('%%header %%{#define swiglal_return_1starg_%s%%}\n' % function_name)
 
@@ -382,10 +353,10 @@ for header_name in ordered_headers:
         f.write('SWIGLAL_CLEAR(%s);\n' % macro_name)
 f.write('%%include <lal/SWIG%sOmega.i>\n' % package_name)
 
-# add extensions to structs, e.g. constructors and destructors
+# create constructors and destructors for structs
 for struct_name in sorted(tdstructs):
     struct_tagname = tdstruct_names[struct_name]
     struct_opaque = '%i' % (not struct_tagname in structs)
     struct_dtor_function = dtor_functions.get(struct_name, '')
-    struct_args = (struct_tagname, struct_opaque, struct_dtor_function)
-    f.write('%%swiglal_struct_extend(%s)\n' % ','.join(struct_args))
+    struct_args = (struct_name, struct_tagname, struct_opaque, struct_dtor_function)
+    f.write('%%swiglal_struct_create_cdtors(%s)\n' % ','.join(struct_args))

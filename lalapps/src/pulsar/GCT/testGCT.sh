@@ -87,7 +87,6 @@ gct_dF2dot=0
 gct_nCands=10
 
 sqrtSh=1
-assumeSqrtSh=1
 
 ## --------- Generate fake data set time stamps -------------
 echo "----------------------------------------------------------------------"
@@ -117,15 +116,14 @@ iSeg=1
 while [ $iSeg -le $Nsegments ]; do
     t0=$tmpTime
     t1=$(($t0 + $Tsegment))
-
-    if [ $iSeg -eq 1 -o $iSeg -eq $Nsegments ]; then
+    TspanHours=`echo $Tsegment | awk '{printf "%.7f", $1 / 3600.0 }'`
         ## first and last segment will be single-IFO only
+    if [ $iSeg -eq 1 -o $iSeg -eq $Nsegments ]; then
         NSFT=`echo $Tsegment $Tsft |  awk '{print int(1.0 * $1 / $2 + 0.5) }'`
-    else
-	## while all other segments are 2-IFO
+    else	## while all other segments are 2-IFO
         NSFT=`echo $Tsegment $Tsft |  awk '{print int(2.0 * $1 / $2 + 0.5) }'`
     fi
-    echo "$t0 $t1 $NSFT" >> $segFile
+    echo "$t0 $t1 $TspanHours $NSFT" >> $segFile
 
     segs[$iSeg]=$tmpTime # save seg's beginning for later use
     echo "Segment: $iSeg of $Nsegments	GPS start time: ${segs[$iSeg]}"
@@ -148,7 +146,7 @@ done
 
 echo
 echo "----------------------------------------------------------------------"
-echo " STEP 1: Generate Fake Signal with MFDv5"
+echo " STEP 1: Generate Fake Signal"
 echo "----------------------------------------------------------------------"
 echo
 
@@ -156,7 +154,7 @@ FreqStep=`echo $mfd_FreqBand $numFreqBands |  awk '{print $1 / $2}'`
 mfd_fBand=`echo $FreqStep $Tsft |  awk '{print ($1 - 1.5 / $2)}'`	## reduce by 1/2 a bin to avoid including last freq-bins
 
 # construct common MFD cmd
-mfd_CL_common="--Band=${mfd_fBand} --Tsft=$Tsft --randSeed=1000 --outSingleSFT --IFOs=H1,L1 --timestampsFiles=${tsFile_H1},${tsFile_L1}"
+mfd_CL_common="--Band=${mfd_fBand} --injectionSources=\"{Freq=$Freq; f1dot=$f1dot; f2dot=$f2dot; Alpha=$Alpha; Delta=$Delta; psi=$psi; phi0=$phi0; h0=$h0; cosi=$cosi; refTime=$refTime}\" --Tsft=$Tsft --randSeed=1000 --outSingleSFT --IFOs=H1,L1 --timestampsFiles=${tsFile_H1},${tsFile_L1}"
 
 if [ "$sqrtSh" != "0" ]; then
     mfd_CL_common="$mfd_CL_common --sqrtSX=${sqrtSh},${sqrtSh}";
@@ -167,9 +165,6 @@ while [ $iFreq -le $numFreqBands ]; do
     mfd_fi=`echo $mfd_fmin $iFreq $FreqStep | awk '{print $1 + ($2 - 1) * $3}'`
 
     cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --outSFTdir=${SFTdir} --outLabel=freqBand$iFreq"
-    if [ $iFreq -eq 2 ]; then
-        cmdline="$cmdline --injectionSources=\"{Freq=$Freq; f1dot=$f1dot; f2dot=$f2dot; Alpha=$Alpha; Delta=$Delta; psi=$psi; phi0=$phi0; h0=$h0; cosi=$cosi; refTime=$refTime}\""
-    fi
     if [ -n "$DEBUG" ]; then
         cmdline="$cmdline"
     else
@@ -197,8 +192,7 @@ if [ ! -r "$outfile_cfs" ]; then
     tmpfile_cfs="${testDir}/__tmp_CFS.dat";
     cfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --Freq=$Freq --f1dot=$f1dot --f2dot=$f2dot --outputLoudest=$tmpfile_cfs --refTime=$refTime --Dterms=$Dterms --RngMedWindow=$RngMedWindow --outputSingleFstats"
     if [ "$sqrtSh" = "0" ]; then
-        # assume sqrtS=${assumeSqrtSh} in all detectors, regardless of how many detectors are in segment
-        cfs_CL_common="$cfs_CL_common --assumeSqrtSX=${assumeSqrtSh}";
+        cfs_CL_common="$cfs_CL_common --SignalOnly";
     fi
 
     TwoFsum=0
@@ -260,15 +254,14 @@ echo "==>   Average <2F_multi>=$TwoFAvg, <2F_H1>=$TwoFAvg_H1, <2F_L1>=$TwoFAvg_L
 
 gct_CL_common="--gridType1=3 --nCand1=$gct_nCands --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles' --skyGridFile='$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand  --df2dot=$gct_dF2dot --f2dot=$f2dot --f2dotBand=$gct_F2dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime --segmentList=$segFile --Dterms=$Dterms --blocksRngMed=$RngMedWindow"
 if [ "$sqrtSh" = "0" ]; then
-    # assume sqrtS=${assumeSqrtSh} in both H1 and L1 detectors
-    gct_CL_common="$gct_CL_common --assumeSqrtSX=${assumeSqrtSh},${assumeSqrtSh}";
+    gct_CL_common="$gct_CL_common --SignalOnly";
 fi
 
 BSGL_flags="--computeBSGL --Fstar0=10 --oLGX='0.5,0.5' --recalcToplistStats"
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
-echo " STEP 3: run HierarchSearchGCT using Resampling and default 2F toplist"
+echo " STEP 3: run HierarchSearchGCT using Resampling (perfect match) and segment-list file and --recalcToplistStats"
 echo "----------------------------------------------------------------------------------------------------"
 echo
 
@@ -276,7 +269,7 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_RS="${testDir}/GCT_RS.dat"
 timingsfile_RS="${testDir}/timing_RS.dat"
 
-cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS' --outputTiming='$timingsfile_RS' ${BSGL_flags}"
+cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS' --outputTiming='$timingsfile_RS' --recalcToplistStats ${BSGL_flags}"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline"
 else
@@ -298,7 +291,7 @@ resGCT_RSr_L1=$(echo $topline  | awk '{print $14}')
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
-echo " STEP 4: run HierarchSearchGCT using LALDemod and default 2F toplist"
+echo " STEP 4: run HierarchSearchGCT using LALDemod (perfect match) and --tStack and --nStacksMax and --recalcToplistStats"
 echo "----------------------------------------------------------------------------------------------------"
 echo
 
@@ -306,7 +299,7 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_DM="${testDir}/GCT_DM.dat"
 timingsfile_DM="${testDir}/timing_DM.dat"
 
-cmdline="$gct_code $gct_CL_common --FstatMethod=DemodBest --fnameout='$outfile_GCT_DM' --outputTiming='$timingsfile_DM' ${BSGL_flags}"
+cmdline="$gct_code $gct_CL_common --FstatMethod=DemodOptC --fnameout='$outfile_GCT_DM' --outputTiming='$timingsfile_DM' ${BSGL_flags}"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline"
 else
@@ -330,7 +323,7 @@ resGCT_DMr_L1=$(echo $topline  | awk '{print $14}')
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
-echo " STEP 5: run HierarchSearchGCT using LALDemod and BSGL toplist"
+echo " STEP 5: run HierarchSearchGCT using LALDemod (perfect match) and --tStack and --nStacksMax and --computeBSGL"
 echo "----------------------------------------------------------------------------------------------------"
 echo
 
@@ -338,7 +331,7 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_DM_BSGL="${testDir}/GCT_DM_BSGL.dat"
 timingsfile_DM_BSGL="${testDir}/timing_DM_BSGL.dat"
 
-cmdline="$gct_code $gct_CL_common --FstatMethod=DemodBest ${BSGL_flags} --SortToplist=2 --fnameout='$outfile_GCT_DM_BSGL' --outputTiming='$timingsfile_DM_BSGL'"
+cmdline="$gct_code $gct_CL_common --FstatMethod=DemodOptC ${BSGL_flags} --SortToplist=2 --fnameout='$outfile_GCT_DM_BSGL' --outputTiming='$timingsfile_DM_BSGL'"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline"
 else
@@ -359,7 +352,7 @@ freqGCT_DM_BSGL=$(echo $topline | awk '{print $1}')
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
-echo " STEP 6: run HierarchSearchGCT using LALDemod and dual toplist: 1st=F, 2nd=BSGL"
+echo " STEP 6: run HierarchSearchGCT using LALDemod (perfect match) with 'dual' toplist: 1st=F, 2nd=BSGL"
 echo "----------------------------------------------------------------------------------------------------"
 echo
 
@@ -367,7 +360,7 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_DM_DUAL="${testDir}/GCT_DM_DUAL.dat"
 timingsfile_DM_DUAL="${testDir}/timing_DM_DUAL.dat"
 
-cmdline="$gct_code $gct_CL_common --FstatMethod=DemodBest --SortToplist=3 ${BSGL_flags} --fnameout='$outfile_GCT_DM_DUAL' --outputTiming='$timingsfile_DM_DUAL'"
+cmdline="$gct_code $gct_CL_common --FstatMethod=DemodOptC --SortToplist=3 ${BSGL_flags} --fnameout='$outfile_GCT_DM_DUAL' --outputTiming='$timingsfile_DM_DUAL'"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline"
 else
@@ -386,114 +379,6 @@ if [ -n "${diff_F}" -o -n "${diff_BSGL}" ]; then
     echo "Error: 'dual' toplist handling seems to differ from indidual 'F' or 'BSGL'-sorted toplists"
     exit 1
 fi
-
-echo
-echo "----------------------------------------------------------------------------------------------------"
-echo " STEP 7: run HierarchSearchGCT using Resampling and triple toplist (BSGL, BSGLtL and BtSGLtL), "
-echo "         compared with separate runs for each of these 3 toplist rankings"
-echo "----------------------------------------------------------------------------------------------------"
-echo
-
-rm -f checkpoint.cpt # delete checkpoint to start correctly
-outfile_GCT_RS_triple="${testDir}/GCT_RS_triple.dat"
-timingsfile_RS_triple="${testDir}/timing_RS_triple.dat"
-
-
-# set plan mode so that results should be deterministic, easier to compare results of different runs this way
-
-export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE
-export LAL_FSTAT_FFT_PLAN_TIMEOUT=30
-
-
-cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' --outputTiming='$timingsfile_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=6"
-if [ -n "$DEBUG" ]; then
-    cmdline="$cmdline"
-else
-    cmdline="$cmdline &> /dev/null"
-fi
-
-echo $cmdline
-if ! eval "$cmdline"; then
-    echo "Error.. something failed when running '$gct_code' ..."
-    exit 1
-fi
-
-
-## re-run, but now create the three toplists one by one, then compare results
-
-outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_1.dat"
-
-cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=2"
-if [ -n "$DEBUG" ]; then
-    cmdline="$cmdline"
-else
-    cmdline="$cmdline &> /dev/null"
-fi
-
-echo $cmdline
-if ! eval "$cmdline"; then
-    echo "Error.. something failed when running '$gct_code' ..."
-    exit 1
-fi
-
-outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_2.dat"
-
-cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=4"
-if [ -n "$DEBUG" ]; then
-    cmdline="$cmdline"
-else
-    cmdline="$cmdline &> /dev/null"
-fi
-
-echo $cmdline
-if ! eval "$cmdline"; then
-    echo "Error.. something failed when running '$gct_code' ..."
-    exit 1
-fi
-
-outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_3.dat"
-
-cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=5"
-if [ -n "$DEBUG" ]; then
-    cmdline="$cmdline"
-else
-    cmdline="$cmdline &> /dev/null"
-fi
-
-echo $cmdline
-if ! eval "$cmdline"; then
-    echo "Error.. something failed when running '$gct_code' ..."
-    exit 1
-fi
-
-
-# filter out comments
-
-egrep -v "^%" ${testDir}/GCT_RS_triple_1.dat > ${testDir}/GCT_RS_triple_1.txt
-egrep -v "^%" ${testDir}/GCT_RS_triple_2.dat > ${testDir}/GCT_RS_triple_2.txt
-egrep -v "^%" ${testDir}/GCT_RS_triple_3.dat > ${testDir}/GCT_RS_triple_3.txt
-
-
-egrep -v "^%" ${testDir}/GCT_RS_triple.dat > ${testDir}/GCT_RS_triple.txt
-egrep -v "^%" ${testDir}/GCT_RS_triple.dat-BSGLtL > ${testDir}/GCT_RS_triple-BSGLtL.txt
-egrep -v "^%" ${testDir}/GCT_RS_triple.dat-BtSGLtL > ${testDir}/GCT_RS_triple-BtSGLtL.txt
-
-if ! eval "diff ${testDir}/GCT_RS_triple_1.txt ${testDir}/GCT_RS_triple.txt"; then
-    echo "Error: tripple toplists do not match separately generated toplists  (1) "
-    exit 1
-fi
-
-if ! eval "diff ${testDir}/GCT_RS_triple_2.txt ${testDir}/GCT_RS_triple-BSGLtL.txt"; then
-    echo "Error: tripple toplists do not match separately generated toplists  (2) "
-    exit 1
-fi
-
-if ! eval "diff ${testDir}/GCT_RS_triple_3.txt ${testDir}/GCT_RS_triple-BtSGLtL.txt"; then
-    echo "Error: tripple toplists do not match separately generated toplists  (3) "
-    exit 1
-fi
-
-
 
 ## ---------- compute relative differences and check against tolerance --------------------
 awk_reldev='{printf "%.2e", sqrt(($1-$2)*($1-$2))/(0.5*($1+$2)) }'
@@ -527,19 +412,13 @@ awk_isgtr='{if($1>$2) {print "1"}}'
 
 echo
 echo "--------- Timings ------------------------------------------------------------------------------------------------"
-echo "Timing model: tau = Nseg * Ndet * Ncoh * tau_Fstat + Nseg * Ninc * tau_SumF + Ninc * tau_Bayes + Ncand * tau_Recalc + time_Other"
-echo
-awk_timing='{printf "tau_Fstat = %-6.1e s, tau_SumF = %-6.1e s, tau_Bayes = %-6.1e s, tau_Recalc = %-6.1e s, time_Other = %-6.1e s", $1, $2, $3, $4, $5}'
+awk_timing='{printf "c0ic = %-6.1e s, c1co = %-6.1e s, c0Demod = %-6.1e s,  (%s)", $8, $9, $10, $11, $12}'
 timing_DM=$(sed '/^%.*/d' $timingsfile_DM | awk "$awk_timing")
 timing_DM_BSGL=$(sed '/^%.*/d' $timingsfile_DM_BSGL | awk "$awk_timing")
-timing_DM_DUAL=$(sed '/^%.*/d' $timingsfile_DM_DUAL | awk "$awk_timing")
 timing_RS=$(sed '/^%.*/d' $timingsfile_RS | awk "$awk_timing")
-timing_RS_triple=$(sed '/^%.*/d' $timingsfile_RS_triple | awk "$awk_timing")
-echo " GCT-LALDemod:       $timing_DM"
+echo " GCT-LALDemod:      $timing_DM"
 echo " GCT-LALDemod-BSGL:  $timing_DM_BSGL"
-echo " GCT-LALDemod-2top:  $timing_DM_DUAL"
-echo " GCT-Resamp:         $timing_RS"
-echo " GCT-Resamp-3top:    $timing_RS_triple"
+echo " GCT-Resamp:        $timing_RS"
 
 echo
 echo "--------- Compare results ----------------------------------------------------------------------------------------"

@@ -61,13 +61,13 @@ eah_build2_loc="`echo $PWD/$0 | sed 's%/[^/]*$%%'`"
 
 test ".$appname" = "." && appname=einstein_S6Bucket
 test ".$appversion" = "." && appversion=0.00
-boinc_repo="https://gitlab.aei.uni-hannover.de/einsteinathome/boinc.git"
+boinc_repo="git://gitmaster.atlas.aei.uni-hannover.de/einsteinathome/boinc.git"
 boinc_rev=current_gw_apps
 #previous:-r22844 -r22825 -r22804 -r22794 -r22784 -r22561 -r22503 -r22363 -r21777 -r'{2008-12-01}'
 retries=1
 
 gsl=gsl-1.16
-fftw=fftw-3.3.4
+fftw=fftw-3.3.3
 zlib=zlib-1.2.8
 binutils=binutils-2.19
 
@@ -79,15 +79,10 @@ for i; do
 	    build_win32=true
 	    cross_prefix=i586-mingw32msvc ;;
 	--cross-prefix=*)
-	    cross_prefix=`echo "$i" | sed 's/--cross-prefix=//'`
-	    if echo "$cross_prefix"|grep w64-mingw32 >/dev/null; then
-		LDFLAGS="-static-libstdc++ $LDFLAGS"
-	    fi ;;
+	    cross_prefix=`echo "$i" | sed 's/--cross-prefix=//'` ;;
 	--static)
 	    shared_copt="--disable-shared" ;;
 	--rebuild)
-	    rebuild_zlib=true
-	    rebuild_binutils=true
 	    rebuild_boinc=true
 	    rebuild_lal=true
 	    rebuild=true ;;
@@ -107,7 +102,7 @@ for i; do
 	    rebuild=true
 	    release=true
 	    CFLAGS="-O3 $CFLAGS"
-#	    LDFLAGS="-static-libgcc $LDFLAGS"
+	    LDFLAGS="-static-libgcc $LDFLAGS"
 	    shared_copt="--disable-shared"  ;;
 	--appname=*)
 	    appname=`echo "$i" | sed 's/--appname=//'` ;;
@@ -123,11 +118,7 @@ for i; do
             noupdate=true ;;
 	--gc-opt)
 	    CPPFLAGS="-DGC_SSE2_OPT $CPPFLAGS" ;;
-        --avx)
-            fftw_copts_single="--enable-avx $fftw_copts_single"
-	    planclass=__AVX ;;
 	--64)
-	    fftw_copts_single="--enable-sse --enable-sse2 $fftw_copts_single"
 	    CPPFLAGS="-m64 $CPPFLAGS"
 	    CXXFLAGS="-m64 $CXXFLAGS"
 	    CFLAGS="-m64 $CFLAGS"
@@ -140,19 +131,14 @@ for i; do
 	--sse)
 	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
 	    CFLAGS="-msse -march=pentium3 $CFLAGS"
-	    fftw_copts_single="--enable-sse $fftw_copts_single"
+	    fftw_copts_single=--enable-sse
 	    planclass=__SSE
 	    acc="_sse";;
 	--sse2)
-	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS -DGC_SSE2_OPT $CPPFLAGS"
-	    CFLAGS="-msse -msse2 -mfpmath=sse $CFLAGS"
-	    if echo $CFLAGS|grep -e -m64 >/dev/null; then
-		CFLAGS="$CFLAGS -march=core2"
-	    else
-		CFLAGS="$CFLAGS -march=pentium-m"
-	    fi
-            fftw_copts_single="--enable-sse $fftw_copts_single"
-            fftw_copts_double="--enable-sse2 $fftw_copts_double"
+	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
+	    CFLAGS="-msse -msse2 -mfpmath=sse -march=pentium-m $CFLAGS"
+            fftw_copts_single=--enable-sse
+            fftw_copts_double=--enable-sse2
 	    planclass=__SSE2
 	    acc="_sse2";;
 	--altivec)
@@ -160,7 +146,7 @@ for i; do
 	    CFLAGS="-arch ppc -fast -mcpu=G4 -maltivec -faltivec $CFLAGS"
 	    CXXFLAGS="-arch ppc -mcpu=G4 $CXXFLAGS"
 	    LDFLAGS="-arch ppc $LDFLAGS"
-	    fftw_copts_single="--enable-altivec $fftw_copts_single"
+	    fftw_copts_single=--enable-altivec
 	    planclass=__ALTIVEC
 	    acc="_altivec"
 	    cross_copt=--host=powerpc-apple-darwin ;;
@@ -207,12 +193,10 @@ for i; do
 	    echo "  --cross-prefix=<p> use a compiler toolchain with a prefix other than i586-mingw32msvc"
 	    echo "  --32              build 32Bit (add -m32 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS)"
 	    echo "  --64              build 64Bit (add -m64 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS)"
-	    echo "                    - needs to precede --sse2 if that is also used"
 	    echo "  --tiger           build to run on Mac OS 10.4"
 	    echo "  --cuda            build an App that uses CUDA"
 	    echo "  --sse             build an App that uses SSE"
-	    echo "  --sse2            build an App that uses SSE2 (implies --sse and --gc-opt)"
-            echo "  --avx             build an App that uses AVX (currently in FFTW only)"
+	    echo "  --sse2            build an App that uses SSE2"
 	    echo "  --altivec         build an App that uses AltiVec"
 	    echo "  --gc-opt          build an App that uses SSE2 GC optimization"
 	    echo "  --boinc-tag=<tag>|--boinc-commit=<sha1> specify a BOINC commit to use (defaults to 'current_gw_apps')"
@@ -266,15 +250,8 @@ log_and_show "Build start `date`"
 
 missing_wine_warning=false
 if [ ."$build_win32" = ."true" ] ; then
-    if echo "$LDFLAGS" | grep -w -e -m64 >/dev/null; then
-	platform=windows_x86_64
-	BUILD="${BUILD}_win64"
-	INSTALL="${INSTALL}_win64"
-    else
-	platform=windows_intelx86
-	BUILD="${BUILD}_win32"
-	INSTALL="${INSTALL}_win32"
-    fi
+    BUILD="${BUILD}_win32"
+    INSTALL="${INSTALL}_win32"
     export CC=${cross_prefix}-gcc
     export CXX=${cross_prefix}-g++
     export AR=${cross_prefix}-ar
@@ -288,6 +265,7 @@ if [ ."$build_win32" = ."true" ] ; then
     fftw_copts_double="$fftw_copts_double --with-our-malloc16"
     build_zlib=true
     ext=".exe"
+    platform=windows_intelx86
     wine=`which wine`
     if [ ".$wine" = "." -a ".$check" = ".true" ]; then
         missing_wine_warning=true
@@ -312,8 +290,6 @@ else
 	Darwin)
             if echo "$LDFLAGS" | grep -w -e -m64 >/dev/null; then
 		platform=x86_64-apple-darwin
-		BUILD="${BUILD}_64"
-		INSTALL="${INSTALL}_64"
 	    else
 		platform=i686-apple-darwin
 	    fi
@@ -322,8 +298,6 @@ else
 	    LDFLAGS="-lpthread $LDFLAGS"
 	    if echo "$LDFLAGS" | grep -w -e -m64 >/dev/null; then
 	        platform=x86_64-pc-linux-gnu
-		BUILD="${BUILD}_64"
-		INSTALL="${INSTALL}_64"
 	    else
 	        platform=i686-pc-linux-gnu
 	    fi
@@ -334,7 +308,7 @@ else
 		WITH_SSL="--with-ssl=$ssldir"
 	    fi
 	    if [ ".$release" = ".true" ]; then
-		CPPFLAGS="-DEXT_STACKTRACE -I$INSTALL/include/bfd $CPPFLAGS"
+		CPPFLAGS="-DDLOPEN_LIBGCC -DEXT_STACKTRACE -I$INSTALL/include/bfd $CPPFLAGS"
 		export RELEASE_DEPS="erp_execinfo_plus.o libstdc++.a"
 		export RELEASE_LDADD="$RELEASE_LDADD erp_execinfo_plus.o -lbfd -liberty -ldl"
 		build_zlib=true
@@ -383,14 +357,6 @@ echo BUILD_INFO="\"$BUILD_INFO\"" >> "$LOGFILE"
 if [ ."$missing_wine_warning" = ."true" ] ; then
     log_and_show "WARNING: 'wine' not found, disabling check as it won't work"
 fi
-# augment wine's PATH such that
-#   /usr/lib/gcc/i686-w64-mingw32/4.8/libstdc++-6.dll
-# and
-#   /usr/i686-w64-mingw32/lib/libwinpthread-1.dll
-# are found
-# test -r ~/.wine/system.reg && !fgrep i686-w64-mingw32 ~/.wine/system.reg &&
-#   sed -i~ 's/^\("PATH"=.*\)"$/\1;Z:\\\\usr\\\\i686-w64-mingw32\\\\lib;Z:\\\\usr\\\\lib\\\\gcc\\\\i686-w64-mingw32\\\\4.8/' ~/.wine/system.reg
-# see https://fedoraproject.org/wiki/MinGW/Configure_wine
 
 if ! [ .$check_only = .true ]; then
 
@@ -423,16 +389,17 @@ if test -z "$rebuild" && pkg-config --exists fftw3 fftw3f; then
     log_and_show "using existing fftw source"
 elif test -z "$noupdate"; then
     log_and_show "retrieving $fftw"
-    download http://www.fftw.org $fftw.tar.gz
+    download $fftw.tar.gz
     log_and_do tar xzf "$fftw.tar.gz"
 fi
 
 if test ."$build_zlib" = ."true"; then
-    if test -z "$rebuild" -a -f "$zlib.tar.gz"; then
+    if test -z "$rebuild" -a -d "$zlib"; then
         log_and_show "using existing zlib source"
     elif test -z "$noupdate"; then
         log_and_show "retrieving $zlib"
         download $zlib.tar.gz
+        log_and_do tar xzf "$zlib.tar.gz"
     fi
 fi
 
@@ -485,9 +452,7 @@ if test ."$build_zlib" = ."true"; then
         log_and_show "using existing zlib"
     else
         log_and_show "compiling zlib"
-        log_and_do cd "$BUILD"
-        log_and_do tar xzf "$SOURCE/$zlib.tar.gz"
-        log_and_do cd "$zlib"
+        log_and_do cd "$SOURCE/$zlib"
         if [ "$zlib_shared" = "--shared" -a "$zlib" = "zlib-1.2.3" ] && echo "$CFLAGS" | grep -w -e -m64 >/dev/null; then
             CC="gcc -m64" log_and_do "./configure" $zlib_shared --prefix="$INSTALL"
         else
@@ -510,13 +475,7 @@ else
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install
-    if test ".$CC" = ".gcc-mp-4.8" &&
-        echo $fftw_copts_single | fgrep -e "--enable-avx" >/dev/null; then
-	# on OSX with AVX use the clang assembler
-	log_and_do "$SOURCE/$fftw/configure" CFLAGS="$CFLAGS -Wa,-q" $fftw_copts_single --enable-single "$shared_copt" "$cross_copt" --prefix="$INSTALL"
-    else
-	log_and_do "$SOURCE/$fftw/configure" $fftw_copts_single --enable-single "$shared_copt" "$cross_copt" --prefix="$INSTALL"
-    fi
+    log_and_do "$SOURCE/$fftw/configure" $fftw_copts_single --enable-single "$shared_copt" "$cross_copt" --prefix="$INSTALL"
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install
@@ -553,7 +512,6 @@ if test -n "$build_binutils"; then
     log_and_do cd "$SOURCE/$binutils"
     log_and_do mkdir -p "$INSTALL/include/bfd"
     log_and_do cp -r include/* bfd/*.h "$BUILD/$binutils/binutils/config.h" "$INSTALL/include/bfd"
-    log_and_do rm -f "$INSTALL/include/bfd/getopt.h"
     if [ ."$build_win32" = ."true" ] ; then
 	log_and_do cd "$BUILD/$binutils"
 	log_and_do cp "intl/libintl.a" "$INSTALL/lib"
@@ -624,10 +582,9 @@ else
             log_and_do make -f "$makefile"
 	    log_and_do make -f "$makefile" install
         fi
-        sed -i~ '/#include "boinc_win.h"/d' "$INSTALL/include/boinc/filesys.h"
     else
 	log_and_do cd "$SOURCE/boinc"
-	log_and_do ./_autosetup -f
+	log_and_do ./_autosetup
 	log_and_do cd "$BUILD/boinc"
 	log_and_do "$SOURCE/boinc/configure" --disable-server --disable-manager --disable-client "$WITH_SSL" "$shared_copt" "$cross_copt" --prefix="$INSTALL" # --target=powerpc-apple-darwin7.9.0
 	log_and_dont_fail make uninstall
@@ -636,10 +593,7 @@ else
     fi
 fi
 
-lalsuite_copts="--disable-gcc-flags --without-hdf5 --disable-frame --disable-metaio --disable-swig --disable-lalsimulation --disable-lalxml --enable-boinc --disable-silent-rules --disable-pthread-lock $shared_copt $cross_copt --prefix=$INSTALL"
-if [ ."$build_win32" = ."true" ] ; then
-    export BOINC_EXTRA_LIBS="-lpsapi"
-fi
+lalsuite_copts="--disable-gcc-flags --disable-debug --disable-frame --disable-metaio --disable-lalsimulation --disable-lalxml --enable-boinc --disable-silent-rules --without-simd $shared_copt $cross_copt --prefix=$INSTALL"
 if test -z "$rebuild_lal" && pkg-config --exists lal; then
     log_and_show "using existing lal"
 else
@@ -651,7 +605,6 @@ else
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install
-    log_and_do sed -i~ 's/.*typedef .* UINT8 *;.*/#define UINT8 uint64_t/;s/.*typedef .* INT8 *;.*/#define INT8 int64_t/' "$INSTALL/include/lal/LALAtomicDatatypes.h"
 fi
 
 if test -z "$rebuild_lal" && pkg-config --exists lalpulsar; then
@@ -689,8 +642,7 @@ log_and_dont_fail make gitID
 log_and_do make "eah_HierarchSearchGCT$ext"
 log_and_do cp "eah_HierarchSearchGCT$ext" "$EAH/eah_HierarchSearchGCT$acc$ext"
 test ".$release" = ".true" &&
-    log_and_do cp "$EAH/eah_HierarchSearchGCT$acc$ext" "$EAH/${appname}_${appversion}_$platform$planclass$ext" &&
-    log_and_do gzip -f "$EAH/${appname}_${appversion}_$platform$planclass$ext"
+    log_and_do cp "$EAH/eah_HierarchSearchGCT$acc$ext" "$EAH/${appname}_${appversion}_$platform$planclass$ext"
 
 log_and_do cd "$BUILD/lalapps/src/pulsar/Injections"
 log_and_do make eah_Makefakedata_v5$ext
@@ -700,8 +652,8 @@ log_and_do make eah_PredictFstat$ext eah_ComputeFstatistic_v2$ext
 log_and_do cp eah_PredictFstat$ext eah_ComputeFstatistic_v2$ext "$EAH"
 
 log_and_show "==========================================="
-log_and_show "Einstein@home App was built, find it at"
-log_and_show "$EAH/${appname}_${appversion}_$platform$planclass${ext}.gz"
+log_and_show "Einstein@home Apps were built, should be in"
+log_and_show "$EAH"
 log_and_show "==========================================="
 
 fi # check-only
@@ -719,8 +671,8 @@ if [ .$check = .true ]; then
     log_and_do cp ../eah_Makefakedata_v5$ext lalapps_Makefakedata_v5
     log_and_do cp ../eah_PredictFstat$ext lalapps_PredictFstat
     log_and_do cp ../eah_ComputeFstatistic_v2$ext lalapps_ComputeFstatistic_v2
-    LAL_DATA_PATH="$INSTALL/share/lalpulsar" DEBUG=1 NOCLEANUP=1 PATH="$PWD:$PATH" \
-	log_and_do ../source/lalsuite/lalapps/src/pulsar/GCT/testGCT.sh $wine "$check_app"
+    LAL_DATA_PATH="$INSTALL/share/lalpulsar" NOCLEANUP=1 PATH="$PWD:$PATH" \
+	log_and_do ../source/lalsuite/lalapps/src/pulsar/GCT/testGCT.sh $wine "$check_app" --Dterms=8
     log_and_show "==========================================="
     log_and_show "Test passed"
     log_and_show "==========================================="

@@ -51,7 +51,7 @@
 #include <lal/LIGOLwXMLBurstRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/SnglBurstUtils.h>
+#include <lal/LIGOMetadataBurstUtils.h>
 #include <lal/TimeDelay.h>
 #include <lal/TimeSeries.h>
 #include <lal/XLALError.h>
@@ -741,7 +741,7 @@ static double sequence_preset_next(gsl_rng *rng)
 		1e-20
 	};
 
-	return presets[gsl_rng_uniform_int(rng, XLAL_NUM_ELEM(presets))];
+	return presets[gsl_rng_uniform_int(rng, sizeof(presets)/sizeof(*presets))];
 }
 #endif
 
@@ -1110,7 +1110,7 @@ int main(int argc, char *argv[])
 
 
 	process_table_head = process = XLALCreateProcessTableRow();
-	if(XLALPopulateProcessTable(process, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId, lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0))
+	if(XLALPopulateProcessTable(process, PROGRAM_NAME, lalAppsVCSIdentId, lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0))
 		exit(1);
 	XLALGPSTimeNow(&process->start_time);
 

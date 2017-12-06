@@ -24,12 +24,17 @@
 
 
 #include <math.h>
+#include <stdio.h>
+
 #include <lal/LALConstants.h>
 #include <lal/Sort.h>
+
 #include <gsl/gsl_sf_log.h>
-#include "TwoSpectTypes.h"
+#include <gsl/gsl_machine.h>
+
 #include "cdfwchisq.h"
 #include "vectormath.h"
+
 
 //Exp function to avoid underflows
 REAL8 exp1(REAL8 x)
@@ -84,6 +89,7 @@ REAL8 errbound(qfvars *vars, REAL8 u, REAL8* cx)
 {
 
    REAL8 sum1, x, y, xconst;
+   INT4 ii;
 
    (vars->count)++;           //Increase counter
 
@@ -91,7 +97,7 @@ REAL8 errbound(qfvars *vars, REAL8 u, REAL8* cx)
    sum1 = u * xconst;         //sum1 = u**2 * sigma**2 + sum{ } this is almost the equation after eq 9 in Davies 1973
                               //without the factor of 1/2 (applied at the end of this function)
    u *= 2.0;
-   for (INT4 ii=vars->weights->length-1; ii>=0; ii--) {
+   for (ii=vars->weights->length-1; ii>=0; ii--) {
       x = u * vars->weights->data[ii];       //x=2*u*lambda_j
       y = 1.0 - x;                           //y=1-2*u*lambda_j
       xconst += vars->weights->data[ii] * (vars->noncentrality->data[ii] / y + vars->dofs->data[ii]) / y;
@@ -107,13 +113,14 @@ REAL8 errbound_twospect(qfvars *vars, REAL8 u, REAL8* cx)
 {
 
    REAL8 sum1, x, y, xconst;
+   INT4 ii;
 
    (vars->count)++;           //Increase counter
 
    xconst = u * vars->sigsq;
    sum1 = u * xconst;
    u *= 2.0;
-   for (INT4 ii=vars->weights->length-1; ii>=0; ii--) {
+   for (ii=vars->weights->length-1; ii>=0; ii--) {
       x = u * vars->weights->data[ii];
       y = 1.0 - x;
       xconst += 2.0*vars->weights->data[ii]/y;
@@ -205,7 +212,7 @@ REAL8 cutoff_twospect(qfvars *vars, REAL8 accx, REAL8* upn)
 REAL8 truncation(qfvars *vars, REAL8 u, REAL8 tausq)
 {
    REAL8 sum1, sum2, prod1, prod2, prod3, x, y, err1, err2;
-   INT4 s;
+   INT4 ii, s;
 
    //counter(vars);
    (vars->count)++;           //Increase counter
@@ -219,7 +226,7 @@ REAL8 truncation(qfvars *vars, REAL8 u, REAL8 tausq)
    prod1 = 2.0 * sum2;
    u *= 2.0;      //This produces the factor of 4 in front of the products (U*lambda_j)**2 (i and ii) in Davies 1980
 
-   for (UINT4 ii=0; ii<vars->weights->length; ii++ ) {
+   for (ii=0; ii<(INT4)vars->weights->length; ii++ ) {
       x = (u * vars->weights->data[ii])*(u * vars->weights->data[ii]);  //(2*U*lambda_j)**2
       sum1 += vars->noncentrality->data[ii] * x / (1.0 + x);   //Sum after eq 4 in Davies 1980
       if (x > 1.0) {
@@ -257,7 +264,7 @@ REAL8 truncation(qfvars *vars, REAL8 u, REAL8 tausq)
 REAL8 truncation_twospect(qfvars *vars, REAL8 u, REAL8 tausq)
 {
    REAL8 sum2, prod1, prod2, prod3, x, y, err1, err2;
-   INT4 s;
+   INT4 ii, s;
 
    (vars->count)++;           //Increase counter
 
@@ -269,7 +276,7 @@ REAL8 truncation_twospect(qfvars *vars, REAL8 u, REAL8 tausq)
    prod1 = 2.0 * sum2;
    u *= 2.0;
 
-   for (UINT4 ii=0; ii<vars->weights->length; ii++) {
+   for (ii=0; ii<(INT4)vars->weights->length; ii++) {
       x = (u * vars->weights->data[ii])*(u * vars->weights->data[ii]);
       if (x > 1.0) {
          prod2 += 2 * log(x);
@@ -306,6 +313,7 @@ void findu(qfvars *vars, REAL8* utx, REAL8 accx)
 {
 
    REAL8 u, ut;
+   INT4 ii;
    REAL8 divis[] = {2.0, 1.4, 1.2, 1.1};
 
    ut = *utx;
@@ -327,7 +335,7 @@ void findu(qfvars *vars, REAL8* utx, REAL8 accx)
       }
    }
 
-   for (UINT4 ii=0; ii<4; ii++) {
+   for (ii=0; ii<4; ii++) {
       u = ut/divis[ii];
       if ( truncation(vars, u, 0.0)<=accx )  ut = u;
    }
@@ -340,6 +348,7 @@ void findu_twospect(qfvars *vars, REAL8* utx, REAL8 accx)
 {
 
    REAL8 u, ut;
+   INT4 ii;
    REAL8 divis[] = {2.0, 1.4, 1.2, 1.1};
 
    ut = *utx;
@@ -359,7 +368,7 @@ void findu_twospect(qfvars *vars, REAL8* utx, REAL8 accx)
       }
    }
 
-   for (UINT4 ii=0; ii<4; ii++) {
+   for (ii=0; ii<4; ii++) {
       u = ut/divis[ii];
       if ( truncation_twospect(vars, u, 0.0)<=accx )  ut = u;
    }
@@ -374,16 +383,17 @@ void integrate(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
 {
 
    REAL8 inpi, u, sum1, sum2, sum3, x, y, z;
+   INT4 ii, jj;
 
    inpi = interv*LAL_1_PI;    //inpi = pi*(k + 1/2)
 
-   for (INT4 ii=nterm; ii>=0; ii--) {
+   for (ii=nterm; ii>=0; ii--) {
       u = (ii + 0.5)*interv;     //First part of eq 3 in Davies 1980, eq 9 in Davies 1973
       sum1 = -2.0*u*vars->c;     //Third sum, eq 13 of Davies 1980, the u*c term, will divide by 2 at the end
       sum2 = fabs(sum1);         //Davies 1980 says that the sine term can be replaced by the sum of abs vals of the arguement
       sum3 = -0.5*vars->sigsq * u*u;   //First part of eq 13 Davies 1980 in the exponential
 
-      for (INT4 jj=vars->weights->length-1; jj>=0; jj--) {
+      for (jj=(INT4)vars->weights->length-1; jj>=0; jj--) {
          x = 2.0 * vars->weights->data[jj] * u;    //2 * lambda_j * u
          y = x*x;    //4 * lambda_j**2 * u**2
          sum3 -= 0.25 * vars->dofs->data[jj] * gsl_sf_log_1plusx(y);    //product in eq 13 of Davies 1980
@@ -408,18 +418,19 @@ void integrate_twospect(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT
 {
 
    REAL8 inpi, u, sum1, sum2, sum3, x, z;
+   INT4 ii, jj;
 
    inpi = interv*LAL_1_PI;
    REAL8 neg2timesc = -2.0*vars->c, neghalftimessigsq = -0.5*vars->sigsq, neghalftimestausq = -0.5*tausq;
 
-   for (INT4 ii=nterm; ii>=0; ii--) {
+   for (ii=nterm; ii>=0; ii--) {
       u = (ii + 0.5)*interv;
       sum1 = neg2timesc*u;
       sum2 = fabs(sum1);
       sum3 = neghalftimessigsq * u*u;
 
       REAL8 twotimesu = 2.0*u;
-      for (INT4 jj=vars->weights->length-1; jj>=0; jj--) {
+      for (jj=(INT4)vars->weights->length-1; jj>=0; jj--) {
          x = twotimesu * vars->weights->data[jj];
          sum3 -= 0.5 * log1p((x*x));
          z = 2.0 * atan(x);
@@ -440,11 +451,13 @@ void integrate_twospect(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT
 void integrate_eg(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
 {
 
-   for (INT4 ii=nterm; ii>=0; ii--) {
+   INT4 ii, jj;
+
+   for (ii=nterm; ii>=0; ii--) {
       REAL8 u = (ii + 0.5)*interv;
 
       REAL8 exptermarguementsum = 0.0, logofproductterm = 0.0, sinetermargumentsum = 0.0, sumofabssinesumargs = 0.0;
-      for (INT4 jj=vars->weights->length-1; jj>=0; jj--) {
+      for (jj=(INT4)vars->weights->length-1; jj>=0; jj--) {
          exptermarguementsum += (vars->weights->data[jj]*vars->weights->data[jj])*(vars->noncentrality->data[jj]*vars->noncentrality->data[jj])/(1.0 + 4.0*(u*u)*(vars->weights->data[jj]*vars->weights->data[jj]));
 
          logofproductterm += -0.25*vars->dofs->data[jj]*log1p(4.0*(u*u)*(vars->weights->data[jj]*vars->weights->data[jj]));
@@ -472,13 +485,15 @@ void integrate_eg(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 main
 void integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
 {
 
-   for (INT4 ii=nterm; ii>=0; ii--) {
+   INT4 ii, jj;
+
+   for (ii=nterm; ii>=0; ii--) {
       REAL8 u = (ii + 0.5)*interv;
       REAL8 oneoverPiTimesiiPlusHalf = 1.0/(LAL_PI*(ii+0.5));
 
       REAL8 exptermarguementsum = 0.0, logofproductterm = 0.0, sinetermargumentsum = 0.0, sumofabssinesumargs = 0.0;
 
-      for (INT4 jj=vars->weights->length-1; jj>=0; jj--) {
+      for (jj=(INT4)vars->weights->length-1; jj>=0; jj--) {
          REAL8 twoUtimesWeight = 2.0*u*vars->weights->data[jj];
          REAL8 atanTwoUtimesWeight = atan(twoUtimesWeight);
 
@@ -506,41 +521,35 @@ void integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, IN
 INT4 fast_integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
 {
 
-   alignedREAL8Vector *uVector = NULL, *twoUvector = NULL, *oneoverPiTimesiiPlusHalfVector = NULL, *uVectorTimesThreshold = NULL, *scaledweightvector = NULL, *scaledweightvectorsq = NULL;
-   XLAL_CHECK( (uVector = createAlignedREAL8Vector(nterm+1, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (twoUvector = createAlignedREAL8Vector(uVector->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (oneoverPiTimesiiPlusHalfVector = createAlignedREAL8Vector(uVector->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (uVectorTimesThreshold = createAlignedREAL8Vector(uVector->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (scaledweightvector = createAlignedREAL8Vector(vars->weights->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (scaledweightvectorsq = createAlignedREAL8Vector(vars->weights->length, 32)) != NULL, XLAL_EFUNC );
+   INT4 ii, jj;
 
-   for (INT4 ii=nterm; ii>=0; ii--) uVector->data[ii] = (REAL8)ii;
-   XLAL_CHECK( VectorShiftREAL8(uVector, uVector, 0.5, vars->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLAL_CHECK( VectorScaleREAL8(oneoverPiTimesiiPlusHalfVector, uVector, LAL_PI, vars->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLAL_CHECK( VectorScaleREAL8(uVector, uVector, interv, vars->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLAL_CHECK( VectorScaleREAL8(uVectorTimesThreshold, uVector, vars->c, vars->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLAL_CHECK( VectorScaleREAL8(twoUvector, uVector, 2.0, vars->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLAL_CHECK( VectorInvertREAL8(oneoverPiTimesiiPlusHalfVector, oneoverPiTimesiiPlusHalfVector, vars->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+   REAL8Vector *scaledweightvector = NULL;
+   XLAL_CHECK( (scaledweightvector = XLALCreateREAL8Vector(vars->weights->length)) != NULL, XLAL_EFUNC );
 
-   for (INT4 ii=nterm; ii>=0; ii--) {
-      XLAL_CHECK( VectorScaleREAL8(scaledweightvector, vars->weights, twoUvector->data[ii], vars->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( VectorMultiplyREAL8(scaledweightvectorsq, scaledweightvector, scaledweightvector, vars->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+   for (ii=nterm; ii>=0; ii--) {
+      REAL8 u = (ii + 0.5)*interv;
+      REAL8 oneoverPiTimesiiPlusHalf = 1.0/(LAL_PI*(ii+0.5));
+      REAL8 twoU = 2.0*u;
 
-      REAL8 logofproductterm = 0.0, sinetermargumentsum = 0.0, sumofabssinesumargs = 0.0;
-      for (UINT4 jj=0; jj<scaledweightvector->length; jj++) {
+      REAL8 exptermarguementsum = 0.0, logofproductterm = 0.0, sinetermargumentsum = 0.0, sumofabssinesumargs = 0.0;
+      if (vars->useSSE) XLAL_CHECK( sseScaleREAL8Vector(scaledweightvector, vars->weights, twoU) == XLAL_SUCCESS, XLAL_EFUNC );
+      else if (vars->useAVX) XLAL_CHECK( avxScaleREAL8Vector(scaledweightvector, vars->weights, twoU) == XLAL_SUCCESS, XLAL_EFUNC );
+      else for (jj=0; jj<(INT4)scaledweightvector->length; jj++) scaledweightvector->data[jj] = vars->weights->data[jj]*twoU;
+
+      for (jj=(INT4)vars->weights->length-1; jj>=0; jj--) {
          REAL8 atanTwoUtimesWeight = atan(scaledweightvector->data[jj]);
 
-         logofproductterm += log1p(scaledweightvectorsq->data[jj]);
+         logofproductterm += -0.5*log1p(scaledweightvector->data[jj]*scaledweightvector->data[jj]);
          sinetermargumentsum += atanTwoUtimesWeight;
          sumofabssinesumargs += fabs(atanTwoUtimesWeight);
       }
-      logofproductterm *= -0.5;
+      REAL8 firstterm = exp1(-twoU*u*exptermarguementsum);
       REAL8 secondterm = exp1(logofproductterm);
-      REAL8 thirdterm = sin(sinetermargumentsum - uVectorTimesThreshold->data[ii]);
-      REAL8 together = secondterm * thirdterm * oneoverPiTimesiiPlusHalfVector->data[ii];
-      REAL8 together2 = secondterm * (sumofabssinesumargs + fabs(uVectorTimesThreshold->data[ii])) * oneoverPiTimesiiPlusHalfVector->data[ii];
+      REAL8 thirdterm = sin(sinetermargumentsum - u*vars->c);
+      REAL8 together = firstterm * secondterm * thirdterm * oneoverPiTimesiiPlusHalf;
+      REAL8 together2 = firstterm * secondterm * (sumofabssinesumargs + fabs(u*vars->c)) * oneoverPiTimesiiPlusHalf;
       if ( !mainx ) {
-         REAL8 scalingfactor = (1.0 - exp1(-0.5 * tausq * uVector->data[ii]*uVector->data[ii]));
+         REAL8 scalingfactor = (1.0 - exp1(-0.5 * tausq * u*u));
          together *= scalingfactor;
          together2 *= scalingfactor;
       }
@@ -549,12 +558,7 @@ INT4 fast_integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 taus
       vars->integrationError += together2;
    }
 
-   destroyAlignedREAL8Vector(uVector);
-   destroyAlignedREAL8Vector(twoUvector);
-   destroyAlignedREAL8Vector(oneoverPiTimesiiPlusHalfVector);
-   destroyAlignedREAL8Vector(uVectorTimesThreshold);
-   destroyAlignedREAL8Vector(scaledweightvector);
-   destroyAlignedREAL8Vector(scaledweightvectorsq);
+   XLALDestroyREAL8Vector(scaledweightvector);
 
    return XLAL_SUCCESS;
 
@@ -567,7 +571,7 @@ REAL8 coeff(qfvars *vars, REAL8 x)
 {
 
    REAL8 axl, axl1, axl2, sxl, sum1, lj;
-   INT4 t;
+   INT4 ii, jj, t;
 
    (vars->count)++;
 
@@ -586,7 +590,7 @@ REAL8 coeff(qfvars *vars, REAL8 x)
    else sxl = -1.0;
 
    sum1 = 0.0;
-   for (INT4 ii=vars->weights->length-1; ii>=0; ii-- ) {
+   for ( ii=vars->weights->length-1; ii>=0; ii-- ) {
       t = vars->sorting->data[ii];
       if ( vars->weights->data[t] * sxl > 0.0 ) {
          lj = fabs(vars->weights->data[t]);
@@ -596,7 +600,7 @@ REAL8 coeff(qfvars *vars, REAL8 x)
          else {
             if ( axl > axl2 ) axl = axl2;
             sum1 = (axl - axl1) / lj;
-            for (INT4 jj = ii-1; jj>=0; jj--) sum1 += (vars->dofs->data[vars->sorting->data[jj]] + vars->noncentrality->data[vars->sorting->data[jj]]);
+            for ( jj = ii-1; jj>=0; jj--) sum1 += (vars->dofs->data[vars->sorting->data[jj]] + vars->noncentrality->data[vars->sorting->data[jj]]);
 
             if (sum1 > 100.0) {
                vars->fail = 1;
@@ -621,7 +625,7 @@ REAL8 coeff_twospect(qfvars *vars, REAL8 x)
 {
 
    REAL8 axl, axl1, axl2, sxl, sum1, lj;
-   INT4 t;
+   INT4 ii, jj, t;
 
    (vars->count)++;
 
@@ -631,7 +635,7 @@ REAL8 coeff_twospect(qfvars *vars, REAL8 x)
    else sxl = -1.0;
 
    sum1 = 0.0;
-   for (INT4 ii=vars->weights->length-1; ii>=0; ii-- ) {
+   for ( ii=vars->weights->length-1; ii>=0; ii-- ) {
       t = vars->sorting->data[ii];
       if ( vars->weights->data[t] * sxl > 0.0 ) {
          lj = fabs(vars->weights->data[t]);
@@ -641,7 +645,7 @@ REAL8 coeff_twospect(qfvars *vars, REAL8 x)
          else {
             if ( axl > axl2 ) axl = axl2;
             sum1 = (axl - axl1) / lj;
-            for (INT4 jj = ii-1; jj>=0; jj--) sum1 += 2;
+            for ( jj = ii-1; jj>=0; jj--) sum1 += 2;
 
             if (sum1 > 100.0) {
                vars->fail = 1;
@@ -681,7 +685,7 @@ output:
 REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
 {
 
-   INT4 nt, ntm;
+   INT4 ii, nt, ntm;
    REAL8 acc1, almx, xlim, xnt, xntm;
    REAL8 utx, tausq, wnstd, intv, intv1, x, up, un, d1, d2;
    REAL8 qfval;
@@ -703,7 +707,7 @@ REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
    vars->wnmax = 0.0;            //Initial value for weights*noise maximum
    vars->wnmin = 0.0;            //Initial value for weights*noise minimum
    vars->wnmean = 0.0;           //Initial value for weights*noise 'mean'
-   for (UINT4 ii=0; ii<vars->weights->length; ii++ ) {
+   for (ii=0; ii<(INT4)vars->weights->length; ii++ ) {
       if ( vars->dofs->data[ii] < 0  ||  vars->noncentrality->data[ii] < 0.0 ) {
          *ifault = 3;
          return qfval;
@@ -821,7 +825,7 @@ REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
       /* test whether round-off error could be significant allow for radix 8 or 16 machines */
       up = vars->integrationError;
       x = up + 0.1*acc;
-      for (UINT4 ii=0; ii<4; ii++) {
+      for (ii=0; ii<4; ii++) {
          if (rats[ii] * x == rats[ii] * up) *ifault = 2;
       }
 
@@ -831,7 +835,7 @@ REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
 REAL8 cdfwchisq_twospect(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
 {
 
-   INT4 nt, ntm;
+   INT4 ii, nt, ntm;
    REAL8 acc1, almx, xlim, xnt, xntm;
    REAL8 utx, tausq, wnstd, intv, intv1, x, up, un, d1, d2;
    REAL8 qfval;
@@ -853,7 +857,7 @@ REAL8 cdfwchisq_twospect(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
    vars->wnmax = 0.0;            //Initial value for weights*noise maximum
    vars->wnmin = 0.0;            //Initial value for weights*noise minimum
    vars->wnmean = 0.0;           //Initial value for weights*noise 'mean'
-   for (UINT4 ii=0; ii<vars->weights->length; ii++ ) {
+   for (ii=0; ii<(INT4)vars->weights->length; ii++ ) {
 
       wnstd += 4*vars->weights->data[ii]*vars->weights->data[ii];  //weight_i^2 * 2 * 2
       vars->wnmean += 2*vars->weights->data[ii];                   //2*weight_i
@@ -975,7 +979,7 @@ REAL8 cdfwchisq_twospect(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
    /* test whether round-off error could be significant allow for radix 8 or 16 machines */
    up = vars->integrationError;
    x = up + 0.1*acc;
-   for (UINT4 ii=0; ii<4; ii++) {
+   for (ii=0; ii<4; ii++) {
       if (rats[ii] * x == rats[ii] * up) *ifault = 2;
    }
 

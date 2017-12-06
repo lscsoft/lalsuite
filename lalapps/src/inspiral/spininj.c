@@ -40,7 +40,6 @@
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
-#include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXML.h>
@@ -51,6 +50,7 @@
 #include <lal/DetectorSite.h>
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
+#include <lal/LALErrno.h>
 #include <LALAppsVCSInfo.h>
 
 
@@ -314,8 +314,7 @@ void LALSimInspiralTablePopulate(LALStatus        *status,
                                  MetadataTable     injections, 
                                  SimInspiralTable *this_inj)
 {
-  XLALSimInspiralAssignIDs ( injections.simInspiralTable, 0, 0 );
-
+  
   LAL_CALL( LALBeginLIGOLwXMLTable( status, &xmlfp, sim_inspiral_table ), 
             status );
   LAL_CALL( LALWriteLIGOLwXMLTable( status, &xmlfp, injections, 
@@ -326,7 +325,7 @@ void LALSimInspiralTablePopulate(LALStatus        *status,
     {
       this_inj = injections.simInspiralTable;
       injections.simInspiralTable = injections.simInspiralTable->next;
-      XLALFreeSimInspiral( &this_inj );
+      LALFree( this_inj );
     }
 }
 
@@ -645,8 +644,8 @@ void LALParserInspiralInjection(LALStatus *status,
     calloc( 1, sizeof(ProcessTable) );
 
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
-      lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentId,
+      lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0);
   snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );

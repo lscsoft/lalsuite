@@ -57,6 +57,7 @@ extern "C" {
 #include <lal/Velocity.h>
 #include <lal/Statistics.h>
 #include <lal/ComputeFstat.h>
+#include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/LALInitBarycenter.h>
@@ -80,7 +81,7 @@ extern "C" {
  *  Structure, enum, union, etc., typdefs.
  */
 
-  typedef enum tagDetChoice
+  typedef enum
   { SAME,
     DIFFERENT,
     ALL

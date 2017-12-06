@@ -28,23 +28,23 @@
 
 /* some more functions with just different names */
 #define fsync _commit
-#define putenv _putenv
+#define snprintf _snprintf
 
 /* functions actually implemented in win_lib.cpp */
 #ifdef __cplusplus
 extern "C" {
 #endif
-  /* functions implemented based on Windows API counterparts */
-  extern unsigned int sleep(unsigned int s);
-  extern char *index(const char *s, int c);
+  /* sleep function implemented in win_lib.c */
+  extern void sleep(unsigned int s);
+  /* quick fix for LAL now using finite without checking if we have it... */
+  extern int finite(double x);
+  /* get a "signaling" NaN */
+  extern float get_float_snan(void);
+  /* replacements for the asctime_r and gmtime_r functions */
   extern struct tm *gmtime_r(const time_t *t, struct tm *s);
   extern char *asctime_r(const struct tm *t, char *s);
   extern char *strsep (char **, const char *);
-  /* quick fix for LAL now using finite without checking if we have it... */
-  extern int finite(double x);
-  /* get a "signaling" NaN for testing FPEs & signal(-handler) */
-  extern float get_float_snan(void);
-  /* a different, more "atomic" implementation of boinc_rename() */
+  /* a different implementation of boinc_rename() */
   extern int eah_rename(const char* oldf, const char* newf);
 #ifdef __cplusplus
 }

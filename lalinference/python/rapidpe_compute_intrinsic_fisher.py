@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+#
 # Copyright (C) 2012 Evan Ochsner
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -25,7 +27,7 @@ import select
 import sys
 import stat
 from functools import partial
-from argparse import ArgumentParser
+from optparse import OptionParser, OptionGroup
 
 import numpy as np
 
@@ -34,76 +36,53 @@ import lalsimulation as lalsim
 
 import glue.lal
 from glue.ligolw import utils, ligolw, lsctables, table, ilwd
-lsctables.use_in(ligolw.LIGOLWContentHandler)
 from glue.ligolw.utils import process
 from glue import pipeline
 
-from lal import series
-
 from lalinference.rapid_pe import lalsimutils as lsu
 from lalinference.rapid_pe import effectiveFisher as eff
-from lalinference.rapid_pe import common_cl
+from lalinference.rapid_pe import dagutils
 
 __author__ = "Evan Ochsner <evano@gravity.phys.uwm.edu>, Chris Pankow <pankow@gravity.phys.uwm.edu>, R. O'Shaughnessy"
 
-argp = ArgumentParser()
+optp = OptionParser()
 # Options needed by this program only.
-argp.add_argument("-X", "--mass-points-xml", action="store_true", help="Output mass points as a sim_inspiral table.")
-argp.add_argument("--save-ellipsoid-data", action="store_true", help="Save the parameters and eigenvalues of the ellipsoid.")
-
-argp.add_argument("-N", "--N-mass-pts", type=int, default=200, help="Number of intrinsic parameter (mass) values at which to compute marginalized likelihood. Default is 200.")
-argp.add_argument("-t", "--N-tidal-pts", type=int, default=None, help="Number of intrinsic parameter (tidal) values at which to compute marginalized likelihood. Default is None, meaning 'don't grid in lambda'")
-argp.add_argument("--linear-spoked", action="store_true", help="Place mass pts along spokes linear in radial distance (if omitted placement will be random and uniform in volume")
-argp.add_argument("--uniform-spoked", action="store_true", help="Place mass pts along spokes uniform in radial distance (if omitted placement will be random and uniform in volume")
-argp.add_argument("--match-value", type=float, default=0.97, help="Use this as the minimum match value. Default is 0.97")
+optp.add_option("-X", "--mass-points-xml", action="store_true", help="Output mass points as a sim_inspiral table.")
+optp.add_option("-N", "--N-mass-pts", type=int, default=200, help="Number of intrinsic parameter (mass) values at which to compute marginalized likelihood. Default is 200.")
+optp.add_option("--linear-spoked", action="store_true", help="Place mass pts along spokes linear in radial distance (if omitted placement will be random and uniform in volume")
+optp.add_option("--match-value", type=float, default=0.97, help="Use this as the minimum match value. Default is 0.97")
+optp.add_option("--save-ellipsoid-data", action="store_true", help="Save the parameters and eigenvalues of the ellipsoid.")
 
 # Options transferred to ILE
-argp.add_argument("-C", "--channel-name", action="append", help="instrument=channel-name, e.g. H1=FAKE-STRAIN. Not required except to name the output file properly. Can be given multiple times for different instruments.")
-argp.add_argument("-p", "--psd-file", action="append", help="instrument=psd-file-name e.g. H1=psd.xml.gz. Can be given multiple times for different instruments.")
-argp.add_argument("-x", "--coinc-xml", help="gstlal_inspiral XML file containing coincidence information.")
-argp.add_argument("-s", "--sim-xml", help="XML file containing injected event information.")
+optp.add_option("-C", "--channel-name", action="append", help="instrument=channel-name, e.g. H1=FAKE-STRAIN. Can be given multiple times for different instruments.")
+optp.add_option("-x", "--coinc-xml", help="gstlal_inspiral XML file containing coincidence information.")
+optp.add_option("-s", "--sim-xml", help="XML file containing injected event information.")
 
 #
 # Add the intrinsic parameters
 #
-intrinsic_params = argp.add_argument_group("Intrinsic Parameters", "Intrinsic parameters (e.g component mass) to use.")
-intrinsic_params.add_argument("--mass1", type=float, help="Value of first component mass, in solar masses. Required if not providing coinc tables.")
-intrinsic_params.add_argument("--mass2", type=float, help="Value of second component mass, in solar masses. Required if not providing coinc tables.")
-intrinsic_params.add_argument("--eff-lambda", type=float, help="Value of the effective tidal parameter. Optional, ignored if not given.")
-intrinsic_params.add_argument("--delta-eff-lambda", type=float, help="Value of second effective tidal parameter. Optional, ignored if not given.")
-intrinsic_params.add_argument("--event-time", type=float, help="Event coalescence GPS time.")
-intrinsic_params.add_argument("--approximant", help="Waveform family approximant to use. Required.")
+intrinsic_params = OptionGroup(optp, "Intrinsic Parameters", "Intrinsic parameters (e.g component mass) to use.")
+intrinsic_params.add_option("--mass1", type=float, help="Value of first component mass, in solar masses. Required if not providing coinc tables.")
+intrinsic_params.add_option("--mass2", type=float, help="Value of second component mass, in solar masses. Required if not providing coinc tables.")
+intrinsic_params.add_option("--event-time", type=float, help="Event coalescence GPS time.")
+intrinsic_params.add_option("--approximant", help="Waveform family approximant to use. Required.")
+optp.add_option_group(intrinsic_params)
 
-opts = argp.parse_args()
-
-if opts.delta_eff_lambda and opts.eff_lambda is None:
-    exit("If you specify delta_eff_lambda and not eff_lambda, you're gonna have a bad time.")
-if opts.N_tidal_pts is not None and (opts.delta_eff_lambda or opts.eff_lambda):
-    exit("You asked for a specific value of lambda and gridding. You can't have it both ways.")
-
-if opts.uniform_spoked and opts.linear_spoked:
-    exit("Specify only one point placement scheme.")
+opts, args = optp.parse_args()
 
 #
 # Get trigger information from coinc xml file
 #
 
 # Get end time from coinc inspiral table or command line
-xmldoc, sim_row = None, None
+xmldoc = None
 if opts.coinc_xml is not None:
-    xmldoc = utils.load_filename(opts.coinc_xml, contenthandler=ligolw.LIGOLWContentHandler)
-    coinc_table = lsctables.CoincInspiralTable.get_table(xmldoc)
+    xmldoc = utils.load_filename(opts.coinc_xml)
+    coinc_table = table.get_table(xmldoc, lsctables.CoincInspiralTable.tableName)
     assert len(coinc_table) == 1
     coinc_row = coinc_table[0]
     event_time = coinc_row.get_end()
     print "Coinc XML loaded, event time: %s" % str(coinc_row.get_end())
-elif opts.sim_xml is not None:
-    xmldoc = utils.load_filename(opts.sim_xml, contenthandler=ligolw.LIGOLWContentHandler)
-    sim_table = lsctables.SimInspiralTable.get_table(xmldoc)
-    assert len(sim_table) == 1
-    sim_row = sim_table[0]
-    event_time = sim_row.get_end()
-    print "Sim XML loaded, event time: %s" % str(sim_row.get_end())
 elif opts.event_time is not None:
     event_time = glue.lal.LIGOTimeGPS(opts.event_time)
     print "Event time from command line: %s" % str(event_time)
@@ -113,8 +92,6 @@ else:
 # get masses from sngl_inspiral_table
 if opts.mass1 is not None and opts.mass2 is not None:
     m1, m2 = opts.mass1, opts.mass2
-elif sim_row:
-    m1, m2 = sim_row.mass1, sim_row.mass2
 elif xmldoc is not None:
     sngl_inspiral_table = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
     assert len(sngl_inspiral_table) == len(coinc_row.ifos.split(","))
@@ -123,6 +100,7 @@ elif xmldoc is not None:
         # NOTE: gstlal is exact match, but other pipelines may not be
         assert m1 is None or (sngl_row.mass1 == m1 and sngl_row.mass2 == m2)
         m1, m2 = sngl_row.mass1, sngl_row.mass2
+    event_time = glue.lal.LIGOTimeGPS(opts.event_time)
 else:
     raise ValueError("Need either --mass1 --mass2 or --coinc-xml to retrieve masses.")
 
@@ -130,11 +108,18 @@ m1_SI = m1 * lal.MSUN_SI
 m2_SI = m2 * lal.MSUN_SI
 print "Computing marginalized likelihood in a neighborhood about intrinsic parameters mass 1: %f, mass 2 %f" % (m1, m2)
 
-
-# The next 4 values set the maximum size of the region to explore
-min_mc_factor, max_mc_factor = 0.9, 1.1
-min_eta, max_eta = 0.05, 0.25
-
+#
+# FIXME: Hardcoded values - eventually promote to command line arguments
+#
+template_min_freq = 40.
+ip_min_freq = 40.
+eff_fisher_psd = lal.LIGOIPsd
+analyticPSD_Q = True
+# The next 4 lines set the maximum size of the region to explore
+min_mc_factor = 0.9
+max_mc_factor = 1.1
+min_eta = 0.05
+max_eta = 0.25
 # Control evaluation of the effective Fisher grid
 NMcs = 11
 NEtas = 11
@@ -142,23 +127,6 @@ match_cntr = opts.match_value # Fill an ellipsoid of this match
 wide_match = 1-(1-opts.match_value)**(2/3.0)
 fit_cntr = match_cntr # Do the effective Fisher fit with pts above this match
 Nrandpts = opts.N_mass_pts # Requested number of pts to put inside the ellipsoid
-Nlam = opts.N_tidal_pts or 1
-
-#
-# Tidal parameters
-#
-if opts.eff_lambda:
-    # NOTE: Since dlambda tilde is effectively zero, it's assumed that the user
-    # will set it explicitly if they want it, otherwise it's zero identically
-    lambda1, lambda2 = lsu.tidal_lambda_from_tilde(m1, m2, opts.eff_lambda, opts.delta_eff_lambda or 0)
-else:
-    lambda1, lambda2 = 0, 0
-
-#
-# FIXME: Hardcoded values - eventually promote to command line arguments
-#
-template_min_freq = 40.
-ip_min_freq = 40.
 
 #
 # Setup signal and IP class
@@ -166,24 +134,11 @@ ip_min_freq = 40.
 param_names = ['Mc', 'eta']
 McSIG = lsu.mchirp(m1_SI, m2_SI)
 etaSIG = lsu.symRatio(m1_SI, m2_SI)
-if sim_row is not None:
-    PSIG = lsu.ChooseWaveformParams(
-            m1=m1_SI, m2=m2_SI,
-            lambda1=lambda1, lambda2=lambda2,
-            fmin=template_min_freq,
-            approx=lalsim.GetApproximantFromString(opts.approximant)
-            )
-    PSIG.copy_lsctables_sim_inspiral(sim_row)
-    # FIXME: Not converting this causes segfaults with python's built in copying
-    # module
-    PSIG.tref = float(PSIG.tref)
-else:
-    PSIG = lsu.ChooseWaveformParams(
-            m1=m1_SI, m2=m2_SI,
-            lambda1=lambda1, lambda2=lambda2,
-            fmin=template_min_freq,
-            approx=lalsim.GetApproximantFromString(opts.approximant)
-            )
+PSIG = lsu.ChooseWaveformParams(
+        m1=m1_SI, m2=m2_SI,
+        fmin=template_min_freq,
+        approx=lalsim.GetApproximantFromString(opts.approximant)
+        )
 # Find a deltaF sufficient for entire range to be explored
 PTEST = PSIG.copy()
 
@@ -197,33 +152,6 @@ deltaF_2 = lsu.findDeltaF(PTEST)
 PSIG.deltaF = min(deltaF_1, deltaF_2)
 
 PTMPLT = PSIG.copy()
-
-if opts.psd_file is None:
-    eff_fisher_psd = lal.LIGOIPsd
-    analyticPSD_Q = True
-else:
-    psd_map = common_cl.parse_cl_key_value(opts.psd_file)
-    for inst, psdfile in psd_map.items():
-        if psd_map.has_key(psdfile):
-            psd_map[psdfile].add(inst)
-        else:
-            psd_map[psdfile] = set([inst])
-        del psd_map[inst]
-
-    for psdf, insts in psd_map.iteritems():
-        xmldoc = utils.load_filename(psdf, contenthandler=series.PSDContentHandler)
-        # FIXME: How to handle multiple PSDs
-        for inst in insts:
-            psd = series.read_psd_xmldoc(xmldoc)[inst]
-            psd_f_high = len(psd.data.data)*psd.deltaF
-            f = np.arange(0, psd_f_high, psd.deltaF)
-            fvals = np.arange(0, psd_f_high, PSIG.deltaF)
-
-            def anon_interp(newf):
-                return np.interp(newf, f, psd.data.data)
-            eff_fisher_psd = np.array(map(anon_interp, fvals))
-
-    analyticPSD_Q = False
 
 IP = lsu.Overlap(fLow = ip_min_freq,
         deltaF = PSIG.deltaF,
@@ -328,8 +256,6 @@ cart_grid = cart_grid[phys_cut]
 print "Requested", Nrandpts, "points inside the ellipsoid of",\
         match_cntr, "match."
 print "Kept", len(cart_grid), "points with physically allowed parameters."
-if opts.N_tidal_pts:
-    print "With tidal parameters will have", len(cart_grid)*Nlam, "points."
 
 # Output Cartesian and spherical coordinates of intrinsic grid
 indices = np.arange(len(cart_grid))
@@ -363,21 +289,16 @@ if opts.mass_points_xml:
     procid = procrow.process_id
     process.append_process_params(xmldoc, procrow, process.process_params_from_dict(opts.__dict__))
     
-    sim_insp_tbl = lsctables.New(lsctables.SimInspiralTable, ["simulation_id", "process_id", "numrel_data", "mass1", "mass2", "psi0", "psi3"])
+    sim_insp_tbl = lsctables.New(lsctables.SimInspiralTable, ["simulation_id", "process_id", "numrel_data", "mass1", "mass2"])
     for itr, (m1, m2) in enumerate(m1m2_grid):
-        for l1 in np.linspace(common_cl.param_limits["lam_tilde"][0], common_cl.param_limits["lam_tilde"][1], Nlam):
-            sim_insp = sim_insp_tbl.RowType()
-            sim_insp.numrel_data = "MASS_SET_%d" % itr
-            sim_insp.simulation_id = ilwd.ilwdchar("sim_inspiral:sim_inspiral_id:%d" % itr)
-            sim_insp.process_id = procid
-            sim_insp.mass1, sim_insp.mass2 = m1, m2
-            sim_insp.psi0, sim_insp.psi3 = opts.eff_lambda or l1, opts.delta_eff_lambda or 0
-            sim_insp_tbl.append(sim_insp)
+        sim_insp = sim_insp_tbl.RowType()
+        sim_insp.numrel_data = "MASS_SET_%d" % itr
+        sim_insp.simulation_id = ilwd.ilwdchar("sim_inspiral:sim_inspiral_id:%d" % itr)
+        sim_insp.process_id = procid
+        sim_insp.mass1, sim_insp.mass2 = m1, m2
+        sim_insp_tbl.append(sim_insp)
     xmldoc.childNodes[0].appendChild(sim_insp_tbl)
-    if opts.channel_name:
-        ifos = "".join([o.split("=")[0][0] for o in opts.channel_name])
-    else:
-        ifos = "HLV"
+    ifos = "".join([o.split("=")[0][0] for o in opts.channel_name])
     start = int(event_time)
     fname = "%s-MASS_POINTS-%d-1.xml.gz" % (ifos, start)
     utils.write_filename(xmldoc, fname, gz=True)

@@ -21,7 +21,7 @@
  * \author Matt Pitkin
  * \date 2013
  * \file
- * \ingroup lalpulsar_general
+ * \ingroup lalpulsar_UNCLASSIFIED
  * \brief Functions to read TEMPO pulsar parameter files
  *
    Functions for reading pulsar parameters from TEMPO .par files.
@@ -37,10 +37,10 @@
    found in the TEMPO documentation. Two function are available to extract these
    parameters from the <tt>.par</tt> files:
    <ul>
-   <li>\c XLALReadTEMPOParFileOrig - this will read parameters into a \c BinaryPulsarParams structure and set
+   <li>\c XLALReadTEMPOParFile - this will read parameters into a \c BinaryPulsarParams structure and set
    any unused parameters to zero or \c NULL. To use this you must know the correct parameter name within
-   the structure. This is deprecated in favour of \c XLALReadTEMPOParFile and is no longer maintained</li>
-   <li>\c XLALReadTEMPOParFile - this reads the parameters into a linked list \c PulsarParameters structure, from which the
+   the structure.</li>
+   <li>\c XLALReadTEMPOParFileNew - this reads the parameters into a linked list structure, from which the
    parameters can be accessed using the appropriate access function. These use a hash table to quick look-up.
    The parameters are assigned names, which are used as the hash table keys, which are fully uppercase
    versions of the TEMPO parameter names.
@@ -72,7 +72,6 @@
 #include <lal/ComputeFstat.h>
 #include <lal/TranslateAngles.h>
 #include <lal/TranslateMJD.h>
-#include <lal/LALHashFunc.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -109,46 +108,12 @@ static void strtoupper(CHAR *s) {
   }
 }
 
-/* hash functions copied from LALInference.c */
-typedef struct taghash_elem
-{
-  const char *name;
-  PulsarParam *itemPtr;
-} hash_elem;
 
-static void *new_elem( const char *name, PulsarParam *itemPtr )
-{
-  hash_elem e = { .name=name, .itemPtr=itemPtr };
-  return memcpy( XLALMalloc( sizeof( e ) ), &e, sizeof( e ) );
-};
-
-static void del_elem(void *elem)
-{
-  XLALFree(elem);
-}
-
-
-/* Compute a hash value based on element */
-static UINT8 PulsarHash( const void *elem );
-static UINT8 PulsarHash( const void *elem )
-{
-  if( !elem ) { XLAL_ERROR(XLAL_EINVAL); }
-  // size_t len = strnlen(((const hash_elem *)elem)->name, PULSAR_PARNAME_MAX );
-  // use this instead of strnlen
-  const char *s = ((const hash_elem *)elem)->name;
-  size_t len;
-  for (len = 0; len < PULSAR_PARNAME_MAX; len++, s++) {
-    if (!*s) { break; }
-  }
-  return( XLALCityHash64(((const hash_elem *)elem)->name, len) );
-}
-
-
-static int PulsarHashElemCmp( const void *elem1, const void *elem2 );
-static int PulsarHashElemCmp( const void *elem1, const void *elem2 )
-{
-  if( !elem1 || !elem2 ) { XLAL_ERROR(XLAL_EINVAL); }
-  return(strncmp(((const hash_elem *)elem1)->name,((const hash_elem *)elem2)->name, PULSAR_PARNAME_MAX));
+/** \brief Compute a hash value based on an input string */
+static UINT4 PulsarHash( const CHAR *name ){
+  UINT4 hashval = 0;
+  for( ; *name != '\0' ; name++ ) { hashval = *name + 31 * hashval; }
+  return ( hashval % PULSAR_HASHTABLE_SIZE );
 }
 
 
@@ -184,8 +149,7 @@ static PulsarParam *PulsarGetParamItemSlow( const PulsarParameters *pars, const 
 static PulsarParam *PulsarGetParamItem( const PulsarParameters *pars, const CHAR *name ){
 /* (this function is only to be used internally) */
 /* Returns pointer to item for given item name.  */
-  hash_elem tmp;
-  const hash_elem *match=NULL;
+  PulsarParam *item = NULL;
 
   CHAR upperName[PULSAR_PARNAME_MAX];
   XLALStringCopy( upperName, name, PULSAR_PARNAME_MAX );
@@ -193,13 +157,16 @@ static PulsarParam *PulsarGetParamItem( const PulsarParameters *pars, const CHAR
 
   if( pars == NULL ) { return NULL; }
   if( pars->nparams == 0 ) { return NULL; }
-  if( !pars->hash_table ) { return PulsarGetParamItemSlow( pars, upperName ); }
 
-  tmp.name = upperName;
-  XLALHashTblFind( pars->hash_table, &tmp, (const void **)&match );
-  if ( !match ) { return NULL; }
+  item = pars->hash_table[PulsarHash( upperName )];
 
-  return match->itemPtr;
+  /* If not found in the hash table, need to check for collision with an item previous Removed()
+   *  which will put a NULL in the hash table */
+  if( !item ) { return PulsarGetParamItemSlow( pars, upperName ); }
+
+  /* Check for hash collision */
+  if( strcmp( item->name, upperName ) ) { return PulsarGetParamItemSlow( pars, upperName ); }
+  else { return item; }
 }
 
 
@@ -224,18 +191,9 @@ REAL8 PulsarGetREAL8Param( const PulsarParameters *pars, const CHAR *name ){
 }
 
 
-REAL8 PulsarGetREAL8ParamOrZero( const PulsarParameters *pars, const CHAR *name ){
-  /* if parameter is there return it otherwise return zero */
-  return PulsarCheckParam(pars, name) ? PulsarGetREAL8Param(pars, name) : 0.;
-}
-
-
-const CHAR* PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name ){
+CHAR* PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name ){
   /* check type is a string */
-  if ( PulsarGetParamType( pars, name ) == PULSARTYPE_string_t ){
-    CHAR *rvalue = *(CHAR **)PulsarGetParam( pars, name );
-    return rvalue;
-  }
+  if ( PulsarGetParamType( pars, name ) == PULSARTYPE_string_t ){ return (CHAR *)PulsarGetParam( pars, name ); }
   else{ XLAL_ERROR_NULL( XLAL_EINVAL,"Used wrong type for required parameter"  ); }
 }
 
@@ -247,31 +205,23 @@ REAL8Vector* PulsarGetREAL8VectorParam( const PulsarParameters *pars, const CHAR
 }
 
 
-REAL8 PulsarGetREAL8VectorParamIndividual( const PulsarParameters *pars, const CHAR *name ){
-  /* split the input name into the parameter name and an index e.g. FB0 into FB and 0, or GLEP_1 */
+REAL8 PulsarGetREAL8VectorParamIndividual( const PulsarParameters *pars, const CHAR *name){
+  /* split the input name into the parameter name and an index e.g. FB0 into FB and 0*/
   CHAR *namecopy = NULL, *token;
+  const CHAR delimiters[] = "0123456789"; /* delimit by numbers */
   namecopy = XLALStringDuplicate( name );
   REAL8 val = 0.;
 
-  if ( strchr( name, '_' ) ){ /* check for underscore delimiting numbers */
-    token = strtok(namecopy, "_");
-  }
-  else{ /* name delimited by just numbers */
-    token = strtok(namecopy, "0123456789");
-  }
+  token = strtok(namecopy, delimiters);
 
   REAL8Vector *vpars = PulsarGetREAL8VectorParam( pars, token );
 
   /* get the index value of the parameter name */
   INT4 idx = -1;
-  INT4 loc = strlen(token);
-  if ( name[loc] == '_' ){ loc++; }
-  if( sscanf(name+loc, "%d", &idx) != 1 ){
+  if( sscanf(name+strlen(token), "%d", &idx) != 1 ){
     XLAL_ERROR_REAL8( XLAL_EINVAL, "Input parameter (%s) problem", name );
   }
 
-  /* for glitch parameters GL, or WAVE parameters the index starts at 1, so shift it */
-  if ( !strncmp( name, "GL", 2 ) || !strncmp( name, "WAVE", 4 ) ) { idx--; }
   if ( idx < 0 || (UINT4)idx > vpars->length-1 ){
     XLAL_ERROR_REAL8( XLAL_EINVAL, "Input parameter index %d is wrong", idx );
   }
@@ -330,28 +280,20 @@ REAL8Vector *PulsarGetREAL8VectorParamErr( const PulsarParameters *pars, const C
 REAL8 PulsarGetREAL8VectorParamErrIndividual( const PulsarParameters *pars, const CHAR *name){
   /* split the input name into the parameter name and an index e.g. FB0 into FB and 0*/
   CHAR *namecopy = NULL, *token;
+  const CHAR delimiters[] = "0123456789"; /* delimit by numbers */
   namecopy = XLALStringDuplicate( name );
   REAL8 val = 0.;
 
-  if ( strchr( name, '_' ) ){ /* check for underscore delimiting numbers */
-    token = strtok(namecopy, "_");
-  }
-  else{ /* name delimited by just numbers */
-    token = strtok(namecopy, "0123456789");
-  }
+  token = strtok(namecopy, delimiters);
 
   REAL8Vector *vpars = PulsarGetREAL8VectorParamErr( pars, token );
 
   /* get the index value of the parameter name */
   INT4 idx = -1;
-  INT4 loc = strlen(token);
-  if ( name[loc] == '_' ){ loc++; }
-  if( sscanf(name+loc, "%d", &idx) != 1 ){
-    XLAL_ERROR_REAL8( XLAL_EINVAL, "Input parameter (%s) problem", name );
+  if( sscanf(name+strlen(token), "%d", &idx) != 1 ){
+     XLAL_ERROR_REAL8( XLAL_EINVAL, "Input parameter (%s) problem", name );
   }
 
-  /* for glitch parameters GL, or WAVE parameters the index starts at 1, so shift it */
-  if ( !strncmp( name, "GL", 2 ) || !strncmp( name, "WAVE", 4 ) ) { idx--; }
   if ( idx < 0 || (UINT4)idx > vpars->length-1 ){
     XLAL_ERROR_REAL8( XLAL_EINVAL, "Input parameter index %d is wrong", idx );
   }
@@ -369,8 +311,10 @@ void PulsarAddParam( PulsarParameters *pars, const CHAR *name, void *value, Puls
 /* If variable already exists, it will over-write the current value if type compatible*/
   PulsarParam *old = NULL;
 
-  /* create the hash table if it does not exist */
-  if( !pars->hash_table ) { pars->hash_table = XLALHashTblCreate( del_elem, PulsarHash, PulsarHashElemCmp ); }
+  /* This is a bit of a hack to make sure the hash table is initialised
+   * before it is accessed, assuming nobody is silly enough to Get()
+   * from a just-declared LALInferenceVariable */
+  if( pars->nparams == 0 ) { PulsarClearParams( pars ); }
 
   /* Check input value is accessible */
   if( !value ) { XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to access value through null pointer; trying to add \"%s\".", name); }
@@ -388,14 +332,13 @@ void PulsarAddParam( PulsarParameters *pars, const CHAR *name, void *value, Puls
   }
 
   /* If we get this far it is safe to create a new node for this variable */
-  PulsarParam *new = XLALMalloc(sizeof(PulsarParam));
-  memset(new,0,sizeof(PulsarParam));
+  PulsarParam *new = XLALCalloc( sizeof( PulsarParam ), 1 );
+
   if( new ) {
     new->value = (void *)XLALMalloc( PulsarTypeSize[type] );
     new->err = NULL;
     new->fitFlag = (UINT4 *)XLALMalloc( sizeof(UINT4) );
   }
-
   if( new == NULL || new->value == NULL ) {
     XLAL_ERROR_VOID(XLAL_ENOMEM, "Unable to allocate memory for list item.");
   }
@@ -409,45 +352,13 @@ void PulsarAddParam( PulsarParameters *pars, const CHAR *name, void *value, Puls
   memcpy( new->value, value, PulsarTypeSize[type] );
   new->next = pars->head;
   pars->head = new;
-  hash_elem *elem = new_elem( new->name, new );
-  XLALHashTblAdd(pars->hash_table, (void *)elem);
+  pars->hash_table[PulsarHash( new->name )] = new;
   pars->nparams++;
 }
 
 
-void PulsarAddREAL8Param(PulsarParameters *pars, const CHAR * name, REAL8 value)
-/* Typed version of PulsarAddParam for REAL8 values.*/
-{
-  PulsarAddParam(pars, name, (void*)&value, PULSARTYPE_REAL8_t);
-}
-
-
-void PulsarAddUINT4Param(PulsarParameters *pars, const CHAR * name, UINT4 value)
-/* Typed version of PulsarAddParam for UINT4 values.*/
-{
-  PulsarAddParam(pars, name, (void*)&value, PULSARTYPE_UINT4_t);
-}
-
-
-void PulsarAddREAL8VectorParam(PulsarParameters *pars, const CHAR * name, REAL8Vector *value)
-/* Typed version of PulsarAddParam for REAL8Vector values.*/
-{
-  PulsarAddParam(pars, name, (void*)&value, PULSARTYPE_REAL8Vector_t);
-}
-
-
-void PulsarAddStringParam(PulsarParameters *pars, const CHAR * name, const CHAR *value)
-/* Typed version of PulsarAddParam for string values.*/
-{
-  CHAR *sval = NULL;
-  sval = XLALMalloc( PulsarTypeSize[PULSARTYPE_string_t] );
-  XLALStringCopy(sval, value, PulsarTypeSize[PULSARTYPE_string_t]);
-  PulsarAddParam(pars, name, (void *)&sval, PULSARTYPE_string_t);
-}
-
-
 /* Check for existance of name */
-int PulsarCheckParam( const PulsarParameters *pars, const CHAR *name ){
+int PulsarCheckParam( PulsarParameters *pars, const CHAR *name ){
   /* convert name to uppercase */
   CHAR upperName[PULSAR_PARNAME_MAX];
   XLALStringCopy( upperName, name, PULSAR_PARNAME_MAX );
@@ -470,11 +381,8 @@ void PulsarClearParams( PulsarParameters *pars ){
 
   while( this ){
     if( this->type == PULSARTYPE_REAL8Vector_t ) {
-      if ( this->value ) { XLALDestroyREAL8Vector( *(REAL8Vector **)this->value ); }
-      if ( this->err ) { XLALDestroyREAL8Vector( *(REAL8Vector **)this->err ); }
-    }
-    else if ( this->type == PULSARTYPE_string_t ){
-      if ( this->value ) { XLALFree( *(CHAR **)this->value ); }
+      XLALDestroyREAL8Vector( *(REAL8Vector **)this->value );
+      XLALDestroyREAL8Vector( *(REAL8Vector **)this->err );
     }
     XLALFree( this->value );
     XLALFree( this->err );
@@ -484,10 +392,8 @@ void PulsarClearParams( PulsarParameters *pars ){
     if( this ) { next = this->next; }
   }
   pars->head = NULL;
+  memset( pars->hash_table, 0, PULSAR_HASHTABLE_SIZE * sizeof(PulsarParam *) );
   pars->nparams = 0;
-
-  if( pars->hash_table ) { XLALHashTblDestroy(pars->hash_table); }
-  pars->hash_table = NULL;
 }
 
 
@@ -518,17 +424,6 @@ void PulsarRemoveParam( PulsarParameters *pars, const CHAR *name ){
 
   if( !parent ) { pars->head = this->next; }
   else { parent->next = this->next; }
-  /* Remove from hash table */
-  hash_elem elem;
-  elem.name = this->name;
-  XLALHashTblRemove( pars->hash_table, (void *)&elem );
-  if( this->type == PULSARTYPE_REAL8Vector_t ) {
-    if ( this->value ) { XLALDestroyREAL8Vector( *(REAL8Vector **)this->value ); }
-    if ( this->err ) { XLALDestroyREAL8Vector( *(REAL8Vector **)this->err ); }
-  }
-  else if ( this->type == PULSARTYPE_string_t ){
-    if ( this->value ) { XLALFree( *(CHAR **)this->value ); }
-  }
   XLALFree( this->value );
   XLALFree( this->err );
   XLALFree( this->fitFlag );
@@ -537,13 +432,17 @@ void PulsarRemoveParam( PulsarParameters *pars, const CHAR *name ){
   this->fitFlag = NULL;
   XLALFree( this );
 
+  /* Have to check the name in case there was a collision */
+  UINT4 hash = PulsarHash( upperName );
+  if( this == pars->hash_table[hash] ) { pars->hash_table[hash] = NULL; }
   this = NULL;
   pars->nparams--;
+  if( pars->nparams == 0 ) { PulsarClearParams( pars ); }
 }
 
 
 /* Set the value of parameter name in the pars structure to value */
-void PulsarSetParam( PulsarParameters* pars, const CHAR *name, const void *value ){
+void PulsarSetParam( PulsarParameters* pars, const CHAR *name, void *value ){
   PulsarParam *item;
 
   /* convert name to uppercase */
@@ -587,7 +486,6 @@ void PulsarFreeParams( PulsarParameters* pars ){
   if ( !pars ) { return; }
 
   PulsarClearParams( pars );
-  if( pars->hash_table ) { XLALHashTblDestroy(pars->hash_table); }
   XLALFree( pars );
 }
 
@@ -656,10 +554,9 @@ DEFINE_CONV_FACTOR_FUNCTION( ArcsecsToRads, LAL_PI_180/3600., CONVFLOAT ) /* con
 DEFINE_CONV_FACTOR_FUNCTION( MasToRads, LAL_PI_180/3600.0e3, CONVFLOAT ) /* convert milliarcseconds to radians */
 DEFINE_CONV_FACTOR_FUNCTION( InvArcsecsToInvRads, 3600./LAL_PI_180, CONVFLOAT ) /* convert 1/arcsec to 1/rads */
 DEFINE_CONV_FACTOR_FUNCTION( DaysToSecs, DAYSTOSECS, CONVFLOAT ) /* convert days to seconds */
-DEFINE_CONV_FACTOR_FUNCTION( KpcToMetres, LAL_PC_SI*1.e3, CONVFLOAT ) /* convert kiloparsecs to metres */
 DEFINE_CONV_FACTOR_FUNCTION( BinaryUnits, 1.e-12, CONVBINUNITS ) /* convert certain binary units as defined in TEMPO2 with factor */
 DEFINE_CONV_FACTOR_FUNCTION( MJDToGPS, 0, CONVMJD ) /* convert from MJD to GPS time */
-DEFINE_CONV_FACTOR_FUNCTION( DegPerYrToRadPerSec, LAL_PI_180/(365.25*DAYSTOSECS), CONVFLOAT ) /* convert degs/year to rads/s */
+DEFINE_CONV_FACTOR_FUNCTION( DegPerYrToRadParSec, LAL_PI_180/(365.25*DAYSTOSECS), CONVFLOAT ) /* convert degs/year to rads/s */
 DEFINE_CONV_FACTOR_FUNCTION( SolarMassToKg, LAL_MSUN_SI, CONVFLOAT ) /* convert solar masses to kg */
 DEFINE_CONV_FACTOR_FUNCTION( RAToRads, 0, CONVHMS ) /* convert right ascension to radians */
 DEFINE_CONV_FACTOR_FUNCTION( DecToRads, 0, CONVDMS ) /* convert declination to radians */
@@ -678,7 +575,7 @@ typedef struct tagParConversion{
 }ParConversion;
 
 
-#define NUM_PARS 107 /* number of allowed parameters */
+#define NUM_PARS 106 /* number of allowed parameters */
 
 /** Initialise conversion structure with most allowed TEMPO2 parameter names and conversion functions
  * (convert all read in parameters to SI units where necessary). See http://arxiv.org/abs/astro-ph/0603381 and
@@ -688,8 +585,17 @@ typedef struct tagParConversion{
  * incremented.
  */
 ParConversion pc[NUM_PARS] = {
-  { .name = "F", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8Vector_t }, /* vector containing frequency and derivatives (Hz, Hz/s, Hz/s^2 ...) */
-  { .name = "DIST", .convfunc = ParConvKpcToMetres, .converrfunc = ParConvKpcToMetres, .ptype = PULSARTYPE_REAL8_t }, /* distance to pulsar in metres */
+  { .name = "F0", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* frequency (Hz) */
+  { .name = "F1", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* first frequency time derivative (Hz/s) */
+  { .name = "F2", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* second frequency time derivative (Hz/s^2) */
+  { .name = "F3", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* third frequency time derivative (Hz/s^3) */
+  { .name = "F4", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* fourth frequency time derivative (Hz/s^4) */
+  { .name = "F5", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* fifth frequency time derivative (Hz/s^5) */
+  { .name = "F6", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* sixth frequency time derivative (Hz/s^6) */
+  { .name = "F7", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* seventh frequency time derivative (Hz/s^7) */
+  { .name = "F8", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* eighth frequency time derivative (Hz/s^8) */
+  { .name = "F9", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* ninth frequency time derivative (Hz/s^9) */
+  { .name = "DIST", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* distance to pulsar in kpc */
   { .name = "PX", .convfunc = ParConvMasToRads, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* parallax (converted to radians) */
   { .name = "DM", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* dispersion measure */
   { .name = "DM1", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /*first derivative of the dispersion measure */
@@ -705,18 +611,9 @@ ParConversion pc[NUM_PARS] = {
   { .name = "ELAT", .convfunc = ParConvDegsToRads, .converrfunc = ParConvDegsToRads, .ptype = PULSARTYPE_REAL8_t }, /* ecliptic latitude (converted from degs to rads) */
 
   /* epoch parameters */
-  { .name = "PEPOCH", .convfunc = ParConvMJDToGPS, .converrfunc = ParConvDaysToSecs, .ptype = PULSARTYPE_REAL8_t }, /* period epoch (saved as GPS time) */
-  { .name = "POSEPOCH", .convfunc = ParConvMJDToGPS, .converrfunc = ParConvDaysToSecs, .ptype = PULSARTYPE_REAL8_t }, /* position epoch (saved as GPS time) */
-  { .name = "DMEPOCH", .convfunc = ParConvMJDToGPS, .converrfunc = ParConvDaysToSecs, .ptype = PULSARTYPE_REAL8_t }, /* dispersion measure epoch (saved as GPS time) */
-
-  /* glitch parameters */
-  { .name = "GLEP", .convfunc = ParConvMJDToGPS, .converrfunc = ParConvDaysToSecs, .ptype = PULSARTYPE_REAL8Vector_t }, /* glitch epochs (saved as GPS times) */
-  { .name = "GLPH", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8Vector_t }, /* glitch phase offsets (rotational phase) */
-  { .name = "GLF0", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8Vector_t }, /* glitch frequency offsets (Hz) */
-  { .name = "GLF1", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8Vector_t }, /* glitch frequency derivative offsets (Hz/s) */
-  { .name = "GLF2", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8Vector_t }, /* glitch second frequency derivative offsets (Hz/s^2) */
-  { .name = "GLF0D", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8Vector_t }, /* glitch decaying frequency component (Hz) */
-  { .name = "GLTD", .convfunc = ParConvDaysToSecs, .converrfunc = ParConvDaysToSecs, .ptype = PULSARTYPE_REAL8Vector_t }, /* glitch decay time (seconds) */
+  { .name = "PEPOCH", .convfunc = ParConvMJDToGPS, .converrfunc = NULL, .ptype = PULSARTYPE_REAL8_t }, /* period epoch (saved as GPS time) */
+  { .name = "POSEPOCH", .convfunc = ParConvMJDToGPS, .converrfunc = NULL, .ptype = PULSARTYPE_REAL8_t }, /* position epoch (saved as GPS time) */
+  { .name = "DMEPOCH", .convfunc = ParConvMJDToGPS, .converrfunc = NULL, .ptype = PULSARTYPE_REAL8_t }, /* dispersion measure epoch (saved as GPS time) */
 
   /* string parameters */
   { .name = "NAME", .convfunc = ParConvToString, .converrfunc = NULL, .ptype = PULSARTYPE_string_t }, /* pulsar name */
@@ -735,10 +632,10 @@ ParConversion pc[NUM_PARS] = {
   { .name = "EPS1", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* e*sin(w0) for ELL1 model */
   { .name = "EPS2", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* e*cos(w0) for ELL1 model */
   { .name = "GAMMA", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* relativistic parameter */
-  { .name = "OMDOT", .convfunc = ParConvDegPerYrToRadPerSec, .converrfunc = ParConvDegPerYrToRadPerSec, .ptype = PULSARTYPE_REAL8_t }, /* angle of periastron time derivative (degs/year converted to rad/s) */
+  { .name = "OMDOT", .convfunc = ParConvDegPerYrToRadParSec, .converrfunc = ParConvDegPerYrToRadParSec, .ptype = PULSARTYPE_REAL8_t }, /* angle of periastron time derivative (degs/year converted to rad/s) */
   { .name = "XDOT", .convfunc = ParConvBinaryUnits, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* project semi-major axis time derivative (light sec/sec) */
   { .name = "PBDOT", .convfunc = ParConvBinaryUnits, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* period time derivative */
-  { .name = "EDOT", .convfunc = ParConvBinaryUnits, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* eccentricity time derivative (1/s) */
+  { .name = "EDOT", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* eccentricity time derivative (1/year) */
   { .name = "EPS1DOT", .convfunc = ParConvBinaryUnits, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
   { .name = "EPS2DOT", .convfunc = ParConvBinaryUnits, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
   { .name = "XPBDOT", .convfunc = ParConvBinaryUnits, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
@@ -804,16 +701,13 @@ ParConversion pc[NUM_PARS] = {
   { .name = "THETA", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
   { .name = "I21", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
   { .name = "I31", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
-  { .name = "Q22", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* the l=m=2 mass quadrupole in kg m^2 */
 
   /* GW non-GR polarisation mode amplitude parameters */
   { .name = "HPLUS", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW tensor plus polarisation amplitude */
   { .name = "HCROSS", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW tensor cross polarisation amplitude */
-  { .name = "PSITENSOR", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW tensor angle polarisation */
   { .name = "PHI0TENSOR", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* initial phase for tensor modes */
   { .name = "HSCALARB", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW scalar breathing mode polarisation amplitude */
   { .name = "HSCALARL", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW scalar longitudinal polarisation amplitude */
-  { .name = "PSISCALAR", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW scalar angle polarisation */
   { .name = "PHI0SCALAR", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* initial phase for scalar modes */
   { .name = "HVECTORX", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW vector x-mode amplitude */
   { .name = "HVECTORY", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW vector y-mode amplitude */
@@ -834,7 +728,7 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
   CHAR str[PULSAR_PARNAME_MAX];
   /* three potential values on the line */
   CHAR str1[PULSAR_PARNAME_MAX], str2[PULSAR_PARNAME_MAX], str3[PULSAR_PARNAME_MAX];
-  INT4 i = 0, tmpnum = 0;
+  INT4 i = 0;
   CHAR *nname = NULL; /* duplicate of name */
 
   if ( par == NULL ){  XLAL_ERROR( XLAL_EINVAL, "Error... PulsarParameter structure is not initialised!\n"); }
@@ -864,15 +758,11 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
 
   /* perform parameter dependent inputs */
   for ( i = 0; i < NUM_PARS; i++ ){
-    /* this has to be hard-coded for the F, WAVE, FB and glitch (GL) vector parameters */
-
-    /* check for parameters requiring placement in vectors */
-    INT4 isfreq = ( !strncmp( nname, "F", 1 ) && !strcmp( "F", pc[i].name ) && sscanf( nname+strlen( "F" ), "%d",  &tmpnum ) == 1 );
-    INT4 iswave = ( ( !strncmp( nname, "WAVE", 4 ) && ( !strcmp( "WAVESIN", pc[i].name ) || !strcmp( "WAVECOS", pc[i].name ) ) ) && strcmp( "WAVE_OM", nname ) && strcmp( "WAVEEPOCH", nname ) );
-    INT4 isfb = ( !strncmp( nname, "FB", 2 ) && !strcmp( "FB", pc[i].name ) );
-    INT4 isgl = ( !strncmp( nname, "GL", 2 ) && strstr( nname, pc[i].name ) && !strncmp( nname, pc[i].name, strlen(nname)-2 ) );
-
-    if ( !strcmp( nname, pc[i].name ) || isfreq || iswave || isfb || isgl ){
+    /* this has to be hard-coded for the WAVE and FB vector parameters */
+    if ( !strcmp( nname, pc[i].name ) ||
+       ( ( !strncmp( nname, "WAVE", 4 ) && ( !strcmp( "WAVESIN", pc[i].name ) || !strcmp( "WAVECOS", pc[i].name ) ) ) &&
+       strcmp( "WAVE_OM", nname ) && strcmp( "WAVEEPOCH", nname ) ) ||
+       ( !strncmp( nname, "FB", 2 ) && !strcmp( "FB", pc[i].name ) ) ){
       UINT4 num = 0;
 
       if ( pc[i].convfunc == NULL ){
@@ -881,21 +771,12 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
       }
 
       /* add parameter */
-      if ( isfreq || isfb ){ /* add frequency and frequency derivative values or FB values */
+      if ( !strncmp( nname, "FB", 2 ) ){ /* add FB values */
         REAL8Vector *ptr = NULL;
 
-        if ( isfb ){
-          if ( strlen( nname ) > strlen( "FB" ) ){
-            if ( sscanf( nname+strlen( "FB" ), "%d",  &num ) != 1 ){
-              XLAL_ERROR( XLAL_EINVAL, "Error...problem reading %s number from par file.\n", nname );
-            }
-          }
-        }
-        else{
-          if ( strlen( nname ) > strlen( "F" ) ){
-            if ( sscanf( nname+strlen( "F" ), "%d", &num ) != 1 ){
-              XLAL_ERROR( XLAL_EINVAL, "Error...problem reading %s number from par file.\n", nname );
-            }
+        if ( strlen( nname ) > strlen( "FB" ) ){
+          if ( sscanf( nname+strlen( "FB" ), "%d",  &num ) != 1 ){
+            XLAL_ERROR( XLAL_EINVAL, "Error...problem reading %s number from par file.\n", nname );
           }
         }
 
@@ -914,7 +795,8 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
 
         XLALFree( val );
       }
-      else if ( iswave && nread == 2 ){ /* add WAVE values */
+      else if ( !strncmp( nname, "WAVE", 4 ) && strcmp( "WAVE_OM", nname ) && strcmp( "WAVEEPOCH", nname ) && nread == 2
+        && ( !strcmp( "WAVESIN", pc[i].name ) || !strcmp( "WAVECOS", pc[i].name ) ) ){ /* add WAVE values */
         REAL8Vector *ptr1 = NULL, *ptr2 = NULL;
 
         if ( strlen( nname ) > strlen( "WAVE" ) ){
@@ -922,7 +804,6 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
             XLAL_ERROR( XLAL_EINVAL, "Error...problem reading %s number from par file.\n", nname);
           }
         }
-        else{ break; }
 
         num--; /* WAVE values start from WAVE1, so subtract 1 from the num for the vector index */
 
@@ -958,42 +839,12 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
         /* there are no errors on the wave parameters, so break */
         break;
       }
-      else if ( isgl ){ /* get glitch parameters */
-        REAL8Vector *ptr = NULL;
-
-        if ( sscanf( strstr(nname, "_")+1, "%d", &num ) != 1 ){
-          XLAL_ERROR( XLAL_EINVAL, "Error...problem reading %s number from par file.\n", nname);
-        }
-
-        num--; /* GL values start from e.g. GLF0_1, so subtract 1 from the num for the vector index */
-
-        void *val = (void *)XLALMalloc( PulsarTypeSize[PULSARTYPE_REAL8_t] );
-
+      else{
+        void *val = (void *)XLALMalloc( PulsarTypeSize[pc[i].ptype] );
         pc[i].convfunc( str1, val );
-
-        if( PulsarCheckParam( par, pc[i].name ) ){  ptr = PulsarGetREAL8VectorParam( par, pc[i].name ); }
-        else{ ptr = XLALCreateREAL8Vector( 1 ); }
-
-        if ( num+1 > ptr->length ) { ptr = XLALResizeREAL8Vector( ptr, num+1 ); }
-
-        ptr->data[num] = *(REAL8 *)val;
-
-        PulsarAddParam( par, pc[i].name, &ptr, PULSARTYPE_REAL8Vector_t );
+        PulsarAddParam( par, pc[i].name, val, pc[i].ptype );
 
         XLALFree( val );
-      }
-      else{
-        if ( pc[i].ptype != PULSARTYPE_string_t ){
-          void *val = (void *)XLALMalloc( PulsarTypeSize[pc[i].ptype] );
-          pc[i].convfunc( str1, val );
-          PulsarAddParam( par, pc[i].name, val, pc[i].ptype );
-          XLALFree( val );
-        }
-        else{
-          CHAR *val = XLALStringDuplicate(str1);
-          PulsarAddStringParam( par, pc[i].name, (const CHAR*)val );
-          XLALFree( val );
-        }
       }
 
       /* check for error values */
@@ -1007,7 +858,7 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
         UINT4 isFit = 0;
 
         /* get the fit flag */
-        if( isfreq || isfb || isgl ){ /* do this for REAL8Vector parameters */
+        if ( !strncmp( nname, "FB", 2 ) ){
           REAL8Vector *ptr = NULL;
 
           if ( nread == 2 ) { pc[i].converrfunc( str2, val ); }
@@ -1047,7 +898,7 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
 
 
 /* read in the pulsar parameter file */
-PulsarParameters *XLALReadTEMPOParFile( const CHAR *pulsarAndPath ){
+PulsarParameters *XLALReadTEMPOParFileNew( const CHAR *pulsarAndPath ){
   FILE *fp = NULL;
   CHAR str[PULSAR_PARNAME_MAX]; /* string to contain first value on line */
 
@@ -1056,7 +907,6 @@ PulsarParameters *XLALReadTEMPOParFile( const CHAR *pulsarAndPath ){
   /* open file */
   if((fp = fopen(pulsarAndPath, "r")) == NULL){
     XLAL_PRINT_ERROR("Error... Cannot open .par file %s\n", pulsarAndPath);
-    XLALFree( par );
     XLAL_ERROR_NULL( XLAL_EIO );
   }
 
@@ -1086,7 +936,7 @@ PulsarParameters *XLALReadTEMPOParFile( const CHAR *pulsarAndPath ){
 
   /* check for linked parameters SINI and KIN */
   if ( PulsarCheckParam( par, "SINI" ) ){
-    CHAR *sini = XLALStringDuplicate(PulsarGetStringParam( par, "SINI" ));
+    CHAR* sini = *(CHAR **)PulsarGetParam( par, "SINI" );
     strtoupper( sini );
 
     REAL8 sinid;
@@ -1095,13 +945,11 @@ PulsarParameters *XLALReadTEMPOParFile( const CHAR *pulsarAndPath ){
 
     if ( !strcmp(sini, "KIN") ){
       if ( PulsarCheckParam( par, "KIN" ) ){
-        sinid = sin(PulsarGetREAL8Param( par, "KIN" ));
+        sinid = sin(*(REAL8*)PulsarGetParam( par, "KIN" ));
         PulsarAddParam( par, "SINI", &sinid, PULSARTYPE_REAL8_t );
       }
       else{
         XLAL_PRINT_ERROR("Error... KIN not set in .par file %s\n", pulsarAndPath);
-        PulsarClearParams( par );
-        XLALFree( par );
         XLAL_ERROR_NULL( XLAL_EIO );
       }
     }
@@ -1109,8 +957,6 @@ PulsarParameters *XLALReadTEMPOParFile( const CHAR *pulsarAndPath ){
       sinid = atof(sini);
       PulsarAddParam( par, "SINI", &sinid, PULSARTYPE_REAL8_t );
     }
-
-    XLALFree(sini);
   }
 
   fclose(fp);
@@ -1121,11 +967,9 @@ PulsarParameters *XLALReadTEMPOParFile( const CHAR *pulsarAndPath ){
 /* NOTE: Convert this function to be more like readParfile.C in TEMPO2 - read
  * in a line at a time using fgets and make each parameter a structure */
 void
-XLALReadTEMPOParFileOrig( BinaryPulsarParams *output,
-                          CHAR      *pulsarAndPath )
+XLALReadTEMPOParFile( BinaryPulsarParams *output,
+                      CHAR      *pulsarAndPath )
 {
-  XLAL_PRINT_DEPRECATION_WARNING("XLALReadTEMPOParFile");
-
   FILE *fp=NULL;
   CHAR val[500][40]; /* string array to hold all the read in values
                         500 strings of max 40 characters is enough */
@@ -1203,7 +1047,6 @@ XLALReadTEMPOParFileOrig( BinaryPulsarParams *output,
   output->f7=0.0;
   output->f8=0.0;
   output->f9=0.0;
-  output->f10=0.0;
 
   output->waveSin = NULL;
   output->waveCos = NULL;
@@ -1241,9 +1084,6 @@ XLALReadTEMPOParFileOrig( BinaryPulsarParams *output,
   output->posepochErr=0.0;
   output->pepochErr=0.0;
 
-  output->startTime=0.0;
-  output->finishTime=INFINITY;
-
   output->xpbdotErr=0.0;  /* (10^-12) */
 
   output->eps1Err=0.0;        /* e*sin(w) */
@@ -1280,7 +1120,6 @@ XLALReadTEMPOParFileOrig( BinaryPulsarParams *output,
   output->f7Err=0.0;
   output->f8Err=0.0;
   output->f9Err=0.0;
-  output->f10Err=0.0;
 
   output->eErr =0.0;
   output->w0Err=0.0;
@@ -1307,7 +1146,6 @@ XLALReadTEMPOParFileOrig( BinaryPulsarParams *output,
   output->DM1Err=0.;
 
   output->h0=0.;
-  output->Q22=0.;
   output->cosiota=0.;
   output->iota=0.;
   output->psi=0.;
@@ -1326,11 +1164,9 @@ XLALReadTEMPOParFileOrig( BinaryPulsarParams *output,
 
   output->hPlus=0.;
   output->hCross=0.;
-  output->psiTensor=0.;
   output->phi0Tensor=0.;
   output->hScalarB=0.;
   output->hScalarL=0.;
-  output->psiScalar=0.;
   output->phi0Scalar=0.;
   output->hVectorX=0.;
   output->hVectorY=0.;
@@ -1338,7 +1174,6 @@ XLALReadTEMPOParFileOrig( BinaryPulsarParams *output,
   output->phi0Vector=0.;
 
   output->h0Err=0.;
-  output->Q22Err=0.;
   output->cosiotaErr=0.;
   output->iotaErr=0.;
   output->psiErr=0.;
@@ -1356,11 +1191,9 @@ XLALReadTEMPOParFileOrig( BinaryPulsarParams *output,
   output->phi21Err=0.;
   output->hPlusErr=0.;
   output->hCrossErr=0.;
-  output->psiTensorErr=0.;
   output->phi0TensorErr=0.;
   output->hScalarBErr=0.;
   output->hScalarLErr=0.;
-  output->psiScalarErr=0.;
   output->phi0ScalarErr=0.;
   output->hVectorXErr=0.;
   output->hVectorYErr=0.;
@@ -1473,17 +1306,6 @@ XLALReadTEMPOParFileOrig( BinaryPulsarParams *output,
     }
     else if( !strcmp(val[i],"posepoch") || !strcmp(val[i],"POSEPOCH")){
       output->posepoch = XLALTTMJDtoGPS(atof(val[i+1]));
-      j++;
-      /* position epoch in GPS seconds TDB */
-    }
-    else if(!strcmp(val[i],"start") || !strcmp(val[i],"START")) {
-      output->startTime = XLALTTMJDtoGPS(atof(val[i+1])); /* convert all epochs to
-        from MJD to GPS seconds in TDB */
-      j++;
-
-    }
-    else if( !strcmp(val[i],"finish") || !strcmp(val[i],"FINISH")){
-      output->finishTime = XLALTTMJDtoGPS(atof(val[i+1]));
       j++;
       /* position epoch in GPS seconds TDB */
     }
@@ -1711,29 +1533,6 @@ XLALReadTEMPOParFileOrig( BinaryPulsarParams *output,
         }
         else{
           output->f9Err = atof(val[i+3]);
-        }
-        j+=2;
-      }
-    }
-    else if( !strcmp(val[i],"f10") || !strcmp(val[i],"F10")) {
-      CHAR *loc;
-
-      /* check if exponent contains e/E or d/D or neither */
-      if((loc = strstr(val[i+1], "D"))!=NULL || (loc = strstr(val[i+1], "d"))!=NULL){
-        output->f10 = atof(val[i+1])*pow(10, atof(loc+1));
-      }
-      else{
-        output->f10 = atof(val[i+1]);
-      }
-      j++;
-
-      if(atoi(val[i+2])==1 && i+2<k){
-        /* check if exponent contains e/E or d/D or neither */
-        if((loc = strstr(val[i+3], "D"))!=NULL || (loc = strstr(val[i+3], "d"))!=NULL){
-          output->f10Err = atof(val[i+3])*pow(10, atof(loc+1));
-        }
-        else{
-          output->f10Err = atof(val[i+3]);
         }
         j+=2;
       }
@@ -2224,15 +2023,6 @@ XLALReadTEMPOParFileOrig( BinaryPulsarParams *output,
         j+=2;
       }
     }
-    else if( !strcmp(val[i],"q22") || !strcmp(val[i],"Q22") ) {
-      output->Q22 = atof(val[i+1]);
-      j++;
-
-      if(atoi(val[i+2])==1 && i+2<k){
-        output->Q22Err = atof(val[i+3]);
-        j+=2;
-      }
-    }
     else if( !strcmp(val[i],"cosiota") || !strcmp(val[i],"COSIOTA") ||
       !strcmp(val[i],"ciota") || !strcmp(val[i],"CIOTA") ) {
       output->cosiota = atof(val[i+1]);
@@ -2387,15 +2177,6 @@ XLALReadTEMPOParFileOrig( BinaryPulsarParams *output,
         j+=2;
       }
     }
-    else if( !strcmp(val[i],"psitensor") || !strcmp(val[i],"PSITENSOR") ) {
-      output->psiTensor = atof(val[i+1]);
-      j++;
-
-      if(atoi(val[i+2])==1 && i+2<k){
-        output->psiTensorErr = atof(val[i+3]);
-        j+=2;
-      }
-    }
     else if( !strcmp(val[i],"phi0tensor") || !strcmp(val[i],"PHI0TENSOR") ) {
       output->phi0Tensor = atof(val[i+1]);
       j++;
@@ -2420,15 +2201,6 @@ XLALReadTEMPOParFileOrig( BinaryPulsarParams *output,
 
       if(atoi(val[i+2])==1 && i+2<k){
         output->hScalarLErr = atof(val[i+3]);
-        j+=2;
-      }
-    }
-    else if( !strcmp(val[i],"psiscalar") || !strcmp(val[i],"PSISCALAR") ) {
-      output->psiScalar = atof(val[i+1]);
-      j++;
-
-      if(atoi(val[i+2])==1 && i+2<k){
-        output->psiScalarErr = atof(val[i+3]);
         j+=2;
       }
     }
@@ -2628,10 +2400,10 @@ LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile ){
     tmpparams = XLALAppendString2Vector( tmpparams, tmpStr );
 
     /* convert some parameter names to a more common convention */
-    if ( !XLALStringCaseCompare(tmpStr, "RAJ") ) /* convert RAJ to ra */
-      params = XLALAppendString2Vector( params, "RA" );
-    else if ( !XLALStringCaseCompare(tmpStr, "DECJ") ) /* convert DECJ to dec */
-      params = XLALAppendString2Vector( params, "DEC" );
+    if ( !strcasecmp(tmpStr, "RAJ") ) /* convert RAJ to ra */
+      params = XLALAppendString2Vector( params, "ra" );
+    else if ( !strcasecmp(tmpStr, "DECJ") ) /* convert DECJ to dec */
+      params = XLALAppendString2Vector( params, "dec" );
     else
       params = XLALAppendString2Vector( params, tmpStr );
   }
@@ -2679,12 +2451,8 @@ Parameters not in consistent order!\n");
     }
   }
 
-  XLALDestroyStringVector( tmpparams );
-
   return params;
 }
-
-
 /* functions for converting times given in Terrestrial time TT or TDB in MJD to
 times in GPS - this is important for epochs given in .par files which are in
 TDB. TT and GPS are different by a factor of 51.184 secs, this is just the
@@ -2713,7 +2481,7 @@ REAL8 XLALTTMJDtoGPS(REAL8 MJD){
  * the equivalent GPS time in TDB (see Table 1 of Seidelmann and Fukushima,
  * Astronomy & Astrophysics, 265, 833-838 (1992).
  *
- * Note that XLALBarycenter performs these TDBtoTT corrections (i.e. the
+ * Note that LALBarycenter performs these TDBtoTT corrections (i.e. the
  * Einstein delay) when correcting a GPS time on the Earth to TDB. Also, for
  * TEMPO produced pulsar epochs given in MJD these are already in the TDB
  * system and an equivalent GPS time in the TDB can be calculated just using

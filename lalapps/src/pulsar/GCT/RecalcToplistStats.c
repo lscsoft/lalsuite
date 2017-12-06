@@ -104,7 +104,6 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,				/**< list of cancidate
       /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
       RecalcStatsComponents XLAL_INIT_DECL(recalcStats); /* struct containing multi-detector F-stat, single-detector F-stats, BSGL */
       recalcStats.log10BSGL = -LAL_REAL4_MAX; /* proper initialization here is not 0 */
-      recalcStats.log10BSGLtL = -LAL_REAL4_MAX;
       XLAL_CHECK ( XLALComputeExtraStatsSemiCoherent( &recalcStats, &candidateDopplerParams, recalcParams ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed call to XLALComputeExtraStatsSemiCoherent()." );
 
       /* save values in toplist */
@@ -116,7 +115,6 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,				/**< list of cancidate
             elem->avTwoFXrecalc[X] = recalcStats.avTwoFX[X];
           }
           elem->log10BSGLrecalc = recalcStats.log10BSGL;
-          elem->log10BSGLtLrecalc = recalcStats.log10BSGLtL;
           if ( recalcParams->loudestSegOutput ) {
             elem->loudestSeg      = recalcStats.loudestSeg;
             elem->twoFloudestSeg  = recalcStats.twoFloudestSeg;
@@ -180,8 +178,6 @@ int XLALComputeExtraStatsSemiCoherent ( RecalcStatsComponents *recalcStats,		/**
     recalcStats->twoFXloudestSeg[X] = 0.0;
   }
   recalcStats->twoFloudestSeg = 0.0;
-  REAL4 maxTwoFXl[PULSAR_MAX_DETECTORS]; // max single-IFO Fstat-value, maximized over all segments
-  XLAL_INIT_MEM ( maxTwoFXl );
 
   /* compute single- and multi-detector Fstats for each data segment and sum up */
   FstatResults* Fstat_res = NULL;
@@ -196,7 +192,7 @@ int XLALComputeExtraStatsSemiCoherent ( RecalcStatsComponents *recalcStats,		/**
       XLAL_CHECK ( XLALExtrapolatePulsarSpins( dopplerParams_temp.fkdot, dopplerParams->fkdot, deltaTau ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALExtrapolatePulsarSpins() failed." );
 
       /* recompute multi-detector Fstat and atoms */
-      XLAL_CHECK ( XLALComputeFstat(&Fstat_res, recalcParams->Fstat_in_vec->data[k], &dopplerParams_temp, 1, FSTATQ_2F | FSTATQ_2F_PER_DET) == XLAL_SUCCESS, XLAL_EFUNC, "XLALComputeFstat() failed with errno=%d", xlalErrno );
+      XLAL_CHECK ( XLALComputeFstat(&Fstat_res, recalcParams->Fstat_in_vec->data[k], &dopplerParams_temp, 0.0, 1, FSTATQ_2F | FSTATQ_2F_PER_DET) == XLAL_SUCCESS, XLAL_EFUNC, "XLALComputeFstat() failed with errno=%d", xlalErrno );
 
       sumTwoF  += Fstat_res->twoF[0]; /* sum up multi-detector Fstat for this segment*/
 
@@ -238,8 +234,6 @@ int XLALComputeExtraStatsSemiCoherent ( RecalcStatsComponents *recalcStats,		/**
             updated_twoFXloudestSeg[detid] = TRUE;
           }
 
-          maxTwoFXl[detid] = fmaxf ( maxTwoFXl[detid], Fstat_res->twoFPerDet[X][0] );
-
         } /* for X < numDetectorsSeg */
 
       /* need to overwrite the twoFXloudestSeg when not all detectors have data in the loudest segment */
@@ -258,13 +252,7 @@ int XLALComputeExtraStatsSemiCoherent ( RecalcStatsComponents *recalcStats,		/**
     {
       recalcStats->log10BSGL = XLALComputeBSGL ( sumTwoF, sumTwoFX, recalcParams->BSGLsetup );
       XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeBSGL() failed with xlalErrno = %d\n", xlalErrno );
-
-      if ( recalcParams->computeBSGLtL )
-        {
-          recalcStats->log10BSGLtL  = XLALComputeBSGLtL ( sumTwoF, sumTwoFX, maxTwoFXl, recalcParams->BSGLsetup );
-          XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeBSGLtL() failed with xlalErrno = %d\n", xlalErrno );
-        }
-    } // if BSGLsetup != NULL
+    }
 
   /* get average stats over all segments */
   recalcStats->avTwoF = sumTwoF/numSegments;

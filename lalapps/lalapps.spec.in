@@ -1,77 +1,21 @@
 %define _prefix /usr
 %define _mandir %{_prefix}/share/man
 %define _sysconfdir %{_prefix}/etc
-%define _pkgpythondir %{_prefix}/lib64/python2.?/site-packages/@PACKAGE@
-%define _pkgpyexecdir %{_libdir}/python2.?/site-packages/@PACKAGE@
+%define _pkgpythondir %{_prefix}/lib64/python2.6/site-packages/@PACKAGE@
+%define _pkgpyexecdir %{_libdir}/python2.6/site-packages/@PACKAGE@
 
 Name: @PACKAGE@
 Version: @VERSION@
-Release: 1%{?dist}
+Release: 1
 Summary: LSC Algorithm Library Applications
-License: GPLv2+
+License: GPL
 Group: LAL
-Source: %{name}-%{version}.tar.xz
-URL: https://wiki.ligo.org/DASWG/LALSuite
-Packager: Adam Mercer <adam.mercer@ligo.org>
+Source: %{name}-%{version}.tar.gz
+URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
+Packager: Duncan Brown <dbrown@ligo.caltech.edu>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: cfitsio-devel
-BuildRequires: fftw-devel
-BuildRequires: gsl-devel
-BuildRequires: less
-BuildRequires: libframe-devel
-BuildRequires: libmetaio-devel
-BuildRequires: openmpi-devel
-BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: lal-python >= @MIN_LAL_VERSION@
-BuildRequires: lalframe-devel >= @MIN_LALFRAME_VERSION@
-BuildRequires: lalframe-python >= @MIN_LALFRAME_VERSION@
-BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalxml-devel >= @MIN_LALXML_VERSION@
-BuildRequires: lalxml-python >= @MIN_LALXML_VERSION@
-BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
-BuildRequires: lalburst-python >= @MIN_LALBURST_VERSION@
-BuildRequires: lalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
-BuildRequires: lalinspiral-python >= @MIN_LALINSPIRAL_VERSION@
-BuildRequires: lalstochastic-devel >= @MIN_LALSTOCHASTIC_VERSION@
-BuildRequires: lalstochastic-python >= @MIN_LALSTOCHASTIC_VERSION@
-BuildRequires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
-BuildRequires: lalpulsar-python >= @MIN_LALPULSAR_VERSION@
-BuildRequires: lalinference-devel >= @MIN_LALINFERENCE_VERSION@
-BuildRequires: lalinference-python >= @MIN_LALINFERENCE_VERSION@
-Requires: cfitsio
-Requires: fftw
-Requires: gsl
-Requires: h5py
-Requires: healpy
-Requires: less
-Requires: libframe
-Requires: libmetaio
-Requires: openmpi
-Requires: python
-Requires: lal >= @MIN_LAL_VERSION@
-Requires: lal-python >= @MIN_LAL_VERSION@
-Requires: lalframe >= @MIN_LALFRAME_VERSION@
-Requires: lalframe-python >= @MIN_LALFRAME_VERSION@
-Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
-Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
-Requires: lalxml >= @MIN_LALXML_VERSION@
-Requires: lalxml-python >= @MIN_LALXML_VERSION@
-Requires: lalsimulation  >= @MIN_LALSIMULATION_VERSION@
-Requires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
-Requires: lalburst >= @MIN_LALBURST_VERSION@
-Requires: lalburst-python >= @MIN_LALBURST_VERSION@
-Requires: lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-Requires: lalinspiral-python >= @MIN_LALINSPIRAL_VERSION@
-Requires: lalstochastic >= @MIN_LALSTOCHASTIC_VERSION@
-Requires: lalstochastic-python >= @MIN_LALSTOCHASTIC_VERSION@
-Requires: lalpulsar >= @MIN_LALPULSAR_VERSION@
-Requires: lalpulsar-python >= @MIN_LALPULSAR_VERSION@
-Requires: lalinference >= @MIN_LALINFERENCE_VERSION@
-Requires: lalinference-python >= @MIN_LALINFERENCE_VERSION@
-Requires: skyarea
+BuildRequires: gsl-devel fftw-devel libframe-devel libmetaio-devel lal-devel lal-python lalframe-devel lalframe-python lalmetaio-devel lalmetaio-python lalxml-devel lalxml-python lalsimulation-devel lalsimulation-python lalburst-devel lalburst-python lalinspiral-devel lalinspiral-python lalstochastic-devel lalstochastic-python lalpulsar-devel lalpulsar-python lalinference-devel lalinference-python
+Requires: healpy gsl fftw libframe libmetaio lal lal-python lalframe lalframe-python lalmetaio lalmetaio-python lalxml lalxml-python lalsimulation lalsimulation-python lalburst lalburst-python lalinspiral lalinspiral-python lalstochastic lalstochastic-python lalpulsar lalpulsar-python lalinference lalinference-python python
 Prefix: %{_prefix}
 
 %description
@@ -84,11 +28,8 @@ Algorithm Library.
 
 %build
 nightly_version=@NIGHTLY_VERSION@
-%configure --enable-nightly=${nightly_version:-no} --disable-gcc-flags --enable-cfitsio --enable-openmp --enable-mpi MPICC=/usr/lib64/openmpi/bin/mpicc MPICXX=/usr/lib64/openmpi/bin/mpicxx MPIFC=/usr/lib64/openmpi/bin/mpifc
+%configure --enable-nightly=${nightly_version:-no} --disable-gcc-flags --disable-debug
 %{__make} V=1
-
-%check
-%{__make} V=1 check
 
 %install
 %make_install
@@ -106,21 +47,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %files
 %defattr(-,root,root)
 %{_bindir}/*
-%{_datadir}/lalapps/*
-%{_mandir}/man1/*
 %{_pkgpythondir}/*
+%{_mandir}/man1/*
+%{_datadir}/lalapps/*
 %{_sysconfdir}/lalapps-user-env.*
-
-# dates should be formatted using: 'date +"%a %b %d %Y"'
-%changelog
-* Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 6.21.0-1
-- O2 release
-
-* Mon Sep 26 2016 Adam Mercer <adam.mercer@ligo.org> 6.20.0-1
-- ER10 release
-
-* Thu Jun 23 2016 Adam Mercer <adam.mercer@ligo.org> 6.19.0-1
-- ER9 release
-
-* Fri Mar 25 2016 Adam Mercer <adam.mercer@ligo.org> 6.18.0-1
-- Pre O2 packaging test release

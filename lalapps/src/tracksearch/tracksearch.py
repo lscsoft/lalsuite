@@ -31,6 +31,7 @@ import re
 import time
 import string
 import math
+import exceptions
 import ConfigParser
 import subprocess
 from tracksearchutils import determineDataPadding
