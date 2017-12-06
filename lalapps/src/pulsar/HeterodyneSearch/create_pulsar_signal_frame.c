@@ -167,7 +167,7 @@ int main(int argc, char **argv){
       continue;
     }
     else{
-      snprintf(parname,sizeof(parname),"%s/%s", inputs.pulsarDir, pulsars[h]->d_name);
+      sprintf(parname,"%s/%s", inputs.pulsarDir, pulsars[h]->d_name);
       fprintf(stderr, "%s\n", parname);
       FILE *inject;
 
@@ -400,7 +400,6 @@ void ReadInput(InputParams *inputParams, int argc, char *argv[]){
         else
           fprintf(stderr, "Error parsing option %s with argument %s\n",
             long_options[option_index].name, LALoptarg );
-		break;
       case 'h': /* help message */
         fprintf(stderr, USAGE, program);
         exit(0);
@@ -438,10 +437,8 @@ void ReadInput(InputParams *inputParams, int argc, char *argv[]){
         break;
       case '?':
         fprintf(stderr, "unknown error while parsing options\n" );
-		break;
       default:
         fprintf(stderr, "unknown error while parsing options\n" );
-		break;
     }
   }
 

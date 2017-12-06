@@ -793,80 +793,213 @@ class CoincTables(object):
 #
 
 
-class CoincRates(object):
-	def __init__(self, instruments, delta_t, min_instruments = 2, abundance_rel_accuracy = 1e-4):
-		"""
-		Model for coincidences among noise events collected from
-		several antennas.  Independent Poisson processes are
-		assumed.  The coincidence window for each pair of
-		instruments is (delta_t + light travel time between that
-		pair).  A coincidence is assumed to require full N-way
-		coincidence and require at least min_instruments to
-		participate.
+class CoincSynthesizer(object):
+	"""
+	Class to collect the information required to predict the rate at
+	which different instrument combinations will participate in
+	background coincidences, and compute various probabilities and
+	rates related to the problem of doing so.
+	"""
 
-		Initial configuration requires some relatively expensive
-		pre-calculation of internal quantities, but once
-		initialized coincidence rates can be computed quickly from
-		observed event rates.  Several other related quantities can
-		be computed.
+	def __init__(self, eventlists = None, segmentlists = None, delta_t = None, min_instruments = 2, abundance_rel_accuracy = 1e-4):
+		"""
+		eventlists is either a dictionary mapping instrument name
+		to a list of the events (arbitrary objects) seen in that
+		instrument or a dictionary mapping instrument name to a
+		total count of events seen in that instrument (some
+		features will not be available if a dictionary of counts is
+		provided).  segmentlists is a glue.segments.segmentlistdict
+		object describing the observation segments for each of the
+		instruments.  A segment list must be provided for (at
+		least) each instrument in eventlists.  delta_t is a time
+		window in seconds, the light travel time between instrument
+		pairs is added to this internally to set the maximum
+		allowed coincidence window between a pair of instruments.
+		min_instruments sets the minimum number of instruments that
+		must participate in a coincidence (default is 2).
+
+		abundance_rel_accuracy sets the fractional error tolerated
+		in the Monte Carlo integrator used to estimate the relative
+		abundances of the different kinds of coincs.
 
 		Example:
 
-		>>> coincrates = CoincRates(("H1", "L1", "V1"), 0.005, 2)
+		>>> from glue.segments import *
+		>>> eventlists = {"H1": [0, 1, 2, 3], "L1": [10, 11, 12, 13], "V1": [20, 21, 22, 23]}
+		>>> seglists = segmentlistdict({"H1": segmentlist([segment(0, 30)]), "L1": segmentlist([segment(10, 50)]), "V1": segmentlist([segment(20, 70)])})
+		>>> coinc_synth = CoincSynthesizer(eventlists, seglists, 0.001)
+		>>> coinc_synth.mu
+		{'V1': 0.08, 'H1': 0.13333333333333333, 'L1': 0.1}
+		>>> coinc_synth.tau
+		{frozenset(['V1', 'H1']): 0.028287979933844225, frozenset(['H1', 'L1']): 0.011012846152223924, frozenset(['V1', 'L1']): 0.027448341016726496}
+		>>> coinc_synth.rates	# doctest: +SKIP
+		{frozenset(['V1', 'H1']): 0.0006034769052553435, frozenset(['V1', 'H1', 'L1']): 1.1793108172576082e-06, frozenset(['H1', 'L1']): 0.000293675897392638, frozenset(['V1', 'L1']): 0.00043917345626762395}
+		>>> coinc_synth.P_live
+		{frozenset(['V1', 'H1']): 0.0, frozenset(['V1', 'H1', 'L1']): 0.25, frozenset(['H1', 'L1']): 0.25, frozenset(['V1', 'L1']): 0.5}
+		>>>
+		>>>
+		>>> coinc_synth = CoincSynthesizer(eventlists, seglists, 0.001, min_instruments = 1)
+		>>> coinc_synth.rates	# doctest: +SKIP
+		{frozenset(['V1']): 0.08, frozenset(['H1']): 0.13333333333333333, frozenset(['V1', 'H1']): 0.0006034769052553435, frozenset(['L1']): 0.1, frozenset(['V1', 'L1']): 0.00043917345626762395, frozenset(['V1', 'H1', 'L1']): 1.179508868912594e-06, frozenset(['H1', 'L1']): 0.000293675897392638}
 		"""
-		self.instruments = frozenset(instruments)
+		self.eventlists = eventlists if eventlists is not None else dict.fromkeys(segmentlists, 0) if segmentlists is not None else {}
+		self.segmentlists = segmentlists if segmentlists is not None else segmentsUtils.segments.segmentlistdict()
+		if set(self.eventlists) > set(self.segmentlists):
+			raise ValueError("require a segmentlist for each event list")
 		self.delta_t = delta_t
+		if min_instruments < 1:
+			raise ValueError("min_instruments must be >= 1")
 		self.min_instruments = min_instruments
-		if self.min_instruments > len(self.instruments):
-			raise ValueError("require len(instruments) >= min_instruments")
-		if self.delta_t < 0.:
-			raise ValueError("require delta_t >= 0.")
-		if abundance_rel_accuracy <= 0.:
-			raise ValueError("require abundance_rel_accuracy > 0.")
+		self.abundance_rel_accuracy = abundance_rel_accuracy
 
-		# dictionary mapping pair of instrument names (as a
-		# frozenset) to coincidence window in seconds = delta_t +
-		# light travel time
-		self.tau = dict((frozenset(ab), self.delta_t + light_travel_time(*ab)) for ab in itertools.combinations(tuple(self.instruments), 2))
 
-		# for instruments {1, ..., N}, with rates \\mu_{1}, ...,
-		# \\mu_{N}, the rate of coincidences is
-		#
-		# 	\\propto \\prod_{i} \\mu_{i}.
-		#
-		# the proportionality constant depends only on the
-		# coincidence windows.  the following computes a dictionary
-		# of these proportionality constants keyed by instrument
-		# set.
+	def reset(self):
+		"""
+		Reset all internally-cached data.  This method must be
+		invoked if the .eventlists, .segmentlists or .delta_t
+		attributes (or their contents) are modified.  This class
+		relies heavily on pre-computed quantities that are derived
+		from the input parameters and cached;  invoking this method
+		forces the recalculation of cached data (the next time it's
+		needed).  Until this method is invoked, derived data like
+		coincidence window sizes and mean event rates might reflect
+		the previous state of this class.
+		"""
+		try:
+			del self._P_live
+		except AttributeError:
+			pass
+		try:
+			del self._mu
+		except AttributeError:
+			pass
+		try:
+			del self._tau
+		except AttributeError:
+			pass
+		try:
+			del self._coincidence_rate_factors
+		except AttributeError:
+			pass
+
+
+	@property
+	def all_instrument_combos(self):
+		"""
+		A tuple of all possible instrument combinations (as
+		frozensets).
+		"""
+		all_instruments = tuple(self.eventlists)
+		return tuple(frozenset(instruments) for n in range(self.min_instruments, len(all_instruments) + 1) for instruments in itertools.combinations(all_instruments, n))
+
+
+	@property
+	def P_live(self):
+		"""
+		Dictionary mapping instrument combination (as a frozenset)
+		to fraction of the total time in which the minimum required
+		number of instruments were on during which precisely that
+		combination of instruments (and no other instruments) are
+		on.  E.g., P_live[frozenset(("H1", "L1"))] gives the
+		probability that precisely H1 and L1 are the only
+		instruments operating.
+		"""
+		try:
+			return self._P_live
+		except AttributeError:
+			livetime = float(abs(segmentsUtils.vote(self.segmentlists.values(), self.min_instruments)))
+			all_instruments = set(self.segmentlists)
+			self._P_live = dict((instruments, float(abs(self.segmentlists.intersection(instruments) - self.segmentlists.union(all_instruments - instruments))) / livetime) for instruments in self.all_instrument_combos)
+			# check normalization
+			total = sum(sorted(self._P_live.values()))
+			assert abs(1.0 - total) < 1e-14
+			for key in self._P_live:
+				self._P_live[key] /= total
+			# done
+			return self._P_live
+
+
+	@property
+	def mu(self):
+		"""
+		Dictionary mapping instrument name to mean event rate in
+		Hz.  This is a reference to an internally-cached
+		dictionary.  Modifications will be retained, or an
+		externally supplied dictionary can be assigned to this
+		attribute to override it entirely.
+		"""
+		try:
+			return self._mu
+		except AttributeError:
+			try:
+				# try treating eventlists values as lists
+				# and measure their lengths
+				counts = dict((instrument, len(events)) for instrument, events in self.eventlists.items())
+			except TypeError:
+				# failed.  assume they're scalars giving
+				# the number of events directly
+				counts = self.eventlists
+			self._mu = dict((instrument, count / float(abs(self.segmentlists[instrument]))) for instrument, count in counts.items())
+			return self._mu
+
+
+	@mu.setter
+	def mu(self, val):
+		self._mu = val
+
+
+	@property
+	def tau(self):
+		"""
+		Dictionary mapping pair of instrument names (as a
+		frozenset) to coincidence window in seconds.  This is a
+		reference to an internally-cached dictionary.
+		Modifications will be retained, or an externally supplied
+		dictionary can be assigned to this attribute to override it
+		entirely.
+		"""
+		try:
+			return self._tau
+		except AttributeError:
+			self._tau = dict((frozenset(ab), self.delta_t + light_travel_time(*ab)) for ab in itertools.combinations(tuple(self.eventlists), 2))
+			return self._tau
+
+
+	@tau.setter
+	def tau(self, val):
+		self._tau = val
+		# force re-computation of coincidence rates
+		try:
+			del self._coincidence_rate_factors
+		except AttributeError:
+			pass
+
+
+	@property
+	def coincidence_rate_factors(self):
+		"""
+		For instruments {1, ..., N}, with rates \\mu_{1}, ...,
+		\\mu_{N}, the rate of coincidences is
+
+		\\propto \\prod_{i} \\mu_{i}.
+
+		The proportionality constant depends only on the
+		coincidence windows.  This function computes and returns a
+		dictionary of the proportionality constants keyed by
+		instrument set.
+
+		The return value is a reference to an internally-cached
+		dictionary.  Modifications will be retained until the
+		cached data is regenerated (after .reset() is invoked or
+		the .tau attribute is assigned to).
+		"""
+		try:
+			return self._coincidence_rate_factors
+		except AttributeError:
+			pass
 
 		# initialize the proportionality constants
-		self.rate_factors = dict.fromkeys(self.all_instrument_combos, 1.0)
-
-		# fast-path for gstlal-inspiral pipeline:  hard-coded
-		# result for H,L,V network, 5 ms coincidence window, 1 or 2
-		# minimum instruments required.  computing using qhull's
-		# half-plane intersection code on a machine where that's
-		# available
-		if self.instruments == set(("H1", "L1", "V1")) and self.delta_t == 0.005:
-			if self.min_instruments == 1:
-				self.rate_factors = {
-					frozenset(["H1"]): 1.0,
-					frozenset(["L1"]): 1.0,
-					frozenset(["V1"]): 1.0,
-					frozenset(["H1", "L1"]): 0.030025692304447849,
-					frozenset(["H1", "V1"]): 0.064575959867688451,
-					frozenset(["L1", "V1"]): 0.062896682033452986,
-					frozenset(["H1", "L1", "V1"]): 0.0016876366183778862
-				}
-				return
-			elif self.min_instruments == 2:
-				self.rate_factors = {
-					frozenset(["H1", "L1"]): 0.030025692304447849,
-					frozenset(["H1", "V1"]): 0.064575959867688451,
-					frozenset(["L1", "V1"]): 0.062896682033452986,
-					frozenset(["H1", "L1", "V1"]): 0.0016876366183778862
-				}
-				return
+		self._coincidence_rate_factors = dict.fromkeys(self.all_instrument_combos, 1.0)
 
 		for instruments in self.all_instrument_combos:
 		# choose the instrument whose TOA forms the "epoch" of the
@@ -919,7 +1052,7 @@ class CoincRates(object):
 		# stone-throwing to estimate the ratio of the desired
 		# volume to that volume and multiply by that factor.
 			for instrument in instruments:
-				self.rate_factors[key] *= 2. * self.tau[frozenset((anchor, instrument))]
+				self._coincidence_rate_factors[key] *= 2. * self.tau[frozenset((anchor, instrument))]
 		# compute the ratio of the desired volume to that volume by
 		# stone throwing.
 			if len(instruments) > 1:
@@ -961,19 +1094,20 @@ class CoincRates(object):
 		# here is much simpler.
 				math_sqrt = math.sqrt
 				random_uniform = random.uniform
-				two_epsilon = 2. * abundance_rel_accuracy
+				two_epsilon = 2. * self.abundance_rel_accuracy
 				n, d = 0, 0
 				while math_sqrt(d) >= two_epsilon * n:
 					dt = tuple(random_uniform(*window) for window in windows)
 					if all(abs(dt[i] - dt[j]) <= maxdt for i, j, maxdt in ijseq):
 						n += 1
 					d += 1
-				self.rate_factors[key] *= float(n) / float(d)
+				self._coincidence_rate_factors[key] *= float(n) / float(d)
 
-		# done computing rate_factors
+		# done
+		return self._coincidence_rate_factors
 
 		# FIXME:  commented-out implementation that requires scipy
-		# >= 0.19.  saving it for later.
+		# >= 0.19.  saving it for later.  NOTE:  untested
 
 		# the half-space instersection code assumes constraints of
 		# the form
@@ -1020,206 +1154,219 @@ class CoincRates(object):
 		#		# the origin is in the interior
 		#		interior = numpy.zeros((len(instruments),), dtype = "double")
 		#		# compute volume
-		#		self.rate_factors[key] = spatial.ConvexHull(spatial.HalfspaceIntersection(halfspaces, interior).intersections).volume
+		#		self._coincidence_rate_factors[key] *= spatial.ConvexHull(spatial.HalfspaceIntersection(halfspaces, interior).intersections).volume
+		#	else:
+		#		# 1-D case (qhull barfs, but who needs it)
+		#		self._coincidence_rate_factors[key] *= 2. * self.tau[frozenset((anchor, instruments[0]))]
 
 
 	@property
-	def all_instrument_combos(self):
+	def rates(self):
 		"""
-		A tuple of all possible instrument combinations (as
-		frozensets).
-
-		Example:
-
-		>>> coincrates = CoincRates(("H1", "L1", "V1"), 0.005, 1)
-		>>> coincrates.all_instrument_combos
-		(frozenset(['V1']), frozenset(['H1']), frozenset(['L1']), frozenset(['V1', 'H1']), frozenset(['V1', 'L1']), frozenset(['H1', 'L1']), frozenset(['V1', 'H1', 'L1']))
-		>>> coincrates = CoincRates(("H1", "L1", "V1"), 0.005, 2)
-		>>> coincrates.all_instrument_combos
-		(frozenset(['V1', 'H1']), frozenset(['V1', 'L1']), frozenset(['H1', 'L1']), frozenset(['V1', 'H1', 'L1']))
+		Dictionary mapping instrument combination (as a frozenset)
+		to mean rate in Hz at which that combination of instruments
+		can be found in a coincidence under the assumption that all
+		instruments are on and able to participate in coincidences.
+		Corrections (e.g., based on the contents of the .P_live
+		attribute) are required if that assumption does not hold.
+		Note the difference between the contents of this dictionary
+		and the rates of various kinds of coincidences.  For
+		example, the rate for frozenset(("H1", "L1")) is the rate,
+		in Hz, at which that combination of instruments
+		participates in coincidences, not the rate of H1,L1
+		doubles.  The return value is not cached.
 		"""
-		all_instruments = tuple(self.instruments)
-		return tuple(frozenset(instruments) for n in range(self.min_instruments, len(all_instruments) + 1) for instruments in itertools.combinations(all_instruments, n))
-
-
-	def coinc_rates(self, **rates):
-		"""
-		Given the event rates for a collection of instruments,
-		compute the rates at which N-way coincidences occur among
-		them where N >= min_instruments.  The return value is a
-		dictionary whose keys are frozensets of instruments and
-		whose values are the rate of coincidences for that set.
-
-		NOTE:  the computed rates are the rates at which
-		coincidences among at least those instruments occur, not
-		the rate at which coincidences among exactly those
-		instruments occur.  e.g., considering the H1, L1, V1
-		network, for the pair H1, L1 the return value is the sum of
-		the rate at which those two instruments form double
-		coincidences and also the rate at which they participate in
-		H1, L1, V1 triple coincidences.
-
-		See also .strict_coinc_rates().
-
-		Example:
-
-		>>> coincrates = CoincRates(("H1", "L1", "V1"), 0.005, 2)
-		>>> coincrates.coinc_rates(H1 = 0.001, L1 = 0.002, V1 = 0.003)
-		{frozenset(['V1', 'H1']): 1.9372787960306537e-07, frozenset(['V1', 'H1', 'L1']): 1.0125819710267318e-11, frozenset(['H1', 'L1']): 6.00513846088957e-08, frozenset(['V1', 'L1']): 3.77380092200718e-07}
-		>>> coincrates.coinc_rates(H1 = 0.001, L1 = 0.002, V1 = 0.002)
-		{frozenset(['V1', 'H1']): 1.291519197353769e-07, frozenset(['V1', 'H1', 'L1']): 6.750546473511545e-12, frozenset(['H1', 'L1']): 6.00513846088957e-08, frozenset(['V1', 'L1']): 2.5158672813381197e-07}
-		>>> coincrates.coinc_rates(H1 = 0.001, L1 = 0.002, V1 = 0.001)
-		{frozenset(['V1', 'H1']): 6.457595986768845e-08, frozenset(['V1', 'H1', 'L1']): 3.3752732367557724e-12, frozenset(['H1', 'L1']): 6.00513846088957e-08, frozenset(['V1', 'L1']): 1.2579336406690598e-07}
-		"""
-		if set(rates) != self.instruments:
-			raise ValueError("require event rates for %s, got rates for %s" % (", ".join(sorted(self.instruments)), ", ".join(sorted(rates))))
-		if any(rate < 0. for rate in rates.values()):
-			# they don't have to be non-negative for this
-			# method to succede, but negative values are
-			# nonsensical and other things will certainly fail.
-			# it's best to catch and report the problem as
-			# early in the code path as it can be identified,
-			# so that when the problem is encountered it's
-			# easier to identify the cause
-			raise ValueError("rates must be >= 0")
-		if max(rates.values()) * max(self.tau.values()) >= 1.:
-			raise ValueError("events per coincidence window must be << 1: rates = %s, max window = %g" % (rates, max(self.tau.values())))
-
 		# compute \mu_{1} * \mu_{2} ... \mu_{N} * FACTOR where
 		# FACTOR is the previously-computed proportionality
-		# constant from self.rate_factors
+		# constant from coincidence_rate_factors.
 
-		coinc_rates = dict(self.rate_factors)
-		for instruments in coinc_rates:
+		rates = dict(self.coincidence_rate_factors)
+		for instruments in rates:
 			for instrument in instruments:
-				coinc_rates[instruments] *= rates[instrument]
-		return coinc_rates
+				rates[instruments] *= self.mu[instrument]
+
+		# rates now contains the mean rate at which each
+		# combination of instruments can be found in a coincidence
+		# during the times when at least those instruments are
+		# available to form coincidences.  Note:  the rate, e.g.,
+		# for the combo "H1,L1" is the sum of the rate of "H1,L1"
+		# doubles as well as the rate of "H1,L1,V1" triples and all
+		# other higher-order coincidences in which H1 and L1
+		# participate.
+
+		return rates
 
 
-	def strict_coinc_rates(self, **rates):
+	@property
+	def mean_coinc_rate(self):
 		"""
-		Given the event rates for a collection of instruments,
-		compute the rates at which strict N-way coincidences occur
-		among them where N >= min_instruments.  The return value is
-		a dictionary whose keys are frozensets of instruments and
-		whose values are the rate of coincidences for that set.
-
-		NOTE:  the computed rates are the rates at which
-		coincidences occur among exactly those instrument
-		combinations, excluding the rate at which each combination
-		participates in higher-order coincs.  e.g., considering the
-		H1, L1, V1 network, for the pair H1, L1 the return value is
-		the rate at which H1, L1 doubles occur, not including the
-		rate at which the H1, L1 pair participates in H1, L1, V1
-		triples.
-
-		See also .coinc_rates().
-
-		Example:
-
-		>>> coincrates = CoincRates(("H1", "L1", "V1"), 0.005, 2)
-		>>> coincrates.strict_coinc_rates(H1 = 0.001, L1 = 0.002, V1 = 0.003)
-		{frozenset(['V1', 'H1']): 1.937177537833551e-07, frozenset(['V1', 'H1', 'L1']): 1.0125819710267318e-11, frozenset(['H1', 'L1']): 6.004125878918543e-08, frozenset(['V1', 'L1']): 3.7736996638100773e-07}
-		>>> coincrates.strict_coinc_rates(H1 = 0.001, L1 = 0.002, V1 = 0.002)
-		{frozenset(['V1', 'H1']): 1.2914516918890337e-07, frozenset(['V1', 'H1', 'L1']): 6.750546473511545e-12, frozenset(['H1', 'L1']): 6.004463406242219e-08, frozenset(['V1', 'L1']): 2.5157997758733847e-07}
-		>>> coincrates.strict_coinc_rates(H1 = 0.001, L1 = 0.002, V1 = 0.001)
-		{frozenset(['V1', 'H1']): 6.457258459445168e-08, frozenset(['V1', 'H1', 'L1']): 3.3752732367557724e-12, frozenset(['H1', 'L1']): 6.004800933565894e-08, frozenset(['V1', 'L1']): 1.2578998879366924e-07}
+		Dictionary mapping instrument combo (as a frozenset) to the
+		mean rate at which coincidences involving precisely that
+		combination of instruments occur, averaged over times when
+		at least the minimum required number of instruments are
+		operating --- the mean rate during times when coincidences
+		are possible, not the mean rate over all time.  The result
+		is not cached.
 		"""
-		# initialize from the plain coinc rates
-		strict_coinc_rates = self.coinc_rates(**rates)
-		# iterating over the instrument combos from the combo with
-		# the most instruments to the combo with the least
-		# instruments ...
-		for instruments in sorted(strict_coinc_rates, reverse = True, key = lambda instruments: len(instruments)):
-			# ... subtract from its rate the rate at which
-			# combos containing it occur (which, because we're
-			# moving from biggest combo to smallest combo, have
-			# already had the rates of higher order combos
-			# containing themselves subtracted)
-			for key, rate in strict_coinc_rates.items():
-				if instruments < key:
-					strict_coinc_rates[instruments] -= rate
-		# make sure this didn't produce any negative rates
-		assert all(rate >= 0. for rate in strict_coinc_rates.values()), "encountered negative rate: %s" % strict_coinc_rates
-		return strict_coinc_rates
+		rates = self.rates	# don't re-evalute in loop
+		coinc_rate = dict.fromkeys(rates, 0.0)
+		# iterate over probabilities in order for better numerical
+		# accuracy
+		for on_instruments, P_on_instruments in sorted(self.P_live.items(), key = lambda ignored_P: ignored_P[1]):
+			# short cut
+			if not P_on_instruments:
+				continue
+
+			# rates for instrument combinations that are
+			# possible given the instruments that are on
+			allowed_rates = dict((participating_instruments, rate) for participating_instruments, rate in rates.items() if participating_instruments <= on_instruments)
+
+			# subtract from each rate the rate at which that
+			# combination of instruments is found in (allowed)
+			# higher-order coincs.  after this, allowed_rates
+			# maps instrument combo to rate of coincs involving
+			# exactly that combo given the instruments that are
+			# on
+			for key in sorted(allowed_rates, key = lambda x: len(x), reverse = True):
+				allowed_rates[key] -= sum(sorted(rate for otherkey, rate in allowed_rates.items() if key < otherkey))
+
+			for combo, rate in allowed_rates.items():
+				assert rate >= 0.
+				coinc_rate[combo] += P_on_instruments * rate
+		return coinc_rate
 
 
-	def marginalized_strict_coinc_counts(self, seglists, **rates):
+	@property
+	def P_instrument_combo(self):
+		"""
+		A dictionary mapping instrument combination (as a
+		frozenset) to the probability that a background coincidence
+		involves precisely that combination of instruments.  This
+		is derived from the live times and the mean rates at which
+		the different instrument combinations participate in
+		coincidences.  The result is not cached.
+		"""
+		# convert rates to relative abundances
+		mean_rates = self.mean_coinc_rate	# calculate once
+		total_rate = sum(sorted(mean_rates.values()))
+		P = dict((key, rate / total_rate) for key, rate in mean_rates.items())
+		# make sure normalization is good
+		total = sum(sorted(P.values()))
+		assert abs(1.0 - total) < 1e-14
+		for key in P:
+			P[key] /= total
+		return P
+
+
+	@property
+	def mean_coinc_count(self):
 		"""
 		A dictionary mapping instrument combination (as a
 		frozenset) to the total number of coincidences involving
 		precisely that combination of instruments expected from the
-		background.
+		background.  The result is not cached.
 		"""
-		if set(seglists) != self.instruments:
-			raise ValueError("require segmentlists for %s, got %s" % (", ".join(sorted(self.instruments)), ", ".join(sorted(seglists))))
-
-		# time when exactly a given set of instruments are on
-		livetime = dict((on_instruments, float(abs(seglists.intersection(on_instruments) - seglists.union(self.instruments - on_instruments)))) for on_instruments in self.all_instrument_combos)
-
-		coinc_count = dict.fromkeys(livetime, 0.0)
-		for on_instruments, T in livetime.items():
-			for coinc_instruments, rate in self.strict_coinc_rates(**dict((instrument, (rate if instrument in on_instruments else 0.)) for instrument, rate in rates.items())).items():
-				coinc_count[coinc_instruments] += T * rate
-
-		return coinc_count
+		T = float(abs(segmentsUtils.vote(self.segmentlists.values(), self.min_instruments)))
+		return dict((instruments, rate * T) for instruments, rate in self.mean_coinc_rate.items())
 
 
-	def lnP_instruments(self, **rates):
+	def instrument_combos(self):
 		"""
-		Given the event rates for a collection of instruments,
-		compute the natural logarithm of the probability that a
-		coincidence is found to involve exactly a given set of
-		instruments.  This is equivalent to the ratios of the
-		values in the dictionary returned by .strict_coinc_rates()
-		to their sum.
-
-		Raises ZeroDivisionError if all coincidence rates are 0.
-
-		See also .strict_coinc_rates().
+		Generator that yields random instrument combinations (as
+		frozensets) in relative abundances that match the expected
+		relative abundances of background coincidences given the
+		live times, mean single-instrument event rates, and
+		coincidence windows.
 
 		Example:
 
-		>>> coincrates = CoincRates(("H1", "L1", "V1"), 0.005, 2)
-		>>> coincrates.lnP_instruments(H1 = 0.001, L1 = 0.002, V1 = 0.003)
-		{frozenset(['V1', 'H1']): -1.181124067253893, frozenset(['V1', 'H1', 'L1']): -11.040192999777876, frozenset(['H1', 'L1']): -2.352494317162074, frozenset(['V1', 'L1']): -0.5143002401188091}
+		>>> from glue.segments import *
+		>>> eventlists = {"H1": [0, 1, 2, 3], "L1": [10, 11, 12, 13], "V1": [20, 21, 22, 23]}
+		>>> seglists = segmentlistdict({"H1": segmentlist([segment(0, 30)]), "L1": segmentlist([segment(10, 50)]), "V1": segmentlist([segment(20, 70)])})
+		>>> coinc_synth = CoincSynthesizer(eventlists, seglists, 0.001)
+		>>> combos = coinc_synth.instrument_combos()
+		>>> combos.next()	# doctest: +SKIP
+		frozenset(['V1', 'L1'])
 		"""
-		strict_coinc_rates = self.strict_coinc_rates(**rates)
-		total_rate = sum(strict_coinc_rates.values())
-		if total_rate == 0.:
-			raise ZeroDivisionError("all rates are 0")
-		P_instruments = dict((instruments, rate / total_rate) for instruments, rate in strict_coinc_rates.items())
-		norm = sum(sorted(P_instruments.values()))
-		# safety check:  result should be nearly exactly normalized
-		assert abs(1.0 - norm) < 1e-14
-		return dict((instruments, (math.log(P / norm) if P else NegInf)) for instruments, P in P_instruments.items())
+		#
+		# retrieve sorted tuple of (probability mass, instrument
+		# combo) pairs.  remove instrument combos whose probability
+		# mass is 0.  if no combos remain then we can't form
+		# coincidences
+		#
+
+		P = tuple(sorted([mass, instruments] for instruments, mass in self.P_instrument_combo.items() if mass != 0))
+		if not P:
+			return
+
+		#
+		# replace the probability masses with cummulative probabilities
+		#
+
+		for i in range(1, len(P)):
+			P[i][0] += P[i - 1][0]
+
+		#
+		# normalize (should be already, just be certain)
+		#
+
+		assert abs(P[-1][0] - 1.0) < 1e-14
+		for i in range(len(P)):
+			P[i][0] /= P[-1][0]
+		assert P[-1][0] == 1.0
+
+		#
+		# generate random instrument combos
+		#
+
+		while 1:	# 1 is immutable, so faster than True
+			yield P[bisect_left(P, [random.uniform(0.0, 1.0)])][1]
 
 
-	def random_instruments(self, **rates):
+	def coincs(self, timefunc, allow_zero_lag = False):
 		"""
-		Generator that, given the event rates for a collection of
-		instruments, yields a sequence of two-element tuples each
-		containing a randomly-selected frozen set of instruments
-		and the natural logarithm of the ratio of the rate at which
-		that combination of instruments forms coincidences to the
-		rate at which it is being yielded by this generator.
+		Generator to yield time shifted coincident event tuples
+		without the use of explicit time shift vectors.  This
+		generator can only be used if the eventlists dictionary
+		with which this object was initialized contained lists of
+		event objects and not merely counts of events.
 
-		See also .lnP_instruments().
+		timefunc is a function for computing the "time" of an
+		event, its signature should be
+
+			t = timefunc(event)
+
+		This function will be applied to the event objects
+		contained in self.eventlists.
+
+		If allow_zero_lag is False (the default), then only event tuples
+		with no genuine zero-lag coincidences are returned, that is
+		only tuples in which no event pairs would be considered to
+		be coincident without time shifts applied.  Note that
+		single-instrument "coincidences", if allowed, are *not*
+		considered to be zero-lag coincidences.
 
 		Example:
 
-		>>> coincrates = CoincRates(("H1", "L1", "V1"), 0.005, 2)
-		>>> x = iter(coincrates.random_instruments(H1 = 0.001, L1 = 0.002, V1 = 0.003))
-		>>> x.next()	# doctest: +SKIP
-		(frozenset(['H1', 'L1']), -3.738788683913535)
+		>>> from glue.segments import *
+		>>> eventlists = {"H1": [0, 1, 2, 3], "L1": [10, 11, 12, 13], "V1": [20, 21, 22, 23]}
+		>>> seglists = segmentlistdict({"H1": segmentlist([segment(0, 30)]), "L1": segmentlist([segment(10, 50)]), "V1": segmentlist([segment(20, 70)])})
+		>>> coinc_synth = CoincSynthesizer(eventlists, seglists, 0.001)
+		>>> coincs = coinc_synth.coincs((lambda x: 0), allow_zero_lag = True)
+		>>> # returns a tuple of events
+		>>> coincs.next()	# doctest: +SKIP
 		"""
-		# guaranteed non-empty
-		lnP_instruments = self.lnP_instruments(**rates)
-		lnN = math.log(len(lnP_instruments))
-		results = tuple((instruments, lnP - lnN) for instruments, lnP in lnP_instruments.items())
-		choice = random.choice
-		while 1:
-			yield choice(results)
+		for instruments in self.instrument_combos():
+			# randomly selected events from those instruments
+			instruments = tuple(instruments)
+			events = tuple(random.choice(self.eventlists[instrument]) for instrument in instruments)
+
+			# test for a genuine zero-lag coincidence among them
+			if not allow_zero_lag and any(abs(ta - tb) < self.tau[frozenset((instrumenta, instrumentb))] for (instrumenta, ta), (instrumentb, tb) in itertools.combinations(zip(instruments, (timefunc(event) for event in events)), 2)):
+				continue
+
+			# return acceptable event tuples
+			yield events
 
 
 	def plausible_toas(self, instruments):
@@ -1233,16 +1380,14 @@ class CoincRates(object):
 
 		Example:
 
-		>>> coincrates = CoincRates(("H1", "L1", "V1"), 0.005, 2)
-		>>> x = iter(coincrates.plausible_toas(("H1", "L1")))
-		>>> x.next()	# doctest: +SKIP
-		{'H1': 0.0, 'L1': -0.010229226372297711}
+		>>> # minimal initialization for this method
+		>>> coinc_synth = CoincSynthesizer(segmentlists = {"H1": None, "L1": None, "V1": None}, delta_t = 0.005)
+		>>> toas = coinc_synth.plausible_toas(("H1", "L1", "V1"))
+		>>> toas.next()	# doctest: +SKIP
+		{'V1': 0.004209420456924601, 'H1': 0.0, 'L1': -0.006071537909950742}
 		"""
+		# this algorithm is documented in slideless_coinc_generator_rates()
 		instruments = tuple(instruments)
-		if set(instruments) > self.instruments:
-			raise ValueError("not configured for %s" % ", ".join(sorted(set(instruments) - self.instruments)))
-		if len(instruments) < self.min_instruments:
-			raise ValueError("require at least %d instruments, got %d" % (self.min_instruments, len(instruments)))
 		anchor, instruments = instruments[0], instruments[1:]
 		anchor_offset = ((anchor, 0.0),)	 # don't build inside loop
 		uniform = random.uniform
@@ -1535,12 +1680,12 @@ class LnLRDensity(object):
 	histogram of the candidates observed in a search.
 
 	Typically, the ranking statistic implementation will provide a
-	function to transform a candidate to the arguments to use with the
-	.__call__() implementation, and so in this way a LnLRDensity object
-	is generally only meaningful in the context of the ranking
+	function to transform a candidate to a "params" object for use with
+	the .__call__() implementation, and so in this way a LnLRDensity
+	object is generally only meaningful in the context of the ranking
 	statistic class for which it has been constructed.
 	"""
-	def __call__(self, *args, **kwargs):
+	def __call__(self, params):
 		"""
 		Evaluate.  Return the natural logarithm of the density
 		evaluated at the given parameters.
@@ -1553,10 +1698,10 @@ class LnLRDensity(object):
 		"""
 		raise NotImplementedError
 
-	def increment(self, *args, **kwargs):
+	def increment(self, params, weight = 1.0):
 		"""
-		Increment the counts defining this density at the given
-		parameters.
+		Increment the counts defining this density by weight
+		(default = 1) at the given parameters.
 		"""
 		raise NotImplementedError
 
@@ -2120,7 +2265,7 @@ class LnLikelihoodRatioMixin(object):
 				warnings.warn("inf/inf encountered")
 		return  lnP_signal - lnP_noise
 
-	def ln_lr_samples(self, random_params_seq, sampler_coinc_params = None):
+	def ln_lr_samples(self, random_params_seq, sampler_coinc_params = None, **kwargs):
 		"""
 		Generator that yields an unending sequence of 3-element
 		tuples.  Each tuple's elements are a value of the natural
@@ -2139,16 +2284,15 @@ class LnLikelihoodRatioMixin(object):
 		the two populations.
 
 		random_params_seq is a sequence (generator is OK) yielding
-		3-element tuples whose first two elements provide the *args
-		and **kwargs values passed to the numerator and denominator
-		density functions, and whose thrid element is the natural
+		2-element tuples whose first element is a choice of
+		parameter values and whose second element is the natural
 		logarithm of the probability density from which the
 		parameters have been drawn evaluated at the parameters.
 
-		On each iteration, the *args and **kwargs values yielded by
-		random_params_seq is passed to our own .__call__() method
-		to evalute the log likelihood ratio at that choice of
-		parameter values.  If sampler_coinc_params is None the
+		On each iteration, the sample of parameter values yielded
+		by random_params_seq is passed to our own .__call__()
+		method to evalute the log likelihood ratio at that choice
+		of parameter values.  If sampler_coinc_params is None the
 		parameters are also passed to the .__call__() mehods of the
 		.numerator and .denominator attributes of self to obtain
 		the signal and noise population densities at those
@@ -2167,7 +2311,7 @@ class LnLikelihoodRatioMixin(object):
 		else:
 			lnP_signal_func = sampler_coinc_params.numerator
 			lnP_noise_func = sampler_coinc_params.denominator
-		for args, kwargs, lnP_params in random_params_seq:
-			lnP_signal = lnP_signal_func(*args, **kwargs)
-			lnP_noise = lnP_noise_func(*args, **kwargs)
-			yield self(*args, **kwargs), lnP_signal - lnP_params, lnP_noise - lnP_params
+		for params, lnP_params in random_params_seq:
+			lnP_signal = lnP_signal_func(params, **kwargs)
+			lnP_noise = lnP_noise_func(params, **kwargs)
+			yield self(params, **kwargs), lnP_signal - lnP_params, lnP_noise - lnP_params

@@ -1498,12 +1498,10 @@ static double NRSur7dq2_get_t_ref(
     double *q_ref,      // coprecessing frame quaternion at reference point
     double phi_ref      // orbital phase at reference point
 ) {
-    if (fabs(omega_ref) < 1.e-10) {
-        XLAL_PRINT_WARNING("WARNING: Treating omega_ref = 0 as a flag to use t_ref = t_0 = -4500M");
-        return -4499.99999999; // The first time node is ever so slightly larger than -4500; this avoids out-of-range issues
-    }
-
+    if (NULL) {
+// FIXME
     if (omega_ref > 0.201) XLAL_ERROR_REAL8(XLAL_FAILURE, "Reference frequency omega_ref=%0.4f > 0.2, too large!\n", omega_ref);
+    }
 
     double y0[11];
     int i;
@@ -1516,7 +1514,16 @@ static double NRSur7dq2_get_t_ref(
 
     double omega_min = NRSur7dq2_get_omega(0, q, y0);
     if (omega_ref < omega_min) {
+      omega_ref = 0;
+    if (NULL) {
+// FIXME
         XLAL_ERROR_REAL8(XLAL_FAILURE, "Got omega_ref=%0.4f smaller than omega0=%0.4f for this configuration!", omega_ref, omega_min);
+    }
+    }
+
+    if (fabs(omega_ref) < 1.e-10) {
+        XLAL_PRINT_WARNING("WARNING: Treating omega_ref = 0 as a flag to use t_ref = t_0 = -4500M");
+        return -4499.99999999; // The first time node is ever so slightly larger than -4500; this avoids out-of-range issues
     }
 
     // i0=0 is a lower bound; find the first index where omega > omega_ref, and the previous index will have omega <= omega_ref.
@@ -1529,8 +1536,11 @@ static double NRSur7dq2_get_t_ref(
         omega_max = NRSur7dq2_get_omega(imax, q, y0);
     }
 
+    if (NULL) {
+// FIXME
     if (omega_max <= omega_ref) {
         XLAL_ERROR_REAL8(XLAL_FAILURE, "Tried all nodes and still have omega=%0.4f <= omega_ref=%0.4f\n", omega_min, omega_ref);
+    }
     }
 
     // Do a linear interpolation between omega_min and omega_max
@@ -2541,12 +2551,12 @@ SphHarmTimeSeries *XLALSimInspiralNRSur7dq2Modes(
     COMPLEX16TimeSeries *tmp_mode;
     int ell, m;
     int i=0;
-    char mode_name[32];
+    char mode_name[20];
     for (ell=2; ell<=lmax; ell++) {
         for (m=-ell; m<=ell; m++) {
             gsl_vector_scale(h_inertial->modes_real_part[i], a0);
             gsl_vector_scale(h_inertial->modes_imag_part[i], a0);
-            snprintf(mode_name, sizeof(mode_name), "(%d, %d) mode", ell, m);
+            snprintf(mode_name, 20, "(%d, %d) mode", ell, m);
             tmp_mode = XLALCreateCOMPLEX16TimeSeries(mode_name, &epoch, 0.0,
                     deltaT, &lalStrainUnit, nt);
             gsl_spline *spl_re = gsl_spline_alloc(gsl_interp_cspline, length);

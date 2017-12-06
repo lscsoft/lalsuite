@@ -21,6 +21,7 @@ TRIGSCANSRC = trigscan.c
 INSPFRINJSRC = inspfrinj.c
 GWF2XMLSRC = gwf2xml.c
 SPININJSRC = spininj.c
+COINEXTSRC = coinext.c
 RANDOMBANKSRC = randombank.c
 NINJASRC = ninja.c
 FRNINJASRC = fr_ninja.c
@@ -46,6 +47,7 @@ LALMETAIO_PROGS = \
 	lalapps_trigbank \
 	lalapps_trigscan \
 	lalapps_spininj \
+	lalapps_coinext \
 	lalapps_randombank \
 	lalapps_ninja \
 	lalapps_fr_ninja \
@@ -68,6 +70,7 @@ lalapps_trigscan_SOURCES = $(TRIGSCANSRC)
 lalapps_spininj_SOURCES = $(SPININJSRC)
 lalapps_inspfrinj_SOURCES = $(INSPFRINJSRC)
 lalapps_gwf2xml_SOURCES = $(GWF2XMLSRC)
+lalapps_coinext_SOURCES = $(COINEXTSRC)
 lalapps_randombank_SOURCES = $(RANDOMBANKSRC)
 lalapps_ninja_SOURCES = $(NINJASRC)
 lalapps_fr_ninja_SOURCES = $(FRNINJASRC)
