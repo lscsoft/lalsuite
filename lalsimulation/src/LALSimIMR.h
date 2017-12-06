@@ -148,7 +148,8 @@ int XLALSimIMRSpinEOBWaveformAll(
                                  const REAL8     INspin2x,
                                  const REAL8     INspin2y,
                                  const REAL8     INspin2z,
-                                 const UINT4     PrecEOBversion
+                                 const UINT4     PrecEOBversion,
+                                 const UINT4     flagEulerextension
                                  );
 
 /* in module LALSimIMREOBNRv2HMROM.c */

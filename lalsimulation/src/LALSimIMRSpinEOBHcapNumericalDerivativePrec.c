@@ -468,9 +468,10 @@ static REAL8 XLALSpinPrecHcapNumDerivWRTParam(
 		tplspin = 0.0;
 		break;
 	case 2:
+    case 4:
         /* See below Eq. 4 of PRD 89, 061502(R) (2014)*/
 		tplspin = (1. - 2. * eta) * chiS + (mass1 - mass2) / (mass1 + mass2) * chiA;
-		break;
+        break;
 	default:
 		XLALPrintError("XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1 and v2 are available.\n", __func__);
 		XLAL_ERROR(XLAL_EINVAL);
