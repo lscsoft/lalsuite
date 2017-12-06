@@ -1143,6 +1143,9 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
   polarization=inj->polarization;
   REAL8 latitude=inj->latitude;
   REAL8 longitude=inj->longitude;
+  REAL8 eccentricity = inj->eccentricity;
+  REAL8 f_ecc = inj->f_ecc;
+  INT4 ecc_order = inj->ecc_order;
 
   LIGOTimeGPS epoch;
   memcpy(&epoch,&(inj->geocent_end_time),sizeof(LIGOTimeGPS));
@@ -1185,10 +1188,13 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
 
     COMPLEX16FrequencySeries *hptilde=NULL;
     COMPLEX16FrequencySeries *hctilde=NULL;
+    //passing f_ecc, ecc_order through LALDict. by KGWG 2017/07/13
+    XLALDictInsertREAL8Value(LALpars, "f_ecc", f_ecc);
+    XLALDictInsertINT4Value(LALpars, "ecc_order", ecc_order);
     //We do not pass the polarization here, we assume it is taken into account when projecting h+,x onto the detector.
     XLAL_TRY(ret=XLALSimInspiralChooseFDWaveform(&hptilde,&hctilde, m1, m2,
 						 s1x, s1y, s1z, s2x, s2y, s2z,
-						 LAL_PC_SI * 1.0e6, iota, phi0, 0., 0., 0.,
+						 LAL_PC_SI * 1.0e6, iota, phi0, 0., eccentricity, 0.,
 						 deltaF, f_min, 0.0, 0.0,
 						 LALpars,approx),errnum);
     XLALDestroyDict(LALpars);
@@ -1280,7 +1286,7 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
       timeHplus->data->data[j]*=window->data->data[j];
     for (j=0; j<(UINT4) timeHcross->data->length; ++j)
       timeHcross->data->data[j]*=window->data->data[j];
-      
+
     for (j=0; j<(UINT4) freqHplus->data->length; ++j)
     {
       freqHplus->data->data[j]=0.0+I*0.0;
@@ -1340,7 +1346,7 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
   if ( psd )
   {
     psd = XLALInterpolatePSD(psd,  deltaF);
-  } 
+  }
   for (j=lower; j<=(UINT4) upper; ++j)
   {
     /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */

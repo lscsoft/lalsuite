@@ -401,7 +401,6 @@ UNUSED static struct allocNode *FindAlloc(void *p)
     return AllocHashTblFind(&key);
 }
 
-
 static void *PadAlloc(size_t * p, size_t n, int keep, const char *func)
 {
     size_t i;
@@ -516,7 +515,6 @@ static void *UnPadAlloc(void *p, int keep, const char *func)
     return q;
 }
 
-
 static void *PushAlloc(void *p, size_t n, const char *file, int line)
 {
     struct allocNode *newnode;
@@ -563,7 +561,6 @@ static void *PopAlloc(void *p, const char *func)
     pthread_mutex_unlock(&mut);
     return p;
 }
-
 
 static void *ModAlloc(void *p, void *q, size_t n, const char *func,
                       const char *file, int line)

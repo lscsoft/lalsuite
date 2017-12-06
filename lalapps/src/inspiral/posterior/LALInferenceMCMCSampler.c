@@ -60,7 +60,7 @@
 #define CVS_DATE "$Date$"
 #define CVS_NAME_STRING "$Name$"
 
-const char *const clusteredKDEProposalName = "ClusteredKDEProposal";
+//const char *const clusteredKDEProposalName = "ClusteredKDEProposal";
 
 static void
 thinDifferentialEvolutionPoints(LALInferenceThreadState *thread) {
@@ -125,7 +125,6 @@ resetDifferentialEvolutionBuffer(LALInferenceThreadState *thread) {
     thread->differentialPointsSize = 1;
     thread->differentialPointsSkip = LALInferenceGetINT4Variable(thread->proposalArgs, "de_skip");
 }
-
 
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     INT4 t=0; //indexes for for() loops
@@ -407,7 +406,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
 
         /* Check if run should end */
         if (runState->threads[0]->step > Niter)
-            runComplete=1;
+          runComplete=1;
 
         /* Have the cold chain decide when to compute ACLs, and calculate for all chains.  This is done
          * in a similar way to the write interval: ten times each sampling decade.
@@ -1650,7 +1649,7 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
             LALInferenceSetVariable(thread->currentParams, "eta", &eta);
         } else {
             /* Restore state, cleanup, and throw error */
-            LALInferenceClearVariables(thread->currentParams);
+            //LALInferenceClearVariables(thread->currentParams); // will be done at LALInferenceCopyVariables commented out by hwlee
             LALInferenceCopyVariables(saveParams, thread->currentParams);
             XLALFree(fname);
             LALInferenceClearVariables(saveParams);

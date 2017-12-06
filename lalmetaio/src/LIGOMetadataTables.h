@@ -558,8 +558,10 @@ tagSimInspiralTable
   REAL4          eff_dist_g;
   REAL4          eff_dist_t;
   REAL4          eff_dist_v;
-  REAL4	         qmParameter1;
-  REAL4		 qmParameter2;
+  REAL8	         quadparam1; // changed from qmParameter1 to quadparam1 by hwlee at 5 Sep. 2017
+  REAL8		 quadparam2;
+  REAL8		 lambda1; // added for tides by hwlee at 5 Sep. 2017
+  REAL8		 lambda2;
   long           simulation_id;
   INT4           numrel_mode_min;
   INT4           numrel_mode_max;
@@ -567,6 +569,9 @@ tagSimInspiralTable
   INT4           amp_order;
   CHAR           taper[LIGOMETA_INSPIRALTAPER_MAX];
   INT4           bandpass;
+  REAL8          eccentricity;
+  INT4           ecc_order;
+  REAL8          f_ecc;
 }
 SimInspiralTable;
 
@@ -916,7 +921,7 @@ tagSegmentTable
   LIGOTimeGPS start_time;
   LIGOTimeGPS end_time;
   long segment_def_id;
-  INT4 segment_def_cdb; 
+  INT4 segment_def_cdb;
 }
 SegmentTable;
 

@@ -85,7 +85,7 @@ int main(void){
 
   // Define h_{2-2}
   for( i=0; i< hp->data->length; i++ ){
-    h_2_2->data->data[i] = (hp->data->data[i] + 1I * hx->data->data[i]) / Y_2_m2;
+    h_2_2->data->data[i] = (hp->data->data[i] + 1.0I * hx->data->data[i]) / Y_2_m2;
   }
 
   XLALDestroyREAL8TimeSeries( hp );
@@ -123,7 +123,7 @@ int main(void){
 
   // Define h_{22}
   for( i=0; i< hp->data->length; i++ ){
-    h_22->data->data[i] = (hp->data->data[i] + 1I * hx->data->data[i]) / Y_22;
+    h_22->data->data[i] = (hp->data->data[i] + 1.0I * hx->data->data[i]) / Y_22;
   }
 
   // Write out reference waveform

@@ -324,6 +324,12 @@ void LALInferencePrintVariables(LALInferenceVariables *var);
 /** Check for equality in two variables */
 int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariables *var2);
 
+/** Calculate occupied memory size for variables, added by hwlee and KGWG at 7 Oct 2016 */
+int LALInferenceGetAllocatedSize(LALInferenceVariables *var);
+
+/** Calculate occupied memory size for variableItem, added by hwlee and KGWG at 7 Oct 2016 */
+int LALInferenceGetAllocatedSizeItem(LALInferenceVariableItem *varItem);
+
 /** Computes the factor relating the physical waveform to a measured
     waveform for a spline-fit calibration model in amplitude and
     phase.  The spline points can be arbitrary frequencies, and the
@@ -879,6 +885,9 @@ void LALInferenceQ2Eta(double q, double *eta);
 /** Convert from lambdaT, dLambdaT, and eta to lambda1 and lambda2. */
 void LALInferenceLambdaTsEta2Lambdas(REAL8 lambdaT, REAL8 dLambdaT, REAL8 eta, REAL8 *lambda1, REAL8 *lambda2);
 
+/** Convert from lambda1, lambda2, and eta to lambdaT and dLambdaT. added by hwlee at 1 Sep. 2017*/
+void LALInferenceLambdasEta2LambdaTs(REAL8 lambda1, REAL8 lambda2, REAL8 eta, REAL8 *lambdaT, REAL8 *dLambdaT);
+
 /**
  * The kD trees in LALInference are composed of cells.  Each cell
  * represents a rectangular region in parameter space, defined by
@@ -1185,6 +1194,24 @@ void LALInferenceDetFrameToEquatorial(LALDetector *det0, LALDetector *det1,
 void LALInferenceEquatorialToDetFrame(LALDetector *det0, LALDetector *det1,
                                  REAL8 tg, REAL8 ra, REAL8 dec,
                                  REAL8 *t0, REAL8 *alpha, REAL8 *theta);
+
+/**
+ * Functions related to tagLALInferenceIFOData structure
+ * added by HyungWon Lee and KGWG to clean memories 
+ * 14 Sep. 2016
+ */
+void LALInferenceDestroyRunState(LALInferenceRunState *runState);
+void LALInferenceDestroyIFOData(LALInferenceIFOData *ifo);
+void LALInferenceDestroyROQData(LALInferenceROQData *roq);
+void LALInferenceDestroyThreadState(LALInferenceThreadState *thread);
+void LALInferenceDestroyProposalCycle(LALInferenceProposalCycle *cycle);
+void LALInferenceDestroyInferenceModel(LALInferenceModel *model);
+void LALInferenceDestroyIFOModel(LALInferenceIFOModel *ifo);
+/**
+ * Save the current variable to h5 file by appending
+ * added by hwlee and KGWG to reduce the usage of memory at 10 Oct 2016
+ */
+void LALInferenceLogSampleToHDF5File(LALInferenceVariables *algorithmParams, LALInferenceVariables *vars);
 
 /*@}*/
 

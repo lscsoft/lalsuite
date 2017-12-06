@@ -59,16 +59,16 @@
  * <DD>apply waveform conditioning</DD>
  * <DT>`-P`, `--amp-phase`
  * <DD>output data as amplitude and phase</DD>
- * <DT>`-a` APPROX, `--approximant=`APPROX 
+ * <DT>`-a` APPROX, `--approximant=`APPROX
  * <DD>approximant [TaylorT1]</DD>
- * <DT>`-w` WAVEFORM, `--waveform=`WAVEFORM 
+ * <DT>`-w` WAVEFORM, `--waveform=`WAVEFORM
  * <DD>waveform string giving both approximant and order</DD>
- * <DT>`-D` domain, `--domain=`DOMAIN      
+ * <DT>`-D` domain, `--domain=`DOMAIN
  * <DD>domain for waveform generation when both are available {"time", "freq"}
  * [use natural domain for output]</DD>
- * <DT>`-O` PHASEO, `--phase-order=`PHASEO 
+ * <DT>`-O` PHASEO, `--phase-order=`PHASEO
  * <DD>twice pN order of phase (-1 == highest) [-1]</DD>
- * <DT>`-o` AMPO, `--amp-order=`AMPO       
+ * <DT>`-o` AMPO, `--amp-order=`AMPO
  * <DD>twice pN order of amplitude (-1 == highest) [0]</DD>
  * <DT>`-u` PHIREF, `--phiRef=`PHIREF
  * <DD>reference phase in degrees [0]</DD>
@@ -80,29 +80,29 @@
  * <DD>orbital eccentricity [0]</DD>
  * <DT>`-R` SRATE, `--sample-rate=`SRATE   
  * <DD>sample rate in Hertz [16384]</DD>
- * <DT>`-M` M1, `--m1=`M1                  
+ * <DT>`-M` M1, `--m1=`M1
  * <DD>mass of primary in solar masses [1.4]</DD>
- * <DT>`-m` M2, `--m2=`M2                  
+ * <DT>`-m` M2, `--m2=`M2
  * <DD>mass of secondary in solar masses [1.4]</DD>
- * <DT>`-d` D, `--distance=`D              
+ * <DT>`-d` D, `--distance=`D
  * <DD>distance in Mpc [1]</DD>
- * <DT>`-i` IOTA, `--inclination=`IOTA     
+ * <DT>`-i` IOTA, `--inclination=`IOTA
  * <DD>inclination in degrees [0]</DD>
- * <DT>`-X` S1X, `--spin1x=`S1X            
+ * <DT>`-X` S1X, `--spin1x=`S1X
  * <DD>x-component of dimensionless spin of primary [0]</DD>
- * <DT>`-Y` S1Y, `--spin1y=`S1Y            
+ * <DT>`-Y` S1Y, `--spin1y=`S1Y
  * <DD>y-component of dimensionless spin of primary [0]</DD>
- * <DT>`-Z` S1Z, `--spin1z=`S1Z            
+ * <DT>`-Z` S1Z, `--spin1z=`S1Z
  * <DD>z-component of dimensionless spin of primary [0]</DD>
- * <DT>`-x` S2X, `--spin2x=`S2X            
+ * <DT>`-x` S2X, `--spin2x=`S2X
  * <DD>x-component of dimensionless spin of secondary [0]</DD>
- * <DT>`-y` S2Y, `--spin2y=`S2Y            
+ * <DT>`-y` S2Y, `--spin2y=`S2Y
  * <DD>y-component of dimensionless spin of secondary [0]</DD>
- * <DT>`-z` S2Z, `--spin2z=`S2Z            
+ * <DT>`-z` S2Z, `--spin2z=`S2Z
  * <DD>z-component of dimensionless spin of secondary [0]</DD>
- * <DT>`-L` LAM1, `--tidal-lambda1=`LAM1   
+ * <DT>`-L` LAM1, `--tidal-lambda1=`LAM1
  * <DD>dimensionless tidal deformability of primary [0]</DD>
- * <DT>`-l` LAM2, `--tidal-lambda2=`LAM2   
+ * <DT>`-l` LAM2, `--tidal-lambda2=`LAM2
  * <DD>dimensionless tidal deformability of secondary [0]</DD>
  * <DT>`-q` DQM1, `--delta-quad-mon1=`DQM1
  * <DD>difference in quadrupole-monopole term of primary [0]</DD>
@@ -110,15 +110,15 @@
  * <DD>difference in quadrupole-monopole term of secondary [0]</DD>
  * <DT>`-s` SPINO, `--spin-order=`SPINO    
  * <DD>twice pN order of spin effects (-1 == all) [-1]</DD>
- * <DT>`-t` TIDEO, `--tidal-order=`TIDEO   
+ * <DT>`-t` TIDEO, `--tidal-order=`TIDEO
  * <DD>twice pN order of tidal effects (-1 == all) [-1]</DD>
- * <DT>`-f` FMIN, `--f-min=`FMIN           
+ * <DT>`-f` FMIN, `--f-min=`FMIN
  * <DD>frequency to start waveform in Hertz [40]</DD>
- * <DT>`-r` FREF, `--fRef=`FREF            
+ * <DT>`-r` FREF, `--fRef=`FREF
  * <DD>reference frequency in Hertz [0]</DD>
- * <DT>`-A` AXIS, `--axis=`AXIS            
+ * <DT>`-A` AXIS, `--axis=`AXIS
  * <DD>axis for PhenSpin {View, TotalJ, OrbitalL} [OrbitalL]</DD>
- * <DT>`-n` MODES, `--modes=`MODES         
+ * <DT>`-n` MODES, `--modes=`MODES
  * <DD>allowed l modes {L2, L23, ..., ALL} [L2]</DD>
  * <DT>`-p` KEY1`=`VAL1`,`KEY2`=`VAL2,...,
  * `--params=`KEY1`=`VAL1`,`KEY2`=`VAL2,...</DT>
@@ -1027,6 +1027,12 @@ struct params parseargs(int argc, char **argv)
             exit(1);
         }
     }
+    //f_ecc, ecc_order to be set a default values at moment, it will be changed when required.
+    // by KGWG at 2017/07/13.
+    if (p.params == NULL)
+      p.params = XLALCreateDict();
+    XLALSimInspiralWaveformParamsInsertEccentricityFreq(p.params, 10.0);
+    XLALSimInspiralWaveformParamsInsertPNEccentricityOrder(p.params, -1);
     if (LALoptind < argc) {
         fprintf(stderr, "extraneous command line arguments:\n");
         while (LALoptind < argc)

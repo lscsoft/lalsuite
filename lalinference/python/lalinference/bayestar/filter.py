@@ -486,7 +486,7 @@ def generate_template(mass1, mass2, S, f_low, sample_rate, template_duration,
             0, 1 / template_duration,
             mass1 * lal.MSUN_SI, mass2 * lal.MSUN_SI,
             0, 0, 0, 0, 0, 0, f_low, 0, 0, 1e6 * lal.PC_SI,
-            0, 0, 0, None, None, amplitude_order, phase_order, approximant)
+            0, 0, 0, 0, 0, 10.0, None, None, amplitude_order, phase_order, approximant)
         lal.ResizeCOMPLEX16FrequencySeries(zf, 0, template_length // 2 + 1)
 
         # Generate over-whitened template

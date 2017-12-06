@@ -465,6 +465,7 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     if (singleadapt){
       LALInferenceModel *model = LALInferenceInitCBCModel(runState);
       LALInferenceSetupAdaptiveProposals(propArgs, model->params);
+      LALInferenceDestroyInferenceModel(model); // added by hwlee and KGWG to destry properly at 16 Sep 2016
       XLALFree(model);
     }
 
@@ -2788,7 +2789,6 @@ void LALInferenceSetupGlitchProposal(LALInferenceIFOData *data, LALInferenceVari
     LALInferenceAddVariable(propArgs, "f2t_plans", plans, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
 
 }
-
 
 /** Setup adaptive proposals. Should be called when state->currentParams is already filled with an initial sample */
 void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInferenceVariables *params) {

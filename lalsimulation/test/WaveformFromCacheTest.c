@@ -54,12 +54,17 @@ int main(void) {
     REAL8 phiref1 = 0., phiref2 = 0.3;
     REAL8 inc1 = 0.2, inc2 = 1.3;
     REAL8 dist1 = 1.e6 * LAL_PC_SI, dist2 = 2.e6 * LAL_PC_SI;
+    // new variables for eccentric waveform added by hwlee at 15 March, 2016
+    REAL8 eccentricity=0.0, f_ecc=10.0;
+    INT4 ecc_order=-1;
     LALSimInspiralWaveformCache *cache = XLALCreateSimInspiralWaveformCache();
     LALDict *LALpars=XLALCreateDict();
     XLALSimInspiralWaveformParamsInsertTidalLambda1(LALpars,lambda1);
     XLALSimInspiralWaveformParamsInsertTidalLambda1(LALpars,lambda2);
     XLALSimInspiralWaveformParamsInsertPNPhaseOrder(LALpars,phaseO);
     XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(LALpars,ampO);
+    XLALSimInspiralWaveformParamsInsertPNEccentricityOrder(LALpars,ecc_order);
+    XLALSimInspiralWaveformParamsInsertEccentricityFreq(LALpars,f_ecc);
 
     //
     // Test TD path with SEOBNRv1
@@ -163,7 +168,7 @@ int main(void) {
     s1 = clock();
     ret = XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde,
 					  m1, m2, s1x, s1y, s1z, s2x, s2y, s2z,
-					  dist1, inc1, phiref1, 0., 0., 0.,
+					  dist1, inc1, phiref1, 0., eccentricity, 0.,
 					  df,f_min, f_max, f_ref,
 					  LALpars, approxFD);
     e1 = clock();
@@ -175,7 +180,7 @@ int main(void) {
     s2 = clock();
     ret = XLALSimInspiralChooseFDWaveformFromCache(&hptildeC, &hctildeC,
             phiref1, df, m1, m2, s1x, s1y, s1z, s2x, s2y, s2z, f_min, f_max,
-	    f_ref, dist1, inc1, LALpars, approxFD, cache, NULL);
+	    f_ref, dist1, inc1, eccentricity, LALpars, approxFD, cache, NULL);
     e2 = clock();
     diff2 = (double) (e2 - s2) / CLOCKS_PER_SEC;
     if( ret == XLAL_FAILURE )
@@ -208,7 +213,7 @@ int main(void) {
     ret = XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde,
 					  m1, m2, s1x, s1y, s1z, s2x, s2y, s2z,
 					  dist2, inc2,
-					  phiref2, 0., 0., 0.,
+					  phiref2, 0., eccentricity, 0.,
 					  df, f_min, f_max, f_ref,
 					  LALpars, approxFD);
     e1 = clock();
@@ -220,7 +225,7 @@ int main(void) {
     s2 = clock();
     ret = XLALSimInspiralChooseFDWaveformFromCache(&hptildeC, &hctildeC,
             phiref2, df, m1, m2, s1x, s1y, s1z, s2x, s2y, s2z, f_min, f_max,
-            f_ref, dist2, inc2, LALpars, approxFD, cache, NULL);
+            f_ref, dist2, inc2, eccentricity, LALpars, approxFD, cache, NULL);
     XLALDestroyDict(LALpars);
     e2 = clock();
     diff2 = (double) (e2 - s2) / CLOCKS_PER_SEC;

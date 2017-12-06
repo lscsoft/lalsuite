@@ -691,6 +691,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
             arr_view_hp[:int(self.flow / df)] = 0.
             arr_view_hp[int(self.f_final/df) : hp.data.length] = 0.
 
+            # Whiten
             arr_view_hc[:] /= ASD[:hc.data.length]
             arr_view_hc[:int(self.flow / df)] = 0.
             arr_view_hc[int(self.f_final/df) : hc.data.length] = 0.

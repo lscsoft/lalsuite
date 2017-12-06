@@ -34,7 +34,6 @@ void DFUNC (
 	XLALFree(sequence);
 }
 
-
 SEQUENCETYPE *CFUNC (
 	size_t length
 )

@@ -1357,6 +1357,281 @@ InspiralTmpltBankFromLIGOLw (
   thisSim = NULL; \
 }
 
+/* added by hwlee to set default value for the missing column values for old injection XML table at 1 Sep. 2017
+ *  * check if the column is missed in XML file */
+static int is_missed(int index, int *missed_cols, int size)
+{
+  int i;
+  for(i=0; i<size; i++)
+    if(missed_cols[i] == index) return 1; // it is missed column
+  return 0; // it is not missed column
+}
+/* set default value for each missed columns, the default values should be checked by an expert FIXME */
+static void set_missed_column(SimInspiralTable *thisSim, int idx)
+{
+        if ( idx == 0 )
+        {
+          snprintf(thisSim->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
+              "%s", "TaylorF2threePointFivePN");
+        }
+        else if ( idx == 1 )
+        {
+          thisSim->geocent_end_time.gpsSeconds = 0;
+        }
+        else if ( idx == 2 )
+        {
+          thisSim->geocent_end_time.gpsNanoSeconds = 0;
+        }
+        else if ( idx == 3 )
+        {
+          thisSim->h_end_time.gpsSeconds = 0;
+        }
+        else if ( idx == 4 )
+        {
+          thisSim->h_end_time.gpsNanoSeconds = 0;
+        }
+        else if ( idx == 5 )
+        {
+          thisSim->l_end_time.gpsSeconds = 0;
+        }
+        else if ( idx == 6 )
+        {
+          thisSim->l_end_time.gpsNanoSeconds = 0;
+        }
+        else if ( idx == 7 )
+        {
+          thisSim->g_end_time.gpsSeconds = 0;
+        }
+        else if ( idx == 8 )
+        {
+          thisSim->g_end_time.gpsNanoSeconds = 0;
+        }
+        else if ( idx == 9 )
+        {
+          thisSim->t_end_time.gpsSeconds = 0;
+        }
+        else if ( idx == 10 )
+        {
+          thisSim->t_end_time.gpsNanoSeconds = 0;
+        }
+        else if ( idx == 11 )
+        {
+          thisSim->v_end_time.gpsSeconds = 0;
+        }
+        else if ( idx == 12 )
+        {
+          thisSim->v_end_time.gpsNanoSeconds = 0;
+        }
+        else if ( idx == 13 )
+        {
+          thisSim->end_time_gmst = 0;
+        }
+        else if ( idx == 14 )
+        {
+          snprintf(thisSim->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR),
+              "%s", "");
+        }
+        else if ( idx == 15 )
+        {
+          thisSim->mass1 = 1.4;
+        }
+        else if ( idx == 16 )
+        {
+          thisSim->mass2 = 1.4;
+        }
+        else if ( idx == 17 )
+        {
+          thisSim->eta = 0.25;
+        }
+        else if ( idx == 18 )
+        {
+          thisSim->distance = 1.0;
+        }
+        else if ( idx == 19 )
+        {
+          thisSim->longitude = 0;
+        }
+        else if ( idx == 20 )
+        {
+          thisSim->latitude = 0;
+        }
+        else if ( idx == 21 )
+        {
+          thisSim->inclination = 0;
+        }
+        else if ( idx == 22 )
+        {
+          thisSim->coa_phase = 0;
+        }
+        else if ( idx == 23 )
+        {
+          thisSim->polarization = 0;
+        }
+        else if ( idx == 24 )
+        {
+          thisSim->psi0 = 0;
+        }
+        else if ( idx == 25 )
+        {
+          thisSim->psi3 = 0;
+        }
+        else if ( idx == 26 )
+        {
+          thisSim->alpha = 0;
+        }
+        else if ( idx == 27 )
+        {
+          thisSim->alpha1 = 0;
+        }
+        else if ( idx == 28 )
+        {
+          thisSim->alpha2 = 0;
+        }
+        else if ( idx == 29 )
+        {
+          thisSim->alpha3 = 0;
+        }
+        else if ( idx == 30 )
+        {
+          thisSim->alpha4 = 0;
+        }
+        else if ( idx == 31 )
+        {
+          thisSim->alpha5 = 0;
+        }
+        else if ( idx == 32 )
+        {
+          thisSim->alpha6 = 0;
+        }
+        else if ( idx == 33 )
+        {
+          thisSim->beta = 0;
+        }
+        else if ( idx == 34 )
+        {
+          thisSim->spin1x = 0;
+        }
+        else if ( idx == 35 )
+        {
+          thisSim->spin1y = 0;
+        }
+        else if ( idx == 36 )
+        {
+          thisSim->spin1z = 0;
+        }
+        else if ( idx == 37 )
+        {
+          thisSim->spin2x = 0;
+        }
+        else if ( idx == 38 )
+        {
+          thisSim->spin2y = 0;
+        }
+        else if ( idx == 39 )
+        {
+          thisSim->spin2z = 0;
+        }
+        else if ( idx == 40 )
+        {
+          thisSim->theta0 = 0;
+        }
+        else if ( idx == 41 )
+        {
+          thisSim->phi0 = 0;
+        }
+        else if ( idx == 42 )
+        {
+          thisSim->f_lower = 20.0;
+        }
+        else if ( idx == 43 )
+        {
+          thisSim->f_final = 0.0;
+        }
+        else if ( idx == 44 )
+        {
+          thisSim->mchirp = 1.218770789;
+        }
+        else if ( idx == 45 )
+        {
+          thisSim->eff_dist_h = 0;
+        }
+        else if ( idx == 46 )
+        {
+          thisSim->eff_dist_l = 0;
+        }
+        else if ( idx == 47 )
+        {
+          thisSim->eff_dist_g = 0;
+        }
+        else if ( idx == 48 )
+        {
+          thisSim->eff_dist_t = 0;
+        }
+        else if ( idx == 49 )
+        {
+          thisSim->eff_dist_v = 0;
+        }
+        else if ( idx == 50 )
+        {
+          thisSim->numrel_mode_min = 0;
+        }
+        else if ( idx == 51 )
+        {
+          thisSim->numrel_mode_max = 0;
+        }
+        else if ( idx == 52 )
+        {
+          snprintf(thisSim->numrel_data, LIGOMETA_STRING_MAX * sizeof(CHAR),
+              "%s", "");
+        }
+        else if ( idx == 53 )
+        {
+            thisSim->amp_order = 0;
+        }
+        else if ( idx == 54 )
+        {
+            snprintf(thisSim->taper, LIGOMETA_INSPIRALTAPER_MAX * sizeof(CHAR),
+                    "%s", "TAPER_NONE");
+        }
+        else if ( idx == 55 )
+        {
+            thisSim->bandpass = 0;
+        }
+        else if ( idx == 56 ) {
+                thisSim->eccentricity = 0;
+        }
+        else if ( idx == 57 ) {
+                thisSim->ecc_order = 0;
+        }
+        else if ( idx == 58 ) {
+                thisSim->f_ecc = 10.0;
+        }
+        else if ( idx == 59 )
+        {
+            thisSim->process_id = 0;
+        }
+        else if ( idx == 60 )
+        {
+            thisSim->simulation_id = 0;
+        }
+        else if ( idx == 61 ) {
+                thisSim->lambda1 = 0;
+        }
+        else if ( idx == 62 ) {
+                thisSim->lambda2 = 0;
+        }
+        else if ( idx == 63 ) {
+                thisSim->quadparam1 = 1;
+        }
+        else if ( idx == 64 ) {
+                thisSim->quadparam2 = 1;
+        }
+        else
+        {
+            fprintf( stderr, "unknown column while setting default value\n" );
+        }
+}
+
 
 int
 SimInspiralTableFromLIGOLw (
@@ -1430,8 +1705,15 @@ SimInspiralTableFromLIGOLw (
     {"amp_order",           -1, 53},
     {"taper",               -1, 54},
     {"bandpass",            -1, 55},
-    {"process_id",          -1, 56},
-    {"simulation_id",       -1, 57},
+    {"eccentricity",        -1, 56},
+    {"ecc_order",           -1, 57},
+    {"f_ecc",               -1, 58},
+    {"process_id",          -1, 59},
+    {"simulation_id",       -1, 60},
+    {"lambda1",             -1, 61},
+    {"lambda2",             -1, 62},
+    {"quadparam1",          -1, 63},
+    {"quadparam2",          -1, 64},
     {NULL,                   0, 0}
   };
 
@@ -1455,15 +1737,20 @@ SimInspiralTableFromLIGOLw (
         fileName );
     return -1;
   }
+  /* added by hwlee to set default value for the missed column values for old injection XML table at 1 Sep. 2017 */
+  int missed_cols[66]={0}; // 66 = 64 + 1 + 1, it should be same as last index + 2
+  int missed_number = 0;
 
   /* figure out the column positions of the simulated parameters */
   for ( i = 0; tableDir[i].name; ++i )
   {
     if ( (tableDir[i].pos = MetaioFindColumn( env, tableDir[i].name )) < 0 )
     {
-      fprintf( stderr, "unable to find column %s\n", tableDir[i].name );
-      MetaioClose(env);
-      return -1;
+      fprintf( stderr, "unable to find column %s, its value will be set as a default value\n", tableDir[i].name );
+      missed_cols[missed_number++] = i;
+      //fprintf( stderr, "unable to find column %s\n", tableDir[i].name );
+      //MetaioClose(env);
+      //return -1;
     }
   }
 
@@ -1499,6 +1786,11 @@ SimInspiralTableFromLIGOLw (
       /* parse the row into the SimInspiralTable structure */
       for ( j = 0; tableDir[j].name; ++j )
       {
+        if(is_missed(j, missed_cols, missed_number))
+        {
+          set_missed_column(thisSim, tableDir[j].idx);
+          continue;// do not read the missed column go to the next column
+        }
         REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
         REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8;
         INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
@@ -1731,6 +2023,15 @@ SimInspiralTableFromLIGOLw (
           thisSim->bandpass = i4colData;
         }
         else if ( tableDir[j].idx == 56 ) {
+        	thisSim->eccentricity = r8colData;
+        }
+        else if ( tableDir[j].idx == 57 ) {
+        	thisSim->ecc_order = i4colData;
+        }
+        else if ( tableDir[j].idx == 58 ) {
+        	thisSim->f_ecc = r8colData;
+        }
+        else if ( tableDir[j].idx == 59 ) {
           if ( tableDir[j].pos > 0 )
           {
             thisSim->process_id = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "process", "process_id");
@@ -1738,13 +2039,25 @@ SimInspiralTableFromLIGOLw (
               return -1;
           }
         }
-        else if ( tableDir[j].idx == 57 ) {
+        else if ( tableDir[j].idx == 60 ) {
           if ( tableDir[j].pos > 0 )
           {
             thisSim->simulation_id = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "sim_inspiral", "simulation_id");
             if ( thisSim->simulation_id < 0 )
               return -1;
           }
+        }
+        else if ( tableDir[j].idx == 61 ) {
+                thisSim->lambda1 = r8colData;
+        }
+        else if ( tableDir[j].idx == 62 ) {
+                thisSim->lambda2 = r8colData;
+        }
+        else if ( tableDir[j].idx == 63 ) {
+                thisSim->quadparam1 = r8colData;
+        }
+        else if ( tableDir[j].idx == 64 ) {
+                thisSim->quadparam2 = r8colData;
         }
         else
         {
@@ -1761,7 +2074,7 @@ SimInspiralTableFromLIGOLw (
 
   if ( mioStatus == -1 )
   {
-    fprintf( stderr, "error parsing after row %d\n", i );
+    fprintf( stderr, "error parsing after row %d\n", nrows );
     CLOBBER_SIM;
     MetaioClose( env );
     return -1;
@@ -3075,15 +3388,15 @@ LALMultiInspiralTableFromLIGOLw (
       else if ( tableDir[j].idx == 74 )
       {
         thisEvent->cont_chisq_h1 = r4colData;
-      } 
+      }
       else if ( tableDir[j].idx == 75 )
       {
         thisEvent->cont_chisq_h2 = r4colData;
-      } 
+      }
       else if ( tableDir[j].idx == 76 )
       {
         thisEvent->cont_chisq_l = r4colData;
-      } 
+      }
       else if ( tableDir[j].idx == 77 )
       {
         thisEvent->cont_chisq_g = r4colData;

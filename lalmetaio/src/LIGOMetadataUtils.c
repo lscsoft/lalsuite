@@ -1368,3 +1368,20 @@ void XLALDestroyTimeSlideSegmentMapTable(TimeSlideSegmentMapTable *head)
   }
 }
 
+/**
+ * added to destroy injection table by hwlee and KGWG at 16 Sep 2016
+ */
+void
+LALDestroySimInspiralTable(
+    SimInspiralTable *table
+    )
+{
+  while(table)
+  {
+    SimInspiralTable *next = table->next;
+    XLALFree(table);
+    table = next;
+  }
+  return;
+}
+

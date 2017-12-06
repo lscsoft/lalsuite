@@ -111,6 +111,7 @@ const char * usage =
 "                             SEOBNRv2_ROM_EffectiveSpin\n"
 "                             SEOBNRv2_ROM_DoubleSpin\n"
 "                             TaylorF2\n"
+"                             TaylorF2Ecc\n"
 "                             SpinTaylorF2\n"
 "                             TaylorR2F4\n"
 "                             SpinTaylorT4Fourier\n"
@@ -141,6 +142,10 @@ const char * usage =
 "                           (~128-2560 for NS, 0 for BH) (default 0)\n"
 "--tidal-lambda2 L2         (tidal deformability of mass 2) / (mass of body 2)^5\n"
 "                           (~128-2560 for NS, 0 for BH) (default 0)\n"
+"--ecc_order eccO           PN order for eccentric correction term\n"
+"                           (-1 for maximum order) (default -1)\n"
+"--f_ecc f                  reference frequency for initial eccentricity\n"
+"                           (10Hz) (default 10)\n"
 "--tidal-lambda-octu1 L31         (octupolar tidal deformability of mass 1) / (mass of body 1)^7\n"
 "                           (0 for BH) (default 0)\n"
 "--tidal-lambda-octu2 L32         (octupolar tidal deformability of mass 2) / (mass of body 2)^7\n"
@@ -216,6 +221,8 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
     params->meanPerAno = 0.;
     XLALSimInspiralWaveformParamsInsertTidalLambda1(params->params, 0.);
     XLALSimInspiralWaveformParamsInsertTidalLambda2(params->params, 0.);
+    XLALSimInspiralWaveformParamsInsertPNEccentricityOrder(params->params, -1);
+    XLALSimInspiralWaveformParamsInsertEccentricityFreq(params->params, 10.0);
     XLALSimInspiralWaveformParamsInsertTidalOctupolarLambda1(params->params, 0.);
     XLALSimInspiralWaveformParamsInsertTidalOctupolarLambda2(params->params, 0.);
     XLALSimInspiralWaveformParamsInsertTidalQuadrupolarFMode1(params->params, 0.);
@@ -284,7 +291,11 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
         } else if (strcmp(argv[i], "--tidal-lambda1") == 0) {
 	    XLALSimInspiralWaveformParamsInsertTidalLambda1(params->params, atof(argv[++i]));
         } else if (strcmp(argv[i], "--tidal-lambda2") == 0) {
-	    XLALSimInspiralWaveformParamsInsertTidalLambda2(params->params, atof(argv[++i]));
+	    XLALSimInspiralWaveformParamsInsertTidalLambda2(params->params, atoi(argv[++i]));
+        } else if (strcmp(argv[i], "--ecc_order") == 0) {
+	    XLALSimInspiralWaveformParamsInsertPNEccentricityOrder(params->params, atoi(argv[++i]));
+        } else if (strcmp(argv[i], "--f_ecc") == 0) {
+	    XLALSimInspiralWaveformParamsInsertEccentricityFreq(params->params, atof(argv[++i]));
         } else if (strcmp(argv[i], "--tidal-lambda-octu1") == 0) {
         XLALSimInspiralWaveformParamsInsertTidalOctupolarLambda1(params->params, atof(argv[++i]));
         } else if (strcmp(argv[i], "--tidal-lambda-octu2") == 0) {
@@ -383,7 +394,7 @@ static int dump_FD(FILE *f, COMPLEX16FrequencySeries *hptilde,
 
     fprintf(f, "# f hptilde.re hptilde.im hctilde.re hctilde.im\n");
     for (i=0; i < hptilde->data->length; i++)
-        fprintf(f, "%.16e %.16e %.16e %.16e %.16e\n",
+        fprintf(f, "%25.16e %25.16e %25.16e %25.16e %25.16e\n",
                 hptilde->f0 + i * hptilde->deltaF,
                 creal(dataPtr1[i]), cimag(dataPtr1[i]), creal(dataPtr2[i]), cimag(dataPtr2[i]));
     return 0;
@@ -419,7 +430,7 @@ static int dump_FD2(FILE *f, COMPLEX16FrequencySeries *hptilde,
 
     fprintf(f, "# f amp_+ phase_+ amp_x phase_x\n");
     for (i=0; i < hptilde->data->length; i++)
-        fprintf(f, "%.16e %.16e %.16e %.16e %.16e\n",
+        fprintf(f, "%25.16e %25.16e %25.16e %25.16e %25.16e\n",
                 hptilde->f0 + i * hptilde->deltaF,
                 amp1[i], phaseUW1[i], amp2[i], phaseUW2[i]);
     return 0;
@@ -438,7 +449,7 @@ static int dump_TD(FILE *f, REAL8TimeSeries *hplus, REAL8TimeSeries *hcross) {
 
     fprintf(f, "# t hplus hcross\n");
     for (i=0; i < hplus->data->length; i++)
-        fprintf(f, "%.16e %.16e %.16e\n", t0 + i * hplus->deltaT, 
+        fprintf(f, "%25.16e %25.16e %25.16e\n", t0 + i * hplus->deltaT,
                 hplus->data->data[i], hcross->data->data[i]);
     return 0;
 }
@@ -468,7 +479,7 @@ static int dump_TD2(FILE *f, REAL8TimeSeries *hplus, REAL8TimeSeries *hcross) {
 
     fprintf(f, "# t amp phase\n");
     for (i=0; i < hplus->data->length; i++)
-        fprintf(f, "%.16e %.16e %.16e\n", t0 + i * hplus->deltaT,
+        fprintf(f, "%25.16e %25.16e %25.16e\n", t0 + i * hplus->deltaT,
                 amp[i], phaseUW[i]);
     return 0;
 }
@@ -484,7 +495,7 @@ int main (int argc , char **argv) {
     REAL8TimeSeries *hplus = NULL;
     REAL8TimeSeries *hcross = NULL;
     GSParams *params;
-	
+
     /* set us up to fail hard */
     XLALSetErrorHandler(XLALAbortErrorHandler);
 
@@ -517,7 +528,7 @@ int main (int argc , char **argv) {
             XLALPrintError("Error: domain must be either TD or FD\n");
     }
     if (params->verbose)
-        XLALPrintInfo("Generation took %.0f seconds\n", 
+        XLALPrintInfo("Generation took %.0f seconds\n",
                 difftime(time(NULL), start_time));
     if (((params->domain == LAL_SIM_DOMAIN_FREQUENCY) && (!hptilde || !hctilde)) ||
         ((params->domain == LAL_SIM_DOMAIN_TIME) && (!hplus || !hcross))) {

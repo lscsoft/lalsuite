@@ -546,6 +546,7 @@ void LALRandomInspiralSignal
                     randIn->param.approximant == BCVSpin  ||
                     randIn->param.approximant == TaylorF1 ||
                     randIn->param.approximant == TaylorF2 ||
+                    randIn->param.approximant == TaylorF2Ecc ||
                     randIn->param.approximant == PadeF1)
             {
                 LALInspiralWave(status->statusPtr, signalvec, &randIn->param);
@@ -655,6 +656,7 @@ void LALRandomInspiralSignal
                     randIn->param.approximant == BCVSpin  ||
                     randIn->param.approximant == TaylorF1 ||
                     randIn->param.approximant == TaylorF2 ||
+                    randIn->param.approximant == TaylorF2Ecc ||
                     randIn->param.approximant == PadeF1)
             {
                 LALInspiralWave(status->statusPtr, &buff, &randIn->param);

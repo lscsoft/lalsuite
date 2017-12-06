@@ -352,6 +352,26 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
     XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars,lambda2);
   }
 
+  /* ==== Quadrupole deformation PARAMETERS ==== */
+  /* if we do not add quadrupoel deformation parameteres they will be 1.0 */
+  REAL8 quadparam1 = 1.0, quadparam2 = 1.0;
+  if(LALInferenceCheckVariable(model->params, "quadparam1")) quadparam1 = *(REAL8*) LALInferenceGetVariable(model->params, "quadparam1");
+  if(LALInferenceCheckVariable(model->params, "quadparam2")) quadparam1 = *(REAL8*) LALInferenceGetVariable(model->params, "quadparam2");
+  XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars, quadparam1-1);
+  XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars, quadparam2-1);
+
+  /* ==== ECCENTRICITY PARAMETERS ==== */
+  /* if we do not add eccentricity to model parameteres eccentricity would be zero */
+  REAL8 eccentricity = 0.;
+  if(LALInferenceCheckVariable(model->params, "eccentricity")) eccentricity = *(REAL8*) LALInferenceGetVariable(model->params, "eccentricity");
+  REAL8 f_ecc = 10;
+  INT4 ecc_order = -1;
+  if(LALInferenceCheckVariable(model->params, "f_ecc")&&LALInferenceCheckVariable(model->params, "ecc_order")){
+    f_ecc = *(REAL8*) LALInferenceGetVariable(model->params, "f_ecc");
+    ecc_order = *(INT4*) LALInferenceGetVariable(model->params, "ecc_order");
+    XLALSimInspiralWaveformParamsInsertPNEccentricityOrder(model->LALpars, ecc_order);
+    XLALSimInspiralWaveformParamsInsertEccentricityFreq(model->LALpars, f_ecc);
+  }
 
   /* Only use GR templates */
   /* Fill in the extra parameters for testing GR, if necessary */
@@ -381,10 +401,10 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
 
   /* ==== Call the waveform generator ==== */
     XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformSequence (&(model->roq->hptildeLinear), &(model->roq->hctildeLinear), phi0, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI,
-                spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_ref, distance, inclination, model->LALpars, approximant, (model->roq->frequencyNodesLinear)), errnum);
+                spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_ref, distance, inclination, eccentricity, model->LALpars, approximant, (model->roq->frequencyNodesLinear)), errnum);
 
     XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformSequence (&(model->roq->hptildeQuadratic), &(model->roq->hctildeQuadratic), phi0, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI,
-							spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_ref, distance, inclination, model->LALpars, approximant, (model->roq->frequencyNodesQuadratic)), errnum);
+							spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_ref, distance, inclination, eccentricity, model->LALpars, approximant, (model->roq->frequencyNodesQuadratic)), errnum);
 
     REAL8 instant = model->freqhPlus->epoch.gpsSeconds + 1e-9*model->freqhPlus->epoch.gpsNanoSeconds;
     LALInferenceSetVariable(model->params, "time", &instant);
@@ -590,9 +610,14 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 /*   OTHER PARAMETERS                                                                                                    */
 /*   - "lambda1"            tidal parameter of object 1; REAL8  OPTIONAL (0.0)                                           */
 /*   - "lambda2"            tidal parameter of object 1; REAL8  OPTIONAL (0.0)                                           */
+/*   - "quadparam1"         quadrupole deformation parameter of object 1; REAL8  OPTIONAL (1.0)                                           */
+/*   - "quadparam2"         quadrupole deformation parameter of object 2; REAL8  OPTIONAL (1.0)                                           */
 /*                                                                                                                       */
-/*   - "time"               used as an OUTPUT only; REAL8								                                 */
+/*   - "time"               used as an OUTPUT only; REAL8				                                 */
 /*                                                                                                                       */
+/*   - "eccentricity"               eccentricty value at refrence frequency; REAL8		                                 */
+/*   - "ecc_order"          eccentricity PN order; INT4 					                                 */
+/*   - "f_ecc"             refrence frequency of eccentricity; REAL8			                                 */
 /*                                                                                                                       */
 /*   model needs to also contain:                                                                                        */
 /*   - model->fLow Unless  - "fLow" OPTIONAL                                                                             */
@@ -777,6 +802,19 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
     XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
   }
 
+  /* ==== ECCENTRICITY PARAMETERS ==== */
+  /* if we do not add eccentricity to model parameteres eccentricity wouild be zero */
+  REAL8 eccentricity = 0.;
+  if(LALInferenceCheckVariable(model->params, "eccentricity")) eccentricity = *(REAL8*) LALInferenceGetVariable(model->params, "eccentricity");
+  REAL8 f_ecc = 10;
+  INT4 ecc_order = -1;
+  if(LALInferenceCheckVariable(model->params, "f_ecc")&&LALInferenceCheckVariable(model->params, "ecc_order")){
+    f_ecc = *(REAL8*) LALInferenceGetVariable(model->params, "f_ecc");
+    ecc_order = *(INT4*) LALInferenceGetVariable(model->params, "ecc_order");
+    XLALSimInspiralWaveformParamsInsertPNEccentricityOrder(model->LALpars, ecc_order);
+    XLALSimInspiralWaveformParamsInsertEccentricityFreq(model->LALpars, f_ecc);
+  }
+
 
   /* Only use GR templates */
   /* Fill in the extra parameters for testing GR, if necessary */
@@ -803,13 +841,12 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
   }
 
 
-
   /* ==== Call the waveform generator ==== */
   if(model->domain == LAL_SIM_DOMAIN_FREQUENCY) {
     deltaF = model->deltaF;
     XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
             deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
-            spin2x, spin2y, spin2z, f_start, f_max, f_ref, distance, inclination, model->LALpars,
+            spin2x, spin2y, spin2z, f_start, f_max, f_ref, distance, inclination, eccentricity, model->LALpars,
 							      approximant,model->waveformCache, NULL), errnum);
 
     /* if the waveform failed to generate, fill the buffer with zeros
@@ -1255,7 +1292,26 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
         XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
         XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
     }
+  /* ==== Quadrupole deformation PARAMETERS ==== */
+  /* if we do not add quadparams to model parameteres they would be 1.0 */
+  REAL8 quadparam1 = 1., quadparam2 = 1.0;
+  if(LALInferenceCheckVariable(model->params, "quadparam1")) quadparam1 = *(REAL8*) LALInferenceGetVariable(model->params, "quadparam1");
+  if(LALInferenceCheckVariable(model->params, "quadparam2")) quadparam2 = *(REAL8*) LALInferenceGetVariable(model->params, "quadparam2");
+  XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars, quadparam1-1);
+  XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars, quadparam2-1);
 
+  /* ==== ECCENTRICITY PARAMETERS ==== */
+  /* if we do not add eccentricity to model parameteres eccentricity wouild be zero */
+  REAL8 eccentricity = 0.;
+  if(LALInferenceCheckVariable(model->params, "eccentricity")) eccentricity = *(REAL8*) LALInferenceGetVariable(model->params, "eccentricity");
+  REAL8 f_ecc = 10;
+  INT4 ecc_order = -1;
+  if(LALInferenceCheckVariable(model->params, "f_ecc")&&LALInferenceCheckVariable(model->params, "ecc_order")){
+    f_ecc = *(REAL8*) LALInferenceGetVariable(model->params, "f_ecc");
+    ecc_order = *(INT4*) LALInferenceGetVariable(model->params, "ecc_order");
+    XLALSimInspiralWaveformParamsInsertPNEccentricityOrder(model->LALpars, ecc_order);
+    XLALSimInspiralWaveformParamsInsertEccentricityFreq(model->LALpars, f_ecc);
+  }
     /* Only use GR templates */
     /* Fill in the extra parameters for testing GR, if necessary */
     for (UINT4 k=0; k<N_extra_params; k++)
@@ -1292,7 +1348,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
 
         XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
                                                               0.0, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
-                                                              spin2x, spin2y, spin2z, f_start, f_max, f_ref, distance, inclination, model->LALpars,
+                                                              spin2x, spin2y, spin2z, f_start, f_max, f_ref, distance, inclination, eccentricity, model->LALpars,
                                                               approximant,model->waveformCache, frequencies), errnum);
 
         /* if the waveform failed to generate, fill the buffer with zeros

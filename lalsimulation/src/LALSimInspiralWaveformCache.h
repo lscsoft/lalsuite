@@ -65,6 +65,9 @@ tagLALSimInspiralWaveformCacheOld {
     REAL8 i;
     REAL8 lambda1;
     REAL8 lambda2;
+    REAL8 eccentricity;
+    INT4 ecc_order;
+    REAL8 f_ecc;
     LALSimInspiralWaveformFlags *waveFlags;
     LALSimInspiralTestGRParam *nonGRparams; /* Non-NULL pointers here are not allowed b/c it's impossible to know which fields are present */
     int amplitudeO;
@@ -94,6 +97,7 @@ tagLALSimInspiralWaveformCache {
     REAL8 f_max;
     REAL8 r;
     REAL8 i;
+    REAL8 eccentricity;
     LALDict *LALpars;
     Approximant approximant;
     REAL8Sequence *frequencies;
@@ -107,9 +111,9 @@ void XLALDestroySimInspiralWaveformCache(LALSimInspiralWaveformCache *cache);
 
 int XLALSimInspiralChooseTDWaveformFromCache(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 f_min, REAL8 f_ref, REAL8 r, REAL8 i, LALDict *LALpars, Approximant approximant, LALSimInspiralWaveformCache *cache);
 
-int XLALSimInspiralChooseFDWaveformFromCache(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, REAL8 phiRef, REAL8 deltaF, REAL8 m1, REAL8 m2, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z, REAL8 f_min, REAL8 f_max, REAL8 f_ref, REAL8 r, REAL8 i, LALDict *LALpars, Approximant approximant, LALSimInspiralWaveformCache *cache, REAL8Sequence *frequencies);
+int XLALSimInspiralChooseFDWaveformFromCache(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, REAL8 phiRef, REAL8 deltaF, REAL8 m1, REAL8 m2, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z, REAL8 f_min, REAL8 f_max, REAL8 f_ref, REAL8 r, REAL8 i, REAL8 eccentricity, LALDict *LALpars, Approximant approximant, LALSimInspiralWaveformCache *cache, REAL8Sequence *frequencies);
 
-int XLALSimInspiralChooseFDWaveformSequence(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, REAL8 phiRef, REAL8 m1, REAL8 m2, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z, REAL8 f_ref, REAL8 r, REAL8 i, LALDict *LALpars, Approximant approximant, REAL8Sequence *frequencies);
+int XLALSimInspiralChooseFDWaveformSequence(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, REAL8 phiRef, REAL8 m1, REAL8 m2, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z, REAL8 f_ref, REAL8 r, REAL8 i, REAL8 eccentricity, LALDict *LALpars, Approximant approximant, REAL8Sequence *frequencies);
 
 #if 0
 { /* so that editors will match succeeding brace */

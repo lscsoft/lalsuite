@@ -278,16 +278,13 @@ LALTimeSortSummValue (
     int(*comparfunc)    (const void *, const void *)
     );
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * added to destroy injection table by hwlee and KGWG at 16 Sep 2016
+ */
+void
+LALDestroySimInspiralTable(
+    SimInspiralTable *table
+    );
 
 #if 0
 { /* so that editors will match succeeding brace */

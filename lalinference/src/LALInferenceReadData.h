@@ -60,7 +60,7 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
  * \brief Fills the variable in vars with the injection values from theEventTable. Destroys contents of
  * vars. vars cannot be NULL. Resulting variables are LALINFERENCE_PARAM_FIXED.
  */
-void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInferenceVariables *vars);
+void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInferenceVariables *vars, ProcessParamsTable *procParams);
 
 /**
  * \brief Function to output a sample with logL values etc for the injection, if one is made.
