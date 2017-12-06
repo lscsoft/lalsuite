@@ -16,10 +16,10 @@ BuildRequires: gsl-devel
 BuildRequires: numpy
 BuildRequires: octave-devel
 BuildRequires: python-devel
-BuildRequires: swig >= 3.0.7
+BuildRequires: swig
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 BuildRequires: lal-python >= @MIN_LAL_VERSION@
+BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 Requires: gsl
 Requires: lal >= @MIN_LAL_VERSION@
 Prefix: %{_prefix}
@@ -84,12 +84,10 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
-%{_bindir}/lalsim-*
-%{_bindir}/lalsimulation_version
+%{_bindir}/lalsim*
 %{_datarootdir}/lalsimulation/LALSimNeutronStarEOS_*
-%{_datarootdir}/lalsimulation/LIGO-P1200087*
-%{_datarootdir}/lalsimulation/LIGO-T0900288*
-%{_datarootdir}/lalsimulation/LIGO-T1600593*
+%{_datarootdir}/lalsimulation/LIGO-P1200087-v18*
+%{_datarootdir}/lalsimulation/LIGO-T0900288-v3*
 %{_libdir}/*.so.*
 %{_sysconfdir}/*
 
@@ -110,19 +108,6 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
-* Thu Mar 16 2017 Adam Mercer <adam.mercer@ligo.org> 1.7.3-1
-- fix Ldot equation in SpinTaylor
-
-* Wed Mar 01 2017 Adam Mercer <adam.mercer@ligo.org> 1.7.2-1
-- fix bug in SpinTaylor, spin precession vector had incorrect sign
-
-* Sat Feb 25 2017 Adam Mercer <adam.mercer@ligo.org> 1.7.1-1
-- fix memory leak in SpinTaylor code
-- https://bugs.ligo.org/redmine/issues/5182
-
-* Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.7.0-1
-- O2 release
-
 * Mon Sep 26 2016 Adam Mercer <adam.mercer@ligo.org> 1.6.1-1
 - ER10 release
 

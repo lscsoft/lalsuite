@@ -33,7 +33,6 @@
 #include <lal/LALSimInspiral.h>
 #include <lal/Units.h>
 #include <lal/XLALError.h>
-#include <lal/AVFactories.h>
 #include "LALSimInspiralPNCoefficients.c"
 
 #ifndef _OPENMP
@@ -84,60 +83,6 @@ int XLALSimInspiralTaylorF2AlignedPhasing(
 
     return XLAL_SUCCESS;
 }
-
-int XLALSimInspiralTaylorF2AlignedPhasingArray(
-        REAL8Vector **phasingvals, /**< phasing coefficients (output) */
-        REAL8Vector mass1, /**< Masses of heavier bodies */
-        REAL8Vector mass2, /**< Masses of lighter bodies */
-        REAL8Vector chi1, /**< Aligned spin of body 1 */
-        REAL8Vector chi2, /**< Aligned spin of body 2 */
-        REAL8Vector lambda1, /**< Tidal deformation of body 1 */
-        REAL8Vector lambda2, /**< Tidal deformation of body 2 */
-        REAL8Vector dquadmon1, /**< Self-spin deformation of body 1 */
-        REAL8Vector dquadmon2 /**< Self-spin deformation of body 2 */
-        )
-{
-    UINT4 idx, jdx;
-    UINT4 pnmaxnum = PN_PHASING_SERIES_MAX_ORDER + 1;
-    LALDict *a=NULL;
-    a=XLALCreateDict();
-
-    PNPhasingSeries *curr_phasing=NULL;
-    *phasingvals = XLALCreateREAL8Vector(mass1.length * pnmaxnum * 3); 
-    REAL8Vector* pv = *phasingvals;
-
-    for (idx=0; idx < mass1.length; idx++)
-    {
-        XLALSimInspiralWaveformParamsInsertdQuadMon1(a, dquadmon1.data[idx]);
-        XLALSimInspiralWaveformParamsInsertdQuadMon2(a, dquadmon2.data[idx]);
-        /* FIXME: We should be able to specify lambdas like this, but for now
-         * the phasing functon does not use the lambda parameters. */
-        
-        /*XLALSimInspiralWaveformParamsInsertTidalLambda1(a, lambda1.data[idx]); */
-        /*XLALSimInspiralWaveformParamsInsertTidalLambda2(a, lambda2.data[idx]);*/
-        XLALSimInspiralTaylorF2AlignedPhasing
-            (&curr_phasing, mass1.data[idx], mass2.data[idx], chi1.data[idx],
-             chi2.data[idx], a);
-        /* FIXME: Delete the two lines below once the FIXME above is resolved*/
-        curr_phasing->v[10] = curr_phasing->v[0] * (lambda1.data[idx] * XLALSimInspiralTaylorF2Phasing_10PNTidalCoeff(mass1.data[idx] / (mass1.data[idx] + mass2.data[idx])) + lambda2.data[idx] * XLALSimInspiralTaylorF2Phasing_10PNTidalCoeff(mass2.data[idx] / (mass1.data[idx] + mass2.data[idx])));
-        curr_phasing->v[12] = curr_phasing->v[0] * (lambda1.data[idx] * XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(mass1.data[idx] / (mass1.data[idx] + mass2.data[idx])) + lambda2.data[idx] * XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(mass2.data[idx] / (mass1.data[idx] + mass2.data[idx])));
-        for (jdx=0; jdx < pnmaxnum; jdx++)
-        {
-            pv->data[jdx*mass1.length + idx] = curr_phasing->v[jdx];
-            pv->data[mass1.length*pnmaxnum + jdx*mass1.length + idx] =
-                curr_phasing->vlogv[jdx];
-            pv->data[mass1.length*pnmaxnum*2 + idx + jdx*mass1.length] =
-                curr_phasing->vlogvsq[jdx];
-        }
-        LALFree(curr_phasing);
-        curr_phasing=NULL;
-    }
-
-    XLALDestroyDict(a);
-
-    return XLAL_SUCCESS;
-}
-
 
 int XLALSimInspiralTaylorF2Core(
         COMPLEX16FrequencySeries **htilde_out, /**< FD waveform */
@@ -200,41 +145,20 @@ int XLALSimInspiralTaylorF2Core(
         case -1:
         case 7:
             pfa7 = pfa.v[7];
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 6:
             pfa6 = pfa.v[6];
             pfl6 = pfa.vlogv[6];
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 5:
             pfa5 = pfa.v[5];
             pfl5 = pfa.vlogv[5];
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 4:
             pfa4 = pfa.v[4];
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 3:
             pfa3 = pfa.v[3];
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 2:
             pfa2 = pfa.v[2];
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 1:
             pfa1 = pfa.v[1];
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 0:
             pfaN = pfa.v[0];
             break;
@@ -277,14 +201,8 @@ int XLALSimInspiralTaylorF2Core(
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
 	    pft12 = pfaN * (lambda1*XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m1OverM) + lambda2*XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m2OverM) );
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
             pft10 = pfaN * ( lambda1*XLALSimInspiralTaylorF2Phasing_10PNTidalCoeff(m1OverM) + lambda2*XLALSimInspiralTaylorF2Phasing_10PNTidalCoeff(m2OverM) );
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
             break;
         default:
@@ -403,37 +321,19 @@ int XLALSimInspiralTaylorF2Core(
         {
             case 7:
                 flux += FTa7 * v7;
-#if __GNUC__ >= 7
-                __attribute__ ((fallthrough));
-#endif
             case 6:
                 flux += (FTa6 + FTl6*logv) * v6;
                 dEnergy += dETa3 * v6;
-#if __GNUC__ >= 7
-                __attribute__ ((fallthrough));
-#endif
             case 5:
                 flux += FTa5 * v5;
-#if __GNUC__ >= 7
-                __attribute__ ((fallthrough));
-#endif
             case 4:
                 flux += FTa4 * v4;
                 dEnergy += dETa2 * v4;
-#if __GNUC__ >= 7
-                __attribute__ ((fallthrough));
-#endif
             case 3:
                 flux += FTa3 * v3;
-#if __GNUC__ >= 7
-                __attribute__ ((fallthrough));
-#endif
             case 2:
                 flux += FTa2 * v2;
                 dEnergy += dETa1 * v2;
-#if __GNUC__ >= 7
-                __attribute__ ((fallthrough));
-#endif
             case -1: /* Default to no SPA amplitude corrections */
             case 0:
                 flux += 1.;
@@ -482,6 +382,12 @@ int XLALSimInspiralTaylorF2(
         const REAL8 fEnd,                      /**< highest GW frequency (Hz) of waveform generation - if 0, end at Schwarzschild ISCO */
         const REAL8 f_ref,                     /**< Reference GW frequency (Hz) - if 0 reference point is coalescence */
         const REAL8 r,                         /**< distance of source (m) */
+        const REAL8 quadparam1,                /**< quadrupole deformation parameter of body 1 (dimensionless, 1 for BH) */
+        const REAL8 quadparam2,                /**< quadrupole deformation parameter of body 2 (dimensionless, 1 for BH) */
+        const REAL8 lambda1,                   /**< (tidal deformation of body 1)/(mass of body 1)^5 */
+        const REAL8 lambda2,                   /**< (tidal deformation of body 2)/(mass of body 2)^5 */
+        const INT4 phaseO,                     /**< twice PN phase order */
+        const INT4 amplitudeO,                  /**< twice PN amplitude order */
         LALDict *p /**< Linked list containing the extra testing GR parameters >**/
         )
 {
@@ -541,6 +447,12 @@ int XLALSimInspiralTaylorF2(
     for (i = iStart; i < n; i++) {
         freqs->data[i-iStart] = i * deltaF;
     }
+    XLALSimInspiralWaveformParamsInsertTidalLambda1(p,lambda1);
+    XLALSimInspiralWaveformParamsInsertTidalLambda2(p,lambda2);
+    XLALSimInspiralWaveformParamsInsertdQuadMon1(p,quadparam1-1.);
+    XLALSimInspiralWaveformParamsInsertdQuadMon2(p,quadparam2-1.);
+    XLALSimInspiralWaveformParamsInsertPNPhaseOrder(p,phaseO);
+    XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(p,amplitudeO);
     ret = XLALSimInspiralTaylorF2Core(&htilde, freqs, phi_ref, m1_SI, m2_SI,
                                       S1z, S2z, f_ref, shft, r, p);
 

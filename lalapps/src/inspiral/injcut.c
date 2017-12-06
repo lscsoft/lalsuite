@@ -500,7 +500,7 @@ int main( int argc, char *argv[] )
   {
     this_inj = injections.simInspiralTable;
     injections.simInspiralTable = injections.simInspiralTable->next;
-    XLALFreeSimInspiral( &this_inj );
+    LALFree( this_inj );
   }
 
   /* close the injection file */

@@ -169,10 +169,12 @@ tagEventIDColumn
   UINT8  id;
   CHAR   textId[LIGOMETA_UNIQUE_MAX];
   UCHAR  dbUniqueId[LIGOMETA_DBUNIQUE_MAX];
+  struct tagSnglInspiralTable   *snglInspiralTable;
   struct tagSnglRingdownTable   *snglRingdownTable;
   struct tagSummValueTable      *summValueTable;
   struct tagMultiInspiralTable  *multiInspiralTable;
   struct tagSnglTransdataTable  *snglTransdataTable;
+  struct tagSimInspiralTable    *simInspiralTable;
   struct tagSimRingdownTable    *simRingdownTable;
   struct tagCoincInspiralTable  *coincInspiralTable;
   struct tagCoincRingdownTable  *coincRingdownTable;
@@ -325,7 +327,7 @@ tagSnglInspiralTable
   REAL4         spin2x;
   REAL4         spin2y;
   REAL4         spin2z;
-  long          event_id;
+  EventIDColumn *event_id;
 }
 SnglInspiralTable;
 
@@ -513,7 +515,6 @@ typedef struct
 tagSimInspiralTable
 {
   struct tagSimInspiralTable *next;
-  long           process_id;
   CHAR           waveform[LIGOMETA_WAVEFORM_MAX];
   LIGOTimeGPS    geocent_end_time;
   LIGOTimeGPS    h_end_time;
@@ -550,6 +551,38 @@ tagSimInspiralTable
   REAL4          spin2z;
   REAL4          theta0;
   REAL4          phi0;
+
+  /* Ringdown Parameters */
+  REAL4          rdMass;
+  REAL4          rdSpin;
+  /* Parameters for the GR test Gossan's Waveforms */
+  REAL4 dtau21 ;
+  REAL4 dtau22 ;
+  REAL4 dtau33 ;
+  REAL4 dtau44 ;
+  REAL4 dfreq21 ;
+  REAL4 dfreq22 ;
+  REAL4 dfreq33 ;
+  REAL4 dfreq44 ;
+  /* Parameters for the GR test Lionel's Waveform */
+  REAL4 dfreq220;
+  REAL4 dfreq221;
+  REAL4 dfreq330;
+  REAL4 dfreq331;
+  REAL4 dfreq440;
+  REAL4 dfreq550;
+  REAL4 dfreq210;
+  REAL4 dfreq320;
+  REAL4 dfreq430;
+  REAL4 dtau220;
+  REAL4 dtau221;
+  REAL4 dtau330;
+  REAL4 dtau331;
+  REAL4 dtau440;
+  REAL4 dtau550;
+  REAL4 dtau210;
+  REAL4 dtau320;
+  REAL4 dtau430;
   REAL4          f_lower;
   REAL4          f_final;
   REAL4          mchirp;
@@ -560,7 +593,7 @@ tagSimInspiralTable
   REAL4          eff_dist_v;
   REAL4	         qmParameter1;
   REAL4		 qmParameter2;
-  long           simulation_id;
+  EventIDColumn  *event_id;
   INT4           numrel_mode_min;
   INT4           numrel_mode_max;
   CHAR           numrel_data[LIGOMETA_STRING_MAX];

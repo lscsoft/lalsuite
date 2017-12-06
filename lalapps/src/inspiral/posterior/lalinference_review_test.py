@@ -23,14 +23,6 @@ parser.add_argument('--gracedb', action='store_true',
                     default=False,
                     help='Runs the analysis for the GraceDB test event T169545.')
 
-parser.add_argument('--analytic-tests', action='store_true',
-                    default=False,
-                    help='Run on the unmodal and bimodial Gaussian and Rosenbrock test functions.')
-
-parser.add_argument('--analytic-csv-dir', type=str,
-                    default='./',
-                    help='Directory containing the CSVs describing the analytic tests.')
-
 parser.add_argument('--pptest', action='store_true',
                     default=False,
                     help='Runs a P-P analysis.')
@@ -84,12 +76,6 @@ try:
 except:
     print ini_file+' will be modified.'
 
-analytic_csv_dir = os.path.abspath(args.analytic_csv_dir)
-if args.analytic_tests:
-    csvs = glob.glob(analytic_csv_dir+"/*csv")
-    for csv in csvs:
-        shutil.copy(csv,args.output+'/'+os.path.basename(csv))
-
 os.chdir(args.output)
 
 path_keys = {'datafind': 'ligo_data_find',
@@ -109,10 +95,11 @@ path_keys = {'datafind': 'ligo_data_find',
             'gracedb': 'gracedb',
             'ppanalysis': 'cbcBayesPPAnalysis.py',
             'pos_to_sim_inspiral': 'cbcBayesPosToSimInspiral.py',
-            'processareas': 'process_areas',
-            'computeroqweights': 'lalapps_compute_roq_weights'}
+            'processareas': 'process_areas'}
 
 def replace(line):
+    if line[0]=='#':
+        return line
     for key in path_keys.keys():
         if key+'=/' in line:
             albert_path=line.split('=')[-1]
@@ -123,7 +110,7 @@ def replace(line):
             new_path=exec_path+'\n'
             return line.replace(albert_path,new_path)
     if 'engine=' in line:
-        return line.replace(line.split('=')[-1],args.engine)+'\n'
+        return line.replace(line.split('=')[-1],args.engine)
     if 'nparallel=' in line:
         return '# '+line
     if 'accounting_group=' in line:
@@ -142,14 +129,10 @@ def replace_fiducial_bns(line):
         return line.replace(line.split('=')[-1],web_outputdir+'/fiducialBNS/webdir/')
     if 'baseurl=' in line:
         return line.replace(line.split('=')[-1],'file://'+web_outputdir+'/fiducialBNS/webdir/')
-    if 'ifos=' in line:
-        return "ifos=['H1','L1']\n"
     if 'fake-cache=' in line:
         return line.replace(line,"fake-cache={'H1':'LALSimAdLIGO','L1':'LALSimAdLIGO','V1':'LALSimAdVirgo'}")
     if 'ignore-science-segments=' in line:
         return 'ignore-science-segments=True\n'
-    if 'flow=' in line:
-        return line.replace('#','').replace('40','50').strip()+'\n'
     if 'dataseed=' in line:
         return line.replace('#','').strip()+'\n'
     if 'margphi=' in line:
@@ -159,27 +142,17 @@ def replace_fiducial_bns(line):
     if 'disable-spin=' in line:
         return '#disable-spin=\n'
     if 'parname-max' in line:
-        return line+'\ndistance-max=400\n'
+        return line+'\ndistance-max=500\n'
     if 'deltaLogP=' in line:
-        return 'deltaLogP=5.0\n'
-    if 'approx=' in line:
-        return line.replace(line,"approx=SEOBNRv4_ROMpseudoFourPN")+'\n'
-    if 'srate=' in line:
-        return line.replace(line,"srate=2048")+'\n'
-    if 'seglen=' in line:
-        return line.replace(line,"seglen=18")
-    if 'comp-max=' in line:
-        return line.replace(line,"comp-max=3.5")+'\n'
-    if 'comp-min=' in line:
-        return line.replace(line,"comp-min=0.5")+'\n'
-    if '0noise=' in line:
         return line.replace('#','').strip()+'\n'
-    if 'neff=' in line:
-        return line.replace(line,"neff=500")
-    if 'nlive=' in line:
-        return line.replace(line,"nlive=512")
-    if 'maxmcmc=' in line:
-        return line.replace(line,"#maxmcmc=3000")
+    if 'approx=' in line:
+        return line.replace(line,"approx=SEOBNRv4_ROMpseudoFourPN")
+    if 'srate=' in line:
+        return line.replace(line,"srate=4096")
+    if 'comp-max=' in line:
+        return line.replace(line,"comp-max=3.5")
+    if 'comp-min=' in line:
+        return line.replace(line,"comp-min=0.5")
     return line
 
 if args.bns_injection:
@@ -274,8 +247,6 @@ def replace_fiducial_bbh(line):
         return line.replace(line.split('=')[-1],web_outputdir+'/fiducialBBH/webdir/')
     if 'baseurl=' in line:
         return line.replace(line.split('=')[-1],'file://'+web_outputdir+'/fiducialBBH/webdir/')
-    if 'ifos=' in line:
-        return "ifos=['H1','L1']\n"
     if 'fake-cache=' in line:
         return line.replace(line,"fake-cache={'H1':'LALSimAdLIGO','L1':'LALSimAdLIGO','V1':'LALSimAdVirgo'}")
     if 'ignore-science-segments=' in line:
@@ -293,21 +264,11 @@ def replace_fiducial_bbh(line):
     if 'computeroqweights=' in line:
         return line.replace('#','').strip()+'\n'
     if 'approx=' in line:
-        return line.replace(line,"approx=IMRPhenomPv2pseudoFourPN")+'\n'
+        return line.replace(line,"approx=IMRPhenomPv2pseudoFourPN")
     if 'parname-max' in line:
         return line+'\ndistance-max=2000\n'
     if 'deltaLogP=' in line:
         return 'deltaLogP=6.0\n'
-    if '0noise=' in line:
-        return line.replace('#','').strip()+'\n'
-    if 'neff=' in line:
-        return line.replace(line,"neff=500")
-    if 'nlive=' in line:
-        return line.replace(line,"nlive=512")
-    if 'maxmcmc=' in line:
-        return line.replace(line,"#maxmcmc=3000")
-    if 'fref=' in line:
-        return line.replace('#','').replace('100','20').strip()+'\n'
     return line
 
 if args.bbh_injection:
@@ -338,84 +299,6 @@ if args.bbh_injection:
         lalinferenceargs.append('--condor-submit')
 
     subprocess.call(lalinferenceargs)
-
-############################################################
-def replace_analytic_test(line, test_func):
-    if 'webdir=' in line:
-        return line.replace(line.split('=')[-1],web_outputdir+'/'+test_func+'/webdir/')
-    if 'baseurl=' in line:
-        return line.replace(line.split('=')[-1],'file://'+web_outputdir+'/'+test_func+'/webdir/')
-    if 'fake-cache=' in line:
-        return line.replace(line,"fake-cache={'H1':'LALSimAdLIGO','L1':'LALSimAdLIGO','V1':'LALSimAdVirgo'}")
-    if 'dataseed=' in line:
-        return line.replace('#','').strip()+'\n'
-    if 'analyse-all-time' in line:
-        return 'analyse-all-time=True\n'
-    if 'ignore-science-segments=' in line:
-        return 'ignore-science-segments=True\n'
-    if 'seglen=' in line:
-        return 'seglen=1\n'
-    if 'gps-start-time=' in line:
-        return 'gps-start-time=0\n'
-    if 'gps-end-time=' in line:
-        return 'gps-end-time=2\n'
-    if 'segment-overlap=' in line:
-        return 'segment-overlap=0\n'
-    if ' psd-length=' in line:
-        return 'psd-length=1\n'
-    if 'dataseed=' in line:
-        return line.replace('#','').strip()+'\n'
-    if 'disable-spin=' in line:
-        return '#disable-spin=\n'
-    if 'approx=' in line:
-        return line.replace(line,"approx=SpinTaylorT4")+'\n'
-    if test_func+'=' in line:
-        return test_func+'=\n'
-    if 'deltaLogP=' in line:
-        return 'deltaLogP=7\n'
-    if 'neff=' in line:
-        return line.replace(line,"neff=10000")
-    if 'nlive=' in line:
-        return line.replace(line,"nlive=512")
-    if 'maxmcmc=' in line:
-        return line.replace(line,"#maxmcmc=3000")
-    if test_func != "rosenbrockLikelihood":
-        if 'meanVectors=' in line:
-            csv = args.output+'/'+test_func+'_means.csv'
-            if os.path.isfile(csv):
-                return 'meanVectors='+csv+'\n'
-        if 'covarianceMatrix=' in line:
-            csv = args.output+'/'+'test_correlation_matrix.csv'
-            if os.path.isfile(csv):
-                return 'covarianceMatrix='+csv+'\n'
-    return line
-
-if args.analytic_tests:
-    test_funcs = ['correlatedGaussianLikelihood', 'bimodalGaussianLikelihood', 'rosenbrockLikelihood']
-    for test_func in test_funcs:
-        os.makedirs(args.output+'/' + test_func + '/')
-        os.chdir(args.output+'/' + test_func + '/')
-
-        shutil.copy(ini_file,args.output+'/'+test_func+'/'+os.path.basename(ini_file)+'.bak')
-        shutil.copy(ini_file,args.output+'/'+test_func+'/')
-
-        with open(args.output+'/'+test_func+'/'+os.path.basename(ini_file),'w') as fout:
-            with open(args.output+'/'+test_func+'/'+os.path.basename(ini_file)+'.bak','r') as fin:
-                for line in fin:
-                    fout.write(replace_analytic_test(line, test_func))
-
-        lalinferenceargs = [ 'lalinference_pipe'
-                             , '-r'
-                             , './run'
-                             , '-p'
-                             , './daglog'
-                             , args.output+'/'+test_func+'/'+os.path.basename(ini_file)
-                             ]
-
-        if args.condor_submit:
-            lalinferenceargs.append('--condor-submit')
-
-        subprocess.call(lalinferenceargs)
 
 ############################################################
 

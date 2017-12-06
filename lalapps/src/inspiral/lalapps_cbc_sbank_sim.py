@@ -82,9 +82,6 @@ def parse_command_line():
     parser.add_option("--user-tag",default="banksim")
     parser.add_option("--injection-file",default = None)
     parser.add_option("--injection-approx",default = None)
-    parser.add_option("--injection-min", default = 0, type="int", metavar="N", help="Skip first N injections. This cut is applied after all other filters on the injection file are applied.")
-    parser.add_option("--injection-max", default = -1, type="int", metavar="M", help="Skip all injections after the Mth injection. This cut is applied after all other filters on the injection file are applied.")
-
     parser.add_option("--mratio-max",default = float('inf'), type="float", help="Cull injections based on mass ratio")
     parser.add_option("--mtotal-min",default = 0, type="float", help="Cull injections based on total mass")
     parser.add_option("--mtotal-max",default = float('inf'), type="float", help="Cull injections based on total mass")
@@ -142,6 +139,7 @@ opts_dict = dict((k, v) for k, v in opts.__dict__.iteritems() if v is not False 
 process = ligolw_process.register_to_xmldoc(fake_xmldoc, "lalapps_cbc_sbank_sim",
     opts_dict, version="no version",
     cvs_repository="sbank", cvs_entry_time=strftime('%Y/%m/%d %H:%M:%S'))
+h5file = H5File("%s.h5" % usertag, "w")
 
 # load templates
 #
@@ -173,55 +171,45 @@ for file_approx in opts.template_bank:
 if opts.verbose:
     print "Initialized the template bank with %d templates." % len(bank)
 
+# write bank to h5 file, but note that from_sngls() has resorted the
+# bank by neighborhood_param
+sngls = lsctables.SnglInspiralTable()
+for s in bank._templates:
+    sngls.append(s.to_sngl())
+h5file.create_dataset("/sngl_inspiral", data=ligolw_table_to_array(sngls), compression='gzip', compression_opts=1)
+h5file.flush()
+del sngls[:]
 
-#
-# Load injection file and sort by chirp mass. Sorting injections by
-# chirp mass helps avoid memory usage going off the rails when using
-# waveform caching
-#
+# pick injection parameters
 xmldoc2 = utils.load_filename(inj_file, contenthandler=ContentHandler)
 ligolw_copy_process(xmldoc2, fake_xmldoc)
-sims = sorted(lsctables.SimInspiralTable.get_table(xmldoc2), key=lambda s: s.mchirp)
+sims = lsctables.SimInspiralTable.get_table(xmldoc2)
 
 #
-# Sometimes inspinj doesn't give us everything we want, so we give the
-# user a little extra control here over the injections acutally used.
-# FIXME: preprocess inj file in future to avoid this step
+# sometime inspinj doesn't give us everything we want, so we give the
+# user a little extra control here over the injections acutally used
 #
 newtbl = lsctables.SimInspiralTable()
-noinjs = 0
 for s in sims:
-
-    # short-circuit this potentially slow code path if possible
-    if len(newtbl) == opts.injection_max - opts.injection_min:
-        break
-
-    if 1./opts.mratio_max <= s.mass1/s.mass2 <= opts.mratio_max and opts.mtotal_min <= s.mass1 + s.mass2 <= opts.mtotal_max and (opts.duration_min == 0 or lalsim.SimIMRSEOBNRv4ROMTimeOfFrequency(opts.flow, s.mass1 * MSUN_SI, s.mass2* MSUN_SI, s.spin1z, s.spin2z) > opts.duration_min):
+    if 1./opts.mratio_max <= s.mass1/s.mass2 <= opts.mratio_max and opts.mtotal_min <= s.mass1 + s.mass2 <= opts.mtotal_max and lalsim.SimIMRSEOBNRv4ROMTimeOfFrequency(opts.flow, s.mass1 * MSUN_SI, s.mass2* MSUN_SI, s.spin1z, s.spin2z) > opts.duration_min:
         s.polarization = np.random.uniform(0, 2*np.pi)
-
-        # start adding to table once we reach min injection requested
-        # by user
-        if opts.injection_min <= noinjs:
-            newtbl.append(s)
-        noinjs += 1
-
+        newtbl.append(s)
 sims = newtbl
 
+h5file.create_dataset("/sim_inspiral", data=ligolw_table_to_array(sims), compression='gzip', compression_opts=1)
+h5file.flush()
+inj_wfs = Bank.from_sims(sims, inj_approx, noise_model, flow)
+del xmldoc2, sims[:]
 if verbose:
-    print "Loaded %d injections" % len(sims)
+    print "Loaded %d injections" % len(inj_wfs)
     inj_format = "".join("%s: %s   " % name_format for name_format in zip(inj_approx.param_names, inj_approx.param_formats))
 
 # main worker loop
-# FIXME: this (potentially) breaks using mixed template bank approximants
-match_map = np.empty(len(sims), dtype=[("match", np.float32), ("inj_sigmasq", np.float32)])
-inj_bank = Bank(noise_model, flow)
-tmplts = lsctables.SnglInspiralTable()
-for j, sim in enumerate(sims):
+match_map = np.empty(len(inj_wfs), dtype=[("inj_index", np.uint32), ("inj_sigmasq", np.float32), ("match", np.float32), ("best_match_tmplt_index", np.uint32)])
+for inj_ind, inj_wf in enumerate(inj_wfs):
 
-    inj_wf = inj_approx.from_sim(sim, bank=inj_bank)
-    inj_ind = opts.injection_min + j
     if verbose:
-        print "injection %d/%d" % (j+1, len(sims))
+        print "injection %d/%d" % (inj_ind+1, len(inj_wfs))
         print inj_format % inj_wf.params
 
     # NB: sigmasq set during argmax_match
@@ -232,27 +220,22 @@ for j, sim in enumerate(sims):
         print bank._templates[match_tup[1]].params
         print "\tbest match:  %f\n" % match_tup[0]
 
-    match_map[j] = (match_tup[0], inj_wf.sigmasq)
-    tmplts.append(bank._templates[match_tup[1]].to_sngl())
+    match_map[inj_ind] = (inj_ind, inj_wf.sigmasq) + match_tup
+    inj_wf.clear()  # prune inj waveform
+
 
 if verbose:
     print "total number of match calculations:", bank._nmatch
 
-# write out results
-h5file = H5File("%s.h5" % usertag, "w")
-h5file.create_dataset("/sim_inspiral", data=ligolw_table_to_array(sims), compression='gzip', compression_opts=1)
-h5file.create_dataset("/sngl_inspiral", data=ligolw_table_to_array(tmplts), compression='gzip', compression_opts=1)
-h5file.create_dataset("/match_map", data=match_map, compression='gzip', compression_opts=1)
-h5file.flush()
-
 # merge process and process_params tables, then complete ourselves
-lsctables.reset_next_ids((lsctables.ProcessTable, lsctables.ProcessParamsTable))
+table.reset_next_ids((lsctables.ProcessTable, lsctables.ProcessParamsTable))
 ligolw_add.reassign_ids(fake_xmldoc)
 ligolw_add.merge_ligolws(fake_xmldoc)
 ligolw_add.merge_compatible_tables(fake_xmldoc)
 ligolw_process.set_process_end_time(process)
 
-# output process
+# output
+h5file.create_dataset("/match_map", data=match_map, compression='gzip', compression_opts=1)
 proc = lsctables.ProcessTable.get_table(fake_xmldoc)
 for p in proc:
     p.cvs_entry_time = 0

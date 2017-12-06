@@ -25,7 +25,7 @@
 #include <float.h>
 
 #include <lal/Units.h>
-#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
+#include <lal/LALAdaptiveRungeKutta4.h>
 #include <lal/LALConstants.h>
 #include <lal/FindRoot.h>
 #include <lal/SeqFactories.h>
@@ -222,7 +222,7 @@ static void Test_XLALSimIMRPhenomPCalculateModelParameters(void) {
   REAL8 f_ref = f_min;
   IMRPhenomP_version_type version = IMRPhenomPv2_V;
 
-  XLALSimIMRPhenomPCalculateModelParametersOld(
+  XLALSimIMRPhenomPCalculateModelParameters(
       &chi1_l,            /**< Output: aligned spin on companion 1 */
       &chi2_l,            /**< Output: aligned spin on companion 2 */
       &chip,              /**< Output: Effective spin in the orbital plane */
@@ -419,7 +419,7 @@ static void Test_XLALSimIMRPhenomP(void) {
   REAL8 f_ref = f_min;
   IMRPhenomP_version_type version = IMRPhenomPv2_V;
 
-  XLALSimIMRPhenomPCalculateModelParametersOld(
+  XLALSimIMRPhenomPCalculateModelParameters(
       &chi1_l,            /**< Output: aligned spin on companion 1 */
       &chi2_l,            /**< Output: aligned spin on companion 2 */
       &chip,              /**< Output: Effective spin in the orbital plane */
@@ -642,7 +642,7 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
   REAL8 f_ref = f_min;
   IMRPhenomP_version_type version = IMRPhenomPv2_V;
 
-  XLALSimIMRPhenomPCalculateModelParametersOld(
+  XLALSimIMRPhenomPCalculateModelParameters(
       &chi1_l,            /**< Output: aligned spin on companion 1 */
       &chi2_l,            /**< Output: aligned spin on companion 2 */
       &chip,              /**< Output: Effective spin in the orbital plane */
@@ -699,7 +699,7 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
   // Now repeat for a different f_ref
   f_ref = 5;
 
-  XLALSimIMRPhenomPCalculateModelParametersOld(
+  XLALSimIMRPhenomPCalculateModelParameters(
       &chi1_l,            /**< Output: aligned spin on companion 1 */
       &chi2_l,            /**< Output: aligned spin on companion 2 */
       &chip,              /**< Output: Effective spin in the orbital plane */

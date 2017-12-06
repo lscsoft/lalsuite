@@ -14,7 +14,6 @@ pkginclude_HEADERS = \
 	EstimateAmplitudeParams.h \
 	ExtrapolatePulsarSpins.h \
 	FITSFileIO.h \
-	FITSPulsarIO.h \
 	GSLHelpers.h \
 	GeneratePulsarSignal.h \
 	GenerateSpinOrbitCW.h \
@@ -59,7 +58,6 @@ pkginclude_HEADERS = \
 	$(END_OF_LIST)
 
 lib_LTLIBRARIES = liblalpulsar.la
-
 liblalpulsar_la_SOURCES = \
 	BinaryPulsarTiming.c \
 	CWMakeFakeData.c \
@@ -77,7 +75,6 @@ liblalpulsar_la_SOURCES = \
 	EstimateAmplitudeParams.c \
 	ExtrapolatePulsarSpins.c \
 	FITSFileIO.c \
-	FITSPulsarIO.c \
 	GenerateEllipticSpinOrbitCW.c \
 	GenerateHyperbolicSpinOrbitCW.c \
 	GenerateParabolicSpinOrbitCW.c \
@@ -89,6 +86,7 @@ liblalpulsar_la_SOURCES = \
 	LALBarycenter.c \
 	LALComputeAM.c \
 	LALInitBarycenter.c \
+	LALPulsarVCSInfo.c \
 	LFTandTSutils.c \
 	LISAspecifics.c \
 	LatticeTiling.c \
@@ -121,11 +119,7 @@ liblalpulsar_la_SOURCES = \
 	UniversalDopplerMetric.c \
 	Velocity.c \
 	$(END_OF_LIST)
-
-nodist_liblalpulsar_la_SOURCES = \
-	LALPulsarBuildInfoHeader.h \
-	LALPulsarVCSInfo.c \
-	$(END_OF_LIST)
+nodist_liblalpulsar_la_SOURCES = LALPulsarBuildInfo.c
 
 if LALXML
 pkginclude_HEADERS += LALXMLVOTableSerializersPulsar.h
@@ -162,22 +156,9 @@ liblalpulsar_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
 DISTCLEANFILES = config.h
 
-vcs_build_info_source = LALPulsarVCSInfo.c
 vcs_info_sources = LALPulsarVCSInfoHeader.h
-build_info_source = LALPulsarBuildInfoHeader.h
-build_info_dependencies = $(liblalpulsar_la_DEPENDENCIES)
-
-LDADD = liblalpulsar.la
-
-bin_PROGRAMS = \
-	lalpulsar_version \
-	$(END_OF_LIST)
-
-lalpulsar_version_SOURCES = version.c
-
-TESTS = \
-	lalpulsar_version \
-	$(END_OF_LIST)
+build_info_source = LALPulsarBuildInfo.c
+$(build_info_source): $(liblalpulsar_la_DEPENDENCIES)
 
 EXTRA_DIST = \
 	Eccentric_and_true_anomaly.png \

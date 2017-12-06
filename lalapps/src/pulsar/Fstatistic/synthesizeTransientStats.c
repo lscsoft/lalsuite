@@ -126,6 +126,7 @@ typedef struct {
   CHAR *ephemEarth;	/**< Earth ephemeris file to use */
   CHAR *ephemSun;	/**< Sun ephemeris file to use */
 
+  BOOLEAN version;	/**< output version-info */
   INT4 randSeed;	/**< GSL random-number generator seed value to use */
 } UserInput_t;
 
@@ -186,12 +187,24 @@ int main(int argc,char *argv[])
 
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;
-  if ( XLALUserVarReadAllInput ( &should_exit, argc, argv, lalAppsVCSInfoList ) != XLAL_SUCCESS ) {
+  if ( XLALUserVarReadAllInput ( &should_exit, argc, argv ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALUserVarReadAllInput() failed with errno=%d\n", __func__, xlalErrno );
     return 1;
   }
   if ( should_exit )
     return EXIT_FAILURE;
+
+  if ( uvar.version ) {
+    /* output verbose VCS version string if requested */
+    CHAR *vcs;
+    if ( (vcs = XLALGetVersionString (lalDebugLevel)) == NULL ) {
+      LogPrintf ( LOG_CRITICAL, "%s:XLALGetVersionString(%d) failed with errno=%d.\n", __func__, lalDebugLevel, xlalErrno );
+      return 1;
+    }
+    printf ( "%s\n", vcs );
+    XLALFree ( vcs );
+    return 0;
+  }
 
   /* ---------- Initialize code-setup ---------- */
   if ( XLALInitCode( &cfg, &uvar ) != XLAL_SUCCESS ) {
@@ -209,7 +222,7 @@ int main(int argc,char *argv[])
 	  XLAL_ERROR ( XLAL_EIO );
 	}
       fprintf (fpTransientStats, "%s", cfg.logString );		/* write search log comment */
-      if ( write_transientCandidate_to_fp ( fpTransientStats, NULL, 'd' ) != XLAL_SUCCESS ) { /* write header-line comment */
+      if ( write_transientCandidate_to_fp ( fpTransientStats, NULL ) != XLAL_SUCCESS ) { /* write header-line comment */
         XLAL_ERROR ( XLAL_EFUNC );
       }
     } /* if outputStats */
@@ -432,7 +445,7 @@ int main(int argc,char *argv[])
 
 
       /* ----- if requested, output transient-cand statistics */
-      if ( fpTransientStats && write_transientCandidate_to_fp ( fpTransientStats, &cand, 'd' ) != XLAL_SUCCESS ) {
+      if ( fpTransientStats && write_transientCandidate_to_fp ( fpTransientStats, &cand ) != XLAL_SUCCESS ) {
         XLALPrintError ( "%s: write_transientCandidate_to_fp() failed.\n", __func__ );
         XLAL_ERROR ( XLAL_EFUNC );
       }
@@ -587,6 +600,8 @@ XLALInitUserVars ( UserInput_t *uvar )
 
   XLALRegisterUvarMember( ephemEarth, 	 STRING, 0,  OPTIONAL, "Earth ephemeris file to use");
   XLALRegisterUvarMember( ephemSun, 	 	 STRING, 0,  OPTIONAL, "Sun ephemeris file to use");
+
+  XLALRegisterUvarMember( version,        	BOOLEAN, 'V', SPECIAL,  "Output code version");
 
   /* 'hidden' stuff */
   XLALRegisterUvarMember( TAtom,		  	  INT4, 0, DEVELOPER, "Time baseline for Fstat-atoms (typically Tsft) in seconds." );

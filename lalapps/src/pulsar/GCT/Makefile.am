@@ -51,8 +51,8 @@ NVCC ?= nvcc
 .cu.o:
 	$(NVCC) $(CPPFLAGS) -c $< -o $@
 
-EXTRA_DIST = testGCT.sh testGCT_inject.sh
+EXTRA_DIST = testGCT.sh
 
-TESTS = testGCT.sh testGCT_inject.sh
+TESTS = testGCT.sh
 
 CLEANFILES =

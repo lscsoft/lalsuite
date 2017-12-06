@@ -892,7 +892,7 @@ struct params parseargs(int argc, char **argv)
             }
             if (p.params == NULL)
                 p.params = XLALCreateDict();
-            XLALSimInspiralWaveformParamsInsertPNPhaseOrder(p.params, phaseO);
+            XLALSimInspiralWaveformParamsInsertPNPhaseOrder(p.params, atoi(LALoptarg));
             break;
         case 'D':      /* domain */
             switch (*LALoptarg) {

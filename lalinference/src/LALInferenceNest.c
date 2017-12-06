@@ -63,7 +63,7 @@ int main(int argc, char *argv[]){
     fprintf(stdout,"%s",help);
   }
   /* write down git information */
-  fprintf(stdout,"\n\nLALInference version:%s,%s,%s,%s,%s\n\n", lalInferenceVCSInfo.vcsId,lalInferenceVCSInfo.vcsDate,lalInferenceVCSInfo.vcsBranch,lalInferenceVCSInfo.vcsAuthor,lalInferenceVCSInfo.vcsStatus);
+  fprintf(stdout,"\n\nLALInference version:%s,%s,%s,%s,%s\n\n", lalInferenceVCSId,lalInferenceVCSDate,lalInferenceVCSBranch,lalInferenceVCSAuthor,lalInferenceVCSStatus);
   
   /* initialise runstate based on command line */
   /* This includes reading in the data */
@@ -82,11 +82,11 @@ int main(int argc, char *argv[]){
       }
   }
     char *outfile=ppt->value;
-    char headerfile[FILENAME_MAX+100];
+    char headerfile[FILENAME_MAX];
     FILE *fpout=NULL;
-    snprintf(headerfile,sizeof(headerfile),"%s_header.txt",outfile);
+    sprintf(headerfile,"%s_header.txt",outfile);
     fpout=fopen(headerfile,"w");
-    fprintf(fpout,"LALInference version:%s,%s,%s,%s,%s\n", lalInferenceVCSInfo.vcsId,lalInferenceVCSInfo.vcsDate,lalInferenceVCSInfo.vcsBranch,lalInferenceVCSInfo.vcsAuthor,lalInferenceVCSInfo.vcsStatus);
+    fprintf(fpout,"LALInference version:%s,%s,%s,%s,%s\n", lalInferenceVCSId,lalInferenceVCSDate,lalInferenceVCSBranch,lalInferenceVCSAuthor,lalInferenceVCSStatus);
     fprintf(fpout,"%s\n",LALInferencePrintCommandLine(state->commandLine));
     fclose(fpout);
     }
@@ -101,7 +101,16 @@ int main(int argc, char *argv[]){
 
   /* Perform injections if data successful read or created */
   if (state&&!helpflag){
-    LALInferenceInjectInspiralSignal(data, state->commandLine);
+    if (LALInferenceGetProcParamVal(state->commandLine, "--ringdown")){
+      fprintf(stdout, " LALInferenceInjectRingdownSignal(): started.\n"); // FIXME: remove after debug
+      LALInferenceInjectRingdownSignal(state->data, state->commandLine);
+      fprintf(stdout, " LALInferenceInjectRingdownSignal(): finished.\n"); //FM
+    }
+    else{
+      fprintf(stdout, " LALInferenceInjectInspiralSignal(): started.\n"); //FM
+      LALInferenceInjectInspiralSignal(state->data, state->commandLine);
+      fprintf(stdout, " LALInferenceInjectInspiralSignal(): finished.\n"); //FM
+    }
   }
 
   /* Simulate calibration errors. 
@@ -125,7 +134,14 @@ int main(int argc, char *argv[]){
      }
 
   /* Set up the threads */
+  if (!helpflag && LALInferenceGetProcParamVal(state->commandLine, "--ringdown")){
+  LALInferenceInitRingdownThreads(state,1);}
+  else if (!helpflag && !(LALInferenceGetProcParamVal(state->commandLine, "--ringdown"))){
+  LALInferenceInitCBCThreads(state,1);}
+  else if (helpflag){
+  LALInferenceInitRingdownThreads(state,1);
   LALInferenceInitCBCThreads(state,1);
+  }
 
   /* Init the prior */
   LALInferenceInitCBCPrior(state);

@@ -154,7 +154,6 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         else
           error( "error parsing option %s with argument %s\n",
               long_options[option_index].name, LALoptarg );
-		break;
       case 'a': /* gps-start-time */
         localparams.startTime.gpsSeconds = atol( LALoptarg );
         break;
@@ -444,10 +443,8 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         break;
       case '?':
         error( "unknown error while parsing options\n" );
-		break;
       default:
         error( "unknown error while parsing options\n" );
-		break;
     }
   }
 

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2017  Leo Singer
+# Copyright (C) 2013-2016  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -23,13 +23,34 @@ explicitly specify the GraceDb ID on the command line, as in:
 
     $ bayestar_localize_lvalert T90713
 
-Or, `bayetar_localize_lvalert` can GraceDB IDs from stdin (e.g., from the
-terminal, or redirected from a fifo):
+Or, `bayetar_localize_lvalert` can accept an LVAlert XML packet read from
+stdin. This is handy for quickly setting up automatic processing of events in
+response to LVAlert notifications. To do this, first put your LVAlert login
+credentials in the file `~/.netrc` in your home directory:
 
-    $ mkfifo /var/run/bayestar
-    $ tail -F /var/run/bayestar | bayestar_localize_lvalert &
-    $ echo T90713 > /var/run/bayestar
+    machine lvalert.cgca.uwm.edu login albert.einstein password ligorocks
+
+replacing `albert.einstein` and `ligorocks` with your actual username and
+password. Then, subscribe to events of types that you are interested in
+(probably `cbc_lowmass` or `test_lowmass`):
+
+    $ lvalert_admin --subscribe --node cbc_lowmass
+    $ lvalert_admin --subscribe --node test_lowmass
+
+Create a configuration file that will tell `lvalert_listen` what to do in
+response to those event types. For example, you might create a file called
+`lvalert_listen.ini` with the following contents:
+
+    [test_lowmass]
+    executable = bayestar_localize_lvalert
+    [cbc_lowmass]
+    executable = bayestar_localize_lvalert
+
+Finally, start `lvalert_listen`:
+
+    $ lvalert_listen --config-file lvalert_listen.ini
 """
+__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 #
@@ -37,142 +58,130 @@ terminal, or redirected from a fifo):
 #
 
 from lalinference.bayestar import command
+import logging
+import ligo.lvalert.utils
+import sys
+import os
+
+logging.basicConfig(level=logging.DEBUG)
+log = logging.getLogger('BAYESTAR')
 
 methods = '''
     toa_phoa_snr
     toa_phoa_snr_mcmc
+    toa_phoa_snr_mcmc_kde
     '''.split()
 default_method = 'toa_phoa_snr'
 command.skymap_parser.add_argument(
     '--method', choices=methods, default=default_method,
     help='Sky localization method [default: %(default)s]')
 parser = command.ArgumentParser(
-    parents=[
-        command.waveform_parser, command.prior_parser, command.skymap_parser])
-parser.add_argument(
-    '-d', '--disable-detector', metavar='X1', type=str, nargs='+',
-    help='disable certain detectors [default: enable all]')
-parser.add_argument(
-    '-N', '--dry-run', default=False, action='store_true',
+    parents=[command.waveform_parser, command.prior_parser, command.skymap_parser])
+parser.add_argument('-N', '--dry-run', default=False, action='store_true',
     help='Dry run; do not update GraceDB entry [default: %(default)s]')
-parser.add_argument(
-    '--no-tag', default=False, action='store_true',
-    help='Do not set lvem tag for GraceDB entry [default: %(default)s]')
-parser.add_argument(
-    '-o', '--output', metavar='FILE.fits[.gz]', default='bayestar.fits.gz',
+parser.add_argument('-o', '--output', metavar='FILE.fits[.gz]',
+    default='bayestar.fits.gz',
     help='Name for uploaded file [default: %(default)s]')
-parser.add_argument(
-    'graceid', metavar='G123456', nargs='*',
-    help='Run on these GraceDB IDs. If no GraceDB IDs are listed on the '
-    'command line, then read newline-separated GraceDB IDs from stdin.')
+parser.add_argument('graceid', metavar='G123456', nargs='?',
+    help='Run on this GraceDB ID [default: listen to lvalert]')
 opts = parser.parse_args()
 
+if opts.graceid is None:
+    # No GraceDB ID; read LVAlert data from stdin
+    lvadata = ligo.lvalert.utils.get_LVAdata_from_stdin(sys.stdin, as_dict=True)
+    log.info("received lvalert event of type='%s' for uid='%s' and file='%s'",
+        lvadata['alert_type'], lvadata['uid'], lvadata['file'])
+    if lvadata['alert_type'] == 'update' and lvadata['file'] == 'psd.xml.gz':
+        graceid = lvadata['uid']
+    else:
+        log.info('ignoring')
+        raise SystemExit
+else:
+    # One command line argument; manual start from GraceDB id
+    graceid = opts.graceid
+
 
 #
-# Late imports
+# Hook logging into GraceDb
 #
 
-import logging
-import os
-import sys
-import six
-from lalinference.bayestar.sky_map import localize, rasterize
-from lalinference.io import fits
-from lalinference.io import events
 import ligo.gracedb.logging
 import ligo.gracedb.rest
-
-# Squelch annoying and uniformative LAL log messages.
-import lal
-lal.ClobberDebugLevel(lal.LALNDEBUG)
-
-logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s')
-log = logging.getLogger('BAYESTAR')
-
-# If no GraceDB IDs were specified on the command line, then read them
-# from stdin line-by-line.
-graceids = opts.graceid if opts.graceid else command.iterlines(sys.stdin)
 
 # Fire up a GraceDb client
 # FIXME: Mimic the behavior of the GraceDb command line client, where the
 # environment variable GRACEDB_SERVICE_URL overrides the default service URL.
 # It would be nice to get this behavior into the gracedb package itself.
 gracedb = ligo.gracedb.rest.GraceDb(
-    os.environ.get(
-        'GRACEDB_SERVICE_URL', ligo.gracedb.rest.DEFAULT_SERVICE_URL))
+    os.environ.get('GRACEDB_SERVICE_URL',
+    ligo.gracedb.rest.DEFAULT_SERVICE_URL))
 
-if opts.chain_dump:
-    chain_dump = opts.output.replace('.fits.gz', '').replace('.fits', '') + \
-        '.chain.npy'
-else:
-    chain_dump = None
+# Send log messages to GraceDb too
+if not opts.dry_run:
+    handler = ligo.gracedb.logging.GraceDbLogHandler(gracedb, graceid)
+    handler.setLevel(logging.INFO)
+    logging.root.addHandler(handler)
 
-tags = ("sky_loc",)
-if not opts.no_tag:
-    tags += ("lvem",)
 
-event_source = events.gracedb.open(graceids, gracedb)
+#
+# Perform sky localization
+#
 
-if opts.disable_detector:
-    event_source = events.detector_disabled.open(
-        event_source, opts.disable_detector)
+import os
+import shutil
+import tempfile
+from lalinference.bayestar import distance
+from lalinference.bayestar.sky_map import gracedb_sky_map
+from lalinference.io import fits
 
-for graceid in six.iterkeys(event_source):
+# A little bit of Cylon humor
+log.info('by your command...')
 
+try:
+    # download coinc.xml
+    coinc_file = gracedb.files(graceid, "coinc.xml")
+
+    # download psd.xml.gz
+    psd_file = gracedb.files(graceid, "psd.xml.gz")
+
+    if opts.chain_dump:
+        chain_dump = opts.output.replace('.fits.gz', '').replace('.fits', '') + '.chain.npy'
+    else:
+        chain_dump = None
+
+    # perform sky localization
+    log.info("starting sky localization")
+    sky_map, epoch, elapsed_time, instruments = gracedb_sky_map(
+        coinc_file, psd_file, opts.waveform, opts.f_low,
+        opts.min_distance, opts.max_distance, opts.prior_distance_power,
+        phase_convention=opts.phase_convention, nside=opts.nside,
+        f_high_truncate=opts.f_high_truncate,
+        method=opts.method, chain_dump=chain_dump,
+        enable_snr_series=opts.enable_snr_series)
+    prob, distmu, distsigma, _ = sky_map
+    distmean, diststd = distance.parameters_to_marginal_moments(
+        prob, distmu, distsigma)
+    log.info("sky localization complete")
+
+    # upload FITS file
+    fitsdir = tempfile.mkdtemp()
     try:
-        event = event_source[graceid]
-    except:
-        log.exception('failed to read event %s from GraceDB', graceid)
-        continue
-
-    # Send log messages to GraceDb too
-    if not opts.dry_run:
-        handler = ligo.gracedb.logging.GraceDbLogHandler(gracedb, graceid)
-        handler.setLevel(logging.INFO)
-        logging.root.addHandler(handler)
-
-    # A little bit of Cylon humor
-    log.info('by your command...')
-
-    try:
-        # perform sky localization
-        log.info("starting sky localization")
-        sky_map = rasterize(localize(
-            event, opts.waveform, opts.f_low, opts.min_distance,
-            opts.max_distance, opts.prior_distance_power, opts.cosmology,
-            method=opts.method, nside=opts.nside,
-            chain_dump=chain_dump, enable_snr_series=opts.enable_snr_series,
-            f_high_truncate=opts.f_high_truncate))
-        sky_map.meta['objid'] = str(graceid)
-        sky_map.meta['url'] = 'https://gracedb.ligo.org/events/{0}'.format(
-            graceid)
-        log.info("sky localization complete")
-
-        # upload FITS file
-        with command.TemporaryDirectory() as fitsdir:
-            fitspath = os.path.join(fitsdir, opts.output)
-            fits.write_sky_map(fitspath, sky_map, nest=True)
-            log.debug('wrote FITS file: %s', opts.output)
-            if opts.dry_run:
-                command.rename(fitspath, os.path.join('.', opts.output))
-            else:
-                gracedb.writeLog(
-                    graceid, "BAYESTAR rapid sky localization ready",
-                    filename=fitspath, tagname=tags)
-            log.debug('uploaded FITS file')
-    except KeyboardInterrupt:
-        # Produce log message and then exit if we receive SIGINT (ctrl-C).
-        log.exception("sky localization failed")
-        raise
-    except:
-        # Produce log message for any otherwise uncaught exception.
-        # Unless we are in dry-run mode, keep going.
-        log.exception("sky localization failed")
-        if opts.dry_run:
-            # Then re-raise the exception if we are in dry-run mode
-            raise
-
-    if not opts.dry_run:
-        # Remove old log handler
-        logging.root.removeHandler(handler)
-        del handler
+        fitspath = os.path.join(fitsdir, opts.output)
+        fits.write_sky_map(fitspath, sky_map, gps_time=float(epoch),
+            creator=parser.prog, objid=str(graceid),
+            url='https://gracedb.ligo.org/events/{0}'.format(graceid),
+            runtime=elapsed_time, instruments=instruments,
+            distmean=distmean, diststd=diststd,
+            origin='LIGO/Virgo', nest=True)
+        if not opts.dry_run:
+            gracedb.writeLog(graceid, "INFO:BAYESTAR:uploaded sky map",
+                filename=fitspath, tagname=("sky_loc", "lvem"))
+        else:
+            command.rename(fitspath, os.path.join('.', opts.output))
+    finally:
+        shutil.rmtree(fitsdir)
+except:
+    # Produce log message for any otherwise uncaught exception
+    log.exception("sky localization failed")
+    # Then re-raise the exception
+    raise

@@ -10,7 +10,6 @@ import ast
 import os
 import uuid
 from glue import pipeline
-from math import ceil
 
 usage=""" %prog [options] config.ini
 Setup a Condor DAG file to run the LALInference pipeline based on
@@ -141,10 +140,10 @@ if cp.has_option('paths','roq_b_matrix_directory'):
   if roq_mass_freq_scale_factor != 1.:
     print 'WARNING: Rescaling ROQ basis, please ensure it is allowed with the model used.'
 
-  if opts.gid is not None or (opts.injections is not None or cp.has_option('input','injection-file')) or cp.has_option('lalinference','trigger_mchirp'):
+  if opts.gid is not None or (opts.injections is not None or cp.has_option('input','injection-file')):
 
     for mc_prior in mc_priors:
-      mc_priors[mc_prior] = array(mc_priors[mc_prior])
+      mc_priors[mc_prior] = array(mc_priors[mc_prior])*roq_mass_freq_scale_factor
     # find mass bin containing the trigger
     trigger_bin = None
     for roq in roq_paths:
@@ -209,12 +208,12 @@ for sampler in samps:
         path=cp.get('paths','roq_b_matrix_directory')
         thispath=os.path.join(path,roq)
         cp.set('paths','roq_b_matrix_directory',thispath)
-        flow=roq_params[roq]['flow'] / roq_mass_freq_scale_factor
-        srate=2.*roq_params[roq]['fhigh'] / roq_mass_freq_scale_factor
+        flow=int(roq_params[roq]['flow'] / roq_mass_freq_scale_factor)
+        srate=int(2.*roq_params[roq]['fhigh'] / roq_mass_freq_scale_factor)
 	if srate > 8192:
 		srate = 8192
 
-        seglen=roq_params[roq]['seglen'] * roq_mass_freq_scale_factor
+        seglen=int(roq_params[roq]['seglen'] * roq_mass_freq_scale_factor)
         # params.dat uses the convention q>1 so our q_min is the inverse of their qmax
         cp.set('engine','srate',str(srate))
         cp.set('engine','seglen',str(seglen))
@@ -229,8 +228,8 @@ for sampler in samps:
           tmp[i]=flow
         cp.set('lalinference','flow',str(tmp))
         if roq_bounds == 'chirp_mass_q':
-          mc_min=mc_priors[roq][0]*roq_mass_freq_scale_factor
-          mc_max=mc_priors[roq][1]*roq_mass_freq_scale_factor
+          mc_min=mc_priors[roq][0]
+          mc_max=mc_priors[roq][1]
           # params.dat uses the convention q>1 so our q_min is the inverse of their qmax
           q_min=1./float(roq_params[roq]['qmax'])
           cp.set('engine','chirpmass-min',str(mc_min))
@@ -326,22 +325,22 @@ for sampler in samps:
             with open('pegasus.properties','w') as fout:
               for line in lines:
                 fout.write(line)
-        if cp.has_option('condor','accounting_group'):
+        if cp.has_option('analysis','accounting_group'):
           lines=[]
           with open('sites.xml') as fin:
             for line in fin:
               if '<profile namespace="condor" key="getenv">True</profile>' in line:
-                line=line+'    <profile namespace="condor" key="accounting_group">'+cp.get('condor','accounting_group')+'</profile>\n'
+                line=line+'    <profile namespace="condor" key="accounting_group">'+cp.get('analysis','accounting_group')+'</profile>\n'
               lines.append(line)
           with open('sites.xml','w') as fout:
             for line in lines:
               fout.write(line)
-        if cp.has_option('condor','accounting_group_user'):
+        if cp.has_option('analysis','accounting_group_user'):
           lines=[]
           with open('sites.xml') as fin:
             for line in fin:
               if '<profile namespace="condor" key="getenv">True</profile>' in line:
-                line=line+'    <profile namespace="condor" key="accounting_group_user">'+cp.get('condor','accounting_group_user')+'</profile>\n'
+                line=line+'    <profile namespace="condor" key="accounting_group_user">'+cp.get('analysis','accounting_group_user')+'</profile>\n'
               lines.append(line)
           with open('sites.xml','w') as fout:
             for line in lines:
@@ -374,10 +373,8 @@ if not opts.dax:
 if opts.condor_submit:
   import subprocess
   from subprocess import Popen
-  if cp.has_option('condor','notification'):
-    x = subprocess.Popen(['condor_submit_dag','-dont_suppress_notification',outerdag.get_dag_file()])
-  else:
-    x = subprocess.Popen(['condor_submit_dag',outerdag.get_dag_file()])
+
+  x = subprocess.Popen(['condor_submit_dag',outerdag.get_dag_file()])
   x.wait()
   if x.returncode==0:
     print 'Submitted DAG file'

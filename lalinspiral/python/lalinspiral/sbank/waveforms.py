@@ -1,5 +1,4 @@
 # Copyright (C) 2011  Nickolas Fotopoulos
-# Copyright (C) 2012-2017 Stephen Privitera
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -19,14 +18,13 @@ from __future__ import division
 
 from math import isnan
 import numpy as np
-from numpy import float32
 np.seterr(all="ignore")
 
 import lal
 import lalsimulation as lalsim
 from lal import MSUN_SI, MTSUN_SI, PC_SI, PI, CreateREAL8Vector, CreateCOMPLEX8FrequencySeries
 from lalinspiral import InspiralSBankComputeMatch, InspiralSBankComputeRealMatch, InspiralSBankComputeMatchMaxSkyLoc, InspiralSBankComputeMatchMaxSkyLocNoPhase
-from lalinspiral.sbank.psds import get_neighborhood_PSD, get_ASD
+from lalinspiral.sbank.psds import get_neighborhood_PSD
 from lalinspiral.sbank.tau0tau3 import m1m2_to_tau0tau3
 
 # I wanted to use lalmetaio here, but the class has issues with python as the
@@ -165,65 +163,27 @@ class AlignedSpinTemplate(object):
       a sim_inspiral object.
     """
     approximant = None
-    __slots__ = ("m1", "m2", "spin1z", "spin2z", "chieff", "bank", "tau0", "_dur", "_mchirp", "_wf", "_metric", "sigmasq", "is_seed_point", "_f_final", "_fhigh_max")
+    __slots__ = ("m1", "m2", "spin1z", "spin2z", "chieff", "bank", "_dur", "_mchirp", "_tau0", "_wf", "_metric", "sigmasq", "is_seed_point", "_f_final", "_fhigh_max")
     param_names = ("m1", "m2", "spin1z", "spin2z")
     param_formats = ("%.2f", "%.2f", "%.2f", "%.2f")
-    hdf_dtype=[('mass1', float32), ('mass2', float32),
-               ('spin1z', float32), ('spin2z', float32),
-               ('template_duration', float32), ('f_lower', float32),
-               ('approximant', 'S32')]
 
-    def __init__(self, m1, m2, spin1z, spin2z, bank, flow=None, duration=None):
+    def __init__(self, m1, m2, spin1z, spin2z, bank):
 
         self.m1 = float(m1)
         self.m2 = float(m2)
         self.spin1z = float(spin1z)
         self.spin2z = float(spin2z)
-        self.chieff = lalsim.SimIMRPhenomBComputeChi(self.m1, self.m2,
-                                                     self.spin1z, self.spin2z)
+        self.chieff = lalsim.SimIMRPhenomBComputeChi(m1, m2, spin1z, spin2z)
         self.bank = bank
-
-        if flow is None:
-            self.flow = bank.flow
-            if bank.optimize_flow is not None:
-                self.optimize_flow(bank.flow, bank.fhigh_max, bank.noise_model,
-                                   sigma_frac=bank.optimize_flow)
-        else:
-            self.flow = flow
 
         self._wf = {}
         self._metric = None
         self.sigmasq = 0.
         self._mchirp = compute_mchirp(m1, m2)
-        self.tau0 = compute_tau0(self._mchirp, bank.flow)
-        self._dur = duration
+        self._tau0 = compute_tau0( self._mchirp, bank.flow)
+        self._dur = self._get_dur()
         self._f_final = None
         self._fhigh_max = bank.fhigh_max
-
-    def optimize_flow(self, flow_min, fhigh_max, noise_model, df=0.1,
-                      sigma_frac=0.99):
-        """Set the template's flow as high as possible but still recovering
-        at least the given fraction of the template's sigma when calculated
-        from the minimum allowed flow. This avoids having unnecessarily long
-        templates.
-        """
-        # compute the whitened waveform
-        asd = get_ASD(df, flow_min, fhigh_max, noise_model)
-        wf = self._compute_waveform(df, fhigh_max)
-        if wf.data.length > len(asd):
-            asd2 = np.ones(wf.data.length) * np.inf
-            asd2[:len(asd)] = asd
-        elif wf.data.length < len(asd):
-            asd2 = asd[:wf.data.length]
-        else:
-            asd2 = asd
-        wwf = wf.data.data / asd2
-        # sum the power cumulatively from high to low frequencies
-        integral = np.cumsum(np.flipud(wwf * wwf.conj()))
-        ref_sigmasq = integral[-1]
-        # find the frequency bin corresponding to the target loss
-        i = np.searchsorted(integral, ref_sigmasq * sigma_frac ** 2)
-        self.flow = (len(integral) - i) * df
 
     @property
     def params(self):
@@ -240,22 +200,11 @@ class AlignedSpinTemplate(object):
 
         return self._f_final
 
-    @property
-    def dur(self):
-
-        if self._dur is None:
-            self._dur = self._get_dur()
-        return self._dur
-
-    @dur.setter
-    def dur(self, new_val):
-        self._dur = new_val
-
     def _get_isco_f_final(self):
         return 6**-1.5 / (PI * (self.m1 + self.m2) * MTSUN_SI)  # ISCO
 
     def _get_chirp_dur(self):
-        return lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.flow,
+        return lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.bank.flow,
             self.m1 * MSUN_SI, self.m2 * MSUN_SI, self.chieff, 7)
 
     def _get_imr_dur(self):
@@ -285,18 +234,6 @@ class AlignedSpinTemplate(object):
     def from_sngl(cls, sngl, bank):
         return cls(sngl.mass1, sngl.mass2, sngl.spin1z, sngl.spin2z, bank)
 
-    @classmethod
-    def from_dict(cls, params, idx, bank):
-        flow = float(params['f_lower'][idx])
-        if not flow > 0:
-            flow = None
-        duration = float(params['template_duration'][idx])
-        if not duration > 0:
-            duration = None
-        return cls(float(params['mass1'][idx]), float(params['mass2'][idx]),
-                   float(params['spin1z'][idx]), float(params['spin2z'][idx]),
-                   bank, flow=flow, duration=duration)
-
     def to_sngl(self):
         # All numerical values are initiated as 0 and all strings as ''
         row = SnglInspiralTable()
@@ -306,27 +243,14 @@ class AlignedSpinTemplate(object):
         row.mtotal = self.m1 + self.m2
         row.mchirp = self._mchirp
         row.eta = row.mass1 * row.mass2 / (row.mtotal * row.mtotal)
-        row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.flow)
-        row.template_duration = self.dur
+        row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
+        row.f_final = self.f_final
+        row.template_duration = self._dur
         row.spin1z = self.spin1z
         row.spin2z = self.spin2z
         row.sigmasq = self.sigmasq
-        if self.bank.flow_column:
-            setattr(row, self.bank.flow_column, self.flow)
 
         return row
-
-    def to_storage_arr(self):
-        """Dump the template params to a numpy array."""
-        new_tmplt = np.zeros(1, dtype=self.hdf_dtype)
-        new_tmplt['mass1'] = self.m1
-        new_tmplt['mass2'] = self.m2
-        new_tmplt['spin1z'] = self.spin1z
-        new_tmplt['spin2z'] = self.spin2z
-        new_tmplt['template_duration'] = self.dur
-        new_tmplt['f_lower'] = self.flow
-        new_tmplt['approximant'] = self.approximant
-        return new_tmplt
 
     def __repr__(self):
         return "(%s)" % ", ".join(self.param_formats) % self.params
@@ -350,7 +274,7 @@ class AlignedSpinTemplate(object):
                 0., 0., self.spin1z, 0., 0., self.spin2z,
                 1e6*PC_SI, 0., 0.,
                 0., 0., 0.,
-                df, self.flow, f_final, self.flow,
+                df, self.bank.flow, f_final, self.bank.flow,
                 None, approx)
 
         else:
@@ -359,7 +283,7 @@ class AlignedSpinTemplate(object):
                 0, self.spin1z, 0, 0, self.spin2z,
                 1.e6*PC_SI, 0., 0.,
                 0., 0., 0.,
-                df, self.flow, f_final, 40.,
+                df, self.bank.flow, f_final, 40.,
                 None, approx)
         return hplus_fd
 
@@ -383,7 +307,7 @@ class AlignedSpinTemplate(object):
 
             # whiten
             arr_view[:] /= ASD[:wf.data.length]
-            arr_view[:int(self.flow / df)] = 0.
+            arr_view[:int(self.bank.flow / df)] = 0.
             arr_view[int(self.f_final/df) : wf.data.length] = 0.
 
             # normalize
@@ -425,11 +349,10 @@ class InspiralAlignedSpinTemplate(AlignedSpinTemplate):
     templates should sub-class this class.
     """
     __slots__ = ("chired")
-    def __init__(self, m1, m2, spin1z, spin2z, bank, flow=None, duration=None):
+    def __init__(self, m1, m2, spin1z, spin2z, bank):
 
         self.chired = lalsim.SimInspiralTaylorF2ReducedSpinComputeChi(m1, m2, spin1z, spin2z)
-        AlignedSpinTemplate.__init__(self, m1, m2, spin1z, spin2z, bank,
-                                     flow=flow, duration=duration)
+        AlignedSpinTemplate.__init__(self, m1, m2, spin1z, spin2z, bank)
 
     def _get_dur(self):
         return self._get_chirp_dur()
@@ -447,7 +370,7 @@ class IMRPhenomBTemplate(IMRAlignedSpinTemplate):
     def _compute_waveform(self, df, f_final):
         return lalsim.SimIMRPhenomBGenerateFD(0, df,
             self.m1 * MSUN_SI, self.m2 * MSUN_SI,
-            self.chieff, self.flow, f_final, 1000000 * PC_SI)
+            self.chieff, self.bank.flow, f_final, 1000000 * PC_SI)
 
 
 class IMRPhenomCTemplate(IMRPhenomBTemplate):
@@ -456,7 +379,7 @@ class IMRPhenomCTemplate(IMRPhenomBTemplate):
         return lalsim.SimIMRPhenomCGenerateFD(
             0, df,
             self.m1 * MSUN_SI, self.m2 * MSUN_SI,
-            self.chieff, self.flow, f_final, 1000000 * PC_SI)
+            self.chieff, self.bank.flow, f_final, 1000000 * PC_SI)
 
 class IMRPhenomDTemplate(IMRAlignedSpinTemplate):
     approximant = "IMRPhenomD"
@@ -465,12 +388,12 @@ class IMRPhenomDTemplate(IMRAlignedSpinTemplate):
             0, 0, df, # ref phase, ref frequency, df
             self.m1 * MSUN_SI, self.m2 * MSUN_SI,
             self.spin1z, self.spin2z,
-            self.flow, f_final, 1000000 * PC_SI, None)
+            self.bank.flow, f_final, 1000000 * PC_SI, None)
 
     def _get_dur(self):
         dur = lalsim.SimIMRPhenomDChirpTime(self.m1 * MSUN_SI,
                                             self.m2 * MSUN_SI, self.spin1z,
-                                            self.spin2z, self.flow)
+                                            self.spin2z, self.bank.flow)
         # add a 10% to be consistent with PyCBC's duration estimate,
         # may want to FIXME if that changes
         return dur * 1.1
@@ -482,7 +405,7 @@ class SEOBNRv2Template(IMRAlignedSpinTemplate):
         seff = lalsim.SimIMRPhenomBComputeChi(self.m1, self.m2,
                                               self.spin1z, self.spin2z)
         dur = lalsim.SimIMRSEOBNRv2ChirpTimeSingleSpin(
-                self.m1 * MSUN_SI, self.m2 * MSUN_SI, seff, self.flow)
+                self.m1 * MSUN_SI, self.m2 * MSUN_SI, seff, self.bank.flow)
         # add a 10% to be consistent with PyCBC's duration estimate,
         # may want to FIXME if that changes
         return dur * 1.1
@@ -498,7 +421,7 @@ class SEOBNRv4Template(IMRAlignedSpinTemplate):
 
     def _get_dur(self):
         dur = lalsim.SimIMRSEOBNRv4ROMTimeOfFrequency(
-                self.flow, self.m1 * MSUN_SI, self.m2 * MSUN_SI,
+                self.bank.flow, self.m1 * MSUN_SI, self.m2 * MSUN_SI,
                 self.spin1z, self.spin2z)
         # Allow a 10% margin of error
         return dur * 1.1
@@ -512,39 +435,38 @@ class EOBNRv2Template(SEOBNRv2Template):
     param_names = ("m1", "m2")
     param_formats = ("%.2f", "%.2f")
 
-    def __init__(self, m1, m2, bank, flow=None, duration=None):
+    def __init__(self, m1, m2, bank):
         # Use everything from SEOBNRv2Template class except call
         # parent __init__ with spins set to zero
-        SEOBNRv2Template.__init__(self, m1, m2, 0, 0, bank, flow=flow,
-                                  duration=duration)
+        SEOBNRv2Template.__init__(self, m1, m2, 0, 0, bank)
 
 class TaylorF2RedSpinTemplate(InspiralAlignedSpinTemplate):
     approximant = "TaylorF2RedSpin"
     param_names = ("m1", "m2", "chired")
     param_formats = ("%.5f", "%.5f", "%+.4f")
 
-    __slots__ = ("chired", "tau0", "_dur", "_mchirp", "_eta", "_theta0", "_theta3", "_theta3s")
+    __slots__ = ("chired", "_dur", "_mchirp", "_tau0", "_eta", "_theta0", "_theta3", "_theta3s")
 
-    def __init__(self, m1, m2, spin1z, spin2z, bank, flow=None, duration=None):
+    def __init__(self, m1, m2, spin1z, spin2z, bank):
 
-        AlignedSpinTemplate.__init__(self, m1, m2, spin1z, spin2z, bank,
-                                     flow=flow, duration=duration)
+        AlignedSpinTemplate.__init__(self, m1, m2, spin1z, spin2z, bank)
         self.chired = lalsim.SimInspiralTaylorF2ReducedSpinComputeChi(m1, m2, spin1z, spin2z)
+        self._dur = self._get_dur()
         self._eta = m1*m2/(m1+m2)**2
-        self._theta0, self._theta3, self._theta3s = compute_chirptimes(self._mchirp, self._eta, self.chired, self.flow)
+        self._theta0, self._theta3, self._theta3s = compute_chirptimes(self._mchirp, self._eta, self.chired, self.bank.flow)
 
     def finalize_as_template(self):
         if not self.bank.use_metric: return
 
-        df, PSD = get_neighborhood_PSD([self], self.flow, self.bank.noise_model)
+        df, PSD = get_neighborhood_PSD([self], self.bank.flow, self.bank.noise_model)
 
-        if df not in self.bank._moments or len(PSD) - self.flow // df > self.bank._moments[df][0].length:
+        if df not in self.bank._moments or len(PSD) - self.bank.flow // df > self.bank._moments[df][0].length:
             real8vector_psd = CreateREAL8Vector(len(PSD))
             real8vector_psd.data[:] = PSD
-            self.bank._moments[df] = create_moments(df, self.flow, len(PSD))
-            lalsim.SimInspiralTaylorF2RedSpinComputeNoiseMoments(*(self.bank._moments[df] + (real8vector_psd, self.flow, df)))
+            self.bank._moments[df] = create_moments(df, self.bank.flow, len(PSD))
+            lalsim.SimInspiralTaylorF2RedSpinComputeNoiseMoments(*(self.bank._moments[df] + (real8vector_psd, self.bank.flow, df)))
 
-        self._metric = lalsim.SimInspiralTaylorF2RedSpinMetricChirpTimes(self._theta0, self._theta3, self._theta3s, self.flow, df, *self.bank._moments[df])
+        self._metric = lalsim.SimInspiralTaylorF2RedSpinMetricChirpTimes(self._theta0, self._theta3, self._theta3s, self.bank.flow, df, *self.bank._moments[df])
         if isnan(self._metric[0]):
             raise ValueError("g00 is nan")
 
@@ -571,6 +493,9 @@ class TaylorF2Template(InspiralAlignedSpinTemplate):
     def _compute_waveform(self, df, f_final):
         phi0 = 0  # This is a reference phase, and not an intrinsic parameter
         LALpars=lal.CreateDict()
+        lalsim.SimInspiralWaveformParamsInsertPNAmplitudeOrder(LALpars, 0)
+        lalsim.SimInspiralWaveformParamsInsertPNPhaseOrder(LALpars, 7)
+        lalsim.SimInspiralWaveformParamsInsertPNSpinOrder(LALpars, 5)
         approx = lalsim.GetApproximantFromString( self.approx_name )
         hplus_fd, hcross_fd = lalsim.SimInspiralChooseFDWaveform(
                 self.m1*MSUN_SI, self.m2*MSUN_SI,
@@ -578,8 +503,9 @@ class TaylorF2Template(InspiralAlignedSpinTemplate):
                 0., 0., self.spin2z,
                 1.e6*PC_SI, 0., phi0,
                 0., 0., 0.,
-                df, self.flow, f_final, self.flow,
+                df, self.bank.flow, f_final, self.bank.flow,
                 LALpars, approx)
+        lal.DestroyDict(LALpars)
 
         # Must set values greater than _get_f_final to 0
         act_f_max = self._get_f_final()
@@ -597,29 +523,23 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
     """
     param_names = ("m1", "m2", "spin1x", "spin1y", "spin1z", "spin2x", "spin2y", "spin2z", "theta", "phi", "iota", "psi")
     param_formats = ("%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f")
-    __slots__ = param_names + ("bank", "chieff", "chipre", "tau0", "_dur","_mchirp", "_wf_hp", "_wf_hc", "_hpsigmasq", "_hcsigmasq", "_hphccorr")
-    hdf_dtype = AlignedSpinTemplate.hdf_dtype + \
-        [('spin1x', float32), ('spin1y', float32), ('spin2x', float32),
-         ('spin2y', float32), ('latitude', float32), ('longitude', float32),
-         ('polarization', float32), ('inclination', float32),
-         ('orbital_phase', float32)]
+    __slots__ = param_names + ("bank", "chieff", "chipre", "_dur","_mchirp","_tau0", "_wf_hp", "_wf_hc", "_hpsigmasq", "_hcsigmasq", "_hphccorr")
 
-    def __init__(self, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi, orb_phase, bank, flow=None, duration=None):
+    def __init__(self, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi, orb_phase, bank):
 
-        AlignedSpinTemplate.__init__(self, m1, m2, spin1z, spin2z, bank,
-                                     flow=flow, duration=duration)
-        self.spin1x = float(spin1x)
-        self.spin1y = float(spin1y)
-        self.spin2x = float(spin2x)
-        self.spin2y = float(spin2y)
+        AlignedSpinTemplate.__init__(self, m1, m2, spin1z, spin2z, bank)
+        self.spin1x = spin1x
+        self.spin1y = spin1y
+        self.spin2x = spin2x
+        self.spin2y = spin2y
 
-        self.theta = float(theta)
-        self.phi = float(phi)
-        self.iota = float(iota)
-        self.psi = float(psi)
-        self.orb_phase = float(orb_phase)
+        self.theta = theta
+        self.phi = phi
+        self.iota = iota
+        self.psi = psi
+        self.orb_phase = orb_phase
 
-        self.chieff, self.chipre = lalsim.SimIMRPhenomPCalculateModelParametersFromSourceFrame(self.m1, self.m2, self.flow, self.orb_phase, self.iota, self.spin1x, self.spin1y, self.spin1z, self.spin2x, self.spin2y, self.spin2z, lalsim.IMRPhenomPv2_V)[:2]
+        self.chieff, self.chipre = lalsim.SimIMRPhenomPCalculateModelParameters(self.m1, self.m2, self.bank.flow, np.sin(iota), float(0), np.cos(iota), spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, 1)[:2]
 
         self._wf = {}
         self._metric = None
@@ -634,7 +554,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
     def from_sim(cls, sim, bank):
         # theta = polar angle wrt overhead
         #       = pi/2 - latitude (which is 0 on the horizon)
-        return cls(sim.mass1, sim.mass2, sim.spin1x, sim.spin1y, sim.spin1z, sim.spin2x, sim.spin2y, sim.spin2z, np.pi/2 - sim.latitude, sim.longitude, sim.inclination, sim.polarization, sim.coa_phase, bank)
+        return cls(sim.mass1, sim.mass2, sim.spin1x, sim.spin1y, sim.spin1z, sim.spin2x, sim.spin2y, sim.spin2z, np.pi/2 - sim.latitude, sim.longitude, sim.inclination, sim.polarization, sim.orb_phase, bank)
 
     def _compute_waveform_comps(self, df, f_final):
         approx = lalsim.GetApproximantFromString( self.approximant )
@@ -645,7 +565,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
                 self.spin2x, self.spin2y, self.spin2z,
                 1.e6*PC_SI, self.iota, self.orb_phase,
                 0., 0., 0.,
-                df, self.flow, f_final, self.flow,
+                df, self.bank.flow, f_final, self.bank.flow,
                 None, approx)
         else:
             hplus_fd, hcross_fd = lalsim.SimInspiralFD(
@@ -654,7 +574,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
                 self.spin2x, self.spin2y, self.spin2z,
                 1.e6*PC_SI, self.iota, self.orb_phase,
                 0., 0., 0.,
-                df, self.flow, f_final, self.flow,
+                df, self.bank.flow, f_final, self.bank.flow,
                 None, approx)
 
         return hplus_fd, hcross_fd
@@ -688,11 +608,11 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
 
             # Whiten
             arr_view_hp[:] /= ASD[:hp.data.length]
-            arr_view_hp[:int(self.flow / df)] = 0.
+            arr_view_hp[:int(self.bank.flow / df)] = 0.
             arr_view_hp[int(self.f_final/df) : hp.data.length] = 0.
 
             arr_view_hc[:] /= ASD[:hc.data.length]
-            arr_view_hc[:int(self.flow / df)] = 0.
+            arr_view_hc[:int(self.bank.flow / df)] = 0.
             arr_view_hc[int(self.f_final/df) : hc.data.length] = 0.
 
             # Get normalization factors and normalize
@@ -730,23 +650,6 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
                    sngl.alpha1, sngl.alpha2, sngl.alpha3, sngl.alpha4,
                    sngl.alpha5, bank)
 
-    @classmethod
-    def from_dict(cls, params, idx, bank):
-        flow = float(params['f_lower'][idx])
-        if not flow > 0:
-            flow = None
-        duration = float(params['template_duration'][idx])
-        if not duration > 0:
-            duration = None
-        return cls(params['mass1'][idx], params['mass2'][idx],
-                   params['spin1x'][idx], params['spin1y'][idx],
-                   params['spin1z'][idx], params['spin2x'][idx],
-                   params['spin2y'][idx], params['spin2z'][idx],
-                   params['latitude'][idx], params['longitude'][idx],
-                   params['polarization'][idx], params['inclination'][idx],
-                   params['orbital_phase'][idx], bank,
-                   flow=flow, duration=duration)
-
     def to_sngl(self):
         # All numerical values are initiated as 0 and all strings as ''
         row = SnglInspiralTable()
@@ -755,8 +658,9 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
         row.mtotal = self.m1 + self.m2
         row.mchirp = self._mchirp
         row.eta = row.mass1 * row.mass2 / (row.mtotal * row.mtotal)
-        row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.flow)
-        row.template_duration = self.dur
+        row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
+        row.f_final = self.f_final
+        row.template_duration = self._dur
         row.spin1x = self.spin1x
         row.spin1y = self.spin1y
         row.spin1z = self.spin1z
@@ -769,23 +673,8 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
         row.alpha4 = self.psi
         row.alpha5 = self.orb_phase
         row.sigmasq = self.sigmasq
-        if self.bank.flow_column:
-            setattr(row, self.bank.flow_column, self.flow)
         return row
 
-    def to_storage_arr(self):
-        """Dump the template params to a numpy array."""
-        new_tmplt = super(PrecessingSpinTemplate, self).to_storage_arr()
-        new_tmplt['spin1x'] = self.spin1x
-        new_tmplt['spin1y'] = self.spin1y
-        new_tmplt['spin2x'] = self.spin2x
-        new_tmplt['spin2y'] = self.spin2y
-        new_tmplt['latitude'] = self.theta
-        new_tmplt['longitude'] = self.phi
-        new_tmplt['polarization'] = self.psi
-        new_tmplt['inclination'] = self.iota
-        new_tmplt['orbital_phase'] = self.orb_phase
-        return new_tmplt
 
 class IMRPrecessingSpinTemplate(PrecessingSpinTemplate):
     """
@@ -817,12 +706,10 @@ class InspiralPrecessingSpinTemplate(PrecessingSpinTemplate):
 class SpinTaylorF2Template(InspiralPrecessingSpinTemplate):
     approximant = "SpinTaylorF2"
     def __init__(self, m1, m2, spin1x, spin1y, spin1z,
-                 theta, phi, iota, psi, orb_phase, bank, flow=None,
-                 duration=None):
+                 theta, phi, iota, psi, orb_phase, bank):
         super(SpinTaylorF2Template,self).__init__(m1, m2,
                                     spin1x, spin1y, spin1z, 0, 0, 0,
-                                    theta, phi, iota, psi, orb_phase, bank,
-                                    flow=flow, duration=None)
+                                    theta, phi, iota, psi, orb_phase, bank)
 
     def _compute_waveform_comps(self, df, f_final):
         hplus_fd, hcross_fd = \
@@ -843,10 +730,6 @@ class SpinTaylorF2Template(InspiralPrecessingSpinTemplate):
                    sngl.spin1z, sngl.alpha1, sngl.alpha2, sngl.alpha3,
                    sngl.alpha4, sngl.alpha5, bank)
 
-    @classmethod
-    def from_dict(cls, hdf_fp, idx, bank):
-        raise NotImplementedError('Please write this!')
-
     def to_sngl(self):
         # All numerical values are initiated as 0 and all strings as ''
         row = SnglInspiralTable()
@@ -855,8 +738,9 @@ class SpinTaylorF2Template(InspiralPrecessingSpinTemplate):
         row.mtotal = self.m1 + self.m2
         row.mchirp = self._mchirp
         row.eta = row.mass1 * row.mass2 / (row.mtotal * row.mtotal)
-        row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.flow)
-        row.template_duration = self.dur
+        row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
+        row.f_final = self.f_final
+        row.template_duration = self._dur
         row.spin1x = self.spin1x
         row.spin1y = self.spin1y
         row.spin1z = self.spin1z
@@ -869,8 +753,6 @@ class SpinTaylorF2Template(InspiralPrecessingSpinTemplate):
         row.alpha4 = self.psi
         row.alpha5 = self.orb_phase
         row.sigmasq = self.sigmasq
-        if self.bank.flow_column:
-            setattr(row, self.bank.flow_column, self.flow)
         return row
 
 

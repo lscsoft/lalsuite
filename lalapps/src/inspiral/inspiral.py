@@ -10,12 +10,13 @@ __version__ = '$Revision$'
 
 import copy
 import string
+import exceptions
 import sys, os, re, subprocess
 from glue import pipeline
 from glue import lal
 
 
-class InspiralError(Exception):
+class InspiralError(exceptions.Exception):
   def __init__(self, args=None):
     self.args = args
 

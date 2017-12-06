@@ -24,14 +24,12 @@
 #include <stdio.h>
 #include <math.h>
 
-#define _COMPUTE_FSTAT_C
 #include "ComputeFstat_internal.h"
 
 #include <lal/LALString.h>
 #include <lal/LALSIMD.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/ExtrapolatePulsarSpins.h>
-#include <lal/VectorMath.h>
 
 // ---------- Internal struct definitions ---------- //
 
@@ -46,8 +44,6 @@ struct tagFstatInput {
 };
 
 // ---------- Internal prototypes ---------- //
-
-static int XLALSelectBestFstatMethod ( FstatMethodType *method );
 
 int XLALSetupFstatDemod  ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
 int XLALSetupFstatResamp ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
@@ -76,9 +72,12 @@ const FstatOptionalArgs FstatOptionalArgsDefaults = {
   .injectSqrtSX = NULL,
   .assumeSqrtSX = NULL,
   .prevInput = NULL,
-  .collectTiming = 0,
-  .resampFFTPowerOf2 = 1
+  .collectTiming = 0
 };
+
+// hidden global variables used to pass timings to test/benchmark programs
+REAL8 Fstat_tauF1Buf = 0.0;
+REAL8 Fstat_tauF1NoBuf = 0.0;
 
 // ==================== Function definitions =================== //
 
@@ -235,8 +234,9 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   }
 
   // Check remaining required parameters
-  XLAL_CHECK_NULL ( isfinite(minCoverFreq) && ( minCoverFreq > 0 ) && isfinite(maxCoverFreq) && ( maxCoverFreq > 0 ), XLAL_EINVAL, "Check failed: minCoverFreq=%f and maxCoverFreq=%f must be finite and positive!", minCoverFreq, maxCoverFreq );
-  XLAL_CHECK_NULL ( maxCoverFreq > minCoverFreq, XLAL_EINVAL, "Check failed: maxCoverFreq>minCoverFreq (%f<=%f)!", maxCoverFreq, minCoverFreq );
+  XLAL_CHECK_NULL ( isfinite(minCoverFreq) && minCoverFreq > 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( isfinite(maxCoverFreq) && maxCoverFreq > 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( maxCoverFreq > minCoverFreq, XLAL_EINVAL );
   XLAL_CHECK_NULL ( ephemerides != NULL, XLAL_EINVAL );
   XLAL_CHECK_NULL ( dFreq >= 0, XLAL_EINVAL);
 
@@ -257,7 +257,30 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   // Check optional Fstat method type argument
   XLAL_CHECK_NULL ( ( FMETHOD_START < optArgs.FstatMethod ) && ( optArgs.FstatMethod < FMETHOD_END ), XLAL_EINVAL );
   XLAL_CHECK_NULL ( FstatMethodNames[optArgs.FstatMethod] != NULL, XLAL_EFAULT );
-  XLAL_CHECK_NULL ( XLALSelectBestFstatMethod( &optArgs.FstatMethod ) == XLAL_SUCCESS, XLAL_EFAULT );
+  switch (optArgs.FstatMethod) {
+
+  case FMETHOD_DEMOD_BEST:
+  case FMETHOD_RESAMP_BEST:
+    // If user asks for a 'best' method:
+    //   Decrement the current method, then check for the first available Fstat method. This assumes the FstatMethodType enum is ordered as follows:
+    //     FMETHOD_..._GENERIC,      (must **always** avaiable)
+    //     FMETHOD_..._OPTIMISED,    (always avaiable)
+    //     FMETHOD_..._SUPERFAST     (not always available; requires special hardware)
+    //     FMETHOD_..._BEST          (must **always** avaiable)
+    XLALPrintInfo( "%s: trying to find best available Fstat method for '%s'\n", __func__, FstatMethodNames[optArgs.FstatMethod] );
+    while ( !XLALFstatMethodIsAvailable( --optArgs.FstatMethod ) ) {
+      XLAL_CHECK_NULL ( FMETHOD_START < optArgs.FstatMethod, XLAL_EFAILED );
+      XLALPrintInfo( "%s: Fstat method '%s' is unavailable\n",  __func__, FstatMethodNames[optArgs.FstatMethod] );
+    }
+    XLALPrintInfo( "%s: Fstat method '%s' is available; selected as best method\n", __func__, FstatMethodNames[optArgs.FstatMethod] );
+    break;
+
+  default:
+    // If user asks for a specific method:
+    //   Check that method is available
+    XLAL_CHECK_NULL ( XLALFstatMethodIsAvailable(optArgs.FstatMethod), XLAL_EINVAL, "Fstat method '%s' is unavailable", FstatMethodNames[optArgs.FstatMethod] );
+    break;
+  }
 
   //
   // Parse which F-statistic method to use, and set these variables:
@@ -454,14 +477,6 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   // Calculate SFT noise weights from PSD
   XLAL_CHECK_NULL ( (common->multiNoiseWeights = XLALComputeMultiNoiseWeights ( runningMedian, optArgs.runningMedianWindow, 0 )) != NULL, XLAL_EFUNC );
 
-  // for use within this modul: remove the normalization from the noise-weights: the normalisation factor is saved separately
-  // in the struct, and this allows us to use and extract subsets of the noise-weights without having to re-normalize them
-  for ( UINT4 X = 0; X < common->detectors.length; ++X )
-    {
-      XLAL_CHECK_NULL ( XLALVectorScaleREAL8 ( common->multiNoiseWeights->data[X]->data, common->multiNoiseWeights->Sinv_Tsft, common->multiNoiseWeights->data[X]->data, common->multiNoiseWeights->data[X]->length) == XLAL_SUCCESS, XLAL_EFUNC);
-    }
-  common->multiNoiseWeights->isNotNormalized = (1 == 1);
-
   // at this point we're done with running-median noise estimation and can 'trim' the SFTs back to
   // the width actually required by the Fstat-methods *methods*.
   // NOTE: this is especially relevant for resampling, where the frequency-band determines the sampling
@@ -537,33 +552,15 @@ XLALGetFstatInputTimestamps ( const FstatInput* input   ///< [in] \c FstatInput 
 
 ///
 /// Returns the multi-detector noise weights stored in a \c FstatInput structure.
-/// Note: the returned object is allocated here and needs to be free'ed by caller.
 ///
-MultiNoiseWeights*
+const MultiNoiseWeights*
 XLALGetFstatInputNoiseWeights ( const FstatInput* input     ///< [in] \c FstatInput structure.
                                 )
 {
   // Check input
   XLAL_CHECK_NULL ( input != NULL, XLAL_EINVAL );
 
-  // copy and rescale data to a new allocated MultiNoiseWeights structure
-  UINT4 numIFOs = input->common.multiNoiseWeights->length;
-  MultiNoiseWeights *ret = NULL;
-  XLAL_CHECK_NULL ( ( ret = XLALCalloc(1, sizeof(*ret) ) ) != NULL, XLAL_ENOMEM );
-  XLAL_CHECK_NULL ( ( ret->data = XLALCalloc ( numIFOs, sizeof(ret->data[0]) ) ) != NULL, XLAL_ENOMEM );
-  ret->length = numIFOs;
-  ret->Sinv_Tsft = input->common.multiNoiseWeights->Sinv_Tsft;
-  REAL8 ooSinv_Tsft = 1.0 / input->common.multiNoiseWeights->Sinv_Tsft;
-  for ( UINT4 X = 0; X < numIFOs; X++ )
-    {
-      UINT4 length = input->common.multiNoiseWeights->data[X]->length;
-      XLAL_CHECK_NULL ( ( ret->data[X] = XLALCreateREAL8Vector ( length ) ) != NULL, XLAL_EFUNC );
-      // ComputeFstat stores *un-normalized* weights internally, so re-normalize them for returning them
-      XLAL_CHECK_NULL ( input->common.multiNoiseWeights->isNotNormalized, XLAL_EERR, "BUG: noise weights stored in FstatInput must be unnormalized!\n" );
-      XLAL_CHECK_NULL ( XLALVectorScaleREAL8 ( ret->data[X]->data, ooSinv_Tsft, input->common.multiNoiseWeights->data[X]->data, length) == XLAL_SUCCESS, XLAL_EFUNC);
-    }
-
-  return ret;
+  return input->common.multiNoiseWeights;
 
 } // XLALGetFstatInputNoiseWeights()
 
@@ -599,7 +596,7 @@ XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of
   XLAL_CHECK ( doppler->asini >= 0, XLAL_EINVAL);
   XLAL_CHECK ( numFreqBins > 0, XLAL_EINVAL);
   XLAL_CHECK ( !input->singleFreqBin || numFreqBins == 1, XLAL_EINVAL, "numFreqBins must be 1 if XLALCreateFstatInput() was passed zero dFreq" );
-  XLAL_CHECK ( whatToCompute < FSTATQ_LAST, XLAL_EINVAL);
+  XLAL_CHECK ( 0 < whatToCompute && whatToCompute < FSTATQ_LAST, XLAL_EINVAL);
 
   // Allocate results struct, if needed
   if ( (*Fstats) == NULL ) {
@@ -649,7 +646,7 @@ XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of
               (*Fstats)->FaPerDet[X] = XLALRealloc ( (*Fstats)->FaPerDet[X], numFreqBins*sizeof((*Fstats)->FaPerDet[X][0]) );
               XLAL_CHECK( (*Fstats)->FaPerDet[X] != NULL, XLAL_EINVAL, "Failed to (re)allocate (*Fstats)->FaPerDet[%u] to length %u", X, numFreqBins );
               (*Fstats)->FbPerDet[X] = XLALRealloc ( (*Fstats)->FbPerDet[X], numFreqBins*sizeof((*Fstats)->FbPerDet[X][0]) );
-              XLAL_CHECK( (*Fstats)->FbPerDet[X] != NULL, XLAL_EINVAL, "Failed to (re)allocate (*Fstats)->FbPerDet[%u] to length %u", X, numFreqBins );
+              XLAL_CHECK( (*Fstats)->FbPerDet[X] != NULL, XLAL_EINVAL, "Fbiled to (re)allocate (*Fstats)->FbPerDet[%u] to length %u", X, numFreqBins );
             }
         }
 
@@ -715,15 +712,6 @@ XLALDestroyFstatInput ( FstatInput* input       ///< [in] \c FstatInput structur
   if ( input == NULL ) {
     return;
   }
-  if ( input->common.isTimeslice )
-    {
-      XLAL_CHECK_VOID ( input->method < FMETHOD_RESAMP_GENERIC, XLAL_EINVAL,
-                        "Something is wrong: 'isTimeslice==TRUE' for non-LALDemod F-stat method '%s' is not supported!\n", XLALGetFstatInputMethodName(input));
-      XLALDestroyFstatInputTimeslice_common ( &input->common );
-      XLALDestroyFstatInputTimeslice_Demod ( input->method_data);
-      XLALFree ( input );
-      return;
-    }
 
   XLALDestroyMultiTimestamps ( input->common.multiTimestamps );
   XLALDestroyMultiNoiseWeights ( input->common.multiNoiseWeights );
@@ -774,14 +762,14 @@ XLALDestroyFstatResults ( FstatResults* Fstats  ///< [in] #FstatResults structur
       XLALFree ( Fstats->twoFPerDet[X] );
       XLALFree ( Fstats->FaPerDet[X] );
       XLALFree ( Fstats->FbPerDet[X] );
-    }
-  if ( Fstats->multiFatoms != NULL )
-    {
-      for ( UINT4 n = 0; n < Fstats->internalalloclen; ++n )
+      if ( Fstats->multiFatoms != NULL )
         {
-          XLALDestroyMultiFstatAtomVector ( Fstats->multiFatoms[n] );
+          for ( UINT4 n = 0; n < Fstats->internalalloclen; ++n )
+            {
+              XLALDestroyMultiFstatAtomVector ( Fstats->multiFatoms[n] );
+            }
+          XLALFree ( Fstats->multiFatoms );
         }
-      XLALFree ( Fstats->multiFatoms );
     }
 
   XLALFree ( Fstats );
@@ -883,46 +871,14 @@ XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   ///< 
 
 } // XLALComputeFstatFromAtoms()
 
-///
-/// If user asks for a 'best' #FstatMethodType, find and select it
-///
-static int
-XLALSelectBestFstatMethod ( FstatMethodType *method )
-{
-  switch ( *method ) {
-
-  case FMETHOD_DEMOD_BEST:
-  case FMETHOD_RESAMP_BEST:
-    // If user asks for a 'best' method:
-    //   Decrement the current method, then check for the first available Fstat method. This assumes the FstatMethodType enum is ordered as follows:
-    //     FMETHOD_..._GENERIC,      (must **always** avaiable)
-    //     FMETHOD_..._OPTIMISED,    (always avaiable)
-    //     FMETHOD_..._SUPERFAST     (not always available; requires special hardware)
-    //     FMETHOD_..._BEST          (must **always** avaiable)
-    XLALPrintInfo( "%s: trying to find best available Fstat method for '%s'\n", __func__, FstatMethodNames[*method] );
-    while ( !XLALFstatMethodIsAvailable( --( *method ) ) ) {
-      XLAL_CHECK ( FMETHOD_START < *method, XLAL_EFAILED );
-      XLALPrintInfo( "%s: Fstat method '%s' is unavailable\n",  __func__, FstatMethodNames[*method] );
-    }
-    XLALPrintInfo( "%s: Fstat method '%s' is available; selected as best method\n", __func__, FstatMethodNames[*method] );
-    break;
-
-  default:
-    // If user asks for a specific method:
-    //   Check that method is available
-    XLAL_CHECK ( XLALFstatMethodIsAvailable(*method), XLAL_EINVAL, "Fstat method '%s' is unavailable", FstatMethodNames[*method] );
-    break;
-  }
-  return XLAL_SUCCESS;
-}
 
 ///
 /// Return true if given #FstatMethodType corresponds to a valid and *available* Fstat method, false otherwise
 ///
 int
-XLALFstatMethodIsAvailable ( FstatMethodType method )
+XLALFstatMethodIsAvailable ( FstatMethodType i )
 {
-  switch (method) {
+  switch (i) {
 
   case FMETHOD_DEMOD_GENERIC:
   case FMETHOD_DEMOD_BEST:
@@ -959,317 +915,117 @@ XLALFstatMethodIsAvailable ( FstatMethodType method )
 } // XLALFstatMethodIsAvailable()
 
 ///
-/// Return pointer to a static string giving the name of the #FstatMethodType \p method
+/// Return pointer to a static string giving the name of the #FstatMethodType \p i
 ///
 const CHAR *
-XLALFstatMethodName ( FstatMethodType method )
+XLALFstatMethodName ( FstatMethodType i )
 {
-  XLAL_CHECK_NULL( method < XLAL_NUM_ELEM(FstatMethodNames) && FstatMethodNames[method] != NULL,
-                   XLAL_EINVAL, "FstatMethodType = %i is invalid", method );
-  return FstatMethodNames[method];
+  XLAL_CHECK_NULL( i < XLAL_NUM_ELEM(FstatMethodNames) && FstatMethodNames[i] != NULL,
+                   XLAL_EINVAL, "FstatMethodType = %i is invalid", i );
+  return FstatMethodNames[i];
 }
 
 ///
-/// Return pointer to a static array of all (available) #FstatMethodType choices.
-/// This data is used by the UserInput module to parse a user enumeration.
+/// Return pointer to a static help string enumerating all (available) #FstatMethodType options.
+/// Also indicates which is the (guessed) available 'best' method available.
 ///
-const UserChoices *
-XLALFstatMethodChoices ( void )
+const CHAR *
+XLALFstatMethodHelpString ( void )
 {
   static int firstCall = 1;
-  static UserChoices choices;
+  static CHAR helpstr[1024];
   if ( firstCall )
     {
-      XLAL_INIT_MEM ( choices );
-      size_t i = 0;
-      for (FstatMethodType m = FMETHOD_START + 1; m < FMETHOD_END; m++ )
+      XLAL_INIT_MEM ( helpstr );
+      for (int i = FMETHOD_START + 1; i < FMETHOD_END; i++ )
         {
-          if ( ! XLALFstatMethodIsAvailable(m) ) {
+          if ( ! XLALFstatMethodIsAvailable(i) ) {
             continue;
           }
-          FstatMethodType bm = m;
-          XLAL_CHECK_NULL ( XLALSelectBestFstatMethod( &bm ) == XLAL_SUCCESS, XLAL_EFAULT );
-          if ( bm == m ) {
-            // add an Fstat method
-            choices[i].name = FstatMethodNames[m];
-            choices[i].val = m;
-            i++;
-          } else {
-            // add a "best" Fstat method twice, so that:
-            // - name of "best" method will appear as equal to the actual method it selects,
-            //   in the help string, e.g. "...|DemodSuperFast=DemodBest|..."
-            // - FMETHOD_..._BEST will print as "...Best" in e.g. help default argument, log output
-            choices[i].name = FstatMethodNames[m];
-            choices[i].val = bm;
-            i++;
-            choices[i].name = FstatMethodNames[m];
-            choices[i].val = m;
-            i++;
+          XLAL_CHECK_NULL ( FstatMethodNames[i] != NULL, XLAL_EFAULT );
+          if ( strcmp ( FstatMethodNames[i] + strlen(FstatMethodNames[i]) - 4, "Best" ) == 0 ) {
+            strcat ( helpstr, "=" );
+          } else if ( i > FMETHOD_START + 1 ) {
+            strcat ( helpstr, "|" );
           }
-        } // for m < FMETHOD_LAST
+          strcat ( helpstr, FstatMethodNames[i] );
+        } // for i < FMETHOD_LAST
+
+      XLAL_CHECK_NULL ( XLAL_LAST_ELEM ( helpstr ) == '\0', XLAL_EBADLEN, "FstatMethod help-string exceeds buffer length (%zu)\n", sizeof(helpstr) );
 
       firstCall = 0;
 
     } // if firstCall
 
-  return (const UserChoices *) &choices;
-} // XLALFstatMethodChoices()
+  return helpstr;
+} // XLALFstatMethodHelpString()
 
-/// Return measured values and details about generic F-statistic timing and method-specific timing model,
-// including static pointers to help-string documenting the generic F-stat timing, and the method-specific timing model.
-/// See also https://dcc.ligo.org/LIGO-T1600531-v4 for details about the timing model.
+///
+/// Parse a given string into an #FstatMethodType number if valid and available,
+/// return error otherwise.
+///
 int
-XLALGetFstatTiming ( const FstatInput* input, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel )
+XLALParseFstatMethodString ( FstatMethodType *Fmethod,          //!< [out] Parsed #FstatMethodType enum
+                             const char *s                      //!< [in] String to parse
+                             )
+{
+  XLAL_CHECK ( s != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( Fmethod != NULL, XLAL_EINVAL );
+
+  // find matching FstatMethod string
+  for (int i = FMETHOD_START + 1; i < FMETHOD_END; i++ )
+    {
+      XLAL_CHECK ( FstatMethodNames[i] != NULL, XLAL_EFAULT );
+      if ( XLALStringCaseCompare ( s, FstatMethodNames[i] ) == 0 )
+        {
+          if ( XLALFstatMethodIsAvailable(i) )
+            {
+              (*Fmethod) = i;
+              return XLAL_SUCCESS;
+            }
+          else
+            {
+              XLAL_ERROR ( XLAL_EINVAL, "Chosen FstatMethod '%s' valid but unavailable in this binary\n", s );
+            }
+        } // if found matching FstatMethod
+    } // for i < FMETHOD_LAST
+
+  XLAL_ERROR ( XLAL_EINVAL, "Unknown FstatMethod '%s'\n", s );
+
+} // XLALParseFstatMethodString()
+
+int
+XLALGetFstatTiming ( const FstatInput* input, REAL8 *tauF1Buf, REAL8 *tauF1NoBuf )
 {
   XLAL_CHECK ( input != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( timingGeneric != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( timingModel != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( (tauF1Buf != NULL) && (tauF1NoBuf != NULL), XLAL_EINVAL );
 
-  if ( input->method >= FMETHOD_DEMOD_GENERIC && input->method <= FMETHOD_DEMOD_BEST)
+  if ( input->method < FMETHOD_RESAMP_GENERIC )
     {
-      XLAL_CHECK ( XLALGetFstatTiming_Demod ( input->method_data, timingGeneric, timingModel ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-  else if ( input->method >= FMETHOD_RESAMP_GENERIC && input->method <= FMETHOD_RESAMP_BEST)
-    {
-      XLAL_CHECK ( XLALGetFstatTiming_Resamp ( input->method_data, timingGeneric, timingModel ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALGetFstatTiming_Demod ( input->method_data, tauF1Buf, tauF1NoBuf ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   else
     {
-      XLAL_ERROR ( XLAL_EINVAL, "Unsupported F-stat method '%s'\n", FstatMethodNames [ input->method ] );
+      XLAL_CHECK ( XLALGetFstatTiming_Resamp ( input->method_data, tauF1Buf, tauF1NoBuf ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
-  timingGeneric->help = FstatTimingGenericHelp;	// set static help-string pointer (not used or set otherwise)
-
   return XLAL_SUCCESS;
-
 } // XLALGetFstatTiming()
 
 int
-XLALAppendFstatTiming2File ( const FstatInput* input, FILE *fp, BOOLEAN printHeader )
+AppendFstatTimingInfo2File ( const FstatInput* input, FILE *fp, BOOLEAN printHeader )
 {
   XLAL_CHECK ( input != NULL, XLAL_EINVAL );
   XLAL_CHECK ( fp != NULL, XLAL_EINVAL );
 
-  FstatTimingGeneric XLAL_INIT_DECL ( tiGen);
-  FstatTimingModel XLAL_INIT_DECL ( tiModel );
-  XLAL_CHECK ( XLALGetFstatTiming ( input, &tiGen, &tiModel ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  if ( printHeader )
+  if ( input->method < FMETHOD_RESAMP_GENERIC )
     {
-      fprintf ( fp, "%s\n", tiGen.help );
-      fprintf ( fp, "%s\n", tiModel.help );
-      // generic F-stat timing header line
-      fprintf ( fp, "%%%%%8s %10s %4s %10s %10s %11s %10s ", "NCalls", "NFbin", "Ndet", "tauF_eff", "tauF_core", "tauF_buffer", "b");
-      // method-specific F-stat timing model header line
-      fprintf (fp, "|");
-      for ( UINT4 i = 0; i < tiModel.numVariables; i ++ ) {
-        fprintf (fp, " %13s", tiModel.names[i] );
-      }
-      fprintf (fp, "\n");
-    } // if (printHeader)
-
-  // generic F-stat timing values
-  fprintf (fp, "%10.0f %10d %4d %10.2e %10.2e %11.2e %10.2e ",
-           tiGen.NCalls, tiGen.NFbin, tiGen.Ndet, tiGen.tauF_eff, tiGen.tauF_core, tiGen.tauF_buffer, tiGen.NBufferMisses/tiGen.NCalls );
-
-  // method-specific F-stat timing model values
-  fprintf (fp, " "); // for '|'
-  for ( UINT4 i = 0; i < tiModel.numVariables; i ++ ) {
-    fprintf (fp, " %13g", tiModel.values[i] );
-  }
-  fprintf (fp, "\n");
-
-  return XLAL_SUCCESS;
-
-} // AppendFstatTiming2File()
-
-///
-/// Extracts the resampled timeseries from a given FstatInput structure (must have been initialized previously by XLALCreateFstatInput() and a call to XLALComputeFstat()).
-///
-/// \note This function only returns a pointer to the time-series that are still part of the FstatInput structure, and will by managed by F-statistic API calls.
-/// Therefore do *not* free the resampled timeseries with XLALDestroyMultiCOMPLEX8TimeSeries(), only
-/// free the complete Fstat input structure with XLALDestroyFstatInputVector() at the end once its no longer needed.
-///
-int
-XLALExtractResampledTimeseries ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, ///< [out] \c multi-detector SRC-frame timeseries, multiplied by AM function a(t).
-                                 MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, ///< [out] \c multi-detector SRC-frame timeseries, multiplied by AM function b(t).
-                                 const FstatInput *input ///< [in] \c FstatInput structure.
-                                 )
-{
-  XLAL_CHECK ( input != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( ( multiTimeSeries_SRC_a != NULL ) && ( multiTimeSeries_SRC_b != NULL ) , XLAL_EINVAL );
-  XLAL_CHECK ( (input->method >= FMETHOD_RESAMP_GENERIC) && (input->method <= FMETHOD_RESAMP_BEST), XLAL_EINVAL,
-               "%s() only works for resampling-Fstat methods, not with '%s'\n", __func__, XLALGetFstatInputMethodName ( input ) );
-
-  XLAL_CHECK ( XLALExtractResampledTimeseries_intern ( multiTimeSeries_SRC_a, multiTimeSeries_SRC_b, input->method_data ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  return XLAL_SUCCESS;
-} // XLALExtractResampledTimeseries()
-
-///
-/// Create and return an FstatInput 'timeslice' for given input FstatInput object [must be using LALDemod Fstat method!]
-/// which covers only the time interval  ['minStartGPS','maxStartGPS'), using conventions of XLALCWGPSinRange().
-///
-/// The returned FstatInput structure is equivalent to one that would have been produced for the given time-interval
-/// in the first place, except that it uses "containers" and references the data in the original FstatInput object.
-/// A special flag is set in the FstatInput object to notify the destructor to only free the data-containers.
-///
-/// Note: if a timeslice is empty for any detector, the corresponding timeseries 'container' will be allocated and
-/// will have length==0 and data==NULL.
-///
-int
-XLALFstatInputTimeslice ( FstatInput ** slice,                ///< [out] Address of a pointer to a \c FstatInput structure
-                          const FstatInput* input,            ///< [in] Input data structure
-                          const LIGOTimeGPS *minStartGPS,     ///< [in] Minimum starting GPS time
-                          const LIGOTimeGPS *maxStartGPS      ///< [in] Maximum starting GPS time
-                        )
-{
-  XLAL_CHECK ( input != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( slice != NULL && (*slice) == NULL, XLAL_EINVAL );
-  XLAL_CHECK ( minStartGPS != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( maxStartGPS != NULL, XLAL_EINVAL );
-  XLAL_CHECK( XLALGPSCmp( minStartGPS, maxStartGPS ) < 1 , XLAL_EINVAL , "minStartGPS (%"LAL_GPS_FORMAT") is greater than maxStartGPS (%"LAL_GPS_FORMAT")\n",
-              LAL_GPS_PRINT(*minStartGPS), LAL_GPS_PRINT(*maxStartGPS) );
-
-  // only supported for 'LALDemod' Fstat methods
-  XLAL_CHECK ( input->method < FMETHOD_RESAMP_GENERIC, XLAL_EINVAL, "This function is not avavible for the chosen FstatMethod '%s'!", XLALGetFstatInputMethodName ( input ) );
-
-  const FstatCommon *common = &(input->common);
-  UINT4 numIFOs = common->detectors.length;
-
-  // ---------- Find start- and end- indices of the requested timeslice for all detectors
-  const MultiLIGOTimeGPSVector *mTS = common->multiTimestamps;
-  UINT4 XLAL_INIT_DECL ( iStart, [PULSAR_MAX_DETECTORS] );
-  UINT4 XLAL_INIT_DECL ( iEnd, [PULSAR_MAX_DETECTORS] );
-  for ( UINT4 X = 0; X < numIFOs; X ++ ) {
-    XLAL_CHECK ( XLALFindTimesliceBounds ( &(iStart[X]), &(iEnd[X]), input->common.multiTimestamps->data[X], minStartGPS, maxStartGPS ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
-
-  // ----- prepare new top-level 'containers' for the timeslices in the 'common' part of FstatInput:
-  MultiLIGOTimeGPSVector *multiTimestamps = NULL;
-  XLAL_CHECK ( ( multiTimestamps = XLALCalloc ( 1, sizeof(*multiTimestamps) ) ) != NULL, XLAL_ENOMEM );
-  XLAL_CHECK ( ( multiTimestamps->data = XLALCalloc ( numIFOs, sizeof(*multiTimestamps->data) ) ) != NULL, XLAL_ENOMEM );
-  multiTimestamps->length = numIFOs;
-
-  MultiNoiseWeights *multiNoiseWeights = NULL;
-  XLAL_CHECK ( ( multiNoiseWeights = XLALCalloc ( 1, sizeof(*multiNoiseWeights) ) ) != NULL, XLAL_ENOMEM );
-  XLAL_CHECK ( ( multiNoiseWeights->data = XLALCalloc ( numIFOs, sizeof(*multiNoiseWeights->data) ) ) != NULL, XLAL_ENOMEM );
-  multiNoiseWeights->length = numIFOs;
-
-  MultiDetectorStateSeries *multiDetectorStates = NULL;
-  XLAL_CHECK ( ( multiDetectorStates = XLALCalloc ( 1, sizeof(*multiDetectorStates) ) ) != NULL, XLAL_ENOMEM );
-  XLAL_CHECK ( ( multiDetectorStates->data = XLALCalloc ( numIFOs, sizeof(*multiDetectorStates->data) ) ) != NULL, XLAL_ENOMEM );
-  multiDetectorStates->length = numIFOs;
-
-  // determine earliest and latest SFT times of timeslice over all IFOs, in order to correctly set 'FstatCommon->midTime' value
-  LIGOTimeGPS earliest_time = {LAL_INT4_MAX,0};
-  LIGOTimeGPS latest_time = {0,0};
-
-  // for updating noise-normalization factor Sinv_Tsft over timesclie
-  UINT4 numSFTsSlice = 0;
-  REAL8 sumWeightsSlice = 0;
-
-  // ----- loop over detectors, create per-detector containers and set them to the requested timeslice
-  for ( UINT4 X = 0; X < numIFOs; X ++ )
+      XLAL_CHECK ( AppendFstatTimingInfo2File_Demod ( input->method_data, fp, printHeader ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+  else
     {
-      // prepare multiTimestamps
-      XLAL_CHECK ( ( multiTimestamps->data[X] = XLALCalloc ( 1, sizeof(*multiTimestamps->data[X]) ) ) != NULL, XLAL_EFUNC );
-      multiTimestamps->data[X]->deltaT = common->multiTimestamps->data[X]->deltaT;
-
-      // prepare multiNoiseWeights
-      multiNoiseWeights->data[X] = NULL;
-      XLAL_CHECK ( ( multiNoiseWeights->data[X] = XLALCalloc ( 1, sizeof(*multiNoiseWeights->data[X]) ) ) !=NULL, XLAL_EFUNC );
-
-      // prepare multiDetectorStates, copy struct values
-      XLAL_CHECK ( ( multiDetectorStates->data[X] = XLALCalloc ( 1, sizeof(*multiDetectorStates->data[X]) ) ) != NULL, XLAL_EFUNC );
-      multiDetectorStates->data[X]->detector = common->multiDetectorStates->data[X]->detector;
-      multiDetectorStates->data[X]->system   = common->multiDetectorStates->data[X]->system;
-      multiDetectorStates->data[X]->deltaT   = common->multiDetectorStates->data[X]->deltaT;
-
-      //---- set the timeslices
-      if ( iStart[X] > iEnd[X] ) {
-        continue;	// empty slice
-      }
-
-      UINT4 sliceLength =  iEnd[X] - iStart[X] + 1;	// guaranteed >= 1
-
-      // slice multiTimestamps
-      multiTimestamps->data[X]->length = sliceLength;
-      multiTimestamps->data[X]->data   = &( mTS->data[X]->data[iStart[X]] );
-
-      // keep track of earliest and latest SFT times included in timeslice (for computing 'midTime')
-      if ( ( XLALGPSCmp ( &(multiTimestamps->data[X]->data[0]), &earliest_time ) == -1 ) ) {
-        earliest_time = multiTimestamps->data[X]->data[0];
-      }
-      if ( XLALGPSCmp ( &(multiTimestamps->data[X]->data[sliceLength - 1]), &latest_time ) == 1 ) {
-        latest_time = multiTimestamps->data[X]->data[sliceLength - 1];
-      }
-
-      // slice multiNoiseWeights
-      multiNoiseWeights->data[X]->length = sliceLength;
-      multiNoiseWeights->data[X]->data   = &( common->multiNoiseWeights->data[X]->data[iStart[X]] );
-
-      // sum the weights for updating the overall noise-normalisation factor Sinv_Tsft
-      numSFTsSlice += sliceLength;
-      for ( UINT4 alpha = 0; alpha < sliceLength; alpha++ ) {
-        sumWeightsSlice += multiNoiseWeights->data[X]->data[alpha];
-      }
-
-      // slice multiDetectorStates
-      multiDetectorStates->data[X]->length = sliceLength;
-      multiDetectorStates->data[X]->data   = &( common->multiDetectorStates->data[X]->data[iStart[X]] );
-
-    } // for X < numIFOs
-
-  // calculate new data midTime for timeslice
-  XLALGPSAdd ( &latest_time, multiDetectorStates->data[0]->deltaT );
-  REAL8 TspanSlice = XLALGPSDiff( &latest_time, &earliest_time );
-  LIGOTimeGPS midTimeSlice = earliest_time;
-  XLALGPSAdd ( &midTimeSlice, 0.5 * TspanSlice );
-
-  // update noise-weight normalisation factor
-  multiNoiseWeights->Sinv_Tsft = sumWeightsSlice / numSFTsSlice ;
-  multiNoiseWeights->isNotNormalized = (1 == 1);
-
-  // allocate memory and copy the orginal FstatInput struct
-  XLAL_CHECK ( ( (*slice) = XLALCalloc ( 1 , sizeof(*input) ) ) != NULL, XLAL_ENOMEM );
-  memcpy ( (*slice), input, sizeof ( *input ) );
-
-  (*slice)->common.isTimeslice         = (1==1); // This is a timeslice
-  (*slice)->common.midTime             = midTimeSlice;
-  (*slice)->common.multiTimestamps     = multiTimestamps;
-  (*slice)->common.multiDetectorStates = multiDetectorStates;
-  (*slice)->common.multiNoiseWeights   = multiNoiseWeights;
-
-  (*slice)->method_data = XLALFstatInputTimeslice_Demod ( input->method_data, iStart, iEnd );
-  XLAL_CHECK ( (*slice)->method_data != NULL, XLAL_EFUNC );
-
-  return XLAL_SUCCESS;
-
-} // XLALFstatInputTimeslice()
-
-
-void
-XLALDestroyFstatInputTimeslice_common ( FstatCommon *common )
-{
-  if ( !common ) {
-    return;
-  }
-
-  for ( UINT4 X=0; X < common->multiTimestamps->length; X ++ )
-    {
-      XLALFree ( common->multiTimestamps->data[X] );
-      XLALFree ( common->multiDetectorStates->data[X] );
-      XLALFree ( common->multiNoiseWeights->data[X] );
+      XLAL_CHECK ( AppendFstatTimingInfo2File_Resamp ( input->method_data, fp, printHeader ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
-  XLALFree ( common->multiTimestamps->data );
-  XLALFree ( common->multiDetectorStates->data );
-  XLALFree ( common->multiNoiseWeights->data );
-  XLALFree ( common->multiTimestamps );
-  XLALFree ( common->multiNoiseWeights );
-  XLALFree ( common->multiDetectorStates );
-
-  return;
-
-} // XLALDestroyFstatInputTimeslice_common()
+  return XLAL_SUCCESS;
+} // AppendFstatTimingInfo2File()

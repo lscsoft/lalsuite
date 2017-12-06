@@ -30,14 +30,12 @@ pkginclude_HEADERS = \
 
 liblal_la_SOURCES = \
 	LALMisc.c \
-	$(END_OF_LIST)
-
-nodist_liblal_la_SOURCES = \
-	LALBuildInfoHeader.h \
 	LALVCSInfo.c \
 	$(END_OF_LIST)
 
-EXTRA_liblal_la_DEPENDENCIES = \
+nodist_liblal_la_SOURCES = LALBuildInfo.c
+
+liblal_la_DEPENDENCIES = \
 	std/libstd.la \
 	tools/libtools.la \
 	factories/libfactories.la \
@@ -52,7 +50,8 @@ EXTRA_liblal_la_DEPENDENCIES = \
 	noisemodels/libnoisemodels.la \
 	$(END_OF_LIST)
 
-liblal_la_LDFLAGS = $(EXTRA_liblal_la_DEPENDENCIES) $(AM_LDFLAGS) -version-info $(LIBVERSION)
+liblal_la_LIBADD = $(liblal_la_DEPENDENCIES)
+liblal_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
 EXTRA_DIST = \
 	config.h.in \
@@ -61,22 +60,19 @@ EXTRA_DIST = \
 
 DISTCLEANFILES = config.h
 
-vcs_build_info_source = LALVCSInfo.c
 vcs_info_sources = LALVCSInfoHeader.h
-build_info_source = LALBuildInfoHeader.h
-build_info_dependencies = $(EXTRA_liblal_la_DEPENDENCIES)
-
-LDADD = liblal.la
+build_info_source = LALBuildInfo.c
+$(build_info_source): $(liblal_la_DEPENDENCIES)
 
 bin_PROGRAMS = \
-	lal_simd_detect \
-	lal_version \
+	lal-simd-detect \
+	lal-version \
 	$(END_OF_LIST)
 
-lal_simd_detect_SOURCES = simd_detect.c
-lal_version_SOURCES = version.c
+lal_version_SOURCES = lal-version.c
+lal_version_LDADD = liblal.la
 
-TESTS = \
-	lal_simd_detect \
-	lal_version \
-	$(END_OF_LIST)
+lal_simd_detect_SOURCES = lal-simd-detect.c
+lal_simd_detect_LDADD = liblal.la
+
+TESTS = $(bin_PROGRAMS)

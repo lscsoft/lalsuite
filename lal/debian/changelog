@@ -1,9 +1,8 @@
-lal (6.18.0-1) unstable; urgency=low
+lal (6.17.0.1-1) UNRELEASED; urgency=medium
 
-  * LAL 6.18.0
-  * O2 release
+  * Back to development
 
- -- Adam Mercer <adam.mercer@ligo.org>  Tue, 07 Feb 2017 15:39:28 -0600
+ -- Leo Singer <leo@lalsuitedev>  Thu, 13 Oct 2016 20:02:36 -0400
 
 lal (6.17.0-1) unstable; urgency=low
 

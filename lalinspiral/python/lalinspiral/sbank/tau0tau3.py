@@ -1,5 +1,4 @@
-# Copyright (C) 2011  Nickolas Fotopoulos
-# Copyright (C) 2011-2017 Stephen Privitera
+# Copyright (C) 2011  Nickolas Fotopoulos, Stephen Privitera
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -542,8 +541,8 @@ def aligned_spin_param_generator(flow, tmplt_class, bank, **kwargs):
         spin1 = (chis*mtot - mass2*spin2)/mass1
 
         t = tmplt_class(mass1, mass2, spin1, spin2, bank=bank)
-        if (dur_min is not None and t.dur < dur_min) \
-                or (dur_max is not None and t.dur > dur_max):
+        if (dur_min is not None and t._dur < dur_min) \
+                or (dur_max is not None and t._dur > dur_max):
             continue
         yield t
 

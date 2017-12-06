@@ -377,8 +377,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
     } else {
       output->sampleUnits = CWsignal->a->sampleUnits;
     }
-    if( snprintf( output->name, LALNameLength, "response to %s", CWsignal->a->name ) >= LALNameLength )
-      ABORT( stat, SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
+    snprintf( output->name, LALNameLength, "response to %s", CWsignal->a->name );
   }
 
   /* Define temporary variables to access the data of CWsignal->a,

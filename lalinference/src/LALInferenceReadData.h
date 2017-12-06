@@ -43,7 +43,7 @@
  * \author John Veitch
  */
 struct tagLALInferenceIFOData * LALInferenceReadData (ProcessParamsTable * commandLine);
-
+void GetWindowParamsFromReadDataToTemplate(REAL8 * rise_time, REAL8 * window_shift);
 /**
  * \brief Convenience function to inject a signal into the data, using a SimInspiralTable
  * Injects a signal from a SimInspiralTable into a pre-existing \c IFOdata structure,
@@ -53,6 +53,7 @@ struct tagLALInferenceIFOData * LALInferenceReadData (ProcessParamsTable * comma
  */
 void LALInferenceInjectInspiralSignal(struct tagLALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
 
+void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, LALInferenceModel *model, ProcessParamsTable *commandLine);
 void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
 void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *commandLine);
 
@@ -68,6 +69,18 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
  */
 void LALInferencePrintInjectionSample(LALInferenceRunState *runState);
 void LALInferenceInjectFromMDC(ProcessParamsTable *commandLine, LALInferenceIFOData *IFOdata);
+
+REAL8 XLALChiEffRingdown(REAL8 m1, REAL8 m2, REAL8 spin1[3], REAL8 spin2[3]);
+
+/** \brief Function that injects a ringdown-only signal into data, using *** SimRingdownTable
+ * This function injects a ringdown signal from a SimRingdownTable into a pre-existing \c IFOdata 
+ * structure, based on command-line arguments.
+ * \param commandLine [in] Pointer to a *** containing command-line arguments.
+ * \param IFOdata [in] Pointer to a pre-existing IFOdata structure.
+ * \author Michalis Agathos
+ */
+void LALInferenceInjectRingdownSignal(struct tagLALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
+
 /*@}*/
 
 #endif

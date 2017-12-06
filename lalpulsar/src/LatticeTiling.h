@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2007, 2008, 2012, 2014, 2015, 2016, 2017 Karl Wette
+// Copyright (C) 2007, 2008, 2012, 2014, 2015, 2016 Karl Wette
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 #include <lal/LALStdlib.h>
-#include <lal/UserInputParse.h>
 #include <lal/Random.h>
 #include <lal/FITSFileIO.h>
 
@@ -58,63 +57,6 @@ typedef struct tagLatticeTilingIterator LatticeTilingIterator;
 typedef struct tagLatticeTilingLocator LatticeTilingLocator;
 
 ///
-/// Type of lattice to generate tiling with.
-///
-typedef enum tagTilingLattice {
-  TILING_LATTICE_CUBIC,                 ///< Cubic (\f$Z_n\f$) lattice
-  TILING_LATTICE_ANSTAR,                ///< An-star (\f$A_n^*\f$) lattice
-  TILING_LATTICE_MAX
-} TilingLattice;
-
-///
-/// Lattice tiling parameter-space bound padding control flags.
-///
-typedef enum tagLatticeTilingPaddingFlags {
-  LATTICE_TILING_PAD_LHBBX = 0x01,      ///< Add half-bounding-box padding to lower physical parameter-space bounds
-  LATTICE_TILING_PAD_UHBBX = 0x02,      ///< Add half-bounding-box padding to upper physical parameter-space bounds
-  LATTICE_TILING_PAD_LINTP = 0x04,      ///< Add integer point padding to lower integer parameter-space bounds
-  LATTICE_TILING_PAD_UINTP = 0x08,      ///< Add integer point padding to upper integer parameter-space bounds
-  LATTICE_TILING_PAD_MAX   = 0x20,
-} LatticeTilingPaddingFlags;
-
-///
-/// Static array of all #TilingLattice choices, for use by the UserInput module parsing routines
-///
-extern const UserChoices TilingLatticeChoices;
-
-///
-/// Function which returns a bound on a dimension of the lattice tiling.
-///
-typedef double( *LatticeTilingBound )(
-  const void *data,                     ///< [in] Arbitrary data describing parameter space bound
-  const size_t dim,                     ///< [in] Dimension on which bound applies
-  const gsl_matrix* cache,              ///< [in] Cached values computed in lower dimensions
-  const gsl_vector *point               ///< [in] Point at which to find bound
-  );
-
-///
-/// Function which caches values required by a lattice tiling bound function.
-///
-typedef void( *LatticeTilingBoundCache )(
-  const size_t dim,                     ///< [in] Dimension on which bound applies
-  const gsl_vector *point,              ///< [in] Point at which to find bound
-  gsl_vector* cache                     ///< [out] Values to cache
-  );
-
-///
-/// Callback function which can be used to compute properties of a lattice tiling.
-///
-typedef int( *LatticeTilingCallback )(
-  const bool first_call,                ///< [in] Whether this is the first call to this function
-  const LatticeTiling *tiling,          ///< [in] Lattice tiling
-  const LatticeTilingIterator *itr,     ///< [in] Lattice tiling iterator
-  const gsl_vector *point,              ///< [in] Current lattice tiling point
-  const size_t changed_i,               ///< [in] Index of first dimension to have changed since last call
-  const void *param,                    ///< [in] Arbitrary input data for use by callback function
-  void *out                             ///< [out] Output data to be filled by callback function
-  );
-
-///
 /// Statistics related to the number/value of lattice tiling points in a dimension.
 ///
 #ifdef SWIG /* SWIG interface directives */
@@ -128,6 +70,15 @@ typedef struct tagLatticeTilingStats {
   double min_value;                     ///< Minimum value of points in this dimension
   double max_value;                     ///< Maximum value of points in this dimension
 } LatticeTilingStats;
+
+///
+/// Function which returns a bound on a dimension of the lattice tiling.
+///
+typedef double( *LatticeTilingBound )(
+  const void *data,                     ///< [in] Arbitrary data describing parameter space bound
+  const size_t dim,                     ///< [in] Dimension on which bound applies
+  const gsl_vector *point               ///< [in] Point at which to find bound
+  );
 
 ///
 /// Create a new lattice tiling.
@@ -170,15 +121,6 @@ int XLALSetLatticeTilingBoundName(
   ) _LAL_GCC_PRINTF_FORMAT_(3,4);
 
 ///
-/// Set bound cache function for a lattice tiling parameter-space dimension
-///
-int XLALSetLatticeTilingBoundCacheFunction(
-  LatticeTiling *tiling,                ///< [in] Lattice tiling
-  const size_t dim,                     ///< [in] Dimension on which bound cache function applies
-  const LatticeTilingBoundCache func    ///< [in] Parameter space bound cache function
-  );
-
-///
 /// Set a constant lattice tiling parameter-space bound, given by the minimum and maximum of the two
 /// supplied bounds, on a dimension of the lattice tiling.
 ///
@@ -190,43 +132,11 @@ int XLALSetLatticeTilingConstantBound(
   );
 
 ///
-/// Set flags which control the padding of lattice tiling parameter-space bounds in the given dimension.
-/// This is an optional setting and should generally not be used unless specifically required.
+/// Set the level of padding added to the lattice tiling parameter space bounds.
 ///
-int XLALSetLatticeTilingPaddingFlags(
+int XLALSetLatticeTilingPadding(
   LatticeTiling *tiling,                ///< [in] Lattice tiling
-  const size_t dim,                     ///< [in] Dimension on which to set padding control flags
-  const LatticeTilingPaddingFlags setf  ///< [in] Padding control flags to set
-  );
-
-///
-/// Add to flags which control the padding of lattice tiling parameter-space bounds in the given dimension.
-/// This is an optional setting and should generally not be used unless specifically required.
-///
-int XLALAddLatticeTilingPaddingFlags(
-  LatticeTiling *tiling,                ///< [in] Lattice tiling
-  const size_t dim,                     ///< [in] Dimension on which to add padding control flags
-  const LatticeTilingPaddingFlags addf  ///< [in] Padding control flags to add
-  );
-
-///
-/// Set the physical parameter-space origin of the lattice tiling in the given dimension.
-/// This is an optional setting and should generally not be used unless specifically required.
-///
-int XLALSetLatticeTilingOrigin(
-  LatticeTiling *tiling,                ///< [in] Lattice tiling
-  const size_t dim,                     ///< [in] Dimension in which to set origin
-  const double origin                   ///< [in] Physical parameter-space origin
-  );
-
-///
-/// Offset the physical parameter-space origin of the lattice tiling by a random fraction of the
-/// lattice step size in tiled dimensions. This is important when performing mismatch studies to
-/// ensure that the mismatch distribution is fully sampled.
-///
-int XLALSetLatticeTilingRandomOriginOffsets(
-  LatticeTiling *tiling,                ///< [in] Lattice tiling
-  RandomParams *rng                     ///< [in] Random number generator used to generate offsets
+  const UINT4 padding                   ///< [in] Level of padding added to parameter space bounds
   );
 
 ///
@@ -234,9 +144,13 @@ int XLALSetLatticeTilingRandomOriginOffsets(
 /// tiling \c tiling is now fully initialised, and can be used to create tiling iterators [via
 /// XLALCreateLatticeTilingIterator()] and locators [via XLALCreateLatticeTilingLocator()].
 ///
+/// Valid lattice names are:
+/// - Cubic (\f$Z_n\f$) lattice: \c Zn or \c Cubic
+/// - An-star (\f$A_n^*\f$) lattice: \c Ans or \c An-star
+///
 int XLALSetTilingLatticeAndMetric(
   LatticeTiling *tiling,                ///< [in] Lattice tiling
-  const TilingLattice lattice,          ///< [in] Type of lattice to generate tiling with
+  const char *lattice_name,             ///< [in] Name of lattice to generate tiling with
   const gsl_matrix *metric,             ///< [in] Parameter-space metric
   const double max_mismatch             ///< [in] Maximum prescribed mismatch
   );
@@ -256,41 +170,9 @@ size_t XLALTiledLatticeTilingDimensions(
   );
 
 ///
-/// Return the dimension of the tiled lattice tiling dimension indexed by 'tiled_dim'
-///
-size_t XLALLatticeTilingTiledDimension(
-  const LatticeTiling *tiling,          ///< [in] Lattice tiling
-  const size_t tiled_dim                ///< [in] Index of tiled dimension to return
-  );
-
-///
-/// Return >0 if a lattice tiling dimension is tiled (i.e. not a single point), and 0 otherwise.
-///
-int XLALIsTiledLatticeTilingDimension(
-  const LatticeTiling *tiling,          ///< [in] Lattice tiling
-  const size_t dim                      ///< [in] Dimension of which to return tiling status
-  );
-
-///
-/// Get the name of a lattice tiling parameter-space dimension.
-///
-const char *XLALLatticeTilingBoundName(
-  const LatticeTiling *tiling,          ///< [in] Lattice tiling
-  const size_t dim                      ///< [in] Dimension for which to get name
-  );
-
-///
-/// Return the index of the lattice tiling dimension which has the given name
-///
-int XLALLatticeTilingDimensionByName(
-  const LatticeTiling *tiling,          ///< [in] Lattice tiling
-  const char *bound_name                ///< [in] Name of bound for which to find index
-  );
-
-///
 /// Return the step size of the lattice tiling in a given dimension, or 0 for non-tiled dimensions.
 ///
-REAL8 XLALLatticeTilingStepSize(
+REAL8 XLALLatticeTilingStepSizes(
   const LatticeTiling *tiling,          ///< [in] Lattice tiling
   const size_t dim                      ///< [in] Dimension of which to return step size
   );
@@ -305,28 +187,7 @@ REAL8 XLALLatticeTilingBoundingBox(
   );
 
 ///
-/// Register a callback function which can be used to compute properties of a lattice tiling.
-/// Returns a const pointer to the output data to be filled by the callback function.
-///
-const void *XLALRegisterLatticeTilingCallback(
-  LatticeTiling *tiling,                ///< [in] Lattice tiling
-  const LatticeTilingCallback func,     ///< [in] Callback function
-  const size_t param_len,               ///< [in] Length of arbitrary input data for use by callback function
-  const void *param,                    ///< [in] Arbitrary input data for use by callback function
-  const size_t out_len                  ///< [in] Length of output data to be filled by callback function
-  );
-
-///
-/// Perform all registered lattice tiling callbacks.
-///
-int XLALPerformLatticeTilingCallbacks(
-  const LatticeTiling *tiling           ///< [in] Lattice tiling
-  );
-
-///
 /// Return statistics related to the number/value of lattice tiling points in a dimension.
-///
-/// Statistics are computed through a callback function with XLALPerformLatticeTilingCallbacks().
 ///
 const LatticeTilingStats *XLALLatticeTilingStatistics(
   const LatticeTiling *tiling,          ///< [in] Lattice tiling
@@ -341,15 +202,30 @@ const LatticeTilingStats *XLALLatticeTilingStatistics(
 int XLALRandomLatticeTilingPoints(
   const LatticeTiling *tiling,          ///< [in] Lattice tiling
   const double scale,                   ///< [in] Scale of random points
-  RandomParams *rng,                    ///< [in] Random number generator used to generate points
+  RandomParams *rng,                    ///< [in] Random number generator
   gsl_matrix *random_points             ///< [out] Matrix whose columns are the random points
+  );
+
+///
+/// Allocate and return vectors containing the bounds on neighbouring dimesions of the lattice
+/// tiling parameter space.
+///
+int XLALLatticeTilingDimensionBounds(
+  const LatticeTiling *tiling,          ///< [in] Lattice tiling
+  const UINT4 padding,                  ///< [in] Level of padding added to parameter space bounds
+  const gsl_vector *point,              ///< [in] Point at which to return bounds
+  const size_t y_dim,                   ///< [in] Dimension 'y' of which to return bounds
+  const double x_scale,                 ///< [in] Scale of steps in 'x', in units of lattice step size
+  gsl_vector **y_lower,                 ///< [in] Lower bounds of dimension 'y' as function of 'x'
+  gsl_vector **y_upper,                 ///< [in] Upper bounds of dimension 'y' as function of 'x'
+  gsl_vector **x                        ///< [in] Values 'x' in dimension 'y-1'
   );
 
 ///
 /// Create a new lattice tiling iterator.
 ///
 #ifdef SWIG // SWIG interface directives
-SWIGLAL( RETURN_OWNED_BY_1ST_ARG( int, XLALCreateLatticeTilingIterator ) );
+SWIGLAL( OWNED_BY_1ST_ARG( int, XLALCreateLatticeTilingIterator ) );
 #endif
 LatticeTilingIterator *XLALCreateLatticeTilingIterator(
   const LatticeTiling *tiling,          ///< [in] Lattice tiling
@@ -449,7 +325,7 @@ int XLALRestoreLatticeTilingIterator(
 /// Create a new lattice tiling locator. If there are tiled dimensions, an index trie is internally built.
 ///
 #ifdef SWIG // SWIG interface directives
-SWIGLAL( RETURN_OWNED_BY_1ST_ARG( int, XLALCreateLatticeTilingLocator ) );
+SWIGLAL( OWNED_BY_1ST_ARG( int, XLALCreateLatticeTilingLocator ) );
 #endif
 LatticeTilingLocator *XLALCreateLatticeTilingLocator(
   const LatticeTiling *tiling           ///< [in] Lattice tiling
@@ -521,8 +397,3 @@ int XLALPrintLatticeTilingIndexTrie(
 #endif
 
 #endif // _LATTICETILING_H
-
-// Local Variables:
-// c-file-style: "linux"
-// c-basic-offset: 2
-// End:

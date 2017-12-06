@@ -13,8 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## \defgroup laldetchar_py_idq_idq_gdb_utils methods used for GraceDB interface
-## \ingroup laldetchar_py_idq
+## \addtogroup laldetchar_py_idq
 ## Synopsis
 # ~~~
 # from laldetchar.idq import idq_gdb_utils
@@ -69,13 +68,13 @@ def get_glitch_times(glitch_xmlfiles):
         return []
 
     # check if glitch table is present
-    if not idq_tables.IDQGlitchTable.tableName in tablenames:
+    if not table.Table.TableName(idq_tables.IDQGlitchTable.tableName) in tablenames:
         print "No glitch table is found in database."
         print "Can not perform requested query."
         return []
 
     data = cursor.execute("""SELECT gps, gps_ns FROM """ + \
-        idq_tables.IDQGlitchTable.tableName).fetchall()
+        table.Table.TableName(idq_tables.IDQGlitchTable.tableName)).fetchall()
     # close database
     connection.close()
     return data

@@ -5,7 +5,6 @@
 *.pc
 *.pyc
 *.pyo
-__pycache__
 .deps
 .libs
 /_build/
@@ -29,8 +28,8 @@ include/lal/*.i
 include/lal/header-link-stamp
 lalpulsar-*.tar.xz
 lalpulsar-user-env.csh
-lalpulsar-user-env.fish
 lalpulsar-user-env.sh
+lalpulsar-user-env.fish
 lalpulsar-user-env.shell
 lalpulsar.spec
 libtool
@@ -39,7 +38,7 @@ python/lalpulsar/__init__.py
 python/lalpulsar/_lalpulsar*
 python/lalpulsar/git_version.py
 python/lalpulsar/lalpulsar.py
-src/LALPulsarBuildInfoHeader.h
+src/LALPulsarBuildInfo.c
 src/LALPulsarConfig.h
 src/LALPulsarVCSInfo.c
 src/LALPulsarVCSInfo.h
@@ -47,13 +46,11 @@ src/LALPulsarVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/git_version
-src/lalpulsar_version
 src/stamp-h1
 src/stamp-h2
-src/version.c
-swig/swiglalpulsar.i*
-swig/swiglal_*
+swig/swiglal*
 test/BinarySSBTimesTest
+test/ComputeFstatBenchmark
 test/ComputeFstatTest
 test/ConstructPLUTTest
 test/DopplerScanTest
@@ -101,7 +98,6 @@ test/SkyMetricTest
 test/StackMetricTest
 test/StatisticsTest
 test/SuperskyMetricsTest
-test/SuperskyMetricsTest.fits
 test/TEMPOcomparison
 test/TwoDMeshTest
 test/UniversalDopplerMetricTest
@@ -110,8 +106,6 @@ test/XLALComputeAMTest
 test/XLALMultiNoiseWeightsTest
 test/outputsft_v1.sft
 test/outputsft_v2.sft
-test/outputsftv2_r1.sft
-test/outputsftv2_r2.sft
 test/outputsftv2_v1.sft
 test/outputsftv2_v2.sft
 test/testLFTandTSutils-LFT.sft

@@ -31,7 +31,7 @@
 #include <lal/SeqFactories.h>
 #include <lal/RealFFT.h>
 #include <lal/SphericalHarmonics.h>
-#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
+#include <lal/LALAdaptiveRungeKutta4.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
 #include <lal/LALSimSphHarmMode.h>
@@ -198,9 +198,6 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
     case -1: // Use the highest PN order available.
     case 7:
       params->wdotcoeff[7]  = XLALSimInspiralTaylorT4wdot_7PNCoeff(params->eta);
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case 6:
       params->Ecoeff[6]     = XLALSimInspiralPNEnergy_6PNCoeff(params->eta);
@@ -208,9 +205,6 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
       params->wdotlogcoeff  = XLALSimInspiralTaylorT4wdot_6PNLogCoeff(params->eta);
       params->wdot6S1O   = XLALSimInspiralTaylorT4wdot_6PNSOCoeff(params->m1ByM);
       params->wdot6S2O   = XLALSimInspiralTaylorT4wdot_6PNSOCoeff(params->m2ByM);
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case 5:
       params->Ecoeff[5]     = 0.;
@@ -221,17 +215,14 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
       params->wdot5S2O  = XLALSimInspiralTaylorT4wdot_5PNSOCoeff(params->m2ByM);
       params->S1dot5    = XLALSimInspiralSpinDot_5PNCoeff(params->m1ByM);
       params->S2dot5    = XLALSimInspiralSpinDot_5PNCoeff(params->m2ByM);
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case 4:
       params->wdotcoeff[4]  = XLALSimInspiralTaylorT4wdot_4PNCoeff(params->eta);
       params->Ecoeff[4]     = XLALSimInspiralPNEnergy_4PNCoeff(params->eta);
-      params->wdot4S1S2     = XLALSimInspiralTaylorT4wdot_4PNS1S2CoeffAvg(params->eta);
-      params->wdot4S1OS2O   = XLALSimInspiralTaylorT4wdot_4PNS1S2OCoeffAvg(params->eta);
-      params->E4S1S2      = XLALSimInspiralPNEnergy_4PNS1S2CoeffAvg(params->eta);
-      params->E4S1OS2O    = XLALSimInspiralPNEnergy_4PNS1S2OCoeffAvg(params->eta);
+      params->wdot4S1S2     = XLALSimInspiralTaylorT4wdot_4PNS1S2Coeff(params->eta);
+      params->wdot4S1OS2O   = XLALSimInspiralTaylorT4wdot_4PNS1S2OCoeff(params->eta);
+      params->E4S1S2      = XLALSimInspiralPNEnergy_4PNS1S2Coeff(params->eta);
+      params->E4S1OS2O    = XLALSimInspiralPNEnergy_4PNS1S2OCoeff(params->eta);
       params->wdot4S1S1     = XLALSimInspiralTaylorT4wdot_4PNSelf2SCoeff(params->m1ByM);
       params->wdot4S1OS1O   = XLALSimInspiralTaylorT4wdot_4PNSelf2SOCoeff(params->m1ByM);
       params->wdot4S2S2     = XLALSimInspiralTaylorT4wdot_4PNSelf2SCoeff(params->m2ByM);
@@ -240,17 +231,14 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
       params->wdot4QMS1O    = quadparam1*XLALSimInspiralTaylorT4wdot_4PNQM2SOCoeff(params->m1ByM);
       params->wdot4QMS2     = quadparam2*XLALSimInspiralTaylorT4wdot_4PNQM2SCoeff(params->m2ByM);
       params->wdot4QMS2O    = quadparam2*XLALSimInspiralTaylorT4wdot_4PNQM2SOCoeff(params->m2ByM);
-      params->E4QMS1      = quadparam1*XLALSimInspiralPNEnergy_4PNQM2SCoeffAvg(params->m1ByM);
-      params->E4QMS2      = quadparam2*XLALSimInspiralPNEnergy_4PNQM2SCoeffAvg(params->m2ByM);
-      params->E4QMS1O     = quadparam1*XLALSimInspiralPNEnergy_4PNQM2SOCoeffAvg(params->m1ByM);
-      params->E4QMS2O     = quadparam2*XLALSimInspiralPNEnergy_4PNQM2SOCoeffAvg(params->m2ByM);
-      params->Sdot4S2     = XLALSimInspiralSpinDot_4PNS2CoeffAvg;
-      params->Sdot4S2O    = XLALSimInspiralSpinDot_4PNS2OCoeffAvg;
-      params->S1dot4QMS1O  = quadparam1*XLALSimInspiralSpinDot_4PNQMSOCoeffAvg(params->m1ByM);
-      params->S2dot4QMS2O  = quadparam2*XLALSimInspiralSpinDot_4PNQMSOCoeffAvg(params->m2ByM);
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
+      params->E4QMS1      = quadparam1*XLALSimInspiralPNEnergy_4PNQM2SCoeff(params->m1ByM);
+      params->E4QMS2      = quadparam2*XLALSimInspiralPNEnergy_4PNQM2SCoeff(params->m2ByM);
+      params->E4QMS1O     = quadparam1*XLALSimInspiralPNEnergy_4PNQM2SOCoeff(params->m1ByM);
+      params->E4QMS2O     = quadparam2*XLALSimInspiralPNEnergy_4PNQM2SOCoeff(params->m2ByM);
+      params->Sdot4S2     = XLALSimInspiralSpinDot_4PNS2Coeff;
+      params->Sdot4S2O    = XLALSimInspiralSpinDot_4PNS2OCoeff;
+      params->S1dot4QMS1O  = quadparam1*XLALSimInspiralSpinDot_4PNQMSOCoeff(params->m1ByM);
+      params->S2dot4QMS2O  = quadparam2*XLALSimInspiralSpinDot_4PNQMSOCoeff(params->m2ByM);
 
     case 3:
       params->Ecoeff[3]      = 0.;
@@ -261,23 +249,14 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
       params->E3S2O     = XLALSimInspiralPNEnergy_3PNSOCoeff(params->m1ByM);
       params->S1dot3    = XLALSimInspiralSpinDot_3PNCoeff(params->m1ByM);
       params->S2dot3    = XLALSimInspiralSpinDot_3PNCoeff(params->m2ByM);
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case 2:
       params->Ecoeff[2]  = XLALSimInspiralPNEnergy_2PNCoeff(params->eta);
       params->wdotcoeff[2] = XLALSimInspiralTaylorT4wdot_2PNCoeff(params->eta);
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case 1:
       params->Ecoeff[1]  = 0.;
       params->wdotcoeff[1] = phi1;
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case 0:
       params->Ecoeff[0]  = 1.;
@@ -308,9 +287,6 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
       params->wdot6S1O   = 0.;
       params->S1dot6     = 0.;
       params->S2dot6     = 0.;
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case LAL_SIM_INSPIRAL_SPIN_ORDER_15PN:
       /* This keeps only the leading spin-orbit interactions*/
@@ -320,9 +296,6 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
       params->E4QMS2  = 0.;
       params->E4QMS1O = 0.;
       params->E4QMS2O = 0.;
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
       /* This kills all spin interaction intervening at 2.5PN order or higher*/
@@ -332,17 +305,11 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
       params->wdot5S2O    = 0.;
       params->S1dot5      = 0.;
       params->S2dot5      = 0.;
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
       /* This kills all spin interaction intervening at 3PN order or higher*/
       params->wdot6S1O   = 0.;
       params->wdot6S2O   = 0.;
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
     case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
@@ -355,15 +322,9 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
     case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
       params->wdottidal6pn = lambda1 * XLALSimInspiralTaylorT4wdot_12PNTidalCoeff(params->m1ByM) + lambda2 * XLALSimInspiralTaylorT4wdot_12PNTidalCoeff(params->m2ByM);
       params->Etidal6pn =  lambda1*XLALSimInspiralPNEnergy_12PNTidalCoeff(params->m1ByM) + lambda2*XLALSimInspiralPNEnergy_12PNTidalCoeff(params->m2ByM);
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
     case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
       params->wdottidal5pn = lambda1 * XLALSimInspiralTaylorT4wdot_10PNTidalCoeff(params->m1ByM) + lambda2 * XLALSimInspiralTaylorT4wdot_10PNTidalCoeff(params->m2ByM);
       params->Etidal5pn = lambda1*XLALSimInspiralPNEnergy_10PNTidalCoeff(params->m1ByM) + lambda2*XLALSimInspiralPNEnergy_10PNTidalCoeff(params->m2ByM);
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
     case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
       break;
     default:
@@ -945,7 +906,7 @@ static INT4 XLALSimInspiralSpinTaylorT4Engine(REAL8TimeSeries **omega,      /**<
   REAL8 S1x0,S1y0,S1z0,S2x0,S2y0,S2z0;  /** Used to store initial spin values */
   REAL8Array *yout;                     /** Used to store integration output */
 
-  LALAdaptiveRungeKuttaIntegrator *integrator;
+  LALAdaptiveRungeKutta4Integrator *integrator;
 
   /* allocate the integrator */
   if (approx == PhenSpinTaylor)
@@ -975,7 +936,7 @@ static INT4 XLALSimInspiralSpinTaylorT4Engine(REAL8TimeSeries **omega,      /**<
   intLen    = XLALAdaptiveRungeKutta4Hermite(integrator,(void *)params,yin,0.0,length,params->dt/params->M,&yout);
 
   intReturn = integrator->returncode;
-  XLALAdaptiveRungeKuttaFree(integrator);
+  XLALAdaptiveRungeKutta4Free(integrator);
 
   if (intReturn == XLAL_FAILURE) {
     XLALPrintError("** LALSimIMRPSpinInspiralRD Error **: Adaptive Integrator\n");

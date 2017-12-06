@@ -12,7 +12,6 @@ bin_PROGRAMS = \
 	lalapps_fits_array_list \
 	lalapps_fits_array_stat \
 	lalapps_fits_copy \
-	lalapps_fits_header_delval \
 	lalapps_fits_header_getval \
 	lalapps_fits_header_list \
 	lalapps_fits_header_setval \
@@ -28,7 +27,6 @@ lalapps_fits_array_imarith_SOURCES = fits_array_imarith.c
 lalapps_fits_array_list_SOURCES = fits_array_list.c
 lalapps_fits_array_stat_SOURCES = fits_array_stat.c
 lalapps_fits_copy_SOURCES = fits_copy.c
-lalapps_fits_header_delval_SOURCES = fits_header_delval.c
 lalapps_fits_header_getval_SOURCES = fits_header_getval.c
 lalapps_fits_header_list_SOURCES = fits_header_list.c
 lalapps_fits_header_setval_SOURCES = fits_header_setval.c

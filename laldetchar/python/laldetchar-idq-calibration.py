@@ -106,7 +106,7 @@ sys.stderr = idq.LogFile(logger)
 #===================================================================================================
 ### check lockfile
 if opts.lockfile:
-    idq.dieiflocked( opts.lockfile )
+    lockfp = idq.dieiflocked( opts.lockfile )
 
 #===================================================================================================
 ### read global configuration file
@@ -653,4 +653,5 @@ while gpsstart < gpsstop:
 
 #===================================================================================================
 if opts.lockfile:
-    idq.release(opts.lockfile) ### unlock lockfile
+    idq.release(lockfp) ### unlock lockfile
+    os.remove( opts.lockfile )

@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2011 Nickolas Fotopoulos, Evan Ochsner, 2016 Riccardo Sturani
+*  Copyright (C) 2011 Nickolas Fotopoulos, Evan Ochsner
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
 #include <lal/XLALError.h>
-#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
+#include <lal/LALAdaptiveRungeKutta4.h>
 #include <lal/LALSimInspiralWaveformParams.h>
 
 /* internal storage is in SI units! */
@@ -52,9 +52,6 @@ typedef struct GSParams {
     REAL8 s2x;                /**< (x,y,z) component ofs spin of m2 body */
     REAL8 s2y;                /**< z-axis along line of sight, L in x-z plane */
     REAL8 s2z;                /**< dimensionless spin, Kerr bound: |s2| <= 1 */
-    REAL8 longAscNodes;       /**< longitude of ascending nodes 0<= omega < 2 pi */
-    REAL8 ecc;                /**< eccentricity 0<= ecc < 1 */
-    REAL8 meanPerAno;         /**< mean periastron anomaly 0<= psi < 2 Pi */
     char outname[256];        /**< file to which output should be written */
     LALDict *params;          /**<Container for all accessory parameters */
     int ampPhase;
@@ -88,9 +85,6 @@ const char * usage =
 "                             SEOBNRv1\n"
 "                             SEOBNRv2\n"
 "                             SEOBNRv3\n"
-"                             SEOBNRv4\n"
-"                             TEOBv2\n"
-"                             TEOBv4\n"
 "                             SpinTaylorT4\n"
 "                             SpinTaylorT2\n"
 "                             PhenSpinTaylor\n"
@@ -141,14 +135,6 @@ const char * usage =
 "                           (~128-2560 for NS, 0 for BH) (default 0)\n"
 "--tidal-lambda2 L2         (tidal deformability of mass 2) / (mass of body 2)^5\n"
 "                           (~128-2560 for NS, 0 for BH) (default 0)\n"
-"--tidal-lambda-octu1 L31         (octupolar tidal deformability of mass 1) / (mass of body 1)^7\n"
-"                           (0 for BH) (default 0)\n"
-"--tidal-lambda-octu2 L32         (octupolar tidal deformability of mass 2) / (mass of body 2)^7\n"
-"                           (0 for BH) (default 0)\n"
-"--tidal-quadfmode1 W21      dimensionless quadrupolar f-mode angular frequency of mass 1, normalized to mass 1\n"
-"--tidal-quadfmode2 W22      dimensionless quadrupolar f-mode angular frequency of mass 2, normalized to mass 2\n"
-"--tidal-octufmode1 W31      dimensionless octupolar f-mode angular frequency of mass 1, normalized to mass 1\n"
-"--tidal-octufmode2 W32      dimensionless octupolar f-mode angular frequency of mass 2, normalized to mass 2\n"
 "--spin-order ORD           Twice PN order of spin effects\n"
 "                           (default ORD=-1 <==> All spin effects)\n"
 "--tidal-order ORD          Twice PN order of tidal effects\n"
@@ -157,9 +143,6 @@ const char * usage =
 "--f-max FMAX               Frequency at which to stop waveform in Hz\n"
 "                           (default: generate as much as possible)\n"
 "--distance D               Distance in Mpc (default 100)\n"
-"--long-asc-nodes omega     Longitude of ascending nodes in radians (default 0)\n"
-"--eccentricity ecc         Eccentricity (default 0)\n"
-"--mean-per-ano psi         Mean periastron anomaly in radians (default 0)\n"
 "--axis AXIS                for PhenSpin: 'View' (default), 'TotalJ', 'OrbitalL'\n"
 "--nonGRpar NAME VALUE      add the nonGRparam with name 'NAME' and value 'VALUE'\n"
 "                           Supported names:\n"
@@ -211,17 +194,8 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
     params->s2x = 0.;
     params->s2y = 0.;
     params->s2z = 0.;
-    params->longAscNodes = 0.;
-    params->ecc = 0.;
-    params->meanPerAno = 0.;
     XLALSimInspiralWaveformParamsInsertTidalLambda1(params->params, 0.);
     XLALSimInspiralWaveformParamsInsertTidalLambda2(params->params, 0.);
-    XLALSimInspiralWaveformParamsInsertTidalOctupolarLambda1(params->params, 0.);
-    XLALSimInspiralWaveformParamsInsertTidalOctupolarLambda2(params->params, 0.);
-    XLALSimInspiralWaveformParamsInsertTidalQuadrupolarFMode1(params->params, 0.);
-    XLALSimInspiralWaveformParamsInsertTidalQuadrupolarFMode2(params->params, 0.);
-    XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode1(params->params, 0.);
-    XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode2(params->params, 0.);
     strncpy(params->outname, "simulation.dat", 256); /* output to this file */
     params->verbose = 0; /* No verbosity */
 
@@ -282,21 +256,9 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
         } else if (strcmp(argv[i], "--spin2z") == 0) {
             params->s2z = atof(argv[++i]);
         } else if (strcmp(argv[i], "--tidal-lambda1") == 0) {
-	    XLALSimInspiralWaveformParamsInsertTidalLambda1(params->params, atof(argv[++i]));
+	    XLALSimInspiralWaveformParamsInsertTidalLambda1(params->params, atoi(argv[++i]));
         } else if (strcmp(argv[i], "--tidal-lambda2") == 0) {
-	    XLALSimInspiralWaveformParamsInsertTidalLambda2(params->params, atof(argv[++i]));
-        } else if (strcmp(argv[i], "--tidal-lambda-octu1") == 0) {
-        XLALSimInspiralWaveformParamsInsertTidalOctupolarLambda1(params->params, atof(argv[++i]));
-        } else if (strcmp(argv[i], "--tidal-lambda-octu2") == 0) {
-        XLALSimInspiralWaveformParamsInsertTidalOctupolarLambda2(params->params, atof(argv[++i]));
-        } else if (strcmp(argv[i], "--tidal-quadfmode1") == 0) {
-        XLALSimInspiralWaveformParamsInsertTidalQuadrupolarFMode1(params->params, atof(argv[++i]));
-        } else if (strcmp(argv[i], "--tidal-quadfmode2") == 0) {
-        XLALSimInspiralWaveformParamsInsertTidalQuadrupolarFMode2(params->params, atof(argv[++i]));
-        } else if (strcmp(argv[i], "--tidal-octufmode1") == 0) {
-        XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode1(params->params, atof(argv[++i]));
-        } else if (strcmp(argv[i], "--tidal-octufmode2") == 0) {
-        XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode2(params->params, atof(argv[++i]));
+	    XLALSimInspiralWaveformParamsInsertTidalLambda2(params->params, atoi(argv[++i]));
         } else if (strcmp(argv[i], "--spin-order") == 0) {
 	    XLALSimInspiralWaveformParamsInsertPNSpinOrder(params->params, atoi(argv[++i]));
         } else if (strcmp(argv[i], "--tidal-order") == 0) {
@@ -309,12 +271,6 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
             params->distance = atof(argv[++i]) * 1e6 * LAL_PC_SI;
         } else if (strcmp(argv[i], "--inclination") == 0) {
             params->inclination = atof(argv[++i]);
-        } else if (strcmp(argv[i], "--long-asc-nodes") == 0) {
-            params->longAscNodes = atof(argv[++i]);
-        } else if (strcmp(argv[i], "--eccentricity") == 0) {
-            params->ecc = atof(argv[++i]);
-        } else if (strcmp(argv[i], "--mean-per-ano") == 0) {
-            params->meanPerAno = atof(argv[++i]);
         } else if (strcmp(argv[i], "--axis") == 0) {
 	    XLALSimInspiralWaveformParamsInsertFrameAxis(params->params, XLALGetFrameAxisFromString(argv[++i]) );
             if ( (int) XLALSimInspiralWaveformParamsLookupFrameAxis(params->params)
@@ -499,7 +455,7 @@ int main (int argc , char **argv) {
                     params->m1, params->m2, params->s1x,
                     params->s1y, params->s1z, params->s2x, params->s2y,
                     params->s2z, params->distance, params->inclination,
-                    params->phiRef, params->longAscNodes, params->ecc, params->meanPerAno,
+                    params->phiRef, 0., 0., 0.,
                     params->deltaF, params->f_min, params->f_max, params->fRef,
                     params->params, params->approximant);
             break;
@@ -508,7 +464,7 @@ int main (int argc , char **argv) {
                     params->m1, params->m2, params->s1x,
                     params->s1y, params->s1z, params->s2x, params->s2y,
                     params->s2z, params->distance, params->inclination,
-		    params->phiRef, params->longAscNodes, params->ecc, params->meanPerAno,
+		    params->phiRef, 0., 0., 0.,
                     params->deltaT, params->f_min, params->fRef,
                     params->params,
                     params->approximant);

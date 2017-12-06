@@ -646,6 +646,47 @@ REAL8Window *XLALCreateGaussREAL8Window(UINT4 length, REAL8 beta)
 	return XLALCreateREAL8WindowFromSequence(sequence);
 }
 
+REAL8Window *XLALCreatePlanckREAL8Window(UINT4 length, REAL8 start_time, REAL8 trigtime, REAL8 SampleRate, REAL8 rise_time)
+{
+    REAL8Sequence *sequence;
+    sequence = XLALCreateREAL8Sequence(length);
+    UINT4 i;
+
+    /*check sequence is initialized correctly*/
+    if(!sequence)
+        XLAL_ERROR_NULL(XLAL_EFUNC);
+
+    REAL8 end_time = start_time + rise_time; 
+    REAL8 time= trigtime+2.0-(REAL8)length/SampleRate;
+    /*window similar to arxiv 1003.2939 but one-sided with different parametrization*/
+    for(i = 0; i< length; i++)
+    {
+        time = time + (REAL8)1.0/SampleRate;
+        if(time <= start_time){sequence->data[i] = 0.0;}
+        else if(time < end_time){sequence->data[i] = 1.0/(exp((end_time-start_time)/(time-start_time)+(end_time-start_time)/(time-end_time))+1.0);}
+        else{sequence->data[i] = 1.0;}
+    }
+
+   return XLALCreateREAL8WindowFromSequence(sequence);
+
+}
+
+int XLALApplyPlanckWindowToTemplate(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, UINT4 Nsamples, REAL8 start_time, REAL8 trigtime, REAL8 SampleRate, REAL8 rise_time)
+{
+    
+    REAL8Window * window_rd;
+    window_rd = XLALCreatePlanckREAL8Window(Nsamples, start_time, trigtime, SampleRate, rise_time);
+    for (UINT4 i=0; i<Nsamples; i++)
+    {
+        (*hplus)->data->data[i]  =  (*hplus)->data->data[i]*(window_rd->data->data)[i];
+        (*hcross)->data->data[i] = (*hcross)->data->data[i]*(window_rd->data->data)[i];
+    }
+    
+    XLALDestroyREAL8Window(window_rd);
+    return XLAL_SUCCESS;
+    
+}
+
 
 REAL8Window *XLALCreateLanczosREAL8Window(UINT4 length)
 {

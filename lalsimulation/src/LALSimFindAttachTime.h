@@ -65,8 +65,7 @@ double  XLALSimLocateOmegaTime(
     REAL8 m2,
     REAL8Vector *radiusVec,
     int *found,
-    REAL8* tMaxOmega,
-    INT4 use_optimized
+    REAL8* tMaxOmega
 );
 
 

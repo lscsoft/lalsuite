@@ -37,9 +37,15 @@
 #include <lal/LALInference.h>
 #include <lal/XLALError.h>
 #include <lal/LIGOMetadataRingdownUtils.h>
+#include <lal/RingUtils.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALInferenceTemplate.h>
 #include <lal/LALInferenceMultibanding.h>
+#include <lal/LALSimBlackHoleRingdownTiger.h>
+#include <lal/LALSimRingdownMMRDNS.h>
+#include <lal/Window.h>
+#include <lal/LALInferenceReadData.h>
+#include <lal/LALConstants.h>
 
 /* LIB imports*/
 #include <lal/LALInferenceBurstRoutines.h>
@@ -66,13 +72,52 @@
 #define Pi_p2by3 2.1450293971110256000774441009412356
 #define log4 1.3862943611198906188344642429163531
 
+
+REAL8 XLALE_rad_nonspinning_UIB2016(REAL8 eta)
+{
+    REAL8 a1, a2, a3, a4;
+    REAL8 eta2, eta3, eta4;
+    
+    /********************************************************************************************************************
+     * Formula taken from eq. (21) and table VII of Jimenez, Keitel, Husa et al.  arXiv:1611.00332                      *
+     * Note that the formula given there corresponds to E_rad = M - M_f = 1 - M_f (in units of the initial total mass). *
+     * Then M = M_f + E_rad * M ==> M = M_f/(1-E_rad)                                                                   *
+     ********************************************************************************************************************/
+    
+    a1   =  (1-(2.*sqrt(2.))/3.); /* Std error: 0 (Th) ; Rel error: 0   % */
+    a2   =  0.5610;               /* Std error: 0.0026 ; Rel error: 0.5 % */
+    a3   = -0.847;                /* Std error: 0.0270 ; Rel error: 3.2 % */
+    a4   =  3.145;                /* Std error: 0.0690 ; Rel error: 2.2 % */
+    
+    eta2 = eta  * eta;
+    eta3 = eta  * eta * eta;
+    eta4 = eta2 * eta2;
+    
+    return a4*eta4 + a3*eta3 + a2*eta2 + a1*eta;
+    
+}
+
+REAL8 XLALMf_to_M_nonspinning_UIB2016(REAL8 eta, REAL8 M_f)
+{
+    REAL8 M;
+    
+    M = M_f/(1-XLALE_rad_nonspinning_UIB2016(eta));
+    
+    return M;
+}
+
+
+
 static void q2masses(double mc, double q, double *m1, double *m2);
+static void eta2q(REAL8 eta, REAL8 *q);
 
 /* list of testing GR parameters to be passed to the waveform */
 
 const char list_extra_parameters[34][16] = {"dchi0","dchi1","dchi2","dchi3","dchi4","dchi5","dchi5l","dchi6","dchi6l","dchi7","aPPE","alphaPPE","bPPE","betaPPE","betaStep","fStep","dxi1","dxi2","dxi3","dxi4","dxi5","dxi6","dalpha1","dalpha2","dalpha3","dalpha4","dalpha5","dbeta1","dbeta2","dbeta3","dsigma1","dsigma2","dsigma3","dsigma4"};
+const char list_hairy_parameters[26][16] = {"dtau21","dtau22","dtau33","dtau44","dfreq21","dfreq22","dfreq33","dfreq44","dfreq220","dfreq221","dfreq330","dfreq331","dfreq440","dfreq550","dfreq210","dfreq320","dfreq430","dtau220","dtau221","dtau330","dtau331","dtau440","dtau550","dtau210","dtau320","dtau430"};
 
 const UINT4 N_extra_params = 34;
+const UINT4 N_hairy_params = 26;
 
 
 static int InterpolateWaveform(REAL8Vector *freqs, COMPLEX16FrequencySeries *src, COMPLEX16FrequencySeries *dest);
@@ -82,10 +127,10 @@ static int InterpolateWaveform(REAL8Vector *freqs, COMPLEX16FrequencySeries *src
   UINT4 j=ceil(freqs->data[0] / deltaF);
   COMPLEX16 *d=dest->data->data;
   memset(d, 0, sizeof(*(d))*j);
-
+  
   /* Loop over reduced frequency set */
   for(UINT4 i=0;i<freqs->length-1;i++)
-  {
+  {  
     double startpsi = carg(src->data->data[i]);
     double startamp = cabs(src->data->data[i]);
     double endpsi = carg(src->data->data[i+1]);
@@ -95,7 +140,7 @@ static int InterpolateWaveform(REAL8Vector *freqs, COMPLEX16FrequencySeries *src
     double endf=freqs->data[i+1];
 
     double df = endf - startf; /* Big freq step */
-
+    
     /* linear interpolation setup */
     double dpsi = (endpsi - startpsi);
 
@@ -105,12 +150,12 @@ static int InterpolateWaveform(REAL8Vector *freqs, COMPLEX16FrequencySeries *src
      * the phase wrapping around (e.g. TF2 1.4-1.4 srate=4096)
      */
     if (dpsi/df<-LAL_PI ) {dpsi+=LAL_TWOPI;}
-
+    
     double dpsidf = dpsi/df;
     double dampdf = (endamp - startamp)/df;
 
     double damp = dampdf *deltaF;
-
+    
     const double dim = sin(dpsidf*deltaF);
     const double dre = 2.0*sin(dpsidf*deltaF*0.5)*sin(dpsidf*deltaF*0.5);
 
@@ -119,9 +164,9 @@ static int InterpolateWaveform(REAL8Vector *freqs, COMPLEX16FrequencySeries *src
     for(f=j*deltaF,
 	re = cos(startpsi), im = sin(startpsi),
         a = startamp;
-
+        
         f<endf;
-
+        
         j++, f+=deltaF,
         newRe = re - dre*re-dim*im,
         newIm = im + re*dim-dre*im,
@@ -204,6 +249,38 @@ static void q2masses(double mc, double q, double *m1, double *m2)
   *m2 = (*m1) * q;
   return;
 }
+
+static void eta2q(REAL8 eta, REAL8 *q)
+/* Compute assymetric mass ratio q, given a
+ * symmetric mass ratio, eta.
+ */
+{
+  *q = (1. - sqrt(1. - 4.*eta))/(1. + sqrt(1. - 4.*eta)) ;
+}
+
+// void LALInferenceTemplateROQ(LALInferenceModel *model)
+// {
+// double m1,m2,mc,eta,q,iota=0;
+// /* Prefer m1 and m2 if available (i.e. for injection template) */
+//   if(LALInferenceCheckVariable(model->params,"mass1")&&LALInferenceCheckVariable(model->params,"mass2"))
+//   {
+//     m1=*(REAL8 *)LALInferenceGetVariable(model->params,"mass1");
+//     m2=*(REAL8 *)LALInferenceGetVariable(model->params,"mass2");
+//     eta=m1*m2/((m1+m2)*(m1+m2));
+//     mc=pow(eta , 0.6)*(m1+m2);
+//   }
+//   else
+//   {
+//     if (LALInferenceCheckVariable(model->params,"q")) {
+//       q = *(REAL8 *)LALInferenceGetVariable(model->params,"q");
+//       q2eta(q, &eta);
+//     }
+//     else
+//       eta = *(REAL8*) LALInferenceGetVariable(model->params, "eta");
+//     mc       = *(REAL8*) LALInferenceGetVariable(model->params, "chirpmass");
+//     mc2masses(mc, eta, &m1, &m2);
+//   }
+// }
 
 void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferenceModel *model){
 /*************************************************************************************************************************/
@@ -312,7 +389,8 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
 
   /* If we have tilt angles zero, then the spins are aligned and we just set the z component */
   /* However, if the waveform supports precession then we still need to get the right coordinate components */
-  if(tilt1==0.0 && tilt2==0.0)
+  SpinSupport spin_support=XLALSimInspiralGetSpinSupportFromApproximant(approximant);
+  if(tilt1==0.0 && tilt2==0.0 && (spin_support==LAL_SIM_INSPIRAL_SPINLESS || spin_support==LAL_SIM_INSPIRAL_ALIGNEDSPIN))
   {
       spin1z=a_spin1;
       spin2z=a_spin2;
@@ -549,6 +627,488 @@ void LALInferenceTemplateASinOmegaT(LALInferenceModel *model)
   return;
 }
 
+void LALInferenceTemplateXLALSimBlackHoleRingdown(LALInferenceModel *model)  // TODO: add comments!
+/*************************************************************************************************/
+/* Wrapper for Ringdown waveforms:
+ * LALSimBlackHoleRingdown and LALSimBlackHoleRingdownTiger.
+ *
+ * IFOdata->modelParams parameters:
+ * 
+ 
+ */
+
+{
+  Approximant approximant = (Approximant) 0;
+  UINT4 qnmorder=0;
+  
+  unsigned long	i;
+  static int sizeWarning = 0;
+  int ret=0;
+  INT4 errnum=0;
+  REAL8 instant;
+  
+  
+  REAL8TimeSeries *hplus=NULL;  /**< +-polarization waveform [returned] */
+  REAL8TimeSeries *hcross=NULL; /**< x-polarization waveform [returned] */
+  COMPLEX16FrequencySeries *hptilde=NULL, *hctilde=NULL;
+  
+  REAL8 phi0 = LALInferenceGetREAL8Variable(model->params, "phase"); /* START phase as per lalsimulation convention, radians*/
+  
+  // REAL8 mc;
+  REAL8 phi, deltaT, m1, m2, mass, eta, q, distance, inclination, f_low, UNUSED f_min;
+  REAL8 frac_mass_loss = 0.0;
+  REAL8 chiEff = 0.0;
+
+  //REAL8 *mass_p;
+  LALSimulationDomain model_domain = model->domain;
+  REAL8 f_max;
+  REAL8 deltaF = model->deltaF;
+  
+  // LALSimInspiralWaveformFlags *waveFlags = XLALSimInspiralCreateWaveformFlags();
+  LALSimInspiralTestGRParam *nonGRparams = NULL;
+
+  if (LALInferenceCheckVariable(model->params, "LAL_APPROXIMANT")){
+    approximant = *(Approximant*) LALInferenceGetVariable(model->params, "LAL_APPROXIMANT");
+  }
+  else {
+    XLALPrintError(" ERROR in LALInferenceTemplateXLALSimBlackHoleRingdown(): (INT4) \"LAL_APPROXIMANT\" parameter not provided!\n");
+    XLAL_ERROR_VOID(XLAL_EDATA);
+  }
+  
+  qnmorder = 4 ;
+  /* NOTE: For now I'm hardcoding qnmorder, there does not appear to be a commandline option yet.
+  if (LALInferenceCheckVariable(model->params, "LAL_QNM_ORDER"))
+    qnmorder = *(UINT4*) LALInferenceGetVariable(model->params, "LAL_QNM_ORDER");
+  else {
+    XLALPrintError(" ERROR in LALInferenceTemplateXLALSimBlackHoleRingdown(): (INT4) \"LAL_QNM_ORDER\" parameter not provided!\n");
+    XLAL_ERROR_VOID(XLAL_EDATA);
+  }
+  */
+
+  REAL8 f_ref = 100.0;
+  if (LALInferenceCheckVariable(model->params, "f_ref")) f_ref = *(REAL8 *)LALInferenceGetVariable(model->params, "f_ref");
+
+  REAL8 fTemp = f_ref;
+
+  if (model->timehCross==NULL) {
+    XLALPrintError(" ERROR in LALInferenceTemplateXLALSimBlackHoleRingdown(): encountered unallocated 'timeData'.\n");
+    XLAL_ERROR_VOID(XLAL_EFAULT);
+  }
+  deltaT = model->timehCross->deltaT;
+  
+  if(model->domain == LAL_SIM_DOMAIN_FREQUENCY) {
+    if (model->freqhCross==NULL) {
+      XLALPrintError(" ERROR in LALInferenceTemplateXLALSimBlackHoleRingdown(): encountered unallocated 'freqhCross'.\n");
+      XLAL_ERROR_VOID(XLAL_EFAULT);
+    }
+    
+    deltaF = model->deltaF;
+  }
+    
+  if (LALInferenceCheckVariable(model->params,"rd_chi_eff"))
+    {
+      chiEff = *(REAL8*) LALInferenceGetVariable(model->params, "rd_chi_eff");
+    }
+  
+  if(LALInferenceCheckVariable(model->params,"rd_mass"))
+    {
+      mass = *(REAL8 *)LALInferenceGetVariable(model->params,"rd_mass");
+      if (LALInferenceCheckVariable(model->params,"asym_massratio")) 
+	{
+	  q = *(REAL8 *)LALInferenceGetVariable(model->params,"asym_massratio");
+          eta = q / ((1.+q)*(1.+q));
+// 	  q2eta(q, &eta);
+	} 
+      else if (LALInferenceCheckVariable(model->params, "massratio")) 
+	{
+	  eta = *(REAL8*) LALInferenceGetVariable(model->params, "massratio");
+	  eta2q(eta, &q);
+	}
+      else
+	{
+	  fprintf(stderr, "No mass parameters found\n");
+	  exit(0);
+	}
+      if(LALInferenceCheckVariable(model->params, "fractionalmassloss")) frac_mass_loss = *(REAL8 *)LALInferenceGetVariable(model->params, "frac_mass_loss");
+      m1 = mass*(1. - frac_mass_loss)/(1+q);
+      m2 = m1*q;
+    }
+  else if(LALInferenceCheckVariable(model->params, "nospincomponentmasses") && LALInferenceGetVariable(model->params, "mass1") && LALInferenceGetVariable(model->params, "mass2"))
+    { 
+      m1 = *(REAL8 *)LALInferenceGetVariable(model->params, "mass1");
+      m2 = *(REAL8 *)LALInferenceGetVariable(model->params, "mass2");
+      eta = m1*m2/((m1+m2)*(m1+m2));
+      mass = XLALNonSpinBinaryFinalBHMass(eta, m1, m2); 
+    }
+  else if(LALInferenceCheckVariable(model->params, "fractionalmassloss") && LALInferenceGetVariable(model->params, "mass1") && LALInferenceGetVariable(model->params, "mass2"))
+    { 
+      frac_mass_loss = *(REAL8 *)LALInferenceGetVariable(model->params, "frac_mass_loss");
+      m1 = *(REAL8 *)LALInferenceGetVariable(model->params, "mass1");
+      m2 = *(REAL8 *)LALInferenceGetVariable(model->params, "mass2");
+      eta = m1*m2/((m1+m2)*(m1+m2));
+      mass = (m1 + m2)*(1. - frac_mass_loss); 
+    }
+  else
+    {
+      fprintf(stderr,"No mass parameters found!\n");
+      exit(0);
+    }
+  
+  /* Zenith angle between J and N in radians. Also known as inclination angle when spins are aligned */
+  REAL8 thetaJN = acos(LALInferenceGetREAL8Variable(model->params, "costheta_jn"));     /* zenith angle between J and N in radians */
+  
+  /* Check if fLow is a model parameter, otherwise use data structure definition */
+  if(LALInferenceCheckVariable(model->params, "flow"))
+    f_low = *(REAL8*) LALInferenceGetVariable(model->params, "flow");
+  else
+    f_low = model->fLow;
+  
+  f_max = 0.0; /* for freq domain waveforms this will stop at ISCO. Previously found using model->fHigh causes NaNs in waveform (see redmine issue #750)*/
+
+  /* ==== SPINS ==== */
+  /* We will default to spinless signal and then add in the spin components if required */
+  /* If there are non-aligned spins, we must convert between the System Frame coordinates
+   * and the cartestian coordinates */
+
+  /* The cartesian spin coordinates (default 0), as passed to LALSimulation */
+  REAL8 spin1x = 0.0;
+  REAL8 spin1y = 0.0;
+  REAL8 spin1z = 0.0;
+  REAL8 spin2x = 0.0;
+  REAL8 spin2y = 0.0;
+  REAL8 spin2z = 0.0;
+  
+  /* System frame coordinates as used for jump proposals */
+  REAL8 a_spin1 = 0.0;  /* Magnitude of spin1 */
+  REAL8 a_spin2 = 0.0;  /* Magnitude of spin2 */
+  REAL8 phiJL  = 0.0;  /* azimuthal angle of L_N on its cone about J radians */ 
+  REAL8 tilt1   = 0.0;  /* zenith angle between S1 and LNhat in radians */
+  REAL8 tilt2   = 0.0;  /* zenith angle between S2 and LNhat in radians */
+  REAL8 phi12   = 0.0;  /* difference in azimuthal angle btwn S1, S2 in radians */
+
+  /* Now check if we have spin amplitudes */
+  if(LALInferenceCheckVariable(model->params, "a_spin1"))    a_spin1   = *(REAL8*) LALInferenceGetVariable(model->params, "a_spin1");
+  if(LALInferenceCheckVariable(model->params, "a_spin2"))    a_spin2   = *(REAL8*) LALInferenceGetVariable(model->params, "a_spin2");
+
+  /* Check if we have spin angles too */
+  if(LALInferenceCheckVariable(model->params, "phi_jl"))
+      phiJL = LALInferenceGetREAL8Variable(model->params, "phi_jl");
+  if(LALInferenceCheckVariable(model->params, "tilt_spin1"))
+      tilt1 = LALInferenceGetREAL8Variable(model->params, "tilt_spin1");
+  if(LALInferenceCheckVariable(model->params, "tilt_spin2"))
+      tilt2 = LALInferenceGetREAL8Variable(model->params, "tilt_spin2");
+  if(LALInferenceCheckVariable(model->params, "phi12"))
+      phi12 = LALInferenceGetREAL8Variable(model->params, "phi12");
+
+  /* If we have tilt angles zero, then the spins are aligned and we just set the z component */
+  /* However, if the waveform supports precession then we still need to get the right coordinate components */
+  SpinSupport spin_support=XLALSimInspiralGetSpinSupportFromApproximant(approximant);
+  if(tilt1==0.0 && tilt2==0.0 && (spin_support==LAL_SIM_INSPIRAL_SPINLESS || spin_support==LAL_SIM_INSPIRAL_ALIGNEDSPIN))
+  {
+      spin1z=a_spin1;
+      spin2z=a_spin2;
+      inclination = thetaJN; /* Inclination angle is just thetaJN */
+  }
+  else
+  {   /* Template is not aligned-spin only. */
+      /* Set all the other spin components according to the angles we received above */
+      /* The transformation function doesn't know fLow, so f_ref==0 isn't interpretted as a request to use the starting frequency for reference. */
+      if(fTemp==0.0)
+        fTemp = f_low;
+
+      XLAL_TRY(ret=XLALSimInspiralTransformPrecessingNewInitialConditions(
+                    &inclination, &spin1x, &spin1y, &spin1z, &spin2x, &spin2y, &spin2z,
+                    thetaJN, phiJL, tilt1, tilt2, phi12, a_spin1, a_spin2, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, fTemp, phi0), errnum);
+      if (ret == XLAL_FAILURE)
+      {
+        XLALPrintError(" ERROR in XLALSimInspiralTransformPrecessingNewInitialConditions(): error converting angles. errnum=%d: %s\n",errnum, XLALErrorString(errnum) );
+        return;
+      }
+  }
+
+  phi		= LALInferenceGetREAL8Variable(model->params, "phase"); /* START phase as per lalsimulation convention, radians*/
+  /*  distance  = 1.0; // *(REAL8*) LALInferenceGetVariable(model->params, "distance");
+      distance *= LAL_PC_SI*1.0e6;  */ /* Distance to source in meters */
+  distance	= exp(LALInferenceGetREAL8Variable(model->params, "logdistance"))* LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
+  
+  
+  REAL8 spin = 0.0;  /* Spin of the final black hole */
+  
+  // TODO: see if the final spin/mass functions can be updated with more recent results
+  /* Fill in final black hole spin magnitude.
+   * Three options are available here :
+   * 1) Final BH spin distribution is defined 
+   * 2) Final BH spin is calculated from progenitor mass and spin parameters
+   * 3) Final BH spin is calculated from non-spinning progenitor mass ratio. 
+   * If --enable-a is used, with the related options, then 1) is chosen.
+   * If --disable-a is used, then 2) or 3) is chosen, depending on spins being 0 or not. */
+  
+  if(LALInferenceCheckVariable(model->params, "rd_spin")){
+    spin = *(REAL8*) LALInferenceGetVariable(model->params, "rd_spin");
+  }
+  else if (LALInferenceCheckVariable(model->params, "spin_from_components") && (m1 > 0.0) && (m2 > 0.0)){
+    if ( fabs(spin1x) + fabs(spin1y) + fabs(spin1z) + fabs(spin2x) + fabs(spin2y) + fabs(spin2z) != 0.0) {
+      spin = XLALSpinBinaryFinalBHSpin(eta, m1, m2, spin1x, spin2x, spin1y, spin2y, spin1z, spin2z); /* Barausse & Rezzolla arxiv:0904.2577 */
+    }
+    else {
+      spin = XLALNonSpinBinaryFinalBHSpin(eta); /* Buonanno et al arxiv:0706.3732v3 */
+    }
+  }
+  else {
+    XLALPrintError(" ERROR in LALInferenceTemplateXLALSimBlackHoleRingdown(): encountered undefined 'spin'.\n");
+    XLAL_ERROR_VOID(XLAL_EFAULT);
+    
+  }
+  
+  REAL8 spin1[3];
+  REAL8 spin2[3];
+  
+  spin1[0] = spin1x;
+  spin1[1] = spin1y;
+  spin1[2] = spin1z;
+  spin2[0] = spin2x;
+  spin2[1] = spin2y;
+  spin2[2] = spin2z;
+
+
+  for (UINT4 k=0; k<N_hairy_params; k++)
+  {
+    if(LALInferenceCheckVariable(model->params,list_hairy_parameters[k]))
+    {
+      XLALSimInspiralAddTestGRParam(&nonGRparams,list_hairy_parameters[k],*(REAL8 *)LALInferenceGetVariable(model->params,list_hairy_parameters[k]));
+      //printf("added TestGRParam %s, with value %.3f\n",list_hairy_parameters[k],XLALSimInspiralGetTestGRParam(nonGRparams,list_hairy_parameters[k])) ;
+    }
+  }
+
+  
+  SphHarmTimeSeries *qnmodes=NULL;        /**< List containing empty Quasi-Normal Modes  */
+  
+  // TODO: Get maxl or (l,m) pairs from commandLine.
+
+  UINT4 maxl = qnmorder;
+      
+  if (!qnmodes){
+    qnmodes = XLALSphHarmTimeSeriesAddMode(qnmodes, NULL, 2, 2);
+    qnmodes = XLALSphHarmTimeSeriesAddMode(qnmodes, NULL, 2, 1);
+    qnmodes = XLALSphHarmTimeSeriesAddMode(qnmodes, NULL, 3, 3);
+    qnmodes = XLALSphHarmTimeSeriesAddMode(qnmodes, NULL, 4, 4);
+  }
+  else maxl = XLALSphHarmTimeSeriesGetMaxL(qnmodes);
+  qnmorder = maxl; 
+      
+
+  if (model_domain == LAL_SIM_DOMAIN_FREQUENCY){
+    
+    /*XLALPrintError(" ERROR in LALInferenceTemplateXLALSimBlackHoleRingdown(): FD waveform not implemented yet.\n");
+    XLAL_ERROR_VOID(XLAL_EFAILED);*/
+    
+    //TODO: add spin parameter like effective spin or component spins or whatever is necessary
+    if(approximant==(int)RingdownFD){XLAL_TRY(ret = XLALSimBlackHoleRingdownTigerFD(&hptilde, &hctilde, phi, deltaF, f_max, f_low, 
+                                                 mass*LAL_MSUN_SI, spin, eta, chiEff, distance,
+                                                 inclination, nonGRparams), errnum); 
+    }
+    /*TODO: Is there anything wrong with using this phi?*/
+    if(approximant==(int)RingdownMMRDNSFD){
+        XLAL_TRY(ret = XLALSimRingdownMMRDNSFD(&hptilde, &hctilde, deltaF, f_low, f_max,mass*LAL_MSUN_SI, spin,eta,inclination,phi,distance,nonGRparams),errnum);
+    }
+	if (hptilde==NULL || hptilde->data==NULL || hptilde->data->data==NULL ) {
+	if (hptilde==NULL){ XLALPrintError("Error1");}
+	if (hptilde->data==NULL){ XLALPrintError("Error2");}
+	if (hptilde->data->data==NULL){ XLALPrintError("Error3");}
+	  XLALPrintError(" ERROR in LALInferenceTemplateXLALSimBlackHoleRingdown(): encount/ered unallocated 'hptilde'.\n");
+	  XLAL_ERROR_VOID(XLAL_EFAULT);
+	}
+	if (hctilde==NULL || hctilde->data==NULL || hctilde->data->data==NULL ) {
+	  XLALPrintError(" ERROR in LALInferenceTemplateXLALSimBlackHoleRingdown(): encountered unallocated 'hctilde'.\n");
+	  XLAL_ERROR_VOID(XLAL_EFAULT);
+	}
+      
+	COMPLEX16 *dataPtr = hptilde->data->data;
+
+    for (i=0; i<model->freqhCross->data->length; ++i) {
+      dataPtr = hptilde->data->data;
+      if(i < hptilde->data->length){
+        model->freqhPlus->data->data[i] = dataPtr[i];
+      }else{
+        model->freqhPlus->data->data[i] = 0.0;
+        //model->freqhPlus->data->data[i].imag_FIXME = 0.0;
+      }
+    }
+
+    dataPtr = hctilde->data->data;
+    for (i=0; i<model->freqhCross->data->length; ++i) {
+      dataPtr = hctilde->data->data;
+      if(i < hctilde->data->length){
+        model->freqhCross->data->data[i] = dataPtr[i];
+      }else{
+        model->freqhCross->data->data[i] = 0.0;
+        //model->freqhCross->data->data[i].imag_FIXME = 0.0;
+      }
+    }
+    /* nomalise (apply same scaling as in XLALREAL8TimeFreqFFT()") : */
+    //for (i=0; i<model->freqhCross->data->length; ++i) {
+    //model->freqhCross->data->data[i].re *= ((REAL8) model->timehPlus->data->length) * deltaT;
+    //model->freqhCross->data->data[i].im *= ((REAL8) model->timehPlus->data->length) * deltaT;
+    //}
+    
+    
+    /* Destroy the WF flags and the nonGr params */
+    //XLALSimInspiralDestroyWaveformFlags(waveFlags);
+    XLALSimInspiralDestroyTestGRParam(nonGRparams);
+    
+    instant= (model->timehCross->epoch.gpsSeconds + 1e-9*model->timehCross->epoch.gpsNanoSeconds);
+    LALInferenceSetVariable(model->params, "time", &instant);
+
+
+  }
+  else if (model_domain == LAL_SIM_DOMAIN_TIME)
+  {
+    //TODO: add spin parameter like effective spin or component spins or whatever is necessary
+    /* XLAL_TRY(ret=XLALSimRingdownChooseTDWaveform(&hplus, &hcross, phi, deltaT,
+                                                 mass*LAL_MSUN_SI, spin, eta, distance,
+                                                 inclination, waveFlags, nonGRparams,
+                                                 qnmorder, qnmodes, approximant), errnum); */
+
+    if(approximant==(int)RingdownTD)
+    {
+        XLAL_TRY(ret=XLALSimBlackHoleRingdownTiger(&hplus, &hcross, qnmodes, (&model->timehCross->epoch), phi, deltaT, mass*LAL_MSUN_SI,spin, eta, spin1, spin2, chiEff, distance, inclination, nonGRparams), errnum);
+    }
+    else if(approximant==(int)RingdownMMRDNSTD)
+    {
+        /* prepare window */
+        REAL8 rise_time, window_shift;
+        GetWindowParamsFromReadDataToTemplate(&rise_time, &window_shift);
+        REAL8 M      = XLALMf_to_M_nonspinning_UIB2016(eta, mass);
+        REAL8 Tstart =  0.0*M*LAL_MTSUN_SI;
+        REAL8 Tend   = 80.0*M*LAL_MTSUN_SI;
+        UINT4 Num_samples_window=ceil((Tend-Tstart)/(deltaT));	
+
+        XLAL_TRY(ret=XLALSimRingdownGenerateFullSphericalWaveform_time(&hplus, &hcross, (&model->timehCross->epoch), deltaT, Num_samples_window, mass*LAL_MSUN_SI, spin, eta, inclination, phi, distance, nonGRparams), errnum); 
+        XLAL_TRY(ret=XLALApplyPlanckWindowToTemplate(&hplus, &hcross, Num_samples_window, M*LAL_MTSUN_SI*window_shift, (Num_samples_window*deltaT)-2.0, 1.0/deltaT, rise_time), errnum);
+    }
+    
+    // XLALSimInspiralDestroyWaveformFlags(waveFlags);
+    XLALSimInspiralDestroyTestGRParam(nonGRparams);
+    if (ret == XLAL_FAILURE || hplus == NULL || hcross == NULL)
+    {
+      for (i=0; i<model->timehCross->data->length; i++)
+      {
+        model->timehPlus->data->data[i] = 0.0;
+        model->timehCross->data->data[i] = 0.0;
+      }
+      XLALPrintError(" ERROR in XLALSimBlackHoleRingdownTiger(): error generating waveform. errnum=%d\n",errnum );
+      return;
+    }
+    /* if the waveform failed to generate, fill the buffer with zeros
+     * so that the previous waveform is not left there
+     */
+    if(ret!=XLAL_SUCCESS)
+    {
+      memset(model->freqhPlus->data->data,0,sizeof(model->freqhPlus->data->data[0])*model->freqhPlus->data->length);
+      memset(model->freqhCross->data->data,0,sizeof(model->freqhCross->data->data[0])*model->freqhCross->data->length);
+      if ( hptilde ) XLALDestroyCOMPLEX16FrequencySeries(hptilde);
+      if ( hctilde ) XLALDestroyCOMPLEX16FrequencySeries(hctilde);
+      XLALSimInspiralDestroyTestGRParam(nonGRparams);
+      errnum&=~XLAL_EFUNC; /* Mask out the internal function failure bit */
+      switch(errnum)
+      {
+        case XLAL_EDOM:
+          /* The waveform was called outside its domain. Return an empty vector but not an error */
+          XLAL_ERROR_VOID(XLAL_FAILURE);
+        default:
+          /* Another error occurred that we can't handle. Propogate upward */
+          XLALSetErrno(errnum);
+          XLAL_ERROR_VOID(errnum,"%s: Template generation failed in XLALSimBlackHoleRingdownTiger",__func__);
+      }
+    }
+
+    size_t waveLength = hplus->data->length;
+    size_t bufLength = model->timehPlus->data->length;
+    
+    /* Note: For ringdown, waveform is assumed to start at 0.0 always! */
+
+    /* 2*Rearth/(c*deltaT)---2 is safety factor---is the maximum time
+     shift for any earth-based detector. */
+    size_t maxShift = (size_t)lround(4.255e-2/hplus->deltaT); 
+    
+    /* Taper 0.4 seconds at start and end (hard-coded! in
+     LALInferenceReadData.c, around line 233). */
+    size_t taperLength = (size_t)lround(0.4/hplus->deltaT); 
+    
+    /* Within unsafeLength of ends of buffer, possible danger of
+     wrapping and/or tapering interactions. */
+    size_t unsafeLength = taperLength + maxShift;
+    
+    REAL8 desiredTc = *(REAL8 *)LALInferenceGetVariable(model->params, "time");
+    REAL8 tStart = XLALGPSGetREAL8(&(model->timehPlus->epoch));
+    REAL8 tEnd = tStart + deltaT * model->timehPlus->data->length;
+    
+    if (desiredTc < tStart || desiredTc > tEnd) {
+      XLALDestroyREAL8TimeSeries(hplus);
+      XLALDestroyREAL8TimeSeries(hcross);
+      
+      XLAL_PRINT_ERROR("desired ringdown start time (%.4f) outside data buffer\n", desiredTc);
+      XLAL_ERROR_VOID(XLAL_EDOM);
+    }
+    
+    /* The nearest sample in model buffer to the desired tc. */
+    size_t tcSample = (size_t)lround((desiredTc - XLALGPSGetREAL8(&(model->timehPlus->epoch)))/deltaT);
+    
+    /* The acutal coalescence time that corresponds to the buffer
+     sample on which the waveform's tC lands. */
+    REAL8 injT = XLALGPSGetREAL8(&(model->timehPlus->epoch)) + tcSample*deltaT;
+        
+    size_t bufStartIndex = tcSample; // (tcSample >= 0 ? tcSample : 0);
+    size_t bufEndIndex = (waveLength + tcSample <= bufLength ? waveLength + tcSample : bufLength);
+    size_t bufWaveLength = bufEndIndex - bufStartIndex;
+    size_t waveStartIndex = 0; // (tcSample >= 0 ? 0 : - tcSample);    
+    
+    if (bufStartIndex < unsafeLength || (bufLength - bufEndIndex) <= unsafeLength) {
+      /* The waveform could be timeshifted into a region where it will
+       be tapered improperly, or even wrap around from the periodic
+       timeshift.  Issue warning. */
+      if (!sizeWarning) {
+        fprintf(stderr, "WARNING: Generated template is too long to guarantee that it will not\n");
+        fprintf(stderr, "WARNING:  (a) lie in a tapered region of the time-domain buffer\n");
+        fprintf(stderr, "WARNING:  (b) wrap periodically when timeshifted in likelihood computation\n");
+        fprintf(stderr, "WARNING: Either of these may cause differences between the template and the\n");
+        fprintf(stderr, "WARNING: correct GW waveform in each detector.\n");
+        fprintf(stderr, "WARNING: Parameter estimation will continue, but you should consider\n");
+        fprintf(stderr, "WARNING: increasing the data segment length (using the --seglen) option.\n");
+        sizeWarning = 1;
+      }
+    }
+    
+    /* Clear model buffers */
+    memset(model->timehPlus->data->data, 0, sizeof(REAL8)*model->timehPlus->data->length);
+    memset(model->timehCross->data->data, 0, sizeof(REAL8)*model->timehCross->data->length);
+    
+    /* Inject */
+    memcpy(model->timehPlus->data->data + bufStartIndex,
+           hplus->data->data + waveStartIndex,
+           bufWaveLength*sizeof(REAL8));
+    memcpy(model->timehCross->data->data + bufStartIndex,
+           hcross->data->data + waveStartIndex,
+           bufWaveLength*sizeof(REAL8));
+    
+    LALInferenceSetVariable(model->params, "time", &injT);
+  }
+  else {
+    XLALPrintError(" ERROR in LALInferenceTemplateXLALSimBlackHoleRingdown(): parameter 'modelDomain' not defined.\n");
+    XLAL_ERROR_VOID(XLAL_EFAULT);
+  }
+    
+  if ( hplus ) XLALDestroyREAL8TimeSeries(hplus);
+  if ( hcross ) XLALDestroyREAL8TimeSeries(hcross);
+  if ( hptilde ) XLALDestroyCOMPLEX16FrequencySeries(hptilde);
+  if ( hctilde ) XLALDestroyCOMPLEX16FrequencySeries(hctilde);
+
+  if ( qnmodes ) XLALDestroySphHarmTimeSeries(qnmodes) ;
+
+  
+  return;
+}
+
 void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 /*************************************************************************************************************************/
 /* Wrapper for LALSimulation waveforms:						                                                             */
@@ -690,12 +1250,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
     f_low = model->fLow;
 
   f_start = XLALSimInspiralfLow2fStart(f_low, XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(model->LALpars), approximant);
-
-  /* Don't let TaylorF2 generate unphysical inspiral up to Nyquist */
-  if (approximant == TaylorF2)
-      f_max = 0.0; /* this will stop at ISCO */
-  else
-      f_max = model->fHigh; /* this will be the highest frequency used across the network */
+  f_max = 0.0; /* for freq domain waveforms this will stop at ISCO. Previously found using model->fHigh causes NaNs in waveform (see redmine issue #750)*/
 
   /* ==== SPINS ==== */
   /* We will default to spinless signal and then add in the spin components if required */
@@ -734,7 +1289,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 
   /* If we have tilt angles zero, then the spins are aligned and we just set the z component */
   /* However, if the waveform supports precession then we still need to get the right coordinate components */
-  if(tilt1==0.0 && tilt2==0.0)
+  SpinSupport spin_support=XLALSimInspiralGetSpinSupportFromApproximant(approximant);
+  if(tilt1==0.0 && tilt2==0.0 && (spin_support==LAL_SIM_INSPIRAL_SPINLESS || spin_support==LAL_SIM_INSPIRAL_ALIGNEDSPIN))
   {
       spin1z=a_spin1;
       spin2z=a_spin2;
@@ -1170,12 +1726,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
         f_low = model->fLow;
 
     f_start = XLALSimInspiralfLow2fStart(f_low, XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(model->LALpars), approximant);
-
-    /* Don't let TaylorF2 generate unphysical inspiral up to Nyquist */
-    if (approximant == TaylorF2)
-        f_max = 0.0; /* this will stop at ISCO */
-    else
-        f_max = model->fHigh; /* this will be the highest frequency used across the network */
+    f_max = 0.0; /* for freq domain waveforms this will stop at ISCO. Previously found using model->fHigh causes NaNs in waveform (see redmine issue #750)*/
 
     /* ==== SPINS ==== */
     /* We will default to spinless signal and then add in the spin components if required */
@@ -1214,7 +1765,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
 
     /* If we have tilt angles zero, then the spins are aligned and we just set the z component */
     /* However, if the waveform supports precession then we still need to get the right coordinate components */
-    if(tilt1==0.0 && tilt2==0.0)
+    SpinSupport spin_support=XLALSimInspiralGetSpinSupportFromApproximant(approximant);
+    if(tilt1==0.0 && tilt2==0.0 && (spin_support==LAL_SIM_INSPIRAL_SPINLESS || spin_support==LAL_SIM_INSPIRAL_ALIGNEDSPIN))
     {
         spin1z=a_spin1;
         spin2z=a_spin2;
@@ -1329,8 +1881,8 @@ model->LALpars,%d,model->waveformCache)\n",__func__,
             XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): encountered unallocated 'hctilde'.\n");
             XLAL_ERROR_VOID(XLAL_EFAULT);
         }
-
-
+        
+        
         InterpolateWaveform(frequencies, hptilde, model->freqhPlus);
         InterpolateWaveform(frequencies, hctilde, model->freqhCross);
 
@@ -1573,7 +2125,7 @@ void LALInferenceTemplateXLALSimBurstChooseWaveform(LALInferenceModel *model)
     polar_ecc=*(REAL8*) LALInferenceGetVariable(model->params, "polar_eccentricity");
 
   f_low=0.0; // These are not really used for burst signals.
-  f_max = model->fHigh; /* this will be the highest frequency used across the network */
+  f_max = 0.0; /* for freq domain waveforms this will stop at Nyquist of lower, if the WF allows.*/
 
 
   if (model->timehCross==NULL) {

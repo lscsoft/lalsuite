@@ -10,7 +10,6 @@ noinst_LTLIBRARIES = libvectorops.la
 libvectorops_la_SOURCES = \
 	VectorMath.c \
 	VectorMath_GEN.c \
-	VectorMath_GEN_Find.c \
 	VectorMultiply.c \
 	VectorPolar.c \
 	$(END_OF_LIST)
@@ -37,13 +36,6 @@ libvectormath_sse2_la_SOURCES = VectorMath_SSEx.c
 libvectormath_sse2_la_CFLAGS = $(AM_CFLAGS) $(SSE2_CFLAGS)
 endif
 
-if HAVE_SSSE3_COMPILER
-noinst_LTLIBRARIES += libvectormath_ssse3.la
-libvectorops_la_LIBADD += libvectormath_ssse3.la
-libvectormath_ssse3_la_SOURCES = VectorMath_SSSE3_Find.c
-libvectormath_ssse3_la_CFLAGS = $(AM_CFLAGS) $(SSSE3_CFLAGS)
-endif
-
 if HAVE_AVX_COMPILER
 noinst_LTLIBRARIES += libvectormath_avx.la
 libvectorops_la_LIBADD += libvectormath_avx.la
@@ -54,6 +46,6 @@ endif
 if HAVE_AVX2_COMPILER
 noinst_LTLIBRARIES += libvectormath_avx2.la
 libvectorops_la_LIBADD += libvectormath_avx2.la
-libvectormath_avx2_la_SOURCES = VectorMath_AVXx.c VectorMath_AVX2_Find.c
+libvectormath_avx2_la_SOURCES = VectorMath_AVXx.c
 libvectormath_avx2_la_CFLAGS = $(AM_CFLAGS) $(AVX2_CFLAGS)
 endif

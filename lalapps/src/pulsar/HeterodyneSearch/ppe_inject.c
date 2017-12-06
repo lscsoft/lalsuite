@@ -52,7 +52,7 @@ void inject_signal( LALInferenceRunState *runState ){
   ProcessParamsTable *ppt;
   ProcessParamsTable *commandLine = runState->commandLine;
 
-  PulsarParameters *injpars = XLALCalloc(sizeof(*injpars),1);
+  PulsarParameters *injpars = XLALCalloc(sizeof(*injpars),1);;
 
   FILE *fpsnr = NULL; /* output file for SNRs */
   INT4 ndats = 0, j = 1;
@@ -91,7 +91,7 @@ void inject_signal( LALInferenceRunState *runState ){
     }
 
     /* read in injection parameter file */
-    injpars = XLALReadTEMPOParFile( injectfile );
+    injpars = XLALReadTEMPOParFileNew( injectfile );
     XLALFree( injectfile );
 
     /* check RA and DEC are set (if only RAJ and DECJ are given in the par file) */
@@ -112,15 +112,6 @@ void inject_signal( LALInferenceRunState *runState ){
       else {
         XLAL_ERROR_VOID( XLAL_EINVAL, "No source declination specified!" );
       }
-    }
-
-    /* check if Q22, DIST and F0 are set, but not H0 */
-    if( !PulsarCheckParam( injpars, "H0" ) && PulsarCheckParam( injpars, "Q22" ) && PulsarCheckParam( injpars, "DIST" ) && PulsarCheckParam( injpars, "F" ) ){
-      REAL8 f0val = PulsarGetREAL8VectorParamIndividual( injpars, "F0" );
-      REAL8 distval = PulsarGetREAL8Param( injpars, "DIST" );
-      REAL8 q22val = PulsarGetREAL8Param( injpars, "Q22" );
-      REAL8 h0val = q22val*sqrt(8.*LAL_PI/15.)*16.*LAL_PI*LAL_PI*LAL_G_SI*f0val*f0val/(LAL_C_SI*LAL_C_SI*LAL_C_SI*LAL_C_SI*distval);
-      PulsarAddParam( injpars, "H0", &h0val, PULSARTYPE_REAL8_t );
     }
 
     /* make sure that we have parameters in terms of amplitude and phase parameters */
@@ -301,7 +292,7 @@ void inject_signal( LALInferenceRunState *runState ){
       snrval = calculate_time_domain_snr( data, ifo_model );
       snrmulti += SQUARE(snrval);
 
-      fprintf(fpsnr, "%s\t%.3lf\t%le\t%le\n", data->name, freqFactors->data[ndats%(INT4)freqFactors->length], snrscale, snrval);
+      fprintf(fpsnr, "%s\t%.3lf\t%le\n", data->name, freqFactors->data[ndats%(INT4)freqFactors->length], snrval);
 
       data = data->next;
       ifo_model = ifo_model->next;
@@ -366,11 +357,11 @@ void inject_signal( LALInferenceRunState *runState ){
       /* write out injection to file */
       if( fp != NULL && fpso != NULL ){
         /* print out data - time stamp, real and imaginary parts of data (injected signal + noise) */
-        fprintf(fp, "%.5lf\t%.12le\t%.12le\n", XLALGPSGetREAL8( &ifo_model->times->data[i] ),
+        fprintf(fp, "%.5lf\t%le\t%le\n", XLALGPSGetREAL8( &ifo_model->times->data[i] ),
                 creal(data->compTimeData->data->data[i]), cimag(data->compTimeData->data->data[i]) );
 
         /* print signal only data - time stamp, real and imaginary parts of signal */
-        fprintf(fpso, "%.5lf\t%.12le\t%.12le\n", XLALGPSGetREAL8( &ifo_model->times->data[i] ),
+        fprintf(fpso, "%.5lf\t%le\t%le\n", XLALGPSGetREAL8( &ifo_model->times->data[i] ),
                 creal(ifo_model->compTimeSignal->data->data[i]), cimag(ifo_model->compTimeSignal->data->data[i]) );
       }
     }
@@ -407,44 +398,16 @@ void inject_signal( LALInferenceRunState *runState ){
     }
     ifo_model = runState->threads[0]->model->ifo;
   }
-
-  UINT4 outputchunks = 0, chunkMin = 0, chunkMax = 0;
-  INT4 inputsigma = 0;
-  if ( LALInferenceGetProcParamVal( commandLine, "--output-chunks" ) ){ outputchunks = 1; }
-
-  ifo_model = runState->threads[0]->model->ifo;
-  data = runState->data;
+  
   while ( ifo_model ){
-    UINT4Vector *chunkLength = NULL;
-
     if ( !varyphase ){ LALInferenceRemoveVariable( ifo_model->params, "varyphase" ); }
     if ( !varyskypos ){ LALInferenceRemoveVariable( ifo_model->params, "varyskypos" ); }
     if ( !varybinary ){ LALInferenceRemoveVariable( ifo_model->params, "varybinary" ); }
-
-    /* re-do segmentation of the data including the signal */
-    inputsigma = LALInferenceGetINT4Variable( ifo_model->params, "inputSigma" );
-    if ( !inputsigma && ! LALInferenceGetProcParamVal( commandLine, "--oldChunks" ) ){
-      chunkMin = LALInferenceGetUINT4Variable( ifo_model->params, "chunkMin" );
-      chunkMax = LALInferenceGetUINT4Variable( ifo_model->params, "chunkMax" );
-
-      chunkLength = chop_n_merge( data, chunkMin, chunkMax, outputchunks );
-      LALInferenceRemoveVariable( ifo_model->params, "chunkLength" );
-      LALInferenceAddVariable( ifo_model->params, "chunkLength", &chunkLength, LALINFERENCE_UINT4Vector_t, LALINFERENCE_PARAM_FIXED );
-    }
-
-    /* recompute variances */
-    if ( !inputsigma ){ compute_variance( data, ifo_model ); }
-
     ifo_model = ifo_model->next;
-    data = data->next;
   }
+  ifo_model = runState->threads[0]->model->ifo;
 
   PulsarFreeParams( injpars ); /* free memory */
-
-  /* check if we only want to create and output an injection file and not analyse it yet */
-  if ( LALInferenceGetProcParamVal( commandLine, "--inject-file" ) && LALInferenceGetProcParamVal( commandLine, "--inject-only" ) ){
-    exit(0); /* exit the code */
-  }
 }
 
 /*-------------------- END OF SOFTWARE INJECTION FUNCTIONS -------------------*/

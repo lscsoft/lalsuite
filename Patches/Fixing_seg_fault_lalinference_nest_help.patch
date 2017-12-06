@@ -1,0 +1,33 @@
+From 36eb16e779b763bff45d1628200f77006288b438 Mon Sep 17 00:00:00 2001
+From: Tsun Ho Pang <tsun-ho.pang@ligo.org>
+Date: Thu, 30 Mar 2017 03:12:12 -0700
+Subject: [PATCH] Fixing the help text seg fault for lalinference_nest
+
+---
+ lalinference/src/LALInferenceNest.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/lalinference/src/LALInferenceNest.c b/lalinference/src/LALInferenceNest.c
+index 0598d17821..60b5c086a6 100644
+--- a/lalinference/src/LALInferenceNest.c
++++ b/lalinference/src/LALInferenceNest.c
+@@ -134,8 +134,14 @@ int main(int argc, char *argv[]){
+      }
+ 
+   /* Set up the threads */
+-  if (LALInferenceGetProcParamVal(state->commandLine, "--ringdown")) LALInferenceInitRingdownThreads(state,1);
+-  else LALInferenceInitCBCThreads(state,1);
++  if (!helpflag && LALInferenceGetProcParamVal(state->commandLine, "--ringdown")){
++  LALInferenceInitRingdownThreads(state,1);}
++  else if (!helpflag && !(LALInferenceGetProcParamVal(state->commandLine, "--ringdown"))){
++  LALInferenceInitCBCThreads(state,1);}
++  else if (helpflag){
++  LALInferenceInitRingdownThreads(state,1);
++  LALInferenceInitCBCThreads(state,1);
++  }
+ 
+   /* Init the prior */
+   LALInferenceInitCBCPrior(state);
+-- 
+2.14.1
+

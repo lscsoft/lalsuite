@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 141
+# serial 131
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -43,11 +43,6 @@ AC_DEFUN([AC_OUTPUT],[
   m4_foreach_w([uvar],uvar_list,[
     AC_SUBST(AM_[]uvar,"${AM_[]uvar} ${sys_[]uvar}")
     uvar="${uvar_prefix[]uvar}"
-  ])
-  # append extra values for user variables to be added after configuration
-  m4_foreach_w([uvar],uvar_list,[
-    AC_ARG_VAR([POSTCONFIG_]uvar,[Extra ]uvar[ to be added after configuration])
-    uvar="${uvar} ${POSTCONFIG_[]uvar}"
   ])
   # call original AC_OUTPUT
   lalsuite_AC_OUTPUT
@@ -504,32 +499,24 @@ AC_DEFUN([LALSUITE_MULTILIB_LIBTOOL_HACK],[
 AC_DEFUN([LALSUITE_DISTCHECK_CONFIGURE_FLAGS],[
   # $0: store configure flags for 'make distcheck'
   DISTCHECK_CONFIGURE_FLAGS=
-  eval set x "${ac_configure_args}"
-  shift
-  for arg
-  do
-    AS_CASE(["${arg}"],
-      [--enable-*|--disable-*],[
+  for arg in ${ac_configure_args}; do
+    case ${arg} in
+      (\'--enable-*\'|\'--disable-*\')
         # save any --enable/--disable arguments
-        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} '${arg}'"
-      ],
-      [--with-*|--without-*],[
+        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} ${arg}";;
+      (\'--with-*\'|\'--without-*\')
         # save any --with/--without arguments
-        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} '${arg}'"
-      ],
-      [--*],[
+        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} ${arg}";;
+      (\'--*\')
         # skip all other ./configure arguments
-        :
-      ],
-      [DISTCHECK_CONFIGURE_FLAGS=*],[
+        : ;;
+      (\'DISTCHECK_CONFIGURE_FLAGS=*\')
         # append value of DISTCHECK_CONFIGURE_FLAGS
-        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} '`expr "X${arg}" : "XDISTCHECK_CONFIGURE_FLAGS=\(.*\)"`'"
-      ],
-      [*=*],[
+        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} "`expr "X${arg}" : "X'DISTCHECK_CONFIGURE_FLAGS=\(.*\)'"`;;
+      (\'*=*\')
         # save any environment variables given to ./configure
-        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} '${arg}'"
-      ]
-    )
+        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} ${arg}";;
+    esac
   done
   AC_SUBST(DISTCHECK_CONFIGURE_FLAGS)
   # end $0
@@ -615,9 +602,9 @@ AC_DEFUN([LALSUITE_CHECK_LIB],[
   else
     AC_CHECK_LIB(lowercase,[$3],,[AC_MSG_ERROR([could not find the $1 library])])
     AC_CHECK_HEADERS([$4],,[AC_MSG_ERROR([could not find the $4 header])])
-    m4_if(lowercase,[lalsupport],[],[
+    if test "$1" != "LALSupport"; then
       LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK([$1])
-    ])
+    fi
   fi
   AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
   # add $1 to list of LALSuite libraries
@@ -653,46 +640,24 @@ AC_DEFUN([LALSUITE_CHECK_OPT_LIB],[
 
 AC_DEFUN([LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK],[
   # $0: check for version mismatch between library $1 and its headers
-  m4_pushdef([uppercase],m4_translit([[$1]], [a-z], [A-Z]))
-  m4_pushdef([withoutlal],m4_bpatsubst([$1], [^LAL], []))
   AC_MSG_CHECKING([whether $1 headers match the library])
-  AC_LINK_IFELSE([
+  lib_structure=`echo $1 | sed 's/LAL/lal/'`VCSInfo
+  header_structure=`echo $1 | sed 's/LAL/lal/'`VCSInfoHeader
+  AC_RUN_IFELSE([
     AC_LANG_SOURCE([[
+#include <string.h>
+#include <stdlib.h>
 #include <lal/$1VCSInfoHeader.h>
-int main(void) {
-#if ]uppercase[_VERSION_DEVEL != 0
-  ]uppercase[_VCS_LINK_CHECK();
-#endif
-  return 0;
-}
+int main(void) { exit(XLALVCSInfoCompare(&$lib_structure, &$header_structure) ? 1 : 0); }
     ]])
   ],[
-    AC_MSG_RESULT([yes])
+    AC_MSG_RESULT(yes)
   ],[
-    AC_MSG_RESULT([no])
-    AC_LINK_IFELSE([
-      AC_LANG_SOURCE([[
-#include <stdio.h>
-#include <lal/$1VCSInfoHeader.h>
-int main(void) {
-  printf("$1 headers: %s %s %s\n", ]uppercase[_VERSION, ]uppercase[_VCS_ID, ]uppercase[_VCS_STATUS);
-  printf("$1 library: %s %s %s\n", lal]withoutlal[VCSInfo.version, lal]withoutlal[VCSInfo.vcsId, lal]withoutlal[VCSInfo.vcsStatus);
-  return 0;
-}
-      ]])
-    ],[
-      AS_IF([test ${cross_compiling} != yes],[
-        ./conftest${EXEEXT} | ${SED} -e "s/^/${as_me}:${as_lineno-$LINENO}: /" >&AS_MESSAGE_LOG_FD
-      ])
-    ],[
-      _AS_ECHO_LOG([could not determine further details of $1 header-library mismatch (compile/link error)])
-    ],[
-      _AS_ECHO_LOG([could not determine further details of $1 header-library mismatch (cross compiling)])
-    ])
+    AC_MSG_RESULT(no)
     AC_MSG_ERROR([Your $1 headers do not match your library. Check config.log for details.])
+  ],[
+    AC_MSG_WARN([cross compiling: not checking])
   ])
-  m4_popdef([uppercase])
-  m4_popdef([withoutlal])
   # end $0
 ])
 
@@ -704,24 +669,10 @@ AC_DEFUN([LALSUITE_CHECK_LIBRARY_FOR_SUPPORT],[
   save_CPPFLAGS="${CPPFLAGS}"
   LALSUITE_CLEAR_UVARS
   CPPFLAGS="${save_CPPFLAGS}"
-  AS_IF([test "x${LALSUITE_BUILD}" = xtrue],[
-    for arg in ${lalsuite_libs}; do
-      AS_CASE([${arg}],
-        [lalsupport],[:],[
-          CPPFLAGS="-I${ac_pwd}/../${arg}/src ${CPPFLAGS}"
-        ]
-      )
-    done
-    CPPFLAGS="-DLALSUITE_BUILD ${CPPFLAGS}"
-  ])
   AC_MSG_CHECKING([whether $1 has been compiled with $2 support])
   AC_COMPILE_IFELSE([
     AC_LANG_SOURCE([[
-#ifdef LALSUITE_BUILD
-#include "$1Config.h"
-#else
 #include <lal/$1Config.h>
-#endif
 #ifndef ]uppercase[_$2_ENABLED
 #error ]uppercase[_$2_ENABLED is not defined
 #endif
@@ -972,59 +923,12 @@ AC_DEFUN([LALSUITE_ENABLE_BOINC],[
 ])
 
 AC_DEFUN([LALSUITE_CHECK_BOINC],[
-  # $0: check for BOINC, and modify compiler for lal library checks
+  # $0: check for BOINC support
   AS_IF([test "${boinc}" = "true"],[
-
-    # do compilation checks with c++
-    AC_LANG_PUSH([C++])
-
-    # check for BOINC libraries
-    AC_SUBST([BOINC_CFLAGS],[""])
-    AC_SUBST([BOINC_LIBS],["-lboinc_api -lboinc"])
-    LALSUITE_ADD_FLAGS([C],[${BOINC_CFLAGS}],[${BOINC_LIBS}])
-    AC_CHECK_LIB([boinc],[boinc_fopen],[:],[AC_MSG_ERROR([could not find the boinc library])])
-    AC_CHECK_LIB([boinc_api],[boinc_finish],[:],[AC_MSG_ERROR([could not find the boinc_api library])])
-
-    # check for BOINC headers
-    AC_CHECK_HEADERS([boinc/boinc_api.h],[:],[AC_MSG_ERROR([could not find the boinc_api.h header])])
-
-  ])
-  # end $0
-])
-
-AC_DEFUN([LALSUITE_END_CHECK_BOINC],[
-  # $0: finish BOINC checks, and restore compiler after lal library checks
-  m4_pushdef([lowercase],m4_translit(AC_PACKAGE_NAME, [A-Z], [a-z]))
-  AC_REQUIRE([LALSUITE_CHECK_BOINC])
-  AS_IF([test "${boinc}" = "true"],[
-
-    m4_if(lowercase,[lal],[
-
-      # if LAL, define macro to indicate BOINC support
-      AC_DEFINE([LAL_BOINC_ENABLED],[1],[Define if using BOINC library])
-
-    ],[
-
-      # if not LAL, check LAL was compiled with BOINC support
-      LALSUITE_CHECK_LIBRARY_FOR_SUPPORT([LAL],[BOINC],[:],[
-        AC_MSG_ERROR([BOINC enabled but LAL not compiled with BOINC support])
-      ])
-
+    LALSUITE_CHECK_LIBRARY_FOR_SUPPORT([LAL],[BOINC],[:],[
+      AC_MSG_ERROR([BOINC was enabled but LAL was not compiler with BOINC support])
     ])
-
-    # go back to c
-    AC_LANG_POP([C++])
-
-    # force automake to use c++ compiler for linking
-    AC_MSG_WARN([using C++ compiler for linking (forced by BOINC)])
-    AC_SUBST([CCLD],['$(CXX)'])
-    AC_SUBST([am__v_CCLD_0],['@echo "  CXXLD(B)" $][@;'])
-
-  ],[
-    AC_SUBST([CCLD],['$(CC)'])
-    AC_SUBST([am__v_CCLD_0],['@echo "  CCLD    " $][@;'])
   ])
-  m4_popdef([lowercase])
   # end $0
 ])
 
@@ -1146,7 +1050,7 @@ AS_IF([test "x${osx_version_check}" = "xtrue"],[
       AC_MSG_RESULT([$MACOSX_VERSION])])
     AS_CASE(["$MACOSX_VERSION"],
       [10.0*|10.1|10.1.*|10.2*|10.3*],AC_MSG_ERROR([This version of Mac OS X is not supported]),
-      [10.4*|10.5*|10.6*|10.7*|10.8*|10.9*|10.10*|10.11*|10.12*|10.13*],,
+      [10.4*|10.5*|10.6*|10.7*|10.8*|10.9*|10.10*|10.11*|10.12*],,
       AC_MSG_WARN([Unknown Mac OS X version]))
 ])])])
 
@@ -1398,8 +1302,6 @@ double volatile d = round(c);
 
     ])
 
-    m4_popdef([option])
-    m4_popdef([symbol])
   ])
 
   # string listing all the SIMD extensions supported by the compiler
@@ -1464,11 +1366,9 @@ AC_DEFUN([LALSUITE_CHECK_PAGER],[
     AS_CASE([${PAGER}],
       [''],[:],
       [*/less],[
-        for pager_arg in -F -R -S -X; do
-          AS_IF([echo | ${PAGER} ${pager_arg} >/dev/null 2>&1],[
-            PAGER="${PAGER} ${pager_arg}"
-          ])
-        done
+        AS_IF([echo | ${PAGER} -FRX >/dev/null 2>&1],[
+          PAGER="${PAGER} -FRX"
+        ])
       ]
     )
   ])
@@ -1482,24 +1382,6 @@ AC_DEFUN([LALSUITE_CHECK_PAGER],[
 AC_DEFUN([LALSUITE_ENABLE_HELP2MAN],[
   # $0: check for help2man utility
   AC_PATH_PROG([HELP2MAN], [help2man])
-  # Require a minimum version of help2man to support the
-  # --version-string and --no-discard-stderr flags.
-  AS_IF(
-    [test -n "${HELP2MAN}"],
-    [
-      HELP2MAN_MIN_VERSION="1.37"
-      AC_MSG_CHECKING([for help2man >= ${HELP2MAN_MIN_VERSION}])
-      HELP2MAN_VERSION=`${HELP2MAN} --version --version | head -n 1 | cut -d ' ' -f 3`
-      AX_COMPARE_VERSION(
-        [${HELP2MAN_VERSION}], [ge], [${HELP2MAN_MIN_VERSION}],
-        [AC_MSG_RESULT([yes])],
-        [
-          AC_MSG_RESULT([no])
-          HELP2MAN=
-        ]
-      )
-    ]
-  )
   AC_ARG_ENABLE(
     [help2man],
     AC_HELP_STRING([--enable-help2man],[automatically generate man pages with help2man @<:@default=yes@:>@]),

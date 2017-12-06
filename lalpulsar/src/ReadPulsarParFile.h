@@ -420,10 +420,6 @@ REAL8 PulsarGetREAL8Param( const PulsarParameters *pars, const CHAR *name );
  */
 REAL8 PulsarGetREAL8ParamOrZero( const PulsarParameters *pars, const CHAR *name );
 
-#ifdef SWIG   /* SWIG interface directives */
-SWIGLAL(OWNS_THIS_STRING(const CHAR*, value));
-#endif
-
 /** \brief Return a string parameter
  *
  * This function will call \c PulsarGetParam for a string parameter and properly cast it for returning.
@@ -431,14 +427,7 @@ SWIGLAL(OWNS_THIS_STRING(const CHAR*, value));
  * CHAR *str = XLALStringDuplicate( PulsarGetStringParam(pars, "NAME") );
  * It also needs to be freed afterwards.
  */
-const CHAR *PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name );
-
-/** \brief Add a string parameter to the \c PulsarParameters structure */
-void PulsarAddStringParam(PulsarParameters *pars, const CHAR * name, const CHAR *value);
-
-#ifdef SWIG   /* SWIG interface directives */
-SWIGLAL_CLEAR(OWNS_THIS_STRING(const CHAR*, value));
-#endif
+CHAR *PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name );
 
 /** \brief Return a \c REAL8Vector parameter
  *
@@ -461,15 +450,6 @@ REAL8 PulsarGetREAL8VectorParamIndividual( const PulsarParameters *pars, const C
  */
 void PulsarAddParam( PulsarParameters *pars, const CHAR *name, void *value, PulsarParamType type );
 
-/** \brief Add a \c REAL8 parameter to the \c PulsarParameters structure */
-void PulsarAddREAL8Param(PulsarParameters *pars, const CHAR * name, REAL8 value);
-
-/** \brief Add a \c UINT4 parameter to the \c PulsarParameters structure */
-void PulsarAddUINT4Param(PulsarParameters *pars, const CHAR * name, UINT4 value);
-
-/** \brief Add a \c REAL8Vector parameter to the \c PulsarParameters structure */
-void PulsarAddREAL8VectorParam(PulsarParameters *pars, const CHAR * name, REAL8Vector *value);
-
 /** \brief Free all the parameters from a \c PulsarParameters structure */
 void PulsarClearParams( PulsarParameters *pars );
 
@@ -481,7 +461,7 @@ void PulsarRemoveParam( PulsarParameters *pars, const CHAR *name );
  * Set the value of the parameter given by \c name in the \c PulsarParameters structure. The parameter must already
  * exist in the structure, otherwise it should be added using \c PulsarAddParam().
  */
-void PulsarSetParam( PulsarParameters* pars, const CHAR *name, const void *value );
+void PulsarSetParam( PulsarParameters* pars, const CHAR *name, void *value );
 
 /** \brief Set the value of the error of a parameter in the \c PulsarParameters structure
  *
@@ -546,18 +526,23 @@ void ParConvMicrosecToSec( const CHAR *in, void *out );
 /** \brief Read in the parameters from a TEMPO(2) parameter file into a \c PulsarParameters structure
  *
  * This function will read in a TEMPO(2) parameter file into a \c PulsarParameters structure. The structure of this
- * function is similar to those in the TEMPO2 code \c readParfile.C and this supersedes the
- * \c XLALReadTEMPOParFileOrig function.
+ * function is similar to those in the TEMPO2 code \c readParfile.C and this is intended to supersede the
+ * \c XLALReadTEMPOParFile function.
  *
  * \param pulsarAndPath [in] The path to the pulsar parameter file
  */
-PulsarParameters *XLALReadTEMPOParFile( const CHAR *pulsarAndPath );
+PulsarParameters *XLALReadTEMPOParFileNew( const CHAR *pulsarAndPath );
 
 /** function to read in a TEMPO parameter file
  */
 void
-XLALReadTEMPOParFileOrig( BinaryPulsarParams    *output,
-                          CHAR                  *pulsarAndPath );
+XLALReadTEMPOParFile( BinaryPulsarParams    *output,
+                      CHAR                  *pulsarAndPath );
+
+void
+LALReadTEMPOParFile( LALStatus              *status,
+                     BinaryPulsarParams    *output,
+                     CHAR                  *pulsarAndPath );
 
 /** \brief This function will read in a TEMPO-style parameter correlation matrix
  *
