@@ -119,6 +119,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
+#include <lal/LALVersion.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/XLALError.h>
@@ -346,6 +347,9 @@ LALBeginLIGOLwXMLTable (
     case ext_triggers_table:
       (void)myfprintf( xml->fp, LIGOLW_XML_EXT_TRIGGERS);
       break;
+    case filter_table:
+      (void)myfprintf( xml->fp, LIGOLW_XML_FILTER );
+      break;
     default:
       ABORT( status, LIGOLWXMLH_EUTAB, LIGOLWXMLH_MSGEUTAB );
   }
@@ -491,14 +495,18 @@ LALWriteLIGOLwXMLTable (
     case sngl_inspiral_table:
       while( tablePtr.snglInspiralTable )
       {
+        UINT8 id = 0;
+        if ( tablePtr.snglInspiralTable->event_id )
+        {
+          id = tablePtr.snglInspiralTable->event_id->id;
+        }
         FIRST_TABLE_ROW
           fprintf( xml->fp, SNGL_INSPIRAL_ROW,
-              tablePtr.snglInspiralTable->process_id,
               tablePtr.snglInspiralTable->ifo,
               tablePtr.snglInspiralTable->search,
               tablePtr.snglInspiralTable->channel,
-              tablePtr.snglInspiralTable->end.gpsSeconds,
-              tablePtr.snglInspiralTable->end.gpsNanoSeconds,
+              tablePtr.snglInspiralTable->end_time.gpsSeconds,
+              tablePtr.snglInspiralTable->end_time.gpsNanoSeconds,
               tablePtr.snglInspiralTable->end_time_gmst,
               tablePtr.snglInspiralTable->impulse_time.gpsSeconds,
               tablePtr.snglInspiralTable->impulse_time.gpsNanoSeconds,
@@ -556,7 +564,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglInspiralTable->spin2x,
               tablePtr.snglInspiralTable->spin2y,
               tablePtr.snglInspiralTable->spin2z,
-              tablePtr.snglInspiralTable->event_id );
+              id );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
         ++(xml->rowCount);
       }
@@ -569,8 +577,8 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglInspiralTable->ifo,
               tablePtr.snglInspiralTable->search,
               tablePtr.snglInspiralTable->channel,
-              tablePtr.snglInspiralTable->end.gpsSeconds,
-              tablePtr.snglInspiralTable->end.gpsNanoSeconds,
+              tablePtr.snglInspiralTable->end_time.gpsSeconds,
+              tablePtr.snglInspiralTable->end_time.gpsNanoSeconds,
               tablePtr.snglInspiralTable->end_time_gmst,
               tablePtr.snglInspiralTable->template_duration,
               tablePtr.snglInspiralTable->eff_distance,
@@ -605,8 +613,8 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglInspiralTable->ifo,
               tablePtr.snglInspiralTable->search,
               tablePtr.snglInspiralTable->channel,
-              tablePtr.snglInspiralTable->end.gpsSeconds,
-              tablePtr.snglInspiralTable->end.gpsNanoSeconds,
+              tablePtr.snglInspiralTable->end_time.gpsSeconds,
+              tablePtr.snglInspiralTable->end_time.gpsNanoSeconds,
               tablePtr.snglInspiralTable->end_time_gmst,
               tablePtr.snglInspiralTable->template_duration,
               tablePtr.snglInspiralTable->eff_distance,
@@ -796,7 +804,6 @@ LALWriteLIGOLwXMLTable (
       {
         FIRST_TABLE_ROW
           fprintf( xml->fp, SIM_INSPIRAL_ROW,
-              tablePtr.simInspiralTable->process_id,
               tablePtr.simInspiralTable->waveform,
               tablePtr.simInspiralTable->geocent_end_time.gpsSeconds,
               tablePtr.simInspiralTable->geocent_end_time.gpsNanoSeconds,
@@ -853,7 +860,7 @@ LALWriteLIGOLwXMLTable (
 	      tablePtr.simInspiralTable->amp_order,
 	      tablePtr.simInspiralTable->taper,
 	      tablePtr.simInspiralTable->bandpass,
-	      tablePtr.simInspiralTable->simulation_id
+              xml->rowCount
               );
         tablePtr.simInspiralTable = tablePtr.simInspiralTable->next;
         ++(xml->rowCount);
@@ -1026,6 +1033,21 @@ LALWriteLIGOLwXMLTable (
 	      tablePtr.extTriggerTable->event_status
 	    );
         tablePtr.extTriggerTable = tablePtr.extTriggerTable->next;
+        ++(xml->rowCount);
+      }
+      break;
+    case filter_table:
+      while( tablePtr.filterTable )
+      {
+        FIRST_TABLE_ROW
+          fprintf( xml->fp, FILTER_ROW,
+              tablePtr.filterTable->program,
+              tablePtr.filterTable->start_time,
+              tablePtr.filterTable->filter_name,
+              tablePtr.filterTable->comment,
+              xml->rowCount
+              );
+        tablePtr.filterTable = tablePtr.filterTable->next;
         ++(xml->rowCount);
       }
       break;
@@ -1412,14 +1434,13 @@ int XLALWriteLIGOLwXMLSnglInspiralTable(
 	/* rows */
 
 	for(; sngl_inspiral; sngl_inspiral = sngl_inspiral->next) {
-		if( fprintf(xml->fp,"%s\"process:process_id:%ld\",\"%s\",\"%s\",\"%s\",%d,%d,%.16g,%d,%d,%.16g,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%u,%.8g,%u,%.8g,%u,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_inspiral:event_id:%ld\"",
+		if( fprintf(xml->fp,"%s\"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%.16g,%d,%d,%.16g,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%u,%.8g,%u,%.8g,%u,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_inspiral:event_id:0\"",
 			   row_head,
-			   sngl_inspiral->process_id,
 			   sngl_inspiral->ifo,
 			   sngl_inspiral->search,
 			   sngl_inspiral->channel,
-			   sngl_inspiral->end.gpsSeconds,
-			   sngl_inspiral->end.gpsNanoSeconds,
+			   sngl_inspiral->end_time.gpsSeconds,
+			   sngl_inspiral->end_time.gpsNanoSeconds,
 			   sngl_inspiral->end_time_gmst,
 			   sngl_inspiral->impulse_time.gpsSeconds,
 			   sngl_inspiral->impulse_time.gpsNanoSeconds,
@@ -1476,8 +1497,7 @@ int XLALWriteLIGOLwXMLSnglInspiralTable(
 			   sngl_inspiral->spin1z,
 			   sngl_inspiral->spin2x,
 			   sngl_inspiral->spin2y,
-			   sngl_inspiral->spin2z,
-			   sngl_inspiral->event_id ) < 0)
+			   sngl_inspiral->spin2z  ) < 0)
 			XLAL_ERROR(XLAL_EFUNC);
 		row_head = ",\n\t\t\t";
 	}

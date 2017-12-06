@@ -25,6 +25,7 @@ import os
 import numpy
 import random
 import time
+import exceptions
 ###########################################
 from pyfann import libfann
 ###########################################

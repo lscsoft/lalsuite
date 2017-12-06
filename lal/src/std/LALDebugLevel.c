@@ -36,7 +36,12 @@ static int lalOnce = 1;
 #define LAL_ONCE(init) (lalOnce ? (init)(), lalOnce = 0 : 0)
 #endif
 
-/* LAL_DEFAULT_DEBUG_LEVEL is defined in <config.h> by LAL_WITH_DEFAULT_DEBUG_LEVEL() in gnuscripts/lal.m4 */
+#if defined(NDEBUG) || defined(LAL_NDEBUG)
+#define LAL_DEFAULT_DEBUG_LEVEL 0
+#else
+#define LAL_DEFAULT_DEBUG_LEVEL 1
+#endif
+
 static int lalDebugLevel = LAL_DEFAULT_DEBUG_LEVEL;
 
 /*

@@ -13,8 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## \defgroup laldetchar_py_idq_idq_tables iDQ Tables
-## \ingroup laldetchar_py_idq
+## \addtogroup laldetchar_py_idq
 ## Synopsis
 # ~~~
 # from laldetchar.idq import idq_tables
@@ -148,8 +147,8 @@ CoincDefToTableNames = {
 #
 
 IDQTableByName = {
-    IDQGlitchTable.tableName: IDQGlitchTable,
-    OVLDataTable.tableName: OVLDataTable
+    table.StripTableName(IDQGlitchTable.tableName): IDQGlitchTable,
+    table.StripTableName(OVLDataTable.tableName): OVLDataTable
 }
 
 TableByName = dict(lsctables.TableByName, **IDQTableByName)
@@ -177,7 +176,7 @@ def use_in(ContentHandler):
     ContentHandler = table.use_in(ContentHandler)
 
     def startTable(self, parent, attrs, __orig_startTable = ContentHandler.startTable):
-        name = attrs[u"Name"]
+        name = table.StripTableName(attrs[u"Name"])
         if name in TableByName:
             return TableByName[name](attrs)
         return __orig_startTable(self, parent, attrs)
@@ -185,6 +184,8 @@ def use_in(ContentHandler):
     ContentHandler.startTable = startTable
 
     return ContentHandler
+  
+
 
 def use_in_db(ContentHandler):
         """
@@ -218,7 +219,7 @@ def use_in_db(ContentHandler):
         ContentHandler = use_in(ContentHandler)
 
         def startTable(self, parent, attrs):
-                name = attrs[u"Name"]
+                name = table.StripTableName(attrs[u"Name"])
                 if name in dbtables.TableByName:
                         return dbtables.TableByName[name](attrs, connection = self.connection)
                 elif name in IDQTableByName:
@@ -237,10 +238,15 @@ def use_in_db(ContentHandler):
 
         return ContentHandler
 
+
+
+
+
 def coinc_to_ovl_data(xmldoc):
     """Function returns list of (idq_glitch_object, ovl_data_object) tuples
        where objects in the tuple are mapped to each other via coinc tables.
 	"""
+
     # get necessary tables from xmldoc
     coinc_def_table = table.get_table(xmldoc, lsctables.CoincDefTable.tableName)
     coinc_table = table.get_table(xmldoc, lsctables.CoincTable.tableName)
@@ -255,6 +261,8 @@ def coinc_to_ovl_data(xmldoc):
     #            create_new = False,
     #            description = 'idq_glitch<-->ovl_data')
     coinc_def_ids = [row.coinc_def_id for row in coinc_def_table if row.description == 'idq_glitch<-->ovl_data']
+        
+        
     
     # use this id to get all coinc_event ids
     ovl_coinc_ids = [coinc.coinc_event_id for coinc in coinc_table if coinc.coinc_def_id in coinc_def_ids]
@@ -262,6 +270,7 @@ def coinc_to_ovl_data(xmldoc):
     # convert idq_glitch and ovl tables into dictionaries for a quick lookup
     glitches = dict([(glitch.event_id, glitch) for glitch in idq_glitch_table])
     ovl_data = dict([(row.event_id, row) for row in ovl_data_table])
+
     
     # create dictionary of connected events in coinc_event_map.
     # We can not assume any specific order of rows in the table.
@@ -270,8 +279,8 @@ def coinc_to_ovl_data(xmldoc):
         try: connected_events_dict[row.coinc_event_id].append(row)
         except: connected_events_dict[row.coinc_event_id] = [row]
     
-    glitch_table_name = lsctables.IDQGlitchTable.tableName
-    ovl_data_table_name = lsctables.OVLDataTable.tableName
+    glitch_table_name =  table.StripTableName(lsctables.IDQGlitchTable.tableName)
+    ovl_data_table_name = table.StripTableName(lsctables.OVLDataTable.tableName)
      
     glitch_ovl_pairs = []
     for coinc_id in ovl_coinc_ids:
@@ -295,18 +304,23 @@ def coinc_to_ovl_data(xmldoc):
                             )
         glitch_ovl_pairs.append((glitch_event, ovl_event))
     return glitch_ovl_pairs
+            
+        
     
 def coinc_to_triggers(xmldoc, trigger_types):
     """ Function returns list of glitch-trigger(s) coincident events.
         Coincident event in the list is represented by tuple (glitch_object, [trigger1, trigger2, ...]).
         trigger_types is the list of trigger type names corresponding to "search" column of the sngl_burst table
     """
+
+
     # get necessary tables from xmldoc
     coinc_def_table = table.get_table(xmldoc, lsctables.CoincDefTable.tableName)
     coinc_table = table.get_table(xmldoc, lsctables.CoincTable.tableName)
     coinc_map_table = table.get_table(xmldoc, lsctables.CoincMapTable.tableName)
     idq_glitch_table = table.get_table(xmldoc, lsctables.IDQGlitchTable.tableName)
     sngl_burst_table = table.get_table(xmldoc, lsctables.SnglBurstTable.tableName)
+    
     
     # get coinc_def_id
     #coinc_def_id = coinc_def_table.get_coinc_def_id(
@@ -318,6 +332,7 @@ def coinc_to_triggers(xmldoc, trigger_types):
     
     # use this id to get all coinc_event ids
     trig_coinc_ids = [coinc.coinc_event_id for coinc in coinc_table if coinc.coinc_def_id in coinc_def_ids]
+    
 
     # convert idq_glitch and sngl_burst tables into dictionaries for a quick lookup
     glitches = dict([ (glitch.event_id, glitch) for glitch in idq_glitch_table])
@@ -330,8 +345,9 @@ def coinc_to_triggers(xmldoc, trigger_types):
         try: connected_events_dict[row.coinc_event_id].append(row)
         except: connected_events_dict[row.coinc_event_id] = [row]
     
-    glitch_table_name = lsctables.IDQGlitchTable.tableName
-    sngl_burst_table_name = lsctables.SnglBurstTable.tableName    
+    glitch_table_name = table.StripTableName(lsctables.IDQGlitchTable.tableName)
+    sngl_burst_table_name = table.StripTableName(lsctables.SnglBurstTable.tableName)
+    
     glitch_trig_tuples = []
     for coinc_id in trig_coinc_ids:
         # get connectected events for this id
@@ -356,4 +372,7 @@ def coinc_to_triggers(xmldoc, trigger_types):
         glitch_trig_tuples.append((glitch_event, connected_trigs))
     return glitch_trig_tuples
 
+    
+    
 ##@}
+

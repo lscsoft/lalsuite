@@ -492,7 +492,11 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
         }
       }
       else if( LALInferenceCheckFermiDiracPrior(runState->priorArgs, item->name) ){
-        prior += LALInferenceFermiDiracPrior( runState->priorArgs, item->name, value );
+        REAL8 r = 0., sigma = 0.;
+        LALInferenceGetFermiDiracPrior(runState->priorArgs, item->name, &sigma, &r);
+
+        if ( value < 0. ) { return -INFINITY; } /* value must be positive */
+        prior += LALInferenceFermiDiracPrior(value, sigma, r);
       }
       else if( LALInferenceCheckCorrelatedPrior(runState->priorArgs, item->name) && corlist ){
         /* set item in correct position given the order of the correlation matrix given by corlist */
@@ -511,14 +515,6 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
             break;
           }
         }
-      }
-      /* check if using a Gaussian Mixture Model prior */
-      else if( LALInferenceCheckGMMPrior(runState->priorArgs, item->name) ){
-        prior += LALInferenceGMMPrior( runState->priorArgs, item->name, value );
-      }
-      /* check for log(uniform) prior */
-      else if( LALInferenceCheckLogUniformPrior(runState->priorArgs, item->name) ){
-        prior += LALInferenceLogUniformPrior( runState->priorArgs, item->name, value );
       }
       else{
         XLAL_ERROR_REAL8( XLAL_EFUNC, "Error... no prior specified!" );
@@ -551,7 +547,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
     LALInferenceGetCorrelatedPrior( runState->priorArgs, corlist->data[0], &cor, &invcor, &mu, &sigma, &idx );
 
     /* get the log prior (this only works properly if the parameter values have been prescaled so as to be from a
-     * Gaussian of zero mean and unit variance, which happens on line 510) */
+     * Gaussian of zero mean and unit variance, which happens on line 473) */
     vals = gsl_vector_view_array( corVals->data, corVals->length );
 
     XLAL_CALLGSL( gsl_blas_dgemv(CblasNoTrans, 1., invcor, &vals.vector, 0., vm) );
@@ -931,7 +927,7 @@ UINT4 in_range( LALInferenceVariables *priors, LALInferenceVariables *params ){
       if ( !strcmp(item->name, "H0") || !strcmp(item->name, "Q22") || !strcmp(item->name, "DIST") ||
            !strcmp(item->name, "PX") || !strcmp(item->name, "CGW") || !strncmp(item->name, "ECC", sizeof(CHAR)*3) ||
            !strncmp(item->name, "A1", sizeof(CHAR)*2) || !strcmp(item->name, "MTOT") || !strcmp(item->name, "M2") ){
-        return 0;
+          return 0;
       }
     }
 

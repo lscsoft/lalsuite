@@ -60,8 +60,15 @@
 		<Column Type="real_4" Name="sim_inspiral:eta"/>
 		<Column Type="real_4" Name="sim_inspiral:psi0"/>
 		<Column Type="real_4" Name="sim_inspiral:psi3"/>
+		<Column Type="real_8" Name="sim_inspiral:eccentricity"/>
+		<Column Type="int_4s" Name="sim_inspiral:ecc_order"/>
+		<Column Type="real_8" Name="sim_inspiral:f_ecc"/>
+		<Column Type="real_8" Name="sim_inspiral:lambda1"/>
+		<Column Type="real_8" Name="sim_inspiral:lambda2"/>
+		<Column Type="real_8" Name="sim_inspiral:quadparam1"/>
+		<Column Type="real_8" Name="sim_inspiral:quadparam2"/>
 		<Stream Delimiter="," Type="Local" Name="sim_inspiral:table">
-			0,0,0,0,2,1.1750885,0,0,"0",0.5,"",1170720018,0,0,-0.01,"process:process_id:0",0,188.76135,0,"TAPER_NONE",1,0,0,0,0,0,0,0,0,0.04,0,0,0,0,0,0,0,0,0,0,2,"SEOBNRv4_ROMpseudoFourPN",0,0.1,"sim_inspiral:simulation_id:0",40,0,0,0,0,0,0,1.37,1.33,0,0.24994513,0,0
+			0,0,0,0,2,1.1750885,0,0,"0",0.5,"",1170720018,0,0,-0.01,"process:process_id:0",0,188.76135,0,"TAPER_NONE",1,0,0,0,0,0,0,0,0,0.04,0,0,0,0,0,0,0,0,0,0,2,"SEOBNRv4_ROMpseudoFourPN",0,0.1,"sim_inspiral:simulation_id:0",40,0,0,0,0,0,0,1.37,1.33,0,0.24994513,0,0,0,0,0,0,0,0,0
 		</Stream>
 	</Table>
 </LIGO_LW>

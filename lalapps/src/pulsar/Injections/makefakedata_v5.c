@@ -85,8 +85,6 @@ typedef struct
   SFTCatalog *noiseCatalog; 			/**< catalog of noise-SFTs */
   MultiSFTCatalogView *multiNoiseCatalogView; 	/**< multi-IFO 'view' of noise-SFT catalogs */
   MultiREAL8TimeSeries *inputMultiTS;	/**< 'input' time-series to add other stuff to, and output as frames or SFTs */
-  REAL8 fminOut;				/**< Lowest frequency in output SFT (= heterodyning frequency) */
-  REAL8 BandOut;				/**< bandwidth of output SFT in Hz (= 1/2 sampling frequency) */
 
   transientWindow_t transientWindow;	/**< properties of transient-signal window */
   CHAR *VCSInfoString;          /**< LAL + LALapps Git version string */
@@ -112,7 +110,6 @@ typedef struct
   /* time-series sampling + heterodyning frequencies */
   REAL8 fmin;		/**< Lowest frequency in output SFT (= heterodyning frequency) */
   REAL8 Band;		/**< bandwidth of output SFT in Hz (= 1/2 sampling frequency) */
-  REAL8 sourceDeltaT;   /**< source-frame sampling period. '0' implies previous internal defaults */
 
   /* SFT params */
   REAL8 Tsft;		        /**< SFT time baseline Tsft */
@@ -140,6 +137,8 @@ typedef struct
 
   /* pulsar parameters */
   LALStringVector *injectionSources;	///< Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}')
+
+  BOOLEAN version;		/**< output version information */
 
   INT4 randSeed;		/**< allow user to specify random-number seed for reproducible noise-realizations */
 
@@ -185,7 +184,7 @@ main(int argc, char *argv[])
 
   PulsarParamsVector *injectionSources = NULL;
   if ( uvar.injectionSources ) {
-    XLAL_CHECK ( (injectionSources = XLALPulsarParamsFromUserInput ( uvar.injectionSources, NULL ) ) != NULL, XLAL_EFUNC );
+    XLAL_CHECK ( (injectionSources = XLALPulsarParamsFromUserInput ( uvar.injectionSources ) ) != NULL, XLAL_EFUNC );
   }
 
   CWMFDataParams XLAL_INIT_DECL(DataParams);
@@ -195,11 +194,10 @@ main(int argc, char *argv[])
   DataParams.randSeed           = uvar.randSeed;
   DataParams.SFTWindowType      = uvar.SFTWindowType;
   DataParams.SFTWindowBeta      = uvar.SFTWindowBeta;
-  DataParams.sourceDeltaT       = uvar.sourceDeltaT;
   if ( GV.inputMultiTS == NULL )
     {
-      DataParams.fMin               = GV.fminOut;
-      DataParams.Band               = GV.BandOut;
+      DataParams.fMin               = uvar.fmin;
+      DataParams.Band               = uvar.Band;
       DataParams.inputMultiTS       = NULL;
     }
   else // current limitation: FIXME
@@ -368,6 +366,13 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   cfg->VCSInfoString = XLALGetVersionString(0);
   XLAL_CHECK ( cfg->VCSInfoString != NULL, XLAL_EFUNC, "XLALGetVersionString(0) failed.\n" );
 
+  // version info was requested: output then exit
+  if ( uvar->version )
+    {
+      printf ("%s\n", cfg->VCSInfoString );
+      exit (0);
+    }
+
   /* if requested, log all user-input and code-versions */
   if ( uvar->logfile ) {
     XLAL_CHECK ( XLALWriteMFDlog ( uvar->logfile, cfg ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALWriteMFDlog() failed with xlalErrno = %d\n", xlalErrno );
@@ -420,11 +425,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   BOOLEAN haveOverlap = ( uvar->SFToverlap > 0 );
   XLAL_CHECK ( !haveOverlap || !( have_noiseSFTs || have_timestampsFiles ), XLAL_EINVAL, "--SFToverlap incompatible with {--noiseSFTs or --timestampsFiles}\n" );
 
-
-  // in general frequency-band taken from user-input (or its default values) [default can be overloaded by noiseSFTs, though]
-  cfg->fminOut = uvar->fmin;
-  cfg->BandOut = uvar->Band;
-
   // now handle the 3 mutually-exclusive cases: have_noiseSFTs || have_timestampsFiles || have_startTime (only)
   if ( have_noiseSFTs )
     {
@@ -448,22 +448,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       XLAL_CHECK ( (cfg->multiTimestamps = XLALTimestampsFromMultiSFTCatalogView ( cfg->multiNoiseCatalogView )) != NULL, XLAL_EFUNC );
       // extract IFOs from multi-SFT catalog
       XLAL_CHECK ( XLALMultiLALDetectorFromMultiSFTCatalogView ( &(cfg->multiIFO), cfg->multiNoiseCatalogView ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      // if user didn't specify a frequency range: extract the range from noise SFTs and use that one
-      UINT4 nSet = UVAR_SET2(fmin,Band);
-      XLAL_CHECK ( (nSet == 2) || (nSet == 0), XLAL_EINVAL, "Either none of both of 'fMin' and 'Band' need to be specified!\n");
-      // if not given by user: extract frequency start + band from noise SFT catalog
-      if ( nSet == 0 )
-        {
-          const SFTDescriptor *desc = &(cfg->multiNoiseCatalogView->data[0].data[0]);
-          REAL8 noise_fmin    = desc->header.f0;
-          REAL8 noise_dFreq   = desc->header.deltaF;
-          UINT4 noise_numBins = desc->numBins;
-          REAL8 noise_band    = (noise_numBins-1) * noise_dFreq;
-          // user give no input on {fmin,Band}: overload default values with noise-SFT values
-          cfg->fminOut = noise_fmin;
-          cfg->BandOut = noise_band;
-        }
 
     } // endif have_noiseSFTs
   else if ( have_timestampsFiles )
@@ -509,23 +493,11 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
         {
           LALCache *cache;
           XLAL_CHECK ( (cache = XLALCacheImport ( uvar->inFrames->data[X] )) != NULL, XLAL_EFUNC, "Failed to import cache file '%s'\n", uvar->inFrames->data[X] );
-          // ----- open frame stream ----------
-          LALFrStream *stream;
-          XLAL_CHECK ( (stream = XLALFrStreamCacheOpen ( cache )) != NULL, XLAL_EFUNC, "Failed to open stream from cache file '%s'\n", uvar->inFrames->data[X] );
-          XLALDestroyCache ( cache );
-
-          // ----- determine time span of frame data from the stream ----------
-          // determine time spanned by the frames in this cache
-          LIGOTimeGPS frames_startGPS, frames_endGPS;
-          XLAL_CHECK ( XLALFrStreamSeekO ( stream, 0, SEEK_SET ) == 0, XLAL_EFUNC, "Failed to move to start of input frame-stream\n");
-          XLAL_CHECK ( XLALFrStreamTell ( &frames_startGPS, stream ) == XLAL_SUCCESS, XLAL_EFUNC );
-          XLAL_CHECK ( XLALFrStreamSeekO ( stream, 0, SEEK_END ) == 0, XLAL_EFUNC, "Failed to move to end of input frame-stream\n");
-          XLAL_CHECK ( XLALFrStreamTell ( &frames_endGPS, stream ) == XLAL_SUCCESS, XLAL_EFUNC );
-          REAL8 frames_start = XLALGPSGetREAL8 ( &frames_startGPS );
-          REAL8 frames_end   = XLALGPSGetREAL8 ( &frames_endGPS );
-          REAL8 frames_span = frames_end - frames_start;
-
-          LIGOTimeGPS ts_startGPS;
+          // this is a sorted cache, so extract its time-range:
+          REAL8 cache_tStart = cache->list[0].t0;
+          REAL8 cache_tEnd   = cache->list[cache->length-1].t0 + cache->list[cache->length-1].dt;
+          REAL8 cache_duration = (cache_tEnd - cache_tStart);
+          LIGOTimeGPS ts_start;
           REAL8 ts_duration;
           // check that it's consistent with timestamps, if given, otherwise create timestamps from this
           if ( cfg->multiTimestamps->data[X] != NULL )	// FIXME: implicitly assumes timestamps are sorted, which is not guaranteed by timestamps-reading from file
@@ -533,30 +505,27 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
               const LIGOTimeGPSVector *timestampsX = cfg->multiTimestamps->data[X];
               REAL8 tStart = XLALGPSGetREAL8( &timestampsX->data[0] );
               REAL8 tEnd   = XLALGPSGetREAL8( &timestampsX->data[timestampsX->length-1]) + timestampsX->deltaT;
-              XLAL_CHECK ( tStart >= frames_start && tEnd <= frames_end, XLAL_EINVAL, "Detector X=%d: Requested timestamps-range [%.0f, %.0f]s outside of cache range [%.0f,%.0f]s\n",
-                           X, tStart, tEnd, frames_start, frames_end );
-              XLALGPSSetREAL8 ( &ts_startGPS, tStart );
+              XLAL_CHECK ( tStart >= cache_tStart && tEnd <= cache_tEnd, XLAL_EINVAL, "Detector X=%d: Requested timestamps-range [%.0f, %.0f]s outside of cache range [%.0f,%.0f]s\n",
+                           X, tStart, tEnd, cache_tStart, cache_tEnd );
+              XLALGPSSetREAL8 ( &ts_start, tStart );
               ts_duration = (tEnd - tStart);
-            } // if have_timestamps
+            }
           else
             {
-              ts_startGPS = frames_startGPS;
-              ts_duration = frames_span;
-              XLAL_CHECK ( (cfg->multiTimestamps->data[X] = XLALMakeTimestamps ( ts_startGPS, ts_duration, uvar->Tsft, uvar->SFToverlap ) ) != NULL, XLAL_EFUNC );
-              // in this case we can't allow timestamps extending beyond the end of the frame timeseries, so we drop the last timestamp if necessary
-              LIGOTimeGPSVector *timestampsX = cfg->multiTimestamps->data[X];
-              REAL8 tEnd;
-              while ( (tEnd = XLALGPSGetREAL8 ( &timestampsX->data[timestampsX->length-1] ) + timestampsX->deltaT) > frames_end ) {
-                timestampsX->length --;
-              }
-            } // if have no timestamps
+              XLALGPSSetREAL8 ( &ts_start, (REAL8)cache_tStart + 1); // cache times can apparently be by rounded up or down by 1s, so shift by 1s to be safe
+              ts_duration = cache_duration - 1;
+              XLAL_CHECK ( (cfg->multiTimestamps->data[X] = XLALMakeTimestamps ( ts_start, ts_duration, uvar->Tsft, uvar->SFToverlap ) ) != NULL, XLAL_EFUNC );
+            }
+          // ----- now open frame stream and read *all* the data within this time-range [FIXME] ----------
+          LALFrStream *stream;
+          XLAL_CHECK ( (stream = XLALFrStreamCacheOpen ( cache )) != NULL, XLAL_EFUNC, "Failed to open stream from cache file '%s'\n", uvar->inFrames->data[X] );
+          XLALDestroyCache ( cache );
 
           const char *channel = uvar->inFrChannels->data[X];
           size_t limit = 0;	// unlimited read
           REAL8TimeSeries *ts;
-          XLAL_CHECK ( (ts = XLALFrStreamInputREAL8TimeSeries ( stream, channel, &ts_startGPS, ts_duration, limit )) != NULL,
-                       XLAL_EFUNC, "Frame reading failed for stream created for '%s': ts_start = {%d,%d}, duration=%.0f\n",
-                       uvar->inFrames->data[X], ts_startGPS.gpsSeconds, ts_startGPS.gpsNanoSeconds, ts_duration );
+          XLAL_CHECK ( (ts = XLALFrStreamInputREAL8TimeSeries ( stream, channel, &ts_start, ts_duration, limit )) != NULL,
+                       XLAL_EFUNC, "Frame reading failed for stream created for '%s': ts_start = {%d,%d}, duration=%.0f\n", uvar->inFrames->data[X], ts_start.gpsSeconds, ts_start.gpsNanoSeconds, ts_duration );
           cfg->inputMultiTS->data[X] = ts;
 
           XLAL_CHECK ( XLALFrStreamClose ( stream ) == XLAL_SUCCESS, XLAL_EFUNC, "Stream closing failed for cache file '%s'\n", uvar->inFrames->data[X] );
@@ -594,7 +563,6 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   uvar->Tsft = 1800;
   uvar->fmin = 0;	/* no heterodyning by default */
   uvar->Band = 8192;	/* 1/2 LIGO sampling rate by default */
-  uvar->outSingleSFT = 1; /* write our a single SFT file by default */
 
 #define MISC_DEFAULT "mfdv5"
   XLAL_CHECK ( (uvar->outLabel = XLALStringDuplicate ( MISC_DEFAULT ))  != NULL, XLAL_EFUNC );
@@ -649,9 +617,10 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember ( outFrChannels, STRINGVector, 0,  DEFUNCT, "Need to compile with lalframe support for this option to work");
 #endif
 
+  XLALRegisterUvarMember(  version,             BOOLEAN, 'V', SPECIAL, "Output version information");
+
   // ----- 'expert-user/developer' options ----- (only shown in help at lalDebugLevel >= warning)
   XLALRegisterUvarMember(   randSeed,             INT4, 0, DEVELOPER, "Specify random-number seed for reproducible noise (0 means use /dev/urandom for seeding).");
-  XLALRegisterUvarMember(  sourceDeltaT,        REAL8,  0, DEVELOPER, "Source-frame sampling period. '0' implies previous internal defaults" );
 
   // ----- deprecated but still supported options [throw warning if used] (only shown in help at lalDebugLevel >= info) ----------
 #ifdef HAVE_LIBLALFRAME
@@ -664,7 +633,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit (1);
   }

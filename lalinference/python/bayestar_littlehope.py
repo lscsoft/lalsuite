@@ -28,11 +28,13 @@ BEWARE THAT THIS PROGRAM'S TIMING ERRORS ARE KNOWN TO EXCEED THOSE OF ``REAL''
 MATCHED FILTER PIPELINES! THERE IS LIKELY A BUG SOMEWHERE IN HERE!
 """
 from __future__ import division
+__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Determine list of known detectors for command line arguments.
 import lal
-available_ifos = sorted(det.frDetector.prefix for det in lal.CachedDetectors)
+available_ifos = sorted(det.frDetector.prefix
+    for det in lal.CachedDetectors)
 
 # List of interpolation methods
 available_interp_methods = [
@@ -50,38 +52,26 @@ parser.add_argument(
 parser.add_argument(
     '-o', '--output', metavar='OUT.xml[.gz]', type=argparse.FileType('wb'),
     default='-', help='Name of output file [default: stdout]')
-parser.add_argument(
-    '--detector', metavar='|'.join(available_ifos), action='append',
+parser.add_argument('--detector', metavar='|'.join(available_ifos), action='append',
     help='Detectors to use.  May be specified multiple times.',
     choices=available_ifos)
-parser.add_argument(
-    '--trigger-window', type=float, default=0.1, metavar='SECONDS',
-    help='Search for a trigger across this many seconds before and after the '
-    'time of the injection [default: %(default)s]')
-parser.add_argument(
-    '--interp-method', metavar='|'.join(available_interp_methods),
-    default='lanczos', choices=available_interp_methods,
+parser.add_argument('--trigger-window', type=float, default=0.1, metavar='SECONDS',
+    help='Search for a trigger across this many seconds before and after the time of the injection [default: %(default)s]')
+parser.add_argument('--interp-method', metavar='|'.join(available_interp_methods),
+       default='lanczos', choices=available_interp_methods,
     help='Trigger interpolation method [default: %(default)s]')
-parser.add_argument(
-    '--interp-window', metavar='SAMPLES', type=int, default=2,
+parser.add_argument('--interp-window', metavar='SAMPLES', type=int, default=2,
     help='Trigger interpolation window [default: %(default)s]')
-parser.add_argument(
-    '--waveform',
+parser.add_argument('--waveform',
     help='Waveform to use for injections [required]', required=True)
-parser.add_argument(
-    '--snr-threshold', type=float, default=4.,
+parser.add_argument('--snr-threshold', type=float, default=4.,
     help='Single-detector SNR threshold [default: %(default)s]')
+parser.add_argument('--min-triggers', type=int, default=2,
+    help='Emit coincidences only when at least this many triggers are found [default: %(default)s]')
+parser.add_argument('-R', '--repeat-first-injection', type=int, default=None,
+    help='Instead of performing each injection once, just perform the first injection this many times.')
 parser.add_argument(
-    '--min-triggers', type=int, default=2,
-    help='Emit coincidences only when at least this many triggers are found '
-    '[default: %(default)s]')
-parser.add_argument(
-    '-R', '--repeat-first-injection', type=int, default=None,
-    help='Instead of performing each injection once, just perform the first '
-    'injection this many times.')
-parser.add_argument(
-    '--template-bank', metavar='TMPLTBANK.xml[.gz]',
-    type=argparse.FileType('rb'),
+    '--template-bank', metavar='TMPLTBANK.xml[.gz]', type=argparse.FileType('rb'),
     required=True, help='Name of template bank file [required]')
 parser.add_argument(
     '--reference-psd', metavar='PSD.xml[.gz]', type=argparse.FileType('rb'),
@@ -99,6 +89,7 @@ from glue.ligolw import ligolw
 from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw.utils import search_summary as ligolw_search_summary
 from glue.ligolw import table as ligolw_table
+from pylal import ligolw_thinca
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import lsctables
 
@@ -106,10 +97,8 @@ from glue.ligolw import lsctables
 from glue import segments
 import glue.text_progress_bar
 import glue.lal
-import lal
-import lalsimulation
+import lal, lalsimulation
 import lal.series
-from lalinspiral.thinca import InspiralCoincDef
 
 # BAYESTAR imports.
 from lalinference.bayestar import timing
@@ -128,11 +117,11 @@ template_approximant, template_amplitude_order, template_phase_order = \
 
 # FIXME: sample rate could be a command line option; template duration and data
 # duration should be determined from chirp time
-sample_rate = 4096  # sample rate in Hz
-template_duration = 128  # template duration in seconds
-template_length = sample_rate * template_duration  # template length in samples
-data_duration = 512  # data duration in seconds
-data_length = sample_rate * data_duration  # data length in samples
+sample_rate = 4096 # sample rate in Hz
+template_duration = 128 # template duration in seconds
+template_length = sample_rate * template_duration # template length in samples
+data_duration = 512 # data duration in seconds
+data_length = sample_rate * data_duration # data length in samples
 
 
 # Open output file.
@@ -144,11 +133,11 @@ process = command.register_to_xmldoc(
     out_xmldoc, parser, opts, ifos=opts.detector, comment="Little hope!")
 
 # Add search summary to output file.
-all_time = segments.segment([lal.LIGOTimeGPS(0), lal.LIGOTimeGPS(2e9)])
+all_time = segments.segment([glue.lal.LIGOTimeGPS(0), glue.lal.LIGOTimeGPS(2e9)])
 search_summary_table = lsctables.New(lsctables.SearchSummaryTable)
 out_xmldoc.childNodes[0].appendChild(search_summary_table)
-summary = ligolw_search_summary.append_search_summary(
-    out_xmldoc, process, inseg=all_time, outseg=all_time)
+summary = ligolw_search_summary.append_search_summary(out_xmldoc, process,
+    inseg=all_time, outseg=all_time)
 
 # Read template bank file.
 progress.update(-1, 'reading ' + opts.template_bank.name)
@@ -158,8 +147,8 @@ xmldoc, _ = ligolw_utils.load_fileobj(
 # Determine the low frequency cutoff from the template bank file.
 template_bank_f_low = ligolw_bayestar.get_template_bank_f_low(xmldoc)
 
-template_bank = ligolw_table.get_table(
-    xmldoc, lsctables.SnglInspiralTable.tableName)
+template_bank = ligolw_table.get_table(xmldoc,
+    lsctables.SnglInspiralTable.tableName)
 
 # Read injection file.
 progress.update(-1, 'reading ' + opts.input.name)
@@ -167,8 +156,8 @@ xmldoc, _ = ligolw_utils.load_fileobj(
     opts.input, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
 
 # Extract simulation table from injection file.
-sim_inspiral_table = ligolw_table.get_table(
-    xmldoc, lsctables.SimInspiralTable.tableName)
+sim_inspiral_table = ligolw_table.get_table(xmldoc,
+    lsctables.SimInspiralTable.tableName)
 
 # Create a SnglInspiral table and initialize its row ID counter.
 sngl_inspiral_table = lsctables.New(lsctables.SnglInspiralTable)
@@ -177,20 +166,19 @@ sngl_inspiral_table.set_next_id(lsctables.SnglInspiralID(0))
 
 # Create a time slide entry.  Needed for coinc_event rows.
 try:
-    time_slide_table = ligolw_table.get_table(
-        out_xmldoc, lsctables.TimeSlideTable.tableName)
+    time_slide_table = ligolw_table.get_table(out_xmldoc, lsctables.TimeSlideTable.tableName)
 except ValueError:
     time_slide_table = lsctables.New(lsctables.TimeSlideTable)
     out_xmldoc.childNodes[0].appendChild(time_slide_table)
     time_slide_table.sync_next_id()
 time_slide_id = time_slide_table.get_time_slide_id(
-    {ifo: 0 for ifo in opts.detector}, create_new=process)
+    dict((ifo, 0) for ifo in opts.detector), create_new=process)
 
 # Create a CoincDef table and record a CoincDef row for
 # sngl_inspiral <-> sngl_inspiral coincidences.
 coinc_def_table = lsctables.New(lsctables.CoincDefTable)
 out_xmldoc.childNodes[0].appendChild(coinc_def_table)
-coinc_def = InspiralCoincDef
+coinc_def = ligolw_thinca.InspiralCoincDef
 coinc_def_id = coinc_def_table.get_next_id()
 coinc_def.coinc_def_id = coinc_def_id
 coinc_def_table.append(coinc_def)
@@ -212,10 +200,9 @@ progress.update(-1, 'reading ' + opts.reference_psd.name)
 xmldoc, _ = ligolw_utils.load_fileobj(
     opts.reference_psd, contenthandler=lal.series.PSDContentHandler)
 psds = lal.series.read_psd_xmldoc(xmldoc)
-psds = {
-    key: timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data)
-    for key, psd in psds.items() if psd is not None}
-
+psds = dict(
+    (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data))
+    for key, psd in psds.items() if psd is not None)
 
 # Detector noise PSD model
 class psdfunc(object):
@@ -244,8 +231,7 @@ horizons_bank = [
     ] for sngl in template_bank]
 
 # Generate templates for each unique set of intrinsic parameters
-# FIXME: Get template_duration, template_approximant, template_amplitude_order,
-# and template_phase_order from sngl_inspiral table.
+# FIXME: Get template_duration, template_approximant, template_amplitude_order, and template_phase_order from sngl_inspiral table.
 progress.update(-1, 'computing template bank')
 template_bank = [
     [
@@ -255,12 +241,8 @@ template_bank = [
 
 # Generate PSDs for data coloring
 progress.update(-1, 'computing PSDs')
-
-
 def generate_psd(S):
-    psd = lal.CreateREAL8FrequencySeries(
-        None, lal.LIGOTimeGPS(0), 0, 1 / data_duration,
-        filter.unitInverseHertz, data_length // 2 + 1)
+    psd = lal.CreateREAL8FrequencySeries(None, lal.LIGOTimeGPS(0), 0, 1 / data_duration, filter.unitInverseHertz, data_length // 2 + 1)
     psd.data.data = S(filter.abscissa(psd))
     return psd
 psds = [generate_psd(S) for ifo, S in zip(opts.detector, psdfuncs)]
@@ -278,8 +260,7 @@ def detect_sngls(ifos, data, horizons, templates):
         rho = filter.fftfilt(zW, x.data.data)[len(zW)-1:]
 
         # Find maximum index
-        i0 = int(round(
-            -(template_duration + float(x.epoch - end_time)) * sample_rate))
+        i0 = int(round(-(template_duration + float(x.epoch - end_time)) * sample_rate))
         di = int(round(sample_rate * opts.trigger_window))
         imax = np.argmax(filter.abs2(rho[i0 - di:i0 + di])) + i0 - di
 
@@ -288,8 +269,7 @@ def detect_sngls(ifos, data, horizons, templates):
             continue
 
         # Interpolate time series
-        imax, rhomax = filter.interpolate_max(
-            imax, rho, opts.interp_window, method=opts.interp_method)
+        imax, rhomax = filter.interpolate_max(imax, rho, opts.interp_window, method=opts.interp_method)
         tmax = x.epoch + (imax / sample_rate + template_duration)
 
         # Add SnglInspiral entry.
@@ -301,13 +281,11 @@ def detect_sngls(ifos, data, horizons, templates):
         sngl_inspiral.mass1 = mass1
         sngl_inspiral.mass2 = mass2
         sngl_inspiral.mtotal = mass1 + mass2
-        sngl_inspiral.mchirp = ((mass1 * mass2)**0.6
-                                * sngl_inspiral.mtotal**-0.2)
+        sngl_inspiral.mchirp = (mass1 * mass2)**0.6 * sngl_inspiral.mtotal**-0.2
         sngl_inspiral.end_time = tmax.gpsSeconds
         sngl_inspiral.end_time_ns = tmax.gpsNanoSeconds
         sngl_inspiral.snr = abs(rhomax)
-        # minus sign to match gstlal_inspiral phase convention
-        sngl_inspiral.coa_phase = -np.angle(rhomax)
+        sngl_inspiral.coa_phase = -np.angle(rhomax) # minus sign to match gstlal_inspiral phase convention
         sngl_inspiral.eff_distance = horizon / sngl_inspiral.snr
         yield sngl_inspiral
 
@@ -333,18 +311,15 @@ def inject(hplus, hcross, ifo, psd):
 
 
 class keyboard_interrupt_handler(object):
-
     def __init__(self):
         self.interrupted = False
         signal.signal(signal.SIGINT, self)
-
     def __call__(self, signal, frame):
         self.interrupted = True
 handler = keyboard_interrupt_handler()
 
 
-for i_sim_inspiral in progress.iterate(
-        range(n_injections), format='injection %d of ' + str(n_injections)):
+for i_sim_inspiral in progress.iterate(range(n_injections), format='injection %d of ' + str(n_injections)):
 
     if handler.interrupted:
         print('warning: interrupted, cleaning up')
@@ -372,12 +347,10 @@ for i_sim_inspiral in progress.iterate(
         inc = sim_inspiral.inclination
         phi = sim_inspiral.coa_phase
         psi = sim_inspiral.polarization
-        end_time = lal.LIGOTimeGPS(sim_inspiral.geocent_end_time,
-                                   sim_inspiral.geocent_end_time_ns)
-        epoch = end_time - 256  # GPS start time of data
+        end_time = lal.LIGOTimeGPS(sim_inspiral.geocent_end_time, sim_inspiral.geocent_end_time_ns)
+        epoch = end_time - 256 # GPS start time of data
         gmst = lal.GreenwichMeanSiderealTime(end_time)
-        approximant, amplitude_order, phase_order = \
-            filter.get_approximant_and_orders_from_string(sim_inspiral.waveform)
+        approximant, amplitude_order, phase_order = filter.get_approximant_and_orders_from_string(sim_inspiral.waveform)
         if approximant != lalsimulation.TaylorT4:
             raise ValueError("unrecognized approximant")
 
@@ -397,12 +370,9 @@ for i_sim_inspiral in progress.iterate(
         hcross.epoch += end_time
 
     # Realize detector noise and add injection
-    data = [inject(hplus, hcross, ifo, psd)
-            for ifo, psd in zip(opts.detector, psds)]
+    data = [inject(hplus, hcross, ifo, psd) for ifo, psd in zip(opts.detector, psds)]
 
-    net_snr, sngl_inspirals = max(
-        detect_net_snr_and_sngls(opts.detector, data, horizons, templates)
-        for templates, horizons in zip(template_bank, horizons_bank))
+    net_snr, sngl_inspirals = max(detect_net_snr_and_sngls(opts.detector, data, horizons, templates) for templates, horizons in zip(template_bank, horizons_bank))
 
     # If too few triggers were found, then skip this event.
     if len(sngl_inspirals) < opts.min_triggers:
@@ -426,7 +396,7 @@ for i_sim_inspiral in progress.iterate(
         for sngl_inspiral in sngl_inspirals])))
     coinc_inspiral.set_ifos([sngl_inspiral.ifo
         for sngl_inspiral in sngl_inspirals])
-    coinc_inspiral.set_end(glue.lal.LIGOTimeGPS(float(np.mean([float(sngl_inspiral.end)
+    coinc_inspiral.set_end(glue.lal.LIGOTimeGPS(float(np.mean([float(sngl_inspiral.get_end())
         for sngl_inspiral in sngl_inspirals]))))
     coinc_inspiral.false_alarm_rate = None
     coinc_inspiral.combined_far = None
@@ -458,9 +428,8 @@ ligolw_process.set_process_end_time(process)
 
 # Write output file.
 with ligolw_utils.SignalsTrap():
-    ligolw_utils.write_fileobj(
-        out_xmldoc, opts.output,
-        gz=(os.path.splitext(opts.output.name)[-1] == ".gz"))
+  ligolw_utils.write_fileobj(out_xmldoc, opts.output,
+      gz=(os.path.splitext(opts.output.name)[-1]==".gz"))
 
 
 if handler.interrupted:

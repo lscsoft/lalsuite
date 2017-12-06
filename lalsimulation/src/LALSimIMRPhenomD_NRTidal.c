@@ -42,7 +42,7 @@ static int IMRPhenomD_NRTidal_Core(
   REAL8 chi2,                                   /**< Dimensionless aligned component spin of NS 2 */
   REAL8 lambda1,                                /**< Dimensionless tidal deformability of NS 1 */
   REAL8 lambda2,                                /**< Dimensionless tidal deformability of NS 2 */
-  LALDict *extraParams, /**< linked list containing the extra testing GR parameters */
+  const LALSimInspiralTestGRParam *extraParams, /**< linked list containing the extra testing GR parameters */
   const REAL8Sequence *freqs_in,                /**< Frequency points at which to evaluate the waveform (Hz) */
   REAL8 deltaF                                  /**< Sampling frequency (Hz) */
 );
@@ -60,7 +60,7 @@ int IMRPhenomD_NRTidal_Core(
   REAL8 chi2,                                   /**< Dimensionless aligned component spin of NS 2 */
   REAL8 lambda1,                                /**< Dimensionless tidal deformability of NS 1 */
   REAL8 lambda2,                                /**< Dimensionless tidal deformability of NS 2 */
-  LALDict *extraParams, /**< linked list containing the extra testing GR parameters */
+  const LALSimInspiralTestGRParam *extraParams, /**< linked list containing the extra testing GR parameters */
   const REAL8Sequence *freqs_in,                /**< Frequency points at which to evaluate the waveform (Hz) */
   REAL8 deltaF)                                 /**< Sampling frequency (Hz) */
 {
@@ -96,47 +96,15 @@ int IMRPhenomD_NRTidal_Core(
 
   int ret = XLAL_SUCCESS;
   if (deltaF > 0)
-  {
-      // if using a uniform frequency series then we only need to generate
-      // phenomD upto a bit beyond the BNS merger frequency.
-      // if asked for a frequency beyond NRTIDAL_FMAX then the
-      // returned waveform contains frequencies up to the input fHigh but
-      // only contains zeros beyond NRTIDAL_FMAX
-      double f_max_nr_tidal = fHigh;
-      /**< tidal coupling constant.*/
-      const double kappa2T = XLALSimNRTunedTidesComputeKappa2T(m1_SI, m2_SI, lambda1, lambda2);
-      /* Prepare tapering of amplitude beyond merger frequency */
-      const double fHz_mrg = XLALSimNRTunedTidesMergerFrequency( (m1_SI+m2_SI)/LAL_MSUN_SI , kappa2T, m1_SI/m2_SI);
-      const double NRTIDAL_FMAX = 1.3*fHz_mrg;
-
-      if ( ( fHigh > NRTIDAL_FMAX ) || ( fHigh == 0.0 ) )
-      {
-          // only generate upto NRTIDAL_FMAX
-          f_max_nr_tidal = NRTIDAL_FMAX;
-      }
-
     ret = XLALSimIMRPhenomDGenerateFD(
       htilde,
       phiRef, fRef, deltaF,
       m1_SI, m2_SI,
       chi1, chi2,
-      fLow, f_max_nr_tidal,
+      fLow, fHigh,
       distance,
       extraParams);
-
-      // if uniform sampling and fHigh > NRTIDAL_FMAX then resize htilde
-      // so that it goes up to the user fHigh but is filled with zeros
-      // beyond NRTIDAL_FMAX
-      if (fHigh > NRTIDAL_FMAX)
-      {
-          // resize
-          // n_full is the next power of 2 +1.
-          size_t n_full = (size_t) pow(2,ceil(log2(fHigh / deltaF))) + 1;
-          *htilde = XLALResizeCOMPLEX16FrequencySeries(*htilde, 0, n_full);
-          XLAL_CHECK ( *htilde, XLAL_ENOMEM, "Failed to resize waveform COMPLEX16FrequencySeries");
-      }
-
-  } else {
+  else
     ret = XLALSimIMRPhenomDFrequencySequence(
       htilde,
       freqs_in,
@@ -145,7 +113,6 @@ int IMRPhenomD_NRTidal_Core(
       chi1, chi2,
       distance,
       extraParams);
-  }
 
   XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to generate IMRPhenomD waveform.");
 
@@ -254,7 +221,7 @@ int XLALSimIMRPhenomDNRTidalFrequencySequence(
   REAL8 chi2,                                   /**< Dimensionless aligned component spin of NS 2 */
   REAL8 lambda1,                                /**< Dimensionless tidal deformability of NS 1 */
   REAL8 lambda2,                                /**< Dimensionless tidal deformability of NS 2 */
-  LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+  const LALSimInspiralTestGRParam *extraParams  /**< linked list containing the extra testing GR parameters */
 ) {
   if (!freqs) XLAL_ERROR(XLAL_EFAULT);
 
@@ -289,7 +256,7 @@ int XLALSimIMRPhenomDNRTidal(
   REAL8 chi2,                                   /**< Dimensionless aligned component spin of NS 2 */
   REAL8 lambda1,                                /**< Dimensionless tidal deformability of NS 1 */
   REAL8 lambda2,                                /**< Dimensionless tidal deformability of NS 2 */
-  LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+  const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
 ) {
   // Use fLow, fHigh, deltaF to compute freqs sequence
   // Instead of building a full sequence we only transfer the boundaries and let

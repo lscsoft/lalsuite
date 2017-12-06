@@ -32,6 +32,19 @@
 
 #include <lal/LALInference.h>
 
+#define DEFAULT_LAMBDA1_MIN 0.0
+#define DEFAULT_LAMBDA2_MIN 0.0
+#define DEFAULT_LAMBDA1_MAX 3000.0
+#define DEFAULT_LAMBDA2_MAX 3000.0
+#define DEFAULT_LAMBDAT_MIN 0.0
+#define DEFAULT_LAMBDAT_MAX 5151.364764 /*calculated to be consistent with lambda1,2 ranges */
+#define DEFAULT_DLAMBDAT_MIN -1104.94049
+#define DEFAULT_DLAMBDAT_MAX 3000.0
+#define DEFAULT_QUADPARAM1_MIN 1.0
+#define DEFAULT_QUADPARAM1_MAX 100.0
+#define DEFAULT_QUADPARAM2_MIN 1.0
+#define DEFAULT_QUADPARAM2_MAX 100.0
+
 /* Initialize a bare-bones run-state. */
 LALInferenceRunState *LALInferenceInitRunState(ProcessParamsTable *command_line);
 

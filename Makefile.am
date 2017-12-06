@@ -1,9 +1,3 @@
-BUILT_SOURCES =
-sysconf_DATA =
-MOSTLYCLEANFILES =
-EXTRA_DIST =
-include $(top_srcdir)/gnuscripts/lalsuite_top.am
-
 ACLOCAL_AMFLAGS = -I gnuscripts
 
 SUBDIRS = @subdirs@
@@ -27,16 +21,14 @@ cscopelist-subdirs:
 		sed "s|^|$${subdir}/|" $${subdir}/cscope.files >> $(top_builddir)/cscope.files; \
 	done
 
-user_environment = \
-	`for dir in $(SUBDIRS); do printf 'source %s; ' "$(sysconfdir)/$${dir}-user-env"; done` \
-	$(END_OF_LIST)
-
-BUILT_SOURCES += $(PACKAGE)rc
-sysconf_DATA += $(PACKAGE)rc
-MOSTLYCLEANFILES += $(PACKAGE)rc
+BUILT_SOURCES = $(PACKAGE)rc
+sysconf_DATA = $(PACKAGE)rc
+MOSTLYCLEANFILES = $(PACKAGE)rc
 $(PACKAGE)rc: Makefile
-	$(AM_V_GEN)echo "# source this file to access $(PACKAGE_NAME) from Bourne or C shells" >$@; \
-	echo "expr \"X\$$0\" : '^X.*csh' >/dev/null && source $(sysconfdir)/$(PACKAGE)-user-env.csh || . $(sysconfdir)/$(PACKAGE)-user-env.sh" >>$@
+	$(AM_V_GEN)echo "# source this file to access $(PACKAGE_NAME)" >$@; \
+	for dir in $(SUBDIRS); do \
+		echo "eval \`sh -c \"case \$$0 in *csh) echo source $(sysconfdir)/$${dir}-user-env.csh;; *) echo . $(sysconfdir)/$${dir}-user-env.sh;; esac\"\`" >>$@; \
+	done
 
 if DOXYGEN
 
@@ -60,3 +52,26 @@ uninstall-local:
 	-rm -rf "$(DESTDIR)$(htmldir)/"
 
 endif
+
+.PHONY: print-build-success
+all-local: print-build-success
+print-build-success:
+	@echo "";\
+	echo "==================================================";\
+	echo "$(PACKAGE_NAME) has now been successfully built.";\
+	echo "Now run 'make install' to install $(PACKAGE_NAME).";\
+	echo "==================================================";\
+	echo ""
+.PHONY: print-install-success
+install-exec-local: print-install-success
+print-install-success:
+	@echo "";\
+	echo "==================================================";\
+	echo "$(PACKAGE_NAME) has now been successfully installed.";\
+	echo "To set up your environment, please add the line";\
+	echo "  . $(sysconfdir)/$(PACKAGE)rc";\
+	echo "to ~/.profile for Bourne shells (e.g. bash), or";\
+	echo "  source $(sysconfdir)/$(PACKAGE)rc";\
+	echo "to ~/.login for C shells (e.g. tcsh).";\
+	echo "==================================================";\
+	echo ""

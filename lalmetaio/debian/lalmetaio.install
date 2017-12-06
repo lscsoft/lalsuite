@@ -1,3 +1,2 @@
-usr/bin/lalmetaio_version
-usr/lib/*/*.so.*
+usr/lib/*.so*
 etc/*

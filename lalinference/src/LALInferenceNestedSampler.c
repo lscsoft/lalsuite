@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <float.h>
 #include <signal.h>
+#include <sys/types.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -210,7 +211,6 @@ static int _loadNSintegralState(FILE *fp, NSintegralState *s)
 static int WriteNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSintegralState *s)
 {
   FILE *progfile=fopen(filename,"w");
-  int errnum;
   if(!progfile)
   {
     fprintf(stderr,"Unable to save resume file %s!\n",filename);
@@ -227,13 +227,7 @@ static int WriteNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSi
       fclose(progfile);
       return 1;
     }
-    XLAL_TRY(LALInferenceWriteVariablesArrayBinary(progfile,runState->livePoints, Nlive),errnum);
-	if(errnum!=XLAL_SUCCESS)
-	{
-      fprintf(stderr,"Unable to write live points - will not be able to resume!\n");
-      fclose(progfile);
-      return 1;
-	}
+    LALInferenceWriteVariablesArrayBinary(progfile,runState->livePoints, Nlive);
     INT4 N_output_array=0;
     if(LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray")) N_output_array=LALInferenceGetINT4Variable(runState->algorithmParams,"N_outputarray");
     fwrite(&N_output_array,sizeof(INT4),1,progfile);
@@ -241,13 +235,7 @@ static int WriteNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSi
     {
       LALInferenceVariables **output_array=NULL;
       output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
-      XLAL_TRY(LALInferenceWriteVariablesArrayBinary(progfile,output_array, N_output_array),errnum);
-	  if(errnum!=XLAL_SUCCESS)
-	  {
-		      fprintf(stderr,"Unable to write past chain - will not be able to resume!\n");
-		      fclose(progfile);
-		      return 1;	
-	  }
+      LALInferenceWriteVariablesArrayBinary(progfile,output_array, N_output_array);
       fprintf(stderr,"Resume --> wrote %d past chain samples\n\n",N_output_array);
     }
     fclose(progfile);
@@ -257,7 +245,6 @@ static int WriteNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSi
 
 static int ReadNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSintegralState *s)
 {
-  int errnum;
   FILE *progfile=fopen(filename,"r");
   if(!progfile)
   {
@@ -274,26 +261,14 @@ static int ReadNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSin
       return 1;
     }
     //if(retcode) return 1;
-    XLAL_TRY(LALInferenceReadVariablesArrayBinary(progfile,runState->livePoints,Nlive),errnum);
-	if(errnum!=XLAL_SUCCESS)
-    {
-		fprintf(stderr,"Unable to read live points from resume file!\n");
-		fclose(progfile);
-		return(1);
-	}
+    LALInferenceReadVariablesArrayBinary(progfile,runState->livePoints,Nlive);
     INT4 N_output_array;
     fread(&N_output_array,sizeof(INT4),1,progfile);
     LALInferenceVariables **output_array=NULL;
     if(N_output_array!=0){
       output_array=XLALCalloc(N_output_array,sizeof(LALInferenceVariables *));
       fprintf(stderr,"Resume --> read %d past chain samples\n",N_output_array);
-      XLAL_TRY(LALInferenceReadVariablesArrayBinary(progfile,output_array,N_output_array),errnum);
-	  if(errnum!=XLAL_SUCCESS)
-	  {
-		fprintf(stderr,"Unable to read past chain from resume file!\n");
-		fclose(progfile);
-		return(1);
-	  }
+      LALInferenceReadVariablesArrayBinary(progfile,output_array,N_output_array);
       if(LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray")) LALInferenceRemoveVariable(runState->algorithmParams,"N_outputarray");
       if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")) LALInferenceRemoveVariable(runState->algorithmParams,"outputarray");
       LALInferenceAddVariable(runState->algorithmParams,"N_outputarray",&N_output_array,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
@@ -839,10 +814,12 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       fprintf(stderr,"Must specify --outfile <filename.hdf5>\n");
       exit(1);
   }
-  char *outfile=ppt->value;
+  char *outfilep=ppt->value;
   /* Check if the output file has hdf5 extension */
-  if(strstr(outfile,".h5") || strstr(outfile,".hdf")) HDFOUTPUT=1;
+  if(strstr(outfilep,".h5") || strstr(outfilep,".hdf")) HDFOUTPUT=1;
   else HDFOUTPUT=0;
+  char outfile[FILENAME_MAX];
+  sprintf(outfile, "%s", outfilep);
   
 #ifndef HAVE_HDF5
   if(HDFOUTPUT)
@@ -888,8 +865,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   s=initNSintegralState(Nruns,Nlive);
 
   /* Check for an interrupted run */
-  char resumefilename[FILENAME_MAX+10];
-  snprintf(resumefilename,sizeof(resumefilename),"%s_resume",outfile);
+  char resumefilename[FILENAME_MAX];
+  sprintf(resumefilename,"%s_resume",outfile);
   int retcode=1;
   if(LALInferenceGetProcParamVal(runState->commandLine,"--resume")){
 #ifdef HAVE_HDF5
@@ -986,8 +963,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   if(!HDFOUTPUT)
   {
       FILE *lout=NULL;
-      char param_list[FILENAME_MAX+16];
-      snprintf(param_list,sizeof(param_list),"%s_params.txt",outfile);
+      char param_list[FILENAME_MAX];
+      sprintf(param_list,"%s_params.txt",outfile);
       lout=fopen(param_list,"w");
       LALInferenceFprintParameterHeaders(lout,runState->livePoints[0]);
       fclose(lout);
@@ -1142,7 +1119,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		}
         fclose(fpout);
     
-        char bayesfile[FILENAME_MAX+10];
+        char bayesfile[FILENAME_MAX];
         sprintf(bayesfile,"%s_B.txt",outfile);
         fpout=fopen(bayesfile,"w");
         fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
@@ -1157,11 +1134,11 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       
       LALH5File *h5file=XLALH5FileOpen(outfile, "w");
       // Create group heirarchy 
-      char runID[2048];
+      char runID[256]="";
       if((ppt=LALInferenceGetProcParamVal(runState->commandLine,"--runid")))
-        snprintf(runID,sizeof(runID),"%s_%s","lalinference_nest",ppt->value);
+        snprintf(runID,255,"%s_%s","lalinference_nest",ppt->value);
       else
-        snprintf(runID,sizeof(runID),"lalinference_nest");
+        snprintf(runID,255,"lalinference_nest");
 
       LALH5File *groupPtr = LALInferenceH5CreateGroupStructure(h5file, "lalinference", runID);
       /* Create run identifier group */
@@ -1204,8 +1181,8 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   /* Single threaded here */
   LALInferenceThreadState *threadState = runState->threads[0];
   ProcessParamsTable *ppt=NULL;
-  char chainfilename[2048]="";
-  char acf_file_name[2048]="";
+  char chainfilename[128]="";
+  char acf_file_name[128]="";
   FILE *chainfile=NULL;
   FILE *acffile=NULL;
   UINT4 i,j;
@@ -1231,7 +1208,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   LALInferenceCopyVariables(oldAlgParams,&myAlgParams);
   if(LALInferenceCheckVariable(&myAlgParams,"outputarray")) LALInferenceRemoveVariable(&myAlgParams,"outputarray");
   if(LALInferenceCheckVariable(&myAlgParams,"N_outputarray")) LALInferenceRemoveVariable(&myAlgParams,"N_outputarray");
-  if(LALInferenceCheckVariable(&myAlgParams,"outfile")) LALInferenceRemoveVariable(&myAlgParams,"outfile");
+  LALInferenceRemoveVariable(&myAlgParams,"outfile");
   LALInferenceRemoveVariable(&myAlgParams,"Nmcmc");
   LALInferenceAddVariable(&myAlgParams,"Nmcmc",&thinning,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
 
@@ -1534,7 +1511,7 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     LALInferenceIFOData *data=runState->data;
     REAL8 tmp;
     REAL8 Target=0.3;
-    char tmpName[320];
+    char tmpName[32];
     REAL8 logLold=*(REAL8 *)LALInferenceGetVariable(threadState->currentParams,"logL");
     memset(&oldParams,0,sizeof(oldParams));
     LALInferenceCopyVariables(threadState->currentParams,&oldParams);
@@ -1717,6 +1694,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	}
 	threadState->currentParams=curParsBackup;
 	if(!threadState->currentParams) threadState->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
+
 }
 
 

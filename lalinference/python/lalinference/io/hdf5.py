@@ -17,6 +17,9 @@
 """
 Reading HDF5 posterior sample chain HDF5 files.
 """
+__author__ = "Leo Singer <leo.singer@ligo.org>"
+__all__ = ('read_samples', 'write_samples')
+
 
 import numpy as np
 import h5py
@@ -28,29 +31,22 @@ from lalinference import LALINFERENCE_PARAM_CIRCULAR as CIRCULAR
 from lalinference import LALINFERENCE_PARAM_FIXED as FIXED
 from lalinference import LALINFERENCE_PARAM_OUTPUT as OUTPUT
 
-__all__ = ('read_samples', 'write_samples')
 
-
-def _identity(x):
-    return x
-
-
-_colname_map = (('rightascension', 'ra', _identity),
-                ('declination', 'dec', _identity),
-                ('logdistance', 'dist', np.exp),
-                ('distance', 'dist', _identity),
-                ('polarisation', 'psi', _identity),
-                ('chirpmass', 'mc', _identity),
-                ('a_spin1', 'a1', _identity),
-                ('a_spin2', 'a2', _identity),
-                ('tilt_spin1', 'tilt1', _identity),
-                ('tilt_spin2', 'tilt2', _identity))
+_colname_map = (('rightascension', 'ra'),
+                ('declination', 'dec'),
+                ('distance', 'dist'),
+                ('polarisation','psi'),
+                ('chirpmass', 'mc'),
+                ('a_spin1', 'a1'),
+                ('a_spin2','a2'),
+                ('tilt_spin1', 'tilt1'),
+                ('tilt_spin2', 'tilt2'))
 
 
 def _remap_colnames(table):
-    for old_name, new_name, func in _colname_map:
-        if old_name in table.colnames:
-            table[new_name] = func(table.columns.pop(old_name))
+    for old_name, new_name in _colname_map:
+        if old_name in table.colnames and not new_name in table.colnames:
+            table.rename_column(old_name, new_name)
 
 
 def _find_table(group, tablename):
@@ -108,7 +104,7 @@ def _find_table(group, tablename):
     ...         _find_table(f, 'bat')
     Traceback (most recent call last):
         ...
-    KeyError: 'Multiple tables called bat exist: foo/bat, foo/xyzzy/bat'
+    KeyError: 'Multiple tables called bat exist: foo/xyzzy/bat, foo/bat'
     """
     results = {}
 
@@ -124,7 +120,7 @@ def _find_table(group, tablename):
 
     if len(results) > 1:
         raise KeyError('Multiple tables called {0} exist: {1}'.format(
-            tablename, ', '.join(sorted(results.keys()))))
+            tablename, ', '.join(results.keys())))
 
     table, = results.values()
     return table
@@ -159,7 +155,7 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
     ... ])
     >>> with TemporaryDirectory() as dir:
     ...     filename = os.path.join(dir, 'test.hdf5')
-    ...     write_samples(table, filename, path='foo/bar/posterior_samples')
+    ...     write_samples(table, filename, 'foo/bar/posterior_samples')
     ...     len(read_samples(filename))
     10
 
@@ -169,9 +165,9 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
     ['uvw', 'opq', 'lmn', 'ijk', 'def', 'abc', 'rst', 'ghi']
     """
     with h5py.File(filename, 'r') as f:
-        if path is not None:  # Look for a given path
+        if path is not None: # Look for a given path
             table = f[path]
-        else:  # Look for a given table name
+        else: # Look for a given table name
             table = _find_table(f, tablename)
         table = Table.read(table)
 
@@ -188,8 +184,9 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
         table.add_column(Column([value] * len(table), name=key,
                          meta={'vary': FIXED}))
 
-    # Delete remaining table attributes.
-    table.meta.clear()
+    # Delete table attributes.
+    for key in table.meta:
+        del table.meta[key]
 
     # Normalize column names.
     _remap_colnames(table)
@@ -198,7 +195,7 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
     return table
 
 
-def write_samples(table, filename, metadata=None, **kwargs):
+def write_samples(table, filename, path, metadata=None):
     """Write an HDF5 sample chain file.
 
     Parameters
@@ -207,11 +204,11 @@ def write_samples(table, filename, metadata=None, **kwargs):
         The sample chain as an Astropy table.
     filename : str
         The path of the HDF5 file on the filesystem.
+    path : str
+        The path of the dataset within the HDF5 file.
     metadata: dict (optional)
         Dictionary of (path, value) pairs of metadata attributes
         to add to the output file
-    kwargs: dict
-        Any keyword arguments for `astropy.table.Table.write`.
 
     Check that we catch columns that are supposed to be FIXED but are not:
     >>> table = Table([
@@ -235,21 +232,13 @@ def write_samples(table, filename, metadata=None, **kwargs):
     ...     Column(np.arange(10), name='baz', meta={'vary': OUTPUT})
     ... ])
     >>> with TemporaryDirectory() as dir:
-    ...     write_samples(
-    ...         table, os.path.join(dir, 'test.hdf5'), path='bat/baz')
+    ...     write_samples(table, os.path.join(dir, 'test.hdf5'), 'bat/baz')
     """
     # Copy the table so that we do not modify the original.
     table = table.copy()
 
-    # Make sure that all tables have a 'vary' type.
-    for column in table.columns.values():
-        if 'vary' not in column.meta:
-            if np.all(column[0] == column[1:]):
-                column.meta['vary'] = FIXED
-            else:
-                column.meta['vary'] = OUTPUT
     # Reconstruct table attributes.
-    for colname, column in tuple(table.columns.items()):
+    for colname, column in table.columns.items():
         if column.meta['vary'] == FIXED:
             np.testing.assert_array_equal(column[1:], column[0],
                                           'Column {0} is a fixed column, but '
@@ -259,7 +248,7 @@ def write_samples(table, filename, metadata=None, **kwargs):
             del table[colname]
     for i, column in enumerate(table.columns.values()):
         table.meta['FIELD_{0}_VARY'.format(i)] = column.meta['vary']
-    table.write(filename, format='hdf5', **kwargs)
+    table.write(filename, format='hdf5', path=path)
     if metadata:
         with h5py.File(filename) as hdf:
             for internal_path, attributes in metadata.items():
@@ -269,4 +258,4 @@ def write_samples(table, filename, metadata=None, **kwargs):
                     except KeyError:
                         raise KeyError(
                             'Unable to set metadata {0}[{1}] = {2}'.format(
-                                internal_path, key, value))
+                            internal_path, key, value))

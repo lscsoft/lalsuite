@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
   int i;
   float *data=NULL;
   
-  fprintf(stdout, "%s: %s %s\n", argv[0], lalAppsVCSInfo.vcsId, lalAppsVCSInfo.vcsStatus);
+  fprintf(stdout, "%s: %s %s\n", argv[0], lalAppsVCSId, lalAppsVCSStatus);
 
   /* loop over all file names on command line */
   for (i=1; i<argc; i++) {

@@ -17,6 +17,8 @@
 import os
 import sys
 
+import subprocess
+
 import time
 import logging
 import tempfile
@@ -131,7 +133,7 @@ mainidqdir = config.get('general', 'idqdir') ### get the main directory where id
 if not opts.lockfile:
     opts.lockfile = "%s/.idq_realtime.lock"%mainidqdir
 
-idq.dieiflocked( opts.lockfile ) ### prevent multiple copies from running
+lockfp = idq.dieiflocked( opts.lockfile ) ### prevent multiple copies from running
 
 gchtag = "_glitch" ### used for xml filenames
 clntag = "_clean"
@@ -351,7 +353,7 @@ if initial_training:
     ### launch training script, wait for it to finish
     train_out_file = open(train_out, 'a')
     train_err_file = open(train_err, 'a')
-    proc = idq.fork( train_command.split() , stdout=train_out_file, stderr=train_err_file, cwd=cwd )
+    proc = subprocess.Popen( train_command.split() , stdout=train_out_file, stderr=train_err_file, cwd=cwd )
     train_out_file.close()
     train_err_file.close()
     returncode = proc.wait() ### block
@@ -392,7 +394,7 @@ if initial_calibration:
     ### launch calibration script, wait for it to finish
     calibration_out_file = open(calibration_out, 'a')
     calibration_err_file = open(calibration_err, 'a')
-    proc = idq.fork( calibration_command.split() , stdout=calibration_out_file, stderr=calibration_err_file, cwd=cwd )
+    proc = subprocess.Popen( calibration_command.split() , stdout=calibration_out_file, stderr=calibration_err_file, cwd=cwd )
     calibration_out_file.close()
     calibration_err_file.close()
     returncode = proc.wait()
@@ -488,13 +490,13 @@ while t  < opts.endgps:
         train_err_file = open(train_err, 'a')
         if opts.offline: ### running in "offline mode"
             logger.info('Running in OFFLINE mode, will wait until train is complete before proceeding with evaluation.')
-            proc = idq.fork( train_command.split() , stdout=train_out_file, stderr=train_err_file , cwd=cwd )
+            proc = subprocess.Popen( train_command.split() , stdout=train_out_file, stderr=train_err_file , cwd=cwd )
             train_out_file.close()
             train_err_file.close()
             proc.wait() ### blocks!
         else:
             ### running in realtime, don't wait for training job to complete so we can keep the latency low
-            idq.double_fork(train_command.split(), stdout=train_out_file, stderr=train_err_file, cwd=cwd )
+            train_pid = subprocess.Popen(train_command.split(), stdout=train_out_file, stderr=train_err_file, cwd=cwd ).pid ### only remember the pid, and let the process float
             train_out_file.close()
             train_err_file.close()
 
@@ -535,12 +537,12 @@ while t  < opts.endgps:
         calibration_err_file = open(calibration_err, 'a')
         if opts.offline:
             logger.info("Running in OFFLINE mode, will wait until calibration is complete before proceeding with evaluation")
-            proc = idq.fork(calibration_command.split(), stdout=calibration_out_file, stderr=calibration_err_file, cwd=cwd)
+            proc = subprocess.Popen(calibration_command.split(), stdout=calibration_out_file, stderr=calibration_err_file, cwd=cwd)
             calibration_out_file.close()
             calibration_err_file.close()
             proc.wait() # block!
         else:
-            idq.double_fork(calibration_command.split(), stdout=calibration_out_file, stderr=calibration_err_file, cwd=cwd)
+            summary_pid = subprocess.Popen(calibration_command.split(), stdout=calibration_out_file, stderr=calibration_err_file, cwd=cwd).pid ### only remember the pid, let the process float
             calibration_out_file.close()
             calibration_err_file.close()
 
@@ -588,12 +590,12 @@ while t  < opts.endgps:
         summary_err_file = open(summary_err, 'a')
         if opts.offline:
             logger.info("Running in OFFLINE mode, will wait until summary is complete before proceeding with evaluation")
-            proc = idq.fork(summary_command.split(), stdout=summary_out_file, stderr=summary_err_file, cwd=cwd)
+            proc = subprocess.Popen(summary_command.split(), stdout=summary_out_file, stderr=summary_err_file, cwd=cwd)
             summary_out_file.close()
             summary_err_file.close()
             proc.wait() # block!
         else:                                              
-            idq.double_fork(summary_command.split(), stdout=summary_out_file, stderr=summary_err_file, cwd=cwd)
+            summary_pid = subprocess.Popen(summary_command.split(), stdout=summary_out_file, stderr=summary_err_file, cwd=cwd).pid ### only remember the pid, let the process float
             summary_out_file.close()
             summary_err_file.close()
 
@@ -1138,4 +1140,5 @@ logger.info('End real-time evaluation')
 logger.info('t + stride = %d > %d = endgps'%(t+stride, opts.endgps))
 
 ### unlock file
-idq.release(lockfile)
+idq.release(lockfp)
+os.remove( opts.lockfile )

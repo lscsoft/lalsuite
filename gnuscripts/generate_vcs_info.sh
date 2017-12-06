@@ -103,14 +103,11 @@ esac
 
 # determine state of git repository
 if ! eval "(cd \"$srcdir\" && $git_path diff-files --quiet)"; then
-    git_clean=UNCLEAN
-    git_status="$git_clean: Modified working tree"
+    git_status="UNCLEAN: Modified working tree"
 elif ! eval "(cd \"$srcdir\" && $git_path diff-index --cached --quiet HEAD)"; then
-    git_clean=UNCLEAN
-    git_status="$git_clean: Modified index"
+    git_status="UNCLEAN: Modified index"
 else
-    git_clean=CLEAN
-    git_status="$git_clean: All modifications committed"
+    git_status="CLEAN: All modifications committed"
 fi
 
 # determine builder
@@ -147,7 +144,6 @@ s%@BRANCH@%$git_branch%;t t
 s%@TAG@%$git_tag%;t t
 s%@AUTHOR@%$git_author%;t t
 s%@COMMITTER@%$git_committer%;t t
-s%@CLEAN@%$git_clean%;t t
 s%@STATUS@%$git_status%;t t
 s%@BUILDER@%$git_builder%;t t
 "

@@ -22,22 +22,17 @@
 #include <stdbool.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALError.h>
-#include <lal/LALDict.h>
 
 /**
  * @addtogroup LALSimInspiral_h
  * @{
  */
 
-/** Default values for all enumerated flags */
+/** Default values for all enumerated flags */ 
 #define LAL_SIM_INSPIRAL_SPIN_ORDER_DEFAULT LAL_SIM_INSPIRAL_SPIN_ORDER_ALL
 #define LAL_SIM_INSPIRAL_TIDAL_ORDER_DEFAULT LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL
 #define LAL_SIM_INSPIRAL_FRAME_AXIS_DEFAULT LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L
 #define LAL_SIM_INSPIRAL_MODES_CHOICE_DEFAULT LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED
-
-/** Maximum L spherical harmonic mode that is supported in Mode Array*/
-#define LAL_SIM_L_MAX_MODE_ARRAY 8
-
 
 /**
  * Enumeration of allowed PN orders of spin effects. All effects up to and
@@ -127,10 +122,8 @@ typedef struct tagLALSimInspiralWaveformFlags LALSimInspiralWaveformFlags;
 
 LALSimInspiralWaveformFlags *XLALSimInspiralCreateWaveformFlags(void);
 void XLALSimInspiralDestroyWaveformFlags(LALSimInspiralWaveformFlags *waveFlags);
-bool XLALSimInspiralWaveformParamsFlagsAreDefault(LALDict *params);
-bool XLALSimInspiralWaveformFlagsIsDefaultOLD(LALSimInspiralWaveformFlags *waveFlags);
-bool XLALSimInspiralWaveformFlagsEqualOLD(LALSimInspiralWaveformFlags *waveFlags1, LALSimInspiralWaveformFlags *waveFlags2);
-bool XLALSimInspiralWaveformFlagsEqual(LALDict *LALpars1, LALDict *LALpars2);
+bool XLALSimInspiralWaveformFlagsIsDefault(LALSimInspiralWaveformFlags *waveFlags);
+bool XLALSimInspiralWaveformFlagsEqual(LALSimInspiralWaveformFlags *waveFlags1, LALSimInspiralWaveformFlags *waveFlags2);
 void XLALSimInspiralSetSpinOrder(LALSimInspiralWaveformFlags *waveFlags, LALSimInspiralSpinOrder spinO);
 LALSimInspiralSpinOrder XLALSimInspiralGetSpinOrder(LALSimInspiralWaveformFlags *waveFlags);
 bool XLALSimInspiralSpinOrderIsDefault(LALSimInspiralSpinOrder spinO);
@@ -143,17 +136,7 @@ bool XLALSimInspiralFrameAxisIsDefault(LALSimInspiralFrameAxis axisChoice);
 void XLALSimInspiralSetModesChoice(LALSimInspiralWaveformFlags *waveFlags, LALSimInspiralModesChoice modesChoice);
 LALSimInspiralModesChoice XLALSimInspiralGetModesChoice(LALSimInspiralWaveformFlags *waveFlags);
 bool XLALSimInspiralModesChoiceIsDefault(LALSimInspiralModesChoice modesChoice);
-void XLALSimInspiralSetNumrelDataOLD(LALSimInspiralWaveformFlags *waveFlags, const char* numreldata);
-char* XLALSimInspiralGetNumrelDataOLD(LALSimInspiralWaveformFlags *waveFlags);
-
-LALValue * XLALSimInspiralCreateModeArray(void);
-LALValue * XLALSimInspiralModeArrayActivateMode(LALValue *modes, unsigned l, int m);
-LALValue * XLALSimInspiralModeArrayDeactivateMode(LALValue *modes, unsigned l, int m);
-LALValue * XLALSimInspiralModeArrayActivateAllModes(LALValue *modes);
-LALValue * XLALSimInspiralModeArrayDeactivateAllModes(LALValue *modes);
-int XLALSimInspiralModeArrayIsModeActive(LALValue *modes, unsigned l, int m);
-LALValue * XLALSimInspiralModeArrayActivateAllModesAtL(LALValue *modes, unsigned l);
-LALValue * XLALSimInspiralModeArrayDeactivateAllModesAtL(LALValue *modes, unsigned l);
-int XLALSimInspiralModeArrayPrintModes(LALValue *modes);
+void XLALSimInspiralSetNumrelData(LALSimInspiralWaveformFlags *waveFlags, const char* numreldata);
+char* XLALSimInspiralGetNumrelData(LALSimInspiralWaveformFlags *waveFlags);
 
 #endif /* _LALSIMINSPIRALWAVEFORMFLAGS_H */

@@ -92,7 +92,7 @@ main(int argc, char *argv[])
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit (1);
   }
@@ -120,7 +120,7 @@ main(int argc, char *argv[])
     }
 
   /* use IFO-contraint if one given by the user */
-  if ( XLALUserVarWasSet ( &uvar.IFO ) ) {
+  if ( LALUserVarWasSet ( &uvar.IFO ) ) {
     XLAL_CHECK_MAIN ( (constraints.detector = XLALGetChannelPrefix ( uvar.IFO )) != NULL, XLAL_EINVAL );
   }
 
@@ -161,9 +161,9 @@ main(int argc, char *argv[])
   /* which frequency-band to extract? */
   fMin = -1;	/* default: all */
   fMax = -1;
-  if ( XLALUserVarWasSet ( &uvar.fmin ) )
+  if ( LALUserVarWasSet ( &uvar.fmin ) )
     fMin = uvar.fmin;
-  if ( XLALUserVarWasSet ( &uvar.fmax ) )
+  if ( LALUserVarWasSet ( &uvar.fmax ) )
     fMax = uvar.fmax;
 
   FILE *fpSingleSFT = NULL;

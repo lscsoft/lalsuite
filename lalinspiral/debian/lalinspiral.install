@@ -1,3 +1,2 @@
-usr/bin/lalinspiral_version
-usr/lib/*/*.so.*
+usr/lib/*.so*
 etc/*

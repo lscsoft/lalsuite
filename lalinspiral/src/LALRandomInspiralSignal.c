@@ -483,7 +483,6 @@ void LALRandomInspiralSignal
                     CHECKSTATUSPTR(status);
                     randIn->param.massChoice = fixedPsi;
                     valid = 1;
-                    break;
                 case psi0Andpsi3:
                     /*
                      * the following makes sure that the BCV has
@@ -546,6 +545,7 @@ void LALRandomInspiralSignal
                     randIn->param.approximant == BCVSpin  ||
                     randIn->param.approximant == TaylorF1 ||
                     randIn->param.approximant == TaylorF2 ||
+                    randIn->param.approximant == TaylorF2Ecc ||
                     randIn->param.approximant == PadeF1)
             {
                 LALInspiralWave(status->statusPtr, signalvec, &randIn->param);
@@ -655,6 +655,7 @@ void LALRandomInspiralSignal
                     randIn->param.approximant == BCVSpin  ||
                     randIn->param.approximant == TaylorF1 ||
                     randIn->param.approximant == TaylorF2 ||
+                    randIn->param.approximant == TaylorF2Ecc ||
                     randIn->param.approximant == PadeF1)
             {
                 LALInspiralWave(status->statusPtr, &buff, &randIn->param);

@@ -30,12 +30,10 @@ pkginclude_HEADERS = \
 
 liblal_la_SOURCES = \
 	LALMisc.c \
-	$(END_OF_LIST)
-
-nodist_liblal_la_SOURCES = \
-	LALBuildInfoHeader.h \
 	LALVCSInfo.c \
 	$(END_OF_LIST)
+
+nodist_liblal_la_SOURCES = LALBuildInfo.c
 
 EXTRA_liblal_la_DEPENDENCIES = \
 	std/libstd.la \
@@ -61,22 +59,20 @@ EXTRA_DIST = \
 
 DISTCLEANFILES = config.h
 
-vcs_build_info_source = LALVCSInfo.c
 vcs_info_sources = LALVCSInfoHeader.h
-build_info_source = LALBuildInfoHeader.h
-build_info_dependencies = $(EXTRA_liblal_la_DEPENDENCIES)
-
+build_info_source = LALBuildInfo.c
+$(build_info_source): $(EXTRA_liblal_la_DEPENDENCIES)
 LDADD = liblal.la
 
 bin_PROGRAMS = \
-	lal_simd_detect \
-	lal_version \
+	lal-simd-detect \
+	lal-version \
 	$(END_OF_LIST)
 
-lal_simd_detect_SOURCES = simd_detect.c
-lal_version_SOURCES = version.c
+lal_version_SOURCES = lal-version.c
+lal_version_LDADD = liblal.la
 
-TESTS = \
-	lal_simd_detect \
-	lal_version \
-	$(END_OF_LIST)
+lal_simd_detect_SOURCES = lal-simd-detect.c
+lal_simd_detect_LDADD = liblal.la
+
+TESTS = $(bin_PROGRAMS)

@@ -38,21 +38,18 @@
 
 // ---------- Shared struct definitions ---------- //
 
-
 // Common input data for F-statistic methods
 typedef struct {
   LIGOTimeGPS midTime;                                  // Mid-time of SFT data
   REAL8 dFreq;						// Requested spacing of \f$\mathcal{F}\f$-statistic frequency bins.
   MultiLALDetector detectors;				// List of detectors
   MultiLIGOTimeGPSVector *multiTimestamps;		// Multi-detector list of SFT timestamps
-  MultiNoiseWeights *multiNoiseWeights;                 // Multi-detector noise weights: stored unnormalized (divide by Sinv_Tsft to get normalized version)
+  MultiNoiseWeights *multiNoiseWeights;			// Multi-detector noise weights
   MultiDetectorStateSeries *multiDetectorStates;	// Multi-detector state series
   const EphemerisData *ephemerides;			// Ephemerides for the time-span of the SFTs
   SSBprecision SSBprec;					// Barycentric transformation precision
   void *workspace;					// F-statistic method workspace
-  BOOLEAN isTimeslice;                                  //Flag if this is a timeslice of another FstatInput struct
 } FstatCommon;
-
 
 // Pointers to function pointers which perform method-specific operations
 typedef struct {
@@ -64,12 +61,10 @@ typedef struct {
 } FstatMethodFuncs;
 
 // ---------- Shared internal functions ---------- //
-int XLALExtractResampledTimeseries_intern ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, const void* method_data );
-int XLALGetFstatTiming_Demod  ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
-int XLALGetFstatTiming_Resamp ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
-void *XLALFstatInputTimeslice_Demod ( const void *method_data, const UINT4 iStart[PULSAR_MAX_DETECTORS], const UINT4 iEnd[PULSAR_MAX_DETECTORS] );
-void XLALDestroyFstatInputTimeslice_common ( FstatCommon *common );
-void XLALDestroyFstatInputTimeslice_Demod ( void *method_data );
+int XLALGetFstatTiming_Demod ( const void* method_data, REAL8 *tauF1Buf, REAL8 *tauF1NoBuf );
+int XLALGetFstatTiming_Resamp ( const void* method_data, REAL8 *tauF1Buf, REAL8 *tauF1NoBuf );
+int AppendFstatTimingInfo2File_Demod ( const void* method_data, FILE *fp, BOOLEAN printHeader );
+int AppendFstatTimingInfo2File_Resamp ( const void *method_data, FILE *fp, BOOLEAN printHeader );
 
 static inline REAL4
 XLALComputeFstatFromFaFb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4 B, REAL4 C, REAL4 E, REAL4 Dinv )

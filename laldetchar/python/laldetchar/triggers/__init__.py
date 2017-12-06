@@ -13,8 +13,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation,.
 
-## \defgroup laldetchar_py_triggers Triggers
-## \ingroup laldetchar_python
+## \addtogroup laldetchar_py_triggers
 """A collection of tools for reading, manipulating, and writing triggers
 in a standard format.
 

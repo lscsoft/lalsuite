@@ -19,7 +19,16 @@
 
 
 #include <math.h>
-#include <gsl/gsl_math.h>
+/*#include <complex.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_spline.h>
+
+#include <lal/LALStdlib.h>
+#include <lal/LALSimIMR.h>
+#include <lal/LALConstants.h>
+#include <lal/FrequencySeries.h>
+#include <lal/Units.h>
+*/
 #include "LALSimIMRPhenomD_internals.c"
 #include <lal/Sequence.h>
 UsefulPowers powers_of_pi;	// declared in LALSimIMRPhenomD_internals.c
@@ -36,7 +45,7 @@ UsefulPowers powers_of_pi;	// declared in LALSimIMRPhenomD_internals.c
 static int IMRPhenomDGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< [out] FD waveform */
     const REAL8Sequence *freqs_in,     /**< Frequency points at which to evaluate the waveform (Hz) */
-    double deltaF,                     /**< If deltaF > 0, the frequency points given in freqs are uniformly spaced with
+    double deltaF,                     /* If deltaF > 0, the frequency points given in freqs are uniformly spaced with
                                         * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
                                         * Then we will use deltaF = 0 to create the frequency series we return. */
     const REAL8 phi0,                  /**< phase at fRef */
@@ -46,7 +55,7 @@ static int IMRPhenomDGenerateFD(
     const REAL8 chi1_in,               /**< aligned-spin of companion 1 */
     const REAL8 chi2_in,               /**< aligned-spin of companion 2 */
     const REAL8 distance,              /**< distance to source (m) */
-    LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+    const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
 );
 
 /**
@@ -109,7 +118,7 @@ int XLALSimIMRPhenomDGenerateFD(
     const REAL8 f_min,                 /**< Starting GW frequency (Hz) */
     const REAL8 f_max,                 /**< End frequency; 0 defaults to Mf = \ref f_CUT */
     const REAL8 distance,               /**< Distance of source (m) */
-    LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+    const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
 ) {
   /* external: SI; internal: solar masses */
   const REAL8 m1 = m1_SI / LAL_MSUN_SI;
@@ -157,6 +166,7 @@ int XLALSimIMRPhenomDGenerateFD(
   REAL8Sequence *freqs = XLALCreateREAL8Sequence(2);
   freqs->data[0] = f_min;
   freqs->data[1] = f_max_prime;
+
   int status = IMRPhenomDGenerateFD(htilde, freqs, deltaF, phi0, fRef,
                                     m1, m2, chi1, chi2,
                                     distance, extraParams);
@@ -201,7 +211,7 @@ int XLALSimIMRPhenomDFrequencySequence(
     const REAL8 chi1,                            /**< Aligned-spin parameter of companion 1 */
     const REAL8 chi2,                            /**< Aligned-spin parameter of companion 2 */
     const REAL8 distance,                        /**< Distance of source (m) */
-    LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+    const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
 ) {
   /* external: SI; internal: solar masses */
   const REAL8 m1 = m1_SI / LAL_MSUN_SI;
@@ -235,7 +245,6 @@ int XLALSimIMRPhenomDFrequencySequence(
   return XLAL_SUCCESS;
 }
 
-
 /** @} */
 
 /** @} */
@@ -258,7 +267,7 @@ static int IMRPhenomDGenerateFD(
     const REAL8 chi1_in,               /**< aligned-spin of companion 1 */
     const REAL8 chi2_in,               /**< aligned-spin of companion 2 */
     const REAL8 distance,              /**< distance to source (m) */
-    LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+    const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
 ) {
   LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0, 0}
 
@@ -286,17 +295,16 @@ static int IMRPhenomDGenerateFD(
   XLAL_CHECK(f_max >= 0, XLAL_EDOM, "Maximum frequency must be non-negative.\n");
 
   const REAL8 M = m1 + m2;
-  REAL8 eta = m1 * m2 / (M * M);
+  const REAL8 eta = m1 * m2 / (M * M);
 
-  if (eta > 0.25)
-      nudge(&eta, 0.25, 1e-6);
   if (eta > 0.25 || eta < 0.0)
-      XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
+    XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
 
   const REAL8 M_sec = M * LAL_MTSUN_SI;
 
   /* Compute the amplitude pre-factor */
   const REAL8 amp0 = 2. * sqrt(5. / (64.*LAL_PI)) * M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
+
 
   size_t npts = 0;
   UINT4 offset = 0; // Index shift between freqs and the frequency series
@@ -304,11 +312,14 @@ static int IMRPhenomDGenerateFD(
   if (deltaF > 0)  { // freqs contains uniform frequency grid with spacing deltaF; we start at frequency 0
     /* Set up output array with size closest power of 2 */
     npts = NextPow2(f_max / deltaF) + 1;
+
     /* Coalesce at t=0 */
     // shift by overall length in time
     XLAL_CHECK ( XLALGPSAdd(&ligotimegps_zero, -1. / deltaF), XLAL_EFUNC, "Failed to shift coalescence time to t=0, tried to apply shift of -1.0/deltaF with deltaF=%g.", deltaF);
+
     *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, npts);
     XLAL_CHECK ( *htilde, XLAL_ENOMEM, "Failed to allocated waveform COMPLEX16FrequencySeries of length %zu for f_max=%f, deltaF=%g.", npts, f_max, deltaF);
+
     // Recreate freqs using only the lower and upper bounds
     size_t iStart = (size_t) (f_min / deltaF);
     size_t iStop = (size_t) (f_max / deltaF);
@@ -318,12 +329,15 @@ static int IMRPhenomDGenerateFD(
       XLAL_ERROR(XLAL_EFUNC, "Frequency array allocation failed.");
     for (UINT4 i=iStart; i<iStop; i++)
       freqs->data[i-iStart] = i*deltaF;
+
     offset = iStart;
   } else { // freqs contains frequencies with non-uniform spacing; we start at lowest given frequency
     npts = freqs_in->length;
+
     *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &ligotimegps_zero, f_min, deltaF, &lalStrainUnit, npts);
     XLAL_CHECK ( *htilde, XLAL_ENOMEM, "Failed to allocated waveform COMPLEX16FrequencySeries of length %zu from sequence.", npts);
     offset = 0;
+
     freqs = XLALCreateREAL8Sequence(freqs_in->length);
     if (!freqs)
       XLAL_ERROR(XLAL_EFUNC, "Frequency array allocation failed.");
@@ -343,19 +357,19 @@ static int IMRPhenomDGenerateFD(
 
   IMRPhenomDAmplitudeCoefficients *pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi1, chi2, finspin);
   if (!pAmp) XLAL_ERROR(XLAL_EFUNC);
-  if (extraParams==NULL)
-    extraParams=XLALCreateDict();
-  XLALSimInspiralWaveformParamsInsertPNSpinOrder(extraParams,LAL_SIM_INSPIRAL_SPIN_ORDER_35PN);
   IMRPhenomDPhaseCoefficients *pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi1, chi2, finspin, extraParams);
   if (!pPhi) XLAL_ERROR(XLAL_EFUNC);
   PNPhasingSeries *pn = NULL;
-  XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1, chi2, extraParams);
+  XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1, chi2, 1.0, 1.0, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN, extraParams);
   if (!pn) XLAL_ERROR(XLAL_EFUNC);
 
   // Subtract 3PN spin-spin term below as this is in LAL's TaylorF2 implementation
   // (LALSimInspiralPNCoefficients.c -> XLALSimInspiralPNPhasing_F2), but
   REAL8 testGRcor=1.0;
-  testGRcor += XLALSimInspiralWaveformParamsLookupNonGRDChi6(extraParams);
+  if (extraParams!=NULL)
+  {
+	  if (XLALSimInspiralTestGRParamExists(extraParams,"dchi6"))  testGRcor += XLALSimInspiralGetTestGRParam(extraParams,"dchi6");
+  }
 
   // was not available when PhenomD was tuned.
   pn->v[6] -= (Subtract3PNSS(m1, m2, M, chi1, chi2) * pn->v[0])* testGRcor;
@@ -387,7 +401,6 @@ static int IMRPhenomDGenerateFD(
 
   int status_in_for = XLAL_SUCCESS;
   /* Now generate the waveform */
-  #pragma omp parallel for
   for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
     double Mf = M_sec * freqs->data[i];
     int j = i + offset; // shift index for frequency series if needed
@@ -451,11 +464,8 @@ double XLALIMRPhenomDGetPeakFreq(
     const REAL8 M_sec = M * LAL_MTSUN_SI; // Conversion factor Hz -> dimensionless frequency
 
     REAL8 eta = m1 * m2 / (M * M);
-
-    if (eta > 0.25)
-        nudge(&eta, 0.25, 1e-6);
     if (eta > 0.25 || eta < 0.0)
-        XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
+      XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
 
     // Calculate phenomenological parameters
     REAL8 finspin = FinalSpin0815(eta, chi1, chi2);
@@ -555,10 +565,8 @@ double XLALSimIMRPhenomDChirpTime(
     XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to initiate useful powers of pi.");
 
     const REAL8 M = m1 + m2;
-    REAL8 eta = m1 * m2 / (M * M);
+    const REAL8 eta = m1 * m2 / (M * M);
 
-    if (eta > 0.25)
-        nudge(&eta, 0.25, 1e-6);
     if (eta > 0.25 || eta < 0.0)
       XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
 
@@ -572,14 +580,11 @@ double XLALSimIMRPhenomDChirpTime(
     if (finspin < MIN_FINAL_SPIN)
             XLAL_PRINT_WARNING("Final spin (Mf=%g) and ISCO frequency of this system are small, \
                             the model might misbehave here.", finspin);
-    LALDict *extraParams = NULL;
-    if (extraParams == NULL)
-      extraParams = XLALCreateDict();
-    XLALSimInspiralWaveformParamsInsertPNSpinOrder(extraParams, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN);
+    const LALSimInspiralTestGRParam *extraParams = NULL;
     IMRPhenomDPhaseCoefficients *pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi1, chi2, finspin, extraParams);
     if (!pPhi) XLAL_ERROR(XLAL_EFUNC);
     PNPhasingSeries *pn = NULL;
-    XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1, chi2, extraParams);
+    XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1, chi2, 1.0, 1.0, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN, extraParams);
     if (!pn) XLAL_ERROR(XLAL_EFUNC);
 
     // Subtract 3PN spin-spin term below as this is in LAL's TaylorF2 implementation
@@ -646,12 +651,10 @@ double XLALSimIMRPhenomDFinalSpin(
     }
 
     const REAL8 M = m1 + m2;
-    REAL8 eta = m1 * m2 / (M * M);
 
-    if (eta > 0.25)
-        nudge(&eta, 0.25, 1e-6);
+    REAL8 eta = m1 * m2 / (M * M);
     if (eta > 0.25 || eta < 0.0)
-        XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
+      XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
 
     REAL8 finspin = FinalSpin0815(eta, chi1, chi2);
 
@@ -660,27 +663,4 @@ double XLALSimIMRPhenomDFinalSpin(
                           the model might misbehave here.", finspin);
 
     return finspin;
-}
-
-// Taken from LALSimIMRPhenomP.c
-// This function determines whether x and y are approximately equal to a relative accuracy epsilon.
-// Note that x and y are compared to relative accuracy, so this function is not suitable for testing whether a value is approximately zero.
-static bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon) {
-  return !gsl_fcmp(x, y, epsilon);
-}
-
-// If x and X are approximately equal to relative accuracy epsilon then set x = X.
-// If X = 0 then use an absolute comparison.
-// Taken from LALSimIMRPhenomP.c
-static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon) {
-  if (X != 0.0) {
-    if (approximately_equal(*x, X, epsilon)) {
-      XLAL_PRINT_INFO("Nudging value %.15g to %.15g\n", *x, X);
-      *x = X;
-    }
-  }
-  else {
-    if (fabs(*x - X) < epsilon)
-      *x = X;
-  }
 }

@@ -67,12 +67,13 @@
 
 /*---------- empty initializers ---------- */
 
-/*---------- internal variables ----------*/
-static FILE *logFile = NULL;
+/*---------- internal Global variables ----------*/
+
 
 /*---------- internal prototypes ----------*/
 static FILE* LogFile(void);
 
+static const char * LogGetTimestamp (void);
 static const char * LogTimeToString(double t);
 
 static const char *LogFormatLevel( LogLevel_t level );
@@ -93,17 +94,9 @@ LogLevel_t LogLevel(void)
   return LOG_NORMAL;		// Print LOG_CRITICAL and LOG_NORMAL messages by default
 }
 
-/** Set file to print log messages to */
-void LogSetFile(FILE *fp)
-{
-  logFile = fp;
-}
-
 /** Decide where to print log messages */
 static FILE* LogFile(void)
 {
-  if (logFile)
-    return logFile;		// Print all messages to 'logFile' if defined
   if (LogLevel() < LOG_NORMAL)
     return stderr;		// Error log messages are printed to standard error
   return stdout;		// All other log messages are printed to standard output
@@ -257,30 +250,31 @@ XLALGetTimeOfDay ( void )
 /// High-resolution CPU timer (returns result in seconds), aimed for code-timing purposes.
 /// Attempts to provide the highest time resolution available, while adding as little overhead as possible.
 ///
-/// \note Returns 0.0 if no CPU timer is available.
+/// \note uses clock_gettime() with ns precision if available, or falls back to XLALGetTimeOfDay() with
+/// mus-precision otherwise.
 ///
 ///
 REAL8
 XLALGetCPUTime ( void )
 {
-#if defined(HAVE_CLOCK_GETTIME) && HAVE_DECL_CLOCK_PROCESS_CPUTIME_ID
+#ifndef HAVE_CLOCK_GETTIME
+  return XLALGetTimeOfDay();
+#else
 
   struct timespec ut;
-  if ( clock_gettime ( CLOCK_PROCESS_CPUTIME_ID, &ut ) != 0 ) {
-    return 0.0;
-  }
+  clockid_t clk_id;
+  clk_id = CLOCK_REALTIME;	// use this as fallback, guaranteed to exist.
+
+  clock_gettime ( clk_id, &ut);	// don't bother testing to avoid overheads, and we would notice in timing if unavailable
+
   return ut.tv_sec + ut.tv_nsec * 1.e-9;
-
-#else   // no CPU timer available
-
-  return 0.0;
 
 #endif
 } // XLALGetCPUTime()
 
 
 /* returns static timestamps-string for 'now' */
-const char *
+static const char *
 LogGetTimestamp (void)
 {
   return ( LogTimeToString ( XLALGetTimeOfDay() ) );

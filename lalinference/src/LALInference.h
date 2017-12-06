@@ -47,7 +47,7 @@
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
 
-#define VARNAME_MAX 320
+#define VARNAME_MAX 128
 #define VARVALSTRINGSIZE_MAX 128
 
 #include <lal/LALStdlib.h>
@@ -59,7 +59,6 @@
 #include <lal/FindChirp.h>
 #include <lal/Window.h>
 #include <lal/LALString.h>
-#include <lal/StringInput.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimInspiralWaveformCache.h>
 #include <lal/LALHashTbl.h>
@@ -461,7 +460,7 @@ typedef struct tagLALInferenceModel
   COMPLEX16FrequencySeries    *freqhPlus, *freqhCross; /** Freq series model buffers */
   COMPLEX16FrequencySeries    **freqhs; /** Projected freq series model buffers */
 
-  LALDict *LALpars;
+  LALSimInspiralWaveformFlags *waveFlags;   /** A pointer to the WF flag. Will store here tide and spin order, as well as frame */
   LALSimInspiralWaveformCache *waveformCache;   /** Waveform cache */
   LALSimBurstWaveformCache    *burstWaveformCache;   /** Burst Waveform cache for LIB*/
   REAL8FFTPlan                *timeToFreqFFTPlan, *freqToTimeFFTPlan; /** Pre-calculated FFT plans for forward and reverse FFTs */
@@ -879,6 +878,9 @@ void LALInferenceQ2Eta(double q, double *eta);
 /** Convert from lambdaT, dLambdaT, and eta to lambda1 and lambda2. */
 void LALInferenceLambdaTsEta2Lambdas(REAL8 lambdaT, REAL8 dLambdaT, REAL8 eta, REAL8 *lambda1, REAL8 *lambda2);
 
+/** Convert from lambda1, lambda2, and eta to lambdaT and dLambdaT. added by hwlee at 1 Sep. 2017*/
+void LALInferenceLambdasEta2LambdaTs(REAL8 lambda1, REAL8 lambda2, REAL8 eta, REAL8 *lambdaT, REAL8 *dLambdaT);
+
 /**
  * The kD trees in LALInference are composed of cells.  Each cell
  * represents a rectangular region in parameter space, defined by
@@ -1153,19 +1155,11 @@ LALInferenceMCMCRunPhase* LALInferenceGetMCMCrunphase_ptrVariable(LALInferenceVa
 
 void LALInferenceSetMCMCrunphase_ptrVariable(LALInferenceVariables* vars,const char* name,LALInferenceMCMCRunPhase* value);
 
-#ifdef SWIG   /* SWIG interface directives */
-SWIGLAL(OWNS_THIS_STRING(const CHAR*, value));
-#endif
+void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * name, CHAR* value, LALInferenceParamVaryType vary);
 
-void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * name, const CHAR* value, LALInferenceParamVaryType vary);
+CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * name);
 
-const CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * name);
-
-void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name, const CHAR* value);
-
-#ifdef SWIG   /* SWIG interface directives */
-SWIGLAL_CLEAR(OWNS_THIS_STRING(const CHAR*, value));
-#endif
+void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name,CHAR* value);
 
 /**
  * Print spline calibration parameter names as tab-separated ASCII

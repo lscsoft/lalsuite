@@ -1,6 +1,4 @@
-MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
-include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 LALFRAMEPROGRAMS = \
 	lalapps_animate \
