@@ -303,7 +303,8 @@ int XLALSimInspiralSpinTaylorF2(
         const REAL8 fEnd,                      /**< highest GW frequency (Hz) of waveform generation - if 0, end at Schwarzschild ISCO */
         const REAL8 f_ref,                     /**< Reference GW frequency (Hz) - if 0 reference point is coalescence */
         const REAL8 r,                         /**< distance of source (m) */
-	LALDict *moreParams, /**< Linked list of extra. Pass in NULL (or None in python) for standard waveform. Set "sideband",m to get a single sideband (m=-2..2) */
+        LALSimInspiralTestGRParam *moreParams, /**< Linked list of extra. Pass in NULL (or None in python) for standard waveform. Set "sideband",m to get a single sideband (m=-2..2) */
+        const LALSimInspiralSpinOrder spinO,   /**< twice PN order of spin effects */
         const INT4 phaseO,                     /**< twice PN phase order */
         const INT4 amplitudeO                  /**< twice PN amplitude order */
         )
@@ -343,7 +344,7 @@ int XLALSimInspiralSpinTaylorF2(
     COMPLEX16 SBplus[5]; /* complex sideband factors for plus pol, mm=2 is first entry */
     COMPLEX16 SBcross[5]; /* complex sideband factors for cross pol, mm=2 is first entry */
     REAL8 emission[5]; /* emission factor for each sideband */
-    if ( !XLALSimInspiralWaveformParamsSidebandIsDefault(moreParams))
+    if ( !XLALSimInspiralTestGRParamExists(moreParams, "sideband") )
     {
         for(mm = -2; mm <= 2; mm++)
         {
@@ -355,7 +356,7 @@ int XLALSimInspiralSpinTaylorF2(
     {
         memset(SBplus, 0, 5 * sizeof(COMPLEX16));
         memset(SBcross, 0, 5 * sizeof(COMPLEX16));
-        mm = (int) XLALSimInspiralWaveformParamsLookupSideband(moreParams);
+        mm = (int) XLALSimInspiralGetTestGRParam(moreParams, "sideband");
         SBplus[2-mm] = XLALSimInspiralSF2Polarization(orientation.thetaJ, orientation.psiJ, mm);
         SBcross[2-mm] = XLALSimInspiralSF2Polarization(orientation.thetaJ, orientation.psiJ+LAL_PI/4., mm);
     }
@@ -363,11 +364,12 @@ int XLALSimInspiralSpinTaylorF2(
     const REAL8 chi1L = orientation.chi*orientation.kappa;
     const REAL8 chi1sq = orientation.chi*orientation.chi;
     /* FIXME: Cannot yet set QM constant in ChooseFDWaveform interface */
+    const REAL8 quadparam1 = 1.;
     /* phasing coefficients */
     PNPhasingSeries pfa;
-    XLALSimInspiralPNPhasing_F2(&pfa, m1, m2, chi1L, 0., chi1sq, 0., 0., moreParams);
+    XLALSimInspiralPNPhasing_F2(&pfa, m1, m2, chi1L, 0., chi1sq, 0., 0., quadparam1, 0., spinO);
 
-    REAL8 pfaN = 0.; REAL8 pfa1 = 0.;
+    REAL8 pfaN = 0.;
     REAL8 pfa2 = 0.; REAL8 pfa3 = 0.; REAL8 pfa4 = 0.;
     REAL8 pfa5 = 0.; REAL8 pfl5 = 0.;
     REAL8 pfa6 = 0.; REAL8 pfl6 = 0.;
@@ -378,41 +380,18 @@ int XLALSimInspiralSpinTaylorF2(
         case -1:
         case 7:
             pfa7 = pfa.v[7];
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 6:
             pfa6 = pfa.v[6];
             pfl6 = pfa.vlogv[6];
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 5:
             pfa5 = pfa.v[5];
             pfl5 = pfa.vlogv[5];
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 4:
             pfa4 = pfa.v[4];
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 3:
             pfa3 = pfa.v[3];
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 2:
             pfa2 = pfa.v[2];
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
-        case 1:
-            pfa1 = pfa.v[1];
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 0:
             pfaN = pfa.v[0];
             break;
@@ -500,7 +479,7 @@ int XLALSimInspiralSpinTaylorF2(
         const REAL8 v3ref = v_ref * v2ref;
         const REAL8 v4ref = v_ref * v3ref;
         const REAL8 v5ref = v_ref * v4ref;
-        ref_phasing = (pfaN + pfa1 * v_ref +pfa2 * v2ref + pfa3 * v3ref + pfa4 * v4ref) / v5ref + (pfa5 + pfl5 * logvref) + (pfa6 + pfl6 * logvref) * v_ref + pfa7 * v2ref + pfa8 * v3ref;
+        ref_phasing = (pfaN + pfa2 * v2ref + pfa3 * v3ref + pfa4 * v4ref) / v5ref + (pfa5 + pfl5 * logvref) + (pfa6 + pfl6 * logvref) * v_ref + pfa7 * v2ref + pfa8 * v3ref;
     } /* end of if (f_ref > 0.) */
 
     #pragma omp parallel for
@@ -512,7 +491,7 @@ int XLALSimInspiralSpinTaylorF2(
         const REAL8 v3 = v * v2;
         const REAL8 v4 = v * v3;
         const REAL8 v5 = v * v4;
-        REAL8 phasing = (pfaN + pfa1*v + pfa2 * v2 + pfa3 * v3 + pfa4 * v4) / v5 + (pfa5 + pfl5 * logv) + (pfa6 + pfl6 * logv) * v + pfa7 * v2 + pfa8 * v3;
+        REAL8 phasing = (pfaN + pfa2 * v2 + pfa3 * v3 + pfa4 * v4) / v5 + (pfa5 + pfl5 * logv) + (pfa6 + pfl6 * logv) * v + pfa7 * v2 + pfa8 * v3;
         COMPLEX16 amp = amp0 / (v3 * sqrt(v));
 
         alpha = enable_precession ? XLALSimInspiralSF2Alpha(v, coeffs) - alpha_ref : 0.;

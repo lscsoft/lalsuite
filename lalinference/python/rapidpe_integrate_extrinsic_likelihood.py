@@ -21,7 +21,7 @@ Integrate the extrinsic parameters of the prefactored likelihood function.
 # Basic stuff
 import sys
 import functools
-from argparse import ArgumentParser
+from optparse import OptionParser, OptionGroup
 
 # analysis stuff
 import numpy
@@ -38,33 +38,33 @@ import pylal
 from lalinference.rapid_pe import lalsimutils, factored_likelihood, mcsampler, xmlutils, common_cl
 from lalinference.rapid_pe.common_cl import param_limits
 
-from lalinference.io import fits as bfits
+from lalinference import fits as bfits
 
 __author__ = "Evan Ochsner <evano@gravity.phys.uwm.edu>, Chris Pankow <pankow@gravity.phys.uwm.edu>, R. O'Shaughnessy"
 
 #
 # Option parsing
 #
-argp = ArgumentParser()
-common_cl.add_datasource_params(argp)
-common_cl.add_output_params(argp)
+optp = OptionParser()
+common_cl.add_datasource_params(optp)
+common_cl.add_output_params(optp)
 
 #
 # Add the integration options
 #
-common_cl.add_integration_params(argp)
+common_cl.add_integration_params(optp)
 
 #
 # Add the intrinsic parameters
 #
-common_cl.add_intrinsic_params(argp)
+common_cl.add_intrinsic_params(optp)
 
 #
 # Add the pinnable parameters
 #
-common_cl.add_pinnable_params(argp)
+common_cl.add_pinnable_params(optp)
 
-opts = argp.parse_args()
+opts, args = optp.parse_args()
 
 # Check both or neither of --data-start/end-time given
 if opts.data_start_time is None and opts.data_end_time is not None:
@@ -153,7 +153,7 @@ print "Performing integration for intrinsic parameters mass 1: %f, mass 2 %f, la
 # Template descriptors
 #
 
-fiducial_epoch = lal.LIGOTimeGPS(event_time.gpsSeconds, event_time.gpsNanoSeconds)
+fiducial_epoch = lal.LIGOTimeGPS(event_time.seconds, event_time.nanoseconds)
 
 # Struct to hold template parameters
 P = lalsimutils.ChooseWaveformParams(
@@ -248,7 +248,11 @@ for inst, psdf in map(lambda c: c.split("="), opts.psd_file):
 
     deltaF = data_dict[inst].deltaF
     # Highest freq. at which PSD is defined
-    fmax = psd_dict[inst].f0 + psd_dict[inst].deltaF * (psd_dict[inst].data.length - 1)
+    if isinstance(psd_dict[inst],
+            pylal.xlal.datatypes.real8frequencyseries.REAL8FrequencySeries):
+        fmax = psd_dict[inst].f0 + psd_dict[inst].deltaF * (len(psd_dict[inst].data) - 1)
+    elif isinstance(psd_dict[inst], lal.REAL8FrequencySeries):
+        fmax = psd_dict[inst].f0 + psd_dict[inst].deltaF * (psd_dict[inst].data.length - 1)
 
     # Assert upper limit of IP integral does not go past where PSD defined
     assert opts.fmax is None or opts.fmax<= fmax

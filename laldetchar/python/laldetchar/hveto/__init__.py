@@ -13,8 +13,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation,.
 
-## \defgroup laldetchar_py_hveto hveto utility modules
-## \ingroup laldetchar_python
+## \addtogroup laldetchar_py_hveto
 """A collection of tools for using, plotting, and interpreting HVeto results
 as produced by the laldetchar-hveto program.
 
@@ -194,6 +193,7 @@ def write_coinc_tables( vetotrigs, xmldoc, refchannel, twind, time_slide_id=None
 
 	# Insert a time slide ID. It's not yet really necessary
 	if time_slide_id is None:
+		from pylal import ligolw_tisi
 		timeslidetable = lsctables.New(lsctables.TimeSlideTable)
 		time_slide = timeslidetable.RowType
 		time_slide.process_id = process_id

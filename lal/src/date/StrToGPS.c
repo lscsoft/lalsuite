@@ -265,29 +265,28 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
  * LIGOTimeGPS.  If s is not NULL, then the string is written to that
  * location which must be large enough to hold the string plus a 0
  * terminator.  If s is NULL then a new buffer is allocated, and the string
- * written to it;  free the buffer with XLALFree().  The return value is
- * the address of the string or NULL on failure.
+ * written to it.  The return value is the address of the string or NULL on
+ * failure.
  */
 char *XLALGPSToStr(char *s, const LIGOTimeGPS *t)
 {
-	char *end;
 	/* so we can play with it */
 	LIGOTimeGPS copy = *t;
 
 	/* make sure we've got a buffer */
 
 	if(!s) {
-		/* 22 = 9 digits to the right of the decimal point +
+		/* 21 = 9 digits to the right of the decimal point +
 		 * decimal point + upto 10 digits to the left of the
 		 * decimal point plus an optional sign + a null */
-		s = XLALMalloc(22 * sizeof(*s));
+		s = XLALMalloc(21 * sizeof(*s));
 		if(!s)
 			XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	/* normalize the fractional part */
 
-	while(labs(copy.gpsNanoSeconds) >= XLAL_BILLION_INT4) {
+	while(labs(copy.gpsNanoSeconds) > XLAL_BILLION_INT4) {
 		if(copy.gpsNanoSeconds < 0) {
 			copy.gpsSeconds -= 1;
 			copy.gpsNanoSeconds += XLAL_BILLION_INT4;
@@ -312,19 +311,10 @@ char *XLALGPSToStr(char *s, const LIGOTimeGPS *t)
 
 	if(copy.gpsSeconds < 0 || copy.gpsNanoSeconds < 0)
 		/* number is negative */
-		end = s + sprintf(s, "-%ld.%09ld", labs(copy.gpsSeconds), labs(copy.gpsNanoSeconds));
+		sprintf(s, "-%ld.%09ld", labs(copy.gpsSeconds), labs(copy.gpsNanoSeconds));
 	else
 		/* number is non-negative */
-		end = s + sprintf(s, "%ld.%09ld", (long) copy.gpsSeconds, (long) copy.gpsNanoSeconds);
-
-	/* remove trailing 0s and decimal point */
-
-	while(*(--end) == '0')
-		*end = 0;
-	if(*end == '.')
-		*end = 0;
-
-	/* done */
+		sprintf(s, "%ld.%09ld", (long) copy.gpsSeconds, (long) copy.gpsNanoSeconds);
 
 	return s;
 }

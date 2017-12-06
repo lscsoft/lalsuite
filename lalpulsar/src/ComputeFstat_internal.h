@@ -29,15 +29,20 @@
 // ================================================================================================= //
 
 // ---------- Shared constants/defines ---------- //
+#ifndef COLLECT_TIMING
+#define COLLECT_TIMING 1
+#endif
 
 // ---------- Shared macro definitions ---------- //
 
 #define SQ(x) ( (x) * (x) )
 
 // ---------- Shared global variables ---------- //
+// hidden global variables used to pass timings to test/benchmark programs
+extern REAL8 Fstat_tauF1Buf;
+extern REAL8 Fstat_tauF1NoBuf;
 
 // ---------- Shared struct definitions ---------- //
-
 
 // Common input data for F-statistic methods
 typedef struct {
@@ -45,14 +50,12 @@ typedef struct {
   REAL8 dFreq;						// Requested spacing of \f$\mathcal{F}\f$-statistic frequency bins.
   MultiLALDetector detectors;				// List of detectors
   MultiLIGOTimeGPSVector *multiTimestamps;		// Multi-detector list of SFT timestamps
-  MultiNoiseWeights *multiNoiseWeights;                 // Multi-detector noise weights: stored unnormalized (divide by Sinv_Tsft to get normalized version)
+  MultiNoiseWeights *multiNoiseWeights;			// Multi-detector noise weights
   MultiDetectorStateSeries *multiDetectorStates;	// Multi-detector state series
   const EphemerisData *ephemerides;			// Ephemerides for the time-span of the SFTs
   SSBprecision SSBprec;					// Barycentric transformation precision
   void *workspace;					// F-statistic method workspace
-  BOOLEAN isTimeslice;                                  //Flag if this is a timeslice of another FstatInput struct
 } FstatCommon;
-
 
 // Pointers to function pointers which perform method-specific operations
 typedef struct {
@@ -64,12 +67,6 @@ typedef struct {
 } FstatMethodFuncs;
 
 // ---------- Shared internal functions ---------- //
-int XLALExtractResampledTimeseries_intern ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, const void* method_data );
-int XLALGetFstatTiming_Demod  ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
-int XLALGetFstatTiming_Resamp ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
-void *XLALFstatInputTimeslice_Demod ( const void *method_data, const UINT4 iStart[PULSAR_MAX_DETECTORS], const UINT4 iEnd[PULSAR_MAX_DETECTORS] );
-void XLALDestroyFstatInputTimeslice_common ( FstatCommon *common );
-void XLALDestroyFstatInputTimeslice_Demod ( void *method_data );
 
 static inline REAL4
 XLALComputeFstatFromFaFb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4 B, REAL4 C, REAL4 E, REAL4 Dinv )

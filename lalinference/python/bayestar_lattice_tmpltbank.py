@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2016  Leo Singer
+# Copyright (C) 2013  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -21,31 +21,32 @@ from an initial (mass1, mass2), with lattice points spaced according to the
 metric at the initial point.
 """
 from __future__ import division
+__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Command line interface.
-import argparse
+from optparse import Option, OptionParser
 from lalinference.bayestar import command
 
-parser = command.ArgumentParser()
-parser.add_argument(
-    '--initial-mass1', metavar='Msun', type=float, default=1.4,
-    help='Mass of first component of an initial lattice point '
-    '[default: %(default)s]')
-parser.add_argument(
-    '--initial-mass2', metavar='Msun', type=float, default=1.4,
-    help='Mass of second component of an initial lattice point '
-    '[default: %(default)s]')
-parser.add_argument(
-    '--min-mass', metavar='Msun', type=float, default=1.,
-    help='Minimum component mass [default: %(default)s]')
-parser.add_argument(
-    '--max-mass', metavar='Msun', type=float, default=3.,
-    help='Maximum component mass [default: %(default)s]')
-parser.add_argument(
-    '-o', '--output', metavar='OUT.xml[.gz]', type=argparse.FileType('wb'),
-    default='-', help='Name of output file [default: stdout]')
-opts = parser.parse_args()
+parser = OptionParser(
+    formatter = command.NewlinePreservingHelpFormatter(),
+    description = __doc__,
+    usage="%prog [options] [INPUT.xml[.gz]] [-o OUTPUT.xml[.gz]]",
+    option_list = [
+        Option("--initial-mass1", metavar="Msun", type=float, default=1.4,
+            help="Mass of first component of an initial lattice point [default: %default]"),
+        Option("--initial-mass2", metavar="Msun", type=float, default=1.4,
+            help="Mass of second component of an initial lattice point [default: %default]"),
+        Option("--min-mass", metavar="Msun", type=float, default=1.,
+            help="Minimum component mass [default: %default]"),
+        Option("--max-mass", metavar="Msun", type=float, default=3.,
+            help="Maximum component mass [default: %default]"),
+        Option("-o", "--output", metavar="OUTPUT.xml[.gz]", default="/dev/stdout",
+            help="Name of output file (default=stdout)")
+    ]
+)
+opts, args = parser.parse_args()
+infilename = command.get_input_filename(parser, args)
 
 
 # Python standard library imports.
@@ -54,17 +55,18 @@ import os
 # LIGO-LW XML imports.
 from glue.ligolw import ligolw
 from glue.ligolw.utils import process as ligolw_process
+from glue.ligolw import table as ligolw_table
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import lsctables
 
 # glue and LAL imports.
-from glue.text_progress_bar import ProgressBar
 import lal
-from lalinspiral.sbank.tau0tau3 import m1m2_to_mchirp
+import lalinspiral.sbank.tau0tau3
 import lalsimulation
 
 # BAYESTAR imports.
-from lalinference.bayestar import filter
+from lalinference.bayestar import ligolw as ligolw_bayestar
+from lalinference.bayestar import timing
 
 # Other imports.
 import numpy as np
@@ -76,7 +78,8 @@ xmldoc = ligolw.Document()
 xmldoc.appendChild(ligolw.LIGO_LW())
 
 # Write process metadata to output file.
-process = command.register_to_xmldoc(xmldoc, parser, opts)
+process = ligolw_process.register_to_xmldoc(xmldoc, parser.get_prog_name(),
+    opts.__dict__)
 
 # Create a SnglInspiral table and initialize its row ID counter.
 sngl_inspiral_table = lsctables.New(lsctables.SnglInspiralTable)
@@ -87,9 +90,8 @@ f_low = 10.
 f_high = 2048.
 df = 0.1
 
-initial_mchirp = m1m2_to_mchirp(opts.initial_mass1, opts.initial_mass2)
-initial_mtotal = opts.initial_mass1 + opts.initial_mass2
-initial_eta = opts.initial_mass1 * opts.initial_mass2 / initial_mtotal**2
+initial_mchirp = lalinspiral.sbank.tau0tau3.m1m2_to_mchirp(opts.initial_mass1, opts.initial_mass2)
+initial_eta = opts.initial_mass1 * opts.initial_mass2 / (opts.initial_mass1 + opts.initial_mass2)**2
 initial_chi = 0.
 initial_chirp_times = lalsimulation.SimInspiralTaylorF2RedSpinChirpTimesFromMchirpEtaChi(initial_mchirp, initial_eta, initial_chi, f_low)
 initial_theta0_theta3 = initial_chirp_times[:2]
@@ -97,11 +99,10 @@ initial_theta0_theta3 = initial_chirp_times[:2]
 # Sampled PSD.
 S = lal.CreateREAL8Vector(int(f_high // df))
 S.data = [lalsimulation.SimNoisePSDaLIGOZeroDetHighPower(i * df)
-          for i in range(len(S.data))]
+    for i in range(len(S.data))]
 
 # Allocate noise moments.
-moments = [lal.CreateREAL8Vector(int((f_high - f_low) // df))
-           for _ in range(29)]
+moments = [lal.CreateREAL8Vector(int((f_high - f_low) // df)) for _ in range(29)]
 
 # Compute noise moments.
 lalsimulation.SimInspiralTaylorF2RedSpinComputeNoiseMoments(
@@ -116,9 +117,9 @@ I = lalsimulation.SimInspiralTaylorF2RedSpinFisherMatrixChirpTimes(
 
 # Blockwise separation of Fisher matrix. Parameters are in the following order:
 # theta0, theta3, theta3S, t0, phi0
-IA = I[0:2, 0:2]  # (theta0, theta3) block
-IB = I[0:2, 3:5]  # cross block
-ID = I[3:5, 3:5]  # (time, phase) block
+IA = I[0:2, 0:2] # (theta0, theta3) block
+IB = I[0:2, 3:5] # cross block
+ID = I[3:5, 3:5] # (time, phase) block
 
 # Metric. We are dropping the theta3S terms completely and projecting out
 # time and phase.
@@ -129,8 +130,7 @@ metric_eigenvalues, metric_eigenvectors = np.linalg.eigh(metric)
 
 # Shift between adjacent lattice points.
 # FIXME: square root or no?
-delta_theta0_theta3 = np.dot(metric_eigenvectors,
-                             np.diag(1 / np.sqrt(metric_eigenvalues)))
+delta_theta0_theta3 = np.dot(metric_eigenvectors, np.diag(1 / np.sqrt(metric_eigenvalues)))
 
 # FIXME: Determine appropriate boundaries to looping over lots of points that
 # we are going to skip.
@@ -146,7 +146,7 @@ i = np.column_stack((i0.ravel(), i1.ravel()))
 skip = 10
 theta0_theta3 = np.dot(i, skip * delta_theta0_theta3.T) + initial_theta0_theta3
 
-for th0, th3 in ProgressBar(theta0_theta3.tolist()):
+for th0, th3 in theta0_theta3:
 
     th3S = 0
     tau0 = th0 / (2 * np.pi * f_low)
@@ -177,7 +177,7 @@ for th0, th3 in ProgressBar(theta0_theta3.tolist()):
     # Create new sngl_inspiral row and initialize its columns to None,
     # which produces an empty field in the XML output.
     sngl_inspiral = lsctables.SnglInspiral()
-    for validcolumn in sngl_inspiral_table.validcolumns.keys():
+    for validcolumn in sngl_inspiral_table.validcolumns.iterkeys():
         setattr(sngl_inspiral, validcolumn, None)
 
     # Populate the row's fields.
@@ -190,7 +190,7 @@ for th0, th3 in ProgressBar(theta0_theta3.tolist()):
     sngl_inspiral.mchirp = mchirp
     sngl_inspiral.eta = eta
     sngl_inspiral.chi = chi
-    sngl_inspiral.f_final = filter.get_f_lso(mass1, mass2)
+    sngl_inspiral.f_final = timing.get_f_lso(mass1, mass2)
 
     # Add the row to the table in the document.
     sngl_inspiral_table.append(sngl_inspiral)
@@ -199,7 +199,5 @@ for th0, th3 in ProgressBar(theta0_theta3.tolist()):
 ligolw_process.set_process_end_time(process)
 
 # Write output file.
-with ligolw_utils.SignalsTrap():
-    ligolw_utils.write_fileobj(
-        xmldoc, opts.output,
-        gz=(os.path.splitext(opts.output.name)[-1] == ".gz"))
+ligolw_utils.write_filename(xmldoc, opts.output,
+    gz=(os.path.splitext(opts.output)[-1]==".gz"))

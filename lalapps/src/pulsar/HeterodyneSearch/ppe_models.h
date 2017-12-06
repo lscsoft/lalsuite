@@ -1,6 +1,5 @@
 /*******************************************************************************
   Matt Pitkin, Colin Gill, John Veitch - 2011
-  Max Isi - 2016
 
   ppe_models.h
 
@@ -15,7 +14,7 @@
 /**
  * \file
  * \ingroup lalapps_pulsar_HeterodyneSearch
- * \author Matthew Pitkin, John Veitch, Colin Gill, Max Isi
+ * \author Matthew Pitkin, John Veitch, Colin Gill
  *
  * \brief Header file for the signal models functions used in parameter
  * estimation code for known pulsar searches using the nested sampling
@@ -47,10 +46,15 @@ void set_nonGR_model_parameters( PulsarParameters *pars, char* nonGRmodel );
 REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *ifo, REAL8 freqFactor );
 
 REAL8Vector *get_ssb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes, EphemerisData *ephem,
-                            TimeCorrectionData *tdat, TimeCorrectionType ttype, LALDetector *detector);
+                            TimeCorrectionData *tdat, TimeCorrectionType ttype, LALDetector *detector,
+                            REAL8 interptime );
 
 REAL8Vector *get_bsb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes, REAL8Vector *dts,
                             EphemerisData *ephem );
+
+void get_triaxial_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo );
+
+void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOModel *ifo );
 
 void get_amplitude_model( PulsarParameters *pars, LALInferenceIFOModel *ifo );
 

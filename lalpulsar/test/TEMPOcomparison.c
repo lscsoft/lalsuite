@@ -41,7 +41,6 @@
 #include <lal/Random.h>
 #include <lal/LALString.h>
 #include <lal/UserInput.h>
-#include <lal/LALPulsarVCSInfo.h>
 #include <lal/TranslateAngles.h>
 
 /*---------- local defines ---------- */
@@ -166,6 +165,8 @@
 /** user input variables */
 typedef struct
 {
+  BOOLEAN help;
+
   CHAR *RAJ;
   CHAR *DECJ;
   REAL8 TstartUTCMJD;
@@ -245,6 +246,10 @@ main(int argc, char *argv[])
   // ----------------------------------------------------------------------
   UserVariables_t XLAL_INIT_DECL(uvar);
   XLAL_CHECK ( initUserVars (argc, argv, &uvar) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  if (uvar.help) {   /* exit if help was required */
+    exit(0);
+  }
 
   unsigned int seed = uvar.randSeed;
   if ( uvar.randSeed == 0 ) {
@@ -665,6 +670,8 @@ initUserVars ( int argc, char *argv[], UserVariables_t *uvar )
   XLAL_CHECK ( argc > 0 && (argv != NULL) && (uvar != NULL), XLAL_EINVAL );
 
   /* set a few defaults */
+  uvar->help = FALSE;
+
   uvar->RAJ  = NULL;
   uvar->DECJ = NULL;
 
@@ -686,6 +693,7 @@ initUserVars ( int argc, char *argv[], UserVariables_t *uvar )
   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
   /* register user input variables */
+  XLALRegisterUvarMember( help, 		BOOLEAN, 'h', HELP,    	"Print this message" );
   XLALRegisterUvarMember( RAJ, 	        STRING, 'r', OPTIONAL, 	"Right ascension hh:mm.ss.ssss [Default=random]");
   XLALRegisterUvarMember( DECJ, 	        STRING, 'j', OPTIONAL, 	"Declination deg:mm.ss.ssss [Default=random]");
   XLALRegisterUvarMember( ephemEarth, 	 STRING, 0,  OPTIONAL, 	"Earth ephemeris file to use");
@@ -701,11 +709,7 @@ initUserVars ( int argc, char *argv[], UserVariables_t *uvar )
   XLALRegisterUvarMember( randSeed,  		 INT4, 0,  OPTIONAL, 	"The random seed [0 = clock]");
 
   /* read all command line variables */
-  BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if ( should_exit ) {
-    exit(1);
-  }
+  XLAL_CHECK ( XLALUserVarReadAllInput( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 } /* initUserVars() */

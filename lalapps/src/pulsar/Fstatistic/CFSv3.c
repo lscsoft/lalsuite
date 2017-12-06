@@ -72,6 +72,8 @@ extern int vrbflg;		/**< defined in lalapps.c */
 
 /* ----- User-variables: can be set from config-file or command-line */
 typedef struct {
+  BOOLEAN help;		/**< trigger output of help string */
+
   CHAR *inputSFTs;	/**< SFT input-files to use */
   CHAR *outputLFT;	/**< output ('Long Fourier Transform') file to write total-time Fourier transform into */
   INT4 minStartTime;	/**< limit start-time of input SFTs to use */
@@ -82,6 +84,7 @@ typedef struct {
 
   REAL8 upsampling;	/**< factor by which to upsample the frequency resolution by */
 
+  BOOLEAN version;	/**< output version-info */
 } UserInput_t;
 
 /* ---------- local prototypes ---------- */
@@ -116,10 +119,10 @@ int main(int argc, char *argv[])
   LAL_CALL ( LALInitUserVars(&status, &uvar), &status);
 
   /* do ALL cmdline and cfgfile handling */
-  BOOLEAN should_exit = 0;
-  LAL_CALL (LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
-  if (should_exit)
-    exit (1);
+  LAL_CALL (LALUserVarReadAllInput(&status, argc, argv), &status);
+
+  if (uvar.help)	/* if help was requested, we're done here */
+    exit (0);
 
   if ( uvar.version )
     {
@@ -152,7 +155,7 @@ int main(int argc, char *argv[])
       numSFTs->data[X] = inputData.multiSFTs->data[X]->length;		/* number of sfts for IFO X */
     }
 
-    XLAL_CHECK_MAIN ( ( SSBmultiSFTs = XLALCreateMultiSFTVector ( inputData.numBins, numSFTs ) ) != NULL, XLAL_EFUNC );
+    LAL_CALL ( LALCreateMultiSFTVector ( &status, &SSBmultiSFTs, inputData.numBins, numSFTs ), &status );
 
     XLALDestroyUINT4Vector ( numSFTs );
 
@@ -200,16 +203,16 @@ int main(int argc, char *argv[])
 
   /* write output LFT */
   if ( uvar.outputLFT ) {
-    XLAL_CHECK_MAIN ( XLALWriteSFT2file (outputLFT, uvar.outputLFT, inputData.dataSummary) == XLAL_SUCCESS, XLAL_EFUNC);
+    LAL_CALL ( LALWriteSFT2file ( &status, outputLFT, uvar.outputLFT, inputData.dataSummary), &status);
   }
 
   /* Free config-Variables and userInput stuff */
   LAL_CALL (LALDestroyUserVars (&status), &status);
 
   LALFree ( inputData.dataSummary );
-  XLALDestroyMultiSFTVector ( inputData.multiSFTs);
-  XLALDestroySFT ( outputLFT );
-  XLALDestroyMultiSFTVector ( SSBmultiSFTs);
+  LAL_CALL ( LALDestroyMultiSFTVector (&status, &inputData.multiSFTs), &status );
+  LAL_CALL ( LALDestroySFTtype ( &status, &outputLFT ), &status );
+  LAL_CALL ( LALDestroyMultiSFTVector (&status, &SSBmultiSFTs), &status);
 
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
@@ -230,12 +233,16 @@ LALInitUserVars ( LALStatus *status, UserInput_t *uvar )
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
+  uvar->help = 0;
+
   uvar->minStartTime = 0;
   uvar->maxEndTime = LAL_INT4_MAX;
 
   uvar->upsampling = 1;
 
   /* register all our user-variables */
+  LALregBOOLUserStruct(status,	help, 		'h', UVAR_HELP,     "Print this message");
+
   LALregSTRINGUserStruct(status,inputSFTs, 	'D', UVAR_OPTIONAL, "File-pattern specifying input SFT-files");
   LALregSTRINGUserStruct(status,outputLFT,      'o', UVAR_OPTIONAL, "Output 'Long Fourier Transform' (LFT) file" );
 
@@ -281,7 +288,7 @@ LoadInputSFTs ( LALStatus *status, InputSFTData *sftData, const UserInput_t *uva
   /* ----- get full SFT-catalog of all matching (multi-IFO) SFTs */
   LogPrintf (LOG_DEBUG, "Finding all SFTs to load ... ");
 
-  XLAL_CHECK_LAL ( status, ( catalog = XLALSFTdataFind ( uvar->inputSFTs, &constraints ) ) != NULL, XLAL_EFUNC);
+  TRY ( LALSFTdataFind ( status->statusPtr, &catalog, uvar->inputSFTs, &constraints ), status);
   LogPrintfVerbatim (LOG_DEBUG, "done. (found %d SFTs)\n", catalog->length);
 
   if ( catalog->length == 0 )
@@ -310,9 +317,9 @@ LoadInputSFTs ( LALStatus *status, InputSFTData *sftData, const UserInput_t *uva
       fMax = uvar->fmax;
 
     LogPrintf (LOG_DEBUG, "Loading SFTs ... ");
-    XLAL_CHECK_LAL ( status, ( multiSFTs = XLALLoadMultiSFTs ( catalog, fMin, fMax ) ) != NULL, XLAL_EFUNC );
+    TRY ( LALLoadMultiSFTs ( status->statusPtr, &multiSFTs, catalog, fMin, fMax ), status );
     LogPrintfVerbatim (LOG_DEBUG, "done.\n");
-    XLALDestroySFTCatalog (catalog );
+    TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
 
     sftData->fmin = multiSFTs->data[0]->data[0].f0;
     sftData->numBins = multiSFTs->data[0]->data[0].data->length;

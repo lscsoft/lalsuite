@@ -21,9 +21,5 @@ config.log
 config.status
 configure
 cscope.*
-lalsuite-*.tar.xz
-lalsuite-user-env.csh
-lalsuite-user-env.fish
-lalsuite-user-env.sh
-lalsuite-user-env.shell
+lalsuite-*.tar.gz
 tags

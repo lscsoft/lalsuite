@@ -1,6 +1,5 @@
-MOSTLYCLEANFILES =
+BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
-include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 if FRAME
 frameprogs = lalapps_MakeSFTs
@@ -19,7 +18,7 @@ pss_progs =
 pssinterface =
 endif
 
-bin_PROGRAMS = $(frameprogs) $(pss_progs)
+bin_PROGRAMS = $(frameprogs) $(pss_progs) lalapps_ConvertToSFTv2
 EXTRA_PROGRAMS = $(frameexprogs)
 
 if FRAME
@@ -31,3 +30,5 @@ lalapps_MakeSFTs_CPPFLAGS = $(AM_CPPFLAGS)
 if PSS
 lalapps_MakeSFTs_CPPFLAGS += -DPSS_ENABLED
 endif
+
+lalapps_ConvertToSFTv2_SOURCES = ConvertToSFTv2.c

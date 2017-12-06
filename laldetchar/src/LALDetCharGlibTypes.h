@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-typedef enum tagLALGType {
+typedef enum {
   LALGTYPE_NONE = 0,
   LALGTYPE_INT,
   LALGTYPE_DBL,
@@ -48,7 +48,7 @@ size_t XLALGetGSequenceLength(LALGSequence* seq);
 
 void XLALDestroyGSequenceIter(LALGSequenceIter* itr);
 #ifdef SWIG   // SWIG interface directives
-SWIGLAL(RETURN_OWNED_BY_1ST_ARG(LALGSequenceIter*, XLALGSequenceBegin));
+SWIGLAL(OWNED_BY_1ST_ARG(LALGSequenceIter*, XLALGSequenceBegin));
 #endif
 LALGSequenceIter* XLALGSequenceBegin(LALGSequence* seq);
 bool XLALGSequenceNext(LALGSequenceIter* itr);
@@ -57,7 +57,7 @@ GSequenceIter* XLALGSequenceBeginRaw(LALGSequence* seq, LALGType type);
 #endif
 
 #ifdef SWIG   // SWIG interface directives
-SWIGLAL(RETURN_OWNED_BY_1ST_ARG(SnglBurst*, XLALGetGSeqSnglBurst));
+SWIGLAL(OWNED_BY_1ST_ARG(SnglBurst*, XLALGetGSeqSnglBurst));
 #endif
 SnglBurst* XLALGetGSeqSnglBurst(LALGSequenceIter* itr);
 #ifdef SWIG   // SWIG interface directives

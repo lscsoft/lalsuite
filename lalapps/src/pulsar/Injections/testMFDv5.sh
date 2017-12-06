@@ -10,11 +10,9 @@ if [ -z "${srcdir}" ]; then
 fi
 
 builddir="./";
-sftdir="${builddir}../SFTTools/"
-
 mfdv4_CODE="${builddir}lalapps_Makefakedata_v4"
 mfdv5_CODE="${builddir}lalapps_Makefakedata_v5"
-cmp_CODE="${sftdir}lalapps_compareSFTs"
+cmp_CODE="${builddir}lalapps_compareSFTs"
 
 testDIR="./mfdv5_TEST"
 

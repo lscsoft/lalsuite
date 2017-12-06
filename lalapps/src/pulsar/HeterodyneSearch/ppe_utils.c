@@ -21,7 +21,6 @@
 /*                            HELPER FUNCTIONS                                */
 /******************************************************************************/
 
-#include "config.h"
 #include "ppe_utils.h"
 
 /** \brief Compute the noise variance for each data segment
@@ -91,9 +90,9 @@ void compute_variance( LALInferenceIFOData *data, LALInferenceIFOModel *model ){
  *
  * \return A vector of chunk/segment lengths
  */
-UINT4Vector *get_chunk_lengths( LALInferenceIFOModel *ifo, UINT4 chunkMax ){
-  UINT4 i = 0, j = 0, count = 0;
-  UINT4 length;
+UINT4Vector *get_chunk_lengths( LALInferenceIFOModel *ifo, INT4 chunkMax ){
+  INT4 i = 0, j = 0, count = 0;
+  INT4 length;
 
   REAL8 t1, t2;
 
@@ -119,7 +118,7 @@ UINT4Vector *get_chunk_lengths( LALInferenceIFOModel *ifo, UINT4 chunkMax ){
 
     i++;
 
-    t1 = XLALGPSGetREAL8( &ifo->times->data[i-1] );
+    t1 = XLALGPSGetREAL8( &ifo->times->data[i-1 ] );
     t2 = XLALGPSGetREAL8( &ifo->times->data[i] );
 
     /* if consecutive points are within two sample times of each other count as in the same chunk */
@@ -154,13 +153,12 @@ UINT4Vector *get_chunk_lengths( LALInferenceIFOModel *ifo, UINT4 chunkMax ){
  * the data (e.g. those caused by a strong signal), which might affect the calculations (which assume the data is
  * Gaussian with zero mean).
  *
- * If the \c outputchunks is non-zero then a list of the segments will be output to a file called \c data_segment_list.txt,
+ * If the \c verbose flag is set then a list of the segments will be output to a file called \c data_segment_list.txt,
  * with a prefix of the detector name.
  *
  * \param data [in] A data structure
  * \param chunkMin [in] The minimum length of a segment
  * \param chunkMax [in] The maximum length of a segment
- * \param outputchunks [in] A flag to check whether to output the segments
  *
  * \return A vector of segment/chunk lengths
  *
@@ -169,7 +167,7 @@ UINT4Vector *get_chunk_lengths( LALInferenceIFOModel *ifo, UINT4 chunkMax ){
  * \sa merge_data
  * \sa rechop_data
  */
-UINT4Vector *chop_n_merge( LALInferenceIFOData *data, UINT4 chunkMin, UINT4 chunkMax, UINT4 outputchunks ){
+UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin, INT4 chunkMax ){
   UINT4 j = 0;
 
   UINT4Vector *chunkLengths = NULL;
@@ -186,12 +184,10 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, UINT4 chunkMin, UINT4 chun
   chunkIndex = chop_data( &meddatagsl.vector, chunkMin );
 
   /* DON'T BOTHER WITH THE MERGING AS IT WILL MAKE VERY LITTLE DIFFERENCE */
-  /* merge_data( meddata, &chunkIndex ); */
-
-  XLALDestroyCOMPLEX16Vector( meddata ); /* free memory */
+  /* merge_data( meddata, chunkIndex ); */
 
   /* if a maximum chunk length is defined then rechop up the data, to segment any chunks longer than this value */
-  if ( chunkMax > chunkMin ) { rechop_data( &chunkIndex, chunkMax, chunkMin ); }
+  if ( chunkMax > chunkMin ) { rechop_data( chunkIndex, chunkMax, chunkMin ); }
 
   chunkLengths = XLALCreateUINT4Vector( chunkIndex->length );
 
@@ -201,41 +197,29 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, UINT4 chunkMin, UINT4 chun
     else { chunkLengths->data[j] = chunkIndex->data[j] - chunkIndex->data[j-1]; }
   }
 
-  /* if required output the chunk end indices and lengths to a file */
-  if ( outputchunks ){
+  /* if verbose print out the segment end indices to a file */
+  if ( verbose_output ){
     FILE *fpsegs = NULL;
 
-    /* set detector name as prefix */
     CHAR *outfile = NULL;
+
+    /* set detector name as prefix */
     outfile = XLALStringDuplicate( data->detector->frDetector.prefix );
+
     outfile = XLALStringAppend( outfile, "data_segment_list.txt" );
 
-    /* check if file exists, i.e. given mutliple frequency harmonics, and if so open for appending */
-    FILE *fpcheck = NULL;
-    if ( (fpcheck = fopen(outfile, "r")) != NULL ){
-      fclose(fpcheck);
-      if ( (fpsegs = fopen(outfile, "a")) == NULL ){
-        fprintf(stderr, "Non-fatal error open file to output segment list.\n");
-        return chunkLengths;
-      }
+    if ( (fpsegs = fopen(outfile, "w")) == NULL ){
+      fprintf(stderr, "Non-fatal error open file to output segment list.\n");
+      return chunkLengths;
     }
-    else{
-      if ( (fpsegs = fopen(outfile, "w")) == NULL ){
-        fprintf(stderr, "Non-fatal error open file to output segment list.\n");
-        return chunkLengths;
-      }
-    }
-    XLALFree( outfile );
 
-    for ( j = 0; j < chunkIndex->length; j++ ) { fprintf(fpsegs, "%u\t%u\n", chunkIndex->data[j], chunkLengths->data[j]); }
+    for ( j = 0; j < chunkIndex->length; j++ ) { fprintf(fpsegs, "%u\n", chunkIndex->data[j]); }
 
     /* add space at the end so that you can separate lists from different detector data streams */
     fprintf(fpsegs, "\n");
 
     fclose( fpsegs );
   }
-
-  XLALDestroyUINT4Vector( chunkIndex );
 
   return chunkLengths;
 }
@@ -331,7 +315,7 @@ COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data ){
  *
  * \sa find_change_point
  */
-UINT4Vector *chop_data( gsl_vector_complex *data, UINT4 chunkMin ){
+UINT4Vector *chop_data( gsl_vector_complex *data, INT4 chunkMin ){
   UINT4Vector *chunkIndex = NULL;
 
   UINT4 length = (UINT4)data->size;
@@ -367,9 +351,6 @@ UINT4Vector *chop_data( gsl_vector_complex *data, UINT4 chunkMin ){
     /* combine new chunks */
     for (i = 0; i < cp1->length; i++) { chunkIndex->data[i] = cp1->data[i]; }
     for (i = 0; i < cp2->length; i++) { chunkIndex->data[i+cp1->length] = cp2->data[i] + changepoint; }
-
-    XLALDestroyUINT4Vector( cp1 );
-    XLALDestroyUINT4Vector( cp2 );
   }
   else{ chunkIndex->data[0] = length; }
 
@@ -393,7 +374,7 @@ UINT4Vector *chop_data( gsl_vector_complex *data, UINT4 chunkMin ){
  * split point recorded. However, the value required for comparing to that for the whole data set, to give the odds
  * ratio, is the evidence that having any split is better than having no split, so the individual split data evidences
  * need to be added incoherently to give the total evidence for a split. The index at which the evidence for a single
- * split is maximum (i.e. the most favoured split point) is that which is returned.
+ * split is maximum (i.e. the most favoured split point) that which is returned.
  *
  * \param data [in] a complex data vector
  * \param logodds [in] a pointer to return the natural logarithm of the odds ratio/Bayes factor
@@ -401,7 +382,7 @@ UINT4Vector *chop_data( gsl_vector_complex *data, UINT4 chunkMin ){
  *
  * \return The position of the change point
  */
-UINT4 find_change_point( gsl_vector_complex *data, REAL8 *logodds, UINT4 minlength ){
+UINT4 find_change_point( gsl_vector_complex *data, REAL8 *logodds, INT4 minlength ){
   UINT4 changepoint = 0, i = 0;
   UINT4 length = (UINT4)data->size, lsum = 0;
 
@@ -434,7 +415,7 @@ UINT4 find_change_point( gsl_vector_complex *data, REAL8 *logodds, UINT4 minleng
 
   for ( i = 0; i < length; i++ ){
     dval = gsl_vector_complex_get( data, i );
-    if ( i < minlength-1 ){ sumforward += SQUARE( gsl_complex_abs( dval ) ); }
+    if ( i < (UINT4)minlength-1 ){ sumforward += SQUARE( gsl_complex_abs( dval ) ); }
     else{ sumback += SQUARE( gsl_complex_abs( dval ) ); }
   }
 
@@ -487,45 +468,47 @@ UINT4 find_change_point( gsl_vector_complex *data, REAL8 *logodds, UINT4 minleng
  * \param chunkMax [in] the maximum allowed segment/chunk length
  * \param chunkMin [in] the minimum allowed segment/chunk length
  */
-void rechop_data( UINT4Vector **chunkIndex, UINT4 chunkMax, UINT4 chunkMin ){
-  UINT4 i = 0, j = 0, count = 0;
-  UINT4Vector *cip = *chunkIndex; /* pointer to chunkIndex */
-  UINT4 length = cip->length;
-  UINT4 endIndex = cip->data[length-1];
+void rechop_data( UINT4Vector *chunkIndex, INT4 chunkMax, INT4 chunkMin ){
+  INT4 i = 0, j = 0, count = 0;
+  INT4 length = chunkIndex->length;
+  INT4 endIndex = (INT4)chunkIndex->data[length-1];
   UINT4 startindex = 0, chunklength = 0;
-  UINT4 newindex[(UINT4)ceil((REAL8)endIndex/(REAL8)chunkMin)];
+
+  UINT4Vector *newindex = NULL;
+  newindex = XLALCreateUINT4Vector( ceil((REAL8)endIndex / (REAL8)chunkMax ) );
 
   /* chop any chunks that are greater than chunkMax into chunks smaller than, or equal to chunkMax, and greater than chunkMin */
   for ( i = 0; i < length; i++ ){
     if ( i == 0 ) { startindex = 0; }
-    else { startindex = cip->data[i-1]; }
+    else { startindex = chunkIndex->data[i-1]+1; }
 
-    chunklength = cip->data[i] - startindex;
+    chunklength = chunkIndex->data[i] - startindex;
 
-    if ( chunklength > chunkMax ){
-      UINT4 remain = chunklength % chunkMax;
+    if ( chunklength > (UINT4)chunkMax ){
+      INT4 remain = chunklength % chunkMax;
 
-      /* cut segment into as many chunkMax chunks as possible */
+      /* cut segment into as many chunkMin chunks as possible */
       for ( j = 0; j < floor(chunklength / chunkMax); j++ ){
-        newindex[count] = startindex + (j+1)*chunkMax;
+        newindex->data[count] = startindex + (j+1)*chunkMax;
         count++;
       }
 
       /* last chunk values */
       if ( remain != 0 ){
         /* set final value */
-        newindex[count] = startindex + j*chunkMax + remain;
+        newindex->data[count] = startindex + j*chunkMax + remain;
 
         if ( remain < chunkMin ){
           /* split the last two cells into one that is chunkMin long and one that is (chunkMax+remainder)-chunkMin long
            * - this may leave a cell shorter than chunkMin, but we'll have to live with that! */
-          UINT4 n1 = (chunkMax + remain) - chunkMin;
+          INT4 n1 = (chunkMax + remain) - chunkMin;
 
           /* reset second to last value two values */
-          newindex[count-1] = newindex[count] - chunkMin;
+          newindex->data[count-1] = newindex->data[count] - chunkMin;
 
-          if ( n1 < chunkMin ){
-            XLAL_PRINT_WARNING("Non-fatal error... segment no. %d is %d long, which is less than chunkMin = %d.\n", count, n1, chunkMin);
+          if ( n1 < chunkMin && verbose_output ){
+            fprintf(stderr, "Non-fatal error... segment no. %d is %d long, which is less than chunkMin = %d.\n",
+                    count, n1, chunkMin);
           }
         }
 
@@ -533,14 +516,16 @@ void rechop_data( UINT4Vector **chunkIndex, UINT4 chunkMax, UINT4 chunkMin ){
       }
     }
     else{
-      newindex[count] = cip->data[i];
+      newindex->data[count] = chunkIndex->data[i];
       count++;
     }
   }
 
-  cip = XLALResizeUINT4Vector( cip, count );
+  chunkIndex = XLALResizeUINT4Vector( chunkIndex, count );
 
-  for ( i = 0; i < count; i++ ) { cip->data[i] = newindex[i]; }
+  for ( i = 0; i < count; i++ ) { chunkIndex->data[i] = newindex->data[i]; }
+
+  XLALDestroyUINT4Vector( newindex );
 }
 
 
@@ -553,12 +538,11 @@ void rechop_data( UINT4Vector **chunkIndex, UINT4 chunkMax, UINT4 chunkMin ){
  * combined segments they are merged.
  *
  * \param data [in] A complex data vector
- * \param segments [in] A vector of split segment indexes
+ * \param segs [in] A vector of split segment indexes
  */
-void merge_data( COMPLEX16Vector *data, UINT4Vector **segments ){
+void merge_data( COMPLEX16Vector *data, UINT4Vector *segs ){
   UINT4 j = 0;
   REAL8 threshold = 0.; /* may need to be passed to function in the future, or defined globally */
-  UINT4Vector *segs = *segments;
 
   /* loop until stopping criterion is reached */
   while( 1 ){
@@ -621,6 +605,109 @@ void merge_data( COMPLEX16Vector *data, UINT4Vector **segments ){
 
 
 /**
+ * \brief Gzip the nested sample files
+ *
+ * This function gzips the output nested sample files. It will also strip unneccesary parameters
+ * from the header "_params.txt" file.
+ *
+ * \param runState [in] The analysis information structure
+ */
+void gzip_output( LALInferenceRunState *runState ){
+  /* Single thread here */
+  LALInferenceThreadState *threadState = runState->threads[0];
+  /* Open original output output file */
+  CHAR *outfile = NULL;
+  ProcessParamsTable *ppt1 = LALInferenceGetProcParamVal( runState->commandLine, "--outfile" );
+
+  if( ppt1 ){
+    CHAR outfilepars[256] = "", outfileparstmp[256] = "";
+    FILE *fppars = NULL, *fpparstmp = NULL;
+    UINT4 nonfixed = 1;
+
+    outfile = ppt1->value;
+
+    /* open file for printing out list of parameter names - this should already exist */
+    sprintf(outfilepars, "%s_params.txt", outfile);
+    if( (fppars = fopen(outfilepars, "r")) == NULL ){
+      XLALPrintError("Error... cannot open parameter name output file %s.\n", outfilepars);
+      XLAL_ERROR_VOID(XLAL_EIO);
+    }
+    /* read in the parameter names and remove the "model" value */
+    sprintf(outfileparstmp, "%s_params.txt_tmp", outfile);
+    if( (fpparstmp = fopen(outfileparstmp, "w")) == NULL ){
+      XLALPrintError("Error... cannot open parameter name output file %s.\n", outfileparstmp);
+      XLAL_ERROR_VOID(XLAL_EIO);
+    }
+
+    if ( LALInferenceGetProcParamVal( runState->commandLine, "--output-all-params" ) ){ nonfixed = 0; }
+
+    CHAR v[128] = "";
+    while( fscanf(fppars, "%s", v) != EOF ){
+      /* if outputing only non-fixed values then only re-output names of those non-fixed things */
+      if ( nonfixed ){
+        if ( LALInferenceCheckVariable( threadState->currentParams, v ) ){
+          if ( LALInferenceGetVariableVaryType( threadState->currentParams, v ) != LALINFERENCE_PARAM_FIXED ){
+            fprintf(fpparstmp, "%s\t", v);
+          }
+        }
+      }
+      else{
+        /* re-output everything to a temporary file */
+        fprintf(fpparstmp, "%s\t", v);
+      }
+    }
+
+    fclose(fppars);
+    fclose(fpparstmp);
+
+    /* move the temporary file name to the standard outfile_param name */
+    rename( outfileparstmp, outfilepars );
+
+    /* gzip the output file if required */
+    if( LALInferenceGetProcParamVal( runState->commandLine, "--gzip" ) ){
+      if ( XLALGzipTextFile( outfile ) != XLAL_SUCCESS ){
+        XLAL_PRINT_ERROR( "Error... Could not gzip the output file!\n" );
+        XLAL_ERROR_VOID( XLAL_EIO );
+      }
+    }
+  }
+/* if we have XML enabled */
+#ifdef HAVE_LIBLALXML
+  ProcessParamsTable *ppt2 = LALInferenceGetProcParamVal( runState->commandLine, "--outxml" );
+  if(!ppt2){
+    ppt2=LALInferenceGetProcParamVal(runState->commandLine,"--outXML");
+  }
+  CHAR *outVOTable = NULL;
+
+  if ( !ppt2 && !ppt1 ){
+    XLALPrintError("Must specify either --outfile or --outXML\n");
+    XLAL_ERROR_VOID( XLAL_EIO );
+  }
+
+  if( ppt2 ){
+    outVOTable = ppt2->value;
+
+    /* gzip the output file if required */
+    if( LALInferenceGetProcParamVal( runState->commandLine, "--gzip" ) ){
+      if ( XLALGzipTextFile( outVOTable ) != XLAL_SUCCESS ){
+        XLAL_PRINT_ERROR( "Error... Could not gzip the output file!\n" );
+        XLAL_ERROR_VOID( XLAL_EIO );
+      }
+    }
+  }
+
+#else
+  if ( !ppt1 ){
+    XLALPrintError("Error... --outfile not defined!\n");
+    XLAL_ERROR_VOID( XLAL_EIO );
+  }
+#endif
+
+  return;
+}
+
+
+/**
  * \brief Counts the number of comma separated values in a string
  *
  * This function counts the number of comma separated values in a given input string.
@@ -637,26 +724,49 @@ INT4 count_csv( CHAR *csvline ){
 
   /* count number of commas */
   while(1){
-    if( XLALStringToken(&inputstr, ",", 0) == NULL ){ XLAL_ERROR( XLAL_EFUNC, "Error... problem counting number of commas!" ); }
+    if( XLALStringToken(&inputstr, ",", 0) == NULL ){
+      XLALPrintError("Error... problem counting number of commas!\n");
+      XLAL_ERROR( XLAL_EFUNC );
+    }
 
     if ( inputstr == NULL ) { break; }
 
     count++;
   }
 
-  XLALFree( inputstr );
-
   return count+1;
+}
+
+
+/**
+ * \brief Checks if a given parameter is recognised
+ *
+ * This function checks whether a given parameter is one of the defined amplitude (\c amppars), frequency (\c freqpars),
+ * sky location (\c skypars) or binary system (\c binpars) parameters given in the header file.
+ *
+ * \param parname [in] The name of a parameter
+ *
+ * \return true (1) if the parameter is recognised and false (0) if not
+ */
+INT4 recognised_parameter( CHAR *parname ){
+  INT4 i = 0;
+
+  for( i = 0; i < NUMAMPPARS; i++ ) { if (!strcmp(parname, amppars[i])) { return 1; } }
+  for( i = 0; i < NUMFREQPARS; i++ ) { if (!strcmp(parname, freqpars[i])) { return 1; } }
+  for( i = 0; i < NUMSKYPARS; i++ ) { if (!strcmp(parname, skypars[i])) { return 1; } }
+  for( i = 0; i < NUMBINPARS; i++ ) { if (!strcmp(parname, binpars[i])) { return 1; } }
+
+  return 0;
 }
 
 
 /**
  * \brief Automatically set the solar system ephemeris file based on environment variables and data time span
  *
- * This function will attempt to construct the file name for Sun, Earth and time correction ephemeris files
- * based on the ephemeris used for the equivalent TEMPO(2) pulsar timing information. It assumes that the
- * ephemeris files are those constructed between 2000 and 2020. The path to the file is not required as this
- * will be found in \c XLALInitBarycenter.
+ * This function will attempt to find Earth and Sun ephemeris files based on LAL environment variables (as set up by
+ * <code> lalpulsar-user-env.(c)sh </code>) and a given start and end GPS time (presumably taken from the data that is
+ * to be analysed). It requires \c LALPULSAR is installed and the \c LALPULSAR_PREFIX variable is set, which should mean
+ * that ephemeris files are installed in the directory \c ${LALPULSAR_PREFIX}/share/lalpulsar/.
  *
  * \param efile [in] a string that will return the Earth ephemeris file
  * \param sfile [in] a string that will return the Sun ephemeris file
@@ -667,57 +777,94 @@ INT4 count_csv( CHAR *csvline ){
  *
  * \return The TimeCorrectionType e.g. TDB or TCB
  */
-TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR **efile, CHAR **sfile, CHAR **tfile, PulsarParameters *pulsar,
+TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile, CHAR *tfile, BinaryPulsarParams  pulsar,
                                               INT4 gpsstart, INT4 gpsend ){
   /* set the times that the ephemeris files span */
   INT4 ephemstart = 630720013; /* GPS time of Jan 1, 2000, 00:00:00 UTC */
   INT4 ephemend = 1261872015; /* GPS time of Jan 1, 2020, 00:00:00 UTC */
+  CHAR *eftmp = NULL, *sftmp = NULL, *tftmp = NULL;
   TimeCorrectionType ttype = TIMECORRECTION_NONE;
 
+  CHAR *lalpath = NULL, *lalpulsarpath = NULL;
+
   if( gpsstart < ephemstart || gpsend < ephemstart || gpsstart > ephemend || gpsend > ephemend ){
-    XLAL_ERROR(XLAL_EFUNC, "Start and end times are outside the ephemeris file ranges!" );
+    XLALPrintError("Start and end times are outside the ephemeris file ranges!\n");
+    XLAL_ERROR(XLAL_EFUNC);
   }
 
-  *efile = XLALStringDuplicate("earth00-19-");
-  *sfile = XLALStringDuplicate("sun00-19-");
+  /* first check that the path to the Ephemeris files is available in the
+     environment variables */
+  if((lalpath = getenv("LALPULSAR_PREFIX")) == NULL){
+    XLALPrintError("LALPULSAR_PREFIX environment variable not set. Cannot automatically generate ephemeris files!\n");
+    XLAL_ERROR(XLAL_EFUNC);
+  }
 
-  if( !PulsarCheckParam(pulsar, "EPHEM") ){
+  lalpulsarpath = XLALStringDuplicate( lalpath );
+
+  if ( (lalpulsarpath = XLALStringAppend(lalpulsarpath, "/share/lalpulsar/")) == NULL ) { XLAL_ERROR(XLAL_EFUNC); }
+
+  eftmp = XLALStringDuplicate(lalpulsarpath);
+  sftmp = XLALStringDuplicate(lalpulsarpath);
+  tftmp = XLALStringDuplicate(lalpulsarpath);
+
+  eftmp = XLALStringAppend(eftmp, "earth00-19-");
+  sftmp = XLALStringAppend(sftmp, "sun00-19-");
+
+  if( pulsar.ephem == NULL ){
     /* default to use DE405 */
-    *efile = XLALStringAppend(*efile, "DE405");
-    *sfile = XLALStringAppend(*sfile, "DE405");
+    eftmp = XLALStringAppend(eftmp, "DE405");
+    sftmp = XLALStringAppend(sftmp, "DE405");
   }
   else{
-    if( !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE405") || !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE200") ||
-        !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE414") || !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE421") ){
-      *efile = XLALStringAppend(*efile, PulsarGetStringParam(pulsar, "EPHEM"));
-      *sfile = XLALStringAppend(*sfile, PulsarGetStringParam(pulsar, "EPHEM"));
+    if( !strcmp(pulsar.ephem, "DE405") || !strcmp(pulsar.ephem, "DE200") ||
+        !strcmp(pulsar.ephem, "DE414") ){
+      eftmp = XLALStringAppend(eftmp, pulsar.ephem);
+      sftmp = XLALStringAppend(sftmp, pulsar.ephem);
     }
     else{
-      XLAL_ERROR(XLAL_EFUNC, "Unknown ephemeris %s in par file.", PulsarGetStringParam(pulsar, "EPHEM") );
+      XLALPrintError("Unknown ephemeris %s in par file\n", pulsar.ephem);
+      XLAL_ERROR(XLAL_EFUNC);
     }
   }
 
-  /* add .dat.gz extension */
-  *efile = XLALStringAppend(*efile, ".dat.gz");
-  *sfile = XLALStringAppend(*sfile, ".dat.gz");
+  /* add .dat extension */
+  eftmp = XLALStringAppend(eftmp, ".dat.gz");
+  sftmp = XLALStringAppend(sftmp, ".dat.gz");
 
-  if( !PulsarCheckParam( pulsar, "UNITS" ) ){
+  if ( eftmp == NULL || sftmp == NULL ) { XLAL_ERROR(XLAL_EFUNC); }
+
+  XLALStringCopy( efile, eftmp, strlen(eftmp)+1 );
+  XLALStringCopy( sfile, sftmp, strlen(sftmp)+1 );
+
+  /* double check that the files exist */
+  if( fopen(sfile, "r") == NULL || fopen(efile, "r") == NULL ){
+    XLALPrintError("Error... ephemeris files not, or incorrectly, defined!\n");
+    XLAL_ERROR(XLAL_EFUNC);
+  }
+
+  if( pulsar.units == NULL ){
     /* default to using TCB units */
-    *tfile = XLALStringDuplicate("te405_2000-2019.dat.gz");
+    tftmp = XLALStringAppend(tftmp, "te405_2000-2019.dat.gz");
     ttype = TIMECORRECTION_TCB;
   }
   else{
-    if ( !strcmp( PulsarGetStringParam(pulsar, "UNITS"), "TDB" ) ){
-      *tfile = XLALStringDuplicate("tdb_2000-2019.dat.gz");
+    if ( !strcmp( pulsar.units, "TDB" ) ){
+      tftmp = XLALStringAppend(tftmp, "tdb_2000-2019.dat.gz");
       ttype = TIMECORRECTION_TDB;
     }
-    else if ( !strcmp( PulsarGetStringParam(pulsar, "UNITS"), "TCB" ) ) {
-      *tfile = XLALStringDuplicate("te405_2000-2019.dat.gz");
-      ttype = TIMECORRECTION_TCB;
-    }
     else{
-      XLAL_ERROR(XLAL_EFUNC, "Error... unknown units %s in par file!", PulsarGetStringParam(pulsar, "UNITS"));
+      XLALPrintError("Error... unknown units %s in par file!\n", pulsar.units);
+      XLAL_ERROR(XLAL_EFUNC);
     }
+  }
+
+  if ( tftmp == NULL ) { XLAL_ERROR(XLAL_EFUNC); }
+
+  XLALStringCopy( tfile, tftmp, strlen(tftmp)+1 );
+
+  if( fopen(tfile, "r") == NULL ){
+    XLALPrintError("Error... time ephemeris files not, or incorrectly, defined!\n");
+    XLAL_ERROR(XLAL_EFUNC);
   }
 
   return ttype;

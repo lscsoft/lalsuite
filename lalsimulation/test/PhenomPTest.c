@@ -25,7 +25,7 @@
 #include <float.h>
 
 #include <lal/Units.h>
-#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
+#include <lal/LALAdaptiveRungeKutta4.h>
 #include <lal/LALConstants.h>
 #include <lal/FindRoot.h>
 #include <lal/SeqFactories.h>
@@ -222,7 +222,7 @@ static void Test_XLALSimIMRPhenomPCalculateModelParameters(void) {
   REAL8 f_ref = f_min;
   IMRPhenomP_version_type version = IMRPhenomPv2_V;
 
-  XLALSimIMRPhenomPCalculateModelParametersOld(
+  XLALSimIMRPhenomPCalculateModelParameters(
       &chi1_l,            /**< Output: aligned spin on companion 1 */
       &chi2_l,            /**< Output: aligned spin on companion 2 */
       &chip,              /**< Output: Effective spin in the orbital plane */
@@ -286,8 +286,7 @@ static void Test_PhenomC(void) {
     m1,    /**< mass of companion 1 (solar masses) */
     m2,    /**< mass of companion 2 (solar masses) */
     chi,   /**< Reduced aligned spin of the binary chi = (m1*chi1 + m2*chi2)/M */
-    chip, /**< Dimensionless spin in the orbial plane */
-    NULL); /**< No testing GR parameters */
+    chip); /**< Dimensionless spin in the orbial plane */
 
   int errcode = IMRPhenomCGenerateAmpPhase( &aPhenomC, &phPhenomC, fHz, eta, PCparams );
   if( errcode != XLAL_SUCCESS )
@@ -316,7 +315,7 @@ static void Test_PhenomC(void) {
 static void Test_PhenomPCore(void);
 static void Test_PhenomPCore(void) {
   printf("\n** Test_PhenomPCore: **\n");
-  BBHPhenomCParams *PCparams = ComputeIMRPhenomCParamsRDmod(10, 40, 0.45, 0.18, NULL);
+  BBHPhenomCParams *PCparams = ComputeIMRPhenomCParamsRDmod(10, 40, 0.45, 0.18);
   REAL8 q = 4;
   REAL8 chi_eff = 0.45;
   const REAL8 chil = (1.0+q)/q * chi_eff; /* dimensionless aligned spin of the largest BH */
@@ -419,7 +418,7 @@ static void Test_XLALSimIMRPhenomP(void) {
   REAL8 f_ref = f_min;
   IMRPhenomP_version_type version = IMRPhenomPv2_V;
 
-  XLALSimIMRPhenomPCalculateModelParametersOld(
+  XLALSimIMRPhenomPCalculateModelParameters(
       &chi1_l,            /**< Output: aligned spin on companion 1 */
       &chi2_l,            /**< Output: aligned spin on companion 2 */
       &chip,              /**< Output: Effective spin in the orbital plane */
@@ -462,8 +461,7 @@ static void Test_XLALSimIMRPhenomP(void) {
     f_min,                    /**< Starting GW frequency (Hz) */
     f_max,                    /**< End frequency; 0 defaults to ringdown cutoff freq */
     f_ref,                    /**< Reference frequency */
-    version,
-    NULL);                   /**<linked list containing the extra testing GR parameters */
+    version);
 
   dump_file("PhenomP_Test1.dat", hptilde, hctilde, m1+m2);
   MYUNUSED(ret);
@@ -514,7 +512,6 @@ static void Test_PhenomC_PhenomP(void) {
   REAL8 lnhaty = 0;
   REAL8 lnhatz = 1;
   const UINT4 version = 1;
-  const LALSimInspiralTestGRParam *nonGR = NULL;
 
   REAL8 chi1_l, chi2_l, chip, thetaJ, alpha0;
 
@@ -558,8 +555,7 @@ static void Test_PhenomC_PhenomP(void) {
     f_min,                    /**< Starting GW frequency (Hz) */
     f_max,                    /**< End frequency; 0 defaults to ringdown cutoff freq */
     f_ref,                    /**< Reference frequency */
-    version,
-    nonGR);
+    version);
 
   int wflen = hptilde->data->length;
   REAL8 f_max_prime = 0;
@@ -588,8 +584,7 @@ static void Test_PhenomC_PhenomP(void) {
       chi,                   /**< mass-weighted aligned-spin parameter */
       f_min,                 /**< starting GW frequency (Hz) */
       f_max,                 /**< end frequency; 0 defaults to ringdown cutoff freq */
-      distance,               /**< distance of source (m) */
-      nonGR
+      distance               /**< distance of source (m) */
   );
 
   out = fopen("XLALSimIMRPhenomC.dat", "w");
@@ -642,7 +637,7 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
   REAL8 f_ref = f_min;
   IMRPhenomP_version_type version = IMRPhenomPv2_V;
 
-  XLALSimIMRPhenomPCalculateModelParametersOld(
+  XLALSimIMRPhenomPCalculateModelParameters(
       &chi1_l,            /**< Output: aligned spin on companion 1 */
       &chi2_l,            /**< Output: aligned spin on companion 2 */
       &chip,              /**< Output: Effective spin in the orbital plane */
@@ -685,8 +680,7 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
     f_min,                    /**< Starting GW frequency (Hz) */
     f_max,                    /**< End frequency; 0 defaults to ringdown cutoff freq */
     f_ref,                    /**< Reference frequency */
-    version,
-    NULL);
+    version);
 
   dump_file("PhenomP_Test_f_ref1.dat", hptilde, hctilde, m1+m2);
   MYUNUSED(ret);
@@ -699,7 +693,7 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
   // Now repeat for a different f_ref
   f_ref = 5;
 
-  XLALSimIMRPhenomPCalculateModelParametersOld(
+  XLALSimIMRPhenomPCalculateModelParameters(
       &chi1_l,            /**< Output: aligned spin on companion 1 */
       &chi2_l,            /**< Output: aligned spin on companion 2 */
       &chip,              /**< Output: Effective spin in the orbital plane */
@@ -738,8 +732,7 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
     f_min,                    /**< Starting GW frequency (Hz) */
     f_max,                    /**< End frequency; 0 defaults to ringdown cutoff freq */
     f_ref,                    /**< Reference frequency */
-    version,
-    NULL);
+    version);
 
 
   dump_file("PhenomP_Test_f_ref2.dat", hptilde2, hctilde2, m1+m2);

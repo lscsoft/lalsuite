@@ -164,11 +164,13 @@ typedef struct {
  * A structure that sores user input variables
  */
 typedef struct { 
+  BOOLEAN help;		            /**< trigger output of help string */
   CHAR *inputdir;                   /**< directory containing input frame files */
   CHAR *pattern;                    /**< the input frame file name pattern */
   CHAR *outputdir;                  /**< name of output directory */
   REAL8 deltat;                     /**< the desired sampling time */
   INT4 goodxenon;                   /**< flag for using goodxenon data */
+  BOOLEAN version;	            /**< output version-info */
 } UserInput_t;
 
 /***********************************************************************************************/
@@ -359,6 +361,7 @@ int main( int argc, char *argv[] )
 void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar,CHAR *clargs)
 {
   
+  CHAR *version_string;
   INT4 i;
 
   INITSTATUS(status);
@@ -372,16 +375,30 @@ void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar,CHAR
   uvar->goodxenon = 0;
 
   /* ---------- register all user-variables ---------- */
+  LALregBOOLUserStruct(status, 	help, 		'h', UVAR_HELP,     "Print this message");
   LALregSTRINGUserStruct(status,inputdir, 	'i', UVAR_REQUIRED, "The input frame directory"); 
   LALregSTRINGUserStruct(status,pattern, 	'p', UVAR_OPTIONAL, "The frame file name pattern"); 
   LALregSTRINGUserStruct(status,outputdir, 	'o', UVAR_REQUIRED, "The output frame file directory"); 
   LALregREALUserStruct(status,  deltat,         't', UVAR_OPTIONAL, "The output sampling time (in seconds)");
   LALregINTUserStruct(status,  goodxenon,       'x', UVAR_OPTIONAL, "Set this flag to include good xenon data");
+  LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,  "Output code version");
 
   /* do ALL cmdline and cfgfile handling */
-  BOOLEAN should_exit = 0;
-  LAL_CALL (LALUserVarReadAllInput(status->statusPtr, &should_exit, argc, argv), status->statusPtr);
-  if (should_exit) exit(1);
+  LAL_CALL (LALUserVarReadAllInput(status->statusPtr, argc, argv), status->statusPtr);
+ 
+  /* if help was requested, we're done here */
+  if (uvar->help) exit(0);
+
+  if ((version_string = XLALGetVersionString(0)) == NULL) {
+    XLALPrintError("XLALGetVersionString(0) failed.\n");
+    exit(1);
+  }
+  
+  if (uvar->version) {
+    printf("%s\n",version_string);
+    exit(0);
+  }
+  XLALFree(version_string);
 
   /* put clargs into string */
   strcpy(clargs,"");

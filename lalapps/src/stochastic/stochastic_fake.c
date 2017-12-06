@@ -451,7 +451,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
         /* signal scale factor */
         scaleFactor = atof(LALoptarg);
         ADD_PROCESS_PARAM("float", "%e", scaleFactor);
-	break;
 
       case 't':
         /* filter spectrum exponent */
@@ -702,7 +701,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   proctable.processTable = (ProcessTable *) calloc(1, sizeof(ProcessTable));
   XLALGPSTimeNow(&proctable.processTable->start_time);
   XLALPopulateProcessTable(proctable.processTable, prog_name, \
-      lalAppsVCSIdentInfo.vcsId, lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
+      lalAppsVCSIdentId, lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0);
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) \
                     calloc(1, sizeof(ProcessParamsTable));
   memset(comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR));

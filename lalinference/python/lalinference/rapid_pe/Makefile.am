@@ -15,7 +15,6 @@ pymodule_PYTHON = \
 	statutils.py \
 	xmlutils.py \
 	amrlib.py \
-	synchlib.py \
 	common_cl.py \
 	dagutils.py \
 	effectiveFisher.py \

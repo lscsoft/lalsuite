@@ -130,7 +130,7 @@ void getLogLike(double *Cube, UNUSED int *ndim, UNUSED int *npars, double *lnew,
     // if the parameters violate the prior then set likelihood to log(0);
     if( i == 0 )
     {
-        *lnew = -INFINITY;
+        *lnew = -DBL_MAX;
         LALInferenceClearVariables(newParams);
         free(newParams);
         return;
@@ -598,7 +598,7 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
 #ifdef PARALLEL
     initMPI = 1;
 #endif
-    logZero = -INFINITY;
+    logZero = -DBL_MAX;
     int maxiter = 0;
     char **info;
     info=(char **)malloc(3*sizeof(char *));

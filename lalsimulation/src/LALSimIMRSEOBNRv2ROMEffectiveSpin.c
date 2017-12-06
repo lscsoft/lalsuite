@@ -421,6 +421,7 @@ static int SEOBNRROMdata_Init(SEOBNRROMdata *romdata, const char dir[]) {
     return (XLAL_FAILURE);
   }
 
+  gsl_set_error_handler(&err_handler);
   (romdata)->cvec_amp = gsl_vector_alloc(N*nk_amp);
   (romdata)->cvec_phi = gsl_vector_alloc(N*nk_phi);
   (romdata)->Bamp = gsl_matrix_alloc(nk_amp, nk_amp);
@@ -533,7 +534,7 @@ static int SEOBNRv2ROMEffectiveSpinCore(
 
   // Enforce allowed geometric frequency range
   if (fLow_geom < Mf_ROM_min)
-    XLAL_ERROR(XLAL_EDOM, "Starting frequency Mflow=%g is smaller than lowest frequency in ROM Mf=%g.\n", fLow_geom, Mf_ROM_min);
+    XLAL_ERROR(XLAL_EDOM, "Starting frequency Mflow=%g is smaller than lowest frequency in ROM Mf=%g. Starting at lowest frequency in ROM.\n", fLow_geom, Mf_ROM_min);
   if (fHigh_geom == 0)
     fHigh_geom = Mf_ROM_max;
   else if (fHigh_geom > Mf_ROM_max) {
@@ -605,10 +606,8 @@ static int SEOBNRv2ROMEffectiveSpinCore(
     *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, npts);
 
     // Recreate freqs using only the lower and upper bounds
-    // Use fLow, fHigh and deltaF rather than geometric frequencies for numerical accuracy
-    double fHigh_temp = fHigh_geom / Mtot_sec;
-    UINT4 iStart = (UINT4) ceil(fLow / deltaF);
-    UINT4 iStop = (UINT4) ceil(fHigh_temp / deltaF);
+    UINT4 iStart = (UINT4) ceil(fLow_geom / deltaF_geom);
+    UINT4 iStop = (UINT4) ceil(fHigh_geom / deltaF_geom);
     freqs = XLALCreateREAL8Sequence(iStop - iStart);
     if (!freqs) {
       XLAL_ERROR(XLAL_EFUNC, "Frequency array allocation failed.");

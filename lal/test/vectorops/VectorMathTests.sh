@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# check for lal_simd_detect
-lal_simd_detect="${LAL_TEST_BUILDDIR}/../../src/lal_simd_detect"
+# check for lal-simd-detect
+lal_simd_detect="${LAL_TEST_BUILDDIR}/../../src/lal-simd-detect"
 if test ! -x ${lal_simd_detect}; then
     echo "$0: could not execute ${lal_simd_detect}" >&2
     exit 1

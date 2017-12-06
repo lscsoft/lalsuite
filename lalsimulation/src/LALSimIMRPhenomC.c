@@ -97,8 +97,7 @@ int XLALSimIMRPhenomCGenerateFD(
     const REAL8 chi,                   /**< mass-weighted aligned-spin parameter */
     const REAL8 f_min,                 /**< starting GW frequency (Hz) */
     const REAL8 f_max,                 /**< end frequency; 0 defaults to ringdown cutoff freq */
-    const REAL8 distance,              /**< distance of source (m) */
-    LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+    const REAL8 distance               /**< distance of source (m) */
 ) {
   BBHPhenomCParams *params;
   int status;
@@ -132,7 +131,7 @@ int XLALSimIMRPhenomCGenerateFD(
       XLAL_PRINT_WARNING("Warning: The model is only calibrated for m1/m2 <= 4.\n");
 
   /* phenomenological parameters*/
-  params = ComputeIMRPhenomCParams(m1, m2, chi, extraParams);
+  params = ComputeIMRPhenomCParams(m1, m2, chi);
   if (!params) XLAL_ERROR(XLAL_EFUNC);
   if (params->fCut <= f_min)
       XLAL_ERROR(XLAL_EDOM, "(fCut = 0.15M) <= f_min\n");
@@ -166,8 +165,7 @@ double XLALSimIMRPhenomCGetFinalFreq(
     const REAL8 chi
 ) {
     BBHPhenomCParams *phenomParams;
-    LALDict *extraParams = NULL;
-    phenomParams = ComputeIMRPhenomCParams(m1, m2, chi, extraParams);
+    phenomParams = ComputeIMRPhenomCParams(m1, m2, chi);
     return phenomParams->fCut;
 }
 
@@ -196,8 +194,7 @@ int XLALSimIMRPhenomCGenerateTD(
     const REAL8 f_min,        /**< starting GW frequency (Hz) */
     const REAL8 f_max,        /**< end GW frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance,     /**< distance of source (m) */
-    const REAL8 inclination,   /**< inclination of source (rad) */
-    LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+    const REAL8 inclination   /**< inclination of source (rad) */
 ) {
 	BBHPhenomCParams *params;
 	size_t cut_ind, peak_ind, ind_t0;
@@ -234,7 +231,7 @@ int XLALSimIMRPhenomCGenerateTD(
 		XLAL_PRINT_WARNING("Warning: The model is only calibrated for m1/m2 <= 4.\n");
 
 	/* phenomenological parameters*/
-	params = ComputeIMRPhenomCParams(m1, m2, chi, extraParams);
+	params = ComputeIMRPhenomCParams(m1, m2, chi);
 	if (!params) XLAL_ERROR(XLAL_EFUNC);
 	if (params->fCut <= f_min)
 		XLAL_ERROR(XLAL_EDOM, "(fCut = 0.15M) <= f_min\n");

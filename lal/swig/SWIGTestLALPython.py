@@ -7,10 +7,6 @@ import datetime
 import numpy
 expected_exception = False
 
-# return if 'x' has both value 'v' and type 't'
-def is_value_and_type(x, v, t):
-    return x == v and type(x) is t
-
 # turn NumPy's ComplexWarning into an error, if available
 if hasattr(numpy, "ComplexWarning"):
     warnings.simplefilter("error", numpy.ComplexWarning)
@@ -883,7 +879,7 @@ del plan
 lal.CheckMemoryLeaks()
 r4inv = lal.CreateREAL4Vector(len(r4in))
 r4inv.data = r4in
-c8outv = lal.CreateCOMPLEX8Vector(len(r4in)//2 + 1)
+c8outv = lal.CreateCOMPLEX8Vector(len(r4in)/2 + 1)
 plan = lal.CreateForwardREAL4FFTPlan(len(r4in), 0)
 lal.REAL4ForwardFFT(c8outv, r4inv, plan)
 c8out = numpy.zeros(numpy.shape(c8outv.data), dtype=c8outv.data.dtype)
@@ -907,7 +903,7 @@ del plan
 lal.CheckMemoryLeaks()
 r8inv = lal.CreateREAL8Vector(len(r8in))
 r8inv.data = r8in
-c16outv = lal.CreateCOMPLEX16Vector(len(r8in)//2 + 1)
+c16outv = lal.CreateCOMPLEX16Vector(len(r8in)/2 + 1)
 plan = lal.CreateForwardREAL8FFTPlan(len(r8in), 0)
 lal.REAL8ForwardFFT(c16outv, r8inv, plan)
 c16out = numpy.zeros(numpy.shape(c16outv.data), dtype=c16outv.data.dtype)
@@ -955,7 +951,7 @@ del plan
 lal.CheckMemoryLeaks()
 r4inv = lal.CreateREAL4Vector(len(r4in))
 r4inv.data = r4in
-r4outv = lal.CreateREAL4Vector(len(r4in)//2 + 1)
+r4outv = lal.CreateREAL4Vector(len(r4in)/2 + 1)
 plan = lal.CreateForwardREAL4FFTPlan(len(r4in), 0)
 lal.REAL4PowerSpectrum(r4outv, r4inv, plan)
 r4out = numpy.zeros(numpy.shape(r4outv.data), dtype=r4outv.data.dtype)
@@ -967,7 +963,7 @@ del plan
 lal.CheckMemoryLeaks()
 r8inv = lal.CreateREAL8Vector(len(r8in))
 r8inv.data = r8in
-r8outv = lal.CreateREAL8Vector(len(r8in)//2 + 1)
+r8outv = lal.CreateREAL8Vector(len(r8in)/2 + 1)
 plan = lal.CreateForwardREAL8FFTPlan(len(r8in), 0)
 lal.REAL8PowerSpectrum(r8outv, r8inv, plan)
 r8out = numpy.zeros(numpy.shape(r8outv.data), dtype=r8outv.data.dtype)
@@ -990,20 +986,6 @@ for i in range(0, ap.length):
 del ap
 lal.CheckMemoryLeaks()
 print("PASSED dynamic array of pointers access")
-
-## check typemaps for strings and double pointers
-print("checking typemaps for strings and double pointers ...")
-sts = lal.swig_lal_test_struct()
-ptr_ptr, ptr_null_ptr, null_ptr_ptr = lal.swig_lal_test_typemaps_string_ptrptr("abcde", "", None, sts, 0, None)
-assert(ptr_ptr == sts)
-assert(ptr_null_ptr == sts)
-assert(null_ptr_ptr == None)
-del sts
-del ptr_ptr
-del ptr_null_ptr
-del null_ptr_ptr
-lal.CheckMemoryLeaks()
-print("PASSED typemaps for strings and double pointers")
 
 # check 'tm' struct conversions
 print("checking 'tm' struct conversions ...")
@@ -1030,34 +1012,34 @@ print("PASSED 'tm' struct conversions")
 print("checking LIGOTimeGPS operations ...")
 from lal import LIGOTimeGPS
 t0 = LIGOTimeGPS()
-assert(type(LIGOTimeGPS(t0)) is LIGOTimeGPS)
-assert(is_value_and_type(t0, 0, LIGOTimeGPS))
+assert(isinstance(LIGOTimeGPS(t0), LIGOTimeGPS))
+assert(t0 == 0 and isinstance(t0, LIGOTimeGPS))
 assert(t0 != None and not t0 is None)
 t1 = LIGOTimeGPS(10.5)
 t2 = LIGOTimeGPS(10, 500000000)
 assert(not t0 and t1 and t2)
-assert(is_value_and_type(t1, t2, LIGOTimeGPS))
+assert(t1 == t2 and isinstance(t1, LIGOTimeGPS))
 t3 = +t1
 t3 = -t2
 assert(t1 == t2 and t1 >= t2 and t2 >= t1)
 assert(abs(-t1) == t1)
 assert(float(t1) == 10.5)
-assert(is_value_and_type(t1 + 3.5, 14, LIGOTimeGPS))
-assert(is_value_and_type(3.5 + t1, 14, LIGOTimeGPS))
+assert(t1 + 3.5 == 14 and isinstance(t1 + 3.5, LIGOTimeGPS))
+assert(3.5 + t1 == 14 and isinstance(3.5 + t1, LIGOTimeGPS))
 t2 -= 5.5
-assert(is_value_and_type(t2, 5, LIGOTimeGPS))
+assert(t2 == 5 and isinstance(t2, LIGOTimeGPS))
 assert(t2 + 5.5 >= t1 and t2 + 3 != t2)
-assert(is_value_and_type(t2 - 5, t0, LIGOTimeGPS))
-assert(is_value_and_type(t1 * 3, 31.5, LIGOTimeGPS))
-assert(is_value_and_type(3 * t1, 31.5, LIGOTimeGPS))
-assert(is_value_and_type(t2 / 2.5, 2, LIGOTimeGPS))
-assert(is_value_and_type(21 / t1, 2, LIGOTimeGPS))
-assert(is_value_and_type(t1 + t2, 15.5, LIGOTimeGPS))
-assert(is_value_and_type(t1 - t2, 5.5, LIGOTimeGPS))
-assert(is_value_and_type(t1 * t2, 52.5, LIGOTimeGPS))
-assert(is_value_and_type(t2 * t1, 52.5, LIGOTimeGPS))
-assert(is_value_and_type(t1 / t2, 2.1, LIGOTimeGPS))
-assert(is_value_and_type(t1 % t2, 0.5, LIGOTimeGPS))
+assert(t2 - 5 == t0 and isinstance(t2 - 5, LIGOTimeGPS))
+assert(t1 * 3 == 31.5 and isinstance(t1 * 3, LIGOTimeGPS))
+assert(3 * t1 == 31.5 and isinstance(3 * t1, LIGOTimeGPS))
+assert(t2 / 2.5 == 2 and isinstance(t2 / 2.5, LIGOTimeGPS))
+assert(21 / t1  == 2 and isinstance(21 / t1, LIGOTimeGPS))
+assert(t1 + t2 == 15.5 and isinstance(t1 + t2, LIGOTimeGPS))
+assert(t1 - t2 == 5.5 and isinstance(t1 - t2, LIGOTimeGPS))
+assert(t1 * t2 == 52.5 and isinstance(t1 * t2, LIGOTimeGPS))
+assert(t2 * t1 == 52.5 and isinstance(t2 * t1, LIGOTimeGPS))
+assert(t1 / t2 == 2.1 and isinstance(t1 / t2, LIGOTimeGPS))
+assert(t1 % t2 == 0.5 and isinstance(t1 % t2, LIGOTimeGPS))
 assert(t1 > t2 and t2 < t1 and t1 >= t2 and t2 <= t1)
 assert(LIGOTimeGPS(333333333,333333333) == LIGOTimeGPS(1000000000) / 3)
 assert(LIGOTimeGPS(666666666,666666667) == LIGOTimeGPS(2000000000) / 3)
@@ -1066,11 +1048,10 @@ assert(LIGOTimeGPS("-6542354.389038577") == LIGOTimeGPS("-914984.929117316") * 7
 assert(LIGOTimeGPS("-6542354.389038577") == 7.1502318572066237 * LIGOTimeGPS("-914984.929117316"))
 assert(LIGOTimeGPS("-127965.770535834") == LIGOTimeGPS("-914984.929117316") / 7.1502318572066237)
 t1 += 812345667.75
-assert(str(t1) == "812345678.25")
-assert(type(eval(repr(t1))) is type(t1))
-assert(eval(repr(t1)) == t1)
-assert(int(t1) == 812345678)
-assert(t1.ns() == 812345678250000000)
+assert(str(t1) == "812345678.250000000")
+assert(LIGOTimeGPS(repr(t1)) == t1)
+assert(long(t1) == 812345678)
+assert(t1.ns() == 812345678250000000L)
 assert(hash(t1) == 1049484238)
 t4struct = lal.swig_lal_test_gps()
 t4struct.t = 1234.5
@@ -1107,17 +1088,17 @@ class my_gps_class:
         self.gpsNanoSeconds = ns
 tmy = my_gps_class(987, 654321)
 tsw = LIGOTimeGPS(tmy)
-assert(type(tsw) is LIGOTimeGPS)
+assert(isinstance(tsw, LIGOTimeGPS))
 assert(tsw.gpsSeconds == 987)
 assert(tsw.gpsNanoSeconds == 654321)
-assert(is_value_and_type(tsw + tmy, tsw + tsw, LIGOTimeGPS))
-assert(is_value_and_type(tmy + tsw, tsw + tsw, LIGOTimeGPS))
-assert(is_value_and_type(tsw - tmy, tsw - tsw, LIGOTimeGPS))
-assert(is_value_and_type(tmy - tsw, tsw - tsw, LIGOTimeGPS))
-assert(is_value_and_type(tsw * tmy, tsw * tsw, LIGOTimeGPS))
-assert(is_value_and_type(tmy * tsw, tsw * tsw, LIGOTimeGPS))
-assert(is_value_and_type(tsw / tmy, tsw / tsw, LIGOTimeGPS))
-assert(is_value_and_type(tmy / tsw, tsw / tsw, LIGOTimeGPS))
+assert(tsw + tmy == tsw + tsw and isinstance(tsw + tmy, LIGOTimeGPS))
+assert(tmy + tsw == tsw + tsw and isinstance(tmy + tsw, LIGOTimeGPS))
+assert(tsw - tmy == tsw - tsw and isinstance(tsw - tmy, LIGOTimeGPS))
+assert(tmy - tsw == tsw - tsw and isinstance(tmy - tsw, LIGOTimeGPS))
+assert(tsw * tmy == tsw * tsw and isinstance(tsw * tmy, LIGOTimeGPS))
+assert(tmy * tsw == tsw * tsw and isinstance(tmy * tsw, LIGOTimeGPS))
+assert(tsw / tmy == tsw / tsw and isinstance(tsw / tmy, LIGOTimeGPS))
+assert(tmy / tsw == tsw / tsw and isinstance(tmy / tsw, LIGOTimeGPS))
 assert(lal.swig_lal_test_noptrgps(tmy) == lal.swig_lal_test_noptrgps(tsw))
 del tsw
 lal.CheckMemoryLeaks()
@@ -1126,13 +1107,13 @@ print("PASSED LIGOTimeGPS operations (Python specific)")
 # check LALUnit operations
 print("checking LALUnit operations ...")
 u1 = lal.Unit("kg m s^-2")
-assert(type(lal.Unit(u1)) is lal.Unit)
-assert(is_value_and_type(u1, lal.NewtonUnit, lal.Unit))
+assert(isinstance(lal.Unit(u1), lal.Unit))
+assert(u1 == lal.NewtonUnit and isinstance(u1, lal.Unit))
 assert(str(u1) == "m kg s^-2")
 u2 = lal.MeterUnit * lal.KiloGramUnit / lal.SecondUnit ** 2
-assert(is_value_and_type(u2, u1, lal.Unit))
+assert(u1 == u2 and isinstance(u2, lal.Unit))
 u2 = lal.MeterUnit**(1,2) * lal.KiloGramUnit**(1,2) * lal.SecondUnit ** -1
-assert(is_value_and_type(u2, u1**(1,2), lal.Unit))
+assert(u1**(1,2) == u2 and isinstance(u2, lal.Unit))
 try:
     lal.SecondUnit ** (1,0)
     expected_exception = True
@@ -1140,10 +1121,10 @@ except:
     pass
 assert(not expected_exception)
 u1 *= lal.MeterUnit
-assert(is_value_and_type(u1, lal.JouleUnit, lal.Unit))
+assert(u1 == lal.JouleUnit and isinstance(u1, lal.Unit))
 assert(repr(u1) == "m^2 kg s^-2")
 u1 /= lal.SecondUnit
-assert(is_value_and_type(u1, lal.WattUnit, lal.Unit))
+assert(u1 == lal.WattUnit and isinstance(u1, lal.Unit))
 assert(u1 == "m^2 kg s^-3")
 u1 *= 1000
 assert(u1 == lal.KiloUnit * lal.WattUnit)

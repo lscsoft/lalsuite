@@ -1,7 +1,2 @@
 # Import SWIG wrappings, if available
-@SWIG_BUILD_PYTHON_TRUE@from .lalstochastic import *
-
-__version__ = "@PACKAGE_VERSION@"
-
-## \addtogroup lalstochastic_python
-"""This package provides Python wrappings and extensions to LALStochastic"""
+@SWIG_BUILD_PYTHON_TRUE@from lalstochastic import *

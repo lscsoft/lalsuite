@@ -47,7 +47,7 @@
 
 
 /*
- * Copyright (C) 2013-2017  Leo Singer
+ * Copyright (C) 2013-2015  Leo Singer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -77,32 +77,48 @@
 #include <sys/types.h>
 
 
-typedef struct {
-    unsigned long long uniq;
-    double value[3];
-} bayestar_pixel;
-
-
 /* Perform sky localization based on TDOAs, PHOAs, and amplitude. */
-bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
-    size_t *out_len,                /* Number of returned pixels */
-    double *out_log_bci,            /* log Bayes factor: coherent vs. incoherent */
-    double *out_log_bsn,            /* log Bayes factor: signal vs. noise */
+double *bayestar_sky_map_toa_phoa_snr(
+    long *npix,
     /* Prior */
     double min_distance,            /* Minimum distance */
     double max_distance,            /* Maximum distance */
     int prior_distance_power,       /* Power of distance in prior */
-    int cosmology,                  /* Set to nonzero to include comoving volume correction */
-    /* Data */
+    /* Detector network */
     double gmst,                    /* GMST (rad) */
     unsigned int nifos,             /* Number of detectors */
-    unsigned long nsamples,         /* Lengths of SNR series */
+    unsigned long nsamples,         /* Length of autocorrelation sequence */
     double sample_rate,             /* Sample rate in seconds */
-    const double *epochs,           /* Timestamps of SNR time series */
-    const float complex **snrs,     /* Complex SNR series */
+    const double complex **acors,   /* Autocorrelation sequences */
     const float (**responses)[3],   /* Detector responses */
     const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
-    const double *horizons          /* SNR=1 horizon distances for each detector */
+    const double *horizons,         /* SNR=1 horizon distances for each detector */
+    /* Observations */
+    const double *toas,             /* Arrival time differences relative to network barycenter (s) */
+    const double *phoas,            /* Phases on arrival */
+    const double *snrs              /* SNRs */
+);
+
+double bayestar_log_likelihood_toa_snr(
+    /* Parameters */
+    double ra,                      /* Right ascension (rad) */
+    double sin_dec,                 /* Sin(declination) */
+    double distance,                /* Distance */
+    double u,                       /* Cos(inclination) */
+    double twopsi,                  /* Twice polarization angle (rad) */
+    double t,                       /* Barycentered arrival time (s) */
+    /* Detector network */
+    double gmst,                    /* GMST (rad) */
+    unsigned int nifos,             /* Number of detectors */
+    unsigned long nsamples,         /* Length of autocorrelation sequence */
+    double sample_rate,             /* Sample rate in seconds */
+    const double complex **acors,   /* Autocorrelation sequences */
+    const float (**responses)[3],   /* Detector responses */
+    const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
+    const double *horizons,         /* SNR=1 horizon distances for each detector */
+    /* Observations */
+    const double *toas,             /* Arrival time differences relative to network barycenter (s) */
+    const double *snrs              /* SNRs */
 );
 
 double bayestar_log_likelihood_toa_phoa_snr(
@@ -113,21 +129,32 @@ double bayestar_log_likelihood_toa_phoa_snr(
     double u,                       /* Cos(inclination) */
     double twopsi,                  /* Twice polarization angle (rad) */
     double t,                       /* Barycentered arrival time (s) */
-    /* Data */
+    /* Detector network */
     double gmst,                    /* GMST (rad) */
     unsigned int nifos,             /* Number of detectors */
-    unsigned long nsamples,         /* Length of SNR series */
+    unsigned long nsamples,         /* Length of autocorrelation sequence */
     double sample_rate,             /* Sample rate in seconds */
-    const double *epochs,           /* Timestamps of SNR time series */
-    const float complex **snrs,     /* Complex SNR series */
+    const double complex **acors,   /* Autocorrelation sequences */
     const float (**responses)[3],   /* Detector responses */
     const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
-    const double *horizons          /* SNR=1 horizon distances for each detector */
+    const double *horizons,         /* SNR=1 horizon distances for each detector */
+    /* Observations */
+    const double *toas,             /* Arrival time differences relative to network barycenter (s) */
+    const double *phoas,            /* Phases on arrival */
+    const double *snrs              /* SNRs */
 );
 
 /* Unit test suite. Return EXIT_SUCCESS if tests passed,
  * or otherwise EXIT_FAILURE. */
 int bayestar_test(void);
+
+typedef struct log_radial_integrator_t log_radial_integrator;
+
+log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, double pmax, size_t size);
+
+void log_radial_integrator_free(log_radial_integrator *integrator);
+
+double log_radial_integrator_eval(const log_radial_integrator *integrator, double p, double b);
 
 #endif /* !defined(SWIG) && !defined(__cplusplus) */
 

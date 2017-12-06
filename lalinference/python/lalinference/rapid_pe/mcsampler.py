@@ -32,8 +32,8 @@ import functools
 
 import healpy
 
-from lalinference.rapid_pe import statutils, synchlib
-from lal import rate
+from lalinference.rapid_pe import statutils
+from pylal import rate
 
 class NanOrInf(Exception):
     def __init__(self, value):
@@ -101,20 +101,6 @@ class MCSampler(object):
         # MEASURES (=priors): ROS needs these at the sampler level, to clearly separate their effects
         # ASSUMES the user insures they are normalized
         self.prior_pdf = {}
-
-        # Used if networking is useful
-        self._address, self._port = None, None
-        self.socket = None
-
-    def init_socket(self, address, port):
-        """
-        Initialize a network connection to 'address' at 'port'.
-        """
-        self._address, self._port = address, port
-        try:
-            self.socket = synchlib.init_socket(self._address, self._port)
-        except pysocket.error as sockerr:
-            pass
 
     def clear(self):
         """
@@ -361,7 +347,6 @@ class MCSampler(object):
         if show_evaluation_log:
             print "walltime : iteration Neff  ln(maxweight) lnLmarg ln(Z/Lmax) int_var"
 
-        socket = None
         while self.ntotal < nmin or (eff_samp < neff and self.ntotal < nmax):
             # Draw our sample points
             p_s, p_prior, rv = self.draw(n, *self.params)
@@ -483,14 +468,6 @@ class MCSampler(object):
                 for key in convergence_tests:
                     print "   -- Convergence test status : ", key, last_convergence_test[key]
 
-            self._address, self._port = "pcdev2.nemo.phys.uwm.edu", 1890
-            #if self._address is not None:
-            if False:
-                dims = ("distance", "inclination", "right_ascension",
-                        "declination", "integrand", "joint_prior", "joint_s_prior")
-                send_data = synchlib.prepare_data(self._rvs, dims, self.ntotal - n)
-                self.socket = synchlib.send_samples(send_data, self._address, self._port, verbose=True, socket=self.socket)
-
             #
             # The total number of adaptive steps is reached
             #
@@ -523,7 +500,7 @@ class MCSampler(object):
                 for pt, w in zip(points, weights):
                     self._hist[p][pt,] += w
                 self._hist[p].array += self._hist[p].array.mean()
-                rate.filter_array(self._hist[p].array, rate.tophat_window(3))
+                rate.to_moving_mean_density(self._hist[p], rate.tophat_window(3))
                 norm = numpy.sum(self._hist[p].array * self._hist[p].bins.volumes())
                 self._hist[p].array /= norm
                 # FIXME: Stupid pet trick while numpy version is lacking
@@ -592,7 +569,7 @@ class HealPixSampler(object):
         dec = pi/2 - theta
         ra = phi
         """
-        return numpy.asarray((numpy.pi/2-th, ph))
+        return numpy.pi/2-th, ph
 
     @staticmethod
     def decra2thph(dec, ra):
@@ -606,12 +583,71 @@ class HealPixSampler(object):
         theta = pi/2 - dec
         ra = phi
         """
-        return numpy.asarray((numpy.pi/2-dec, ra))
+        return numpy.pi/2-dec, ra
 
-    def __init__(self, skymap):
+    def __init__(self, skymap, massp=1.0):
         self.skymap = skymap
-        self._argsort = skymap.argsort()
-        self._probmap = skymap[self._argsort].cumsum()
+        self._massp = massp
+        self.renormalize()
+
+    @property
+    def massp(self):
+        return self._massp
+
+    @massp.setter
+    def massp(self, value):
+        assert 0 <= value <= 1
+        self._massp = value
+        norm = self.renormalize()
+
+    def renormalize(self):
+        """
+        Identify the points contributing to the overall cumulative probability distribution, and set the proper normalization.
+        """
+        res = healpy.npix2nside(len(self.skymap))
+        self.pdf_sorted = sorted([(p, i) for i, p in enumerate(self.skymap)], reverse=True)
+        self.valid_points_decra = []
+        cdf, np = 0, 0
+        for p, i in self.pdf_sorted:
+            if p == 0:
+                continue # Can't have a zero prior
+            self.valid_points_decra.append(HealPixSampler.thph2decra(*healpy.pix2ang(res, i)))
+            cdf += p
+            if cdf > self._massp:
+                break
+        self._renorm = cdf
+        # reset to indicate we'd need to recalculate this
+        self.valid_points_hist = None
+        return self._renorm
+
+    def __expand_valid(self, min_p=1e-7):
+        #
+        # Determine what the 'quanta' of probabilty is
+        #
+        if self._massp == 1.0:
+            # This is to ensure we don't blow away everything because the map
+            # is very spread out
+            min_p = min(min_p, max(self.skymap))
+        else:
+            # NOTE: Only valid if CDF descending order is kept
+            min_p = self.pseudo_pdf(*self.valid_points_decra[-1])
+
+        self.valid_points_hist = []
+        ns = healpy.npix2nside(len(self.skymap))
+
+        # Renormalize first so that the vector histogram is properly normalized
+        self._renorm = 0
+        # Account for probability lost due to cut off
+        for i, v in enumerate(self.skymap >= min_p):
+            self._renorm += self.skymap[i] if v else 0
+
+        for pt in self.valid_points_decra:
+            th, ph = HealPixSampler.decra2thph(pt[0], pt[1])
+            pix = healpy.ang2pix(ns, th, ph)
+            if self.skymap[pix] < min_p:
+                continue
+            self.valid_points_hist.extend([pt]*int(round(self.pseudo_pdf(*pt)/min_p)))
+        self.valid_points_hist = numpy.array(self.valid_points_hist).T
 
     def pseudo_pdf(self, dec_in, ra_in):
         """
@@ -619,24 +655,42 @@ class HealPixSampler(object):
         """
         th, ph = HealPixSampler.decra2thph(dec_in, ra_in)
         res = healpy.npix2nside(len(self.skymap))
-        return self.skymap[healpy.ang2pix(res, th, ph)]
+        return self.skymap[healpy.ang2pix(res, th, ph)]/self._renorm
 
-    def pseudo_cdf_inverse(self, dec_in=None, ra_in=None, ndraws=1):
+    def pseudo_cdf_inverse(self, dec_in=None, ra_in=None, ndraws=1, stype='vecthist'):
         """
         Select points from the skymap with a distribution following its corresponding pixel probability. If dec_in, ra_in are suupplied, they are ignored except that their shape is reproduced. If ndraws is supplied, that will set the shape. Will return a 2xN numpy array of the (dec, ra) values.
+        stype controls the type of sampling done to retrieve points. Valid choices are
+        'rejsamp': Rejection sampling: accurate but slow
+        'vecthist': Expands a set of points into a larger vector with the multiplicity of the points in the vector corresponding roughly to the probability of drawing that point. Because this is not an exact representation of the proability, some points may not be represented at all (less than quantum of minimum probability) or inaccurately (a significant fraction of the fundamental quantum).
         """
-        res = healpy.npix2nside(len(self.skymap))
+        # FIXME: Add the multinomial selection here
 
         if ra_in is not None:
             ndraws = len(ra_in)
-        elif ndraws is not None:
+        if ra_in is None:
             ra_in, dec_in = numpy.zeros((2, ndraws))
-        else:
-            raise ValueError("Either ra / dec or ndraws must be specified.")
 
-        idx = numpy.searchsorted(self._probmap, \
-                    numpy.random.uniform(0, 1, ndraws))
-        return HealPixSampler.thph2decra(*healpy.pix2ang(res, self._argsort[idx]))
+        if stype == 'rejsamp':
+            # FIXME: This is only valid under descending ordered CDF summation
+            ceiling = max(self.skymap)
+            i, np = 0, len(self.valid_points_decra)
+            while i < len(ra_in):
+                rnd_n = numpy.random.randint(0, np)
+                trial = numpy.random.uniform(0, ceiling)
+                if trial <= self.pseudo_pdf(*self.valid_points_decra[rnd_n]):
+                    dec_in[i], ra_in[i] = self.valid_points_decra[rnd_n]
+                    i += 1
+            return numpy.array([dec_in, ra_in])
+        elif stype == 'vecthist':
+            if self.valid_points_hist is None:
+                self.__expand_valid()
+            np = self.valid_points_hist.shape[1]
+            rnd_n = numpy.random.randint(0, np, len(ra_in))
+            dec_in, ra_in = self.valid_points_hist[:,rnd_n]
+            return numpy.array([dec_in, ra_in])
+        else:
+            raise ValueError("%s is not a recgonized sampling type" % stype)
 
 ### UTILITIES: Predefined distributions
 
@@ -685,15 +739,3 @@ delta_func_pdf_vector = numpy.vectorize(delta_func_pdf, otypes=[numpy.float])
 def delta_func_samp(x_0, x):
     return x_0
 delta_func_samp_vector = numpy.vectorize(delta_func_samp, otypes=[numpy.float])
-
-if __name__ == "__main__":
-
-    ns = healpy.nside2npix(1024)
-    smap = numpy.zeros(ns)
-    rnd_idx = numpy.random.randint(len(smap))
-    smap[rnd_idx] = 1.
-
-    hps = HealPixSampler(smap)
-
-    pts = hps.pseudo_cdf_inverse(None, ndraws=int(1e6))
-    assert numpy.all(healpy.ang2pix(1024, *HealPixSampler.decra2thph(*pts)) == rnd_idx)

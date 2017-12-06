@@ -98,6 +98,8 @@ extern int vrbflg;		/**< defined in lalapps.c */
 
 /* ----- User-variables: can be set from config-file or command-line */
 typedef struct {
+  BOOLEAN help;		/**< trigger output of help string */
+
   /* amplitude parameters + ranges */
   REAL8 h0Nat;		/**< overall GW amplitude h0 in *natural units*: h0Nat = h0 * sqrt(T/Sn) */
   REAL8 h0NatBand;	/**< randomize signal within [h0, h0+Band] with uniform prior */
@@ -122,6 +124,7 @@ typedef struct {
 
   BOOLEAN SignalOnly;	/**< don't generate noise-draws: will result in non-random 'signal only' values of F and B */
 
+  BOOLEAN version;	/**< output version-info */
 } UserInput_t;
 
 
@@ -200,13 +203,18 @@ int main(int argc,char *argv[])
   XLAL_CHECK_MAIN ( initUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* do ALL cmdline and cfgfile handling */
-  BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if ( should_exit ) {
-    return EXIT_FAILURE;
+  XLAL_CHECK_MAIN ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  if (uvar.help) {	/* if help was requested, we're done here */
+    return 0;
   }
 
   XLAL_CHECK_MAIN ( (version_string = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
+
+  if ( uvar.version ) {
+    printf ( "%s\n", version_string );
+    return 0;
+  }
 
   /* ---------- Initialize code-setup ---------- */
   XLAL_CHECK_MAIN ( InitCode ( &GV, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -333,6 +341,7 @@ initUserVars ( UserInput_t *uvar )
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL );
 
   /* set a few defaults */
+  uvar->help = 0;
   uvar->outputStats = NULL;
 
   uvar->phi0 = 0;
@@ -346,6 +355,8 @@ initUserVars ( UserInput_t *uvar )
   uvar->E = 0;	/* RAA approximation antenna-pattern matrix component M_{14}. Zero if using LWL */
 
   /* register all our user-variables */
+  XLALRegisterUvarMember(	help, 		BOOLEAN, 'h', HELP,     "Print this message");
+
   XLALRegisterUvarMember(	h0Nat,		REAL8, 's', OPTIONAL, "Overall GW amplitude h0 in *natural units*: h0Nat = h0 sqrt(T/Sn) ");
   XLALRegisterUvarMember(	h0NatBand,	 REAL8, 0,  OPTIONAL, "Randomize amplitude within [h0, h0+h0Band] with uniform prior");
   XLALRegisterUvarMember(	SNR,		 REAL8, 0,  OPTIONAL, "Alternative: adjust h0 to obtain signal of exactly this optimal SNR");
@@ -366,7 +377,9 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( integrationMethod,INT4, 'm', OPTIONAL, "2D Integration-method: 0=Gauss-Kronod, 1=Monte-Carlo(Vegas)");
   XLALRegisterUvarMember(	numMCpoints,	REAL8, 'M', OPTIONAL, "Number of points to use in Monte-Carlo integration");
 
-  XLALRegisterUvarMember(	SignalOnly,     BOOLEAN, 'S', OPTIONAL,  "No noise-draws: will result in non-random 'signal only' values for F and B");
+  XLALRegisterUvarMember(	SignalOnly,     BOOLEAN, 'S', SPECIAL,  "No noise-draws: will result in non-random 'signal only' values for F and B");
+
+  XLALRegisterUvarMember(	version,        BOOLEAN, 'V', SPECIAL,   "Output code version");
 
   return XLAL_SUCCESS;
 

@@ -97,6 +97,8 @@ ConfigVariables GV;		/**< global container for various derived configuration set
 
 /* ----- User-variables: can be set from config-file or command-line */
 typedef struct {
+  BOOLEAN help;		/**< trigger output of help string */
+
   INT4 RngMedWindow;	/**< running-median window to use for noise-floor estimation */
 
   REAL8 aPlus;		/**< '+' polarization amplitude: aPlus  [alternative to {h0, cosi}: aPlus = 0.5*h0*(1+cosi^2)] */
@@ -108,8 +110,6 @@ typedef struct {
   REAL8 Freq;		/**< GW signal frequency */
   REAL8 Alpha;		/**< sky-position angle 'alpha', which is right ascencion in equatorial coordinates */
   REAL8 Delta;		/**< sky-position angle 'delta', which is declination in equatorial coordinates */
-
-  BOOLEAN PureSignal;   /**< If true, calculate 2F for pure signal, i.e. E[2F] = 2F = rho^2 */
 
   LALStringVector* assumeSqrtSX;/**< Assume stationary Gaussian noise with detector noise-floors sqrt{SX}" */
   BOOLEAN SignalOnly;	/**< DEPRECATED: ALTERNATIVE switch to assume Sh=1 instead of estimating noise-floors from SFTs */
@@ -128,6 +128,8 @@ typedef struct {
   CHAR *transientWindowType;	/**< name of transient window ('rect', 'exp',...) */
   REAL8 transientStartTime;	/**< GPS start-time of transient window */
   REAL8 transientTauDays;	/**< time-scale in days of transient window */
+
+  BOOLEAN version;	/**< output version-info */
 
 } UserInput_t;
 
@@ -163,13 +165,18 @@ int main(int argc,char *argv[])
   XLAL_CHECK_MAIN ( initUserVars( &uvar) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* do ALL cmdline and cfgfile handling */
-  BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if ( should_exit ) {
-    exit (1);
+  XLAL_CHECK_MAIN ( XLALUserVarReadAllInput ( argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  if (uvar.help) {	/* if help was requested, we're done here */
+    exit (0);
   }
 
   XLAL_CHECK_MAIN ( (VCSInfoString = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
+
+  if ( uvar.version ) {
+    printf ("%s\n", VCSInfoString );
+    exit(0);
+  }
 
   /* Initialize code-setup */
   XLAL_CHECK_MAIN ( InitPFS ( &GV, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -189,13 +196,8 @@ int main(int argc,char *argv[])
     rho2 = GV.Mmunu.Sinv_Tsft * (GV.Mmunu.Ad * al1 + GV.Mmunu.Bd * al2 + 2.0 * GV.Mmunu.Cd * al3 );
   }
 
-  /* F-statistic expected mean and standard deviation */
-  const REAL8 twoF_expected = uvar.PureSignal ? ( rho2 ) : ( 4.0 + rho2 );
-  const REAL8 twoF_sigma    = uvar.PureSignal ? (    0 ) : ( sqrt( 8.0 + 4.0 * rho2 ) );
-
-  /* output predicted Fstat-value, if requested */
   if (uvar.printFstat) {
-    fprintf(stdout, "\n%.1f\n", twoF_expected);
+    fprintf(stdout, "\n%.1f\n", 4.0 + rho2);
   }
 
   /* output predicted Fstat-value into file, if requested */
@@ -217,8 +219,8 @@ int main(int argc,char *argv[])
       /* append 'dataSummary' */
       fprintf (fpFstat, "%s", GV.dataSummary );
       /* output E[2F] and std[2F] */
-      fprintf (fpFstat, "twoF_expected = %g;\n", twoF_expected);
-      fprintf (fpFstat, "twoF_sigma    = %g;\n", twoF_sigma);
+      fprintf (fpFstat, "twoF_expected = %g;\n", 4.0 + rho2);
+      fprintf (fpFstat, "twoF_sigma    = %g;\n", sqrt( 4.0 * ( 2.0 + rho2 ) ) );
 
       /* output antenna-pattern matrix MNat_mu_nu = matrix(A, B, C) */
       {
@@ -262,13 +264,12 @@ initUserVars ( UserInput_t *uvar )
   uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
+  uvar->help = 0;
   uvar->outputFstat = NULL;
   uvar->printFstat = 1;
 
   uvar->minStartTime = 0;
   uvar->maxStartTime = LAL_INT4_MAX;
-
-  uvar->PureSignal = 0;
 
   uvar->assumeSqrtSX = NULL;
   uvar->SignalOnly = 0;
@@ -277,6 +278,8 @@ initUserVars ( UserInput_t *uvar )
   uvar->transientWindowType = XLALStringDuplicate ( "none" );
 
   /* register all our user-variables */
+  XLALRegisterUvarMember( help, 	BOOLEAN, 'h', HELP,     "Print this message");
+
   XLALRegisterUvarMember( aPlus, 	 REAL8, 0 , OPTIONAL, "'Plus' polarization amplitude: aPlus  [alternative to {h0, cosi}");
   XLALRegisterUvarMember( aCross,  	 REAL8, 0 , OPTIONAL, "'Cross' polarization amplitude: aCross [alternative to {h0, cosi}");
   XLALRegisterUvarMember( h0,		REAL8, 's', OPTIONAL, "Overall GW amplitude h0 [alternative to {aPlus, aCross}]");
@@ -299,10 +302,10 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( minStartTime, 	 INT4, 0,  OPTIONAL, "Only use SFTs with timestamps starting from (including) this GPS time");
   XLALRegisterUvarMember( maxStartTime, 	 INT4, 0,  OPTIONAL, "Only use SFTs with timestamps up to (excluding) this GPS time");
 
-  XLALRegisterUvarMember( PureSignal,	BOOLEAN, 'P', OPTIONAL, "If true, calculate 2F for pure signal, i.e. E[2F] = 2F = rho^2. If false, calculate 2F for signal+noise, i.e. E[2F] = 4 + rho^2.");
-
   XLALRegisterUvarMember( assumeSqrtSX,	 STRINGVector, 0,  OPTIONAL, "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs)");
-  XLALRegisterUvarMember( SignalOnly,	BOOLEAN, 'S', DEPRECATED,"DEPRECATED ALTERNATIVE: Don't estimate noise-floors but assume sqrtSX=1 instead");
+  XLALRegisterUvarMember( SignalOnly,	BOOLEAN, 'S', DEVELOPER,"DEPRECATED ALTERNATIVE: Don't estimate noise-floors but assume sqrtSX=1 instead");
+
+  XLALRegisterUvarMember( version,        BOOLEAN, 'V', SPECIAL,  "Output code version");
 
   XLALRegisterUvarMember( RngMedWindow,	INT4, 'k', DEVELOPER, "Running-Median window size");
 

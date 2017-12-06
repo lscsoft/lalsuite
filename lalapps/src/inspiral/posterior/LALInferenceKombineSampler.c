@@ -153,7 +153,7 @@ void ensemble_sampler(struct tagLALInferenceRunState *run_state) {
 
     /* Sampling complete, so clean up and return */
     for (walker=0; walker<nwalkers_per_thread; walker++)
-        run_state->threads[walker]->currentPropDensity = -INFINITY;
+        run_state->threads[walker]->currentPropDensity = -DBL_MAX;
 
     fclose(output);
     return;
@@ -177,7 +177,7 @@ void walker_step(LALInferenceRunState *run_state, LALInferenceThreadState *threa
 
     /* Only bother calculating likelihood if within prior boundaries */
     *proposed_prior = run_state->prior(run_state, thread->proposedParams, thread->model);
-    if (isfinite(*proposed_prior))
+    if (*proposed_prior > -DBL_MAX)
         *proposed_likelihood = run_state->likelihood(thread->proposedParams,
                                                      run_state->data, thread->model);
 
@@ -595,8 +595,8 @@ FILE *print_ensemble_header(LALInferenceRunState *run_state, INT4 rank) {
     /* Write the header information to file */
     fprintf(output,
             "  LALInference version:%s,%s,%s,%s,%s\n",
-            lalAppsVCSInfo.vcsId, lalAppsVCSInfo.vcsDate, lalAppsVCSInfo.vcsBranch,
-            lalAppsVCSInfo.vcsAuthor, lalAppsVCSInfo.vcsStatus);
+            lalAppsVCSId, lalAppsVCSDate, lalAppsVCSBranch,
+            lalAppsVCSAuthor, lalAppsVCSStatus);
 
     fprintf(output, "  %s\n", cmd_str);
 

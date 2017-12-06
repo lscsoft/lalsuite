@@ -67,7 +67,7 @@ extern "C" {
  */
 
 /** Enum listing different stream states */
-typedef enum tagLALFrStreamState {
+typedef enum {
     LAL_FR_STREAM_OK = 0,       /**< nominal */
     LAL_FR_STREAM_ERR = 1,      /**< error in frame stream */
     LAL_FR_STREAM_END = 2,      /**< end of frame stream */
@@ -77,7 +77,7 @@ typedef enum tagLALFrStreamState {
 } LALFrStreamState;
 
 /** Enum listing different stream modes */
-typedef enum tagLALFrStreamMode {
+typedef enum {
     LAL_FR_STREAM_SILENT_MODE = 0,	/**< silent mode */
     LAL_FR_STREAM_TIMEWARN_MODE = 1,    /**< display warning for invalid time requests */
     LAL_FR_STREAM_GAPINFO_MODE = 2,     /**< display info for gaps in data */
@@ -277,7 +277,7 @@ COMPLEX16FrequencySeries
 #define FRAMESTREAMH_MSGEDGAP "Gap in the data"
 /*@}*/
 
-typedef enum tagFrChanType {
+typedef enum {
     LAL_ADC_CHAN, LAL_SIM_CHAN, LAL_PROC_CHAN
 } FrChanType;
 

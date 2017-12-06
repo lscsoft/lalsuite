@@ -152,7 +152,7 @@ FULL_PATH_NAMES        = NO
 # will be relative from the directory where doxygen is started.
 # This tag requires that the tag FULL_PATH_NAMES is set to YES.
 
-STRIP_FROM_PATH        = @abs_builddir@/in
+STRIP_FROM_PATH        = @abs_top_srcdir@
 
 # The STRIP_FROM_INC_PATH tag can be used to strip a user-defined part of the
 # path mentioned in the documentation of a class, which tells the reader which
@@ -282,7 +282,7 @@ OPTIMIZE_OUTPUT_VHDL   = NO
 # Note that for custom extensions you also need to set FILE_PATTERNS otherwise
 # the files are not read by doxygen.
 
-EXTENSION_MAPPING      = i=C
+EXTENSION_MAPPING      =
 
 # If the MARKDOWN_SUPPORT tag is enabled then doxygen pre-processes all comments
 # according to the Markdown format, which allows for more readable
@@ -760,9 +760,8 @@ WARN_LOGFILE           = @abs_builddir@/warnings.log
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = @abs_builddir@/autogen.dox \
-                         @abs_srcdir@/src/toplevel.dox \
-                         @abs_srcdir@/src \
-                         @abs_builddir@/in
+                         @abs_srcdir@/toplevel.dox \
+                         $(doxygen_input)
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -785,8 +784,7 @@ INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.c \
                          *.h \
                          *.py \
-                         *.dox \
-                         SWIG*.i
+                         *.dox
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
 # be searched for input files as well.
@@ -857,7 +855,7 @@ EXAMPLE_RECURSIVE      = NO
 # \image command).
 
 IMAGE_PATH             = @abs_srcdir@/src \
-                         @abs_builddir@/in
+                         $(doxygen_input)
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program

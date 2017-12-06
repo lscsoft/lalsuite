@@ -28,8 +28,6 @@
 #include <lal/XLALError.h>
 #include <lal/XLALGSL.h>
 
-#ifndef SWIG // exclude from SWIG interface
-
 #define ALLOC_GSL_VAL(val, name, call) \
   name = (call); \
   XLAL_CHECK_VAL(val, (name) != NULL, XLAL_ENOMEM, #call " failed")
@@ -89,7 +87,7 @@
     fprintf(stderr, "%s:%i ", strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__, __LINE__); \
     fprintf(stderr, "%s = [", #name); \
     for (size_t GH_i = 0; (name) != NULL && GH_i < (name)->size; ++GH_i) { \
-      fprintf(stderr, " " fmt, gsl_##type##_get(name, GH_i)); \
+      fprintf(stderr, " "fmt, gsl_##type##_get(name, GH_i)); \
     } \
     fprintf(stderr, " ]\n"); \
   } while (0)
@@ -101,7 +99,7 @@
     for (size_t GH_i = 0; (name) != NULL && GH_i < (name)->size1; ++GH_i) { \
       fprintf(stderr, "  "); \
       for (size_t GH_j = 0; GH_j < (name)->size2; ++GH_j) { \
-        fprintf(stderr, " " fmt, gsl_##type##_get(name, GH_i, GH_j)); \
+        fprintf(stderr, " "fmt, gsl_##type##_get(name, GH_i, GH_j)); \
       } \
       fprintf(stderr, ";\n"); \
     } \
@@ -116,11 +114,32 @@
     } \
   } while (0)
 
+#define CALL_GSL_VAL(val, call, ...) \
+  do { \
+    int GH_retn = 0; \
+    XLAL_CALLGSL(GH_retn = (call)); \
+    if (GH_retn != 0) { \
+      char GH_buf[1024]; \
+      snprintf(GH_buf, sizeof(GH_buf), "X" __VA_ARGS__); \
+      if (strlen(GH_buf) > 1) { \
+        XLAL_ERROR_VAL(val, XLAL_EFAILED, "%s", &GH_buf[1]); \
+      } else { \
+        XLAL_ERROR_VAL(val, XLAL_EFAILED, #call " failed: %s", gsl_strerror(GH_retn)); \
+      } \
+    } \
+  } while (0)
+
 #define GALLOC(name, call)		ALLOC_GSL_VAL(XLAL_FAILURE, name, call)
 #define GALLOC_NULL(type, name, n)	ALLOC_GSL_VAL(NULL, name, call)
 #define GALLOC_MAIN(type, name, n)	ALLOC_GSL_VAL(EXIT_FAILURE, name, call)
 #define GALLOC_REAL8(type, name, n)	ALLOC_GSL_VAL(XLAL_REAL8_FAIL_NAN, name, call)
 #define GALLOC_REAL4(type, name, n)	ALLOC_GSL_VAL(XLAL_REAL4_FAIL_NAN, name, call)
+
+#define GCALL(...)			CALL_GSL_VAL(XLAL_FAILURE, __VA_ARGS__)
+#define GCALL_NULL(...)			CALL_GSL_VAL(NULL, __VA_ARGS__)
+#define GCALL_MAIN(...)			CALL_GSL_VAL(EXIT_FAILURE, __VA_ARGS__)
+#define GCALL_REAL8(...)		CALL_GSL_VAL(XLAL_REAL8_FAIL_NAN, __VA_ARGS__)
+#define GCALL_REAL4(...)		CALL_GSL_VAL(XLAL_REAL4_FAIL_NAN, __VA_ARGS__)
 
 #define GAPERM(name, n)			ALLOC_GSL_1D_VAL(XLAL_FAILURE, permutation, name, n)
 #define GAPERM_NULL(name, n)		ALLOC_GSL_1D_VAL(NULL, permutation, name, n)
@@ -319,8 +338,6 @@
 #define GCMPMATLU_REAL4(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(XLAL_REAL4_FAIL_NAN, matrix_ulong, lhs, rhs, tol)
 #define GPMATLU(name, fmt)		PRINT_GSL_2D(matrix_ulong, name, fmt)
 #define GFMATLU(...)			FREE_GSL(matrix_ulong, __VA_ARGS__)
-
-#endif // SWIG
 
 /// \endcond
 #endif // _GSLHELPERS_H

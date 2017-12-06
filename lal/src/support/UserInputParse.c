@@ -51,7 +51,7 @@ XLALParseStringValueAsINT8 ( INT8 *valINT8,         ///< [out] return INT8 value
                              const char *valString  ///< [in]  input string value
                              )
 {
-  XLAL_CHECK ( (valINT8 != NULL) && (valString != NULL) && (strlen(valString) > 0), XLAL_EINVAL );
+  XLAL_CHECK ( (valINT8 != NULL) && (valString != NULL ), XLAL_EINVAL );
 
   errno = 0;
   char *endptr;
@@ -80,7 +80,7 @@ XLALParseStringValueAsINT4 ( INT4 *valINT4,         ///< [out] return INT4 value
                              const char *valString  ///< [in]  input string value
                              )
 {
-  XLAL_CHECK ( (valINT4 != NULL) && (valString != NULL) && (strlen(valString) > 0), XLAL_EINVAL );
+  XLAL_CHECK ( (valINT4 != NULL) && (valString != NULL ), XLAL_EINVAL );
 
   INT8 valINT8;
   XLAL_CHECK ( XLALParseStringValueAsINT8 ( &valINT8, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -96,62 +96,6 @@ XLALParseStringValueAsINT4 ( INT4 *valINT4,         ///< [out] return INT4 value
 } // XLALParseStringValueAsINT4()
 
 
-/// Parse a string into an UINT8
-/// This ignores initial whitespace, but throws an error on _any_ non-converted trailing characters (including whitespace)
-int
-XLALParseStringValueAsUINT8 ( UINT8 *valUINT8,       ///< [out] return UINT8 value
-                              const char *valString  ///< [in]  input string value
-                             )
-{
-  XLAL_CHECK ( (valUINT8 != NULL) && (valString != NULL) && (strlen(valString) > 0), XLAL_EINVAL );
-
-  errno = 0;
-  char *endptr;
-  int base10 = 10;
-  unsigned long long valULLong = strtoull ( valString, &endptr, base10 );
-  XLAL_CHECK ( errno == 0, XLAL_EFAILED, "strtoll() failed to convert '%s' into long long!\n", valString );
-  XLAL_CHECK ( (*endptr) == '\0', XLAL_EFAILED, "strtoll(): trailing garbage '%s' found after int-conversion of '%s'\n", endptr, valString );
-
-  //  check range and convert unsigned long-int into UINT8
-  long long valLLong = strtoll ( valString, &endptr, base10 );   // This is to check for negative numbers, which strtoull() accepts
-  errno = 0;   // Do not need to check error code
-  XLAL_CHECK ( (valLLong >= 0), XLAL_EDOM, "String-conversion '%s' --> '%lli' exceeds UINT8 range of [0,%"LAL_UINT8_FORMAT"]\n",
-               valString, valLLong, LAL_UINT8_MAX );
-  if ( sizeof(valULLong) > sizeof(UINT8) ) { // avoid warning about trivial check
-    XLAL_CHECK ( (valULLong <= LAL_UINT8_MAX), XLAL_EDOM, "String-conversion '%s' --> '%llu' exceeds UINT8 range of [0,%"LAL_UINT8_FORMAT"]\n",
-                 valString, valULLong, LAL_UINT8_MAX );
-  }
-
-  (*valUINT8) = (UINT8)valULLong;
-
-  return XLAL_SUCCESS;
-
-} // XLALParseStringValueAsUINT8()
-
-
-/// Parse a string into an UINT4
-/// This ignores initial whitespace, but throws an error on _any_ non-converted trailing characters (including whitespace)
-int
-XLALParseStringValueAsUINT4 ( UINT4 *valUINT4,       ///< [out] return UINT4 value
-                              const char *valString  ///< [in]  input string value
-                             )
-{
-  XLAL_CHECK ( (valUINT4 != NULL) && (valString != NULL) && (strlen(valString) > 0), XLAL_EINVAL );
-
-  UINT8 valUINT8;
-  XLAL_CHECK ( XLALParseStringValueAsUINT8 ( &valUINT8, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // check range and convert UINT8 into UINT4
-  XLAL_CHECK ( (valUINT8 <= LAL_UINT4_MAX), XLAL_EDOM, "String-conversion '%s' --> '%"LAL_UINT8_FORMAT"' exceeds UINT4 range of [0,%"LAL_UINT8_FORMAT"]\n",
-               valString, valUINT8, LAL_UINT4_MAX );
-
-  (*valUINT4) = (UINT4)valUINT8;
-
-  return XLAL_SUCCESS;
-
-} // XLALParseStringValueAsUINT4()
-
-
 /// Parse a string into a REAL8
 /// This ignores initial whitespace, but throws an error on _any_ non-converted trailing characters (including whitespace)
 int
@@ -159,7 +103,7 @@ XLALParseStringValueAsREAL8 ( REAL8 *valREAL8,         ///< [out] return REAL8 v
                               const char *valString    ///< [in]  input string value
                               )
 {
-  XLAL_CHECK ( (valREAL8 != NULL) && (valString != NULL) && (strlen(valString) > 0), XLAL_EINVAL );
+  XLAL_CHECK ( (valREAL8 != NULL) && (valString != NULL ), XLAL_EINVAL );
 
   errno = 0;
   char *endptr;
@@ -180,7 +124,7 @@ XLALParseStringValueAsREAL4 ( REAL4 *valREAL4,         ///< [out] return REAL4 v
                               const char *valString    ///< [in]  input string value
                               )
 {
-  XLAL_CHECK ( (valREAL4 != NULL) && (valString != NULL) && (strlen(valString) > 0), XLAL_EINVAL );
+  XLAL_CHECK ( (valREAL4 != NULL) && (valString != NULL ), XLAL_EINVAL );
 
   errno = 0;
   char *endptr;
@@ -249,7 +193,7 @@ XLALParseStringValueAsBOOLEAN ( BOOLEAN *valBOOLEAN,     ///< [out] return BOOLE
                                 const char *valString    ///< [in]  input string value
                                 )
 {
-  XLAL_CHECK ( (valBOOLEAN != NULL) && (valString != NULL) && (strlen(valString) > 0), XLAL_EINVAL );
+  XLAL_CHECK ( (valBOOLEAN != NULL) && (valString != NULL ), XLAL_EINVAL );
 
   /* get rid of case ambiguities */
   char *valStringLower;
@@ -288,7 +232,7 @@ XLALParseStringValueAsGPS ( LIGOTimeGPS *gps,	///< [out] returned GPS time
                             const char *valString 	///< [in] input string representing MJD(TT) time
                             )
 {
-  XLAL_CHECK ( (gps != NULL) && (valString != NULL) && (strlen(valString) > 0), XLAL_EINVAL );
+  XLAL_CHECK ( (gps != NULL) && (valString != NULL), XLAL_EINVAL );
 
   INT4 gpsInt;
   REAL8 gpsFrac;
@@ -315,7 +259,7 @@ XLALParseStringValueAsEPOCH ( LIGOTimeGPS *gps,   	///< [out] return LIGOTimeGPS
                               const char *valString  	///< [in]  input string value
                               )
 {
-  XLAL_CHECK ( (gps != NULL) && (valString != NULL) && (strlen(valString) > 0), XLAL_EINVAL );
+  XLAL_CHECK ( (gps != NULL) && (valString != NULL ), XLAL_EINVAL );
 
   char buf[256];
   strncpy ( buf, valString, sizeof(buf)-1 );
@@ -366,7 +310,7 @@ XLALParseStringValueAsRAJ ( REAL8 *valRAJ,   	///< [out] return longitude value 
                             const char *valString  	///< [in]  input string value
                             )
 {
-  XLAL_CHECK ( (valRAJ != NULL) && (valString != NULL) && (strlen(valString) > 0), XLAL_EINVAL );
+  XLAL_CHECK ( (valRAJ != NULL) && (valString != NULL ), XLAL_EINVAL );
 
   // ---------- first check if there's a colon ':' somewhere in the string, which indicates "H:M:S" format
   const char *colon;
@@ -393,7 +337,7 @@ XLALParseStringValueAsDECJ ( REAL8 *valDECJ,   	///< [out] return latitude value
                              const char *valString 	///< [in]  input string value
                              )
 {
-  XLAL_CHECK ( (valDECJ != NULL) && (valString != NULL) && (strlen(valString) > 0), XLAL_EINVAL );
+  XLAL_CHECK ( (valDECJ != NULL) && (valString != NULL ), XLAL_EINVAL );
 
   // ---------- first check if there's a colon ':' somewhere in the string, which indicates "D:M:S" format
   const char *colon;
@@ -414,7 +358,7 @@ XLALParseStringValueAsDECJ ( REAL8 *valDECJ,   	///< [out] return latitude value
 // Split a range string into parts, return the parts as strings, and
 // the linear transform used to compute the range from the parsed parts
 //
-static int SplitStringIntoRange(const char *str, char part[2][256], int T[2][2]) {
+static void split_string_into_range(const char *str, char part[2][256], int T[2][2]) {
 
   // Assume no separators by default, copy 'str' to both parts (--var=point)
   memset(part[0], 0, sizeof(part[0]));
@@ -431,7 +375,7 @@ static int SplitStringIntoRange(const char *str, char part[2][256], int T[2][2])
   } syntaxes[] = {
     { ',', { {1,  0}, {0, 1} } },   // --var=start,end
     { '/', { {1,  0}, {1, 1} } },   // --var=start/band
-    { '~', { {1, -1}, {1, 1} } },   // --var=start~plusminus
+    { '~', { {1, -1}, {1, 1} } },   // --var=centre~halfband
   };
 
   // Loop over possible syntaxes
@@ -444,30 +388,25 @@ static int SplitStringIntoRange(const char *str, char part[2][256], int T[2][2])
       // Copy everything in 'str' up to separator to 'part[0]'
       memset(part[0], 0, sizeof(part[0]));
       strncpy(part[0], str, MYMIN((size_t)(found - str), sizeof(part[0]) - 1));
-      XLAL_CHECK( strlen(part[0]) > 0, XLAL_EINVAL, "Input '%s' contains no value before range separator '%c'", str, syntaxes[i].sep );
 
       // Copy everything in 'str' past separator to 'part[1]'
       memset(part[1], 0, sizeof(part[1]));
       strncpy(part[1], found + 1, sizeof(part[1]) - 1);
-      XLAL_CHECK( strlen(part[1]) > 0, XLAL_EINVAL, "Input '%s' contains no value after range separator '%c'", str, syntaxes[i].sep );
 
       // Copy transform to 'T'
       memcpy(T, syntaxes[i].T, sizeof(syntaxes[i].T));
 
-      break;
-
+      return;
     }
 
   }
-
-  return XLAL_SUCCESS;
 
 }
 
 
 ///
 /// Parse a string representing a range of REAL8 values into a REAL8Range. Possible formats
-/// are <tt>start</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>start~plusminus</tt>.
+/// are <tt>point</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>centre~halfband</tt>.
 /// Output range is always <tt>low,high</tt> with <tt>range[0] = low; range[1] = high</tt>.
 ///
 int XLALParseStringValueAsREAL8Range(
@@ -479,12 +418,11 @@ int XLALParseStringValueAsREAL8Range(
   // Check input
   XLAL_CHECK(real8Range != NULL, XLAL_EFAULT);
   XLAL_CHECK(valString != NULL, XLAL_EFAULT);
-  XLAL_CHECK(strlen(valString) > 0, XLAL_EINVAL);
 
   // Parse range
   char part[2][256];
   int T[2][2];
-  XLAL_CHECK( SplitStringIntoRange(valString, part, T) == XLAL_SUCCESS, XLAL_EFUNC );
+  split_string_into_range(valString, part, T);
   REAL8 val[2];
   XLAL_CHECK( XLALParseStringValueAsREAL8(&val[0], part[0]) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALParseStringValueAsREAL8(&val[1], part[1]) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -502,47 +440,10 @@ int XLALParseStringValueAsREAL8Range(
 
 }
 
-///
-/// Parse a string representing a range of INT4 values into a INT4Range. Possible formats
-/// are <tt>start</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>start~plusminus</tt>.
-/// Output range is always <tt>low,high</tt> with <tt>range[0] = low; range[1] = high</tt>.
-///
-int XLALParseStringValueAsINT4Range(
-  INT4Range *int4Range,		///< [out] output range of INT4 values
-  const char *valString			///< [in] input string
-  )
-{
-
-  // Check input
-  XLAL_CHECK(int4Range != NULL, XLAL_EFAULT);
-  XLAL_CHECK(valString != NULL, XLAL_EFAULT);
-  XLAL_CHECK(strlen(valString) > 0, XLAL_EINVAL);
-
-  // Parse range
-  char part[2][256];
-  int T[2][2];
-  XLAL_CHECK( SplitStringIntoRange(valString, part, T) == XLAL_SUCCESS, XLAL_EFUNC );
-  INT4 val[2];
-  XLAL_CHECK( XLALParseStringValueAsINT4(&val[0], part[0]) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALParseStringValueAsINT4(&val[1], part[1]) == XLAL_SUCCESS, XLAL_EFUNC );
-  (*int4Range)[0] = T[0][0] * val[0] + T[0][1] * val[1];
-  (*int4Range)[1] = T[1][0] * val[0] + T[1][1] * val[1];
-
-  // Check range ordering
-  if ((*int4Range)[0] > (*int4Range)[1]) {
-    const INT4 tmp = (*int4Range)[0];
-    (*int4Range)[0] = (*int4Range)[1];
-    (*int4Range)[1] = tmp;
-  }
-
-  return XLAL_SUCCESS;
-
-} // XLALParseStringValueAsINT4Range()
-
 
 ///
 /// Parse a string representing a range of LIGOTimeGPS values into a LIGOTimeGPSRange. Possible formats
-/// are <tt>start</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>start~plusminus</tt>.
+/// are <tt>point</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>centre~halfband</tt>.
 /// Output range is always <tt>low,high</tt> with <tt>range[0] = low; range[1] = high</tt>.
 ///
 int XLALParseStringValueAsEPOCHRange(
@@ -554,12 +455,11 @@ int XLALParseStringValueAsEPOCHRange(
   // Check input
   XLAL_CHECK(gpsRange != NULL, XLAL_EFAULT);
   XLAL_CHECK(valString != NULL, XLAL_EFAULT);
-  XLAL_CHECK(strlen(valString) > 0, XLAL_EINVAL);
 
   // Parse range
   char part[2][256];
   int T[2][2];
-  XLAL_CHECK( SplitStringIntoRange(valString, part, T) == XLAL_SUCCESS, XLAL_EFUNC );
+  split_string_into_range(valString, part, T);
   LIGOTimeGPS val[2];
   XLAL_CHECK( XLALParseStringValueAsEPOCH(&val[0], part[0]) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALParseStringValueAsEPOCH(&val[1], part[1]) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -580,7 +480,7 @@ int XLALParseStringValueAsEPOCHRange(
 
 ///
 /// Parse a string representing a range of RAJ values into a REAL8Range. Possible formats
-/// are <tt>start</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>start~plusminus</tt>.
+/// are <tt>point</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>centre~halfband</tt>.
 /// Output range is always <tt>low,high</tt> with <tt>range[0] = low; range[1] = high</tt>.
 ///
 int XLALParseStringValueAsRAJRange(
@@ -592,12 +492,11 @@ int XLALParseStringValueAsRAJRange(
   // Check input
   XLAL_CHECK(rajRange != NULL, XLAL_EFAULT);
   XLAL_CHECK(valString != NULL, XLAL_EFAULT);
-  XLAL_CHECK(strlen(valString) > 0, XLAL_EINVAL);
 
   // Parse range
   char part[2][256];
   int T[2][2];
-  XLAL_CHECK( SplitStringIntoRange(valString, part, T) == XLAL_SUCCESS, XLAL_EFUNC );
+  split_string_into_range(valString, part, T);
   REAL8 val[2];
   XLAL_CHECK( XLALParseStringValueAsRAJ(&val[0], part[0]) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALParseStringValueAsRAJ(&val[1], part[1]) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -618,7 +517,7 @@ int XLALParseStringValueAsRAJRange(
 
 ///
 /// Parse a string representing a range of DECJ values into a REAL8Range. Possible formats
-/// are <tt>start</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>start~plusminus</tt>.
+/// are <tt>point</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>centre~halfband</tt>.
 /// Output range is always <tt>low,high</tt> with <tt>range[0] = low; range[1] = high</tt>.
 ///
 int XLALParseStringValueAsDECJRange(
@@ -630,12 +529,11 @@ int XLALParseStringValueAsDECJRange(
   // Check input
   XLAL_CHECK(decjRange != NULL, XLAL_EFAULT);
   XLAL_CHECK(valString != NULL, XLAL_EFAULT);
-  XLAL_CHECK(strlen(valString) > 0, XLAL_EINVAL);
 
   // Parse range
   char part[2][256];
   int T[2][2];
-  XLAL_CHECK( SplitStringIntoRange(valString, part, T) == XLAL_SUCCESS, XLAL_EFUNC );
+  split_string_into_range(valString, part, T);
   REAL8 val[2];
   XLAL_CHECK( XLALParseStringValueAsDECJ(&val[0], part[0]) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALParseStringValueAsDECJ(&val[1], part[1]) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -655,97 +553,6 @@ int XLALParseStringValueAsDECJRange(
 
 
 ///
-/// Parse a string representing a user selection of an enumeration value.
-/// - Enumeration choices with values < 0 are ignored.
-/// - Enumeration choice names are case insensitive.
-///
-int XLALParseStringValueAsUserEnum ( int *valEnum,			///< [out] output enumeration value
-                                     const UserChoices *enumData,	///< [in] possible choices for enumeration values
-                                     const char *valString		///< [in] input string value
-  )
-{
-
-  // Check input
-  XLAL_CHECK(valEnum != NULL, XLAL_EFAULT);
-  XLAL_CHECK(enumData != NULL, XLAL_EFAULT);
-  XLAL_CHECK(valString != NULL, XLAL_EFAULT);
-  XLAL_CHECK(strlen(valString) > 0, XLAL_EINVAL);
-
-  // Select enumeration value
-  for ( size_t i = 0; i < XLAL_NUM_ELEM(*enumData); ++i ) {
-    if ((*enumData)[i].val >= 0 && (*enumData)[i].name != NULL) {
-      if (XLALStringCaseCompare(valString, (*enumData)[i].name) == 0) {
-        *valEnum = (*enumData)[i].val;
-        return XLAL_SUCCESS;
-      }
-    }
-  }
-  XLAL_ERROR( XLAL_EINVAL, "String '%s' does not name a valid enumeration value", valString );
-
-}
-
-
-///
-/// Parse a string representing a user selection of a set of bitflags.
-/// - If the first bitflag choice has a value of zero, it is treated
-//    as a special exclusive case for setting a zero bitflag.
-/// - Bitflag choices with values <= 0 are ignored.
-/// - Bigflag choice names are separated by ',' and are case insensitive.
-///
-int XLALParseStringValueAsUserFlag ( int *valFlag,			///< [out] output bitflag value
-                                     const UserChoices *flagData,	///< [in] possible choices for bitflag values
-                                     const char *valString		///< [in] input string value
-  )
-{
-  LALStringVector *valStringNames = NULL;
-
-  // Check input
-  XLAL_CHECK_FAIL(valFlag != NULL, XLAL_EFAULT);
-  XLAL_CHECK_FAIL(flagData != NULL, XLAL_EFAULT);
-  XLAL_CHECK_FAIL(valString != NULL, XLAL_EFAULT);
-  XLAL_CHECK_FAIL(strlen(valString) > 0, XLAL_EINVAL);
-
-  // Handle special case of first bitflag with value 0, representing a zero bitflag
-  if ((*flagData)[0].val == 0 && (*flagData)[0].name != NULL && XLALStringCaseCompare(valString, (*flagData)[0].name) == 0) {
-    *valFlag = 0;
-    return XLAL_SUCCESS;
-  }
-
-  // Parse input string into bitflag names
-  XLAL_CHECK_FAIL( ( valStringNames = XLALParseStringVector( valString, "," ) ) != NULL, XLAL_EFUNC );
-
-  // Build bitflag value
-  *valFlag = 0;
-  for ( size_t j = 0; j < valStringNames->length; ++j ) {
-    int valFlag_j = 0;
-    for ( size_t i = 0; i < XLAL_NUM_ELEM(*flagData); ++i ) {
-      if ((*flagData)[i].val > 0 && (*flagData)[i].name != NULL) {
-        if (XLALStringCaseCompare(valStringNames->data[j], (*flagData)[i].name) == 0) {
-          valFlag_j = (*flagData)[i].val;
-          break;
-        }
-      }
-    }
-    XLAL_CHECK_FAIL( valFlag_j > 0, XLAL_EINVAL, "String '%s' does not name a valid bitflag value", valStringNames->data[j] );
-    *valFlag |= valFlag_j;
-  }
-
-  // Cleanup
-  XLALDestroyStringVector( valStringNames );
-
-  return XLAL_SUCCESS;
-
-XLAL_FAIL:
-
-  // Cleanup
-  XLALDestroyStringVector( valStringNames );
-
-  return XLAL_FAILURE;
-
-}
-
-
-///
 /// Duplicate string 'in', removing surrounding quotes \" or \' if present.
 ///
 /// \note Quotes at the beginning of the string must be matched at the end,
@@ -758,7 +565,7 @@ XLALParseStringValueAsSTRING ( CHAR **out,		///< [out] return allocated string
                                const CHAR *valStr	///< [in] input string value
                                )
 {
-  XLAL_CHECK ( (valStr != NULL) && (strlen(valStr) > 0), XLAL_EINVAL );
+  XLAL_CHECK ( valStr != NULL, XLAL_EINVAL );
   XLAL_CHECK ( (out != NULL) && (*out == NULL), XLAL_EINVAL );
 
   CHAR opening_quote = 0;
@@ -806,7 +613,7 @@ XLALParseStringValueAsSTRINGVector ( LALStringVector **strVect,	///< [out] alloc
                                      const CHAR *valString	///< [in] input string value
                                      )
 {
-  XLAL_CHECK ( (valString != NULL) && (strlen(valString) > 0), XLAL_EINVAL );
+  XLAL_CHECK ( valString != NULL, XLAL_EINVAL );
   XLAL_CHECK ( (strVect != NULL) && (*strVect == NULL) , XLAL_EINVAL );
 
   LALStringVector *ret;
@@ -873,7 +680,7 @@ XLALParseStringValueAsSTRINGVector ( LALStringVector **strVect,	///< [out] alloc
 #define DEFN_XLALParseStringValueAsVector(CTYPE)                        \
 DECL_XLALParseStringValueAsVector(CTYPE)                                \
 {                                                                       \
- XLAL_CHECK ( (valString != NULL) && (strlen(valString) > 0), XLAL_EINVAL ); \
+ XLAL_CHECK ( valString != NULL, XLAL_EINVAL );                         \
  XLAL_CHECK ( (vect != NULL) && (*vect == NULL) , XLAL_EINVAL );        \
                                                                         \
  /* parse this as a string vector first */                              \
@@ -897,6 +704,5 @@ DECL_XLALParseStringValueAsVector(CTYPE)                                \
                                                                         \
 } /* XLALParseStringValueAs\<CTYPE\>Vector() */
 
-DEFN_XLALParseStringValueAsVector(INT4);
-DEFN_XLALParseStringValueAsVector(UINT4);
 DEFN_XLALParseStringValueAsVector(REAL8);
+DEFN_XLALParseStringValueAsVector(INT4);

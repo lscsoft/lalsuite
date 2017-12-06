@@ -1,6 +1,5 @@
-MOSTLYCLEANFILES =
+BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
-include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 progs = lalapps_psinject
 

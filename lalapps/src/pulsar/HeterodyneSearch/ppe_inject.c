@@ -21,7 +21,6 @@
 /*                       SOFTWARE INJECTION FUNCTIONS                         */
 /******************************************************************************/
 
-#include "config.h"
 #include "ppe_inject.h"
 
 /**
@@ -52,7 +51,7 @@ void inject_signal( LALInferenceRunState *runState ){
   ProcessParamsTable *ppt;
   ProcessParamsTable *commandLine = runState->commandLine;
 
-  PulsarParameters *injpars = XLALCalloc(sizeof(*injpars),1);
+  PulsarParameters *injpars = XLALCalloc(sizeof(*injpars),1);;
 
   FILE *fpsnr = NULL; /* output file for SNRs */
   INT4 ndats = 0, j = 1;
@@ -62,24 +61,18 @@ void inject_signal( LALInferenceRunState *runState ){
   REAL8 snrscale = 0;
 
   ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
-  if ( !ppt ){ XLAL_ERROR_VOID( XLAL_EINVAL, "Error... no output file specified!" ); }
+  if( !ppt ){
+    fprintf(stderr, "Error... no output file specified!\n");
+    exit(0);
+  }
 
   snrfile = XLALStringDuplicate( ppt->value );
-  /* strip the file extension */
-  CHAR *dotloc = strrchr(snrfile, '.');
-  CHAR *slashloc = strrchr(snrfile, '/');
-  if ( dotloc != NULL ){
-    if ( slashloc != NULL ){ /* check dot is after any filename seperator */
-      if( slashloc < dotloc ){ *dotloc = '\0'; }
-    }
-    else{ *dotloc = '\0'; }
-  }
   snrfile = XLALStringAppend( snrfile, "_SNR" );
 
   if( (fpsnr = fopen(snrfile, "w")) == NULL ){
-    XLAL_ERROR_VOID( XLAL_EIO, "Error... cannot open output SNR file!");
+    fprintf(stderr, "Error... cannot open output SNR file!\n");
+    exit(0);
   }
-  XLALFree( snrfile );
 
   ppt = LALInferenceGetProcParamVal( commandLine, "--inject-file" );
   if( ppt ){
@@ -87,12 +80,12 @@ void inject_signal( LALInferenceRunState *runState ){
 
     /* check that the file exists */
     if ( fopen(injectfile, "r") == NULL ){
-      XLAL_ERROR_VOID(XLAL_EINVAL, "Error... Injection specified, but the injection parameter file %s is wrong.", injectfile);
+      fprintf(stderr, "Error... Injection specified, but the injection parameter file %s is wrong.\n", injectfile);
+      exit(3);
     }
 
     /* read in injection parameter file */
-    injpars = XLALReadTEMPOParFile( injectfile );
-    XLALFree( injectfile );
+    injpars = XLALReadTEMPOParFileNew( injectfile );
 
     /* check RA and DEC are set (if only RAJ and DECJ are given in the par file) */
     if ( !PulsarCheckParam( injpars, "RA" ) ){
@@ -101,7 +94,8 @@ void inject_signal( LALInferenceRunState *runState ){
         PulsarAddParam( injpars, "RA", &ra, PULSARTYPE_REAL8_t );
       }
       else {
-        XLAL_ERROR_VOID( XLAL_EINVAL, "No source right ascension specified!" );
+        XLALPrintError ("%s: No source right ascension specified!", __func__ );
+        XLAL_ERROR_VOID( XLAL_EINVAL );
       }
     }
     if ( !PulsarCheckParam( injpars, "DEC" ) ){
@@ -110,17 +104,9 @@ void inject_signal( LALInferenceRunState *runState ){
         PulsarAddParam( injpars, "DEC", &dec, PULSARTYPE_REAL8_t );
       }
       else {
-        XLAL_ERROR_VOID( XLAL_EINVAL, "No source declination specified!" );
+        XLALPrintError ("%s: No source declination specified!", __func__ );
+        XLAL_ERROR_VOID( XLAL_EINVAL );
       }
-    }
-
-    /* check if Q22, DIST and F0 are set, but not H0 */
-    if( !PulsarCheckParam( injpars, "H0" ) && PulsarCheckParam( injpars, "Q22" ) && PulsarCheckParam( injpars, "DIST" ) && PulsarCheckParam( injpars, "F" ) ){
-      REAL8 f0val = PulsarGetREAL8VectorParamIndividual( injpars, "F0" );
-      REAL8 distval = PulsarGetREAL8Param( injpars, "DIST" );
-      REAL8 q22val = PulsarGetREAL8Param( injpars, "Q22" );
-      REAL8 h0val = q22val*sqrt(8.*LAL_PI/15.)*16.*LAL_PI*LAL_PI*LAL_G_SI*f0val*f0val/(LAL_C_SI*LAL_C_SI*LAL_C_SI*LAL_C_SI*distval);
-      PulsarAddParam( injpars, "H0", &h0val, PULSARTYPE_REAL8_t );
     }
 
     /* make sure that we have parameters in terms of amplitude and phase parameters */
@@ -132,40 +118,6 @@ void inject_signal( LALInferenceRunState *runState ){
     return;
   }
 
-  /* check the number of frequency and frequency derivative parameters (add DELTAF parameter) */
-  if ( LALInferenceCheckVariable( runState->threads[0]->currentParams, "FREQNUM" ) ){
-    UINT4 freqnum = LALInferenceGetUINT4Variable(runState->threads[0]->currentParams, "FREQNUM" );
-    REAL8Vector *deltafreqs = XLALCreateREAL8Vector( freqnum );
-    REAL8Vector *freqs = NULL, *freqsnew = NULL;
-
-    if ( PulsarCheckParam( injpars, "F" ) ){
-      freqs = PulsarGetREAL8VectorParam( injpars, "F" );
-
-      if ( freqs->length > freqnum ){ freqnum = freqs->length; }
-      else if ( freqs->length < freqnum ){ /* add on additional freqs */
-        freqsnew = XLALCreateREAL8Vector( freqnum );
-        for ( UINT4 i = 0; i < freqs->length; i++ ){ freqsnew->data[i] = freqs->data[i]; }
-        for ( UINT4 i = freqs->length; i < freqnum; i++ ){ freqsnew->data[i] = 0.; }
-        PulsarRemoveParam( injpars, "F" );
-        PulsarAddParam( injpars, "F", &freqsnew, PULSARTYPE_REAL8Vector_t );
-      }
-    }
-    else{
-      freqsnew = XLALCreateREAL8Vector( freqnum );
-      for ( UINT4 i = 0; i < freqnum; i++ ){ freqsnew->data[i] = 0.; }
-      PulsarAddParam( injpars, "F", &freqsnew, PULSARTYPE_REAL8Vector_t );
-      freqs = PulsarGetREAL8VectorParam( injpars, "F" );
-    }
-
-    for ( UINT4 i = 0; i < freqnum; i++ ){
-      CHAR varname[256];
-      snprintf(varname, sizeof(varname), "F%u_FIXED", i);
-      REAL8 f0fixed = LALInferenceGetREAL8Variable( runState->threads[0]->currentParams, varname );
-      deltafreqs->data[i] = freqs->data[i]-f0fixed; /* frequency (derivative) difference */
-    }
-    PulsarAddParam( injpars, "DELTAF", &deltafreqs, PULSARTYPE_REAL8Vector_t );
-  }
-
   freqFactors = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "freqfactors" );
 
   /* get the SNR scale factor if required */
@@ -174,27 +126,12 @@ void inject_signal( LALInferenceRunState *runState ){
 
   /* create signal to inject */
   /* for injection always attempt to include the signal phase model even if the search is not going to be over phase */
-  INT4 varyphase = 1, varyskypos = 1, varybinary = 1;
-  while ( ifo_model ) {
-    if ( !LALInferenceCheckVariable( ifo_model->params, "varyphase" ) ){
-      LALInferenceAddVariable( ifo_model->params, "varyphase", &varyphase, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
-      varyphase = 0; /* set to zero so varyphase is removed after the model is created */
+  INT4 varyphase = 1;
 
-      if ( !LALInferenceCheckVariable( ifo_model->params, "varyskypos" ) ){
-        LALInferenceAddVariable( ifo_model->params, "varyskypos", &varyskypos, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
-        varyskypos = 0;
-      }
-
-      if ( PulsarCheckParam( injpars, "BINARY" ) ){
-        if ( !LALInferenceCheckVariable( ifo_model->params, "varybinary" ) ){
-          LALInferenceAddVariable( ifo_model->params, "varybinary", &varybinary, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
-          varybinary = 0;
-        }
-      }
-    }
-    ifo_model = ifo_model->next;
+  if ( !LALInferenceCheckVariable( ifo_model->params, "varyphase" ) ){
+    LALInferenceAddVariable( ifo_model->params, "varyphase", &varyphase, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+    varyphase = 0; /* set to zero so varyphase is removed after the model is created */
   }
-  ifo_model = runState->threads[0]->model->ifo;
 
   /* check whether to inject a non-GR signal (the default will ALWAYS be GR) */
   UINT4 nonGR_search = LALInferenceCheckVariable( ifo_model->params, "nonGR" );
@@ -249,7 +186,15 @@ void inject_signal( LALInferenceRunState *runState ){
   while ( data ){
     REAL8 snrval = 0.;
 
+    if ( !LALInferenceCheckVariable( ifo_model->params, "varyphase" ) ){
+      LALInferenceAddVariable( ifo_model->params, "varyphase", &varyphase, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+    }
+
     snrval = calculate_time_domain_snr( data, ifo_model );
+
+    /* reset varyphase to its original value */
+    if ( !varyphase ){ LALInferenceRemoveVariable( ifo_model->params, "varyphase" ); }
+
     snrmulti += SQUARE(snrval);
 
     /* if not scaling print out individual detector/datastream SNRs */
@@ -279,9 +224,17 @@ void inject_signal( LALInferenceRunState *runState ){
     PulsarAddParam( injpars, "C22", &C22, PULSARTYPE_REAL8_t );
     PulsarAddParam( injpars, "C21", &C21, PULSARTYPE_REAL8_t );
 
+    /* recreate the signal with scaled amplitude */
+    varyphase = 1;
+
     /* reset to head */
     ifo_model = runState->threads[0]->model->ifo;
     data = runState->data;
+
+    if ( !LALInferenceCheckVariable( ifo_model->params, "varyphase" ) ){
+      LALInferenceAddVariable( ifo_model->params, "varyphase", &varyphase, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+      varyphase = 0; /* set to zero so varyphase is removed after the model is created */
+    }
 
     pulsar_model( injpars, ifo_model );
 
@@ -297,11 +250,19 @@ void inject_signal( LALInferenceRunState *runState ){
     while( data ){
       REAL8 snrval = 0.;
 
+      if ( !LALInferenceCheckVariable( ifo_model->params, "varyphase" ) ){
+        LALInferenceAddVariable( ifo_model->params, "varyphase", &varyphase, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+      }
+
       /* recalculate the SNR */
       snrval = calculate_time_domain_snr( data, ifo_model );
+
+      /* reset varyphase to its original value */
+      if ( !varyphase ){ LALInferenceRemoveVariable( ifo_model->params, "varyphase" ); }
+
       snrmulti += SQUARE(snrval);
 
-      fprintf(fpsnr, "%s\t%.3lf\t%le\t%le\n", data->name, freqFactors->data[ndats%(INT4)freqFactors->length], snrscale, snrval);
+      fprintf(fpsnr, "%s\t%.3lf\t%le\n", data->name, freqFactors->data[ndats%(INT4)freqFactors->length], snrval);
 
       data = data->next;
       ifo_model = ifo_model->next;
@@ -356,7 +317,6 @@ void inject_signal( LALInferenceRunState *runState ){
       if ( (fpso = fopen(signalonly, "w")) == NULL ){
         fprintf(stderr, "Non-fatal error... unable to open file %s to output injection\n", signalonly);
       }
-      XLALFree( outfile );
     }
 
     /* add the signal to the data */
@@ -366,11 +326,11 @@ void inject_signal( LALInferenceRunState *runState ){
       /* write out injection to file */
       if( fp != NULL && fpso != NULL ){
         /* print out data - time stamp, real and imaginary parts of data (injected signal + noise) */
-        fprintf(fp, "%.5lf\t%.12le\t%.12le\n", XLALGPSGetREAL8( &ifo_model->times->data[i] ),
+        fprintf(fp, "%.5lf\t%le\t%le\n", XLALGPSGetREAL8( &ifo_model->times->data[i] ),
                 creal(data->compTimeData->data->data[i]), cimag(data->compTimeData->data->data[i]) );
 
         /* print signal only data - time stamp, real and imaginary parts of signal */
-        fprintf(fpso, "%.5lf\t%.12le\t%.12le\n", XLALGPSGetREAL8( &ifo_model->times->data[i] ),
+        fprintf(fpso, "%.5lf\t%le\t%le\n", XLALGPSGetREAL8( &ifo_model->times->data[i] ),
                 creal(ifo_model->compTimeSignal->data->data[i]), cimag(ifo_model->compTimeSignal->data->data[i]) );
       }
     }
@@ -408,43 +368,7 @@ void inject_signal( LALInferenceRunState *runState ){
     ifo_model = runState->threads[0]->model->ifo;
   }
 
-  UINT4 outputchunks = 0, chunkMin = 0, chunkMax = 0;
-  INT4 inputsigma = 0;
-  if ( LALInferenceGetProcParamVal( commandLine, "--output-chunks" ) ){ outputchunks = 1; }
-
-  ifo_model = runState->threads[0]->model->ifo;
-  data = runState->data;
-  while ( ifo_model ){
-    UINT4Vector *chunkLength = NULL;
-
-    if ( !varyphase ){ LALInferenceRemoveVariable( ifo_model->params, "varyphase" ); }
-    if ( !varyskypos ){ LALInferenceRemoveVariable( ifo_model->params, "varyskypos" ); }
-    if ( !varybinary ){ LALInferenceRemoveVariable( ifo_model->params, "varybinary" ); }
-
-    /* re-do segmentation of the data including the signal */
-    inputsigma = LALInferenceGetINT4Variable( ifo_model->params, "inputSigma" );
-    if ( !inputsigma && ! LALInferenceGetProcParamVal( commandLine, "--oldChunks" ) ){
-      chunkMin = LALInferenceGetUINT4Variable( ifo_model->params, "chunkMin" );
-      chunkMax = LALInferenceGetUINT4Variable( ifo_model->params, "chunkMax" );
-
-      chunkLength = chop_n_merge( data, chunkMin, chunkMax, outputchunks );
-      LALInferenceRemoveVariable( ifo_model->params, "chunkLength" );
-      LALInferenceAddVariable( ifo_model->params, "chunkLength", &chunkLength, LALINFERENCE_UINT4Vector_t, LALINFERENCE_PARAM_FIXED );
-    }
-
-    /* recompute variances */
-    if ( !inputsigma ){ compute_variance( data, ifo_model ); }
-
-    ifo_model = ifo_model->next;
-    data = data->next;
-  }
-
   PulsarFreeParams( injpars ); /* free memory */
-
-  /* check if we only want to create and output an injection file and not analyse it yet */
-  if ( LALInferenceGetProcParamVal( commandLine, "--inject-file" ) && LALInferenceGetProcParamVal( commandLine, "--inject-only" ) ){
-    exit(0); /* exit the code */
-  }
 }
 
 /*-------------------- END OF SOFTWARE INJECTION FUNCTIONS -------------------*/
@@ -611,7 +535,7 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data, LALInferenceIFOModel
  */
 void get_loudest_snr( LALInferenceRunState *runState ){
   INT4 ndats = 0;
-  UINT4 roq = 0; // i = 0;
+  UINT4 roq = 0;
   INT4 Nlive = *(INT4 *)LALInferenceGetVariable( runState->algorithmParams, "Nlive" );
   REAL8 snrmulti = 0.;
   REAL8Vector *freqFactors = NULL;
@@ -636,6 +560,8 @@ void get_loudest_snr( LALInferenceRunState *runState ){
     roq = 1;
 
     while ( ifo_model ){
+      UINT4 varyphase = 1; /* must set varyphase */
+
       REAL8Vector *sidtime = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "siderealDayFull" );
       LALInferenceRemoveVariable( ifo_model->params, "siderealDay" );
       LALInferenceAddVariable( ifo_model->params, "siderealDay", &sidtime, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
@@ -643,12 +569,19 @@ void get_loudest_snr( LALInferenceRunState *runState ){
       LIGOTimeGPSVector *timestamps = *(LIGOTimeGPSVector **)LALInferenceGetVariable( ifo_model->params, "timeStampVectorFull" );
       XLALDestroyTimestampVector( ifo_model->times );
       ifo_model->times = timestamps;
-      //fprintf(stderr, "timestamps->length = %d, ifo_model->times->data[0] = %d, ifo_model->times->data[-1] = %d\n", timestamps->length, ifo_model->times->data[0].gpsSeconds, ifo_model->times->data[timestamps->length-1].gpsSeconds);
+
+      REAL8TimeSeries *timedata = *(REAL8TimeSeries **)LALInferenceGetVariable( ifo_model->params, "timeDataFull" );
+      XLALDestroyREAL8TimeSeries( ifo_model->timeData );
+      ifo_model->timeData = timedata;
 
       ifo_model->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifo_model->compTimeSignal, 0, ifo_model->times->length );
 
       /* remove the ROQ variable for calculating the likelihood */
       LALInferenceRemoveVariable( ifo_model->params, "roq" );
+
+      if ( !LALInferenceCheckVariable( ifo_model->params, "varyphase" ) ){
+        LALInferenceAddVariable( ifo_model->params, "varyphase", &varyphase, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+      }
 
       if ( LALInferenceCheckVariable( ifo_model->params, "ssb_delays" ) ){
         REAL8Vector *ssbdelays = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "ssb_delays_full" );
@@ -660,12 +593,6 @@ void get_loudest_snr( LALInferenceRunState *runState ){
         REAL8Vector *bsbdelays = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "bsb_delays_full" );
         LALInferenceRemoveVariable( ifo_model->params, "bsb_delays" );
         LALInferenceAddVariable( ifo_model->params, "bsb_delays", &bsbdelays, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
-      }
-
-      /* make sure varyphase is set (this is required if having used ROQ for a non-varyphase model) */
-      if ( !LALInferenceCheckVariable( ifo_model->params, "varyphase" ) ){
-        UINT4 varyphasetmp = 1;
-        LALInferenceAddVariable( ifo_model->params, "varyphase", &varyphasetmp, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
       }
 
       ifo_model = ifo_model->next;
@@ -695,18 +622,12 @@ void get_loudest_snr( LALInferenceRunState *runState ){
 
   /* setup output file */
   ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
-  if ( !ppt ){ XLAL_ERROR_VOID(XLAL_EIO, "Error... no output file specified!\n"); }
+  if( !ppt ){
+    fprintf(stderr, "Error... no output file specified!\n");
+    exit(0);
+  }
 
   snrfile = XLALStringDuplicate( ppt->value );
-  /* strip the file extension */
-  CHAR *dotloc = strrchr(snrfile, '.');
-  CHAR *slashloc = strrchr(snrfile, '/');
-  if ( dotloc != NULL ){
-    if ( slashloc != NULL ){ /* check dot is after any filename seperator */
-      if( slashloc < dotloc ){ *dotloc = '\0'; }
-    }
-    else{ *dotloc = '\0'; }
-  }
   snrfile = XLALStringAppend( snrfile, "_SNR" );
 
   /* append to previous injection SNR file if it exists */
@@ -714,7 +635,6 @@ void get_loudest_snr( LALInferenceRunState *runState ){
     fprintf(stderr, "Error... cannot open output SNR file!\n");
     exit(0);
   }
-  XLALFree( snrfile );
 
   /* get SNR of loudest point and print out to file */
   data = runState->data;
@@ -732,14 +652,14 @@ void get_loudest_snr( LALInferenceRunState *runState ){
 
     REAL8 snrval = calculate_time_domain_snr( data, ifo_model );
 
-    //UINT4 length = ifo_model->compTimeSignal->data->length;
+    //UINT4 length = ifo_model->compTimeData->data->length;
 
     /* print out maxlikelihood template */
     //for ( UINT4 j=0; j < length; j++ ){
     //  fprintf(fp, "%lf\t%le\t%le\n",
     //          XLALGPSGetREAL8( &ifo_model->times->data[j] ),
-    //          creal(ifo_model->compTimeSignal->data->data[j]),
-    //          cimag(ifo_model->compTimeSignal->data->data[j]));
+    //          ifo_model->compTimeSignal->data->data[j].re,
+    //          ifo_model->compTimeSignal->data->data[j].im );
     //}
 
     snrmulti += SQUARE( snrval );

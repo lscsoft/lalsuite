@@ -372,8 +372,7 @@ def veto_segments(ifo, config, categories, generateVetoes):
         # write file
         ligolw_process.set_process_end_time(process)
         fp = open(combinedFileXML, 'w')
-        with utils.SignalsTrap():
-          utils.write_fileobj(xmldoc, fp, gz=False)
+        utils.write_fileobj(xmldoc, fp, gz=False)
         fp.close()
 
     else: vetoFiles[category] = vetoFile
@@ -580,8 +579,7 @@ def findSegmentsToAnalyze(config, ifo, veto_categories, generate_segments=True,\
     # write file
     ligolw_process.set_process_end_time(process)
     fp = open(segFileXML, 'w')
-    with utils.SignalsTrap():
-      utils.write_fileobj(xmldoc, fp, gz=False)
+    utils.write_fileobj(xmldoc, fp, gz=False)
     fp.close()
 
     print "Writing " + ifo + " segments of total time " + \
@@ -1433,7 +1431,7 @@ def determine_sieve_patterns(cp, plot_name, ifotag, usertag=None):
     >>> from ConfigParser import ConfigParser
     >>> cp = ConfigParser()
     >>> cp.read("plot_hipe.ini")
-    >>> print(determine_sieve_patterns(cp, "plotinspiral", "H1"))
+    >>> print determine_sieve_patterns(cp, "plotinspiral", "H1")
     {'bank-pattern': 'TRIGBANK_H1*_PLAYGROUND', 'missed-pattern':
      'SIRE_H1*_INJ*', 'trig-pattern': 'SIRE_H1*_PLAYGROUND'}
     

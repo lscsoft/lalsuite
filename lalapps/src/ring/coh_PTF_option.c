@@ -17,7 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-#include "config.h"
 #include "coh_PTF.h"
 
 /* parse command line arguments using LALgetopt_long to get ring params */
@@ -154,7 +153,6 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         else
           error( "error parsing option %s with argument %s\n",
               long_options[option_index].name, LALoptarg );
-		break;
       case 'a': /* gps-start-time */
         localparams.startTime.gpsSeconds = atol( LALoptarg );
         break;
@@ -444,10 +442,8 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         break;
       case '?':
         error( "unknown error while parsing options\n" );
-		break;
       default:
         error( "unknown error while parsing options\n" );
-		break;
     }
   }
 
@@ -504,9 +500,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
   /* For now we stick to only analysing half of each segment */
   localparams.strideDuration = 0.5 * localparams.segmentDuration;
 
-  /* When shifting data from interferometers to 'point' at a sky location, */
-  /* we don't want to let possibly corrupted data to leak in at start/end. */
-  /* This buffer ensures that doesn't happen. Hardcoded to 1s */
+  /* FIXME: Hardcoded to 1s */
   localparams.numBufferPoints = floor(localparams.sampleRate + 0.5);
 
   /* Choose the start and end point of each segment for analysis */

@@ -65,7 +65,6 @@ extern "C" {
 
 /** UNDOCUMENTED */
 typedef enum
-tagCalibrationType
 {
   CalibrationAmplitude = 001,
   CalibrationOffset    = 002,

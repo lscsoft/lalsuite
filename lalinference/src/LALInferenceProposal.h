@@ -109,7 +109,6 @@ extern const char *const ensembleStretchFullName;
 extern const char *const ensembleStretchIntrinsicName;
 extern const char *const ensembleStretchExtrinsicName;
 extern const char *const drawApproxPriorName;
-extern const char *const drawFlatPriorName;
 extern const char *const skyReflectDetPlaneName;
 extern const char *const skyRingProposalName;
 extern const char *const PSDFitJumpName;
@@ -218,13 +217,6 @@ REAL8 LALInferenceDifferentialEvolutionExtrinsic(LALInferenceThreadState *thread
  */
 REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
-
-/**
- * Draws from a flat prior for all variables where are flat prior is specified. Variables
- * that do not have a flat prior are not moved.
- */
-REAL8 LALInferenceDrawFlatPrior(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
-
 /**
  * Reflects the sky location through the plane formed by three
  * detectors.  Should only be used when there are exactly three
@@ -322,6 +314,9 @@ void LALInferenceUpdateMaxAutoCorrLen(LALInferenceThreadState *thread);
 
 /* Determine the effective sample size based on the DE buffer. */
 INT4 LALInferenceComputeEffectiveSampleSize(LALInferenceThreadState *thread);
+
+/* Initialize differential evolution proposal */
+void LALInferenceSetupDifferentialEvolutionProposal(LALInferenceThreadState *thread);
 
 /** Helper function to setup the adaptive step proposals before the run */
 void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInferenceVariables *params);

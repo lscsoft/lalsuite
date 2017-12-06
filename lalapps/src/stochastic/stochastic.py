@@ -21,6 +21,7 @@ __date__ = '$Date$'
 __version__ = '$Revision$'
 
 import string
+import exceptions
 import os
 from glue import pipeline
 
@@ -32,7 +33,7 @@ def version():
   return __version__
 
 
-class StochasticError(Exception):
+class StochasticError(exceptions.Exception):
   def __init__(self, args=None):
     self.args = args
 

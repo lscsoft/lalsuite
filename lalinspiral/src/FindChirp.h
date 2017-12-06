@@ -317,9 +317,7 @@ FindChirpTmpltParams;
  * This structure contains the possible methods by which
  * to maximize over a chirp in a data segment.
  */
-typedef enum
-tagFindChirpClustering
-{
+typedef enum {
   FindChirpClustering_none,		/**< The decision to do no clustering of events */
   FindChirpClustering_tmplt,		/**< Cluster over the length of the data segment */
   FindChirpClustering_window,		/**< Cluster over a given number of seconds given by the argument to the flag
@@ -651,6 +649,19 @@ LALFindChirpStoreEvent (
     UINT4                       numChisqBins,
     CHAR                       *searchName
     );
+
+void
+LALFindChirpClusterEvents (
+    LALStatus                  *status,
+    SnglInspiralTable         **eventList,
+    FindChirpFilterInput       *input,
+    FindChirpFilterParams      *params,
+    FindChirpBankVetoData      *bankVetoData,
+    UINT4                       subBankIndex,
+    int                         writeCData,
+    InspiralTemplate           *bankCurrent
+    );
+
 
 void
 LALFindChirpFilterOutputVeto(

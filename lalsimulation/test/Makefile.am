@@ -15,19 +15,17 @@ test_programs += WaveformFlagsTest
 test_programs += WaveformFromCacheTest
 test_programs += XLALSimAddInjectionTest
 test_programs += InitialSpinRotationTest
-#test_programs += TEOBResumROMTest
 #test_programs += TestTaylorTFourier
 #test_programs += SpinTaylorT4DynamicsTest
-#if OPENMP
+#if HAVE_OPENMP
 #test_programs += OpenMPTest
 #endif
 
 # Add shell, Python, etc. test scripts to this variable
-# tests are currently broken on OS X
-#test_scripts += AllApproximantsTest.sh
-#if SWIG_BUILD_PYTHON
-#test_scripts += LALSimWaveformReferenceTest.py
-#endif
+test_scripts += AllApproximantsTest.sh
+if SWIG_BUILD_PYTHON
+test_scripts += LALSimWaveformReferenceTest.py
+endif
 
 # Add any helper programs required by tests to this variable
 test_helpers += GenerateSimulation

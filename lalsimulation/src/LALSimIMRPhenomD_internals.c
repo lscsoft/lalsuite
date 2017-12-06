@@ -26,8 +26,6 @@
  * \brief Internal function for IMRPhenomD phenomenological waveform model.
  * See \ref LALSimIMRPhenom_c for more details.
  *
- * Note that the functions defined here in LALSimIMRPhenomD_internals.c / .h
- * must be used by BOTH LALSimIMRPhenomD.c AND LALSimIMRPhenomP.c.
  */
 
 /*
@@ -1207,7 +1205,6 @@ static double DPhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p, PNPhas
   Dphasing += -1.0 * pn->v[4] * v4;
   Dphasing += -2.0 * pn->v[3] * v3;
   Dphasing += -3.0 * pn->v[2] * v2;
-  Dphasing += -4.0 * pn->v[1] * v;
   Dphasing += -5.0 * pn->v[0];
   Dphasing /= v8 * 3.0/Pi;
 
@@ -1228,8 +1225,7 @@ static double DPhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p, PNPhas
  * A struct containing all the parameters that need to be calculated
  * to compute the phenomenological phase
  */
-static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double eta, double chi1, double chi2, double finspin, LALDict *extraParams) {
-
+static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double eta, double chi1, double chi2, double finspin) {
   IMRPhenomDPhaseCoefficients *p = (IMRPhenomDPhaseCoefficients *) XLALMalloc(sizeof(IMRPhenomDPhaseCoefficients));
 
   // Convention m1 >= m2
@@ -1257,19 +1253,6 @@ static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double et
 
   p->fRD = fring(eta, chi1, chi2, finspin);
   p->fDM = fdamp(eta, chi1, chi2, finspin);
-
-  p->sigma1*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDSigma1(extraParams));
-  p->sigma2*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDSigma2(extraParams));
-  p->sigma3*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDSigma3(extraParams));
-  p->sigma4*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDSigma4(extraParams));
-  p->beta1*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDBeta1(extraParams));
-  p->beta2*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDBeta2(extraParams));
-  p->beta3*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDBeta3(extraParams));
-  p->alpha1*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDAlpha1(extraParams));
-  p->alpha2*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDAlpha2(extraParams));
-  p->alpha3*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDAlpha3(extraParams));
-  p->alpha4*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDAlpha4(extraParams));
-  p->alpha5*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDAlpha5(extraParams));
 
   return p;
 }

@@ -423,14 +423,14 @@ BOOLEAN swig_lal_test_copyinout_gsl_vector_complex(gsl_vector_complex* copyinout
   return 1;
 }
 BOOLEAN swig_lal_test_viewin_gsl_matrix_float(gsl_matrix_float* copyout, const gsl_matrix_float* viewin) {
-  if (!copyout || !viewin || copyout->size1 != viewin->size1 || copyout->size2 != viewin->size2) {
+  if (!copyout || !viewin || copyout->size1 != copyout->size1 || copyout->size2 != copyout->size2) {
     return 0;
   }
   gsl_matrix_float_memcpy(copyout, viewin);
   return 1;
 }
 BOOLEAN swig_lal_test_viewinout_gsl_matrix_float(gsl_matrix_float* viewout, gsl_matrix_float* viewin) {
-  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size1 != viewin->size1 || viewout->size2 != viewin->size2) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size1 != viewout->size1 || viewout->size2 != viewout->size2) {
     return 0;
   }
   gsl_matrix_float_memcpy(viewout, viewin);
@@ -445,14 +445,14 @@ BOOLEAN swig_lal_test_copyinout_gsl_matrix_float(gsl_matrix_float* copyinout) {
   return 1;
 }
 BOOLEAN swig_lal_test_viewin_gsl_matrix(gsl_matrix* copyout, const gsl_matrix* viewin) {
-  if (!copyout || !viewin || copyout->size1 != viewin->size1 || copyout->size2 != viewin->size2) {
+  if (!copyout || !viewin || copyout->size1 != copyout->size1 || copyout->size2 != copyout->size2) {
     return 0;
   }
   gsl_matrix_memcpy(copyout, viewin);
   return 1;
 }
 BOOLEAN swig_lal_test_viewinout_gsl_matrix(gsl_matrix* viewout, gsl_matrix* viewin) {
-  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size1 != viewin->size1 || viewout->size2 != viewin->size2) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size1 != viewout->size1 || viewout->size2 != viewout->size2) {
     return 0;
   }
   gsl_matrix_memcpy(viewout, viewin);
@@ -467,14 +467,14 @@ BOOLEAN swig_lal_test_copyinout_gsl_matrix(gsl_matrix* copyinout) {
   return 1;
 }
 BOOLEAN swig_lal_test_viewin_gsl_matrix_complex_float(gsl_matrix_complex_float* copyout, const gsl_matrix_complex_float* viewin) {
-  if (!copyout || !viewin || copyout->size1 != viewin->size1 || copyout->size2 != viewin->size2) {
+  if (!copyout || !viewin || copyout->size1 != copyout->size1 || copyout->size2 != copyout->size2) {
     return 0;
   }
   gsl_matrix_complex_float_memcpy(copyout, viewin);
   return 1;
 }
 BOOLEAN swig_lal_test_viewinout_gsl_matrix_complex_float(gsl_matrix_complex_float* viewout, gsl_matrix_complex_float* viewin) {
-  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size1 != viewin->size1 || viewout->size2 != viewin->size2) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size1 != viewout->size1 || viewout->size2 != viewout->size2) {
     return 0;
   }
   gsl_matrix_complex_float_memcpy(viewout, viewin);
@@ -493,14 +493,14 @@ BOOLEAN swig_lal_test_copyinout_gsl_matrix_complex_float(gsl_matrix_complex_floa
   return 1;
 }
 BOOLEAN swig_lal_test_viewin_gsl_matrix_complex(gsl_matrix_complex* copyout, const gsl_matrix_complex* viewin) {
-  if (!copyout || !viewin || copyout->size1 != viewin->size1 || copyout->size2 != viewin->size2) {
+  if (!copyout || !viewin || copyout->size1 != copyout->size1 || copyout->size2 != copyout->size2) {
     return 0;
   }
   gsl_matrix_complex_memcpy(copyout, viewin);
   return 1;
 }
 BOOLEAN swig_lal_test_viewinout_gsl_matrix_complex(gsl_matrix_complex* viewout, gsl_matrix_complex* viewin) {
-  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size1 != viewin->size1 || viewout->size2 != viewin->size2) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size1 != viewout->size1 || viewout->size2 != viewout->size2) {
     return 0;
   }
   gsl_matrix_complex_memcpy(viewout, viewin);
@@ -553,22 +553,6 @@ void swig_lal_test_Destroy_arrayofptrs(swig_lal_test_arrayofptrs* ap) {
     }
     XLALFree(ap);
   }
-}
-
-// Test typemaps for strings and double pointers
-int swig_lal_test_typemaps_string_ptrptr(
-  const char *str, const char *empty_str, const char *null_str,
-  const swig_lal_test_struct** ptr_ptr, const swig_lal_test_struct** ptr_null_ptr, const swig_lal_test_struct** null_ptr_ptr
-  )
-{
-  XLAL_CHECK( str != NULL && strcmp( str, "abcde" ) == 0, XLAL_EFAILED );
-  XLAL_CHECK( empty_str != NULL && strlen( empty_str ) == 0, XLAL_EFAILED );
-  XLAL_CHECK( null_str == NULL, XLAL_EFAILED );
-  XLAL_CHECK( ptr_ptr != NULL && *ptr_ptr != NULL, XLAL_EFAILED );
-  XLAL_CHECK( ptr_null_ptr != NULL && *ptr_null_ptr == NULL, XLAL_EFAILED );
-  XLAL_CHECK( null_ptr_ptr == NULL, XLAL_EFAILED );
-  *ptr_null_ptr = *ptr_ptr;
-  return XLAL_SUCCESS;
 }
 
 // Test LIGOTimeGPS operations.

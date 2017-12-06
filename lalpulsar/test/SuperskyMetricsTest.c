@@ -19,7 +19,6 @@
 
 // Tests of the supersky metric code in SuperskyMetrics.[ch].
 
-#include <config.h>
 #include <math.h>
 #include <string.h>
 #include <gsl/gsl_blas.h>
@@ -34,24 +33,9 @@
 #define NUM_POINTS 10
 #define NUM_SEGS 3
 
-#define REF_TIME        { 900100100, 0 }
+#define REF_TIME_S      900100100
+#define REF_TIME        { REF_TIME_S, 0 }
 #define FIDUCIAL_FREQ   100.0
-
-// Maximum number of sky offsets required
-// - Must match that given in src/SuperskyMetrics.c
-#define MAX_SKY_OFFSETS PULSAR_MAX_SPINS
-
-// Internal definition of reduced supersky metric coordinate transform data
-// - MUST match the definition given in src/SuperskyMetrics.c
-struct tagSuperskyTransformData {
-  UINT4 ndim;                                   ///< Dimensions of the corresponding metric
-  LIGOTimeGPS ref_time;                         ///< Reference time of the metric
-  REAL8 fiducial_freq;                          ///< Fiducial frequency of metric
-  UINT4 nspins;                                 ///< Number of spindown dimensions
-  REAL8 align_sky[3][3];                        ///< Alignment transform of the supersky metric
-  UINT4 nsky_offsets;                           ///< Number of sky offsets
-  REAL8 sky_offsets[MAX_SKY_OFFSETS][3];        ///< Sky offsets of the supersky metric
-};
 
 const PulsarDopplerParams phys_points[NUM_POINTS] = {
   { .refTime = REF_TIME, .Alpha = 0.00000000000000, .Delta =  0.000000000000000, .fkdot = {100.0000000000000,  0.00000000000000e-00} },
@@ -92,69 +76,37 @@ const double coh_rssky_metric_refs[NUM_SEGS][4][4] = {
   }
 };
 
-const SuperskyTransformData semi_rssky_transf_ref = {
-  .ndim = 4,
-  .ref_time = REF_TIME,
-  .fiducial_freq = FIDUCIAL_FREQ,
-  .nspins = 1,
-  .align_sky = {
-    { 9.363383835591375e-01,  3.276518345636219e-01,  1.261535048302427e-01},
-    {-3.309081001489509e-01,  9.436487575620593e-01,  5.181853663774516e-03},
-    {-1.173467542357819e-01, -4.659718509388588e-02,  9.919971983890140e-01},
-  },
-  .nsky_offsets = 2,
-  .sky_offsets = {
-    {-2.134760488419512e-11,  1.830302603631687e-09,  7.303907936812212e-10},
-    { 9.866360627623324e-03,  4.620189300680953e-05,  1.748754269165573e-04},
-  }
+const double semi_rssky_transf_ref[6][3] = {
+  { REF_TIME_S, FIDUCIAL_FREQ, 0 },
+  { 9.363383835591375e-01,  3.276518345636219e-01,  1.261535048302427e-01},
+  {-3.309081001489509e-01,  9.436487575620593e-01,  5.181853663774516e-03},
+  {-1.173467542357819e-01, -4.659718509388588e-02,  9.919971983890140e-01},
+  {-2.134760488419512e-11,  1.830302603631687e-09,  7.303907936812212e-10},
+  { 9.866360627623324e-03,  4.620189300680953e-05,  1.748754269165573e-04},
 };
 
-const SuperskyTransformData coh_rssky_transf_refs[NUM_SEGS] = {
+const double coh_rssky_transf_refs[NUM_SEGS][6][3] = {
   {
-    .ndim = 4,
-    .ref_time = REF_TIME,
-    .fiducial_freq = FIDUCIAL_FREQ,
-    .nspins = 1,
-    .align_sky = {
-      { 7.014188729589919e-01, -7.127492992955380e-01,  3.179083552258733e-05},
-      { 7.127491812384910e-01,  7.014187811320953e-01,  5.460027715689418e-04},
-      {-4.114617819526091e-04, -3.603177566767635e-04,  9.999998504351469e-01},
-    },
-    .nsky_offsets = 2,
-    .sky_offsets = {
-      {-1.518511649108543e-09,  9.119239045225907e-10,  7.652734977238319e-10},
-      { 4.238436305149103e-03,  8.987129848963495e-03,  1.432613602463570e-03},
-    }
+    { REF_TIME_S, FIDUCIAL_FREQ, 0 },
+    { 7.014188729589919e-01, -7.127492992955380e-01,  3.179083552258733e-05},
+    { 7.127491812384910e-01,  7.014187811320953e-01,  5.460027715689418e-04},
+    {-4.114617819526091e-04, -3.603177566767635e-04,  9.999998504351469e-01},
+    {-1.518511649108543e-09,  9.119239045225907e-10,  7.652734977238319e-10},
+    { 4.238436305149103e-03,  8.987129848963495e-03,  1.432613602463570e-03},
   }, {
-    .ndim = 4,
-    .ref_time = REF_TIME,
-    .fiducial_freq = FIDUCIAL_FREQ,
-    .nspins = 1,
-    .align_sky = {
-      { 7.928332170641094e-01, -6.094386653165459e-01,  5.600859050599027e-05},
-      { 6.094384042541772e-01,  7.928329562280915e-01,  8.572856860540078e-04},
-      {-5.668685006887667e-04, -6.455507823947125e-04,  9.999996309620771e-01},
-    },
-    .nsky_offsets = 2,
-    .sky_offsets = {
-      {-1.538506600219701e-09,  9.036045301253465e-10,  7.329842343015285e-10},
-      { 5.337970249571395e-03,  8.252674722491856e-03,  1.420014590206618e-03},
-    }
+    { REF_TIME_S, FIDUCIAL_FREQ, 0 },
+    { 7.928332170641094e-01, -6.094386653165459e-01,  5.600859050599027e-05},
+    { 6.094384042541772e-01,  7.928329562280915e-01,  8.572856860540078e-04},
+    {-5.668685006887667e-04, -6.455507823947125e-04,  9.999996309620771e-01},
+    {-1.538506600219701e-09,  9.036045301253465e-10,  7.329842343015285e-10},
+    { 5.337970249571395e-03,  8.252674722491856e-03,  1.420014590206618e-03},
   }, {
-    .ndim = 4,
-    .ref_time = REF_TIME,
-    .fiducial_freq = FIDUCIAL_FREQ,
-    .nspins = 1,
-    .align_sky = {
-      { 8.689897105711624e-01, -4.948301493223842e-01,  7.901287635748977e-05},
-      { 4.948297433622081e-01,  8.689891816122729e-01,  1.152095883124570e-03},
-      {-6.387531126429617e-04, -9.620615466963718e-04,  9.999993332157983e-01},
-    },
-    .nsky_offsets = 2,
-    .sky_offsets = {
-      {-1.560552363459718e-09,  9.006124427330534e-10,  6.868353365772801e-10},
-      { 6.434079710711734e-03,  7.519415923170119e-03,  1.434855908485180e-03},
-    }
+    { REF_TIME_S, FIDUCIAL_FREQ, 0 },
+    { 8.689897105711624e-01, -4.948301493223842e-01,  7.901287635748977e-05},
+    { 4.948297433622081e-01,  8.689891816122729e-01,  1.152095883124570e-03},
+    {-6.387531126429617e-04, -9.620615466963718e-04,  9.999993332157983e-01},
+    {-1.560552363459718e-09,  9.006124427330534e-10,  6.868353365772801e-10},
+    { 6.434079710711734e-03,  7.519415923170119e-03,  1.434855908485180e-03},
   }
 };
 
@@ -216,22 +168,22 @@ const double coh_phys_mismatches[NUM_SEGS][NUM_POINTS][NUM_POINTS] = {
     XLAL_CHECK( lhs <= tol * rhs, XLAL_ETOL, "|"#A" - "#B"| = %0.5e > %0.5e = %0.5e * |"#A" + "#B"|", lhs, tol * rhs, tol ); \
   } while(0)
 
-static int CompareDoppler( const PulsarDopplerParams *a, const PulsarDopplerParams *b )
+static int CompareDoppler(const PulsarDopplerParams *a, const PulsarDopplerParams *b)
 {
-  XLAL_CHECK( XLALGPSCmp( &a->refTime, &b->refTime ) == 0, XLAL_ETOL, "Reference time mismatch!" );
-  CHECK_RELERR( cos( a->Alpha ), cos( b->Alpha ), 1e-10 );
-  CHECK_RELERR( sin( a->Alpha ), sin( b->Alpha ), 1e-10 );
-  CHECK_RELERR( a->Delta, b->Delta, 1e-10 );
-  CHECK_RELERR( a->fkdot[0], b->fkdot[0], 1e-10 );
-  CHECK_RELERR( a->fkdot[1], b->fkdot[1], 1e-10 );
+  XLAL_CHECK(XLALGPSCmp(&a->refTime, &b->refTime) == 0, XLAL_ETOL, "Reference time mismatch!");
+  CHECK_RELERR(cos(a->Alpha), cos(b->Alpha), 1e-10);
+  CHECK_RELERR(sin(a->Alpha), sin(b->Alpha), 1e-10);
+  CHECK_RELERR(a->Delta, b->Delta, 1e-10);
+  CHECK_RELERR(a->fkdot[0], b->fkdot[0], 1e-10);
+  CHECK_RELERR(a->fkdot[1], b->fkdot[1], 1e-10);
   return XLAL_SUCCESS;
 }
 
 static int CheckSuperskyMetrics(
   const gsl_matrix *rssky_metric,
   const double rssky_metric_ref[4][4],
-  const SuperskyTransformData *rssky_transf,
-  const SuperskyTransformData *rssky_transf_ref,
+  const gsl_matrix *rssky_transf,
+  const double rssky_transf_ref[6][3],
   const double phys_mismatch[NUM_POINTS][NUM_POINTS],
   const double phys_mismatch_tol
   )
@@ -239,98 +191,90 @@ static int CheckSuperskyMetrics(
 
   // Check supersky metrics
   {
-    gsl_matrix_const_view rssky_metric_ref_view = gsl_matrix_const_view_array( ( const double * )rssky_metric_ref, 4, 4 );
-    const double err = XLALCompareMetrics( rssky_metric, &rssky_metric_ref_view.matrix ), err_tol = 1e-6;
-    XLAL_CHECK( err <= err_tol, XLAL_ETOL, "'rssky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol );
+    gsl_matrix_const_view rssky_metric_ref_view = gsl_matrix_const_view_array((const double *)rssky_metric_ref, 4, 4);
+    const double err = XLALCompareMetrics(rssky_metric, &rssky_metric_ref_view.matrix), err_tol = 1e-6;
+    XLAL_CHECK(err <= err_tol, XLAL_ETOL, "'rssky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol);
   }
   {
-    XLAL_CHECK( rssky_transf->ndim == 4, XLAL_ESIZE );
-    XLAL_CHECK( rssky_transf->nsky_offsets == 2, XLAL_ESIZE );
+    XLAL_CHECK(rssky_transf->size1 == 6 && rssky_transf->size2 == 3, XLAL_ESIZE);
     const double err_tol = 1e-5;
-    for ( size_t i = 0; i < 3; ++i ) {
-      for ( size_t j = 0; j < 3; ++j ) {
-        const double align_sky_ij = rssky_transf->align_sky[i][j];
-        const double align_sky_ref_ij = rssky_transf_ref->align_sky[i][j];
-        CHECK_RELERR( align_sky_ij, align_sky_ref_ij, err_tol );
-      }
-    }
-    for ( size_t i = 0; i < rssky_transf->nsky_offsets; ++i ) {
-      for ( size_t j = 0; j < 3; ++j ) {
-        const double sky_offsets_ij = rssky_transf->sky_offsets[i][j];
-        const double sky_offsets_ref_ij = rssky_transf_ref->sky_offsets[i][j];
-        CHECK_RELERR( sky_offsets_ij, sky_offsets_ref_ij, err_tol );
+    for (size_t i = 0; i < rssky_transf->size1; ++i) {
+      for (size_t j = 0; j < rssky_transf->size2; ++j) {
+        const double rssky_transf_ij = gsl_matrix_get(rssky_transf, i, j);
+        const double rssky_transf_ref_ij = rssky_transf_ref[i][j];
+        CHECK_RELERR(rssky_transf_ij, rssky_transf_ref_ij, err_tol);
       }
     }
   }
 
   // Check round-trip conversions of each test point
   {
-    gsl_matrix *GAMAT( rssky_points, 4, NUM_POINTS );
-    for ( size_t j = 0; j < NUM_POINTS; ++j ) {
-      gsl_vector_view rssky_point = gsl_matrix_column( rssky_points, j );
-      PulsarDopplerParams XLAL_INIT_DECL( new_phys_point );
-      XLAL_CHECK( XLALConvertPhysicalToSuperskyPoint( &rssky_point.vector, &phys_points[j], rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &new_phys_point, &rssky_point.vector, NULL, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( CompareDoppler( &phys_points[j], &new_phys_point ) == EXIT_SUCCESS, XLAL_EFUNC );
+    gsl_matrix *GAMAT(rssky_points, 4, NUM_POINTS);
+    for (size_t j = 0; j < NUM_POINTS; ++j) {
+      gsl_vector_view rssky_point = gsl_matrix_column(rssky_points, j);
+      PulsarDopplerParams XLAL_INIT_DECL(new_phys_point);
+      XLAL_CHECK(XLALConvertPhysicalToSuperskyPoint(&rssky_point.vector, &phys_points[j], rssky_transf) == XLAL_SUCCESS, XLAL_EFUNC);
+      XLAL_CHECK(XLALConvertSuperskyToPhysicalPoint(&new_phys_point, &rssky_point.vector, rssky_transf) == XLAL_SUCCESS, XLAL_EFUNC);
+      XLAL_CHECK(CompareDoppler(&phys_points[j], &new_phys_point) == EXIT_SUCCESS, XLAL_EFUNC);
     }
     gsl_matrix *intm_phys_points = NULL;
     gsl_matrix *new_rssky_points = NULL;
-    XLAL_CHECK( XLALConvertSuperskyToPhysicalPoints( &intm_phys_points, rssky_points, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLALConvertPhysicalToSuperskyPoints( &new_rssky_points, intm_phys_points, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK(XLALConvertSuperskyToPhysicalPoints(&intm_phys_points, rssky_points, rssky_transf) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK(XLALConvertPhysicalToSuperskyPoints(&new_rssky_points, intm_phys_points, rssky_transf) == XLAL_SUCCESS, XLAL_EFUNC);
     const double err_tol = 1e-6;
-    for ( size_t i = 0; i < 4; ++i ) {
-      for ( size_t j = 0; j < NUM_POINTS; ++j ) {
-        const double rssky_points_ij = gsl_matrix_get( rssky_points, i, j );
-        const double new_rssky_points_ij = gsl_matrix_get( new_rssky_points, i, j );
-        CHECK_RELERR( rssky_points_ij, new_rssky_points_ij, err_tol );
+    for (size_t i = 0; i < 4; ++i) {
+      for (size_t j = 0; j < NUM_POINTS; ++j) {
+        const double rssky_points_ij = gsl_matrix_get(rssky_points, i, j);
+        const double new_rssky_points_ij = gsl_matrix_get(new_rssky_points, i, j);
+        CHECK_RELERR(rssky_points_ij, new_rssky_points_ij, err_tol);
       }
     }
-    GFMAT( rssky_points, intm_phys_points, new_rssky_points );
+    GFMAT(rssky_points, intm_phys_points, new_rssky_points);
   }
 
   // Check mismatches between pairs of points
   {
-    gsl_vector *GAVEC( rssky_point_i, 4 );
-    gsl_vector *GAVEC( rssky_point_j, 4 );
-    gsl_vector *GAVEC( temp, 4 );
-    for ( size_t i = 0; i < NUM_POINTS; ++i ) {
-      XLAL_CHECK( XLALConvertPhysicalToSuperskyPoint( rssky_point_i, &phys_points[i], rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
-      for ( size_t j = 0; j < NUM_POINTS; ++j ) {
-        XLAL_CHECK( XLALConvertPhysicalToSuperskyPoint( rssky_point_j, &phys_points[j], rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
-        gsl_vector_sub( rssky_point_j, rssky_point_i );
-        gsl_blas_dgemv( CblasNoTrans, 1.0, rssky_metric, rssky_point_j, 0.0, temp );
+    gsl_vector *GAVEC(rssky_point_i, 4);
+    gsl_vector *GAVEC(rssky_point_j, 4);
+    gsl_vector *GAVEC(temp, 4);
+    for (size_t i = 0; i < NUM_POINTS; ++i) {
+      XLAL_CHECK(XLALConvertPhysicalToSuperskyPoint(rssky_point_i, &phys_points[i], rssky_transf) == XLAL_SUCCESS, XLAL_EFUNC);
+      for (size_t j = 0; j < NUM_POINTS; ++j) {
+        XLAL_CHECK(XLALConvertPhysicalToSuperskyPoint(rssky_point_j, &phys_points[j], rssky_transf) == XLAL_SUCCESS, XLAL_EFUNC);
+        gsl_vector_sub(rssky_point_j, rssky_point_i);
+        gsl_blas_dgemv(CblasNoTrans, 1.0, rssky_metric, rssky_point_j, 0.0, temp);
         double mismatch = 0.0;
-        gsl_blas_ddot( rssky_point_j, temp, &mismatch );
-        CHECK_RELERR( mismatch, phys_mismatch[i][j], phys_mismatch_tol );
+        gsl_blas_ddot(rssky_point_j, temp, &mismatch);
+        CHECK_RELERR(mismatch, phys_mismatch[i][j], phys_mismatch_tol);
       }
     }
-    GFVEC( rssky_point_i, rssky_point_j, temp );
+    GFVEC(rssky_point_i, rssky_point_j, temp);
   }
 
   return XLAL_SUCCESS;
 
 }
 
-int main( void )
+int main(void)
 {
 
   // Load ephemeris data
-  EphemerisData *edat = XLALInitBarycenter( TEST_DATA_DIR "earth00-19-DE405.dat.gz",
-                                            TEST_DATA_DIR "sun00-19-DE405.dat.gz" );
-  XLAL_CHECK_MAIN( edat != NULL, XLAL_EFUNC );
+  EphemerisData *edat =  XLALInitBarycenter(TEST_DATA_DIR "earth00-19-DE405.dat.gz",
+                                            TEST_DATA_DIR "sun00-19-DE405.dat.gz");
+  XLAL_CHECK_MAIN(edat != NULL, XLAL_EFUNC);
 
   // Create segment list
   LALSegList segments;
-  XLAL_CHECK_MAIN( XLALSegListInit( &segments ) == XLAL_SUCCESS, XLAL_EFUNC );
-  for ( size_t n = 0; n < NUM_SEGS; ++n ) {
+  XLAL_CHECK_MAIN(XLALSegListInit(&segments) == XLAL_SUCCESS, XLAL_EFUNC);
+  for (size_t n = 0; n < NUM_SEGS; ++n) {
     const double Tspan = 3 * 86400;
     const double deltat[NUM_SEGS] = { -8 * 86400, 0, 8 * 86400 };
     LALSeg segment;
     LIGOTimeGPS start_time = REF_TIME, end_time = REF_TIME;
-    XLALGPSAdd( &start_time, deltat[n] - 0.5 * Tspan );
-    XLALGPSAdd( &end_time, deltat[n] + 0.5 * Tspan );
-    XLAL_CHECK_MAIN( XLALSegSet( &segment, &start_time, &end_time, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALSegListAppend( &segments, &segment ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLALGPSAdd(&start_time, deltat[n] - 0.5 * Tspan);
+    XLALGPSAdd(&end_time, deltat[n] + 0.5 * Tspan);
+    XLAL_CHECK_MAIN(XLALSegSet(&segment, &start_time, &end_time, 0) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN(XLALSegListAppend(&segments, &segment) == XLAL_SUCCESS, XLAL_EFUNC);
   }
 
   // Compute supersky metrics
@@ -338,116 +282,50 @@ int main( void )
   {
     const LIGOTimeGPS ref_time = REF_TIME;
     const MultiLALDetector detectors = { .length = 1, .sites = { lalCachedDetectors[LAL_LLO_4K_DETECTOR] } };
-    metrics = XLALComputeSuperskyMetrics( SUPERSKY_METRIC_TYPE, 1, &ref_time, &segments, FIDUCIAL_FREQ, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat );
+    metrics = XLALComputeSuperskyMetrics(1, &ref_time, &segments, FIDUCIAL_FREQ, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat);
   }
-  XLAL_CHECK_MAIN( metrics != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN(metrics != NULL, XLAL_EFUNC);
 
-  // Check coherent and semicoherent metrics
-  for ( size_t n = 0; n < NUM_SEGS; ++n ) {
-    XLAL_CHECK_MAIN( CheckSuperskyMetrics(
-                       metrics->coh_rssky_metric[n], coh_rssky_metric_refs[n],
-                       metrics->coh_rssky_transf[n], &coh_rssky_transf_refs[n],
-                       coh_phys_mismatches[n], 1e-2
-                       ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Check coherent metrics
+  for (size_t n = 0; n < NUM_SEGS; ++n) {
+    XLAL_CHECK_MAIN(CheckSuperskyMetrics(
+                      metrics->coh_rssky_metric[n], coh_rssky_metric_refs[n],
+                      metrics->coh_rssky_transf[n], coh_rssky_transf_refs[n],
+                      coh_phys_mismatches[n], 1e-2
+                      ) == XLAL_SUCCESS, XLAL_EFUNC);
   }
-  XLAL_CHECK_MAIN( CheckSuperskyMetrics(
-                     metrics->semi_rssky_metric, semi_rssky_metric_ref,
-                     metrics->semi_rssky_transf, &semi_rssky_transf_ref,
-                     semi_phys_mismatch, 3e-2
-                     ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Check semicoherent metric
+  XLAL_CHECK_MAIN(CheckSuperskyMetrics(
+                    metrics->semi_rssky_metric, semi_rssky_metric_ref,
+                    metrics->semi_rssky_transf, semi_rssky_transf_ref,
+                    semi_phys_mismatch, 3e-2
+                    ) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Check semicoherent metric after round-trip frequency rescaling
-  XLAL_CHECK_MAIN( XLALScaleSuperskyMetricsFiducialFreq( metrics, 257.52 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN(XLALScaleSuperskyMetricsFiducialFreq(metrics, 257.52) == XLAL_SUCCESS, XLAL_EFUNC);
   {
     double semi_rssky_metric_rescale[4][4];
-    memcpy( semi_rssky_metric_rescale, semi_rssky_metric_ref, sizeof( semi_rssky_metric_ref ) );
-    gsl_matrix_view semi_rssky_metric_rescale_view = gsl_matrix_view_array( ( double * )semi_rssky_metric_rescale, 4, 4 );
-    gsl_matrix_view sky_sky = gsl_matrix_submatrix( &semi_rssky_metric_rescale_view.matrix, 0, 0, 2, 2 );
-    gsl_matrix_scale( &sky_sky.matrix, ( 257.52 / FIDUCIAL_FREQ ) * ( 257.52 / FIDUCIAL_FREQ ) );
-    const double err = XLALCompareMetrics( metrics->semi_rssky_metric, &semi_rssky_metric_rescale_view.matrix ), err_tol = 1e-6;
-    XLAL_CHECK_MAIN( err <= err_tol, XLAL_ETOL, "'rssky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol );
+    memcpy(semi_rssky_metric_rescale, semi_rssky_metric_ref, sizeof(semi_rssky_metric_ref));
+    gsl_matrix_view semi_rssky_metric_rescale_view = gsl_matrix_view_array((double *)semi_rssky_metric_rescale, 4, 4);
+    gsl_matrix_view sky_sky = gsl_matrix_submatrix(&semi_rssky_metric_rescale_view.matrix, 0, 0, 2, 2);
+    gsl_matrix_scale(&sky_sky.matrix, (257.52 / FIDUCIAL_FREQ) * (257.52 / FIDUCIAL_FREQ));
+    const double err = XLALCompareMetrics(metrics->semi_rssky_metric, &semi_rssky_metric_rescale_view.matrix), err_tol = 1e-6;
+    XLAL_CHECK(err <= err_tol, XLAL_ETOL, "'rssky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol);
   }
-  XLAL_CHECK_MAIN( XLALScaleSuperskyMetricsFiducialFreq( metrics, FIDUCIAL_FREQ ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( CheckSuperskyMetrics(
-                     metrics->semi_rssky_metric, semi_rssky_metric_ref,
-                     metrics->semi_rssky_transf, &semi_rssky_transf_ref,
-                     semi_phys_mismatch, 3e-2
-                     ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // Check that XLALEqualizeReducedSuperskyMetricsFreqSpacing() with equal mismatches does nothing
-  XLAL_CHECK_MAIN( XLALEqualizeReducedSuperskyMetricsFreqSpacing( metrics, 0.1, 0.1 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  for ( size_t n = 0; n < NUM_SEGS; ++n ) {
-    XLAL_CHECK_MAIN( CheckSuperskyMetrics(
-                       metrics->coh_rssky_metric[n], coh_rssky_metric_refs[n],
-                       metrics->coh_rssky_transf[n], &coh_rssky_transf_refs[n],
-                       coh_phys_mismatches[n], 1e-2
-                       ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
-  XLAL_CHECK_MAIN( CheckSuperskyMetrics(
-                     metrics->semi_rssky_metric, semi_rssky_metric_ref,
-                     metrics->semi_rssky_transf, &semi_rssky_transf_ref,
-                     semi_phys_mismatch, 3e-2
-                     ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // Check coherent and semicoherent metrics
-  SuperskyMetrics *copy_metrics = XLALCopySuperskyMetrics( metrics );
-  XLAL_CHECK_MAIN( copy_metrics != NULL, XLAL_EFUNC );
-  for ( size_t n = 0; n < NUM_SEGS; ++n ) {
-    XLAL_CHECK_MAIN( CheckSuperskyMetrics(
-                       copy_metrics->coh_rssky_metric[n], coh_rssky_metric_refs[n],
-                       copy_metrics->coh_rssky_transf[n], &coh_rssky_transf_refs[n],
-                       coh_phys_mismatches[n], 1e-2
-                       ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
-  XLAL_CHECK_MAIN( CheckSuperskyMetrics(
-                     copy_metrics->semi_rssky_metric, semi_rssky_metric_ref,
-                     copy_metrics->semi_rssky_transf, &semi_rssky_transf_ref,
-                     semi_phys_mismatch, 3e-2
-                     ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-
-  // Check writing/reading SuperskyMetrics to a FITS file
-#if !defined(HAVE_LIBCFITSIO)
-  fprintf( stderr, "CFITSIO library is not available; skipping FITS writing/reading test\n" );
-#else
-  {
-    FITSFile *file = XLALFITSFileOpenWrite( "SuperskyMetricsTest.fits" );
-    XLAL_CHECK_MAIN( file != NULL, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSWriteSuperskyMetrics( file, metrics ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLALFITSFileClose( file );
-  }
-  {
-    FITSFile *file = XLALFITSFileOpenRead( "SuperskyMetricsTest.fits" );
-    XLAL_CHECK_MAIN( file != NULL, XLAL_EFUNC );
-    SuperskyMetrics *metrics_from_fits = NULL;
-    XLAL_CHECK_MAIN( XLALFITSReadSuperskyMetrics( file, &metrics_from_fits ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLALFITSFileClose( file );
-    for ( size_t n = 0; n < NUM_SEGS; ++n ) {
-      XLAL_CHECK_MAIN( XLALCompareMetrics( metrics->coh_rssky_metric[n], metrics_from_fits->coh_rssky_metric[n] ) == 0,
-                       XLAL_EIO, "Failed to read coh_rssky_metric[%zu] from FITS file", n );
-      XLAL_CHECK_MAIN( memcmp( metrics->coh_rssky_transf[n], metrics_from_fits->coh_rssky_transf[n], sizeof( *metrics->coh_rssky_transf[n] ) ) == 0,
-                       XLAL_EIO, "Failed to read coh_rssky_transf[%zu] from FITS file", n );
-    }
-    XLAL_CHECK_MAIN( XLALCompareMetrics( metrics->semi_rssky_metric, metrics_from_fits->semi_rssky_metric ) == 0,
-                     XLAL_EIO, "Failed to read semi_rssky_metric from FITS file" );
-    XLAL_CHECK_MAIN( memcmp( metrics->semi_rssky_transf, metrics_from_fits->semi_rssky_transf, sizeof( *metrics->semi_rssky_transf ) ) == 0,
-                     XLAL_EIO, "Failed to read semi_rssky_transf from FITS file" );
-    XLALDestroySuperskyMetrics( metrics_from_fits );
-  }
-#endif
+  XLAL_CHECK_MAIN(XLALScaleSuperskyMetricsFiducialFreq(metrics, FIDUCIAL_FREQ) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(CheckSuperskyMetrics(
+                    metrics->semi_rssky_metric, semi_rssky_metric_ref,
+                    metrics->semi_rssky_transf, semi_rssky_transf_ref,
+                    semi_phys_mismatch, 3e-2
+                    ) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Cleanup
-  XLALDestroyEphemerisData( edat );
-  XLALSegListClear( &segments );
-  XLALDestroySuperskyMetrics( metrics );
-  XLALDestroySuperskyMetrics( copy_metrics );
+  XLALDestroyEphemerisData(edat);
+  XLALSegListClear(&segments);
+  XLALDestroySuperskyMetrics(metrics);
   LALCheckMemoryLeaks();
 
   return EXIT_SUCCESS;
 
 }
-
-// Local Variables:
-// c-file-style: "linux"
-// c-basic-offset: 2
-// End:

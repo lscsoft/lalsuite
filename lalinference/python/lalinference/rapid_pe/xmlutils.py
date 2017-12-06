@@ -213,12 +213,8 @@ def db_to_samples(db_fname, tbltype, cols):
 #
 # HDF5 I/O
 #
-def append_samples_to_hdf5_group(grp, samples, compress='gzip'):
-    if "samples" in grp:
-        samp_grp = grp["samples"]
-    else:
-        samp_grp = grp.create_group("samples")
-
+def append_samples_to_hdf5_group(grp, samples):
+    samp_grp = grp.create_group("samples")
     cols = set(samples.validcolumns.keys()) & set(dir(samples[0]))
     for col in cols:
         try:
@@ -226,22 +222,16 @@ def append_samples_to_hdf5_group(grp, samples, compress='gzip'):
         except AttributeError:
             continue
 
-        if samples.validcolumns[col] in ("ilwd:char",):
-            raw_dat = map(int, [getattr(samples[i], col) for i, row in enumerate(samples)])
-        else:
-            raw_dat = [getattr(samples[i], col) for i, row in enumerate(samples)]
-
-        if col in samp_grp:
-            ds = samp_grp[col]
-            ds.resize((len(ds) + len(samples),))
-            ds[len(ds) - len(raw_dat):len(ds)] = raw_dat
-        else:
-            ds = samp_grp.create_dataset(col, data=raw_dat, maxshape=(None,), compression=compress)
-
+        ds = samp_grp.create_dataset(col, (len(samples),))
+        for i, row in enumerate(samples):
+            if samples.validcolumns[col] in ("ilwd:char",):
+                ds[i] = int(getattr(samples[i], col))
+            else:
+                ds[i] = getattr(samples[i], col)
 
 def append_metadata_to_hdf5_group(grp, metadata):
     for name, val in metadata.iteritems():
-        grp.attrs[name] = val or ""
+        grp.attrs[name] = val
 
 # TESTING
 import sys

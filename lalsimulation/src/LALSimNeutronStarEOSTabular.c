@@ -201,6 +201,7 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
     LALSimNeutronStarEOSDataTabular *data;
     size_t i;
     double *hdat;
+    double dhdp;
     double *rhodat;
     double integrand_im1, integrand_i, integral;
 
@@ -220,38 +221,15 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
     eos->dedp_of_p = eos_dedp_of_p_tabular;
     eos->v_of_h = eos_v_of_h_tabular;
 
-    /* compute pseudo-enthalpy h from dhdp */
-    /* Integrate in log space: 
-       dhdp = 1 / [e(p) + p]
-       h(p) = h(p0) + \int_p0^p dhdp dp
-       h(p) = h(p0) + \int_ln(p0)^ln(p) exp[ln(p) + ln(dhdp)] dln(p)
-    */
-    double * integrand;
-    double * log_pdat;
-    log_pdat = XLALCalloc(ndat-1, sizeof(*log_pdat));
-    integrand = LALMalloc((ndat-1) * sizeof(*integrand));
-    for (i = 0; i < ndat-1; ++i) {
-        log_pdat[i] = log(pdat[i+1]);
-        integrand[i] = exp(log_pdat[i] + log(1.0 / (edat[i+1] + pdat[i+1])));
-    }
-
-    gsl_interp_accel * dhdp_of_p_acc_temp = gsl_interp_accel_alloc();
-    gsl_interp * dhdp_of_p_interp_temp = gsl_interp_alloc(gsl_interp_linear, ndat-1);
-    gsl_interp_init(dhdp_of_p_interp_temp, log_pdat, integrand, ndat-1);
-
+    /* compute enthalpy data by integrating (trapezoid rule) */
     hdat = LALMalloc(ndat * sizeof(*hdat));
     hdat[0] = 0.0;
-    // Do first point by hand
-    hdat[1] = hdat[0] + 0.5 * (1./(pdat[1]+edat[1])) * (pdat[1] - pdat[0]);
-    for (i = 1; i < ndat-1; ++i) {
-        hdat[i+1] = gsl_interp_eval_integ(dhdp_of_p_interp_temp, log_pdat, integrand,
-          log_pdat[0], log_pdat[i], dhdp_of_p_acc_temp);
+    dhdp = 1.0 / (edat[1] + pdat[1]);   /* first deriv is at second point */
+    for (i = 1; i < ndat; ++i) {
+        double prev = dhdp;
+        dhdp = 1.0 / (edat[i] + pdat[i]);
+        hdat[i] = hdat[i - 1] + 0.5 * (prev + dhdp) * (pdat[i] - pdat[i - 1]);
     }
-    gsl_interp_free(dhdp_of_p_interp_temp);
-    gsl_interp_accel_free(dhdp_of_p_acc_temp);
-
-    LALFree(log_pdat);
-    LALFree(integrand);
 
     /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
     /*             CALCULATION OF RHO CURRENTLY RETURNS GARBAGE               */
@@ -363,51 +341,11 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
  * @brief Creates an equation of state structure from tabulated equation
  * of state data of a known name.
  * @details A known, installed, named tabulated equation of state data file is
- * read and the used to create the equation of state structure.  
- * The equations of state available are the representative sample drawn from
- * http://xtreme.as.arizona.edu/NeutronStars/ they are:
- * - ALF1
- * - ALF2
- * - ALF3
- * - ALF4
- * - AP1
- * - AP2
- * - AP3
+ * read and the used to create the equation of state structure.  Presently
+ * the known equations of state are:
  * - AP4
- * - BBB2
- * - BGN1H1
- * - BPAL12
- * - BSK19
- * - BSK20
- * - BSK21
- * - ENG
  * - FPS
- * - GNH3
- * - GS1
- * - GS2
- * - H1
- * - H2
- * - H3
- * - H4
- * - H5
- * - H6
- * - H7
- * - MPA1
- * - MS1B
- * - MS1
- * - MS2
- * - PAL6
- * - PCL2
- * - PS
- * - QMC700
  * - SLY4
- * - SLY
- * - SQM1
- * - SQM2
- * - SQM3
- * - WFF1
- * - WFF2
- * - WFF3
  * @param[in] name The name of the equation of state.
  * @return A pointer to neutron star equation of state structure.
  */
@@ -416,19 +354,9 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name)
     static const char fname_base[] = "LALSimNeutronStarEOS_";
     static const char fname_extn[] = ".dat";
     static const char *eos_names[] = {
-        "ALF1", "ALF2", "ALF3", "ALF4",
-        "AP1", "AP2", "AP3", "AP4",
-        "BBB2", "BGN1H1", "BPAL12", 
-        "BSK19", "BSK20", "BSK21",
-        "ENG", "FPS", "GNH3",
-        "GS1", "GS2",
-        "H1", "H2", "H3", "H4", "H5", "H6", "H7",
-        "MPA1", "MS1B", "MS1", "MS2",
-        "PAL6", "PCL2", "PS",
-        "QMC700",
-        "SLY4", "SLY",
-        "SQM1", "SQM2", "SQM3",
-        "WFF1", "WFF2", "WFF3"
+        "FPS",
+        "SLY4",
+        "AP4"
     };
     size_t n = XLAL_NUM_ELEM(eos_names);
     size_t i;

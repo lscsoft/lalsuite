@@ -20,9 +20,19 @@
 // SWIG interface code specific to Python.
 // Author: Karl Wette
 
-//
-// General SWIG directives and interface code
-//
+// # General SWIG directives and interface code
+
+// Call VCS information check function when module is loaded
+%init %{
+  if (VCS_INFO_CHECK() != XLAL_SUCCESS) {
+    SWIG_Error(SWIG_RuntimeError, "Could not load SWIG module");
+#if PY_VERSION_HEX >= 0x03000000
+    return NULL;
+#else
+    return;
+#endif
+  }
+%}
 
 // In SWIG Python modules, everything is namespaced, so it makes sense to rename symbols to remove
 // superfluous C-API prefixes.
@@ -75,14 +85,7 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
 #define swiglal_append_output_if_empty(v) if (resultobj == Py_None) resultobj = SWIG_Python_AppendOutput(resultobj, v)
 %}
 
-// Evaluates true if a PyObject represents a null pointer, false otherwise.
-%header %{
-#define swiglal_null_ptr(v)  ((v) == Py_None)
-%}
-
-//
-// SWIG directives for operators
-//
+// # SWIG directives for operators
 
 // These macros apply the correct python:slot directives to map Python __operator__ functions (which
 // may be defined in %extend) to the correct PyTypeObject slots.
@@ -141,13 +144,6 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
   }
 }
 
-// SWIG's SWIGPY_HASHFUNC_CLOSURE() macro requires the return of a __hash__()
-// function to be of PyLong type, which is not guaranteed by SWIG_from_long()
-// (which may return a PyInt), so use this custom typemap to guarantee this.
-%typemap(out, noblock=1) long __hash__ {
-  %set_output(PyLong_FromLong($1));
-}
-
 // Comparison operators.
 %typemap(in, numinputs=0, noblock=1) int SWIGLAL_CMP_OP_RETN_HACK "";
 %define %swiglal_py_cmp_op(NAME, COMPTYPE)
@@ -171,57 +167,7 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
 %swiglal_py_cmp_op(lt, Py_LT);
 %swiglal_py_cmp_op(ne, Py_NE);
 
-//
-// Python-specific extensions to structs
-//
-
-// Extend a struct TAGNAME.
-%define %swiglal_struct_extend_specific(TAGNAME, OPAQUE, DTORFUNC)
-
-// Create shallow copy function __copy__() for the use of Python's copy.copy() function. It is
-// always defined but will fail for opaque structs, which cannot be copied.
-#if !OPAQUE
-%extend TAGNAME {
-  struct TAGNAME *__copy__() {
-    return %swiglal_new_copy(*$self, struct TAGNAME);
-  }
-}
-#else
-%extend TAGNAME {
-  struct TAGNAME *__copy__() {
-    XLALSetErrno(XLAL_ENOSYS); /* Silently signal an error to wrapper function */
-    return NULL;
-  }
-}
-#endif
-
-// Create deep copy function __deepcopy__() for the use of Python's copy.deepcopy() function. It is
-// always defined but will fail for opaque structs, which cannot be copied, and for structs with a
-// destructor, which presumably cannot be trivially copied with memcpy().
-#if !OPAQUE && #DTORFUNC == ""
-%extend TAGNAME {
-  %typemap(in, noblock=1) const void *memo "";
-  struct TAGNAME *__deepcopy__(const void *memo) {
-    return %swiglal_new_copy(*$self, struct TAGNAME);
-  }
-  %clear const void *memo;
-}
-#else
-%extend TAGNAME {
-  %typemap(in, noblock=1) const void *memo "";
-  struct TAGNAME *__deepcopy__(const void *memo) {
-    XLALSetErrno(XLAL_ENOSYS); /* Silently signal an error to wrapper function */
-    return NULL;
-  }
-  %clear const void *memo;
-}
-#endif
-
-%enddef // %swiglal_struct_extend_specific
-
-//
-// General fragments, typemaps, and macros
-//
+// # General fragments, typemaps, and macros
 
 // SWIG conversion fragments and typemaps for GSL complex numbers.
 %swig_cplxflt_convn(gsl_complex_float, gsl_complex_float_rect, GSL_REAL, GSL_IMAG);
@@ -300,9 +246,7 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
 
 }
 
-//
-// Interface code to track object parents
-//
+// # Interface code to track object parents
 
 // Interface code which tracks the parent structs of SWIG-wrapped struct members, so that the parent
 // struct is not destroyed as long as a SWIG-wrapped object containing any of its members exists.
@@ -420,9 +364,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
 %} // %init
 
-//
-// Fragments and typemaps for arrays
-//
+// # Fragments and typemaps for arrays
 
 // This section implements array conversion functions for basic C array types, and custom NumPy
 // array descriptors for viewing C arrays of object, e.g. structs.
@@ -438,8 +380,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
                                    npy_intp idx[])
   {
     size_t elemidx = 0;
-    for (size_t j = 0; j < ndims; ++j) {
-      elemidx += ((size_t)idx[j]) * strides[j];
+    for (int j = 0; j < ndims; ++j) {
+      elemidx += idx[j] * strides[j];
     }
     return %reinterpret_cast(%reinterpret_cast(ptr, char*) + elemidx*esize, void*);
   }
@@ -449,8 +391,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
                                 const size_t dims[],
                                 npy_intp idx[])
   {
-    for (int j = ((int)ndims) - 1; j >= 0; --j) {
-      if (++idx[j] < ((npy_intp)dims[j])) {
+    for (int j = ndims-1; j >= 0; --j) {
+      if (++idx[j] < dims[j]) {
         break;
       }
       idx[j] = 0;
@@ -747,13 +689,13 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     }
 
     // Check that NumPy array dimensions are consistent with C array dimensions.
-    if (((size_t)PyArray_NDIM(nparr)) != ndims) {
+    if (PyArray_NDIM(nparr) != ndims) {
       res = SWIG_ValueError;
       goto end;
     }
     size_t nelem = 1;
-    for (size_t i = 0; i < ndims; ++i) {
-      if (((size_t)PyArray_DIM(nparr, i)) != dims[i]) {
+    for (int i = 0; i < ndims; ++i) {
+      if (PyArray_DIM(nparr, i) != dims[i]) {
         res = SWIG_ValueError;
         goto end;
       }
@@ -814,7 +756,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
     // Copy C array dimensions.
     size_t nelem = 1;
-    for (size_t i = 0; i < ndims; ++i) {
+    for (int i = 0; i < ndims; ++i) {
       objdims[i] = dims[i];
       nelem *= dims[i];
     }
@@ -892,12 +834,12 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     }
 
     // Check that the elements of 'nparr' have the correct size.
-    if (((size_t)PyArray_ITEMSIZE(nparr)) != esize) {
+    if (PyArray_ITEMSIZE(nparr) != esize) {
       return SWIG_TypeError;
     }
 
     // Check that 'nparr' has the correct number of dimensions.
-    if (((size_t)PyArray_NDIM(nparr)) != ndims) {
+    if (PyArray_NDIM(nparr) != ndims) {
       return SWIG_ValueError;
     }
 
@@ -937,7 +879,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     npy_intp objstrides[ndims];
 
     // Copy C array dimensions and strides.
-    for (size_t i = 0; i < ndims; ++i) {
+    for (int i = 0; i < ndims; ++i) {
       objdims[i] = dims[i];
       objstrides[i] = strides[i] * esize;
     }

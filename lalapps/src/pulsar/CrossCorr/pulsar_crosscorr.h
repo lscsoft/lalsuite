@@ -18,15 +18,10 @@
  */
 
 /**
- * \defgroup lalapps_pulsar_CrossCorr Cross-Correlation Search Applications
- * \ingroup lalapps_pulsar_Apps
- */
-
-/**
  * \author Christine Chung, Badri Krishnan, John Whelan
  * \date 2008
  * \file
- * \ingroup lalapps_pulsar_CrossCorr
+ * \ingroup lalapps_pulsar_crosscorr
  * \brief Header for CW cross-correlation search
  *
  */

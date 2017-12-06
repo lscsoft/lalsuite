@@ -172,8 +172,7 @@ void XLALComputeDetAMResponseExtraModes(
 		*fplus += X[i] * DX - Y[i] * DY;
 		*fcross += X[i] * DY + Y[i] * DX;
 
-		/* scalar and vector modes from [Nishizawa2009] 
-     * also Eq. (13.96) in the textbook by Poisson & Will */
+		/* scalar and vector modes from [Nishizawa2009] */
 		*fb += X[i] * DX + Y[i] * DY;
 		*fl += LAL_SQRT2 * Z[i] * DZ;
 		*fx += X[i] * DZ + Z[i] * DX;

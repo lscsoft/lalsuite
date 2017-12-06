@@ -14,8 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## \defgroup laldetchar_py_idq_idq iDQ Functions
-## \ingroup laldetchar_py_idq
+## \addtogroup laldetchar_py_idq
 ## Synopsis
 # ~~~
 # from laldetchar.idq import idq
@@ -36,7 +35,6 @@ import time
 import numpy
 import math
 
-import multiprocessing
 import subprocess
 import tempfile
 
@@ -90,33 +88,53 @@ mla_flavors = ["forest", "svm", "ann"]
 train_with_dag = ["forest", "svm", "ann"]
 
 #===================================================================================================
-# standardize uploads to GraceDb and tagging
+# DEPRECATED FUNCTIONS THAT SHOULD BE REMOVED
 #===================================================================================================
+'''
+def submit_command(
+    command,
+    process_name='unspecified process',
+    dir='.',
+    verbose=False,
+    ):
+    """
+....Utility function for submiting jobs via python's subprocess. 
+....@param command is a list, first element of which is interpretted as an executable
+....and all others as options and values for that executable.
+....@param process_name is the name identifying the submitted job.
+....@param dir is directory in which the job is to be executed.
+....@param verbose UNDOCUMENTED.
+...."""
 
-tagnames = ["idq"]
+    print "WARNING: submit_command is deprecated and should be replaced by direct calls to the subprocess module"
 
-#===================================================================================================
-# forking
-#===================================================================================================
-
-def double_fork( cmd, stdout=None, stderr=None, cwd='.' ):
-    '''
-    double forks your process so it is orphaned
-
-    NOTE: does not allow you to communicate through STDIN. If you need to do that, you should handle the calls yourself.
-    '''
-    proc = multiprocessing.Process(target=fork, args=(cmd, stdout, stderr, cwd))
-    proc.start() ### start the job
-    proc.join() ### wait for it to finish, which should be quick because it only forks
-
-def fork( cmd, stdout=None, stderr=None, cwd='.' ):
-    '''
-    forks the process via subprocess
-    returns the pid
-
-    NOTE: does not allow you to communicate through STDIN. If you need to do that, you should handle the calls to subprocess yourself
-    '''
-    return subprocess.Popen( cmd, stdout=stdout, stderr=stderr, cwd=cwd )
+    process = subprocess.Popen(command, stderr=subprocess.PIPE,
+                               stdout=subprocess.PIPE, cwd=dir)
+    (output, errors) = process.communicate()
+    if process.returncode:
+        print 'Error! ' + process_name + ' failed.'
+        print 'Error! ' + process_name + ' ' + 'exit code: ' \
+            + str(process.returncode)
+        if errors:
+            for line in errors.split('\n'):
+                if line != '':
+                    print 'Error! ' + process_name + ' error out: ' \
+                        + line.rstrip('\n')
+        if output:
+            for line in output.split('\n'):
+                if line != '':
+                    print 'Error! ' + process_name + ' standard out: ' \
+                        + line.rstrip('\n')
+        exit_code = 1
+        return exit_code
+    else:
+        exit_code = 0
+    if verbose:
+        for line in output.split('\n'):
+            if line != '':
+                print process_name + ': ' + line.rstrip('\n')
+    return exit_code
+'''
 
 #===================================================================================================
 # parsing the config file
@@ -363,9 +381,6 @@ def useSummary_json( directory, ifo, classifier, tag, t, stride):
 def frame2segment( directory, classifier, ifo, FAPthr, tag, right_padding, left_padding, t_lag, t, stride ):
     return "%s/%s_%s_FAP-%.3e_rp-%.3f_lp-%.3f_tl-%.3f%s-%d-%d.seg"%(directory, ifo, classifier, FAPthr, right_padding, left_padding, t_lag, tag, t, stride)
 
-def frame2segmentxml( directory, tag, t, stride ):
-    return "%s/laldetcharIDQFrame2Segment%s-%d-%d.xml.gz"%(directory, tag, t, stride)
-
 #=================================================
 # extract start/dur
 #=================================================
@@ -503,33 +518,28 @@ def nowgps():
 
 def dieiflocked(lockfile='.idq.lock'):
     """
-    try to set pid file, die iif file exists and pid within is still running
-    Note, there's still the possibility of a small race condition here, but it shouldn't matter in practice
+    try to set lockfile, die if cannot establish lock
     """
-    if os.path.exists(lockfile):
-        lockfp = open(lockfile, 'r')
-        pid = int(lockfp.readline().strip()) ### read the pid from the file
-        lockfp.close()
-
-        try: ### confirm the process is running
-            os.kill(pid, 0) ### sends 0 to the process. does nothing if it's running. raises an error if it isn't
-            ### we'll only execute the next line if the call to os.kill did not raise an error -> process exists
-            sys.exit('ERROR: possible duplicate process. %s contains running pid=%d. exiting..'%(lockfile, pid))
-
-        except OSError: ### process is not running
-            pass
-        
-    ### we only get here if there is no currently running process
+    import fcntl
+    global lockfp
     lockfp = open(lockfile, 'w')
-    lockfp.write( str(os.getpid()) )
+    try:
+        fcntl.lockf(lockfp, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except IOError:
+        lockfp.close()
+        import sys
+        sys.exit('ERROR: cannot establish lock on \'%s\', possible duplicate process, exiting..'%lockfile)
+
+    return lockfp
+
+def release(lockfp):
+    """
+    try to release a lockfile
+    """
+    import fcntl
+    fcntl.lockf(lockfp, fcntl.LOCK_UN)
     lockfp.close()
 
-def release(lockfile='.idq.lock'):
-    """
-    try to release a pid file (just delete it)
-    """
-    os.remove(lockfile)
-    
 #=================================================
 ### reporting/logging utilities
 #=================================================
@@ -1434,12 +1444,16 @@ def extract_dmt_segments(xmlfiles, dq_name):
     covered = []
     lsctables.use_in(ligolw.LIGOLWContentHandler)
     for file in xmlfiles:
+        print "load xmldoc"
         xmldoc = ligolw_utils.load_filename(file, contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))  # load file
+        print "Done: load xmldoc"
         # get segment tables
 
         sdef = table.get_table(xmldoc,
                                lsctables.SegmentDefTable.tableName)
+        print "Done: get sdef"
         seg = table.get_table(xmldoc, lsctables.SegmentTable.tableName)
+        print "Done: get seg"
 
         # segment definer ID correspodning to dq_name
         # FIX ME: in case of multiple segment versions this matching becomes ambiguous
@@ -1447,14 +1461,20 @@ def extract_dmt_segments(xmlfiles, dq_name):
         dq_seg_def_id = next(a.segment_def_id for a in sdef if a.name
                              == dq_name.split(":")[1])
                              #== dq_name)
+        print "Done: dq_seg_def_id"
 
         # get list of  segments
 
         good.extend([[a.start_time, a.end_time] for a in seg
                     if a.segment_def_id == dq_seg_def_id])
+        print "good"
+        print good
 
     # coalesce segments....
+
     good = event.fixsegments(good)
+    print "good=event.fixsegments(good)"
+    print good
 
     # convert file names into segments
 
@@ -1888,7 +1908,9 @@ def collect_sngl_chan_kw(
         elif fields[0] == 'basename':
             basename = fields[1]
         elif fields[0] == 'channel':
-            channels.append([fields[1], "%s_%s_%d_%d"%(fields[1][:2], fields[1][3:], float(fields[2]), float(fields[3])) ])
+            channels.append([fields[1], (fields[1])[:2] + '_'
+                            + (fields[1])[3:] + '_' + fields[2] + '_'
+                            + fields[3]])
     f.close()
     
     if chans: ### if supplied, only keep those channels that are specified
@@ -1966,9 +1988,6 @@ def collect_sngl_chan_kw(
                     # not worth extra processing to parse GPS times to sort them out
 
                     for line in f:
-                        if line[0]=="#": ### respect comments
-                            continue
-
                         fields = line.strip().split()
                         if len(fields) == 9 and fields[-1] != '':
                             tag = fields[-1]
@@ -2067,7 +2086,7 @@ def build_auxmvc_vectors( trigger_dict, main_channel, time_window, signif_thresh
     trigger_dict.include([[gps_start_time, gps_end_time]], channels=[main_channel])
 
     # keep only triggers from the science segments if given........
-    if science_segments!=None:
+    if science_segments:
         science_segments = event.andsegments([[gps_start_time - time_window, gps_end_time + time_window]], science_segments)
         trigger_dict.include(science_segments)
 
@@ -2087,7 +2106,7 @@ def build_auxmvc_vectors( trigger_dict, main_channel, time_window, signif_thresh
         if clean_samples_rate:
 
             # generate random times for clean samples
-            if science_segments!=None:
+            if science_segments:
                 clean_times = event.randomrate(clean_samples_rate,
                         event.andsegments([[gps_start_time
                         + time_window, gps_end_time - time_window]],
@@ -2418,7 +2437,7 @@ def timeseries_to_segments(t, ts, thr):
 
         edges = numpy.array(edges)
         segs = numpy.transpose( numpy.array([t[edges[:-1:2]], t[edges[1::2]]]) )
-        return [list(seg) for seg in segs], numpy.min(ts[truth])
+        return segs, numpy.min(ts[truth])
     else:
         return [], None
 
@@ -2781,14 +2800,14 @@ def datfile2xmldocs(datfilename, ifo, FAPmap, Lmap=False, Effmap=False, flavor=N
                 # add entries to coinc_map table
                 coinc_map_row = lsctables.CoincMap()
                 coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
-                coinc_map_row.table_name = idq_tables.IDQGlitchTable.tableName
+                coinc_map_row.table_name = table.StripTableName(idq_tables.IDQGlitchTable.tableName)
                 coinc_map_row.event_id = idq_glitch_row.event_id
 
                 gchCoincMapTable.append(coinc_map_row)
 
                 coinc_map_row = lsctables.CoincMap()
                 coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
-                coinc_map_row.table_name = lsctables.SnglBurstTable.tableName
+                coinc_map_row.table_name = table.StripTableName(lsctables.SnglBurstTable.tableName)
                 coinc_map_row.event_id = sngl_burst_row.event_id
 
                 gchCoincMapTable.append(coinc_map_row)
@@ -2816,14 +2835,14 @@ def datfile2xmldocs(datfilename, ifo, FAPmap, Lmap=False, Effmap=False, flavor=N
                 # add entries to coinc_map table
                 coinc_map_row = lsctables.CoincMap()
                 coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
-                coinc_map_row.table_name = idq_tables.IDQGlitchTable.tableName
+                coinc_map_row.table_name = table.StripTableName(idq_tables.IDQGlitchTable.tableName)
                 coinc_map_row.event_id = idq_glitch_row.event_id
 
                 gchCoincMapTable.append(coinc_map_row)
 
                 coinc_map_row = lsctables.CoincMap()
                 coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
-                coinc_map_row.table_name = idq_tables.OVLDataTable.tableName
+                coinc_map_row.table_name = table.StripTableName(idq_tables.OVLDataTable.tableName)
                 coinc_map_row.event_id = ovl_row.event_id
 
                 gchCoincMapTable.append(coinc_map_row)
@@ -2856,14 +2875,14 @@ def datfile2xmldocs(datfilename, ifo, FAPmap, Lmap=False, Effmap=False, flavor=N
                 # add entries to coinc_map table
                 coinc_map_row = lsctables.CoincMap()
                 coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
-                coinc_map_row.table_name = idq_tables.IDQGlitchTable.tableName
+                coinc_map_row.table_name = table.StripTableName(idq_tables.IDQGlitchTable.tableName)
                 coinc_map_row.event_id = idq_glitch_row.event_id
 
                 clnCoincMapTable.append(coinc_map_row)
 
                 coinc_map_row = lsctables.CoincMap()
                 coinc_map_row.coinc_event_id = coinc_row.coinc_event_id
-                coinc_map_row.table_name = idq_tables.OVLDataTable.tableName
+                coinc_map_row.table_name = table.StripTableName(idq_tables.OVLDataTable.tableName)
                 coinc_map_row.event_id = ovl_row.event_id
 
                 clnCoincMapTable.append(coinc_map_row)

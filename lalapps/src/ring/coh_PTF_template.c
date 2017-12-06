@@ -18,7 +18,6 @@
 */
 
 
-#include "config.h"
 #include "coh_PTF.h"
 
 void coh_PTF_template (

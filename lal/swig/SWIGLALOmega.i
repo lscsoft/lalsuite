@@ -106,6 +106,13 @@ typedef struct {
 %extend tagLIGOTimeGPS {
   /// <ul><li>
 
+  /// Construct a new ::LIGOTimeGPS from another ::LIGOTimeGPS.
+  tagLIGOTimeGPS(const LIGOTimeGPS* gps) {
+    return %swiglal_new_copy(*gps, LIGOTimeGPS);
+  }
+
+  /// </li><li>
+
   /// Construct a new ::LIGOTimeGPS from a real number.
   tagLIGOTimeGPS(REAL8 t) {
     return XLALGPSSetREAL8(%swiglal_new_instance(LIGOTimeGPS), t);
@@ -202,7 +209,7 @@ typedef struct {
   %newobject __repr__;
   %typemap(newfree) char* __repr__ "XLALFree($1);";
   char* __repr__() {
-    return XLALStringAppendFmt(NULL, "LIGOTimeGPS(%d, %d)", $self->gpsSeconds, $self->gpsNanoSeconds);
+    return XLALGPSToStr(NULL, $self);
   }
 
   /// </li><li>
@@ -388,12 +395,19 @@ typedef struct {
 %extend tagLALUnit {
   /// <ul><li>
 
+  /// Construct a new ::LALUnit from another ::LALUnit.
+  tagLALUnit(const LALUnit* unit) {
+    return %swiglal_new_copy(*unit, LALUnit);
+  }
+
+  /// </li><li>
+
   /// Construct a new ::LALUnit class from a string.
   tagLALUnit(const char* str) {
     LALUnit* unit = %swiglal_new_instance(LALUnit);
     if (XLALParseUnitString(unit, str) == NULL) {
       XLALFree(unit);
-      XLALSetErrno(XLAL_EFUNC); /* Silently signal an error to wrapper function */
+      xlalErrno = XLAL_EFUNC; /* Silently signal an error to constructor */
       return NULL;
     }
     return unit;
@@ -469,7 +483,7 @@ typedef struct {
   /// Return the rational exponentiation of a ::LALUnit.
   LALUnit* __pow__(INT2 r[2], void* SWIGLAL_OP_POW_3RDARG) {
     if (r[1] == 0) {
-      XLALSetErrno(XLAL_EDOM); /* Silently signal an error to wrapper function */
+      xlalErrno = XLAL_EDOM; /* Silently signal an error to caller */
       return NULL;
     }
     RAT4 rat;

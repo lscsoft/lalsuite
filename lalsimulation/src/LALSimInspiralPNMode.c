@@ -184,33 +184,18 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode22(
             re6logsq = - 72.0;
             im6 = (428.0/105.0)*LAL_PI;
             im6log = 24.0*LAL_PI;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 5:
             re5 = - ((107.0/21.0) - (34.0/21.0)*nu)*LAL_PI;
             im5 = - 24.0*nu;
             im5log = - ((107.0/7.0) - (34.0/7.0)*nu)*2.0;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 4:
             re4 = - ((2173.0/1512.0) + (1069.0/216.0)*nu 
                     - (2047.0/1512.0)*nu2);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 3:
             re3 = 2.0*LAL_PI;
             im3log = 12.;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 2:
             re2 = - ((107.0/42.0) - (55.0/42.0)*nu);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 1:
         case 0:
             break;
@@ -280,27 +265,15 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode21(
         case 6:
         case 5:
             re5 = -((43.0/126.0)+(509.0/126.0)*nu-(79.0/168.0)*nu2);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 4:
             re4 = LAL_PI;
             im4 = -(1.0/2.0) - 2.0*log(2.0);
             im4log = 6.0;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 3:
             re3 = - ((17.0/28.0) - (5.0/7.0)*nu);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 2:
         case 1:
             re1 = 1.;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 0:
             break;
     }
@@ -409,27 +382,15 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode33(
         case 5:
             re5 = ((123.0/110.0) - (1838.0/165.0)*nu
                     - (887.0/330.0)*nu2);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 4:
             re4 = 3.0*LAL_PI;
             im4 = -(21.0/5.0) + 6.0*log(3.0/2.0);
             im4log = 18.0;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 3:
             re3 = - (4.0 - 2.0*nu);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 2:
         case 1:
             re1 = 1.;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 0:
             break;
     }
@@ -497,21 +458,12 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode32(
             re5 = 2.0*LAL_PI*nuterm;
             im5 = -3.0 + (66.0/5.0)*nu;
             im5log = 12.0*nuterm;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 4:
             re4 = - ((193.0/90.0) - (145.0/18.0)*nu 
                     + (73.0/18.0)*nu2);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 3:
         case 2:
             re2 = nuterm;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 1:
         case 0:
             break;
@@ -578,27 +530,15 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode31(
         case 5:
             re5 = ((607.0/198.0) - (136.0/99.0)*nu 
                     - (247.0/198.0)*nu2);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 4:
             re4 = LAL_PI;
             im4 = -(7.0/5.0) - 2.0*log(2.0);
             im4log = 6.0;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 3:
             re3 = - ((8.0/3.0) + (2.0/3.0)*nu);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 2:
         case 1:
             re1 = 1.;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 0:
             break;
     }
@@ -726,27 +666,15 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode44(
         case 6:
             re6 = 1068671./200200. - (1088119./28600.)*nu
                     + (146879./2340.)*nu2 - (226097./17160.)*nu2*nu;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 5:
             re5 = 4.*LAL_PI*nuterm;
             im5 = -42./5. + (1193./40.) *nu + 8.*nuterm*log(2.);
             im5log = 24.*nuterm;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 4:
             re4 = 593./110. - (1273./66.)*nu + (175./22.)*nu2;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 3:
         case 2:
             re2 = nuterm;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 1:
         case 0:
             break;
@@ -812,15 +740,9 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode43(
         case 6:
         case 5:
             re5 = 39./11. - (1267./132.)*nu + (131./33.)*nu2;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 4:
         case 3:
             re3 = 1. - 2.*nu;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 2:
         case 1:
         case 0:
@@ -886,27 +808,15 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode42(
         case 6:
             re6 = 1038039./200200. - (606751./28600.)*nu
                     + (400453./25740.)*nu2 + (25783./17160.)*nu*nu2;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 5:
             re5 = 2.*LAL_PI*nuterm;
             im5 = -21./5. + (84./5.) *nu + 8.*nuterm*log(2.);
             im5log = 12.*nuterm;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 4:
             re4 = 437./110. - (805./66.)*nu + (19./22.)*nu2;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 3:
         case 2:
             re2 = nuterm;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 1:
         case 0:
             break;
@@ -972,15 +882,9 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode41(
         case 6:
         case 5:
             re5 = - (101./33. - (337./44.)*nu + (83./33.)*nu2);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 4:
         case 3:
             re3 = 1. - 2.*nu;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 2:
         case 1:
         case 0:
@@ -1089,15 +993,9 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode55(
         case 6:
         case 5:
             re5 = - (263./39. - (688./39.)*nu + (256./39.)*nu2);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 4:
         case 3:
             re3 = 1. - 2.*nu;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 2:
         case 1:
         case 0:
@@ -1162,15 +1060,9 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode54(
         case 6:
             re6 = - (4451./910. - (3619./130.)*nu + (521./13.)*nu2
                     - (339./26.)*nu*nu2);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 5:
         case 4:
             re4 = 1. - 5.*nu + 5.*nu2;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 3:
         case 2:
         case 1:
@@ -1237,15 +1129,9 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode53(
         case 6:
         case 5:
             re5 = - (69./13. - (464./39.)*nu + (88./39.)*nu2);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 4:
         case 3:
             re3 = 1. - 2.*nu;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 2:
         case 1:
         case 0:
@@ -1310,15 +1196,9 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode52(
         case 6:
             re6 = - (3911./910. - (3079./130.)*nu + (413./13.)*nu2
                     - (231./26.)*nu*nu2);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 5:
         case 4:
             re4 = 1. - 5.*nu + 5.*nu2;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 3:
         case 2:
         case 1:
@@ -1385,15 +1265,9 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode51(
         case 6:
         case 5:
             re5 = - (179./39. - (352./39.)*nu + (4./39.)*nu2);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 4:
         case 3:
             re3 = 1. - 2.*nu;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 2:
         case 1:
         case 0:
@@ -1493,15 +1367,9 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode66(
         case 6:
             re6 = - (113./14. - (91./2.)*nu + (64.)*nu2
                     - (39./2.)*nu*nu2);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 5:
         case 4:
             re4 = 1. - 5.*nu + 5.*nu2;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 3:
         case 2:
         case 1:
@@ -1634,15 +1502,9 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode64(
         case 6:
             re6 = - (113./14. - (91./2.)*nu + (64.)*nu2
                     - (39./2.)*nu*nu2);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 5:
         case 4:
             re4 = 1. - 5.*nu + 5.*nu2;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 3:
         case 2:
         case 1:
@@ -1775,15 +1637,9 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode62(
         case 6:
             re6 = - (81./14. - (59./2.)*nu + 32.*nu2
                     - (7./2.)*nu*nu2);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 5:
         case 4:
             re4 = 1. - 5.*nu + 5.*nu2;
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case 3:
         case 2:
         case 1:

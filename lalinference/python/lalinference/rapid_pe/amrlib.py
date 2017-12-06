@@ -31,9 +31,9 @@ def refine_regular_grid(grid, grid_spacing, return_cntr=False):
     >>> region = Cell(numpy.array([(-1., 1.), (-2., 2.)]))
     >>> grid, spacing = create_regular_grid_from_cell(region, side_pts=2)
     >>> grid, spacing = refine_regular_grid(grid, spacing)
-    >>> print(grid)
+    >>> print grid
     [array([-2., -4.]), array([-2., -2.]), array([-1., -4.]), array([-1., -2.]), array([-2.,  0.]), array([-2.,  2.]), array([-1.,  0.]), array([-1.,  2.]), array([ 0., -4.]), array([ 0., -2.]), array([ 1., -4.]), array([ 1., -2.]), array([ 0.,  0.]), array([ 0.,  2.]), array([ 1.,  0.]), array([ 1.,  2.])]
-    >>> print(spacing)
+    >>> print spacing
     [ 1.  2.]
     """
 
@@ -234,18 +234,16 @@ class Cell(object):
 
         return Cell(numpy.array(cell_bounds), inpt_pt)
 
-class GriddingException(Exception):
-    def __init__(self, *args, **kwargs):
-        super(Exception, self).__init__(*args, **kwargs)
-
 #
 # Gridding / cell utilities
 #
-def grid_to_indices(pts, region, grid_spacing, check=True):
+def grid_to_indices(pts, region, grid_spacing):
     """
-    Convert points in a grid to their 1-D indices according to the grid extent in region, and grid spacing. If 'check' is True, ensure that all points exist within the expanded region before indexing --- this tends to avoid more cryptic errors about indexing later on.
+    Convert points in a grid to their 1-D indices according to the grid extent in region, and grid spacing.
     """
     region = region.copy() # avoid referencing
+    #region[:,0] = region[:,0] - grid_spacing
+    #region[:,1] = region[:,1] + grid_spacing
     # FIXME: This is not really exact. Because the information about how much
     # the initial region is expanded by the refinement is lost, we'll assume
     # our region extends in 3x in all directions.
@@ -253,10 +251,6 @@ def grid_to_indices(pts, region, grid_spacing, check=True):
     # original region doesn't matter so much as the relative position
     region[:,0] -= numpy.diff(region).flatten()
     region[:,1] += numpy.diff(region).flatten()
-    if check:
-        if not ((region[:,0] < pts).all() and (region[:,1] > pts).all()):
-            raise GriddingException("Some or all of provided points are not within the region. Are your dimension labels swapped?")
-
     extent = numpy.diff(region)[:,0]
     pt_stride = numpy.round(extent / grid_spacing).astype(int)
     # Necessary for additional point on the right edge
@@ -284,12 +278,12 @@ def create_regular_grid_from_cell(cell, side_pts=5, return_cells=False):
     >>> import numpy
     >>> region = Cell(numpy.array([(-1., 1.), (-2., 2.)]))
     >>> grid, spacing = create_regular_grid_from_cell(region, side_pts=2)
-    >>> print(grid)
+    >>> print grid
     [[-1. -2.]
      [-1.  2.]
      [ 1. -2.]
      [ 1.  2.]]
-    >>> print(spacing)
+    >>> print spacing
     [ 2.  4.]
     """
 
@@ -350,7 +344,7 @@ def grid_to_cells(grid, grid_spacing):
 # Cell grid serialization and packing routines
 #
 
-def init_grid_hdf(init_region, h5file, overlap_thresh, crd_sys, intr_prms=None, base_grp="rapidpe_grids"):
+def init_grid_hdf(init_region, h5file, overlap_thresh, crd_sys, base_grp="rapidpe_grids"):
     """
     Set up a new HDF5 file (h5file), truncating any existing file with this name. A new 'folder' called 'base_grp' is set up and the initial region with attribute 'overlap_thresh' is set up under it.
     """
@@ -360,11 +354,9 @@ def init_grid_hdf(init_region, h5file, overlap_thresh, crd_sys, intr_prms=None, 
     hfile[base_grp].create_dataset("init_region", data=init_region._bounds)
     hfile[base_grp].attrs.create("overlap_thresh", overlap_thresh)
     hfile[base_grp].attrs.create("distance_coordinates", crd_sys)
-    if intr_prms is not None:
-        hfile[base_grp].attrs.create("labels", intr_prms)
     return hfile[base_grp]
 
-def save_grid_cells_hdf(base_grp, cells, crd_sys, intr_prms=None, check=True):
+def save_grid_cells_hdf(base_grp, cells, crd_sys, check=True):
     """
     Under the base_grp, a new level of grid points is saved. It will create a subgroup called "grids" if it does not already exist. Under this subgroup, levels are created sequentially, the function looks for the last level (e.g. the subsubgroup with the largest "level" attribute, and appends a new level with +1 to that number. If check is enabled (that is the default), a safety check against the new level versus the last level is made to ensure the resolution is a factor of two smaller.
     """
@@ -384,7 +376,6 @@ def save_grid_cells_hdf(base_grp, cells, crd_sys, intr_prms=None, check=True):
         ds = grids.create_dataset("level_0", data=numpy.array([c._center for c in cells]))
         ds.attrs.create("level", 0)
         ds.attrs.create("resolution", grid_res)
-        lvl = 0
     else:
         levels.sort()
         lvl, name = levels[-1]
@@ -396,29 +387,14 @@ def save_grid_cells_hdf(base_grp, cells, crd_sys, intr_prms=None, check=True):
         ds.attrs.create("level", lvl)
         ds.attrs.create("resolution", grid_res)
 
-    if intr_prms is not None:
-        assert len(intr_prms) == ds.shape[1]
-        ds.attrs.create("labels", intr_prms)
-
-    return lvl
-
-def load_init_region(h5file, get_labels=False, base_grp="rapidpe_grids"):
+def load_init_region(h5file, base_grp="rapidpe_grids"):
     """
     Load the initial region for a set grid points (in the form of cells) from h5file.
     """
     hfile = h5py.File(h5file, "r")
-    if get_labels:
-        if "labels" in hfile[base_grp].attrs:
-            labels = hfile[base_grp].attrs["labels"]
-        else:
-            labels = tuple()
+    return Cell(hfile[base_grp]["init_region"][:])
 
-    if get_labels:
-        return Cell(hfile[base_grp]["init_region"][:]), labels
-    else:
-        return Cell(hfile[base_grp]["init_region"][:])
-
-def load_grid_level(h5file, level, return_labels= False, base_grp="rapidpe_grids"):
+def load_grid_level(h5file, level, base_grp="rapidpe_grids"):
     """
     Load a set grid points (in the form of cells) from h5file. If level is None, return the base_grp, if level is -1, return the highest resolution available, otherwise an ArgumentError is raised if 'level' is not represented in the attributes of one of the levels stored under base_grp/'grids'
     """
@@ -433,11 +409,7 @@ def load_grid_level(h5file, level, return_labels= False, base_grp="rapidpe_grids
     for name, dat in grids.iteritems():
         if dat.attrs["level"] == level:
             grid_res = dat.attrs["resolution"][numpy.newaxis,:]
-            if return_labels:
-                labels = dat.attrs["labels"] if "labels" in dat.attrs else tuple()
-                return unpack_grid_cells(numpy.concatenate((grid_res, dat[:]))), level, labels
-            else:
-                return unpack_grid_cells(numpy.concatenate((grid_res, dat[:]))), level
+            return unpack_grid_cells(numpy.concatenate((grid_res, dat[:]))), level
     raise ArgumentError("No grid refinement level %d" % level)
 
 def pack_grid_cells(cells, resolution):
@@ -506,15 +478,6 @@ def transform_tau0tau3_m1m2(tau0, tau3, flow=40.):
 def transform_s1zs2z_chi(m1, m2, s1z, s2z):
     return (m1 * s1z + m2 * s2z) / (m1 + m2)
 
-def transform_m1m2_mcq(m1, m2):
-    mc = (m1 * m2)**(3./5) / (m1 + m2)**(1./5)
-    q = np.min([m1, m2], axis=0) / np.max([m1, m2], axis=0)
-    return mc, q
-
-def transform_mcq_m1m2(mc, q):
-    m = mc * (1 + q)**(1./5)
-    return m / q**(3./5), m * q**(2/5.)
-
 #
 # Coordinate transformation boundaries
 #
@@ -532,7 +495,7 @@ def check_tau0tau3(tau0, tau3, flow=40):
     return tau3 > tau3_bnd
 
 def check_mchirpeta(mchirp, eta):
-    return (numpy.array(eta) <= 0.25) & (numpy.array(eta) > 0) & (numpy.array(mchirp) >= 0)
+    return eta <= 0.25 and mchirp >= 0
 
 def check_spins(spin):
     return numpy.sqrt(numpy.atleast_2d(spin**2).sum(axis=0)) <= 1
@@ -556,37 +519,25 @@ def check_grid(grid, intr_prms, distance_coordinates):
     if "spin2z" in intr_prms:
         s2_axis = intr_prms.index("spin2z")
         bounds_mask &= check_spins(grid_check[s2_axis])
-    if "chi_z" in intr_prms:
-        chi_axis = intr_prms.index("chi_z")
-        bounds_mask &= check_spins(grid_check[chi_axis])
     return bounds_mask
 
 VALID_TRANSFORMS_MASS = { \
     "mchirp_eta": transform_m1m2_mceta,
-    "mchirp_q": transform_m1m2_mcq,
     "tau0_tau3": transform_m1m2_tau0tau3,
     None: None
 }
 
 INVERSE_TRANSFORMS_MASS = { \
     transform_m1m2_mceta: transform_mceta_m1m2,
-    transform_m1m2_mcq: transform_mcq_m1m2,
     transform_m1m2_tau0tau3: transform_tau0tau3_m1m2,
     None: None
 }
 
-def apply_transform(pts, intr_prms, mass_transform=None, spin_transform=None):
+def apply_transform(pts, intr_prms, mass_transform=None):
     # You know what... recarrays are dumb, and so's your face.
     # FIXME: Why does numpy want me to repack this into tuples!?
     #tpts = numpy.array([tuple(pt) for pt in pts.T], dtype = numpy.dtype([(a ,"float64") for a in intr_prms]))
     m1_idx, m2_idx = intr_prms.index("mass1"), intr_prms.index("mass2")
-    if spin_transform:
-        if spin_transform == "chi_z":
-            s1z_idx, s2z_idx = intr_prms.index("spin1z"), intr_prms.index("spin2z")
-            chi_z = transform_s1zs2z_chi(pts[:,m1_idx], pts[:,m2_idx], pts[:,s1z_idx], pts[:,s2z_idx]) 
-            pts = numpy.vstack((pts.T, chi_z)).T
-            intr_prms.append("chi_z")
-
     if mass_transform:
        pts[:,m1_idx], pts[:,m2_idx] = VALID_TRANSFORMS_MASS[mass_transform](pts[:,m1_idx], pts[:,m2_idx])
 

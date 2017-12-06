@@ -58,7 +58,8 @@ void printmemuse() {
    pid_t mypid=getpid();
    char commandline[256];
    fflush(NULL);
-   snprintf(commandline, sizeof(commandline), "cat /proc/%d/status | /bin/grep Vm | /usr/bin/fmt -140 -u", (int)mypid);
+   snprintf(commandline, sizeof(commandline), "cat /proc/%d/status | /bin/grep\
+ Vm | /usr/bin/fmt -140 -u", (int)mypid);
    system(commandline);
    fflush(NULL);
  }
@@ -83,7 +84,7 @@ int main(int argc, char *argv[]){
 
   CHAR outputfile[256]="";
   CHAR channel[128]="";
-  const CHAR *psrname;
+  CHAR *psrname = NULL;
 
   INT4Vector *starts=NULL, *stops=NULL; /* science segment start and stop times */
   INT4 numSegs=0;
@@ -105,18 +106,18 @@ int main(int argc, char *argv[]){
   hetParams.heterodyneflag = inputParams.heterodyneflag; /* set type of heterodyne */
 
   /* read in pulsar data */
-  hetParams.het = XLALReadTEMPOParFile( inputParams.paramfile );
-  hetParams.hetUpdate = NULL;
+  XLALReadTEMPOParFile( &hetParams.het, inputParams.paramfile );
 
-  /* set pulsar name - take from par file if available, or if not get from command line args */
-  if( PulsarCheckParam( hetParams.het, "PSRJ" ) )
-    psrname = PulsarGetStringParam( hetParams.het, "PSRJ" );
-  else if( PulsarCheckParam( hetParams.het, "PSRB" ) )
-    psrname = PulsarGetStringParam( hetParams.het, "PSRB" );
-  else if( PulsarCheckParam( hetParams.het, "NAME" ) )
-    psrname = PulsarGetStringParam( hetParams.het, "NAME" );
-  else if( PulsarCheckParam( hetParams.het, "PSR" ) )
-    psrname = PulsarGetStringParam( hetParams.het, "PSR" );
+  /* set pulsar name - take from par file if available, or if not get from
+     command line args */
+  if( hetParams.het.jname )
+    psrname = XLALStringDuplicate( hetParams.het.jname );
+  else if ( hetParams.het.bname )
+    psrname = XLALStringDuplicate( hetParams.het.bname );
+  else if ( hetParams.het.name )
+    psrname = XLALStringDuplicate( hetParams.het.name );
+  else if ( inputParams.pulsar )
+    psrname = XLALStringDuplicate( inputParams.pulsar );
   else{
     fprintf(stderr, "No pulsar name specified!\n");
     exit(0);
@@ -127,31 +128,19 @@ int main(int argc, char *argv[]){
      example, with the pulsar hardware injections in which this should be set
      at 751680013.0 */
   if(inputParams.manualEpoch != 0.){
-    PulsarSetParam( hetParams.het, "PEPOCH", &inputParams.manualEpoch );
-    PulsarSetParam( hetParams.het, "POSEPOCH", &inputParams.manualEpoch );
+    hetParams.het.pepoch = inputParams.manualEpoch;
+    hetParams.het.posepoch = inputParams.manualEpoch;
   }
 
   if(verbose){
     fprintf(stderr, "I've read in the pulsar parameters for %s.\n", psrname);
-    REAL8 rav, decv, pepochv;
-    if ( PulsarCheckParam( hetParams.het, "RAJ" ) ){ rav = PulsarGetREAL8Param( hetParams.het, "RAJ" ); }
-    else { rav = PulsarGetREAL8ParamOrZero( hetParams.het, "RA" ); }
+    fprintf(stderr, "alpha = %lf rads, delta = %lf rads.\n", hetParams.het.ra,
+      hetParams.het.dec);
+    fprintf(stderr, "f0 = %.1lf Hz, f1 = %.1e Hz/s, epoch = %.1lf.\n",
+      hetParams.het.f0, hetParams.het.f1, hetParams.het.pepoch);
 
-    if ( PulsarCheckParam( hetParams.het, "DECJ" ) ){ decv = PulsarGetREAL8Param( hetParams.het, "DECJ" ); }
-    else { decv = PulsarGetREAL8ParamOrZero( hetParams.het, "DEC" ); }
-
-    fprintf(stderr, "alpha = %lf rads, delta = %lf rads.\n", rav, decv);
-
-    if ( PulsarCheckParam( hetParams.het, "F" ) ) {
-      REAL8Vector *freqsv = PulsarGetREAL8VectorParam( hetParams.het, "F" );
-      UINT4 i = 0;
-
-      pepochv = PulsarGetREAL8ParamOrZero( hetParams.het, "PEPOCH" );
-      for ( i=0; i<freqsv->length; i++ ){ fprintf(stderr, "f%u = %.1e Hz/s^%u, ", i, freqsv->data[i], i); }
-      fprintf(stderr, "epoch = %.1lf.\n", pepochv);
-    }
-
-    fprintf(stderr, "I'm looking for gravitational waves at %.2lf times the pulsars spin frequency.\n", inputParams.freqfactor);
+    fprintf(stderr, "I'm looking for gravitational waves at %.2lf times the \
+pulsars spin frequency.\n", inputParams.freqfactor);
   }
 
   /*if performing fine heterdoyne using same params as coarse */
@@ -163,38 +152,27 @@ int main(int argc, char *argv[]){
   /* set detector */
   hetParams.detector = *XLALGetSiteInfo( inputParams.ifo );
 
-  if(verbose){  fprintf(stderr, "I've set the detector location for %s.\n", inputParams.ifo); }
+  if(verbose){  fprintf(stderr, "I've set the detector location for\
+ %s.\n", inputParams.ifo); }
 
-  if(inputParams.heterodyneflag == 2 || inputParams.heterodyneflag == 4){ /* if updating parameters read in updated par file */
-    hetParams.hetUpdate = XLALReadTEMPOParFile( inputParams.paramfileupdate );
+  if(inputParams.heterodyneflag == 2 || inputParams.heterodyneflag == 4){ /* if
+    updating parameters read in updated par file */
+    XLALReadTEMPOParFile( &hetParams.hetUpdate, inputParams.paramfileupdate );
 
     /* if there is an epoch given manually (i.e. not from the pulsar parameter
        file) then set it here and overwrite any other value */
     if(inputParams.manualEpoch != 0.){
-      PulsarSetParam( hetParams.hetUpdate, "PEPOCH", &inputParams.manualEpoch );
-      PulsarSetParam( hetParams.hetUpdate, "POSEPOCH", &inputParams.manualEpoch );
+      hetParams.hetUpdate.pepoch = inputParams.manualEpoch;
+      hetParams.hetUpdate.posepoch = inputParams.manualEpoch;
     }
 
     if(verbose){
       fprintf(stderr, "I've read the updated parameters for %s.\n", psrname);
-
-      REAL8 rav, decv, pepochv;
-      if ( PulsarCheckParam( hetParams.hetUpdate, "RAJ" ) ){ rav = PulsarGetREAL8Param( hetParams.hetUpdate, "RAJ" ); }
-      else { rav = PulsarGetREAL8ParamOrZero( hetParams.hetUpdate, "RA" ); }
-
-      if ( PulsarCheckParam( hetParams.hetUpdate, "DECJ" ) ){ decv = PulsarGetREAL8Param( hetParams.hetUpdate, "DECJ" ); }
-      else { decv = PulsarGetREAL8ParamOrZero( hetParams.hetUpdate, "DEC" ); }
-
-      fprintf(stderr, "alpha = %lf rads, delta = %lf rads.\n", rav, decv);
-
-      if ( PulsarCheckParam( hetParams.hetUpdate, "F" ) ) {
-        REAL8Vector *freqsv = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "F" );
-        UINT4 i = 0;
-
-        pepochv = PulsarGetREAL8ParamOrZero( hetParams.hetUpdate, "PEPOCH" );
-        for ( i=0; i<freqsv->length; i++ ){ fprintf(stderr, "f%u = %.1e Hz/s^%u, ", i, freqsv->data[i], i); }
-        fprintf(stderr, "epoch = %.1lf.\n", pepochv);
-      }
+      fprintf(stderr, "alpha = %lf rads, delta = %lf rads.\n",
+        hetParams.hetUpdate.ra, hetParams.hetUpdate.dec);
+      fprintf(stderr, "f0 = %.1lf Hz, f1 = %.1e Hz/s, epoch = %.1lf.\n",
+        hetParams.hetUpdate.f0, hetParams.hetUpdate.f1,
+        hetParams.hetUpdate.pepoch);
     }
   }
 
@@ -207,8 +185,8 @@ int main(int argc, char *argv[]){
     if( inputParams.timeCorrFile != NULL ){
       hetParams.timeCorrFile = XLALStringDuplicate( inputParams.timeCorrFile );
 
-      if ( PulsarCheckParam( hetParams.hetUpdate, "UNITS" ) ){
-        if ( !strcmp( PulsarGetStringParam( hetParams.hetUpdate, "UNITS" ), "TDB" ) )
+      if( hetParams.hetUpdate.units != NULL ){
+        if ( !strcmp(hetParams.hetUpdate.units, "TDB") )
           hetParams.ttype = TIMECORRECTION_TDB; /* use TDB units i.e. TEMPO standard */
         else
           hetParams.ttype = TIMECORRECTION_TCB; /* default to TCB i.e. TEMPO2 standard */
@@ -453,7 +431,7 @@ data!\n");
 
       /* make vector (make sure imaginary parts are set to zero) */
       if( (data = XLALCreateCOMPLEX16TimeSeries( "", &epochdummy,
-        PulsarGetREAL8VectorParamIndividual( hetParams.het, "F0" ), 1./inputParams.samplerate, &lalSecondUnit,
+        hetParams.het.f0, 1./inputParams.samplerate, &lalSecondUnit,
         (INT4)inputParams.samplerate * duration )) == NULL )
         {  XLALPrintError("Error allocating data memory.\n");  }
 
@@ -500,21 +478,19 @@ data!\n");
       epochdummy.gpsNanoSeconds = 0;
 
       if( (data = XLALCreateCOMPLEX16TimeSeries( "", &epochdummy,
-        PulsarGetREAL8VectorParamIndividual( hetParams.het, "F0" ), 1./inputParams.samplerate, &lalSecondUnit, 1))
+          hetParams.het.f0, 1./inputParams.samplerate, &lalSecondUnit, 1 ))
           == NULL || (times = XLALCreateREAL8Vector( 1 )) == NULL )
         {  XLALPrintError("Error allocating memory for data.\n");  }
       i=0;
 
       fprintf(stderr, "Reading heterodyned data from %s.\n", inputParams.datafile);
 
-      /* read in header info (if not working on legacy files without the header) */
+      /* read in header info */
       CHAR headerdata[HEADERSIZE];
-      if ( !inputParams.legacyinput ){
-        size_t rch = XLALFileRead((void*)&headerdata[0], sizeof(CHAR), HEADERSIZE, fpin);
-        if ( !rch ){
-          fprintf(stderr, "Error... problem reading in header data!\n");
-          exit(1);
-        }
+      size_t rch = XLALFileRead((void*)&headerdata[0], sizeof(CHAR), HEADERSIZE, fpin);
+      if ( !rch ){
+        fprintf(stderr, "Error... problem reading in header data!\n");
+        exit(1);
       }
 
       /* read in file - depends on if file is binary or not */
@@ -529,9 +505,6 @@ data!\n");
           rc = XLALFileRead((void*)&imVal, sizeof(REAL8), 1, fpin);
 
           if( XLALFileEOF(fpin) || rc == 0 ) break;
-
-          /* check that data is finite (and not unrealistically large) and not NaN */
-          if ( !isfinite(reVal) || !isfinite(imVal) || fabs(reVal) > 1. || fabs(imVal) > 1. ){ continue; }
 
           if(inputParams.scaleFac > 1.0){
             reVal *= inputParams.scaleFac;
@@ -573,9 +546,6 @@ data!\n");
             continue;
           }
 
-          /* check that data is finite (and not unrealistically large) and not NaN */
-          if ( !isfinite(reVal) || !isfinite(imVal) || fabs(reVal) > 1. || fabs(imVal) > 1. ){ continue; }
-
           if( inputParams.scaleFac > 1.0 ){
             reVal *= inputParams.scaleFac;
             imVal *= inputParams.scaleFac;
@@ -614,7 +584,8 @@ data!\n");
       if( verbose ) fprintf(stderr, "I've read in the fine heterodyne data.\n");
     }
     else{
-      fprintf(stderr, "Error... Heterodyne flag = %d, should be 0, 1, 2, 3 or 4.\n", inputParams.heterodyneflag);
+      fprintf(stderr, "Error... Heterodyne flag = %d, should be 0, 1, 2, 3 or \
+4.\n", inputParams.heterodyneflag);
       return 0;
     }
 
@@ -628,7 +599,8 @@ data!\n");
     if( inputParams.filterknee > 0. ){/* filter if knee frequency is not zero */
       filter_data(data, &iirFilters);
 
-      if( verbose ){  fprintf(stderr, "I've low pass filtered the data at %.2lf Hz\n", inputParams.filterknee);  }
+      if( verbose ){  fprintf(stderr, "I've low pass filtered the \
+data at %.2lf Hz\n", inputParams.filterknee);  }
     }
 
     if( inputParams.heterodyneflag==0 || inputParams.heterodyneflag==3 )
@@ -639,7 +611,8 @@ data!\n");
     resampData = resample_data(data, times, starts, stops,
       inputParams.samplerate, inputParams.resamplerate,
       inputParams.heterodyneflag);
-    if( verbose ){  fprintf(stderr, "I've resampled the data from %.2lf to %.4lf Hz\n", inputParams.samplerate, inputParams.resamplerate);  }
+    if( verbose ){  fprintf(stderr, "I've resampled the data from \
+%.2lf to %.4lf Hz\n", inputParams.samplerate, inputParams.resamplerate);  }
 
     XLALDestroyCOMPLEX16TimeSeries( data );
 
@@ -649,7 +622,8 @@ data!\n");
       numOutliers = remove_outliers(resampData, times,
         inputParams.stddevthresh);
       if( verbose ){
-        fprintf(stderr, "I've removed %lf%% of data above the threshold %.1lf sigma for 1st time.\n",
+        fprintf(stderr, "I've removed %lf%% of data above the threshold %.1lf \
+sigma for 1st time.\n",
           100.*(double)numOutliers/(double)resampData->data->length,
           inputParams.stddevthresh);
       }
@@ -658,8 +632,9 @@ data!\n");
     /* calibrate */
     if( inputParams.calibrate ){
       calibrate(resampData, times, inputParams.calibfiles,
-        inputParams.freqfactor*PulsarGetREAL8VectorParamIndividual( hetParams.het, "F0" ), inputParams.channel);
-      if( verbose ){ fprintf(stderr, "I've calibrated the data at %.1lf Hz\n", inputParams.freqfactor*PulsarGetREAL8VectorParamIndividual( hetParams.het, "F0" ));  }
+        inputParams.freqfactor*hetParams.het.f0, inputParams.channel);
+      if( verbose ){  fprintf(stderr, "I've calibrated the data at \
+%.1lf Hz\n", inputParams.freqfactor*hetParams.het.f0);  }
     }
 
     /* remove outliers above our threshold */
@@ -668,7 +643,8 @@ data!\n");
       numOutliers = remove_outliers(resampData, times,
         inputParams.stddevthresh);
       if( verbose ){
-        fprintf(stderr, "I've removed %lf%% of data above the threshold %.1lf sigma for 2nd time.\n",
+        fprintf(stderr, "I've removed %lf%% of data above the threshold %.1lf \
+sigma for 2nd time.\n",
           100.*(double)numOutliers/(double)resampData->data->length,
           inputParams.stddevthresh);
       }
@@ -780,9 +756,6 @@ data!\n");
 
   if ( filtresp != NULL ){ destroy_filter_response( filtresp ); }
 
-  PulsarFreeParams( hetParams.het );
-  if ( inputParams.heterodyneflag == 2 || inputParams.heterodyneflag == 4 ){ PulsarFreeParams( hetParams.hetUpdate ); }
-
   #if TRACKMEMUSE
     fprintf(stderr, "Memory use at the end of the code:\n"); printmemuse();
   #endif
@@ -823,12 +796,11 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "binary-input",             no_argument,     NULL, 'B' },
     { "binary-output",            no_argument,     NULL, 'b' },
     { "gzip-output",              no_argument,     NULL, 'Z' },
-    { "legacy-input",             no_argument,     NULL, 'L' },
     { "verbose",                  no_argument,     NULL, 'v' },
     { 0, 0, 0, 0 }
   };
 
-  char args[] = "hi:p:z:f:g:k:s:r:d:c:o:e:S:t:l:R:C:F:O:T:m:G:H:M:ABbZLv";
+  char args[] = "hi:p:z:f:g:k:s:r:d:c:o:e:S:t:l:R:C:F:O:T:m:G:H:M:ABbZv";
   char *program = argv[0];
 
   /* set defaults */
@@ -838,8 +810,8 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
   inputParams->samplerate = 0.;
   inputParams->calibrate = 0; /* default is not to calibrate */
   inputParams->verbose = 0; /* default is not to do verbose */
-  inputParams->binaryinput = 0; /* default to NOT read in data from a binary file */
-  inputParams->legacyinput = 0; /* default is that input files are not legacy files without the header information */
+  inputParams->binaryinput = 0; /* default to NOT read in data from a binary
+file */
   inputParams->binaryoutput = 0; /* default is to output data as ASCII text */
   inputParams->gzipoutput = 0; /* default is to not gzip the output */
   inputParams->stddevthresh = 0.; /* default is not to threshold */
@@ -877,7 +849,6 @@ the pulsar parameter file */
         else
           fprintf(stderr, "Error parsing option %s with argument %s\n",
             long_options[option_index].name, LALoptarg );
-		break;
       case 'h': /* help message */
         fprintf(stderr, USAGE, program);
         exit(0);
@@ -1041,15 +1012,10 @@ the pulsar parameter file */
       case 'M':
         inputParams->manualEpoch = atof(LALoptarg);
         break;
-      case 'L':
-        inputParams->legacyinput = 1;
-        break;
       case '?':
         fprintf(stderr, "unknown error while parsing options\n" );
-		break;
       default:
         fprintf(stderr, "unknown error while parsing options\n" );
-		break;
     }
   }
 
@@ -1094,7 +1060,7 @@ heterodyne!\n");
 void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
   HeterodyneParams hetParams, REAL8 freqfactor, FilterResponse *filtresp){
   REAL8 phaseCoarse=0., phaseUpdate=0., deltaphase=0.;
-  REAL8 t=0., t2=0., tdt=0., T0=0., T0Update=0., tdt_2=0.;
+  REAL8 t=0., t2=0., tdt=0., tdt2=0., T0=0., T0Update=0., tdt_2=0., tdt2_2=0.;
   REAL8 dtpos=0.; /* time between position epoch and data timestamp */
   INT4 i=0;
 
@@ -1113,36 +1079,39 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
   REAL8 filtphase=0.;
   UINT4 position=0, middle=0;
 
-  REAL8 om = PulsarGetREAL8ParamOrZero( hetParams.het, "WAVE_OM" ), omu = PulsarGetREAL8ParamOrZero( hetParams.hetUpdate, "WAVE_OM" );
+  REAL8 lyr_pc = LAL_PC_SI/LAL_LYR_SI; /* light years per parsec */
+
+  REAL8 om = hetParams.het.wave_om, omu = hetParams.hetUpdate.wave_om;
 
   /* set the position, frequency and whitening epochs if not already set */
-  REAL8 pepoch = 0., pepochu = 0., posepoch = 0., posepochu = 0.;
-  pepoch = PulsarGetREAL8ParamOrZero( hetParams.het, "PEPOCH" );
-  posepoch = PulsarGetREAL8ParamOrZero( hetParams.het, "POSEPOCH" );
-  if ( pepoch == 0. && posepoch != 0. ) { pepoch = posepoch; }
-  else if ( posepoch == 0. && pepoch != 0. ) { posepoch = pepoch; }
+  if(hetParams.het.pepoch == 0. && hetParams.het.posepoch != 0.)
+    hetParams.het.pepoch = hetParams.het.posepoch;
+  else if(hetParams.het.posepoch == 0. && hetParams.het.pepoch != 0.)
+    hetParams.het.posepoch = hetParams.het.pepoch;
 
-  REAL8 waveepoch = 0., waveepochu = 0.;
-  waveepoch = PulsarGetREAL8ParamOrZero( hetParams.het, "WAVEEPOCH" );
-  if ( PulsarCheckParam( hetParams.het, "WAVESIN" ) && waveepoch == 0. ){ waveepoch = pepoch; }
+  if(hetParams.het.waveepoch == 0. && hetParams.het.nwaves != 0)
+    hetParams.het.waveepoch = hetParams.het.pepoch;
 
-  if(hetParams.heterodyneflag == 1 || hetParams.heterodyneflag == 2 || hetParams.heterodyneflag == 4 ){
-    pepochu = PulsarGetREAL8ParamOrZero( hetParams.hetUpdate, "PEPOCH" );
-    posepochu = PulsarGetREAL8ParamOrZero( hetParams.hetUpdate, "POSEPOCH" );
-    if ( pepochu == 0. && posepochu != 0. ) { pepochu = posepochu; }
-    else if ( posepochu == 0. && pepochu != 0. ) { posepochu = pepochu; }
+  if(hetParams.heterodyneflag == 1 || hetParams.heterodyneflag == 2 ||
+    hetParams.heterodyneflag == 4 ){
+    if(hetParams.hetUpdate.pepoch == 0. && hetParams.hetUpdate.posepoch != 0.)
+      hetParams.hetUpdate.pepoch = hetParams.hetUpdate.posepoch;
+    else if(hetParams.hetUpdate.posepoch == 0. &&
+      hetParams.hetUpdate.pepoch != 0.)
+      hetParams.hetUpdate.posepoch = hetParams.hetUpdate.pepoch;
 
-    waveepochu = PulsarGetREAL8ParamOrZero( hetParams.hetUpdate, "WAVEEPOCH" );
-    if ( PulsarCheckParam( hetParams.hetUpdate, "WAVESIN" ) && waveepochu == 0. ){ waveepochu = pepochu; }
+    if(hetParams.hetUpdate.waveepoch == 0. && hetParams.hetUpdate.nwaves != 0)
+      hetParams.hetUpdate.waveepoch = hetParams.hetUpdate.pepoch;
 
-    T0Update = pepochu;
+    T0Update = hetParams.hetUpdate.pepoch;
   }
 
-  T0 = pepoch;
+  T0 = hetParams.het.pepoch;
 
   /* set up ephemeris files */
   if( hetParams.heterodyneflag > 0){
-    XLAL_CHECK_VOID( (edat = XLALInitBarycenter( hetParams.earthfile, hetParams.sunfile )) != NULL, XLAL_EFUNC );
+    XLAL_CHECK_VOID( (edat = XLALInitBarycenter( hetParams.earthfile,
+                hetParams.sunfile )) != NULL, XLAL_EFUNC );
 
     /* get files containing Einstein delay correction look-up table */
     if ( hetParams.ttype != TIMECORRECTION_ORIGINAL ){
@@ -1155,97 +1124,30 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
     baryinput.site.location[1] = hetParams.detector.location[1]/LAL_C_SI;
     baryinput.site.location[2] = hetParams.detector.location[2]/LAL_C_SI;
 
-    /* set 1/distance using parallax value if given - in 1/secs */
+    /* set 1/distance using parallax or distance value is given (try parallax
+       first) - in 1/secs */
     if( hetParams.heterodyneflag != 2 && hetParams.heterodyneflag != 4 ){ /* not
       using updated params */
-      REAL8 px = PulsarGetREAL8ParamOrZero( hetParams.het, "PX" );
-      if ( px != 0. ){ baryinput.dInv = px*(LAL_C_SI/LAL_AU_SI); }
-      else { baryinput.dInv = 0.; } /* no parallax */
+      if( hetParams.het.px != 0. ){
+        baryinput.dInv = ( 3600. / LAL_PI_180 )*hetParams.het.px /
+          (LAL_C_SI*lyr_pc);
+      }
+      else if( hetParams.het.dist != 0. ){
+        baryinput.dInv = 1./(hetParams.het.dist*1e3*LAL_C_SI*lyr_pc);
+      }
+      else
+        baryinput.dInv = 0.; /* no parallax */
     }
     else{                                /* using updated params */
-      REAL8 pxu = PulsarGetREAL8ParamOrZero( hetParams.hetUpdate, "PX" );
-      if ( pxu != 0. ){ baryinput.dInv = pxu*(LAL_C_SI/LAL_AU_SI); }
-      else { baryinput.dInv = 0.; } /* no parallax */
-    }
-  }
-
-  REAL8 ra, dec, rau, decu;
-  if ( PulsarCheckParam( hetParams.het, "RAJ" ) ){ ra = PulsarGetREAL8Param( hetParams.het, "RAJ" ); }
-  else { ra = PulsarGetREAL8ParamOrZero( hetParams.het, "RA" ); }
-  if ( PulsarCheckParam( hetParams.hetUpdate, "RAJ" ) ){ rau = PulsarGetREAL8Param( hetParams.hetUpdate, "RAJ" ); }
-  else { rau = PulsarGetREAL8ParamOrZero( hetParams.hetUpdate, "RA" ); }
-  if ( PulsarCheckParam( hetParams.het, "DECJ" ) ){ dec = PulsarGetREAL8Param( hetParams.het, "DECJ" ); }
-  else { dec = PulsarGetREAL8ParamOrZero( hetParams.het, "DEC" ); }
-  if ( PulsarCheckParam( hetParams.hetUpdate, "DECJ" ) ){ decu = PulsarGetREAL8Param( hetParams.hetUpdate, "DECJ" ); }
-  else { decu = PulsarGetREAL8ParamOrZero( hetParams.hetUpdate, "DEC" ); }
-
-  REAL8 pmra, pmdec, pmrau, pmdecu;
-  pmra = PulsarGetREAL8ParamOrZero( hetParams.het, "PMRA" );
-  pmrau = PulsarGetREAL8ParamOrZero( hetParams.hetUpdate, "PMRA" );
-  pmdec = PulsarGetREAL8ParamOrZero( hetParams.het, "PMDEC" );
-  pmdecu = PulsarGetREAL8ParamOrZero( hetParams.hetUpdate, "PMDEC" );
-
-  REAL8 cgw = PulsarGetREAL8ParamOrZero( hetParams.het, "CGW" );
-  REAL8 cgwu = PulsarGetREAL8ParamOrZero( hetParams.hetUpdate, "CGW" );
-
-  REAL8Vector *freqs = PulsarGetREAL8VectorParam( hetParams.het, "F" );
-  REAL8Vector *freqsu = NULL;
-  if ( PulsarCheckParam( hetParams.hetUpdate, "F" ) ){
-    freqsu = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "F" );
-  }
-
-  /* check for glitch parameters */
-  REAL8 *glep = NULL, *glph = NULL, *glf0 = NULL, *glf1 = NULL, *glf2 = NULL, *glf0d = NULL, *gltd = NULL;
-  UINT4 glnum = 0;
-  if ( PulsarCheckParam( hetParams.hetUpdate, "GLEP" ) ){
-    REAL8Vector *glpars = NULL;
-    glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLEP" );
-    glnum = glpars->length;
-
-    /* get epochs */
-    glep = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    for ( i=0; i<(INT4)glpars->length; i++ ){ glep[i] = glpars->data[i]; }
-
-    /* get phase offsets */
-    glph = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( hetParams.hetUpdate, "GLPH" ) ) {
-      glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLPH" );
-      for ( i=0; i<(INT4)glpars->length; i++ ){ glph[i] = glpars->data[i]; }
-    }
-
-    /* get frequencies offsets */
-    glf0 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( hetParams.hetUpdate, "GLF0" ) ) {
-      glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLF0" );
-      for ( i=0; i<(INT4)glpars->length; i++ ){ glf0[i] = glpars->data[i]; }
-    }
-
-    /* get frequency derivative offsets */
-    glf1 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( hetParams.hetUpdate, "GLF1" ) ) {
-      glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLF1" );
-      for ( i=0; i<(INT4)glpars->length; i++ ){ glf1[i] = glpars->data[i]; }
-    }
-
-    /* get second frequency derivative offsets */
-    glf2 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( hetParams.hetUpdate, "GLF2" ) ) {
-      glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLF2" );
-      for ( i=0; i<(INT4)glpars->length; i++ ){ glf2[i] = glpars->data[i]; }
-    }
-
-    /* get decaying frequency component offset derivative */
-    glf0d = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( hetParams.hetUpdate, "GLF0D" ) ) {
-      glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLF0D" );
-      for ( i=0; i<(INT4)glpars->length; i++ ){ glf0d[i] = glpars->data[i]; }
-    }
-
-    /* get decaying frequency component decay time constant */
-    gltd = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( hetParams.hetUpdate, "GLTD" ) ) {
-      glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLTD" );
-      for ( i=0; i<(INT4)glpars->length; i++ ){ gltd[i] = glpars->data[i]; }
+      if( hetParams.hetUpdate.px == 2 ){
+        baryinput.dInv = ( 3600. / LAL_PI_180 ) * hetParams.hetUpdate.px /
+          (LAL_C_SI*lyr_pc);
+      }
+      else if( hetParams.hetUpdate.dist != 0. ){
+        baryinput.dInv = 1./(hetParams.hetUpdate.dist*1e3*LAL_C_SI*lyr_pc);
+      }
+      else
+        baryinput.dInv = 0.; /* no parallax */
     }
   }
 
@@ -1253,23 +1155,25 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
 
 /******************************************************************************/
     REAL8 phaseWave = 0.; /* phase of any timing noise whitening parameters */
-    REAL8 phaseGlitch = 0.; /* phase from any glitches */
 
-    /* produce initial heterodyne phase for coarse heterodyne with no time delays */
+    /* produce initial heterodyne phase for coarse heterodyne with no time
+       delays */
     if(hetParams.heterodyneflag == 0)
       tdt = hetParams.timestamp + (REAL8)i/hetParams.samplerate - T0;
     else if( hetParams.heterodyneflag == 1 || hetParams.heterodyneflag == 2){
       tdt = times->data[i] - T0;
       tdt_2 = times->data[i] - T0Update;
     }
-    /* if doing one single heterodyne i.e. het flag = 3 then just calc phaseCoarse at all times */
+    /* if doing one single heterodyne i.e. het flag = 3 then just calc
+       phaseCoarse at all times */
     else if(hetParams.heterodyneflag == 3 || hetParams.heterodyneflag == 4 ){
-      /* set up XLALBarycenter */
-      dtpos = hetParams.timestamp - posepoch;
+      /* set up LALBarycenter */
+      dtpos = hetParams.timestamp - hetParams.het.posepoch;
 
-      /* set up RA, DEC, and distance variables for XLALBarycenter*/
-      baryinput.delta = dec + dtpos*pmdec;
-      baryinput.alpha = ra + dtpos*pmra/cos(baryinput.delta);
+      /* set up RA, DEC, and distance variables for LALBarycenter*/
+      baryinput.delta = hetParams.het.dec + dtpos*hetParams.het.pmdec;
+      baryinput.alpha = hetParams.het.ra +
+        dtpos*hetParams.het.pmra/cos(baryinput.delta);
 
       if( hetParams.heterodyneflag == 3 ) /*get data time */
         t = hetParams.timestamp + (REAL8)i/hetParams.samplerate;
@@ -1278,17 +1182,19 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
 
       XLALGPSSetREAL8(&baryinput.tgps, t);
 
-      XLAL_CHECK_VOID( XLALBarycenterEarthNew( &earth, &baryinput.tgps, edat, tdat, hetParams.ttype ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_VOID( XLALBarycenter( &emit, &baryinput, &earth ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_VOID( XLALBarycenterEarthNew( &earth, &baryinput.tgps, edat,
+        tdat, hetParams.ttype ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_VOID( XLALBarycenter( &emit, &baryinput, &earth ) ==
+                       XLAL_SUCCESS, XLAL_EFUNC );
 
       /* if binary pulsar add extra time delay */
-      if ( PulsarCheckParam( hetParams.het, "BINARY" ) ){
+      if(hetParams.het.model!=NULL){
         /* input SSB time into binary timing function */
         binInput.tb = t + emit.deltaT;
         binInput.earth = earth;
 
         /* calculate binary time delay */
-        XLALBinaryPulsarDeltaTNew( &binOutput, &binInput, hetParams.het );
+        XLALBinaryPulsarDeltaT( &binOutput, &binInput, &hetParams.het );
 
         /* add binary time delay */
         tdt = (t - T0) + emit.deltaT +  binOutput.deltaT;
@@ -1300,77 +1206,57 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       }
 
       /* add the effect of a variable gravitational wave speed */
-      if ( cgw > 0. && cgw < 1. ){
-        tdt /= cgw;
-        tdt_2 /= cgw;
-      }
+      tdt /= hetParams.het.cgw;
+      tdt_2 /= hetParams.het.cgw;
 
       /* check if any timing noise whitening is used */
-      if ( PulsarCheckParam( hetParams.het, "WAVESIN" ) && PulsarCheckParam( hetParams.het, "WAVECOS" ) ){
+      if( hetParams.het.nwaves != 0 ){
         /* dtWave only doesn't include binary corrections as they would
          * also be sinusoidal terms */
-        REAL8 dtWave = (XLALGPSGetREAL8(&emit.te) - waveepoch)/86400.; /* in days */
+        REAL8 dtWave = (XLALGPSGetREAL8(&emit.te) -
+          hetParams.het.waveepoch)/86400.; /* in days */
         REAL8 tWave = 0.;
 
-        REAL8Vector *wavesin = PulsarGetREAL8VectorParam( hetParams.het, "WAVESIN" );
-        REAL8Vector *wavecos = PulsarGetREAL8VectorParam( hetParams.het, "WAVECOS" );
-
-        for( UINT4 k = 0; k < wavesin->length; k++ ){
-          tWave += wavesin->data[k]*sin(om*(REAL8)(k+1.)*dtWave) + wavecos->data[k]*cos(om*(REAL8)(k+1.)*dtWave);
+        for( INT4 k = 0; k < hetParams.het.nwaves; k++ ){
+          tWave += hetParams.het.waveSin[k]*sin(om*(REAL8)(k+1.)*dtWave) +
+            hetParams.het.waveCos[k]*cos(om*(REAL8)(k+1.)*dtWave);
         }
-        phaseWave = freqs->data[0]*freqfactor*tWave;
-      }
-
-      /* add glitch phase - based on equations in formResiduals.C of TEMPO2 from Eqn 1 of Yu et al (2013) http://ukads.nottingham.ac.uk/abs/2013MNRAS.429..688Y */
-      phaseGlitch = 0.;
-      if ( glnum > 0 ){
-        for ( UINT4 k = 0; k < glnum; k++ ){
-          if ( tdt >= glep[k] - T0 ){
-            REAL8 dtg = 0, expd = 1.;
-            dtg = tdt - (glep[k]-T0); /* time since glitch */
-            if ( gltd[k] != 0. ) { expd = exp(-dtg/gltd[k]); } /* decaying part of glitch */
-
-            phaseGlitch += glph[k] + glf0[k]*dtg + 0.5*glf1[k]*dtg*dtg + (1./6.)*glf2[k]*dtg*dtg*dtg + glf0d[k]*gltd[k]*(1.-expd);
-          }
-        }
-        phaseGlitch *= freqfactor;
+        phaseWave = hetParams.het.f0*freqfactor*tWave;
       }
     }
+
+    tdt2 = tdt*tdt; /* tdt^2 for /slightly/ faster computation */
+    tdt2_2 = tdt_2*tdt_2;
 
     /* multiply by 2 to get gw phase */
-    phaseCoarse = 0.;
-    REAL8 taylorcoeff = 1.;
-    REAL8 tdttmp = tdt;
-    for ( UINT4 k = 0; k < freqs->length; k++ ){
-      taylorcoeff /= (REAL8)(k+1);
-      phaseCoarse += taylorcoeff*freqs->data[k]*tdttmp;
-      tdttmp *= tdt;
-    }
-    phaseCoarse *= freqfactor;
-    phaseCoarse += phaseWave + phaseGlitch;
+    phaseCoarse = freqfactor*(hetParams.het.f0*tdt +
+      0.5*hetParams.het.f1*tdt2 + (1./6.)*hetParams.het.f2*tdt2*tdt +
+      (1./24.)*hetParams.het.f3*tdt2*tdt2 +
+      (1./120.)*hetParams.het.f4*tdt2*tdt2*tdt +
+      (1./720.)*hetParams.het.f5*tdt2*tdt2*tdt2 +
+      (1./5040.)*hetParams.het.f6*tdt2*tdt2*tdt2*tdt +
+      (1./40320.)*hetParams.het.f7*tdt2*tdt2*tdt2*tdt2 +
+      (1./362880.)*hetParams.het.f8*tdt2*tdt2*tdt2*tdt2*tdt +
+      (1./3628800.)*hetParams.het.f9*tdt2*tdt2*tdt2*tdt2*tdt2);
+    phaseCoarse += phaseWave;
 
-    /* don't bother including glitch effects when calculating these frequencies as the effects (for the later filter amplitude and phase corrections) should be small */
-    taylorcoeff = 1.;
-    fcoarse = freqs->data[0];
-    tdttmp = tdt;
-    for ( UINT4 k = 1; k < freqs->length; k++ ){
-      taylorcoeff /= (REAL8)k;
-      fcoarse += taylorcoeff*freqs->data[k]*tdttmp;
-      tdttmp *= tdt;
-    }
-    fcoarse *= freqfactor;
+    fcoarse = freqfactor*(hetParams.het.f0 + hetParams.het.f1*tdt +
+      0.5*hetParams.het.f2*tdt2 + (1./6.)*hetParams.het.f3*tdt2*tdt +
+      (1./24.)*hetParams.het.f4*tdt2*tdt2 +
+      (1./120.)*hetParams.het.f5*tdt2*tdt2*tdt +
+      (1./720.)*hetParams.het.f6*tdt2*tdt2*tdt2 +
+      (1./5040.)*hetParams.het.f7*tdt2*tdt2*tdt2*tdt +
+      (1./40320.)*hetParams.het.f8*tdt2*tdt2*tdt2*tdt2 +
+      (1./362880.)*hetParams.het.f9*tdt2*tdt2*tdt2*tdt2*tdt);
 
-    if ( freqsu != NULL ){
-      taylorcoeff = 1.;
-      ffine = freqsu->data[0];
-      tdttmp = tdt;
-      for ( UINT4 k = 1; k < freqsu->length; k++ ){
-        taylorcoeff /= (REAL8)k;
-        ffine += taylorcoeff*freqsu->data[k]*tdttmp;
-        tdttmp *= tdt;
-      }
-      ffine *= freqfactor;
-    }
+    ffine = freqfactor*(hetParams.hetUpdate.f0 + hetParams.hetUpdate.f1*tdt_2 +
+      0.5*hetParams.hetUpdate.f2*tdt2_2 + (1./6.)*hetParams.hetUpdate.f3*tdt2_2*tdt_2
+      + (1./24.)*hetParams.hetUpdate.f4*tdt2_2*tdt2_2 +
+      (1./120.)*hetParams.hetUpdate.f5*tdt2_2*tdt2_2*tdt_2 +
+      (1./720.)*hetParams.hetUpdate.f6*tdt2_2*tdt2_2*tdt2_2 +
+      (1./5040.)*hetParams.hetUpdate.f7*tdt2_2*tdt2_2*tdt2_2*tdt_2 +
+      (1./40320.)*hetParams.hetUpdate.f8*tdt2_2*tdt2_2*tdt2_2*tdt2_2 +
+      (1./362880.)*hetParams.hetUpdate.f9*tdt2_2*tdt2_2*tdt2_2*tdt2_2*tdt_2);
 
 /******************************************************************************/
     /* produce second phase for fine heterodyne */
@@ -1379,18 +1265,23 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       REAL8 tWave1 = 0., tWave2 = 0.;
       phaseWave = 0.;
 
-      /* set up XLALBarycenter */
-      dtpos = hetParams.timestamp - posepochu;
+      /* set up LALBarycenter */
+      dtpos = hetParams.timestamp - hetParams.hetUpdate.posepoch;
 
-      baryinput.delta = decu + dtpos*pmdecu;
-      baryinput.alpha = rau + dtpos*pmrau/cos(baryinput.delta);
+      /* set up RA, DEC, and distance variables for LALBarycenter*/
+      baryinput.delta = hetParams.hetUpdate.dec +
+        dtpos*hetParams.hetUpdate.pmdec;
+      baryinput.alpha = hetParams.hetUpdate.ra +
+        dtpos*hetParams.hetUpdate.pmra/cos(baryinput.delta);
 
       t = times->data[i]; /* get data time */
+
       t2 = times->data[i] + 1.; /* just add a second to get the gradient */
 
       baryinput2 = baryinput;
 
       XLALGPSSetREAL8(&baryinput.tgps, t);
+
       XLALGPSSetREAL8(&baryinput2.tgps, t2);
 
       XLAL_CHECK_VOID( XLALBarycenterEarthNew( &earth, &baryinput.tgps, edat,
@@ -1404,15 +1295,15 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
                        XLAL_SUCCESS, XLAL_EFUNC );
 
       /* if binary pulsar add extra time delay */
-      if( PulsarCheckParam( hetParams.hetUpdate, "BINARY" ) ){
+      if(hetParams.hetUpdate.model!=NULL){
         /* input SSB time into binary timing function */
         binInput.tb = t + emit.deltaT;
         binInput2.tb = t2 + emit2.deltaT;
         binInput.earth = binInput2.earth = earth;
 
         /* calculate binary time delay */
-        XLALBinaryPulsarDeltaTNew( &binOutput, &binInput, hetParams.hetUpdate );
-        XLALBinaryPulsarDeltaTNew( &binOutput2, &binInput2, hetParams.hetUpdate );
+        XLALBinaryPulsarDeltaT( &binOutput, &binInput, &hetParams.hetUpdate );
+        XLALBinaryPulsarDeltaT( &binOutput2, &binInput2, &hetParams.hetUpdate );
 
         /* add binary time delay */
         tdt = (t - T0Update) + emit.deltaT + binOutput.deltaT;
@@ -1423,24 +1314,24 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
         binOutput2.deltaT = 0.;
       }
 
-      /* check if any timing noise whitening is used */
-      if ( PulsarCheckParam( hetParams.hetUpdate, "WAVESIN" ) && PulsarCheckParam( hetParams.hetUpdate, "WAVECOS" ) ){
-        REAL8 dtWave = (XLALGPSGetREAL8(&emit.te) - waveepochu)/86400.; /* in days */
+      if( hetParams.hetUpdate.nwaves != 0 ){
+        REAL8 dtWave = (XLALGPSGetREAL8(&emit.te) -
+          hetParams.hetUpdate.waveepoch)/86400.;
 
-        REAL8Vector *wavesin = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "WAVESIN" );
-        REAL8Vector *wavecos = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "WAVECOS" );
+       for( INT4 k = 0; k < hetParams.hetUpdate.nwaves; k++ ){
+          tWave1 += hetParams.hetUpdate.waveSin[k]*sin(omu*(REAL8)(k+1.)*dtWave) +
+            hetParams.hetUpdate.waveCos[k]*cos(omu*(REAL8)(k+1.)*dtWave);
 
-        for( UINT4 k = 0; k < wavesin->length; k++ ){
-          tWave1 += wavesin->data[k]*sin(omu*(REAL8)(k+1.)*dtWave) + wavecos->data[k]*cos(omu*(REAL8)(k+1.)*dtWave);
-          tWave2 += wavesin->data[k]*sin(omu*(REAL8)(k+1.)*(dtWave+(1./86400.))) + wavecos->data[k]*cos(omu*(REAL8)(k+1.)*(dtWave+(1./86400.)));
+          tWave2 += hetParams.hetUpdate.waveSin[k]*sin(omu*(REAL8)(k+1.)*(dtWave+(1./86400.))) +
+            hetParams.hetUpdate.waveCos[k]*cos(omu*(REAL8)(k+1.)*(dtWave+(1./86400.)));
         }
-        phaseWave = freqsu->data[0]*freqfactor*tWave1;
+        phaseWave = hetParams.hetUpdate.f0*freqfactor*tWave1;
       }
 
       if( filtresp != NULL ){
         /* calculate df  = f*(dt(t2) - dt(t))/(t2 - t) here (t2 - t) is 1 sec */
-        df = fcoarse*(emit2.deltaT - emit.deltaT + binOutput2.deltaT - binOutput.deltaT + tWave2 - tWave1);
-        if ( cgwu > 0. && cgwu < 1. ){ df /= cgwu; }
+        df = fcoarse*(emit2.deltaT - emit.deltaT + binOutput2.deltaT -
+          binOutput.deltaT + tWave2 - tWave1) / (hetParams.hetUpdate.cgw);
         df += (ffine - fcoarse);
 
         /*sample rate*/
@@ -1452,35 +1343,21 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       }
 
       /* add the effect of a variable gravitational wave speed */
-      if ( cgwu > 0. && cgwu < 1. ){ tdt /= cgwu; }
+      tdt /= hetParams.hetUpdate.cgw;
 
+      tdt2 = tdt*tdt;
       /* multiply by freqfactor to get gw phase */
-      taylorcoeff = 1.;
-      tdttmp = tdt;
-      phaseUpdate = 0.;
-      for ( UINT4 k = 0; k < freqsu->length; k++ ){
-        taylorcoeff /= (REAL8)(k+1);
-        phaseUpdate += taylorcoeff*freqsu->data[k]*tdttmp;
-        tdttmp *= tdt;
-      }
-      phaseUpdate *= freqfactor;
-
-      /* add glitch phase */
-      phaseGlitch = 0.;
-      if ( glnum > 0 ){
-        for ( UINT4 k = 0; k < glnum; k++ ){
-          if ( tdt >= glep[k] - T0Update ){
-            REAL8 dtg = 0, expd = 1.;
-            dtg = tdt - (glep[k]-T0Update); /* time since glitch */
-            if ( gltd[k] != 0. ) { expd = exp(-dtg/gltd[k]); } /* decaying part of glitch */
-
-            phaseGlitch += glph[k] + glf0[k]*dtg + 0.5*glf1[k]*dtg*dtg + (1./6.)*glf2[k]*dtg*dtg*dtg + glf0d[k]*gltd[k]*(1.-expd);
-          }
-        }
-        phaseGlitch *= freqfactor;
-      }
-
-      phaseUpdate += phaseWave + phaseGlitch;
+      phaseUpdate = freqfactor*(hetParams.hetUpdate.f0*tdt +
+        0.5*hetParams.hetUpdate.f1*tdt2 +
+        (1./6.)*hetParams.hetUpdate.f2*tdt2*tdt +
+        (1./24.)*hetParams.hetUpdate.f3*tdt2*tdt2 +
+        (1./120.)*hetParams.hetUpdate.f4*tdt2*tdt2*tdt +
+        (1./720.)*hetParams.hetUpdate.f5*tdt2*tdt2*tdt2 +
+        (1./5040.)*hetParams.hetUpdate.f6*tdt2*tdt2*tdt2*tdt +
+        (1./40320.)*hetParams.hetUpdate.f7*tdt2*tdt2*tdt2*tdt2 +
+        (1./362880.)*hetParams.hetUpdate.f8*tdt2*tdt2*tdt2*tdt2*tdt +
+        (1./3628800.)*hetParams.hetUpdate.f9*tdt2*tdt2*tdt2*tdt2*tdt2);
+      phaseUpdate += phaseWave;
     }
 
 /******************************************************************************/
@@ -1495,7 +1372,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       hetParams.heterodyneflag == 4){
       deltaphase = 2.*LAL_PI*fmod(phaseUpdate - phaseCoarse, 1.);
 
-      /* multiply the data by the filters complex response function to remove its effect */
+      /* multiply the data by the filters complex response function to remove
+         its effect */
       /* do a linear interpolation between filter response function points */
       if( filtresp != NULL ){
         filtphase = filtresp->phaseResp->data[position] +
@@ -1527,6 +1405,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
     if ( hetParams.ttype != TIMECORRECTION_ORIGINAL )
       XLALDestroyTimeCorrectionData( tdat );
   }
+
 }
 
 /* function to extract the frame time and duration from the file name */
@@ -1618,7 +1497,8 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 ttime,
       dblseries->data->data[i] = scalefac*(REAL8)frvect->dataD[i];
   }
   else{ /* channel name is not recognised */
-    fprintf(stderr, "Error... Channel name %s is not recognised as a proper channel.\n", channel);
+    fprintf(stderr, "Error... Channel name %s is not recognised as a proper \
+channel.\n", channel);
     exit(1); /* abort code */
   }
 
@@ -1779,7 +1659,8 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
       }
       if( starts->data[i] >= times->data[times->length-1] ){
         /* segment is outside of data time, so exit */
-        fprintf(stderr, "Segment %d to %d is outside the times of the data!\n", starts->data[i], stops->data[i]);
+        fprintf(stderr, "Segment %d to %d is outside the times of the data!\n",
+          starts->data[i], stops->data[i]);
         fprintf(stderr, "End resampling\n");
         break;
       }
@@ -1816,7 +1697,8 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
 
       if( duration < size ){
         j += (INT4)(duration*sampleRate);
-        continue; /* if segment is smaller than the number of samples needed then skip to next */
+        continue; /* if segment is smaller than the number of samples needed
+                     then skip to next */
       }
 
       rremainder = (INT4)(duration*sampleRate)%size;
@@ -1834,7 +1716,10 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data,
       for( j=prevdur+frombeg;j<prevdur + (INT4)ROUND(duration*sampleRate) -fromend-1 ; j+=size ){
         tempData = 0.;
 
-        for( k=0;k<size;k++ ){ tempData += data->data->data[j+k]; }
+        for( k=0;k<size;k++ ){
+          tempData += data->data->data[j+k];
+        }
+
         series->data->data[count] = tempData/(REAL8)size;
 
         if( sampleRate != resampleRate )
@@ -1882,12 +1767,6 @@ INT4 heterodyneflag){
   while ( (ch = fgetc(fp)) != EOF ){
     if ( ch == '\n' ) /* check for return at end of line */
       linecount++;
-  }
-
-  /* if segment list is empty exit with a warning */
-  if ( linecount == 0 ){
-    fprintf(stderr, "Warning... segment list file was empty, so no heterodyne will be performed\n");
-    exit(0);
   }
 
   /* allocate memory for vectors */
@@ -2252,8 +2131,6 @@ INT4 remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times,
       j++;
     }
   }
-
-  XLAL_CHECK( j > 0, XLAL_EFUNC, "Error... thresholding has rejected all the data!" );
 
   /* resize data and times */
   if( (data = XLALResizeCOMPLEX16TimeSeries(data, 0, j)) == NULL ||

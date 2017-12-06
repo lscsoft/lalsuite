@@ -18,17 +18,11 @@
 */
 
 /**
- * \defgroup lalapps_pulsar_TwoSpect TwoSpect Search Application
- * \ingroup lalapps_pulsar_Apps
- */
-
-/*
  * \file
  * \ingroup lalapps_pulsar_TwoSpect
  * \author Evan Goetz
  */
 
-#include "config.h"
 #include <sys/stat.h>
 
 #include <lal/UserInput.h>
@@ -789,12 +783,6 @@ int main(int argc, char *argv[])
          for (ii=0; ii<(INT4)exactCandidates2->numofcandidates; ii++) exactCandidates2->data[ii].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);
       }
 
-      //If the user wants to do a templated search with fixed Df, that is done here
-      if (uvar.templateSearchFixedDf) {
-         XLAL_CHECK( templateSearch_fixedDf(&exactCandidates2, uvar.templateSearchDf, uvar.fmin, uvar.fspan, uvar.templateSearchP, skypos, &uvar, ffdata->ffdata, aveNoise, aveTFnoisePerFbinRatio, trackedlines, secondFFTplan, rng, 1) == XLAL_SUCCESS, XLAL_EFUNC );
-         for (ii=0; ii<(INT4)exactCandidates2->numofcandidates; ii++) exactCandidates2->data[ii].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);
-      }
-
       //Template bank analysis
       if (XLALUserVarWasSet(&(uvar.templatebankfile))) {
          candidateVector *candVec = NULL, *subsetVec = NULL;
@@ -820,7 +808,7 @@ int main(int argc, char *argv[])
       //Start of the IHS step!
       //Find the FAR of IHS sum -- only if the templateTest has not been given
       candidateVector *ihsCandidates_reduced = NULL;
-      if (!XLALUserVarWasSet(&uvar.templatebankfile) && !uvar.templateTest && !uvar.templateSearch && !uvar.bruteForceTemplateTest && !uvar.templateSearchFixedDf) {
+      if (!XLALUserVarWasSet(&uvar.templatebankfile) && !uvar.templateTest && !uvar.templateSearch && !uvar.bruteForceTemplateTest) {
          //If the false alarm thresholds need to be computed
          if (ihsfarstruct->ihsfar->data[0]<0.0) XLAL_CHECK( genIhsFar(ihsfarstruct, &uvar, maxrows, aveNoise, rng) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -846,7 +834,7 @@ int main(int argc, char *argv[])
 
       //Start of the Gaussian template search!
       //First check to see if the IHSonly or templateTest or templateSearch was given
-      if (uvar.IHSonly && !uvar.templateTest && !uvar.templateSearch && !uvar.templateSearchFixedDf && !XLALUserVarWasSet(&uvar.templatebankfile)) {
+      if (uvar.IHSonly && !uvar.templateTest && !uvar.templateSearch && !XLALUserVarWasSet(&uvar.templatebankfile)) {
          //Check the length of the exactCandidates2 vector is large enough and resize if necessary
          if (exactCandidates2->length < exactCandidates2->numofcandidates+ihsCandidates->numofcandidates) XLAL_CHECK( (exactCandidates2 = resizecandidateVector(exactCandidates2, exactCandidates2->numofcandidates+ihsCandidates->numofcandidates)) != NULL, XLAL_EFUNC );
 
@@ -858,7 +846,7 @@ int main(int argc, char *argv[])
             (exactCandidates2->numofcandidates)++;
          }
 
-      } else if (!uvar.templateTest && !uvar.templateSearch && !uvar.templateSearchFixedDf && !XLALUserVarWasSet(&uvar.templatebankfile)) {
+      } else if (!uvar.templateTest && !uvar.templateSearch && !XLALUserVarWasSet(&uvar.templatebankfile)) {
 
          //Test the IHS candidates against Gaussian templates in this function
          XLAL_CHECK( testIHScandidates(&gaussCandidates1, ihsCandidates, ffdata, aveNoise, aveTFnoisePerFbinRatio, skypos, &uvar, rng) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -951,7 +939,7 @@ int main(int argc, char *argv[])
       } /* if gaussCandidates1->numofcandidates > 0 */
 
       //Determine upper limits, if the ULoff has not been set
-      if (!uvar.ULoff && !uvar.templateTest && !uvar.templateSearch && !uvar.templateSearchFixedDf && !XLALUserVarWasSet(&uvar.templatebankfile)) {
+      if (!uvar.ULoff && !uvar.templateTest && !uvar.templateSearch && !XLALUserVarWasSet(&uvar.templatebankfile)) {
          upperlimits->data[upperlimits->length-1].alpha = (REAL4)dopplerpos.Alpha;
          upperlimits->data[upperlimits->length-1].delta = (REAL4)dopplerpos.Delta;
          upperlimits->data[upperlimits->length-1].normalization = ffdata->tfnormalization;
@@ -1684,6 +1672,7 @@ INT4 readTwoSpectInputParams(UserInput_t *uvar, int argc, char *argv[])
    uvar->lineDetection = -1.0;
    uvar->cosiSignCoherent = 0;
 
+   XLALRegisterUvarMember(help,                         BOOLEAN, 'h', HELP    ,  "Print this help/usage message");
    XLALRegisterUvarMember(outdirectory,                STRING, 0 , REQUIRED,  "Output directory");
    XLALRegisterUvarMember(IFO,                           STRINGVector, 0 , REQUIRED,  "CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
    XLALRegisterUvarMember(Tobs,                          REAL8, 0 , REQUIRED,  "Total observation time (in seconds)");
@@ -1716,8 +1705,6 @@ INT4 readTwoSpectInputParams(UserInput_t *uvar, int argc, char *argv[])
    XLALRegisterUvarMember(templateSearchP,               REAL8, 0 , OPTIONAL,  "The template search period; templateSearch flag is required");
    XLALRegisterUvarMember(templateSearchAsini,           REAL8, 0 , OPTIONAL,  "The template search Asini; templateSearch flag is required");
    XLALRegisterUvarMember(templateSearchAsiniSigma,      REAL8, 0 , OPTIONAL,  "The template search uncertainty in Asini; templateSearch flag is required");
-   XLALRegisterUvarMember(templateSearchFixedDf,         BOOLEAN, 0 , OPTIONAL, "Flag for doing a template-based search on search region specified by (df,sky,f,fspan,P)");
-   XLALRegisterUvarMember(templateSearchDf,              STRINGVector, 0 , OPTIONAL,   "The (list of) template search df(s); templateSearchFixedDf flag is required");
    XLALRegisterUvarMember(assumeNScosi,                  REAL8, 0 , OPTIONAL,  "Assume cosi orientation of the source (only used when specifying more than 1 detector)");
    XLALRegisterUvarMember(assumeNSpsi,                   REAL8, 0 , OPTIONAL,  "Assume psi polarization angle of the source (only used when specifying more than 1 detector)");
    XLALRegisterUvarMember(assumeNSGWfreq,                REAL8, 0 , OPTIONAL,  "Assume GW frequency of the source (only used when specifying more than 1 detector)");
@@ -1779,9 +1766,10 @@ INT4 readTwoSpectInputParams(UserInput_t *uvar, int argc, char *argv[])
 
    //Read all the input from config file and command line (command line has priority)
    //Also checks required variables unless help is requested
-   BOOLEAN should_exit = 0;
-   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
-   if ( should_exit ) exit(1);
+   XLAL_CHECK( XLALUserVarReadAllInput(argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
+
+   //Help and exit
+   if (uvar->help) exit(0);
 
    //Check analysis parameters
    if (ceil(uvar->t0/uvar->SFToverlap)*uvar->SFToverlap - uvar->t0 != 0.0) {
@@ -1840,14 +1828,9 @@ INT4 readTwoSpectInputParams(UserInput_t *uvar, int argc, char *argv[])
    //Check skyRegion and skyRegionFile options
    if ((XLALUserVarWasSet(&uvar->skyRegion) && XLALUserVarWasSet(&uvar->skyRegionFile)) || (!XLALUserVarWasSet(&uvar->skyRegion) && !XLALUserVarWasSet(&uvar->skyRegionFile))) XLAL_ERROR(XLAL_EINVAL, "Specify only one of skyRegion or skyRegionFile\n");
 
-   //Check required options if specifying templateSearchFixedDf
-   if (uvar->templateSearchFixedDf || XLALUserVarWasSet(&uvar->templateSearchDf)) {
-      if (!(uvar->templateSearchFixedDf && XLALUserVarWasSet(&uvar->templateSearchDf) && XLALUserVarWasSet(&uvar->templateSearchP))) XLAL_ERROR(XLAL_FAILURE, "Must specify all or none of templateSearchFixedDf, templateSearchDf, templateSearchP\n");
-   }
-
    //Check required options if specifying templateSearch
    if (uvar->templateSearch || XLALUserVarWasSet(&uvar->templateSearchP) || XLALUserVarWasSet(&uvar->templateSearchAsini) || XLALUserVarWasSet(&uvar->templateSearchAsiniSigma)) {
-      if (!(uvar->templateSearchFixedDf) && !(uvar->templateSearch && XLALUserVarWasSet(&uvar->templateSearchP) && XLALUserVarWasSet(&uvar->templateSearchAsini) && XLALUserVarWasSet(&uvar->templateSearchAsiniSigma))) XLAL_ERROR(XLAL_FAILURE, "Must specify all or none of templateSearch, templateSearchP, templateSearchAsini, and templateSearchAsiniSigma\n");
+      if (!(uvar->templateSearch && XLALUserVarWasSet(&uvar->templateSearchP) && XLALUserVarWasSet(&uvar->templateSearchAsini) && XLALUserVarWasSet(&uvar->templateSearchAsiniSigma))) XLAL_ERROR(XLAL_FAILURE, "Must specify all or none of templateSearch, templateSearchP, templateSearchAsini, and templateSearchAsiniSigma\n");
    }
 
    //Error if dfmax is smaller than templateTestDf or if dfmax is smaller than the templateSearch or bruteForceTemplateTest largest modulation depth

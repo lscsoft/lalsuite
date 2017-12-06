@@ -36,6 +36,7 @@
 #include <lal/ConfigFile.h>
 #include <lal/LogPrintf.h>
 
+#include <lal/FlatPulsarMetric.h>
 #include <lal/DopplerFullScan.h>
 
 /*---------- DEFINES ----------*/
@@ -216,7 +217,7 @@ XLALInitDopplerFullScan ( const DopplerFullScanInit *init       /**< [in] initia
         gsl_matrix_set_identity(metric);
         gsl_matrix_view spin_metric = gsl_matrix_submatrix(metric, 2, 2, PULSAR_MAX_SPINS, PULSAR_MAX_SPINS);
         XLAL_CHECK_NULL ( XLALSpindownMetric(&spin_metric.matrix, init->Tspan) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK_NULL ( XLALSetTilingLatticeAndMetric(thisScan->spindownTiling, TILING_LATTICE_ANSTAR, metric, init->metricMismatch) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_NULL ( XLALSetTilingLatticeAndMetric(thisScan->spindownTiling, "Ans", metric, init->metricMismatch) == XLAL_SUCCESS, XLAL_EFUNC );
 
         /* Create iterator over flat lattice tiling */
         XLAL_CHECK_NULL ( (thisScan->spindownTilingItr = XLALCreateLatticeTilingIterator(thisScan->spindownTiling, n)) != NULL, XLAL_EFUNC );
@@ -773,18 +774,11 @@ XLALLoadFullGridFile ( DopplerFullScanState *scan,
   /* parse this list of lines into a full grid */
   numTemplates = 0;
   tail = &head;         /* head will remain empty! */
-  CHAR line[2048];
-  while ( ! feof ( fp ) && ! ferror ( fp ) && fgets( line, sizeof(line), fp ) != NULL )
+  while ( ! feof ( fp ) )
     {
-
-      // Skip over any comment lines
-      if ( line[0] == '#' || line[0] == '%' ) {
-        continue;
-      }
-
-      // File format expects lines containing 6 columns: Freq   Alpha  Delta  f1dot  f2dot  f3dot
       REAL8 Freq, Alpha, Delta, f1dot, f2dot, f3dot;
-      if ( 6 != sscanf( line, "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT "\n",
+      // File format expects lines containing 6 columns: Freq   Alpha  Delta  f1dot  f2dot  f3dot
+      if ( 6 != fscanf( fp, "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT "\n",
                         &Freq, &Alpha, &Delta, &f1dot, &f2dot, &f3dot ) )
         {
           XLALPrintError ("ERROR: Failed to parse 6 REAL8's from line %d in grid-file '%s'\n\n", numTemplates + 1, init->gridFile);
@@ -827,10 +821,7 @@ XLALLoadFullGridFile ( DopplerFullScanState *scan,
 
       numTemplates ++ ;
 
-    } /* while !feof(fp) && ... */
-  if ( ferror ( fp ) ) {
-    XLAL_ERROR ( XLAL_EIO );
-  }
+    } /* while !feof(fp) */
 
   XLALDestroyREAL8Vector ( entry );
 
@@ -879,7 +870,6 @@ typedef struct {
 static double F1DotAgeBrakingBound(
   const void* data,
   const size_t dim UNUSED,
-  const gsl_matrix *cache UNUSED,
   const gsl_vector* point
   )
 {
@@ -913,13 +903,18 @@ int XLALSetLatticeTilingF1DotAgeBrakingBound(
   XLAL_CHECK(max_braking > 1.0, XLAL_EINVAL);
   XLAL_CHECK(min_braking <= max_braking, XLAL_EINVAL);
 
+  // Allocate memory
+  const size_t info_len = sizeof(F1DotAgeBrakingBoundInfo);
+  F1DotAgeBrakingBoundInfo* info_lower = XLALMalloc(info_len);
+  XLAL_CHECK(info_lower != NULL, XLAL_ENOMEM);
+  F1DotAgeBrakingBoundInfo* info_upper = XLALMalloc(info_len);
+  XLAL_CHECK(info_upper != NULL, XLAL_ENOMEM);
+
   // Set the parameter-space bound
-  F1DotAgeBrakingBoundInfo XLAL_INIT_DECL( info_lower );
-  F1DotAgeBrakingBoundInfo XLAL_INIT_DECL( info_upper );
-  info_lower.freq_dim = info_upper.freq_dim = freq_dimension;
-  info_lower.scale = -1.0 / ((min_braking - 1.0) * age);
-  info_upper.scale = -1.0 / ((max_braking - 1.0) * age);
-  XLAL_CHECK(XLALSetLatticeTilingBound(tiling, f1dot_dimension, F1DotAgeBrakingBound, sizeof( info_lower ), &info_lower, &info_upper) == XLAL_SUCCESS, XLAL_EFAILED);
+  info_lower->freq_dim = info_upper->freq_dim = freq_dimension;
+  info_lower->scale = -1.0 / ((min_braking - 1.0) * age);
+  info_upper->scale = -1.0 / ((max_braking - 1.0) * age);
+  XLAL_CHECK(XLALSetLatticeTilingBound(tiling, f1dot_dimension, F1DotAgeBrakingBound, info_len, info_lower, info_upper) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 
@@ -934,7 +929,6 @@ typedef struct {
 static double F2DotBrakingBound(
   const void* data,
   const size_t dim UNUSED,
-  const gsl_matrix *cache UNUSED,
   const gsl_vector* point
   )
 {
@@ -969,14 +963,19 @@ int XLALSetLatticeTilingF2DotBrakingBound(
   XLAL_CHECK(max_braking > 0.0, XLAL_EINVAL);
   XLAL_CHECK(min_braking <= max_braking, XLAL_EINVAL);
 
+  // Allocate memory
+  const size_t info_len = sizeof(F2DotBrakingBoundInfo);
+  F2DotBrakingBoundInfo* info_lower = XLALMalloc(info_len);
+  XLAL_CHECK(info_lower != NULL, XLAL_ENOMEM);
+  F2DotBrakingBoundInfo* info_upper = XLALMalloc(info_len);
+  XLAL_CHECK(info_upper != NULL, XLAL_ENOMEM);
+
   // Set the parameter-space bound
-  F2DotBrakingBoundInfo XLAL_INIT_DECL( info_lower );
-  F2DotBrakingBoundInfo XLAL_INIT_DECL( info_upper );
-  info_lower.freq_dim = info_upper.freq_dim = freq_dimension;
-  info_lower.f1dot_dim = info_upper.f1dot_dim = f1dot_dimension;
-  info_lower.scale = min_braking;
-  info_upper.scale = max_braking;
-  XLAL_CHECK(XLALSetLatticeTilingBound(tiling, f2dot_dimension, F2DotBrakingBound, sizeof( info_lower ), &info_lower, &info_upper) == XLAL_SUCCESS, XLAL_EFAILED);
+  info_lower->freq_dim = info_upper->freq_dim = freq_dimension;
+  info_lower->f1dot_dim = info_upper->f1dot_dim = f1dot_dimension;
+  info_lower->scale = min_braking;
+  info_upper->scale = max_braking;
+  XLAL_CHECK(XLALSetLatticeTilingBound(tiling, f2dot_dimension, F2DotBrakingBound, info_len, info_lower, info_upper) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 

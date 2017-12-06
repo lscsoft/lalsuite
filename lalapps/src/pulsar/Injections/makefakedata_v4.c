@@ -21,7 +21,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_Tools
+ * \ingroup lalapps_pulsar_Injections
  * \author R. Prix, M.A. Papa, X. Siemens, B. Allen, C. Messenger
  */
 
@@ -69,9 +69,6 @@
 /***************************************************/
 #define SQ(x) ( (x) * (x) )
 
-#define TRUE    1
-#define FALSE   0
-
 /*----------------------------------------------------------------------*/
 /** configuration-variables derived from user-variables */
 typedef struct
@@ -110,6 +107,8 @@ typedef enum
 // ----- User variables
 typedef struct
 {
+  BOOLEAN help;		/**< Print this help/usage message */
+
   /* output */
   CHAR *outSFTbname;		/**< Path and basefilename of output SFT files */
   BOOLEAN outSFTv1;		/**< use v1-spec for output-SFTs */
@@ -194,6 +193,8 @@ typedef struct
   BOOLEAN exactSignal;	/**< generate signal timeseries as exactly as possible (slow) */
   BOOLEAN lineFeature;	/**< generate a monochromatic line instead of a pulsar-signal */
 
+  BOOLEAN version;		/**< output version information */
+
   INT4 randSeed;		/**< allow user to specify random-number seed for reproducible noise-realizations */
 
   CHAR *parfile;             /** option .par file path */
@@ -201,7 +202,6 @@ typedef struct
   REAL8 transientStartTime;	/**< GPS start-time of transient window */
   REAL8 transientTauDays;	/**< time-scale in days of transient window */
 
-  REAL8 sourceDeltaT;   /**< source-frame sampling period. '0' implies previous internal defaults */
   // ---------- OBSOLETE & unsupported options [kept for error-reporting] ----------
   INT4 orbitTpSSBsec;
   INT4 orbitTpSSBnan;
@@ -220,10 +220,6 @@ int XLALFreeMem ( ConfigVars_t *cfg );
 
 BOOLEAN is_directory ( const CHAR *fname );
 int XLALIsValidDescriptionField ( const char *desc );
-
-static BOOLEAN is_valid_detector (const char *channel);
-void LALWriteSFTfile (LALStatus *, const SFTtype *sft, const CHAR *outfname);
-void LALWrite_v2SFT_to_v1file (LALStatus *, const SFTtype *sft, const CHAR *fname);
 
 /*----------------------------------------------------------------------
  * main function
@@ -271,8 +267,6 @@ main(int argc, char *argv[])
   params.orbit.asini               = GV.pulsar.Doppler.asini;
   params.orbit.ecc                 = GV.pulsar.Doppler.ecc;
   params.orbit.period              = GV.pulsar.Doppler.period;
-
-  params.sourceDeltaT              = uvar.sourceDeltaT;
 
   /* detector params */
   params.transfer = GV.transfer;	/* detector transfer function (NULL if not used) */
@@ -591,14 +585,21 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   cfg->VCSInfoString = XLALGetVersionString(0);
   XLAL_CHECK ( cfg->VCSInfoString != NULL, XLAL_EFUNC, "XLALGetVersionString(0) failed.\n" );
 
+  // version info was requested: output then exit
+  if ( uvar->version )
+    {
+      printf ("%s\n", cfg->VCSInfoString );
+      exit (0);
+    }
+
   BOOLEAN have_parfile = XLALUserVarWasSet (&uvar->parfile);
   BinaryPulsarParams pulparams;
 
   /* read in par file parameters if given */
    if (have_parfile)
      {
-       XLALReadTEMPOParFileOrig( &pulparams, uvar->parfile);
-       XLAL_CHECK ( xlalErrno == XLAL_SUCCESS, XLAL_EFUNC, "XLALReadTEMPOParFileOrig() failed for parfile = '%s', xlalErrno = %d\n", uvar->parfile, xlalErrno );
+       XLALReadTEMPOParFile( &pulparams, uvar->parfile);
+       XLAL_CHECK ( xlalErrno == XLAL_SUCCESS, XLAL_EFUNC, "XLALReadTEMPOParFile() failed for parfile = '%s', xlalErrno = %d\n", uvar->parfile, xlalErrno );
        XLAL_CHECK ( pulparams.f0 > 0, XLAL_EINVAL, "Invalid .par file values, need f0 > 0!\n" );
        XLAL_CHECK ( (pulparams.pepoch > 0) || (pulparams.posepoch > 0), XLAL_EINVAL, "Invalid .par file values, need PEPOCH or POSEPOCH!\n");
      }
@@ -752,14 +753,8 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       {
       case 3:
 	cfg->spindown->data[2] = uvar->f3dot;
-#if __GNUC__ >= 7
-	__attribute__ ((fallthrough));
-#endif
       case 2:
 	cfg->spindown->data[1] = uvar->f2dot;
-#if __GNUC__ >= 7
-	__attribute__ ((fallthrough));
-#endif
       case 1:
 	cfg->spindown->data[0] = uvar->f1dot;
 	break;
@@ -808,25 +803,36 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   /* ---------- for SFT output: calculate effective fmin and Band ---------- */
   if ( XLALUserVarWasSet( &uvar->outSFTbname ) )
     {
-      UINT4 firstBin, numBins;
-      /* calculate "effective" fmin from uvar->fmin:
+      UINT4 imin, imax;
+      volatile REAL8 dFreq = 1.0 / uvar->Tsft;
+      volatile REAL8 tmp;
+      REAL8 fMax, fMin_eff;
+
+      /* calculate "effective" fmin from uvar->fmin: following makefakedata_v2, we
        * make sure that fmin_eff * Tsft = integer, such that freqBinIndex corresponds
        * to a frequency-index of the non-heterodyned signal.
        */
+      tmp = uvar->fmin / dFreq;	/* NOTE: don't "simplify" this: we try to make sure
+				 * the result of this will be guaranteed to be IEEE-compliant,
+				 * and identical to other locations, such as in SFT-IO
+				 */
+      imin = (UINT4) floor( tmp );
+      fMin_eff = (REAL8)imin * dFreq;
 
-      XLAL_CHECK ( XLALFindCoveringSFTBins ( &firstBin, &numBins, uvar->fmin, uvar->Band, uvar->Tsft ) == XLAL_SUCCESS, XLAL_EFUNC );
+      fMax = uvar->fmin + uvar->Band;
+      tmp = fMax / dFreq;
+      imax = (UINT4) ceil (tmp);
 
-      /* Adjust Band correspondingly */
-      REAL8 dFreq = 1.0 / uvar->Tsft;
-      cfg->fmin_eff  = firstBin * dFreq;
-      cfg->fBand_eff = (numBins-1) * dFreq;
+      /* Increase Band correspondingly. */
+      cfg->fmin_eff = fMin_eff;
+      cfg->fBand_eff = 1.0 * (imax - imin) * dFreq;
 
       if ( lalDebugLevel )
 	{
 	  if ( fabs(cfg->fmin_eff - uvar->fmin)> LAL_REAL8_EPS
 	       || fabs(cfg->fBand_eff - uvar->Band) > LAL_REAL8_EPS )
 	    printf("\nWARNING: for SFT-creation we had to adjust (fmin,Band) to"
-		   " fmin_eff=%.15g and Band_eff=%.15g\n\n", cfg->fmin_eff, cfg->fBand_eff);
+		   " fmin_eff=%.20g and Band_eff=%.20g\n\n", cfg->fmin_eff, cfg->fBand_eff);
 	}
 
     } /* END: SFT-specific corrections to fmin and Band */
@@ -1138,7 +1144,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
   /* ----- set "pulsar reference time", i.e. SSB-time at which pulsar params are defined ---------- */
   if (XLALUserVarWasSet (&uvar->parfile)) {
-    XLALGPSSetREAL8( &(uvar->refTime), pulparams.pepoch ); /*XLALReadTEMPOParFileOrig converted pepoch to REAL8 */
+    XLALGPSSetREAL8( &(uvar->refTime), pulparams.pepoch ); /*XLALReadTEMPOParFile converted pepoch to REAL8 */
     XLALGPSSetREAL8( &(cfg->pulsar.Doppler.refTime), pulparams.pepoch);
   }
   else if (XLALUserVarWasSet(&uvar->refTime))
@@ -1192,7 +1198,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 int
 XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 {
-  int len;
+  int ret, len;
 
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL, "Invalid NULL input 'uvar'\n");
   XLAL_CHECK ( argv != NULL, XLAL_EINVAL, "Invalid NULL input 'argv'\n");
@@ -1208,7 +1214,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   // per default we now generate a timeseries per SFT: slower, but avoids potential confusion about sft-"nudging"
   uvar->generationMode = GENERATE_PER_SFT;
 
-  uvar->actuationScale = + 1.0;
+  uvar->actuationScale = - 1.0;	/* seems to be the LIGO-default */
 
 #define DEFAULT_TRANSIENT "none"
   uvar->transientWindowType = XLALCalloc ( 1, len = strlen(DEFAULT_TRANSIENT)+1 );
@@ -1216,6 +1222,8 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   strcpy ( uvar->transientWindowType, DEFAULT_TRANSIENT );
 
   // ---------- register all our user-variable ----------
+  XLALRegisterUvarMember(  help,                BOOLEAN, 'h', HELP    , "Print this help/usage message");
+
   /* output options */
   XLALRegisterUvarMember(   outSingleSFT,       BOOLEAN, 's', OPTIONAL, "Write a single concatenated SFT (name given by --outSFTbname)" );
   XLALRegisterUvarMember( outSFTbname,        STRING, 'n', OPTIONAL, "Output SFTs: target Directory (if --outSingleSFT=false) or filename (if --outSingleSFT=true)");
@@ -1279,6 +1287,8 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 
   XLALRegisterUvarMember(  lineFeature,          BOOLEAN, 0, OPTIONAL, "Generate a monochromatic 'line' of amplitude h0 and frequency 'Freq'}");
 
+  XLALRegisterUvarMember(  version,             BOOLEAN, 'V', SPECIAL, "Output version information");
+
   XLALRegisterUvarMember(parfile,             STRING, 'p', OPTIONAL, "Directory path for optional .par files");            /*registers .par file in mfd*/
 
   /* transient signal window properties (name, start, duration) */
@@ -1287,7 +1297,6 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember(  transientTauDays,     REAL8, 0, OPTIONAL, "Timescale 'tau' of transient signal window in days.");
 
   /* ----- 'expert-user/developer' and deprecated options ----- */
-  XLALRegisterUvarMember(  sourceDeltaT,        REAL8,  0, DEVELOPER, "Source-frame sampling period. '0' implies previous internal defaults" );
   XLALRegisterUvarMember(   generationMode,       INT4, 0,  DEVELOPER, "How to generate timeseries: 0=all-at-once (faster), 1=per-sft (slower)");
 
   XLALRegisterUvarMember(  hardwareTDD,         BOOLEAN, 'b', DEVELOPER, "Hardware injection: output TDD in binary format (implies generationMode=1)");
@@ -1313,10 +1322,11 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember ( orbitTpSSBMJD, STRING,0, DEFUNCT, "Obsolete, use --orbitTp instead");
 
   /* read cmdline & cfgfile  */
-  BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if ( should_exit )
-    exit (1);
+  ret = XLALUserVarReadAllInput ( argc, argv );
+  XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "Failed to parse user-input\n");
+
+  if ( uvar->help ) 	/* if help was requested, we're done */
+    exit (0);
 
   return XLAL_SUCCESS;
 
@@ -1496,212 +1506,3 @@ is_directory ( const CHAR *fname )
     return 1;
 
 } /* is_directory() */
-
-/*================================================================================
- * OBSOLETE v1-only API [DEPRECATED!]
- *================================================================================*/
-
-#define SFTFILEIO_ENULL         1
-#define SFTFILEIO_EFILE         2
-#define SFTFILEIO_EVAL          5
-#define SFTFILEIO_EMEM          14
-
-#define SFTFILEIO_MSGENULL      "Null pointer"
-#define SFTFILEIO_MSGEFILE      "Error in file-IO"
-#define SFTFILEIO_MSGEVAL       "Invalid value"
-#define SFTFILEIO_MSGEMEM       "Out of memory"
-
-/* check that channel-prefix defines a valid 'known' detector.
- * This is just a convenience wrapper to XLALGetCWDetectorPrefix(), which defines all valid 'CW detectors'
- *
- * returns TRUE if valid, FALSE otherwise */
-static BOOLEAN
-is_valid_detector (const char *channel)
-{
-
-  char *prefix = XLALGetCWDetectorPrefix ( NULL, channel );
-  if ( prefix == NULL ) {
-    return FALSE;
-  }
-  XLALFree ( prefix );
-  return TRUE;
-
-} /* is_valid_detector() */
-
-/**
- * [OBSOLETE] Write a *v1-normalized* (i.e. raw DFT) SFTtype to a SFT-v1 file.
- *
- * \note:only SFT-spec v1.0 is supported, and the SFTtype must follow the
- * *obsolete* v1-normalization. => Use XLALWriteSFT2file() to write v2 SFTs !
- *
- */
-void
-LALWriteSFTfile (LALStatus  *status,			/**< pointer to LALStatus structure */
-		 const SFTtype *sft,		/**< SFT to write to disk */
-		 const CHAR *outfname)		/**< filename */
-{
-
-  /**
-   * [DEPRECATED] This structure contains the header-info contained in an SFT-file of specification
-   * version v1.0.
-   */
-  typedef struct tagSFTHeader {
-    REAL8  version;		/**< SFT version-number (currently only 1.0 allowed )*/
-    INT4   gpsSeconds;		/**< gps start-time (seconds)*/
-    INT4   gpsNanoSeconds;	/**< gps start-time (nanoseconds) */
-    REAL8  timeBase;		/**< length of data-stretch in seconds */
-    INT4   fminBinIndex;		/**< first frequency-index contained in SFT */
-    INT4   length;                /**< number of frequency bins */
-  } SFTHeader;
-
-  FILE  *fp = NULL;
-  COMPLEX8  *inData;
-  INT4  i;
-  UINT4 datalen;
-  REAL4  *rawdata;
-  CHAR *rawheader, *ptr;
-  SFTHeader header;
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
-
-  /*   Make sure the arguments are not NULL and perform basic checks*/
-  ASSERT (sft,   status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
-  ASSERT (sft->data,  status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT (sft->deltaF > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT (outfname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
-
-  /* fill in the header information */
-  header.version = 1.0;
-  header.gpsSeconds = sft->epoch.gpsSeconds;
-  header.gpsNanoSeconds = sft->epoch.gpsNanoSeconds;
-  header.timeBase = 1.0 / sft->deltaF;
-  header.fminBinIndex = lround (sft->f0 / sft->deltaF );
-  header.length = sft->data->length;
-
-  /* build raw header for writing to disk */
-  rawheader = LALCalloc (1, sizeof(SFTHeader) );
-  if (rawheader == NULL) {
-    ABORT (status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
-  }
-  ptr = rawheader;
-  memcpy( ptr, &header.version, sizeof(REAL8) );
-  ptr += sizeof (REAL8);
-  memcpy( ptr, &header.gpsSeconds, sizeof(INT4) );
-  ptr += sizeof (INT4);
-  memcpy( ptr, &header.gpsNanoSeconds, sizeof(INT4) );
-  ptr += sizeof (INT4);
-  memcpy( ptr, &header.timeBase, sizeof(REAL8) );
-  ptr += sizeof (REAL8);
-  memcpy( ptr, &header.fminBinIndex, sizeof(INT4) );
-  ptr += sizeof (INT4);
-  memcpy( ptr, &header.length, sizeof(INT4) );
-
-  /* write data into a contiguous REAL4-array */
-  datalen = 2 * header.length * sizeof(REAL4);	/* amount of bytes for SFT-data */
-
-  rawdata = LALCalloc (1, datalen);
-  if (rawdata == NULL) {
-    LALFree (rawheader);
-    ABORT (status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
-  }
-
-  inData = sft->data->data;
-  for ( i = 0; i < header.length; i++)
-    {
-      rawdata[2 * i]     = crealf(inData[i]);
-      rawdata[2 * i + 1] = cimagf(inData[i]);
-    } /* for i < length */
-
-
-  /* open the file for writing */
-  fp = LALFopen(outfname, "wb");
-  if (fp == NULL) {
-    LALFree (rawheader);
-    LALFree (rawdata);
-    XLALPrintError ("\nFailed to open file '%s' for writing!\n\n", outfname );
-    ABORT (status, SFTFILEIO_EFILE,  SFTFILEIO_MSGEFILE);
-  }
-
-  /* write the header*/
-  if( fwrite( rawheader, sizeof(SFTHeader), 1, fp) != 1) {
-    LALFree (rawheader);
-    LALFree (rawdata);
-    fclose (fp);
-    ABORT (status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE);
-  }
-
-  /* write the data */
-  if (fwrite( rawdata, datalen, 1, fp) != 1) {
-    LALFree (rawheader);
-    LALFree (rawdata);
-    fclose (fp);
-    ABORT (status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE);
-  }
-
-  /* done */
-  fclose(fp);
-  LALFree (rawheader);
-  LALFree (rawdata);
-
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-
-} /* WriteSFTtoFile() */
-
-/**
- * For backwards-compatibility: write a *v2-normalized* (ie dt x DFT) SFTtype
- * to a v1-SFT file.
- *
- * NOTE: the only difference to WriteSFTfile() is that the data-normalization
- * is changed back to v1-type 'DFT', by dividing the dt corresponding to the
- * frequency-band contained in the SFTtype.
- */
-void
-LALWrite_v2SFT_to_v1file (LALStatus *status,			/**< pointer to LALStatus structure */
-			  const SFTtype *sft,		/**< SFT to write to disk */
-			  const CHAR *fname)		/**< filename */
-{
-  UINT4 i, numBins;
-  REAL8 Band, dt;
-  SFTtype v1SFT;
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
-
-  /*   Make sure the arguments are not NULL and perform basic checks*/
-  ASSERT (sft,   status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
-  ASSERT (sft->data,  status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT (sft->deltaF > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT (sft->f0 >= 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT ( (sft->epoch.gpsSeconds >= 0) && (sft->epoch.gpsNanoSeconds >= 0), status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT ( sft->epoch.gpsNanoSeconds < 1000000000, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT (sft->data->length > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-
-  ASSERT (fname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
-
-  if ( !is_valid_detector(sft->name) ) {
-    ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
-  }
-
-  numBins = sft->data->length;
-  Band = sft->deltaF * numBins ;
-  dt = 1.0 / (2.0 * Band);
-
-  v1SFT.data = NULL;
-  XLAL_CHECK_LAL ( status, XLALCopySFT ( &v1SFT, sft ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  for ( i=0; i < numBins; i ++ )
-    {
-      v1SFT.data->data[i] = crectf( (REAL4) ( (REAL8)crealf(v1SFT.data->data[i]) / dt ), (REAL4) ( (REAL8)cimagf(v1SFT.data->data[i]) / dt ) );
-    }
-
-  TRY ( LALWriteSFTfile (status->statusPtr, &v1SFT, fname ), status );
-
-  XLALDestroyCOMPLEX8Vector ( v1SFT.data );
-
-  DETATCHSTATUSPTR ( status );
-  RETURN ( status );
-
-} /* LALWrite_v2SFT_to_v1file() */

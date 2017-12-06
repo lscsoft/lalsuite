@@ -36,7 +36,7 @@ extern "C" {
 
 // Test various combinations of 1D and 2D fixed arrays
 // with structs, struct/enum type, and global variables.
-typedef enum tagswig_lal_test_enum {
+typedef enum {
   swig_lal_test_enum_a,
   swig_lal_test_enum_b,
   swig_lal_test_enum_c
@@ -316,32 +316,20 @@ SWIGLAL_CLEAR(COPYINOUT_ARRAYS(gsl_matrix_complex, copyinout));
 // Test dynamic array of pointer access.
 typedef struct tagswig_lal_test_arrayofdata {
 #ifdef SWIG
-  SWIGLAL(ARRAY_STRUCT_1D(swig_lal_test_arrayofdata, INT4, data, UINT4, length));
+  SWIGLAL(ARRAY_1D(swig_lal_test_arrayofdata, INT4, data, UINT4, length));
 #endif // SWIG
   UINT4 length;
   INT4 *data;
 } swig_lal_test_arrayofdata;
 typedef struct tagswig_lal_test_arrayofptrs {
 #ifdef SWIG
-  SWIGLAL(ARRAY_STRUCT_1D(swig_lal_test_arrayofptrs, swig_lal_test_arrayofdata*, data, UINT4, length));
+  SWIGLAL(ARRAY_1D(swig_lal_test_arrayofptrs, swig_lal_test_arrayofdata*, data, UINT4, length));
 #endif // SWIG
   UINT4 length;
   swig_lal_test_arrayofdata **data;
 } swig_lal_test_arrayofptrs;
 swig_lal_test_arrayofptrs* swig_lal_test_Create_arrayofptrs(UINT4 length);
 void swig_lal_test_Destroy_arrayofptrs(swig_lal_test_arrayofptrs* ap);
-
-// Test typemaps for strings and double pointers
-#ifdef SWIG
-SWIGLAL(INOUT_STRUCTS(const swig_lal_test_struct**, ptr_ptr, ptr_null_ptr, null_ptr_ptr));
-#endif // SWIG
-int swig_lal_test_typemaps_string_ptrptr(
-  const char *str, const char *empty_str, const char *null_str,
-  const swig_lal_test_struct** ptr_ptr, const swig_lal_test_struct** ptr_null_ptr, const swig_lal_test_struct** null_ptr_ptr
-  );
-#ifdef SWIG
-SWIGLAL_CLEAR(INOUT_STRUCTS(const swig_lal_test_struct**, ptr_ptr, ptr_null_ptr, null_ptr_ptr));
-#endif // SWIG
 
 // Test LIGOTimeGPS operations.
 typedef struct tagswig_lal_test_gps {

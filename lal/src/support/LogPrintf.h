@@ -49,7 +49,7 @@ extern "C" {
 /*---------- TYPES ----------*/
 
 /** Argument-type for LogPrintf(): determines log-level of this message */
-typedef enum tagLogLevel_t
+typedef enum
   {
     LOG_NONE = 0,	/**< internal: don't use */
     LOG_CRITICAL,	/**< log-level for critical errors */
@@ -62,10 +62,6 @@ typedef enum tagLogLevel_t
 /*---------- GLOBALs ----------*/
 
 /*---------- PROTOTYPES [API] ----------*/
-LogLevel_t LogLevel(void);
-
-void LogSetFile( FILE* fp );
-
 void LogPrintf (LogLevel_t, const char* format, ...) _LAL_GCC_PRINTF_FORMAT_(2,3);
 void LogPrintfVerbatim (LogLevel_t, const char* format, ...) _LAL_GCC_PRINTF_FORMAT_(2,3);
 
@@ -75,7 +71,6 @@ int XLALfprintfGSLvector_int ( FILE *fp, const char *fmt, const gsl_vector_int *
 
 REAL8 XLALGetTimeOfDay(void);
 REAL8 XLALGetCPUTime ( void );
-const char * LogGetTimestamp (void);
 
 REAL8 XLALGetPeakHeapUsageMB ( void );
 

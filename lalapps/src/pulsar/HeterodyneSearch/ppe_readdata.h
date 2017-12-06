@@ -20,7 +20,7 @@
 /**
  * \file
  * \ingroup lalapps_pulsar_HeterodyneSearch
- * \author Matthew Pitkin
+ * \author Matthew Pitkin, John Veitch, Colin Gill
  *
  * \brief Header file for the data reading functions for the parameter estimation code for known pulsar
  * searches using the nested sampling algorithm.

@@ -93,6 +93,8 @@ typedef struct tagBSGLComponents {
 
 /** User-variables: can be set from config-file or command-line */
 typedef struct {
+  BOOLEAN help;		/**< trigger output of help string */
+
   /* amplitude parameters + ranges: 4 alternative ways to specify the h0-prior (set to < 0 to deactivate all but one!) */
   REAL8 fixedh0Nat;	/**< Alternative 1: if >=0 ==> fix the GW amplitude: h0/sqrt(Sn) */
   REAL8 fixedSNR;	/**< Alternative 2: if >=0 ==> fix the optimal SNR of the injected signals */
@@ -134,6 +136,7 @@ typedef struct {
   CHAR *ephemEarth;	/**< Earth ephemeris file to use */
   CHAR *ephemSun;	/**< Sun ephemeris file to use */
 
+  BOOLEAN version;	/**< output version-info */
   INT4 randSeed;	/**< GSL random-number generator seed value to use */
 } UserInput_t;
 
@@ -200,13 +203,25 @@ int main(int argc,char *argv[])
   }
 
   /* do ALL cmdline and cfgfile handling */
-  BOOLEAN should_exit = 0;
-  if ( XLALUserVarReadAllInput ( &should_exit, argc, argv, lalAppsVCSInfoList ) != XLAL_SUCCESS ) {
+  if ( XLALUserVarReadAllInput ( argc, argv ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALUserVarReadAllInput() failed with errno=%d\n", __func__, xlalErrno );
     return 1;
   }
-  if ( should_exit )
-    return EXIT_FAILURE;
+
+  if (uvar.help)	/* if help was requested, we're done here */
+    return 0;
+
+  if ( uvar.version ) {
+    /* output verbose VCS version string if requested */
+    CHAR *vcs;
+    if ( (vcs = XLALGetVersionString (lalDebugLevel)) == NULL ) {
+      LogPrintf ( LOG_CRITICAL, "%s:XLALGetVersionString(%d) failed with errno=%d.\n", __func__, lalDebugLevel, xlalErrno );
+      return 1;
+    }
+    printf ( "%s\n", vcs );
+    XLALFree ( vcs );
+    return 0;
+  }
 
   /* ---------- Initialize code-setup ---------- */
   if ( XLALInitCode( &cfg, &uvar ) != XLAL_SUCCESS ) {
@@ -273,7 +288,7 @@ int main(int argc,char *argv[])
           XLAL_CHECK ( XLALParseLinePriors ( &oLGX[0], uvar.oLGX ) == XLAL_SUCCESS, XLAL_EFUNC );
           oLGX_p = &oLGX[0];
         }
-      XLAL_CHECK ( ( BSGLsetup = XLALCreateBSGLSetup ( numDetectors, uvar.Fstar0, oLGX_p, useLogCorrection, 1 ) ) != NULL, XLAL_EFUNC ); // coherent F-stat: NSeg=1
+      XLAL_CHECK ( ( BSGLsetup = XLALCreateBSGLSetup ( numDetectors, uvar.Fstar0, oLGX_p, useLogCorrection ) ) != NULL, XLAL_EFUNC );
     } // if computeBSGL
 
   /* ----- main MC loop over numDraws trials ---------- */
@@ -349,7 +364,7 @@ int main(int argc,char *argv[])
 
       /* ----- if requested, output transient-cand statistics */
       if ( fpStats && write_BSGL_candidate_to_fp ( fpStats, &synthStats, uvar.IFOs, &injParamsDrawn, uvar.computeBSGL ) != XLAL_SUCCESS ) {
-        XLALPrintError ( "%s: write_BSGL_candidate_to_fp() failed.\n", __func__ );
+        XLALPrintError ( "%s: write_transientCandidate_to_fp() failed.\n", __func__ );
         XLAL_ERROR ( XLAL_EFUNC );
       }
 
@@ -398,6 +413,7 @@ int
 XLALInitUserVars ( UserInput_t *uvar )
 {
   /* set a few defaults */
+  uvar->help = 0;
   uvar->outputStats = NULL;
 
   uvar->Alpha = -1;	/* Alpha < 0 indicates "allsky" */
@@ -437,6 +453,8 @@ XLALInitUserVars ( UserInput_t *uvar )
 #define DEFAULT_TRANSIENT "rect"
 
   /* register all our user-variables */
+  XLALRegisterUvarMember( help, 		BOOLEAN, 'h',     HELP, "Print this message");
+
   /* signal Doppler parameters */
   XLALRegisterUvarMember( Alpha, 		REAL8, 'a', OPTIONAL, "Sky position alpha (equatorial coordinates) in radians [Default:allsky]");
   XLALRegisterUvarMember( Delta, 		REAL8, 'd', OPTIONAL, "Sky position delta (equatorial coordinates) in radians [Default:allsky]");
@@ -478,6 +496,8 @@ XLALInitUserVars ( UserInput_t *uvar )
 
   XLALRegisterUvarMember( ephemEarth, 	 STRING, 0,  OPTIONAL, "Earth ephemeris file to use");
   XLALRegisterUvarMember( ephemSun, 	 	 STRING, 0,  OPTIONAL, "Sun ephemeris file to use");
+
+  XLALRegisterUvarMember( version,        	BOOLEAN, 'V', SPECIAL,  "Output code version");
 
   /* 'hidden' stuff */
   XLALRegisterUvarMember( TAtom,		  	  INT4, 0, DEVELOPER, "Time baseline for Fstat-atoms (typically Tsft) in seconds." );

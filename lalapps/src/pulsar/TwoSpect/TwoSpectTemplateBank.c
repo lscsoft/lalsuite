@@ -18,11 +18,11 @@
 */
 
 #include <lal/UserInput.h>
-#include <lalapps.h>
 #include "templates.h"
 
 typedef struct
 {
+   BOOLEAN help;
    REAL8 Pmin;
    REAL8 Pmax;
    REAL8 dfmin;
@@ -69,6 +69,7 @@ INT4 InitUserVars2(UserVariables_t *uvar, int argc, char *argv[])
    uvar->Tsft = 1800;
    uvar->SFToverlap = 900;
 
+   XLALRegisterUvarMember(  help,             BOOLEAN, 'h', HELP    , "Print this help/usage message");
    XLALRegisterUvarMember(  Pmin,              REAL8, 0 , REQUIRED, "Minimum period");
    XLALRegisterUvarMember(  Pmax,              REAL8, 0 , REQUIRED, "Maximum period");
    XLALRegisterUvarMember(  dfmin,             REAL8, 0 , REQUIRED, "Minimum modulation depth");
@@ -83,9 +84,9 @@ INT4 InitUserVars2(UserVariables_t *uvar, int argc, char *argv[])
    XLALRegisterUvarMember(  exactflag,         BOOLEAN, 0 , OPTIONAL, "Flag to specify using exact templates");
    XLALRegisterUvarMember(filename,          STRING, 0 , OPTIONAL, "Filename of output file (if not specified, the vector is destroyed upon exit)");
 
-   BOOLEAN should_exit = 0;
-   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
-   if ( should_exit ) exit (1);
+   XLAL_CHECK( XLALUserVarReadAllInput(argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
+
+   if ( uvar->help ) exit (0);
 
    return XLAL_SUCCESS;
 }

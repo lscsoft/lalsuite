@@ -52,7 +52,7 @@
 
 typedef struct
 {
-  EphemerisData *edat;			/**< ephemeris data (from XLALInitBarycenter()) */
+  EphemerisData *edat;			/**< ephemeris data (from LALInitBarycenter()) */
   UINT4 numDetectors;			/**< number of detectors */
   MultiDetectorStateSeries *multiDetStates;	/**< detector state time series */
   MultiNoiseWeights *multiNoiseWeights;		/**< per-detector noise weights */
@@ -67,6 +67,8 @@ typedef struct
 
 typedef struct
 {
+  BOOLEAN help;
+
   LALStringVector* IFOs; /**< list of detector-names "H1,H2,L1,.." or single detector*/
 
   REAL8 Alpha;		/**< a single skyposition Alpha: radians, equatorial coords. */
@@ -86,6 +88,8 @@ typedef struct
 
   CHAR *outab; 			/**< output file for antenna pattern functions a(t), b(t) at each timestamp */
   CHAR *outABCD; 		/**< output file for antenna pattern matrix elements A, B, C, D averaged over timestamps */
+
+  BOOLEAN version;	/**< output code versions */
 
 } UserVariables_t;
 
@@ -113,11 +117,17 @@ main(int argc, char *argv[])
   XLAL_CHECK ( XLALInitUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read cmdline & cfgfile  */
-  BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if ( should_exit ) {
-    exit(1);
+  XLAL_CHECK ( XLALUserVarReadAllInput ( argc,argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  if (uvar.help) { 	/* help requested: we're done */
+    exit(0);
   }
+
+  if ( uvar.version )
+    {
+      XLALOutputVersionString ( stdout, lalDebugLevel );
+      exit(0);
+    }
 
   /* basic setup and initializations */
   XLAL_CHECK ( XLALInitCode( &config, &uvar, argv[0] ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -276,6 +286,8 @@ XLALInitUserVars ( UserVariables_t *uvar )
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL );
 
   /* set a few defaults */
+  uvar->help = 0;
+
   XLAL_CHECK ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) != NULL, XLAL_ENOMEM, "Call to XLALCreateStringVector() failed." );
 
   uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
@@ -295,6 +307,7 @@ XLALInitUserVars ( UserVariables_t *uvar )
   uvar->noiseSqrtShX = NULL;
 
   /* register all user-variables */
+  XLALRegisterUvarMember(	help,		BOOLEAN, 'h', HELP,		"Print this help/usage message");
   XLALRegisterUvarMember( IFOs,                  STRINGVector, 'I', OPTIONAL, "Comma-separated list of detectors, eg. \"H1,H2,L1,G1, ...\" [only 1 detector supported at the moment] ");
 
   XLALRegisterUvarMember(	Alpha,		REAL8, 'a', OPTIONAL,	"single skyposition Alpha in radians, equatorial coords.");
@@ -314,6 +327,8 @@ XLALInitUserVars ( UserVariables_t *uvar )
 
   XLALRegisterUvarMember(	outab,		STRING, 'o', OPTIONAL,	"output file for antenna pattern functions a(t), b(t) at each timestamp");
   XLALRegisterUvarMember(	outABCD,	STRING, 'O', OPTIONAL,	"output file for antenna pattern matrix elements A, B, C, D averaged over timestamps");
+
+  XLALRegisterUvarMember(	version,        BOOLEAN, 'V', SPECIAL,      "Output code version");
 
   /* developer user variables */
   XLALRegisterUvarMember(	timeStampsFile,	  STRING, 0, OPTIONAL,	"Alternative: single time-stamps file (deprecated, use --timeStampsFiles instead");

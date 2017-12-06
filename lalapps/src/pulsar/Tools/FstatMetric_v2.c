@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_Fstatistic
+ * \ingroup lalapps_pulsar_templateBanks
  * \author Reinhard Prix
  * \brief
  * This module deals with calculating various F-statistic metric approximations,
@@ -46,7 +46,7 @@
 #include <lal/AVFactories.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/ComputeFstat.h>
-#include <lal/GetEarthTimes.h>
+#include <lal/PulsarTimes.h>
 #include <lal/SFTutils.h>
 #include <lal/LALString.h>
 
@@ -54,6 +54,7 @@
 #include <lal/LogPrintf.h>
 #include <lal/StringVector.h>
 
+#include <lal/FlatPulsarMetric.h>
 #include <lal/UniversalDopplerMetric.h>
 #include <lal/MetricUtils.h>
 
@@ -130,6 +131,8 @@ typedef struct
 
 typedef struct
 {
+  BOOLEAN help;
+
   LALStringVector *IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector*/
   LALStringVector *sqrtSX; 	/**< (string-) list of per-IFO sqrt{Sn} values, \f$\sqrt{S_X}\f$ */
 
@@ -173,6 +176,8 @@ typedef struct
 
   BOOLEAN approxPhase;	/**< use an approximate phase-model, neglecting Roemer delay in spindown coordinates */
 
+  BOOLEAN version;	/**< output code versions */
+
 } UserVariables_t;
 
 /* ---------- global variables ----------*/
@@ -210,16 +215,25 @@ main(int argc, char *argv[])
   }
 
   /* read cmdline & cfgfile  */
-  BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if ( should_exit )
+  if ( XLALUserVarReadAllInput(argc,argv) != XLAL_SUCCESS ) {
+    XLALPrintError( "%s(): XLALUserVarReadAllInput() failed\n", __func__ );
     return EXIT_FAILURE;
+  }
+
+  if (uvar.help) 	/* help requested: we're done */
+    return 0;
 
   CHAR *VCSInfoString;
   if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
     XLALPrintError("XLALGetVersionString(0) failed.\n");
     exit(1);
   }
+
+  if ( uvar.version ) {
+    printf ( "%s\n", VCSInfoString );
+    return 0;
+  }
+
 
   if ( uvar.coordsHelp )
     {
@@ -308,6 +322,8 @@ initUserVars (UserVariables_t *uvar)
 {
 
   /* set a few defaults */
+  uvar->help = FALSE;
+
   uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
@@ -345,6 +361,7 @@ initUserVars (UserVariables_t *uvar)
 
   /* register all our user-variables */
 
+  XLALRegisterUvarMember(help,		BOOLEAN, 'h', HELP,		"Print this help/usage message");
   XLALRegisterUvarMember(IFOs,		STRINGVector, 'I', OPTIONAL, 	"CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
   XLALRegisterUvarMember(sqrtSX,	 	 STRINGVector, 0,  OPTIONAL, 	"[for F-metric weights] CSV list of detectors' noise-floors sqrt{Sn}");
   XLALRegisterUvarMember(Alpha,		RAJ, 'a', OPTIONAL,	"Sky: equatorial J2000 right ascension (in radians or hours:minutes:seconds)");
@@ -383,6 +400,8 @@ initUserVars (UserVariables_t *uvar)
 
   XLALRegisterUvarMember(detMotionStr,  STRING, 0,  DEVELOPER,	"Detector-motion string: S|O|S+O where S=spin|spinz|spinxy and O=orbit|ptoleorbit");
   XLALRegisterUvarMember(approxPhase,     BOOLEAN, 0,  DEVELOPER,	"Use an approximate phase-model, neglecting Roemer delay in spindown coordinates (or orders >= 1)");
+
+  XLALRegisterUvarMember(version,        BOOLEAN, 'V', SPECIAL,      "Output code version");
 
   return XLAL_SUCCESS;
 
@@ -626,7 +645,7 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerPhaseMetric *Pmetric, const Dop
   /* ----- output phase metric ---------- */
   if ( Pmetric != NULL )
     {
-      fprintf ( fp, "\ng_ij = " ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Pmetric->g_ij );
+      fprintf ( fp, "\ng_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Pmetric->g_ij );
       fprintf ( fp, "maxrelerr_gPh = %.2e;\n", Pmetric->maxrelerr );
 
       gsl_matrix *gN_ij = NULL;
@@ -634,7 +653,7 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerPhaseMetric *Pmetric, const Dop
         XLALPrintError ("%s: something failed Naturalizing phase metric g_ij!\n", __func__ );
         XLAL_ERROR ( XLAL_EFUNC );
       }
-      fprintf ( fp, "\ngN_ij = " ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  gN_ij );
+      fprintf ( fp, "\ngN_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  gN_ij );
       gsl_matrix_free ( gN_ij );
 
       gsl_matrix *gDN_ij = NULL;
@@ -642,18 +661,18 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerPhaseMetric *Pmetric, const Dop
         XLALPrintError ("%s: something failed NormDiagonalizing phase metric g_ij!\n", __func__ );
         XLAL_ERROR ( XLAL_EFUNC );
       }
-      fprintf ( fp, "\ngDN_ij = " ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  gDN_ij );
+      fprintf ( fp, "\ngDN_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  gDN_ij );
       gsl_matrix_free ( gDN_ij );
     }
 
   /* ----- output F-metric (and related matrices ---------- */
   if ( Fmetric != NULL )
     {
-      fprintf ( fp, "\ngF_ij = " );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->gF_ij );
-      fprintf ( fp, "\ngFav_ij = " ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->gFav_ij );
-      fprintf ( fp, "\nm1_ij = " );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->m1_ij );
-      fprintf ( fp, "\nm2_ij = " );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->m2_ij );
-      fprintf ( fp, "\nm3_ij = " );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->m3_ij );
+      fprintf ( fp, "\ngF_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->gF_ij );
+      fprintf ( fp, "\ngFav_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->gFav_ij );
+      fprintf ( fp, "\nm1_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->m1_ij );
+      fprintf ( fp, "\nm2_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->m2_ij );
+      fprintf ( fp, "\nm3_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->m3_ij );
       fprintf ( fp, "maxrelerr_gF = %.2e;\n", Fmetric->maxrelerr );
     }
 
@@ -669,7 +688,7 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerPhaseMetric *Pmetric, const Dop
       fprintf ( fp, "\nA = %.16g;\nB = %.16g;\nC = %.16g;\nD = %.16g;\n", A, B, C, D );
       fprintf ( fp, "\nrho2 = %.16g;\n", Fmetric->rho2 );
 
-      fprintf (fp, "\nFisher_ab = " ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->Fisher_ab );
+      fprintf (fp, "\nFisher_ab = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->Fisher_ab );
     }
 
   // ---------- output segment list at the end, as this can potentially become quite long and distracting
