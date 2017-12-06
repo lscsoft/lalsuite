@@ -1,0 +1,9 @@
+diff a/lalsimulation/src/LALSimInspiral.c b/lalsimulation/src/LALSimInspiral.c	(rejected hunks)
+@@ -3975,6 +3990,7 @@ int XLALSimInspiralImplementedTDApproximants(
+         case SEOBNRv4:
+         case SEOBNRv4_opt:
+         case NR_hdf5:
++        case NRSur7dq2:
+             return 1;
+ 
+         default:

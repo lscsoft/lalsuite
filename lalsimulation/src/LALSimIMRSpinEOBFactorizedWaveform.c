@@ -141,11 +141,11 @@ static COMPLEX16 XLALhTidal(
     REAL8 k2Tidal2eff = 0.;
     REAL8 u = 1./pow(Omega,-2./3);
     if ( lambda1 != 0.) {
-        k2Tidal1effHam = XLALSimIMRTEOBkleff(2, u, eta, tidal1);
+        k2Tidal1effHam = XLALSimIMRTEOBk2eff(u, eta, tidal1);
         k2Tidal1eff = XLALSimIMRTEOBk2effMode (Omega,  k2Tidal1effHam, omega02Tidal1, X2);
     }
     if ( lambda2 != 0.) {
-        k2Tidal2effHam = XLALSimIMRTEOBkleff(2, u, eta, tidal2);
+        k2Tidal2effHam = XLALSimIMRTEOBk2eff(u, eta, tidal2);
         k2Tidal2eff = XLALSimIMRTEOBk2effMode (Omega,  k2Tidal2effHam, omega02Tidal2, X1);
     }
     REAL8 q = X2/X1;
@@ -173,7 +173,7 @@ static COMPLEX16 XLALhTidal(
                     hNewtonTidal = -3. * I * v*v2 * sqrt(6.*LAL_PI/7.);
                     break;
                 case 2:
-                    return 0.;
+                    hNewtonTidal = -8./3. * v2*v2 * sqrt(LAL_PI/7.);
                     break;
                 case 1:
                     hNewtonTidal = 1./3. * I * v*v2 * sqrt(2.*LAL_PI/35.);
@@ -752,7 +752,7 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
          __func__);
         XLAL_ERROR (XLAL_EINVAL);
    }
-
+    
   REAL8 eta2 = eta * eta;
   REAL8 eta3 = eta2 * eta;
 

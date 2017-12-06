@@ -23,11 +23,11 @@
 #include <lal/LALDatatypes.h>
 #include <lal/Date.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
 #include <sys/stat.h>
-#include <gsl/gsl_math.h>
 #include <gsl/gsl_interp.h>        /* needed for the gsl interpolation */
 #include <gsl/gsl_spline.h>        /* needed for the gsl interpolation */
 #include <gsl/gsl_rng.h>           /* for random number generation */
@@ -52,6 +52,7 @@
 #include <lalapps.h>
 
 /* includes */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
@@ -84,8 +85,6 @@
 #include <lal/StringVector.h>
 #include <lal/NormalizeSFTRngMed.h>
 
-#include <lal/SinCosLUT.h>
-
 #include <gsl/gsl_rng.h>           /* for random number generation */
 #include <gsl/gsl_randist.h>       /* for random number generation */
 
@@ -111,7 +110,6 @@ extern "C" {
 #define NFREQMAX 4                    /* the max dimensionality of the frequency derivitive grid */
 #define NBINMAX 4                        /* the number of binary parameter dimensions */
 #define NBINS 4                       /* the number of bins to add to each side of the fft for safety */
-#define BINS_FACTOR 0.075             /* the default percentage of bins to add to each side of the fft for safety */
 #define WINGS_FACTOR 2                /* the safety factor in reading extra frequency from SFTs */
 #define MAXNTSERIES 1073741824        /* the max number of samples in a timeseries at one time */
 
@@ -150,7 +148,7 @@ extern "C" {
     REAL8 *x;                         /**< the location in parameter space */
     INT4 *idx;                        /**< the index of each dimension for this template */
     UINT4 ndim;                       /**< the dimension of the parameter space */
-    UINT8 currentidx;                 /**< the current index value of the template */
+    UINT4 currentidx;                 /**< the current index value of the template */
   } Template;
 
   /** Stores the gridding parameters for a hypercubic grid of templates
@@ -159,10 +157,9 @@ extern "C" {
     Grid *grid;                       /**< stores the parameters defining a single dimension */
     UINT4 ndim;                       /**< the number of dimensions */
     UINT4 *prod;                      /**< internal variable used to store the size of sub-dimensions */
-    UINT8 max;                        /**< the maximum (total) number of templates */
+    UINT4 max;                        /**< the maximum (total) number of templates */
     REAL8 mismatch;                   /**< the mismatch */
-    REAL8 coverage;                   /**< random template bank coverage */
-    UINT8 Nr;                         /**< number of random templates to generate */
+    INT4 Nr;
   } GridParameters;
 
    /** Stores the gridding parameters for a hypercubic grid of templates
@@ -213,7 +210,7 @@ extern "C" {
    */
   typedef struct {
     REAL8 tsamp;                      /**< the sampling time of the data */
-    REAL8 tsft;                       /**< the length of the SFTs */
+    INT4 tsft;                        /**< the length of the SFTs */
     LIGOTimeGPS tstart;               /**< the first sft time stamp */
     REAL8 freq;                       /**< the starting frequency */
     REAL8 freqband;                   /**< the band width */
@@ -228,9 +225,9 @@ extern "C" {
     gsl_rng *r;
   } BinaryToSFTparams;
 
-  int XLALReadSFTs(SFTVector**,CHAR *,REAL8,REAL8,INT4,INT4,REAL8,REAL8);
-  int XLALComputeFreqGridParamsVector(GridParametersVector**,REAL8Space*,SFTVector*,REAL8,INT4*,REAL8);
-  int XLALComputeFreqGridParams(GridParameters **freqgridparams,REAL8Space *pspace, REAL8 tmid,REAL8 tsft, REAL8 mu, INT4 *ndim, REAL8 bins_factor);
+  int XLALReadSFTs(SFTVector**,CHAR *,REAL8,REAL8,INT4,INT4,INT4);
+  int XLALComputeFreqGridParamsVector(GridParametersVector**,REAL8Space*,SFTVector*,REAL8);
+  int XLALComputeFreqGridParams(GridParameters **freqgridparams,REAL8Space *pspace, REAL8 tmid,REAL8 tsft, REAL8 mu);
   int XLALSFTVectorToCOMPLEX8TimeSeriesArray(COMPLEX8TimeSeriesArray **dstimevec, SFTVector *sftvec);
   int XLALSFTToCOMPLEX8TimeSeries(COMPLEX8TimeSeries **ts, COMPLEX8FrequencySeries *sft,COMPLEX8FFTPlan **plan);
   int XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **fs,const COMPLEX8TimeSeries *ts,GridParameters **gridparams);

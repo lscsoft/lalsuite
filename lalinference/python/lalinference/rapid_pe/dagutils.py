@@ -106,10 +106,9 @@ def write_integrate_likelihood_extrinsic_sub(tag='integrate', exe=None, log_dir=
             # NOTE: Hack to get around multiple instances of the same option
             for p in param:
                 ile_job.add_arg("--%s %s" % (opt.replace("_", "-"), str(p)))
-        elif param is True or param is None:
+        elif param is True:
             ile_job.add_opt(opt.replace("_", "-"), '')
-        # Explcitly check for False to turn it off
-        elif param is False:
+        elif param is None:
             continue
         else:
             ile_job.add_opt(opt.replace("_", "-"), str(param))

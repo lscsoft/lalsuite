@@ -144,7 +144,6 @@ int main( int argc, char *argv[] ){
           break;
         else
           fprintf(stderr, "Error parsing option %s with argument %s\n", long_options[option_index].name, LALoptarg );
-      break;
       case 'h': /* help message */
         fprintf(stderr, USAGE, program);
         exit(0);
@@ -162,15 +161,12 @@ int main( int argc, char *argv[] ){
         break;
       case 'g': /* the gps time */
         gpstime = atof(LALoptarg);
-		break;
       case '?':
         fprintf(stderr, "Unknown error while parsing options\n" );
         exit(0);
-		break;
       default:
         fprintf(stderr, "Unknown error while parsing options\n" );
         exit(0);
-		break;
     }
   }
 

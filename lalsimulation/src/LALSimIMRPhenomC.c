@@ -98,7 +98,7 @@ int XLALSimIMRPhenomCGenerateFD(
     const REAL8 f_min,                 /**< starting GW frequency (Hz) */
     const REAL8 f_max,                 /**< end frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance,              /**< distance of source (m) */
-    LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+    const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
 ) {
   BBHPhenomCParams *params;
   int status;
@@ -166,7 +166,7 @@ double XLALSimIMRPhenomCGetFinalFreq(
     const REAL8 chi
 ) {
     BBHPhenomCParams *phenomParams;
-    LALDict *extraParams = NULL;
+    const LALSimInspiralTestGRParam *extraParams = NULL;
     phenomParams = ComputeIMRPhenomCParams(m1, m2, chi, extraParams);
     return phenomParams->fCut;
 }
@@ -197,7 +197,7 @@ int XLALSimIMRPhenomCGenerateTD(
     const REAL8 f_max,        /**< end GW frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance,     /**< distance of source (m) */
     const REAL8 inclination,   /**< inclination of source (rad) */
-    LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+    const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */ 
 ) {
 	BBHPhenomCParams *params;
 	size_t cut_ind, peak_ind, ind_t0;
@@ -354,7 +354,6 @@ static int IMRPhenomCGenerateFD(
   REAL8 *phis = XLALMalloc(L*sizeof(REAL8));
 
   /* now generate the waveform */
-  #pragma omp parallel for
   for (size_t i = ind_min; i < ind_max; i++)
   {
 
@@ -363,14 +362,12 @@ static int IMRPhenomCGenerateFD(
     REAL8 f = i * deltaF;
 
     int per_thread_errcode;
-    #pragma omp flush(errcode)
     if (errcode != XLAL_SUCCESS)
       goto skip;
 
     per_thread_errcode = IMRPhenomCGenerateAmpPhase( &aPhenomC, &phPhenomC, f, eta, params );
     if (per_thread_errcode != XLAL_SUCCESS) {
       errcode = per_thread_errcode;
-      #pragma omp flush(errcode)
     }
 
     phPhenomC -= 2.*phi0; // factor of 2 b/c phi0 is orbital phase

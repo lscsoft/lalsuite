@@ -1,5 +1,4 @@
 /*
- * Copyright (C) 2017 Arunava Mukherjee
  * Copyright (C) 2012--2015 Karl Wette
  * Copyright (C) 2008, 2009 Reinhard Prix
  *
@@ -114,15 +113,13 @@ typedef enum tagDopplerCoordinateID {
   DOPPLERCOORD_F1DOT,		/**< First spindown [Units: Hz/s]. */
   DOPPLERCOORD_F2DOT,		/**< Second spindown [Units: Hz/s^2]. */
   DOPPLERCOORD_F3DOT,		/**< Third spindown [Units: Hz/s^3]. */
-  DOPPLERCOORD_F4DOT,		/**< Fourth spindown [Units: Hz/s^4]. */
 
-  DOPPLERCOORD_LASTFDOT = DOPPLERCOORD_F4DOT,
+  DOPPLERCOORD_LASTFDOT = DOPPLERCOORD_F3DOT,
 
   DOPPLERCOORD_GC_NU0,		/**< Global correlation frequency [Units: Hz]. Activates 'reduced' detector position. */
   DOPPLERCOORD_GC_NU1,		/**< Global correlation first spindown [Units: Hz/s]. Activates 'reduced' detector position. */
   DOPPLERCOORD_GC_NU2,		/**< Global correlation second spindown [Units: Hz/s^2]. Activates 'reduced' detector position. */
   DOPPLERCOORD_GC_NU3,		/**< Global correlation third spindown [Units: Hz/s^3]. Activates 'reduced' detector position. */
-  DOPPLERCOORD_GC_NU4,		/**< Global correlation fourth spindown [Units: Hz/s^4]. Activates 'reduced' detector position. */
 
   DOPPLERCOORD_ALPHA,		/**< Right ascension [Units: radians]. Uses 'reduced' detector position. */
   DOPPLERCOORD_DELTA,		/**< Declination [Units: radians]. Uses 'reduced' detector position. */
@@ -153,12 +150,6 @@ typedef enum tagDopplerCoordinateID {
   DOPPLERCOORD_PORB,		/**< Period of binary orbit (ELL1 model) [Units: s]. */
   DOPPLERCOORD_KAPPA,		/**< Lagrange parameter 'kappa = ecc * cos(argp)', ('ecc' = eccentricity, 'argp' = argument of periapse) of binary orbit (ELL1 model) [Units: none] */
   DOPPLERCOORD_ETA,		/**< Lagrange parameter 'eta = ecc * sin(argp) of binary orbit (ELL1 model) [Units: none] */
-
-  DOPPLERCOORD_VP,		/**< Rescaled (by asini) differential-coordinate 'dvp = asini * dOMEGA', ('OMEGA' = 2 * pi/'porb') of binary orbit (ELL1 model) [Units: (light second)/(GPS second)]. */
-  DOPPLERCOORD_DASC,		/**< Distance traversed on the arc of binary orbit (ELL1 model) 'dasc = 2 * pi * (ap/porb) * tasc' [Units: light second]. */
-  DOPPLERCOORD_KAPPAP,		/**< Rescaled (by asini) differential-coordinate 'dkappap = asini * dkappa' [Units: light seconds]. */
-  DOPPLERCOORD_ETAP,		/**< Rescaled (by asini) differential-coordinate 'detap = asini * deta' [Units: light seconds]. */
-
 
   DOPPLERCOORD_LAST
 } DopplerCoordinateID;

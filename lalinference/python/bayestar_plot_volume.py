@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2017  Leo Singer
+# Copyright (C) 2015-2016  Leo Singer
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,13 +18,11 @@
 Plot a volumetric posterior in three-projection view.
 """
 from __future__ import division
+__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Command line interface
 
-# Set no-op backend, because seaborn imports pyplot and we must not load X11
-import matplotlib
-matplotlib.use('Template')
 # Set seaborn style (overwrites rcParams, so has to be before argparse)
 import seaborn
 seaborn.set_style("white")
@@ -34,11 +31,8 @@ import argparse
 from lalinference.bayestar import command
 parser = command.ArgumentParser(parents=[command.figure_parser])
 parser.add_argument(
-    '--annotate', default=False, action='store_true',
-    help='annotate plot with information about the event')
-parser.add_argument(
-    '--max-distance', metavar='Mpc', type=float,
-    help='maximum distance of plot in Mpc [default: auto]')
+    '--max-distance', metavar='Mpc', type=float, default=120,
+    help='maximum distance of plot in Mpc [default: %(default)s]')
 parser.add_argument(
     '--contour', metavar='PERCENT', type=float, nargs='+',
     help='plot contour enclosing this percentage of'
@@ -48,8 +42,8 @@ parser.add_argument(
     help='right ascension (deg), declination (deg), and distance to mark'
     ' [may be specified multiple times, default: none]')
 parser.add_argument(
-    '--chain', metavar='CHAIN.hdf5', type=argparse.FileType('rb'),
-    help='optionally plot a posterior sample chain [default: none]')
+    '--chain', metavar='CHAIN.dat', type=argparse.FileType('r'),
+    help='parser.add_argumentally plot a posterior sample chain [default: none]')
 parser.add_argument(
     '--projection', type=int, choices=list(range(4)), default=0,
     help='Plot one specific projection [default: plot all projections]')
@@ -58,8 +52,7 @@ parser.add_argument(
     default='-', nargs='?', help='Input FITS file [default: stdin]')
 parser.add_argument(
     '--align-to', metavar='SKYMAP.fits[.gz]', type=argparse.FileType('rb'),
-    help='Align to the principal axes of this sky map '
-    '[default: input sky map]')
+    help='Align to the principal axes of this sky map [default: input sky map]')
 parser.set_defaults(figure_width='3.5', figure_height='3.5')
 opts = parser.parse_args()
 
@@ -72,37 +65,32 @@ progress.update(-1, 'Starting up')
 from matplotlib import pyplot as plt
 from matplotlib import gridspec
 from matplotlib import transforms
-from lalinference import io
-from lalinference.plot import marker
-from lalinference.distance import (
-    parameters_to_marginal_moments, principal_axes, volume_render, marginal_pdf)
+from lalinference.io import fits
+from lalinference import marker
+from lalinference.bayestar.distance import (
+    principal_axes, volume_render, marginal_pdf)
 import healpy as hp
 import numpy as np
 import scipy.stats
 
 # Read input, determine input resolution.
 progress.update(-1, 'Loading FITS file')
-(prob, mu, sigma, norm), metadata = io.read_sky_map(
+(prob, mu, sigma, norm), metadata = fits.read_sky_map(
     opts.input.name, distances=True)
 npix = len(prob)
 nside = hp.npix2nside(npix)
 
 progress.update(-1, 'Preparing projection')
 
-if opts.align_to is None or opts.input.name == opts.align_to.name:
-    prob2, mu2, sigma2, norm2 = prob, mu, sigma, norm
+if opts.align_to is None:
+    prob2, mu2, sigma2 = prob, mu, sigma
 else:
-    (prob2, mu2, sigma2, norm2), _ = io.read_sky_map(
+    (prob2, mu2, sigma2, _), _ = fits.read_sky_map(
         opts.align_to.name, distances=True)
-if opts.max_distance is None:
-    mean, std = parameters_to_marginal_moments(prob2, mu2, sigma2)
-    max_distance = mean + 2.5 * std
-else:
-    max_distance = opts.max_distance
 R = np.ascontiguousarray(principal_axes(prob2, mu2, sigma2))
 
 if opts.chain:
-    chain = io.read_samples(opts.chain.name)
+    chain = np.recfromtxt(opts.chain, names=True)
     chain = np.dot(R.T, (hp.ang2vec(
         0.5 * np.pi - chain['dec'], chain['ra'])
         * np.atleast_2d(chain['dist']).T).T)
@@ -114,7 +102,7 @@ gs = gridspec.GridSpec(
     wspace=0.05, hspace=0.05)
 
 imgwidth = int(opts.dpi * opts.figure_width / n)
-s = np.linspace(-max_distance, max_distance, imgwidth)
+s = np.linspace(-opts.max_distance, opts.max_distance, imgwidth)
 xx, yy = np.meshgrid(s, s)
 dtheta = 0.5 * np.pi / nside / 4
 
@@ -136,15 +124,15 @@ for iface, (axis0, axis1, (sp0, sp1)) in enumerate((
 
     # Marginalize onto the given face
     density = volume_render(
-        xx.ravel(), yy.ravel(), max_distance, axis0, axis1, R, False,
+        xx.ravel(), yy.ravel(), opts.max_distance, axis0, axis1, R, False,
         prob, mu, sigma, norm).reshape(xx.shape)
 
     # Plot heat map
-    ax = fig.add_subplot(
-        gs[0, 0] if opts.projection else gs[sp0, sp1], aspect=1)
+    ax = fig.add_subplot(gs[0, 0] if opts.projection else gs[sp0, sp1], aspect=1)
     ax.imshow(
         density, origin='lower',
-        extent=[-max_distance, max_distance, -max_distance, max_distance],
+        extent=[-opts.max_distance, opts.max_distance,
+                -opts.max_distance, opts.max_distance],
         cmap=opts.colormap)
 
     # Add contours if requested
@@ -156,8 +144,7 @@ for iface, (axis0, axis1, (sp0, sp1)) in enumerate((
         cumsum[indices] = cs / cs[-1] * 100
         cumsum = np.reshape(cumsum, density.shape)
         u, v = np.meshgrid(s, s)
-        contourset = ax.contour(
-            u, v, cumsum, levels=opts.contour, linewidths=0.5)
+        contourset = ax.contour(u, v, cumsum, levels=opts.contour, linewidths=0.5)
 
     # Mark locations
     for (ra, dec, dist), color in zip(opts.radecdist, colors[1:]):
@@ -177,8 +164,8 @@ for iface, (axis0, axis1, (sp0, sp1)) in enumerate((
     ax.set_yticks([])
 
     # Set axis limits
-    ax.set_xlim([-max_distance, max_distance])
-    ax.set_ylim([-max_distance, max_distance])
+    ax.set_xlim([-opts.max_distance, opts.max_distance])
+    ax.set_ylim([-opts.max_distance, opts.max_distance])
 
     # Mark origin (Earth)
     ax.plot(
@@ -195,12 +182,9 @@ if opts.contour:
 
 if not opts.projection:
     # Add scale bar, 1/4 width of the plot
-    ax.plot(
-        [0.0625, 0.3125], [0.0625, 0.0625],
+    ax.plot([0.0625, 0.3125], [0.0625, 0.0625],
         color='black', linewidth=1, transform=ax.transAxes)
-    ax.text(
-        0.0625, 0.0625,
-        '{0:d} Mpc'.format(int(np.round(0.5 * max_distance))),
+    ax.text(0.0625, 0.0625, '{0:g} Mpc'.format(0.5 * opts.max_distance),
         fontsize=8, transform=ax.transAxes, verticalalignment='bottom')
 
     # Create marginal distance plot.
@@ -209,9 +193,9 @@ if not opts.projection:
     ax = fig.add_subplot(gs1[1:-1, 1:-1])
 
     # Plot marginal distance distribution, integrated over the whole sky.
-    d = np.linspace(0, max_distance)
-    ax.fill_between(
-        d, marginal_pdf(d, prob, mu, sigma, norm), alpha=0.5, color=colors[0])
+    d = np.linspace(0, opts.max_distance)
+    ax.fill_between(d, marginal_pdf(d, prob, mu, sigma, norm),
+        alpha=0.5, color=colors[0])
 
     # Plot conditional distance distribution at true position
     # and mark true distance.
@@ -227,35 +211,14 @@ if not opts.projection:
             [dist], [-0.15], marker=truth_marker, markeredgecolor=color,
             markerfacecolor='none', markeredgewidth=1, clip_on=False,
             transform=transforms.blended_transform_factory(
-                ax.transData, ax.transAxes))
+            ax.transData, ax.transAxes))
         ax.axvline(dist, color='black', linewidth=0.5)
 
     # Scale axes
-    ax.set_xticks([0, max_distance])
-    ax.set_xticklabels(
-        ['0', "{0:d}\nMpc".format(int(np.round(max_distance)))], fontsize=9)
+    ax.set_xticks([0, opts.max_distance])
+    ax.set_xticklabels(['0', "{0:g}\nMpc".format(opts.max_distance)], fontsize=9)
     ax.set_yticks([])
-    ax.set_xlim(0, max_distance)
     ax.set_ylim(0, ax.get_ylim()[1])
-
-    if opts.annotate:
-        text = []
-        try:
-            objid = metadata['objid']
-        except KeyError:
-            pass
-        else:
-            text.append('event ID: {}'.format(objid))
-        try:
-            distmean = metadata['distmean']
-            diststd = metadata['diststd']
-        except KeyError:
-            pass
-        else:
-            text.append(u'distance: {}±{} Mpc'.format(
-                        int(np.round(distmean)), int(np.round(diststd))))
-        ax.text(0, 1, '\n'.join(text), transform=ax.transAxes, fontsize=7,
-                 ha='left', va='bottom', clip_on=False)
 
 progress.update(-1, 'Saving')
 opts.output()

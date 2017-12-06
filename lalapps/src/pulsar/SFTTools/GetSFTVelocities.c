@@ -33,6 +33,11 @@
 
 
 /* boolean global variables for controlling output */
+
+#define EARTHEPHEMERIS "/home/badkri/lscsoft/share/lal/earth05-09.dat"
+#define SUNEPHEMERIS "/home/badkri/lscsoft/share/lal/sun05-09.dat"
+
+
 #define TRUE (1==1)
 #define FALSE (1==0)
 
@@ -49,7 +54,6 @@
 #include <errno.h> 
 
 #include <lal/Date.h>
-#include <lal/LALString.h>
 #include <lal/DetectorSite.h>
 #include <lal/DetectorStates.h>
 #include <lal/LALDatatypes.h>
@@ -92,22 +96,29 @@ int main(int argc, char *argv[]){
   /* LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
   
-  uvar_earthEphemeris = XLALStringDuplicate("earth00-19-DE405.dat.gz");
-  uvar_sunEphemeris = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+  uvar_earthEphemeris = (CHAR *)LALCalloc( 512 , sizeof(CHAR));
+  strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
+
+  uvar_sunEphemeris = (CHAR *)LALCalloc( 512 , sizeof(CHAR));
+  strcpy(uvar_sunEphemeris,SUNEPHEMERIS);
 
   /* register user input variables */
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_earthEphemeris, "earthEphemeris", STRING, 'E', OPTIONAL, "Earth Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sunEphemeris,   "sunEphemeris",   STRING, 'S', OPTIONAL, "Sun Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,         "sftDir",         STRING, 'D', REQUIRED, "SFT filename pattern") == XLAL_SUCCESS, XLAL_EFUNC);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_REQUIRED, "Earth Ephemeris file",  &uvar_earthEphemeris),  &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_REQUIRED, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_REQUIRED, "SFT filename pattern", &uvar_sftDir), &status);
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
+  LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
   if (should_exit)
     exit(1);
 
   /*  get ephemeris  */
-  XLAL_CHECK_MAIN( ( edat = XLALInitBarycenter( uvar_earthEphemeris, uvar_sunEphemeris ) ) != NULL, XLAL_EFUNC);
+  edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
+  (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
+  (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
+
+  LAL_CALL( LALInitBarycenter( &status, edat), &status);
   
   /* read sft Files and set up weights and nstar vector */
   {
@@ -120,7 +131,7 @@ int main(int argc, char *argv[]){
     constraints.detector = NULL;
     
     /* get sft catalog */
-    XLAL_CHECK_MAIN( ( catalog = XLALSFTdataFind( uvar_sftDir, &constraints) ) != NULL, XLAL_EFUNC);
+    LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftDir, &constraints), &status);
     if ( (catalog == NULL) || (catalog->length == 0) ) {
       fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar_sftDir );
       exit(1);
@@ -135,24 +146,26 @@ int main(int argc, char *argv[]){
       timeV.deltaT = timeBase;
       timeV.data = &(catalog->data[k].header.epoch);
 
-      XLAL_CHECK_MAIN( ( detStates = XLALGetDetectorStates ( &timeV, det, edat, 0.5*timeBase) ) != NULL, XLAL_EFUNC);
+      LAL_CALL( LALGetDetectorStates ( &status, &detStates, &timeV, det, edat, 0.5*timeBase), &status);
 
 
       fprintf(stdout, "%g  %g   %g\n", detStates->data[0].vDetector[0], detStates->data[0].vDetector[1],
 	      detStates->data[0].vDetector[2]);
       
-      XLALDestroyDetectorStateSeries (detStates );
+      LALDestroyDetectorStateSeries (&status, &detStates );
       LALFree (det);
 
     }   /* end loop over sfts */
 
-    XLALDestroySFTCatalog(catalog );  	
+    LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
 
   } /* end of sft reading block */
 
-  XLALDestroyEphemerisData(edat);
+  LALFree(edat->ephemE);
+  LALFree(edat->ephemS);
+  LALFree(edat);
 
-  XLALDestroyUserVars();
+  LAL_CALL (LALDestroyUserVars(&status), &status);
   
   LALCheckMemoryLeaks();
 

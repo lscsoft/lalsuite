@@ -1,5 +1,4 @@
 # Copyright (C) 2011  Nickolas Fotopoulos
-# Copyright (C) 2014-2017  Stephen Privitera
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -86,7 +85,7 @@ def get_neighborhood_df_fmax(waveforms, flow):
     Return PSD that is optimized for this neighborhood, with small enough
     df and big enough f_max to cover all waveforms.
     """
-    max_dur = max(w.dur for w in waveforms)
+    max_dur = max(w._dur for w in waveforms)
     assert 16384 * max_dur > 1   # chirp lasts long enough for one LIGO sample
     if max_dur >= 1:
         df = 1 / next_pow2(max_dur)
@@ -102,7 +101,7 @@ def get_neighborhood_PSD(waveforms, flow, noise_model):
     Return PSD that is optimized for this neighborhood, with small enough
     df and big enough f_max to cover all waveforms.
     """
-    max_dur = max(w.dur for w in waveforms)
+    max_dur = max(w._dur for w in waveforms)
     assert 16384 * max_dur > 1   # chirp lasts long enough for one LIGO sample
     if max_dur >= 1:
         df = 1 / next_pow2(max_dur)
@@ -118,7 +117,7 @@ def get_neighborhood_ASD(waveforms, flow, noise_model):
     Return ASD that is optimized for this neighborhood, with small enough
     df and big enough f_max to cover all waveforms.
     """
-    max_dur = max(w.dur for w in waveforms)
+    max_dur = max(w._dur for w in waveforms)
     assert 16384 * max_dur > 1   # chirp lasts long enough for one LIGO sample
     if max_dur >= 1:
         df = 1 / next_pow2(max_dur)

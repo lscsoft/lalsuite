@@ -43,9 +43,10 @@
 #include <lal/AVFactories.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/ComputeFstat.h>
-#include <lal/GetEarthTimes.h>
+#include <lal/PulsarTimes.h>
 #include <lal/SFTutils.h>
 
+#include <lal/FlatPulsarMetric.h>
 #include <lal/ComputeFstat.h>
 #include <lal/UniversalDopplerMetric.h>
 
@@ -131,7 +132,7 @@ typedef struct {
 
 typedef struct
 {
-  const EphemerisData *edat;		/**< ephemeris data (from XLALInitBarycenter()) */
+  const EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
   LIGOTimeGPS startTime;		/**< start time of observation */
   LIGOTimeGPS refTime;			/**< reference time for spin-parameters  */
   DopplerPoint dopplerPoint;		/**< sky-position and spins */
@@ -203,6 +204,10 @@ XLALOldDopplerFstatMetric ( const OldMetricType_t metricType,		/**< type of metr
 
   XLAL_CHECK_NULL ( metricType < OLDMETRIC_TYPE_LAST, XLAL_EDOM );
 
+  LIGOTimeGPS *startTime = &(metricParams->segmentList.segs[0].start);
+  LIGOTimeGPS *endTime   = &(metricParams->segmentList.segs[0].end);
+  REAL8 duration = XLALGPSDiff( endTime, startTime );
+
   const DopplerCoordinateSystem *coordSys = &(metricParams->coordSys);
   XLAL_CHECK_NULL ( coordSys->dim == METRIC_DIM, XLAL_EINVAL );
   XLAL_CHECK_NULL ( coordSys->coordIDs[0] == DOPPLERCOORD_FREQ, XLAL_EDOM );
@@ -235,8 +240,15 @@ XLALOldDopplerFstatMetric ( const OldMetricType_t metricType,		/**< type of metr
     }
   if ( (metricType == OLDMETRIC_TYPE_PHASE) || (metricType == OLDMETRIC_TYPE_ALL) )
     {
-      XLAL_CHECK_NULL ( config.multidPhi->length == 1, XLAL_EFAILED, "%s: computePhaseMetric() can only handle a single detector!", __func__ );
-      XLAL_CHECK_NULL ( computePhaseMetric ( metric->g_ij, config.multidPhi->data[0], config.GLweights) == XLAL_SUCCESS, XLAL_EFUNC );
+      if ( metricParams->detMotionType == (DETMOTION_SPINXY | DETMOTION_ORBIT) )
+        {
+          XLAL_CHECK_NULL ( XLALFlatMetricCW ( metric->g_ij, config.refTime, config.startTime, duration, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
+        }
+      else
+        {
+          XLAL_CHECK_NULL ( config.multidPhi->length == 1, XLAL_EFAILED, "%s: computePhaseMetric() can only handle a single detector!", __func__ );
+          XLAL_CHECK_NULL ( computePhaseMetric ( metric->g_ij, config.multidPhi->data[0], config.GLweights) == XLAL_SUCCESS, XLAL_EFUNC );
+        }
     } // endif metricType==PHASE || ALL
 
   // ----- Free internal memory
@@ -809,6 +821,7 @@ InitCode ( ConfigVariables *cfg,
   XLAL_CHECK ( (cfg->multiDetStates->data = XLALCalloc (numDet, sizeof( *(cfg->multiDetStates->data)))) != NULL, XLAL_ENOMEM );
 
   cfg->multiDetStates->length = numDet;
+  cfg->multiDetStates->Tspan = duration;
 
   for ( UINT4 X=0; X < numDet; X ++ )
     {
@@ -927,8 +940,9 @@ getMultiPhaseDerivs ( const MultiDetectorStateSeries *multiDetStates,
   REAL8 refTime = XLALGPSGetREAL8 ( &refTimeGPS );
 
   /* get tAutumn */
-  REAL8 tMidnight, tAutumn;
-  XLAL_CHECK_NULL ( XLALGetEarthTimes ( &refTimeGPS, &tMidnight, &tAutumn ) == XLAL_SUCCESS, XLAL_EFUNC );
+  PulsarTimesParamStruc XLAL_INIT_DECL(times);
+  times.epoch = refTimeGPS;
+  XLAL_CHECK_NULL ( XLALGetEarthTimes ( &(times.epoch), &(times.tMidnight), &(times.tAutumn) ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   MultiPhaseDerivs *mdPhi = NULL;
   XLAL_CHECK_NULL( (mdPhi = XLALCalloc ( 1, sizeof( *mdPhi ))) != NULL, XLAL_ENOMEM );
@@ -978,7 +992,7 @@ getMultiPhaseDerivs ( const MultiDetectorStateSeries *multiDetStates,
 	      COPY_VECT ( rX, rDet );
 	      break;
 	    case PHASE_PTOLE: /* use Ptolemaic orbital approximation */
-	      getPtolePosVel( &posvel, ti, tAutumn );
+	      getPtolePosVel( &posvel, ti, times.tAutumn );
 	      COPY_VECT ( rX, posvel.pos );
 	      /* add on the detector-motion due to the Earth's spin */
 

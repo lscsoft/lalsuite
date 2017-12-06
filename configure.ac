@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALSuite],[6.48.1],[lal-discuss@ligo.org])
+AC_INIT([LALSuite],[6.38.1],[lal-discuss@ligo.org])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -21,10 +21,6 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 # use silent build rules
 AM_SILENT_RULES([yes])
 
-# check for programs
-AC_PROG_AWK
-AC_PROG_SED
-
 # provide LAL library enable/disable options
 LALSUITE_ENABLE_ALL_LAL
 lal=true
@@ -44,6 +40,7 @@ LALSUITE_ENABLE_LALAPPS
 LALSUITE_ENABLE_DOXYGEN
 LALSUITE_ENABLE_MODULE([DOXYGEN])
 AS_IF([test "x${doxygen}" = xtrue],[
+  AC_PROG_SED
   AC_CONFIG_FILES([index.html:gnuscripts/lalsuite_index.html.in])
   AC_SUBST([DOXYGEN_PACKAGE_LINKS],[])
   AM_SUBST_NOTMAKE([DOXYGEN_PACKAGE_LINKS])

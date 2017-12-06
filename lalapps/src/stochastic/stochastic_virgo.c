@@ -2173,7 +2173,6 @@ void parseOptions(INT4 argc, CHAR *argv[])
       case 'P':
 	       /* high pass filter order  */
 	       highPassOrder = atoi(LALoptarg);
-	       break;
    
 
       case 'b':

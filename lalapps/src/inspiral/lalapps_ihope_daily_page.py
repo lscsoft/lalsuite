@@ -29,7 +29,11 @@ from glue.segments import segment, segmentlist
 
 from glue.segmentdb import segmentdb_utils
 
-import sqlite3
+try:
+    import sqlite3
+except ImportError:
+    # pre 2.5.x
+    from pysqlite2 import dbapi2 as sqlite3
 
 params = {'axes.labelsize'  : 12,
           'font.size'       : 12,
@@ -459,7 +463,7 @@ def make_veto_files(engine, config, ifo, category, cluster, start_time, end_time
     for f in config['veto_definer_file'].split(','):
         xmldoc  = utils.load_url(f, contenthandler=DefaultContentHandler)
 
-        veto_definers += lsctables.VetoDefTable.get_table(xmldoc)
+        veto_definers += table.get_table(xmldoc, lsctables.VetoDefTable.tableName)
 
     cats = [make_segdef(row, overall) for row in veto_definers if row.category == category and row.ifo == ifo]
 

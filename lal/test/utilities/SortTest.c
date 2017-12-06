@@ -35,7 +35,7 @@
  * ### Usage ###
  *
  * \code
- * SortTest
+ * SortTest [-s seed]
  * \endcode
  *
  * ### Description ###
@@ -45,6 +45,10 @@
  * generated randomly, and the output is to \c stdout if <tt>-v</tt> is
  * specified (unless redirected).  \c SortTest returns 0 if it executes
  * successfully, and 1 if any of the subroutines fail.
+ *
+ * The <tt>-s</tt> option sets the seed for the random number generator; if
+ * \c seed is set to zero (or if no <tt>-s</tt> option is given) then
+ * the seed is taken from the processor clock.
  *
  * ### Exit codes ###
  *
@@ -60,33 +64,124 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
+#include <lal/Random.h>
 #include <lal/Sort.h>
 
+#define NPTS 5
 
-static void makedata( int nobj, int **data, int **sort, int **indx, int **rank )
+#define SORTTEST_ESUB 1
+#define SORTTEST_MSGESUB "Subroutine returned error"
+
+void test_xlal_routines( void );
+
+int main(int argc, char **argv)
 {
-  int i;
+  static LALStatus stat;
+  INT4         i;
+  INT4         seed=0;
+  INT4         verbose=0;
+  INT4Vector   *lal_index=NULL;
+  REAL4Vector  *data=NULL;
+  RandomParams *params=NULL;
 
-  *data = malloc(nobj*sizeof(**data));
-  *sort = malloc(nobj*sizeof(**data));
-  *indx = malloc(nobj*sizeof(**indx));
-  *rank = malloc(nobj*sizeof(**rank));
+  if(argc==2&&!strcmp(argv[1],"-s"))
+    seed=atoi(argv[1]);
+  else if (argc!=1)
+      LALPrintError("%s: Incorrect arguments\n",argv[0]);
+  test_xlal_routines();
 
-  for ( i = 0; i < nobj; ++i )
-    (*sort)[i] = (*data)[i] = rand() % 100;
+  /* Create vectors and random parameters. */
+  LALI4CreateVector(&stat,&lal_index,NPTS);
+  if(stat.statusCode){
+    LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
+    REPORTSTATUS(&stat);
+    return SORTTEST_ESUB;
+  }
+  LALSCreateVector(&stat,&data,NPTS);
+  if(stat.statusCode){
+    LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
+    REPORTSTATUS(&stat);
+    return SORTTEST_ESUB;
+  }
+  LALCreateRandomParams(&stat,&params,seed);
+  if(stat.statusCode){
+    LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
+    REPORTSTATUS(&stat);
+    return SORTTEST_ESUB;
+  }
+
+  /* Initialize data. */
+  for(i=0;i<NPTS;i++){
+    LALUniformDeviate(&stat,data->data+i,params);
+    if(stat.statusCode){
+      LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
+      REPORTSTATUS(&stat);
+      return SORTTEST_ESUB;
+    }
+    data->data[i]*=9.99;
+  }
+
+  /* Rank data; print data and ranks. */
+  LALSHeapRank(&stat,lal_index,data);
+  if(stat.statusCode){
+    LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
+    REPORTSTATUS(&stat);
+    return SORTTEST_ESUB;
+  }
+  if ( verbose )
+    fprintf(stdout,  " Data    Rank\n");
+  for(i=0;i<NPTS;i++)
+    if ( verbose )
+      fprintf(stdout," %4.2f     %2i\n",data->data[i],lal_index->data[i]);
+  if ( verbose )
+    fprintf(stdout,"\n");
+
+  /* Index and sort data; print sorted data and indecies. */
+  LALSHeapIndex(&stat,lal_index,data);
+  if(stat.statusCode){
+    LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
+    REPORTSTATUS(&stat);
+    return SORTTEST_ESUB;
+  }
+  LALSHeapSort(&stat,data);
+  if(stat.statusCode){
+    LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
+    REPORTSTATUS(&stat);
+    return SORTTEST_ESUB;
+  }
+  if ( verbose )
+    fprintf(stdout,  "Sorted  Index\n");
+  for(i=0;i<NPTS;i++)
+    if ( verbose )
+      fprintf(stdout," %4.2f     %2i\n",data->data[i],lal_index->data[i]);
+
+  /* Free and clear. */
+  LALI4DestroyVector(&stat,&lal_index);
+  if(stat.statusCode){
+    LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
+    REPORTSTATUS(&stat);
+    return SORTTEST_ESUB;
+  }
+  LALSDestroyVector(&stat,&data);
+  if(stat.statusCode){
+    LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
+    REPORTSTATUS(&stat);
+    return SORTTEST_ESUB;
+  }
+  LALDestroyRandomParams(&stat,&params);
+  if(stat.statusCode){
+    LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
+    REPORTSTATUS(&stat);
+    return SORTTEST_ESUB;
+  }
+  return 0;
 }
 
 
-static void freedata( int *data, int *sort, int *indx, int *rank)
-{
-  free( data );
-  free( sort );
-  free( indx );
-  free( rank );
-}
-
-
-static int compar( void *p, const void *a, const void *b )
+int compar( void *p, const void *a, const void *b );
+int compar( void *p, const void *a, const void *b )
 {
   int x = *((const int *)a);
   int y = *((const int *)b);
@@ -108,99 +203,94 @@ static int compar( void *p, const void *a, const void *b )
   return 0;
 }
 
-
-static int check( int *data, int *sort, int nobj, int ascend )
+int check( int *data, int nobj, int ascend );
+int check( int *data, int nobj, int ascend )
 {
-  int i, j;
-  /* make sure result is in correct order */
+  int i;
   for ( i = 1; i < nobj; ++i )
     if ( ascend )
     {
-      if ( sort[i] < sort[i-1] )
+      if ( data[i] < data[i-1] )
         abort();
     }
     else
     {
-      if ( sort[i] > sort[i-1] )
+      if ( data[i] > data[i-1] )
         abort();
     }
-  /* make sure every element from the original data can be found somewhere
-   * in the result, and every element in the result can be found in the
-   * original data */
-  for ( i = 0; i < nobj; ++i )
-  {
-    for ( j = 0; j < nobj && sort[j] != data[i]; ++j );
-    if ( j == nobj )
-      abort();
-  }
-  for ( i = 0; i < nobj; ++i )
-  {
-    for ( j = 0; j < nobj && data[j] != sort[i]; ++j );
-    if ( j == nobj )
-      abort();
-  }
   return 0;
 }
 
-
-int main(int argc, char **argv)
+void test_xlal_routines( void )
 {
-  int testnum;
+  int  nobj = 9;
+  int *data;
+  int *sort;
+  int *indx;
+  int *rank;
+  int ascend;
+  int code;
+  int i;
 
-  if (argc!=1)
-      LALPrintError("%s: Incorrect arguments\n",argv[0]);
+  data = malloc(nobj*sizeof(*data));
+  sort = malloc(nobj*sizeof(*data));
+  indx = malloc(nobj*sizeof(*indx));
+  rank = malloc(nobj*sizeof(*rank));
 
   srand(time(NULL));
 
-  for ( testnum = 0; testnum < 200; testnum++ )
-  {
-    int nobj = rand() % 24;
-    int ascend = rand() & 1;
-    int *data;
-    int *sort;
-    int *indx;
-    int *rank;
-    int i;
+  /* sort in ascending order */
 
-    makedata( nobj, &data, &sort, &indx, &rank );
+  ascend = 1;
 
-    if ( XLALHeapIndex( indx, data, nobj, sizeof(*data), &ascend, compar ) < 0 )
-      abort();
-    if ( XLALHeapRank( rank, data, nobj, sizeof(*data), &ascend, compar ) < 0 )
-      abort();
-    if ( XLALHeapSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 )
-      abort();
+  for ( i = 0; i < nobj; ++i )
+    sort[i] = data[i] = rand() % 100;
 
-    for ( i = 0; i < nobj; ++i )
-      if ( sort[i] != data[indx[i]] )
-        abort();
+  code = XLALHeapIndex( indx, data, nobj, sizeof(*data), &ascend, compar );
+  if ( code < 0 )
+    abort();
+  code = XLALHeapRank( rank, data, nobj, sizeof(*data), &ascend, compar );
+  if ( code < 0 )
+    abort();
+  code = XLALHeapSort( sort, nobj, sizeof(*data), &ascend, compar );
+  if ( code < 0 )
+    abort();
 
-    check( data, sort, nobj, ascend );
-
-    freedata( data, sort, indx, rank );
-  }
-
-  for ( testnum = 0; testnum < 200; testnum++ )
-  {
-    int nobj = rand() % 24;
-    int ascend = rand() & 1;
-    int *data;
-    int *sort;
-    int *indx;	/* unused for these tests */
-    int *rank;	/* unused for these tests */
-
-    makedata( nobj, &data, &sort, &indx, &rank );
-
-    if ( XLALInsertionSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 )
+  for ( i = 0; i < nobj; ++i )
+    if ( sort[i] != data[indx[i]] )
       abort();
 
-    check( data, sort, nobj, ascend );
+  check( sort, nobj, ascend );
 
-    freedata( data, sort, indx, rank );
-  }
+  /* sort in descending order */
 
+  ascend = 0;
 
-  return 0;
+  for ( i = 0; i < nobj; ++i )
+    sort[i] = data[i] = rand() % 100;
+
+  code = XLALHeapIndex( indx, data, nobj, sizeof(*data), &ascend, compar );
+  if ( code < 0 )
+    abort();
+  code = XLALHeapRank( rank, data, nobj, sizeof(*data), &ascend, compar );
+  if ( code < 0 )
+    abort();
+  code = XLALHeapSort( sort, nobj, sizeof(*data), &ascend, compar );
+  if ( code < 0 )
+    abort();
+
+  for ( i = 0; i < nobj; ++i )
+    if ( sort[i] != data[indx[i]] )
+      abort();
+
+  check( sort, nobj, ascend );
+
+  free( data );
+  free( sort );
+  free( indx );
+  free( rank );
+
+  return;
 }
 
 /** \endcond */

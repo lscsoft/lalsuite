@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
   }
 
   /* read in binary params from par file */
-  params = XLALReadTEMPOParFile(par.parfile);
+  params = XLALReadTEMPOParFileNew(par.parfile);
 
   if ( verbose ) fprintf(stderr, "I've read in the parameter file\n");
 

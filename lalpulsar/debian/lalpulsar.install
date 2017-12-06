@@ -1,4 +1,3 @@
-usr/bin/lalpulsar_version
-usr/lib/*/*.so.*
+usr/lib/*.so*
 etc/*
 usr/share/lal*

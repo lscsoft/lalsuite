@@ -25,7 +25,7 @@
 #include <gsl/gsl_odeiv.h>
 
 #include <lal/LALSimInspiral.h>
-#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
+#include <lal/LALAdaptiveRungeKutta4.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
 #include <lal/TimeSeries.h>
@@ -195,15 +195,9 @@ XLALSimInspiralTaylorT1Setup(
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
 	    ak->akdEF.ETa6  = lambda1 * XLALSimInspiralPNEnergy_12PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralPNEnergy_12PNTidalCoeff(ak->chi2);
             ak->akdEF.FTa12 = lambda1 * XLALSimInspiralPNFlux_12PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralPNFlux_12PNTidalCoeff(ak->chi2);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
             ak->akdEF.ETa5  = lambda1 * XLALSimInspiralPNEnergy_10PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralPNEnergy_10PNTidalCoeff(ak->chi2);
             ak->akdEF.FTa10 = lambda1 * XLALSimInspiralPNFlux_10PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralPNFlux_10PNTidalCoeff(ak->chi2);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
             break;
         default:
@@ -309,7 +303,7 @@ int XLALSimInspiralTaylorT1PNEvolveOrbit(
 	double lengths, VRef = 0.;
 	int len, intreturn, idx, idxRef = 0;
 	XLALSimInspiralTaylorT1PNEvolveOrbitParams params;
-	LALAdaptiveRungeKuttaIntegrator *integrator = NULL;
+	LALAdaptiveRungeKutta4Integrator *integrator = NULL;
 	expnFuncTaylorT1 expnfunc;
 	expnCoeffsTaylorT1 ak;
 
@@ -349,7 +343,7 @@ int XLALSimInspiralTaylorT1PNEvolveOrbit(
 	len = XLALAdaptiveRungeKutta4Hermite(integrator, (void *) &params, yinit, 0.0, lengths, deltaT, &yout);
 
 	intreturn = integrator->returncode;
-	XLALAdaptiveRungeKuttaFree(integrator);
+	XLALAdaptiveRungeKutta4Free(integrator);
 
 	if (!len) 
 	{

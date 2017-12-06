@@ -1,1 +1,3 @@
-../../gnuscripts/debian/pkg-dev.install
+usr/lib/*.a
+usr/lib/pkgconfig
+usr/include/lal*
