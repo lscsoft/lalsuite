@@ -3534,7 +3534,6 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
 	string = XLALCalloc(sizeof(char), len+1); /* One extra character: '\0' */
 	if(len!=fread(string, sizeof(char), len, stream)) XLAL_ERROR_NULL(XLAL_EIO);
 	LALInferenceAddVariable(vars,name,&string,type,vary);
-	break;
       }
     case LALINFERENCE_MCMCrunphase_ptr_t:
       {
@@ -3913,13 +3912,13 @@ void LALInferenceSetMCMCrunphase_ptrVariable(LALInferenceVariables* vars,const c
   LALInferenceSetVariable(vars,name,(void*)&value);
 }
 
-void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * name, const CHAR* value, LALInferenceParamVaryType vary)
+void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * name, CHAR* value, LALInferenceParamVaryType vary)
 /* Typed version of LALInferenceAddVariable for CHAR values.*/
 {
   LALInferenceAddVariable(vars,name,&value,LALINFERENCE_string_t,vary);
 }
 
-const CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * name)
+CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * name)
 /* Typed version of LALInferenceGetVariable for CHAR values.*/
 {
 
@@ -3932,7 +3931,7 @@ const CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const ch
   return rvalue;
 }
 
-void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name, const CHAR* value){
+void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name,CHAR* value){
   LALInferenceSetVariable(vars,name,&value);
 }
 

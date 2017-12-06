@@ -83,7 +83,7 @@ int main(int argc, char *argv[]){
 
   CHAR outputfile[256]="";
   CHAR channel[128]="";
-  const CHAR *psrname;
+  CHAR *psrname = NULL;
 
   INT4Vector *starts=NULL, *stops=NULL; /* science segment start and stop times */
   INT4 numSegs=0;
@@ -110,13 +110,13 @@ int main(int argc, char *argv[]){
 
   /* set pulsar name - take from par file if available, or if not get from command line args */
   if( PulsarCheckParam( hetParams.het, "PSRJ" ) )
-    psrname = PulsarGetStringParam( hetParams.het, "PSRJ" );
+    psrname = XLALStringDuplicate( PulsarGetStringParam( hetParams.het, "PSRJ" ) );
   else if( PulsarCheckParam( hetParams.het, "PSRB" ) )
-    psrname = PulsarGetStringParam( hetParams.het, "PSRB" );
+    psrname = XLALStringDuplicate( PulsarGetStringParam( hetParams.het, "PSRB" ) );
   else if( PulsarCheckParam( hetParams.het, "NAME" ) )
-    psrname = PulsarGetStringParam( hetParams.het, "NAME" );
+    psrname = XLALStringDuplicate( PulsarGetStringParam( hetParams.het, "NAME" ) );
   else if( PulsarCheckParam( hetParams.het, "PSR" ) )
-    psrname = PulsarGetStringParam( hetParams.het, "PSR" );
+    psrname = XLALStringDuplicate( PulsarGetStringParam( hetParams.het, "PSR" ) );
   else{
     fprintf(stderr, "No pulsar name specified!\n");
     exit(0);
@@ -530,8 +530,8 @@ data!\n");
 
           if( XLALFileEOF(fpin) || rc == 0 ) break;
 
-          /* check that data is finite (and not unrealistically large) and not NaN */
-          if ( !isfinite(reVal) || !isfinite(imVal) || fabs(reVal) > 1. || fabs(imVal) > 1. ){ continue; }
+          /* check that data is finite and not NaN */
+          if ( !isfinite(reVal) && !isfinite(imVal) ){ continue; }
 
           if(inputParams.scaleFac > 1.0){
             reVal *= inputParams.scaleFac;
@@ -573,8 +573,8 @@ data!\n");
             continue;
           }
 
-          /* check that data is finite (and not unrealistically large) and not NaN */
-          if ( !isfinite(reVal) || !isfinite(imVal) || fabs(reVal) > 1. || fabs(imVal) > 1. ){ continue; }
+          /* check that data is finite and not NaN */
+          if ( !isfinite(reVal) && !isfinite(imVal) ){ continue; }
 
           if( inputParams.scaleFac > 1.0 ){
             reVal *= inputParams.scaleFac;
@@ -877,7 +877,6 @@ the pulsar parameter file */
         else
           fprintf(stderr, "Error parsing option %s with argument %s\n",
             long_options[option_index].name, LALoptarg );
-		break;
       case 'h': /* help message */
         fprintf(stderr, USAGE, program);
         exit(0);
@@ -1046,10 +1045,8 @@ the pulsar parameter file */
         break;
       case '?':
         fprintf(stderr, "unknown error while parsing options\n" );
-		break;
       default:
         fprintf(stderr, "unknown error while parsing options\n" );
-		break;
     }
   }
 
@@ -1882,12 +1879,6 @@ INT4 heterodyneflag){
   while ( (ch = fgetc(fp)) != EOF ){
     if ( ch == '\n' ) /* check for return at end of line */
       linecount++;
-  }
-
-  /* if segment list is empty exit with a warning */
-  if ( linecount == 0 ){
-    fprintf(stderr, "Warning... segment list file was empty, so no heterodyne will be performed\n");
-    exit(0);
   }
 
   /* allocate memory for vectors */

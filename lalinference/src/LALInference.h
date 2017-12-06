@@ -47,7 +47,7 @@
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
 
-#define VARNAME_MAX 320
+#define VARNAME_MAX 128
 #define VARVALSTRINGSIZE_MAX 128
 
 #include <lal/LALStdlib.h>
@@ -1153,19 +1153,11 @@ LALInferenceMCMCRunPhase* LALInferenceGetMCMCrunphase_ptrVariable(LALInferenceVa
 
 void LALInferenceSetMCMCrunphase_ptrVariable(LALInferenceVariables* vars,const char* name,LALInferenceMCMCRunPhase* value);
 
-#ifdef SWIG   /* SWIG interface directives */
-SWIGLAL(OWNS_THIS_STRING(const CHAR*, value));
-#endif
+void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * name, CHAR* value, LALInferenceParamVaryType vary);
 
-void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * name, const CHAR* value, LALInferenceParamVaryType vary);
+CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * name);
 
-const CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * name);
-
-void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name, const CHAR* value);
-
-#ifdef SWIG   /* SWIG interface directives */
-SWIGLAL_CLEAR(OWNS_THIS_STRING(const CHAR*, value));
-#endif
+void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name,CHAR* value);
 
 /**
  * Print spline calibration parameter names as tab-separated ASCII

@@ -618,13 +618,13 @@ class LinearPlusOverflowBins(LoHiCountBins):
 		raise IndexError(x)
 
 	def lower(self):
-		return numpy.concatenate((numpy.array([NegInf]), numpy.linspace(self.min, self.max - self.delta, len(self) - 1)))
+		return numpy.concatenate((numpy.array([NegInf]), self.min + self.delta * numpy.arange(len(self) - 2), numpy.array([self.max])))
 
 	def centres(self):
-		return numpy.concatenate((numpy.array([NegInf]), numpy.linspace(self.min + self.delta / 2., self.max - self.delta / 2., len(self) - 2), numpy.array([PosInf])))
+		return numpy.concatenate((numpy.array([NegInf]), self.min + self.delta * (numpy.arange(len(self) - 2) + 0.5), numpy.array([PosInf])))
 
 	def upper(self):
-		return numpy.concatenate((numpy.linspace(self.min + self.delta, self.max, len(self) - 1), numpy.array([PosInf])))
+		return numpy.concatenate((numpy.array([self.min]), self.min + self.delta * (numpy.arange(len(self) - 2) + 1), numpy.array([PosInf])))
 
 	#
 	# XML I/O related methods and data
@@ -1486,47 +1486,10 @@ class BinnedArray(object):
 		"""
 		Add the contents of another BinnedArray object to this one.
 		Both must have identical binnings.
-
-		Example:
-
-		>>> x = BinnedArray(NDBins((LinearBins(-0.5, 1.5, 2), LinearBins(-0.5, 1.5, 2))))
-		>>> x[0, 0] = 0
-		>>> x[0, 1] = 1
-		>>> x[1, 0] = 2
-		>>> x[1, 1] = 4
-		>>> x.at_centres()
-		array([[ 0.,  1.],
-		       [ 2.,  4.]])
-		>>> x += x
-		>>> x.at_centres()
-		array([[ 0.,  2.],
-		       [ 4.,  8.]])
 		"""
 		if self.bins != other.bins:
 			raise TypeError("incompatible binning: %s" % repr(other))
 		self.array += other.array
-		return self
-
-	def __add__(self, other):
-		"""
-		Add two BinnedArray objects together.
-
-		Example:
-
-		>>> x = BinnedArray(NDBins((LinearBins(-0.5, 1.5, 2), LinearBins(-0.5, 1.5, 2))))
-		>>> x[0, 0] = 0
-		>>> x[0, 1] = 1
-		>>> x[1, 0] = 2
-		>>> x[1, 1] = 4
-		>>> x.at_centres()
-		array([[ 0.,  1.],
-		       [ 2.,  4.]])
-		>>> (x + x).at_centres()
-		array([[ 0.,  2.],
-		       [ 4.,  8.]])
-		"""
-		self = self.copy()
-		self += other
 		return self
 
 	def copy(self):
@@ -1592,7 +1555,7 @@ class BinnedArray(object):
 		NOTE:
 
 		- This is a legacy method that has been superceded by the
-		  BinnedDensity and BinnedLnPDF classes.  You almost
+		  BinnedDensity and BinnedLnPDF classes.  You also
 		  certainly want to be using those instead of whatever
 		  you're doing that needs this method.
 		"""
@@ -1613,7 +1576,7 @@ class BinnedArray(object):
 		NOTE:
 
 		- This is a legacy method that has been superceded by the
-		  BinnedDensity and BinnedLnPDF classes.  You almost
+		  BinnedDensity and BinnedLnPDF classes.  You also
 		  certainly want to be using those instead of whatever
 		  you're doing that needs this method.
 		"""
@@ -2048,7 +2011,7 @@ class BinnedLnPDF(BinnedDensity):
 
 	As with the BinnedDensity class, the internal array contains counts
 	(not densities, nor natural logarithms of densities), and the
-	.count attribute continues to be a BinnedArray interface to those
+	.counts attribute continues to be a BinnedArray interface to those
 	counts.  The intention is for the counts themselves to provide an
 	additional degree of freedom apart from the normalized density.
 	For example, see the .__iadd__() method where it is assumed that
@@ -2090,7 +2053,7 @@ class BinnedLnPDF(BinnedDensity):
 	>>> # ln probability density = ln 1/(2 * 3) = -1.791759469228055
 	>>> y.at_centres()
 	array([       -inf, -1.79175947, -1.79175947, -1.79175947,        -inf])
-	>>> # assuming \\sqrt{N} counting fluctuations, compute the fractional uncertainty
+	>>> # assuming \\sqrt{N} counting flucutations, compute the fractional uncertainty
 	>>> import numpy
 	>>> d = BinnedArray(x.bins, 1. / numpy.sqrt(x.count.at_centres()))
 	>>> d.at_centres()
@@ -2160,7 +2123,7 @@ class BinnedLnPDF(BinnedDensity):
 		# between them are preserved.  forbidden cases include:
 		# infinite bin size, total count is initially 0.
 		#
-		raise NotImplementedError("item assignment operation not defined.  assign to .count then invoke .normalize()")
+		raise NotImplementedError("item assignment operation not defined.  assign to .counts then invoke .normalize()")
 
 	def mkinterp(self):
 		"""
@@ -2203,8 +2166,7 @@ class BinnedLnPDF(BinnedDensity):
 		return InterpBinnedArray(self)
 
 	def at_centres(self):
-		with numpy.errstate(divide = "ignore", invalid = "ignore"):
-			return numpy.log(super(BinnedLnPDF, self).at_centres()) - self.norm
+		return numpy.log(super(BinnedLnPDF, self).at_centres()) - self.norm
 
 	def marginalize(self, dim):
 		new = super(BinnedLnPDF, self).marginalize(dim)
@@ -2247,11 +2209,6 @@ class BinnedLnPDF(BinnedDensity):
 			self.norm += math.log1p(math.exp(other.norm - self.norm))
 		else:
 			self.norm = other.norm + math.log1p(math.exp(self.norm - other.norm))
-		return self
-
-	def __add__(self, other):
-		self = super(BinnedLnPDF, self).__add__(other)
-		self.normalize()
 		return self
 
 	def copy(self):

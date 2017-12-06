@@ -91,13 +91,6 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
   );
 
 ///
-/// Copy a #SuperskyMetrics struct.
-///
-SuperskyMetrics *XLALCopySuperskyMetrics(
-  const SuperskyMetrics *metrics                ///< [in] Supersky metrics struct
-  );
-
-///
 /// Destroy a #SuperskyMetrics struct.
 ///
 void XLALDestroySuperskyMetrics(
@@ -115,6 +108,9 @@ int XLALFITSWriteSuperskyMetrics(
 ///
 /// Read a #SuperskyMetrics struct from a FITS file.
 ///
+#ifdef SWIG // SWIG interface directives
+SWIGLAL( INOUT_STRUCTS( SuperskyMetrics **, metrics ) );
+#endif
 int XLALFITSReadSuperskyMetrics(
   FITSFile *file,                               ///< [in] FITS file pointer
   SuperskyMetrics **metrics                     ///< [out] Supersky metrics struct
@@ -180,7 +176,6 @@ int XLALConvertSuperskyToSuperskyPoint(
   gsl_vector *out_rssky,                        ///< [out] Output point in supersky coordinates
   const SuperskyTransformData *out_rssky_transf,///< [in] Output reduced supersky coordinate transform data
   const gsl_vector *in_rssky,                   ///< [in] Input point in supersky coordinates
-  const gsl_vector *ref_rssky,                  ///< [in,optional] Reference point in supersky coordinates
   const SuperskyTransformData *in_rssky_transf  ///< [in] Input reduced supersky coordinate transform data
   );
 
@@ -235,8 +230,6 @@ int XLALSetSuperskyPhysicalSkyBounds(
 ///
 int XLALSetSuperskyEqualAreaSkyBounds(
   LatticeTiling *tiling,                        ///< [in] Lattice tiling
-  const gsl_matrix *rssky_metric,               ///< [in] Reduced supersky metric
-  const double max_mismatch,                    ///< [in] Maximum prescribed mismatch
   const UINT4 patch_count,                      ///< [in] Number of equal-area patches to divide sky into
   const UINT4 patch_index                       ///< [in] Index of the patch for which to compute bounds
   );

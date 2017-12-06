@@ -33,6 +33,7 @@
 static LIGOTimeGPS empty_LIGOTimeGPS;
 static SFTConstraints empty_SFTConstraints;
 
+
 int main( int argc, char **argv ){
 
   InputParams inputParams;
@@ -89,6 +90,7 @@ int main( int argc, char **argv ){
   /* Initialise variables for use throughout */
   LIGOTimeGPS minStartTimeGPS = empty_LIGOTimeGPS;
   LIGOTimeGPS maxEndTimeGPS = empty_LIGOTimeGPS;
+  CHAR *psrname=NULL;
   UINT4 segcount=0;
   CHAR outputFilename[FILENAME_MAXLEN];
   EmissionTime emit, emitS, emitE;
@@ -116,11 +118,10 @@ int main( int argc, char **argv ){
   UINT4 h=0;
 
   PulsarParameters **pulparams = (PulsarParameters **)XLALMalloc(sizeof(PulsarParameters*)*1);
-  LALStringVector *outputfilenames = NULL;
+  FILE **fpout = (FILE **)XLALMalloc(sizeof(FILE*)*1);
 
   /* count number of pulsars with valid frequencies, and read in parameters */
   for(h=0; h<numfiles; h++){
-    CHAR *psrname = NULL;
     PulsarParameters *tmppar = XLALReadTEMPOParFile( parfiles->data[h] );
 
     /* check if par file was read in successfully */
@@ -161,6 +162,7 @@ int main( int argc, char **argv ){
     // allocate more memory for array holding pulsar parameters
     if (numpulsars > 0){
       pulparams = XLALRealloc(pulparams, sizeof(PulsarParameters*)*(numpulsars+1));
+      fpout = XLALRealloc(fpout, sizeof(FILE*)*(numpulsars+1));
     }
 
     // re-read in file
@@ -181,17 +183,18 @@ int main( int argc, char **argv ){
     // add "NAME" attribute
     PulsarAddParam( pulparams[numpulsars], "NAME", psrname, PULSARTYPE_string_t );
 
-    snprintf(outputFilename, sizeof(outputFilename), "%s/SplInter_%s_%s",inputParams.outputdir,psrname,
+    sprintf(outputFilename, "%s/SplInter_%s_%s",inputParams.outputdir,psrname,
       splParams.detector.frDetector.prefix);
-    outputfilenames = XLALAppendString2Vector(outputfilenames, outputFilename);
 
-    /* check output files can be opened/clear any previous file */
-    FILE *fp = NULL;
-    if( (fp = fopen(outputFilename,"w"))==NULL){
+    if( (fpout[numpulsars] = fopen(outputFilename,"w"))==NULL){
       fprintf(stderr, "Error... can't open output file %s!\n", outputFilename);
       return 0;
     }
-    fclose(fp);
+
+    /* buffer the output, so that file system is not overloaded when outputing */
+    if( setvbuf(fpout[numpulsars], NULL, _IOFBF, 0x10000) ){
+      fprintf(stderr, "Warning: Unable to set output file buffer!");
+    }
 
     /* If position epoch is not set but epoch is set position epoch to be epoch */
     if ( !PulsarCheckParam( pulparams[numpulsars], "POSEPOCH" ) && PulsarCheckParam( pulparams[numpulsars], "PEPOCH" ) ){
@@ -230,14 +233,14 @@ int main( int argc, char **argv ){
   }
 
   /* load all types of ephemeris files, as uses little RAM/computational effort, and different parfiles may use a combination */
-  snprintf(earthfile200, sizeof(earthfile200), "%s/earth00-19-DE200.dat.gz",inputParams.ephemdir);
-  snprintf(sunfile200, sizeof(sunfile200), "%s/sun00-19-DE200.dat.gz",inputParams.ephemdir);
-  snprintf(earthfile405, sizeof(earthfile405), "%s/earth00-19-DE405.dat.gz",inputParams.ephemdir);
-  snprintf(sunfile405, sizeof(sunfile405), "%s/sun00-19-DE405.dat.gz",inputParams.ephemdir);
-  snprintf(earthfile414, sizeof(earthfile414), "%s/earth00-19-DE414.dat.gz",inputParams.ephemdir);
-  snprintf(sunfile414, sizeof(sunfile414), "%s/sun00-19-DE414.dat.gz",inputParams.ephemdir);
-  snprintf(earthfile421, sizeof(earthfile421), "%s/earth00-19-DE421.dat.gz",inputParams.ephemdir);
-  snprintf(sunfile421, sizeof(sunfile421), "%s/sun00-19-DE421.dat.gz",inputParams.ephemdir);
+  sprintf(earthfile200, "%s/earth00-19-DE200.dat.gz",inputParams.ephemdir);
+  sprintf(sunfile200, "%s/sun00-19-DE200.dat.gz",inputParams.ephemdir);
+  sprintf(earthfile405, "%s/earth00-19-DE405.dat.gz",inputParams.ephemdir);
+  sprintf(sunfile405, "%s/sun00-19-DE405.dat.gz",inputParams.ephemdir);
+  sprintf(earthfile414, "%s/earth00-19-DE414.dat.gz",inputParams.ephemdir);
+  sprintf(sunfile414, "%s/sun00-19-DE414.dat.gz",inputParams.ephemdir);
+  sprintf(earthfile421, "%s/earth00-19-DE421.dat.gz",inputParams.ephemdir);
+  sprintf(sunfile421, "%s/sun00-19-DE421.dat.gz",inputParams.ephemdir);
 
   edat200 = XLALMalloc(sizeof(*edat200));
   edat405 = XLALMalloc(sizeof(*edat405));
@@ -245,8 +248,8 @@ int main( int argc, char **argv ){
   edat421 = XLALMalloc(sizeof(*edat421));
 
   /* Load time correction files. */
-  snprintf(timefileTDB, sizeof(timefileTDB), "%s/tdb_2000-2019.dat.gz",inputParams.ephemdir);
-  snprintf(timefileTE405, sizeof(timefileTE405), "%s/te405_2000-2019.dat.gz",inputParams.ephemdir);
+  sprintf(timefileTDB,"%s/tdb_2000-2019.dat.gz",inputParams.ephemdir);
+  sprintf(timefileTE405, "%s/te405_2000-2019.dat.gz",inputParams.ephemdir);
 
   /*  read in ephemeris files */
   edat200 = XLALInitBarycenter(earthfile200, sunfile200);
@@ -298,24 +301,6 @@ int main( int argc, char **argv ){
 
   UINT4 TotalNSFTs = 0;
   REAL8 TotalInterTime = 0., TotalCatalogTime = 0., TotalLoadTime = 0.;
-
-  /* input a list of SFTs from a LALcache format file if provided */
-  LALCache *sftlalcache = NULL;
-  if ( inputParams.lalcacheFile && !inputParams.cacheFile && !inputParams.cacheDir ){
-    sftlalcache = XLALCacheImport( inputParams.filePattern );
-    if ( sftlalcache == NULL ){
-      XLALPrintError("Error... there's a problem loading the SFT LALCache file");
-      exit(1);
-    }
-    XLAL_CHECK( XLALCacheUniq(sftlalcache) == 0, XLAL_EFUNC, "Error... problem getting unique values from SFT LALCache file" );
-  }
-  else if (!inputParams.cacheFile && !inputParams.cacheDir) {
-    XLALPrintError("Error... must specify either --sft-cache, --sft-lalcache, or --sft-loc");
-    exit(1);
-  }
-
-  FILE *fpout[numpulsars];
-
   /* --------------------------------------- */
   /* --- BIT THAT DOES THE INTERPOLATION --- */
   /* --------------------------------------- */
@@ -342,13 +327,6 @@ int main( int argc, char **argv ){
     if ( (endt-startt) < inputParams.minSegLength ){
       segcount++;
       continue; // skip segment
-    }
-
-    // check whether segment exceeds maximum length, and if so truncate it
-    if ( (endt-startt) > inputParams.maxSegLength ){
-      endt = startt + inputParams.maxSegLength;
-      XLALGPSSetREAL8( &seglist->segs[segcount].start, endt ); // update segment start time
-      segcount--; // reduce segcount, so this segment in the list gets redone with updated values
     }
 
     fprintf(stderr, "Segment %.0lf-%.0lf",startt,endt);
@@ -387,66 +365,33 @@ int main( int argc, char **argv ){
     if(inputParams.Timing) gettimeofday(&timeCatalogStart, NULL);
 
     /* Set up SFT cache filename and cache opening string */
-    if ( sftlalcache == NULL ){
-      CHAR cacheFile[FILENAME_MAXLEN], cacheFileCheck[FILENAME_MAXLEN];
-      if(inputParams.cacheDir){
-        snprintf(cacheFile, sizeof(cacheFile), "list:%s/Segment_%d-%d.sftcache",inputParams.filePattern,(INT4)ROUND(startt),(INT4)ROUND(endt));
-        snprintf(cacheFileCheck, sizeof(cacheFileCheck), "%s/Segment_%d-%d.sftcache",inputParams.filePattern,(INT4)ROUND(startt),(INT4)ROUND(endt));
-      }
-      else{
-        sprintf(cacheFile,"%s",inputParams.filePattern);
-        CHAR *rmlist=inputParams.filePattern;
-        rmlist+=5;
-        sprintf(cacheFileCheck,"%s",rmlist);
-      }
-
-      /* Check SFT cache file exists and is not empty*/
-      struct stat fileStat;
-      if(stat(cacheFileCheck,&fileStat) < 0){
-        segcount++;
-        fprintf(stderr," SFT cache file %s does not exist.\n", cacheFileCheck);
-        continue;
-      }
-
-      if(fileStat.st_size==0){
-        segcount++;
-        fprintf(stderr," SFT cache file %s is empty.\n", cacheFileCheck);
-        continue;
-      }
-
-      catalog = XLALSFTdataFind(cacheFile, &constraints);
+    CHAR cacheFile[FILENAME_MAXLEN], cacheFileCheck[FILENAME_MAXLEN];
+    if(inputParams.cacheDir){
+      sprintf(cacheFile,"list:%s/Segment_%d-%d.sftcache",inputParams.filePattern,(INT4)ROUND(startt),(INT4)ROUND(endt));
+      sprintf(cacheFileCheck,"%s/Segment_%d-%d.sftcache",inputParams.filePattern,(INT4)ROUND(startt),(INT4)ROUND(endt));
     }
     else{
-      /* find required SFTs for the segment from the cache file and create a catalog */
-      CHAR *cacheFile = NULL;
-      LALCache *sievesfts = XLALCacheDuplicate( sftlalcache ); /* duplicate of full cache that can be sieved */
-      XLAL_CHECK( XLALCacheSieve(sievesfts, (INT4)startt, (INT4)endt, NULL, NULL, NULL) == 0, XLAL_EFUNC, "Warning... problem sieving SFTs");
-
-      if ( sievesfts->length == 0 ){
-        segcount++;
-        fprintf(stderr," no SFTs for this period.\n");
-        XLALFree( cacheFile );
-        XLALDestroyCache( sievesfts );
-        continue;
-      }
-
-      /* make cache into a ; separated list of file */
-      for ( h=0; h < sievesfts->length; h++ ){
-        CHAR *sftptr = sievesfts->list[h].url;
-
-        /* remove file://localhost if present (this confused XLALFindFiles) */
-        if (strncmp(sftptr, "file://localhost/", strlen("file://localhost/")) == 0) {
-          sftptr += strlen("file://localhost/") - 1;
-        }
-        cacheFile = XLALStringAppend(cacheFile, sftptr);
-        if ( h < sievesfts->length-1 ){ cacheFile = XLALStringAppend(cacheFile, ";"); }
-      }
-
-      catalog = XLALSFTdataFind(cacheFile, &constraints);
-
-      XLALFree( cacheFile );
-      XLALDestroyCache( sievesfts );
+      sprintf(cacheFile,"%s",inputParams.filePattern);
+      CHAR *rmlist=inputParams.filePattern;
+      rmlist+=5;
+      sprintf(cacheFileCheck,"%s",rmlist);
     }
+
+    /* Check SFT cache file exists and is not empty*/
+    struct stat fileStat;
+    if(stat(cacheFileCheck,&fileStat) < 0){
+      segcount++;
+      fprintf(stderr," SFT cache file %s does not exist.\n", cacheFileCheck);
+      continue;
+    }
+
+    if(fileStat.st_size==0){
+      segcount++;
+      fprintf(stderr," SFT cache file %s is empty.\n", cacheFileCheck);
+      continue;
+    }
+
+    catalog = XLALSFTdataFind(cacheFile, &constraints);
 
     if(inputParams.Timing){
       gettimeofday(&timeCatalogEnd, NULL);
@@ -525,20 +470,6 @@ int main( int argc, char **argv ){
     /* start interpolation clock */
     if(inputParams.Timing) gettimeofday(&timeInterpolateStart, NULL);
 
-    /* re-open the output files */
-    for (h=0; h<numpulsars;h++){
-      fpout[h] = NULL;
-      if( (fpout[h] = fopen(outputfilenames->data[h],"a"))==NULL){
-        fprintf(stderr, "Error... can't open output file %s!\n", outputfilenames->data[h]);
-        return 0;
-      }
-
-      /* buffer the output, so that file system is not overloaded when outputing */
-      if( setvbuf(fpout[h], NULL, _IOFBF, 0x10000) ){
-        fprintf(stderr, "Warning: Unable to set output file buffer!");
-      }
-    }
-
     /* Loop through each SFT */
     for (sftnum=0; sftnum<(SFTdat->length); sftnum++){
 
@@ -574,14 +505,6 @@ int main( int argc, char **argv ){
         baryInput.site.location[1] = splParams.detector.location[1]/LAL_C_SI;
         baryInput.site.location[2] = splParams.detector.location[2]/LAL_C_SI;
 
-        baryInputE.site.location[0] = splParams.detector.location[0]/LAL_C_SI;
-        baryInputE.site.location[1] = splParams.detector.location[1]/LAL_C_SI;
-        baryInputE.site.location[2] = splParams.detector.location[2]/LAL_C_SI;
-
-        baryInputS.site.location[0] = splParams.detector.location[0]/LAL_C_SI;
-        baryInputS.site.location[1] = splParams.detector.location[1]/LAL_C_SI;
-        baryInputS.site.location[2] = splParams.detector.location[2]/LAL_C_SI;
-
         /* get sky position and inverse distance from previously calculated values */
         baryInput.delta = baryDelta[h];
         baryInput.alpha = baryAlpha[h];
@@ -610,6 +533,9 @@ int main( int argc, char **argv ){
           ttype=TIMECORRECTION_ORIGINAL;
           tdat=NULL;
         }
+
+        /* create pulsar name */
+        psrname = XLALStringDuplicate( PulsarGetStringParam(pulparams[h], "NAME") );
 
         /* set up which ephemeris type is being used for this source */
         if( PulsarCheckParam(pulparams[h], "EPHEM" ) ) {
@@ -746,7 +672,7 @@ int main( int argc, char **argv ){
 
         if((fnew < inputParams.startF) || (fnew > inputParams.endF)){
           fprintf(stderr,"Pulsar %s has frequency %.4f outside of the frequency range %f-%f at time %.0f\n",
-              PulsarGetStringParam(pulparams[h], "NAME"), fnew, inputParams.startF, inputParams.endF, timestamp);
+              psrname, fnew, inputParams.startF, inputParams.endF, timestamp);
           continue;
         }
 
@@ -1049,16 +975,16 @@ int main( int argc, char **argv ){
       fprintf(stderr," done.\n");
     }
 
-    /* close all the output files */
-    for(h=0;h<numpulsars;h++){ fclose(fpout[h]); }
-
     XLALDestroySFTVector(SFTdat);
     segcount++; /* move to next segment */
   }/* close segment loop */
 
-  XLALSegListFree( seglist );
+  /* close all the output files */
+  for(h=0;h<numpulsars;h++){
+    fclose(fpout[h]);
+  }
 
-  if ( sftlalcache != NULL ){ XLALDestroyCache( sftlalcache ); } // destroy lalcache of SFTs
+  XLALSegListFree( seglist );
 
   REAL8 tPre =0. , tPul =0.;
   if(inputParams.Timing){
@@ -1077,8 +1003,17 @@ int main( int argc, char **argv ){
     if(inputParams.Timing) gettimeofday(&timeORStart, NULL);
 
     for(h=0;h<numpulsars;h++){
+
+      char BkFilename[FILENAME_MAXLEN];
+      CHAR *parName=NULL;
+      /* -------- Set up file for output -------- */
+      /* create filename */
+      parName = XLALStringDuplicate( PulsarGetStringParam( pulparams[h], "NAME") );
+      sprintf(BkFilename, "%s/SplInter_%s_%s",inputParams.outputdir ,parName,
+            splParams.detector.frDetector.prefix);
+
       FILE *BkFile=NULL;
-      BkFile = fopen(outputfilenames->data[h],"r");
+      BkFile = fopen(BkFilename,"r");
       if(BkFile == NULL){
         XLALPrintError("Error opening file");
       }
@@ -1114,7 +1049,7 @@ int main( int argc, char **argv ){
       fclose(BkFile);
 
       FILE *BkFileOut=NULL;
-      BkFileOut = fopen(outputfilenames->data[h],"w");
+      BkFileOut = fopen(BkFilename,"w");
       UINT4 p=0;
       UINT4 startlen=ReData->length;
       REAL8 meanNoiseEst = 0, meanAbsValue = 0.;
@@ -1199,22 +1134,11 @@ int main( int argc, char **argv ){
     }
   }
 
-  if ( inputParams.gzip ){
-    /* gzip the output files */
-    for ( h = 0; h < numpulsars; h++ ){
-      if ( XLALGzipTextFile(outputfilenames->data[h]) != XLAL_SUCCESS ){ // gzip it
-        XLALPrintError("Error... problem gzipping the output file.\n");
-      }
-    }
-  }
-
   for(h=0;h<numpulsars;h++){
     // free par files
     PulsarClearParams( pulparams[h] );
   }
   XLALFree(pulparams);
-
-  XLALDestroyStringVector( outputfilenames );
 
   if(inputParams.Timing){
     gettimeofday(&timeEndTot, NULL);
@@ -1232,7 +1156,6 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "help",                     no_argument,        0, 'h' },
     { "ifo",                      required_argument,  0, 'i' },
     { "sft-cache",                required_argument,  0, 'F' },
-    { "sft-lalcache",             required_argument,  0, 'C' },
     { "sft-loc",                  required_argument,  0, 'L' },
     { "param-dir",                required_argument,  0, 'd' },
     { "param-file",               required_argument,  0, 'P' },
@@ -1245,39 +1168,34 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "freq-factor",              required_argument,  0, 'm' },
     { "bandwidth",                required_argument,  0, 'b' },
     { "min-seg-length",           required_argument,  0, 'M' },
-    { "max-seg-length",           required_argument,  0, 'Z' },
     { "starttime",                required_argument,  0, 's' },
     { "finishtime",               required_argument,  0, 'f' },
     { "stddevthresh",             required_argument,  0, 'T' },
     { "output-timing",            no_argument,     NULL, 't' },
     { "geocentreFlag",            no_argument,     NULL, 'g' },
     { "baryFlag",                 no_argument,     NULL, 'B' },
-    { "gzip",                     no_argument,     NULL, 'G' },
     { 0, 0, 0, 0 }
   };
 
-  char args[] = "hi:F:C:L:d:P:N:o:e:l:S:E:m:b:M:Z:s:f:T:ntgBG";
+  char args[] = "hi:F:L:d:P:N:o:e:l:S:E:m:b:M:s:f:T:ntgB";
 
   /* set defaults */
-  inputParams->freqfactor = 2.0;        /* default is to look for gws at twice the pulsar spin frequency */
-  inputParams->bandwidth = 0.3;         /* Default is a 0.3Hz bandwidth search */
-  inputParams->geocentre = 0;           /* Default is not to look at the geocentre */
-  inputParams->minSegLength = 1800;     /* Default minimum segment length is 1800s */
-  inputParams->maxSegLength = INFINITY; /* Default maximum segment length is INFINITY */
-  inputParams->baryFlag = 0;            /* Default is to perform barycentring routine */
-  inputParams->endF=0.;                 /* in order to check if the end frequency is set */
-  inputParams->startF=0.;               /* in order to check if the start frequency is set*/
-  inputParams->parfileflag=0.;          /* in order to check if the Parfile is set */
-  inputParams->pardirflag=0.;           /* in order to check if the Parfile directory is set*/
-  inputParams->nameset=0;               /* flag in order to check if pulsar name is set*/
-  inputParams->startTime = 0.;          /* Start time not set - use zero */
-  inputParams->endTime = INFINITY;      /* end time not set - use infinity */
-  inputParams->Timing=0.;               /* default not to output timing info to stderr */
-  inputParams->cacheDir=0;              /* default is that directory flag is zero */
-  inputParams->cacheFile=0;             /* default that file flag is zero */
-  inputParams->lalcacheFile=0;          /* default that that lalcache file flag is zero */
-  inputParams->stddevthresh=0.;         /* default not to do outlier removal */
-  inputParams->gzip = 0;                /* default not to gzip the output files */
+  inputParams->freqfactor = 2.0;    /* default is to look for gws at twice the pulsar spin frequency */
+  inputParams->bandwidth = 0.3;     /* Default is a 0.3Hz bandwidth search */
+  inputParams->geocentre = 0;       /* Default is not to look at the geocentre */
+  inputParams->minSegLength = 1800; /* Default minimum segment length is 1800s */
+  inputParams->baryFlag = 0;        /* Default is to perform barycentring routine */
+  inputParams->endF=0.;             /* in order to check if the end frequency is set */
+  inputParams->startF=0.;           /* in order to check if the start frequency is set*/
+  inputParams->parfileflag=0.;      /* in order to check if the Parfile is set */
+  inputParams->pardirflag=0.;       /* in order to check if the Parfile directory is set*/
+  inputParams->nameset=0.;          /* flag in order to check if pulsar name is set*/
+  inputParams->startTime = 0.;      /* Start time not set - use zero */
+  inputParams->endTime = INFINITY;  /* end time not set - use infinity */
+  inputParams->Timing=0.;           /* default not to output timing info to stderr */
+  inputParams->cacheDir=0.;         /* default is that directory flag is zero */
+  inputParams->cacheFile=0.;        /* default that file flag is zero */
+  inputParams->stddevthresh=0.;     /* default not to do outlier removal */
 
   /* get input arguments */
   while(1){
@@ -1334,11 +1252,6 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
           optarg);
         inputParams->cacheFile=1;
         break;
-      case 'C': /* file path to lalcache file containing SFTs */
-        snprintf(inputParams->filePattern, sizeof(inputParams->filePattern), "%s",
-          optarg);
-        inputParams->lalcacheFile=1;
-        break;
       case 'L': /* filepath to SFTcache directory */
         snprintf(inputParams->filePattern, sizeof(inputParams->filePattern), "%s",
           optarg);
@@ -1367,21 +1280,13 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
       case 'M': /* Minimum Segment Length Allowed */
         inputParams->minSegLength = atof(optarg);
         break;
-      case 'Z': /* Maximum segment length allowed (use to stop too may SFTs being read at once) */
-        inputParams->maxSegLength = atof(optarg);
-        break;
       case 't': /* write timing values to stderr */
         inputParams->Timing = 1;
         break;
-      case 'G': /* gzip the output files */
-        inputParams->gzip = 1;
-        break;
       case '?':
         fprintf(stderr, "unknown error while parsing options\n" );
-		break;
       default:
         fprintf(stderr, "unknown error while parsing options\n" );
-		break;
     }
   }
 }

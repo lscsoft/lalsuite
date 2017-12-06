@@ -159,6 +159,7 @@ typedef struct tagFacWaveformCoeffs
 
   REAL8 delta33vh3;
   REAL8 delta33vh6;
+  REAL8 delta33vh6Wave;
   REAL8 delta33vh6S;
   REAL8 delta33vh9;
   REAL8 delta33v5;
@@ -167,19 +168,27 @@ typedef struct tagFacWaveformCoeffs
   REAL8 rho33v2;
   REAL8 rho33v3;
   REAL8 rho33v4;
+  REAL8 rho33v4Wave;
   REAL8 rho33v4S;
   REAL8 rho33v5;
+  REAL8 rho33v5Wave;
   REAL8 rho33v5S;
   REAL8 rho33v6;
+  REAL8 rho33v6Wave;
   REAL8 rho33v6S;
   REAL8 rho33v6l;
   REAL8 rho33v7;
+  REAL8 rho33v7Wave;
   REAL8 rho33v7S;
   REAL8 rho33v8;
   REAL8 rho33v8l;
 
   REAL8 f33v3;
+  REAL8 f33v4;
+  REAL8 f33v5;
+  REAL8 f33v6;
   REAL8 f33v3S;
+  REAL8 f33vh6;
 
   REAL8 delta32vh3;
   REAL8 delta32vh4;
@@ -464,7 +473,6 @@ typedef struct tagEOBParams
   REAL8 m1;
   REAL8 m2;
   REAL8 rad;
-  INT4 NyquistStop;
   EOBACoefficients *aCoeffs;
   FacWaveformCoeffs *hCoeffs;
   EOBNonQCCoeffs *nqcCoeffs;
