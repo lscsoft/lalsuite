@@ -51,6 +51,5 @@ src/lalxml_version
 src/stamp-h1
 src/stamp-h2
 src/version.c
-swig/swiglalxml.i*
-swig/swiglal_*
+swig/swiglal*
 test/LALXMLTest

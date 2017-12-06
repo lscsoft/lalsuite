@@ -57,8 +57,7 @@ src/lal_version
 src/stamp-h1
 src/stamp-h2
 src/version.c
-swig/swiglal.i*
-swig/swiglal_*
+swig/swiglal*
 test/*/*.dat
 test/*/*.out
 test/*/*.txt
@@ -141,7 +140,6 @@ test/utilities/EigenTest
 test/utilities/FindRootTest
 test/utilities/IntegrateTest
 test/utilities/InterpolateTest
-test/utilities/LALBitsetTest
 test/utilities/LALHashFuncTest
 test/utilities/LALHashTblTest
 test/utilities/LALHeapTest

@@ -278,7 +278,7 @@ int parseargs( int argc, char **argv )
 			{ "kagra", no_argument, 0, 'K' },
 			{ "official", no_argument, 0, 'O' },
 			{ "psd-only", no_argument, 0, 'P' },
-			{ "asd-file", required_argument, 0, 'a' },
+			{ "psd-file", no_argument, 0, 'p' },
 			{ "start-time", required_argument, 0, 's' },
 			{ "duration", required_argument, 0, 't' },
 			{ "sample-rate", required_argument, 0, 'r' },

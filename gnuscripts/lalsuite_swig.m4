@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 102
+# serial 99
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -226,11 +226,6 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
   # $0: configure SWIG Octave bindings
   LALSUITE_USE_SWIG_LANGUAGE([Octave],[C++],[
 
-    # check for GSL, needed for LAL complex number support in C++
-    PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
-    LALSUITE_ADD_FLAGS([C],[${GSL_CFLAGS}],[${GSL_LIBS}])
-    AC_CHECK_HEADERS([gsl/gsl_complex.h],,[AC_MSG_ERROR([could not find the gsl/gsl_complex.h header])])
-
     # check for Octave
     AC_PATH_PROGS(OCTAVE,[octave-cli octave],[],[])
     AS_IF([test "x${OCTAVE}" = x],[
@@ -417,19 +412,6 @@ int main() { std::string s = "a"; return 0; }
 AC_DEFUN([LALSUITE_USE_SWIG_PYTHON],[
   # $0: configure SWIG Python bindings
   LALSUITE_USE_SWIG_LANGUAGE([Python],[C],[
-
-    # check Python version
-    AC_MSG_CHECKING([${PYTHON} version])
-    AS_IF([test "x${PYTHON_VERSION}" = x],[
-      AC_MSG_ERROR([could not determine ${PYTHON} version])
-    ])
-    AC_MSG_RESULT([${PYTHON_VERSION}])
-    LALSUITE_VERSION_COMPARE([${PYTHON_VERSION}],[>=],[3.0.0],[
-      LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[3.0.9],[
-        swig_min_version=3.0.9
-        swig_min_version_info="for Python version ${PYTHON_VERSION}"
-      ])
-    ])
 
     # check for distutils
     AC_MSG_CHECKING([for distutils])

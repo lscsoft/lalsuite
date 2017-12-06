@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015-2017  Leo Singer
 #
@@ -33,9 +32,6 @@ seaborn.set_style("white")
 import argparse
 from lalinference.bayestar import command
 parser = command.ArgumentParser(parents=[command.figure_parser])
-parser.add_argument(
-    '--annotate', default=False, action='store_true',
-    help='annotate plot with information about the event')
 parser.add_argument(
     '--max-distance', metavar='Mpc', type=float,
     help='maximum distance of plot in Mpc [default: auto]')
@@ -74,8 +70,8 @@ from matplotlib import gridspec
 from matplotlib import transforms
 from lalinference import io
 from lalinference.plot import marker
-from lalinference.distance import (
-    parameters_to_marginal_moments, principal_axes, volume_render, marginal_pdf)
+from lalinference.bayestar.distance import (
+    principal_axes, volume_render, marginal_pdf, marginal_ppf)
 import healpy as hp
 import numpy as np
 import scipy.stats
@@ -95,8 +91,7 @@ else:
     (prob2, mu2, sigma2, norm2), _ = io.read_sky_map(
         opts.align_to.name, distances=True)
 if opts.max_distance is None:
-    mean, std = parameters_to_marginal_moments(prob2, mu2, sigma2)
-    max_distance = mean + 2.5 * std
+    max_distance = 2.5 * marginal_ppf(0.5, prob2, mu2, sigma2, norm2)
 else:
     max_distance = opts.max_distance
 R = np.ascontiguousarray(principal_axes(prob2, mu2, sigma2))
@@ -237,25 +232,6 @@ if not opts.projection:
     ax.set_yticks([])
     ax.set_xlim(0, max_distance)
     ax.set_ylim(0, ax.get_ylim()[1])
-
-    if opts.annotate:
-        text = []
-        try:
-            objid = metadata['objid']
-        except KeyError:
-            pass
-        else:
-            text.append('event ID: {}'.format(objid))
-        try:
-            distmean = metadata['distmean']
-            diststd = metadata['diststd']
-        except KeyError:
-            pass
-        else:
-            text.append(u'distance: {}±{} Mpc'.format(
-                        int(np.round(distmean)), int(np.round(diststd))))
-        ax.text(0, 1, '\n'.join(text), transform=ax.transAxes, fontsize=7,
-                 ha='left', va='bottom', clip_on=False)
 
 progress.update(-1, 'Saving')
 opts.output()

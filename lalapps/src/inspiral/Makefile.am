@@ -8,6 +8,7 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 SUBDIRS = posterior
 
 TMPLTBANKSRC = tmpltbank.c inspiralutils.c inspiral.h
+COHIRESRC = cohire.c
 INCASRC = inca.c
 SIVASRC = siva.c
 INSPINJSRC = inspinj.c inspiralutils.c inspiral.h
@@ -21,6 +22,7 @@ TRIGSCANSRC = trigscan.c
 INSPFRINJSRC = inspfrinj.c
 GWF2XMLSRC = gwf2xml.c
 SPININJSRC = spininj.c
+COINEXTSRC = coinext.c
 RANDOMBANKSRC = randombank.c
 NINJASRC = ninja.c
 FRNINJASRC = fr_ninja.c
@@ -46,6 +48,8 @@ LALMETAIO_PROGS = \
 	lalapps_trigbank \
 	lalapps_trigscan \
 	lalapps_spininj \
+	lalapps_cohire \
+	lalapps_coinext \
 	lalapps_randombank \
 	lalapps_ninja \
 	lalapps_fr_ninja \
@@ -54,6 +58,7 @@ LALMETAIO_PROGS = \
 	lalapps_skymap \
 	lalapps_coinj \
 	lalapps_cbc_stochasticbank
+lalapps_cohire_SOURCES = $(COHIRESRC)
 lalapps_tmpltbank_SOURCES = $(TMPLTBANKSRC)
 lalapps_inca_SOURCES = $(INCASRC)
 lalapps_siva_SOURCES = $(SIVASRC)
@@ -68,6 +73,7 @@ lalapps_trigscan_SOURCES = $(TRIGSCANSRC)
 lalapps_spininj_SOURCES = $(SPININJSRC)
 lalapps_inspfrinj_SOURCES = $(INSPFRINJSRC)
 lalapps_gwf2xml_SOURCES = $(GWF2XMLSRC)
+lalapps_coinext_SOURCES = $(COINEXTSRC)
 lalapps_randombank_SOURCES = $(RANDOMBANKSRC)
 lalapps_ninja_SOURCES = $(NINJASRC)
 lalapps_fr_ninja_SOURCES = $(FRNINJASRC)
@@ -119,7 +125,6 @@ pybin_scripts = \
 	lalapps_cbc_sbank_sim \
 	lalapps_cbc_sbank_sim_pipe \
 	lalapps_make_nr_hdf_catalog \
-	lalapps_run_sqlite \
 	lalapps_bank_plotter
 
 pkgpython_PYTHON = \

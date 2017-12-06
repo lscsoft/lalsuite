@@ -141,7 +141,7 @@ if cp.has_option('paths','roq_b_matrix_directory'):
   if roq_mass_freq_scale_factor != 1.:
     print 'WARNING: Rescaling ROQ basis, please ensure it is allowed with the model used.'
 
-  if opts.gid is not None or (opts.injections is not None or cp.has_option('input','injection-file')) or cp.has_option('lalinference','trigger_mchirp'):
+  if opts.gid is not None or (opts.injections is not None or cp.has_option('input','injection-file')):
 
     for mc_prior in mc_priors:
       mc_priors[mc_prior] = array(mc_priors[mc_prior])
@@ -326,22 +326,22 @@ for sampler in samps:
             with open('pegasus.properties','w') as fout:
               for line in lines:
                 fout.write(line)
-        if cp.has_option('condor','accounting_group'):
+        if cp.has_option('analysis','accounting_group'):
           lines=[]
           with open('sites.xml') as fin:
             for line in fin:
               if '<profile namespace="condor" key="getenv">True</profile>' in line:
-                line=line+'    <profile namespace="condor" key="accounting_group">'+cp.get('condor','accounting_group')+'</profile>\n'
+                line=line+'    <profile namespace="condor" key="accounting_group">'+cp.get('analysis','accounting_group')+'</profile>\n'
               lines.append(line)
           with open('sites.xml','w') as fout:
             for line in lines:
               fout.write(line)
-        if cp.has_option('condor','accounting_group_user'):
+        if cp.has_option('analysis','accounting_group_user'):
           lines=[]
           with open('sites.xml') as fin:
             for line in fin:
               if '<profile namespace="condor" key="getenv">True</profile>' in line:
-                line=line+'    <profile namespace="condor" key="accounting_group_user">'+cp.get('condor','accounting_group_user')+'</profile>\n'
+                line=line+'    <profile namespace="condor" key="accounting_group_user">'+cp.get('analysis','accounting_group_user')+'</profile>\n'
               lines.append(line)
           with open('sites.xml','w') as fout:
             for line in lines:

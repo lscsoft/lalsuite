@@ -28,7 +28,6 @@ import errno
 import glob
 import inspect
 import itertools
-import logging
 import os
 import shutil
 import sys
@@ -46,17 +45,6 @@ if 'matplotlib.pyplot' in sys.modules:
     plt.switch_backend('Template')
 else:
     matplotlib.use('Template', warn=False, force=True)
-
-
-# FIXME: Remove this after all Matplotlib monkeypatches are obsolete.
-import matplotlib
-import distutils.version
-mpl_version = distutils.version.LooseVersion(matplotlib.__version__)
-
-
-def get_version():
-    from .. import InferenceVCSInfo as vcs_info
-    return vcs_info.name + ' ' + vcs_info.version
 
 
 @contextlib.contextmanager
@@ -144,9 +132,9 @@ group.add_argument(
     '--cosmology', default=False, action='store_true',
     help='Use cosmological comoving volume prior [default: %(default)s]')
 group.add_argument(
-    '--disable-snr-series', dest='enable_snr_series', action='store_false',
-    help='Disable input of SNR time series (WARNING: UNREVIEWED!) '
-    '[default: enabled]')
+    '--enable-snr-series', default=False, action='store_true',
+    help='Enable input of SNR time series (WARNING: UNREVIEWED!) '
+    '[default: no]')
 del group
 
 
@@ -174,16 +162,7 @@ class MatplotlibFigureType(argparse.FileType):
 
     def __save(self):
         from matplotlib import pyplot as plt
-        _, ext = os.path.splitext(self.string)
-        ext = ext.lower()
-        program, _ = os.path.splitext(os.path.basename(sys.argv[0]))
-        cmdline = ' '.join([program] + sys.argv[1:])
-        metadata = {'Title': cmdline}
-        if ext == '.png':
-            metadata['Software'] = get_version()
-        elif ext in {'.pdf', '.ps', '.eps'}:
-            metadata['Creator'] = get_version()
-        return plt.savefig(self.string, metadata=metadata)
+        return plt.savefig(self.string)
 
     def __call__(self, string):
         from matplotlib import pyplot as plt
@@ -285,12 +264,9 @@ group.add_argument(
 group.add_argument(
     '--dpi', metavar='PIXELS', type=dpi, default=300,
     help='resolution of figure in dots per inch [default: %(default)s]')
-# FIXME: the savefig.transparent rcparam was added in Matplotlib 1.4,
-# but we have to support Matplotlib 1.2 for Scientific Linux 7.
-if mpl_version >= '1.4':
-    group.add_argument(
-        '--transparent', const='1', default='0', nargs='?', type=transparent,
-        help='Save image with transparent background [default: false]')
+group.add_argument(
+    '--transparent', const='1', default='0', nargs='?', type=transparent,
+    help='Save image with transparent background [default: false]')
 del colormap_choices
 del group
 
@@ -298,40 +274,10 @@ del group
 # Defer loading SWIG bindings until version string is needed.
 class VersionAction(argparse._VersionAction):
     def __call__(self, parser, namespace, values, option_string=None):
-        self.version = get_version()
+        from .. import InferenceVCSInfo
+        self.version = 'LALInference ' + InferenceVCSInfo.version
         super(VersionAction, self).__call__(
             parser, namespace, values, option_string)
-
-
-@type_with_sideeffect(str)
-def loglevel_type(value):
-    try:
-        value = int(value)
-    except ValueError:
-        value = value.upper()
-    logging.basicConfig(level=value)
-
-
-class LogLevelAction(argparse._StoreAction):
-
-    def __init__(
-            self, option_strings, dest, nargs=None, const=None, default=None,
-            type=None, choices=None, required=False, help=None, metavar=None):
-        # FIXME: this broke because of internal changes in the Python standard
-        # library logging module between Python 2.7 and 3.6. We should not rely
-        # on these undocumented module variables in the first place.
-        try:
-            logging._levelNames
-        except AttributeError:
-            metavar = '|'.join(logging._levelToName.values())
-        else:
-            metavar = '|'.join(
-                _ for _ in logging._levelNames.keys() if isinstance(_, str))
-        type = loglevel_type
-        super(LogLevelAction, self).__init__(
-            option_strings, dest, nargs=nargs, const=const, default=default,
-            type=type, choices=choices, required=required, help=help,
-            metavar=metavar)
 
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -382,11 +328,8 @@ class ArgumentParser(argparse.ArgumentParser):
                  argument_default=argument_default,
                  conflict_handler=conflict_handler,
                  add_help=add_help)
+        self.add_argument('--version', action=VersionAction)
         self.register('action', 'glob', GlobAction)
-        self.register('action', 'loglevel', LogLevelAction)
-        self.register('action', 'version', VersionAction)
-        self.add_argument('--version', action='version')
-        self.add_argument('-l', '--loglevel', action='loglevel', default='INFO')
 
 
 class DirType(object):
@@ -465,22 +408,11 @@ def rm_f(filename):
             raise
 
 
-def _sanitize_arg_value_for_xmldoc(value):
-    if hasattr(value, 'read'):
-        return value.name
-    elif isinstance(value, tuple):
-        return tuple(_sanitize_arg_value_for_xmldoc(v) for v in value)
-    elif isinstance(value, list):
-        return [_sanitize_arg_value_for_xmldoc(v) for v in value]
-    else:
-        return value
-
-
 def register_to_xmldoc(xmldoc, parser, opts, **kwargs):
     from glue.ligolw.utils import process
-    params = {key: _sanitize_arg_value_for_xmldoc(value)
+    params = {key: value.name if hasattr(value, 'read') else value
               for key, value in opts.__dict__.items()}
-    return process.register_to_xmldoc(xmldoc, parser.prog, params, **kwargs)
+    return process.register_to_xmldoc(xmldoc, parser.prog, params)
 
 
 start_msg = '\

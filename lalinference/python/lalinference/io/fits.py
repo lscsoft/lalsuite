@@ -73,7 +73,7 @@ from ..bayestar import moc
 # FIXME: Remove this after all Astropy monkeypatches are obsolete.
 import astropy
 import distutils.version
-astropy_version = distutils.version.LooseVersion(astropy.__version__)
+astropy_version = distutils.version.StrictVersion(astropy.__version__)
 
 __all__ = ("read_sky_map", "write_sky_map")
 
@@ -217,9 +217,9 @@ FITS_META_MAPPING = (
      identity, identity),
     ('runtime', 'RUNTIME', 'Runtime in seconds of the CREATOR program',
      identity, identity),
-    ('distmean', 'DISTMEAN', 'Posterior mean distance (Mpc)',
+    ('distmean', 'DISTMEAN', 'Posterior mean distance in Mpc',
      identity, identity),
-    ('diststd', 'DISTSTD', 'Posterior standard deviation of distance (Mpc)',
+    ('diststd', 'DISTSTD', 'Posterior standard deviation of distance in Mpc',
      identity, identity),
     ('log_bci', 'LOGBCI', 'Log Bayes factor: coherent vs. incoherent',
      identity, identity),
@@ -229,7 +229,7 @@ FITS_META_MAPPING = (
      lambda _: _.name + ' ' + _.version, None),
     ('vcs_info', 'VCSSTAT', 'Software version control status',
      lambda _: _.vcsStatus, None),
-    ('vcs_info', 'VCSREV', 'Software revision (Git)',
+    ('vcs_info', 'VCSID', 'Software git commit hash',
      lambda _: _.vcsId, None),
     ('vcs_info', 'DATE-BLD', 'Software build date',
      lambda _: _.buildDate, None))
@@ -296,7 +296,7 @@ def write_sky_map(filename, m, **kwargs):
     INDXSCHM= 'IMPLICIT'           / Indexing: IMPLICIT or EXPLICIT
     VCSVERS = 'LALInference ...' / Software version
     VCSSTAT = '...: ...' / Software version control status
-    VCSREV  = '...' / Software revision (Git)
+    VCSID   = '...' / Software git commit hash
     DATE-BLD= '...' / Software build date
 
     >>> uniq = moc.nest2uniq(np.uint8(order), np.arange(npix, dtype=np.uint64))
@@ -327,7 +327,7 @@ def write_sky_map(filename, m, **kwargs):
     MOCORDER=                    9 / MOC resolution (best order)
     VCSVERS = 'LALInference ...' / Software version
     VCSSTAT = '...: ...' / Software version control status
-    VCSREV  = '...' / Software revision (Git)
+    VCSID   = '...' / Software git commit hash
     DATE-BLD= '...' / Software build date
     """
 
@@ -419,7 +419,7 @@ def write_sky_map(filename, m, **kwargs):
         hdulist.writeto(filename, clobber=True)
 
 
-def read_sky_map(filename, nest=False, distances=False, moc=False, **kwargs):
+def read_sky_map(filename, nest=False, distances=False, moc=False):
     """
     Read a LIGO/Virgo-type sky map and return a tuple of the HEALPix array
     and a dictionary of metadata from the header.
@@ -466,7 +466,7 @@ def read_sky_map(filename, nest=False, distances=False, moc=False, **kwargs):
     ...     m, meta = read_sky_map(f.name)
     ...     np.testing.assert_array_equal(m, hp.ring2nest(nside, ipix_nest))
     """
-    m = Table.read(filename, format='fits', **kwargs)
+    m = Table.read(filename, format='fits')
 
     # Remove some keys that we do not need
     for key in (
@@ -514,8 +514,6 @@ def read_sky_map(filename, nest=False, distances=False, moc=False, **kwargs):
     elif 'UNIQ' not in m.colnames and moc:
         from ..bayestar.sky_map import derasterize
         if not m.meta['nest']:
-            npix = len(m)
-            nside = hp.npix2nside(npix)
             m = m[hp.nest2ring(nside, np.arange(npix))]
         m = derasterize(m)
         m.meta.pop('nest', None)

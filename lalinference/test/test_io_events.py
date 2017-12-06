@@ -11,7 +11,6 @@ import h5py
 import numpy as np
 import errno
 import gzip
-import re
 from lalinference.io import events
 
 
@@ -31,10 +30,6 @@ class MockGraceDb(object):
             return gzip.GzipFile(path + '.gz', 'rb')
 
 
-def raises(expected_exception, msg):
-    return pytest.raises(expected_exception, match='^' + re.escape(msg) + '$')
-
-
 def test_ligolw():
     """Test reading events from LIGO-LW XML files."""
     source = events.open(os.path.join(DATA_PATH, '2016_subset.xml.gz'))
@@ -42,7 +37,7 @@ def test_ligolw():
     event = source[821759]
     assert len(event.singles) == 2
     assert event.singles[0].snr_series is event.singles[1].snr_series is None
-    assert event.singles[0].detector == 'H1'
+    assert event.singles[0].instrument == 'H1'
     assert event.singles[0].snr == 8.5362396
     assert event.singles[0].phase == -0.81192881
     assert (event.singles[0].time == event.singles[0].zerolag_time ==
@@ -50,7 +45,7 @@ def test_ligolw():
     psd = event.singles[0].psd
     assert psd.f0 == 0.0
     assert psd.deltaF == 0.125
-    assert event.singles[1].detector == 'L1'
+    assert event.singles[1].instrument == 'L1'
     assert event.singles[1].snr == 10.36818
     assert event.singles[1].phase == 1.9740163
     assert (event.singles[1].time == event.singles[1].zerolag_time ==
@@ -72,14 +67,14 @@ def test_ligolw():
 def test_gracedb():
     """Test reading events from GraceDB records."""
     client = MockGraceDb()
-    source = events.gracedb.open(['G211117', 'G197392'], client)
+    source = events.gracedb.open(client, ['G211117', 'G197392'])
     assert len(source) == 2
     for i, (event_id, event) in enumerate(source.items()):
         if i == 0:
             assert event_id == 'G211117'
             assert (event.singles[0].snr_series is event.singles[1].snr_series
                     is None)
-            assert event.singles[0].detector == 'H1'
+            assert event.singles[0].instrument == 'H1'
             assert event.singles[0].snr == 9.0802174
             assert event.singles[0].phase == -0.13969257
             assert (event.singles[0].time == event.singles[0].zerolag_time ==
@@ -87,7 +82,7 @@ def test_gracedb():
             psd = event.singles[0].psd
             assert psd.f0 == 0.0
             assert psd.deltaF == 0.125
-            assert event.singles[1].detector == 'L1'
+            assert event.singles[1].instrument == 'L1'
             assert event.singles[1].snr == 7.3947201
             assert event.singles[1].phase == -2.7356486
             assert (event.singles[1].time == event.singles[1].zerolag_time ==
@@ -108,7 +103,7 @@ def test_gracedb():
             assert event_id == 'G197392'
             assert (event.singles[0].snr_series is event.singles[1].snr_series
                     is None)
-            assert event.singles[0].detector == 'H1'
+            assert event.singles[0].instrument == 'H1'
             assert event.singles[0].snr == 6.9068823
             assert event.singles[0].phase == 1.8298783
             assert (event.singles[0].time == event.singles[0].zerolag_time ==
@@ -116,7 +111,7 @@ def test_gracedb():
             psd = event.singles[0].psd
             assert psd.f0 == 30.0
             assert psd.deltaF == 0.125
-            assert event.singles[1].detector == 'L1'
+            assert event.singles[1].instrument == 'L1'
             assert event.singles[1].snr == 6.8389997
             assert event.singles[1].phase == -1.0297496
             assert (event.singles[1].time == event.singles[1].zerolag_time ==
@@ -134,45 +129,6 @@ def test_gracedb():
                 'spin2y': 0.0,
                 'spin2z': -0.53029484}
 
-
-def test_detector_disabled():
-    """Test reading from event sources with certain detectors disabled."""
-    client = MockGraceDb()
-    graceids = ('G211117', 'G197392')
-    base_source = events.gracedb.open(graceids, client)
-
-    source = events.detector_disabled.open(base_source, ['H1'])
-    assert len(source) == 2
-    for graceid, (event_id, event) in zip(graceids, source.items()):
-        assert event_id == graceid
-        assert len(event.singles) == 1
-        assert event.singles[0].detector == 'L1'
-
-    # Now test that exceptions are raised when they are called for.
-    expected_message = ('Disabling detectors {H1, L1} would have no effect on '
-                        'this event with detectors {H1 L1}')
-    nonraising_source = events.detector_disabled.open(
-        base_source, ['H1, L1'], raises=False)
-    raising_source = events.detector_disabled.open(
-        base_source, ['H1, L1'])
-    for event in nonraising_source.values():
-        event.singles
-    for event in raising_source.values():
-        with raises(events.DetectorDisabledError, expected_message):
-            event.singles
-
-    # Now test that exceptions are raised when they are called for.
-    expected_message = ('Disabling detectors {V1} would have no effect on '
-                        'this event with detectors {H1 L1}')
-    nonraising_source = events.detector_disabled.open(
-        base_source, ['V1'], raises=False)
-    raising_source = events.detector_disabled.open(
-        base_source, ['V1'])
-    for event in nonraising_source.values():
-        event.singles
-    for event in raising_source.values():
-        with raises(events.DetectorDisabledError, expected_message):
-            event.singles
 
 def test_hdf(tmpdir):
     """Test reading events from HDF5 files."""
@@ -224,12 +180,11 @@ def test_hdf(tmpdir):
     assert len(source) == 5
     for coinc_id, coinc in source.items():
         for i, (ifo, single) in enumerate(zip(ifos, coinc.singles)):
-            assert single.detector == ifo
+            assert single.instrument == ifo
             assert single.snr == i + coinc_id * np.pi
             assert single.phase == i + coinc_id * np.pi**2
             assert single.time == (
-                single.zerolag_time +
-                coinc_id * 10 * np.e * (-0.5 if i == 0 else +0.5))
+                single.zerolag_time + coinc_id * 10 * np.e * (i == 0))
             assert single.zerolag_time == i + coinc_id * np.pi**3
             assert single.psd.f0 == 10.0
             assert single.psd.deltaF == 2.0

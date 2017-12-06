@@ -69,9 +69,8 @@ if __name__ == '__main__':
 
 # Imports.
 import sqlite3
-import numpy as np
 from lalinference.io import fits
-from lalinference.bayestar.postprocess import find_injection_moc
+from lalinference.bayestar import distance, postprocess
 
 
 def startup(dbfilename, opts_contour, opts_modes, opts_area):
@@ -83,15 +82,14 @@ def startup(dbfilename, opts_contour, opts_modes, opts_area):
 
 
 def process(fitsfilename):
-    sky_map = fits.read_sky_map(fitsfilename, moc=True)
+    (prob, distmu, distsigma, distnorm), metadata = fits.read_sky_map(
+        fitsfilename, nest=None, distances=True)
 
-    coinc_event_id = sky_map.meta['objid']
+    coinc_event_id = metadata['objid']
     try:
-        runtime = sky_map.meta['runtime']
+        runtime = metadata['runtime']
     except KeyError:
         runtime = float('nan')
-
-    contour_pvalues = 0.01 * np.asarray(contours)
 
     row = db.execute(
         """
@@ -110,25 +108,24 @@ def process(fitsfilename):
             "No database record found for event '{0}' in '{1}'".format(
                 coinc_event_id, command.sqlite_get_filename(db)))
     simulation_id, true_ra, true_dec, true_dist, far, snr = row
-    searched_area, searched_prob, offset, searched_modes, contour_areas, \
-        area_probs, contour_modes, searched_prob_dist, contour_dists, \
-        searched_vol, searched_prob_vol, contour_vols = find_injection_moc(
-            sky_map, true_ra, true_dec, true_dist, contours=contour_pvalues,
-            areas=areas, modes=modes)
+    searched_area, searched_prob, offset, searched_modes, contour_areas, area_probs, contour_modes = postprocess.find_injection(
+        prob, true_ra, true_dec, contours=[0.01 * p for p in contours],
+        areas=areas, modes=modes, nest=metadata['nest'])
+    searched_prob_distance = distance.marginal_cdf(
+        true_dist, prob, distmu, distsigma, distnorm)
 
     if snr is None:
-        snr = np.nan
+        snr = float('nan')
     if far is None:
-        far = np.nan
-    distmean = sky_map.meta.get('distmean', np.nan)
-    diststd = sky_map.meta.get('diststd', np.nan)
-    log_bci = sky_map.meta.get('log_bci', np.nan)
-    log_bsn = sky_map.meta.get('log_bsn', np.nan)
+        far = float('nan')
+    distmean = metadata.get('distmean', float('nan'))
+    diststd = metadata.get('diststd', float('nan'))
+    log_bci = metadata.get('log_bci', float('nan'))
+    log_bsn = metadata.get('log_bsn', float('nan'))
 
     ret = [coinc_event_id, simulation_id, far, snr, searched_area,
-           searched_prob, searched_prob_dist, searched_vol, searched_prob_vol,
-           offset, runtime, distmean, diststd, log_bci, log_bsn] \
-          + contour_areas + area_probs + contour_dists + contour_vols
+           searched_prob, searched_prob_distance, offset, runtime, distmean,
+           diststd, log_bci, log_bsn] + contour_areas + area_probs
     if modes:
         ret += [searched_modes] + contour_modes
     return ret
@@ -154,17 +151,14 @@ if __name__ == '__main__':
         map = Pool(
             opts.jobs, startup,
             (command.sqlite_get_filename(db), contours, modes, areas)
-            ).imap
+            ).imap_unordered
 
     colnames = (
         ['coinc_event_id', 'simulation_id', 'far', 'snr', 'searched_area',
-         'searched_prob', 'searched_prob_dist', 'searched_vol',
-         'searched_prob_vol', 'offset', 'runtime', 'distmean', 'diststd',
-         'log_bci', 'log_bsn'] +
-        ['area({0:g})'.format(_) for _ in contours] +
-        ['prob({0:g})'.format(_) for _ in areas] +
-        ['dist({0:g})'.format(_) for _ in contours] +
-        ['vol({0:g})'.format(_) for _ in contours])
+         'searched_prob', 'searched_prob_distance', 'offset', 'runtime',
+         'distmean', 'diststd', 'log_bci', 'log_bsn'] +
+        ['area({0:g})'.format(p) for p in contours] +
+        ['prob({0:g})'.format(a) for a in areas])
     if modes:
         colnames += ['searched_modes']
         colnames += ["modes({0:g})".format(p) for p in contours]

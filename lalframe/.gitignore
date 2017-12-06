@@ -51,8 +51,7 @@ src/lalframe_version
 src/stamp-h1
 src/stamp-h2
 src/version.c
-swig/swiglalframe.i*
-swig/swiglal_*
+swig/swiglal*
 test/AggregationTest
 test/H1:LSC-AS_Q.???
 test/LALFrSeriesTest

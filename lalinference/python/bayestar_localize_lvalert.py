@@ -37,6 +37,11 @@ terminal, or redirected from a fifo):
 #
 
 from lalinference.bayestar import command
+import logging
+
+logging.basicConfig(
+    level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
+log = logging.getLogger('BAYESTAR')
 
 methods = '''
     toa_phoa_snr
@@ -50,9 +55,6 @@ parser = command.ArgumentParser(
     parents=[
         command.waveform_parser, command.prior_parser, command.skymap_parser])
 parser.add_argument(
-    '-d', '--disable-detector', metavar='X1', type=str, nargs='+',
-    help='disable certain detectors [default: enable all]')
-parser.add_argument(
     '-N', '--dry-run', default=False, action='store_true',
     help='Dry run; do not update GraceDB entry [default: %(default)s]')
 parser.add_argument(
@@ -63,8 +65,7 @@ parser.add_argument(
     help='Name for uploaded file [default: %(default)s]')
 parser.add_argument(
     'graceid', metavar='G123456', nargs='*',
-    help='Run on these GraceDB IDs. If no GraceDB IDs are listed on the '
-    'command line, then read newline-separated GraceDB IDs from stdin.')
+    help='Run on this GraceDB ID [default: listen to lvalert]')
 opts = parser.parse_args()
 
 
@@ -72,22 +73,14 @@ opts = parser.parse_args()
 # Late imports
 #
 
-import logging
 import os
 import sys
-import six
 from lalinference.bayestar.sky_map import localize, rasterize
 from lalinference.io import fits
 from lalinference.io import events
 import ligo.gracedb.logging
 import ligo.gracedb.rest
 
-# Squelch annoying and uniformative LAL log messages.
-import lal
-lal.ClobberDebugLevel(lal.LALNDEBUG)
-
-logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s')
-log = logging.getLogger('BAYESTAR')
 
 # If no GraceDB IDs were specified on the command line, then read them
 # from stdin line-by-line.
@@ -111,19 +104,7 @@ tags = ("sky_loc",)
 if not opts.no_tag:
     tags += ("lvem",)
 
-event_source = events.gracedb.open(graceids, gracedb)
-
-if opts.disable_detector:
-    event_source = events.detector_disabled.open(
-        event_source, opts.disable_detector)
-
-for graceid in six.iterkeys(event_source):
-
-    try:
-        event = event_source[graceid]
-    except:
-        log.exception('failed to read event %s from GraceDB', graceid)
-        continue
+for graceid, event in events.gracedb.open(gracedb, graceids).items():
 
     # Send log messages to GraceDb too
     if not opts.dry_run:
@@ -160,13 +141,8 @@ for graceid in six.iterkeys(event_source):
                     graceid, "BAYESTAR rapid sky localization ready",
                     filename=fitspath, tagname=tags)
             log.debug('uploaded FITS file')
-    except KeyboardInterrupt:
-        # Produce log message and then exit if we receive SIGINT (ctrl-C).
-        log.exception("sky localization failed")
-        raise
     except:
-        # Produce log message for any otherwise uncaught exception.
-        # Unless we are in dry-run mode, keep going.
+        # Produce log message for any otherwise uncaught exception
         log.exception("sky localization failed")
         if opts.dry_run:
             # Then re-raise the exception if we are in dry-run mode

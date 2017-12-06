@@ -76,29 +76,23 @@ class HDFEventSource(EventSource):
 
         try:
             coinc_file, = files['coincs']
-        except (KeyError, ValueError):
+        except ValueError:
             raise ValueError('You must provide exactly one coinc file.')
         try:
             bank_file, = files['bank']
-        except (KeyError, ValueError):
+        except ValueError:
             raise ValueError(
                 'You must provide exactly one template bank file.')
-        try:
-            psd_files = files['psds']
-        except KeyError:
-            raise ValueError('You must provide PSD files.')
-        try:
-            trigger_files = files['triggers']
-        except KeyError:
-            raise ValueError('You must provide trigger files.')
+        psd_files = files['psds']
+        trigger_files = files['triggers']
 
         self._bank = bank_file
 
         key_prefix = 'detector_'
-        detector_nums, self._ifos = zip(*sorted(
-            (int(key[len(key_prefix):]), value)
-            for key, value in coinc_file.attrs.items()
-            if key.startswith(key_prefix)))
+        template_nums, self._ifos = zip(
+            *((key[len(key_prefix):], value)
+                for key, value in coinc_file.attrs.items()
+                if key.startswith(key_prefix)))
 
         coinc_group = coinc_file[sample]
         self._timeslide_interval = coinc_file.attrs.get(
@@ -107,8 +101,8 @@ class HDFEventSource(EventSource):
         self._timeslide_ids = coinc_group.get(
             'timeslide_id', np.zeros(len(self)))
         self._trigger_ids = [
-            coinc_group['trigger_id{}'.format(detector_num)]
-            for detector_num in detector_nums]
+            coinc_group['trigger_id' + template_num]
+            for template_num in template_nums]
 
         triggers = {}
         for f in trigger_files:
@@ -166,9 +160,9 @@ class HDFEvent(Event):
 class HDFSingleEvent(SingleEvent):
 
     def __init__(
-            self, detector, _coinc_id, _detector_num, _trigger_id,
+            self, instrument, _coinc_id, _detector_num, _trigger_id,
             _timeslide_interval, _triggers, _timeslide_ids, _psds):
-        self._detector = detector
+        self._instrument = instrument
         self._coinc_id = _coinc_id
         self._detector_num = _detector_num
         self._trigger_id = _trigger_id
@@ -178,8 +172,8 @@ class HDFSingleEvent(SingleEvent):
         self._psds = _psds
 
     @property
-    def detector(self):
-        return self._detector
+    def instrument(self):
+        return self._instrument
 
     @property
     def snr(self):
@@ -192,18 +186,9 @@ class HDFSingleEvent(SingleEvent):
     @property
     def time(self):
         value = self.zerolag_time
-
-        # PyCBC does not specify which detector is time-shifted in time slides.
-        # Since PyCBC's coincidence format currently supports only two
-        # detectors, we arbitrarily apply half of the time slide to each
-        # detector.
-        shift = self._timeslide_ids[self._coinc_id] * self._timeslide_interval
         if self._detector_num == 0:
-            value -= 0.5 * shift
-        elif self._detector_num == 1:
-            value += 0.5 * shift
-        else:
-            raise RuntimeError('This line should not be reached')
+            timeslide_id = self._timeslide_ids[self._coinc_id]
+            value += self._timeslide_interval * timeslide_id
         return value
 
     @property
@@ -217,7 +202,7 @@ class HDFSingleEvent(SingleEvent):
         except ValueError:
             raise ValueError(
                 'No PSD found for detector {} at zero-lag GPS time {}'.format(
-                    self.detector, self.zerolag_time))
+                    self.instrument, self.zerolag_time))
 
         dyn_range_fac = psd.file.attrs['dynamic_range_factor']
         flow = psd.file.attrs['low_frequency_cutoff']

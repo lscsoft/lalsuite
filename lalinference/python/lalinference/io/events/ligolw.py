@@ -88,8 +88,7 @@ class LigoLWEventSource(OrderedDict, EventSource):
     _invert_phases = {
         'pycbc': False,
         'gstlal_inspiral': True,
-        'bayestar_realize_coincs': True,
-        'MBTAOnline': True
+        'bayestar_realize_coincs': True
     }
 
     @classmethod
@@ -184,7 +183,7 @@ class LigoLWEventSource(OrderedDict, EventSource):
             singles = tuple(LigoLWSingleEvent(
                 self, sngl.ifo, sngl.snr, sngl.coa_phase,
                 float(sngl.end + offsets[sngl.ifo]), float(sngl.end),
-                psd_file or psd_filenames_by_process_id.get(sngl.process_id),
+                psd_filenames_by_process_id.get(sngl.process_id) or psd_file,
                 snr_dict.get(sngl.event_id), invert_phases)
                 for sngl in sngls)
 
@@ -226,10 +225,10 @@ class LigoLWEvent(Event):
 
 class LigoLWSingleEvent(SingleEvent):
 
-    def __init__(self, source, detector, snr, phase, time, zerolag_time,
+    def __init__(self, source, instrument, snr, phase, time, zerolag_time,
                  psd_file, snr_series, invert_phases):
         self._source = source
-        self._detector = detector
+        self._instrument = instrument
         self._snr = snr
         self._phase = phase
         self._time = time
@@ -239,8 +238,8 @@ class LigoLWSingleEvent(SingleEvent):
         self._invert_phases = invert_phases
 
     @property
-    def detector(self):
-        return self._detector
+    def instrument(self):
+        return self._instrument
 
     @property
     def snr(self):
@@ -249,7 +248,7 @@ class LigoLWSingleEvent(SingleEvent):
     @property
     def phase(self):
         value = self._phase
-        if value is not None and self._invert_phases:
+        if self._invert_phases:
             value *= -1
         return value
 
@@ -263,14 +262,14 @@ class LigoLWSingleEvent(SingleEvent):
 
     @property
     def psd(self):
-        return self._source._psds_for_file(self._psd_file)[self._detector]
+        return self._source._psds_for_file(self._psd_file)[self._instrument]
 
     @property
     def snr_series(self):
         value = self._snr_series
         if self._invert_phases and value is not None:
             value = lal.CutCOMPLEX8TimeSeries(value, 0, len(value.data.data))
-            value.data.data = value.data.data.conj()
+            value.data.data *= -1
         return value
 
 

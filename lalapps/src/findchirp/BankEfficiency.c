@@ -3287,11 +3287,14 @@ void BankEfficiencyParseGetInt(
 {
   CHAR *tmp;
   CHAR msg[2048];
+  CHAR *tmp1;
+
+  tmp1 = argv[*bank_index+1];
 
   if ( argv[*bank_index+1] != NULL )
   {
     *data = strtol(argv[*bank_index+1], &tmp  , 10);
-    if (*data==0 && argv[*bank_index+1][0] != '0')
+    if (*data==0 && tmp1[0] != '0')
     {
       sprintf(msg, "Expect a int after option %s (got %s)\n ",
           argv[*bank_index],
@@ -3302,8 +3305,9 @@ void BankEfficiencyParseGetInt(
   }
   else
   {
-    sprintf(msg, "Expect a int after option %s (got NULL)\n ",
-        argv[*bank_index]);
+    sprintf(msg, "Expect a int after option %s (got %s)\n ",
+        argv[*bank_index],
+        argv[*bank_index+1]);
     fprintf(stderr, "%s", msg);
     exit( 1 );
   }
@@ -3334,11 +3338,13 @@ void BankEfficiencyParseGetDouble(
 {
   CHAR *tmp;
   CHAR msg[2048];
+  CHAR *tmp2 ;
+  tmp2 = argv[*bank_index+1];
 
   if (argv[*bank_index+1] != NULL)
   {
     *data = strtod(argv[*bank_index+1], &tmp  );
-    if (*data == 0 && argv[*bank_index+1][0]!='0')
+    if (*data == 0 && tmp2[0]!='0')
     {
       sprintf(msg, "Expect a float after option %s (got %s)\n ",
           argv[*bank_index],
@@ -3348,8 +3354,9 @@ void BankEfficiencyParseGetDouble(
   }
   else
   {
-    sprintf(msg, "Expect a float after option %s (got NULL)\n ",
-        argv[*bank_index]);
+    sprintf(msg, "Expect a float after option %s (got %s)\n ",
+        argv[*bank_index],
+        argv[*bank_index+1]);
     fprintf(stderr, "%s", msg);
   }
   *bank_index =*bank_index + 1;
@@ -3364,6 +3371,10 @@ void BankEfficiencyParseGetDouble2(
 {
   CHAR *tmp;
   CHAR msg[2048];
+  CHAR *tmp2 , *tmp1;
+
+  tmp1 = argv[*bank_index+1];
+  tmp2=  argv[*bank_index+2];
 
   *data1 = 0 ;
   *data2 = 0 ;
@@ -3372,8 +3383,8 @@ void BankEfficiencyParseGetDouble2(
   {
     *data1 = strtod(argv[*bank_index+1], &tmp  );
     *data2 = strtod(argv[*bank_index+2], &tmp  );
-    if ((!(*data1) && argv[*bank_index+1][0]!='0')
-       ||  (!(*data2) && argv[*bank_index+2][0]!='0'))
+    if ((!(*data1) && tmp1[0]!='0')
+       ||  (!(*data2) && tmp2[0]!='0'))
     {
       sprintf(msg, "Expect 2 floats after option %s (got %s and %s)\n ",
           argv[*bank_index],
@@ -3383,8 +3394,9 @@ void BankEfficiencyParseGetDouble2(
   }
   else
   {
-    sprintf(msg, "Expect 2 floats after option %s (got NULL and/or NULL)\n ",
-        argv[*bank_index]);
+    sprintf(msg, "Expect 2 floats after option %s (got %s and %s)\n ",
+        argv[*bank_index],
+        argv[*bank_index+1],argv[*bank_index+2]);
     fprintf(stderr, "%s", msg);
   }
   *bank_index = *bank_index +2 ;

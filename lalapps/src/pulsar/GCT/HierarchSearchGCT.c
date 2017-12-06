@@ -157,7 +157,7 @@ typedef struct {
   UINT4 nf1dot;			/**< number of 1st spindown Fstat bins */
   UINT4 nf2dot;			/**< number of 2nd spindown Fstat bins */
   UINT4 nf3dot;			/**< number of 3rd spindown Fstat bins */
-  int SSBprec;                     /**< SSB transform precision */
+  SSBprecision SSBprec;            /**< SSB transform precision */
   FstatMethodType Fmethod;         //!< which Fstat-method/algorithm to use
   BOOLEAN recalcToplistStats;	   //!< do additional analysis for all toplist candidates, output F, FXvector for postprocessing */
   FstatMethodType FmethodRecalc;   //!< which Fstat-method/algorithm to use for the recalc step
@@ -167,8 +167,8 @@ typedef struct {
   REAL4 NSegmentsInvX[PULSAR_MAX_DETECTORS]; /**< effective inverse number of segments per detector (needed for correct averaging in single-IFO F calculation) */
   FstatInputVector* Fstat_in_vec;	/**< Original wide-parameter search: vector of Fstat input data structures for XLALComputeFstat(), one per stack */
   FstatInputVector* Fstat_in_vec_recalc; /**< Recalculate the toplist: Vector of Fstat input data structures for XLALComputeFstat(), one per stack */
+  FILE *timingDetailsFP;	// file pointer to write detailed coherent-timing info into
   PulsarParamsVector *injectionSources; ///< Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}')
-  BOOLEAN collectFstatTiming;		///< flag whether to collect and output F-stat timing info
 } UsefulStageVariables;
 
 
@@ -248,10 +248,6 @@ static inline REAL4 findLoudestTwoF ( const FstatResults *in );
 /* ---------- Global variables -------------------- */
 LALStatus *global_status; /* a global pointer to MAIN()s head of the LALStatus structure */
 char *global_column_headings_stringp;
-
-// XLALReadSegmentsFromFile(): applications which still must support
-// the deprecated 4-column format should set this variable to non-zero
-extern int XLALReadSegmentsFromFile_support_4column_format;
 
 /* ###################################  MAIN  ################################### */
 
@@ -448,12 +444,13 @@ int MAIN( int argc, char *argv[]) {
   INT4 uvar_numSkyPartitions = 0;
   INT4 uvar_partitionIndex = 0;
   INT4 uvar_SortToplist = 0;
+  BOOLEAN uvar_version = 0;
 
   CHAR *uvar_outputTiming = NULL;
   CHAR *uvar_outputTimingDetails = NULL;
 
-  int uvar_FstatMethod = FMETHOD_DEMOD_BEST;
-  int uvar_FstatMethodRecalc = FMETHOD_DEMOD_BEST;
+  CHAR *uvar_FstatMethod = XLALStringDuplicate("DemodBest");
+  CHAR *uvar_FstatMethodRecalc = XLALStringDuplicate("DemodBest");
 
   timingInfo_t XLAL_INIT_DECL(timing);
 
@@ -475,9 +472,6 @@ int MAIN( int argc, char *argv[]) {
 
 #ifdef EAH_LALDEBUGLEVEL
 #endif
-
-  // XLALReadSegmentsFromFile(): continue to support deprecated 4-column format (startGPS endGPS duration NumSFTs, duration is ignored)
-  XLALReadSegmentsFromFile_support_4column_format = 1;
 
   uvar_ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
   uvar_ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
@@ -552,27 +546,27 @@ int MAIN( int argc, char *argv[]) {
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_SortToplist,         "SortToplist",         INT4,         0,   OPTIONAL,   "Sort toplist by: 0=Fstat, 1=nc, 2=B_S/GL, 3='Fstat + B_S/GL', 4=B_S/GLtL, 5=B_tS/GLtL, 6='B_S/GL + B_S/GLtL + B_tS/GLtL'") == XLAL_SUCCESS, XLAL_EFUNC);
   // --------------------------------------------
 
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvarAuxData( &uvar_FstatMethod, "FstatMethod", UserEnum, XLALFstatMethodChoices(), 0, OPTIONAL, "F-statistic method to use" ) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvarAuxData( &uvar_FstatMethodRecalc, "FstatMethodRecalc", UserEnum, XLALFstatMethodChoices(), 0, OPTIONAL, "F-statistic method to use for recalc" ) == XLAL_SUCCESS, XLAL_EFUNC);
-
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_FstatMethod,         "FstatMethod",         STRING,       0,   OPTIONAL,   "F-statistic method to use. Available methods: %s", XLALFstatMethodHelpString() ) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_FstatMethodRecalc,   "FstatMethodRecalc",   STRING,       0,   OPTIONAL,   "F-statistic method to use for recalc. Available methods: %s", XLALFstatMethodHelpString() ) == XLAL_SUCCESS, XLAL_EFUNC);
   /* developer user variables */
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_blocksRngMed,        "blocksRngMed",        INT4,         0,   DEVELOPER,  "RngMed block size") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvarAuxData( &uvar_SSBprecision, "SSBprecision", UserEnum, &SSBprecisionChoices, 0, DEVELOPER, "Precision for SSB transform") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_SSBprecision,        "SSBprecision",        INT4,         0,   DEVELOPER,  "Precision for SSB transform.") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_Dterms,              "Dterms",              INT4,         0,   DEVELOPER,  "Number of kernel terms (single-sided) to use in\na) Dirichlet kernel if FstatMethod=Demod*\nb) sinc-interpolation kernel if FstatMethod=Resamp*" ) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_DtermsRecalc,        "DtermsRecalc",        INT4,         0,   DEVELOPER,  "Same as 'Dterms', applies to 'Recalc' step" ) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_skyPointIndex,       "skyPointIndex",       INT4,         0,   DEVELOPER,  "Only analyze this skypoint in grid" ) == XLAL_SUCCESS, XLAL_EFUNC);
 
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outputTiming,        "outputTiming",        STRING,       0,   DEVELOPER,  "Append timing information into this file") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outputTimingDetails, "outputTimingDetails", STRING,       0,   DEVELOPER,  "Append detailed averaged F-stat timing information to this file") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outputTimingDetails, "outputTimingDetails", STRING,       0,   DEVELOPER,  "Append detailed F-stat timing information to this file") == XLAL_SUCCESS, XLAL_EFUNC);
 
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_loudestTwoFPerSeg,   "loudestTwoFPerSeg",   BOOLEAN,      0, DEVELOPER, "Output loudest per-segment Fstat values into file '_loudestTwoFPerSeg'" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_version,             "version",             BOOLEAN,      'V', SPECIAL,    "Output version information") == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* inject signals into the data being analyzed */
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar ( &uvar_injectionSources, "injectionSources",      STRINGVector, 0, DEVELOPER,     "CSV list of files containing signal parameters for injection [see mfdv5]") == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     return(1);
 
@@ -585,6 +579,12 @@ int MAIN( int argc, char *argv[]) {
 
   LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s\n", VCSInfoString );
   // LogPrintfVerbatim( LOG_DEBUG, "CFS Hotloop variant: %s\n", OptimisedHotloopSource );
+
+  if ( uvar_version )
+    {
+      printf ("%s\n", VCSInfoString );
+      return (0);
+    }
 
   /* some basic sanity checks on user vars */
   if ( uvar_nStacksMax < 1) {
@@ -716,7 +716,16 @@ int MAIN( int argc, char *argv[]) {
     } /* end of logging */
 
   tic_Start = GETTIME();
-  usefulParams.collectFstatTiming = ( uvar_outputTimingDetails != NULL );
+  BOOLEAN printHeader = 0;
+  if ( uvar_outputTimingDetails != NULL ) {
+    FILE *tmp;
+    if ( (tmp = fopen ( uvar_outputTimingDetails, "r" )) == NULL ) {
+      printHeader = 1;
+    } else {
+      fclose (tmp );
+    }
+    XLAL_CHECK ( (usefulParams.timingDetailsFP = fopen ( uvar_outputTimingDetails, "wb" )) != NULL, XLAL_ESYS, "Failed to open '%s' for writing\n", uvar_outputTimingDetails );
+  } // if uvar_outputTimingDetails
 
   /* initializations of coarse and fine grids */
   coarsegrid.TwoF=NULL;
@@ -818,8 +827,9 @@ int MAIN( int argc, char *argv[]) {
   usefulParams.assumeSqrtSX = uvar_assumeSqrtSX;
   usefulParams.SignalOnly = uvar_SignalOnly;
   usefulParams.SSBprec = uvar_SSBprecision;
-  usefulParams.Fmethod = uvar_FstatMethod;
-  usefulParams.FmethodRecalc = uvar_FstatMethodRecalc;
+
+  XLAL_CHECK_MAIN ( XLALParseFstatMethodString ( &usefulParams.Fmethod, uvar_FstatMethod ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALParseFstatMethodString ( &usefulParams.FmethodRecalc, uvar_FstatMethodRecalc ) == XLAL_SUCCESS, XLAL_EFUNC );
   usefulParams.recalcToplistStats = uvar_recalcToplistStats;
 
   usefulParams.mismatch1 = uvar_mismatch1;
@@ -1563,6 +1573,9 @@ int MAIN( int argc, char *argv[]) {
                     XLALPrintError ("%s: XLALComputeFstat() failed with errno=%d\n", __func__, xlalErrno );
                     return xlalErrno;
                   }
+                  if ( usefulParams.timingDetailsFP != NULL ) {
+                    XLAL_CHECK ( AppendFstatTimingInfo2File ( usefulParams.Fstat_in_vec->data[k], usefulParams.timingDetailsFP, printHeader ) == XLAL_SUCCESS, XLAL_EFUNC );
+                  }
                   /* if single-only flag is given, add +4 to F-statistic */
                   if ( uvar_SignalOnly ) {
                     if (XLALAdd4ToFstatResults(Fstat_res) != XLAL_SUCCESS) {
@@ -1828,17 +1841,6 @@ int MAIN( int argc, char *argv[]) {
   }
   LogPrintf( LOG_NORMAL, "Finished main analysis.\n");
 
-
-  // output averaged F-stat timing model (--outputTimingDetails)
-  if ( uvar_outputTimingDetails != NULL ) {
-    FILE *fp;
-    XLAL_CHECK ( (fp = fopen ( uvar_outputTimingDetails, "ab" )) != NULL, XLAL_ESYS, "Failed to open '%s' for writing\n", uvar_outputTimingDetails );
-    for (size_t l=0; l < nStacks; l++) {
-      XLAL_CHECK ( XLALAppendFstatTiming2File ( usefulParams.Fstat_in_vec->data[l], fp, (l==0) ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-    fclose ( fp );
-  }
-
   /* Also compute F, FX (for line-robust statistics) for all candidates in final toplist */
   tic_RecalcToplist = GETTIME();
   if ( uvar_recalcToplistStats ) {
@@ -2087,6 +2089,9 @@ int MAIN( int argc, char *argv[]) {
 
   XLALFree ( VCSInfoString );
 
+  if ( usefulParams.timingDetailsFP != NULL ) {
+    fclose ( usefulParams.timingDetailsFP );
+  }
   XLALFree ( loudestTwoFPerSeg );
 
   LALCheckMemoryLeaks();
@@ -2331,7 +2336,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   optionalArgs.Dterms = in->Dterms;
   optionalArgs.runningMedianWindow = in->blocksRngMed;
   optionalArgs.FstatMethod = in->Fmethod;
-  optionalArgs.collectTiming = in->collectFstatTiming;
+  optionalArgs.collectTiming = (in->timingDetailsFP != NULL);
   optionalArgs.injectSources = in->injectionSources;
 
   FstatOptionalArgs XLAL_INIT_DECL(optionalArgsRecalc);

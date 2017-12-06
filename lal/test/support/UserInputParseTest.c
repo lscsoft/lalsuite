@@ -43,14 +43,6 @@ int test_ParseREAL8Vector(void);
 // ==================== function definitions ====================
 int main(void)
 {
-
-  // ---------- test XLAL_IDX2BIT()/XLAL_BIT2IDX() macros
-  for ( int i = 0; i < 64; ++i ) {
-    const unsigned long j = XLAL_IDX2BIT( i );
-    const int k = XLAL_BIT2IDX( j );
-    XLAL_CHECK_MAIN( i == k, XLAL_EFAILED, "XLAL_IDX2BIT()/XLAL_BIT2IDX() failed: %i -> %lu -> %i\n", i, j, k );
-  }
-
   // ---------- test various string-value parser functions ----------
   XLAL_CHECK_MAIN ( test_ParseStringValue() == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -213,51 +205,6 @@ test_ParseStringValue ( void )
                valString, valGPS.gpsSeconds, valGPS.gpsNanoSeconds, valGPSRef.gpsSeconds, valGPSRef.gpsNanoSeconds );
 
   // ---------- XLALParseStringValueAsREAL8Range() ----------
-  INT4Range int4Range, int4RangeRef;
-
-  valString = "100";
-  int4RangeRef[0] = 100; int4RangeRef[1] = 100;
-  XLAL_CHECK( XLALParseStringValueAsINT4Range(&int4Range, valString) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( int4Range[0] == int4RangeRef[0] && int4Range[1] == int4RangeRef[1] && int4Range[0] <= int4Range[1],
-              XLAL_ETOL, "XLALParseStringValueAsINT4Range(%s) failed, return = {%d,%d}\n", valString, int4Range[0], int4Range[1] );
-
-  valString = "150/5";
-  int4RangeRef[0] = 150; int4RangeRef[1] = 155;
-  XLAL_CHECK( XLALParseStringValueAsINT4Range(&int4Range, valString) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( int4Range[0] == int4RangeRef[0] && int4Range[1] == int4RangeRef[1] && int4Range[0] <= int4Range[1],
-              XLAL_ETOL, "XLALParseStringValueAsINT4Range(%s) failed, return = {%d,%d}\n", valString, int4Range[0], int4Range[1] );
-
-  valString = "150/-5";
-  int4RangeRef[0] = 145; int4RangeRef[1] = 150;
-  XLAL_CHECK( XLALParseStringValueAsINT4Range(&int4Range, valString) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( int4Range[0] == int4RangeRef[0] && int4Range[1] == int4RangeRef[1] && int4Range[0] <= int4Range[1],
-              XLAL_ETOL, "XLALParseStringValueAsINT4Range(%s) failed, return = {%d,%d}\n", valString, int4Range[0], int4Range[1] );
-
-  valString = "200,201";
-  int4RangeRef[0] = 200; int4RangeRef[1] = 201;
-  XLAL_CHECK( XLALParseStringValueAsINT4Range(&int4Range, valString) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( int4Range[0] == int4RangeRef[0] && int4Range[1] == int4RangeRef[1] && int4Range[0] <= int4Range[1],
-              XLAL_ETOL, "XLALParseStringValueAsINT4Range(%s) failed, return = {%d,%d}\n", valString, int4Range[0], int4Range[1] );
-
-  valString = "203,202";
-  int4RangeRef[0] = 202; int4RangeRef[1] = 203;
-  XLAL_CHECK( XLALParseStringValueAsINT4Range(&int4Range, valString) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( int4Range[0] == int4RangeRef[0] && int4Range[1] == int4RangeRef[1] && int4Range[0] <= int4Range[1],
-              XLAL_ETOL, "XLALParseStringValueAsINT4Range(%s) failed, return = {%d,%d}\n", valString, int4Range[0], int4Range[1] );
-
-  valString = "-203,-202";
-  int4RangeRef[0] = -203; int4RangeRef[1] = -202;
-  XLAL_CHECK( XLALParseStringValueAsINT4Range(&int4Range, valString) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( int4Range[0] == int4RangeRef[0] && int4Range[1] == int4RangeRef[1] && int4Range[0] <= int4Range[1],
-              XLAL_ETOL, "XLALParseStringValueAsINT4Range(%s) failed, return = {%d,%d}\n", valString, int4Range[0], int4Range[1] );
-
-  valString = "250~5";
-  int4RangeRef[0] = 245; int4RangeRef[1] = 255;
-  XLAL_CHECK( XLALParseStringValueAsINT4Range(&int4Range, valString) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( int4Range[0] == int4RangeRef[0] && int4Range[1] == int4RangeRef[1] && int4Range[0] <= int4Range[1],
-              XLAL_ETOL, "XLALParseStringValueAsINT4Range(%s) failed, return = {%d,%d}\n", valString, int4Range[0], int4Range[1] );
-
-  // ---------- XLALParseStringValueAsREAL8Range() ----------
   REAL8Range real8Range, real8RangeRef;
 
   valString = "100";
@@ -418,66 +365,6 @@ test_ParseStringValue ( void )
   XLAL_CHECK( XLALParseStringValueAsDECJRange(&decjRange, valString) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( fabs(decjRange[0] - decjRangeRef[0])/decjRangeRef[0] <= LAL_REAL8_EPS && fabs(decjRange[1] - decjRangeRef[1])/decjRangeRef[1] <= LAL_REAL8_EPS && decjRange[0] <= decjRange[1],
               XLAL_ETOL, "XLALParseStringValueAsDECJRange(%s) failed, return = {%g,%g}\n", valString, decjRange[0], decjRange[1] );
-
-  // ---------- XLALParseStringValueAsUserEnum() ----------
-  int valEnum;
-  const UserChoices enumData = { { -1, "noenum" }, { 1, "enum1" }, { 2, "enum2" }, { 2, "enumB" }, { 0, "enum0" } };
-
-  valString = "noenum";
-  XLAL_TRY_SILENT( XLALParseStringValueAsUserEnum ( &valEnum, &enumData, valString ), errnum );
-  XLAL_CHECK( errnum != 0, XLAL_EFAILED, "XLALParseStringValueAsUserEnum() failed to catch invalid enumeration value\n" );
-
-  valString = "enum0";
-  XLAL_CHECK( XLALParseStringValueAsUserEnum ( &valEnum, &enumData, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( valEnum == 0, XLAL_ETOL, "XLALParseStringValueAsUserEnum(%s), failed, return = %i", valString, valEnum );
-
-  valString = "enum1";
-  XLAL_CHECK( XLALParseStringValueAsUserEnum ( &valEnum, &enumData, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( valEnum == 1, XLAL_ETOL, "XLALParseStringValueAsUserEnum(%s), failed, return = %i", valString, valEnum );
-
-  valString = "enum2";
-  XLAL_CHECK( XLALParseStringValueAsUserEnum ( &valEnum, &enumData, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( valEnum == 2, XLAL_ETOL, "XLALParseStringValueAsUserEnum(%s), failed, return = %i", valString, valEnum );
-
-  valString = "enumb";
-  XLAL_CHECK( XLALParseStringValueAsUserEnum ( &valEnum, &enumData, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( valEnum == 2, XLAL_ETOL, "XLALParseStringValueAsUserEnum(%s), failed, return = %i", valString, valEnum );
-
-  // ---------- XLALParseStringValueAsUserFlag() ----------
-  int valFlag;
-  const UserChoices flagData = { { 0, "none" }, { -1, "noflag" }, { 1, "flagA" }, { 2, "flagB" }, { 4, "flagC" }, { 5, "flagAC" } };
-
-  valString = "none";
-  XLAL_CHECK( XLALParseStringValueAsUserFlag ( &valFlag, &flagData, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( valFlag == 0, XLAL_ETOL, "XLALParseStringValueAsUserFlag(%s), failed, return = %i", valString, valFlag );
-
-  valString = "noflag";
-  XLAL_TRY_SILENT( XLALParseStringValueAsUserFlag ( &valFlag, &flagData, valString ), errnum );
-  XLAL_CHECK( errnum != 0, XLAL_EFAILED, "XLALParseStringValueAsUserFlag() failed to catch invalid bitflag value\n" );
-
-  valString = "none,flagA";
-  XLAL_TRY_SILENT( XLALParseStringValueAsUserFlag ( &valFlag, &flagData, valString ), errnum );
-  XLAL_CHECK( errnum != 0, XLAL_EFAILED, "XLALParseStringValueAsUserFlag() failed to catch invalid bitflag value\n" );
-
-  valString = "flagA";
-  XLAL_CHECK( XLALParseStringValueAsUserFlag ( &valFlag, &flagData, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( valFlag == 1, XLAL_ETOL, "XLALParseStringValueAsUserFlag(%s), failed, return = %i", valString, valFlag );
-
-  valString = "flagB";
-  XLAL_CHECK( XLALParseStringValueAsUserFlag ( &valFlag, &flagData, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( valFlag == 2, XLAL_ETOL, "XLALParseStringValueAsUserFlag(%s), failed, return = %i", valString, valFlag );
-
-  valString = "flagA,flagC";
-  XLAL_CHECK( XLALParseStringValueAsUserFlag ( &valFlag, &flagData, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( valFlag == 5, XLAL_ETOL, "XLALParseStringValueAsUserFlag(%s), failed, return = %i", valString, valFlag );
-
-  valString = "flagAC";
-  XLAL_CHECK( XLALParseStringValueAsUserFlag ( &valFlag, &flagData, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( valFlag == 5, XLAL_ETOL, "XLALParseStringValueAsUserFlag(%s), failed, return = %i", valString, valFlag );
-
-  valString = "flagB,flagA,flagC,flagA";
-  XLAL_CHECK( XLALParseStringValueAsUserFlag ( &valFlag, &flagData, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( valFlag == 7, XLAL_ETOL, "XLALParseStringValueAsUserFlag(%s), failed, return = %i", valString, valFlag );
 
   return XLAL_SUCCESS;
 } // test_ParseStringValue()

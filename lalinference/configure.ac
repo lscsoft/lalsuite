@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALInference],[1.9.4.1],[lal-discuss@ligo.org])
+AC_INIT([LALInference],[1.9.2.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALInferenceConfig.h])
 AC_CONFIG_SRCDIR([src/LALInference.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -18,13 +18,13 @@ AC_CONFIG_FILES([ \
   python/lalinference/Makefile \
   python/lalinference/__init__.py \
   python/lalinference/bayestar/Makefile \
-  python/lalinference/imrtgr/Makefile \
   python/lalinference/io/Makefile \
   python/lalinference/io/events/Makefile \
+  python/lalinference/rapid_pe/Makefile \
+  python/lalinference/imrtgr/Makefile \
+  python/lalinference/tiger/Makefile \
   python/lalinference/plot/Makefile \
   python/lalinference/popprior/Makefile \
-  python/lalinference/rapid_pe/Makefile \
-  python/lalinference/tiger/Makefile \
   src/LALInferenceVCSInfo.c \
   src/LALInferenceVCSInfo.h \
   src/Makefile \
@@ -87,9 +87,9 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[14])
+AC_SUBST([LIBCURRENT],[13])
 AC_SUBST([LIBREVISION],[0])
-AC_SUBST([LIBAGE],[1])
+AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # nightly build

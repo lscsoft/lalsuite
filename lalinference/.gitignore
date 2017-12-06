@@ -52,12 +52,11 @@ python/bayestar_plot_volume
 python/bayestar_prune_neighborhood_tmpltbank
 python/bayestar_realize_coincs
 python/bayestar_sample_model_psd
-python/bayestar_samples_ppplot
 python/bayestar_sim_to_tmpltbank
 python/imrtgr_imr_consistency_test
 python/lalinference/__init__.py
-python/lalinference/_distance.so
 python/lalinference/_lalinference*
+python/lalinference/bayestar/_distance.so
 python/lalinference/bayestar/_moc.so
 python/lalinference/bayestar/_sky_map.so
 python/lalinference/bayestar/sky_map.so
@@ -85,8 +84,7 @@ src/lalinference_version
 src/stamp-h1
 src/stamp-h2
 src/version.c
-swig/swiglalinference.i*
-swig/swiglal_*
+swig/swiglal*
 test/.cache
 test/LALInferenceGenerateROQTest
 test/LALInferenceHDF5Test
