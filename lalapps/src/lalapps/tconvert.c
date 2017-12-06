@@ -17,24 +17,23 @@
 *  MA  02111-1307  USA
 */
 
-#define _GNU_SOURCE     /* for setenv() and putenv() */
-
-#include <stdlib.h>
 #include <ctype.h>
 #include <errno.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
+
+#define _GNU_SOURCE
+#include "getopt.h"
 
 #include <lal/LALStdlib.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALConstants.h>
 #include <lal/Date.h>
 #include "getdate.h"
 #include "lalapps.h"
-
-#include "config.h"
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -307,9 +306,9 @@ static void output_jd( int gps_sec )
   struct tm utc;
   double jd;
   utc = *XLALGPSToUTC( &utc, gps_sec );
-  jd = XLALConvertCivilTimeToJD( &utc );
+  jd = XLALJulianDay( &utc );
   if ( verbose )
-    printf( "Julian Day (UTC)  = " );
+    printf( "Julian Day = " );
   printf( "%.6f\n", jd );
   return;
 }
@@ -317,11 +316,13 @@ static void output_jd( int gps_sec )
 static void output_mjd( int gps_sec )
 {
   struct tm utc;
+  double jd;
   double mjd;
   utc = *XLALGPSToUTC( &utc, gps_sec );
-  mjd = XLALConvertCivilTimeToMJD( &utc );
+  jd = XLALJulianDay( &utc );
+  mjd = jd - XLAL_MJD_REF;
   if ( verbose )
-    printf( "Modified Julian Day (UTC) = " );
+    printf( "Modified Julian Day = " );
   printf( "%.6f\n", mjd );
   return;
 }
@@ -630,7 +631,7 @@ void usage( const char *program, int exitcode )
                 output date string in ISO 8601 format\n\
         \n\
         -j, --jd, --julian-day\n\
-                output Julian day (in UTC time system)\n\
+                output Julian day\n\
         \n\
         -l, --leap-seconds\n\
                 output number of leap seconds (TAI-UTC)\n\
@@ -639,7 +640,7 @@ void usage( const char *program, int exitcode )
                 date strings formatted for local time (current TZ setting)\
         \n\
         -m, --mjd, --modified-julian-day\n\
-                output modified Julian day (in UTC time system)\n\
+                output modified Julian day\n\
         \n\
         -R, --rfc-2822\n\
                 output RFC-2822 compliant date string\n\
@@ -684,7 +685,7 @@ void usage( const char *program, int exitcode )
         \n\
                 %s --sidereal-time --site=LHO 3 hours ago\n\
         \n\
-        Get the Julian day(UTC) of Y2K (UTC is default unless --local is used):\n\
+        Get the Julian day of Y2K (UTC is default unless --local is used):\n\
         \n\
                 %s --julian-day Jan 1, 2000\n\
         \n\
@@ -704,7 +705,7 @@ void usage( const char *program, int exitcode )
 
 char * parse_options( char *buf, int buflen, int argc, char **argv )
 {
-  struct LALoption long_options[] =
+  struct option long_options[] =
   {
     { "date",           no_argument,            0,      'd'     },
     { "format",         required_argument,      0,      'f'     },
@@ -738,7 +739,7 @@ char * parse_options( char *buf, int buflen, int argc, char **argv )
     int option_index = 0;
     int c;
 
-    c = LALgetopt_long_only( argc, argv, args, long_options, &option_index );
+    c = getopt_long_only( argc, argv, args, long_options, &option_index );
     if ( c == -1 ) /* end of options */
       break;
 
@@ -749,7 +750,7 @@ char * parse_options( char *buf, int buflen, int argc, char **argv )
         if ( ! long_options[option_index].flag )
         {
           fprintf( stderr, "error parsing option %s with argument %s\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           usage( program, 1 );
         }
         break;
@@ -759,7 +760,7 @@ char * parse_options( char *buf, int buflen, int argc, char **argv )
         break;
 
       case 'f': /* format */
-        output_date_format = LALoptarg;
+        output_date_format = optarg;
         break;
 
       case 'G': /* gps-epoch */
@@ -796,15 +797,15 @@ char * parse_options( char *buf, int buflen, int argc, char **argv )
 
       case 's': /* sidereal-time */
         output_type = OUTPUT_GMST;
-        if ( LALoptarg )
+        if ( optarg )
         {
-          if ( ! strcmp( LALoptarg, "rad" ) || ! strcmp( LALoptarg, "RAD" ) )
+          if ( ! strcmp( optarg, "rad" ) || ! strcmp( optarg, "RAD" ) )
             sidereal_format = SIDEREAL_RAD;
-          else if ( ! strcmp( LALoptarg, "hms" ) || ! strcmp( LALoptarg, "HMS" ) )
+          else if ( ! strcmp( optarg, "hms" ) || ! strcmp( optarg, "HMS" ) )
             sidereal_format = SIDEREAL_HMS;
           else
           {
-            fprintf( stderr, "unrecognized sidereal time format %s\n", LALoptarg );
+            fprintf( stderr, "unrecognized sidereal time format %s\n", optarg );
             fprintf( stderr, "expect \"HMS\" (hours:minutes:seconds)" );
             fprintf( stderr, "or \"RAD\" (radians)\n" );
             exit( 1 );
@@ -838,17 +839,17 @@ char * parse_options( char *buf, int buflen, int argc, char **argv )
         break;
 
       case 'z': /* zone */
-        tz = LALoptarg;
+        tz = optarg;
         break;
 
       case 'Z': /* site */
-        if ( strcmp( LALoptarg, "LHO" ) == 0 || strcmp( LALoptarg, "lho" ) == 0 )
+        if ( strcmp( optarg, "LHO" ) == 0 || strcmp( optarg, "lho" ) == 0 )
           site = SITE_LHO;
-        else if ( strcmp( LALoptarg, "LLO" ) == 0 || strcmp( LALoptarg, "llo" ) == 0 )
+        else if ( strcmp( optarg, "LLO" ) == 0 || strcmp( optarg, "llo" ) == 0 )
           site = SITE_LLO;
         else
         {
-          fprintf( stderr, "unrecognized detector site %s\n", LALoptarg );
+          fprintf( stderr, "unrecognized detector site %s\n", optarg );
           fprintf( stderr, "expect either \"LHO\" or \"LLO\"\n" );
           exit( 1 );
         }
@@ -862,18 +863,18 @@ char * parse_options( char *buf, int buflen, int argc, char **argv )
     }
   }
 
-  if ( LALoptind == argc && fp )
+  if ( optind == argc && fp )
   {
       char UNUSED *c;
       c = fgets( buf, buflen, fp );
   }
   else
   {
-    for ( ; LALoptind < argc; ++LALoptind )
+    for ( ; optind < argc; ++optind )
     {
       int len;
       len = strlen( buf );
-      strncat( buf + len, argv[LALoptind], buflen - len );
+      strncat( buf + len, argv[optind], buflen - len );
       len = strlen( buf );
       if ( len == buflen )
       {

@@ -1,36 +1,35 @@
-LAL
-================================
+LAL - LIGO Scientific Collaboration Algorithm Library
 
-Core gravitational wave analysis routines.
+Synopsis:
 
-Acknowledgment
---------------------------------
+        A collection of routines for gravitational wave data analysis.
 
-We request that any academic report, publication, or other academic
-disclosure of results derived from the use of this software acknowledge
-the use of the software by an appropriate acknowledgment or citation.
 
-Basic Build Instructions
---------------------------------
+Notice:
 
-     ./configure --prefix=...
-     make
-     make install
+        We request that any academic report, publication, or other
+        academic disclosure of results derived from the use of this
+        software acknowledge the use of the software by an appropriate
+        acknowledgment or citation.
 
-Please read the [LALSuite install how-to][install] for more detailed
-build instructions.
 
-Bug Reporting
---------------------------------
+Consult:
 
-Please visit the [LALSuite bug reporting system][bugs] (LIGO.org
-authentication required).
+        README.bugs             reporting problems with LAL
+        README.contrib          instructions for LAL developers
+        README.install          instructions for building LAL from source
 
-For More Information
---------------------------------
 
-Please visit the [LALSuite project page][project].
+Other resources:
 
-[install]: https://wiki.ligo.org/DASWG/LALSuiteInstall
-[bugs]:    https://bugs.ligo.org/redmine/projects/lalsuite
-[project]: https://wiki.ligo.org/DASWG/LALSuite
+        Binary releases of LAL for various platforms:
+        http://www.lsc-group.phys.uwm.edu/daswg/download/repositories.html
+
+        LAL-Announce: LAL announcements including release announcements.
+        http://www.lsc-group.phys.uwm.edu/mailman/listinfo/lal-announce
+
+        LAL-Discuss: general LAL discussion forum (not for bug reports)
+        http://www.lsc-group.phys.uwm.edu/mailman/listinfo/lal-discuss
+
+        Please see the LAL webpage for more information:
+        http://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html

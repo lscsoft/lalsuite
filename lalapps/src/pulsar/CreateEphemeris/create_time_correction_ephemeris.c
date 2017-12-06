@@ -83,9 +83,9 @@ int main(int argc, char **argv){
 
   /* output header information on lines starting with a # comment */
   fprintf(fp, "# Build information for %s\n", argv[0]);
-  fprintf(fp, "# Author: %s\n", lalAppsVCSInfo.vcsAuthor);
-  fprintf(fp, "# LALApps Commit ID: %s\n", lalAppsVCSInfo.vcsId);
-  fprintf(fp, "# LALApps Commit Date: %s\n", lalAppsVCSInfo.vcsDate);
+  fprintf(fp, "# Author: %s\n", lalAppsVCSAuthor);
+  fprintf(fp, "# LALApps Commit ID: %s\n", lalAppsVCSId);
+  fprintf(fp, "# LALApps Commit Date: %s\n", lalAppsVCSDate);
   fprintf(fp, "#\n# Ephemeris creation command:-\n#\t");
   for( INT4 k=0; k<argc; k++ ) fprintf(fp, "%s ", argv[k]);
   fprintf(fp, "\n");
@@ -137,7 +137,7 @@ the conversion:\n\
 }
 
 void get_input_args(inputParams_t *inputParams, int argc, char *argv[]){
-  struct LALoption long_options[] =
+  struct option long_options[] =
   {
     { "help",          no_argument,       0, 'h' },
     { "verbose",       no_argument, &verbose, 1 },
@@ -177,7 +177,7 @@ void get_input_args(inputParams_t *inputParams, int argc, char *argv[]){
     int option_index = 0;
     int c;
 
-    c = LALgetopt_long( argc, argv, args, long_options, &option_index );
+    c = getopt_long( argc, argv, args, long_options, &option_index );
     if ( c == -1 ) /* end of options */
       break;
 
@@ -187,29 +187,27 @@ void get_input_args(inputParams_t *inputParams, int argc, char *argv[]){
           break;
         else
           fprintf(stderr, "Error passing option %s with argument %s\n",
-            long_options[option_index].name, LALoptarg);
-#if __GNUC__ >= 7
-        __attribute__ ((fallthrough));
-#endif
+            long_options[option_index].name, optarg);
       case 'h': /* help message */
         fprintf(stderr, USAGE, program);
         exit(0);
       case 't':
-        inputParams->ephemtype = XLALStringDuplicate(LALoptarg);
+        inputParams->ephemtype = strdup(optarg);
         break;
       case 'o':
-        inputParams->outputpath = XLALStringDuplicate(LALoptarg);
+        inputParams->outputpath = strdup(optarg);
         break;
       case 's':
-        inputParams->startT = atof(LALoptarg);
+        inputParams->startT = atof(optarg);
         break;
       case 'e':
-        inputParams->endT = atof(LALoptarg);
+        inputParams->endT = atof(optarg);
         break;
       case 'i':
-        inputParams->interval = atof(LALoptarg);
+        inputParams->interval = atof(optarg);
         break;
       case '?':
+        fprintf(stderr, "Unknown error while parsing options\n");
       default:
         fprintf(stderr, "Unknown error while parsing options\n");
     }

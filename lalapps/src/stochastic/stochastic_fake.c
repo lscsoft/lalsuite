@@ -32,7 +32,7 @@
 /* program info */
 const CHAR* prog_name="lalapps_stochastic_fake";
 
-/* flags for LALgetopt_long */
+/* flags for getopt_long */
 int middle_segment_flag;
 int apply_mask_flag;
 int high_pass_flag;
@@ -154,7 +154,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
   while(1)
   {
-    static struct LALoption long_options[] =
+    static struct option long_options[] =
     {
       /* options that set a flag */
       {"middle-segment", no_argument, &middle_segment_flag, 1},
@@ -189,11 +189,11 @@ static void parse_options(INT4 argc, CHAR *argv[])
       {0, 0, 0, 0}
     };
 
-    /* LALgetopt_long stores the option here */
+    /* getopt_long stores the option here */
     int option_index = 0;
-    size_t LALoptarg_len;
+    size_t optarg_len;
 
-    c = LALgetopt_long_only(argc, argv, \
+    c = getopt_long_only(argc, argv, \
         "abc:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:", long_options, \
         &option_index);
 
@@ -214,7 +214,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         else
         {
           fprintf(stderr, "error parseing option %s with argument %s\n", \
-              long_options[option_index].name, LALoptarg);
+              long_options[option_index].name, optarg);
           exit(1);
         }
         break;
@@ -234,9 +234,9 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'd':
         /* user tag */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        userTag = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
-        memcpy(userTag, LALoptarg, LALoptarg_len);
+        optarg_len = strlen(optarg) + 1;
+        userTag = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(userTag, optarg, optarg_len);
 
         /* add to process_params table */
         this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
@@ -244,12 +244,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
         snprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", prog_name);
         snprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, "--user-tag");
         snprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-        snprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, "%s", LALoptarg);
+        snprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, "%s", optarg);
         break;
 
       case 'e':
         /* xml comment */
-        if (strlen(LALoptarg) > LIGOMETA_COMMENT_MAX - 1)
+        if (strlen(optarg) > LIGOMETA_COMMENT_MAX - 1)
         {
           fprintf(stderr, "invalid argument to --%s:\n" \
               "comment must be less than %d characters\n", \
@@ -258,15 +258,15 @@ static void parse_options(INT4 argc, CHAR *argv[])
         }
         else
         {
-          snprintf(comment, LIGOMETA_COMMENT_MAX, "%s", LALoptarg);
+          snprintf(comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
 
       case 'f':
         /* directory for output files */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        outputPath = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
-        memcpy(outputPath, LALoptarg, LALoptarg_len);
+        optarg_len = strlen(optarg) + 1;
+        outputPath = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(outputPath, optarg, optarg_len);
         if (stat(outputPath, &fileStatus) == -1)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -279,15 +279,15 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'g':
         /* filename for output file */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        outputFileName = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
-        memcpy(outputFileName, LALoptarg, LALoptarg_len);
+        optarg_len = strlen(optarg) + 1;
+        outputFileName = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(outputFileName, optarg, optarg_len);
         ADD_PROCESS_PARAM("string", "%s", outputFileName);
         break;
 
       case 'h':
         /* duration */
-        totalDuration = atoi(LALoptarg);
+        totalDuration = atoi(optarg);
         if (totalDuration <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -300,7 +300,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'i':
         /* interval duration */
-        intervalDuration = atoi(LALoptarg);
+        intervalDuration = atoi(optarg);
         if (intervalDuration <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -313,7 +313,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'j':
         /* segment duration */
-        segmentDuration = atoi(LALoptarg);
+        segmentDuration = atoi(optarg);
         if (segmentDuration <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -326,7 +326,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'k':
         /* sample rate */
-        resampleRate = atoi(LALoptarg);
+        resampleRate = atoi(optarg);
         if (resampleRate < 2 || resampleRate > 16384 || resampleRate % 2)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -341,7 +341,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'l':
         /* minimal frequency */
-        fMin = atof(LALoptarg);
+        fMin = atof(optarg);
         if (fMin < 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -361,7 +361,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'm':
         /* maximal frequency */
-        fMax = atof(LALoptarg);
+        fMax = atof(optarg);
         if (fMax < 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -381,7 +381,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'n':
         /* number of bins to mask for frequency mask */
-        maskBin = atoi(LALoptarg);
+        maskBin = atoi(optarg);
         if (maskBin <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -394,7 +394,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'o':
         /* hann window duration */
-        hannDuration = atoi(LALoptarg);
+        hannDuration = atoi(optarg);
         if (hannDuration < 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -407,7 +407,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'p':
         /* high pass knee filter frequency  */
-        highPassFreq = atof(LALoptarg);
+        highPassFreq = atof(optarg);
         if (highPassFreq < 0)
         {
           fprintf(stderr, "Invalid argument tp --%s:\n" \
@@ -421,7 +421,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'q':
         /* high pass filter attenuation  */
-        highPassAtten = atof(LALoptarg);
+        highPassAtten = atof(optarg);
         if ((highPassAtten < 0.0) || (highPassAtten > 1.0))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -435,7 +435,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'r':
         /* high pass filter order  */
-        highPassOrder = atoi(LALoptarg);
+        highPassOrder = atoi(optarg);
         if (highPassOrder <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -449,19 +449,18 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 's':
         /* signal scale factor */
-        scaleFactor = atof(LALoptarg);
+        scaleFactor = atof(optarg);
         ADD_PROCESS_PARAM("float", "%e", scaleFactor);
-	break;
 
       case 't':
         /* filter spectrum exponent */
-        alpha = atof(LALoptarg);
+        alpha = atof(optarg);
         ADD_PROCESS_PARAM("float", "%e", alpha);
         break;
 
       case 'u':
         /* filter reference frequency */
-        fRef = atof(LALoptarg);
+        fRef = atof(optarg);
         if (fRef < 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -474,7 +473,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'v':
         /* filter reference omega */
-        omegaRef = atof(LALoptarg);
+        omegaRef = atof(optarg);
         if (omegaRef <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -495,12 +494,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
     }
   }
 
-  if (LALoptind < argc)
+  if (optind < argc)
   {
     fprintf(stderr, "Extraneous command line arguments:\n");
-    while(LALoptind < argc)
+    while(optind < argc)
     {
-      fprintf(stderr, "%s\n", argv[LALoptind++]);
+      fprintf(stderr, "%s\n", argv[optind++]);
     }
     exit(1);
   }
@@ -702,7 +701,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   proctable.processTable = (ProcessTable *) calloc(1, sizeof(ProcessTable));
   XLALGPSTimeNow(&proctable.processTable->start_time);
   XLALPopulateProcessTable(proctable.processTable, prog_name, \
-      lalAppsVCSIdentInfo.vcsId, lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
+      lalAppsVCSIdentId, lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0);
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) \
                     calloc(1, sizeof(ProcessParamsTable));
   memset(comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR));

@@ -1,9 +1,9 @@
 //
-// Copyright (C) 2012--2015 Karl Wette
-// Copyright (C) 2005--2007, 2009, 2010, 2012, 2014 Reinhard Prix
-// Copyright (C) 2007--2010, 2012 Bernd Machenschalk
+// Copyright (C) 2012, 2013, 2014 Karl Wette
+// Copyright (C) 2007, 2008, 2009, 2010, 2012 Bernd Machenschalk
 // Copyright (C) 2007 Chris Messenger
 // Copyright (C) 2006 John T. Whelan, Badri Krishnan
+// Copyright (C) 2005, 2006, 2007, 2009, 2010, 2012 Reinhard Prix
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,118 +21,107 @@
 // MA  02111-1307  USA
 //
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
+// This file implements the F-statistic demodulation algorithm. It is not compiled directly, but
+// included from ComputeFstat.c
 
-#include "ComputeFstat_internal.h"
-
-#include <lal/Factorial.h>
 #include <lal/LogPrintf.h>
-#include <lal/SinCosLUT.h>
+#include <lal/CWFastMath.h>
+#include "config.h"
 
 // ========== Demod internals ==========
 
 // ----- local types ----------
-
-// ---------- BEGIN: Demod-specific timing model data ----------
-typedef struct tagFstatTimingDemod
-{
-  REAL4 Nsft;			   //  (average) number of SFTs per detector
-  REAL4 tau0_coreLD;		   // 'fundamental' timing coefficient: fully-buffered time to compute F-stat for one SFT
-  REAL4 tau0_bufferLD;		   // 'fundamental' timing coefficient: time to re-compute buffered quantities for one SFT
-} FstatTimingDemod;
-
-static char FstatTimingDemodHelp[] =
-  "%%%% ----- Demod-specific F-statistic timing model -----\n"
-  "%%%% Nsft:          (average) number of SFTs per detector\n"
-  "%%%% tau0_coreLD:    timing coefficient for core Demod F-stat time\n"
-  "%%%% tau0_bufferLD:  timing coefficient for computation of buffered quantities\n"
-  "%%%%\n"
-  "%%%% Demod F-statistic timing model:\n"
-  "%%%% tauF_core      =  Nsft * tau0_coreLD\n"
-  "%%%% tauF_buffer    =  Nsft * tau0_bufferLD / NFbin\n"
-  "%%%%"
-  "";
-// ---------- END: Demod-specific timing model data ----------
-
-
-typedef struct {
-  int (*computefafb_func) (			// XLALComputeFaFb_...() function for the selected Demod hotloop
-    COMPLEX8 *, COMPLEX8 *, FstatAtomVector **, const SFTVector *, const PulsarSpins, const SSBtimes *, const AMCoeffs *, const UINT4 Dterms
-    );
-  UINT4 Dterms;					// Number of terms to keep in Dirichlet kernel
-  MultiSFTVector *multiSFTs;			// Input multi-detector SFTs
-  REAL8 prevAlpha, prevDelta;			// buffering: previous skyposition computed
+struct tagFstatInput_Demod {
+  UINT4 Dterms;                                 // Number of terms to keep in Dirichlet kernel
+  MultiSFTVector *multiSFTs;                    // Input multi-detector SFTs
+  REAL8 prevAlpha, prevDelta;                   // buffering: previous skyposition computed
   LIGOTimeGPS prevRefTime;			// buffering: keep track of previous refTime for SSBtimes buffering
   MultiSSBtimes *prevMultiSSBtimes;		// buffering: previous multiSSB times, unique to skypos + SFTs
   MultiAMCoeffs *prevMultiAMcoef;		// buffering: previous AM-coeffs, unique to skypos + SFTs
-
-  // ----- timing -----
-  BOOLEAN collectTiming;			// flag whether or not to collect timing information
-  FstatTimingGeneric timingGeneric;		// measured generic F-statistic timing values
-  FstatTimingDemod   timingDemod;		// storage for measured Demod-specific timing model
-
-} DemodMethodData;
+};
 
 // ----- local prototypes ----------
+static void DestroyFstatInput_Demod ( FstatInput_Demod* demod );
+static int ComputeFstat_Demod ( FstatResults* Fstats, const FstatInput_Common *common, FstatInput_Demod* demod );
 
-int XLALSetupFstatDemod  ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
 
-int XLALComputeFaFb_Generic ( COMPLEX8 *Fa, COMPLEX8 *Fb, FstatAtomVector **FstatAtoms, const SFTVector *sfts,
-                              const PulsarSpins fkdot, const SSBtimes *tSSB, const AMCoeffs *amcoe, const UINT4 Dterms );
-
-int XLALComputeFaFb_OptC    ( COMPLEX8 *Fa, COMPLEX8 *Fb, FstatAtomVector **FstatAtoms, const SFTVector *sfts,
-                              const PulsarSpins fkdot, const SSBtimes *tSSB, const AMCoeffs *amcoe, const UINT4 Dterms );
-
-#ifdef HAVE_ALTIVEC
-int XLALComputeFaFb_Altivec ( COMPLEX8 *Fa, COMPLEX8 *Fb, FstatAtomVector **FstatAtoms, const SFTVector *sfts,
-                              const PulsarSpins fkdot, const SSBtimes *tSSB, const AMCoeffs *amcoe, const UINT4 Dterms );
+// ========== define various hotloop variants of ComputeFaFb() ==========
+// ComputeFaFb: DTERMS define used for loop unrolling in some hotloop variants
+#define DTERMS 8
+#define LD_SMALL4       (2.0e-4)                /* "small" number for REAL4*/
+#define OOTWOPI         (1.0 / LAL_TWOPI)       /* 1/2pi */
+#define TWOPI_FLOAT     6.28318530717958f       /* single-precision 2*pi */
+#define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)    /* single-precision 1 / (2pi) */
+/* somehow the branch prediction of gcc-4.1.2 terribly fails
+ * So let's give gcc a hint which path has a higher probablility
+ */
+#ifdef __GNUC__
+#define likely(x)       __builtin_expect((x),1)
+#else
+#define likely(x)       (x)
 #endif
 
-#ifdef HAVE_SSE_COMPILER
-int XLALComputeFaFb_SSE     ( COMPLEX8 *Fa, COMPLEX8 *Fb, FstatAtomVector **FstatAtoms, const SFTVector *sfts,
-                              const PulsarSpins fkdot, const SSBtimes *tSSB, const AMCoeffs *amcoe, const UINT4 Dterms );
+#include "SinCosLUT.i"
+
+// ----- old (pre-Akos) LALDemod hotloop variant (unrestricted Dterms) ----------
+#define FUNC XLALComputeFaFb_Generic
+#define HOTLOOP_SOURCE "ComputeFstat_DemodHL_Generic.i"
+#define RUNTIME_CHECK XLAL_CHECK ( Dterms > 0, XLAL_EINVAL );
+#include "ComputeFstat_Demod_ComputeFaFb.c"
+// ----- Akos generic hotloop code (Dterms <= 20) ----------
+#define FUNC XLALComputeFaFb_OptC
+#define HOTLOOP_SOURCE "ComputeFstat_DemodHL_OptC.i"
+#define RUNTIME_CHECK XLAL_CHECK ( Dterms <= 20, XLAL_EINVAL, "Selected Hotloop variant 'OptC' only works for Dterms <= 20, got %d\n", Dterms );
+#include "ComputeFstat_Demod_ComputeFaFb.c"
+// ----- Akos hotloop precalc SSE code (Dterms=8) ----------
+#if CFS_HAVE_SSE
+#define FUNC XLALComputeFaFb_SSE
+#define HOTLOOP_SOURCE "ComputeFstat_DemodHL_SSE.i"
+#define RUNTIME_CHECK XLAL_CHECK ( Dterms == 8, XLAL_EINVAL, "Selected Hotloop variant 'SSE' only works for Dterms == 8, got %d\n", Dterms );
+#include "ComputeFstat_Demod_ComputeFaFb.c"
+#else
+#define XLALComputeFaFb_SSE(...) (XLALPrintError("Selected Hotloop variant 'SSE' unavailable\n") || XLAL_EFAILED)
 #endif
+// ----- Akos hotloop Altivec code (Dterms=8) ----------
+#if CFS_HAVE_ALTIVEC
+#include <altivec.h>
+#define FUNC XLALComputeFaFb_Altivec
+#define HOTLOOP_SOURCE "ComputeFstat_DemodHL_Altivec.i"
+#define RUNTIME_CHECK XLAL_CHECK ( Dterms == 8, XLAL_EINVAL, "Selected Hotloop variant 'Altivec' only works for Dterms == 8, got %d\n", Dterms );
+#include "ComputeFstat_Demod_ComputeFaFb.c"
+#else
+#define XLALComputeFaFb_Altivec(...) (XLALPrintError("Selected Hotloop variant 'Altivec' unavailable\n") || XLAL_EFAILED)
+#endif
+// ======================================================================
+
 
 // ----- local function definitions ----------
 static int
-XLALComputeFstatDemod ( FstatResults* Fstats,
-                        const FstatCommon *common,
-                        void *method_data
-                      )
+ComputeFstat_Demod ( FstatResults* Fstats,
+                     const FstatInput_Common *common,
+                     FstatInput_Demod* demod
+                     )
 {
   // Check input
   XLAL_CHECK(Fstats != NULL, XLAL_EFAULT);
   XLAL_CHECK(common != NULL, XLAL_EFAULT);
-  XLAL_CHECK(method_data != NULL, XLAL_EFAULT);
-
-  DemodMethodData *demod = (DemodMethodData*) method_data;
-  // get internal timing info
-  BOOLEAN collectTiming = demod->collectTiming;
-  BOOLEAN BufferRecomputed = 0;	// keep track if buffer was recomputed in this call or not
-  REAL8 Tau_buffer = 0;
-  REAL8 tic = 0, toc = 0;
+  XLAL_CHECK(demod != NULL, XLAL_EFAULT);
 
   // Get which F-statistic quantities to compute
   const FstatQuantities whatToCompute = Fstats->whatWasComputed;
 
   // handy shortcuts
   BOOLEAN returnAtoms = (whatToCompute & FSTATQ_ATOMS_PER_DET);
+  UINT4 Dterms = demod->Dterms;
   PulsarDopplerParams thisPoint = Fstats->doppler;
   const REAL8 fStart = thisPoint.fkdot[0];
   const MultiSFTVector *multiSFTs = demod->multiSFTs;
-  const MultiNoiseWeights *multiWeights = common->multiNoiseWeights;
-  const MultiDetectorStateSeries *multiDetStates = common->multiDetectorStates;
+  const MultiNoiseWeights *multiWeights = common->noiseWeights;
+  const MultiDetectorStateSeries *multiDetStates = common->detectorStates;
 
   UINT4 numDetectors = multiSFTs->length;
   XLAL_CHECK ( multiDetStates->length == numDetectors, XLAL_EINVAL );
   XLAL_CHECK ( multiWeights==NULL || (multiWeights->length == numDetectors), XLAL_EINVAL );
-
-  // initialize timing info struct
-  if ( collectTiming ) {
-    tic = XLALGetCPUTime();
-  }
 
   MultiSSBtimes *multiSSB = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
@@ -144,13 +133,9 @@ XLALComputeFstatDemod ( FstatResults* Fstats,
     { // if yes ==> reuse
       multiSSB    = demod->prevMultiSSBtimes;
       multiAMcoef = demod->prevMultiAMcoef;
-      BufferRecomputed = 0;
     }
   else
     { // if not, compute SSB + AMcoef for this skyposition
-      BufferRecomputed = 1;
-      demod->timingGeneric.NBufferMisses ++;
-
       SkyPosition skypos;
       skypos.system = COORDINATESYSTEM_EQUATORIAL;
       skypos.longitude = thisPoint.Alpha;
@@ -167,11 +152,6 @@ XLALComputeFstatDemod ( FstatResults* Fstats,
       demod->prevAlpha = thisPoint.Alpha;
       demod->prevDelta = thisPoint.Delta;
     } // if could not reuse previously buffered quantites
-
-  if ( collectTiming ) {
-    toc = XLALGetCPUTime();
-    Tau_buffer = (toc - tic);
-  }
 
   MultiSSBtimes *multiBinary = NULL;
   MultiSSBtimes *multiSSBTotal = NULL;
@@ -219,9 +199,25 @@ XLALComputeFstatDemod ( FstatResults* Fstats,
           FstatAtomVector *FstatAtoms = NULL;
           FstatAtomVector **FstatAtoms_p = returnAtoms ? (&FstatAtoms) : NULL;
 
-          // call XLALComputeFaFb_...() function for the user-requested hotloop variant
-          XLAL_CHECK ( (demod->computefafb_func) ( &FaX, &FbX, FstatAtoms_p, multiSFTs->data[X], thisPoint.fkdot,
-                                                   multiSSBTotal->data[X], multiAMcoef->data[X], demod->Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
+          // chose ComputeFaFb main function depending on selected hotloop variant
+          switch ( common->FstatMethod )
+            {
+            case  FMETHOD_DEMOD_GENERIC:
+              XLAL_CHECK ( XLALComputeFaFb_Generic ( &FaX, &FbX, FstatAtoms_p, multiSFTs->data[X], thisPoint.fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], Dterms )==XLAL_SUCCESS,XLAL_EFUNC);
+              break;
+            case FMETHOD_DEMOD_OPTC:
+              XLAL_CHECK ( XLALComputeFaFb_OptC ( &FaX, &FbX, FstatAtoms_p, multiSFTs->data[X], thisPoint.fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], Dterms ) == XLAL_SUCCESS, XLAL_EFUNC);
+              break;
+            case FMETHOD_DEMOD_SSE:
+              XLAL_CHECK ( XLALComputeFaFb_SSE ( &FaX, &FbX, FstatAtoms_p, multiSFTs->data[X], thisPoint.fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], Dterms) == XLAL_SUCCESS, XLAL_EFUNC);
+              break;
+            case FMETHOD_DEMOD_ALTIVEC:
+              XLAL_CHECK ( XLALComputeFaFb_Altivec ( &FaX, &FbX, FstatAtoms_p, multiSFTs->data[X], thisPoint.fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], Dterms)==XLAL_SUCCESS,XLAL_EFUNC);
+              break;
+            default:
+              XLAL_ERROR ( XLAL_EINVAL, "Invalid Fstat-method %d!\n", common->FstatMethod );
+              break;
+            } // switch ( FstatMethod )
 
           if ( returnAtoms ) {
             multiFstatAtoms->data[X] = FstatAtoms;     // copy pointer to IFO-specific Fstat-atoms 'contents'
@@ -281,273 +277,54 @@ XLALComputeFstatDemod ( FstatResults* Fstats,
   // this needs to be free'ed, as it's currently not buffered
   XLALDestroyMultiSSBtimes ( multiBinary );
 
+
   // Return amplitude modulation coefficients
   Fstats->Mmunu = demod->prevMultiAMcoef->Mmunu;
 
-  // return per-detector antenna-pattern matrices
-  for ( UINT4 X=0; X < numDetectors; X ++ )
-    {
-      Fstats->MmunuX[X].Ad = multiAMcoef->data[X]->A;
-      Fstats->MmunuX[X].Bd = multiAMcoef->data[X]->B;
-      Fstats->MmunuX[X].Cd = multiAMcoef->data[X]->C;
-      Fstats->MmunuX[X].Dd = multiAMcoef->data[X]->D;
-      Fstats->MmunuX[X].Ed = 0;
-    }
-
-  if ( collectTiming )
-    {
-      toc = XLALGetCPUTime();
-      REAL8 Tau_total = (toc - tic);
-
-      FstatTimingGeneric *tiGen = &(demod->timingGeneric);	// generic part
-      FstatTimingDemod   *tiLD  = &(demod->timingDemod);	// Demod-method specific part
-
-      XLAL_CHECK ( numDetectors == tiGen->Ndet, XLAL_EINVAL, "Inconsistent number of detectors between XLALCreateSetup() [%d] and XLALComputeFstat() [%d]\n", tiGen->Ndet, numDetectors );
-
-      // rescale all relevant timings to per-detector
-      Tau_total  /= numDetectors;
-      Tau_buffer /= numDetectors;
-
-      // compute generic F-stat timing model contributions
-      UINT4 NFbin     = Fstats->numFreqBins;
-      REAL8 tauF_eff  = Tau_total / NFbin;
-      REAL8 tauF_core = (Tau_total - Tau_buffer) / NFbin;
-
-      // compute Demod timing model coefficients
-      REAL8 NsftPerDet    = tiLD->Nsft;
-      REAL8 tau0_coreLD   = tauF_core / NsftPerDet;
-
-      // update the averaged timing-model quantities
-      tiGen->NCalls ++;	// keep track of number of Fstat-calls for timing
-#define updateAvgF(q) tiGen->q = ((tiGen->q *(tiGen->NCalls-1) + q)/(tiGen->NCalls))
-      updateAvgF(tauF_eff);
-      updateAvgF(tauF_core);
-      // we also average NFbin, which can be different betnween different calls to XLALComputeFstat() (contrary to Ndet)
-      updateAvgF(NFbin);
-
-#define updateAvgLD(q) tiLD->q = ((tiLD->q *(tiGen->NCalls-1) + q)/(tiGen->NCalls))
-      updateAvgLD(tau0_coreLD);
-
-      // buffer-quantities only updated if buffer was actually recomputed
-      if ( BufferRecomputed )
-        {
-          REAL8 tau0_bufferLD = Tau_buffer / NsftPerDet;
-          REAL8 tauF_buffer   = Tau_buffer / NFbin;
-
-          updateAvgF(tauF_buffer);
-          updateAvgLD(tau0_bufferLD);
-        } // if BufferRecomputed
-
-    } // if collect timing
-
   return XLAL_SUCCESS;
 
-} // XLALComputeFstatDemod()
+} // ComputeFstat_Demod()
 
 
 static void
-XLALDestroyDemodMethodData ( void* method_data )
+DestroyFstatInput_Demod ( FstatInput_Demod* demod )
 {
-
-  DemodMethodData *demod = (DemodMethodData*) method_data;
-
+  if ( demod == NULL ) {
+    return;
+  }
   XLALDestroyMultiSFTVector ( demod->multiSFTs);
   XLALDestroyMultiSSBtimes  ( demod->prevMultiSSBtimes );
   XLALDestroyMultiAMCoeffs  ( demod->prevMultiAMcoef );
   XLALFree ( demod );
 
-} // XLALDestroyDemodMethodData()
+} // DestroyFstatInput_Demod()
 
-int
-XLALSetupFstatDemod ( void **method_data,
-                      FstatCommon *common,
-                      FstatMethodFuncs* funcs,
-                      MultiSFTVector *multiSFTs,
-                      const FstatOptionalArgs *optArgs
-                    )
+static int
+SetupFstatInput_Demod ( FstatInput_Demod *demod,
+                        const FstatInput_Common *common,
+                        MultiSFTVector *multiSFTs
+                        )
 {
   // Check input
-  XLAL_CHECK ( method_data != NULL, XLAL_EFAULT );
   XLAL_CHECK ( common != NULL, XLAL_EFAULT );
-  XLAL_CHECK ( funcs != NULL, XLAL_EFAULT );
+  XLAL_CHECK ( demod != NULL, XLAL_EFAULT );
   XLAL_CHECK ( multiSFTs != NULL, XLAL_EFAULT );
-  XLAL_CHECK ( optArgs != NULL, XLAL_EFAULT );
-
-  // Allocate method data
-  DemodMethodData *demod = *method_data = XLALCalloc( 1, sizeof(*demod) );
-  XLAL_CHECK( demod != NULL, XLAL_ENOMEM );
-
-  // Set method function pointers
-  funcs->compute_func = XLALComputeFstatDemod;
-  funcs->method_data_destroy_func = XLALDestroyDemodMethodData;
-  funcs->workspace_destroy_func = NULL;
 
   // Save pointer to SFTs
   demod->multiSFTs = multiSFTs;
 
-  // Save Dterms
-  demod->Dterms = optArgs->Dterms;
-
-  // turn on timing collection if requested
-  demod->collectTiming = optArgs->collectTiming;
-
-  // initialize struct for collecting timing data, store invariant 'meta' quantities about this setup
-  if ( demod->collectTiming )
-    {
-      XLAL_INIT_MEM(demod->timingGeneric);
-      XLAL_INIT_MEM(demod->timingDemod);
-      UINT4 numDetectors = demod->multiSFTs->length;
-      UINT4 numSFTs = 0;
-      for ( UINT4 X = 0; X < numDetectors; X ++ ) {
-        numSFTs += demod->multiSFTs->data[X]->length;
-      }
-      demod->timingGeneric.Ndet = numDetectors;
-      demod->timingDemod.Nsft	= 1.0 * numSFTs / numDetectors;	// average number of sfts *per detector*
-    } // if collectTiming
-
-  // Select XLALComputeFaFb_...() function for the user-requested hotloop variant
-  switch ( optArgs->FstatMethod ) {
-  case  FMETHOD_DEMOD_GENERIC:
-    demod->computefafb_func = XLALComputeFaFb_Generic;
-    break;
-  case FMETHOD_DEMOD_OPTC:
-    demod->computefafb_func = XLALComputeFaFb_OptC;
-    break;
-#ifdef HAVE_ALTIVEC
-  case FMETHOD_DEMOD_ALTIVEC:
-    demod->computefafb_func = XLALComputeFaFb_Altivec;
-    break;
-#endif
-#ifdef HAVE_SSE_COMPILER
-  case FMETHOD_DEMOD_SSE:
-    demod->computefafb_func = XLALComputeFaFb_SSE;
-    break;
-#endif
-  default:
-    XLAL_ERROR ( XLAL_EINVAL, "Invalid Demod hotloop optArgs->FstatMethod='%d'", optArgs->FstatMethod );
-    break;
-  }
-
   return XLAL_SUCCESS;
 
-} // XLALSetupFstatDemod()
+} // SetupFstatInput_Demod()
 
 
-int
-XLALGetFstatTiming_Demod ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel )
+static int
+GetFstatExtraBins_Demod ( FstatInput_Demod* demod )
 {
-  XLAL_CHECK ( method_data != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( timingGeneric != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( timingModel != NULL, XLAL_EINVAL );
+  // Check input
+  XLAL_CHECK ( demod != NULL, XLAL_EFAULT );
 
-  const DemodMethodData *demod = (const DemodMethodData*) method_data;
-  XLAL_CHECK ( demod != NULL, XLAL_EINVAL );
+  // Demodulation requires 'Dterms' extra frequency bins
+  return demod->Dterms;
 
-  (*timingGeneric) = demod->timingGeneric; // struct-copy generic timing measurements
-
-  const FstatTimingDemod *tiLD = &(demod->timingDemod);
-
-  // return method-specific timing model values
-  XLAL_INIT_MEM( (*timingModel) );
-
-  UINT4 i = 0;
-  timingModel->names[i]     = "Nsft";
-  timingModel->values[i]    = tiLD->Nsft;
-
-  i++;
-  timingModel->names[i]     = "tau0_coreLD";
-  timingModel->values[i]    = tiLD->tau0_coreLD;
-
-  i++;
-  timingModel->names[i]     = "tau0_bufferLD";
-  timingModel->values[i]    = tiLD->tau0_bufferLD;
-
-  timingModel->numVariables = i+1;
-  timingModel->help         = FstatTimingDemodHelp;
-
-  return XLAL_SUCCESS;
-} // XLALGetFstatTiming_Demod()
-
-// Generates an FstatInput Timeslice based on minStartGPS and maxStartGPS according to XLALCWGPSinRange().
-void *
-XLALFstatInputTimeslice_Demod ( const void *method_data,
-                                const UINT4 iStart[PULSAR_MAX_DETECTORS],
-                                const UINT4 iEnd[PULSAR_MAX_DETECTORS]
-                                )
-{
-  XLAL_CHECK_NULL ( method_data != NULL, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( iStart != NULL, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( iEnd != NULL, XLAL_EINVAL );
-
-  const DemodMethodData *demod_input = (const DemodMethodData *)method_data;
-
-  // allocate memory and copy the input method_data struct
-  DemodMethodData *demod_slice;
-  XLAL_CHECK_NULL ( ( demod_slice = XLALCalloc ( 1, sizeof(*demod_input) ) ) != NULL, XLAL_ENOMEM );
-  memcpy ( demod_slice, demod_input, sizeof(*demod_input) );
-
-  UINT4 numIFOs = demod_input->multiSFTs->length;
-
-  // prepare MultiSFTs struct
-  MultiSFTVector *multiSFTs;
-  XLAL_CHECK_NULL ( ( multiSFTs = XLALCalloc( 1, sizeof(*multiSFTs) ) ) != NULL, XLAL_ENOMEM );
-  XLAL_CHECK_NULL ( ( multiSFTs->data = XLALCalloc( numIFOs, sizeof(*multiSFTs->data) ) ) != NULL, XLAL_ENOMEM );
-  multiSFTs->length = numIFOs;
-
-  // loop over all detectors
-  for ( UINT4 X = 0; X < numIFOs; X ++ )
-    {
-      XLAL_CHECK_NULL ( ( multiSFTs->data[X] = XLALCalloc ( 1, sizeof(*multiSFTs->data[X]) ) ) !=NULL, XLAL_EFUNC );
-
-      if ( iStart[X] > iEnd[X] ) {
-        continue; 	// empty slice
-      }
-      UINT4 sliceLength =  iEnd[X] - iStart[X] + 1; // guaranteed >= 1
-      multiSFTs->data[X]->length = sliceLength;
-      multiSFTs->data[X]->data   = &(demod_input->multiSFTs->data[X]->data[iStart[X]]);
-
-    } // for loop over all detectors
-
-  demod_slice->multiSFTs = multiSFTs;
-
-  // empty all buffering quantities
-  demod_slice->prevAlpha = 0;
-  demod_slice->prevDelta = 0;
-  XLAL_INIT_MEM(demod_slice->prevRefTime);
-  demod_slice->prevMultiSSBtimes = NULL;
-  demod_slice->prevMultiAMcoef = NULL;
-
-  // reset timing counters
-  XLAL_INIT_MEM(demod_slice->timingGeneric);
-  XLAL_INIT_MEM(demod_slice->timingDemod);
-
-  return demod_slice;
-
-} // XLALFstatInputTimeslice_Demod()
-
-///
-/// Free all memory not needed by the orginal FstatInput structure
-///
-void
-XLALDestroyFstatInputTimeslice_Demod ( void *method_data )
-{
-  if ( !method_data ) {
-    return;
-  }
-
-  DemodMethodData *demod = (DemodMethodData*) method_data;
-
-  XLALDestroyMultiSSBtimes  ( demod->prevMultiSSBtimes );
-  XLALDestroyMultiAMCoeffs  ( demod->prevMultiAMcoef );
-
-  for ( UINT4 X=0; X < demod->multiSFTs->length; X ++ ) {
-    XLALFree ( demod->multiSFTs->data[X] );
-  }
-
-  XLALFree ( demod->multiSFTs->data );
-  XLALFree ( demod->multiSFTs );
-  XLALFree ( demod );
-
-  return;
-
-} // XLALDestroyFstatInputTimeslice_Demod()
+} // GetFstatExtraBins_Demod()

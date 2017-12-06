@@ -136,7 +136,7 @@ int intializeArgs(
 		  )
 {
   /* getop arguments */
-  struct LALoption long_options[] = 
+  struct option long_options[] = 
     {
       {"Amplitude_Initial",      required_argument,      0,       'a'},
       {"Amplitude_Final",        required_argument,      0,       'b'},
@@ -197,7 +197,7 @@ int intializeArgs(
   while (TRUE)
     {
       int option_index=0;
-      C = LALgetopt_long_only(argc,argv,"a:b:c:d:e:f:g:h:i:j:k:l:m",long_options,&option_index);
+      C = getopt_long_only(argc,argv,"a:b:c:d:e:f:g:h:i:j:k:l:m",long_options,&option_index);
       if (C == -1) /* No more arguements to parse */
 	{
 	  break;
@@ -206,7 +206,7 @@ int intializeArgs(
 	{
 	case 'a':
 	  { /* Setting Amplitude Initial */
-	    params->ampInitial = atof(LALoptarg);
+	    params->ampInitial = atof(optarg);
 	    if ( params->ampInitial < 0) 
 	      {
 		fprintf(stderr,TSDATAGENC_MSGEVAL);
@@ -217,7 +217,7 @@ int intializeArgs(
 	  
 	case 'b':
 	  { /* Set finish amplitude of signal */
-	    params->ampFinal = atof(LALoptarg);
+	    params->ampFinal = atof(optarg);
 	    if (params->ampFinal < 0) 
 	      {
 		fprintf(stderr,TSDATAGENC_MSGEVAL);
@@ -228,7 +228,7 @@ int intializeArgs(
 	  
 	case 'c':
 	  { /* Settig up sin initial frequency */
-	    params->freqInitial = atof(LALoptarg);
+	    params->freqInitial = atof(optarg);
 	    if (params->freqInitial < 0) 
 	      {
 		fprintf(stderr,TSDATAGENC_MSGEVAL);
@@ -239,7 +239,7 @@ int intializeArgs(
 	  
 	case 'd':
 	  { /* Setting up final frequency part */
-	    params->freqFinal = atof(LALoptarg);
+	    params->freqFinal = atof(optarg);
 	    if (params->freqFinal < 0) 
 	      {
 		fprintf(stderr,TSDATAGENC_MSGEVAL);
@@ -250,7 +250,7 @@ int intializeArgs(
 	  
 	case 'e':
 	  { /* Getting the sampling frequency */
-	    params->sampleFreq = atof(LALoptarg);
+	    params->sampleFreq = atof(optarg);
 	    if (params->sampleFreq < 0)
 	      {
 		fprintf(stderr,TSDATAGENC_MSGEVAL);
@@ -261,7 +261,7 @@ int intializeArgs(
 	  
 	case 'f':
 	  { /* Setting relative noise amp number */
-	    params->noiseAmp = atoi(LALoptarg);
+	    params->noiseAmp = atoi(optarg);
 	    if (params->noiseAmp < 0)
 	      {
 		fprintf(stderr,TSDATAGENC_MSGEVAL);
@@ -272,7 +272,7 @@ int intializeArgs(
 
 	case 'g':
 	  { /* Read in SamplePoint Count */
-	    params->numSamplePoints = atoi(LALoptarg);
+	    params->numSamplePoints = atoi(optarg);
 	    if (params->numSamplePoints < 0)
 	      {
 		fprintf(stderr,TSDATAGENC_MSGEVAL);
@@ -283,8 +283,8 @@ int intializeArgs(
 
 	case 'h':
 	  { /* Read in data file name to create */
-	    params->name = (CHAR*) XLALMalloc(strlen(LALoptarg)+1);
-	    strcpy(params->name,LALoptarg);
+	    params->name = (CHAR*) XLALMalloc(strlen(optarg)+1);
+	    strcpy(params->name,optarg);
 	  }
 	  break;
 	  
@@ -296,7 +296,7 @@ int intializeArgs(
 
 	case 'j':
 	  { /* Setting user requested SNR for data */
-	    params->SNR = atof(LALoptarg);
+	    params->SNR = atof(optarg);
 	  }
 	  break;
 
@@ -308,51 +308,51 @@ int intializeArgs(
 
 	case 'l':
 	  { /* Set flag for external Signal and path/filename */
-	    params->signalFileName = (CHAR*) XLALMalloc(strlen(LALoptarg)+1);
-	    strcpy(params->signalFileName,LALoptarg);
+	    params->signalFileName = (CHAR*) XLALMalloc(strlen(optarg)+1);
+	    strcpy(params->signalFileName,optarg);
 	    params->externalSignal=1;
 	  }
 	  break;
 
 	case 'm':
 	  { /* Set a search seed for testing */
-	    params->seed = atoi(LALoptarg);
+	    params->seed = atoi(optarg);
 	  }
 	  break;
 
 	case 'n':
 	  { /* grab number of copies to make */
-	    params->multipleInjects=atoi(LALoptarg);
+	    params->multipleInjects=atoi(optarg);
 	  }
 	  break;
 
 	case 'o':
 	  { /* grab silent points to insert with copies */
-	    params->multipleInjectSpacing=atoi(LALoptarg);
+	    params->multipleInjectSpacing=atoi(optarg);
 	  }
 	  break;
 
 	case 'p':
 	  { /* Setup Noise PSD Max F for writing to frame */
-	    params->noisePSDMaxF=atof(LALoptarg);
+	    params->noisePSDMaxF=atof(optarg);
 	  }
 	  break;
 
 	case 'q':
 	  { /* Setup Noise PSD freq resolution */
-	    params->noisePSDDeltaF=atof(LALoptarg);
+	    params->noisePSDDeltaF=atof(optarg);
 	  }
 	  break;
 	  
 	case 'r':
 	    {
-	      params->gpsSeconds=atoi(LALoptarg);
+	      params->gpsSeconds=atoi(optarg);
 	    }
 	    break;
 	    
 	case 's':
 	  {
-	    params->gpsNanoSeconds=atoi(LALoptarg);
+	    params->gpsNanoSeconds=atoi(optarg);
 	  }
 	  break;
 	default:

@@ -35,11 +35,11 @@
 #include <ctype.h>
 #include <assert.h>
 #include <string.h>
+#include <getopt.h>
 #include <time.h>
 #include <lalapps.h>
 #include <processtable.h>
 #include <lal/LALStdio.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LIGOMetadataTables.h>
@@ -452,8 +452,8 @@ int main( int argc, char *argv[] )
   LIGOLwXMLStream       xmlfp;
   FILE                 *fp = NULL;
 
-  /* LALgetopt arguments */
-  struct LALoption long_options[] =
+  /* getopt arguments */
+  struct option long_options[] =
   {
     {"help",                    no_argument,       0,                'h'},
     {"verbose",                 no_argument,       &vrbflg,           1 },
@@ -504,8 +504,8 @@ int main( int argc, char *argv[] )
   proctable.processTable = (ProcessTable *) 
     calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
-      lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentId,
+      lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0);
   snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
@@ -523,11 +523,11 @@ int main( int argc, char *argv[] )
 
   while ( 1 )
   {
-    /* LALgetopt_long stores long option here */
+    /* getopt_long stores long option here */
     int option_index = 0;
     long int gpsinput;
 
-    c = LALgetopt_long_only( argc, argv, "a:hs:t:V", long_options, &option_index );
+    c = getopt_long_only( argc, argv, "a:hs:t:V", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -546,13 +546,13 @@ int main( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "error parsing option %s with argument %s\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
         break;
 
       case 'a':
-        gpsinput = atol( LALoptarg );
+        gpsinput = atol( optarg );
         if ( gpsinput < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -570,7 +570,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 's':
-        randSeed = atoi( LALoptarg );
+        randSeed = atoi( optarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "int", 
               "%d", randSeed );
@@ -578,15 +578,15 @@ int main( int argc, char *argv[] )
 
       case 't':
         /* set the injection type */
-        if ( ! strcmp( "strain", LALoptarg ) )
+        if ( ! strcmp( "strain", optarg ) )
         {
           injectionResponse = unityResponse;
         }
-        else if ( ! strcmp( "etmx", LALoptarg ) )
+        else if ( ! strcmp( "etmx", optarg ) )
         {
           injectionResponse = actuationX;
         }
-        else if ( ! strcmp( "etmy", LALoptarg ) )
+        else if ( ! strcmp( "etmy", optarg ) )
         {
           injectionResponse = actuationY;
         }
@@ -595,11 +595,11 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown injection type specified: "
               "%s (must be strain, etmx or etmy)\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
         next_process_param( long_options[option_index].name, "string", "%s", 
-            LALoptarg );
+            optarg );
         break;
 
       case 'V':
@@ -623,12 +623,12 @@ int main( int argc, char *argv[] )
     }
   }
 
-  if ( LALoptind < argc )
+  if ( optind < argc )
   {
     fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( LALoptind < argc )
+    while ( optind < argc )
     {
-      fprintf ( stderr, "%s\n", argv[LALoptind++] );
+      fprintf ( stderr, "%s\n", argv[optind++] );
     }
     exit( 1 );
   }
@@ -956,7 +956,6 @@ int main( int argc, char *argv[] )
   }
 
   /* write the sim_inspiral table */
-  XLALSimInspiralAssignIDs ( inspInjections.simInspiralTable, 0, 0 );
   if ( inspInjections.simInspiralTable )
   {
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_inspiral_table ), 
@@ -965,11 +964,12 @@ int main( int argc, char *argv[] )
           sim_inspiral_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
   }
+
   while ( inspInjections.simInspiralTable )
   {
     inj = inspInjections.simInspiralTable;
     inspInjections.simInspiralTable = inspInjections.simInspiralTable->next;
-    XLALFreeSimInspiral( &inj );
+    LALFree( inj );
   }
 
    

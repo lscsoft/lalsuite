@@ -19,10 +19,10 @@
 
 
 #include <config.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <lal/LALFrameL.h>
-#include <lal/LALgetopt.h>
 
 
 struct options {
@@ -55,17 +55,17 @@ static struct options parse_command_line(int argc, char *argv[])
 		0,
 		0
 	};
-	struct LALoption long_options[] = {
+	struct option long_options[] = {
 		{"help", no_argument, NULL, 'h'},
 		{"output", required_argument, NULL, 'o'},
 		{"verbose", no_argument, NULL, 'v'},
 		{NULL, 0, NULL, 0}
 	};
 
-	do switch(c = LALgetopt_long(argc, argv, "", long_options, &option_index)) {
+	do switch(c = getopt_long(argc, argv, "", long_options, &option_index)) {
 	/* --output */
 	case 'o':
-		options.outfile = LALoptarg;
+		options.outfile = optarg;
 		break;
 
 	/* --help */
@@ -84,13 +84,13 @@ static struct options parse_command_line(int argc, char *argv[])
 
 	/* end of arguments */
 	case -1:
-		if(LALoptind >= argc) {
+		if(optind >= argc) {
 			/* nothing on command line after options */
 			print_usage(argv[0]);
 			exit(1);
 		}
-		options.infiles = &argv[LALoptind];
-		options.n_infiles = argc - LALoptind;
+		options.infiles = &argv[optind];
+		options.n_infiles = argc - optind;
 		break;
 
 	/* unrecognized option */
@@ -108,7 +108,7 @@ static struct options parse_command_line(int argc, char *argv[])
 		/* --output not among command line options, use first
 		 * filename on command line as output (ugh). emulates
 		 * legacy behaviour */
-		if(LALoptind + 1 >= argc) {
+		if(optind + 1 >= argc) {
 			/* not enough file names on command line */
 			print_usage(argv[0]);
 			exit(1);

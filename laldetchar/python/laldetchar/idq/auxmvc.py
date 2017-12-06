@@ -13,8 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## \defgroup laldetchar_py_idq_auxmvc AuxMVC Module
-## \ingroup laldetchar_py_idq
+## addtogroup pkg_py_laldetchar_idq
 ## Synopsis
 # ~~~
 # from laldetchar.idq import auxmvc
@@ -36,7 +35,7 @@ __version__ = git_version.id
 __date__ = git_version.date
 
 
-## \addtogroup laldetchar_py_idq_auxmvc
+## addtogroup pkg_py_laldetchar_idq_auxmvc
 # @{
 
 # definitions of condor job and node classes for auxmvc algroithms.
@@ -107,14 +106,6 @@ class auxmvc_analysis_job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         self.add_condor_cmd('environment',
                             'KMP_LIBRARY=serial;MKL_SERIAL=yes')
         self.__use_gpus = cp.has_option('condor', 'use-gpus')
-
-        ### accounting tags
-        if cp.has_option('condor', 'accounting_group'):
-            self.add_condor_cmd('accounting_group', cp.get('condor', 'accounting_group') )
-
-        if cp.has_option('condor', 'accounting_group_user'):
-            self.add_condor_cmd('accounting_group_user', cp.get('condor', 'accounting_group_user') )
-
         for sec in sections:
             if cp.has_section(sec):
                 if short_opts:
@@ -314,8 +305,7 @@ class add_file_to_cache_job(auxmvc_analysis_job):
         """
     """
 
-#        sections = ['add_file_to_cache']
-        sections = [] ### never actually used, only references "condor" section
+        sections = ['add_file_to_cache']
         exec_name = 'add_file_to_cache'
         tag_base = 'add_file_to_cache'
         auxmvc_analysis_job.__init__(self, cp, sections, exec_name,
@@ -470,12 +460,13 @@ class forest_add_excluded_vars_job(auxmvc_analysis_job):
         """
     """
 
-#        sections = ['forest_add_excluded_vars']
-        sections = [] ### not used...
+        sections = ['forest_add_excluded_vars']
         exec_name = 'forest_add_excluded_vars'
         tag_base = 'forest_add_excluded_vars'
-        auxmvc_analysis_job.__init__(self, cp, sections, exec_name, tag_base=tag_base)
-        self.add_opt('excluded-variables', cp.get('forest_evaluate', 'z'))
+        auxmvc_analysis_job.__init__(self, cp, sections, exec_name,
+                tag_base=tag_base)
+        self.add_opt('excluded-variables', cp.get('forest_evaluate', 'z'
+                     ))
 
 
 class forest_add_excluded_vars_node(pipeline.CondorDAGNode):
@@ -648,9 +639,9 @@ class train_svm_job(auxmvc_analysis_job):
         """
     """
 
-        sections = ['train_svm']  # no section in configuration yet
+        sections = ['svm_train']  # no section in configuration yet
         exec_name = 'svm_train_cmd'
-        tag_base = 'train_svm'
+        tag_base = 'svm_train'
         auxmvc_analysis_job.__init__(self, cp, sections, exec_name,
                 tag_base=tag_base)
 
@@ -721,7 +712,7 @@ class convert_annfile_job(auxmvc_analysis_job):
     """
 
         sections = ['ann_convert']
-        exec_name = 'ConvertANNData'
+        exec_name = 'ConvertSprToFann'
         tag_base = 'ann_convert'
         auxmvc_analysis_job.__init__(
             self,
@@ -742,7 +733,7 @@ class convert_annfile_node(pipeline.CondorDAGNode):
     def __init__(
         self,
         job,
-        training_data_file,
+        pat_file,
         p_node=[],
         ):
         job.set_stdout_file('logs/'
@@ -752,11 +743,11 @@ class convert_annfile_node(pipeline.CondorDAGNode):
                             + os.path.split(training_data_file)[1].replace('.pat'
                             , '.err'))
         pipeline.CondorDAGNode.__init__(self, job)
-        self.add_input_file(training_data_file)
-        self.training_data_file = self.get_input_files()[0]
-        self.fann_file = training_data_file.replace('.pat', '.ann')
+        self.add_input_file(pat_file)
+        self.pat_file = self.get_input_files()[0]
+        self.fann_file = pat_file.replace('.pat', '.ann')
         self.add_output_file(self.fann_file)
-        self.add_file_arg(' %s' % self.training_data_file)
+        self.add_file_arg(' %s' % self.pat_file)
         for p in p_node:
             self.add_parent(p)
 
@@ -798,10 +789,10 @@ class train_ann_node(pipeline.CondorDAGNode):
         p_node=[],
         ):
         job.set_stdout_file('logs/'
-                            + os.path.split(training_data_file)[1].replace('.ann'
+                            + os.path.split(training_data_file)[1].replace('.pat'
                             , '.out'))
         job.set_stderr_file('logs/'
-                            + os.path.split(training_data_file)[1].replace('.ann'
+                            + os.path.split(training_data_file)[1].replace('.pat'
                             , '.err'))
         pipeline.CondorDAGNode.__init__(self, job)
         self.add_input_file(training_data_file)

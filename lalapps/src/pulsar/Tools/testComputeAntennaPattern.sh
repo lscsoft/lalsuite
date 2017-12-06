@@ -17,19 +17,13 @@ fi
 
 builddir="./";
 injectdir="../Injections/"
-fdsdir="../Fstatistic/"
+fdsdir="../FDS_isolated/"
 
 ##---------- names of codes
 cap_code="${builddir}lalapps_ComputeAntennaPattern"
 pds_code="${builddir}lalapps_PrintDetectorState"
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
-pfs_code="${fdsdir}lalapps_PredictFstat"
-
-testDir="./testCAP.d";
-if [ -d "$testDir" ]; then
-    rm -rf $testDir
-fi
-mkdir -p "$testDir"
+pfs_code="${fdsdir}lalapps_PredictFStat"
 
 tolerance=1e-3
 tolerance_pfs=1 ## more lenient because PFS has noise fluctuations from MFD
@@ -54,15 +48,15 @@ alpha=4.649850989853494
 delta=-0.506281802989210
 
 # ---------- temporary files
-outCAP="${testDir}/antenna_pattern_test.dat"
-outPDS="${testDir}/detector_state_test.dat"
-skygridfile="${testDir}/skygrid_test.dat"
-timestampsfile_H1="${testDir}/timestamps_test_H1.dat"
-timestampsfile_L1="${testDir}/timestamps_test_L1.dat"
-sftfile_base="${testDir}/sft_test_"
+outCAP=antenna_pattern_test.dat
+outPDS=detector_state_test.dat
+skygridfile=./skygrid_test.dat
+timestampsfile_H1=./timestamps_test_H1.dat
+timestampsfile_L1=./timestamps_test_L1.dat
+sftfile_base=./sft_test_
 sftfile_H1="${sftfile_base}H1"
 sftfile_L1="${sftfile_base}L1"
-outPFS="${testDir}/pfs_test.dat"
+outPFS=./pfs_test.dat
 
 
 ## if a previous run failed, have to delete some files to avoid appending
@@ -81,10 +75,9 @@ if [ -f $timestampsfile_L1 ]; then
 fi
 
 echo "----------------------------------------------------------------------------------------------------"
-echo "ComputeAntennaPattern Test1: single-sky-point, single-timestamp comparison of a(t), b(t) to PrintDetectorState";
+echo "ComputeAntennaPattern Test0: internal consistency of different computeAM implementations in PrintDetectorState";
 echo "----------------------------------------------------------------------------------------------------"
 
-## ----- run PrintDetectorState
 pds_cmdline="${pds_code} -I H1 -a $alpha -d $delta -t $timestamp1_pds >> $outPDS"
 echo $pds_cmdline;
 if ! eval $pds_cmdline; then
@@ -92,9 +85,48 @@ if ! eval $pds_cmdline; then
     exit 1
 fi
 
-a=$( sed -n 's/^a = //p' $outPDS )
-b=$( sed -n 's/^b = //p' $outPDS )
-echo "==> lalapps_PrintDetectorState:      a=$a, b=$b"
+pds_out_lalcomp=$(grep LALComputeAM ${outPDS} | tr ',' ' ')
+a_lalcomp=$( echo $pds_out_lalcomp | awk '{print $3}' )
+b_lalcomp=$( echo $pds_out_lalcomp | awk '{print $4}' )
+echo "==> LALComputeAM:                    a=$a_lalcomp, b=$b_lalcomp"
+pds_out_lalget=$(grep LALGetAMCoeffs ${outPDS} | tr ',' ' ')
+a_lalget=$( echo $pds_out_lalget | awk '{print $3}' )
+b_lalget=$( echo $pds_out_lalget | awk '{print $4}' )
+echo "    LALGetAMCoeffs:                  a=$a_lalget, b=$b_lalget"
+pds_out_lalnew=$(grep LALNewGetAMCoeffs ${outPDS} | tr ',' ' ')
+a_lalnew=$( echo $pds_out_lalnew | awk '{print $3}' )
+b_lalnew=$( echo $pds_out_lalnew | awk '{print $4}' )
+echo "    LALNewGetAMCoeffs:               a=$a_lalnew, b=$b_lalnew"
+pds_out_xlal=$(grep XLALComputeAntennaPatternCoeffs ${outPDS} | tr ',' ' ')
+a_xlal=$( echo $pds_out_xlal | awk '{print $3}' )
+b_xlal=$( echo $pds_out_xlal | awk '{print $4}' )
+echo "    XLALComputeAntennaPatternCoeffs: a=$a_xlal, b=$b_xlal"
+
+reldev_a_lalget=$(echo $a_lalcomp $a_lalget | awk "$awk_reldev")
+reldev_b_lalget=$(echo $b_lalcomp $b_lalget | awk "$awk_reldev")
+reldev_a_lalnew=$(echo $a_lalcomp $a_lalnew | awk "$awk_reldev")
+reldev_b_lalnew=$(echo $b_lalcomp $b_lalnew | awk "$awk_reldev")
+reldev_a_xlal=$(echo $a_lalcomp $a_xlal | awk "$awk_reldev")
+reldev_b_xlal=$(echo $b_lalcomp $b_xlal | awk "$awk_reldev")
+
+fail_a_get=$(echo $reldev_a_lalget $tolerance | awk "$awk_isgtr")
+fail_b_get=$(echo $reldev_b_lalget $tolerance | awk "$awk_isgtr")
+fail_a_new=$(echo $reldev_a_lalnew $tolerance | awk "$awk_isgtr")
+fail_b_new=$(echo $reldev_b_lalnew $tolerance | awk "$awk_isgtr")
+fail_a_xlal=$(echo $reldev_a_xlal $tolerance | awk "$awk_isgtr")
+fail_b_xlal=$(echo $reldev_b_xlal $tolerance | awk "$awk_isgtr")
+
+if [ "$fail_a_get" -o "$fail_b_get" -o "$fail_a_new" -o "$fail_b_new" -o "$fail_a_xlal" -o "$fail_b_xlal" ]; then
+    echo "==> FAILED at tolerance=$tolerance"
+    exit 1
+else
+    echo "==> OK at tolerance=$tolerance"
+fi
+
+
+echo "----------------------------------------------------------------------------------------------------"
+echo "ComputeAntennaPattern Test1: single-sky-point, single-timestamp comparison of a(t), b(t) to PrintDetectorState";
+echo "----------------------------------------------------------------------------------------------------"
 
 ## ----- run ComputeAntennaPattern
 cap_cmdline="${cap_code} --IFOs=H1 --timeGPS=$timestamp1 --outab=$outCAP --Alpha=$alpha --Delta=$delta"
@@ -108,10 +140,10 @@ a_cap=$(awk -v col=4 "$awk_print_wo_headers" $outCAP)
 b_cap=$(awk -v col=5 "$awk_print_wo_headers" $outCAP)
 echo "==> lalapps_ComputeAntennaPattern:   a=$a_cap, b=$b_cap"
 
-reldev_a_cap=$(echo $a $a_cap | awk "$awk_reldev")
-reldev_b_cap=$(echo $b $b_cap | awk "$awk_reldev")
-fail_a_cap=$(echo $reldev_a_cap $tolerance | awk "$awk_isgtr")
-fail_b_cap=$(echo $reldev_b_cap $tolerance | awk "$awk_isgtr")
+reldev_a_cap_xlal=$(echo $a_xlal $a_cap | awk "$awk_reldev")
+reldev_b_cap_xlal=$(echo $b_xlal $b_cap | awk "$awk_reldev")
+fail_a_cap=$(echo $reldev_a_cap_xlal $tolerance | awk "$awk_isgtr")
+fail_b_cap=$(echo $reldev_b_cap_xlal $tolerance | awk "$awk_isgtr")
 
 if [ "$fail_a_cap" -o "$fail_b_cap" ]; then
     echo "==> FAILED at tolerance=$tolerance"
@@ -142,8 +174,9 @@ if ! eval $pds_cmdline; then
     echo "Error.. something failed when running '$pds_code' ..."
     exit 1
 fi
-a1_pds=$( sed -n 's/^a = //p' $outPDS )
-b1_pds=$( sed -n 's/^b = //p' $outPDS )
+pds_out_xlal=$(grep XLALComputeAntennaPatternCoeffs ${outPDS} | tr ',' ' ')
+a1_pds=$( echo $pds_out_xlal | awk '{print $3}')
+b1_pds=$( echo $pds_out_xlal | awk '{print $4}')
 
 rm $outPDS
 pds_cmdline="${pds_code} -I H1 -a $alpha2 -d $delta2 -t $timestamp1_pds >> $outPDS"
@@ -152,8 +185,9 @@ if ! eval $pds_cmdline; then
     echo "Error.. something failed when running '$pds_code' ..."
     exit 1
 fi
-a2_pds=$( sed -n 's/^a = //p' $outPDS )
-b2_pds=$( sed -n 's/^b = //p' $outPDS )
+pds_out_xlal=$(grep XLALComputeAntennaPatternCoeffs ${outPDS} | tr ',' ' ')
+a2_pds=$( echo $pds_out_xlal | awk '{print $3}')
+b2_pds=$( echo $pds_out_xlal | awk '{print $4}')
 
 rm $outPDS
 pds_cmdline="${pds_code} -I H1 -a $alpha3 -d $delta3 -t $timestamp1_pds >> $outPDS"
@@ -162,8 +196,9 @@ if ! eval $pds_cmdline; then
     echo "Error.. something failed when running '$pds_code' ..."
     exit 1
 fi
-a3_pds=$( sed -n 's/^a = //p' $outPDS )
-b3_pds=$( sed -n 's/^b = //p' $outPDS )
+pds_out_xlal=$(grep XLALComputeAntennaPatternCoeffs ${outPDS} | tr ',' ' ')
+a3_pds=$( echo $pds_out_xlal | awk '{print $3}')
+b3_pds=$( echo $pds_out_xlal | awk '{print $4}')
 
 ## ----- run ComputeAntennaPattern
 cap_cmdline="${cap_code} --IFOs=H1 --timeGPS=$timestamp1 --outab=$outCAP --skyGridFile=$skygridfile"
@@ -265,7 +300,7 @@ else
 fi
 
 echo "----------------------------------------------------------------------------------------------------"
-echo "ComputeAntennaPattern Test4: comparing A,B,C,D with PredictFstat";
+echo "ComputeAntennaPattern Test4: comparing A,B,C,D with PredictFStat";
 echo "----------------------------------------------------------------------------------------------------"
 
 cap_cmdline="${cap_code} --IFOs=H1 --timeStampsFiles=$timestampsfile_H1 --outABCD=$outCAP --Alpha=$alpha --Delta=$delta"
@@ -287,7 +322,7 @@ if ! eval $mfd_cmdline; then
     exit 1
 fi
 
-pfs_cmdline="${pfs_code} --IFO=H1 --h0=1e-24 --cosi=0 --psi=0 --phi0=0 --Freq=60 --Alpha=$alpha --Delta=$delta --DataFiles=$sftfile_H1 --outputFstat=$outPFS --assumeSqrtSX=1.0 --printFstat=0"
+pfs_cmdline="${pfs_code} --IFO=H1 --h0=1e-24 --cosi=0 --psi=0 --phi0=0 --Freq=60 --Alpha=$alpha --Delta=$delta --DataFiles=$sftfile_H1 --outputFstat=$outPFS --SignalOnly --printFstat=0"
 echo $pfs_cmdline;
 if ! eval $pfs_cmdline; then
     echo "Error.. something failed when running '$pfs_code' ..."
@@ -300,7 +335,7 @@ C_pfs=$(grep 'C =' ${outPFS} | tr -d 'C =;')
 D_pfs=$(grep 'D =' ${outPFS} | tr -d 'D =;')
 
 echo "==> lalapps_ComputeAntennaPattern:   A=$A_cap, B=$B_cap, C=$C_cap, D=$D_cap"
-echo "    lalapps_PredictFstat:            A=$A_pfs,   B=$B_pfs,   C=$C_pfs,   D=$D_pfs"
+echo "    lalapps_PredictFStat:            A=$A_pfs,   B=$B_pfs,   C=$C_pfs,   D=$D_pfs"
 
 reldev_A=$(echo $A_cap $A_pfs | awk "$awk_reldev")
 fail_A=$(echo $reldev_A $tolerance | awk "$awk_isgtr")
@@ -408,8 +443,10 @@ echo "--------------------------------------------------------------------------
 echo "ComputeAntennaPattern Test6: varying detector sensitivity (compared with PFS)";
 echo "----------------------------------------------------------------------------------------------------"
 
+## compute harmonic mean of ShX
 SqrtShH=3e-23
 SqrtShL=6e-23
+Sinv=$(echo $SqrtShH $SqrtShL | awk '{print 0.5 * (1/($1^2)+1/($2^2))}')
 
 ## need more timestamps to get decent statistics for PFS
 rm $timestampsfile_H1
@@ -426,7 +463,7 @@ iTS=$(($iTS + 1))
 timestamp_i=$(echo $timestamp1 $iTS $Tsft| awk '{print $1 + ($2 - 1) * $3}')
 printf "%s 0\n" "$timestamp_i" >> $timestampsfile_L1
 
-cap_cmdline="${cap_code} --IFOs=H1,L1 --timeStampsFiles=$timestampsfile_H1,$timestampsfile_L1 --outABCD=$outCAP --Alpha=$alpha --Delta=$delta --noiseSqrtShX=$SqrtShH,$SqrtShL --singleIFOweighting=1"
+cap_cmdline="${cap_code} --IFOs=H1,L1 --timeStampsFiles=$timestampsfile_H1,$timestampsfile_L1 --outABCD=$outCAP --Alpha=$alpha --Delta=$delta --noiseSqrtShX=$SqrtShH,$SqrtShL"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
@@ -543,7 +580,12 @@ fi
 
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $testDir
+    rm $outCAP
+    rm $outPDS
+    rm $skygridfile
+    rm $timestampsfile_H1 $timestampsfile_L1
+    rm $sftfile_H1 $sftfile_L1
+    rm $outPFS
     echo "Cleaned up."
 fi
 

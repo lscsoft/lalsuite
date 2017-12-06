@@ -27,7 +27,7 @@ extern "C" {
 
 /**
  * \defgroup CWMakeFakeData_h Header CWMakeFakeData.h
- * \ingroup lalpulsar_inject
+ * \ingroup pkg_pulsarCommon
  * \author Reinhard Prix, Karl Wette
  *
  * \brief Module for generating 'fake' data containing CW signals and/or Gaussian noise.
@@ -78,8 +78,6 @@ typedef struct tagCWMFDataParams
   const char *SFTWindowType;			//!< window to apply to the SFT timeseries
   REAL8 SFTWindowBeta;				//!< 'beta' parameter required for *some* windows [otherwise must be 0]
   UINT4 randSeed;				//!< seed value for random-number generator
-  MultiREAL8TimeSeries *inputMultiTS;		//!< [optional] input time-series for signals+noise to be added to
-  REAL8 sourceDeltaT;                           //!< [optional] source-frame sampling period. '0' means to use the previous internal defaults
 } CWMFDataParams;
 
 // ---------- Global variables ----------
@@ -88,25 +86,24 @@ typedef struct tagCWMFDataParams
 
 #ifdef SWIG // SWIG interface directives
 SWIGLAL(INOUT_STRUCTS(MultiSFTVector**, multiSFTs));
-SWIGLAL(INOUT_STRUCTS(MultiREAL8TimeSeries**, multiTseries));
+SWIGLAL(INOUT_STRUCTS(MultiREAL4TimeSeries**, multiTseries));
 SWIGLAL(INOUT_STRUCTS(SFTVector**, SFTVect));
-SWIGLAL(INOUT_STRUCTS(REAL8TimeSeries**, Tseries));
+SWIGLAL(INOUT_STRUCTS(REAL4TimeSeries**, Tseries));
 #endif
 
 int XLALFindSmallestValidSamplingRate ( UINT4 *n1, UINT4 n0, const LIGOTimeGPSVector *timestamps );
-int XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs, MultiREAL8TimeSeries **multiTseries,
+int XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs, MultiREAL4TimeSeries **multiTseries,
                               const PulsarParamsVector *injectionSources, const CWMFDataParams *dataParams, const EphemerisData *edat );
-int XLALCWMakeFakeData ( SFTVector **SFTVect, REAL8TimeSeries **Tseries,
-                         const PulsarParamsVector *injectionSources, const CWMFDataParams *dataParams, UINT4 detectorIndex, const EphemerisData *edat );
+int XLALCWMakeFakeData ( SFTVector **SFTVect, REAL4TimeSeries **Tseries,
+                         const PulsarParamsVector *injectionSources, const CWMFDataParams *dataParams, const EphemerisData *edat );
 
 REAL4TimeSeries *
-XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams, const LALDetector *site, LIGOTimeGPS startTime, REAL8 duration, REAL8 fSamp, REAL8 fHet, const EphemerisData *edat, REAL8 sourceDeltaT );
-SFTVector *
-XLALMakeSFTsFromREAL8TimeSeries ( const REAL8TimeSeries *timeseries, const LIGOTimeGPSVector *timestamps, const char *windowType, REAL8 windowBeta );
+XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams, const LALDetector *site, LIGOTimeGPS startTime, REAL8 duration, REAL8 fSamp, REAL8 fHet, const EphemerisData *edat );
 
-int XLALReadPulsarParams ( PulsarParams *pulsarParams, LALParsedDataFile *cfgdata, const CHAR *secName, const LIGOTimeGPS *refTimeDef );
-PulsarParamsVector *XLALPulsarParamsFromFile ( const char *fname, const LIGOTimeGPS *refTimeDef );
-PulsarParamsVector *XLALPulsarParamsFromUserInput ( const LALStringVector *UserInput, const LIGOTimeGPS *refTimeDef );
+
+int XLALReadPulsarParams ( PulsarParams *pulsarParams, const LALParsedDataFile *cfgdata, const CHAR *secName );
+PulsarParamsVector *XLALPulsarParamsFromFile ( const char *fname );
+PulsarParamsVector *XLALPulsarParamsFromUserInput ( const LALStringVector *UserInput );
 
 PulsarParamsVector *XLALCreatePulsarParamsVector ( UINT4 numPulsars );
 PulsarParamsVector * XLALPulsarParamsVectorAppend ( PulsarParamsVector *list, const PulsarParamsVector *add );

@@ -192,7 +192,7 @@ LALGenerateInspiral(
   /* If no waveform has been generated.*/
   if ( waveform->a == NULL && waveform->h == NULL)
   {
-    snprintf( warnMsg, XLAL_NUM_ELEM(warnMsg),
+    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
              "No waveform generated (check lower frequency)\n");
     LALInfo( status, warnMsg );
     ABORT( status, LALINSPIRALH_ENOWAVEFORM, LALINSPIRALH_MSGENOWAVEFORM );
@@ -202,7 +202,7 @@ LALGenerateInspiral(
   /* If sampling problem. (AmpCorPPN may not be compatible) */
   if ( ppnParams->dfdt > 2.0 && approximant != AmpCorPPN )
   {
-    snprintf( warnMsg, XLAL_NUM_ELEM(warnMsg),
+    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "Waveform sampling interval is too large:\n"
         "\tmaximum df*dt = %f", ppnParams->dfdt );
     LALInfo( status, warnMsg );
@@ -210,7 +210,7 @@ LALGenerateInspiral(
   }
 
   /* Some info should add everything (spin and so on) */
-  snprintf( warnMsg, XLAL_NUM_ELEM(warnMsg),
+  snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
       "Injected waveform parameters:\n"
       "ppnParams->mTot\t= %"LAL_REAL4_FORMAT"\n"
       "ppnParams->eta\t= %"LAL_REAL4_FORMAT"\n"

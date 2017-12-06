@@ -21,9 +21,15 @@
 #include <math.h>
 #include <sys/times.h>
 
-#include <lal/LALPulsarVCSInfo.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+
+
 #include <lal/ComputeFstat.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/FindRoot.h>
 #include <lal/UserInput.h>
@@ -31,7 +37,7 @@
 /**
  * \author Reinhard Prix
  * \file
- * \ingroup lalpulsar_coh
+ * \ingroup ComputeFstat_OldDemodAPI_h
  * \brief Tests for XLALAdd[Multi]BinaryTimes()
  *
  * We simply compare the results to the old+obsolete LAL functions LALGet[Multi]Binarytimes(),
@@ -54,6 +60,7 @@ static REAL8 A,B;          /* binary time delay coefficients (need to be global 
 // local types
 typedef struct
 {
+  BOOLEAN help;		/**< Print this help/usage message */
   INT4 randSeed;	/**< allow user to specify random-number seed for reproducible noise-realizations */
 } UserInput_t;
 
@@ -87,13 +94,13 @@ main ( int argc, char *argv[] )
   uvar->randSeed = times(&buf);
 
   // ---------- register all our user-variable ----------
-  XLALRegisterUvarMember(   randSeed,             INT4, 's', OPTIONAL, "Specify random-number seed for reproducible noise.");
+  XLALregBOOLUserStruct (  help,                'h', UVAR_HELP    , "Print this help/usage message");
+  XLALregINTUserStruct (   randSeed,             's', UVAR_OPTIONAL, "Specify random-number seed for reproducible noise.");
 
   /* read cmdline & cfgfile  */
-  BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if ( should_exit ) {
-    exit (1);
+  XLAL_CHECK ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( uvar->help ) {	/* if help was requested, we're done */
+    exit (0);
   }
 
   srand ( uvar->randSeed );

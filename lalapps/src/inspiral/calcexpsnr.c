@@ -31,6 +31,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -44,7 +46,6 @@
 #include <lalappsfrutils.h>
 
 #include <lal/LALConfig.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
@@ -244,8 +245,8 @@ int main( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
-      lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentId,
+      lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0);
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
                                       calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
@@ -254,8 +255,8 @@ int main( int argc, char *argv[] )
   while ( 1 )
   {
 
-  /* LALgetopt arguments */
-  static struct LALoption long_options[] =
+  /* getopt arguments */
+  static struct option long_options[] =
   {
     /* these options set a flag */
     /* these options do not set a flag */
@@ -283,11 +284,11 @@ int main( int argc, char *argv[] )
    *
    */
 
-    /* LALgetopt_long stores long option here */
+    /* getopt_long stores long option here */
     int option_index = 0;
-    size_t LALoptarg_len;
+    size_t optarg_len;
 
-    c = LALgetopt_long_only( argc, argv, "a:b:c:d:e:f:g:hV", long_options, &option_index );
+    c = getopt_long_only( argc, argv, "a:b:c:d:e:f:g:hV", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -306,7 +307,7 @@ int main( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "error parsing option %s with argument %s\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
         break;
@@ -318,46 +319,46 @@ int main( int argc, char *argv[] )
 
       case 'a':
         /* create storage for the spectrum file name */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        specFileH1 = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
-        memcpy( specFileH1, LALoptarg, LALoptarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        optarg_len = strlen( optarg ) + 1;
+        specFileH1 = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( specFileH1, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'b':
         /* create storage for the spectrum file name */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        specFileH2 = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
-        memcpy( specFileH2, LALoptarg, LALoptarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        optarg_len = strlen( optarg ) + 1;
+        specFileH2 = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( specFileH2, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'c':
         /* create storage for the spectrum file name */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        specFileL1 = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
-        memcpy( specFileL1, LALoptarg, LALoptarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        optarg_len = strlen( optarg ) + 1;
+        specFileL1 = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( specFileL1, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'd':
         /* create storage for the injection file name */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        injectionFile = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
-        memcpy( injectionFile, LALoptarg, LALoptarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        optarg_len = strlen( optarg ) + 1;
+        injectionFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( injectionFile, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'f':
         /* create storage for the output file name */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        outputFile = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
-        memcpy( outputFile, LALoptarg, LALoptarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        optarg_len = strlen( optarg ) + 1;
+        outputFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( outputFile, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
     
       case 'g':
-        fLow = (INT4) atof( LALoptarg );
+        fLow = (INT4) atof( optarg );
         if ( fLow < 40 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -370,7 +371,7 @@ int main( int argc, char *argv[] )
 
 
      case 'e':
-        if ( strlen( LALoptarg ) > LIGOMETA_COMMENT_MAX - 1 )
+        if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "comment must be less than %d characters\n",
@@ -379,7 +380,7 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", LALoptarg);
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
 
@@ -398,12 +399,12 @@ int main( int argc, char *argv[] )
     }
   }  
 
-  if ( LALoptind < argc )
+  if ( optind < argc )
   {
     fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( LALoptind < argc )
+    while ( optind < argc )
     {
-      fprintf ( stderr, "%s\n", argv[LALoptind++] );
+      fprintf ( stderr, "%s\n", argv[optind++] );
     }
     exit( 1 );
   }

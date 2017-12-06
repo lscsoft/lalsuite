@@ -10,11 +10,11 @@ if [ -z "${srcdir}" ]; then
 fi
 
 builddir="./";
-sftdir="${builddir}../SFTTools/"
+msftdir="${builddir}../MakeSFTs/"
 
 mfdCODE="${builddir}lalapps_Makefakedata_v4"
-cmpCODE="${sftdir}lalapps_compareSFTs"
-extractCODE="${sftdir}lalapps_ConvertToSFTv2"
+cmpCODE="${builddir}lalapps_compareSFTs"
+extractCODE="${msftdir}lalapps_ConvertToSFTv2"
 
 testDIR1="./mfdv4_TEST1"
 testDIR2="./mfdv4_TEST2"

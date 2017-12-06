@@ -14,8 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## \defgroup lal_py_gpstime GPSTime
-## \ingroup lal_python
+## \addtogroup GPSTime_py
 """Utilties for calculating and modifying GPS times using the LAL date
 package
 """
@@ -47,8 +46,7 @@ except ImportError:
     raise ImportError("LAL SWIG-wrappings are not available, you must install "
                       "these to use the gpstime module")
 
-from . import git_version
-
+import git_version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = git_version.verbose_msg
 __date__ = git_version.date

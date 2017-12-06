@@ -39,16 +39,14 @@
 
 /**
  * \defgroup LALTrigScanCluster_h Header LALTrigScanCluster.h
- * \ingroup lalinspiral_UNCLASSIFIED
+ * \ingroup pkg_CBC_NEW
  * \author Sengupta, Anand. S., Gupchup, Jayant A. and Robinson, C. A. K.
  * \brief NONE
  */
 /*@{*/
 
 /** UNDOCUMENTED */
-typedef enum
-tagtrigScanType
-{
+typedef enum {
     trigScanNone,	/**< UNDOCUMENTED */
     T0T3Tc,		/**< UNDOCUMENTED */
     Psi0Psi3Tc,		/**< UNDOCUMENTED */
@@ -67,7 +65,6 @@ tagTrigScanCluster
 
 /** UNDOCUMENTED */
 typedef enum
-tagTrigScanStatus
 {
   TRIGSCAN_SUCCESS,	/**< UNDOCUMENTED */
   TRIGSCAN_ERROR,	/**< UNDOCUMENTED */

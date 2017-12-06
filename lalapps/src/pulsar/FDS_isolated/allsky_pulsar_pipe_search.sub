@@ -1,0 +1,10 @@
+universe   = vanilla
+executable = allsky_pulsar_pipe_search.py
+error      = err.$(Process)
+log        = log.$(Process)
+output     = out.$(Process)
+initialdir = /dso-test/siemens/AllSky
+notification = Never
+arguments  =  --job-id $(Process)  --params-file allsky_pulsar_pipe.ini --starting-dir /dso-test/siemens/AllSky  --local-work-dir /usr1/scratch/xavi
+on_exit_remove = (ExitBySignal == False) || ((ExitBySignal == True) && (ExitSignal != 11))
+queue 1000

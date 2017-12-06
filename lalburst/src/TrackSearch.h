@@ -44,7 +44,7 @@ extern "C" {
 
 /**
  * \defgroup TrackSearch_h Header TrackSearch.h
- * \ingroup lalburst_tracksearch
+ * \ingroup pkg_tracksearch
  *
  * ### Synopsis ###
  *
@@ -145,7 +145,7 @@ typedef struct tagTrackSearchStore
  */
 typedef enum tagTrackSearchCut
   {
-    TRACKSEARCH_none, TRACKSEARCH_PandL, TRACKSEARCH_nPandnL, TRACKSEARCH_PandnL, TRACKSEARCH_nPandL
+    none, PandL, nPandnL, PandnL, nPandL
   }TrackSearchCut;
 
 /**

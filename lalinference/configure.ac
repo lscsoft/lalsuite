@@ -1,70 +1,27 @@
 AC_PREREQ([2.63])
-AC_INIT([LALInference],[1.9.4.1],[lal-discuss@ligo.org])
+AC_INIT([LALInference],[1.4.2.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALInferenceConfig.h])
 AC_CONFIG_SRCDIR([src/LALInference.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
+  lalinference.spec \
+  lalinference.pc \
   Makefile \
   debian/Makefile \
-  debian/control \
-  doxygen/Makefile \
-  doxygen/doxygen.cfg \
   include/Makefile \
   include/lal/Makefile \
-  lalinference.pc \
-  lalinference.spec \
+  src/LALInferenceVCSInfo.c \
+  src/LALInferenceVCSInfo.h \
+  src/Makefile \
   python/Makefile \
   python/lalinference/Makefile \
   python/lalinference/__init__.py \
   python/lalinference/bayestar/Makefile \
-  python/lalinference/imrtgr/Makefile \
-  python/lalinference/io/Makefile \
-  python/lalinference/io/events/Makefile \
-  python/lalinference/plot/Makefile \
-  python/lalinference/popprior/Makefile \
-  python/lalinference/rapid_pe/Makefile \
-  python/lalinference/tiger/Makefile \
-  src/LALInferenceVCSInfo.c \
-  src/LALInferenceVCSInfo.h \
-  src/Makefile \
-  src/version.c \
   swig/Makefile \
   test/Makefile \
-  test/baseline/Makefile \
-  test/data/Makefile \
-  test/data/gstlal_reference_psd/Makefile
 ])
-AM_INIT_AUTOMAKE([ \
-  1.11 \
-  foreign \
-  subdir-objects \
-  color-tests \
-  parallel-tests \
-  tar-ustar \
-  dist-xz \
-  no-dist-gzip \
-])
-
-# version requirements
-MIN_GLUE_VERSION="1.54.1"
-MIN_LAL_VERSION="6.18.0"
-MIN_LALMETAIO_VERSION="1.3.1"
-MIN_LALFRAME_VERSION="1.4.3"
-MIN_LALSIMULATION_VERSION="1.7.0"
-MIN_LALINSPIRAL_VERSION="1.7.7"
-MIN_LALPULSAR_VERSION="1.16.0"
-MIN_LALBURST_VERSION="1.4.4"
-MIN_LALXML_VERSION="1.2.4"
-AC_SUBST([MIN_GLUE_VERSION])
-AC_SUBST([MIN_LAL_VERSION])
-AC_SUBST([MIN_LALMETAIO_VERSION])
-AC_SUBST([MIN_LALFRAME_VERSION])
-AC_SUBST([MIN_LALSIMULATION_VERSION])
-AC_SUBST([MIN_LALINSPIRAL_VERSION])
-AC_SUBST([MIN_LALPULSAR_VERSION])
-AC_SUBST([MIN_LALBURST_VERSION])
-AC_SUBST([MIN_LALXML_VERSION])
+AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
@@ -87,9 +44,9 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[14])
+AC_SUBST([LIBCURRENT],[8])
 AC_SUBST([LIBREVISION],[0])
-AC_SUBST([LIBAGE],[1])
+AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # nightly build
@@ -103,17 +60,11 @@ LALSUITE_ENABLE_LALFRAME
 LALSUITE_ENABLE_LALMETAIO
 LALSUITE_ENABLE_LALINSPIRAL
 LALSUITE_ENABLE_LALPULSAR
-LALSUITE_ENABLE_LALBURST
 LALSUITE_ENABLE_LALXML
+LALSUITE_ENABLE_LALBURST
 
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
-
-# enable Doxygen documentation
-LALSUITE_ENABLE_DOXYGEN
-
-# enable help2man documentation
-LALSUITE_ENABLE_HELP2MAN
 
 # define version/configure info
 LALSUITE_VERSION_CONFIGURE_INFO
@@ -142,16 +93,40 @@ LALSUITE_USE_LIBTOOL
 
 # check for header files
 AC_HEADER_STDC
-AC_CHECK_HEADERS([unistd.h])
 
 # check for required libraries
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for OpenMP
-LALSUITE_ENABLE_OPENMP
+AC_OPENMP
+
+# check that compiler supports C99 variable length arrays in OpenMP for loops.
+# Apple's llvm-gcc-4.2 is buggy and does not.
+AS_IF([test "x$OPENMP_CFLAGS" != "x"],
+  [
+    AC_MSG_CHECKING([if compiler supports C99 VLAs in OpenMP for loops])
+    LALSUITE_PUSH_UVARS
+    CFLAGS="$OPENMP_CFLAGS"
+    AC_LINK_IFELSE([
+        AC_LANG_PROGRAM(, [
+          int i, n = 10;
+          #pragma omp parallel for
+          for (i = 0; i < 10; i ++)
+          { int a@<:@n@:>@; }
+        ])
+      ],
+      [AC_MSG_RESULT([yes])],
+      [
+        AC_MSG_RESULT([no, disabling OpenMP])
+        OPENMP_CFLAGS=
+      ]
+    )
+    LALSUITE_POP_UVARS
+  ]
+)
 
 # check for HEALPix
-PKG_CHECK_MODULES([CHEALPIX],[chealpix >= 3.30.0],[true],[false])
+PKG_CHECK_MODULES([CHEALPIX],[chealpix],[true],[false])
 LALSUITE_ADD_FLAGS([C],[${CHEALPIX_CFLAGS}],[${CHEALPIX_LIBS}])
 HEALPIX_ENABLE_VAL=ENABLED
 AC_CHECK_LIB([chealpix],[nside2npix],,[HEALPIX_ENABLE_VAL=DISABLED])
@@ -176,20 +151,6 @@ AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio lib
 # check for libmetaio headers
 AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
 
-# check for hdf5 support
-HDF5_ENABLE_VAL="DISABLED"
-# Note that AX_LIB_HDF5 uses h5cc to determine compiler for configure tests.
-# Make sure that it uses the same compiler as we are using.
-# Otherwise the configure tests may fail if we are using icc.
-HDF5_CC="${CC}"; export HDF5_CC
-HDF5_CLINKER="${CC}"; export HDF5_CLINKER
-AX_LIB_HDF5()
-unset HDF5_CC
-unset HDF5_CLINKER
-if test "${with_hdf5}" != "yes"; then
-  AC_MSG_ERROR([could not find the HDF5 library])
-fi
-
 if test "$lalxml" = "true"; then
   # check for libxml2
   PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
@@ -198,48 +159,38 @@ if test "$lalxml" = "true"; then
 fi
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
-LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
-LALSUITE_CHECK_LIB([LALMetaIO],[${MIN_LALMETAIO_VERSION}],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
-LALSUITE_CHECK_LIB([LALFrame],[${MIN_LALFRAME_VERSION}],[LALFrOpen],[lal/LALFrameL.h])
-LALSUITE_CHECK_LIB([LALSimulation],[${MIN_LALSIMULATION_VERSION}],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
-LALSUITE_CHECK_LIB([LALInspiral],[${MIN_LALINSPIRAL_VERSION}],[LALInspiralParameterCalc],[lal/LALInspiral.h])
-LALSUITE_CHECK_LIB([LALPulsar],[${MIN_LALPULSAR_VERSION}],[XLALComputeFstat],[lal/ComputeFstat.h])
-LALSUITE_CHECK_LIB([LALBurst],[${MIN_LALBURST_VERSION}],[XLALEPSearch],[lal/EPSearch.h])
-
-
+LALSUITE_CHECK_LIB([LAL],[6.13.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.13.0],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_LIB([LALMetaIO],[1.2.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_LIB([LALFrame],[1.2.0],[LALFrOpen],[lal/LALFrameL.h])
+LALSUITE_CHECK_LIB([LALSimulation],[1.2.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
+LALSUITE_CHECK_LIB([LALInspiral],[1.6.0],[LALInspiralParameterCalc],[lal/LALInspiral.h])
+LALSUITE_CHECK_LIB([LALPulsar],[1.10.0],[XLALComputeFstat],[lal/ComputeFstat.h])
+LALSUITE_CHECK_LIB([LALBurst],[1.2.0],[XLALSimBurstTableFromLIGOLw],[lal/LIGOLwXMLBurstRead.h])
 # check for lalxml
-LALSUITE_CHECK_OPT_LIB([LALXML],[${MIN_LALXML_VERSION}],[XLALXMLFilePrintElements],[lal/LALXML.h])
-
-dnl FIXME: This doesn't work in the top-level build, because it tries
-dnl to compile and link against LAL itself, which will not have been built yet.
-dnl
-dnl AC_MSG_CHECKING([if LAL was built with HDF5 support])
-dnl AC_RUN_IFELSE(
-dnl   [AC_LANG_PROGRAM(
-dnl     [
-dnl       #include <lal/H5FileIO.h>
-dnl       #include <lal/XLALError.h>
-dnl     ],
-dnl     [
-dnl       int ret;
-dnl       (void)XLALSetSilentErrorHandler();
-dnl       (void)XLALH5FileOpen(NULL, NULL);
-dnl       return xlalErrno != XLAL_EFAULT;
-dnl     ]
-dnl   )],
-dnl   [AC_MSG_RESULT([yes])],
-dnl   [
-dnl     AC_MSG_RESULT([no])
-dnl     AC_MSG_ERROR([LAL must be built with HDF5 support in order to build LALInference])
-dnl   ]
-dnl )
+LALSUITE_CHECK_OPT_LIB([LALXML],[1.1.5],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG
 
-# configure Doxygen documentation
-LALSUITE_USE_DOXYGEN
+# Disable OpenMP by default.
+# FIXME: OpenMP should be on by default, but it breaks condor_compiling lalapps.
+AS_IF(
+  [test "x$enable_openmp" = "x"],
+  [OPENMP_CFLAGS=]
+)
+# add compiler flags for OpenMP
+AS_IF(
+  [test "x$OPENMP_CFLAGS" = "x"],
+  [
+    OPENMP_ENABLE_VAL="DISABLED"
+    LALSUITE_ADD_FLAGS([C],[-Wno-unknown-pragmas],[])
+  ],
+  [
+    OPENMP_ENABLE_VAL="ENABLED"
+    LALSUITE_ADD_FLAGS([C],[${OPENMP_CFLAGS}],[])
+  ]
+)
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
@@ -267,12 +218,11 @@ LALInference has now been successfully configured:
 
 * Python support is $PYTHON_ENABLE_VAL
 * LALXML library support is $LALXML_ENABLE_VAL
+* SWIG binding generation is $SWIG_GENERATE_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
 * HEALPix is $HEALPIX_ENABLE_VAL
 * OpenMP acceleration is $OPENMP_ENABLE_VAL
-* Doxygen documentation is $DOXYGEN_ENABLE_VAL
-* help2man documentation is $HELP2MAN_ENABLE_VAL
 
 and will be installed under the directory:
 

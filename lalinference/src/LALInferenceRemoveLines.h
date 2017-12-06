@@ -25,7 +25,7 @@
 
 /**
  * \defgroup LALInferenceRemoveLines_h Header LALInferenceRemoveLines.h
- * \ingroup lalinference_general
+ * \ingroup pkg_LALInference
  * \brief Utility functions for identifying lines
  * in IFO data to be removed in LALInference
  */

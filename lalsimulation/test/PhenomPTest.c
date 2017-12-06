@@ -1,6 +1,6 @@
 /*
  *  Copyright (C) 2013 Michael Puerrer
- *  Test code for LALSimIMRPhenomP(v1)
+ *  Test code for LALSimIMRPhenomP
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 #include <float.h>
 
 #include <lal/Units.h>
-#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
+#include <lal/LALAdaptiveRungeKutta4.h>
 #include <lal/LALConstants.h>
 #include <lal/FindRoot.h>
 #include <lal/SeqFactories.h>
@@ -35,14 +35,14 @@
 #include <lal/LALSimNoise.h>
 #include <lal/ComplexFFT.h>
 
-#include <lal/ComplexFFT.h>
+#include <fftw3.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_math.h>
 
 #include "../src/LALSimIMRPhenomP.c" /* Include source directly so we can carry out unit tests for internal functions */
 
-#define MYUNUSED(expr) do { (void)(expr); } while (0)
+#define UNUSED(expr) do { (void)(expr); } while (0)
 
 void prC(const char *name, COMPLEX16 x);
 void prC(const char *name, COMPLEX16 x) {
@@ -65,7 +65,8 @@ REAL8 MatchSI(COMPLEX16FrequencySeries **htilde1, COMPLEX16FrequencySeries **hti
   }
   int n = len1;
 
-  COMPLEX16Vector *integrand = XLALCreateCOMPLEX16Vector(n);
+  fftw_complex *integrand;
+  integrand = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * n);
   REAL8 PSDfact = XLALSimNoisePSDaLIGOZeroDetHighPower((fMax-fMin)/4.);
   REAL8 tableS;
   COMPLEX16 h1,h2;
@@ -81,7 +82,7 @@ REAL8 MatchSI(COMPLEX16FrequencySeries **htilde1, COMPLEX16FrequencySeries **hti
     tableS = PSDfact / XLALSimNoisePSDaLIGOZeroDetHighPower(f);
     h1 = ((*htilde1)->data->data)[i];
     h2 = ((*htilde2)->data->data)[i];
-    integrand->data[i] = h1 * conj(h2) * tableS;
+    integrand[i] = h1 * conj(h2) * tableS;
     norm1 += sqr(cabs(h1)) * tableS;
     norm2 += sqr(cabs(h2)) * tableS;
     // printf("f = %g\tnoise(f) = %g\ttableS[i] = %g\tintegrand[i] = %g\n", f, XLALSimNoisePSDaLIGOZeroDetHighPower(f), tableS, creal(integrand[i]));
@@ -92,31 +93,31 @@ REAL8 MatchSI(COMPLEX16FrequencySeries **htilde1, COMPLEX16FrequencySeries **hti
   int zpf = 10;
   int m = n + 2*zpf*n; // zero-pad on both sides
   //printf("Total length %d\n", m);
-
-  COMPLEX16FFTPlan *myplan = XLALCreateForwardCOMPLEX16FFTPlan(m, 0);
-  COMPLEX16Vector *array_in = XLALCreateCOMPLEX16Vector(m);
-  COMPLEX16Vector *array_out = XLALCreateCOMPLEX16Vector(m);
+  fftw_complex *array;
+  fftw_plan p;
+  array = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m);
+  p = fftw_plan_dft_1d(m, array, array, FFTW_FORWARD, FFTW_ESTIMATE); // prepare in-place FFT
 
   // fill input array
   for (int i=0; i<zpf*n; i++)
-    array_in->data[i] = 0.0;
+    array[i] = 0.0;
   for (int i=zpf*n; i<(zpf*n + n); i++)
-    array_in->data[i] = integrand->data[iStart + i-zpf*n];
+    array[i] = integrand[iStart + i-zpf*n];
   for (int i=zpf*n + n; i<m; i++)
-    array_in->data[i] = 0.0;
+    array[i] = 0.0;
 
-  XLALCOMPLEX16VectorFFT(array_out, array_in, myplan);
+  fftw_execute(p);
 
   REAL8 match=0; REAL8 val;
   for (int i=0; i<m; i++) {
-    val = cabs(array_out->data[i]);
+    val = cabs(array[i]);
     if (val > match)
       match = val;
   }
 
-  XLALFree(array_in);
-  XLALFree(array_out);
-  XLALDestroyCOMPLEX16FFTPlan(myplan);
+  fftw_destroy_plan(p);
+  fftw_free(array);
+  fftw_free(integrand);
 
   return match / sqrt(norm1*norm2);
 }
@@ -205,7 +206,7 @@ static void Test_XLALSimIMRPhenomPCalculateModelParameters(void);
 static void Test_XLALSimIMRPhenomPCalculateModelParameters(void) {
   printf("\n** Test_XLALSimIMRPhenomPCalculateModelParameters: **\n");
 
-  REAL8 chi1_l, chi2_l, chi_eff, chip, thetaJ, alpha0;
+  REAL8 eta, chi_eff, chip, thetaJ, alpha0;
 
   REAL8 m1_SI = 10 * LAL_MSUN_SI;
   REAL8 m2_SI = 40 * LAL_MSUN_SI;
@@ -220,12 +221,11 @@ static void Test_XLALSimIMRPhenomPCalculateModelParameters(void) {
   REAL8 lnhatz = cos(0.4);
   REAL8 f_min = 20;
   REAL8 f_ref = f_min;
-  IMRPhenomP_version_type version = IMRPhenomPv2_V;
 
-  XLALSimIMRPhenomPCalculateModelParametersOld(
-      &chi1_l,            /**< Output: aligned spin on companion 1 */
-      &chi2_l,            /**< Output: aligned spin on companion 2 */
+  XLALSimIMRPhenomPCalculateModelParameters(
+      &chi_eff,           /**< Output: Effective aligned spin */
       &chip,              /**< Output: Effective spin in the orbital plane */
+      &eta,               /**< Output: Symmetric mass-ratio */
       &thetaJ,            /**< Output: Angle between J0 and line of sight (z-direction) */
       &alpha0,            /**< Output: Initial value of alpha angle (azimuthal precession angle) */
       m1_SI,              /**< Mass of companion 1 (kg) */
@@ -239,16 +239,15 @@ static void Test_XLALSimIMRPhenomPCalculateModelParameters(void) {
       s1z,                /**< Initial value of s1z: dimensionless spin of larger BH */
       s2x,                /**< Initial value of s2x: dimensionless spin of larger BH */
       s2y,                /**< Initial value of s2y: dimensionless spin of larger BH */
-      s2z,                /**< Initial value of s2z: dimensionless spin of larger BH */
-      version);
+      s2z);               /**< Initial value of s2z: dimensionless spin of larger BH */
 
-  chi_eff = (m1_SI*chi1_l + m2_SI*chi2_l) / (m1_SI + m2_SI); /* Effective aligned spin */
-
-  REAL8 chi_eff_expected = 0.4378425478398173;
-  REAL8 chip_expected = 0.1752382540388927;
-  REAL8 thetaJ_expected = 0.29197409372473093;
+  REAL8 eta_expected = 0.16;
+  REAL8 chi_eff_expected = 0.4378425;
+  REAL8 chip_expected = 0.17523825;
+  REAL8 thetaJ_expected = 0.298552787;
   REAL8 alpha0_expected = LAL_PI;
 
+  print_difference("eta", eta, eta_expected);
   print_difference("chi_eff", chi_eff, chi_eff_expected);
   print_difference("chip", chip, chip_expected);
   print_difference("thetaJ", thetaJ, thetaJ_expected);
@@ -257,7 +256,9 @@ static void Test_XLALSimIMRPhenomPCalculateModelParameters(void) {
   //const REAL8 eps = DBL_EPSILON;
   const REAL8 eps = 1e-5;
 
-  assert(approximatelyEqual(chi_eff,  chi_eff_expected, eps)
+  assert(
+       approximatelyEqual(eta,      eta_expected, eps)
+    && approximatelyEqual(chi_eff,  chi_eff_expected, eps)
     && approximatelyEqual(chip,     chip_expected, eps)
     && approximatelyEqual(thetaJ,   thetaJ_expected, eps)
     && approximatelyEqual(alpha0,   alpha0_expected, eps)
@@ -266,7 +267,6 @@ static void Test_XLALSimIMRPhenomPCalculateModelParameters(void) {
 }
 
 
-#if 0
 static void Test_PhenomC(void);
 static void Test_PhenomC(void) {
   printf("\n** Test_PhenomC: **\n");
@@ -286,8 +286,7 @@ static void Test_PhenomC(void) {
     m1,    /**< mass of companion 1 (solar masses) */
     m2,    /**< mass of companion 2 (solar masses) */
     chi,   /**< Reduced aligned spin of the binary chi = (m1*chi1 + m2*chi2)/M */
-    chip, /**< Dimensionless spin in the orbial plane */
-    NULL); /**< No testing GR parameters */
+    chip); /**< Dimensionless spin in the orbial plane */
 
   int errcode = IMRPhenomCGenerateAmpPhase( &aPhenomC, &phPhenomC, fHz, eta, PCparams );
   if( errcode != XLAL_SUCCESS )
@@ -301,7 +300,7 @@ static void Test_PhenomC(void) {
   printf("LAL_MRSUN_SI, LAL_MTSUN_SI, LAL_PC_SI: %g\t%g\t%g\n",LAL_MRSUN_SI, LAL_MTSUN_SI, LAL_PC_SI);
   prC("hPC", hPC);
 
-  COMPLEX16 hPC_expected = -4.08291e-23 - I * 8.89596e-23;
+  COMPLEX16 hPC_expected = -4.08272e-23 - I * 8.89604e-23;
 
   const REAL8 eps = 1e-5;
 
@@ -310,13 +309,11 @@ static void Test_PhenomC(void) {
     && "Test_PhenomC()"
   );
 }
-#endif
 
-#if 0
 static void Test_PhenomPCore(void);
 static void Test_PhenomPCore(void) {
   printf("\n** Test_PhenomPCore: **\n");
-  BBHPhenomCParams *PCparams = ComputeIMRPhenomCParamsRDmod(10, 40, 0.45, 0.18, NULL);
+  BBHPhenomCParams *PCparams = ComputeIMRPhenomCParamsRDmod(10, 40, 0.45, 0.18);
   REAL8 q = 4;
   REAL8 chi_eff = 0.45;
   const REAL8 chil = (1.0+q)/q * chi_eff; /* dimensionless aligned spin of the largest BH */
@@ -348,16 +345,8 @@ static void Test_PhenomPCore(void) {
   Y2m.Y22  = XLALSpinWeightedSphericalHarmonic(ytheta, yphi, -2, 2,  2);
 
   COMPLEX16 hp, hc;
-  REAL8 phasing;
   REAL8 fHz = 40.6051; // Mf = 0.01 for M=50Msun
-  const UINT4 version = 1;
-  IMRPhenomDAmplitudeCoefficients *pAmp = NULL;
-  IMRPhenomDPhaseCoefficients *pPhi = NULL;
-  PNPhasingSeries *PNparams = NULL;
-  AmpInsPrefactors * amp_prefactors = NULL;
-  PhiInsPrefactors * phi_prefactors = NULL;
-
-  int ret = PhenomPCoreOneFrequency(
+  int ret = PhenomPCore(
     fHz,                     /**< frequency (Hz) */
     0.16,                    /**< symmetric mass ratio */
     0.45,                    /**< dimensionless effective total aligned spin */
@@ -365,27 +354,18 @@ static void Test_PhenomPCore(void) {
     100 * 1e6 * LAL_PC_SI,   /**< distance of source (m) */
     50,                      /**< total mass (Solar masses) */
     0,                       /**< orbital coalescence phase (rad) */
-    pAmp,                    /**< Internal IMRPhenomD amplitude coefficients */
-    pPhi,                    /**< Internal IMRPhenomD phase coefficients */
     PCparams,                /**< internal PhenomC parameters */
-    PNparams,                /**< PN inspiral phase coefficients */
     &angcoeffs,              /**< struct with PN coeffs for the NNLO angles */
     &Y2m,                    /**< struct of l=2 spherical harmonics of spin weight -2 */
     0,0,
-    &hp,                     /**< output: \f$\tilde h_+\f$ */
-    &hc,                     /**< output: \f$\tilde h_+\f$ */
-    &phasing,                /**< Output: overall phasing */
-    version,
-    amp_prefactors,
-    phi_prefactors
-);
-
-  MYUNUSED(ret);
+    &hp,                     /**< output: \tilde h_+ */
+    &hc);                    /**< output: \tilde h_+ */
+  UNUSED(ret);
   prC("hp", hp);
   prC("hc", hc);
 
-  COMPLEX16 hp_expected = 2.06975e-23 - I * 9.29353e-23;
-  COMPLEX16 hc_expected = -9.29441e-23 - I * 2.06616e-23;
+  COMPLEX16 hp_expected = 2.06987e-23 - I*9.29351e-23;
+  COMPLEX16 hc_expected = -9.29438e-23 - I*2.06629e-23;
   const REAL8 eps = 1e-5;
 
   assert(
@@ -394,13 +374,12 @@ static void Test_PhenomPCore(void) {
     && "Test_PhenomPCore()"
   );
 }
-#endif
 
 static void Test_XLALSimIMRPhenomP(void);
 static void Test_XLALSimIMRPhenomP(void) {
   printf("\n** Test_XLALSimIMRPhenomP: **\n");
 
-  REAL8 chi1_l, chi2_l, chip, thetaJ, alpha0;
+  REAL8 eta, chi_eff, chip, thetaJ, alpha0;
 
   REAL8 m1 = 10;
   REAL8 m2 = 40;
@@ -417,12 +396,11 @@ static void Test_XLALSimIMRPhenomP(void) {
   REAL8 lnhatz = cos(0.4);
   REAL8 f_min = 20;
   REAL8 f_ref = f_min;
-  IMRPhenomP_version_type version = IMRPhenomPv2_V;
 
-  XLALSimIMRPhenomPCalculateModelParametersOld(
-      &chi1_l,            /**< Output: aligned spin on companion 1 */
-      &chi2_l,            /**< Output: aligned spin on companion 2 */
+  XLALSimIMRPhenomPCalculateModelParameters(
+      &chi_eff,           /**< Output: Effective aligned spin */
       &chip,              /**< Output: Effective spin in the orbital plane */
+      &eta,               /**< Output: Symmetric mass-ratio */
       &thetaJ,            /**< Output: Angle between J0 and line of sight (z-direction) */
       &alpha0,            /**< Output: Initial value of alpha angle (azimuthal precession angle) */
       m1_SI,              /**< Mass of companion 1 (kg) */
@@ -436,8 +414,7 @@ static void Test_XLALSimIMRPhenomP(void) {
       s1z,                /**< Initial value of s1z: dimensionless spin of larger BH */
       s2x,                /**< Initial value of s2x: dimensionless spin of larger BH */
       s2y,                /**< Initial value of s2y: dimensionless spin of larger BH */
-      s2z,                /**< Initial value of s2z: dimensionless spin of larger BH */
-      version);
+      s2z);               /**< Initial value of s2z: dimensionless spin of larger BH */
 
   COMPLEX16FrequencySeries *hptilde = NULL;
   COMPLEX16FrequencySeries *hctilde = NULL;
@@ -449,31 +426,28 @@ static void Test_XLALSimIMRPhenomP(void) {
   int ret = XLALSimIMRPhenomP(
     &hptilde,                 /**< Frequency-domain waveform h+ */
     &hctilde,                 /**< Frequency-domain waveform hx */
-    chi1_l,                   /**< aligned spin on companion 1 */
-    chi2_l,                   /**< aligned spin on companion 2 */
+    chi_eff,                  /**< Effective aligned spin */
     chip,                     /**< Effective spin in the orbital plane */
+    eta,                      /**< Symmetric mass-ratio */
     thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
-    m1_SI,                    /**< mass of companion1 (kg) */
-    m2_SI,                    /**< mass of companion1 (kg) */
+    m1_SI + m2_SI,            /**< Total mass of binary (kg) */
     distance,                 /**< Distance of source (m) */
     alpha0,                   /**< Initial value of alpha angle */
     phic,                     /**< Orbital coalescence phase (rad) */
     deltaF,                   /**< Sampling frequency (Hz) */
     f_min,                    /**< Starting GW frequency (Hz) */
     f_max,                    /**< End frequency; 0 defaults to ringdown cutoff freq */
-    f_ref,                    /**< Reference frequency */
-    version,
-    NULL);                   /**<linked list containing the extra testing GR parameters */
+    f_ref);                   /**< Reference frequency */
 
   dump_file("PhenomP_Test1.dat", hptilde, hctilde, m1+m2);
-  MYUNUSED(ret);
+  UNUSED(ret);
   COMPLEX16 hp = (hptilde->data->data)[1000];
   COMPLEX16 hc = (hctilde->data->data)[1000];
   prC("hp", hp);
   prC("hc", hc);
 
-  COMPLEX16 hp_expected = -5.17559e-23 + I * 2.60627e-23;
-  COMPLEX16 hc_expected =  2.60624e-23 + I * 5.17509e-23;
+  COMPLEX16 hp_expected = 1.00825e-23 - I*5.79215e-23;
+  COMPLEX16 hc_expected = -5.7913e-23 - I*1.00782e-23;
   const REAL8 eps = 1e-5;
 
   assert(
@@ -484,7 +458,6 @@ static void Test_XLALSimIMRPhenomP(void) {
 
 }
 
-#if 0
 static void Test_PhenomC_PhenomP(void);
 static void Test_PhenomC_PhenomP(void) {
   printf("\n** Test_PhenomC_PhenomP: **\n");
@@ -513,15 +486,13 @@ static void Test_PhenomC_PhenomP(void) {
   REAL8 lnhatx = 0;
   REAL8 lnhaty = 0;
   REAL8 lnhatz = 1;
-  const UINT4 version = 1;
-  const LALSimInspiralTestGRParam *nonGR = NULL;
 
-  REAL8 chi1_l, chi2_l, chip, thetaJ, alpha0;
+  REAL8 chi_eff, chip, thetaJ, alpha0;
 
   XLALSimIMRPhenomPCalculateModelParameters(
-      &chi1_l,            /**< Output: aligned spin on companion 1 */
-      &chi2_l,            /**< Output: aligned spin on companion 2 */
+      &chi_eff,           /**< Output: Effective aligned spin */
       &chip,              /**< Output: Effective spin in the orbital plane */
+      &eta,               /**< Output: Symmetric mass-ratio */
       &thetaJ,            /**< Output: Angle between J0 and line of sight (z-direction) */
       &alpha0,            /**< Output: Initial value of alpha angle (azimuthal precession angle) */
       m1_SI,              /**< Mass of companion 1 (kg) */
@@ -537,7 +508,7 @@ static void Test_PhenomC_PhenomP(void) {
       s2y,                /**< Initial value of s2y: dimensionless spin of larger BH */
       s2z);               /**< Initial value of s2z: dimensionless spin of larger BH */
 
-//  printf("chi_eff = %g\n", chi_eff);
+  printf("chi_eff = %g\n", chi_eff);
   printf("chip = %g\n", chip);
   printf("eta = %g\n", eta);
   printf("thetaJ = %g\n", thetaJ);
@@ -545,21 +516,18 @@ static void Test_PhenomC_PhenomP(void) {
   int ret = XLALSimIMRPhenomP(
     &hptilde,                 /**< Frequency-domain waveform h+ */
     &hctilde,                 /**< Frequency-domain waveform hx */
-    chi1_l,                   /**< aligned spin on companion 1 */
-    chi2_l,                   /**< aligned spin on companion 2 */
+    chi_eff,                  /**< Effective aligned spin */
     chip,                     /**< Effective spin in the orbital plane */
+    eta,                      /**< Symmetric mass-ratio */
     thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
-    m1_SI,                    /**< Mass of companion 1 (kg) */
-    m2_SI,                    /**< Mass of companion 2 (kg) */
+    m1_SI + m2_SI,            /**< Total mass of binary (kg) */
     distance,                 /**< Distance of source (m) */
     alpha0,                   /**< Initial value of alpha angle (azimuthal precession angle) */
     phic,                     /**< Orbital coalescence phase (rad) */
     deltaF,                   /**< Sampling frequency (Hz) */
     f_min,                    /**< Starting GW frequency (Hz) */
     f_max,                    /**< End frequency; 0 defaults to ringdown cutoff freq */
-    f_ref,                    /**< Reference frequency */
-    version,
-    nonGR);
+    f_ref);                   /**< Reference frequency */
 
   int wflen = hptilde->data->length;
   REAL8 f_max_prime = 0;
@@ -588,8 +556,7 @@ static void Test_PhenomC_PhenomP(void) {
       chi,                   /**< mass-weighted aligned-spin parameter */
       f_min,                 /**< starting GW frequency (Hz) */
       f_max,                 /**< end frequency; 0 defaults to ringdown cutoff freq */
-      distance,               /**< distance of source (m) */
-      nonGR
+      distance               /**< distance of source (m) */
   );
 
   out = fopen("XLALSimIMRPhenomC.dat", "w");
@@ -604,7 +571,7 @@ static void Test_PhenomC_PhenomP(void) {
 
   // Now compute match between PhenomC and PhenomP for this aligned configuration
   REAL8 match = MatchSI(&hptilde, &htildePC, f_min, f_max_prime, deltaF);
-  REAL8 match_expected = 0.999465;
+  REAL8 match_expected = 0.999443;
 
   const REAL8 eps = 1e-5;
 
@@ -614,16 +581,15 @@ static void Test_PhenomC_PhenomP(void) {
   );
 
   printf("match(PhenomP_aligned, PhenomC) = %g\n", match);
-  MYUNUSED(ret);
+  UNUSED(ret);
 }
-#endif
 
 static void Test_XLALSimIMRPhenomP_f_ref(void);
 static void Test_XLALSimIMRPhenomP_f_ref(void) {
   // For aligned spins f_ref should not change the waveform
   printf("\n** Test_XLALSimIMRPhenomP_f_ref: **\n");
 
-  REAL8 chi1_l, chi2_l, chip, thetaJ, alpha0;
+  REAL8 eta, chi_eff, chip, thetaJ, alpha0;
 
   REAL8 m1 = 10;
   REAL8 m2 = 40;
@@ -640,12 +606,11 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
   REAL8 lnhatz = cos(0.4);
   REAL8 f_min = 20;
   REAL8 f_ref = f_min;
-  IMRPhenomP_version_type version = IMRPhenomPv2_V;
 
-  XLALSimIMRPhenomPCalculateModelParametersOld(
-      &chi1_l,            /**< Output: aligned spin on companion 1 */
-      &chi2_l,            /**< Output: aligned spin on companion 2 */
+  XLALSimIMRPhenomPCalculateModelParameters(
+      &chi_eff,           /**< Output: Effective aligned spin */
       &chip,              /**< Output: Effective spin in the orbital plane */
+      &eta,               /**< Output: Symmetric mass-ratio */
       &thetaJ,            /**< Output: Angle between J0 and line of sight (z-direction) */
       &alpha0,            /**< Output: Initial value of alpha angle (azimuthal precession angle) */
       m1_SI,              /**< Mass of companion 1 (kg) */
@@ -659,8 +624,7 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
       s1z,                /**< Initial value of s1z: dimensionless spin of larger BH */
       s2x,                /**< Initial value of s2x: dimensionless spin of larger BH */
       s2y,                /**< Initial value of s2y: dimensionless spin of larger BH */
-      s2z,                /**< Initial value of s2z: dimensionless spin of larger BH */
-      version);
+      s2z);               /**< Initial value of s2z: dimensionless spin of larger BH */
 
   COMPLEX16FrequencySeries *hptilde = NULL;
   COMPLEX16FrequencySeries *hctilde = NULL;
@@ -672,24 +636,21 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
   int ret = XLALSimIMRPhenomP(
     &hptilde,                 /**< Frequency-domain waveform h+ */
     &hctilde,                 /**< Frequency-domain waveform hx */
-    chi1_l,                   /**< aligned spin on companion 1 */
-    chi2_l,                   /**< aligned spin on companion 2 */
+    chi_eff,                  /**< Effective aligned spin */
     chip,                     /**< Effective spin in the orbital plane */
+    eta,                      /**< Symmetric mass-ratio */
     thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
-    m1_SI,                    /**< mass of companion1 (kg) */
-    m2_SI,                    /**< mass of companion1 (kg) */
+    m1_SI + m2_SI,            /**< Total mass of binary (kg) */
     distance,                 /**< Distance of source (m) */
     alpha0,                   /**< Initial value of alpha angle (azimuthal precession angle) */
     phic,                     /**< Orbital coalescence phase (rad) */
     deltaF,                   /**< Sampling frequency (Hz) */
     f_min,                    /**< Starting GW frequency (Hz) */
     f_max,                    /**< End frequency; 0 defaults to ringdown cutoff freq */
-    f_ref,                    /**< Reference frequency */
-    version,
-    NULL);
+    f_ref);                   /**< Reference frequency */
 
   dump_file("PhenomP_Test_f_ref1.dat", hptilde, hctilde, m1+m2);
-  MYUNUSED(ret);
+  UNUSED(ret);
   COMPLEX16 hp = (hptilde->data->data)[1000];
   COMPLEX16 hc = (hctilde->data->data)[1000];
   printf("f_ref = %g\n", f_ref);
@@ -699,10 +660,10 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
   // Now repeat for a different f_ref
   f_ref = 5;
 
-  XLALSimIMRPhenomPCalculateModelParametersOld(
-      &chi1_l,            /**< Output: aligned spin on companion 1 */
-      &chi2_l,            /**< Output: aligned spin on companion 2 */
+  XLALSimIMRPhenomPCalculateModelParameters(
+      &chi_eff,           /**< Output: Effective aligned spin */
       &chip,              /**< Output: Effective spin in the orbital plane */
+      &eta,               /**< Output: Symmetric mass-ratio */
       &thetaJ,            /**< Output: Angle between J0 and line of sight (z-direction) */
       &alpha0,            /**< Output: Initial value of alpha angle (azimuthal precession angle) */
       m1_SI,              /**< Mass of companion 1 (kg) */
@@ -716,8 +677,7 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
       s1z,                /**< Initial value of s1z: dimensionless spin of larger BH */
       s2x,                /**< Initial value of s2x: dimensionless spin of larger BH */
       s2y,                /**< Initial value of s2y: dimensionless spin of larger BH */
-      s2z,                /**< Initial value of s2z: dimensionless spin of larger BH */
-      version);
+      s2z);               /**< Initial value of s2z: dimensionless spin of larger BH */
 
   COMPLEX16FrequencySeries *hptilde2 = NULL;
   COMPLEX16FrequencySeries *hctilde2 = NULL;
@@ -725,25 +685,21 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
   ret = XLALSimIMRPhenomP(
     &hptilde2,                /**< Frequency-domain waveform h+ */
     &hctilde2,                /**< Frequency-domain waveform hx */
-    chi1_l,                   /**< aligned spin on companion 1 */
-    chi2_l,                   /**< aligned spin on companion 2 */
+    chi_eff,                  /**< Effective aligned spin */
     chip,                     /**< Effective spin in the orbital plane */
+    eta,                      /**< Symmetric mass-ratio */
     thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
-    m1_SI,                    /**< mass of companion1 (kg) */
-    m2_SI,                    /**< mass of companion1 (kg) */
+    m1_SI + m2_SI,            /**< Total mass of binary (kg) */
     distance,                 /**< Distance of source (m) */
     alpha0,                   /**< Initial value of alpha angle (azimuthal precession angle) */
     phic,                     /**< Orbital coalescence phase (rad) */
     deltaF,                   /**< Sampling frequency (Hz) */
     f_min,                    /**< Starting GW frequency (Hz) */
     f_max,                    /**< End frequency; 0 defaults to ringdown cutoff freq */
-    f_ref,                    /**< Reference frequency */
-    version,
-    NULL);
-
+    f_ref);                   /**< Reference frequency */
 
   dump_file("PhenomP_Test_f_ref2.dat", hptilde2, hctilde2, m1+m2);
-  MYUNUSED(ret);
+  UNUSED(ret);
   COMPLEX16 hp2 = (hptilde2->data->data)[1000];
   COMPLEX16 hc2 = (hctilde2->data->data)[1000];
   printf("f_ref = %g\n", f_ref);
@@ -760,26 +716,16 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
 }
 
 int main(int argc, char *argv[]) {
-  MYUNUSED(argc);
-  MYUNUSED(argv);
+  UNUSED(argc);
+  UNUSED(argv);
 
-#ifndef _OPENMP
   Test_alpha_epsilon();
   Test_XLALSimIMRPhenomPCalculateModelParameters();
-  //Test_PhenomC();
-  //Test_PhenomPCore();
+  Test_PhenomC();
+  Test_PhenomPCore();
   Test_XLALSimIMRPhenomP();
-  //Test_PhenomC_PhenomP();
+  Test_PhenomC_PhenomP();
   Test_XLALSimIMRPhenomP_f_ref();
-#else
-  MYUNUSED(Test_alpha_epsilon);
-  MYUNUSED(Test_XLALSimIMRPhenomPCalculateModelParameters);
-  //MYUNUSED(Test_PhenomC);
-  //MYUNUSED(Test_PhenomPCore);
-  MYUNUSED(Test_XLALSimIMRPhenomP);
-  //MYUNUSED(Test_PhenomC_PhenomP);
-  MYUNUSED(Test_XLALSimIMRPhenomP_f_ref);
-#endif
 
   printf("\nAll done!\n");
   return 0;

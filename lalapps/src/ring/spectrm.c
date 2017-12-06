@@ -17,8 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-#include "lalapps.h"
-
 #include <math.h>
 
 #include <lal/LALStdlib.h>
@@ -30,6 +28,7 @@
 #include <lal/Window.h>
 #include <lal/LIGOMetadataRingdownUtils.h>
 
+#include "lalapps.h"
 #include "spectrm.h"
 #include "errutil.h"
 

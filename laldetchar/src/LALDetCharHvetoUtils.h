@@ -22,7 +22,7 @@
 
 #include <lal/LALDetCharGlibTypes.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/SnglBurstUtils.h>
+#include <lal/LIGOMetadataBurstUtils.h>
 #include <lal/LIGOLwXMLBurstRead.h>
 
 #ifdef  __cplusplus
@@ -36,11 +36,11 @@ LALGHashTable* XLALGetChannelList(LALGSequence *trig_sequence);
 LALGSequence* XLALPopulateTrigSequenceFromFile(LALGSequence* trig_sequence, const char* fname, double min_snr, char* ignore_list);
 
 #ifdef SWIG   // SWIG interface directives
-SWIGLAL(OWNS_THIS_ARG(SnglBurst*, tbl));
+SWIGLAL(ACQUIRES_OWNERSHIP(SnglBurst*, tbl));
 #endif
 LALGSequence* XLALPopulateTrigSequenceFromTrigList(LALGSequence* trig_sequence, SnglBurst* tbl);
 #ifdef SWIG   // SWIG interface directives
-SWIGLAL_CLEAR(OWNS_THIS_ARG(SnglBurst*, tbl));
+SWIGLAL_CLEAR(ACQUIRES_OWNERSHIP(SnglBurst*, tbl));
 #endif
 
 #ifdef  __cplusplus

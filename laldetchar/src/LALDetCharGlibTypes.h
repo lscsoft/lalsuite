@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-typedef enum tagLALGType {
+typedef enum {
   LALGTYPE_NONE = 0,
   LALGTYPE_INT,
   LALGTYPE_DBL,
@@ -48,7 +48,7 @@ size_t XLALGetGSequenceLength(LALGSequence* seq);
 
 void XLALDestroyGSequenceIter(LALGSequenceIter* itr);
 #ifdef SWIG   // SWIG interface directives
-SWIGLAL(RETURN_OWNED_BY_1ST_ARG(LALGSequenceIter*, XLALGSequenceBegin));
+SWIGLAL(RETURNS_PROPERTY(LALGSequenceIter*, XLALGSequenceBegin));
 #endif
 LALGSequenceIter* XLALGSequenceBegin(LALGSequence* seq);
 bool XLALGSequenceNext(LALGSequenceIter* itr);
@@ -57,15 +57,15 @@ GSequenceIter* XLALGSequenceBeginRaw(LALGSequence* seq, LALGType type);
 #endif
 
 #ifdef SWIG   // SWIG interface directives
-SWIGLAL(RETURN_OWNED_BY_1ST_ARG(SnglBurst*, XLALGetGSeqSnglBurst));
+SWIGLAL(RETURNS_PROPERTY(SnglBurst*, XLALGetGSeqSnglBurst));
 #endif
 SnglBurst* XLALGetGSeqSnglBurst(LALGSequenceIter* itr);
 #ifdef SWIG   // SWIG interface directives
-SWIGLAL(OWNS_THIS_ARG(SnglBurst*, sb));
+SWIGLAL(ACQUIRES_OWNERSHIP(SnglBurst*, sb));
 #endif
 LALGSequenceIter* XLALAddGSeqSnglBurst(LALGSequence* seq, SnglBurst* sb);
 #ifdef SWIG   // SWIG interface directives
-SWIGLAL_CLEAR(OWNS_THIS_ARG(SnglBurst*, sb));
+SWIGLAL_CLEAR(ACQUIRES_OWNERSHIP(SnglBurst*, sb));
 #endif
 
 LALGHashTable* XLALCreateGHashTable(LALGType type);

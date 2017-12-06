@@ -32,8 +32,16 @@
 #include <stdlib.h>
 #include <math.h>
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_GETOPT_H
+/* #include <getopt.h> */
+#endif
+#include <getopt.h>
+
 #include <lal/LALConfig.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/AVFactories.h>
@@ -63,6 +71,9 @@ typedef enum{
   impulse, gaussian, file
     }
 InputDataType;
+
+extern char    *optarg;
+extern int      optind;
 
 static FILE *fp[4];
 static FILE *fp2[4];
@@ -532,7 +543,7 @@ ParseOptions (
     {
       int c = -1;
 
-      c = LALgetopt (argc, argv, "whd:""A:""L:""V:""G:""T:""Z:""a:""l:""v:""g:""t:""z:""o:""n:""b:""c:""s:""N:""f:""r:""p:");
+      c = getopt (argc, argv, "whd:""A:""L:""V:""G:""T:""Z:""a:""l:""v:""g:""t:""z:""o:""n:""b:""c:""s:""N:""f:""r:""p:");
       if (c == -1)
 	{
 	  break;
@@ -549,73 +560,73 @@ ParseOptions (
 	case 'd': /* set debuglevel */
 	  break;
   	case 'A':
-	  strcpy(H1filename,LALoptarg);
+	  strcpy(H1filename,optarg);
 	  caseID[0] = 1;
 	  break;
 	case 'L':
-	  strcpy(L1filename,LALoptarg);
+	  strcpy(L1filename,optarg);
 	  caseID[1] = 1;
 	  break;
 	case 'V':
-	  strcpy(VIRGOfilename,LALoptarg);
+	  strcpy(VIRGOfilename,optarg);
 	  caseID[2] = 1;
 	  break;
 	case 'G':
-	  strcpy(GEOfilename,LALoptarg);
+	  strcpy(GEOfilename,optarg);
 	  caseID[3] = 1;
 	  break;
 	case 'T':
-	  strcpy(TAMAfilename,LALoptarg);
+	  strcpy(TAMAfilename,optarg);
 	  caseID[4] = 1;
 	  break;
 	case 'Z':
-	  strcpy(H2filename,LALoptarg);
+	  strcpy(H2filename,optarg);
 	  caseID[5] = 1;
 	  break;
   	case 'a':
-	  strcpy(H1Beam,LALoptarg);
+	  strcpy(H1Beam,optarg);
 	  break;
 	case 'l':
-	  strcpy(L1Beam,LALoptarg);
+	  strcpy(L1Beam,optarg);
 	  break;
 	case 'v':
-	  strcpy(VIRGOBeam,LALoptarg);
+	  strcpy(VIRGOBeam,optarg);
 	  break;
 	case 'g':
-	  strcpy(GEOBeam,LALoptarg);
+	  strcpy(GEOBeam,optarg);
 	  break;
 	case 't':
-	  strcpy(TAMABeam,LALoptarg);
+	  strcpy(TAMABeam,optarg);
 	  break;
 	case 'z':
-	  strcpy(H2Beam,LALoptarg);
+	  strcpy(H2Beam,optarg);
 	  break;
 	case 'o': /* sets flag to write coherent SNR */
 	  cohSNROut = 1;
 	  break;
 	case 'n': /* set number of points in a segment */
-	  numPoints = atoi (LALoptarg);
+	  numPoints = atoi (optarg);
 	  break;
 	case 'b': /* set number of theta-phi template points */
-	  numBeamPoints = atoi (LALoptarg);
+	  numBeamPoints = atoi (optarg);
 	  break;
 	case 'c': /* set maximiseOverChirp */
 	  maximiseOverChirp  = 1;
 	  break;
 	case 's': /* set number of segments */
-	  numSegments = atoi (LALoptarg);
+	  numSegments = atoi (optarg);
 	  break;
 	case 'N': /* set number of templates */
-	  numTmplts = atoi (LALoptarg);
+	  numTmplts = atoi (optarg);
 	  break;
 	case 'f': /* set fLow */
-	  fLow = (REAL4) atof (LALoptarg);
+	  fLow = (REAL4) atof (optarg);
 	  break;
 	case 'r': /* set sampling rate */
-	  sampleRate = atoi (LALoptarg);
+	  sampleRate = atoi (optarg);
 	  break;
 	case 'p': /* set coherent SNR threshold */
-	  cohSNRThresh = atof (LALoptarg);
+	  cohSNRThresh = atof (optarg);
 	  break;
         default:
 	  Usage (argv[0], 1);
@@ -625,7 +636,7 @@ ParseOptions (
 	}
     }
 
-  if (LALoptind < argc)
+  if (optind < argc)
     {
       Usage (argv[0], 1);
     }

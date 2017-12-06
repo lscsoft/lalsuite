@@ -75,7 +75,7 @@ int main (int argc, char *argv[])
   lal_errhandler = LAL_ERR_ABRT;
 
 
-  struct LALoption long_options[] =
+  struct option long_options[] =
     {
       {"filename",            required_argument,  0,    'a'},
       {0,                     0,                  0,      0}
@@ -84,7 +84,7 @@ int main (int argc, char *argv[])
   while (TRUE)
     {
       int option_index=0;
-      C = LALgetopt_long_only(argc,
+      C = getopt_long_only(argc,
 			   argv,
 			   "a:b:c:d:e:f:h:i:j:k:l:m:o:p:q:r:s:t:u",
 			   long_options, 
@@ -105,7 +105,7 @@ int main (int argc, char *argv[])
 	  else
 	    {
 	      fprintf( stderr, "error parsing option %s with argument %s\n",
-		       long_options[option_index].name, LALoptarg );
+		       long_options[option_index].name, optarg );
 	      exit( 1 );
 	    }
 	  break;
@@ -114,7 +114,7 @@ int main (int argc, char *argv[])
 	  /* Setting the GPS start time parameter */
 	  {
 	    file2convert=XLALCreateCHARVector(512);
-	    strncpy(file2convert->data,LALoptarg,strlen(LALoptarg)+1);
+	    strncpy(file2convert->data,optarg,strlen(optarg)+1);
 	  }
 	  break;
 	};

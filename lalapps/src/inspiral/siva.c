@@ -24,6 +24,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <getopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/SegmentsIO.h>
@@ -111,7 +112,7 @@ int main( int argc, char *argv[] )
 
     /*-- Check the time of this event against the veto segment list --*/
 
-    if ( XLALSegListSearch( &vetoSegs, &(thisEvent->end) ) == NULL ) {
+    if ( XLALSegListSearch( &vetoSegs, &(thisEvent->end_time) ) == NULL ) {
       /* This inspiral trigger does not fall within any veto segment */
 
       /* keep the trigger and increment the count of triggers */

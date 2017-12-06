@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2017  Leo Singer
+# Copyright (C) 2011  Leo Singer
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,54 +18,67 @@
 Overplot contours for a large number of sky maps, in geographical coordinates.
 This can reveal patterns due to the priors (i.e., the network antenna pattern).
 """
+__author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Command line interface
 
+from optparse import Option, OptionParser
 from lalinference.bayestar import command
-parser = command.ArgumentParser(parents=[command.figure_parser])
-parser.add_argument(
-    '--contour', metavar='PERCENT', type=float, default=90,
-    help='plot contour enclosing this percentage of'
-    ' probability mass [default: %(default)s]')
-parser.add_argument(
-    '--alpha', metavar='ALPHA', type=float, default=0.1,
-    help='alpha blending for each sky map [default: %(default)s]')
-parser.add_argument(
-    'fitsfilenames', metavar='GLOB.fits[.gz]', nargs='+', action='glob',
-    help='Input FITS filenames and/or globs')
-parser.set_defaults(colormap=None)
-opts = parser.parse_args()
+parser = OptionParser(
+    description = __doc__,
+    usage = "%prog [options] INPUT1.fits[.gz] INPUT2.fits[.gz] ...",
+    option_list = [
+        Option("-o", "--output", metavar="FILE.{pdf,png}",
+            help="name of output file [default: plot to screen]"),
+        Option("--figure-width", metavar="INCHES", type=float, default=8.,
+            help="width of figure in inches [default: %default]"),
+        Option("--figure-height", metavar="INCHES", type=float, default=6.,
+            help="height of figure in inches [default: %default]"),
+        Option("--dpi", metavar="PIXELS", type=int, default=300,
+            help="resolution of figure in dots per inch [default: %default]"),
+        Option("--contour", metavar="PERCENT", type=float, default=90,
+            help="plot contour enclosing this percentage of"
+            + " probability mass [default: %default]"),
+        Option("--alpha", metavar="ALPHA", type=float, default=0.1,
+            help="alpha blending for each sky map [default: %default]")
+    ]
+)
+opts, args = parser.parse_args()
 
 # Late imports
 
-import numpy as np
+# Choose a matplotlib backend that is suitable for headless
+# rendering if output to file is requested
 import matplotlib
+if opts.output is not None:
+    matplotlib.use('agg')
+
+import functools
+import numpy as np
 import matplotlib.pyplot as plt
 import healpy as hp
 import lal
-from lalinference.io import fits
+from lalinference import fits
 from lalinference import plot
 from glue.text_progress_bar import ProgressBar
 
 
-fig = plt.figure(frameon=False)
-ax = plt.axes(projection='mollweide')
+fig = plt.figure(figsize=(opts.figure_width, opts.figure_height), frameon=False)
+ax = plt.subplot(111, projection='mollweide')
+ax.cla()
 ax.grid()
 
 progress = ProgressBar()
 
-progress.max = len(opts.fitsfilenames)
+progress.update(-1, 'obtaining filenames of sky maps')
+fitsfilenames = tuple(command.chainglob(args))
+
+progress.max = len(fitsfilenames)
 
 matplotlib.rc('path', simplify=True, simplify_threshold=1)
 
-if opts.colormap is None:
-    colors = ['k'] * len(opts.fitsfilenames)
-else:
-    colors = matplotlib.cm.get_cmap(opts.colormap)
-    colors = colors(np.linspace(0, 1, len(opts.fitsfilenames)))
-for count_records, (color, fitsfilename) in enumerate(
-        zip(colors, opts.fitsfilenames)):
+for count_records, fitsfilename in enumerate(fitsfilenames):
     progress.update(count_records, fitsfilename)
     skymap, metadata = fits.read_sky_map(fitsfilename, nest=None)
     nside = hp.npix2nside(len(skymap))
@@ -75,13 +88,20 @@ for count_records, (color, fitsfilename) in enumerate(
     region = np.empty(skymap.shape)
     region[indices] = 100 * np.cumsum(skymap[indices])
     plot.healpix_contour(
-        region, nest=metadata['nest'], dlon=-gmst,
-        colors=[color], linewidths=0.5, levels=[opts.contour],
-        alpha=opts.alpha)
+        region, nest=metadata['nest'], dlon=-gmst, colors='k', linewidths=0.5,
+        levels=[opts.contour], alpha=opts.alpha)
 
 progress.update(-1, 'saving figure')
 
-# Add a white outline to all text to make it stand out from the background.
+# If we are using a new enough version of matplotlib, then
+# add a white outline to all text to make it stand out from the background.
 plot.outline_text(ax)
 
-opts.output()
+fig.patch.set_alpha(0.)
+ax.patch.set_alpha(0.)
+ax.set_alpha(0.)
+
+if opts.output is None:
+    plt.show()
+else:
+    plt.savefig(opts.output, dpi=opts.dpi)

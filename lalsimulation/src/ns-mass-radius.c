@@ -20,9 +20,9 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <getopt.h>
 
 #include <lal/LALConstants.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALSimNeutronStar.h>
 
@@ -152,7 +152,7 @@ int output(const char *fmt, double c, double m, double r, double k2)
 
 int parseargs(int argc, char **argv)
 {
-    struct LALoption long_options[] = {
+    struct option long_options[] = {
         {"help", no_argument, 0, 'h'},
         {"eos-file", required_argument, 0, 'f'},
         {"eos-name", required_argument, 0, 'n'},
@@ -183,7 +183,7 @@ int parseargs(int argc, char **argv)
         int option_index = 0;
         int c;
 
-        c = LALgetopt_long_only(argc, argv, args, long_options, &option_index);
+        c = getopt_long_only(argc, argv, args, long_options, &option_index);
         if (c == -1)    /* end of options */
             break;
 
@@ -193,23 +193,23 @@ int parseargs(int argc, char **argv)
                 break;
             else {
                 fprintf(stderr, "error parsing option %s with argument %s\n",
-                    long_options[option_index].name, LALoptarg);
+                    long_options[option_index].name, optarg);
                 exit(1);
             }
         case 'h':      /* help */
             usage(argv[0]);
             exit(0);
         case 'f':      /* eos-file */
-            global_eos = XLALSimNeutronStarEOSFromFile(LALoptarg);
+            global_eos = XLALSimNeutronStarEOSFromFile(optarg);
             break;
         case 'n':      /* eos-name */
-            global_eos = XLALSimNeutronStarEOSByName(LALoptarg);
+            global_eos = XLALSimNeutronStarEOSByName(optarg);
             break;
         case 'F':      /* format */
-            global_fmt = LALoptarg;
+            global_fmt = optarg;
             break;
         case 'N':      /* npts */
-            global_npts = strtol(LALoptarg, NULL, 0);
+            global_npts = strtol(optarg, NULL, 0);
             if (global_npts < 1) {
                 fprintf(stderr, "invalid number of points\n");
                 exit(1);
@@ -221,13 +221,13 @@ int parseargs(int argc, char **argv)
             polytropeFlag = 1;
             break;
         case 'G':
-            Gamma = atof(LALoptarg);
+            Gamma = atof(optarg);
             break;
         case 'p':
-            reference_pressure_si = atof(LALoptarg);
+            reference_pressure_si = atof(optarg);
             break;
         case 'r':
-            reference_density_si = atof(LALoptarg);
+            reference_density_si = atof(optarg);
             break;
 
             /* using a 4-piece polytrope */
@@ -235,16 +235,16 @@ int parseargs(int argc, char **argv)
             piecewisePolytropeFlag = 1;
             break;
         case 'q':
-            logp1_si = atof(LALoptarg);
+            logp1_si = atof(optarg);
             break;
         case '1':
-            gamma1 = atof(LALoptarg);
+            gamma1 = atof(optarg);
             break;
         case '2':
-            gamma2 = atof(LALoptarg);
+            gamma2 = atof(optarg);
             break;
         case '3':
-            gamma3 = atof(LALoptarg);
+            gamma3 = atof(optarg);
             break;
 
         default:
@@ -265,10 +265,10 @@ int parseargs(int argc, char **argv)
             XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(logp1_si,
             gamma1, gamma2, gamma3);
 
-    if (LALoptind < argc) {
+    if (optind < argc) {
         fprintf(stderr, "extraneous command line arguments:\n");
-        while (LALoptind < argc)
-            fprintf(stderr, "%s\n", argv[LALoptind++]);
+        while (optind < argc)
+            fprintf(stderr, "%s\n", argv[optind++]);
         exit(1);
     }
 

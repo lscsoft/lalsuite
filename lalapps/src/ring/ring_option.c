@@ -21,9 +21,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <getopt.h>
 
 #include <lal/LALStdio.h>
-#include <lal/LALgetopt.h>
 #include <lal/LIGOMetadataRingdownUtils.h>
 #include "lalapps.h"
 #include "errutil.h"
@@ -36,11 +37,11 @@ static int ring_usage( const char *program );
 static int ring_default_params( struct ring_params *params );
 
 
-/* parse command line arguments using LALgetopt_long to get ring params */
+/* parse command line arguments using getopt_long to get ring params */
 int ring_parse_options( struct ring_params *params, int argc, char **argv )
 {
   static struct ring_params localparams;
-  struct LALoption long_options[] =
+  struct option long_options[] =
   {
     { "verbose", no_argument, &vrbflg, 1 },
     { "white-spectrum",          no_argument, &localparams.whiteSpectrum, 1 },
@@ -107,7 +108,7 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     int option_index = 0;
     int c;
 
-    c = LALgetopt_long_only( argc, argv, args, long_options, &option_index );
+    c = getopt_long_only( argc, argv, args, long_options, &option_index );
     if ( c == -1 ) /* end of options */
       break;
 
@@ -118,65 +119,64 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
           break;
         else
           error( "error parsing option %s with argument %s\n",
-              long_options[option_index].name, LALoptarg );
-		  break;
+              long_options[option_index].name, optarg );
       case 'a': /* gps-start-time */
-        localparams.startTime.gpsSeconds = atol( LALoptarg );
+        localparams.startTime.gpsSeconds = atol( optarg );
         break;
       case 'A': /* gps-start-time-ns */
-        localparams.startTime.gpsNanoSeconds = atol( LALoptarg );
+        localparams.startTime.gpsNanoSeconds = atol( optarg );
         break;
       case 'b': /* gps-end-time */
-        localparams.endTime.gpsSeconds = atol( LALoptarg );
+        localparams.endTime.gpsSeconds = atol( optarg );
         break;
       case 'B': /* gps-end-time-ns */
-        localparams.endTime.gpsNanoSeconds = atol( LALoptarg );
+        localparams.endTime.gpsNanoSeconds = atol( optarg );
         break;
       case 'c': /* channel-name */
-        localparams.channel = LALoptarg;
+        localparams.channel = optarg;
         break;
       case 'C': /* calibration-cache */
-        localparams.calibCache = LALoptarg;
+        localparams.calibCache = optarg;
         break;
       case 'D': /* frame-cache */
-        localparams.dataCache = LALoptarg;
+        localparams.dataCache = optarg;
         break;
       case 'e': /* cutoff-frequency */
-        localparams.lowCutoffFrequency = atof( LALoptarg );
+        localparams.lowCutoffFrequency = atof( optarg );
         break;
       case 'E': /* highpass-frequency */
-        localparams.highpassFrequency = atof( LALoptarg );
+        localparams.highpassFrequency = atof( optarg );
         break;
       case 'f': /* bank min frequency */
-        localparams.bankParams.minFrequency = atof( LALoptarg );
+        localparams.bankParams.minFrequency = atof( optarg );
         break;
       case 'F': /* bank max frequency */
-        localparams.bankParams.maxFrequency = atof( LALoptarg );
+        localparams.bankParams.maxFrequency = atof( optarg );
         break;
      case 'h': /* help */
         ring_usage( program );
         exit( 0 );
       case 'i': /* injection-file */
-        localparams.injectFile = LALoptarg;
+        localparams.injectFile = optarg;
         break;
       case 'G': /* data type */
-        if( ! strcmp( "sim", LALoptarg ) )
+        if( ! strcmp( "sim", optarg ) )
         {
           localparams.dataType = 0;
         }
-        else if( ! strcmp( "zero", LALoptarg ) )
+        else if( ! strcmp( "zero", optarg ) )
         {
           localparams.dataType = 1;
         }
-        else if( ! strcmp( "uncal", LALoptarg ) )
+        else if( ! strcmp( "uncal", optarg ) )
         {
           localparams.dataType = 2;
         }
-        else if( ! strcmp( "ht_real4", LALoptarg ) )
+        else if( ! strcmp( "ht_real4", optarg ) )
         {
           localparams.dataType = 3;
         }
-        else if( ! strcmp( "ht_real8", LALoptarg ) )
+        else if( ! strcmp( "ht_real8", optarg ) )
         {
           localparams.dataType = 4;
         }
@@ -189,11 +189,11 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
         }
         break;
       case 'L': /* spectrum type */
-        if( ! strcmp( "median", LALoptarg ) )
+        if( ! strcmp( "median", optarg ) )
         {
           localparams.spectrumType = 0;
         }
-        else if( ! strcmp( "median_mean", LALoptarg ) )
+        else if( ! strcmp( "median_mean", optarg ) )
         {
           localparams.spectrumType = 1;
         }
@@ -206,23 +206,23 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
         }
         break;
       case 'J': /* injection type */
-        if( ! strcmp( "RINGDOWN", LALoptarg ) )
+        if( ! strcmp( "RINGDOWN", optarg ) )
         { 
           localparams.injectType = 0;
         }
-        else if( ! strcmp( "IMR", LALoptarg ) )
+        else if( ! strcmp( "IMR", optarg ) )
         {
           localparams.injectType = 1;
         }
-        else if( ! strcmp( "IMR_RINGDOWN", LALoptarg ) )
+        else if( ! strcmp( "IMR_RINGDOWN", optarg ) )
         {
           localparams.injectType = 2;
         }
-        else if( ! strcmp( "EOBNR", LALoptarg ) )
+        else if( ! strcmp( "EOBNR", optarg ) )
         {
           localparams.injectType = 3;
         }
-        else if( ! strcmp( "PHENOM", LALoptarg ) )
+        else if( ! strcmp( "PHENOM", optarg ) )
         {
           localparams.injectType = 4;
         }
@@ -238,86 +238,83 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
         error( "currently unsupported option: --inject-mdc-frame\n" );
         break;
       case 'k': /* user-tag */
-        strncpy( localparams.userTag, LALoptarg, sizeof( localparams.userTag ) - 1 );
+        strncpy( localparams.userTag, optarg, sizeof( localparams.userTag ) - 1 );
         break;
       case 'K': /* ifo-tag */
-        strncpy( localparams.ifoTag, LALoptarg, sizeof( localparams.ifoTag ) - 1 );
+        strncpy( localparams.ifoTag, optarg, sizeof( localparams.ifoTag ) - 1 );
         break;
       case 'm': /* bank max mismatch */
-        localparams.bankParams.maxMismatch = atof( LALoptarg );
+        localparams.bankParams.maxMismatch = atof( optarg );
         break;
       case 'M': /* maximize duration */
-        localparams.maximizeEventDuration = atof( LALoptarg );
+        localparams.maximizeEventDuration = atof( optarg );
         break;
       case 'n': /* only-segment-numbers */
-        localparams.segmentsToDoList = LALoptarg;
+        localparams.segmentsToDoList = optarg;
         break;
       case 'N': /* only-template-number */
-        localparams.templatesToDoList = LALoptarg;
+        localparams.templatesToDoList = optarg;
         break;
       case 'o': /* output-file */
-        strncpy( localparams.outputFile, LALoptarg, sizeof( localparams.outputFile ) - 1 );
+        strncpy( localparams.outputFile, optarg, sizeof( localparams.outputFile ) - 1 );
         break;
       case 'O': /* bank-file */
-        strncpy( localparams.bankFile, LALoptarg, sizeof( localparams.bankFile ) - 1 );
+        strncpy( localparams.bankFile, optarg, sizeof( localparams.bankFile ) - 1 );
         break;
       case 'p': /* bank template phase */
-        localparams.bankParams.templatePhase = atof( LALoptarg );
+        localparams.bankParams.templatePhase = atof( optarg );
         break;
       case 'q': /* bank min quality */
-        localparams.bankParams.minQuality = atof( LALoptarg );
+        localparams.bankParams.minQuality = atof( optarg );
         break;
       case 'Q': /* bank max quality */
-        localparams.bankParams.maxQuality = atof( LALoptarg );
+        localparams.bankParams.maxQuality = atof( optarg );
         break;
       case 'r': /* random seed */
-        localparams.randomSeed = atoi( LALoptarg );
+        localparams.randomSeed = atoi( optarg );
         break;
       case 'R': /* dynamic range factor */
-        localparams.dynRangeFac = atof( LALoptarg );
+        localparams.dynRangeFac = atof( optarg );
         break;
       case 's': /* sample rate */
-        localparams.sampleRate = atof( LALoptarg );
+        localparams.sampleRate = atof( optarg );
         break;
       case 'S': /* segment-duration */
-        localparams.segmentDuration = atof( LALoptarg );
+        localparams.segmentDuration = atof( optarg );
         break;
       case 't': /* threshold */
-        localparams.threshold = atof( LALoptarg );
+        localparams.threshold = atof( optarg );
         break;
       case 'T': /* inverse-spec-length */
-        localparams.invSpecLen = atof( LALoptarg );
+        localparams.invSpecLen = atof( optarg );
         break;
       case 'u': /* trig-start-time */
-        localparams.trigStartTimeNS = (INT8) atol( LALoptarg ) * LAL_INT8_C(1000000000);
+        localparams.trigStartTimeNS = (INT8) atol( optarg ) * LAL_INT8_C(1000000000);
         break;
       case 'U': /* trig-end-time */
-        localparams.trigEndTimeNS = (INT8) atol( LALoptarg ) * LAL_INT8_C(1000000000);
+        localparams.trigEndTimeNS = (INT8) atol( optarg ) * LAL_INT8_C(1000000000);
         break;
       case 'w': /* block-duration */
-        localparams.duration = atof( LALoptarg );
+        localparams.duration = atof( optarg );
         break;
       case 'W': /* pad-data */
-        localparams.padData = atof( LALoptarg );
+        localparams.padData = atof( optarg );
         break;
       case 'V': /* version */
         XLALOutputVersionString(stderr, 0);
         exit( 0 );
-		break;
       case '?':
         error( "unknown error while parsing options\n" );
-		break;
       default:
         error( "unknown error while parsing options\n" );
-		break;
     }
   }
 
-  if ( LALoptind < argc )
+  if ( optind < argc )
   {
     fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( LALoptind < argc )
-      fprintf( stderr, "%s\n", argv[LALoptind++] );
+    while ( optind < argc )
+      fprintf( stderr, "%s\n", argv[optind++] );
     exit( 1 );
   }
 

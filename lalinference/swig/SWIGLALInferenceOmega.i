@@ -17,12 +17,8 @@
 // MA  02111-1307  USA
 //
 
-///
-/// \defgroup SWIGLALInferenceOmega_i Interface SWIGLALInferenceOmega.i
-/// \ingroup lalinference_swig
-/// \brief SWIG code which must appear \e after the LALInference headers.
-/// \author Karl Wette
-///
+// Header containing SWIG code which must appear *after* the LALInference headers.
+// Author: Karl Wette
 
 // Local Variables:
 // mode: c

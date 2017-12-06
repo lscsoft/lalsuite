@@ -21,12 +21,12 @@
 #include <stdlib.h>
 #include <config.h>
 #include <math.h>
+#include <getopt.h>
 #include <string.h>
 
 #include <lalapps.h>
 #include <processtable.h>
 #include <lal/LALStdio.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
   CHAR            adjustedfile[FILENAME_MAX+10];
   CHAR                injtype[30];
   CHAR                det_name[10];
-  INT8                detectorFlags;
+  INT4                detectorFlags;
   LIGOTimeGPS inj_epoch;
   REAL8                deltaT= 1.0/16384.0;
   REAL8                injLength=100.0; /* Ten seconds at end */
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
   int rewriteXML=0;
   LALFrameH *frame;
 
-  struct LALoption long_options[]=
+  struct option long_options[]=
     {
       {"help", no_argument, 0, 'h'},
       {"input",required_argument,0, 'i'},
@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
   while(1)
     {
       int option_idx=0;
-      c=LALgetopt_long_only(argc,argv,"hFi:d:",long_options,&option_idx);
+      c=getopt_long_only(argc,argv,"hFi:d:",long_options,&option_idx);
       if(c==-1) break;
       switch(c)
         {
@@ -232,38 +232,38 @@ int main(int argc, char *argv[])
           exit(0);
           break;
         case 'i':
-          strncpy(inputfile,LALoptarg,FILENAME_MAX-1);
+          strncpy(inputfile,optarg,FILENAME_MAX-1);
           break;
         case 'o':
-          strncpy(outputpath,LALoptarg,999);
+          strncpy(outputpath,optarg,999);
           break;          
         case 'r':
-          if(!strcmp("strain",LALoptarg))          injectionResponse = unityResponse;
-          else if(!strcmp("etmx",LALoptarg))   injectionResponse = actuationX;
-          else if(!strcmp("etmy",LALoptarg))   injectionResponse = actuationY;
+          if(!strcmp("strain",optarg))          injectionResponse = unityResponse;
+          else if(!strcmp("etmx",optarg))   injectionResponse = actuationX;
+          else if(!strcmp("etmy",optarg))   injectionResponse = actuationY;
           else {fprintf(stderr,"Invalid argument to response-type: %s\nResponse type must be strain, etmy or etmx\n", \
-                        LALoptarg); exit(1);}
+                        optarg); exit(1);}
           break;
         case 2:
-          minSNR=atof(LALoptarg);
+          minSNR=atof(optarg);
           fprintf(stderr,"Using minimum SNR of %f\n",minSNR);
           break;
         case 3:
-          maxSNR=atof(LALoptarg);
+          maxSNR=atof(optarg);
           fprintf(stderr,"Using maximum SNR of %f\n",maxSNR);
           break;
         case 4:
-          GPSstart=atoi(LALoptarg);
+          GPSstart=atoi(optarg);
           break;
         case 5:
-          GPSend=atoi(LALoptarg);
+          GPSend=atoi(optarg);
           break;
         case 6:
-          targetSNR=atof(LALoptarg);
+          targetSNR=atof(optarg);
           fprintf(stderr,"Target SNR = %lf\n",targetSNR);
           break;
         case 'd':
-	  max_chirp_dist=atof(LALoptarg);
+	  max_chirp_dist=atof(optarg);
           fprintf(stderr,"Using maximum chirp distance of %lf\n",max_chirp_dist);
 	  break;
 	}

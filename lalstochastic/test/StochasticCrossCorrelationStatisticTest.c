@@ -110,7 +110,7 @@
  * LALCHARDestroyVector()
  * XLALUnitAsString()
  * XLALUnitCompare()
- * LALgetopt()
+ * getopt()
  * printf()
  * fprintf()
  * freopen()
@@ -157,8 +157,15 @@
 #include <stdio.h>
 #include <config.h>
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+
 #include <lal/StochasticCrossCorrelation.h>
-#include <lal/LALgetopt.h>
 #include <lal/AVFactories.h>
 #include <lal/ReadFTSeries.h>
 #include <lal/Units.h>
@@ -177,6 +184,9 @@
 
 #define STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE     1
 #define STOCHASTICCROSSCORRELATIONSTATISTICTESTC_FALSE    0
+
+extern char *optarg;
+extern int   optind;
 
 BOOLEAN optVerbose  = STOCHASTICCROSSCORRELATIONSTATISTICTESTC_FALSE;
 BOOLEAN optMatch    = STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TRUE;
@@ -974,7 +984,7 @@ ParseOptions (int argc, char *argv[])
   {
     int c = -1;
 
-    c = LALgetopt (argc, argv, "hqvd:i:j:k:n:t");
+    c = getopt (argc, argv, "hqvd:i:j:k:n:t");
     if (c == -1)
     {
       break;
@@ -987,19 +997,19 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'i': /* specify file containing first data stream */
-        strncpy (optData1File, LALoptarg, LALNameLength);
+        strncpy (optData1File, optarg, LALNameLength);
         break;
 
       case 'j': /* specify file containing second data stream */
-        strncpy (optData2File, LALoptarg, LALNameLength);
+        strncpy (optData2File, optarg, LALNameLength);
         break;
 
       case 'k': /* specify file containing optimal filter */
-        strncpy (optFilterFile, LALoptarg, LALNameLength);
+        strncpy (optFilterFile, optarg, LALNameLength);
         break;
 
       case 'n': /* specify number of points in frequency series */
-        optLength = atoi (LALoptarg);
+        optLength = atoi (optarg);
         break;
 
       case 'd': /* set debug level */
@@ -1034,7 +1044,7 @@ ParseOptions (int argc, char *argv[])
 
   }
 
-  if (LALoptind < argc)
+  if (optind < argc)
   {
     Usage (argv[0], 1);
   }

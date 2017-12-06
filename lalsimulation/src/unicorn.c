@@ -1,4 +1,5 @@
 #include <math.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,7 +7,6 @@
 #include <gsl/gsl_rng.h>
 
 #include <lal/LALStdlib.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDetectors.h>
 #include <lal/LALSimulation.h>
@@ -27,7 +27,7 @@ char output[FILENAME_MAX];
 
 int usage(const char *program);
 int parseargs(int argc, char **argv);
-int fprintgps(FILE *fp, const LIGOTimeGPS *t);
+int fprintgps(FILE *fp, LIGOTimeGPS *t);
 
 #define CAT(a,b) a ## b
 #define FLT(i) CAT(i,.)
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 		XLALAudioAURecordREAL8TimeSeries(fp, h);
 	else { /* ascii file */
 		size_t j;
-		fprintf(fp, "# time (s)\t%s:STRAIN (strain)\n", detector.frDetector.prefix);
+		fprintf(fp, "# time (s)\th\n");
 		for (j = 0; j < h->data->length; ++j) {
 			LIGOTimeGPS t = h->epoch;
 			XLALGPSAdd(&t, j * h->deltaT);
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
 
 int parseargs(int argc, char **argv)
 {
-	struct LALoption long_options[] = {
+	struct option long_options[] = {
 			{ "help", no_argument, 0, 'h' },
 			{ "detector-site", required_argument, 0, 'd' },
 			{ "min-frequency", required_argument, 0, 'f' },
@@ -111,7 +111,7 @@ int parseargs(int argc, char **argv)
 		int option_index = 0;
 		int c;
 	
-		c = LALgetopt_long_only(argc, argv, args, long_options, &option_index);
+		c = getopt_long_only(argc, argv, args, long_options, &option_index);
 		if (c == -1) /* end of options */
 			break;
 	
@@ -120,14 +120,14 @@ int parseargs(int argc, char **argv)
 				if (long_options[option_index].flag)
 					break;
 				else {
-					fprintf(stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, LALoptarg);
+					fprintf(stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, optarg);
 					exit(1);
 				}
 			case 'h': /* help */
 				usage(argv[0]);
 				exit(0);
 			case 'd': /* detector-site */
-				switch (*LALoptarg) {
+				switch (*optarg) {
 					case 'G':
 						detector = lalCachedDetectors[LAL_GEO_600_DETECTOR];
 						break;
@@ -141,29 +141,29 @@ int parseargs(int argc, char **argv)
 						detector = lalCachedDetectors[LAL_VIRGO_DETECTOR];
 						break;
 					default:
-						fprintf(stderr, "unrecognized detector site %s - must be 'G', 'H', 'L' or 'V'\n", LALoptarg);
+						fprintf(stderr, "unrecognized detector site %s - must be 'G', 'H', 'L' or 'V'\n", optarg);
 						exit(1);
 				}
 			case 'f': /* min-frequency */
-				f_min = atof(LALoptarg);
+				f_min = atof(optarg);
 				break;
 			case 'F': /* max-frequency */
-				f_max = atof(LALoptarg);
+				f_max = atof(optarg);
 				break;
 			case 'H': /* hrss */
-				hrss = atof(LALoptarg);
+				hrss = atof(optarg);
 				break;
 			case 'o': /* output-file */
-				strncpy(output, LALoptarg, sizeof(output) - 1);
+				strncpy(output, optarg, sizeof(output) - 1);
 				break;
 			case 's': /* sample-rate */
-				deltaT = 1.0 / atof(LALoptarg);
+				deltaT = 1.0 / atof(optarg);
 				break;
 			case 't': /* gps-start-time */
-				XLALGPSSetREAL8(&epoch, atof(LALoptarg));
+				XLALGPSSetREAL8(&epoch, atof(optarg));
 				break;
 			case 'V': /* time-freq-volume */
-				V = atof(LALoptarg);
+				V = atof(optarg);
 				break;
 			case '?':
 			default:
@@ -172,10 +172,10 @@ int parseargs(int argc, char **argv)
 		}
 	}
 	
-	if (LALoptind < argc) {
+	if (optind < argc) {
 		fprintf(stderr, "extraneous command line arguments:\n");
-		while (LALoptind < argc)
-			fprintf(stderr, "%s\n", argv[LALoptind++]);
+		while (optind < argc)
+			fprintf(stderr, "%s\n", argv[optind++]);
 		exit(1);
 	}
 
@@ -226,10 +226,10 @@ int usage( const char *program )
 	return 0;
 }
 
-int fprintgps(FILE *fp, const LIGOTimeGPS *t)
+int fprintgps(FILE *fp, LIGOTimeGPS *t)
 {
-	char *s = XLALGPSToStr(NULL, t);
-	int result = fprintf(fp, "%s", s);
-	free(s);
-	return result;
+	int s = t->gpsSeconds;
+	int ns = t->gpsNanoSeconds;
+	int sgn = signbit(s + ns);
+	return fprintf(fp, "%s%d.%09d", sgn ? "-" : "", abs(s), abs(ns));
 }

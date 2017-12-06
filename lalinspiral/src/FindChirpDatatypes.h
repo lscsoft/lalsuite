@@ -39,8 +39,7 @@ extern "C" {
 #endif
 
 /**
- * \defgroup FindChirpDatatypes_h Header FindChirpDatatypes.h
- * \ingroup lalinspiral_findchirp
+ * \addtogroup FindChirpDatatypes_h
  * \author Brown, D. A.
  *
  * \brief Provides core protypes for the core datatypes using in findchirp.

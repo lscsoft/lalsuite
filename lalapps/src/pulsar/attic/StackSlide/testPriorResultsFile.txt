@@ -1,0 +1,10 @@
+
+IFO, startFreq, band = L1,       375.0000000000,         0.2500000000
+
+Loudest event: RA, DEC, fDeriv1, f, power, width
+        3.1341397383        -0.0087266462         0.0000000000e+00       375.1383333333         1.6794450283         22.0
+
+The estimated 95 confidence Upper Limit = 9.81609e-23 +/- 1.65971e-23 
+
+Loudest Event, Start Frequency, Search Band, Confidence, Estimated Upper Limit, Uncertainty = 
+            1.679445       375.0000000000         0.2500000000     0.95     6.0e-01     1.6e-02

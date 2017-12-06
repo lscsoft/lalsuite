@@ -32,9 +32,10 @@
 #include <sys/time.h>
 #include <math.h>
 
+#include <unistd.h>
+#include <getopt.h>
 
 #include <lal/LALFrameL.h>
-#include <lal/LALgetopt.h>
 
 #include <lal/AVFactories.h>
 #include <lal/BandPassTimeSeries.h>
@@ -73,7 +74,11 @@
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "lalapps_stochastic_preprocess"
 
-/* flags for LALgetopt_long */
+/* variables for getopt options parsing */
+extern char *optarg;
+extern int optind;
+
+/* flags for getopt_long */
 static int double_flag = 0;
 static int double_high_pass_flag = 0;
 static int recenter_flag = 0;
@@ -1163,7 +1168,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
   while(1)
    {
-    static struct LALoption long_options[] =
+    static struct option long_options[] =
      {
       /* options that set a flag */
       {"double", no_argument, &double_flag,1},
@@ -1201,10 +1206,10 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {0, 0, 0, 0}
      };
 
-    /* LALgetopt_long stores the option here */
+    /* getopt_long stores the option here */
     int option_index = 0;
 
-    c = LALgetopt_long(argc, argv,
+    c = getopt_long(argc, argv, 
                   "ht:T:i:I:c:C:d:D:l:s:S:r:R:f:F:w:k:p:P:b:v",
  		   long_options, &option_index);
 
@@ -1221,8 +1226,8 @@ void parseOptions(INT4 argc, CHAR *argv[])
              if (long_options[option_index].flag != 0)
               break;
              printf ("option %s", long_options[option_index].name);
-             if (LALoptarg)
-              printf (" with arg %s", LALoptarg);
+             if (optarg)
+              printf (" with arg %s", optarg);
              printf ("\n");
              break;
 
@@ -1233,103 +1238,102 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
       case 't':
                /* start time */
-	       startTime = atoi(LALoptarg);
+	       startTime = atoi(optarg);
 	       break;
 
       case 'T':
 	       /* stop time */
-	       stopTime = atoi(LALoptarg);
+	       stopTime = atoi(optarg);
 	       break;
 
       case 'i':
 	       /* ifo for first stream */
-	       strncpy(ifo1, LALoptarg, LALNameLength);
+	       strncpy(ifo1, optarg, LALNameLength);
                break;
 
       case 'I':
 	       /* ifo for first stream */
-	       strncpy(ifo2, LALoptarg, LALNameLength);
+	       strncpy(ifo2, optarg, LALNameLength);
                break;
      
       case 'c':
 	       /* ifo for first stream */
-	       strncpy(channel1, LALoptarg, LALNameLength);
+	       strncpy(channel1, optarg, LALNameLength);
                break;
 
       case 'C':
 	       /* ifo for first stream */
-	       strncpy(channel2, LALoptarg, LALNameLength);
+	       strncpy(channel2, optarg, LALNameLength);
                break;
 
 
       case 'd':
                /* data cache one */
-               strncpy(frameCache1, LALoptarg, 200);
+               strncpy(frameCache1, optarg, 200);
                break;
 
       case 'D':
                /* data cache two */
-               strncpy(frameCache2, LALoptarg, 200);
+               strncpy(frameCache2, optarg, 200);
                break;
 
       case 'l':
 	       /* duration */
-	       segmentDuration = atoi(LALoptarg);
+	       segmentDuration = atoi(optarg);
 	       break;
       case 's':
                /* sample rate */
-               sampleRate1 = atoi(LALoptarg);
+               sampleRate1 = atoi(optarg);
                break;
 
       case 'S':
               /* sample rate */
-              sampleRate2 = atoi(LALoptarg);
+              sampleRate2 = atoi(optarg);
               break;
 
       case 'r':
 	      /* resampling */
-	      resampleRate1 = atoi(LALoptarg);
+	      resampleRate1 = atoi(optarg);
 	      break;
      
       case 'R':
 	      /* resampling */
-	      resampleRate2 = atoi(LALoptarg);
+	      resampleRate2 = atoi(optarg);
 	      break;
 
       case 'f':
 	       /* minimal frequency */
-	       fMin = atoi(LALoptarg);
+	       fMin = atoi(optarg);
 	       break;
 
       case 'F':
 	       /* maximal frequency */
-	       fMax = atoi(LALoptarg);
+	       fMax = atoi(optarg);
 	       break;
 
       case 'w':
 	       /* hann window duration */
-	       hannDuration = atoi(LALoptarg);
+	       hannDuration = atoi(optarg);
 	       break;
 
       case 'k':
 	       /* high pass knee filter frequency  */
-	       highPassFreq= atof(LALoptarg);
+	       highPassFreq= atof(optarg);
 	       break;
                           
       case 'p':
 	       /* high pass filter attenuation  */
-	       highPassAt = atof(LALoptarg);
+	       highPassAt = atof(optarg);
 	       break;
 
       case 'P':
 	       /* high pass filter order  */
-	       highPassOrder = atoi(LALoptarg);
-	       break;
+	       highPassOrder = atoi(optarg);
    
 
       case 'b':
               /* bin for frequency mask */
-              maskBin = atoi(LALoptarg);
+              maskBin = atoi(optarg);
               break;
         
      case 'v':
@@ -1343,7 +1347,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
      }
     }
 
-   if (LALoptind < argc)
+   if (optind < argc)
     {
      displayUsage(1);
     }

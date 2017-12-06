@@ -4,34 +4,16 @@
 
 Name: @PACKAGE@
 Version: @VERSION@
-Release: 1%{?dist}
+Release: 1
 Summary: LSC Algorithm Burst Library
-License: GPLv2+
+License: GPL
 Group: LAL
-Source: %{name}-%{version}.tar.xz
-URL: https://wiki.ligo.org/DASWG/LALSuite
+Source: %{name}-%{version}.tar.gz
+URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: gsl-devel
-BuildRequires: libmetaio-devel
-BuildRequires: numpy
-BuildRequires: octave-devel
-BuildRequires: python-devel
-BuildRequires: swig >= 3.0.7
-BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: lal-octave >= @MIN_LAL_VERSION@
-BuildRequires: lal-python >= @MIN_LAL_VERSION@
-BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
-Requires: gsl
-Requires: libmetaio
-Requires: lal >= @MIN_LAL_VERSION@
-Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
-Requires: lalsimulation >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: python-devel octave-devel
+Requires: gsl libmetaio lal lalmetaio lalsimulation
 Prefix: %{_prefix}
 
 %description
@@ -43,11 +25,7 @@ that use the LAL Burst library.
 Summary: Files and documentation needed for compiling programs that use LAL Burst
 Group: LAL
 Requires: %{name} = %{version}
-Requires: gsl-devel
-Requires: libmetaio-devel
-Requires: lal-devel >= @MIN_LAL_VERSION@
-Requires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
-Requires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
+Requires: gsl-devel libmetaio-devel lal-devel lalmetaio-devel lalsimulation-devel
 %description devel
 The LSC Algorithm Burst Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Burst
@@ -57,11 +35,7 @@ library.
 Summary: Python Bindings for LALBurst
 Group: LAL
 Requires: %{name} = %{version}
-Requires: numpy
-Requires: python
-Requires: lal-python >= @MIN_LAL_VERSION@
-Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
-Requires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
+Requires: python numpy lal-python lalmetaio-python lalsimulation-python
 %description python
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python bindings for LALBurst.
@@ -70,10 +44,7 @@ This package provides the Python bindings for LALBurst.
 Summary: Octave Bindings for LALBurst
 Group: LAL
 Requires: %{name} = %{version}
-Requires: octave
-Requires: lal-octave >= @MIN_LAL_VERSION@
-Requires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
-Requires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
+Requires: octave lal-octave lalmetaio-octave lalsimulation-octave
 %description octave
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Octave bindings for LALBurst.
@@ -85,12 +56,9 @@ This package provides the Octave bindings for LALBurst.
 %configure --disable-gcc-flags --enable-swig
 %{__make} V=1
 
-%check
-%{__make} V=1 check
-
 %install
-%make_install
-find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
+%makeinstall
+rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
 
 %post
 ldconfig
@@ -104,35 +72,26 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
-%{_bindir}/lalburst_version
-%{_libdir}/*.so.*
+%{_libdir}/*.so*
 %{_sysconfdir}/*
+%exclude %{_libdir}/python*
 
 %files devel
 %defattr(-,root,root)
-%{_includedir}/lal
 %{_libdir}/*.a
-%{_libdir}/*.so
 %{_libdir}/pkgconfig/*
+%{_includedir}/lal
 
 %files python
 %defattr(-,root,root)
-%{_libdir}/python*
+%{_libdir}/python*/site-packages/lalburst/*.py
+%{_libdir}/python*/site-packages/lalburst/*.pyc
+%{_libdir}/python*/site-packages/lalburst/_lalburst.so*
+%exclude %{_libdir}/python*/site-packages/lalburst/*.pyo
+%exclude %{_libdir}/python*/site-packages/lalburst/*.la
 
 %files octave
 %defattr(-,root,root)
-%{_prefix}/lib*/octave/*/site/oct/*/lalburst.oct*
+%{_libexecdir}/octave/*/site/oct/*/lalburst.oct*
+%exclude %{_libexecdir}/octave/*/site/oct/*/lalburst.la
 
-# dates should be formatted using: 'date +"%a %b %d %Y"'
-%changelog
-* Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.4.4-1
-- O2 release
-
-* Mon Sep 26 2016 Adam Mercer <adam.mercer@ligo.org> 1.4.3-1
-- ER10 release
-
-* Thu Jun 23 2016 Adam Mercer <adam.mercer@ligo.org> 1.4.2-1
-- ER9 release
-
-* Fri Mar 25 2016 Adam Mercer <adam.mercer@ligo.org> 1.4.1-1
-- Pre O2 packaging test release

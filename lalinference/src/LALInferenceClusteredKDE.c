@@ -42,11 +42,6 @@
 #include <lal/LALInferenceKDE.h>
 #include <lal/LALInferenceClusteredKDE.h>
 
-#ifndef _OPENMP
-#define omp ignore
-#endif
-
-
 
 /**
  * Kmeans cluster data, increasing k until the BIC stops increasing.

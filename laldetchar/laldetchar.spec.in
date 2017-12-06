@@ -4,41 +4,16 @@
 
 Name: @PACKAGE@
 Version: @VERSION@
-Release: 1%{?dist}
+Release: 1
 Summary: LSC Algorithm DetChar Library
-License: GPLv2+
+License: GPL
 Group: LAL
-Source: %{name}-%{version}.tar.xz
-URL: http://wiki.ligo.org/DASWG/LALSuite
+Source: %{name}-%{version}.tar.gz
+URL: http://www.lsc-group.phys.uwm.edu/lal
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: glib2-devel
-BuildRequires: gsl-devel
-BuildRequires: libmetaio-devel
-BuildRequires: numpy
-BuildRequires: octave-devel
-BuildRequires: python-devel
-BuildRequires: swig >= 3.0.7
-BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: lal-octave >= @MIN_LAL_VERSION@
-BuildRequires: lal-python >= @MIN_LAL_VERSION@
-BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
-BuildRequires: lalburst-octave >= @MIN_LALBURST_VERSION@
-BuildRequires: lalburst-python >= @MIN_LALBURST_VERSION@
-Requires: glib2
-Requires: gsl
-Requires: libframe
-Requires: libmetaio
-Requires: lal >= @MIN_LAL_VERSION@
-Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
-Requires: lalsimulation >= @MIN_LALSIMULATION_VERSION@
-Requires: lalburst >= @MIN_LALBURST_VERSION@
+BuildRequires: python-devel octave-devel
+Requires: gsl libframe libmetaio lal lalframe lalmetaio lalsimulation lalburst
 Prefix: %{_prefix}
 
 %description
@@ -50,13 +25,7 @@ that use the LAL DetChar library.
 Summary: Files and documentation needed for compiling programs that use LAL DetChar
 Group: LAL
 Requires: %{name} = %{version}
-Requires: glib2-devel
-Requires: gsl-devel
-Requires: libmetaio-devel
-Requires: lal-devel >= @MIN_LAL_VERSION@
-Requires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
-Requires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
-Requires: lalburst-devel >= @MIN_LALBURST_VERSION@
+Requires: gsl-devel glib2-devel lal-devel lalmetaio-devel lalsimulation-devel lalburst-devel
 %description devel
 The LSC Algorithm DetChar Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL DetChar
@@ -66,12 +35,7 @@ library.
 Summary: Python Bindings for LALDetChar
 Group: LAL
 Requires: %{name} = %{version}
-Requires: numpy
-Requires: python
-Requires: lal-python >= @MIN_LAL_VERSION@
-Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
-Requires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
-Requires: lalburst-python >= @MIN_LALBURST_VERSION@
+Requires: python numpy lal-python lalmetaio-python lalsimulation-python lalburst-python
 %description python
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python bindings for LALDetChar.
@@ -80,11 +44,7 @@ This package provides the Python bindings for LALDetChar.
 Summary: Octave Bindings for LALDetChar
 Group: LAL
 Requires: %{name} = %{version}
-Requires: octave
-Requires: lal-octave >= @MIN_LAL_VERSION@
-Requires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
-Requires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
-Requires: lalburst-octave >= @MIN_LALBURST_VERSION@
+Requires: octave lal-octave lalmetaio-octave lalsimulation-octave lalburst-octave
 %description octave
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Octave bindings for LALDetChar.
@@ -96,12 +56,9 @@ This package provides the Octave bindings for LALDetChar.
 %configure --disable-gcc-flags --enable-swig
 %{__make} V=1
 
-%check
-%{__make} V=1 check
-
 %install
-%make_install
-find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
+%makeinstall
+rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
 
 %post
 ldconfig
@@ -115,36 +72,31 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
-%{_bindir}/laldetchar_version
-%{_libdir}/*.so.*
+%{_libdir}/*.so*
 %{_sysconfdir}/*
 
 %files devel
 %defattr(-,root,root)
-%{_includedir}/lal
 %{_libdir}/*.a
-%{_libdir}/*.so
 %{_libdir}/pkgconfig/*
+%{_includedir}/lal
 
 %files python
 %defattr(-,root,root)
 %{_bindir}/laldetchar-*
-%{_libdir}/python*
+%{_libdir}/python*/site-packages/laldetchar/*.py
+%{_libdir}/python*/site-packages/laldetchar/*.pyc
+%{_libdir}/python*/site-packages/laldetchar/_laldetchar.so*
+%{_libdir}/python*/site-packages/laldetchar/hveto/*.py
+%{_libdir}/python*/site-packages/laldetchar/hveto/*.pyc
+%{_libdir}/python*/site-packages/laldetchar/triggers/*.py
+%{_libdir}/python*/site-packages/laldetchar/triggers/*.pyc
+%exclude %{_libdir}/python*/site-packages/laldetchar/*.pyo
+%exclude %{_libdir}/python*/site-packages/laldetchar/*.la
+%exclude %{_libdir}/python*/site-packages/laldetchar/hveto/*.pyo
+%exclude %{_libdir}/python*/site-packages/laldetchar/triggers/*.pyo
 
 %files octave
 %defattr(-,root,root)
-%{_prefix}/lib*/octave/*/site/oct/*/laldetchar.oct*
-
-# dates should be formatted using: 'date +"%a %b %d %Y"'
-%changelog
-* Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 0.3.5-1
-- O2 release
-
-* Mon Sep 26 2016 Adam Mercer <adam.mercer@ligo.org> 0.3.4-1
-- ER10 release
-
-* Thu Jun 23 2016 Adam Mercer <adam.mercer@ligo.org> 0.3.3-1
-- ER9 release
-
-* Fri Mar 25 2016 Adam Mercer <adam.mercer@ligo.org> 0.3.2-1
-- Pre O2 packaging test release
+%{_libexecdir}/octave/*/site/oct/*/laldetchar.oct*
+%exclude %{_libexecdir}/octave/*/site/oct/*/laldetchar.la

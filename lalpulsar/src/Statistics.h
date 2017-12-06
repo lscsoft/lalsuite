@@ -27,7 +27,7 @@ extern "C" {
 /**
  * \author Krishnan, B., Sintes, A.M.
  * \defgroup Statistics_h Statistics
- * \ingroup lalpulsar_hough
+ * \ingroup pkg_pulsarHough
  * \brief Computes statistics of the Hough maps.
  *
  * ### Synopsis ###

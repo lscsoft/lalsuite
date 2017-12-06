@@ -17,45 +17,8 @@
 // MA  02111-1307  USA
 //
 
-///
-/// \defgroup SWIGLALMetaIOOmega_i Interface SWIGLALMetaIOOmega.i
-/// \ingroup lalmetaio_swig
-/// \brief SWIG code which must appear \e after the LALMetaIO headers.
-/// \author Karl Wette
-///
-
-///
-/// # Specialised wrapping of ::SnglInspiralTable
-///
-
-%{
-int tagSnglInspiralTable_end_time_get(SnglInspiralTable *self) {
-  return self->end.gpsSeconds;
-}
-void tagSnglInspiralTable_end_time_set(SnglInspiralTable *self, int val) {
-  self->end.gpsSeconds = val;
-}
-int tagSnglInspiralTable_end_time_ns_get(SnglInspiralTable *self) {
-  return self->end.gpsNanoSeconds;
-}
-void tagSnglInspiralTable_end_time_ns_set(SnglInspiralTable *self, int val) {
-  self->end.gpsNanoSeconds = val;
-}
-%}
-
-///
-/// Extend the ::SnglInspiralTable class.
-%extend tagSnglInspiralTable {
-  /// <ul><li>
-
-  /// Export .end integer and nanosecond parts as .end_time and
-  /// .end_time_ns for compatibility with glue
-  int end_time;
-  int end_time_ns;
-
-  /// </li></ul>
-}
-///
+// Header containing SWIG code which must appear *after* the LALMetaIO headers.
+// Author: Karl Wette
 
 // Local Variables:
 // mode: c

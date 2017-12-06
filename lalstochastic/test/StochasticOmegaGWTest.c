@@ -83,20 +83,19 @@
  *
  * If the \c filename argument is present, it also calculates a
  * spectrum based on user-specified data.
- * \ref stochasticOmegaGWQuadratic "this figure" illustrates the output of the
+ * \figref{stochasticOmegaGWQuadratic} illustrates the output of the
  * command with the following arguments:
  * \code
  * StochasticOmegaGWTest -e 1 -n 1000 -F 100 -O 1e-6 -a 2 -o OmegaGW.dat
  * \endcode
  *
- * \anchor stochasticOmegaGWQuadratic
- * \image html stochasticOmegaGWQuadratic.png "A quadratic stochastic gravitational-wave background spectrum."
+ * \figure{stochasticOmegaGWQuadratic,eps,0.6,A quadratic stochastic gravitational-wave background spectrum.}
  *
  * ### Uses ###
  *
  * \code
  * lalDebugLevel
- * LALgetopt()
+ * getopt()
  * LALSCreateVector()
  * LALStochasticOmegaGW()
  * LALSPrintFrequencySeries
@@ -157,8 +156,15 @@
 #include <stdio.h>
 #include <config.h>
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+
 #include <lal/StochasticCrossCorrelation.h>
-#include <lal/LALgetopt.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/Units.h>
@@ -175,6 +181,9 @@
 
 #define STOCHASTICOMEGAGWTESTC_TRUE     1
 #define STOCHASTICOMEGAGWTESTC_FALSE    0
+
+extern char *optarg;
+extern int   optind;
 
 BOOLEAN optVerbose    = STOCHASTICOMEGAGWTESTC_FALSE;
 REAL8 optDeltaF     = -1.0;
@@ -581,7 +590,7 @@ ParseOptions (int argc, char *argv[])
   {
     int c = -1;
 
-    c = LALgetopt (argc, argv, "hqvd:a:O:F:e:f:n:o:");
+    c = getopt (argc, argv, "hqvd:a:O:F:e:f:n:o:");
     if (c == -1)
     {
       break;
@@ -590,31 +599,31 @@ ParseOptions (int argc, char *argv[])
     switch (c)
     {
       case 'o': /* specify output file */
-        strncpy (optFile, LALoptarg, LALNameLength);
+        strncpy (optFile, optarg, LALNameLength);
         break;
 
       case 'n': /* specify number of points in frequency series */
-        optLength = atoi (LALoptarg);
+        optLength = atoi (optarg);
         break;
 
       case 'e': /* specify frequency resolution */
-        optDeltaF = atof (LALoptarg);
+        optDeltaF = atof (optarg);
         break;
 
       case 'f': /* specify start frequency */
-        optF0 = atof (LALoptarg);
+        optF0 = atof (optarg);
         break;
 
       case 'O': /* specify amplitude at reference frequency */
-        optOmegaR = atof (LALoptarg);
+        optOmegaR = atof (optarg);
         break;
 
       case 'F': /* specify reference frequency */
-        optFR = atof (LALoptarg);
+        optFR = atof (optarg);
         break;
 
       case 'a': /* specify power law exponent */
-        optAlpha = atof (LALoptarg);
+        optAlpha = atof (optarg);
         break;
 
       case 'd': /* set debug level */
@@ -649,7 +658,7 @@ ParseOptions (int argc, char *argv[])
 
   }
 
-  if (LALoptind < argc)
+  if (optind < argc)
   {
     Usage (argv[0], 1);
   }

@@ -31,6 +31,7 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
+#include <lal/LALErrno.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/Date.h>
@@ -53,6 +54,28 @@
  * \ingroup CoincInspiralEllipsoid_h
  *
  * ### Description ###
+ *
+ * <tt>LALCreateTwoIFOCoincListEllipsoid()</tt> takes in a linked list of
+ * single inspiral tables and returns a list of two instrument coincidences.
+ * To determine coincidence, the triggers are modelled as ellipsoids in the
+ * parameter space. Triggers are deemed to be coincident if these ellipsoids
+ * are found to overlap.The ellipsoid scaling factor is given within the
+ * \c accuracyParams structure. When single inspirals from two different
+ * instruments are found to be coincident, the code creates a new
+ * \c coincInspiralTable and uses <tt>LALAddSnglInspiralToCoinc()</tt>
+ * to add the single inspirals to the coinc. The function returns
+ * \c coincOutput which is a pointer to the head of a linked list of
+ * \c CoincInspiralTables.
+ *
+ * <tt>XLALSnglInspiralCoincTestEllipsoid()</tt> is used in the creation of
+ * multiple IFO coincident events. It is called by <tt>LALCreateNIFOCoincList()</tt>
+ * when the coincidence test is set to be ellipsoid. Unlike in other coincidence
+ * tests, coincidence here is determined by the use of event ids as opposed to
+ * calling the comparison function. This is because the test for ellipsoid overlap
+ * uses matrix inversions and function maximizations, which are potentially costly
+ * operations. If all members of the coinc are found to be
+ * coincident with the single, then <tt>accuracyParams.match</tt> is set to 1,
+ * otherwise to 0.
  *
  * <tt>XLALCompareInspiralsEllipsoid()</tt> checks for the overlap of ellipsoids
  * associated with two single inspiral tables. The ellipsoid scaling factor is
@@ -91,6 +114,220 @@ REAL8 XLALMinimizeEThincaParameterOverTravelTime( REAL8 travelTime,
                                                   EThincaMinimizer *minimizer,
                                                   INT4   exttrig
                                                 );
+
+
+
+void
+LALCreateTwoIFOCoincListEllipsoid(
+    LALStatus                  *status,
+    CoincInspiralTable        **coincOutput,
+    SnglInspiralTable          *snglInput,
+    InspiralAccuracyList       *accuracyParams
+    )
+
+{
+  INT8                          currentTriggerNS[2];
+  CoincInspiralTable           *coincHead = NULL;
+  CoincInspiralTable           *thisCoinc = NULL;
+  INT4                          numEvents = 0;
+  INT8                          maxTimeDiff = 0;
+  TriggerErrorList             *errorListHead = NULL;
+  TriggerErrorList             UNUSED *thisErrorList = NULL;
+  TriggerErrorList             *currentError[2];
+  fContactWorkSpace            *workSpace;
+  REAL8                        timeError = 0.0;
+
+
+  INITSTATUS(status);
+  ATTATCHSTATUSPTR( status );
+
+  ASSERT( snglInput, status,
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  ASSERT( coincOutput, status,
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  ASSERT( ! *coincOutput, status,
+      LIGOMETADATAUTILSH_ENNUL, LIGOMETADATAUTILSH_MSGENNUL );
+
+  memset( currentTriggerNS, 0, 2 * sizeof(INT8) );
+
+  /* Loop through triggers and assign each of them an error ellipsoid */
+  errorListHead = XLALCreateTriggerErrorList( snglInput, accuracyParams->eMatch, &timeError );
+  if ( !errorListHead )
+  {
+    ABORTXLAL( status );
+  }
+
+  /* Initialise the workspace for ellipsoid overlaps */
+  workSpace = XLALInitFContactWorkSpace( 3, NULL, NULL, gsl_min_fminimizer_brent, 1.0e-2 );
+  if (!workSpace)
+  {
+    XLALDestroyTriggerErrorList( errorListHead );
+    ABORTXLAL( status );
+  }
+
+  /* calculate the maximum time delay
+   * set it equal to 2 * worst IFO timing accuracy plus
+   * light travel time for earths diameter
+   * (detectors cant be further apart than this) */
+
+  maxTimeDiff = (INT8) (1e9 * 2.0 * timeError);
+  maxTimeDiff += (INT8) ( 1e9 * 2 * LAL_REARTH_SI / LAL_C_SI );
+
+  for ( currentError[0] = errorListHead; currentError[0]->next;
+      currentError[0] = currentError[0]->next)
+  {
+
+    /* calculate the time of the trigger */
+    currentTriggerNS[0] = XLALGPSToINT8NS(
+                 &(currentError[0]->trigger->end_time) );
+
+    /* set next trigger for comparison */
+    currentError[1] = currentError[0]->next;
+    currentTriggerNS[1] = XLALGPSToINT8NS(
+                 &(currentError[1]->trigger->end_time) );
+
+    while ( (currentTriggerNS[1] - currentTriggerNS[0]) < maxTimeDiff )
+    {
+
+      INT2 match;
+
+      /* test whether we have coincidence */
+      match = XLALCompareInspiralsEllipsoid( currentError[0],
+                 currentError[1], workSpace, accuracyParams );
+      if ( match == XLAL_FAILURE )
+      {
+        /* Error in the comparison function */
+        XLALDestroyTriggerErrorList( errorListHead );
+        XLALFreeFContactWorkSpace( workSpace );
+        ABORTXLAL( status );
+      }
+
+      /* Check whether the event was coincident */
+      if ( match )
+      {
+#if 0
+        REAL8 etp = XLALCalculateEThincaParameter( currentError[0]->trigger,  currentError[1]->trigger, accuracyParams );
+#endif
+        /* create a 2 IFO coinc and store */
+        if ( ! coincHead  )
+        {
+          coincHead = thisCoinc = (CoincInspiralTable *)
+            LALCalloc( 1, sizeof(CoincInspiralTable) );
+        }
+        else
+        {
+          thisCoinc = thisCoinc->next = (CoincInspiralTable *)
+            LALCalloc( 1, sizeof(CoincInspiralTable) );
+        }
+        if ( !thisCoinc )
+        {
+          /* Error allocating memory */
+          thisCoinc = coincHead;
+          while ( thisCoinc )
+          {
+            coincHead = thisCoinc->next;
+            LALFree( thisCoinc );
+            thisCoinc = coincHead;
+          }
+          XLALDestroyTriggerErrorList( errorListHead );
+          XLALFreeFContactWorkSpace( workSpace );
+          ABORT( status, LAL_NOMEM_ERR, LAL_NOMEM_MSG );
+        }
+
+        /* Add the two triggers to the coinc */
+        LALAddSnglInspiralToCoinc( status->statusPtr, &thisCoinc,
+            currentError[0]->trigger );
+        LALAddSnglInspiralToCoinc( status->statusPtr, &thisCoinc,
+            currentError[1]->trigger );
+
+        ++numEvents;
+
+      }
+
+      /* scroll on to the next sngl inspiral */
+
+      if ( (currentError[1] = currentError[1]->next) )
+      {
+        currentTriggerNS[1] = XLALGPSToINT8NS( &(currentError[1]->trigger->end_time) );
+      }
+      else
+      {
+        LALInfo(status, "Second trigger has reached end of list");
+        break;
+      }
+    }
+  }
+
+  *coincOutput = coincHead;
+
+  /* Free all the memory allocated for the ellipsoid overlap */
+  thisErrorList = errorListHead;
+  XLALDestroyTriggerErrorList( errorListHead );
+  XLALFreeFContactWorkSpace( workSpace );
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+
+
+void
+XLALSnglInspiralCoincTestEllipsoid(
+    CoincInspiralTable         *coincInspiral,
+    SnglInspiralTable          *snglInspiral,
+    InspiralAccuracyList       *accuracyParams
+    )
+
+{
+  SnglInspiralTable    *thisCoincEntry;
+  INT4                  match = 1;
+  INT4                  ifoNumber = 0;
+
+  /* Loop over sngl_inspirals contained in coinc_inspiral */
+  for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    thisCoincEntry = coincInspiral->snglInspiral[ifoNumber];
+
+    if ( thisCoincEntry )
+    {
+      /* snglInspiral entry exists for this IFO, perform coincidence test */
+      if ( ifoNumber == XLALIFONumber(snglInspiral->ifo) )
+      {
+        XLALPrintInfo( "We already have a coinc from this IFO" );
+        accuracyParams->match = 0;
+      }
+
+      else
+      {
+        EventIDColumn  *eventIDHead = thisCoincEntry->event_id;
+        EventIDColumn  *thisID      = NULL;
+        CoincInspiralTable *thisCoinc;
+
+        accuracyParams->match = 0;
+        for ( thisID = eventIDHead; thisID; thisID = thisID->next )
+        {
+          thisCoinc = thisID->coincInspiralTable;
+          if ( thisCoinc->snglInspiral[XLALIFONumber(snglInspiral->ifo)] == snglInspiral )
+          {
+            accuracyParams->match = 1;
+            break;
+          }
+        }
+      }
+      /* set match to zero if no match.  Keep same if match */
+      match *= accuracyParams->match;
+    }
+  }
+  /* returm errorParams->match to be 1 if we match, zero otherwise */
+  accuracyParams->match = match;
+  if ( accuracyParams->match == 0 )
+    XLALPrintInfo( "Coincidence test failed" );
+  if ( accuracyParams->match == 1 )
+    XLALPrintInfo( "Coincidence test passed" );
+
+  return;
+}
+
 
 
 INT2 XLALCompareInspiralsEllipsoid(
@@ -201,7 +438,7 @@ REAL8 XLALCalculateEThincaParameter(
   }
 
   /* Set up the trigger lists */
-  if ( XLALGPSToINT8NS( &(table1->end) ) < XLALGPSToINT8NS( &(table2->end)) )
+  if ( XLALGPSToINT8NS( &(table1->end_time) ) < XLALGPSToINT8NS( &(table2->end_time )) )
   {
      errorList[0]->trigger = table1;
      errorList[1]->trigger = table2;
@@ -322,7 +559,7 @@ REAL8 XLALEThincaParameterForInjection(
   /* Get the GPS time from the injection*/
   injEndTime = XLALReturnSimInspiralEndTime( injection, trigger->ifo );
 
-  dtC = ( injEndTime - XLALGPSToINT8NS( &(trigger->end) ) ) * 1.0e-9;
+  dtC = ( injEndTime - XLALGPSToINT8NS( &(trigger->end_time) ) ) * 1.0e-9;
   dt0 = injTmplt.t0 - trigger->tau0;
   dt3 = injTmplt.t3 - trigger->tau3;
 
@@ -484,8 +721,8 @@ static REAL8 minimizeEThincaParameterOverTimeDiff( REAL8 timeShift,
   originalTimeA = gsl_vector_get( params->aPtr->position, 0 );
   originalTimeB = gsl_vector_get( params->bPtr->position, 0 );
 
-  curTimeANS = XLALGPSToINT8NS( &(params->aPtr->trigger->end) );
-  curTimeBNS = XLALGPSToINT8NS( &(params->bPtr->trigger->end) );
+  curTimeANS = XLALGPSToINT8NS( &(params->aPtr->trigger->end_time) );
+  curTimeBNS = XLALGPSToINT8NS( &(params->bPtr->trigger->end_time) );
 
   /* Reset the times to avoid any precision problems */
   XLALSetTimeInPositionVector( params->aPtr->position, timeShift );

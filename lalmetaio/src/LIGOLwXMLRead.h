@@ -29,7 +29,7 @@
 /**
  * \author Brown, D. A. and Fairhurst, S.
  * \file
- * \ingroup lalmetaio_general
+ * \ingroup lalmetaio
  * \brief Provides functions for reading LIGO lightweight XML files to LIGO metadata database tables.
  *
  * ### Synopsis ###

@@ -1,4 +1,3 @@
-#include "config.h"
 #include "coh_PTF.h"
 
 #define PROGRAM_NAME "lalapps_coh_PTF_inspiral"

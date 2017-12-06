@@ -17,39 +17,9 @@
 *  MA  02111-1307  USA
 */
 
-/**
- * @defgroup lalfr_cut lalfr-cut
- * @ingroup lalframe_programs
- *
- * @brief Cut channels from frames in frame files
- *
- * ### Synopsis
- *
- *     lalfr-cut list [file ...]
- *
- * ### Description
- *
- * The `lalfr-cut` utility cuts out selected channels (as specified by `list`)
- * from each `file` and writes frames containing these channels only to the
- * standard output.  If no `file` argument is specified, or if a file argument
- * is a single dash (`-`), `lalfr-cut` reads from the standard input.  The
- * channels specified by list are comma-delimited channel names.
- *
- * ### Example
- *
- * To cut the channels `chan1` and `chan2` from file `framefile.gwf` and output
- * frames to standard output:
- *
- *     lalfr-cut chan1,chan2 framefile.gwf
- *
- * @sa @ref lalfr_paste
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <lal/LALMalloc.h>
-#include <lal/LALString.h>
 #include <lal/LALFrameU.h>
 #include "utils.h"
 
@@ -132,7 +102,7 @@ int main(int argc, char *argv[])
 /* creates a vector of channel names from a comma-delimited channel list */
 char **chanvalloc(const char *str)
 {
-    char *s = XLALStringDuplicate(str);
+    char *s = strdup(str);
     char **chanv;
     int chanc = 1;
     int i;
@@ -140,10 +110,10 @@ char **chanvalloc(const char *str)
         ++chanc;
     chanv = calloc(chanc + 1, sizeof(*chanv));
     if (chanc > 1) {
-        chanv[0] = XLALStringDuplicate(strtok(s, ","));
+        chanv[0] = strdup(strtok(s, ","));
         for (i = 1; i < chanc; ++i)
-            chanv[i] = XLALStringDuplicate(strtok(NULL, ","));
-        XLALFree(s);
+            chanv[i] = strdup(strtok(NULL, ","));
+        free(s);
     } else
         chanv[0] = s;
     return chanv;
@@ -155,7 +125,7 @@ void chanvfree(char **chanv)
     if (chanv) {
         char **p;
         for (p = chanv; *p; ++p)
-            XLALFree(*p);
+            free(*p);
         free(chanv);
     }
     return;

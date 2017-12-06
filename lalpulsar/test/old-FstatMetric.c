@@ -37,15 +37,17 @@
 #include <gsl/gsl_matrix.h>
 
 
+#include <lal/UserInput.h>
 #include <lal/LALConstants.h>
 #include <lal/Date.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/AVFactories.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/ComputeFstat.h>
-#include <lal/GetEarthTimes.h>
+#include <lal/PulsarTimes.h>
 #include <lal/SFTutils.h>
 
+#include <lal/FlatPulsarMetric.h>
 #include <lal/ComputeFstat.h>
 #include <lal/UniversalDopplerMetric.h>
 
@@ -68,32 +70,6 @@
 #define SQ(x) ((x) * (x))
 
 /* ---------- local types ---------- */
-typedef enum {
-  OLDMETRIC_TYPE_PHASE = 0,        /**< compute phase metric only */
-  OLDMETRIC_TYPE_FSTAT = 1,        /**< compute full F-metric only */
-  OLDMETRIC_TYPE_ALL   = 2,        /**< compute both F-metric and phase-metric */
-  OLDMETRIC_TYPE_LAST
-} OldMetricType_t;
-
-typedef struct tagOldDopplerMetric
-{
-  DopplerMetricParams meta;             /**< "meta-info" describing/specifying the type of Doppler metric */
-
-  gsl_matrix *g_ij;                     /**< symmetric matrix holding the phase-metric, averaged over segments */
-  gsl_matrix *g_ij_seg;                 /**< the phase-metric for each segment, concatenated by column: [g_ij_1, g_ij_2, ...] */
-
-  gsl_matrix *gF_ij;                    /**< full F-statistic metric gF_ij, including antenna-pattern effects (see \cite Prix07) */
-  gsl_matrix *gFav_ij;                  /**< 'average' Fstat-metric */
-  gsl_matrix *m1_ij, *m2_ij, *m3_ij;    /**< Fstat-metric sub components */
-
-  gsl_matrix *Fisher_ab;                /**< Full 4+n dimensional Fisher matrix, ie amplitude + Doppler space */
-
-  double maxrelerr_gPh;                 /**< estimate for largest relative error in phase-metric component integrations */
-  double maxrelerr_gF;                  /**< estimate for largest relative error in Fmetric component integrations */
-
-  REAL8 rho2;                           /**< signal SNR rho^2 = A^mu M_mu_nu A^nu */
-} OldDopplerMetric;
-
 typedef enum {
   PHASE_NONE = -1,
   PHASE_FULL = 0,
@@ -131,7 +107,7 @@ typedef struct {
 
 typedef struct
 {
-  const EphemerisData *edat;		/**< ephemeris data (from XLALInitBarycenter()) */
+  const EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
   LIGOTimeGPS startTime;		/**< start time of observation */
   LIGOTimeGPS refTime;			/**< reference time for spin-parameters  */
   DopplerPoint dopplerPoint;		/**< sky-position and spins */
@@ -169,10 +145,7 @@ void XLALDestroyMultiPhaseDerivs ( MultiPhaseDerivs *mdPhi );
 
 void gauleg(double x1, double x2, double x[], double w[], int n);
 
-OldDopplerMetric *XLALOldDopplerFstatMetric ( const OldMetricType_t metricType, const DopplerMetricParams *metricParams, const EphemerisData *edat );
-void XLALDestroyOldDopplerMetric ( OldDopplerMetric *metric );
-int XLALAddOldDopplerMetric ( OldDopplerMetric **metric1, const OldDopplerMetric *metric2 );
-int XLALScaleOldDopplerMetric ( OldDopplerMetric *m, REAL8 scale );
+DopplerMetric *XLALOldDopplerFstatMetric ( const DopplerMetricParams *metricParams, const EphemerisData *edat );
 
 /*============================================================
  * FUNCTION definitions
@@ -188,9 +161,8 @@ int XLALScaleOldDopplerMetric ( OldDopplerMetric *m, REAL8 scale );
  * with XLALDopplerFstatMetric().
  *
  */
-OldDopplerMetric *
-XLALOldDopplerFstatMetric ( const OldMetricType_t metricType,		/**< type of metric to compute */
-                            const DopplerMetricParams *metricParams,  	/**< input parameters determining the metric calculation */
+DopplerMetric *
+XLALOldDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input parameters determining the metric calculation */
                             const EphemerisData *edat			/**< ephemeris data */
                             )
 {
@@ -201,7 +173,12 @@ XLALOldDopplerFstatMetric ( const OldMetricType_t metricType,		/**< type of metr
   UINT4 Nseg = metricParams->segmentList.length;
   XLAL_CHECK_NULL ( Nseg == 1, XLAL_EINVAL, "Segment list must only contain Nseg=1 segments, got Nseg=%d", Nseg );
 
-  XLAL_CHECK_NULL ( metricType < OLDMETRIC_TYPE_LAST, XLAL_EDOM );
+  MetricType_t metricType = metricParams->metricType;
+  XLAL_CHECK_NULL ( metricType < METRIC_TYPE_LAST, XLAL_EDOM );
+
+  LIGOTimeGPS *startTime = &(metricParams->segmentList.segs[0].start);
+  LIGOTimeGPS *endTime   = &(metricParams->segmentList.segs[0].end);
+  REAL8 duration = XLALGPSDiff( endTime, startTime );
 
   const DopplerCoordinateSystem *coordSys = &(metricParams->coordSys);
   XLAL_CHECK_NULL ( coordSys->dim == METRIC_DIM, XLAL_EINVAL );
@@ -210,7 +187,7 @@ XLALOldDopplerFstatMetric ( const OldMetricType_t metricType,		/**< type of metr
   XLAL_CHECK_NULL ( coordSys->coordIDs[2] == DOPPLERCOORD_DELTA, XLAL_EDOM );
   XLAL_CHECK_NULL ( coordSys->coordIDs[3] == DOPPLERCOORD_F1DOT, XLAL_EDOM );
 
-  OldDopplerMetric *metric;
+  DopplerMetric *metric;
   XLAL_CHECK_NULL ( (metric = XLALCalloc ( 1, sizeof(*metric) )) != NULL, XLAL_ENOMEM );
 
   ConfigVariables XLAL_INIT_DECL(config);
@@ -229,14 +206,20 @@ XLALOldDopplerFstatMetric ( const OldMetricType_t metricType,		/**< type of metr
   config.multidPhi = getMultiPhaseDerivs ( config.multiDetStates, &(config.dopplerPoint), config.phaseType );
   XLAL_CHECK_NULL ( config.multidPhi != NULL, XLAL_EFUNC, "getMultiPhaseDerivs() failed.\n" );
 
-  if ( (metricType == OLDMETRIC_TYPE_FSTAT) || (metricType == OLDMETRIC_TYPE_ALL) )
+  if ( (metricType == METRIC_TYPE_FSTAT) || (metricType == METRIC_TYPE_ALL) )
     {
       XLAL_CHECK_NULL ( computeFstatMetric ( metric->gF_ij, metric->gFav_ij, metric->m1_ij, metric->m2_ij, metric->m3_ij, &config ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
-  if ( (metricType == OLDMETRIC_TYPE_PHASE) || (metricType == OLDMETRIC_TYPE_ALL) )
+  if ( (metricType == METRIC_TYPE_PHASE) || (metricType == METRIC_TYPE_ALL) )
     {
-      XLAL_CHECK_NULL ( config.multidPhi->length == 1, XLAL_EFAILED, "%s: computePhaseMetric() can only handle a single detector!", __func__ );
-      XLAL_CHECK_NULL ( computePhaseMetric ( metric->g_ij, config.multidPhi->data[0], config.GLweights) == XLAL_SUCCESS, XLAL_EFUNC );
+      if ( metricParams->detMotionType == (DETMOTION_SPINXY | DETMOTION_ORBIT) )
+        {
+          XLAL_CHECK_NULL ( XLALFlatMetricCW ( metric->g_ij, config.refTime, config.startTime, duration, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
+        }
+      else
+        {
+          XLAL_CHECK_NULL ( computePhaseMetric ( metric->g_ij, config.multidPhi->data[0], config.GLweights) == XLAL_SUCCESS, XLAL_EFUNC );
+        }
     } // endif metricType==PHASE || ALL
 
   // ----- Free internal memory
@@ -254,116 +237,6 @@ XLALOldDopplerFstatMetric ( const OldMetricType_t metricType,		/**< type of metr
   return metric;
 
 } /* XLALOldDopplerFstatMetric() */
-
-
-/** Free a OldDopplerMetric structure */
-void
-XLALDestroyOldDopplerMetric ( OldDopplerMetric *metric )
-{
-  if ( !metric )
-    return;
-
-  if ( metric->g_ij )      gsl_matrix_free ( metric->g_ij );
-  if ( metric->gF_ij )     gsl_matrix_free ( metric->gF_ij );
-  if ( metric->gFav_ij )   gsl_matrix_free ( metric->gFav_ij );
-  if ( metric->m1_ij )     gsl_matrix_free ( metric->m1_ij );
-  if ( metric->m2_ij )     gsl_matrix_free ( metric->m2_ij );
-  if ( metric->m3_ij )     gsl_matrix_free ( metric->m3_ij );
-  if ( metric->Fisher_ab ) gsl_matrix_free ( metric->Fisher_ab );
-
-  XLALFree ( metric );
-
-  return;
-
-} /* XLALDestroyOldDopplerMetric() */
-
-
-/**
- * Add 'metric2' to 'metric1', by adding the matrixes and 'rho2', and adding error-estimates in quadrature.
- *
- * Note1: if the '*metric1 == NULL', then it is initialized to the values
- * in 'metric2'. The elements are *copied* and the result is allocated here.
- *
- * Note2: the 'meta' field-information of 'metric2' is simply copied into the output,
- * meta-info consistency is *not* checked.
- */
-int
-XLALAddOldDopplerMetric ( OldDopplerMetric **metric1, const OldDopplerMetric *metric2 )
-{
-  XLAL_CHECK ( metric1, XLAL_EINVAL, "Invalid NULL input 'metric1'\n" );
-  XLAL_CHECK ( metric2, XLAL_EINVAL, "Invalid NULL input 'metric2'\n" );
-
-  OldDopplerMetric *m1 = (*metric1);
-  const OldDopplerMetric *m2 = metric2;
-
-  if ( m1 == NULL )	// create new empty matrices for those that exist in 'metric2'
-    {
-      int len, len1, len2;
-      XLAL_CHECK ( (m1 = XLALCalloc ( 1, len=sizeof(*m1) )) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1,%d)\n", len );
-
-      if(m2->g_ij) XLAL_CHECK ( (m1->g_ij = gsl_matrix_calloc(len1=m2->g_ij->size1,len2=m2->g_ij->size2)),XLAL_ENOMEM, "Failed: g_ij = gsl_matrix_calloc(%d,%d)\n",len1,len2 );
-      if(m2->gF_ij)XLAL_CHECK ( (m1->gF_ij = gsl_matrix_calloc(len1=m2->gF_ij->size1,len2=m2->gF_ij->size2)),XLAL_ENOMEM, "Failed: gF_ij = gsl_matrix_calloc(%d,%d)\n",len1,len2 );
-      if(m2->gFav_ij)XLAL_CHECK((m1->gFav_ij=gsl_matrix_calloc(len1=m2->gFav_ij->size1,len2=m2->gFav_ij->size2)),XLAL_ENOMEM, "Failed: gFav_ij = gsl_matrix_calloc(%d,%d)\n",len1,len2 );
-      if(m2->m1_ij)XLAL_CHECK ( (m1->m1_ij = gsl_matrix_calloc(len1=m2->m1_ij->size1,len2=m2->m1_ij->size2 )),XLAL_ENOMEM, "Failed: m1_ij = gsl_matrix_calloc(%d,%d)\n",len1,len2 );
-      if(m2->m2_ij) XLAL_CHECK ( (m1->m2_ij = gsl_matrix_calloc(len1=m2->m2_ij->size1,len2=m2->m2_ij->size2 )),XLAL_ENOMEM, "Failed: m2_ij = gsl_matrix_calloc(%d,%d)\n",len1,len2 );
-      if(m2->m3_ij) XLAL_CHECK ( (m1->m3_ij = gsl_matrix_calloc(len1=m2->m3_ij->size1,len2=m2->m3_ij->size2 )),XLAL_ENOMEM, "Failed: m3_ij = gsl_matrix_calloc(%d,%d)\n",len1,len2 );
-      if(m2->Fisher_ab)XLAL_CHECK((m1->Fisher_ab=gsl_matrix_calloc(len1=m2->Fisher_ab->size1,len2=m2->Fisher_ab->size2)),XLAL_ENOMEM,"Failed: Fisher_ab = gsl_matrix_calloc(%d,%d)\n",len1,len2 );
-
-      (*metric1) = m1;
-    } // if *metric1==NULL
-
-  // copy meta-information from m2 into m1
-  memcpy ( &(m1->meta), &(m2->meta), sizeof(m1->meta) );
-
-  int ret;
-  // add existing matrices
-  if ( m2->g_ij ) XLAL_CHECK (   (ret = gsl_matrix_add ( m1->g_ij,      m2->g_ij )) == 0, XLAL_EFAILED, "g_ij: gsl_matrix_add() failed with status=%d\n", ret );
-  if ( m2->gF_ij ) XLAL_CHECK (  (ret = gsl_matrix_add ( m1->gF_ij,     m2->gF_ij )) == 0, XLAL_EFAILED, "gF_ij: gsl_matrix_add() failed with status=%d\n", ret );
-  if ( m2->gFav_ij ) XLAL_CHECK( (ret = gsl_matrix_add ( m1->gFav_ij,   m2->gFav_ij )) == 0, XLAL_EFAILED, "gFav_ij: gsl_matrix_add() failed with status=%d\n", ret );
-  if ( m2->m1_ij ) XLAL_CHECK (  (ret = gsl_matrix_add ( m1->m1_ij,     m2->m1_ij )) == 0, XLAL_EFAILED, "m1_ij: gsl_matrix_add() failed with status=%d\n", ret );
-  if ( m2->m2_ij ) XLAL_CHECK (  (ret = gsl_matrix_add ( m1->m2_ij,     m2->m2_ij )) == 0, XLAL_EFAILED, "m2_ij: gsl_matrix_add() failed with status=%d\n", ret );
-  if ( m2->m3_ij ) XLAL_CHECK (  (ret = gsl_matrix_add ( m1->m3_ij,     m2->m3_ij )) == 0, XLAL_EFAILED, "m3_ij: gsl_matrix_add() failed with status=%d\n", ret );
-  if ( m2->Fisher_ab) XLAL_CHECK((ret = gsl_matrix_add ( m1->Fisher_ab, m2->Fisher_ab )) == 0, XLAL_EFAILED, "Fisher_ab: gsl_matrix_add() failed with status=%d\n", ret );
-
-  // add errors in quadrature
-  m1->maxrelerr_gPh = sqrt ( SQ(m1->maxrelerr_gPh) + SQ(m2->maxrelerr_gPh) );
-  m1->maxrelerr_gF  = sqrt ( SQ(m1->maxrelerr_gF)  + SQ(m2->maxrelerr_gF) );
-
-  // add SNR^2
-  m1->rho2 += m2->rho2;
-
-  return XLAL_SUCCESS;
-
-} /* XLALAddOldDopplerMetric() */
-
-/**
- * Scale all (existing) matrices, error-estimates and 'rho2' by 'scale'
- */
-int
-XLALScaleOldDopplerMetric ( OldDopplerMetric *m, REAL8 scale )
-{
-  XLAL_CHECK ( m != NULL, XLAL_EINVAL, "Invalid NULL input 'metric'\n" );
-
-  int ret;
-  // scale all existing matrices
-  if ( m->g_ij ) XLAL_CHECK (   (ret = gsl_matrix_scale ( m->g_ij,      scale )) == 0, XLAL_EFAILED, "g_ij: gsl_matrix_scale(%g) failed with status=%d\n", scale, ret );
-  if ( m->gF_ij ) XLAL_CHECK (  (ret = gsl_matrix_scale ( m->gF_ij,     scale )) == 0, XLAL_EFAILED, "gF_ij: gsl_matrix_scale(%g) failed with status=%d\n", scale, ret );
-  if ( m->gFav_ij ) XLAL_CHECK( (ret = gsl_matrix_scale ( m->gFav_ij,   scale )) == 0, XLAL_EFAILED, "gFav_ij: gsl_matrix_scale(%g) failed with status=%d\n", scale, ret );
-  if ( m->m1_ij ) XLAL_CHECK (  (ret = gsl_matrix_scale ( m->m1_ij,     scale )) == 0, XLAL_EFAILED, "m1_ij: gsl_matrix_scale(%g) failed with status=%d\n", scale, ret );
-  if ( m->m2_ij ) XLAL_CHECK (  (ret = gsl_matrix_scale ( m->m2_ij,     scale )) == 0, XLAL_EFAILED, "m2_ij: gsl_matrix_scale(%g) failed with status=%d\n", scale, ret );
-  if ( m->m3_ij ) XLAL_CHECK (  (ret = gsl_matrix_scale ( m->m3_ij,     scale )) == 0, XLAL_EFAILED, "m3_ij: gsl_matrix_scale(%g) failed with status=%d\n", scale, ret );
-  if ( m->Fisher_ab) XLAL_CHECK((ret = gsl_matrix_scale ( m->Fisher_ab, scale )) == 0, XLAL_EFAILED, "Fisher_ab: gsl_matrix_scale(%g) failed with status=%d\n", scale, ret );
-
-  // scale errors
-  m->maxrelerr_gPh *= scale;
-  m->maxrelerr_gF  *= scale;
-
-  // scale SNR^2
-  m->rho2 *= scale;
-
-  return XLAL_SUCCESS;
-
-} /* XLALScaleOldDopplerMetric() */
 
 
 /* calculate Fstat-metric components m1_ij, m2_ij, m3_ij, and metrics gF_ij, gFav_ij,
@@ -809,6 +682,7 @@ InitCode ( ConfigVariables *cfg,
   XLAL_CHECK ( (cfg->multiDetStates->data = XLALCalloc (numDet, sizeof( *(cfg->multiDetStates->data)))) != NULL, XLAL_ENOMEM );
 
   cfg->multiDetStates->length = numDet;
+  cfg->multiDetStates->Tspan = duration;
 
   for ( UINT4 X=0; X < numDet; X ++ )
     {
@@ -892,7 +766,7 @@ InitCode ( ConfigVariables *cfg,
 
   return XLAL_SUCCESS;
 
-} /* InitCode() */
+} /* InitFStat() */
 
 
 /**
@@ -927,8 +801,9 @@ getMultiPhaseDerivs ( const MultiDetectorStateSeries *multiDetStates,
   REAL8 refTime = XLALGPSGetREAL8 ( &refTimeGPS );
 
   /* get tAutumn */
-  REAL8 tMidnight, tAutumn;
-  XLAL_CHECK_NULL ( XLALGetEarthTimes ( &refTimeGPS, &tMidnight, &tAutumn ) == XLAL_SUCCESS, XLAL_EFUNC );
+  PulsarTimesParamStruc XLAL_INIT_DECL(times);
+  times.epoch = refTimeGPS;
+  XLAL_CHECK_NULL ( XLALGetEarthTimes ( &(times.epoch), &(times.tMidnight), &(times.tAutumn) ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   MultiPhaseDerivs *mdPhi = NULL;
   XLAL_CHECK_NULL( (mdPhi = XLALCalloc ( 1, sizeof( *mdPhi ))) != NULL, XLAL_ENOMEM );
@@ -978,7 +853,7 @@ getMultiPhaseDerivs ( const MultiDetectorStateSeries *multiDetStates,
 	      COPY_VECT ( rX, rDet );
 	      break;
 	    case PHASE_PTOLE: /* use Ptolemaic orbital approximation */
-	      getPtolePosVel( &posvel, ti, tAutumn );
+	      getPtolePosVel( &posvel, ti, times.tAutumn );
 	      COPY_VECT ( rX, posvel.pos );
 	      /* add on the detector-motion due to the Earth's spin */
 

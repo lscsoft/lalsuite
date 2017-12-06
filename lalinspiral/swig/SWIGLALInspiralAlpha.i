@@ -17,12 +17,8 @@
 // MA  02111-1307  USA
 //
 
-///
-/// \defgroup SWIGLALInspiralAlpha_i Interface SWIGLALInspiralAlpha.i
-/// \ingroup lalinspiral_swig
-/// \brief SWIG code which must appear \e before the LALInspiral headers.
-/// \author Karl Wette
-///
+// Header containing SWIG code which must appear *before* the LALInspiral headers.
+// Author: Karl Wette
 
 // Local Variables:
 // mode: c

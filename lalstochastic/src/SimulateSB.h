@@ -31,8 +31,7 @@ extern "C" {
 #endif
 
 /**
- * \defgroup SimulateSB_h Header SimulateSB.h
- * \ingroup lalstochastic_general
+ * \addtogroup SimulateSB_h
  * \author Sukanta Bose
  *
  * \brief Provides prototype and error code information for the modules needed

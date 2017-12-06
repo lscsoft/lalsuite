@@ -437,7 +437,7 @@ void LALappsTrackSearchInitialize(
 
   /* Setup file option to read ascii types and not frames */
   /* getop arguments */
-  struct LALoption long_options[] =
+  struct option long_options[] =
     {
       {"gpsstart_seconds",    required_argument,  0,    'a'},
       {"total_time_points",   required_argument,  0,    'b'},
@@ -576,7 +576,7 @@ void LALappsTrackSearchInitialize(
   while (TRUE)
     {
       int option_index=0;
-      C = LALgetopt_long_only(argc,
+      C = getopt_long_only(argc,
 			   argv,
 			   "a:b:c:d:e:f:h:i:j:k:l:m:o:p:q:r:s:t:u:v:w:x:y:z:A:B:C:D:E:F:G:H",
 			   long_options, 
@@ -597,7 +597,7 @@ void LALappsTrackSearchInitialize(
 	  else
 	    {
 	      fprintf( stderr, "error parsing option %s with argument %s\n",
-		       long_options[option_index].name, LALoptarg );
+		       long_options[option_index].name, optarg );
 	      exit( 1 );
 	    }
 	  break;
@@ -606,7 +606,7 @@ void LALappsTrackSearchInitialize(
 	  /* Setting the GPS start time parameter */
 	  {
 	    /* Allow intepreting float values */
-	    REAL8 startTime = atof(LALoptarg);
+	    REAL8 startTime = atof(optarg);
 	    XLALGPSSetREAL8(&tempGPS,startTime);
 	    params->GPSstart.gpsSeconds = tempGPS.gpsSeconds;
 	    params->GPSstart.gpsNanoSeconds = tempGPS.gpsNanoSeconds;
@@ -616,7 +616,7 @@ void LALappsTrackSearchInitialize(
 	case 'b':
 	  /* Setting the total length of data to analyze */
 	  {
-	    params->TimeLengthPoints = ((UINT4) atoi(LALoptarg));
+	    params->TimeLengthPoints = ((UINT4) atoi(optarg));
 	  }
 	  break;
 	  
@@ -625,7 +625,7 @@ void LALappsTrackSearchInitialize(
 	  {
 	    /* Change the name field to be a integer instead of *char */
 	    char *name = NULL;
-	    name = (CHAR*) XLALMalloc(strlen(LALoptarg)+1);
+	    name = (CHAR*) XLALMalloc(strlen(optarg)+1);
 	    if (!name)
 	      {
 		fprintf(stderr,TRACKSEARCHC_MSGEMEM);
@@ -639,7 +639,7 @@ void LALappsTrackSearchInitialize(
 	case 'd':
 	  /* Setting Line Width parameter */
 	  {
-	    params->LineWidth = atoi(LALoptarg);
+	    params->LineWidth = atoi(optarg);
 
 	    /* We don't limit the max line width as an error the user
 	     * is responsible to pick this with some care
@@ -650,28 +650,28 @@ void LALappsTrackSearchInitialize(
 	case 'e':
 	  /* Setting Start Threshold parameter */
 	  {
-	    params->StartThresh = atof(LALoptarg);
+	    params->StartThresh = atof(optarg);
 	  }
 	  break;
 	  
 	case 'f':
 	  /* Setting member point threshold paramter */
 	  {
-	    params->LinePThresh = atof(LALoptarg);
+	    params->LinePThresh = atof(optarg);
 	  }
 	  break;
 	  
 	case 'g':
 	  /* Setting Thresholding on line length for search */
 	  {
-	    params->MinLength = atoi(LALoptarg);
+	    params->MinLength = atoi(optarg);
 	  }
 	  break; 	  
 
 	case 'h':
 	  /* Setting Thresholding on integrated line power */
 	  {
-	    params->MinPower = atof(LALoptarg);
+	    params->MinPower = atof(optarg);
 	    if(params->MinPower < 0)
 	      {
 		fprintf(stderr,TRACKSEARCHC_MSGEARGS);
@@ -683,13 +683,13 @@ void LALappsTrackSearchInitialize(
 	case 'i':
 	  /* Setting data source name to look for CHANNEL */
 	  {
-	    params->channelName = (CHAR*) XLALMalloc(strlen(LALoptarg)+1);
+	    params->channelName = (CHAR*) XLALMalloc(strlen(optarg)+1);
 	    if (!(params->channelName))
 	      {
 		fprintf(stderr,TRACKSEARCHC_MSGEMEM);
 		exit(TRACKSEARCHC_EMEM);
 	      };
-	    strcpy(params->channelName,LALoptarg);
+	    strcpy(params->channelName,optarg);
 	  }
 	  break;
 	  
@@ -705,46 +705,46 @@ void LALappsTrackSearchInitialize(
 	case 'k':
 	  /* Setting number of time bins for each TF map */
 	  {
-	    params->TimeBins = ((UINT4) atoi(LALoptarg));
+	    params->TimeBins = ((UINT4) atoi(optarg));
 	  }
 	  break;
 	  
 	case 'l':
 	  {
-	    params->overlapFlag = ((UINT4) atoi(LALoptarg));
+	    params->overlapFlag = ((UINT4) atoi(optarg));
 	  }
 	  break;
 	  
 	case 'n':
 	  /* Setup number of desire frequency bins to make map with */
 	  {
-	    params->FreqBins = atoi(LALoptarg);
+	    params->FreqBins = atoi(optarg);
 	  }
 	  break;
 	  
 	case 'o':
 	  /* Setup whiten level is specified */
 	  {
-	    params->whiten = atoi(LALoptarg);
+	    params->whiten = atoi(optarg);
 	  }
 	  break;
 
 	case 'p':
 	  /* Choose transform type */
 	  {
-	    if (strcmp(LALoptarg,"Spectrogram")==0)
+	    if (strcmp(optarg,"Spectrogram")==0)
 	      {
 		params->TransformType=Spectrogram;
 	      }
-	    else if (strcmp(LALoptarg,"RSpectrogram")==0)
+	    else if (strcmp(optarg,"RSpectrogram")==0)
 	      {
 		params->TransformType=RSpectrogram;
 	      }
-	    else if (strcmp(LALoptarg,"WignerVille")==0)
+	    else if (strcmp(optarg,"WignerVille")==0)
 	      {
 		params->TransformType=WignerVille;
 	      }
-	    else if (strcmp(LALoptarg,"PSWignerVille")==0)
+	    else if (strcmp(optarg,"PSWignerVille")==0)
 	      {
 		params->TransformType=PSWignerVille;
 	      }
@@ -759,20 +759,20 @@ void LALappsTrackSearchInitialize(
 
 	case 'q':
 	  {/* Specify length of each time segment */
-	    params->SegLengthPoints  = ((UINT4) atoi(LALoptarg));
+	    params->SegLengthPoints  = ((UINT4) atoi(optarg));
 	    break;
 	  }
 	  break;
 
 	case 'r':
 	  {/* Auxlabel file name to read in */
-	    params->auxlabel = (CHAR*) XLALMalloc(strlen(LALoptarg)+1);
+	    params->auxlabel = (CHAR*) XLALMalloc(strlen(optarg)+1);
 	    if (!(params->auxlabel))
 	      {
 		fprintf(stderr,TRACKSEARCHC_MSGEMEM);
 		exit(TRACKSEARCHC_EMEM);
 	      };
-	    strncpy(params->auxlabel,LALoptarg,(strlen(LALoptarg)+1));
+	    strncpy(params->auxlabel,optarg,(strlen(optarg)+1));
 	  }
 	  break;
 
@@ -780,20 +780,20 @@ void LALappsTrackSearchInitialize(
 	  {
 	    /*Setup structure for path or cachefile name temp*/
 	    *(dPtrDirPath)=XLALCreateCHARVector(maxFilenameLength);
-	    len= strlen(LALoptarg) +1;
-	    strncpy((*dPtrDirPath)->data,LALoptarg,len);
+	    len= strlen(optarg) +1;
+	    strncpy((*dPtrDirPath)->data,optarg,len);
 	  }
 	  break;
 
 	case 't':
 	  { /* Looking further in code realize this isn't used !!!!*/
-	    params->windowsize = atoi(LALoptarg);
+	    params->windowsize = atoi(optarg);
 	  }
 	  break;
 
 	case 'u':
 	  { /* Setting up the seed for random values */
-	    params->makenoise = atoi(LALoptarg);
+	    params->makenoise = atoi(optarg);
 	  }
 	  break;
 
@@ -801,8 +801,8 @@ void LALappsTrackSearchInitialize(
 	  { /* Setting up aux label if present */
 	    /* Insert string copy code here */
 	    *dPtrCachefile=XLALCreateCHARVector(maxFilenameLength);
-	    len = strlen(LALoptarg) +1;
-	    memcpy((*dPtrCachefile)->data,LALoptarg,len);
+	    len = strlen(optarg) +1;
+	    memcpy((*dPtrCachefile)->data,optarg,len);
 	  }
 	  break;
 
@@ -814,19 +814,19 @@ void LALappsTrackSearchInitialize(
 
 	case 'x':
 	  {
-	    len=strlen(LALoptarg)+1;
+	    len=strlen(optarg)+1;
 	    params->detectorPSDCache=(CHAR *)
 	      XLALCalloc(len,sizeof(CHAR));
-	    memcpy(params->detectorPSDCache,LALoptarg,len);
+	    memcpy(params->detectorPSDCache,optarg,len);
 	  }
 	  break;
 	case 'y':
 	  {
-	    if(!strcmp(LALoptarg, "useMean"))
+	    if(!strcmp(optarg, "useMean"))
 	      params->avgSpecMethod = useMean;
-	    else if(!strcmp(LALoptarg, "useMedian"))
+	    else if(!strcmp(optarg, "useMedian"))
 	      params->avgSpecMethod = useMedian;
-	    else if(!strcmp(LALoptarg, "useUnity"))
+	    else if(!strcmp(optarg, "useUnity"))
 	      params->avgSpecMethod = useUnity;
 	    else 
 	      {
@@ -838,9 +838,9 @@ void LALappsTrackSearchInitialize(
 	case 'z':
 	  { /* Setting up aux label if present */
 	    /* Insert string copy code here */
-	    len = strlen(LALoptarg) +1;
+	    len = strlen(optarg) +1;
 	    params->calFrameCache = (CHAR *) XLALCalloc(len,sizeof(CHAR));
-	    memcpy(params->calFrameCache,LALoptarg,len);
+	    memcpy(params->calFrameCache,optarg,len);
 	    params->calibrate=1;
 	  }
 	  break;
@@ -851,15 +851,15 @@ void LALappsTrackSearchInitialize(
 	  break;
 	case 'B':
 	  {
-	    len = strlen(LALoptarg) +1;
+	    len = strlen(optarg) +1;
 	    params->pgmColorMapFile = (CHAR *) XLALCalloc(len,sizeof(CHAR));
-	    memcpy(params->pgmColorMapFile,LALoptarg,len);
+	    memcpy(params->pgmColorMapFile,optarg,len);
 	  }
 	case 'C':
 	  {
 	    params->injectMapCache=
-	      (CHAR*) XLALCalloc(strlen(LALoptarg)+1,sizeof(CHAR));
-	    memcpy(params->injectMapCache,LALoptarg,strlen(LALoptarg)+1);
+	      (CHAR*) XLALCalloc(strlen(optarg)+1,sizeof(CHAR));
+	    memcpy(params->injectMapCache,optarg,strlen(optarg)+1);
 	    /*
 	     * Turn off tseries flag
 	     */
@@ -870,8 +870,8 @@ void LALappsTrackSearchInitialize(
 	case 'D':
 	  {
 	    params->injectSingleMap=
-	      (CHAR*) XLALCalloc(strlen(LALoptarg)+1,sizeof(CHAR));
-	    memcpy(params->injectSingleMap,LALoptarg,strlen(LALoptarg)+1);
+	      (CHAR*) XLALCalloc(strlen(optarg)+1,sizeof(CHAR));
+	    memcpy(params->injectSingleMap,optarg,strlen(optarg)+1);
 	    /*
 	     * Turn off tseries flag
 	     */
@@ -881,15 +881,15 @@ void LALappsTrackSearchInitialize(
 
 	case 'E':
 	  {
-	    params->SamplingRate=atof(LALoptarg);
-	    params->SamplingRateOriginal=atof(LALoptarg);
+	    params->SamplingRate=atof(optarg);
+	    params->SamplingRateOriginal=atof(optarg);
 	    injectParams->sampleRate=params->SamplingRate;
 	  }
 	  break;
 
 	case 'F':
 	  {
-	    params->smoothAvgPSD =(UINT4) atoi(LALoptarg);
+	    params->smoothAvgPSD =(UINT4) atoi(optarg); 
 	    /* 
 	     * >0 Means do running median with this block size
 	     */
@@ -898,25 +898,25 @@ void LALappsTrackSearchInitialize(
 
 	case 'G':
 	  {
-	    params->highPass=atof(LALoptarg);
+	    params->highPass=atof(optarg);
 	  }
 	  break;
 
 	case 'H':
 	  {
-	    params->lowPass=atof(LALoptarg);
+	    params->lowPass=atof(optarg);
 	  }
 	  break;
 
 	case 'I':
 	  {
-	    if(!strcmp(LALoptarg,"quiet"))
+	    if(!strcmp(optarg,"quiet"))
 	      params->verbosity=quiet;
-	    else if(!strcmp(LALoptarg,"verbose"))
+	    else if(!strcmp(optarg,"verbose"))
 	      params->verbosity=verbose;
-	    else if(!strcmp(LALoptarg,"printFiles"))
+	    else if(!strcmp(optarg,"printFiles"))
 	      params->verbosity=printFiles;
-	    else if(!strcmp(LALoptarg,"all"))
+	    else if(!strcmp(optarg,"all"))
 	      params->verbosity=all;
 	    else
 	      {
@@ -928,59 +928,59 @@ void LALappsTrackSearchInitialize(
 	
 	case 'J':
 	  {
-	    injectParams->startTimeOffset=atof(LALoptarg);
+	    injectParams->startTimeOffset=atof(optarg);
 	  }
 	  break;
 
 	case 'K':
 	  {
-	    injectParams->numOfInjects=atoi(LALoptarg);
+	    injectParams->numOfInjects=atoi(optarg);
 	  }
 	  break;
 
 	case 'L':
 	  {
-	    injectParams->injectSpace=atof(LALoptarg);
+	    injectParams->injectSpace=atof(optarg);
 	  }
 	  break;
 
 	case 'M':
 	  {
-	    injectParams->injectTxtFile=XLALCreateCHARVector(strlen(LALoptarg)+1);
-	    memcpy(injectParams->injectTxtFile->data,LALoptarg,strlen(LALoptarg)+1);
+	    injectParams->injectTxtFile=XLALCreateCHARVector(strlen(optarg)+1);
+	    memcpy(injectParams->injectTxtFile->data,optarg,strlen(optarg)+1);
 	  }
 	  break;
 
 	case 'N':
 	  {
-	    injectParams->scaleFactor=atof(LALoptarg);
+	    injectParams->scaleFactor=atof(optarg);
 	  }
 	  break;
 
 	case 'P':
 	  {
-	    params->colsToClip=atoi(LALoptarg);
+	    params->colsToClip=atoi(optarg);
 	  }
 	  break;
 
 	case 'Q':
 	  {
-	    params->autoThresh=atof(LALoptarg);
+	    params->autoThresh=atof(optarg);
 	    params->autoLambda=1;
 	  }
 	  break;
 
 	case 'R':
 	  {
-	    params->relaThresh=atof(LALoptarg);
+	    params->relaThresh=atof(optarg);
 	  }
 	  break;
 
 	case 'S':
 	  {
 	    lineTokens=XLALCreateCHARVector(maxFilenameLength);
-	    len = strlen(LALoptarg) +1;
-	    strncpy(lineTokens->data,LALoptarg,len);
+	    len = strlen(optarg) +1;
+	    strncpy(lineTokens->data,optarg,len);
 	    token=strtok(lineTokens->data,lineDelimiters);
 	    while (token!=NULL)
 	      {
@@ -995,25 +995,25 @@ void LALappsTrackSearchInitialize(
 
 	case 'T':
 	  {
-	    params->maxHarmonics=atoi(LALoptarg);
+	    params->maxHarmonics=atoi(optarg);
 	  }
 	  break;
 
 	case 'U':
 	  {
-	    params->MinSNR=atof(LALoptarg);
+	    params->MinSNR=atof(optarg);
 	  }
 	  break;
 
 	case 'V':
 	  {
-	    params->HeterodyneFrequency=atof(LALoptarg);
+	    params->HeterodyneFrequency=atof(optarg);
 	  }
 	  break;
 
 	case 'W':
 	  {
-	    params->HeterodyneSamplingRate=atof(LALoptarg);
+	    params->HeterodyneSamplingRate=atof(optarg);
 	  }
 	  break;
 
@@ -1873,7 +1873,7 @@ LALappsDoTSeriesSearch(REAL4TimeSeries   *signalSeries,
 		       TSSearchParams     params,
 		       INT4               callNum)
 {
-  CreateTimeFreqIn       tfInputs;/*Input params for map making*/
+//  CreateTimeFreqIn       tfInputs;/*Input params for map making*/
   INT4                   j;
   REAL4Window           *tempWindow = NULL;
   TimeFreqParam         *autoparams = NULL;/*SelfGenerated values for TFmap*/
@@ -1908,6 +1908,7 @@ LALappsDoTSeriesSearch(REAL4TimeSeries   *signalSeries,
    */
   if (injectionRun == 0)
     { 
+      CreateTimeFreqIn       tfInputs;
       tfInputs.type = params.TransformType;
       tfInputs.fRow = 2*params.FreqBins;
       /*
@@ -2124,8 +2125,10 @@ LALappsDoTSeriesSearch(REAL4TimeSeries   *signalSeries,
    * TFR.  MAKE SURE to account for proper TFR dims and time/freq
    * information.
    */
+//  CreateTimeFreqIn       tfInputs;
   tmpTSA=XLALMalloc(sizeof(TSAMap));
-  tmpTSA->imageCreateParams=tfInputs;
+//  CreateTimeFreqIn       tfInputs;
+//  tmpTSA->imageCreateParams=tfInputs;
   tmpTSA->clippedWith=0;
   tmpTSA->imageBorders=mapMarkerParams;
   tmpTSA->imageRep=tfmap;
@@ -2138,7 +2141,7 @@ LALappsDoTSeriesSearch(REAL4TimeSeries   *signalSeries,
   /* 
    *Copy information from cropping procedure to relevant structures.
    */
-  memcpy(&tfInputs,&(tmpTSA->imageCreateParams),sizeof(CreateTimeFreqIn));
+//  memcpy(&tfInputs,&(tmpTSA->imageCreateParams),sizeof(CreateTimeFreqIn));
   memcpy(&mapMarkerParams,&(tmpTSA->imageBorders),sizeof(TrackSearchMapMarkingParams));
   if (params.verbosity >= printFiles)
     LALappsTSAWritePGM(tmpTSA,NULL);
@@ -2194,7 +2197,7 @@ LALappsDoTSeriesSearch(REAL4TimeSeries   *signalSeries,
        * Assemble a tsaMap structure 
        */
       mapBuilder=XLALMalloc(sizeof(TSAMap));
-      mapBuilder->imageCreateParams=tfInputs;
+ //     mapBuilder->imageCreateParams=tfInputs;
       mapBuilder->clippedWith=0;
       mapBuilder->imageBorders=mapMarkerParams;
       mapBuilder->imageRep=tfmap;

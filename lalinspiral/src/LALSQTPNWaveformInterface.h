@@ -15,7 +15,7 @@ extern "C" {
 
 /**
  * \defgroup LALSQTPNWaveformInterface_h Header LALSQTPNWaveformInterface.h
- * \ingroup lalinspiral_UNCLASSIFIED
+ * \ingroup pkg_CBC_NEW
  *
  * \brief Contains function declarations to integrate the SpinQuadTaylor code into the other parts of the LALSuit.
  * \author László Veréb

@@ -26,7 +26,7 @@ extern "C" {
 
 /**
  * \defgroup PulsarCrossCorr_h Header PulsarCrossCorr.h
- * \ingroup lalpulsar_crosscorr
+ * \ingroup pkg_pulsarCrossCorr
  * \author Christine Chung, Badri Krishnan, John Whelan
  * \date 2008
  * \brief Header-file for LAL routines for CW cross-correlation searches
@@ -34,6 +34,7 @@ extern "C" {
  */
 /*@{*/
 
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -57,6 +58,7 @@ extern "C" {
 #include <lal/Velocity.h>
 #include <lal/Statistics.h>
 #include <lal/ComputeFstat.h>
+#include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/LALInitBarycenter.h>
@@ -80,7 +82,7 @@ extern "C" {
  *  Structure, enum, union, etc., typdefs.
  */
 
-  typedef enum tagDetChoice
+  typedef enum
   { SAME,
     DIFFERENT,
     ALL

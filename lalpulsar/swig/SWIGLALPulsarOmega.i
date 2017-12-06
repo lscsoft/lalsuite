@@ -17,12 +17,8 @@
 // MA  02111-1307  USA
 //
 
-///
-/// \defgroup SWIGLALPulsarOmega_i Interface SWIGLALPulsarOmega.i
-/// \ingroup lalpulsar_swig
-/// \brief SWIG code which must appear \e after the LALPulsar headers.
-/// \author Karl Wette
-///
+// Header containing SWIG code which must appear *after* the LALPulsar headers.
+// Author: Karl Wette
 
 // Local Variables:
 // mode: c

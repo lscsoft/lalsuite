@@ -1,7 +1,20 @@
 # Import SWIG wrappings, if available
-@SWIG_BUILD_PYTHON_TRUE@from .laldetchar import *
+@SWIG_BUILD_PYTHON_TRUE@from laldetchar import *
 
-__version__ = "@PACKAGE_VERSION@"
-
-## \addtogroup laldetchar_python
-"""This package provides Python wrappings and extensions to LALDetChar"""
+## \addtogroup pkg_py_laldetchar
+"""This package provides a variety of tools for manipulating data for
+detector charaterisation purposes.
+"""
+#
+# ### Synopsis ###
+#
+#~~~
+#import laldetchar
+#~~~
+#\author Duncan Macleod (<duncan.macleod@ligo.org>), Chris Pankow (<chris.pankow@ligo.org>)
+#@{
+#	\defgroup pkg_py_laldetchar_triggers	Triggers
+#	\defgroup pkg_py_laldetchar_hveto	hveto utility modules
+#       \defgroup pkg_py_laldetchar_idq         iDQ pipeline
+#@}
+#

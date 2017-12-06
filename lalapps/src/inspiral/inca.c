@@ -27,436 +27,14 @@
  *-----------------------------------------------------------------------
  */
 
-/**
- * \file
- * \ingroup lalapps_inspiral
- *
- * <dl>
- * <dt>Name</dt><dd>
- * \c lalapps_inca --- program does inspiral coincidence analysis.</dd>
- *
- * <dt>Synopsis</dt><dd>
- * \code
- *  [--help ]
- *  [--verbose ]
- *  [--version ]
- *  [--user-tag USERTAG ]
- *  [--ifo-tag IFOTAG ]
- *  [--comment STRING ]
- *
- *   --gps-start-time GPSSTARTTIME
- *   --gps-end-time GPSENDTIME
- *
- *  [--silde-time SLIDE_SEC ]
- *  [--slide-time-ns SLIDE_NS ]
- *
- *   --ifo-a IFOA
- *   --ifo-b IFOB
- *
- *  [--single-ifo ]
- *  [--triggered-bank TRIGBANKFILE]
- *  [--minimal-match M ]
- *
- *  [--epsilon EPSILON ]
- *  [--kappa KAPPA ]
- *  [--ifo-b-snr-threshold B_SNR]
- *  [--ifo-b-range-cut ]
- *
- *   --paramenter-test TEST
- *  [--dm DM ]
- *  [--dpsi0 DPSI0 ]
- *  [--dpsi3 DPSI3 ]
- *  [--alphaf-cut ALPHAFCUT]
- *  [--dmchirp DM_CHIRP ]
- *  [--deta  DETA ]
- *  [--dt DT ]
- *
- *  [--no-playground ]
- *  [--playground-only ]
- *  [--write-uniq-triggers ]
- *
- * \endcode
- *
- * <tt>(LIGO Lightweight XML files)</tt></dd>
- *
- * <dt>Description --- General</dt><dd>
- *
- * \c lalapps_inca runs in three distinct modes.  The first is to
- * perform coincidence between triggers from two distinct interferomters.
- * The second is to create a triggered templatebank from a list of inspiral
- * triggers.  The third is to create a list of triggers from a single
- * interferometer in a specified time interval.  The way to run the code in
- * these three ways is descibed below.</dd>
- *
- * <dt>Description --- Coincidence Testing</dt><dd>
- *
- * We begin with the two interferometer coincidence testing.  This is the
- * default behaviour of the code.  It takes in triggers from two
- * interferometers and returns those which pass both time and mass
- * coincidence tests.  The two interferometers are specified with the
- * <tt>ifo-a</tt> and <tt>ifo-b</tt> arguments. The triggers are read in
- * from a list of LIGO Lightweight XML files given after the last command
- * line argument.  This list must contain at least one from each of the two
- * interferometers.  The triggers from these files are read in, and only
- * those triggers which lie in the interval between \c GPSSTARTTIME and
- * \c GPSENDTIME are kept. The default behaviour is to keep only
- * playground triggers (this can be explicitly requested with the
- * <tt>playground-only</tt> option).  By specifying
- * <tt>no-playground</tt>, only non-playground triggers are kept.  The
- * triggers from the two interferometers are then tested for time and mass
- * coincidence.  Two triggers are considered time coincident if their end
- * times differ by less than \c dt milliseconds.  If a time slide has
- * been specified, then \c SLIDE_SEC seconds plus \c SLIDE_NS
- * nanoseconds is added to the recorded time of each trigger in
- * \c IFOB before testing for time coincidence.  Triggers are then
- * tested for mass coincidence using one of three tests
- * <tt>(m1_and_m2 | mchirp_and_eta | psi0_and_psi3)</tt>.  If
- * \c m1_and_m2 is specified then both the mass1 and mass2 fields
- * of the triggers must differ by less than the specified \c DM.  If
- * \c mchirp_and_eta is specified then the chirp masses must differ
- * by less than \c DM_CHIRP and the mass ratios \f$\eta\f$ must differ
- * by less then \c DETA.  Finally, if \c psi0_and_psi3 is
- * specified the \c psi0 and \c psi3 fields of the trigger must
- * differ by less than \c PSI0 and \c PSI3.
- *
- * If demanding coincidence over m1 and m2, it then tests
- * that
- *
- * \f{equation}{ \frac{\left|D_\mathrm{IFOA} -
- *   D_\mathrm{IFOA}\right|}{D_\mathrm{IFOA}} <
- *   \frac{\epsilon}{\rho_\mathrm{IFOB}} + \kappa.  \f}
- *
- * This is equivalent to testing that
- *
- * \f{equation}{\label{snrtest} \left|\rho_\mathrm{IFOB} -
- * \hat{\rho}_\mathrm{IFOB}\right| < \epsilon + \kappa\rho_\mathrm{IFOB},
- * \f}
- *
- * where
- *
- * \f{equation}{ \hat{\rho}_\mathrm{IFOB} = \frac{\sigma_\mathrm{IFOB}}
- * {\sigma_\mathrm{IFOA}} \rho_\mathrm{IFOA} \, .  \f}
- *
- * If demanding coincidence over \f$\psi_0\f$ and \f$\psi_3\f$, there is an additional
- * cut applied in the triggers. The single-ifo triggers that have values
- * of \f$\alpha_F\f$ greater than ALPHAFCUT (as specified in the
- * command line) are rejected. For that reason, the option
- * <tt>--alphaf-cut</tt> is required, if <tt>--parameter-test</tt> is
- * set to \c psi0_and_psi3.
- *
- * If all the tests are passed, the events are considered to be coincident
- * and written to the output file.
- *
- * The <tt>--ifo-b-range-cut</tt> option performs a test similar to
- * \eqref{snrtest} above to see whether we should expect a trigger in
- * \c IFOB.  There are three possibilities, which depend upon the
- * value of the \c SNRSTAR threshold for \c IFOB, denoted
- * \f$\rho_\mathrm{IFOB}^{*}\f$.
- *
- * <ol>
- *
- * <li> In this case, the expected signal to noise ratio in \c IFOB is
- * above our threshold:
- *
- * \f{equation}{
- *   \rho_\mathrm{IFOB}^{*} < \frac{(\hat{\rho}_\mathrm{IFOB} - \epsilon)}
- *   {1 + \kappa} ,
- * \f}
- *
- * so we look for a coincident trigger.  We only keep the
- * \c IFOA trigger if one is found in coincidence in \c IFOB.</li>
- *
- * <li> In this case, our the allowed range of signal to noise ratio in
- * \c IFOB is partly above and partly below our threshold:
- *
- * \f{equation}{
- *   \frac{(\hat{\rho}_\mathrm{IFOB} - \epsilon)} {1 + \kappa} <
- *   \rho_\mathrm{IFOB}^{*} <
- *   \frac{(\hat{\rho}_\mathrm{IFOB} + \epsilon)} {1 - \kappa} .
- * \f}
- *
- * We search \c IFOB for triggers and record a coincident trigger if
- * found.  Otherwise, we just record the \c IFOA trigger.</li>
- *
- * <li> In this case, the trigger is not visible to \c IFOB:
- *
- * \f{equation}{
- *   \rho_\mathrm{IFOB}^{*} <
- *   \frac{(\hat{\rho}_\mathrm{IFOB} + \epsilon)} {1 - \kappa} .
- * \f}
- *
- * We do not search \c IFOB, but do keep the trigger from \c IFOA.
- *
- * </li>
- * </ol>
- *
- * The triggers which survive coincidence are output to two LIGO
- * lightweight XML files.  Two XML output files are written.  The output
- * files contain \c process, \c process_params and
- * \c search_summary tables that describe the search. The primary
- * ifo output file contains the triggers from \c IFOA that are found
- * to be in coincidence with triggers in \c IFOB. The secondary
- * output file contains the triggers from \c IFOB that are found to
- * be in coincidence with the triggers from \c IFOA.  Each trigger in
- * the \c IFOA file corresponds to the coincident trigger in the
- * \c IFOB file, so there may be duplicate \c IFOA triggers.
- * To prevent this, specify the <tt>write-uniq-triggers</tt> option.
- *
- * The output files are named in the standard way for inspiral pipeline output.
- * The primary triggers are in a file named\\
- *
- * <tt>IFOA-INCA_IFOTAG_USERTAG-GPSSTARTTIME-DURATION.xml</tt>\\
- *
- * and the secondary triggers are in a file named\\
- *
- * <tt>IFOB-INCA_IFOTAG_USERTAG-GPSSTARTTIME-DURATION.xml</tt>\\
- *
- * If a <tt>--user-tag</tt> or <tt>--ifo-tag</tt> is not specified on the
- * command line, the \c _USERTAG or \c _IFOTAG part of the
- * filename will be omitted.</dd>
- *
- * <dt>Description --- Triggered Bank</dt><dd>
- *
- * If the <tt>triggered-bank</tt> option is specified, then
- * \c lalapps_inca will produce a triggered template bank from the
- * input xml files.  In this case, the code expects triggers from only a
- * single interferometer, {IFOA}.  The triggered bank is formed by first
- * sorting the templates in time, and discarding any which are before the
- * \c GPSSTARTTIME or after the time specified \c GPSENDTIME.
- * The templates are then sorted according to the given
- * <tt>parameter-test</tt>, which must be one of \c m1_and_m2 or
- * \c psi0_and_psi3.  Duplicate templates (those with identical m1
- *     and m2 or psio and psi3) are discarded and what
- * remains is output to the \c TRIGBANKFILE specified by the
- * <tt>--triggered-bank</tt> argument.  The output file contain
- * \c process, \c process_params, \c search_summary and
- * \c sngl_inspiral tables.  </dd>
- *
- * <dt>Description --- Single IFO mode</dt><dd>
- *
- * If the <tt>single-ifo</tt> option is specified, then
- * \c lalapps_inca reads in triggers from a single interferometer
- * and returns those within the specified time window.  The time window is
- * specified by \c GPSSTARTTIME and \c GPSENDTIME.
- * By default, the program returns only playground triggers.  This
- * behaviour can be explicitly requested with the <tt>playground-only</tt>
- * flag.  If <tt>no-playground</tt> is specified then only those triggers
- * outside the playground are written to the output file.
- *
- * The output file is named in the standard way for inspiral pipeline output.
- * The triggers are in a file named\\
- *
- * <tt>IFOA-INCA_IFOTAG_USERTAG-GPSSTARTTIME-DURATION.xml</tt>\\
- *
- * If a <tt>--user-tag</tt> or <tt>--ifo-tag</tt> is not specified on the
- * command line, the \c _USERTAG or \c _IFOTAG part of the
- * filename will be omitted.  The triggers are stored in a
- * \c sngl_inspiral table.  The output file also contains
- * \c process, \c process_params and \c search_summary
- * tables that describe the search.</dd>
- *
- * <dt>Options</dt><dd>
- * <ul>
- *
- * <li><tt>--triggered-bank</tt> \c TRIGBANKFILE: Optional.  Run
- * inca in triggered bank mode.  Output the triggered bank to a file named
- * \c TRIGBANKFILE.</li>
- *
- * <li><tt>--single-ifo</tt>: Optional.  Run inca in single ifo mode.</li>
- *
- * <li><tt>--playground-only</tt>: Optional.  Record only triggers that
- * occur in the playground times.  This is the default behavior.</li>
- *
- * <li><tt>--no-playground</tt>: Optional.  Record all triggers that are
- * not in playground data.  The default behavior returns only those triggers
- * which lie in the playground data set.  </li>
- *
- * <li><tt>--ifo-a</tt> \c IFOA: Required. This is the name of the
- * interferometer to use as the interferometer A in the coincidence algorithm.
- * It must be a two letter IFO code e.g. \c L1, \c H1, etc.</li>
- *
- * <li><tt>--ifo-b</tt> \c IFOB: Required for coincidence, not for
- * trigbank or single ifo. This is the name of the interferometer to use as
- * the interferometer B in the coincidence algorithm.  It must be a two
- * letter IFO code e.g. \c L1, \c H1, etc.</li>
- *
- * <li><tt>--epsilon</tt> \f$\epsilon\f$: Optional. Set the value of
- * \f$\epsilon\f$ in the effective distance test. If not given the default of
- * \f$\epsilon = 2\f$ will be used.</li>
- *
- * <li><tt>--kappa</tt> \f$\kappa\f$: Optional. Set the value of
- * \f$\kappa\f$ in the effective distance test. If not given the default of
- * \f$\kappa= 0.01\f$ will be used.</li>
- *
- * <li><tt>--ifo-b-range-cut</tt>: Optional.  Use effective distance test
- * to see whether \c IFOB has a chance of seeing trigger before
- * performing the search.</li>
- *
- * <li><tt>--ifo-b-snr-threshold</tt> \c SNRSTAR: Optional.  Set the
- * value of the signal to noise threshold for \c IFOB.  This is used in
- * determining which triggers \c IFOB has a chance to see.  If not
- * specified, the default value of 6 is used.</li>
- *
- * <li><tt>--parameter-test</tt> TEST: Required. Choose which parameters
- * to use when testing for coincidence
- * (m1_and_m2|psi0_and_psi3|mchirp_and_eta).  Depending on which test
- * is chosen, the allowed windows on the appropriate parameters should be
- * set as described below.</li>
- *
- * <li><tt>--dm</tt> \f$\delta m\f$: Optional. Accept triggers as
- * coincident if both m1 and m2 agree within \f$\delta m\f$.  If not supplied,
- * 	   then \f$\delta m = 0\f$.</li>
- *
- * <li><tt>--dpsi0</tt> \f$\delta \psi_0\f$: Optional. Accept
- * triggers as coincident if \f$\psi_0\f$ parameters agree within
- * \f$\delta \psi_0\f$.  If not supplied,  then \f$\delta  \psi_0 = 0\f$.</li>
- *
- * <li><tt>--dpsi3</tt> \f$\delta \psi_3\f$: Optional. Accept
- * triggers as coincident if \f$\psi_3\f$ parameters agree within
- * \f$\delta \psi_3\f$.  If not supplied,  then \f$\delta  \psi_3 = 0\f$.</li>
- *
- * <li><tt>--alphaf-cut</tt> \c ALPHAFCUT: Required only if
- * <tt>--parameter-test</tt> is set to \c psi0_and_psi3. Accept
- * only the single-ifo BCV triggers that have \f$\alpha_F\f$ less or
- * equal to \c ALPHAFCUT. Affects only the coincidence part of
- * the code and not the triggered-bank generation.</li>
- *
- * <li><tt>--dmchirp</tt> \f$\delta mchirp\f$: Optional. Accept
- * triggers as coincident if mchirp agrees within \f$\delta mchirp\f$.  If not
- * supplied,  then \f$\delta mchirp = 0\f$.</li>
- *
- * <li><tt>--deta</tt> \f$\delta \eta\f$: Optional. Accept triggers
- * as coincident if \f$eta\f$ agrees within \f$\delta \eta\f$.  If not supplied,
- * then \f$\delta \eta = 0\f$.</li>
- *
- * <li><tt>--dt</tt> \f$\delta t\f$: Optional. Accept triggers as
- * coincident if their end times agree within \f$\delta t\f$ milliseconds.  If
- * not supplied,  then \f$\delta t = 0\f$.</li>
- *
- * <li><tt>--gps-start-time</tt> <tt>GPS seconds</tt>: Required.  Look
- * for coincident triggers with end times after <tt>GPS seconds</tt>.</li>
- *
- * <li><tt>--gps-end-time</tt> <tt>GPS seconds</tt>: Required.  Look for
- * coincident triggers with end times before <tt>GPS seconds</tt>.</li>
- *
- * <li><tt>--slide-time</tt>: \c SLIDE_SEC Optional.  Slide the
- * triggers from \c IFOB forwards in time by  \c SLIDE_SEC
- * seconds before testing for coincidence.  Only used in the coincidence
- * testing mode of inca.</li>
- *
- * <li><tt>--slide-time-ns</tt>: \c SLIDE_NS Optional.  Slide the
- * triggers from \c IFOB forwards in time by  \c SLIDE_NS nano
- * seconds before testing for coincidence.  Only used in the coincidence
- * testing mode of inca.</li>
- *
- * <li><tt>--write-uniq-triggers</tt>: Optional.  The default behavior is
- * to only write all triggers from IFO A. However, a trigger from IFO A may
- * match two or more triggers from IFO B, so it may be duplicated in the
- * output. Specifying this option causes only unique IFO A triggers to be
- * written.</li>
- *
- * <li><tt>--minimal-match</tt> \c M: Optional.  If running in triggered
- * bank mode, set the minimal match in the output file to \c M.</li>
- *
- * <li><tt>--comment</tt> \c string: Optional. Add \c string
- * to the comment field in the process table. If not specified, no comment
- * is added. </li>
- *
- * <li><tt>--user-tag</tt> \c USERTAG: Optional. Set the user tag
- * for this job to be \c USERTAG. May also be specified on the command
- * line as <tt>-userTag</tt> for LIGO database compatibility.  This will
- * affect the naming of the output file.</li>
- *
- * <li><tt>--ifo-tag</tt> \c IFOTAG: Optional. Set the user tag for
- * this job to be \c IFOTAG.  This will affect the naming of the
- * output file.</li>
- *
- * <li><tt>--verbose</tt>: Enable the output of informational messages.</li>
- *
- * <li><tt>--help</tt>: Optional.  Print a help message and exit.</li>
- *
- * <li><tt>--version</tt>: Optional.  Print out the author, CVS version and
- * tag information and exit.
- * </li>
- * </ul></dd>
- *
- * <dt>Arguments</dt><dd>
- * <ul>
- * <li><tt>[LIGO Lightweight XML files]</tt>: The arguments to the program
- * should be a list of LIGO Lightweight XML files containing the triggers from
- * the two interferometers. The input files can be in any order and do not need
- * to be time ordered as \c inca will sort all the triggers once they are
- * read in. If the program encounters a LIGO Lightweight XML containing triggers
- * from an unknown interferometer (i.e. not IFO A or IFO B) it will exit with an
- * error.</li>
- * </ul></dd>
- *
- * <dt>Example</dt><dd>
- * \code
- * lalapps_inca \
- * --playground-only  --dm 0.03 --kappa 1000.0 --ifo-b H1 --ifo-a L1 \
- * --user-tag SNR6_INJ --gps-start-time 734323079
- * --gps-end-time 734324999 --epsilon 2.0 --dt 11.0 \
- * L1-INSPIRAL_INJ-734323015-2048.xml H1-INSPIRAL_INJ-734323015-2048.xml
- * \endcode</dd>
- *
- * <dt>Algorithm</dt><dd>
- * The code maintains two pointers to triggers from each ifo,
- * <tt>currentTrigger[0]</tt> and <tt>currentTrigger[1]</tt>, corresponding to
- * the current trigger from IFO A and B respectively.
- *
- * <ol>
- * <li> An empty linked list of triggers from each interferometer is created.
- * Each input file is read in and the code determines which IFO the triggers in
- * the file correspond to. The triggers are appended to the linked list for the
- * corresponding interferometer.</li>
- *
- * <li> If there are no triggers read in from either of the interferometers,
- * the code exits cleanly.</li>
- *
- * <li> The triggers for each interferometer is sorted by the \c end_time
- * of the trigger.</li>
- *
- * <li> <tt>currentTrigger[0]</tt> is set to point to the first trigger from IFO
- * A that is after the specified GPS start time for coincidence. If no trigger is
- * found after the start time, the code exits cleanly.</li>
- *
- * <li> Loop over each trigger from IFO A that occurs before the specified GPS
- * end time for coincidence:
- * <ol>
- * <li> <tt>currentTrigger[1]</tt> is set to point to the first trigger from IFO
- * B that is within the time coincidence window, \f$\delta t\f$, of
- * <tt>currentTrigger[0]</tt>. If no IFO B trigger exists within this window,
- * <tt>currentTrigger[0]</tt> is incremented to the next trigger from IFO A and
- * the loop over IFO A triggers restarts.</li>
- *
- * <li> If the trigger <tt>currentTrigger[0]</tt> <em>is, is not</em> in the
- * playground data, start looping over triggers from IFO B.
- * <ol>
- * <li> For each trigger from IFO B that is within \f$\delta t\f$ of
- * <tt>currentTrigger[0]</tt></li>
- * <li> Call <tt>LALCompareSnglInspiral()</tt> to check if the triggers match as
- * determined by the options on the command line. If the trigger match, record
- * them for later output as coincident triggers.</li>
- * </ol></li>
- *
- * <li> Increment <tt>currentTrigger[0]</tt> and continue loop over triggers
- * from IFO A.</li>
- * </ol></li>
- * </ol></dd>
- *
- * <dt>Author</dt><dd>
- * Patrick Brady, Duncan Brown and Steve Fairhurst</dd>
- * </dl>
- */
 
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
 #include <sys/types.h>
 #include <lal/LALStdio.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
@@ -614,8 +192,8 @@ int main( int argc, char *argv[] )
 
   INT4                  i, j;
 
-  /* LALgetopt arguments */
-  struct LALoption long_options[] =
+  /* getopt arguments */
+  struct option long_options[] =
   {
     {"verbose",                 no_argument,       &vrbflg,           1 },
     {"write-compress",          no_argument,       &outCompress,      1 },
@@ -669,8 +247,8 @@ int main( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
-      lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentId,
+      lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0);
   this_proc_param = processParamsTable.processParamsTable = 
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
@@ -694,12 +272,12 @@ int main( int argc, char *argv[] )
   /* parse the arguments */
   while ( 1 )
   {
-    /* LALgetopt_long stores long option here */
+    /* getopt_long stores long option here */
     int option_index = 0;
     long int gpstime;
-    size_t LALoptarg_len;
+    size_t optarg_len;
 
-    c = LALgetopt_long_only( argc, argv,
+    c = getopt_long_only( argc, argv, 
         "a:b:e:k:A:m:p:P:F:t:q:r:s:hI:Z:M:T:S:c:n:QRD", long_options, 
         &option_index );
 
@@ -720,61 +298,61 @@ int main( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "Error parsing option %s with argument %s\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
         break;
 
       case 'a':
         /* name of interferometer a */
-        snprintf( ifoName[0], LIGOMETA_IFO_MAX, "%s", LALoptarg );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        snprintf( ifoName[0], LIGOMETA_IFO_MAX, "%s", optarg );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'b':
         /* name of interferometer b */
-        snprintf( ifoName[1], LIGOMETA_IFO_MAX, "%s", LALoptarg );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        snprintf( ifoName[1], LIGOMETA_IFO_MAX, "%s", optarg );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'e':
         /* epsilon */
-        errorParams.epsilon = atof(LALoptarg);
+        errorParams.epsilon = atof(optarg);
         if ( errorParams.epsilon < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "epsilon must be non-negative: "
               "(%s given)\n", 
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
       case 'k':
         /* kappa */
-        errorParams.kappa = atof(LALoptarg);
+        errorParams.kappa = atof(optarg);
         if ( errorParams.kappa < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "epsilon must be non-negative: "
               "(%s given)\n", 
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
       case 'A':
-        if ( ! strcmp( "m1_and_m2", LALoptarg ) )
+        if ( ! strcmp( "m1_and_m2", optarg ) )
         {
           errorParams.test = m1_and_m2;
         }
-        else if ( ! strcmp( "psi0_and_psi3", LALoptarg ) )
+        else if ( ! strcmp( "psi0_and_psi3", optarg ) )
         {
           errorParams.test = psi0_and_psi3;
         }
-        else if ( ! strcmp( "mchirp_and_eta", LALoptarg ) )
+        else if ( ! strcmp( "mchirp_and_eta", optarg ) )
         {
           errorParams.test = mchirp_and_eta;
         }
@@ -783,74 +361,74 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown test specified: "
               "%s (must be m1_and_m2, psi0_and_psi3 or mchirp_and_eta)\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
         haveTest = 1;
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
 
       case 'S':
         /* set the snr threshold in ifo b.  Used when deciding if ifo b
          * could have seen the triggers. */
-        ifob_snrthresh = atof(LALoptarg);
+        ifob_snrthresh = atof(optarg);
         if ( ifob_snrthresh < 0.0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "IFO B snr threshold must be positive"
               "(%s given)\n", 
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
       case 'm':
         /* mass errors allowed */
-        errorParams.dm = atof(LALoptarg);
-        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
+        errorParams.dm = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
       case 'p':
         /* psi0 errors allowed */
-        errorParams.dpsi0 = atof(LALoptarg);
-        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
+        errorParams.dpsi0 = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
       case 'P':
         /* psi3 errors allowed */
-        errorParams.dpsi3 = atof(LALoptarg);
-        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
+        errorParams.dpsi3 = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
       case 'F':
         /* alphaF cut for coincidence */
-        alphaFcut = atof(LALoptarg);
-        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
+        alphaFcut = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
       case 'c':
         /* mass errors allowed */
-        errorParams.dmchirp = atof(LALoptarg);
-        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
+        errorParams.dmchirp = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
       case 'n':
         /* mass errors allowed */
-        errorParams.deta = atof(LALoptarg);
-        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
+        errorParams.deta = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
       case 't':
         /* time coincidence window, argument is in milliseconds */
-        errorParams.dt = atof(LALoptarg) * 1000000LL;
-        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
+        errorParams.dt = atof(optarg) * 1000000LL;
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
       case 'q':
         /* time coincidence window */
-        gpstime = atol( LALoptarg );
+        gpstime = atol( optarg );
         if ( gpstime < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -866,7 +444,7 @@ int main( int argc, char *argv[] )
 
       case 'r':
         /* time coincidence window */
-        gpstime = atol( LALoptarg );
+        gpstime = atol( optarg );
         if ( gpstime < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -881,7 +459,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 's':
-        if ( strlen( LALoptarg ) > LIGOMETA_COMMENT_MAX - 1 )
+        if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "comment must be less than %d characters\n",
@@ -890,7 +468,7 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", LALoptarg);
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
 
@@ -917,9 +495,9 @@ int main( int argc, char *argv[] )
 
       case 'Z':
         /* create storage for the usertag */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        userTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
-        memcpy( userTag, LALoptarg, LALoptarg_len );
+        optarg_len = strlen(optarg) + 1;
+        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( userTag, optarg, optarg_len );
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
@@ -928,26 +506,26 @@ int main( int argc, char *argv[] )
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-            LALoptarg );
+            optarg );
         break;
 
       case 'I':
         /* create storage for the ifo-tag */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        ifoTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
-        memcpy( ifoTag, LALoptarg, LALoptarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        optarg_len = strlen(optarg) + 1;
+        ifoTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( ifoTag, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'T':
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        trigBankFile = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
-        memcpy( trigBankFile, LALoptarg, LALoptarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        optarg_len = strlen( optarg ) + 1;
+        trigBankFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( trigBankFile, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'M':
-        minMatch = (REAL4) atof( LALoptarg );
+        minMatch = (REAL4) atof( optarg );
         if ( minMatch <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -960,12 +538,12 @@ int main( int argc, char *argv[] )
         break;
 
       case 'X':
-        slideData.gpsSeconds = (INT4) atoi( LALoptarg );
+        slideData.gpsSeconds = (INT4) atoi( optarg );
         ADD_PROCESS_PARAM( "int", "%d", slideData.gpsSeconds );
         break;
 
       case 'Y':
-        slideData.gpsNanoSeconds = (INT4) atoi( LALoptarg );
+        slideData.gpsNanoSeconds = (INT4) atoi( optarg );
         ADD_PROCESS_PARAM( "int", "%d", slideData.gpsNanoSeconds );
         break;
 
@@ -1148,9 +726,9 @@ int main( int argc, char *argv[] )
    */
 
 
-  if ( LALoptind < argc )
+  if ( optind < argc )
   {
-    for( i = LALoptind; i < argc; ++i )
+    for( i = optind; i < argc; ++i )
     {
       INT4 numFileTriggers = 0;
       SnglInspiralTable *inputData = NULL;
@@ -1383,9 +961,9 @@ int main( int argc, char *argv[] )
               if ( slideDataNS && j == 1 )
               {
                 INT8 trigTimeNS = 0;
-                trigTimeNS = XLALGPSToINT8NS( &(currentTrigger[j]->end) );
+                trigTimeNS = XLALGPSToINT8NS( &(currentTrigger[j]->end_time) );
                 trigTimeNS += slideDataNS;
-                XLALINT8NSToGPS( &(currentTrigger[j]->end), trigTimeNS );
+                XLALINT8NSToGPS( &(currentTrigger[j]->end_time), trigTimeNS );
               }     
               currentTrigger[j] = currentTrigger[j]->next;
             }
@@ -1394,9 +972,9 @@ int main( int argc, char *argv[] )
             if ( slideDataNS && j == 1)
             {
               INT8 trigTimeNS = 0;
-              trigTimeNS = XLALGPSToINT8NS( &(currentTrigger[j]->end) );
+              trigTimeNS = XLALGPSToINT8NS( &(currentTrigger[j]->end_time) );
               trigTimeNS += slideDataNS;
-              XLALINT8NSToGPS( &(currentTrigger[j]->end), trigTimeNS );
+              XLALINT8NSToGPS( &(currentTrigger[j]->end_time), trigTimeNS );
             }
 
             /* store number of triggers from ifo a for trigtotmplt algorithm */
@@ -1479,8 +1057,8 @@ int main( int argc, char *argv[] )
       SnglInspiralTable *tmpEvent = thisEvent;
       thisEvent = thisEvent->next;
 
-      if ( tmpEvent->end.gpsSeconds >= startCoincidence &&
-          tmpEvent->end.gpsSeconds < endCoincidence )
+      if ( tmpEvent->end_time.gpsSeconds >= startCoincidence &&
+          tmpEvent->end_time.gpsSeconds < endCoincidence )
       {
         /* keep this template */
         if ( ! inspiralEventList[0] )
@@ -1658,7 +1236,7 @@ int main( int argc, char *argv[] )
   }
 
   while ( currentTrigger[0] && 
-      ( currentTrigger[0]->end.gpsSeconds < startCoincidence ) )
+      ( currentTrigger[0]->end_time.gpsSeconds < startCoincidence ) )
   {
     currentTrigger[0] = currentTrigger[0]->next;
   }
@@ -1682,13 +1260,13 @@ int main( int argc, char *argv[] )
   if ( vrbflg ) fprintf( stdout, "start loop over ifo A\n" );
 
   while ( (currentTrigger[0] ) && 
-      (currentTrigger[0]->end.gpsSeconds < endCoincidence) )
+      (currentTrigger[0]->end_time.gpsSeconds < endCoincidence) )
   {
     if ( vrbflg ) fprintf( stdout, "  using IFO A trigger at %d + %10.10f\n",
-        currentTrigger[0]->end.gpsSeconds, 
-        ((REAL4) currentTrigger[0]->end.gpsNanoSeconds * 1e-9) );
+        currentTrigger[0]->end_time.gpsSeconds, 
+        ((REAL4) currentTrigger[0]->end_time.gpsNanoSeconds * 1e-9) );
 
-    ta = XLALGPSToINT8NS( &(currentTrigger[0]->end) );
+    ta = XLALGPSToINT8NS( &(currentTrigger[0]->end_time) );
 
     isPlay = XLALINT8NanoSecIsPlayground( ta );
 
@@ -1737,7 +1315,7 @@ int main( int argc, char *argv[] )
       /* window of the current ifo a trigger                            */
       while ( currentTrigger[1] )
       {
-        tb = XLALGPSToINT8NS( &(currentTrigger[1]->end) );
+        tb = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
 
         if ( tb > ta - errorParams.dt )
         {
@@ -1838,15 +1416,15 @@ int main( int argc, char *argv[] )
         {
           if ( vrbflg && currentTrigger[1] ) fprintf( stdout, 
               "  start loop over IFO B trigger at %d + %10.10f\n",
-              currentTrigger[1]->end.gpsSeconds, 
-              ((REAL4)currentTrigger[1]->end.gpsNanoSeconds * 1e-9) );
+              currentTrigger[1]->end_time.gpsSeconds, 
+              ((REAL4)currentTrigger[1]->end_time.gpsNanoSeconds * 1e-9) );
 
           /* look for coincident events in B within the time window */
           currentEvent = currentTrigger[1];
 
           while ( currentTrigger[1] )
           {
-            tb = XLALGPSToINT8NS( &(currentTrigger[1]->end) );
+            tb = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
 
             if (tb > ta + errorParams.dt )
             {
@@ -1860,8 +1438,8 @@ int main( int argc, char *argv[] )
               /* call the LAL function which compares events parameters */
               if ( vrbflg ) fprintf( stdout, 
                   "    comparing IFO B trigger at %d + %10.10f\n",
-                  currentTrigger[1]->end.gpsSeconds, 
-                  ((REAL4)currentTrigger[1]->end.gpsNanoSeconds * 1e-9) );
+                  currentTrigger[1]->end_time.gpsSeconds, 
+                  ((REAL4)currentTrigger[1]->end_time.gpsNanoSeconds * 1e-9) );
 
               LAL_CALL( LALCompareSnglInspiral( &status, currentTrigger[0],
                     currentTrigger[1], &errorParams ), &status );

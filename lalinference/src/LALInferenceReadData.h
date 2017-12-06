@@ -29,7 +29,7 @@
 
 /**
  * \defgroup LALInferenceReadData_h Header LALInferenceReadData.h
- * \ingroup lalinference_general
+ * \ingroup pkg_LALInference
  * \brief Utility functions for handling IFO data
  */
 /*@{*/
@@ -53,8 +53,14 @@ struct tagLALInferenceIFOData * LALInferenceReadData (ProcessParamsTable * comma
  */
 void LALInferenceInjectInspiralSignal(struct tagLALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
 
-void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
-void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *commandLine);
+/**
+ * \brief Function to set up the ROQ structure
+ * Sets up the ROQ sturtucture into a pre-existing \c IFOdata structure,
+ * based on command line arguments (see --help for details).
+ * \param commandLine [in] Pointer to a ProcessParamsTable containing command line arguments
+ * \param IFOdata [in] Pointer to an already existing IFOdata structure.
+ */
+void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, LALInferenceModel *model, ProcessParamsTable *commandLine);
 
 /**
  * \brief Fills the variable in vars with the injection values from theEventTable. Destroys contents of
@@ -68,6 +74,7 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
  */
 void LALInferencePrintInjectionSample(LALInferenceRunState *runState);
 void LALInferenceInjectFromMDC(ProcessParamsTable *commandLine, LALInferenceIFOData *IFOdata);
+//void LALInferenceInjectBurstSignal(LALInferenceRunState *runState, ProcessParamsTable *commandLine);
+//void LALInferenceBurstInjectionToVariables(SimBurst *theEventTable, LALInferenceVariables *vars);
 /*@}*/
-
 #endif

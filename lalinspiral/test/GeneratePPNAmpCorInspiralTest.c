@@ -74,6 +74,7 @@
 
 /* headers from TimeFreqFFTTest.c */
 #include <stdio.h>
+#include <unistd.h>
 #include <lal/Random.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/TimeFreqFFT.h>
@@ -179,6 +180,11 @@ do {                                                                 \
 } while (0)
 
 
+
+/* A global pointer for debugging. */
+#ifndef NDEBUG
+char *lalWatch;
+#endif
 
 /* A function to convert INT8 nanoseconds to LIGOTimeGPS. */
 void

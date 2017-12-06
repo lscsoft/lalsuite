@@ -1,0 +1,263 @@
+LALAPPS package for S2/S3 time domain pulsar analysis. 
+
+Author: Réjean Dupuis rejean@astro.gla.ac.uk
+Last modified: 26/03/2004 
+
+This README contains a description and operating instructions. 
+
+There are two main driver codes for the time domain pulsar analysis:  
+  1. TargetedPulsars.c 
+  2. ComputePDF.c
+
+The main routines are in the LAL-compliant HeterodynePulsar.c and
+FitToPulsar.c files (the latest versions not in lal yet).  
+
+*****************************************************************
+Warning:  This is a first attempt to write up some instructions
+for the whole time domain pulsars pipeline. Some details may be
+missing or unclear, please let me know if you are having problems
+following these instructions.
+*****************************************************************
+
+I did not include a Makefile.am file because the TargetedPulsars.c
+code needs to be attached to the Frame library.  Here is a copy of
+my Makefile to help you compile the codes.
+
+==== Makefile ===
+FLAGS=-I/home/rejean/src/include -L/home/rejean/src/lib -Wall
+LIBS=-llalsupport -llal  -lm  -lFrame
+
+TargetedPulsars: TargetedPulsars.c HeterodynePulsar.c 
+	condor_compile gcc -g TargetedPulsars.c HeterodynePulsar.c -static -o TargetedPulsars ${FLAGS} ${LIBS}
+
+ComputePDF: ComputePDF.c FitToPulsar.c 
+	condor_compile gcc -g ComputePDF.c FitToPulsar.c -static -o ComputePDF ${FLAGS} ${LIBS}
+
+ProcData: ProcData.c
+	gcc -g ProcData.c -o ProcData -lm -Wall
+================
+*****************************************************************
+
+TargetedPulsars.c is the driver code to read the raw data in the
+frame format and then heterodyne, filter, and average (bin) it to
+produce our reduced  data set {Bk}.  The final products of this code
+are several ascii  files (to be concatenated) which contain three
+columns: times stamps, real part of Bk, and imaginary part of Bk. 
+The Bk are computed every 60 seconds when the detector is in science
+mode. The naming convention for these ascii files is
+outfine.psrname_det.gps where psrname is the  name of the pulsar, det
+is site (H1, H2, L1, or GEO), gps is the value of the last gps time
+stamp in the file (eg outfine.B1937+21_H1.751689905).  These files
+must be concatenated together for each run so that  for each pulsar
+we have only one file (eg outfine.B1937+21_H1.S2).  This file can
+then be processed by the program ProcData.c.
+
+ProcData.c is a short intermediate C program that reads the concatenated
+output from TargetedPulsars.c and writes out the files that will be
+used for input into ComputePDF.c.  ProcData.c goes through the data
+and only  writes out contiguous segments of N minutes (eg N=30).  In
+addition, ProcData.c  calculates the average Bk and the variance for
+each N minutes segment.  If we use  a Gaussian likelihood then as
+input to ComputePDF we will use the ascii file  produced by
+ProcData.c which has the following name
+outfine.psrame_det.run_chi_N.  This file will contain five columns:
+time stamp, average real part of Bk over N minutes, average imaginary
+part of Bk over N minutes, variance of real part of Bk over N
+minutes, and variance of imaginary part of Bk over N minutes.  If on
+the other hand  we want to use the Gaussian likelihood with no
+explicit variance (marginalized over variance) then the input file to
+ComputePDF (also generate by ProcData) will be names
+outfine.psrname_det.run_N and include 3 columns: time stamps, real
+part of Bk, and imaginary part of Bk.  The code ProcData.c also
+writes the reduced chi square value for each pulsar to a file called
+hist_det_N.run.  For the program ProcData to run a file called pulsarlist.txt 
+must be present in the same directory.  The of this file is the number of 
+pulsars and for subsequent lines there are 3 columns: pulsar number, pulsar
+name, and pulsar frequency. For example,
+
+=== pulsarlist.txt ===
+4
+1     B0021-72C  	 173.7 
+2     B0021-72D  	 186.6 
+3     B0021-72F  	 381.1 
+4     B0021-72G  	 247.5 
+======================
+
+************************ RUNNING TargetedPulsars *************************************
+STEP 1 
+PREPARE INPUT FILES AND DIRECTORY STRUCTURE
+
+A directory (eg input_files_S2) needs to be created that will contain
+all the input files required to run the code.  A number of
+subdirectories also need to be created as described below.
+
+The following files must be placed in the input directory:
+earth00-04.dat, sun00-04.dat, and pulsar.list
+
+earth00-04.dat and sun00-04.dat are the ephemeris files needed by
+LALBarycenter.
+
+pulsar.list is an ascii file which contains information on the
+pulsars of interest.  It has the following format:
+
+DummyNumber PulsarName RA DEC PMRA PMDEC POSEPOCH FO F1 F2 FEPOCH
+
+where RA is expressed in HR:MIN:SEC, DEC in DEG:MIN:SEC, PMRA and
+PMDEC in mas/year, POSEPOCH (positional epoch) in MJD, F0, F1, and F2
+are the spin parameters of the pulsar (not gw signal), and FEPOCH
+(frequency epoch) is in MJD.  The format of this file is slighly
+different for hardware injections (since the RA and DEC are provided
+in radians and the spin parameters are for the gw signal). 
+
+The input directory must also contain a subdirectory named
+'calibration' that will contain the calibration information for the
+LIGO IFOs.  For each IFO there must be three files containing the ASQ
+sensing, the open loop gain, and a time series containing the
+alpha/beta parameters.  For example (strict naming convention)
+H1alphabeta.txt, H1ASQsensing.txt, and H1openloopgain.txt for the H1
+IFO.  In S2 there were two reference epochs for H2.  This is hard
+wired in the driver code and when analysing the S2 H2 data two
+additional files named H2ASQsensingb.txt and H2openloopgainb.txt
+which contain the second set of reference functions must be included.
+For the GEO data the strain channel is stored already calibrated so
+there is no calibration performed.
+
+These calibration files are available from the calibration home
+page as ascii files (http://blue.ligo-wa.caltech.edu/engrun/Calib_Home/)
+
+The input directory must also contain up to four additional
+subdirectories containing files in the correct format to point the
+code to the frame files on the cluster.  This will consist of M files
+called jobdata.* and jobtime.* where M is the number of jobs to be
+created (eg 300 on Medusa). The details on how to produce these files
+will change slightly from cluster to cluster. Instructions for for
+creating these files for Medusa are available in the lalapps in
+src/pulsars.
+
+STEP 2
+PREPARE OUTPUT DIRECTORY STRUCTURE
+
+A directory must be created (eg RESULTS) where the output files will
+be written. The main output directory must have up to four
+subdirectories called H1, H2, L1, and GEO.  In each of these
+subdirectories there must be a directory created with the exact same
+name of the pulsar that appears in pulsar.list.  An output file will
+be written to these directories for each file jobdata.*.  
+
+STEP 3
+HETERODYNE THE DATA
+
+The driver code can be run on its own or by running a condor job
+(depending on whether the CONDOR variable is defined in the code).
+
+The driver code takes six command line arguments.  
+1 - job number (not used when jobs are submitted via condor)
+2 - full path to input directory
+3 - full path to output directory
+4 - IFO (either H1, H2, L1, or GEO)
+5 - run 2 (S2) or 3 (S3)
+6 - injections? 0 for no, 1 for yes
+The job number (eg 22) corresponds to the data in the file jobdata.00022
+at the times stated in jobtimes.00022.
+
+To run the code under condor, N files must be created called in.0 to
+in.N.  These files contain only one ascii line which is their job
+number  (eg in.N is created with the command "echo N > in.N").
+
+
+The jobs can then be submitted to condor (using condor_submit),
+for example, with the following script:
+>universe   = standard
+>executable = /dso-test/rejean/working/src/TargetedPulsars 
+>input      = in.$(Process) 
+>output     = out.$(Process)
+>error      = err.$(Process)
+>log        = log.$(Process)
+>notification = Never
+>arguments  =  0  /data/ide15/rejean/input_files_S2 /data/ide15/rejean/RESULTS_S2 H1 2 0
+>queue 154 
+
+
+************************ RUNNING ComputePDF *************************************
+
+ComputePDF.c calculates the posterior pdfs using the Bk's calculated
+by TargetedPulsars.c.  This code can calculate the posterior pdfs
+using either a Gaussian likelihood where sigma is known, or a
+likelihood where the noise estimate has been analytically
+marginalized (using Jeffrey's prior). If data from more than one IFO
+is provided it calculates the joint pdfs for all the IFOs.
+
+An intermediate code (ProcData.c) prepares the output from
+TargetedPulsars.c to the correct format for ComputePDF.c. The
+preparation is simply to ensure that we only keep contiguous 30
+minute chunks of data.  ProcData.c also calculates the variance and
+average for these 30 minute segments (from the Bk's) in case we want
+to use a Gaussian likelihood. 
+
+STEP 1 
+CREATE 'WORKING DIRECTORY'
+
+This is the directory where the output and input files/directories
+will be located.  
+
+A subdirectory called inputs must be created. This directory must
+contain an input file, with the same name as the name of the pulsar,
+for each pulsar to be analyzed (an output of TargetedPulsars).  This 
+inputs subdirectory must also contain a file with the mesh that is to
+be used, for example:
+
+==== mesh.txt ====
+h0	0.0	1.0e-22 101	
+cosIota	-1.0	0.02 	101
+phase	0.0	0.0523598776	61
+psi	-0.785398163	0.0392699082	41
+==================
+
+For each pulsar, there must be a directory in the working directory
+with the pulsar's name. This is where the output files will be
+written.  
+
+Subdirectories called dataL1, dataH1, dataH2, and dataGEO, must also
+be created in the working directory.  These directories must contain
+the files produced by ProcData.c (which used the output from
+TargetedPulsars.c).  For example, if we were to calculate the pdfs
+for B1937+21 for H1 and H2, we would need a file in dataH1 called
+outfine.B1937+21_H1.S2_30 and a file in dataH2 callted
+outfine.B1937+21_H2.S2_30. The '_30' here is added by the program
+ProcData.c and signifies that the data is prepared in 30 minute
+segments.  If we wish to calculate the posterior pdfs using a
+Gaussian likelihood (using our estimate of the noise) then the input
+files should be called outfine.B1937+21_H1.S2_chi_30 and
+outfine.B1937+21_H2.S2_chi_30. The extra 'chi' indicates that this
+file has one estimate of Bk every 30 minutes (as opposed to every
+minute) and also has an estimate of the noise (calculated from the
+Bk's) in the file (five columns instead of three).
+
+
+STEP 2   
+RUN COMPUTEPDF
+
+Command line arguments:
+   
+1 - The name of the pulsar (eg B0531+21).  If the variable CONDOR is
+    defined then this string is read from standard input instead. If
+    using condor then must create files in.N where the line of text
+    inside the files is the name of the pulsar (eg "echo B1937+21 >
+    in.0").
+
+2 - Full path to working directory (eg /home/rejean/S2analysis/).
+
+3 - Flag to indicate whether to use a Gaussian likelihood using
+estimate of noise (flag = 1) or use the likelihood where the esimate
+of the noise has been analytically marginalized (flag = 2)
+
+4 - name of the mesh file location in inputs directory
+
+5 - irun - 2 for S2, 3 for S3
+
+6 - number of IFOs to analyze
+
+7-10 - list the IFOS (H1, H2, L1, GEO) to analyze
+
+
+       

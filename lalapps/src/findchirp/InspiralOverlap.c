@@ -20,7 +20,7 @@
 /**
  * \author Cokelaer, T. and Sathyaprakash, B. S.
  * \file
- * \ingroup lalapps_inspiral
+ * \ingroup inspiral
  *
  * \brief Code for computing overalps of two waveforms.
  *

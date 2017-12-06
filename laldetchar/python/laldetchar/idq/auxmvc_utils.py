@@ -13,8 +13,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## \defgroup laldetchar_py_idq_auxmvc_utils AuxMVC Utils
-## \ingroup laldetchar_py_idq
+## addtogroup pkg_py_laldetchar_idq
+
 ## Synopsis
 # ~~~
 # from laldetchar.idq import auxmvc_utils
@@ -38,7 +38,7 @@ __version__ = git_version.id
 __date__ = git_version.date
 
 
-## \addtogroup laldetchar_py_idq_auxmvc_utils
+## addtogroup pkg_py_laldetchar_idq_auxmvc_utils
 # @{
 
 # Utility functions for manipulations and I/O of auxmvc
@@ -573,4 +573,4 @@ def Convert_ovl_chan(chan, channels):
             return False  # not in channels_file
 
 
-##@}
+# @}

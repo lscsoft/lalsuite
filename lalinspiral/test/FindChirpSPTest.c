@@ -33,8 +33,15 @@
 #include <math.h>
 #include <lal/LALConfig.h>
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+
 #include <lal/LALStdlib.h>
-#include <lal/LALgetopt.h>
 #include <lal/AVFactories.h>
 #include <lal/Random.h>
 #include <lal/LALInspiral.h>
@@ -58,6 +65,10 @@ typedef enum
   impulse, gaussian, file
 }
 InputDataType;
+
+extern char    *optarg;
+extern int      optind;
+
 
 static InputDataType    inputDataType   = gaussian;
 static BOOLEAN          rhosqout        = 0;
@@ -692,7 +703,7 @@ ParseOptions (
   {
     int c = -1;
 
-    c = LALgetopt (argc, argv, "Vhd:""n:""s:""y:""r:""v:""i:""f:""R:""t:""b:""m:""N:""c:""oI:");
+    c = getopt (argc, argv, "Vhd:""n:""s:""y:""r:""v:""i:""f:""R:""t:""b:""m:""N:""c:""oI:");
     if (c == -1)
     {
       break;
@@ -709,43 +720,43 @@ ParseOptions (
         rhosqout = 1;
         break;
       case 'n': /* set number of points in a segment */
-        numPoints = atoi (LALoptarg);
+        numPoints = atoi (optarg);
         break;
       case 's': /* set number of segments */
-        numSegments = atoi (LALoptarg);
+        numSegments = atoi (optarg);
         break;
       case 'r': /* set sampling rate */
-        srate = atoi (LALoptarg);
+        srate = atoi (optarg);
         break;
       case 'i': /* set invSpecTrunc */
-        invSpecTrunc = atoi (LALoptarg);
+        invSpecTrunc = atoi (optarg);
         break;
       case 'N': /* set numChisqBins */
-        numTmplts = atoi (LALoptarg);
+        numTmplts = atoi (optarg);
         break;
       case 'b': /* set numChisqBins */
-        numChisqBins = atoi (LALoptarg);
+        numChisqBins = atoi (optarg);
         break;
       case 'f': /* set fLow */
-        fLow = (REAL4) atof (LALoptarg);
+        fLow = (REAL4) atof (optarg);
         break;
       case 'y': /* set dynRange */
-        dynRange = (REAL4) atof (LALoptarg);
+        dynRange = (REAL4) atof (optarg);
         break;
       case 'm': /* mass */
-        mass = (REAL4) atof (LALoptarg);
+        mass = (REAL4) atof (optarg);
         break;
       case 't': /* set rhosq threshold */
-        rhosqThresh = (REAL4) atof (LALoptarg);
+        rhosqThresh = (REAL4) atof (optarg);
         break;
       case 'c': /* set chisq threshold */
-        chisqThresh = (REAL4) atof (LALoptarg);
+        chisqThresh = (REAL4) atof (optarg);
         break;
       case 'v': /* set variance */
-        sigmasq = (float) atof (LALoptarg);
+        sigmasq = (float) atof (optarg);
         break;
       case 'I': /* input data */
-        switch (*LALoptarg)
+        switch (*optarg)
         {
           case 'i':
             inputDataType = impulse;
@@ -768,7 +779,7 @@ ParseOptions (
     }
   }
 
-  if (LALoptind < argc)
+  if (optind < argc)
   {
     Usage (argv[0], 1);
   }

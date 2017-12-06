@@ -1059,7 +1059,7 @@ connect2Segments(
       tempCurve.gpsStamp[k].gpsNanoSeconds=curveB->gpsStamp[k].gpsNanoSeconds;
       tempCurve.depth[k]=curveB->depth[k];
       i++;
-      k++;
+//      k++;
     };
   /*Index i tracking elements of tempCurve*/
   tempCurve.n=i;

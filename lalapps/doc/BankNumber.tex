@@ -1,0 +1,94 @@
+\subsection{Program \texttt{lalapps\_BankNumberOfTemplates}}
+\label{program:lalapps-BankNumberOfTemplates}
+\idx[Program]{lalapps\_BankNumberOfTemplates}
+{\LARGE{{\bf Documentation In progress}}}
+
+\begin{entry}
+
+\item[Name]
+\verb$lalapps_BankNumberOfTemplates$ --- Compute the number of templates given 
+by a bank.
+
+\item[Synopsis]
+\verb$lalapps_BankNumberOfTemplates$ [\verb$-h$] 
+[\verb$--alpha-range$   \textit{$\alpha_{Min}$}\texttt{\&}\textit{$\alpha_{Max}$}]
+[\verb$--d-range$   \textit{step in $\alpha$}]
+[\verb$--fend-bcv$     \textit{$f_{cut}Min$}\texttt{\&}\textit{$f_{cut}Max$}]
+[\verb$--fl$	\textit{lower cutoff frequency}]
+[\verb$--mm$ \textit{MinimalMatch}]
+[\verb$--number-fcut$ \textit{number of layers } \textit{ in $f_{cut}$ dimension}]
+[\verb$--psi0-range$ \textit{$\psi0_{Min}$}\texttt{\&}\textit{$\psi0_{Max}$}]
+[\verb$--psi3-range$ \textit{$\psi3_{Min}$}\texttt{\&}\textit{$\psi3_{Max}$}]
+
+
+
+
+
+
+
+\item[Description]
+\verb$lalapps_BankNumberOfTemplates$ This application compute the number of 
+templates in  a bank of templates based on the SPA bank or BCV bank.
+
+To compute the number of templates one need the minimal match, the lower cutoff
+frequency and a range of parameters such as masses or $\tau_i$ in the SPA case or 
+$\psi_0$ and $\psi_3$ in the  BCV case. 
+
+Concerning BCV, we also need the alpha parameter. 
+
+In the BCV case, a range of alpha value is given [0-1] by default as well as a step
+ (0.01 by default). Thus it provides an easy way to see the evolution of the number of
+templates with respect to the $\alpha$ parameter. 
+
+Later, we might add options to do the same but with a range in the lower frequency for
+instance.
+
+
+\item[Options related to the simulations]\leavevmode
+\begin{entry}
+\item[\texttt{--alpha-range}]
+alpha parameter to compute the metric.
+\item[\texttt{--dalpha}]
+step in alpha parameter.
+\item[\texttt{--fend-bcv}]
+Range of cutoff frequency for the BCV template creation. User must provide two parameters: 
+the lowest and upper frequency cutoff. Those frequency are not expressed in Hz but in term
+of distance betwwen the two objets. for instance at the last stable orbit, the distance 
+between the two objects is 6GM. In the case of an EOB description, the distance between 
+the two objects is closer to 3GM. A good compromise is to use fend-bcv between 8GM and 3GM
+and using the options --number-fcut = 5. 
+\item[\texttt{-h}]
+Print a help message.
+\item[\texttt{--mm}]
+Fixe the Minimal Match of the bank.
+\item[\texttt{--n}]
+Number of trials, i.e number of injections.
+\item[\texttt{--number-fcut}]
+Number of layers to create in the BCV bank in the fend-bcv dimension. 
+Given the lower and upper frequency (see option fend-bcv), the bank creates
+n layers each of them having a frequency between lowest fend-bcv and highest fend-bcv.
+\item[\texttt{--psi0-range}]
+Range of paramter psi0. User must give two positive numbers.
+\item[\texttt{--psi3-range}]
+Range of paramter psi3. User must give two negative numbers.
+\item[\texttt{--seed}]
+Random seed.
+\item[\texttt{--space}]
+When --bank is given we should also provide the space of parameter. In the case
+of a BCV bank is it Psi0Psi3 and there is only one space. But in the SPA case on 
+might provide either Tau0Tau3 or Tau0Tau2 option. 
+
+\end{entry}
+
+
+\item[EXAMPLE]
+\begin{verbatim}
+lalapps_BankNumberOfTemplates --dalpha 0.001 --alpha-range 0 1 
+ --bank BCV
+
+lalapps_BankNumberOfTemplates  --bank SPA --space Tau0Tau3
+\end{verbatim}
+\item[Author]
+Thomas Cokelaer
+
+\end{entry}

@@ -31,6 +31,7 @@
 int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", stderr);return 1;}
 #else
 
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -41,10 +42,10 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <time.h>
 #include <glob.h>
 #include <errno.h>
+#include <getopt.h>
 #include <stdarg.h>
 
 #include <lal/LALDatatypes.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
@@ -73,6 +74,9 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 /* #define DEBUG 1 */  /* Uncomment this line to enable debugging fprintfs and mem usage */
 
 double hypot(double, double);
+
+extern char *optarg;
+extern int optind, opterr, optopt;
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
@@ -1000,7 +1004,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
 
   INT4 errflg=0;
-  struct LALoption long_options[] = {
+  struct option long_options[] = {
     {"freq-file",            required_argument, NULL,           'a'},
     {"time",                 required_argument, NULL,           'b'},
     {"band",                 required_argument, NULL,           'c'},
@@ -1066,10 +1070,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   /* Scan through list of command line arguments */
   while ( 1 )
   {
-    int option_index = 0; /* LALgetopt_long stores long option here */
+    int option_index = 0; /* getopt_long stores long option here */
     int c;
 
-    c = LALgetopt_long_only( argc, argv, args, long_options, &option_index );
+    c = getopt_long_only( argc, argv, args, long_options, &option_index );
     if ( c == -1 ) /* end of options */
       break;
 
@@ -1083,94 +1087,94 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       exit(0);
       break;
     case 'a':
-      CLA->freqfile=LALoptarg;
+      CLA->freqfile=optarg;
       break;
     case 'b':
-      CLA->t=atof(LALoptarg);
+      CLA->t=atof(optarg);
       break;
     case 'c':
-      CLA->b=atof(LALoptarg);
+      CLA->b=atof(optarg);
       break;
     case 'd':
-      CLA->hoftFrCacheFile=LALoptarg;
+      CLA->hoftFrCacheFile=optarg;
       break;
     case 'e':
-      CLA->derrFrCacheFile=LALoptarg;
+      CLA->derrFrCacheFile=optarg;
       break;
     case 'f':
       /* name of darm channel */
-      CLA->derr_chan=LALoptarg;
+      CLA->derr_chan=optarg;
       break;
     case 'g':
       /* name of darm channel */
-      CLA->darm_chan=LALoptarg;
+      CLA->darm_chan=optarg;
       break;
     case 'i':
       /* name of darm channel */
-      CLA->exc_chan=LALoptarg;
+      CLA->exc_chan=optarg;
       break;
     case 'j':
       /* name of darm channel */
-      CLA->asq_chan=LALoptarg;
+      CLA->asq_chan=optarg;
       break;
     case 'k':
       /* name of darm err channel */
-      CLA->hoft_chan=LALoptarg;
+      CLA->hoft_chan=optarg;
       break;
     case 'l':
       /* GPS start */
-      CLA->GPSStart=atoi(LALoptarg);
+      CLA->GPSStart=atoi(optarg);
       break;
     case 'm':
       /* GPS end */
-      CLA->GPSEnd=atof(LALoptarg);
+      CLA->GPSEnd=atof(optarg);
       break;
     case 'n':
       /* real part of OLG */
-      CLA->noisefile=LALoptarg;
+      CLA->noisefile=optarg;
       break;
     case 'B':
       /* real part of OLG */
-      CLA->noisefilebin=LALoptarg;
+      CLA->noisefilebin=optarg;
       break;
     case 'o':
       /* real part of OLG */
-      CLA->OLGFile=LALoptarg;
+      CLA->OLGFile=optarg;
       break;
     case 'p':
       /* real part of OLG */
-      CLA->SensingFile=LALoptarg;
+      CLA->SensingFile=optarg;
       break;
     case 'q':
       /* real part of OLG */
-      CLA->G0Re=atof(LALoptarg);
+      CLA->G0Re=atof(optarg);
       break;
     case 'r':
       /* imaginary part of OLG */
-      CLA->G0Im=atof(LALoptarg);
+      CLA->G0Im=atof(optarg);
       break;
     case 's':
       /*  real part of servo*/
-      CLA->D0Re=atof(LALoptarg);
+      CLA->D0Re=atof(optarg);
       break;
     case 't':
       /*  imaginary part of servo */
-      CLA->D0Im=atof(LALoptarg);
+      CLA->D0Im=atof(optarg);
       break;
     case 'u':
       /*  real part of servo*/
-      CLA->W0Re=atof(LALoptarg);
+      CLA->W0Re=atof(optarg);
       break;
     case 'v':
       /*  imaginary part of servo */
-      CLA->W0Im=atof(LALoptarg);
+      CLA->W0Im=atof(optarg);
       break;
     case 'w':
       /*  imaginary part of servo */
-      CLA->fcal=atof(LALoptarg);
+      CLA->fcal=atof(optarg);
       break;
     case 'y':
-      CLA->gamma_fudgefactor=atof(LALoptarg);
+      CLA->gamma_fudgefactor=atof(optarg);
       break;
     case 'z':
       CLA->nofactors=1;

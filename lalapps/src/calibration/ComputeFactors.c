@@ -34,6 +34,7 @@ int main(void) {fputs("disabled, no lal frame library support.\n", stderr);retur
 int main(void) {fputs("disabled, no frame library support.\n", stderr);return 1;}
 #else
 
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -46,7 +47,6 @@ int main(void) {fputs("disabled, no frame library support.\n", stderr);return 1;
 #include <errno.h>
 
 #include <lal/LALDatatypes.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
@@ -63,6 +63,9 @@ int main(void) {fputs("disabled, no frame library support.\n", stderr);return 1;
 #include <lal/LALFrameL.h>
 
 #include <series.h>
+
+extern char *optarg;
+extern int optind, opterr, optopt;
 
 #define MAXLINESEGS 10000                 /* Maximum number of science segments */
 
@@ -437,7 +440,7 @@ int ReadFiles(struct CommandLineArgsTag CLA)
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
   INT4 c, errflg = 0;
-  LALoptarg = NULL;
+  optarg = NULL;
 
   /* Initialize default values */
   CLA->f=0.0;
@@ -459,63 +462,63 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->version=NULL;
 
   /* Scan through list of command line arguments */
-  while (!errflg && ((c = LALgetopt(argc, argv,"hof:F:S:A:E:D:b:t:i:j:k:l:m:n:v:"))!=-1))
+  while (!errflg && ((c = getopt(argc, argv,"hof:F:S:A:E:D:b:t:i:j:k:l:m:n:v:"))!=-1))
     switch (c) {
     case 'f':
       /* calibration line frequency */
-      CLA->f=atof(LALoptarg);
+      CLA->f=atof(optarg);
       break;
     case 't':
       /* calibration line frequency */
-      CLA->t=atof(LALoptarg);
+      CLA->t=atof(optarg);
       break;
     case 'i':
       /* calibration line frequency */
-      CLA->G0Re=atof(LALoptarg);
+      CLA->G0Re=atof(optarg);
       break;
     case 'j':
       /* calibration line frequency */
-      CLA->G0Im=atof(LALoptarg);
+      CLA->G0Im=atof(optarg);
       break;
     case 'k':
       /* calibration line frequency */
-      CLA->D0Re=atof(LALoptarg);
+      CLA->D0Re=atof(optarg);
       break;
     case 'l':
       /* calibration line frequency */
-      CLA->D0Im=atof(LALoptarg);
+      CLA->D0Im=atof(optarg);
       break;
     case 'm':
       /* calibration line frequency */
-      CLA->W0Re=atof(LALoptarg);
+      CLA->W0Re=atof(optarg);
       break;
     case 'n':
       /* calibration line frequency */
-      CLA->W0Im=atof(LALoptarg);
+      CLA->W0Im=atof(optarg);
       break;
     case 'F':
       /* name of frame cache file */
-      CLA->FrCacheFile=LALoptarg;
+      CLA->FrCacheFile=optarg;
       break;
     case 'S':
       /* name of segments file */
-      CLA->SegmentsFile=LALoptarg;
+      CLA->SegmentsFile=optarg;
       break;
     case 'E':
       /* name of excitation channel */
-      CLA->exc_chan=LALoptarg;
+      CLA->exc_chan=optarg;
       break;
     case 'A':
       /* name of as_q channel */
-      CLA->asq_chan=LALoptarg;
+      CLA->asq_chan=optarg;
       break;
     case 'D':
       /* name of darm channel */
-      CLA->darm_chan=LALoptarg;
+      CLA->darm_chan=optarg;
       break;
     case 'b':
       /* name of darm channel */
-      CLA->alphafile=LALoptarg;
+      CLA->alphafile=optarg;
       break;
     case 'o':
       /* output frame files */
@@ -523,7 +526,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 'v':
       /* calibration version string */
-      CLA->version=LALoptarg;
+      CLA->version=optarg;
       break;
    case 'h':
       /* print usage/help message */

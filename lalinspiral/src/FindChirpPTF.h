@@ -41,8 +41,7 @@ extern "C" {
 #endif
 
 /**
- * \defgroup FindChirpPTF_h Header FindChirpPTF.h
- * \ingroup lalinspiral_findchirp
+ * \addtogroup FindChirpPTF_h
  * \author Brown, D. A., and Fazi, D.
  *
  * \brief Provides structures and functions to filter interferometer data using the
@@ -115,6 +114,14 @@ XLALPTFWaveformDerivatives(
         const REAL8  y[14],
               REAL8  dydt[14],
               void  *params );
+
+void
+LALFindChirpPTFFilterSegment (
+    LALStatus                  *status,
+    SnglInspiralTable         **eventList,
+    FindChirpFilterInput       *input,
+    FindChirpFilterParams      *params
+    );
 
 /*@}*/ /* end:FindChirpPTF.h */
 

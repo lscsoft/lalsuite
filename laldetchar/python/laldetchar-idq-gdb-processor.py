@@ -23,7 +23,6 @@ import sys
 
 import ConfigParser
 
-from laldetchar.idq import idq
 from laldetchar import git_version
 
 __author__ = \
@@ -34,7 +33,7 @@ __date__ = git_version.date
 
 
 def getProcessData():
-    ps = idq.fork(['ps', 'aux', '-ww'], stdout=subprocess.PIPE).communicate()[0]
+    ps = subprocess.Popen(['ps', 'aux', '-ww'], stdout=subprocess.PIPE).communicate()[0]
     processes = ps.split('\n')
     # this specifies the number of splits, so the splitted lines
     # will have (nfields+1) elements
@@ -85,32 +84,9 @@ if args.command == 'start':
     config = ConfigParser.SafeConfigParser()
     config.read(args.config)
 
-    server = config.get("lvalert_listener", "server")
     username = config.get("lvalert_listener", "username")
+    password = config.get("lvalert_listener", "password")
     lvalert_config = config.get("lvalert_listener", "lvalert_config")
-
-    ### write lvalert_config file based on information from config
-    lvalert_config_obj = ConfigParser.SafeConfigParser()
-
-    for node in config.options("nodes"): ### iterate over nodes listed in config
-        lvalert_config_obj.add_section( node )
-        lvalert_config_obj.set( node, "executable", config.get("lvalert_listener", "executable") )
-#        lvalert_config_obj.set( node, "plotting_time_before", config.getfloat(node, "plotting_time_before") )
-#        lvalert_config_obj.set( node, "plotting_time_after", config.getfloat(node, "plotting_time_after") )
-#        lvalert_config_obj.set( node, "time_before", config.getfloat(node, "time_before") )
-#        lvalert_config_obj.set( node, "time_after", config.getfloat(node, "time_after") )
-#        lvalert_config_obj.set( node, "max_wait", config.getfloat(node, "max_wait") )
-#        lvalert_config_obj.set( node, "delay", config.getfloat(node, "delay") )
-
-    ### add heartbeat response
-    if config.has_section('heartbeat'):
-        node = config.get('heartbeat', 'node')
-        lvalert_config_obj.add_section( node )
-        lvalert_config_obj.set( node, "executable", config.get('heartbeat', "executable") )
-
-    lvalert_config_file = open(lvalert_config, "w")
-    lvalert_config_obj.write(lvalert_config_file) ### write new config to disk
-    lvalert_config_file.close()
 
     print "Launching lvalert listener ..."
     lvalert_launch_command = [
@@ -118,17 +94,17 @@ if args.command == 'start':
                 'lvalert_listen',
                 '--username',
                 username,
+                '--password',
+                password,
                 '--config-file',
-                lvalert_config,
-                '--server',
-                server
+                lvalert_config
                 ]
     if args.dont_wait:
         lvalert_launch_command.insert(2, "--dont-wait" )
     if config.has_option("lvalert_listener","resource_name"):
         lvalert_launch_command += ["-r", config.get("lvalert_listener","resource_name")]
 
-    pid = idq.fork(lvalert_launch_command, stdout=open('lvalert_listen.out', 'a')).pid
+    pid = subprocess.Popen(lvalert_launch_command, stdout=open('lvalert_listen.out', 'a')).pid
 
     print "lvalert_listen is launched with process id " + str(pid)
     sys.exit(0)

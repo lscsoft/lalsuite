@@ -42,8 +42,7 @@ extern "C" {
 #endif
 
 /**
- * \defgroup FindChirpBCVSpin_h Header FindChirpBCVSpin.h
- * \ingroup lalinspiral_findchirp
+ * \addtogroup FindChirpBCVSpin_h
  * \author Brown, D. A. and Jones, G
  *
  * \brief Provides structures and functions to condition interferometer data

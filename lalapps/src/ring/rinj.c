@@ -34,6 +34,7 @@
 #include <ctype.h>
 #include <assert.h>
 #include <string.h>
+#include <getopt.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -43,7 +44,6 @@
 #include <lalapps.h>
 #include <processtable.h>
 #include <lal/LALStdio.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LIGOMetadataTables.h>
@@ -177,8 +177,8 @@ int main( int argc, char *argv[] )
   SimRingdownTable     *this_inj = NULL; 
   LIGOLwXMLStream       xmlfp;
 
-  /* LALgetopt arguments */
-  struct LALoption long_options[] =
+  /* getopt arguments */
+  struct option long_options[] =
   {
     {"help",                    no_argument,       0,                'h'},
     {"verbose",                 no_argument,       &vrbflg,           1 },
@@ -229,7 +229,7 @@ int main( int argc, char *argv[] )
     calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
   XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, \
-      lalAppsVCSIdentInfo.vcsId, lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
+      lalAppsVCSIdentId, lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0);
   snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
@@ -248,12 +248,12 @@ int main( int argc, char *argv[] )
      
   while ( 1 )
   {
-    /* LALgetopt_long stores long option here */
+    /* getopt_long stores long option here */
     int option_index = 0;
     long int gpsinput;
-    size_t LALoptarg_len;
+    size_t optarg_len;
 
-    c = LALgetopt_long_only( argc, argv,
+    c = getopt_long_only( argc, argv, 
         "a:A:b:B:C:D:E:F:G:h:P:Q:r:s:t:V:W:vZ:", long_options, &option_index );
 
     /* detect the end of the options */
@@ -273,13 +273,13 @@ int main( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "error parsing option %s with argument %s\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
         break;
 
       case 'a':
-        gpsinput = atol( LALoptarg );
+        gpsinput = atol( optarg );
         if ( gpsinput < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -297,7 +297,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'b':
-        gpsinput = atol( LALoptarg );
+        gpsinput = atol( optarg );
         if ( gpsinput < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -314,14 +314,14 @@ int main( int argc, char *argv[] )
         break;
 
       case 's':
-        randSeed = atoi( LALoptarg );
+        randSeed = atoi( optarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "int", 
               "%d", randSeed );
         break;
 
       case 't':
-        meanTimeStep = (REAL8) atof( LALoptarg );
+        meanTimeStep = (REAL8) atof( optarg );
         if ( meanTimeStep <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -335,7 +335,7 @@ int main( int argc, char *argv[] )
         break;
       
       case 'i':
-        timeInterval = atof( LALoptarg );
+        timeInterval = atof( optarg );
         if ( timeInterval < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -349,7 +349,7 @@ int main( int argc, char *argv[] )
         break;
      
         case 'G':
-        injdistr = (UINT4) atoi( LALoptarg );
+        injdistr = (UINT4) atoi( optarg );
         if ( injdistr != 0 && injdistr != 1 && injdistr != 2 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -363,7 +363,7 @@ int main( int argc, char *argv[] )
        break;
 
       case 'A':
-        minMass = (REAL4) atof( LALoptarg );
+        minMass = (REAL4) atof( optarg );
         if ( minMass <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -378,7 +378,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'B':
-        maxMass = (REAL4) atof( LALoptarg );
+        maxMass = (REAL4) atof( optarg );
         if ( maxMass <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -394,7 +394,7 @@ int main( int argc, char *argv[] )
 
       case 'P':
         /* minimum spin */
-        minSpin = (REAL4) atof( LALoptarg );
+        minSpin = (REAL4) atof( optarg );
         if ( minSpin < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -410,7 +410,7 @@ int main( int argc, char *argv[] )
 
       case 'Q':
         /* maximum spin */
-        maxSpin = (REAL4) atof( LALoptarg );
+        maxSpin = (REAL4) atof( optarg );
         if ( maxSpin > .994 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -425,7 +425,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'C':
-        minFreq = (REAL4) atof( LALoptarg );
+        minFreq = (REAL4) atof( optarg );
         if ( minFreq <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -440,7 +440,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'D':
-        maxFreq = (REAL4) atof( LALoptarg );
+        maxFreq = (REAL4) atof( optarg );
         if ( maxFreq <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -456,7 +456,7 @@ int main( int argc, char *argv[] )
 
       case 'E':
         /* minimum quality factor */
-        minQuality = (REAL4) atof( LALoptarg );
+        minQuality = (REAL4) atof( optarg );
         if ( minQuality < 2.1187 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -472,7 +472,7 @@ int main( int argc, char *argv[] )
 
       case 'F':
         /* maximum quality factor */
-        maxQuality = (REAL4) atof( LALoptarg );
+        maxQuality = (REAL4) atof( optarg );
         if ( maxQuality < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -489,7 +489,7 @@ int main( int argc, char *argv[] )
        
       case 'V':
         /* minimum distance from earth */
-        dmin = (REAL4) atof( LALoptarg );
+        dmin = (REAL4) atof( optarg );
         if ( dmin <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -505,7 +505,7 @@ int main( int argc, char *argv[] )
 
       case 'W':
         /* max distance from earth */
-        dmax = (REAL4) atof( LALoptarg );
+        dmax = (REAL4) atof( optarg );
         if ( dmax <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -521,7 +521,7 @@ int main( int argc, char *argv[] )
         
       case 'r':
         /* epsilon */
-        epsilon = (REAL4) atof( LALoptarg );
+        epsilon = (REAL4) atof( optarg );
         if ( epsilon <= 0 || epsilon > 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -537,26 +537,26 @@ int main( int argc, char *argv[] )
 
       case 'Z':
        /* create storage for the usertag */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        userTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
-        memcpy( userTag, LALoptarg, LALoptarg_len );
+        optarg_len = strlen( optarg ) + 1;
+        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( userTag, optarg, optarg_len );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
-              "string", "%s", LALoptarg );
+              "string", "%s", optarg );
         break;
       
       case 'w':
-        snprintf( waveform, LIGOMETA_WAVEFORM_MAX, "%s", LALoptarg);
+        snprintf( waveform, LIGOMETA_WAVEFORM_MAX, "%s", optarg);
         this_proc_param = this_proc_param->next =
            next_process_param( long_options[option_index].name, "string",
-              "%s", LALoptarg);
+              "%s", optarg);
         break;
       
       case 'c':
-        snprintf( coordinates, LIGOMETA_COORDINATES_MAX, "%s", LALoptarg);
+        snprintf( coordinates, LIGOMETA_COORDINATES_MAX, "%s", optarg);
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
-              "%s", LALoptarg);
+              "%s", optarg);
         break;
                                 
       case 'v':
@@ -580,12 +580,12 @@ int main( int argc, char *argv[] )
     }
   }
 
-  if ( LALoptind < argc )
+  if ( optind < argc )
   {
     fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( LALoptind < argc )
+    while ( optind < argc )
     {
-      fprintf ( stderr, "%s\n", argv[LALoptind++] );
+      fprintf ( stderr, "%s\n", argv[optind++] );
     }
     exit( 1 );
   }

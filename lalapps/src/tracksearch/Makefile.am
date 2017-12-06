@@ -1,15 +1,18 @@
-include $(top_srcdir)/gnuscripts/lalapps.am
-
+BUILT_SOURCES =
 MOSTLYCLEANFILES =
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
-include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
+include $(top_srcdir)/gnuscripts/lalapps.am
 
+if LALFRAME
+if LALBURST
 bin_PROGRAMS = \
 	lalapps_tracksearch \
 	lalapps_tracksearch_datagen \
 	lalapps_tracksearch_averager \
 	lalapps_tracksearch_dat2pgm
+endif
+endif
 
 noinst_HEADERS = \
 	FrameDataConvert_source.c

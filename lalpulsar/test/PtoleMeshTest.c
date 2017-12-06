@@ -71,6 +71,10 @@
  * default is \f$10^5\f$ seconds, which is of order one day but is not an integer
  * multiple of anything astronomically important.)
  *
+ * The <tt>-x</tt> option makes a plot of the mesh points on the sky patch using a
+ * system call to \c xmgrace. If \c xmgrace is not installed on your
+ * system, this option will not work. The plot goes to a file <tt>mesh.agr</tt>.
+ *
  * ### Algorithm ###
  *
  *
@@ -81,6 +85,7 @@
  * LALCheckMemoryLeaks()
  * LALProjectMetric()
  * LALPtoleMetric()
+ * LALXMGRPlotMesh()
  * \endcode
  *
  * ### Notes ###
@@ -101,11 +106,20 @@
 
 #include <config.h>
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+
 #include <math.h>
 #include <stdio.h>
 #include <lal/AVFactories.h>
-#include <lal/LALgetopt.h>
+#include <lal/LALXMGRInterface.h>
 #include <lal/PtoleMetric.h>
+#include <lal/StackMetric.h>
 #include <lal/TwoDMesh.h>
 
 /** \cond DONT_DOXYGEN */
@@ -127,6 +141,8 @@
 
 
 
+extern char *optarg;     /* option argument for getopt() */
+
 void getRange( LALStatus *, REAL4 [2], REAL4, void * );
 void getMetric( LALStatus *, REAL4 [3], REAL4 [2], void * );
 
@@ -138,6 +154,7 @@ int main( int argc, char **argv )
 {
   static LALStatus     stat;      /* status structure */
   INT2                 opt;       /* command-line option character */
+  BOOLEAN              grace;     /* whether or not to graph using xmgrace */
   BOOLEAN              nonGrace;  /* whether or not to write to data file */
   TwoDMeshNode        *firstNode; /* head of linked list of nodes in mesh */
   static TwoDMeshParamStruc mesh; /* mesh parameters */
@@ -152,6 +169,7 @@ int main( int argc, char **argv )
 
 
   /* Set default values. */
+  grace = 0;
   nonGrace = 0;
   begin = 0.0;
   duration = 1e5;
@@ -165,7 +183,7 @@ int main( int argc, char **argv )
   radius = 24.0/60*LAL_PI_180;
 
   /* Parse and sanity-check the command-line options. */
-  while( (opt = LALgetopt( argc, argv, "b:c:e:f:im:n:pr:t:x" )) != -1 )
+  while( (opt = getopt( argc, argv, "b:c:e:f:im:n:pr:t:x" )) != -1 )
   {
     switch( opt )
     {
@@ -173,10 +191,10 @@ int main( int argc, char **argv )
     case '?':
       return PTOLEMESHTESTC_EOPT;
     case 'b':
-      begin = atof( LALoptarg );
+      begin = atof( optarg );
       break;
     case 'c':
-      if( sscanf( LALoptarg, "%f:%f:%f:%f:%f:%f", &a, &b, &c, &d, &e, &f ) != 6)
+      if( sscanf( optarg, "%f:%f:%f:%f:%f:%f", &a, &b, &c, &d, &e, &f ) != 6)
       {
         fprintf( stderr, "coordinates should be hh:mm:ss:dd:mm:ss\n" );
         return PTOLEMESHTESTC_EOPT;
@@ -187,21 +205,21 @@ int main( int argc, char **argv )
     case 'e':
       break;
     case 'f':
-      fMax = atof( LALoptarg );
+      fMax = atof( optarg );
       break;
     case 'i':
       break;
     case 'm':
-      mismatch = atof( LALoptarg );
+      mismatch = atof( optarg );
       break;
     case 'n':
-      maxNodes = atoi( LALoptarg );
+      maxNodes = atoi( optarg );
       break;
     case 'p':
       nonGrace = 1;
       break;
     case 'r':
-      radius = LAL_PI_180/60*atof( LALoptarg );
+      radius = LAL_PI_180/60*atof( optarg );
       if( radius < 0 ) {
         fprintf( stderr, "%s line %d: %s\n", __FILE__, __LINE__,
                  PTOLEMESHTESTC_MSGERNG );
@@ -209,15 +227,18 @@ int main( int argc, char **argv )
       }
       break;
     case 't':
-      duration = atof( LALoptarg );
+      duration = atof( optarg );
       if( duration < MIN_DURATION || duration > MAX_DURATION ) {
 	fprintf( stderr, "%s line %d: %s\n", __FILE__, __LINE__,
                  PTOLEMESHTESTC_MSGERNG );
         return PTOLEMESHTESTC_ERNG;
       }
       break;
+    case 'x':
+      grace = 1;
+      break;
     } /* switch( opt ) */
-  } /* while( LALgetopt... ) */
+  } /* while( getopt... ) */
 
   /* Create the mesh. */
   mesh.mThresh = mismatch;
@@ -251,6 +272,18 @@ int main( int argc, char **argv )
   if( stat.statusCode )
     return stat.statusCode;
   printf( "created %d nodes\n", mesh.nOut );
+
+  /* Plot what we've got, if asked. */
+  if( grace )
+  {
+    fp = fopen( "mesh.agr", "w" );
+    if( !fp )
+      return PTOLEMESHTESTC_EFIO;
+    LALXMGRPlotMesh( &stat, firstNode, fp, &mesh );
+    if( stat.statusCode )
+      return stat.statusCode;
+    fclose( fp );
+  }
 
   /* Write what we've got to file mesh.dat */
   if( nonGrace )

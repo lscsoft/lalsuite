@@ -39,7 +39,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include <lal/LALgetopt.h>
+#include <unistd.h>
+#include <getopt.h>
 
 #include <gsl/gsl_sort.h>
 #include <gsl/gsl_rng.h>
@@ -2524,7 +2525,7 @@ int opt_parse( bayesline_opt *opts, int argc, char **argv )
 
   static bayesline_opt cmd_param;
 
-  struct LALoption cmd_opt[] =
+  struct option cmd_opt[] =
   {
     { "gnuplot",  no_arg,  0, 'g' },
     { "help",     no_arg,  0, 'h' },
@@ -2555,7 +2556,7 @@ int opt_parse( bayesline_opt *opts, int argc, char **argv )
     int opt_indx = 0;
     int c;
 
-    c = LALgetopt_long( argc, argv, args, cmd_opt, &opt_indx );
+    c = getopt_long( argc, argv, args, cmd_opt, &opt_indx );
     if ( c == -1 ) // end of options
       break;
 
@@ -2565,7 +2566,7 @@ int opt_parse( bayesline_opt *opts, int argc, char **argv )
         if ( cmd_opt[opt_indx].flag ) break;
         else
         {
-          fprintf(stderr,"error parsing option %s with argument %s\n", cmd_opt[opt_indx].name, LALoptarg );
+          fprintf(stderr,"error parsing option %s with argument %s\n", cmd_opt[opt_indx].name, optarg );
           exit(1);
         }
       case 'g': // gnuplot output
@@ -2576,12 +2577,12 @@ int opt_parse( bayesline_opt *opts, int argc, char **argv )
         bayesline_usage();
         exit(0);
       case 'i': // in-file
-        sprintf(cmd_param.ifile,"%s",LALoptarg);
+        sprintf(cmd_param.ifile,"%s",optarg);
         break;
       case 'l': // likelihood=constant test
         cmd_param.zerologL = 1;
       case 'o': // out-file
-        sprintf(cmd_param.ofile,"%s",LALoptarg);
+        sprintf(cmd_param.ofile,"%s",optarg);
         break;
       case 'v': // verbose output
         cmd_param.verbose = 1;
@@ -2595,10 +2596,10 @@ int opt_parse( bayesline_opt *opts, int argc, char **argv )
     }
   }
   
-  if ( LALoptind < argc )
+  if ( optind < argc )
   {
     fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( LALoptind < argc ) fprintf( stderr, "%s\n", argv[LALoptind++] );
+    while ( optind < argc ) fprintf( stderr, "%s\n", argv[optind++] );
     exit(1);
   }
   

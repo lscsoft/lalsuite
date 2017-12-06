@@ -39,6 +39,7 @@
  */
 
 #include <stdio.h>
+#include <unistd.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>

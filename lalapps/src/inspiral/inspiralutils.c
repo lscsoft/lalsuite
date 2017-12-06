@@ -31,6 +31,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -72,11 +74,9 @@
 #include <lal/FindChirpBCVSpin.h>
 #include <lal/FindChirpChisq.h>
 #include <lal/LALFrameL.h>
-#include <lal/LALDict.h>
 
 #include <lal/LALSimulation.h>
 #include <lal/LALSimNoise.h>
-#include <lal/LALInspiral.h>
 
 #include "inspiral.h"
 
@@ -1111,11 +1111,12 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
       exit(1);
   }
 
-  REAL8 m1,m2, s1x,s1y,s1z,s2x,s2y,s2z,phi0,f_min,f_max,iota,polarization;
+  REAL8 m1,m2, s1x,s1y,s1z,s2x,s2y,s2z,phi0,f_min,f_max,iota,polarization,
 
   /* No tidal PN terms until injtable is able to get them */
+  lambda1=0.0,lambda2=0.0;
 
-  LALDict *LALpars= XLALCreateDict();
+  LALSimInspiralWaveformFlags *waveFlags= XLALSimInspiralCreateWaveformFlags();
 
   /* Spin and tidal interactions at the highest level (default) until injtable stores them.
    * When spinO and tideO are added to injtable we can un-comment those lines and should be ok
@@ -1126,8 +1127,14 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
   XLALSimInspiralSetTidalOrder(waveFlags, *(LALSimInspiralTidalOrder*) tideO);
   */
 
-  XLALSimInspiralWaveformParamsInsertPNPhaseOrder(LALpars,XLALGetOrderFromString(inj->waveform));
-  XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(LALpars,inj->amp_order);
+  /* When nonGR terms stored in the table, we can add them here. (If they are only phase deformations, they won't change the SNR though) */
+  LALSimInspiralTestGRParam *nonGRparams=NULL;
+  /* Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
+
+  LALPNOrder  order;   /* Phase order of the model   */
+  INT4        amporder=0;
+  order = XLALGetOrderFromString(inj->waveform);
+  amporder = inj->amp_order;
   /* Read parameters */
   m1=inj->mass1*LAL_MSUN_SI;
   m2=inj->mass2*LAL_MSUN_SI;
@@ -1138,7 +1145,7 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
   s2y=inj->spin2y;
   s2z=inj->spin2z;
   iota=inj->inclination;
-  f_min=XLALSimInspiralfLow2fStart(inj->f_lower,XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(LALpars),XLALGetApproximantFromString(inj->waveform));
+  f_min=start_freq;
   phi0=inj->coa_phase;
   polarization=inj->polarization;
   REAL8 latitude=inj->latitude;
@@ -1185,13 +1192,11 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
 
     COMPLEX16FrequencySeries *hptilde=NULL;
     COMPLEX16FrequencySeries *hctilde=NULL;
-    //We do not pass the polarization here, we assume it is taken into account when projecting h+,x onto the detector.
-    XLAL_TRY(ret=XLALSimInspiralChooseFDWaveform(&hptilde,&hctilde, m1, m2,
-						 s1x, s1y, s1z, s2x, s2y, s2z,
-						 LAL_PC_SI * 1.0e6, iota, phi0, 0., 0., 0.,
-						 deltaF, f_min, 0.0, 0.0,
-						 LALpars,approx),errnum);
-    XLALDestroyDict(LALpars);
+    XLAL_TRY(ret=XLALSimInspiralChooseFDWaveform(&hptilde,&hctilde, phi0, deltaF, m1, m2,
+      s1x, s1y, s1z, s2x, s2y, s2z, f_min, 0.0, 0.0, LAL_PC_SI * 1.0e6,
+      iota, lambda1, lambda2, waveFlags, nonGRparams,
+      amporder, order, approx),errnum
+    );
 
     if(!hptilde|| hptilde->data==NULL || hptilde->data->data==NULL ||!hctilde|| hctilde->data==NULL || hctilde->data->data==NULL)
     {
@@ -1258,11 +1263,9 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
       timeHcross->data->data[j]=0.0;
     for (j=0;j<(UINT4) timeHplus->data->length;++j)
       timeHplus->data->data[j]=0.0;
-    XLAL_TRY(ret=XLALSimInspiralChooseTDWaveform(&hplus, &hcross, m1, m2,
-						 s1x, s1y, s1z, s2x, s2y, s2z,
-						 LAL_PC_SI*1.0e6, iota,
-						 phi0, 0., 0., 0., deltaT, f_min, 0.,
-						 LALpars, approx),
+    XLAL_TRY(ret=XLALSimInspiralChooseTDWaveform(&hplus, &hcross, phi0, deltaT,
+        m1, m2, s1x, s1y, s1z, s2x, s2y, s2z, f_min, 0., LAL_PC_SI*1.0e6,
+        iota, lambda1, lambda2, waveFlags, nonGRparams, amporder, order, approx),
         errnum);
 
     if (ret == XLAL_FAILURE || hplus == NULL || hcross == NULL)
@@ -1270,9 +1273,6 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
       XLALPrintError(" ERROR in XLALSimInspiralChooseTDWaveform(): error generating waveform. errnum=%d. Exiting...\n",errnum );
       exit(1);
     }
-
-    hplus->epoch  = timeHplus->epoch;
-    hcross->epoch = timeHcross->epoch;
 
     XLALSimAddInjectionREAL8TimeSeries(timeHplus, hplus, NULL);
     XLALSimAddInjectionREAL8TimeSeries(timeHcross, hcross, NULL);
@@ -1324,7 +1324,7 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
   REAL8 timeshift =  timedelay;
   REAL8 twopit    = LAL_TWOPI * timeshift;
 
-  UINT4 lower = (UINT4)ceil(start_freq / deltaF);
+  UINT4 lower = (UINT4)ceil(f_min / deltaF);
   UINT4 upper = (UINT4)floor(f_max / deltaF);
   REAL8 re = cos(twopit*deltaF*lower);
   REAL8 im = -sin(twopit*deltaF*lower);
@@ -1337,10 +1337,6 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
   REAL8 plainTemplateReal,  plainTemplateImag,templateReal,templateImag;
   REAL8 newRe, newIm,temp;
   REAL8 this_snr=0.0;
-  if ( psd )
-  {
-    psd = XLALInterpolatePSD(psd,  deltaF);
-  } 
   for (j=lower; j<=(UINT4) upper; ++j)
   {
     /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
@@ -1367,6 +1363,8 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
   /* Clean */
   if (freqHcross) XLALDestroyCOMPLEX16FrequencySeries(freqHcross);
   if (freqHplus) XLALDestroyCOMPLEX16FrequencySeries(freqHplus);
+  if (waveFlags) XLALSimInspiralDestroyWaveformFlags(waveFlags);
+  if (nonGRparams) XLALSimInspiralDestroyTestGRParam(nonGRparams);
   if (detector) free(detector);
 
   return sqrt(this_snr*2.0);

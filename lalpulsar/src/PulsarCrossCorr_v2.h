@@ -26,7 +26,7 @@ extern "C" {
 
 /**
  * \defgroup PulsarCrossCorr_v2_h Header PulsarCrossCorr_v2.h
- * \ingroup lalpulsar_crosscorr
+ * \ingroup pkg_pulsarCrossCorr
  * \author John Whelan, Yuanhao Zhang, Shane Larson, Badri Krishnan
  * \date 2012, 2013, 2014
  * \brief Header-file for XLAL routines for v2 CW cross-correlation searches
@@ -34,6 +34,7 @@ extern "C" {
  */
 /*@{*/
 
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -57,6 +58,7 @@ extern "C" {
 #include <lal/Statistics.h>
 #include <lal/ComputeFstat.h>
 #include <lal/LALConstants.h>
+#include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/LALInitBarycenter.h>
@@ -65,9 +67,8 @@ extern "C" {
 #include <gsl/gsl_sf_trig.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
-#include <lal/SinCosLUT.h>
+#include <lal/CWFastMath.h>
 #include <lal/LogPrintf.h>
-#include <lal/UniversalDopplerMetric.h>
 
 /* ******************************************************************
  *  Structure, enum, union, etc., typdefs.
@@ -100,17 +101,7 @@ extern "C" {
     SFTPairIndex *data; /**< array of SFT Pair indices */
   } SFTPairIndexList;
 
-/** A collection of UINT4Vectors -- one for each IFO  */
-  /* Probably belongs in SFTUtils.h */
-typedef struct tagMultiUINT4Vector {
-#ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(MultiUINT4Vector, UINT4Vector*, data, UINT4, length));
-#endif /* SWIG */
-  UINT4        length;  /**< number of ifos */
-  UINT4Vector  **data; 	/**< unit4vector for each ifo */
-} MultiUINT4Vector;
-
-  /*
+/*
  *  Functions Declarations (i.e., prototypes).
  */
 
@@ -125,7 +116,6 @@ int XLALGetDopplerShiftedFrequencyInfo
    SFTIndexList                   *sfts,
    MultiSFTVector            *inputSFTs,
    MultiSSBtimes            *multiTimes,
-   MultiUINT4Vector            *badBins,
    REAL8                           Tsft
    )
   ;
@@ -147,10 +137,9 @@ int XLALCreateSFTPairIndexList
    )
   ;
 
-int XLALCalculateCrossCorrGammas
+int XLALCalculateAveCurlyGAmpUnshifted
   (
-   REAL8Vector          **Gamma_ave,
-   REAL8Vector         **Gamma_circ,
+   REAL8Vector            **G_alpha,
    SFTPairIndexList  *pairIndexList,
    SFTIndexList          *indexList,
    MultiAMCoeffs       *multiCoeffs
@@ -173,46 +162,24 @@ int XLALCalculatePulsarCrossCorrStatistic
    )
   ;
 
-int XLALCalculateCrossCorrPhaseDerivatives
-  (
-   REAL8VectorSequence        **phaseDerivs,
-   const PulsarDopplerParams  *dopplerPoint,
-   const EphemerisData                *edat,
-   SFTIndexList                  *indexList,
-   MultiSSBtimes                *multiTimes,
-   const DopplerCoordinateSystem  *coordSys
-   )
-  ;
-
-int XLALCalculateCrossCorrPhaseMetric
-  (
-   gsl_matrix                        **g_ij,
-   gsl_vector                       **eps_i,
-   REAL8                        *sumGammaSq,
-   const REAL8VectorSequence   *phaseDerivs,
-   const SFTPairIndexList    *pairIndexList,
-   const REAL8Vector             *Gamma_ave,
-   const REAL8Vector            *Gamma_circ,
-   const DopplerCoordinateSystem  *coordSys
-   );
-
-int XLALCalculateLMXBCrossCorrDiagMetric
+int XLALFindLMXBCrossCorrDiagMetric
   (
    REAL8                      *hSens,
    REAL8                       *g_ff,
    REAL8                       *g_aa,
    REAL8                       *g_TT,
-   REAL8                       *g_pp,
-   REAL8             *weightedMuTAve,
    PulsarDopplerParams DopplerParams,
    REAL8Vector              *G_alpha,
    SFTPairIndexList   *pairIndexList,
    SFTIndexList           *indexList,
    MultiSFTVector              *sfts,
    MultiNoiseWeights   *multiWeights
+   /* REAL8Vector       *kappaValues */
+   /*REAL8                     *g_pp,*/
    )
   ;
 
+  ;
 /*@}*/
 
 void XLALDestroySFTIndexList ( SFTIndexList *sftIndices );

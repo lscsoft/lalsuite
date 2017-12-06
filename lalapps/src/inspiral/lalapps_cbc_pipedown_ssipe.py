@@ -1,6 +1,5 @@
 ##############################################################################
 # import standard modules
-import itertools
 import os, sys, re, copy
 from optparse import OptionParser
 import tempfile
@@ -9,6 +8,7 @@ import tempfile
 # import the modules we need to build the pipeline
 from glue import pipeline
 from glue import lal
+from glue import iterutils
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import utils
@@ -48,8 +48,8 @@ def get_veto_segments_name( veto_cat_num, cumulative = True ):
   Given a category number, returns a veto segments name 
   as set by segs_from_cats.
 
-  @param veto_cat_num: integer representing the category veto
-  @param cumulative: If set to True, will add CUMULATIVE to the name.
+  @veto_cat_num: integer representing the category veto
+  @cumulative: If set to True, will add CUMULATIVE to the name.
   """
   if cumulative:
     return ''.join([ 'VETO_CAT', str(veto_cat_num), '_CUMULATIVE' ])
@@ -617,7 +617,7 @@ for result_db in result_dbs_cache:
   distinct_instrument_sets = [instruments]
   distinct_instrument_sets.extend( set(sub_combo)
     for nn in range(2, len(instruments))
-    for sub_combo in itertools.combinations( list(instruments), nn ) )
+    for sub_combo in iterutils.choices( list(instruments), nn ) )
 
   # add the injection xmls to the FULL_DATA databases
   if 'FULL_DATA' in tag and veto_cat in sim_caches:

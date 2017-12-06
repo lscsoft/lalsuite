@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation,.
 
-## \addtogroup laldetchar_py_hveto
+## addtogroup pkg_py_laldetchar_hveto
 """Some plotting utilities for HVeto based analyses."""
 # \author Chris Pankow (<chris.pankow@ligo.org>)
-# ### Synopsis ###
+# \heading{Synopsis}
 # ~~~
 # from laldetchar.hveto import plot_utils
 # ~~~
@@ -43,7 +43,7 @@ __author__ = "Chris Pankow <chris.pankow@ligo.org>"
 __version__ = version.id
 __date__ = version.date
 
-## \addtogroup laldetchar_py_hveto_plot_utils
+## \addtogroup pkg_py_laldetchar_hveto_plot_utils
 #@{
 
 def plot_scatter(trigs, ref_chan, saveto, runseg):

@@ -17,12 +17,8 @@
 // MA  02111-1307  USA
 //
 
-///
-/// \defgroup SWIGLALMetaIOAlpha_i Interface SWIGLALMetaIOAlpha.i
-/// \ingroup lalmetaio_swig
-/// \brief SWIG code which must appear \e before the LALMetaIO headers.
-/// \author Karl Wette
-///
+// Header containing SWIG code which must appear *before* the LALMetaIO headers.
+// Author: Karl Wette
 
 // Local Variables:
 // mode: c

@@ -27,7 +27,7 @@ extern "C" {
 
 /**
  * \defgroup LALXMLVOTableSerializers_h Header LALXMLVOTableSerializers.h
- * \ingroup lalxml_general
+ * \ingroup pkg_XML
  * \brief Header file declaring the public VOTable serializers XML API
  */
 /*@{*/

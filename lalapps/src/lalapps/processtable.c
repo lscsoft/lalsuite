@@ -22,8 +22,6 @@
 
 #define _GNU_SOURCE
 
-#include <config.h>
-
 #include <ctype.h>
 #include <pwd.h>
 #include <stdio.h>
@@ -31,9 +29,8 @@
 #include <string.h>
 #include <sys/types.h>
 #include <time.h>
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
+
 
 #include <lal/Date.h>
 #include <lal/LIGOMetadataTables.h>

@@ -32,12 +32,23 @@ extern "C" {
 EphemerisData * XLALInitBarycenter ( const CHAR *earthEphemerisFile, const CHAR *sunEphemerisFile );
 void XLALDestroyEphemerisData ( EphemerisData *edat );
 
-int XLALRestrictEphemerisData ( EphemerisData *edat, const LIGOTimeGPS *startGPS, const LIGOTimeGPS *endGPS );
-
 TimeCorrectionData *XLALInitTimeCorrections ( const CHAR *timeCorrectionFile );
 void XLALDestroyTimeCorrectionData( TimeCorrectionData *tcd );
 
 char *XLALPulsarFileResolvePath ( const char *fname );
+
+
+/* ==================== deprecated LAL interface  ==================================================*/
+
+#define LALINITBARYCENTERH_EOPEN    1
+#define LALINITBARYCENTERH_EMEM     2
+#define LALINITBARYCENTERH_EEPHFILE 32
+
+#define LALINITBARYCENTERH_MSGEOPEN    "Could not open ephemeris file"
+#define LALINITBARYCENTERH_MSGEMEM     "Out of memory"
+#define LALINITBARYCENTERH_MSGEEPHFILE "Error in reading an ephemeris file"
+
+void LALInitBarycenter(LALStatus *, EphemerisData *);
 
 /** \endcond */
 

@@ -25,6 +25,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LALMoment.h>
 #include <lal/LALStdlib.h>
+#include <lal/Matrix.h>
 #include <lal/RealFFT.h>
 #include <lal/TSSearch.h>
 #include <lal/TimeSeries.h>
@@ -37,7 +38,7 @@ extern "C" {
 
 /**
  * \defgroup TSData_h Header TSData.h
- * \ingroup lalburst_tracksearch
+ * \ingroup pkg_tracksearch
  * \author C. Torres
  *
  * \brief Provides an intermediate level of functions and structures for testing

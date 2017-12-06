@@ -24,6 +24,7 @@
 
 #include "tracksearch.h"
 #include "tracksearchToolbox.h"
+#include <unistd.h>
 
 
 #define TYPE REAL8

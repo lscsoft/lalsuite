@@ -134,7 +134,7 @@ LALappsTSAInitialize(
 {
   int C;
 
-  struct LALoption long_options[] =
+  struct option long_options[] =
     {
       {"map_cache",            required_argument,  0,   'a'},
       {"new_t_bins",           required_argument,  0,   'b'},
@@ -166,7 +166,7 @@ LALappsTSAInitialize(
   while (TRUE)
     {
       int option_index=0;
-      C = LALgetopt_long_only(argc,
+      C = getopt_long_only(argc,
 			   argv,
 			   "a:b:c:d",
 			   long_options,
@@ -185,7 +185,7 @@ LALappsTSAInitialize(
 	  else
 	    {
 	      fprintf(stderr, "error parsing option %s with argument %s\n",
-		      long_options[option_index].name, LALoptarg );
+		      long_options[option_index].name, optarg );
 	      exit( 1 );
 	    }
 	  break;
@@ -193,19 +193,19 @@ LALappsTSAInitialize(
 	case 'a':
 	  {
 	    params->cacheFilename=XLALCreateCHARVector(maxFilenameLength);
-	    strcpy(params->cacheFilename->data,LALoptarg);
+	    strcpy(params->cacheFilename->data,optarg);
 	  }
 	  break;
 
 	case 'b':
 	  {
-	    params->colParams.newTDim=(UINT4) atoi(LALoptarg);
+	    params->colParams.newTDim=(UINT4) atoi(optarg);
 	  }
 	  break;
 
 	case 'c':
 	  {
-	    params->colParams.newFDim=(UINT4) atoi(LALoptarg);
+	    params->colParams.newFDim=(UINT4) atoi(optarg);
 	  }
 	  break;
 
@@ -221,7 +221,7 @@ LALappsTSAInitialize(
 	     * If we are sending a txt cache of cache's
 	     */
 	    params->multiCacheFilename=XLALCreateCHARVector(maxFilenameLength);
-	    strcpy(params->multiCacheFilename->data,LALoptarg);
+	    strcpy(params->multiCacheFilename->data,optarg);
 	  }
 	  break;
 

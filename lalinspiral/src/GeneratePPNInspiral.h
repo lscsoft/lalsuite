@@ -33,8 +33,7 @@ extern "C" {
 #endif
 
 /**
- * \defgroup GeneratePPNInspiral_h Header GeneratePPNInspiral.h
- * \ingroup lalinspiral_inject
+ * \addtogroup GeneratePPNInspiral_h
  * \author Creighton, T. D.
  *
  * \brief Provides routines to generate restricted parametrized

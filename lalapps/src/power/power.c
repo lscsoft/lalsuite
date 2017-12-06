@@ -29,6 +29,7 @@
  */
 
 
+#include <getopt.h>
 #include <lalapps.h>
 #include <math.h>
 #include <processtable.h>
@@ -41,7 +42,6 @@
 #include <gsl/gsl_randist.h>
 
 #include <lal/AVFactories.h>
-#include <lal/LALgetopt.h>
 #include <lal/BandPassTimeSeries.h>
 #include <lal/Date.h>
 #include <lal/EPSearch.h>
@@ -67,12 +67,13 @@
 #include <lal/LIGOLwXMLBurstRead.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataBurstUtils.h>
 #include <lal/Random.h>
 #include <lal/RealFFT.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/SeqFactories.h>
 #include <lal/SimulateCoherentGW.h>
-#include <lal/SnglBurstUtils.h>
+#include <lal/TFTransform.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
@@ -241,7 +242,8 @@ struct options {
 	 * diagnostics support
 	 */
 
-	LIGOLwXMLStream *diagnostics;
+	/* diagnostics call back for passing to LAL (NULL = disable) */
+	struct XLALEPSearchDiagnostics *diagnostics;
 };
 
 
@@ -356,7 +358,7 @@ static void print_missing_argument(const char *prog, const char *arg)
  */
 
 
-static int all_required_arguments_present(char *prog, struct LALoption *long_options, const struct options *options)
+static int all_required_arguments_present(char *prog, struct option *long_options, const struct options *options)
 {
 	int option_index;
 	int got_all_arguments = 1;
@@ -457,7 +459,7 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, c
 
 
 #define ADD_PROCESS_PARAM(process, type) \
-	do { paramaddpoint = add_process_param(paramaddpoint, process, type, long_options[option_index].name, LALoptarg); } while(0)
+	do { paramaddpoint = add_process_param(paramaddpoint, process, type, long_options[option_index].name, optarg); } while(0)
 
 
 /*
@@ -472,7 +474,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 	int args_are_bad = 0;
 	int c;
 	int option_index;
-	struct LALoption long_options[] = {
+	struct option long_options[] = {
 		{"bandwidth", required_argument, NULL, 'A'},
 		{"injection-file", required_argument, NULL, 'P'},
 		{"calibration-cache", required_argument, NULL, 'B'},
@@ -515,11 +517,11 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 	 * Parse command line.
 	 */
 
-	LALopterr = 1;		/* enable error messages */
-	LALoptind = 0;		/* start scanning from argv[0] */
-	do switch (c = LALgetopt_long(argc, argv, "", long_options, &option_index)) {
+	opterr = 1;		/* enable error messages */
+	optind = 0;		/* start scanning from argv[0] */
+	do switch (c = getopt_long(argc, argv, "", long_options, &option_index)) {
 	case 'A':
-		options->bandwidth = atof(LALoptarg);
+		options->bandwidth = atof(optarg);
 		if(options->bandwidth <= 0 || !double_is_power_of_2(options->bandwidth)) {
 			sprintf(msg, "must be greater than 0 and a power of 2 (%g specified)", options->bandwidth);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -529,18 +531,18 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'B':
-		options->cal_cache_filename = LALoptarg;
+		options->cal_cache_filename = optarg;
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'C':
-		options->channel_name = LALoptarg;
-		memcpy(options->ifo, LALoptarg, sizeof(options->ifo) - 1);
+		options->channel_name = optarg;
+		memcpy(options->ifo, optarg, sizeof(options->ifo) - 1);
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'F':
-		options->max_event_rate = atoi(LALoptarg);
+		options->max_event_rate = atoi(optarg);
 		if(options->max_event_rate < 0) {
 			sprintf(msg, "must not be negative (%d specified)", options->max_event_rate);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -550,13 +552,13 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'G':
-		options->cache_filename = LALoptarg;
+		options->cache_filename = optarg;
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'K':
-		if(XLALStrToGPS(&options->gps_end, LALoptarg, NULL)) {
-			sprintf(msg, "range error parsing \"%s\"", LALoptarg);
+		if(XLALStrToGPS(&options->gps_end, optarg, NULL)) {
+			sprintf(msg, "range error parsing \"%s\"", optarg);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = 1;
 		}
@@ -564,8 +566,8 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'M':
-		if(XLALStrToGPS(&options->gps_start, LALoptarg, NULL)) {
-			sprintf(msg, "range error parsing \"%s\"", LALoptarg);
+		if(XLALStrToGPS(&options->gps_start, optarg, NULL)) {
+			sprintf(msg, "range error parsing \"%s\"", optarg);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = 1;
 		}
@@ -578,12 +580,12 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'P':
-		options->injection_filename = LALoptarg;
+		options->injection_filename = optarg;
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'Q':
-		options->flow = atof(LALoptarg);
+		options->flow = atof(optarg);
 		if(options->flow < 0) {
 			sprintf(msg, "must not be negative (%f Hz specified)", options->flow);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -593,17 +595,17 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'R':
-		options->mdc_cache_filename = LALoptarg;
+		options->mdc_cache_filename = optarg;
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'S':
-		options->mdc_channel_name = LALoptarg;
+		options->mdc_channel_name = optarg;
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'V':
-		options->noise_rms = atof(LALoptarg);
+		options->noise_rms = atof(optarg);
 		if(options->noise_rms <= 0.0) {
 			sprintf(msg, "must be greater than 0 (%f specified)", options->noise_rms);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -614,7 +616,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 
 	case 'W':
 		{
-		int window_length = atoi(LALoptarg);
+		int window_length = atoi(optarg);
 		if((window_length < 4) || !is_power_of_2(window_length)) {
 			sprintf(msg, "must be greater than or equal to 4 and a power of 2 (%i specified)", window_length);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -634,7 +636,11 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 
 	case 'X':
 #if 0
-		options->diagnostics = XLALOpenLIGOLwXMLFile(LALoptarg);
+		options->diagnostics = malloc(sizeof(*options->diagnostics));
+		options->diagnostics->LIGOLwXMLStream = XLALOpenLIGOLwXMLFile(optarg);
+		options->diagnostics->XLALWriteLIGOLwXMLArrayREAL8FrequencySeries = XLALWriteLIGOLwXMLArrayREAL8FrequencySeries;
+		options->diagnostics->XLALWriteLIGOLwXMLArrayREAL8TimeSeries = XLALWriteLIGOLwXMLArrayREAL8TimeSeries;
+		options->diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries = XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries;
 #else
 		sprintf(msg, "--dump-diagnostics given but diagnostic code not included at compile time");
 		args_are_bad = 1;
@@ -642,7 +648,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'Z':
-		options->psd_length = atoi(LALoptarg);
+		options->psd_length = atoi(optarg);
 		ADD_PROCESS_PARAM(process, "int");
 		break;
 
@@ -652,9 +658,9 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		 * guestimated limit on the length of a time series to read
 		 * in.
 		 */
-		options->max_series_length = atoi(LALoptarg) * 1024 * 1024 / (8 * sizeof(REAL8));
+		options->max_series_length = atoi(optarg) * 1024 * 1024 / (8 * sizeof(REAL8));
 		if(options->max_series_length <= 0) {
-			sprintf(msg, "must be greater than 0 (%i specified)", atoi(LALoptarg));
+			sprintf(msg, "must be greater than 0 (%i specified)", atoi(optarg));
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = 1;
 		}
@@ -662,17 +668,17 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'b':
-		options->output_filename = LALoptarg;
+		options->output_filename = optarg;
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'c':
-		options->seed = atol(LALoptarg);
+		options->seed = atol(optarg);
 		ADD_PROCESS_PARAM(process, "long");
 		break;
 
 	case 'e':
-		options->resample_rate = atoi(LALoptarg);
+		options->resample_rate = atoi(optarg);
 		if(options->resample_rate < 2 || options->resample_rate > 16384 || !is_power_of_2(options->resample_rate)) {
 			sprintf(msg, "must be a power of 2 in the rage [2,16384] (%d specified)", options->resample_rate);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -682,7 +688,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'f':
-		options->fractional_stride = atof(LALoptarg);
+		options->fractional_stride = atof(optarg);
 		if(options->fractional_stride > 1 || !double_is_power_of_2(options->fractional_stride)) {
 			sprintf(msg, "must be less than or equal to 1 and a power of 2 (%g specified)", options->fractional_stride);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -692,7 +698,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'g':
-		options->confidence_threshold = atof(LALoptarg);
+		options->confidence_threshold = atof(optarg);
 		if(options->confidence_threshold < 0) {
 			sprintf(msg, "must not be negative (%g specified)", options->confidence_threshold);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -702,12 +708,12 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'h':
-		options->comment = LALoptarg;
+		options->comment = optarg;
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
 	case 'j':
-		options->filter_corruption = atoi(LALoptarg);
+		options->filter_corruption = atoi(optarg);
 		if(options->filter_corruption < 0) {
 			sprintf(msg, "must not be negative (%d specified)", options->filter_corruption);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -717,7 +723,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'l':
-		options->maxTileBandwidth = atof(LALoptarg);
+		options->maxTileBandwidth = atof(optarg);
 		if((options->maxTileBandwidth <= 0) || !double_is_power_of_2(options->maxTileBandwidth)) {
 			sprintf(msg, "must be greater than 0 and a power of 2 (%f specified)", options->maxTileBandwidth);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -727,7 +733,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'm':
-		options->maxTileDuration = atof(LALoptarg);
+		options->maxTileDuration = atof(optarg);
 		if((options->maxTileDuration <= 0) || !double_is_power_of_2(options->maxTileDuration)) {
 			sprintf(msg, "must be greater than 0 and a power of 2 (%f specified)", options->maxTileDuration);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -737,7 +743,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'o':
-		options->high_pass = atof(LALoptarg);
+		options->high_pass = atof(optarg);
 		if(options->high_pass < 0) {
 			sprintf(msg, "must not be negative (%f Hz specified)", options->high_pass);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -748,7 +754,7 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 
 	/* option sets a flag */
 	case 0:
-		LALoptarg = NULL;
+		optarg = NULL;
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
@@ -802,12 +808,9 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 	 * Compute timing parameters.
 	 */
 
-	{
-	int tiling_length;	/* unused */
-	if(XLALEPGetTimingParameters(options->window->data->length, options->maxTileDuration * options->resample_rate, options->fractional_stride, &options->psd_length, &options->psd_shift, &options->window_shift, &options->window_pad, &tiling_length) < 0) {
+	if(XLALEPGetTimingParameters(options->window->data->length, options->maxTileDuration * options->resample_rate, options->fractional_stride, &options->psd_length, &options->psd_shift, &options->window_shift, &options->window_pad, NULL) < 0) {
 		XLALPrintError("calculation of timing parameters failed\n");
 		exit(1);
-	}
 	}
 
 	/*
@@ -1143,13 +1146,23 @@ static void destroy_injection_document(struct injection_document *doc)
 }
 
 
-static struct injection_document *load_injection_document(const char *filename)
+static struct injection_document *load_injection_document(const char *filename, LIGOTimeGPS start, LIGOTimeGPS end)
 {
 	struct injection_document *new;
+	/* hard-coded speed hack.  only injections whose "times" are within
+	 * this many seconds of the requested interval will be loaded */
+	const double longest_injection = 600.0;
 
 	new = malloc(sizeof(*new));
 	if(!new)
 		XLAL_ERROR_NULL(XLAL_ENOMEM);
+
+	/*
+	 * adjust start and end times
+	 */
+
+	XLALGPSAdd(&start, -longest_injection);
+	XLALGPSAdd(&end, longest_injection);
 
 	/*
 	 * load required tables
@@ -1166,7 +1179,7 @@ static struct injection_document *load_injection_document(const char *filename)
 
 	new->has_sim_burst_table = XLALLIGOLwHasTable(filename, "sim_burst");
 	if(new->has_sim_burst_table) {
-		new->sim_burst_table_head = XLALSimBurstTableFromLIGOLw(filename, NULL, NULL);
+		new->sim_burst_table_head = XLALSimBurstTableFromLIGOLw(filename, &start, &end);
 	} else
 		new->sim_burst_table_head = NULL;
 
@@ -1176,9 +1189,7 @@ static struct injection_document *load_injection_document(const char *filename)
 
 	new->has_sim_inspiral_table = XLALLIGOLwHasTable(filename, "sim_inspiral");
 	if(new->has_sim_inspiral_table) {
-		/* FIXME:  find way to ask for "everything" (see
-		 * XLALSimBurstTableFromLIGOLw for example) */
-		if(SimInspiralTableFromLIGOLw(&new->sim_inspiral_table_head, filename, 0, 2147483647) < 0)
+		if(SimInspiralTableFromLIGOLw(&new->sim_inspiral_table_head, filename, start.gpsSeconds - 1, end.gpsSeconds + 1) < 0)
 			new->sim_inspiral_table_head = NULL;
 	} else
 		new->sim_inspiral_table_head = NULL;
@@ -1460,7 +1471,7 @@ int main(int argc, char *argv[])
 	 */
 
 	_process_table = XLALCreateProcessTableRow();
-	if(XLALPopulateProcessTable(_process_table, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId, lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 9))
+	if(XLALPopulateProcessTable(_process_table, PROGRAM_NAME, lalAppsVCSIdentId, lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 9))
 		exit(1);
 
 	XLALGPSTimeNow(&_process_table->start_time);
@@ -1502,7 +1513,7 @@ int main(int argc, char *argv[])
 	 */
 
 	if(options->injection_filename) {
-		injection_document = load_injection_document(options->injection_filename);
+		injection_document = load_injection_document(options->injection_filename, options->gps_start, options->gps_end);
 		if(!injection_document) {
 			XLALPrintError("%s: error: failure reading injections file \"%s\"\n", argv[0], options->injection_filename);
 			exit(1);
@@ -1668,7 +1679,7 @@ int main(int argc, char *argv[])
 	 * Sort the events, and assign IDs.
 	 */
 
-	XLALSortSnglBurst(&_sngl_burst_table, XLALCompareSnglBurstByPeakTimeAndSNR);
+	XLALSortSnglBurst(&_sngl_burst_table, XLALCompareSnglBurstByStartTimeAndLowFreq);
 	XLALSnglBurstAssignIDs(_sngl_burst_table, _process_table->process_id, 0);
 
 	/*
@@ -1702,7 +1713,7 @@ int main(int argc, char *argv[])
 	destroy_injection_document(injection_document);
 
 	if(options->diagnostics)
-		XLALCloseLIGOLwXMLFile(options->diagnostics);
+		XLALCloseLIGOLwXMLFile(options->diagnostics->LIGOLwXMLStream);
 	options_free(options);
 
 	LALCheckMemoryLeaks();

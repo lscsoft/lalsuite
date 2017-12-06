@@ -49,7 +49,7 @@
 
 
 /**
- * \brief Provides an interface between code build from \ref lalinspiral_findchirp and
+ * \brief Provides an interface between code build from \ref pkg_findchirp and
  * various simulation packages for injecting chirps into data.
  * \author Brown, D. A. and Creighton, T. D
  *
@@ -260,7 +260,7 @@ LALFindChirpInjectIMR (
           );
     }
 
-    snprintf( warnMsg, XLAL_NUM_ELEM(warnMsg),
+    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "Injected waveform timing:\n"
         "thisEvent->geocent_end_time.gpsSeconds = %d\n"
         "thisEvent->geocent_end_time.gpsNanoSeconds = %d\n"
@@ -306,7 +306,7 @@ LALFindChirpInjectIMR (
     FILE *fp;
     char fname[512];
     UINT4 jj, kplus, kcross;
-    snprintf( fname, XLAL_NUM_ELEM(fname),
+    snprintf( fname, sizeof(fname) / sizeof(*fname),
         "waveform-%d-%d-%s.txt",
         thisEvent->geocent_end_time.gpsSeconds,
         thisEvent->geocent_end_time.gpsNanoSeconds,
@@ -329,7 +329,7 @@ LALFindChirpInjectIMR (
     FILE *fp;
     char fname[512];
     UINT4 jj;
-    snprintf( fname, XLAL_NUM_ELEM(fname),
+    snprintf( fname, sizeof(fname) / sizeof(*fname),
         "waveform-%d-%d-%s.txt",
         thisEvent->geocent_end_time.gpsSeconds,
         thisEvent->geocent_end_time.gpsNanoSeconds,

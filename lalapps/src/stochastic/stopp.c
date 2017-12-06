@@ -20,73 +20,13 @@
  * 02110-1301, USA
  */
 
-/**
- * \file
- * \ingroup lalapps_inspiral
- *
- *
- * <dl>
- * <dt>Name</dt><dd>
- * <tt>lalapps_stopp</tt> --- Stochastic Post Processing.</dd>
- *
- * <dt>Synopsis</dt><dd>
- * <tt>lalapps_stopp</tt> <i>options</i> <i>xml files</i>
- * <tt>--help</tt>
- * <tt>--version</tt>
- * <tt>--verbose</tt>
- * <tt>--cat-only</tt>
- * <tt>--analyse-only</tt>
- * <tt>--text</tt>
- * <tt>--output</tt> <i>FILE</i></dd>
- *
- * <dt>Description</dt><dd>
- * <tt>lalapps_stopp</tt> performs post processing upon output from
- * <tt>lalapps_stochastic</tt>.</dd>
- *
- * <dt>Options</dt><dd>
- * <dl>
- * <dt><tt>--help</tt></dt><dd>
- * Display usage information</dd>
- * <dt><tt>--version</tt></dt><dd>
- * Display version information</dd>
- * <dt><tt>--verbose</tt></dt><dd>
- * Verbose mode</dd>
- * <dt><tt>--cat-only</tt></dt><dd>
- * Only cat XML files together</dd>
- * <dt><tt>--analyse-only</tt></dt><dd>
- * Only combine statistics</dd>
- * <dt><tt>--text</tt></dt><dd>
- * Output file as text</dd>
- * <dt><tt>--output</tt> <i>FILE</i></dt><dd>
- * write output data to <i>FILE</i></dd>
- * </dl></dd>
- *
- * <dt>Example</dt><dd>
- * <tt>lalapps_stopp</tt> is generally run as part of a DAG, as created by
- * the pipeline generation script <tt>lalapps_stochastic_pipe</tt>, however
- * an example usage can be seen below.
- *
- * \code
- * > lalapps_stopp --output S3-H1L1-STOCHASTIC.xml \
- * >   H1L1-STOCHASTIC-753601044-753601242.xml \
- * >   H1L1-STOCHASTIC-753620042-753620352.xml \
- * >   H1L1-STOCHASTIC-753638864-753639462.xml \
- * >   H1L1-STOCHASTIC-753785374-753785707.xml \
- * >   H1L1-STOCHASTIC-753791744-753792342.xml
- * \endcode</dd>
- *
- * <dt>Author</dt><dd>
- * Adam Mercer</dd>
- * </dl>
- */
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <getopt.h>
 
 #include <lal/Date.h>
-#include <lal/LALgetopt.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLStochasticRead.h>
 #include <lal/LIGOMetadataTables.h>
@@ -116,7 +56,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* status */
   LALStatus status = blank_status;
 
-  /* LALgetopt flags */
+  /* getopt flags */
   static int text_flag;
   static int cat_flag;
   static int analyse_flag;
@@ -147,8 +87,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* parse command line arguments */
   while (1)
   {
-    /* LALgetopt arguments */
-    static struct LALoption long_options[] =
+    /* getopt arguments */
+    static struct option long_options[] =
     {
       /* options that set a flag */
       {"verbose", no_argument, &vrbflg, 1},
@@ -163,11 +103,11 @@ INT4 main(INT4 argc, CHAR *argv[])
     };
     int c;
 
-    /* LALgetopt_long stores the option index here. */
+    /* getopt_long stores the option index here. */
     int option_index = 0;
-    size_t LALoptarg_len;
+    size_t optarg_len;
 
-    c = LALgetopt_long_only(argc, argv, "hvo:", long_options, &option_index);
+    c = getopt_long_only(argc, argv, "hvo:", long_options, &option_index);
 
     /* detect the end of the options */
     if (c == - 1)
@@ -187,7 +127,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         else
         {
           fprintf(stderr, "error parseing option %s with argument %s\n", \
-              long_options[option_index].name, LALoptarg);
+              long_options[option_index].name, optarg);
           exit(1);
         }
         break;
@@ -206,9 +146,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 
       case 'o':
         /* create storage for the output file name */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        outputFileName = (CHAR *)calloc(LALoptarg_len, sizeof(CHAR));
-        memcpy(outputFileName, LALoptarg, LALoptarg_len);
+        optarg_len = strlen(optarg) + 1;
+        outputFileName = (CHAR *)calloc(optarg_len, sizeof(CHAR));
+        memcpy(outputFileName, optarg, optarg_len);
         break;
 
       case '?':
@@ -222,9 +162,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* read in the input data from the rest of the arguments */
-  if (LALoptind < argc)
+  if (optind < argc)
   {
-    for (i = LALoptind; i < argc; ++i)
+    for (i = optind; i < argc; ++i)
     {
       struct stat infileStatus;
 

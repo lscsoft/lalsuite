@@ -39,8 +39,7 @@
 #include<lal/LIGOMetadataTables.h>
 
 /**
- * \defgroup TemplateBankGeneration_h Header TemplateBankGeneration.h
- * \ingroup lalinspiral_bank
+ * \addtogroup TemplateBankGeneration_h
  * \author Hanna, C. R.
  *
  * \brief This header file includes all the necessary types and
@@ -66,7 +65,7 @@
 #define TEMPLATEBANKGENERATIONH_MSGENULL "Unexpected NULL pointer to an input type"
 /*@}*/
 
-typedef enum tagTemplateBankType {
+typedef enum {
   /* Binary Inspiral Searches 100-199 */
      BCVType,
      BCVSpinType,

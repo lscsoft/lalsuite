@@ -42,7 +42,7 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup lalburst_general
+ * \addtogroup GenerateBurst_h
  * \brief UNDOCUMENTED
  */
 /*@{*/

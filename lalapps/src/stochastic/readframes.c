@@ -31,6 +31,8 @@
 #include <string.h>
 #include <sys/time.h>
 #include <math.h>
+#include <unistd.h>
+#include <getopt.h>
 
 #include <lal/LALFrameL.h>
 

@@ -1,46 +1,27 @@
 AC_PREREQ([2.63])
-AC_INIT([LALFrame],[1.4.3.1],[lal-discuss@ligo.org])
+AC_INIT([LALFrame],[1.2.2.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALFrameConfig.h])
 AC_CONFIG_SRCDIR([src/LALFrameIO.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
+  lalframe.spec \
+  lalframe.pc \
   Makefile \
   debian/Makefile \
-  debian/control \
-  doxygen/Makefile \
-  doxygen/doxygen.cfg \
   include/Makefile \
   include/lal/Makefile \
-  lalframe.pc \
-  lalframe.spec \
+  src/LALFrameVCSInfo.c \
+  src/LALFrameVCSInfo.h \
+  src/Makefile \
   python/Makefile \
   python/lalframe/Makefile \
   python/lalframe/__init__.py \
   python/lalframe/utils/Makefile \
-  src/LALFrameVCSInfo.c \
-  src/LALFrameVCSInfo.h \
-  src/Makefile \
-  src/version.c \
   swig/Makefile \
-  test/Makefile \
+  test/Makefile
 ])
-AM_INIT_AUTOMAKE([ \
-  1.11 \
-  foreign \
-  subdir-objects \
-  color-tests \
-  parallel-tests \
-  tar-ustar \
-  dist-xz \
-  no-dist-gzip \
-])
-
-# version requirements
-MIN_LAL_VERSION="6.18.0"
-MIN_FRAMECPPC_VERSION="2.5.5"
-AC_SUBST([MIN_LAL_VERSION])
-AC_SUBST([MIN_FRAMECPPC_VERSION])
+AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
@@ -63,28 +44,25 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[10])
-AC_SUBST([LIBREVISION],[2])
-AC_SUBST([LIBAGE],[0])
+AC_SUBST([LIBCURRENT],[8])
+AC_SUBST([LIBREVISION],[0])
+AC_SUBST([LIBAGE],[1])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
 
-# enable check for framec
+# enable check for FrameC
 LALFRAME_ENABLE_FRAMEC
 
-# enable check for framel
-LALFRAME_ENABLE_FRAMEL
+# enable check for inotify
+LALFRAME_ENABLE_INOTIFY
 
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
 
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
-
-# enable Doxygen documentation
-LALSUITE_ENABLE_DOXYGEN
 
 # define version/configure info
 LALSUITE_VERSION_CONFIGURE_INFO
@@ -98,7 +76,7 @@ AM_SILENT_RULES([yes])
 # check for required compilers
 LALSUITE_PROG_COMPILERS
 
-# check for pthread, needed for low latency data test codes
+# check for pythread, needed for low latency data test codes
 AX_PTHREAD([lalframe_pthread=true],[lalframe_pthread=false])
 AM_CONDITIONAL([PTHREAD],[test x$lalframe_pthread = xtrue])
 
@@ -117,7 +95,6 @@ LALSUITE_USE_LIBTOOL
 
 # check for header files
 AC_HEADER_STDC
-AC_CHECK_HEADERS([unistd.h])
 
 # check for gethostname in unistd.h
 AC_MSG_CHECKING([for gethostname prototype in unistd.h])
@@ -133,53 +110,41 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 AC_CHECK_FUNCS([gmtime_r localtime_r])
 
 # check for framec or libframe libraries and headers
-PKG_PROG_PKG_CONFIG
 FRAMEC_AVAILABLE="no"
-FRAMEL_AVAILABLE="no"
-
-AS_IF([test "${framec}" = "true"], [
-       FRAMEC_AVAILABLE="yes"
-       PKG_CHECK_MODULES([FRAMECPPC],[framecppc >= ${MIN_FRAMECPPC_VERSION}],[true],[false])
-       LALSUITE_ADD_FLAGS([C],[${FRAMECPPC_CFLAGS}],[${FRAMECPPC_LIBS}])
-       AC_CHECK_LIB([framecppc],[FrameCFileOpen],,[FRAMEC_AVAILABLE="no"])
-       AC_CHECK_HEADERS([framecppc/FrameC.h],,[FRAMEC_AVAILABLE="no"])
-])
-
-AS_IF([test "${framel}" = "true"], [
-       FRAMEL_AVAILABLE="yes"
-       PKG_CHECK_MODULES([LIBFRAME],[libframe],[true],[false])
-       LALSUITE_ADD_FLAGS([C],[${LIBFRAME_CFLAGS}],[${LIBFRAME_LIBS}])
-       AC_CHECK_LIB([Frame],[FrLibIni],,[FRAMEL_AVAILABLE="no"])
-       AC_CHECK_HEADERS([FrameL.h],,[FRAMEL_AVAILABLE="no"])
-])
+FRAMEL_AVAILABLE="yes"
+PKG_PROG_PKG_CONFIG
+AS_IF([test "${framec}" = "true"],[
+	FRAMEC_AVAILABLE="yes"
+	PKG_CHECK_MODULES([FRAMECPPC],[framecppc >= 1.19.32],[true],[false])
+	LALSUITE_ADD_FLAGS([C],[${FRAMECPPC_CFLAGS}],[${FRAMECPPC_LIBS}])
+	AC_CHECK_LIB([framecppc],[FrameCFileOpen],,[FRAMEC_AVAILABLE="no"])
+	AC_CHECK_HEADERS([framecppc/FrameC.h],,[FRAMEC_AVAILABLE="no"])])
+PKG_CHECK_MODULES([LIBFRAME],[libframe],[true],[false])
+LALSUITE_ADD_FLAGS([C],[${LIBFRAME_CFLAGS}],[${LIBFRAME_LIBS}])
+AC_CHECK_LIB([Frame],[FrLibIni],,[FRAMEL_AVAILABLE="no"])
+AC_CHECK_HEADERS([FrameL.h],,[FRAMEL_AVAILABLE="no"])
 
 # make sure a frame library was found
 AS_IF([test "${FRAMEC_AVAILABLE}" = "no" -a "${FRAMEL_AVAILABLE}" = "no"], [
-       AC_MSG_ERROR([no frame library available])
+	AC_MSG_ERROR([no frame library available])
 ])
-
-AS_IF([test "${FRAMEC_AVAILABLE}" = "yes"],
-      [AC_SUBST([PC_REQUIRES_FRAMEC], [", framecppc >= ${MIN_FRAMECPPC_VERSION}"])],
-      [AC_SUBST([PC_REQUIRES_FRAMEC], [""])]
-)
-
-AS_IF([test "${FRAMEL_AVAILABLE}" = "yes"],
-      [AC_SUBST([PC_REQUIRES_FRAMEL], [", libframe"])],
-      [AC_SUBST([PC_REQUIRES_FRAMEL], [""])]
-)
-
 AM_CONDITIONAL([FRAMEC],[test "${FRAMEC_AVAILABLE}" = "yes"])
 AM_CONDITIONAL([FRAMEL],[test "${FRAMEL_AVAILABLE}" = "yes"])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
-LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_LIB([LAL],[6.13.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.13.0],[XLALCacheImport],[lal/LALCache.h])
+
+# check for inotify
+if test "${inotify}" = "true"; then
+  AC_CHECK_HEADER([sys/inotify.h],
+                  [AC_DEFINE([HAVE_INOTIFY],[1],[Define if you have inotify])],
+                  [inotify=false])
+fi
+INOTIFY_ENABLE_VAL="`eval test x$inotify = xtrue && echo "ENABLED" || echo "DISABLED"`"
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG
-
-# configure Doxygen documentation
-LALSUITE_USE_DOXYGEN
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
@@ -206,11 +171,13 @@ AC_MSG_NOTICE([
 LALFrame has now been successfully configured:
 
 * Python support is $PYTHON_ENABLE_VAL
+* using the $FRAME_LIBRARY frame library
 * FrameC availability... ${FRAMEC_AVAILABLE}
 * FrameL availability... ${FRAMEL_AVAILABLE}
+* inotify support is $INOTIFY_ENABLE_VAL
+* SWIG binding generation is $SWIG_GENERATE_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
-* Doxygen documentation is $DOXYGEN_ENABLE_VAL
 
 and will be installed under the directory:
 

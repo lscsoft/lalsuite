@@ -33,10 +33,10 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
 #include <time.h>
 #include <math.h>
 #include <lal/LALStdio.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALConstants.h>
 #include <lal/Date.h>
 #include <lal/TimeDelay.h>
@@ -193,8 +193,8 @@ int main( int argc, char *argv[] )
   struct bin_source_data *bin_source_data = NULL;
   struct clusteredsourcedata *clustered_source_data = NULL;
 */
-  /* LALgetopt arguments */
-  struct LALoption long_options[] =
+  /* getopt arguments */
+  struct option long_options[] =
   {
     {"help",                          no_argument, 0,                'h'},
     {"source-file",             required_argument, 0,                'f'},
@@ -209,11 +209,11 @@ int main( int argc, char *argv[] )
   /* parse the arguments */
   while ( 1 )
   {
-    /* LALgetopt_long stores long option here */
+    /* getopt_long stores long option here */
     int option_index = 0;
-    size_t LALoptarg_len;
+    size_t optarg_len;
 
-    c = LALgetopt_long_only( argc, argv,
+    c = getopt_long_only( argc, argv, 
         "hf:r:c:l:", long_options, &option_index );
 
     /* detect the end of the options */
@@ -233,28 +233,28 @@ int main( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "error parsing option %s with argument %s\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
         break;
 
       case 'f':
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        sourceFileName = calloc( 1, LALoptarg_len * sizeof(char) );
-        memcpy( sourceFileName, LALoptarg, LALoptarg_len * sizeof(char) );
+        optarg_len = strlen( optarg ) + 1;
+        sourceFileName = calloc( 1, optarg_len * sizeof(char) );
+        memcpy( sourceFileName, optarg, optarg_len * sizeof(char) );
         break;
 
       case 'r':
-        RAbinsize = atof( LALoptarg );
+        RAbinsize = atof( optarg );
         RAbinsize *= LAL_PI/180.0;
         break;
 
       case 'c':
-        cosDECbinsize = atof( LALoptarg );
+        cosDECbinsize = atof( optarg );
         break;
 
       case 'l':
-        logDISTbinsize = atof( LALoptarg );
+        logDISTbinsize = atof( optarg ); 
         break;
 
       case 'h':

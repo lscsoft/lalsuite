@@ -17,12 +17,8 @@
 // MA  02111-1307  USA
 //
 
-///
-/// \defgroup SWIGLALSimulationOmega_i Interface SWIGLALSimulationOmega.i
-/// \ingroup lalsimulation_swig
-/// \brief SWIG code which must appear \e after the LALSimulation headers.
-/// \author Karl Wette
-///
+// Header containing SWIG code which must appear *after* the LALSimulation headers.
+// Author: Karl Wette
 
 // Local Variables:
 // mode: c

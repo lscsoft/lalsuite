@@ -1,12 +1,14 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 141
+# serial 97
 
-# restrict which LALSUITE_... patterns can appearing in output (./configure);
-# useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
-m4_pattern_forbid([^_?LALSUITE_[A-Z_]+$])
-m4_pattern_allow([^LALSUITE_(BUILD)$])
+# not present in older versions of pkg.m4
+m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
+m4_pattern_allow([^PKG_CONFIG_(DISABLE_UNINSTALLED|TOP_BUILD_DIR|DEBUG_SPEW)$])
+
+# forbid LALSUITE_... from appearing in output (./configure)
+#m4_pattern_forbid([^_?LALSUITE_[A-Z_]+$])
 
 # list of user variables; see section 4.8.1 of the Autoconf manual
 m4_define([uvar_list],[CPPFLAGS CFLAGS CXXFLAGS FCFLAGS FFLAGS LDFLAGS])
@@ -44,11 +46,6 @@ AC_DEFUN([AC_OUTPUT],[
     AC_SUBST(AM_[]uvar,"${AM_[]uvar} ${sys_[]uvar}")
     uvar="${uvar_prefix[]uvar}"
   ])
-  # append extra values for user variables to be added after configuration
-  m4_foreach_w([uvar],uvar_list,[
-    AC_ARG_VAR([POSTCONFIG_]uvar,[Extra ]uvar[ to be added after configuration])
-    uvar="${uvar} ${POSTCONFIG_[]uvar}"
-  ])
   # call original AC_OUTPUT
   lalsuite_AC_OUTPUT
 ])
@@ -81,73 +78,16 @@ AC_DEFUN([LALSUITE_POP_UVARS],[
   # end $0
 ])
 
-AC_DEFUN([LALSUITE_CHECK_COMPILE_FLAGS],[
-  # $0: check multiple compile flags
-  LALSUITE_PUSH_UVARS
-  LALSUITE_CLEAR_UVARS
-  lalsuite_save_werror_flag=${ac_[]_AC_LANG_ABBREV[]_werror_flag}
-  ac_[]_AC_LANG_ABBREV[]_werror_flag=yes
-  for flag in m4_normalize($1); do
-    AS_VAR_PUSHDEF([CACHEVAR],[lalsuite_cv_check_compile_[]_AC_LANG_ABBREV[]_${flag}])
-    AC_CACHE_CHECK([whether ]_AC_LANG[ compiler accepts ${flag}],CACHEVAR,[
-      _AC_LANG_PREFIX[]FLAGS="${uvar_orig_prefix[]_AC_LANG_PREFIX[]FLAGS} ${flag}"
-      AC_COMPILE_IFELSE([AC_LANG_SOURCE([])],[
-        AS_VAR_SET(CACHEVAR,[yes])
-      ],[
-        AS_VAR_SET(CACHEVAR,[no])
-      ])
-    ])
-    AS_IF([test x"AS_VAR_GET(CACHEVAR)" = xyes],[
-      m4_default([$2], :)
-    ],[
-      m4_default([$3], :)
-    ])
-    AS_VAR_POPDEF([CACHEVAR])
-  done
-  ac_[]_AC_LANG_ABBREV[]_werror_flag=${lalsuite_save_werror_flag}
-  LALSUITE_POP_UVARS
-  # end $0
-])
-
-AC_DEFUN([LALSUITE_CHECK_LINK_FLAGS],[
-  # $0: check multiple link flags
-  LALSUITE_PUSH_UVARS
-  LALSUITE_CLEAR_UVARS
-  lalsuite_save_werror_flag=${ac_[]_AC_LANG_ABBREV[]_werror_flag}
-  ac_[]_AC_LANG_ABBREV[]_werror_flag=yes
-  for flag in m4_normalize($1); do
-    AS_VAR_PUSHDEF([CACHEVAR],[lalsuite_cv_check_link_[]_AC_LANG_ABBREV[]_${flag}])
-    AC_CACHE_CHECK([whether ]_AC_LANG[ linker accepts ${flag}],CACHEVAR,[
-      LDFLAGS="${uvar_orig_prefix[]LDFLAGS} ${flag}"
-      AC_LINK_IFELSE([AC_LANG_PROGRAM([])],[
-        AS_VAR_SET(CACHEVAR,[yes])
-      ],[
-        AS_VAR_SET(CACHEVAR,[no])
-      ])
-    ])
-    AS_IF([test x"AS_VAR_GET(CACHEVAR)" = xyes],[
-      m4_default([$2],[:])
-    ],[
-      m4_default([$3],[:])
-    ])
-    AS_VAR_POPDEF([CACHEVAR])
-  done
-  ac_[]_AC_LANG_ABBREV[]_werror_flag=${lalsuite_save_werror_flag}
-  LALSUITE_POP_UVARS
-  # end $0
-])
-
 AC_DEFUN([LALSUITE_ADD_FLAGS],[
-  # $0: prepend/append flags to AM_CPPFLAGS/AM_$1FLAGS/AM_LDFLAGS/LIBS,
+  # $0: prepend flags to AM_CPPFLAGS/AM_$1FLAGS/AM_LDFLAGS/LIBS,
   # and update values of CPPFLAGS/$1FLAGS/LDFLAGS for Autoconf tests
   # - arg 1: prefix of the compiler flag variable, e.g. C for CFLAGS, CXX for CXXFLAGS
   # - arg 2: compiler flags
   # - arg 3: linker flags
   m4_ifval([$1],[m4_ifval([$2],[
     pre_AM_CPPFLAGS=
-    post_AM_CPPFLAGS=
     pre_sys_CPPFLAGS=
-    post_AM_$1FLAGS=
+    pre_AM_$1FLAGS=
     for flag in $2; do
       # AM_CPPFLAGS gets unique -I, -D and -U flags
       # sys_CPPFLAGS gets unique system -I flags
@@ -165,32 +105,27 @@ AC_DEFUN([LALSUITE_ADD_FLAGS],[
             [pre_AM_CPPFLAGS="${pre_AM_CPPFLAGS} ${flag}"]
           )
         ],
-        [-D*|-U*],[post_AM_CPPFLAGS="${post_AM_CPPFLAGS} ${flag}"],
-        [post_AM_$1FLAGS="${post_AM_$1FLAGS} ${flag}"]
+        [-D*|-U*],[pre_AM_CPPFLAGS="${pre_AM_CPPFLAGS} ${flag}"],
+        [pre_AM_$1FLAGS="${pre_AM_$1FLAGS} ${flag}"]
       )
     done
     AS_IF([test "x${pre_AM_CPPFLAGS}" != x],[
       AM_CPPFLAGS="${pre_AM_CPPFLAGS} ${AM_CPPFLAGS}"
       _AS_ECHO_LOG([prepended ${pre_AM_CPPFLAGS} to AM_CPPFLAGS])
     ])
-    AS_IF([test "x${post_AM_CPPFLAGS}" != x],[
-      AM_CPPFLAGS="${AM_CPPFLAGS} ${post_AM_CPPFLAGS}"
-      _AS_ECHO_LOG([appended ${post_AM_CPPFLAGS} to AM_CPPFLAGS])
-    ])
     AS_IF([test "x${pre_sys_CPPFLAGS}" != x],[
       sys_CPPFLAGS="${pre_sys_CPPFLAGS} ${sys_CPPFLAGS}"
       _AS_ECHO_LOG([prepended ${pre_sys_CPPFLAGS} to system AM_CPPFLAGS])
     ])
-    AS_IF([test "x${post_AM_$1FLAGS}" != x],[
-      AM_$1FLAGS="${AM_$1FLAGS} ${post_AM_$1FLAGS}"
-      _AS_ECHO_LOG([appended ${post_AM_$1FLAGS} to AM_$1FLAGS])
+    AS_IF([test "x${pre_AM_$1FLAGS}" != x],[
+      AM_$1FLAGS="${pre_AM_$1FLAGS} ${AM_$1FLAGS}"
+      _AS_ECHO_LOG([prepended ${pre_AM_$1FLAGS} to AM_$1FLAGS])
     ])
     CPPFLAGS="${AM_CPPFLAGS} ${sys_CPPFLAGS} ${uvar_orig_prefix[]CPPFLAGS}"
     $1FLAGS="${AM_$1FLAGS} ${uvar_orig_prefix[]$1FLAGS}"
   ])])
   m4_ifval([$3],[
     pre_AM_LDFLAGS=
-    post_AM_LDFLAGS=
     pre_sys_LDFLAGS=
     pre_LIBS=
     for flag in $3; do
@@ -211,16 +146,12 @@ AC_DEFUN([LALSUITE_ADD_FLAGS],[
           )
         ],
         [-l*|*.la],[pre_LIBS="${pre_LIBS} ${flag}"],
-        [post_AM_LDFLAGS="${post_AM_LDFLAGS} ${flag}"]
+        [pre_AM_LDFLAGS="${pre_AM_LDFLAGS} ${flag}"]
       )
     done
     AS_IF([test "x${pre_AM_LDFLAGS}" != x],[
       AM_LDFLAGS="${pre_AM_LDFLAGS} ${AM_LDFLAGS}"
       _AS_ECHO_LOG([prepended ${pre_AM_LDFLAGS} to AM_LDFLAGS])
-    ])
-    AS_IF([test "x${post_AM_LDFLAGS}" != x],[
-      AM_LDFLAGS="${AM_LDFLAGS} ${post_AM_LDFLAGS}"
-      _AS_ECHO_LOG([appended ${post_AM_LDFLAGS} to AM_LDFLAGS])
     ])
     AS_IF([test "x${pre_sys_LDFLAGS}" != x],[
       sys_LDFLAGS="${pre_sys_LDFLAGS} ${sys_LDFLAGS}"
@@ -239,21 +170,17 @@ AC_DEFUN([LALSUITE_ADD_PATH],[
   # $0: prepend path to $1, removing duplicates, first value taking precedence
   # - arg 1: name of path variable
   # - arg 2: path to prepend
-  # - arg 3: whether to exclude /opt/... and /usr/... directories (default: yes)
   tokens=$2
   tokens=`echo ${tokens} ${$1} | sed 's/:/ /g'`
   $1=
   for token in ${tokens}; do
-    AS_CASE([m4_default([$3],[yes]):${token}],
-      [yes:/opt/*|yes:/usr/*],[:],
-      AS_CASE([":${$1}:"],
-        [*:${token}:*],[:],
-        AS_IF([test "x${$1}" = x],[
-          $1="${token}"
-        ],[
-          $1="${$1}:${token}"
-        ])
-      )
+    AS_CASE([":${$1}:"],
+      [*:${token}:*],[:],
+      AS_IF([test "x${$1}" = x],[
+        $1="${token}"
+      ],[
+        $1="${$1}:${token}"
+      ])
     )
   done
   _AS_ECHO_LOG([$1=${$1}])
@@ -339,39 +266,59 @@ m4_foreach([lang],[[C++],[Fortran 77],[Fortran]],[
   m4_defun([AC_LANG_PREPROC(]lang[)],[])
 ])
 
+AC_DEFUN([_LALSUITE_PRE_PROG_COMPILERS],[
+  # $0: just before LALSUITE_PROG_COMPILERS:
+  # save current values of user variables, then unset them
+  LALSUITE_PUSH_UVARS
+  LALSUITE_CLEAR_UVARS
+  # end $0
+])
+
+AC_DEFUN([_LALSUITE_POST_PROG_COMPILERS],[
+  # $0: just after LALSUITE_PROG_COMPILERS:
+  # save values of user variables set during compiler configuration,
+  # restore previous values of user variables, then add compiler values
+  # of user variables to then using LALSUITE_ADD_FLAGS
+  m4_foreach_w([uvar],uvar_list,[
+    lalsuite_compiler_[]uvar="${uvar}"
+  ])
+  LALSUITE_POP_UVARS
+  LALSUITE_ADD_FLAGS([C],[${lalsuite_compiler_CPPFLAGS} ${lalsuite_compiler_CFLAGS}],[${lalsuite_compiler_LDFLAGS}])
+  AS_IF([test "${lalsuite_require_cxx}" = true],[
+    LALSUITE_ADD_FLAGS([CXX],[${lalsuite_compiler_CXXFLAGS}],[])
+  ])
+  AS_IF([test "${lalsuite_require_f77}" = true],[
+    LALSUITE_ADD_FLAGS([FC],[${lalsuite_compiler_FCFLAGS}],[])
+    LALSUITE_ADD_FLAGS([F],[${lalsuite_compiler_FFLAGS}],[])
+  ])
+  # end $0
+])
+
 AC_DEFUN([LALSUITE_PROG_COMPILERS],[
   # $0: check for C/C++/Fortran compilers
+  AC_REQUIRE([_LALSUITE_PRE_PROG_COMPILERS])
 
   # check for C99 compiler
   AC_REQUIRE([AC_PROG_CC])
   AC_REQUIRE([AC_PROG_CC_C99])
   AC_REQUIRE([AC_PROG_CPP])
 
-  # set default CFLAGS
-  CFLAGS=
-  AS_IF([test "x${GCC}" = xyes],[
-    CFLAGS="${CFLAGS} -O2"
-  ])
-  AS_IF([test "x${ac_cv_prog_cc_g}" = xyes],[
-    CFLAGS="${CFLAGS} -g"
-  ])
-
-  # only include ISO C99 definitions from system headers
-  CFLAGS="${CFLAGS} -D_ISOC99_SOURCE"
+  # check for clang
+  AS_IF([test "x$GCC" = xyes],
+    [AS_IF([test "`$CC -v 2>&1 | grep -c 'clang'`" != "0"],[CLANG_CC=1])],
+    [CLANG_CC=])
+  AC_SUBST(CLANG_CC)
 
   # check for C++ compiler, if needed
   AS_IF([test "${lalsuite_require_cxx}" = true],[
     AC_PROG_CXX
     AC_PROG_CXXCPP
 
-    # set default CXXFLAGS
-    CXXFLAGS=
-    AS_IF([test "x${GXX}" = xyes],[
-      CXXFLAGS="${CXXFLAGS} -O2"
-    ])
-    AS_IF([test "x${ac_cv_prog_cxx_g}" = xyes],[
-      CXXFLAGS="${CXXFLAGS} -g"
-    ])
+    # check for clang++
+    AS_IF([test "x$GXX" = xyes],
+      [AS_IF([test "`$CXX -v 2>&1 | grep -c 'clang'`" != "0"],[CLANG_CXX=1])],
+      [CLANG_CXX=])
+    AC_SUBST(CLANG_CXX)
 
     # define C99 constant and limit macros for C++ sources
     CXXFLAGS="${CXXFLAGS} -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS"
@@ -379,33 +326,17 @@ AC_DEFUN([LALSUITE_PROG_COMPILERS],[
   ],[
     CXX=
     CXXCPP=
-    CXXFLAGS=
     AM_CONDITIONAL([am__fastdepCXX],[false])
   ])
 
   # check for F77 compiler, if needed
   AS_IF([test "${lalsuite_require_f77}" = true],[
     AC_PROG_F77
-
-    # set default FFLAGS
-    FFLAGS=
-    AS_IF([test "x${ac_cv_f77_compiler_gnu}" = xyes],[
-      FFLAGS="${FFLAGS} -O2"
-    ])
-    AS_IF([test "x${ac_cv_prog_f77_g}" = xyes],[
-      FFLAGS="${FFLAGS} -g"
-    ])
-
   ],[
     F77=
-    FFLAGS=
   ])
 
-  # add flags
-  LALSUITE_ADD_FLAGS([C],[${CFLAGS}])
-  LALSUITE_ADD_FLAGS([CXX],[${CXXFLAGS}])
-  LALSUITE_ADD_FLAGS([F],[${FFLAGS}])
-
+  _LALSUITE_POST_PROG_COMPILERS
   # end $0
 ])
 
@@ -423,44 +354,25 @@ AC_DEFUN([LALSUITE_REQUIRE_PYTHON],[
 
 AC_DEFUN([LALSUITE_CHECK_PYTHON],[
   # $0: check for Python
-  AC_ARG_ENABLE(
-    [python],
-    AC_HELP_STRING(
-      [--enable-python],
-      [build Python programs and modules]
-    ),[
-      AS_CASE(["${enableval}"],
-        [yes],[python=true],
-        [no],[python=false],
-        [AC_MSG_ERROR([invalid value "${enableval}" for --enable-python])]
-      )
-    ],[
-      python=
-    ]
-  )
   lalsuite_pyvers="$1"
   AS_IF([test "x${lalsuite_require_pyvers}" != x],[
     LALSUITE_VERSION_COMPARE([${lalsuite_require_pyvers}],[>],[${lalsuite_pyvers}],[
       lalsuite_pyvers="${lalsuite_require_pyvers}"
     ])
   ])
-  AS_IF([test "x${python}" != xfalse || test "x${lalsuite_require_pyvers}" != x],[
-    AM_PATH_PYTHON([${lalsuite_pyvers}],[
-      AC_SUBST([python_prefix], [`${PYTHON} -c 'import sys; print(sys.prefix)' 2>/dev/null`])
-      AC_SUBST([python_exec_prefix], [`${PYTHON} -c 'import sys; print(sys.exec_prefix)' 2>/dev/null`])
-    ],[
-      AS_IF([test "x${python}" = xtrue || test "x${lalsuite_require_pyvers}" != x],[
-        AC_MSG_ERROR([Python version ${lalsuite_pyvers} or later is required])
+  AS_IF([test "x${PYTHON}" != xfalse],[
+    AM_PATH_PYTHON([${lalsuite_pyvers}],,[
+      AS_IF([test "x${lalsuite_require_pyvers}" = x],[
+        PYTHON=false
       ],[
-        python=false
+        AC_MSG_ERROR([Python version ${lalsuite_pyvers} or later is required])
       ])
     ])
   ])
-  AS_IF([test "x${python}" = xfalse && test "x${lalsuite_require_pyvers}" = x],[
-    AC_SUBST([PYTHON],["${SHELL} -c 'echo ERROR: Python is missing >&2; exit 1' --"])
-  ])
-  AM_CONDITIONAL([HAVE_PYTHON],[test "x${python}" != xfalse])
+  AM_CONDITIONAL([HAVE_PYTHON],[test "x${PYTHON}" != xfalse])
   AM_COND_IF([HAVE_PYTHON],[
+    AC_SUBST([python_prefix], [`${PYTHON} -c 'import sys; print(sys.prefix)' 2>/dev/null`])
+    AC_SUBST([python_exec_prefix], [`${PYTHON} -c 'import sys; print(sys.exec_prefix)' 2>/dev/null`])
     PYTHON_ENABLE_VAL=ENABLED
   ],[
     PYTHON_ENABLE_VAL=DISABLED
@@ -469,20 +381,18 @@ AC_DEFUN([LALSUITE_CHECK_PYTHON],[
 ])
 
 AC_DEFUN([LALSUITE_USE_LIBTOOL],[
-  # $0: Generate a libtool script for use in configure tests. Arguments
-  # are added to link command in variable ${lalsuite_libtool_flags}
+  # $0: Generate a libtool script for use in configure tests
   AC_REQUIRE([LT_INIT])
   LT_OUTPUT
   m4_append([AC_LANG(C)],[
-    ac_link="./libtool --mode=link --tag=CC ${ac_link} ${lalsuite_libtool_flags}"
+    ac_link="./libtool --mode=link --tag=CC $ac_link"
   ])
   AC_PROVIDE_IFELSE([AC_PROG_CXX],[
     m4_append([AC_LANG(C++)],[
-      ac_link="./libtool --mode=link --tag=CXX ${ac_link} ${lalsuite_libtool_flags}"
+      ac_link="./libtool --mode=link --tag=CXX $ac_link"
     ])
   ])
   AC_LANG(_AC_LANG)
-  LALSUITE_ADD_FLAGS([],[],[${lalsuite_libtool_flags}])
   # end $0
 ])
 
@@ -504,32 +414,24 @@ AC_DEFUN([LALSUITE_MULTILIB_LIBTOOL_HACK],[
 AC_DEFUN([LALSUITE_DISTCHECK_CONFIGURE_FLAGS],[
   # $0: store configure flags for 'make distcheck'
   DISTCHECK_CONFIGURE_FLAGS=
-  eval set x "${ac_configure_args}"
-  shift
-  for arg
-  do
-    AS_CASE(["${arg}"],
-      [--enable-*|--disable-*],[
+  for arg in ${ac_configure_args}; do
+    case ${arg} in
+      (\'--enable-*\'|\'--disable-*\')
         # save any --enable/--disable arguments
-        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} '${arg}'"
-      ],
-      [--with-*|--without-*],[
+        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} ${arg}";;
+      (\'--with-*\'|\'--without-*\')
         # save any --with/--without arguments
-        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} '${arg}'"
-      ],
-      [--*],[
+        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} ${arg}";;
+      (\'--*\')
         # skip all other ./configure arguments
-        :
-      ],
-      [DISTCHECK_CONFIGURE_FLAGS=*],[
+        : ;;
+      (\'DISTCHECK_CONFIGURE_FLAGS=*\')
         # append value of DISTCHECK_CONFIGURE_FLAGS
-        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} '`expr "X${arg}" : "XDISTCHECK_CONFIGURE_FLAGS=\(.*\)"`'"
-      ],
-      [*=*],[
+        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} "`expr "X${arg}" : "X'DISTCHECK_CONFIGURE_FLAGS=\(.*\)'"`;;
+      (\'*=*\')
         # save any environment variables given to ./configure
-        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} '${arg}'"
-      ]
-    )
+        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} ${arg}";;
+    esac
   done
   AC_SUBST(DISTCHECK_CONFIGURE_FLAGS)
   # end $0
@@ -567,12 +469,11 @@ AC_DEFUN([LALSUITE_CHECK_LIB],[
   AS_UNSET([PKG_CONFIG_ALLOW_SYSTEM_CFLAGS])
   AS_UNSET([PKG_CONFIG_ALLOW_SYSTEM_LIBS])
 
-  # prepend to CFLAGS, CPPFLAGS, LDFLAGS, LIBS, LAL_DATA_PATH, LAL_OCTAVE_PATH, LAL_PYTHON_PATH, LAL_HTMLDIR
+  # prepend to CFLAGS, CPPFLAGS, LDFLAGS, LIBS, LAL_DATA_PATH, LAL_OCTAVE_PATH, LAL_PYTHON_PATH
   PKG_CHECK_MODULES(uppercase, [lowercase >= $2], [lowercase="true"], [lowercase="false"])
   PKG_CHECK_VAR(uppercase[]_DATA_PATH, [lowercase >= $2], uppercase[]_DATA_PATH,,)
   PKG_CHECK_VAR(uppercase[]_OCTAVE_PATH, [lowercase >= $2], uppercase[]_OCTAVE_PATH,,)
   PKG_CHECK_VAR(uppercase[]_PYTHON_PATH, [lowercase >= $2], uppercase[]_PYTHON_PATH,,)
-  PKG_CHECK_VAR(uppercase[]_HTMLDIR, [lowercase >= $2], htmldir,,)
   if test "$lowercase" = "true"; then
     LALSUITE_ADD_FLAGS([C],$[]uppercase[]_CFLAGS,$[]uppercase[]_LIBS)
     LALSUITE_ADD_PATH(LAL_DATA_PATH,"$[]uppercase[]_DATA_PATH")
@@ -596,7 +497,7 @@ AC_DEFUN([LALSUITE_CHECK_LIB],[
     # use standard include paths
     save_IFS="$IFS"
     IFS=:
-    for flag in $C_INCLUDE_PATH $CPLUS_INCLUDE_PATH /usr/include ; do
+    for flag in "$C_INCLUDE_PATH:$CPLUS_INCLUDE_PATH:/usr/include" ; do
       test -n "$flag" && flag="-I$flag"
       AS_CASE([" $CPPFLAGS $LAL_SYSTEM_INCLUDES "],
         [*" ${flag} "*],[:],
@@ -615,9 +516,9 @@ AC_DEFUN([LALSUITE_CHECK_LIB],[
   else
     AC_CHECK_LIB(lowercase,[$3],,[AC_MSG_ERROR([could not find the $1 library])])
     AC_CHECK_HEADERS([$4],,[AC_MSG_ERROR([could not find the $4 header])])
-    m4_if(lowercase,[lalsupport],[],[
+    if test "$1" != "LALSupport"; then
       LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK([$1])
-    ])
+    fi
   fi
   AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
   # add $1 to list of LALSuite libraries
@@ -653,46 +554,24 @@ AC_DEFUN([LALSUITE_CHECK_OPT_LIB],[
 
 AC_DEFUN([LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK],[
   # $0: check for version mismatch between library $1 and its headers
-  m4_pushdef([uppercase],m4_translit([[$1]], [a-z], [A-Z]))
-  m4_pushdef([withoutlal],m4_bpatsubst([$1], [^LAL], []))
   AC_MSG_CHECKING([whether $1 headers match the library])
-  AC_LINK_IFELSE([
+  lib_structure=`echo $1 | sed 's/LAL/lal/'`VCSInfo
+  header_structure=`echo $1 | sed 's/LAL/lal/'`VCSInfoHeader
+  AC_RUN_IFELSE([
     AC_LANG_SOURCE([[
+#include <string.h>
+#include <stdlib.h>
 #include <lal/$1VCSInfoHeader.h>
-int main(void) {
-#if ]uppercase[_VERSION_DEVEL != 0
-  ]uppercase[_VCS_LINK_CHECK();
-#endif
-  return 0;
-}
+int main(void) { exit(XLALVCSInfoCompare(&$lib_structure, &$header_structure) ? 1 : 0); }
     ]])
   ],[
-    AC_MSG_RESULT([yes])
+    AC_MSG_RESULT(yes)
   ],[
-    AC_MSG_RESULT([no])
-    AC_LINK_IFELSE([
-      AC_LANG_SOURCE([[
-#include <stdio.h>
-#include <lal/$1VCSInfoHeader.h>
-int main(void) {
-  printf("$1 headers: %s %s %s\n", ]uppercase[_VERSION, ]uppercase[_VCS_ID, ]uppercase[_VCS_STATUS);
-  printf("$1 library: %s %s %s\n", lal]withoutlal[VCSInfo.version, lal]withoutlal[VCSInfo.vcsId, lal]withoutlal[VCSInfo.vcsStatus);
-  return 0;
-}
-      ]])
-    ],[
-      AS_IF([test ${cross_compiling} != yes],[
-        ./conftest${EXEEXT} | ${SED} -e "s/^/${as_me}:${as_lineno-$LINENO}: /" >&AS_MESSAGE_LOG_FD
-      ])
-    ],[
-      _AS_ECHO_LOG([could not determine further details of $1 header-library mismatch (compile/link error)])
-    ],[
-      _AS_ECHO_LOG([could not determine further details of $1 header-library mismatch (cross compiling)])
-    ])
+    AC_MSG_RESULT(no)
     AC_MSG_ERROR([Your $1 headers do not match your library. Check config.log for details.])
+  ],[
+    AC_MSG_WARN([cross compiling: not checking])
   ])
-  m4_popdef([uppercase])
-  m4_popdef([withoutlal])
   # end $0
 ])
 
@@ -704,24 +583,10 @@ AC_DEFUN([LALSUITE_CHECK_LIBRARY_FOR_SUPPORT],[
   save_CPPFLAGS="${CPPFLAGS}"
   LALSUITE_CLEAR_UVARS
   CPPFLAGS="${save_CPPFLAGS}"
-  AS_IF([test "x${LALSUITE_BUILD}" = xtrue],[
-    for arg in ${lalsuite_libs}; do
-      AS_CASE([${arg}],
-        [lalsupport],[:],[
-          CPPFLAGS="-I${ac_pwd}/../${arg}/src ${CPPFLAGS}"
-        ]
-      )
-    done
-    CPPFLAGS="-DLALSUITE_BUILD ${CPPFLAGS}"
-  ])
   AC_MSG_CHECKING([whether $1 has been compiled with $2 support])
   AC_COMPILE_IFELSE([
     AC_LANG_SOURCE([[
-#ifdef LALSUITE_BUILD
-#include "$1Config.h"
-#else
 #include <lal/$1Config.h>
-#endif
 #ifndef ]uppercase[_$2_ENABLED
 #error ]uppercase[_$2_ENABLED is not defined
 #endif
@@ -972,59 +837,12 @@ AC_DEFUN([LALSUITE_ENABLE_BOINC],[
 ])
 
 AC_DEFUN([LALSUITE_CHECK_BOINC],[
-  # $0: check for BOINC, and modify compiler for lal library checks
+  # $0: check for BOINC support
   AS_IF([test "${boinc}" = "true"],[
-
-    # do compilation checks with c++
-    AC_LANG_PUSH([C++])
-
-    # check for BOINC libraries
-    AC_SUBST([BOINC_CFLAGS],[""])
-    AC_SUBST([BOINC_LIBS],["-lboinc_api -lboinc"])
-    LALSUITE_ADD_FLAGS([C],[${BOINC_CFLAGS}],[${BOINC_LIBS}])
-    AC_CHECK_LIB([boinc],[boinc_fopen],[:],[AC_MSG_ERROR([could not find the boinc library])])
-    AC_CHECK_LIB([boinc_api],[boinc_finish],[:],[AC_MSG_ERROR([could not find the boinc_api library])])
-
-    # check for BOINC headers
-    AC_CHECK_HEADERS([boinc/boinc_api.h],[:],[AC_MSG_ERROR([could not find the boinc_api.h header])])
-
-  ])
-  # end $0
-])
-
-AC_DEFUN([LALSUITE_END_CHECK_BOINC],[
-  # $0: finish BOINC checks, and restore compiler after lal library checks
-  m4_pushdef([lowercase],m4_translit(AC_PACKAGE_NAME, [A-Z], [a-z]))
-  AC_REQUIRE([LALSUITE_CHECK_BOINC])
-  AS_IF([test "${boinc}" = "true"],[
-
-    m4_if(lowercase,[lal],[
-
-      # if LAL, define macro to indicate BOINC support
-      AC_DEFINE([LAL_BOINC_ENABLED],[1],[Define if using BOINC library])
-
-    ],[
-
-      # if not LAL, check LAL was compiled with BOINC support
-      LALSUITE_CHECK_LIBRARY_FOR_SUPPORT([LAL],[BOINC],[:],[
-        AC_MSG_ERROR([BOINC enabled but LAL not compiled with BOINC support])
-      ])
-
+    LALSUITE_CHECK_LIBRARY_FOR_SUPPORT([LAL],[BOINC],[:],[
+      AC_MSG_ERROR([BOINC was enabled but LAL was not compiler with BOINC support])
     ])
-
-    # go back to c
-    AC_LANG_POP([C++])
-
-    # force automake to use c++ compiler for linking
-    AC_MSG_WARN([using C++ compiler for linking (forced by BOINC)])
-    AC_SUBST([CCLD],['$(CXX)'])
-    AC_SUBST([am__v_CCLD_0],['@echo "  CXXLD(B)" $][@;'])
-
-  ],[
-    AC_SUBST([CCLD],['$(CC)'])
-    AC_SUBST([am__v_CCLD_0],['@echo "  CCLD    " $][@;'])
   ])
-  m4_popdef([lowercase])
   # end $0
 ])
 
@@ -1146,7 +964,7 @@ AS_IF([test "x${osx_version_check}" = "xtrue"],[
       AC_MSG_RESULT([$MACOSX_VERSION])])
     AS_CASE(["$MACOSX_VERSION"],
       [10.0*|10.1|10.1.*|10.2*|10.3*],AC_MSG_ERROR([This version of Mac OS X is not supported]),
-      [10.4*|10.5*|10.6*|10.7*|10.8*|10.9*|10.10*|10.11*|10.12*|10.13*],,
+      [10.4*|10.5*|10.6*|10.7*|10.8*|10.9*|10.10*],,
       AC_MSG_WARN([Unknown Mac OS X version]))
 ])])])
 
@@ -1173,397 +991,4 @@ AC_MSG_RESULT([no])
 [cuda=false],
 AC_MSG_RESULT([unknown])
 [cuda=false])
-])
-
-AC_DEFUN([LALSUITE_ENABLE_DOXYGEN],[
-  # $0: enable Doxygen documentation
-  AC_ARG_ENABLE(
-    [doxygen],
-    AC_HELP_STRING(
-      [--enable-doxygen],
-      [generate Doxygen documentation]
-    ),[
-      AS_CASE(["${enableval}"],
-        [yes],[doxygen=true],
-        [no],[doxygen=false],
-        [AC_MSG_ERROR([invalid value "${enableval}" for --enable-doxygen])]
-      )
-    ],[
-      doxygen=false
-    ]
-  )
-  # end $0
-])
-
-AC_DEFUN([LALSUITE_USE_DOXYGEN],[
-  # $0: configure Doxygen documentation
-  AC_REQUIRE([LALSUITE_CHECK_GIT_REPO])
-
-  # add configuration option for MathJax installation
-  AC_ARG_WITH(
-    [mathjax],
-    AC_HELP_STRING(
-      [--with-mathjax=PATH],
-      [use MathJax installation at PATH [default: use CDN]]
-    ),[
-      DOXYGEN_MATHJAXDIR="${withval}"
-    ],[
-      DOXYGEN_MATHJAXDIR=
-    ]
-  )
-
-  # enable Doxygen module
-  LALSUITE_ENABLE_MODULE([DOXYGEN])
-
-  AS_IF([test "x${doxygen}" = xtrue],[
-
-    # configure Doxygen filter script
-    AC_CONFIG_FILES([doxygen/filter],[chmod +x doxygen/filter])
-
-    # Python is required to run some scripts
-    LALSUITE_REQUIRE_PYTHON([2.6])
-
-    # Perl and BibTeX are required to build the references
-    AC_PATH_PROG([PERL],[perl],[],[])
-    AS_IF([test "x${PERL}" = x],[
-      AC_MSG_ERROR([could not find 'perl' in PATH (required for Doxygen references)])
-    ])
-    AC_PATH_PROG([BIBTEX],[bibtex],[],[])
-    AS_IF([test "x${BIBTEX}" = x],[
-      AC_MSG_ERROR([could not find 'bibtex' in PATH (required for Doxygen references)])
-    ])
-
-    # check for Doxygen
-    AC_PATH_PROG([DOXYGEN],[doxygen],[],[])
-    AS_IF([test "x${DOXYGEN}" = x],[
-      AC_MSG_ERROR([could not find 'doxygen' in PATH])
-    ])
-    doxygen_min_version=1.8.1.2   # minimum required Doxygen version
-    AC_MSG_CHECKING([if ${DOXYGEN} version is at least ${doxygen_min_version}])
-    doxygen_version=`${DOXYGEN} --version 2>/dev/null`
-    LALSUITE_VERSION_COMPARE([${doxygen_version}],[<],[${doxygen_min_version}],[
-      AC_MSG_RESULT([no (${doxygen_version})])
-      AC_MSG_ERROR([Doxygen version ${doxygen_min_version} or later is required])
-    ])
-    AC_MSG_RESULT([yes (${doxygen_version})])
-
-    # ignore some Doxygen warnings due to Doxygen bugs
-    AC_SUBST([DOXYGEN_WARNING_REGEX],["-e '/^\$$/d'"])
-    LALSUITE_VERSION_COMPARE([${doxygen_version}],[<],[1.8.9.1],[
-      # https://bugzilla.gnome.org/show_bug.cgi?id=742151
-      DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/^citelist/d'"]
-    ])
-    LALSUITE_VERSION_COMPARE([1.8.8],[<=],[${doxygen_version}],[
-      LALSUITE_VERSION_COMPARE([${doxygen_version}],[<],[1.8.11],[
-        # https://bugzilla.gnome.org/show_bug.cgi?id=743604
-        DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/warning: Duplicate anchor/d'"]
-        DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/warning: multiple use of section label/d'"]
-      ])
-    ])
-    LALSUITE_VERSION_COMPARE([1.8.8],[<=],[${doxygen_version}],[
-      LALSUITE_VERSION_COMPARE([${doxygen_version}],[<=],[1.8.9.1],[
-        # https://bugzilla.gnome.org/show_bug.cgi?id=743605
-        DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/warning: explicit link request/d'"]
-      ])
-    ])
-
-    # build some substituted variables from list of configured LAL libraries
-    AC_SUBST([DOXYGEN_ENABLED_SECTIONS])
-    AC_SUBST([DOXYGEN_TAGFILES],[])
-    AC_SUBST([DOXYGEN_INSTALL_DIRMAP],[])
-    for arg in ${lalsuite_libs}; do
-      AS_CASE([${arg}],
-        [lalsupport],[:],[
-          ucarg=[`echo ${arg} | tr '[a-z]' '[A-Z]'`]
-          DOXYGEN_ENABLED_SECTIONS="${DOXYGEN_ENABLED_SECTIONS} ${ucarg}"
-          arg_htmldir_name="${ucarg}_HTMLDIR"
-          AS_VAR_COPY([arg_htmldir],[${arg_htmldir_name}])
-          AS_IF([test "x${LALSUITE_BUILD}" = xtrue],[
-            tagpath="\$(abs_top_builddir)/../${arg}/doxygen/out"
-          ],[
-            tagpath="${arg_htmldir}"
-          ])
-          DOXYGEN_TAGFILES="${DOXYGEN_TAGFILES} ${tagpath}/${arg}.tag=${tagpath}"
-          DOXYGEN_INSTALL_DIRMAP="${DOXYGEN_INSTALL_DIRMAP} ${tagpath}:${arg_htmldir}"
-        ]
-      )
-    done
-
-    # configure MathJax
-    AC_SUBST([DOXYGEN_MATHJAXDIR])
-    AS_IF([test "x${DOXYGEN_MATHJAXDIR}" != x],[
-      AS_IF([test ! -f "${DOXYGEN_MATHJAXDIR}/MathJax.js"],[
-        AC_MSG_ERROR([no MathJax installation found in ${DOXYGEN_MATHJAXDIR}])
-      ])
-    ],[
-      for dir in /usr/share/javascript/mathjax; do
-        AC_MSG_CHECKING([for MathJax installation in ${dir}])
-        AS_IF([test -f "${dir}/MathJax.js"],[
-          AC_MSG_RESULT([yes])
-          DOXYGEN_MATHJAXDIR="${dir}"
-          break
-        ],[
-          AC_MSG_RESULT([no])
-        ])
-      done
-      AS_IF([test "x${DOXYGEN_MATHJAXDIR}" = x],[
-        DOXYGEN_MATHJAXDIR='https://cdn.mathjax.org/mathjax/latest'
-        AC_MSG_NOTICE([using MathJax CDN at ${DOXYGEN_MATHJAXDIR}])
-      ])
-    ])
-
-  ])
-  # end $0
-])
-
-AC_DEFUN([LALSUITE_CHECK_SIMD],[
-  # $0: check for SIMD extensions
-
-  # list of recognised SIMD instruction sets
-  m4_define([simd_isets],[m4_normalize([
-    [SSE],[SSE2],[SSE3],[SSSE3],[SSE4.1],[SSE4.2],
-    [AVX],[AVX2]
-  ])])
-
-  # push compiler environment
-  LALSUITE_PUSH_UVARS
-  LALSUITE_CLEAR_UVARS
-  AC_LANG_PUSH([C])
-
-  # check compiler support for each SIMD instruction set
-  simd_supported=
-  m4_foreach([iset],simd_isets,[
-    m4_pushdef([option],m4_translit(iset,[A-Z.],[a-z.]))
-    m4_pushdef([symbol],m4_translit(iset,[A-Z.],[A-Z_]))
-
-    # assume supported until test fails, in which break out of loop
-    for iset_supported in yes; do
-
-      # check -m[]option flag
-      LALSUITE_CHECK_COMPILE_FLAGS([-m[]option],[],[iset_supported=no])
-      AS_IF([test x"${iset_supported}" = xno],[break])
-
-      # check that compiler defines __]symbol[__ preprocessor symbol
-      AC_MSG_CHECKING([whether ]_AC_LANG[ compiler defines __]symbol[__ with -m[]option])
-      CFLAGS="${uvar_orig_prefix[]CFLAGS} -m[]option"
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([],[[
-#if !defined(__]]symbol[[__)
-#error Preprocessor macro not defined by compiler
-#endif
-]])
-      ],[
-        AC_MSG_RESULT([yes])
-      ],[
-        AC_MSG_RESULT([no])
-        iset_supported=no
-      ])
-      AS_IF([test x"${iset_supported}" = xno],[break])
-
-      # check that compiler compiles floating-point math with -m[]option
-      AC_MSG_CHECKING([whether ]_AC_LANG[ compiler compiles floating-point math with -m[]option])
-      CFLAGS="${uvar_orig_prefix[]CFLAGS} -m[]option"
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([
-AC_INCLUDES_DEFAULT
-#include <math.h>
-],[[
-double volatile a = 1.2;
-double volatile b = 3.4;
-double volatile c = a * b;
-double volatile d = round(c);
-]])
-      ],[
-        AC_MSG_RESULT([yes])
-      ],[
-        AC_MSG_RESULT([no])
-        iset_supported=no
-      ])
-      AS_IF([test x"${iset_supported}" = xno],[break])
-
-    done
-
-    # define Automake conditional HAVE_<SIMD>_COMPILER
-    AM_CONDITIONAL([HAVE_]symbol[_COMPILER],[test x"${iset_supported}" = xyes])
-    AM_COND_IF([HAVE_]symbol[_COMPILER],[
-
-      # define config.h preprocessor symbol HAVE_<SIMD>_COMPILER
-      AC_DEFINE([HAVE_]symbol[_COMPILER],[1],[Define to 1 if compiler supports ]iset[ SIMD extensions])
-
-      # substitute Automake variable <SIMD>_CFLAGS
-      AC_SUBST(symbol[_CFLAGS],["-DSIMD_INSTRSET=]symbol[ -m[]option"])
-
-      # add to list of supported instruction sets
-      simd_supported="${simd_supported} iset"
-
-    ])
-
-    m4_popdef([option])
-    m4_popdef([symbol])
-  ])
-
-  # string listing all the SIMD extensions supported by the compiler
-  simd_supported=`echo ${simd_supported}`
-  AC_DEFINE_UNQUOTED([HAVE_SIMD_COMPILER],["${simd_supported}"],
-    [Define to a string listing all the SIMD extensions supported by the ]_AC_LANG[ compiler]
-  )
-  AS_IF([test x"${simd_supported}" = x],[
-    AC_MSG_NOTICE([]_AC_LANG[ compiler does not support SIMD instruction sets])
-  ],[
-    AC_MSG_NOTICE([]_AC_LANG[ compiler supports SIMD instruction sets: ${simd_supported}])
-  ])
-
-  # pop compiler environment
-  AC_LANG_POP([C])
-  LALSUITE_POP_UVARS
-
-  # end $0
-])
-
-AC_DEFUN([LALSUITE_ENABLE_CFITSIO],[
-  # $0: enable/disable cfitsio library
-  AC_ARG_ENABLE(
-    [cfitsio],
-    AC_HELP_STRING([--enable-cfitsio],[compile code that requires cfitsio library [default=no]]),
-    AS_CASE(["${enableval}"],
-      [yes],[cfitsio=true],
-      [no],[cfitsio=false],
-      AC_MSG_ERROR([bad value ${enableval} for --enable-cfitsio])
-    ),
-    [cfitsio=false]
-  )
-  # end $0
-])
-
-AC_DEFUN([LALSUITE_USE_CFITSIO],[
-  # $0: check for cfitsio library
-  AS_IF([test "x${cfitsio}" = xtrue],[
-    LALSUITE_PUSH_UVARS
-    PKG_CHECK_MODULES([CFITSIO],[cfitsio],[true],[false])
-    LALSUITE_ADD_FLAGS([C],[${CFITSIO_CFLAGS}],[${CFITSIO_LIBS}])
-    AC_CHECK_LIB([cfitsio],[ffopen],[],[cfitsio=false])
-    AC_CHECK_HEADER([fitsio.h],[],[cfitsio=false])
-    AC_CHECK_FUNCS([fffree])
-    AC_CHECK_DECLS([fffree],[],[],[AC_INCLUDES_DEFAULT
-#include <fitsio.h>
-])
-    LALSUITE_POP_UVARS
-  ])
-  AS_IF([test "x${cfitsio}" = xtrue],[
-    LALSUITE_ADD_FLAGS([C],[${CFITSIO_CFLAGS}],[${CFITSIO_LIBS}])
-  ])
-  LALSUITE_ENABLE_MODULE([CFITSIO])
-  # end $0
-])
-
-AC_DEFUN([LALSUITE_CHECK_PAGER],[
-  # $0: check for pager programs and required functions
-  AC_ARG_VAR([PAGER],[Pager program])
-  AS_IF([test "x${PAGER}" = x],[
-    AC_PATH_PROGS([PAGER],[less more])
-    AS_CASE([${PAGER}],
-      [''],[:],
-      [*/less],[
-        for pager_arg in -F -R -S -X; do
-          AS_IF([echo | ${PAGER} ${pager_arg} >/dev/null 2>&1],[
-            PAGER="${PAGER} ${pager_arg}"
-          ])
-        done
-      ]
-    )
-  ])
-  AS_IF([test "x${PAGER}" != x],[
-    AC_SUBST([PAGER_CPPFLAGS],["-DPAGER='\"\$(PAGER)\"'"])
-    AC_CHECK_FUNCS([popen pclose])
-  ])
-  # end $0
-])
-
-AC_DEFUN([LALSUITE_ENABLE_HELP2MAN],[
-  # $0: check for help2man utility
-  AC_PATH_PROG([HELP2MAN], [help2man])
-  # Require a minimum version of help2man to support the
-  # --version-string and --no-discard-stderr flags.
-  AS_IF(
-    [test -n "${HELP2MAN}"],
-    [
-      HELP2MAN_MIN_VERSION="1.37"
-      AC_MSG_CHECKING([for help2man >= ${HELP2MAN_MIN_VERSION}])
-      HELP2MAN_VERSION=`${HELP2MAN} --version --version | head -n 1 | cut -d ' ' -f 3`
-      AX_COMPARE_VERSION(
-        [${HELP2MAN_VERSION}], [ge], [${HELP2MAN_MIN_VERSION}],
-        [AC_MSG_RESULT([yes])],
-        [
-          AC_MSG_RESULT([no])
-          HELP2MAN=
-        ]
-      )
-    ]
-  )
-  AC_ARG_ENABLE(
-    [help2man],
-    AC_HELP_STRING([--enable-help2man],[automatically generate man pages with help2man @<:@default=yes@:>@]),
-    AS_CASE([${enableval}],
-      [yes], [],
-      [no], [HELP2MAN=],
-      AC_MSG_ERROR([bad value ${enableval} for --enable-help2man])
-    )
-  )
-  AC_SUBST([HELP2MAN], ["${HELP2MAN}"])
-  AS_IF([test -n "${HELP2MAN}"], [help2man=true], [help2man=false])
-  LALSUITE_ENABLE_MODULE([HELP2MAN])
-  # end $0
-])
-
-AC_DEFUN([LALSUITE_ENABLE_OPENMP],[
-  # $0: check for OpenMP support
-  # check for OpenMP
-  AC_OPENMP
-
-  # check that compiler supports C99 variable length arrays in OpenMP for loops.
-  # Apple's llvm-gcc-4.2 is buggy and does not.
-  AS_IF([test "x$OPENMP_CFLAGS" != "x"],
-    [
-      AC_MSG_CHECKING([if compiler supports C99 VLAs in OpenMP for loops])
-      LALSUITE_PUSH_UVARS
-      CFLAGS="$OPENMP_CFLAGS"
-      AC_LINK_IFELSE([
-          AC_LANG_PROGRAM(, [
-            int i, n = 10;
-            #pragma omp parallel for
-            for (i = 0; i < 10; i ++)
-            { int a@<:@n@:>@; }
-          ])
-        ],
-        [AC_MSG_RESULT([yes])],
-        [
-          AC_MSG_RESULT([no, disabling OpenMP])
-          OPENMP_CFLAGS=
-        ]
-      )
-      LALSUITE_POP_UVARS
-    ]
-  )
-
-  # Disable OpenMP by default.
-  # FIXME: OpenMP should be on by default, but it breaks condor_compiling lalapps.
-  AS_IF(
-    [test "x$enable_openmp" = "x"],
-    [OPENMP_CFLAGS=]
-  )
-  # add compiler flags for OpenMP
-  AS_IF(
-    [test "x$OPENMP_CFLAGS" = "x" -a "x$ac_cv_prog_[]_AC_LANG_ABBREV[]_openmp" != "xnone needed"],
-    [
-      openmp="false"
-      LALSUITE_ADD_FLAGS([C],[-Wno-unknown-pragmas],[])
-    ],
-    [
-      openmp="true"
-      LALSUITE_ADD_FLAGS([C],[${OPENMP_CFLAGS}],[])
-    ]
-  )
-
-  LALSUITE_ENABLE_MODULE([OPENMP])
-  # end $0
 ])

@@ -22,10 +22,10 @@
 #define __USE_ISOC99 1
 #include <math.h>
 
-#include <lal/SinCosLUT.h>
+#include <lal/CWFastMath.h>
 #include <lal/DetectorStates.h>
 #include <lal/LISAspecifics.h>
-#include <lal/UserInputParse.h>
+#include <lal/ConfigFile.h>
 
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)
@@ -46,6 +46,42 @@
 int XLALFillDetectorTensor (DetectorState *detState, const LALDetector *detector );	/* no need to export this ... */
 
 /*==================== FUNCTION DEFINITIONS ====================*/
+
+/**
+ * \deprecated Use XLALGetDetectorStates() instead
+ */
+void
+LALGetDetectorStates (LALStatus *status,			/**< pointer to LALStatus structure */
+		      DetectorStateSeries **DetectorStates,	/**< [out] series of DetectorStates */
+		      const LIGOTimeGPSVector *timestamps,	/**< array of GPS timestamps t_i */
+		      const LALDetector *detector,		/**< detector info */
+		      const EphemerisData *edat,		/**< ephemeris file data */
+		      REAL8 tOffset				/**< compute detector states at timestamps SHIFTED by tOffset */
+		      )
+{
+  INITSTATUS(status);
+
+  ASSERT ( DetectorStates != NULL, status,  DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
+  ASSERT ( *DetectorStates == NULL, status,  DETECTORSTATES_ENONULL, DETECTORSTATES_MSGENONULL);
+
+  ASSERT ( timestamps, status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
+  ASSERT ( detector, status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
+  ASSERT ( edat, status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
+
+  /* call XLAL function */
+  DetectorStateSeries *ret = NULL;
+  if ( ( ret = XLALGetDetectorStates ( timestamps, detector, edat, tOffset )) == NULL ) {
+    XLALPrintError ("%s: XLALGetDetectorStates() failed with code=%d\n", __func__, xlalErrno );
+    ABORT ( status, DETECTORSTATES_EXLAL, DETECTORSTATES_MSGEXLAL );
+  }
+
+  /* return result */
+  (*DetectorStates) = ret;
+
+  RETURN (status);
+
+} /* LALGetDetectorStates() */
+
 
 /**
  * Function to compute the LWL detector-tensor for the given \a detector in
@@ -268,7 +304,93 @@ XLALContractSymmTensor3s ( const SymmTensor3 *T1, const SymmTensor3 *T2 )
 
 } /* XLALContractSymmTensor3s() */
 
-/** Get rid of a DetectorStateSeries */
+
+/* ===== Multi-IFO versions of some of the above functions ===== */
+
+/**
+ * Deprecated LAL wrapper to XLALGetMultiDetectorStates().
+ * Get the detector-time series for the given MultiSFTVector.
+ * (see LALGetDetectorStates() for more comments).
+ *
+ * \note The time-series is based on the <em>midpoints</em> of the SFT-timestamps.
+ */
+void
+LALGetMultiDetectorStates( LALStatus *status,				/**< pointer to LALStatus structure */
+			   MultiDetectorStateSeries **mdetStates, 	/**< [out] multi-IFO detector-states */
+			   const MultiSFTVector *multiSFTs, 		/**< [in] multi-IFO SFTs */
+			   const EphemerisData *edat )			/**< ephemeris data */
+{
+  INITSTATUS(status);
+
+  ASSERT ( mdetStates, status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
+  ASSERT ( multiSFTs, status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
+  ASSERT ( *mdetStates == NULL, status, DETECTORSTATES_ENONULL, DETECTORSTATES_MSGENONULL);
+
+  /* NOTE API change: XLAL-function wants detector-array and timestamps-vectors directly,
+   * instead of a multi-SFT vector. We therefore need to extract this info from the
+   * multi-SFT vector first
+   */
+  MultiLALDetector multiIFO;
+  if ( XLALMultiLALDetectorFromMultiSFTs ( &multiIFO, multiSFTs ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALMultiLALDetectorFromMultiSFTs() failed with code %d\n", __func__, xlalErrno );
+    ABORT ( status, DETECTORSTATES_EXLAL, DETECTORSTATES_MSGEXLAL );
+  }
+
+  MultiLIGOTimeGPSVector *multiTS;
+  if ( ( multiTS = XLALExtractMultiTimestampsFromSFTs ( multiSFTs )) == NULL ) {
+    XLALPrintError ("%s: XLALExtractMultiTimestampsFromSFTs() failed with code %d\n", __func__, xlalErrno );
+    ABORT ( status, DETECTORSTATES_EXLAL, DETECTORSTATES_MSGEXLAL );
+  }
+
+  /* ---------- central wrapper: call XLAL function XLALGetMultiDetectorStates() ---------- */
+  MultiDetectorStateSeries *ret = NULL;
+  /* the API of this LAL interface specifies a hardcoded shift by Tsft/2 of all timestamps */
+  REAL8 Tsft = 1.0 / multiSFTs->data[0]->data[0].deltaF;
+  REAL8 tOffset = 0.5 * Tsft;
+  if ( ( ret = XLALGetMultiDetectorStates( multiTS, &multiIFO, edat, tOffset )) == NULL ) {
+    XLALPrintError ("%s: XLALGetMultiDetectorStates() failed with code %d\n", __func__, xlalErrno );
+    XLALDestroyMultiTimestamps ( multiTS );
+    ABORT ( status, DETECTORSTATES_EXLAL, DETECTORSTATES_MSGEXLAL );
+  }
+
+  /* free temporary mem */
+  XLALDestroyMultiTimestamps ( multiTS );
+
+  (*mdetStates) = ret;
+
+  RETURN ( status );
+
+} /* LALGetMultiDetectorStates() */
+
+
+
+/* ===== Object creation/destruction functions ===== */
+
+/** Create a DetectorStateSeries */
+void
+LALCreateDetectorStateSeries (LALStatus *status,		/**< pointer to LALStatus structure */
+			      DetectorStateSeries **vect,	/**< output vector */
+			      UINT4 length )			/**< number of entries */
+{
+  DetectorStateSeries *ret = NULL;
+
+  INITSTATUS(status);
+
+  ASSERT ( vect, status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
+  ASSERT ( *vect == NULL, status, DETECTORSTATES_ENONULL, DETECTORSTATES_MSGENONULL);
+
+  if ( (ret = XLALCreateDetectorStateSeries ( length )) == NULL ) {
+    ABORT ( status, DETECTORSTATES_EXLAL, DETECTORSTATES_MSGEXLAL );
+  }
+
+  /* return result */
+  (*vect) = ret;
+
+  RETURN (status);
+
+} /* LALCreateDetectorStateSeries() */
+
+/* Get rid of a DetectorStateSeries */
 void
 XLALDestroyDetectorStateSeries ( DetectorStateSeries *detStates )
 {
@@ -281,6 +403,22 @@ XLALDestroyDetectorStateSeries ( DetectorStateSeries *detStates )
   return;
 
 } /* XLALDestroyDetectorStateSeries() */
+
+/** Destroy a DetectorStateSeries (and set it to NULL) */
+void
+LALDestroyDetectorStateSeries (LALStatus *status,		/**< pointer to LALStatus structure */
+			       DetectorStateSeries **detStates ) /**< pointer to vector to be destroyed */
+{
+  INITSTATUS(status);
+
+  ASSERT ( detStates, status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
+
+  XLALDestroyDetectorStateSeries ( (*detStates) );
+
+  (*detStates) = NULL;
+
+  RETURN (status);
+} /* LALDestroyDetectorStateSeries() */
 
 /**
  * Helper function to get rid of a multi-IFO DetectorStateSeries
@@ -311,6 +449,81 @@ XLALDestroyMultiDetectorStateSeries ( MultiDetectorStateSeries *mdetStates )
 
 } /* XLALDestroyMultiDetectorStateSeries() */
 
+
+/**
+ * Helper funxtion to copy velocity, time and position vectors out of the
+ * multi-detector state series
+ */
+void LALGetMultiDetectorVelTimePos(LALStatus                *status,
+				   REAL8VectorSequence      **outVel,
+				   REAL8VectorSequence      **outPos,
+				   LIGOTimeGPSVector        **outTime,
+				   MultiDetectorStateSeries *in)
+{
+
+  UINT4 numifo, len, numsft, iIFO, iSFT, j;
+  REAL8VectorSequence *velV = NULL;
+  REAL8VectorSequence *posV = NULL;
+  LIGOTimeGPSVector *timeV = NULL;
+
+  INITSTATUS(status);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT (in, status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
+  ASSERT (in->length > 0, status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
+
+  ASSERT (*outVel == NULL, status, DETECTORSTATES_ENONULL, DETECTORSTATES_MSGENONULL);
+  ASSERT (*outPos == NULL, status, DETECTORSTATES_ENONULL, DETECTORSTATES_MSGENONULL);
+  ASSERT (*outTime == NULL, status, DETECTORSTATES_ENONULL, DETECTORSTATES_MSGENONULL);
+
+  /* number of ifos */
+  numifo = in->length;
+
+  len = 0;
+  /* calculate total number of data points */
+  for (j = 0, iIFO = 0; iIFO < numifo; iIFO++ ) {
+    ASSERT (in->data[iIFO], status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
+    len += in->data[iIFO]->length;
+  }
+
+  /* allocate memory for vectors */
+  velV =  XLALCreateREAL8VectorSequence ( len, 3 );
+  posV =  XLALCreateREAL8VectorSequence ( len, 3 );
+  TRY (LALCreateTimestampVector ( status->statusPtr, &timeV,  len), status);
+
+  /* copy the timestamps, weights, and velocity vector */
+  for (j = 0, iIFO = 0; iIFO < numifo; iIFO++ ) {
+
+    ASSERT (in->data[iIFO], status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
+
+    numsft = in->data[iIFO]->length;
+    for ( iSFT = 0; iSFT < numsft; iSFT++, j++) {
+
+      velV->data[3*j] = in->data[iIFO]->data[iSFT].vDetector[0];
+      velV->data[3*j+1] = in->data[iIFO]->data[iSFT].vDetector[1];
+      velV->data[3*j+2] = in->data[iIFO]->data[iSFT].vDetector[2];
+
+      posV->data[3*j] = in->data[iIFO]->data[iSFT].rDetector[0];
+      posV->data[3*j+1] = in->data[iIFO]->data[iSFT].rDetector[1];
+      posV->data[3*j+2] = in->data[iIFO]->data[iSFT].rDetector[2];
+
+      /* mid time of sfts */
+      timeV->data[j] = in->data[iIFO]->data[iSFT].tGPS;
+
+    } /* loop over SFTs */
+
+  } /* loop over IFOs */
+
+  *outVel = velV;
+  *outPos = posV;
+  *outTime = timeV;
+
+  DETATCHSTATUSPTR (status);
+
+  /* normal exit */
+  RETURN (status);
+}
+
 /** Create a DetectorStateSeries with length entries */
 DetectorStateSeries*
 XLALCreateDetectorStateSeries ( UINT4 length )		/**< number of entries */
@@ -318,13 +531,13 @@ XLALCreateDetectorStateSeries ( UINT4 length )		/**< number of entries */
   DetectorStateSeries *ret = NULL;
 
   if ( (ret = LALCalloc(1, sizeof(DetectorStateSeries) )) == NULL ) {
-    XLALPrintError ("%s: failed to LALCalloc(1, %zu)\n", __func__, sizeof(DetectorStateSeries) );
+    XLALPrintError ("%s: failed to LALCalloc(1, %lu)\n", __func__, sizeof(DetectorStateSeries) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   if ( (ret->data = LALCalloc (length, sizeof(DetectorState) )) == NULL ) {
     XLALFree (ret);
-    XLALPrintError ("%s: failed to LALCalloc(%d, %zu)\n", __func__, length, sizeof(DetectorState) );
+    XLALPrintError ("%s: failed to LALCalloc(%d, %lu)\n", __func__, length, sizeof(DetectorState) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
@@ -339,11 +552,11 @@ XLALCreateDetectorStateSeries ( UINT4 length )		/**< number of entries */
  * Get the 'detector state' (ie detector-tensor, position, velocity, etc) for the given
  * vector of timestamps, shifted by a common time-shift \a tOffset.
  *
- * This function just calls XLALBarycenterEarth() and XLALBarycenter() for the
+ * This function just calls LALBarycenterEarth() and LALBarycenter() for the
  * given vector of timestamps (shifted by tOffset) and returns the positions,
  * velocities and LMSTs of the detector, stored in a DetectorStateSeries.
  * There is also an entry containing the EarthState at each timestamp, which
- * can be used as input for subsequent calls to XLALBarycenter().
+ * can be used as input for subsequent calls to LALBarycenter().
  *
  * \a tOffset allows one to easily use the midpoints of SFT-timestamps, for example.
  *
@@ -451,7 +664,7 @@ XLALGetDetectorStates ( const LIGOTimeGPSVector *timestamps,	/**< array of GPS t
 
 /**
  * Get the detector-time series for the given MultiLIGOTimeGPSVector.
- * NOTE: contrary to the deprecated XLALGetMultiDetectorStatesFromMultiSFTs() interface, this
+ * NOTE: contrary to the deprecated LALGetMultiDetectorStates() interface, this
  * function computes detector-states at the given timestamps shifted by tOffset
  *
  */
@@ -478,18 +691,20 @@ XLALGetMultiDetectorStates( const MultiLIGOTimeGPSVector *multiTS, /**< [in] mul
   /* prepare return-structure */
   MultiDetectorStateSeries *ret = NULL;
   if ( ( ret = LALCalloc ( 1, sizeof( *ret ) )) == NULL ) {
-    XLALPrintError ("%s: LALCalloc ( 1, %zu ) failed\n", __func__, sizeof(*ret) );
+    XLALPrintError ("%s: LALCalloc ( 1, %lu ) failed\n", __func__, sizeof(*ret) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   if ( ( ret->data = LALCalloc ( numDetectors, sizeof( *(ret->data) ) )) == NULL ) {
     XLALFree ( ret );
-    XLALPrintError ("%s: LALCalloc ( %d, %zu ) failed\n", __func__, numDetectors, sizeof(*(ret->data)) );
+    XLALPrintError ("%s: LALCalloc ( %d, %lu ) failed\n", __func__, numDetectors, sizeof(*(ret->data)) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   ret->length = numDetectors;
 
+  REAL8 t0=LAL_REAL4_MAX;
+  REAL8 t1=0;
   REAL8 deltaT = multiTS->data[0]->deltaT;
-
+  LIGOTimeGPS startTime = {0, 0};
   /* loop over detectors */
   UINT4 X;
   for ( X=0; X < numDetectors; X ++ )
@@ -512,49 +727,25 @@ XLALGetMultiDetectorStates( const MultiLIGOTimeGPSVector *multiTS, /**< [in] mul
         XLAL_ERROR_NULL ( XLAL_EFUNC );
       }
 
+      /* keep track of earliest/latest timestamp in order to determine total Tspan */
+      UINT4 numTS = tsX->length;
+      REAL8 t0_X = XLALGPSGetREAL8( &tsX->data[0] );
+      REAL8 t1_X = XLALGPSGetREAL8( &tsX->data[numTS-1] );
+
+      if ( t0_X < t0 ) {
+        t0 = t0_X;
+        startTime = tsX->data[0];
+      }
+      if ( t1_X > t1 ) t1 = t1_X;
+
     } /* for X < numDetectors */
+
+  ret->Tspan = t1 - t0 + deltaT;	/* total time spanned by all SFTs */
+  ret->startTime = startTime;		/* earliest start-time of observation */
 
   return ret;
 
 } /* XLALGetMultiDetectorStates() */
-
-/**
- * Get the 'detector state' (ie detector-tensor, position, velocity, etc) for the given
- * multi-vector of SFTs, shifted by a common time-shift \a tOffset.
- *
- * \a tOffset allows one to easily use the midpoints of SFT-timestamps, for example.
- *
- */
-MultiDetectorStateSeries *
-XLALGetMultiDetectorStatesFromMultiSFTs(
-  const MultiSFTVector *multiSFTs,		/**< [in] multi-IFO SFTs */
-  const EphemerisData *edat,			/**< [in] ephemeris data */
-  REAL8 tOffset					/**< [in] shift all timestamps by this amount */
-  )
-{
-
-  // Check input
-  XLAL_CHECK_NULL( multiSFTs != NULL, XLAL_EFAULT );
-  XLAL_CHECK_NULL( edat != NULL, XLAL_EFAULT );
-
-  // XLALGetMultiDetectorStates() wants detector-array and timestamps-vectors directly,
-  // instead of a multi-SFT vector. We therefore need to extract this info from the
-  // multi-SFT vector first
-  MultiLALDetector multiIFO;
-  XLAL_CHECK_NULL( XLALMultiLALDetectorFromMultiSFTs ( &multiIFO, multiSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
-  MultiLIGOTimeGPSVector *multiTS;
-  XLAL_CHECK_NULL( ( multiTS = XLALExtractMultiTimestampsFromSFTs ( multiSFTs )) != NULL, XLAL_EFUNC );
-
-  // call XLALGetMultiDetectorStates()
-  MultiDetectorStateSeries *ret = NULL;
-  XLAL_CHECK_NULL( ( ret = XLALGetMultiDetectorStates( multiTS, &multiIFO, edat, tOffset )) != NULL, XLAL_EFUNC );
-
-  // free temporary mem
-  XLALDestroyMultiTimestamps ( multiTS );
-
-  return ret;
-
-} /* XLALGetMultiDetectorStatesFromMultiSFTs() */
 
 /**
  * Parse string-vectors (typically input by user) of N detector noise-floors \f$\sqrt{S_X}\f$
@@ -587,7 +778,7 @@ XLALParseMultiNoiseFloor ( MultiNoiseFloor *multiNoiseFloor,	/**< [out] parsed m
       UINT4 X0 = X % numSqrtSX;		// always = 0 if (numSqrtSX == 1), otherwise = X if (numSqrtSX==numDetectors)
       const char *sqrtSnStr = sqrtSX->data[X0];
       REAL8 sqrtSn;
-      XLAL_CHECK ( XLALParseStringValueAsREAL8 ( &sqrtSn, sqrtSnStr ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALParseStringValueToREAL8 ( &sqrtSn, sqrtSnStr ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK ( sqrtSn >= 0, XLAL_EDOM );
       multiNoiseFloor->sqrtSn[X] = sqrtSn;
     } /* for X < numDetectors */
@@ -595,59 +786,6 @@ XLALParseMultiNoiseFloor ( MultiNoiseFloor *multiNoiseFloor,	/**< [out] parsed m
   return XLAL_SUCCESS;
 
 } /* XLALParseMultiNoiseFloor() */
-
-
-/**
- * Parse string-vectors (typically input by user) of N detector noise-floors \f$\sqrt{S_X}\f$
- * for detectors \f$X=1\ldots N\f$, where here we assume equal number of SFTs per detector
- * such that \f$S^{-1} = \frac{1}{N}\sum_{X=0}^{N-1} S_X^{-1}\f$.
- *
- * The detectors corresponding to each noise-floor may be a subset of the input string-vectors,
- * e.g. if parsing noise-floors for a segment where SFTs from some detectors are missing.
- * The vector \p
- */
-int
-XLALParseMultiNoiseFloorMapped ( MultiNoiseFloor *multiNoiseFloor,			/**< [out] parsed multi-IFO noise floor info */
-                                 const LALStringVector *multiNoiseFloorDetNames,	/**< [in] detector names for entries in \p multiNoiseFloor */
-                                 const LALStringVector *sqrtSX,				/**< [in] string-list of \f$\sqrt{S_X}\f$ for detectors \f$X\f$ */
-                                 const LALStringVector *sqrtSXDetNames			/**< [in] detector names for entries in \p sqrtSX */
-  )
-{
-  XLAL_CHECK ( multiNoiseFloor != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( multiNoiseFloorDetNames != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( sqrtSX != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( sqrtSXDetNames != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( multiNoiseFloorDetNames->length <= sqrtSXDetNames->length, XLAL_EINVAL );
-  XLAL_CHECK ( sqrtSX->length == sqrtSXDetNames->length, XLAL_EINVAL );
-
-  /* parse input strings */
-  REAL8 sqrtSn[PULSAR_MAX_DETECTORS];
-  for ( UINT4 Y = 0; Y < sqrtSX->length; Y ++ )
-    {
-      XLAL_CHECK ( XLALParseStringValueAsREAL8 ( &sqrtSn[Y], sqrtSX->data[Y] ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK ( sqrtSn[Y] >= 0, XLAL_EDOM );
-    }
-
-  /* initialize empty return struct */
-  multiNoiseFloor->length = multiNoiseFloorDetNames->length;
-
-  /* fill multiNoiseFloor with correctly mapped values */
-  for ( UINT4 X = 0; X < multiNoiseFloor->length; X ++ )
-    {
-      const INT4 Y = XLALFindStringInVector( multiNoiseFloorDetNames->data[X], sqrtSXDetNames );
-      if ( Y < 0 )
-        {
-          char *sqrtSXDet = XLALConcatStringVector( sqrtSXDetNames, "," );
-          XLAL_PRINT_ERROR ( "Noise-floor detector '%s' not found in list of sqrtSX detectors '%s'", multiNoiseFloorDetNames->data[X], sqrtSXDet );
-          XLALFree ( sqrtSXDet );
-          XLAL_ERROR ( XLAL_EINVAL );
-        }
-      multiNoiseFloor->sqrtSn[X] = sqrtSn[Y];
-    }
-
-  return XLAL_SUCCESS;
-
-} /* XLALParseMultiNoiseFloorMapped() */
 
 
 /**

@@ -52,26 +52,19 @@ def parse_command_line():
     if options.nbanks <= 0:
         parser.error("--nbanks argument must be positive")
 
-    if len(filenames) == 0:
+    if len(filenames) != 1:
         parser.error("must provide input file")
 
     if options.mchirp_min and options.mchirp_max and options.mchirp_max <= options.mchirp_min:
         parser.error("--mchirp-max argument must be greater than --mchirp-min")
 
-    return options, filenames
+    return options, filenames[0]
 
-options, filenames = parse_command_line()
+options, filename = parse_command_line()
 
 # read input document
-templates = None
-for filename in filenames:
-    xmldoc = utils.load_filename(filename, verbose=options.verbose,
-                                 contenthandler=ContentHandler)
-    curr_tmps = lsctables.SnglInspiralTable.get_table(xmldoc)
-    if templates is None:
-        templates = curr_tmps
-    else:
-        templates = templates + curr_tmps
+xmldoc = utils.load_filename(filename, verbose=options.verbose, contenthandler=ContentHandler)
+templates = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
 if len(templates) < options.nbanks:
     raise ValueError("len(templates) < opts.nbanks; coarse bank too coarse")
 
@@ -91,34 +84,18 @@ if options.mchirp_min or options.mchirp_max:
         high = len(mchirps)
     templates = templates[low:high]
 
-
-#
-# Define boundaries based on templates in coarse bank. The step size
-# is determined by a rough estimate of the computational scale for the
-# bank generation between the given mchirp boundaries.
-#
+# define boundaries based on templates in coarse bank
 if options.template_weight == "equal":
-    # More appropriate for metric match.
     template_weights = [1.0 for row in templates]
 elif options.template_weight == "duration":
-    # More appropriate for brute match (or bank sim). Split template
-    # banks up to have equal amounts of sum( deltaF * deltaT ), which
-    # should be ~ proportional to the computational scale for
-    # generating this sub-bank.
     template_weights = [row.tau0 * row.f_final for row in templates]
-
 template_weights = numpy.array(template_weights).cumsum()
-stride = numpy.searchsorted(template_weights, numpy.linspace(0, template_weights[-1], options.nbanks+1))
 
-# We output the boundaries excluding the largest and smallest chirp
-# mass values. The idea is that if the "coarse" bank already contains
-# strict boundary points, then including extremal boundary points in
-# the split boundary file will lead to a job with a zero-measure
-# parameter space. This job gets stuck in a while 1 loop (this
-# behavior is a bug, which should be caught by the code and lead to a
-# crash, but regardless we want to avoid such cases here).
-boundaries = [templates[k].mchirp for k in stride[1:-1]] # exclude high mass and low mass end points
-
+# split template banks up to have equal amounts of sum( deltaF *
+# deltaT ), which should be ~ proportional to the computational scale
+# for generating this sub-bank
+stride = numpy.searchsorted(template_weights, numpy.linspace(0, template_weights[-1], options.nbanks))
+boundaries = [templates[k].mchirp for k in stride[:-1]] # exclude high mass end point
 
 # adjust based on user preferences
 if options.mchirp_min:

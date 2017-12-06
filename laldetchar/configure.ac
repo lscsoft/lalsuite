@@ -1,52 +1,29 @@
 AC_PREREQ([2.63])
-AC_INIT([LALDetChar],[0.3.5.1],[lal-discuss@ligo.org])
+AC_INIT([LALDetChar],[0.2.2.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALDetCharConfig.h])
 AC_CONFIG_SRCDIR([src/LALDetChar.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
+  laldetchar.spec \
+  laldetchar.pc \
   Makefile \
   debian/Makefile \
-  debian/control \
-  doxygen/Makefile \
-  doxygen/doxygen.cfg \
   include/Makefile \
   include/lal/Makefile \
-  laldetchar.pc \
-  laldetchar.spec \
-  python/Makefile \
-  python/laldetchar/Makefile \
-  python/laldetchar/__init__.py \
-  python/laldetchar/hveto/Makefile \
-  python/laldetchar/idq/Makefile \
-  python/laldetchar/triggers/Makefile \
   src/LALDetCharVCSInfo.c \
   src/LALDetCharVCSInfo.h \
   src/Makefile \
-  src/version.c \
+  python/Makefile \
+  python/laldetchar/Makefile \
+  python/laldetchar/__init__.py \
+  python/laldetchar/triggers/Makefile \
+  python/laldetchar/hveto/Makefile \
+  python/laldetchar/idq/Makefile \
   swig/Makefile \
-  test/Makefile \
+  test/Makefile
 ])
-AM_INIT_AUTOMAKE([ \
-  1.11 \
-  foreign \
-  subdir-objects \
-  color-tests \
-  parallel-tests \
-  tar-ustar \
-  dist-xz \
-  no-dist-gzip \
-])
-
-# version requirements
-MIN_LAL_VERSION="6.18.0"
-MIN_LALMETAIO_VERSION="1.3.1"
-MIN_LALSIMULATION_VERSION="1.7.0"
-MIN_LALBURST_VERSION="1.4.4"
-AC_SUBST([MIN_LAL_VERSION])
-AC_SUBST([MIN_LALMETAIO_VERSION])
-AC_SUBST([MIN_LALSIMULATION_VERSION])
-AC_SUBST([MIN_LALBURST_VERSION])
+AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
@@ -69,8 +46,8 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[3])
-AC_SUBST([LIBREVISION],[2])
+AC_SUBST([LIBCURRENT],[2])
+AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
@@ -85,12 +62,6 @@ LALSUITE_ENABLE_SWIG
 
 # optional lal libraries
 LALSUITE_ENABLE_LALFRAME
-
-# enable Doxygen documentation
-LALSUITE_ENABLE_DOXYGEN
-
-# enable help2man documentation
-LALSUITE_ENABLE_HELP2MAN
 
 # define version/configure info
 LALSUITE_VERSION_CONFIGURE_INFO
@@ -146,17 +117,14 @@ LALSUITE_ADD_FLAGS([C],[${METAIO_CFLAGS}],[${METAIO_LIBS}])
 AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio library])])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
-LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
-LALSUITE_CHECK_LIB([LALMetaIO],[${MIN_LALMETAIO_VERSION}],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
-LALSUITE_CHECK_LIB([LALSimulation],[${MIN_LALSIMULATION_VERSION}],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
-LALSUITE_CHECK_LIB([LALBurst],[${MIN_LALBURST_VERSION}],[XLALEPSearch],[lal/EPSearch.h])
+LALSUITE_CHECK_LIB([LAL],[6.13.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.13.0],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_LIB([LALMetaIO],[1.2.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_LIB([LALSimulation],[1.2.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
+LALSUITE_CHECK_LIB([LALBurst],[1.2.0],[XLALEPSearch],[lal/EPSearch.h])
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG
-
-# configure Doxygen documentation
-LALSUITE_USE_DOXYGEN
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
@@ -183,10 +151,9 @@ AC_MSG_NOTICE([
 LALDetChar has now been successfully configured:
 
 * Python support is $PYTHON_ENABLE_VAL
+* SWIG binding generation is $SWIG_GENERATE_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
-* Doxygen documentation is $DOXYGEN_ENABLE_VAL
-* help2man documentation is $HELP2MAN_ENABLE_VAL
 
 and will be installed under the directory:
 

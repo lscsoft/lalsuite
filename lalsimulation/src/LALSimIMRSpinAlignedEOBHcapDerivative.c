@@ -37,6 +37,8 @@
 #ifndef LALSIMIMRSPINALIGNEDEOBHCAPDERIVATIVE_C
 #define LALSIMIMRSPINALIGNEDEOBHCAPDERIVATIVE_C
 
+#include <unistd.h>
+
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
 

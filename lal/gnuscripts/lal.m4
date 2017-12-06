@@ -1,17 +1,16 @@
 # lal.m4 - lal specific macros
 #
-# serial 20
+# serial 19
 
-AC_DEFUN([LAL_WITH_DEFAULT_DEBUG_LEVEL],[
-  AC_ARG_WITH(
-    [default_debug_level],
-    AC_HELP_STRING([--with-default-debug-level],[set default value of lalDebugLevel [default=1, i.e. print error messages]]),
-    [AS_IF([test "x`expr "X${withval}" : ["^\(X[0-9][0-9]*$\)"]`" != "xX${withval}"],[
-      AC_MSG_ERROR([bad integer value '${withval}' for --with-default-debug-level])
-    ])],
-    [with_default_debug_level=1]
-  )
-  AC_DEFINE_UNQUOTED([LAL_DEFAULT_DEBUG_LEVEL],[${with_default_debug_level}],[Set default value of lalDebugLevel])
+AC_DEFUN([LAL_ENABLE_DEBUG],
+[AC_ARG_ENABLE(
+  [debug],
+  AC_HELP_STRING([--enable-debug],[include standard LAL debugging code [default=yes]]),
+  [AS_CASE(["${enableval}"],
+    [yes],,
+    [no],AC_DEFINE(LAL_NDEBUG, 1, Suppress debugging code),
+    AC_MSG_ERROR(bad value for ${enableval} for --enable-debug))
+  ], )
 ])
 
 AC_DEFUN([LAL_ENABLE_FFTW3_MEMALIGN],
@@ -48,27 +47,15 @@ AC_DEFUN([LAL_ENABLE_MACROS],
   ),)
 ])
 
-AC_DEFUN([LAL_ENABLE_PTHREAD_LOCK], [
-  AC_ARG_ENABLE([pthread_lock],
-    AC_HELP_STRING([--enable-pthread-lock],[use pthread mutex lock for threadsafety @<:@default=yes@:>@]),
-    AS_CASE(["${enableval}"],
-      [yes],[lal_pthread_lock=true],
-      [no],[lal_pthread_lock=false],
-      AC_MSG_ERROR([bad value for ${enableval} for --enable-pthread-lock])
-    ),
-    [lal_pthread_lock=true]
-  )
-  AS_IF([test "x$lal_pthread_lock" = "xtrue"], [
-    # check for pthreads
-    AX_PTHREAD([
-      LALSUITE_ADD_FLAGS([C],[${PTHREAD_CFLAGS}],[${PTHREAD_LIBS}])
-    ],[
-      AC_MSG_ERROR([do not know how to compile posix threads])
-    ])
-    AC_DEFINE([LAL_PTHREAD_LOCK],[1],[Use pthread mutex lock for threadsafety])
-  ])
-  AC_SUBST([PTHREAD_CFLAGS])
-  AC_SUBST([PTHREAD_LIBS])
+AC_DEFUN([LAL_ENABLE_PTHREAD_LOCK],
+[AC_ARG_ENABLE(
+  [pthread_lock],
+  AC_HELP_STRING([--enable-pthread-lock],[use pthread mutex lock for threadsafety [default=no]]),
+  AS_CASE(["${enableval}"],
+    [yes],[lal_pthread_lock=true; AC_DEFINE([LAL_PTHREAD_LOCK],[1],[Use pthread mutex lock for threadsafety])],
+    [no],[lal_pthread_lock=false],
+    AC_MSG_ERROR([bad value for ${enableval} for --enable-pthread-lock])
+  ),[lal_pthread_lock=false])
 ])
 
 AC_DEFUN([LAL_INTEL_MKL_QTHREAD_WARNING],
@@ -108,20 +95,4 @@ AC_DEFUN([LAL_INTEL_FFT_LIBS_MSG_ERROR],
  echo "* Please see the instructions in the file INSTALL.           *"
  echo "**************************************************************"
 AC_MSG_ERROR([Intel FFT must use either static or shared libraries])
-])
-
-AC_DEFUN([LAL_ENABLE_DEBUG],[
-  AC_ARG_ENABLE(
-    [debug],
-    AC_HELP_STRING([--enable-debug],[THIS OPTION IS NO LONGER SUPPORTED]),
-    AC_MSG_ERROR([[
-**************************************************************************
-* The options --enable-debug/--disable-debug are no longer supported.    *
-* The only important thing that this option used to do was to change the *
-* default value of lalDebugLevel - if you still want to do this, please  *
-* use the new option --with-default-debug-level. Otherwise simply remove *
-* --enable-debug/--disable-debug from your ./configure command line.     *
-**************************************************************************
-]])
-  )
 ])

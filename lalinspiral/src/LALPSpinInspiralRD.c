@@ -19,7 +19,7 @@
 */
 
 /**
- * \defgroup LALPSpinInspiralRD_c Module LALPSpinInspiralRD.c
+ * \file
  * \ingroup LALInspiral_h
  *
  * \brief Module to generate generic spinning binaries waveforms complete with ring-down
@@ -93,10 +93,19 @@
  *
  * ### Notes ###
  *
- *//*@{*/
+ */
+
+/**
+ * \defgroup psird Complete phenomenological spin-inspiral waveforms
+ * \ingroup ch_inspiral
+ *
+ * This code provides complete waveforms for generically spinning binary
+ * systems.
+ *
+ */
 
 #include <lal/LALPSpinInspiralRD.h>
-#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
+#include <lal/LALAdaptiveRungeKutta4.h>
 
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
@@ -272,9 +281,6 @@ static int XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspir
 
     case LAL_PNORDER_THREE_POINT_FIVE:
       mparams->wdotorb[7] = paramsInit->ak.ST[8];
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case LAL_PNORDER_THREE:
       mparams->epnorb[3] = paramsInit->ak.ETa3;
@@ -282,9 +288,6 @@ static int XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspir
       mparams->wdotorblog = paramsInit->ak.ST[7];
       mparams->wdotspin30S1LNh = -LAL_PI/3. * ( 188. - 151./2./mparams->m1m);
       mparams->wdotspin30S2LNh = -LAL_PI/3. * ( 188. + 151./2./mparams->m2m);
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case LAL_PNORDER_TWO_POINT_FIVE:
       mparams->wdotorb[5] = paramsInit->ak.ST[5];
@@ -294,9 +297,6 @@ static int XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspir
       mparams->wdotspin25S2LNh = -31319. / 1008. + 1159. / 24. * mparams->eta + (-809. / 84. + 281. / 8. * mparams->eta) * mparams->m1m2;
       mparams->S1dot25 = 0.5625 + 1.25 * mparams->eta - mparams->eta * mparams->eta / 24. + mparams->dm * (-0.5625 + 0.625 * mparams->eta);
       mparams->S2dot25 = 0.5625 + 1.25 * mparams->eta - mparams->eta * mparams->eta / 24. - mparams->dm * (-0.5625 + 0.625 * mparams->eta);
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case LAL_PNORDER_TWO:
       mparams->epnorb[2] = paramsInit->ak.ETa2;
@@ -311,9 +311,6 @@ static int XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspir
       mparams->epnspin20S2S2 = (1. + mparams->m1m2) * (1. + mparams->m1m2) / 2.;
       mparams->epnspin20S1S1dotLNh = -3. * (1. + mparams->m2m1) * (1. + mparams->m2m1) / 2.;
       mparams->epnspin20S2S2dotLNh = -3. * (1. + mparams->m1m2) * (1. + mparams->m1m2) / 2.;
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case LAL_PNORDER_ONE_POINT_FIVE:
       mparams->wdotorb[3] = paramsInit->ak.ST[3];
@@ -324,22 +321,13 @@ static int XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspir
       mparams->LNhdot15 = 0.5;
       mparams->S1dot15 = (4.0 + 3.0 * mparams->m2m1) / 2.0 * mparams->eta;
       mparams->S2dot15 = (4.0 + 3.0 * mparams->m1m2) / 2.0 * mparams->eta;
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case LAL_PNORDER_ONE:
       mparams->epnorb[1] = paramsInit->ak.ETa1;
       mparams->wdotorb[2] = paramsInit->ak.ST[2];
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case LAL_PNORDER_HALF:
       mparams->wdotorb[1] = paramsInit->ak.ST[1];
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case LAL_PNORDER_NEWTONIAN:
       mparams->epnorb[0] = paramsInit->ak.ETaN;
@@ -352,7 +340,6 @@ static int XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspir
 
     case LAL_PNORDER_NUM_ORDER:
       XLALPrintError("*** LALPhenSpinInspiralRD ERROR: NUM_ORDER not a valid PN order\n");
-      break;
 
     default:
       XLALPrintError("*** LALPhenSpinInspiralRD ERROR: Impossible to create waveform with %d order\n",params->order);
@@ -370,18 +357,12 @@ static int XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspir
       mparams->wdotspin15S2LNh   = 0.;
       mparams->S1dot15           = 0.;
       mparams->S2dot15           = 0.;
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case LAL_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN:
       /* This keeps only the leading spin-orbit interactions*/
       mparams->wdotspin20S1S2      = 0.;
       mparams->epnspin20S1S2       = 0.;
       mparams->epnspin20S1S2dotLNh = 0.;
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case LAL_INSPIRAL_INTERACTION_SPIN_SPIN_2PN:
       /* This keeps S1-S2 interactions but kill spin self-interactions*/
@@ -393,9 +374,6 @@ static int XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspir
       mparams->epnspin20S2S2 = 0.;
       mparams->epnspin20S1S1dotLNh = 0.;
       mparams->epnspin20S2S2dotLNh = 0.;
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case LAL_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN:
       /* This kills all spin interaction intervening at 2.5PN order or higher*/
@@ -405,18 +383,12 @@ static int XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspir
       mparams->wdotspin25S2LNh     = 0.;
       mparams->S1dot25             = 0.;
       mparams->S2dot25             = 0.;
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case LAL_INSPIRAL_INTERACTION_QUAD_MONO_2PN:
 
     case LAL_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN:
       mparams->wdotspin30S1LNh     = 0.;
       mparams->wdotspin30S2LNh     = 0.;
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
 
     case LAL_INSPIRAL_INTERACTION_SPIN_ORBIT_3PN:
 
@@ -493,8 +465,10 @@ static int XLALSpinInspiralTest(double t, const double values[], double dvalues[
 }
 
 /**
- * Function to compute detivative of dynamical variables
+ * \ingroup psird
+ * \brief Module to compute detivative of dynamical variables
  */
+
 static int XLALSpinInspiralDerivatives(double t, const double values[], double dvalues[], void *mparams) {
 
     REAL8 omega;                // time-derivative of the orbital phase
@@ -690,8 +664,10 @@ void LALSpinInspiralDerivatives(REAL8Vector * values, REAL8Vector * dvalues, voi
 }				/* end of LALSpinInspiralDerivatives */
 
 /**
- * Main function to produce waveforms
+ * \ingroup psird
+ * \brief Main module to produce waveforms
  */
+
 static int XLALPSpinInspiralRDEngine(
 			REAL8Vector * signalvec1,
 			REAL8Vector * signalvec2,
@@ -751,8 +727,10 @@ int XLALPSpinInspiralRD(REAL4Vector * signalvec, InspiralTemplate * params)
 }
 
 /**
- * Function to produce waveform templates
+ * \ingroup psird
+ * \brief Module to produce waveform templates
  */
+
 void LALPSpinInspiralRDTemplates(LALStatus * status,
          REAL4Vector * signalvec1,
          REAL4Vector * signalvec2,
@@ -818,8 +796,10 @@ int XLALPSpinInspiralRDTemplates(
 }
 
 /**
- * Function Module to produce injection waveforms
+ * \ingroup psird
+ * \brief Module to produce injection waveforms
  */
+
 void LALPSpinInspiralRDForInjection(LALStatus        * status,
             CoherentGW       * waveform,
             InspiralTemplate * params,
@@ -1088,7 +1068,8 @@ int XLALPSpinInspiralRDFreqDom(
 }
 
 /**
- * Function actually computing PSIRD waveforms
+ * \ingroup psird
+ * \brief Module actually computing PSIRD waveforms
  */
 
 static int XLALSpinInspiralFillH2Modes(
@@ -1818,9 +1799,9 @@ static int XLALSpinInspiralAdaptiveEngine(
 
   REAL8Array *yout=NULL;
   //yout=malloc(sizeof(REAL8Array));
-  LALAdaptiveRungeKuttaIntegrator *integrator=NULL;
-  //integrator=malloc(sizeof(LALAdaptiveRungeKutta4Integrator));
- //memset(&integrator,0,sizeof(LALAdaptiveRungeKutta4Integrator)+1);
+  ark4GSLIntegrator *integrator=NULL;
+  //integrator=malloc(sizeof(ark4GSLIntegrator));
+ //memset(&integrator,0,sizeof(ark4GSLIntegrator)+1);
 
   REAL8 Psi;
   REAL8 alpha=0.;
@@ -1876,7 +1857,7 @@ static int XLALSpinInspiralAdaptiveEngine(
   intlen = XLALAdaptiveRungeKutta4Hermite(integrator,(void *)mparams,yin,0.0,mparams->lengths/Mass,dt/Mass,&yout);
 
   intreturn = integrator->returncode;
-  XLALAdaptiveRungeKuttaFree(integrator);
+  XLALAdaptiveRungeKutta4Free(integrator);
 
   /* End integration*/
 
@@ -3296,5 +3277,3 @@ static int XLALPSpinInspiralRDEngine(
 
   /*End */
 }
-
-/*@}*/

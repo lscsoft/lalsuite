@@ -31,10 +31,7 @@
 int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", stderr);return 1;}
 #else
 
-#ifdef HAVE_UNISTD_H
-#define _GNU_SOURCE   /* for getdomainname() */
 #include <unistd.h>
-#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -45,6 +42,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <time.h>
 #include <glob.h>
 #include <errno.h>
+#include <getopt.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,7 +52,6 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <time.h>
 
 #include <lal/LALDatatypes.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
@@ -72,6 +69,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/ConfigFile.h>
 #include <lal/ReadFiltersFile.h>
 #include <lal/TimeSeries.h>
+#include <lal/LALVersion.h>
 #include <lal/LALFrameIO.h>
 #include <lal/LALDetectors.h>
 #include <lal/Date.h>
@@ -81,6 +79,9 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/LALVCSInfo.h>
 #include <lalapps.h>
 #include <LALAppsVCSInfo.h>
+
+extern char *optarg;
+extern int optind, opterr, optopt;
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
@@ -227,7 +228,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   INT4 t0;
   INT4 dt;
   INT4 FrDuration;
-  INT8 detectorFlags;
+  int detectorFlags;
   char hostnameanduser[4096];
   char hostname[1024];
   char domainname[1024];
@@ -323,12 +324,12 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
 
   /* Add lalapps info */
   snprintf( lalappsconfargs, sizeof( lalappsconfargs), "LALApps Info:\n                          LALApps Version: %s\n                          Git Tag: %s\n                          Git ID: %s\n                          Configure Date: %s\n                          Configure Arguments: %s",
-            LALAPPS_VERSION , lalAppsVCSInfo.vcsTag, lalAppsVCSInfo.vcsId, lalAppsVCSInfo.configureDate, lalAppsVCSInfo.configureArgs );
+            LALAPPS_VERSION , lalAppsVCSInfo.vcsTag, lalAppsVCSInfo.vcsId, lalAppsConfigureDate, lalAppsConfigureArgs );
   XLALFrameAddFrHistory( frame, __FILE__, lalappsconfargs);
 
   /* Add lal info */
   snprintf( lalconfargs, sizeof( lalconfargs), "LAL Info:\n                          LAL Version: %s\n                          Git Tag: %s\n                          Git ID: %s\n                          Configure Date: %s\n                          Configure Arguments: %s",
-	       LAL_VERSION , lalVCSInfo.vcsTag, lalVCSInfo.vcsId, lalAppsVCSInfo.configureDate, lalAppsVCSInfo.configureArgs );
+	       LAL_VERSION , lalVCSInfo.vcsTag, lalVCSInfo.vcsId, lalAppsConfigureDate, lalAppsConfigureArgs );
   XLALFrameAddFrHistory( frame, __FILE__, lalconfargs);
 
   /* Create string with all command line arguments and add it to history */
@@ -353,8 +354,8 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
 
   /* Filters file checksum and cvs info (first 2 lines in filters file) */
   {
-    char buffer[1280];
-    snprintf(buffer, sizeof(buffer), "Filters file checksum and header: %s\n%s",
+    char buffer[1024];
+    snprintf(buffer, sizeof buffer, "Filters file checksum and header: %s\n%s",
              InputData.filter_chksum, InputData.filter_vc_info);
     XLALFrameAddFrHistory(frame, __FILE__, buffer);
   }
@@ -608,7 +609,7 @@ static FrChanIn chanin_lay;  /* light in y-arm */
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
   INT4 errflg=0;
-  struct LALoption long_options[] = {
+  struct option long_options[] = {
     {"factors-time",        required_argument, NULL,  't'},
     {"filters-file",        required_argument, NULL,  'F'},
     {"frame-cache",         required_argument, NULL,  'C'},
@@ -660,10 +661,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   /* Scan through list of command line arguments */
   while ( 1 )
   {
-    int option_index = 0; /* LALgetopt_long stores long option here */
+    int option_index = 0; /* getopt_long stores long option here */
     int c;
 
-    c = LALgetopt_long_only( argc, argv, args, long_options, &option_index );
+    c = getopt_long_only( argc, argv, args, long_options, &option_index );
     if ( c == -1 ) /* end of options */
       break;
 
@@ -671,24 +672,24 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {
     case 't':
       /* factors integration time */
-      CLA->To=atof(LALoptarg);
+      CLA->To=atof(optarg);
       break;
     case 'C':
       /* name of frame cache file */
-      CLA->FrCacheFile=LALoptarg;
+      CLA->FrCacheFile=optarg;
       break;
     case 'F':
       /* name of filter cache file */
-      CLA->filterfile=LALoptarg;
+      CLA->filterfile=optarg;
       break;
     case 'i':
       /* name of interferometer */
-      if (strcmp(LALoptarg, "H1") != 0 && strcmp(LALoptarg, "H2") != 0 &&
-          strcmp(LALoptarg, "L1") != 0) {
-        fprintf(stderr, "Bad ifo: %s   (must be H1, H2 or L1)\n", LALoptarg);
+      if (strcmp(optarg, "H1") != 0 && strcmp(optarg, "H2") != 0 &&
+          strcmp(optarg, "L1") != 0) {
+        fprintf(stderr, "Bad ifo: %s   (must be H1, H2 or L1)\n", optarg);
         exit(1);
       }
-      CLA->ifo=LALoptarg;
+      CLA->ifo=optarg;
       {
         int i;
         char *cnames[] = { sv_cname, lax_cname, lay_cname, asq_cname,
@@ -699,11 +700,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 's':
       /* GPS start */
-      CLA->GPSStart=atof(LALoptarg);
+      CLA->GPSStart=atof(optarg);
       break;
     case 'e':
       /* GPS end */
-      CLA->GPSEnd=atof(LALoptarg);
+      CLA->GPSEnd=atof(optarg);
       break;
     case 'd':
       /*  use unit impulse*/
@@ -719,7 +720,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 'o':
       /*  wing size (at each end have this many extra seconds) */
-      InputData.wings=atoi(LALoptarg);
+      InputData.wings=atoi(optarg);
       break;
     case 'u':
       /* don't use calibration factors in teh strain computation */
@@ -730,16 +731,16 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       InputData.fftconv=0;
       break;
     case 'T':
-      CLA->frametype=LALoptarg;
+      CLA->frametype=optarg;
       break;
     case 'S':
-      CLA->strainchannel=LALoptarg;
+      CLA->strainchannel=optarg;
       break;
     case 'z':
-      CLA->datadirL1=LALoptarg;
+      CLA->datadirL1=optarg;
       break;
     case 'p':
-      CLA->datadirL2=LALoptarg;
+      CLA->datadirL2=optarg;
       break;
     case 'v':
       CLA->checkfilename=1;
@@ -749,7 +750,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       InputData.darmctrl=0;
       break;
     case 'y':
-      InputData.gamma_fudgefactor=atof(LALoptarg);
+      InputData.gamma_fudgefactor=atof(optarg);
       break;
     case 'h':
       /* print usage/help message */

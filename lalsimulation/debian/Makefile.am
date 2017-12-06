@@ -3,11 +3,12 @@ EXTRA_DIST = \
 	compat \
 	control \
 	copyright \
+	docs \
+	lalsimulation-dev.dirs \
 	lalsimulation-dev.install \
 	lalsimulation-octave.install \
 	lalsimulation-python.install \
-	lalsimulation-python3.install \
+	lalsimulation.dirs \
 	lalsimulation.install \
 	rules \
-	lalsuite.mk \
 	source/format

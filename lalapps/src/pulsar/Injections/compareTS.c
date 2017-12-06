@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_Tools
+ * \ingroup pulsarApps
  * \author R. Prix
  * \brief
  * compare two binary strain files, written from hardware-injection
@@ -40,12 +40,41 @@
 
 #include <lalapps.h>
 
+/* Error codes and messages */
+#define MAKEFAKEDATAC_ENORM 	0
+#define MAKEFAKEDATAC_ESUB  	1
+#define MAKEFAKEDATAC_EARG  	2
+#define MAKEFAKEDATAC_EBAD  	3
+#define MAKEFAKEDATAC_EFILE 	4
+#define MAKEFAKEDATAC_ENOARG 	5
+#define MAKEFAKEDATAC_EINCOMPAT 6
+#define MAKEFAKEDATAC_ENULL	7
+
+#define MAKEFAKEDATAC_MSGENORM "Normal exit"
+#define MAKEFAKEDATAC_MSGESUB  "Subroutine failed"
+#define MAKEFAKEDATAC_MSGEARG  "Error parsing arguments"
+#define MAKEFAKEDATAC_MSGEBAD  "Bad argument values"
+#define MAKEFAKEDATAC_MSGEFILE "File IO error"
+#define MAKEFAKEDATAC_MSGENOARG "Missing argument"
+#define MAKEFAKEDATAC_MSGEINCOMPAT "Incompatible SFTs"
+#define MAKEFAKEDATAC_MSGENULL	"Unexpected null pointer"
+
+/***************************************************/
+#define TRUE (1==1)
+#define FALSE (1==0)
+
+#define MYMAX(a,b) ( (a>b) ? a:b )
+#define SQ(x) ( (x) * (x) )
+
+
 /* User variables */
 typedef struct {
   CHAR *infile1;
   CHAR *infile2;
   INT4 debug;
   BOOLEAN verbose;
+  BOOLEAN help;
+  BOOLEAN version;
   REAL8 relErrorMax;
 } UserVar;
 
@@ -53,7 +82,10 @@ typedef struct {
 /* ----- local prototypes ----- */
 REAL4 getMaxErrSFT (const SFTtype *sft1, const SFTtype *sft2);
 REAL4 getMaxErrSFTVector (const SFTVector *sftvect1, const SFTVector *sftvect2);
-int initUserVars ( UserVar *uvar );
+void scalarProductSFT (LALStatus *stat, REAL4 *scalar, const SFTtype *sft1, const SFTtype *sft2);
+void scalarProductSFTVector (LALStatus *stat, REAL4 *scalar, const SFTVector *sftvect1, const SFTVector *sftvect2);
+void subtractSFTVectors (LALStatus *stat, SFTVector **ret, const SFTVector *sftvect1, const SFTVector *sftvect2);
+void initUserVars (LALStatus *status, UserVar *uvar);
 REAL4 XLALcompareREAL4Vectors ( REAL4Vector *ts1, REAL4Vector *ts2 );
 REAL4Vector *XLALREAL4VectorFromFile ( const CHAR *fname );
 
@@ -65,34 +97,68 @@ extern int vrbflg;
 int
 main(int argc, char *argv[])
 {
-  /* register all user-variables */
+  LALStatus XLAL_INIT_DECL(status);
   UserVar XLAL_INIT_DECL(uvar);
-  XLAL_CHECK_MAIN ( initUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
+  REAL4Vector *ts1 = NULL, *ts2 = NULL;
+  REAL4 maxd;
+
+
+  /* set LAL error-handler */
+  lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
+
+  /* register all user-variables */
+  LAL_CALL ( initUserVars (&status, &uvar), &status );
 
   /* read cmdline & cfgfile  */
-  BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if ( should_exit ) {
-    exit (1);
-  }
+  LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);
+
+  if (uvar.help) 	/* help requested: we're done */
+    exit (0);
+
+  if (uvar.version)
+    {
+      CHAR *VCSInfoString;
+      if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
+        XLALPrintError("XLALGetVersionString(0) failed.\n");
+        exit(1);
+      }
+      printf ("%s\n", VCSInfoString );
+      XLALFree ( VCSInfoString );
+      exit(0);
+    }
+
+  LogSetLevel ( lalDebugLevel );
 
   /* now read in the two timeseries */
-  REAL4Vector *ts1, *ts2;
-  XLAL_CHECK_MAIN ( (ts1 = XLALREAL4VectorFromFile ( uvar.infile1 )) != NULL, XLAL_EFUNC, "Failed to load timeseries file '%s'.\n", uvar.infile1 );
-  XLAL_CHECK_MAIN ( (ts2 = XLALREAL4VectorFromFile ( uvar.infile2 )) != NULL, XLAL_EFUNC, "Failed to load timeseries file '%s'.\n", uvar.infile2 );
+  if ( (ts1 = XLALREAL4VectorFromFile ( uvar.infile1 )) == NULL ) {
+    LogPrintf ( LOG_CRITICAL, "%s: failed to load timeseries file '%s'.\n", __func__, uvar.infile1 );
+    return MAKEFAKEDATAC_EFILE;
+  }
 
-  REAL4 maxd = XLALcompareREAL4Vectors ( ts1, ts2 );
-  XLAL_CHECK_MAIN ( ! XLAL_IS_REAL8_FAIL_NAN ( maxd ), XLAL_EFUNC );
+  if ( (ts2 = XLALREAL4VectorFromFile ( uvar.infile2 )) == NULL ) {
+    LogPrintf (LOG_CRITICAL, "%s: failed to load timeseries file '%s'.\n", __func__, uvar.infile2 );
+    return MAKEFAKEDATAC_EFILE;
+  }
 
-  XLAL_CHECK_MAIN ( maxd <= uvar.relErrorMax, XLAL_ETOL, "FAILED. Maximal relative error %e exceeds tolerance %e.\n", maxd, uvar.relErrorMax );
+  maxd = XLALcompareREAL4Vectors ( ts1, ts2 );
+  if ( XLAL_IS_REAL8_FAIL_NAN ( maxd ) ) {
+    LogPrintf (LOG_CRITICAL, "%s: XLALcompareTS() failed. xlalErrno = %d.\n", __func__, xlalErrno );
+    return XLAL_EFUNC;
+  }
 
-  XLALPrintInfo ("OK. Maximal relative error %e is within tolerance of %e.\n", maxd, uvar.relErrorMax );
+  if ( maxd > uvar.relErrorMax )
+    {
+      LogPrintf (LOG_CRITICAL, "%s: FAILED. Maximal relative error %e exceeds tolerance %e.\n", __func__, maxd, uvar.relErrorMax );
+      return XLAL_EFAILED;
+    }
+
+  LogPrintf (LOG_DEBUG, "%s: OK. Maximal relative error %e is within tolerance of %e.\n", __func__, maxd, uvar.relErrorMax );
 
   /* free memory */
   XLALDestroyREAL4Vector ( ts1 );
   XLALDestroyREAL4Vector ( ts2 );
 
-  XLALDestroyUserVars();
+  LALDestroyUserVars (&status);
 
   LALCheckMemoryLeaks();
 
@@ -103,21 +169,29 @@ main(int argc, char *argv[])
 
 /*----------------------------------------------------------------------*/
 /* register all our "user-variables" */
-int
-initUserVars ( UserVar *uvar )
+void
+initUserVars (LALStatus *status, UserVar *uvar)
 {
+  INITSTATUS(status);
+  ATTATCHSTATUSPTR (status);
+
   /* set some defaults */
   uvar->debug = lalDebugLevel;
-  uvar->verbose = 0;
+  uvar->verbose = FALSE;
   uvar->relErrorMax = 1e-4;
 
   /* now register all our user-variable */
-  XLALRegisterUvarMember(	infile1,	STRING, '1', REQUIRED, "First timeseries input file");
-  XLALRegisterUvarMember( 	infile2,	STRING, '2', REQUIRED, "Second timeseries input file");
-  XLALRegisterUvarMember( 	verbose,	BOOLEAN, 'v', OPTIONAL, "Verbose output of differences");
-  XLALRegisterUvarMember( 	relErrorMax,   	REAL8, 'e', OPTIONAL, "Maximal relative error acceptable to 'pass' comparison");
+  LALregBOOLUserStruct(status,   help,	        'h', UVAR_HELP,     "Print this help/usage message");
+  LALregSTRINGUserStruct(status, infile1,	'1', UVAR_REQUIRED, "First timeseries input file");
+  LALregSTRINGUserStruct(status, infile2,	'2', UVAR_REQUIRED, "Second timeseries input file");
+  LALregBOOLUserStruct(status,   verbose,	'v', UVAR_OPTIONAL, "Verbose output of differences");
+  LALregREALUserStruct(status,   relErrorMax,   'e', UVAR_OPTIONAL, "Maximal relative error acceptable to 'pass' comparison");
+  LALregBOOLUserStruct(status,   version,	'V', UVAR_SPECIAL,  "Output version information");
 
-  return XLAL_SUCCESS;
+
+  DETATCHSTATUSPTR (status );
+  RETURN (status );
+
 } /* initUserVars() */
 
 
@@ -171,7 +245,7 @@ XLALcompareREAL4Vectors ( REAL4Vector *ts1, REAL4Vector *ts2 )
   LogPrintf (LOG_DEBUG, "%s: maximal difference = %g, maximal amplitude = %g ==> relative error %g\n", __func__, maxdiff, maxpower, reldiff_max );
   LogPrintf (LOG_DEBUG, "%s: total difference = %g, total summed amplitude = %g ==> relative avg error %g\n", __func__, sumdiff, total_power, reldiff_avg );
 
-  reldiff = fmax ( reldiff_max, reldiff_avg );
+  reldiff = MYMAX ( reldiff_max, reldiff_avg );
 
   return (REAL4)reldiff;
 

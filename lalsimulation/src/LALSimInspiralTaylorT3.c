@@ -514,7 +514,7 @@ XLALSimInspiralPhasing3_7PN (
 }
 
 
-/*
+/**
  * Returns the sum of chirp times to a specified order.
  *
  * Computes the sum of the chirp times to a specified order. Inputs given in SI
@@ -569,15 +569,9 @@ static REAL8 XLALSimInspiralChirpLength(
 		case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
 			t12 = XLALSimInspiralTaylorT2Timing_12PNTidalCoeff(eta,chi1,lambda1)
 		    	+ XLALSimInspiralTaylorT2Timing_12PNTidalCoeff(eta,chi2,lambda2);
-#if __GNUC__ >= 7
-			__attribute__ ((fallthrough));
-#endif
 		case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
 			t10 = XLALSimInspiralTaylorT2Timing_10PNTidalCoeff(chi1,lambda1)
 		    	+ XLALSimInspiralTaylorT2Timing_10PNTidalCoeff(chi2,lambda2);
-#if __GNUC__ >= 7
-			__attribute__ ((fallthrough));
-#endif
 		case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
 			break;
 		default:
@@ -591,35 +585,17 @@ static REAL8 XLALSimInspiralChirpLength(
 		case 0:
 		case 1:
 			t2 = 0.;
-#if __GNUC__ >= 7
-			__attribute__ ((fallthrough));
-#endif
 		case 2:
 			t3 = 0.;
-#if __GNUC__ >= 7
-			__attribute__ ((fallthrough));
-#endif
 		case 3:
 			t4 = 0.;
-#if __GNUC__ >= 7
-			__attribute__ ((fallthrough));
-#endif
 		case 4:
 			t5 = 0.;
-#if __GNUC__ >= 7
-			__attribute__ ((fallthrough));
-#endif
 		case 5:
 			t6 = 0.;
 			t6l = 0.;
-#if __GNUC__ >= 7
-			__attribute__ ((fallthrough));
-#endif
 		case 6:
 			t7 = 0.;
-#if __GNUC__ >= 7
-			__attribute__ ((fallthrough));
-#endif
 		case 7:
         case -1: // Use the max PN order, move if higher orders implemented
 			break;
@@ -646,7 +622,7 @@ static REAL8 XLALSimInspiralChirpLength(
 }
 
 
-/*
+/**
  * Set up the expnCoeffsTaylorT3 and expnFuncTaylorT3 structures for
  * generating a TaylorT3 waveform.
  *
@@ -714,17 +690,11 @@ static int XLALSimInspiralTaylorT3Setup(
       ak->fta12 = XLALSimInspiralTaylorT3Frequency_12PNTidalCoeff(
           eta, chi1, lambda1)
           + XLALSimInspiralTaylorT3Frequency_12PNTidalCoeff(eta,chi2,lambda2);
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
     case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
       ak->pta10 = XLALSimInspiralTaylorT3Phasing_10PNTidalCoeff(chi1,lambda1)
                 + XLALSimInspiralTaylorT3Phasing_10PNTidalCoeff(chi2,lambda2);
       ak->fta10 = XLALSimInspiralTaylorT3Frequency_10PNTidalCoeff(chi1,lambda1)
                 + XLALSimInspiralTaylorT3Frequency_10PNTidalCoeff(chi2,lambda2);
-#if __GNUC__ >= 7
-      __attribute__ ((fallthrough));
-#endif
     case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
       break;
     default:
@@ -784,17 +754,6 @@ static int XLALSimInspiralTaylorT3Setup(
   return XLAL_SUCCESS;
 }
 
-/**
- * @addtogroup LALSimInspiralTaylorXX_c
- * @{
- * @name Routines for TaylorT3 Waveforms
- * @sa
- * Section IIID of Alessandra Buonanno, Bala R Iyer, Evan
- * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
- * templates for compact binary inspiral signals in gravitational-wave
- * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
- * @{
- */
 
 /**
  * Computes a post-Newtonian orbit using the Taylor T3 method.
@@ -1229,6 +1188,3 @@ int XLALSimInspiralTaylorT3PNRestricted(
 			deltaT, m1, m2, f_min, fRef, r, i, lambda1, lambda2,
 			tideO, 0, O);
 }
-
-/** @} */
-/** @} */

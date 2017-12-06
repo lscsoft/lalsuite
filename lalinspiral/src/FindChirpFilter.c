@@ -249,7 +249,7 @@ LALFindChirpFilterSegment (
   {
     CHAR infomsg[256];
 
-    snprintf( infomsg, XLAL_NUM_ELEM(infomsg),
+    snprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg),
         "m1 = %e m2 = %e => %e seconds => %d points\n"
         "invSpecTrunc = %d => ignoreIndex = %d\n",
         input->fcTmplt->tmplt.mass1, input->fcTmplt->tmplt.mass2,
@@ -271,7 +271,7 @@ LALFindChirpFilterSegment (
   {
     CHAR infomsg[256];
 
-    snprintf( infomsg, XLAL_NUM_ELEM(infomsg),
+    snprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg),
         "filtering from %d to %d\n",
         ignoreIndex, numPoints - ignoreIndex );
     LALInfo( status, infomsg );

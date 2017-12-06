@@ -58,7 +58,7 @@ extern "C" {
 
 /**
  * \defgroup TimeFreq_h Header TimeFreq.h
- * \ingroup lalburst_timefreq
+ * \ingroup pkg_TFR
  *
  * ### Synopsis ###
  *

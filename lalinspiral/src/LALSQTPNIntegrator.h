@@ -15,7 +15,7 @@ extern "C" {
 
 /**
  * \defgroup LALSQTPNIntegrator_h Header LALSQTPNIntegrator.h
- * \ingroup lalinspiral_UNCLASSIFIED
+ * \ingroup pkg_CBC_NEW
  *
  * \brief Contains the function declarations and structures needed by the integration method.
  * \author László Veréb

@@ -191,10 +191,7 @@ LALInspiralFindLoudestEvent
 		   if (findeventsin->displayTemplates)
 		   {
 			   for (i=0;i<(INT4)output1.length;i++)
-         {
-           printf("%e %e %e\n", i*dt, output1.data[i], output2.data[i]);
-           printf("&\n");
-         }
+				   printf("%e %e %e\n", i*dt, output1.data[i], output2.data[i]);printf("&\n");
 		   }
 		   if (XLALREAL4VectorFFT(&filter1, &output1, findeventsin->fwdp) != 0)
          ABORTXLAL(status);
@@ -221,10 +218,7 @@ LALInspiralFindLoudestEvent
 			   if (XLALREAL4VectorFFT(&output2, &filter2, findeventsin->revp) != 0)
 				   ABORTXLAL(status);
 			   for (i=0;i<(INT4)output1.length;i++)
-         {
-           printf("%e %e %e\n", i*dt, output1.data[i], output2.data[i]);
-           printf("&\n");
-         }
+				   printf("%e %e %e\n", i*dt, output1.data[i], output2.data[i]);printf("&\n");
 
 			   if (XLALREAL4VectorFFT(&filter1, &output1, findeventsin->fwdp) != 0)
 				   ABORTXLAL(status);

@@ -29,7 +29,7 @@
 /**
  * \author Brown, D. A. and Fairhurst, S.
  * \file
- * \ingroup lalmetaio_general
+ * \ingroup lalmetaio
  * \brief Provides functions for manipulating the LAL structures that correspond
  * to the LIGO metadata database tables defined in \ref LIGOMetadataTables.h.
  *
@@ -91,7 +91,7 @@ extern "C" {
  * The \c LALPlaygroundDataMask contains an enum type for describing the
  * subset of data to be used, \c playground_only, \c exclude_play and \c all_data.
  */
-typedef enum tagLALPlaygroundDataMask
+typedef enum
 {
   unspecified_data_type,
   playground_only,

@@ -21,11 +21,6 @@
 #include <lal/LALAtomicDatatypes.h>
 
 /**
- * @addtogroup LALSimInspiralPrecess_h
- * @{
- */
-
-/**
  * Takes in the h_lm spherical harmonic decomposed modes and rotates the modes
  * by Euler angles alpha, beta, and gamma using the Wigner D matrices.
  *
@@ -62,10 +57,8 @@ int XLALSimInspiralPrecessionRotateModes(
 			for(m=0; m<2*l+1; m++){
 				for(mp=0; mp<2*l+1; mp++){
 					if( !h_xx[m] ) continue;
-					if(!(creal(h_xx[m]->data->data[i])==0 && creal(x_lm[mp])==0)) {
-					  h_xx[m]->data->data[i] +=
-					    x_lm[mp] * XLALWignerDMatrix( l, mp-l, m-l, alpha->data->data[i], beta->data->data[i], gam->data->data[i] );
-					  }
+					h_xx[m]->data->data[i] += 
+						x_lm[mp] * XLALWignerDMatrix( l, mp-l, m-l, alpha->data->data[i], beta->data->data[i], gam->data->data[i] );
 				}
 			}
 		}
@@ -337,5 +330,3 @@ int XLALSimInspiralOrientationMatrixDirection(
 
 		return XLAL_SUCCESS;
 }
-
-/** @} */

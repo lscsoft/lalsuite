@@ -1,18 +1,21 @@
-MOSTLYCLEANFILES =
+BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
-include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
-AM_CPPFLAGS += -I$(top_srcdir)/src/pulsar/Fstatistic -I$(top_srcdir)/src/pulsar/EinsteinAtHome -I$(top_srcdir)/src/pulsar/HoughFstat
+AM_CPPFLAGS = -I$(top_srcdir)/src/pulsar/FDS_isolated @AM_CPPFLAGS@
+
+CFSsrc = $(top_srcdir)/src/pulsar/FDS_isolated
+EAHsrc = $(top_srcdir)/src/pulsar/hough/src2/EinsteinAtHome
 
 bin_PROGRAMS = lalapps_HierarchSearchGCT
 check_PROGRAMS =
 EXTRA_PROGRAMS = eah_HierarchSearchGCT \
 	         lalapps_HierarchSearchGCT_SSE2 lalapps_HierarchSearchGCT_SSE2_NONC
 
-EAHSources = hs_boinc_extras.c hs_boinc_options.cpp win_lib.cpp
+EAHSources = $(EAHsrc)/hs_boinc_extras.c $(EAHsrc)/hs_boinc_options.cpp $(EAHsrc)/win_lib.cpp
 HSGCTSources = HierarchSearchGCT.c HierarchSearchGCT.h \
                           GCTtoplist.c GCTtoplist.h \
-                          HeapToplist.c \
+                          $(CFSsrc)/HeapToplist.c $(CFSsrc)/HeapToplist.h \
+                          $(CFSsrc)/ComputeFStatistic.h \
                           RecalcToplistStats.c RecalcToplistStats.h
 
 lalapps_HierarchSearchGCT_SOURCES = $(HSGCTSources)
@@ -39,11 +42,11 @@ eah_HierarchSearchGCT_LDADD = $(LDADD) $(RELEASE_LDADD)
 libstdc++.a:
 	cp -f `$(CC) -print-file-name=$@` $@
 
-exchndl.o: exchndl.c
-	$(CC) $(AM_CPPFLAGS) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+exchndl.o: $(EAHsrc)/exchndl.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-erp_execinfo_plus.o: erp_execinfo_plus.c
-	$(CC) $(AM_CPPFLAGS) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+erp_execinfo_plus.o: $(EAHsrc)/erp_execinfo_plus.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 
 # how to compile CUDA files (.cu)
@@ -51,8 +54,25 @@ NVCC ?= nvcc
 .cu.o:
 	$(NVCC) $(CPPFLAGS) -c $< -o $@
 
-EXTRA_DIST = testGCT.sh testGCT_inject.sh
+## pretty dirty hack, particulary for compiling an E@H Mac OS 10.3 App on 10.4
+eah_HierarchSearchGCT_manual: eah_HierarchSearchGCT-HierarchSearchGCT.o \
+    eah_HierarchSearchGCT-GCTtoplist.o \
+    eah_HierarchSearchGCT-HeapToplist.o \
+    eah_HierarchSearchGCT-ComputeFstat_RS.o \
+    eah_HierarchSearchGCT-RecalcToplistStats.o \
+    eah_HierarchSearchGCT-hs_boinc_extras.o \
+    eah_HierarchSearchGCT-hs_boinc_options.o \
+    eah_HierarchSearchGCT-win_lib.o \
+    libstdc++.a
+	$(CXX) $(CPPFLAGS) $(AC_CPPFLAGS) -o $@ $^ $(LDFLAGS) $(AC_LDFLAGS) $(LDADD) $(AC_LDADD) $(LIBS) $(AC_LIBS) libstdc++.a
 
-TESTS = testGCT.sh testGCT_inject.sh
+
+EXTRA_DIST = testGCT.sh
+
+TESTS = testGCT.sh
+
+TESTS_ENVIRONMENT = \
+	LAL_DEBUG_LEVEL=msglvl1,memdbg; export LAL_DEBUG_LEVEL; \
+	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;
 
 CLEANFILES =

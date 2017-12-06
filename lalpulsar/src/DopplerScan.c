@@ -26,15 +26,15 @@
 
 /*---------- INCLUDES ----------*/
 #include <math.h>
-#include <ctype.h>
 
 #include <lal/LALStdlib.h>
 #include <lal/DetectorSite.h>
+#include <lal/StackMetric.h>
 #include <lal/AVFactories.h>
 #include <lal/LALError.h>
 #include <lal/LALString.h>
 #include <lal/StringInput.h>
-#include <lal/UserInputParse.h>
+#include <lal/ConfigFile.h>
 #include <lal/Velocity.h>
 #include <lal/TwoDMesh.h>
 
@@ -49,6 +49,12 @@
 #else
 #define UNUSED
 #endif
+
+#define MIN(x,y) (x < y ? x : y)
+#define MAX(x,y) (x > y ? x : y)
+
+#define TRUE (1==1)
+#define FALSE (1==0)
 
 /* Metric indexing scheme: if g_ij for i<=j: index = i + j*(j+1)/2 */
 /* the variable-order of PulsarMetric is {f, alpha, delta, f1, f2, ... } */
@@ -68,12 +74,12 @@
 #define INDEX_f1_f1	PMETRIC_INDEX(3,3)
 
 /* all-sky skyregion string, with exact boundaries */
-#define DELTA_0     "-1.570796"
-#define DELTA_1      "1.570796"
-#define ALPHA_0     "1e-6"
-#define ALPHA_1     "6.283185"
+#define DELTA_0     "-1.570796)"
+#define DELTA_1     " 1.570796)"
+#define ALPHA_0     "(1e-6, "
+#define ALPHA_1     "(6.283185, "
 
-#define SKYREGION_ALLSKY  "(" ALPHA_0 ", " DELTA_0 "),(" ALPHA_1 ", " DELTA_0 "),(" ALPHA_1 ", " DELTA_1 "),(" ALPHA_0 ", " DELTA_1 ")"
+#define SKYREGION_ALLSKY  ALPHA_0 DELTA_0 "," ALPHA_1 DELTA_0 "," ALPHA_1 DELTA_1 "," ALPHA_0 DELTA_1
 
 /* the amount by which we push-in the encosing rectangle to avoid spurious polygon-clipping
  * of boundary-points due to numerical fluctuations in TwoDMesh().
@@ -98,20 +104,20 @@ void getRange( LALStatus *, meshREAL y[2], meshREAL x, void *params );
 void getMetric( LALStatus *, meshREAL g[3], meshREAL skypos[2], void *params );
 REAL8 getDopplermax(EphemerisData *edat);
 
-DopplerSkyGrid *ConvertTwoDMesh2SkyGrid ( const meshNODE *mesh2d, const SkyRegion *region );
+void ConvertTwoDMesh2SkyGrid ( LALStatus *, DopplerSkyGrid **grid, const meshNODE *mesh2d, const SkyRegion *region );
 
 BOOLEAN pointInPolygon ( const SkyPosition *point, const SkyRegion *polygon );
 
 void gridFlipOrder ( meshNODE *grid );
 
-DopplerSkyGrid * buildFlatSkyGrid (const SkyRegion *region, REAL8 dAlpha, REAL8 dDelta);
-DopplerSkyGrid * buildIsotropicSkyGrid ( const SkyRegion *skyRegion, REAL8 dAlpha, REAL8 dDelta);
-DopplerSkyGrid * buildMetricSkyGrid ( SkyRegion *skyRegion,  const DopplerSkyScanInit *init);
-DopplerSkyGrid * loadSkyGridFile ( const CHAR *fname );
+void buildFlatSkyGrid (LALStatus *, DopplerSkyGrid **skygrid, const SkyRegion *region, REAL8 dAlpha, REAL8 dDelta);
+void buildIsotropicSkyGrid (LALStatus *, DopplerSkyGrid **skygrid, const SkyRegion *skyRegion, REAL8 dAlpha, REAL8 dDelta);
+void buildMetricSkyGrid (LALStatus *, DopplerSkyGrid **skygrid, SkyRegion *skyRegion,  const DopplerSkyScanInit *init);
+void loadSkyGridFile (LALStatus *, DopplerSkyGrid **skygrid, const CHAR *fname );
 
 void plotSkyGrid (LALStatus *, DopplerSkyGrid *skygrid, const SkyRegion *region, const DopplerSkyScanInit *init);
 void freeSkyGrid(DopplerSkyGrid *skygrid);
-int  getGridSpacings( PulsarDopplerParams *spacings, PulsarDopplerParams gridpoint, const DopplerSkyScanInit *params);
+void getGridSpacings(LALStatus *, PulsarDopplerParams *spacings, PulsarDopplerParams gridpoint, const DopplerSkyScanInit *params);
 
 void printFrequencyShifts(LALStatus *, const DopplerSkyScanState *skyScan, const DopplerSkyScanInit *init);
 
@@ -169,62 +175,94 @@ XLALNextDopplerSkyPos( PulsarDopplerParams *pos, DopplerSkyScanState *skyScan)
 /**
  * Initialize the Doppler sky-scanner
  */
-int
-XLALInitDopplerSkyScan ( DopplerSkyScanState *skyScan, 		/**< [out] the initialized scan-structure */
-                         const DopplerSkyScanInit *init)	/**< [in] init-params */
+void
+InitDopplerSkyScan( LALStatus *status,			/**< pointer to LALStatus structure */
+		    DopplerSkyScanState *skyScan, 	/**< [out] the initialized scan-structure */
+		    const DopplerSkyScanInit *init)	/**< [in] init-params */
 {
-  XLAL_CHECK ( skyScan != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( skyScan->state == STATE_IDLE, XLAL_EINVAL );
-  XLAL_CHECK ( init->gridType < GRID_SKY_LAST, XLAL_EINVAL );
+  DopplerSkyGrid *node;
+
+  INITSTATUS(status);
+  ATTATCHSTATUSPTR (status);
+
+  /* This traps coding errors in the calling routine. */
+  ASSERT ( skyScan, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
+  ASSERT ( skyScan->state == STATE_IDLE, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
+  ASSERT ( init->gridType < GRID_SKY_LAST, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
 
   /* trap some abnormal input */
-  if ( (init->gridType != GRID_FILE_SKYGRID) && (init->gridType != GRID_METRIC_SKYFILE) && (init->skyRegionString == NULL) ) {
-    XLAL_ERROR ( XLAL_EINVAL, "ERROR: No sky-region was specified!\n\n");
-  }
-  if ( (init->gridType == GRID_FILE_SKYGRID) && (init->skyGridFile == NULL) ) {
-    XLAL_ERROR ( XLAL_EINVAL, "ERROR: no skyGridFile has been specified!\n\n");
-  }
+  if ( (init->gridType != GRID_FILE_SKYGRID) && (init->gridType != GRID_METRIC_SKYFILE) && (init->skyRegionString == NULL) )
+    {
+      LogPrintf (LOG_CRITICAL, "ERROR: No sky-region was specified!\n\n");
+      ABORT (status,  DOPPLERSCANH_ENULL ,  DOPPLERSCANH_MSGENULL );
+    }
+  if ( (init->gridType == GRID_FILE_SKYGRID) && (init->skyGridFile == NULL) )
+    {
+      LogPrintf (LOG_CRITICAL, "ERROR: no skyGridFile has been specified!\n\n");
+      ABORT (status,  DOPPLERSCANH_ENULL ,  DOPPLERSCANH_MSGENULL );
+    }
 
-  DopplerSkyGrid *node;
   /* general initializations */
   skyScan->skyGrid = NULL;
   skyScan->skyNode = NULL;
 
-  XLAL_CHECK ( XLALParseSkyRegionString ( &(skyScan->skyRegion), init->skyRegionString) == XLAL_SUCCESS, XLAL_EFUNC );
+  TRY (ParseSkyRegionString(status->statusPtr, &(skyScan->skyRegion), init->skyRegionString), status);
 
-  XLAL_CHECK ( skyScan->skyRegion.numVertices != 2, XLAL_EFAILED, "Anomalous sky region with 2 vertices: allowed are 1 or >= 3\n" );
+  if (skyScan->skyRegion.numVertices == 2){ /* anomaly! Allowed are either 1 or >= 3 */
+    ABORT (status, DOPPLERSCANH_E2DSKY, DOPPLERSCANH_MSGE2DSKY);
+  }
 
   switch (init->gridType)
     {
     case GRID_FLAT:		/* flat-grid: constant dAlpha, dDelta */
-      XLAL_CHECK ( (skyScan->skyGrid = buildFlatSkyGrid( &(skyScan->skyRegion), init->dAlpha, init->dDelta)) != NULL, XLAL_EFUNC );
+      TRY ( buildFlatSkyGrid( status->statusPtr, &(skyScan->skyGrid), &(skyScan->skyRegion), init->dAlpha, init->dDelta), status);
       break;
 
     case GRID_ISOTROPIC: 	/* variant of manual stepping: try to produce an isotropic mesh */
-      XLAL_CHECK ( (skyScan->skyGrid = buildIsotropicSkyGrid( &(skyScan->skyRegion), init->dAlpha, init->dDelta )) != NULL, XLAL_EFUNC );
+      TRY ( buildIsotropicSkyGrid( status->statusPtr, &(skyScan->skyGrid), &(skyScan->skyRegion), init->dAlpha, init->dDelta), status);
       break;
 
     case GRID_METRIC:
-      XLAL_CHECK ( (skyScan->skyGrid = buildMetricSkyGrid (&(skyScan->skyRegion), init)) != NULL, XLAL_EFUNC );
+      TRY ( buildMetricSkyGrid (status->statusPtr, &(skyScan->skyGrid), &(skyScan->skyRegion), init), status);
       break;
 
     case GRID_METRIC_SKYFILE:
     case GRID_FILE_SKYGRID:
-      XLAL_CHECK ( (skyScan->skyGrid = loadSkyGridFile ( init->skyGridFile )) != NULL, XLAL_EFUNC );
+      TRY ( loadSkyGridFile (status->statusPtr, &skyScan->skyGrid, init->skyGridFile ), status);
       break;
 
     default:
-      XLAL_ERROR ( XLAL_EINVAL, "Unknown grid-type `%d`\n\n", init->gridType);
+      LogPrintf (LOG_CRITICAL, "Unknown grid-type `%d`\n\n", init->gridType);
+      ABORT ( status, DOPPLERSCANH_EMETRICTYPE, DOPPLERSCANH_MSGEMETRICTYPE);
       break;
 
     } /* switch (metric) */
+
+  /* NOTE: we want to make sure we return at least one grid-point:
+   * so check if we got one, and if not, we return the
+   * first point of the skyRegion-polygon as a grid-point
+   */
+  if (skyScan->skyGrid == NULL)
+    {
+      skyScan->skyGrid = LALCalloc (1, sizeof(DopplerSkyGrid));
+      if (skyScan->skyGrid == NULL) {
+	ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
+      }
+      skyScan->skyGrid->Alpha = skyScan->skyRegion.vertices[0].longitude;
+      skyScan->skyGrid->Delta = skyScan->skyRegion.vertices[0].latitude;
+
+    } /* no points found inside of sky-region */
 
   /* extract sky-grid partition 'partitionIndex' if requested */
   if ( init->numSkyPartitions > 0 )
     {
       DopplerSkyGrid *tmp;
 
-      XLAL_CHECK ( (tmp = XLALEquiPartitionSkygrid (skyScan->skyGrid, init->partitionIndex, init->numSkyPartitions)) != NULL, XLAL_EFUNC );
+      if ( (tmp = XLALEquiPartitionSkygrid (skyScan->skyGrid, init->partitionIndex, init->numSkyPartitions)) == NULL )
+	{
+	  LogPrintf ( LOG_CRITICAL, "Something failed in XLALEquiPartitionSkygrid()\n");
+	  ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
+	}
       freeSkyGrid (skyScan->skyGrid);
       skyScan->skyGrid = tmp;
     } /* if numPartitions > 0 */
@@ -256,11 +294,12 @@ XLALInitDopplerSkyScan ( DopplerSkyScanState *skyScan, 		/**< [out] the initiali
     XLAL_INIT_MEM ( gridpoint.fkdot );
     gridpoint.fkdot[0] = init->Freq;
 
-    XLAL_CHECK ( getGridSpacings( &gridSpacings, gridpoint, init) == XLAL_SUCCESS, XLAL_EFUNC );
+    TRY ( getGridSpacings( status->statusPtr, &gridSpacings, gridpoint, init), status);
 
-    XLALPrintInfo ( "'theoretical' spacings in frequency and spindown: \n");
-    XLALPrintInfo ( "dFreq = %g, df1dot = %g, df2dot = %g, df3dot = %g\n",
-                    gridSpacings.fkdot[0], gridSpacings.fkdot[1], gridSpacings.fkdot[2], gridSpacings.fkdot[3]);
+
+    LogPrintf (LOG_DETAIL, "'theoretical' spacings in frequency and spindown: \n");
+    LogPrintf (LOG_DETAIL, "dFreq = %g, df1dot = %g, df2dot = %g, df3dot = %g\n",
+	       gridSpacings.fkdot[0], gridSpacings.fkdot[1], gridSpacings.fkdot[2], gridSpacings.fkdot[3]);
 
     memcpy ( skyScan->dfkdot, gridSpacings.fkdot, sizeof(PulsarSpins) );
   }
@@ -268,26 +307,7 @@ XLALInitDopplerSkyScan ( DopplerSkyScanState *skyScan, 		/**< [out] the initiali
   skyScan->state = STATE_READY;
 
   /* clean up */
-  return XLAL_SUCCESS;
-
-} // XLALInitDopplerSkyScan()
-
-
-/** \deprecated Use XLALInitDopplerSkyScan() instead.
- */
-void
-InitDopplerSkyScan( LALStatus *status,			/**< pointer to LALStatus structure */
-		    DopplerSkyScanState *skyScan, 	/**< [out] the initialized scan-structure */
-		    const DopplerSkyScanInit *init)	/**< [in] init-params */
-{
-  INITSTATUS(status);
-
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInitDopplerSkyScan");
-
-  if ( XLALInitDopplerSkyScan ( skyScan, init) != XLAL_SUCCESS ) {
-    ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
-  }
-
+  DETATCHSTATUSPTR (status);
   RETURN( status );
 
 } /* InitDopplerSkyScan() */
@@ -297,44 +317,34 @@ InitDopplerSkyScan( LALStatus *status,			/**< pointer to LALStatus structure */
  * Destroy the DopplerSkyScanState structure
  */
 void
-XLALDestroyDopplerSkyScan ( DopplerSkyScanState *skyScan )
+FreeDopplerSkyScan (LALStatus *status, DopplerSkyScanState *skyScan)
 {
-  if ( skyScan == NULL ) {
-    return;
-  }
 
-  if ( skyScan->state == STATE_IDLE ) {
-    return;
-  }
+  INITSTATUS(status);
+  ATTATCHSTATUSPTR (status);
 
-  freeSkyGrid ( skyScan->skyGrid );
+  /* This traps coding errors in the calling routine. */
+  ASSERT( skyScan != NULL, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
+
+  if ( skyScan->state == STATE_IDLE )
+    {
+      LALError (status, "\nTrying to free an uninitialized DopplerSkyScan.\n");
+      ABORT (status, DOPPLERSCANH_ENOTREADY, DOPPLERSCANH_MSGENOTREADY);
+    }
+  else if ( skyScan->state != STATE_FINISHED )
+    LALWarning (status, "freeing unfinished DopplerSkyScan.");
+
+  freeSkyGrid (skyScan->skyGrid);
 
   skyScan->skyGrid = skyScan->skyNode = NULL;
 
-  if (skyScan->skyRegion.vertices) {
-    XLALFree (skyScan->skyRegion.vertices);
-  }
+  if (skyScan->skyRegion.vertices)
+    LALFree (skyScan->skyRegion.vertices);
   skyScan->skyRegion.vertices = NULL;
 
   skyScan->state = STATE_IDLE;
 
-  return;
-
-} // XLALDestroyDopplerSkyScan()
-
-
-/**
- * \deprecated Use XLALDestroyDopplerSkyScan() instead.
- */
-void
-FreeDopplerSkyScan (LALStatus *status, DopplerSkyScanState *skyScan)
-{
-  INITSTATUS(status);
-
-  XLAL_PRINT_DEPRECATION_WARNING("XLALDestroyDopplerSkyScan");
-
-  XLALDestroyDopplerSkyScan ( skyScan );
-
+  DETATCHSTATUSPTR (status);
   RETURN( status );
 
 } /* FreeDopplerSkyScan() */
@@ -728,7 +738,7 @@ pointInPolygon ( const SkyPosition *point, const SkyRegion *polygon )
       v2y = vertex[(i+1) % N].latitude;
 
       /* pre-select candidate edges */
-      if ( (py <  fmin(v1y,  v2y)) || (py >=  fmax(v1y, v2y) ) || (v1y == v2y) )
+      if ( (py <  MIN(v1y,  v2y)) || (py >=  MAX(v1y, v2y) ) || (v1y == v2y) )
 	continue;
 
       /* now calculate the actual intersection point of the horizontal ray with the edge in question*/
@@ -752,17 +762,22 @@ pointInPolygon ( const SkyPosition *point, const SkyRegion *polygon )
  *
  * NOTE: the returned grid will be NULL if there are no points inside the sky-region
  *----------------------------------------------------------------------*/
-DopplerSkyGrid *
-ConvertTwoDMesh2SkyGrid ( const meshNODE *mesh2d, 		/* input: a 2Dmesh */
-                          const SkyRegion *region )   	/* a sky-region for clipping */
+void
+ConvertTwoDMesh2SkyGrid ( LALStatus *status,
+		       DopplerSkyGrid **skyGrid, 	/* output: a dopperScan-grid */
+		       const meshNODE *mesh2d, 		/* input: a 2Dmesh */
+		       const SkyRegion *region )   	/* a sky-region for clipping */
 {
   const meshNODE *meshpoint;
   DopplerSkyGrid XLAL_INIT_DECL(head);
   DopplerSkyGrid *node = NULL;
   SkyPosition point;
 
-  XLAL_CHECK_NULL (region, XLAL_EINVAL );
-  XLAL_CHECK_NULL (mesh2d, XLAL_EINVAL );
+  INITSTATUS(status);
+
+  ASSERT ( *skyGrid == NULL, status, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL );
+  ASSERT (region, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT (mesh2d, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
 
   meshpoint = mesh2d;	/* this is the 2-d mesh from LALTwoDMesh() */
 
@@ -784,23 +799,27 @@ ConvertTwoDMesh2SkyGrid ( const meshNODE *mesh2d, 		/* input: a 2Dmesh */
       if (pointInPolygon (&point, region) )
 	{
 	  /* prepare a new node for this point */
-	  XLAL_CHECK_NULL ( (node->next = LALCalloc (1, sizeof(DopplerSkyGrid) )) != NULL, XLAL_ENOMEM );
+	  if ( (node->next = (DopplerSkyGrid*) LALCalloc (1, sizeof(DopplerSkyGrid) )) == NULL) {
+	    ABORT ( status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM );
+	  }
 	  node = node->next;
 
 	  node->Alpha = point.longitude;
 	  node->Delta = point.latitude;
 
 	} /* if point in polygon */
-      else {
-	XLALPrintInfo ( "Point [%g, %g] has been discarded by polygon-clipping!\n", point.longitude, point.latitude );
-      }
+      else
+	LogPrintf (LOG_DEBUG, "Point [%g, %g] has been discarded by polygon-clipping!\n",
+		   point.longitude, point.latitude );
 
       meshpoint = meshpoint->next;
 
     } /* while meshpoint */
 
 
-  return head.next;		/* return the final skygrid (excluding static head) */
+  *skyGrid = head.next;		/* return the final skygrid (excluding static head) */
+
+  RETURN (status);
 
 } /* ConvertTwoDMesh2SkyGrid() */
 
@@ -810,30 +829,41 @@ ConvertTwoDMesh2SkyGrid ( const meshNODE *mesh2d, 		/* input: a 2Dmesh */
  * make a "flat" grid, i.e. a grid with fixed mesh-sizes dAlpha, dDelta
  *
  *----------------------------------------------------------------------*/
-DopplerSkyGrid *
-buildFlatSkyGrid ( const SkyRegion *skyRegion,
-                   REAL8 dAlpha,
-                   REAL8 dDelta)
+void
+buildFlatSkyGrid (LALStatus *status,
+	       DopplerSkyGrid **skyGrid,
+	       const SkyRegion *skyRegion,
+	       REAL8 dAlpha,
+	       REAL8 dDelta)
 {
-  XLAL_CHECK_NULL ( skyRegion, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( (dAlpha > 0) && (dDelta > 0), XLAL_EINVAL );
-
+  SkyPosition thisPoint;
   DopplerSkyGrid XLAL_INIT_DECL(head);
-  DopplerSkyGrid *node = &head;
+  DopplerSkyGrid *node = NULL;
 
-  BOOLEAN singlePoint = 0;
-  if ( skyRegion->numVertices < 3 ) {	/* got no area to cover */
-    singlePoint = 1;
-  }
+  INITSTATUS(status);
 
-  SkyPosition thisPoint = skyRegion->lowerLeft;	/* start from lower-left corner */
+  ASSERT ( skyGrid, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT ( skyRegion, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT ( (dAlpha > 0) && (dDelta > 0), status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
+  ASSERT ( *skyGrid == NULL, status, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL);
+
+  if ( skyRegion->numVertices < 3 )	/* got no surface to cover */
+    goto done;
+
+  thisPoint = skyRegion->lowerLeft;	/* start from lower-left corner */
+
+  node = &head;
 
   while (1)
     {
-      if ( singlePoint || pointInPolygon ( &thisPoint, skyRegion )  )
+      if (pointInPolygon (&thisPoint, skyRegion) )
 	{
 	  /* prepare this node */
-	  XLAL_CHECK_NULL ( (node->next = LALCalloc (1, sizeof(DopplerSkyGrid))) != NULL, XLAL_ENOMEM );
+	  node->next = LALCalloc (1, sizeof(DopplerSkyGrid));
+	  if (node->next == NULL) {
+	    freeSkyGrid ( head.next );
+	    ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
+	  }
 	  node = node->next;
 
 	  node->Alpha = thisPoint.longitude;
@@ -849,13 +879,15 @@ buildFlatSkyGrid ( const SkyRegion *skyRegion,
 	}
 
       /* this it the break-condition: are we done yet? */
-      if (thisPoint.longitude >= skyRegion->upperRight.longitude + dAlpha) {
+      if (thisPoint.longitude >= skyRegion->upperRight.longitude + dAlpha)
 	break;
-      }
 
     } /* while(1) */
 
-  return head.next;
+  *skyGrid = head.next;	/* return final grid-list */
+
+ done:
+  RETURN (status);
 
 } /* buildFlatSkyGrid */
 
@@ -865,20 +897,22 @@ buildFlatSkyGrid ( const SkyRegion *skyRegion,
  * (approx.) isotropic grid with cells of fixed solid-angle dAlpha x dDelta
  *
  *----------------------------------------------------------------------*/
-DopplerSkyGrid *
-buildIsotropicSkyGrid ( const SkyRegion *skyRegion, REAL8 dAlpha, REAL8 dDelta )
+void
+buildIsotropicSkyGrid (LALStatus *status, DopplerSkyGrid **skyGrid, const SkyRegion *skyRegion, REAL8 dAlpha, REAL8 dDelta)
 {
-  XLAL_CHECK_NULL ( skyRegion != NULL, XLAL_EINVAL );
-
   SkyPosition thisPoint;
   DopplerSkyGrid XLAL_INIT_DECL(head);
   DopplerSkyGrid *node = NULL;
   REAL8 step_Alpha, step_Delta, cos_Delta;
 
-  BOOLEAN singlePoint = 0;
-  if ( skyRegion->numVertices < 3 ) {	/* got no area to cover */
-    singlePoint = 1;
-  }
+  INITSTATUS(status);
+
+  ASSERT ( skyGrid, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT ( skyRegion, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT ( *skyGrid == NULL, status, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL);
+
+  if ( skyRegion->numVertices < 3 )	/* got no surface to cover */
+    goto done;
 
   thisPoint = skyRegion->lowerLeft;	/* start from lower-left corner */
 
@@ -889,10 +923,14 @@ buildIsotropicSkyGrid ( const SkyRegion *skyRegion, REAL8 dAlpha, REAL8 dDelta )
 
   while (1)
     {
-      if ( singlePoint || pointInPolygon ( &thisPoint, skyRegion ) )
+      if (pointInPolygon ( &thisPoint, skyRegion ) )
 	{
 	  /* prepare this node */
-	  XLAL_CHECK_NULL ( (node->next = LALCalloc (1, sizeof(DopplerSkyGrid))) != NULL, XLAL_ENOMEM );
+	  node->next = LALCalloc (1, sizeof(DopplerSkyGrid));
+	  if (node->next == NULL) {
+	    freeSkyGrid ( head.next );
+	    ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
+	  }
 	  node = node->next;
 
 	  node->Alpha = thisPoint.longitude;
@@ -910,13 +948,15 @@ buildIsotropicSkyGrid ( const SkyRegion *skyRegion, REAL8 dAlpha, REAL8 dDelta )
 	}
 
       /* this it the break-condition: are we done yet? */
-      if (thisPoint.latitude > skyRegion->upperRight.latitude) {
+      if (thisPoint.latitude > skyRegion->upperRight.latitude)
 	break;
-      }
 
     } /* while(1) */
 
-  return head.next;
+  *skyGrid = head.next;	/* set result: could be NULL! */
+
+ done:
+  RETURN (status);
 
 } /* buildIsotropicSkyGrid() */
 
@@ -932,25 +972,28 @@ buildIsotropicSkyGrid ( const SkyRegion *skyRegion, REAL8 dAlpha, REAL8 dDelta )
  * by about EPS~1e-6 [as REAL4-arithmetic is used in TwoDMesh()].
  *
  */
-DopplerSkyGrid *
-buildMetricSkyGrid ( SkyRegion *skyRegion,
-                     const DopplerSkyScanInit *init)
+void
+buildMetricSkyGrid (LALStatus *status,
+		    DopplerSkyGrid **skyGrid,
+		    SkyRegion *skyRegion,
+		    const DopplerSkyScanInit *init)
 {
-  XLAL_CHECK_NULL ( skyRegion, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( (init->metricType > LAL_PMETRIC_NONE) && (init->metricType < LAL_PMETRIC_LAST), XLAL_EINVAL );
-
   meshNODE *mesh2d = NULL;
   meshPARAMS XLAL_INIT_DECL(meshpar);
   PtoleMetricIn XLAL_INIT_DECL(metricpar);
   DopplerSkyScanInit params = (*init);
-  DopplerSkyGrid *skyGrid = NULL;
 
-  if ( skyRegion->numVertices < 3 ) {	/* got no surface to cover */
-    XLAL_CHECK_NULL ( (skyGrid = LALCalloc (1, sizeof(DopplerSkyGrid))) != NULL, XLAL_ENOMEM );
-    skyGrid->Alpha = skyRegion->lowerLeft.longitude;
-    skyGrid->Delta = skyRegion->lowerLeft.latitude;
+  INITSTATUS(status);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT ( skyGrid, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT ( skyRegion, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT ( *skyGrid == NULL, status, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL);
+  ASSERT ( (init->metricType > LAL_PMETRIC_NONE) && (init->metricType < LAL_PMETRIC_LAST),
+	   status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
+
+  if ( skyRegion->numVertices < 3 )	/* got no surface to cover */
     goto done;
-  }
 
   /* some general mesh-settings are needed in metric case */
   meshpar.getRange = getRange;
@@ -980,28 +1023,25 @@ buildMetricSkyGrid ( SkyRegion *skyRegion,
   meshpar.metricParams = (void *) (&params);
 
   /* finally: create the mesh! (ONLY 2D for now!) */
-  LALStatus XLAL_INIT_DECL(status);
-  LALCreateTwoDMesh( &status, &mesh2d, &meshpar );
-  XLAL_CHECK_NULL ( status.statusCode == 0, XLAL_EFAILED, "LAL function LALCreateTwoDMesh() failed with statusCode = %d\n", status.statusCode );
+  TRY( LALCreateTwoDMesh( status->statusPtr, &mesh2d, &meshpar ), status);
 
   if (metricpar.spindown) {
     /* FIXME: this is currently broken in LAL, as length=0 is not allowed */
     /*    TRY (LALSDestroyVector ( status->statusPtr, &(skyScan->MetricPar.spindown) ), status); */
-    XLALFree (metricpar.spindown);
+    LALFree (metricpar.spindown);
     metricpar.spindown = NULL;
   }
 
   /* convert this 2D-mesh into our skygrid-structure, including clipping to the skyRegion */
-  if ( mesh2d ) {
-    XLAL_CHECK_NULL ( (skyGrid = ConvertTwoDMesh2SkyGrid ( mesh2d, skyRegion )) != NULL, XLAL_EFUNC );
-  }
+  if ( mesh2d )
+    ConvertTwoDMesh2SkyGrid ( status->statusPtr, skyGrid, mesh2d, skyRegion );
 
   /* get rid of 2D-mesh */
-  LALDestroyTwoDMesh ( &status,  &mesh2d, 0);
-  XLAL_CHECK_NULL ( status.statusCode == 0, XLAL_EFAILED, "LAL function LALDestroyTwoDMesh() failed with statusCode = %d\n", status.statusCode );
+  TRY ( LALDestroyTwoDMesh ( status->statusPtr,  &mesh2d, 0), status);
 
  done:
-  return skyGrid;
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 
 } /* buildMetricSkyGrid() */
 
@@ -1009,19 +1049,26 @@ buildMetricSkyGrid ( SkyRegion *skyRegion,
 /**
  * Load skygrid from file, clipped to searchRegion.
  */
-DopplerSkyGrid *
-loadSkyGridFile ( const CHAR *fname
+void
+loadSkyGridFile (LALStatus *status,
+		 DopplerSkyGrid **skyGrid,
+		 const CHAR *fname
 		 )
 {
-  XLAL_CHECK_NULL ( fname, XLAL_EINVAL );
-
   LALParsedDataFile *data = NULL;
   DopplerSkyGrid *node;
   DopplerSkyGrid XLAL_INIT_DECL(head);
   UINT4 i;
   SkyPosition XLAL_INIT_DECL(thisPoint);
 
-  XLAL_CHECK_NULL ( XLALParseDataFile ( &data, fname ) == XLAL_SUCCESS, XLAL_EFUNC );
+  INITSTATUS(status);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT ( skyGrid, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT ( *skyGrid == NULL, status, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL);
+  ASSERT ( fname, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+
+  TRY (LALParseDataFile (status->statusPtr, &data, fname), status);
 
   thisPoint.system = COORDINATESYSTEM_EQUATORIAL;
 
@@ -1032,11 +1079,17 @@ loadSkyGridFile ( const CHAR *fname
       if ( 2 != sscanf( data->lines->tokens[i], "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT,
 			&(thisPoint.longitude), &(thisPoint.latitude)) )
 	{
-          XLAL_ERROR_NULL ( XLAL_EINVAL, "ERROR: could not parse line %d in skyGrid-file '%s'\n\n", i, fname);
+	  LogPrintf (LOG_CRITICAL,"ERROR: could not parse line %d in skyGrid-file '%s'\n\n", i, fname);
+	  freeSkyGrid (head.next);
+	  ABORT (status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
 	}
       /* if (pointInPolygon (&thisPoint, region) ) { */
       /* prepare new list-entry */
-      XLAL_CHECK_NULL ( (node->next = LALCalloc (1, sizeof (DopplerSkyGrid))) != NULL, XLAL_ENOMEM );
+      if ( (node->next = LALCalloc (1, sizeof (DopplerSkyGrid))) == NULL)
+	{
+	  freeSkyGrid (head.next);
+	  ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
+	}
       node = node->next;
       node->Alpha = thisPoint.longitude;
       node->Delta = thisPoint.latitude;
@@ -1044,9 +1097,12 @@ loadSkyGridFile ( const CHAR *fname
 
     } /* for i < nLines */
 
-  XLALDestroyParsedDataFile (data);
+  TRY ( LALDestroyParsedDataFile (status->statusPtr, &data), status);
 
-  return head.next;
+  *skyGrid = head.next;	/* pass result (without head!) */
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 
 } /* loadSkyGridFile() */
 
@@ -1236,46 +1292,62 @@ getDopplermax(EphemerisData *edat)
 
 
 /**
- * parse a skyRegion-string into a SkyRegion structure: the expected string-format is
- * " (longitude1, latitude1), (longitude2, latitude2), (longitude3, latitude3), ... "
+ * parse a skyRegion-string into a SkyRegion structure: the expected
+ * string-format is
+ * " (ra1, dec1), (ra2, dec2), (ra3, dec3), ... "
  *
  * If input == NULL or input == "allsky":==> sky-region covering the whole sky.
  *
  */
-int
-XLALParseSkyRegionString ( SkyRegion *region, const CHAR *input)
+void
+ParseSkyRegionString (LALStatus *status, SkyRegion *region, const CHAR *input)
 {
-  XLAL_CHECK ( region != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( region->vertices == NULL, XLAL_EINVAL );
-
+  const CHAR *pos;
   const CHAR *skyRegion = NULL;
+  CHAR buf[100];
+  UINT4 i;
 
-  if ( input == NULL ) // default is 'allsky'
-    {
-      skyRegion = SKYREGION_ALLSKY;
-    }
-  else if ( !strcmp ( input, "allsky" ) || !strcmp ( input, "ALLSKY" ) || !strcmp ( input, "Allsky" ) )
-    {
-      skyRegion = SKYREGION_ALLSKY;
-    }
+  INITSTATUS(status);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT (region != NULL, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT (region->vertices == NULL, status, DOPPLERSCANH_ENONULL,  DOPPLERSCANH_MSGENONULL);
+
+  /* ----- first check if special skyRegion string was specified: */
+  if ( input == NULL )
+    skyRegion = SKYREGION_ALLSKY;
   else
     {
-      skyRegion = input;
+      strncpy (buf, input, 99);
+      buf[99] = 0;
+      if ( XLALStringToLowerCase (buf) != XLAL_SUCCESS ) {
+        ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
+      }
+      /* check if "allsky" was given: replace input by allsky-skyRegion */
+      if ( !strcmp( buf, "allsky" ) )	/* All-sky search */
+	skyRegion = SKYREGION_ALLSKY;
+      else
+	skyRegion = input;
     }
 
   /* count number of entries (by # of opening parantheses) */
   region->numVertices = 0;
-  const CHAR *pos = skyRegion;
+  pos = skyRegion;
   while ( (pos = strchr (pos, '(')) != NULL )
     {
       region->numVertices ++;
       pos ++;
     }
 
-  XLAL_CHECK (region->numVertices != 0, XLAL_EINVAL, "Failed to parse sky-region: '%s'\n", skyRegion );
+  if (region->numVertices == 0) {
+    LogPrintf (LOG_CRITICAL, "Failed to parse sky-region: `%s`\n", skyRegion);
+    ABORT (status, DOPPLERSCANH_ESKYREGION, DOPPLERSCANH_MSGESKYREGION);
+  }
 
   /* allocate list of vertices */
-  XLAL_CHECK ( (region->vertices = XLALMalloc (region->numVertices * sizeof (SkyPosition))) != NULL, XLAL_ENOMEM );
+  if ( (region->vertices = LALMalloc (region->numVertices * sizeof (SkyPosition))) == NULL) {
+    ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
+  }
 
   region->lowerLeft.longitude = LAL_TWOPI;
   region->lowerLeft.latitude  = LAL_PI/2.0;
@@ -1284,97 +1356,91 @@ XLALParseSkyRegionString ( SkyRegion *region, const CHAR *input)
   region->upperRight.latitude  = -LAL_PI/2;
   region->lowerLeft.system = region->upperRight.system = COORDINATESYSTEM_EQUATORIAL;
 
-  char buf[256];
   /* and parse list of vertices from input-string */
   pos = skyRegion;
-  for ( UINT4 i = 0; i < region->numVertices; i++ )
+  for (i = 0; i < region->numVertices; i++)
     {
       region->vertices[i].system = COORDINATESYSTEM_EQUATORIAL;
-      const char *startLong, *comma, *startLat, *end;
-      XLAL_CHECK ( (startLong = strchr ( pos, '(')) != NULL, XLAL_EINVAL, "Invalid skyregion format at '%s': no opening '('\n", pos );
-      XLAL_CHECK ( (comma     = strchr ( pos, ',')) != NULL, XLAL_EINVAL, "Invalid skyregion format at '%s': no comma separator ','\n", pos );
-      XLAL_CHECK ( (end       = strchr ( pos, ')')) != NULL, XLAL_EINVAL, "Invalid skyregion format at '%s': no closing ')'\n", pos );
-
-      startLong ++;
-      startLat = comma + 1;
-
-      while ( isspace(startLong[0]) ) { startLong ++; }	// skip initial whitespace in longitude string
-      while ( isspace(startLat[0]) ) { startLat ++; }	// skip initial whitespace in latitude string
-
-      size_t lenLong = comma - startLong;
-      size_t lenLat  = end   - startLat;
-
-      XLAL_CHECK ( lenLong < sizeof(buf), XLAL_EINVAL, "Element at '%s' exceeds buffer length %zd\n", startLong, sizeof(buf) );
-      XLAL_CHECK ( lenLat  < sizeof(buf), XLAL_EINVAL, "Element at '%s' exceeds buffer length %zd\n", startLat,  sizeof(buf) );
-
-      // parse longitude
-      memcpy ( buf, startLong, lenLong );
-      buf[lenLong] = 0;
-      XLAL_CHECK ( XLALParseStringValueAsRAJ ( &(region->vertices[i].longitude), buf ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      // parse latitude
-      memcpy ( buf, startLat, lenLat );
-      buf[lenLat] = 0;
-      XLAL_CHECK ( XLALParseStringValueAsDECJ ( &(region->vertices[i].latitude), buf ) == XLAL_SUCCESS, XLAL_EFUNC );
+      if ( sscanf (pos, "(%" LAL_REAL8_FORMAT ", %" LAL_REAL8_FORMAT ")",
+		   &(region->vertices[i].longitude), &(region->vertices[i].latitude) ) != 2)
+	{
+	  ABORT (status, DOPPLERSCANH_ESKYREGION, DOPPLERSCANH_MSGESKYREGION);
+	}
 
       /* keep track of min's and max's to get the bounding square */
-      region->lowerLeft.longitude = fmin ( region->lowerLeft.longitude, region->vertices[i].longitude );
-      region->lowerLeft.latitude  = fmin ( region->lowerLeft.latitude,  region->vertices[i].latitude );
+      region->lowerLeft.longitude=MIN(region->lowerLeft.longitude, region->vertices[i].longitude);
+      region->lowerLeft.latitude =MIN(region->lowerLeft.latitude,  region->vertices[i].latitude);
 
-      region->upperRight.longitude = fmax ( region->upperRight.longitude, region->vertices[i].longitude );
-      region->upperRight.latitude  = fmax ( region->upperRight.latitude, region->vertices[i].latitude );
+      region->upperRight.longitude = MAX( region->upperRight.longitude, region->vertices[i].longitude);
+      region->upperRight.latitude  = MAX( region->upperRight.latitude, region->vertices[i].latitude);
 
       pos = strchr (pos + 1, '(');
 
     } /* for numVertices */
 
-  return XLAL_SUCCESS;
+  DETATCHSTATUSPTR(status);
+  RETURN (status);
 
-} /* XLALParseSkyRegionString() */
+} /* ParseSkyRegionString() */
 
 /*----------------------------------------------------------------------*/
 /**
  * parse a 'classical' sky-square (Alpha, Delta, AlphaBand, DeltaBand) into a
  * "SkyRegion"-string of the form '(a1,d1), (a2,d2),...'
  */
-CHAR *
-XLALSkySquare2String ( REAL8 Alpha,		/**< [in] longitude of first point */
-                       REAL8 Delta,		/**< [in] latitude of first point */
-                       REAL8 AlphaBand,		/**< [in] longitude-interval */
-                       REAL8 DeltaBand		/**< [in] latitude-interval */
-                       )
+void
+SkySquare2String (LALStatus *status,	/**< pointer to LALStatus structure */
+		  CHAR **string,	/**< OUT: skyRegion string */
+		  REAL8 Alpha,		/**< longitude of first point */
+		  REAL8 Delta,		/**< latitude of first point */
+		  REAL8 AlphaBand,	/**< longitude-interval */
+		  REAL8 DeltaBand)	/**< latitude-interval */
 {
+  REAL8 Da, Dd;
+  BOOLEAN onePoint, region2D;
+  CHAR *ret, *buf;
+
+  INITSTATUS(status);
+
   /* consistency check either one single point or a real 2D region! */
-  BOOLEAN onePoint = (AlphaBand == 0) && (DeltaBand == 0);
-  BOOLEAN region2D = (AlphaBand != 0) && (DeltaBand != 0);
+  onePoint = (AlphaBand == 0) && (DeltaBand == 0);
+  region2D = (AlphaBand != 0) && (DeltaBand != 0);
 
-  XLAL_CHECK_NULL ( ( onePoint || region2D ), XLAL_EINVAL, "Need either single point or real 2D region\n" );
+  if ( ! ( onePoint || region2D ) )
+    ABORT ( status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
 
-  REAL8 Da = AlphaBand;
-  REAL8 Dd = DeltaBand;
+  Da = AlphaBand;
+  Dd = DeltaBand;
 
-  /* enough memory for max 4 points... */
-  CHAR buf[256];
-
-  if ( onePoint ) {
-    sprintf (buf, "(%.16g, %.16g)", Alpha, Delta);
+  /* get enough memory for max 4 points... */
+  if ( (buf = LALMalloc (1024)) == NULL ) {
+    ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
   }
-  else  {                           /* or a 2D rectangle */
+
+  if ( onePoint )
+    sprintf (buf, "(%.16g, %.16g)", Alpha, Delta);
+  else                            /* or a 2D rectangle */
     sprintf (buf,
 	     "(%.16g, %.16g), (%.16g, %.16g), (%.16g, %.16g), (%.16g, %.16g)",
 	     Alpha, Delta,
 	     Alpha + Da, Delta,
 	     Alpha + Da, Delta + Dd,
 	     Alpha, Delta + Dd );
-  }
 
   /* make tight-fitting string */
-  CHAR *ret;
-  XLAL_CHECK_NULL ( (ret = XLALStringDuplicate ( buf )) != NULL, XLAL_EFUNC );
+  if ( (ret = LALMalloc( strlen(buf) + 1 )) == NULL) {
+    LALFree (buf);
+    ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
+  }
 
-  return ret;
+  strcpy ( ret, buf );
+  LALFree (buf);
 
-} // XLALSkySquare2String()
+  *string = ret;
+
+  RETURN (status);
+
+} /* SkySquare2String() */
 
 /*----------------------------------------------------------------------*/
 /**
@@ -1386,18 +1452,22 @@ XLALSkySquare2String ( REAL8 Alpha,		/**< [in] longitude of first point */
  *
  * NOTE: currently only 1 spindown is supported!
  */
-int
-getGridSpacings( PulsarDopplerParams *spacings,		/**< OUT: grid-spacings in gridpoint */
+void
+getGridSpacings( LALStatus *status,			/**< pointer to LALStatus structure */
+		 PulsarDopplerParams *spacings,		/**< OUT: grid-spacings in gridpoint */
 		 PulsarDopplerParams gridpoint,		/**< IN: gridpoint to get spacings for*/
 		 const DopplerSkyScanInit *params)	/**< IN: Doppler-scan parameters */
 {
-  XLAL_CHECK ( params != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( spacings != NULL, XLAL_EINVAL );
-
   REAL8Vector *metric = NULL;
   REAL8 g_f0_f0 = 0, gamma_f1_f1 = 0, gamma_a_a, gamma_d_d;
   PtoleMetricIn XLAL_INIT_DECL(metricpar);
   UINT4 s;
+
+  INITSTATUS(status);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT ( params != NULL, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
+  ASSERT ( spacings != NULL, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
 
   if ( (params->gridType == GRID_METRIC) || (params->gridType == GRID_METRIC_SKYFILE) )	/* use the metric to fix f0/fdot stepsizes */
     {
@@ -1406,7 +1476,7 @@ getGridSpacings( PulsarDopplerParams *spacings,		/**< OUT: grid-spacings in grid
       metricpar.position.longitude = gridpoint.Alpha;
       metricpar.position.latitude = gridpoint.Delta;
 
-      XLAL_CHECK ( (metricpar.spindown = XLALCreateREAL4Vector (1)) != NULL, XLAL_EFUNC );
+      TRY ( LALSCreateVector (status->statusPtr, &(metricpar.spindown), 1), status);
       /* !!NOTE!!: in the metric-codes, the spindown f1 is defined as
        * f1 = f1dot / Freq, while here f1dot = d Freq/dt
        */
@@ -1419,12 +1489,10 @@ getGridSpacings( PulsarDopplerParams *spacings,		/**< OUT: grid-spacings in grid
       metricpar.ephemeris = params->ephemeris;	/* needed for ephemeris-metrics */
       metricpar.metricType = params->metricType;
 
-      XLALNormalizeSkyPosition ( &metricpar.position.longitude, &metricpar.position.latitude );
+      TRY ( LALNormalizeSkyPosition(status->statusPtr, &(metricpar.position), &(metricpar.position)), status);
 
-      LALStatus XLAL_INIT_DECL ( status );
-      LALPulsarMetric (&status, &metric, &metricpar);
-      XLAL_CHECK ( status.statusCode == 0, XLAL_EFAILED, "LAL function LALPulsarMetric() failed with lalStatusCode = %d\n", status.statusCode );
-      XLALDestroyREAL4Vector ( metricpar.spindown );
+      TRY ( LALPulsarMetric (status->statusPtr, &metric, &metricpar), status);
+      TRY ( LALSDestroyVector(status->statusPtr, &(metricpar.spindown)), status);
 
       g_f0_f0 = metric->data[INDEX_f0_f0];
 
@@ -1439,16 +1507,14 @@ getGridSpacings( PulsarDopplerParams *spacings,		/**< OUT: grid-spacings in grid
       spacings->fkdot[0] = 2.0 * sqrt ( params->metricMismatch / g_f0_f0 );
 
       if ( params->projectMetric ) {
-	LALProjectMetric( &status, metric, 0 );
-        XLAL_CHECK ( status.statusCode == 0, XLAL_EFAILED, "LAL function LALProjectMetric() failed with lalStatusCode = %d\n", status.statusCode );
+	TRY ( LALProjectMetric( status->statusPtr, metric, 0 ), status);
       }
 
       gamma_f1_f1 = metric->data[INDEX_f1_f1];
       spacings->fkdot[1] = 2.0 * gridpoint.fkdot[0] * sqrt( params->metricMismatch / gamma_f1_f1 );
       /* FIXME: metric spin-spacings would be better */
-      for ( s=2; s < PULSAR_MAX_SPINS; s++) {
+      for ( s=2; s < PULSAR_MAX_SPINS; s++)
 	spacings->fkdot[s] = 1;		/* non-zero defaults for remaining spin-steps (avoid div by 0 ) */
-      }
 
       gamma_a_a = metric->data[INDEX_A_A];
       gamma_d_d = metric->data[INDEX_D_D];
@@ -1456,7 +1522,7 @@ getGridSpacings( PulsarDopplerParams *spacings,		/**< OUT: grid-spacings in grid
       spacings->Alpha = 2.0 * sqrt ( params->metricMismatch / gamma_a_a );
       spacings->Delta = 2.0 * sqrt ( params->metricMismatch / gamma_d_d );
 
-      XLALDestroyREAL8Vector ( metric );
+      TRY( LALDDestroyVector (status->statusPtr, &metric), status);
       metric = NULL;
     }
   else	/* no metric: use 'naive' value of 1/(2*T^(k+1)) [previous default in CFS] */
@@ -1472,9 +1538,148 @@ getGridSpacings( PulsarDopplerParams *spacings,		/**< OUT: grid-spacings in grid
 	}
     }
 
-  return XLAL_SUCCESS;
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
 
 } /* getGridSpacings() */
+
+/*----------------------------------------------------------------------*/
+/**
+ * Determine a (randomized) cubic DopplerRegion around a search-point
+ * with (roughly) the given number of grid-points in each non-projected
+ * dimension.
+ *
+ * Motivation: mainly useful for MC tests of the search-grid.
+ * For this we need to simulate a 'small' search-grid around
+ * the signal-location.
+ *
+ * This function tries to estimate a region in parameter-space
+ * with roughly the given number of grid-points in each non-projected dimension.
+ *
+ * NOTE: if the frequency has been projected, we need to search
+ * the *whole* possible Doppler-range of frequencies, in which the
+ * signal can show up. This range is bounded by (from circle-equation)
+ * |FreqBand/Freq| < beta_orb Delta_n, where beta_orb = V_orb/c ~1e-4,
+ * and \f$\Delta_n = |\vec{n} - \vec{n}_sig|\f$ can be estimated from the
+ * metric sky-ellipses: Delta_n ~ smajor of the sky-ellipse
+ *
+ * The region will be randomized wrt the central point within one
+ * grid-spacing in order to avoid systematic effects in MC simulations.
+ *
+ * PointsPerDim == 0: trivial search-region consisting just of the signal-location
+ * ( no randomization! )
+ * PointsPerDim == 1: DopplerRegion is only one point (randomized within one cell)
+ */
+void
+getMCDopplerCube (LALStatus *status,		/**< pointer to LALStatus structure */
+		  DopplerRegion *cube, 		/**< OUT: 'cube' around signal-position */
+		  PulsarDopplerParams lal_signal, 	/**< signal-position: approximate cube-center */
+		  UINT4 PointsPerDim,		/**< desired number of grid-points per dim. */
+		  const DopplerSkyScanInit *params)/**< search+metric parameters */
+{
+  PulsarDopplerParams XLAL_INIT_DECL(spacings);
+  REAL8 Alpha, Delta, Freq, f1dot;
+  REAL8 dAlpha, dDelta, dFreq, df1dot;
+  REAL8 AlphaBand, DeltaBand, FreqBand, f1dotBand;
+  REAL8 numSteps;
+
+  INITSTATUS(status);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT ( params != NULL, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
+  ASSERT ( cube != NULL, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
+
+  /* get the grid-spacings at the signal-location */
+  TRY ( getGridSpacings(status->statusPtr, &spacings, lal_signal, params), status);
+
+  dAlpha = spacings.Alpha;
+  dDelta = spacings.Delta;
+  dFreq  = spacings.fkdot[0];
+  df1dot = spacings.fkdot[1];
+
+  numSteps = PointsPerDim;
+  if ( PointsPerDim )
+    numSteps -= 1.0e-4;	/* trick: make sure we get the right number of points */
+
+  /* figure out corresponding Bands in each dimension */
+  AlphaBand = (dAlpha * numSteps);
+  DeltaBand = (dDelta * numSteps);
+  f1dotBand = (df1dot * numSteps);
+
+  FreqBand  = (dFreq  * numSteps);	/* 'canonical' value if not projecting */
+
+  /*
+   * if projected sky-metric is used, we need to estimate
+   * the maximal Delta_n now, so that we can get a reasonable
+   * bound on the required Frequency-band (the whole Doppler-window
+   * just gets too large for longer observation times...
+   */
+  if ( (PointsPerDim > 0) && params->projectMetric )
+    { /* choose large-enough FreqBand if projecting */
+      REAL8 DopplerFreqBand;
+      REAL8 fB = FreqBand;
+      PtoleMetricIn XLAL_INIT_DECL(metricpar);
+      MetricEllipse ellipse;
+      REAL8Vector *metric = NULL;
+
+      /* setup metric parameters */
+      metricpar.position.system = COORDINATESYSTEM_EQUATORIAL;
+      metricpar.position.longitude = lal_signal.Alpha;
+      metricpar.position.latitude = lal_signal.Delta;
+      TRY ( LALSCreateVector (status->statusPtr, &(metricpar.spindown), 1), status);
+      metricpar.spindown->data[0] = lal_signal.fkdot[1] / lal_signal.fkdot[0];
+      metricpar.epoch = params->obsBegin;
+      metricpar.duration = params->obsDuration;
+      metricpar.maxFreq = lal_signal.fkdot[0];
+      metricpar.site = params->Detector;
+      metricpar.ephemeris = params->ephemeris;
+      metricpar.metricType = params->metricType;
+      TRY ( LALPulsarMetric(status->statusPtr, &metric, &metricpar), status);
+      TRY ( LALSDestroyVector(status->statusPtr, &(metricpar.spindown)), status);
+      TRY ( LALProjectMetric( status->statusPtr, metric, 0 ), status);
+
+      TRY ( getMetricEllipse(status->statusPtr, &ellipse, params->metricMismatch, metric, 1), status);
+      TRY ( LALDDestroyVector(status->statusPtr, &metric), status);
+
+      /* now we can estimate the Doppler-Band on f: |dFreq| < Freq * 1e-4 * smajor */
+      DopplerFreqBand = 2.0 * lal_signal.fkdot[0] * 1.0e-4 * ellipse.smajor;
+
+      LogPrintf (LOG_DEBUG,
+		 "Using projected sky-metric: canonical FreqBand would be %g,"
+		 "but Doppler-FreqBand = %g\n", fB, DopplerFreqBand);
+
+      FreqBand = MAX( fB, DopplerFreqBand );	/* pick larger one */
+
+    } /* if project metric */
+
+  /* set center-point to signal-location */
+  Alpha = lal_signal.Alpha - 0.5 * AlphaBand;
+  Delta = lal_signal.Delta - 0.5 * DeltaBand;
+  Freq  = lal_signal.fkdot[0] - 0.5 * FreqBand;
+  f1dot = lal_signal.fkdot[1] - 0.5 * f1dotBand;
+
+  /* randomize center-point within one grid-cell *
+   * (we assume seed has been set elsewhere) */
+  if ( PointsPerDim > 0 )
+    {
+#define randShift() (1.0 * rand()/RAND_MAX)
+      Alpha += dAlpha * randShift();
+      Delta += dDelta * randShift();
+      Freq  += dFreq  * randShift();
+      f1dot += df1dot * randShift();
+    }
+
+  /* convert sky-square into a skyRegionString */
+  TRY ( SkySquare2String (status->statusPtr, &(cube->skyRegionString),  Alpha, Delta, AlphaBand, DeltaBand), status);
+  cube->fkdot[0] = Freq;
+  cube->fkdotBand[0] = FreqBand;
+  cube->fkdot[1] = f1dot;
+  cube->fkdotBand[1] = f1dotBand;
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+} /* getMCDopplerCube() */
 
 /*----------------------------------------------------------------------*/
 /**
@@ -1576,7 +1781,7 @@ XLALEquiPartitionSkygrid ( const DopplerSkyGrid *skygrid, UINT4 partitionIndex, 
   dp = Nsky - numPartitions * Nt;	/* dp = Nsky mod P : 0 <= dp < P */
 
   /* first point in partion partitionIndex */
-  iMin = fmin ( partitionIndex, dp ) * ( Nt + 1 )  + fmax ( 0, ((INT4)partitionIndex - (INT4)dp) ) * Nt;
+  iMin = MIN ( partitionIndex, dp ) * ( Nt + 1 )  + MAX ( 0, ((INT4)partitionIndex - (INT4)dp) ) * Nt;
   numPoints = (partitionIndex < dp) ? (Nt + 1) : Nt ;	/* number of points in partition partitionIndex */
 
   /* ----- generate skygrid patch partitionIndex */

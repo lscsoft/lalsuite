@@ -39,6 +39,9 @@ extern REAL4 optAzimuth1;
 extern REAL4 optAzimuth2;
 extern CHAR optFile[LALNameLength];
 
+extern char *optarg;
+extern int   optind;
+
 /*-----------------------------------------------------------------------*/
 
 void
@@ -88,7 +91,7 @@ olapredfcn_parse_options (
   {
     int c = -1;
 
-    c = LALgetopt (argc, argv, "hqvs:t:a:b:f:e:n:o:");
+    c = getopt (argc, argv, "hqvs:t:a:b:f:e:n:o:");
     if (c == -1)
     {
       break;
@@ -97,35 +100,35 @@ olapredfcn_parse_options (
     switch (c)
     {
       case 'o': /* specify output file */
-        strncpy (optFile, LALoptarg, LALNameLength);
+        strncpy (optFile, optarg, LALNameLength);
         break;
         
       case 'n': /* specify number of points in frequency series */
-        optLength = atoi (LALoptarg);
+        optLength = atoi (optarg);
         break;
         
       case 'e': /* specify frequency resolution */
-        optDeltaF = atof (LALoptarg);
+        optDeltaF = atof (optarg);
         break;
         
       case 'f': /* specify start frequency */
-        optF0 = atof (LALoptarg);
+        optF0 = atof (optarg);
         break;
 
       case 'a': /* specify detector #1 azimuth */
-        optAzimuth1 = atof (LALoptarg);
+        optAzimuth1 = atof (optarg);
 	break;
 
       case 'b': /* specify detector #2 azimuth */
-        optAzimuth2 = atof (LALoptarg);
+        optAzimuth2 = atof (optarg);
 	break;
 
       case 's': /* specify detector #1 */
-        optDetector1 = atoi (LALoptarg);
+        optDetector1 = atoi (optarg);
 	break;
 
       case 't': /* specify detector #2 */
-        optDetector2 = atoi (LALoptarg);
+        optDetector2 = atoi (optarg);
 	break;
 
       case 'v': /* optVerbose */
@@ -157,7 +160,7 @@ olapredfcn_parse_options (
 
   }
 
-  if (LALoptind < argc)
+  if (optind < argc)
   {
     olapredfcn_usage(argv[0], 1);
   }

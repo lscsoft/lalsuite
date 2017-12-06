@@ -40,7 +40,7 @@
 #define UNUSED
 #endif
 
-/*
+/**
  * This structure contains the intrinsic parameters and post-newtonian
  * co-efficients for the energy and angular acceleration expansions.
  * These are computed by XLALSimInspiralTaylorT4Setup routine.
@@ -69,7 +69,7 @@ typedef REAL8 (SimInspiralAngularAcceleration4)(
    expnCoeffsTaylorT4 *ak
 );
 
-/*
+/**
  * This strucuture contains pointers to the functions for calculating
  * the post-newtonian terms at the desired order. They can be set by
  * XLALSimInspiralTaylorT4Setup by passing an appropriate PN order.
@@ -83,7 +83,7 @@ tagexpnFuncTaylorT4
 } expnFuncTaylorT4;
 
 
-/*
+/**
  * Computes the rate of increase of the orbital frequency for a post-Newtonian
  * inspiral.
  *
@@ -303,7 +303,7 @@ XLALSimInspiralTaylorT4PNEvolveOrbitIntegrand(double UNUSED t, const double y[],
 }
 
 
-/*
+/**
  * Set up the expnCoeffsTaylorT4 and expnFuncTaylorT4 structures for
  * generating a TaylorT4 waveform and select the post-newtonian
  * functions corresponding to the desired order.
@@ -341,14 +341,14 @@ XLALSimInspiralTaylorT4Setup(
     akdEF->ETa3 = XLALSimInspiralPNEnergy_6PNCoeff(ak->nu);
 
     /* PN co-efficients for angular acceleration */
-    ak->aatN = XLALSimInspiralTaylorT4wdot_0PNCoeff(ak->nu)/(ak->m/LAL_MSUN_SI*LAL_MTSUN_SI)/3.;
-    ak->aat2 = XLALSimInspiralTaylorT4wdot_2PNCoeff(ak->nu);
-    ak->aat3 = XLALSimInspiralTaylorT4wdot_3PNCoeff(ak->nu);
-    ak->aat4 = XLALSimInspiralTaylorT4wdot_4PNCoeff(ak->nu);
-    ak->aat5 = XLALSimInspiralTaylorT4wdot_5PNCoeff(ak->nu);
-    ak->aat6 = XLALSimInspiralTaylorT4wdot_6PNCoeff(ak->nu);
-    ak->aat7 = XLALSimInspiralTaylorT4wdot_7PNCoeff(ak->nu);
-    ak->aat6l = XLALSimInspiralTaylorT4wdot_6PNLogCoeff(ak->nu);
+    ak->aatN = XLALSimInspiralTaylorT4OmDer_0PNCoeff(ak->nu)/(ak->m/LAL_MSUN_SI*LAL_MTSUN_SI)/3.;
+    ak->aat2 = XLALSimInspiralTaylorT4OmDer_2PNCoeff(ak->nu);
+    ak->aat3 = XLALSimInspiralTaylorT4OmDer_3PNCoeff(ak->nu);
+    ak->aat4 = XLALSimInspiralTaylorT4OmDer_4PNCoeff(ak->nu);
+    ak->aat5 = XLALSimInspiralTaylorT4OmDer_5PNCoeff(ak->nu);
+    ak->aat6 = XLALSimInspiralTaylorT4OmDer_6PNCoeff(ak->nu);
+    ak->aat7 = XLALSimInspiralTaylorT4OmDer_7PNCoeff(ak->nu);
+    ak->aat6l = XLALSimInspiralTaylorT4OmDer_6PNLogCoeff(ak->nu);
 
     /* Tidal coefficients for energy and angular acceleration */
     akdEF->ETa5 = 0.;
@@ -359,17 +359,23 @@ XLALSimInspiralTaylorT4Setup(
     {
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
-            akdEF->ETa6 = lambda1 * XLALSimInspiralPNEnergy_12PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralPNEnergy_12PNTidalCoeff(ak->chi2);
-            ak->aat12   = lambda1 * XLALSimInspiralTaylorT4wdot_12PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralTaylorT4wdot_12PNTidalCoeff(ak->chi2);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
+            akdEF->ETa6 = XLALSimInspiralPNEnergy_12PNTidalCoeff(
+                    ak->chi2, ak->chi1, lambda1)
+                    + XLALSimInspiralPNEnergy_12PNTidalCoeff(
+                    ak->chi1, ak->chi2, lambda2);
+            ak->aat12   = XLALSimInspiralTaylorT4OmDer_12PNTidalCoeff(
+                    ak->nu, ak->chi1, lambda1)
+                    + XLALSimInspiralTaylorT4OmDer_12PNTidalCoeff(
+                    ak->nu, ak->chi2, lambda2);
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
-            akdEF->ETa5 = lambda1 * XLALSimInspiralPNEnergy_10PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralPNEnergy_10PNTidalCoeff(ak->chi2);
-            ak->aat10   = lambda1 * XLALSimInspiralTaylorT4wdot_10PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralTaylorT4wdot_10PNTidalCoeff(ak->chi2);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
+            akdEF->ETa5 = XLALSimInspiralPNEnergy_10PNTidalCoeff(
+                    ak->chi2, ak->chi1, lambda1)
+                    + XLALSimInspiralPNEnergy_10PNTidalCoeff(
+                    ak->chi1, ak->chi2, lambda2);
+            ak->aat10   = XLALSimInspiralTaylorT4OmDer_10PNTidalCoeff(
+                    ak->chi1, lambda1)
+                    + XLALSimInspiralTaylorT4OmDer_10PNTidalCoeff(
+                    ak->chi2, lambda2);
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
             break;
         default:
@@ -426,17 +432,6 @@ XLALSimInspiralTaylorT4Setup(
   return 0;
 }
 
-/**
- * @addtogroup LALSimInspiralTaylorXX_c
- * @{
- * @name Routines for TaylorT4 Waveforms
- * @sa
- * Section IIIB of Alessandra Buonanno, Bala R Iyer, Evan
- * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
- * templates for compact binary inspiral signals in gravitational-wave
- * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
- * @{
- */
 
 /**
  * Evolves a post-Newtonian orbit using the Taylor T4 method.
@@ -822,8 +817,6 @@ int XLALSimInspiralTaylorT4PNRestricted(
 			deltaT, m1, m2, f_min, fRef, r, i, lambda1, lambda2, tideO, 0, O);
 }
 
-/** @} */
-/** @} */
 
 #if 0
 #include <lal/PrintFTSeries.h>

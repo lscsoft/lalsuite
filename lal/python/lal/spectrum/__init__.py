@@ -14,8 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## \defgroup lal_py_spectrum Spectrum
-## \ingroup lal_python
+## \addtogroup pky_py_lal_spectrum
 """This module provides spectral estimation methods, using wrappings
 of the LAL FFT module
 """

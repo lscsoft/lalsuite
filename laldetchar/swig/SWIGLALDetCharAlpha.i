@@ -17,12 +17,8 @@
 // MA  02111-1307  USA
 //
 
-///
-/// \defgroup SWIGLALDetCharAlpha_i Interface SWIGLALDetCharAlpha.i
-/// \ingroup laldetchar_swig
-/// \brief SWIG code which must appear \e before the LALDetChar headers.
-/// \author Karl Wette
-///
+// Header containing SWIG code which must appear *before* the LALDetChar headers.
+// Author: Karl Wette
 
 // Local Variables:
 // mode: c

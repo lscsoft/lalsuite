@@ -1,35 +1,51 @@
 # -*- mode: autoconf; -*-
-# lalpulsar.m4 - LALPulsar specific macros
+# lalpulsar.m4 - lalpulsar specific macros
 #
-# serial 1
+# serial 2
 
-AC_DEFUN([LALPULSAR_CHECK_ALTIVEC],[
-  # $0: check for Altivec support for ComputeFstat Demod hotloop
-  have_altivec=no
-  AS_CASE([$host_cpu],
-    [powerpc*],[
-      LALSUITE_PUSH_UVARS
-      LALSUITE_CLEAR_UVARS
-      AC_LANG_PUSH([C])
-      CFLAGS="${lalsuite_uvar_CFLAGS}"
-      AC_MSG_CHECKING([whether ]_AC_LANG[ compiler defines __ALTIVEC__ with CFLAGS=${CFLAGS}])
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([],[[
-#if !defined(__ALTIVEC__)
-#error Preprocessor macro not defined by compiler
-#endif
-]])
-      ],[
-        have_altivec=yes
-      ])
-      AC_MSG_RESULT([${have_altivec}])
-      AC_LANG_POP([C])
-      LALSUITE_POP_UVARS
-    ]
+AC_DEFUN([LALPULSAR_WITH_SIMD],[
+  # $0: check for SIMD extensions
+  AC_ARG_WITH(
+    [simd],
+    AC_HELP_STRING([--with-simd],[use SIMD extensions @<:@default: yes@:>@]),
+    [],[with_simd=yes]
   )
-  AM_CONDITIONAL([HAVE_ALTIVEC],[test x"${have_altivec}" = xyes])
-  AM_COND_IF([HAVE_ALTIVEC],[
-    AC_DEFINE([HAVE_ALTIVEC],[1],[Define to 1 for Altivec support])
+  AS_IF([test "${cross_compiling}" = yes],[
+    AC_MSG_WARN([cross compiling: disabling SIMD extension checks])
+  ],[
+    LALSUITE_PUSH_UVARS
+    LALSUITE_CLEAR_UVARS
+    SIMD_FLAGS=
+    AS_CASE([${with_simd}],
+      [yes],[
+        AX_EXT
+        AX_CHECK_COMPILE_FLAG([-mfpmath=sse],[SIMD_FLAGS="${SIMD_FLAGS} -mfpmath=sse"],[:],[-Werror])
+        AX_GCC_ARCHFLAG([yes],[SIMD_FLAGS="${SIMD_FLAGS} ${ax_cv_gcc_archflag}"])
+      ],
+      [no],[:],
+      [AC_MSG_ERROR([bad value '${with_simd}' for --with-simd])]
+    )
+    AS_IF([test "x${SIMD_FLAGS}" != x],[
+      CFLAGS="${SIMD_FLAGS} -O0"
+      AC_MSG_CHECKING([whether C compiler assembles basic math with SIMD extensions])
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[[
+double volatile a = 1.2;
+double volatile b = 3.4;
+double volatile c = a * b;
+]])],[
+        AC_MSG_RESULT([yes])
+      ],[
+        AC_MSG_RESULT([no; disabling SIMD extensions])
+        SIMD_FLAGS=
+      ])
+    ])
+    LALSUITE_POP_UVARS
+    AS_IF([test "x${SIMD_FLAGS}" != x],[
+      LALSUITE_ADD_FLAGS([C],[${SIMD_FLAGS}],[])
+      SIMD_ENABLE_VAL=ENABLED
+    ],[
+      SIMD_ENABLE_VAL=DISABLED
+    ])
   ])
   # end $0
 ])

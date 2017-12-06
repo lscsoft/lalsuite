@@ -20,23 +20,11 @@
 // Code for SWIG tests of the LALFrame bindings.
 // Author: Karl Wette
 
+// Include LAL test code header.
 #include <lal/SWIGLALTest.h>
-
-#ifndef _SWIGLALFRAMETEST_H
-#define _SWIGLALFRAMETEST_H
-
-#ifdef  __cplusplus
-extern "C" {
-#endif
 
 // Test object parent tracking between modules.
 typedef struct tagswig_lalframe_test_parent_map_struct {
   swig_lal_test_struct s;
 } swig_lalframe_test_parent_map_struct;
-extern swig_lalframe_test_parent_map_struct swig_lalframe_test_parent_map;
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif // _SWIGLALFRAMETEST_H
+swig_lalframe_test_parent_map_struct swig_lalframe_test_parent_map;

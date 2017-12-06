@@ -32,8 +32,7 @@ extern "C" {
 #endif
 
 /**
- * \defgroup GenerateRing_h Header GenerateRing.h
- * \ingroup lalinspiral_inject
+ * \addtogroup GenerateRing_h
  * \author Goggin, L., and Brown, D. A.
  *
  * \brief Provides routines to generate ringdown waveforms.
@@ -67,7 +66,7 @@ extern "C" {
 /** \endcond */
 
 /** UNDOCUMENTED */
-typedef enum tagSimRingType {
+typedef enum{
   Ringdown
 } SimRingType;
 

@@ -32,7 +32,6 @@ import numpy
 import random
 from laldetchar.idq import event
 from laldetchar.idq import idq
-#from laldetchar.idq import reed as idq
 
 ######################################################################################
 #
@@ -74,6 +73,7 @@ if opts.gps_start_time and opts.gps_end_time:
 	gps_start_time = int(opts.gps_start_time)
 	gps_end_time = int(opts.gps_end_time)
 
+
 # get list of trigger files
 if opts.trigger_dir:
 	trig_files = idq.get_all_files_in_range(opts.trigger_dir, gps_start_time, gps_end_time, pad=0, suffix='.trg')
@@ -84,15 +84,16 @@ if not trig_files:
 	print "Warning: Empty list of trigger files, exiting without doing anything."
 	sys.exit(0)
 
+
+
 if opts.verbose: 
 	print "Loading triggers ..."
 # load triggers from files
 trigger_dict = event.loadkwm(trig_files) 
-if main_channel not in trigger_dict:
-    trigger_dict[main_channel] = []
 
 if opts.verbose:
 	print "Done."	
+
 
 if not trigger_dict:
 	print "Warning: No triggers in the input files, exiting without doing anything."
@@ -105,15 +106,13 @@ if opts.dq_segments:
 	dq_segments = event.fixsegments(dq_segments)
 else:
 	dq_segments = None
+  
 
 # construct auxmvc feature vectors
 auxmvc_vectors = idq.build_auxmvc_vectors(trigger_dict, main_channel, opts.time_window, opts.signif_threshold, opts.output_file,\
   gps_start_time=gps_start_time, gps_end_time=gps_end_time, channels=opts.channels, unsafe_channels=opts.unsafe_channels,\
   science_segments = dq_segments, clean_samples_rate=opts.clean_samples_rate, filter_out_unclean=opts.filter_out_unclean,\
   max_clean_samples = opts.max_clean_samples, max_glitch_samples = opts.max_glitch_samples)
-#  gps_start_time=gps_start_time, gps_end_time=gps_end_time, channels=opts.channels, unsafe_channels=opts.unsafe_channels,\
-#  science_segments = dq_segments, clean_samples_rate=opts.clean_samples_rate, filter_out_unclean=opts.filter_out_unclean,\
-#  max_clean_samples = opts.max_clean_samples, max_glitch_samples = opts.max_glitch_samples)
 
 clean_samples = auxmvc_vectors[numpy.nonzero(auxmvc_vectors['i']==0)[0],:]
 glitch_samples = auxmvc_vectors[numpy.nonzero(auxmvc_vectors['i']==1)[0],:]

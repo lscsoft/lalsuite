@@ -30,8 +30,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <getopt.h>
 #include <lal/LALFrameL.h>
-#include <lal/LALgetopt.h>
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
@@ -90,10 +90,10 @@ static int frEvent2snglInspiral(SnglInspiralTable **snglInspiralEvent,
     /* read data from the frEvt */
     snprintf(snglEvt->search, LIGOMETA_SEARCH_MAX, "%s", frEvt->name);
     snglEvt->snr = frEvt->amplitude;
-    snglEvt->end.gpsSeconds = frEvt->GTimeS;
-    snglEvt->end.gpsNanoSeconds = frEvt->GTimeN;
+    snglEvt->end_time.gpsSeconds = frEvt->GTimeS;
+    snglEvt->end_time.gpsNanoSeconds = frEvt->GTimeN;
     timeAfter = frEvt->timeAfter;
-    XLALGPSAdd(&snglEvt->end,timeAfter);
+    XLALGPSAdd(&snglEvt->end_time,timeAfter);
     snglEvt->eff_distance = FrEventGetParam ( frEvt, ignore_const("distance (Mpc)") );
     snglEvt->mass1 = FrEventGetParam ( frEvt, ignore_const("mass1") );
     snglEvt->mass2 = FrEventGetParam ( frEvt, ignore_const("mass2") );
@@ -202,8 +202,8 @@ int main( int argc, char *argv[] )
 
   while (1)
   {
-    /* LALgetopt arguments */
-    static struct LALoption long_options[] = 
+    /* getopt arguments */
+    static struct option long_options[] = 
     {
       {"help",                    no_argument,            0,              'h'},
       {"input",                   required_argument,      0,              'i'},
@@ -214,11 +214,11 @@ int main( int argc, char *argv[] )
     };
     int c;
 
-    /* LALgetopt_long stores the option index here. */
+    /* getopt_long stores the option index here. */
     int option_index = 0;
-    size_t LALoptarg_len;
+    size_t optarg_len;
 
-    c = LALgetopt_long_only ( argc, argv, "hi:o:s:",
+    c = getopt_long_only ( argc, argv, "hi:o:s:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -236,7 +236,7 @@ int main( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "error parsing option %s with argument %s\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
         break;
@@ -248,27 +248,27 @@ int main( int argc, char *argv[] )
 
       case 'i':
         /* create storage for the input file name */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        inputFileName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
-        memcpy( inputFileName, LALoptarg, LALoptarg_len );
+        optarg_len = strlen( optarg ) + 1;
+        inputFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( inputFileName, optarg, optarg_len );
         break;
 
       case 'o':
         /* create storage for the output file name */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        outputFileName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
-        memcpy( outputFileName, LALoptarg, LALoptarg_len );
+        optarg_len = strlen( optarg ) + 1;
+        outputFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( outputFileName, optarg, optarg_len );
         break;
 
     case 'd':
         /* create storage for the output file name */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        ifo = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
-        memcpy( ifo, LALoptarg, LALoptarg_len );
+        optarg_len = strlen( optarg ) + 1;
+        ifo = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( ifo, optarg, optarg_len );
         break;
 
       case 's':
-        snrMin = (double) atof( LALoptarg );
+        snrMin = (double) atof( optarg );
         if ( snrMin < 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
@@ -289,12 +289,12 @@ int main( int argc, char *argv[] )
     }   
   }
 
-  if ( LALoptind < argc )
+  if ( optind < argc )
   {
     fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( LALoptind < argc )
+    while ( optind < argc )
     {
-      fprintf ( stderr, "%s\n", argv[LALoptind++] );
+      fprintf ( stderr, "%s\n", argv[optind++] );
     }
     exit( 1 );
   }

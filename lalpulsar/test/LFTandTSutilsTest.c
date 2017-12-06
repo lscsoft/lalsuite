@@ -1,5 +1,4 @@
 /*
- * Copyright (C) 2014 Reinhard Prix
  * Copyright (C) 2009 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -30,6 +29,9 @@
 /* System includes */
 #include <stdio.h>
 #include <time.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 /* GSL includes */
 #include <gsl/gsl_rng.h>
@@ -70,7 +72,7 @@ int main(void);
 
 int test_XLALSFTVectorToLFT(void);
 int test_XLALSincInterpolateCOMPLEX8TimeSeries(void);
-int test_XLALSincInterpolateSFT ( void );
+int test_XLALDirichletInterpolateSFT ( void );
 
 int XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts );
 int write_SFTdata (const char *fname, const SFTtype *sft);
@@ -90,7 +92,7 @@ int main(void)
 
   XLAL_CHECK ( test_XLALSincInterpolateCOMPLEX8TimeSeries() == XLAL_SUCCESS, XLAL_EFUNC );
 
-  XLAL_CHECK ( test_XLALSincInterpolateSFT() == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( test_XLALDirichletInterpolateSFT() == XLAL_SUCCESS, XLAL_EFUNC );
 
   LALCheckMemoryLeaks();
 
@@ -167,11 +169,6 @@ test_XLALSFTVectorToLFT ( void )
   } // end: debug output
 
   // ========== compare resulting LFTs ==========
-  VectorComparison XLAL_INIT_DECL(tol0);
-  XLALPrintInfo ("Comparing LFT with itself: should give 0 for all measures\n");
-  XLAL_CHECK ( XLALCompareSFTs ( lftR4, lftR4, &tol0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALCompareSFTs ( lftSFTs, lftSFTs, &tol0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-
   VectorComparison XLAL_INIT_DECL(tol);
   tol.relErr_L1 	= 4e-2;
   tol.relErr_L2		= 5e-2;
@@ -235,7 +232,7 @@ test_XLALSincInterpolateCOMPLEX8TimeSeries ( void )
       times_out->data[j] = t_j;
     } // for j < numSamplesOut
 
-  XLAL_CHECK ( XLALSincInterpolateCOMPLEX8TimeSeries ( tsOut->data, times_out, tsIn, Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALSincInterpolateCOMPLEX8TimeSeries ( &(tsOut->data), times_out, tsIn, Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLALDestroyREAL8Vector ( times_out );
 
   // ---------- check accuracy of interpolation
@@ -274,7 +271,7 @@ test_XLALSincInterpolateCOMPLEX8TimeSeries ( void )
 } // test_XLALSincInterpolateCOMPLEX8TimeSeries()
 
 int
-test_XLALSincInterpolateSFT ( void )
+test_XLALDirichletInterpolateSFT ( void )
 {
   REAL8 f0 = 0;		// heterodyning frequency
   REAL8 sigmaN = 0.001;
@@ -350,7 +347,7 @@ test_XLALSincInterpolateSFT ( void )
   XLAL_CHECK ( XLALExtractBandFromSFT ( &sftUpsampled, sft0padded, fMin + 0.5*df0padded, BandOut - df0padded ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   SFTtype *sftInterpolated;
-  XLAL_CHECK ( (sftInterpolated = XLALSincInterpolateSFT ( sft, fMin, df0padded, numBinsOut, Dterms )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( (sftInterpolated = XLALDirichletInterpolateSFT ( sft, fMin, df0padded, numBinsOut, Dterms )) != NULL, XLAL_EFUNC );
 
   // ----- out debug info
   if ( lalDebugLevel & LALINFO )
@@ -380,7 +377,7 @@ test_XLALSincInterpolateSFT ( void )
 
   return XLAL_SUCCESS;
 
-} // test_XLALSincInterpolateSFT()
+} // test_XLALDirichletInterpolateSFT()
 
 
 /**

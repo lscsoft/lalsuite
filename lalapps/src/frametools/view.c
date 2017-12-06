@@ -19,6 +19,7 @@
 
 /* vim: set noet ts=4 sw=4: */
 #include <complex.h>
+#include <getopt.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -26,7 +27,6 @@
 #include <string.h>
 
 #include <lal/LALFrameIO.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALCache.h>
 #include <lal/LALFrStream.h>
 #include <lal/BandPassTimeSeries.h>
@@ -40,7 +40,7 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/SnglBurstUtils.h>
+#include <lal/LIGOMetadataBurstUtils.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOLwXMLBurstRead.h>
@@ -76,6 +76,9 @@ int outtype_ = ASCII_OUTPUT;
 int intype_ = READ_INPUT;
 int verboseflg_ = 0;
 int debugflg_ = 0;
+
+extern char *optarg;
+extern int optind;
 
 int verbose( const char *fmt, ... );
 int usage( const char *program );
@@ -163,7 +166,7 @@ int main( int argc, char *argv[] )
 
 int parseopts( int argc, char **argv )
 {
-	struct LALoption long_options[] = {
+	struct option long_options[] = {
 		{ "help", no_argument, 0, 'h' },
 		{ "power-spectrum", required_argument, 0, 'P' },
 		{ "gps-start-time", required_argument, 0, 't' },
@@ -191,14 +194,14 @@ int parseopts( int argc, char **argv )
 	while ( 1 ) {
 		int option_index = 0;
 		int c;
-		c = LALgetopt_long_only( argc, argv, args, long_options, &option_index );
+		c = getopt_long_only( argc, argv, args, long_options, &option_index );
 		if ( c == -1 )
 			break;
 		switch ( c ) {
 			case 0:
 				if ( long_options[option_index].flag )
 					break; /* option set flag: nothing else to do */
-				fprintf( stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, LALoptarg );
+				fprintf( stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, optarg );
 				exit( 1 );
 			case '0':
 				intype_ = ZERO_INPUT;
@@ -210,50 +213,50 @@ int parseopts( int argc, char **argv )
 				usage( argv[0] );
 				exit( 0 );
 			case 'P':
-				numave_ = atoi( LALoptarg );
+				numave_ = atoi( optarg );
 				outtype_ = PSD_OUTPUT;
 				break;
 			case 't':
-				XLALStrToGPS( &start_, LALoptarg, NULL );
+				XLALStrToGPS( &start_, optarg, NULL );
 				texactflg_ = 0;
 				break;
 			case 'T':
-				XLALStrToGPS( &start_, LALoptarg, NULL );
+				XLALStrToGPS( &start_, optarg, NULL );
 				texactflg_ = 1;
 				break;
 			case 'c':
-				channel_ = LALoptarg;
+				channel_ = optarg;
 				break;
 			case 'C':
-				calibfile_ = LALoptarg;
+				calibfile_ = optarg;
 				calibflg_ = 1;
 				break;
 			case 'f':
 				cachefileflg_ = 0;
-				datafile_ = LALoptarg;
+				datafile_ = optarg;
 				break;
 			case 'F':
 				cachefileflg_ = 1;
-				datafile_ = LALoptarg;
+				datafile_ = optarg;
 				break;
 			case 'I':
-				inspinjfile_ = LALoptarg;
+				inspinjfile_ = optarg;
 				break;
 			case 'B':
-				burstinjfile_ = LALoptarg;
+				burstinjfile_ = optarg;
 				break;
 			case 'd':
-				duration_ = atof( LALoptarg );
+				duration_ = atof( optarg );
 				break;
 			case 'o':
-				outfile_ = LALoptarg;
+				outfile_ = optarg;
 				break;
 			case 'O':
-				if ( strstr( LALoptarg, "ASC" ) || strstr( LALoptarg, "asc" ) )
+				if ( strstr( optarg, "ASC" ) || strstr( optarg, "asc" ) )
 					outtype_ = ASCII_OUTPUT;
-				else if ( strstr( LALoptarg, "WAV" ) || strstr( LALoptarg, "wav" ) )
+				else if ( strstr( optarg, "WAV" ) || strstr( optarg, "wav" ) )
 					outtype_ = WAVE_OUTPUT;
-				else if ( strstr( LALoptarg, "AU" ) || strstr( LALoptarg, "au" ) )
+				else if ( strstr( optarg, "AU" ) || strstr( optarg, "au" ) )
 					outtype_ = AU_OUTPUT;
 				else {
 					fprintf( stderr, "error: unrecognized output type\n" );
@@ -261,13 +264,13 @@ int parseopts( int argc, char **argv )
 				}
 				break;
 			case 's':
-				srate_ = atof( LALoptarg );
+				srate_ = atof( optarg );
 				break;
 			case 'm':
-				minfreq_ = atof( LALoptarg );
+				minfreq_ = atof( optarg );
 				break;
 			case 'M':
-				maxfreq_ = atof( LALoptarg );
+				maxfreq_ = atof( optarg );
 				break;
 			case '?':
 			default:
@@ -276,10 +279,10 @@ int parseopts( int argc, char **argv )
 		}
 	}
 
-	if ( LALoptind < argc ) {
+	if ( optind < argc ) {
 		fprintf( stderr, "extraneous command line arguments:\n" );
-		while ( LALoptind < argc )
-			fprintf( stderr, "%s\n", argv[LALoptind++] );
+		while ( optind < argc )
+			fprintf( stderr, "%s\n", argv[optind++] );
 		exit( 1 );
 	}
 

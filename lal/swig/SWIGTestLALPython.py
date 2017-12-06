@@ -7,10 +7,6 @@ import datetime
 import numpy
 expected_exception = False
 
-# return if 'x' has both value 'v' and type 't'
-def is_value_and_type(x, v, t):
-    return x == v and type(x) is t
-
 # turn NumPy's ComplexWarning into an error, if available
 if hasattr(numpy, "ComplexWarning"):
     warnings.simplefilter("error", numpy.ComplexWarning)
@@ -19,8 +15,8 @@ if hasattr(numpy, "ComplexWarning"):
 print("checking module load ...")
 import lal
 from lal import globalvar as lalglobalvar
-lal_c_si = lal.C_SI
-lal_180_pi = lal.LAL_180_PI
+lal_c_si = lal.C_SI;
+lal_180_pi = lal.LAL_180_PI;
 print("PASSED module load")
 
 # check memory allocation
@@ -32,6 +28,8 @@ if not lal.NoDebug:
     mem3 = lal.CreateREAL8Vector(3)
     mem4 = lal.CreateREAL4TimeSeries("test", lal.LIGOTimeGPS(0), 100, 0.1, lal.DimensionlessUnit, 10)
     print("*** below should be an error message from CheckMemoryLeaks() ***")
+    sys.stdout.flush()
+    sys.stderr.flush()
     try:
         lal.CheckMemoryLeaks()
         expected_exception = True
@@ -311,17 +309,6 @@ assert((2 * r4out.data == r4.data).all())
 r4out.data = numpy.zeros(numpy.shape(r4dat), dtype=r4dat.dtype)
 assert(lal.swig_lal_test_viewinout_REAL4Vector(r4out, r4dat))
 assert((2 * r4out.data == r4dat).all())
-r4.data = r4dat
-assert(lal.swig_lal_test_copyinout_REAL4Vector(r4))
-assert((r4.data == 3 * r4dat).all())
-r4.data = r4dat
-retn, r4 = lal.swig_lal_test_copyinout_REAL4Vector(r4)
-assert(retn)
-assert((r4.data == 3 * r4dat).all())
-r4 = r4dat
-retn, r4 = lal.swig_lal_test_copyinout_REAL4Vector(r4)
-assert(retn)
-assert((r4 == 3 * r4dat).all())
 del r4
 del r4out
 del r4dat
@@ -341,17 +328,6 @@ assert((2 * r8out.data == r8.data).all())
 r8out.data = numpy.zeros(numpy.shape(r8dat), dtype=r8dat.dtype)
 assert(lal.swig_lal_test_viewinout_REAL8Vector(r8out, r8dat))
 assert((2 * r8out.data == r8dat).all())
-r8.data = r8dat
-assert(lal.swig_lal_test_copyinout_REAL8Vector(r8))
-assert((r8.data == 3 * r8dat).all())
-r8.data = r8dat
-retn, r8 = lal.swig_lal_test_copyinout_REAL8Vector(r8)
-assert(retn)
-assert((r8.data == 3 * r8dat).all())
-r8 = r8dat
-retn, r8 = lal.swig_lal_test_copyinout_REAL8Vector(r8)
-assert(retn)
-assert((r8 == 3 * r8dat).all())
 del r8
 del r8out
 del r8dat
@@ -371,17 +347,6 @@ assert((2 * c8out.data == c8.data).all())
 c8out.data = numpy.zeros(numpy.shape(c8dat), dtype=c8dat.dtype)
 assert(lal.swig_lal_test_viewinout_COMPLEX8Vector(c8out, c8dat))
 assert((2 * c8out.data == c8dat).all())
-c8.data = c8dat
-assert(lal.swig_lal_test_copyinout_COMPLEX8Vector(c8))
-assert((c8.data == 3 * c8dat).all())
-c8.data = c8dat
-retn, c8 = lal.swig_lal_test_copyinout_COMPLEX8Vector(c8)
-assert(retn)
-assert((c8.data == 3 * c8dat).all())
-c8 = c8dat
-retn, c8 = lal.swig_lal_test_copyinout_COMPLEX8Vector(c8)
-assert(retn)
-assert((c8 == 3 * c8dat).all())
 del c8
 del c8out
 del c8dat
@@ -401,17 +366,6 @@ assert((2 * c16out.data == c16.data).all())
 c16out.data = numpy.zeros(numpy.shape(c16dat), dtype=c16dat.dtype)
 assert(lal.swig_lal_test_viewinout_COMPLEX16Vector(c16out, c16dat))
 assert((2 * c16out.data == c16dat).all())
-c16.data = c16dat
-assert(lal.swig_lal_test_copyinout_COMPLEX16Vector(c16))
-assert((c16.data == 3 * c16dat).all())
-c16.data = c16dat
-retn, c16 = lal.swig_lal_test_copyinout_COMPLEX16Vector(c16)
-assert(retn)
-assert((c16.data == 3 * c16dat).all())
-c16 = c16dat
-retn, c16 = lal.swig_lal_test_copyinout_COMPLEX16Vector(c16)
-assert(retn)
-assert((c16 == 3 * c16dat).all())
 del c16
 del c16out
 del c16dat
@@ -435,17 +389,6 @@ assert((2 * r4out.data == r4.data).all())
 r4out.data = numpy.zeros(numpy.shape(r4dat), dtype=r4dat.dtype)
 assert(lal.swig_lal_test_viewinout_REAL4VectorSequence(r4out, r4dat))
 assert((2 * r4out.data == r4dat).all())
-r4.data = r4dat
-assert(lal.swig_lal_test_copyinout_REAL4VectorSequence(r4))
-assert((r4.data == 3 * r4dat).all())
-r4.data = r4dat
-retn, r4 = lal.swig_lal_test_copyinout_REAL4VectorSequence(r4)
-assert(retn)
-assert((r4.data == 3 * r4dat).all())
-r4 = r4dat
-retn, r4 = lal.swig_lal_test_copyinout_REAL4VectorSequence(r4)
-assert(retn)
-assert((r4 == 3 * r4dat).all())
 del r4
 del r4out
 del r4dat
@@ -465,17 +408,6 @@ assert((2 * r8out.data == r8.data).all())
 r8out.data = numpy.zeros(numpy.shape(r8dat), dtype=r8dat.dtype)
 assert(lal.swig_lal_test_viewinout_REAL8VectorSequence(r8out, r8dat))
 assert((2 * r8out.data == r8dat).all())
-r8.data = r8dat
-assert(lal.swig_lal_test_copyinout_REAL8VectorSequence(r8))
-assert((r8.data == 3 * r8dat).all())
-r8.data = r8dat
-retn, r8 = lal.swig_lal_test_copyinout_REAL8VectorSequence(r8)
-assert(retn)
-assert((r8.data == 3 * r8dat).all())
-r8 = r8dat
-retn, r8 = lal.swig_lal_test_copyinout_REAL8VectorSequence(r8)
-assert(retn)
-assert((r8 == 3 * r8dat).all())
 del r8
 del r8out
 del r8dat
@@ -495,17 +427,6 @@ assert((2 * c8out.data == c8.data).all())
 c8out.data = numpy.zeros(numpy.shape(c8dat), dtype=c8dat.dtype)
 assert(lal.swig_lal_test_viewinout_COMPLEX8VectorSequence(c8out, c8dat))
 assert((2 * c8out.data == c8dat).all())
-c8.data = c8dat
-assert(lal.swig_lal_test_copyinout_COMPLEX8VectorSequence(c8))
-assert((c8.data == 3 * c8dat).all())
-c8.data = c8dat
-retn, c8 = lal.swig_lal_test_copyinout_COMPLEX8VectorSequence(c8)
-assert(retn)
-assert((c8.data == 3 * c8dat).all())
-c8 = c8dat
-retn, c8 = lal.swig_lal_test_copyinout_COMPLEX8VectorSequence(c8)
-assert(retn)
-assert((c8 == 3 * c8dat).all())
 del c8
 del c8out
 del c8dat
@@ -525,17 +446,6 @@ assert((2 * c16out.data == c16.data).all())
 c16out.data = numpy.zeros(numpy.shape(c16dat), dtype=c16dat.dtype)
 assert(lal.swig_lal_test_viewinout_COMPLEX16VectorSequence(c16out, c16dat))
 assert((2 * c16out.data == c16dat).all())
-c16.data = c16dat
-assert(lal.swig_lal_test_copyinout_COMPLEX16VectorSequence(c16))
-assert((c16.data == 3 * c16dat).all())
-c16.data = c16dat
-retn, c16 = lal.swig_lal_test_copyinout_COMPLEX16VectorSequence(c16)
-assert(retn)
-assert((c16.data == 3 * c16dat).all())
-c16 = c16dat
-retn, c16 = lal.swig_lal_test_copyinout_COMPLEX16VectorSequence(c16)
-assert(retn)
-assert((c16 == 3 * c16dat).all())
 del c16
 del c16out
 del c16dat
@@ -560,17 +470,6 @@ assert((2 * vfout.data == vf.data).all())
 vfout.data = numpy.zeros(numpy.shape(vfdat), dtype=vfdat.dtype)
 assert(lal.swig_lal_test_viewinout_gsl_vector_float(vfout, vfdat))
 assert((2 * vfout.data == vfdat).all())
-vf.data = vfdat
-assert(lal.swig_lal_test_copyinout_gsl_vector_float(vf))
-assert((vf.data == 3 * vfdat).all())
-vf.data = vfdat
-retn, vf = lal.swig_lal_test_copyinout_gsl_vector_float(vf)
-assert(retn)
-assert((vf.data == 3 * vfdat).all())
-vf = vfdat
-retn, vf = lal.swig_lal_test_copyinout_gsl_vector_float(vf)
-assert(retn)
-assert((vf == 3 * vfdat).all())
 del vf
 del vfout
 del vfdat
@@ -590,17 +489,6 @@ assert((2 * vdout.data == vd.data).all())
 vdout.data = numpy.zeros(numpy.shape(vddat), dtype=vddat.dtype)
 assert(lal.swig_lal_test_viewinout_gsl_vector(vdout, vddat))
 assert((2 * vdout.data == vddat).all())
-vd.data = vddat
-assert(lal.swig_lal_test_copyinout_gsl_vector(vd))
-assert((vd.data == 3 * vddat).all())
-vd.data = vddat
-retn, vd = lal.swig_lal_test_copyinout_gsl_vector(vd)
-assert(retn)
-assert((vd.data == 3 * vddat).all())
-vd = vddat
-retn, vd = lal.swig_lal_test_copyinout_gsl_vector(vd)
-assert(retn)
-assert((vd == 3 * vddat).all())
 del vd
 del vdout
 del vddat
@@ -620,17 +508,6 @@ assert((2 * vcfout.data == vcf.data).all())
 vcfout.data = numpy.zeros(numpy.shape(vcfdat), dtype=vcfdat.dtype)
 assert(lal.swig_lal_test_viewinout_gsl_vector_complex_float(vcfout, vcfdat))
 assert((2 * vcfout.data == vcfdat).all())
-vcf.data = vcfdat
-assert(lal.swig_lal_test_copyinout_gsl_vector_complex_float(vcf))
-assert((vcf.data == 3 * vcfdat).all())
-vcf.data = vcfdat
-retn, vcf = lal.swig_lal_test_copyinout_gsl_vector_complex_float(vcf)
-assert(retn)
-assert((vcf.data == 3 * vcfdat).all())
-vcf = vcfdat
-retn, vcf = lal.swig_lal_test_copyinout_gsl_vector_complex_float(vcf)
-assert(retn)
-assert((vcf == 3 * vcfdat).all())
 del vcf
 del vcfout
 del vcfdat
@@ -650,17 +527,6 @@ assert((2 * vcdout.data == vcd.data).all())
 vcdout.data = numpy.zeros(numpy.shape(vcddat), dtype=vcddat.dtype)
 assert(lal.swig_lal_test_viewinout_gsl_vector_complex(vcdout, vcddat))
 assert((2 * vcdout.data == vcddat).all())
-vcd.data = vcddat
-assert(lal.swig_lal_test_copyinout_gsl_vector_complex(vcd))
-assert((vcd.data == 3 * vcddat).all())
-vcd.data = vcddat
-retn, vcd = lal.swig_lal_test_copyinout_gsl_vector_complex(vcd)
-assert(retn)
-assert((vcd.data == 3 * vcddat).all())
-vcd = vcddat
-retn, vcd = lal.swig_lal_test_copyinout_gsl_vector_complex(vcd)
-assert(retn)
-assert((vcd == 3 * vcddat).all())
 del vcd
 del vcdout
 del vcddat
@@ -684,17 +550,6 @@ assert((2 * mfout.data == mf.data).all())
 mfout.data = numpy.zeros(numpy.shape(mfdat), dtype=mfdat.dtype)
 assert(lal.swig_lal_test_viewinout_gsl_matrix_float(mfout, mfdat))
 assert((2 * mfout.data == mfdat).all())
-mf.data = mfdat
-assert(lal.swig_lal_test_copyinout_gsl_matrix_float(mf))
-assert((mf.data == 3 * mfdat).all())
-mf.data = mfdat
-retn, mf = lal.swig_lal_test_copyinout_gsl_matrix_float(mf)
-assert(retn)
-assert((mf.data == 3 * mfdat).all())
-mf = mfdat
-retn, mf = lal.swig_lal_test_copyinout_gsl_matrix_float(mf)
-assert(retn)
-assert((mf == 3 * mfdat).all())
 del mf
 del mfout
 del mfdat
@@ -714,17 +569,6 @@ assert((2 * mdout.data == md.data).all())
 mdout.data = numpy.zeros(numpy.shape(mddat), dtype=mddat.dtype)
 assert(lal.swig_lal_test_viewinout_gsl_matrix(mdout, mddat))
 assert((2 * mdout.data == mddat).all())
-md.data = mddat
-assert(lal.swig_lal_test_copyinout_gsl_matrix(md))
-assert((md.data == 3 * mddat).all())
-md.data = mddat
-retn, md = lal.swig_lal_test_copyinout_gsl_matrix(md)
-assert(retn)
-assert((md.data == 3 * mddat).all())
-md = mddat
-retn, md = lal.swig_lal_test_copyinout_gsl_matrix(md)
-assert(retn)
-assert((md == 3 * mddat).all())
 del md
 del mdout
 del mddat
@@ -744,17 +588,6 @@ assert((2 * mcfout.data == mcf.data).all())
 mcfout.data = numpy.zeros(numpy.shape(mcfdat), dtype=mcfdat.dtype)
 assert(lal.swig_lal_test_viewinout_gsl_matrix_complex_float(mcfout, mcfdat))
 assert((2 * mcfout.data == mcfdat).all())
-mcf.data = mcfdat
-assert(lal.swig_lal_test_copyinout_gsl_matrix_complex_float(mcf))
-assert((mcf.data == 3 * mcfdat).all())
-mcf.data = mcfdat
-retn, mcf = lal.swig_lal_test_copyinout_gsl_matrix_complex_float(mcf)
-assert(retn)
-assert((mcf.data == 3 * mcfdat).all())
-mcf = mcfdat
-retn, mcf = lal.swig_lal_test_copyinout_gsl_matrix_complex_float(mcf)
-assert(retn)
-assert((mcf == 3 * mcfdat).all())
 del mcf
 del mcfout
 del mcfdat
@@ -774,17 +607,6 @@ assert((2 * mcdout.data == mcd.data).all())
 mcdout.data = numpy.zeros(numpy.shape(mcddat), dtype=mcddat.dtype)
 assert(lal.swig_lal_test_viewinout_gsl_matrix_complex(mcdout, mcddat))
 assert((2 * mcdout.data == mcddat).all())
-mcd.data = mcddat
-assert(lal.swig_lal_test_copyinout_gsl_matrix_complex(mcd))
-assert((mcd.data == 3 * mcddat).all())
-mcd.data = mcddat
-retn, mcd = lal.swig_lal_test_copyinout_gsl_matrix_complex(mcd)
-assert(retn)
-assert((mcd.data == 3 * mcddat).all())
-mcd = mcddat
-retn, mcd = lal.swig_lal_test_copyinout_gsl_matrix_complex(mcd)
-assert(retn)
-assert((mcd == 3 * mcddat).all())
 del mcd
 del mcdout
 del mcddat
@@ -883,7 +705,7 @@ del plan
 lal.CheckMemoryLeaks()
 r4inv = lal.CreateREAL4Vector(len(r4in))
 r4inv.data = r4in
-c8outv = lal.CreateCOMPLEX8Vector(len(r4in)//2 + 1)
+c8outv = lal.CreateCOMPLEX8Vector(len(r4in)/2 + 1)
 plan = lal.CreateForwardREAL4FFTPlan(len(r4in), 0)
 lal.REAL4ForwardFFT(c8outv, r4inv, plan)
 c8out = numpy.zeros(numpy.shape(c8outv.data), dtype=c8outv.data.dtype)
@@ -907,7 +729,7 @@ del plan
 lal.CheckMemoryLeaks()
 r8inv = lal.CreateREAL8Vector(len(r8in))
 r8inv.data = r8in
-c16outv = lal.CreateCOMPLEX16Vector(len(r8in)//2 + 1)
+c16outv = lal.CreateCOMPLEX16Vector(len(r8in)/2 + 1)
 plan = lal.CreateForwardREAL8FFTPlan(len(r8in), 0)
 lal.REAL8ForwardFFT(c16outv, r8inv, plan)
 c16out = numpy.zeros(numpy.shape(c16outv.data), dtype=c16outv.data.dtype)
@@ -955,7 +777,7 @@ del plan
 lal.CheckMemoryLeaks()
 r4inv = lal.CreateREAL4Vector(len(r4in))
 r4inv.data = r4in
-r4outv = lal.CreateREAL4Vector(len(r4in)//2 + 1)
+r4outv = lal.CreateREAL4Vector(len(r4in)/2 + 1)
 plan = lal.CreateForwardREAL4FFTPlan(len(r4in), 0)
 lal.REAL4PowerSpectrum(r4outv, r4inv, plan)
 r4out = numpy.zeros(numpy.shape(r4outv.data), dtype=r4outv.data.dtype)
@@ -967,7 +789,7 @@ del plan
 lal.CheckMemoryLeaks()
 r8inv = lal.CreateREAL8Vector(len(r8in))
 r8inv.data = r8in
-r8outv = lal.CreateREAL8Vector(len(r8in)//2 + 1)
+r8outv = lal.CreateREAL8Vector(len(r8in)/2 + 1)
 plan = lal.CreateForwardREAL8FFTPlan(len(r8in), 0)
 lal.REAL8PowerSpectrum(r8outv, r8inv, plan)
 r8out = numpy.zeros(numpy.shape(r8outv.data), dtype=r8outv.data.dtype)
@@ -991,38 +813,23 @@ del ap
 lal.CheckMemoryLeaks()
 print("PASSED dynamic array of pointers access")
 
-## check typemaps for strings and double pointers
-print("checking typemaps for strings and double pointers ...")
-sts = lal.swig_lal_test_struct()
-ptr_ptr, ptr_null_ptr, null_ptr_ptr = lal.swig_lal_test_typemaps_string_ptrptr("abcde", "", None, sts, 0, None)
-assert(ptr_ptr == sts)
-assert(ptr_null_ptr == sts)
-assert(null_ptr_ptr == None)
-del sts
-del ptr_ptr
-del ptr_null_ptr
-del null_ptr_ptr
-lal.CheckMemoryLeaks()
-print("PASSED typemaps for strings and double pointers")
-
 # check 'tm' struct conversions
 print("checking 'tm' struct conversions ...")
-gps0 = 989168284
-utc0 = [2011, 5, 11, 16, 57, 49, 2, 131, 0]
-assert(lal.GPSToUTC(gps0) == tuple(utc0))
-assert(lal.UTCToGPS(utc0) == gps0)
-for i in range(0, 10):
-    gps = gps0 + i * 86400
-    utc = list(utc0)
-    utc[2] = utc[2] + i
-    utc[6] = (utc[6] + i) % 7
-    utc[7] = utc[7] + i
-    utc[8] = -1 + (i % 3)
-    assert(lal.GPSToUTC(gps)[0:8] == tuple(utc[0:8]))
+gps = 989168284
+utc = [2011, 5, 11, 16, 57, 49, 2, 131, 0]
+assert(lal.GPSToUTC(gps) == utc)
+assert(lal.UTCToGPS(utc) == gps)
+assert(lal.UTCToGPS(utc[0:6]) == gps)
+utc[6] = utc[7] = 0
+for i in [-1, 0, 1]:
+    utc[8] = i
     assert(lal.UTCToGPS(utc) == gps)
-    utc = lal.GPSToUTC(lal.UTCToGPS(utc))
-    dt = datetime.datetime(*utc[0:6])
-    assert(utc[6] == dt.weekday())
+utcd = utc
+for i in range(0, 10):
+    utcd[2] = utc[2] + i
+    utcd = lal.GPSToUTC(lal.UTCToGPS(utcd))
+    dt = datetime.datetime(*utcd[0:6])
+    assert(utcd[6] == dt.weekday())
 lal.CheckMemoryLeaks()
 print("PASSED 'tm' struct conversions")
 
@@ -1030,54 +837,48 @@ print("PASSED 'tm' struct conversions")
 print("checking LIGOTimeGPS operations ...")
 from lal import LIGOTimeGPS
 t0 = LIGOTimeGPS()
-assert(type(LIGOTimeGPS(t0)) is LIGOTimeGPS)
-assert(is_value_and_type(t0, 0, LIGOTimeGPS))
+assert(isinstance(LIGOTimeGPS(t0), LIGOTimeGPS))
+assert(t0 == 0 and isinstance(t0, LIGOTimeGPS))
 assert(t0 != None and not t0 is None)
 t1 = LIGOTimeGPS(10.5)
 t2 = LIGOTimeGPS(10, 500000000)
 assert(not t0 and t1 and t2)
-assert(is_value_and_type(t1, t2, LIGOTimeGPS))
+assert(t1 == t2 and isinstance(t1, LIGOTimeGPS))
 t3 = +t1
 t3 = -t2
 assert(t1 == t2 and t1 >= t2 and t2 >= t1)
 assert(abs(-t1) == t1)
 assert(float(t1) == 10.5)
-assert(is_value_and_type(t1 + 3.5, 14, LIGOTimeGPS))
-assert(is_value_and_type(3.5 + t1, 14, LIGOTimeGPS))
+assert(t1 + 3.5 == 14 and isinstance(t1 + 3.5, LIGOTimeGPS))
+assert(3.5 + t1 == 14 and isinstance(3.5 + t1, LIGOTimeGPS))
 t2 -= 5.5
-assert(is_value_and_type(t2, 5, LIGOTimeGPS))
+assert(t2 == 5 and isinstance(t2, LIGOTimeGPS))
 assert(t2 + 5.5 >= t1 and t2 + 3 != t2)
-assert(is_value_and_type(t2 - 5, t0, LIGOTimeGPS))
-assert(is_value_and_type(t1 * 3, 31.5, LIGOTimeGPS))
-assert(is_value_and_type(3 * t1, 31.5, LIGOTimeGPS))
-assert(is_value_and_type(t2 / 2.5, 2, LIGOTimeGPS))
-assert(is_value_and_type(21 / t1, 2, LIGOTimeGPS))
-assert(is_value_and_type(t1 + t2, 15.5, LIGOTimeGPS))
-assert(is_value_and_type(t1 - t2, 5.5, LIGOTimeGPS))
-assert(is_value_and_type(t1 * t2, 52.5, LIGOTimeGPS))
-assert(is_value_and_type(t2 * t1, 52.5, LIGOTimeGPS))
-assert(is_value_and_type(t1 / t2, 2.1, LIGOTimeGPS))
-assert(is_value_and_type(t1 % t2, 0.5, LIGOTimeGPS))
+assert(t2 - 5 == t0 and isinstance(t2 - 5, LIGOTimeGPS))
+assert(t1 * 3 == 31.5 and isinstance(t1 * 3, LIGOTimeGPS))
+assert(3 * t1 == 31.5 and isinstance(3 * t1, LIGOTimeGPS))
+assert(t2 / 2.5 == 2 and isinstance(t2 / 2.5, LIGOTimeGPS))
+assert(21 / t1  == 2 and isinstance(21 / t1, LIGOTimeGPS))
+assert(t1 + t2 == 15.5 and isinstance(t1 + t2, LIGOTimeGPS))
+assert(t1 - t2 == 5.5 and isinstance(t1 - t2, LIGOTimeGPS))
+assert(t1 * t2 == 52.5 and isinstance(t1 * t2, LIGOTimeGPS))
+assert(t2 * t1 == 52.5 and isinstance(t2 * t1, LIGOTimeGPS))
+assert(t1 / t2 == 2.1 and isinstance(t1 / t2, LIGOTimeGPS))
+assert(t1 % t2 == 0.5 and isinstance(t1 % t2, LIGOTimeGPS))
 assert(t1 > t2 and t2 < t1 and t1 >= t2 and t2 <= t1)
 assert(LIGOTimeGPS(333333333,333333333) == LIGOTimeGPS(1000000000) / 3)
 assert(LIGOTimeGPS(666666666,666666667) == LIGOTimeGPS(2000000000) / 3)
-assert(LIGOTimeGPS("-62997760.825036067") == LIGOTimeGPS("-47044285.062262587") - LIGOTimeGPS("15953475.76277348"))
-assert(LIGOTimeGPS("-6542354.389038577") == LIGOTimeGPS("-914984.929117316") * 7.1502318572066237)
-assert(LIGOTimeGPS("-6542354.389038577") == 7.1502318572066237 * LIGOTimeGPS("-914984.929117316"))
-assert(LIGOTimeGPS("-127965.770535834") == LIGOTimeGPS("-914984.929117316") / 7.1502318572066237)
 t1 += 812345667.75
-assert(str(t1) == "812345678.25")
-assert(type(eval(repr(t1))) is type(t1))
-assert(eval(repr(t1)) == t1)
-assert(int(t1) == 812345678)
-assert(t1.ns() == 812345678250000000)
+assert(str(t1) == "812345678.250000000")
+assert(LIGOTimeGPS(repr(t1)) == t1)
+assert(long(t1) == 812345678)
+assert(t1.ns() == 812345678250000000L)
 assert(hash(t1) == 1049484238)
 t4struct = lal.swig_lal_test_gps()
 t4struct.t = 1234.5
 assert(t4struct.t == 1234.5)
 t5 = LIGOTimeGPS("1000")
 assert(t5 == 1000)
-print("*** below should be error messages from LIGOTimeGPS constructor ***")
 try:
     t5 = LIGOTimeGPS("abc1000")
     expected_exception = True
@@ -1090,7 +891,6 @@ try:
 except:
     pass
 assert(not expected_exception)
-print("*** above should be error messages from LIGOTimeGPS constructor ***")
 assert(lal.swig_lal_test_noptrgps(LIGOTimeGPS(1234.5)) == lal.swig_lal_test_noptrgps(1234.5))
 del t0
 del t1
@@ -1100,50 +900,28 @@ del t4struct
 del t5
 lal.CheckMemoryLeaks()
 print("PASSED LIGOTimeGPS operations")
-print("checking LIGOTimeGPS operations (Python specific) ...")
-class my_gps_class:
-    def __init__(self, s, ns):
-        self.gpsSeconds = s
-        self.gpsNanoSeconds = ns
-tmy = my_gps_class(987, 654321)
-tsw = LIGOTimeGPS(tmy)
-assert(type(tsw) is LIGOTimeGPS)
-assert(tsw.gpsSeconds == 987)
-assert(tsw.gpsNanoSeconds == 654321)
-assert(is_value_and_type(tsw + tmy, tsw + tsw, LIGOTimeGPS))
-assert(is_value_and_type(tmy + tsw, tsw + tsw, LIGOTimeGPS))
-assert(is_value_and_type(tsw - tmy, tsw - tsw, LIGOTimeGPS))
-assert(is_value_and_type(tmy - tsw, tsw - tsw, LIGOTimeGPS))
-assert(is_value_and_type(tsw * tmy, tsw * tsw, LIGOTimeGPS))
-assert(is_value_and_type(tmy * tsw, tsw * tsw, LIGOTimeGPS))
-assert(is_value_and_type(tsw / tmy, tsw / tsw, LIGOTimeGPS))
-assert(is_value_and_type(tmy / tsw, tsw / tsw, LIGOTimeGPS))
-assert(lal.swig_lal_test_noptrgps(tmy) == lal.swig_lal_test_noptrgps(tsw))
-del tsw
-lal.CheckMemoryLeaks()
-print("PASSED LIGOTimeGPS operations (Python specific)")
 
 # check LALUnit operations
 print("checking LALUnit operations ...")
 u1 = lal.Unit("kg m s^-2")
-assert(type(lal.Unit(u1)) is lal.Unit)
-assert(is_value_and_type(u1, lal.NewtonUnit, lal.Unit))
+assert(isinstance(lal.Unit(u1), lal.Unit))
+assert(u1 == lal.NewtonUnit and isinstance(u1, lal.Unit))
 assert(str(u1) == "m kg s^-2")
 u2 = lal.MeterUnit * lal.KiloGramUnit / lal.SecondUnit ** 2
-assert(is_value_and_type(u2, u1, lal.Unit))
+assert(u1 == u2 and isinstance(u2, lal.Unit));
 u2 = lal.MeterUnit**(1,2) * lal.KiloGramUnit**(1,2) * lal.SecondUnit ** -1
-assert(is_value_and_type(u2, u1**(1,2), lal.Unit))
+assert(u1**(1,2) == u2 and isinstance(u2, lal.Unit));
 try:
-    lal.SecondUnit ** (1,0)
+    lal.SecondUnit ** (1,0);
     expected_exception = True
 except:
     pass
 assert(not expected_exception)
 u1 *= lal.MeterUnit
-assert(is_value_and_type(u1, lal.JouleUnit, lal.Unit))
+assert(u1 == lal.JouleUnit and isinstance(u1, lal.Unit))
 assert(repr(u1) == "m^2 kg s^-2")
 u1 /= lal.SecondUnit
-assert(is_value_and_type(u1, lal.WattUnit, lal.Unit))
+assert(u1 == lal.WattUnit and isinstance(u1, lal.Unit))
 assert(u1 == "m^2 kg s^-3")
 u1 *= 1000
 assert(u1 == lal.KiloUnit * lal.WattUnit)

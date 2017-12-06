@@ -20,10 +20,10 @@
 /**
  * \author Jolien D. E. Creighton
  * \file
- * \ingroup lalapps_frametools
  */
 
 #include <stdio.h>
+#include <unistd.h>
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>

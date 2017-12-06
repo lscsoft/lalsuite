@@ -23,7 +23,6 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/ConfigFile.h>
 #include <lal/LALString.h>
-#include <lal/Date.h>
 
 /** \cond DONT_DOXYGEN */
 
@@ -106,7 +105,7 @@ XLALInitTimeCorrections ( const CHAR *timeCorrectionFile /**< File containing Ea
   /* prepare output ephemeris struct for returning */
   TimeCorrectionData *tdat;
   if ( ( tdat = XLALCalloc ( 1, sizeof(*tdat) ) ) == NULL )
-    XLAL_ERROR_NULL ( XLAL_ENOMEM, "XLALCalloc ( 1, %zu ) failed.\n", sizeof(*tdat) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM, "XLALCalloc ( 1, %lu ) failed.\n", sizeof(*tdat) );
 
   numLines = flines->lines->nTokens;
 
@@ -212,8 +211,6 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
     earth_etype = EPHEM_DE405;
   else if ( strstr( earthEphemerisFile, "DE414" ) )
     earth_etype = EPHEM_DE414;
-  else if ( strstr( earthEphemerisFile, "DE421" ) )
-    earth_etype = EPHEM_DE421;
   else
     earth_etype = EPHEM_DE405;
 
@@ -224,14 +221,12 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
     sun_etype = EPHEM_DE405;
   else if ( strstr( sunEphemerisFile, "DE414" ) )
     sun_etype = EPHEM_DE414;
-  else if ( strstr( sunEphemerisFile, "DE421" ) )
-    sun_etype = EPHEM_DE421;
   else
     sun_etype = EPHEM_DE405;
 
   // check consistency
   if ( earth_etype != sun_etype )
-    XLAL_ERROR_NULL (XLAL_EINVAL, "Earth '%s' and Sun '%s' ephemeris-files have inconsistent coordinate-types %d != %d\n",
+    XLAL_ERROR_NULL (XLAL_EINVAL, "Earth '%s' and Sun '%s' ephermis-files have inconsistent coordinate-types %d != %d\n",
                      earthEphemerisFile, sunEphemerisFile, earth_etype, sun_etype );
   else
     etype = earth_etype;
@@ -254,7 +249,7 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
   /* prepare output ephemeris struct for returning */
   EphemerisData *edat;
   if ( ( edat = XLALCalloc ( 1, sizeof(*edat) ) ) == NULL )
-    XLAL_ERROR_NULL ( XLAL_ENOMEM, "XLALCalloc ( 1, %zu ) failed.\n", sizeof(*edat) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM, "XLALCalloc ( 1, %lu ) failed.\n", sizeof(*edat) );
 
   /* store in ephemeris-struct */
   edat->nentriesE = ephemV->length;
@@ -290,8 +285,8 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
   ephemV = NULL;
 
   // store *copy* of ephemeris-file names in output structure
-  edat->filenameE = XLALStringDuplicate( earthEphemerisFile );
-  edat->filenameS = XLALStringDuplicate( sunEphemerisFile );
+  edat->ephiles.earthEphemeris = XLALStringDuplicate( earthEphemerisFile );
+  edat->ephiles.sunEphemeris   = XLALStringDuplicate( sunEphemerisFile );
 
   /* return resulting ephemeris-data */
   return edat;
@@ -309,11 +304,11 @@ XLALDestroyEphemerisData ( EphemerisData *edat )
   if ( !edat )
     return;
 
-  if ( edat->filenameE )
-    XLALFree ( edat->filenameE );
+  if ( edat->ephiles.earthEphemeris )
+    XLALFree ( edat->ephiles.earthEphemeris );
 
-  if ( edat->filenameS )
-    XLALFree ( edat->filenameS );
+  if ( edat->ephiles.sunEphemeris )
+    XLALFree ( edat->ephiles.sunEphemeris );
 
   if ( edat->ephemE )
     XLALFree ( edat->ephemE );
@@ -328,68 +323,6 @@ XLALDestroyEphemerisData ( EphemerisData *edat )
 } /* XLALDestroyEphemerisData() */
 
 
-/**
- * Restrict the EphemerisData 'edat' to the smallest number of entries
- * required to cover the GPS time range ['startGPS', 'endGPS']
- *
- * \ingroup LALBarycenter_h
- */
-int XLALRestrictEphemerisData ( EphemerisData *edat, const LIGOTimeGPS *startGPS, const LIGOTimeGPS *endGPS ) {
-
-  // Check input
-  XLAL_CHECK(edat != NULL, XLAL_EFAULT);
-  XLAL_CHECK(startGPS != NULL, XLAL_EFAULT);
-  XLAL_CHECK(endGPS != NULL, XLAL_EFAULT);
-  XLAL_CHECK(XLALGPSCmp(startGPS, endGPS) < 0, XLAL_EINVAL);
-
-  // Convert 'startGPS' and 'endGPS' to REAL8s
-  const REAL8 start = XLALGPSGetREAL8(startGPS), end = XLALGPSGetREAL8(endGPS);
-
-  // Increase 'ephemE' and decrease 'nentriesE' to fit the range ['start', 'end']
-  PosVelAcc *const old_ephemE = edat->ephemE;
-  do {
-    if (edat->nentriesE > 1 && edat->ephemE[0].gps < start && edat->ephemE[1].gps <= start) {
-      ++edat->ephemE;
-      --edat->nentriesE;
-    } else if (edat->nentriesE > 1 && edat->ephemE[edat->nentriesE-1].gps > end && edat->ephemE[edat->nentriesE-2].gps >= end) {
-      --edat->nentriesE;
-    } else {
-      break;
-    }
-  } while(1);
-
-  // Reallocate 'ephemE' to new table size, and free old table
-  PosVelAcc *const new_ephemE = XLALMalloc(edat->nentriesE * sizeof(*new_ephemE));
-  XLAL_CHECK(new_ephemE != NULL, XLAL_ENOMEM);
-  memcpy(new_ephemE, edat->ephemE, edat->nentriesE * sizeof(*new_ephemE));
-  edat->ephemE = new_ephemE;
-  XLALFree(old_ephemE);
-
-  // Increase 'ephemS' and decrease 'nentriesS' to fit the range ['start', 'end']
-  PosVelAcc *const old_ephemS = edat->ephemS;
-  do {
-    if (edat->nentriesS > 1 && edat->ephemS[0].gps < start && edat->ephemS[1].gps <= start) {
-      ++edat->ephemS;
-      --edat->nentriesS;
-    } else if (edat->nentriesS > 1 && edat->ephemS[edat->nentriesS-1].gps > end && edat->ephemS[edat->nentriesS-2].gps >= end) {
-      --edat->nentriesS;
-    } else {
-      break;
-    }
-  } while(1);
-
-  // Reallocate 'ephemS' to new table size, and free old table
-  PosVelAcc *const new_ephemS = XLALMalloc(edat->nentriesS * sizeof(*new_ephemS));
-  XLAL_CHECK(new_ephemS != NULL, XLAL_ENOMEM);
-  memcpy(new_ephemS, edat->ephemS, edat->nentriesS * sizeof(*new_ephemS));
-  edat->ephemS = new_ephemS;
-  XLALFree(old_ephemS);
-
-  return XLAL_SUCCESS;
-
-} /* XLALRestrictEphemerisData() */
-
-
 /* ========== internal function definitions ========== */
 
 /** simple creator function for EphemerisVector type */
@@ -398,12 +331,12 @@ XLALCreateEphemerisVector ( UINT4 length )
 {
   EphemerisVector * ret;
   if ( ( ret = XLALCalloc ( 1, sizeof (*ret) )) == NULL )
-    XLAL_ERROR_NULL ( XLAL_ENOMEM, "Failed to XLALCalloc(1, %zu)\n", sizeof (*ret) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM, "Failed to XLALCalloc(1, %lu)\n", sizeof (*ret) );
 
   if ( ( ret->data = XLALCalloc ( length, sizeof(*ret->data) ) ) == NULL )
     {
       XLALFree ( ret );
-      XLAL_ERROR_NULL ( XLAL_ENOMEM, "Failed to XLALCalloc (%d, %zu)\n", length, sizeof(*ret->data) );
+      XLAL_ERROR_NULL ( XLAL_ENOMEM, "Failed to XLALCalloc (%d, %lu)\n", length, sizeof(*ret->data) );
     }
 
   ret->length = length;
@@ -628,3 +561,53 @@ XLALCheckEphemerisRanges ( const EphemerisVector *ephemV, REAL8 avg[3], REAL8 ra
   return XLAL_SUCCESS;
 
 } /* XLALCheckEphemerisRanges() */
+
+/* ============================= deprecated LAL interface ============================== */
+
+/**
+ * \ingroup LALBarycenter_h
+ * \brief [DEPRECATED] Reads Earth and Sun ephemeris files. Simple wrapper around XLALInitBarycenter()
+ * \deprecated Use XLALInitBarycenter() instead.
+ */
+void
+LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
+                    EphemerisData *edat	/**< [in/out] initialized ephemeris-data */
+                    )
+{
+    INITSTATUS(stat);
+
+    if( edat == NULL )
+      ABORT( stat, LALINITBARYCENTERH_EOPEN, "Ephemeris structure is NULL" );
+
+    if( edat->ephiles.earthEphemeris == NULL )
+      ABORT( stat, LALINITBARYCENTERH_EOPEN, LALINITBARYCENTERH_MSGEOPEN );
+
+    if( edat->ephiles.sunEphemeris == NULL )
+      ABORT( stat, LALINITBARYCENTERH_EOPEN, LALINITBARYCENTERH_MSGEOPEN );
+
+    /* use XLALInitBarycenter */
+    EphemerisData *edattmp = XLALInitBarycenter( edat->ephiles.earthEphemeris, edat->ephiles.sunEphemeris );
+    if( edattmp == NULL ){
+      ABORT( stat, LALINITBARYCENTERH_EOPEN, LALINITBARYCENTERH_MSGEOPEN );
+    }
+
+    // We need to be careful about returning this, due to the unfortunate input/output method
+    // of this deprecated LAL function: 'edat' is both used as input and output, where only
+    // the 'ephiles' entry is supposed to be initialized in the input data, and so we need to
+    // preserve that entry:
+    EphemerisFilenames tmp;
+    memcpy ( &tmp, &edat->ephiles, sizeof(edat->ephiles) );
+    // now copy new ephemeris-struct over the input one:
+    memcpy ( edat, edattmp, sizeof(*edat) );
+    // restore the original 'ephiles' pointer entries
+    memcpy ( &edat->ephiles, &tmp, sizeof(edat->ephiles) );
+    // free the new 'ephiles' strings (allocated in XLALInitBarycenter())
+    XLALFree ( edattmp->ephiles.earthEphemeris );
+    XLALFree ( edattmp->ephiles.sunEphemeris );
+    // and free the interal 'edattmp' container (but *not* the ephemE/ephemS arrays, which we return in 'edat' !)
+    XLALFree ( edattmp );
+
+    /* successful return */
+    RETURN(stat);
+
+} /* LALInitBarycenter() */

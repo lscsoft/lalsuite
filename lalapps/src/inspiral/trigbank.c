@@ -27,146 +27,14 @@
  *-----------------------------------------------------------------------
  */
 
-/**
- * \file
- * \ingroup lalapps_inspiral
- *
- * <dl>
- * <dt>Name</dt><dd>
- * \c lalapps_trigbank --- program to make triggered template banks.</dd>
- *
- * <dt>Synopsis</dt><dd>
- * <tt>lalapps_trigbank</tt>
- * [<tt>--help</tt>]
- * [<tt>--verbose</tt>]
- * [<tt>--version</tt>]
- * [<tt>--user-tag</tt> <i>usertag</i>]
- * [<tt>--ifo-tag</tt> <i>ifotag</i>]
- * [<tt>--comment</tt>]
- * <tt>--gps-start-time</tt> <i>start_time</i>
- * <tt>--gps-end-time</tt> <i>end_time</i>
- * [<tt>--check-times</tt>]
- * <tt>--input-ifo</tt> <i>inputifo</i>
- * <tt>--output-ifo</tt> <i>outputifo</i>
- * <tt>--parameter-test</tt> <i>(m1_and_m2|psi0_and_psi3|mchirp_and_eta)</i>
- *
- * <tt>--data-type</tt> <i>(playground_only|exclude_play|all_data)</i>
- *
- * <tt>LIGOLW XML input files</tt>
- *
- * <tt>(LIGO Lightweight XML files)</tt></dd>
- *
- * <dt>Description --- General</dt><dd>
- *
- * \c lalapps_trigbank produces a triggered template bank from the input xml
- * files.  The code takes in a list of triggers from the specified input files.
- * First, it discards any triggers which do not come from the specified
- * \c input_ifo.  Then, it keeps only those triggers which occur between
- * the \c start_time and the \c end_time. If the
- * <tt>check-times</tt> option is specified, then the input search summary tables
- * are checked to ensure that we have searched all data between the
- * \c start_time and \c end_time in all relevant ifos.  Following
- * this, we discard the non-playground triggers if \c playground_only was
- * specified and any playground triggers if \c exclude_play was specified.
- *
- * The remaining triggers are sorted according to the given
- * <tt>parameter-test</tt>, which must be one of \c m1_and_m2 or
- * \c psi0_and_psi3.  Duplicate templates (those with identical m1
- * and m2 or psio and psi3) are discarded and what
- * remains is output as the triggered template bank.
- *
- * The output file contains \c process, \c process_params,
- * \c search_summary and \c sngl_inspiral tables.  The output
- * file name is
- *
- * <tt>OUTPUTIFO-TRIGBANK_IFOTAG_USERTAG-GPSSTARTTIME-DURATION.xml</tt>\\
- *
- * where the input and output instruments are specified on the command line.</dd>
- *
- * <dt>Options</dt><dd>
- * <ul>
- *
- * <li><tt>--data-type</tt> (playground_only|exclude_play|all_data):
- * Required.  Specify whether the code should use only the playground, exclude
- * the playground or use all the data. </li>
- *
- * <li><tt>--gps-start-time</tt> \c start_time: Required.  Look
- * for coincident triggers with end times after \c start_time.</li>
- *
- * <li><tt>--gps-end-time</tt> \c end_time: Required.  Look for
- * coincident triggers with end times before \c end_time.</li>
- *
- * <li><tt>--check-times</tt>: Optional.  If this flag is set, the code checks
- * the input search summary tables to verify that the data for the input
- * interferometers was analyzed once and only once between the
- * \c start_time and \c end_time.  By default, the code will not
- * perform this check.</li>
- *
- * <li><tt>--parameter-test</tt> (m1_and_m2|psi0_and_psi3): Required. Choose
- * which parameters to use when testing for repeated triggers.  If two triggers
- * have the same value of \c mass1 and \c mass2 or \c psi0 and
- * \c psi3 then only one copy is put into the triggered bank.</li>
- *
- * <li><tt>--input-ifo</tt> \c inputifo: Required. The triggers from
- * \c INPUTIFO are uset to create the triggered bank.</li>
- *
- * <li><tt>--output-ifo</tt> \c outputifo: Required. This gives the
- * instrument for which we are creating the triggered bank.  It is only used in
- * naming the output file.</li>
- *
- * <li><tt>--ifo-tag</tt> \c ifotag: Optional.  Used in naming the output
- * file.</li>
- *
- * <li><tt>--comment</tt> \c string: Optional. Add \c string
- * to the comment field in the process table. If not specified, no comment
- * is added. </li>
- *
- * <li><tt>--user-tag</tt> \c usertag: Optional. Set the user tag for
- * this job to be \c usertag. May also be specified on the command line as
- * <tt>-userTag</tt> for LIGO database compatibility.  This will affect the
- * naming of the output file.</li>
- *
- * <li><tt>--verbose</tt>: Enable the output of informational messages.</li>
- *
- * <li><tt>--help</tt>: Optional.  Print a help message and exit.</li>
- *
- * <li><tt>--version</tt>: Optional.  Print out the author, CVS version and
- * tag information and exit.
- * </li>
- * </ul></dd>
- *
- * <dt>Arguments</dt><dd>
- * <ul>
- * <li><tt>[LIGO Lightweight XML files]</tt>: The arguments to the program
- * should be a list of LIGO Lightweight XML files containing the triggers from the
- * two interferometers. The input files can be in any order and do not need to be
- * time ordered as \c trigbank will sort all the triggers once they are read
- * in. </li>
- * </ul></dd>
- *
- * <dt>Example</dt><dd>
- * \code
- * lalapps_trigbank \
- * --data-type playground_only --input-ifo H1 --output-ifo H1 --ifo-tag H1H2 \
- * --gps-start-time 734323079 --gps-end-time 734324999 \
- * H1-INSPIRAL-734323015-2048.xml
- * \endcode</dd>
- *
- * <dt>Algorithm</dt><dd>
- * None.</dd>
- *
- * <dt>Author</dt><dd>
- * Patrick Brady, Duncan Brown and Steve Fairhurst</dd>
- * </dl>
- */
 
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
 #include <sys/types.h>
 #include <lal/LALStdio.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
@@ -288,8 +156,8 @@ int main( int argc, char *argv[] )
 
   INT4                  i;
 
-  /* LALgetopt arguments */
-  struct LALoption long_options[] =
+  /* getopt arguments */
+  struct option long_options[] =
   {
     {"verbose",                no_argument,     &vrbflg,                  1 },
     {"check-times",            no_argument, &checkTimes,                  1 },
@@ -324,8 +192,8 @@ int main( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
-      lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentId,
+      lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0);
   this_proc_param = processParamsTable.processParamsTable = 
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
@@ -338,12 +206,12 @@ int main( int argc, char *argv[] )
   /* parse the arguments */
   while ( 1 )
   {
-    /* LALgetopt_long stores long option here */
+    /* getopt_long stores long option here */
     int option_index = 0;
     long int gpstime;
-    size_t LALoptarg_len;
+    size_t optarg_len;
 
-    c = LALgetopt_long_only( argc, argv,
+    c = getopt_long_only( argc, argv,
         "a:b:hq:r:s:t:A:I:VZ:", long_options,
         &option_index );
 
@@ -364,42 +232,42 @@ int main( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "Error parsing option %s with argument %s\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
         break;
 
       case 'a':
         /* name of input ifo*/
-        strncpy( inputIFO, LALoptarg, LIGOMETA_IFO_MAX );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        strncpy( inputIFO, optarg, LIGOMETA_IFO_MAX );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'b':
         /* name of output ifo */
-        strncpy( outputIFO, LALoptarg, LIGOMETA_IFO_MAX );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        strncpy( outputIFO, optarg, LIGOMETA_IFO_MAX );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'A':
         /* comparison used to test for uniqueness of triggers */
-        if ( ! strcmp( "m1_and_m2", LALoptarg ) )
+        if ( ! strcmp( "m1_and_m2", optarg ) )
         {
           test = m1_and_m2;
         }
-        else if ( ! strcmp( "psi0_and_psi3", LALoptarg ) )
+        else if ( ! strcmp( "psi0_and_psi3", optarg ) )
         {
           test = psi0_and_psi3;
         }
-        else if ( ! strcmp( "mchirp_and_eta", LALoptarg ) )
+        else if ( ! strcmp( "mchirp_and_eta", optarg ) )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "mchirp_and_eta test specified, not implemented for trigbank: "
               "%s (must be m1_and_m2, psi0_and_psi3, no_test)\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
-        else if ( ! strcmp( "no_test", LALoptarg ) )
+        else if ( ! strcmp( "no_test", optarg ) )
         {
           test = no_test;
         }
@@ -408,24 +276,24 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown test specified: "
               "%s (must be m1_and_m2, psi0_and_psi3,no_test, or mchirp_and_eta)\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
 
       case 'D':
         /* type of data to analyze */
-        if ( ! strcmp( "playground_only", LALoptarg ) )
+        if ( ! strcmp( "playground_only", optarg ) )
         {
           dataType = playground_only;
         }
-        else if ( ! strcmp( "exclude_play", LALoptarg ) )
+        else if ( ! strcmp( "exclude_play", optarg ) )
         {
           dataType = exclude_play;
         }
-        else if ( ! strcmp( "all_data", LALoptarg ) )
+        else if ( ! strcmp( "all_data", optarg ) )
         {
           dataType = all_data;
         }
@@ -434,15 +302,15 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown data type, %s, specified: "
               "(must be playground_only, exclude_play or all_data)\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'q':
         /* start time */
-        gpstime = atol( LALoptarg );
+        gpstime = atol( optarg );
         if ( gpstime < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -459,7 +327,7 @@ int main( int argc, char *argv[] )
 
       case 'r':
         /* end time  */
-        gpstime = atol( LALoptarg );
+        gpstime = atol( optarg );
         if ( gpstime < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -475,7 +343,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 's':
-        if ( strlen( LALoptarg ) > LIGOMETA_COMMENT_MAX - 1 )
+        if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "comment must be less than %d characters\n",
@@ -484,12 +352,12 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", LALoptarg);
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
 
       case 't':
-        coherentBuffer = (INT4) atoi( LALoptarg );
+        coherentBuffer = (INT4) atoi( optarg );
         if ( coherentBuffer < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -509,9 +377,9 @@ int main( int argc, char *argv[] )
 
       case 'Z':
         /* create storage for the usertag */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        userTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
-        memcpy( userTag, LALoptarg, LALoptarg_len );
+        optarg_len = strlen(optarg) + 1;
+        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( userTag, optarg, optarg_len );
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
@@ -520,15 +388,15 @@ int main( int argc, char *argv[] )
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-            LALoptarg );
+            optarg );
         break;
 
       case 'I':
         /* create storage for the ifo-tag */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        ifoTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
-        memcpy( ifoTag, LALoptarg, LALoptarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        optarg_len = strlen(optarg) + 1;
+        ifoTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( ifoTag, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'V':
@@ -616,9 +484,9 @@ int main( int argc, char *argv[] )
    */
 
 
-  if ( LALoptind < argc )
+  if ( optind < argc )
   {
-    for( i = LALoptind; i < argc; ++i )
+    for( i = optind; i < argc; ++i )
     {
       INT4 numFileTriggers = 0;
 

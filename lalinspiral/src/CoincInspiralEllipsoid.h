@@ -34,7 +34,7 @@ extern "C" {
 
 /**
  * \defgroup CoincInspiralEllipsoid_h Header CoincInspiralEllipsoid.h
- * \ingroup lalinspiral_UNCLASSIFIED
+ * \ingroup pkg_CBC_NEW
  * \author Robinson, C. A.
  *
  * \brief Provides function definitions for performing inspiral coincidence analysis
@@ -80,6 +80,15 @@ typedef struct tagTriggerErrorList
 TriggerErrorList;
 
 
+/* Functions for performing coincident analysis */
+void
+LALCreateTwoIFOCoincListEllipsoid(
+    LALStatus                  *status,
+    CoincInspiralTable        **coincOutput,
+    SnglInspiralTable          *snglInput,
+    InspiralAccuracyList       *accuracyParams
+    );
+
 /* Functions for checking for coincidence between inspiral events */
 INT2 XLALCompareInspiralsEllipsoid(
       TriggerErrorList              *aPtr,
@@ -87,6 +96,13 @@ INT2 XLALCompareInspiralsEllipsoid(
       fContactWorkSpace             *workSpace,
       InspiralAccuracyList          *params
       );
+
+void
+XLALSnglInspiralCoincTestEllipsoid(
+    CoincInspiralTable         *coincInspiral,
+    SnglInspiralTable          *snglInspiral,
+    InspiralAccuracyList       *accuracyParams
+    );
 
 /* Functions for generating the error matrix and position vectors for triggers */
 gsl_matrix * XLALGetErrorMatrixFromSnglInspiral(

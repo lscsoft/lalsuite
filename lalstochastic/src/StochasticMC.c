@@ -40,9 +40,14 @@
  * #include <math.h>
  * #include <string.h>
  * #include <stdio.h>
+ * #ifdef HAVE_UNISTD_H
+ * #include <unistd.h>
+ * #endif
+ * #ifdef HAVE_GETOPT_H
+ * #include <getopt.h>
+ * #endif
  * #include <FrameL.h>
  * #include <lal/LALStdio.h>
- * #include <lal/LALgetopt.h>
  * #include <lal/LALStdlib.h>
  * #include <lal/AVFactories.h>
  * #include <lal/PrintFTSeries.h>
@@ -294,8 +299,13 @@
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
 #include <lal/LALStdio.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/Calibration.h>

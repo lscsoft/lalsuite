@@ -1,6 +1,6 @@
 /*
 *  Copyright (C) 2007 Gregory Mendell
-*  Copyright (C) 2010,2011,2016 Bernd Machenschalk
+*  Copyright (C) 2010,2011 Bernd Machenschalk
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_SFTTools
+ * \ingroup pulsarApps
  * \author Gregory Mendell, Xavier Siemens, Bruce Allen, Bernd Machenschalk
  * \brief generate SFTs
  */
@@ -64,9 +64,7 @@
 int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", stderr);return 1;}
 #else
 
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -77,10 +75,10 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <time.h>
 #include <glob.h>
 #include <errno.h>
+#include <getopt.h>
 #include <stdarg.h>
 
 #include <lal/LALDatatypes.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
@@ -99,12 +97,13 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/ComplexFFT.h>
 #include <lal/SFTfileIO.h>
 #include <lal/SFTutils.h>
-#include <lal/LALVCSInfo.h>
-#include <LALAppsVCSInfo.h>
 
 #ifdef PSS_ENABLED
 #include <XLALPSSInterface.h>
 #endif
+
+extern char *optarg;
+extern int optind, opterr, optopt;
 
 /* track memory usage under linux */
 #define TRACKMEMUSE 0
@@ -142,7 +141,6 @@ struct CommandLineArgsTag {
   REAL8 PSSCleanHPf;       /* Cut frequency for the bilateral highpass filter. It has to be used only if PSSCleaning is YES.*/
   INT4 PSSCleanExt;        /* Extend the timeseries at the beginning before calculating the autoregressive mean */
   INT4 windowOption;       /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
-  REAL8 windowR;
   REAL8 overlapFraction;   /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 1.0). */
   BOOLEAN useSingle;       /* 11/19/05 gam; use single rather than double precision */
   char *frameStructType;   /* 01/10/07 gam */
@@ -577,7 +575,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
   INT4 errflg=0;
   INT4 i;              /* 06/26/07 gam */
-  struct LALoption long_options[] = {
+  struct option long_options[] = {
     {"high-pass-freq",       required_argument, NULL,          'f'},
     {"sft-duration",         required_argument, NULL,          't'},
     {"sft-write-path",       required_argument, NULL,          'p'},
@@ -595,7 +593,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"frame-struct-type",    required_argument, NULL,          'u'},
     {"ifo",                  required_argument, NULL,          'i'},
     {"window-type",          required_argument, NULL,          'w'},
-    {"window-radius",        required_argument, NULL,          'r'},
     {"overlap-fraction",     required_argument, NULL,          'P'},
     {"td-cleaning",          no_argument,       NULL,          'a'},
 #ifdef PSS_ENABLED
@@ -610,10 +607,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"ht-data",              no_argument,       NULL,          'H'},
     {"use-single",           no_argument,       NULL,          'S'},
     {"help",                 no_argument,       NULL,          'h'},
-    {"version",              no_argument,       NULL,          'V'},
     {0, 0, 0, 0}
   };
-  char args[] = "hHZSf:t:C:N:i:s:e:v:c:F:B:D:X:u:w:r:P:p:ab:";
+  char args[] = "hHZSf:t:C:N:i:s:e:v:c:F:B:D:X:u:w:P:p:ab:";
 
   /* Initialize default values */
   CLA->HPf=-1.0;
@@ -630,7 +626,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->miscDesc=NULL;   /* 12/28/05 gam; misc. part of the SFT description field in the filename (also used if makeGPSDirs > 0) */
   CLA->commentField=NULL; /* 12/28/05 gam; comment for version 2 SFT header. */
   CLA->windowOption=1;  /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
-  CLA->windowR = 0.001;
   CLA->overlapFraction=0.0; /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0). */
   CLA->htdata = 0;
   CLA->makeTmpFile = 0; /* 01/09/06 gam */  
@@ -640,46 +635,21 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->PSSCleanHPf = 100.0;  /* Cut frequency for the bilateral highpass filter. It has to be used only if PSSCleaning is YES. defaults to 100Hz */
   CLA->PSSCleanExt = 1;      /* by default, extend the timeseries */
 
-  strcat(allargs, "\nMakeSFTs ");
-  strcat(allargs, lalVCSIdentInfo.vcsId);
-  strcat(allargs, lalVCSIdentInfo.vcsStatus);
-  strcat(allargs, "\nMakeSFTs ");
-  strcat(allargs, lalAppsVCSIdentInfo.vcsId);
-  strcat(allargs, lalAppsVCSIdentInfo.vcsStatus);
-  strcat(allargs, "\nMakeSFTs command line args: "); /* 06/26/07 gam; copy all command line args into commentField */
+  strcat(allargs, "Command line args: "); /* 06/26/07 gam; copy all command line args into commentField */
   for(i = 0; i < argc; i++)
   {
-      /* if the argument describes an additioanl comment, don't record it
-         in the command-line as well, as it will be recoeded in the comment later.
-         if the option is a single argument and does not include the comment itself,
-         skip the next argument as well, as this should be the comment then. */
-      if ((strstr(argv[i], "-c")==argv[i])) {
-          strcat(allargs, "-c ... ");
-          if (strcmp(argv[i], "-c") == 0) {
-              i++;
-          }
-          continue;
-      }
-      if ((strstr(argv[i], "--comment-field")==argv[i])) {
-          strcat(allargs, "--comment-field ... ");
-          if (strcmp(argv[i], "--comment-field") == 0) {
-              i++;
-          }
-          continue;
-      }
       strcat(allargs,argv[i]);
       strcat(allargs, " ");
   }
-  strcat(allargs, "\n");
   CLA->commentField=allargs;
       
   /* Scan through list of command line arguments */
   while ( 1 )
   {
-    int option_index = 0; /* LALgetopt_long stores long option here */
+    int option_index = 0; /* getopt_long stores long option here */
     int c;
 
-    c = LALgetopt_long_only( argc, argv, args, long_options, &option_index );
+    c = getopt_long_only( argc, argv, args, long_options, &option_index );
     if ( c == -1 ) /* end of options */
       break;
 
@@ -699,105 +669,100 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 'f':
       /* high pass frequency */
-      CLA->HPf=atof(LALoptarg);
+      CLA->HPf=atof(optarg);
       break;
     case 't':
       /* SFT time */
-      CLA->stringT = LALoptarg;  /* 12/27/05 gam; keep pointer to string that gives the SFT duration */
-      CLA->T=atoi(LALoptarg);
+      CLA->stringT = optarg;  /* 12/27/05 gam; keep pointer to string that gives the SFT duration */
+      CLA->T=atoi(optarg);
       break;
     case 'C':
       /* name of frame cache file */
-      CLA->FrCacheFile=LALoptarg;
+      CLA->FrCacheFile=optarg;
       break;
     case 's':
       /* GPS start */
-      CLA->GPSStart=atof(LALoptarg);
+      CLA->GPSStart=atof(optarg);
       break;
     case 'e':
       /* GPS end */
-      CLA->GPSEnd=atof(LALoptarg);
+      CLA->GPSEnd=atof(optarg);
       break;
     case 'F':
       /* 12/28/05 gam; start frequency */
-      FMIN=(REAL8)atof(LALoptarg);
+      FMIN=(REAL8)atof(optarg);
       break;
     case 'B':
       /* 12/28/05 gam; band */
-      DF=(REAL8)atof(LALoptarg);
+      DF=(REAL8)atof(optarg);
       break;
     case 'D':
       /* 12/27/05 gam; make directories based on GPS time */
-      CLA->makeGPSDirs=atof(LALoptarg);
+      CLA->makeGPSDirs=atof(optarg);
       break;
     case 'v':
       /* 07/24/14 eag; output SFT version; default is version 2 SFTs */
-      CLA->sftVersion=atoi(LALoptarg);
+      CLA->sftVersion=atoi(optarg);
       break;
     case 'c':
       /* 12/28/05 gam; comment for version 2 SFTs */
-      /* CLA->commentField=LALoptarg; */ /* 06/26/07 gam */
-      strcat(CLA->commentField, "MakeSFTs additional comment: "); /* 06/26/07 gam; copy all command line args into commentField */
-      strcat(CLA->commentField,LALoptarg);
-      strcat(CLA->commentField,"\n");
+      /* CLA->commentField=optarg; */ /* 06/26/07 gam */
+      strcat(CLA->commentField, " Additional comment: "); /* 06/26/07 gam; copy all command line args into commentField */      
+      strcat(CLA->commentField,optarg);
       break;
     case 'X':
       /* 12/28/05 gam; misc. part of the SFT description field in the filename (also used if makeGPSDirs > 0) */
-      CLA->miscDesc=LALoptarg;
+      CLA->miscDesc=optarg;
       break;
     case 'u':
-      CLA->frameStructType=LALoptarg; /* 01/10/07 gam */
+      CLA->frameStructType=optarg; /* 01/10/07 gam */
       break;
     case 'w':
       /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
-      CLA->windowOption=atoi(LALoptarg);
-      break;
-    case 'r':
-      /* defulat 0.001 */
-      CLA->windowR=(REAL8)atof(LALoptarg);
+      CLA->windowOption=atoi(optarg);
       break;
     case 'P':
       /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 1.0). */
-      CLA->overlapFraction=(REAL8)atof(LALoptarg);
+      CLA->overlapFraction=(REAL8)atof(optarg);
       break;
     case 'N':
-      CLA->ChannelName=LALoptarg;
+      CLA->ChannelName=optarg;       
       break;
     case 'i':
-      CLA->IFO=LALoptarg; /* 01/14/07 gam */
+      CLA->IFO=optarg; /* 01/14/07 gam */
       break;
     case 'p':
-      CLA->SFTpath=LALoptarg;
+      CLA->SFTpath=optarg;       
       break;
     case 'a':
       CLA->PSSCleaning = 1;
       break;
     case 'b':
-      CLA->PSSCleanHPf = atof(LALoptarg);
+      CLA->PSSCleanHPf = atof(optarg);
       break;
 #ifdef PSS_ENABLED
     case 512:
-      XLALPSSParams.abs  = atof(LALoptarg);
+      XLALPSSParams.abs  = atof(optarg);
       XLALPSSParams.set |= XLALPSS_SET_ABS;
       break;
     case 513:
-      XLALPSSParams.tau  = atof(LALoptarg);
+      XLALPSSParams.tau  = atof(optarg);
       XLALPSSParams.set |= XLALPSS_SET_TAU;
       break;
     case 514:
-      XLALPSSParams.fact = atof(LALoptarg);
+      XLALPSSParams.fact = atof(optarg);
       XLALPSSParams.set |= XLALPSS_SET_FACT;
       break;
     case 515:
-      XLALPSSParams.cr   = atof(LALoptarg);
+      XLALPSSParams.cr   = atof(optarg);
       XLALPSSParams.set |= XLALPSS_SET_CR;
       break;
     case 516:
-      XLALPSSParams.edge = atof(LALoptarg);
+      XLALPSSParams.edge = atof(optarg);
       XLALPSSParams.set |= XLALPSS_SET_EDGE;
       break;
     case 517:
-      CLA->PSSCleanExt = atoi(LALoptarg);
+      CLA->PSSCleanExt = atoi(optarg);
       break;
 #endif
     case 'h':
@@ -819,7 +784,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tmake-tmp-file (-Z)\tINT\t (optional) Write SFT to .*.tmp file, then move to final filename.\n");
       fprintf(stdout,"\tmisc-desc (-X)   \tSTRING\t (optional) Misc. part of the SFT description field in the filename (also used if make-gps-dirs, -D option, is > 0)\n");
       fprintf(stdout,"\twindow-type (-w)\tINT\t (optional) 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window\n");
-      fprintf(stdout,"\twindow-radius (-r)\tFLOAT\t (optional) default = 0.001\n");
       fprintf(stdout,"\toverlap-fraction (-P)\tFLOAT\t (optional) Overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0).\n");
       fprintf(stdout,"\tht-data (-H)\t\tFLAG\t (optional) Input data is h(t) data (input is PROC_REAL8 data ).\n");
       fprintf(stdout,"\tuse-single (-S)\t\tFLAG\t (optional) Use single precision for window, plan, and fft; double precision filtering is always done.\n");
@@ -834,14 +798,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tpss-edge           \tFLOAT\t (optional) Set PSS parameter 'edge' for time-domain cleaning\n");
       fprintf(stdout,"\tpss-ext            \tINT\t (optional) Extend the timeseries at the beginning before calculating the autoregressive mean, defaults to 1, set to 0 for no\n");
 #endif
-      fprintf(stdout,"\tversion (-V)\t\tFLAG\t Print LAL & LALApps version and exit.\n");
       fprintf(stdout,"\thelp (-h)\t\tFLAG\t This message.\n");
       exit(0);
-    case 'V':
-      /* print version */
-      fprintf(stdout,"MakeSFTs %s %s\n", lalVCSIdentInfo.vcsId, lalVCSIdentInfo.vcsStatus);
-      fprintf(stdout,"MakeSFTs %s %s\n", lalAppsVCSIdentInfo.vcsId, lalAppsVCSIdentInfo.vcsStatus);
-      exit(0);
+      break;
     default:
       /* unrecognized option */
       errflg++;
@@ -1503,7 +1462,7 @@ int HighPass(struct CommandLineArgsTag CLA)
 /*******************************************************************************/
 int WindowData(struct CommandLineArgsTag CLA)
 {
-  REAL8 r = CLA.windowR;
+  REAL8 r = 0.001;
   INT4 k, N, kl, kh;
   /* 10/05/12 gam */
   REAL8 win;
@@ -2086,9 +2045,10 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   }  
 
   /* make container to store the SFT data */
-  XLAL_CHECK( ( oneSFT = XLALCreateSFT ( ((UINT4)nBins)) ) != NULL, XLAL_EFUNC );
+  LALCreateSFTtype (&status, &oneSFT, ((UINT4)nBins));
+  TESTSTATUS( &status );
   #if TRACKMEMUSE
-      printf("Memory use after creating oneSFT and calling XLALCreateSFT in WriteVersion2SFT:\n"); printmemuse();
+      printf("Memory use after creating oneSFT and calling LALCreateSFTtype in WriteVersion2SFT:\n"); printmemuse();
   #endif
   
   /* copy the data to oneSFT */
@@ -2146,16 +2106,18 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   }  
 
   /* write the SFT */
-  XLAL_CHECK( XLALWriteSFT2file(oneSFT, sftname, CLA.commentField) == XLAL_SUCCESS, XLAL_EFUNC );
+  LALWriteSFT2file(&status, oneSFT, sftname, CLA.commentField);
+  TESTSTATUS( &status );
 
   /* 01/09/06 gam; sftname is temporary; move to sftnameFinal. */
   if(CLA.makeTmpFile) {  
     mvFilenames(sftname,sftnameFinal);
   }
 
-  XLALDestroySFT (oneSFT);
+  LALDestroySFTtype (&status,&oneSFT);
+  TESTSTATUS( &status );
   #if TRACKMEMUSE
-      printf("Memory use after destroying oneSFT and calling XLALDestroySFT in WriteVersion2SFT:\n"); printmemuse();
+      printf("Memory use after destroying oneSFT and calling LALDestroySFTtype in WriteVersion2SFT:\n"); printmemuse();
   #endif
 
   return 0;

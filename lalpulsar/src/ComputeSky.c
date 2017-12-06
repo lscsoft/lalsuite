@@ -20,7 +20,7 @@
 /**
  * \author  Berukoff, S.J., Papa, M.A.
  * \file
- * \ingroup lalpulsar_inject
+ * \ingroup pulsarTODO
  * \brief Computes the phase model coefficients necessary for a successful demodulation.
  *
  */
@@ -110,8 +110,8 @@ LALComputeSky (LALStatus *status,
     params->baryinput->tgps.gpsSeconds=params->tGPS[0].gpsSeconds;
     params->baryinput->tgps.gpsNanoSeconds=params->tGPS[0].gpsNanoSeconds;
 
-    XLALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps), params->edat);
-    XLALBarycenter(status->statusPtr, params->emit, params->baryinput, params->earth);
+    LALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps), params->edat);
+    LALBarycenter(status->statusPtr, params->emit, params->baryinput, params->earth);
     TimeToFloat(&tB0, &(params->emit->te));
   */
   TimeToFloat(&tB0, &(params->tGPS[0]));
@@ -123,8 +123,9 @@ LALComputeSky (LALStatus *status,
 
      FloatToTime(&(params->baryinput->tgps), &t);
 
-     XLAL_CHECK_LAL( status, XLALBarycenterEarth(params->earth, &(params->baryinput->tgps), params->edat) == XLAL_SUCCESS, XLAL_EFUNC);
-     XLAL_CHECK_LAL( status, XLALBarycenter(params->emit, params->baryinput, params->earth) == XLAL_SUCCESS, XLAL_EFUNC);
+     TRY( LALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps), params->edat),
+	  status);
+     TRY( LALBarycenter(status->statusPtr, params->emit, params->baryinput, params->earth), status);
 
      TimeToFloat(&tBary, &(params->emit->te));
 

@@ -19,8 +19,8 @@
 
 /**
  * \author C.Messenger
+ * \ingroup pulsarCoherent
  * \file
- * \ingroup lalapps_frametools
  * \brief
  * This code is designed to compute statistical quantities from a specified channel in a given
  * frame file.
@@ -97,9 +97,11 @@ typedef struct {
  * A structure that sores user input variables
  */
 typedef struct { 
+  BOOLEAN help;		            /**< trigger output of help string */
   CHAR *inputfile;                  /**< input frame file name pattern */
   CHAR *channel;                    /**< the frame channel to read */
   CHAR *outputfile;                 /**< name of output file */
+  BOOLEAN version;	            /**< output version-info */
 } UserInput_t;
 
 /***********************************************************************************************/
@@ -231,6 +233,8 @@ int main( int argc, char *argv[] )
 void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar)
 {
   
+  CHAR *version_string;
+
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
@@ -240,14 +244,28 @@ void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar)
   uvar->channel = NULL;
 
   /* ---------- register all user-variables ---------- */
+  LALregBOOLUserStruct(status, 	help, 		'h', UVAR_HELP,     "Print this message");
   LALregSTRINGUserStruct(status,inputfile, 	'i', UVAR_REQUIRED, "The input frame name pattern"); 
   LALregSTRINGUserStruct(status,outputfile, 	'o', UVAR_REQUIRED, "The output statistics file"); 
   LALregSTRINGUserStruct(status,channel, 	'c', UVAR_REQUIRED, "The frame channel to be read"); 
+  LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,  "Output code version");
 
   /* do ALL cmdline and cfgfile handling */
-  BOOLEAN should_exit = 0;
-  LAL_CALL (LALUserVarReadAllInput(status->statusPtr, &should_exit, argc, argv), status->statusPtr);
-  if (should_exit) exit(1);
+  LAL_CALL (LALUserVarReadAllInput(status->statusPtr, argc, argv), status->statusPtr);
+ 
+  /* if help was requested, we're done here */
+  if (uvar->help) exit(0);
+
+  if ((version_string = XLALGetVersionString(0)) == NULL) {
+    XLALPrintError("XLALGetVersionString(0) failed.\n");
+    exit(1);
+  }
+  
+  if (uvar->version) {
+    printf("%s\n",version_string);
+    exit(0);
+  }
+  XLALFree(version_string);
 
   DETATCHSTATUSPTR (status);
   RETURN (status);

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2007--2010, 2012 Bernd Machenschalk, Reinhard Prix
+// Copyright (C) 2007, 2008, 2009, 2010, 2012 Bernd Machenschalk, Reinhard Prix
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 
 {
   {
+    {
     REAL4 s_alpha, c_alpha;   /* sin(2pi kappa_alpha) and (cos(2pi kappa_alpha)-1) */
     XLALSinCos2PiLUTtrimmed ( &s_alpha, &c_alpha, kappa_star );
     c_alpha -= 1.0f;
@@ -99,6 +100,7 @@
         imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
       }
     }
+  }
 
     REAL8 _lambda_alpha = lambda_alpha;
     XLALSinCos2PiLUT( &imagQ, &realQ, _lambda_alpha );

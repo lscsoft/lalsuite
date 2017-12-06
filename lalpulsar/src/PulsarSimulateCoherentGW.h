@@ -32,8 +32,7 @@ extern "C" {
 #endif
 
 /**
- * \defgroup PulsarSimulateCoherentGW_h Header PulsarSimulateCoherentGW.h
- * \ingroup lalpulsar_inject
+ * \addtogroup PulsarSimulateCoherentGW_h
  * \author Creighton, T. D.
  *
  * \brief Provides routines to simulate generic gravitational waveforms
@@ -76,8 +75,7 @@ extern "C" {
  * + B_{+,\times}(t)\sin\phi(t) \; ,
  * \f]
  *
- * \anchor cw_inject_phase_diagram
- * \image html inject_phase_diagram.png "Polarization phase diagram for a quasiperiodic gravitational wave. The phase point p(t) traces out the indicated ellipse in the h_+\,h_x plane; the parameters A1\, A2 and Phi remain roughly constant over many cycles in phi."
+ * \figure{inject_phase_diagram,eps,0.42,Polarization phase diagram for a quasiperiodic gravitational wave. The phase point p(t) traces out the indicated ellipse in the h_+\,h_x plane; the parameters A1\, A2 and Phi remain roughly constant over many cycles in phi.}
  *
  * where \f$\phi(t)=2\pi\int f(t)\,dt\f$, and the <em>evolution timescale</em>
  * \f$\tau=\min\{A/\dot{A},B/\dot{B},f/\dot{f}\}\f$ is much greater than
@@ -106,7 +104,7 @@ extern "C" {
  * h_\times(t) & = & A_1(t)\sin\Phi(t)\cos\phi(t)
  * + A_2(t)\cos\Phi(t)\sin\phi(t) \; .
  * \f}
- * The physical meaning of these functions is shown in \ref cw_inject_phase_diagram "this figure".
+ * The physical meaning of these functions is shown in \figref{inject_phase_diagram}.
  *
  * There is a close relationship between the polarization shift \f$\Phi\f$
  * and the orientation of the \f$x\f$-\f$y\f$ coordinates used to define our
@@ -261,16 +259,18 @@ extern "C" {
  * \note It is permissible to set only some of the
  * \c REAL4TimeSeries or \c REAL4TimeVectorSeries fields above,
  * but the waveform is treated as being zero except during those times
- * when both \c a and \c phi are defined.
+ * when either \c h, or both \c a and \c phi, are defined.
  * Where \c shift is not specified, it is assumed that \f$\Phi\f$ is
  * zero; where \c f is not specified but \c phi is, \f$f(t)\f$ can be
  * computed as \f$\dot{\phi}(t)/2\pi\f$.  Where \c f and \c phi
- * overlap, they must be defined consistently.
+ * overlap, or where \c h and any other time series overlap, they
+ * must be defined consistently.
  *
  */
 typedef struct tagPulsarCoherentGW {
   SkyPosition position;     /**< The location of the source in the sky; this should be in equatorial celestial coordinates, but routines may be able to do the conversion */
-  REAL4 psi;                /**< The polarization angle \f$\psi\f$, in radians, as defined in Appendix B of \cite ABCF2001 . */
+  REAL4 psi;                /**< The polarization angle \f$\psi\f$, in radians, as defined in Appendix B of \cite ABCF2001 */
+  REAL4TimeVectorSeries *h; /**< A time-sampled two-dimensional vector storing the waveforms \f$h_+(t)\f$ and \f$h_\times(t)\f$, in dimensionless strain */
   REAL4TimeVectorSeries *a; /**< A time-sampled two-dimensional vector storing the amplitudes \f$A_1(t)\f$ and \f$A_2(t)\f$, in dimensionless strain */
   REAL4TimeSeries *f;       /**< A time-sampled sequence storing the instantaneous frequency \f$f(t)\f$, in Hz. */
   REAL8TimeSeries *phi;     /**< A time-sampled sequence storing the phase function \f$\phi(t)\f$, in radians */
@@ -283,6 +283,9 @@ typedef struct tagPulsarCoherentGW {
  * This structure contains information required to determine the response
  * of a detector to a gravitational waveform.
  */
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagPulsarDetectorResponse, transfer, site, ephemerides));
+#endif /* SWIG */
 typedef struct tagPulsarDetectorResponse {
   const COMPLEX8FrequencySeries *transfer;    /**< The frequency-dependent transfer function of the interferometer, in ADC counts per unit strain amplitude at any given frequency;
                                          * if absent, the response will be given in raw strain rather than ADC output */

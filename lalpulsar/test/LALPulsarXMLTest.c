@@ -19,6 +19,9 @@
  */
 
 #include <config.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #include <stdlib.h>
 #include <time.h>
 

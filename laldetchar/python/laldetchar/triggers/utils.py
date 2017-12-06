@@ -16,7 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## \addtogroup laldetchar_py_triggers_utils
+## \addtogroup pkg_py_laldetchar_triggers_utils
 """Utilities for the triggers package.
 
 This package includes ways of determining the correct LIGO_LW table
@@ -94,7 +94,7 @@ def _which_etg(etg):
                      "isn't an I/O wrapper for it")
 
 # open doxygen
-## \addtogroup laldetchar_py_triggers_utils
+## \addtogroup pkg_py_laldetchar_triggers_utils
 #@{
 
 
@@ -118,17 +118,17 @@ def which_table(etg):
     if etg in lsctables.TableByName.keys():
         return etg
     elif MULTI_BURST_REGEX.search(etg):
-        return ligolw_table.Table.TableName(lsctables.MultiBurstTable.tableName)
+        return ligolw_table.StripTableName(lsctables.MultiBurstTable.tableName)
     elif SNGL_BURST_REGEX.search(etg):
-        return ligolw_table.Table.TableName(lsctables.SnglBurstTable.tableName)
+        return ligolw_table.StripTableName(lsctables.SnglBurstTable.tableName)
     elif MULTI_INSPIRAL_REGEX.search(etg):
-        return ligolw_table.Table.TableName(
+        return ligolw_table.StripTableName(
                    lsctables.MultiInspiralTable.tableName)
     elif SNGL_INSPIRAL_REGEX.search(etg):
-        return ligolw_table.Table.TableName(
+        return ligolw_table.StripTableName(
                    lsctables.SnglInspiralTable.tableName)
     elif SNGL_RING_REGEX.search(etg):
-        return ligolw_table.Table.TableName(
+        return ligolw_table.StripTableName(
                    lsctables.SnglRingdownTable.tableName)
     else:
         raise ValueError("No LIGO_LW table mapped for ETG=\'%s\'" % etg)
@@ -204,7 +204,7 @@ def time_column(table, ifo=None):
     """
     if hasattr(table, "get_time"):
         return numpy.asarray(table.get_time())
-    func_name = time_func(ligolw_table.Table.TableName(table.tableName)).__name__
+    func_name = time_func(ligolw_table.StripTableName(table.tableName)).__name__
     if hasattr(table, func_name):
         return numpy.asarray(getattr(table, func_name)())
     else:
@@ -226,8 +226,6 @@ def from_ligolw(filepath, table_name, columns=None, start=None, end=None,
         minimum GPS time for returned triggers
     @param end
         maximum GPS time for returned triggers
-    @param kwargs
-        UNDOCUMENTED
 
     @returns the requested `LIGO_LW` table.
     """

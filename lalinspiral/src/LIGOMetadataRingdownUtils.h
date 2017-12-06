@@ -30,7 +30,6 @@ extern "C" {
  *
  */
 typedef enum
-tagSnglRingdownParameterTest
 {
   LALRINGDOWN_UNKNOWN_TEST,
   LALRINGDOWN_F_AND_Q,
@@ -40,7 +39,6 @@ tagSnglRingdownParameterTest
 SnglRingdownParameterTest;
 
 typedef enum
-taglalringdown_inject_type
 {
   LALRINGDOWN_RING_INJECT,
   LALRINGDOWN_IMR_INJECT,
@@ -51,7 +49,6 @@ taglalringdown_inject_type
 lalringdown_inject_type;
 
 typedef enum
-taglalringdown_spectrum_type
 {
   LALRINGDOWN_SPECTRUM_MEDIAN,
   LALRINGDOWN_SPECTRUM_MEDIAN_MEAN
@@ -59,7 +56,6 @@ taglalringdown_spectrum_type
 lalringdown_spectrum_type;
 
 typedef enum
-taglalringdown_data_type
 {
   LALRINGDOWN_DATATYPE_SIM,
   LALRINGDOWN_DATATYPE_ZERO,

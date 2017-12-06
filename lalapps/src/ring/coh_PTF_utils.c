@@ -1,4 +1,3 @@
-#include "config.h"
 #include "coh_PTF.h"
 
 INT4 coh_PTF_data_condition(
@@ -2547,7 +2546,7 @@ MultiInspiralTable* coh_PTF_create_multi_event(
 {
   LIGOTimeGPS trigTime;
   UINT4 numDOF = 4;
-  if (params->singlePolFlag || params->faceOnStatistic || params->numIFO == 1)
+  if ( params->singlePolFlag || params->faceOnStatistic )
     numDOF = 2;
 
   MultiInspiralTable *currEvent;
@@ -2594,56 +2593,26 @@ MultiInspiralTable* coh_PTF_create_multi_event(
       if (bankVeto[LAL_IFO_G1])
       {
         currEvent->bank_chisq_g = bankVeto[LAL_IFO_G1]->data->data[currPos];
-        if (params->numIFO == 1)
-        {
-          currEvent->bank_chisq = bankVeto[LAL_IFO_G1]->data->data[currPos];
-          currEvent->bank_chisq_dof = numDOF * params->BVsubBankSize;
-        }
       }
       if (bankVeto[LAL_IFO_H1])
       {
         currEvent->bank_chisq_h1 = bankVeto[LAL_IFO_H1]->data->data[currPos];
-        if (params->numIFO == 1)
-        {
-          currEvent->bank_chisq = bankVeto[LAL_IFO_H1]->data->data[currPos];
-          currEvent->bank_chisq_dof = numDOF * params->BVsubBankSize;
-        }
       }
       if (bankVeto[LAL_IFO_H2])
       {
         currEvent->bank_chisq_h2 = bankVeto[LAL_IFO_H2]->data->data[currPos];
-        if (params->numIFO == 1)
-        {
-          currEvent->bank_chisq = bankVeto[LAL_IFO_H2]->data->data[currPos];
-          currEvent->bank_chisq_dof = numDOF * params->BVsubBankSize;
-        }
       }
       if (bankVeto[LAL_IFO_L1])
       {
         currEvent->bank_chisq_l = bankVeto[LAL_IFO_L1]->data->data[currPos];
-        if (params->numIFO == 1)
-        {
-          currEvent->bank_chisq = bankVeto[LAL_IFO_L1]->data->data[currPos];
-          currEvent->bank_chisq_dof = numDOF * params->BVsubBankSize;
-        }
       }
       if (bankVeto[LAL_IFO_T1])
       {
         currEvent->bank_chisq_t = bankVeto[LAL_IFO_T1]->data->data[currPos];
-        if (params->numIFO == 1)
-        {
-          currEvent->bank_chisq = bankVeto[LAL_IFO_T1]->data->data[currPos];
-          currEvent->bank_chisq_dof = numDOF * params->BVsubBankSize;
-        }
       }
       if (bankVeto[LAL_IFO_V1])
       {
         currEvent->bank_chisq_v = bankVeto[LAL_IFO_V1]->data->data[currPos];
-        if (params->numIFO == 1)
-        {
-          currEvent->bank_chisq = bankVeto[LAL_IFO_V1]->data->data[currPos];
-          currEvent->bank_chisq_dof = numDOF * params->BVsubBankSize;
-        }
       }
     }
   }
@@ -2659,56 +2628,26 @@ MultiInspiralTable* coh_PTF_create_multi_event(
       if (autoVeto[LAL_IFO_G1])
       {
         currEvent->cont_chisq_g = autoVeto[LAL_IFO_G1]->data->data[currPos];
-        if (params->numIFO == 1)
-        {
-          currEvent->cont_chisq = autoVeto[LAL_IFO_G1]->data->data[currPos];
-          currEvent->cont_chisq_dof = numDOF * params->numAutoPoints;
-        }
       }
       if (autoVeto[LAL_IFO_H1])
       {
         currEvent->cont_chisq_h1 = autoVeto[LAL_IFO_H1]->data->data[currPos];
-        if (params->numIFO == 1)
-        {
-          currEvent->cont_chisq = autoVeto[LAL_IFO_H1]->data->data[currPos];
-          currEvent->cont_chisq_dof = numDOF * params->numAutoPoints;
-        }
       }
       if (autoVeto[LAL_IFO_H2])
       {
         currEvent->cont_chisq_h2 = autoVeto[LAL_IFO_H2]->data->data[currPos];
-        if (params->numIFO == 1)
-        {
-          currEvent->cont_chisq = autoVeto[LAL_IFO_H2]->data->data[currPos];
-          currEvent->cont_chisq_dof = numDOF * params->numAutoPoints;
-        }
       }
       if (autoVeto[LAL_IFO_L1])
       {
         currEvent->cont_chisq_l = autoVeto[LAL_IFO_L1]->data->data[currPos];
-        if (params->numIFO == 1)
-        {
-          currEvent->cont_chisq = autoVeto[LAL_IFO_L1]->data->data[currPos];
-          currEvent->cont_chisq_dof = numDOF * params->numAutoPoints;
-        }
       }
       if (autoVeto[LAL_IFO_T1])
       {
         currEvent->cont_chisq_t = autoVeto[LAL_IFO_T1]->data->data[currPos];
-        if (params->numIFO == 1)
-        {
-          currEvent->cont_chisq = autoVeto[LAL_IFO_T1]->data->data[currPos];
-          currEvent->cont_chisq_dof = numDOF * params->numAutoPoints;
-        }
       }
       if (autoVeto[LAL_IFO_V1])
       {
         currEvent->cont_chisq_v = autoVeto[LAL_IFO_V1]->data->data[currPos];
-        if (params->numIFO == 1)
-        {
-          currEvent->cont_chisq = autoVeto[LAL_IFO_V1]->data->data[currPos];
-          currEvent->cont_chisq_dof = numDOF * params->numAutoPoints;
-        }
       }
     }
   }
@@ -2724,56 +2663,26 @@ MultiInspiralTable* coh_PTF_create_multi_event(
       if (chiSquare[LAL_IFO_G1])
       {
         currEvent->chisq_g = chiSquare[LAL_IFO_G1]->data->data[currPos];
-        if (params->numIFO == 1)
-        {
-          currEvent->chisq = chiSquare[LAL_IFO_G1]->data->data[currPos];
-          currEvent->chisq_dof = numDOF * (params->numChiSquareBins - 1);
-        }
       }
       if (chiSquare[LAL_IFO_H1])
       {
         currEvent->chisq_h1 = chiSquare[LAL_IFO_H1]->data->data[currPos];
-        if (params->numIFO == 1)
-        {
-          currEvent->chisq = chiSquare[LAL_IFO_H1]->data->data[currPos];
-          currEvent->chisq_dof = numDOF * (params->numChiSquareBins - 1);
-        }
       }
       if (chiSquare[LAL_IFO_H2])
       {
         currEvent->chisq_h2 = chiSquare[LAL_IFO_H2]->data->data[currPos];
-        if (params->numIFO == 1)
-        {
-          currEvent->chisq = chiSquare[LAL_IFO_H2]->data->data[currPos];
-          currEvent->chisq_dof = numDOF * (params->numChiSquareBins - 1);
-        }
       }
       if (chiSquare[LAL_IFO_L1])
       {
         currEvent->chisq_l = chiSquare[LAL_IFO_L1]->data->data[currPos];
-        if (params->numIFO == 1)
-        {
-          currEvent->chisq = chiSquare[LAL_IFO_L1]->data->data[currPos];
-          currEvent->chisq_dof = numDOF * (params->numChiSquareBins - 1);
-        }
       }
       if (chiSquare[LAL_IFO_T1])
       {
         currEvent->chisq_t = chiSquare[LAL_IFO_T1]->data->data[currPos];
-        if (params->numIFO == 1)
-        {
-          currEvent->chisq = chiSquare[LAL_IFO_T1]->data->data[currPos];
-          currEvent->chisq_dof = numDOF * (params->numChiSquareBins - 1);
-        }
       }
       if (chiSquare[LAL_IFO_V1])
       {
         currEvent->chisq_v = chiSquare[LAL_IFO_V1]->data->data[currPos];
-        if (params->numIFO == 1)
-        {
-          currEvent->chisq = chiSquare[LAL_IFO_V1]->data->data[currPos];
-          currEvent->chisq_dof = numDOF * (params->numChiSquareBins - 1);
-        }
       }
     }
   }
@@ -2928,10 +2837,14 @@ UINT8 coh_PTF_add_sngl_triggers(
           &eventId,pValues,bankVeto,autoVeto,chiSquare,PTFM,i);
 
       /* Check trigger against trig times */
-      if (coh_PTF_trig_time_check(params,currEvent->end,\
-                                         currEvent->end))
+      if (coh_PTF_trig_time_check(params,currEvent->end_time,\
+                                         currEvent->end_time))
       {
-        XLALFreeSnglInspiral(&currEvent);
+        if (currEvent->event_id)
+        {
+          LALFree(currEvent->event_id);
+        }
+        LALFree(currEvent);
         continue;
       }
       /* And add the trigger to the lists. IF it passes clustering! */
@@ -2954,7 +2867,11 @@ UINT8 coh_PTF_add_sngl_triggers(
         }
         else
         {
-          XLALFreeSnglInspiral(&currEvent);
+          if (currEvent->event_id)
+          {
+            LALFree(currEvent->event_id);
+          }
+          LALFree(currEvent);
         }
       }
     }
@@ -2985,13 +2902,16 @@ SnglInspiralTable* coh_PTF_create_sngl_event(
   SnglInspiralTable *thisEvent;
   thisEvent = (SnglInspiralTable *)
       LALCalloc(1, sizeof(SnglInspiralTable));
-  thisEvent->event_id = (*eventId)++;
+  thisEvent->event_id = (EventIDColumn *)
+      LALCalloc(1, sizeof(EventIDColumn));
+  thisEvent->event_id->id=*eventId;
+  (*eventId)++;
   /* Set end times */
   trigTime = cohSNR->epoch;
   XLALGPSAdd(&trigTime,currPos*cohSNR->deltaT);
-  thisEvent->end = trigTime;
+  thisEvent->end_time = trigTime;
   thisEvent->end_time_gmst = fmod(XLALGreenwichMeanSiderealTime(
-      &thisEvent->end), LAL_TWOPI) * 24.0 / LAL_TWOPI;     /* hours */
+      &thisEvent->end_time), LAL_TWOPI) * 24.0 / LAL_TWOPI;     /* hours */
 
   /* Set SNR, chisqs, sigmasq, eff_distance */
   REAL8 sigmasqCorrFac;
@@ -3035,7 +2955,7 @@ SnglInspiralTable* coh_PTF_create_sngl_event(
     }
   }
   /* FIXME: NOt sure about this one either, inspiral just copies end_time */
-  thisEvent->impulse_time = thisEvent->end;
+  thisEvent->impulse_time = thisEvent->end_time;
 
   /* copy the template into the event */
   thisEvent->mass1   = (REAL4) PTFTemplate.mass1;
@@ -3081,16 +3001,16 @@ UINT4 coh_PTF_accept_sngl_trig_check(
 
   /* for each trigger, find out whether a louder trigger is within the
  *    * clustering time */
-  time1.gpsSeconds=thisEvent.end.gpsSeconds;
-  time1.gpsNanoSeconds = thisEvent.end.gpsNanoSeconds;
+  time1.gpsSeconds=thisEvent.end_time.gpsSeconds;
+  time1.gpsNanoSeconds = thisEvent.end_time.gpsNanoSeconds;
   while (currEvent)
   {
-    time2.gpsSeconds=currEvent->end.gpsSeconds;
-    time2.gpsNanoSeconds=currEvent->end.gpsNanoSeconds;
+    time2.gpsSeconds=currEvent->end_time.gpsSeconds;
+    time2.gpsNanoSeconds=currEvent->end_time.gpsNanoSeconds;
     if (fabs(XLALGPSDiff(&time1,&time2)) < params->clusterWindow)
     {
       if (thisEvent.snr < currEvent->snr\
-          && (thisEvent.event_id != currEvent->event_id))
+          && (thisEvent.event_id->id != currEvent->event_id->id))
       {
         if ( XLALGPSDiff(&time1,&time2) < 0 )
           loudTrigBefore = 1;
@@ -3173,8 +3093,12 @@ void coh_PTF_cluster_sngl_triggers(
     }
     else
     {
+      if (currEvent->event_id)
+      {
+        LALFree(currEvent->event_id);
+      }
       currEvent2 = currEvent->next;
-      XLALFreeSnglInspiral(&currEvent);
+      LALFree(currEvent);
       currEvent = currEvent2;
     }
     triggerNum+=1;
@@ -3259,7 +3183,11 @@ void coh_PTF_cleanup(
     SnglInspiralTable *thisSnglEvent;
     thisSnglEvent = snglEvents;
     snglEvents = snglEvents->next;
-    XLALFreeSnglInspiral( &thisSnglEvent );
+    if ( thisSnglEvent->event_id )
+    {
+      LALFree( thisSnglEvent->event_id );
+    }
+    LALFree( thisSnglEvent );
   }
 
   while ( PTFbankhead )
@@ -3495,7 +3423,9 @@ SnglInspiralTable *conv_insp_tmpl_to_sngl_table(
 {
   SnglInspiralTable *cnvTemplate;
   cnvTemplate = (SnglInspiralTable *) LALCalloc(1,sizeof(SnglInspiralTable));
-  cnvTemplate->event_id = eventNumber;
+  cnvTemplate->event_id = (EventIDColumn *)
+      LALCalloc(1, sizeof(EventIDColumn) );
+  cnvTemplate->event_id->id=eventNumber;
   cnvTemplate->mass1 = template->mass1;
   cnvTemplate->mass2 = template->mass2;
   cnvTemplate->chi = template->chi;

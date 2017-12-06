@@ -38,12 +38,6 @@
 
 /*---------- Global variables ----------*/
 
-const UserChoices SSBprecisionChoices = {
-  { SSBPREC_NEWTONIAN,		"newtonian" },
-  { SSBPREC_RELATIVISTIC,	"relativistic" },
-  { SSBPREC_RELATIVISTICOPT,  	"relativisticopt" },
-};
-
 /*---------- internal prototypes ----------*/
 
 static double gsl_E_solver ( double E, void *p );
@@ -143,7 +137,9 @@ The extra time-delay from the binary orbital motion can be written as
 where \f$R\f$ is the radial distance from the BSB to the emitting NS along the line of sight, and here and in the following we are using
 units where \f$c=1\f$. The sign convention is such that \f$R>0\f$ means that the NS is further away than the BSB, when \f$R<0\f$ it is closer.
 
-In terms of orbital parameters, the radial distance \f$R\f$ can be expressed as (see \ref inject_binary "this figure").
+\figure{inject_binary,eps,0.47,Binary orbit orientation parameters [T. Creighton]}
+
+In terms of orbital parameters, the radial distance \f$R\f$ can be expressed as (see \figref{inject_binary}).
 \f{equation}{
   \label{eq:2}
   R = r\,\sini\,\sin(\argp + \upsilon)\,,
@@ -152,10 +148,9 @@ where \f$r\f$ is the distance of the NS from the BSB (ie the focus of the ellips
 between the orbital plane and the sky, \f$\argp\f$ is the argument of periapse, and \f$\upsilon\f$ is the <em>true anomaly</em> (ie
 the angle from the periapse to the current NS location around the BSB.
 
-\anchor Eccentric_and_true_anomaly
-\image html Eccentric_and_true_anomaly.png "Definition of true anomaly 'v' and eccentric anomaly 'E' to describe an ellipse [Wikipedia]"
+\figure{Eccentric_and_true_anomaly,png,0.2,Definition of true anomaly 'v' and eccentric anomaly 'E' to describe an ellipse [Wikipedia]}
 
-Using elementary trigonometry (cf. \ref Eccentric_and_true_anomaly "this figure" and https://en.wikipedia.org/wiki/Eccentric_anomaly), one can see that the elliptical
+Using elementary trigonometry (cf. \figref{Eccentric_and_true_anomaly} and https://en.wikipedia.org/wiki/Eccentric_anomaly), one can see that the elliptical
 orbit can be described in terms of the true anomaly \f$\upsilon\f$ as
 \f{equation}{
   \label{eq:3}
@@ -175,7 +170,7 @@ From \eqref{eq:3} and \eqref{eq:4} we easily obtain the relations
     \label{eq:9}
 \f}
 where in the second equation we have used the fact that \f$\sin E\f$ and \f$\sin\upsilon\f$ always have the same sign, as can be
-seen from \ref Eccentric_and_true_anomaly "this figure".
+seen from \figref{Eccentric_and_true_anomaly}.
 
 The (Keplerian) motion of the NS on this elliptical orbit is described by Kepler's equation:
 \f{equation}{
@@ -326,7 +321,7 @@ XLALAddBinaryTimes ( SSBtimes **tSSBOut,			//!< [out] reference-time offsets in 
       REAL8 x0 = fracOrb_i * LAL_TWOPI;
       REAL8 E_i;              // eccentric anomaly at emission of the wavefront arriving in SSB at tSSB
       { // ---------- use GSL for the root-finding
-        const gsl_root_fsolver_type *T = gsl_root_fsolver_brent;
+        const gsl_root_fsolver_type *T = gsl_root_fsolver_bisection;
         gsl_root_fsolver *s = gsl_root_fsolver_alloc(T);
         REAL8 E_lo = 0, E_hi = LAL_TWOPI;	// gauge-choice mod (2pi)
         gsl_function F;
@@ -580,7 +575,7 @@ XLALGetSSBtimes ( const DetectorStateSeries *DetectorStates,	/**< [in] detector-
 
       break;
 
-    case SSBPREC_RELATIVISTIC:	/* use XLALBarycenter() to get SSB-times and derivative */
+    case SSBPREC_RELATIVISTIC:	/* use LALBarycenter() to get SSB-times and derivative */
 
       baryinput.site = DetectorStates->detector;
       baryinput.site.location[0] /= LAL_C_SI;
@@ -649,7 +644,7 @@ XLALGetSSBtimes ( const DetectorStateSeries *DetectorStates,	/**< [in] detector-
 
 } /* XLALGetSSBtimes() */
 
-/** Multi-IFO version of XLALGetSSBtimes().
+/** Multi-IFO version of LALGetSSBtimes().
  * Get all SSB-timings for all input detector-series.
  *
  * NOTE: this functions *allocates* the output-vector,

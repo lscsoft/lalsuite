@@ -19,12 +19,6 @@
 #include  <lal/LALSimInspiralTestGRParams.h>
 
 /**
- * @addtogroup LALSimInspiralTestGRParams_c
- * @brief Routines to manipulate non-GR parameter key-value pairs.
- * @{
- */
-
-/**
  * Function that creates the head node of the test GR parameters linked list.
  * It is initialized with a single parameter with given name and value
  */
@@ -185,50 +179,3 @@ void XLALSimInspiralDestroyTestGRParam(
 	parameter=tmp;
 	}
 }
-
-int XLALSimInspiralWaveformParamsNonGRAreDefault(LALDict *params)
-{
-  return (XLALSimInspiralWaveformParamsNonGRPhi1IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRPhi2IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRPhi3IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRPhi4IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDChi0IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDChi1IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDChi2IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDChi3IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDChi4IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDChi5IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDChi5LIsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDChi6IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDChi6LIsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDChi7IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDXi1IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDXi2IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDXi3IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDXi4IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDXi5IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDXi6IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDSigma1IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDSigma2IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDSigma3IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDSigma4IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDAlpha1IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDAlpha2IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDAlpha3IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDAlpha4IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDAlpha5IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDBeta1IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDBeta2IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDBeta3IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRAlphaPPEIsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRAlphaPPE0IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRAlphaPPE1IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRAlphaPPE2IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRAlphaPPE3IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRAlphaPPE4IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRAlphaPPE5IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRAlphaPPE6IsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRAlphaPPE7IsDefault(params));
-}
-
-/** @} */

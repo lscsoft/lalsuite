@@ -84,7 +84,7 @@ int computePriorMassNormTest(void)
 	massRatioMax = 10;
 	XLAL_TRY(result = LALInferenceComputePriorMassNorm(MMin, MMax, MTotMax, McMin, McMax, massRatioMin, massRatioMax, NULL), errnum);
 	if (!XLAL_IS_REAL8_FAIL_NAN(result) || errnum != XLAL_EFAULT)
-	        TEST_FAIL("Null reference check failed.");
+		TEST_FAIL("Null reference check failed.");
 
 	strcpy(massRatioName, "foo");
 	XLAL_TRY(result = LALInferenceComputePriorMassNorm(MMin, MMax, MTotMax, McMin, McMax, massRatioMin, massRatioMax, massRatioName), errnum);
@@ -386,25 +386,23 @@ int LALInferenceDrawFromPriorTest(void)
 		name = "correlated";
 		gsl_matrix *covariance = gsl_matrix_calloc(3, 3);
 		LALInferenceAddVariable(output, name, &correlated, type, vary);
-		LALInferenceRemoveCorrelatedPrior(priorArgs);
+		LALInferenceRemoveCorrelatedPrior(priorArgs, name);
+		LALInferenceAddCorrelatedPrior(priorArgs, name, &covariance, &idx);
 
-		// See what happens when we try to add a non-positive-definite covariance matrix
-                gsl_matrix_set(covariance, 0, 0, -1);
-                XLAL_TRY(LALInferenceAddCorrelatedPrior(priorArgs, name, &covariance, &mu, &sigma, &idx), errnum);
-                if (errnum == XLAL_SUCCESS)
-                        TEST_FAIL("%sNon-positive-definite covariance matrix was not rejected.", caseTag);
-                LALInferenceRemoveCorrelatedPrior(priorArgs);
+		// See what happens when we try to generate correlated values from a non-positive-definite
+		// covariance matrix.
+		gsl_matrix_set(covariance, 0, 0, -1);
+		XLAL_TRY(LALInferenceDrawFromPrior(output, priorArgs, rng), errnum);
+		if (errnum == XLAL_SUCCESS)
+			TEST_FAIL("%sNon-positive-definite covariance matrix was not rejected.", caseTag);
 
-		// Now try a positive-semi-definite matrix; this should be accepted
-                covariance = gsl_matrix_calloc(3, 3);
-                gsl_matrix_set(covariance, 0, 0, 1);
-                XLAL_TRY(LALInferenceAddCorrelatedPrior(priorArgs, name, &covariance, &mu, &sigma, &idx), errnum);
-                if (errnum != XLAL_SUCCESS)
-                        TEST_FAIL("%sCould not add semi-positive-definite covariance matrix.", caseTag);
-		LALInferenceRemoveCorrelatedPrior(priorArgs);
-
+		// Now try a positive-semi-definite matrix; this should be accepted (need only update matrix, not add it afresh).
+		gsl_matrix_set(covariance, 0, 0, 1);
+		XLAL_TRY(LALInferenceDrawFromPrior(output, priorArgs, rng), errnum);
+		if (errnum != XLAL_SUCCESS)
+			TEST_FAIL("%sCould not generate correlated variable from positive-semi-definite matrix; XLAL error: %s.", caseTag, XLALErrorString(errnum));
+		
 		// Try a legitimate positive-definite covariance matrix.
-                covariance = gsl_matrix_calloc(3, 3);
 		gsl_matrix_set(covariance, 0, 0, 2);
 		gsl_matrix_set(covariance, 0, 1, 1);
 		gsl_matrix_set(covariance, 0, 2, 0);
@@ -414,15 +412,12 @@ int LALInferenceDrawFromPriorTest(void)
 		gsl_matrix_set(covariance, 2, 0, 0);
 		gsl_matrix_set(covariance, 2, 1, 1);
 		gsl_matrix_set(covariance, 2, 2, 1);
-                XLAL_TRY(LALInferenceAddCorrelatedPrior(priorArgs, name, &covariance, &mu, &sigma, &idx), errnum);
-                if (errnum != XLAL_SUCCESS)
-                        TEST_FAIL("%sCould not add correlated prior.", caseTag);
-                XLAL_TRY(LALInferenceDrawFromPrior(output, priorArgs, rng), errnum);
+		XLAL_TRY(LALInferenceDrawFromPrior(output, priorArgs, rng), errnum);
 		if (errnum != XLAL_SUCCESS)
 			TEST_FAIL("%sCould not generate correlated variable from positive-definite matrix; XLAL error: %s.", caseTag, XLALErrorString(errnum));
 
 		LALInferenceRemoveVariable(output, name);
-		LALInferenceRemoveCorrelatedPrior(priorArgs);
+		LALInferenceRemoveCorrelatedPrior(priorArgs, name);
 
 		//gsl_matrix_free(covariance);
 		LALInferenceRemoveVariable(output, "gaussian");
@@ -443,22 +438,19 @@ int LALInferenceInspiralPriorTest(void)
 
 	REAL8 result;
 	LALInferenceRunState *runState = XLALCalloc(1, sizeof(LALInferenceRunState));
-    LALInferenceThreadState *thread = XLALCalloc(1, sizeof(LALInferenceThreadState));
-    runState->threads = XLALCalloc(1, sizeof(LALInferenceThreadState*));
-    runState->threads[0] = thread;
 	LALInferenceVariables *params = XLALCalloc(1, sizeof(LALInferenceVariables));
 	LALInferenceVariables *priorArgs = XLALCalloc(1, sizeof(LALInferenceVariables));
 
 	// Standard null reference check.
 	int failed = 1;
 	runState->priorArgs = NULL;
-    thread->model = NULL;
-	XLAL_TRY(result = LALInferenceInspiralPrior(runState, params, thread->model), errnum);
+    runState->model = NULL;
+	XLAL_TRY(result = LALInferenceInspiralPrior(runState, params, runState->model), errnum);
 	failed &= !XLAL_IS_REAL8_FAIL_NAN(result) || errnum != XLAL_EFAULT;
 	runState->priorArgs = priorArgs;
-	XLAL_TRY(result = LALInferenceInspiralPrior(NULL, params, thread->model), errnum);
+	XLAL_TRY(result = LALInferenceInspiralPrior(NULL, params, runState->model), errnum);
 	failed &= !XLAL_IS_REAL8_FAIL_NAN(result) || errnum != XLAL_EFAULT;
-	XLAL_TRY(result = LALInferenceInspiralPrior(runState, NULL, thread->model), errnum);
+	XLAL_TRY(result = LALInferenceInspiralPrior(runState, NULL, runState->model), errnum);
 	failed &= !XLAL_IS_REAL8_FAIL_NAN(result) || errnum != XLAL_EFAULT;
 	if (failed)
 		TEST_FAIL("Null reference check failed.");
@@ -487,8 +479,7 @@ int LALInferenceInspiralPriorTest(void)
 	min = log(min); max = log(max);
 	LALInferenceAddMinMaxPrior(priorArgs, "logmc", &min, &max, LALINFERENCE_REAL8_t);
 	min = 1.0; max = 30.0;
-	LALInferenceAddMinMaxPrior(priorArgs, "mass1", &min, &max, LALINFERENCE_REAL8_t);
-	LALInferenceAddMinMaxPrior(priorArgs, "mass2", &min, &max, LALINFERENCE_REAL8_t);
+	LALInferenceAddMinMaxPrior(priorArgs, "component", &min, &max, LALINFERENCE_REAL8_t);
 	/*max *= 2;*/
 	/*LALInferenceAddVariable(priorArgs, "MTotMax", &max, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);*/
 	min = -LAL_PI; max = LAL_PI;
@@ -510,13 +501,13 @@ int LALInferenceInspiralPriorTest(void)
 	LALInferenceDrawFromPrior(params, priorArgs, rng);
 
 	// Check that we get a finite log prior.
-	XLAL_TRY(result = LALInferenceInspiralPrior(runState, params, thread->model), errnum);
+	XLAL_TRY(result = LALInferenceInspiralPrior(runState, params, runState->model), errnum);
 
 	if (XLAL_IS_REAL8_FAIL_NAN(result) || errnum != XLAL_SUCCESS)
 	{
 		TEST_FAIL("Could not generate inspiral prior; XLAL error: %s", XLALErrorString(errnum));
 	}
-	else if (isinf(result))
+	else if (result == -DBL_MAX)
 	{
 		TEST_FAIL("Parameter configuration within specified min/max bounds for each parameter gave zero prior.");
 	}
@@ -525,12 +516,12 @@ int LALInferenceInspiralPriorTest(void)
 	LALInferenceGetMinMaxPrior(priorArgs, "distance", &min, &max);
 	value = max + (max - min) / 2;
 	LALInferenceSetVariable(params, "distance", &value);
-	XLAL_TRY(result = LALInferenceInspiralPrior(runState, params, thread->model), errnum);
+	XLAL_TRY(result = LALInferenceInspiralPrior(runState, params, runState->model), errnum);
 	if (XLAL_IS_REAL8_FAIL_NAN(result) || errnum != XLAL_SUCCESS)
 	{
 		TEST_FAIL("Could not generate inspiral prior; XLAL error: %s", XLALErrorString(errnum));
 	}
-	else if (isfinite(result))
+	else if (result != -DBL_MAX)
 	{
 		TEST_FAIL("Distance %f is outside [%f,%f] but prior is non-zero.", value, min, max);
 	}
@@ -539,7 +530,7 @@ int LALInferenceInspiralPriorTest(void)
 	// but the chirp mass and symmetric mass ratio are still OK; this should be picked up and a
 	// zero prior returned.
 	LALInferenceDrawFromPrior(params, priorArgs, rng);
-	LALInferenceGetMinMaxPrior(priorArgs, "mass1", &min, &max);
+	LALInferenceGetMinMaxPrior(priorArgs, "component", &min, &max);
 	REAL8 m2 = 0.5;
 	REAL8 m1 = 3.82;
 	REAL8 eta = m1 * m2 / pow(m1 + m2, 2);
@@ -548,12 +539,12 @@ int LALInferenceInspiralPriorTest(void)
 	LALInferenceSetVariable(params, "chirpmass", &Mc);
 	REAL8 logMc = log(Mc);
 	LALInferenceSetVariable(params, "logmc", &logMc);
-	XLAL_TRY(result = LALInferenceInspiralPrior(runState, params, thread->model), errnum);
+	XLAL_TRY(result = LALInferenceInspiralPrior(runState, params, runState->model), errnum);
 	if (XLAL_IS_REAL8_FAIL_NAN(result) || errnum != XLAL_SUCCESS)
 	{
 		TEST_FAIL("Could not generate inspiral prior; XLAL error: %s", XLALErrorString(errnum));
 	}
-	else if (isfinite(result))
+	else if (result != -DBL_MAX)
 	{
 		TEST_FAIL("Mass ratio %f and chirp mass %f define masses outside bounds [%f,%f], but prior is non-zero.", eta, Mc, min, max);
 	}

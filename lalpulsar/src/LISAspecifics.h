@@ -21,7 +21,7 @@
  * \author Reinhard Prix
  * \date 2006
  * \file
- * \ingroup lalpulsar_general
+ * \ingroup pulsarTODO
  * \brief Header-file defining the API for the LISA-specific functions
  *
  */
@@ -38,7 +38,7 @@ extern "C" {
 #include <lal/LALDetectors.h>
 #include <lal/LALDatatypes.h>
 #include <lal/DetectorStates.h>
-#include <lal/LALComputeAM.h>
+#include <lal/ComplexAM.h>
 
 /*---------- exported DEFINES ----------*/
 
@@ -46,7 +46,7 @@ extern "C" {
 
 /*---------- exported types ----------*/
 /** Translate TDI arm indices to C-indexing */
-typedef enum tagLISAarmT {
+typedef enum {
   LISA_ARM1 = 0,
   LISA_ARM2,
   LISA_ARM3
@@ -64,16 +64,6 @@ typedef struct tagCmplxDetectorTensor
   SymmTensor3 im;	/**< tensor holding imaginary-parts of all components */
 } CmplxDetectorTensor;
 
-/**
- * Convenience container for precomputed pi f L/c  and skyposition vector
- */
-typedef struct tagFreqSkypos_t
-{
-  REAL4 Freq;		/**< signal frequency */
-  REAL8 skyposV[3];	/**< unit vector pointing to skyposition of source */
-  SymmTensor3 ePlus;	/**< ePlus polarization tensor (skypos-dependent) */
-  SymmTensor3 eCross;	/**< eCross polarization tensor (skypos-dependent) */
-} FreqSkypos_t;
 
 /*---------- exported Global variables ----------*/
 /* empty init-structs for the types defined in here */

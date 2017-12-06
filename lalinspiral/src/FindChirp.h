@@ -47,8 +47,7 @@ extern "C" {
 
 
 /**
- * \defgroup FindChirp_h Header FindChirp.h
- * \ingroup lalinspiral_findchirp
+ * \addtogroup FindChirp_h
  * \author Allen, B., Brown, D. A. and Creighton, J. D. E.
  *
  * \brief This header provides core prototypes, structures and functions to
@@ -262,7 +261,7 @@ FindChirpDataParams;
 
 /**
  * This structure contains the parameters for generation of templates
- * by the various template generation functions provided in \ref lalinspiral_findchirp.
+ * by the various template generation functions provided in \ref pkg_findchirp.
  */
 typedef struct
 tagFindChirpTmpltParams
@@ -317,9 +316,7 @@ FindChirpTmpltParams;
  * This structure contains the possible methods by which
  * to maximize over a chirp in a data segment.
  */
-typedef enum
-tagFindChirpClustering
-{
+typedef enum {
   FindChirpClustering_none,		/**< The decision to do no clustering of events */
   FindChirpClustering_tmplt,		/**< Cluster over the length of the data segment */
   FindChirpClustering_window,		/**< Cluster over a given number of seconds given by the argument to the flag
@@ -651,6 +648,19 @@ LALFindChirpStoreEvent (
     UINT4                       numChisqBins,
     CHAR                       *searchName
     );
+
+void
+LALFindChirpClusterEvents (
+    LALStatus                  *status,
+    SnglInspiralTable         **eventList,
+    FindChirpFilterInput       *input,
+    FindChirpFilterParams      *params,
+    FindChirpBankVetoData      *bankVetoData,
+    UINT4                       subBankIndex,
+    int                         writeCData,
+    InspiralTemplate           *bankCurrent
+    );
+
 
 void
 LALFindChirpFilterOutputVeto(

@@ -17,12 +17,8 @@
 // MA  02111-1307  USA
 //
 
-///
-/// \defgroup SWIGLALStochasticAlpha_i Interface SWIGLALStochasticAlpha.i
-/// \ingroup lalstochastic_swig
-/// \brief SWIG code which must appear \e before the LALStochastic headers.
-/// \author Karl Wette
-///
+// Header containing SWIG code which must appear *before* the LALStochastic headers.
+// Author: Karl Wette
 
 // Local Variables:
 // mode: c

@@ -29,7 +29,7 @@
 
 /**
  * \file
- * \ingroup lalmetaio_general
+ * \ingroup LIGOLwXMLArray
  * \author Kipp Cannon
  *
  * \brief I/O library for LIGO Light Weight XML Array document fragments.
@@ -133,9 +133,9 @@ static int WriteLIGOLwXMLArrayHeader(
 	int is_complex
 )
 {
-	const char *dim1 = is_tseries ? "Time" : (const char *) "Frequency";
-	const char *units1 = is_tseries ? "s" : (const char *) "s^-1";
-	const char *dim2 = is_complex ? "Real,Imaginary" : (const char *) "Real";
+	const char *dim1 = is_tseries ? "Time" : "Frequency";
+	const char *units1 = is_tseries ? "s" : "s^-1";
+	const char *dim2 = is_complex ? "Real,Imaginary" : "Real";
 	char units2[100];
 	int error = 0;
 

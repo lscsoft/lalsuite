@@ -27,18 +27,17 @@
  *-----------------------------------------------------------------------
  */
 
-#include <config.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <regex.h>
 #include <time.h>
 #include <lal/LALStdlib.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALStdio.h>
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
@@ -204,7 +203,7 @@ int main( int argc, char *argv[] )
   XLALGPSTimeNow(&(proctable.processTable->start_time));
 
   XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
-      lalAppsVCSIdentInfo.vcsId, lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
+      lalAppsVCSIdentId, lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0);
 
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
@@ -221,8 +220,8 @@ int main( int argc, char *argv[] )
 
   while (1)
   {
-    /* LALgetopt arguments */
-    static struct LALoption long_options[] = 
+    /* getopt arguments */
+    static struct option long_options[] = 
     {
       {"verbose",                 no_argument,       &vrbflg,              1 },
       {"sort-triggers",           no_argument,  &sortTriggers,             1 },
@@ -257,11 +256,11 @@ int main( int argc, char *argv[] )
     };
     int c;
 
-    /* LALgetopt_long stores the option index here. */
+    /* getopt_long stores the option index here. */
     int option_index = 0;
-    size_t LALoptarg_len;
+    size_t optarg_len;
 
-    c = LALgetopt_long_only ( argc, argv, "a:b:c:d:e:hj:k:l:m:n:o:p:t:"
+    c = getopt_long_only ( argc, argv, "a:b:c:d:e:hj:k:l:m:n:o:p:t:"
                                        "A:C:D:E:I:N:S:T:V:W:Y:Z", long_options, 
                                        &option_index );
 
@@ -280,39 +279,39 @@ int main( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "error parsing option %s with argument %s\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
         break;
 
       case 'a':
-        bittenLParams.param_a[LAL_IFO_H1] = atof(LALoptarg);
-      ADD_PROCESS_PARAM( "float", "%s", LALoptarg);
+        bittenLParams.param_a[LAL_IFO_H1] = atof(optarg);
+      ADD_PROCESS_PARAM( "float", "%s", optarg);
         break;
 
       case 'b':
-        bittenLParams.param_b[LAL_IFO_H1] = atof(LALoptarg);
-      ADD_PROCESS_PARAM( "float", "%s", LALoptarg);
+        bittenLParams.param_b[LAL_IFO_H1] = atof(optarg);
+      ADD_PROCESS_PARAM( "float", "%s", optarg);
         break;
 
       case 'j':
-        bittenLParams.param_a[LAL_IFO_H2] = atof(LALoptarg);
-      ADD_PROCESS_PARAM( "float", "%s", LALoptarg);
+        bittenLParams.param_a[LAL_IFO_H2] = atof(optarg);
+      ADD_PROCESS_PARAM( "float", "%s", optarg);
         break;
 
       case 'n':
-        bittenLParams.param_b[LAL_IFO_H2] = atof(LALoptarg);
-      ADD_PROCESS_PARAM( "float", "%s", LALoptarg);
+        bittenLParams.param_b[LAL_IFO_H2] = atof(optarg);
+      ADD_PROCESS_PARAM( "float", "%s", optarg);
         break;
 
       case 'l':
-        bittenLParams.param_a[LAL_IFO_L1] = atof(LALoptarg);
-      ADD_PROCESS_PARAM( "float", "%s", LALoptarg);
+        bittenLParams.param_a[LAL_IFO_L1] = atof(optarg);
+      ADD_PROCESS_PARAM( "float", "%s", optarg);
         break;
 
       case 'p':
-        bittenLParams.param_b[LAL_IFO_L1] = atof(LALoptarg);
-      ADD_PROCESS_PARAM( "float", "%s", LALoptarg);
+        bittenLParams.param_b[LAL_IFO_L1] = atof(optarg);
+      ADD_PROCESS_PARAM( "float", "%s", optarg);
         break;
 
       
@@ -323,9 +322,9 @@ int main( int argc, char *argv[] )
 
       case 'Z':
         /* create storage for the usertag */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        userTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
-        memcpy( userTag, LALoptarg, LALoptarg_len );
+        optarg_len = strlen( optarg ) + 1;
+        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( userTag, optarg, optarg_len );
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
@@ -334,11 +333,11 @@ int main( int argc, char *argv[] )
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-            LALoptarg );
+            optarg );
         break;
 
       case 'c':
-        if ( strlen( LALoptarg ) > LIGOMETA_COMMENT_MAX - 1 )
+        if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "comment must be less than %d characters\n",
@@ -347,7 +346,7 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", LALoptarg);
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
 
@@ -360,15 +359,15 @@ int main( int argc, char *argv[] )
 
       case 'o':
         /* create storage for the output file name */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        outputFileName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
-        memcpy( outputFileName, LALoptarg, LALoptarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        optarg_len = strlen( optarg ) + 1;
+        outputFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( outputFileName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'e':
         /* store the number of slides */
-        extractSlide = atoi( LALoptarg );
+        extractSlide = atoi( optarg );
         if ( extractSlide == 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
@@ -382,7 +381,7 @@ int main( int argc, char *argv[] )
  
       case 'N':
         /* store the number of slides */
-        numSlides = atoi( LALoptarg );
+        numSlides = atoi( optarg );
         if ( numSlides < 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
@@ -396,23 +395,23 @@ int main( int argc, char *argv[] )
 
       case 'S':
         /* create storage for the summ file name */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        summFileName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
-        memcpy( summFileName, LALoptarg, LALoptarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        optarg_len = strlen( optarg ) + 1;
+        summFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( summFileName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'k':
         /* type of data to analyze */
-        if ( ! strcmp( "playground_only", LALoptarg ) )
+        if ( ! strcmp( "playground_only", optarg ) )
         {
           dataType = playground_only;
         }
-        else if ( ! strcmp( "exclude_play", LALoptarg ) )
+        else if ( ! strcmp( "exclude_play", optarg ) )
         {
           dataType = exclude_play;
         }
-        else if ( ! strcmp( "all_data", LALoptarg ) )
+        else if ( ! strcmp( "all_data", optarg ) )
         {
           dataType = all_data;
         }
@@ -421,24 +420,24 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown data type, %s, specified: "
               "(must be playground_only, exclude_play or all_data)\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'C':
         /* choose the coinc statistic */
         {        
-          if ( ! strcmp( "snrsq", LALoptarg ) )
+          if ( ! strcmp( "snrsq", optarg ) )
           {
             coincstat = snrsq;
           }
-          else if ( ! strcmp( "effective_snrsq", LALoptarg) )
+          else if ( ! strcmp( "effective_snrsq", optarg) )
           {
             coincstat = effective_snrsq;
           }
-          else if ( ! strcmp( "bitten_l", LALoptarg ) )
+          else if ( ! strcmp( "bitten_l", optarg ) )
           {
             coincstat = bitten_l;
           }
@@ -448,16 +447,16 @@ int main( int argc, char *argv[] )
                "unknown coinc statistic:\n "
                "%s (must be one of:\n"
                "snrsq, effective_snrsq, bitten_l, s3_snr_chi_stat)\n",
-                long_options[option_index].name, LALoptarg);
+                long_options[option_index].name, optarg);
             exit( 1 );
           }
-          ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
         break; 
 
       case 'E':
         /* store the stat threshold for a cut */
-        statThreshold = atof( LALoptarg );
+        statThreshold = atof( optarg );
         if ( statThreshold <= 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
@@ -470,7 +469,7 @@ int main( int argc, char *argv[] )
          
       case 't':
         /* cluster time is specified on command line in ms */
-        cluster_dt = (INT8) atoi( LALoptarg );
+        cluster_dt = (INT8) atoi( optarg );
         if ( cluster_dt <= 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
@@ -486,31 +485,31 @@ int main( int argc, char *argv[] )
 
       case 'I':
         /* create storage for the injection file name */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        injectFileName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
-        memcpy( injectFileName, LALoptarg, LALoptarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        optarg_len = strlen( optarg ) + 1;
+        injectFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( injectFileName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'd':
         /* discard all triggers from ifo */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        ifo = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
-        memcpy( ifo, LALoptarg, LALoptarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        optarg_len = strlen( optarg ) + 1;
+        ifo = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( ifo, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'D':
         /* keep only coincs found in ifos */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        ifos = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
-        memcpy( ifos, LALoptarg, LALoptarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        optarg_len = strlen( optarg ) + 1;
+        ifos = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( ifos, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'T':
         /* injection coincidence time is specified on command line in ms */
-        injectWindowNS = (INT8) atoi( LALoptarg );
+        injectWindowNS = (INT8) atoi( optarg );
         if ( injectWindowNS < 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
@@ -526,22 +525,22 @@ int main( int argc, char *argv[] )
 
       case 'm':
         /* create storage for the missed injection file name */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        missedFileName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
-        memcpy( missedFileName, LALoptarg, LALoptarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        optarg_len = strlen( optarg ) + 1;
+        missedFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( missedFileName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'W':
         /* kappa accuracy H1 */
-        accuracyParams.ifoAccuracy[LAL_IFO_H1].kappa = atof(LALoptarg);
-        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_H1].kappa = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
          
       case 'Y':
         /* kappa accuracy H2 */
-        accuracyParams.ifoAccuracy[LAL_IFO_H2].kappa = atof(LALoptarg);
-        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
+        accuracyParams.ifoAccuracy[LAL_IFO_H2].kappa = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
       
       case '?':
@@ -652,14 +651,14 @@ int main( int argc, char *argv[] )
    */
 
   /* if we have run out of arguments on the command line, throw an error */
-  if ( ! (LALoptind < argc) )
+  if ( ! (optind < argc) )
   {
     fprintf( stderr, "Error: No input trigger files specified.\n" );
     exit( 1 );
   }
 
   /* read in the triggers */
-  for( j = LALoptind; j < argc; ++j )
+  for( j = optind; j < argc; ++j )
   {
     INT4 numFileTriggers = 0;
     INT4 numFileCoincs   = 0;

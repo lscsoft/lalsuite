@@ -32,7 +32,7 @@
 /**
  * \author Brown, D. A. and Fairhurst, S.
  * \file
- * \ingroup lalmetaio_general
+ * \ingroup lalmetaio
  *
  * \brief Routines to write LIGO metadata database structures to LIGO lightweight XML files.
  *
@@ -54,6 +54,14 @@
  * these are set to 0 and -1 respectively, all events are returned.  Although a
  * \c sngl_inspiral table is read in, only those entries relevant for an
  * InspiralTemplate are read in and stored.
+ *
+ * The routine \c SimInspiralTableFromLIGOLw reads in a \c sim_inspiral
+ * table from the LIGOLwXML file specified in \c fileName.  It returns the
+ * number of rows read in and \c SimHead provides a pointer to the head of a
+ * linked list of \c SimInspiralTables containing the events.  Additionally, a
+ * \c startTime and \c endTime are specified.  Only simulated events
+ * occuring between these times are returned.  If the \c endTime is set to
+ * zero, then all events are returned.
  *
  * The routine \c XLALSearchSummaryTableFromLIGOLw reads in a
  * \c search_summary table from the LIGOLwXML file specified in

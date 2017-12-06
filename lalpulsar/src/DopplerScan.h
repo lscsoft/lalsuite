@@ -38,6 +38,7 @@ extern "C" {
 #include <lal/LALDatatypes.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/PtoleMetric.h>
+#include <lal/StackMetric.h>
 #include <lal/LALBarycenter.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/ComputeFstat.h>
@@ -78,7 +79,7 @@ extern "C" {
 /*---------- external types ----------*/
 
 /** Different 'states' a Doppler-scan can be in */
-typedef enum tagscan_state_t {
+typedef enum {
   STATE_IDLE = 0,   	/**< not initialized yet */
   STATE_READY,		/**< initialized and ready */
   STATE_FINISHED,	/**< all templates have been read */
@@ -86,7 +87,8 @@ typedef enum tagscan_state_t {
 } scan_state_t;
 
 /** different types of grids: */
-typedef enum tagDopplerGridType {
+typedef enum
+{
   /* ----- factored grid-types: sky x f0dot x f1dot x f2dot x f3dot  */
   GRID_FLAT 		= 0,		/**< "flat" sky-grid: fixed step-size (dAlpha,dDelta) */
   GRID_ISOTROPIC	= 1,		/**< approximately isotropic sky-grid */
@@ -168,27 +170,22 @@ typedef struct tagMetricEllipse {
 /*---------- external prototypes [API] ----------*/
 
 /* ------ functions to handle factored grids: 'sky x freq x f1dot...' covering ----- */
-void XLALDestroyDopplerSkyScan ( DopplerSkyScanState *skyScan );
-int XLALInitDopplerSkyScan ( DopplerSkyScanState *skyScan, const DopplerSkyScanInit *init);
-
+void InitDopplerSkyScan(LALStatus *, DopplerSkyScanState *skyScan, const DopplerSkyScanInit *init);
 int  XLALNextDopplerSkyPos( PulsarDopplerParams *pos, DopplerSkyScanState *skyScan);
+void FreeDopplerSkyScan(LALStatus *, DopplerSkyScanState *skyScan);
 
 void writeSkyGridFile(LALStatus *, const DopplerSkyGrid *grid, const CHAR *fname );
 
 /* ----- various utility functions ----- */
-CHAR *XLALSkySquare2String ( REAL8 Alpha, REAL8 Delta, REAL8 AlphaBand, REAL8 DeltaBand );
+void ParseSkyRegionString (LALStatus *, SkyRegion *region, const CHAR *input);
+void SkySquare2String (LALStatus *, CHAR **string, REAL8 Alpha, REAL8 Delta, REAL8 AlphaBand, REAL8 DeltaBand);
 
-int XLALParseSkyRegionString ( SkyRegion *region, const CHAR *input);
+void getMCDopplerCube (LALStatus *, DopplerRegion *cube, PulsarDopplerParams lal_signal, UINT4 PointsPerDim, const DopplerSkyScanInit *params);
 void getMetricEllipse(LALStatus *, MetricEllipse *ellipse, REAL8 mismatch, const REAL8Vector *metric, UINT4 dim0);
 
 int fprintfDopplerParams ( FILE *fp, const PulsarDopplerParams *params );
 
 DopplerSkyGrid *XLALEquiPartitionSkygrid ( const DopplerSkyGrid *skygrid, UINT4 jPart, UINT4 numPartitions );
-
-
-// ---------- deprecated LAL functions ----------
-void FreeDopplerSkyScan(LALStatus *, DopplerSkyScanState *skyScan);
-void InitDopplerSkyScan(LALStatus *, DopplerSkyScanState *skyScan, const DopplerSkyScanInit *init);
 
 #ifdef  __cplusplus
 }

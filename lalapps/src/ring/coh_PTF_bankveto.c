@@ -1,4 +1,3 @@
-#include "config.h"
 #include "coh_PTF.h"
 
 #ifdef __GNUC__

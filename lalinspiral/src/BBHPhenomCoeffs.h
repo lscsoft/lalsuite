@@ -37,7 +37,7 @@ extern "C" {
 
 /**
  * \defgroup BBHPhenomCoeffs_h Header BBHPhenomCoeffs.h
- * \ingroup lalinspiral_UNCLASSIFIED
+ * \ingroup pkg_CBC_NEW
  * \author Santamaria L, Krishnan B, Whelan JT, Dias M, Parameswaran A.
  *
  * \brief Provides coëfficients for the phenomenological waveforms

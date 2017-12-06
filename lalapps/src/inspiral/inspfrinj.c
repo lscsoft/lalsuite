@@ -27,238 +27,12 @@
  *-----------------------------------------------------------------------
  */
 
-/**
- * \file
- * \ingroup lalapps_inspiral
- *
- * <dl>
- * <dt>Name</dt><dd>
- * \c lalapps_inspfrinj --- performs inspiral injections into frame data.</dd>
- *
- * <dt>Synopsis</dt><dd>
- * \code
- * lalapps_inspfrinj [options]
- *
- *  [--help ]
- *  [--verbose ]
- *  [--version ]
- *  [--user-tag STRING ]
- *  [--comment STRING ]
- *
- *   --gps-start-time SEC
- *  [--gps-start-time-ns NS ]
- *   --gps-end-time SEC
- *  [--gps-end-time-ns NS ]
- *
- *  [--frame-cache FRAME_CACHE
- *   --channel-name CHAN ]
- *
- *  [--ifo  IFO
- *   --sample-rate SAMPLE_RATE ]
- *
- *   --calibration-cache CAL_CACHE
- *   --calibrated-data TYPE
- *
- *  [--num-resp-points N ]
- *
- *   --injection-file FILE
- *   --injection-channel INJ
- *  [--inject-overhead ]
- *  [--inject-safety SEC ]
- *
- *  [--write-raw-data ]
- *  [--write-inj-only ]
- *  [--write-raw-plus-inj ]
- *
- *   --output-frame-length OUTPUT_LENGTH
- *  [--output-file-name OUTPUT_NAME ]
- *
- * \endcode</dd>
- *
- * <dt>Description</dt><dd>
- *
- * \c lalapps_frinspinj generates injections and stores them as
- * frame files.  This code is essentially a copy of those parts of
- * \c lalapps_inspiral responsible for reading in the data and
- * performing the injections.  The injection details are either read in
- * from frame files containin an injection channel or from the
- * \c sim_inspiral table of a LIGO lightweight xml file or Is a
- * \c sim_inspiral table is given, the injections are generated
- * using LALFindChirpInjectSignals.  The injection data is output to frame
- * files.  The length of the output frames is specified by
- * <tt>output-frame-length</tt>.
- *
- * The code is capable of generating both calibrated and uncalibrated
- * injections.  To obtain calibrated h(t) injections the option
- * <tt>calibrated-data</tt> must be specified (at present the code only
- * works for real_4 data).  Alternatively, if a \c CAL_CACHE is
- * given, then uncalibrated injections will be produced using the a
- * response function generated from the calibration data in the cache.  The
- * calibration coefficients will by default be averaged over the duration
- * of the data.  When working with uncalibrated data, the number of points
- * used to determine the response function will have an effect, albeit
- * minor, on the injection signals.  By default, the value
- * <tt>num-resp-points</tt> is set to 4194304.  This matches the value used
- * by \c lalapps_inspiral when working with 256 second segments and
- * a channel sampled at 16384 Hz.
- *
- * If input data is given by a \c FRAME_CACHE, the code will read in
- * this data.  In this case, the sample rate and ifo will be determined
- * from the data and channel name respectively.  The output frames can
- * contain any of the following: raw data, injection only and raw plus
- * injection.
- *
- * If no input data is provided, then the \c IFO and
- * \c SAMPLE_RATE must be given on the command line.  Since no input
- * data is read in, the output data can only contain the injection only
- * channel.
- *
- * The output of \c lalapps_frinspinj is an xml file and one or several
- * frame files.  The xml file contains
- * \c process, \c process_params, \c search_summary and
- * \c sim_inspiral tables and is named (unless set on the command line):
- *
- * <tt>IFO-INSPFRINJ_USERTAG-GPSSTARTTIME-DURATION.xml</tt>\\
- *
- * where \c GPSSTARTTIME and \c DURATION are the start time and
- * duration passed to the code.  If <tt>--output-file-name</tt> is set to
- * \c OUTPUT on the command line, the xml will be named
- *
- * <tt>OUTPUT_USERTAG-GPSSTARTTIME-DURATION.xml</tt>.\\
- *
- * The \c sim_inspiral table contains a list of all injections which
- * were performed into the specified data.  The length of output frame
- * files is specified by <tt>output-frame-length</tt>.  Unless otherwise set
- * on the command line, output frames are named:
- *
- * <tt>IFO-INSPFRINJ_USERTAG-FRAMESTARTTIME-FRAMELENGTH.gwf</tt>\\
- *
- * The channels stored in the output frame are determined by which of
- * <tt>--write-raw-data</tt>, <tt>--write-inj-only</tt> and
- * <tt>--write-raw-plus-inj</tt> are selected.  The channel names are
- * \c CHAN, \c CHAN_INSP_INJ_ONLY and
- * \c CHAN_RAW_PLUS_INSP_INJ.  In the case where no input data is
- * given, the single output channel name is \c IFO:STRAIN_INSP_INJ_ONLY.</dd>
- *
- * <dt>Options</dt><dd>
- * <ul>
- *
- * <li><tt>--help</tt>:  Optional.  Print a help message and exit.</li>
- *
- * <li><tt>--verbose</tt>: Optional.  Print out the author, CVS version
- * and tag information and exit.</li>
- *
- * <li><tt>--version</tt>: Optional.  Print out the author, CVS version and
- * tag information and exit.
- *   </li>
- * <li><tt>--user-tag</tt> \c USERTAG: Optional. Set the user tag
- * for this job to be \c USERTAG. May also be specified on the command
- * line as <tt>-userTag</tt> for LIGO database compatibility.  This will
- * affect the naming of the output file.</li>
- *
- * <li><tt>--comment</tt> \c string: Optional. Add \c string
- * to the comment field in the process table. If not specified, no comment
- * is added. </li>
- *
- * <li><tt>--gps-start-time</tt> <tt>GPS seconds</tt>: Required.  Start
- * time, GPS seconds.</li>
- *
- * <li><tt>--gps-start-time-ns</tt> <tt>GPS seconds</tt>: Optional.
- * Start time, GPS nanoseconds.  If not specified, then set to zero.</li>
- *
- * <li><tt>--gps-end-time</tt> <tt>GPS seconds</tt>: Required.  End
- * time, GPS seconds.</li>
- *
- * <li><tt>--gps-end-time-ns</tt> <tt>GPS seconds</tt>: Optional.
- * Start time, GPS nanoseconds.  If not specified, then set to zero.</li>
- *
- * <li><tt>--frame-cache</tt> \c FRAME_CACHE: Optional.  Name of
- * the frame cache file.  If this is not specified then the code will not
- * read in any input data.  Hence it will be unable to produce the raw or
- * raw_plus_inj frames.</li>
- *
- * <li><tt>--channel-name</tt> \c CHAN: Optional.  Input data
- * channel name.  This must be specified if the <tt>frame-cache</tt> file
- * is specified.
- *  </li>
- * <li><tt>--ifo</tt> \c IFO: Optional.  Set input interferometer
- * name to \c IFO.  This information is required unless a
- * <tt>channel-name</tt> is specified (in this case the \c IFO is
- * obtained from the channel name).</li>
- *
- * <li><tt>--sample-rate</tt> \c SAMPLE_RATE: Optional.  Set the
- * sample rate (in Hz) at which the injections should be produced.  This is
- * required unless a frame cache is given (in this case, the sample rate of
- * the injections matches the input data).</li>
- *
- * <li><tt>--calibration-cache</tt> \c CAL_CACHE: Optional.
- * Specify the \c CAL_CACHE to obtain the calibration information.</li>
- *
- * <li><tt>--calibrated-data </tt>\c TYPE:  Optional.  Use
- * calibrated data as input/output.  This will produce strain data
- * injections.  This option must be specified if no calibration cache is
- * given.
- *   </li>
- * <li><tt>--num-resp-points</tt> \c N: Optional.  The number of
- * points used to generate the response function.  If generating
- * uncalibrated injections, this can actually change slightly the injection
- * data.  If not specified, then set to default value of 4194304.
- *  </li>
- * <li><tt>--injection-channel</tt> \c INJ: Optional.  If this
- * option is specified, the code will read in injection data from the INJ
- * channel and add it to the raw data.  Either this option or
- * <tt>--injection-file</tt> must be specified.
- *  </li>
- * <li><tt>--injection-file</tt> \c FILE: Optional. Read in the
- * injection data from \c FILE.  This should contain a
- * \c sim_inspiral table with a list of injections.  Either this
- * option or <tt>--injection-channel</tt> must be specified.</li>
- *
- * <li><tt>--inject-overhead</tt>: Optional.  Perform the injections
- * directly overhead the interferometer and optimally oriented.</li>
- *
- * <li><tt>--inject-safety</tt> \c SEC: Optional.  Inject signals
- * whose end time is up to \c SEC after the gps end time.
- *  </li>
- * <li><tt>--write-raw-data</tt>:  Optional.  Write out a frame
- * containing the raw data.  This can only be done if the raw data has been
- * read in from frames.</li>
- *
- * <li><tt>--write-inj-only</tt>:  Optional.  Write out a frame
- * containing only the injection data.</li>
- *
- * <li><tt>--write-raw-plus-inj</tt>:  Optional.  Write out a frame
- * containing the raw data with the injections added.
- *   </li>
- * <li><tt>--output-frame-length</tt> \c OUTPUT_LENGTH:  Required.
- * Specify the length of the output frames to be \c output_length
- * seconds.</li>
- *
- * <li><tt>--output-file-name</tt> \c OUTPUT_NAME : Optional.
- * Set the output file name.  This overrides the default file naming
- * convention given above.
- * </li>
- * </ul></dd>
- *
- * <dt>Example</dt><dd>
- * \code
- * lalapps_frinspinj --gps-start-time 732758030  --gps-end-time 732760078 \
- *   --frame-cache cache/L-732758022-732763688.cache --channel-name L1:LSC-AS_Q\
- *   --calibration-cache cache_files/L1-CAL-V03-729273600-734367600.cache \
- *   --injection-file HL-INJECTIONS_4096-729273613-5094000.xml \
- *   --inject-safety 50 --output-frame-length 16 \
- *   --write-raw-data   --write-inj-only   --write-raw-plus-inj
- * \endcode</dd>
- *
- * <dt>Author</dt><dd>
- * Steve Fairhurst</dd>
- * </dl>
- */
-
 #include <config.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -272,7 +46,6 @@
 #include <lalappsfrutils.h>
 
 #include <lal/LALConfig.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
@@ -434,8 +207,8 @@ int main( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
-      lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentId,
+      lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0);
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
@@ -1028,7 +801,7 @@ int main( int argc, char *argv[] )
     {
       thisInj = injections;
       injections = injections->next;
-      XLALFreeSimInspiral( &thisInj );
+      LALFree( thisInj );
     }
   }
 
@@ -1114,8 +887,8 @@ static void print_usage(char *program)
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 {
-  /* LALgetopt arguments */
-  struct LALoption long_options[] =
+  /* getopt arguments */
+  struct option long_options[] =
   {
     /* these options set a flag */
     {"verbose",                 no_argument,       &vrbflg,           1 },
@@ -1166,11 +939,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
   while ( 1 )
   {
-    /* LALgetopt_long stores long option here */
+    /* getopt_long stores long option here */
     int option_index = 0;
-    size_t LALoptarg_len;
+    size_t optarg_len;
 
-    c = LALgetopt_long_only( argc, argv,
+    c = getopt_long_only( argc, argv, 
         "A:B:C:I:L:N:S:V:Z:"
         "a:b:c:d:f:hi:l:p:q:r:s:u:w:y:",
         long_options, &option_index );
@@ -1192,7 +965,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         else
         {
           fprintf( stderr, "error parsing option %s with argument %s\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
         break;
@@ -1200,7 +973,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'a':
         /* set gps start seconds */
         {
-          long int gstartt = atol( LALoptarg );
+          long int gstartt = atol( optarg );
           if ( gstartt < 441417609 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
@@ -1218,7 +991,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'A':
         /* set gps start nanoseconds */
         {
-          long int gstarttns = atol( LALoptarg );
+          long int gstarttns = atol( optarg );
           if ( gstarttns < 0 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
@@ -1242,7 +1015,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'b':
         /* set gps end seconds */
         {
-          long int gendt = atol( LALoptarg );
+          long int gendt = atol( optarg );
           if ( gendt < 441417609 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
@@ -1260,7 +1033,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'B':
         /* set gps end nanoseconds */
         {
-          long int gendtns = atol( LALoptarg );
+          long int gendtns = atol( optarg );
           if ( gendtns < 0 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
@@ -1286,10 +1059,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           /* create storage for the channel name and copy it */
           char *channamptr = NULL;
-          LALoptarg_len = strlen( LALoptarg ) + 1;
-          fqChanName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
-          memcpy( fqChanName, LALoptarg, LALoptarg_len );
-          ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+          optarg_len = strlen( optarg ) + 1;
+          fqChanName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+          memcpy( fqChanName, optarg, optarg_len );
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
 
           /* check that we have a proper channel name */
           if ( ! (channamptr = strstr( fqChanName, ":" ) ) )
@@ -1297,19 +1070,19 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
             fprintf( stderr, "invalid argument to --%s:\n"
                 "channel name must be a full LIGO channel name "
                 "e.g. L1:LSC-AS_Q\n(%s specified)\n",
-                long_options[option_index].name, LALoptarg );
+                long_options[option_index].name, optarg );
             exit( 1 );
           }
 
           /* copy the first two characters to the ifo name */
           memset( ifo, 0, sizeof(ifo) );
-          memcpy( ifo, LALoptarg, sizeof(ifo) - 1 );
+          memcpy( ifo, optarg, sizeof(ifo) - 1 );
         }
         break;
 
       case 'd':
         /* set length of output frames */
-        frameLength = (INT4) atoi( LALoptarg );
+        frameLength = (INT4) atoi( optarg );
         if ( frameLength < 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1323,14 +1096,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'f':
         /* set output file name */
-        if ( snprintf( outfileName, FILENAME_MAX, "%s", LALoptarg ) < 0 )
+        if ( snprintf( outfileName, FILENAME_MAX, "%s", optarg ) < 0 )
         {
           fprintf( stderr, "invalid argument to --%s\n"
               "outfile name %s too long: string truncated\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'h':
@@ -1341,24 +1114,24 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'p':
         /* create storage for the calibration frame cache name */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        calCacheName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
-        memcpy( calCacheName, LALoptarg, LALoptarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        optarg_len = strlen( optarg ) + 1;
+        calCacheName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( calCacheName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'q':
         /* create storage for the calibration frame file name */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        calFileName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
-        memcpy( calFileName, LALoptarg, LALoptarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        optarg_len = strlen( optarg ) + 1;
+        calFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( calFileName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
 
       case 'N':
         /* store the number of points used in computing the response */
-        numRespPoints = (INT4) atoi( LALoptarg );
+        numRespPoints = (INT4) atoi( optarg );
         if ( numRespPoints < 2 || numRespPoints % 2 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1373,11 +1146,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'y': 
         /* specify which type of calibrated data */
         {
-          if ( ! strcmp( "real_4", LALoptarg ) )
+          if ( ! strcmp( "real_4", optarg ) )
           {
             calData = real_4;
           }
-          else if ( ! strcmp( "real_8", LALoptarg ) )
+          else if ( ! strcmp( "real_8", optarg ) )
           {
             calData = real_8;
             fprintf( stderr, "Sorry, code not currently set up to\n"
@@ -1389,16 +1162,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
             fprintf( stderr, "invalid argument to --%s:\n"
                 "unknown data type specified;\n"
                 "%s (must be one of: real_4, real_8)\n",
-                long_options[option_index].name, LALoptarg);
+                long_options[option_index].name, optarg);
             exit( 1 );
           }
-          ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
         break;
 
       case 'r':
         /* set the sample rate */
-        sampleRate = (INT4) atoi( LALoptarg );
+        sampleRate = (INT4) atoi( optarg );
         if ( sampleRate < 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1412,7 +1185,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'L':
         /* set the injection start frequency */
-        injFlow = (REAL4) atof ( LALoptarg );
+        injFlow = (REAL4) atof ( optarg );
         if ( injFlow <= 0 )
         {
           fprintf( stderr, "invalide argument to --%s:\n"
@@ -1428,14 +1201,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           /* create storage for the ifo name and copy it */
           memset( ifo, 0, sizeof(ifo) );
-          memcpy( ifo, LALoptarg, sizeof(ifo) - 1 );
-          ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+          memcpy( ifo, optarg, sizeof(ifo) - 1 );
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
         break;
 
 
       case 's':
-        if ( strlen( LALoptarg ) > LIGOMETA_COMMENT_MAX - 1 )
+        if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "comment must be less than %d characters\n",
@@ -1444,12 +1217,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         }
         else
         {
-          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", LALoptarg);
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
 
       case 'S':
-        injectSafety = (INT4) atoi( LALoptarg );
+        injectSafety = (INT4) atoi( optarg );
         if ( injectSafety < 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1464,42 +1237,42 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'I':
         {
           /* create storage for the injection channel name and copy it */
-          LALoptarg_len = strlen( LALoptarg ) + 1;
-          injChanName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
-          memcpy( injChanName, LALoptarg, LALoptarg_len );
-          ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+          optarg_len = strlen( optarg ) + 1;
+          injChanName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+          memcpy( injChanName, optarg, optarg_len );
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
         break;
 
       case 'u':
         /* create storage for the input frame cache name */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        frInCacheName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
-        memcpy( frInCacheName, LALoptarg, LALoptarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        optarg_len = strlen( optarg ) + 1;
+        frInCacheName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( frInCacheName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'C':
         /* create storage for the input frame cache name */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        injCacheName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
-        memcpy( injCacheName, LALoptarg, LALoptarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        optarg_len = strlen( optarg ) + 1;
+        injCacheName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( injCacheName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'w':
         /* create storage for the injection file name */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        injectionFile = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
-        memcpy( injectionFile, LALoptarg, LALoptarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        optarg_len = strlen( optarg ) + 1;
+        injectionFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( injectionFile, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'Z':
         /* create storage for the usertag */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        userTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
-        memcpy( userTag, LALoptarg, LALoptarg_len );
+        optarg_len = strlen( optarg ) + 1;
+        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( userTag, optarg, optarg_len );
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
@@ -1508,7 +1281,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-            LALoptarg );
+            optarg );
         break;
 
       case 'V':
@@ -1531,12 +1304,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     }
   }
 
-  if ( LALoptind < argc )
+  if ( optind < argc )
   {
     fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( LALoptind < argc )
+    while ( optind < argc )
     {
-      fprintf ( stderr, "%s\n", argv[LALoptind++] );
+      fprintf ( stderr, "%s\n", argv[optind++] );
     }
     exit( 1 );
   }

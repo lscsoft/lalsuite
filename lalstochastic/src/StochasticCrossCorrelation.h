@@ -18,17 +18,7 @@
 */
 
 /**
- * \defgroup StochasticCrossCorrelation_h Header StochasticCrossCorrelation.h
- * \ingroup lalstochastic_general
- * @{
- * \defgroup StochasticCrossCorrelation_c Module StochasticCrossCorrelation.c
- * \defgroup ZeroPadAndFFT_c Module ZeroPadAndFFT.c
- * \defgroup StochasticOptimalFilter_c Module StochasticOptimalFilter.c
- * \defgroup StochasticOptimalFilterNormalization_c Module StochasticOptimalFilterNormalization.c
- * \defgroup StochasticInverseNoise_c Module StochasticInverseNoise.c
- * \defgroup StochasticOmegaGW_c Module StochasticOmegaGW.c
- * \defgroup OverlapReductionFunction_c Module OverlapReductionFunction.c
- * @}
+ * \addtogroup StochasticCrossCorrelation_h
  *
  * \author UTB Relativity Group; contact john.whelan@ligo.org (original by S. Drasco)
  *
@@ -40,12 +30,11 @@
  * segments, along with appropriate representations of the detector
  * transfer function and the (uncalibrated) power spectral density of the
  * noise in each detector.  The relationship among these modules is
- * illustrated in \ref stochastic_CrossCorrFlowchart "this figure".
+ * illustrated in \figref{stochastic_CrossCorrFlowchart}.
  *
- * \anchor stochastic_CrossCorrFlowchart
- * \image html stochastic_CrossCorrFlowchart.png "Relationship between the modules in StochasticCrossCorrelation.h"
+ * \figure{stochastic_CrossCorrFlowchart,pdf,0.6,Relationship between the modules in StochasticCrossCorrelation.h}
  *
- * \ref stochastic_CrossCorrFlowchart "this figure" illustrates the relationship among the modules
+ * \figref{stochastic_CrossCorrFlowchart} illustrates the relationship among the modules
  * dependent on \ref StochasticCrossCorrelation_h, which are used to calculate the cross-correlation
  * statistic \f$Y\f$ and its theoretical variance per unit time \f$\sigma^2/T\f$ from (uncalibrated)
  * stretches of data \f$h_1(t)\f$, \f$h_2(t)\f$, from two detectors, using metadata on the power

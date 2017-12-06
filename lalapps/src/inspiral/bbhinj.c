@@ -27,178 +27,6 @@
  *-----------------------------------------------------------------------
  */
 
-/**
- * \file
- * \ingroup lalapps_inspiral
- *
- * <dl>
- * <dt>Name</dt><dd>
- * \c lalapps_bbhinj --- produces inspiral injection data files.</dd>
- *
- * <dt>Synopsis</dt><dd>
- * \c lalapps_bbhinj
- * [<tt>--help</tt>]
- * [<tt>--verbose</tt>]
- * [<tt>--gps-start-time</tt> \c tstart]
- * [<tt>--gps-end-time</tt> \c tend]
- * [<tt>--time-step</tt> \c tstep]
- * [<tt>--time-interval</tt> \c tinterval]
- * [<tt>--seed</tt> \c seed]
- * [<tt>--usertag</tt> \c tag]
- * [<tt>--min-mass</tt> \c mmin]
- * [<tt>--max-mass</tt> \c mmax]
- * [<tt>--max-total-mass</tt> \c totalmass]
- * [<tt>--min-distance</tt> \c dmin]
- * [<tt>--max-distance</tt> \c dmax]
- * [<tt>--m-distr</tt> \c mdistr]
- * [<tt>--d-distr</tt> \c ddistr]
- * [<tt>--waveform</tt> \c wvf] </dd>
- *
- * <dt>Description</dt><dd>
- * \c lalapps_bbhinj
- * generates a number of inspiral  parameters suitable  for using in a Monte
- * Carlo injection to test the efficiency of an inspiral search.  The  various
- * parameters (detailed  below)  are randomly chosen and are appropriate for
- * a population of binaries that extends over all space between
- * the minimum and maximum distances specified.
- * Despite its name, it can be used for BNS and for BBH parameter generation.
- *
- * The output of this program  is  a  list  of  the  injected events,  starting
- * at  the specified start time and ending at the specified end time.  One
- * injection with random inspiral parameters will be made every specified time
- * step, and will be randomly placed within the specified time interval.
- * The output is written to a file name in the standard inspiral pipeline format:
- *
- * \code
- * HL-INJECTIONS_USERTAG_SEED-GPSSTART-DURATION.xml
- * \endcode
- *
- * where \c USERTAG is \c tag as specfied on the command line,
- * \c SEED is the  value  of  the random number seed chosen and
- * \c GPSSTART and \c DURATION describes the GPS time interval that
- * the file covers. The file is in the standard LIGO lightweight XML format
- * containing a \c sim_inspiral table that describes the injections.
- * In addition, an ASCII log file called <tt>injlog.txt</tt> is also written.
- * If a <tt>--user-tag</tt> is not specified on the command line, the
- * \c _USERTAG part of the filename will be omitted.
- *
- * The GEO, TAMA and VIRGO end times and effective distances are currently
- * not being populated.</dd>
- *
- * <dt>Options</dt><dd>
- * <ul>
- * <li><tt>--help</tt>: Print a help message.</li>
- *
- * <li><tt>--gps-start-time</tt> \c tstart:
- * Optional.  Start time of the injection data to be created. Defaults to the
- * start of S2, Feb 14 2003 16:00:00 UTC (GPS time 729273613)</li>
- *
- * <li><tt>--gps-end-time</tt> \c tend:
- * Optional. End time of the injection data to be created. Defaults to the end of
- * S2, Apr 14 2003 15:00:00 UTC (GPS time 734367613).</li>
- *
- * <li><tt>--time-step</tt> \c tstep:
- * Optional. Sets the time step interval between injections. The injections will
- * occur with an average spacing of \c tstep seconds. Defaults to
- * \f$2630/\pi\f$.</li>
- *
- * <li><tt>--time-interval</tt> \c tinterval:
- * Optional. Sets the time interval during which an injection can occur.
- * Injections are uniformly distributed over the interval.  Setting \c tstep
- * to \f$6370\f$ and \c tinterval to 600 guarantees there will be one injection
- * into each playground segment and they will be randomly distributed within the
- * playground times.</li>
- *
- * <li><tt>--seed</tt> \c seed:
- * Optional. Seed the random number generator with the integer \c seed.
- * Defaults to \f$1\f$.</li>
- *
- * <li><tt>--user-tag</tt> \c string: Optional. Set the user tag for this
- * job to be \c string. May also be specified on the command line as
- * <tt>-userTag</tt> for LIGO database compatibility.</li>
- *
- * <li><tt>--min-mass</tt> \c mmin: Optional. The minimum component
- * mass of the binary. If not specified, it is automatically set to 3
- * \f$M_\odot\f$.</li>
- *
- * <li><tt>--max-mass</tt> \c mmax: Optional. The maximum component
- * mass of the binary. If not specified, it is automatically set to 20
- * \f$M_\odot\f$.</li>
- *
- * <li><tt>-max-total-mass</tt> \c totalmass: Optional. The maximum of the total
- * masses of the two components. If not specified, no restriction is set to
- * the total mass of the two components. </li>
- *
- * <li><tt>--min-distance</tt> \c dmin: Optional. The minimum distance
- * (in kpc) from the earth of the signals. If not specified, it is automatically
- * set to 1 kpc.</li>
- *
- * <li><tt>--max-distance</tt> \c dmax: Optional. The maximum distance
- * (in kpc) from the earth of the signals. If not specified, it is automatically
- * set to 20 Mpc (20000 kpc).</li>
- *
- * <li><tt>--m-distr</tt> \c mdistr: Optional. It lets the user specify
- * the mass distribution of the population. The choices are:
- *  <ul>
- *  <li> \c mdistr = 0 the distribution is uniform over total mass
- *  (DEFAULT VALUE)
- *  </li><li> \c mdistr = 1 the distribution is uniform over mass1 and
- *     over mass2
- *  </li></ul></li>
- *
- * <li><tt>--d-distr</tt> \c ddistr: Optional. It lets the used
- * specify the distance distribution of the population. The choices are:
- *  <ul>
- *  <li> \c ddistr = 0 uniform-distance distribution
- *  (DEFAULT VALUE)
- *  </li><li> \c ddistr = 1 uniform \f$\log\f$(distance) distribution
- *  </li><li> \c ddistr = 2 uniform volume distribution
- *  </li></ul></li>
- *
- * <li><tt>--waveform</tt> \c wvf: Optional. Sets the waveforms to
- * be injected to \c wvf. The \c wvf consists of two parts,
- * which are specified as one word. The first part is one of:
- *   <ul>
- *   <li> EOB
- *   </li><li> PadeT1
- *   </li><li> TaylorT1
- *   </li><li> TaylorT3
- *   </li><li> GeneratePPN
- *   </li></ul>
- * The second part is one of:
- *   <ul>
- *   <li> newtonian
- *   </li><li> onePN
- *   </li><li> onePointFivePN
- *   </li><li> twoPN (ONLY CHOICE if GeneratePPN is used before!)
- *   </li><li> twoPointFivePN
- *   </li><li> threePN
- *   </li></ul>
- * If nothing is specified, the default value is EOBtwoPN. It should be noted
- * that if GeneratePPNtwoPN is used as the waveform, the code used to
- * perform the injections is different than otherwise. For GeneratePPNtwoPN, the
- * older injection code (that does only standard post-Newtonian injections) is
- * used. That is the recommended approximant for the case of binary neutron
- * star injections.
- * </li>
- * </ul></dd>
- *
- * <dt>Example:</dt><dd>
- * The following command will produce an injection file for a population
- * of binary black holes of total mass between 6 and 20 \f$M_\odot\f$ (component
- * mass between 3 and 10 \f$M_\odot\f$), with uniform-distance distribution
- * between 100 kpc and 3 Mpc. Since no mass-distribution is specified, the
- * mass-distribution will be uniform over total mass (default value).
- * \code
- * lalapps_bbhinj --min-mass 3.0 --max-mass 10.0 --min-distance 100
- * --max-distance 3000 --d-distr 0 --waveform PadeT1twoPN
- * \endcode</dd>
- *
- * <dt>Author</dt><dd>
- * Jolien Creighton, Patrick Brady, Duncan Brown and Eirini Messaritaki</dd>
- * </dl>
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <config.h>
@@ -211,6 +39,7 @@ int main( void ) { fprintf( stderr, "no gsl: disabled\n" ); return 77; }
 #include <ctype.h>
 #include <assert.h>
 #include <string.h>
+#include <getopt.h>
 #include <time.h>
 #include <lalapps.h>
 #include <processtable.h>
@@ -218,7 +47,6 @@ int main( void ) { fprintf( stderr, "no gsl: disabled\n" ); return 77; }
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_roots.h>
 #include <lal/LALStdio.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LIGOMetadataTables.h>
@@ -366,8 +194,8 @@ int main( int argc, char *argv[] )
   LIGOLwXMLStream       xmlfp;
   UINT4                 outCompress = 0;
 
-  /* LALgetopt arguments */
-  struct LALoption long_options[] =
+  /* getopt arguments */
+  struct option long_options[] =
   {
     {"help",                    no_argument,       0,                'h'},
     {"verbose",                 no_argument,       &vrbflg,           1 },
@@ -430,12 +258,12 @@ int main( int argc, char *argv[] )
      
   while ( 1 )
   {
-    /* LALgetopt_long stores long option here */
+    /* getopt_long stores long option here */
     int option_index = 0;
     long int gpsinput;
-    size_t LALoptarg_len;
+    size_t optarg_len;
 
-    c = LALgetopt_long_only( argc, argv,
+    c = getopt_long_only( argc, argv, 
         "a:A:b:B:d:f:hi:m:p:q:r:s:t:vZ:w:", long_options, &option_index );
 
     /* detect the end of the options */
@@ -455,13 +283,13 @@ int main( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "error parsing option %s with argument %s\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
         break;
 
       case 'a':
-        gpsinput = atol( LALoptarg );
+        gpsinput = atol( optarg );
         if ( gpsinput < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -479,7 +307,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'b':
-        gpsinput = atol( LALoptarg );
+        gpsinput = atol( optarg );
         if ( gpsinput < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -496,21 +324,21 @@ int main( int argc, char *argv[] )
         break;
 
       case 'f':
-        fLower = atof( LALoptarg );
+        fLower = atof( optarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "float", 
               "%f", fLower );
         break;
 
       case 's':
-        randSeed = atoi( LALoptarg );
+        randSeed = atoi( optarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "int", 
               "%d", randSeed );
         break;
 
       case 't':
-        meanTimeStep = (REAL8) atof( LALoptarg );
+        meanTimeStep = (REAL8) atof( optarg );
         if ( meanTimeStep <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -524,7 +352,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'i':
-        timeInterval = atof( LALoptarg );
+        timeInterval = atof( optarg );
         if ( timeInterval < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -539,7 +367,7 @@ int main( int argc, char *argv[] )
 
       case 'A':
         /* minimum component mass */
-        minMass = (REAL4) atof( LALoptarg );
+        minMass = (REAL4) atof( optarg );
         if ( minMass <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -555,7 +383,7 @@ int main( int argc, char *argv[] )
 
       case 'B':
         /* maximum component mass */
-        maxMass = (REAL4) atof( LALoptarg );
+        maxMass = (REAL4) atof( optarg );
         if ( maxMass <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -571,7 +399,7 @@ int main( int argc, char *argv[] )
 
     case 'x':
       /* maximum sum of components */
-      sumMaxMass = (REAL4) atof( LALoptarg );
+      sumMaxMass = (REAL4) atof( optarg );
       if ( sumMaxMass <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -588,7 +416,7 @@ int main( int argc, char *argv[] )
 
       case 'p':
         /* minimum distance from earth */
-        dmin = (REAL4) atof( LALoptarg );
+        dmin = (REAL4) atof( optarg );
         if ( dmin <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -604,7 +432,7 @@ int main( int argc, char *argv[] )
 
       case 'r':
         /* max distance from earth */
-        dmax = (REAL4) atof( LALoptarg );
+        dmax = (REAL4) atof( optarg );
         if ( dmax <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -619,7 +447,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'd':
-        ddistr = (UINT4) atoi( LALoptarg );
+        ddistr = (UINT4) atoi( optarg );
         if ( ddistr != 0 && ddistr != 1 && ddistr != 2)
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -634,7 +462,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'm':
-        mdistr = (UINT4) atoi( LALoptarg );
+        mdistr = (UINT4) atoi( optarg );
         if ( mdistr != 0 && mdistr != 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -651,19 +479,19 @@ int main( int argc, char *argv[] )
 
       case 'Z':
         /* create storage for the usertag */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        userTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
-        memcpy( userTag, LALoptarg, LALoptarg_len );
+        optarg_len = strlen( optarg ) + 1;
+        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( userTag, optarg, optarg_len );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
-              "string", "%s", LALoptarg );
+              "string", "%s", optarg );
         break;
 
       case 'w':
-        snprintf( waveform, LIGOMETA_WAVEFORM_MAX, "%s", LALoptarg);
+        snprintf( waveform, LIGOMETA_WAVEFORM_MAX, "%s", optarg);
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
-              "%s", LALoptarg);
+              "%s", optarg);
         break;
 
       case 'V':
@@ -689,12 +517,12 @@ int main( int argc, char *argv[] )
     }
   }
 
-  if ( LALoptind < argc )
+  if ( optind < argc )
   {
     fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( LALoptind < argc )
+    while ( optind < argc )
     {
-      fprintf ( stderr, "%s\n", argv[LALoptind++] );
+      fprintf ( stderr, "%s\n", argv[optind++] );
     }
     exit( 1 );
   }
@@ -1001,7 +829,6 @@ int main( int argc, char *argv[] )
   }
 
   /* write the sim_inspiral table */
-  XLALSimInspiralAssignIDs ( injections.simInspiralTable, 0, 0 );
   if ( injections.simInspiralTable )
   {
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_inspiral_table ), 
@@ -1014,7 +841,7 @@ int main( int argc, char *argv[] )
   {
     this_inj = injections.simInspiralTable;
     injections.simInspiralTable = injections.simInspiralTable->next;
-    XLALFreeSimInspiral( &this_inj );
+    LALFree( this_inj );
   }
 
   /* close the injection file */

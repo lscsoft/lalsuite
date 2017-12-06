@@ -32,9 +32,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
 #include <sys/types.h>
 #include <lal/LALStdio.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
@@ -156,8 +156,8 @@ int main( int argc, char *argv[] )
 
   INT4                  i;
 
-  /* LALgetopt arguments */
-  struct LALoption long_options[] =
+  /* getopt arguments */
+  struct option long_options[] =
   {
     {"verbose",                no_argument,           &vrbflg,            1 },
     {"write-compress",         no_argument,           &outCompress,       1 },
@@ -185,8 +185,8 @@ int main( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
-      lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentId,
+      lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0);
   this_proc_param = processParamsTable.processParamsTable = 
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
@@ -199,11 +199,11 @@ int main( int argc, char *argv[] )
   /* parse the arguments */
   while ( 1 )
   {
-    /* LALgetopt_long stores long option here */
+    /* getopt_long stores long option here */
     int option_index = 0;
-    size_t LALoptarg_len;
+    size_t optarg_len;
 
-    c = LALgetopt_long_only( argc, argv,
+    c = getopt_long_only( argc, argv, 
         "a:b:hq:r:s:A:I:VZ:", long_options, 
         &option_index );
 
@@ -224,13 +224,13 @@ int main( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "Error parsing option %s with argument %s\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
         break;
 
       case 's':
-        if ( strlen( LALoptarg ) > LIGOMETA_COMMENT_MAX - 1 )
+        if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "comment must be less than %d characters\n",
@@ -239,7 +239,7 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", LALoptarg);
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
 
@@ -251,9 +251,9 @@ int main( int argc, char *argv[] )
 
       case 'Z':
         /* create storage for the usertag */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        userTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
-        memcpy( userTag, LALoptarg, LALoptarg_len );
+        optarg_len = strlen(optarg) + 1;
+        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( userTag, optarg, optarg_len );
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
@@ -262,18 +262,18 @@ int main( int argc, char *argv[] )
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-            LALoptarg );
+            optarg );
         break;
 
       case 'I':
         /* create storage for the ifo-tag */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        ifoTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
-        memcpy( ifoTag, LALoptarg, LALoptarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        optarg_len = strlen(optarg) + 1;
+        ifoTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( ifoTag, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
 
-        snprintf(inputIFO,  LIGOMETA_IFO_MAX, "%s", LALoptarg);
-        snprintf(outputIFO, LIGOMETA_IFO_MAX, "%s", LALoptarg);
+        snprintf(inputIFO,  LIGOMETA_IFO_MAX, "%s", optarg);
+        snprintf(outputIFO, LIGOMETA_IFO_MAX, "%s", optarg);
         break;
       case 'V':
         /* print version information and exit */
@@ -290,7 +290,7 @@ int main( int argc, char *argv[] )
         break;
       case 'q':
         /* start time */
-        gpstime = atol( LALoptarg );
+        gpstime = atol( optarg );
         if ( gpstime < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -307,7 +307,7 @@ int main( int argc, char *argv[] )
 
       case 'r':
         /* end time  */
-        gpstime = atol( LALoptarg );
+        gpstime = atol( optarg );
         if ( gpstime < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -324,22 +324,22 @@ int main( int argc, char *argv[] )
 
       case '*':
         /* store trigSanClustering method */
-        if ( ! strcmp( "T0T3Tc", LALoptarg ) )
+        if ( ! strcmp( "T0T3Tc", optarg ) )
         {
             trigScanMethod = T0T3Tc;
             trigScanAppendStragglers = 0;
         }
-        else if ( ! strcmp( "T0T3TcAS", LALoptarg ) )
+        else if ( ! strcmp( "T0T3TcAS", optarg ) )
         {
             trigScanMethod = T0T3Tc;
             trigScanAppendStragglers = 1;
         }
-        else if ( ! strcmp( "Psi0Psi3Tc", LALoptarg ) )
+        else if ( ! strcmp( "Psi0Psi3Tc", optarg ) )
         {
             trigScanMethod = Psi0Psi3Tc;
             trigScanAppendStragglers = 0;
         }
-        else if ( ! strcmp( "Psi0Psi3TcAS", LALoptarg ) )
+        else if ( ! strcmp( "Psi0Psi3TcAS", optarg ) )
         {
             trigScanMethod = Psi0Psi3Tc;
             trigScanAppendStragglers = 1;
@@ -349,15 +349,15 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown scan method specified: %s\n"
               "(Must be one of T0T3Tc, T0T3TcAS, Psi0Psi3Tc, Psi0Psi3TcAS)\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case '>':
         /* TrigScan Template Metric Scaling Factor */
-        trigScanMetricScalingFac = atof( LALoptarg );
+        trigScanMetricScalingFac = atof( optarg );
         if ( trigScanMetricScalingFac <= 0.0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -366,7 +366,7 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, trigScanMetricScalingFac );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "float", "%s", LALoptarg );
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
       default:
         fprintf( stderr, "Error: Unknown error while parsing options\n" );
@@ -430,9 +430,9 @@ int main( int argc, char *argv[] )
    *
    */
 
-  if ( LALoptind < argc )
+  if ( optind < argc )
   {
-    for( i = LALoptind; i < argc; ++i )
+    for( i = optind; i < argc; ++i )
     {
       INT4 numFileTriggers = 0;
 

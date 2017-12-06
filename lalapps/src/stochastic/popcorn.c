@@ -36,13 +36,14 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
+#include <unistd.h>
+#include <getopt.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_multimin.h>
 #include <gsl/gsl_statistics.h>
 #include <lal/LALFrameL.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConfig.h>
@@ -68,7 +69,11 @@
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "popcorn"
 
-/* flag for LALgetopt_long */
+/* variables for getopt options parsing */
+extern char *optarg;
+extern int optind;
+
+/* flag for getopt_long */
 static int verbose_flag = 0;
 static int gaussian_flag = 0;
 static int ascii_flag = 0;
@@ -915,7 +920,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
   while(1)
    {
-    static struct LALoption long_options[] =
+    static struct option long_options[] =
      {
 	  /* options that set a flag */
       {"verbose", no_argument, &verbose_flag, 1},
@@ -958,10 +963,10 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {0, 0, 0, 0}
      };
 
-    /* LALgetopt_long stores the option here */
+    /* getopt_long stores the option here */
     int option_index = 0;
 
-    c = LALgetopt_long(argc, argv,
+    c = getopt_long(argc, argv, 
                   "hn:t:T:l:N:r:R:a:A:k:K:m:M:s:S:g:G:p:c:C:d:D:v:",
  		   long_options, &option_index);
 
@@ -978,8 +983,8 @@ void parseOptions(INT4 argc, CHAR *argv[])
              if (long_options[option_index].flag != 0)
               break;
              printf ("option %s", long_options[option_index].name);
-             if (LALoptarg)
-              printf (" with arg %s", LALoptarg);
+             if (optarg)
+              printf (" with arg %s", optarg);
              printf ("\n");
              break;
 
@@ -990,103 +995,103 @@ void parseOptions(INT4 argc, CHAR *argv[])
 			   
       case 'n':
 			   /* jub number */
-	           job = atoi(LALoptarg);
+	           job = atoi(optarg);
 	           break;
 			   
       case 't':
 			   /* start time */
-	           startTime = atoi(LALoptarg);
+	           startTime = atoi(optarg);
 	           break;
 			   
 	  case 'T':
 			   /* stop time */
-	           stopTime = atoi(LALoptarg);
+	           stopTime = atoi(optarg);
 	           break;
 			   
 	  case 'l':
 			   /* duration if condor flag */
-	           duration = atoi(LALoptarg);
+	           duration = atoi(optarg);
 	           break;
 
       case 'N':
 			   /* number of points in time serie */
-	           Npt = atoi(LALoptarg);
+	           Npt = atoi(optarg);
 	           break;
 			   
 	  case 'r':
 			   /* sample rate */
-	           sampleRate = atof(LALoptarg);
+	           sampleRate = atof(optarg);
 	           break;
 			   
 	  case 'R':
-			   resampleRate= atof(LALoptarg);
+			   resampleRate= atof(optarg);
 	           break;
 			   
 	  case 'a':
 			   /* statistic for analysis */
-	           stat = atoi(LALoptarg);
+	           stat = atoi(optarg);
 	           break;
 			   
 	  case 'A':
 			   /* statistic for MC */
-	           mcstat = atoi(LALoptarg);
+	           mcstat = atoi(optarg);
 	           break;
 			   
 	  case 'k':
-	           ksi = atof(LALoptarg);
+	           ksi = atof(optarg);
 	           break;
 			   
 	  case 'K':
-	           ksi0 = atof(LALoptarg);
+	           ksi0 = atof(optarg);
 	           break;
 			   
 	  case 'm':
-	           mu = atof(LALoptarg);
+	           mu = atof(optarg);
 	           break;
 			   
 	  case 'M':
-	           mu0 = atof(LALoptarg);
+	           mu0 = atof(optarg);
 	           break;
 			   
 	  case 's':
-	           sigma = atof(LALoptarg);
+	           sigma = atof(optarg);
 	           break;
 			   
 	  case 'S':
-	           sigma0 = atof(LALoptarg);
+	           sigma0 = atof(optarg);
 	           break;
 
 			   
 	  case 'g':
-	           sigma1_ref = atof(LALoptarg);
+	           sigma1_ref = atof(optarg);
 	           break;
 			   
 	  case 'G':
-	           sigma2_ref = atof(LALoptarg);
+	           sigma2_ref = atof(optarg);
 	           break;
 			   
 	  case 'p':
-	           nmax = atoi(LALoptarg);
+	           nmax = atoi(optarg);
 	           break;		   
      
       case 'c':
 	           /* ifo for first stream */
-	           strncpy(channel1, LALoptarg, LALNameLength);
+	           strncpy(channel1, optarg, LALNameLength);
                break;
 
       case 'C':
 	           /* ifo for first stream */
-	           strncpy(channel2, LALoptarg, LALNameLength);
+	           strncpy(channel2, optarg, LALNameLength);
                break;
 
       case 'd':
                /* data cache one */
-               strncpy(frameCache1, LALoptarg, 200);
+               strncpy(frameCache1, optarg, 200);
                break;
 
       case 'D':
                /* data cache two */
-               strncpy(frameCache2, LALoptarg, 200);
+               strncpy(frameCache2, optarg, 200);
                break;
 
       case 'v':
@@ -1100,7 +1105,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
      }
     }
 
-   if (LALoptind < argc)
+   if (optind < argc)
     {
      displayUsage(1);
     }

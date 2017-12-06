@@ -45,6 +45,8 @@ test_programs += RandomInspiralSignalTest
 # requires lalstochastic:
 #test_programs += CoherentInspiralFilterTest
 #test_programs += CoherentInspiralInputTest
+# requires lalpulsar:
+#test_programs += BCVTemplatesFlatMesh
 
 # Add shell, Python, etc. test scripts to this variable
 test_scripts +=
@@ -58,7 +60,6 @@ MOSTLYCLEANFILES = \
 	$(END_OF_LIST)
 
 EXTRA_DIST += \
-	LALSQTPNWaveformTest.c \
 	NRWaveIOTest.cfg \
 	NRWaveIOTest.data \
 	RandomInspiralSignalTest.par \

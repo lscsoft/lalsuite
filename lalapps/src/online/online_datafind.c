@@ -19,18 +19,14 @@
  * Copyright (C) 2009 Adam Mercer
  */
 
-#include <config.h>
-
 #include <stdio.h>
+#include <getopt.h>
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
 
 #include <lal/LALStdio.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALDatatypes.h>
 #include <lal/Aggregation.h>
 #include <lal/XLALError.h>
@@ -43,7 +39,7 @@
 
 #include <lalapps.h>
 
-/* flags for LALgetopt_long */
+/* flags for getopt_long */
 extern int vrbflg;
 
 /* global variables */
@@ -66,7 +62,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
   while(1)
   {
-    static struct LALoption long_options[] =
+    static struct option long_options[] =
     {
       /* options that set a flag */
       {"verbose", no_argument, &vrbflg, 1},
@@ -86,12 +82,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
       {0, 0, 0, 0}
     };
 
-    /* LALgetopt_long stores the option here */
+    /* getopt_long stores the option here */
     int option_index = 0;
-    size_t LALoptarg_len;
+    size_t optarg_len;
 
     /* parse options */
-    c = LALgetopt_long_only(argc, argv, "vac:d:e:f:g:h:i:j:k:l", \
+    c = getopt_long_only(argc, argv, "vac:d:e:f:g:h:i:j:k:l", \
         long_options, &option_index);
 
     if (c == -1)
@@ -111,7 +107,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         else
         {
           fprintf(stderr, "error parsing option %s with argument %s\n", \
-              long_options[option_index].name, LALoptarg);
+              long_options[option_index].name, optarg);
           exit(1);
         }
         break;
@@ -141,14 +137,14 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'c':
         /* get ifo */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        ifo = (CHAR *)calloc(LALoptarg_len, sizeof(CHAR));
-        memcpy(ifo, LALoptarg, LALoptarg_len);
+        optarg_len = strlen(optarg) + 1;
+        ifo = (CHAR *)calloc(optarg_len, sizeof(CHAR));
+        memcpy(ifo, optarg, optarg_len);
         break;
 
       case 'd':
         /* get gps start time */
-        gps_start.gpsSeconds = atoi(LALoptarg);
+        gps_start.gpsSeconds = atoi(optarg);
         gps_start.gpsNanoSeconds = 0;
         if (gps_start.gpsSeconds <= 0)
         {
@@ -160,7 +156,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'e':
         /* get gps end time */
-        gps_end.gpsSeconds = atoi(LALoptarg);
+        gps_end.gpsSeconds = atoi(optarg);
         gps_end.gpsNanoSeconds = 0;
         if (gps_end.gpsSeconds <= 0)
         {
@@ -172,34 +168,33 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'f':
         /* get timeout */
-        timeout = atoi(LALoptarg);
+        timeout = atoi(optarg);
         if (timeout < 0)
         {
           fprintf(stderr, "invalid argument to --%s: %d\n", \
               long_options[option_index].name, timeout);
           exit(1);
         }
-        break;
 
       case 'g':
         /* get filename */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        output_filename = (CHAR *)calloc(LALoptarg_len, sizeof(CHAR));
-        memcpy(output_filename, LALoptarg, LALoptarg_len);
+        optarg_len = strlen(optarg) + 1;
+        output_filename = (CHAR *)calloc(optarg_len, sizeof(CHAR));
+        memcpy(output_filename, optarg, optarg_len);
         break;
 
       case 'h':
         /* set observatory */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        observatory = (CHAR *)calloc(LALoptarg_len, sizeof(CHAR));
-        memcpy(observatory, LALoptarg, LALoptarg_len);
+        optarg_len = strlen(optarg) + 1;
+        observatory = (CHAR *)calloc(optarg_len, sizeof(CHAR));
+        memcpy(observatory, optarg, optarg_len);
         break;
 
       case 'i':
         /* set frame type */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        frame_type = (CHAR *)calloc(LALoptarg_len, sizeof(CHAR));
-        memcpy(frame_type, LALoptarg, LALoptarg_len);
+        optarg_len = strlen(optarg) + 1;
+        frame_type = (CHAR *)calloc(optarg_len, sizeof(CHAR));
+        memcpy(frame_type, optarg, optarg_len);
         break;
 
       case 'j':
@@ -219,12 +214,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
     }
   }
 
-  if (LALoptind < argc)
+  if (optind < argc)
   {
     fprintf(stderr, "extraneous command line arguments:\n");
-    while(LALoptind < argc)
+    while(optind < argc)
     {
-      fprintf(stderr, "%s\n", argv[LALoptind++]);
+      fprintf(stderr, "%s\n", argv[optind++]);
     }
     exit(1);
   }

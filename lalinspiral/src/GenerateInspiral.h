@@ -36,8 +36,7 @@ extern "C" {
 #endif
 
 /**
- * \defgroup GenerateInspiral_h Header GenerateInspiral.h
- * \ingroup lalinspiral_inject
+ * \addtogroup GenerateInspiral_h
  * \author Cokelaer, T.
  *
  * \brief %Header file for the inspiral injection interface code.
@@ -63,10 +62,10 @@ extern "C" {
  *
  * <dl>
  * <dt><tt>LALGenerateInspiral()</tt></dt><dd> create an inspiral binary
- * waveform generated either by the \ref lalinspiral_inspiral (#EOB,
+ * waveform generated either by the \ref pkg_inspiral (#EOB,
  * #EOBNR, #PadeT1, #TaylorT1, #TaylorT2, #TaylorT3, #SpinTaylor, #PhenSpinTaylorRD, #SpinQuadTaylor)
  * or the \c inject package (#GeneratePPN).  It is used in the module
- * \c FindChirpSimulation in \ref lalinspiral_findchirp.
+ * \c FindChirpSimulation in \ref pkg_findchirp.
  *
  * There are three  parsed arguments
  * <ul>

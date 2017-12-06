@@ -1,45 +1,26 @@
 AC_PREREQ([2.63])
-AC_INIT([LALSimulation],[1.7.3.1],[lal-discuss@ligo.org])
+AC_INIT([LALSimulation],[1.2.2.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALSimulationConfig.h])
 AC_CONFIG_SRCDIR([src/LALSimulation.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
+  lalsimulation.spec \
+  lalsimulation.pc \
   Makefile \
   debian/Makefile \
-  debian/control \
-  doxygen/Makefile \
-  doxygen/doxygen.cfg \
   include/Makefile \
   include/lal/Makefile \
-  lalsimulation.pc \
-  lalsimulation.spec \
-  python/Makefile \
-  python/lalsimulation/Makefile \
-  python/lalsimulation/__init__.py \
   src/LALSimulationVCSInfo.c \
   src/LALSimulationVCSInfo.h \
   src/Makefile \
-  src/mathematica_codes/Makefile \
-  src/mathematica_codes/SEOBNRv3_opt/Makefile \
-  src/version.c \
+  python/Makefile \
+  python/lalsimulation/Makefile \
+  python/lalsimulation/__init__.py \
   swig/Makefile \
-  test/Makefile \
+  test/Makefile
 ])
-AM_INIT_AUTOMAKE([ \
-  1.11 \
-  foreign \
-  subdir-objects \
-  color-tests \
-  parallel-tests \
-  tar-ustar \
-  dist-xz \
-  no-dist-gzip \
-])
-
-# version requirements
-MIN_LAL_VERSION="6.18.0"
-AC_SUBST([MIN_LAL_VERSION])
+AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
@@ -62,8 +43,8 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[16])
-AC_SUBST([LIBREVISION],[3])
+AC_SUBST([LIBCURRENT],[10])
+AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
@@ -75,12 +56,6 @@ LALSUITE_ENABLE_GCC_FLAGS
 
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
-
-# enable Doxygen documentation
-LALSUITE_ENABLE_DOXYGEN
-
-# enable help2man documentation
-LALSUITE_ENABLE_HELP2MAN
 
 # define version/configure info
 LALSUITE_VERSION_CONFIGURE_INFO
@@ -109,7 +84,6 @@ LALSUITE_USE_LIBTOOL
 
 # check for header files
 AC_HEADER_STDC
-AC_CHECK_HEADERS([unistd.h])
 
 # check for gethostname in unistd.h
 AC_MSG_CHECKING([for gethostname prototype in unistd.h])
@@ -122,7 +96,7 @@ AC_DEFINE([HAVE_GETHOSTNAME_PROTOTYPE],[1],
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for OpenMP
-LALSUITE_ENABLE_OPENMP
+AC_OPENMP
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
@@ -134,16 +108,36 @@ LALSUITE_ENABLE_FAST_GSL
 
 # check for gsl headers
 AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
-
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
-LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_LIB([LAL],[6.13.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.13.0],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_LIB([LALMetaIO],[1.2.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG
 
-# configure Doxygen documentation
-LALSUITE_USE_DOXYGEN
+# Disable OpenMP by default.
+# FIXME: OpenMP should be on by default, but it breaks condor_compiling lalapps.
+AS_IF(
+  [test "x$enable_openmp" = "x"],
+  [OPENMP_CFLAGS=]
+)
+# add compiler flags for OpenMP
+AS_IF(
+  [test "x$OPENMP_CFLAGS" = "x"],
+  [
+    OPENMP_ENABLE_VAL="DISABLED"
+    LALSUITE_ADD_FLAGS([C],[-Wno-unknown-pragmas],[])
+  ],
+  [
+    OPENMP_ENABLE_VAL="ENABLED"
+    LALSUITE_ADD_FLAGS([C],[${OPENMP_CFLAGS}],[])
+  ]
+)
+
+# create Automake conditional so that we know whether we need to build
+# OpenMP-specific tests
+AM_CONDITIONAL([HAVE_OPENMP],[test "x$OPENMP_ENABLE_VAL" = "xENABLED"])
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
@@ -170,11 +164,10 @@ AC_MSG_NOTICE([
 LALSimulation has now been successfully configured:
 
 * Python support is $PYTHON_ENABLE_VAL
+* SWIG binding generation is $SWIG_GENERATE_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
 * OpenMP acceleration is $OPENMP_ENABLE_VAL
-* Doxygen documentation is $DOXYGEN_ENABLE_VAL
-* help2man documentation is $HELP2MAN_ENABLE_VAL
 
 and will be installed under the directory:
 

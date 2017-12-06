@@ -30,14 +30,14 @@ extern "C" {
 #include <lal/LALDatatypes.h>
 
 /**
- * \addtogroup lalxml_general
+ * \addtogroup pkg_XML
  * \author Oliver Bock, Reinhard Prix, Jolien Creighton
  * \brief Module for reading/writing/manipulating XML as well as data serialization.
  */
 
 /**
  * \defgroup LALXML_h Header LALXML.h
- * \ingroup lalxml_general
+ * \ingroup pkg_XML
  * \brief Header file declaring the public XML API
  */
 /*@{*/

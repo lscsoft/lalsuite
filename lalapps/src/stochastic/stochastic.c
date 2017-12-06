@@ -21,232 +21,6 @@
  *
  */
 
-/**
- * \file
- * \ingroup lalapps_inspiral
- *
- *
- * <dl>
- * <dt>Name</dt><dd>
- * <tt>lalapps_stochastic</tt> --- standalone stochastic analysis code.</dd>
- *
- * <dt>Synopsis</dt><dd>
- * <tt>lalapps_stochastic</tt>
- * [<tt>--help</tt>]
- * [<tt>--version</tt>]
- * [<tt>--verbose</tt>]
- * [<tt>--debug</tt>]
- * [<tt>--user-tag</tt> <i>STRING</i>]
- * [<tt>--comment</tt> <i>STRING</i>]
- * [<tt>--output-dir</tt> <i>DIR</i>]
- * [<tt>--cc-spectra</tt>]
- * <tt>--gps-start-time</tt> <i>N</i>
- * <tt>--gps-end-time</tt> <i>N</i>
- * <tt>--interval-duration</tt> <i>N</i>
- * <tt>--segment-duration</tt> <i>N</i>
- * <tt>--resample-rate</tt> <i>N</i>
- * <tt>--f-min</tt> <i>N</i>
- * <tt>--f-max</tt> <i>N</i>
- * <tt>--ifo-one</tt> <i>IFO</i>
- * <tt>--ifo-two</tt> <i>IFO</i>
- * <tt>--channel-one</tt> <i>CHANNEL</i>
- * <tt>--channel-two</tt> <i>CHANNEL</i>
- * <tt>--frame-cache-one</tt> <i>FILE</i>
- * <tt>--frame-cache-two</tt> <i>FILE</i>
- * <tt>--calibration-cache-one</tt> <i>FILE</i>
- * <tt>--calibration-cache-two</tt> <i>FILE</i>
- * <tt>--calibration-offset</tt> <i>N</i>
- * [<tt>--apply-mask</tt> <i>N</i>
- * <tt>--mask-bin</tt> <i>N</i>]
- * [<tt>--overlap-hann</tt>
- * <tt>--hann-duration</tt> <i>N</i>]
- * [<tt>--high-pass-filter</tt>
- * <tt>--hpf-frequency</tt> <i>N</i>
- * <tt>--hpf-attenuation</tt> <i>N</i>
- * <tt>--hpf-order</tt> <i>N</i>]
- * <tt>--recentre</tt>
- * <tt>--middle-segment</tt>
- * [<tt>--geo-hpf-frequency</tt> <i>N</i>
- * <tt>--geo-hpf-attenuation</tt> <i>N</i>
- * <tt>--geo-hpf-order</tt> <i>N</i>]
- * [<tt>--alpha</tt> <i>N</i>]
- * [<tt>--f-ref</tt> <i>N</i>]
- * [<tt>--omega0</tt> <i>N</i>]</dd>
- *
- * <dt>Description</dt><dd>
- * <tt>lalapps_stochastic</tt> runs the standalone stochastic analysis code.</dd>
- *
- * <dt>Options</dt><dd>
- * <dl>
- * <dt><tt>--help</tt></dt><dd>
- * Display usage information and exit.</dd>
- *
- * <dt><tt>--version</tt></dt><dd>
- * Display version information and exit.</dd>
- *
- * <dt><tt>--verbose</tt></dt><dd>
- * Enable the output of informational messages.</dd>
- *
- * <dt><tt>--debug</tt></dt><dd>
- * Run in debug mode, saves out all intermediate products as ASCII files.</dd>
- *
- * <dt><tt>--user-tag</tt> <i>STRING</i></dt><dd>
- * Set the user tag to the string <i>STRING</i>. This string must not
- * contain spaces or dashes ("-"). This string will appear in the name of
- * the file to which output information is written, and is recorded in the
- * various XML tables within the file.</dd>
- *
- * <dt><tt>--comment</tt> <i>STRING</i></dt><dd>
- * Set the process table comment to <i>STRING</i></dd>
- *
- * <dt><tt>--output-dir</tt> <i>DIR</i></dt><dd>
- * Set the output directory for search results to <i>DIR</i></dd>
- *
- * <dt><tt>--cc-spectra</tt></dt><dd>
- * Save out cross correlation spectra as frame files.</dd>
- *
- * <dt><tt>--gps-start-time</tt> <i>N</i></dt><dd>
- * Sets the GPS time from which data should be read to <i>N</i></dd>
- *
- * <dt><tt>--gps-end-time</tt> <i>N</i></dt><dd>
- * Sets the GPS time to which data should be read to <i>N</i></dd>
- *
- * <dt><tt>--interval-duration</tt> <i>N</i></dt><dd>
- * Sets the interval duration to <i>N</i></dd>
- *
- * <dt><tt>--segment-duration</tt> <i>N</i></dt><dd>
- * Sets the segment duration to <i>N</i></dd>
- *
- * <dt><tt>--resample-rate</tt> <i>N</i></dt><dd>
- * Down-convert the input data stream to a sample rate of <i>N</i> samples
- * per second prior to analysis.  This can be used to reduce the number of CPU
- * cycles required to analyze a given quantity of input data.</dd>
- *
- * <dt><tt>--f-min</tt> <i>N</i></dt><dd>
- * Sets the minimum frequency of the search band to <i>N</i></dd>
- *
- * <dt><tt>--f-max</tt> <i>N</i></dt><dd>
- * Sets the maximum frequency of the search band to <i>N</i></dd>
- *
- * <dt><tt>--ifo-one</tt> <i>IFO</i></dt><dd>
- * Sets the IFO for the first stream to be <i>IFO</i>, currently supported
- * IFO's are H1, H2, L1 and G1</dd>
- *
- * <dt><tt>--ifo-two</tt> <i>IFO</i></dt><dd>
- * Sets the IFO for the second stream to be <i>IFO</i>, currently supported
- * IFO's are H1, H2, L1 and G1</dd>
- *
- * <dt><tt>--channel-one</tt> <i>CHANNEL</i></dt><dd>
- * Sets the channel for the first stream to be <i>CHANNEL</i></dd>
- *
- * <dt><tt>--channel-two</tt> <i>CHANNEL</i></dt><dd>
- * Sets the channel for the second stream to be <i>CHANNEL</i></dd>
- *
- * <dt><tt>--frame-cache-one</tt> <i>FILE</i></dt><dd>
- * Obtain the locations of input <tt>.gwf</tt> frame files from the LAL frame
- * cache file <i>FILE</i> for the first detector.  LAL frame cache files
- * are explained in the "framedata" package in LAL and can be constructed
- * by using <tt>LSCdataFind</tt> on supported systems.</dd>
- *
- * <dt><tt>--frame-cache-two</tt> <i>FILE</i></dt><dd>
- * Obtain the locations of input <tt>.gwf</tt> frame files from the LAL frame
- * cache file <i>FILE</i> for the second detector.  LAL frame cache files
- * are explained in the "framedata" package in LAL and can be constructed
- * by using <tt>LSCdataFind</tt> on supported systems.</dd>
- *
- * <dt><tt>--calibration-cache-one</tt> <i>FILE</i></dt><dd>
- * Specify the location of calibration information for the first detector.
- * <i>FILE</i> gives the path to a LAL-format frame cache file describing
- * locations of <tt>.gwf</tt> frame files that provide the calibration data
- * (\f$\alpha\f$ and \f$\beta\f$ coefficients) for the analysis.  Frame cache files
- * are explained in the "framedata" package in LAL.</dd>
- *
- * <dt><tt>--calibration-cache-two</tt> <i>FILE</i></dt><dd>
- * Specify the location of calibration information for the second detector.
- * <i>FILE</i> gives the path to a LAL-format frame cache file describing
- * locations of <tt>.gwf</tt> frame files that provide the calibration data
- * (\f$\alpha\f$ and \f$\beta\f$ coefficients) for the analysis.  Frame cache files
- * are explained in the "framedata" package in LAL.</dd>
- *
- * <dt><tt>--calibration-offset</tt> <i>N</i></dt><dd>
- * Sets the calibration offset to <i>N</i></dd>
- *
- * <dt><tt>--apply-mask</tt></dt><dd>
- * Apply frequency masking</dd>
- *
- * <dt><tt>--mask-bin</tt> <i>N</i></dt><dd>
- * Set the number of bins to mask per frequency to <i>N</i></dd>
- *
- * <dt><tt>--overlap-hann</tt></dt><dd>
- * Use overlapping Hann windows for data segments</dd>
- *
- * <dt><tt>--hann-duration</tt> <i>N</i></dt><dd>
- * Set the Hann duration of the data segment window to <i>N</i>, 0 for
- * Rectangular windowing, 1 for Tukey windowing and 60 for Hann windowing</dd>
- *
- * <dt><tt>--high-pass-filter</tt></dt><dd>
- * Apply a high pass filter to the input data</dd>
- *
- * <dt><tt>--hpf-frequency</tt> <i>N</i></dt><dd>
- * Set the knee frequency of the high pass filter to <i>N</i></dd>
- *
- * <dt><tt>--hpf-attenuation</tt> <i>N</i></dt><dd>
- * Set the attenuation coefficent for the high pass filter to <i>N</i></dd>
- *
- * <dt><tt>--hpf-order</tt> <i>N</i></dt><dd>
- * Sets the high pass filter order to <i>N</i></dd>
- *
- * <dt><tt>--recentre</tt></dt><dd>
- * Centre the data</dd>
- *
- * <dt><tt>--middle-segment</tt></dt><dd>
- * Include the middle segment in the power spectra estimation</dd>
- *
- * <dt><tt>--geo-hpf-frequency</tt> <i>N</i></dt><dd>
- * Set the knee frequency for the GEO high pass filter to <i>N</i></dd>
- *
- * <dt><tt>--geo-hpf-attenuation</tt> <i>N</i></dt><dd>
- * Set the attenuation coefficient for the GEO high pass filter to <i>N</i></dd>
- *
- * <dt><tt>--geo-hpf-order</tt> <i>N</i></dt><dd>
- * Set the GEO high pass filter order to <i>N</i></dd>
- *
- * <dt><tt>--alpha</tt> <i>N</i></dt><dd>
- * Exponent for \f$\Omega_{\mathrm{GW}}\f$ for construction of the optimal
- * filter.</dd>
- *
- * <dt><tt>--f-ref</tt> <i>N</i></dt><dd>
- * Reference frequency for \f$\Omega_{\mathrm{GW}}\f$ for the construction of
- * the optimal filter.</dd>
- *
- * <dt><tt>--omega0</tt> <i>N</i></dt><dd>
- * Reference \f$\Omega_0\f$ for \f$\Omega_{\mathrm{GW}}\f$ for the construction of
- * the optimal filter.</dd>
- * </dl></dd>
- *
- * <dt>Example</dt><dd>
- * <tt>lalapps_stochastic</tt> is generally run as part of a DAG, as created
- * by the pipeline generation scripts, <tt>lalapps_stochastic_pipe</tt> or
- * <tt>lalapps_stochastic_bayes</tt>, however an example usage can be seen
- * below.
- *
- * \code
- * > lalapps_stochastic --verbose \
- * >   --gps-start-time 752242398 --gps-end-time 752242758 \
- * >   --interval-duration 180 --segment-duration 60 \
- * >   --resample-rate 1024 --f-min 50 --f-max 250 --ifo-one H1 \
- * >   --ifo-two H2 --channel-one LSC-AS_Q --channel-two LSC-AS_Q \
- * >   --frame-cache-one H1.cache --frame-cache-two H2.cache \
- * >   --calibration-cache-one H1-CAL-V02-751651244-757699245.cache \
- * >   --calibration-cache-two H2-CAL-V02-751651244-757699245.cache \
- * >   --calibration-offset 0 --hann-duration 1 --cc-spectra
- * \endcode</dd>
- *
- * <dt>Author</dt><dd>
- * Adam Mercer, Tania Regimbau</dd>
- * </dl>
- */
-
 #include "data_input.h"
 #include "misc.h"
 #include "sgwb.h"
@@ -257,7 +31,7 @@
 /* program info */
 const CHAR* prog_name="lalapps_stochastic";
 
-/* flags for LALgetopt_long */
+/* flags for getopt_long */
 int middle_segment_flag;
 int apply_mask_flag;
 int high_pass_flag;
@@ -389,7 +163,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
   while(1)
   {
-    static struct LALoption long_options[] =
+    static struct option long_options[] =
     {
       /* options that set a flag */
       {"middle-segment", no_argument, &middle_segment_flag, 1},
@@ -436,11 +210,11 @@ static void parse_options(INT4 argc, CHAR *argv[])
       {0, 0, 0, 0}
     };
 
-    /* LALgetopt_long stores the option here */
+    /* getopt_long stores the option here */
     int option_index = 0;
-    size_t LALoptarg_len;
+    size_t optarg_len;
 
-    c = LALgetopt_long_only(argc, argv, \
+    c = getopt_long_only(argc, argv, \
         "abd:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:" \
         "A:B:C:D:E:F:G:", long_options, &option_index);
 
@@ -461,7 +235,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         else
         {
           fprintf(stderr, "error parseing option %s with argument %s\n", \
-              long_options[option_index].name, LALoptarg);
+              long_options[option_index].name, optarg);
           exit(1);
         }
         break;
@@ -481,9 +255,9 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'd':
         /* user tag */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        userTag = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
-        memcpy(userTag, LALoptarg, LALoptarg_len);
+        optarg_len = strlen(optarg) + 1;
+        userTag = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(userTag, optarg, optarg_len);
 
         /* add to process_params table */
         this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
@@ -491,12 +265,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
         snprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", prog_name);
         snprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, "--user-tag");
         snprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-        snprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, "%s", LALoptarg);
+        snprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, "%s", optarg);
         break;
 
       case 'e':
         /* xml comment */
-        if (strlen(LALoptarg) > LIGOMETA_COMMENT_MAX - 1)
+        if (strlen(optarg) > LIGOMETA_COMMENT_MAX - 1)
         {
           fprintf(stderr, "invalid argument to --%s:\n" \
               "comment must be less than %d characters\n", \
@@ -505,15 +279,15 @@ static void parse_options(INT4 argc, CHAR *argv[])
         }
         else
         {
-          snprintf(comment, LIGOMETA_COMMENT_MAX, "%s", LALoptarg);
+          snprintf(comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
 
       case 'f':
         /* directory for output files */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        outputPath = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
-        memcpy(outputPath, LALoptarg, LALoptarg_len);
+        optarg_len = strlen(optarg) + 1;
+        outputPath = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(outputPath, optarg, optarg_len);
         if (stat(outputPath, &fileStatus) == -1)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -526,7 +300,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'g':
         /* start time */
-        startTime = atoi(LALoptarg);
+        startTime = atoi(optarg);
         if (startTime < 441217609)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -548,7 +322,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'h':
         /* end time */
-        endTime = atoi(LALoptarg);
+        endTime = atoi(optarg);
         if (endTime < 441217609)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -570,7 +344,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'i':
         /* interval duration */
-        intervalDuration = atoi(LALoptarg);
+        intervalDuration = atoi(optarg);
         if (intervalDuration <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -583,7 +357,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'j':
         /* segment duration */
-        segmentDuration = atoi(LALoptarg);
+        segmentDuration = atoi(optarg);
         if (segmentDuration <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -596,7 +370,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'k':
         /* resample rate */
-        resampleRate = atoi(LALoptarg);
+        resampleRate = atoi(optarg);
         if (resampleRate < 2 || resampleRate > 16384 || resampleRate % 2)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -611,7 +385,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'l':
         /* minimal frequency */
-        fMin = atof(LALoptarg);
+        fMin = atof(optarg);
         if (fMin < 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -631,7 +405,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'm':
         /* maximal frequency */
-        fMax = atof(LALoptarg);
+        fMax = atof(optarg);
         if (fMax < 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -651,9 +425,9 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'n':
         /* ifo for first stream */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        ifoOne = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
-        memcpy(ifoOne, LALoptarg, LALoptarg_len);
+        optarg_len = strlen(optarg) + 1;
+        ifoOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(ifoOne, optarg, optarg_len);
 
         /* set site id for ifo one */
         if (strncmp(ifoOne, "H1", 2) == 0)
@@ -674,9 +448,9 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'o':
         /* ifo for second stream */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        ifoTwo = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
-        memcpy(ifoTwo, LALoptarg, LALoptarg_len);
+        optarg_len = strlen(optarg) + 1;
+        ifoTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(ifoTwo, optarg, optarg_len);
 
         /* set site id for ifo two */
         if (strncmp(ifoTwo, "H1", 2) == 0)
@@ -697,27 +471,27 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'p':
         /* channel one */
-        LALoptarg_len = strlen(LALoptarg) + 4;
-        channelOneTemp = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
-        channelOne = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
-        memcpy(channelOneTemp, LALoptarg, LALoptarg_len);
+        optarg_len = strlen(optarg) + 4;
+        channelOneTemp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        channelOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(channelOneTemp, optarg, optarg_len);
         ADD_PROCESS_PARAM("string", "%s", channelOneTemp);
         break;
 
       case 'q':
         /* channel two */
-        LALoptarg_len = strlen(LALoptarg) + 4;
-        channelTwoTemp = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
-        channelTwo = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
-        memcpy(channelTwoTemp, LALoptarg, LALoptarg_len);
+        optarg_len = strlen(optarg) + 4;
+        channelTwoTemp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        channelTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(channelTwoTemp, optarg, optarg_len);
         ADD_PROCESS_PARAM("string", "%s", channelTwoTemp);
         break;
 
       case 'r':
         /* frame cache one */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        frameCacheOne = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
-        memcpy(frameCacheOne, LALoptarg, LALoptarg_len);
+        optarg_len = strlen(optarg) + 1;
+        frameCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(frameCacheOne, optarg, optarg_len);
         if (stat(frameCacheOne, &fileStatus) == -1)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -730,9 +504,9 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 's':
         /* frame cache two */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        frameCacheTwo = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
-        memcpy(frameCacheTwo, LALoptarg, LALoptarg_len);
+        optarg_len = strlen(optarg) + 1;
+        frameCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(frameCacheTwo, optarg, optarg_len);
         if (stat(frameCacheTwo, &fileStatus) == -1)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -745,9 +519,9 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 't':
         /* calibration cache one */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        calCacheOne = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
-        memcpy(calCacheOne, LALoptarg, LALoptarg_len);
+        optarg_len = strlen(optarg) + 1;
+        calCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(calCacheOne, optarg, optarg_len);
         if (stat(calCacheOne, &fileStatus) == -1)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -760,9 +534,9 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'u':
         /* calibration cache two */
-        LALoptarg_len = strlen(LALoptarg) + 1;
-        calCacheTwo = (CHAR*)calloc(LALoptarg_len, sizeof(CHAR));
-        memcpy(calCacheTwo, LALoptarg, LALoptarg_len);
+        optarg_len = strlen(optarg) + 1;
+        calCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(calCacheTwo, optarg, optarg_len);
         if (stat(calCacheTwo, &fileStatus) == -1)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -775,13 +549,13 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'v':
         /* calibration time offset */
-        calibOffset = atoi(LALoptarg);
+        calibOffset = atoi(optarg);
         ADD_PROCESS_PARAM("int", "%d", calibOffset);
         break;
 
       case 'w':
         /* number of bins to mask for frequency mask */
-        maskBin = atoi(LALoptarg);
+        maskBin = atoi(optarg);
         if (maskBin <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -794,7 +568,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'x':
         /* hann window duration */
-        hannDuration = atoi(LALoptarg);
+        hannDuration = atoi(optarg);
         if (hannDuration < 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -807,7 +581,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'y':
         /* high pass knee filter frequency  */
-        highPassFreq = atof(LALoptarg);
+        highPassFreq = atof(optarg);
         if (highPassFreq < 0)
         {
           fprintf(stderr, "Invalid argument tp --%s:\n" \
@@ -821,7 +595,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'z':
         /* high pass filter attenuation  */
-        highPassAtten = atof(LALoptarg);
+        highPassAtten = atof(optarg);
         if ((highPassAtten < 0.0) || (highPassAtten > 1.0))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -835,7 +609,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'A':
         /* high pass filter order  */
-        highPassOrder = atoi(LALoptarg);
+        highPassOrder = atoi(optarg);
         if (highPassOrder <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -849,7 +623,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'B':
         /* GEO high pass knee filter frequency */
-        geoHighPassFreq = atof(LALoptarg);
+        geoHighPassFreq = atof(optarg);
         if (geoHighPassFreq < 0)
         {
           fprintf(stderr, "Invalid argument tp --%s:\n" \
@@ -863,7 +637,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'C':
         /* GEO high pass filter attenuation */
-        geoHighPassAtten = atof(LALoptarg);
+        geoHighPassAtten = atof(optarg);
         if ((geoHighPassAtten < 0.0) || (geoHighPassAtten > 1.0))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -877,7 +651,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'D':
         /* GEO high pass filter order */
-        geoHighPassOrder = atoi(LALoptarg);
+        geoHighPassOrder = atoi(optarg);
         if (geoHighPassOrder <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -891,13 +665,13 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'E':
         /* filter spectrum exponent */
-        alpha = atof(LALoptarg);
+        alpha = atof(optarg);
         ADD_PROCESS_PARAM("float", "%e", alpha);
         break;
 
       case 'F':
         /* filter reference frequency */
-        fRef = atof(LALoptarg);
+        fRef = atof(optarg);
         if (fRef < 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -910,7 +684,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
       case 'G':
         /* filter reference omega */
-        omegaRef = atof(LALoptarg);
+        omegaRef = atof(optarg);
         if (omegaRef <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -931,12 +705,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
     }
   }
 
-  if (LALoptind < argc)
+  if (optind < argc)
   {
     fprintf(stderr, "Extraneous command line arguments:\n");
-    while(LALoptind < argc)
+    while(optind < argc)
     {
-      fprintf(stderr, "%s\n", argv[LALoptind++]);
+      fprintf(stderr, "%s\n", argv[optind++]);
     }
     exit(1);
   }
@@ -1242,7 +1016,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   proctable.processTable = (ProcessTable *) calloc(1, sizeof(ProcessTable));
   XLALGPSTimeNow(&proctable.processTable->start_time);
   XLALPopulateProcessTable(proctable.processTable, prog_name, \
-      lalAppsVCSIdentInfo.vcsId, lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
+      lalAppsVCSIdentId, lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0);
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) \
                     calloc(1, sizeof(ProcessParamsTable));
   memset(comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR));

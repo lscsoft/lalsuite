@@ -18,8 +18,7 @@ extern "C" {
 #endif
 
 /**
- * \defgroup InspiralInjectionParams_h Header InspiralInjectionParams.h
- * \ingroup lalinspiral_inject
+ * \addtogroup InspiralInjectionParams_h
  * \author D. Brown, J. Creighton, S. Fairhurst, G. Jones, E. Messaritaki
  *
  * \brief Module for generating randomly distributed inspiral parameters
@@ -32,13 +31,11 @@ extern "C" {
  * injections can be distributed
  */
 typedef enum
-taglalinspiral_time_distribution
 {
   LALINSPIRAL_UNKNOWN_TIME_DIST,
   LALINSPIRAL_FIXED_TIME_DIST,
   LALINSPIRAL_UNIFORM_TIME_DIST,
-  LALINSPIRAL_EXPONENTIAL_TIME_DIST,
-  LALINSPIRAL_FILE_TIME_DIST
+  LALINSPIRAL_EXPONENTIAL_TIME_DIST
 }
 lalinspiral_time_distribution;
 
@@ -47,7 +44,6 @@ lalinspiral_time_distribution;
  * injections can be distributed
  */
 typedef enum
-tagLoudnessDistribution
 {
   unknownLoudnessDist,
   distFromSourceFile,
@@ -67,7 +63,6 @@ LoudnessDistribution;
  * injections can be distributed
  */
 typedef enum
-tagSkyLocationDistribution
 {
   unknownLocationDist,
   locationFromSourceFile,
@@ -83,7 +78,6 @@ SkyLocationDistribution;
  * injections can be distributed
  */
 typedef enum
-tagMassDistribution
 {
   unknownMassDist,
   massFromSourceFile,
@@ -105,7 +99,6 @@ MassDistribution;
  * injections can be distributed
  */
 typedef enum
-tagInclDistribution
 {
   unknownInclDist,
   uniformInclDist,
@@ -119,7 +112,6 @@ InclDistribution;
  * injections can be distributed
  */
 typedef enum
-tagSpinDistribution
 {
   unknownSpinDist,
   uniformSpinDist,
@@ -132,7 +124,6 @@ SpinDistribution;
  * depending on the waveform family
  */
 typedef enum
-tagAlignmentType
 {
   alongzAxis,
   inxzPlane,

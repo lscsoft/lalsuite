@@ -8,7 +8,12 @@ header-link-stamp: force-header-link-generation
 	$(AM_V_at)for file in $(DISTCLEANFILES); do \
 		rm -f "$$file"; \
 	done; \
-	for dir in src swig; do \
+	if test $(PACKAGE) = lal; then \
+		srcdirs="packages lib"; \
+	else \
+		srcdirs="src"; \
+	fi; \
+	for dir in $$srcdirs swig; do \
 		( cd "$(top_builddir)/$$dir" && $(MAKE) $(AM_MAKEFLAGS) header-links ) || exit 1; \
 	done; \
 	echo "$@" > $@

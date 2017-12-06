@@ -31,7 +31,7 @@
 #include <lal/VectorOps.h>
 #include <lal/PulsarSimulateCoherentGW.h>
 #include <lal/SkyCoordinates.h>
-#include <lal/SinCosLUT.h>
+#include <lal/CWFastMath.h>
 
 /** \name Error Codes */
 /*@{*/
@@ -222,7 +222,7 @@ XLALPulsarSimulateCoherentGW ( REAL4TimeSeries  *output,	///< [in/out] output ti
  * years between phase epoch and observation time for frequencies of
  * around 1kHz).
  *
- * To activate this feature, be sure that <tt>sunmath.h</tt> and
+ * To activate this feature, be sure that \ref sunmath.h and
  * \c libsunmath are on your system, and add <tt>-DONLINE</tt> to the
  * <tt>--with-extra-cppflags</tt> configuration argument.  In future this
  * flag may be used to turn on other efficient trig algorithms on other
@@ -387,9 +387,7 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
 
   /* Check units on input, and set units on output. */
   {
-    if( CWsignal->f ) {
-      ASSERT( XLALUnitCompare( &(CWsignal->f->sampleUnits), &lalHertzUnit ) == 0, stat, SIMULATECOHERENTGWH_EUNIT, SIMULATECOHERENTGWH_MSGEUNIT );
-    }
+    ASSERT( XLALUnitCompare( &(CWsignal->f->sampleUnits), &lalHertzUnit ) == 0, stat, SIMULATECOHERENTGWH_EUNIT, SIMULATECOHERENTGWH_MSGEUNIT );
     ASSERT( XLALUnitCompare( &(CWsignal->phi->sampleUnits), &lalDimensionlessUnit ) == 0, stat, SIMULATECOHERENTGWH_EUNIT, SIMULATECOHERENTGWH_MSGEUNIT );
     if( CWsignal->shift ) {
       ASSERT( XLALUnitCompare( &(CWsignal->shift->sampleUnits), &lalDimensionlessUnit ) == 0, stat, SIMULATECOHERENTGWH_EUNIT, SIMULATECOHERENTGWH_MSGEUNIT );
@@ -401,38 +399,22 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
     } else {
       output->sampleUnits = CWsignal->a->sampleUnits;
     }
-    if (snprintf( output->name, LALNameLength, "response to %s", CWsignal->a->name ) >= LALNameLength ) {
-      LALWarning( stat, "output name truncated" );
-    }
+    snprintf( output->name, LALNameLength, "response to %s", CWsignal->a->name );
   }
 
   /* Define temporary variables to access the data of CWsignal->a,
      CWsignal->f, and CWsignal->phi. */
   aData = CWsignal->a->data->data;
-  INT4 aLen = CWsignal->a->data->length * CWsignal->a->data->vectorLength;
   phiData = CWsignal->phi->data->data;
-  INT4 phiLen = CWsignal->phi->data->length;
   outData = output->data->data;
-  INT4 fLen=0, shiftLen=0;
   if ( CWsignal->f )
-    {
-      fData = CWsignal->f->data->data;
-      fLen = CWsignal->f->data->length;
-    }
+    fData = CWsignal->f->data->data;
   else
-    {
-      fData = NULL;
-    }
-
+    fData = NULL;
   if ( CWsignal->shift )
-    {
-      shiftData = CWsignal->shift->data->data;
-      shiftLen = CWsignal->shift->data->length;
-    }
+    shiftData = CWsignal->shift->data->data;
   else
-    {
-      shiftData = NULL;
-    }
+    shiftData = NULL;
 
   /* Convert source position to equatorial coordinates, if
      required. */
@@ -468,8 +450,8 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
   if ( detector->site && detector->ephemerides ) {
     LIGOTimeGPS gpsTime;   /* detector time when we compute delay */
     EarthState state;      /* Earth position info at that time */
-    BarycenterInput input; /* input structure to XLALBarycenter() */
-    EmissionTime emit;     /* output structure from XLALBarycenter() */
+    BarycenterInput input; /* input structure to LALBarycenter() */
+    EmissionTime emit;     /* output structure from LALBarycenter() */
 
     /* Arrange nested pointers, and set initial values. */
     gpsTime = input.tgps = output->epoch;
@@ -487,15 +469,15 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
     /* Compute table. */
     for ( i = 0; i < nMax; i++ ) {
       REAL8 tDelay; /* propagation time */
-      if ( XLALBarycenterEarth(&state, &gpsTime,
-                          detector->ephemerides ) != XLAL_SUCCESS ) {
+      LALBarycenterEarth( stat->statusPtr, &state, &gpsTime,
+                          detector->ephemerides );
+      BEGINFAIL( stat )
         TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-        ABORTXLAL( stat );
-      }
-      if ( XLALBarycenter(&emit, &input, &state ) != XLAL_SUCCESS ) {
+      ENDFAIL( stat );
+      LALBarycenter( stat->statusPtr, &emit, &input, &state );
+      BEGINFAIL( stat )
         TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-        ABORTXLAL( stat );
-      }
+      ENDFAIL( stat );
       delayData[i] = tDelay = emit.deltaT/output->deltaT;
       if ( tDelay < delayMin )
         delayMin = tDelay;
@@ -571,13 +553,6 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
   } ENDFAIL( stat );
   plusData = polResponse.pPlus->data->data;
   crossData = polResponse.pCross->data->data;
-  INT4 plusLen = polResponse.pPlus->data->length;
-  INT4 crossLen = polResponse.pCross->data->length;
-  if ( plusLen != crossLen ) {
-    XLALPrintError ("plusLen = %d != crossLen = %d\n", plusLen, crossLen );
-    ABORT ( stat, SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
-  }
-
   if ( detector->site ) {
     LALSource polSource;     /* position and polarization angle */
     LALDetAndSource input;            /* response input structure */
@@ -622,7 +597,6 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
 
   /* Decompose the transfer function into an amplitude and phase
      response. */
-  INT4 phiTransLen = 0, aTransLen = 0;
   if ( transfer ) {
     nMax = detector->transfer->data->length;
     LALSCreateVector( stat->statusPtr, &phiTemp, nMax );
@@ -696,13 +670,7 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
       LALFree( polResponse.pCross );
     } ENDFAIL( stat );
     phiTransData = phiTransfer->data;
-    phiTransLen = phiTransfer->length;
     aTransData = aTransfer->data;
-    aTransLen = aTransfer->length;
-  }
-  if ( aTransLen != phiTransLen ) {
-    XLALPrintError ("aTransLen = %d != phiTransLen = %d\n", aTransLen, phiTransLen );
-    ABORT ( stat, SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
   }
 
   /* Compute offsets for interpolating the signal, delay, and
@@ -768,9 +736,9 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
   /* Compute final value of i, ensuring that we will never index
      CWsignal->a or CWsignal->phi above their range. */
   n = output->data->length - 1;
-  INT4 nMax_a = CWsignal->a->data->length - 1;
-  if ( aOff + ( n + delayMax )*aDt > nMax_a ) {
-    INT4 j = (INT4)( ( nMax_a - aOff )/aDt - delayMin + 1.0 );
+  nMax = CWsignal->a->data->length - 1;
+  if ( aOff + ( n + delayMax )*aDt > nMax ) {
+    INT4 j = (INT4)( ( nMax - aOff )/aDt - delayMin + 1.0 );
     if ( n > j )
       n = j;
     while ( ( n >= 0 ) &&
@@ -874,10 +842,13 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
     j = (INT4)floor( x );
     frac = (REAL8)( x - j );
     j *= 2;
-    if ( j + 3 >= aLen ) {
-      XLALPrintError ( "Interpolation error: no point at or after last sample for {a1,a2}: i = %d, n = %d, j = %d, aLen = %d", i, n, j, aLen );
-      ABORT( stat, SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
+
+    /* Handle special case where output lands on final sample - no interpolation */
+    if(i==n){
+      a1=aData[j];
+      a2=aData[j+1];
     }
+    else
     {
       a1 = frac*aData[j+2] + ( 1.0 - frac )*aData[j];
       a2 = frac*aData[j+3] + ( 1.0 - frac )*aData[j+1];
@@ -890,23 +861,14 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
       x = shiftOff + iCentre*shiftDt;
       j = (INT4)floor( x );
       frac = (REAL8)( x - j );
-
-      if ( j + 1 >= shiftLen ) {
-        XLALPrintError ( "Interpolation error: no point at or after last sample for 'shift'" );
-        ABORT( stat, SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
-      }
-      shift = frac*shiftData[j+1] + ( 1.0 - frac )*shiftData[j];
+      if(i==n) shift=shiftData[j];
+      else     shift = frac*shiftData[j+1] + ( 1.0 - frac )*shiftData[j];
     }
 
     /* Interpolate the signal phase, and apply any heterodyning. */
     x = phiOff + iCentre*phiDt;
     j = (INT4)floor( x );
     frac = (REAL8)( x - j );
-
-    if ( j + 1 >= phiLen ) {
-      XLALPrintError ( "Interpolation error: no point at or after last sample for 'phi'" );
-      ABORT( stat, SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
-    }
     phi = frac*phiData[j+1] + ( 1.0 - frac )*phiData[j];
     phi -= heteroFac*i + phi0;
 
@@ -919,11 +881,8 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
         x = fOff + iCentre*fDt;
         j = (INT4)floor( x );
         frac = (REAL8)( x - j );
-        if ( j + 1 >= fLen ) {
-          XLALPrintError ( "Interpolation error: no point at or after last sample for 'f'" );
-          ABORT( stat, SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
-        }
-        f = frac*fData[j+1] + ( 1.0 - frac )*fData[j];
+        if(i==n) f=fData[j];
+        else     f = frac*fData[j+1] + ( 1.0 - frac )*fData[j];
         f *= fFac;
       }
       x = f - f0;
@@ -934,10 +893,11 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
       } else  {
         j = (INT4)floor( x );
         frac = (REAL8)( x - j );
-        if ( j + 1 >= aTransLen ) {
-          XLALPrintError ( "Interpolation error: no point at or after last sample for '{aTrans,phiTrans}'" );
-          ABORT( stat, SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
-        }
+        if(i==n)
+        {
+          aTrans=aTransData[j];
+          phiTrans=phiTransData[j];
+        } else
         {
           aTrans = frac*aTransData[j+1] + ( 1.0 - frac )*aTransData[j];
           phiTrans = frac*phiTransData[j+1] + ( 1.0 - frac )*phiTransData[j];
@@ -964,11 +924,11 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
     x = polOff + i*polDt;
     j = (INT4)floor( x );
     frac = (REAL8)( x - j );
-    if ( j + 1 >= plusLen ) {
-      XLALPrintError ( "Interpolation error: no point at or after last sample for '{oPlus,oCross}'" );
-      ABORT( stat, SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
-    }
+    if(i==n)
     {
+      oPlus*=plusData[j];
+      oCross*=crossData[j];
+    } else {
       oPlus *= frac*plusData[j+1] + ( 1.0 - frac )*plusData[j];
       oCross *= frac*crossData[j+1] + ( 1.0 - frac )*crossData[j];
     }

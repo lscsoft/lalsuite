@@ -90,8 +90,13 @@
 
 #include <stdio.h>
 #include <math.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
 #include <lal/LALStdlib.h>
-#include <lal/LALgetopt.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/LALFrStream.h>
@@ -112,6 +117,8 @@
 #define CAL_CATALOG "%s-CAL-V03-%s.cache"
 
 
+extern char *optarg;
+extern int   optind;
 int verbose = 0;
 int output = 0;
 
@@ -158,12 +165,12 @@ int main( int argc, char *argv[] )
   response.sampleUnits = strainPerCount;
 
   /* loop over the three interferometers */
-  for ( j = 0; j < XLAL_NUM_ELEM(ifoCode); ++j )
+  for ( j = 0; j < sizeof(ifoCode) / sizeof(*ifoCode); ++j )
   {
     snprintf( response.name, LALNameLength * sizeof(CHAR),
         CHANNEL, ifoCode[j] );
 
-    for ( i = 0; i < XLAL_NUM_ELEM(calTime); ++i )
+    for ( i = 0; i < sizeof(calTime) / sizeof(*calTime); ++i )
     {
       /* set the time of the calibration and the frame cahche file to use */
       snprintf( calCacheName, LALNameLength * sizeof(CHAR), CAL_CATALOG,
@@ -274,7 +281,7 @@ ParseOptions (int argc, char *argv[])
   while (1)
   {
     int c = -1;
-    c = LALgetopt (argc, argv, "hvo");
+    c = getopt (argc, argv, "hvo");
     if (c == -1)
     {
       break;
@@ -299,7 +306,7 @@ ParseOptions (int argc, char *argv[])
     }
   }
 
-  if (LALoptind < argc)
+  if (optind < argc)
   {
     Usage (argv[0], 1);
   }

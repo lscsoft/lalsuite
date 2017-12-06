@@ -80,11 +80,12 @@ int XLALGenerateSimBurst(
 		 * the LAL constants, the total factor multiplying
 		 * egw_over_rsquared is 1.8597e-21. */
 
-		double int_hdot_squared_dt = sim_burst->egw_over_rsquared * LAL_GMSUN_SI * 4 / LAL_C_SI / LAL_PC_SI / LAL_PC_SI;
+		double int_hdot_squared_dt = sim_burst->egw_over_rsquared * LAL_MSUN_SI * 4 * LAL_G_SI / LAL_C_SI / LAL_PC_SI / LAL_PC_SI;
 
 		/* the waveform number is interpreted as the seed for GSL's
 		 * Mersenne twister random number generator */
 		gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+
 		if(!rng) {
 			XLALPrintError("%s(): failure creating random number generator\n", __func__);
 			XLAL_ERROR(XLAL_ENOMEM);
@@ -92,7 +93,7 @@ int XLALGenerateSimBurst(
 		gsl_rng_set(rng, sim_burst->waveform_number);
 
 		XLALPrintInfo("%s(): BTLWNB @ %9d.%09u s (GPS): f = %.16g Hz, df = %.16g Hz, dt = %.16g s, hdot^2 = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->frequency, sim_burst->bandwidth, sim_burst->duration, int_hdot_squared_dt);
-		if(XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(hplus, hcross, sim_burst->duration, sim_burst->frequency, sim_burst->bandwidth, sim_burst->pol_ellipse_e, sim_burst->pol_ellipse_angle, int_hdot_squared_dt, delta_t, rng)) {
+		if(XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(hplus, hcross, sim_burst->duration, sim_burst->frequency, sim_burst->bandwidth, int_hdot_squared_dt, delta_t, rng)) {
 			gsl_rng_free(rng);
 			XLAL_ERROR(XLAL_EFUNC);
 		}
@@ -105,9 +106,13 @@ int XLALGenerateSimBurst(
 		XLALPrintInfo("%s(): sine-Gaussian @ %9d.%09u s (GPS): f = %.16g Hz, Q = %.16g, hrss = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->frequency, sim_burst->q, sim_burst->hrss);
 		if(XLALSimBurstSineGaussian(hplus, hcross, sim_burst->q, sim_burst->frequency, sim_burst->hrss, sim_burst->pol_ellipse_e, sim_burst->pol_ellipse_angle, delta_t))
 			XLAL_ERROR(XLAL_EFUNC);
-	} else if(!strcmp(sim_burst->waveform, "Gaussian")) {
-		XLALPrintInfo("%s(): Gaussian @ %9d.%09u s (GPS): duration = %.16g, hrss = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->duration, sim_burst->hrss);
-		if(XLALSimBurstGaussian(hplus, hcross, sim_burst->duration, sim_burst->hrss, delta_t))
+        } else if(!strcmp(sim_burst->waveform, "DampedSinusoid")) {
+		XLALPrintInfo("%s(): DampedSinusoid @ %9d.%09u s (GPS): f = %.16g Hz, Q = %.16g, hrss = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->frequency, sim_burst->q, sim_burst->hrss);
+		if(XLALSimBurstDampedSinusoid(hplus, hcross, sim_burst->q, sim_burst->frequency, sim_burst->hrss, sim_burst->pol_ellipse_e, sim_burst->pol_ellipse_angle, delta_t))
+                        XLAL_ERROR(XLAL_EFUNC);
+    } else if(!strcmp(sim_burst->waveform, "Gaussian")) {
+		XLALPrintInfo("%s(): Gaussian @ %9d.%09u s (GPS): f = %.16g Hz, duration = %.16g, hrss = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->frequency, sim_burst->duration, sim_burst->hrss);
+		if(XLALSimBurstGaussian(hplus, hcross, sim_burst->duration,sim_burst->hrss, sim_burst->pol_ellipse_e, sim_burst->pol_ellipse_angle, delta_t))
 			XLAL_ERROR(XLAL_EFUNC);
 	} else if(!strcmp(sim_burst->waveform, "Impulse")) {
 		XLALPrintInfo("%s(): impulse @ %9d.%09u s (GPS): hpeak = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->amplitude);
@@ -123,14 +128,8 @@ int XLALGenerateSimBurst(
 	 * times of the h+ and hx time series.  after this, their epochs
 	 * mark the start of those time series at the geocentre. */
 
-	if(!XLALGPSAddGPS(&(*hcross)->epoch, &sim_burst->time_geocent_gps) ||
-	   !XLALGPSAddGPS(&(*hplus)->epoch, &sim_burst->time_geocent_gps)) {
-		XLALPrintError("%s(): bad geocentre time or waveform too long\n", __func__);
-		XLALDestroyREAL8TimeSeries(*hcross);
-		XLALDestroyREAL8TimeSeries(*hplus);
-		*hplus = *hcross = NULL;
-		XLAL_ERROR(XLAL_EFUNC);
-	}
+	XLALGPSAddGPS(&(*hcross)->epoch, &sim_burst->time_geocent_gps);
+	XLALGPSAddGPS(&(*hplus)->epoch, &sim_burst->time_geocent_gps);
 
 	/* done */
 
@@ -155,8 +154,7 @@ int XLALBurstInjectSignals(
 	/* FIXME:  fix the const entanglement so as to get rid of this */
 	LALDetector detector_copy;
 	/* + and x time series for injection waveform */
-	REAL8TimeSeries *hplus = NULL;
-	REAL8TimeSeries *hcross = NULL;
+	REAL8TimeSeries *hplus, *hcross;
 	/* injection time series as added to detector's */
 	REAL8TimeSeries *h;
 	/* skip injections whose geocentre times are more than this many
@@ -222,7 +220,6 @@ int XLALBurstInjectSignals(
 		h = XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross, sim_burst->ra, sim_burst->dec, sim_burst->psi, &detector_copy);
 		XLALDestroyREAL8TimeSeries(hplus);
 		XLALDestroyREAL8TimeSeries(hcross);
-		hplus = hcross = NULL;
 		if(!h)
 			XLAL_ERROR(XLAL_EFUNC);
 

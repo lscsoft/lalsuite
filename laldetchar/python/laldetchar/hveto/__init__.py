@@ -13,8 +13,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation,.
 
-## \defgroup laldetchar_py_hveto hveto utility modules
-## \ingroup laldetchar_python
+## addtogroup pkg_py_laldetchar_hveto
 """A collection of tools for using, plotting, and interpreting HVeto results
 as produced by the laldetchar-hveto program.
 
@@ -22,10 +21,14 @@ glib_utils: A collection of functions to better handle the GLib SWIG wrapped par
 plot_utils: Some functions to plot triggers and the like from HVeto rounds.
 """
 # \author Chris Pankow (<chris.pankow@ligo.org>)
-# ### Synopsis ###
+# \heading{Synopsis}
 # ~~~
 # from laldetchar import hveto
 # ~~~
+# \heading{Example}
+# \code
+# from laldetchar import hveto
+# \endcode
 
 import sys
 import re
@@ -56,7 +59,7 @@ __author__ = "Chris Pankow <chris.pankow@ligo.org>"
 __version__ = version.id
 __date__ = version.date
 
-## \addtogroup laldetchar_py_hveto
+## addtogroup pkg_py_laldetchar_hveto
 #@{
 
 #
@@ -194,6 +197,7 @@ def write_coinc_tables( vetotrigs, xmldoc, refchannel, twind, time_slide_id=None
 
 	# Insert a time slide ID. It's not yet really necessary
 	if time_slide_id is None:
+		from pylal import ligolw_tisi
 		timeslidetable = lsctables.New(lsctables.TimeSlideTable)
 		time_slide = timeslidetable.RowType
 		time_slide.process_id = process_id
@@ -351,6 +355,6 @@ from . import plot_utils
 
 # close doxygen
 ##
-#	\defgroup laldetchar_py_hveto_glib_utils	Glib Utils
-#	\defgroup laldetchar_py_hveto_plot_utils	Plotting Utils
+#	\defgroup	pkg_py_laldetchar_triggers_glib_utils   Glib Utils
+#	\defgroup	pkg_py_laldetchar_triggers_plot_utils   Plotting Utils
 #@}

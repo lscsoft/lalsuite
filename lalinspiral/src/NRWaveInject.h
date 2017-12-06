@@ -41,8 +41,7 @@ extern "C" {
 #endif
 
 /**
- * \defgroup NRWaveInject_h Header NRWaveInject.h
- * \ingroup lalinspiral_inject
+ * \addtogroup NRWaveInject_h
  * \author S.Fairhurst, B. Krishnan, L.Santamaria
  *
  * \brief Module for generating h(t) from Numrel waveforms
@@ -73,7 +72,7 @@ extern "C" {
 #define NINJA_MAX_MODE 5
 
 /** enum for list of numrel groups */
-typedef enum tagNumRelGroup {
+typedef enum{
   NINJA_GROUP_AEI = 0,
   NINJA_GROUP_CIT,
   NINJA_GROUP_LSU,

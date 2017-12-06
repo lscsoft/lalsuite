@@ -17,12 +17,8 @@
 // MA  02111-1307  USA
 //
 
-///
-/// \defgroup SWIGLALFrameOmega_i Interface SWIGLALFrameOmega.i
-/// \ingroup lalframe_swig
-/// \brief SWIG code which must appear \e after the LALFrame headers.
-/// \author Karl Wette
-///
+// Header containing SWIG code which must appear *after* the LALFrame headers.
+// Author: Karl Wette
 
 // Local Variables:
 // mode: c

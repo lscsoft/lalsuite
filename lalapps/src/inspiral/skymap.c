@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <getopt.h>
 #include <math.h>
 #include <zlib.h>
 
@@ -8,7 +9,6 @@
 #endif
 
 #include <lal/LALConstants.h>
-#include <lal/LALgetopt.h>
 #include <lal/Skymap.h>
 
 #include <lal/LALFrStream.h>
@@ -105,7 +105,7 @@ int main(int argc, char** argv)
  
   while (1)
     {
-      static struct LALoption long_options[] =
+      static struct option long_options[] =
 	{
 	  {"h1-frame-file", required_argument, 0, 'h'},
 	  {"l1-frame-file", required_argument, 0, 'l'},
@@ -127,62 +127,62 @@ int main(int argc, char** argv)
 	  {0, 0, 0, 0}
 	};
       int option_index = 0;
-      c = LALgetopt_long_only(argc, argv, "h:l:v:i:o:a:d:t:s:r:q:e:f:j:k:m:n:", long_options, &option_index);
+      c = getopt_long_only(argc, argv, "h:l:v:i:o:a:d:t:s:r:q:e:f:j:k:m:n:", long_options, &option_index);
       if (c == -1)
 	break;
       
       switch (c)
         {
 	case 'h':
-	  frame_file[LAL_LHO_4K_DETECTOR] = LALoptarg;
+	  frame_file[LAL_LHO_4K_DETECTOR] = optarg;
 	  break;
 	case 'l':
-	  frame_file[LAL_LLO_4K_DETECTOR] = LALoptarg;
+	  frame_file[LAL_LLO_4K_DETECTOR] = optarg;
 	  break;
 	case 'v':
-	  frame_file[LAL_VIRGO_DETECTOR] = LALoptarg;
+	  frame_file[LAL_VIRGO_DETECTOR] = optarg;
 	  break;
 	case 'i':
-	  frame_file[LAL_LHO_2K_DETECTOR] = LALoptarg;
+	  frame_file[LAL_LHO_2K_DETECTOR] = optarg;
 	  break;              
 	case 'o':
-	  output_file = LALoptarg;
+	  output_file = optarg;
 	  break;
 	case 'a':
-	  ra_res = atoi(LALoptarg);
+	  ra_res = atoi(optarg);
 	  break;
 	case 'd':
-	  dec_res = atoi(LALoptarg);
+	  dec_res = atoi(optarg);
 	  break;
 	case 't':
-	  xml_file[LAL_LHO_4K_DETECTOR] = LALoptarg;
+	  xml_file[LAL_LHO_4K_DETECTOR] = optarg;
 	  break;
 	case 's':
-	  xml_file[LAL_LLO_4K_DETECTOR] = LALoptarg;
+	  xml_file[LAL_LLO_4K_DETECTOR] = optarg;
 	  break;
 	case 'r':
-	  xml_file[LAL_VIRGO_DETECTOR] = LALoptarg;
+	  xml_file[LAL_VIRGO_DETECTOR] = optarg;
 	  break;
 	case 'q':
-	  xml_file[LAL_LHO_2K_DETECTOR] = LALoptarg;
+	  xml_file[LAL_LHO_2K_DETECTOR] = optarg;
 	  break;
 	case 'j':
-	  channel_name[LAL_LHO_4K_DETECTOR] = LALoptarg;
+	  channel_name[LAL_LHO_4K_DETECTOR] = optarg;
 	  break;
 	case 'k':
-	  channel_name[LAL_LLO_4K_DETECTOR] = LALoptarg;
+	  channel_name[LAL_LLO_4K_DETECTOR] = optarg;
 	  break;
 	case 'm':
-	  channel_name[LAL_VIRGO_DETECTOR] = LALoptarg;
+	  channel_name[LAL_VIRGO_DETECTOR] = optarg;
 	  break;
 	case 'n':
-	  channel_name[LAL_LHO_2K_DETECTOR] = LALoptarg;
+	  channel_name[LAL_LHO_2K_DETECTOR] = optarg;
 	  break;
 	case 'e':
-	  event_id = LALoptarg;
+	  event_id = optarg;
 	  break;
 	case 'f':
-	  frequency = atoi(LALoptarg);
+	  frequency = atoi(optarg);
 	  break;
 	default:
 	  fprintf(stderr, "unknown error while parsing options\n");
@@ -190,12 +190,12 @@ int main(int argc, char** argv)
         }// end switch
     }// end while
   
-  if (LALoptind < argc)
+  if (optind < argc)
     {
       fprintf(stderr, "error: extraneous command line argument ");
-      while (LALoptind < argc)
+      while (optind < argc)
         {
-	  fprintf(stderr, "%s\n", argv[LALoptind++]);
+	  fprintf(stderr, "%s\n", argv[optind++]);
         }
       exit(1);
     }// end if
@@ -401,7 +401,7 @@ void load_metadata(NetworkProperties* network , int slot)
 	  exit(1);
         }
       network->wSw[slot] = a->sigmasq;
-      greenwich = fmod(XLALGreenwichMeanSiderealTime(&(a->end)), LAL_TWOPI);
+      greenwich = fmod(XLALGreenwichMeanSiderealTime(&(a->end_time)), LAL_TWOPI);
     }//end file if
 }// end load_metadata
 

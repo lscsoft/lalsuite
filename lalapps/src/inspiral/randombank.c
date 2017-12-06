@@ -31,6 +31,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -42,7 +44,6 @@
 #include <processtable.h>
 
 #include <lal/LALConfig.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
@@ -128,8 +129,8 @@ int main ( int argc, char *argv[] )
   proctable.processTable = (ProcessTable *)
     calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
-      lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentId,
+      lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0);
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
     calloc( 1, sizeof(ProcessParamsTable) );
 
@@ -396,8 +397,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 {
-  /* LALgetopt arguments */
-  struct LALoption long_options[] =
+  /* getopt arguments */
+  struct option long_options[] =
   {
     /* these options set a flag */
     {"verbose",                 no_argument,       &vrbflg,           1 },
@@ -427,11 +428,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
   while ( 1 )
   {
-    /* LALgetopt_long stores long option here */
+    /* getopt_long stores long option here */
     int option_index = 0;
-    size_t LALoptarg_len;
+    size_t optarg_len;
 
-    c = LALgetopt_long_only( argc, argv, "hs:a:b:i:A:B:K:J:Z:",
+    c = getopt_long_only( argc, argv, "hs:a:b:i:A:B:K:J:Z:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -451,7 +452,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         else
         {
           fprintf( stderr, "error parsing option %s with argument %s\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
         break;
@@ -463,9 +464,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'Z':
         /* create storage for the usertag */
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        userTag = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR) );
-        memcpy( userTag, LALoptarg, LALoptarg_len );
+        optarg_len = strlen( optarg ) + 1;
+        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( userTag, optarg, optarg_len );
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
@@ -474,11 +475,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-            LALoptarg );
+            optarg );
         break;
 
       case 'A':
-        minMass = (REAL4) atof( LALoptarg );
+        minMass = (REAL4) atof( optarg );
         if ( minMass <= 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
@@ -491,7 +492,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'B':
-        maxMass = (REAL4) atof( LALoptarg );
+        maxMass = (REAL4) atof( optarg );
         if ( maxMass <= 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
@@ -504,21 +505,21 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'J':
-        if ( ! strcmp( "urandom", LALoptarg ) )
+        if ( ! strcmp( "urandom", optarg ) )
         {
           randSeedType = urandom;
-          ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
         else
         {
           randSeedType = user;
-          randomSeed = (INT4) atoi( LALoptarg );
+          randomSeed = (INT4) atoi( optarg );
           ADD_PROCESS_PARAM( "int", "%d", randomSeed );
         }
         break;
 
       case 'K':
-        numTmplts = (INT4) atoi( LALoptarg );
+        numTmplts = (INT4) atoi( optarg );
         if ( numTmplts < 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -532,7 +533,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'a':
         {
-          long int gstartt = atol( LALoptarg );
+          long int gstartt = atol( optarg );
           if ( gstartt < 441417609 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
@@ -550,7 +551,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'b':
         {
-          long int gendt = atol( LALoptarg );
+          long int gendt = atol( optarg );
           if ( gendt < 441417609 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
@@ -567,7 +568,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'i':
-        fLow = (REAL4) atof( LALoptarg );
+        fLow = (REAL4) atof( optarg );
         if ( fLow < 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
@@ -591,12 +592,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     }
   }
 
-  if ( LALoptind < argc )
+  if ( optind < argc )
   {
     fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( LALoptind < argc )
+    while ( optind < argc )
     {
-      fprintf ( stderr, "%s\n", argv[LALoptind++] );
+      fprintf ( stderr, "%s\n", argv[optind++] );
     }
     exit( 1 );
   }

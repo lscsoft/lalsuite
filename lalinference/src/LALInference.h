@@ -27,7 +27,7 @@
 
 /**
  * \defgroup LALInference_h Header LALInference.h
- * \ingroup lalinference_general
+ * \ingroup pkg_LALInference
  * \brief Main header file for LALInference common routines and structures
  *
  * LALInference is a Bayesian analysis toolkit for use with LAL. It contains
@@ -44,10 +44,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_spline.h>
 
-#define VARNAME_MAX 320
+#define VARNAME_MAX 128
 #define VARVALSTRINGSIZE_MAX 128
 
 #include <lal/LALStdlib.h>
@@ -59,11 +57,9 @@
 #include <lal/FindChirp.h>
 #include <lal/Window.h>
 #include <lal/LALString.h>
-#include <lal/StringInput.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimInspiralWaveformCache.h>
-#include <lal/LALHashTbl.h>
-
+#include <lal/LALSimBurstWaveformCache.h>
 #include <lal/SFTutils.h>
 #include <lal/SFTfileIO.h>
 #include <lal/LALDetectors.h>
@@ -86,18 +82,27 @@
 #include <gsl/gsl_statistics.h>
 #include <gsl/gsl_complex_math.h>
 #include <sys/time.h>
-
-/*LIB imports*/
-#include <lal/LALInferenceBurstRoutines.h>
-
-#define LALINFERENCE_HASHTABLE_SIZE 256 /* Max entries in hash table */
+//#include <fft.h>
 
 //...other includes
 
 struct tagLALInferenceRunState;
-struct tagLALInferenceThreadState;
 struct tagLALInferenceIFOData;
 struct tagLALInferenceModel;
+
+struct stft_data
+{
+  //complex double **complex_data;
+  double **mag_data;
+  double *freqs;
+  int freq_N;
+  double *times;
+  int times_N;
+  double trig_time;
+  double inj_dist_kpc;
+  double *inj_hplus;
+  double *inj_hcross;
+};
 
 /*Data storage type definitions*/
 
@@ -105,19 +110,17 @@ struct tagLALInferenceModel;
  * An enumerated type for denoting the type of a variable. Several LAL
  * types are supported as well as others.
  */
-typedef enum tagLALInferenceVariableType {
+typedef enum {
   LALINFERENCE_INT4_t,
   LALINFERENCE_INT8_t,
   LALINFERENCE_UINT4_t,
-  LALINFERENCE_REAL4_t,
-  LALINFERENCE_REAL8_t,
-  LALINFERENCE_COMPLEX8_t,
-  LALINFERENCE_COMPLEX16_t,
+  LALINFERENCE_REAL4_t, 
+  LALINFERENCE_REAL8_t, 
+  LALINFERENCE_COMPLEX8_t, 
+  LALINFERENCE_COMPLEX16_t, 
   LALINFERENCE_gslMatrix_t,
   LALINFERENCE_REAL8Vector_t,
-  LALINFERENCE_INT4Vector_t,
   LALINFERENCE_UINT4Vector_t,
-  LALINFERENCE_COMPLEX16Vector_t,
   LALINFERENCE_string_t,
   LALINFERENCE_MCMCrunphase_ptr_t,
   LALINFERENCE_void_ptr_t
@@ -128,14 +131,14 @@ typedef enum tagLALInferenceVariableType {
  * This information is used by the sampling routines when deciding
  * what to vary in a proposal, etc.
  */
-typedef enum tagLALInferenceParamVaryType {
+typedef enum {
 	LALINFERENCE_PARAM_LINEAR,   /** A parameter that simply has a maximum and a minimum */
 	LALINFERENCE_PARAM_CIRCULAR, /** A parameter that is cyclic, such as an angle between 0 and 2pi */
 	LALINFERENCE_PARAM_FIXED,    /** A parameter that never changes, functions should respect this */
 	LALINFERENCE_PARAM_OUTPUT    /** A parameter changed by an inner code and passed out */
 } LALInferenceParamVaryType;
 
-extern size_t LALInferenceTypeSize[15];
+extern size_t LALInferenceTypeSize[14];
 
 /**
  * The LALInferenceVariableItem list node structure
@@ -163,7 +166,6 @@ tagVariableItem
   struct tagVariableItem		*next;
 } LALInferenceVariableItem;
 
-
 /**
  * The LALInferenceVariables structure to contain a set of parameters
  * Implemented as a linked list of LALInferenceVariableItems.
@@ -174,14 +176,13 @@ tagLALInferenceVariables
 {
   LALInferenceVariableItem	*head;
   INT4 				dimension;
-  LALHashTbl        *hash_table;
 } LALInferenceVariables;
 
-/**
+/** 
  * Phase of MCMC run (depending on burn-in status, different actions
  * are performed during the run, and this tag controls the activity).
  */
-typedef enum tagLALInferenceMCMCRunPhase {
+typedef enum {
 	LALINFERENCE_ONLY_PT,          /** Run only parallel tempers. */
 	LALINFERENCE_TEMP_PT,          /** In the parallel tempering phase of an annealed run */
 	LALINFERENCE_ANNEALING,        /** In the annealing phase of an annealed run */
@@ -220,9 +221,8 @@ INT4 LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables
  */
 INT4 LALInferenceFprintParameterNonFixedHeadersWithSuffix(FILE *out, LALInferenceVariables *params, const char *suffix);
 
-/** Prints a variable item to a string. Print at most N characters. Returns the number of characters actually required
- * to store the output (can be more or less than N) */
-UINT4 LALInferencePrintNVariableItem(char *out, UINT4 N, const LALInferenceVariableItem *const ptr);
+/** Prints a variable item to a string (must be pre-allocated!) */
+void LALInferencePrintVariableItem(char *out, LALInferenceVariableItem *ptr);
 
 /**
  * Return a pointer to the memory the variable \c vars is stored in specified by \c name
@@ -236,10 +236,6 @@ INT4 LALInferenceGetVariableDimension(LALInferenceVariables *vars);
 
 /** Get number of dimensions in \c vars which are not fixed to a certain value */
 INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars);
-
-/** Get number of dimensions in \c vars which are not fixed to a certain value,
- *    with a flag for skipping counting vectors */
-INT4 LALInferenceGetVariableDimensionNonFixedChooseVectors(LALInferenceVariables *vars, INT4 count_vectors);
 
 /**
  * Get the LALInferenceVariableType of the \c idx -th item in the \c vars
@@ -273,7 +269,7 @@ char *LALInferenceGetVariableName(LALInferenceVariables *vars, int idx);
  * Pass a void * in \c value to the value you wish to set,
  * i.e. LALInferenceSetVariable(vars, "mu", (void *)&mu);
  */
-void LALInferenceSetVariable(LALInferenceVariables * vars, const char * name, const void * value);
+void LALInferenceSetVariable(LALInferenceVariables * vars, const char * name, void * value);
 
 /**
  * Add a variable named \c name to \c vars with initial value referenced by \c value
@@ -284,7 +280,7 @@ void LALInferenceSetVariable(LALInferenceVariables * vars, const char * name, co
  * \param value UNDOCUMENTED
  * If the variable already exists it will be over-written UNLESS IT HAS A CONFLICTING TYPE
  */
-void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, const void * value,
+void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, void * value, 
 	LALInferenceVariableType type, LALInferenceParamVaryType vary);
 
 /**
@@ -304,7 +300,7 @@ int  LALInferenceCheckVariable(LALInferenceVariables *vars,const char *name);
  * returns 1 or 0
  */
 int LALInferenceCheckVariableNonFixed(LALInferenceVariables *vars, const char *name);
-int LALInferenceCheckVariableToPrint(LALInferenceVariables *vars, const char *name);
+
 /**
  * Delete the variables in this structure.
  * Does not free the LALInferenceVariables itself
@@ -314,9 +310,6 @@ void LALInferenceClearVariables(LALInferenceVariables *vars);
 
 /** Deep copy the variables from one to another LALInferenceVariables structure */
 void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariables *target);
-
-/*  Copy REAL8s from "origin" to "target" if they weren't set on the command line */
-void LALInferenceCopyUnsetREAL8Variables(LALInferenceVariables *origin, LALInferenceVariables *target, ProcessParamsTable *commandLine);
 
 /** Print variables to stdout */
 void LALInferencePrintVariables(LALInferenceVariables *var);
@@ -332,9 +325,9 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
     \f$\delta \phi\f$, the measured waveform is related to the
     physical waveform via
 
-    \f[
+    \f\[
       h_\mathrm{meas} = h_\mathrm{phys} \left(1 + \delta A \right) \frac{2 + i \delta \phi}{2 - i \delta \phi}
-    \f]
+    \f\]
 
     The phase factor takes the form above rather than the more obvious
     \f$\exp(i \delta \phi)\f$ or \f$1 + \delta \phi\f$ because it is
@@ -352,26 +345,12 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
     given values at the given frequencies.
 
 */
-int LALInferenceSplineCalibrationFactor(REAL8Vector *freqs,
-					REAL8Vector *deltaAmps,
-					REAL8Vector *deltaPhases,
+int LALInferenceSplineCalibrationFactor(REAL8Vector *freqs, 
+					REAL8Vector *deltaAmps, 
+					REAL8Vector *deltaPhases, 
 					COMPLEX16FrequencySeries *calFactor);
 
- /** Modified version of LALInferenceSplineCalibrationFactor to compute the 
- *	calibration factors for the specific frequency nodes used for 
- *	Reduced Order Quadrature likelihoods.
- */
-
-int LALInferenceSplineCalibrationFactorROQ(REAL8Vector *logfreqs,
-					REAL8Vector *deltaAmps,
-					REAL8Vector *deltaPhases,
-					REAL8Sequence *freqNodesLin,
-					COMPLEX16Sequence **calFactorROQLin,
-					REAL8Sequence *freqNodesQuad,
-					COMPLEX16Sequence **calFactorROQQuad);
-
-
-//Wrapper for template computation
+//Wrapper for template computation 
 //(relies on LAL libraries for implementation) <- could be a #DEFINE ?
 //typedef void (LALTemplateFunction) (LALInferenceVariables *currentParams, struct tagLALInferenceIFOData *data); //Parameter Set is modelParams of LALInferenceIFOData
 /**
@@ -392,9 +371,22 @@ typedef void (*LALInferenceTemplateFunction) (struct tagLALInferenceModel *model
  * distribution functions with various probabilities to allow for multiple
  * jump proposal distributions
  */
-typedef REAL8 (*LALInferenceProposalFunction) (struct tagLALInferenceThreadState *thread,
+typedef REAL8 (*LALInferenceProposalFunction) (struct tagLALInferenceRunState *runState,
 	LALInferenceVariables *currentParams,
 	LALInferenceVariables *proposedParams);
+
+/**
+ * Jump proposal statistics
+ * Stores the weight given for a proposal function, the number of times
+ * it has been proposed, and the number of times it has been accepted
+ */
+typedef struct
+tagLALInferenceProposalStatistics
+{
+  UINT4   weight;     // Weight of proposal function in cycle
+  UINT4   proposed;   // Number of times proposal has been called
+  UINT4   accepted;   // Number of times a proposal from this function has been accepted
+} LALInferenceProposalStatistics;
 
 /**
  * Type declaration for prior function which returns p(\c params)
@@ -453,23 +445,22 @@ typedef struct tagLALInferenceModel
   REAL8*                       ifo_SNRs; /** Array of single-IFO SNRs at *params* */
 
   REAL8                        fLow;   /** Start frequency for waveform generation */
-  REAL8                        fHigh;   /** End frequency for waveform generation */
   REAL8                        deltaT, deltaF;   /** Sampling rate information */
   INT4                         freqLength; /* Length of freq-domain buffer */
 
   REAL8TimeSeries             *timehPlus, *timehCross; /** Time series model buffers */
   COMPLEX16FrequencySeries    *freqhPlus, *freqhCross; /** Freq series model buffers */
-  COMPLEX16FrequencySeries    **freqhs; /** Projected freq series model buffers */
 
-  LALDict *LALpars;
+  LALSimInspiralWaveformFlags *waveFlags;   /** A pointer to the WF flag. Will store here tide and spin order, as well as frame */
   LALSimInspiralWaveformCache *waveformCache;   /** Waveform cache */
-  LALSimBurstWaveformCache    *burstWaveformCache;   /** Burst Waveform cache for LIB*/
+  LALSimBurstWaveformCache *burstWaveformCache;   /** Waveform cache */
+
   REAL8FFTPlan                *timeToFreqFFTPlan, *freqToTimeFFTPlan; /** Pre-calculated FFT plans for forward and reverse FFTs */
   REAL8Window                 *window;        /** A window */
-  REAL8                        padding; /** The padding of the above window */
+  REAL8                       padding; /** Padding used for the window */
   struct tagLALInferenceROQModel *roq; /** ROQ data */
-  int roq_flag;
-
+  struct tagLALInferencePCsModel *pcs; /** Principle Component data */
+  struct stft_data *spechPlus, *spechCross;
 } LALInferenceModel;
 
 
@@ -481,10 +472,10 @@ typedef struct tagLALInferenceModel
 typedef LALInferenceModel* (*LALInferenceInitModelFunction) (struct tagLALInferenceRunState *runState);
 
 
-//Likelihood calculator
-//Should take care to perform expensive evaluation of h+ and hx
-//only once if possible, unless necessary because different IFOs
-//have different data lengths or sampling rates
+//Likelihood calculator 
+//Should take care to perform expensive evaluation of h+ and hx 
+//only once if possible, unless necessary because different IFOs 
+//have different data lengths or sampling rates 
 /**
  * Type declaration for likelihood function
  * Computes p(\c data | \c currentParams, \c templt )
@@ -496,9 +487,6 @@ typedef REAL8 (*LALInferenceLikelihoodFunction) (LALInferenceVariables *currentP
 /** Perform one step of an algorithm, replaces \c runState ->currentParams */
 typedef INT4 (*LALInferenceEvolveOneStepFunction) (struct tagLALInferenceRunState *runState);
 
-/** Propose a swap between chain locations */
-typedef void (*LALInferenceSwapRoutine) (struct tagLALInferenceRunState *runState, FILE *);
-
 /**
  * Type declaration for an algorithm function which is called by the driver code
  * The user must initialise runState before use. The Algorithm manipulates
@@ -507,93 +495,14 @@ typedef void (*LALInferenceSwapRoutine) (struct tagLALInferenceRunState *runStat
 typedef void (*LALInferenceAlgorithm) (struct tagLALInferenceRunState *runState);
 
 /** Type declaration for output logging function, can be user-declared */
-typedef void (*LALInferenceLogFunction) (LALInferenceVariables *algorithmParams, LALInferenceVariables *vars);
-
-
-/**
- * Structure for holding a LALInference proposal, along with name and stats.
- */
-typedef struct
-tagLALInferenceProposal
-{
-    LALInferenceProposalFunction func;  /* The actual proposal function */
-    char name[VARNAME_MAX]; /* The name of the proposal.  This is used for printing stats */
-    INT4   weight;     // Weight of proposal function in cycle
-    INT4   proposed;   // Number of times proposal has been called
-    INT4   accepted;   // Number of times a proposal from this function has been accepted
-    LALInferenceVariables *args; /** Local storage for arguments needed by the proposal (e.g. number of detectors) */
-} LALInferenceProposal;
-
-/**
- * Structure for holding a proposal cycle
- */
-typedef struct
-tagLALInferenceProposalCycle
-{
-    LALInferenceProposal **proposals;  /** Array of proposals (one per proposal function) */
-    INT4 *order; /* Array of proposal orders, with each element giving the index of the funcion in *proposals* */
-    INT4 length; /** Length of cycle */
-    INT4 nProposals; /* The number of unique proposals in the cycle */
-    INT4 counter; /** Counter for cycling through proposals */
-    char last_proposal_name[VARNAME_MAX]; /** Name of current proposal */
-    LALInferenceVariables *proposalArgs; /** Storage for arguments needed by proposal functions (e.g. number of detectors) */
-} LALInferenceProposalCycle;
-
-/**
- * Structure containing chain-specific variables
- */
-typedef struct
-tagLALInferenceThreadState
-{
-    INT4 id; /** Unique integer ID of this thread.  Handy of I/O. */
-    char name[VARNAME_MAX];
-    INT4 step; /** Step counter for this thread.  Negative numbers indicate burnin*/
-    INT4 effective_sample_size; /** Step counter for this thread.  Negative numbers indicate burnin*/
-    LALInferenceProposalFunction proposal; /** The proposal cycle */
-    LALInferenceProposalCycle *cycle; /** Cycle of proposals to call */
-    LALInferenceModel *model; /** Stucture containing model buffers and parameters */
-    REAL8 currentPropDensity; /** Array containing multiple proposal densities */
-    REAL8 temperature;
-    LALInferenceVariables *proposalArgs, /** Arguments needed by proposals */
-                          *algorithmParams, /** Stope things such as output arrays */
-                          *priorArgs; /** Prior boundaries, etc.  This is
-                                          stored at the thread level because proposals
-                                          often need to know about prior boundaries */
-    LALInferenceVariables *currentParams, /** The current parameters */
-                          *preProposalParams, /** Current location going into jump proposal */
-                          *proposedParams; /** Parameters proposed */
-    LALInferenceVariables **differentialPoints; /** Array of points for differential evolution */
-    size_t differentialPointsLength; /** Length of the current differential points stored in
-                                         differentialPoints.  This should be removed can be given
-                                         as an algorithmParams entry */
-    size_t differentialPointsSize; /** Size of the differentialPoints memory block
-                                       (must be >= length of differential points).
-                                        Can also be removed. */
-    size_t differentialPointsSkip; /** When the DE buffer gets too long, start storing
-                                       only every n-th output point; this counter stores n */
-    REAL8 *currentIFOSNRs; /** Array storing single-IFO SNRs of current sample */
-    REAL8 *currentIFOLikelihoods; /** Array storing single-IFO likelihoods of current sample */
-    REAL8 currentSNR; /** Array storing network SNR of current sample */
-    REAL8 nullLikelihood;
-    REAL8 currentLikelihood; /** This should be removed, can be given as an algorithmParams or proposalParams entry */
-    REAL8 currentPrior; /** This should be removed, can be given as an algorithmParams entry */
-    INT4 accepted;
-    INT4 acceptanceCount;
-    gsl_rng *GSLrandom;
-    REAL8 creation_time;
-    struct tagLALInferenceRunState *parent; /** Pointer to the parent RunState of the thread.  e.g., Useful for getting data */
-    INT4 *temp_swap_accepts;
-    INT4 temp_swap_window;
-    INT4 temp_swap_counter;
-} LALInferenceThreadState;
-
+typedef void (*LALInferenceLogFunction) (struct tagLALInferenceRunState *runState, LALInferenceVariables *vars);
 
 /**
  * Structure containing inference run state
  * This includes pointers to the function types required to run
  * the algorithm, and data structures as required
  */
-typedef struct
+typedef struct 
 tagLALInferenceRunState
 {
   ProcessParamsTable        *commandLine; /** A ProcessParamsTable with command line arguments */
@@ -603,19 +512,46 @@ tagLALInferenceRunState
   LALInferencePriorFunction          prior; /** The prior for the parameters */
   LALInferenceCubeToPriorFunction    CubeToPrior; /** MultiNest prior for the parameters */
   LALInferenceLikelihoodFunction     likelihood; /** The likelihood function */
+  LALInferenceProposalFunction       proposal; /** The proposal function */
   LALInferenceLogFunction            logsample; /** Log sample, i.e. to disk */
+  LALInferenceTemplateFunction templt; /** The template generation function */
+  LALInferenceModel        *model; /** Stucture containing model buffers and parameters */
+  LALInferenceModel        **modelArray; /** Array containing multiple models */
   struct tagLALInferenceIFOData      *data; /** The data from the interferometers */
-  LALInferenceVariables *proposalArgs; /** Common arguments needed by proposals, to be copied to thread->cycle */
-  LALInferenceVariables              *priorArgs,     /** Any special arguments for the prior function */
-    *algorithmParams;                                /** Parameters which control the running of the algorithm*/
+  LALInferenceVariables **currentParamArray;         /** Array containing multiple currentParams */
+  REAL8 *currentPropDensityArray;         /** Array containing multiple proposal densities */
+  LALInferenceVariables              *currentParams, /** The current parameters */
+    *priorArgs,                                      /** Any special arguments for the prior function */
+    *proposalArgs,                                   /** Any special arguments for the proposal function */
+    *proposalStats,                                  /** Set of structs containing statistics for each proposal*/
+    *algorithmParams,                                /** Parameters which control the running of the algorithm*/
+    *preProposalParams,                              /** Current location going into jump proposal */
+    *proposedParams;                                 /** Parameters proposed */
   LALInferenceVariables				**livePoints; /** Array of live points for Nested Sampling */
-  LALInferenceThreadState          **threads; /** Array of chains for this run */
-  INT4 nthreads; /** Number of threads stored in ``threads``. */
-  LALInferenceSwapRoutine  parallelSwap;
-  gsl_rng *GSLrandom;
-  char *outFileName; /** Name for thread's output file */
-  char *resumeOutFileName; /** Name for thread's resume file */
-  char runID[VARNAME_MAX];
+  LALInferenceVariables **differentialPoints;        /** Array of points for differential evolution */
+  size_t differentialPointsLength;                   /** Length of the current differential points stored in 
+                                                         differentialPoints.  This should be removed can be given 
+                                                         as an algorithmParams entry */
+  size_t differentialPointsSize;                     /** Size of the differentialPoints memory block 
+                                                         (must be >= length of differential points).  
+                                                         Can also be removed. */
+  size_t differentialPointsSkip;                     /** When the DE
+							 buffer gets
+							 too long,
+							 start storing
+							 only every
+							 n-th output
+							 point; this
+							 counter
+							 stores n */
+  REAL8*        currentIFOSNRs; /** Array storing single-IFO SNRs of current sample */
+  REAL8*        currentIFOLikelihoods; /** Array storing single-IFO likelihoods of current sample */
+  REAL8         currentSNR; /** Array storing network SNR of current sample */
+  REAL8			currentLikelihood;  /** This should be removed, can be given as an algorithmParams or proposalParams entry */
+  REAL8                 currentPrior;       /** This should be removed, can be given as an algorithmParams entry */
+  gsl_rng               *GSLrandom;         /** A pointer to a GSL random number generator */
+  REAL8                  *currentPriors;
+  REAL8                  *currentLikelihoods;
 } LALInferenceRunState;
 
 
@@ -631,14 +567,13 @@ tagLALInferenceIFOData
   char                       name[DETNAMELEN]; /** Detector name */
   REAL8TimeSeries           *timeData,         /** A time series from the detector */
                             *whiteTimeData, *windowedTimeData; /** white is not really white, but over-white. */
-  REAL8TimeSeries           *varTimeData;    /** A time series of the data noise variance */
   /* Stores the log(L) for the model in presence of data.  These were
      added to allow for individual-detector log(L) output.  The
      convention is that loglikelihood always stores the log(L) for the
      model in freqModel... or timeModel....  When a jump is accepted,
      that value is copied into acceptedloglikelihood, which is the
      quantity that is actually output in the output files. */
-  REAL8                      nullloglikelihood;
+  REAL8                      nullloglikelihood; 
   REAL8                      fPlus, fCross; /** Detector responses */
   REAL8                      timeshift;     /** What is this? */
   COMPLEX16FrequencySeries  *freqData,      /** Buffer for frequency domain data */
@@ -646,104 +581,90 @@ tagLALInferenceIFOData
   COMPLEX16TimeSeries       *compTimeData;  /** Complex time series data buffers */
   LALInferenceVariables     *dataParams;    /* Optional data parameters */
   REAL8FrequencySeries      *oneSidedNoisePowerSpectrum;  /** one-sided Noise Power Spectrum */
+  REAL8FrequencySeries      *PSD_SMEE;
   REAL8FrequencySeries      *noiseASD;  /** (one-sided Noise Power Spectrum)^{-1/2} */
 //  REAL8TimeSeries           *timeDomainNoiseWeights; /** Roughly, InvFFT(1/Noise PSD). */
   REAL8Window               *window;        /** A window */
-  REAL8                      padding; /** Padding for the above window */
+  REAL8 padding;
   REAL8FFTPlan              *timeToFreqFFTPlan, *freqToTimeFFTPlan; /** Pre-calculated FFT plans for forward and reverse FFTs */
-  REAL8FFTPlan              *margFFTPlan; /** FFT plan needed for time/time-and-phase marginalisation */
+  COMPLEX16FFTPlan          *margComplexFFTPlan; /** FFT plan needed for time/time-and-phase marginalisation */
   REAL8                     fLow, fHigh;	/** integration limits for overlap integral in F-domain */
   LALDetector               *detector;          /** LALDetector structure for where this data came from */
   BarycenterInput           *bary;              /** Barycenter information */
   LIGOTimeGPS		    epoch;              /** The epoch of this observation (the time of the first sample) */
   REAL8                     SNR;                /** IF INJECTION ONLY, E(SNR) of the injection in the detector.*/
   REAL8                     STDOF;              /** Degrees of freedom for IFO to be used in Student-T Likelihood. */
-  UINT4                     likeli_counter; /** counts how many time the likelihood has been calculated */
-  UINT4                     templa_counter; /** counts how many time the template has been calculated */
   struct tagLALInferenceROQData *roq; /** ROQ data */
-
   struct tagLALInferenceIFOData      *next;     /** A pointer to the next set of data for linked list */
+  struct stft_data *specData;
+
 } LALInferenceIFOData;
 
+/**
+ * Structure to contain data-related Reduced Order Quadrature quantities
+ */
 typedef struct
 tagLALInferenceROQData
 {
-  COMPLEX16 *weightsLinear; /** weights for <d|h>: NOTE: needs to be stored from data read from command line */
-  REAL8 *weightsQuadratic; /** weights for calculating <h|h>*/
-  REAL8 time_weights_width;
-  REAL8 time_step_size;
-  int n_time_steps;
-  FILE *weightsFileLinear;
-  FILE *weightsFileQuadratic;
-
-
-  struct tagLALInferenceROQSplineWeightsLinear *weights_linear;
-
- 
-  /* Deprecated functions that should be removed at some point */ 
   gsl_matrix_complex *weights; /** weights for the likelihood: NOTE: needs to be stored from data read from command line */
-  gsl_matrix_complex *mmweights; /** weights for calculating <h|h> if not using analytical formula */
   double int_f_7_over_3; /** /int_{fmin}^{fmax} df f^(-7/3)/psd...for <h|h> part of the likelihood */
-  /* end deprecated function */
-
+  REAL8 time_weights_width;
 } LALInferenceROQData;
 
-/**
- *  *  * Structure to contain spline of ROQ weights as a function of tc
- *   *   */
 
-typedef struct
-tagLALInferenceROQSplineWeightsLinear
-{
-  
- 
-  gsl_spline *spline_real_weight_linear;
-  gsl_spline *spline_imag_weight_linear; 
-  gsl_interp_accel *acc_real_weight_linear;
-  gsl_interp_accel *acc_imag_weight_linear;
-
-} LALInferenceROQSplineWeights;
 /**
- *  * Structure to contain model-related Reduced Order Quadrature quantities
- *   */
+ * Structure to contain model-related Reduced Order Quadrature quantities
+ */
 typedef struct
 tagLALInferenceROQModel
 {
-  COMPLEX16FrequencySeries *hptildeLinear;
-  COMPLEX16FrequencySeries *hctildeLinear;
-  COMPLEX16FrequencySeries *hptildeQuadratic;
-  COMPLEX16FrequencySeries *hctildeQuadratic;
-
-  COMPLEX16Sequence *calFactorLinear;
-
-  COMPLEX16Sequence *calFactorQuadratic;
-
-  REAL8Sequence  * frequencyNodesLinear; /** empirical frequency nodes for the likelihood. NOTE: needs to be stored from data read from command line */
-  REAL8Sequence * frequencyNodesQuadratic;
-  REAL8 trigtime;
-  REAL8 ROQnullLikelihood;
-  
-  FILE *nodesFileLinear;
-  FILE *nodesFileQuadratic;
-   
-  /* Deprecated functions that should be removed at some point */
   gsl_vector_complex *hplus; /** waveform at frequency nodes. */
   gsl_vector_complex *hcross;
   gsl_vector_complex *hstrain;
   gsl_vector         *frequencyNodes; /** empirical frequency nodes for the likelihood. NOTE: needs to be stored from data read from command line */
   REAL8* amp_squared;
-  /* end Deprecated functions */
-
+  REAL8 trigtime;
 } LALInferenceROQModel;
 
 /**
- * Structure to contain data-related Reduced Order Quadrature quantities
+ * Structure to contain model-related principle component quantities
  */
-/* Initialize an empty thread, saving a timestamp for benchmarking */
-LALInferenceThreadState *LALInferenceInitThread(void);
+typedef struct
+tagLALInferencePCsModel
+{
+  INT4 nPCs;
+  INT4 nAmpPCs; /** Number of PCs to use */
+  INT4 nPhasePCs; /** Number of PCs to use */
+  const gsl_matrix_complex *pcs_plus;   /** Principle component matrix for complex H freqseries*/
+  const gsl_matrix_complex *pcs_cross;  /** Principle component matrix for complex H freqseries*/
+  const gsl_matrix_complex *td_pcs;  /** Principle component matrix for complex h timeseries*/
+  const gsl_matrix *amp_pcs;    /** Principle component matrix for td amplitudes */
+  const gsl_matrix *phase_pcs;  /** Principle component matrix for td phases*/
+} LALInferencePCsModel;
 
-/* Initialize a bunch of threads using LALInferenceInitThread */
-LALInferenceThreadState **LALInferenceInitThreads(INT4 nthreads);
+typedef struct
+tagLALInferenceSpecPCsModel
+{
+  INT4 nPCs;
+  INT4 nAmpPCs; /** Number of PCs to use */
+  INT4 nPhasePCs; /** Number of PCs to use */
+  const gsl_matrix *pcs_plus;   /** Principle component matrix for complex H freqseries*/
+  const gsl_matrix *pcs_cross;  /** Principle component matrix for complex H freqseries*/
+  const gsl_matrix_complex *td_pcs;  /** Principle component matrix for complex h timeseries*/
+  const gsl_matrix *amp_pcs;    /** Principle component matrix for td amplitudes */
+  const gsl_matrix *phase_pcs;  /** Principle component matrix for td phases*/
+} LALInferenceSpecPCsModel;
+
+/*typedef struct
+tagSpec_Data
+{
+  complex double **complex_data;
+  double **mag_data;
+  double *freqs;
+  int freq_N;
+  double *times;
+  int times_N;
+  }Spec_Data;*/
 
 /** Returns the element of the process params table with "name" */
 ProcessParamsTable *LALInferenceGetProcParamVal(ProcessParamsTable *procparams,const char *name);
@@ -784,11 +705,6 @@ LALInferenceVariableItem *LALInferenceGetItem(const LALInferenceVariables *vars,
  */
 LALInferenceVariableItem *LALInferenceGetItemNr(LALInferenceVariables *vars, int idx);
 
-/**
- * Pop the list node for "name". Returns a pointer to the node, which is removed from vars
- */
-LALInferenceVariableItem *LALInferencePopVariableItem(LALInferenceVariables *vars, const char *name);
-
 /** Output the sample to file *fp, in ASCII format */
 void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample);
 
@@ -796,7 +712,7 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample);
 void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample);
 
 /** Output spline calibration parameters */
-void LALInferencePrintSplineCalibration(FILE *fp, LALInferenceThreadState *thread);
+void LALInferencePrintSplineCalibration(FILE *fp, LALInferenceRunState *state);
 
 /** Read in the non-fixed parameters from the given file (position in
     the file must be arranged properly before calling this
@@ -825,10 +741,10 @@ void LALInferenceReadAsciiHeader(FILE *input, char params[][VARNAME_MAX], INT4 *
 REAL8 **LALInferenceSelectColsFromArray(REAL8 **inarray, INT4 nRows, INT4 nCols, INT4 nSelCols, INT4 *selCols);
 
 /** Output proposal statistics header to file *fp */
-int LALInferencePrintProposalStatsHeader(FILE *fp, LALInferenceProposalCycle *cycle);
+int LALInferencePrintProposalStatsHeader(FILE *fp,LALInferenceVariables *propStats);
 
 /** Output proposal statistics to file *fp */
-void LALInferencePrintProposalStats(FILE *fp, LALInferenceProposalCycle *cycle);
+void LALInferencePrintProposalStats(FILE *fp,LALInferenceVariables *propStats);
 
 /**
  * Reads one line from the given file and stores the values there into
@@ -841,8 +757,10 @@ void LALInferenceProcessParamLine(FILE *inp, char **headers, LALInferenceVariabl
 void LALInferenceSortVariablesByName(LALInferenceVariables *vars);
 
 /** LALInferenceVariable buffer to array and vica versa */
-INT4 LALInferenceThinnedBufferToArray(LALInferenceThreadState *thread, REAL8** DEarray, INT4 step);
-INT4 LALInferenceBufferToArray(LALInferenceThreadState *thread, REAL8** DEarray);
+INT4 LALInferenceThinnedBufferToArray(LALInferenceRunState *state, REAL8 **array, INT4 step);
+INT4 LALInferenceBufferToArray(LALInferenceRunState *state, REAL8 **array);
+
+void LALInferenceArrayToBuffer(LALInferenceRunState *state, REAL8 **array, INT4 nPoints);
 
 /** LALInference variables to an array, and vica versa */
 void LALInferenceCopyVariablesToArray(LALInferenceVariables *origin, REAL8 *target);
@@ -855,7 +773,7 @@ void LALInferenceCopyArrayToVariables(REAL8 *origin, LALInferenceVariables *targ
  * Caller is responsible for opening and closing file.
  * Variables are alphabetically sorted before being written
  */
-void LALInferenceLogSampleToFile(LALInferenceVariables *algorithmParams, LALInferenceVariables *vars);
+void LALInferenceLogSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars);
 
 /**
  * Append the sample to an array which can be later processed by the user.
@@ -865,7 +783,7 @@ void LALInferenceLogSampleToFile(LALInferenceVariables *algorithmParams, LALInfe
  * DOES NOT FREE ARRAY, user must clean up after use.
  * Also outputs sample to disk if possible using LALInferenceLogSampleToFile()
  */
-void LALInferenceLogSampleToArray(LALInferenceVariables *algorithmParams, LALInferenceVariables *vars);
+void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars);
 
 /** Convert from Mc, eta space to m1, m2 space (note m1 > m2).*/
 void LALInferenceMcEta2Masses(double mc, double eta, double *m1, double *m2);
@@ -1129,23 +1047,11 @@ REAL8Vector* LALInferenceGetREAL8VectorVariable(LALInferenceVariables * vars, co
 
 void LALInferenceSetREAL8VectorVariable(LALInferenceVariables* vars,const char* name,REAL8Vector* value);
 
-void LALInferenceAddCOMPLEX16VectorVariable(LALInferenceVariables * vars, const char * name, COMPLEX16Vector* value, LALInferenceParamVaryType vary);
-
-COMPLEX16Vector* LALInferenceGetCOMPLEX16VectorVariable(LALInferenceVariables * vars, const char * name);
-
-void LALInferenceSetCOMPLEX16VectorVariable(LALInferenceVariables* vars,const char* name,COMPLEX16Vector* value);
-
-void LALInferenceAddINT4VectorVariable(LALInferenceVariables * vars, const char * name, INT4Vector* value, LALInferenceParamVaryType vary);
-
 void LALInferenceAddUINT4VectorVariable(LALInferenceVariables * vars, const char * name, UINT4Vector* value, LALInferenceParamVaryType vary);
-
-INT4Vector* LALInferenceGetINT4VectorVariable(LALInferenceVariables * vars, const char * name);
 
 UINT4Vector* LALInferenceGetUINT4VectorVariable(LALInferenceVariables * vars, const char * name);
 
-void LALInferenceSetINT4VectorVariable(LALInferenceVariables* vars, const char* name, INT4Vector* value);
-
-void LALInferenceSetUINT4VectorVariable(LALInferenceVariables* vars, const char* name, UINT4Vector* value);
+void LALInferenceSetUINT4VectorVariable(LALInferenceVariables* vars,const char* name,UINT4Vector* value);
 
 void LALInferenceAddMCMCrunphase_ptrVariable(LALInferenceVariables * vars, const char * name, LALInferenceMCMCRunPhase* value, LALInferenceParamVaryType vary);
 
@@ -1153,38 +1059,36 @@ LALInferenceMCMCRunPhase* LALInferenceGetMCMCrunphase_ptrVariable(LALInferenceVa
 
 void LALInferenceSetMCMCrunphase_ptrVariable(LALInferenceVariables* vars,const char* name,LALInferenceMCMCRunPhase* value);
 
-#ifdef SWIG   /* SWIG interface directives */
-SWIGLAL(OWNS_THIS_STRING(const CHAR*, value));
-#endif
+void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * name, CHAR* value, LALInferenceParamVaryType vary);
 
-void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * name, const CHAR* value, LALInferenceParamVaryType vary);
+CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * name);
 
-const CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * name);
+void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name,CHAR* value);
 
-void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name, const CHAR* value);
+gsl_matrix_complex* get_complex_matrix_from_file(const char *file_name, int M, int N);
 
-#ifdef SWIG   /* SWIG interface directives */
-SWIGLAL_CLEAR(OWNS_THIS_STRING(const CHAR*, value));
-#endif
+gsl_matrix_complex* copy_npcs_from_complex_matrix(gsl_matrix_complex *input_matrix, int nPCs_max, int nPCs, int nrows, int ncols);
+
+gsl_matrix* get_matrix_from_file(const char *file_name, int M, int N);
+
+gsl_matrix* copy_npcs_from_matrix(gsl_matrix *input_matrix, int nPCs_max, int nPCs, int nrows, int ncols);
+
+float w(float n, float N);
+struct stft_data* spec(double data[], int N, int fft_N, int overlap, float fs);
+bool transform(double real[], double imag[], size_t n);
+bool inverse_transform(double real[], double imag[], size_t n);
+bool transform_radix2(double real[], double imag[], size_t n);
+bool transform_bluestein(double real[], double imag[], size_t n);
+bool convolve_real(const double x[], const double y[], double out[], size_t n);
+bool convolve_complex(const double xreal[], const double ximag[], const double yreal[], const double yimag[], double outreal[], double outimag[], size_t n);
+void circshift(double *in_array, int N, int shift);
+double RMS(double *in_array, int N);
+// static size_t reverse_bits(size_t x, int n);
 
 /**
  * Print spline calibration parameter names as tab-separated ASCII
  */
-void LALInferenceFprintSplineCalibrationHeader(FILE *output, LALInferenceThreadState *thread);
-
-/**
- * Conversion routines between Equatorial (RA,DEC) and detector-based coordinate systems, where
- * new "north pole" points along vector from det0 to det1.
- * theta - azimuth angle about vector joining det0 and det1
- * alpha - co-latitude (0,pi) relative to det0-det1 vector
- */
-void LALInferenceDetFrameToEquatorial(LALDetector *det0, LALDetector *det1,
-                                      REAL8 t0, REAL8 alpha, REAL8 theta,
-                                      REAL8 *tg, REAL8 *ra, REAL8 *dec);
-
-void LALInferenceEquatorialToDetFrame(LALDetector *det0, LALDetector *det1,
-                                 REAL8 tg, REAL8 ra, REAL8 dec,
-                                 REAL8 *t0, REAL8 *alpha, REAL8 *theta);
+void LALInferenceFprintSplineCalibrationHeader(FILE *out, LALInferenceRunState *state);
 
 /*@}*/
 

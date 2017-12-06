@@ -25,7 +25,7 @@
 #include <gsl/gsl_odeiv.h>
 
 #include <lal/LALSimInspiral.h>
-#include <lal/LALAdaptiveRungeKuttaIntegrator.h>
+#include <lal/LALAdaptiveRungeKutta4.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
 #include <lal/TimeSeries.h>
@@ -51,7 +51,7 @@
 #define LALSIMINSPIRAL_T1_ABSOLUTE_TOLERANCE 1.e-12
 #define LALSIMINSPIRAL_T1_RELATIVE_TOLERANCE 1.e-12
 
-/*
+/**
  * This structure contains the intrinsic parameters and post-newtonian
  * co-efficients for the denergy/dv and flux expansions.
  * These are computed by XLALSimInspiralTaylorT1Setup routine.
@@ -84,7 +84,7 @@ typedef REAL8 (SimInspiralTaylorT1Flux)(
 	expnCoeffsdEnergyFlux *ak
 );
 
-/*
+/**
  * This strucuture contains pointers to the functions for calculating
  * the post-newtonian terms at the desired order. They can be set by
  * XLALSimInspiralTaylorT1Setup by passing an appropriate PN order.
@@ -105,7 +105,7 @@ typedef struct
 	expnCoeffsTaylorT1 ak;
 }XLALSimInspiralTaylorT1PNEvolveOrbitParams;
 
-/*
+/**
  * This function is used in the call to the integrator.
  */
 static int 
@@ -118,7 +118,7 @@ XLALSimInspiralTaylorT1PNEvolveOrbitIntegrand(double UNUSED t, const double y[],
 }
 
 
-/*
+/**
  * This function is used in the call to the integrator to determine the stopping condition.
  */
 static int
@@ -131,7 +131,7 @@ XLALSimInspiralTaylorT1StoppingTest(double UNUSED t, const double y[], double UN
 }
 
 
-/*
+/**
  * Set up the expnCoeffsTaylorT1 and expnFuncTaylorT1 structures for
  * generating a TaylorT1 waveform and select the post-newtonian
  * functions corresponding to the desired order.
@@ -193,17 +193,23 @@ XLALSimInspiralTaylorT1Setup(
     {
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
-	    ak->akdEF.ETa6  = lambda1 * XLALSimInspiralPNEnergy_12PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralPNEnergy_12PNTidalCoeff(ak->chi2);
-            ak->akdEF.FTa12 = lambda1 * XLALSimInspiralPNFlux_12PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralPNFlux_12PNTidalCoeff(ak->chi2);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
+            ak->akdEF.ETa6  = XLALSimInspiralPNEnergy_12PNTidalCoeff(
+                    ak->chi2, ak->chi1, lambda1)
+                    + XLALSimInspiralPNEnergy_12PNTidalCoeff(
+                    ak->chi1, ak->chi2, lambda2);
+            ak->akdEF.FTa12 = XLALSimInspiralPNFlux_12PNTidalCoeff(
+                    ak->chi1, lambda1)
+                    + XLALSimInspiralPNFlux_12PNTidalCoeff(
+                    ak->chi2, lambda2);
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
-            ak->akdEF.ETa5  = lambda1 * XLALSimInspiralPNEnergy_10PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralPNEnergy_10PNTidalCoeff(ak->chi2);
-            ak->akdEF.FTa10 = lambda1 * XLALSimInspiralPNFlux_10PNTidalCoeff(ak->chi1) + lambda2 * XLALSimInspiralPNFlux_10PNTidalCoeff(ak->chi2);
-#if __GNUC__ >= 7
-            __attribute__ ((fallthrough));
-#endif
+            ak->akdEF.ETa5  = XLALSimInspiralPNEnergy_10PNTidalCoeff(
+                    ak->chi2, ak->chi1, lambda1)
+                    + XLALSimInspiralPNEnergy_10PNTidalCoeff(
+                    ak->chi1, ak->chi2, lambda2);
+            ak->akdEF.FTa10 = XLALSimInspiralPNFlux_10PNTidalCoeff(
+                    ak->chi1, lambda1)
+                    + XLALSimInspiralPNFlux_10PNTidalCoeff(
+                    ak->chi2, lambda2);
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
             break;
         default:
@@ -269,19 +275,6 @@ XLALSimInspiralTaylorT1Setup(
   return 0;
 }
 
-/**
- * @addtogroup LALSimInspiralTaylorXX_c
- * @brief Routines to produce Taylor -T1, -T2, -T3, -T4, -F2, and -Et inspiral
- * waveforms.
- * @{
- * @name Routines for TaylorT1 Waveforms
- * @sa
- * Section IIIA of Alessandra Buonanno, Bala R Iyer, Evan
- * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
- * templates for compact binary inspiral signals in gravitational-wave
- * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
- * @{
- */
 
 /**
  * Evolves a post-Newtonian orbit using the Taylor T1 method.
@@ -309,7 +302,7 @@ int XLALSimInspiralTaylorT1PNEvolveOrbit(
 	double lengths, VRef = 0.;
 	int len, intreturn, idx, idxRef = 0;
 	XLALSimInspiralTaylorT1PNEvolveOrbitParams params;
-	LALAdaptiveRungeKuttaIntegrator *integrator = NULL;
+	ark4GSLIntegrator *integrator = NULL;
 	expnFuncTaylorT1 expnfunc;
 	expnCoeffsTaylorT1 ak;
 
@@ -349,7 +342,7 @@ int XLALSimInspiralTaylorT1PNEvolveOrbit(
 	len = XLALAdaptiveRungeKutta4Hermite(integrator, (void *) &params, yinit, 0.0, lengths, deltaT, &yout);
 
 	intreturn = integrator->returncode;
-	XLALAdaptiveRungeKuttaFree(integrator);
+	XLALAdaptiveRungeKutta4Free(integrator);
 
 	if (!len) 
 	{
@@ -663,8 +656,6 @@ int XLALSimInspiralTaylorT1PNRestricted(
 			tideO, 0, O);
 }
 
-/** @} */
-/** @} */
 
 #if 0
 #include <lal/PrintFTSeries.h>

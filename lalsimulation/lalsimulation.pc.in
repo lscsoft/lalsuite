@@ -1,11 +1,9 @@
-PACKAGE_TARNAME=@PACKAGE_TARNAME@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
-docdir=@docdir@
-htmldir=@htmldir@
+LALSIMULATION_DATA_PATH=@datadir@/@PACKAGE@
 LALSIMULATION_OCTAVE_PATH=@octexecdir@
 LALSIMULATION_PYTHON_PATH=@pyexecdir@
 

@@ -31,10 +31,10 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <getopt.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <lal/LALError.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStatusMacros.h>
@@ -102,8 +102,8 @@ int main ( int argc, char *argv[] )
   CHAR                     *specFile=NULL;
   REAL4                      numChisqBins=0.0;
 
-  /* LALgetopt arguments */
-  struct LALoption long_options[] =
+  /* getopt arguments */
+  struct option long_options[] =
   {
     {"verbose",                 no_argument,       &verbose,          1 },
     {"machine",                 no_argument,       &machine,          1 },
@@ -132,11 +132,11 @@ int main ( int argc, char *argv[] )
   /* parse the arguments */
   while ( 1 )
   {
-    /* LALgetopt_long stores long option here */
+    /* getopt_long stores long option here */
     int option_index = 0;
-    int LALoptarg_len = 0;
+    int optarg_len = 0;
 
-    c = LALgetopt_long_only( argc, argv,
+    c = getopt_long_only( argc, argv, 
         "f:m:n:o:p:hV", long_options, 
 	&option_index );
 
@@ -157,42 +157,42 @@ int main ( int argc, char *argv[] )
         else
         {
           fprintf( stderr, "Error parsing option %s with argument %s\n",
-              long_options[option_index].name, LALoptarg );
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
         break;
 
       case 'f':
         /* flow */
-        fstart=atof(LALoptarg);
+        fstart=atof(optarg);
         break;
 
       case 'm':
         /* mass1 */
-        m1=atof(LALoptarg);
+        m1=atof(optarg);
         break;
 
       case 'n':
         /* mass2 */
-        m2=atof(LALoptarg);
+        m2=atof(optarg);
         break;
 
       case 'o':
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        specFile = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
-        memcpy( specFile, LALoptarg, LALoptarg_len );
+        optarg_len = strlen( optarg ) + 1;
+        specFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( specFile, optarg, optarg_len );
         break;
  
       case 'p':
         /* number of chisq bins */
-        numChisqBins=atof(LALoptarg);
+        numChisqBins=atof(optarg);
         chisqFlag = 1;
         break;
 
       case 'q':
-        LALoptarg_len = strlen( LALoptarg ) + 1;
-        waveFile = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
-        memcpy( waveFile, LALoptarg, LALoptarg_len );
+        optarg_len = strlen( optarg ) + 1;
+        waveFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( waveFile, optarg, optarg_len );
         printWaveform = 1;
         break;
 

@@ -32,7 +32,7 @@
 
 #include <lal/LISAspecifics.h>
 #include <lal/LALError.h>
-#include <lal/SinCosLUT.h>
+#include <lal/CWFastMath.h>
 
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)
@@ -129,7 +129,7 @@ XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
   Detector1.type = LALDETECTORTYPE_ABSENT;
 
   /* however: need to be careful to put some non-zero numbers for location
-   * otherwise XLALBarycenter() will spit out NaNs ...
+   * otherwise LALBarycenter() will spit out NaNs ...
    */
   Detector1.location[0] = 1;
   Detector1.location[1] = 1;
@@ -137,7 +137,7 @@ XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
 
   (*Detector) = Detector1;
 
-  return XLAL_SUCCESS;
+  return 0;
 
 } /* XLALcreateLISA() */
 
@@ -238,7 +238,7 @@ XLALgetLISADetectorTensorLWL ( SymmTensor3 *detT, 		/**< [out]: LISA LWL detecto
 			       const Detector3Arms detArms,	/**< [in] precomputed detector-arms */
 			       CHAR channelNum )		/**< channel-number (as a char)  '1', '2', '3' .. */
 {
-  LISAarmT armA = 0, armB = 0;
+  LISAarmT armA, armB;
   CHAR chan1 = 0;
   CHAR chan2 = 0;
   SymmTensor3 detT1, detT2;
@@ -398,7 +398,7 @@ XLALgetLISADetectorTensorRAA ( CmplxDetectorTensor *detT, 	/**< [out]: LISA LWL 
 			       const FreqSkypos_t *freq_skypos	/**< [in] precompute frequency and skypos info */
 			       )
 {
-  LISAarmT armA = 0, armB = 0;
+  LISAarmT armA, armB;
   CHAR chan1 = 0;
   CHAR chan2 = 0;
   CmplxDetectorTensor detT1, detT2;
