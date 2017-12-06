@@ -68,7 +68,6 @@ class MeasLikelihoodJob(pipeline.CondorDAGJob):
 		self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "lalapps_string_meas_likelihood-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "lalapps_string_meas_likelihood-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
-		self.add_condor_cmd("accounting_group", power.get_accounting_group(config_parser))
 		self.add_ini_opts(config_parser, "lalapps_string_meas_likelihood")
 
 		self.cache_dir = power.get_cache_dir(config_parser)
@@ -140,7 +139,6 @@ class CalcLikelihoodJob(pipeline.CondorDAGJob):
 		self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "lalapps_string_calc_likelihood-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "lalapps_string_calc_likelihood-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
-		self.add_condor_cmd("accounting_group", power.get_accounting_group(config_parser))
 		self.add_ini_opts(config_parser, "lalapps_string_calc_likelihood")
 		self.cache_dir = power.get_cache_dir(config_parser)
 		self.files_per_calc_likelihood = get_files_per_calc_likelihood(config_parser)
@@ -218,7 +216,6 @@ class StringJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "lalapps_StringSearch-$(cluster)-$(process).out"))
     self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "lalapps_StringSearch-$(cluster)-$(process).err"))
     self.add_condor_cmd("getenv", "True")
-    self.add_condor_cmd("accounting_group", power.get_accounting_group(config_parser))
     self.set_sub_file("lalapps_StringSearch.sub")
     #self.add_condor_cmd("Requirements", "Memory > 1100")
 
@@ -312,7 +309,6 @@ class RunSqliteJob(pipeline.CondorDAGJob):
                 self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "lalapps_run_sqlite-$(cluster)-$(process).out"))
                 self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "lalapps_run_sqlite-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
-		self.add_condor_cmd("accounting_group", power.get_accounting_group(config_parser))
                 self.set_sub_file("lalapps_run_sqlite.sub")
 		self.files_per_run_sqlite = get_files_per_run_sqlite(config_parser)
 		if self.files_per_run_sqlite < 1:

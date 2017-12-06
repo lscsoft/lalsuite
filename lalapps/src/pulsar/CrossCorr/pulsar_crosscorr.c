@@ -43,6 +43,7 @@
 
 
 /* user input variables */
+BOOLEAN  uvar_version;     /**< output version information */
 BOOLEAN  uvar_averagePsi;
 BOOLEAN  uvar_averageIota;
 BOOLEAN  uvar_autoCorrelate;
@@ -204,6 +205,8 @@ int main(int argc, char *argv[]){
   static SFTConstraints constraints;
   INT4 sftcounter = 0, slidingcounter = 1, listLength = 0;
 
+  CHAR *VCSInfoString;          /**< LAL + LALapps Git version string */
+
   /* to time the code*/
   time_t t1, t2;
 
@@ -215,9 +218,20 @@ int main(int argc, char *argv[]){
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     exit(1);
+
+
+  if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
+    XLALPrintError("XLALGetVersionString(0) failed.\n");
+    exit(1);
+  }
+
+  if ( uvar_version ) {
+    printf ("%s\n", VCSInfoString );
+    exit (0);
+  }
 
   /* very basic consistency checks on user input */
   if ( uvar_f0 < 0 ) {
@@ -1052,6 +1066,9 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
   XLALDestroyREAL8Vector(galphare);
   XLALDestroyREAL8Vector(galphaim);
 
+  if ( VCSInfoString )
+    XLALFree ( VCSInfoString );
+
   if (!uvar_averagePsi) {
     LALFree(psi);
   }
@@ -1698,6 +1715,7 @@ void initUserVars (LALStatus *status)
 
   uvar_maxlag = 0;
 
+  uvar_version = FALSE;
   uvar_averagePsi = TRUE;
   uvar_averageIota = TRUE;
   uvar_autoCorrelate = FALSE;
@@ -1749,6 +1767,7 @@ void initUserVars (LALStatus *status)
   strcpy(uvar_skyfile,SKYFILE);
 
   /* register user input variables */
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_version,                "version",       BOOLEAN, 'V', SPECIAL,  "Output version information") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_averagePsi,             "averagePsi",    BOOLEAN, 0,   OPTIONAL, "Use average over psi") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_averageIota,            "averageIota",   BOOLEAN, 0,   OPTIONAL, "Use average over iota") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_autoCorrelate,          "autoCorrelate", BOOLEAN, 0,   OPTIONAL, "Include autocorrelations") == XLAL_SUCCESS, XLAL_EFUNC );

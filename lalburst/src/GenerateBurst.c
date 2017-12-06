@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2007 Jolien Creighton, Patrick Brady, Saikat Ray-Majumder,
- * Xavier Siemens, Teviet Creighton, Kipp Cannon
+ * Xavier Siemens, Teviet Creighton, Kipp Cannon, Chris Pankow
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -71,7 +71,19 @@ int XLALGenerateSimBurst(
 	double delta_t
 )
 {
-	if(!strcmp(sim_burst->waveform, "BTLWNB")) {
+	if(strcmp(sim_burst->numrel_data, "") != 0) {
+		/* Assume we have some data to read. */
+
+		XLALPrintInfo("%s(): ad hoc @ %9d.%09u s (GPS): from file %s\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->numrel_data);
+		/* In the following line the hrss and amplitude
+		   columns are used as stand-ins for the distance at
+		   which the NR file is scaled, and the desired
+		   distance scaling. */
+		if(XLALGenerateBurstFromFile(hplus, hcross, sim_burst->numrel_data, sim_burst->incl, sim_burst->phi, delta_t, sim_burst->hrss, sim_burst->amplitude)) {
+			XLAL_ERROR(XLAL_EFUNC);
+		}
+
+	} else if(!strcmp(sim_burst->waveform, "BTLWNB")) {
 		/* E_{GW}/r^{2} is in M_{sun} / pc^{2}, so we multiply by
 		 * (M_{sun} c^2) to convert to energy/pc^{2}, and divide by
 		 * (distance/pc)^{2} to convert to energy/distance^{2},
@@ -116,6 +128,7 @@ int XLALGenerateSimBurst(
 	} else {
 		/* unrecognized waveform */
 		XLALPrintError("%s(): error: unrecognized waveform\n", __func__);
+		XLALPrintError("%s(): error: No numrel data", sim_burst->numrel_data);
 		XLAL_ERROR(XLAL_EINVAL);
 	}
 

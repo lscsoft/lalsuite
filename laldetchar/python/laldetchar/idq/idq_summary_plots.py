@@ -14,8 +14,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## \defgroup laldetchar_py_idq_idq_summary_plots Plotting Routines
-## \ingroup laldetchar_py_idq
+## \addtogroup laldetchar_py_idq
+
 ## Synopsis
 # ~~~
 # from laldetchar.idq import idq_summary_plots
@@ -73,7 +73,7 @@ __date__ = git_version.date
 
 description = """Module for plotting routines for idq pipeline."""
 
-## \addtogroup laldetchar_py_idq_idq_summary_plots
+## \addtogroup laldetchar_py_idq_summary_plots
 # @{
 
 #===================================================================================================

@@ -5,7 +5,6 @@
 *.pc
 *.pyc
 *.pyo
-__pycache__
 .deps
 .libs
 /_build/
@@ -51,9 +50,9 @@ src/lalpulsar_version
 src/stamp-h1
 src/stamp-h2
 src/version.c
-swig/swiglalpulsar.i*
-swig/swiglal_*
+swig/swiglal*
 test/BinarySSBTimesTest
+test/ComputeFstatBenchmark
 test/ComputeFstatTest
 test/ConstructPLUTTest
 test/DopplerScanTest
@@ -101,7 +100,6 @@ test/SkyMetricTest
 test/StackMetricTest
 test/StatisticsTest
 test/SuperskyMetricsTest
-test/SuperskyMetricsTest.fits
 test/TEMPOcomparison
 test/TwoDMeshTest
 test/UniversalDopplerMetricTest

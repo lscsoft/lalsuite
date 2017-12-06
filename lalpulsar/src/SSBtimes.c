@@ -38,12 +38,6 @@
 
 /*---------- Global variables ----------*/
 
-const UserChoices SSBprecisionChoices = {
-  { SSBPREC_NEWTONIAN,		"newtonian" },
-  { SSBPREC_RELATIVISTIC,	"relativistic" },
-  { SSBPREC_RELATIVISTICOPT,  	"relativisticopt" },
-};
-
 /*---------- internal prototypes ----------*/
 
 static double gsl_E_solver ( double E, void *p );
@@ -326,7 +320,7 @@ XLALAddBinaryTimes ( SSBtimes **tSSBOut,			//!< [out] reference-time offsets in 
       REAL8 x0 = fracOrb_i * LAL_TWOPI;
       REAL8 E_i;              // eccentric anomaly at emission of the wavefront arriving in SSB at tSSB
       { // ---------- use GSL for the root-finding
-        const gsl_root_fsolver_type *T = gsl_root_fsolver_brent;
+        const gsl_root_fsolver_type *T = gsl_root_fsolver_bisection;
         gsl_root_fsolver *s = gsl_root_fsolver_alloc(T);
         REAL8 E_lo = 0, E_hi = LAL_TWOPI;	// gauge-choice mod (2pi)
         gsl_function F;

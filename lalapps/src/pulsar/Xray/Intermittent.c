@@ -39,7 +39,6 @@
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
 #include <lalapps.h>
-#include <LALAppsVCSInfo.h>
 #include <lal/BandPassTimeSeries.h>
 
 #include <lal/LALDatatypes.h>
@@ -305,8 +304,7 @@ int main( int argc, char *argv[] )  {
         /**********************************************************************************/
 
         /* compute the grid parameters for all SFTs */
-        INT4 ndim = -1;
-        if (XLALComputeFreqGridParamsVector(&freqgridparams,pspace.space,sftvec,uvar.mismatch,&ndim,BINS_FACTOR)) {
+        if (XLALComputeFreqGridParamsVector(&freqgridparams,pspace.space,sftvec,uvar.mismatch)) {
           LogPrintf(LOG_CRITICAL,"%s : XLALComputeFreqGridParams() failed with error = %d\n",__func__,xlalErrno);
           return 1;
         }
@@ -442,7 +440,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;
-  if (XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList)) {
+  if (XLALUserVarReadAllInput(&should_exit, argc, argv)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput failed with error = %d\n",__func__,xlalErrno);
     return XLAL_EFAULT;
   }
@@ -515,7 +513,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 
 /*   /\* get GIT version information *\/ */
 /*   { */
-/*     CHAR *temp_version = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% "); */
+/*     CHAR *temp_version = XLALGetVersionString(0); */
 /*     UINT4 n = strlen(temp_version); */
 /*     version_string = XLALCalloc(n,sizeof(CHAR)); */
 /*     snprintf(version_string,n-1,"%s",temp_version); */
@@ -599,7 +597,13 @@ int XLALOpenIntermittentResultsFile(FILE **fp,                  /**< [in] filepo
   }
 
   /* get GIT version information */
-  version_string = XLALVCSInfoString( lalAppsVCSInfoList, 0, "%% " );
+  {
+    CHAR *temp_version = XLALGetVersionString(0);
+    UINT4 n = strlen(temp_version);
+    version_string = XLALCalloc(n,sizeof(CHAR));
+    snprintf(version_string,n-1,"%s",temp_version);
+    XLALFree(temp_version);
+  }
 
   /* output header information */
   fprintf((*fp),"%s \n",version_string);

@@ -23,7 +23,6 @@ pybin_scripts = \
 	bayestar_prune_neighborhood_tmpltbank \
 	bayestar_realize_coincs \
 	bayestar_sample_model_psd \
-	bayestar_samples_ppplot \
 	bayestar_sim_to_tmpltbank \
 	bayestar_littlehope \
 	rapidpe_integrate_extrinsic_likelihood \
@@ -32,7 +31,6 @@ pybin_scripts = \
 	rapidpe_compute_intrinsic_grid \
 	rapidpe_calculate_overlap \
 	imrtgr_imr_consistency_test \
-	lalinference_average_skymaps \
 	lalinference_pipe \
 	$(END_OF_LIST)
 

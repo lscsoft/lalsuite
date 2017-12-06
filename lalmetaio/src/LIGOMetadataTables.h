@@ -173,6 +173,7 @@ tagEventIDColumn
   struct tagSummValueTable      *summValueTable;
   struct tagMultiInspiralTable  *multiInspiralTable;
   struct tagSnglTransdataTable  *snglTransdataTable;
+  struct tagSimInspiralTable    *simInspiralTable;
   struct tagSimRingdownTable    *simRingdownTable;
   struct tagCoincInspiralTable  *coincInspiralTable;
   struct tagCoincRingdownTable  *coincRingdownTable;
@@ -560,7 +561,7 @@ tagSimInspiralTable
   REAL4          eff_dist_v;
   REAL4	         qmParameter1;
   REAL4		 qmParameter2;
-  long           simulation_id;
+  EventIDColumn  *event_id;
   INT4           numrel_mode_min;
   INT4           numrel_mode_max;
   CHAR           numrel_data[LIGOMETA_STRING_MAX];
@@ -620,9 +621,12 @@ tagSimBurst
 	struct tagSimBurst *next;
 	long process_id;
 	char waveform[LIGOMETA_WAVEFORM_MAX];
+    char numrel_data[LIGOMETA_STRING_MAX];
 	REAL8 ra;
 	REAL8 dec;
 	REAL8 psi;
+        REAL8 incl;
+  REAL8 phi;
 	LIGOTimeGPS time_geocent_gps;
 	REAL8 time_geocent_gmst;
 	REAL8 duration;

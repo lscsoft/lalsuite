@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 141
+# serial 138
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -43,11 +43,6 @@ AC_DEFUN([AC_OUTPUT],[
   m4_foreach_w([uvar],uvar_list,[
     AC_SUBST(AM_[]uvar,"${AM_[]uvar} ${sys_[]uvar}")
     uvar="${uvar_prefix[]uvar}"
-  ])
-  # append extra values for user variables to be added after configuration
-  m4_foreach_w([uvar],uvar_list,[
-    AC_ARG_VAR([POSTCONFIG_]uvar,[Extra ]uvar[ to be added after configuration])
-    uvar="${uvar} ${POSTCONFIG_[]uvar}"
   ])
   # call original AC_OUTPUT
   lalsuite_AC_OUTPUT
@@ -1146,7 +1141,7 @@ AS_IF([test "x${osx_version_check}" = "xtrue"],[
       AC_MSG_RESULT([$MACOSX_VERSION])])
     AS_CASE(["$MACOSX_VERSION"],
       [10.0*|10.1|10.1.*|10.2*|10.3*],AC_MSG_ERROR([This version of Mac OS X is not supported]),
-      [10.4*|10.5*|10.6*|10.7*|10.8*|10.9*|10.10*|10.11*|10.12*|10.13*],,
+      [10.4*|10.5*|10.6*|10.7*|10.8*|10.9*|10.10*|10.11*|10.12*],,
       AC_MSG_WARN([Unknown Mac OS X version]))
 ])])])
 
@@ -1398,8 +1393,6 @@ double volatile d = round(c);
 
     ])
 
-    m4_popdef([option])
-    m4_popdef([symbol])
   ])
 
   # string listing all the SIMD extensions supported by the compiler

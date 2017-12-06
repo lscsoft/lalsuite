@@ -658,13 +658,6 @@ XLALFreeSimInspiral (
     SimInspiralTable **eventHead
     );
 
-long
-XLALSimInspiralAssignIDs (
-    SimInspiralTable *head,
-    long process_id,
-    long simulation_id
-    );
-
 void
 XLALPlayTestSimInspiral(
     SimInspiralTable          **eventHead,
@@ -763,6 +756,15 @@ int
 LALCompareMultiInspiralByTime (
     const void *a,
     const void *b
+    );
+
+int
+XLALMultiSimInspiralTest (
+    SimInspiralTable  **simHead,
+    MultiInspiralTable **eventHead,
+    SimInspiralTable  **missedSimHead,
+    MultiInspiralTable **missedMultiHead,
+    INT8                injectWindowNS
     );
 
 int

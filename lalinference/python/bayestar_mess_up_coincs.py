@@ -39,8 +39,8 @@ import lal
 
 
 # Available detectors
-available_ifos = sorted(
-    det.frDetector.prefix for det in lal.CachedDetectors)
+available_ifos = sorted(det.frDetector.prefix
+    for det in lal.CachedDetectors)
 
 
 # Transformations
@@ -59,8 +59,7 @@ def swap(xmldoc, ifo1, ifo2):
 
 
 def is_COMPLEX8TimeSeries(elem):
-    return elem.tagName == LIGO_LW.tagName \
-        and getattr(elem, 'Name', None) == 'COMPLEX8TimeSeries'
+    return elem.tagName == LIGO_LW.tagName and getattr(elem, 'Name', None) == 'COMPLEX8TimeSeries'
 
 
 @as_dict
@@ -73,7 +72,7 @@ def get_snr_series(xmldoc):
             pass
         else:
             yield event_id, array
-
+    
 
 # Transformations
 def conj(xmldoc, ifos):
@@ -118,8 +117,6 @@ parser.add_argument(
     default='-', help='Name of output file [default: stdout]')
 
 subparsers = parser.add_subparsers()
-
-
 def add_parser(func):
     subparser = subparsers.add_parser(func.__name__, help=func.__doc__)
     subparser.set_defaults(func=func.__name__)

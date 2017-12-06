@@ -16,7 +16,6 @@ BuildRequires: chealpix-devel >= 3.30.0
 BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
 BuildRequires: healpy >= 1.9.1
-BuildRequires: python-astropy >= 1.1.1
 BuildRequires: python-matplotlib >= 1.2.0
 BuildRequires: python-shapely
 BuildRequires: libmetaio-devel
@@ -96,12 +95,10 @@ Requires: python-shapely
 Requires: numpy >= 1.7
 Requires: python
 Requires: scipy >= 0.8
-Requires: python-astropy >= 1.1.1
 Requires: python-matplotlib >= 1.2.0
 Requires: python-six
 Requires: python-seaborn
 Requires: glue >= @MIN_GLUE_VERSION@
-Requires: ligo-gracedb
 Requires: lal-python >= @MIN_LAL_VERSION@
 Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 Requires: lalxml-python >= @MIN_LALXML_VERSION@
@@ -180,12 +177,6 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
-* Thu Jul 27 2017 Adam Mercer <adam.mercer@ligo.org> 1.9.4-1
-- bayestar_plot_volume: work around broken fonts in SL7
-
-* Wed Jul 26 2017 Adam Mercer <adam.mercer@ligo.org> 1.9.3-1
-- BAYESTAR and sky map post-processing updates
-
 * Thu Mar 16 2017 Adam Mercer <adam.mercer@ligo.org> 1.9.2-1
 - lalinference.io.fits: remove some redundant keys on reading
 - lalinference.io.fits: fix writing single-column sky maps

@@ -27,6 +27,7 @@
 import math
 import sys
 
+from glue.ligolw import lsctables
 
 import lal
 from lal import rate
@@ -47,6 +48,26 @@ from git_version import version as __version__
 #
 # =============================================================================
 #
+
+def add_numrel_data(xmldoc):
+	# add columns if required
+	add_numrel_data_columns_to_table(lsctables.SimBurstTable.get_table(xmldoc))
+
+def add_numrel_data_to_table(sim_burst_table):
+	added = False
+	try:
+		sim_burst_table.getColumnByName("numrel_data")
+	except KeyError:
+		sim_burst_table.appendColumn("numrel_data")
+		added = True
+
+	if not added:
+		# didn't add any columns, so don't muck their contents
+		return
+
+	# column was added, initialize
+	for row in sim_burst_table:
+		row.numrel_data = ""
 
 
 def on_instruments(sim, seglists, offsetvector):

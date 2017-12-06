@@ -17,6 +17,9 @@
 """
 Reading HDF5 posterior sample chain HDF5 files.
 """
+__author__ = "Leo Singer <leo.singer@ligo.org>"
+__all__ = ('read_samples', 'write_samples')
+
 
 import numpy as np
 import h5py
@@ -28,29 +31,22 @@ from lalinference import LALINFERENCE_PARAM_CIRCULAR as CIRCULAR
 from lalinference import LALINFERENCE_PARAM_FIXED as FIXED
 from lalinference import LALINFERENCE_PARAM_OUTPUT as OUTPUT
 
-__all__ = ('read_samples', 'write_samples')
 
-
-def _identity(x):
-    return x
-
-
-_colname_map = (('rightascension', 'ra', _identity),
-                ('declination', 'dec', _identity),
-                ('logdistance', 'dist', np.exp),
-                ('distance', 'dist', _identity),
-                ('polarisation', 'psi', _identity),
-                ('chirpmass', 'mc', _identity),
-                ('a_spin1', 'a1', _identity),
-                ('a_spin2', 'a2', _identity),
-                ('tilt_spin1', 'tilt1', _identity),
-                ('tilt_spin2', 'tilt2', _identity))
+_colname_map = (('rightascension', 'ra'),
+                ('declination', 'dec'),
+                ('distance', 'dist'),
+                ('polarisation','psi'),
+                ('chirpmass', 'mc'),
+                ('a_spin1', 'a1'),
+                ('a_spin2','a2'),
+                ('tilt_spin1', 'tilt1'),
+                ('tilt_spin2', 'tilt2'))
 
 
 def _remap_colnames(table):
-    for old_name, new_name, func in _colname_map:
+    for old_name, new_name in _colname_map:
         if old_name in table.colnames:
-            table[new_name] = func(table.columns.pop(old_name))
+            table.rename_column(old_name, new_name)
 
 
 def _find_table(group, tablename):
@@ -169,9 +165,9 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
     ['uvw', 'opq', 'lmn', 'ijk', 'def', 'abc', 'rst', 'ghi']
     """
     with h5py.File(filename, 'r') as f:
-        if path is not None:  # Look for a given path
+        if path is not None: # Look for a given path
             table = f[path]
-        else:  # Look for a given table name
+        else: # Look for a given table name
             table = _find_table(f, tablename)
         table = Table.read(table)
 
@@ -235,19 +231,11 @@ def write_samples(table, filename, metadata=None, **kwargs):
     ...     Column(np.arange(10), name='baz', meta={'vary': OUTPUT})
     ... ])
     >>> with TemporaryDirectory() as dir:
-    ...     write_samples(
-    ...         table, os.path.join(dir, 'test.hdf5'), path='bat/baz')
+    ...     write_samples(table, os.path.join(dir, 'test.hdf5'), path='bat/baz')
     """
     # Copy the table so that we do not modify the original.
     table = table.copy()
 
-    # Make sure that all tables have a 'vary' type.
-    for column in table.columns.values():
-        if 'vary' not in column.meta:
-            if np.all(column[0] == column[1:]):
-                column.meta['vary'] = FIXED
-            else:
-                column.meta['vary'] = OUTPUT
     # Reconstruct table attributes.
     for colname, column in tuple(table.columns.items()):
         if column.meta['vary'] == FIXED:
@@ -269,4 +257,4 @@ def write_samples(table, filename, metadata=None, **kwargs):
                     except KeyError:
                         raise KeyError(
                             'Unable to set metadata {0}[{1}] = {2}'.format(
-                                internal_path, key, value))
+                            internal_path, key, value))

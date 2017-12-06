@@ -29,7 +29,6 @@ extern "C" {
 
 #include <lal/ConfigFile.h>
 #include <lal/UserInputParse.h>
-#include <lal/LALVCSInfoType.h>
 
 /**
  * \defgroup UserInput_h Header UserInput.h
@@ -101,7 +100,7 @@ extern "C" {
  *   XLALRegisterUvarMember( specialGeekSwitch,  REAL8,    'g', DEVELOPER, "This REAL8 user-variable may not be relevant for standard usage");
  *
  *   // 3. step: parse all user-input, from either config-file if given, or commandline (overloads config-file values)
- *   XLAL_CHECK ( XLALUserVarReadAllInput ( argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC);
+ *   XLAL_CHECK ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC);
  *
  *   if (uvar->help){      // if user had requested help, then we're already done here
  *     return 0;
@@ -155,29 +154,14 @@ someEpoch = {2147483596 s, 816000000 ns}, RA = 2.727813 rad, DEC = -0.523599 rad
  * Shortcut macro for registering new user variables, which are accessed via the \e struct-pointer '*uvar'
  */
 #define XLALRegisterUvarMember(name,type,option,category,...)             \
-  XLALRegister ##type## UserVar( &(uvar-> name), NULL, #name, option, UVAR_CATEGORY_ ## category, __VA_ARGS__)
-
-/**
- * Shortcut macro for registering new user variables, which are accessed via the \e struct-pointer '*uvar',
- * and which acquire some auxilliary data in order to be parsed
- */
-#define XLALRegisterUvarAuxDataMember(name,type,cdata,option,category,...) \
-  XLALRegister ##type## UserVar( &(uvar-> name), cdata, #name, option, UVAR_CATEGORY_ ## category, __VA_ARGS__)
+  XLALRegister ##type## UserVar( &(uvar-> name), #name, option, UVAR_CATEGORY_ ## category, __VA_ARGS__)
 
 /**
  * Shortcut macro for registering new user variables, named 'name' and accessed via the \e variable-pointer '*cvar'
  * \note This style of user variable is deprecated; XLALRegisterUvarMember() is preferred
  */
 #define XLALRegisterNamedUvar(cvar,name,type,option,category,...)         \
-  XLALRegister ##type## UserVar( cvar, NULL, name, option, UVAR_CATEGORY_ ## category, __VA_ARGS__)
-
-/**
- * Shortcut macro for registering new user variables, named 'name' and accessed via the \e variable-pointer '*cvar',
- * and which acquire some auxilliary data in order to be parsed
- * \note This style of user variable is deprecated; XLALRegisterUvarAuxDataMember() is preferred
- */
-#define XLALRegisterNamedUvarAuxData(cvar,name,type,cdata,option,category,...) \
-  XLALRegister ##type## UserVar( cvar, cdata, name, option, UVAR_CATEGORY_ ## category, __VA_ARGS__)
+  XLALRegister ##type## UserVar( cvar, name, option, UVAR_CATEGORY_ ## category, __VA_ARGS__)
 
 /**
  * Mutually-exclusive user variable categories: optional, required, help, developer, ...
@@ -190,6 +174,7 @@ typedef enum tagUserVarCategory {
   UVAR_CATEGORY_DEVELOPER,	///< optional and hidden in help-output until lalDebugLevel>=warning
   UVAR_CATEGORY_DEPRECATED,	///< optional and hidden until lalDebugLevel>=info; still supported but output warning if used
   UVAR_CATEGORY_DEFUNCT,	///< hidden completely from help output; not supported, will output error + help-string if used
+  UVAR_CATEGORY_SPECIAL,	///< optional and *turns off* all checking of required variables, useful for output of version info
   UVAR_CATEGORY_NODEFAULT,	///< optional and supresses printing the default value in the help, where it doesn't make sense
   UVAR_CATEGORY_END		///< internal end marker for range checking
 } UserVarCategory;
@@ -199,7 +184,6 @@ typedef enum tagUserVarCategory {
  * This determines the format of the string returned from XLALUserVarGetLog().
  */
 typedef enum tagUserVarLogFormat {
-  UVAR_LOGFMT_RAWFORM,		/**< return UserVars in a raw format suitable for further parsing */
   UVAR_LOGFMT_CFGFILE,		/**< return UserVars as a config-file */
   UVAR_LOGFMT_CMDLINE,		/**< return UserVars as a command-line */
   UVAR_LOGFMT_PROCPARAMS, 	/**< return UserVars suitable for filling in process-params struct */
@@ -209,15 +193,13 @@ typedef enum tagUserVarLogFormat {
 /* Global variables */
 #ifndef SWIG /* exclude from SWIG interface */
 extern const char *lalUserVarHelpBrief;
-extern const char *lalUserVarHelpDescription;
-extern const char *lalUserVarHelpOptionSubsection;
 #endif /* SWIG */
 
 /* Function prototypes */
 void XLALDestroyUserVars( void );
-int XLALUserVarReadCmdline( BOOLEAN *should_exit, int argc, char *argv[], const LALVCSInfoList vcs_list );
+int XLALUserVarReadCmdline( BOOLEAN *should_exit, int argc, char *argv[] );
 int XLALUserVarReadCfgfile( BOOLEAN *should_exit, const CHAR *cfgfile );
-int XLALUserVarReadAllInput( BOOLEAN *should_exit, int argc, char *argv[], const LALVCSInfoList vcs_list );
+int XLALUserVarReadAllInput( BOOLEAN *should_exit, int argc, char *argv[] );
 int XLALUserVarWasSet( const void *cvar );
 void XLALUserVarCheck( BOOLEAN *should_exit, const int assertion, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(3,4);
 CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
@@ -276,9 +258,7 @@ CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
 
 // declare type-specific wrappers to XLALRegisterUserVar() to allow for strict C type-checking!
 #define DECL_REGISTER_UVAR(UTYPE,CTYPE)                                 \
-  DECL_REGISTER_UVAR_AUX_DATA(UTYPE,CTYPE,void)
-#define DECL_REGISTER_UVAR_AUX_DATA(UTYPE,CTYPE,DTYPE)                  \
-  int XLALRegister ##UTYPE## UserVar ( CTYPE *cvar, const DTYPE *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7)
+  int XLALRegister ##UTYPE## UserVar ( CTYPE *cvar, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(5,6)
 
 // ------ declare registration functions
 DECL_REGISTER_UVAR(BOOLEAN,BOOLEAN);
@@ -292,14 +272,10 @@ DECL_REGISTER_UVAR(RAJ,REAL8);
 DECL_REGISTER_UVAR(DECJ,REAL8);
 DECL_REGISTER_UVAR(STRING,CHAR*);
 
-DECL_REGISTER_UVAR(INT4Range,INT4Range);
 DECL_REGISTER_UVAR(REAL8Range,REAL8Range);
 DECL_REGISTER_UVAR(EPOCHRange,LIGOTimeGPSRange);
 DECL_REGISTER_UVAR(RAJRange,REAL8Range);
 DECL_REGISTER_UVAR(DECJRange,REAL8Range);
-
-DECL_REGISTER_UVAR_AUX_DATA(UserEnum,int,UserChoices);
-DECL_REGISTER_UVAR_AUX_DATA(UserFlag,int,UserChoices);
 
 DECL_REGISTER_UVAR(INT4Vector,INT4Vector*);
 DECL_REGISTER_UVAR(UINT4Vector,UINT4Vector*);

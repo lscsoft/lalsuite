@@ -34,28 +34,19 @@
 // ========== Demod internals ==========
 
 // ----- local types ----------
+typedef struct tagDemodTimingInfo
+{ // NOTE: all times refer to a single-detector timing case
+  BOOLEAN collectTiming;	// turn on/off the collection of F-stat-method-specific timing-data (stored in method-data 'demod')
 
-// ---------- BEGIN: Demod-specific timing model data ----------
-typedef struct tagFstatTimingDemod
-{
-  REAL4 Nsft;			   //  (average) number of SFTs per detector
-  REAL4 tau0_coreLD;		   // 'fundamental' timing coefficient: fully-buffered time to compute F-stat for one SFT
-  REAL4 tau0_bufferLD;		   // 'fundamental' timing coefficient: time to re-compute buffered quantities for one SFT
-} FstatTimingDemod;
+  UINT4 numFreqBins;		// number of frequency bins to compute F-stat for
+  UINT4 numSFTs;		// total number of SFTs used
+  UINT4 numDetectors;		// number of detectors
 
-static char FstatTimingDemodHelp[] =
-  "%%%% ----- Demod-specific F-statistic timing model -----\n"
-  "%%%% Nsft:          (average) number of SFTs per detector\n"
-  "%%%% tau0_coreLD:    timing coefficient for core Demod F-stat time\n"
-  "%%%% tau0_bufferLD:  timing coefficient for computation of buffered quantities\n"
-  "%%%%\n"
-  "%%%% Demod F-statistic timing model:\n"
-  "%%%% tauF_core      =  Nsft * tau0_coreLD\n"
-  "%%%% tauF_buffer    =  Nsft * tau0_bufferLD / NFbin\n"
-  "%%%%"
-  "";
-// ---------- END: Demod-specific timing model data ----------
-
+  REAL8 tauTotal;		// total time spent in XLALComputeFstatDemod()
+  REAL8 tauBary;		// time spent in barycentring
+  REAL8 tauF1Buf;		// Demod timing 'constant': Fstat time per template per detector for a 'buffered' case (same skypos, same numFreqBins)
+  REAL8 tauF1NoBuf;		// Demod timing 'constant': Fstat time per template per detector for an 'unbuffered' usage (different skypos and numFreqBins)
+} DemodTimingInfo;
 
 typedef struct {
   int (*computefafb_func) (			// XLALComputeFaFb_...() function for the selected Demod hotloop
@@ -68,11 +59,7 @@ typedef struct {
   MultiSSBtimes *prevMultiSSBtimes;		// buffering: previous multiSSB times, unique to skypos + SFTs
   MultiAMCoeffs *prevMultiAMcoef;		// buffering: previous AM-coeffs, unique to skypos + SFTs
 
-  // ----- timing -----
-  BOOLEAN collectTiming;			// flag whether or not to collect timing information
-  FstatTimingGeneric timingGeneric;		// measured generic F-statistic timing values
-  FstatTimingDemod   timingDemod;		// storage for measured Demod-specific timing model
-
+  DemodTimingInfo timingInfo;			// temporary storage for collecting timing data
 } DemodMethodData;
 
 // ----- local prototypes ----------
@@ -109,9 +96,7 @@ XLALComputeFstatDemod ( FstatResults* Fstats,
 
   DemodMethodData *demod = (DemodMethodData*) method_data;
   // get internal timing info
-  BOOLEAN collectTiming = demod->collectTiming;
-  BOOLEAN BufferRecomputed = 0;	// keep track if buffer was recomputed in this call or not
-  REAL8 Tau_buffer = 0;
+  DemodTimingInfo *ti = &(demod->timingInfo);
   REAL8 tic = 0, toc = 0;
 
   // Get which F-statistic quantities to compute
@@ -128,11 +113,23 @@ XLALComputeFstatDemod ( FstatResults* Fstats,
   UINT4 numDetectors = multiSFTs->length;
   XLAL_CHECK ( multiDetStates->length == numDetectors, XLAL_EINVAL );
   XLAL_CHECK ( multiWeights==NULL || (multiWeights->length == numDetectors), XLAL_EINVAL );
+  UINT4 numSFTs = 0;
+  for ( UINT4 X = 0; X < numDetectors; X ++ ) {
+    numSFTs += multiDetStates->data[X]->length;
+  }
 
   // initialize timing info struct
-  if ( collectTiming ) {
-    tic = XLALGetCPUTime();
-  }
+  if ( ti->collectTiming )
+    {
+      XLAL_INIT_MEM ( (*ti) );
+      ti->collectTiming = 1;
+
+      ti->numDetectors = numDetectors;
+      ti->numFreqBins = Fstats->numFreqBins;
+      ti->numSFTs = numSFTs;
+
+      tic = XLALGetCPUTime();
+    }
 
   MultiSSBtimes *multiSSB = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
@@ -144,13 +141,9 @@ XLALComputeFstatDemod ( FstatResults* Fstats,
     { // if yes ==> reuse
       multiSSB    = demod->prevMultiSSBtimes;
       multiAMcoef = demod->prevMultiAMcoef;
-      BufferRecomputed = 0;
     }
   else
     { // if not, compute SSB + AMcoef for this skyposition
-      BufferRecomputed = 1;
-      demod->timingGeneric.NBufferMisses ++;
-
       SkyPosition skypos;
       skypos.system = COORDINATESYSTEM_EQUATORIAL;
       skypos.longitude = thisPoint.Alpha;
@@ -168,11 +161,6 @@ XLALComputeFstatDemod ( FstatResults* Fstats,
       demod->prevDelta = thisPoint.Delta;
     } // if could not reuse previously buffered quantites
 
-  if ( collectTiming ) {
-    toc = XLALGetCPUTime();
-    Tau_buffer = (toc - tic);
-  }
-
   MultiSSBtimes *multiBinary = NULL;
   MultiSSBtimes *multiSSBTotal = NULL;
   // handle binary-orbital timing corrections, if applicable
@@ -186,6 +174,11 @@ XLALComputeFstatDemod ( FstatResults* Fstats,
     {
       multiSSBTotal = multiSSB;
     }
+
+  if ( ti->collectTiming ) {
+    toc = XLALGetCPUTime();
+    ti->tauBary = (toc - tic);
+  }
 
   // ----- compute final Fstatistic-value -----
   REAL4 Ad = multiAMcoef->Mmunu.Ad;
@@ -294,51 +287,12 @@ XLALComputeFstatDemod ( FstatResults* Fstats,
       Fstats->MmunuX[X].Ed = 0;
     }
 
-  if ( collectTiming )
-    {
-      toc = XLALGetCPUTime();
-      REAL8 Tau_total = (toc - tic);
-
-      FstatTimingGeneric *tiGen = &(demod->timingGeneric);	// generic part
-      FstatTimingDemod   *tiLD  = &(demod->timingDemod);	// Demod-method specific part
-
-      XLAL_CHECK ( numDetectors == tiGen->Ndet, XLAL_EINVAL, "Inconsistent number of detectors between XLALCreateSetup() [%d] and XLALComputeFstat() [%d]\n", tiGen->Ndet, numDetectors );
-
-      // rescale all relevant timings to per-detector
-      Tau_total  /= numDetectors;
-      Tau_buffer /= numDetectors;
-
-      // compute generic F-stat timing model contributions
-      UINT4 NFbin     = Fstats->numFreqBins;
-      REAL8 tauF_eff  = Tau_total / NFbin;
-      REAL8 tauF_core = (Tau_total - Tau_buffer) / NFbin;
-
-      // compute Demod timing model coefficients
-      REAL8 NsftPerDet    = tiLD->Nsft;
-      REAL8 tau0_coreLD   = tauF_core / NsftPerDet;
-
-      // update the averaged timing-model quantities
-      tiGen->NCalls ++;	// keep track of number of Fstat-calls for timing
-#define updateAvgF(q) tiGen->q = ((tiGen->q *(tiGen->NCalls-1) + q)/(tiGen->NCalls))
-      updateAvgF(tauF_eff);
-      updateAvgF(tauF_core);
-      // we also average NFbin, which can be different betnween different calls to XLALComputeFstat() (contrary to Ndet)
-      updateAvgF(NFbin);
-
-#define updateAvgLD(q) tiLD->q = ((tiLD->q *(tiGen->NCalls-1) + q)/(tiGen->NCalls))
-      updateAvgLD(tau0_coreLD);
-
-      // buffer-quantities only updated if buffer was actually recomputed
-      if ( BufferRecomputed )
-        {
-          REAL8 tau0_bufferLD = Tau_buffer / NsftPerDet;
-          REAL8 tauF_buffer   = Tau_buffer / NFbin;
-
-          updateAvgF(tauF_buffer);
-          updateAvgLD(tau0_bufferLD);
-        } // if BufferRecomputed
-
-    } // if collect timing
+  if ( ti->collectTiming ) {
+    toc = XLALGetCPUTime();
+    ti->tauTotal = (toc - tic);
+    ti->tauF1NoBuf = ti->tauTotal / ( Fstats->numFreqBins * numDetectors );
+    ti->tauF1Buf   = (ti->tauTotal - ti->tauBary) / ( Fstats->numFreqBins * numDetectors );
+  }
 
   return XLAL_SUCCESS;
 
@@ -388,22 +342,8 @@ XLALSetupFstatDemod ( void **method_data,
   // Save Dterms
   demod->Dterms = optArgs->Dterms;
 
-  // turn on timing collection if requested
-  demod->collectTiming = optArgs->collectTiming;
-
-  // initialize struct for collecting timing data, store invariant 'meta' quantities about this setup
-  if ( demod->collectTiming )
-    {
-      XLAL_INIT_MEM(demod->timingGeneric);
-      XLAL_INIT_MEM(demod->timingDemod);
-      UINT4 numDetectors = demod->multiSFTs->length;
-      UINT4 numSFTs = 0;
-      for ( UINT4 X = 0; X < numDetectors; X ++ ) {
-        numSFTs += demod->multiSFTs->data[X]->length;
-      }
-      demod->timingGeneric.Ndet = numDetectors;
-      demod->timingDemod.Nsft	= 1.0 * numSFTs / numDetectors;	// average number of sfts *per detector*
-    } // if collectTiming
+  // Save flag about collecting timing data
+  demod->timingInfo.collectTiming = optArgs->collectTiming;
 
   // Select XLALComputeFaFb_...() function for the user-requested hotloop variant
   switch ( optArgs->FstatMethod ) {
@@ -433,121 +373,40 @@ XLALSetupFstatDemod ( void **method_data,
 } // XLALSetupFstatDemod()
 
 
+// export timing constants from internally-stored 'method data' struct
 int
-XLALGetFstatTiming_Demod ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel )
+XLALGetFstatTiming_Demod ( const void* method_data, REAL8 *tauF1Buf, REAL8 *tauF1NoBuf )
 {
   XLAL_CHECK ( method_data != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( timingGeneric != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( timingModel != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( (tauF1Buf != NULL) && (tauF1NoBuf != NULL), XLAL_EINVAL );
 
-  const DemodMethodData *demod = (const DemodMethodData*) method_data;
-  XLAL_CHECK ( demod != NULL, XLAL_EINVAL );
+  const DemodMethodData *demod = (const DemodMethodData *)method_data;
 
-  (*timingGeneric) = demod->timingGeneric; // struct-copy generic timing measurements
-
-  const FstatTimingDemod *tiLD = &(demod->timingDemod);
-
-  // return method-specific timing model values
-  XLAL_INIT_MEM( (*timingModel) );
-
-  UINT4 i = 0;
-  timingModel->names[i]     = "Nsft";
-  timingModel->values[i]    = tiLD->Nsft;
-
-  i++;
-  timingModel->names[i]     = "tau0_coreLD";
-  timingModel->values[i]    = tiLD->tau0_coreLD;
-
-  i++;
-  timingModel->names[i]     = "tau0_bufferLD";
-  timingModel->values[i]    = tiLD->tau0_bufferLD;
-
-  timingModel->numVariables = i+1;
-  timingModel->help         = FstatTimingDemodHelp;
+  (*tauF1Buf) = demod->timingInfo.tauF1Buf;
+  (*tauF1NoBuf) = demod->timingInfo.tauF1NoBuf;
 
   return XLAL_SUCCESS;
+
 } // XLALGetFstatTiming_Demod()
 
-// Generates an FstatInput Timeslice based on minStartGPS and maxStartGPS according to XLALCWGPSinRange().
-void *
-XLALFstatInputTimeslice_Demod ( const void *method_data,
-                                const UINT4 iStart[PULSAR_MAX_DETECTORS],
-                                const UINT4 iEnd[PULSAR_MAX_DETECTORS]
-                                )
+// append detailed (method-specific) timing info to given file
+int
+AppendFstatTimingInfo2File_Demod ( const void* method_data, FILE *fp, BOOLEAN printHeader )
 {
-  XLAL_CHECK_NULL ( method_data != NULL, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( iStart != NULL, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( iEnd != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( method_data != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( fp != NULL, XLAL_EINVAL );
 
-  const DemodMethodData *demod_input = (const DemodMethodData *)method_data;
-
-  // allocate memory and copy the input method_data struct
-  DemodMethodData *demod_slice;
-  XLAL_CHECK_NULL ( ( demod_slice = XLALCalloc ( 1, sizeof(*demod_input) ) ) != NULL, XLAL_ENOMEM );
-  memcpy ( demod_slice, demod_input, sizeof(*demod_input) );
-
-  UINT4 numIFOs = demod_input->multiSFTs->length;
-
-  // prepare MultiSFTs struct
-  MultiSFTVector *multiSFTs;
-  XLAL_CHECK_NULL ( ( multiSFTs = XLALCalloc( 1, sizeof(*multiSFTs) ) ) != NULL, XLAL_ENOMEM );
-  XLAL_CHECK_NULL ( ( multiSFTs->data = XLALCalloc( numIFOs, sizeof(*multiSFTs->data) ) ) != NULL, XLAL_ENOMEM );
-  multiSFTs->length = numIFOs;
-
-  // loop over all detectors
-  for ( UINT4 X = 0; X < numIFOs; X ++ )
-    {
-      XLAL_CHECK_NULL ( ( multiSFTs->data[X] = XLALCalloc ( 1, sizeof(*multiSFTs->data[X]) ) ) !=NULL, XLAL_EFUNC );
-
-      if ( iStart[X] > iEnd[X] ) {
-        continue; 	// empty slice
-      }
-      UINT4 sliceLength =  iEnd[X] - iStart[X] + 1; // guaranteed >= 1
-      multiSFTs->data[X]->length = sliceLength;
-      multiSFTs->data[X]->data   = &(demod_input->multiSFTs->data[X]->data[iStart[X]]);
-
-    } // for loop over all detectors
-
-  demod_slice->multiSFTs = multiSFTs;
-
-  // empty all buffering quantities
-  demod_slice->prevAlpha = 0;
-  demod_slice->prevDelta = 0;
-  XLAL_INIT_MEM(demod_slice->prevRefTime);
-  demod_slice->prevMultiSSBtimes = NULL;
-  demod_slice->prevMultiAMcoef = NULL;
-
-  // reset timing counters
-  XLAL_INIT_MEM(demod_slice->timingGeneric);
-  XLAL_INIT_MEM(demod_slice->timingDemod);
-
-  return demod_slice;
-
-} // XLALFstatInputTimeslice_Demod()
-
-///
-/// Free all memory not needed by the orginal FstatInput structure
-///
-void
-XLALDestroyFstatInputTimeslice_Demod ( void *method_data )
-{
-  if ( !method_data ) {
-    return;
+  const DemodMethodData *demod = (const DemodMethodData *)method_data;
+  if ( printHeader ) {
+    fprintf (fp, "%%%%%8s %4s %10s ", "Nfreq", "Ndet", "Nsft" );
+    fprintf (fp, "%10s %10s %10s %10s %10s\n",
+             "tauTotal", "tauBary", "tauF1NoBuf", "tauF1Buf", "tauF0Demod" );
   }
 
-  DemodMethodData *demod = (DemodMethodData*) method_data;
+  const DemodTimingInfo *ti = &(demod->timingInfo);
+  fprintf (fp, "%10d %4d %10d", ti->numFreqBins, ti->numDetectors, ti->numSFTs );
+  REAL8 numSFTsPerDet = ti->numSFTs / ti->numDetectors;
+  fprintf (fp, "%10.1e %10.1e %10.1e %10.1e %10.1e\n", ti->tauTotal, ti->tauBary, ti->tauF1NoBuf, ti->tauF1Buf, ti->tauF1Buf / numSFTsPerDet );
 
-  XLALDestroyMultiSSBtimes  ( demod->prevMultiSSBtimes );
-  XLALDestroyMultiAMCoeffs  ( demod->prevMultiAMcoef );
-
-  for ( UINT4 X=0; X < demod->multiSFTs->length; X ++ ) {
-    XLALFree ( demod->multiSFTs->data[X] );
-  }
-
-  XLALFree ( demod->multiSFTs->data );
-  XLALFree ( demod->multiSFTs );
-  XLALFree ( demod );
-
-  return;
-
-} // XLALDestroyFstatInputTimeslice_Demod()
+  return XLAL_SUCCESS;
+} // AppendFstatTimingInfo2File_Demod()

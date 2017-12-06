@@ -194,7 +194,7 @@ size_t XLALSimReadDataFileNCol(double **data, size_t *ncol, LALFILE *fp)
 
         if (nrow == size) {     /* allocate more memory for data */
             size += page;
-            *data = XLALRealloc(*data, *ncol * page * sizeof(**data));
+            *data = XLALRealloc(*data, *ncol * size * sizeof(**data));
         }
 
         /* scan line for data values in each column */

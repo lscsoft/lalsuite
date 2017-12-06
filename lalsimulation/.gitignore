@@ -6,7 +6,6 @@
 *.pc
 *.pyc
 *.pyo
-__pycache__
 .deps
 .libs
 /_build/
@@ -64,8 +63,7 @@ src/lalsimulation_version
 src/stamp-h1
 src/stamp-h2
 src/version.c
-swig/swiglalsimulation.i*
-swig/swiglal_*
+swig/swiglal*
 test/EOBNRv2Test
 test/GRFlagsTest
 test/GenerateSimulation

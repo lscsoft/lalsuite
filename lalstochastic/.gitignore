@@ -5,7 +5,6 @@
 *.pc
 *.pyc
 *.pyo
-__pycache__
 .deps
 .libs
 /_build/
@@ -51,8 +50,7 @@ src/lalstochastic_version
 src/stamp-h1
 src/stamp-h2
 src/version.c
-swig/swiglalstochastic.i*
-swig/swiglal_*
+swig/swiglal*
 test/??_714382918*.dat
 test/AstroOmegaTest
 test/CCoarseGrainFrequencySeriesTest

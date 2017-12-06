@@ -45,20 +45,17 @@ typedef struct {
   REAL8Vector *square;
   REAL8Vector *age_braking;
   REAL8 max_mismatch;
-  int lattice;
-  int metric;
+  CHAR *lattice;
+  CHAR *metric;
 } UserVariables;
-
-enum { SPINDOWN, EYE } MetricType;
-const UserChoices MetricTypeChoices = { { SPINDOWN, "spindown" }, { EYE, "eye" } };
 
 int main(int argc, char *argv[])
 {
 
   // Initialise user variables
   UserVariables uvar_struct = {
-    .lattice = TILING_LATTICE_ANSTAR,
-    .metric = SPINDOWN,
+    .lattice = XLALStringDuplicate("an-star"),
+    .metric = XLALStringDuplicate("spindown"),
   };
   UserVariables *const uvar = &uvar_struct;
 
@@ -67,12 +64,12 @@ int main(int argc, char *argv[])
   XLAL_CHECK_MAIN(XLALRegisterUvarMember(square, REAL8Vector, 0, OPTIONAL, "Square parameter space: start,width,...") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN(XLALRegisterUvarMember(age_braking, REAL8Vector, 0, OPTIONAL, "Age/braking index parameter space: alpha,delta,freq,freqband,age,minbrake,maxbrake") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN(XLALRegisterUvarMember(max_mismatch, REAL8, 'X', REQUIRED, "Maximum allowed mismatch between the templates") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(XLALRegisterUvarAuxDataMember(lattice, UserEnum, &TilingLatticeChoices, 'L', REQUIRED, "Type of lattice to use") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(XLALRegisterUvarAuxDataMember(metric, UserEnum, &MetricTypeChoices, 'M', OPTIONAL, "Type of metric to use") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(XLALRegisterUvarMember(lattice, STRING, 'L', REQUIRED, "Lattice: 'an-star' or 'cubic'") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(XLALRegisterUvarMember(metric, STRING, 'M', OPTIONAL, "Metric: 'spindown' or 'eye'") == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Parse user input
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Check user input
   XLALUserVarCheck( &should_exit, UVAR_SET2(square, age_braking) == 1, "Exactly one of " UVAR_STR2AND(square, age_braking) " must be specified" );
@@ -118,14 +115,16 @@ int main(int argc, char *argv[])
 
   // Set lattice and metric
   gsl_matrix *metric = NULL;
-  if (uvar->metric == SPINDOWN) {
+  if (XLALStringCaseCompare(uvar->metric, "spindown") == 0) {
     GAMAT(metric, n, n);
     gsl_matrix_set_identity(metric);
     gsl_matrix_view spin_metric = gsl_matrix_submatrix(metric, 2, 2, n - 2, n - 2);
     XLAL_CHECK_MAIN(XLALSpindownMetric(&spin_metric.matrix, uvar->time_span) == XLAL_SUCCESS, XLAL_EFUNC);
-  } else {
+  } else if (XLALStringCaseCompare(uvar->metric, "eye") == 0) {
     GAMAT(metric, n, n);
     gsl_matrix_set_identity(metric);
+  } else {
+    XLAL_ERROR_MAIN(XLAL_EINVAL, "Invalid value '%s' for 'metric'", uvar->metric);
   }
   XLAL_CHECK_MAIN(XLALSetTilingLatticeAndMetric(tiling, uvar->lattice, metric, uvar->max_mismatch)  == XLAL_SUCCESS, XLAL_EFUNC);
   gsl_matrix_free(metric);

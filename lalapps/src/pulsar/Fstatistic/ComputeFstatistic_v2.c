@@ -178,10 +178,10 @@ typedef struct {
   BSGLSetup *BSGLsetup;                    /**< pre-computed setup for line-robust statistic */
   RankingStat_t RankingStatistic;           /**< rank candidates according to F or BSGL */
   BOOLEAN useResamp;
+  FstatMethodType FstatMethod;
   UINT4 numFreqBins_FBand;
   REAL8 dFreq;
   CHAR transientOutputTimeUnit; /**< output format for transient times t0,tau: 'd' for days (deprecated) or 's' for seconds */
-  PulsarParamsVector *injectionSources;    /**< Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}') */
 } ConfigVariables;
 
 
@@ -273,12 +273,14 @@ typedef struct {
   INT4 RngMedWindow;		/**< running-median window for noise floor estimation */
   LIGOTimeGPS refTime;		/**< reference-time for definition of pulsar-parameters [GPS] */
 
-  int SSBprecision;		/**< full relativistic timing or Newtonian */
+  INT4 SSBprecision;		/**< full relativistic timing or Newtonian */
 
   LIGOTimeGPS minStartTime;	/**< Only use SFTs with timestamps starting from (including) this epoch (format 'xx.yy[GPS]' or 'xx.yyMJD') */
   LIGOTimeGPS maxStartTime;	/**< Only use SFTs with timestamps up to (excluding) this epoch (format 'xx.yy[GPS]' or 'xx.yyMJD') */
   CHAR *workingDir;		/**< directory to use for output files */
   REAL8 timerCount;		/**< output progress-meter every timerCount seconds */
+
+  BOOLEAN version;		/**< output version information */
 
   CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
 
@@ -308,12 +310,10 @@ typedef struct {
   BOOLEAN transient_useFReg;  	/**< FALSE: use 'standard' e^F for marginalization, TRUE: use e^FReg = (1/D)*e^F */
 
   CHAR *outputTiming;		/**< output timing measurements and parameters into this file [append!]*/
-  CHAR *outputFstatTiming;	/**< output F-statistic timing measurements and parameters into this file [append!]*/
 
-  int FstatMethod;		//!< select which method/algorithm to use to compute the F-statistic
+  CHAR *FstatMethod;		//!< select which method/algorithm to use to compute the F-statistic
 
   BOOLEAN resampFFTPowerOf2;	//!< in Resamp: enforce FFT length to be a power of two (by rounding up)
-  LALStringVector *injectionSources;    /**< Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}') */
 
   // ----- deprecated and obsolete variables, kept around for backwards-compatibility -----
   LIGOTimeGPS internalRefTime;   /**< [DEPRECATED] internal reference time. Has no effect, XLALComputeFstat() now always uses midtime anyway ... */
@@ -390,10 +390,16 @@ int main(int argc,char *argv[])
 
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit (1);
   }
+
+  if ( uvar.version )
+    {
+      printf ( "%s\n", GV.VCSInfoString );
+      exit (0);
+    }
 
   /* do some sanity checks on the user-input before we proceed */
   XLAL_CHECK_MAIN ( checkUserInputConsistency ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -794,26 +800,6 @@ int main(int argc,char *argv[])
 
     } /* if timing output requested */
 
-  /* if requested: output F-statistic timings into F-statistic-timing-file */
-  if ( uvar.outputFstatTiming )
-    {
-
-      FILE *fp;
-      if ( (fp = fopen( uvar.outputFstatTiming, "rb" )) != NULL )
-        {
-          fclose(fp);
-          XLAL_CHECK ( (fp = fopen( uvar.outputFstatTiming, "ab" ) ), XLAL_ESYS, "Failed to open existing timing-file '%s' for appending\n", uvar.outputFstatTiming );
-          XLAL_CHECK_MAIN ( XLALAppendFstatTiming2File ( GV.Fstat_in, fp, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        }
-      else
-        {
-          XLAL_CHECK ( (fp = fopen( uvar.outputFstatTiming, "wb" ) ), XLAL_ESYS, "Failed to open new timing-file '%s' for writing\n", uvar.outputFstatTiming );
-          XLAL_CHECK_MAIN ( XLALAppendFstatTiming2File ( GV.Fstat_in, fp, 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        }
-      fclose(fp);
-
-    } /* if timing output requested */
-
   /* ----- if using toplist: sort and write it out to file now ----- */
   if ( fpFstat && GV.FstatToplist )
     {
@@ -966,6 +952,8 @@ initUserVars ( UserInput_t *uvar )
 
   uvar->metricMismatch = 0.02;
 
+  uvar->version = FALSE;
+
   uvar->outputLogfile = NULL;
   uvar->outputFstat = NULL;
   uvar->outputLoudest = NULL;
@@ -994,7 +982,7 @@ initUserVars ( UserInput_t *uvar )
   uvar->minBraking = 0.0;
   uvar->maxBraking = 0.0;
 
-  uvar->FstatMethod = FMETHOD_DEMOD_BEST;	// default to guessed 'best' demod hotloop variant
+  uvar->FstatMethod = XLALStringDuplicate("DemodBest");	// default to guessed 'best' demod hotloop variant
 
   uvar->outputSingleFstats = FALSE;
   uvar->RankingStatistic = XLALStringDuplicate ( "F" );
@@ -1008,7 +996,6 @@ initUserVars ( UserInput_t *uvar )
   uvar->transient_WindowType = XLALStringDuplicate ( "none" );
   uvar->transient_useFReg = 0;
   uvar->resampFFTPowerOf2 = TRUE;
-  uvar->injectionSources = NULL;
 
   /* ---------- register all user-variables ---------- */
   XLALRegisterUvarMember( 	Alpha, 		RAJ, 'a', OPTIONAL, "Sky: equatorial J2000 right ascension (in radians or hours:minutes:seconds)");
@@ -1106,14 +1093,16 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( transient_tauDaysBand, 	 REAL8, 0, DEPRECATED, 	 "TransientCW: Range of transient-CW duration timescales to search, in days [better use --transient_tauBand in seconds instead]");
   XLALRegisterUvarMember( transient_dtau, 	  	  	 INT4,  0, OPTIONAL, 	 "TransientCW: Step-size in transient-CW duration timescale, in seconds [Default:Tsft]");
 
-  XLALRegisterUvarAuxDataMember( FstatMethod, UserEnum, XLALFstatMethodChoices(), 0, OPTIONAL,  "F-statistic method to use" );
+  XLALRegisterUvarMember(FstatMethod,             STRING, 0,  OPTIONAL,  "F-statistic method to use. Available methods: %s", XLALFstatMethodHelpString() );
+
+  XLALRegisterUvarMember(  version,	BOOLEAN, 'V', SPECIAL,  "Output version information");
 
   /* ----- more experimental/expert options ----- */
   XLALRegisterUvarMember( 	UseNoiseWeights,BOOLEAN, 'W', DEVELOPER, "Use per-SFT noise weights");
   XLALRegisterUvarMember(ephemEarth, 	 STRING, 0,  DEVELOPER, "Earth ephemeris file to use");
   XLALRegisterUvarMember(ephemSun, 	 STRING, 0,  DEVELOPER, "Sun ephemeris file to use");
 
-  XLALRegisterUvarAuxDataMember( SSBprecision, UserEnum, &SSBprecisionChoices, 0, DEVELOPER, "Precision to use for time-transformation to SSB" );
+  XLALRegisterUvarMember( 	SSBprecision,	 INT4, 0,  DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
 
   XLALRegisterUvarMember( 	RngMedWindow,	INT4, 'k', DEVELOPER, "Running-Median window size");
   XLALRegisterUvarMember(	Dterms,		INT4, 't', DEVELOPER, "Number of kernel terms (single-sided) to use in\na) Dirichlet kernel if FstatMethod=Demod*\nb) sinc-interpolation kernel if FstatMethod=Resamp*" );
@@ -1132,12 +1121,8 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember(transient_useFReg,   	 BOOLEAN, 0,  DEVELOPER, "FALSE: use 'standard' e^F for marginalization, if TRUE: use e^FReg = (1/D)*e^F (BAD)");
 
   XLALRegisterUvarMember(outputTiming,         STRING, 0,  DEVELOPER, "Append timing measurements and parameters into this file");
-  XLALRegisterUvarMember(outputFstatTiming,    STRING, 0,  DEVELOPER, "Append F-statistic timing measurements and parameters into this file");
 
   XLALRegisterUvarMember(resampFFTPowerOf2,  BOOLEAN, 0,  DEVELOPER, "For Resampling methods: enforce FFT length to be a power of two (by rounding up)" );
-
-  /* inject signals into the data being analyzed */
-  XLALRegisterUvarMember(injectionSources,  STRINGVector, 0, DEVELOPER, "CSV list of files containing signal parameters for injection [see mfdv5]");
 
   // ---------- deprecated but still-supported or tolerated options ----------
   XLALRegisterUvarMember ( RA,	STRING, 0, DEPRECATED, "Use --Alpha instead" );
@@ -1170,7 +1155,9 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   XLAL_CHECK ( chdir ( uvar->workingDir ) == 0, XLAL_EINVAL, "Unable to change directory to workinDir '%s'\n", uvar->workingDir );
 
   /* ----- set computational parameters for F-statistic from User-input ----- */
-  cfg->useResamp = ( uvar->FstatMethod >= FMETHOD_RESAMP_GENERIC ); // use resampling;
+  XLAL_CHECK ( XLALParseFstatMethodString ( &cfg->FstatMethod, uvar->FstatMethod ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  cfg->useResamp = ( cfg->FstatMethod >= FMETHOD_RESAMP_GENERIC ); // use resampling;
 
   /* use IFO-contraint if one given by the user */
   if ( XLALUserVarWasSet ( &uvar->IFO ) ) {
@@ -1305,11 +1292,6 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
 
   } /* get DopplerRegion */
 
-  /*read signal parameters to be injected, if requested by the user*/
-  if ( uvar->injectionSources != NULL ) {
-    XLAL_CHECK_MAIN ( (cfg->injectionSources = XLALPulsarParamsFromUserInput ( uvar->injectionSources, NULL ) ) != NULL, XLAL_EFUNC );
-  }
-
   /* ----- set fixed grid step-sizes from user-input: only used for GRID_FLAT ----- */
   cfg->stepSizes.Alpha = uvar->dAlpha;
   cfg->stepSizes.Delta = uvar->dDelta;
@@ -1413,17 +1395,17 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
     cfg->numFreqBins_FBand = 1;	// number of frequency-bins in the frequency-band used for resampling (1 if not using Resampling)
   }
 
+  PulsarParamsVector *injectSources = NULL;
   MultiNoiseFloor *injectSqrtSX = NULL;
   FstatOptionalArgs optionalArgs = FstatOptionalArgsDefaults;
   optionalArgs.Dterms  = uvar->Dterms;
   optionalArgs.SSBprec = uvar->SSBprecision;
   optionalArgs.runningMedianWindow = uvar->RngMedWindow;
-  optionalArgs.injectSources = cfg->injectionSources;
+  optionalArgs.injectSources = injectSources;
   optionalArgs.injectSqrtSX = injectSqrtSX;
   optionalArgs.assumeSqrtSX = assumeSqrtSX;
-  optionalArgs.FstatMethod = uvar->FstatMethod;
+  optionalArgs.FstatMethod = cfg->FstatMethod;
   optionalArgs.resampFFTPowerOf2 = uvar->resampFFTPowerOf2;
-  optionalArgs.collectTiming = XLALUserVarWasSet ( &uvar->outputFstatTiming );
 
   XLAL_CHECK ( (cfg->Fstat_in = XLALCreateFstatInput( catalog, fCoverMin, fCoverMax, cfg->dFreq, cfg->ephemeris, &optionalArgs )) != NULL, XLAL_EFUNC );
   XLALDestroySFTCatalog(catalog);
@@ -1649,7 +1631,7 @@ XLALGetLogString ( const ConfigVariables *cfg )
   struct tm startTimeUTC = *XLALGPSToUTC ( &startTimeUTC, startTimeSeconds );
   {
     CHAR *startTimeUTCString = XLALStringDuplicate ( asctime(&startTimeUTC) );
-    startTimeUTCString[strlen(startTimeUTCString)-1] = 0;	// kill trailing newline
+    startTimeUTCString[strlen(startTimeUTCString)-2] = 0;	// kill trailing newline
     XLAL_CHECK_NULL ( snprintf ( buf, BUFLEN, "%%%% GPS starttime         = %d (%s GMT)\n", startTimeSeconds, startTimeUTCString ) < BUFLEN, XLAL_EBADLEN );
     XLALFree ( startTimeUTCString );
   }
@@ -1737,11 +1719,6 @@ Freemem( ConfigVariables *cfg )
   }
 
   XLALFree ( cfg->BSGLsetup );
-
-  /* free source injection if any */
-  if ( cfg->injectionSources ) {
-    XLALDestroyPulsarParamsVector ( cfg->injectionSources );
-  }
 
   return;
 

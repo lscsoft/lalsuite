@@ -11,7 +11,7 @@
 #include "LALSimIMRSpinEOBFactorizedWaveformCoefficientsPrec.c"
 
 /**
- * Function to calculate exact derivatives of the spin EOB Hamiltonian,
+ * Function to calculate numerical derivatives of the spin EOB Hamiltonian,
  * to get \f$dr/dt\f$, as decribed in Eqs. A4 of PRD 81, 084041 (2010)
  * This function is not used by the spin-aligned SEOBNRv1 model.
  */
@@ -22,13 +22,22 @@ static int XLALSpinPrecHcapRvecDerivative_exact(
                  void             *funcParams /**<< EOB parameters */
                                )
 {
+  //UNUSED int debugPK = 1;
+  //if (debugPK){
     for(int i =0; i < 12; i++){
       if( isnan(values[i]) ) {
         XLAL_PRINT_INFO("XLALSpinPrecHcapRvecDerivative_exact::values %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f\n", values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8], values[9], values[10], values[11]);
           XLALPrintError( "XLAL Error - %s: nan in input values \n", __func__);
           XLAL_ERROR( XLAL_EINVAL );
         }
+
+      if( isnan(dvalues[i]) ) {
+        XLAL_PRINT_INFO("XLALSpinPrecHcapRvecDerivative_exact::dvalues %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f %3.10f\n", dvalues[0], dvalues[1], dvalues[2], dvalues[3], dvalues[4], dvalues[5], dvalues[6], dvalues[7], dvalues[8], dvalues[9], dvalues[10], dvalues[11]);
+          XLALPrintError( "XLAL Error - %s: nan in the input dvalues \n", __func__);
+          XLAL_ERROR( XLAL_EINVAL );
+        }
     }
+  //}
     SpinEOBParams * seobParams = (SpinEOBParams *)funcParams;
 
     REAL8 tmpDValues[12] = {0.}, Tmatrix[3][3]={{0.,0.,0.},{0.,0.,0.},{0.,0.,0.}};
@@ -59,7 +68,7 @@ static int XLALSpinPrecHcapRvecDerivative_exact(
         u5 = u4*u;
         w2 = rMag2 + a2;
 
-        /* Eq. 5.83 of Barausse and Buonanno PRD 81, 084024 (2010) (hereafter  BB1), inverse */
+        /* Eq. 5.83 of BB1, inverse */
         D = 1. + log(1. + 6.*eta*u2 + 2.*(26. - 3.*eta)*eta*u3);
 
         m1PlusetaKK = -1. + eta * coeffs->KK;
@@ -81,14 +90,14 @@ static int XLALSpinPrecHcapRvecDerivative_exact(
         /* Eq. 5.38 of BB1 */
         deltaR = deltaT*D;
 
-        csi = sqrt( fabs(deltaT * deltaR) )/ w2; /* Inverse of Eq. 28 of Pan et al. PRD 81, 084041 (2010), so that csi = \xi_a(R) */
+        csi = sqrt( fabs(deltaT * deltaR) )/ w2; /* Eq. 28 of Pan et al. PRD 81, 084041 (2010) */
 
         XLALSimIMRCalculateSpinPrecEOBHCoeffs( seobParams->seobCoeffs, seobParams->eobParams->eta, sqrt(a2), seobParams->seobCoeffs->SpinAlignedEOBversion );
     }
 
     /* Calculate the T-matrix, required to convert P from tortoise to
     * non-tortoise coordinates, and/or vice-versa. This is given explicitly
-    * in Eq. A3 of Pan et al. PRD 81, 084041 (2010) */
+    * in Eq. A3 of 0912.3466 */
     for( int i = 0; i < 3; i++ ){
         for( int j = 0; j <= i; j++ )
             Tmatrix[i][j] = Tmatrix[j][i] = (values[i]*values[j]/rMag2)* (csi - 1.);
@@ -102,8 +111,8 @@ static int XLALSpinPrecHcapRvecDerivative_exact(
     //OPTV3: The following updates hcoeffs
         REAL8 mass1 = seobParams->eobParams->m1;
         REAL8 mass2 = seobParams->eobParams->m2;
-        REAL8 s1Data[3],s2Data[3], rcrossrDot[3];
-        REAL8 rcrossrDotMag, s1dotLN, s2dotLN, chiS,chiA, tplspin;
+        REAL8 s1Data[3],s2Data[3],/*magL,polData[3],*/rcrossrDot[3];
+        REAL8 /*Lx,Ly,Lz,*/rcrossrDotMag, s1dotLN, s2dotLN, chiS,chiA, tplspin;
         memcpy(s1Data,values+6,3*sizeof(REAL8));
         memcpy(s2Data,values+9,3*sizeof(REAL8));
         for ( int i = 0; i < 3; i++ )
@@ -111,8 +120,20 @@ static int XLALSpinPrecHcapRvecDerivative_exact(
             s1Data[i] *= (mass1+mass2)*(mass1+mass2);
             s2Data[i] *= (mass1+mass2)*(mass1+mass2);
         }
+        /* Calculate the polar data: NOT USED. */
+        /*
+        // Calculate the orbital angular momentum
+        Lx = values[1]*values[5] - values[2]*values[4];
+        Ly = values[2]*values[3] - values[0]*values[5];
+        Lz = values[0]*values[4] - values[1]*values[3];
+        magL = sqrt( Lx*Lx + Ly*Ly + Lz*Lz );
+        polData[0] = sqrt( values[0]*values[0] + values[1]*values[1]+ values[2]*values[2] );
+        polData[1] = 0;
+        polData[2] = (values[0]*values[3] + values[1]*values[4]+ values[2]*values[5]) / polData[0];
+        polData[3] = magL; // <- BUG IN THIS LINE: polData has only 3 elements. Trying to set the fourth here.
+        */
 
-        /*Compute \vec{L_N} = \vec{r} \times \dot{\vec{r}}, \vec{S_i} \cdot \vec{L_N} and chiS and chiA */
+        /*Compute \vec{L_N} = \vec{r} \times \.{\vec{r}}, \vec{S_i} \dot \vec{L_N} and chiS and chiA */
         rcrossrDot[0] = values[1]*tmpDValues[5] - values[2]*tmpDValues[4];
         rcrossrDot[1] = values[2]*tmpDValues[3] - values[0]*tmpDValues[5];
         rcrossrDot[2] = values[0]*tmpDValues[4] - values[1]*tmpDValues[3];
@@ -124,7 +145,6 @@ static int XLALSpinPrecHcapRvecDerivative_exact(
         s2dotLN = (s2Data[0]*rcrossrDot[0] + s2Data[1]*rcrossrDot[1] + s2Data[2]*rcrossrDot[2])/ (mass2*mass2) ;
         chiS = 0.5 * (s1dotLN + s2dotLN);
         chiA = 0.5 * (s1dotLN - s2dotLN);
-	/* Compute the Kerr spin parameter for the test particle; equivalent to Equation 31 of PRD 86, 024011(2012) */
         tplspin = (1.-2.*seobParams->eobParams->eta) * chiS + (mass1 - mass2)/(mass1 + mass2) * chiA;
 
         XLALSimIMREOBCalcSpinPrecFacWaveformCoefficients(seobParams->eobParams->hCoeffs, mass1, mass2, seobParams->eobParams->eta, tplspin,chiS, chiA, 3);
@@ -137,17 +157,6 @@ static int XLALSpinPrecHcapRvecDerivative_exact(
       for( int j = 0.; j < 3; j++ )
           dvalues[i] += tmpDValues[j+3]*Tmatrix[i][j];
     }
-
-    /* Now check for NaNs in the dvalues[] output array; only elements 0, 1, and 2 are set */
-    for(int i = 0; i < 3; i++ ){
-      if( isnan(dvalues[i]) ) {
-        XLAL_PRINT_INFO("XLALSpinPrecHcapRvecDerivative_exact::dvalues %3.10f %3.10f %3.10f\n", dvalues[0], dvalues[1], dvalues[2]);
-	XLALPrintError( "XLAL Error - %s: nan in the output dvalues \n", __func__);
-	XLAL_ERROR( XLAL_EINVAL );
-      }
-    }
-
-
     return XLAL_SUCCESS;
 }
 

@@ -1,7 +1,7 @@
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_test.am
 
-SUBDIRS = baseline data
+SUBDIRS = baseline
 
 # Add compiled test programs to this variable
 test_programs += LALInferenceTest
@@ -20,7 +20,6 @@ test_programs += test_cubic_interp
 if SWIG_BUILD_PYTHON
 test_scripts += test_plot.py
 test_scripts += test_detframe.py
-test_scripts += test_io_events.py
 if HAVE_CHEALPIX
 test_scripts += doctests.py
 

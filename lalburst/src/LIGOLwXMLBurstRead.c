@@ -198,9 +198,11 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 	struct {
 		int process_id;
 		int waveform;
+		int numrel_data;
 		int ra;
 		int dec;
 		int psi;
+                int incl;
 		int time_geocent_gps;
 		int time_geocent_gps_ns;
 		int time_geocent_gmst;
@@ -235,6 +237,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 	XLALClearErrno();
 	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_ILWD_CHAR, 1);
 	column_pos.waveform = XLALLIGOLwFindColumn(&env, "waveform", METAIO_TYPE_LSTRING, 1);
+	column_pos.numrel_data = XLALLIGOLwFindColumn(&env, "numrel_data", METAIO_TYPE_LSTRING, 0);
 	column_pos.ra = XLALLIGOLwFindColumn(&env, "ra", METAIO_TYPE_REAL_8, 0);
 	column_pos.dec = XLALLIGOLwFindColumn(&env, "dec", METAIO_TYPE_REAL_8, 0);
 	column_pos.psi = XLALLIGOLwFindColumn(&env, "psi", METAIO_TYPE_REAL_8, 0);
@@ -291,6 +294,14 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 			XLAL_ERROR_NULL(XLAL_EIO);
 		}
 		strncpy(row->waveform, env.ligo_lw.table.elt[column_pos.waveform].data.lstring.data, sizeof(row->waveform) - 1);
+		if(strlen(env.ligo_lw.table.elt[column_pos.numrel_data].data.lstring.data) >= sizeof(row->numrel_data)) {
+			XLALDestroySimBurst(row);
+			XLALDestroySimBurstTable(head);
+			MetaioAbort(&env);
+			XLALPrintError("%s(): failure reading %s table: string too long\n", __func__, table_name);
+			XLAL_ERROR_NULL(XLAL_EIO);
+		}
+		strncpy(row->numrel_data, env.ligo_lw.table.elt[column_pos.numrel_data].data.lstring.data, sizeof(row->numrel_data) - 1);
 		if(column_pos.ra >= 0)
 			row->ra = env.ligo_lw.table.elt[column_pos.ra].data.real_8;
 		if(column_pos.dec >= 0)
@@ -373,6 +384,15 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 				XLAL_ERROR_NULL(XLAL_EIO);
 			}
 			row->amplitude = env.ligo_lw.table.elt[column_pos.amplitude].data.real_8;
+		} else if(strcmp(row->numrel_data, "") != 0) {
+			if(column_pos.hrss < 0) {
+				XLALDestroySimBurst(row);
+				XLALDestroySimBurstTable(head);
+				MetaioAbort(&env);
+				XLALPrintError("%s(): failure reading %s table: missing required column\n", __func__, table_name);
+				XLAL_ERROR_NULL(XLAL_EIO);
+			}
+			row->hrss = env.ligo_lw.table.elt[column_pos.hrss].data.real_8;
 		} else {
 			/* unrecognized waveform */
 			XLALDestroySimBurst(row);
