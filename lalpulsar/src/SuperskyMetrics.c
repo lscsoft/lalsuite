@@ -700,47 +700,8 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
 
 }
 
-SuperskyMetrics *XLALCopySuperskyMetrics(
-  const SuperskyMetrics *metrics
-  )
-{
-
-  // Check input
-  XLAL_CHECK_NULL( metrics != NULL, XLAL_EFAULT );
-
-  // Allocate memory for copied struct
-  SuperskyMetrics *copy_metrics = XLALCalloc( 1, sizeof( *copy_metrics ) );
-  XLAL_CHECK_NULL( copy_metrics != NULL, XLAL_ENOMEM );
-  copy_metrics->num_segments = metrics->num_segments;
-
-  // Allocate memory for copies of arrays of coherent metrics
-  copy_metrics->coh_rssky_metric = XLALCalloc( copy_metrics->num_segments, sizeof( *copy_metrics->coh_rssky_metric ) );
-  XLAL_CHECK_NULL( copy_metrics->coh_rssky_metric != NULL, XLAL_ENOMEM );
-  copy_metrics->coh_rssky_transf = XLALCalloc( copy_metrics->num_segments, sizeof( *copy_metrics->coh_rssky_transf ) );
-  XLAL_CHECK_NULL( copy_metrics->coh_rssky_transf != NULL, XLAL_ENOMEM );
-
-  // Copy coherent metrics and transform data
-  for ( size_t n = 0; n < metrics->num_segments; ++n ) {
-    GAMAT_NULL( copy_metrics->coh_rssky_metric[n], metrics->coh_rssky_metric[n]->size1, metrics->coh_rssky_metric[n]->size2 );
-    gsl_matrix_memcpy( copy_metrics->coh_rssky_metric[n], metrics->coh_rssky_metric[n] );
-    copy_metrics->coh_rssky_transf[n] = XLALCalloc( 1, sizeof( *copy_metrics->coh_rssky_transf[n] ) );
-    XLAL_CHECK_NULL( copy_metrics->coh_rssky_transf[n] != NULL, XLAL_ENOMEM );
-    memcpy( copy_metrics->coh_rssky_transf[n], metrics->coh_rssky_transf[n], sizeof( *copy_metrics->coh_rssky_transf[n] ) );
-  }
-
-  // Copy semocherent metrics and transform data
-  GAMAT_NULL( copy_metrics->semi_rssky_metric, metrics->semi_rssky_metric->size1, metrics->semi_rssky_metric->size2 );
-  gsl_matrix_memcpy( copy_metrics->semi_rssky_metric, metrics->semi_rssky_metric );
-  copy_metrics->semi_rssky_transf = XLALCalloc( 1, sizeof( *copy_metrics->semi_rssky_transf ) );
-  XLAL_CHECK_NULL( copy_metrics->semi_rssky_transf != NULL, XLAL_ENOMEM );
-  memcpy( copy_metrics->semi_rssky_transf, metrics->semi_rssky_transf, sizeof( *copy_metrics->semi_rssky_transf ) );
-
-  return copy_metrics;
-
-}
-
 void XLALDestroySuperskyMetrics(
-  SuperskyMetrics *metrics
+  SuperskyMetrics *metrics                      /// [in] Supersky metrics struct
   )
 {
   if ( metrics != NULL ) {
@@ -1239,7 +1200,6 @@ int XLALConvertSuperskyToSuperskyPoint(
   gsl_vector *out_rssky,
   const SuperskyTransformData *out_rssky_transf,
   const gsl_vector *in_rssky,
-  const gsl_vector *ref_rssky,
   const SuperskyTransformData *in_rssky_transf
   )
 {
@@ -1252,7 +1212,7 @@ int XLALConvertSuperskyToSuperskyPoint(
 
   // Convert input reduced supersky point to physical coordinates
   PulsarDopplerParams XLAL_INIT_DECL( phys );
-  XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &phys, in_rssky, ref_rssky, in_rssky_transf ) == XLAL_SUCCESS, XLAL_EINVAL );
+  XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &phys, in_rssky, NULL, in_rssky_transf ) == XLAL_SUCCESS, XLAL_EINVAL );
 
   // Convert physical point to output reduced supersky coordinates
   XLAL_CHECK( XLALConvertPhysicalToSuperskyPoint( out_rssky, &phys, out_rssky_transf ) == XLAL_SUCCESS, XLAL_EINVAL );
@@ -2108,8 +2068,6 @@ static double EqualAreaSkyBoundSolverB(
 
 int XLALSetSuperskyEqualAreaSkyBounds(
   LatticeTiling *tiling,
-  const gsl_matrix *rssky_metric,
-  const double max_mismatch,
   const UINT4 patch_count,
   const UINT4 patch_index
   )
@@ -2117,13 +2075,7 @@ int XLALSetSuperskyEqualAreaSkyBounds(
 
   // Check input
   XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
-  XLAL_CHECK( rssky_metric->size1 == rssky_metric->size2, XLAL_EINVAL );
-  XLAL_CHECK( rssky_metric->size1 >= 2, XLAL_EINVAL );
-  XLAL_CHECK( gsl_matrix_get( rssky_metric, 0, 1 ) == 0, XLAL_EINVAL );
-  XLAL_CHECK( gsl_matrix_get( rssky_metric, 1, 0 ) == 0, XLAL_EINVAL );
-  XLAL_CHECK( max_mismatch > 0, XLAL_EINVAL );
   XLAL_CHECK( patch_count > 0, XLAL_EINVAL );
-  XLAL_CHECK( patch_count == 1 || patch_count % 2 == 0, XLAL_EINVAL, "'patch_count' must be either one or even" );
   XLAL_CHECK( patch_index < patch_count, XLAL_EINVAL );
 
   // Set parameter-space bound names
@@ -2142,25 +2094,14 @@ int XLALSetSuperskyEqualAreaSkyBounds(
     A_bound[1] = A_bound[0] + 4 / ( ( double ) patch_count );
   } else {
 
-    // Number of patches per hemisphere for odd number of patches
+    // Number of patches per hemisphere; rounded down for odd number of patches
     const UINT4 hemi_patch_count = patch_count / 2;
 
     // Index of patch within hemisphere; increases to 'hemi_patch_count' then decreases to zero
     const UINT4 hemi_patch_index = patch_index < hemi_patch_count ? patch_index : patch_count - patch_index - 1;
 
-    // Minimum number of patch divisions in supersky coordinate A within one hemisphere
-    // - Prevents patches from being too squashed in either A or B, which lead to overcoverage (i.e. the
-    //   sum of points over all sky patches being much larger than the number of points in the whole sky)
-    const UINT4 min_A_count = ceil( sqrt( hemi_patch_count ) );
-
-    // Maximum extent of metric ellipse bounding box in supersky coordinate B
-    const double max_B_bbox = 2 * sqrt( max_mismatch / gsl_matrix_get( rssky_metric, 1, 1 ) );
-
-    // Target number of patch divisions in supersky coordinate B
-    const double target_B_count = 1.0 / ( 1.0 * max_B_bbox );
-
     // Number of patch divisions in supersky coordinate A within one hemisphere
-    const UINT4 A_count = GSL_MIN( min_A_count, ceil( hemi_patch_count / target_B_count ) );
+    const UINT4 A_count = ceil( sqrt( hemi_patch_count ) );
 
     // Minimum number of patch divisions in supersky coordinate B
     const UINT4 min_B_count = hemi_patch_count / A_count;
@@ -2176,34 +2117,45 @@ int XLALSetSuperskyEqualAreaSkyBounds(
     }
 
     // Calculate range of indices in 'A', and number of patch divisions and index in 'B'.
-    // - The divisions in 'A' are set in proportion to the range of 'A_index', i.e. the number of
-    //   divisions in 'B' for that range of 'A_index'. This is so that, if 'patch_excess' is
-    //   not zero, and therefore the number of divisions in 'B' is not constant, patch areas should
-    //   still be equal. Example:
-    //     hemi_patch_count=7 hemi_patch_index=0 | A_index=0--3 B_count=3 B_index=0
-    //     hemi_patch_count=7 hemi_patch_index=1 | A_index=0--3 B_count=3 B_index=1
-    //     hemi_patch_count=7 hemi_patch_index=2 | A_index=0--3 B_count=3 B_index=2
-    //     hemi_patch_count=7 hemi_patch_index=3 | A_index=3--5 B_count=2 B_index=0
-    //     hemi_patch_count=7 hemi_patch_index=4 | A_index=3--5 B_count=2 B_index=1
-    //     hemi_patch_count=7 hemi_patch_index=5 | A_index=5--7 B_count=2 B_index=0
-    //     hemi_patch_count=7 hemi_patch_index=6 | A_index=5--7 B_count=2 B_index=1
     UINT4 A_index[2] = {0, B_count};
     UINT4 B_index = hemi_patch_index;
-    while ( B_index >= B_count ) {
+    if ( hemi_patch_index == hemi_patch_count ) {
 
-      // Decrease index in 'B'; we are done when 'B_index' < 'B_count'
-      B_index -= B_count;
+      // For odd number of patches, one patch will straddle both hemispheres
+      A_index[0] = A_index[1] = hemi_patch_count;
+      B_index = 0;
+      B_count = 1;
 
-      // Decrease number of excess patches; if zero, subtract extra patch from patch divisions in 'B'
-      --patch_excess;
-      if ( patch_excess == 0 ) {
-        --B_count;
+    } else {
+
+      // The divisions in 'A' are set in proportion to the range of 'A_index', i.e. the number of
+      // divisions in 'B' for that range of 'A_index'. This is so that, if 'patch_excess' is
+      // not zero, and therefore the number of divisions in 'B' is not constant, patch areas should
+      // still be equal. Example:
+      //   hemi_patch_count=7 hemi_patch_index=0 | A_index=0--3 B_count=3 B_index=0
+      //   hemi_patch_count=7 hemi_patch_index=1 | A_index=0--3 B_count=3 B_index=1
+      //   hemi_patch_count=7 hemi_patch_index=2 | A_index=0--3 B_count=3 B_index=2
+      //   hemi_patch_count=7 hemi_patch_index=3 | A_index=3--5 B_count=2 B_index=0
+      //   hemi_patch_count=7 hemi_patch_index=4 | A_index=3--5 B_count=2 B_index=1
+      //   hemi_patch_count=7 hemi_patch_index=5 | A_index=5--7 B_count=2 B_index=0
+      //   hemi_patch_count=7 hemi_patch_index=6 | A_index=5--7 B_count=2 B_index=1
+      while ( B_index >= B_count ) {
+
+        // Decrease index in 'B'; we are done when 'B_index' < 'B_count'
+        B_index -= B_count;
+
+        // Decrease number of excess patches; if zero, subtract extra patch from patch divisions in 'B'
+        --patch_excess;
+        if ( patch_excess == 0 ) {
+          --B_count;
+        }
+
+        // Store the current last 'A' index in 'A_index[0]', and increase
+        // 'A_index[1]' by the current number of patch divisions in 'B'
+        A_index[0] = A_index[1];
+        A_index[1] += B_count;
+
       }
-
-      // Store the current last 'A' index in 'A_index[0]', and increase
-      // 'A_index[1]' by the current number of patch divisions in 'B'
-      A_index[0] = A_index[1];
-      A_index[1] += B_count;
 
     }
 
@@ -2224,7 +2176,7 @@ int XLALSetSuperskyEqualAreaSkyBounds(
       // Handle boundaries as special cases
       if ( A_index_i == 0 ) {
         A_bound[i] = -1;
-      } else if ( A_index_i == hemi_patch_count ) {
+      } else if ( A_index_i == hemi_patch_count && patch_count % 2 == 0 ) {
         A_bound[i] = 1;
       } else {
 
@@ -2259,8 +2211,8 @@ int XLALSetSuperskyEqualAreaSkyBounds(
       const UINT4 B_index_i = B_index + i;
 
       // Maximum possible value of 'B' within the region bound by 'A_bound'
-      // - For a single patch in 'A', 'B' must span the entire unit disk
-      const double B_max = ( A_count == 1 ) ? 1 : RE_SQRT( 1 - GSL_MIN( SQR( A_bound[0] ), SQR( A_bound[1] ) ) );
+      // - For 4 patches or fewer, 'B' must span the entire unit disk
+      const double B_max = ( B_count <= 4 ) ? 1 : RE_SQRT( 1 - GSL_MIN( SQR( A_bound[0] ), SQR( A_bound[1] ) ) );
 
       // Handle boundaries as special cases
       if ( B_index_i == 0 ) {
@@ -2300,7 +2252,7 @@ int XLALSetSuperskyEqualAreaSkyBounds(
     // Restrict range 'A' if 'B = const' bounds intersect unit disk boundary within it
     // - Only start to do this when there are 3 patches in 'B' direction
     // - Do not do this for the middle 'B' patch which straddles 'B = 0'
-    if ( B_count >= 3 && B_index != (B_count-1)/2 ) {
+    if ( patch_count >= 14 && B_index != (B_count-1)/2 ) {
       const double Ai = RE_SQRT( 1 - GSL_MIN( SQR( B_bound[0] ), SQR( B_bound[1] ) ) );
       if ( A_bound[0] < -Ai ) {
         A_bound[0] = -Ai;
@@ -2311,7 +2263,10 @@ int XLALSetSuperskyEqualAreaSkyBounds(
     }
 
     // Shift bounds on 'A' into the correct hemisphere, and put in correct order
-    if ( patch_index < hemi_patch_count ) {    // This patch is in the left hemisphere
+    if ( hemi_patch_index == hemi_patch_count ) {     // This patch straddles both hemispheres
+      A_bound[0] = A_bound[0] - 1;
+      A_bound[1] = -A_bound[1] + 1;
+    } else if ( patch_index < hemi_patch_count ) {    // This patch is in the left hemisphere
       A_bound[0] = A_bound[0] - 1;
       A_bound[1] = A_bound[1] - 1;
     } else {                                          // This patch is in the left hemisphere
@@ -2538,7 +2493,7 @@ static int SM_LatticeSuperskyRangeCallback(
   // Convert point from reduced supersky coordinates to other reduced supersky coordinates
   double rssky2_array[cparam->rssky_transf->ndim];
   gsl_vector_view rssky2_view = gsl_vector_view_array( rssky2_array, cparam->rssky2_transf->ndim );
-  XLAL_CHECK( XLALConvertSuperskyToSuperskyPoint( &rssky2_view.vector, cparam->rssky2_transf, point, point, cparam->rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALConvertSuperskyToSuperskyPoint( &rssky2_view.vector, cparam->rssky2_transf, point, cparam->rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Store minimum/maximum values of other reduced supersky sky coordinates
   for ( size_t i = 0; i < 2; ++i ) {

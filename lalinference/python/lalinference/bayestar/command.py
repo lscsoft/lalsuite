@@ -54,11 +54,6 @@ import distutils.version
 mpl_version = distutils.version.LooseVersion(matplotlib.__version__)
 
 
-def get_version():
-    from .. import InferenceVCSInfo as vcs_info
-    return vcs_info.name + ' ' + vcs_info.version
-
-
 @contextlib.contextmanager
 def TemporaryDirectory(suffix='', prefix='tmp', dir=None, delete=True):
     try:
@@ -174,16 +169,7 @@ class MatplotlibFigureType(argparse.FileType):
 
     def __save(self):
         from matplotlib import pyplot as plt
-        _, ext = os.path.splitext(self.string)
-        ext = ext.lower()
-        program, _ = os.path.splitext(os.path.basename(sys.argv[0]))
-        cmdline = ' '.join([program] + sys.argv[1:])
-        metadata = {'Title': cmdline}
-        if ext == '.png':
-            metadata['Software'] = get_version()
-        elif ext in {'.pdf', '.ps', '.eps'}:
-            metadata['Creator'] = get_version()
-        return plt.savefig(self.string, metadata=metadata)
+        return plt.savefig(self.string)
 
     def __call__(self, string):
         from matplotlib import pyplot as plt
@@ -298,7 +284,8 @@ del group
 # Defer loading SWIG bindings until version string is needed.
 class VersionAction(argparse._VersionAction):
     def __call__(self, parser, namespace, values, option_string=None):
-        self.version = get_version()
+        from .. import InferenceVCSInfo
+        self.version = 'LALInference ' + InferenceVCSInfo.version
         super(VersionAction, self).__call__(
             parser, namespace, values, option_string)
 
@@ -317,16 +304,8 @@ class LogLevelAction(argparse._StoreAction):
     def __init__(
             self, option_strings, dest, nargs=None, const=None, default=None,
             type=None, choices=None, required=False, help=None, metavar=None):
-        # FIXME: this broke because of internal changes in the Python standard
-        # library logging module between Python 2.7 and 3.6. We should not rely
-        # on these undocumented module variables in the first place.
-        try:
-            logging._levelNames
-        except AttributeError:
-            metavar = '|'.join(logging._levelToName.values())
-        else:
-            metavar = '|'.join(
-                _ for _ in logging._levelNames.keys() if isinstance(_, str))
+        metavar = '|'.join(
+            _ for _ in logging._levelNames.keys() if isinstance(_, str))
         type = loglevel_type
         super(LogLevelAction, self).__init__(
             option_strings, dest, nargs=nargs, const=const, default=default,

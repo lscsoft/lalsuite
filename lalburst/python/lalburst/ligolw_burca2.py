@@ -51,7 +51,7 @@ from git_version import version as __version__
 #
 
 
-def assign_likelihood_ratios(connection, coinc_def_id, offset_vectors, vetoseglists, events_func, veto_func, ln_likelihood_ratio_func, verbose = False):
+def assign_likelihood_ratios(connection, coinc_def_id, offset_vectors, vetoseglists, events_func, veto_func, ln_likelihood_ratio_func, likelihood_params_func, verbose = False, params_func_extra_args = ()):
 	"""
 	Assigns likelihood ratio values to coincidences.
 	"""
@@ -77,7 +77,8 @@ def assign_likelihood_ratios(connection, coinc_def_id, offset_vectors, vetosegli
 
 	def ln_likelihood_ratio(coinc_event_id, time_slide_id):
 		try:
-			return ln_likelihood_ratio_func([event for event in events_func(cursor, coinc_event_id) if veto_func(event, vetoseglists)], offset_vectors[time_slide_id])
+			params = likelihood_params_func([event for event in events_func(cursor, coinc_event_id) if veto_func(event, vetoseglists)], offset_vectors[time_slide_id], *params_func_extra_args)
+			return ln_likelihood_ratio_func(params) if params is not None else None
 		except:
 			traceback.print_exc()
 			raise
@@ -108,7 +109,7 @@ WHERE
 	cursor.close()
 
 
-def assign_likelihood_ratios_xml(xmldoc, coinc_def_id, offset_vectors, vetoseglists, events_func, veto_func, ln_likelihood_ratio_func, verbose = False):
+def assign_likelihood_ratios_xml(xmldoc, coinc_def_id, offset_vectors, vetoseglists, events_func, veto_func, ln_likelihood_ratio_func, likelihood_params_func, verbose = False, params_func_extra_args = ()):
 	"""
 	Assigns likelihood ratio values to coincidences (XML version).
 	"""
@@ -119,7 +120,7 @@ def assign_likelihood_ratios_xml(xmldoc, coinc_def_id, offset_vectors, vetosegli
 	coinc_event_table = lsctables.CoincTable.get_table(xmldoc)
 
 	if verbose:
-		progressbar = ProgressBar("computing ln L", max = len(coinc_event_table))
+		progressbar = ProgressBar("computing likelihood ratios", max = len(coinc_event_table))
 	else:
 		progressbar = None
 
@@ -128,7 +129,8 @@ def assign_likelihood_ratios_xml(xmldoc, coinc_def_id, offset_vectors, vetosegli
 			progressbar.increment()
 		if coinc_event.coinc_def_id != coinc_def_id:
 			continue
-		coinc_event.likelihood = ln_likelihood_ratio_func([event for event in events_func(None, coinc_event.coinc_event_id) if veto_func(event, vetoseglists)], offset_vectors[coinc_event.time_slide_id])
+		params = likelihood_params_func([event for event in events_func(None, coinc_event.coinc_event_id) if veto_func(event, vetoseglists)], offset_vectors[coinc_event.time_slide_id], *params_func_extra_args)
+		coinc_event.likelihood = ln_likelihood_ratio_func(params) if params is not None else None
 
 	del progressbar
 
@@ -164,9 +166,11 @@ def sngl_burst_veto_func(event, vetoseglists):
 	return event.ifo not in vetoseglists or event.peak not in vetoseglists[event.ifo]
 
 
-def ligolw_burca2(database, ln_likelihood_ratio_func, verbose = False):
+def ligolw_burca2(database, ln_likelihood_ratio, params_func, verbose = False, params_func_extra_args = ()):
 	"""
 	Assigns likelihood ratio values to excess power coincidences.
+	database is lalburst.SnglBurstUtils.CoincDatabase instance, and
+	ln_likelihood_ratio is a LnLikelihoodRatio class instance.
 	"""
 	#
 	# Run core function
@@ -179,8 +183,10 @@ def ligolw_burca2(database, ln_likelihood_ratio_func, verbose = False):
 		vetoseglists = database.vetoseglists,
 		events_func = lambda cursor, coinc_event_id: sngl_burst_events_func(cursor, coinc_event_id, database.sngl_burst_table.row_from_cols),
 		veto_func = sngl_burst_veto_func,
-		ln_likelihood_ratio_func = ln_likelihood_ratio_func,
-		verbose = verbose
+		ln_likelihood_ratio_func = ln_likelihood_ratio,
+		likelihood_params_func = params_func,
+		verbose = verbose,
+		params_func_extra_args = params_func_extra_args
 	)
 
 	#

@@ -420,10 +420,6 @@ REAL8 PulsarGetREAL8Param( const PulsarParameters *pars, const CHAR *name );
  */
 REAL8 PulsarGetREAL8ParamOrZero( const PulsarParameters *pars, const CHAR *name );
 
-#ifdef SWIG   /* SWIG interface directives */
-SWIGLAL(OWNS_THIS_STRING(const CHAR*, value));
-#endif
-
 /** \brief Return a string parameter
  *
  * This function will call \c PulsarGetParam for a string parameter and properly cast it for returning.
@@ -431,14 +427,7 @@ SWIGLAL(OWNS_THIS_STRING(const CHAR*, value));
  * CHAR *str = XLALStringDuplicate( PulsarGetStringParam(pars, "NAME") );
  * It also needs to be freed afterwards.
  */
-const CHAR *PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name );
-
-/** \brief Add a string parameter to the \c PulsarParameters structure */
-void PulsarAddStringParam(PulsarParameters *pars, const CHAR * name, const CHAR *value);
-
-#ifdef SWIG   /* SWIG interface directives */
-SWIGLAL_CLEAR(OWNS_THIS_STRING(const CHAR*, value));
-#endif
+CHAR *PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name );
 
 /** \brief Return a \c REAL8Vector parameter
  *
@@ -470,6 +459,9 @@ void PulsarAddUINT4Param(PulsarParameters *pars, const CHAR * name, UINT4 value)
 /** \brief Add a \c REAL8Vector parameter to the \c PulsarParameters structure */
 void PulsarAddREAL8VectorParam(PulsarParameters *pars, const CHAR * name, REAL8Vector *value);
 
+/** \brief Add a string parameter to the \c PulsarParameters structure */
+void PulsarAddstringParam(PulsarParameters *pars, const CHAR * name, CHAR *value);
+
 /** \brief Free all the parameters from a \c PulsarParameters structure */
 void PulsarClearParams( PulsarParameters *pars );
 
@@ -481,7 +473,7 @@ void PulsarRemoveParam( PulsarParameters *pars, const CHAR *name );
  * Set the value of the parameter given by \c name in the \c PulsarParameters structure. The parameter must already
  * exist in the structure, otherwise it should be added using \c PulsarAddParam().
  */
-void PulsarSetParam( PulsarParameters* pars, const CHAR *name, const void *value );
+void PulsarSetParam( PulsarParameters* pars, const CHAR *name, void *value );
 
 /** \brief Set the value of the error of a parameter in the \c PulsarParameters structure
  *

@@ -112,12 +112,15 @@ extern const int lalNoDebug;
   } while ( 0 )
 
 #define ABORT( statusptr, code, mesg )                                        \
-  do { if ( (statusptr)->statusPtr ) FREESTATUSPTR( statusptr );              \
+  do { if ( 1 )                                                               \
+  {                                                                           \
+    if ( (statusptr)->statusPtr ) FREESTATUSPTR( statusptr );                   \
     SETSTATUS( statusptr, code, mesg );                                       \
     if ( code )                                                               \
       (void) LALError( statusptr, "ABORT:" );                                 \
     (void) LALTrace( statusptr, 1 );                                          \
     return;                                                                   \
+  }                                                                           \
   } while ( 0 )
 
 #ifdef LAL_NDEBUG
