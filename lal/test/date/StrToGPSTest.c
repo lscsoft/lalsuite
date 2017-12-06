@@ -28,7 +28,7 @@
 
 struct TESTCASE_StrToGPS {
 	const char *string;
-	UINT8 sec, ns;
+	long int sec, ns;
 	const char *remainder;
 	int xlal_errno;
 };
@@ -172,7 +172,7 @@ static int test_XLALStrToGPS(void)
 		failures += runtest_XLALStrToGPS(testcase);
 
 	/* do extra tests if ints > 32 bits overflow strtol() */
-	UINT8 rc;
+	long int rc;
 	errno = 0;
 	rc = strtol("7323456785", NULL, 0);
 	if ((rc == 0) && (errno == ERANGE))
@@ -194,7 +194,7 @@ static int test_XLALStrToGPS(void)
 
 
 struct TESTCASE_GPSToStr {
-	UINT8 sec, ns;
+	long int sec, ns;
 	const char *correct;
 };
 
@@ -215,7 +215,7 @@ static int runtest_XLALGPSToStr(const struct TESTCASE_GPSToStr *testcase)
 		failure = 1;
 
 	if(lalDebugLevel || failure)
-		fprintf(stdout, "Input = LIGOTimeGPS(%" LAL_UINT8_FORMAT ",%" LAL_UINT8_FORMAT ")\n\tOutput =\t\"%s\"\n\tCorrect =\t\"%s\"\n\t\t===> %s\n", testcase->sec, testcase->ns, s, testcase->correct, failure ? "*** FAIL ***" : "Pass");
+		fprintf(stdout, "Input = LIGOTimeGPS(%ld,%ld)\n\tOutput =\t\"%s\"\n\tCorrect =\t\"%s\"\n\t\t===> %s\n", testcase->sec, testcase->ns, s, testcase->correct, failure ? "*** FAIL ***" : "Pass");
 	LALFree(s);
 
 	return failure;
@@ -228,32 +228,32 @@ static int test_XLALGPSToStr(void)
 		/* check determination of overall sign and the correct
 		 * combining of interger and fractional parts */
 		{1, 1, "1.000000001"},
-		{1, 0, "1"},
+		{1, 0, "1.000000000"},
 		{1, -1, "0.999999999"},
 		{0, 1, "0.000000001"},
-		{0, 0, "0"},
+		{0, 0, "0.000000000"},
 		{0, -1, "-0.000000001"},
 		{-1, 1, "-0.999999999"},
-		{-1, 0, "-1"},
+		{-1, 0, "-1.000000000"},
 		{-1, -1, "-1.000000001"},
 		/* check for boundary cases in handling of de-normalized
 		 * numbers */
 		{0, 999999999, "0.999999999"},
 		{0, -999999999, "-0.999999999"},
-		{0, 1000000000, "1"},
-		{0, -1000000000, "-1"},
+		{0, 1000000000, "1.000000000"},
+		{0, -1000000000, "-1.000000000"},
 		{0, 1000000001, "1.000000001"},
 		{0, -1000000001, "-1.000000001"},
 		{0, 2345678901, "2.345678901"},
 		{0, -2345678901, "-2.345678901"},
 		/* confirm that precision is preserved */
-		{2145678901, 0, "2145678901"},
+		{2145678901, 0, "2145678901.000000000"},
 		{2145678901, 1, "2145678901.000000001"},
 		{2145678901, 2, "2145678901.000000002"},
 		{2145678901, 3, "2145678901.000000003"},
 		{2145678901, 4, "2145678901.000000004"},
 		{2145678901, 5, "2145678901.000000005"},
-		{-2145678901, 0, "-2145678901"},
+		{-2145678901, 0, "-2145678901.000000000"},
 		{-2145678901, -1, "-2145678901.000000001"},
 		{-2145678901, -2, "-2145678901.000000002"},
 		{-2145678901, -3, "-2145678901.000000003"},

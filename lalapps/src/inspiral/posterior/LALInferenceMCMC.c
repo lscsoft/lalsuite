@@ -317,10 +317,6 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     /* Establish the random state across MPI threads */
     init_mpi_randomstate(runState);
 
-    /* Add common fixed parameters to output */
-
-    LALInferenceAddPTMCMCMetaInfo(runState);
-
     /* Give a new set of proposal args to each thread */
     for (i=0; i<runState->nthreads; i++) {
         thread = runState->threads[i];

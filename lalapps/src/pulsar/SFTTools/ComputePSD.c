@@ -130,6 +130,8 @@ typedef struct
   REAL8 fStart;		/**< Start Frequency to load from SFT and compute PSD, including wings (it is RECOMMENDED to use --Freq instead) */
   REAL8 fBand;		/**< Frequency Band to load from SFT and compute PSD, including wings (it is RECOMMENDED to use --FreqBand instead) */
 
+  BOOLEAN version;	/**< Output version information */
+
 } UserVariables_t;
 
 /**
@@ -184,6 +186,19 @@ main(int argc, char *argv[])
   if (initUserVars(argc, argv, &uvar) != XLAL_SUCCESS)
     return EXIT_FAILURE;
 
+  /* assemble version string */
+  CHAR *VCSInfoString;
+  if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
+    XLALPrintError("XLALGetVersionString(0) failed with xlalErrno = %d\n", xlalErrno );
+    return EXIT_FAILURE;
+  }
+
+  if ( uvar.version )
+    {
+      printf ("%s\n", VCSInfoString );
+      return (0);
+    }
+
   MultiSFTVector *inputSFTs = NULL;
   if ( ( inputSFTs = XLALReadSFTs ( &cfg, &uvar ) ) == NULL )
     {
@@ -219,7 +234,7 @@ main(int argc, char *argv[])
 
   /* get power running-median rngmed[ |data|^2 ] from SFTs */
   MultiPSDVector *multiPSD = NULL;
-  XLAL_CHECK_MAIN( ( multiPSD = XLALNormalizeMultiSFTVect ( inputSFTs, uvar.blocksRngMed, NULL ) ) != NULL, XLAL_EFUNC);
+  LAL_CALL( LALNormalizeMultiSFTVect (&status, &multiPSD, inputSFTs, uvar.blocksRngMed), &status);
   /* restrict this PSD to just the "physical" band if requested using {--Freq, --FreqBand} */
   if ( ( XLALCropMultiPSDandSFTVectors ( multiPSD, inputSFTs, cfg.firstBin, cfg.lastBin )) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: XLALCropMultiPSDandSFTVectors (inputPSD, inputSFTs, %d, %d) failed with xlalErrno = %d\n", __func__, cfg.firstBin, cfg.lastBin, xlalErrno );
@@ -440,15 +455,16 @@ main(int argc, char *argv[])
   }
 
   /* we are now done with the psd */
-  XLALDestroyMultiPSDVector  ( multiPSD);
-  XLALDestroyMultiSFTVector  ( inputSFTs);
+  LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multiPSD), &status);
+  LAL_CALL ( LALDestroyMultiSFTVector  (&status, &inputSFTs), &status);
 
-  XLALDestroyUserVars();
+  LAL_CALL (LALDestroyUserVars(&status), &status);
 
   XLALDestroyREAL8Vector ( overSFTs );
   XLALDestroyREAL8Vector ( overIFOs );
   XLALDestroyREAL8Vector ( finalPSD );
   XLALDestroyREAL8Vector ( finalNormSFT );
+  XLALFree ( VCSInfoString );
 
   LALCheckMemoryLeaks();
 
@@ -579,6 +595,8 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
   uvar->binStep   = 0.0;
   uvar->binStep   = 1;
 
+  uvar->version = FALSE;
+
   /* register user input variables */
   XLALRegisterUvarMember(inputData,        STRING, 'i', REQUIRED, "Input SFT pattern");
   XLALRegisterUvarMember(outputPSD,        STRING, 'o', OPTIONAL, "Output PSD into this file");
@@ -630,10 +648,12 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
   XLALRegisterUvarMember(fStart,           REAL8, 'f', DEVELOPER, "Start Frequency to load from SFT and compute PSD, including rngmed wings (BETTER: use --Freq instead)");
   XLALRegisterUvarMember(fBand,            REAL8, 'b', DEVELOPER, "Frequency Band to load from SFT and compute PSD, including rngmed wings (BETTER: use --FreqBand instead)");
 
+  XLALRegisterUvarMember(version,          BOOLEAN, 'V', SPECIAL, "Output version information");
+
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit(1);
   }
@@ -967,8 +987,10 @@ XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration 
 
   /* get sft catalog */
   LogPrintf ( LOG_DEBUG, "Finding all SFTs to load ... ");
-  if ( ( catalog = XLALSFTdataFind ( uvar->inputData, &constraints) ) == NULL ) {
-    XLALPrintError ("%s: XLALSFTdataFind() failed with xlalErrno = %d\n", __func__, xlalErrno );
+  LALStatus status = blank_status;
+  LALSFTdataFind ( &status, &catalog, uvar->inputData, &constraints);
+  if ( status.statusCode != 0 ) {
+    XLALPrintError ("%s: LALSFTdataFind() failed with statusCode = %d\n", __func__, status.statusCode );
     XLAL_ERROR_NULL ( XLAL_EFAILED );
   }
   if ( (catalog == NULL) || (catalog->length == 0) ) {

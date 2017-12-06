@@ -13,6 +13,7 @@ __date__ = '$Date$'
 __version__ = '$Revision$'
 
 import string
+import exceptions
 import os
 from glue import pipeline
 

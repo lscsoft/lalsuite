@@ -36,6 +36,7 @@
 #include <lal/ConfigFile.h>
 #include <lal/LogPrintf.h>
 
+#include <lal/FlatPulsarMetric.h>
 #include <lal/DopplerFullScan.h>
 
 /*---------- DEFINES ----------*/
@@ -216,7 +217,7 @@ XLALInitDopplerFullScan ( const DopplerFullScanInit *init       /**< [in] initia
         gsl_matrix_set_identity(metric);
         gsl_matrix_view spin_metric = gsl_matrix_submatrix(metric, 2, 2, PULSAR_MAX_SPINS, PULSAR_MAX_SPINS);
         XLAL_CHECK_NULL ( XLALSpindownMetric(&spin_metric.matrix, init->Tspan) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK_NULL ( XLALSetTilingLatticeAndMetric(thisScan->spindownTiling, TILING_LATTICE_ANSTAR, metric, init->metricMismatch) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_NULL ( XLALSetTilingLatticeAndMetric(thisScan->spindownTiling, "Ans", metric, init->metricMismatch) == XLAL_SUCCESS, XLAL_EFUNC );
 
         /* Create iterator over flat lattice tiling */
         XLAL_CHECK_NULL ( (thisScan->spindownTilingItr = XLALCreateLatticeTilingIterator(thisScan->spindownTiling, n)) != NULL, XLAL_EFUNC );
@@ -879,7 +880,6 @@ typedef struct {
 static double F1DotAgeBrakingBound(
   const void* data,
   const size_t dim UNUSED,
-  const gsl_matrix *cache UNUSED,
   const gsl_vector* point
   )
 {
@@ -934,7 +934,6 @@ typedef struct {
 static double F2DotBrakingBound(
   const void* data,
   const size_t dim UNUSED,
-  const gsl_matrix *cache UNUSED,
   const gsl_vector* point
   )
 {

@@ -30,6 +30,7 @@ import sys
 import ast
 import numpy as np
 import re
+import urllib2
 import copy
 import os
 import fnmatch
@@ -38,7 +39,6 @@ import datetime
 import json
 from scipy import stats
 import h5py
-import itertools
 
 import matplotlib
 matplotlib.use("Agg")
@@ -171,19 +171,59 @@ function toggle(id) {{
 """
 
 
-def set_spin_down(p1_I, assoc, f0, f1, n=5.):
+def get_atnf_info(psr):
   """
-  Set the spin-down of the source based on the intrinsic period derivative (p1_I) corrected for any proper motion/
-  globular cluster acceleration if available, or if not give AND the pulsar is in a globular cluster base the
-  spin-down on assuming an age of 10^9 years (defaulting to the source being a gravitar, with n=5).
-  Otherwise just return the unadjusted spin-down.
+  Get the pulsar (psr) distance (DIST in kpc), proper motion corrected age (AGE_I) and any association
+  (ASSOC e.g. GC) from the ATNF catalogue.
   """
 
-  if p1_I != None and p1_I > 0.:
-    return -p1_I*f0**2 # convert period derivative into frequency derivative
+  psrname = re.sub('\+', '%2B', psr) # switch '+' for unicode character
+
+  atnfversion = '1.54' # the latest ATNF version
+  atnfurl = 'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=' + atnfversion
+  atnfurl += '&Dist=Dist&Assoc=Assoc&Age_i=Age_i' # set parameters to get
+  atnfurl += '&startUserDefined=true&c1_val=&c2_val=&c3_val=&c4_val=&sort_attr=jname&sort_order=asc&condition=&pulsar_names=' + psrname
+  atnfurl += '&ephemeris=selected&submit_ephemeris=Get+Ephemeris&coords_unit=raj%2Fdecj&radius=&coords_1=&coords_2='
+  atnfurl += '&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=linear&y_axis=&y_scale=linear&state=query'
+
+  try:
+    urldat = urllib2.urlopen(atnfurl).read() # read ATNF url
+    predat = re.search(r'<pre[^>]*>([^<]+)</pre>', urldat) # to extract data within pre environment (without using BeautifulSoup) see e.g. http://stackoverflow.com/a/3369000/1862861 and http://stackoverflow.com/a/20046030/1862861
+    pdat = predat.group(1).strip().split('\n') # remove preceeding and trailing new lines and split lines
+  except:
+    print("Warning... could not get information from ATNF pulsar catalogue.")
+    return None
+
+  # check whether information could be found and get distance, age and association from data
+  dist = None
+  age = None
+  assoc = None
+  for line in pdat:
+    if 'WARNING' in line or 'not in catalogue' in line:
+      return None
+    vals = line.split()
+    if 'DIST' in vals[0]:
+      dist = float(vals[1])
+    if 'AGE_I' in vals[0]:
+      age = float(vals[1])
+    if 'ASSOC' in vals[0]:
+      assoc = vals[1]
+
+  return (dist, age, assoc)
+
+
+def set_spin_down(age, assoc, f0, f1):
+  """
+  Set the spin-down of the source based on the instrinsic age (age) corrected for any proper motion/
+  globular cluster accelation if available, or if not give AND the pulsar is in a globular cluster base the
+  spin-down on assuming an age of 10^9 years. Otherwise just return the unadjusted spin-down.
+  """
+
+  if age != None and age > 0.:
+    return -f0/(2.* age * 365.25 * 86400.)
   elif assoc != None:
     if 'GC' in assoc: # check if a globular cluster pulsar
-      return -f0/((n-1.) * 1.e9 * 365.25 * 86400.)
+      return -f0/(2. * 1.e9 * 365.25 * 86400.)
     else:
       return f1
   else:
@@ -401,7 +441,7 @@ class posteriors:
   """
   Get sample posteriors and created a set of functions for outputting tables, plots and posterior statistics
   """
-  def __init__(self, postfiles, outputdir, ifos=None, harmonics=[2], modeltype='waveform', biaxial=False, usegwphase=False, parfile=None, priorfile=None, subtracttruths=False, showcontours=False):
+  def __init__(self, postfiles, outputdir, harmonics=[2], modeltype='waveform', biaxial=False, usegwphase=False, parfile=None, priorfile=None, subtracttruths=False):
     """
     Initialise with a dictionary keyed in detector names containing paths to the equivalent posterior samples
     file for that detector.
@@ -411,19 +451,7 @@ class posteriors:
       print("Error... output path '%s' for data plots does not exist" % self._outputdir, file=sys.stderr)
       sys.exit(1)
 
-    if ifos is None: # get list of detectors from postfiles dictionary
-      self._ifos = list(postfiles.keys())    # get list of detectors
-    else:
-      if isinstance(ifos, list):
-        self._ifos = ifos
-      else:
-        self._ifos = [ifos]
-      # check ifos are in postfiles dictionary
-      for ifo in self._ifos:
-        if ifo not in postfiles:
-          print("Error... posterior files for detector '%s' not given" % ifo, file=sys.stderr)
-          sys.exit(1)
-
+    self._ifos = list(postfiles.keys())    # get list of detectors
     self._postfiles = postfiles
     self._posteriors = {}                  # dictionary of posterior objects
     self._posterior_stats = {}             # dictionary if posteriors statistics
@@ -447,7 +475,6 @@ class posteriors:
     self._biaxial = biaxial                # whether the source is a biaxial star (rather than triaxial)
     self._usegwphase = usegwphase          # whether to use GW phase rather than rotational phase
     self._subtract_truths = subtracttruths # set whether to subtract true/heterodyned values of phase parameters from the distributions (so true/heterodyned value is at zero)
-    self._showcontours = showcontours      # set whether to show probability contours on 2d posterior plots
 
     # check if parameter file has been given
     if self._parfile is not None:
@@ -484,52 +511,17 @@ class posteriors:
 
       for line in pf.readlines(): # read in priors
         priorlinevals = line.split()
-        if len(priorlinevals) < 4:
-          print("Error... there must be at least four values on each line of the prior file '%s'." % self._priorfile, file=sys.stderr)
+        if len(priorlinevals) != 4:
+          print("Error... there must be four values on each line of the prior file '%s'." % self._priorfile, file=sys.stderr)
           sys.exit(1)
 
-        if priorlinevals[1] not in ['uniform', 'fermidirac', 'gaussian', 'gmm', 'loguniform']:
-          print("Error... the prior for '%s' must be either 'uniform', 'loguniform', 'gmm', 'fermidirac', or 'gaussian'." % priorlinevals[0], file=sys.stderr)
+        if priorlinevals[1] not in ['uniform', 'fermidirac', 'gaussian']:
+          print("Error... the prior for '%s' must be either 'uniform', 'fermidirac', or 'gaussian'." % priorlinevals[0], file=sys.stderr)
           sys.exit(1)
 
-        if priorlinevals[1] in ['uniform', 'fermidirac', 'gaussian', 'loguniform']:
-          if len(priorlinevals) != 4:
-            print("Error... there must be four values on each line of the prior file '%s'." % self._priorfile, file=sys.stderr)
-            sys.exit(1)
-          ranges = np.array([float(priorlinevals[2]), float(priorlinevals[3])]) # set ranges
-
-          if self._usegwphase and priorlinevals[0].lower() == 'phi0': # adjust phi0 priors if using GW phase
-            ranges = 2.*ranges
-        elif priorlinevals[1] is 'gmm':
-          try:
-            ranges = {}
-            ranges['nmodes'] = priorlinevals[2]
-            ranges['means'] = ast.literal_eval(priorlinevals[3])   # means
-            ranges['covs'] = ast.literal_eval(priorlinevals[4])    # covariance matrices
-            ranges['weights'] = ast.literal_eval(priorlinevals[5]) # weights
-            plims = []
-            splitpars = [p.lower() for p in priorlinevals[0].split(':')] # split GMM parameter names
-            npars = len(splitpars)
-            for lims in priorlinevals[6:-1]: # limits for each parameter
-              plims.append(np.array(ast.literal_eval(lims)))
-            ranges['limits'] = plims
-            ranges['npars'] = npars
-            if self._usegwphase and 'phi0' in splitpars:
-              phi0idx = splitpars.index('phi0')
-              # adjust phi0 priors (multiply limits, means and covariances by 2.) if using GW phase
-              for ci in range(ranges['nmodes']):
-                ranges['means'][ci][phi0idx] = 2.*ranges['means'][ci][phi0idx]
-                for ck in range(npars): # this will correctly multiply the variances by 4 when ck == phi0idx
-                  ranges['covs'][ci][phi0idx][ck] = 2.*ranges['covs'][ci][phi0idx][ck]
-                  ranges['covs'][ci][ck][phi0idx] = 2.*ranges['covs'][ci][ck][phi0idx]
-              ranges['limits'][phi0idx] = 2.*ranges['limits'][phi0idx]
-            for sidx, spar in enumerate(splitpars):
-              ranges['pindex'] = sidx
-              self._prior_parameters[spar] = {'gmm': ranges}
-            continue
-          except:
-            # if can't read in GMM prior correctly then just continue
-            continue
+        ranges = [float(priorlinevals[2]), float(priorlinevals[3])]
+        if self._usegwphase and priorlinevals[0].lower() == 'phi0': # adjust phi0 priors if using GW phase
+          ranges = [2.*ranges[0], 2.*ranges[1]]
 
         self._prior_parameters[priorlinevals[0]] = {priorlinevals[1]: ranges}
 
@@ -563,33 +555,6 @@ class posteriors:
             if param not in self._parameters:
               print("Error... parameter '%s' is not defined in posteriors samples for '%s'." % (param, ifo), file=sys.stderr)
               sys.exit(1)
-
-        # rotate phi0 and psi into the 0->pi and 0->pi/2 ranges respectively if required (see Eqn. 45 of http://arxiv.org/abs/1501.05832)
-        if modeltype == 'source':
-          phi0samples = None
-          psisamples = None
-          if 'phi0' in pos.names:
-            phi0samples = pos['phi0'].samples
-          if 'psi' in pos.names:
-            psisamples = pos['psi'].samples
-
-          # rotate psi values by pi/2 increments into the 0->pi/2 range
-          if psisamples is not None:
-            for i in range(len(psisamples)):
-              nrots = np.abs(np.floor(psisamples[i]/(np.pi/2.))) # number of rotations to return to range
-              psisamples[i] = np.mod(psisamples[i], np.pi/2.)
-              if phi0samples is not None: # rotate phi0 appropriately
-                phi0samples[i] += nrots*(np.pi/2.)
-            psisnew = bppu.PosteriorOneDPDF('psi', psisamples)
-            pos.pop('psi')
-            pos.append(psisnew)
-
-          # make sure phi0 values are between 0->pi
-          if phi0samples is not None:
-            phi0samples = np.mod(phi0samples, np.pi)
-            phi0new = bppu.PosteriorOneDPDF('phi0', phi0samples)
-            pos.pop('phi0')
-            pos.append(phi0new)
 
         if self._usegwphase: # try switching phi0 to 2*phi0 if working with l=m=2 gravitational wave initial phase (e.g. for hardware injections)
           if 'phi0' in pos.names:
@@ -747,34 +712,18 @@ class posteriors:
     return snr/len(snrfiles)
 
   def _get_bayes_factors(self):
-    # get the Bayes factors (actually odds ratios with equal priors for all hypotheses) for the signal
-    nifos = 0
-    ifosn = [] # list of signal and noise evidences for each detector
+    # get the Bayes factors for the signal
+    incoherent = 0. # the incoherent evidence
     for ifo in self._ifos:
       self._Bsn[ifo], self._signal_evidence[ifo], self._noise_evidence[ifo], self._maxL[ifo] = self.get_bayes_factor(self._postfiles[ifo])
 
       if ifo != 'Joint':
-        nifos += 1
-        ifosn.append({'s': self._signal_evidence[ifo], 'n': self._noise_evidence[ifo]})
+        incoherent += self._signal_evidence[ifo]
 
-    # get all combinations of (incoherent) noise and signal hypotheses
-    combs = [list(i) for i in itertools.product(['s', 'n'], repeat=nifos)] # see e.g. http://stackoverflow.com/q/14931769/1862861
-    incoherentcombs = -np.inf
-    incoherentsig = 0. # incoherent signal in all detectors
-    for comb in combs:
-      # don't include the all noise hypotheses (as we have that already as self._noise_evidence['Joint'])
-      if comb.count('n') != len(comb): # see e.g. http://stackoverflow.com/a/3844948/1862861
-        combsum = 0.
-        for i, cval in enumerate(comb):
-          combsum += ifosn[i][cval]
-        incoherentcombs = np.logaddexp(incoherentcombs, combsum)
-        if comb.count('s') == len(comb):
-          incoherentsig = combsum
-
-    # get the coherent vs incoherent noise odds ratio (assuming all hypotheses have equal priors)
+    # get the coherent vs incoherent noise evidence
     if len(self._ifos) > 2 and 'Joint' in self._ifos:
-      self._Bci = self._signal_evidence['Joint'] - incoherentsig
-      self._Bcin = self._signal_evidence['Joint'] - np.logaddexp(incoherentcombs, self._noise_evidence['Joint'])
+      self._Bci = self._signal_evidence['Joint'] - incoherent
+      self._Bcin = self._signal_evidence['Joint'] - np.logaddexp(incoherent, self._noise_evidence['Joint'])
 
   def get_bayes_factor(self, postfile):
     # return the Bayes factor extracted from a posterior file
@@ -888,21 +837,21 @@ class posteriors:
     if plotifos[0] == 'Joint':
       histops = {'histtype': 'stepfilled', 'color': 'darkslategrey', 'edgecolor': coldict['Joint'], 'linewidth': 1.5}
       contourops = {'colors': coldict[plotifos[0]]}
-      showcontours = self._showcontours
+      showcontours = True
       if whichtruth == 'Joint' or whichtruth == 'all':
         truthops = {'color': 'black', 'markeredgewidth': 2}
       else:
         truthops = {}
       showpoints = jointsamples
     else:
-      showcontours = self._showcontours
+      showcontours = True
       contourops = {'colors': 'dark'+coldict[plotifos[0]]}
       showpoints = True
       if len(plotifos) == 1: # if just one detector use a filled histogram
         histops = {'histtype': 'stepfilled', 'color': coldict[plotifos[0]], 'edgecolor': coldict[plotifos[0]], 'linewidth': 1.5}
         truthops = {'color': 'black', 'markeredgewidth': 2}
       else:
-        histops = {'histtype': 'step', 'color': coldict[plotifos[0]], 'edgecolor': coldict[plotifos[0]], 'linewidth': 1}
+        histops = {'histtype': 'step', 'color': coldict[plotifos[0]], 'linewidth': 1}
         if whichtruth == plotifos[0]:
           truthops = {'color': 'black', 'markeredgewidth': 2}
         elif whichtruth == 'all':
@@ -917,11 +866,11 @@ class posteriors:
     # now add the rest to the plots
     if len(plotifos) > 1:
       for k, ifo in enumerate(plotifos[1:]):
-        histops = {'histtype': 'step', 'color': coldict[ifo], 'edgecolor': coldict[ifo], 'linewidth': 1}
+        histops = {'histtype': 'step', 'color': coldict[ifo], 'linewidth': 1}
         x = self._posteriors[ifo][parameters[0]].samples
         for param in parameters[1:]:
           x = np.hstack((x, self._posteriors[ifo][param].samples))
-        showcontours = self._showcontours
+        showcontours = True
         contourops = {'colors': 'dark'+coldict[plotifos[k+1]]}
         if whichtruth == plotifos[k+1]:
           truthops = {'color': 'black', 'markeredgewidth': 2}
@@ -946,9 +895,9 @@ class posteriors:
           vertaxrange = sc.histvert[-1].get_ylim()
           yl = thisax.get_ylim()
           if yl[0] == vertaxrange[0] and yl[1] == vertaxrange[1]: # vertical histogram
-            self.plot_prior(thisax, priorparam, self._prior_parameters, truth=atruth, orientation='vertical')
+            self.plot_prior(thisax, self._prior_parameters[priorparam], truth=atruth, orientation='vertical')
           else:
-            self.plot_prior(thisax, priorparam, self._prior_parameters, truth=atruth, orientation='horizontal')
+            self.plot_prior(thisax, self._prior_parameters[priorparam], truth=atruth, orientation='horizontal')
 
     # output the plots
     if 'png' not in figformats and 'svg' not in figformats:
@@ -974,12 +923,12 @@ class posteriors:
         sys.exit(1)
       outfiles.append(outfile)
 
-    return outfiles # list of output figure file names
+    return outfiles # list of output figure filenames
 
-  def plot_prior(self, ax, param, prior, orientation='horizontal', truth=0., npoints=100):
+  def plot_prior(self, ax, prior, orientation='horizontal', truth=0., npoints=100):
     # plot the prior distribution (with truth subtracted if non-zero)
-    priortype = prior[param].keys()[0]
-    priorrange = prior[param].values()[0]
+    priortype = prior.keys()[0]
+    priorrange = prior.values()[0]
 
     if truth is None:
       truth = 0.
@@ -996,59 +945,12 @@ class posteriors:
     if priortype == 'uniform':
       vals = stats.uniform.pdf(valrange, priorrange[0]-truth, priorrange[1]-priorrange[0])
     elif priortype == 'gaussian':
-      # crude (not taking account of wrap-around) shift of phi0 and psi into 0->pi and 0->pi/2 ranges)
-      if param.lower() == 'psi':
-        priorrange[0] = np.mod(priorrange[0], np.pi/2.)
-      if param.lower() == 'phi0':
-        if self._usegwphase:
-          priorrange[0] = np.mod(priorrange[0], 2.*pi)
-        else:
-          priorrange[0] = np.mod(priorrange[0], pi)
-
       vals = stats.norm.pdf(valrange, priorrange[0]-truth, priorrange[1])
     elif priortype == 'fermidirac': # don't subtract truth from Fermi-Dirac as it should only be use for amplitude parameters anyway
       sigma = priorrange[0]
       r = priorrange[1]
       mu = sigma*r
       vals = 1./((sigma*np.log(1.+np.exp(r)))*(np.exp((valrange-mu)/sigma)+1.))
-    elif priortype == 'loguniform':
-      vals = np.zeros(len(valrange))
-      indices = (valrange >= priorrange[0]) & (valrange <= priorrange[1])
-      vals[indices] = 1./(valrange[indices]*np.log(priorrange[1]/priorrange[0]))
-    elif priortype == 'gmm':
-      vals = np.zeros(len(valrange))
-      nmodes = priorrange['nmodes'] # number of modes in GMM
-      pindex = priorrange['pindex'] # parameter index in GMM prior
-      mmeans = np.array([mm[pindex] for mm in priorrange['means']])  # means
-      mcovs = priorrange['covs']    # covariance matrices
-      mstddevs = []
-      for cov in mcovs:
-        mstddevs.append(np.sqrt(cov[pindex][pindex]))
-      mweights = priorrange['weights']
-      # check bounds
-      bmin = -np.inf
-      bmax = np.inf
-      plims = priorrange['limits'][pindex]
-      if np.isfinite(plims[0]):
-        bmin = plims[0]
-      if np.isfinite(plims[1]):
-        bmax = plims[1]
-      indices = (valrange >= bmin) & (valrange <= bmax)
-
-      # crude (not taking account of wrap-around) shift of phi0 and psi into 0->pi and 0->pi/2 ranges)
-      if param.lower() == 'psi':
-        mmeans = np.mod(mmeans, np.pi/2.)
-      if param.lower() == 'phi0':
-        if self._usegwphase:
-          mmeans = np.mod(mmeans, 2.*pi)
-        else:
-          mmeans = np.mod(mmeans, pi)
-
-      # create Gaussian mixture model
-      for i in range(nmodes):
-        vals[indices] += mweights[i]*stats.norm.pdf(valrange[indices], mmeans[i]-truth, mstddevs[i])
-      # normalise
-      vals = vals/np.trapz(vals, valrange)
     else:
       print("Error... prior type '%s' not recognised." % priortype, file=sys.stderr)
       sys.exit(1)
@@ -1143,7 +1045,7 @@ class posteriors:
           contourlimits.append(limits[p])
           figlimits.append(limits[p])
       if notpresent: break
-
+      # contourlimits = None # temporary for testing
       pf = self.create_joint_posterior_plot(parampairs, figformats=['png'], ratio=2, figlimits=figlimits, contourlimits=contourlimits, jointsamples=False)
       if allparams:
         tagclass = 'jointplot'
@@ -1442,7 +1344,7 @@ class create_background(posteriors):
   """
   Get information (evidence ratios and SNRs) from any the background analyses
   """
-  def __init__(self, backgrounddirs, snrs, Bsn, outputdir, Bci=None, Bcin=None, showcontours=True):
+  def __init__(self, backgrounddirs, snrs, Bsn, outputdir, Bci=None, Bcin=None):
     # initialise with a dictionary (keyed to detectors) of directories containing the background analyses,
     # a dictionary of signal vs noise Bayes factors, a coherent vs incoherent Bayes factor and a coherent
     # vs incoherent or noise Bayes factor (all created from the posterior class)
@@ -1727,7 +1629,6 @@ indexpage = 'path_to_index_page'       # an optional path (relative to the base 
 [plotting]
 all_posteriors = False  # a boolean stating whether to show joint posterior plots of all parameters (default: False)
 subtract_truths = False # a boolean stating whether to subtract the true/heterodyned value from any phase parameters to centre the plot at zero for that value
-show_contours = False   # a boolean stating whether to show probabilty contours on 2D posterior plots (default: False)
 eps_output = False      # a boolean stating whether to also output eps versions of figures (png figures will automatically be produced)
 pdf_output = False      # a boolean stating whether to also output pdf versions of figures (png figures will automatically be produced)
 
@@ -1831,45 +1732,26 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
     priorfile = None
 
   # attempt to get pulsar distance, proper motion corrected age and any association (e.g. GC from the ATNF catalogue)
-  dist = p1_I = assoc = sdlim = f1sd = None
+  dist = age = assoc = sdlim = f1sd = None
   atnfurl = None
   if not injection:
-    # set ATNF URL where pulsar can be found
-    atnfurl = 'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=' + ATNF_VERSION
-    atnfurl += '&startUserDefined=true&pulsar_names=' + re.sub('\+', '%2B', pname)
-    atnfurl += '&ephemeris=long&submit_ephemeris=Get+Ephemeris&state=query'
-
-    # try getting information already parsed from ATNF catalogue by lalapps_knope pipeline setup
-    jsonfile = os.path.join(outdir, pname+'.json')
-    tryatnf = True
-    if os.path.isfile(jsonfile):
-      try:
-        fp = open(jsonfile, 'r')
-        info = json.load(fp)
-        fp.close()
-
-        # extract distance, intrinsic period derivative, pulsar association and required URL
-        dist = info['Pulsar data']['DIST']
-        p1_I = info['Pulsar data']['P1_I']
-        assoc = info['Pulsar data']['ASSOC']
-        tryatnf = False
-      except:
-        print("Warning... could not read in JSON file '%s'." % jsonfile, file=sys.stderr)
-
-    if tryatnf: # try getting ATNF info now
-      pinfo = get_atnf_info(pname)
-      if pinfo is not None:
-        dist, p1_I, assoc, atnfurlref = pinfo # unpack values
+    pinfo = get_atnf_info(pname)
+    if pinfo != None:
+      dist, age, assoc = pinfo # unpack values
+      atnfversion = '1.54'
+      atnfurl = 'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=' + atnfversion
+      atnfurl += '&startUserDefined=true&pulsar_names=' + re.sub('\+', '%2B', pname)
+      atnfurl += '&ephemeris=long&submit_ephemeris=Get+Ephemeris&state=query'
 
     # if distance is in the par file use that instead
     if par['DIST']:
-      dist = par['DIST']/KPC # convert back into kpc
+      dist = par['DIST']
 
-    # set the corrected spin-down value (based on intrinsic period derivative or using conservative age (10^9) value from GC pulsars)
-    f1sd = set_spin_down(p1_I, assoc, f0, f1)
+    # set the corrected spin-down value (based on intrinsic age or using consverative value from GC pulsars)
+    f1sd = set_spin_down(age, assoc, f0, f1)
 
     # get spin-down limit
-    if f1sd is not None and dist is not None:
+    if f1sd != None and dist != None:
       sdlim = spin_down_limit(f0, f1sd, dist)
 
   # check whether to only include results from a joint (multi-detector) analysis
@@ -1922,12 +1804,6 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
     subtracttruths = cp.getboolean('plotting', 'subtract_truths')
   except:
     subtracttruths = False
-
-  # check whether to show probability contours on 2D posterior plots
-  try:
-    showcontours = cp.getboolean('plotting', 'show_contours')
-  except:
-    showcontours = False
 
   figformat = ['png'] # default to outputting png versions of figures
   # check whether to (also) output figures as eps
@@ -2042,10 +1918,9 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
   htmlinput['pulsartable'] = psrtable
 
   # get posterior class (containing samples, sample plots and posterior plots)
-  postinfo = posteriors(postfiles, outdir, ifos=ifos, harmonics=harmonics, modeltype=modeltype,
+  postinfo = posteriors(postfiles, outdir, harmonics=harmonics, modeltype=modeltype,
                         biaxial=biaxial, parfile=parfile, usegwphase=usegwphase,
-                        subtracttruths=subtracttruths, priorfile=priorfile,
-                        showcontours=showcontours)
+                        subtracttruths=subtracttruths, priorfile=priorfile)
 
   # create table of upper limits, SNR and evidence ratios
   htmlinput['limitstable'] = postinfo.create_limits_table(f0 , sdlim=sdlim, dist=dist, ul=upperlim)
@@ -2130,7 +2005,6 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
   info['Pulsar data']['F1ROT'] = f1
   info['Pulsar data']['F1GW'] = 2.*f1 # assuming l=m=2 mode emission
   info['Pulsar data']['F1SD'] = f1sd # acceleration corrected f1
-  info['Pulsar data']['P1_I'] = p1_I # intrinsic period derivative (corrected for proper motion/GC acceleration effects)
   info['Pulsar data']['DIST'] = dist
   info['Pulsar data']['RA'] = par['RA_RAD']   # right ascension in radians
   info['Pulsar data']['DEC'] = par['DEC_RAD'] # declination in radians

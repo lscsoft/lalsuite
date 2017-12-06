@@ -17,26 +17,26 @@ the standalone ring code on LIGO data
 """
 
 
-import ConfigParser
-import itertools
-from optparse import OptionParser
-import os
-import sys
+import sys, os
 import tempfile
+import ConfigParser
+from optparse import OptionParser
 
 
+from glue import iterutils
 from glue import pipeline
 from glue import segments
 from glue import segmentsUtils
+from glue.lal import CacheEntry
 from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import segments as ligolw_segments
+from glue.ligolw import utils
+from glue.ligolw.utils import segments as ligolwsegments
 from glue import offsetvector
+from lalburst import timeslides as ligolw_tisi
 from lal import LIGOTimeGPS
-from lal.utils import CacheEntry
-from lalburst import timeslides
 from lalapps import cosmicstring
 from lalapps import power
+
 
 __author__ = 'Xavier Siemens<siemens@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
@@ -173,9 +173,8 @@ overlap = short_segment_duration / 2 + 2 * pad	# FIXME:  correct?
 # get the instruments and raw segments
 #
 
-instruments = lsctables.instrumentsproperty.get(config_parser.get('pipeline','ifos'))
-segments_cache = set([CacheEntry(None, None, None, "file://localhost" + os.path.abspath(options.segments_file))])
-seglists = ligolw_segments.segmenttable_get_by_name(ligolw_utils.load_filename(options.segments_file, contenthandler = ligolw_segments.LIGOLWContentHandler, verbose = options.verbose), options.segments_name).coalesce()
+instruments = lsctables.instrument_set_from_ifos(config_parser.get('pipeline','ifos'))
+seglists = ligolwsegments.segmenttable_get_by_name(utils.load_filename(options.segments_file, gz = (options.segments_file or "stdin").endswith(".gz"), verbose = options.verbose), options.segments_name).coalesce()
 # remove extra instruments
 for instrument in set(seglists) - instruments:
 	if options.verbose:
@@ -199,24 +198,19 @@ background_time_slides = {}
 background_seglists = segments.segmentlistdict()
 for filename in options.background_time_slides:
 	cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
-
-	background_time_slides[cache_entry] = lsctables.TimeSlideTable.get_table(ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw_segments.LIGOLWContentHandler)).as_dict().values()
-
-
+	background_time_slides[cache_entry] = ligolw_tisi.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
 	for i in range(len(background_time_slides[cache_entry])):
 		background_time_slides[cache_entry][i] = offsetvector.offsetvector((instrument, LIGOTimeGPS(offset)) for instrument, offset in background_time_slides[cache_entry][i].items())
-	background_seglists |= cosmicstring.compute_segment_lists(seglists, offsetvector.component_offsetvectors(background_time_slides[cache_entry], 2), min_segment_length, pad)
+	background_seglists |= cosmicstring.compute_segment_lists(seglists, ligolw_tisi.time_slide_component_vectors(background_time_slides[cache_entry], 2), min_segment_length, pad)
 
 injection_time_slides = {}
 injection_seglists = segments.segmentlistdict()
 for filename in options.injection_time_slides:
 	cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
-
-        injection_time_slides[cache_entry] = lsctables.TimeSlideTable.get_table(ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw_segments.LIGOLWContentHandler)).as_dict().values()
-
+	injection_time_slides[cache_entry] = ligolw_tisi.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
 	for i in range(len(injection_time_slides[cache_entry])):
 		injection_time_slides[cache_entry][i] = offsetvector.offsetvector((instrument, LIGOTimeGPS(offset)) for instrument, offset in injection_time_slides[cache_entry][i].items())
-	injection_seglists |= cosmicstring.compute_segment_lists(seglists, offsetvector.component_offsetvectors(injection_time_slides[cache_entry], 2), min_segment_length, pad)
+	injection_seglists |= cosmicstring.compute_segment_lists(seglists, ligolw_tisi.time_slide_component_vectors(injection_time_slides[cache_entry], 2), min_segment_length, pad)
 
 
 #
@@ -321,7 +315,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 		coinc_nodes.append(set())
 
 		#
-		# lalapps_cafe & ligolw_add
+		# ligolw_cafe & ligolw_add
 		#
 
 		tisi_cache = set([time_slides_cache_entry])
@@ -339,7 +333,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 				# ligolw_add needs to copy the time slide
 				# document into its output
 				extra_input_cache = tisi_cache | vetoes_cache
-			these_lladd_nodes = power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache | segments_cache, extra_input_cache = extra_input_cache, remove_input = do_injections and clipseg is not None, preserve_cache = binj_cache | segments_cache | tisi_cache | vetoes_cache)
+			these_lladd_nodes = power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache, extra_input_cache = extra_input_cache, remove_input = do_injections and clipseg is not None, preserve_cache = binj_cache | tisi_cache | vetoes_cache)
 			if clipseg is not None:
 				#
 				# this is a fragment of a too-large burca
@@ -363,7 +357,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 				lladd_nodes |= these_lladd_nodes
 
 		#
-		# lalapps_burca pool.  these are the burca jobs that don't
+		# ligolw_burca pool.  these are the burca jobs that don't
 		# require special clipping command line options, and so can
 		# bulk-process many files with each job
 		#
@@ -375,7 +369,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 			print >>sys.stderr, "done %s %d/%d" % (tag, n + 1, len(time_slides))
 
 	#
-	# lalapps_binjfind
+	# ligolw_binjfind
 	#
 
 	if do_injections:
@@ -458,9 +452,11 @@ if options.verbose:
 	print >>sys.stderr, "building lalapps_string_calc_likelihood jobs ..."
 
 def round_robin_and_flatten(injection_coinc_node_groups, injection_likelihood_node_groups):
-	# round-robin the node lists
-	A = list(itertools.combinations(injection_coinc_node_groups, 1))
-	B = list(itertools.combinations(injection_likelihood_node_groups, len(injection_likelihood_node_groups) - 1))
+	# see the documentation for glue.iterutils.choices() for an
+	# explanation of the procedure used here to round-robin the node
+	# lists
+	A = list(iterutils.choices(injection_coinc_node_groups, 1))
+	B = list(iterutils.choices(injection_likelihood_node_groups, len(injection_likelihood_node_groups) - 1))
 	B.reverse()
 	A = [flatten_node_groups(node_groups) for node_groups in A]
 	B = [flatten_node_groups(node_groups) for node_groups in B]

@@ -55,20 +55,12 @@ extern "C" {
 char *XLALPrintStringValueOfBOOLEAN ( const BOOLEAN *valBOOLEAN );
 char *XLALPrintStringValueOfINT4 ( const INT4 *valINT4 );
 char *XLALPrintStringValueOfINT8 ( const INT8 *valINT8 );
-char *XLALPrintStringValueOfUINT4 ( const UINT4 *valUINT4 );
-char *XLALPrintStringValueOfUINT8 ( const UINT8 *valUINT8 );
 char *XLALPrintStringValueOfREAL4 ( const REAL4 *valREAL4 );
 char *XLALPrintStringValueOfREAL8 ( const REAL8 *valREAL8 );
 char *XLALPrintStringValueOfEPOCH ( const LIGOTimeGPS *valGPS );
 
-char *XLALPrintStringValueOfINT4Range ( const INT4Range *int4Range );
 char *XLALPrintStringValueOfREAL8Range ( const REAL8Range *real8Range );
 char *XLALPrintStringValueOfEPOCHRange ( const LIGOTimeGPSRange *gpsRange );
-
-char *XLALPrintStringValueOfUserEnum ( const int *valEnum, const UserChoices *enumData );
-char *XLALFormatHelpStringOfUserEnum ( const UserChoices *enumData );
-char *XLALPrintStringValueOfUserFlag ( const int *valFlag, const UserChoices *flagData );
-char *XLALFormatHelpStringOfUserFlag ( const UserChoices *flagData );
 
 char *XLALPrintStringValueOfSTRING ( char **valSTRING );
 char *XLALPrintStringValueOfSTRINGVector ( LALStringVector **valSTRINGVector );
@@ -77,9 +69,8 @@ char *XLALPrintStringValueOfSTRINGVector ( LALStringVector **valSTRINGVector );
 #define DECL_XLALPrintStringValueOfVector(CTYPE) \
 char *XLALPrintStringValueOf##CTYPE##Vector ( CTYPE##Vector **valVector )
 
-DECL_XLALPrintStringValueOfVector(INT4);
-DECL_XLALPrintStringValueOfVector(UINT4);
 DECL_XLALPrintStringValueOfVector(REAL8);
+DECL_XLALPrintStringValueOfVector(INT4);
 
 /*@}*/
 

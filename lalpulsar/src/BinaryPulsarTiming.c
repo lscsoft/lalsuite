@@ -608,12 +608,12 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
           e*e)*cu - x*sw*su)/(1.0 - e*cu));
       }
       else{
-          /* dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
-            lal_gamma)*sin(u))*(1.0 - (LAL_TWOPI/Pb)*(x*cos(w)*sqrt(1.0 -
-            e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u))); */
-          dt += (x*sw*(cu-e) + (x*cw*sqrt(1.0-e*e) +
-            lal_gamma)*su)*(1.0 - (LAL_TWOPI/Pb)*(x*cw*sqrt(1.0 -
-            e*e)*cu - x*sw*su)/(1.0 - e*cu));
+        /* dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
+          lal_gamma)*sin(u))*(1.0 - (LAL_TWOPI/Pb)*(x*cos(w)*sqrt(1.0 -
+          e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u))); */
+        dt += (x*sw*(cu-e) + (x*cw*sqrt(1.0-e*e) +
+          lal_gamma)*su)*(1.0 - (LAL_TWOPI/Pb)*(x*cw*sqrt(1.0 -
+          e*e)*cu - x*sw*su)/(1.0 - e*cu));
       }
     /**********************************************************/
     }
@@ -919,7 +919,7 @@ XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
   REAL8 m2;
   const REAL8 c3 = (REAL8)LAL_C_SI*(REAL8)LAL_C_SI*(REAL8)LAL_C_SI;
 
-  const CHAR *model = PulsarGetStringParam(params, "BINARY");
+  CHAR *model = PulsarGetStringParam(params, "BINARY");
 
   /* Check input arguments */
   if( input == (BinaryPulsarInput *)NULL ){
@@ -1100,12 +1100,12 @@ XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
           e*e)*cu - x*sw*su)/(1.0 - e*cu));
       }
       else{
-          /* dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
-            lal_gamma)*sin(u))*(1.0 - (LAL_TWOPI/Pb)*(x*cos(w)*sqrt(1.0 -
-            e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u))); */
-          dt += (x*sw*(cu-e) + (x*cw*sqrt(1.0-e*e) +
-            lal_gamma)*su)*(1.0 - (LAL_TWOPI/Pb)*(x*cw*sqrt(1.0 -
-            e*e)*cu - x*sw*su)/(1.0 - e*cu));
+        /* dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
+          lal_gamma)*sin(u))*(1.0 - (LAL_TWOPI/Pb)*(x*cos(w)*sqrt(1.0 -
+          e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u))); */
+        dt += (x*sw*(cu-e) + (x*cw*sqrt(1.0-e*e) +
+          lal_gamma)*su)*(1.0 - (LAL_TWOPI/Pb)*(x*cw*sqrt(1.0 -
+          e*e)*cu - x*sw*su)/(1.0 - e*cu));
       }
     /**********************************************************/
     }

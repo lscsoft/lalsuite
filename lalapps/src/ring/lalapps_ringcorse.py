@@ -29,7 +29,11 @@ import bisect
 import numpy
 from new import instancemethod
 from optparse import OptionParser
-import sqlite3
+try:
+	import sqlite3
+except ImportError:
+	# pre 2.5.x
+	from pysqlite2 import dbapi2 as sqlite3
 import sys
 
 sqlite3.enable_callback_tracebacks(True)
@@ -38,7 +42,7 @@ from glue import segments
 from glue.ligolw import lsctables
 from glue.ligolw import dbtables
 from glue.ligolw import utils
-from lal import rate
+from pylal import rate
 from pylal import db_thinca_rings
 from pylal import git_version
 from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS

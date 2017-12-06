@@ -10,9 +10,6 @@ pkginclude_HEADERS = \
 	FrequencySeries.h \
 	LALCosmologyCalculator.h \
 	LALDetectors.h \
-	LALDict.h \
-	LALList.h \
-	LALValue.h \
 	ResampleTimeSeries.h \
 	Segments.h \
 	Sequence.h \
@@ -37,9 +34,6 @@ libtools_la_SOURCES = \
 	EllipsoidOverlapTools.c \
 	FrequencySeries.c \
 	LALCosmologyCalculator.c \
-	LALDict.c \
-	LALList.c \
-	LALValue.c \
 	ResampleTimeSeries.c \
 	Segments.c \
 	Sequence.c \
@@ -57,7 +51,6 @@ libtools_la_SOURCES = \
 noinst_HEADERS = \
 	FrequencySeriesComplex_source.c \
 	FrequencySeries_source.c \
-	LALValue_private.h \
 	SequenceComplex_source.c \
 	Sequence_source.c \
 	TimeSeries_source.c \

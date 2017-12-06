@@ -84,7 +84,7 @@ XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
       /*------------------------------------------------------------ */
       /* temporary fix for comparison with Chris' code */
       /*
-	TRY (XLALConvertGPS2SSB (status->statusPtr, &tmpTime, params->orbit->orbitEpoch, params), status);
+	TRY (LALConvertGPS2SSB (status->statusPtr, &tmpTime, params->orbit->orbitEpoch, params), status);
 	sourceParams.orbitEpoch = tmpTime;
       */
       sourceParams.orbitEpoch =  params->orbit.tp;
@@ -111,24 +111,16 @@ XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
       sourceParams.spinEpoch = tmpTime;
     }
 
-  if ( params->sourceDeltaT == 0 )	 // backwards-compatible treatment for absence of this parameter
-    {
-      /* sampling-timestep and length for source-parameters */
-      /* in seconds; hardcoded; was 60s in makefakedata_v2,
-       * but for fast binaries (e.g. SCO-X1) we need faster sampling
-       * This does not seem to affect performance a lot (~4% in makefakedata),
-       * but we'll nevertheless make this sampling faster for binaries and slower
-       * for isolated pulsars */
-      if (params->orbit.asini > 0) {
-        sourceParams.deltaT = 5;	/* for binaries */
-      } else {
-        sourceParams.deltaT = 60;	/* for isolated pulsars */
-      }
-    }
-  else	// use the user-defined sampling
-    {
-      sourceParams.deltaT = params->sourceDeltaT;
-    }
+  /* sampling-timestep and length for source-parameters */
+  /* in seconds; hardcoded; was 60s in makefakedata_v2,
+   * but for fast binaries (e.g. SCO-X1) we need faster sampling
+   * This does not seem to affect performance a lot (~4% in makefakedata),
+   * but we'll nevertheless make this sampling faster for binaries and slower
+   * for isolated pulsars */
+  if (params->orbit.asini > 0)
+    sourceParams.deltaT = 5;	/* for binaries */
+  else
+    sourceParams.deltaT = 60;	/* for isolated pulsars */
 
   /* start-time in SSB time */
   LIGOTimeGPS t0;
@@ -518,7 +510,7 @@ LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,		/**< pointer to LALStatus
 
   /* setup baryinput for LALComputeSky */
   baryinput.site = *(params->pSigParams->site);
-  /* account for a quirk in XLALBarycenter(): -> see documentation of type BarycenterInput */
+  /* account for a quirk in LALBarycenter(): -> see documentation of type BarycenterInput */
   baryinput.site.location[0] /= LAL_C_SI;
   baryinput.site.location[1] /= LAL_C_SI;
   baryinput.site.location[2] /= LAL_C_SI;
@@ -660,7 +652,7 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
 
   /* prepare SFT-vector for return */
   if (*outputSFTs == NULL) {
-    XLAL_CHECK_LAL (status, ( sftvect = XLALCreateSFTVector ( numSFTs, SFTlen) ) != NULL, XLAL_EFUNC);
+    TRY (LALCreateSFTVector (status->statusPtr, &sftvect, numSFTs, SFTlen), status);
     setToZero = 1; /* 09/07/05 gam; allocated memory for the output SFTs, zero bins not within the Dterms loop */
   } else {
     sftvect = *outputSFTs;  /* Assume memory already allocated for SFTs */
@@ -850,7 +842,7 @@ XLALConvertGPS2SSB ( LIGOTimeGPS *SSBout, 		/**< [out] arrival-time in SSB */
 
   BarycenterInput XLAL_INIT_DECL(baryinput);
   baryinput.site = *(params->site);
-  /* account for a quirk in XLALBarycenter(): -> see documentation of type BarycenterInput */
+  /* account for a quirk in LALBarycenter(): -> see documentation of type BarycenterInput */
   baryinput.site.location[0] /= LAL_C_SI;
   baryinput.site.location[1] /= LAL_C_SI;
   baryinput.site.location[2] /= LAL_C_SI;

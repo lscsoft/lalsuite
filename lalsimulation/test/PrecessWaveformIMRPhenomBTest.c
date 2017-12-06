@@ -54,15 +54,15 @@ int main(void){
   REAL8TimeSeries *hp, *hx;
   hp = NULL; hx = NULL;
 
-  ret = XLALSimInspiralChooseTDWaveformOLD(
+  ret = XLALSimInspiralChooseTDWaveform(
     &hp, &hx,
+    phi, dt,
     m1, m2,
     s1x, s1y, s1z,
     s2x, s2y, s2z,
+    f_min, f_ref,
     dist, inc,
-    phi, 0., 0., 0.,
-    dt, f_min, f_ref,
-    lambda1, lambda2, 0., 0.,
+    lambda1, lambda2,
     waveFlags,
     nonGRparams,
     amplitudeOrder, phaseOrder,
@@ -93,15 +93,15 @@ int main(void){
   hp = NULL; hx = NULL;
 
   inc=0;  // +z axis
-  ret = XLALSimInspiralChooseTDWaveformOLD(
+  ret = XLALSimInspiralChooseTDWaveform(
     &hp, &hx,
+    phi, dt,
     m1, m2,
     s1x, s1y, s1z,
     s2x, s2y, s2z,
+    f_min, f_ref,
     dist, inc,
-    phi, 0., 0., 0.,
-    dt, f_min, f_ref,
-    lambda1, lambda2, 0., 0.,
+    lambda1, lambda2,
     waveFlags,
     NULL, // non-GR params
     amplitudeOrder, phaseOrder,

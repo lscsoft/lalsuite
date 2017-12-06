@@ -3534,7 +3534,6 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
 	string = XLALCalloc(sizeof(char), len+1); /* One extra character: '\0' */
 	if(len!=fread(string, sizeof(char), len, stream)) XLAL_ERROR_NULL(XLAL_EIO);
 	LALInferenceAddVariable(vars,name,&string,type,vary);
-	break;
       }
     case LALINFERENCE_MCMCrunphase_ptr_t:
       {
@@ -3582,22 +3581,15 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
 int LALInferenceWriteVariablesArrayBinary(FILE *file, LALInferenceVariables **vars, UINT4 N)
 {
   UINT4 i=0;
-  int errnum;
-  for(i=0;i<N;i++)
-  {
-		  XLAL_TRY(LALInferenceWriteVariablesBinary(file, vars[i]),errnum);
-		  if(errnum!=XLAL_SUCCESS) XLAL_ERROR(XLAL_EIO,"Unable to write variables as binary\n");
-  }
+  for(i=0;i<N;i++) LALInferenceWriteVariablesBinary(file, vars[i]);
   return N;
 }
 
 int LALInferenceReadVariablesArrayBinary(FILE *file, LALInferenceVariables **vars, UINT4 N)
 {
   UINT4 i=0;
-  int errnum;
   for(i=0;i<N;i++){
-		  XLAL_TRY(vars[i]=LALInferenceReadVariablesBinary(file),errnum);
-		  if(errnum!=XLAL_SUCCESS) XLAL_ERROR(XLAL_EIO,"Unable to read variables from binary file\n");
+    vars[i]=LALInferenceReadVariablesBinary(file);
   }
   return N;
 }
@@ -3778,7 +3770,7 @@ void LALInferenceSetCOMPLEX16Variable(LALInferenceVariables* vars,const char* na
 void LALInferenceAddgslMatrixVariable(LALInferenceVariables * vars, const char * name, gsl_matrix* value, LALInferenceParamVaryType vary)
 /* Typed version of LALInferenceAddVariable for gsl_matrix values.*/
 {
-  LALInferenceAddVariable(vars,name,(void*)&value,LALINFERENCE_gslMatrix_t,vary);
+  LALInferenceAddVariable(vars,name,(void*)value,LALINFERENCE_gslMatrix_t,vary);
 }
 
 gsl_matrix* LALInferenceGetgslMatrixVariable(LALInferenceVariables * vars, const char * name)
@@ -3801,7 +3793,7 @@ void LALInferenceSetgslMatrixVariable(LALInferenceVariables* vars,const char* na
 void LALInferenceAddREAL8VectorVariable(LALInferenceVariables * vars, const char * name, REAL8Vector* value, LALInferenceParamVaryType vary)
 /* Typed version of LALInferenceAddVariable for REAL8Vector values.*/
 {
-  LALInferenceAddVariable(vars,name,(void*)&value,LALINFERENCE_REAL8Vector_t,vary);
+  LALInferenceAddVariable(vars,name,(void*)value,LALINFERENCE_REAL8Vector_t,vary);
 }
 
 REAL8Vector* LALInferenceGetREAL8VectorVariable(LALInferenceVariables * vars, const char * name)
@@ -3824,7 +3816,7 @@ void LALInferenceSetREAL8VectorVariable(LALInferenceVariables* vars,const char* 
 void LALInferenceAddCOMPLEX16VectorVariable(LALInferenceVariables * vars, const char * name, COMPLEX16Vector* value, LALInferenceParamVaryType vary)
 /* Typed version of LALInferenceAddVariable for COMPLEX16Vector values.*/
 {
-  LALInferenceAddVariable(vars,name,(void*)&value,LALINFERENCE_COMPLEX16Vector_t,vary);
+  LALInferenceAddVariable(vars,name,(void*)value,LALINFERENCE_COMPLEX16Vector_t,vary);
 }
 
 COMPLEX16Vector* LALInferenceGetCOMPLEX16VectorVariable(LALInferenceVariables * vars, const char * name)
@@ -3847,13 +3839,13 @@ void LALInferenceSetCOMPLEX16VectorVariable(LALInferenceVariables* vars,const ch
 void LALInferenceAddUINT4VectorVariable(LALInferenceVariables * vars, const char * name, UINT4Vector* value, LALInferenceParamVaryType vary)
 /* Typed version of LALInferenceAddVariable for UINT4Vector values.*/
 {
-  LALInferenceAddVariable(vars,name,(void*)&value,LALINFERENCE_UINT4Vector_t,vary);
+  LALInferenceAddVariable(vars,name,(void*)value,LALINFERENCE_UINT4Vector_t,vary);
 }
 
 void LALInferenceAddINT4VectorVariable(LALInferenceVariables * vars, const char * name, INT4Vector* value, LALInferenceParamVaryType vary)
 /* Typed version of LALInferenceAddVariable for INT4Vector values.*/
 {
-  LALInferenceAddVariable(vars,name,(void*)&value,LALINFERENCE_INT4Vector_t,vary);
+  LALInferenceAddVariable(vars,name,(void*)value,LALINFERENCE_INT4Vector_t,vary);
 }
 
 UINT4Vector* LALInferenceGetUINT4VectorVariable(LALInferenceVariables * vars, const char * name)
@@ -3864,7 +3856,7 @@ UINT4Vector* LALInferenceGetUINT4VectorVariable(LALInferenceVariables * vars, co
     XLAL_ERROR_NULL(XLAL_ETYPE, "Entry \"%s\" not found or of wrong type.", name);
   }
 
-  UINT4Vector* rvalue=*(UINT4Vector**)LALInferenceGetVariable(vars,name);
+  UINT4Vector* rvalue=(UINT4Vector*)LALInferenceGetVariable(vars,name);
 
   return rvalue;
 }
@@ -3877,7 +3869,7 @@ INT4Vector* LALInferenceGetINT4VectorVariable(LALInferenceVariables * vars, cons
     XLAL_ERROR_NULL(XLAL_ETYPE, "Entry \"%s\" not found or of wrong type.", name);
   }
 
-  INT4Vector* rvalue=*(INT4Vector**)LALInferenceGetVariable(vars,name);
+  INT4Vector* rvalue=(INT4Vector*)LALInferenceGetVariable(vars,name);
 
   return rvalue;
 }
@@ -3893,7 +3885,7 @@ void LALInferenceSetINT4VectorVariable(LALInferenceVariables* vars,const char* n
 void LALInferenceAddMCMCrunphase_ptrVariable(LALInferenceVariables * vars, const char * name, LALInferenceMCMCRunPhase* value, LALInferenceParamVaryType vary)
 /* Typed version of LALInferenceAddVariable for LALInferenceMCMCRunPhase values.*/
 {
-  LALInferenceAddVariable(vars,name,(void*)&value,LALINFERENCE_MCMCrunphase_ptr_t,vary);
+  LALInferenceAddVariable(vars,name,(void*)value,LALINFERENCE_MCMCrunphase_ptr_t,vary);
 }
 
 LALInferenceMCMCRunPhase* LALInferenceGetMCMCrunphase_ptrVariable(LALInferenceVariables * vars, const char * name)
@@ -3904,7 +3896,7 @@ LALInferenceMCMCRunPhase* LALInferenceGetMCMCrunphase_ptrVariable(LALInferenceVa
     XLAL_ERROR_NULL(XLAL_ETYPE, "Entry \"%s\" not found or of wrong type.", name);
   }
 
-  LALInferenceMCMCRunPhase* rvalue=*(LALInferenceMCMCRunPhase**)LALInferenceGetVariable(vars,name);
+  LALInferenceMCMCRunPhase* rvalue=(LALInferenceMCMCRunPhase*)LALInferenceGetVariable(vars,name);
 
   return rvalue;
 }
@@ -3913,13 +3905,13 @@ void LALInferenceSetMCMCrunphase_ptrVariable(LALInferenceVariables* vars,const c
   LALInferenceSetVariable(vars,name,(void*)&value);
 }
 
-void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * name, const CHAR* value, LALInferenceParamVaryType vary)
+void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * name, CHAR* value, LALInferenceParamVaryType vary)
 /* Typed version of LALInferenceAddVariable for CHAR values.*/
 {
   LALInferenceAddVariable(vars,name,&value,LALINFERENCE_string_t,vary);
 }
 
-const CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * name)
+CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * name)
 /* Typed version of LALInferenceGetVariable for CHAR values.*/
 {
 
@@ -3932,7 +3924,7 @@ const CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const ch
   return rvalue;
 }
 
-void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name, const CHAR* value){
+void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name,CHAR* value){
   LALInferenceSetVariable(vars,name,&value);
 }
 

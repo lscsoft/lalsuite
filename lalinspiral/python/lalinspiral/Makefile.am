@@ -17,8 +17,6 @@ pymoduledir = $(pkgpythondir)
 pymodule_PYTHON = \
 	__init__.py \
 	git_version.py \
-	inspinjfind.py \
-	thinca.py \
 	$(END_OF_LIST)
 
 endif

@@ -30,6 +30,7 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/DetectorSite.h>
+#include <lal/StackMetric.h>
 #include <lal/AVFactories.h>
 #include <lal/LALError.h>
 #include <lal/LALString.h>

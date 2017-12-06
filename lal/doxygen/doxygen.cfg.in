@@ -282,7 +282,7 @@ OPTIMIZE_OUTPUT_VHDL   = NO
 # Note that for custom extensions you also need to set FILE_PATTERNS otherwise
 # the files are not read by doxygen.
 
-EXTENSION_MAPPING      = i=C
+EXTENSION_MAPPING      =
 
 # If the MARKDOWN_SUPPORT tag is enabled then doxygen pre-processes all comments
 # according to the Markdown format, which allows for more readable
@@ -761,7 +761,6 @@ WARN_LOGFILE           = @abs_builddir@/warnings.log
 
 INPUT                  = @abs_builddir@/autogen.dox \
                          @abs_srcdir@/src/toplevel.dox \
-                         @abs_srcdir@/src \
                          @abs_builddir@/in
 
 # This tag can be used to specify the character encoding of the source files

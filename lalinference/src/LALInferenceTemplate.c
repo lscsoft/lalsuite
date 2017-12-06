@@ -208,6 +208,8 @@ static void q2masses(double mc, double q, double *m1, double *m2)
 void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferenceModel *model){
 /*************************************************************************************************************************/
   Approximant approximant = (Approximant) 0;
+  INT4 order=-1;
+  INT4 amporder;
 
   int ret=0;
   INT4 errnum=0;
@@ -227,7 +229,7 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
   }
 
   if (LALInferenceCheckVariable(model->params, "LAL_PNORDER"))
-    XLALSimInspiralWaveformParamsInsertPNPhaseOrder(model->LALpars, *(INT4 *) LALInferenceGetVariable(model->params, "LAL_PNORDER"));
+    order = *(INT4*) LALInferenceGetVariable(model->params, "LAL_PNORDER");
   else {
     XLALPrintError(" ERROR in templateLALGenerateInspiral(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
     XLAL_ERROR_VOID(XLAL_EDATA);
@@ -238,11 +240,9 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
    *     1) The default behavior of the code won't change unexpectedly due to changes in LALSimulation.
    *     2) We need to know the amplitude order in order to set the starting frequency of the waveform properly. */
   if (LALInferenceCheckVariable(model->params, "LAL_AMPORDER"))
-    XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(model->LALpars, *(INT4 *) LALInferenceGetVariable(model->params, "LAL_AMPORDER"));
+    amporder = *(INT4*) LALInferenceGetVariable(model->params, "LAL_AMPORDER");
   else
-    if (!XLALSimInspiralWaveformParamsPNAmplitudeOrderIsDefault(model->LALpars))
-      XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(model->LALpars,-1);
-
+    amporder = -1;
   REAL8 f_ref = 100.0;
   if (LALInferenceCheckVariable(model->params, "f_ref")) f_ref = *(REAL8 *)LALInferenceGetVariable(model->params, "f_ref");
 
@@ -312,6 +312,8 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
 
   /* If we have tilt angles zero, then the spins are aligned and we just set the z component */
   /* However, if the waveform supports precession then we still need to get the right coordinate components */
+  /*SpinSupport spin_support=XLALSimInspiralGetSpinSupportFromApproximant(approximant);*/
+  /*if(tilt1==0.0 && tilt2==0.0 && (spin_support==LAL_SIM_INSPIRAL_SPINLESS || spin_support==LAL_SIM_INSPIRAL_ALIGNEDSPIN))*/
   if(tilt1==0.0 && tilt2==0.0)
   {
       spin1z=a_spin1;
@@ -324,7 +326,7 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
       /* The transformation function doesn't know fLow, so f_ref==0 isn't interpretted as a request to use the starting frequency for reference. */
       XLAL_TRY(ret=XLALSimInspiralTransformPrecessingNewInitialConditions(
                     &inclination, &spin1x, &spin1y, &spin1z, &spin2x, &spin2y, &spin2z,
-                    thetaJN, phiJL, tilt1, tilt2, phi12, a_spin1, a_spin2, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, fTemp, phi0), errnum);
+                    thetaJN, phiJL, tilt1, tilt2, phi12, a_spin1, a_spin2, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, fTemp), errnum);
       if (ret == XLAL_FAILURE)
       {
         XLALPrintError(" ERROR in XLALSimInspiralTransformPrecessingNewInitialConditions(): error converting angles. errnum=%d\n",errnum );
@@ -333,35 +335,30 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
   }
 
   /* ==== TIDAL PARAMETERS ==== */
-  if(LALInferenceCheckVariable(model->params, "lambda1"))
-    XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "lambda1"));
-  if(LALInferenceCheckVariable(model->params, "lambda2"))
-    XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "lambda2"));
+  REAL8 lambda1 = 0.;
+  if(LALInferenceCheckVariable(model->params, "lambda1")) lambda1 = *(REAL8*) LALInferenceGetVariable(model->params, "lambda1");
+  REAL8 lambda2 = 0.;
+  if(LALInferenceCheckVariable(model->params, "lambda2")) lambda2 = *(REAL8*) LALInferenceGetVariable(model->params, "lambda2");
   REAL8 lambdaT = 0.;
   REAL8 dLambdaT = 0.;
   REAL8 sym_mass_ratio_eta = 0.;
-
   if(LALInferenceCheckVariable(model->params, "lambdaT")&&LALInferenceCheckVariable(model->params, "dLambdaT")){
-    REAL8 lambda1=0.;
-    REAL8 lambda2=0.;
     lambdaT = *(REAL8*) LALInferenceGetVariable(model->params, "lambdaT");
     dLambdaT = *(REAL8*) LALInferenceGetVariable(model->params, "dLambdaT");
     sym_mass_ratio_eta = m1*m2/((m1+m2)*(m1+m2));
     LALInferenceLambdaTsEta2Lambdas(lambdaT,dLambdaT,sym_mass_ratio_eta,&lambda1,&lambda2);
-    XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars,lambda1);
-    XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars,lambda2);
   }
 
 
   /* Only use GR templates */
+  LALSimInspiralTestGRParam *nonGRparams = NULL;
+
   /* Fill in the extra parameters for testing GR, if necessary */
   for (UINT4 k=0; k<N_extra_params; k++)
   {
     if(LALInferenceCheckVariable(model->params,list_extra_parameters[k]))
     {
-      XLALDictInsert(model->LALpars, list_extra_parameters[k], (void *)LALInferenceGetVariable(model->params,list_extra_parameters[k]), sizeof(double), LAL_D_TYPE_CODE);
-
-      //XLALSimInspiralAddTestGRParam(&nonGRparams,list_extra_parameters[k],*(REAL8 *)LALInferenceGetVariable(model->params,list_extra_parameters[k]));
+      XLALSimInspiralAddTestGRParam(&nonGRparams,list_extra_parameters[k],*(REAL8 *)LALInferenceGetVariable(model->params,list_extra_parameters[k]));
     }
   }
   /* Fill in PPE params if they are available */
@@ -373,18 +370,22 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
     {
       sprintf(PPEparam, "%s%d",PPEnames[idx],ppeidx);
       if(LALInferenceCheckVariable(model->params,PPEparam))
-	XLALDictInsert(model->LALpars, PPEparam, (void *)LALInferenceGetVariable(model->params,PPEparam), sizeof(double), LAL_D_TYPE_CODE);
+        XLALSimInspiralAddTestGRParam(&nonGRparams,PPEparam,LALInferenceGetREAL8Variable(model->params,PPEparam));
       else
         break;
     }
   }
 
   /* ==== Call the waveform generator ==== */
-    XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformSequence (&(model->roq->hptildeLinear), &(model->roq->hctildeLinear), phi0, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI,
-                spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_ref, distance, inclination, model->LALpars, approximant, (model->roq->frequencyNodesLinear)), errnum);
+  XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformSequence (&(model->roq->hptildeLinear), &(model->roq->hctildeLinear), phi0, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI,
+                spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_ref, distance, inclination, lambda1, lambda2,
+                model->waveFlags, nonGRparams, amporder, order, approximant, (model->roq->frequencyNodesLinear)), errnum);
 
-    XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformSequence (&(model->roq->hptildeQuadratic), &(model->roq->hctildeQuadratic), phi0, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI,
-							spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_ref, distance, inclination, model->LALpars, approximant, (model->roq->frequencyNodesQuadratic)), errnum);
+  XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformSequence (&(model->roq->hptildeQuadratic), &(model->roq->hctildeQuadratic), phi0, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI,
+                  spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_ref, distance, inclination, lambda1, lambda2,
+                  model->waveFlags, nonGRparams, amporder, order, approximant, (model->roq->frequencyNodesQuadratic)), errnum);
+    /* Destroy the nonGr params */
+    XLALSimInspiralDestroyTestGRParam(nonGRparams);
 
     REAL8 instant = model->freqhPlus->epoch.gpsSeconds + 1e-9*model->freqhPlus->epoch.gpsNanoSeconds;
     LALInferenceSetVariable(model->params, "time", &instant);
@@ -608,6 +609,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 {
 
   Approximant approximant = (Approximant) 0;
+  INT4 order=-1;
+  INT4 amporder;
 
   static int sizeWarning = 0;
   int ret=0;
@@ -633,7 +636,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
   }
 
   if (LALInferenceCheckVariable(model->params, "LAL_PNORDER"))
-    XLALSimInspiralWaveformParamsInsertPNPhaseOrder(model->LALpars, *(INT4*) LALInferenceGetVariable(model->params, "LAL_PNORDER"));
+    order = *(INT4*) LALInferenceGetVariable(model->params, "LAL_PNORDER");
   else {
     XLALPrintError(" ERROR in templateLALGenerateInspiral(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
     XLAL_ERROR_VOID(XLAL_EDATA);
@@ -644,10 +647,9 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
    *     1) The default behavior of the code won't change unexpectedly due to changes in LALSimulation.
    *     2) We need to know the amplitude order in order to set the starting frequency of the waveform properly. */
   if (LALInferenceCheckVariable(model->params, "LAL_AMPORDER"))
-    XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(model->LALpars,*(INT4*) LALInferenceGetVariable(model->params, "LAL_AMPORDER"));
+    amporder = *(INT4*) LALInferenceGetVariable(model->params, "LAL_AMPORDER");
   else
-    if (!XLALSimInspiralWaveformParamsPNAmplitudeOrderIsDefault(model->LALpars))
-      XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(model->LALpars,-1);
+    amporder = -1;
 
   REAL8 f_ref = 100.0;
   if (LALInferenceCheckVariable(model->params, "f_ref")) f_ref = *(REAL8 *)LALInferenceGetVariable(model->params, "f_ref");
@@ -689,7 +691,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
   else
     f_low = model->fLow;
 
-  f_start = XLALSimInspiralfLow2fStart(f_low, XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(model->LALpars), approximant);
+  f_start = XLALSimInspiralfLow2fStart(f_low, amporder, approximant);
 
   /* Don't let TaylorF2 generate unphysical inspiral up to Nyquist */
   if (approximant == TaylorF2)
@@ -734,6 +736,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 
   /* If we have tilt angles zero, then the spins are aligned and we just set the z component */
   /* However, if the waveform supports precession then we still need to get the right coordinate components */
+  /*SpinSupport spin_support=XLALSimInspiralGetSpinSupportFromApproximant(approximant);*/
+  /*if(tilt1==0.0 && tilt2==0.0 && (spin_support==LAL_SIM_INSPIRAL_SPINLESS || spin_support==LAL_SIM_INSPIRAL_ALIGNEDSPIN))*/
   if(tilt1==0.0 && tilt2==0.0)
   {
       spin1z=a_spin1;
@@ -749,7 +753,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 
       XLAL_TRY(ret=XLALSimInspiralTransformPrecessingNewInitialConditions(
                     &inclination, &spin1x, &spin1y, &spin1z, &spin2x, &spin2y, &spin2z,
-                    thetaJN, phiJL, tilt1, tilt2, phi12, a_spin1, a_spin2, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, fTemp, phi0), errnum);
+                    thetaJN, phiJL, tilt1, tilt2, phi12, a_spin1, a_spin2, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, fTemp), errnum);
       if (ret == XLAL_FAILURE)
       {
         XLALPrintError(" ERROR in XLALSimInspiralTransformPrecessingNewInitialConditions(): error converting angles. errnum=%d: %s\n",errnum, XLALErrorString(errnum) );
@@ -759,32 +763,30 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 
 
   /* ==== TIDAL PARAMETERS ==== */
-  if(LALInferenceCheckVariable(model->params, "lambda1"))
-    XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "lambda1"));
-  if(LALInferenceCheckVariable(model->params, "lambda2"))
-    XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "lambda2"));
+  REAL8 lambda1 = 0.;
+  if(LALInferenceCheckVariable(model->params, "lambda1")) lambda1 = *(REAL8*) LALInferenceGetVariable(model->params, "lambda1");
+  REAL8 lambda2 = 0.;
+  if(LALInferenceCheckVariable(model->params, "lambda2")) lambda2 = *(REAL8*) LALInferenceGetVariable(model->params, "lambda2");
   REAL8 lambdaT = 0.;
   REAL8 dLambdaT = 0.;
   REAL8 sym_mass_ratio_eta = 0.;
   if(LALInferenceCheckVariable(model->params, "lambdaT")&&LALInferenceCheckVariable(model->params, "dLambdaT")){
-    REAL8 lambda1=0.;
-    REAL8 lambda2=0.;
     lambdaT = *(REAL8*) LALInferenceGetVariable(model->params, "lambdaT");
     dLambdaT = *(REAL8*) LALInferenceGetVariable(model->params, "dLambdaT");
     sym_mass_ratio_eta = m1*m2/((m1+m2)*(m1+m2));
     LALInferenceLambdaTsEta2Lambdas(lambdaT,dLambdaT,sym_mass_ratio_eta,&lambda1,&lambda2);
-    XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
-    XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
   }
 
 
   /* Only use GR templates */
+  LALSimInspiralTestGRParam *nonGRparams = NULL;
+
   /* Fill in the extra parameters for testing GR, if necessary */
   for (UINT4 k=0; k<N_extra_params; k++)
   {
       if(LALInferenceCheckVariable(model->params,list_extra_parameters[k]))
       {
-	XLALDictInsert(model->LALpars, list_extra_parameters[k], (void *)LALInferenceGetVariable(model->params,list_extra_parameters[k]), sizeof(double), LAL_D_TYPE_CODE);
+          XLALSimInspiralAddTestGRParam(&nonGRparams,list_extra_parameters[k],*(REAL8 *)LALInferenceGetVariable(model->params,list_extra_parameters[k]));
       }
   }
   /* Fill in PPE params if they are available */
@@ -796,7 +798,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
     {
       sprintf(PPEparam, "%s%d",PPEnames[idx],ppeidx);
       if(LALInferenceCheckVariable(model->params,PPEparam))
-	XLALDictInsert(model->LALpars, PPEparam, (void *)LALInferenceGetVariable(model->params,PPEparam), sizeof(double), LAL_D_TYPE_CODE);
+        XLALSimInspiralAddTestGRParam(&nonGRparams,PPEparam,LALInferenceGetREAL8Variable(model->params,PPEparam));
       else
         break;
     }
@@ -807,10 +809,13 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
   /* ==== Call the waveform generator ==== */
   if(model->domain == LAL_SIM_DOMAIN_FREQUENCY) {
     deltaF = model->deltaF;
-    XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
+
+	XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
             deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
-            spin2x, spin2y, spin2z, f_start, f_max, f_ref, distance, inclination, model->LALpars,
-							      approximant,model->waveformCache, NULL), errnum);
+            spin2x, spin2y, spin2z, f_start, f_max, f_ref, distance, inclination,lambda1, lambda2, model->waveFlags, nonGRparams, amporder, order,
+            approximant,model->waveformCache, NULL), errnum);
+
+	XLALSimInspiralDestroyTestGRParam(nonGRparams);
 
     /* if the waveform failed to generate, fill the buffer with zeros
      * so that the previous waveform is not left there
@@ -831,10 +836,12 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
           XLALSetErrno(errnum);
           XLAL_ERROR_VOID(errnum,"%s: Template generation failed in XLALSimInspiralChooseFDWaveformFromCache:\n\
 XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, \
-%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, \
-,model->LALpars,model->waveformCache)\n",__func__,
-			  phi0, deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
-			  f_start, f_max, f_ref, distance, inclination);
+%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, \
+model->waveFlags(%d,%d,%d,%d,numreldata),nonGRparams,%d,%d,%d,model->waveformCache)\n",__func__,
+            phi0, deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
+            f_start, f_max, f_ref, distance, inclination, lambda1, lambda2, (int) XLALSimInspiralGetSpinOrder(model->waveFlags),
+            (int) XLALSimInspiralGetTidalOrder(model->waveFlags),(int) XLALSimInspiralGetFrameAxis(model->waveFlags),
+            (int) XLALSimInspiralGetModesChoice(model->waveFlags),amporder, order, approximant);
       }
     }
 
@@ -868,7 +875,9 @@ XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, \
     XLAL_TRY(ret=XLALSimInspiralChooseTDWaveformFromCache(&hplus, &hcross, phi0, deltaT,
             m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
             spin2x, spin2y, spin2z, f_start, f_ref, distance,
-	    inclination, model->LALpars, approximant,model->waveformCache), errnum);
+            inclination, lambda1, lambda2, model->waveFlags, nonGRparams,
+            amporder, order, approximant,model->waveformCache), errnum);
+	XLALSimInspiralDestroyTestGRParam(nonGRparams);
     /* if the waveform failed to generate, fill the buffer with zeros
      * so that the previous waveform is not left there
      */
@@ -890,13 +899,14 @@ XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, \
           XLALSetErrno(errnum);
           XLAL_ERROR_VOID(errnum,"%s: Template generation failed in XLALSimInspiralChooseTDWaveformFromCache\n\
 XLALSimInspiralChooseTDWaveformFromCache(&hplus, &hcross, \
-%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, \
-model->LALpars,model->waveformCache)\n",__func__,
+%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, \
+model->waveFlags(%d,%d,%d,%d,numreldata),nonGRparams,%d,%d,%d,model->waveformCache)\n",__func__,
             phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
-            f_start, f_ref, distance, inclination);
+            f_start, f_ref, distance, inclination, lambda1, lambda2, (int) XLALSimInspiralGetSpinOrder(model->waveFlags),
+            (int) XLALSimInspiralGetTidalOrder(model->waveFlags),(int) XLALSimInspiralGetFrameAxis(model->waveFlags),
+            (int) XLALSimInspiralGetModesChoice(model->waveFlags),amporder, order, approximant);
       }
     }
-
 
     /* The following complicated mess is a result of the following considerations:
 
@@ -1084,6 +1094,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
 /*************************************************************************************************************************/
 {
     Approximant approximant = (Approximant) 0;
+    INT4 order=-1;
+    INT4 amporder;
 
     static int sizeWarning = 0;
     int ret=0;
@@ -1107,10 +1119,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
         XLAL_ERROR_VOID(XLAL_EDATA);
     }
 
-    if (LALInferenceCheckVariable(model->params, "LAL_PNORDER")) {
-      if (XLALSimInspiralWaveformParamsLookupPNPhaseOrder(model->LALpars)!=(*(INT4*) LALInferenceGetVariable(model->params, "LAL_PNORDER")))
-	XLALSimInspiralWaveformParamsInsertPNPhaseOrder(model->LALpars, *(INT4*) LALInferenceGetVariable(model->params, "LAL_PNORDER"));
-    }
+    if (LALInferenceCheckVariable(model->params, "LAL_PNORDER"))
+        order = *(INT4*) LALInferenceGetVariable(model->params, "LAL_PNORDER");
     else {
         XLALPrintError(" ERROR in templateLALGenerateInspiral(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
         XLAL_ERROR_VOID(XLAL_EDATA);
@@ -1121,13 +1131,10 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
      *     1) The default behavior of the code won't change unexpectedly due to changes in LALSimulation.
      *     2) We need to know the amplitude order in order to set the starting frequency of the waveform properly. */
 
-    if (LALInferenceCheckVariable(model->params, "LAL_AMPORDER")) {
-      if ( XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(model->LALpars)!= *(INT4*) LALInferenceGetVariable(model->params, "LAL_AMPORDER"))
-	XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(model->LALpars, *(INT4*) LALInferenceGetVariable(model->params, "LAL_AMPORDER"));
-    }
+    if (LALInferenceCheckVariable(model->params, "LAL_AMPORDER"))
+        amporder = *(INT4*) LALInferenceGetVariable(model->params, "LAL_AMPORDER");
     else
-      if (!XLALSimInspiralWaveformParamsPNAmplitudeOrderIsDefault(model->LALpars))
-	XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(model->LALpars,-1);
+        amporder = -1;
 
     REAL8 f_ref = 100.0;
     if (LALInferenceCheckVariable(model->params, "f_ref")) f_ref = *(REAL8 *)LALInferenceGetVariable(model->params, "f_ref");
@@ -1169,7 +1176,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
     else
         f_low = model->fLow;
 
-    f_start = XLALSimInspiralfLow2fStart(f_low, XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(model->LALpars), approximant);
+    f_start = XLALSimInspiralfLow2fStart(f_low, amporder, approximant);
 
     /* Don't let TaylorF2 generate unphysical inspiral up to Nyquist */
     if (approximant == TaylorF2)
@@ -1214,6 +1221,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
 
     /* If we have tilt angles zero, then the spins are aligned and we just set the z component */
     /* However, if the waveform supports precession then we still need to get the right coordinate components */
+    /*SpinSupport spin_support=XLALSimInspiralGetSpinSupportFromApproximant(approximant);*/
+    /*if(tilt1==0.0 && tilt2==0.0 && (spin_support==LAL_SIM_INSPIRAL_SPINLESS || spin_support==LAL_SIM_INSPIRAL_ALIGNEDSPIN))*/
     if(tilt1==0.0 && tilt2==0.0)
     {
         spin1z=a_spin1;
@@ -1229,7 +1238,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
 
         XLAL_TRY(ret=XLALSimInspiralTransformPrecessingNewInitialConditions(
                                                                             &inclination, &spin1x, &spin1y, &spin1z, &spin2x, &spin2y, &spin2z,
-                                                                            thetaJN, phiJL, tilt1, tilt2, phi12, a_spin1, a_spin2, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, fTemp, phi0), errnum);
+                                                                            thetaJN, phiJL, tilt1, tilt2, phi12, a_spin1, a_spin2, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, fTemp), errnum);
         if (ret == XLAL_FAILURE)
         {
             XLALPrintError(" ERROR in XLALSimInspiralTransformPrecessingNewInitialConditions(): error converting angles. errnum=%d: %s\n",errnum, XLALErrorString(errnum) );
@@ -1238,31 +1247,28 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
     }
 
     /* ==== TIDAL PARAMETERS ==== */
-    if(LALInferenceCheckVariable(model->params, "lambda1"))
-      XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "lambda1"));
-    if(LALInferenceCheckVariable(model->params, "lambda2"))
-      XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "lambda2"));
+    REAL8 lambda1 = 0.;
+    if(LALInferenceCheckVariable(model->params, "lambda1")) lambda1 = *(REAL8*) LALInferenceGetVariable(model->params, "lambda1");
+    REAL8 lambda2 = 0.;
+    if(LALInferenceCheckVariable(model->params, "lambda2")) lambda2 = *(REAL8*) LALInferenceGetVariable(model->params, "lambda2");
     REAL8 lambdaT = 0.;
     REAL8 dLambdaT = 0.;
     REAL8 sym_mass_ratio_eta = 0.;
     if(LALInferenceCheckVariable(model->params, "lambdaT")&&LALInferenceCheckVariable(model->params, "dLambdaT")){
-        REAL8 lambda1=0.;
-        REAL8 lambda2=0.;
         lambdaT = *(REAL8*) LALInferenceGetVariable(model->params, "lambdaT");
         dLambdaT = *(REAL8*) LALInferenceGetVariable(model->params, "dLambdaT");
         sym_mass_ratio_eta = m1*m2/((m1+m2)*(m1+m2));
         LALInferenceLambdaTsEta2Lambdas(lambdaT,dLambdaT,sym_mass_ratio_eta,&lambda1,&lambda2);
-        XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
-        XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
     }
 
     /* Only use GR templates */
+    LALSimInspiralTestGRParam *nonGRparams = NULL;
     /* Fill in the extra parameters for testing GR, if necessary */
     for (UINT4 k=0; k<N_extra_params; k++)
     {
         if(LALInferenceCheckVariable(model->params,list_extra_parameters[k]))
         {
-	  XLALDictInsert(model->LALpars, list_extra_parameters[k], (void *)LALInferenceGetVariable(model->params,list_extra_parameters[k]), sizeof(double), LAL_D_TYPE_CODE);
+            XLALSimInspiralAddTestGRParam(&nonGRparams,list_extra_parameters[k],*(REAL8 *)LALInferenceGetVariable(model->params,list_extra_parameters[k]));
         }
     }
     /* Fill in PPE params if they are available */
@@ -1274,7 +1280,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
         {
             sprintf(PPEparam, "%s%d",PPEnames[idx],ppeidx);
             if(LALInferenceCheckVariable(model->params,PPEparam))
-	      XLALDictInsert(model->LALpars, PPEparam, (void *)LALInferenceGetVariable(model->params,PPEparam), sizeof(double), LAL_D_TYPE_CODE);
+                XLALSimInspiralAddTestGRParam(&nonGRparams,PPEparam,LALInferenceGetREAL8Variable(model->params,PPEparam));
             else
                 break;
         }
@@ -1292,9 +1298,10 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
 
         XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
                                                               0.0, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
-                                                              spin2x, spin2y, spin2z, f_start, f_max, f_ref, distance, inclination, model->LALpars,
+                                                              spin2x, spin2y, spin2z, f_start, f_max, f_ref, distance, inclination,lambda1, lambda2, model->waveFlags, nonGRparams, amporder, order,
                                                               approximant,model->waveformCache, frequencies), errnum);
-
+        /* Destroy the nonGr params */
+	    XLALSimInspiralDestroyTestGRParam(nonGRparams);
         /* if the waveform failed to generate, fill the buffer with zeros
          * so that the previous waveform is not left there
          */
@@ -1314,10 +1321,12 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
                     XLALSetErrno(errnum);
                     XLAL_ERROR_VOID(errnum,"%s: Template generation failed in XLALSimInspiralChooseFDWaveformFromCache:\n\
 XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, \
-%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, \
-model->LALpars,%d,model->waveformCache)\n",__func__,
+%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, \
+model->waveFlags(%d,%d,%d,%d,numreldata),nonGRparams,%d,%d,%d,model->waveformCache)\n",__func__,
 		      phi0, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
-				    f_start, f_max, f_ref, distance, inclination, approximant);
+		      f_start, f_max, f_ref, distance, inclination, lambda1, lambda2, (int) XLALSimInspiralGetSpinOrder(model->waveFlags),
+		      (int) XLALSimInspiralGetTidalOrder(model->waveFlags),(int) XLALSimInspiralGetFrameAxis(model->waveFlags),
+		      (int) XLALSimInspiralGetModesChoice(model->waveFlags),amporder, order, approximant);
             }
         }
 
@@ -1343,8 +1352,9 @@ model->LALpars,%d,model->waveformCache)\n",__func__,
         XLAL_TRY(ret=XLALSimInspiralChooseTDWaveformFromCache(&hplus, &hcross, phi0, deltaT,
                                                               m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
                                                               spin2x, spin2y, spin2z, f_start, f_ref, distance,
-                                                              inclination, model->LALpars,
-                                                              approximant,model->waveformCache), errnum);
+                                                              inclination, lambda1, lambda2, model->waveFlags, nonGRparams,
+                                                              amporder, order, approximant,model->waveformCache), errnum);
+		XLALSimInspiralDestroyTestGRParam(nonGRparams);
         /* if the waveform failed to generate, fill the buffer with zeros
          * so that the previous waveform is not left there
          */

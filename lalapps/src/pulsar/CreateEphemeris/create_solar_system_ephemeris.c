@@ -135,7 +135,7 @@ INT4 test=0;
 
 UINT4 ARRAY_SIZE=0;
 
-/* function to convert a GPS time in JD to TDB (similar to my routine XLALTDBMJDtoGPS) */
+/* function to convert a GPS time in JD to TDB (similar to my routine LALTDBMJDtoGPS) */
 void convert(REAL8 *gps_JD, REAL8 *time);
 
 /* function to read the record length of the binary file - this differs for
@@ -328,9 +328,9 @@ writing!\n");
 
     /* output header information on lines starting with a # comment */
     fprintf(fpe, "# Build information for %s\n", argv[0]);
-    fprintf(fpe, "# Author: %s\n", lalAppsVCSInfo.vcsAuthor);
-    fprintf(fpe, "# LALApps Commit ID: %s\n", lalAppsVCSInfo.vcsId);
-    fprintf(fpe, "# LALApps Commit Date: %s\n", lalAppsVCSInfo.vcsDate);
+    fprintf(fpe, "# Author: %s\n", lalAppsVCSAuthor);
+    fprintf(fpe, "# LALApps Commit ID: %s\n", lalAppsVCSId);
+    fprintf(fpe, "# LALApps Commit Date: %s\n", lalAppsVCSDate);
     fprintf(fpe, "#\n# Ephemeris creation command:-\n#\t");
     for( INT4 k=0; k<argc; k++ ) fprintf(fpe, "%s ", argv[k]);
     fprintf(fpe, "\n");
@@ -925,9 +925,6 @@ void get_input_args(inputParams_t *inputParams, INT4 argc, CHAR *argv[]){
         else
           fprintf(stderr, "Error passing option %s with argument %s\n",
             long_options[option_index].name, LALoptarg);
-#if __GNUC__ >= 7
-        __attribute__ ((fallthrough));
-#endif
       case 'h': /* help message */
         fprintf(stderr, USAGE, program);
         exit(0);
@@ -984,6 +981,7 @@ void get_input_args(inputParams_t *inputParams, INT4 argc, CHAR *argv[]){
         inputParams->nyears = atoi(LALoptarg);
         break;
       case '?':
+        fprintf(stderr, "Unknown error while parsing options\n");
       default:
         fprintf(stderr, "Unknown error while parsing options\n");
     }

@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALApps],[6.21.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALApps],[6.19.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/lalapps/lalapps.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -7,7 +7,6 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([\
   Makefile \
   debian/Makefile \
-  debian/control \
   doxygen/Makefile \
   doxygen/doxygen.cfg \
   lalapps.spec \
@@ -23,7 +22,6 @@ AC_CONFIG_FILES([\
   src/lalapps/LALAppsVCSInfo.c \
   src/lalapps/LALAppsVCSInfo.h \
   src/lalapps/Makefile \
-  src/lalapps/version2.c \
   src/online/Makefile \
   src/power/Makefile \
   src/pulsar/CreateEphemeris/Makefile \
@@ -57,30 +55,6 @@ AM_INIT_AUTOMAKE([ \
   dist-xz \
   no-dist-gzip \
 ])
-
-# version requirements
-MIN_LAL_VERSION="6.18.0"
-MIN_LALFRAME_VERSION="1.4.3"
-MIN_LALMETAIO_VERSION="1.3.1"
-MIN_LALXML_VERSION="1.2.4"
-MIN_LALSIMULATION_VERSION="1.7.0"
-MIN_LALBURST_VERSION="1.4.4"
-MIN_LALINSPIRAL_VERSION="1.7.7"
-MIN_LALPULSAR_VERSION="1.16.0"
-MIN_LALINFERENCE_VERSION="1.9.0"
-MIN_LALSTOCHASTIC_VERSION="1.1.20"
-AC_SUBST([MIN_LAL_VERSION])
-AC_SUBST([MIN_LALFRAME_VERSION])
-AC_SUBST([MIN_LALMETAIO_VERSION])
-AC_SUBST([MIN_LALXML_VERSION])
-AC_SUBST([MIN_LALSIMULATION_VERSION])
-AC_SUBST([MIN_LALBURST_VERSION])
-AC_SUBST([MIN_LALINSPIRAL_VERSION])
-AC_SUBST([MIN_LALPULSAR_VERSION])
-AC_SUBST([MIN_LALINFERENCE_VERSION])
-AC_SUBST([MIN_LALSTOCHASTIC_VERSION])
-
-LT_INIT()
 
 AC_CANONICAL_HOST
 
@@ -120,9 +94,6 @@ LALSUITE_ENABLE_LALSTOCHASTIC
 # enable Doxygen documentation
 LALSUITE_ENABLE_DOXYGEN
 
-# enable help2man documentation
-LALSUITE_ENABLE_HELP2MAN
-
 # define version/configure info
 LALSUITE_VERSION_CONFIGURE_INFO
 
@@ -158,12 +129,6 @@ if test "x$mpi" = "xtrue"; then
 fi
 LALSUITE_ENABLE_MODULE([MPI])
 
-# link tests using libtool
-if test "${static_binaries}" = "true"; then
-  lalsuite_libtool_flags="-all-static"
-fi
-LALSUITE_USE_LIBTOOL
-
 # checks for programs
 AC_PROG_INSTALL
 AC_PROG_LN_S
@@ -175,6 +140,7 @@ LALSUITE_CHECK_PYTHON([2.6])
 LALSUITE_CHECK_PAGER
 
 # check for condor_compile
+AC_ENABLE_SHARED
 if test "x$condor" = "xtrue"; then
   AC_CHECK_PROGS([CONDOR_COMPILE],[condor_compile],[false])
   if test "x$CONDOR_COMPILE" = "xfalse"; then
@@ -189,9 +155,6 @@ if test "x$condor" = "xtrue"; then
     AC_MSG_RESULT([yes])
     LD=/usr/bin/ld
   fi
-
-  CC="$CONDOR_COMPILE $CC"
-
   CONDOR_ENABLE_VAL="ENABLED"
 else
   CONDOR_ENABLE_VAL="DISABLED"
@@ -199,6 +162,9 @@ fi
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
+
+# link tests using libtool
+LALSUITE_USE_LIBTOOL
 
 # check for system libraries
 AC_CHECK_LIB([m],[sin])
@@ -370,24 +336,31 @@ fi
 AM_CONDITIONAL([HAVE_BAMBI],[${hbf}])
 AM_CONDITIONAL([HAVE_BAMBI_MPI],[${bambimpi}])
 
-# check for boinc, and modify compiler for lal library checks
-LALSUITE_CHECK_BOINC
+# use c++ mode for boinc build
+if test "${boinc}" = "true" ; then
+   AC_LANG_PUSH([C++])
+fi
 
 # check for lal libararies and headers
-LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
-LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
-LALSUITE_CHECK_OPT_LIB([LALFrame],[${MIN_LALFRAME_VERSION}],[LALFrOpen],[lal/LALFrameL.h])
-LALSUITE_CHECK_OPT_LIB([LALMetaIO],[${MIN_LALMETAIO_VERSION}],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
-LALSUITE_CHECK_OPT_LIB([LALXML],[${MIN_LALXML_VERSION}],[XLALXMLFilePrintElements],[lal/LALXML.h])
-LALSUITE_CHECK_OPT_LIB([LALSimulation],[${MIN_LALSIMULATION_VERSION}],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
-LALSUITE_CHECK_OPT_LIB([LALBurst],[${MIN_LALBURST_VERSION}],[XLALEPSearch],[lal/EPSearch.h])
-LALSUITE_CHECK_OPT_LIB([LALInspiral],[${MIN_LALINSPIRAL_VERSION}],[LALInspiralParameterCalc],[lal/LALInspiral.h])
-LALSUITE_CHECK_OPT_LIB([LALPulsar],[${MIN_LALPULSAR_VERSION}],[XLALComputeFstat],[lal/ComputeFstat.h])
-LALSUITE_CHECK_OPT_LIB([LALInference],[${MIN_LALINFERENCE_VERSION}],[LALInferenceAddVariable],[lal/LALInference.h])
-LALSUITE_CHECK_OPT_LIB([LALStochastic],[${MIN_LALSTOCHASTIC_VERSION}],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
+LALSUITE_CHECK_LIB([LAL],[6.16.1],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.16.1],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_OPT_LIB([LALFrame],[1.4.1],[LALFrOpen],[lal/LALFrameL.h])
+LALSUITE_CHECK_OPT_LIB([LALMetaIO],[1.2.8],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_OPT_LIB([LALXML],[1.2.2],[XLALXMLFilePrintElements],[lal/LALXML.h])
+LALSUITE_CHECK_OPT_LIB([LALSimulation],[1.6.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
+LALSUITE_CHECK_OPT_LIB([LALBurst],[1.4.2],[XLALEPSearch],[lal/EPSearch.h])
+LALSUITE_CHECK_OPT_LIB([LALInspiral],[1.7.5],[LALInspiralParameterCalc],[lal/LALInspiral.h])
+LALSUITE_CHECK_OPT_LIB([LALPulsar],[1.14.0],[XLALComputeFstat],[lal/ComputeFstat.h])
+LALSUITE_CHECK_OPT_LIB([LALInference],[1.7.0],[LALInferenceAddVariable],[lal/LALInference.h])
+LALSUITE_CHECK_OPT_LIB([LALStochastic],[1.1.18],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
 
-# finish boinc checks, and restore compiler after lal library checks
-LALSUITE_END_CHECK_BOINC
+# check that lal was built with BOINC support, if required
+LALSUITE_CHECK_BOINC
+
+# back to c mode
+if test "${boinc}" = "true" ; then
+   AC_LANG_POP([C++])
+fi
 
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN
@@ -412,9 +385,49 @@ if test "${cuda}" = "true"; then
   AC_DEFINE([LALAPPS_CUDA_ENABLED],[1],[Define if using cuda library])
 fi
 
-# check for OpenMP
-LALSUITE_ENABLE_OPENMP
+# enable condor compile
+if test "x${condor}" = "xtrue" ; then
+  CC="$CONDOR_COMPILE $CC"
+  LALSUITE_ADD_FLAGS([],[],[-all-static])
+  AC_DISABLE_SHARED
+fi
 
+# add -all-static to AM_LDFLAGS for --enable-static-binaries
+if test "${static_binaries}" = "true"; then
+  LALSUITE_ADD_FLAGS([],[],[-all-static])
+  AC_DISABLE_SHARED
+fi
+
+# check for OpenMP
+AC_OPENMP
+
+# Disable OpenMP by default.
+# FIXME: OpenMP should be on by default, but it breaks condor_compiling lalapps.
+AS_IF(
+  [test "x$enable_openmp" = "x"],
+  [OPENMP_CFLAGS=]
+)
+# add compiler flags for OpenMP
+AS_IF(
+  [test "x$OPENMP_CFLAGS" = "x" -a "x$ac_cv_prog_[]_AC_LANG_ABBREV[]_openmp" != "xnone needed"],
+  [
+    OPENMP_ENABLE_VAL="DISABLED"
+    LALSUITE_ADD_FLAGS([C],[-Wno-unknown-pragmas],[])
+  ],
+  [
+    OPENMP_ENABLE_VAL="ENABLED"
+    LALSUITE_ADD_FLAGS([C],[${OPENMP_CFLAGS}],[])
+  ]
+)
+
+# create Automake conditional so that we know whether we need to build
+# OpenMP-specific tests
+AM_CONDITIONAL([HAVE_OPENMP],[test "x$OPENMP_ENABLE_VAL" = "xENABLED"])
+
+# create Automake conditional so that we know whether we need to build
+# OpenMP-specific tests
+AM_CONDITIONAL([HAVE_OPENMP],[test "x$OPENMP_ENABLE_VAL" = "xENABLED"])
+# add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
 
 # link any executables against LALApps library
@@ -456,7 +469,7 @@ LALApps has now been successfully configured:
 * LALStochastic library support is $LALSTOCHASTIC_ENABLE_VAL
 * LALPulsar library support is $LALPULSAR_ENABLE_VAL
 * LALInference library support is $LALINFERENCE_ENABLE_VAL
-* CFITSIO library support is $CFITSIO_ENABLE_VAL
+* FITS library support is $CFITSIO_ENABLE_VAL
 * PSS library support is $PSS_ENABLE_VAL
 * BAMBI library support is $BAMBI_ENABLE_VAL
 * Condor support is $CONDOR_ENABLE_VAL
@@ -466,7 +479,6 @@ LALApps has now been successfully configured:
 * CUDA support is $CUDA_ENABLE_VAL
 * OpenMP acceleration is $OPENMP_ENABLE_VAL
 * Doxygen documentation is $DOXYGEN_ENABLE_VAL
-* help2man documentation is $HELP2MAN_ENABLE_VAL
 
 and will be installed under the directory:
 

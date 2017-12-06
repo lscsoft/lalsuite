@@ -1,6 +1,7 @@
 import sys
 import os
 from optparse import *
+import exceptions
 import subprocess
 import ConfigParser as cp
 
