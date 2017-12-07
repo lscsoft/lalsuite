@@ -30,14 +30,19 @@ If the --min-distance argument is omitted, it defaults to zero. If the
 distance of the most sensitive detector.
 
 A FITS file is created for each sky map, having a filename of the form
+"X.fits" where X is the LIGO-LW row id of the coinc.
+
+If the user requests multiple sky localization methods with the --method
+option, then the filenames will instead have the form
 
   "X.toa_phoa_snr.fits"
   "X.toa_snr_mcmc.fits"
   "X.toa_phoa_snr_mcmc.fits"
 
-where X is the LIGO-LW row id of the coinc and "toa" or "toa_phoa_snr"
-identifies whether the sky map accounts for times of arrival (TOA),
-PHases on arrival (PHOA), and amplitudes on arrival (SNR).
+where the suffixes indicate the localization method: whether it uses
+times of arrival (TOA), PHases on arrival (PHOA), and/or amplitudes on
+arrival (SNR), and whether it uses the default integrator or the MCMC
+integrator.
 """
 
 
@@ -167,7 +172,10 @@ for int_coinc_event_id, event in six.iteritems(event_source):
             log.info(
                 "%s:method '%s':saving sky map",
                 coinc_event_id, method)
-            filename = '%d.%s.fits' % (int_coinc_event_id, method)
+            if len(opts.method) > 1:
+                filename = '%d.%s.fits' % (int_coinc_event_id, method)
+            else:
+                filename = '%d.fits' % int_coinc_event_id
             fits.write_sky_map(
                 os.path.join(opts.output, filename), sky_map, nest=True)
 
