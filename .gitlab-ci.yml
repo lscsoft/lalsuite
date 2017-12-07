@@ -43,7 +43,7 @@ level0:lal:
     - cd lal-*
     - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
     - make -j4 V=1
-    - make -j4 V=1 check
+    - make -j4 V=1 VERBOSE=1 check
     - make -j4 install
     - make -j4 install-html
   artifacts:
@@ -65,7 +65,7 @@ level1:lalframe:
     - cd lalframe-*
     - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
     - make -j4 V=1
-    - make -j4 V=1 check
+    - make -j4 V=1 VERBOSE=1 check
     - make -j4 install
     - make -j4 install-html
   artifacts:
@@ -89,7 +89,7 @@ level1:lalmetaio:
     - cd lalmetaio-*
     - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
     - make -j4 V=1
-    - make -j4 V=1 check
+    - make -j4 V=1 VERBOSE=1 check
     - make -j4 install
     - make -j4 install-html
   artifacts:
@@ -113,7 +113,7 @@ level1:lalsimulation:
     - cd lalsimulation-*
     - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
     - make -j4 V=1
-    - make -j4 V=1 check
+    - make -j4 V=1 VERBOSE=1 check
     - make -j4 install
     - make -j4 install-html
   artifacts:
@@ -137,7 +137,7 @@ level1:lalxml:
     - cd lalxml-*
     - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
     - make -j4 V=1
-    - make -j4 V=1 check
+    - make -j4 V=1 VERBOSE=1 check
     - make -j4 install
     - make -j4 install-html
   artifacts:
@@ -161,7 +161,7 @@ level2:lalburst:
     - cd lalburst-*
     - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
     - make -j4 V=1
-    - make -j4 V=1 check
+    - make -j4 V=1 VERBOSE=1 check
     - make -j4 install
     - make -j4 install-html
   artifacts:
@@ -186,7 +186,7 @@ level2:lalinspiral:
     - cd lalinspiral-*
     - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
     - make -j4 V=1
-    - make -j4 V=1 check
+    - make -j4 V=1 VERBOSE=1 check
     - make -j4 install
     - make -j4 install-html
   artifacts:
@@ -212,7 +212,7 @@ level2:lalpulsar:
     - cd lalpulsar-*
     - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
     - make -j4 V=1
-    - make -j4 V=1 check
+    - make -j4 V=1 VERBOSE=1 check
     - make -j4 install
     - make -j4 install-html
   artifacts:
@@ -236,7 +236,7 @@ level2:lalstochastic:
     - cd lalstochastic-*
     - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
     - make -j4 V=1
-    - make -j4 V=1 check
+    - make -j4 V=1 VERBOSE=1 check
     - make -j4 install
     - make -j4 install-html
   artifacts:
@@ -260,7 +260,7 @@ level3:laldetchar:
     - cd laldetchar-*
     - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
     - make -j4 V=1
-    - make -j4 V=1 check
+    - make -j4 V=1 VERBOSE=1 check
     - make -j4 install
     - make -j4 install-html
   artifacts:
@@ -284,7 +284,7 @@ level3:lalinference:
     - cd lalinference-*
     - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
     - make -j4 V=1
-    - make -j4 V=1 check
+    - make -j4 V=1 VERBOSE=1 check
     - make -j4 install
     - make -j4 install-html
   artifacts:
@@ -310,7 +310,7 @@ level4:lalapps:
     - cd lalapps-*
     - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
     - make -j4 V=1
-    - make -j4 V=1 check
+    - make -j4 V=1 VERBOSE=1 check
     - make -j4 install
     - make -j4 install-html
   artifacts:
