@@ -130,8 +130,8 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(SEOBNRv3_opt_rk4),
     INITIALIZE_NAME(SEOBNRv4),
     INITIALIZE_NAME(SEOBNRv4_opt),
-    INITIALIZE_NAME(TEOBv2),
-    INITIALIZE_NAME(TEOBv4),
+    INITIALIZE_NAME(SEOBNRv2T),
+    INITIALIZE_NAME(SEOBNRv4T),
     INITIALIZE_NAME(SEOBNRv1_ROM_EffectiveSpin),
     INITIALIZE_NAME(SEOBNRv1_ROM_DoubleSpin),
     INITIALIZE_NAME(SEOBNRv2_ROM_EffectiveSpin),
@@ -819,8 +819,8 @@ int XLALSimInspiralChooseTDWaveform(
             }
             break;
 
-        case TEOBv2:
-        case TEOBv4:
+        case SEOBNRv2T:
+        case SEOBNRv4T:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
                 ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
@@ -841,8 +841,8 @@ int XLALSimInspiralChooseTDWaveform(
             XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode1(LALparams, omega3TidalA_UR);
             XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode2(LALparams, omega3TidalB_UR);
             /* Call the waveform driver routine */
-            if (approximant==TEOBv2) SpinAlignedEOBversion = 201;
-            if (approximant==TEOBv4) SpinAlignedEOBversion = 401;
+            if (approximant==SEOBNRv2T) SpinAlignedEOBversion = 201;
+            if (approximant==SEOBNRv4T) SpinAlignedEOBversion = 401;
             ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
                                                    deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion, LALparams);
             break;
@@ -4530,8 +4530,8 @@ int XLALSimInspiralImplementedTDApproximants(
         case SEOBNRv3_opt_rk4:
         case SEOBNRv4:
         case SEOBNRv4_opt:
-        case TEOBv2:
-        case TEOBv4:
+        case SEOBNRv2T:
+        case SEOBNRv4T:
         case NR_hdf5:
         case NRSur7dq2:
         case TEOBResum_ROM:
@@ -4991,8 +4991,8 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case SEOBNRv4:
     case SEOBNRv2_opt:
     case SEOBNRv4_opt:
-    case TEOBv2:
-    case TEOBv4:
+    case SEOBNRv2T:
+    case SEOBNRv4T:
     case SEOBNRv1_ROM_EffectiveSpin:
     case SEOBNRv1_ROM_DoubleSpin:
     case SEOBNRv2_ROM_EffectiveSpin:
@@ -5082,8 +5082,8 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case SEOBNRv3_opt_rk4:
     case SEOBNRv4:
     case SEOBNRv4_opt:
-    case TEOBv2:
-    case TEOBv4:
+    case SEOBNRv2T:
+    case SEOBNRv4T:
     case SEOBNRv1_ROM_EffectiveSpin:
     case SEOBNRv1_ROM_DoubleSpin:
     case SEOBNRv2_ROM_EffectiveSpin:
