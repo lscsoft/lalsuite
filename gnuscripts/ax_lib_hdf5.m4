@@ -38,7 +38,7 @@
 #
 #   and sets with_hdf5="yes".  Additionally, the macro sets
 #   with_hdf5_fortran="yes" if a matching Fortran wrapper script is found.
-#   Note that Autconf's Fortran support is not used to perform this check.
+#   Note that Autoconf's Fortran support is not used to perform this check.
 #   H5CC and H5FC will contain the appropriate serial or parallel HDF5
 #   wrapper script locations.
 #
@@ -88,7 +88,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 16
+#serial 18
 
 AC_DEFUN([AX_LIB_HDF5], [
 
