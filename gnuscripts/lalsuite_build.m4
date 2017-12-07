@@ -906,7 +906,7 @@ AC_ARG_ENABLE(
       no) lalstochastic=false;;
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalstochastic) ;;
     esac
-  ], [ lalstochastic=${all_lal:-true} ] )
+  ], [ lalstochastic=${all_lal:-false} ] )
 if test "$lalmetaio" = "false"; then
   lalstochastic=false
 fi
