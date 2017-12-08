@@ -24,5 +24,5 @@ for elem in install_dirmap.split():
         fail('from-directory in install directory map is empty')
     if len(to_dir) == 0:
         fail('to-directory in install directory map is empty')
-    print 's|%s|%s|g' % (from_dir, os.path.relpath(to_dir, install_dir))
-print "p"
+    print('s|%s|%s|g' % (from_dir, os.path.relpath(to_dir, install_dir)))
+print("p")
