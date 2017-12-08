@@ -96,8 +96,9 @@ REAL4FrequencySeries *compute_average_spectrum(
     }
   }
 
-  snprintf( spectrum->name, sizeof( spectrum->name ),
-      "%s_SPEC", series->name );
+  if((int)sizeof(spectrum->name) <= snprintf( spectrum->name, sizeof( spectrum->name ),
+      "%s_SPEC", series->name ))
+		  XLAL_ERROR_NULL(XLAL_FAILURE,"String truncated");
 
   XLALDestroyREAL4Window( window );
 
@@ -127,8 +128,9 @@ REAL4FrequencySeries *resample_psd(
   rsmplspectrum->f0 = origspectrum->f0;
   rsmplspectrum->deltaF = rsmplDeltaF;
   rsmplspectrum->sampleUnits = origspectrum->sampleUnits;
-  snprintf( rsmplspectrum->name, sizeof( rsmplspectrum->name ),
-      "%s_RSMPL", origspectrum->name);
+  if((int)sizeof(rsmplspectrum->name) <= snprintf( rsmplspectrum->name, sizeof( rsmplspectrum->name ),
+      "%s_RSMPL", origspectrum->name))
+		  XLAL_ERROR_NULL(XLAL_FAILURE,"String truncated");
 
   for (k=0; k < segmentLength/2 + 1; k++)
   {

@@ -483,52 +483,59 @@ int ring_params_sanity_check( struct ring_params *params )
     {
       if ( strlen( params->userTag ) && strlen( params->ifoTag ) && params->outCompress )
       {
-        snprintf( params->outputFile, sizeof( params->outputFile ),
+        if((int)sizeof(params->outputFile) <= snprintf( params->outputFile, sizeof( params->outputFile ),
           "%s-RING_%s_%s-%d-%d.xml.gz", params->ifoName, 
           params->ifoTag, params->userTag, params->startTime.gpsSeconds,
-          (int)ceil( params->duration ) );
+          (int)ceil( params->duration ) ))
+				XLAL_ERROR(XLAL_FAILURE,"String truncated");
       }
       else if ( strlen( params->userTag ) && strlen( params->ifoTag )  && !params->outCompress )
       {
-        snprintf( params->outputFile, sizeof( params->outputFile ),
+        if((int)sizeof(params->outputFile) <= snprintf( params->outputFile, sizeof( params->outputFile ),
           "%s-RING_%s_%s-%d-%d.xml", params->ifoName,
           params->ifoTag, params->userTag, params->startTime.gpsSeconds,
-          (int)ceil( params->duration ) );
+          (int)ceil( params->duration ) ))
+				XLAL_ERROR(XLAL_FAILURE,"String truncated");
       }
       else if ( strlen( params->userTag ) && !strlen( params->ifoTag ) && params->outCompress )
       {
-        snprintf( params->outputFile, sizeof( params->outputFile ),
+        if((int)sizeof(params->outputFile) <= snprintf( params->outputFile, sizeof( params->outputFile ),
           "%s-RING_%s-%d-%d.xml.gz", params->ifoName, 
           params->userTag, params->startTime.gpsSeconds,
-          (int)ceil( params->duration ) );
+          (int)ceil( params->duration ) ))
+				XLAL_ERROR(XLAL_FAILURE,"String truncated");
       }
       else if ( strlen( params->userTag ) && !strlen( params->ifoTag ) && !params->outCompress  )
       {
-        snprintf( params->outputFile, sizeof( params->outputFile ),
+        if((int)sizeof(params->outputFile) <= snprintf( params->outputFile, sizeof( params->outputFile ),
           "%s-RING_%s-%d-%d.xml", params->ifoName,
           params->userTag, params->startTime.gpsSeconds,
-          (int)ceil( params->duration ) );
+          (int)ceil( params->duration ) ))
+				XLAL_ERROR(XLAL_FAILURE,"String truncated");
       }
       else if ( !strlen( params->userTag ) && strlen( params->ifoTag ) && params->outCompress )
       {
-        snprintf( params->outputFile, sizeof( params->outputFile ),
+        if((int)sizeof(params->outputFile) <= snprintf( params->outputFile, sizeof( params->outputFile ),
           "%s-RING_%s-%d-%d.xml.gz", params->ifoName, 
           params->ifoTag, params->startTime.gpsSeconds,
-          (int)ceil( params->duration ) );
+          (int)ceil( params->duration ) ))
+				XLAL_ERROR(XLAL_FAILURE,"String truncated");
       }
       else if ( !strlen( params->userTag ) && strlen( params->ifoTag ) && !params->outCompress )
       {
-        snprintf( params->outputFile, sizeof( params->outputFile ),
+        if((int)sizeof(params->outputFile) <= snprintf( params->outputFile, sizeof( params->outputFile ),
           "%s-RING_%s-%d-%d.xml", params->ifoName,
           params->ifoTag, params->startTime.gpsSeconds,
-          (int)ceil( params->duration ) );
+          (int)ceil( params->duration ) ))
+				XLAL_ERROR(XLAL_FAILURE,"String truncated");
       }
       else 
       {
-        snprintf( params->outputFile, sizeof( params->outputFile ),
+        if((int)sizeof(params->outputFile) <= snprintf( params->outputFile, sizeof( params->outputFile ),
           "%s-RING-%d-%d.xml", params->ifoName, 
           params->startTime.gpsSeconds,
-          (int)ceil( params->duration ) );
+          (int)ceil( params->duration ) ))
+				XLAL_ERROR(XLAL_FAILURE,"String truncated");
       }
     }
 

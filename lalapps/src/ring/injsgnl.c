@@ -66,7 +66,7 @@ int ring_inject_signal(
   INT4                     stopSec;
   int                      strainData;
   char                     ifoName[3];
-  char                     name[LALNameLength];
+  char                     name[LALNameLength+4];
   REAL8                    sampleRate;
   INT4                     calType=0;
 

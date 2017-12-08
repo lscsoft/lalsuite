@@ -359,8 +359,9 @@ REAL4FrequencySeries *coh_PTF_get_invspec(
       invspec = XLALCreateREAL4FrequencySeries("TEMP",&(channel->epoch),0,
           1.0/params->segmentDuration,&lalDimensionlessUnit,
           params->numFreqPoints);
-      snprintf( invspec->name, sizeof( invspec->name),
-          "%s_SPEC", channel->name);
+      if((int)sizeof(invspec->name) <= snprintf( invspec->name, sizeof( invspec->name),
+          "%s_SPEC", channel->name))
+			  XLAL_ERROR_NULL(XLAL_FAILURE,"String truncated");
       for ( k = 0; k < spectrum->data->length; ++k )
       {
         invspec->data->data[k] = (REAL4)(spectrum->data->data[k]*1E40);

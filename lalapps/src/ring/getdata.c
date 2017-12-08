@@ -243,7 +243,8 @@ REAL4TimeSeries * get_frame_data_dbl_convert(
   series = LALCalloc( 1, sizeof( *series ) );
 
   /* copy metadata */
-  snprintf( series->name, sizeof( series->name ), "%s_CNVRT", dblser->name );
+  if((int)sizeof(series->name) <= snprintf( series->name, sizeof( series->name ), "%s_CNVRT", dblser->name ))
+		  XLAL_ERROR_NULL(XLAL_FAILURE,"String truncated");
   series->epoch       = dblser->epoch;
   series->deltaT      = dblser->deltaT;
   series->f0          = dblser->f0;

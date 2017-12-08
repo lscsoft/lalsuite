@@ -198,8 +198,9 @@ static int filter_segment_template(
   char *s;
 
   /* name of rtilde */
-  snprintf( rtilde->name, sizeof( rtilde->name ), "%s_%s",
-      segment->name, stilde->name );
+  if((int)sizeof(rtilde->name) <= snprintf( rtilde->name, sizeof( rtilde->name ), "%s_%s",
+      segment->name, stilde->name ))
+		  XLAL_ERROR(XLAL_FAILURE,"String truncated");
   /* name of result is the same but without the _FFT */
   strncpy( result->name, rtilde->name, sizeof( result->name ) - 1 );
   /* make sure that the string ends with _FFT */
