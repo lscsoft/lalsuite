@@ -77,7 +77,7 @@ install-html-local: html-local
 		for file in `cd out/ && echo $${dir}/*`; do \
 			if test -f "out/$${file}"; then \
 				echo " $(INSTALL_DATA) out/$${file} '$(DESTDIR)$(htmldir)/$${file}'"; \
-				$(SED) -n -f $@.regex "out/$${file}" > $@.tmp; \
+				LC_ALL=C $(SED) -n -f $@.regex "out/$${file}" > $@.tmp; \
 				$(INSTALL_DATA) $@.tmp "$(DESTDIR)$(htmldir)/$${file}"; \
 			fi; \
 		done; \
