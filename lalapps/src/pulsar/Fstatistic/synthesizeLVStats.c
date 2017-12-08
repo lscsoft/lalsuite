@@ -322,7 +322,7 @@ int main(int argc,char *argv[])
       if ( uvar.outputAtoms )
         {
 
-          FILE *fpAtoms;
+          LALFILE *fpAtoms;
           char *fnameAtoms;
           UINT4 len = strlen ( uvar.outputAtoms ) + 20;
           if ( (fnameAtoms = XLALCalloc ( 1, len )) == NULL ) {
@@ -331,11 +331,11 @@ int main(int argc,char *argv[])
           }
           sprintf ( fnameAtoms, "%s_%04d_of_%04d.dat", uvar.outputAtoms, i + 1, uvar.numDraws );
 
-          if ( ( fpAtoms = fopen ( fnameAtoms, "wb" )) == NULL ) {
+          if ( ( fpAtoms = XLALFileOpen ( fnameAtoms, "wb" )) == NULL ) {
             XLALPrintError ("%s: failed to open atoms-output file '%s' for writing.\n", __func__, fnameAtoms );
             XLAL_ERROR ( XLAL_EFUNC );
           }
-	  fprintf ( fpAtoms, "%s", cfg.logString );	/* output header info */
+	  XLALFilePrintf ( fpAtoms, "%s", cfg.logString );	/* output header info */
 
 	  if ( write_MultiFstatAtoms_to_fp ( fpAtoms, multiAtoms ) != XLAL_SUCCESS ) {
             XLALPrintError ("%s: failed to write atoms to output file '%s'. xlalErrno = %d\n", __func__, fnameAtoms, xlalErrno );
@@ -343,7 +343,7 @@ int main(int argc,char *argv[])
           }
 
           XLALFree ( fnameAtoms );
-	  fclose (fpAtoms);
+	  XLALFileClose (fpAtoms);
         } /* if outputAtoms */
 
 

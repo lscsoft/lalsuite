@@ -292,7 +292,7 @@ typedef struct {
   REAL8 BSGLthreshold;		/**< output threshold on BSGL */
 
   CHAR *outputTransientStats;	/**< output file for transient B-stat values */
-  CHAR *outputTransientStatsAll;	/**< output file for transient B-stat values */
+  CHAR *outputTransientStatsAll;	/**< output file for transient Fstat map F(t0,tau) for each candidate */
   CHAR *transient_WindowType;	/**< name of transient window ('none', 'rect', 'exp',...) */
   LIGOTimeGPS transient_t0Epoch;	/**< earliest GPS start-time for transient window search, in seconds */
   UINT4 transient_t0Offset;	/**< earliest start-time for transient window search, as offset in seconds from dataStartGPS */
@@ -367,7 +367,8 @@ BOOLEAN XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 s
  */
 int main(int argc,char *argv[])
 {
-  FILE *fpFstat = NULL, *fpTransientStats = NULL, *fpTransientStatsAll = NULL;
+  FILE *fpFstat = NULL;
+  LALFILE *fpTransientStats = NULL, *fpTransientStatsAll = NULL;
   REAL8 numTemplates, templateCounter;
   time_t clock0;
   PulsarDopplerParams XLAL_INIT_DECL(dopplerpos);
@@ -442,15 +443,15 @@ int main(int argc,char *argv[])
 
   if ( uvar.outputTransientStats )
     {
-      XLAL_CHECK_MAIN ( (fpTransientStats = fopen (uvar.outputTransientStats, "wb")) != NULL, XLAL_ESYS, "\nError opening file '%s' for writing..\n\n", uvar.outputTransientStats );
-      fprintf (fpTransientStats, "%s", GV.logstring );			/* write search log comment */
+      XLAL_CHECK_MAIN ( (fpTransientStats = XLALFileOpen (uvar.outputTransientStats, "wb")) != NULL, XLAL_ESYS, "\nError opening file '%s' for writing..\n\n", uvar.outputTransientStats );
+      XLALFilePrintf (fpTransientStats, "%s", GV.logstring );			/* write search log comment */
       XLAL_CHECK_MAIN ( write_transientCandidate_to_fp ( fpTransientStats, NULL, GV.transientOutputTimeUnit ) == XLAL_SUCCESS, XLAL_EFUNC );	/* write header-line comment */
     }
 
   if ( uvar.outputTransientStatsAll )
     {
-      XLAL_CHECK_MAIN ( (fpTransientStatsAll = fopen (uvar.outputTransientStatsAll, "wb")) != NULL, XLAL_ESYS, "\nError opening file '%s' for writing..\n\n", uvar.outputTransientStatsAll );
-      fprintf (fpTransientStatsAll, "%s", GV.logstring );			/* write search log comment */
+      XLAL_CHECK_MAIN ( (fpTransientStatsAll = XLALFileOpen (uvar.outputTransientStatsAll, "wb")) != NULL, XLAL_ESYS, "\nError opening file '%s' for writing..\n\n", uvar.outputTransientStatsAll );
+      XLALFilePrintf (fpTransientStatsAll, "%s", GV.logstring );			/* write search log comment */
       XLAL_CHECK_MAIN ( write_transientCandidateAll_to_fp ( fpTransientStatsAll, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );	/* write header-line comment */
     }
 
@@ -674,7 +675,7 @@ int main(int argc,char *argv[])
       /* F-stat 'atoms' = per-SFT components {a,b,Fa,Fb}_alpha) */
       if (uvar.outputFstatAtoms)
 	{
-	  FILE *fpFstatAtoms = NULL;
+	  LALFILE *fpFstatAtoms = NULL;
 	  CHAR *fnameAtoms = NULL;
 	  CHAR *dopplerName;
 	  UINT4 len;
@@ -684,14 +685,14 @@ int main(int argc,char *argv[])
 	  XLAL_CHECK_MAIN ( (fnameAtoms = LALMalloc (len)) != NULL, XLAL_ENOMEM, "Failed to LALMalloc(%d)\n", len );
 	  sprintf (fnameAtoms, "%s_%s.dat", uvar.outputFstatAtoms, dopplerName );
 
-	  XLAL_CHECK_MAIN ( (fpFstatAtoms = fopen (fnameAtoms, "wb")) != NULL, XLAL_ESYS, "Error opening file '%s' for writing..\n\n", fnameAtoms );
+	  XLAL_CHECK_MAIN ( (fpFstatAtoms = XLALFileOpen (fnameAtoms, "wb")) != NULL, XLAL_ESYS, "Error opening file '%s' for writing..\n\n", fnameAtoms );
 	  XLALFree ( fnameAtoms );
 	  XLALFree ( dopplerName );
 
-	  fprintf (fpFstatAtoms, "%s", GV.logstring );
+	  XLALFilePrintf (fpFstatAtoms, "%s", GV.logstring );
 
 	  XLAL_CHECK_MAIN ( write_MultiFstatAtoms_to_fp ( fpFstatAtoms, thisFAtoms ) == XLAL_SUCCESS, XLAL_EFUNC );
-	  fclose (fpFstatAtoms);
+	  XLALFileClose (fpFstatAtoms);
 
 	} /* if outputFstatAtoms */
 
@@ -851,8 +852,8 @@ int main(int argc,char *argv[])
       fclose (fpFstat);
       fpFstat = NULL;
     }
-  if ( fpTransientStats ) fclose (fpTransientStats);
-  if ( fpTransientStatsAll ) fclose (fpTransientStatsAll);
+  XLALFileClose (fpTransientStats);
+  XLALFileClose (fpTransientStatsAll);
 
   /* ----- estimate amplitude-parameters for the loudest canidate and output into separate file ----- */
   if ( uvar.outputLoudest )

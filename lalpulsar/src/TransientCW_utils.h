@@ -49,6 +49,7 @@ extern "C" {
 #include <lal/PulsarDataTypes.h>
 #include <lal/ComputeFstat.h>
 #include <lal/SinCosLUT.h> /* for XLALFastNegExp() */
+#include <lal/FileIO.h>
 
 /* ---------- exported API defines ---------- */
 
@@ -107,11 +108,11 @@ int XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights
                                             const MultiLIGOTimeGPSVector *multiTS,
                                             transientWindow_t TransientWindowParams );
 
-int write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisTransCand, const char timeUnit );
+int write_transientCandidate_to_fp ( LALFILE *fp, const transientCandidate_t *thisTransCand, const char timeUnit );
 
-int write_transientFstatMap_to_fp ( FILE *fp, const transientFstatMap_t *FstatMap, const transientWindowRange_t *windowRange, const PulsarDopplerParams *doppler );
+int write_transientFstatMap_to_fp ( LALFILE *fp, const transientFstatMap_t *FstatMap, const transientWindowRange_t *windowRange, const PulsarDopplerParams *doppler );
 
-int write_transientCandidateAll_to_fp ( FILE *fp, const transientCandidate_t *thisTransCand );
+int write_transientCandidateAll_to_fp ( LALFILE *fp, const transientCandidate_t *thisTransCand );
 
 
 transientFstatMap_t *XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms,
@@ -130,7 +131,7 @@ REAL8 XLALFastNegExp ( REAL8 mx );
 void XLALDestroyExpLUT( void );
 
 /* ---------- Fstat-atoms related functions ----------*/
-int write_MultiFstatAtoms_to_fp ( FILE *fp, const MultiFstatAtomVector *multiAtoms );
+int write_MultiFstatAtoms_to_fp ( LALFILE *fp, const MultiFstatAtomVector *multiAtoms );
 CHAR* XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par );
 
 FstatAtomVector *XLALmergeMultiFstatAtomsBinned ( const MultiFstatAtomVector *multiAtoms, UINT4 deltaT );
