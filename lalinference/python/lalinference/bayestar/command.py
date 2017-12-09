@@ -54,6 +54,11 @@ import distutils.version
 mpl_version = distutils.version.LooseVersion(matplotlib.__version__)
 
 
+def get_version():
+    from .. import InferenceVCSInfo as vcs_info
+    return vcs_info.name + ' ' + vcs_info.version
+
+
 @contextlib.contextmanager
 def TemporaryDirectory(suffix='', prefix='tmp', dir=None, delete=True):
     try:
@@ -169,7 +174,16 @@ class MatplotlibFigureType(argparse.FileType):
 
     def __save(self):
         from matplotlib import pyplot as plt
-        return plt.savefig(self.string)
+        _, ext = os.path.splitext(self.string)
+        ext = ext.lower()
+        program, _ = os.path.splitext(os.path.basename(sys.argv[0]))
+        cmdline = ' '.join([program] + sys.argv[1:])
+        metadata = {'Title': cmdline}
+        if ext == '.png':
+            metadata['Software'] = get_version()
+        elif ext in {'.pdf', '.ps', '.eps'}:
+            metadata['Creator'] = get_version()
+        return plt.savefig(self.string, metadata=metadata)
 
     def __call__(self, string):
         from matplotlib import pyplot as plt
@@ -284,8 +298,7 @@ del group
 # Defer loading SWIG bindings until version string is needed.
 class VersionAction(argparse._VersionAction):
     def __call__(self, parser, namespace, values, option_string=None):
-        from .. import InferenceVCSInfo
-        self.version = 'LALInference ' + InferenceVCSInfo.version
+        self.version = get_version()
         super(VersionAction, self).__call__(
             parser, namespace, values, option_string)
 

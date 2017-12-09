@@ -42,9 +42,9 @@ from glue.ligolw.utils import process
 import lalsimulation
 from lalinference.rapid_pe import amrlib, lalsimutils, common_cl
 
-def get_cr_from_grid(cells, weight, cr_thr=0.9):
+def get_cr_from_grid(cells, weight, cr_thr=0.9, min_n=None, max_n=None):
     """
-    Given a set of cells and the weight of that cell, calculate a N% CR including cells which contribute to that probability mass.
+    Given a set of cells and the weight of that cell, calculate a N% CR including cells which contribute to that probability mass. If n is set, cr_thr is ignored and instead this many points are taken.
     """
     if cr_thr == 0.0:
         return numpy.empty((0,))
@@ -57,8 +57,13 @@ def get_cr_from_grid(cells, weight, cr_thr=0.9):
     cell_sort[:,0] = cell_sort[:,0].cumsum()
     cell_sort[:,0] /= cell_sort[-1,0]
 
-    # find the CR probability
     idx = cell_sort[:,0].searchsorted(1-cr_thr)
+    n_select = cell_sort.shape[0] - idx
+    if min_n is not None:
+        n_select = max(n_select, min_n)
+    if max_n is not None:
+        n_select = min(n_select, max_n)
+    idx = cell_sort.shape[0] - n_select
 
     return cell_sort[idx:,1:]
 
@@ -85,7 +90,7 @@ def find_olap_index(tree, intr_prms, exact=True, **kwargs):
     pt = numpy.array([kwargs[k] for k in intr_prms])
 
     # FIXME: Replace with standard function
-    dist, m_idx = tree.query(pt, k=1)
+    dist, m_idx = tree.query(numpy.atleast_2d(pt), k=1)
     dist, m_idx = dist[0][0], int(m_idx[0][0])
 
     # FIXME: There's still some tolerance from floating point conversions
@@ -104,6 +109,11 @@ def write_to_xml(cells, intr_prms, pin_prms={}, fvals=None, fname=None, verbose=
     process.append_process_params(xmldoc, procrow, process.process_params_from_dict(opts.__dict__))
 
     rows = ["simulation_id", "process_id", "numrel_data"]
+    # Override eff_lambda to with psi0, its shoehorn column
+    if "eff_lambda" in intr_prms:
+        intr_prms[intr_prms.index("eff_lambda")] = "psi0"
+    if "deff_lambda" in intr_prms:
+        intr_prms[intr_prms.index("deff_lambda")] = "psi3"
     rows += list(intr_prms)
     rows += list(pin_prms)
     if fvals is not None:
@@ -142,7 +152,7 @@ def get_evidence_grid(points, res_pts, intr_prms, exact=False):
     grid_idx = []
     # Reorder the grid points to match their weight indices
     for res in res_pts:
-        dist, idx = grid_tree.query(res, k=1)
+        dist, idx = grid_tree.query(numpy.atleast_2d(res), k=1)
         # Stupid floating point inexactitude...
         #print res, selected[idx[0][0]]
         #assert numpy.allclose(res, selected[idx[0][0]])
@@ -182,12 +192,16 @@ grid_section.add_argument("--setup", help="Set up the initial grid based on temp
 grid_section.add_argument("-t", "--tmplt-bank", help="XML file with template bank.")
 grid_section.add_argument("-O", "--use-overlap", help="Use overlap information to define 'closeness'.")
 grid_section.add_argument("-T", "--overlap-threshold", type=float, help="Threshold on overlap value.")
+grid_section.add_argument("-s", "--points-per-side", type=int, default=10, help="Number of points per side, default is 10.")
+grid_section.add_argument("-I", "--initial-region", action="append", help="Override the initial region with a custom specification. Specify multiple times like, -I mass1=1.0,2.0 -I mass2=1.0,1.5")
 grid_section.add_argument("-D", "--deactivate", action="store_true", help="Deactivate cells initially which have no template within them.")
 grid_section.add_argument("-P", "--prerefine", help="Refine this initial grid based on overlap values.")
 
 refine_section = argp.add_argument_group("refine options", "Options for refining a pre-existing grid.")
 refine_section.add_argument("--refine", help="Refine a prexisting grid. Pass this option the grid points from previous levels (or the --setup) option.")
 refine_section.add_argument("-r", "--result-file", help="XML file containing newest result to refine.")
+refine_section.add_argument("-M", "--max-n-points", help="Refine *at most* this many points, can override confidence region thresholds.")
+refine_section.add_argument("-m", "--min-n-points", help="Refine *at least* this many points, can override confidence region thresholds.")
 
 opts = argp.parse_args()
 
@@ -326,15 +340,21 @@ if opts.refine or opts.prerefine:
     init_region, region_labels = amrlib.load_init_region(opts.refine or opts.prerefine, get_labels=True)
 else:
     ####### BEGIN INITIAL GRID CODE #########
-    init_region, idx = determine_region(pt, pts, ovrlp, opts.overlap_threshold, expand_prms)
-    region_labels = intr_prms
-    # FIXME: To be reimplemented in a different way
-    #if opts.expand_param is not None:
-        #expand_param(init_region, opts.expand_param)
+    if opts.initial_region is None:
+        init_region, idx = determine_region(pt, pts, ovrlp, opts.overlap_threshold, expand_prms)
+        region_labels = intr_prms
+        # FIXME: To be reimplemented in a different way
+        #if opts.expand_param is not None:
+            #expand_param(init_region, opts.expand_param)
+    else:
+        # Override initial region -- use with care
+        _, init_region = common_cl.parse_param(opts.initial_region)
+        region_labels = init_region.keys()
+        init_region = amrlib.Cell(numpy.vstack(init_region[k] for k in region_labels))
 
     # TODO: Alternatively, check density of points in the region to determine
     # the points to a side
-    grid, spacing = amrlib.create_regular_grid_from_cell(init_region, side_pts=5, return_cells=True)
+    grid, spacing = amrlib.create_regular_grid_from_cell(init_region, side_pts=opts.points_per_side / 2, return_cells=True)
 
     # "Deactivate" cells not close to template points
     # FIXME: This gets more and more dangerous in higher dimensions
@@ -343,7 +363,7 @@ else:
     if opts.deactivate:
         get_idx = set()
         for pt in pts[idx:]:
-            get_idx.add(tree.query(pt, k=1, return_distance=False)[0][0])
+            get_idx.add(tree.query(numpy.atleast_2d(pt), k=1, return_distance=False)[0][0])
         selected = grid[numpy.array(list(get_idx))]
     else:
         selected = grid
@@ -375,7 +395,7 @@ if opts.result_file is not None:
 
     if opts.refine:
         # FIXME: We use overlap threshold as a proxy for confidence level
-        selected = get_cr_from_grid(selected, results, cr_thr=opts.overlap_threshold)
+        selected = get_cr_from_grid(selected, results, cr_thr=opts.overlap_threshold, min_n=opts.min_n_points, max_n=opts.max_n_points)
         print "Selected %d cells from %3.2f%% confidence region" % (len(selected), opts.overlap_threshold*100)
 
 if opts.prerefine:
