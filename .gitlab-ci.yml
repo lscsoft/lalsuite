@@ -206,11 +206,11 @@ level2:lalpulsar:
   script:
     - cd lalpulsar
     - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
+    - ./configure --enable-cfitsio --enable-swig --enable-doxygen --prefix=${LAL_DIR}
     - make dist
     - tar xf lalpulsar-*.tar.xz
     - cd lalpulsar-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
+    - ./configure --enable-cfitsio --enable-swig --enable-doxygen --prefix=${LAL_DIR}
     - make -j4 V=1
     - make -j4 V=1 VERBOSE=1 check
     - make -j4 install
@@ -304,11 +304,11 @@ level4:lalapps:
   script:
     - cd lalapps
     - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
+    - ./configure --enable-cfitsio --enable-swig --enable-doxygen --prefix=${LAL_DIR}
     - make dist
     - tar xf lalapps-*.tar.xz
     - cd lalapps-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
+    - ./configure --enable-cfitsio --enable-swig --enable-doxygen --prefix=${LAL_DIR}
     - make -j4 V=1
     - make -j4 V=1 VERBOSE=1 check
     - make -j4 install
