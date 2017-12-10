@@ -25,6 +25,7 @@ before_script:
   - export CCACHE_DIR=${PWD}/ccache
   - export PKG_CONFIG_PATH=${LAL_DIR}/lib/pkgconfig
   - mkdir -p opt/lalsuite
+  - git lfs install
 
 cache:
   key: $CI_JOB_NAME
