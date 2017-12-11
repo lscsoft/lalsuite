@@ -437,7 +437,7 @@ pages:
     paths:
       - public
   only:
-    - master@adam-mercer/lalsuite-git-lfs
+    - master@lscsoft/lalsuite
     - schedules
     - web
   except:
