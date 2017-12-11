@@ -290,7 +290,7 @@ def burca(
 	EventListType,
 	CoincTables,
 	coinc_definer_row,
-	thresholds,
+	threshold,
 	ntuple_comparefunc = lambda events, offset_vector: False,
 	min_instruments = 2,
 	verbose = False
@@ -322,7 +322,7 @@ def burca(
 	# and record the survivors
 	#
 
-	for node, coinc in time_slide_graph.get_coincs(eventlists, thresholds, verbose = verbose):
+	for node, coinc in time_slide_graph.get_coincs(eventlists, threshold, verbose = verbose):
 		if not ntuple_comparefunc(coinc, node.offset_vector):
 			coinc_tables.append_coinc(*coinc_tables.coinc_rows(process_id, node.time_slide_id, coinc_def_id, coinc))
 

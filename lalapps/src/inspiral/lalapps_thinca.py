@@ -231,7 +231,7 @@ for n, filename in enumerate(filenames, start = 1):
 		xmldoc,
 		process_id = process.process_id,
 		coinc_definer_row = thinca.InspiralCoincDef,
-		thresholds = options.threshold,
+		delta_t = options.threshold,
 		ntuple_comparefunc = ntuple_comparefunc,
 		seglists = None,	# FIXME
 		veto_segments = vetoes,

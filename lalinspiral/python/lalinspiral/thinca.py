@@ -309,33 +309,11 @@ class InspiralEventList(snglcoinc.EventList):
 #
 
 
-def replicate_threshold(threshold, instruments):
-	"""
-	From a single threshold and a list of instruments, return a
-	dictionary whose keys are every instrument pair (both orders), and
-	whose values are all the same single threshold.
-
-	Example:
-
-	>>> replicate_threshold(6, ["H1", "H2"])
-	{("H1", "H2"): 6, ("H2", "H1"): 6}
-	"""
-	# uniqueify
-	instruments = list(set(instruments))
-	# first order
-	thresholds = dict((pair, threshold) for pair in itertools.combinations(instruments, 2))
-	# other order
-	instruments.reverse()
-	thresholds.update(dict((pair, threshold) for pair in itertools.combinations(instruments, 2)))
-	# done
-	return thresholds
-
-
 def ligolw_thinca(
 	xmldoc,
 	process_id,
 	coinc_definer_row,
-	thresholds,
+	delta_t,
 	ntuple_comparefunc = InspiralCoincTables.ntuple_comparefunc,
 	seglists = None,
 	veto_segments = None,
@@ -362,13 +340,6 @@ def ligolw_thinca(
 	instruments = set(coinc_tables.time_slide_table.getColumnByName("instrument"))
 
 	#
-	# replicate the coincidence window parameter for every possible
-	# instrument pair
-	#
-
-	thresholds = replicate_threshold(thresholds, instruments)
-
-	#
 	# build the event list accessors.  apply vetoes by excluding events
 	# from the lists that fall in vetoed segments
 	#
@@ -392,7 +363,7 @@ def ligolw_thinca(
 	# and record the survivors
 	#
 
-	for node, coinc in time_slide_graph.get_coincs(eventlists, thresholds, verbose = verbose):
+	for node, coinc in time_slide_graph.get_coincs(eventlists, delta_t, verbose = verbose):
 		if not ntuple_comparefunc(coinc, node.offset_vector):
 			coinc, coincmaps, coinc_inspiral = coinc_tables.coinc_rows(process_id, node.time_slide_id, coinc_def_id, coinc, seglists = seglists)
 			if min_log_L is None or coinc.likelihood >= min_log_L:

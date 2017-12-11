@@ -116,7 +116,7 @@ class EventList(list):
 		# when applying the offset to each event.
 		self.offset = lal.LIGOTimeGPS(offset)
 
-	def get_coincs(self, event_a, offset_a, light_travel_time, threshold):
+	def get_coincs(self, event_a, offset_a, light_travel_time, threshold_data):
 		"""
 		Return a sequence of the events from this list that are
 		coincident with event_a.  The object returned by this
@@ -139,12 +139,6 @@ class EventList(list):
 		Because it is frequently needed by implementations of this
 		method, the distance in light seconds between the two
 		instruments is provided as the light_travel_time parameter.
-
-		The threshold argument will be the thresholds appropriate
-		for "instrument_a, instrument_b", in that order, where
-		instrument_a is the instrument for event_a, and
-		instrument_b is the instrument for the events in this
-		EventList.
 		"""
 		raise NotImplementedError
 
@@ -237,29 +231,14 @@ def light_travel_time(instrument1, instrument2):
 	return math.sqrt((dx * dx).sum()) / lal.C_SI
 
 
-def get_doubles(eventlists, instruments, thresholds, unused):
+def get_doubles(eventlists, instruments, threshold_data, unused):
 	"""
 	Given an instance of an EventListDict, an iterable (e.g., a list)
-	of instruments, and a dictionary mapping instrument pair to
-	threshold data for use by the event comparison test defined by the
-	EventListDict (or None if this feature is not used), generate a
-	sequence of tuples of Python IDs of mutually coincident events, and
-	populate a set (unused) of 1-element tuples of the Python IDs of
-	the events that did not participate in coincidences.
-
-	If not set to None, the thresholds dictionary should look like
-
-	{("H1", "L1"): 10.0, ("L1", "H1"): -10.0}
-
-	i.e., the keys are tuples of instrument pairs and the values
-	specify the "threshold data" for that instrument pair.  The
-	threshold data itself is an arbitrary Python object.  Floats are
-	shown in the example above, but any Python object can be provided
-	and will be passed to the .get_coincs() method of an EventList
-	object in the EventListDict.  Note that it is assumed that order
-	matters in the selection of the threshold object function and so
-	the thresholds dictionary must provide a threshold for the
-	instruments in both orders.
+	of instruments, and threshold data to pass to the comparison
+	function, generate a sequence of tuples of Python IDs of mutually
+	coincident events, and populate a set (unused) of 1-element tuples
+	of the Python IDs of the events that did not participate in
+	coincidences.
 
 	Each tuple returned by this generator will contain exactly two
 	Python IDs, one from each of the two instruments in the instruments
@@ -286,19 +265,12 @@ def get_doubles(eventlists, instruments, thresholds, unused):
 
 	if len(eventlistb) < len(eventlista):
 		eventlista, eventlistb = eventlistb, eventlista
-		instruments = instruments[1], instruments[0]
 		unswap = lambda a, b: (b, a)
 	else:
 		unswap = lambda a, b: (a, b)
 
-	# extract the thresholds and pre-compute the light travel time.
-	# need to do this after swapping the event lists (if they need to
-	# be swapped).
+	# pre-compute the light travel time.
 
-	try:
-		threshold_data = thresholds[instruments] if thresholds is not None else None
-	except KeyError as e:
-		raise KeyError("no coincidence thresholds provided for instrument pair %s, %s" % e.args[0])
 	dt = light_travel_time(*instruments)
 
 	# populate the unused set with all IDs from list B
@@ -351,7 +323,7 @@ class TimeSlideGraphNode(object):
 	def name(self):
 		return self.offset_vector.__str__(compact = True)
 
-	def get_coincs(self, eventlists, thresholds, verbose = False):
+	def get_coincs(self, eventlists, threshold_data, verbose = False):
 		#
 		# has this node already been visited?  if so, return the
 		# answer we already know
@@ -393,7 +365,7 @@ class TimeSlideGraphNode(object):
 			# which we make be alphabetical
 			#
 
-			self.coincs = tuple(sorted(get_doubles(eventlists, sorted(self.offset_vector), thresholds, self.unused_coincs)))
+			self.coincs = tuple(sorted(get_doubles(eventlists, sorted(self.offset_vector), threshold_data, self.unused_coincs)))
 			if not self.keep_unused:
 				self.unused_coincs.clear()
 			return self.coincs
@@ -406,7 +378,7 @@ class TimeSlideGraphNode(object):
 		if len(self.components) == 1:
 			if verbose:
 				print("\tcopying from %s ..." % str(self.components[0].offset_vector), file=sys.stderr)
-			self.coincs = self.components[0].get_coincs(eventlists, thresholds, verbose = verbose)
+			self.coincs = self.components[0].get_coincs(eventlists, threshold_data, verbose = verbose)
 			if self.keep_unused:
 				# don't copy reference, always do in-place
 				# manipulation of our own .unused_coincs so
@@ -444,7 +416,7 @@ class TimeSlideGraphNode(object):
 		# must be done whether or not we'll be keeping the
 		# collection of return values
 		for component in self.components:
-			self.unused_coincs.update(component.get_coincs(eventlists, thresholds, verbose = verbose))
+			self.unused_coincs.update(component.get_coincs(eventlists, threshold_data, verbose = verbose))
 		# of the (< n-1)-instrument coincs that were not used in
 		# forming the (n-1)-instrument coincs, any that remained
 		# unused after forming two compontents cannot have been
@@ -464,9 +436,9 @@ class TimeSlideGraphNode(object):
 		# what n is (n > 2).  note that we pass verbose=False
 		# because we've already called the .get_coincs() methods
 		# above, these are no-ops to retrieve the answers again
-		allcoincs0 = self.components[0].get_coincs(eventlists, thresholds, verbose = False)
-		allcoincs1 = self.components[1].get_coincs(eventlists, thresholds, verbose = False)
-		allcoincs2 = self.components[-1].get_coincs(eventlists, thresholds, verbose = False)
+		allcoincs0 = self.components[0].get_coincs(eventlists, threshold_data, verbose = False)
+		allcoincs1 = self.components[1].get_coincs(eventlists, threshold_data, verbose = False)
+		allcoincs2 = self.components[-1].get_coincs(eventlists, threshold_data, verbose = False)
 		# for each coinc in list 0
 		for coinc0 in allcoincs0:
 			# find all the coincs in list 1 whose first (n-2)
@@ -641,7 +613,7 @@ class TimeSlideGraph(object):
 			print("\t%d offset vectors total" % sum(len(self.generations[n]) for n in self.generations), file=sys.stderr)
 
 
-	def get_coincs(self, eventlists, thresholds, verbose = False):
+	def get_coincs(self, eventlists, threshold_data, verbose = False):
 		if verbose:
 			print("constructing coincs for target offset vectors ...", file=sys.stderr)
 		# don't do attribute look-ups in the loop
@@ -658,7 +630,7 @@ class TimeSlideGraph(object):
 			# attribute look-up can occur before or after
 			# .get_coincs() is called as long as its contents
 			# are not iterated over until after).
-			for coinc in itertools.chain(node.get_coincs(eventlists, thresholds, verbose), node.unused_coincs):
+			for coinc in itertools.chain(node.get_coincs(eventlists, threshold_data, verbose), node.unused_coincs):
 				# we don't need to check that coinc
 				# contains at least min_instruments events
 				# because those that don't meet the
