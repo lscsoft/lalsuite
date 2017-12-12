@@ -72,6 +72,7 @@ UNUSED static REAL8 XLALSimInspiralNRWaveformCheckFRef(
     /* This is the lowest f_lower in the Omega-vs-time array */
     omega_group = XLALH5GroupOpen(file, "Omega-vs-time");
     ReadHDF5RealVectorDataset(omega_group, "Y", &omega_w_vec);
+    XLALH5FileClose(omega_group);
     lowest_arr_fref = gsl_vector_get(omega_w_vec, 0);
     lowest_arr_fref = lowest_arr_fref / (LAL_MTSUN_SI * LAL_PI);
     gsl_vector_free(omega_w_vec);
@@ -110,6 +111,7 @@ UNUSED static REAL8 XLALSimInspiralNRWaveformGetRefTimeFromRefFreq(
   curr_group = XLALH5GroupOpen(file, "Omega-vs-time");
   ReadHDF5RealVectorDataset(curr_group, "X", &omega_t_vec);
   ReadHDF5RealVectorDataset(curr_group, "Y", &omega_w_vec);
+  XLALH5FileClose(curr_group);
   acc = gsl_interp_accel_alloc();
   spline = gsl_spline_alloc(gsl_interp_cspline, omega_w_vec->size);
   gsl_spline_init(spline, omega_w_vec->data, omega_t_vec->data,
@@ -141,6 +143,7 @@ UNUSED static REAL8 XLALSimInspiralNRWaveformGetInterpValueFromGroupAtPoint(
   curr_group = XLALH5GroupOpen(file, groupName);
   ReadHDF5RealVectorDataset(curr_group, "X", &curr_t_vec);
   ReadHDF5RealVectorDataset(curr_group, "Y", &curr_y_vec);
+  XLALH5FileClose(curr_group);
   acc = gsl_interp_accel_alloc();
   spline = gsl_spline_alloc(gsl_interp_cspline, curr_t_vec->size);
   gsl_spline_init(spline, curr_t_vec->data, curr_y_vec->data,
@@ -297,6 +300,7 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetDataFromHDF5File(
 
   ReadHDF5RealVectorDataset(group, "X", &knotsVector);
   ReadHDF5RealVectorDataset(group, "Y", &dataVector);
+  XLALH5FileClose(group);
 
   *output = XLALCreateREAL8Vector(length);
 
@@ -694,6 +698,7 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   /* Figure out start time of data */
   group = XLALH5GroupOpen(file, "amp_l2_m2");
   ReadHDF5RealVectorDataset(group, "X", &tmpVector);
+  XLALH5FileClose(group);
   time_start_M = (REAL8)(gsl_vector_get(tmpVector, 0));
   time_end_M = (REAL8)(gsl_vector_get(tmpVector, tmpVector->size - 1));
   gsl_vector_free(tmpVector);
