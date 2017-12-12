@@ -73,8 +73,6 @@ level1:lalframe:
     expire_in: 3h
     paths:
       - opt/lalsuite
-  dependencies:
-    - level0:lal
   only:
     - pushes
 
@@ -97,8 +95,6 @@ level1:lalmetaio:
     expire_in: 3h
     paths:
       - opt/lalsuite
-  dependencies:
-    - level0:lal
   only:
     - pushes
 
@@ -121,8 +117,6 @@ level1:lalsimulation:
     expire_in: 3h
     paths:
       - opt/lalsuite
-  dependencies:
-    - level0:lal
   only:
     - pushes
 
@@ -145,8 +139,6 @@ level1:lalxml:
     expire_in: 3h
     paths:
       - opt/lalsuite
-  dependencies:
-    - level0:lal
   only:
     - pushes
 
@@ -169,9 +161,6 @@ level2:lalburst:
     expire_in: 3h
     paths:
       - opt/lalsuite
-  dependencies:
-    - level1:lalmetaio
-    - level1:lalsimulation
   only:
     - pushes
 
@@ -194,10 +183,6 @@ level2:lalinspiral:
     expire_in: 3h
     paths:
       - opt/lalsuite
-  dependencies:
-    - level1:lalframe
-    - level1:lalmetaio
-    - level1:lalsimulation
   only:
     - pushes
 
@@ -220,8 +205,6 @@ level2:lalpulsar:
     expire_in: 3h
     paths:
       - opt/lalsuite
-  dependencies:
-    - level1:lalxml
   only:
     - pushes
 
@@ -244,8 +227,6 @@ level2:lalstochastic:
     expire_in: 3h
     paths:
       - opt/lalsuite
-  dependencies:
-    - level1:lalmetaio
   only:
     - pushes
 
@@ -268,8 +249,6 @@ level3:laldetchar:
     expire_in: 3h
     paths:
       - opt/lalsuite
-  dependencies:
-    - level2:lalburst
   only:
     - pushes
 
@@ -292,10 +271,6 @@ level3:lalinference:
     expire_in: 3h
     paths:
       - opt/lalsuite
-  dependencies:
-    - level2:lalburst
-    - level2:lalinspiral
-    - level2:lalpulsar
   only:
     - pushes
 
@@ -318,10 +293,6 @@ level4:lalapps:
     expire_in: 3h
     paths:
       - opt/lalsuite
-  dependencies:
-    - level2:lalstochastic
-    - level3:laldetchar
-    - level3:lalinference
   only:
     - pushes
 
@@ -449,8 +420,6 @@ dockerize:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker build --pull -t $COMMIT -t $BRANCH .
     - docker push $COMMIT
-  dependencies:
-    - level4:lalapps
   only:
     - pushes
 
