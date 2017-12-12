@@ -227,7 +227,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
   output.psr = inputs.pulsar;
   output.dob = inputs.dob; /* set degree of belief for UL */
   output.outPost = inputs.outputPost;
-  snprintf(outputFile, sizeof(outputFile), "%s/evidence_%s", output.outputDir, output.psr);
+  if ( (int)sizeof(outputFile) <= snprintf(outputFile, sizeof(outputFile), "%s/evidence_%s", output.outputDir, output.psr) ){ XLAL_ERROR(XLAL_FAILURE, "String truncated"); }
   /*==========================================================================*/
 
   if( inputs.mcmc.doMCMC == 0 ){
@@ -294,8 +294,10 @@ defined!\n");
   for( i = 0 ; i < numDets ; i++ ){
     /*============================ GET DATA ==================================*/
     /* get detector B_ks data file in form finehet_JPSR_DET */
-    snprintf(dataFile, sizeof(dataFile), "%s/data%s/finehet_%s_%s", inputs.inputDir, dets[i],
-      inputs.pulsar, dets[i]);
+    if ( (int)sizeof(dataFile) <= snprintf(dataFile, sizeof(dataFile), "%s/data%s/finehet_%s_%s", inputs.inputDir, dets[i],
+      inputs.pulsar, dets[i]) ){
+      XLAL_ERROR(XLAL_FAILURE, "String truncated");
+    }
 
     /* open data file */
     if((fp = fopen(dataFile, "r"))==NULL){
@@ -2462,11 +2464,12 @@ paramData ) ) == NULL ){
   }
 
   /* open output file */
-  if( input.mcmc.outputBI == 0 )
-    snprintf(outFile, sizeof(outFile), "%s/MCMCchain_%s_%s", input.outputDir, input.pulsar, det);
+  if( input.mcmc.outputBI == 0 ){
+    if ( (int)sizeof(outFile) <= snprintf(outFile, sizeof(outFile), "%s/MCMCchain_%s_%s", input.outputDir, input.pulsar, det) ){ XLAL_ERROR_VOID(XLAL_FAILURE, "String truncated"); }
+  }
   else{ /* append number of burn in steps to the file name */
-    snprintf(outFile, sizeof(outFile), "%s/MCMCchain_%s_%s_burn_in_%d", input.outputDir,
-      input.pulsar, det, input.mcmc.burnIn );
+    if ( (int)sizeof(outFile) <= snprintf(outFile, sizeof(outFile), "%s/MCMCchain_%s_%s_burn_in_%d", input.outputDir,
+      input.pulsar, det, input.mcmc.burnIn )) { XLAL_ERROR_VOID(XLAL_FAILURE, "String truncated"); }
   }
 
   if( (fp=fopen(outFile, "w")) == NULL ){

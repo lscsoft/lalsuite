@@ -181,8 +181,10 @@ int main( int argc, char **argv ){
     // add "NAME" attribute
     PulsarAddParam( pulparams[numpulsars], "NAME", psrname, PULSARTYPE_string_t );
 
-    snprintf(outputFilename, sizeof(outputFilename), "%s/SplInter_%s_%s",inputParams.outputdir,psrname,
-      splParams.detector.frDetector.prefix);
+    if ( (int)sizeof(outputFilename) <= snprintf(outputFilename, FILENAME_MAXLEN, "%s/SplInter_%s_%s",inputParams.outputdir,psrname,
+      splParams.detector.frDetector.prefix) ){
+      XLAL_ERROR(XLAL_FAILURE, "String truncated");
+    }
     outputfilenames = XLALAppendString2Vector(outputfilenames, outputFilename);
 
     /* check output files can be opened/clear any previous file */
@@ -230,14 +232,14 @@ int main( int argc, char **argv ){
   }
 
   /* load all types of ephemeris files, as uses little RAM/computational effort, and different parfiles may use a combination */
-  snprintf(earthfile200, sizeof(earthfile200), "%s/earth00-19-DE200.dat.gz",inputParams.ephemdir);
-  snprintf(sunfile200, sizeof(sunfile200), "%s/sun00-19-DE200.dat.gz",inputParams.ephemdir);
-  snprintf(earthfile405, sizeof(earthfile405), "%s/earth00-19-DE405.dat.gz",inputParams.ephemdir);
-  snprintf(sunfile405, sizeof(sunfile405), "%s/sun00-19-DE405.dat.gz",inputParams.ephemdir);
-  snprintf(earthfile414, sizeof(earthfile414), "%s/earth00-19-DE414.dat.gz",inputParams.ephemdir);
-  snprintf(sunfile414, sizeof(sunfile414), "%s/sun00-19-DE414.dat.gz",inputParams.ephemdir);
-  snprintf(earthfile421, sizeof(earthfile421), "%s/earth00-19-DE421.dat.gz",inputParams.ephemdir);
-  snprintf(sunfile421, sizeof(sunfile421), "%s/sun00-19-DE421.dat.gz",inputParams.ephemdir);
+  if ( (int)sizeof(outputFilename) <= snprintf(earthfile200, FILENAME_MAXLEN, "%s/earth00-19-DE200.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
+  if ( (int)sizeof(outputFilename) <= snprintf(sunfile200, FILENAME_MAXLEN, "%s/sun00-19-DE200.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
+  if ( (int)sizeof(outputFilename) <= snprintf(earthfile405, FILENAME_MAXLEN, "%s/earth00-19-DE405.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
+  if ( (int)sizeof(outputFilename) <= snprintf(sunfile405, FILENAME_MAXLEN, "%s/sun00-19-DE405.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
+  if ( (int)sizeof(outputFilename) <= snprintf(earthfile414, FILENAME_MAXLEN, "%s/earth00-19-DE414.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
+  if ( (int)sizeof(outputFilename) <= snprintf(sunfile414, FILENAME_MAXLEN, "%s/sun00-19-DE414.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
+  if ( (int)sizeof(outputFilename) <= snprintf(earthfile421, FILENAME_MAXLEN, "%s/earth00-19-DE421.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
+  if ( (int)sizeof(outputFilename) <= snprintf(sunfile421, FILENAME_MAXLEN, "%s/sun00-19-DE421.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
 
   edat200 = XLALMalloc(sizeof(*edat200));
   edat405 = XLALMalloc(sizeof(*edat405));
@@ -245,8 +247,8 @@ int main( int argc, char **argv ){
   edat421 = XLALMalloc(sizeof(*edat421));
 
   /* Load time correction files. */
-  snprintf(timefileTDB, sizeof(timefileTDB), "%s/tdb_2000-2019.dat.gz",inputParams.ephemdir);
-  snprintf(timefileTE405, sizeof(timefileTE405), "%s/te405_2000-2019.dat.gz",inputParams.ephemdir);
+  if ( (int)sizeof(outputFilename) <= snprintf(timefileTDB, FILENAME_MAXLEN, "%s/tdb_2000-2019.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
+  if ( (int)sizeof(outputFilename) <= snprintf(timefileTE405, FILENAME_MAXLEN, "%s/te405_2000-2019.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
 
   /*  read in ephemeris files */
   edat200 = XLALInitBarycenter(earthfile200, sunfile200);
@@ -390,14 +392,14 @@ int main( int argc, char **argv ){
     if ( sftlalcache == NULL ){
       CHAR cacheFile[FILENAME_MAXLEN], cacheFileCheck[FILENAME_MAXLEN];
       if(inputParams.cacheDir){
-        snprintf(cacheFile, sizeof(cacheFile), "list:%s/Segment_%d-%d.sftcache",inputParams.filePattern,(INT4)ROUND(startt),(INT4)ROUND(endt));
-        snprintf(cacheFileCheck, sizeof(cacheFileCheck), "%s/Segment_%d-%d.sftcache",inputParams.filePattern,(INT4)ROUND(startt),(INT4)ROUND(endt));
+        if(FILENAME_MAXLEN <= snprintf(cacheFile, FILENAME_MAXLEN, "list:%s/Segment_%d-%d.sftcache",inputParams.filePattern,(INT4)ROUND(startt),(INT4)ROUND(endt)) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
+        if(FILENAME_MAXLEN <= snprintf(cacheFileCheck, FILENAME_MAXLEN, "%s/Segment_%d-%d.sftcache",inputParams.filePattern,(INT4)ROUND(startt),(INT4)ROUND(endt)) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
       }
       else{
-        sprintf(cacheFile,"%s",inputParams.filePattern);
+        if(FILENAME_MAXLEN <= snprintf(cacheFile, FILENAME_MAXLEN, "%s",inputParams.filePattern) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
         CHAR *rmlist=inputParams.filePattern;
         rmlist+=5;
-        sprintf(cacheFileCheck,"%s",rmlist);
+        if(FILENAME_MAXLEN <= snprintf(cacheFileCheck, FILENAME_MAXLEN, "%s",rmlist) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
       }
 
       /* Check SFT cache file exists and is not empty*/
