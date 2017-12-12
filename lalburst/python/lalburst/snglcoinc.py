@@ -81,22 +81,13 @@ from .git_version import version as __version__
 
 class EventList(list):
 	"""
-	A parent class for managing a list of events:  applying time
-	offsets, and retrieving subsets of the list selected by time
-	interval.  To be useful, this class must be subclassed with
-	overrides provided for certain methods.  The only methods that
-	*must* be overridden in a subclass are the _add_offset() and
-	get_coincs() methods.  The make_index() method can be overridden if
-	needed.  None of the other methods inherited from the list parent
-	class need to be overridden, indeed they probably should not be
-	unless you know what you're doing.
+	A parent class for managing a list of events, retrieving subsets of
+	the list selected by time interval.  To be useful, this class must
+	be subclassed with overrides provided for certain methods.  The
+	only method that must be overridden in a subclass is the
+	get_coincs() method.  The make_index() method can be overridden if
+	needed.
 	"""
-	def __init__(self):
-		# the offset that should be added to the times of events in
-		# this list when comparing to the times of other events.
-		# used to implement time-shifted coincidence tests
-		self.offset = lal.LIGOTimeGPS(0)
-
 	def make_index(self):
 		"""
 		Provided to allow for search-specific look-up tables or
@@ -108,14 +99,6 @@ class EventList(list):
 		"""
 		pass
 
-	def set_offset(self, offset):
-		"""
-		Set an offset on the times of all events in the list.
-		"""
-		# cast offset to LIGOTimeGPS to avoid repeated conversion
-		# when applying the offset to each event.
-		self.offset = lal.LIGOTimeGPS(offset)
-
 	def get_coincs(self, event_a, offset_a, light_travel_time, threshold_data):
 		"""
 		Return a sequence of the events from this list that are
@@ -125,16 +108,8 @@ class EventList(list):
 
 		offset_a is the time shift to be added to the time of
 		event_a before comparing to the times of events in this
-		list.  The offset attribute of this object will contain the
-		time shift to be added to the times of the events in this
-		list before comparing to event_a.  That is, the times of
-		arrival of the events in this list should have (self.offset
-		- offset_a) added to them before comparing to the time of
-		arrival of event_a.  Or, equivalently, the time of arrival
-		of event_a should have (offset_a - self.offset) added to it
-		before comparing to the times of arrival of the events in
-		this list.  This behaviour is to support the construction
-		of time shifted coincidences.
+		list.  This behaviour is to support the construction of
+		time shifted coincidences.
 
 		Because it is frequently needed by implementations of this
 		method, the distance in light seconds between the two
@@ -185,29 +160,6 @@ class EventListDict(dict):
 		for l in self.values():
 			l.make_index()
 
-	@property
-	def offsetvector(self):
-		"""
-		offsetvector of the offsets carried by the event lists.
-		When assigning to this property, any event list whose
-		instrument is not in the dictionary of offsets is not
-		modified, and KeyError is raised if the offset dictionary
-		contains an instrument that is not in this dictionary of
-		event lists.  As a short-cut to setting all offsets to 0,
-		the attribute can be deleted.
-		"""
-		return offsetvector.offsetvector((instrument, eventlist.offset) for instrument, eventlist in self.items())
-
-	@offsetvector.setter
-	def offsetvector(self, offsetvector):
-		for instrument, offset in offsetvector.items():
-			self[instrument].set_offset(offset)
-
-	@offsetvector.deleter
-	def offsetvector(self):
-		for eventlist in self.values():
-			eventlist.set_offset(0)
-
 
 #
 # =============================================================================
@@ -231,47 +183,48 @@ def light_travel_time(instrument1, instrument2):
 	return math.sqrt((dx * dx).sum()) / lal.C_SI
 
 
-def get_doubles(eventlists, instruments, threshold_data, unused):
+def get_doubles(eventlists, offsetvector, threshold_data, unused):
 	"""
-	Given an instance of an EventListDict, an iterable (e.g., a list)
-	of instruments, and threshold data to pass to the comparison
-	function, generate a sequence of tuples of Python IDs of mutually
-	coincident events, and populate a set (unused) of 1-element tuples
-	of the Python IDs of the events that did not participate in
-	coincidences.
+	Given an instance of an EventListDict, a dictionary of
+	instrument,offset pairs, and threshold data to pass to the
+	comparison function, generate a sequence of tuples of Python IDs of
+	mutually coincident events, and populate a set (unused) of
+	1-element tuples of the Python IDs of the events that did not
+	participate in coincidences.
 
 	Each tuple returned by this generator will contain exactly two
-	Python IDs, one from each of the two instruments in the instruments
-	sequence.
+	Python IDs, one from each of the two instruments in the offset
+	vector.
 
-	NOTE:  the instruments sequence must contain exactly two
-	instruments;  it may be a generator, it will be iterated over only
-	once.
+	NOTE:  the offset vector must contain exactly two instruments.
 
 	NOTE:  the "unused" parameter passed to this function must be a set
 	or set-like object.  It will be cleared by invoking .clear(), then
 	populated by invoking .update(), .add(), and .remove().
 
 	NOTE:  the order of the IDs in each tuple returned by this function
-	matches the order of the instruments sequence.
+	will be in alphabetical order by instrument.
 	"""
 	# retrieve the event lists for the requested instrument combination
+	try:
+		instrumenta, instrumentb = sorted(offsetvector)
+	except ValueError:
+		raise ValueError("offsetvector must be for 2 instruments, not %d" % len(offsetvector))
+	eventlista, eventlistb = eventlists[instrumenta], eventlists[instrumentb]
 
-	instruments = tuple(instruments)
-	assert len(instruments) == 2, "instruments must be an iterable of exactly two names, not %d" % len(instruments)
-	eventlista, eventlistb = eventlists[instruments[0]], eventlists[instruments[1]]
+	# compute the time offset and light travel time.
+
+	offset_a = offsetvector[instrumenta] - offsetvector[instrumentb]
+	dt = light_travel_time(instrumenta, instrumentb)
 
 	# choose the shorter of the two lists for the outer loop
 
 	if len(eventlistb) < len(eventlista):
 		eventlista, eventlistb = eventlistb, eventlista
+		offset_a = -offset_a
 		unswap = lambda a, b: (b, a)
 	else:
 		unswap = lambda a, b: (a, b)
-
-	# pre-compute the light travel time.
-
-	dt = light_travel_time(*instruments)
 
 	# populate the unused set with all IDs from list B
 
@@ -284,7 +237,6 @@ def get_doubles(eventlists, instruments, threshold_data, unused):
 	# IDs, otherwise remove the IDs of the things that are coincident
 	# with it from the set.
 
-	offset_a = eventlista.offset
 	eventlistb_get_coincs = eventlistb.get_coincs
 	for eventa in eventlista:
 		eventa_id = id(eventa)
@@ -350,22 +302,13 @@ class TimeSlideGraphNode(object):
 			assert set(self.offset_vector) <= set(eventlists), "no event list for instrument(s) %s" % ", ".join(sorted(set(self.offset_vector) - set(eventlists)))
 
 			#
-			# apply offsets to events
-			#
-
-			eventlists.offsetvector = self.offset_vector
-
-			#
 			# search for and record coincidences.  coincs is a
 			# sorted tuple of event ID pairs, where each pair
 			# of IDs is, itself, ordered alphabetically by
-			# instrument name.  note that the event order in
-			# each tuple returned by get_doubles() is set by
-			# the order of the instrument names passed to it,
-			# which we make be alphabetical
+			# instrument name.
 			#
 
-			self.coincs = tuple(sorted(get_doubles(eventlists, sorted(self.offset_vector), threshold_data, self.unused_coincs)))
+			self.coincs = tuple(sorted(get_doubles(eventlists, self.offset_vector, threshold_data, self.unused_coincs)))
 			if not self.keep_unused:
 				self.unused_coincs.clear()
 			return self.coincs

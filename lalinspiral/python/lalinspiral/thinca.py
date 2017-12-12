@@ -274,7 +274,7 @@ class InspiralEventList(snglcoinc.EventList):
 		# times in this list.
 		#
 
-		end = event_a.end + offset_a - self.offset
+		end = event_a.end + offset_a
 
 		#
 		# the coincidence window
