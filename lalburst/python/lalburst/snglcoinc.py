@@ -646,7 +646,6 @@ class TimeSlideGraph(object):
 			print("constructing coincs for target offset vectors ...", file=sys.stderr)
 		# don't do attribute look-ups in the loop
 		sngl_index = eventlists.idx
-		min_instruments = self.min_instruments
 		for n, node in enumerate(self.head, start = 1):
 			if verbose:
 				print("%d/%d: %s" % (n, len(self.head), str(node.offset_vector)), file=sys.stderr)
