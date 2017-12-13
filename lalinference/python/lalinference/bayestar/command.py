@@ -418,12 +418,12 @@ class SQLiteType(argparse.FileType):
     Here is an example of trying to open a file that does not exist for
     reading (mode='r'). It should raise an exception:
 
+    >>> import pytest
     >>> filetype = SQLiteType('r')
     >>> filename = tempfile.mktemp()
-    >>> filetype(filename)
-    Traceback (most recent call last):
-      ...
-    FileNotFoundError: [Errno 2] No such file or directory: ...
+    >>> # Note, simply check or a FileNotFound error in Python 3.
+    >>> with pytest.raises(OSError):
+    ...     filetype(filename)
 
     If the file already exists, then it's fine:
     >>> filetype = SQLiteType('r')
@@ -449,15 +449,18 @@ class SQLiteType(argparse.FileType):
     NOT overwrite the file if it exists. If the file was not an SQLite database
     beforehand, this should raise an exception.
 
+    >>> import pytest
     >>> filetype = SQLiteType('a')
     >>> with tempfile.NamedTemporaryFile(mode='w') as f:
     ...     print('This is definitely not an SQLite file.', file=f)
     ...     f.flush()
     ...     with filetype(f.name) as db:
-    ...         db.execute('create table foo (bar char)')
-    Traceback (most recent call last):
-      ...
-    sqlite3.DatabaseError: file is not a database
+    ...         # FIXME: The string representation of this exception changed
+    ...         # from 'DatabaseError' to 'sqlite3.DatabaseErrro' from Python
+    ...         # 2 to 3. Once we drop support for Python 2, just put the
+    ...         # exception output verbatim in the doctest output.
+    ...         with pytest.raises(sqlite3.DatabaseError):
+    ...             db.execute('create table foo (bar char)')
 
     And if the database did exist beforehand, then opening for appending
     (mode='a') should not clobber existing tables.

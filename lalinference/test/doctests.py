@@ -23,7 +23,7 @@ Run doctests for selected LALInference modules.
 # to mark the entire test as skipped.
 import pkg_resources
 try:
-    pkg_resources.require(['astropy', 'healpy >= 1.9'])
+    pkg_resources.require(['astropy', 'healpy >= 1.9', 'pytest'])
 except pkg_resources.ResolutionError as e:
     print(e)
     raise SystemExit(77)
