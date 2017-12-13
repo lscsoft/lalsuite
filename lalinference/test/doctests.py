@@ -31,6 +31,7 @@ except pkg_resources.ResolutionError as e:
 import sys
 import doctest
 import numpy as np
+import lalinference.bayestar.command
 import lalinference.bayestar.sky_map
 import lalinference.distance
 import lalinference.bayestar.filter
@@ -42,6 +43,7 @@ import lalinference.bayestar.postprocess
 
 modules = [
     lalinference.distance,
+    lalinference.bayestar.command,
     lalinference.bayestar.filter,
     lalinference.bayestar.sky_map,
     lalinference.io.fits,

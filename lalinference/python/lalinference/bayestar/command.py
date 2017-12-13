@@ -31,6 +31,7 @@ import itertools
 import logging
 import os
 import shutil
+import sqlite3
 import sys
 import tempfile
 import matplotlib
@@ -412,18 +413,85 @@ class DirType(object):
 class SQLiteType(argparse.FileType):
     """Open an SQLite database, or fail if it does not exist.
     FIXME: use SQLite URI when we drop support for Python < 3.4.
-    See: https://docs.python.org/3.4/whatsnew/3.4.html#sqlite3"""
+    See: https://docs.python.org/3.4/whatsnew/3.4.html#sqlite3
 
-    def __init__(self, mode='r'):
-        super(SQLiteType, self).__init__(mode + 'b')
+    Here is an example of trying to open a file that does not exist for
+    reading (mode='r'). It should raise an exception:
+
+    >>> filetype = SQLiteType('r')
+    >>> filename = tempfile.mktemp()
+    >>> filetype(filename)
+    Traceback (most recent call last):
+      ...
+    FileNotFoundError: [Errno 2] No such file or directory: ...
+
+    If the file already exists, then it's fine:
+    >>> filetype = SQLiteType('r')
+    >>> with tempfile.NamedTemporaryFile() as f:
+    ...     with sqlite3.connect(f.name) as db:
+    ...         _ = db.execute('create table foo (bar char)')
+    ...     filetype(f.name)
+    <sqlite3.Connection object at ...>
+
+    Here is an example of opening a file for writing (mode='w'), which should
+    overwrite the file if it exists. Even if the file was not an SQLite
+    database beforehand, this should work:
+
+    >>> filetype = SQLiteType('w')
+    >>> with tempfile.NamedTemporaryFile(mode='w') as f:
+    ...     print('This is definitely not an SQLite file.', file=f)
+    ...     f.flush()
+    ...     with filetype(f.name) as db:
+    ...         db.execute('create table foo (bar char)')
+    <sqlite3.Cursor object at ...>
+
+    Here is an example of opening a file for appending (mode='a'), which should
+    NOT overwrite the file if it exists. If the file was not an SQLite database
+    beforehand, this should raise an exception.
+
+    >>> filetype = SQLiteType('a')
+    >>> with tempfile.NamedTemporaryFile(mode='w') as f:
+    ...     print('This is definitely not an SQLite file.', file=f)
+    ...     f.flush()
+    ...     with filetype(f.name) as db:
+    ...         db.execute('create table foo (bar char)')
+    Traceback (most recent call last):
+      ...
+    sqlite3.DatabaseError: file is not a database
+
+    And if the database did exist beforehand, then opening for appending
+    (mode='a') should not clobber existing tables.
+
+    >>> filetype = SQLiteType('a')
+    >>> with tempfile.NamedTemporaryFile() as f:
+    ...     with sqlite3.connect(f.name) as db:
+    ...         _ = db.execute('create table foo (bar char)')
+    ...     with filetype(f.name) as db:
+    ...         db.execute('select count(*) from foo').fetchone()
+    (0,)
+    """
+
+    def __init__(self, mode):
+        self.mode = mode
 
     def __call__(self, string):
         if string == '-':
             raise argparse.ArgumentTypeError(
                 'Cannot open stdin/stdout as an SQLite database')
-        with super(SQLiteType, self).__call__(string):
-            import sqlite3
+        if self.mode == 'r':
+            fd = os.open(string, os.O_RDONLY)
+            try:
+                return sqlite3.connect('/dev/fd/{}'.format(fd))
+            finally:
+                os.close(fd)
+        elif self.mode == 'w':
+            with open(string, 'wb') as f:
+                pass
             return sqlite3.connect(string)
+        elif self.mode == 'a':
+            return sqlite3.connect(string)
+        else:
+            raise ValueError('Unknown file mode: {}'.format(self.mode))
 
 
 def sqlite_get_filename(connection):
