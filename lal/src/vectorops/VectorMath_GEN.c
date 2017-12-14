@@ -63,6 +63,11 @@ static inline COMPLEX8 local_cmulf ( COMPLEX8 x, COMPLEX8 y )
   return x * y;
 }
 
+static inline COMPLEX8 local_caddf ( COMPLEX8 x, COMPLEX8 y )
+{
+  return x + y;
+}
+
 static inline REAL4 local_fmaxf ( REAL4 x, REAL4 y ) {
   return (x > y) ? x : y;
 }
@@ -199,3 +204,4 @@ DEFINE_VECTORMATH_DD2D(Max, fmax)
   DEFINE_VECTORMATH_ANY( XLALVectorMath_CC2C_GEN, NAME ## COMPLEX8, ( COMPLEX8 *out, const COMPLEX8 *in1, const COMPLEX8 *in2, const UINT4 len ), ( (out != NULL) && (in1 != NULL) && (in2 != NULL) ), ( out, in1, in2, len, GEN_OP ) )
 
 DEFINE_VECTORMATH_CC2C(Multiply, local_cmulf)
+DEFINE_VECTORMATH_CC2C(Add, local_caddf)

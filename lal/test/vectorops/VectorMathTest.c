@@ -323,6 +323,7 @@ main ( int argc, char *argv[] )
   TESTBENCH_VECTORMATH_DD2D(Scale,xInD[0],xIn2D);
 
   TESTBENCH_VECTORMATH_CC2C(Multiply,xInC,xIn2C);
+  TESTBENCH_VECTORMATH_CC2C(Add,xInC,xIn2C);
 
   // ==================== FIND ====================
   for ( UINT4 i = 0; i < Ntrials; i ++ ) {
