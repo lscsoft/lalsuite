@@ -637,6 +637,54 @@ XLALGetSSBtimes ( const DetectorStateSeries *DetectorStates,	/**< [in] detector-
 
       break;
 
+    case SSBPREC_DMOFF:	/* switch off all demodulation terms */
+
+      baryinput.site = DetectorStates->detector;
+      baryinput.site.location[0] /= LAL_C_SI;
+      baryinput.site.location[1] /= LAL_C_SI;
+      baryinput.site.location[2] /= LAL_C_SI;
+
+      baryinput.alpha = alpha;
+      baryinput.delta = delta;
+      baryinput.dInv = 0;
+
+      for ( UINT4 i = 0; i < numSteps; i++ )
+        {
+          EmissionTime emit;
+          DetectorState *state = &(DetectorStates->data[i]);
+          baryinput.tgps = state->tGPS;
+
+          REAL8 tgps[2];
+          tgps[0] = baryinput.tgps.gpsSeconds;
+          tgps[1] = baryinput.tgps.gpsNanoSeconds;
+
+          if ( XLALBarycenterOpt ( &emit, &baryinput, &(state->earthState), &bBuffer ) != XLAL_SUCCESS )
+            XLAL_ERROR_NULL ( XLAL_EFUNC, "XLALBarycenterOpt() failed with xlalErrno = %d\n", xlalErrno );
+
+              emit.deltaT = 0;
+              emit.tDot = 1;
+              INT4 deltaTint = floor ( emit.deltaT );
+
+              if ( ( 1e-9 * tgps[1] + emit.deltaT - deltaTint ) >= 1.e0 )
+                {
+                  emit.te.gpsSeconds     = baryinput.tgps.gpsSeconds + deltaTint + 1;
+                  emit.te.gpsNanoSeconds = floor ( 1e9 * ( tgps[1] * 1e-9 + emit.deltaT - deltaTint - 1.0 ) );
+                }
+              else
+                {
+                  emit.te.gpsSeconds     = baryinput.tgps.gpsSeconds + deltaTint;
+                  emit.te.gpsNanoSeconds = floor ( 1e9 * ( tgps[1] * 1e-9 + emit.deltaT - deltaTint ) );
+                }
+
+              ret->DeltaT->data[i] = XLALGPSGetREAL8 ( &emit.te ) - refTimeREAL8;
+              ret->Tdot->data[i] = emit.tDot;
+
+        } /* for i < numSteps */
+      // free buffer memory
+      XLALFree ( bBuffer );
+
+      break;
+
     default:
       XLAL_ERROR_NULL (XLAL_EFAILED, "\n?? Something went wrong.. this should never be called!\n\n" );
       break;
