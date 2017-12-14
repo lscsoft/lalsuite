@@ -3,8 +3,9 @@ image: docker:latest
 variables:
   DOCKER_DRIVER: overlay
 #  GIT_DEPTH: 1
-  COMMIT: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   BRANCH: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
+  COMMIT: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  NIGHTLY: $CI_REGISTRY_IMAGE:nightly
   TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
   LAL_DIR: $CI_PROJECT_DIR/opt/lalsuite
 
@@ -52,6 +53,7 @@ level0:lal:
       - opt/lalsuite
   only:
     - pushes
+    - schedules
 
 level1:lalframe:
   image: ligo/lalsuite-dev:jessie
@@ -76,6 +78,7 @@ level1:lalframe:
     - level0:lal
   only:
     - pushes
+    - schedules
 
 level1:lalmetaio:
   image: ligo/lalsuite-dev:jessie
@@ -100,6 +103,7 @@ level1:lalmetaio:
     - level0:lal
   only:
     - pushes
+    - schedules
 
 level1:lalsimulation:
   image: ligo/lalsuite-dev:jessie
@@ -124,6 +128,7 @@ level1:lalsimulation:
     - level0:lal
   only:
     - pushes
+    - schedules
 
 level1:lalxml:
   image: ligo/lalsuite-dev:jessie
@@ -148,6 +153,7 @@ level1:lalxml:
     - level0:lal
   only:
     - pushes
+    - schedules
 
 level2:lalburst:
   image: ligo/lalsuite-dev:jessie
@@ -173,6 +179,7 @@ level2:lalburst:
     - level1:lalsimulation
   only:
     - pushes
+    - schedules
 
 level2:lalinspiral:
   image: ligo/lalsuite-dev:jessie
@@ -199,6 +206,7 @@ level2:lalinspiral:
     - level1:lalsimulation
   only:
     - pushes
+    - schedules
 
 level2:lalpulsar:
   image: ligo/lalsuite-dev:jessie
@@ -223,6 +231,7 @@ level2:lalpulsar:
     - level1:lalxml
   only:
     - pushes
+    - schedules
 
 level2:lalstochastic:
   image: ligo/lalsuite-dev:jessie
@@ -247,6 +256,7 @@ level2:lalstochastic:
     - level1:lalmetaio
   only:
     - pushes
+    - schedules
 
 level3:laldetchar:
   image: ligo/lalsuite-dev:jessie
@@ -271,6 +281,7 @@ level3:laldetchar:
     - level2:lalburst
   only:
     - pushes
+    - schedules
 
 level3:lalinference:
   image: ligo/lalsuite-dev:jessie
@@ -297,6 +308,7 @@ level3:lalinference:
     - level2:lalpulsar
   only:
     - pushes
+    - schedules
 
 level4:lalapps:
   image: ligo/lalsuite-dev:jessie
@@ -323,6 +335,7 @@ level4:lalapps:
     - level3:lalinference
   only:
     - pushes
+    - schedules
 
 nightly:top-level:el7:
   image: ligo/lalsuite-dev:el7
@@ -335,16 +348,8 @@ nightly:top-level:el7:
     - schedules
     - web
 
-nightly:top-level:jessie:
-  image: ligo/lalsuite-dev:jessie
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen
-    - make -j4 distcheck
-  only:
-    - schedules
-    - web
+# do not perform a jessie build because we are doing one nightly via
+# the normal CI parellel build process
 
 nightly:top-level:stretch:
   image: ligo/lalsuite-dev:stretch
@@ -441,17 +446,30 @@ pages:
   except:
     - pushes
 
-dockerize:
+docker:tags:
   stage: container
   before_script: []
   script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $COMMIT -t $BRANCH .
-    - docker push $COMMIT
+    - docker build --pull -t $TAG .
+    - docker push $TAG
   dependencies:
     - level4:lalapps
   only:
-    - pushes
+    - tags
+
+docker:nightly:
+  stage: container
+  before_script: []
+  script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker build --pull -t $NIGHTLY .
+    - docker push $NIGHTLY
+  dependencies:
+    - level4:lalapps
+  only:
+    - master@lscsoft/lalsuite
+    - schedules
 
 tagged:
   stage: tag
