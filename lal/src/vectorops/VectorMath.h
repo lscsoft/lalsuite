@@ -202,6 +202,9 @@ int XLALVectorShiftREAL8 ( REAL8 *out, REAL8 scalar, const REAL8 *in, const UINT
 /** Compute \f$\text{out} = \text{scalar} \times \text{in}\f$ over COMPLEX8 vector \c in with \c len elements */
 int XLALVectorScaleCOMPLEX8 ( COMPLEX8 *out, COMPLEX8 scalar, const COMPLEX8 *in, const UINT4 len);
 
+/** Compute \f$\text{out} = \text{scalar} + \text{in}\f$ over COMPLEX8 vector \c in with \c len elements */
+int XLALVectorShiftCOMPLEX8 ( COMPLEX8 *out, COMPLEX8 scalar, const COMPLEX8 *in, const UINT4 len);
+
 /** @} */
 
 /** \name Vector Element Finding Operations */

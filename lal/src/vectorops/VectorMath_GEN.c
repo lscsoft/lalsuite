@@ -222,3 +222,4 @@ DEFINE_VECTORMATH_CC2C(Add, local_caddf)
   DEFINE_VECTORMATH_ANY( XLALVectorMath_cC2C_GEN, NAME ## COMPLEX8, ( COMPLEX8 *out, COMPLEX8 scalar, const COMPLEX8 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, scalar, in, len, GEN_OP ) )
 
 DEFINE_VECTORMATH_cC2C(Scale, local_cmulf)
+DEFINE_VECTORMATH_cC2C(Shift, local_caddf)
