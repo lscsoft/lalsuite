@@ -37,6 +37,8 @@
 
 // Internal definition of input data structure
 struct tagFstatInput {
+  REAL8 minFreqFull;					// Minimum frequency loaded from input SFTs
+  REAL8 maxFreqFull;					// Maximum frequency loaded from input SFTs
   int singleFreqBin;					// True if XLALComputeFstat() can only compute a single frequency bin, due to zero dFreq being passed to XLALCreateFstatInput()
   FstatMethodType method;				// Method to use for computing the F-statistic
   FstatCommon common;					// Common input data
@@ -364,7 +366,6 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   // the difference being that for noise-floor estimation, we need extra frequency-bands for the
   // running median
   REAL8 minFreqMethod, maxFreqMethod;
-  REAL8 minFreqFull, maxFreqFull;
   {
     // Number of extra frequency bins required by: F-stat method, and running median
     int extraBinsFull = extraBinsMethod + optArgs.runningMedianWindow/2 + 1; // NOTE: running-median window needed irrespective of assumeSqrtSX!
@@ -375,8 +376,8 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
     maxFreqMethod = maxCoverFreq + extraFreqMethod;
 
     const REAL8 extraFreqFull = extraBinsFull / Tsft;
-    minFreqFull = minCoverFreq - extraFreqFull;
-    maxFreqFull = maxCoverFreq + extraFreqFull;
+    input->minFreqFull = minCoverFreq - extraFreqFull;
+    input->maxFreqFull = maxCoverFreq + extraFreqFull;
 
   } // end: block to determine frequency-bins range
 
@@ -385,7 +386,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   if (loadSFTs)
     {
       // Load all SFTs at once
-      XLAL_CHECK_NULL ( ( multiSFTs = XLALLoadMultiSFTs(SFTcatalog, minFreqFull, maxFreqFull) ) != NULL, XLAL_EFUNC );
+      XLAL_CHECK_NULL ( ( multiSFTs = XLALLoadMultiSFTs(SFTcatalog, input->minFreqFull, input->maxFreqFull) ) != NULL, XLAL_EFUNC );
 
       // Extract detectors and timestamps from SFTs
       XLAL_CHECK_NULL ( XLALMultiLALDetectorFromMultiSFTs ( &common->detectors, multiSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -415,8 +416,8 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
     {
       // Initialise parameters struct for XLALCWMakeFakeMultiData()
       CWMFDataParams XLAL_INIT_DECL(MFDparams);
-      MFDparams.fMin = minFreqFull;
-      MFDparams.Band = maxFreqFull - minFreqFull;
+      MFDparams.fMin = input->minFreqFull;
+      MFDparams.Band = input->maxFreqFull - input->minFreqFull;
       MFDparams.multiIFO = common->detectors;
       MFDparams.multiTimestamps = *(common->multiTimestamps);
       MFDparams.randSeed = optArgs.randSeed;
@@ -491,6 +492,27 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   return input;
 
 } // XLALCreateFstatInput()
+
+///
+/// Returns the frequency band loaded from input SFTs
+///
+int XLALGetFstatInputSFTBand ( const FstatInput *input,  ///< [in] \c FstatInput structure.
+                               REAL8 *minFreqFull,       ///< [out] Minimum frequency loaded from input SFTs
+                               REAL8 *maxFreqFull        ///< [out] Maximum frequency loaded from input SFTs
+  )
+{
+
+  // Check input
+  XLAL_CHECK ( input != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( minFreqFull != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( maxFreqFull != NULL, XLAL_EINVAL );
+
+  *minFreqFull = input->minFreqFull;
+  *maxFreqFull = input->maxFreqFull;
+
+  return XLAL_SUCCESS;
+
+}
 
 ///
 /// Returns the human-readable name of the \f$\mathcal{F}\f$-statistic method being used by a \c FstatInput structure.
