@@ -186,3 +186,9 @@ EXPORT_VECTORMATH_DD2D(Max, AVX2, AVX, NONE, NONE)
 EXPORT_VECTORMATH_CC2C(Multiply, AVX2, AVX, SSE2, SSE)
 EXPORT_VECTORMATH_CC2C(Add, AVX2, AVX, SSE2, SSE)
 
+// ---------- define exported vector math functions with 1 COMPLEX8 scalar and 1 COMPLEX8 vector inputs to 1 COMPLEX8 vector output (cC2C) ----------
+#define EXPORT_VECTORMATH_cC2C(NAME, ...)                                    \
+  EXPORT_VECTORMATH_ANY( NAME ## COMPLEX8, (COMPLEX8 *out, COMPLEX8 scalar, const COMPLEX8 *in, const UINT4 len), (out, scalar, in, len), __VA_ARGS__ )
+
+EXPORT_VECTORMATH_cC2C(Scale, AVX2, AVX, SSE2, SSE)
+

@@ -151,6 +151,17 @@ XLALVectorMath_CC2C_GEN ( COMPLEX8 *out, const COMPLEX8 *in1, const COMPLEX8 *in
   return XLAL_SUCCESS;
 }
 
+// ---------- generic operator with 1 COMPLEX8 scalar and 1 COMPLEX8 vector inputs to 1 COMPLEX8 vector output (cC2C) ----------
+static inline int
+XLALVectorMath_cC2C_GEN ( COMPLEX8 *out, COMPLEX8 scalar, const COMPLEX8 *in, const UINT4 len, COMPLEX8 (*op)(COMPLEX8, COMPLEX8) )
+{
+  for ( UINT4 i = 0; i < len; i ++ )
+    {
+      out[i] = (*op) ( scalar, in[i] );
+    }
+  return XLAL_SUCCESS;
+}
+
 // ========== internal vector math functions ==========
 
 // ---------- define vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
@@ -205,3 +216,9 @@ DEFINE_VECTORMATH_DD2D(Max, fmax)
 
 DEFINE_VECTORMATH_CC2C(Multiply, local_cmulf)
 DEFINE_VECTORMATH_CC2C(Add, local_caddf)
+
+// ---------- define vector math functions with 1 COMPLEX8 scalar and 1 COMPLEX8 vector inputs to 1 COMPLEX8 vector output (cC2C) ----------
+#define DEFINE_VECTORMATH_cC2C(NAME, GEN_OP)                            \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_cC2C_GEN, NAME ## COMPLEX8, ( COMPLEX8 *out, COMPLEX8 scalar, const COMPLEX8 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, scalar, in, len, GEN_OP ) )
+
+DEFINE_VECTORMATH_cC2C(Scale, local_cmulf)

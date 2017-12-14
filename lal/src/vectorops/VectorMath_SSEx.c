@@ -321,6 +321,39 @@ XLALVectorMath_CC2C_SSEx ( COMPLEX8 *out, const COMPLEX8 *in1, const COMPLEX8 *i
 
 } // XLALVectorMath_CC2C_SSEx()
 
+// ---------- generic SSEx operator with 1 COMPLEX8 scalar and 1 COMPLEX8 vector inputs to 1 COMPLEX8 vector output (cC2C) ----------
+static inline int
+XLALVectorMath_cC2C_SSEx ( COMPLEX8 *out, COMPLEX8 scalar, const COMPLEX8 *in, const UINT4 len, __m128 (*op)(__m128, __m128) )
+{
+  const V4SF scalar4 = {.f={crealf(scalar),cimagf(scalar),crealf(scalar),cimagf(scalar)}};
+
+  // walk through vector in blocks of 2
+  UINT4 i2Max = len - ( len % 2 );
+  for ( UINT4 i2 = 0; i2 < i2Max; i2 += 2 )
+    {
+      __m128 in4p = _mm_loadu_ps( (const REAL4*)&in[i2] );
+      __m128 out4p = (*op) ( scalar4.v, in4p );
+      _mm_storeu_ps(( REAL4*)&out[i2], out4p);
+    }
+
+  // deal with the remaining (<=1) terms separately
+  V4SF in4 = {.f={0,0,0,0}};
+  V4SF out4;
+  for ( UINT4 i = i2Max,j=0; i < len; i ++, j=+2 )
+    {
+      in4.f[j]   = crealf ( in[i] );
+      in4.f[j+1] = cimagf ( in[i] );
+    }
+  out4.v = (*op) ( scalar4.v, in4.v );
+  for ( UINT4 i = i2Max,j=0; i < len; i ++, j+=2 )
+    {
+      out[i] = crect( out4.f[j], out4.f[j+1] );
+    }
+
+  return XLAL_SUCCESS;
+
+} // XLALVectorMath_cC2C_SSEx()
+
 // ========== internal SSEx vector math functions ==========
 
 // ---------- define vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
@@ -374,3 +407,9 @@ DEFINE_VECTORMATH_DD2D(Multiply, local_mul_pd)
 
 DEFINE_VECTORMATH_CC2C(Multiply, local_cmul_ps)
 DEFINE_VECTORMATH_CC2C(Add, local_add_ps)
+
+// ---------- define vector math functions with 1 COMPLEX8 scalar and 1 COMPLEX8 vector inputs to 1 COMPLEX8 vector output (cC2C) ----------
+#define DEFINE_VECTORMATH_cC2C(NAME, AVX_OP)                            \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_cC2C_SSEx, NAME ## COMPLEX8, ( COMPLEX8 *out, COMPLEX8 scalar, const COMPLEX8 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, scalar, in, len, AVX_OP ) )
+
+DEFINE_VECTORMATH_cC2C(Scale, local_cmul_ps)

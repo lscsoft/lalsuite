@@ -114,3 +114,9 @@ DECLARE_VECTORMATH_DD2D(Max, AVX2, AVX, NONE, NONE)
 
 DECLARE_VECTORMATH_CC2C(Multiply, AVX2, AVX, SSE2, SSE)
 DECLARE_VECTORMATH_CC2C(Add, AVX2, AVX, SSE2, SSE)
+
+/* declare internal prototypes of SIMD-specific vector math functions with 1 COMPLEX8 scalar and 1 COMPLEX8 vector input to 1 COMPLEX8 vector output (cC2C) */
+#define DECLARE_VECTORMATH_cC2C(NAME, ...) \
+  DECLARE_VECTORMATH_ANY( NAME ## COMPLEX8, ( COMPLEX8 *out, COMPLEX8 scalar, const COMPLEX8 *in, const UINT4 len ), __VA_ARGS__ )
+
+DECLARE_VECTORMATH_cC2C(Scale, AVX2, AVX, SSE2, SSE)

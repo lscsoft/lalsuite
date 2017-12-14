@@ -318,6 +318,40 @@ XLALVectorMath_CC2C_AVXx ( COMPLEX8 *out, const COMPLEX8 *in1, const COMPLEX8 *i
 
 } // XLALVectorMath_CC2C_AVXx()
 
+// ---------- generic AVXx operator with 1 COMPLEX8 scalar and 1 COMPLEX8 vector inputs to 1 COMPLEX8 vector output (cC2C) ----------
+static inline int
+XLALVectorMath_cC2C_AVXx ( COMPLEX8 *out, COMPLEX8 scalar, const COMPLEX8 *in, const UINT4 len, __m256 (*op)(__m256, __m256) )
+{
+  const V8SF scalar8 = {.f={crealf(scalar),cimagf(scalar),crealf(scalar),cimagf(scalar),crealf(scalar),cimagf(scalar),crealf(scalar),cimagf(scalar)}};
+
+  // walk through vector in blocks of 4
+  UINT4 i4Max = len - ( len % 4 );
+  for ( UINT4 i4 = 0; i4 < i4Max; i4+=4 )
+    {
+      __m256 in8p = _mm256_loadu_ps( (const REAL4*)&in[i4] );
+      __m256 out8p = (*op) ( scalar8.v, in8p );
+      _mm256_storeu_ps( (REAL4*)&out[i4], out8p );
+    }
+
+  // deal with the remaining (<=3) terms separately
+  V8SF in8 = {.f={0,0,0,0,0,0,0,0}};
+  V8SF out8;
+  for ( UINT4 i = i4Max,j=0; i < len ; i++, j+=2 )
+    {
+      in8.f[j]   = crealf ( in[i] );
+      in8.f[j+1] = cimagf ( in[i] );
+     }
+
+  out8.v = (*op) ( scalar8.v, in8.v );
+  for ( UINT4 i = i4Max,j=0; i < len; i++,j+=2 )
+    {
+      out[i] = crect( out8.f[j], out8.f[j+1] );
+    }
+
+  return XLAL_SUCCESS;
+
+} // XLALVectorMath_cC2C_AVXx()
+
 // ========== internal AVXx vector math functions ==========
 
 // ---------- define vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
@@ -372,3 +406,9 @@ DEFINE_VECTORMATH_DD2D(Max, local_max_pd)
 
 DEFINE_VECTORMATH_CC2C(Multiply, local_cmul_ps)
 DEFINE_VECTORMATH_CC2C(Add, local_add_ps)
+
+// ---------- define vector math functions with 1 COMPLEX8 scalar and 1 COMPLEX8 vector inputs to 1 COMPLEX8 vector output (cC2C) ----------
+#define DEFINE_VECTORMATH_cC2C(NAME, AVX_OP)                            \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_cC2C_AVXx, NAME ## COMPLEX8, ( COMPLEX8 *out, COMPLEX8 scalar, const COMPLEX8 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, scalar, in, len, AVX_OP ) )
+
+DEFINE_VECTORMATH_cC2C(Scale, local_cmul_ps)
