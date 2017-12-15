@@ -46,10 +46,10 @@ typedef struct {
   LIGOTimeGPS sft_last[PULSAR_MAX_DETECTORS];
   /// Number of SFTs from each detector
   UINT4 sft_count[PULSAR_MAX_DETECTORS];
-  /// Minimum of frequency range covered by SFTs
-  REAL8 sft_min_cover_freq;
-  /// Maximum of frequency range covered by SFTs
-  REAL8 sft_max_cover_freq;
+  /// Minimum of frequency range loaded from SFTs
+  REAL8 sft_min_freq;
+  /// Maximum of frequency range loaded from SFTs
+  REAL8 sft_max_freq;
 } segment_info;
 
 ///
@@ -182,8 +182,6 @@ WeaveCohInput *XLALWeaveCohInputCreate(
   XLAL_CHECK_NULL( XLALInitPulsarSpinRangeFromSpins( &spin_range, &min_phys->refTime, min_phys->fkdot, max_phys->fkdot ) == XLAL_SUCCESS, XLAL_EFUNC );
   double sft_min_cover_freq = 0, sft_max_cover_freq = 0;
   XLAL_CHECK_NULL( XLALCWSignalCoveringBand( &sft_min_cover_freq, &sft_max_cover_freq, &sft_start, &sft_end, &spin_range, 0, 0, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  coh_input->seg_info.sft_min_cover_freq = sft_min_cover_freq;
-  coh_input->seg_info.sft_max_cover_freq = sft_max_cover_freq;
 
   // Parse SFT noise PSD string vector for detectors in this segment
   // - This is important when segments contain data from a subset of detectors
@@ -242,6 +240,8 @@ WeaveCohInput *XLALWeaveCohInputCreate(
     }
     XLALDestroyMultiSFTCatalogView( sft_catalog_seg_view );
   }
+  XLAL_CHECK_NULL( XLALGetFstatInputSFTBand( coh_input->Fstat_input, &coh_input->seg_info.sft_min_freq, &coh_input->seg_info.sft_max_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
+
 
   // Cleanup
   XLALDestroyStringVector( sft_catalog_seg_detectors );
@@ -395,8 +395,8 @@ int XLALWeaveCohInputWriteSegInfo(
       snprintf( col_name, sizeof( col_name ), "sft_count_%s", coh_input[0]->setup_detectors->data[i] );
       XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, UINT4, sft_count[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_min_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_max_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_min_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_max_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Write FITS table
