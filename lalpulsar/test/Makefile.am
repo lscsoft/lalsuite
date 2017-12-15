@@ -44,6 +44,9 @@ endif
 
 # Add shell, Python, etc. test scripts to this variable
 test_scripts += pulsar_toa_test.sh
+if SWIG_BUILD_PYTHON
+test_scripts += simulateCWTest.py
+endif
 
 # Add any helper programs required by tests to this variable
 test_helpers += TEMPOcomparison
@@ -72,6 +75,7 @@ MOSTLYCLEANFILES = \
 	TEMPOcomparison.par \
 	TEMPOcomparison.tim \
 	TS_R4.dat \
+	V-1_V1_1800SFT_simCW_simulateCWTest-*.sft \
 	outputsft*.sft \
 	$(END_OF_LIST)
 
