@@ -358,6 +358,7 @@ nightly:top-level:stretch:
     - ./00boot
     - ./configure --enable-swig --enable-doxygen
     - make -j4 distcheck
+  dependencies: []
   only:
     - schedules
     - web
@@ -369,6 +370,7 @@ nightly:top-level:trusty:
     - ./00boot
     - ./configure --disable-swig --enable-doxygen
     - make -j4 distcheck
+  dependencies: []
   only:
     - schedules
     - web
@@ -380,6 +382,7 @@ nightly:top-level:xenial:
     - ./00boot
     - ./configure --disable-swig --enable-doxygen
     - make -j4 distcheck
+  dependencies: []
   only:
     - schedules
     - web
@@ -387,6 +390,7 @@ nightly:top-level:xenial:
 nightly:top-level:buster:
   image: skymoo/ligo-lalsuite-dev:buster
   stage: nightly
+  dependencies: []
   script:
     - ./00boot
     - ./configure --enable-swig-python --enable-doxygen
@@ -399,6 +403,7 @@ nightly:top-level:buster:
 nightly:mpi:jessie:
   image: ligo/lalsuite-dev:jessie
   stage: nightly
+  dependencies: []
   script:
     - ./00boot
     - ./configure --enable-swig --enable-doxygen --enable-mpi
@@ -410,6 +415,7 @@ nightly:mpi:jessie:
 nightly:openmp:jessie:
   image: ligo/lalsuite-dev:jessie
   stage: nightly
+  dependencies: []
   script:
     - ./00boot
     - ./configure --enable-swig --enable-doxygen --enable-openmp
@@ -425,6 +431,7 @@ nightly:python3:stretch:
     - ./00boot
     - PYTHON=python3 ./configure --enable-swig --enable-doxygen
     - make -j4 distcheck
+  dependencies: []
   only:
     - schedules
     - web
@@ -437,6 +444,7 @@ pages:
     - ./configure --enable-doxygen --prefix=${LAL_DIR}
     - make -j4 install-html
     - cp -r ${LAL_DIR}/share/doc public/
+  dependencies: []
   artifacts:
     paths:
       - public
