@@ -410,6 +410,25 @@ class DirType(object):
         return string
 
 
+def sqlite_open_a(string):
+    return sqlite3.connect(string)
+
+def sqlite_open_r(string):
+    if (sys.version_info.major, sys.version_info.minor) >= (3, 4):
+        return sqlite3.connect('file:{}?mode=ro'.format(string), uri=True)
+    else:  # FIXME: remove this code path when we drop Python < 3.4
+        fd = os.open(string, os.O_RDONLY)
+        try:
+            return sqlite3.connect('/dev/fd/{}'.format(fd))
+        finally:
+            os.close(fd)
+
+def sqlite_open_w(string):
+    with open(string, 'wb') as f:
+        pass
+    return sqlite3.connect(string)
+
+
 class SQLiteType(argparse.FileType):
     """Open an SQLite database, or fail if it does not exist.
     FIXME: use SQLite URI when we drop support for Python < 3.4.
@@ -418,12 +437,13 @@ class SQLiteType(argparse.FileType):
     Here is an example of trying to open a file that does not exist for
     reading (mode='r'). It should raise an exception:
 
-    >>> import pytest
     >>> filetype = SQLiteType('r')
     >>> filename = tempfile.mktemp()
     >>> # Note, simply check or a FileNotFound error in Python 3.
-    >>> with pytest.raises(OSError):
-    ...     filetype(filename)
+    >>> filetype(filename)
+    Traceback (most recent call last):
+      ...
+    argparse.ArgumentTypeError: ...
 
     If the file already exists, then it's fine:
     >>> filetype = SQLiteType('r')
@@ -475,26 +495,21 @@ class SQLiteType(argparse.FileType):
     """
 
     def __init__(self, mode):
+        if mode not in 'arw':
+            raise ValueError('Unknown file mode: {}'.format(mode))
         self.mode = mode
 
     def __call__(self, string):
-        if string == '-':
+        if string in {'-', '/dev/stdin', '/dev/stdout'}:
             raise argparse.ArgumentTypeError(
                 'Cannot open stdin/stdout as an SQLite database')
-        if self.mode == 'r':
-            fd = os.open(string, os.O_RDONLY)
-            try:
-                return sqlite3.connect('/dev/fd/{}'.format(fd))
-            finally:
-                os.close(fd)
-        elif self.mode == 'w':
-            with open(string, 'wb') as f:
-                pass
-            return sqlite3.connect(string)
-        elif self.mode == 'a':
-            return sqlite3.connect(string)
-        else:
-            raise ValueError('Unknown file mode: {}'.format(self.mode))
+        openers = {'a': sqlite_open_a, 'r': sqlite_open_r, 'w': sqlite_open_w}
+        opener = openers[self.mode]
+        try:
+            return opener(string)
+        except (OSError, sqlite3.Error) as e:
+            raise argparse.ArgumentTypeError(
+                'Failed to open database {}: {}'.format(string, e))
 
 
 def sqlite_get_filename(connection):
