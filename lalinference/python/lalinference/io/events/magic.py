@@ -18,18 +18,30 @@
 Read events from either HDF or LIGO-LW files.
 """
 import os
+import sqlite3
 from subprocess import check_output
 
+from glue.ligolw.ligolw import LIGO_LW
 import h5py
 
-from . import hdf, ligolw
+from . import hdf, ligolw, sqlite
 
 __all__ = ('MagicEventSource',)
 
 
 def _get_file_type(f):
-    if isinstance(f, h5py.File):
-        return b'Hierarchical Data Format (version 5) data'
+    """Determine the file type by calling the POSIX ``file`` utility.
+
+    Parameters
+    ----------
+    f : file, str
+        A file object or the path to a file
+
+    Returns
+    -------
+    filetype : bytes
+        A string describing the file type
+    """
     try:
         f.read
     except AttributeError:
@@ -49,10 +61,23 @@ def MagicEventSource(f, *args, **kwargs):
     using the POSIX `file` command, which determines the file by looking for
     'magic' byte strings (hence the name of this module).
     """
-    if _get_file_type(f) == b'Hierarchical Data Format (version 5) data':
-        return hdf.open(f, *args, **kwargs)
+    if isinstance(f, h5py.File):
+        opener = hdf.open
+    elif isinstance(f, sqlite3.Connection):
+        opener = sqlite.open
+    elif isinstance(f, LIGO_LW):
+        opener = ligolw.open
     else:
-        return ligolw.open(f, *args, **kwargs)
+        filetype = _get_file_type(f)
+        if filetype == b'Hierarchical Data Format (version 5) data':
+            opener = hdf.open
+        elif filetype.startswith(b'SQLite 3.x database'):
+            opener = sqlite.open
+        elif filetype.startswith(b'XML') or filetype.startswith(b'gzip'):
+            opener = ligolw.open
+        else:
+            raise IOError('Unknown file format')
+    return opener(f, *args, **kwargs)
 
 
 open = MagicEventSource
