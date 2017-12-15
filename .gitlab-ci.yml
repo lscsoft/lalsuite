@@ -15,9 +15,9 @@ stages:
   - level2
   - level3
   - level4
-  - nightly
   - container
   - tag
+  - nightly
 
 before_script:
   - ulimit -S -c 0
