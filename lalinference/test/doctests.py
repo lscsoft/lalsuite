@@ -55,7 +55,11 @@ modules = [
 
 
 finder = doctest.DocTestFinder()
-runner = doctest.DocTestRunner(optionflags=doctest.ELLIPSIS)
+# FIXME: Python 2 tracebacks show BarError whereas Python 3 tracebacks
+# show foo.BarError. Until we drop support for Python 2, we have to check
+# that the type of the exception matches but not the exact text.
+runner = doctest.DocTestRunner(
+    optionflags=doctest.ELLIPSIS | doctest.IGNORE_EXCEPTION_DETAIL)
 tests = []
 
 for module in modules:

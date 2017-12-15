@@ -475,12 +475,10 @@ class SQLiteType(argparse.FileType):
     ...     print('This is definitely not an SQLite file.', file=f)
     ...     f.flush()
     ...     with filetype(f.name) as db:
-    ...         # FIXME: The string representation of this exception changed
-    ...         # from 'DatabaseError' to 'sqlite3.DatabaseErrro' from Python
-    ...         # 2 to 3. Once we drop support for Python 2, just put the
-    ...         # exception output verbatim in the doctest output.
-    ...         with pytest.raises(sqlite3.DatabaseError):
-    ...             db.execute('create table foo (bar char)')
+    ...         db.execute('create table foo (bar char)')
+    Traceback (most recent call last):
+      ...
+    sqlite3.DatabaseError: ...
 
     And if the database did exist beforehand, then opening for appending
     (mode='a') should not clobber existing tables.
