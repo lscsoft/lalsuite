@@ -68,6 +68,34 @@ local_max_pd ( __m256d in1, __m256d in2 )
   return _mm256_max_pd ( in1, in2 );
 }
 
+// in1: a0,b0,a1,b1,a2,b2,a3,b3 in2: c0,d0,c1,d1,c2,d2,c3,d3
+UNUSED static inline __m256
+local_cmul_ps ( __m256 in1, __m256 in2 )
+{
+  __m256 neg = _mm256_setr_ps(1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0);
+
+  // Multiply in1 and in2
+  // a0c0, b0d0, a1c1, b2d2, a3c3, b3d3
+  __m256 temp1 = _mm256_mul_ps(in1, in2);
+
+  // Switch the real and imaginary elements of in2
+  in2 = _mm256_permute_ps(in2, 0xb1);
+
+  //Negate the real elements of in2
+  in2 = _mm256_mul_ps(in2, neg);
+
+  // Multiply in1 and the modified in2
+  // a0d0, -b0c0, a1d1, -b1c1, a2d2, -b2c2, a3d3, -b3c3
+  __m256 temp2 = _mm256_mul_ps(in1, in2);
+
+  // Horizontally subtract the elements in temp1 and temp2
+  // a0c0-b0d0, a1c1-b1d1, a0d0+b0c0, a1d1+b1c1,a2c2-b2d2, a3c3-b3d3, a2d2+b2c2, a3d3+b3c3
+  in2 = _mm256_hsub_ps(temp1, temp2);
+
+  // swap odd numbers real component with even numbers imaginary component
+  return _mm256_permute_ps(in2, 0xd8);
+}
+
 // ========== internal generic AVXx functions ==========
 
 // ---------- generic AVXx operator with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
@@ -253,6 +281,43 @@ XLALVectorMath_DD2D_AVXx ( REAL8 *out, const REAL8 *in1, const REAL8 *in2, const
 
 } // XLALVectorMath_DD2D_AVXx()
 
+// ---------- generic AVXx operator with 2 COMPLEX8 vector inputs to 1 COMPLEX8 vector output (CC2C) ----------
+static inline int
+XLALVectorMath_CC2C_AVXx ( COMPLEX8 *out, const COMPLEX8 *in1, const COMPLEX8 *in2, const UINT4 len, __m256 (*op)(__m256, __m256) )
+{
+
+  // walk through vector in blocks of 4
+  UINT4 i4Max = len - ( len % 4 );
+  for ( UINT4 i4 = 0; i4 < i4Max; i4+=4 )
+    {
+      __m256 in8p_1 = _mm256_loadu_ps( (const REAL4*)&in1[i4] );
+      __m256 in8p_2 = _mm256_loadu_ps( (const REAL4*)&in2[i4] );
+      __m256 out8p = (*op) ( in8p_1, in8p_2 );
+      _mm256_storeu_ps( (REAL4*)&out[i4], out8p );
+    }
+
+  // deal with the remaining (<=3) terms separately
+  V8SF in8_1 = {.f={0,0,0,0,0,0,0,0}};
+  V8SF in8_2 = {.f={0,0,0,0,0,0,0,0}};
+  V8SF out8;
+  for ( UINT4 i = i4Max,j=0; i < len ; i++,j+=2)
+    {
+      in8_1.f[j]   = crealf ( in1[i] );
+      in8_1.f[j+1] = cimagf ( in1[i] );
+      in8_2.f[j]   = crealf ( in2[i] );
+      in8_2.f[j+1] = cimagf ( in2[i] );
+    }
+
+  out8.v = (*op) ( in8_1.v, in8_2.v );
+  for ( UINT4 i = i4Max, j = 0; i < len; i++,j+=2 )
+    {
+      out[i] = crect( out8.f[j], out8.f[j+1] );
+    }
+
+  return XLAL_SUCCESS;
+
+} // XLALVectorMath_CC2C_AVXx()
+
 // ========== internal AVXx vector math functions ==========
 
 // ---------- define vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
@@ -300,3 +365,9 @@ DEFINE_VECTORMATH_dD2D(Shift, local_add_pd)
 DEFINE_VECTORMATH_DD2D(Add, local_add_pd)
 DEFINE_VECTORMATH_DD2D(Multiply, local_mul_pd)
 DEFINE_VECTORMATH_DD2D(Max, local_max_pd)
+
+// ---------- define vector math functions with 2 COMPLEX8 vector inputs to 1 COMPLEX8 vector output (CC2C) ----------
+#define DEFINE_VECTORMATH_CC2C(NAME, AVX_OP)                            \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_CC2C_AVXx, NAME ## COMPLEX8, ( COMPLEX8 *out, const COMPLEX8 *in1, const COMPLEX8 *in2, const UINT4 len ), ( (out != NULL) && (in1 != NULL) && (in2 != NULL) ), ( out, in1, in2, len, AVX_OP ) )
+
+DEFINE_VECTORMATH_CC2C(Multiply, local_cmul_ps)
