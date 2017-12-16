@@ -23,6 +23,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
 #include <numpy/arrayobject.h>
+#include <numpy/ufuncobject.h>
 #pragma GCC diagnostic pop
 #include <chealpix.h>
 #include <gsl/gsl_errno.h>
@@ -355,6 +356,27 @@ fail: /* Cleanup */
 };
 
 
+static void signal_amplitude_model_loop(
+    char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
+{
+    const npy_intp n = dimensions[0];
+
+    for (npy_intp i = 0; i < n; i ++)
+    {
+        /* FIXME: args must be void ** to avoid alignment warnings */
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wcast-align"
+        *(double complex *) &args[4][i * steps[4]] =
+            bayestar_signal_amplitude_model(
+            *(double complex *) &args[0][i * steps[0]],
+            *(double complex *) &args[1][i * steps[1]],
+            *(double *)         &args[2][i * steps[2]],
+            *(double *)         &args[3][i * steps[3]]);
+        #pragma GCC diagnostic pop
+    }
+}
+
+
 static PyObject *test(
     PyObject *NPY_UNUSED(module), PyObject *NPY_UNUSED(arg))
 {
@@ -386,6 +408,15 @@ static PyModuleDef moduledef = {
 };
 
 
+static const PyUFuncGenericFunction
+    signal_amplitude_model_loops[] = {signal_amplitude_model_loop};
+
+static const char signal_amplitude_model_ufunc_types[] = {
+    NPY_CDOUBLE, NPY_CDOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_CDOUBLE};
+
+static void *const no_ufunc_data[] = {NULL};
+
+
 PyMODINIT_FUNC PyInit__sky_map(void); /* Silence -Wmissing-prototypes */
 PyMODINIT_FUNC PyInit__sky_map(void)
 {
@@ -393,6 +424,7 @@ PyMODINIT_FUNC PyInit__sky_map(void)
 
     gsl_set_error_handler_off();
     import_array();
+    import_umath();
 
     sky_map_descr = sky_map_create_descr();
     if (!sky_map_descr)
@@ -401,6 +433,22 @@ PyMODINIT_FUNC PyInit__sky_map(void)
     module = PyModule_Create(&moduledef);
     if (!module)
         goto done;
+
+    /* Ignore warnings in Numpy API */
+    #pragma GCC diagnostic push
+    #ifdef __clang__
+    #pragma GCC diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"
+    #else
+    #pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+    #endif
+
+    PyModule_AddObject(
+        module, "signal_amplitude_model", PyUFunc_FromFuncAndData(
+            signal_amplitude_model_loops, no_ufunc_data,
+            signal_amplitude_model_ufunc_types, 1, 4, 1, PyUFunc_None,
+            "signal_amplitude_model", NULL, 0));
+
+    #pragma GCC diagnostic pop
 
 done:
     return module;
