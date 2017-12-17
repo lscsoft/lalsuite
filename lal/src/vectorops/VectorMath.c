@@ -129,6 +129,7 @@ EXPORT_VECTORMATH_S2S(Sin, AVX2, AVX, SSE2, SSE)
 EXPORT_VECTORMATH_S2S(Cos, AVX2, AVX, SSE2, SSE)
 EXPORT_VECTORMATH_S2S(Exp, AVX2, AVX, SSE2, SSE)
 EXPORT_VECTORMATH_S2S(Log, AVX2, AVX, SSE2, SSE)
+EXPORT_VECTORMATH_S2S(Round, AVX2, AVX, NONE, NONE)
 
 // ---------- define exported vector math functions with 1 REAL4 vector input to 2 REAL4 vector outputs (S2SS) ----------
 #define EXPORT_VECTORMATH_S2SS(NAME, ...)                                    \
@@ -194,4 +195,10 @@ EXPORT_VECTORMATH_CC2C(Add, AVX2, AVX, SSE2, SSE)
 
 EXPORT_VECTORMATH_cC2C(Scale, AVX2, AVX, SSE2, SSE)
 EXPORT_VECTORMATH_cC2C(Shift, AVX2, AVX, SSE2, SSE)
+
+// ---------- define exported vector math functions with 1 REAL8 vector input to 1 REAL8 vector output (D2D) ----------
+#define EXPORT_VECTORMATH_D2D(NAME, ...)                                     \
+  EXPORT_VECTORMATH_ANY( NAME ## REAL8, (REAL8 *out, const REAL8 *in, const UINT4 len), (out, in, len), __VA_ARGS__ )
+
+EXPORT_VECTORMATH_D2D(Round, AVX2, AVX, NONE, NONE)
 

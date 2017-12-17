@@ -57,6 +57,7 @@ DECLARE_VECTORMATH_S2S(Sin, AVX2, AVX, SSE2, SSE)
 DECLARE_VECTORMATH_S2S(Cos, AVX2, AVX, SSE2, SSE)
 DECLARE_VECTORMATH_S2S(Exp, AVX2, AVX, SSE2, SSE)
 DECLARE_VECTORMATH_S2S(Log, AVX2, AVX, SSE2, SSE)
+DECLARE_VECTORMATH_S2S(Round, AVX2, AVX, NONE, NONE)
 
 /* declare internal prototypes of SIMD-specific vector math functions with 1 REAL4 vector input to 2 REAL4 vector outputs (S2SS) */
 #define DECLARE_VECTORMATH_S2SS(NAME, ...)                                   \
@@ -123,3 +124,9 @@ DECLARE_VECTORMATH_CC2C(Add, AVX2, AVX, SSE2, SSE)
 
 DECLARE_VECTORMATH_cC2C(Scale, AVX2, AVX, SSE2, SSE)
 DECLARE_VECTORMATH_cC2C(Shift, AVX2, AVX, SSE2, SSE)
+
+/* declare internal prototypes of SIMD-specific vector math functions with 1 REAL8 vector input to 1 REAL8 vector output (D2D) */
+#define DECLARE_VECTORMATH_D2D(NAME, ...)                                    \
+  DECLARE_VECTORMATH_ANY( NAME ## REAL8, ( REAL8 *out, const REAL8 *in, const UINT4 len ), __VA_ARGS__ )
+
+DECLARE_VECTORMATH_D2D(Round, AVX2, AVX, NONE, NONE)

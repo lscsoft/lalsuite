@@ -80,6 +80,78 @@ local_max_pd ( __m256d in1, __m256d in2 )
   return _mm256_max_pd ( in1, in2 );
 }
 
+UNUSED static inline __m256
+local_round_ps ( __m256 in )
+{
+
+  __m256 result = _mm256_round_ps ( in, 0x0 );
+
+  //calculate absolute values from result and in
+  __m256 neg = _mm256_set1_ps ( -1.0f );
+  __m256 in_neg = _mm256_mul_ps ( in, neg );
+  __m256 result_neg = _mm256_mul_ps ( result ,neg );
+  __m256 in_abs = _mm256_max_ps ( in, in_neg );
+  __m256 result_abs = _mm256_max_ps ( result, result_neg );
+
+  //test if we had round half down to even
+  __m256 diff = _mm256_sub_ps ( result_abs, in_abs );
+  __m256 test = _mm256_set1_ps ( -0.5f );
+  __m256 cmp = _mm256_cmp_ps ( diff, test, _CMP_EQ_OQ );
+  int mask = _mm256_movemask_ps ( cmp );
+
+  if ( mask != 0 )
+    {
+      //add or sub 1.0 to the 'rounded half down to even' values
+      __m256 pos = _mm256_set1_ps ( 1.0f );
+      __m256 zero = _mm256_setzero_ps ();
+      __m256 even_down_rounds = _mm256_and_ps ( in, cmp );
+      __m256 cmp_neg = _mm256_cmp_ps ( even_down_rounds, zero, _CMP_LT_OQ );
+      __m256 cmp_pos = _mm256_cmp_ps ( even_down_rounds, zero, _CMP_GT_OQ );
+      __m256 add = _mm256_and_ps ( pos, cmp_pos );
+      __m256 sub = _mm256_and_ps ( neg, cmp_neg );
+      __m256 tot = _mm256_add_ps ( add, sub );
+      result = _mm256_add_ps ( result, tot );
+    }
+
+  return result;
+}
+
+UNUSED static inline __m256d
+local_round_pd ( __m256d in )
+{
+
+  __m256d result = _mm256_round_pd ( in, 0x0 );
+
+  //calculate absolute values from result and in
+  __m256d neg = _mm256_set1_pd ( -1.0 );
+  __m256d in_neg = _mm256_mul_pd ( in, neg );
+  __m256d result_neg = _mm256_mul_pd ( result, neg );
+  __m256d in_abs = _mm256_max_pd ( in, in_neg );
+  __m256d result_abs = _mm256_max_pd ( result, result_neg );
+
+  //test if we had round half down to even
+  __m256d diff = _mm256_sub_pd ( result_abs, in_abs );
+  __m256d test = _mm256_set1_pd ( -0.5 );
+  __m256d cmp = _mm256_cmp_pd ( diff, test, _CMP_EQ_OQ );
+  int mask = _mm256_movemask_pd ( cmp );
+
+  if ( mask != 0 )
+    {
+      //add or sub 1.0 to the 'rounded half down to even' values
+      __m256d pos = _mm256_set1_pd ( 1.0 );
+      __m256d zero = _mm256_setzero_pd ();
+      __m256d even_down_rounds = _mm256_and_pd ( in, cmp );
+      __m256d cmp_neg = _mm256_cmp_pd ( even_down_rounds, zero, _CMP_LT_OQ );
+      __m256d cmp_pos = _mm256_cmp_pd ( even_down_rounds, zero, _CMP_GT_OQ );
+      __m256d add = _mm256_and_pd ( pos, cmp_pos );
+      __m256d sub = _mm256_and_pd ( neg, cmp_neg );
+      __m256d tot = _mm256_add_pd ( add, sub );
+      result = _mm256_add_pd ( result, tot );
+    }
+
+  return result;
+}
+
 // in1: a0,b0,a1,b1,a2,b2,a3,b3 in2: c0,d0,c1,d1,c2,d2,c3,d3
 UNUSED static inline __m256
 local_cmul_ps ( __m256 in1, __m256 in2 )
@@ -364,6 +436,34 @@ XLALVectorMath_cC2C_AVXx ( COMPLEX8 *out, COMPLEX8 scalar, const COMPLEX8 *in, c
 
 } // XLALVectorMath_cC2C_AVXx()
 
+// ---------- generic AVXx operator with 1 REAL8 vector input to 1 REAL8 vector output (D2D) ----------
+static inline int
+XLALVectorMath_D2D_AVXx ( REAL8 *out, const REAL8 *in, const UINT4 len, __m256d (*f)(__m256d) )
+{
+
+  // walk through vector in blocks of 4
+  UINT4 i4Max = len - ( len % 4 );
+  for ( UINT4 i4 = 0; i4 < i4Max; i4 += 4 )
+    {
+      __m256d in4p = _mm256_loadu_pd(&in[i4]);
+      __m256d out4p = (*f)( in4p );
+      _mm256_storeu_pd(&out[i4], out4p);
+    }
+
+  // deal with the remaining (<=3) terms separately
+  V4SD in4 = {.f={0,0,0,0}}, out4;
+  for ( UINT4 i = i4Max,j=0; i < len; i ++, j++ ) {
+    in4.f[j] = in[i];
+  }
+  out4.v = (*f)( in4.v );
+  for ( UINT4 i = i4Max,j=0; i < len; i ++, j++ ) {
+    out[i] = out4.f[j];
+  }
+
+  return XLAL_SUCCESS;
+
+} // XLALVectorMath_D2D_AVXx()
+
 // ========== internal AVXx vector math functions ==========
 
 // ---------- define vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
@@ -374,6 +474,7 @@ DEFINE_VECTORMATH_S2S(Sin, sin256_ps)
 DEFINE_VECTORMATH_S2S(Cos, cos256_ps)
 DEFINE_VECTORMATH_S2S(Exp, exp256_ps)
 DEFINE_VECTORMATH_S2S(Log, log256_ps)
+DEFINE_VECTORMATH_S2S(Round, local_round_ps)
 
 // ---------- define vector math functions with 1 REAL4 vector input to 2 REAL4 vector outputs (S2SS) ----------
 #define DEFINE_VECTORMATH_S2SS(NAME, AVX_OP)                            \
@@ -427,3 +528,9 @@ DEFINE_VECTORMATH_CC2C(Add, local_add_ps)
 
 DEFINE_VECTORMATH_cC2C(Scale, local_cmul_ps)
 DEFINE_VECTORMATH_cC2C(Shift, local_add_ps)
+
+// ---------- define vector math functions with 1 REAL8 vector input to 1 REAL8 vector output (D2D) ----------
+#define DEFINE_VECTORMATH_D2D(NAME, AVX_OP)                             \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_D2D_AVXx, NAME ## REAL8, ( REAL8 *out, const REAL8 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, AVX_OP ) )
+
+DEFINE_VECTORMATH_D2D(Round, local_round_pd)
