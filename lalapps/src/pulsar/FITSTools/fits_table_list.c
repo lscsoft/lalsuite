@@ -33,11 +33,6 @@
 #error CFITSIO library is not available
 #endif
 
-#if !defined(PAGER) || !defined(HAVE_POPEN) || !defined(HAVE_PCLOSE)
-#define popen(...) stdout
-#define pclose(...)
-#endif
-
 static int ndigits(int x) {
   return floor(log10(abs(x))) + 1;
 }
@@ -78,11 +73,15 @@ int main(int argc, char *argv[])
     return (0);
   }
 
+#if !defined(PAGER) || !defined(HAVE_POPEN) || !defined(HAVE_PCLOSE)
+  FILE *fout = stdout;
+#else
   FILE *fout = popen(PAGER, "w");
   if (fout == NULL) {
     fprintf(stderr, "Could not execute '%s'\n", PAGER);
     return (1);
   }
+#endif
 
   if (!fits_open_file(&fptr, argfile, READONLY, &status)) {
     if (fits_get_hdu_num(fptr, &hdunum) == 1)
@@ -151,7 +150,9 @@ int main(int argc, char *argv[])
     fits_close_file(fptr, &status);
   }
 
+#if !defined(PAGER) || !defined(HAVE_POPEN) || !defined(HAVE_PCLOSE)
   pclose(fout);
+#endif
 
   if (status) {
     fits_report_error(stderr, status);  /* print any error message */
