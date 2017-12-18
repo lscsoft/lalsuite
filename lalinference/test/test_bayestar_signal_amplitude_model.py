@@ -1,11 +1,14 @@
 from __future__ import division
 from __future__ import print_function
 import os
+import pkg_resources
 import sys
+# Pytest >= 3.0.0 required for pytest.approx().
 try:
-    from astropy.tests.helper import pytest
+    pkg_resources.require(['pytest >= 3.0.0'])
+    import pytest
 except ImportError:
-    print('these tests require pytest', file=sys.stderr)
+    print('these tests require pytest >= 3.0.0', file=sys.stderr)
     raise SystemExit(77)
 from pytest import approx, mark
 import lal
