@@ -375,7 +375,7 @@ int XLALWeaveSearchTimingWriteInfo(
 
   // Get number of computed coherent results, and number of coherent and semicoherent templates
   UINT8 coh_nres = 0, coh_ntmpl = 0, semi_ntmpl = 0;
-  XLAL_CHECK_MAIN( XLALWeaveCacheQueriesGetCounts( queries, &coh_nres, &coh_ntmpl, &semi_ntmpl ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALWeaveCacheQueriesGetCounts( queries, &coh_nres, &coh_ntmpl, &semi_ntmpl ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Compute denominators for timing constants
   const UINT8 denoms[WEAVE_SEARCH_DENOM_MAX] = {
@@ -386,6 +386,8 @@ int XLALWeaveSearchTimingWriteInfo(
   };
 
   for ( WeaveSearchTimingSection i = 0; i < WEAVE_SEARCH_TIMING_MAX; ++i ) {
+
+    // Get section CPU time and denominator
     const double section_cpu_time = tim->section_cpu_times[i];
     const UINT8 section_denom = denoms[cpu_sections[i].denom];
     const char *section_denom_name = denom_names[cpu_sections[i].denom];
@@ -429,6 +431,7 @@ int XLALWeaveSearchTimingWriteInfo(
 
         // Write timing constant for computation of statistic
         if ( section_denom > 0 ) {
+          XLAL_CHECK( section_denom_name != NULL, XLAL_EFAILED );
           char keyword[64];
           char comment[1024];
           snprintf( keyword, sizeof( keyword ), "tau %s %s_%s", cpu_sections[i].name, statistic_name, section_denom_name );
