@@ -34,6 +34,19 @@ pybin_scripts = \
 	imrtgr_imr_consistency_test \
 	lalinference_average_skymaps \
 	lalinference_pipe \
+	cbcBayesBurstPostProc \
+	cbcBayesCombinePosteriors \
+	cbcBayesCompPos \
+	cbcBayesDIEvidence \
+	cbcBayesPlotSpinDisk \
+	cbcBayesPosToSimInspiral \
+	cbcBayesPPAnalysis \
+	cbcBayesBurstPPAnalysis \
+	cbcBayesCombinePTMCMCh5s \
+	cbcBayesMCMC2pos \
+	cbcBayesPosToSimBurst \
+	cbcBayesPostProc \
+	cbcBayesThermoInt \
 	$(END_OF_LIST)
 
 endif

@@ -28,6 +28,7 @@ pymodule_PYTHON = \
 	kde.py \
 	lalinference_pipe_utils.py \
 	nest2pos.py \
+	bayespputils.py \
 	git_version.py \
 	$(END_OF_LIST)
 
