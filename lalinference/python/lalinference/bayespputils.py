@@ -43,10 +43,9 @@ from xml.dom import minidom
 from operator import itemgetter
 
 #related third party imports
-from lalinference.io import read_samples
+from .io import read_samples
 import healpy as hp
 import astropy.table
-import lalinference.plot.cmap
 import numpy as np
 from numpy import fmod
 import matplotlib
@@ -2870,50 +2869,6 @@ class htmlCollapseSection(htmlChunk):
 # Internal module functions
 #===============================================================================
 
-def _skyhist_cart_slow(skycarts,sky_samples):
-    """
-    @deprecated: This is a pure python version of the C extension function
-        pylal._bayespputils._skyhist_cart .
-    """
-
-    N=len(skycarts)
-    print 'operating on %d sky points'%(N)
-    bins=np.zeros(N)
-    for RAsample,decsample in sky_samples:
-        sampcart=pol2cart(RAsample,decsample)
-        maxdx=-1
-        maxvalue=-1
-        for i in xrange(0,N):
-            dx=np.dot(sampcart,skycarts[i])
-            if dx>maxvalue:
-                    maxdx=i
-                    maxvalue=dx
-
-        bins[maxdx]+=1
-    return bins
-#
-def _sky_hist(skypoints,samples):
-    """
-    @deprecated: This is an old pure python version of the C extension function
-        pylal._bayespputils._skyhist_cart .
-    """
-    N=len(skypoints)
-    print 'operating on %d sky points' % (N)
-    bins=zeros(N)
-    j=0
-    for sample in samples:
-        seps=map(lambda s: ang_dist(sample[RAdim],sample[decdim],s[1],s[0]),skypoints)
-        minsep=math.pi
-        for i in range(0,N):
-            if seps[i]<minsep:
-                minsep=seps[i]
-                mindx=i
-        bins[mindx]=bins[mindx]+1
-        j=j+1
-        print 'Done %d/%d iterations, minsep=%f degrees'\
-            %(j,len(samples),minsep*(180.0/3.1415926))
-    return (skypoints,bins)
-#
 
 def _calculate_confidence_levels(hist, points, injBin, NSamples):
     """
@@ -3532,58 +3487,6 @@ def cart2sph(x,y,z):
     return r,theta,phi
 
 
-def greedy_bin_sky(posterior,skyres,confidence_levels):
-    """
-    Greedy bins the sky posterior samples into a grid on the sky constructed so that
-    sky boxes have roughly equal size (determined by skyres).
-
-    @param posterior: Posterior class instance containing ra and dec samples.
-
-    @param skyres: Desired approximate size of sky pixel on one side.
-
-    @param confidence_levels: List of desired confidence levels [(0-1)].
-    """
-
-    from pylal import skylocutils
-
-    np.seterr(under='ignore')
-
-    if 'ra' in posterior.names and 'dec' in posterior.names:
-        skypos=np.column_stack([posterior['ra'].samples,posterior['dec'].samples])
-        raname='ra'
-        decname='dec'
-    elif 'rightascension' in posterior.names and 'declination' in posterior.names:
-        skypos=np.column_stack([posterior['rightascension'].samples,posterior['declination'].samples])
-        raname='rightascension'
-        decname='declination'
-    else:
-        raise RuntimeError('could not find ra and dec or rightascention and declination in column names for sky position')
-
-    injvalues=None
-
-    sky_injpoint=(posterior[raname].injval,posterior[decname].injval)
-
-    skypoints=np.array(skylocutils.gridsky(float(skyres)))
-    skycarts=map(lambda s: pol2cart(s[1],s[0]),skypoints)
-    skyinjectionconfidence=None
-
-    shist=_skyhist_cart(np.array(skycarts),skypos)
-
-    #shist=skyhist_cart(skycarts,list(pos))
-    bins=skycarts
-
-    # Find the bin of the injection if available
-    injbin=None
-    if None not in sky_injpoint:
-        injhist=_skyhist_cart_slow(skycarts,np.array([sky_injpoint]))
-        injbin=injhist.tolist().index(1)
-        print 'Found injection in bin %d with co-ordinates %f,%f .'%(
-                                                                     injbin,
-                                                                     skypoints[injbin,0],
-                                                                     skypoints[injbin,1]
-                                                                     )
-
-    return _greedy_bin(shist,skypoints,injbin,float(skyres)*float(skyres),len(skypos),confidence_levels)
 
 def plot_sky_map(hpmap, outdir, inj=None, nest=True):
     """Plots a sky map from a healpix map, optionally including an
