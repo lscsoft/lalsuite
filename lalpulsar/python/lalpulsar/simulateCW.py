@@ -162,7 +162,7 @@ class CWSimulator(object):
             lalpulsar.Barycenter(bary_emit, bary_input, bary_state)
 
             # adjust reference time so that dt = 0 is tref in detector frame
-            tref -= bary_emit.deltaT
+            tref += bary_emit.deltaT
 
         # start signal time series 'Tpad_wf' before/after output strain time series
         # add sufficient padding to signal for maximum Doppler modulation time shifts, otherwise
