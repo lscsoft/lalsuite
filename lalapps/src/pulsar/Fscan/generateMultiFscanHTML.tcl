@@ -7,6 +7,7 @@
 # \
 exec tclsh "$0" "$@"
 
+
 # Base names of html output files (written as .tmp and moved to .html).
 set ::outputFscanNavigationHTMLFile "fscanNavigation";
 set ::outputFscanDateHTMLFile "fscanDates";
@@ -177,7 +178,8 @@ if {$argc >= 2} {
 cd $::fscanDirectory;
 
 # Get a list of date/channel/fscan.html files
-set fullPathDirList [glob "*/*/fscan*.html"];
+# set fullPathDirList [glob "*/*/fscan*.html"];
+set fullPathDirList [glob "fscan*/*/fscan*.html"];
 set fullPathDirList [lsort $fullPathDirList];
 #puts $fullPathDirList;
 
