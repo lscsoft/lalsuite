@@ -35,6 +35,8 @@ struct tagWeaveSearchTiming {
   BOOLEAN detailed_timing;
   /// Struct holding all parameters for which statistics to output and compute, when, and how
   const WeaveStatisticsParams *statistics_params;
+  /// Number of output results toplists
+  size_t ntoplists;
   /// Total wall time
   double wall_total;
   /// Total CPU time
@@ -68,6 +70,8 @@ typedef enum {
   WEAVE_SEARCH_DENOM_PSSM1,
   /// Per number of semicoherent templates, per number of segments
   WEAVE_SEARCH_DENOM_PSSEG,
+  /// Per semicoherent templates, per number of toplists
+  WEAVE_SEARCH_DENOM_PSTOP,
   WEAVE_SEARCH_DENOM_MAX,
 } WeaveSearchTimingDenominator;
 
@@ -79,6 +83,7 @@ const char *denom_names[WEAVE_SEARCH_DENOM_MAX] = {
   [WEAVE_SEARCH_DENOM_PSEMI] = "psemi",
   [WEAVE_SEARCH_DENOM_PSSM1] = "psemi_psegm1",
   [WEAVE_SEARCH_DENOM_PSSEG] = "psemi_pseg",
+  [WEAVE_SEARCH_DENOM_PSTOP] = "psemi_ptopl",
 };
 
 ///
@@ -94,7 +99,7 @@ const struct {
   [WEAVE_SEARCH_TIMING_COH]     = {"coh",       "computing coherent results",                   WEAVE_SEARCH_DENOM_PCOH},
   [WEAVE_SEARCH_TIMING_SEMISEG] = {"semiseg",   "computing per-segment semicoherent results",   WEAVE_SEARCH_DENOM_PSSM1},
   [WEAVE_SEARCH_TIMING_SEMI]    = {"semi",      "computing semicoherent results",               WEAVE_SEARCH_DENOM_PSEMI},
-  [WEAVE_SEARCH_TIMING_OUTPUT]  = {"output",    "result output",                                WEAVE_SEARCH_DENOM_PSEMI},
+  [WEAVE_SEARCH_TIMING_OUTPUT]  = {"output",    "result output",                                WEAVE_SEARCH_DENOM_PSTOP},
   [WEAVE_SEARCH_TIMING_CKPT]    = {"ckpt",      "checkpointing",                                WEAVE_SEARCH_DENOM_PSEMI},
   [WEAVE_SEARCH_TIMING_CMPL]    = {"cmpl",      "computing completion-loop results",            WEAVE_SEARCH_DENOM_NONE},
   [WEAVE_SEARCH_TIMING_OTHER]   = {"other",     "unaccounted",                                  WEAVE_SEARCH_DENOM_NONE},
@@ -383,6 +388,7 @@ int XLALWeaveSearchTimingWriteInfo(
     [WEAVE_SEARCH_DENOM_PSEMI]  = semi_ntmpl,
     [WEAVE_SEARCH_DENOM_PSSM1]  = semi_ntmpl * ( tim->statistics_params->nsegments - 1 ),
     [WEAVE_SEARCH_DENOM_PSSEG]  = semi_ntmpl * tim->statistics_params->nsegments,
+    [WEAVE_SEARCH_DENOM_PSTOP]  = semi_ntmpl * tim->statistics_params->ntoplists,
   };
 
   for ( WeaveSearchTimingSection i = 0; i < WEAVE_SEARCH_TIMING_MAX; ++i ) {

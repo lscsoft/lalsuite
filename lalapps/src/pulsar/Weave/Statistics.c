@@ -306,6 +306,15 @@ int XLALWeaveStatisticsParamsSetDependencyMap(
   statistics_params -> completionloop_statistics[1] = recalc_stats_deps;
 
   statistics_params -> all_statistics_to_compute    = stats_to_compute;
+
+  // Count number of toplists
+  statistics_params->ntoplists = 0;
+  for (int idx = 0; idx < XLAL_BIT2IDX(WEAVE_STATISTIC_MAX); ++idx) {
+    if ( statistics_params->toplist_statistics & XLAL_IDX2BIT(idx) ) {
+      ++statistics_params->ntoplists;
+    }
+  }
+
   return XLAL_SUCCESS;
 
 } // XLALWeaveStatisticsParamsSetDependencyMap()

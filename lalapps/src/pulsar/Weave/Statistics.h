@@ -122,6 +122,8 @@ struct tagWeaveStatisticsParams {
 
   /// ----- derived from the above: for internal use only [wont read/write these from fits files]
 
+  /// Number of output results toplists
+  UINT4 ntoplists;
   /// Bitflag: set of "main-loop" statistics that need to be computed on the semi-coherent "fine" grid
   WeaveStatisticType mainloop_statistics;
   /// Bitflag: subset of "main-loop" statistics to keep around after mainloop: either because 1) needed for output, 2) needed for completionloop-stats

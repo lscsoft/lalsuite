@@ -179,6 +179,9 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
     out->ntoplists++;
   }
 
+  // Comnsistency check on number of toplists
+  XLAL_CHECK_NULL( out->ntoplists == statistics_params->ntoplists, XLAL_EFAILED );
+
   return out;
 
 } // XLALWeaveOutputResultsCreate()
