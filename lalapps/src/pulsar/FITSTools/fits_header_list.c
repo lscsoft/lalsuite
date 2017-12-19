@@ -59,14 +59,14 @@ int main(int argc, char *argv[])
     return (0);
   }
 
-#if !defined(PAGER) || !defined(HAVE_POPEN) || !defined(HAVE_PCLOSE)
-  FILE *fout = stdout;
-#else
+#if defined(PAGER) && defined(HAVE_POPEN) && defined(HAVE_PCLOSE)
   FILE *fout = popen(PAGER, "w");
   if (fout == NULL) {
     fprintf(stderr, "Could not execute '%s'\n", PAGER);
     return (1);
   }
+#else
+  FILE *fout = stdout;
 #endif
 
   if (!fits_open_file(&fptr, argv[1], READONLY, &status)) {
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
     fits_close_file(fptr, &status);
   }
 
-#if !defined(PAGER) || !defined(HAVE_POPEN) || !defined(HAVE_PCLOSE)
+#if defined(PAGER) && defined(HAVE_POPEN) && defined(HAVE_PCLOSE)
   pclose(fout);
 #endif
 
