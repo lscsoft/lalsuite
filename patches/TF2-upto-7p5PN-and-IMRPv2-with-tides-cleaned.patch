@@ -1,0 +1,1656 @@
+From dc81e1bd6302e8a17edb5373f7edea14b773fd0a Mon Sep 17 00:00:00 2001
+From: Anuradha Samajdar <anuradha.samajdar@ligo.org>
+Date: Wed, 22 Nov 2017 16:04:52 -0600
+Subject: [PATCH 1/1] Adding tidal terms upto 7.5PN in TaylorF2, including QM
+ terms and introducing contact frequency; adding IMRPhenomPv2_NRTidal
+ approximant where tides are added first and then twisting is done
+
+---
+ lalsimulation/src/LALSimIMR.h                    |  11 +-
+ lalsimulation/src/LALSimIMRPhenomD.c             |  14 +-
+ lalsimulation/src/LALSimIMRPhenomD_NRTidal.c     |   8 +
+ lalsimulation/src/LALSimIMRPhenomP.c             | 569 ++++++++++++++++++++++-
+ lalsimulation/src/LALSimIMRPhenomP.h             |  51 ++
+ lalsimulation/src/LALSimInspiral.c               |  64 ++-
+ lalsimulation/src/LALSimInspiral.h               |   2 +
+ lalsimulation/src/LALSimInspiralEOS.c            | 256 ++++++++++
+ lalsimulation/src/LALSimInspiralEOS.h            |  82 ++++
+ lalsimulation/src/LALSimInspiralPNCoefficients.c |  29 ++
+ lalsimulation/src/LALSimInspiralTaylorF2.c       |  33 +-
+ lalsimulation/src/LALSimInspiralWaveformCache.c  |   9 +-
+ lalsimulation/src/LALSimInspiralWaveformCache.h  |   1 +
+ lalsimulation/src/LALSimInspiralWaveformFlags.h  |   3 +
+ lalsimulation/src/Makefile.am                    |   6 +-
+ 15 files changed, 1113 insertions(+), 25 deletions(-)
+ create mode 100644 lalsimulation/src/LALSimInspiralEOS.c
+ create mode 100644 lalsimulation/src/LALSimInspiralEOS.h
+
+diff --git a/lalsimulation/src/LALSimIMR.h b/lalsimulation/src/LALSimIMR.h
+index b110534dff..11c2f37351 100644
+--- a/lalsimulation/src/LALSimIMR.h
++++ b/lalsimulation/src/LALSimIMR.h
+@@ -22,6 +22,7 @@
+ 
+ #include <lal/LALDatatypes.h>
+ #include <lal/LALSimInspiral.h>
++#include <lal/LALSimInspiralEOS.h>
+ 
+ #ifdef LAL_HDF5_ENABLED
+ #include <lal/H5FileIO.h>
+@@ -82,14 +83,14 @@ int XLALSimIMRPhenomCGenerateFD(COMPLEX16FrequencySeries **htilde, const REAL8 p
+ int XLALSimIMRPhenomCGenerateTD(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiPeak, const REAL8 deltaT, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 chi, const REAL8 f_min, const REAL8 f_max, const REAL8 distance, const REAL8 inclination, const LALSimInspiralTestGRParam *extraParams);
+ 
+ /* in module LALSimIMRPhenomD.c */
+-int XLALSimIMRPhenomDGenerateFD(COMPLEX16FrequencySeries **htilde, const REAL8 phi0, const REAL8 fRef, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 chi1, const REAL8 chi2, const REAL8 f_min, const REAL8 f_max, const REAL8 distance, const LALSimInspiralTestGRParam *extraParams);
+-int XLALSimIMRPhenomDFrequencySequence(COMPLEX16FrequencySeries **htilde, const REAL8Sequence *freqs, const REAL8 phi0, const REAL8 fRef_in, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 chi1, const REAL8 chi2, const REAL8 distance, const LALSimInspiralTestGRParam *extraParams);
++int XLALSimIMRPhenomDGenerateFD(COMPLEX16FrequencySeries **htilde, const REAL8 phi0, const REAL8 fRef, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 chi1, const REAL8 chi2, const REAL8 f_min, const REAL8 f_max, const REAL8 distance, const REAL8 quadparam1, const REAL8 quadparam2, const LALSimInspiralTestGRParam *extraParams);
++int XLALSimIMRPhenomDFrequencySequence(COMPLEX16FrequencySeries **htilde, const REAL8Sequence *freqs, const REAL8 phi0, const REAL8 fRef_in, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 chi1, const REAL8 chi2, const REAL8 distance, const REAL8 quadparam1, const REAL8 quadparam2, const LALSimInspiralTestGRParam *extraParams);
+ double XLALIMRPhenomDGetPeakFreq(const REAL8 m1_in, const REAL8 m2_in, const REAL8 chi1_in, const REAL8 chi2_in);
+ double XLALSimIMRPhenomDChirpTime(const REAL8 m1_in, const REAL8 m2_in, const REAL8 chi1_in, const REAL8 chi2_in, const REAL8 fHz);
+ double XLALSimIMRPhenomDFinalSpin(const REAL8 m1_in, const REAL8 m2_in, const REAL8 chi1_in, const REAL8 chi2_in);
+ 
+-int XLALSimIMRPhenomP(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, const REAL8 chi1_l, const REAL8 chi2_l, const REAL8 chip, const REAL8 thetaJ, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 distance, const REAL8 alpha0, const REAL8 phic, const REAL8 deltaF, const REAL8 f_min, const REAL8 f_max, const REAL8 f_ref, IMRPhenomP_version_type IMRPhenomP_version, const LALSimInspiralTestGRParam *extraParams);
+-int XLALSimIMRPhenomPFrequencySequence(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, const REAL8Sequence *freqs, const REAL8 chi1_l, const REAL8 chi2_l, const REAL8 chip, const REAL8 thetaJ, REAL8 m1_SI, const REAL8 m2_SI, const REAL8 distance, const REAL8 alpha0, const REAL8 phic, const REAL8 f_ref, IMRPhenomP_version_type IMRPhenomP_version, const LALSimInspiralTestGRParam *extraParams);
++int XLALSimIMRPhenomP(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, const REAL8 chi1_l, const REAL8 chi2_l, const REAL8 chip, const REAL8 thetaJ, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 distance, const REAL8 quadparam1, const REAL8 quadparam2, const REAL8 alpha0, const REAL8 phic, const REAL8 deltaF, const REAL8 f_min, const REAL8 f_max, const REAL8 f_ref, IMRPhenomP_version_type IMRPhenomP_version, const LALSimInspiralTestGRParam *extraParams);
++int XLALSimIMRPhenomPFrequencySequence(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, const REAL8Sequence *freqs, const REAL8 chi1_l, const REAL8 chi2_l, const REAL8 chip, const REAL8 thetaJ, REAL8 m1_SI, const REAL8 m2_SI, const REAL8 distance, const REAL8 quadparam1, const REAL8 quadparam2, const REAL8 alpha0, const REAL8 phic, const REAL8 f_ref, IMRPhenomP_version_type IMRPhenomP_version, const LALSimInspiralTestGRParam *extraParams);
+ int XLALSimIMRPhenomPCalculateModelParameters(REAL8 *chi1_l, REAL8 *chi2_l, REAL8 *chip, REAL8 *thetaJ, REAL8 *alpha0, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 f_ref, const REAL8 lnhatx, const REAL8 lnhaty, const REAL8 lnhatz, const REAL8 s1x, const REAL8 s1y, const REAL8 s1z, const REAL8 s2x, const REAL8 s2y, const REAL8 s2z, IMRPhenomP_version_type IMRPhenomP_version);
+ 
+ /* in module LALSimIMREOBNRv2.c */
+@@ -274,6 +275,8 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
+ int XLALSimIMRPhenomDNRTidal(COMPLEX16FrequencySeries **htilde, REAL8 phiRef, REAL8 deltaF, REAL8 fLow, REAL8 fHigh, REAL8 fRef, REAL8 distance, REAL8 m1_SI, REAL8 m2_SI, REAL8 chi1, REAL8 chi2, REAL8 lambda1, REAL8 lambda2, const LALSimInspiralTestGRParam *extraParams);
+ int XLALSimIMRPhenomDNRTidalFrequencySequence(COMPLEX16FrequencySeries **htilde, const REAL8Sequence *freqs, REAL8 phiRef, REAL8 fRef, REAL8 distance, REAL8 m1_SI, REAL8 m2_SI, REAL8 chi1, REAL8 chi2, REAL8 lambda1, REAL8 lambda2, const LALSimInspiralTestGRParam *extraParams);
+ 
++/* Function to generate IMRPhenomPv2_NRTidal waveform */
++int XLALSimIMRPhenomPv2NRTidal(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, REAL8 chi1_l, REAL8 chi2_l, REAL8 chip, REAL8 thetaJ, REAL8 alpha0, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 distance, const REAL8 lambda1, const REAL8 lambda2, const REAL8 quadparam1, const REAL8 quadparam2, const REAL8 phic, const REAL8 deltaF, const REAL8 f_min, const REAL8 f_max, const REAL8 f_ref, const LALSimInspiralTestGRParam *extraParams);
+ 
+ #if 0
+ { /* so that editors will match succeeding brace */
+diff --git a/lalsimulation/src/LALSimIMRPhenomD.c b/lalsimulation/src/LALSimIMRPhenomD.c
+index 4244eb8705..235171de57 100644
+--- a/lalsimulation/src/LALSimIMRPhenomD.c
++++ b/lalsimulation/src/LALSimIMRPhenomD.c
+@@ -55,6 +55,8 @@ static int IMRPhenomDGenerateFD(
+     const REAL8 chi1_in,               /**< aligned-spin of companion 1 */
+     const REAL8 chi2_in,               /**< aligned-spin of companion 2 */
+     const REAL8 distance,              /**< distance to source (m) */
++    const REAL8 quadparam1,
++    const REAL8 quadparam2,
+     const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
+ );
+ 
+@@ -118,6 +120,8 @@ int XLALSimIMRPhenomDGenerateFD(
+     const REAL8 f_min,                 /**< Starting GW frequency (Hz) */
+     const REAL8 f_max,                 /**< End frequency; 0 defaults to Mf = \ref f_CUT */
+     const REAL8 distance,               /**< Distance of source (m) */
++    const REAL8 quadparam1,
++    const REAL8 quadparam2,
+     const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
+ ) {
+   /* external: SI; internal: solar masses */
+@@ -169,7 +173,7 @@ int XLALSimIMRPhenomDGenerateFD(
+ 
+   int status = IMRPhenomDGenerateFD(htilde, freqs, deltaF, phi0, fRef,
+                                     m1, m2, chi1, chi2,
+-                                    distance, extraParams);
++                                    distance, quadparam1, quadparam2, extraParams);
+   XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to generate IMRPhenomD waveform.");
+   XLALDestroyREAL8Sequence(freqs);
+ 
+@@ -211,6 +215,8 @@ int XLALSimIMRPhenomDFrequencySequence(
+     const REAL8 chi1,                            /**< Aligned-spin parameter of companion 1 */
+     const REAL8 chi2,                            /**< Aligned-spin parameter of companion 2 */
+     const REAL8 distance,                        /**< Distance of source (m) */
++    const REAL8 quadparam1,
++    const REAL8 quadparam2,
+     const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
+ ) {
+   /* external: SI; internal: solar masses */
+@@ -239,7 +245,7 @@ int XLALSimIMRPhenomDFrequencySequence(
+ 
+   int status = IMRPhenomDGenerateFD(htilde, freqs, 0, phi0, fRef,
+                                     m1, m2, chi1, chi2,
+-                                    distance, extraParams);
++                                    distance, quadparam1, quadparam2, extraParams);
+   XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to generate IMRPhenomD waveform.");
+ 
+   return XLAL_SUCCESS;
+@@ -267,6 +273,8 @@ static int IMRPhenomDGenerateFD(
+     const REAL8 chi1_in,               /**< aligned-spin of companion 1 */
+     const REAL8 chi2_in,               /**< aligned-spin of companion 2 */
+     const REAL8 distance,              /**< distance to source (m) */
++    const REAL8 quadparam1, 
++    const REAL8 quadparam2,
+     const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
+ ) {
+   LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0, 0}
+@@ -360,7 +368,7 @@ static int IMRPhenomDGenerateFD(
+   IMRPhenomDPhaseCoefficients *pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi1, chi2, finspin, extraParams);
+   if (!pPhi) XLAL_ERROR(XLAL_EFUNC);
+   PNPhasingSeries *pn = NULL;
+-  XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1, chi2, 1.0, 1.0, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN, extraParams);
++  XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1, chi2, quadparam1, quadparam2, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN, extraParams);
+   if (!pn) XLAL_ERROR(XLAL_EFUNC);
+ 
+   // Subtract 3PN spin-spin term below as this is in LAL's TaylorF2 implementation
+diff --git a/lalsimulation/src/LALSimIMRPhenomD_NRTidal.c b/lalsimulation/src/LALSimIMRPhenomD_NRTidal.c
+index f117881899..da72c06626 100644
+--- a/lalsimulation/src/LALSimIMRPhenomD_NRTidal.c
++++ b/lalsimulation/src/LALSimIMRPhenomD_NRTidal.c
+@@ -19,6 +19,7 @@
+ 
+ #include <math.h>
+ #include <lal/LALSimIMR.h>
++#include <lal/LALSimInspiralEOS.h>
+ #include <lal/FrequencySeries.h>
+ #include <lal/Sequence.h>
+ #include <lal/Units.h>
+@@ -90,6 +91,9 @@ int IMRPhenomD_NRTidal_Core(
+     chi2 = chi1temp;
+     lambda2 = lambda1temp;
+   }
++  REAL8 quadparam1, quadparam2;
++  quadparam1 = XLALSimInspiralEOSQfromLambda(lambda1);
++  quadparam2 = XLALSimInspiralEOSQfromLambda(lambda2);
+ 
+   // Call IMRPhenomD. We call either the FrequencySequence version
+   // or the regular LAL version depending on how we've been called.
+@@ -103,6 +107,8 @@ int IMRPhenomD_NRTidal_Core(
+       chi1, chi2,
+       fLow, fHigh,
+       distance,
++      quadparam1,
++      quadparam2,
+       extraParams);
+   else
+     ret = XLALSimIMRPhenomDFrequencySequence(
+@@ -112,6 +118,8 @@ int IMRPhenomD_NRTidal_Core(
+       m1_SI, m2_SI,
+       chi1, chi2,
+       distance,
++      quadparam1,
++      quadparam2,
+       extraParams);
+ 
+   XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to generate IMRPhenomD waveform.");
+diff --git a/lalsimulation/src/LALSimIMRPhenomP.c b/lalsimulation/src/LALSimIMRPhenomP.c
+index 58e19f3fe2..12df7516e8 100644
+--- a/lalsimulation/src/LALSimIMRPhenomP.c
++++ b/lalsimulation/src/LALSimIMRPhenomP.c
+@@ -242,6 +242,8 @@ int XLALSimIMRPhenomP(
+   const REAL8 m1_SI,                          /**< Mass of companion 1 (kg) */
+   const REAL8 m2_SI,                          /**< Mass of companion 2 (kg) */
+   const REAL8 distance,                       /**< Distance of source (m) */
++  const REAL8 quadparam1,
++  const REAL8 quadparam2,
+   const REAL8 alpha0,                         /**< Initial value of alpha angle (azimuthal precession angle) */
+   const REAL8 phic,                           /**< Orbital phase at the peak of the underlying non precessing model (rad) */
+   const REAL8 deltaF,                         /**< Sampling frequency (Hz) */
+@@ -267,7 +269,7 @@ int XLALSimIMRPhenomP(
+   freqs->data[1] = f_max;
+ 
+   int retcode = PhenomPCore(hptilde, hctilde,
+-      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, alpha0, phic, f_ref, freqs, deltaF, IMRPhenomP_version, extraParams);
++      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, quadparam1, quadparam2, alpha0, phic, f_ref, freqs, deltaF, IMRPhenomP_version, extraParams);
+   XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to generate IMRPhenomP waveform.");
+   XLALDestroyREAL8Sequence(freqs);
+   return (retcode);
+@@ -299,6 +301,8 @@ int XLALSimIMRPhenomPFrequencySequence(
+   const REAL8 m1_SI,                          /**< Mass of companion 1 (kg) */
+   const REAL8 m2_SI,                          /**< Mass of companion 2 (kg) */
+   const REAL8 distance,                       /**< Distance of source (m) */
++  const REAL8 quadparam1,
++  const REAL8 quadparam2,
+   const REAL8 alpha0,                         /**< Initial value of alpha angle (azimuthal precession angle) */
+   const REAL8 phic,                           /**< Orbital phase at the peak of the underlying non precessing model (rad) */
+   const REAL8 f_ref,                          /**< Reference frequency */
+@@ -312,7 +316,7 @@ int XLALSimIMRPhenomPFrequencySequence(
+   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
+   // spaced and we want the strain only at these frequencies
+   int retcode = PhenomPCore(hptilde, hctilde,
+-      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, alpha0, phic, f_ref, freqs, 0, IMRPhenomP_version, extraParams);
++      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, quadparam1, quadparam2, alpha0, phic, f_ref, freqs, 0, IMRPhenomP_version, extraParams);
+   XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to generate IMRPhenomP waveform.");
+   return(retcode);
+ }
+@@ -338,6 +342,8 @@ static int PhenomPCore(
+   const REAL8 m1_SI_in,                      /**< Mass of companion 1 (kg) */
+   const REAL8 m2_SI_in,                      /**< Mass of companion 2 (kg) */
+   const REAL8 distance,                      /**< Distance of source (m) */
++  const REAL8 quadparam1,
++  const REAL8 quadparam2,
+   const REAL8 alpha0,                        /**< Initial value of alpha angle (azimuthal precession angle) */
+   const REAL8 phic,                          /**< Orbital phase at the peak of the underlying non precessing model (rad) */
+   const REAL8 f_ref,                         /**< Reference frequency */
+@@ -510,7 +516,7 @@ static int PhenomPCore(
+       // IMRPhenomD assumes that m1 >= m2.
+       pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi2_l, chi1_l, finspin);
+       pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi2_l, chi1_l, finspin, extraParams);
+-      XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1_l, chi2_l, 1.0, 1.0, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN, extraParams);
++      XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1_l, chi2_l, quadparam1, quadparam2, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN, extraParams);
+       if (!pAmp || !pPhi || !pn) {
+         errcode = XLAL_EFUNC;
+         goto cleanup;
+@@ -752,6 +758,439 @@ static int PhenomPCore(
+   }
+ }
+ 
++/**
++ *  The following defines the function XLALSimIMRPhenomPv2NRTidal() which adds the tidal
++ *  infrastructure in IMRPhenomD_NRTidal to the IMRPhenomPv2 waveform.
++ *  For the following waveform, the tidal phase is applied first and then the waveform is twisted */
++
++int XLALSimIMRPhenomPv2NRTidal(
++  COMPLEX16FrequencySeries **hptilde,         /**< [out] Frequency-domain waveform h+ */
++  COMPLEX16FrequencySeries **hctilde,         /**< [out] Frequency-domain waveform hx */
++  REAL8 chi1_l,                  /**< Dimensionless aligned spin on companion 1 */
++  REAL8 chi2_l,                  /**< Dimensionless aligned spin on companion 2 */
++  REAL8 chip,                    /**< Effective spin in the orbital plane */
++  REAL8 thetaJ,                  /**< Angle between J0 and line of sight (z-direction) */
++  REAL8 alpha0,                  /**< Initial value of alpha angle (azimuthal precession angle) */
++  const REAL8 m1_SI,              /**< Mass of companion 1 (kg) */
++  const REAL8 m2_SI,              /**< Mass of companion 2 (kg) */
++  const REAL8 distance,           /**< Distance of source (m) */
++  const REAL8 lambda1,            /**< Dimensionless tidal deformability of mass 1 */
++  const REAL8 lambda2,            /**< Dimensionless tidal deformability of mass 2 */
++  const REAL8 quadparam1,
++  const REAL8 quadparam2,
++  const REAL8 phic,               /**< Orbital phase at the peak of the underlying non precessing model (rad) */
++  const REAL8 deltaF,             /**< Sampling frequency (Hz) */
++  const REAL8 f_min,              /**< Starting GW frequency (Hz) */
++  const REAL8 f_max,              /**< End frequency; 0 defaults to ringdown cutoff freq */
++  const REAL8 f_ref,              /**< Reference frequency */
++  const LALSimInspiralTestGRParam *nonGRparams)
++{
++  
++  XLAL_CHECK (f_min > 0, XLAL_EDOM, "Minimum frequency must be positive.");
++  XLAL_CHECK (f_max >= 0, XLAL_EDOM, "Maximum frequency must be non-negative.");
++  XLAL_CHECK ( ( f_max == 0 ) || ( f_max > f_min ), XLAL_EDOM, "f_max <= f_min");
++  REAL8Sequence *freqs = XLALCreateREAL8Sequence(2);
++  XLAL_CHECK(freqs != NULL, XLAL_EFAULT);
++  freqs->data[0] = f_min;
++  freqs->data[1] = f_max;
++
++  int retcode = PhenomPCore_withTides(hptilde, hctilde,
++      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, quadparam1, quadparam2, lambda1, lambda2, alpha0, phic, f_ref, freqs, deltaF, nonGRparams);
++  XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to generate IMRPhenomP waveform.");
++  XLALDestroyREAL8Sequence(freqs);
++  return (retcode);
++
++}
++
++static int PhenomPCore_withTides(
++  COMPLEX16FrequencySeries **hptilde,        /**< [out] Frequency-domain waveform h+ */
++  COMPLEX16FrequencySeries **hctilde,        /**< [out] Frequency-domain waveform hx */
++  const REAL8 chi1_l_in,                     /**< Dimensionless aligned spin on companion 1 */
++  const REAL8 chi2_l_in,                     /**< Dimensionless aligned spin on companion 2 */
++  const REAL8 chip,                          /**< Effective spin in the orbital plane */
++  const REAL8 thetaJ,                        /**< Angle between J0 and line of sight (z-direction) */
++  const REAL8 m1_SI_in,                      /**< Mass of companion 1 (kg) */
++  const REAL8 m2_SI_in,                      /**< Mass of companion 2 (kg) */
++  const REAL8 distance,                      /**< Distance of source (m) */
++  const REAL8 quadparam1,
++  const REAL8 quadparam2,
++  const REAL8 lambda1,
++  const REAL8 lambda2,
++  const REAL8 alpha0,                        /**< Initial value of alpha angle (azimuthal precession angle) */
++  const REAL8 phic,                          /**< Orbital phase at the peak of the underlying non precessing model (rad) */
++  const REAL8 f_ref,                         /**< Reference frequency */
++  const REAL8Sequence *freqs_in,             /**< Frequency points at which to evaluate the waveform (Hz) */
++  double deltaF,                             /**< Sampling frequency (Hz).
++   * If deltaF > 0, the frequency points given in freqs are uniformly spaced with
++   * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
++   * Then we will use deltaF = 0 to create the frequency series we return. */
++  const LALSimInspiralTestGRParam *extraParams /**<linked list containing the extra testing GR parameters */
++  )
++{
++  /* Check inputs for sanity */
++  XLAL_CHECK(NULL != hptilde, XLAL_EFAULT);
++  XLAL_CHECK(NULL != hctilde, XLAL_EFAULT);
++  XLAL_CHECK(*hptilde == NULL, XLAL_EFAULT);
++  XLAL_CHECK(*hctilde == NULL, XLAL_EFAULT);
++  XLAL_CHECK(deltaF >= 0, XLAL_EDOM, "deltaF must be non-negative.\n");
++  XLAL_CHECK(m1_SI_in > 0, XLAL_EDOM, "m1 must be positive.\n");
++  XLAL_CHECK(m2_SI_in > 0, XLAL_EDOM, "m2 must be positive.\n");
++  XLAL_CHECK(f_ref > 0, XLAL_EDOM, "Reference frequency must be non-negative.\n");
++  XLAL_CHECK(distance > 0, XLAL_EDOM, "distance must be positive.\n");
++  XLAL_CHECK(fabs(chi1_l_in) <= 1.0, XLAL_EDOM, "Aligned spin chi1_l=%g must be <= 1 in magnitude!\n", chi1_l_in);
++  XLAL_CHECK(fabs(chi2_l_in) <= 1.0, XLAL_EDOM, "Aligned spin chi2_l=%g must be <= 1 in magnitude!\n", chi2_l_in);
++  XLAL_CHECK(fabs(chip) <= 1.0, XLAL_EDOM, "In-plane spin chip =%g must be <= 1 in magnitude!\n", chip);
++
++  // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
++  // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParameters
++  // and alpha0 are degenerate. Therefore phiJ is not passed to this function.
++  /* Phenomenological parameters */
++  IMRPhenomDAmplitudeCoefficients *pAmp = NULL;
++  IMRPhenomDPhaseCoefficients *pPhi = NULL;
++  PNPhasingSeries *pn = NULL;
++  gsl_interp_accel *acc = NULL;
++  gsl_spline *phiI = NULL;
++  REAL8Sequence *freqs = NULL;
++  REAL8Sequence *phi_tidal = NULL;
++  REAL8Sequence *amp_tidal = NULL;
++  REAL8 *phis=NULL;
++  int errcode = XLAL_SUCCESS;
++  int ret = 0;
++
++  // Enforce convention m2 >= m1
++  REAL8 chi1_l, chi2_l;
++  REAL8 m1_SI, m2_SI;
++  if (m2_SI_in >= m1_SI_in) {
++    m1_SI = m1_SI_in;
++    m2_SI = m2_SI_in;
++    chi1_l = chi1_l_in;
++    chi2_l = chi2_l_in;
++  }
++  else { // swap bodies 1 <-> 2
++    m1_SI = m2_SI_in;
++    m2_SI = m1_SI_in;
++    chi1_l = chi2_l_in;
++    chi2_l = chi1_l_in;
++  }
++
++  errcode = init_useful_powers(&powers_of_pi, LAL_PI);
++  XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "init_useful_powers() failed.");
++
++  /* Find frequency bounds */
++  if (!freqs_in || !freqs_in->data) XLAL_ERROR(XLAL_EFAULT);
++  double f_min = freqs_in->data[0];
++  double f_max = freqs_in->data[freqs_in->length - 1];
++  XLAL_CHECK(f_min > 0, XLAL_EDOM, "Minimum frequency must be positive.\n");
++  XLAL_CHECK(f_max >= 0, XLAL_EDOM, "Maximum frequency must be non-negative.\n");
++
++  /* External units: SI; internal units: solar masses */
++  const REAL8 m1 = m1_SI / LAL_MSUN_SI;
++  const REAL8 m2 = m2_SI / LAL_MSUN_SI;
++  const REAL8 M = m1 + m2;
++  const REAL8 m_sec = M * LAL_MTSUN_SI;   /* Total mass in seconds */
++  REAL8 q = m2 / m1; /* q >= 1 */
++  REAL8 eta = m1 * m2 / (M*M);    /* Symmetric mass-ratio */
++  const REAL8 piM = LAL_PI * m_sec;
++
++  LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0, 0}
++
++  const REAL8 chi_eff = (m1*chi1_l + m2*chi2_l) / M; /* Effective aligned spin */
++  const REAL8 chil = (1.0+q)/q * chi_eff; /* dimensionless aligned spin of the largest BH */
++
++  if (q > 18.0)
++    XLAL_PRINT_WARNING("IMRPhenomPv2: Warning: The underlying non-precessing model is calibrated up to m1/m2 <= 18.\n");
++  else if (q > 100.0)
++    XLAL_ERROR(XLAL_EDOM, "IMRPhenomPv2: Mass ratio q > 100 which is way outside the calibration range q <= 18.\n");
++  CheckMaxOpeningAngle(m1, m2, chi1_l, chi2_l, chip);
++
++  if (eta > 0.25 || q < 1.0) {
++    nudge(&eta, 0.25, 1e-6);
++    nudge(&q, 1.0, 1e-6);
++  }
++
++  NNLOanglecoeffs angcoeffs; /* Next-to-next-to leading order PN coefficients for Euler angles alpha and epsilon */
++  ComputeNNLOanglecoeffs(&angcoeffs,q,chil,chip);
++
++  /* Compute the offsets due to the choice of integration constant in alpha and epsilon PN formula */
++  const REAL8 omega_ref = piM * f_ref;
++  const REAL8 logomega_ref = log(omega_ref);
++  const REAL8 omega_ref_cbrt = cbrt(piM * f_ref); // == v0
++  const REAL8 omega_ref_cbrt2 = omega_ref_cbrt*omega_ref_cbrt;
++  const REAL8 alphaNNLOoffset = (angcoeffs.alphacoeff1/omega_ref
++                              + angcoeffs.alphacoeff2/omega_ref_cbrt2
++                              + angcoeffs.alphacoeff3/omega_ref_cbrt
++                              + angcoeffs.alphacoeff4*logomega_ref
++                              + angcoeffs.alphacoeff5*omega_ref_cbrt);
++
++  const REAL8 epsilonNNLOoffset = (angcoeffs.epsiloncoeff1/omega_ref
++                                + angcoeffs.epsiloncoeff2/omega_ref_cbrt2
++                                + angcoeffs.epsiloncoeff3/omega_ref_cbrt
++                                + angcoeffs.epsiloncoeff4*logomega_ref
++                                + angcoeffs.epsiloncoeff5*omega_ref_cbrt);
++
++  /* Compute Ylm's only once and pass them to PhenomPCoreOneFrequency() below. */
++  SpinWeightedSphericalHarmonic_l2 Y2m;
++  const REAL8 ytheta  = thetaJ;
++  const REAL8 yphi    = 0;
++  Y2m.Y2m2 = XLALSpinWeightedSphericalHarmonic(ytheta, yphi, -2, 2, -2);
++  Y2m.Y2m1 = XLALSpinWeightedSphericalHarmonic(ytheta, yphi, -2, 2, -1);
++  Y2m.Y20  = XLALSpinWeightedSphericalHarmonic(ytheta, yphi, -2, 2,  0);
++  Y2m.Y21  = XLALSpinWeightedSphericalHarmonic(ytheta, yphi, -2, 2,  1);
++  Y2m.Y22  = XLALSpinWeightedSphericalHarmonic(ytheta, yphi, -2, 2,  2);
++
++
++  REAL8 fCut = 0.0;
++  REAL8 finspin = 0.0;
++  REAL8 f_final = 0.0;
++
++  finspin = FinalSpinIMRPhenomD_all_in_plane_spin_on_larger_BH(m1, m2, chi1_l, chi2_l, chip);
++  if( fabs(finspin) > 1.0 ) {
++    XLAL_PRINT_WARNING("Warning: final spin magnitude %g > 1. Setting final spin magnitude = 1.", finspin);
++    finspin = copysign(1.0, finspin);
++   }
++
++      // IMRPhenomD assumes that m1 >= m2.
++  pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi2_l, chi1_l, finspin);
++  pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi2_l, chi1_l, finspin, extraParams);
++  XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1_l, chi2_l, quadparam1, quadparam2, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN, extraParams);
++  if (!pAmp || !pPhi || !pn) {
++    errcode = XLAL_EFUNC;
++    goto cleanup;
++  }
++
++  // Subtract 3PN spin-spin term below as this is in LAL's TaylorF2 implementation
++  // (LALSimInspiralPNCoefficients.c -> XLALSimInspiralPNPhasing_F2), but
++  // was not available when PhenomD was tuned.
++  pn->v[6] -= (Subtract3PNSS(m1, m2, M, chi1_l, chi2_l) * pn->v[0]);
++  
++  PhiInsPrefactors phi_prefactors;
++  errcode = init_phi_ins_prefactors(&phi_prefactors, pPhi, pn);
++  XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "init_phi_ins_prefactors failed");
++
++  ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn, &phi_prefactors);
++  // This should be the same as the ending frequency in PhenomD
++  fCut = f_CUT / m_sec;
++  f_final = pAmp->fRD / m_sec;
++
++
++  XLAL_CHECK ( fCut > f_min, XLAL_EDOM, "fCut = %.2g/M <= f_min", fCut );
++
++  /* Default f_max to params->fCut */
++  REAL8 f_max_prime = f_max ? f_max : fCut;
++  f_max_prime = (f_max_prime > fCut) ? fCut : f_max_prime;
++  if (f_max_prime <= f_min){
++    XLALPrintError("XLAL Error - %s: f_max <= f_min\n", __func__);
++    errcode = XLAL_EDOM;
++    goto cleanup;
++  }
++
++  /* Allocate hp, hc */
++
++  UINT4 L_fCut = 0; // number of frequency points before we hit fCut
++  size_t n = 0;
++  UINT4 offset = 0; // Index shift between freqs and the frequency series
++  if (deltaF > 0)  { // freqs contains uniform frequency grid with spacing deltaF; we start at frequency 0
++    /* Set up output array with size closest power of 2 */
++    if (f_max_prime < f_max)  /* Resize waveform if user wants f_max larger than cutoff frequency */
++      n = NextPow2(f_max / deltaF) + 1;
++    else
++      n = NextPow2(f_max_prime / deltaF) + 1;
++
++    /* coalesce at t=0 */
++    XLAL_CHECK(XLALGPSAdd(&ligotimegps_zero, -1. / deltaF), XLAL_EFUNC,
++    "Failed to shift coalescence time by -1.0/deltaF with deltaF=%g.", deltaF); // shift by overall length in time
++
++    *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
++    if(!*hptilde) {
++      errcode = XLAL_ENOMEM;
++      goto cleanup;
++    }
++    *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
++    if(!*hctilde) {
++      errcode = XLAL_ENOMEM;
++      goto cleanup;
++    }
++
++    // Recreate freqs using only the lower and upper bounds
++    size_t i_min = (size_t) (f_min / deltaF);
++    size_t i_max = (size_t) (f_max_prime / deltaF);
++    freqs = XLALCreateREAL8Sequence(i_max - i_min);
++    if (!freqs) {
++      errcode = XLAL_EFUNC;
++      XLALPrintError("XLAL Error - %s: Frequency array allocation failed.", __func__);
++      goto cleanup;
++    }
++    for (UINT4 i=i_min; i<i_max; i++)
++      freqs->data[i-i_min] = i*deltaF;
++    L_fCut = freqs->length;
++    offset = i_min;
++  } else { // freqs contains frequencies with non-uniform spacing; we start at lowest given frequency
++    n = freqs_in->length;
++
++    *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &ligotimegps_zero, f_min, 0, &lalStrainUnit, n);
++    if(!*hptilde) {
++      XLALPrintError("XLAL Error - %s: Failed to allocate frequency series for hptilde polarization with f_min=%f and %tu bins.", __func__, f_min, n);
++      errcode = XLAL_ENOMEM;
++      goto cleanup;
++    }
++    *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &ligotimegps_zero, f_min, 0, &lalStrainUnit, n);
++    if(!*hctilde) {
++      XLALPrintError("XLAL Error - %s: Failed to allocate frequency series for hctilde polarization with f_min=%f and %tu bins.", __func__, f_min, n);
++      errcode = XLAL_ENOMEM;
++      goto cleanup;
++    }
++    offset = 0;
++
++    // Enforce that FS is strictly increasing
++    // (This is needed for phase correction towards the end of this function.)
++    for (UINT4 i=1; i<n; i++)
++    {
++      if (!(freqs_in->data[i] > freqs_in->data[i-1]))
++      {
++        XLALPrintError("XLAL Error - %s: Frequency sequence must be strictly increasing!\n",  __func__);
++        errcode = XLAL_EDOM;
++        goto cleanup;
++      }
++    }
++
++    freqs = XLALCreateREAL8Sequence(n);
++    if (!freqs) {
++      XLALPrintError("XLAL Error - %s: Frequency array allocation failed.",  __func__);
++      errcode = XLAL_ENOMEM;
++      goto cleanup;
++    }
++    // Restrict sequence to frequencies <= fCut
++    for (UINT4 i=0; i<n; i++)
++      if (freqs_in->data[i] <= fCut) {
++        freqs->data[i] = freqs_in->data[i];
++        L_fCut++;
++      }
++  }
++
++  memset((*hptilde)->data->data, 0, n * sizeof(COMPLEX16));
++  memset((*hctilde)->data->data, 0, n * sizeof(COMPLEX16));
++  XLALUnitMultiply(&((*hptilde)->sampleUnits), &((*hptilde)->sampleUnits), &lalSecondUnit);
++  XLALUnitMultiply(&((*hctilde)->sampleUnits), &((*hctilde)->sampleUnits), &lalSecondUnit);
++
++  /* Generating the NR tidal amplitude and phase */
++  /* Get FD tidal phase correction and amplitude factor from arXiv:1706.02969 */
++  phi_tidal = XLALCreateREAL8Sequence(L_fCut);
++  amp_tidal = XLALCreateREAL8Sequence(L_fCut);
++  ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, freqs, m1_SI, m2_SI, lambda1, lambda2);
++  XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
++
++  phis = XLALMalloc(L_fCut*sizeof(REAL8)); // array for waveform phase
++  if(!phis) {
++    errcode = XLAL_ENOMEM;
++    goto cleanup;
++  }
++  REAL8 phasing = 0;
++
++  AmpInsPrefactors amp_prefactors;
++
++  errcode = init_amp_ins_prefactors(&amp_prefactors, pAmp);
++  XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "init_amp_ins_prefactors() failed.");
++
++  /*
++    We can't call XLAL_ERROR() directly with OpenMP on.
++    Keep track of return codes for each thread and in addition use flush to get out of
++    the parallel for loop as soon as possible if something went wrong in any thread.
++  */
++  for (UINT4 i=0; i<L_fCut; i++) { // loop over frequency points in sequence
++    COMPLEX16 hp_val = 0.0;
++    COMPLEX16 hc_val = 0.0;
++    double f = freqs->data[i];
++    double ampTidal = amp_tidal->data[i];
++    COMPLEX16 phaseTidal = cexp(-I*phi_tidal->data[i]);
++    int j = i + offset; // shift index for frequency series if needed
++
++    int per_thread_errcode;
++
++    if (errcode != XLAL_SUCCESS)
++      goto skip;
++
++    /* Generate the waveform */
++    per_thread_errcode = PhenomPCoreOneFrequency_withTides(f, ampTidal, phaseTidal, eta, chi1_l, chi2_l, chip, distance, M, phic,
++                              pAmp, pPhi, pn, &angcoeffs, &Y2m,
++                              alphaNNLOoffset - alpha0, epsilonNNLOoffset,
++                              &hp_val, &hc_val, &phasing, &amp_prefactors, &phi_prefactors);
++
++    if (per_thread_errcode != XLAL_SUCCESS) {
++      errcode = per_thread_errcode;
++     }
++
++    ((*hptilde)->data->data)[j] = hp_val;
++    ((*hctilde)->data->data)[j] = hc_val;
++
++    phis[i] = phasing;
++
++    skip: /* this statement intentionally left blank */;
++  }
++
++  /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
++  /* We apply the same time shift to hptilde and hctilde based on the overall phasing returned by PhenomPCoreOneFrequency */
++  /* Set up spline for phase */
++  acc = gsl_interp_accel_alloc();
++  phiI = gsl_spline_alloc(gsl_interp_cspline, L_fCut);
++  XLAL_CHECK(phiI, XLAL_ENOMEM, "Failed to allocate GSL spline with %d points for phase.", L_fCut);
++
++  gsl_spline_init(phiI, freqs->data, phis, L_fCut);
++
++  // Prevent gsl interpolation errors
++  if (f_final > freqs->data[L_fCut-1])
++    f_final = freqs->data[L_fCut-1];
++  if (f_final < freqs->data[0])
++  {
++    XLALPrintError("XLAL Error - %s: f_ringdown = %f < f_min\n", __func__, f_final);
++    errcode = XLAL_EDOM;
++    goto cleanup;
++  }
++
++  if (L_fCut<=5){ // prevent spline interpolation failing in phase correction below
++    XLALPrintError("XLAL Error - %s: PhenomP waveform is too short: L_fcut is too small.", __func__);
++    errcode = XLAL_EDOM;
++    goto cleanup;
++   }
++
++  /* Time correction is t(f_final) = 1/(2pi) dphi/df (f_final) */
++  REAL8 t_corr = gsl_spline_eval_deriv(phiI, f_final, acc) / (2*LAL_PI);
++  /* Now correct phase */
++  for (UINT4 i=0; i<L_fCut; i++) { // loop over frequency points in sequence
++    double f = freqs->data[i];
++    COMPLEX16 phase_corr = cexp(-2*LAL_PI * I * f * t_corr);
++    int j = i + offset; // shift index for frequency series if needed
++    ((*hptilde)->data->data)[j] *= phase_corr;
++    ((*hctilde)->data->data)[j] *= phase_corr;
++  }
++
++  cleanup:
++  if(phis) XLALFree(phis);
++  if(phiI) gsl_spline_free(phiI);
++  if(acc) gsl_interp_accel_free(acc);
++
++  if(pAmp) XLALFree(pAmp);
++  if(pPhi) XLALFree(pPhi);
++  if(pn) XLALFree(pn);
++
++  if(freqs) XLALDestroyREAL8Sequence(freqs);
++  if (phi_tidal) XLALDestroyREAL8Sequence(phi_tidal);
++  if (amp_tidal) XLALDestroyREAL8Sequence(amp_tidal);
++
++  if( errcode != XLAL_SUCCESS ) {
++    if(*hptilde) {
++      XLALDestroyCOMPLEX16FrequencySeries(*hptilde);
++      *hptilde=NULL;
++    }
++    if(*hctilde) {
++      XLALDestroyCOMPLEX16FrequencySeries(*hctilde);
++      *hctilde=NULL;
++    }
++    XLAL_ERROR(errcode);
++  }
++  else {
++    return XLAL_SUCCESS;
++  }
++}
+ /* ***************************** PhenomP internal functions *********************************/
+ 
+ /**
+@@ -1390,3 +1829,127 @@ static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon) {
+   }
+ }
+ 
++static int PhenomPCoreOneFrequency_withTides(
++  const REAL8 fHz,                            /**< Frequency (Hz) */
++  const REAL8 ampTidal,
++  COMPLEX16 phaseTidal,
++  const REAL8 eta,                            /**< Symmetric mass ratio */
++  const REAL8 chi1_l,                         /**< Dimensionless aligned spin on companion 1 */
++  const REAL8 chi2_l,                         /**< Dimensionless aligned spin on companion 2 */
++  const REAL8 chip,                           /**< Dimensionless spin in the orbital plane */
++  const REAL8 distance,                       /**< Distance of source (m) */
++  const REAL8 M,                              /**< Total mass (Solar masses) */
++  const REAL8 phic,                           /**< Orbital phase at the peak of the underlying non precessing model (rad) */
++  IMRPhenomDAmplitudeCoefficients *pAmp,      /**< Internal IMRPhenomD amplitude coefficients */
++  IMRPhenomDPhaseCoefficients *pPhi,          /**< Internal IMRPhenomD phase coefficients */
++  PNPhasingSeries *PNparams,                  /**< PN inspiral phase coefficients */
++  NNLOanglecoeffs *angcoeffs,                 /**< Struct with PN coeffs for the NNLO angles */
++  SpinWeightedSphericalHarmonic_l2 *Y2m,      /**< Struct of l=2 spherical harmonics of spin weight -2 */
++  const REAL8 alphaoffset,                    /**< f_ref dependent offset for alpha angle (azimuthal precession angle) */
++  const REAL8 epsilonoffset,                  /**< f_ref dependent offset for epsilon angle */
++  COMPLEX16 *hp,                              /**< [out] plus polarization \f$\tilde h_+\f$ */
++  COMPLEX16 *hc,                              /**< [out] cross polarization \f$\tilde h_x\f$ */
++  REAL8 *phasing,                             /**< [out] overall phasing */
++  AmpInsPrefactors *amp_prefactors,           /**< pre-calculated (cached for saving runtime) coefficients for amplitude. See LALSimIMRPhenomD_internals.c*/
++  PhiInsPrefactors *phi_prefactors            /**< pre-calculated (cached for saving runtime) coefficients for phase. See LALSimIMRPhenomD_internals.*/)
++{
++  XLAL_CHECK(angcoeffs != NULL, XLAL_EFAULT);
++  XLAL_CHECK(hp != NULL, XLAL_EFAULT);
++  XLAL_CHECK(hc != NULL, XLAL_EFAULT);
++  XLAL_CHECK(Y2m != NULL, XLAL_EFAULT);
++  XLAL_CHECK(phasing != NULL, XLAL_EFAULT);
++
++  REAL8 f = fHz*LAL_MTSUN_SI*M; /* Frequency in geometric units */
++
++  REAL8 aPhenom = 0.0;
++  REAL8 phPhenom = 0.0;
++  int errcode = XLAL_SUCCESS;
++  UsefulPowers powers_of_f;
++
++  const REAL8 q = (1.0 + sqrt(1.0 - 4.0*eta) - 2.0*eta)/(2.0*eta);
++  const REAL8 m1 = 1.0/(1.0+q);       /* Mass of the smaller BH for unit total mass M=1. */
++  const REAL8 m2 = q/(1.0+q);         /* Mass of the larger BH for unit total mass M=1. */
++  const REAL8 Sperp = chip*(m2*m2);   /* Dimensionfull spin component in the orbital plane. S_perp = S_2_perp */
++  REAL8 SL;                           /* Dimensionfull aligned spin. */
++
++  /* Calculate Phenom amplitude and phase for a given frequency. */
++  XLAL_CHECK(pAmp != NULL, XLAL_EFAULT);
++  XLAL_CHECK(pPhi != NULL, XLAL_EFAULT);
++  XLAL_CHECK(PNparams != NULL, XLAL_EFAULT);
++  XLAL_CHECK(amp_prefactors != NULL, XLAL_EFAULT);
++  XLAL_CHECK(phi_prefactors != NULL, XLAL_EFAULT);
++  errcode = init_useful_powers(&powers_of_f, f);
++  XLAL_CHECK(errcode == XLAL_SUCCESS, errcode, "init_useful_powers failed for f");
++  aPhenom = IMRPhenDAmplitude(f, pAmp, &powers_of_f, amp_prefactors);
++  phPhenom = IMRPhenDPhase(f, pPhi, PNparams, &powers_of_f, phi_prefactors);
++  SL = chi1_l*m1*m1 + chi2_l*m2*m2;        /* Dimensionfull aligned spin. */
++
++  phPhenom -= 2.*phic; /* Note: phic is orbital phase */
++  REAL8 amp0 = M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
++  COMPLEX16 hP = amp0 * aPhenom * cexp(-I*phPhenom) * ampTidal * phaseTidal; /* Assemble IMRPhenom waveform. */
++
++  /* Compute PN NNLO angles */
++  const REAL8 omega = LAL_PI * f;
++  const REAL8 logomega = log(omega);
++  const REAL8 omega_cbrt = cbrt(omega);
++  const REAL8 omega_cbrt2 = omega_cbrt*omega_cbrt;
++
++  REAL8 alpha = (angcoeffs->alphacoeff1/omega
++              + angcoeffs->alphacoeff2/omega_cbrt2
++              + angcoeffs->alphacoeff3/omega_cbrt
++              + angcoeffs->alphacoeff4*logomega
++              + angcoeffs->alphacoeff5*omega_cbrt) - alphaoffset;
++
++  REAL8 epsilon = (angcoeffs->epsiloncoeff1/omega
++                + angcoeffs->epsiloncoeff2/omega_cbrt2
++                + angcoeffs->epsiloncoeff3/omega_cbrt
++                + angcoeffs->epsiloncoeff4*logomega
++                + angcoeffs->epsiloncoeff5*omega_cbrt) - epsilonoffset;
++
++  /* Calculate intermediate expressions cos(beta/2), sin(beta/2) and powers thereof for Wigner d's. */
++  REAL8 cBetah, sBetah; /* cos(beta/2), sin(beta/2) */
++  WignerdCoefficients(&cBetah, &sBetah, omega_cbrt, SL, eta, Sperp);
++
++  const REAL8 cBetah2 = cBetah*cBetah;
++  const REAL8 cBetah3 = cBetah2*cBetah;
++  const REAL8 cBetah4 = cBetah3*cBetah;
++  const REAL8 sBetah2 = sBetah*sBetah;
++  const REAL8 sBetah3 = sBetah2*sBetah;
++  const REAL8 sBetah4 = sBetah3*sBetah;
++
++  /* Compute Wigner d coefficients
++    The expressions below agree with refX [Goldstein?] and Mathematica
++    d2  = Table[WignerD[{2, mp, 2}, 0, -\[Beta], 0], {mp, -2, 2}]
++    dm2 = Table[WignerD[{2, mp, -2}, 0, -\[Beta], 0], {mp, -2, 2}]
++  */
++  COMPLEX16 d2[5]   = {sBetah4, 2*cBetah*sBetah3, sqrt_6*sBetah2*cBetah2, 2*cBetah3*sBetah, cBetah4};
++  COMPLEX16 dm2[5]  = {d2[4], -d2[3], d2[2], -d2[1], d2[0]}; /* Exploit symmetry d^2_{-2,-m} = (-1)^m d^2_{2,m} */
++
++  COMPLEX16 Y2mA[5] = {Y2m->Y2m2, Y2m->Y2m1, Y2m->Y20, Y2m->Y21, Y2m->Y22};
++  COMPLEX16 hp_sum = 0;
++  COMPLEX16 hc_sum = 0;
++
++  /* Sum up contributions to \tilde h+ and \tilde hx */
++  /* Precompute powers of e^{i m alpha} */
++  COMPLEX16 cexp_i_alpha = cexp(+I*alpha);
++  COMPLEX16 cexp_2i_alpha = cexp_i_alpha*cexp_i_alpha;
++  COMPLEX16 cexp_mi_alpha = 1.0/cexp_i_alpha;
++  COMPLEX16 cexp_m2i_alpha = cexp_mi_alpha*cexp_mi_alpha;
++  COMPLEX16 cexp_im_alpha[5] = {cexp_m2i_alpha, cexp_mi_alpha, 1.0, cexp_i_alpha, cexp_2i_alpha};
++  for(int m=-2; m<=2; m++) {
++    COMPLEX16 T2m   = cexp_im_alpha[-m+2] * dm2[m+2] *      Y2mA[m+2];  /*  = cexp(-I*m*alpha) * dm2[m+2] *      Y2mA[m+2] */
++    COMPLEX16 Tm2m  = cexp_im_alpha[m+2]  * d2[m+2]  * conj(Y2mA[m+2]); /*  = cexp(+I*m*alpha) * d2[m+2]  * conj(Y2mA[m+2]) */
++    hp_sum +=     T2m + Tm2m;
++    hc_sum += +I*(T2m - Tm2m);
++  }
++
++  COMPLEX16 eps_phase_hP = cexp(-2*I*epsilon) * hP / 2.0;
++  *hp = eps_phase_hP * hp_sum;
++  *hc = eps_phase_hP * hc_sum;
++
++  // Return phasing for time-shift correction
++  *phasing = -phPhenom; // ignore alpha and epsilon contributions
++
++  return XLAL_SUCCESS;
++}
++
+diff --git a/lalsimulation/src/LALSimIMRPhenomP.h b/lalsimulation/src/LALSimIMRPhenomP.h
+index 4ce75be7a1..4c3fd9f726 100644
+--- a/lalsimulation/src/LALSimIMRPhenomP.h
++++ b/lalsimulation/src/LALSimIMRPhenomP.h
+@@ -79,6 +79,8 @@ static int PhenomPCore(
+   const REAL8 m1_SI_in,                 /**< Mass of companion 1 (kg) */
+   const REAL8 m2_SI_in,                 /**< Mass of companion 2 (kg) */
+   const REAL8 distance,                 /**< Distance of source (m) */
++  const REAL8 quadparam1,
++  const REAL8 quadparam2,
+   const REAL8 alpha0,                   /**< Initial value of alpha angle (azimuthal precession angle) */
+   const REAL8 phic,                     /**< Orbital phase at the peak of the underlying non precessing model (rad) */
+   const REAL8 f_ref,                    /**< Reference frequency */
+@@ -180,4 +182,53 @@ static REAL8 FinalSpinBarausse2009(  /* Barausse & Rezzolla, Astrophys.J.Lett.70
+ static bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon);
+ static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon);
+ 
++static int PhenomPCore_withTides(
++  COMPLEX16FrequencySeries **hptilde,        /**< [out] Frequency-domain waveform h+ */
++  COMPLEX16FrequencySeries **hctilde,        /**< [out] Frequency-domain waveform hx */
++  const REAL8 chi1_l_in,                     /**< Dimensionless aligned spin on companion 1 */
++  const REAL8 chi2_l_in,                     /**< Dimensionless aligned spin on companion 2 */
++  const REAL8 chip,                          /**< Effective spin in the orbital plane */
++  const REAL8 thetaJ,                        /**< Angle between J0 and line of sight (z-direction) */
++  const REAL8 m1_SI_in,                      /**< Mass of companion 1 (kg) */
++  const REAL8 m2_SI_in,                      /**< Mass of companion 2 (kg) */
++  const REAL8 distance,                      /**< Distance of source (m) */
++  const REAL8 quadparam1,
++  const REAL8 quadparam2,
++  const REAL8 lambda1,
++  const REAL8 lambda2,
++  const REAL8 alpha0,                        /**< Initial value of alpha angle (azimuthal precession angle) */
++  const REAL8 phic,                          /**< Orbital phase at the peak of the underlying non precessing model (rad) */
++  const REAL8 f_ref,                         /**< Reference frequency */
++  const REAL8Sequence *freqs_in,             /**< Frequency points at which to evaluate the waveform (Hz) */
++  double deltaF,                             /**< Sampling frequency (Hz).
++   * If deltaF > 0, the frequency points given in freqs are uniformly spaced with
++   *    * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
++   *       * Then we will use deltaF = 0 to create the frequency series we return. */
++  const LALSimInspiralTestGRParam *extraParams /**<linked list containing the extra testing GR parameters */
++  );
++
++static int PhenomPCoreOneFrequency_withTides(
++  const REAL8 fHz,                            /**< Frequency (Hz) */
++  const REAL8 ampTidal,
++  COMPLEX16 phaseTidal,
++  const REAL8 eta,                            /**< Symmetric mass ratio */
++  const REAL8 chi1_l,                         /**< Dimensionless aligned spin on companion 1 */
++  const REAL8 chi2_l,                         /**< Dimensionless aligned spin on companion 2 */
++  const REAL8 chip,                           /**< Dimensionless spin in the orbital plane */
++  const REAL8 distance,                       /**< Distance of source (m) */
++  const REAL8 M,                              /**< Total mass (Solar masses) */
++  const REAL8 phic,                           /**< Orbital phase at the peak of the underlying non precessing model (rad) */
++  IMRPhenomDAmplitudeCoefficients *pAmp,      /**< Internal IMRPhenomD amplitude coefficients */
++  IMRPhenomDPhaseCoefficients *pPhi,          /**< Internal IMRPhenomD phase coefficients */
++  PNPhasingSeries *PNparams,                  /**< PN inspiral phase coefficients */
++  NNLOanglecoeffs *angcoeffs,                 /**< Struct with PN coeffs for the NNLO angles */
++  SpinWeightedSphericalHarmonic_l2 *Y2m,      /**< Struct of l=2 spherical harmonics of spin weight -2 */
++  const REAL8 alphaoffset,                    /**< f_ref dependent offset for alpha angle (azimuthal precession angle) */
++  const REAL8 epsilonoffset,                  /**< f_ref dependent offset for epsilon angle */
++  COMPLEX16 *hp,                              /**< [out] plus polarization \f$\tilde h_+\f$ */
++  COMPLEX16 *hc,                              /**< [out] cross polarization \f$\tilde h_x\f$ */
++  REAL8 *phasing,                             /**< [out] overall phasing */
++  AmpInsPrefactors *amp_prefactors,           /**< pre-calculated (cached for saving runtime) coefficients for amplitude. See LALSimIMRPhenomD_internals.c*/
++  PhiInsPrefactors *phi_prefactors            /**< pre-calculated (cached for saving runtime) coefficients for phase. See LALSimIMRPhenomD_internals.*/);
++
+ #endif	// of #ifndef _LALSIM_IMR_PHENOMP_H
+diff --git a/lalsimulation/src/LALSimInspiral.c b/lalsimulation/src/LALSimInspiral.c
+index 1a8021dd72..68e24983f0 100644
+--- a/lalsimulation/src/LALSimInspiral.c
++++ b/lalsimulation/src/LALSimInspiral.c
+@@ -27,6 +27,7 @@
+ 
+ #include <lal/SphericalHarmonics.h>
+ #include <lal/LALSimInspiral.h>
++#include <lal/LALSimInspiralEOS.h>
+ #include <lal/LALSimIMR.h>
+ #include <lal/LALSimSphHarmMode.h>
+ #include <lal/LALConstants.h>
+@@ -101,6 +102,7 @@ static const char *lalSimulationApproximantNames[] = {
+     INITIALIZE_NAME(SpinTaylorFrameless),
+     INITIALIZE_NAME(SpinTaylor),
+     INITIALIZE_NAME(PhenSpinTaylor),
++
+     INITIALIZE_NAME(PhenSpinTaylorRD),
+     INITIALIZE_NAME(SpinQuadTaylor),
+     INITIALIZE_NAME(FindChirpSP),
+@@ -142,6 +144,7 @@ static const char *lalSimulationApproximantNames[] = {
+ 	INITIALIZE_NAME(IMRPhenomD_NRTidal),
+     INITIALIZE_NAME(IMRPhenomP),
+     INITIALIZE_NAME(IMRPhenomPv2),
++    INITIALIZE_NAME(IMRPhenomPv2_NRTidal),
+     INITIALIZE_NAME(IMRPhenomFC),
+     INITIALIZE_NAME(TaylorEt),
+     INITIALIZE_NAME(TaylorT4),
+@@ -261,6 +264,8 @@ static double fixReferenceFrequency(double f_ref, double f_min, Approximant appr
+         case IMRPhenomP:
+         case IMRPhenomPv2:
+             return f_min;
++        case IMRPhenomPv2_NRTidal:
++            return f_min;
+         default:
+             break;
+         }
+@@ -331,6 +336,8 @@ int XLALSimInspiralChooseTDWaveform(
+      * Will later add ability to set via LALSimInspiralTestGRParam
+      */
+     REAL8 v0 = 1., quadparam1 = 1., quadparam2 = 1.;
++    quadparam1 = XLALSimInspiralEOSQfromLambda(lambda1);
++    quadparam2 = XLALSimInspiralEOSQfromLambda(lambda2);
+ 
+     /* General sanity checks that will abort
+      *
+@@ -727,6 +734,12 @@ int XLALSimInspiralChooseTDWaveform(
+ 			    waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
+ 	    break;
+ 
++       case IMRPhenomPv2_NRTidal:
++           ret = XLALSimInspiralTDFromFD(hplus, hcross, phiRef, deltaT, m1, m2, S1x, S1y, S1z,
++                            S2x, S2y, S2z, f_min, f_ref, r, 0, i, lambda1, lambda2,
++                            waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
++           break;
++
+         case PhenSpinTaylorRD:
+             /* Waveform-specific sanity checks */
+             if( !checkTidesZero(lambda1, lambda2) )
+@@ -911,6 +924,8 @@ int XLALSimInspiralChooseFDWaveform(
+     unsigned int j;
+     REAL8 pfac, cfac;
+     REAL8 quadparam1 = 1., quadparam2 = 1.; /* FIXME: This cannot yet be set in the interface */
++    quadparam1 = XLALSimInspiralEOSQfromLambda(lambda1);
++    quadparam2 = XLALSimInspiralEOSQfromLambda(lambda2);
+     INT4 phiRefAtEnd;
+ 
+     /* Support variables for precessing wfs*/
+@@ -1180,11 +1195,11 @@ int XLALSimInspiralChooseFDWaveform(
+                 ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                 ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
+-            if( !checkTidesZero(lambda1, lambda2) )
+-                ABORT_NONZERO_TIDES(waveFlags);
++            //if( !checkTidesZero(lambda1, lambda2) )
++                //ABORT_NONZERO_TIDES(waveFlags);
+             /* Call the waveform driver routine */
+             ret = XLALSimIMRPhenomDGenerateFD(hptilde, phiRef, f_ref, deltaF, m1, m2,
+-                  S1z, S2z, f_min, f_max, r, nonGRparams);
++                  S1z, S2z, f_min, f_max, r, quadparam1, quadparam2, nonGRparams);
+             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+             /* Produce both polarizations */
+             *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
+@@ -1379,7 +1394,7 @@ int XLALSimInspiralChooseFDWaveform(
+             /* Call the waveform driver routine */
+             ret = XLALSimIMRPhenomP(hptilde, hctilde,
+               chi1_l, chi2_l, chip, thetaJ,
+-              m1, m2, r, alpha0, phiRef, deltaF, f_min, f_max, f_ref, IMRPhenomPv1_V, nonGRparams);
++              m1, m2, r, quadparam1, quadparam2, alpha0, phiRef, deltaF, f_min, f_max, f_ref, IMRPhenomPv1_V, nonGRparams);
+             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+             break;
+ 
+@@ -1409,7 +1424,36 @@ int XLALSimInspiralChooseFDWaveform(
+             /* Call the waveform driver routine */
+             ret = XLALSimIMRPhenomP(hptilde, hctilde,
+               chi1_l, chi2_l, chip, thetaJ,
+-              m1, m2, r, alpha0, phiRef, deltaF, f_min, f_max, f_ref, IMRPhenomPv2_V, nonGRparams);
++              m1, m2, r, quadparam1, quadparam2, alpha0, phiRef, deltaF, f_min, f_max, f_ref, IMRPhenomPv2_V, nonGRparams);
++            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
++            break;
++
++        case IMRPhenomPv2_NRTidal:
++            /* Waveform-specific sanity checks */
++            spin1[0]=S1x; spin1[1]=S1y; spin1[2]=S1z;
++            spin2[0]=S2x; spin2[1]=S2y; spin2[2]=S2z;
++            iTmp=i;
++            XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,f_ref,XLALSimInspiralGetFrameAxis(waveFlags));
++            if( !XLALSimInspiralModesChoiceIsDefault(          /* Default is (2,2) or l=2 modes. */
++                    XLALSimInspiralGetModesChoice(waveFlags) ) )
++                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
++            LNhatx = sin(i);
++            LNhaty = 0.;
++            LNhatz = cos(i);
++            /* Tranform to model parameters */
++            if(f_ref==0.0)
++                f_ref = f_min; /* Default reference frequency is minimum frequency */
++            
++            XLALSimIMRPhenomPCalculateModelParameters(
++                &chi1_l, &chi2_l, &chip, &thetaJ, &alpha0,
++                m1, m2, f_ref,
++                LNhatx, LNhaty, LNhatz,
++                S1x, S1y, S1z,
++                S2x, S2y, S2z, IMRPhenomPv2_V);
++
++            ret = XLALSimIMRPhenomPv2NRTidal(hptilde, hctilde,
++              chi1_l, chi2_l, chip, thetaJ, alpha0, 
++              m1, m2, r, lambda1, lambda2, quadparam1, quadparam2, phiRef, deltaF, f_min, f_max, f_ref, nonGRparams);
+             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+             break;
+ 
+@@ -1443,8 +1487,8 @@ int XLALSimInspiralChooseFDWaveform(
+               phiRefAtEnd = 1;
+             }
+             // default quadparams are for black holes. Replace by ~2-12 for neutron stars
+-            quadparam1 = 1.;
+-            quadparam2 = 1.;
++             quadparam1 = 1.;
++             quadparam2 = 1.;
+             /* Call the waveform driver routine */
+             ret = XLALSimInspiralSpinTaylorT4Fourier(hptilde, hctilde,
+               f_min, f_max, deltaF, kMax, phiRef, v0, m1, m2, fStart, f_ref, r, S1x, S1y, S1z, S2x, S2y, S2z, LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, lambda1, lambda2, quadparam1, quadparam2, XLALSimInspiralGetSpinOrder(waveFlags), XLALSimInspiralGetTidalOrder(waveFlags), phaseO, amplitudeO, phiRefAtEnd);
+@@ -4002,6 +4046,7 @@ int XLALSimInspiralImplementedTDApproximants(
+         case IMRPhenomC:
+ 	case IMRPhenomD:
+ 	case IMRPhenomPv2:
++        case IMRPhenomPv2_NRTidal:
+         case PhenSpinTaylorRD:
+         case SEOBNRv1:
+         case SpinDominatedWf:
+@@ -4036,6 +4081,7 @@ int XLALSimInspiralImplementedFDApproximants(
+         case IMRPhenomD_NRTidal:
+         case IMRPhenomP:
+         case IMRPhenomPv2:
++        case IMRPhenomPv2_NRTidal:
+         case EOBNRv2_ROM:
+         case EOBNRv2HM_ROM:
+         case SEOBNRv1_ROM_EffectiveSpin:
+@@ -4436,6 +4482,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
+     case SpinTaylorT3:
+     case IMRPhenomP:
+     case IMRPhenomPv2:
++    case IMRPhenomPv2_NRTidal:
+     case SpinTaylorT2Fourier:
+     case SpinTaylorT4Fourier:
+     case SpinDominatedWf:
+@@ -4578,6 +4625,9 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
+     case IMRPhenomPv2:
+       testGR_accept=LAL_SIM_INSPIRAL_TESTGR_PARAMS;
+       break;
++    case IMRPhenomPv2_NRTidal:
++      testGR_accept=LAL_SIM_INSPIRAL_TESTGR_PARAMS;
++      break;
+     default:
+       XLALPrintError("Approximant not supported by lalsimuation TD/FD routines \n");
+       XLAL_ERROR(XLAL_EINVAL);
+diff --git a/lalsimulation/src/LALSimInspiral.h b/lalsimulation/src/LALSimInspiral.h
+index e0ba3ef6f0..32ccf8849c 100644
+--- a/lalsimulation/src/LALSimInspiral.h
++++ b/lalsimulation/src/LALSimInspiral.h
+@@ -24,6 +24,7 @@
+ #include <lal/LALSimSphHarmSeries.h>
+ #include <lal/LALSimInspiralTestGRParams.h>
+ #include <lal/LALSimInspiralWaveformFlags.h>
++#include <lal/LALSimInspiralEOS.h>
+ #include <gsl/gsl_matrix.h>
+ 
+ #if defined(__cplusplus)
+@@ -369,6 +370,7 @@ typedef enum tagApproximant {
+                           * @remarks Implemented in lalsimulation (frequency domain). */
+    IMRPhenomD_NRTidal,   /**< Uses arxiv:1706.02969 to upgrad IMRPhenomD to a tidal approximant
+                           * @remarks Implemented in lalsimulation (frequency domain). */
++   IMRPhenomPv2_NRTidal, /**< FD waveform; the tidal phase is added first and then the twisting is applied */
+    NumApproximants	/**< Number of elements in enum, useful for checking bounds */
+  } Approximant;
+ 
+diff --git a/lalsimulation/src/LALSimInspiralEOS.c b/lalsimulation/src/LALSimInspiralEOS.c
+new file mode 100644
+index 0000000000..e924ab2410
+--- /dev/null
++++ b/lalsimulation/src/LALSimInspiralEOS.c
+@@ -0,0 +1,256 @@
++/*
++ *  Copyright (C) 2012 Walter Del Pozzo, Tjonnie Li, Michalis Agathos
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with with program; see the file COPYING. If not, write to the
++ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ *  MA  02111-1307  USA
++ */
++ #include <stdlib.h> 
++ #include <stdio.h>
++ #include <string.h>
++ #include <lal/LALSimInspiralEOS.h>
++ #include <lal/LALSimInspiral.h>
++
++ LALEquationOfState XLALSimEOSfromString(char eos_name[])
++ {
++   LALEquationOfState eos;
++   if (!strcmp("MS1",eos_name)) eos = LAL_SIM_INSPIRAL_EOS_MS1;
++   else if (!strcmp("H4",eos_name)) eos = LAL_SIM_INSPIRAL_EOS_H4;
++   else if (!strcmp("SQM3",eos_name)) eos = LAL_SIM_INSPIRAL_EOS_SQM3;
++   else if (!strcmp("MPA1",eos_name)) eos = LAL_SIM_INSPIRAL_EOS_MPA1;
++   else if (!strcmp("GNH3",eos_name)) eos = LAL_SIM_INSPIRAL_EOS_GNH3;
++   else if (!strcmp("A",eos_name)) eos = LAL_SIM_INSPIRAL_EOS_A;
++   else if (!strcmp("AU",eos_name)) eos = LAL_SIM_INSPIRAL_EOS_AU;
++   else if (!strcmp("FPS",eos_name)) eos = LAL_SIM_INSPIRAL_EOS_FPS;
++   else if (!strcmp("APR",eos_name)) eos = LAL_SIM_INSPIRAL_EOS_APR;
++   else if (!strcmp("UU",eos_name)) eos = LAL_SIM_INSPIRAL_EOS_UU;
++   else if (!strcmp("L",eos_name)) eos = LAL_SIM_INSPIRAL_EOS_L;
++   else if (!strcmp("PP",eos_name)) eos = LAL_SIM_INSPIRAL_EOS_NONE;
++   else
++   {
++    XLALPrintError( "XLAL Error - %s: Equation of state %s not recognized.", __func__, eos_name);
++    XLAL_ERROR(XLAL_EINVAL);
++   }
++   return eos;
++ }
++
++REAL8 XLALSimInspiralEOSLambda(LALEquationOfState eos_type, REAL8 m_intr_msun){/** this must be fed the INTRINSIC mass */
++
++    /* this is fed the intrinsic masses and then computes the value of \Lambda(m) See Hinderer et al ( http://arxiv.org/abs/0911.3535 ) for details of the EOSes*/
++    /* \Lambda(m) is in units of s^5 */
++    REAL8 lambda=0.;
++//  printf("EOS number: %d\n", eos_type);
++//  printf("mass: %e\n", m_intr_msun);
++    switch (eos_type)
++    {
++        case LAL_SIM_INSPIRAL_EOS_NONE:
++            lambda = 0.0;
++        break;
++    // MS1
++        case LAL_SIM_INSPIRAL_EOS_MS1:
++           // printf("Using EOS MS1\n");
++            lambda = 2.755956E-24*(2.19296 + 20.0273*m_intr_msun - 17.9443*m_intr_msun*m_intr_msun 
++            + 5.75129*m_intr_msun*m_intr_msun*m_intr_msun - 0.699095*m_intr_msun*m_intr_msun*m_intr_msun*m_intr_msun);
++        break;
++    // H4
++        case LAL_SIM_INSPIRAL_EOS_H4:
++            lambda = 2.755956E-24*(0.743351 + 15.8917*m_intr_msun - 14.7348*m_intr_msun*m_intr_msun 
++            + 5.32863*m_intr_msun*m_intr_msun*m_intr_msun - 0.942625*m_intr_msun*m_intr_msun*m_intr_msun*m_intr_msun);
++        break; 
++    // SQM3
++        case LAL_SIM_INSPIRAL_EOS_SQM3:
++            lambda = 2.755956E-24*(-5.55858 + 20.8977*m_intr_msun - 20.5583*m_intr_msun*m_intr_msun 
++            + 9.55465*m_intr_msun*m_intr_msun*m_intr_msun - 1.84933*m_intr_msun*m_intr_msun*m_intr_msun*m_intr_msun);
++        break;
++    // MPA1
++    case LAL_SIM_INSPIRAL_EOS_MPA1:
++        lambda = 2.755956E-24*(0.276761 + 7.26925*m_intr_msun - 5.72102*m_intr_msun*m_intr_msun
++        + 1.51347*m_intr_msun*m_intr_msun*m_intr_msun - 0.152181*m_intr_msun*m_intr_msun*m_intr_msun*m_intr_msun);
++        break;
++    // GNH3
++    case LAL_SIM_INSPIRAL_EOS_GNH3:
++        lambda = 2.755956E-24*(7.80715 + 0.683549*m_intr_msun + 1.21351*m_intr_msun*m_intr_msun
++        - 3.50234*m_intr_msun*m_intr_msun*m_intr_msun + 0.894662*m_intr_msun*m_intr_msun*m_intr_msun*m_intr_msun);
++        break;
++    default:
++        lambda = 0.0;
++        break;
++    }
++//  printf("calculated love number: %e\n", lambda);
++    if (lambda<0.0) return 0.0;
++    else return lambda;
++}
++
++REAL8 XLALLambdaQuadratic(REAL8 c0, REAL8 c1, REAL8 c2, REAL8 mass) {
++    mass = mass*LAL_MTSUN_SI;
++    // [LAMBDA0] = SEC^5; [LAMBDA1] = SEC^4; [LAMBDA2] = SEC^3
++    REAL8 lambda = 1.0E-23*c0 + 1.0E-18*(mass-1.4*LAL_MTSUN_SI)*c1 + 1.0E-13*(mass-1.4*LAL_MTSUN_SI)*(mass-1.4*LAL_MTSUN_SI)*c2;
++    lambda = (lambda > 0.0) ? lambda : 0.0;
++    return lambda;
++}
++ 
++
++REAL8 XLALSimInspiralEOSQfromLambda(REAL8 lambda) {
++    /* Quadrupole-monopole parameter calculated from love number;
++       see http://arxiv.org/abs/1303.1528 */
++    REAL8 q, loglam;
++    REAL8 tolerance = 1E-15;
++    if(lambda<tolerance) { //printf("Love number is (nearly) zero; cannot compute QM parameter. Setting to 1.0 (BH value).\n");
++                      q = 1.0; } 
++    else {
++    loglam = log(lambda);
++    q =  0.194 + 0.0936*loglam + 0.0474*loglam*loglam;
++    q -= 0.00421*loglam*loglam*loglam;
++    q += 0.000123*loglam*loglam*loglam*loglam;
++    q = exp(q);
++    }
++
++//  printf("%e %e\n", l, q); // Testing numerical results from these functions.
++
++    return q;
++
++}
++
++REAL8 XLALSimInspiralEOSqmparameter(LALEquationOfState eos_type, REAL8 m_intr_msun){
++  
++  REAL8 q = 0.0 ;
++  REAL8 m = m_intr_msun ;
++  REAL8 m2 = m*m ;
++  REAL8 m3 = m2*m ;
++  
++  switch (eos_type) {
++  /*  */
++  case LAL_SIM_INSPIRAL_EOS_A:
++    q = -6.41414141*m3 + 30.70779221*m2 - 53.37417027*m + 35.62253247 ;
++    break;
++  /*  */
++  case LAL_SIM_INSPIRAL_EOS_AU:
++    q = -6.18686869*m3 + 30.15909091*m2 - 52.87806638*m + 35.86616883 ;
++    break;
++  /*  */
++  case LAL_SIM_INSPIRAL_EOS_FPS:
++    q = -3.86363636*m3 + 21.03030303*m2 - 42.19448052*m + 32.83722944 ;
++    break;
++  /*  */
++  case LAL_SIM_INSPIRAL_EOS_APR:
++    q = -10.55555556*m3 + 49.52380952*m2 - 82.77063492*m + 53.02428571 ;
++    break;
++  /*  */
++  case LAL_SIM_INSPIRAL_EOS_UU:
++    q = -8.03030303*m3 + 37.61363636*m2 - 63.48733766*m + 41.75080087 ;
++    break;
++  /*  */
++  case LAL_SIM_INSPIRAL_EOS_L:
++    q = -6.59090909*m3 + 33.67424242*m2 - 63.77034632*m + 48.98073593 ;
++    break;
++  case LAL_SIM_INSPIRAL_EOS_NONE:
++    q = 1.0 ;
++    break;
++
++  default:
++    q = 1.0 ;
++    break ;
++  }
++  
++  if (q < 1.0) {
++    q = 1.0;
++  }
++  
++  return q ;
++}
++
++/**
++ * This function estimates the radius of a NS of a given mass and
++ * tidal deformability parameter, based on the "I-Love-Q forever" relation
++ * of Maselli et al, arXiv:1304.2052v1.
++ * To be used for masses within [1.2,2]M_sun, and preferably not for strange
++ * quark stars (since the relation is calibrated for this mass range and for 
++ * the EoS APR4, MS1, H4).
++ * For a BH, (lambda=0) it returns the Schwarzschild radius.
++ * The arguments are:
++ * m_intr_msun              the intrinsic mass in solar masses
++ * barlambda                the dimensionless tidal deformability (lambda/m^5)
++ * The return value is the radius in meters.
++ */
++
++REAL8 XLALSimInspiralNSRadiusOfLambdaM(REAL8 m_intr_msun, REAL8 barlambda){
++
++  REAL8 loglambda;
++  REAL8 compactness, radius ;
++  REAL8 tolerance = 1E-15;
++
++  /* Check for sign of lambda */
++  if ( barlambda <= tolerance && barlambda >= 0.0 ) {
++  /* This is a black hole */
++    compactness = 0.5;
++  }
++  else if ( barlambda > tolerance ) {
++  loglambda = log(barlambda);
++  /* Calculate compactness according to arXiv:1304.2052v1 */
++  compactness = 0.371 - 0.0391*loglambda + 0.001056*loglambda*loglambda;
++  }
++  else {
++    XLALPrintError( "XLAL Error - %s: Tidal deformability is negative. Only positive values are acceptable.", __func__);
++    XLAL_ERROR_REAL8(XLAL_EDOM);
++  }
++
++  /* Check that radius is larger than Schwarzschild radius */
++  if ( compactness > 0.5 ) {
++    XLALPrintWarning( "XLAL Warning - %s: Neutron Star is calculated to have compactness larger than a black hole (C = %f, lambda = %f, m = %f).\n Setting C=0.5 ...", __func__, compactness, barlambda, m_intr_msun);
++    compactness = 0.5;
++  }
++
++  if ( compactness < 0.0 ) {
++    XLALPrintError( "XLAL Error - %s: Neutron Star is calculated to have negative compactness (C = %f, lambda = %f, m = %f).", __func__, compactness, barlambda, m_intr_msun);
++    XLAL_ERROR_REAL8(XLAL_ERANGE);
++  }
++
++  radius = LAL_MRSUN_SI * m_intr_msun / compactness;
++
++ return radius;
++
++}
++
++
++/**
++ * This function estimates the radius for a binary of given masses and
++ * tidal deformability parameters.
++ * It uses XLALSimInspiralNSRadiusOfLambdaM() to calculate radii (see above).
++ * The arguments are:
++ * m1_intr, m2_intr                      the intrinsic masses in solar masses
++ * barlambda1, barlambda2                the dimensionless tidal deformabilities (lambda_i/m_i^5)
++ * The return value is the GW contact frequency in Hz.
++ */
++
++REAL8 XLALSimInspiralContactFrequency(REAL8 m1_intr, REAL8 barlambda1, REAL8 m2_intr, REAL8 barlambda2){
++
++  REAL8 r1, r2, rtot, mtot, f_gw_contact;
++
++  /* Calculate radii for the two components */
++  r1 = XLALSimInspiralNSRadiusOfLambdaM(m1_intr, barlambda1);
++  r2 = XLALSimInspiralNSRadiusOfLambdaM(m2_intr, barlambda2);
++
++  rtot = (r1 + r2)/LAL_C_SI;                             // Orbital distance in seconds
++  mtot = (m1_intr + m2_intr)*LAL_MTSUN_SI;               // Total mass in seconds
++
++  /* Calculate the GW contact frequency */
++  f_gw_contact = sqrt(mtot/(rtot*rtot*rtot))/LAL_PI;
++  if ( f_gw_contact < 0.0 ) {
++    XLALPrintError( "XLAL Error - %s: Contact frequency is calculated to be negative  (fcontact = %f)", __func__, f_gw_contact);
++    XLAL_ERROR_REAL8(XLAL_ERANGE);
++  }
++
++  return f_gw_contact;
++
++}
+diff --git a/lalsimulation/src/LALSimInspiralEOS.h b/lalsimulation/src/LALSimInspiralEOS.h
+new file mode 100644
+index 0000000000..f7169ab7d8
+--- /dev/null
++++ b/lalsimulation/src/LALSimInspiralEOS.h
+@@ -0,0 +1,82 @@
++/*
++ *  Copyright (C) 2012 Walter Del Pozzo, Tjonnie Li, Michalis Agathos
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with with program; see the file COPYING. If not, write to the
++ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ *  MA  02111-1307  USA
++ */
++
++#ifndef _LALSIMINSPIRALEOS_H  /* Double-include protection. */
++#define _LALSIMINSPIRALEOS_H
++
++#ifdef  __cplusplus   /* C++ protection. */
++extern "C" {
++#endif
++
++#include <math.h>
++#include <lal/LALDatatypes.h>
++#include <lal/LALConstants.h>
++
++/**
++ * The first enum types are available for both lambda and q
++ * From EOS_Lambda_q_Specific, the EOS are only available for either q, or lambda.
++ */
++typedef enum tagLALEquationOfState {
++  /* First set is available for both lambda and q*/
++  LAL_SIM_INSPIRAL_EOS_NONE, /**< A black hole */
++  LAL_SIM_INSPIRAL_EOS_Lambda_q_Specific, /**< From here EOS only available for either lambda or q */
++  LAL_SIM_INSPIRAL_EOS_A,   /**< EOS available for q */
++  LAL_SIM_INSPIRAL_EOS_AU,  /**< EOS available for q */
++  LAL_SIM_INSPIRAL_EOS_FPS, /**< EOS available for q */
++  LAL_SIM_INSPIRAL_EOS_APR, /**< EOS available for q */
++  LAL_SIM_INSPIRAL_EOS_UU,  /**< EOS available for q */
++  LAL_SIM_INSPIRAL_EOS_L,   /**< EOS available for q */
++  LAL_SIM_INSPIRAL_EOS_MS1, /**< EOS available for lambda */
++  LAL_SIM_INSPIRAL_EOS_H4,  /**< EOS available for lambda */
++  LAL_SIM_INSPIRAL_EOS_SQM3,/**< EOS available for lambda */
++  LAL_SIM_INSPIRAL_EOS_MPA1,/**< EOS available for lambda */
++  LAL_SIM_INSPIRAL_EOS_GNH3,/**< EOS available for lambda */
++  LAL_SIM_INSPIRAL_NumEOS   /**< Number of elements in enum, useful for checking bounds */
++} LALEquationOfState;
++
++/*
++typedef enum
++{   
++    LAL_SIM_INSPIRAL_EOS_NONE = 0,
++    LAL_SIM_INSPIRAL_EOS_MS1 = 1,
++    LAL_SIM_INSPIRAL_EOS_H4 = 2,
++    LAL_SIM_INSPIRAL_EOS_SQM3 = 3,
++    LAL_SIM_INSPIRAL_EOS_MPA1 = 4,
++    LAL_SIM_INSPIRAL_EOS_GNH3 = 5
++} LALEquationOfState;
++*/
++
++LALEquationOfState XLALSimEOSfromString(char eos_name[]);
++
++REAL8 XLALSimInspiralEOSLambda(LALEquationOfState eos_type, REAL8 m_intr_msun);
++
++REAL8 XLALSimInspiralEOSqmparameter(LALEquationOfState eos_type, REAL8 m_intr_msun);
++
++  REAL8 XLALLambdaQuadratic(REAL8 c0, REAL8 c1, REAL8 c2, REAL8 mass);
++
++REAL8 XLALSimInspiralEOSQfromLambda(REAL8 lambda);
++
++REAL8 XLALSimInspiralNSRadiusOfLambdaM(REAL8 m_intr_msun, REAL8 barlambda);
++
++REAL8 XLALSimInspiralContactFrequency(REAL8 m1_intr, REAL8 barlambda1, REAL8 m2_intr, REAL8 barlambda2);
++
++#ifdef  __cplusplus
++}
++#endif  /* C++ protection. */
++#endif  /* Double-include protection. */
+diff --git a/lalsimulation/src/LALSimInspiralPNCoefficients.c b/lalsimulation/src/LALSimInspiralPNCoefficients.c
+index 0ef16cfef8..d7ab68089c 100644
+--- a/lalsimulation/src/LALSimInspiralPNCoefficients.c
++++ b/lalsimulation/src/LALSimInspiralPNCoefficients.c
+@@ -586,6 +586,35 @@ XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(
+   return (-15895./28. + 4595./28.*mByM + 5715./14.*mByM*mByM - 325./7.*mByM*mByM*mByM)*mByM*mByM*mByM*mByM;
+ }
+ 
++static REAL8 UNUSED 
++XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(
++      REAL8 mByM /**< ratio of object mass to total mass */ 
++    )
++{
++  return mByM*mByM*mByM*mByM * 24.L*(12.L - 11.L*mByM)*LAL_PI; 
++}
++
++static REAL8 UNUSED
++XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(
++      REAL8 mByM /**< ratio of object mass to total mass */ 
++    )
++{
++  REAL8 mByM3 = mByM*mByM*mByM;
++  REAL8 mByM4 = mByM3 * mByM;
++  return - mByM4 * 24.L*(39927845.L/508032.L - 480043345.L/9144576.L*mByM + 9860575.L/127008.L*mByM*mByM - 421821905.L/2286144.L*mByM3 + 4359700.L/35721.L*mByM4 - 10578445.L/285768.L*mByM4*mByM);     
++}
++
++static REAL8 UNUSED
++XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(
++      REAL8 mByM /**< ratio of object mass to total mass */ 
++    )
++{
++  REAL8 mByM2 = mByM*mByM;
++  REAL8 mByM3 = mByM2*mByM;
++  REAL8 mByM4 = mByM3*mByM;
++  return mByM4 * 1.L/28.L*LAL_PI*(27719.L - 22127.L*mByM + 7022.L*mByM2 - 10232.L*mByM3) ;
++}
++
+ /**
+  * Computes the PN Coefficients for using in the TaylorT2 phasing equation.
+  *
+diff --git a/lalsimulation/src/LALSimInspiralTaylorF2.c b/lalsimulation/src/LALSimInspiralTaylorF2.c
+index e13a5e7a14..8be1b4ea0a 100644
+--- a/lalsimulation/src/LALSimInspiralTaylorF2.c
++++ b/lalsimulation/src/LALSimInspiralTaylorF2.c
+@@ -30,6 +30,7 @@
+ #include <lal/LALConstants.h>
+ #include <lal/Sequence.h>
+ #include <lal/LALDatatypes.h>
++#include <lal/LALSimInspiralEOS.h>
+ #include <lal/LALSimInspiral.h>
+ #include <lal/Units.h>
+ #include <lal/XLALError.h>
+@@ -203,9 +204,18 @@ int XLALSimInspiralTaylorF2Core(
+      */
+     REAL8 pft10 = 0.;
+     REAL8 pft12 = 0.;
++    REAL8 pft13 = 0.; 
++    REAL8 pft14 = 0.; 
++    REAL8 pft15 = 0.;
+     switch( tideO )
+     {
+-	    case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
++	case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
++        case LAL_SIM_INSPIRAL_TIDAL_ORDER_75PN:
++            pft15 = pfaN * (lambda2*XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(m2OverM) + lambda1*XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(m1OverM));
++        case LAL_SIM_INSPIRAL_TIDAL_ORDER_7PN:
++            pft14 = pfaN * (lambda2*XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(m2OverM) + lambda1*XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(m1OverM));
++        case LAL_SIM_INSPIRAL_TIDAL_ORDER_65PN:
++            pft13 = pfaN * (lambda2*XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(m1OverM) + lambda1*XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(m2OverM));
+         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
+ 	    pft12 = pfaN * (lambda1*XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m1OverM) + lambda2*XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m2OverM) );
+         case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
+@@ -267,6 +277,9 @@ int XLALSimInspiralTaylorF2Core(
+         const REAL8 v9ref = vref * v8ref;
+         const REAL8 v10ref = vref * v9ref;
+         const REAL8 v12ref = v2ref * v10ref;
++        const REAL8 v13ref = vref * v12ref;
++        const REAL8 v14ref = vref * v13ref;
++        const REAL8 v15ref = vref * v14ref;
+         ref_phasing += pfa7 * v7ref;
+         ref_phasing += (pfa6 + pfl6 * logvref) * v6ref;
+         ref_phasing += (pfa5 + pfl5 * logvref) * v5ref;
+@@ -277,6 +290,9 @@ int XLALSimInspiralTaylorF2Core(
+         ref_phasing += pfaN;
+ 
+         /* Tidal terms in reference phasing */
++        ref_phasing += pft15 * v15ref;
++        ref_phasing += pft14 * v14ref;
++        ref_phasing += pft13 * v13ref;
+         ref_phasing += pft12 * v12ref;
+         ref_phasing += pft10 * v10ref;
+ 
+@@ -297,6 +313,9 @@ int XLALSimInspiralTaylorF2Core(
+         const REAL8 v9 = v * v8;
+         const REAL8 v10 = v * v9;
+         const REAL8 v12 = v2 * v10;
++        const REAL8 v13 = v * v12;
++        const REAL8 v14 = v * v13;
++        const REAL8 v15 = v * v14;
+         REAL8 phasing = 0.;
+         REAL8 dEnergy = 0.;
+         REAL8 flux = 0.;
+@@ -312,6 +331,9 @@ int XLALSimInspiralTaylorF2Core(
+         phasing += pfaN;
+ 
+         /* Tidal terms in phasing */
++        phasing += pft15 * v15;
++        phasing += pft14 * v14;
++        phasing += pft13 * v13;
+         phasing += pft12 * v12;
+         phasing += pft10 * v10;
+ 
+@@ -385,7 +407,7 @@ int XLALSimInspiralTaylorF2(
+         const REAL8 S1z,                       /**<  z component of the spin of companion 1 */
+         const REAL8 S2z,                       /**<  z component of the spin of companion 2  */
+         const REAL8 fStart,                    /**< start GW frequency (Hz) */
+-        const REAL8 fEnd,                      /**< highest GW frequency (Hz) of waveform generation - if 0, end at Schwarzschild ISCO */
++        const REAL8 fEnd,                      /**< highest GW frequency (Hz) of waveform generation - if 0, end at Schwarzschild ISCO; if -1, end at minimum of ISCO and contact frequencies*/
+         const REAL8 f_ref,                     /**< Reference GW frequency (Hz) - if 0 reference point is coalescence */
+         const REAL8 r,                         /**< distance of source (m) */
+         const REAL8 quadparam1,                /**< quadrupole deformation parameter of body 1 (dimensionless, 1 for BH) */
+@@ -416,6 +438,7 @@ int XLALSimInspiralTaylorF2(
+     REAL8Sequence *freqs = NULL;
+     LIGOTimeGPS tC = {0, 0};
+     int ret;
++    REAL8 fCONT;
+ 
+     COMPLEX16FrequencySeries *htilde = NULL;
+ 
+@@ -429,8 +452,12 @@ int XLALSimInspiralTaylorF2(
+     if (r <= 0) XLAL_ERROR(XLAL_EDOM);
+ 
+     /* allocate htilde */
+-    if ( fEnd == 0. ) // End at ISCO
++    if (( fEnd == 0. ) && ( tideO == 0 )) // End at ISCO
+         f_max = fISCO;
++    else if (( fEnd == 0. ) && ( tideO != 0 )) { // End at the minimum of the contact and ISCO frequencies only when tides are enabled
++        fCONT = XLALSimInspiralContactFrequency(m1, lambda1, m2, lambda2); /* Contact frequency of two compact objects */
++        f_max = (fCONT > fISCO) ? fISCO : fCONT;
++    }
+     else // End at user-specified freq.
+         f_max = fEnd;
+     if (f_max <= fStart) XLAL_ERROR(XLAL_EDOM);
+diff --git a/lalsimulation/src/LALSimInspiralWaveformCache.c b/lalsimulation/src/LALSimInspiralWaveformCache.c
+index d005955ec9..16f79b0880 100644
+--- a/lalsimulation/src/LALSimInspiralWaveformCache.c
++++ b/lalsimulation/src/LALSimInspiralWaveformCache.c
+@@ -20,6 +20,7 @@
+ #include <math.h>
+ #include <LALSimInspiralWaveformCache.h>
+ #include <lal/LALSimInspiral.h>
++#include <lal/LALSimInspiralEOS.h>
+ #include <lal/LALSimIMR.h>
+ #include <lal/FrequencySeries.h>
+ #include <lal/Sequence.h>
+@@ -947,6 +948,8 @@ int XLALSimInspiralChooseFDWaveformSequence(
+     unsigned int j;
+     REAL8 pfac, cfac;
+     REAL8 quadparam1 = 1., quadparam2 = 1.; /* FIXME: This cannot yet be set in the interface */
++    quadparam1 = XLALSimInspiralEOSQfromLambda(lambda1);
++    quadparam2 = XLALSimInspiralEOSQfromLambda(lambda2);
+     REAL8 LNhatx, LNhaty, LNhatz;
+ 
+     /* Support variables for precessing wfs*/
+@@ -1153,7 +1156,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
+             /* Call the waveform driver routine */
+             ret = XLALSimIMRPhenomPFrequencySequence(hptilde, hctilde, frequencies,
+               chi1_l, chi2_l, chip, thetaJ,
+-              m1, m2, r, alpha0, phiRef, f_ref, IMRPhenomPv1_V, nonGRparams);
++              m1, m2, r, quadparam1, quadparam2, alpha0, phiRef, f_ref, IMRPhenomPv1_V, nonGRparams);
+             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+             break;
+ 
+@@ -1187,7 +1190,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
+             /* Call the waveform driver routine */
+             ret = XLALSimIMRPhenomPFrequencySequence(hptilde, hctilde, frequencies,
+               chi1_l, chi2_l, chip, thetaJ,
+-              m1, m2, r, alpha0, phiRef, f_ref, IMRPhenomPv2_V, nonGRparams);
++              m1, m2, r, quadparam1, quadparam2, alpha0, phiRef, f_ref, IMRPhenomPv2_V, nonGRparams);
+             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+             break;
+ 
+@@ -1199,7 +1202,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
+                 ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
+ 
+             ret = XLALSimIMRPhenomDFrequencySequence(hptilde, frequencies,
+-                phiRef, f_ref, m1, m2, S1z, S2z, r, nonGRparams);
++                phiRef, f_ref, m1, m2, S1z, S2z, r, quadparam1, quadparam2, nonGRparams);
+             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+             /* Produce both polarizations */
+             *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
+diff --git a/lalsimulation/src/LALSimInspiralWaveformCache.h b/lalsimulation/src/LALSimInspiralWaveformCache.h
+index 601bf46429..6f29ca85ae 100644
+--- a/lalsimulation/src/LALSimInspiralWaveformCache.h
++++ b/lalsimulation/src/LALSimInspiralWaveformCache.h
+@@ -21,6 +21,7 @@
+ #define _LALSIMINSPIRALWAVEFORMCACHE_H
+ 
+ #include <lal/LALSimInspiral.h>
++#include <lal/LALSimInspiralEOS.h>
+ 
+ #if defined(__cplusplus)
+ extern "C" {
+diff --git a/lalsimulation/src/LALSimInspiralWaveformFlags.h b/lalsimulation/src/LALSimInspiralWaveformFlags.h
+index d59d98b05d..3b6d9fd833 100644
+--- a/lalsimulation/src/LALSimInspiralWaveformFlags.h
++++ b/lalsimulation/src/LALSimInspiralWaveformFlags.h
+@@ -66,6 +66,9 @@ typedef enum tagLALSimInspiralTidalOrder {
+     LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN =  0,
+     LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN = 10,
+     LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN = 12,
++    LAL_SIM_INSPIRAL_TIDAL_ORDER_65PN = 13,
++    LAL_SIM_INSPIRAL_TIDAL_ORDER_7PN = 14,
++    LAL_SIM_INSPIRAL_TIDAL_ORDER_75PN = 15, 
+     LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL = -1
+ } LALSimInspiralTidalOrder;
+ 
+diff --git a/lalsimulation/src/Makefile.am b/lalsimulation/src/Makefile.am
+index d34d43ce5e..b1e51b71a8 100644
+--- a/lalsimulation/src/Makefile.am
++++ b/lalsimulation/src/Makefile.am
+@@ -72,7 +72,8 @@ pkginclude_HEADERS = \
+ 	LALSimulation.h \
+ 	LALSimulationConfig.h \
+ 	LALSimulationVCSInfo.h \
+-	LALSimulationVCSInfoHeader.h
++	LALSimulationVCSInfoHeader.h \
++        LALSimInspiralEOS.h
+ 
+ noinst_HEADERS = \
+ 	LALSimBlackHoleRingdownPrec.c \
+@@ -192,7 +193,8 @@ liblalsimulation_la_SOURCES = \
+ 	check_waveform_macros.h \
+ 	unicorn.xpm \
+ 	LALSimInspiralHGimri.c \
+-	LALSimFindAttachTime.c
++	LALSimFindAttachTime.c \
++        LALSimInspiralEOS.c
+ 
+ nodist_liblalsimulation_la_SOURCES = LALSimulationBuildInfo.c
+ 
+-- 
+2.14.1
+
