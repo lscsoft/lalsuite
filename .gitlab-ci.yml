@@ -478,6 +478,8 @@ docker:nightly:
   only:
     - master@lscsoft/lalsuite
     - schedules
+  except:
+    - pushes
 
 tagged:
   stage: tag
