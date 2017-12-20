@@ -115,7 +115,7 @@ int main(int argc, char **argv)
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&sunFile,      "sunFile",      STRING, 'z', OPTIONAL, "sun .dat file" ) == XLAL_SUCCESS, XLAL_EFUNC);
     
     BOOLEAN should_exit = 0;
-    XLAL_CHECK_MAIN(XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN(XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
     if (should_exit)
       return(1);
     
@@ -277,7 +277,7 @@ int main(int argc, char **argv)
     /*some header files for the crab*/
     /*#include "../TDS_isolated/HeterodyneCrabPulsar.h"*/
     /*#include "../TDS_isolated/heterodyne_pulsar.h"*/
-    #include<../TDS_isolated/HeterodyneCrabPulsar.h>
+    #include<../HeterodyneSearch/HeterodyneCrabPulsar.h>
 
     if (psrInput != NULL){
 
@@ -351,7 +351,7 @@ int main(int argc, char **argv)
     /* read in tempo par file for pulsar, This is one of the optional command line arguments*/
     /*fprintf(stderr,"%s\n",psrInput);*/
     fprintf(stderr,"%s\n",psrInput);
-    XLALReadTEMPOParFile(&pulsarParams, psrInput);
+    XLALReadTEMPOParFileOrig(&pulsarParams, psrInput);
 
     /*Make sure that posepoch and pepoch are set*/
     if(pulsarParams.pepoch == 0. && pulsarParams.posepoch != 0.)
