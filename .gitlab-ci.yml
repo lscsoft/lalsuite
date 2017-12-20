@@ -428,6 +428,18 @@ nightly:top-level:buster:
     - web
   allow_failure: true
 
+nightly:top-level:clang:
+  image: skymoo/ligo-lalsuite-clang:jessie
+  stage: nightly
+  script:
+    - ./00boot
+    - CC=clang CXX=clang++ ./configure --enable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
 nightly:mpi:jessie:
   image: ligo/lalsuite-dev:jessie
   stage: nightly
