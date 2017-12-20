@@ -344,6 +344,7 @@ FstatInput *
 XLALCreateFstatInput ( const SFTCatalog *SFTcatalog, const REAL8 minCoverFreq, const REAL8 maxCoverFreq, const REAL8 dFreq,
                        const EphemerisData *ephemerides, const FstatOptionalArgs *optionalArgs );
 
+int XLALGetFstatInputSFTBand ( const FstatInput *input, REAL8 *minFreqFull, REAL8 *maxFreqFull );
 const CHAR *XLALGetFstatInputMethodName ( const FstatInput* input );
 const MultiLALDetector* XLALGetFstatInputDetectors ( const FstatInput* input );
 const MultiLIGOTimeGPSVector* XLALGetFstatInputTimestamps ( const FstatInput* input );

@@ -261,7 +261,7 @@ static void LT_FindBoundExtrema(
 {
 
   // Get bound information for this dimension
-  const LT_Bound *bound = &tiling->bounds[dim];
+  const LT_Bound *bound = &tiling->bounds[i];
 
   // If 'i' equals target dimension 'dim', get parameter-space bounds in this dimension
   if ( i == dim ) {
