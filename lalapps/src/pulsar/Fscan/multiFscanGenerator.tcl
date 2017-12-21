@@ -62,8 +62,6 @@ proc getColumn {Line ColNum} {
 
 proc getLSCsegFindsegs {typeLSCsegFind startTime endTime segFile} {
   if {[string match "*ligolw_segment_query*" $::segFindCmdAndPath]} {
-   #set segCommand "exec $::segFindCmdAndPath --database --query-segments --include-segments $typeLSCsegFind --gps-start-time  $startTime --gps-end-time $endTime | $::grepCommandAndPath -v \"0, 0\" | $::ligolwPrintCommandAndPath -t segment:table -c start_time -c end_time -d \" \" > $segFile"
-   #set segCommand "exec $segFindCmdAndPath --server $segFindServer --type $typeLSCsegFind --interferometer $thisIfoList2 --gps-start-time $startTime --gps-end-time $endTime";
    #set segCommand "exec $::segFindCmdAndPath --segment-url=https://dqsegdb5.phy.syr.edu --query-segments --include-segments $typeLSCsegFind --gps-start-time  $startTime --gps-end-time $endTime | $::grepCommandAndPath -v \"0, 0\" | $::ligolwPrintCommandAndPath -t segment:table -c start_time -c end_time -d \" \" > $segFile"
    set segCommand "exec $::segFindCmdAndPath --segment-url=https://segments.ligo.org --query-segments --include-segments $typeLSCsegFind --gps-start-time  $startTime --gps-end-time $endTime | $::grepCommandAndPath -v \"0, 0\" | $::ligolwPrintCommandAndPath -t segment:table -c start_time -c end_time -d \" \" > $segFile"
    puts "segCommand = $segCommand";
@@ -252,7 +250,7 @@ set ::segsFromFile {};         # Initialize list of segFile segments;
 set intersectData 0; # 0 == false, 1 == true; if true run fscanDriver.py with -I option so that it intersects the segments with the times data exists.
 
 set fscanDriverPath "none"; # complete path to fscanDriver.py
-set matlabPath "none";      # Path to matlab installation to use with -m option to fscanDriver.py, e.g., /ldcg/matlab_r2008a
+set matlabPath "none";      # Path to matlab installation to use with -m option to fscanDriver.py, e.g., /ldcg/matlab_r2008a. 12/12/2017 gam: obsolete.
 
 set nGPSDigitsList [list 4]
 set startTime "none"
@@ -292,6 +290,7 @@ set moveSFTsFromSuffix "";
 set crab 0; #if crab stuff is to be run then rsc file sets crab to 1, default is not to run.X
 
 set submitLogFileDir "/usr1/pulsar"; # directory location for log files given in the condor submit files, for use with fscanDriver.py -o option.
+
 
 ##### MAIN CODE STARTS HERE #####
 
@@ -358,11 +357,11 @@ if {$fscanDriverPath == "none"} {
    PrintHelpAndExit;
 }
 
-if {$matlabPath == "none"} {
-   puts "Could not determine matlab path from $resourceFile.";
-   PrintHelpAndExit;
-
-}
+#if {$matlabPath == "none"} {
+#   puts "Could not determine matlab path from $resourceFile.";
+#   PrintHelpAndExit;
+#
+#}
 
 # Format start and end time
 set formatStartTime [tconvert -l -f "%a %b %d %I:%M:%S %p %Z %Y" $startTime]
@@ -592,7 +591,8 @@ for {set i 0} {$i < [llength $::masterList]} {incr i} {
     }
     append cmd " -p $thisSFTOutDir -N $thisChan -F $thisStartFreq -B $thisBand -b $thisSubBand";
     append cmd " -X fscan$thisChanDir -o $submitLogFileDir"
-    append cmd " -O $thisDir -m $matlabPath"
+    #append cmd " -O $thisDir -m $matlabPath"
+    append cmd " -O $thisDir"
     append cmd " -W $thisDir/fscan$thisG.html"
     if {$useSegFileList} {
        # Use the segFile that goes with thisIFO.
@@ -604,11 +604,24 @@ for {set i 0} {$i < [llength $::masterList]} {incr i} {
        append cmd " -J $thispsrInput -j $thispsrEphemeris -E $thisearthFile -z $thissunFile";
     }
     if {$thisComparisonChan != "none"} {
-       set thisComparisonChan [split $thisComparisonChan ":"]
-       set thisComparisonIFO [lindex $thisComparisonChan 0]
-       set thisComparisonChan [join $thisComparisonChan "_"]
+       set thisComparisonChan [split $thisComparisonChan ":"];
+       set thisComparisonIFO [lindex $thisComparisonChan 0];
+       set thisComparisonChan [join $thisComparisonChan "_"];
        if {$fixedComparison} {
-         set thisComparisonChanDir $fixedComparisonChanDir;
+         #set thisComparisonChanDir $fixedComparisonChanDir;
+	 #set thisComparisonChanDir "$thisComparisonChanDir/$thisComparisonChan";
+         set fp [open "$fixedComparisonChanDir/$thisComparisonChan.txt" r]
+         set thisComparisonChanDir [read $fp]
+         close $fp
+         set thisComparisonChanDir "../../$thisComparisonChanDir";
+         set fixedComparisonString [glob "$thisComparisonChanDir/fscan*.html"]; # get start and end times from fscan*.html
+         set fixedComparisonString [split $fixedComparisonString "_"];
+         set fixedComparisonString [split $fixedComparisonString "."]; # parse out html
+         set fixedComparisonString [lindex $fixedComparisonString [expr [llength $fixedComparisonString] - 2] ]; # look at list part before .html
+         set compareStartTime [lindex $fixedComparisonString [expr [llength $fixedComparisonString] - 2] ];
+         set compareEndTime [lindex $fixedComparisonString [expr [llength $fixedComparisonString] - 1] ];
+         set fixedComparisonString $thisComparisonIFO
+         append fixedComparisonString "_" $compareStartTime "_" $compareEndTime
          set thisComparisonString $fixedComparisonString;
          set thisComparisonSNR $fixedComparisonSNR;
        } else {
@@ -656,6 +669,8 @@ for {set i 0} {$i < [llength $::masterList]} {incr i} {
     }
     cd ..
 }
+
+
 
 cd $startingPWD;
 

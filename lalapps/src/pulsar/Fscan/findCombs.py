@@ -7,10 +7,53 @@ from numpy import *
 import numpy as np
 import sys
 
-# # define function
-def findCombs2017(threshold,outputName,nround,data):
+# For teeth thicker than epsilon Hz, pick the tooth with the maximum snr. 
+def uniqueTeeth(epsilon,f,snr):
+        indList = [] # List of indices to keep 
+        thisToothIndices = np.array([0],dtype=np.int) # List of indiced belong to a tooth.
+        thisToothSNRs = np.array([snr[0]],dtype=np.int) # List of snrs belong to a tooth.
+        for i in range(0, len(f) - 1):
+                j = i + 1
+                # Use < 2.0*epsilon to avoid round off error to find lines <= epsilon of each other. 
+                if abs( f[j] - f[i] ) < 2.0*epsilon and j < len(f):
+                       thisToothIndices = np.append(thisToothIndices,j)
+                       thisToothSNRs = np.append(thisToothSNRs,snr[j])
+                else:
+                       thisInd = thisToothIndices[np.argmax(thisToothSNRs)]
+                       indList = np.append(indList,int(np.floor(thisInd)))
+                       # Initialize for next tooth 
+                       thisToothIndices = np.array([j],dtype=np.int) # List of indiced belong to a tooth.
+                       thisToothSNRs = np.array([snr[j]],dtype=np.int) # List of snrs belong to a tooth.
+        # We are at the end of the array; add the index of the last tooth.
+        thisInd = thisToothIndices[np.argmax(thisToothSNRs)]
+        indList = np.append(indList,int(np.floor(thisInd)))
+        return indList
 
-# findCombs2017(threshold,outputname,nround,data)
+# Run this function after the np.unique function.
+# This will give a "within epsilon" less strict criteria for what is unique.
+# For example, np.unique sees 58.23 Hz and 58.24 Hz as different teeth.
+# We want to call them the same tooth.
+# Also, after merging combs, can have teeth separated by less than thisDeltaF. Remove those teeth too.
+def uniqueWithinEpsilon(epsilon, thisDeltaF, dataList):
+        diffList = 1 
+	for i in range(0, len(dataList) - 1):
+		j = i + 1
+		#while abs( dataList[j] - dataList[i] ) <= epsilon and j < len(dataList):
+		if abs( dataList[j] - dataList[i] ) < 2.0*epsilon or ( thisDeltaF - (dataList[j] - dataList[i]) ) > 2.0*epsilon and j < len(dataList):
+		        diffList = np.append(diffList,-99999)	
+			#dataList[j] = -99999
+			#j += 1
+		else:
+		        diffList = np.append(diffList,0)	
+	#dataList = dataList[ dataList != -99999 ]
+	#return dataList
+	indList = (diffList == 0)
+	return indList
+
+# # define function
+def findCombs(threshold,outputName,nround,data):
+
+# findCombs(threshold,outputname,nround,data)
 # Author: Joe Milliano, STAR Fellow Summer 2017
 # Author contact: joe.milliano at gmail dot com
 #
@@ -32,28 +75,48 @@ def findCombs2017(threshold,outputName,nround,data):
 		xIn = loadtxt(data, skiprows = 1)
 		freq = xIn[:,0]
 		power = xIn[:,1]
+		snr = xIn[:,2]
 	elif type(data) is np.ndarray:
 		xIn = data
 		freq = xIn[:,0]
 		power = xIn[:,1]
+		snr = xIn[:,2]
 	else:
 		print('Incorrect data type inserted')
 		return
 
 	# define threshold value
-	sortedPower = np.sort(power)
+	sortedSNR = np.sort(snr)
 	if threshold < 1:
-		threshInd = np.floor(threshold*len(power))
-		thresh = sortedPower[threshInd]
+		threshInd = int(np.floor(threshold*len(snr)))
+		thresh = sortedSNR[threshInd]
 	else:
 		thresh = threshold
 
-	epsilon = 0.01				# what is "close enough" to be a comb? ...within epsilon
-	f = freq[power >= thresh]	# get only strong frequencies
-	f = np.around(f,nround)		# round off to nround decimal points
-	print(f)
-	f = np.unique(f)			# return only sorted unique values
-	nStrong = f.size			# number of strong frequencies
+	epsilon = 10 ** (-nround)			# what is "close enough" to be a comb? ...within epsilon
+	#epsilon = 0.0            			# what is "close enough" to be a comb? ...within epsilon
+	f = freq[snr >= thresh]				# get only strong frequencies
+	snr = snr[snr >= thresh]			# grab the SNR of the power of the strong frequencies
+	f = np.around(f,nround)				# round off to nround decimal points
+	#[f, fIdx] = np.unique(f,return_index=True)	# Use uniqueTeeth routine below 
+	#snr = snr[fIdx]
+        #print f,len(f)
+        #print snr 
+        # For teeth thicker than epsilon Hz, pick the tooth with the maximum snr. 
+        uTind = uniqueTeeth(epsilon,f,snr)
+        #print uTind 
+        tmpf = []
+        tmpsnr = []
+        for i in range(len(uTind)):
+           tmpf.append(f[int(uTind[i])])
+           tmpsnr.append(snr[int(uTind[i])])
+        f = tmpf
+	f = np.around(f,nround)				# round off to nround decimal points
+        snr = tmpsnr
+	snr = np.around(snr,nround)				# round off to nround decimal points
+        #print f,len(f)
+        #print snr 
+	nStrong = f.size				# number of strong frequencies
 
 
 	#####################################
@@ -77,14 +140,16 @@ def findCombs2017(threshold,outputName,nround,data):
 					ind2 += 1
 					freq2 = f[ind2]
 					deltaF_B = freq2 - freq1
-			if abs(deltaF_B - deltaF_A) < epsilon: # Are they the same delta f? If so, its a comb!
+			if abs(deltaF_B - deltaF_A) <= epsilon: # Are they the same delta f? If so, its a comb!
 				if numCombs == 0:
 					deltaF = deltaF_A
 					comb = np.array([freq0, freq1, freq2])
+					indArray = np.array([ind0, ind1, ind2])
 					numCombs = 1
 				else:
 					deltaF = np.append(deltaF,deltaF_A)
 					comb = np.vstack((comb,[freq0, freq1, freq2]))
+					indArray = np.vstack((indArray,[ind0, ind1, ind2]))
 					numCombs += 1
 
 
@@ -95,18 +160,39 @@ def findCombs2017(threshold,outputName,nround,data):
 
 
 	deltaF = np.around(deltaF,nround) # Need to round again to account for loss of floating point precision in subtraction
-	uniqueDeltaF = np.unique(deltaF) # only need one comb per delta f
+	uniqueDeltaF = np.unique(deltaF) # only need one comb per delta f 
+	# snr = snr[uniqueFIdx]
+	# snr = snr[np.nonzero(uniqueDeltaF)]
 	uniqueDeltaF = uniqueDeltaF[np.nonzero(uniqueDeltaF)] # no zero delta fs allowed
 	numCombs = len(uniqueDeltaF)
 
 	combList = []
+	snrList = []
 	for combInd in range(numCombs):
-		combStorage = comb[abs(deltaF - uniqueDeltaF[combInd]) < epsilon,:]
-		numElements = np.size(combStorage)
-		combStorage = np.reshape(combStorage,numElements)
-		combStorage = np.unique(combStorage)
+		rowInd = abs( deltaF - uniqueDeltaF[combInd] ) <= epsilon # Which rows hold teeth of the same comb?
+		if numCombs == 1:
+			combStorage = comb
+			indStorage = indArray
+		else:
+			combStorage = comb[rowInd,:]		# Grab those teeth
+			indStorage = indArray[rowInd,:]		# Also grab their indices from the original freq vector...this is used to get SNR of the tooth signal
+			numElements = np.size(combStorage)	# How many teeth are in this comb?
+			combStorage = np.reshape(combStorage,numElements)	# Turn teeth matrix into a vector
+			indStorage = np.reshape(indStorage, numElements) 	# Turn index matrix into a vector
+			[combStorage, toothIdx] = np.unique(combStorage,return_index=True) # Eliminate repeat teeth
+			indStorage = indStorage[toothIdx] 	# Eliminate indices of repeat teeth
+			#combStorage = [combStorage[tInd] for tInd in sorted(toothIdx)] # Put the unique teeth in the order found	
+		 	#combStorage = np.around(combStorage,nround) # Need to round again.	
+		snrStorage = snr[indStorage]		# get SNR of power signal at that tooth
 		combList.append(combStorage)
-
+		snrList.append(snrStorage)
+	
+        for i in range (len(combList)):
+	   	#combList[i] = uniqueWithinEpsilon(epsilon, combList[i])
+	   	thisComb = combList[i]
+                thisDeltaF = uniqueDeltaF[i]
+	        thisIndList = uniqueWithinEpsilon(epsilon,thisDeltaF,thisComb)	
+	   	combList[i] = thisComb[thisIndList]
 
 	########################################
 	## Eliminate higher freq repeat teeth ##
@@ -116,7 +202,7 @@ def findCombs2017(threshold,outputName,nround,data):
 	## KEY INSIGHT:
 	## Let's say a particular deltaF has N teeth in a comb.
 	## Then an integer multiple of deltaF can repeat some of these N combs.
-	## The largest integer n that can have repeat combs is
+	## The largest integer n that can have repeat combs is 
 	## the largest n such that 2n < N-1.
 
 	## COUNTING REPEAT COMB STEPS:
@@ -125,20 +211,13 @@ def findCombs2017(threshold,outputName,nround,data):
 	## 3. Repeat for all possible integer multiples of deltaF (inner loop)
 	## 4. Repeat for all deltaF (outer loop)
 
-	for combInd in range(numCombs):
-		numTeeth = np.size(combList[combInd])
-		# Find highest possible integer multiple of this deltaF that could give a repeat comb
-		if numTeeth % 2 == 1: # if odd number of teeth, '%' is modulo
-			numRepeatCount = (numTeeth - 1) / 2
-		else: # if even number of teeth
-			numRepeatCount = (numTeeth - 2) / 2
-		# Eliminate all integer multiples that repeat
-		for intMult in range(2,numRepeatCount + 1):
-			if sum( abs(uniqueDeltaF - intMult*uniqueDeltaF[combInd]) < epsilon ) > 0 : # If there is a repeat comb
-				repeatInd = np.where(abs( uniqueDeltaF - intMult*uniqueDeltaF[combInd]) < epsilon) # Find repeat comb index
-				repeatInd = int(repeatInd[0]) # make that index an integer
-				# combList[repeatInd] = set( combList[repeatInd] ) - set( combList[combInd] ) # set subtract out repeated teeth
-				combList[repeatInd] = np.setdiff1d( combList[repeatInd], combList[combInd] ) # set subtract out repeated teeth
+        for combInd in range(numCombs):
+            thisDeltaF = uniqueDeltaF[combInd]
+            # Loop through the combs with smaller deltaF, and check if this deltaF is a harmonic of the smaller deltaF. 
+            for smallerDeltaFInd in range(combInd):
+                smallerDeltaF = uniqueDeltaF[smallerDeltaFInd]
+                if abs(thisDeltaF - smallerDeltaF*around((thisDeltaF/smallerDeltaF),0)) <= 2.0*epsilon:
+                   combList[combInd] = np.setdiff1d( combList[combInd], combList[smallerDeltaFInd] ) # subtract out repeated teeth in harmonic of a comb
 
 	###################################################
 	## If comb frequencies are within epsilon Hz,       ##
@@ -150,9 +229,9 @@ def findCombs2017(threshold,outputName,nround,data):
 	for i in range(len(uniqueDeltaF)-1) :
 		if len(combList[i]) > len(combList[i+1]) : # Keep as many teeth as possible
 			ind0 = i + 1
-			ind1 = i
+			ind1 = i 
 		else:
-			ind0 = i
+			ind0 = i 
 			ind1 = i + 1
 		if abs( uniqueDeltaF[ind0] - uniqueDeltaF[ind1] ) < 2*epsilon :
 			combList[ind0] = np.setdiff1d( combList[ind0], combList[ind1] )
@@ -177,12 +256,23 @@ def findCombs2017(threshold,outputName,nround,data):
 
 	fh = open(outputName + "_combs.txt","w")
 
-	fh.write("Combs given as delta f: teeth frequencies ...\n\n")
+	fh.write("Combs given as delta f (median SNR): teeth frequencies ...\n\n")
 
-	for i in range(numCombs):
-		if len(combList[i]) != 0:
-			outputText = str(uniqueDeltaF[i]) + ": " + str(combList[i])[1:-1] + "\n\n"
-			fh.write(outputText)
+        for i in range(numCombs):
+                if len(combList[i]) > 2:
+                        medianSNR = np.median(snrList[i])
+                        medianSNR = np.around(medianSNR,nround)
+                        # If there is a comb within a comb with the same spacing but shifted back in frequency, add a comma to separate them in the list.  
+                        thisComb = combList[i] 
+                        thisCombStr = str(thisComb[0]) 
+                        for j in range(1,len(thisComb)):
+                            if thisComb[j] < thisComb[j-1]:
+                               thisCombStr = thisCombStr + ', ' +  str(thisComb[j]) 
+                            else:
+                               thisCombStr = thisCombStr + ' ' +  str(thisComb[j]) 
+                        #outputText = str(uniqueDeltaF[i]) + " Hz (" + str(medianSNR) + "): " + str(combList[i])[1:-1] + "\n\n"
+                        outputText = str(uniqueDeltaF[i]) + " Hz (" + str(medianSNR) + "): " + thisCombStr + "\n\n"
+                        fh.write(outputText)
 
 	fh.close()
 
@@ -207,4 +297,4 @@ if __name__ == '__main__':
 		nround = int(sys.argv[3])
 
 	# run function
-	findCombs2017(threshold,outputName,nround,data)
+	findCombs(threshold,outputName,nround,data)

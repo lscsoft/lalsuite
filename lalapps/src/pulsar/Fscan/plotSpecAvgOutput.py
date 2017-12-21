@@ -12,9 +12,9 @@ import os
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 import math as math
 import numpy as np
+from findCombs import findCombs
 
-
-def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coinDF,referenceFile):
+def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coinDF, pulsar, referenceFile):
 
 # fileName       -- the name of the file with data to input; this file is the output from spec_avg.
 # outputFileName -- base name of the output spectrogram files; will append .pdf and .png to this name.
@@ -29,7 +29,8 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
 # effTBaseFull   -- 1/effTBaseFull gives the frequency resolution of the average normalized spectra plots. This value is the timbaseline of the sfts.
 # thresholdSNR   -- if > 0 then look for coincident lines with the referenceFile spectra above this threshold.
 # coinDF         -- window in frequency to use when looking for coincident lines.
-# referenceFile  -- base name of the reference file output by spec_avg; will append _timeaverage to this name.
+# pulsar         -- this is an archaic input that is necessary for backwards compatibility. Always make this input 0. (Joe Milliano, 2017)
+# referenceFile  -- base name of the reference file output by spec_avg; will append .txt to this name.
 
 # Convert relevant strings to numbers.
     if isinstance(effTBase,str):
@@ -57,9 +58,9 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
     tStart = lst.pop()      # start time
     ifo = lst.pop()         # ifo
     fEnd = lst.pop()        # end frequency
-    fStart = lst.pop()      # start frequency
+    fStart = lst.pop()      # start frequency 
 
-    y_temp1 = y             #Create an array of the spectrogram data without the segments taken out when a segment file is used
+    y_temp1 = y             # Create an array of the spectrogram data without the segments taken out when a segment file is used
     yzeros=list(y.sum(axis=0))
     for i in reversed(range(len(yzeros))):
         if yzeros[i] == 0:
@@ -68,18 +69,19 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
     y_temp2 = []
     xlen2=len(y_temp1[:,0])
     ylen2=len(y_temp1[0,:])
-    for i in range(xlen2):          #puts y_temp1 in a list column by column
+    for i in range(xlen2):          # puts y_temp1 in a list column by column
         for j in range(ylen2):
             y_temp2.append(y_temp1[i,j])
 
 
-    filename_numbins = filename + '_numbins'
-    NumBinsAvg=loadtxt(filename_numbins)
+    #filename_numbins = filename + '_numbins'
+    #NumBinsAvg=loadtxt(filename_numbins)
+    NumBinsAvg=effTBaseFull/effTBase
 
     mediany = median(y_temp2)
     cutoffval = mediany + (5*(mediany/sqrt(NumBinsAvg)))
 
-#Replace all of the values greater that cut-off value with cutoffval
+# Replace all of the values greater that cut-off value with cutoffval
     for i in range(len(y[:,0])):
         for j in range(len(y[0,:])):
             if y[i,j] >= cutoffval:
@@ -89,7 +91,7 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
     filename_date = filename + '_date'
     dates = loadtxt(filename_date)
 
-#Create strings of start and ends times in 'YYYY/MM/DD HH:MM:SS' format
+# Create strings of start and ends times in 'YYYY/MM/DD HH:MM:SS' format
     startTime = str(int(dates[0,1]))+'/'+str(int(dates[0,2]))+'/'+str(int(dates[0,3]))+' '+str(int(dates[0,4]))+':'+str(int(dates[0,5]))+':'+str(int(dates[0,6]))
     endTime = str(int(dates[-1,1]))+'/'+str(int(dates[-1,2]))+'/'+str(int(dates[-1,3]))+' '+str(int(dates[-1,4]))+':'+str(int(dates[-1,5]))+':'+str(int(dates[-1,6]))
 
@@ -113,11 +115,11 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
 
 #    jetcmap.set_under('0.85')
 #    imshow(y,aspect='auto',cmap=jetcmap)
-    cbar=colorbar(format='%d')             #Show colorbar on spectrogram
+    cbar=colorbar()             #Show colorbar on spectrogram
 #    clim(ymin,ymax)
     cbar.set_label('Channel units/root Hz')  #Colorbar label
     filename_png = filename + '.png'
-
+    
 #y-axis
     ylabel('Frequency [Hz]',fontsize=10)
     fRange = int(float(fEnd)) - int(float(fStart))
@@ -131,7 +133,7 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
     deltaxticks = 10
     if deltaxticks < 1:
         deltaxticks = 1
-    xtcks = linspace(-.5,xlen-.5,deltaxticks)      #matplotlib on cluster seems to start counting tick locations at -.5 insteasd of zero
+    xtcks = linspace(-.5,xlen-.5,deltaxticks)      # matplotlib on cluster seems to start counting tick locations at -.5 insteasd of zero
     xtcks = xtcks.tolist()
     xnumticks=len(xtcks)
     tRange = float(tEnd)-float(tStart)
@@ -144,7 +146,7 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
 
 #Title
 
-    titleString = 'Spectrogram for %s;  %s  to  %s UTC.' %(chanName,startTime,endTime)
+    titleString = 'Spectrogram for %s \n  %s  to  %s UTC.' %(chanName,startTime,endTime)
     title(titleString,fontsize = 9)
 
 #Save spectrogram
@@ -155,7 +157,7 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
 #Plot normalized average power
 #---------------------------------
 
-    figure(2)
+    fig2 = figure(2)
 
     timeaverageFileName = filename + '_timeaverage'
     data = loadtxt(timeaverageFileName)       #Load data for normalized average power plot
@@ -165,13 +167,17 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
     xoutlist = xout.tolist()
     snr = []
     for i in range(len(xout)):                #Calculate SNR using number of sft's used (don't include unused timesteps from seg. list)
-        sr = (xout[i]-1)*math.sqrt(ylen2)
+        sr = (xout[i]-1)*math.sqrt(ylen2)     # ylen2 is number of SFTs, maybe ??? (Joe Milliano)
         snr.append(sr)
     data2=zeros((len(fk),3))
     for i in range(len(xout)):
         data2[i,0] = data[i,0]
         data2[i,1] = data[i,1]
         data2[i,2] = snr[i]
+
+    # Get variables for combfinder
+    numSFTs = ylen2
+    
 
     outputTextFile = filename + '.txt'
     outputSortedTextFile = outputFileName + '_sorted.txt'
@@ -183,12 +189,14 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
     xoutSorted = data4[:,1]
     snrSorted = data4[:,2]
 
-    f_header = open(outputTextFile,'a')
-    f_header.write('Freq.     Normalized Avg Power   SNR \n')
-    savetxt(f_header,transpose(array((fk,xout,snr))),fmt="%.6f %.4f %.4f")
-    f_headers = open(outputSortedTextFile,'a')
-    f_headers.write('Freq.     Normalized Avg Power   SNR\n')
-    savetxt(f_headers,transpose(array((fSorted,xoutSorted,snrSorted))),fmt="%.6f %.4f %.4f")
+    f_header = open(outputTextFile,'w')
+    f_header.write('Freq.     Normalized Avg Power\n')
+    savetxt(f_header,transpose(array((fk,xout))),fmt="%.6f %.3f")
+    f_header.close()
+    f_headers = open(outputSortedTextFile,'w')
+    f_headers.write('Freq.     Normalized Avg Power\n')
+    savetxt(f_headers,transpose(array((fSorted,xoutSorted))),fmt="%.6f %.3f")
+    f_headers.close()
     kmax = len(xout)
     stdev_xout = std(xout)
     meanval_xout = mean(xout)
@@ -200,24 +208,25 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
     ttmp = tmp[:,1]
 
 # Computed expected 5 sigma cutoff for gaussian noise:
-    cutoffmax = 1.0 + 5.0/sqrt(len(ntmp))
+#    cutoffmax = 1.0 + 5.0/sqrt(len(ntmp))
 # avoid too small of a maximum cutoff:
-    if cutoffmax < 4:
-        cutoffmax = 4
-
+#    if cutoffmax < 4:
+#        cutoffmax = 4
+#
 # Compute cutoff from data, but do not exceed cutoffmax:
-    cutoff = meanval_xout+(5*stdev_xout)
-    if cutoff > cutoffmax:
-        cutoff = cutoffmax
+#    cutoff = meanval_xout+(5*stdev_xout)
+#    if cutoff > cutoffmax: # This should be <
+#        cutoff = cutoffmax
+#
+#    for i in range(len(xoutlist)):
+#        if xoutlist[i] >= cutoff:
+#            xoutlist[i] = cutoff
 
-    for i in range(len(xoutlist)):
-        if xoutlist[i] >= cutoff:
-            xoutlist[i] = cutoff
-
-#Plot normalized average power vs. frequency
+# Plot normalized average power vs. frequency
     plot(fklist,xoutlist,'-',linewidth=0.6)
 #    axis([float(fStart), float(fEnd), 0., 4.])
-#Take care of labels and axes
+# Take care of labels and axes
+    matplotlib.rcParams['ytick.labelsize'] = 9
     titleString = 'Spectrum for %s; averaged over %s to %s UTC.' %(chanName,startTime,endTime)
     title(titleString,fontsize = 9)
     ylabel('Normalized Average Power',fontsize = 10)
@@ -231,18 +240,34 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
     plt.locator_params(axis = 'x', nbins = 11)
     xlabel('Frequency (Hz)',fontsize = 10)
     xticks(fontsize = 9)
+    ax1 = plt.gca()
+    # axes.set_xlim([xmin,xmax])
+    xmin, xmax = ax1.get_xlim()
+    ymin1 = 0.
+    ymax1 = 4.
+    ax1.set_ylim([ymin1,ymax1])
+    ax2 = ax1.twinx()
+    ymin2 = (ymin1 - 1)*math.sqrt(numSFTs)
+    ymax2 = (ymax1 - 1)*math.sqrt(numSFTs)
+    ax2.set_ylim(ymin2,ymax2)
+    ax2.set_yticks( range(int(ymin2), int(ymax2),2) )
+    ax2.set_xlim(xmin,xmax)
+    ax2.set_ylabel("SNR", fontsize = 10)
+
 #    XFLabels = range(int(float(fStart)),int(float(fEnd))+1,50)
 #    xticks(range(0,(fRange + 1),50),XFLabels)
 #    figure(figsize=(20, 20))
     filename_png2 = filename + '_2.png'
+
+
 
 #Save normalized average power plot
     savefig(filename_png2)
     close()
 #    savefig(filename_png2, dpi=900)
     if thresholdSNR > 0:
-        timeaverageFileNameRef = referenceFile + '_timeaverage'
-        refData = loadtxt(timeaverageFileNameRef)       #Load reference data
+        timeaverageFileNameRef = referenceFile + '.txt'
+        refData = loadtxt(timeaverageFileNameRef, skiprows = 1)       #Load reference data
         fRef = refData[:,0]
         xRef = refData[:,1]
 
@@ -279,7 +304,7 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
         lengthSNRout = SNRout.size
         skip = 0
         iMax = 0
-        coincidenceBins = math.ceil(coinDF*effTBaseFull)
+        coincidenceBins = int(math.ceil(coinDF*effTBaseFull))
         for j in range(lengthSNRout):
             if skip == 0:
                 jMin = j - coincidenceBins
@@ -327,20 +352,61 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
         fid4.close()
         fid5.close()
 
-from findCombs2017 import findCombs2017
+        #####################################################################
+        ## Update the Comparison Directory text file to point to this plot ##
+        #####################################################################
+
+    if numSFTs > 10:
+        stringCWD = os.getcwd()
+        listCWD = stringCWD.split('/')
+        newReferenceDir = listCWD[-2]
+        chanName = chanName.split(':')
+        chanName = '_'.join(chanName)
+        currentComparisonDirOutputText = newReferenceDir + '/' + chanName
+        currentComparisonFile = chanName + '.txt'
+	fid6 = open(currentComparisonFile,'w')
+        fid6.write(currentComparisonDirOutputText)
+        fid6.close()
+
+        comparisonDir = '../../comparisonFscans/'
+        if not os.path.exists(comparisonDir):
+            os.makedirs(comparisonDir)
+        comparisonFile = comparisonDir + currentComparisonFile
+        if os.path.exists(comparisonFile):
+            os.remove(comparisonFile) # remove old file, if it is there
+        os.rename(currentComparisonFile, comparisonFile) # move new file to comparisonDir
+
+    findCombs(5.0,outputFileName,3,data2)
+
+    # remove the original _timeaverage file:
+    os.remove(timeaverageFileName)
+
+# End def here. Moved findCombs above; output 3 decimal places in comb frequency spacing.
+#from findCombs import findCombs
 
 #Load data from command line
 filename = sys.argv[1]
+# print(filename)
 outputFileName = sys.argv[2]
+# print(outputFileName)
 chanName = sys.argv[3]
+# print(chanName)
 effTBase = sys.argv[4]
+# print(effTBase)
 deltaFTicks = sys.argv[5]
+# print(deltaFTicks)
 taveFlag = sys.argv[6]
+# print(taveFlag)
 effTBaseFull = sys.argv[7]
+# print(effTBaseFull)
 thresholdSNR = sys.argv[8]
+# print(thresholdSNR)
 coinDF = sys.argv[9]
-referenceFile = sys.argv[10]
-
+# print(coinDF)
+pulsar = sys.argv[10]
+# print(pulsar)
+referenceFile = sys.argv[11]
+# print(referenceFile)
 #Call plotting function and comb finding function
-plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coinDF,referenceFile)
-findCombs2017(0.999,outputFileName,2,filename + "_timeaverage")
+plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coinDF,pulsar,referenceFile)
+#findCombs(5.0,outputFileName,2,outputFileName + ".txt")
