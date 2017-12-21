@@ -40,6 +40,7 @@ ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
     --toplists=mean2F --toplist-limit=0 --extra-statistics="mean2F_det" \
     --toplist-tmpl-idx --segment-info \
     --setup-file=WeaveSetup.fits --sft-files='*.sft' \
+    --Fstat-run-med-window=50 \
     --freq=55.5~0.005 --f1dot=-2e-9,0 \
     --semi-max-mismatch=9
 set +x
