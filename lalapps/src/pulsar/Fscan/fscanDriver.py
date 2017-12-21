@@ -15,7 +15,7 @@ __version__ = '$Revision$'
 # REVISIONS:
 # 03/02/2009 gam; implement -g --segment-file option; if not given run on Science,Injections times, if -g ALL given then use start and end times as segment.
 # 03/02/2009 gam; if createSFTs then splice in the SFT DAG.
-# 06/29/2009 gam; Add option to include matlab path, and run_plotSpecAvgOutput.sh rather than plotSpecAvgOutput.
+# 06/29/2009 gam; Add option to include matlab path, and run_plotSpecAvgOutput.sh rather than plotSpecAvgOutput. 12/12/2017 gam: Now obsolete; using Python.
 # 06/29/2009 gam; Include links to _2 plots, when making a comparisons with other fscans.
 # 06/29/2009 gam; Fix options and printing of extra debugging info.
 # 06/29/2009 gam; use ligolw_segment_query instead of LSCsegFind.
@@ -76,12 +76,12 @@ Usage: [options]
   -F, --start-freq           (optional) start frequency of the SFTs (default is 48 Hz).
   -B, --band                 (optional) frequency band of the SFTs (default is 100 Hz).
   -b, --sub-band             (optional) divide frequency band into sub bands of this size (default is 10 Hz).
-  -O, --plot-output-path     (optional) if given then Matlab jobs run and put output plots and data in this directory.
+  -O, --plot-output-path     (optional) if given then Python jobs run and put output plots and data in this directory.
   -m, --matlab-path          (optional) Path to matlab installation, e.g., /ldcg/matlab_r2008a. (Required if --plot-output-path is given.)
   -A, --accounting-group     (optional) accounting group tag to be added to the condor submit files.
   -U, --accounting-group-user  (optional) accounting group albert.einstein username to be added to the condor submit files.
   -n, --max-jobs             (optional) gives -maxjobs to use with condor_submit_dag. (Default is -maxjobs 2.)
-  -w, --window-type          (optional) type of windowing of time-domain to do before generating SFTs (1 = Tukey given by Matlab, 2 = Tukey given in lalapps/src/pulsar/make_sfts.c, 3 = Hann given by Matlab; default is 3)
+  -w, --window-type          (optional) type of windowing of time-domain to do before generating SFTs (1 = Tukey given by Python, 2 = Tukey given in lalapps/src/pulsar/make_sfts.c, 3 = Hann given by Python; default is 3)
   -W, --html-filename        (optional) path and filename of output html file that displays output plots and data.
   -r  --html-reference-path  (optional) path to already existing reference output plots and data for display on html page.
   -e  --html-ref-ifo-epoch   (optional) string that give ifo and GPS start and end times of reference plots, e.g.,H1_840412814_845744945.
@@ -200,7 +200,7 @@ accountingGroupUser = "gregory.mendell"
 maxJobs = 2
 windowType = 3
 matlabPath = None
-makeMatlabPlots = False
+makePythonPlots = False
 htmlFilename = None
 htmlReferenceDir = None
 htmlRefIFOEpoch = None
@@ -437,13 +437,13 @@ if not maxNumPerNode:
   sys.exit(1)
 
 if (plotOutputPath == None):
-   makeMatlabPlots = False
+   makePythonPlots = False
 else:
-   makeMatlabPlots = True
-   if (matlabPath == None):
-     print >> sys.stderr, "No matlab path specified."
-     print >> sys.stderr, "Use --help for usage details."
-     sys.exit(1)
+   makePythonPlots = True
+   #if (matlabPath == None):
+   #  print >> sys.stderr, "No matlab path specified."
+   #  print >> sys.stderr, "Use --help for usage details."
+   #  sys.exit(1)
 
 # try and make a directory to store the cache files and job logs
 try: os.makedirs(logPath)
@@ -680,26 +680,26 @@ spectrumAverageFID.write('notification = never\n')
 spectrumAverageFID.write('queue 1\n')
 spectrumAverageFID.close()
 
-# MAKE A SUBMIT FILE FOR RUNNING THE MATLAB DRIVER SCRIPT
-if (makeMatlabPlots):
-  runMatlabScriptFID = file('runMatlabPlotScript.sub','w')
-  runMatlabScriptLogFile = subLogPath + '/' + 'runMatlabPlotScript_' + dagFileName + '.log'
-  runMatlabScriptFID.write('universe = local\n')
+# MAKE A SUBMIT FILE FOR RUNNING THE PYTHON PLOTTING SCRIPT
+if (makePythonPlots):
+  runPythonScriptFID = file('runPythonPlotScript.sub','w')
+  runPythonScriptLogFile = subLogPath + '/' + 'runPythonPlotScript_' + dagFileName + '.log'
+  runPythonScriptFID.write('universe = vanilla\n')
   # Run compiled version plotSpecAvgOutput.m:
-  # runMatlabScriptFID.write('executable = $ENV(PLOTSPECAVGOUTPUT_PATH)/plotSpecAvgOutput\n'); # 06/29/09 gam; changed to run_plotSpecAvgOutput.sh. 
-  runMatlabScriptFID.write('executable = $ENV(PLOTSPECAVGOUTPUT_PATH)/run_plotSpecAvgOutput.sh\n')
-  runMatlabScriptFID.write('getenv = True\n')
-  runMatlabScriptFID.write('arguments = $(argList)\n')
+  # runPythonScriptFID.write('executable = $ENV(PLOTSPECAVGOUTPUT_PATH)/plotSpecAvgOutput\n'); # 06/29/09 gam; changed to run_plotSpecAvgOutput.sh. 
+  runPythonScriptFID.write('executable = $ENV(PLOTSPECAVGOUTPUT_PATH)/plotSpecAvgOutput.py\n')
+  runPythonScriptFID.write('getenv = True\n')
+  runPythonScriptFID.write('arguments = $(argList)\n')
   if (accountingGroup != None):
-     runMatlabScriptFID.write('accounting_group = %s\n' % accountingGroup)
+     runPythonScriptFID.write('accounting_group = %s\n' % accountingGroup)
   if (accountingGroupUser != None):
-     runMatlabScriptFID.write('accounting_group_user = %s\n' % accountingGroupUser)
-  runMatlabScriptFID.write('log = %s\n' % runMatlabScriptLogFile)
-  runMatlabScriptFID.write('error = %s/runMatlabPlotScript_$(tagstring).err\n' % logPath)
-  runMatlabScriptFID.write('output = %s/runMatlabPlotScript_$(tagstring).out\n' % logPath)
-  runMatlabScriptFID.write('notification = never\n')
-  runMatlabScriptFID.write('queue 1\n')
-  runMatlabScriptFID.close()
+     runPythonScriptFID.write('accounting_group_user = %s\n' % accountingGroupUser)
+  runPythonScriptFID.write('log = %s\n' % runPythonScriptLogFile)
+  runPythonScriptFID.write('error = %s/runPythonPlotScript_$(tagstring).err\n' % logPath)
+  runPythonScriptFID.write('output = %s/runPythonPlotScript_$(tagstring).out\n' % logPath)
+  runPythonScriptFID.write('notification = never\n')
+  runPythonScriptFID.write('queue 1\n')
+  runPythonScriptFID.close()
 
 #cg; Creates the html file, or at least the initial parts of it.
 if (htmlFilename != None):
@@ -803,11 +803,11 @@ while (thisEndFreq <= endFreq):
     #dagFID.write('PARENT %s CHILD %s\n'%(sftDAGSUBJobName,specAvgJobName))
     dagFID.write('PARENT %s CHILD %s\n'%(spliceSFTDAGName,specAvgJobName))
 
-#write arguments to be passed to matlab job
-  if (makeMatlabPlots):
-    runMatlabPlotScriptJobName = 'runMatlabPlotScript_%i' % nodeCount
-    dagFID.write('JOB %s runMatlabPlotScript.sub\n' % runMatlabPlotScriptJobName)
-    dagFID.write('RETRY %s 0\n' % runMatlabPlotScriptJobName)
+#write arguments to be passed to Python job
+  if (makePythonPlots):
+    runPythonPlotScriptJobName = 'runPythonPlotScript_%i' % nodeCount
+    dagFID.write('JOB %s runPythonPlotScript.sub\n' % runPythonPlotScriptJobName)
+    dagFID.write('RETRY %s 0\n' % runPythonPlotScriptJobName)
     inputFileName = 'spec_%d.00_%d.00_%s_%d_%d' % (thisStartFreq,thisEndFreq,ifo,analysisStartTime,analysisEndTime)
     outputFileName = '%s/%s' % (plotOutputPath, inputFileName)   
 
@@ -838,12 +838,13 @@ while (thisEndFreq <= endFreq):
         referenceFileName = 'none'
     #argList = '%s %s %s %d %d %d %d %d %d %s' % (inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,referenceFileName); # 06/29/09 gam; matlabPath has to be first argument.
     #argList = '%s %s %s %s %d %d %d %d %d %d %s' % (matlabPath,inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,referenceFileName)
-    argList = '%s %s %s %s %d %g %d %d %d %d %d %s' % (matlabPath,inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,pulsar,referenceFileName)
+    argList =  '%s %s %s %d %g %d %d %d %d %d %s' % (inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,pulsar,referenceFileName)
+   # argList = '%s %s %s %s %d %g %d %d %d %d %d %s' % (matlabPath,inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,pulsar,referenceFileName)
     tagStringOut = '%s_%i' % (tagString, nodeCount)  
-    dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(runMatlabPlotScriptJobName,argList,tagStringOut))
-    dagFID.write('PARENT %s CHILD %s\n'%(specAvgJobName,runMatlabPlotScriptJobName))
+    dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(runPythonPlotScriptJobName,argList,tagStringOut))
+    dagFID.write('PARENT %s CHILD %s\n'%(specAvgJobName,runPythonPlotScriptJobName))
   
-  #add stuff to the html file to show the plots produced in matlab.
+  #add stuff to the html file to show the plots produced in python. 
   #-----------------------------------------------------------------
   if (htmlFilename != None):
     inputFileName = 'spec_%d.00_%d.00_%s_%d_%d' % (thisStartFreq,thisEndFreq,ifo,analysisStartTime,analysisEndTime)
@@ -901,7 +902,7 @@ while (thisEndFreq <= endFreq):
 	htmlFID.write('    Spectrogram data: <a href="%s">%s</a><br>\n' % (referenceFileName,referenceFileName))
         htmlFID.write('    Freq. vs Power: <a href="%s.txt">%s.txt</a><br>\n' % (referenceFileName,referenceFileName))
         htmlFID.write('    Freq. vs Power (Sorted): <a href="%s_sorted.txt">%s_sorted.txt</a><br>\n' % (referenceFileName,referenceFileName))
-        htmlFID.write('    List of found combs : <a href="%s_combs.txt">%s_combs.txt</a><br>\n' % (inputFileName,inputFileName))
+        htmlFID.write('    List of found combs : <a href="%s_combs.txt">%s_combs.txt</a><br>\n' % (referenceFileName,referenceFileName))
         htmlFID.write('  </td>\n')
     htmlFID.write('  </tr>\n')
   thisStartFreq = thisStartFreq + freqSubBand

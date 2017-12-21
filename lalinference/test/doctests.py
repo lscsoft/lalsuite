@@ -23,7 +23,7 @@ Run doctests for selected LALInference modules.
 # to mark the entire test as skipped.
 import pkg_resources
 try:
-    pkg_resources.require(['astropy', 'healpy >= 1.9'])
+    pkg_resources.require(['astropy', 'healpy >= 1.9', 'pytest'])
 except pkg_resources.ResolutionError as e:
     print(e)
     raise SystemExit(77)
@@ -31,6 +31,7 @@ except pkg_resources.ResolutionError as e:
 import sys
 import doctest
 import numpy as np
+import lalinference.bayestar.command
 import lalinference.bayestar.sky_map
 import lalinference.distance
 import lalinference.bayestar.filter
@@ -42,6 +43,7 @@ import lalinference.bayestar.postprocess
 
 modules = [
     lalinference.distance,
+    lalinference.bayestar.command,
     lalinference.bayestar.filter,
     lalinference.bayestar.sky_map,
     lalinference.io.fits,
@@ -53,7 +55,11 @@ modules = [
 
 
 finder = doctest.DocTestFinder()
-runner = doctest.DocTestRunner(optionflags=doctest.ELLIPSIS)
+# FIXME: Python 2 tracebacks show BarError whereas Python 3 tracebacks
+# show foo.BarError. Until we drop support for Python 2, we have to check
+# that the type of the exception matches but not the exact text.
+runner = doctest.DocTestRunner(
+    optionflags=doctest.ELLIPSIS | doctest.IGNORE_EXCEPTION_DETAIL)
 tests = []
 
 for module in modules:

@@ -20,6 +20,7 @@ Read events from pipedown/GstLal-style XML output.
 from .base import *
 from ...bayestar.decorator import memoized
 from collections import OrderedDict, defaultdict
+import errno
 import logging
 import operator
 import os.path
@@ -48,14 +49,21 @@ class _ContentHandler(LIGOLWContentHandler):
     pass
 
 
-def _read_xml(f):
+def _read_xml(f, fallbackpath=None):
     if f is None:
         doc = filename = None
     elif isinstance(f, Element):
         doc = f
         filename = ''
     elif isinstance(f, six.string_types):
-        doc = load_filename(f, contenthandler=_ContentHandler)
+        try:
+            doc = load_filename(f, contenthandler=_ContentHandler)
+        except IOError as e:
+            if e.errno == errno.ENOENT and fallbackpath and not os.path.isabs(f):
+                f = os.path.join(fallbackpath, f)
+                doc = load_filename(f, contenthandler=_ContentHandler)
+            else:
+                raise
         filename = f
     else:
         doc, _ = load_fileobj(f, contenthandler=_ContentHandler)
@@ -77,10 +85,10 @@ class LigoLWEventSource(OrderedDict, EventSource):
 
     def __init__(self, f, psd_file=None, coinc_def=InspiralCoincDef, **kwargs):
         doc, filename = _read_xml(f)
-        path = os.path.dirname(filename)
+        self._fallbackpath = os.path.dirname(filename) if filename else None
         self._psds_for_file = memoized(self._psds_for_file)
         super(LigoLWEventSource, self).__init__(
-            self._make_events(doc, psd_file, path, coinc_def))
+            self._make_events(doc, psd_file, coinc_def))
 
     _template_keys = '''mass1 mass2
                         spin1x spin1y spin1z spin2x spin2y spin2z'''.split()
@@ -102,10 +110,10 @@ class LigoLWEventSource(OrderedDict, EventSource):
                  'convention could not be deduced.').format(program))
 
     def _psds_for_file(self, f):
-        doc, _ = _read_xml(f)
+        doc, _ = _read_xml(f, self._fallbackpath)
         return lal.series.read_psd_xmldoc(doc, root_name=None)
 
-    def _make_events(self, doc, psd_file, path, coinc_def):
+    def _make_events(self, doc, psd_file, coinc_def):
         # Look up necessary tables.
         coinc_table = get_table(doc, CoincTable.tableName)
         coinc_map_table = get_table(doc, CoincMapTable.tableName)
@@ -150,8 +158,7 @@ class LigoLWEventSource(OrderedDict, EventSource):
             psd_filenames_by_process_id = {}
         else:
             psd_filenames_by_process_id = {
-                process_param.process_id:
-                    os.path.join(path, process_param.value)
+                process_param.process_id: process_param.value
                 for process_param in process_params_table
                 if process_param.param == '--reference-psd'}
 

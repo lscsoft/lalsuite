@@ -14,6 +14,7 @@ pymodule_PYTHON = \
 	ligolw.py \
 	gracedb.py \
 	hdf.py \
-	magic.py
+	magic.py \
+	sqlite.py
 
 endif

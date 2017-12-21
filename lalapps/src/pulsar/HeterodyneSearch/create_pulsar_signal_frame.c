@@ -167,7 +167,9 @@ int main(int argc, char **argv){
       continue;
     }
     else{
-      snprintf(parname,sizeof(parname),"%s/%s", inputs.pulsarDir, pulsars[h]->d_name);
+      if ( (int)sizeof(parname) <= snprintf(parname,sizeof(parname),"%s/%s", inputs.pulsarDir, pulsars[h]->d_name) ){
+        XLAL_ERROR(XLAL_FAILURE, "String truncated");
+      }
       fprintf(stderr, "%s\n", parname);
       FILE *inject;
 

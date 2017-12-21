@@ -435,7 +435,7 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
 				  const REAL8 inc,		     /**<< inclination angle */
 				  const REAL8 spin1z,		     /**<< z-component of spin-1, dimensionless */
 				  const REAL8 spin2z,		      /**<< z-component of spin-2, dimensionless */
-				  UINT4 SpinAlignedEOBversion,		      /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4 */
+				  UINT4 SpinAlignedEOBversion,		      /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4, 201 for SEOBNRv2T, 401 for SEOBNRv4T */
                   LALDict *LALParams /**<< Dictionary of additional wf parameters, including tidal and nonGR */
   )
 {
@@ -548,7 +548,7 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
 }
 
 /**
- * This function generates spin-aligned SEOBNRv1,2,2opt,4,4opt waveforms h+ and hx.
+ * This function generates spin-aligned SEOBNRv1,2,2opt,4,4opt,2T,4T waveforms h+ and hx.
  * Currently, only the h22 harmonic is available.
  * STEP 0) Prepare parameters, including pre-computed coefficients
  * for EOB Hamiltonian, flux and waveform
@@ -566,6 +566,11 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
  * eta<=0.15 and chi1>0.95 about 0.04% of the waveforms display either
  * very shallow double amplitude peak or slightly negave time-derivative of
  * the GW freq at merger.
+ * Note that SEOBNRv2T and SEOBNRv4T can display similar features. The model was
+ * validated on the range q=[1,3], Sz=[-0.5,0.5], Lambda2=[0,5000]. Waveforms
+ * will not fail on Sz=[-0.7,0.7], but with possibly stronger unwanted features.
+ * The initial conditions solver can also fail for low starting frequencies,
+ * with a failure rate of ~0.3% at fmin=10Hz for M=3Msol.
  */
 int
 XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
@@ -601,7 +606,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 				     const REAL8 spin2z,
 				      /**<< z-component of spin-2, dimensionless */
                      UINT4 SpinAlignedEOBversion,
-                     /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4 */
+                     /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4, 201 for SEOBNRv2T, 401 for SEOBNRv4T */
 				     const REAL8 lambda2Tidal1,
                      /**<< dimensionless adiabatic quadrupole tidal deformability for body 1 (2/3 k2/C^5) */
 				     const REAL8 lambda2Tidal2,
@@ -644,6 +649,18 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
             XLALPrintError ("XLAL Error - %s: Tidal parameters are not set correctly! Always provide non-zero compactness and f-mode frequency when lambda3 is non-zero!\n",
                             __func__);
             XLAL_ERROR (XLAL_EDOM);
+        }
+        if (fmax(m1SI/m2SI, m2SI/m1SI)>3.) {
+            XLALPrintWarning("XLAL Warning - %s: Generating waveform with mass ratio outside the recommended range q=[1,3].\n", __func__);
+        }
+        if (fabs(spin1z)>0.5 || fabs(spin2z)>0.5) {
+            XLALPrintWarning("XLAL Warning - %s: Generating waveform with at least one aligned spin component outside the recommended range chi=[-0.5,0.5].\n", __func__);
+        }
+        if (lambda2Tidal1>5000. || lambda2Tidal2>5000.) {
+            XLALPrintWarning("XLAL Warning - %s: Generating waveform with at least one quadrupole tidal deformability outside the recommended range Lambda2=[0,5000].\n", __func__);
+        }
+        if ((m1SI+m2SI)/LAL_MSUN_SI*LAL_MTSUN_SI*fMin<1.477e-4) {
+            XLALPrintWarning("XLAL Warning - %s: Generating waveform with a low starting frequency. Initial conditions solver can fail when pushing the model to lower frequencies, with a rate of failure ~0.3%% at Mf~1.5e-4 (10Hz for M=3Msol).\n", __func__);
         }
       use_tidal = 1;
       if ( SpinAlignedEOBversion==201 )

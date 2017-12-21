@@ -67,6 +67,7 @@ EXTRA_DIST = \
 	testCFSv2_grids.sh \
 	testCFSv2_resamp.sh \
 	testCFSv2_binary.sh \
+	testCFSv2_transient.sh \
 	testSynthLV.sh
 
 EXTRA_DIST += \
@@ -87,5 +88,6 @@ TESTS += \
 	testCFSv2.sh \
 	testCFSv2_grids.sh \
 	testCFSv2_resamp.sh \
-	testCFSv2_binary.sh
+	testCFSv2_binary.sh \
+	testCFSv2_transient.sh
 endif

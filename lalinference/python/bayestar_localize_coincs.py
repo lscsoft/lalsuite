@@ -16,10 +16,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 """
-Produce GW sky maps for all coincidences in a LIGO-LW XML file.
-
-The filename of the (optionally gzip-compressed) LIGO-LW XML input is an
-optional argument; if omitted, input is read from stdin.
+Produce GW sky maps for all coincidences in search pipeline output database
+in LIGO-LW XML, LIGO-LW SQLite, or PyCBC HDF5 format.
 
 The distance prior is controlled by the --prior-distance-power argument.
 If you set --prior-distance-power=k, then the distance prior is
@@ -30,14 +28,19 @@ If the --min-distance argument is omitted, it defaults to zero. If the
 distance of the most sensitive detector.
 
 A FITS file is created for each sky map, having a filename of the form
+"X.fits" where X is the LIGO-LW row id of the coinc.
+
+If the user requests multiple sky localization methods with the --method
+option, then the filenames will instead have the form
 
   "X.toa_phoa_snr.fits"
   "X.toa_snr_mcmc.fits"
   "X.toa_phoa_snr_mcmc.fits"
 
-where X is the LIGO-LW row id of the coinc and "toa" or "toa_phoa_snr"
-identifies whether the sky map accounts for times of arrival (TOA),
-PHases on arrival (PHOA), and amplitudes on arrival (SNR).
+where the suffixes indicate the localization method: whether it uses
+times of arrival (TOA), PHases on arrival (PHOA), and/or amplitudes on
+arrival (SNR), and whether it uses the default integrator or the MCMC
+integrator.
 """
 
 
@@ -60,9 +63,9 @@ parser.add_argument(
     '--keep-going', '-k', default=False, action='store_true',
     help='Keep processing events if a sky map fails to converge [default: no]')
 parser.add_argument(
-    'input', metavar='INPUT.xml[.gz]', default='-', nargs='+',
+    'input', metavar='INPUT.{hdf,xml,xml.gz,sqlite}', default='-', nargs='+',
     type=argparse.FileType('rb'),
-    help='Input LIGO-LW XML file [default: stdin] or PyCBC HDF5 files. '
+    help='Input LIGO-LW XML file, SQLite file, or PyCBC HDF5 files. '
          'For PyCBC, you must supply the coincidence file '
          '(e.g. "H1L1-HDFINJFIND.hdf" or "H1L1-STATMAP.hdf"), '
          'the template bank file (e.g. H1L1-BANK2HDF.hdf), '
@@ -167,7 +170,10 @@ for int_coinc_event_id, event in six.iteritems(event_source):
             log.info(
                 "%s:method '%s':saving sky map",
                 coinc_event_id, method)
-            filename = '%d.%s.fits' % (int_coinc_event_id, method)
+            if len(opts.method) > 1:
+                filename = '%d.%s.fits' % (int_coinc_event_id, method)
+            else:
+                filename = '%d.fits' % int_coinc_event_id
             fits.write_sky_map(
                 os.path.join(opts.output, filename), sky_map, nest=True)
 

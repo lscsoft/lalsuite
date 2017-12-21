@@ -56,8 +56,9 @@ int compute_data_segment(
   verbose( "computing overwhitened data segment %u\n", segmentNumber );
 
   /* name of this segment */
-  snprintf( segment->name, sizeof( segment->name ), "%s_SEG_%u",
-      series->name, segmentNumber );
+  if((int)sizeof(segment->name) <= snprintf( segment->name, sizeof( segment->name ), "%s_SEG_%u",
+      series->name, segmentNumber ))
+		  XLAL_ERROR(XLAL_FAILURE,"String truncated");
 
   /* allocate memory for the data */
   segment->data = XLALCreateCOMPLEX8Vector( segmentLength/2 + 1 );

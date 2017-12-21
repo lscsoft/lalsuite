@@ -125,6 +125,17 @@ double bayestar_log_likelihood_toa_phoa_snr(
     const double *horizons          /* SNR=1 horizon distances for each detector */
 );
 
+/* Expression for complex amplitude on arrival (without 1/distance factor).
+ * This is more of an internal function, but it's *really* important that
+ * it agrees with LAL conventions, so we expose it in the interface in order
+ * to be to validate it in Python against the LALSimluation SWIG bindings. */
+double complex bayestar_signal_amplitude_model(
+    double complex F,               /* Complex antenna factor */
+    double complex exp_i_twopsi,    /* e^(i*2*psi), for polarization angle psi */
+    double u,                       /* cos(inclination) */
+    double u2                       /* cos^2(inclination */
+);
+
 /* Unit test suite. Return EXIT_SUCCESS if tests passed,
  * or otherwise EXIT_FAILURE. */
 int bayestar_test(void);

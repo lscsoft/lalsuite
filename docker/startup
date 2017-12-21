@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# use entrypoint structure so that we can do more at startup in the future, such as ligo-proxy-init
+
+#if ! grid-proxy-info -exists -valid 1:0 2>/dev/null; then
+#  read -p "Enter your LIGO.ORG username: " username && echo $username | xargs -n 1 ligo-proxy-init
+#fi
+
+exec "$@"

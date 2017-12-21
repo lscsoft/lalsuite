@@ -1,11 +1,13 @@
 from __future__ import division
 from __future__ import print_function
+import subprocess
 import sys
 try:
     from astropy.tests.helper import pytest
 except ImportError:
     print('these tests require pytest', file=sys.stderr)
     raise SystemExit(77)
+import os
 import os.path
 import h5py
 import numpy as np
@@ -35,9 +37,8 @@ def raises(expected_exception, msg):
     return pytest.raises(expected_exception, match='^' + re.escape(msg) + '$')
 
 
-def test_ligolw():
-    """Test reading events from LIGO-LW XML files."""
-    source = events.open(os.path.join(DATA_PATH, '2016_subset.xml.gz'))
+def ligolw_assertions(source):
+    """Common assertions for test_ligolw and test_sqlite."""
     assert len(source) == 250
     event = source[821759]
     assert len(event.singles) == 2
@@ -67,6 +68,28 @@ def test_ligolw():
         'spin2x': 0.0,
         'spin2y': 0.0,
         'spin2z': 0.0}
+
+
+def test_ligolw():
+    """Test reading events from LIGO-LW XML files."""
+    source = events.open(os.path.join(DATA_PATH, '2016_subset.xml.gz'))
+    ligolw_assertions(source)
+
+
+def test_sqlite(tmpdir):
+    """Test reading events from SQLite files."""
+    # Convert the test data to SQLite format in the temporary directory.
+    xmlfilename = os.path.join(DATA_PATH, '2016_subset.xml.gz')
+    dbfilename = str(tmpdir / '2016_subset.sqlite')
+    subprocess.check_call(['ligolw_sqlite', '-p',
+                           xmlfilename, '-d', dbfilename])
+
+    # Symbolicly link the PSD directory into the temporary directory.
+    os.symlink(os.path.join(DATA_PATH, 'gstlal_reference_psd'),
+               str(tmpdir / 'gstlal_reference_psd'))
+
+    source = events.open(dbfilename)
+    ligolw_assertions(source)
 
 
 def test_gracedb():

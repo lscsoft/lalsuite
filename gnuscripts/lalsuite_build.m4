@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 141
+# serial 142
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1458,22 +1458,46 @@ AC_DEFUN([LALSUITE_USE_CFITSIO],[
 
 AC_DEFUN([LALSUITE_CHECK_PAGER],[
   # $0: check for pager programs and required functions
-  AC_ARG_VAR([PAGER],[Pager program])
-  AS_IF([test "x${PAGER}" = x],[
-    AC_PATH_PROGS([PAGER],[less more])
-    AS_CASE([${PAGER}],
-      [''],[:],
-      [*/less],[
-        for pager_arg in -F -R -S -X; do
-          AS_IF([echo | ${PAGER} ${pager_arg} >/dev/null 2>&1],[
-            PAGER="${PAGER} ${pager_arg}"
+  AC_ARG_WITH(
+    [pager],
+    AC_HELP_STRING([--with-pager=PAGER],[specify pager program [default: less/more]]),
+    [
+      AS_CASE([${with_pager}],
+        [no],[pager="false"],
+        [yes],[pager="less -F -R -S -X more"],
+        [pager="${with_pager}"]
+      )
+    ],[
+      pager="less -F -R -S -X more"
+    ]
+  )
+  AC_SUBST([PAGER],[])
+  AC_SUBST([PAGER_CPPFLAGS],[])
+  AS_IF([test "x${pager}" != xfalse],[
+    for pager_arg in ${pager}; do
+      AS_CASE([${pager_arg}],
+        [-*],[
+          AS_IF([test "x${PAGER}" != x],[
+            AC_MSG_CHECKING([if option ${pager_arg} works with ${PAGER}])
+            AS_IF([echo | ${PAGER} ${pager_arg} >/dev/null 2>&1],[
+              AC_MSG_RESULT([yes])
+              PAGER="${PAGER} ${pager_arg}"
+            ],[
+              AC_MSG_RESULT([no])
+            ])
           ])
-        done
-      ]
-    )
+        ],[
+          AS_IF([test "x${PAGER}" != x],[
+            break
+          ],[
+            AC_PATH_PROGS([PAGER],[${pager_arg}],[])
+          ])
+        ]
+      )
+    done
   ])
   AS_IF([test "x${PAGER}" != x],[
-    AC_SUBST([PAGER_CPPFLAGS],["-DPAGER='\"\$(PAGER)\"'"])
+      PAGER_CPPFLAGS="-DPAGER='\"\$(PAGER)\"'"
     AC_CHECK_FUNCS([popen pclose])
   ])
   # end $0

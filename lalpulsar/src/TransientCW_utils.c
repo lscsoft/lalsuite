@@ -954,7 +954,7 @@ XLALmergeMultiFstatAtomsBinned ( const MultiFstatAtomVector *multiAtoms, UINT4 d
  *
  */
 int
-write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand, const char timeUnit )
+write_transientCandidate_to_fp ( LALFILE *fp, const transientCandidate_t *thisCand, const char timeUnit )
 {
   /* sanity checks */
   if ( !fp ) {
@@ -965,7 +965,7 @@ write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand,
 
   if ( thisCand == NULL )	/* write header-line comment */
     {
-      fprintf (fp, "%%%% Freq[Hz]            Alpha[rad]          Delta[rad]          fkdot[1]  fkdot[2]  fkdot[3]  t0_ML[%c]    tau_ML[%c]  maxTwoF     logBstat   t0_MP[%c]        tau_MP[%c]\n", timeUnit, timeUnit, timeUnit, timeUnit);
+      XLALFilePrintf  (fp, "%%%% Freq[Hz]            Alpha[rad]          Delta[rad]          fkdot[1]  fkdot[2]  fkdot[3]  t0_ML[%c]    tau_ML[%c]  maxTwoF     logBstat   t0_MP[%c]        tau_MP[%c]\n", timeUnit, timeUnit, timeUnit, timeUnit);
     }
   else
     {
@@ -975,13 +975,13 @@ write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand,
       }
 
       REAL8 maxTwoF = 2.0 *  thisCand->FstatMap->maxF;
-      fprintf (fp, "  %- 18.16f %- 19.16f %- 19.16f %- 9.6g %- 9.5g %- 9.5g",
+      XLALFilePrintf (fp, "  %- 18.16f %- 19.16f %- 19.16f %- 9.6g %- 9.5g %- 9.5g",
                thisCand->doppler.fkdot[0], thisCand->doppler.Alpha, thisCand->doppler.Delta,
                thisCand->doppler.fkdot[1], thisCand->doppler.fkdot[2], thisCand->doppler.fkdot[3]
               );
       if ( timeUnit == 's' )
         {
-           fprintf (fp, " %10d %10d %- 11.8g %- 11.8g %15.4f %15.4f\n",
+           XLALFilePrintf (fp, " %10d %10d %- 11.8g %- 11.8g %15.4f %15.4f\n",
                     thisCand->FstatMap->t0_ML, thisCand->FstatMap->tau_ML,
                     maxTwoF, thisCand->logBstat,
                     thisCand->t0_MP, thisCand->tau_MP
@@ -994,7 +994,7 @@ write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand,
            REAL8 tau_d_ML= 1.0 *  thisCand->FstatMap->tau_ML / DAY24;
            REAL8 t0_d_MP = 1.0 * ( thisCand->t0_MP - t0 ) / DAY24;
            REAL8 tau_d_MP= 1.0 * thisCand->tau_MP / DAY24;
-           fprintf (fp, "    %-8.5f      %-8.5f    %- 11.8g    %- 11.8g    %-8.5f      %8.5f\n",
+           XLALFilePrintf (fp, "    %-8.5f      %-8.5f    %- 11.8g    %- 11.8g    %-8.5f      %8.5f\n",
                     t0_d_ML, tau_d_ML,
                     maxTwoF, thisCand->logBstat,
                     t0_d_MP, tau_d_MP
@@ -1020,7 +1020,7 @@ write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand,
  * if doppler = NULL, we skip those columns
  *
  */
-int write_transientFstatMap_to_fp ( FILE *fp, const transientFstatMap_t *FstatMap, const transientWindowRange_t *windowRange, const PulsarDopplerParams *doppler )
+int write_transientFstatMap_to_fp ( LALFILE *fp, const transientFstatMap_t *FstatMap, const transientWindowRange_t *windowRange, const PulsarDopplerParams *doppler )
 {
 
   /* sanity checks */
@@ -1033,11 +1033,11 @@ int write_transientFstatMap_to_fp ( FILE *fp, const transientFstatMap_t *FstatMa
     {
       if ( !doppler )
         {
-          fprintf (fp, "%%%% t0[s]      tau[s]      twoF\n");
+          XLALFilePrintf (fp, "%%%% t0[s]      tau[s]      twoF\n");
         }
       else
         {
-          fprintf (fp, "%%%% Freq[Hz]            Alpha[rad]          Delta[rad]          fkdot[1]  fkdot[2]  fkdot[3]  t0[s]      tau[s]      twoF\n");
+          XLALFilePrintf (fp, "%%%% Freq[Hz]            Alpha[rad]          Delta[rad]          fkdot[1]  fkdot[2]  fkdot[3]  t0[s]      tau[s]      twoF\n");
         }
     }
   else
@@ -1060,13 +1060,13 @@ int write_transientFstatMap_to_fp ( FILE *fp, const transientFstatMap_t *FstatMa
               UINT4 this_tau = windowRange->tau + n * windowRange->dtau;
               if ( !doppler )
                 {
-                  fprintf (fp, "  %10d %10d %- 11.8g\n",
+                  XLALFilePrintf (fp, "  %10d %10d %- 11.8g\n",
                            this_t0, this_tau, 2.0 * gsl_matrix_get ( FstatMap->F_mn, m, n )
                           );
                 }
                else
                 {
-                  fprintf (fp, "  %- 18.16f %- 19.16f %- 19.16f %- 9.6g %- 9.5g %- 9.5g %10d %10d %- 11.8g\n",
+                  XLALFilePrintf (fp, "  %- 18.16f %- 19.16f %- 19.16f %- 9.6g %- 9.5g %- 9.5g %10d %10d %- 11.8g\n",
                            doppler->fkdot[0], doppler->Alpha, doppler->Delta,
                            doppler->fkdot[1], doppler->fkdot[2], doppler->fkdot[3],
                            this_t0, this_tau, 2.0 * gsl_matrix_get ( FstatMap->F_mn, m, n )
@@ -1088,7 +1088,7 @@ int write_transientFstatMap_to_fp ( FILE *fp, const transientFstatMap_t *FstatMa
  *
  */
 int
-write_transientCandidateAll_to_fp ( FILE *fp, const transientCandidate_t *thisCand )
+write_transientCandidateAll_to_fp ( LALFILE *fp, const transientCandidate_t *thisCand )
 {
 
   /* sanity checks */
@@ -1117,7 +1117,7 @@ write_transientCandidateAll_to_fp ( FILE *fp, const transientCandidate_t *thisCa
  * Write multi-IFO F-stat atoms 'multiAtoms' into output stream 'fstat'.
  */
 int
-write_MultiFstatAtoms_to_fp ( FILE *fp, const MultiFstatAtomVector *multiAtoms )
+write_MultiFstatAtoms_to_fp ( LALFILE *fp, const MultiFstatAtomVector *multiAtoms )
 {
   UINT4 X, alpha;
 
@@ -1126,7 +1126,7 @@ write_MultiFstatAtoms_to_fp ( FILE *fp, const MultiFstatAtomVector *multiAtoms )
     XLAL_ERROR ( XLAL_EINVAL );
   }
 
-  fprintf ( fp, "%%%% GPS[s]     a^2(t_i)   b^2(t_i)  ab(t_i)            Fa(t_i)                  Fb(t_i)\n");
+  XLALFilePrintf ( fp, "%%%% GPS[s]     a^2(t_i)   b^2(t_i)  ab(t_i)            Fa(t_i)                  Fb(t_i)\n");
 
   for ( X=0; X < multiAtoms->length; X++ )
     {
@@ -1134,7 +1134,7 @@ write_MultiFstatAtoms_to_fp ( FILE *fp, const MultiFstatAtomVector *multiAtoms )
       for ( alpha=0; alpha < thisAtomVector->length; alpha ++ )
 	{
           FstatAtom *thisAtom = &thisAtomVector->data[alpha];
-	  fprintf ( fp, "%d   % f  % f  %f    % f  % f     % f  % f\n",
+	  XLALFilePrintf ( fp, "%d   % f  % f  %f    % f  % f     % f  % f\n",
 		    thisAtom->timestamp,
 		    thisAtom->a2_alpha,
 		    thisAtom->b2_alpha,

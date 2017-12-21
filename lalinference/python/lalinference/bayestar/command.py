@@ -31,6 +31,7 @@ import itertools
 import logging
 import os
 import shutil
+import sqlite3
 import sys
 import tempfile
 import matplotlib
@@ -409,21 +410,104 @@ class DirType(object):
         return string
 
 
+def sqlite_open_a(string):
+    return sqlite3.connect(string)
+
+def sqlite_open_r(string):
+    if (sys.version_info.major, sys.version_info.minor) >= (3, 4):
+        return sqlite3.connect('file:{}?mode=ro'.format(string), uri=True)
+    else:  # FIXME: remove this code path when we drop Python < 3.4
+        fd = os.open(string, os.O_RDONLY)
+        try:
+            return sqlite3.connect('/dev/fd/{}'.format(fd))
+        finally:
+            os.close(fd)
+
+def sqlite_open_w(string):
+    with open(string, 'wb') as f:
+        pass
+    return sqlite3.connect(string)
+
+
 class SQLiteType(argparse.FileType):
     """Open an SQLite database, or fail if it does not exist.
     FIXME: use SQLite URI when we drop support for Python < 3.4.
-    See: https://docs.python.org/3.4/whatsnew/3.4.html#sqlite3"""
+    See: https://docs.python.org/3.4/whatsnew/3.4.html#sqlite3
 
-    def __init__(self, mode='r'):
-        super(SQLiteType, self).__init__(mode + 'b')
+    Here is an example of trying to open a file that does not exist for
+    reading (mode='r'). It should raise an exception:
+
+    >>> filetype = SQLiteType('r')
+    >>> filename = tempfile.mktemp()
+    >>> # Note, simply check or a FileNotFound error in Python 3.
+    >>> filetype(filename)
+    Traceback (most recent call last):
+      ...
+    argparse.ArgumentTypeError: ...
+
+    If the file already exists, then it's fine:
+    >>> filetype = SQLiteType('r')
+    >>> with tempfile.NamedTemporaryFile() as f:
+    ...     with sqlite3.connect(f.name) as db:
+    ...         _ = db.execute('create table foo (bar char)')
+    ...     filetype(f.name)
+    <sqlite3.Connection object at ...>
+
+    Here is an example of opening a file for writing (mode='w'), which should
+    overwrite the file if it exists. Even if the file was not an SQLite
+    database beforehand, this should work:
+
+    >>> filetype = SQLiteType('w')
+    >>> with tempfile.NamedTemporaryFile(mode='w') as f:
+    ...     print('This is definitely not an SQLite file.', file=f)
+    ...     f.flush()
+    ...     with filetype(f.name) as db:
+    ...         db.execute('create table foo (bar char)')
+    <sqlite3.Cursor object at ...>
+
+    Here is an example of opening a file for appending (mode='a'), which should
+    NOT overwrite the file if it exists. If the file was not an SQLite database
+    beforehand, this should raise an exception.
+
+    >>> import pytest
+    >>> filetype = SQLiteType('a')
+    >>> with tempfile.NamedTemporaryFile(mode='w') as f:
+    ...     print('This is definitely not an SQLite file.', file=f)
+    ...     f.flush()
+    ...     with filetype(f.name) as db:
+    ...         db.execute('create table foo (bar char)')
+    Traceback (most recent call last):
+      ...
+    sqlite3.DatabaseError: ...
+
+    And if the database did exist beforehand, then opening for appending
+    (mode='a') should not clobber existing tables.
+
+    >>> filetype = SQLiteType('a')
+    >>> with tempfile.NamedTemporaryFile() as f:
+    ...     with sqlite3.connect(f.name) as db:
+    ...         _ = db.execute('create table foo (bar char)')
+    ...     with filetype(f.name) as db:
+    ...         db.execute('select count(*) from foo').fetchone()
+    (0,)
+    """
+
+    def __init__(self, mode):
+        if mode not in 'arw':
+            raise ValueError('Unknown file mode: {}'.format(mode))
+        self.mode = mode
 
     def __call__(self, string):
-        if string == '-':
+        if string in {'-', '/dev/stdin', '/dev/stdout'}:
             raise argparse.ArgumentTypeError(
                 'Cannot open stdin/stdout as an SQLite database')
-        with super(SQLiteType, self).__call__(string):
-            import sqlite3
-            return sqlite3.connect(string)
+        openers = {'a': sqlite_open_a, 'r': sqlite_open_r, 'w': sqlite_open_w}
+        opener = openers[self.mode]
+        try:
+            return opener(string)
+        except (OSError, sqlite3.Error) as e:
+            raise argparse.ArgumentTypeError(
+                'Failed to open database {}: {}'.format(string, e))
 
 
 def sqlite_get_filename(connection):

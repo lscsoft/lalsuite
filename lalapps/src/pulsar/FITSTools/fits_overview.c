@@ -32,11 +32,6 @@
 #error CFITSIO library is not available
 #endif
 
-#if !defined(PAGER) || !defined(HAVE_POPEN) || !defined(HAVE_PCLOSE)
-#define popen(...) stdout
-#define pclose(...)
-#endif
-
 int main(int argc, char *argv[])
 {
   fitsfile *fptr = 0;         /* FITS file pointer, defined in fitsio.h */
@@ -58,11 +53,15 @@ int main(int argc, char *argv[])
     return (0);
   }
 
+#if defined(PAGER) && defined(HAVE_POPEN) && defined(HAVE_PCLOSE)
   FILE *fout = popen(PAGER, "w");
   if (fout == NULL) {
     fprintf(stderr, "Could not execute '%s'\n", PAGER);
     return (1);
   }
+#else
+  FILE *fout = stdout;
+#endif
 
   if (!fits_open_file(&fptr, argv[1], READONLY, &status)) {
     fits_get_hdu_num(fptr, &hdupos);  /* Get the current HDU position */
@@ -119,7 +118,9 @@ int main(int argc, char *argv[])
     fits_close_file(fptr, &status);
   }
 
+#if defined(PAGER) && defined(HAVE_POPEN) && defined(HAVE_PCLOSE)
   pclose(fout);
+#endif
 
   if (status) {
     fits_report_error(stderr, status);  /* print any error message */

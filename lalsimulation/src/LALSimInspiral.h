@@ -328,10 +328,10 @@ typedef enum tagApproximant {
                          * @remarks Implemented in lalsimulation (time domain). */
    SEOBNRv4_opt,	/**< Optimized Spin-aligned EOBNR model v4
                          * @remarks Implemented in lalsimulation (time domain). */
-   TEOBv2,	/**< Tidal EOB model
-                     * @remarks Implemented in lalsimulation (time domain). */
-   TEOBv4,	/**< Tidal EOB model
-             * @remarks Implemented in lalsimulation (time domain). */
+   SEOBNRv2T,	/**< Tidal EOB model
+                     * @remarks Implemented in lalsimulation (time domain). Parameter range: q=[1,3], Sz=[-0.5,0.5], Lambda2=[0,5000]. Initial conditions solver can fail when starting frequency is too low (rate of failure 0.3% at fmin=10Hz for M=3Msol). */
+   SEOBNRv4T,	/**< Tidal EOB model
+             * @remarks Implemented in lalsimulation (time domain). Parameter range: q=[1,3], Sz=[-0.5,0.5], Lambda2=[0,5000]. Initial conditions solver can fail when starting frequency is too low (rate of failure 0.3% at fmin=10Hz for M=3Msol). */
    SEOBNRv1_ROM_EffectiveSpin, /**< Single-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv1 See [Purrer:2014fza]
                                 * @remarks Implemented in lalsimulation (frequency domain). */
    SEOBNRv1_ROM_DoubleSpin, /**< Double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv1 See [Purrer:2014fza]

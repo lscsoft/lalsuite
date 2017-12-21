@@ -261,7 +261,7 @@ static void LT_FindBoundExtrema(
 {
 
   // Get bound information for this dimension
-  const LT_Bound *bound = &tiling->bounds[dim];
+  const LT_Bound *bound = &tiling->bounds[i];
 
   // If 'i' equals target dimension 'dim', get parameter-space bounds in this dimension
   if ( i == dim ) {
@@ -270,13 +270,14 @@ static void LT_FindBoundExtrema(
   }
 
   // Move to higher dimensions if this dimension is not tiled
+  const double phys_point_i = gsl_vector_get( phys_point, i );
   if ( !bound->is_tiled ) {
+    LT_SetPhysPoint( tiling, phys_point_cache, phys_point, i, phys_point_i );
     LT_FindBoundExtrema( tiling, i + 1, dim, phys_point_cache, phys_point, phys_lower_minimum, phys_upper_maximum );
     return;
   }
 
   // Sample parameter-space bounds at +/0/- half the lattice tiling step size
-  const double phys_point_i = gsl_vector_get( phys_point, i );
   const double phys_hstep_i = 0.5 * gsl_matrix_get( tiling->phys_from_int, i, i );
   const double phys_point_sample_i[] = {
     phys_point_i - phys_hstep_i,
