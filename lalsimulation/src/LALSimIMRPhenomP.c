@@ -242,8 +242,6 @@ int XLALSimIMRPhenomP(
   const REAL8 m1_SI,                          /**< Mass of companion 1 (kg) */
   const REAL8 m2_SI,                          /**< Mass of companion 2 (kg) */
   const REAL8 distance,                       /**< Distance of source (m) */
-  const REAL8 quadparam1,
-  const REAL8 quadparam2,
   const REAL8 alpha0,                         /**< Initial value of alpha angle (azimuthal precession angle) */
   const REAL8 phic,                           /**< Orbital phase at the peak of the underlying non precessing model (rad) */
   const REAL8 deltaF,                         /**< Sampling frequency (Hz) */
@@ -269,7 +267,7 @@ int XLALSimIMRPhenomP(
   freqs->data[1] = f_max;
 
   int retcode = PhenomPCore(hptilde, hctilde,
-      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, quadparam1, quadparam2, alpha0, phic, f_ref, freqs, deltaF, IMRPhenomP_version, extraParams);
+      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, alpha0, phic, f_ref, freqs, deltaF, IMRPhenomP_version, extraParams);
   XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to generate IMRPhenomP waveform.");
   XLALDestroyREAL8Sequence(freqs);
   return (retcode);
@@ -301,8 +299,6 @@ int XLALSimIMRPhenomPFrequencySequence(
   const REAL8 m1_SI,                          /**< Mass of companion 1 (kg) */
   const REAL8 m2_SI,                          /**< Mass of companion 2 (kg) */
   const REAL8 distance,                       /**< Distance of source (m) */
-  const REAL8 quadparam1,
-  const REAL8 quadparam2,
   const REAL8 alpha0,                         /**< Initial value of alpha angle (azimuthal precession angle) */
   const REAL8 phic,                           /**< Orbital phase at the peak of the underlying non precessing model (rad) */
   const REAL8 f_ref,                          /**< Reference frequency */
@@ -316,7 +312,7 @@ int XLALSimIMRPhenomPFrequencySequence(
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
   int retcode = PhenomPCore(hptilde, hctilde,
-      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, quadparam1, quadparam2, alpha0, phic, f_ref, freqs, 0, IMRPhenomP_version, extraParams);
+      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, alpha0, phic, f_ref, freqs, 0, IMRPhenomP_version, extraParams);
   XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to generate IMRPhenomP waveform.");
   return(retcode);
 }
@@ -342,8 +338,6 @@ static int PhenomPCore(
   const REAL8 m1_SI_in,                      /**< Mass of companion 1 (kg) */
   const REAL8 m2_SI_in,                      /**< Mass of companion 2 (kg) */
   const REAL8 distance,                      /**< Distance of source (m) */
-  const REAL8 quadparam1,
-  const REAL8 quadparam2,
   const REAL8 alpha0,                        /**< Initial value of alpha angle (azimuthal precession angle) */
   const REAL8 phic,                          /**< Orbital phase at the peak of the underlying non precessing model (rad) */
   const REAL8 f_ref,                         /**< Reference frequency */
@@ -516,7 +510,7 @@ static int PhenomPCore(
       // IMRPhenomD assumes that m1 >= m2.
       pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi2_l, chi1_l, finspin);
       pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi2_l, chi1_l, finspin, extraParams);
-      XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1_l, chi2_l, quadparam1, quadparam2, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN, extraParams);
+      XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1_l, chi2_l, 1.0, 1.0, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN, extraParams);
       if (!pAmp || !pPhi || !pn) {
         errcode = XLAL_EFUNC;
         goto cleanup;

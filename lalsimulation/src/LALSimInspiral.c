@@ -1199,7 +1199,7 @@ int XLALSimInspiralChooseFDWaveform(
                 //ABORT_NONZERO_TIDES(waveFlags);
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomDGenerateFD(hptilde, phiRef, f_ref, deltaF, m1, m2,
-                  S1z, S2z, f_min, f_max, r, quadparam1, quadparam2, nonGRparams);
+                  S1z, S2z, f_min, f_max, r, nonGRparams);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             /* Produce both polarizations */
             *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
@@ -1394,7 +1394,7 @@ int XLALSimInspiralChooseFDWaveform(
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomP(hptilde, hctilde,
               chi1_l, chi2_l, chip, thetaJ,
-              m1, m2, r, quadparam1, quadparam2, alpha0, phiRef, deltaF, f_min, f_max, f_ref, IMRPhenomPv1_V, nonGRparams);
+              m1, m2, r, alpha0, phiRef, deltaF, f_min, f_max, f_ref, IMRPhenomPv1_V, nonGRparams);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
 
@@ -1424,7 +1424,7 @@ int XLALSimInspiralChooseFDWaveform(
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomP(hptilde, hctilde,
               chi1_l, chi2_l, chip, thetaJ,
-              m1, m2, r, quadparam1, quadparam2, alpha0, phiRef, deltaF, f_min, f_max, f_ref, IMRPhenomPv2_V, nonGRparams);
+              m1, m2, r, alpha0, phiRef, deltaF, f_min, f_max, f_ref, IMRPhenomPv2_V, nonGRparams);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
 

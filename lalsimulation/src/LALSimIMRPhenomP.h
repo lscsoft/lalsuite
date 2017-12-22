@@ -79,8 +79,6 @@ static int PhenomPCore(
   const REAL8 m1_SI_in,                 /**< Mass of companion 1 (kg) */
   const REAL8 m2_SI_in,                 /**< Mass of companion 2 (kg) */
   const REAL8 distance,                 /**< Distance of source (m) */
-  const REAL8 quadparam1,
-  const REAL8 quadparam2,
   const REAL8 alpha0,                   /**< Initial value of alpha angle (azimuthal precession angle) */
   const REAL8 phic,                     /**< Orbital phase at the peak of the underlying non precessing model (rad) */
   const REAL8 f_ref,                    /**< Reference frequency */
