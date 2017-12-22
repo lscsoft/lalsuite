@@ -7,7 +7,7 @@ import sys
 try:
     pkg_resources.require(['pytest >= 3.0.0'])
     import pytest
-except ImportError:
+except (ImportError, pkg_resources.VersionConflict):
     print('these tests require pytest >= 3.0.0', file=sys.stderr)
     raise SystemExit(77)
 from pytest import approx, mark
