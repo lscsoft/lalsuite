@@ -15,8 +15,7 @@ stages:
   - level2
   - level3
   - level4
-  - container
-  - tag
+  - release
   - nightly
 
 before_script:
@@ -337,6 +336,35 @@ level4:lalapps:
     - pushes
     - schedules
 
+# release a debian docker image upon every tag in lalsuite
+docker:tags:
+  stage: release
+  before_script: []
+  script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker build --pull -t $TAG .
+    - docker push $TAG
+  dependencies:
+    - level4:lalapps
+  only:
+    - tags
+
+# release a debian docker image of each nightly build
+docker:nightly:
+  stage: nightly
+  before_script: []
+  script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker build --pull -t $NIGHTLY .
+    - docker push $NIGHTLY
+  dependencies:
+    - level4:lalapps
+  only:
+    - master@lscsoft/lalsuite
+    - schedules
+  except:
+    - pushes
+
 nightly:top-level:el7:
   image: ligo/lalsuite-dev:el7
   stage: nightly
@@ -453,39 +481,3 @@ pages:
     - schedules
   except:
     - pushes
-
-docker:tags:
-  stage: container
-  before_script: []
-  script:
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $TAG .
-    - docker push $TAG
-  dependencies:
-    - level4:lalapps
-  only:
-    - tags
-
-docker:nightly:
-  stage: container
-  before_script: []
-  script:
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $NIGHTLY .
-    - docker push $NIGHTLY
-  dependencies:
-    - level4:lalapps
-  only:
-    - master@lscsoft/lalsuite
-    - schedules
-  except:
-    - pushes
-
-tagged:
-  stage: tag
-  only:
-    - tags
-  before_script: []
-  script:
-    - docker tag $COMMIT $TAG
-    - docker push $TAG
