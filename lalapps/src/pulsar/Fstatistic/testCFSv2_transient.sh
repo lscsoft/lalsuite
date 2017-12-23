@@ -169,7 +169,8 @@ fi
 echo
 
 ## work around toplist-sorting bugs in CFSv2: manually sort before comparing
-sort ${outfile_Fstat1} > __tmp_sorted && mv __tmp_sorted ${outfile_Fstat1}
+sort ${outfile_Fstat1} > __tmp_sorted
+mv __tmp_sorted ${outfile_Fstat1}
 
 ## check for matching filelengths of standard-CW, tCW and tCW-Fstatmap output
 ## (should be over same frequency vector)
@@ -267,7 +268,8 @@ fi
 echo
 
 ## work around toplist-sorting bugs in CFSv2: manually sort before comparing
-sort ${outfile_Fstat2} > __tmp_sorted && mv __tmp_sorted ${outfile_Fstat2}
+sort ${outfile_Fstat2} > __tmp_sorted
+mv __tmp_sorted ${outfile_Fstat2}
 
 echo "--------- Checking that --outputFstat and --outputLoudest produced unchanged results: ---------"
 if ! eval "diff -I '[%][%].*' ${outfile_Loudest1} ${outfile_Loudest2}"; then
