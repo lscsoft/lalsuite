@@ -279,6 +279,18 @@ XLAL_ERROR_NULL(XLAL_EINVAL);\
 	XLAL_ERROR(XLAL_EINVAL);\
 	} while (0)
 
+/*
+ * Macro procedure for aborting if not correct eccentricity parameters are given
+ * if eccentricity > 0 ,then f_ecc > 0 also.
+ * default f_ecc = -1.0, when do not specify
+ */
+#define ABORT_WRONG_ECCENTRICITY(LALparams)\
+	do {\
+	XLALDestroyDict(LALparams);\
+	XLALPrintError("XLAL Error - %s: Not correct eccentricity poarameters are given, eccentricity is greater than zero without specifying f_ecc. This approximant does not support this case.\n", __func__);\
+	XLAL_ERROR(XLAL_EINVAL);\
+	} while (0)
+
 /* Internal utility macro to check all spin components are zero
    returns 1 if all spins zero, otherwise returns 0 */
 #define checkSpinsZero(s1x, s1y, s1z, s2x, s2y, s2z) \

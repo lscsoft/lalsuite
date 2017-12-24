@@ -185,6 +185,7 @@ noinst_HEADERS = \
 	LALSimIMRSpinEOBInitialConditions.c \
 	LALSimIMRSpinEOBInitialConditionsPrec.c \
 	LALSimInspiralPNCoefficients.c \
+	LALSimInspiralTaylorF2Ecc.c \
 	LALSimInspiraldEnergyFlux.c \
 	LALSimNeutronStarEOSPiecewisePolytrope.c \
 	LALSimNeutronStarEOSTabular.c \
@@ -220,8 +221,8 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRPhenomD.c \
 	LALSimIMRPhenomD_NRTidal.c \
 	LALSimIMRPhenomP.c \
-    LALSimIMRPhenomInternalUtils.c \
-    LALSimIMRPhenomUtils.c \
+	LALSimIMRPhenomInternalUtils.c \
+	LALSimIMRPhenomUtils.c \
 	LALSimIMRPSpinInspiralRD.c \
 	LALSimPhenSpinRingDown.c \
 	LALSimInspiralWaveformFlags.c \

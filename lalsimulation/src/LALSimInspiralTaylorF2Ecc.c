@@ -64,13 +64,12 @@ int XLALSimInspiralTaylorF2CoreEcc(
         const REAL8 phi_ref,                   /**< reference orbital phase (rad) */
         const REAL8 m1_SI,                     /**< mass of companion 1 (kg) */
         const REAL8 m2_SI,                     /**< mass of companion 2 (kg) */
-        const REAL8 S1z,                       /**<  z component of the spin of companion 1 */
-        const REAL8 S2z,                       /**<  z component of the spin of companion 2  */
         const REAL8 f_ref,                     /**< Reference GW frequency (Hz) - if 0 reference point is coalescence */
 	const REAL8 shft,		       /**< time shift to be applied to frequency-domain phase (sec)*/
         const REAL8 r,                         /**< distance of source (m) */
         const REAL8 eccentricity,              /**< eccentricity effect control < 0 : no eccentricity effect */
-        LALDict *p                       /**< Linked list containing the extra parameters >**/
+        LALDict *p,                       /**< Linked list containing the extra parameters >**/
+        PNPhasingSeries *pfaP /**< Phasing coefficients >**/
         )
 {
 
@@ -83,8 +82,6 @@ int XLALSimInspiralTaylorF2CoreEcc(
     const REAL8 m_sec = m * LAL_MTSUN_SI;  /* total mass in seconds */
     const REAL8 eta = m1 * m2 / (m * m);
     const REAL8 piM = LAL_PI * m_sec;
-    const REAL8 m1OverM = m1 / m;
-    const REAL8 m2OverM = m2 / m;
     REAL8 amp0;
     size_t i;
     COMPLEX16 *data = NULL;
@@ -105,8 +102,7 @@ int XLALSimInspiralTaylorF2CoreEcc(
     }
 
     /* phasing coefficients */
-    PNPhasingSeries pfa;
-    XLALSimInspiralPNPhasing_F2(&pfa, m1, m2, S1z, S2z, S1z*S1z, S2z*S2z, S1z*S2z, p);
+    PNPhasingSeries pfa = *pfaP;
 
     REAL8 pfaN = 0.; REAL8 pfa1 = 0.;
     REAL8 pfa2 = 0.; REAL8 pfa3 = 0.; REAL8 pfa4 = 0.;
@@ -120,20 +116,41 @@ int XLALSimInspiralTaylorF2CoreEcc(
         case -1:
         case 7:
             pfa7 = pfa.v[7];
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
         case 6:
             pfa6 = pfa.v[6];
             pfl6 = pfa.vlogv[6];
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
         case 5:
             pfa5 = pfa.v[5];
             pfl5 = pfa.vlogv[5];
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
         case 4:
             pfa4 = pfa.v[4];
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
         case 3:
             pfa3 = pfa.v[3];
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
         case 2:
             pfa2 = pfa.v[2];
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
         case 1:
             pfa1 = pfa.v[1];
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
         case 0:
             pfaN = pfa.v[0];
             break;
@@ -169,15 +186,19 @@ int XLALSimInspiralTaylorF2CoreEcc(
      */
     REAL8 pft10 = 0.;
     REAL8 pft12 = 0.;
-    REAL8 lambda1=XLALSimInspiralWaveformParamsLookupTidalLambda1(p);
-    REAL8 lambda2=XLALSimInspiralWaveformParamsLookupTidalLambda2(p);
     switch( XLALSimInspiralWaveformParamsLookupPNTidalOrder(p) )
     {
 	case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
-	    pft12 = pfaN * (lambda1*XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m1OverM) + lambda2*XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m2OverM) );
+	    pft12 = pfa.v[12];
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
-            pft10 = pfaN * ( lambda1*XLALSimInspiralTaylorF2Phasing_10PNTidalCoeff(m1OverM) + lambda2*XLALSimInspiralTaylorF2Phasing_10PNTidalCoeff(m2OverM) );
+            pft10 = pfa.v[10];
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
             break;
         default:
@@ -314,19 +335,37 @@ int XLALSimInspiralTaylorF2CoreEcc(
         {
             case 7:
                 flux += FTa7 * v7;
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
             case 6:
                 flux += (FTa6 + FTl6*logv) * v6;
                 dEnergy += dETa3 * v6;
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
             case 5:
                 flux += FTa5 * v5;
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
             case 4:
                 flux += FTa4 * v4;
                 dEnergy += dETa2 * v4;
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
             case 3:
                 flux += FTa3 * v3;
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
             case 2:
                 flux += FTa2 * v2;
                 dEnergy += dETa1 * v2;
+#if __GNUC__ >= 7
+                __attribute__ ((fallthrough));
+#endif
             case -1: /* Default to no SPA amplitude corrections */
             case 0:
                 flux += 1.;
@@ -409,7 +448,7 @@ int XLALSimInspiralTaylorF2Ecc(
     if (r <= 0) XLAL_ERROR(XLAL_EDOM);
 
     /* allocate htilde */
-    if ( fEnd == 0. ) // End at ISCO
+    if ( fEnd == 0. || fEnd > fISCO) // End at ISCO
         f_max = fISCO;
     else // End at user-specified freq.
         f_max = fEnd;
@@ -435,14 +474,35 @@ int XLALSimInspiralTaylorF2Ecc(
     for (i = iStart; i < n; i++) {
         freqs->data[i-iStart] = i * deltaF;
     }
+
+    /* phasing coefficients */
+    PNPhasingSeries pfa;
+    XLALSimInspiralPNPhasing_F2(&pfa, m1, m2, S1z, S2z, S1z*S1z, S2z*S2z, S1z*S2z, p);
     ret = XLALSimInspiralTaylorF2CoreEcc(&htilde, freqs, phi_ref, m1_SI, m2_SI,
-                                      S1z, S2z, f_ref, shft, r, eccentricity, p);
+                                      f_ref, shft, r, eccentricity, p, &pfa);
 
     XLALDestroyREAL8Sequence(freqs);
 
     *htilde_out = htilde;
 
     return ret;
+}
+
+/**
+ * Returns true if f_ecc and eccentricity were set correctly, check for the case of non-zero eccentricity without setting f_ecc
+ * value; returns false otherwise.
+ * Pointed out by Riccaro Sturani
+ */
+int LALSimInspiralEccentricityIsCorrect(REAL8 eccentricity, LALDict *params)
+{
+  /** 
+   * returns true for the case
+   * 1) eccentricity = 0.0, no eccentricity effect is required
+   * 2) eccentricy > 0.0 and f_ecc > 0.0, f_ecc and eccentricity were set intentionally.Default value of f_ecc = -1.0
+   */
+  REAL8 f_ecc = 0;
+  f_ecc = XLALSimInspiralWaveformParamsLookupEccentricityFreq(params); /** get f_ecc */
+  return ( eccentricity == 0.0 || (eccentricity > 0.0 && f_ecc > 0.0));
 }
 
 /** @} */
