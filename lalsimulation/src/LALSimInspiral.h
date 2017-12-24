@@ -213,6 +213,7 @@ extern "C" {
 #define LAL_PN_MODE_L_MAX 3
 /* (2x) Highest available PN order - UPDATE IF NEW ORDERS ADDED!!*/
 #define LAL_MAX_PN_ORDER 8
+#define LAL_MAX_ECC_PN_ORDER 6
 
 /**
  * Enum that specifies the PN approximant to be used in computing the waveform.
@@ -239,6 +240,8 @@ typedef enum tagApproximant {
    EccentricFD,         /**< Frequency domain waveform in the SPA to describe low eccentricity systems.
                          * @remarks Implemented in lalsimulation (frequency domain). */
    TaylorF2,		/**< The standard stationary phase approximation; Outputs a frequency-domain wave.
+                         * @remarks Implemented in lalsimulation (frequency domain). */
+   TaylorF2Ecc,		/**< The standard stationary phase approximation with eccentricity; Outputs a frequency-domain wave.
                          * @remarks Implemented in lalsimulation (frequency domain). */
    TaylorF2NLTides,     /**< The standard stationary phase approximation including a phenomenological model of nonlinear tidal effects; Outputs a frequency-domain wave.
                          * @remarks Implemented in lalsimulation (frequency domain). */
@@ -634,7 +637,8 @@ int XLALHGimriGenerator(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8
 
 /* TaylorF2 functions */
 /* in module LALSimInspiralTaylorF2.c */
-
+int XLALSimInspiralTaylorF2CoreEcc(COMPLEX16FrequencySeries **htilde, const REAL8Sequence *freqs, const REAL8 phi_ref, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 S1z, const REAL8 S2z, const REAL8 f_ref, const REAL8 shft, const REAL8 r, const REAL8 eccentricity, LALDict *LALparams);
+int XLALSimInspiralTaylorF2Ecc(COMPLEX16FrequencySeries **htilde, const REAL8 phi_ref, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 S1z, const REAL8 S2z, const REAL8 fStart, const REAL8 fEnd, const REAL8 f_ref, const REAL8 r, const REAL8 eccentricity, LALDict *LALparams);
 int XLALSimInspiralTaylorF2AlignedPhasing(PNPhasingSeries **pfa, const REAL8 m1, const REAL8 m2, const REAL8 chi1, const REAL8 chi2, LALDict *extraPars);
 int XLALSimInspiralTaylorF2AlignedPhasingArray(REAL8Vector **phasingvals, REAL8Vector mass1, REAL8Vector mass2, REAL8Vector chi1, REAL8Vector chi2, REAL8Vector lambda1, REAL8Vector lambda2, REAL8Vector dquadmon1, REAL8Vector dquadmon2);
 int XLALSimInspiralTaylorF2Core(COMPLEX16FrequencySeries **htilde, const REAL8Sequence *freqs, const REAL8 phi_ref, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 f_ref, const REAL8 shft, const REAL8 r, LALDict *LALparams, PNPhasingSeries *pfaP);
