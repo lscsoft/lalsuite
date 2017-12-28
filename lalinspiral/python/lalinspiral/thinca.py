@@ -348,8 +348,6 @@ def ligolw_thinca(
 	# validate input
 	#
 
-	if min_instruments < 1:
-		raise ValueError("min_instruments (=%d) must be >= 1" % min_instruments)
 	if min_log_L is not None and likelihood_func is None:
 		raise ValueError("must supply likelihood_func to impose min_log_L cut")
 

@@ -296,13 +296,6 @@ def burca(
 	verbose = False
 ):
 	#
-	# validate input
-	#
-
-	if min_instruments < 1:
-		raise ValueError("min_instruments (=%d) must be >= 1" % min_instruments)
-
-	#
 	# prepare the coincidence table interface.
 	#
 
