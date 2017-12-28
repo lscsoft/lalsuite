@@ -109,14 +109,8 @@ InspiralCoincDef = lsctables.CoincDef(search = u"inspiral", search_coinc_type = 
 
 
 class InspiralCoincTables(snglcoinc.CoincTables):
-	def __init__(self, xmldoc, likelihood_func = None):
-		snglcoinc.CoincTables.__init__(self, xmldoc)
-
-		#
-		# configure the likelihood ratio evaluator
-		#
-
-		self.likelihood_func = likelihood_func
+	def __init__(self, xmldoc):
+		super(InspiralCoincTables, self).__init__(xmldoc)
 
 		#
 		# find the coinc_inspiral table or create one if not found
@@ -167,14 +161,6 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 		coinc.insts = set(event.ifo for event in events)
 		if seglists is not None:
 			coinc.insts |= set(instrument for instrument, segs in seglists.items() if end - offsetvector[instrument] in segs)
-
-		#
-		# if a likelihood ratio calculator is available, assign a
-		# likelihood ratio to the coinc
-		#
-
-		if self.likelihood_func is not None:
-			coinc.likelihood = self.likelihood_func(events, offsetvector)
 
 		#
 		# done
@@ -340,7 +326,7 @@ def ligolw_thinca(
 
 	if verbose:
 		print("indexing ...", file=sys.stderr)
-	coinc_tables = InspiralCoincTables(xmldoc, likelihood_func = likelihood_func)
+	coinc_tables = InspiralCoincTables(xmldoc)
 	coinc_def_id = ligolw_coincs.get_coinc_def_id(xmldoc, coinc_definer_row.search, coinc_definer_row.search_coinc_type, create_new = True, description = coinc_definer_row.description)
 	instruments = set(coinc_tables.time_slide_table.getColumnByName("instrument"))
 
@@ -368,9 +354,11 @@ def ligolw_thinca(
 	# and record the survivors
 	#
 
-	for node, coinc in time_slide_graph.get_coincs(eventlists, delta_t, verbose = verbose):
-		if not ntuple_comparefunc(coinc, node.offset_vector):
-			coinc, coincmaps, coinc_inspiral = coinc_tables.coinc_rows(process_id, node.time_slide_id, coinc_def_id, coinc, seglists = seglists)
+	for node, events in time_slide_graph.get_coincs(eventlists, delta_t, verbose = verbose):
+		if not ntuple_comparefunc(events, node.offset_vector):
+			coinc, coincmaps, coinc_inspiral = coinc_tables.coinc_rows(process_id, node.time_slide_id, coinc_def_id, events, seglists = seglists)
+			if likelihood_func is not None:
+				coinc.likelihood = likelihood_func(events, node.offset_vector)
 			if min_log_L is None or coinc.likelihood >= min_log_L:
 				coinc_tables.append_coinc(coinc, coincmaps, coinc_inspiral)
 
