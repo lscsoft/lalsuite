@@ -25,7 +25,7 @@
 
 
 from __future__ import print_function
-from bisect import bisect_left, bisect_right
+from bisect import bisect_left
 import itertools
 import math
 import sys
@@ -284,9 +284,13 @@ class InspiralEventList(snglcoinc.EventList):
 
 		#
 		# extract the subset of events from this list that pass
-		# coincidence with event_a (use bisection searches for the
-		# minimum and maximum allowed end times to quickly identify
-		# a subset of the full list)
+		# coincidence with event_a.  use a bisection search for the
+		# minimum allowed end time and a brute-force scan for the
+		# maximum allowed end time.  because the number of events
+		# in the coincidence window is generally quite small, the
+		# brute-force scan has a lower expected operation count
+		# than a second bisection search to find the upper bound in
+		# the sequence
 		#
 
 		try:
@@ -297,7 +301,8 @@ class InspiralEventList(snglcoinc.EventList):
 			# typical today so trapping the exception is more
 			# efficient than testing
 			return ()
-		return events[bisect_left(events, end - coincidence_window) : bisect_right(events, end + coincidence_window)]
+		stop = end + coincidence_window
+		return tuple(itertools.takewhile(lambda event: event.end <= stop, events[bisect_left(events, end - coincidence_window):]))
 
 
 #
