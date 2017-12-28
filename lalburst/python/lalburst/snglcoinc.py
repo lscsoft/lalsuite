@@ -750,21 +750,21 @@ class CoincTables(object):
 		retrieved from self.time_slide_index using the
 		time_slide_id.
 		"""
-		coinc = self.coinctable.RowType()
-		coinc.process_id = process_id
-		coinc.coinc_def_id = coinc_def_id
-		coinc.coinc_event_id = None
-		coinc.time_slide_id = time_slide_id
-		coinc.insts = None
-		coinc.likelihood = None
-
 		coincmaps = [self.coincmaptable.RowType(
 			coinc_event_id = None,
 			table_name = event.event_id.table_name,
 			event_id = event.event_id
 		) for event in events]
 
-		coinc.nevents = len(coincmaps)
+		coinc = self.coinctable.RowType(
+			process_id = process_id,
+			coinc_def_id = coinc_def_id,
+			coinc_event_id = None,
+			time_slide_id = time_slide_id,
+			insts = None,
+			nevents = len(coincmaps),
+			likelihood = None
+		)
 
 		return coinc, coincmaps
 
