@@ -472,7 +472,10 @@ pages:
     - ./configure --enable-doxygen --prefix=${LAL_DIR}
     - make -j4 install-html
     - cp -r ${LAL_DIR}/share/doc public/
-    - ln -s public/lalsuite/index.html public/index.html
+    - pushd public
+    - cp lalsuite/index.html index.html
+    - sed -i 's/..\/lal/lal/g' index.html
+    - popd
   dependencies: []
   artifacts:
     paths:
