@@ -479,6 +479,5 @@ pages:
       - public
   only:
     - master@lscsoft/lalsuite
-    - schedules
   except:
     - pushes
