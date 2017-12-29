@@ -472,6 +472,7 @@ pages:
     - ./configure --enable-doxygen --prefix=${LAL_DIR}
     - make -j4 install-html
     - cp -r ${LAL_DIR}/share/doc public/
+    - ln -s public/lalsuite/index.html public/index.html
   dependencies: []
   artifacts:
     paths:
