@@ -21,7 +21,7 @@ stages:
 before_script:
   - ulimit -S -c 0
   - export VERBOSE="true"
-  - export PATH=/usr/lib/ccache:$PATH
+  - export PATH=/usr/lib/ccache:/opt/local/libexec/ccache:$PATH
   - export CCACHE_DIR=${PWD}/ccache
   - export PKG_CONFIG_PATH=${LAL_DIR}/lib/pkgconfig
   - mkdir -p opt/lalsuite
@@ -459,6 +459,20 @@ nightly:python3:stretch:
     - ./00boot
     - PYTHON=python3 ./configure --enable-swig --enable-doxygen
     - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
+nightly:macos:
+  tags:
+    - macos
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-swig --enable-doxygen
+    - make -j4
+    - make -j4 check
   dependencies: []
   only:
     - schedules
