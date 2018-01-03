@@ -1,0 +1,83 @@
+#! /usr/bin/python
+
+import os
+import sys
+import numpy
+import copy
+from optparse import OptionParser
+from pylal import spawaveform
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+from glue.ligolw.utils import process as ligolw_process
+
+def parse_command_line():
+        parser = OptionParser()
+        parser.add_option("-o", "--output-path", metavar = "path", default = ".", help = "Set the path to the directory where output files will be written.  Default is \".\".")
+        parser.add_option("-n", "--n", metavar = "count", type = "int", help = "Set the number of templates per output file (required).")
+        parser.add_option("-s", "--sort-by", metavar = "{mchirp|ffinal}", help = "Select the template sort order (required).")
+	parser.add_option("-F", "--add-f-final", action = "store_true", help = "Select whether to add f_final to the bank.")
+	parser.add_option("-M", "--max-f-final", metavar = "float", type="float", help = "Max f_final to populate table with; if f_final over mx, use max.")
+        parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
+        options, filenames = parser.parse_args()
+
+        required_options = ("n", "sort_by")
+        missing_options = [option for option in required_options if getattr(options, option) is None]
+        if missing_options:
+                raise ValueError, "missing required option(s) %s" % ", ".join("--%s" % option.replace("_", "-") for option in missing_options)
+
+        if options.sort_by not in ("mchirp", "ffinal"):
+                raise ValueError, "unrecognized --sort-by \"%s\"" % options.sort_by
+
+        if not filenames:
+                raise ValueError, "must provide list of filenames"
+
+        return options, filenames
+
+options, filenames = parse_command_line()
+options_params=[("--filename","string",filenames),("--output_path","string", options.output_path), ("--n","int",options.n),("--sort-by","string",options.sort_by),("--add-f-final","string",options.add_f_final),("--max-f-final","float",options.max_f_final)]
+
+
+for file in filenames:
+	xmldoc=utils.load_filename(filenames[0], gz=filenames[0].endswith(".gz"), verbose = options.verbose)
+	sngl_inspiral_table=lsctables.table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
+	process_params_table = lsctables.table.get_table(xmldoc, lsctables.ProcessParamsTable.tableName)
+	tmpltbank_process_ids = lsctables.table.get_table(xmldoc, lsctables.ProcessTable.tableName).get_ids_by_program("tmpltbank")
+
+	if options.add_f_final:
+		for row in process_params_table:
+                	if row.process_id in tmpltbank_process_ids and row.param=='--approximant':
+				approximant=row.value
+		for row in sngl_inspiral_table:
+			if approximant=='uIMRPhenomB' and row.f_final==0:
+				row.f_final=spawaveform.imrffinal(row.mass1,row.mass2,row.chi)
+				if options.max_f_final and row.f_final>options.max_f_final:
+					row.f_final=options.max_f_final
+			else:
+				row.f_final=spawaveform.ffinal(row.mass1,row.mass2,'schwarz_isco')
+				if options.max_f_final and (row.f_final > options.max_f_final):
+					print row.f_final, options.max_f_final
+					row.f_final=options.max_f_final
+					print row.f_final
+
+	if options.sort_by=='mchirp':
+        	sngl_inspiral_table.sort(lambda a, b: cmp(a.mchirp, b.mchirp))
+	elif options.sort_by=='ffinal':
+        	sngl_inspiral_table.sort(lambda a, b: cmp(a.f_final, b.f_final))
+	else:
+        	raise ValueError, "internal error"
+
+	sngl_inspiral_table_split = lsctables.table.new_from_template(sngl_inspiral_table)
+	sngl_inspiral_table.parentNode.replaceChild(sngl_inspiral_table_split, sngl_inspiral_table)
+
+	process = ligolw_process.append_process(xmldoc, program = "bank_splitter", comment = "split bank into smaller banks after sorting", ifos = None)
+	ligolw_process.append_process_params(xmldoc, process, options_params)	
+
+
+	output='split_bank-' + os.path.basename(file)
+
+
+	for first_row in range(0, len(sngl_inspiral_table), options.n):
+        	sngl_inspiral_table_split[:] = sngl_inspiral_table[first_row:first_row + options.n]
+        	output_split = os.path.join(options.output_path, "%d-%s" % (first_row/options.n + 1, output))
+        	utils.write_filename(xmldoc, output_split, gz = (output_split or "stdout").endswith(".gz"), verbose = options.verbose)

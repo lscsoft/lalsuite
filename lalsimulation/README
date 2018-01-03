@@ -1,0 +1,36 @@
+LALSimulation
+================================
+
+LAL routines for gravitational waveform and noise generation.
+
+Acknowledgment
+--------------------------------
+
+We request that any academic report, publication, or other academic
+disclosure of results derived from the use of this software acknowledge
+the use of the software by an appropriate acknowledgment or citation.
+
+Basic Build Instructions
+--------------------------------
+
+     ./configure --prefix=...
+     make
+     make install
+
+Please read the [LALSuite install how-to][install] for more detailed
+build instructions.
+
+Bug Reporting
+--------------------------------
+
+Please visit the [LALSuite bug reporting system][bugs] (LIGO.org
+authentication required).
+
+For More Information
+--------------------------------
+
+Please visit the [LALSuite project page][project].
+
+[install]: http://www.lsc-group.phys.uwm.edu/daswg/docs/howto/lal-install.html
+[bugs]:    https://bugs.ligo.org/redmine/projects/lalsuite
+[project]: http://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html

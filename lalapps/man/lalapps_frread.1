@@ -1,0 +1,28 @@
+.TH LALAPPS_FRREAD 1 "11 July 2001" LALApps LALApps
+.SH NAME
+lalapps_frread - reads a frame file and outputs contents as ascii files
+
+.SH SYNOPSIS
+.B lalapps_frread
+.IR infile
+.IR channels
+
+.SH DESCRIPTION
+.PP
+\fIlalapps_frread\fP extracts the specified ADC channels from the input frame
+file \fIinfile\fP and writes them as ascii files.  The ascii file names are of
+the form channel-gpstime.dat.
+
+.SH EXAMPLE
+.PP
+To write the contents of the ADC channels H1:LSC-AS_Q and H2:LSC-AS_Q from a
+LIGO Hanford frame:
+.PP
+.RS
+fr_read H-RDS_R_L1-730155008-16.gwf "H1:LSC-AS_Q" and "H2:LSC-AS_Q"
+.RE
+.PP
+This produces files H1:LSC-AS_Q-730155008.dat, H2:LSC-AS_Q-730155008.dat, etc.
+
+.SH AUTHOR
+Jolien Creighton

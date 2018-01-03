@@ -1,0 +1,209 @@
+%!PS-Adobe-2.0 EPSF-2.0
+%%Title: Equatorial and Galactic coordinate systems
+%%Creator: Teviet Creighton
+%%CreationDate: Mon Apr 23 00:42:54 2001
+%%Orientation: Portrait
+%%Pages: 0
+%%BoundingBox: 56 191 511 656
+%%EndComments
+
+
+% Draw bounding box.
+%56 191 moveto 56 656 lineto 511 656 lineto 511 191 lineto closepath stroke
+
+
+306 396 translate
+2 2 scale
+
+% Define some constants.
+/a 0.3 def  % squeeze factor of equatorial plane
+/v 15 def   % position angle of vernal equinox
+/l v 77.14 sub def % position angle of ascending Galactic node on ecliptic
+/la -34 def % position angle of ascending Galactic node on Galactic plane
+/lc la 33 add def  % position angle of Galactic core on Galactic plane
+/i 32 def   % inclination of Galactic plane ellipse
+/ig 9 def   % orientation angle for meridian through Galactic pole
+
+% Derive some constants.
+/xv v sin 100 mul def
+/yv v cos a mul -100 mul def
+/xl l sin 100 mul def
+/yl l cos a mul -100 mul def
+/b i cos yl mul i sin xl mul sub dup mul
+   xl dup mul i cos xl mul i sin yl mul add dup mul sub yl a div dup mul add
+   div sqrt def
+
+/az 1 a dup mul sub sqrt def
+/bz 1 b dup mul sub sqrt def
+/bg ig sin 1 az div dup mul ig cos dup mul sub sqrt div def
+
+
+% Temporary: Draw reference ellipse for line of latitude corresponding
+% to Galactic pole, and position the ascending node.
+%/e 27.13 def
+%gsave 0 e sin 100 mul az mul translate 1 a scale
+%0 0 100 e cos mul 0 360 arc stroke grestore
+%gsave i rotate 1 b scale la rotate -100 0 2 0 360 arc stroke grestore
+%gsave ig rotate bg 1 scale 0 0 100 0 360 arc stroke grestore
+
+
+% Draw backward arcs of ellipses.
+0.8 setgray
+gsave 1 a scale 0 0 100 0 180 arc stroke grestore
+gsave i rotate 1 b scale 0 0 100 -180 0 arc stroke grestore
+
+% Draw twice-shaded backwards arcs of ellipses.
+0.9 setgray
+gsave 1 a scale 0 0 100 0 360 arc closepath clip 1 1 a div scale
+newpath i rotate 1 b scale 0 0 100 -180 0 arc stroke grestore
+gsave i rotate 1 b scale 0 0 100 0 360 arc closepath clip 1 1 b div scale
+i neg rotate newpath 1 a scale 0 0 100 0 180 arc stroke grestore
+
+% Draw rear arcs of right ascension of Galactic pole.
+/loff l 177 add def
+gsave 1 a scale 0.7 setlinewidth 0 setgray
+% unshaded back arc:
+0 1 a div 100 0 90 arc 0 -2 a div rlineto 0 -1 a div 100 90 0 arcn
+closepath stroke
+% once-shaded back arc:
+0.6 setgray 1 1 a div scale 0 0 100 0 360 arc closepath clip newpath 1 a scale
+0 1 a div 100 0 90 arc 0 -2 a div rlineto 0 -1 a div 100 90 0 arcn
+closepath stroke
+% twice-shaded back arc:
+0.8 setgray 1 1 a div scale i rotate 1 b scale 0 0 100 0 360 arc
+closepath clip 1 1 b div scale i neg rotate 1 a scale newpath
+0 1 a div 100 0 loff arc 0 2 a div rlineto -3 -3 a div rlineto
+3 -3 a div rlineto 0 2 a div rlineto 0 -1 a div 100 loff 0 arcn
+closepath stroke
+grestore
+
+% Draw Galactic z axis (pole).
+gsave 0.6 setgray i rotate 1 bz scale
+0.5 0 moveto 0 95 rlineto 1 0 rlineto -1.5 5 rlineto
+-1.5 -5 rlineto 1 0 rlineto 0 -95 rlineto closepath fill
+0.8 setgray 1 1 bz div scale newpath
+-0.5 0 moveto 0 100 b mul rlineto 1 0 rlineto
+0 -100 b mul rlineto closepath fill
+grestore
+
+% Draw declination of Galactic pole.
+/d0 160 def
+/d1 d0 22 sub def
+gsave 0.6 setgray 0.5 setlinewidth
+ig rotate bg 1 scale -1 bg div 0 100 d0 d1 arcn
+1 bg div 1 scale ig neg rotate -1 0 rlineto 3 5 rlineto
+1 -5 rlineto -1 0 rlineto ig rotate bg 1 scale
+1 bg div 0 100 d1 2 add d0 arc
+closepath 1 bg div 1 scale stroke
+grestore
+% Draw shaded portion.
+gsave 0.8 setgray 0.5 setlinewidth
+i rotate 1 b scale 0 0 100 0 360 arc closepath clip newpath
+1 1 b div scale i neg rotate
+ig rotate bg 1 scale -1 bg div 0 100 d0 d1 arcn 2 bg div 0 rlineto
+1 bg div 0 100 d1 2 add d0 arc
+closepath 1 bg div 1 scale stroke
+grestore
+
+% Draw line of nodes.
+0.5 setlinewidth 0.9 setgray
+xl yl moveto xl neg yl neg lineto stroke
+1 setlinewidth
+
+% Draw celestial sphere.
+0 setgray
+0 0 100 0 360 arc stroke
+
+% Draw equatorial z axis.
+gsave 0.6 setgray 1 az scale
+0.5 5 moveto 0 95 rlineto -1 0 rlineto 0 -95 rlineto closepath fill
+0 setgray
+0.5 100 moveto 0 20 rlineto 1 0 rlineto -1.5 5 rlineto
+-1.5 -5 rlineto 1 0 rlineto 0 -20 rlineto closepath fill
+0.8 setgray 1 1 az div scale
+i rotate 1 b scale 0 0 100 0 360 arc closepath clip 1 1 b div scale
+i neg rotate newpath
+-0.5 0 moveto 0 100 rlineto 1 0 rlineto 0 -100 rlineto closepath fill
+grestore
+
+% Draw x-axis.
+gsave 0.6 setgray i rotate 1 b scale la 33 add rotate
+0 1 moveto -92 0 rlineto 0 2 rlineto -5 -3 rlineto
+5 -3 rlineto 0 2 rlineto 92 0 rlineto closepath fill
+grestore
+% Draw shaded part.
+gsave 1 a scale 0 0 100 0 360 arc closepath clip 1 1 a div scale newpath
+0.8 setgray i rotate 1 b scale la 33 add rotate
+0 1 moveto -100 0 rlineto 0 -2 rlineto 100 0 rlineto closepath fill
+grestore
+
+% Draw forward arcs of ellipses.
+0 setgray
+gsave 1 a scale 0 0 100 -180 0 arc stroke grestore
+gsave i rotate 1 b scale 0 0 100 0 180 arc stroke grestore
+
+% Draw shaded part of vernal equinox axis.
+gsave 0.8 setgray 1 a scale v rotate
+0.5 0 moveto 0 -100 rlineto -1 0 rlineto 0 100 rlineto closepath fill
+grestore
+
+% Draw front arc of right ascension of Galactic pole
+gsave 1 a scale 0.7 setlinewidth 0 setgray
+0 1 a div 100 v 90 sub 0 arc 0 -2 a div rlineto 0 -1 a div 100 0 v 90 sub arcn
+closepath gsave 1 setgray fill grestore stroke
+grestore
+
+% Draw unshaded part of vernal equinox axis.
+gsave 0 setgray 1 a scale v rotate
+0.5 -100 moveto 0 -70 rlineto 1 0 rlineto -1.5 -8 rlineto
+-1.5 8 rlineto 1 0 rlineto 0 70 rlineto closepath fill
+grestore
+
+% Draw Earth.
+0.6 setgray
+0 0 2 0 360 arc gsave closepath 0.8 setgray fill grestore stroke
+
+% Draw Galactic centre.
+/loff la 2 add def  % offset for point of ascending-node arrow
+/dl loff lc sub def % length of stem of arrow
+gsave 0 setgray 0.5 setlinewidth i rotate 1 b scale newpath loff rotate
+0 0 106 -180 dl sub -180 arcn -1 0 rlineto 2 5 rlineto
+2 -5 rlineto -1 0 rlineto 0 0 104 -180 -180 dl sub arc closepath
+gsave 1 setgray fill grestore stroke
+1 setlinewidth
+loff neg rotate lc rotate -100 0 moveto
+lc neg rotate 1 1 b div scale i neg rotate currentpoint translate
+0 setgray newpath
+0 0 2 0 360 arc gsave closepath 1 setgray fill grestore stroke
+grestore
+
+% Label axes.
+0 setgray
+/Times-Italic findfont 10 scalefont setfont
+i rotate 1 bz scale -2 105 moveto 1 1 bz div scale i neg rotate (z) show
+i rotate 1 bz scale -96 8 moveto 1 1 bz div scale i neg rotate (x) show
+-121 -35 moveto (l) show
+/Times-Roman findfont 7 scalefont setfont
+0 -2 rmoveto (ascend) show
+
+/Symbol findfont 10 scalefont setfont
+/char 1 string def char 0 161 put
+xv 2.1 mul yv 2.1 mul moveto -7 0 rmoveto char show
+-68 50 moveto (d) show
+/Times-Roman findfont 7 scalefont setfont
+0 -2 rmoveto (NGP) show
+/Symbol findfont 10 scalefont setfont
+0.6 setgray -41 17 moveto (a) show
+/Times-Roman findfont 7 scalefont setfont
+0 -2 rmoveto (NGP) show
+
+/Times-Roman findfont 10 scalefont setfont
+0 setgray
+1 az scale -3 127 moveto 1 1 az div scale (N) show
+-118 -65 moveto (Galactic) show
+-110 -75 moveto (core) show
+0.4 setgray
+4 0 moveto (Earth) show
+
+%showpage
+%%EOF

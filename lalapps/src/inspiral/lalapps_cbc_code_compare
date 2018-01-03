@@ -1,0 +1,146 @@
+#!/bin/sh
+#
+# cbc_code_compare
+#
+# usage: cbc_code_compare branch1:tag1 branch2:tag2 git_url
+# example:
+#   cbc_code_compare master:ca000577f498a0638dc41512db9ae0205aefdc36 \
+#                    s6_20090722:60d8943667e1088027a26d138127382a9453ff0b
+
+# print (unexpanded) shell input lines as they are read
+set -v
+# print (expanded) commands before they're executed
+set -x
+
+
+if [ "x$LSCSOFT_SRCDIR" == "x" ]; then
+    echo "error: \$LSCSOFT_SRCDIR must be defined in your environment"
+    echo
+    echo "Please set \$LSCSOFT_SRCDIR to the parent dir of a lalsuite/ checkout containing the build & test harness code you wish to use."
+    echo
+    echo "(Yes this is ugly, but fear not: it will go away soon with the new .ini file approach.)"
+    exit 3
+fi
+
+if ! which nmi_submit > /dev/null 2>&1; then
+    NMI_ROOT=/usr/local/nmi/cur
+    export PATH=$PATH:$NMI_ROOT/sbin:$NMI_ROOT/bin
+    export NMI_CONF=$NMI_ROOT/etc/nmi.conf
+fi
+if [ "x$NMI_CONF" == "x" ]; then
+    NMI_CONF="$(dirname $(dirname $(which nmi_submit)))/etc/nmi.conf"
+fi
+
+# Metronome
+#PATH=$PATH:/usr/local/nmi/cur/sbin:/usr/local/nmi/cur/bin
+#export NMI_CONF=/usr/local/nmi/cur/etc/nmi.conf
+
+# where to find the "reference" XML data products for the unit tests
+# TODO: these should be moved out of my home dir (e.g., to /usr/local/...)
+REFERENCE_XML_DIR=~cbc/nmi/share/reference-data/S6AVSR2
+
+# TODO: subtools need to be relocatable -- this is ugly but needed for now
+#export LSCSOFT_SRCDIR=~cbc/nmi/src
+
+# this is necessary so we can store our Metronome run dirs on NFS without DAGMan complaining
+export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
+
+# where to store our temporary submit files
+TMPDIR=${TMPDIR:-/tmp}
+
+# exit immediately if any command exits with a non-zero status.
+set -e
+# treat unset variables as an error when performing parameter expansion.
+set -u
+
+if [[ $# -lt 3 ]]; then
+    echo "usage: $(basename $0) branch1:tag1 branch2:tag2 git_url"
+    echo
+    echo "example:"
+    echo "$(basename $0) origin/master:d21b154897fb961919c51dff7be4f3fafe22e1e7 origin/s6_20090722:60d8943667e1088027a26d138127382a9453ff0b git://ligo-vcs.phys.uwm.edu/lalsuite.git"
+    exit 1
+fi
+
+# extract parameters
+export _NMI_GIT_BRANCH_A=$(echo $1 | cut -f1 -d:)
+export _NMI_GIT_BRANCH_B=$(echo $2 | cut -f1 -d:)
+export _NMI_GIT_ID_A=$(echo $1 | cut -f2 -d:)
+export _NMI_GIT_ID_B=$(echo $2 | cut -f2 -d:)
+export _NMI_GIT_URL=$3
+
+# create a temp dir for our working files
+# name is based on git tags, pid, and epoch time for uniqueness
+SUBMIT_DIR=$TMPDIR/$USER/$(basename $0).${_NMI_GIT_ID_A}.${_NMI_GIT_ID_B}.$$.$(date +%s)
+mkdir -p $SUBMIT_DIR
+
+# print some handy debugging info
+echo SUBMIT_DIR=$SUBMIT_DIR
+env | grep ^_NMI_
+
+### build each given git tag
+
+cd $LSCSOFT_SRCDIR/lalsuite/glue/src/nmi/builds
+#./genbuild.sh $_NMI_GIT_ID_A $_NMI_GIT_BRANCH_A $_NMI_GIT_URL | tee $SUBMIT_DIR/genbuild.a.out
+#./genbuild.sh $_NMI_GIT_ID_B $_NMI_GIT_BRANCH_B $_NMI_GIT_URL | tee $SUBMIT_DIR/genbuild.b.out
+
+LATEST_MASTER_ID=$(git ls-remote $_NMI_GIT_URL heads/master | awk '{print $1}')
+./genbuild.py --harness-git-id=$LATEST_MASTER_ID --harness-git-branch=master --git-repo=$_NMI_GIT_URL --git-id=$_NMI_GIT_ID_A --git-branch=$_NMI_GIT_BRANCH_A --template-dir=. | tee $SUBMIT_DIR/genbuild.a.out
+./genbuild.py --harness-git-id=$LATEST_MASTER_ID --harness-git-branch=master --git-repo=$_NMI_GIT_URL --git-id=$_NMI_GIT_ID_B --git-branch=$_NMI_GIT_BRANCH_B --template-dir=. | tee $SUBMIT_DIR/genbuild.b.out
+
+# needed by subsequent tests
+export BUILD_A_GID=$(awk '/Global ID:/{print $3}' $SUBMIT_DIR/genbuild.a.out)
+export BUILD_B_GID=$(awk '/Global ID:/{print $3}' $SUBMIT_DIR/genbuild.b.out)
+
+### run unit tests for each tag
+
+# workaround for nmi-support #6668
+# set +e
+# while ! nmi_gid2runid $BUILD_A_GID; do
+#     echo "sleeping 10 seconds and trying again..."
+#     sleep 10
+# done
+# while ! nmi_gid2runid $BUILD_B_GID; do
+#     echo "sleeping 10 seconds and trying again..."
+#     sleep 10
+# done
+# set -e
+
+# for each XML data product named in test_suite.txt, submit unit & diff tests
+# the unit tests will block until the build test is complete (or 24h timeout)
+for name in $(< $REFERENCE_XML_DIR/full_data_test_suite.txt); do
+    cd $LSCSOFT_SRCDIR/lalsuite/glue/src/nmi/unit
+    export _NMI_GIT_ID=$_NMI_GIT_ID_A
+    export _NMI_GIT_BRANCH=$_NMI_GIT_BRANCH_A
+    ./genunit.sh $REFERENCE_XML_DIR/$name $BUILD_A_GID \
+	| tee $SUBMIT_DIR/genunit.a.$name.out
+    export _NMI_GIT_ID=$_NMI_GIT_ID_B
+    export _NMI_GIT_BRANCH=$_NMI_GIT_BRANCH_B
+    ./genunit.sh $REFERENCE_XML_DIR/$name $BUILD_B_GID \
+	| tee $SUBMIT_DIR/genunit.b.$name.out
+
+    # extract shorter workflow node name from XML filename
+    # TODO: can this be extracted more reliably from the XML metadata?
+    export _NMI_WORKFLOW_NODENAME=$(echo $name | sed 's/[^-]*-//; s/-.*//')
+
+    # capture the Metronome gid assigned to each unit test job
+    # (needed for diff tests below)
+    export UNIT_A_GID=$(awk '/Global ID:/{print $3}' \
+	$SUBMIT_DIR/genunit.a.$name.out)
+    export UNIT_B_GID=$(awk '/Global ID:/{print $3}' \
+	$SUBMIT_DIR/genunit.b.$name.out)
+
+    cd $LSCSOFT_SRCDIR/lalsuite/glue/src/nmi/diff
+
+    # workaround for nmi-support #6668 and/or #7071
+    condor_reschedule
+    sleep 30
+
+    # given two unit test ids, submit the diff test for this XML data product
+    # this Metronome job will block until the unit tests are complete (or 24h)
+    export _NMI_HARNESS_GIT_REPO=$_NMI_GIT_URL
+    export _NMI_HARNESS_GIT_BRANCH=$LATEST_MASTER_ID
+    ./gendiff.sh $UNIT_A_GID $UNIT_B_GID
+done
+
+# unset loop variables not meant to have global scope
+unset _NMI_WORKFLOW_NODENAME UNIT_A_GID UNIT_B_GID _NMI_GIT_ID _NMI_GIT_BRANCH

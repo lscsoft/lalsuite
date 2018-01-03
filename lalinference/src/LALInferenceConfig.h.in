@@ -1,0 +1,19 @@
+/* only include this file if LALInference's config.h has not been included */
+#ifndef LALINFERENCE_VERSION
+
+/* LALInference Version */
+#undef LALINFERENCE_VERSION
+
+/* LALInference Version Major Number  */
+#undef LALINFERENCE_VERSION_MAJOR
+
+/* LALInference Version Minor Number  */
+#undef LALINFERENCE_VERSION_MINOR
+
+/* LALInference Version Micro Number  */
+#undef LALINFERENCE_VERSION_MICRO
+
+/* LALInference Version Devel Number  */
+#undef LALINFERENCE_VERSION_DEVEL
+
+#endif /* LALINFERENCE_VERSION */

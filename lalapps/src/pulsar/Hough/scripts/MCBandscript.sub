@@ -1,0 +1,14 @@
+universe   = vanilla
+executable = /home/badkri/MC_allsky/MCBandscript.sh
+#input      = inBand.$(Process)
+output     = outBand.$(Process)
+error      = errBand.$(Process)
+log        = logBand.$(Process)
+initialdir = /home/badkri/MC_allsky
++Prio = "42"
+rank = mips
+notification = Never
+arguments  =  $(Process)
+on_exit_remove = (ExitBySignal == False) || ((ExitBySignal == True) && (ExitSignal != 11))
+requirements = ( ( machine != "merlin.geo600.aei.mpg.de" ) && ( machine  != "morgane.geo600.aei.mpg.de" ) )
+queue 100

@@ -1,0 +1,11 @@
+universe = vanilla
+executable = executables/plotinspiral
+arguments = --verbose --ifo-tag $(macroifotag) --gps-end-time $(macrogpsendtime) --gps-start-time $(macrogpsstarttime) --inspiral-glob $(macroinspiralglob) --nbins 200 --ifo-times $(macroifotimes) --snr-time --user-tag $(macrousertag) --enable-output --output-path plots --log-y --add-vertical-line 867680283 --x-min -5 --x-max 5 --y-min 1 --y-max 1000
+environment = KMP_LIBRARY=serial;MKL_SERIAL=yes
+priority = 10
+getenv = True
+log = /people/jclayton/logs/RmpQvGdWO
+error = logs/plotinspiral-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err
+output = logs/plotinspiral-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out
+notification = never
+queue 1

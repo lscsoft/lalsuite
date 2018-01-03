@@ -1,0 +1,33 @@
+.TH LALFR-DUMP 1 "10 June 2013" LALFrame LALFrame
+.SH NAME
+lalfr-dump -- prints channel and detector metadata from frame files
+
+.SH SYNOPSIS
+.B lalfr-dump
+[\fIfile\fP ...]
+
+.SH DESCRIPTION
+.PP
+The \fBlalfr-dump\fP utility dumps information about the contents of each
+\fIfile\fP to the standard output.  The \fIfile\fP operands are processed in
+command-line order.  If \fIfile\fP is a single dash (`\fB-\fP') or absent,
+\fBlalfr-dump\fP reads from the standard input.
+Content dumped includes the detector structures contained and information
+about the data channels present.
+
+.SH EXAMPLE
+.PP
+The command:
+.PP
+.RS
+lalfr-dump file.gwf
+.RE
+.PP
+outputs information about the detector structures and channels contained
+in the \fIfile.gwf\fP.
+
+.SH SEE ALSO
+lalfr-print(1)
+
+.SH AUTHOR
+Jolien Creighton

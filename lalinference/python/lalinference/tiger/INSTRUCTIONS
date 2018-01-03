@@ -1,0 +1,190 @@
+###############################################################################
+#
+# INSTRUCTIONS FOR THE TIGER POST PROCESSING SCRIPT
+#
+###############################################################################
+
+The tiger post processing script takes the user from the output of the backend
+lalinference runs to a summary page and the corresponding plots of the tiger
+results. The main maths and the algorithm of tiger are described in Ref [1].
+
+
+CONTENTS
+-------------------------------------------------------------------------------
+1. Usage
+2. Requirements
+3. Input
+4. Internal structure
+5. Output
+6. Use as a library
+7. References
+
+1. USAGE
+-------------------------------------------------------------------------------
+The tiger postproc script can be used in two distinct modes
+
+1. Standalone python script. You can run the script by either calling the
+python interpreter explicitly by
+
+python /path/to/script/postproc.py 
+
+or by making and running the script as an executable by
+
+/path/to/script/postproc.py
+
+2. Or as a library to use the functions in your own script by
+
+from lalinference.tiger.postproc import *
+
+The remainder of this instruction file will mainly describe the use of this
+script as a standalone python script.
+
+2. REQUIREMENTS
+-------------------------------------------------------------------------------
+There are several requirements that a user must meet before he or she can run
+the post processing script. These are
+
+1. Python (tested on version 2.7.4)
+2. Numpy (tested on version 1.7.1)
+3. Scipy (tested on version 0.11.0)
+4. Access to LDG clusters (if data is stored on LDG clusters)
+
+3. INPUT
+-------------------------------------------------------------------------------
+The input of the tiger post processing are output of inference codes such as
+lalinference or lalnest. The minimum required output of the inference codes are
+
+1. Bayes factors
+2. Signal-to-noise ratios
+
+Other features such as posterior combinations of modGR parameters are not part
+of the main tiger method, but are currently under construction. So optional
+input would be
+
+1. Posterior samples
+
+The specifics of the input are specified by a so-called configuration file
+(typically with an extension .cfg). An example of a configuration file can be
+generated through 
+
+python /path/to/script/postproc.py -g FILENAME
+
+where FILENAME is a user-specified string to where the example script will be
+written. The configuration file has several options that specify the input of
+to the code, but also several options for the output of the code. In this
+section, we will only discuss the options relevant to the input of the code.
+The section within the configuration file relevant to the output of the code
+will be described further down.
+
+[run] engine: specifies the engine of the run. Currently, only lalinference and
+lalnest are supported.
+
+[run] hypotheses: The testing coefficients used for the tiger run. See the data
+generation script if unsure.
+
+[run] runid: Run identifier to separate different runs. Will be used in the
+output file names.
+
+[run] localdest: Output directory of the code
+
+[fetch] type: The script can read two types of files at the moment. The script
+can either pull the sources directory (type=source). If you specify the source
+option, the user needs to point the location file to the another file
+containing the location of the sources (see [fetch] locs). The script can also
+load files from python pickles (type=pickle). To use the pickle option, point
+the location file directly to the pickle file (currently, only local pickles
+are supported).
+
+[fetch] locs: Location of either a file containing the locations of the source
+data ([fetch] type=source) or the location of the python pickle ([fetch]
+type=pickle). For type=source, the locs must point to an additional file where
+each row has the cluster and the directory within that cluster.
+
+[fetch] labels: Labels for individual tiger runs (e.g. background/foreground).
+Used for file creation only.
+
+[fetch] latexlabels: same as [fetch] labels, but only used for with the plots.
+This string may contain latex typesetting.
+
+[fetch] seed: If the seed is nonzero, the code will randomize the order in
+which the sources are distributed within a catalogue. (NB: currently under
+construction, do not use other than seed=0)
+
+4. INTERNAL STRUCTURE
+-------------------------------------------------------------------------------
+Once the input has been specified, the script will 
+
+1. Search for usable sources in the specified locations
+2. Download the relevant Bayes factors and SNRs (and posterior samples if
+specified).
+3. Combines the data into odds ratio and other relevant statistics
+4. Outputs the plots and html summary page
+
+To set the script to run with the input specified in a configuration file,
+simply issue the command
+
+python /path/to/script/postproc.py -c FILENAME
+
+where FILENAME is the name of the configuration file.
+
+To perform the post processing the script has within it classes, methods and
+function, which will be described in what follows.
+
+TigerRun (class): Contains information and function relevant for a single tiger
+run (e.g. single seed). 
+* Members include the gps times of useful sources, location of the bayes factor
+	files, etc. 
+* Functions include searching for sources, downloading bayes factor, etc
+
+TigerSet (class): Contains multiple instances of the TigerRun class that make
+up a single category of runs (e.g. background, tidal deformation, etc). 
+TigerSet (class): Contains some similar members and functions compared to the
+TigerRun class, but aggregates information across different TigerRuns. 
+
+There are also function that operate on TigerSets, mainly those that create the
+plots are calculate statistics. For example, TigerCreateHistogram takes a list
+of TigerSets and output the odds ratio histograms of all the TigerSets in the
+input list.
+
+Note: There is an effort ongoing to add another class to hold single source
+information. This might be needed when analysing real data, when one might also
+have to make distinction between different sources within a single run. An
+example would be the distinction between double and triple time analyses.
+
+5. OUTPUT
+-------------------------------------------------------------------------------
+The output of the tiger post processing is summarised by a simple html page
+containing
+
+1. Statistics (efficiency [1], KS statistic, p-value, etc)
+2. Comparative plots (e.g. background vs foreground)
+3. Links to single set specific plots (e.g. cumulative frequency plots)
+
+The output of the tiger post processing can also receive input from the
+configuration file. For example, which plots are produced is set under the
+section [plot], and the amount of bins in the histograms are set by the [hist]
+bin option. Look at the example configuration file for details.
+
+6. USE AS A LIBRARY
+-------------------------------------------------------------------------------
+The tiger post processing script can be used as a library instead of a
+standalone script. This might be useful if you want to use the function in an
+interactive python environment (e.g. ipython) or if you want to make your own
+derivative scripts. 
+
+Once you have build lal and have the relevant paths in your environment
+variable (in particular $PYTHONPATH), you can simply load the tiger
+postprocessing libraries by 
+
+from lalinference.tiger.postproc import *
+
+or alternatively
+
+import lalinference.tiger.postproc as tig
+
+For more information about loading python modules, see Ref. [2].
+
+7. REFERENCES
+-------------------------------------------------------------------------------
+[1]. arXiv:1110.0530
+[2]. http://docs.python.org/2/tutorial/modules.html  

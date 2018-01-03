@@ -1,0 +1,17 @@
+PACKAGE_TARNAME=@PACKAGE_TARNAME@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+datarootdir=@datarootdir@
+docdir=@docdir@
+htmldir=@htmldir@
+LALSIMULATION_OCTAVE_PATH=@octexecdir@
+LALSIMULATION_PYTHON_PATH=@pyexecdir@
+
+Name: LALSimulation
+Description: LAL Simulation Library Support
+Version: @VERSION@
+Requires: lal >= @LAL_VERSION@
+Libs: -L${libdir} -llalsimulation
+Cflags: -I${includedir} @OPENMP_CFLAGS@

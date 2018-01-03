@@ -1,0 +1,73 @@
+/* Top-level module organisation for LALPulsar */
+/**
+
+\defgroup lalpulsar_general		General Routines
+@{
+   \brief This package provides common data-types and routines for
+   pulsar searches.
+@}
+
+\defgroup lalpulsar_sft			Short Fourier Transform Routines
+@{
+   \brief This packages provides routines for handling Fourier
+   Transforms (SFTs).
+@}
+
+\defgroup lalpulsar_inject		Pulsar Signal Generation
+@{
+   \brief This package provides routines to simulate gravitational waves
+   from a pulsar and their effect on a detector.
+@}
+
+\defgroup lalpulsar_metric		Pulsar Metric Routines
+@{
+   \brief This package provides routines which calculate pulsar-specific
+   parameter-space metrics.
+@}
+
+\defgroup lalpulsar_templbank		Template Bank Routines
+@{
+   \brief This package provides routines which generate template banks
+   for pulsar searches.
+@}
+
+\defgroup lalpulsar_coh			Coherent Search Routines
+@{
+   \brief This packages provides routines which calculate coherent
+   search statistics, e.g. the \f$\mathcal{F}\f$-statistc, and
+   associated functions.
+@}
+
+\defgroup lalpulsar_LR			Line-robust detection statistics
+@{
+   \brief This packages provides routines to calculate (coherent and semi-coherent)
+   line-robust detection statistics (based on F-statistics), e.g. the BSGL statistic.
+@}
+
+\defgroup lalpulsar_hough		The Hough Transform
+@{
+   \brief This package provides routines which implement the
+   Hough-transform as a search-method for unknown pulsars.
+@}
+
+\defgroup lalpulsar_crosscorr		Cross-Correlation Search
+@{
+   \brief This package provides routines which implement a
+   pulsar-specific cross-correlation search.
+@}
+
+\defgroup lalpulsar_xml			XML Serialization Routines
+@{
+   \brief This package provides routines for serializing pulsar data
+   structures to and from XML files.
+@}
+
+\defgroup lalpulsar_swig		SWIG Interfaces
+@{
+   \brief This package provides Octave and Python wrappings of LALPulsar
+   functions and data structures generated using SWIG.
+@}
+
+\defgroup lalpulsar_python		Python Packages
+
+*/

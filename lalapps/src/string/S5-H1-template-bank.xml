@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
+<LIGO_LW>
+
+  <Table Name="sngl_burst:table">
+    <Column Type="ilwd:char" Name="sngl_burst:process_id"/>
+    <Column Type="lstring" Name="sngl_burst:ifo"/>
+    <Column Type="lstring" Name="sngl_burst:search"/>
+    <Column Type="lstring" Name="sngl_burst:channel"/>
+    <Column Type="int_4s" Name="sngl_burst:start_time"/>
+    <Column Type="int_4s" Name="sngl_burst:start_time_ns"/>
+    <Column Type="int_4s" Name="sngl_burst:peak_time"/>
+    <Column Type="int_4s" Name="sngl_burst:peak_time_ns"/>
+    <Column Type="real_4" Name="sngl_burst:duration"/>
+    <Column Type="real_4" Name="sngl_burst:central_freq"/>
+    <Column Type="real_4" Name="sngl_burst:bandwidth"/>
+    <Column Type="real_4" Name="sngl_burst:amplitude"/>
+    <Column Type="real_4" Name="sngl_burst:snr"/>
+    <Column Type="real_4" Name="sngl_burst:confidence"/>
+    <Column Type="real_8" Name="sngl_burst:chisq"/>
+    <Column Type="real_8" Name="sngl_burst:chisq_dof"/>
+    <Column Type="ilwd:char" Name="sngl_burst:event_id"/>
+    <Stream Name="sngl_burst:table" Type="Local" Delimiter=",">
+      "process:process_id:0","H1","StringCusp","H1:LSC-STRAIN",0,0,0,0,0,75,0,0,0,0,0,0,"sngl_burst:event_id:0",
+      "process:process_id:0","H1","StringCusp","H1:LSC-STRAIN",0,0,0,0,0,78.0285,6.05703,0,0,0,0,0,"sngl_burst:event_id:1",
+      "process:process_id:0","H1","StringCusp","H1:LSC-STRAIN",0,0,0,0,0,81.0285,12.057,0,0,0,0,0,"sngl_burst:event_id:2",
+      "process:process_id:0","H1","StringCusp","H1:LSC-STRAIN",0,0,0,0,0,84.0404,18.0808,0,0,0,0,0,"sngl_burst:event_id:3",
+      "process:process_id:0","H1","StringCusp","H1:LSC-STRAIN",0,0,0,0,0,87.5603,25.1207,0,0,0,0,0,"sngl_burst:event_id:4",
+      "process:process_id:0","H1","StringCusp","H1:LSC-STRAIN",0,0,0,0,0,91.4358,32.8715,0,0,0,0,0,"sngl_burst:event_id:5",
+      "process:process_id:0","H1","StringCusp","H1:LSC-STRAIN",0,0,0,0,0,95.4358,40.8715,0,0,0,0,0,"sngl_burst:event_id:6",
+      "process:process_id:0","H1","StringCusp","H1:LSC-STRAIN",0,0,0,0,0,99.9358,49.8715,0,0,0,0,0,"sngl_burst:event_id:7",
+      "process:process_id:0","H1","StringCusp","H1:LSC-STRAIN",0,0,0,0,0,105.227,60.4531,0,0,0,0,0,"sngl_burst:event_id:8",
+      "process:process_id:0","H1","StringCusp","H1:LSC-STRAIN",0,0,0,0,0,111.292,72.5837,0,0,0,0,0,"sngl_burst:event_id:9",
+      "process:process_id:0","H1","StringCusp","H1:LSC-STRAIN",0,0,0,0,0,118.663,87.3255,0,0,0,0,0,"sngl_burst:event_id:10",
+      "process:process_id:0","H1","StringCusp","H1:LSC-STRAIN",0,0,0,0,0,128.09,106.18,0,0,0,0,0,"sngl_burst:event_id:11",
+      "process:process_id:0","H1","StringCusp","H1:LSC-STRAIN",0,0,0,0,0,140.735,131.471,0,0,0,0,0,"sngl_burst:event_id:12",
+      "process:process_id:0","H1","StringCusp","H1:LSC-STRAIN",0,0,0,0,0,159.609,169.219,0,0,0,0,0,"sngl_burst:event_id:13",
+      "process:process_id:0","H1","StringCusp","H1:LSC-STRAIN",0,0,0,0,0,194.79,239.581,0,0,0,0,0,"sngl_burst:event_id:14",
+      "process:process_id:0","H1","StringCusp","H1:LSC-STRAIN",0,0,0,0,0,292.511,435.023,0,0,0,0,0,"sngl_burst:event_id:15",
+      "process:process_id:0","H1","StringCusp","H1:LSC-STRAIN",0,0,0,0,0,2085,4021,0,0,0,0,0,"sngl_burst:event_id:16"
+    </Stream>
+  </Table>
+
+</LIGO_LW>

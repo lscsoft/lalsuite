@@ -1,0 +1,3 @@
+usr/lib/*.so*
+etc/*
+usr/share/lal*

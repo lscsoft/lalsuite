@@ -1,0 +1,17 @@
+PACKAGE_TARNAME=@PACKAGE_TARNAME@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+datarootdir=@datarootdir@
+docdir=@docdir@
+htmldir=@htmldir@
+LALBURST_OCTAVE_PATH=@octexecdir@
+LALBURST_PYTHON_PATH=@pyexecdir@
+
+Name: LALBurst
+Description: LAL Burst Library Support
+Version: @VERSION@
+Requires: gsl, lal >= @LAL_VERSION@, libmetaio, lalmetaio >= @LALMETAIO_VERSION@, lalsimulation >= @LALSIMULATION_VERSION@
+Libs: -L${libdir} -llalburst
+Cflags: -I${includedir}

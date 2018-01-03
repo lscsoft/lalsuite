@@ -1,0 +1,10 @@
+universe = scheduler
+executable = $ENV(ONASYSD_PATH)/onasysd
+getenv = True
+notification = never
+
+arguments = --config-file=onasysd.MakeSFTsA4H1.ini --log-file=onasysd.MakeSFTsA4H1.log
+log = logs/onasysd.MakeSFTsA4H1.log
+error = onasysd.MakeSFTsA4H1.err
+output = onasysd.MakeSFTsA4H1.out
+queue 1

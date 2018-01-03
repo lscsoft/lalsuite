@@ -1,0 +1,3618 @@
+# Q Scan configuration file
+# Automatically generated with wconfigure.sh
+# by user bhughey on 2009-06-12 13:54:08 PDT
+# from sample frame files:
+#   H-H1_RDS_R_L1-928873408-64.gwf
+
+[Context,Context]
+
+[Parameters,Parameter Estimation]
+
+[Notes,Notes]
+
+[Gravitational,Gravitational wave data]
+
+{
+  channelName:                 'H1:LSC-DARM_ERR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              1
+}
+
+{
+  channelName:                 'H1:LSC-DARM_CTRL'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+[Excitation,Calibration lines and injections]
+
+{
+  channelName:                 'H1:LSC-DARM_CTRL_EXC_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:LSC-ETMX_CAL_EXC_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:LSC-ETMX_EXC_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:LSC-ETMY_CAL_EXC_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:LSC-ETMX_CAL'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:LSC-ETMY_CAL'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+[H1:LSC,H1 length sensing and control]
+
+{
+  channelName:                 'H1:LSC-AS_AC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:LSC-AS_DC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             256
+  searchTimeRange:             256
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:LSC-MC_L'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:LSC-MICH_CTRL'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:LSC-POBS_DC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             1024
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:LSC-POB_I'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:LSC-POB_Q'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:LSC-PRC_CTRL'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:LSC-REFL_DC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             1024
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:LSC-REFL_I'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:LSC-REFL_Q'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:LSC-SPOB_I'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             256
+  searchTimeRange:             256
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+[H1:ASC,H1 alignment sensing and control]
+
+{
+  channelName:                 'H1:ASC-BS_P'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-BS_Y'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-ETMX_P'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-ETMX_Y'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-ETMY_P'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-ETMY_Y'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-ITMX_P'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-ITMX_Y'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-ITMY_P'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-ITMY_Y'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-QPDX_DC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             64
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-QPDX_P'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             64
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-QPDX_Y'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             64
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-QPDY_DC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             64
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-QPDY_P'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             64
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-QPDY_Y'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             64
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-RM_P'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-RM_Y'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-WFS1_QP'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             64
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-WFS1_QY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             64
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-WFS2_IP'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             64
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-WFS2_IY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             64
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-WFS2_QP'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             64
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-WFS2_QY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             64
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-WFS3_IP'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             64
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-WFS3_IY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             64
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-WFS4_IP'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             64
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ASC-WFS4_IY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             64
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+[H1:IOO,H1 input/output optics]
+
+{
+  channelName:                 'H1:IOO-MC_F'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+[H1:PSL,H1 pre-stabilized laser]
+
+{
+  channelName:                 'H1:PSL-FSS_MIXERM_F'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+[H1:SUS,H1 suspension system]
+
+{
+  channelName:                 'H1:SUS-BS_OPLEV_PERROR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-BS_OPLEV_YERROR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-BS_SENSOR_SIDE'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ETMX_COIL_LL'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ETMX_COIL_LR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ETMX_COIL_UL'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ETMX_COIL_UR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ETMX_OPLEV_PERROR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ETMX_OPLEV_YERROR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ETMX_SENSOR_SIDE'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ETMY_COIL_LL'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ETMY_COIL_LR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ETMY_COIL_UL'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ETMY_COIL_UR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ETMY_OPLEV_PERROR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ETMY_OPLEV_YERROR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ETMY_SENSOR_SIDE'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ITMX_COIL_LL'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ITMX_COIL_LR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ITMX_COIL_UL'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ITMX_COIL_UR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ITMX_OPLEV_PERROR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ITMX_OPLEV_YERROR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ITMX_SENSOR_SIDE'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ITMY_COIL_LL'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ITMY_COIL_LR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ITMY_COIL_UL'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ITMY_COIL_UR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ITMY_OPLEV_PERROR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ITMY_OPLEV_YERROR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-ITMY_SENSOR_SIDE'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-MMT3_OPLEV_PERROR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-MMT3_OPLEV_YERROR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-RM_OPLEV_PERROR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-RM_OPLEV_YERROR'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:SUS-RM_SENSOR_SIDE'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+[H1:TCS,H1 thermal compensation system]
+
+{
+  channelName:                 'H1:TCS-ITMX_PD_ISS_OUT_AC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:TCS-ITMY_PD_ISS_OUT_AC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+[H1:OMC,H1 output mode cleaner]
+
+{
+  channelName:                 'H1:OMC-HTR_DRV_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-NULLSTREAM_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-PZT_LSC_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-PZT_VMON_AC_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-PZT_VMON_DC_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             512
+  searchTimeRange:             128
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD1_P_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD1_SUM_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD1_Y_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD2_P_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD2_SUM_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD2_Y_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD3_P_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD3_SUM_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD3_Y_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD4_P_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD4_SUM_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-QPD4_Y_OUT_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-TT1_SUSPIT_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             1024
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-TT1_SUSPOS_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             1024
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-TT1_SUSYAW_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             1024
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-TT2_SUSPIT_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             1024
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-TT2_SUSPOS_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             1024
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:OMC-TT2_SUSYAW_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             1024
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+[H1:ISI,H1 HAM6 ISI]
+
+{
+  channelName:                 'H1:ISI-OMC_CONT_RX_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_CONT_RY_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_CONT_RZ_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_CONT_X_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_CONT_Y_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_CONT_Z_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_DISPPF_H1_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_DISPPF_V1_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_GEOPF_H1_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_GEOPF_H2_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_GEOPF_H3_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_GEOPF_V1_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_GEOPF_V2_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H1:ISI-OMC_GEOPF_V3_IN1_DAQ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+[H0:PEM,LHO environment]
+
+{
+  channelName:                 'H0:PEM-BSC10_ACC1Y'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC10_MAGX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC10_MAGY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC10_MAGZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC10_MIC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC1_ACCY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC1_MAG1X'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC1_MAG1Y'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC1_MAG1Z'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC2_ACCX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC2_ACCY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC3_ACCX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC4_ACCX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC4_ACCY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC5_MIC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC6_MIC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC7_ACCX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC7_MIC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC8_ACCY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC8_MIC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC9_ACC1X'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC9_MAGX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC9_MAGY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC9_MAGZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-BSC9_MIC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-COIL_MAGX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-COIL_MAGZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-EX_PWR1'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-EX_SEISX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             128
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [8 64 512]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-EX_SEISY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             128
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [8 64 512]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-EX_SEISZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             128
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [8 64 512]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-EX_V1'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-RACK_1Y22_MAGZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-EY_SEISX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             128
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [8 64 512]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-EY_SEISY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             128
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [8 64 512]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-EY_SEISZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             128
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [8 64 512]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-EY_V1'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-HAM1_ACCX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-HAM1_ACCZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-HAM3_ACCX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-HAM6_ACCX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-HAM6_ACCY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-HAM6_ACCZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-HAM6_MIC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-HAM7_ACCX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-HAM7_ACCZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-HAM9_ACCX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-IOT1_MIC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-IOT7_MIC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-ISCT10_ACCX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-ISCT10_ACCY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-ISCT10_ACCZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-ISCT10_MIC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-ISCT1_ACCX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-ISCT1_ACCY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-ISCT1_ACCZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-ISCT1_MIC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-ISCT4_ACCPER'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-ISCT4_ACCX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-ISCT4_ACCY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-ISCT4_ACCZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-ISCT4_MIC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-ISCT7_ACCX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-ISCT7_ACCY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-ISCT7_ACCZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-ISCT7_MIC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-LSC1_MAGX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-LSC1_MAGY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-LSC1_MAGZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-LVEA2_V1'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-LVEA2_V2'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-LVEA2_V3'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-LVEA_MAGX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-LVEA_MAGY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-LVEA_MAGZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-LVEA_MIC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             4096
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-LVEA_PWR1'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-LVEA_SEISX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             128
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [8 64 512]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-LVEA_SEISY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             128
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [8 64 512]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-LVEA_SEISZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             128
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [8 64 512]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-MX_SEISX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             128
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [8 64 512]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-MX_SEISY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             128
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [8 64 512]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-MX_SEISZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             128
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [8 64 512]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-MY_SEISX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             128
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [8 64 512]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-MY_SEISY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             128
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [8 64 512]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-MY_SEISZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             128
+  searchTimeRange:             1024
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [8 64 512]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-OMC1_MAGX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-OUT_PWR1'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-PSL1_ACCX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-PSL1_ACCY'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-PSL1_ACCZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-PSL1_MIC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-PSL2_ACCX'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-PSL2_ACCZ'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-PSL2_MIC'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-RADIO_CS_1'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-RADIO_CS_2'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-RADIO_LVEA'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+
+{
+  channelName:                 'H0:PEM-RADIO_LVEA_H1'
+  frameType:                   'H1_RDS_R_L1'
+  sampleFrequency:             2048
+  searchTimeRange:             64
+  searchFrequencyRange:        [0 Inf]
+  searchQRange:                [4 64]
+  searchMaximumEnergyLoss:     0.2
+  whiteNoiseFalseRate:         1e-3
+  searchWindowDuration:        2.0
+  plotTimeRanges:              [1 4 16]
+  plotFrequencyRange:          []
+  plotNormalizedEnergyRange:   [0 25.5]
+  alwaysPlotFlag:              0
+}
+

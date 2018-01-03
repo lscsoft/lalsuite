@@ -1,0 +1,13 @@
+universe   = vanilla
+executable = /home/sintes/S4/MCscript_Multi-8b.sh
+#input      = inMultiMC-8.$(Process)
+output     = outMultiMC-8.$(Process)
+error      = errMultiMC-8.$(Process)
+log        = logMultiMC-8.$(Process)
+initialdir = /home/sintes/S4
++Prio = "42"
+notification = Never
+arguments  =  $(Process)
+on_exit_remove = (ExitBySignal == False) || ((ExitBySignal == True) && (ExitSignal != 11))
+requirements = ( ( machine != "merlin.geo600.aei.mpg.de" ) && ( machine  != "morgane.geo600.aei.mpg.de" ) )
+queue 200

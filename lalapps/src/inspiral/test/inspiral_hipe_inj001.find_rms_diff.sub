@@ -1,0 +1,11 @@
+universe = vanilla
+executable = find_rms_diff.py
+arguments = --unit-test --output-file $(macrooutputfile)
+environment = KMP_LIBRARY=serial;MKL_SERIAL=yes
+priority = 10
+getenv = True
+log = /people/jclayton/logs/RmpQvGdSf
+error = logs/find_rms_diff.err
+output = logs/find_rms_diff.out
+notification = never
+queue 1

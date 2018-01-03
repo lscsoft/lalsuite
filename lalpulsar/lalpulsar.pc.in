@@ -1,0 +1,17 @@
+PACKAGE_TARNAME=@PACKAGE_TARNAME@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+datarootdir=@datarootdir@
+docdir=@docdir@
+htmldir=@htmldir@
+LALPULSAR_OCTAVE_PATH=@octexecdir@
+LALPULSAR_PYTHON_PATH=@pyexecdir@
+
+Name: LALPulsar
+Description: LAL Pulsar Library
+Version: @VERSION@
+Requires: gsl, lal >= @LAL_VERSION@
+Libs: -L${libdir} -llalpulsar
+Cflags: -I${includedir}

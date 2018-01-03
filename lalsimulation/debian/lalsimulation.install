@@ -1,0 +1,6 @@
+usr/bin/lalsim*
+etc/*
+usr/lib/*.so*
+usr/share/lalsimulation/LALSimNeutronStarEOS_*
+usr/share/lalsimulation/LIGO-P1200087-v18*
+usr/share/lalsimulation/LIGO-T0900288*

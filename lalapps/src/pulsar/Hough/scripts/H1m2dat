@@ -1,0 +1,13 @@
+#!/bin/bash
+
+mkdir dat
+
+for file in `ls MC_H1_*_*.m`
+do
+ grep -v "\;" $file  | grep -v count > out
+
+ newname=$file.dat
+ echo "processing $newname"
+ mv out dat/$newname
+done
+

@@ -1,0 +1,17 @@
+# This is a segment list file.  It may contain comments anywhere.
+    # There can be whitespace before the hash character.
+723892545 723892560   #-- This segment happens to have integer times
+723904200 723905200
+ 723904205  723905205 #-- Extra whitespace is OK, and overlapping is OK
+723905303.542 724038223.598746221
+103878332 103878544   #-- Remember that GPS times change to 10 digits in 2011 !
+
+# Blank lines and comments in the middle of the file are OK
+5 804323335 804323504   #-- This line has an 'index' at the begining
+ 12  804350000  804350000
+# Now, some segments with associated information:
+ 792331300 792331400 BAD_TIMING
+ 792331500 792331600 BAD_TIMING 5 2 ex
+ 23346  792331300.25 792331400.4  HighNoise   # Has an index AND assocated info
+
+

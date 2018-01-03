@@ -1,0 +1,8 @@
+universe = vanilla
+executable = $ENV(MAKESFTS_PATH)/lalapps_MakeSFTs
+arguments = $(argList)
+log = logs/MakeSFTs_example.dag.log
+error = logs/MakeSFTs_$(tagstring).err
+output = logs/MakeSFTs_$(tagstring).out
+notification = never
+queue 1

@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+
+# usage:  cat x.dagman.out | dag_node_runtimes "node name regex"
+
+
+from optparse import OptionParser
+import sys
+import re
+import time
+
+
+pattern = re.compile(r"(?P<datetime>[\d/]+ [\d:]+) Event: (?P<event>\S+) for Condor Node (?P<nodename>\S+) \((?P<clusterid>.*)\)")
+
+
+[job_name_pattern] = OptionParser().parse_args()[1]
+job_name_pattern = re.compile(job_name_pattern)
+
+job_instances = {}
+
+for line in sys.stdin:
+	match = pattern.match(line.strip())
+	if match is None:
+		continue
+	t, event, job_name = match.group("datetime", "event", "nodename")
+	if job_name_pattern.match(job_name) is None:
+		continue
+	t = time.mktime(time.strptime(t, "%m/%d %H:%M:%S"))
+	if event == "ULOG_EXECUTE":
+		job_instances[job_name] = -t
+	elif event == "ULOG_JOB_TERMINATED":
+		job_instances[job_name] += t
+
+
+run_times = job_instances.values()
+run_times.sort()
+print run_times

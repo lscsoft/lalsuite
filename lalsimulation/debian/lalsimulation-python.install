@@ -1,0 +1,2 @@
+usr/lib/python*/dist-packages/lalsimulation/*.py
+usr/lib/python*/dist-packages/lalsimulation/_lalsimulation.so*

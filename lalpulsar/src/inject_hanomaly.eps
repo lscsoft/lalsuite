@@ -1,0 +1,79 @@
+%!PS-Adobe-2.0 EPSF-2.0
+%%Title: Eccentric anomaly plot
+%%Creator: Teviet Creighton
+%%CreationDate: Wed Jul 3 16:30:34 2002
+%%Orientation: Portrait
+%%Pages: 0
+%%BoundingBox: 0 0 230 230
+%%EndComments
+
+% Draw bounding box
+%0 0 moveto 230 0 rlineto 0 230 rlineto -230 0 rlineto stroke
+
+% Constants.
+/e 2.71828182846 def
+/a 1.5 def
+/b 0.5 def
+/xscale 33.3333333333 def
+/yscale 10 def
+/xmax 3 def
+/ymax 10 def
+
+% Routines for justifying text.
+/cshow { dup stringwidth pop -0.5 mul 0 rmoveto show } def
+/rshow { dup stringwidth pop -1 mul 0 rmoveto show } def
+
+% Routine for drawing a dot.
+/dot { 0.7 0 360 arc closepath fill } def
+
+% Hyperbolic functions.
+/sinh { dup e exch exp exch neg e exch exp sub 0.5 mul } def
+/cosh { dup e exch exp exch neg e exch exp add 0.5 mul } def
+
+/xp 1 sinh a mul 1 cosh 1 sub b mul add 1 sub def
+/xm -1 sinh a mul -1 cosh 1 sub b mul add -1 sub def
+/dxp xp e 1 exp a b add mul 0.5 mul sub def
+/dxm xm e 1 exp a b sub mul -0.5 mul sub def
+
+105 105 translate
+1 setlinewidth 0 setgray
+
+% Define clipping area for plot.
+xmax 0.05 add neg xscale mul ymax 0.05 add neg yscale mul moveto
+0 ymax 0.05 add yscale mul 2 mul rlineto
+xmax 0.05 add xscale mul 2 mul 0 rlineto
+0 ymax 0.05 add yscale mul -2 mul rlineto closepath clip newpath
+
+% Draw approximation.
+1 0.1 xmax { dup e exch exp a b add mul 0.5 mul dxp add yscale mul
+  exch xscale mul exch dot } for
+-1 -0.1 xmax neg { dup e exch neg exp a b sub mul -0.5 mul dxm add
+  yscale mul exch xscale mul exch dot } for
+-1 0.1 0 { dup xm mul neg yscale mul exch xscale mul exch dot } for
+0 0.1 1 { dup xp mul yscale mul exch xscale mul exch dot } for
+
+% Draw actual function.
+xmax 0.1 add neg dup dup dup sinh a mul exch cosh 1 sub b mul add exch
+  sub yscale mul exch xscale mul exch moveto
+xmax neg 0.1 xmax 0.1 add { dup dup dup sinh a mul exch cosh 1 sub b
+  mul add exch sub yscale mul exch xscale mul exch lineto } for stroke
+initclip
+
+% Draw axes.
+0 -10 yscale mul moveto 0 10 yscale mul lineto stroke
+-10 1 10 { -2 exch yscale mul moveto 4 0 rlineto stroke } for
+-3 xscale mul 0 moveto 3 xscale mul 0 lineto stroke
+-3 1 3 { xscale mul -2 moveto 0 4 rlineto stroke } for
+
+% Label axes.
+%/Symbol findfont 20 scalefont setfont
+%-5 -10 yscale mul 6 sub moveto (-10) rshow
+%-5 10 yscale mul 6 sub moveto (10) rshow
+%-3 xscale mul 5 sub 5 moveto (-3) cshow
+%3 xscale mul 5 moveto (3) cshow
+/Times-Roman findfont 20 scalefont setfont
+0 ymax yscale mul 10 add moveto (x) cshow
+xmax xscale mul 10 add -6 moveto (E) cshow
+
+%showpage
+%%EOF
