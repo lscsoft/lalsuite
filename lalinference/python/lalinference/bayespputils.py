@@ -89,8 +89,6 @@ from xml.etree.cElementTree import Element, SubElement, ElementTree, Comment, to
 
 #local application/library specific imports
 import lal
-from glue.ligolw import lsctables
-from glue.ligolw import utils
 from . import git_version
 
 __author__="Ben Aylott <benjamin.aylott@ligo.org>, Ben Farr <bfarr@u.northwestern.edu>, Will M. Farr <will.farr@ligo.org>, John Veitch <john.veitch@ligo.org>, Vivien Raymond <vivien.raymond@ligo.org>"
@@ -272,10 +270,6 @@ function toggle_visibility(tbid,lnkid)
 
 '''
 
-#import sim inspiral table content handler
-from pylal.SimInspiralUtils import ExtractSimInspiralTableLIGOLWContentHandler
-from glue.ligolw import lsctables
-lsctables.use_in(ExtractSimInspiralTableLIGOLWContentHandler)
 
 #===============================================================================
 # Function to return the correct prior distribution for selected parameters
@@ -936,6 +930,7 @@ class Posterior(object):
           if ('ra' in pos.names or 'rightascension' in pos.names) \
           and ('declination' in pos.names or 'dec' in pos.names) \
           and 'time' in pos.names:
+              import pylal
               from pylal import xlal,inject
               from pylal import date
               from pylal.date import XLALTimeDelayFromEarthCenter
@@ -5393,6 +5388,7 @@ def readCoincXML(xml_file, trignum):
     triggers=None
 
     from glue.ligolw import ligolw
+    from glue.ligolw import lsctables
     coincXML = utils.load_filename(xml_file, contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))
     coinc = lsctables.CoincTable.get_table(coincXML)
     coincMap = lsctables.CoincMapTable.get_table(coincXML)
@@ -6393,6 +6389,11 @@ def confidence_interval_uncertainty(cl, cl_bounds, posteriors):
 
 def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V1']):
   import pylal
+  import glue
+  #import sim inspiral table content handler
+  from pylal.SimInspiralUtils import ExtractSimInspiralTableLIGOLWContentHandler
+  from glue.ligolw import lsctables
+  lsctables.use_in(ExtractSimInspiralTableLIGOLWContentHandler)
   from lalsimulation.lalsimulation import SimInspiralChooseTDWaveform,SimInspiralChooseFDWaveform
   from lalsimulation.lalsimulation import SimInspiralImplementedTDApproximants,SimInspiralImplementedFDApproximants
   from lal.lal import StrainUnit
@@ -6403,7 +6404,6 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
   import lalsimulation as lalsim
   from pylal import antenna as ant
   from math import cos,sin,sqrt
-  from glue.ligolw import lsctables
   from glue.ligolw import utils
   import os
   import numpy as np
@@ -6958,6 +6958,7 @@ def plot_calibration_pos(pos, level=.9, outpath=None):
 def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1','V1']):
 
   import pylal
+  import glue
   from lalinference.lalinference import SimBurstChooseFDWaveform,SimBurstChooseTDWaveform
   from lalinference.lalinference import SimBurstImplementedFDApproximants,SimBurstImplementedTDApproximants
   from lal.lal import StrainUnit
@@ -6984,9 +6985,7 @@ def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1'
   colors_rec={'H1':'k','L1':'k','V1':'k','I1':'k','J1':'k'}
   #import sim inspiral table content handler
   from glue.ligolw import ligolw
-  from glue.ligolw import lsctables
   from glue.ligolw import table
-  from glue.ligolw import utils
   class LIGOLWContentHandlerExtractSimBurstTable(ligolw.LIGOLWContentHandler):
     def __init__(self,document):
       ligolw.LIGOLWContentHandler.__init__(self,document)
