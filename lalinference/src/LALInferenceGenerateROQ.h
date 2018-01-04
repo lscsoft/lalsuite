@@ -54,39 +54,52 @@ typedef struct tagLALInferenceCOMPLEXROQInterpolant{
 
 /* function to create or enrich a real orthonormal basis set from a training set of models */
 REAL8 LALInferenceGenerateREAL8OrthonormalBasis(REAL8Array **RB,
-                                                REAL8Vector *delta,
+                                                const REAL8Vector *delta,
                                                 REAL8 tolerance,
-                                                REAL8Array *TS);
+                                                REAL8Array **TS,
+                                                UINT4Vector **greedypoints);
 
 REAL8 LALInferenceGenerateCOMPLEX16OrthonormalBasis(COMPLEX16Array **RB,
-                                                    REAL8Vector *delta,
+                                                    const REAL8Vector *delta,
                                                     REAL8 tolerance,
-                                                    COMPLEX16Array *TS);
-
+                                                    COMPLEX16Array **TS,
+                                                    UINT4Vector **greedypoints);
 
 /* functions to test the basis */
-INT4 LALInferenceTestREAL8OrthonormalBasis(REAL8Vector *delta,
-                                           REAL8 tolerance,
-                                           REAL8Array *RB,
-                                           REAL8Array *testmodels);
+void LALInferenceValidateREAL8OrthonormalBasis(REAL8Vector **projerr,
+                                               const REAL8Vector *delta,
+                                               const REAL8Array *RB,
+                                               REAL8Array **testmodels);
 
-INT4 LALInferenceTestCOMPLEX16OrthonormalBasis(REAL8Vector *delta,
+void LALInferenceValidateCOMPLEX16OrthonormalBasis(REAL8Vector **projerr,
+                                                   const REAL8Vector *delta,
+                                                   const COMPLEX16Array *RB,
+                                                   COMPLEX16Array **testmodels);
+
+INT4 LALInferenceTestREAL8OrthonormalBasis(const REAL8Vector *delta,
+                                           REAL8 tolerance,
+                                           const REAL8Array *RB,
+                                           REAL8Array **testmodels);
+
+INT4 LALInferenceTestCOMPLEX16OrthonormalBasis(const REAL8Vector *delta,
                                                REAL8 tolerance,
-                                               COMPLEX16Array *RB,
-                                               COMPLEX16Array *testmodels);
+                                               const COMPLEX16Array *RB,
+                                               COMPLEX16Array **testmodels);
 
 /* functions to enrich the training model set and basis set */
-REAL8 LALInferenceEnrichREAL8Basis(REAL8Vector *delta,
-                                   REAL8 tolerance,
+REAL8 LALInferenceEnrichREAL8Basis(const REAL8Vector *delta,
+                                   const REAL8 tolerance,
                                    REAL8Array **RB,
-                                   REAL8Array **testmodels,
-                                   REAL8Array *testmodelsnew);
+                                   UINT4Vector **greedypoints,
+                                   const REAL8Array *testmodels,
+                                   REAL8Array **testmodelsnew);
 
-REAL8 LALInferenceEnrichCOMPLEX16Basis(REAL8Vector *delta,
-                                       REAL8 tolerance,
+REAL8 LALInferenceEnrichCOMPLEX16Basis(const REAL8Vector *delta,
+                                       const REAL8 tolerance,
                                        COMPLEX16Array **RB,
-                                       COMPLEX16Array **testmodels,
-                                       COMPLEX16Array *testmodelsnew);
+                                       UINT4Vector **greedypoints,
+                                       const COMPLEX16Array *testmodels,
+                                       COMPLEX16Array **testmodelsnew);
 
 /* function to create the empirical interpolant */
 LALInferenceREALROQInterpolant *LALInferenceGenerateREALROQInterpolant(REAL8Array *RB);

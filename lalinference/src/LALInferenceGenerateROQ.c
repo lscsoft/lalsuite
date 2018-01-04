@@ -42,16 +42,43 @@ void complex_project_onto_basis(gsl_vector *weight,
                                 INT4 idx);
 
 /* the dot product of two real vectors scaled by a weighting factor */
-REAL8 weighted_dot_product(gsl_vector *weight, gsl_vector *a, gsl_vector *b);
+REAL8 weighted_dot_product(const gsl_vector *weight, gsl_vector *a, gsl_vector *b);
 
 /* the dot product of two complex vectors scaled by a weighting factor */
-gsl_complex complex_weighted_dot_product(gsl_vector *weight, gsl_vector_complex *a, gsl_vector_complex *b);
+gsl_complex complex_weighted_dot_product(const gsl_vector *weight, gsl_vector_complex *a, gsl_vector_complex *b);
 
-void normalise(gsl_vector *weight, gsl_vector *a);
-void complex_normalise(gsl_vector *weight, gsl_vector_complex *a);
+void normalise(const gsl_vector *weight, gsl_vector *a);
+void complex_normalise(const gsl_vector *weight, gsl_vector_complex *a);
 
 void normalise_training_set(gsl_vector *weight, gsl_matrix *TS);
 void complex_normalise_training_set(gsl_vector *weight, gsl_matrix_complex *TS);
+
+double normalisation(const gsl_vector *weight, gsl_vector *a);
+double complex_normalisation(const gsl_vector *weight, gsl_vector_complex *a);
+
+void modified_gs_complex(gsl_vector_complex *ru,
+                 gsl_vector_complex *ortho_basis,
+                 const gsl_matrix_complex *RB_space,
+                 const gsl_vector *wQuad,
+                 const int dim_RB);
+
+void iterated_modified_gm_complex(gsl_vector_complex *ru,
+                                  gsl_vector_complex *ortho_basis,
+                                  const gsl_matrix_complex *RB_space,
+                                  const gsl_vector *wQuad,
+                                  const int dim_RB);
+
+void modified_gs(gsl_vector *ru,
+                 gsl_vector *ortho_basis,
+                 const gsl_matrix *RB_space,
+                 const gsl_vector *wQuad,
+                 const int dim_RB);
+
+void iterated_modified_gm(gsl_vector *ru,
+                          gsl_vector *ortho_basis,
+                          const gsl_matrix *RB_space,
+                          const gsl_vector *wQuad,
+                          const int dim_RB);
 
 /* get the B_matrix */
 REAL8Array *B_matrix(gsl_matrix *V, gsl_matrix *RB);
@@ -149,7 +176,7 @@ void complex_project_onto_basis(gsl_vector *weight,
  *
  * @return The real dot product of the two vectors
  */
-REAL8 weighted_dot_product(gsl_vector *weight, gsl_vector *a, gsl_vector *b){
+REAL8 weighted_dot_product(const gsl_vector *weight, gsl_vector *a, gsl_vector *b){
   REAL8 dp;
   gsl_vector *weighted;
 
@@ -188,7 +215,7 @@ REAL8 weighted_dot_product(gsl_vector *weight, gsl_vector *a, gsl_vector *b){
  *
  * @return The absolute value of the complex dot product of the two vectors
  */
-gsl_complex complex_weighted_dot_product(gsl_vector *weight, gsl_vector_complex *a, gsl_vector_complex *b){
+gsl_complex complex_weighted_dot_product(const gsl_vector *weight, gsl_vector_complex *a, gsl_vector_complex *b){
   gsl_complex dp;
   gsl_vector_complex *weighted;
 
@@ -228,7 +255,7 @@ gsl_complex complex_weighted_dot_product(gsl_vector *weight, gsl_vector_complex 
  * @param[in] a The vector to be normalise (this will be change by the function to return the
  * normalised vector.
  */
-void normalise(gsl_vector *weight, gsl_vector *a){
+void normalise(const gsl_vector *weight, gsl_vector *a){
   double norm;
 
   if ( weight->size == 1 ){
@@ -248,10 +275,10 @@ void normalise(gsl_vector *weight, gsl_vector *a){
 /** \brief Normalise a complex vector with a given (real) weighting
  *
  * @param[in] weight The weighting(s) in the normalisation (e.g. time of frequency step(s) between points)
- * @param[in] a The vector to be normalise (this will be change by the function to return the
- * normalised vector.
+ * @param[in] a The vector to be normalised (this will be change by the function to return the
+ * normalised vector).
  */
-void complex_normalise(gsl_vector *weight, gsl_vector_complex *a){
+void complex_normalise(const gsl_vector *weight, gsl_vector_complex *a){
   double norm;
 
   if ( weight->size == 1 ){
@@ -265,6 +292,56 @@ void complex_normalise(gsl_vector *weight, gsl_vector_complex *a){
   else{
     XLAL_ERROR_VOID( XLAL_EFUNC, "Vector of weights must either contain a single value, or be the same length as the other input vectors." );
   }
+}
+
+
+/** \brief Get normalisation constant for a real vector
+ *
+ * @param[in] weight The weighting(s) in the normalisation (e.g. time of frequency step(s) between points)
+ * @param[in] a The vector to calculate the normalisation constant for
+ *
+ * @return The normalisation
+ */
+double normalisation(const gsl_vector *weight, gsl_vector *a){
+  double norm;
+
+  if ( weight->size == 1 ){
+    XLAL_CALLGSL( norm = gsl_blas_dnrm2(a) ); /* use GSL normalisation calculation function */
+    norm *= sqrt(gsl_vector_get(weight, 0));
+  }
+  else if ( weight->size == a->size ){
+    norm = sqrt(fabs(weighted_dot_product(weight, a, a)));
+  }
+  else{
+    XLAL_ERROR_REAL8( XLAL_EFUNC, "Vector of weights must either contain a single value, or be the same length as the other input vectors." );
+  }
+
+  return norm;
+}
+
+
+/** \brief Get normalisation constant for a complex vector
+ *
+ * @param[in] weight The weighting(s) in the normalisation (e.g. time of frequency step(s) between points)
+ * @param[in] a The vector to calculate the normalisation constant for
+ *
+ * @return The normalisation
+ */
+double complex_normalisation(const gsl_vector *weight, gsl_vector_complex *a){
+  double norm;
+
+  if ( weight->size == 1 ){
+    XLAL_CALLGSL( norm = gsl_blas_dznrm2(a) ); /* use GSL normalisation calculation function */
+    norm *= sqrt(gsl_vector_get(weight, 0));
+  }
+  else if ( weight->size == a->size ){
+    norm = sqrt(gsl_complex_abs(complex_weighted_dot_product(weight, a, a)));
+  }
+  else{
+    XLAL_ERROR_REAL8( XLAL_EFUNC, "Vector of weights must either contain a single value, or be the same length as the other input vectors." );
+  }
+
+  return norm;
 }
 
 
@@ -370,12 +447,8 @@ COMPLEX16Array *complex_B_matrix(gsl_matrix_complex *V, gsl_matrix_complex *RB){
   gsl_matrix_complex *invV, *LU;
   gsl_permutation *p;
   gsl_matrix_complex_view subRB;
-  gsl_complex scale1, scale0;
   COMPLEX16Array *B = NULL;
   UINT4Vector *dims = NULL;
-
-  GSL_SET_COMPLEX(&scale1, 1., 0.);
-  GSL_SET_COMPLEX(&scale0, 0., 0.);
 
   XLAL_CALLGSL( invV = gsl_matrix_complex_alloc(n, n) );
   int signum;
@@ -399,7 +472,7 @@ COMPLEX16Array *complex_B_matrix(gsl_matrix_complex *V, gsl_matrix_complex *RB){
   gsl_matrix_complex_view Bview;
   Bview = gsl_matrix_complex_view_array((double *)B->data, n, RB->size2);
   XLAL_CALLGSL( subRB = gsl_matrix_complex_submatrix(RB, 0, 0, n, RB->size2) );
-  XLAL_CALLGSL( gsl_blas_zgemm(CblasTrans, CblasNoTrans, scale1, invV, &subRB.matrix, scale0, &Bview.matrix) );
+  XLAL_CALLGSL( gsl_blas_zgemm(CblasTrans, CblasNoTrans, GSL_COMPLEX_ONE, invV, &subRB.matrix, GSL_COMPLEX_ZERO, &Bview.matrix) );
 
   XLAL_CALLGSL( gsl_matrix_complex_free(invV) );
 
@@ -430,6 +503,228 @@ int complex_vector_maxabs_index( gsl_vector_complex *c ){
 }
 
 
+/** \brief Modified Gram-Schmidt algorithm for complex data
+ *
+ * A modified Gram-Schmidt algorithm taken from the
+ * <a href="https://bitbucket.org/sfield83/greedycpp">greedycpp</a> code.
+ *
+ * @param[out] ru A 1-by-(\c dim_RB + 1) complex vector returning a slice of the R matrix 
+ * @param[out] ortho_basis A complex vector returning the orthogonal basis vector
+ * @param[in] RB_space A complex matrix containing the existing set of orthonormal basis vectors
+ * @param[in] wQuad A vector of weights for the inner products
+ * @param[in] dim_RB The number of elements in the current \c RB_space
+ */
+void modified_gs_complex(gsl_vector_complex *ru,
+                         gsl_vector_complex *ortho_basis,
+                         const gsl_matrix_complex *RB_space,
+                         const gsl_vector *wQuad,
+                         const int dim_RB){
+  INT4 quad_num = RB_space->size2;
+  gsl_complex L2_proj;
+  gsl_vector_complex *basis;
+
+  basis = gsl_vector_complex_alloc(quad_num);
+
+  /* if not done, R matrix fills up below diagonal with .5 instead of 0 */
+  gsl_vector_complex_set_zero(ru); 
+
+  for(INT4 i = 0; i < dim_RB; i++){
+    gsl_matrix_complex_get_row(basis, RB_space, i);
+
+    /* ortho_basis = ortho_basis - L2_proj*basis; */
+    L2_proj = complex_weighted_dot_product(wQuad, basis, ortho_basis);
+    gsl_vector_complex_set(ru, i, L2_proj);
+    gsl_vector_complex_scale(basis, L2_proj); /* basis <- basis*L2_proj */
+    gsl_vector_complex_sub(ortho_basis, basis); /* ortho <- ortho - basis */
+  }
+
+  double nrm = complex_normalisation(wQuad, ortho_basis);
+  gsl_complex nrmc;
+  GSL_SET_COMPLEX(&nrmc, nrm, 0.0);
+  gsl_vector_complex_set(ru, dim_RB, nrmc);
+
+  complex_normalise(wQuad, ortho_basis);
+
+  gsl_vector_complex_free(basis);
+}
+
+
+/** \brief Modified Gram-Schmidt algorithm for real data
+ *
+ * A modified Gram-Schmidt algorithm taken from the
+ * <a href="https://bitbucket.org/sfield83/greedycpp">greedycpp</a> code.
+ *
+ * @param[out] ru A 1-by-(\c dim_RB + 1) vector returning a slice of the R matrix 
+ * @param[out] ortho_basis A vector returning the orthogonal basis vector
+ * @param[in] RB_space A matrix containing the existing set of orthonormal basis vectors
+ * @param[in] wQuad A vector of weights for the inner products
+ * @param[in] dim_RB The number of elements in the current \c RB_space
+ */
+void modified_gs(gsl_vector *ru,
+                 gsl_vector *ortho_basis,
+                 const gsl_matrix *RB_space,
+                 const gsl_vector *wQuad,
+                 const int dim_RB){
+  INT4 quad_num = RB_space->size2;
+  REAL8 L2_proj;
+  gsl_vector *basis;
+
+  basis = gsl_vector_alloc(quad_num);
+
+  /* if not done, R matrix fills up below diagonal with .5 instead of 0 */
+  gsl_vector_set_zero(ru); 
+
+  for(INT4 i = 0; i < dim_RB; i++){
+    gsl_matrix_get_row(basis, RB_space, i);
+
+    /* ortho_basis = ortho_basis - L2_proj*basis; */
+    L2_proj = weighted_dot_product(wQuad, basis, ortho_basis);
+    gsl_vector_set(ru, i, L2_proj);
+    gsl_vector_scale(basis, L2_proj); /* basis <- basis*L2_proj */
+    gsl_vector_sub(ortho_basis, basis); /* ortho <- ortho - basis */
+  }
+
+  double nrm = normalisation(wQuad, ortho_basis);
+  gsl_vector_set(ru, dim_RB, nrm);
+
+  normalise(wQuad, ortho_basis);
+
+  gsl_vector_free(basis);
+}
+
+
+/** \brief Iterated modified Gram-Schmidt algorithm for complex data
+ *
+ * An iterated modified Gram-Schmidt algorithm taken from the
+ * <a href="https://bitbucket.org/sfield83/greedycpp">greedycpp</a> code. This uses the method
+ * given in \cite Hoffmann1989
+ *
+ * @param[out] ru A complex 1-by-(\c dim_RB + 1) vector returning a slice of the R matrix 
+ * @param[out] ortho_basis A complex vector returning the orthogonal basis vector
+ * @param[in] RB_space A complex matrix containing the existing set of orthonormal basis vectors
+ * @param[in] wQuad A vector of weights for the inner products
+ * @param[in] dim_RB The number of elements in the current \c RB_space
+ */
+void iterated_modified_gm_complex(gsl_vector_complex *ru,
+                                  gsl_vector_complex *ortho_basis,
+                                  const gsl_matrix_complex *RB_space,
+                                  const gsl_vector *wQuad,
+                                  const int dim_RB){
+  REAL8 ortho_condition = .5; /* hard coded IMGS stopping condition */
+
+  INT4 quad_num = RB_space->size2;
+  INT4 r_size = ru->size;
+  REAL8 nrm_prev = complex_normalisation(wQuad, ortho_basis);
+  UINT4 flag = 0, iter = 0;
+  gsl_vector_complex *e,*r_last;
+  REAL8 nrm_current = 0.;
+  gsl_complex nrmc_current;
+
+  /* allocate memory */
+  e = gsl_vector_complex_alloc(quad_num);
+  r_last = gsl_vector_complex_alloc(r_size);
+
+  gsl_vector_complex_memcpy(e,ortho_basis);
+  complex_normalise(wQuad, e);
+
+  /* if not done, R matrix fills up below diagonal with .5 instead of 0 */
+  gsl_vector_complex_set_zero(ru);  
+
+  while( !flag ){
+    gsl_vector_complex_memcpy(ortho_basis, e);
+    gsl_vector_complex_set_zero(r_last);
+
+    modified_gs_complex(r_last, ortho_basis, RB_space, wQuad, dim_RB);
+
+    gsl_vector_complex_add(ru, r_last);
+    nrmc_current = gsl_vector_complex_get(r_last, dim_RB);
+    nrm_current = GSL_REAL(nrmc_current);
+
+    gsl_vector_complex_scale(ortho_basis, nrmc_current);
+
+    if( nrm_current/nrm_prev <= ortho_condition ) {
+      nrm_prev = nrm_current;
+      iter = iter + 1;
+      gsl_vector_complex_memcpy(e, ortho_basis);
+    }
+    else{ flag = 1; }
+
+    nrm_current = complex_normalisation(wQuad, ortho_basis);
+    GSL_SET_COMPLEX(&nrmc_current, nrm_current, 0.0);
+    gsl_vector_complex_set(ru, dim_RB, nrmc_current);
+
+    complex_normalise(wQuad, ortho_basis);
+  }
+
+  gsl_vector_complex_free(e);
+  gsl_vector_complex_free(r_last);
+}
+
+
+/** \brief Iterated modified Gram-Schmidt algorithm for real data
+ *
+ * An iterated modified Gram-Schmidt algorithm taken from the
+ * <a href="https://bitbucket.org/sfield83/greedycpp">greedycpp</a> code. This uses the method
+ * given in \cite Hoffmann1989
+ *
+ * @param[out] ru A 1-by-(\c dim_RB + 1) vector returning a slice of the R matrix 
+ * @param[out] ortho_basis A vector returning the orthogonal basis vector
+ * @param[in] RB_space A matrix containing the existing set of orthonormal basis vectors
+ * @param[in] wQuad A vector of weights for the inner products
+ * @param[in] dim_RB The number of elements in the current \c RB_space
+ */
+void iterated_modified_gm(gsl_vector *ru,
+                          gsl_vector *ortho_basis,
+                          const gsl_matrix *RB_space,
+                          const gsl_vector *wQuad,
+                          const int dim_RB){
+  REAL8 ortho_condition = .5; /* hard coded IMGS stopping condition */
+
+  INT4 quad_num = RB_space->size2;
+  INT4 r_size = ru->size;
+  REAL8 nrm_prev = normalisation(wQuad, ortho_basis);
+  UINT4 flag = 0, iter = 0;
+  gsl_vector *e,*r_last;
+  REAL8 nrm_current = 0.;
+
+  /* allocate memory */
+  e = gsl_vector_alloc(quad_num);
+  r_last = gsl_vector_alloc(r_size);
+
+  gsl_vector_memcpy(e,ortho_basis);
+  normalise(wQuad, e);
+
+  /* if not done, R matrix fills up below diagonal with .5 instead of 0 */
+  gsl_vector_set_zero(ru);  
+
+  while( !flag ){
+    gsl_vector_memcpy(ortho_basis, e);
+    gsl_vector_set_zero(r_last);
+
+    modified_gs(r_last, ortho_basis, RB_space, wQuad, dim_RB);
+
+    gsl_vector_add(ru, r_last);
+    nrm_current = gsl_vector_get(r_last, dim_RB);
+
+    gsl_vector_scale(ortho_basis, nrm_current);
+
+    if( nrm_current/nrm_prev <= ortho_condition ) {
+      nrm_prev = nrm_current;
+      iter = iter + 1;
+      gsl_vector_memcpy(e, ortho_basis);
+    }
+    else{ flag = 1; }
+
+    nrm_current = normalisation(wQuad, ortho_basis);
+    gsl_vector_set(ru, dim_RB, nrm_current);
+
+    normalise(wQuad, ortho_basis);
+  }
+
+  gsl_vector_free(e);
+  gsl_vector_free(r_last);
+}
+
 /* main functions */
 
 /**
@@ -453,146 +748,180 @@ int complex_vector_maxabs_index( gsl_vector_complex *c ){
  * @param[in] delta The time/frequency step(s) in the training set used to normalise the models.
  * This can be a vector containing just one value.
  * @param[in] tolerance The tolerance used as a stopping criteria for the basis generation.
- * @param[in] TS A \c REAL8Array matrix containing the complex training set, where the number of waveforms in the
- * training set is given by the rows and the waveform points by the columns.
+ * @param[in] TS A \c REAL8Array matrix containing the complex training set, where the number of
+ * waveforms in the training set is given by the rows and the waveform points by the columns. This
+ * will be modified by this function, as the training set will be normalised.
+ * @param[out] greedypoints A \c UINT4Vector to return the indices of the training set rows that
+ * have been used to form the reduced basis.
  *
  * @return A \c REAL8 with the maximum projection error for the final reduced basis.
  *
  * \sa LALInferenceEnrichREAL8Basis
  */
 REAL8 LALInferenceGenerateREAL8OrthonormalBasis(REAL8Array **RBin,
-                                                REAL8Vector *delta,
+                                                const REAL8Vector *delta,
                                                 REAL8 tolerance,
-                                                REAL8Array *TS){
-  XLAL_CHECK_REAL8( delta != NULL, XLAL_EFUNC, "Vector of 'delta' values is NULL!" );
-  XLAL_CHECK_REAL8( TS != NULL, XLAL_EFUNC, "Training set array is NULL!" );
-  XLAL_CHECK_REAL8( tolerance > 0, XLAL_EFUNC, "Tolerance is less than, or equal to, zero!" );
-  XLAL_CHECK_REAL8( TS->dimLength->length == 2, XLAL_EFUNC, "Training set array must have only two dimensions" );
+                                                REAL8Array **TS,
+                                                UINT4Vector **greedypoints){
+  REAL8Array *ts = NULL;
+  ts = *TS; // pointer to training set
+
+  size_t cols = ts->dimLength->data[1], rows = ts->dimLength->data[0];
+
+  /* view of training set */
+  gsl_matrix_view TSview;
+  XLAL_CALLGSL( TSview = gsl_matrix_view_array((double *)ts->data, rows, cols) );
+
+  size_t max_RB = rows;
+
+  //REAL8 greedy_err[max_RB];           /* approximate error */
+  UINT4Vector *gpts = NULL;
+  gpts = XLALCreateUINT4Vector(max_RB); /* selected greedy points (row selection) */
+  *greedypoints = gpts;
+
+  REAL8 worst_err;          /* errors in greedy sweep */
+  UINT4 worst_app = 0;      /* worst error stored */
+  REAL8 tmpc;               /* worst error temp */
+
+  gsl_vector *ts_el, *last_rb, *ortho_basis, *ru;
+  gsl_matrix *R_matrix;
+  REAL8 A_row_norms2[rows];              // || A(i,:) ||^2
+  REAL8 projection_norms2[rows];
+  REAL8 errors[rows];                    // approximation errors at i^{th} sweep
 
   REAL8Array *RB = NULL;
   UINT4Vector *dims = NULL;
   gsl_matrix_view RBview;
+  
+  /* this memory should be freed here */
+  ts_el         = gsl_vector_alloc(cols);
+  last_rb       = gsl_vector_alloc(cols);
+  ortho_basis   = gsl_vector_alloc(cols);
+  ru            = gsl_vector_alloc(max_RB);
 
-  gsl_matrix *projections; /* projections of the basis onto the training set */
-  gsl_matrix *residual;
-  gsl_vector *projection_errors;
+  //project_coeff = gsl_matrix_alloc(max_RB,rows);
+  REAL8 projection_coeff;
+  R_matrix = gsl_matrix_alloc(max_RB, max_RB);
 
-  REAL8 sigma = 1., prevsigma = 1.;
-  size_t dlength = TS->dimLength->data[1], nts = TS->dimLength->data[0];
-  size_t mindex = 0, k=0;
-  UINT4 idx = 0, nprev = 0, j = 0;
+  /* initialise projection norms with zeros */
+  for(size_t i=0; i<rows; ++i){ projection_norms2[i] = 0; }
 
-  /* normalise the training set */
   gsl_vector_view deltaview;
   XLAL_CALLGSL( deltaview = gsl_vector_view_array(delta->data, delta->length) );
-  gsl_matrix_view TSview;
-  XLAL_CALLGSL( TSview = gsl_matrix_view_array(TS->data, nts, dlength) );
+
+  /* normalise the training set */
   normalise_training_set(&deltaview.vector, &TSview.matrix);
 
-  XLAL_CALLGSL( projections = gsl_matrix_calloc(nts, dlength) );
+  /* compute norm of each training space element */
+  for(size_t i=0; i<rows; ++i) {
+    gsl_matrix_get_row(ts_el, &TSview.matrix, i);
+    A_row_norms2[i] = normalisation(&deltaview.vector, ts_el);
+  }
 
-  /* if a NULL basis has been passed then create reduced basis (initially just one model vector in length) */
+  /* initialize algorithm with first training set value */
   dims = XLALCreateUINT4Vector( 2 );
-  if ( *RBin == NULL ){
-    gsl_vector *firstrow;
-    dims->data[0] = 1; /* one row */
-    dims->data[1] = dlength;
-    RB = XLALCreateREAL8Array( dims );
+  dims->data[0] = 1; /* one row */
+  dims->data[1] = cols;
+  RB = XLALCreateREAL8Array( dims );
+  *RBin = RB;
 
-    XLAL_CALLGSL( RBview = gsl_matrix_view_array(RB->data, 1, dlength) );
-    XLAL_CALLGSL( firstrow = gsl_vector_calloc(dlength) );
-    XLAL_CALLGSL( gsl_matrix_get_row(firstrow, &TSview.matrix, 0) );
-    XLAL_CALLGSL( gsl_matrix_set_row(&RBview.matrix, 0, firstrow) );
-    XLAL_CALLGSL( gsl_vector_free(firstrow) );
-    *RBin = RB;
-    nprev = 1;
-  }
-  else{ /* if the reduced basis already exists then view it as a gsl_matrix */
-    RB = *RBin;
-    dims->data[0] = RB->dimLength->data[0];
-    dims->data[1] = RB->dimLength->data[1];
-    XLAL_CHECK_REAL8( dims->data[1] == dlength, XLAL_EFUNC, "Training set and reduced basis must have the same basis lengths" );
-    XLAL_CALLGSL( RBview = gsl_matrix_view_array(RB->data, dims->data[0], dims->data[1]) );
-    nprev = dims->data[0];
-  }
+  XLAL_CALLGSL( RBview = gsl_matrix_view_array((double*)RB->data, 1, cols) );
+  gsl_matrix_get_row(ts_el, &TSview.matrix, 0);
+  gsl_matrix_set_row(&RBview.matrix, 0, ts_el);
+  tmpc = 1.;
+  gsl_matrix_set(R_matrix, 0, 0, tmpc);  // assumes normalized solutions
 
-  for ( j = 0; j < nprev; j++ ){ project_onto_basis( &deltaview.vector, &RBview.matrix, &TSview.matrix, projections, j ); }
+  gpts->data[0] = 0;
+  UINT4 dim_RB          = 1;
+  //greedy_err[0]    = 1.0;
 
-  XLAL_CALLGSL( projection_errors = gsl_vector_calloc(nts) );
-  XLAL_CALLGSL( residual = gsl_matrix_calloc(nts, dlength) );
+  /* loop to find reduced basis */
+  while( 1 ){
+    gsl_matrix_get_row(last_rb, &RBview.matrix, dim_RB-1); /* previous basis */
 
-  /* create reduced basis set using greedy binning Algorithm 1 of http://arxiv.org/abs/1308.3565 */
-  while ( 1 ){
-    gsl_vector *next_basis;
-    prevsigma = sigma; /* check that sigma is decreasing */
-
-    if ( idx > 0 ){ project_onto_basis(&deltaview.vector, &RBview.matrix, &TSview.matrix, projections, idx+nprev-1); }
-
-    XLAL_CALLGSL( gsl_matrix_memcpy(residual, &TSview.matrix) ); /* copy training set into residual */
-
-    /* get residuals by subtracting projections from training set */
-    XLAL_CALLGSL( gsl_matrix_sub(residual, projections) );
-
-    /* get projection errors */
-    for( k=0; k < nts; k++ ){
-      REAL8 err;
-      gsl_vector_view resrow;
-
-      XLAL_CALLGSL( resrow = gsl_matrix_row(residual, k) );
-
-      err = weighted_dot_product(&deltaview.vector, &resrow.vector, &resrow.vector);
-
-      XLAL_CALLGSL( gsl_vector_set(projection_errors, k, err) );
+    /* Compute overlaps of pieces of training set with rb_new */
+    for(size_t i = 0; i < rows; i++){
+      gsl_matrix_get_row(ts_el, &TSview.matrix, i);
+      projection_coeff = weighted_dot_product(&deltaview.vector, last_rb, ts_el);
+      projection_norms2[i] += (projection_coeff*projection_coeff);
+      errors[i] = A_row_norms2[i] - projection_norms2[i];
     }
 
-    sigma = fabs(gsl_vector_max(projection_errors));
-
-    //if ( sigma > 1e-5 ){ fprintf(stderr, "%.12lf\t%d\n", sigma, idx); }
-    //else { fprintf(stderr, "%.12le\t%d\n", sigma, idx); }
-
-    idx++;
-
-    /* break point */
-    if ( sigma < tolerance || idx == (UINT4)nts || sigma > prevsigma ) {
-      if ( idx == (UINT4)nts ){
-        XLAL_PRINT_WARNING( "Not enough training models (%zu) to produce orthonormal basis given the tolerance of %le\n", nts, tolerance );
+    /* find worst represented training set element, and add to basis */
+    worst_err = 0.0;
+    for(size_t i = 0; i < rows; i++) {
+      if(worst_err < errors[i]) {
+        worst_err = errors[i];
+        worst_app = i;
       }
-      if ( sigma > prevsigma ){
-        XLAL_PRINT_WARNING( "Numerical precision issues have cause the residuals to increase (%12.le -> %.12le). Stop adding more bases with this training set.\n", prevsigma, sigma );
-        /* remove previously added reduced basis */
-        dims->data[0] = dims->data[0]-1;
-        RB = XLALResizeREAL8Array( RB, dims );
-      }
-      break;
     }
 
-    /* get index of training set with the largest projection errors */
-    XLAL_CALLGSL( mindex = gsl_vector_max_index( projection_errors ) );
+    // This block exists for cases when the reduced basis is being used during enrichment.
+    // It exists to make sure that all new training elements get added to the reduced basis
+    // even if their errors are very small.
+    if ( tolerance == 0. ){
+      // check if worst_app is already in gpts
+      UINT4 idxexists = 0;
+      for(size_t i = 0; i < dim_RB; i++) {
+        if ( worst_app == gpts->data[i] ){
+          idxexists = 1;
+          break;
+        }
+      }
 
-    XLAL_CALLGSL( next_basis = gsl_vector_calloc(dlength) );
-    XLAL_CALLGSL( gsl_matrix_get_row(next_basis, residual, mindex) );
+      // if it is, then just find the first index that is not in gpts already
+      if ( idxexists ){
+        UINT4 newidxexists = 0;
+        for (size_t i = 0; i < rows; i++){
+          newidxexists = 0;
+          for (size_t j = 0; j < dim_RB; j++){
+            if ( i == gpts->data[j] ){
+              newidxexists = 1;
+              break;
+            }
+          }
+          if ( !newidxexists ){
+            worst_app = i;
+            break;
+          }
+        }
+      }
+    }
+    //////////// end check ////////////
 
-    /* normalise vector */
-    normalise(&deltaview.vector, next_basis);
+    gpts->data[dim_RB] = worst_app; 
+    //greedy_err[dim_RB]    = worst_err; // These aren't used or output at all
 
-    /* expand reduced basis */
-    dims->data[0] = idx+nprev; /* add row */
+    /* add worst approximated solution to basis set */
+    gsl_matrix_get_row(ortho_basis, &TSview.matrix, worst_app);
+    iterated_modified_gm(ru, ortho_basis, &RBview.matrix, &deltaview.vector, dim_RB); /* use IMGS */ // TODO: need REAL8 version of this
+    
+    /* add to reduced basis */
+    dims->data[0] = dim_RB+1; /* add row */
     RB = XLALResizeREAL8Array( RB, dims );
 
     /* add on next basis */
-    XLAL_CALLGSL( RBview = gsl_matrix_view_array(RB->data, idx+nprev, dlength) );
-    XLAL_CALLGSL( gsl_matrix_set_row(&RBview.matrix, idx+nprev-1, next_basis) );
+    XLAL_CALLGSL( RBview = gsl_matrix_view_array((double*)RB->data, dim_RB+1, cols) );
 
-    XLAL_CALLGSL( gsl_vector_free(next_basis) );
+    gsl_matrix_set_row(&RBview.matrix, dim_RB, ortho_basis);
+    gsl_matrix_set_row(R_matrix, dim_RB, ru);
+
+    ++dim_RB;
+
+    /* decide if another greedy sweep is needed */
+    if( (dim_RB == max_RB) || (worst_err < tolerance) || (rows == dim_RB) ){ break; }
   }
 
-  /* free memory */
-  XLAL_CALLGSL( gsl_matrix_free(projections) );
-  XLAL_CALLGSL( gsl_vector_free(projection_errors) );
-  XLAL_CALLGSL( gsl_matrix_free(residual) );
-  XLALDestroyUINT4Vector( dims );
+  gpts = XLALResizeUINT4Vector( gpts, dim_RB );
 
-  return sigma;
+  XLALDestroyUINT4Vector(dims);
+  gsl_vector_free(ts_el);
+  gsl_vector_free(last_rb);
+  gsl_vector_free(ortho_basis);
+  gsl_vector_free(ru);
+  gsl_matrix_free(R_matrix);
+
+  return worst_err;
 }
 
 
@@ -622,223 +951,316 @@ REAL8 LALInferenceGenerateREAL8OrthonormalBasis(REAL8Array **RBin,
  * @param[in] delta The time/frequency step(s) in the training set used to normalise the models.
  * This can be a vector containing just one value.
  * @param[in] tolerance The tolerance used as a stopping criteria for the basis generation.
- * @param[in] TS A \c COMPLEX16Array matrix containing the complex training set, where the number of waveforms in the
- * training set is given by the rows and the waveform points by the columns.
+ * @param[in] TS A \c COMPLEX16Array matrix containing the complex training set, where the number
+ * of waveforms in the training set is given by the rows and the waveform points by the columns.
+ * This will be modified by this function, as the training set will be normalised.
+ * @param[out] greedypoints A \c UINT4Vector to return the indices of the training set rows that
+ * have been used to form the reduced basis.
  *
  * @return A \c REAL8 with the maximum projection error for the final reduced basis.
  *
  * \sa LALInferenceEnrichCOMPLEX16Basis
  */
 REAL8 LALInferenceGenerateCOMPLEX16OrthonormalBasis(COMPLEX16Array **RBin,
-                                                    REAL8Vector *delta,
+                                                    const REAL8Vector *delta,
                                                     REAL8 tolerance,
-                                                    COMPLEX16Array *TS){
-  XLAL_CHECK_REAL8( delta != NULL, XLAL_EFUNC, "Vector of 'delta' values is NULL!" );
-  XLAL_CHECK_REAL8( TS != NULL, XLAL_EFUNC, "Training set array is NULL!" );
-  XLAL_CHECK_REAL8( tolerance > 0, XLAL_EFUNC, "Tolerance is less than, or equal to, zero!" );
-  XLAL_CHECK_REAL8( TS->dimLength->length == 2, XLAL_EFUNC, "Training set array must have only two dimensions" );
+                                                    COMPLEX16Array **TS,
+                                                    UINT4Vector **greedypoints){
+  COMPLEX16Array *ts = NULL;
+  ts = *TS; // pointer to training set
+
+  size_t cols = ts->dimLength->data[1], rows = ts->dimLength->data[0];
+
+  /* view of training set */
+  gsl_matrix_complex_view TSview;
+  XLAL_CALLGSL( TSview = gsl_matrix_complex_view_array((double *)ts->data, rows, cols) );
+
+  size_t max_RB = rows;
+
+  //REAL8 greedy_err[max_RB];           /* approximate error */
+  UINT4Vector *gpts = NULL;
+  gpts = XLALCreateUINT4Vector(max_RB); /* selected greedy points (row selection) */
+  *greedypoints = gpts;
+
+  REAL8 worst_err;          /* errors in greedy sweep */
+  UINT4 worst_app = 0;      /* worst error stored */
+  gsl_complex tmpc;         /* worst error temp */
+
+  gsl_vector_complex *ts_el, *last_rb, *ortho_basis, *ru;
+  gsl_matrix_complex *R_matrix;
+  REAL8 A_row_norms2[rows];              // || A(i,:) ||^2
+  REAL8 projection_norms2[rows];
+  REAL8 errors[rows];                    // approximation errors at i^{th} sweep
 
   COMPLEX16Array *RB = NULL;
   UINT4Vector *dims = NULL;
   gsl_matrix_complex_view RBview;
+  
+  /* this memory should be freed here */
+  ts_el         = gsl_vector_complex_alloc(cols);
+  last_rb       = gsl_vector_complex_alloc(cols);
+  ortho_basis   = gsl_vector_complex_alloc(cols);
+  ru            = gsl_vector_complex_alloc(max_RB);
 
-  gsl_matrix_complex *projections; /* projections of the basis onto the training set */
-  gsl_matrix_complex *residual;
-  gsl_vector *projection_errors;
+  //project_coeff = gsl_matrix_complex_alloc(max_RB,rows);
+  gsl_complex projection_coeff;
+  R_matrix = gsl_matrix_complex_alloc(max_RB, max_RB);
 
-  REAL8 sigma = 1., prevsigma = 1.;
-  size_t dlength = TS->dimLength->data[1], nts = TS->dimLength->data[0];
-  size_t mindex = 0, k=0;
-  UINT4 idx = 0, nprev = 0, j = 0;
+  /* initialise projection norms with zeros */
+  for(size_t i=0; i<rows; ++i){ projection_norms2[i] = 0; }
 
-  /* normalise the training set */
   gsl_vector_view deltaview;
   XLAL_CALLGSL( deltaview = gsl_vector_view_array(delta->data, delta->length) );
-  gsl_matrix_complex_view TSview;
-  XLAL_CALLGSL( TSview = gsl_matrix_complex_view_array((double *)TS->data, nts, dlength) );
+  
+  /* normalise the training set */
   complex_normalise_training_set(&deltaview.vector, &TSview.matrix);
 
-  XLAL_CALLGSL( projections = gsl_matrix_complex_calloc(nts, dlength) );
+  /* compute norm of each training space element */
+  for(size_t i=0; i<rows; ++i) {
+    gsl_matrix_complex_get_row(ts_el, &TSview.matrix, i);
+    A_row_norms2[i] = complex_normalisation(&deltaview.vector, ts_el);
+  }
 
-  /* if a NULL basis has been passed then create reduced basis (initially just one model vector in length) */
+  /* initialize algorithm with first training set value */
   dims = XLALCreateUINT4Vector( 2 );
-  if ( *RBin == NULL ){
-    gsl_vector_complex *firstrow;
-    dims->data[0] = 1; /* one row */
-    dims->data[1] = dlength;
-    RB = XLALCreateCOMPLEX16Array( dims );
+  dims->data[0] = 1; /* one row */
+  dims->data[1] = cols;
+  RB = XLALCreateCOMPLEX16Array( dims );
+  *RBin = RB;
 
-    XLAL_CALLGSL( RBview = gsl_matrix_complex_view_array((double*)RB->data, 1, dlength) );
-    XLAL_CALLGSL( firstrow = gsl_vector_complex_calloc(dlength) );
-    XLAL_CALLGSL( gsl_matrix_complex_get_row(firstrow, &TSview.matrix, 0) );
-    XLAL_CALLGSL( gsl_matrix_complex_set_row(&RBview.matrix, 0, firstrow) );
-    XLAL_CALLGSL( gsl_vector_complex_free(firstrow) );
-    *RBin = RB;
-    nprev = 1;
-  }
-  else{ /* if the reduced basis already exists then view it as a gsl_matrix */
-    RB = *RBin;
-    dims->data[0] = RB->dimLength->data[0];
-    dims->data[1] = RB->dimLength->data[1];
-    XLAL_CHECK_REAL8( dims->data[1] == dlength, XLAL_EFUNC, "Training set and reduced basis must have the same basis lengths" );
-    XLAL_CALLGSL( RBview = gsl_matrix_complex_view_array((double*)RB->data, dims->data[0], dims->data[1]) );
-    nprev = dims->data[0];
-  }
+  XLAL_CALLGSL( RBview = gsl_matrix_complex_view_array((double*)RB->data, 1, cols) );
+  gsl_matrix_complex_get_row(ts_el, &TSview.matrix, 0);
+  gsl_matrix_complex_set_row(&RBview.matrix, 0, ts_el);
+  GSL_SET_COMPLEX(&tmpc, 1.0, 0.0);
+  gsl_matrix_complex_set(R_matrix, 0, 0, tmpc);  // assumes normalized solutions
 
-  for ( j = 0; j < nprev; j++ ){ complex_project_onto_basis( &deltaview.vector, &RBview.matrix, &TSview.matrix, projections, j ); }
+  gpts->data[0] = 0;
+  UINT4 dim_RB          = 1;
+  //greedy_err[0]    = 1.0;
 
-  XLAL_CALLGSL( projection_errors = gsl_vector_calloc(nts) );
-  XLAL_CALLGSL( residual = gsl_matrix_complex_calloc(nts, dlength) );
+  /* loop to find reduced basis */
+  while( 1 ){
+    gsl_matrix_complex_get_row(last_rb, &RBview.matrix, dim_RB-1); /* previous basis */
 
-  /* create reduced basis set using greedy binning Algorithm 1 of http://arxiv.org/abs/1308.3565 */
-  while ( 1 ){
-    gsl_vector_complex *next_basis;
-    prevsigma = sigma; /* check that sigma is decreasing */
-
-    if ( idx > 0 ){ complex_project_onto_basis(&deltaview.vector, &RBview.matrix, &TSview.matrix, projections, idx+nprev-1); }
-
-    XLAL_CALLGSL( gsl_matrix_complex_memcpy(residual, &TSview.matrix) ); /* copy training set into residual */
-
-    /* get residuals by subtracting projections from training set */
-    XLAL_CALLGSL( gsl_matrix_complex_sub(residual, projections) );
-
-    /* get projection errors */
-    for( k=0; k < nts; k++ ){
-      gsl_complex err;
-      gsl_vector_complex_view resrow;
-
-      XLAL_CALLGSL( resrow = gsl_matrix_complex_row(residual, k) );
-
-      err = complex_weighted_dot_product(&deltaview.vector, &resrow.vector, &resrow.vector);
-
-      XLAL_CALLGSL( gsl_vector_set(projection_errors, k, GSL_REAL(err)) );
+    /* Compute overlaps of pieces of training set with rb_new */
+    for(size_t i = 0; i < rows; i++){
+      gsl_matrix_complex_get_row(ts_el, &TSview.matrix, i);
+      projection_coeff = complex_weighted_dot_product(&deltaview.vector, last_rb, ts_el);
+      projection_norms2[i] += (projection_coeff.dat[0]*projection_coeff.dat[0] + projection_coeff.dat[1]*projection_coeff.dat[1]);
+      errors[i] = A_row_norms2[i] - projection_norms2[i];
     }
 
-    sigma = fabs(gsl_vector_max(projection_errors));
-
-    //if ( sigma > 1e-5 ){ fprintf(stderr, "%.12lf\t%d\n", sigma, idx); }
-    //else { fprintf(stderr, "%.12le\t%d\n", sigma, idx); }
-
-    idx++;
-
-    /* break point */
-    if ( sigma < tolerance || idx == (UINT4)nts || sigma > prevsigma ) {
-      if ( idx == (UINT4)nts ){
-        XLAL_PRINT_WARNING( "Not enough training models (%zu) to produce orthonormal basis given the tolerance of %le\n", nts, tolerance );
+    /* find worst represented training set element, and add to basis */
+    worst_err = 0.0;
+    for(size_t i = 0; i < rows; i++) {
+      if(worst_err < errors[i]) {
+        worst_err = errors[i];
+        worst_app = i;
       }
-      if ( sigma > prevsigma ){
-        XLAL_PRINT_WARNING( "Numerical precision issues have cause the residuals to increase (%12.le -> %.12le). Stop adding more bases with this training set.\n", prevsigma, sigma );
-        /* remove previously added reduced basis */
-        dims->data[0] = dims->data[0]-1;
-        RB = XLALResizeCOMPLEX16Array( RB, dims );
-      }
-      break;
     }
 
-    /* get index of training set with the largest projection errors */
-    XLAL_CALLGSL( mindex = gsl_vector_max_index( projection_errors ) );
+    // This block exists for cases when the reduced basis is being used during enrichment.
+    // It exists to make sure that all new training elements get added to the reduced basis
+    // even if their errors are very small.
+    if ( tolerance == 0. ){
+      // check if worst_app is already in gpts
+      UINT4 idxexists = 0;
+      for(size_t i = 0; i < dim_RB; i++) {
+        if ( worst_app == gpts->data[i] ){
+          idxexists = 1;
+          break;
+        }
+      }
 
-    XLAL_CALLGSL( next_basis = gsl_vector_complex_calloc(dlength) );
-    XLAL_CALLGSL( gsl_matrix_complex_get_row( next_basis, residual, mindex ) );
+      // if it is, then just find the first index that is not in gpts already
+      if ( idxexists ){
+        UINT4 newidxexists = 0;
+        for (size_t i = 0; i < rows; i++){
+          newidxexists = 0;
+          for (size_t j = 0; j < dim_RB; j++){
+            if ( i == gpts->data[j] ){
+              newidxexists = 1;
+              break;
+            }
+          }
+          if ( !newidxexists ){
+            worst_app = i;
+            break;
+          }
+        }
+      }
+    }
+    //////////// end check ////////////
 
-    /* normalise vector */
-    complex_normalise(&deltaview.vector, next_basis);
+    gpts->data[dim_RB] = worst_app;
+    //greedy_err[dim_RB]    = worst_err; // These aren't used or output at all
 
-    /* expand reduced basis */
-    dims->data[0] = idx+nprev; /* add row */
+    /* add worst approximated solution to basis set */
+    gsl_matrix_complex_get_row(ortho_basis, &TSview.matrix, worst_app);
+    iterated_modified_gm_complex(ru, ortho_basis, &RBview.matrix, &deltaview.vector, dim_RB); /* use IMGS */
+    
+    /* add to reduced basis */
+    dims->data[0] = dim_RB+1; /* add row */
     RB = XLALResizeCOMPLEX16Array( RB, dims );
 
     /* add on next basis */
-    XLAL_CALLGSL( RBview = gsl_matrix_complex_view_array((double*)RB->data, idx+nprev, dlength) );
-    XLAL_CALLGSL( gsl_matrix_complex_set_row(&RBview.matrix, idx+nprev-1, next_basis) );
+    XLAL_CALLGSL( RBview = gsl_matrix_complex_view_array((double*)RB->data, dim_RB+1, cols) );
 
-    XLAL_CALLGSL( gsl_vector_complex_free(next_basis) );
+    gsl_matrix_complex_set_row(&RBview.matrix, dim_RB, ortho_basis);
+    gsl_matrix_complex_set_row(R_matrix, dim_RB, ru);
+
+    ++dim_RB;
+
+    /* decide if another greedy sweep is needed */
+    if( (dim_RB == max_RB) || (worst_err < tolerance) || (rows == dim_RB) ){ break; }
   }
 
-  /* free memory */
-  XLAL_CALLGSL( gsl_matrix_complex_free(projections) );
-  XLAL_CALLGSL( gsl_vector_free(projection_errors) );
-  XLAL_CALLGSL( gsl_matrix_complex_free(residual) );
-  XLALDestroyUINT4Vector( dims );
+  gpts = XLALResizeUINT4Vector( gpts, dim_RB );
 
-  return sigma;
+  XLALDestroyUINT4Vector(dims);
+  gsl_vector_complex_free(ts_el);
+  gsl_vector_complex_free(last_rb);
+  gsl_vector_complex_free(ortho_basis);
+  gsl_vector_complex_free(ru);
+  gsl_matrix_complex_free(R_matrix);
+
+  return worst_err;
 }
 
 
 /**
- * \brief Test the real reduced basis against another set of waveforms
+ * \brief Validate the real reduced basis against another set of waveforms
+ *
+ * This function projects a set of waveforms onto the reduced basis and
+ * checks that the residuals are within a given tolerance. It returns
+ * the projection errors.
+ *
+ * Note that the projection error returned are the square of the residual
+ * errors, as is used as the criterion for adding new bases in the reduced
+ * basis generation function \c LALInferenceGenerateREAL8OrthonormalBasis.
+ * This is different to the \c validation.cpp code in <a href="https://bitbucket.org/sfield83/greedycpp">greedycpp</a>,
+ * which returns the square root of the value we return.
+ *
+ * @param[out] projerr The projection errors for each test waveform.
+ * @param[in] delta The time/frequency step(s) in the training set used to normalise the models.
+ * This can be a vector containing just one value.
+ * @param[in] RB The reduced basis set
+ * @param[in] testmodels The set of waveform models to project onto the basis (these will
+ * be changed by this function, as the waveforms will get normalised).
+ *
+ * \sa LALInferenceTestREAL8OrthonormalBasis
+ */
+void LALInferenceValidateREAL8OrthonormalBasis(REAL8Vector **projerr,
+                                               const REAL8Vector *delta,
+                                               const REAL8Array *RB,
+                                               REAL8Array **testmodels){
+  XLAL_CHECK_VOID( delta != NULL, XLAL_EFUNC, "Vector of 'delta' values is NULL!" );
+  XLAL_CHECK_VOID( RB != NULL, XLAL_EFUNC, "Reduced basis set array is NULL!" );
+  XLAL_CHECK_VOID( RB->dimLength->length == 2, XLAL_EFUNC, "Reduced basis set array must have only two dimensions" );
+
+  REAL8Array *tm = NULL;
+  tm = *testmodels;
+
+  size_t dlength = RB->dimLength->data[1], nts = tm->dimLength->data[0];
+  size_t k = 0;
+  gsl_vector *r_tmp, *testrow;
+
+  /* normalise the test set */
+  gsl_vector_view deltaview;
+  XLAL_CALLGSL( deltaview = gsl_vector_view_array(delta->data, delta->length) );
+  gsl_matrix_view testmodelsview;
+  XLAL_CALLGSL( testmodelsview = gsl_matrix_view_array(tm->data, nts, dlength) );
+  normalise_training_set(&deltaview.vector, &testmodelsview.matrix);
+
+  gsl_matrix_view RBview;
+  RBview = gsl_matrix_view_array(RB->data, RB->dimLength->data[0], dlength);
+
+  XLAL_CALLGSL( testrow = gsl_vector_alloc(dlength) );
+  XLAL_CALLGSL( r_tmp = gsl_vector_alloc(RB->dimLength->data[0]) );
+
+  REAL8Vector *pe = NULL;
+  pe = XLALCreateREAL8Vector( nts );
+  *projerr = pe;
+
+  for ( k = 0; k < nts; k++ ){
+    pe->data[k] = 0.;
+    REAL8 r_tmp_nrm = 0.;
+
+    XLAL_CALLGSL( gsl_matrix_get_row(testrow, &testmodelsview.matrix, k) );
+
+    REAL8 nrm = normalisation(&deltaview.vector, testrow); // normalisation (should be 1 as test models are normalised)
+
+    // un-scale testrow
+    if ( delta->length == 1 ){
+      XLAL_CALLGSL( gsl_vector_scale(testrow, delta->data[0]) );
+    }
+    else if ( testrow->size == deltaview.vector.size ){
+      XLAL_CALLGSL( gsl_vector_mul(testrow, &deltaview.vector) );
+    }
+    else{
+      XLAL_ERROR_VOID(XLAL_EFUNC, "Vector of weights must either contain a single value, or be the same length as the other input vectors.");
+    }
+
+    // get projections
+    XLAL_CALLGSL( gsl_blas_dgemv( CblasNoTrans, 1., &RBview.matrix, testrow, 0., r_tmp ) );
+
+    r_tmp_nrm = gsl_blas_dnrm2( r_tmp );
+    pe->data[k] = nrm - r_tmp_nrm*r_tmp_nrm;
+
+    if ( pe->data[k] < 0. ) { pe->data[k] = 1.0e-16; } // floating point error can trigger this
+  }
+
+  XLAL_CALLGSL( gsl_vector_free( testrow ) );
+  XLAL_CALLGSL( gsl_vector_free( r_tmp ) );
+}
+
+
+/**
+ * \brief Test the reduced basis against another set of waveforms
  *
  * This function projects a set of waveforms onto the reduced basis and
  * checks that the residuals are within a given tolerance
  *
  * @param[in] delta The time/frequency step(s) in the training set used to normalise the models.
  * This can be a vector containing just one value.
- * @param[in] tolerance The allowed residual tolerence for the test waveforms
+ * @param[in] tolerance The allowed (squared) residual tolerence for the test waveforms
  * @param[in] RB The reduced basis set
  * @param[in] testmodels The set of waveform models to project onto the basis
  *
  * @return Returns \c XLAL_SUCCESS if all test waveforms meet the tolerance
+ *
+ * \sa LALInferenceValidateREAL8OrthonormalBasis
  */
-INT4 LALInferenceTestREAL8OrthonormalBasis(REAL8Vector *delta,
+INT4 LALInferenceTestREAL8OrthonormalBasis(const REAL8Vector *delta,
                                            REAL8 tolerance,
-                                           REAL8Array *RB,
-                                           REAL8Array *testmodels){
+                                           const REAL8Array *RB,
+                                           REAL8Array **testmodels){
   XLAL_CHECK( delta != NULL, XLAL_EFUNC, "Vector of 'delta' values is NULL!" );
   XLAL_CHECK( RB != NULL, XLAL_EFUNC, "Reduced basis set array is NULL!" );
   XLAL_CHECK( RB->dimLength->length == 2, XLAL_EFUNC, "Reduced basis set array must have only two dimensions" );
   XLAL_CHECK( tolerance > 0, XLAL_EFUNC, "Tolerance is less than, or equal to, zero!" );
-  XLAL_CHECK( testmodels != NULL, XLAL_EFUNC, "Set of test models is NULL!" );
-  XLAL_CHECK( testmodels->dimLength->length == 2, XLAL_EFUNC, "Test set does not have 2 dimensions!" );
 
-  size_t dlength = testmodels->dimLength->data[1], nts = testmodels->dimLength->data[0];
-  size_t j = 0, k = 0;
+  REAL8Array *tm = NULL;
+  tm = *testmodels;
 
-  /* normalise the test set */
-  gsl_vector_view deltaview;
-  XLAL_CALLGSL( deltaview = gsl_vector_view_array(delta->data, delta->length) );
-  gsl_matrix_view testmodelsview;
-  XLAL_CALLGSL( testmodelsview = gsl_matrix_view_array(testmodels->data, nts, dlength) );
-  normalise_training_set(&deltaview.vector, &testmodelsview.matrix);
+  size_t nts = tm->dimLength->data[0], k = 0;
 
-  gsl_matrix_view RBview;
-  RBview = gsl_matrix_view_array(RB->data, RB->dimLength->data[0], dlength);
+  REAL8Vector *projerr = NULL;
 
-  /* get projection errors for each test model */
+  LALInferenceValidateREAL8OrthonormalBasis(&projerr, delta, RB, testmodels);
+
   for ( k = 0; k < nts; k++ ){
-    REAL8 projerr = 0.;
-    gsl_vector *proj;
-    gsl_vector_view testrow;
-    XLAL_CALLGSL( proj = gsl_vector_calloc(dlength) ); /* allocated to zero */
-    XLAL_CALLGSL( testrow = gsl_matrix_row(&testmodelsview.matrix, k) );
-
-    /* loop over reduced basis getting the projection coefficients */
-    for ( j = 0; j < RBview.matrix.size1; j++ ){
-      REAL8 projcoeff;
-      gsl_vector *RBrow;
-      XLAL_CALLGSL( RBrow = gsl_vector_alloc( RBview.matrix.size2 ) );
-      XLAL_CALLGSL( gsl_matrix_get_row( RBrow, &RBview.matrix, j ) );
-
-      /* get dot product of reduced basis vector with test model */
-      projcoeff = weighted_dot_product(&deltaview.vector, RBrow, &testrow.vector);
-
-      XLAL_CALLGSL( gsl_vector_scale( RBrow, projcoeff ) );
-      XLAL_CALLGSL( gsl_vector_add( proj, RBrow ) );
-      XLAL_CALLGSL( gsl_vector_free( RBrow ) );
-    }
-
-    /* get residual */
-    XLAL_CALLGSL( gsl_vector_sub( proj, &testrow.vector ) );
-    projerr = weighted_dot_product(&deltaview.vector, proj, proj);
-
     /* check projection error against tolerance */
-    if ( fabs(projerr) > tolerance ) { return XLAL_FAILURE; }
-
-    XLAL_CALLGSL( gsl_vector_free( proj ) );
+    if ( projerr->data[k] > tolerance ) {
+      XLALDestroyREAL8Vector( projerr );
+      return XLAL_FAILURE;
+    }
   }
+
+  XLALDestroyREAL8Vector( projerr );
 
   return XLAL_SUCCESS;
 }
-
 
 /**
  * \brief Expand the real training waveforms with ones from a set of new training waveforms
@@ -851,170 +1273,259 @@ INT4 LALInferenceTestREAL8OrthonormalBasis(REAL8Vector *delta,
  * This can be a vector containing just one value.
  * @param[in] tolerance The allowed residual tolerence for the test waveforms
  * @param[in] RB The reduced basis set
- * @param[in] testmodels The set of waveform models used to produce the reduced basis
- * @param[in] testmodelsnew A new set of waveforms to project onto the current reduced basis
+ * @param[in] greedypoints The rows in \c testmodels that formed the reduced basis
+ * @param[in] testmodels The set of waveform models used to produce the reduced basis (already normalised)
+ * @param[in] testmodelsnew A new set of waveforms to project onto the current reduced basis (these will
+ * be changed by this function, as the waveforms will get normalised when pass to
+ * \c LALInferenceValidateREAL8OrthonormalBasis, and editted to contain the new set of training waveforms
+ * from which the enriched basis was formed).
  *
  * @return Returns the maximum projection error of the new basis set
  */
-REAL8 LALInferenceEnrichREAL8Basis(REAL8Vector *delta,
+REAL8 LALInferenceEnrichREAL8Basis(const REAL8Vector *delta,
                                    REAL8 tolerance,
                                    REAL8Array **RB,
-                                   REAL8Array **testmodels,
-                                   REAL8Array *testmodelsnew){
+                                   UINT4Vector **greedypoints,
+                                   const REAL8Array *testmodels,
+                                   REAL8Array **testmodelsnew){
   XLAL_CHECK( delta != NULL, XLAL_EFUNC, "Vector of 'delta' values is NULL!" );
   XLAL_CHECK( tolerance > 0, XLAL_EFUNC, "Tolerance is less than, or equal to, zero!" );
 
-  size_t dlength = testmodelsnew->dimLength->data[1], nts = testmodelsnew->dimLength->data[0];
-  size_t j = 0, k = 0;
+  size_t dlength = testmodels->dimLength->data[1]; // length of training vectors
+  size_t k = 0;
 
   REAL8 maxprojerr = 0.;
 
-  /* normalise the test set */
-  gsl_vector_view deltaview;
-  XLAL_CALLGSL( deltaview = gsl_vector_view_array(delta->data, delta->length) );
-  gsl_matrix_view testmodelsview;
-  XLAL_CALLGSL( testmodelsview = gsl_matrix_view_array(testmodelsnew->data, nts, dlength) );
-  normalise_training_set(&deltaview.vector, &testmodelsview.matrix);
-
   REAL8Array *RBin = NULL;
   RBin = *RB;
+  UINT4Vector *gp = NULL;
+  gp = *greedypoints;
   REAL8Array *tm = NULL;
-  tm = *testmodels;
+  tm = *testmodelsnew;
 
-  gsl_matrix_view RBview;
-  RBview = gsl_matrix_view_array(RBin->data, RBin->dimLength->data[0], dlength);
+  size_t nts = tm->dimLength->data[0]; // number of new training vectors
 
   XLAL_CHECK_REAL8( dlength == tm->dimLength->data[1], XLAL_EFUNC, "New training set contains waveforms of different length to the original set!" );
+  
+  gsl_vector_view deltaview;
+  XLAL_CALLGSL( deltaview = gsl_vector_view_array(delta->data, delta->length) );
+  
+  // get projection errors of new test model set against the reduced basis
+  REAL8Vector *projerr = NULL;
+  LALInferenceValidateREAL8OrthonormalBasis( &projerr, delta, *RB, testmodelsnew );
 
-  UINT4Vector *dims = XLALCreateUINT4Vector( 2 );
-  dims->data[0] = tm->dimLength->data[0];
-  dims->data[1] = dlength;
-  size_t ntsorig = tm->dimLength->data[0];
+  // check for errors outside the tolerance value, and reduced new training set accordingly
+  size_t keepcounter = 0;
+  gsl_matrix_view tmview;
+  tmview = gsl_matrix_view_array(tm->data, nts, dlength);
+  for ( k = 0; k < projerr->length; k++ ){
+    if ( projerr->data[k] > tolerance ){
+      if ( keepcounter != k ){
+        gsl_vector_view row;
+        row = gsl_matrix_row( &tmview.matrix, k );
 
-  /* get projection errors for each test model */
-  for ( k = 0; k < nts; k++ ){
-    REAL8 projerr = 0.;
-    gsl_vector *proj;
-    gsl_vector_view testrow;
-    XLAL_CALLGSL( proj = gsl_vector_calloc(dlength) ); /* allocated to zero */
-    XLAL_CALLGSL( testrow = gsl_matrix_row(&testmodelsview.matrix, k) );
-
-    /* loop over reduced basis getting the projection coefficients */
-    for ( j = 0; j < RBview.matrix.size1; j++ ){
-      REAL8 projcoeff;
-      gsl_vector *RBrow;
-      XLAL_CALLGSL( RBrow = gsl_vector_alloc( RBview.matrix.size2 ) );
-      XLAL_CALLGSL( gsl_matrix_get_row( RBrow, &RBview.matrix, j ) );
-
-      /* get dot product of reduced basis vector with test model */
-      projcoeff = weighted_dot_product(&deltaview.vector, RBrow, &testrow.vector);
-
-      XLAL_CALLGSL( gsl_vector_scale( RBrow, projcoeff ) );
-      XLAL_CALLGSL( gsl_vector_add( proj, RBrow ) );
-      XLAL_CALLGSL( gsl_vector_free( RBrow ) );
+        // un-scale row (so that it works with the reduced basis generation function below)
+        if ( delta->length == 1 ){
+          XLAL_CALLGSL( gsl_vector_scale(&row.vector, delta->data[0]) );
+        }
+        else if ( row.vector.size == delta->length ){
+          XLAL_CALLGSL( gsl_vector_mul(&row.vector, &deltaview.vector) );
+        }
+        else{
+          XLAL_ERROR_REAL8(XLAL_EFUNC, "Vector of weights must either contain a single value, or be the same length as the other input vectors.");
+        }
+        
+        gsl_matrix_set_row( &tmview.matrix, keepcounter, &row.vector ); // copy row to earlier in the matrix
+      }
+      keepcounter++;
     }
-
-    /* get residual */
-    XLAL_CALLGSL( gsl_vector_sub( proj, &testrow.vector ) );
-    projerr = weighted_dot_product(&deltaview.vector, proj, proj);
-
-    /* check projection error against tolerance and add to training waveforms if required */
-    if ( fabs(projerr) > tolerance ) {
-      gsl_matrix_view tmview;
-      dims->data[0] = tm->dimLength->data[0] + 1;
-      tm = XLALResizeREAL8Array( tm, dims );
-      tmview = gsl_matrix_view_array(tm->data, tm->dimLength->data[0], tm->dimLength->data[1]);
-      gsl_matrix_set_row(&tmview.matrix, tm->dimLength->data[0]-1, &testrow.vector);
-    }
-    if ( fabs(projerr) > maxprojerr ){ maxprojerr = fabs(projerr); }
-
-    XLAL_CALLGSL( gsl_vector_free( proj ) );
   }
 
-  XLALDestroyUINT4Vector( dims );
+  XLALDestroyREAL8Vector( projerr );
+
+  if ( keepcounter == 0 ){ return maxprojerr; } // nothing was above the tolerance
+
+  // add vectors used to produce the orgial reduced basis
+  UINT4Vector *dims = XLALCreateUINT4Vector( 2 );
+  dims->data[0] = RBin->dimLength->data[0] + keepcounter;
+  dims->data[1] = dlength;
+  tm = XLALResizeREAL8Array( tm, dims );
+  tmview = gsl_matrix_view_array(tm->data, dims->data[0], dlength);
+
+  gsl_matrix_view otmview;
+  otmview = gsl_matrix_view_array(testmodels->data, testmodels->dimLength->data[0], dlength); // view of original training set
+  for ( k = 0; k < RBin->dimLength->data[0]; k++ ){
+    gsl_vector_view row;
+    row = gsl_matrix_row( &otmview.matrix, gp->data[k] );
+
+    // un-scale row (so that it works with the reduced basis generation function below)
+    if ( delta->length == 1 ){
+      XLAL_CALLGSL( gsl_vector_scale(&row.vector, delta->data[0]) );
+    }
+    else if ( row.vector.size == delta->length ){
+      XLAL_CALLGSL( gsl_vector_mul(&row.vector, &deltaview.vector) );
+    }
+    else{
+      XLAL_ERROR_REAL8(XLAL_EFUNC, "Vector of weights must either contain a single value, or be the same length as the other input vectors.");
+    }
+
+    gsl_matrix_set_row( &tmview.matrix, keepcounter + k, &row.vector );
+  }
 
   /* recalculate the reduced basis using the updated training set */
-  if ( tm->dimLength->data[0] > ntsorig ){
-    XLALDestroyREAL8Array( *RB ); /* remove current basis, so it is rebuilt using the entire new training set */
-    *RB = NULL;
-    maxprojerr = LALInferenceGenerateREAL8OrthonormalBasis(RB, delta, tolerance, tm);
-  }
+  XLALDestroyREAL8Array( *RB ); /* remove current basis, so it is rebuilt using the entire new training set */
+  *RB = NULL;
+  XLALDestroyUINT4Vector( *greedypoints );
+  *greedypoints = NULL;
+  maxprojerr = LALInferenceGenerateREAL8OrthonormalBasis(RB, delta, 0.0, &tm, greedypoints); // set tolerance to 0, so that points are always added
+
+  XLALDestroyUINT4Vector( dims );
 
   return maxprojerr;
 }
 
 
 /**
- * \brief Test the complex reduced basis against another set of waveforms
+ * \brief Validate the complex reduced basis against another set of waveforms
+ *
+ * This function projects a set of waveforms onto the reduced basis and
+ * checks that the residuals are within a given tolerance. It returns
+ * the projection errors.
+ *
+ * Note that the projection error returned are the square of the residual
+ * errors, as is used as the criterion for adding new bases in the reduced
+ * basis generation function \c LALInferenceGenerateCOMPLEX16OrthonormalBasis.
+ * This is different to the \c validation.cpp code in <a href="https://bitbucket.org/sfield83/greedycpp">greedycpp</a>,
+ * which returns the square root of the value we return.
+ *
+ * @param[out] projerr The projection errors (square of the residual) for each test waveform.
+ * @param[in] delta The time/frequency step(s) in the training set used to normalise the models.
+ * This can be a vector containing just one value.
+ * @param[in] RB The reduced basis set
+ * @param[in] testmodels The set of waveform models to project onto the basis (these will
+ * be changed by this function, as the waveforms will get normalised).
+ *
+ * \sa LALInferenceTestCOMPLEX16OrthonormalBasis
+ */
+void LALInferenceValidateCOMPLEX16OrthonormalBasis(REAL8Vector **projerr,
+                                                   const REAL8Vector *delta,
+                                                   const COMPLEX16Array *RB,
+                                                   COMPLEX16Array **testmodels){
+  XLAL_CHECK_VOID( delta != NULL, XLAL_EFUNC, "Vector of 'delta' values is NULL!" );
+  XLAL_CHECK_VOID( RB != NULL, XLAL_EFUNC, "Reduced basis is NULL!" );
+  XLAL_CHECK_VOID( RB->dimLength->length == 2, XLAL_EFUNC, "Reduced basis set does not have 2 dimensions!" );
+
+  COMPLEX16Array *tm = NULL;
+  tm = *testmodels;
+
+  size_t dlength = RB->dimLength->data[1], nts = tm->dimLength->data[0];
+  size_t k = 0, j = 0;
+  gsl_vector_complex *r_tmp, *testrow;
+
+  /* normalise the test set */
+  gsl_vector_view deltaview;
+  XLAL_CALLGSL( deltaview = gsl_vector_view_array(delta->data, delta->length) );
+  gsl_matrix_complex_view testmodelsview;
+  XLAL_CALLGSL( testmodelsview = gsl_matrix_complex_view_array((double *)tm->data, nts, dlength) );
+  complex_normalise_training_set(&deltaview.vector, &testmodelsview.matrix);
+
+  gsl_matrix_complex_view RBview;
+  RBview = gsl_matrix_complex_view_array((double *)RB->data, RB->dimLength->data[0], dlength);
+
+  XLAL_CALLGSL( testrow = gsl_vector_complex_alloc(dlength) );
+  XLAL_CALLGSL( r_tmp = gsl_vector_complex_alloc(RB->dimLength->data[0]) );
+
+  REAL8Vector *pe = NULL;
+  pe = XLALCreateREAL8Vector( nts );
+  *projerr = pe;
+
+  /* get projection errors for each test model */
+  for ( k = 0; k < nts; k++ ){
+    pe->data[k] = 0.;
+    REAL8 r_tmp_nrm = 0.;
+
+    XLAL_CALLGSL( gsl_matrix_complex_get_row(testrow, &testmodelsview.matrix, k) );
+
+    REAL8 nrm = complex_normalisation(&deltaview.vector, testrow); // normalisation (should be 1 as test models are normalised)
+
+    // un-scale testrow (gsl_vector_complex_mul doesn't work when delta is a real vector)
+    if ( delta->length == 1 || testrow->size == deltaview.vector.size ){
+      for ( j = 0; j < dlength; j++ ){
+        gsl_complex ctmp;
+        XLAL_CALLGSL( ctmp = gsl_vector_complex_get( testrow, j ) );
+        if ( delta->length == 1 ){
+          XLAL_CALLGSL( ctmp = gsl_complex_mul_real( ctmp, delta->data[0] ) );
+        }
+        else{
+          XLAL_CALLGSL( ctmp = gsl_complex_mul_real( ctmp, delta->data[j] ) );
+        }
+        XLAL_CALLGSL( gsl_vector_complex_set( testrow, j, ctmp ) );
+      }
+    }
+    else{
+      XLAL_ERROR_VOID( XLAL_EFUNC, "Vector of weights must either contain a single value, or be the same length as the other input vectors." );
+    }
+    
+    // get complex conjugate
+    for ( j = 0; j < testrow->size; j++ ){ testrow->data[2*j+1] = -testrow->data[2*j+1]; }
+
+    // get projections
+    XLAL_CALLGSL( gsl_blas_zgemv( CblasNoTrans, GSL_COMPLEX_ONE, &RBview.matrix, testrow, GSL_COMPLEX_ZERO, r_tmp ) );
+
+    r_tmp_nrm = gsl_blas_dznrm2(r_tmp);
+    pe->data[k] = nrm - r_tmp_nrm*r_tmp_nrm;
+
+    if ( pe->data[k] < 0. ) { pe->data[k] = 1.0e-16; } // floating point error can trigger this
+  }
+
+  XLAL_CALLGSL( gsl_vector_complex_free( testrow ) );
+  XLAL_CALLGSL( gsl_vector_complex_free( r_tmp ) );
+}
+
+
+/**
+ * \brief Test the reduced basis against another set of waveforms
  *
  * This function projects a set of waveforms onto the reduced basis and
  * checks that the residuals are within a given tolerance
  *
  * @param[in] delta The time/frequency step(s) in the training set used to normalise the models.
  * This can be a vector containing just one value.
- * @param[in] tolerance The allowed residual tolerence for the test waveforms
+ * @param[in] tolerance The allowed residual (squared) tolerence for the test waveforms
  * @param[in] RB The reduced basis set
  * @param[in] testmodels The set of waveform models to project onto the basis
  *
  * @return Returns \c XLAL_SUCCESS if all test waveforms meet the tolerance
+ *
+ * \sa LALInferenceValidateCOMPLEX16OrthonormalBasis
  */
-INT4 LALInferenceTestCOMPLEX16OrthonormalBasis(REAL8Vector *delta,
+INT4 LALInferenceTestCOMPLEX16OrthonormalBasis(const REAL8Vector *delta,
                                                REAL8 tolerance,
-                                               COMPLEX16Array *RB,
-                                               COMPLEX16Array *testmodels){
-  XLAL_CHECK( tolerance > 0, XLAL_EFUNC, "Tolerance is less than, or equal to, zero!" );
+                                               const COMPLEX16Array *RB,
+                                               COMPLEX16Array **testmodels){
+  XLAL_CHECK( delta != NULL, XLAL_EFUNC, "Vector of 'delta' values is NULL!" );
   XLAL_CHECK( RB != NULL, XLAL_EFUNC, "Reduced basis is NULL!" );
   XLAL_CHECK( RB->dimLength->length == 2, XLAL_EFUNC, "Reduced basis set does not have 2 dimensions!" );
-  XLAL_CHECK( testmodels != NULL, XLAL_EFUNC, "Set of test models is NULL!" );
-  XLAL_CHECK( testmodels->dimLength->length == 2, XLAL_EFUNC, "Test set does not have 2 dimensions!" );
+  XLAL_CHECK( tolerance > 0, XLAL_EFUNC, "Tolerance is less than, or equal to, zero!" );
 
-  size_t dlength = testmodels->dimLength->data[1], nts = testmodels->dimLength->data[0];
-  size_t j = 0, k = 0;
+  COMPLEX16Array *tm = NULL;
+  tm = *testmodels;
 
-  /* normalise the test set */
-  gsl_vector_view deltaview;
-  XLAL_CALLGSL( deltaview = gsl_vector_view_array(delta->data, delta->length) );
-  gsl_matrix_complex_view testmodelsview;
-  XLAL_CALLGSL( testmodelsview = gsl_matrix_complex_view_array((double *)testmodels->data, nts, dlength) );
-  complex_normalise_training_set(&deltaview.vector, &testmodelsview.matrix);
+  size_t nts = tm->dimLength->data[0], k = 0;
 
-  gsl_matrix_complex_view RBview;
-  RBview = gsl_matrix_complex_view_array((double *)RB->data, RB->dimLength->data[0], dlength);
+  REAL8Vector *projerr = NULL;
 
-  /* get projection errors for each test model */
+  LALInferenceValidateCOMPLEX16OrthonormalBasis(&projerr, delta, RB, testmodels);
+
   for ( k = 0; k < nts; k++ ){
-    gsl_complex projerr;
-    gsl_vector_complex *proj;
-    gsl_vector_complex_view testrow;
-    XLAL_CALLGSL( proj = gsl_vector_complex_calloc(dlength) ); /* allocated to zero */
-    XLAL_CALLGSL( testrow = gsl_matrix_complex_row(&testmodelsview.matrix, k) );
-
-    /* loop over reduced basis getting the projection coefficients */
-    for ( j = 0; j < RBview.matrix.size1; j++ ){
-      gsl_complex projcoeff;
-      gsl_vector_complex *RBrow;
-      XLAL_CALLGSL( RBrow = gsl_vector_complex_alloc( RBview.matrix.size2 ) );
-      XLAL_CALLGSL( gsl_matrix_complex_get_row( RBrow, &RBview.matrix, j ) );
-
-      /* get dot product of reduced basis vector with test model */
-      projcoeff = complex_weighted_dot_product(&deltaview.vector, RBrow, &testrow.vector);
-
-      XLAL_CALLGSL( gsl_vector_complex_scale( RBrow, projcoeff ) );
-      XLAL_CALLGSL( gsl_vector_complex_add( proj, RBrow ) );
-      XLAL_CALLGSL( gsl_vector_complex_free( RBrow ) );
-    }
-
-    /* get residual */
-    XLAL_CALLGSL( gsl_vector_complex_sub( proj, &testrow.vector ) );
-    projerr = complex_weighted_dot_product(&deltaview.vector, proj, proj);
-
-    //fprintf(stderr, "%zu: Projected error = %le ", k+1, GSL_REAL(projerr));
-
     /* check projection error against tolerance */
-    if ( GSL_REAL(projerr) > tolerance ) { return XLAL_FAILURE; }
-
-    XLAL_CALLGSL( gsl_vector_complex_free( proj ) );
+    if ( projerr->data[k] > tolerance ) {
+      XLALDestroyREAL8Vector( projerr );
+      return XLAL_FAILURE;
+    }
   }
+
+  XLALDestroyREAL8Vector( projerr );
 
   return XLAL_SUCCESS;
 }
@@ -1031,96 +1542,118 @@ INT4 LALInferenceTestCOMPLEX16OrthonormalBasis(REAL8Vector *delta,
  * This can be a vector containing just one value.
  * @param[in] tolerance The allowed residual tolerence for the test waveforms
  * @param[in] RB The reduced basis set
+ * @param[in] greedypoints The rows in \c testmodels that formed the reduced basis
  * @param[in] testmodels The set of waveform models used to produce the reduced basis
- * @param[in] testmodelsnew A new set of waveforms to project onto the current reduced basis
+ * @param[in] testmodelsnew A new set of waveforms to project onto the current reduced basis (these will
+ * be changed by this function, as the waveforms will get normalised when pass to
+ * \c LALInferenceValidateCOMPLEX16OrthonormalBasis, and editted to contain the new set of training waveforms
+ * from which the enriched basis was formed)
  *
  * @return Returns the maximum projection error of the new basis set
  */
-REAL8 LALInferenceEnrichCOMPLEX16Basis(REAL8Vector *delta,
+REAL8 LALInferenceEnrichCOMPLEX16Basis(const REAL8Vector *delta,
                                        REAL8 tolerance,
                                        COMPLEX16Array **RB,
-                                       COMPLEX16Array **testmodels,
-                                       COMPLEX16Array *testmodelsnew){
+                                       UINT4Vector **greedypoints,
+                                       const COMPLEX16Array *testmodels,
+                                       COMPLEX16Array **testmodelsnew){
   XLAL_CHECK( delta != NULL, XLAL_EFUNC, "Vector of 'delta' values is NULL!" );
   XLAL_CHECK( tolerance > 0, XLAL_EFUNC, "Tolerance is less than, or equal to, zero!" );
 
-  size_t dlength = testmodelsnew->dimLength->data[1], nts = testmodelsnew->dimLength->data[0];
-  size_t j = 0, k = 0;
+  size_t dlength = testmodels->dimLength->data[1]; // length of training vectors
+  size_t k = 0, j = 0;
 
   REAL8 maxprojerr = 0.;
 
-  /* normalise the test set */
-  gsl_vector_view deltaview;
-  XLAL_CALLGSL( deltaview = gsl_vector_view_array(delta->data, delta->length) );
-  gsl_matrix_complex_view testmodelsview;
-  XLAL_CALLGSL( testmodelsview = gsl_matrix_complex_view_array((double *)testmodelsnew->data, nts, dlength) );
-  complex_normalise_training_set(&deltaview.vector, &testmodelsview.matrix);
-
   COMPLEX16Array *RBin = NULL;
   RBin = *RB;
+  UINT4Vector *gp = NULL;
+  gp = *greedypoints;
   COMPLEX16Array *tm = NULL;
-  tm = *testmodels;
+  tm = *testmodelsnew;
 
-  gsl_matrix_complex_view RBview;
-  RBview = gsl_matrix_complex_view_array((double *)RBin->data, RBin->dimLength->data[0], dlength);
+  size_t nts = tm->dimLength->data[0]; // number of new training vectors
 
   XLAL_CHECK_REAL8( dlength == tm->dimLength->data[1], XLAL_EFUNC, "New training set contains waveforms of different length to the original set!" );
 
-  UINT4Vector *dims = XLALCreateUINT4Vector( 2 );
-  dims->data[0] = tm->dimLength->data[0];
-  dims->data[1] = dlength;
-  size_t ntsorig = tm->dimLength->data[0];
+  // get projection errors of new test model set against the reduced basis
+  REAL8Vector *projerr = NULL;
+  LALInferenceValidateCOMPLEX16OrthonormalBasis( &projerr, delta, *RB, testmodelsnew );
 
-  /* get projection errors for each test model */
-  for ( k = 0; k < nts; k++ ){
-    gsl_complex projerr;
-    gsl_vector_complex *proj;
-    gsl_vector_complex_view testrow;
-    XLAL_CALLGSL( proj = gsl_vector_complex_calloc(dlength) ); /* allocated to zero */
-    XLAL_CALLGSL( testrow = gsl_matrix_complex_row(&testmodelsview.matrix, k) );
+  // check for errors outside the tolerance value, and reduced new training set accordingly
+  size_t keepcounter = 0;
+  gsl_matrix_complex_view tmview;
+  tmview = gsl_matrix_complex_view_array((double *)tm->data, nts, dlength);
+  for ( k = 0; k < projerr->length; k++ ){
+    if ( projerr->data[k] > tolerance ){
+      if ( keepcounter != k ){
+        gsl_vector_complex_view row;
+        row = gsl_matrix_complex_row( &tmview.matrix, k );
 
-    /* loop over reduced basis getting the projection coefficients */
-    for ( j = 0; j < RBview.matrix.size1; j++ ){
-      gsl_complex projcoeff;
-      gsl_vector_complex *RBrow;
-      XLAL_CALLGSL( RBrow = gsl_vector_complex_alloc( RBview.matrix.size2 ) );
-      XLAL_CALLGSL( gsl_matrix_complex_get_row( RBrow, &RBview.matrix, j ) );
-
-      /* get dot product of reduced basis vector with test model */
-      projcoeff = complex_weighted_dot_product(&deltaview.vector, RBrow, &testrow.vector);
-
-      XLAL_CALLGSL( gsl_vector_complex_scale( RBrow, projcoeff ) );
-      XLAL_CALLGSL( gsl_vector_complex_add( proj, RBrow ) );
-      XLAL_CALLGSL( gsl_vector_complex_free( RBrow ) );
+        // un-scale row (so that this works with the RB generation function later)
+        if ( delta->length == 1 || row.vector.size == delta->length ){
+          for ( j = 0; j < row.vector.size; j++ ){
+            gsl_complex ctmp;
+            XLAL_CALLGSL( ctmp = gsl_vector_complex_get( &row.vector, j ) );
+            if ( delta->length == 1 ){
+              XLAL_CALLGSL( ctmp = gsl_complex_mul_real( ctmp, delta->data[0] ) );
+            }
+            else{
+              XLAL_CALLGSL( ctmp = gsl_complex_mul_real( ctmp, delta->data[j] ) );
+            }
+            XLAL_CALLGSL( gsl_vector_complex_set( &row.vector, j, ctmp ) );
+          }
+        }
+        else{
+          XLAL_ERROR_REAL8( XLAL_EFUNC, "Vector of weights must either contain a single value, or be the same length as the other input vectors." );
+        }
+        gsl_matrix_complex_set_row( &tmview.matrix, keepcounter, &row.vector ); // copy row to earlier in the matrix
+      }
+      keepcounter++;
     }
-
-    /* get residual */
-    XLAL_CALLGSL( gsl_vector_complex_sub( proj, &testrow.vector ) );
-    projerr = complex_weighted_dot_product(&deltaview.vector, proj, proj);
-
-    //fprintf(stderr, "%zu: Projected error = %le\n", k+1, GSL_REAL(projerr));
-
-    /* check projection error against tolerance */
-    if ( GSL_REAL(projerr) > tolerance ) {
-      gsl_matrix_complex_view tmview;
-      dims->data[0] = tm->dimLength->data[0] + 1;
-      tm = XLALResizeCOMPLEX16Array( tm, dims );
-      tmview = gsl_matrix_complex_view_array((double *)tm->data, tm->dimLength->data[0], tm->dimLength->data[1]);
-      gsl_matrix_complex_set_row(&tmview.matrix, tm->dimLength->data[0]-1, &testrow.vector);
-    }
-    if ( GSL_REAL(projerr) > maxprojerr ){ maxprojerr = GSL_REAL(projerr); }
-
-    XLAL_CALLGSL( gsl_vector_complex_free( proj ) );
   }
 
-  XLALDestroyUINT4Vector( dims );
+  XLALDestroyREAL8Vector( projerr );
+
+  if ( keepcounter == 0 ){ return maxprojerr; } // nothing was above the tolerance
+
+  // add vectors used to produce the orgial reduced basis
+  UINT4Vector *dims = XLALCreateUINT4Vector( 2 );
+  dims->data[0] = RBin->dimLength->data[0] + keepcounter;
+  dims->data[1] = dlength;
+  tm = XLALResizeCOMPLEX16Array( tm, dims );
+  tmview = gsl_matrix_complex_view_array((double *)tm->data, dims->data[0], dlength);
+
+  gsl_matrix_complex_view otmview;
+  otmview = gsl_matrix_complex_view_array((double *)testmodels->data, nts, dlength); // view of original training set
+  for ( k = 0; k < RBin->dimLength->data[0]; k++ ){
+    gsl_vector_complex_view row;
+    row = gsl_matrix_complex_row( &otmview.matrix, gp->data[k] );
+
+    // un-scale row (so that this works with the RB generation function later)
+    for ( j = 0; j < row.vector.size; j++ ){
+      gsl_complex ctmp;
+      XLAL_CALLGSL( ctmp = gsl_vector_complex_get( &row.vector, j ) );
+      if ( delta->length == 1 ){
+        XLAL_CALLGSL( ctmp = gsl_complex_mul_real( ctmp, delta->data[0] ) );
+      }
+      else{
+        XLAL_CALLGSL( ctmp = gsl_complex_mul_real( ctmp, delta->data[j] ) );
+      }
+      XLAL_CALLGSL( gsl_vector_complex_set( &row.vector, j, ctmp ) );
+    }
+
+    gsl_matrix_complex_set_row( &tmview.matrix, keepcounter + k, &row.vector );
+  }
 
   /* recalculate the reduced basis using the updated training set */
-  if ( tm->dimLength->data[0] > ntsorig ){
-    XLALDestroyCOMPLEX16Array( *RB ); /* remove current basis, so it is rebuilt using the entire new training set */
-    *RB = NULL;
-    maxprojerr = LALInferenceGenerateCOMPLEX16OrthonormalBasis(RB, delta, tolerance, tm);
-  }
+  XLALDestroyCOMPLEX16Array( *RB ); /* remove current basis, so it is rebuilt using the entire new training set */
+  *RB = NULL;
+  XLALDestroyUINT4Vector( *greedypoints );
+  *greedypoints = NULL;
+  maxprojerr = LALInferenceGenerateCOMPLEX16OrthonormalBasis(RB, delta, 0.0, &tm, greedypoints); // set tolerance to 0, so that points are always added
+
+  XLALDestroyUINT4Vector( dims );
 
   return maxprojerr;
 }
@@ -1238,10 +1771,6 @@ LALInferenceCOMPLEXROQInterpolant *LALInferenceGenerateCOMPLEXROQInterpolant(COM
   REAL8 *V = XLALMalloc(sizeof(COMPLEX16));
   gsl_matrix_complex_view Vview;
 
-  gsl_complex scale1, scale0;
-  GSL_SET_COMPLEX(&scale1, 1., 0.);
-  GSL_SET_COMPLEX(&scale0, 0., 0.);
-
   LALInferenceCOMPLEXROQInterpolant *interp = XLALMalloc(sizeof(LALInferenceCOMPLEXROQInterpolant));
   int idmax = 0, newidx = 0;
 
@@ -1280,7 +1809,7 @@ LALInferenceCOMPLEXROQInterpolant *LALInferenceGenerateCOMPLEXROQInterpolant(COM
       XLAL_CALLGSL( gsl_vector_complex_set(subbasis, k, gsl_vector_complex_get(&subview.vector, interp->nodes[k])) );
     }
 
-    XLAL_CALLGSL( gsl_blas_zgemv(CblasTrans, scale1, &Bview.matrix, subbasis, scale0, interpolant) );
+    XLAL_CALLGSL( gsl_blas_zgemv(CblasTrans, GSL_COMPLEX_ONE, &Bview.matrix, subbasis, GSL_COMPLEX_ZERO, interpolant) );
 
     /* get residuals of interpolant */
     XLAL_CALLGSL( gsl_vector_complex_sub(interpolant, &subview.vector) );
@@ -1401,7 +1930,7 @@ REAL8Vector *LALInferenceGenerateQuadraticWeights(REAL8Array *B, REAL8Vector *va
 COMPLEX16Vector *LALInferenceGenerateCOMPLEX16LinearWeights(COMPLEX16Array *B, COMPLEX16Vector *data, REAL8Vector *vars){
   COMPLEX16Vector *weights = NULL;
   gsl_vector_complex *conjdata;
-  gsl_complex scale1, scale0, cconj;
+  gsl_complex cconj;
   size_t i = 0;
 
   /* get view of the interpolant matrix */
@@ -1426,9 +1955,7 @@ COMPLEX16Vector *LALInferenceGenerateCOMPLEX16LinearWeights(COMPLEX16Array *B, C
   weights = XLALCreateCOMPLEX16Vector( B->dimLength->data[0] );
   gsl_vector_complex_view weightsview;
   XLAL_CALLGSL( weightsview = gsl_vector_complex_view_array((double *)weights->data, weights->length) );
-  GSL_SET_COMPLEX(&scale1, 1., 0.);
-  GSL_SET_COMPLEX(&scale0, 0., 0.);
-  XLAL_CALLGSL( gsl_blas_zgemv(CblasNoTrans, scale1, &Bview.matrix, conjdata, scale0, &weightsview.vector) );
+  XLAL_CALLGSL( gsl_blas_zgemv(CblasNoTrans, GSL_COMPLEX_ONE, &Bview.matrix, conjdata, GSL_COMPLEX_ZERO, &weightsview.vector) );
   XLAL_CALLGSL( gsl_vector_complex_free(conjdata) );
 
   return weights;
