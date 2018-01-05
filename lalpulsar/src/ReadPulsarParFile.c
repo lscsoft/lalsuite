@@ -230,6 +230,19 @@ REAL8 PulsarGetREAL8ParamOrZero( const PulsarParameters *pars, const CHAR *name 
 }
 
 
+UINT4 PulsarGetUINT4Param( const PulsarParameters *pars, const CHAR *name ){
+  /* check type is a UINT4 */
+  if ( PulsarGetParamType( pars, name ) == PULSARTYPE_UINT4_t ){ return *(UINT4 *)PulsarGetParam( pars, name ); }
+  else{ XLAL_ERROR( XLAL_EINVAL, "Used wrong type for required parameter"  ); }
+}
+
+
+UINT4 PulsarGetUINT4ParamOrZero( const PulsarParameters *pars, const CHAR *name ){
+  /* if parameter is there return it otherwise return zero */
+  return PulsarCheckParam(pars, name) ? PulsarGetUINT4Param(pars, name) : 0;
+}
+
+
 const CHAR* PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name ){
   /* check type is a string */
   if ( PulsarGetParamType( pars, name ) == PULSARTYPE_string_t ){

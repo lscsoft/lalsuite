@@ -420,6 +420,16 @@ REAL8 PulsarGetREAL8Param( const PulsarParameters *pars, const CHAR *name );
  */
 REAL8 PulsarGetREAL8ParamOrZero( const PulsarParameters *pars, const CHAR *name );
 
+/** \brief Return a \c UINT4 parameter
+ *
+ * This function will call \c PulsarGetParam for a \c UINT4 parameter and properly cast it for returning.
+ */
+UINT4 PulsarGetUINT4Param( const PulsarParameters *pars, const CHAR *name );
+
+/** \brief Return a \c UINT4 parameter if it exists, otherwise return zero
+ */
+UINT4 PulsarGetUINT4ParamOrZero( const PulsarParameters *pars, const CHAR *name );
+
 #ifdef SWIG   /* SWIG interface directives */
 SWIGLAL(OWNS_THIS_STRING(const CHAR*, value));
 #endif
