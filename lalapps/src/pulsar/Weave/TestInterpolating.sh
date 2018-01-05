@@ -19,8 +19,7 @@ echo
 
 echo "=== Extract reference time from WeaveSetup.fits ==="
 set -x
-${fitsdir}/lalapps_fits_header_getval "WeaveSetup.fits[0]" 'DATE-OBS GPS' > tmp
-ref_time=`cat tmp | xargs printf "%.9f"`
+ref_time=`${fitsdir}/lalapps_fits_header_getval "WeaveSetup.fits[0]" 'DATE-OBS GPS' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%.9f", $1}'`
 set +x
 echo
 
@@ -51,8 +50,7 @@ echo "=== Check for non-singular semicoherent dimensions ==="
 set -x
 semi_ntmpl_prev=1
 for dim in SSKYA SSKYB NU1DOT NU0DOT; do
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" "NSEMITMPL ${dim}" > tmp
-    semi_ntmpl=`cat tmp | xargs printf "%d"`
+    semi_ntmpl=`${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" "NSEMITMPL ${dim}" | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
     expr ${semi_ntmpl} '>' ${semi_ntmpl_prev}
     semi_ntmpl_prev=${semi_ntmpl}
 done
@@ -62,10 +60,8 @@ echo
 weave_recomp_threshold=0.0
 echo "=== Check that number of recomputed results is below tolerance ==="
 set -x
-${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NCOHRES' > tmp
-coh_nres=`cat tmp | xargs printf "%d"`
-${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NCOHTPL' > tmp
-coh_ntmpl=`cat tmp | xargs printf "%d"`
+coh_nres=`${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NCOHRES' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+coh_ntmpl=`${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NCOHTPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
 awk "BEGIN { print recomp = ( ${coh_nres} - ${coh_ntmpl} ) / ${coh_ntmpl}; exit ( recomp <= ${weave_recomp_threshold} ? 0 : 1 ) }"
 expr ${coh_nres} '=' ${coh_ntmpl}
 set +x

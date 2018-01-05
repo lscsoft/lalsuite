@@ -57,8 +57,7 @@ for setup in short long; do
     set -x
     semi_ntmpl_prev=1
     for dim in SSKYA SSKYB NU1DOT NU0DOT; do
-        ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoMax.fits[0]" "NSEMITMPL ${dim}" > tmp
-        semi_ntmpl=`cat tmp | xargs printf "%d"`
+        semi_ntmpl=`${fitsdir}/lalapps_fits_header_getval "WeaveOutNoMax.fits[0]" "NSEMITMPL ${dim}" | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
         expr ${semi_ntmpl} '>' ${semi_ntmpl_prev}
         semi_ntmpl_prev=${semi_ntmpl}
     done
@@ -75,26 +74,22 @@ for setup in short long; do
 
     echo "=== Setup '${setup}': Check that number of coherent templates are equal ==="
     set -x
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoMax.fits[0]" 'NCOHTPL' > tmp
-    coh_ntmpl_no_max=`cat tmp | xargs printf "%d"`
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutMax.fits[0]" 'NCOHTPL' > tmp
-    coh_ntmpl_max=`cat tmp | xargs printf "%d"`
+    coh_ntmpl_no_max=`${fitsdir}/lalapps_fits_header_getval "WeaveOutNoMax.fits[0]" 'NCOHTPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    coh_ntmpl_max=`${fitsdir}/lalapps_fits_header_getval "WeaveOutMax.fits[0]" 'NCOHTPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
     expr ${coh_ntmpl_no_max} '=' ${coh_ntmpl_max}
     set +x
     echo
 
     echo "=== Setup '${setup}': Check that without a maximum cache number of recomputed results is below tolerance ==="
     set -x
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoMax.fits[0]" 'NCOHRES' > tmp
-    coh_nres_no_max=`cat tmp | xargs printf "%d"`
+    coh_nres_no_max=`${fitsdir}/lalapps_fits_header_getval "WeaveOutNoMax.fits[0]" 'NCOHRES' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
     awk "BEGIN { print recomp = ( ${coh_nres_no_max} - ${coh_ntmpl_no_max} ) / ${coh_ntmpl_no_max}; exit ( recomp <= ${weave_recomp_threshold} ? 0 : 1 ) }"
     set +x
     echo
 
     echo "=== Setup '${setup}': Check that with a maximum cache number of recomputed results is above tolerance ==="
     set -x
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutMax.fits[0]" 'NCOHRES' > tmp
-    coh_nres_max=`cat tmp | xargs printf "%d"`
+    coh_nres_max=`${fitsdir}/lalapps_fits_header_getval "WeaveOutMax.fits[0]" 'NCOHRES' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
     awk "BEGIN { print recomp = ( ${coh_nres_max} - ${coh_ntmpl_max} ) / ${coh_ntmpl_max}; exit ( recomp > ${weave_recomp_threshold} ? 0 : 1 ) }"
     set +x
     echo

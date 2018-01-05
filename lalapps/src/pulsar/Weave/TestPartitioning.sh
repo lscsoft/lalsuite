@@ -72,8 +72,7 @@ for setup in onefreq short long; do
             set -x
             semi_ntmpl_prev=1
             for dim in SSKYA SSKYB NU1DOT NU0DOT; do
-                ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoPart.fits[0]" "NSEMITMPL ${dim}" > tmp
-                semi_ntmpl=`cat tmp | xargs printf "%d"`
+                semi_ntmpl=`${fitsdir}/lalapps_fits_header_getval "WeaveOutNoPart.fits[0]" "NSEMITMPL ${dim}" | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
                 expr ${semi_ntmpl} '>' ${semi_ntmpl_prev}
                 semi_ntmpl_prev=${semi_ntmpl}
             done
@@ -95,15 +94,11 @@ for setup in onefreq short long; do
 
     echo "=== Setup '${setup}': Check that number of recomputed results is below tolerance ==="
     set -x
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoPart.fits[0]" 'NCOHRES' > tmp
-    coh_nres_no_part=`cat tmp | xargs printf "%d"`
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoPart.fits[0]" 'NCOHTPL' > tmp
-    coh_ntmpl_no_part=`cat tmp | xargs printf "%d"`
+    coh_nres_no_part=`${fitsdir}/lalapps_fits_header_getval "WeaveOutNoPart.fits[0]" 'NCOHRES' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    coh_ntmpl_no_part=`${fitsdir}/lalapps_fits_header_getval "WeaveOutNoPart.fits[0]" 'NCOHTPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
     awk "BEGIN { print recomp = ( ${coh_nres_no_part} - ${coh_ntmpl_no_part} ) / ${coh_ntmpl_no_part}; exit ( recomp <= ${weave_recomp_threshold_no_part} ? 0 : 1 ) }"
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutPart.fits[0]" 'NCOHRES' > tmp
-    coh_nres_part=`cat tmp | xargs printf "%d"`
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutPart.fits[0]" 'NCOHTPL' > tmp
-    coh_ntmpl_part=`cat tmp | xargs printf "%d"`
+    coh_nres_part=`${fitsdir}/lalapps_fits_header_getval "WeaveOutPart.fits[0]" 'NCOHRES' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    coh_ntmpl_part=`${fitsdir}/lalapps_fits_header_getval "WeaveOutPart.fits[0]" 'NCOHTPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
     awk "BEGIN { print recomp = ( ${coh_nres_part} - ${coh_ntmpl_part} ) / ${coh_ntmpl_part}; exit ( recomp <= ${weave_recomp_threshold_part} ? 0 : 1 ) }"
     set +x
     echo

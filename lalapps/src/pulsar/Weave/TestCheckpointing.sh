@@ -37,8 +37,7 @@ echo "=== Check for non-singular semicoherent dimensions ==="
 set -x
 semi_ntmpl_prev=1
 for dim in SSKYA SSKYB NU1DOT NU0DOT; do
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoCkpt.fits[0]" "NSEMITMPL ${dim}" > tmp
-    semi_ntmpl=`cat tmp | xargs printf "%d"`
+    semi_ntmpl=`${fitsdir}/lalapps_fits_header_getval "WeaveOutNoCkpt.fits[0]" "NSEMITMPL ${dim}" | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
     expr ${semi_ntmpl} '>' ${semi_ntmpl_prev}
     semi_ntmpl_prev=${semi_ntmpl}
 done
@@ -95,11 +94,9 @@ for opt in nopart freqpart f1dotpart allpart; do
 
     echo "=== Options '${opt}': Check number of times output results have been restored from a checkpoint ==="
     set -x
-    ${fitsdir}/lalapps_fits_header_getval "WeaveCkpt.fits[0]" CKPTCNT > tmp
-    ckpt_count=`cat tmp | xargs printf "%d"`
+    ckpt_count=`${fitsdir}/lalapps_fits_header_getval "WeaveCkpt.fits[0]" CKPTCNT | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
     expr ${ckpt_count} '=' 2
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutCkpt.fits[0]" NUMCKPT > tmp
-    num_ckpt=`cat tmp | xargs printf "%d"`
+    num_ckpt=`${fitsdir}/lalapps_fits_header_getval "WeaveOutCkpt.fits[0]" NUMCKPT | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
     expr ${num_ckpt} '=' ${ckpt_count}
     set +x
     echo

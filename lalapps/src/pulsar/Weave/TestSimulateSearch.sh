@@ -54,8 +54,7 @@ for setup in short mid long; do
     set -x
     semi_ntmpl_prev=1
     for dim in SSKYA SSKYB NU1DOT NU0DOT; do
-        ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" "NSEMITMPL ${dim}" > tmp
-        semi_ntmpl=`cat tmp | xargs printf "%d"`
+        semi_ntmpl=`${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" "NSEMITMPL ${dim}" | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
         expr ${semi_ntmpl} '>' ${semi_ntmpl_prev}
         semi_ntmpl_prev=${semi_ntmpl}
     done
@@ -82,12 +81,9 @@ for setup in short mid long; do
 
     echo "=== Setup '${setup}': Check number of coherent results ==="
     set -x
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" 'NCOHRES' > tmp
-    coh_nres_no_sim=`cat tmp | xargs printf "%d"`
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutSimFull.fits[0]" 'NCOHRES' > tmp
-    coh_nres_sim_full=`cat tmp | xargs printf "%d"`
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutSimMin.fits[0]" 'NCOHRES' > tmp
-    coh_nres_sim_min=`cat tmp | xargs printf "%d"`
+    coh_nres_no_sim=`${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" 'NCOHRES' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    coh_nres_sim_full=`${fitsdir}/lalapps_fits_header_getval "WeaveOutSimFull.fits[0]" 'NCOHRES' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    coh_nres_sim_min=`${fitsdir}/lalapps_fits_header_getval "WeaveOutSimMin.fits[0]" 'NCOHRES' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
     expr ${coh_nres_no_sim} '=' ${coh_nres_sim_full}
     expr ${coh_nres_no_sim} '=' ${coh_nres_sim_min}
     set +x
@@ -95,12 +91,9 @@ for setup in short mid long; do
 
     echo "=== Setup '${setup}': Check number of coherent templates ==="
     set -x
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" 'NCOHTPL' > tmp
-    coh_ntmpl_no_sim=`cat tmp | xargs printf "%d"`
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutSimFull.fits[0]" 'NCOHTPL' > tmp
-    coh_ntmpl_sim_full=`cat tmp | xargs printf "%d"`
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutSimMin.fits[0]" 'NCOHTPL' > tmp
-    coh_ntmpl_sim_min=`cat tmp | xargs printf "%d"`
+    coh_ntmpl_no_sim=`${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" 'NCOHTPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    coh_ntmpl_sim_full=`${fitsdir}/lalapps_fits_header_getval "WeaveOutSimFull.fits[0]" 'NCOHTPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    coh_ntmpl_sim_min=`${fitsdir}/lalapps_fits_header_getval "WeaveOutSimMin.fits[0]" 'NCOHTPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
     expr ${coh_ntmpl_no_sim} '=' ${coh_ntmpl_sim_full}
     expr ${coh_ntmpl_no_sim} '=' ${coh_ntmpl_sim_min}
     set +x
@@ -108,12 +101,9 @@ for setup in short mid long; do
 
     echo "=== Setup '${setup}': Check number of semicoherent templates ==="
     set -x
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" 'NSEMITPL' > tmp
-    semi_ntmpl_no_sim=`cat tmp | xargs printf "%d"`
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutSimFull.fits[0]" 'NSEMITPL' > tmp
-    semi_ntmpl_sim_full=`cat tmp | xargs printf "%d"`
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutSimMin.fits[0]" 'NSEMITPL' > tmp
-    semi_ntmpl_sim_min=`cat tmp | xargs printf "%d"`
+    semi_ntmpl_no_sim=`${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" 'NSEMITPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    semi_ntmpl_sim_full=`${fitsdir}/lalapps_fits_header_getval "WeaveOutSimFull.fits[0]" 'NSEMITPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    semi_ntmpl_sim_min=`${fitsdir}/lalapps_fits_header_getval "WeaveOutSimMin.fits[0]" 'NSEMITPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
     expr ${semi_ntmpl_no_sim} '=' ${semi_ntmpl_sim_full}
     expr ${semi_ntmpl_no_sim} '=' ${semi_ntmpl_sim_min}
     set +x
@@ -121,10 +111,8 @@ for setup in short mid long; do
 
     echo "=== Setup '${setup}': Check peak memory usage ==="
     set -x
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" 'PEAKMEM' > tmp
-    peak_mem_no_sim=`cat tmp | xargs printf "%.16g"`
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOutSimFull.fits[0]" 'PEAKMEM' > tmp
-    peak_mem_sim_full=`cat tmp | xargs printf "%.16g"`
+    peak_mem_no_sim=`${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" 'PEAKMEM' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%.16g", $1}'`
+    peak_mem_sim_full=`${fitsdir}/lalapps_fits_header_getval "WeaveOutSimFull.fits[0]" 'PEAKMEM' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%.16g", $1}'`
     awk "BEGIN { print x = ${peak_mem_sim_full} / ${peak_mem_no_sim}; exit ( ( 0.9 < x && x < 1.0 ) ? 0 : 1 ) }"
     set +x
     echo

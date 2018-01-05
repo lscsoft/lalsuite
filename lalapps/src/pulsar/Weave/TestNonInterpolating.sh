@@ -19,8 +19,7 @@ echo
 
 echo "=== Extract reference time from WeaveSetup.fits ==="
 set -x
-${fitsdir}/lalapps_fits_header_getval "WeaveSetup.fits[0]" 'DATE-OBS GPS' > tmp
-ref_time=`cat tmp | xargs printf "%.9f"`
+ref_time=`${fitsdir}/lalapps_fits_header_getval "WeaveSetup.fits[0]" 'DATE-OBS GPS' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%.9f", $1}'`
 set +x
 echo
 
@@ -69,8 +68,7 @@ echo "=== Check for non-singular semicoherent dimensions ==="
 set -x
 semi_ntmpl_prev=1
 for dim in SSKYA SSKYB NU1DOT NU0DOT; do
-    ${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" "NSEMITMPL ${dim}" > tmp
-    semi_ntmpl=`cat tmp | xargs printf "%d"`
+    semi_ntmpl=`${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" "NSEMITMPL ${dim}" | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
     expr ${semi_ntmpl} '>' ${semi_ntmpl_prev}
     semi_ntmpl_prev=${semi_ntmpl}
 done
@@ -79,22 +77,17 @@ echo
 
 echo "=== Check that no results were recomputed ==="
 set -x
-${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NCOHRES' > tmp
-coh_nres=`cat tmp | xargs printf "%d"`
-${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NCOHTPL' > tmp
-coh_ntmpl=`cat tmp | xargs printf "%d"`
+coh_nres=`${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NCOHRES' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+coh_ntmpl=`${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NCOHTPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
 expr ${coh_nres} '=' ${coh_ntmpl}
 set +x
 echo
 
 echo "=== Check computed number of coherent and semicoherent templates ==="
 set -x
-${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NSEGMENT' > tmp
-nsegments=`cat tmp | xargs printf "%d"`
-${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NCOHTPL' > tmp
-coh_ntmpl=`cat tmp | xargs printf "%d"`
-${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NSEMITPL' > tmp
-semi_ntmpl=`cat tmp | xargs printf "%d"`
+nsegments=`${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NSEGMENT' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+coh_ntmpl=`${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NCOHTPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+semi_ntmpl=`${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NSEMITPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
 expr ${coh_ntmpl} '=' ${semi_ntmpl} '*' ${nsegments}
 set +x
 echo
