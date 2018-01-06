@@ -63,7 +63,110 @@ except pkg_resources.VersionConflict:
             return np.zeros(x_shape, dtype=np.intp)
         else:
             return np.digitize(x_flat, *args, **kwargs).reshape(x_shape)
+
+    # FIXME: np.cov() got the aweights argument in version 1.10.
+    # Until we require numpy >= 1.10, this is copied from the Numpy source.
+    def cov(m, y=None, rowvar=True, bias=False, ddof=None, fweights=None,
+            aweights=None):
+        from numpy import array, average, dot, sum
+        import warnings
+
+        # Check inputs
+        if ddof is not None and ddof != int(ddof):
+            raise ValueError(
+                "ddof must be integer")
+
+        # Handles complex arrays too
+        m = np.asarray(m)
+        if m.ndim > 2:
+            raise ValueError("m has more than 2 dimensions")
+
+        if y is None:
+            dtype = np.result_type(m, np.float64)
+        else:
+            y = np.asarray(y)
+            if y.ndim > 2:
+                raise ValueError("y has more than 2 dimensions")
+            dtype = np.result_type(m, y, np.float64)
+
+        X = array(m, ndmin=2, dtype=dtype)
+        if not rowvar and X.shape[0] != 1:
+            X = X.T
+        if X.shape[0] == 0:
+            return np.array([]).reshape(0, 0)
+        if y is not None:
+            y = array(y, copy=False, ndmin=2, dtype=dtype)
+            if not rowvar and y.shape[0] != 1:
+                y = y.T
+            X = np.concatenate((X, y), axis=0)
+
+        if ddof is None:
+            if bias == 0:
+                ddof = 1
+            else:
+                ddof = 0
+
+        # Get the product of frequencies and weights
+        w = None
+        if fweights is not None:
+            fweights = np.asarray(fweights, dtype=float)
+            if not np.all(fweights == np.around(fweights)):
+                raise TypeError(
+                    "fweights must be integer")
+            if fweights.ndim > 1:
+                raise RuntimeError(
+                    "cannot handle multidimensional fweights")
+            if fweights.shape[0] != X.shape[1]:
+                raise RuntimeError(
+                    "incompatible numbers of samples and fweights")
+            if any(fweights < 0):
+                raise ValueError(
+                    "fweights cannot be negative")
+            w = fweights
+        if aweights is not None:
+            aweights = np.asarray(aweights, dtype=float)
+            if aweights.ndim > 1:
+                raise RuntimeError(
+                    "cannot handle multidimensional aweights")
+            if aweights.shape[0] != X.shape[1]:
+                raise RuntimeError(
+                    "incompatible numbers of samples and aweights")
+            if any(aweights < 0):
+                raise ValueError(
+                    "aweights cannot be negative")
+            if w is None:
+                w = aweights
+            else:
+                w *= aweights
+
+        avg, w_sum = average(X, axis=1, weights=w, returned=True)
+        w_sum = w_sum[0]
+
+        # Determine the normalization
+        if w is None:
+            fact = X.shape[1] - ddof
+        elif ddof == 0:
+            fact = w_sum
+        elif aweights is None:
+            fact = w_sum - ddof
+        else:
+            fact = w_sum - ddof*sum(w*aweights)/w_sum
+
+        if fact <= 0:
+            warnings.warn("Degrees of freedom <= 0 for slice",
+                          RuntimeWarning, stacklevel=2)
+            fact = 0.0
+
+        X -= avg[:, None]
+        if w is None:
+            X_T = X.T
+        else:
+            X_T = (X*w).T
+        c = dot(X, X_T.conj())
+        c *= 1. / np.float64(fact)
+        return c.squeeze()
 else:
+    cov = np.cov
     digitize = np.digitize
 
 
@@ -850,10 +953,10 @@ def find_ellipse(prob, cl=90, projection='ARC', nest=False):
     prob = prob[keep]
 
     # Find covariance matrix.
-    cov = np.cov(xy, aweights=prob, rowvar=False)
+    c = cov(xy, aweights=prob, rowvar=False)
 
     # If each point is n-sigma from the center, find n.
-    nsigmas = np.sqrt(np.sum(xy.T * np.linalg.solve(cov, xy.T), axis=0))
+    nsigmas = np.sqrt(np.sum(xy.T * np.linalg.solve(c, xy.T), axis=0))
 
     # Find the number of sigma that enclose the cl% credible level.
     i = np.argsort(nsigmas)
@@ -867,7 +970,7 @@ def find_ellipse(prob, cl=90, projection='ARC', nest=False):
         return np.nan, np.nan, np.nan, np.nan, np.nan
 
     # Find the eigendecomposition of the covariance matrix.
-    w, v = np.linalg.eigh(cov)
+    w, v = np.linalg.eigh(c)
 
     # Find the semi-minor and semi-major axes.
     b, a = nsigma * np.sqrt(w)
