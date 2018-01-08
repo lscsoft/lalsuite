@@ -301,6 +301,7 @@ typedef struct tagPhiInsPrefactors
 	double minus_third;
 	double minus_two_thirds;
 	double minus_one;
+        double minus_four_thirds;
 	double minus_five_thirds;
 } PhiInsPrefactors;
 
