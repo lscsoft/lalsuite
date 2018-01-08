@@ -44,6 +44,7 @@ except ImportError:
 class PulsarParametersPy(object):
     keynames = []   # parameter names in PulsarParameters structure
     length = 0      # number of parameters
+    _pulsarparameters = None
 
     def __init__(self, pp=None):
         # if pp is None create empty PulsarParameters structure
@@ -233,7 +234,8 @@ class PulsarParametersPy(object):
         """
 
         # remove existing pulsarparameters
-        del self._pulsarparameters
+        if self._pulsarparameters is not None:
+            del self._pulsarparameters
 
         pp = lalpulsar.ReadTEMPOParFile(filename)
 
@@ -242,4 +244,9 @@ class PulsarParametersPy(object):
 
         self._pulsarparameters = pp
 
+    def PulsarParameters(self):
+        """
+        Return the PulsarParameters structure
+        """
 
+        return self._pulsarparameters
