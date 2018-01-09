@@ -42,6 +42,50 @@ except ImportError:
     raise ImportError("Could not import six")
 
 class PulsarParametersPy(object):
+    """
+    A class to wrap the SWIG-wrapped lalpulsar.PulsarParameters structure.
+
+    This class lets you access the structure in a more Pythonic way, as well as providing
+    a nice format for holding pulsar (`.par`) parameter files.
+
+    The class can be used to set numerical values (double precision, unsigned integers), strings,
+    or vectors of floating point values, e.g.:
+
+        >>> from lalpulsar.PulsarParametersWrapper import PulsarParametersPy
+        >>> pppy = PulsarParametersPy() # an empty structure
+        >>> pppy['DECJ'] = 0.23         # set a numerical value
+        >>> pppy['BINARY'] = 'BT'       # set a string value
+        >>> pppy['F'] = [10.2, 1.4e-11] # set a vector of float values
+
+    Args:
+        pp (PulsarParameters, str): a lalpulsar.PulsarParameters structure, or a string giving the
+            path to a TEMPO-style (`.par`) pulsar parameter file. If nothing is given then an empty
+            lalpulsar.PulsarParameters structure is created. The `read()` method can subsequently
+            be used to read in a `.par` file, or parameters can be added.
+
+    Examples:
+        An example of initialising the class with a previously created `lalpulsar.PulsarParameters`
+        structure is:
+
+            >>> import lalpulsar
+            >>> from lalpulsar.PulsarParametersWrapper import PulsarParametersPy
+            >>> # read in a pulsar parameter file
+            >>> pp = lalpulsar.ReadTEMPOParFile('apulsar.par')
+            >>> # view as a PulsarParametersPy object
+            >>> pppy = PulsarParametersPy(pp)
+
+        The same thing could be achieved more directly using:
+
+            >>> pppy = PulsarParametersPy('apulsar.par')
+
+        or, equivalently with:
+
+            >>> pppy = PulsarParametersPy()
+            >>> pppy.read('apulsar.par')
+
+         parameter can be set in the class using, e.g.
+    """
+
     keynames = []   # parameter names in PulsarParameters structure
     length = 0      # number of parameters
     _pulsarparameters = None
@@ -82,13 +126,21 @@ class PulsarParametersPy(object):
             tkey = key[:-4] # get the actual parameter key name
 
         # check if the key is asking for an individal parameter from a vector parameter
-        # (e.g.) 'F0' gets the first value from the 'F' vector
-        
-        # splits, e.g. 'F0' into ('F', '0'), or 'GLF0_1' into ('GLF0_', '1')
-        #match = re.match(r'([a-zA-Z_]+)([0-9]+)', tkey, re.I)
-        #splits, e.g. 'F0' into ('F', '0')
-        #if match is not None:
-            # get index
+        # (e.g. 'F0' gets the first value from the 'F' vector)
+        sname = re.sub(r'_\d', '', tkey) if '_' in tkey else re.sub(r'\d', '', tkey)
+        sidx = None
+        indkey = None
+        if sname != tkey:
+            # check additional index is an integer
+            try:
+                sidx = int(tkey.split('_')[-1]) if '_' in tkey else int(tkey[len(sname):])
+            except ValueError:
+                pass
+
+            # change tkey for checking parameter exists
+            if sidx is not None:
+                indkey = tkey # key with index
+                tkey = sname
 
         # check if parameter given by the key is present
         if not lalpulsar.PulsarCheckParam(self._pulsarparameters, tkey):
@@ -104,11 +156,17 @@ class PulsarParametersPy(object):
                 value = lalpulsar.PulsarGetREAL8ParamErr(self._pulsarparameters, tkey)
         elif ptype == lalpulsar.PULSARTYPE_REAL8Vector_t:
             if not geterr:
-                tmpvalue = lalpulsar.PulsarGetREAL8VectorParam(self._pulsarparameters, tkey)
-                value = tmpvalue.data # 'data' in a REAL8Vector gets returned as a numpy array
+                if sidx is None:
+                    tmpvalue = lalpulsar.PulsarGetREAL8VectorParam(self._pulsarparameters, tkey)
+                    value = tmpvalue.data # 'data' in a REAL8Vector gets returned as a numpy array
+                else:
+                    value = lalpulsar.PulsarGetREAL8VectorParamIndividual(self._pulsarparameters, indkey)
             else:
-                tmpvalue = lalpulsar.PulsarGetREAL8VectorParamErr(self._pulsarparameters, tkey)
-                value = tmpvalue.data
+                if sidx is None:
+                    tmpvalue = lalpulsar.PulsarGetREAL8VectorParamErr(self._pulsarparameters, tkey)
+                    value = tmpvalue.data
+                else:
+                    value = lalpulsar.PulsarGetREAL8VectorParamErrIndividual(self._pulsarparameters, indkey)
         elif ptype == lalpulsar.PULSARTYPE_string_t:
             if not geterr:
                 value = lalpulsar.PulsarGetStringParam(self._pulsarparameters, tkey)
