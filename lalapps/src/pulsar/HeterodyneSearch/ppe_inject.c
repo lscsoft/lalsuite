@@ -136,7 +136,8 @@ void inject_signal( LALInferenceRunState *runState ){
   if ( LALInferenceCheckVariable( runState->threads[0]->currentParams, "FREQNUM" ) ){
     UINT4 freqnum = LALInferenceGetUINT4Variable(runState->threads[0]->currentParams, "FREQNUM" );
     REAL8Vector *deltafreqs = XLALCreateREAL8Vector( freqnum );
-    REAL8Vector *freqs = NULL, *freqsnew = NULL;
+    const REAL8Vector *freqs = NULL;
+    REAL8Vector *freqsnew = NULL;
 
     if ( PulsarCheckParam( injpars, "F" ) ){
       freqs = PulsarGetREAL8VectorParam( injpars, "F" );
@@ -147,13 +148,15 @@ void inject_signal( LALInferenceRunState *runState ){
         for ( UINT4 i = 0; i < freqs->length; i++ ){ freqsnew->data[i] = freqs->data[i]; }
         for ( UINT4 i = freqs->length; i < freqnum; i++ ){ freqsnew->data[i] = 0.; }
         PulsarRemoveParam( injpars, "F" );
-        PulsarAddParam( injpars, "F", &freqsnew, PULSARTYPE_REAL8Vector_t );
+        PulsarAddREAL8VectorParam( injpars, "F", (const REAL8Vector*)freqsnew );
+        XLALDestroyREAL8Vector( freqsnew );
       }
     }
     else{
       freqsnew = XLALCreateREAL8Vector( freqnum );
       for ( UINT4 i = 0; i < freqnum; i++ ){ freqsnew->data[i] = 0.; }
-      PulsarAddParam( injpars, "F", &freqsnew, PULSARTYPE_REAL8Vector_t );
+      PulsarAddREAL8VectorParam( injpars, "F", (const REAL8Vector*)freqsnew );
+      XLALDestroyREAL8Vector( freqsnew );
       freqs = PulsarGetREAL8VectorParam( injpars, "F" );
     }
 
@@ -163,7 +166,8 @@ void inject_signal( LALInferenceRunState *runState ){
       REAL8 f0fixed = LALInferenceGetREAL8Variable( runState->threads[0]->currentParams, varname );
       deltafreqs->data[i] = freqs->data[i]-f0fixed; /* frequency (derivative) difference */
     }
-    PulsarAddParam( injpars, "DELTAF", &deltafreqs, PULSARTYPE_REAL8Vector_t );
+    PulsarAddREAL8VectorParam( injpars, "DELTAF", (const REAL8Vector*)deltafreqs );
+    XLALDestroyREAL8Vector( deltafreqs );
   }
 
   freqFactors = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "freqfactors" );
