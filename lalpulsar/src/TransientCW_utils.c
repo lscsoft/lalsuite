@@ -1025,8 +1025,7 @@ int write_transientFstatMap_to_fp ( LALFILE *fp, const transientFstatMap_t *Fsta
 
   /* sanity checks */
   if ( !fp ) {
-    XLALPrintError ( "%s: invalid NULL filepointer input.\n", __func__ );
-    XLAL_ERROR ( XLAL_EINVAL );
+    XLAL_ERROR ( XLAL_EINVAL, "Invalid NULL filepointer input." );
   }
 
   if ( !FstatMap )	/* write header-line comment */
@@ -1043,25 +1042,29 @@ int write_transientFstatMap_to_fp ( LALFILE *fp, const transientFstatMap_t *Fsta
   else
     {
       if ( !windowRange ) {
-        XLALPrintError ( "%s: invalid NULL windowRange input.\n", __func__ );
-        XLAL_ERROR ( XLAL_EINVAL );
+        XLAL_ERROR ( XLAL_EINVAL, "Invalid NULL windowRange input.\n");
       }
+
       UINT4 t0 = windowRange->t0;
       UINT4 N_t0Range  = (UINT4) floor ( windowRange->t0Band / windowRange->dt0 ) + 1;
       UINT4 N_tauRange = (UINT4) floor ( windowRange->tauBand / windowRange->dtau ) + 1;
+      if ( ( N_t0Range != FstatMap->F_mn->size1 ) || ( N_tauRange != FstatMap->F_mn->size2 ) ) {
+        XLAL_ERROR ( XLAL_EDOM, "Inconsistent dimensions of windowRange (%ux%u) and FstatMap GSL matrix (%lux%lu).", N_t0Range, N_tauRange, FstatMap->F_mn->size1, FstatMap->F_mn->size2 );
+      }
 
       /* ----- OUTER loop over start-times [t0,t0+t0Band] ---------- */
       for ( UINT4 m = 0; m < N_t0Range; m ++ ) /* m enumerates 'binned' t0 start-time indices  */
         {
-         UINT4 this_t0 = t0 + m * windowRange->dt0;
+          UINT4 this_t0 = t0 + m * windowRange->dt0;
           /* ----- INNER loop over timescale-parameter tau ---------- */
           for ( UINT4 n = 0; n < N_tauRange; n ++ )
             {
               UINT4 this_tau = windowRange->tau + n * windowRange->dtau;
+              REAL4 this_2F = 2.0 * gsl_matrix_get ( FstatMap->F_mn, m, n );
               if ( !doppler )
                 {
                   XLALFilePrintf (fp, "  %10d %10d %- 11.8g\n",
-                           this_t0, this_tau, 2.0 * gsl_matrix_get ( FstatMap->F_mn, m, n )
+                           this_t0, this_tau, this_2F
                           );
                 }
                else
@@ -1069,7 +1072,7 @@ int write_transientFstatMap_to_fp ( LALFILE *fp, const transientFstatMap_t *Fsta
                   XLALFilePrintf (fp, "  %- 18.16f %- 19.16f %- 19.16f %- 9.6g %- 9.5g %- 9.5g %10d %10d %- 11.8g\n",
                            doppler->fkdot[0], doppler->Alpha, doppler->Delta,
                            doppler->fkdot[1], doppler->fkdot[2], doppler->fkdot[3],
-                           this_t0, this_tau, 2.0 * gsl_matrix_get ( FstatMap->F_mn, m, n )
+                           this_t0, this_tau, this_2F
                           );
                 }
             }
