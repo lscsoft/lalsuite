@@ -802,8 +802,19 @@ def find_ellipse(prob, cl=90, projection='ARC', nest=False):
     b : float
         The length o the semiminor axis in degrees.
 
+    Examples
+    --------
+
+    I'm not showing the `ra` or `pa` output from the examples below because
+    the right ascension is arbitary when dec=90° and the position angle is
+    arbitrary when a=b; their arbitrary values may vary depending on your math
+    library. Also, I add 0.0 to the outputs because on some platforms you tend
+    to get values of dec or pa that get rounded to -0.0, which is within
+    numerical precision but would break the doctests (see
+    https://stackoverflow.com/questions/11010683).
+
     Example 1
-    ---------
+    ~~~~~~~~~
 
     This is an example sky map that is uniform in sin(theta) out to a given
     radius in degrees. The 90% credible radius should be 0.9 * radius. (There
@@ -817,28 +828,23 @@ def find_ellipse(prob, cl=90, projection='ARC', nest=False):
     ...     return prob / prob.sum()
     ...
 
-    (I'm not showing the `ra` or `pa` output from the examples below because
-    the right ascension is arbitary when dec=90° and the position angle is
-    arbitrary when a=b; their arbitrary values may vary depending on your math
-    library.)
-
     >>> prob = make_uniform_in_sin_theta(1)
-    >>> ra, dec, pa, a, b = np.around(find_ellipse(prob), 5)
+    >>> ra, dec, pa, a, b = np.around(find_ellipse(prob), 5) + 0
     >>> print(dec, a, b)
     90.0 0.82241 0.82241
 
     >>> prob = make_uniform_in_sin_theta(10)
-    >>> ra, dec, pa, a, b = np.around(find_ellipse(prob), 5)
+    >>> ra, dec, pa, a, b = np.around(find_ellipse(prob), 5) + 0
     >>> print(dec, a, b)
     90.0 9.05512 9.05512
 
     >>> prob = make_uniform_in_sin_theta(120)
-    >>> ra, dec, pa, a, b = np.around(find_ellipse(prob), 5)
+    >>> ra, dec, pa, a, b = np.around(find_ellipse(prob), 5) + 0
     >>> print(dec, a, b)
     90.0 107.9745 107.9745
 
     Example 2
-    ---------
+    ~~~~~~~~~
 
     These are approximately Gaussian distributions.
 
@@ -846,8 +852,18 @@ def find_ellipse(prob, cl=90, projection='ARC', nest=False):
     >>> def make_gaussian(mean, cov, nside=512):
     ...     npix = hp.nside2npix(nside)
     ...     xyz = np.transpose(hp.pix2vec(nside, np.arange(npix)))
-    ...     dist = stats.multivariate_normal(mean, cov)
-    ...     prob = dist.pdf(xyz)
+    ...     # FIXME: stats.multivariate_normal was added in scipy 0.14,
+    ...     # but we still need to support an older version on our
+    ...     # Scientific Linux 7 clusters.
+    ...     #
+    ...     # dist = stats.multivariate_normal(mean, cov)
+    ...     # prob = dist.pdf(xyz)
+    ...     if np.ndim(cov) == 0:
+    ...         cov = [cov] * 3
+    ...     if np.ndim(cov) == 1:
+    ...         cov = np.diag(cov)
+    ...     d = xyz - mean
+    ...     prob = np.exp(-0.5 * (np.linalg.solve(cov, d.T) * d.T).sum(0))
     ...     return prob / prob.sum()
     ...
 
@@ -857,8 +873,9 @@ def find_ellipse(prob, cl=90, projection='ARC', nest=False):
     ...     [1/np.sqrt(2), 1/np.sqrt(2), 0],
     ...     np.square(np.deg2rad(1)))
     ...
-    >>> print(*np.around(find_ellipse(prob), 5))
-    45.0 0.0 90.0 2.14209 2.14209
+    >>> ra, dec, pa, a, b = np.around(find_ellipse(prob), 5) + 0
+    >>> print(ra, dec, a, b)
+    45.0 0.0 2.14209 2.14209
 
     This one is centered at RA=45°, Dec=0°, and is elongated in the north-south
     direction.
@@ -867,7 +884,8 @@ def find_ellipse(prob, cl=90, projection='ARC', nest=False):
     ...     [1/np.sqrt(2), 1/np.sqrt(2), 0],
     ...     np.diag(np.square(np.deg2rad([1, 1, 10]))))
     ...
-    >>> print(*np.around(find_ellipse(prob), 5))
+    >>> ra, dec, pa, a, b = np.around(find_ellipse(prob), 5) + 0
+    >>> print(ra, dec, pa, a, b)
     45.0 0.0 0.0 13.44746 2.1082
 
     This one is centered at RA=0°, Dec=0°, and is elongated in the east-west
@@ -877,8 +895,9 @@ def find_ellipse(prob, cl=90, projection='ARC', nest=False):
     ...     [1, 0, 0],
     ...     np.diag(np.square(np.deg2rad([1, 10, 1]))))
     ...
-    >>> print(*np.around(find_ellipse(prob), 5))
-    0.0 0.0 90.0 13.4194 2.1038
+    >>> ra, dec, pa, a, b = np.around(find_ellipse(prob), 5) + 0
+    >>> print(dec, pa, a, b)
+    0.0 90.0 13.4194 2.1038
 
     This one is centered at RA=0°, Dec=0°, and is tilted about 10° to the west
     of north.
@@ -889,8 +908,9 @@ def find_ellipse(prob, cl=90, projection='ARC', nest=False):
     ...      [0, 0.1, -0.15],
     ...      [0, -0.15, 1]])
     ...
-    >>> print(*np.around(find_ellipse(prob), 5))
-    0.0 0.0 170.78253 63.82809 34.00824
+    >>> ra, dec, pa, a, b = np.around(find_ellipse(prob), 5) + 0
+    >>> print(dec, pa, a, b)
+    0.0 170.78253 63.82809 34.00824
 
     This one is centered at RA=0°, Dec=0°, and is tilted about 10° to the east
     of north.
@@ -901,8 +921,9 @@ def find_ellipse(prob, cl=90, projection='ARC', nest=False):
     ...      [0, 0.1, 0.15],
     ...      [0, 0.15, 1]])
     ...
-    >>> print(*np.around(find_ellipse(prob), 5))
-    0.0 0.0 9.21747 63.82809 34.00824
+    >>> ra, dec, pa, a, b = np.around(find_ellipse(prob), 5) + 0
+    >>> print(dec, pa, a, b)
+    0.0 9.21747 63.82809 34.00824
 
     This one is centered at RA=0°, Dec=0°, and is tilted about 80° to the east
     of north.
@@ -913,8 +934,9 @@ def find_ellipse(prob, cl=90, projection='ARC', nest=False):
     ...      [0, 1, 0.15],
     ...      [0, 0.15, 0.1]])
     ...
-    >>> print(*np.around(find_ellipse(prob), 5))
-    0.0 0.0 80.78252 63.82533 34.00677
+    >>> ra, dec, pa, a, b = np.around(find_ellipse(prob), 5) + 0
+    >>> print(dec, pa, a, b)
+    0.0 80.78252 63.82533 34.00677
 
     This one is centered at RA=0°, Dec=0°, and is tilted about 80° to the west
     of north.
@@ -925,8 +947,9 @@ def find_ellipse(prob, cl=90, projection='ARC', nest=False):
     ...      [0, 1, -0.15],
     ...      [0, -0.15, 0.1]])
     ...
-    >>> print(*np.around(find_ellipse(prob), 5))
-    0.0 0.0 99.21748 63.82533 34.00677
+    >>> ra, dec, pa, a, b = np.around(find_ellipse(prob), 5) + 0
+    >>> print(dec, pa, a, b)
+    0.0 99.21748 63.82533 34.00677
     """
     npix = len(prob)
     nside = hp.npix2nside(npix)
