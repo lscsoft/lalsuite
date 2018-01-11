@@ -41,6 +41,157 @@ try:
 except ImportError:
     raise ImportError("Could not import six")
 
+try:
+    import astropy
+except ImportError:
+    raise ImportError("Could not import astropy")
+
+
+from astropy import units as u
+# set units of parameters in the PulsarParameters structure
+ppunits = {'F':          u.Hz,                     # Hz
+           'P':          u.s,                      # seconds
+           'DIST':       u.m,                      # metres
+           'PX':         u.rad,                    # radians
+           'DM':         u.pc/(u.cm)**3,           # cm^-3 pc
+           'DM1':        u.pc/(u.cm**3*u.yr),      # pc cm^-3 yr^-1
+           'RA':         u.rad,                    # radians
+           'RAJ':        u.rad,                    # radians
+           'DEC':        u.rad,                    # radians
+           'DECJ':       u.rad,                    # radians
+           'PMRA':       u.rad/u.s,                # rad/s
+           'PMDEC':      u.rad/u.s,                # rad/s
+           'ELONG':      u.rad,                    # rad
+           'ELAT':       u.rad,                    # rad
+           'PEPOCH':     u.s,                      # GPS seconds
+           'POSEPOCH':   u.s,                      # GPS seconds
+           'DMEPOCH':    u.s,                      # GPS seconds
+           'GLEP':       u.s,                      # GPS seconds
+           'GLPH':       u.rad,                    # rad
+           'GLF0':       u.Hz,                     # Hz
+           'GLF1':       u.Hz/u.s,                 # Hz/s
+           'GLF2':       u.Hz/u.s**2,              # Hz s^-2
+           'GLF0D':      u.Hz,                     # Hz
+           'GLTD':       u.s,                      # sec
+           'A1':         u.s,                      # light seconds
+           'OM':         u.rad,                    # rad
+           'PB':         u.s,                      # seconds
+           'T0':         u.s,                      # GPS seconds
+           'TASC':       u.s,                      # GPS seconds
+           'EPS1':       u.dimensionless_unscaled,
+           'EPS2':       u.dimensionless_unscaled,
+           'GAMMA':      u.s,                      # seconds
+           'OMDOT':      u.rad/u.s,                # rad/s
+           'XDOT':       u.s/u.s,                  # light seconds/sec
+           'PBDOT':      u.s/u.s,                  # s/s
+           'EDOT':       1./u.s,                   # 1/sec
+           'EPSDOT1':    1./u.s,                   # 1/sec
+           'EPSDOT2':    1./u.s,                   # 1/sec
+           'XPBDOT':     u.s/u.s,                  # s/s
+           'SINI':       u.dimensionless_unscaled,
+           'MTOT':       u.kg,                     # kg
+           'M2':         u.kg,                     # kg
+           'DR':         u.dimensionless_unscaled,
+           'DTHETA':     u.dimensionless_unscaled,
+           'SHAPMAX':    u.dimensionless_unscaled,
+           'A1_2':       u.s,                      # light seconds
+           'A1_3':       u.s,                      # light seconds
+           'OM_2':       u.rad,                    # radians
+           'OM_3':       u.rad,                    # radians
+           'PB_2':       u.s,                      # seconds
+           'PB_3':       u.s,                      # seconds
+           'T0_2':       u.s,                      # GPS seconds
+           'T0_3':       u.s,                      # GPS seconds
+           'FB':         u.Hz,                     # Hz
+           'A0':         u.s,                      # seconds
+           'B0':         u.s,                      # seconds
+           'D_AOP':      1./u.rad,                 # 1/rad
+           'KIN':        u.rad,                    # radians
+           'KOM':        u.rad,                    # radians
+           'WAVE_OM':    u.Hz,                     # Hz
+           'WAVEEPOCH':  u.s,                      # GPS seconds
+           'WAVESIN':    u.s,                      # seconds
+           'WAVECOS':    u.s,                      # seconds
+           'START':      u.s,                      # GPS seconds
+           'FINISH':     u.s,                      # GPS seconds
+           'TRES':       u.s,                      # seconds
+           'H0':         u.dimensionless_unscaled,
+           'APLUS':      u.dimensionless_unscaled,
+           'ACROSS':     u.dimensionless_unscaled,
+           'PHI0':       u.rad,                    # radians
+           'PSI':        u.rad,                    # radians
+           'COSIOTA':    u.dimensionless_unscaled,
+           'IOTA':       u.rad,                    # radians
+           'C22':        u.dimensionless_unscaled,
+           'C21':        u.dimensionless_unscaled,
+           'PHI22':      u.rad,                    # radians
+           'PHI21':      u.rad,                    # radians
+           'CGW':        u.dimensionless_unscaled,
+           'LAMBDA':     u.rad,                    # radians
+           'COSTHETA':   u.dimensionless_unscaled,
+           'THETA':      u.rad,
+           'I21':        u.dimensionless_unscaled,
+           'I31':        u.dimensionless_unscaled,
+           'Q22':        u.kg*u.m**2,              # kg m^2
+           'HPLUS':      u.dimensionless_unscaled,
+           'HCROSS':     u.dimensionless_unscaled,
+           'PSITENSOR':  u.rad,                    # radians
+           'PHI0TENSOR': u.rad,                    # radians
+           'HSCALARB':   u.dimensionless_unscaled,
+           'HSCALARL':   u.dimensionless_unscaled,
+           'PSISCALAR':  u.rad,                    # radians
+           'PHI0SCALAR': u.rad,                    # radians
+           'HVECTORX':   u.dimensionless_unscaled,
+           'HVECTORY':   u.dimensionless_unscaled,
+           'PSIVECTOR':  u.rad,                    # radians
+           'PHI0VECTOR': u.rad                     # radians
+          }
+
+# set units of parameters in a TEMPO-style parameter file if different from above
+tempounits = {'DIST':      u.kpc,                  # kpc
+              'PX':        u.mas,                  # milliarcsecs
+              'RA':        u.hourangle,            # hh:mm:ss.s
+              'RAJ':       u.hourangle,            # hh:mm:ss.s
+              'DEC':       u.deg,                  # hh:mm:ss.s
+              'DECJ':      u.deg,                  # hh:mm:ss.s
+              'PMRA':      u.mas/u.yr,             # milliarcsecs/year
+              'PMDEC':     u.mas/u.yr,             # milliarcsecs/year
+              'ELONG':     u.deg,                  # degrees
+              'ELAT':      u.deg,                  # degrees
+              'PEPOCH':    u.d,                    # MJD(TT) (day)
+              'POSEPOCH':  u.d,                    # MJD(TT) (day)
+              'DMEPOCH':   u.d,                    # MJD(TT) (day)
+              'GLEP':      u.d,                    # MJD(TT) (day)
+              'OM':        u.deg,                  # degs
+              'PB':        u.d,                    # day
+              'T0':        u.d,                    # MJD(TT) (day)
+              'TASC':      u.d,                    # MJD(TT) (day)
+              'OMDOT':     u.deg/u.yr,             # deg/yr
+              'MTOT':      u.solMass,              # M_sun
+              'M2':        u.solMass,              # M_sun
+              'OM_2':      u.deg,                  # degrees
+              'OM_3':      u.deg,                  # degrees
+              'PB_2':      u.d,                    # days
+              'PB_3':      u.d,                    # days
+              'T0_2':      u.d,                    # MJD(TT) (days)
+              'T0_3':      u.d,                    # MJD(TT) (days)
+              'D_AOP':     1./u.arcsec,            # 1/arcsec
+              'KIN':       u.deg,                  # degrees
+              'KOM':       u.deg,                  # degrees
+              'WAVEEPOCH': u.d,                    # MJD(TT) (days)
+              'START':     u.d,                    # MJD(TT) (days)
+              'FINISH':    u.d,                    # MJD(TT) (days)
+              'TRES':      u.us                    # microsecs
+             }
+
+# set units of error values in tempo if different from above
+tempoerrunits = {'RA':   u.s,                      # second
+                 'RAJ':  u.s,                      # second
+                 'DEC':  u.arcsec,                 # arcsecond
+                 'DECJ': u.arcsec                  # arcsecond
+                }
+
+
 class PulsarParametersPy(object):
     """
     A class to wrap the SWIG-wrapped lalpulsar.PulsarParameters structure.
@@ -211,6 +362,174 @@ class PulsarParametersPy(object):
         else:
             raise ValueError("Data-type not one of know types")
 
+    def convert_to_units(self, name, value):
+        """
+        Convert parameter values to equivalent dimensional versions.
+
+        Args:
+            name (str): the name of the parameter to convert
+            value: the value to the parameter to convert
+
+        Returns:
+            :class:`astropy.unit.Unit`: a unit class with dimensions for a float parameters, or a
+                list containing unit classes for a list or :class:`numpy.ndarray`
+        """
+
+        uname = name.upper()
+
+        ppunit = u.dimensionless_unscaled
+        if uname in ppunits:
+            ppunit = ppunits[uname]
+
+        if isinstance(value, np.ndarray) or isinstance(value, list):
+            cvalue = []
+            bunit = ppunit
+            for i, v in enumerate(value):
+                cvalue.append(v*ppunit)
+                if uname in ['F', 'FB', 'P']: # frequency/period values
+                    ppunit *= bunit # increment unit (e.g. Hz -> Hz/s, Hz/s -> Hz/s^2)
+        else:
+            cvalue = value*ppunit
+
+        return cvalue
+
+    def convert_to_par_units(self, name, value, iserr=False):
+        """
+        Convert from PulsarParameter units to TEMPO-par-file units
+
+        Args:
+            name (str): a parameter name
+            value (float, list, :class:`numpy.ndarray`): the value of the parameter
+            iserr (bool): state whether where converting the parameter's error value
+
+        Returns:
+            :class:`astropy.unit.Unit`: a unit class with dimensions for a float parameters, or a
+                list containing unit classes for a list or :class:`numpy.ndarray`
+        """
+
+        from astropy.coordinates import ICRS, Angle
+        from astropy.time import Time
+
+        # for certain binary parameters there is an anomoly that their value
+        # may have been rescaled (I think this is a hangover from a TEMPO definition compared to
+        # the TEMPO2 definition)
+        binaryunits = ['XDOT', 'PBDOT', 'EPS1DOT', 'EPS2DOT', 'XPBDOT']
+
+        # the names of epoch parameters that are held as GPS times, but must be converted back to
+        # MJD for a TEMPO-style par file
+        epochpars = ['POSEPOCH',
+                     'PEPOCH',
+                     'WAVEEPOCH',
+                     'T0',
+                     'TASC',
+                     'T0_2',
+                     'T0_3',
+                     'START',
+                     'FINISH',
+                     'DMEPOCH',
+                     'GLEP']
+
+        uname = name.upper()
+
+        ppunit = None
+        if uname in ppunits:
+            ppunit = ppunits[uname]
+
+        tempounit = None
+        if uname in tempounits:
+            if not iserr:
+                tempounit = tempounits[uname]
+            else:
+                if uname not in tempoerrunits:
+                    tempounit = tempounits[uname]
+                else:
+                    tempounit = tempoerrunits[uname]
+
+        if ppunit is None:
+            if uname in binaryunits:
+                # for these binary parameters there is a TEMPO2 oddity that has to be corrected for
+                if abs(value)/1e-12 > 1e-7:
+                    value /= 1e-12
+
+            return value*u.dimensionless_unscaled
+
+        # convert to dimensionful value
+        pvalue = self.convert_to_units(uname, value)
+
+        if ppunit == tempounit or tempounit is None:
+            tempounit = ppunit
+
+        if uname in ['RA', 'RAJ']:
+            if not iserr:
+                # convert right ascension in radians into a string output format
+                c = ICRS(pvalue, 0.0*u.rad)
+                cvalue = c.ra.to_string(unit=tempounit, sep=':', precision=12, pad=True)
+            else:
+                angle = Angle(pvalue)
+                cvalue = (angle.hms[0]*(60.**2) + angle.hms[1]*60. + angle.hms[2])*tempounit
+        elif uname in ['DEC', 'DECJ'] and not iserr:
+            c = ICRS(0.0*u.rad, pvalue)
+            cvalue = c.dec.to_string(unit=tempounit, sep=':', precision=12, pad=True)
+        elif uname in epochpars and not iserr:
+            if isinstance(pvalue, list):
+                cvalue = []
+                for i, pv in enumerate(pvalue):
+                    t = Time(pv, format='gps', scale='tt')
+                    cvalue.append(t.mjd*tempounit)
+            else:
+                t = Time(pvalue, format='gps', scale='tt')
+                cvalue = t.mjd*tempounit
+        elif uname in binaryunits and not iserr:
+            # for these binary parameters there is a TEMPO2 oddity that has to be corrected for
+            if abs(pvalue.value)/1e-12 > 1e-7:
+                pvalue.value /= 1e-12
+            cvalue = pvalue.to(tempounit)
+        else:
+            # perform conversion
+            if isinstance(pvalue, list):
+                cvalue = []
+                bunit = tempounit
+                for i, pv in enumerate(pvalue):
+                    cvalue.append(pv.to(tempounit))
+                    if uname in ['F', 'FB', 'P']: # frequency/period values
+                        tempounit *= bunit # increment unit (e.g. Hz -> Hz/s, Hz/s -> Hz/s^2)
+            else:
+                cvalue = pvalue.to(tempounit)
+
+        return cvalue
+
+    def parameter(self, name, withunits=False, parunits=False):
+        """
+        Return the parameter given by name.
+
+        Args:
+            name (str): the name of the parameter to return
+            withunits (bool): if True return the parameter in a form with its appropriate units
+            parunits (bool): of True return the parameter converted into the units required in a
+                TEMPO-style parameter file
+        """
+
+        value = self[name]
+
+        if value is None:
+            return None
+
+        if name.upper()[-4:] == '_ERR':
+            uname = name.upper()[:-4]
+            iserr = True
+        else:
+            uname = name
+            iserr = False
+
+        if parunits:
+            ovalue = self.convert_to_par_units(uname, value, iserr=iserr)
+        elif withunits:
+            ovalue = self.convert_to_units(uname, value)
+        else:
+            ovalue = value
+
+        return ovalue
+
     def keys(self):
         """
         Return a list of the parameter names stored in the PulsarParameters structure
@@ -225,6 +544,9 @@ class PulsarParametersPy(object):
             self.length += 1
 
             thisitem = thisitem.next # move on to next value
+
+        # reverse the order of the names, so they're in the same order as read from a par file
+        self.keynames = self.keynames[::-1]
 
         return self.keynames
 
@@ -257,7 +579,7 @@ class PulsarParametersPy(object):
 
             tvalues.append(value)
 
-        return tvalues    
+        return tvalues
 
     def as_dict(self):
         """
@@ -289,6 +611,9 @@ class PulsarParametersPy(object):
     def read(self, filename):
         """
         Read a TEMPO-style parameter file into a PulsarParameters structure
+
+        Args:
+            filename (str): the path to the pulsar `.par` file.
         """
 
         # remove existing pulsarparameters
@@ -301,6 +626,164 @@ class PulsarParametersPy(object):
             raise IOError("Problem reading in pulsar parameter file '{}'".format(filename))
 
         self._pulsarparameters = pp
+
+    def get_error(self, name):
+        """
+        Return the error value for a particular parameter
+
+        Args:
+            name (str): the name of the parameter
+        """
+
+        try:
+            if name.upper()[-4:] == '_ERR':
+                return self[name.upper()]
+            else:
+                uname = name.upper() + '_ERR'
+                return self[uname]
+        except ValueError:
+            return None
+
+    def get_fitflag(self, name):
+        """
+        Return the "fit flag" (a 1 or 0 depending whether the parameter with fit for by TEMPO(2)
+        in the `.par` file).
+
+        Args:
+            name (str): the name of the parameter
+        """
+
+        if name.upper() not in self.keys():
+            return 0.
+
+        fitflag = lalpulsar.PulsarGetParamFitFlagAsVector(self._pulsarparameters, name)
+
+        if len(fitflag.data) > 1:
+            return fitflag.data
+        else:
+            return fitflag.data[0]
+
+    def pp_to_par(self, filename, precision=19):
+        """
+        Output the PulsarParameter structure to a `.par` file.
+
+        Args:
+            filename (str): the path to the output file
+            precision (int): the number of decimal places for an output value
+        """
+
+        try:
+            fp = open(filename, 'w')
+        except IOError:
+            raise IOError("Could not open file '{}' for writing".format(filename))
+
+        # output string format
+        outputstr = '{name}\t{value}\t{fitflag}\t{error}\n'
+
+        # get names of parameters in file
+        for item in self.items():
+            key = item[0]
+            value = item[1]
+
+            # get error
+            evalue = self.get_error(key)
+
+            # check for required conversion back to TEMPO-par file units
+            if key in tempounits:
+                uvalue = self.convert_to_par_units(key, value)
+                if evalue is not None:
+                    uevalue = self.convert_to_par_units(key, value, iserr=True)
+
+                # just get values without units
+                if isinstance(uvalue, list):
+                    tvalue = []
+                    tevalue = []
+                    for tv, te in zip(uvalue, uevalue):
+                        tvalue.append(tv.value)
+                        tevalue.append(te.value)
+                elif isinstance(uvalue, string_types):
+                    tvalue = uvalue
+                    tevalue = uevalue.value
+                else:
+                    tvalue = uvalue.value
+                    tevalue = uevalue.value
+            else:
+                tvalue = value
+                tevalue = evalue
+
+            fitflag = None
+            if evalue is not None:
+                fitflag = self.get_fitflag(key)
+
+            if isinstance(tvalue, list) or isinstance(tvalue, np.ndarray):
+                idxoffset = 0
+                idxsep = ''
+                if key in ['WAVESIN', 'WAVECOS', 'GLEP', 'GLPH', 'GLF0', 'GLF0D', 'GLTD']:
+                    # the TEMPO variable name for these parameter start with an index a 1
+                    idxoffset = 1
+
+                    if key[:2] == 'GL':
+                        # glitch parameters have an '_' seperating the name from the index
+                        idxsep = '_'
+
+                for tv, te, tf in zip(tvalue, tevalue, fitflag):
+                    precstr = '{{0:.{}f}}'.format(precision) # print out float
+                    if tv < 1e-6 or tv > 1e6:
+                        # print out float in scientific notation
+                        precstr = '{{0:.{}e}}'.format(precision)
+
+                    precstre = '{{0:.{}f}}'.format(precision) # print out float
+                    if te < 1e-6 or te > 1e6:
+                        # print out float in scientific notation
+                        precstre = '{{0:.{}e}}'.format(precision)
+
+                    outputdic = {}
+                    outputdic['name'] = '{}{}{}'.format(key, idxsep, idxoffset)
+                    idxoffset += 1
+                    outputdic['value'] = precstr.format(tv)
+                    outputdic['fitflag'] = '1' if tf == 1 else ''
+                    outputdic['error'] = precstre.format(te) if te != 0. else ''
+
+                    fp.write(outputstr.format(**outputdic))
+            else:
+                if isinstance(tvalue, float) or key in ['RA', 'RAJ', 'DEC', 'DECJ']:
+                    if isinstance(tvalue, float):
+                        precstr = '{{0:.{}f}}'.format(precision) # print out float
+                        if tvalue < 1e-6 or tvalue > 1e6:
+                            # print out float in scientific notation
+                            precstr = '{{0:.{}e}}'.format(precision)
+
+                        ovalue = precstr.format(tvalue)
+                    else:
+                        ovalue = tvalue
+
+                    precstre = '{{0:.{}f}}'.format(precision) # print out float
+                    oevalue = ''
+                    if tevalue is not None:
+                        if tevalue != 0.:
+                            if tevalue < 1e-6 or tevalue > 1e6:
+                                # print out float in scientific notation
+                                precstre = '{{0:.{}e}}'.format(precision)
+
+                            oevalue = precstre.format(tevalue)
+
+                            if fitflag is not None:
+                                if fitflag == 1:
+                                    ofitflag = '1'
+                else:
+                    ovalue = tvalue
+                    oevalue = ''
+                    ofitflag = ''
+
+                outputdic = {}
+                outputdic['name'] = key
+                outputdic['value'] = ovalue
+                outputdic['fitflag'] = ofitflag
+                outputdic['error'] = oevalue
+
+                fp.write(outputstr.format(**outputdic))
+
+        fp.close()
 
     def PulsarParameters(self):
         """
