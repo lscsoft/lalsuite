@@ -87,7 +87,7 @@ typedef struct tagPulsarParam {
   CHAR                        name[PULSAR_PARNAME_MAX]; /**< Parameter name */
   void                        *value;                   /**< Parameter value */
   void                        *err;                     /**< Parameter error/uncertainty */
-  UINT4                       *fitFlag;                 /**< Set to 1 if the parameter has been fit in the par file */
+  UINT4Vector                 *fitFlag;                 /**< Set to 1 if the parameter has been fit in the par file */
   PulsarParamType             type;                     /**< Parameter type e.g. REAL8, CHAR, INT4 */
   struct tagPulsarParam       *next;
 } PulsarParam;
@@ -384,6 +384,13 @@ void *PulsarGetParamErr( const PulsarParameters *pars, const CHAR *name );
  * This function will return a \c UINT4 array to the parameter fit flag.
  */
 const UINT4 *PulsarGetParamFitFlag( const PulsarParameters *pars, const CHAR *name );
+
+/** \brief Get the fit flag array for a given parameter from the \c PulsarParameters structure
+ *
+ * This function will return a \c UINT4Vector array to the parameter fit flag.
+ */
+const UINT4Vector *PulsarGetParamFitFlagAsVector( const PulsarParameters *pars, const CHAR *name );
+
 
 /** \brief Return a \c REAL8 parameter error value
  *
