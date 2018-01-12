@@ -589,7 +589,7 @@ XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(
 static REAL8 UNUSED 
 XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(
       REAL8 mByM /**< ratio of object mass to total mass */ 
-    )
+    ) /**< literature: Agathos et al (arxiv 1503.0545) eq (5) */
 {
   return mByM*mByM*mByM*mByM * 24.L*(12.L - 11.L*mByM)*LAL_PI; 
 }
@@ -597,7 +597,7 @@ XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(
 static REAL8 UNUSED
 XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(
       REAL8 mByM /**< ratio of object mass to total mass */ 
-    )
+    )/**< literature: Agathos et al (arxiv 1503.0545) eq (5) */ 
 {
   REAL8 mByM3 = mByM*mByM*mByM;
   REAL8 mByM4 = mByM3 * mByM;
@@ -607,7 +607,7 @@ XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(
 static REAL8 UNUSED
 XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(
       REAL8 mByM /**< ratio of object mass to total mass */ 
-    )
+    )/**< literature: Agathos et al (arxiv 1503.0545) eq (5) */
 {
   REAL8 mByM2 = mByM*mByM;
   REAL8 mByM3 = mByM2*mByM;
