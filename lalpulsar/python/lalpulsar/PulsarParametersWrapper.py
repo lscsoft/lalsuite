@@ -49,7 +49,7 @@ except ImportError:
 
 from astropy import units as u
 # set units of parameters in the PulsarParameters structure
-ppunits = {'F':          u.Hz,                     # Hz
+PPUNITS = {'F':          u.Hz,                     # Hz
            'P':          u.s,                      # seconds
            'DIST':       u.m,                      # metres
            'PX':         u.rad,                    # radians
@@ -148,7 +148,7 @@ ppunits = {'F':          u.Hz,                     # Hz
           }
 
 # set units of parameters in a TEMPO-style parameter file if different from above
-tempounits = {'DIST':      u.kpc,                  # kpc
+TEMPOUNITS = {'DIST':      u.kpc,                  # kpc
               'PX':        u.mas,                  # milliarcsecs
               'RA':        u.hourangle,            # hh:mm:ss.s
               'RAJ':       u.hourangle,            # hh:mm:ss.s
@@ -185,7 +185,7 @@ tempounits = {'DIST':      u.kpc,                  # kpc
              }
 
 # set units of error values in tempo if different from above
-tempoerrunits = {'RA':   u.s,                      # second
+TEMPOERRUNITS = {'RA':   u.s,                      # second
                  'RAJ':  u.s,                      # second
                  'DEC':  u.arcsec,                 # arcsecond
                  'DECJ': u.arcsec                  # arcsecond
@@ -375,11 +375,15 @@ class PulsarParametersPy(object):
                 list containing unit classes for a list or :class:`numpy.ndarray`
         """
 
+        if isinstance(value, string_types):
+            # don't make any changes for a string type
+            return value
+
         uname = name.upper()
 
         ppunit = u.dimensionless_unscaled
-        if uname in ppunits:
-            ppunit = ppunits[uname]
+        if uname in PPUNITS:
+            ppunit = PPUNITS[uname]
 
         if isinstance(value, np.ndarray) or isinstance(value, list):
             cvalue = []
@@ -393,7 +397,7 @@ class PulsarParametersPy(object):
 
         return cvalue
 
-    def convert_to_par_units(self, name, value, iserr=False):
+    def convert_to_tempo_units(self, name, value, iserr=False):
         """
         Convert from PulsarParameter units to TEMPO-par-file units
 
@@ -432,18 +436,18 @@ class PulsarParametersPy(object):
         uname = name.upper()
 
         ppunit = None
-        if uname in ppunits:
-            ppunit = ppunits[uname]
+        if uname in PPUNITS:
+            ppunit = PPUNITS[uname]
 
         tempounit = None
-        if uname in tempounits:
+        if uname in TEMPOUNITS:
             if not iserr:
-                tempounit = tempounits[uname]
+                tempounit = TEMPOUNITS[uname]
             else:
-                if uname not in tempoerrunits:
-                    tempounit = tempounits[uname]
+                if uname not in TEMPOERRUNITS:
+                    tempounit = TEMPOUNITS[uname]
                 else:
-                    tempounit = tempoerrunits[uname]
+                    tempounit = TEMPOERRUNITS[uname]
 
         if ppunit is None:
             if uname in binaryunits:
@@ -451,7 +455,10 @@ class PulsarParametersPy(object):
                 if abs(value)/1e-12 > 1e-7:
                     value /= 1e-12
 
-            return value*u.dimensionless_unscaled
+            if isinstance(value, string_types):
+                return value
+            else:
+                return value*u.dimensionless_unscaled
 
         # convert to dimensionful value
         pvalue = self.convert_to_units(uname, value)
@@ -498,14 +505,14 @@ class PulsarParametersPy(object):
 
         return cvalue
 
-    def parameter(self, name, withunits=False, parunits=False):
+    def parameter(self, name, withunits=False, tempounits=False):
         """
         Return the parameter given by name.
 
         Args:
             name (str): the name of the parameter to return
             withunits (bool): if True return the parameter in a form with its appropriate units
-            parunits (bool): of True return the parameter converted into the units required in a
+            tempounits (bool): of True return the parameter converted into the units required in a
                 TEMPO-style parameter file
         """
 
@@ -521,8 +528,8 @@ class PulsarParametersPy(object):
             uname = name
             iserr = False
 
-        if parunits:
-            ovalue = self.convert_to_par_units(uname, value, iserr=iserr)
+        if tempounits:
+            ovalue = self.convert_to_tempo_units(uname, value, iserr=iserr)
         elif withunits:
             ovalue = self.convert_to_units(uname, value)
         else:
@@ -677,8 +684,10 @@ class PulsarParametersPy(object):
         except IOError:
             raise IOError("Could not open file '{}' for writing".format(filename))
 
-        # output string format
-        outputstr = '{name}\t{value}\t{fitflag}\t{error}\n'
+        # output string format (set so that values should line up)
+        mkl = max([len(kn) for kn in self.keys()])+2 # max key length for output alignment
+        vlb = precision+10 # allow extra space for minus sign/exponents
+        outputstr = '{{name: <{0}}}{{value: <{1}}}{{fitflag}}\t{{error}}'.format(mkl, vlb)
 
         # get names of parameters in file
         for item in self.items():
@@ -689,10 +698,10 @@ class PulsarParametersPy(object):
             evalue = self.get_error(key)
 
             # check for required conversion back to TEMPO-par file units
-            if key in tempounits:
-                uvalue = self.convert_to_par_units(key, value)
+            if key in TEMPOUNITS:
+                uvalue = self.convert_to_tempo_units(key, value)
                 if evalue is not None:
-                    uevalue = self.convert_to_par_units(key, value, iserr=True)
+                    uevalue = self.convert_to_tempo_units(key, evalue, iserr=True)
 
                 # just get values without units
                 if isinstance(uvalue, list):
@@ -715,6 +724,8 @@ class PulsarParametersPy(object):
             if evalue is not None:
                 fitflag = self.get_fitflag(key)
 
+            oevalue = ''  # default output error value
+            ofitflag = ' ' # default output fit flag value (a single space for alignment purposes)
             if isinstance(tvalue, list) or isinstance(tvalue, np.ndarray):
                 idxoffset = 0
                 idxsep = ''
@@ -744,7 +755,7 @@ class PulsarParametersPy(object):
                     outputdic['fitflag'] = '1' if tf == 1 else ''
                     outputdic['error'] = precstre.format(te) if te != 0. else ''
 
-                    fp.write(outputstr.format(**outputdic))
+                    fp.write(outputstr.format(**outputdic).strip()+'\n')
             else:
                 if isinstance(tvalue, float) or key in ['RA', 'RAJ', 'DEC', 'DECJ']:
                     if isinstance(tvalue, float):
@@ -772,8 +783,6 @@ class PulsarParametersPy(object):
                                     ofitflag = '1'
                 else:
                     ovalue = tvalue
-                    oevalue = ''
-                    ofitflag = ''
 
                 outputdic = {}
                 outputdic['name'] = key
@@ -781,7 +790,7 @@ class PulsarParametersPy(object):
                 outputdic['fitflag'] = ofitflag
                 outputdic['error'] = oevalue
 
-                fp.write(outputstr.format(**outputdic))
+                fp.write(outputstr.format(**outputdic).strip()+'\n')
 
         fp.close()
 
