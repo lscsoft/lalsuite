@@ -169,12 +169,9 @@ echo "----------------------------------------"
 echo " STEP 5: Comparing results: "
 echo "----------------------------------------"
 
-sort $outfile_Comp > __tmp_sorted
-mv __tmp_sorted $outfile_Comp
-sort $outfile_Demod > __tmp_sorted
-mv __tmp_sorted $outfile_Demod
-sort $outfile_Resamp > __tmp_sorted
-mv __tmp_sorted $outfile_Resamp
+sort -o $outfile_Comp $outfile_Comp
+sort -o $outfile_Demod $outfile_Demod
+sort -o $outfile_Resamp $outfile_Resamp
 
 ## compare absolute differences instead of relative, allow deviations of up to sigma=sqrt(8)~2.8
 echo
