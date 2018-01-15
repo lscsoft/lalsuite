@@ -607,6 +607,7 @@ static REAL8 UNUSED
 XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(
       REAL8 mByM /**< ratio of object mass to total mass */ 
     )/**< literature: Agathos et al (arxiv 1503.0545) eq (5) */ 
+    /** caveat: these are incomplete terms */
     
     /**<conversion see XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff above>*/
 {
