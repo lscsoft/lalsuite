@@ -157,8 +157,7 @@ echo " STEP 3: Compare to reference results: "
 echo "----------------------------------------------------------------------"
 
 ## work around toplist-sorting bugs in CFSv2: manually sort before comparing
-sort ${outfile_Fstat} > __tmp_sorted
-mv __tmp_sorted ${outfile_Fstat}
+sort -o ${outfile_Fstat} ${outfile_Fstat}
 
 echo
 cmdline="$cmp_code -1 ./${outfile_Fstat} -2 ${outfile_ref}"
