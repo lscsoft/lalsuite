@@ -24,6 +24,12 @@
 #include <lal/LALError.h>
 #include <lal/LALDict.h>
 
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
 /**
  * @addtogroup LALSimInspiral_h
  * @{
@@ -155,5 +161,11 @@ int XLALSimInspiralModeArrayIsModeActive(LALValue *modes, unsigned l, int m);
 LALValue * XLALSimInspiralModeArrayActivateAllModesAtL(LALValue *modes, unsigned l);
 LALValue * XLALSimInspiralModeArrayDeactivateAllModesAtL(LALValue *modes, unsigned l);
 int XLALSimInspiralModeArrayPrintModes(LALValue *modes);
+
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
+}
+#endif
 
 #endif /* _LALSIMINSPIRALWAVEFORMFLAGS_H */
