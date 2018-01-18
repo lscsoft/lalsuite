@@ -1975,7 +1975,7 @@ class knopeDAG(pipeline.CondorDAG):
         self.error_code = KNOPE_ERROR_GENERAL
         return
       else:
-            if isinstance(self.coarse_heterodyne_channels[ifo], string_types):
+        if isinstance(self.coarse_heterodyne_channels[ifo], string_types):
           # convert to list
           self.coarse_heterodyne_channels[ifo] = list(self.coarse_heterodyne_channels[ifo])
         elif not isinstance(self.coarse_heterodyne_channels[ifo], list):
@@ -2198,7 +2198,7 @@ class knopeDAG(pipeline.CondorDAG):
               self.add_node(finenode)
             
             if self.ndatasets[ifo] > 1:
-                  concatnode.set_files(finetmpfiles)
+              concatnode.set_files(finetmpfiles)
               self.add_node(concatnode)
               # reset output name to that for the concatenated file
               fineoutput = os.path.join(freqfacdirfine, 'fine-%s-%d-%d.txt' % (ifo, int(self.starttime[ifo][0]), int(self.endtime[ifo][-1])))
@@ -2214,7 +2214,7 @@ class knopeDAG(pipeline.CondorDAG):
             if self.ndatasets[ifo] > 1:
               self.fine_heterodyne_nodes[pname][ifo][freqfactor] = concatnode # set concatenation node as parent of future children
             else:
-            self.fine_heterodyne_nodes[pname][ifo][freqfactor] = finenode
+              self.fine_heterodyne_nodes[pname][ifo][freqfactor] = finenode
             if self.fine_heterodyne_gzip_output:
               fineoutput = fineoutput + '.gz' # append .gz to recorded file name
 
