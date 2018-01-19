@@ -808,8 +808,8 @@ static int PhenomPCore_withTides(
   const REAL8 distance,                      /**< Distance of source (m) */
   const REAL8 quadparam1,
   const REAL8 quadparam2,
-  const REAL8 lambda1,
-  const REAL8 lambda2,
+  const REAL8 lambda1_in,
+  const REAL8 lambda2_in,
   const REAL8 alpha0,                        /**< Initial value of alpha angle (azimuthal precession angle) */
   const REAL8 phic,                          /**< Orbital phase at the peak of the underlying non precessing model (rad) */
   const REAL8 f_ref,                         /**< Reference frequency */
@@ -854,17 +854,22 @@ static int PhenomPCore_withTides(
   // Enforce convention m2 >= m1
   REAL8 chi1_l, chi2_l;
   REAL8 m1_SI, m2_SI;
+  REAL8 lambda1, lambda2;
   if (m2_SI_in >= m1_SI_in) {
     m1_SI = m1_SI_in;
     m2_SI = m2_SI_in;
     chi1_l = chi1_l_in;
     chi2_l = chi2_l_in;
+    lambda1 = lambda1_in;
+    lambda2 = lambda2_in;
   }
   else { // swap bodies 1 <-> 2
     m1_SI = m2_SI_in;
     m2_SI = m1_SI_in;
     chi1_l = chi2_l_in;
     chi2_l = chi1_l_in;
+    lambda1 = lambda2_in;
+    lambda2 = lambda1_in;
   }
 
   errcode = init_useful_powers(&powers_of_pi, LAL_PI);
