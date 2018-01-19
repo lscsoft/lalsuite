@@ -470,7 +470,8 @@ def read_sky_map(filename, nest=False, distances=False, moc=False, **kwargs):
 
     # Remove some keys that we do not need
     for key in (
-            'PIXTYPE', 'EXTNAME', 'NSIDE', 'FIRSTPIX', 'LASTPIX', 'INDXSCHM'):
+            'PIXTYPE', 'EXTNAME', 'NSIDE', 'FIRSTPIX', 'LASTPIX', 'INDXSCHM',
+            'MOCORDER'):
         m.meta.pop(key, None)
 
     if m.meta.pop('COORDSYS', 'C') != 'C':
