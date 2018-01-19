@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2012-2017  Leo Singer
+# Copyright (C) 2012-2018  Leo Singer
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,8 +22,6 @@ from __future__ import division
 import warnings
 
 from matplotlib.axes import Axes
-from matplotlib import text
-from matplotlib import patheffects
 from matplotlib.ticker import Formatter, FixedLocator
 from matplotlib.projections import projection_registry
 from matplotlib.transforms import Transform, Affine2D
@@ -220,11 +218,3 @@ class AstroLambertAxes(LambertAxes):
         self.xaxis.set_major_formatter(self.RaFormatter(degrees))
 
 projection_registry.register(AstroLambertAxes)
-
-
-def outline_text(ax):
-    """Add a white outline to all text to make it stand out from the
-    background."""
-    effects = [patheffects.withStroke(linewidth=2, foreground='w')]
-    for artist in ax.findobj(text.Text):
-        artist.set_path_effects(effects)
