@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2012-2016  Leo Singer
+# Copyright (C) 2012-2018  Leo Singer
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,11 +17,12 @@
 """
 Plotting classes and methods
 """
-from . import allsky, healpix, marker, poly, pp
+from . import allsky, angle, healpix, marker, poly, pp
 from .allsky import *
+from .angle import *
 from .healpix import *
 from .marker import *
 from .poly import *
 from .pp import *
-__all__ = (allsky.__all__ + healpix.__all__ + marker.__all__ + poly.__all__
-           + pp.__all__)
+__all__ = (allsky.__all__ + angle.__all__ + healpix.__all__ + marker.__all__
+           + poly.__all__ + pp.__all__)
