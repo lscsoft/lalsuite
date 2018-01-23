@@ -806,8 +806,8 @@ static int PhenomPCore_withTides(
   const REAL8 m1_SI_in,                      /**< Mass of companion 1 (kg) */
   const REAL8 m2_SI_in,                      /**< Mass of companion 2 (kg) */
   const REAL8 distance,                      /**< Distance of source (m) */
-  const REAL8 quadparam1,
-  const REAL8 quadparam2,
+  const REAL8 quadparam1_in,
+  const REAL8 quadparam2_in,
   const REAL8 lambda1_in,
   const REAL8 lambda2_in,
   const REAL8 alpha0,                        /**< Initial value of alpha angle (azimuthal precession angle) */
@@ -854,12 +854,15 @@ static int PhenomPCore_withTides(
   // Enforce convention m2 >= m1
   REAL8 chi1_l, chi2_l;
   REAL8 m1_SI, m2_SI;
+  REAL8 quadparam1, quadparam2;
   REAL8 lambda1, lambda2;
   if (m2_SI_in >= m1_SI_in) {
     m1_SI = m1_SI_in;
     m2_SI = m2_SI_in;
     chi1_l = chi1_l_in;
     chi2_l = chi2_l_in;
+    quadparam1 = quadparam1_in;
+    quadparam2 = quadparam2_in;
     lambda1 = lambda1_in;
     lambda2 = lambda2_in;
   }
@@ -868,6 +871,8 @@ static int PhenomPCore_withTides(
     m2_SI = m1_SI_in;
     chi1_l = chi2_l_in;
     chi2_l = chi1_l_in;
+    quadparam1 = quadparam2_in;
+    quadparam2 = quadparam1_in;
     lambda1 = lambda2_in;
     lambda2 = lambda1_in;
   }
