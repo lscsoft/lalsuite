@@ -6,7 +6,7 @@ ENV LD_LIBRARY_PATH="/opt/lalsuite/lib" \
     PKG_CONFIG_PATH="/opt/lalsuite/lib/pkgconfig" \
     PYTHONPATH="/opt/lalsuite/lib/python2.7/site-packages"
 
-RUN find /opt/lalsuite/lib/pkgconfig -type f -name 'lal*.pc' -exec sed -i 's|/builds/lscsoft/lalsuite||g' {} \;
+RUN find /opt/lalsuite/lib/pkgconfig -type f -name 'lal*.pc' -exec sed -i 's|^prefix=.*|prefix=/opt/lalsuite|g' {} \;
 
 COPY /docker/startup /usr/local/bin/startup
 
