@@ -141,7 +141,7 @@ int main(int argc,char *argv[]);
 
 int initUserVars ( UserInput_t *uvar );
 int InitPFS ( ConfigVariables *cfg, const UserInput_t *uvar );
-int XLALComputePredictFstat ( REAL8 *rho2, const PulsarAmplitudeParams pap, const AntennaPatternMatrix Mmunu );
+REAL8 XLALComputeOptimalSNR2FromMmunu ( const PulsarAmplitudeParams pap, const AntennaPatternMatrix Mmunu );
 
 /*---------- empty initializers ---------- */
 
@@ -180,7 +180,8 @@ int main(int argc,char *argv[])
   /* Initialize code-setup */
   XLAL_CHECK_MAIN ( InitPFS ( &GV, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  XLAL_CHECK_MAIN( XLALComputePredictFstat ( &rho2, GV. pap, GV.Mmunu ) == XLAL_SUCCESS, XLAL_EFUNC );
+  rho2 = XLALComputeOptimalSNR2FromMmunu ( GV.pap, GV.Mmunu );
+  XLAL_CHECK_MAIN ( xlalErrno == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* F-statistic expected mean and standard deviation */
   const REAL8 twoF_expected = uvar.PureSignal ? ( rho2 ) : ( 4.0 + rho2 );
@@ -608,30 +609,33 @@ InitPFS ( ConfigVariables *cfg, const UserInput_t *uvar )
 } /* InitPFS() */
 
 /**
- * Calculates the SNR^2 value for the F-statistic for given PulsarAmplitudeParameter
- * and Antenna Pattern Matrix.
+ * Calculates the 'optimal' / perfect-match squared signal-to-noise ratio (SNR^2) for a CW signal for
+ * given PulsarAmplitudeParameters 'pap' and Antenna Pattern Matrix 'Mmunu'.
+ * The computed 'SNR' is related to the expectation value of the coherent F-statistic 'F' via
+ * E[2F] = 4 + SNR^2 for a template perfectly matching the signal, ie SNR^2 = (signal|signal).
  */
-int
-XLALComputePredictFstat (REAL8 *rho2, /**< [out] SNR^2 Value */
-    const PulsarAmplitudeParams pap, /**< [in] PulsarAmplitudeParameter {h0, cosi, psi, phi0} */
-    const AntennaPatternMatrix Mmunu /**< [in] Antenna Pattern Matrix */
-    )
+REAL8
+XLALComputeOptimalSNR2FromMmunu ( const PulsarAmplitudeParams pap, /**< [in] PulsarAmplitudeParameter {h0, cosi, psi, phi0} */
+                                  const AntennaPatternMatrix Mmunu /**< [in] Antenna-pattern Matrix */
+                                  )
 {
-  /* Calculating the F-Statistic */
-  REAL8 al1, al2, al3;
-  REAL8 aPlus = 0.5 * pap.h0 * ( 1.0 + SQ( pap.cosi) );
-  REAL8 aCross = pap.h0 * pap.cosi;
-  REAL8 Ap2 = SQ(aPlus);
-  REAL8 Ac2 = SQ(aCross);
-  REAL8 cos2psi2 = SQ( cos(2*pap.psi) );
-  REAL8 sin2psi2 = SQ( sin(2*pap.psi) );
+  // Calculate the SNR using the expressions from the 'CFSv2 notes' T0900149-v5
+  // https://dcc.ligo.org/LIGO-T0900149-v5/public, namely Eqs.(77)-(80), keeping in mind
+  // that Mmunu.{Ad,Bd,Cd} = Nsft * {A,B,C}, and Tdata = Nsft * Tsft
+  REAL8 cos2psi   = cos ( 2.0 * pap.psi );
+  REAL8 sin2psi   = sin ( 2.0 * pap.psi );
+  REAL8 cos2psiSq = SQ( cos2psi );
+  REAL8 sin2psiSq = SQ( sin2psi );
+  REAL8 etaSq     = SQ(pap.cosi);
 
-  al1 = Ap2 * cos2psi2 + Ac2 * sin2psi2;	/* A1^2 + A3^2 */
-  al2 = Ap2 * sin2psi2 + Ac2 * cos2psi2;	/* A2^2 + A4^2 */
-  al3 = ( Ap2 - Ac2 ) * sin(2.0*pap.psi) * cos(2.0*pap.psi);	/* A1 A2 + A3 A4 */
+  REAL8 al1 = 0.25 * SQ( 1.0 + etaSq ) * cos2psiSq + etaSq * sin2psiSq;  // Eq.(78)
+  REAL8 al2 = 0.25 * SQ( 1.0 + etaSq ) * sin2psiSq + etaSq * cos2psiSq;  // Eq.(79)
+  REAL8 al3 = 0.25 * SQ( 1.0 - etaSq ) * sin2psi * cos2psi;              // Eq.(80)
 
   /* SNR^2 */
-  *rho2 = Mmunu.Sinv_Tsft * ( Mmunu.Ad * al1 + Mmunu.Bd * al2 + 2.0 * Mmunu.Cd * al3 );
+  REAL8 rho2 = SQ(pap.h0) * ( al1 * Mmunu.Ad + al2 * Mmunu.Bd + 2.0 * al3 * Mmunu.Cd ) * Mmunu.Sinv_Tsft;
 
-  return XLAL_SUCCESS;
-}/* XLALComputePredictFstat*/
+  return rho2;
+
+} // XLALComputeOptimalSNR2FromMmunu()
+
