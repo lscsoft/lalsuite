@@ -110,11 +110,7 @@ typedef struct {
   REAL8 Delta;		/**< sky-position angle 'delta', which is declination in equatorial coordinates */
 
   BOOLEAN PureSignal;   /**< If true, calculate 2F for pure signal, i.e. E[2F] = 2F = rho^2 */
-
   LALStringVector* assumeSqrtSX;/**< Assume stationary Gaussian noise with detector noise-floors sqrt{SX}" */
-  BOOLEAN SignalOnly;	/**< DEPRECATED: ALTERNATIVE switch to assume Sh=1 instead of estimating noise-floors from SFTs */
-
-  CHAR *IFO;		/**< GW detector short-name, only useful if not using v2-SFTs as input */
 
   CHAR *ephemEarth;	/**< Earth ephemeris file to use */
   CHAR *ephemSun;	/**< Sun ephemeris file to use */
@@ -136,6 +132,8 @@ typedef struct {
   REAL8 transientStartTime;	/**< GPS start-time of transient window */
   REAL8 transientTauDays;	/**< time-scale in days of transient window */
 
+
+  BOOLEAN SignalOnly;	/**< DEPRECATED: ALTERNATIVE --assumeSqrtSX and/or --PureSignal */
 } UserInput_t;
 
 /* ---------- local prototypes ---------- */
@@ -288,7 +286,6 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( Freq,		REAL8, 'F', OPTIONAL, "GW signal frequency (only used for noise-estimation in SFTs)");
 
   XLALRegisterUvarMember( DataFiles, 	STRING, 'D', OPTIONAL, "File-pattern specifying (multi-IFO) input SFT-files");
-  XLALRegisterUvarMember( IFO, 		STRING, 'I', DEPRECATED, "DEPRECATED ALTERNATIVE: use --IFOs instead! Detector-constraint: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
   XLALRegisterUvarMember( ephemEarth, 	 STRING, 0,  OPTIONAL, "Earth ephemeris file to use");
   XLALRegisterUvarMember( ephemSun, 	 STRING, 0,  OPTIONAL, "Sun ephemeris file to use");
   XLALRegisterUvarMember( outputFstat,     STRING, 0,  OPTIONAL, "Output-file for predicted F-stat value" );
@@ -300,8 +297,6 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( PureSignal,	BOOLEAN, 'P', OPTIONAL, "If true, calculate 2F for pure signal, i.e. E[2F] = 2F = rho^2. If false, calculate 2F for signal+noise, i.e. E[2F] = 4 + rho^2.");
 
   XLALRegisterUvarMember( assumeSqrtSX,	 STRINGVector, 0,  OPTIONAL, "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs)");
-  XLALRegisterUvarMember( SignalOnly,	BOOLEAN, 'S', DEPRECATED,"DEPRECATED ALTERNATIVE: Don't estimate noise-floors but assume sqrtSX=1 instead");
-
   XLALRegisterUvarMember( RngMedWindow,	INT4, 'k', DEVELOPER, "Running-Median window size");
 
   /* transient signal window properties (name, start, duration) */
@@ -316,6 +311,9 @@ initUserVars ( UserInput_t *uvar )
   /* SFT properties */
   XLALRegisterUvarMember(  Tsft,                 REAL8, 0, OPTIONAL, "Time baseline of one SFT in seconds, used for --timestampsFiles and --startTime+duration");
   XLALRegisterUvarMember(  SFToverlap,           REAL8, 0, DEVELOPER, "Overlap between successive SFTs in seconds (conflicts with --DataFiles or --timestampsFiles)");
+
+  // ---------- deprecated options
+  XLALRegisterUvarMember( SignalOnly,	BOOLEAN, 'S', DEPRECATED,"ALTERNATIVE: use --assumeSqrtSX and/or --PureSignal instead");
 
   return XLAL_SUCCESS;
 
@@ -395,14 +393,6 @@ InitPFS ( ConfigVariables *cfg, const UserInput_t *uvar )
     {
       SFTConstraints XLAL_INIT_DECL(constraints);
       /* ----- prepare SFT-reading ----- */
-      if ( XLALUserVarWasSet ( &uvar->IFO ) ) {
-        XLAL_CHECK ( (constraints.detector = XLALGetChannelPrefix ( uvar->IFO )) != NULL, XLAL_EFUNC );
-      }
-      if ( XLALUserVarWasSet ( &uvar->IFOs ) )
-        {
-          XLAL_CHECK ( (constraints.detector = XLALGetChannelPrefix ( uvar->IFOs->data[0] )) != NULL, XLAL_EFUNC );
-        }
-
       minStartTimeGPS.gpsSeconds = uvar->minStartTime;
       minStartTimeGPS.gpsNanoSeconds = 0;
       maxStartTimeGPS.gpsSeconds = uvar->maxStartTime;
