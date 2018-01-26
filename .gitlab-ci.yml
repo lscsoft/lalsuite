@@ -342,7 +342,7 @@ docker:tags:
   before_script: []
   script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $TAG .
+    - docker build --pull -t $TAG --file .Dockerfile.gitlab-ci .
     - docker push $TAG
   dependencies:
     - level4:lalapps
@@ -355,7 +355,7 @@ docker:nightly:
   before_script: []
   script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $NIGHTLY .
+    - docker build --pull -t $NIGHTLY --file .Dockerfile.gitlab-ci .
     - docker push $NIGHTLY
   dependencies:
     - level4:lalapps
