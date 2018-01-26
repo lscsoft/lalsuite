@@ -211,11 +211,11 @@ int XLALSimInspiralTaylorF2Core(
     {
 	case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_75PN:
-            pft15 = pfaN * (lambda2*XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(m2OverM) + lambda1*XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(m1OverM));
+            pft15 = pfaN * (lambda1*XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(m1OverM) + lambda2*XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(m2OverM));
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_7PN:
-            pft14 = pfaN * (lambda2*XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(m2OverM) + lambda1*XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(m1OverM));
+            pft14 = pfaN * (lambda1*XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(m1OverM) + lambda2*XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(m2OverM));
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_65PN:
-            pft13 = pfaN * (lambda2*XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(m1OverM) + lambda1*XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(m2OverM));
+            pft13 = pfaN * (lambda1*XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(m1OverM) + lambda2*XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(m2OverM));
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
 	    pft12 = pfaN * (lambda1*XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m1OverM) + lambda2*XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m2OverM) );
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
