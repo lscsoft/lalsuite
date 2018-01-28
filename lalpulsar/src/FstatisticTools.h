@@ -1,4 +1,5 @@
 //
+// Copyright (C) 2017 Maximillian Bensch, Reinhard Prix
 // Copyright (C) 2014 Reinhard Prix
 // Copyright (C) 2012, 2013, 2014 David Keitel, Bernd Machenschalk, Reinhard Prix, Karl Wette
 //
@@ -52,6 +53,8 @@ int XLALEstimatePulsarAmplitudeParams ( PulsarCandidate *pulsarParams, const LIG
 
 int XLALAmplitudeParams2Vect ( PulsarAmplitudeVect A_Mu, const PulsarAmplitudeParams Amp );
 int XLALAmplitudeVect2Params( PulsarAmplitudeParams *Amp, const PulsarAmplitudeVect A_Mu );
+
+REAL8 XLALComputeOptimalSNR2FromMmunu ( const PulsarAmplitudeParams pap, const AntennaPatternMatrix Mmunu );
 
 // @}
 
