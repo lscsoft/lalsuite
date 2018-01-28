@@ -30,7 +30,7 @@
 
 #include <lal/ExtrapolatePulsarSpins.h>
 
-#include <lal/EstimateAmplitudeParams.h>
+#include <lal/FstatisticTools.h>
 
 // ---------- local macro definitions ----------
 #define SQ(x) ( (x) * (x) )

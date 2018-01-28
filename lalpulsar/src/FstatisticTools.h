@@ -18,8 +18,8 @@
 // MA  02111-1307  USA
 //
 
-#ifndef _ESTIMATEAMPLITUDEPARAMS_H
-#define _ESTIMATEAMPLITUDEPARAMS_H
+#ifndef _FSTATISTICTOOLS_H
+#define _FSTATISTICTOOLS_H
 
 #include <lal/LALStdlib.h>
 #include <lal/PulsarDataTypes.h>
@@ -59,4 +59,4 @@ int XLALAmplitudeVect2Params( PulsarAmplitudeParams *Amp, const PulsarAmplitudeV
 }
 #endif
 
-#endif // _ESTIMATEAMPLITUDEPARAMS_H
+#endif // _FSTATISTICTOOLS_H
