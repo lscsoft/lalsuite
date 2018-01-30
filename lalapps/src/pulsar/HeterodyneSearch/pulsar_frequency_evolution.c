@@ -288,7 +288,7 @@ void get_freq( REAL8 start, REAL8 deltaT, REAL8 freqharm,
 
   /* get frequencies */
   REAL8 taylorcoeff = 1., tmpdt = 0.;
-  REAL8Vector *fs = PulsarGetREAL8VectorParam( params, "F" );
+  const REAL8Vector *fs = PulsarGetREAL8VectorParam( params, "F" );
 
   for( i=0; i< freqs->length; i++ ){
     LIGOTimeGPS tgps;

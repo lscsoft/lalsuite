@@ -264,7 +264,7 @@ int main(int argc, char **argv){
       params.pulsar.position.longitude = ra + (REAL8)dtpos * PulsarGetREAL8ParamOrZero(pulparams[h], "PMRA") / cos(params.pulsar.position.latitude);
       params.pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
 
-      REAL8Vector *fs = PulsarGetREAL8VectorParam(pulparams[h], "F");
+      const REAL8Vector *fs = PulsarGetREAL8VectorParam(pulparams[h], "F");
       if ( fs->length == 0 ){
         XLALPrintError("No frequencies found");
         XLAL_ERROR ( XLAL_EFUNC );

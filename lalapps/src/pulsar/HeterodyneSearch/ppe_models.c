@@ -64,7 +64,7 @@ void get_pulsar_model( LALInferenceModel *model ){
         REAL8 dist = LALInferenceGetREAL8Variable( model->params, "DIST" );
         REAL8 f0 = LALInferenceGetREAL8Variable( model->params, "F0" );
         REAL8 h0val = Q22*sqrt(8.*LAL_PI/15.)*16.*LAL_PI*LAL_PI*LAL_G_SI*f0*f0/(LAL_C_SI*LAL_C_SI*LAL_C_SI*LAL_C_SI*dist);
-        PulsarAddParam( pars, "H0", &h0val, PULSARTYPE_REAL8_t );
+        PulsarAddREAL8Param( pars, "H0", h0val );
       }
       else{
         XLAL_ERROR_VOID( XLAL_EINVAL, "Error... using mass quadrupole, Q22, but no distance or frequency given!" );
@@ -85,7 +85,7 @@ void get_pulsar_model( LALInferenceModel *model ){
     /* check whether using cos(theta) or theta as the variable (defaulting to cos(theta) being the value that is set */
     if ( LALInferenceCheckVariableNonFixed( model->params, "THETA" ) ){
       REAL8 costheta = cos(LALInferenceGetREAL8Variable( model->params, "THETA" ));
-      PulsarAddParam( pars, "COSTHETA", &costheta, PULSARTYPE_REAL8_t );
+      PulsarAddREAL8Param( pars, "COSTHETA", costheta );
     }
     else{ add_pulsar_parameter( model->params, pars, "COSTHETA" ); }
     add_pulsar_parameter( model->params, pars, "PHI0" ); /* note that this is the rotational phase */
@@ -93,7 +93,7 @@ void get_pulsar_model( LALInferenceModel *model ){
     /* check whether using cos(iota) or iota as the variable (defaulting to cos(iota) being the value that is set) */
     if ( LALInferenceCheckVariableNonFixed( model->params, "IOTA" ) ){
       REAL8 cosiota = cos(LALInferenceGetREAL8Variable( model->params, "IOTA" ));
-      PulsarAddParam( pars, "COSIOTA", &cosiota, PULSARTYPE_REAL8_t );
+      PulsarAddREAL8Param( pars, "COSIOTA", cosiota );
     }
     else{ add_pulsar_parameter( model->params, pars, "COSIOTA" ); }
 
@@ -142,14 +142,14 @@ void get_pulsar_model( LALInferenceModel *model ){
     /* check whether using cos(theta) or theta as the variable (defaulting to cos(theta) being the value that is set */
     if ( LALInferenceCheckVariableNonFixed( model->params, "IOTA" ) ){
       REAL8 cosiota = cos(LALInferenceGetREAL8Variable( model->params, "IOTA" ));
-      PulsarAddParam( pars, "COSIOTA", &cosiota, PULSARTYPE_REAL8_t );
+      PulsarAddREAL8Param( pars, "COSIOTA", cosiota );
     }
     else{ add_pulsar_parameter( model->params, pars, "COSIOTA" ); }
 
     if( LALInferenceCheckVariable( model->ifo->params, "biaxial" ) ){
       /* use complex amplitude parameterisation, but set up for a biaxial star */
       REAL8 phi22 = 2.*LALInferenceGetREAL8Variable( model->params, "PHI21" );
-      PulsarAddParam( pars, "PHI22", &phi22, PULSARTYPE_REAL8_t );
+      PulsarAddREAL8Param( pars, "PHI22", phi22 );
     }
     else{
       add_pulsar_parameter( model->params, pars, "PHI22" );
@@ -180,8 +180,10 @@ void get_pulsar_model( LALInferenceModel *model ){
       REAL8 f0fixed = LALInferenceGetREAL8Variable( model->params, varname );
       deltafreqs->data[i] = f0new-f0fixed; /* frequency (derivative) difference */
     }
-    PulsarAddParam( pars, "F", &freqs, PULSARTYPE_REAL8Vector_t );
-    PulsarAddParam( pars, "DELTAF", &deltafreqs, PULSARTYPE_REAL8Vector_t );
+    PulsarAddREAL8VectorParam( pars, "F", (const REAL8Vector *)freqs );
+    PulsarAddREAL8VectorParam( pars, "DELTAF", (const REAL8Vector *)deltafreqs );
+    XLALDestroyREAL8Vector( freqs );
+    XLALDestroyREAL8Vector( deltafreqs );
   }
 
   /* check if there are glitch parameters */
@@ -199,7 +201,8 @@ void get_pulsar_model( LALInferenceModel *model ){
           }
           else{ gl->data[j] = 0.; }
         }
-        PulsarAddParam( pars, glitchpars[i], &gl, PULSARTYPE_REAL8Vector_t );
+        PulsarAddREAL8VectorParam( pars, glitchpars[i], (const REAL8Vector *)gl );
+        XLALDestroyREAL8Vector( gl );
       }
     }
   }
@@ -209,7 +212,7 @@ void get_pulsar_model( LALInferenceModel *model ){
     /* binary system model - NOT pulsar model */
     CHAR binary[PULSAR_PARNAME_MAX];
     snprintf(binary, PULSAR_PARNAME_MAX*sizeof(CHAR), "%s", *(CHAR**)LALInferenceGetVariable( model->ifo->params, "BINARY" ));
-    PulsarAddParam( pars, "BINARY", &binary, PULSARTYPE_string_t );
+    PulsarAddStringParam( pars, "BINARY", binary );
 
     add_pulsar_parameter( model->params, pars, "ECC" );
     add_pulsar_parameter( model->params, pars, "OM" );
@@ -260,7 +263,8 @@ void get_pulsar_model( LALInferenceModel *model ){
         snprintf(varname, sizeof(varname), "FB%u", i);
         fb->data[i] = LALInferenceGetREAL8Variable( model->params, varname );
       }
-      PulsarAddParam( pars, "FB", &fb, PULSARTYPE_REAL8Vector_t );
+      PulsarAddREAL8VectorParam( pars, "FB", (const REAL8Vector *)fb );
+      XLALDestroyREAL8Vector( fb );
     }
   }
 
@@ -292,9 +296,9 @@ void set_nonGR_model_parameters( PulsarParameters *pars, char* nonGRmodel ){
     REAL8 hVectorX = h0 * siniota;
     REAL8 hVectorY = h0 * siniota * cosiota;
     REAL8 psiVector = LAL_PI_2;
-    PulsarAddParam( pars, "HVECTORX", &hVectorX, PULSARTYPE_REAL8_t );
-    PulsarAddParam( pars, "HVECTORY", &hVectorY, PULSARTYPE_REAL8_t );
-    PulsarAddParam( pars, "PSIVECTOR", &psiVector, PULSARTYPE_REAL8_t );
+    PulsarAddREAL8Param( pars, "HVECTORX", hVectorX );
+    PulsarAddREAL8Param( pars, "HVECTORY", hVectorY );
+    PulsarAddREAL8Param( pars, "PSIVECTOR", psiVector );
   }
   else if( isEGR == 0 ) {
     /** GR plus an unconstrained non-GR modes
@@ -305,9 +309,9 @@ void set_nonGR_model_parameters( PulsarParameters *pars, char* nonGRmodel ){
     REAL8 hPlus = 0.5 * h0 * (1. + cosiota * cosiota);
     REAL8 hCross = h0 * cosiota;
     REAL8 psiTensor = -LAL_PI_2;
-    PulsarAddParam( pars, "HPLUS", &hPlus, PULSARTYPE_REAL8_t );
-    PulsarAddParam( pars, "HCROSS", &hCross, PULSARTYPE_REAL8_t );
-    PulsarAddParam( pars, "PSITENSOR", &psiTensor, PULSARTYPE_REAL8_t );
+    PulsarAddREAL8Param( pars, "HPLUS", hPlus );
+    PulsarAddREAL8Param( pars, "HCROSS", hCross );
+    PulsarAddREAL8Param( pars, "PSITENSOR", psiTensor );
   } else {
     XLAL_ERROR_VOID( XLAL_EINVAL, "Unrecognized non-GR model. Currently supported: enhanced GR (EGR), G4v, or no argument for full search." );
   }
@@ -323,7 +327,7 @@ void set_nonGR_model_parameters( PulsarParameters *pars, char* nonGRmodel ){
  */
 void add_pulsar_parameter( LALInferenceVariables *var, PulsarParameters *params, const CHAR *parname ){
   REAL8 par = LALInferenceGetREAL8Variable( var, parname );
-  PulsarAddParam( params, parname, &par, PULSARTYPE_REAL8_t );
+  PulsarAddREAL8Param( params, parname, par );
 }
 
 
@@ -495,58 +499,57 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
   }
 
   /* get vector of frequencies and frequency differences */
-  REAL8Vector *freqs = PulsarGetREAL8VectorParam( params, "F" );
-  REAL8Vector *deltafs = PulsarGetREAL8VectorParam( params, "DELTAF" );
+  const REAL8Vector *freqs = PulsarGetREAL8VectorParam( params, "F" );
+  const REAL8Vector *deltafs = PulsarGetREAL8VectorParam( params, "DELTAF" );
 
   if ( PulsarCheckParam( params, "BINARY" ) ){ isbinary = 1; } /* see if pulsar is in binary */
   if ( PulsarCheckParam( params, "GLEP" ) ){ /* see if pulsar has glitch parameters */
-    REAL8Vector *glpars = NULL;
-    glpars = PulsarGetREAL8VectorParam( params, "GLEP" );
-    glnum = glpars->length;
+    const REAL8Vector *gleppars = PulsarGetREAL8VectorParam( params, "GLEP" );
+    glnum = gleppars->length;
 
     /* get epochs */
     glep = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    for ( i=0; i<glpars->length; i++ ){ glep[i] = glpars->data[i]; }
+    for ( i=0; i<gleppars->length; i++ ){ glep[i] = gleppars->data[i]; }
 
     /* get phase offsets */
     glph = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLPH" ) ){
-      glpars = PulsarGetREAL8VectorParam( params, "GLPH" );
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( params, "GLPH" );
       for ( i=0; i<glpars->length; i++ ){ glph[i] = glpars->data[i]; }
     }
 
     /* get frequencies offsets */
     glf0 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLF0" ) ){
-      glpars = PulsarGetREAL8VectorParam( params, "GLF0" );
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( params, "GLF0" );
       for ( i=0; i<glpars->length; i++ ){ glf0[i] = glpars->data[i]; }
     }
 
     /* get frequency derivative offsets */
     glf1 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLF1" ) ){
-      glpars = PulsarGetREAL8VectorParam( params, "GLF1" );
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( params, "GLF1" );
       for ( i=0; i<glpars->length; i++ ){ glf1[i] = glpars->data[i]; }
     }
 
     /* get second frequency derivative offsets */
     glf2 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLF2" ) ){
-      glpars = PulsarGetREAL8VectorParam( params, "GLF2" );
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( params, "GLF2" );
       for ( i=0; i<glpars->length; i++ ){ glf2[i] = glpars->data[i]; }
     }
 
     /* get decaying frequency component offset derivative */
     glf0d = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLF0D" ) ){
-      glpars = PulsarGetREAL8VectorParam( params, "GLF0D" );
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( params, "GLF0D" );
       for ( i=0; i<glpars->length; i++ ){ glf0d[i] = glpars->data[i]; }
     }
 
     /* get decaying frequency component decay time constant */
     gltd = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLTD" ) ){
-      glpars = PulsarGetREAL8VectorParam( params, "GLTD" );
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( params, "GLTD" );
       for ( i=0; i<glpars->length; i++ ){ gltd[i] = glpars->data[i]; }
     }
   }
@@ -1216,10 +1219,10 @@ void invert_source_params( PulsarParameters *params ){
   if ( h0 != 0.){
     phi22 = 2.*phi0;
     phi22 = phi22 - LAL_TWOPI*floor(phi22/LAL_TWOPI);
-    PulsarAddParam( params, "PHI22", &phi22, PULSARTYPE_REAL8_t );
+    PulsarAddREAL8Param( params, "PHI22", phi22 );
 
     C22 = -0.5*h0; /* note the change in sign so that the triaxial model conforms to the convertion in JKS98 */
-    PulsarAddParam( params, "C22", &C22, PULSARTYPE_REAL8_t );
+    PulsarAddREAL8Param( params, "C22", C22 );
   }
   else if ( ( I21 != 0. || I31 != 0. ) && ( C22 == 0. && C21 == 0. ) ) {
     sinlambda = sin( lambda );
@@ -1247,13 +1250,13 @@ void invert_source_params( PulsarParameters *params ){
     C22 = 2.*sqrt( A222 + B222 );
     C21 = 2.*sqrt( A212 + B212 );
 
-    PulsarAddParam( params, "C22", &C22, PULSARTYPE_REAL8_t );
-    PulsarAddParam( params, "C21", &C21, PULSARTYPE_REAL8_t );
+    PulsarAddREAL8Param( params, "C22", C22 );
+    PulsarAddREAL8Param( params, "C21", C21 );
 
     phi22 = fmod( 2.*phi0 - atan2( B22, A22 ), LAL_TWOPI );
     phi21 = fmod( phi0 - atan2( B21, A21 ), LAL_TWOPI );
 
-    PulsarAddParam( params, "PHI22", &phi22, PULSARTYPE_REAL8_t );
-    PulsarAddParam( params, "PHI21", &phi21, PULSARTYPE_REAL8_t );
+    PulsarAddREAL8Param( params, "PHI22", phi22 );
+    PulsarAddREAL8Param( params, "PHI21", phi21 );
   }
 }
