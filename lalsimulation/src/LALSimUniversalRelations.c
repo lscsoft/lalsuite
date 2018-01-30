@@ -108,3 +108,36 @@ REAL8 XLALSimUniversalRelationomega03TidalVSlambda3Tidal(
     }
     return XLALSimUniversalRelation( lnx, coeffs );
 }
+
+/**< Eq. (15) with coeffs from third row of Table I of https://arxiv.org/pdf/1608.02582.pdf (Yagi-Yunes) */
+/* Gives the spin-induced quadrupole coefficient as a function the dimensionless l=2
+ tidal deformability: lambda2bar = 2/3 k2 C^5.
+ This coefficient quadparam relates the spin-induced quadrupole to the square of the spin, according to Q = -quadparam*chi^2*m^3*.
+ It takes the value 1 for BH, and can reach ~10 for NS.
+ The notation is Qbar in Yagi-Yunes. In the PN literature, the notation is often kappa (e.g. in
+ https://arxiv.org/pdf/1501.01529.pdf). In https://arxiv.org/pdf/gr-qc/9709032.pdf the notation is a.
+ The Yagi-Yunes fit does not cover the BH limit, where lambda2bar->0 and kappa->1.
+ We extend it with a polynomial below lambda2bar=1. so that the function and its two
+ first derivatives are smooth at the junction, while enforcing the BH limit.
+ */
+REAL8 XLALSimUniversalRelationQuadMonVSlambda2Tidal(
+                                                    REAL8 lambda2bar /**< l=2 dimensionless tidal deformability */
+)
+{
+    REAL8 coeffs[] = {0.1940, 0.09163, 0.04812, -4.283e-3, 1.245e-4};
+    REAL8 lnx;
+    if ( lambda2bar < 0. ) {
+        XLAL_ERROR (XLAL_EFUNC);
+    }
+    else if ( 0. <= lambda2bar && lambda2bar  < 1. ) {
+        /* Extension of the fit in the range lambda2bar=[0,1.] so that
+        the BH limit is enforced, lambda2bar->0 gives quadparam->1. and
+        the junction with the universal relation is smooth, of class C2  */
+        return 1. + lambda2bar*(0.427688866723244 + lambda2bar*(-0.324336526985068 + lambda2bar*0.1107439432180572));
+    }
+    else {
+        lnx = log( lambda2bar );
+    }
+    REAL8 lny = XLALSimUniversalRelation( lnx, coeffs );
+    return exp(lny);
+}

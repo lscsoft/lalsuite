@@ -63,6 +63,7 @@ typedef struct tagTidalEOBParams
     REAL8 lambda3Tidal;
     REAL8 omega02Tidal;
     REAL8 omega03Tidal;
+    REAL8 quadparam;
 }
 TidalEOBParams;
 

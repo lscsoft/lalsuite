@@ -336,18 +336,24 @@ int XLALSimInspiralChooseTDWaveform(
      * This affects the quadrupole-monopole interaction.
      */
     REAL8 v0 = 1.;
+		/* Note: approximant SEOBNRv2T/v4T will by default compute dQuadMon1, dQuadMon2 */
+		/* from TidalLambda1, TidalLambda2 using universal relations, */
+		/* or use the input value if it is present in the dictionary LALparams */
     REAL8 quadparam1 = 1.+XLALSimInspiralWaveformParamsLookupdQuadMon1(LALparams);
     REAL8 quadparam2 = 1.+XLALSimInspiralWaveformParamsLookupdQuadMon2(LALparams);
     REAL8 lambda1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALparams);
     REAL8 lambda2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALparams);
     int amplitudeO = XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(LALparams);
     int phaseO =XLALSimInspiralWaveformParamsLookupPNPhaseOrder(LALparams);
+		/* Tidal parameters to be computed, if required, by universal relations */
     REAL8 lambda3A_UR = 0.;
     REAL8 omega2TidalA_UR = 0.;
     REAL8 omega3TidalA_UR = 0.;
     REAL8 lambda3B_UR = 0.;
     REAL8 omega2TidalB_UR = 0.;
     REAL8 omega3TidalB_UR = 0.;
+		REAL8 quadparam1_UR = 0.;
+		REAL8 quadparam2_UR = 0.;
 
     /* General sanity checks that will abort
      *
@@ -828,18 +834,39 @@ int XLALSimInspiralChooseTDWaveform(
                 ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
             if( f_ref != 0.)
                 XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
-            lambda3A_UR = XLALSimUniversalRelationlambda3TidalVSlambda2Tidal(lambda1);
-            omega2TidalA_UR = XLALSimUniversalRelationomega02TidalVSlambda2Tidal(lambda1);
-            omega3TidalA_UR = XLALSimUniversalRelationomega03TidalVSlambda3Tidal(lambda3A_UR);
-            lambda3B_UR = XLALSimUniversalRelationlambda3TidalVSlambda2Tidal(lambda2);
-            omega2TidalB_UR = XLALSimUniversalRelationomega02TidalVSlambda2Tidal(lambda2);
-            omega3TidalB_UR = XLALSimUniversalRelationomega03TidalVSlambda3Tidal(lambda3B_UR);
-            XLALSimInspiralWaveformParamsInsertTidalOctupolarLambda1(LALparams, lambda3A_UR);
-            XLALSimInspiralWaveformParamsInsertTidalOctupolarLambda2(LALparams, lambda3B_UR);
-            XLALSimInspiralWaveformParamsInsertTidalQuadrupolarFMode1(LALparams, omega2TidalA_UR);
-            XLALSimInspiralWaveformParamsInsertTidalQuadrupolarFMode2(LALparams, omega2TidalB_UR);
-            XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode1(LALparams, omega3TidalA_UR);
-            XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode2(LALparams, omega3TidalB_UR);
+						/* If tides-related parameter was not input by the user, use universal relations to compute it from quadrupolar lambda (or from octupolar lambda, itself either input or computed, for omega03) - else use the input value given by the user */
+						if(!XLALDictContains(LALparams, "TidalOctupolarLambda1")) {
+							lambda3A_UR = XLALSimUniversalRelationlambda3TidalVSlambda2Tidal(lambda1);
+							XLALSimInspiralWaveformParamsInsertTidalOctupolarLambda1(LALparams, lambda3A_UR);
+						}
+						if(!XLALDictContains(LALparams, "TidalOctupolarLambda2")) {
+							lambda3B_UR = XLALSimUniversalRelationlambda3TidalVSlambda2Tidal(lambda2);
+							XLALSimInspiralWaveformParamsInsertTidalOctupolarLambda2(LALparams, lambda3B_UR);
+						}
+						if(!XLALDictContains(LALparams, "TidalQuadrupolarFMode1")) {
+							omega2TidalA_UR = XLALSimUniversalRelationomega02TidalVSlambda2Tidal(lambda1);
+							XLALSimInspiralWaveformParamsInsertTidalQuadrupolarFMode1(LALparams, omega2TidalA_UR);
+						}
+						if(!XLALDictContains(LALparams, "TidalQuadrupolarFMode2")) {
+							omega2TidalB_UR = XLALSimUniversalRelationomega02TidalVSlambda2Tidal(lambda2);
+							XLALSimInspiralWaveformParamsInsertTidalQuadrupolarFMode2(LALparams, omega2TidalB_UR);
+						}
+						if(!XLALDictContains(LALparams, "TidalOctupolarFMode1")) {
+							omega3TidalA_UR = XLALSimUniversalRelationomega03TidalVSlambda3Tidal(lambda3A_UR);
+							XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode1(LALparams, omega3TidalA_UR);
+						}
+						if(!XLALDictContains(LALparams, "TidalOctupolarFMode2")) {
+							omega3TidalB_UR = XLALSimUniversalRelationomega03TidalVSlambda3Tidal(lambda3B_UR);
+							XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode2(LALparams, omega3TidalB_UR);
+						}
+						if(!XLALDictContains(LALparams, "dQuadMon1")) {
+							  quadparam1_UR = XLALSimUniversalRelationQuadMonVSlambda2Tidal(lambda1);
+								XLALSimInspiralWaveformParamsInsertdQuadMon1(LALparams, quadparam1_UR - 1.);
+						}
+						if(!XLALDictContains(LALparams, "dQuadMon2")) {
+							  quadparam2_UR = XLALSimUniversalRelationQuadMonVSlambda2Tidal(lambda2);
+								XLALSimInspiralWaveformParamsInsertdQuadMon2(LALparams, quadparam2_UR - 1.);
+						}
             /* Call the waveform driver routine */
             if (approximant==SEOBNRv2T) SpinAlignedEOBversion = 201;
             if (approximant==SEOBNRv4T) SpinAlignedEOBversion = 401;
