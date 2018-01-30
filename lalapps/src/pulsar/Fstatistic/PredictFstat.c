@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2017 Maximillian Bensch, Reinhard Prix
  * Copyright (C) 2006 Iraj Gholami, Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -45,7 +46,7 @@
 #include <lal/ComputeFstat.h>
 #include <lal/LALHough.h>
 #include <lal/LogPrintf.h>
-
+#include <lal/FstatisticTools.h>
 #include <lal/TransientCW_utils.h>
 
 #include <lalapps.h>
@@ -85,7 +86,7 @@
  */
 typedef struct {
   CHAR *dataSummary;            /**< descriptive string describing the data */
-  REAL8 aPlus, aCross;		/**< internally always use Aplus, Across */
+  PulsarAmplitudeParams pap;    /**< PulsarAmplitudeParameter {h0, cosi, psi, phi0} */
   AntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix and normalization */
   UINT4 numSFTs;		/**< number of SFTs = Tobs/Tsft */
 } ConfigVariables;
@@ -110,11 +111,7 @@ typedef struct {
   REAL8 Delta;		/**< sky-position angle 'delta', which is declination in equatorial coordinates */
 
   BOOLEAN PureSignal;   /**< If true, calculate 2F for pure signal, i.e. E[2F] = 2F = rho^2 */
-
   LALStringVector* assumeSqrtSX;/**< Assume stationary Gaussian noise with detector noise-floors sqrt{SX}" */
-  BOOLEAN SignalOnly;	/**< DEPRECATED: ALTERNATIVE switch to assume Sh=1 instead of estimating noise-floors from SFTs */
-
-  CHAR *IFO;		/**< GW detector short-name, only useful if not using v2-SFTs as input */
 
   CHAR *ephemEarth;	/**< Earth ephemeris file to use */
   CHAR *ephemSun;	/**< Sun ephemeris file to use */
@@ -125,10 +122,19 @@ typedef struct {
   INT4 minStartTime;	/**< Only use SFTs with timestamps starting from (including) this GPS time */
   INT4 maxStartTime;	/**< Only use SFTs with timestamps up to (excluding) this GPS time */
 
+  LALStringVector *timestampsFiles;        /**< Names of numDet timestamps files */
+  LIGOTimeGPS startTime;	/**< Start-time in detector-frame (GPS seconds) */
+  INT4 duration;		/**< Duration in seconds */
+  LALStringVector* IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector*/
+  REAL8 Tsft;		        /**< SFT time baseline Tsft */
+  REAL8 SFToverlap;		/**< overlap SFTs by this many seconds */
+
   CHAR *transientWindowType;	/**< name of transient window ('rect', 'exp',...) */
   REAL8 transientStartTime;	/**< GPS start-time of transient window */
   REAL8 transientTauDays;	/**< time-scale in days of transient window */
 
+
+  BOOLEAN SignalOnly;	/**< DEPRECATED: ALTERNATIVE --assumeSqrtSX and/or --PureSignal */
 } UserInput_t;
 
 /* ---------- local prototypes ---------- */
@@ -174,20 +180,8 @@ int main(int argc,char *argv[])
   /* Initialize code-setup */
   XLAL_CHECK_MAIN ( InitPFS ( &GV, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  { /* Calculating the F-Statistic */
-    REAL8 al1, al2, al3;
-    REAL8 Ap2 = SQ(GV.aPlus);
-    REAL8 Ac2 = SQ(GV.aCross);
-    REAL8 cos2psi2 = SQ( cos(2*uvar.psi) );
-    REAL8 sin2psi2 = SQ( sin(2*uvar.psi) );
-
-    al1 = Ap2 * cos2psi2 + Ac2 * sin2psi2;	/* A1^2 + A3^2 */
-    al2 = Ap2 * sin2psi2 + Ac2 * cos2psi2;	/* A2^2 + A4^2 */
-    al3 = ( Ap2 - Ac2 ) * sin(2.0*uvar.psi) * cos(2.0*uvar.psi);	/* A1 A2 + A3 A4 */
-
-    /* SNR^2 */
-    rho2 = GV.Mmunu.Sinv_Tsft * (GV.Mmunu.Ad * al1 + GV.Mmunu.Bd * al2 + 2.0 * GV.Mmunu.Cd * al3 );
-  }
+  rho2 = XLALComputeOptimalSNR2FromMmunu ( GV.pap, GV.Mmunu );
+  XLAL_CHECK_MAIN ( xlalErrno == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* F-statistic expected mean and standard deviation */
   const REAL8 twoF_expected = uvar.PureSignal ? ( rho2 ) : ( 4.0 + rho2 );
@@ -276,9 +270,12 @@ initUserVars ( UserInput_t *uvar )
   uvar->phi0 = 0;
   uvar->transientWindowType = XLALStringDuplicate ( "none" );
 
+  uvar->SFToverlap=0;
+  uvar->Tsft=1800;
+
   /* register all our user-variables */
-  XLALRegisterUvarMember( aPlus, 	 REAL8, 0 , OPTIONAL, "'Plus' polarization amplitude: aPlus  [alternative to {h0, cosi}");
-  XLALRegisterUvarMember( aCross,  	 REAL8, 0 , OPTIONAL, "'Cross' polarization amplitude: aCross [alternative to {h0, cosi}");
+  XLALRegisterUvarMember( aPlus, 	 REAL8, 0 , OPTIONAL, "'Plus' polarization amplitude: aPlus  [alternative to {h0, cosi}]");
+  XLALRegisterUvarMember( aCross,  	 REAL8, 0 , OPTIONAL, "'Cross' polarization amplitude: aCross [alternative to {h0, cosi}]");
   XLALRegisterUvarMember( h0,		REAL8, 's', OPTIONAL, "Overall GW amplitude h0 [alternative to {aPlus, aCross}]");
   XLALRegisterUvarMember( cosi,		REAL8, 'i', OPTIONAL, "Inclination angle of rotation axis cos(iota) [alternative to {aPlus, aCross}]");
 
@@ -287,10 +284,9 @@ initUserVars ( UserInput_t *uvar )
 
   XLALRegisterUvarMember( Alpha,	REAL8, 'a', REQUIRED, "Sky position alpha (equatorial coordinates) in radians");
   XLALRegisterUvarMember( Delta,	REAL8, 'd', REQUIRED, "Sky position delta (equatorial coordinates) in radians");
-  XLALRegisterUvarMember( Freq,		REAL8, 'F', REQUIRED, "GW signal frequency (only used for noise-estimation in SFTs)");
+  XLALRegisterUvarMember( Freq,		REAL8, 'F', OPTIONAL, "GW signal frequency (only used for noise-estimation in SFTs)");
 
-  XLALRegisterUvarMember( DataFiles, 	STRING, 'D', REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files");
-  XLALRegisterUvarMember( IFO, 		STRING, 'I', OPTIONAL, "Detector-constraint: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
+  XLALRegisterUvarMember( DataFiles, 	STRING, 'D', OPTIONAL, "File-pattern specifying (multi-IFO) input SFT-files");
   XLALRegisterUvarMember( ephemEarth, 	 STRING, 0,  OPTIONAL, "Earth ephemeris file to use");
   XLALRegisterUvarMember( ephemSun, 	 STRING, 0,  OPTIONAL, "Sun ephemeris file to use");
   XLALRegisterUvarMember( outputFstat,     STRING, 0,  OPTIONAL, "Output-file for predicted F-stat value" );
@@ -302,14 +298,23 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( PureSignal,	BOOLEAN, 'P', OPTIONAL, "If true, calculate 2F for pure signal, i.e. E[2F] = 2F = rho^2. If false, calculate 2F for signal+noise, i.e. E[2F] = 4 + rho^2.");
 
   XLALRegisterUvarMember( assumeSqrtSX,	 STRINGVector, 0,  OPTIONAL, "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs)");
-  XLALRegisterUvarMember( SignalOnly,	BOOLEAN, 'S', DEPRECATED,"DEPRECATED ALTERNATIVE: Don't estimate noise-floors but assume sqrtSX=1 instead");
-
   XLALRegisterUvarMember( RngMedWindow,	INT4, 'k', DEVELOPER, "Running-Median window size");
 
   /* transient signal window properties (name, start, duration) */
   XLALRegisterUvarMember( transientWindowType,  STRING, 0, OPTIONAL, "Name of transient signal window to use. ('none', 'rect', 'exp').");
   XLALRegisterUvarMember( transientStartTime,    REAL8, 0, OPTIONAL, "GPS start-time 't0' of transient signal window.");
   XLALRegisterUvarMember( transientTauDays,   REAL8, 0, OPTIONAL, "Timescale 'tau' of transient signal window in seconds.");
+  /* start + duration of timeseries */
+  XLALRegisterUvarMember(startTime,            EPOCH, 0, OPTIONAL, "Start-time of the signal in detector-frame (format 'xx.yy[GPS|MJD]'), needs duration [alternative to DataFiles and {timestampsFiles,IFOs,assumeSqrtSX}]");
+  XLALRegisterUvarMember(  duration,              INT4, 0,  OPTIONAL, "Duration of the signal in seconds, needs startTime [alternative to DataFiles and {timestampsFiles,IFOs,assumeSqrtSX}]");
+  XLALRegisterUvarMember( timestampsFiles,       STRINGVector, 0,  OPTIONAL, "File to read timestamps from (file-format: lines with <seconds> <nanoseconds>) [alternative to DataFiles and {startTime+duration,IFOs,assumeSqrtSX}]");
+  XLALRegisterUvarMember( IFOs,			STRINGVector, 0, OPTIONAL, "CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" , used for --timestampsFiles and --startTime+duration");
+  /* SFT properties */
+  XLALRegisterUvarMember(  Tsft,                 REAL8, 0, OPTIONAL, "Time baseline of one SFT in seconds, used for --timestampsFiles and --startTime+duration");
+  XLALRegisterUvarMember(  SFToverlap,           REAL8, 0, DEVELOPER, "Overlap between successive SFTs in seconds (conflicts with --DataFiles or --timestampsFiles)");
+
+  // ---------- deprecated options
+  XLALRegisterUvarMember( SignalOnly,	BOOLEAN, 'S', DEPRECATED,"ALTERNATIVE: use --assumeSqrtSX and/or --PureSignal instead");
 
   return XLAL_SUCCESS;
 
@@ -322,7 +327,6 @@ InitPFS ( ConfigVariables *cfg, const UserInput_t *uvar )
   XLAL_CHECK ( (cfg != NULL) && (uvar != NULL), XLAL_EINVAL );
 
   SFTCatalog *catalog = NULL;
-  SFTConstraints XLAL_INIT_DECL(constraints);
   SkyPosition skypos;
 
   LIGOTimeGPS minStartTimeGPS, maxStartTimeGPS;
@@ -338,71 +342,116 @@ InitPFS ( ConfigVariables *cfg, const UserInput_t *uvar )
     BOOLEAN have_Ac   = XLALUserVarWasSet ( &uvar->aCross );
 
     /* ----- handle {h0,cosi} || {aPlus,aCross} freedom ----- */
-    if ( ( have_h0 && !have_cosi ) || ( !have_h0 && have_cosi ) ) {
-      XLAL_ERROR ( XLAL_EINVAL, "Need both (h0, cosi) to specify signal!\n");
-    }
-    if ( ( have_Ap && !have_Ac) || ( !have_Ap && have_Ac ) ) {
-      XLAL_ERROR ( XLAL_EINVAL, "Need both (aPlus, aCross) to specify signal!\n");
-    }
-    if ( have_h0 && have_Ap ) {
-      XLAL_ERROR ( XLAL_EINVAL, "Overdetermined: specify EITHER (h0,cosi) OR (aPlus,aCross)!\n");
-    }
-    /* ----- internally we always use Aplus, Across */
+    XLAL_CHECK( (( have_h0 && !have_cosi ) || ( !have_h0 && have_cosi )) == 0, XLAL_EINVAL, "Need both (h0, cosi) to specify signal!\n");
+    XLAL_CHECK(( ( have_Ap && !have_Ac) || ( !have_Ap && have_Ac ) ) == 0, XLAL_EINVAL, "Need both (aPlus, aCross) to specify signal!\n");
+    XLAL_CHECK(( have_h0 && have_Ap ) == 0, XLAL_EINVAL, "Overdetermined: specify EITHER (h0,cosi) OR (aPlus,aCross)!\n");
+    /* ----- internally we always use h0, cosi */
     if ( have_h0 )
       {
-	cfg->aPlus = 0.5 * uvar->h0 * ( 1.0 + SQ( uvar->cosi) );
-	cfg->aCross = uvar->h0 * uvar->cosi;
+        cfg->pap.h0=uvar->h0;
+        cfg->pap.cosi=uvar->cosi;
       }
     else
       {
-	cfg->aPlus = uvar->aPlus;
-	cfg->aCross = uvar->aCross;
+        cfg->pap.h0 = uvar->aPlus + sqrt( SQ( uvar->aPlus ) - SQ( uvar->aCross ) );
+        cfg->pap.cosi= uvar->aCross / cfg->pap.h0;
       }
+    cfg->pap.psi=uvar->psi;
+    cfg->pap.phi0=uvar->phi0;
   }/* check user-input */
 
-  /* ----- prepare SFT-reading ----- */
-  if ( XLALUserVarWasSet ( &uvar->IFO ) ) {
-    XLAL_CHECK ( (constraints.detector = XLALGetChannelPrefix ( uvar->IFO )) != NULL, XLAL_EFUNC );
-  }
+  MultiLALDetector XLAL_INIT_DECL(multiIFO);
+  // ----- IFOs : only from one of {--IFOs, --DataFiles }: mutually exclusive
+  BOOLEAN have_IFOs      = (uvar->IFOs != NULL);
+  BOOLEAN have_SFTs = (uvar->DataFiles != NULL);
+  XLAL_CHECK ( have_IFOs || have_SFTs, XLAL_EINVAL, "Need one of --IFOs, --DataFiles to determine detectors\n");
+  if ( have_IFOs )
+    {
+      XLAL_CHECK ( XLALParseMultiLALDetector ( &multiIFO, uvar->IFOs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
 
-  minStartTimeGPS.gpsSeconds = uvar->minStartTime;
-  minStartTimeGPS.gpsNanoSeconds = 0;
-  maxStartTimeGPS.gpsSeconds = uvar->maxStartTime;
-  maxStartTimeGPS.gpsNanoSeconds = 0;
-  constraints.minStartTime = &minStartTimeGPS;
-  constraints.maxStartTime = &maxStartTimeGPS;
+  // ----- TIMESTAMPS: either from --timestampsFiles, --startTime+duration, or --SFTs
+  BOOLEAN have_startTime = XLALUserVarWasSet ( &uvar->startTime );
+  BOOLEAN have_duration = XLALUserVarWasSet ( &uvar->duration );
+  BOOLEAN have_timestampsFiles = ( uvar->timestampsFiles != NULL );
+  BOOLEAN have_assumeSqrtSX = ( uvar->assumeSqrtSX != NULL );
+  // need BOTH startTime+duration or none
+  XLAL_CHECK ( ( have_duration && have_startTime) || !( have_duration || have_startTime ), XLAL_EINVAL, "Need BOTH {--startTime,--duration} or NONE\n");
+  // at least one of {startTime,timestamps,SFTs} required
+  XLAL_CHECK ( have_timestampsFiles || have_startTime || have_SFTs , XLAL_EINVAL, "Need at least one of {--timestampsFiles, --startTime+duration, --DataFiles}\n" );
+  // don't allow timestamps + {startTime+duration OR SFTs}
+  XLAL_CHECK ( !have_timestampsFiles || !(have_startTime||have_SFTs), XLAL_EINVAL, "--timestampsFiles incompatible with {--DataFiles or --startTime+duration}\n");
+  // if we have timestamps or startTime+duration we also need assumeSqrtSX
+  XLAL_CHECK ( have_SFTs || ( (have_timestampsFiles || have_startTime) && have_assumeSqrtSX ), XLAL_EINVAL, "Need --assumeSqrtSX \n");
 
-  /* ----- get full SFT-catalog of all matching (multi-IFO) SFTs */
-  XLALPrintInfo ( "Finding all SFTs to load ... ");
-  XLAL_CHECK ( (catalog = XLALSFTdataFind ( uvar->DataFiles, &constraints )) != NULL, XLAL_EFUNC );
-  XLALPrintInfo ( "done. (found %d SFTs)\n", catalog->length );
-  if ( constraints.detector ) {
-    XLALFree ( constraints.detector );
-  }
-  XLAL_CHECK ( catalog->length > 0, XLAL_EINVAL, "No matching SFTs for pattern '%s'!\n", uvar->DataFiles );
+  MultiLIGOTimeGPSVector *mTS = NULL;
+  REAL8 Tsft=0, duration=0;
+  LIGOTimeGPS startTime;
+  UINT4 numDetectors=0;
+  MultiSFTCatalogView *multiCatalogView = NULL;
+  // ----- compute or estimate multiTimestamps ----------
+  if ( have_SFTs )
+    {
+      SFTConstraints XLAL_INIT_DECL(constraints);
+      /* ----- prepare SFT-reading ----- */
+      minStartTimeGPS.gpsSeconds = uvar->minStartTime;
+      minStartTimeGPS.gpsNanoSeconds = 0;
+      maxStartTimeGPS.gpsSeconds = uvar->maxStartTime;
+      maxStartTimeGPS.gpsNanoSeconds = 0;
+      constraints.minStartTime = &minStartTimeGPS;
+      constraints.maxStartTime = &maxStartTimeGPS;
 
-  /* ----- deduce start- and end-time of the observation spanned by the data */
-  GV.numSFTs = catalog->length;	/* total number of SFTs */
-  REAL8 Tsft = 1.0 / catalog->data[0].header.deltaF;
-  LIGOTimeGPS startTime = catalog->data[0].header.epoch;
-  LIGOTimeGPS endTime   = catalog->data[GV.numSFTs-1].header.epoch;
-  XLALGPSAdd ( &endTime, Tsft );
-  REAL8 duration = GPS2REAL8(endTime) - GPS2REAL8 (startTime);
+      /* ----- get full SFT-catalog of all matching (multi-IFO) SFTs */
+      XLALPrintInfo ( "Finding all SFTs to load ... ");
+      XLAL_CHECK ( (catalog = XLALSFTdataFind ( uvar->DataFiles, &constraints )) != NULL, XLAL_EFUNC );
+      XLALPrintInfo ( "done. (found %d SFTs)\n", catalog->length );
+      if ( constraints.detector ) {
+        XLALFree ( constraints.detector );
+      }
+      XLAL_CHECK ( catalog->length > 0, XLAL_EINVAL, "No matching SFTs for pattern '%s'!\n", uvar->DataFiles );
 
+      /* ----- deduce start- and end-time of the observation spanned by the data */
+      GV.numSFTs = catalog->length;	/* total number of SFTs */
+      Tsft = 1.0 / catalog->data[0].header.deltaF;
+      startTime = catalog->data[0].header.epoch;
+      LIGOTimeGPS endTime   = catalog->data[GV.numSFTs-1].header.epoch;
+      XLALGPSAdd ( &endTime, Tsft );
+      duration = GPS2REAL8(endTime) - GPS2REAL8 (startTime);
+
+      XLAL_CHECK ( (multiCatalogView = XLALGetMultiSFTCatalogView ( catalog )) != NULL, XLAL_EFUNC );
+
+      numDetectors = multiCatalogView->length;
+      // ----- get the (multi-IFO) 'detector-state series' for given catalog
+      XLAL_CHECK ( (mTS = XLALTimestampsFromMultiSFTCatalogView ( multiCatalogView )) != NULL, XLAL_EFUNC );
+
+      XLAL_CHECK ( XLALMultiLALDetectorFromMultiSFTCatalogView ( &multiIFO, multiCatalogView ) == XLAL_SUCCESS, XLAL_EFUNC );
+    } // endif have_SFTs
+  else
+    {
+      Tsft=uvar->Tsft;
+      numDetectors=multiIFO.length;
+      if ( have_timestampsFiles )
+        {
+          XLAL_CHECK ( (mTS = XLALReadMultiTimestampsFiles ( uvar->timestampsFiles )) != NULL, XLAL_EFUNC );
+          XLAL_CHECK ( (mTS->length > 0) && (mTS->data != NULL), XLAL_EINVAL, "Got empty timestamps-list from XLALReadMultiTimestampsFiles()\n" );
+          for ( UINT4 X=0; X < mTS->length; X ++ )
+            {
+              mTS->data[X]->deltaT = uvar->Tsft;	// Tsft information not given by timestamps-file
+            }
+          duration = mTS->data[0]->length * mTS->data[0]->deltaT;
+          startTime=mTS->data[0]->data[0];
+        } // endif have_timestampsFiles
+      else if ( have_startTime && have_duration )
+        {
+          XLAL_CHECK ( ( mTS = XLALMakeMultiTimestamps ( uvar->startTime, uvar->duration, uvar->Tsft, uvar->SFToverlap, multiIFO.length )) != NULL, XLAL_EFUNC );
+          duration=uvar->duration;
+          startTime=uvar->startTime;
+        } // endif have_startTime
+    }// calculate or estimate timestamps
   /* ----- load ephemeris-data ----- */
   XLAL_CHECK ( (edat = XLALInitBarycenter( uvar->ephemEarth, uvar->ephemSun )) != NULL, XLAL_EFUNC );
 
-  MultiSFTCatalogView *multiCatalogView;
-  XLAL_CHECK ( (multiCatalogView = XLALGetMultiSFTCatalogView ( catalog )) != NULL, XLAL_EFUNC );
-
-  UINT4 numDetectors = multiCatalogView->length;
-  // ----- get the (multi-IFO) 'detector-state series' for given catalog
-  MultiLIGOTimeGPSVector *mTS;
-  XLAL_CHECK ( (mTS = XLALTimestampsFromMultiSFTCatalogView ( multiCatalogView )) != NULL, XLAL_EFUNC );
-
-  MultiLALDetector XLAL_INIT_DECL(multiIFO);
-  XLAL_CHECK ( XLALMultiLALDetectorFromMultiSFTCatalogView ( &multiIFO, multiCatalogView ) == XLAL_SUCCESS, XLAL_EFUNC );
-
+  // ----- compute or estimate multiDetectorStates ----------
   REAL8 tOffset = 0.5 * Tsft;
   XLAL_CHECK ( ( multiDetStates = XLALGetMultiDetectorStates( mTS, &multiIFO, edat, tOffset )) != NULL, XLAL_EFUNC );
 
@@ -457,10 +506,12 @@ InitPFS ( ConfigVariables *cfg, const UserInput_t *uvar )
         } // for X < numDetectors
 
       multiNoiseWeights->Sinv_Tsft = Sinv * Tsft;
+      GV.numSFTs=numSFTs;
 
     } // if SignalOnly OR assumeSqrtSX given
-  else
+  else if(have_SFTs)
     {// load the multi-IFO SFT-vectors for noise estimation
+      XLAL_CHECK ( XLALUserVarWasSet ( &uvar->Freq ), XLAL_EINVAL, "Need a frequency for noise-estimation in SFTs!\n");
       UINT4 wings = uvar->RngMedWindow/2 + 10;   /* extra frequency-bins needed for rngmed */
       REAL8 fMax = uvar->Freq + 1.0 * wings / Tsft;
       REAL8 fMin = uvar->Freq - 1.0 * wings / Tsft;

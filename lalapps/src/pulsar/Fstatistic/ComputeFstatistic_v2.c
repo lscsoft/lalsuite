@@ -61,7 +61,7 @@
 #include <lal/TranslateMJD.h>
 #include <lal/SFTfileIO.h>
 #include <lal/ExtrapolatePulsarSpins.h>
-#include <lal/EstimateAmplitudeParams.h>
+#include <lal/FstatisticTools.h>
 
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/ComputeFstat.h>
