@@ -155,7 +155,7 @@ int main( void ){
           sprintf(outsigma, "%.5le", PulsarGetREAL8VectorParamErrIndividual(pars, p[i].name));
         }
 
-        UINT4 *fitFlag = PulsarGetParamFitFlag(pars, token);
+        const UINT4 *fitFlag = PulsarGetParamFitFlag(pars, token);
 
         if ( fitFlag[atoi(p[i].name+strlen(token))] == 1 ){ sprintf(outfitflag, "1"); }
         else if ( fitFlag[atoi(p[i].name+strlen(token))] == 0 ){ sprintf(outfitflag, " "); }
@@ -183,7 +183,7 @@ int main( void ){
           sprintf(outsigma, "%.5le", PulsarGetREAL8ParamErr(pars, p[i].name));
         }
 
-        UINT4 *fitFlag = PulsarGetParamFitFlag(pars, p[i].name);
+        const UINT4 *fitFlag = PulsarGetParamFitFlag(pars, p[i].name);
 
         if ( fitFlag[0] == 1 ){ sprintf(outfitflag, "1"); }
         else if ( fitFlag[0] == 0 ){ sprintf(outfitflag, " "); }

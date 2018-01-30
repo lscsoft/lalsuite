@@ -15,6 +15,7 @@ pymodule_PYTHON = \
 	git_version.py \
 	simulateCW.py \
 	NstarTools.py \
+	PulsarParametersWrapper.py \
 	$(END_OF_LIST)
 
 endif

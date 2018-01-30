@@ -1,4 +1,5 @@
 //
+// Copyright (C) 2017 Maximillian Bensch, Reinhard Prix
 // Copyright (C) 2014 Reinhard Prix
 // Copyright (C) 2012, 2013, 2014 Karl Wette
 // Copyright (C) 2007 Chris Messenger
@@ -30,7 +31,7 @@
 
 #include <lal/ExtrapolatePulsarSpins.h>
 
-#include <lal/EstimateAmplitudeParams.h>
+#include <lal/FstatisticTools.h>
 
 // ---------- local macro definitions ----------
 #define SQ(x) ( (x) * (x) )
@@ -393,3 +394,36 @@ XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp,		///< [out] Physical ampl
   return XLAL_SUCCESS;
 
 } // XLALAmplitudeVect2Params()
+
+
+
+/**
+ * Calculates the 'optimal' / perfect-match squared signal-to-noise ratio (SNR^2) for a CW signal for
+ * given PulsarAmplitudeParameters 'pap' and Antenna Pattern Matrix 'Mmunu'.
+ * The computed 'SNR' is related to the expectation value of the coherent F-statistic 'F' via
+ * E[2F] = 4 + SNR^2 for a template perfectly matching the signal, ie SNR^2 = (signal|signal).
+ */
+REAL8
+XLALComputeOptimalSNR2FromMmunu ( const PulsarAmplitudeParams pap, /**< [in] PulsarAmplitudeParameter {h0, cosi, psi, phi0} */
+                                  const AntennaPatternMatrix Mmunu /**< [in] Antenna-pattern Matrix */
+                                  )
+{
+  // Calculate the SNR using the expressions from the 'CFSv2 notes' T0900149-v5
+  // https://dcc.ligo.org/LIGO-T0900149-v5/public, namely Eqs.(77)-(80), keeping in mind
+  // that Mmunu.{Ad,Bd,Cd} = Nsft * {A,B,C}, and Tdata = Nsft * Tsft
+  REAL8 cos2psi   = cos ( 2.0 * pap.psi );
+  REAL8 sin2psi   = sin ( 2.0 * pap.psi );
+  REAL8 cos2psiSq = SQ( cos2psi );
+  REAL8 sin2psiSq = SQ( sin2psi );
+  REAL8 etaSq     = SQ(pap.cosi);
+
+  REAL8 al1 = 0.25 * SQ( 1.0 + etaSq ) * cos2psiSq + etaSq * sin2psiSq;  // Eq.(78)
+  REAL8 al2 = 0.25 * SQ( 1.0 + etaSq ) * sin2psiSq + etaSq * cos2psiSq;  // Eq.(79)
+  REAL8 al3 = 0.25 * SQ( 1.0 - etaSq ) * sin2psi * cos2psi;              // Eq.(80)
+
+  // SNR^2: Eq.(77)
+  REAL8 rho2 = SQ(pap.h0) * ( al1 * Mmunu.Ad + al2 * Mmunu.Bd + 2.0 * al3 * Mmunu.Cd ) * Mmunu.Sinv_Tsft;
+
+  return rho2;
+
+} // XLALComputeOptimalSNR2FromMmunu()

@@ -11,7 +11,7 @@ pkginclude_HEADERS = \
 	DetectorStates.h \
 	DopplerFullScan.h \
 	DopplerScan.h \
-	EstimateAmplitudeParams.h \
+	FstatisticTools.h \
 	ExtrapolatePulsarSpins.h \
 	FITSFileIO.h \
 	FITSPulsarIO.h \
@@ -74,7 +74,7 @@ liblalpulsar_la_SOURCES = \
 	DopplerFullScan.c \
 	DopplerScan.c \
 	DriveHough.c \
-	EstimateAmplitudeParams.c \
+	FstatisticTools.c \
 	ExtrapolatePulsarSpins.c \
 	FITSFileIO.c \
 	FITSPulsarIO.c \

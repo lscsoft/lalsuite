@@ -383,7 +383,7 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
   /***** phase model parameters ******/
   if ( PulsarCheckParam(pars, "F") ){ /* frequency and frequency derivative parameters */
     UINT4 i = 0;
-    REAL8Vector *freqs = PulsarGetREAL8VectorParam( pars, "F" );
+    const REAL8Vector *freqs = PulsarGetREAL8VectorParam( pars, "F" );
     /* add each frequency and derivative value as a seperate parameter (also set a value that is the FIXED value to be used for calculating phase differences) */
     for ( i = 0; i < freqs->length; i++ ){
       CHAR varname[256];
@@ -482,7 +482,7 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
 
     if ( PulsarCheckParam(pars, "FB") ){
       UINT4 i = 0;
-      REAL8Vector *fb = PulsarGetREAL8VectorParam( pars, "FB" );
+      const REAL8Vector *fb = PulsarGetREAL8VectorParam( pars, "FB" );
       /* add each FB value as a seperate parameter */
       for ( i = 0; i < fb->length; i++ ){
         CHAR varname[256];
@@ -500,7 +500,7 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
     UINT4 i = 0, j = 0, glnum = 0;
     for ( i = 0; i < NUMGLITCHPARS; i++ ){
       if ( PulsarCheckParam( pars, glitchpars[i] ) ){
-        REAL8Vector *glv = PulsarGetREAL8VectorParam( pars, glitchpars[i] );
+        const REAL8Vector *glv = PulsarGetREAL8VectorParam( pars, glitchpars[i] );
         for ( j = 0; j < glv->length; j++ ){
           CHAR varname[256];
           snprintf(varname, sizeof(varname), "%s_%u", glitchpars[i], j+1);
