@@ -42,6 +42,7 @@ const UserChoices SSBprecisionChoices = {
   { SSBPREC_NEWTONIAN,		"newtonian" },
   { SSBPREC_RELATIVISTIC,	"relativistic" },
   { SSBPREC_RELATIVISTICOPT,  	"relativisticopt" },
+  { SSBPREC_DMOFF,              "DMoff"},
 };
 
 /*---------- internal prototypes ----------*/
@@ -635,6 +636,16 @@ XLALGetSSBtimes ( const DetectorStateSeries *DetectorStates,	/**< [in] detector-
       // free buffer memory
       XLALFree ( bBuffer );
 
+      break;
+
+    case SSBPREC_DMOFF:	/* switch off all demodulation terms */
+
+      for ( UINT4 i = 0; i < numSteps; i++ )
+        {
+          DetectorState *state = &(DetectorStates->data[i]);
+          ret->DeltaT->data[i] = XLALGPSGetREAL8 ( &state->tGPS ) - refTimeREAL8;
+          ret->Tdot->data[i]   = 1.0;
+        } /* for i < numSteps */
       break;
 
     default:
