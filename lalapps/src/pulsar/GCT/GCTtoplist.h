@@ -77,6 +77,7 @@ typedef enum
     SORTBY_BSGLtL 	= 4,	//< sort by transient-line robust statistic B_S/GLtL
     SORTBY_BtSGLtL 	= 5,	//< sort by transient-CW line robust statistic B_tS/GLtL
     SORTBY_TRIPLE_BStSGLtL = 6,	//< triple toplists: one sorted by B_S/GL, one by B_S/GLtL, one by B_tS/GLtL
+    SORTBY_F_BSGLtL_BtSGLtL = 7,//< triple toplists: one sorted by 2F, one by B_S/GLtL, one by B_tS/GLtL
     SORTBY_LAST			//< end-marker
   } SortBy_t;
 
