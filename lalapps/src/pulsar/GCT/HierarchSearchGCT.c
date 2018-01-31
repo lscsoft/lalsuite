@@ -213,6 +213,7 @@ void PrintStackInfo( LALStatus *status, const SFTCatalogSequence *catalogSeq, FI
 void UpdateSemiCohToplists ( LALStatus *status, toplist_t *list1, toplist_t *list2, toplist_t *list3, FineGrid *in, REAL8 f1dot_fg, REAL8 f2dot_fg, REAL8 f3dot_fg, UsefulStageVariables *usefulparams, REAL4 NSegmentsInv, REAL4 *NSegmentsInvX, BOOLEAN have_f3dot );
 
 void UpdateSemiCohToplistsOptimTriple ( LALStatus *status,
+                             SortBy_t toplist_sortby,
                              toplist_t *list1,
                              toplist_t *list2,
                              toplist_t *list3,
@@ -350,8 +351,8 @@ int MAIN( int argc, char *argv[]) {
 
   /* fstat candidate structure for candidate toplist*/
   toplist_t *semiCohToplist=NULL;
-  toplist_t *semiCohToplist2=NULL;	// only used for SORTBY_DUAL_F_BSGL or SORTBY_TRIPLE_BStSGLtL
-  toplist_t *semiCohToplist3=NULL;	// only used for SORTBY_TRIPLE_BStSGLtL
+  toplist_t *semiCohToplist2=NULL;	// only used for SORTBY_DUAL_F_BSGL, SORTBY_TRIPLE_BStSGLtL or SORTBY_F_BSGLtL_BtSGLtL
+  toplist_t *semiCohToplist3=NULL;	// only used for SORTBY_TRIPLE_BStSGLtL and SORTBY_F_BSGLtL_BtSGLtL
 
   /* template and grid variables */
   static DopplerSkyScanInit scanInit;   /* init-structure for DopperScanner */
@@ -549,7 +550,7 @@ int MAIN( int argc, char *argv[]) {
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_oLGX,                "oLGX",                STRINGVector, 0,   OPTIONAL,   "BSGL: prior per-detector line-vs-Gauss odds 'oLGX' (Defaults to oLGX=1/Ndet)") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_BSGLlogcorr,         "BSGLlogcorr",         BOOLEAN,      0,   DEVELOPER,  "BSGL: include log-correction terms (slower) or not (faster)") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_getMaxFperSeg,       "getMaxFperSeg",       BOOLEAN,      0,   OPTIONAL,   "Compute and output maximum F and FX over segments") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_SortToplist,         "SortToplist",         INT4,         0,   OPTIONAL,   "Sort toplist by: 0=Fstat, 1=nc, 2=B_S/GL, 3='Fstat + B_S/GL', 4=B_S/GLtL, 5=B_tS/GLtL, 6='B_S/GL + B_S/GLtL + B_tS/GLtL'") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_SortToplist,         "SortToplist",         INT4,         0,   OPTIONAL,   "Sort toplist by: 0=Fstat, 1=nc, 2=B_S/GL, 3='Fstat + B_S/GL', 4=B_S/GLtL, 5=B_tS/GLtL, 6='B_S/GL + B_S/GLtL + B_tS/GLtL', 7='Fstat + B_S/GLtL + B_tS/GLtL' ") == XLAL_SUCCESS, XLAL_EFUNC);
   // --------------------------------------------
 
   XLAL_CHECK_MAIN( XLALRegisterNamedUvarAuxData( &uvar_FstatMethod, "FstatMethod", UserEnum, XLALFstatMethodChoices(), 0, OPTIONAL, "F-statistic method to use" ) == XLAL_SUCCESS, XLAL_EFUNC);
@@ -637,12 +638,14 @@ int MAIN( int argc, char *argv[]) {
   }
   if ( (uvar_SortToplist == SORTBY_BSGL || uvar_SortToplist == SORTBY_DUAL_F_BSGL ||
         uvar_SortToplist == SORTBY_BSGLtL || uvar_SortToplist == SORTBY_BtSGLtL ||
-        uvar_SortToplist == SORTBY_TRIPLE_BStSGLtL ) && !uvar_computeBSGL ) {
-    fprintf(stderr, "Toplist sorting by BSGL only possible if --computeBSGL given.\n");
+        uvar_SortToplist == SORTBY_TRIPLE_BStSGLtL ||
+        uvar_SortToplist == SORTBY_F_BSGLtL_BtSGLtL) && !uvar_computeBSGL ) {
+    fprintf(stderr, "Toplist sorting by BSGL[tL] only possible if --computeBSGL given.\n");
     return( HIERARCHICALSEARCH_EBAD );
   }
   if ( ( uvar_SortToplist == SORTBY_BSGLtL || uvar_SortToplist == SORTBY_BtSGLtL ||
-        uvar_SortToplist == SORTBY_TRIPLE_BStSGLtL ) && !uvar_getMaxFperSeg ) {
+        uvar_SortToplist == SORTBY_TRIPLE_BStSGLtL ||
+        uvar_SortToplist == SORTBY_F_BSGLtL_BtSGLtL ) && !uvar_getMaxFperSeg ) {
     fprintf(stderr, "Toplist sorting by B[t]SGLtL only possible if --getMaxFperSeg given.\n");
     return( HIERARCHICALSEARCH_EBAD );
   }
@@ -660,6 +663,15 @@ int MAIN( int argc, char *argv[]) {
     {
       XLAL_CHECK ( 0 == create_gctFstat_toplist ( &semiCohToplist, uvar_nCand1, SORTBY_BSGL ),
                    XLAL_EFUNC, "create_gctFstat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_BSGL );
+      XLAL_CHECK ( 0 == create_gctFstat_toplist ( &semiCohToplist2, uvar_nCand1, SORTBY_BSGLtL ),
+                   XLAL_EFUNC, "create_gctFstat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_BSGLtL );
+      XLAL_CHECK ( 0 == create_gctFstat_toplist ( &semiCohToplist3, uvar_nCand1, SORTBY_BtSGLtL ),
+                   XLAL_EFUNC, "create_gctFstat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_BtSGLtL );
+    }
+  else if ( uvar_SortToplist == SORTBY_F_BSGLtL_BtSGLtL )// special treatement of 'triple' toplists: 1st one sorted by 'F', 2nd one by 'B_S/GLtL', 3rd by 'B_tS/GLtL'
+    {
+      XLAL_CHECK ( 0 == create_gctFstat_toplist ( &semiCohToplist, uvar_nCand1, SORTBY_F ),
+                   XLAL_EFUNC, "create_gctFstat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_F );
       XLAL_CHECK ( 0 == create_gctFstat_toplist ( &semiCohToplist2, uvar_nCand1, SORTBY_BSGLtL ),
                    XLAL_EFUNC, "create_gctFstat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_BSGLtL );
       XLAL_CHECK ( 0 == create_gctFstat_toplist ( &semiCohToplist3, uvar_nCand1, SORTBY_BtSGLtL ),
@@ -1761,8 +1773,9 @@ int MAIN( int argc, char *argv[]) {
                 /* this is necessary here, because UpdateSemiCohToplists() might set
                    a checkpoint that needs some information from here */
 
-                if(uvar_SortToplist == SORTBY_TRIPLE_BStSGLtL && finegrid.sumTwoFX && finegrid.maxTwoFXl ) {
-                  LAL_CALL( UpdateSemiCohToplistsOptimTriple (&status, semiCohToplist, semiCohToplist2, semiCohToplist3, &finegrid, f1dot_fg, f2dot_fg, f3dot_fg, &usefulParams, NSegmentsInv, usefulParams.NSegmentsInvX, XLALUserVarWasSet(&uvar_f3dot) ), &status);
+                if(( uvar_SortToplist == SORTBY_TRIPLE_BStSGLtL || uvar_SortToplist == SORTBY_F_BSGLtL_BtSGLtL ) &&
+                   finegrid.sumTwoFX && finegrid.maxTwoFXl ) {
+                  LAL_CALL( UpdateSemiCohToplistsOptimTriple (&status, uvar_SortToplist, semiCohToplist, semiCohToplist2, semiCohToplist3, &finegrid, f1dot_fg, f2dot_fg, f3dot_fg, &usefulParams, NSegmentsInv, usefulParams.NSegmentsInvX, XLALUserVarWasSet(&uvar_f3dot) ), &status);
                 } else {
                   LAL_CALL( UpdateSemiCohToplists (&status, semiCohToplist, semiCohToplist2, semiCohToplist3, &finegrid, f1dot_fg, f2dot_fg, f3dot_fg, &usefulParams, NSegmentsInv, usefulParams.NSegmentsInvX, XLALUserVarWasSet(&uvar_f3dot) ), &status);
                 }
@@ -1941,7 +1954,8 @@ int MAIN( int argc, char *argv[]) {
       strcpy(t3_suffix,"");
       break;
     };
-    case SORTBY_TRIPLE_BStSGLtL : {
+    case SORTBY_TRIPLE_BStSGLtL:
+    case SORTBY_F_BSGLtL_BtSGLtL : {
       strcpy(t1_suffix,"");
       strcpy(t2_suffix,"-BSGLtL");
       strcpy(t3_suffix,"-BtSGLtL");
@@ -2674,6 +2688,7 @@ void PrintStackInfo( LALStatus  *status,
  * This function allows for inserting candidates into up to 3 toplists at once, which might be sorted differently!
  */
 void UpdateSemiCohToplistsOptimTriple ( LALStatus *status,
+                             SortBy_t toplists_sortby,
                              toplist_t *list1,
                              toplist_t *list2,  //< optional (can be NULL): insert candidate into this 2nd toplist as well
                              toplist_t *list3,  //< optional (can be NULL): insert candidate into this 3rd toplist as well
@@ -2691,6 +2706,7 @@ void UpdateSemiCohToplistsOptimTriple ( LALStatus *status,
   REAL8 freq_fg;
   UINT4 ifreq_fg;
   GCTtopOutputEntry line;
+  BOOLEAN delay_compute_BSGL = (toplists_sortby == SORTBY_F_BSGLtL_BtSGLtL);
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
@@ -2699,9 +2715,11 @@ void UpdateSemiCohToplistsOptimTriple ( LALStatus *status,
   ASSERT ( in != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   ASSERT ( usefulparams != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
 
- /* Optimized version for triple toplist case:
+ /* Optimized version for triple toplist cases: BSGL, BSGLtL,BtSGLtL or
+                                                  2F, BSGLtL,BtSGLtL
 
-    First compute all three detection metrics by which any of the toplists is sorted.
+    First compute all detection metrics by which any of the toplists is sorted (even as seconary
+    comparison criterion).
 
     Next test if the candidate is loud enough to make it into at least one of the toplists.
     If so, build the candidate structure.
@@ -2730,7 +2748,15 @@ void UpdateSemiCohToplistsOptimTriple ( LALStatus *status,
     }
     xlalErrno = 0;
 
-    line.log10BSGL = XLALComputeBSGL ( sumTwoF, sumTwoFX, usefulparams->BSGLsetup );
+    /* Note: sorting a toplist by 2F takes BSGL as a secondary sorting criterion, so even if the 1st toplist is
+       sorted by 2F, we still provide an overestimate of BSGL for a test if it can make it into the toplist in 
+       the first place */
+
+    if(delay_compute_BSGL) {
+      line.log10BSGL = LAL_REAL4_MAX;
+    } else {
+      line.log10BSGL = XLALComputeBSGL ( sumTwoF, sumTwoFX, usefulparams->BSGLsetup );
+    }
     if ( xlalErrno != 0 ) {
       XLALPrintError ("%s line %d : XLALComputeBSGL() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
@@ -2769,8 +2795,8 @@ void UpdateSemiCohToplistsOptimTriple ( LALStatus *status,
     /* take F-stat averages over segments */
     line.avTwoF = sumTwoF*NSegmentsInv; /* average multi-2F by full number of segments */
 
-/* now test if this candidate makes it into any of the toplists, if not we don't need 
-   to do any more copying of data from finegrid to toplist entry structure */
+    /* now test if this candidate makes it into any of the toplists, if not we don't need
+       to do any more copying and computing of data from finegrid to toplist entry structure */
 
 
     int isIncludedToplists = TEST_FSTAT_TOPLIST_INCLUSION( list1, &line) ||
@@ -2779,6 +2805,12 @@ void UpdateSemiCohToplistsOptimTriple ( LALStatus *status,
 
 
     if(likely(! isIncludedToplists)) continue;
+
+
+    /* if we delayed the computation of BSGL for a 2F sorted first toplist, now is the time to actually compute it */
+    if(delay_compute_BSGL) {
+      line.log10BSGL = XLALComputeBSGL ( sumTwoF, sumTwoFX, usefulparams->BSGLsetup );
+    }
 
     line.numDetectors = in->numDetectors;
     line.avTwoFrecalc = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFstatline_to_str if later overwritten in recalcToplistStats step */

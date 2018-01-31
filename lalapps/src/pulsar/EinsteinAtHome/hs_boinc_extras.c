@@ -1143,8 +1143,8 @@ static int worker (void) {
       second_outfile = -1;
     }
 
-    /* record if there will be a second output file */
-    else if (!strcmp("--SortToplist=6",argv[arg])) {
+    /* record if there will be triple output files */
+    else if (!strcmp("--SortToplist=6",argv[arg]) || !strcmp("--SortToplist=7",argv[arg])) {
       rargv[rarg] = argv[arg];
       LogPrintf(LOG_DEBUG,"BSGL output files\n");
       bsgl_outfiles = -1;
