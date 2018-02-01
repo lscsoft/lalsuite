@@ -119,18 +119,19 @@ typedef struct {
   CHAR *DataFiles;	/**< SFT input-files to use to determine startTime, duration, IFOs and for noise-floor estimation */
   CHAR *outputFstat;	/**< output file to write F-stat estimation results into */
   BOOLEAN printFstat;	/**< print F-stat estimation results to terminal? */
-  INT4 minStartTime;	/**< Only use SFTs with timestamps starting from (including) this GPS time */
-  INT4 maxStartTime;	/**< Only use SFTs with timestamps up to (excluding) this GPS time */
+  INT4 minStartTime;	/**< Limit duration to this earliest GPS SFT start-time */
+  INT4 maxStartTime;	/**< Limit duration to this latest GPS SFT start-time */
 
-  LALStringVector *timestampsFiles;        /**< Names of numDet timestamps files */
+  LALStringVector *timestampsFiles; /**< Names of timestamps files, one per detector */
   LIGOTimeGPS startTime;	/**< Start-time in detector-frame (GPS seconds) */
   INT4 duration;		/**< Duration in seconds */
-  LALStringVector* IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector*/
+  LALStringVector* IFOs;	/**< list of detector-names "H1,H2,L1,.." */
   REAL8 Tsft;		        /**< SFT time baseline Tsft */
 
   CHAR *transientWindowType;	/**< name of transient window ('rect', 'exp',...) */
   REAL8 transientStartTime;	/**< GPS start-time of transient window */
-  REAL8 transientTauDays;	/**< time-scale in days of transient window */
+  REAL8 transientTau;	        /**< time-scale in seconds of transient window */
+  REAL8 transientTauDays;       /**< DEFUNCT */
 
 
   BOOLEAN SignalOnly;	/**< DEPRECATED: ALTERNATIVE --assumeSqrtSX and/or --PureSignal */
@@ -272,46 +273,56 @@ initUserVars ( UserInput_t *uvar )
   uvar->Tsft=1800;
 
   /* register all our user-variables */
-  XLALRegisterUvarMember( aPlus, 	 REAL8, 0 , OPTIONAL, "'Plus' polarization amplitude: aPlus  [alternative to {h0, cosi}]");
-  XLALRegisterUvarMember( aCross,  	 REAL8, 0 , OPTIONAL, "'Cross' polarization amplitude: aCross [alternative to {h0, cosi}]");
-  XLALRegisterUvarMember( h0,		REAL8, 's', OPTIONAL, "Overall GW amplitude h0 [alternative to {aPlus, aCross}]");
-  XLALRegisterUvarMember( cosi,		REAL8, 'i', OPTIONAL, "Inclination angle of rotation axis cos(iota) [alternative to {aPlus, aCross}]");
+  lalUserVarHelpOptionSubsection = "Output control";
+  XLALRegisterUvarMember( outputFstat,   STRING,      0,  NODEFAULT,"Output-file (octave/matlab) for predicted F-stat value, variance and antenna-patterns" );
+  XLALRegisterUvarMember( printFstat,    BOOLEAN,     0,  OPTIONAL, "Print predicted F-stat value to terminal" );
+  XLALRegisterUvarMember( PureSignal,    BOOLEAN,    'P', OPTIONAL, "If true return 2F=SNR^2 ('pure signal without noise'). Otherwise return E[2F] = 4 + SNR^2.");
 
-  XLALRegisterUvarMember( psi,		 REAL8, 0, REQUIRED, "Polarisation angle in radians");
-  XLALRegisterUvarMember( phi0,		 REAL8, 0, OPTIONAL, "Initial GW phase phi0 in radians");
+  lalUserVarHelpOptionSubsection = "Signal parameters";
+  XLALRegisterUvarMember( h0,            REAL8,      's', NODEFAULT,"Overall GW amplitude h0 (alternatively use " UVAR_STR2AND(aPlus, aCross) ")." );
+  XLALRegisterUvarMember( cosi,          REAL8,      'i', NODEFAULT,"Inclination angle of rotation axis cos(iota) (alternatively use " UVAR_STR2AND(aPlus, aCross) ").");
+  XLALRegisterUvarMember( aPlus,         REAL8,       0,  NODEFAULT,"'Plus' polarization amplitude A_+ (alternative to " UVAR_STR2AND(h0, cosi) ").");
+  XLALRegisterUvarMember( aCross,        REAL8,       0,  NODEFAULT,"'Cross' polarization amplitude: A_x (alternative to " UVAR_STR2AND(h0, cosi) ").");
 
-  XLALRegisterUvarMember( Alpha,	REAL8, 'a', REQUIRED, "Sky position alpha (equatorial coordinates) in radians");
-  XLALRegisterUvarMember( Delta,	REAL8, 'd', REQUIRED, "Sky position delta (equatorial coordinates) in radians");
-  XLALRegisterUvarMember( Freq,		REAL8, 'F', OPTIONAL, "GW signal frequency (only used for noise-estimation in SFTs)");
+  XLALRegisterUvarMember( psi,           REAL8,       0,  REQUIRED, "Polarisation angle in radians");
+  XLALRegisterUvarMember( phi0,          REAL8,       0,  OPTIONAL, "Initial GW phase phi0 in radians");
 
-  XLALRegisterUvarMember( DataFiles, 	STRING, 'D', OPTIONAL, "File-pattern specifying (multi-IFO) input SFT-files");
-  XLALRegisterUvarMember( ephemEarth, 	 STRING, 0,  OPTIONAL, "Earth ephemeris file to use");
-  XLALRegisterUvarMember( ephemSun, 	 STRING, 0,  OPTIONAL, "Sun ephemeris file to use");
-  XLALRegisterUvarMember( outputFstat,     STRING, 0,  OPTIONAL, "Output-file for predicted F-stat value" );
-  XLALRegisterUvarMember( printFstat,	 BOOLEAN, 0,  OPTIONAL, "Print predicted F-stat value to terminal" );
+  XLALRegisterUvarMember( Alpha,         REAL8,      'a', REQUIRED, "Sky position alpha (equatorial coordinates) in radians");
+  XLALRegisterUvarMember( Delta,         REAL8,      'd', REQUIRED, "Sky position delta (equatorial coordinates) in radians");
 
-  XLALRegisterUvarMember( minStartTime, 	 INT4, 0,  OPTIONAL, "Only use SFTs with timestamps starting from (including) this GPS time");
-  XLALRegisterUvarMember( maxStartTime, 	 INT4, 0,  OPTIONAL, "Only use SFTs with timestamps up to (excluding) this GPS time");
+  lalUserVarHelpOptionSubsection = "Data and noise properties";
+  XLALRegisterUvarMember( DataFiles,     STRING,     'D', NODEFAULT,"Per-detector SFTs (for detectors, timestamps and noise-estimate)\n"
+                          "(Alternatives: " UVAR_STR(assumeSqrtSX)", "UVAR_STR(timestampsFiles)", "UVAR_STR(IFOs) ", "UVAR_STR2AND(minStartTime,maxStartTime)").");
+  XLALRegisterUvarMember( Freq,          REAL8,      'F', NODEFAULT,"Frequency for noise-floor estimation (required if not given " UVAR_STR(assumeSqrtSX) ").");
+  XLALRegisterUvarMember( RngMedWindow,  INT4,       'k', OPTIONAL, "Running median size for noise-floor estimation (only used if not given " UVAR_STR(assumeSqrtSX) ").");
 
-  XLALRegisterUvarMember( PureSignal,	BOOLEAN, 'P', OPTIONAL, "If true, calculate 2F for pure signal, i.e. E[2F] = 2F = rho^2. If false, calculate 2F for signal+noise, i.e. E[2F] = 4 + rho^2.");
+  XLALRegisterUvarMember( assumeSqrtSX,  STRINGVector,0,  OPTIONAL, "Assume stationary per-detector noise-floor sqrt(S[X]) instead of estimating "
+                          "(required if not given " UVAR_STR(DataFiles)").");
 
-  XLALRegisterUvarMember( assumeSqrtSX,	 STRINGVector, 0,  OPTIONAL, "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs)");
-  XLALRegisterUvarMember( RngMedWindow,	INT4, 'k', DEVELOPER, "Running-Median window size");
+  XLALRegisterUvarMember( IFOs,          STRINGVector,0,  NODEFAULT,"CSV list of detectors, eg. \"H1,L1,...\" (required if not given " UVAR_STR(DataFiles)").");
+  XLALRegisterUvarMember(timestampsFiles,STRINGVector,0,  NODEFAULT,"CSV list of SFT timestamps files, one per detector (conflicts with " UVAR_STR(DataFiles) ").");
+  XLALRegisterUvarMember( minStartTime,  INT4,        0,  OPTIONAL, "Limit duration to [" UVAR_STR(minStartTime) ", " UVAR_STR(maxStartTime) " + " UVAR_STR(Tsft) ").");
+  XLALRegisterUvarMember( maxStartTime,  INT4,        0,  OPTIONAL, "Limit duration to [" UVAR_STR(minStartTime) ", " UVAR_STR(maxStartTime) " + " UVAR_STR(Tsft) ").");
 
-  /* transient signal window properties (name, start, duration) */
-  XLALRegisterUvarMember( transientWindowType,  STRING, 0, OPTIONAL, "Name of transient signal window to use. ('none', 'rect', 'exp').");
-  XLALRegisterUvarMember( transientStartTime,    REAL8, 0, OPTIONAL, "GPS start-time 't0' of transient signal window.");
-  XLALRegisterUvarMember( transientTauDays,   REAL8, 0, OPTIONAL, "Timescale 'tau' of transient signal window in seconds.");
-  /* start + duration of timeseries */
-  XLALRegisterUvarMember(startTime,            EPOCH, 0, OPTIONAL, "Start-time of the signal in detector-frame (format 'xx.yy[GPS|MJD]'), needs duration [alternative to DataFiles and {timestampsFiles,IFOs,assumeSqrtSX}]");
-  XLALRegisterUvarMember(  duration,              INT4, 0,  OPTIONAL, "Duration of the signal in seconds, needs startTime [alternative to DataFiles and {timestampsFiles,IFOs,assumeSqrtSX}]");
-  XLALRegisterUvarMember( timestampsFiles,       STRINGVector, 0,  OPTIONAL, "File to read timestamps from (file-format: lines with <seconds> <nanoseconds>) [alternative to DataFiles and {startTime+duration,IFOs,assumeSqrtSX}]");
-  XLALRegisterUvarMember( IFOs,			STRINGVector, 0, OPTIONAL, "CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" , used for --timestampsFiles and --startTime+duration");
-  /* SFT properties */
-  XLALRegisterUvarMember(  Tsft,                 REAL8, 0, OPTIONAL, "Time baseline of one SFT in seconds, used for --timestampsFiles and --startTime+duration");
+  XLALRegisterUvarMember( Tsft,          REAL8,       0,  OPTIONAL, "Time baseline of SFTs in seconds (conflicts with " UVAR_STR(DataFiles) ")." );
 
-  // ---------- deprecated options
-  XLALRegisterUvarMember( SignalOnly,	BOOLEAN, 'S', DEPRECATED,"ALTERNATIVE: use --assumeSqrtSX and/or --PureSignal instead");
+  lalUserVarHelpOptionSubsection = "Transient signal properties";
+  XLALRegisterUvarMember( transientWindowType,STRING, 0,  OPTIONAL, "Transient-signal window function to assume. ('none', 'rect', 'exp').");
+  XLALRegisterUvarMember( transientStartTime, REAL8,  0,  NODEFAULT,"GPS start-time 't0' of transient signal window.");
+  XLALRegisterUvarMember( transientTau    ,   REAL8,  0,  NODEFAULT,"Timescale 'tau' of transient signal window in seconds.");
+
+  // ---------- developer options ----------
+  lalUserVarHelpOptionSubsection = "";
+  XLALRegisterUvarMember( ephemEarth,    STRING,      0,  DEVELOPER, "Earth ephemeris file to use");
+  XLALRegisterUvarMember( ephemSun,      STRING,      0,  DEVELOPER, "Sun ephemeris file to use");
+
+  // ---------- deprecated options ---------
+  XLALRegisterUvarMember( SignalOnly,    BOOLEAN,    'S', DEPRECATED, "use --assumeSqrtSX and/or --PureSignal instead");
+  XLALRegisterUvarMember( startTime,     EPOCH,       0,  DEPRECATED, "Start-time of the signal in detector-frame");
+  XLALRegisterUvarMember( duration,      INT4,        0,  DEPRECATED, "Duration of the signal in seconds");
+
+  // ---------- defunct options ---------
+  XLALRegisterUvarMember( transientTauDays,REAL8,  0,  DEFUNCT, "DEFUNCT: use " UVAR_STR(transientTau) " instead.");
 
   return XLAL_SUCCESS;
 
