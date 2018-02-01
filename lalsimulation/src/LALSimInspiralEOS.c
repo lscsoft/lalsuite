@@ -105,7 +105,7 @@ REAL8 XLALSimInspiralEOSQfromLambda(REAL8 lambda) {
     /* Quadrupole-monopole parameter calculated from love number;
        see http://arxiv.org/abs/1303.1528 */
     REAL8 q, loglam;
-    REAL8 tolerance = 1E-15;
+    REAL8 tolerance = 5E-1;
     if(lambda<tolerance) { //printf("Love number is (nearly) zero; cannot compute QM parameter. Setting to 1.0 (BH value).\n");
                       q = 1.0; } 
     else {
