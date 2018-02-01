@@ -134,7 +134,7 @@ typedef struct {
   REAL8 transientTauDays;       /**< DEFUNCT */
 
 
-  BOOLEAN SignalOnly;	/**< DEPRECATED: ALTERNATIVE --assumeSqrtSX and/or --PureSignal */
+  BOOLEAN SignalOnly;	/**< DEFUNCT: use --assumeSqrtSX */
 } UserInput_t;
 
 /* ---------- local prototypes ---------- */
@@ -265,7 +265,6 @@ initUserVars ( UserInput_t *uvar )
   uvar->PureSignal = 0;
 
   uvar->assumeSqrtSX = NULL;
-  uvar->SignalOnly = 0;
 
   uvar->phi0 = 0;
   uvar->transientWindowType = XLALStringDuplicate ( "none" );
@@ -317,12 +316,12 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( ephemSun,      STRING,      0,  DEVELOPER, "Sun ephemeris file to use");
 
   // ---------- deprecated options ---------
-  XLALRegisterUvarMember( SignalOnly,    BOOLEAN,    'S', DEPRECATED, "use --assumeSqrtSX and/or --PureSignal instead");
   XLALRegisterUvarMember( startTime,     EPOCH,       0,  DEPRECATED, "Start-time of the signal in detector-frame");
   XLALRegisterUvarMember( duration,      INT4,        0,  DEPRECATED, "Duration of the signal in seconds");
 
   // ---------- defunct options ---------
-  XLALRegisterUvarMember( transientTauDays,REAL8,  0,  DEFUNCT, "DEFUNCT: use " UVAR_STR(transientTau) " instead.");
+  XLALRegisterUvarMember( transientTauDays,REAL8,     0,  DEFUNCT, "use " UVAR_STR(transientTau) " instead.");
+  XLALRegisterUvarMember( SignalOnly,    BOOLEAN,    'S', DEFUNCT, "use --assumeSqrtSX instead");
 
   return XLAL_SUCCESS;
 
@@ -460,23 +459,11 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
   // ----- compute or estimate multiNoiseWeights ----------
   MultiNoiseWeights *multiNoiseWeights = NULL;
 
-  // noise-sqrtSX provided by user ==> don't need to load the SFTs at all
-  if ( uvar->SignalOnly || (uvar->assumeSqrtSX != NULL) )
+  // assumed noise-sqrtSX provided by user ==> don't estimate noise-floor from SFTs
+  if ( have_assumeSqrtSX )
     {
-      XLAL_CHECK ( !uvar->SignalOnly || (uvar->assumeSqrtSX == NULL), XLAL_EINVAL, "Cannot pass --SignalOnly AND --assumeSqrtSX at the same time!\n");
-      LALStringVector *assumeSqrtSX_input;
-      if ( uvar->SignalOnly ) {
-        assumeSqrtSX_input = XLALCreateStringVector ( "1", NULL );
-      } else {
-        assumeSqrtSX_input = uvar->assumeSqrtSX;
-      }
-
       MultiNoiseFloor XLAL_INIT_DECL(assumeSqrtSX);
-      XLAL_CHECK ( XLALParseMultiNoiseFloor ( &assumeSqrtSX, assumeSqrtSX_input, numDetectors ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      if ( uvar->SignalOnly ) {
-        XLALDestroyStringVector ( assumeSqrtSX_input );
-      }
+      XLAL_CHECK ( XLALParseMultiNoiseFloor ( &assumeSqrtSX, uvar->assumeSqrtSX, numDetectors ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       XLAL_CHECK ( (multiNoiseWeights = XLALCalloc(1,sizeof(*multiNoiseWeights))) != NULL, XLAL_ENOMEM );
       XLAL_CHECK ( (multiNoiseWeights->data = XLALCalloc ( numDetectors, sizeof(*multiNoiseWeights->data) )) != NULL, XLAL_ENOMEM );
@@ -510,7 +497,7 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
       multiNoiseWeights->Sinv_Tsft = Sinv * Tsft;
       GV.numSFTs=numSFTs;
 
-    } // if SignalOnly OR assumeSqrtSX given
+    } // if --assumeSqrtSX given
   else if(have_SFTs)
     {// load the multi-IFO SFT-vectors for noise estimation
       XLAL_CHECK ( XLALUserVarWasSet ( &uvar->Freq ), XLAL_EINVAL, "Need a frequency for noise-estimation in SFTs!\n");
