@@ -17,6 +17,7 @@ pymodule_PYTHON = \
 	marker.py \
 	poly.py \
 	pp.py \
+	spindisk.py \
 	$(END_OF_LIST)
 
 dist_pymodule_DATA = \
