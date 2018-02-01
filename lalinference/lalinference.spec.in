@@ -19,6 +19,7 @@ BuildRequires: healpy >= 1.9.1
 BuildRequires: python-astropy >= 1.1.1
 BuildRequires: python-matplotlib >= 1.2.0
 BuildRequires: python-shapely
+BuildRequires: pytest
 BuildRequires: libmetaio-devel
 BuildRequires: libxml2-devel
 BuildRequires: numpy >= 1.7
