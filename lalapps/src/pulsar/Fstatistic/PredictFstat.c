@@ -119,8 +119,8 @@ typedef struct {
   CHAR *DataFiles;	/**< SFT input-files to use to determine startTime, duration, IFOs and for noise-floor estimation */
   CHAR *outputFstat;	/**< output file to write F-stat estimation results into */
   BOOLEAN printFstat;	/**< print F-stat estimation results to terminal? */
-  INT4 minStartTime;	/**< Limit duration to this earliest GPS SFT start-time */
-  INT4 maxStartTime;	/**< Limit duration to this latest GPS SFT start-time */
+  LIGOTimeGPS minStartTime;	/**< Limit duration to this earliest GPS SFT start-time */
+  LIGOTimeGPS maxStartTime;	/**< Limit duration to this latest GPS SFT start-time */
 
   LALStringVector *timestampsFiles; /**< Names of timestamps files, one per detector */
   LIGOTimeGPS startTime;	/**< Start-time in detector-frame (GPS seconds) */
@@ -129,7 +129,7 @@ typedef struct {
   REAL8 Tsft;		        /**< SFT time baseline Tsft */
 
   CHAR *transientWindowType;	/**< name of transient window ('rect', 'exp',...) */
-  REAL8 transientStartTime;	/**< GPS start-time of transient window */
+  LIGOTimeGPS transientStartTime;	/**< GPS start-time of transient window */
   REAL8 transientTau;	        /**< time-scale in seconds of transient window */
   REAL8 transientTauDays;       /**< DEFUNCT */
 
@@ -141,7 +141,7 @@ typedef struct {
 int main(int argc,char *argv[]);
 
 int initUserVars ( UserInput_t *uvar );
-int InitPFS ( ConfigVariables *cfg, const UserInput_t *uvar );
+int InitPFS ( ConfigVariables *cfg, UserInput_t *uvar );
 
 /*---------- empty initializers ---------- */
 
@@ -259,8 +259,8 @@ initUserVars ( UserInput_t *uvar )
   uvar->outputFstat = NULL;
   uvar->printFstat = 1;
 
-  uvar->minStartTime = 0;
-  uvar->maxStartTime = LAL_INT4_MAX;
+  uvar->minStartTime.gpsSeconds = 0;
+  uvar->maxStartTime.gpsSeconds = LAL_INT4_MAX;
 
   uvar->PureSignal = 0;
 
@@ -287,8 +287,8 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( psi,           REAL8,       0,  REQUIRED, "Polarisation angle in radians");
   XLALRegisterUvarMember( phi0,          REAL8,       0,  OPTIONAL, "Initial GW phase phi0 in radians");
 
-  XLALRegisterUvarMember( Alpha,         REAL8,      'a', REQUIRED, "Sky position alpha (equatorial coordinates) in radians");
-  XLALRegisterUvarMember( Delta,         REAL8,      'd', REQUIRED, "Sky position delta (equatorial coordinates) in radians");
+  XLALRegisterUvarMember( Alpha,         RAJ,        'a', REQUIRED, "Sky position: equatorial J2000 right ascension");
+  XLALRegisterUvarMember( Delta,         DECJ,       'd', REQUIRED, "Sky position: equatorial J2000 right declination");
 
   lalUserVarHelpOptionSubsection = "Data and noise properties";
   XLALRegisterUvarMember( DataFiles,     STRING,     'D', NODEFAULT,"Per-detector SFTs (for detectors, timestamps and noise-estimate)\n"
@@ -301,15 +301,15 @@ initUserVars ( UserInput_t *uvar )
 
   XLALRegisterUvarMember( IFOs,          STRINGVector,0,  NODEFAULT,"CSV list of detectors, eg. \"H1,L1,...\" (required if not given " UVAR_STR(DataFiles)").");
   XLALRegisterUvarMember(timestampsFiles,STRINGVector,0,  NODEFAULT,"CSV list of SFT timestamps files, one per detector (conflicts with " UVAR_STR(DataFiles) ").");
-  XLALRegisterUvarMember( minStartTime,  INT4,        0,  OPTIONAL, "Limit duration to [" UVAR_STR(minStartTime) ", " UVAR_STR(maxStartTime) " + " UVAR_STR(Tsft) ").");
-  XLALRegisterUvarMember( maxStartTime,  INT4,        0,  OPTIONAL, "Limit duration to [" UVAR_STR(minStartTime) ", " UVAR_STR(maxStartTime) " + " UVAR_STR(Tsft) ").");
+  XLALRegisterUvarMember( minStartTime,  EPOCH,       0,  OPTIONAL, "Limit duration to [" UVAR_STR(minStartTime) ", " UVAR_STR(maxStartTime) " + " UVAR_STR(Tsft) ").");
+  XLALRegisterUvarMember( maxStartTime,  EPOCH,       0,  OPTIONAL, "Limit duration to [" UVAR_STR(minStartTime) ", " UVAR_STR(maxStartTime) " + " UVAR_STR(Tsft) ").");
 
   XLALRegisterUvarMember( Tsft,          REAL8,       0,  OPTIONAL, "Time baseline of SFTs in seconds (conflicts with " UVAR_STR(DataFiles) ")." );
 
   lalUserVarHelpOptionSubsection = "Transient signal properties";
   XLALRegisterUvarMember( transientWindowType,STRING, 0,  OPTIONAL, "Transient-signal window function to assume. ('none', 'rect', 'exp').");
-  XLALRegisterUvarMember( transientStartTime, REAL8,  0,  NODEFAULT,"GPS start-time 't0' of transient signal window.");
-  XLALRegisterUvarMember( transientTau    ,   REAL8,  0,  NODEFAULT,"Timescale 'tau' of transient signal window in seconds.");
+  XLALRegisterUvarMember( transientStartTime, EPOCH,  0,  NODEFAULT,"GPS start-time 't0' of transient signal window.");
+  XLALRegisterUvarMember( transientTau,       REAL8,  0,  NODEFAULT,"Timescale 'tau' of transient signal window in seconds.");
 
   // ---------- developer options ----------
   lalUserVarHelpOptionSubsection = "";
@@ -330,14 +330,12 @@ initUserVars ( UserInput_t *uvar )
 
 /** Initialized Fstat-code: handle user-input and set everything up. */
 int
-InitPFS ( ConfigVariables *cfg, const UserInput_t *uvar )
+InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
 {
   XLAL_CHECK ( (cfg != NULL) && (uvar != NULL), XLAL_EINVAL );
 
   SFTCatalog *catalog = NULL;
   SkyPosition skypos;
-
-  LIGOTimeGPS minStartTimeGPS, maxStartTimeGPS;
 
   EphemerisData *edat = NULL;		    	/* ephemeris data */
   MultiAMCoeffs *multiAMcoef = NULL;
@@ -394,7 +392,7 @@ InitPFS ( ConfigVariables *cfg, const UserInput_t *uvar )
 
   MultiLIGOTimeGPSVector *mTS = NULL;
   REAL8 Tsft=0, duration=0;
-  LIGOTimeGPS startTime;
+  LIGOTimeGPS startTime = {0,0};
   UINT4 numDetectors=0;
   MultiSFTCatalogView *multiCatalogView = NULL;
   // ----- compute or estimate multiTimestamps ----------
@@ -402,12 +400,8 @@ InitPFS ( ConfigVariables *cfg, const UserInput_t *uvar )
     {
       SFTConstraints XLAL_INIT_DECL(constraints);
       /* ----- prepare SFT-reading ----- */
-      minStartTimeGPS.gpsSeconds = uvar->minStartTime;
-      minStartTimeGPS.gpsNanoSeconds = 0;
-      maxStartTimeGPS.gpsSeconds = uvar->maxStartTime;
-      maxStartTimeGPS.gpsNanoSeconds = 0;
-      constraints.minStartTime = &minStartTimeGPS;
-      constraints.maxStartTime = &maxStartTimeGPS;
+      constraints.minStartTime = &uvar->minStartTime;
+      constraints.maxStartTime = &uvar->maxStartTime;
 
       /* ----- get full SFT-catalog of all matching (multi-IFO) SFTs */
       XLALPrintInfo ( "Finding all SFTs to load ... ");
@@ -540,24 +534,21 @@ InitPFS ( ConfigVariables *cfg, const UserInput_t *uvar )
     {
       transientWindow_t transientWindow;	/**< properties of transient-signal window */
 
-      if ( !strcmp ( uvar->transientWindowType, "rect" ) ) {
-        transientWindow.type = TRANSIENT_RECTANGULAR;		/* rectangular window [t0, t0+tau] */
-      }
-      else if ( !strcmp ( uvar->transientWindowType, "exp" ) ) {
-        transientWindow.type = TRANSIENT_EXPONENTIAL;		/* exponential decay window e^[-(t-t0)/tau for t>t0, 0 otherwise */
-      }
-      else {
-        XLAL_ERROR ( XLAL_EINVAL, "Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", uvar->transientWindowType);
-      }
+      int twtype;
+      XLAL_CHECK ( (twtype = XLALParseTransientWindowName ( uvar->transientWindowType )) >= 0, XLAL_EFUNC );
+      transientWindow.type = twtype;
 
       if ( XLALUserVarWasSet ( &uvar->transientStartTime ) ) {
-        transientWindow.t0 = uvar->transientStartTime;
-      }
-      else {
-        transientWindow.t0 = XLALGPSGetREAL8( &startTime ); /* if not set, default window startTime == startTime here */
+        transientWindow.t0 = uvar->transientStartTime.gpsSeconds; // dropping ns part
+      } else {
+        XLAL_ERROR ( XLAL_EINVAL, "Required input " UVAR_STR(transientStartTime) " missing for transient window type '%s'", uvar->transientWindowType );
       }
 
-      transientWindow.tau  = uvar->transientTauDays;
+      if ( XLALUserVarWasSet ( &uvar->transientTau ) ) {
+        transientWindow.tau  = uvar->transientTau;
+      } else {
+        XLAL_ERROR ( XLAL_EINVAL, "Required input " UVAR_STR(transientStartTime) " missing for transient window type '%s'", uvar->transientWindowType );
+      }
 
       XLAL_CHECK ( XLALApplyTransientWindow2NoiseWeights ( multiNoiseWeights, mTS, transientWindow ) == XLAL_SUCCESS, XLAL_EFUNC );
 
