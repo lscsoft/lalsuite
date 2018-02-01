@@ -1,4 +1,3 @@
-
 import argparse
 import shutil
 import distutils.spawn
@@ -93,8 +92,10 @@ if args.analytic_tests:
 os.chdir(args.output)
 
 path_keys = {'datafind': 'ligo_data_find',
-            'mergescript': 'lalapps_nest2pos',
-            'resultspage': 'cbcBayesPostProc.py',
+            'mergeNSscript': 'lalapps_nest2pos',
+            'mergeMCMCscript': 'cbcBayesMCMC2pos',
+            'combinePTMCMCh5script': 'cbcBayesCombinePTMCMCh5s',
+            'resultspage': 'cbcBayesPostProc',
             'segfind': 'ligolw_segment_query',
             'ligolw_print': 'ligolw_print',
             'coherencetest': 'lalapps_coherence_test',
@@ -107,8 +108,8 @@ path_keys = {'datafind': 'ligo_data_find',
             'mpirun': 'mpirun',
             'mpiwrapper': 'lalinference_mpi_wrapper',
             'gracedb': 'gracedb',
-            'ppanalysis': 'cbcBayesPPAnalysis.py',
-            'pos_to_sim_inspiral': 'cbcBayesPosToSimInspiral.py',
+            'ppanalysis': 'cbcBayesPPAnalysis',
+            'pos_to_sim_inspiral': 'cbcBayesPosToSimInspiral',
             'processareas': 'process_areas',
             'computeroqweights': 'lalapps_compute_roq_weights'}
 
