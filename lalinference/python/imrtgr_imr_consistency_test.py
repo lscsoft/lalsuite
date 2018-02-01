@@ -19,7 +19,7 @@ import time, os
 import lalinference.imrtgr.imrtgrutils as tgr
 import pickle, gzip
 import sys 
-from pylal import git_version
+from lalinference import git_version
 
 from matplotlib import rc
 import matplotlib
