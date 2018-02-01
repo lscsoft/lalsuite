@@ -31,7 +31,6 @@ import h5py
 from lalinference import git_version
 from lalinference import bayespputils as bppu
 from lalinference.io import read_samples, write_samples
-from cbcBayesPostProc import multipleFileCB
 
 from lalinference import LALINFERENCE_PARAM_LINEAR as LINEAR
 from lalinference import LALINFERENCE_PARAM_CIRCULAR as CIRCULAR
@@ -42,6 +41,32 @@ __author__="Carl-Johan Haster <carl-johan.haster@ligo.org>>"
 __version__= "git id %s"%git_version.id
 __date__= git_version.date
 
+def multipleFileCB(opt, opt_str, value, parser):
+    args=[]
+
+    def floatable(str):
+      try:
+        float(str)
+        return True
+      except ValueError:
+        return False
+
+    for arg in parser.rargs:
+      # stop on --foo like options
+      if arg[:2] == "--" and len(arg) > 2:
+        break
+      # stop on -a, but not on -3 or -3.0
+      if arg[:1] == "-" and len(arg) > 1 and not floatable(arg):
+        break
+      args.append(arg)
+
+    del parser.rargs[:len(args)]
+    #Append new files to list if some already specified
+    if getattr(parser.values, opt.dest):
+        oldargs = getattr(parser.values, opt.dest)
+        oldargs.extend(args)
+        args = oldargs
+    setattr(parser.values, opt.dest, args)
 
 mcmc_group_id = '/lalinference/lalinference_mcmc'
 

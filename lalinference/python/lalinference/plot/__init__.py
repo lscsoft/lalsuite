@@ -17,12 +17,13 @@
 """
 Plotting classes and methods
 """
-from . import allsky, angle, healpix, marker, poly, pp
+from . import allsky, angle, healpix, marker, poly, pp, spindisk
 from .allsky import *
 from .angle import *
 from .healpix import *
 from .marker import *
 from .poly import *
 from .pp import *
+from .spindisk import *
 __all__ = (allsky.__all__ + angle.__all__ + healpix.__all__ + marker.__all__
-           + poly.__all__ + pp.__all__)
+           + poly.__all__ + pp.__all__ + spindisk.__all__)
