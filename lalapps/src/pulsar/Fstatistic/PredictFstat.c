@@ -73,8 +73,6 @@
 #define PREDICTFSTAT_MSGEXLAL	"XLALFunction-call failed"
 
 /** convert GPS-time to REAL8 */
-#define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
-
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
@@ -123,8 +121,6 @@ typedef struct {
   LIGOTimeGPS maxStartTime;	/**< Limit duration to this latest GPS SFT start-time */
 
   LALStringVector *timestampsFiles; /**< Names of timestamps files, one per detector */
-  LIGOTimeGPS startTime;	/**< Start-time in detector-frame (GPS seconds) */
-  INT4 duration;		/**< Duration in seconds */
   LALStringVector* IFOs;	/**< list of detector-names "H1,H2,L1,.." */
   REAL8 Tsft;		        /**< SFT time baseline Tsft */
 
@@ -316,8 +312,6 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( ephemSun,      STRING,      0,  DEVELOPER, "Sun ephemeris file to use");
 
   // ---------- deprecated options ---------
-  XLALRegisterUvarMember( startTime,     EPOCH,       0,  DEPRECATED, "Start-time of the signal in detector-frame");
-  XLALRegisterUvarMember( duration,      INT4,        0,  DEPRECATED, "Duration of the signal in seconds");
 
   // ---------- defunct options ---------
   XLALRegisterUvarMember( transientTauDays,REAL8,     0,  DEFUNCT, "use " UVAR_STR(transientTau) " instead.");
@@ -365,35 +359,35 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
     cfg->pap.phi0=uvar->phi0;
   }/* check user-input */
 
+  // ----- the following quantities need to specified via the given user inputs
+  REAL8 Tsft;
+  UINT4 numDetectors;
+
   MultiLALDetector XLAL_INIT_DECL(multiIFO);
-  // ----- IFOs : only from one of {--IFOs, --DataFiles }: mutually exclusive
-  BOOLEAN have_IFOs      = (uvar->IFOs != NULL);
-  BOOLEAN have_SFTs = (uvar->DataFiles != NULL);
-  XLAL_CHECK ( have_IFOs || have_SFTs, XLAL_EINVAL, "Need one of --IFOs, --DataFiles to determine detectors\n");
-  if ( have_IFOs )
-    {
-      XLAL_CHECK ( XLALParseMultiLALDetector ( &multiIFO, uvar->IFOs ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-
-  // ----- TIMESTAMPS: either from --timestampsFiles, --startTime+duration, or --SFTs
-  BOOLEAN have_startTime = XLALUserVarWasSet ( &uvar->startTime );
-  BOOLEAN have_duration = XLALUserVarWasSet ( &uvar->duration );
-  BOOLEAN have_timestampsFiles = ( uvar->timestampsFiles != NULL );
-  BOOLEAN have_assumeSqrtSX = ( uvar->assumeSqrtSX != NULL );
-  // need BOTH startTime+duration or none
-  XLAL_CHECK ( ( have_duration && have_startTime) || !( have_duration || have_startTime ), XLAL_EINVAL, "Need BOTH {--startTime,--duration} or NONE\n");
-  // at least one of {startTime,timestamps,SFTs} required
-  XLAL_CHECK ( have_timestampsFiles || have_startTime || have_SFTs , XLAL_EINVAL, "Need at least one of {--timestampsFiles, --startTime+duration, --DataFiles}\n" );
-  // don't allow timestamps + {startTime+duration OR SFTs}
-  XLAL_CHECK ( !have_timestampsFiles || !(have_startTime||have_SFTs), XLAL_EINVAL, "--timestampsFiles incompatible with {--DataFiles or --startTime+duration}\n");
-  // if we have timestamps or startTime+duration we also need assumeSqrtSX
-  XLAL_CHECK ( have_SFTs || ( (have_timestampsFiles || have_startTime) && have_assumeSqrtSX ), XLAL_EINVAL, "Need --assumeSqrtSX \n");
-
   MultiLIGOTimeGPSVector *mTS = NULL;
-  REAL8 Tsft=0, duration=0;
-  LIGOTimeGPS startTime = {0,0};
-  UINT4 numDetectors=0;
   MultiSFTCatalogView *multiCatalogView = NULL;
+
+  // ----- IFOs : only from one of {--IFOs, --DataFiles }: mutually exclusive
+  BOOLEAN have_IFOs = UVAR_SET(IFOs);
+  BOOLEAN have_SFTs = UVAR_SET(DataFiles);
+  BOOLEAN have_Tsft = UVAR_SET(Tsft);
+  XLAL_CHECK ( (have_IFOs || have_SFTs) && !(have_IFOs && have_SFTs), XLAL_EINVAL, "Need exactly one of " UVAR_STR2OR(IFOs,DataFiles) " to determine detectors\n");
+  XLAL_CHECK ( !(have_SFTs && have_Tsft), XLAL_EINVAL, UVAR_STR(Tsft) " cannot be specified with " UVAR_STR(DataFiles) ".");
+
+  // ----- get timestamps from EITHER one of --timestampsFiles, --minStartTime,maxStartTime or --SFTs
+  BOOLEAN have_timeSpan     = UVAR_SET2(minStartTime,maxStartTime);
+  BOOLEAN have_timestamps   = UVAR_SET(timestampsFiles);
+  BOOLEAN have_assumeSqrtSX = UVAR_SET(assumeSqrtSX);
+  // need BOTH --minStartTime and --maxStartTime or none
+  XLAL_CHECK ( have_timeSpan == 2 || have_timeSpan == 0, XLAL_EINVAL, "Need either both " UVAR_STR2AND(minStartTime,maxStartTime) " or none\n");
+  // at least one of {startTime,timestamps,SFTs} required
+  XLAL_CHECK ( have_timestamps || have_timeSpan || have_SFTs, XLAL_EINVAL,
+               "Need at least one of {" UVAR_STR(timestampsFiles)", "UVAR_STR2AND(minStartTime,maxStartTime)", or "UVAR_STR(DataFiles)"}." );
+  // don't allow timestamps AND SFTs
+  XLAL_CHECK ( !(have_timestamps && have_SFTs), XLAL_EINVAL, UVAR_STR(timestampsFiles) " is incompatible with " UVAR_STR(DataFiles) ".");
+  // if we don't have SFTs, then we need assumeSqrtSX
+  XLAL_CHECK ( have_SFTs || have_assumeSqrtSX, XLAL_EINVAL, "Need at least one of " UVAR_STR2OR(assumeSqrtSX,DataFiles) "for noise-floor");
+
   // ----- compute or estimate multiTimestamps ----------
   if ( have_SFTs )
     {
@@ -406,18 +400,10 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
       XLALPrintInfo ( "Finding all SFTs to load ... ");
       XLAL_CHECK ( (catalog = XLALSFTdataFind ( uvar->DataFiles, &constraints )) != NULL, XLAL_EFUNC );
       XLALPrintInfo ( "done. (found %d SFTs)\n", catalog->length );
-      if ( constraints.detector ) {
-        XLALFree ( constraints.detector );
-      }
       XLAL_CHECK ( catalog->length > 0, XLAL_EINVAL, "No matching SFTs for pattern '%s'!\n", uvar->DataFiles );
 
       /* ----- deduce start- and end-time of the observation spanned by the data */
-      GV.numSFTs = catalog->length;	/* total number of SFTs */
       Tsft = 1.0 / catalog->data[0].header.deltaF;
-      startTime = catalog->data[0].header.epoch;
-      LIGOTimeGPS endTime   = catalog->data[GV.numSFTs-1].header.epoch;
-      XLALGPSAdd ( &endTime, Tsft );
-      duration = GPS2REAL8(endTime) - GPS2REAL8 (startTime);
 
       XLAL_CHECK ( (multiCatalogView = XLALGetMultiSFTCatalogView ( catalog )) != NULL, XLAL_EFUNC );
 
@@ -426,33 +412,47 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
       XLAL_CHECK ( (mTS = XLALTimestampsFromMultiSFTCatalogView ( multiCatalogView )) != NULL, XLAL_EFUNC );
 
       XLAL_CHECK ( XLALMultiLALDetectorFromMultiSFTCatalogView ( &multiIFO, multiCatalogView ) == XLAL_SUCCESS, XLAL_EFUNC );
-    } // endif have_SFTs
+    } // if have_SFTs
   else
     {
-      Tsft=uvar->Tsft;
-      numDetectors=multiIFO.length;
-      if ( have_timestampsFiles )
+      XLAL_CHECK ( XLALParseMultiLALDetector ( &multiIFO, uvar->IFOs ) == XLAL_SUCCESS, XLAL_EFUNC );
+      numDetectors = multiIFO.length;
+      Tsft = uvar->Tsft;
+
+      if ( have_timestamps )
         {
-          XLAL_CHECK ( (mTS = XLALReadMultiTimestampsFiles ( uvar->timestampsFiles )) != NULL, XLAL_EFUNC );
+          XLAL_CHECK ( (mTS = XLALReadMultiTimestampsFilesConstrained ( uvar->timestampsFiles, &(uvar->minStartTime), &(uvar->maxStartTime) )) != NULL, XLAL_EFUNC );
           XLAL_CHECK ( (mTS->length > 0) && (mTS->data != NULL), XLAL_EINVAL, "Got empty timestamps-list from XLALReadMultiTimestampsFiles()\n" );
-          for ( UINT4 X=0; X < mTS->length; X ++ )
-            {
-              mTS->data[X]->deltaT = uvar->Tsft;	// Tsft information not given by timestamps-file
-            }
-          duration = mTS->data[0]->length * mTS->data[0]->deltaT;
-          startTime=mTS->data[0]->data[0];
-        } // endif have_timestampsFiles
-      else if ( have_startTime && have_duration )
+          for ( UINT4 X=0; X < mTS->length; X ++ ) {
+            mTS->data[X]->deltaT = Tsft;	// Tsft information not given by timestamps-file
+          }
+        } // if have_timestamps
+      else if ( have_timeSpan ) // if timespan only
         {
-          XLAL_CHECK ( ( mTS = XLALMakeMultiTimestamps ( uvar->startTime, uvar->duration, uvar->Tsft, 0, multiIFO.length )) != NULL, XLAL_EFUNC );
-          duration=uvar->duration;
-          startTime=uvar->startTime;
-        } // endif have_startTime
-    }// calculate or estimate timestamps
+          REAL8 duration = XLALGPSDiff( &(uvar->maxStartTime), &(uvar->minStartTime)) + Tsft;
+          XLAL_CHECK ( ( mTS = XLALMakeMultiTimestamps ( uvar->minStartTime, duration, Tsft, 0, numDetectors )) != NULL, XLAL_EFUNC );
+        } // have_timeSpan
+      else {
+        XLAL_ERROR (XLAL_EINVAL, "Something has gone wrong: couldn't deduce timestamps");
+      }
+    } // if !have_SFTs
+
+  // determine start-time and total amount of data
+  LIGOTimeGPS startTime = {LAL_INT4_MAX,0};
+  cfg->numSFTs = 0;
+  for ( UINT4 X = 0; X < mTS->length; X ++ )
+    {
+      if ( XLALGPSCmp ( &(mTS->data[X]->data[0]), &startTime ) < 0 ) {
+        startTime = mTS->data[X]->data[0];
+      }
+      GV.numSFTs += mTS->data[X]->length;
+    }
+  REAL8 Tdata = GV.numSFTs * Tsft;
+
   /* ----- load ephemeris-data ----- */
   XLAL_CHECK ( (edat = XLALInitBarycenter( uvar->ephemEarth, uvar->ephemSun )) != NULL, XLAL_EFUNC );
 
-  // ----- compute or estimate multiDetectorStates ----------
+  // ----- get multiDetectorStates ----------
   REAL8 tOffset = 0.5 * Tsft;
   XLAL_CHECK ( ( multiDetStates = XLALGetMultiDetectorStates( mTS, &multiIFO, edat, tOffset )) != NULL, XLAL_EFUNC );
 
@@ -470,11 +470,9 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
       multiNoiseWeights->length = numDetectors;
 
       REAL8 Sinv = 0;
-      UINT4 numSFTs = 0;
       for ( UINT4 X = 0; X < numDetectors; X ++ )
         {
           UINT4 numSFTsX = mTS->data[X]->length;
-          numSFTs += numSFTsX;
           XLAL_CHECK ( (multiNoiseWeights->data[X] = XLALCreateREAL8Vector ( numSFTsX )) != NULL, XLAL_EFUNC );
 
           REAL8 SXinv = 1.0  / ( SQ(assumeSqrtSX.sqrtSn[X]) );
@@ -485,7 +483,7 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
         }  // for X < numDetectors
 
       // ----- now properly normalize this
-      Sinv /= 1.0 * numSFTs;
+      Sinv /= 1.0 * GV.numSFTs;
       for ( UINT4 X = 0; X < numDetectors; X ++ )
         {
           UINT4 numSFTsX = mTS->data[X]->length;
@@ -495,7 +493,6 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
         } // for X < numDetectors
 
       multiNoiseWeights->Sinv_Tsft = Sinv * Tsft;
-      GV.numSFTs=numSFTs;
 
     } // if --assumeSqrtSX given
   else if(have_SFTs)
@@ -565,12 +562,12 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
       sprintf (line, "%s:%d%s",  multiIFO.sites[X].frDetector.name, mTS->data[X]->length, (X < numDetectors - 1)?", ":" ]\n");
       strcat ( summary, line );
     }
-    utc = *XLALGPSToUTC( &utc, (INT4)GPS2REAL8(startTime) );
+    utc = *XLALGPSToUTC( &utc, (INT4)XLALGPSGetREAL8(&startTime) );
     strcpy ( dateStr, asctime(&utc) );
     dateStr[ strlen(dateStr) - 1 ] = 0;
-    sprintf (line, "%%%% Start GPS time tStart = %12.3f    (%s GMT)\n", GPS2REAL8(startTime), dateStr);
+    sprintf (line, "%%%% Start GPS time tStart = %12.3f    (%s GMT)\n", XLALGPSGetREAL8(&startTime), dateStr);
     strcat ( summary, line );
-    sprintf (line, "%%%% Total time spanned    = %12.3f s  (%.1f hours)\n", duration, duration/3600 );
+    sprintf (line, "%%%% Total amount of data: Tdata = %12.3f s  (%.2f days)\n", Tdata, Tdata/86400 );
     strcat ( summary, line );
 
     XLAL_CHECK ( (cfg->dataSummary = LALCalloc(1, strlen(summary) + 1 )) != NULL, XLAL_ENOMEM );
