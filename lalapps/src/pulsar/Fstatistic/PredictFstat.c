@@ -54,28 +54,6 @@
 /* local includes */
 
 /*---------- DEFINES ----------*/
-
-#define MAXFILENAMELENGTH 256   /* Maximum # of characters of a SFT filename */
-
-/*----- Error-codes -----*/
-#define PREDICTFSTAT_ENULL 	1
-#define PREDICTFSTAT_ESYS     	2
-#define PREDICTFSTAT_EINPUT   	3
-#define PREDICTFSTAT_EMEM   	4
-#define PREDICTFSTAT_ENONULL 	5
-#define PREDICTFSTAT_EXLAL	6
-
-#define PREDICTFSTAT_MSGENULL 	"Arguments contained an unexpected null pointer"
-#define PREDICTFSTAT_MSGESYS	"System call failed (probably file IO)"
-#define PREDICTFSTAT_MSGEINPUT  "Invalid input"
-#define PREDICTFSTAT_MSGEMEM   	"Out of memory. Bad."
-#define PREDICTFSTAT_MSGENONULL "Output pointer is non-NULL"
-#define PREDICTFSTAT_MSGEXLAL	"XLALFunction-call failed"
-
-/** convert GPS-time to REAL8 */
-#define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
-#define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
-
 #define SQ(x) ((x)*(x))
 
 /**
@@ -365,7 +343,7 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
 
   MultiLALDetector XLAL_INIT_DECL(multiIFO);
   MultiLIGOTimeGPSVector *mTS = NULL;
-  MultiSFTCatalogView *multiCatalogView = NULL;
+  MultiNoiseWeights *multiNoiseWeights = NULL;
 
   // ----- IFOs : only from one of {--IFOs, --DataFiles }: mutually exclusive
   BOOLEAN have_IFOs = UVAR_SET(IFOs);
@@ -378,6 +356,7 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
   BOOLEAN have_timeSpan     = UVAR_SET2(minStartTime,maxStartTime);
   BOOLEAN have_timestamps   = UVAR_SET(timestampsFiles);
   BOOLEAN have_assumeSqrtSX = UVAR_SET(assumeSqrtSX);
+  BOOLEAN have_Freq         = UVAR_SET(Freq);
   // need BOTH --minStartTime and --maxStartTime or none
   XLAL_CHECK ( have_timeSpan == 2 || have_timeSpan == 0, XLAL_EINVAL, "Need either both " UVAR_STR2AND(minStartTime,maxStartTime) " or none\n");
   // at least one of {startTime,timestamps,SFTs} required
@@ -386,12 +365,15 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
   // don't allow timestamps AND SFTs
   XLAL_CHECK ( !(have_timestamps && have_SFTs), XLAL_EINVAL, UVAR_STR(timestampsFiles) " is incompatible with " UVAR_STR(DataFiles) ".");
   // if we don't have SFTs, then we need assumeSqrtSX
-  XLAL_CHECK ( have_SFTs || have_assumeSqrtSX, XLAL_EINVAL, "Need at least one of " UVAR_STR2OR(assumeSqrtSX,DataFiles) "for noise-floor");
+  XLAL_CHECK ( have_SFTs || have_assumeSqrtSX, XLAL_EINVAL, "Need at least one of " UVAR_STR2OR(assumeSqrtSX,DataFiles) " for noise-floor.");
+  // need --Freq for noise-floor estimation if we don't have --assumeSqrtSX
+  XLAL_CHECK ( have_assumeSqrtSX || have_Freq, XLAL_EINVAL, "Need at least one of " UVAR_STR2OR(assumeSqrtSX,Freq) " for noise-floor.");
 
   // ----- compute or estimate multiTimestamps ----------
   if ( have_SFTs )
     {
       SFTConstraints XLAL_INIT_DECL(constraints);
+      MultiSFTCatalogView *multiCatalogView = NULL;
       /* ----- prepare SFT-reading ----- */
       constraints.minStartTime = &uvar->minStartTime;
       constraints.maxStartTime = &uvar->maxStartTime;
@@ -410,8 +392,29 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
       numDetectors = multiCatalogView->length;
       // ----- get the (multi-IFO) 'detector-state series' for given catalog
       XLAL_CHECK ( (mTS = XLALTimestampsFromMultiSFTCatalogView ( multiCatalogView )) != NULL, XLAL_EFUNC );
-
       XLAL_CHECK ( XLALMultiLALDetectorFromMultiSFTCatalogView ( &multiIFO, multiCatalogView ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      // ----- estimate noise-floor from SFTs if --assumeSqrtSX was not given:
+      if ( !have_assumeSqrtSX )
+        {
+          UINT4 wings = uvar->RngMedWindow/2 + 10;   /* extra frequency-bins needed for rngmed */
+          REAL8 fMax = uvar->Freq + 1.0 * wings / Tsft;
+          REAL8 fMin = uvar->Freq - 1.0 * wings / Tsft;
+
+          MultiSFTVector *multiSFTs;
+          XLAL_CHECK ( (multiSFTs = XLALLoadMultiSFTsFromView ( multiCatalogView, fMin, fMax )) != NULL, XLAL_EFUNC );
+
+          MultiPSDVector *multiRngmed = NULL;
+          XLAL_CHECK ( (multiRngmed = XLALNormalizeMultiSFTVect ( multiSFTs, uvar->RngMedWindow, NULL )) != NULL, XLAL_EFUNC );
+          XLALDestroyMultiSFTVector ( multiSFTs );
+
+          XLAL_CHECK ( (multiNoiseWeights = XLALComputeMultiNoiseWeights ( multiRngmed, uvar->RngMedWindow, 0 )) != NULL, XLAL_EFUNC );
+          XLALDestroyMultiPSDVector ( multiRngmed );
+        }
+
+      XLALDestroyMultiSFTCatalogView ( multiCatalogView );
+      XLALDestroySFTCatalog ( catalog );
+
     } // if have_SFTs
   else
     {
@@ -437,7 +440,7 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
       }
     } // if !have_SFTs
 
-  // determine start-time and total amount of data
+  // ---------- determine start-time and total amount of data
   LIGOTimeGPS startTime = {LAL_INT4_MAX,0};
   cfg->numSFTs = 0;
   for ( UINT4 X = 0; X < mTS->length; X ++ )
@@ -449,17 +452,7 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
     }
   REAL8 Tdata = GV.numSFTs * Tsft;
 
-  /* ----- load ephemeris-data ----- */
-  XLAL_CHECK ( (edat = XLALInitBarycenter( uvar->ephemEarth, uvar->ephemSun )) != NULL, XLAL_EFUNC );
-
-  // ----- get multiDetectorStates ----------
-  REAL8 tOffset = 0.5 * Tsft;
-  XLAL_CHECK ( ( multiDetStates = XLALGetMultiDetectorStates( mTS, &multiIFO, edat, tOffset )) != NULL, XLAL_EFUNC );
-
-  // ----- compute or estimate multiNoiseWeights ----------
-  MultiNoiseWeights *multiNoiseWeights = NULL;
-
-  // assumed noise-sqrtSX provided by user ==> don't estimate noise-floor from SFTs
+  // ---------- compute noise-weights from --assumeSqrtSX instead of from SFTs
   if ( have_assumeSqrtSX )
     {
       MultiNoiseFloor XLAL_INIT_DECL(assumeSqrtSX);
@@ -495,23 +488,13 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
       multiNoiseWeights->Sinv_Tsft = Sinv * Tsft;
 
     } // if --assumeSqrtSX given
-  else if(have_SFTs)
-    {// load the multi-IFO SFT-vectors for noise estimation
-      XLAL_CHECK ( XLALUserVarWasSet ( &uvar->Freq ), XLAL_EINVAL, "Need a frequency for noise-estimation in SFTs!\n");
-      UINT4 wings = uvar->RngMedWindow/2 + 10;   /* extra frequency-bins needed for rngmed */
-      REAL8 fMax = uvar->Freq + 1.0 * wings / Tsft;
-      REAL8 fMin = uvar->Freq - 1.0 * wings / Tsft;
 
-      MultiSFTVector *multiSFTs;
-      XLAL_CHECK ( (multiSFTs = XLALLoadMultiSFTsFromView ( multiCatalogView, fMin, fMax )) != NULL, XLAL_EFUNC );
+  /* ----- load ephemeris-data ----- */
+  XLAL_CHECK ( (edat = XLALInitBarycenter( uvar->ephemEarth, uvar->ephemSun )) != NULL, XLAL_EFUNC );
 
-      MultiPSDVector *multiRngmed = NULL;
-      XLAL_CHECK ( (multiRngmed = XLALNormalizeMultiSFTVect ( multiSFTs, uvar->RngMedWindow, NULL )) != NULL, XLAL_EFUNC );
-      XLALDestroyMultiSFTVector ( multiSFTs );
-
-      XLAL_CHECK ( (multiNoiseWeights = XLALComputeMultiNoiseWeights ( multiRngmed, uvar->RngMedWindow, 0 )) != NULL, XLAL_EFUNC );
-      XLALDestroyMultiPSDVector ( multiRngmed );
-    } // if noise-estimation done from SFTs
+  // ----- get multiDetectorStates ----------
+  REAL8 tOffset = 0.5 * Tsft;
+  XLAL_CHECK ( ( multiDetStates = XLALGetMultiDetectorStates( mTS, &multiIFO, edat, tOffset )) != NULL, XLAL_EFUNC );
 
   /* ----- handle transient-signal window if given ----- */
   if ( XLALUserVarWasSet ( &uvar->transientWindowType ) && strcmp ( uvar->transientWindowType, "none") )
@@ -538,8 +521,7 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
 
     } /* apply transient window to noise-weights */
 
-
-  /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
+  // ----- compute antenna-pattern matrix M_munu ----------
   skypos.longitude = uvar->Alpha;
   skypos.latitude = uvar->Delta;
   skypos.system = COORDINATESYSTEM_EQUATORIAL;
@@ -547,8 +529,8 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
 
   XLAL_CHECK ( (multiAMcoef = XLALComputeMultiAMCoeffs ( multiDetStates, multiNoiseWeights, skypos )) != NULL, XLAL_EFUNC );
 
-  /* OK: we only need the antenna-pattern matrix M_mu_nu */
   cfg->Mmunu = multiAMcoef->Mmunu;
+  XLALDestroyMultiAMCoeffs ( multiAMcoef );
 
   /* ----- produce a log-string describing the data-specific setup ----- */
   {
@@ -578,11 +560,8 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
 
   /* free everything not needed any more */
   XLALDestroyMultiTimestamps ( mTS );
-  XLALDestroySFTCatalog ( catalog );
-  XLALDestroyMultiSFTCatalogView ( multiCatalogView );
   XLALDestroyMultiNoiseWeights ( multiNoiseWeights );
   XLALDestroyMultiDetectorStateSeries ( multiDetStates );
-  XLALDestroyMultiAMCoeffs ( multiAMcoef );
 
   /* Free ephemeris data */
   XLALDestroyEphemerisData (edat);
