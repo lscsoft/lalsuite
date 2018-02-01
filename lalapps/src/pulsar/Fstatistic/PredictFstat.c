@@ -127,7 +127,6 @@ typedef struct {
   INT4 duration;		/**< Duration in seconds */
   LALStringVector* IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector*/
   REAL8 Tsft;		        /**< SFT time baseline Tsft */
-  REAL8 SFToverlap;		/**< overlap SFTs by this many seconds */
 
   CHAR *transientWindowType;	/**< name of transient window ('rect', 'exp',...) */
   REAL8 transientStartTime;	/**< GPS start-time of transient window */
@@ -270,7 +269,6 @@ initUserVars ( UserInput_t *uvar )
   uvar->phi0 = 0;
   uvar->transientWindowType = XLALStringDuplicate ( "none" );
 
-  uvar->SFToverlap=0;
   uvar->Tsft=1800;
 
   /* register all our user-variables */
@@ -311,7 +309,6 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( IFOs,			STRINGVector, 0, OPTIONAL, "CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" , used for --timestampsFiles and --startTime+duration");
   /* SFT properties */
   XLALRegisterUvarMember(  Tsft,                 REAL8, 0, OPTIONAL, "Time baseline of one SFT in seconds, used for --timestampsFiles and --startTime+duration");
-  XLALRegisterUvarMember(  SFToverlap,           REAL8, 0, DEVELOPER, "Overlap between successive SFTs in seconds (conflicts with --DataFiles or --timestampsFiles)");
 
   // ---------- deprecated options
   XLALRegisterUvarMember( SignalOnly,	BOOLEAN, 'S', DEPRECATED,"ALTERNATIVE: use --assumeSqrtSX and/or --PureSignal instead");
@@ -443,7 +440,7 @@ InitPFS ( ConfigVariables *cfg, const UserInput_t *uvar )
         } // endif have_timestampsFiles
       else if ( have_startTime && have_duration )
         {
-          XLAL_CHECK ( ( mTS = XLALMakeMultiTimestamps ( uvar->startTime, uvar->duration, uvar->Tsft, uvar->SFToverlap, multiIFO.length )) != NULL, XLAL_EFUNC );
+          XLAL_CHECK ( ( mTS = XLALMakeMultiTimestamps ( uvar->startTime, uvar->duration, uvar->Tsft, 0, multiIFO.length )) != NULL, XLAL_EFUNC );
           duration=uvar->duration;
           startTime=uvar->startTime;
         } // endif have_startTime
