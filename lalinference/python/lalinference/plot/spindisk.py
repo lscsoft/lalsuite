@@ -2,12 +2,12 @@
 
 import numpy as np
 import os
-from matplotlib import pyplot as plt
 from matplotlib.lines import Line2D
 
 __all__=('make_disk_plot',)
 
 def make_disk_plot(post,outpath=None):
+  from matplotlib import pyplot as plt
   from matplotlib import rc
   rc('text', usetex=True)
   rc('font', family='lmodern')
@@ -24,7 +24,7 @@ def make_disk_plot(post,outpath=None):
   try:
     import corner
   except ImportError:
-    print "cannot import corner. Won't plot spin disk"
+    print("cannot import corner. Won't plot spin disk")
     return None
 
   a1='a1'
@@ -38,7 +38,7 @@ def make_disk_plot(post,outpath=None):
     if not i in names:
       allin*=0.0
   if allin==0.0:
-    print "Cannot plot spin disk plot. Not all required spin parameters exist in the posterior file. Skipping...\n"
+    print("Cannot plot spin disk plot. Not all required spin parameters exist in the posterior file. Skipping...\n")
     return None
 
   # Spin disk plot
