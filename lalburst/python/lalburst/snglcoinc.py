@@ -1368,6 +1368,7 @@ class TOATriangulator(object):
 		Example:
 
 		>>> from numpy import array
+		>>> from numpy import testing
 		>>> triangulator = TOATriangulator([
 		...	array([-2161414.92636, -3834695.17889, 4600350.22664]),
 		...	array([  -74276.0447238, -5496283.71971  ,  3224257.01744  ]),
@@ -1386,12 +1387,9 @@ class TOATriangulator(object):
 		...
 		>>> n
 		array([ 0.28747132, -0.37035214,  0.88328904])
-		>>> print(toa)
-		794546669.409
-		>>> print(chi2_per_dof)
-		2.74075797279
-		>>> print(dt)
-		0.01433725385
+		>>> testing.assert_approx_equal(toa, 794546669.409)
+		>>> testing.assert_approx_equal(chi2_per_dof, 2.74075797279)
+		>>> testing.assert_approx_equal(dt, 0.01433725385)
 		"""
 		assert len(ts) == len(self.sigmas)
 
