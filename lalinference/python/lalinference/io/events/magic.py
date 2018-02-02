@@ -26,7 +26,7 @@ import h5py
 
 from . import hdf, ligolw, sqlite
 
-__all__ = ('MagicEventSource',)
+__all__ = ('MagicEventSource', 'open')
 
 
 def _get_file_type(f):
