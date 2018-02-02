@@ -460,10 +460,10 @@ void record_likelihoods(LALInferenceThreadState *thread) {
     LALInferenceAddVariable(thread->currentParams, "nullLogL", &(thread->nullLikelihood), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
 
     LALInferenceIFOData *headIFO = thread->parent->data;
-    char name[256];
+    char name[VARNAME_MAX];
     INT4 ifo = 0;
     while (headIFO != NULL) {
-        sprintf(name, "logl%s", headIFO->name);
+        snprintf(name, sizeof(name), "logl%s", headIFO->name);
         REAL8 ifo_logl = thread->currentIFOLikelihoods[ifo] - headIFO->nullloglikelihood;
 
         LALInferenceAddVariable(thread->currentParams, name, &ifo_logl, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
@@ -1155,7 +1155,12 @@ void LALInferenceNameOutputs(LALInferenceRunState *runState) {
     }
 
     if((ppt=LALInferenceGetProcParamVal(runState->commandLine, "--runid")))
-        snprintf(runState->runID, sizeof(runState->runID), "%s_%s", "lalinference_mcmc",ppt->value);
+	{
+        if( (int) sizeof(runState->runID) <= snprintf(runState->runID, sizeof(runState->runID), "%s_%s", "lalinference_mcmc",ppt->value))
+		{
+				XLAL_ERROR_VOID(XLAL_EINVAL,"run id too long!");
+		}
+	}
     else
         snprintf(runState->runID, sizeof(runState->runID), "lalinference_mcmc");
 }
@@ -1813,12 +1818,11 @@ void LALInferencePrintAdaptationSettings(FILE *outfile, LALInferenceThreadState 
 }
 
 void LALInferenceDataDump(LALInferenceIFOData *data, LALInferenceModel *model) {
-    const UINT4 nameLength=256;
-    char filename[nameLength];
+    char filename[FILENAME_MAX];
     FILE *out;
     UINT4 ui;
 
-    snprintf(filename, nameLength, "freqTemplatehPlus.dat");
+    snprintf(filename, sizeof(filename), "freqTemplatehPlus.dat");
     out = fopen(filename, "w");
     for (ui = 0; ui < model->freqhPlus->data->length; ui++) {
         REAL8 f = model->freqhPlus->deltaF * ui;
@@ -1828,7 +1832,7 @@ void LALInferenceDataDump(LALInferenceIFOData *data, LALInferenceModel *model) {
     }
     fclose(out);
 
-    snprintf(filename, nameLength, "freqTemplatehCross.dat");
+    snprintf(filename, sizeof(filename), "freqTemplatehCross.dat");
     out = fopen(filename, "w");
     for (ui = 0; ui < model->freqhCross->data->length; ui++) {
         REAL8 f = model->freqhCross->deltaF * ui;
@@ -1839,7 +1843,7 @@ void LALInferenceDataDump(LALInferenceIFOData *data, LALInferenceModel *model) {
     fclose(out);
 
     while (data != NULL) {
-        snprintf(filename, nameLength, "%s-freqTemplateStrain.dat", data->name);
+        snprintf(filename, sizeof(filename), "%s-freqTemplateStrain.dat", data->name);
         out = fopen(filename, "w");
         for (ui = 0; ui < model->freqhCross->data->length; ui++) {
             REAL8 f = model->freqhCross->deltaF * ui;
@@ -1851,7 +1855,7 @@ void LALInferenceDataDump(LALInferenceIFOData *data, LALInferenceModel *model) {
         }
         fclose(out);
 
-        snprintf(filename, nameLength, "%s-timeTemplateStrain.dat", data->name);
+        snprintf(filename, sizeof(filename), "%s-timeTemplateStrain.dat", data->name);
         out = fopen(filename, "w");
         for (ui = 0; ui < model->timehCross->data->length; ui++) {
             REAL8 tt = XLALGPSGetREAL8(&(model->timehCross->epoch)) +
@@ -1863,7 +1867,7 @@ void LALInferenceDataDump(LALInferenceIFOData *data, LALInferenceModel *model) {
         }
         fclose(out);
 
-        snprintf(filename, nameLength, "%s-timeTemplatehPlus.dat", data->name);
+        snprintf(filename, sizeof(filename), "%s-timeTemplatehPlus.dat", data->name);
         out = fopen(filename, "w");
         for (ui = 0; ui < model->timehPlus->data->length; ui++) {
             REAL8 tt = XLALGPSGetREAL8(&(model->timehPlus->epoch)) +
@@ -1874,7 +1878,7 @@ void LALInferenceDataDump(LALInferenceIFOData *data, LALInferenceModel *model) {
         }
         fclose(out);
 
-        snprintf(filename, nameLength, "%s-timeTemplatehCross.dat", data->name);
+        snprintf(filename, sizeof(filename), "%s-timeTemplatehCross.dat", data->name);
         out = fopen(filename, "w");
         for (ui = 0; ui < model->timehCross->data->length; ui++) {
             REAL8 tt = XLALGPSGetREAL8(&(model->timehCross->epoch)) +
