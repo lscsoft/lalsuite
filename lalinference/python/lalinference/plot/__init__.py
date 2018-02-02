@@ -17,13 +17,19 @@
 """
 Plotting classes and methods
 """
-from . import allsky, angle, healpix, marker, poly, pp, spindisk
-from .allsky import *
-from .angle import *
-from .healpix import *
-from .marker import *
-from .poly import *
-from .pp import *
-from .spindisk import *
-__all__ = (allsky.__all__ + angle.__all__ + healpix.__all__ + marker.__all__
-           + poly.__all__ + pp.__all__ + spindisk.__all__)
+from __future__ import absolute_import
+import os
+import pkgutil
+import six
+
+__all__ = ()
+
+# Import all symbols from all submodules of this module.
+for _, module, _ in pkgutil.iter_modules([os.path.dirname(__file__)]):
+    six.exec_('from . import {0};'
+              '__all__ += getattr({0}, "__all__", ());'
+              'from .{0} import *'.format(module))
+    del module
+
+# Clean up
+del os, pkgutil, six
