@@ -2,12 +2,12 @@
 
 import numpy as np
 import os
-from matplotlib import pyplot as plt
 from matplotlib.lines import Line2D
 
 __all__=('make_disk_plot',)
 
 def make_disk_plot(post,outpath=None):
+  from matplotlib import pyplot as plt
   from matplotlib import rc
   rc('text', usetex=True)
   rc('font', family='lmodern')
