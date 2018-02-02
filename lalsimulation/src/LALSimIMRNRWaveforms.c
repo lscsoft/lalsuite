@@ -711,9 +711,13 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
    * FIXME: Is this correct for precessing waveforms?
    */
 
-  if (fStart < Mflower / (m1 + m2) )
+  /* We allow fstart to be fractionally lower than expected to
+   * try and catch rounding errors
+   */
+  if (fStart * (1 + 1E-5) < Mflower / (m1 + m2))
   {
-    XLAL_ERROR(XLAL_EDOM, "WAVEFORM IS NOT LONG ENOUGH TO REACH f_low. %e %e %e",
+    XLAL_ERROR(XLAL_EDOM, "WAVEFORM IS NOT LONG ENOUGH TO REACH f_low. \
+                fStart = %e, Mflower = %e, Mflower / (m1 + m2)) = %e",
                 fStart, Mflower, Mflower / (m1 + m2));
   }
 
