@@ -46,7 +46,6 @@ from scipy import stats
 import matplotlib
 matplotlib.use("Agg")
 from matplotlib import pyplot as plt
-import cbcBayesPlotSpinDisk as cbcdiskspin
 
 # Default font properties
 fig_width_pt = 246  # Get this from LaTeX using \showthe\columnwidth
@@ -72,6 +71,7 @@ matplotlib.rcParams.update(
 
 #local application/library specific imports
 from pylal import SimInspiralUtils
+import lalinference.plot
 from lalinference import bayespputils as bppu
 from lalinference import git_version
 
@@ -689,7 +689,7 @@ def cbcBayesPostProc(
     else:
       wftd=html_wf.insert_td(row,'',label='DiskPlot',legend=legend)
       wfsection=html.add_section_to_element('DiskPlot',wftd)
-      cbcdiskspin.make_disk_plot(pos, outpath=outdir)
+      lalinference.plot.make_disk_plot(pos, outpath=outdir)
       wfsection.write('<a href="comp_spin_pos.png" target="_blank"><img src="comp_spin_pos.png"/></a>')
 
     #==================================================================#
