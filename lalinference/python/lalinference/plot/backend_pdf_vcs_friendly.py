@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2016  Leo Singer
+# Copyright (C) 2016-2018  Leo Singer
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,12 +16,14 @@
 #
 """Version control friendly Matplotlib PDF backend"""
 
-
 import inspect
+
 from matplotlib.backend_bases import register_backend
 from matplotlib.backends import backend_pdf
 from matplotlib.backends.backend_pdf import (
     FigureCanvasBase, MixedModeRenderer, RendererPdf)
+
+__all__ = ()
 
 
 class PdfFile(backend_pdf.PdfFile):
