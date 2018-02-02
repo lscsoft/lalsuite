@@ -1,4 +1,4 @@
-# Copyright (C) 2016  Leo Singer
+# Copyright (C) 2016-2018  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -14,10 +14,19 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-from . import events
-from . import fits
-from . import hdf5
-from .events import *
-from .fits import *
-from .hdf5 import *
-__all__ = events.__all__ + fits.__all__ + hdf5.__all__
+from __future__ import absolute_import
+import os
+import pkgutil
+import six
+
+__all__ = ()
+
+# Import all symbols from all submodules of this module.
+for _, module, _ in pkgutil.iter_modules([os.path.dirname(__file__)]):
+    six.exec_('from . import {0};'
+              '__all__ += getattr({0}, "__all__", ());'
+              'from .{0} import *'.format(module))
+    del module
+
+# Clean up
+del os, pkgutil, six
