@@ -9,17 +9,11 @@
 
 #include <Python.h>
 #include <numpy/arrayobject.h>
+#include "six.h"
 
 #include <stdlib.h>
 
 #define MAX_IN_FILES 128
-
-#define MODULE_NAME "_bayespputils"
-
-/* doc string */
-const char BUDocstring[] =
-"This module provides C extensions for Bayesian analysis and post-\n"
-"processing codes.";
 
 double findMaxLogL(FILE * input, double maxLogL);
 
@@ -49,8 +43,6 @@ static PyObject* _burnin(PyObject *self, PyObject *args) {
     PyObject* py_inputfile_list=NULL ;// List of files containing posterior chains."
     Py_ssize_t nfiles;
     PyObject* py_spin=NULL;
-    PyObject* py_deltaLogL=NULL;
-    PyObject* py_outputfilename=NULL ;
 
     //RETURN
     PyObject* py_pos_array=NULL;
@@ -64,9 +56,7 @@ static PyObject* _burnin(PyObject *self, PyObject *args) {
 
     /***PARSE/PROCESS INPUT***/
 
-    if (!PyArg_ParseTuple(args,"O!O!O!O!",&PyList_Type,&py_inputfile_list,&PyBool_Type,&py_spin,&PyFloat_Type,&py_deltaLogL,&PyString_Type,&py_outputfilename))  return NULL;
-
-    input->deltaLogL=PyFloat_AsDouble(py_deltaLogL);
+    if (!PyArg_ParseTuple(args,"O!O!ds",&PyList_Type,&py_inputfile_list,&PyBool_Type,&py_spin,&input->deltaLogL,&input->output_file_name))  return NULL;
 
     input->nfiles=PyList_Size(py_inputfile_list);
 
@@ -75,15 +65,17 @@ static PyObject* _burnin(PyObject *self, PyObject *args) {
     Py_ssize_t i;
     for(i=0;i<input->nfiles;i++){
     	char* ptemp=NULL;
-    	if((ptemp=PyString_AsString(PyList_GetItem(py_inputfile_list,i)))!=0){
+#if PY_MAJOR_VERSION >= 3
+        if((ptemp=PyUnicode_AsUTF8(PyList_GetItem(py_inputfile_list,i)))!=0){
+#else
+        if((ptemp=PyString_AsString(PyList_GetItem(py_inputfile_list,i)))!=0){
+#endif
         	input->files[i]=ptemp;
         }
         else {
         	nfiles--;
         }
     }
-    
-    input->output_file_name = PyString_AsString(py_outputfilename);
 
     Py_INCREF(Py_True);
     if(py_spin==Py_True) {
@@ -125,7 +117,7 @@ static PyObject* _burnin(PyObject *self, PyObject *args) {
  */
 
 
-static struct PyMethodDef BUmethods[] = {
+static struct PyMethodDef methods[] = {
     {"_burnin", _burnin, METH_VARARGS,
     "This function 'burns in' MCMC chains."
     },
@@ -133,9 +125,17 @@ static struct PyMethodDef BUmethods[] = {
 };
 
 
-void init_bayespputils(void);
-void init_bayespputils(void)
+static PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "_bayespputils",
+    "This module provides C extensions for Bayesian analysis and post-processing codes.",
+    -1, methods, NULL, NULL, NULL, NULL
+};
+
+
+PyMODINIT_FUNC PyInit__bayespputils(void); /* Silence -Wmissing-prototypes */
+PyMODINIT_FUNC PyInit__bayespputils(void)
 {
-    (void)Py_InitModule3(MODULE_NAME,BUmethods,BUDocstring);
     import_array();
+    return PyModule_Create(&moduledef);
 }
