@@ -2096,7 +2096,7 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
   for j, det in enumerate(detectors):
     # create the pulsar signal
     if len(freqfac) == 1 and freqfac[0] == 2.0:
-      ts, s = heterodyned_pulsar_signal(starttime, duration, dt, det, pardict)
+      ts, s = heterodyned_pulsar_signal(pardict, det, starttime, duration, dt)
 
       if j == 0:
         tss = np.append(tss, ts)
@@ -2108,7 +2108,7 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
       # get SNR
       snrtmp = get_optimal_snr( s[0], npsds[j] )
     elif len(freqfac) == 2:
-      ts, s = heterodyned_pulsar_signal(starttime, duration, dt, det, pardict)
+      ts, s = heterodyned_pulsar_signal(pardict, det, starttime, duration, dt)
 
       snrtmp = 0
       for k, frf in enumerate(freqfac):
@@ -2137,6 +2137,8 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
   else:
     snrscale = 1
 
+  signalonly = ss.copy()
+
   i = 0
   for det in detectors:
     # for triaxial model
@@ -2146,8 +2148,10 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
 
       for j, t in enumerate(ts[0]):
         if len(tss.shape) == 1:
+          signalonly[j] = (snrscale*ss[j].real) + 1j*(snrscale*ss[j].imag)
           ss[j] = (snrscale*ss[j].real + npsds[i]*rs[j][0]) + 1j*(snrscale*ss[j].imag + npsds[i]*rs[j][1])
         else:
+          signalonly[i][j] = (snrscale*ss[i][j].real) + 1j*(snrscale*ss[i][j].imag)
           ss[i][j] = (snrscale*ss[i][j].real + npsds[i]*rs[j][0]) + 1j*(snrscale*ss[i][j].imag + npsds[i]*rs[j][1])
 
       i = i+1
@@ -2156,7 +2160,9 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
       rs = np.random.randn(len(ts[0][:]), 4)
 
       for j, t in enumerate(ts[0][:]):
+        signalonly[i][j] = (snrscale*ss[i][j].real) + 1j*(snrscale*ss[i][j].imag)
         ss[i][j] = (snrscale*ss[i][j].real + npsds[i]*rs[j][0]) + 1j*(snrscale*ss[i][j].imag + npsds[i]*rs[j][1])
+        signalonly[i+1][j] = (snrscale*ss[i+1][j].real) + 1j*(snrscale*ss[i+1][j].imag)
         ss[i+1][j] = (snrscale*ss[i+1][j].real + npsds[i+1]*rs[j][2]) + \
           1j*(snrscale*ss[i+1][j].imag + npsds[i+1]*rs[j][3])
 
@@ -2167,7 +2173,7 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
 
   snrtot = snrtot*snrscale
 
-  return tss, ss, snrtot, snrscale
+  return tss, ss, signalonly, snrtot, snrscale, npsds
 
 
 # function to create a time domain PSD from theoretical
