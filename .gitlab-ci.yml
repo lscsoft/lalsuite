@@ -434,7 +434,7 @@ nightly:top-level:buster:
   dependencies: []
   script:
     - ./00boot
-    - ./configure --enable-swig-python --enable-doxygen
+    - ./configure --enable-swig --enable-doxygen
     - make -j4 distcheck
   only:
     - schedules
