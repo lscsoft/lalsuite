@@ -416,7 +416,7 @@ nightly:top-level:xenial:
     - web
 
 nightly:top-level:artful:
-  image: skymoo/ligo-lalsuite-dev:xenial
+  image: skymoo/ligo-lalsuite-dev:artful
   stage: nightly
   script:
     - ./00boot
