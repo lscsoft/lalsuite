@@ -281,6 +281,12 @@ SphHarmTimeSeries *XLALSimInspiralNRSur7dq2Modes(
         REAL8 deltaT,                   /**< sampling interval (s) */
         REAL8 m1,                       /**< mass of companion 1 (kg) */
         REAL8 m2,                       /**< mass of companion 2 (kg) */
+        REAL8 S1x,                      /**< x-component of the dimensionless spin of object 1 */
+        REAL8 S1y,                      /**< y-component of the dimensionless spin of object 1 */
+        REAL8 S1z,                      /**< z-component of the dimensionless spin of object 1 */
+        REAL8 S2x,                      /**< x-component of the dimensionless spin of object 2 */
+        REAL8 S2y,                      /**< y-component of the dimensionless spin of object 2 */
+        REAL8 S2z,                      /**< z-component of the dimensionless spin of object 2 */
         REAL8 fMin,                     /**< start GW frequency (Hz) */
         REAL8 fRef,                     /**< reference GW frequency (Hz) */
         REAL8 distnace,                 /**< distance of source (m) */
