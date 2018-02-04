@@ -2259,17 +2259,22 @@ int XLALSimInspiralChooseWaveform(
 
 /**
  * Interface to compute a set of -2 spin-weighted spherical harmonic modes
- * for a binary inspiral of any available amplitude and phase PN order.
- * The phasing is computed with any of the TaylorT1, T2, T3, T4 methods.
+ * for a binary inspiral for a given waveform approximant.
+ * PN Approximants (TaylorT1 - T4), EOBNRv2 (EOBNRv2HM), and NRSur7dq2 are implemented.
  *
- * It can also return the (2,2), (2,1), (3,3), (4,4), (5,5) modes of the EOBNRv2
- * model. Note that EOBNRv2 will ignore ampO, phaseO, lmax and f_ref arguments.
+ * The EOBNRv2 model returns the (2,2), (2,1), (3,3), (4,4), and (5,5) modes.
  */
 SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
     REAL8 phiRef,                               /**< reference orbital phase (rad) */
     REAL8 deltaT,                               /**< sampling interval (s) */
     REAL8 m1,                                   /**< mass of companion 1 (kg) */
     REAL8 m2,                                   /**< mass of companion 2 (kg) */
+    REAL8 S1x,                                  /**< x-component of the dimensionless spin of object 1 */
+    REAL8 S1y,                                  /**< y-component of the dimensionless spin of object 1 */
+    REAL8 S1z,                                  /**< z-component of the dimensionless spin of object 1 */
+    REAL8 S2x,                                  /**< x-component of the dimensionless spin of object 2 */
+    REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
+    REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
     REAL8 f_min,                                /**< starting GW frequency (Hz) */
     REAL8 f_ref,                                /**< reference GW frequency (Hz) */
     REAL8 r,                                    /**< distance of source (m) */
@@ -2303,6 +2308,10 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
         XLALPrintWarning("XLAL Warning - %s: Small value of m2 = %e (kg) = %e (Msun) requested.\nPerhaps you have a unit conversion error?\n", __func__, m2, m2/LAL_MSUN_SI);
     if( m1 + m2 > 1000. * LAL_MSUN_SI )
         XLALPrintWarning("XLAL Warning - %s: Large value of total mass m1+m2 = %e (kg) = %e (Msun) requested.\nSignal not likely to be in band of ground-based detectors.\n", __func__, m1+m2, (m1+m2)/LAL_MSUN_SI);
+    if( S1x*S1x + S1y*S1y + S1z*S1z > 1.000001 )
+        XLALPrintWarning("XLAL Warning - %s: S1 = (%e,%e,%e) with norm > 1 requested.\nAre you sure you want to violate the Kerr bound?\n", __func__, S1x, S1y, S1z);
+    if( S2x*S2x + S2y*S2y + S2z*S2z > 1.000001 )
+        XLALPrintWarning("XLAL Warning - %s: S2 = (%e,%e,%e) with norm > 1 requested.\nAre you sure you want to violate the Kerr bound?\n", __func__, S2x, S2y, S2z);
     if( f_min < 1. )
         XLALPrintWarning("XLAL Warning - %s: Small value of fmin = %e requested.\nCheck for errors, this could create a very long waveform.\n", __func__, f_min);
     if( f_min > 40.000001 )
@@ -2317,6 +2326,8 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
     {
         case TaylorT1:
             /* Waveform-specific sanity checks */
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                ABORT_NONZERO_SPINS_NULL(LALpars);
 	    if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALpars) )
                 ABORT_NONDEFAULT_FRAME_AXIS_NULL(LALpars);
             if( !XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALpars) )
@@ -2329,6 +2340,8 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             break;
         case TaylorT2:
             /* Waveform-specific sanity checks */
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                ABORT_NONZERO_SPINS_NULL(LALpars);
 	    if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALpars) )
                 ABORT_NONDEFAULT_FRAME_AXIS_NULL(LALpars);
             if( !XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALpars) )
@@ -2341,6 +2354,8 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             break;
         case TaylorT3:
             /* Waveform-specific sanity checks */
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                ABORT_NONZERO_SPINS_NULL(LALpars);
 	    if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALpars) )
                 ABORT_NONDEFAULT_FRAME_AXIS_NULL(LALpars);
             if( !XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALpars) )
@@ -2352,6 +2367,8 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             break;
         case TaylorT4:
             /* Waveform-specific sanity checks */
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                ABORT_NONZERO_SPINS_NULL(LALpars);
 	    if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALpars) )
                 ABORT_NONDEFAULT_FRAME_AXIS_NULL(LALpars);
             if( !XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALpars) )
@@ -2365,6 +2382,8 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
         case EOBNRv2:
         case EOBNRv2HM:
             /* Waveform-specific sanity checks */
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                ABORT_NONZERO_SPINS_NULL(LALpars);
 	    if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALpars) )
                 ABORT_NONDEFAULT_FRAME_AXIS_NULL(LALpars);
             if( !XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALpars) )
@@ -2394,8 +2413,8 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
         case NRSur7dq2:
             /* Waveform-specific sanity checks */
             /* Call the waveform driver routine */
-            hlm = XLALSimInspiralNRSur7dq2Modes(phiRef, deltaT, m1, m2, f_min,
-                    f_ref, r, lmax);
+            hlm = XLALSimInspiralNRSur7dq2Modes(phiRef, deltaT, m1, m2, S1x,
+                    S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, lmax);
             break;
 
         default:
@@ -2473,7 +2492,8 @@ SphHarmTimeSeries *XLALSimInspiralModesTD(REAL8 phiRef, REAL8 deltaT, REAL8 m1, 
      * requested frequency f_min; here compute a new lower frequency */
     // fstart = XLALSimInspiralChirpStartFrequencyBound((1.0 + extra_time_fraction) * tchirp + tmerge + textra, m1, m2);
 
-    modes = XLALSimInspiralChooseTDModes(phiRef, deltaT, m1, m2, f_min, f_ref, r, LALpars, lmax, approximant);
+    XLALPrintWarning("XLAL Warning - XLALSimInspiralModesTD does not yet implement spins - passing zeros\n");
+    modes = XLALSimInspiralChooseTDModes(phiRef, deltaT, m1, m2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, f_min, f_ref, r, LALpars, lmax, approximant);
     if (!modes)
         XLAL_ERROR_NULL(XLAL_EFUNC);
 
