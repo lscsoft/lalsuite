@@ -278,7 +278,7 @@ int main( int argc, char *argv[] )
 
   XLALRegisterUvarAuxDataMember(
     recalc_statistics, UserFlag, &WeaveStatisticChoices, 'R', OPTIONAL,
-    "Sets which extra *recalc* statistics to compute on final toplist without interpolation. See " UVAR_STR ( extra_statistics ) " for statistics descriptions.\n"
+    "Sets which extra *recalc* statistics to compute on final toplist without interpolation. See " UVAR_STR( extra_statistics ) " for statistics descriptions.\n"
     );
 
   XLALRegisterUvarMember(
@@ -311,12 +311,12 @@ int main( int argc, char *argv[] )
     rand_seed, UINT4, 'e', DEVELOPER,
     "Random seed used to initialise random number generators. "
     );
-   XLALRegisterUvarMember(
-     simulate_search, BOOLEAN, 0, DEVELOPER,
-     "Simulate search; perform all search actions apart from computing any results. "
-     "If SFT parameters (i.e. " UVAR_STR( sft_files ) " or " UVAR_STR( sft_timebase ) ") are supplied, simulate search with full memory allocation, i.e. with F-statistic input data, cached coherent results, etc. "
-     "Otherwise, perform search with minimal memory allocation, i.e. do not allocate memory for any data or results. "
-     );
+  XLALRegisterUvarMember(
+    simulate_search, BOOLEAN, 0, DEVELOPER,
+    "Simulate search; perform all search actions apart from computing any results. "
+    "If SFT parameters (i.e. " UVAR_STR( sft_files ) " or " UVAR_STR( sft_timebase ) ") are supplied, simulate search with full memory allocation, i.e. with F-statistic input data, cached coherent results, etc. "
+    "Otherwise, perform search with minimal memory allocation, i.e. do not allocate memory for any data or results. "
+    );
   XLALRegisterUvarMember(
     time_search, BOOLEAN, 0, DEVELOPER,
     "Collect and output detailed timing information from various stages of the search pipeline. "
@@ -480,36 +480,36 @@ int main( int argc, char *argv[] )
 
   ////////// Set up calculation of various requested output statistics //////////
 
-  WeaveStatisticsParams *statistics_params = XLALCalloc ( 1, sizeof( *statistics_params ) );
-  XLAL_CHECK_MAIN ( statistics_params != NULL, XLAL_ENOMEM );
+  WeaveStatisticsParams *statistics_params = XLALCalloc( 1, sizeof( *statistics_params ) );
+  XLAL_CHECK_MAIN( statistics_params != NULL, XLAL_ENOMEM );
   statistics_params->detectors = XLALCopyStringVector( setup.detectors );
-  XLAL_CHECK_MAIN ( statistics_params->detectors != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( statistics_params->detectors != NULL, XLAL_EFUNC );
   statistics_params->nsegments = nsegments;
 
   //
-  // figure out which statistics need to be computed, and when, in order to
+  // Figure out which statistics need to be computed, and when, in order to
   // produce all the requested toplist-statistics in the "main loop" and all remaining
   // extra-statistics in the "completion loop" after the toplist has been computed
   // work out dependency-map for different statistics sets: toplist-ranking, output, total set of dependencies in main/completion loop ...
-  XLAL_CHECK_MAIN ( XLALWeaveStatisticsParamsSetDependencyMap( statistics_params, uvar->toplists, uvar->extra_statistics, uvar->recalc_statistics ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALWeaveStatisticsParamsSetDependencyMap( statistics_params, uvar->toplists, uvar->extra_statistics, uvar->recalc_statistics ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // prepare memory for coherent F-stat argument setups
-  statistics_params->coh_input = XLALCalloc ( nsegments, sizeof (statistics_params->coh_input[0]) );
-  XLAL_CHECK_MAIN ( statistics_params->coh_input != NULL, XLAL_ENOMEM );
+  // Prepare memory for coherent F-stat argument setups
+  statistics_params->coh_input = XLALCalloc( nsegments, sizeof( statistics_params->coh_input[0] ) );
+  XLAL_CHECK_MAIN( statistics_params->coh_input != NULL, XLAL_ENOMEM );
 
   // ---------- prepare setup for line-robust statistics if requested ----------
-  if ( statistics_params->all_statistics_to_compute & (WEAVE_STATISTIC_BSGL|WEAVE_STATISTIC_BSGLtL|WEAVE_STATISTIC_BtSGLtL) ) {
+  if ( statistics_params->all_statistics_to_compute & ( WEAVE_STATISTIC_BSGL|WEAVE_STATISTIC_BSGLtL|WEAVE_STATISTIC_BtSGLtL ) ) {
     REAL4 *oLGX_p = NULL;
     REAL4 oLGX[PULSAR_MAX_DETECTORS];
     if ( uvar->lrs_oLGX != NULL ) {
-      XLAL_CHECK_MAIN ( uvar->lrs_oLGX->length == ndetectors, XLAL_EINVAL, "length(lrs-oLGX) = %d must equal number of detectors (%d)'\n", uvar->lrs_oLGX->length, ndetectors );
-      XLAL_CHECK_MAIN ( XLALParseLinePriors ( &oLGX[0], uvar->lrs_oLGX ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( uvar->lrs_oLGX->length == ndetectors, XLAL_EINVAL, "length(lrs-oLGX) = %d must equal number of detectors (%d)'\n", uvar->lrs_oLGX->length, ndetectors );
+      XLAL_CHECK_MAIN( XLALParseLinePriors( &oLGX[0], uvar->lrs_oLGX ) == XLAL_SUCCESS, XLAL_EFUNC );
       oLGX_p = &oLGX[0];
-    } // if uvar_oLGX != NULL
+    }
     const BOOLEAN useLogCorrection = 0;
-    statistics_params->BSGL_setup = XLALCreateBSGLSetup ( ndetectors, uvar->lrs_Fstar0sc, oLGX_p, useLogCorrection, nsegments );
-    XLAL_CHECK_MAIN ( statistics_params->BSGL_setup != NULL, XLAL_EFUNC );
-  } // if BSGL|BSGLtL|BtSGLtL
+    statistics_params->BSGL_setup = XLALCreateBSGLSetup( ndetectors, uvar->lrs_Fstar0sc, oLGX_p, useLogCorrection, nsegments );
+    XLAL_CHECK_MAIN( statistics_params->BSGL_setup != NULL, XLAL_EFUNC );
+  }
   // set number-count threshold
   statistics_params->nc_2Fth = uvar->nc_2Fth;
 
@@ -1075,7 +1075,7 @@ int main( int argc, char *argv[] )
       // Switch timing section
       XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_CKPT, WEAVE_SEARCH_TIMING_OTHER ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    } // if ( UVAR_SET( ckpt_output_file ) )
+    }
 
   }   // End of main loop
 
@@ -1086,21 +1086,21 @@ int main( int argc, char *argv[] )
 
   // Print progress
   double wall_main = 0, cpu_main = 0;
-  XLAL_CHECK_MAIN ( XLALWeaveSearchTimingElapsed( tim, &wall_main, &cpu_main ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALWeaveSearchTimingElapsed( tim, &wall_main, &cpu_main ) == XLAL_SUCCESS, XLAL_EFUNC );
   LogPrintf( LOG_NORMAL, "Finished main loop at %.3g%% complete, main-loop time %.1f sec, CPU %.1f%%, peak memory %.1fMB\n", XLALWeaveSearchIteratorProgress( main_loop_itr ), wall_main, 100.0 * cpu_main / wall_main, XLALGetPeakHeapUsageMB() );
 
   // Prepare completion-loop calculations:
   // if any 'recalc' (= 'stage 1') statistics have been requested: we'll need 'Demod' Fstatistic setups
   // so if the 'stage 0' calculation used Demod => nothing to do, if it used 'Resamp' then re-compute the setups
-  if ( (uvar->recalc_statistics != WEAVE_STATISTIC_NONE) ) {
-    statistics_params->coh_input_recalc = XLALCalloc ( nsegments, sizeof (statistics_params->coh_input_recalc[0]) );
-    XLAL_CHECK_MAIN ( statistics_params->coh_input_recalc != NULL, XLAL_ENOMEM );
+  if ( ( uvar->recalc_statistics != WEAVE_STATISTIC_NONE ) ) {
+    statistics_params->coh_input_recalc = XLALCalloc( nsegments, sizeof( statistics_params->coh_input_recalc[0] ) );
+    XLAL_CHECK_MAIN( statistics_params->coh_input_recalc != NULL, XLAL_ENOMEM );
     FstatOptionalArgs Fstat_opt_args_recalc = Fstat_opt_args;
     Fstat_opt_args_recalc.FstatMethod = FMETHOD_DEMOD_BEST;
     Fstat_opt_args_recalc.prevInput = NULL;
     for ( size_t i = 0; i < nsegments; ++i ) {
       statistics_params->coh_input_recalc[i] = XLALWeaveCohInputCreate( setup.detectors, simulation_level, sft_catalog, i, &setup.segments->segs[i], min_phys[i], max_phys[i], 0, setup.ephemerides, sft_noise_psd, Fstat_assume_psd, &Fstat_opt_args_recalc, statistics_params, 1 );
-      XLAL_CHECK_MAIN ( statistics_params->coh_input_recalc[i] != NULL, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( statistics_params->coh_input_recalc[i] != NULL, XLAL_EFUNC );
     }
   }
 
@@ -1108,7 +1108,7 @@ int main( int argc, char *argv[] )
   XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_OTHER, WEAVE_SEARCH_TIMING_CMPL ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Completion loop: compute all extra statistics that weren't required in the main loop
-  XLAL_CHECK_MAIN ( XLALWeaveOutputResultsCompletionLoop( out ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALWeaveOutputResultsCompletionLoop( out ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Switch timing section
   XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_CMPL, WEAVE_SEARCH_TIMING_OTHER ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -1200,7 +1200,7 @@ int main( int argc, char *argv[] )
     XLALFITSFileClose( file );
     LogPrintf( LOG_NORMAL, "Closed output file '%s'\n", uvar->output_file );
 
-  } // if (search_complete)
+  }
 
   ////////// Cleanup memory and exit //////////
 
@@ -1252,7 +1252,7 @@ int main( int argc, char *argv[] )
 
   return EXIT_SUCCESS;
 
-} // main()
+}
 
 // Local Variables:
 // c-file-style: "linux"

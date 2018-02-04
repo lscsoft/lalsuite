@@ -41,34 +41,34 @@ extern "C" {
 ///
 enum tagWeaveStatisticType {
   WEAVE_STATISTIC_NONE                                          = 0,
-  /// per segment multi-detector F-statistic
-  WEAVE_STATISTIC_COH2F                                         = XLAL_IDX2BIT(0),
-  /// per segment per-detector F-statistic
-  WEAVE_STATISTIC_COH2F_DET                                     = XLAL_IDX2BIT(1),
+  /// Per segment multi-detector F-statistic
+  WEAVE_STATISTIC_COH2F                                         = XLAL_IDX2BIT( 0 ),
+  /// Per segment per-detector F-statistic
+  WEAVE_STATISTIC_COH2F_DET                                     = XLAL_IDX2BIT( 1 ),
   // Maximum over segments multi-detector coherent 2F statistic
-  WEAVE_STATISTIC_MAX2F                                         = XLAL_IDX2BIT(2),
+  WEAVE_STATISTIC_MAX2F                                         = XLAL_IDX2BIT( 2 ),
   // Maximum over segments per-detector coherent 2F statistic
-  WEAVE_STATISTIC_MAX2F_DET                                     = XLAL_IDX2BIT(3),
-  /// multi-detector sum (over segments) F-statistic
-  WEAVE_STATISTIC_SUM2F                                         = XLAL_IDX2BIT(4),
-  /// per detector sum F-statistic
-  WEAVE_STATISTIC_SUM2F_DET                                     = XLAL_IDX2BIT(5),
-  /// multi-detector average (over segments) F-statistic
-  WEAVE_STATISTIC_MEAN2F                                        = XLAL_IDX2BIT(6),
-  /// per detector average F-statistic
-  WEAVE_STATISTIC_MEAN2F_DET                                    = XLAL_IDX2BIT(7),
-  /// line-robust log10(B_S/GL) statistic
-  WEAVE_STATISTIC_BSGL                                          = XLAL_IDX2BIT(8),
-    /// (transient-)line robust log10(B_S/GLtL) statistic
-  WEAVE_STATISTIC_BSGLtL                                        = XLAL_IDX2BIT(9),
+  WEAVE_STATISTIC_MAX2F_DET                                     = XLAL_IDX2BIT( 3 ),
+  /// Multi-detector sum (over segments) F-statistic
+  WEAVE_STATISTIC_SUM2F                                         = XLAL_IDX2BIT( 4 ),
+  /// Per detector sum F-statistic
+  WEAVE_STATISTIC_SUM2F_DET                                     = XLAL_IDX2BIT( 5 ),
+  /// Multi-detector average (over segments) F-statistic
+  WEAVE_STATISTIC_MEAN2F                                        = XLAL_IDX2BIT( 6 ),
+  /// Per detector average F-statistic
+  WEAVE_STATISTIC_MEAN2F_DET                                    = XLAL_IDX2BIT( 7 ),
+  /// Line-robust log10(B_S/GL) statistic
+  WEAVE_STATISTIC_BSGL                                          = XLAL_IDX2BIT( 8 ),
+  /// (transient-)line robust log10(B_S/GLtL) statistic
+  WEAVE_STATISTIC_BSGLtL                                        = XLAL_IDX2BIT( 9 ),
   /// (transient-)line robust log10(B_tS/GLtL) statistic
-  WEAVE_STATISTIC_BtSGLtL                                       = XLAL_IDX2BIT(10),
+  WEAVE_STATISTIC_BtSGLtL                                       = XLAL_IDX2BIT( 10 ),
   /// Hough number count
-  WEAVE_STATISTIC_NCOUNT                                        = XLAL_IDX2BIT(11),
+  WEAVE_STATISTIC_NCOUNT                                        = XLAL_IDX2BIT( 11 ),
   /// Hough number count per detector
-  WEAVE_STATISTIC_NCOUNT_DET                                    = XLAL_IDX2BIT(12),
-  /// marker +1 of maximal combined valid statistics value
-  WEAVE_STATISTIC_MAX                                           = XLAL_IDX2BIT(13)
+  WEAVE_STATISTIC_NCOUNT_DET                                    = XLAL_IDX2BIT( 12 ),
+  /// Marker +1 of maximal combined valid statistics value
+  WEAVE_STATISTIC_MAX                                           = XLAL_IDX2BIT( 13 )
 };
 
 ///
@@ -76,7 +76,7 @@ enum tagWeaveStatisticType {
 ///
 #define WEAVE_STATISTIC_NAME(ws) WeaveStatisticNamesByIndex[XLAL_BIT2IDX(ws)]
 /// \cond DONT_DOXYGEN
-extern const char *const WeaveStatisticNamesByIndex[XLAL_BIT2IDX(WEAVE_STATISTIC_MAX)];
+extern const char *const WeaveStatisticNamesByIndex[XLAL_BIT2IDX( WEAVE_STATISTIC_MAX )];
 /// \endcond
 
 ///
@@ -104,7 +104,7 @@ extern const char *const WeaveStatisticHelpString;
 ///
 struct tagWeaveStatisticsParams {
   /// ---------- elements describing output statistics [read/write from fits files]
-  /// list of detector names
+  /// List of detector names
   LALStringVector *detectors;
   /// Number of segments
   UINT4 nsegments;
@@ -136,20 +136,20 @@ struct tagWeaveStatisticsParams {
   WeaveStatisticType all_statistics_to_compute;
 
   /// ---------- input parameters for various statistics
-  /// reference time for phase-evolution parameters
+  /// Reference time for phase-evolution parameters
   LIGOTimeGPS ref_time;
-  /// setup for line-robust B_*S/GL* family of statistics
+  /// Setup for line-robust B_*S/GL* family of statistics
   BSGLSetup *BSGL_setup;
 
-  /// array of coherent setups over segments for 'stage 0' = main-loop calculation of 2F value over segments
+  /// Array of coherent setups over segments for 'stage 0' = main-loop calculation of 2F value over segments
   WeaveCohInput **coh_input;
-  /// array of coherent setups over segments for 'stage 1' = recalc calculation of 2F value over segments
+  /// Array of coherent setups over segments for 'stage 1' = recalc calculation of 2F value over segments
   WeaveCohInput **coh_input_recalc;
 
-  /// temporary 'workspace' storage for recalc'ed coherent 2F results over segments
+  /// Temporary 'workspace' storage for recalc'ed coherent 2F results over segments
   WeaveCohResults *coh_res;
 
-  /// per-segment 2F threshold for computing 'Hough' number counts
+  /// Per-segment 2F threshold for computing 'Hough' number counts
   REAL4 nc_2Fth;
 
 };
@@ -195,7 +195,7 @@ int XLALWeaveStatisticsParamsSetDependencyMap(
   const WeaveStatisticType recalc_stats
   );
 
-void XLALWeaveStatisticsParamsDestroy (
+void XLALWeaveStatisticsParamsDestroy(
   WeaveStatisticsParams *statistics_params
   );
 

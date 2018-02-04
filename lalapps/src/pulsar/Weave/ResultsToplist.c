@@ -93,24 +93,24 @@ WeaveResultsToplistItem *toplist_item_create(
   XLAL_CHECK_NULL( item != NULL, XLAL_ENOMEM );
 
   const WeaveStatisticsParams *params = toplist-> statistics_params;
-  WeaveStatisticType store_per_segment_stats = (params -> statistics_to_output[0] & (WEAVE_STATISTIC_COH2F | WEAVE_STATISTIC_COH2F_DET));
+  WeaveStatisticType store_per_segment_stats = ( params->statistics_to_output[0] & ( WEAVE_STATISTIC_COH2F | WEAVE_STATISTIC_COH2F_DET ) );
   WeaveStatisticType store_coh2F[2];
   WeaveStatisticType store_coh2F_det[2];
-  store_coh2F[0]     = (params -> mainloop_statistics_to_keep  & WEAVE_STATISTIC_COH2F);
-  store_coh2F_det[0] = (params -> mainloop_statistics_to_keep  & WEAVE_STATISTIC_COH2F_DET);
-  store_coh2F[1]     = (params -> completionloop_statistics[1] & WEAVE_STATISTIC_COH2F);
-  store_coh2F_det[1] = (params -> completionloop_statistics[1] & WEAVE_STATISTIC_COH2F_DET);
+  store_coh2F[0] = ( params->mainloop_statistics_to_keep  & WEAVE_STATISTIC_COH2F );
+  store_coh2F_det[0] = ( params->mainloop_statistics_to_keep  & WEAVE_STATISTIC_COH2F_DET );
+  store_coh2F[1] = ( params->completionloop_statistics[1] & WEAVE_STATISTIC_COH2F );
+  store_coh2F_det[1] = ( params->completionloop_statistics[1] & WEAVE_STATISTIC_COH2F_DET );
 
   // Allocate memory for per-segment output results
   if ( store_per_segment_stats ) {
-    item->coh_index = XLALCalloc( params -> nsegments, sizeof( *item->coh_index ) );
+    item->coh_index = XLALCalloc( params->nsegments, sizeof( *item->coh_index ) );
     XLAL_CHECK_NULL( item->coh_index != NULL, XLAL_ENOMEM );
-    item->coh_alpha = XLALCalloc( params -> nsegments, sizeof( *item->coh_alpha ) );
+    item->coh_alpha = XLALCalloc( params->nsegments, sizeof( *item->coh_alpha ) );
     XLAL_CHECK_NULL( item->coh_alpha != NULL, XLAL_ENOMEM );
-    item->coh_delta = XLALCalloc( params -> nsegments, sizeof( *item->coh_delta ) );
+    item->coh_delta = XLALCalloc( params->nsegments, sizeof( *item->coh_delta ) );
     XLAL_CHECK_NULL( item->coh_delta != NULL, XLAL_ENOMEM );
     for ( size_t k = 0; k <= toplist->nspins; ++k ) {
-      item->coh_fkdot[k] = XLALCalloc( params -> nsegments, sizeof( *item->coh_fkdot[k] ) );
+      item->coh_fkdot[k] = XLALCalloc( params->nsegments, sizeof( *item->coh_fkdot[k] ) );
       XLAL_CHECK_NULL( item->coh_fkdot[k] != NULL, XLAL_ENOMEM );
     }
   }
@@ -118,20 +118,20 @@ WeaveResultsToplistItem *toplist_item_create(
   // Allocate memory for per-segment coh2F and coh2F_det statistics if requested
   for ( UINT4 istage = 0; istage < 2; istage ++ ) {
     if ( store_coh2F[istage] ) {
-      item->stage[istage].coh2F = XLALCalloc( params -> nsegments, sizeof( *item->stage[istage].coh2F ) );
+      item->stage[istage].coh2F = XLALCalloc( params->nsegments, sizeof( *item->stage[istage].coh2F ) );
       XLAL_CHECK_NULL( item->stage[istage].coh2F != NULL, XLAL_ENOMEM );
     }
     if ( store_coh2F_det[istage] ) {
-      for ( UINT4 X = 0; X < params -> detectors->length; ++X ) {
-        item->stage[istage].coh2F_det[X] = XLALCalloc( params -> nsegments, sizeof( *item->stage[istage].coh2F_det[X] ) );
+      for ( UINT4 X = 0; X < params->detectors->length; ++X ) {
+        item->stage[istage].coh2F_det[X] = XLALCalloc( params->nsegments, sizeof( *item->stage[istage].coh2F_det[X] ) );
         XLAL_CHECK_NULL( item->stage[istage].coh2F_det[X] != NULL, XLAL_ENOMEM );
       }
     }
-  } // for istage = 0:1
+  }
 
   return item;
 
-} // toplist_item_create()
+}
 
 ///
 /// Destroy a toplist item
@@ -155,7 +155,7 @@ void toplist_item_destroy(
     }
     XLALFree( item );
   }
-} // toplist_item_destroy()
+}
 
 ///
 /// Compare toplist items
@@ -171,7 +171,7 @@ int toplist_item_compare(
   const WeaveResultsToplistItem *iy = ( const WeaveResultsToplistItem * ) y;
   COMPARE_BY( item_get_rank_stat_fcn( iy ), item_get_rank_stat_fcn( ix ) );   // Compare in descending order
   return 0;
-} // toplist_item_compare()
+}
 
 ///
 /// Initialise a FITS table for writing/reading a toplist
@@ -202,128 +202,129 @@ int toplist_fits_table_init(
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, semi_fkdot[k], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
-  const WeaveStatisticsParams *params = toplist -> statistics_params;
+  const WeaveStatisticsParams *params = toplist->statistics_params;
 
   const char *stage_suffix[2] = {"", "_rec"};
 
   for ( UINT4 istage = 0; istage < 2; istage ++ ) {
-    // which statistics have been requested for output at this stage ('stage0' vs 'recalc')?
-    WeaveStatisticType statistics_to_output = params -> statistics_to_output[istage];
+    // Which statistics have been requested for output at this stage ('stage0' vs 'recalc')?
+    WeaveStatisticType statistics_to_output = params->statistics_to_output[istage];
 
     // Add column for mean multi-detector F-statistic
     if ( statistics_to_output & WEAVE_STATISTIC_MEAN2F ) {
-      snprintf( col_name, sizeof( col_name ), "%s%s", WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_MEAN2F), stage_suffix[istage] );
+      snprintf( col_name, sizeof( col_name ), "%s%s", WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_MEAN2F ), stage_suffix[istage] );
       XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, stage[istage].mean2F, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
+
     // Add columns for mean per-detector F-statistic
     if ( statistics_to_output & WEAVE_STATISTIC_MEAN2F_DET ) {
-      for ( size_t i = 0; i < params -> detectors -> length; ++i ) {
-        snprintf( col_name, sizeof( col_name ), "%s_%s%s", WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_MEAN2F), params->detectors -> data[i], stage_suffix[istage] );
+      for ( size_t i = 0; i < params->detectors->length; ++i ) {
+        snprintf( col_name, sizeof( col_name ), "%s_%s%s", WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_MEAN2F ), params->detectors->data[i], stage_suffix[istage] );
         XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, stage[istage].mean2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
     }
 
-  // Add column for multi-detector max2F statistic
-  if ( statistics_to_output & WEAVE_STATISTIC_MAX2F ) {
-    snprintf( col_name, sizeof( col_name ), "%s%s", WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_MAX2F), stage_suffix[istage] );
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, stage[istage].max2F, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
-
-  // Add columns for per-detector max2F_det statistic
-  if ( statistics_to_output & WEAVE_STATISTIC_MAX2F_DET ) {
-    for ( size_t i = 0; i < params -> detectors->length; ++i ) {
-      snprintf( col_name, sizeof( col_name ), "%s_%s%s", WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_MAX2F), params->detectors->data[i], stage_suffix[istage] );
-      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, stage[istage].max2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+    // Add column for multi-detector max2F statistic
+    if ( statistics_to_output & WEAVE_STATISTIC_MAX2F ) {
+      snprintf( col_name, sizeof( col_name ), "%s%s", WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_MAX2F ), stage_suffix[istage] );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, stage[istage].max2F, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
-  }
 
-  // Add column for multi-detector sum2F statistic
-  if ( statistics_to_output & WEAVE_STATISTIC_SUM2F ) {
-    snprintf( col_name, sizeof( col_name ), "%s%s", WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_SUM2F), stage_suffix[istage] );
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, stage[istage].sum2F, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
-
-  // Add columns for per-detector sum2F statistic
-  if ( statistics_to_output & WEAVE_STATISTIC_SUM2F_DET ) {
-    for ( size_t i = 0; i < params -> detectors->length; ++i ) {
-      snprintf( col_name, sizeof( col_name ), "%s_%s%s", WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_SUM2F), params->detectors->data[i], stage_suffix[istage] );
-      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, stage[istage].sum2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-  }
-
-  // Add column for BSGL statistic
-  if ( statistics_to_output & WEAVE_STATISTIC_BSGL ) {
-    snprintf( col_name, sizeof( col_name ), "%s%s", WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_BSGL), stage_suffix[istage] );
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, stage[istage].log10BSGL, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
-
-  // Add column for BSGLtL statistic
-  if ( statistics_to_output & WEAVE_STATISTIC_BSGLtL ) {
-    snprintf( col_name, sizeof( col_name ), "%s%s", WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_BSGLtL), stage_suffix[istage] );
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, stage[istage].log10BSGLtL, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
-
-  // Add column for BtSGLtL statistic
-  if ( statistics_to_output & WEAVE_STATISTIC_BtSGLtL ) {
-    snprintf( col_name, sizeof( col_name ), "%s%s", WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_BtSGLtL), stage_suffix[istage] );
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, stage[istage].log10BtSGLtL, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
-
-  // Add column for multi-detector number-count statistic
-  if ( statistics_to_output & WEAVE_STATISTIC_NCOUNT ) {
-    snprintf( col_name, sizeof( col_name ), "%s%s", WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_NCOUNT), stage_suffix[istage] );
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, stage[istage].ncount, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
-
-  // Add column for per-detector number-count statistics
-  if ( statistics_to_output & WEAVE_STATISTIC_NCOUNT_DET ) {
-    for ( size_t i = 0; i < params -> detectors->length; ++i ) {
-      snprintf( col_name, sizeof( col_name ), "%s_%s%s", WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_NCOUNT), params->detectors->data[i], stage_suffix[istage] );
-      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, stage[istage].ncount_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-  }
-
-  //
-  // Add columns for per-segment statistics
-  //
-
-  if ( istage == 0 ) { // only output these for 'stage 0'
-    // We tie the output of per-segment coordinates to the output of any per-segment statistics
-    WeaveStatisticType per_segment_stats = (statistics_to_output & (WEAVE_STATISTIC_COH2F | WEAVE_STATISTIC_COH2F_DET));
-    // Add columns for coherent template parameters
-    if ( per_segment_stats ) {
-      if ( toplist->toplist_tmpl_idx ) {
-        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, UINT8, params -> nsegments, coh_index, "index_seg" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      }
-      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params -> nsegments, coh_alpha, "alpha_seg [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params -> nsegments, coh_delta, "delta_seg [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params -> nsegments, coh_fkdot[0], "freq_seg [Hz]" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      for ( size_t k = 1; k <= toplist->nspins; ++k ) {
-        snprintf( col_name, sizeof( col_name ), "f%zudot_seg [Hz/s^%zu]", k, k );
-        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params -> nsegments, coh_fkdot[k], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+    // Add columns for per-detector max2F_det statistic
+    if ( statistics_to_output & WEAVE_STATISTIC_MAX2F_DET ) {
+      for ( size_t i = 0; i < params->detectors->length; ++i ) {
+        snprintf( col_name, sizeof( col_name ), "%s_%s%s", WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_MAX2F ), params->detectors->data[i], stage_suffix[istage] );
+        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, stage[istage].max2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
     }
-  } // if istage==0
 
-  // Add column for per-segment coherent multi-detector 2F statistics
-  if ( statistics_to_output & WEAVE_STATISTIC_COH2F ) {
-    snprintf( col_name, sizeof( col_name ), "%s%s", WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_COH2F), stage_suffix[istage] );
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, params -> nsegments, stage[istage].coh2F, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
-
-  // Add columns for per-segment coherent per-detector 2F statistics
-  if ( statistics_to_output & WEAVE_STATISTIC_COH2F_DET ) {
-    for ( size_t i = 0; i < params -> detectors->length; ++i ) {
-      snprintf( col_name, sizeof( col_name ), "%s_%s%s", WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_COH2F), params->detectors->data[i], stage_suffix[istage] );
-      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, params -> nsegments, stage[istage].coh2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+    // Add column for multi-detector sum2F statistic
+    if ( statistics_to_output & WEAVE_STATISTIC_SUM2F ) {
+      snprintf( col_name, sizeof( col_name ), "%s%s", WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_SUM2F ), stage_suffix[istage] );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, stage[istage].sum2F, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
-  }
 
-  } // for istage = 0:1
+    // Add columns for per-detector sum2F statistic
+    if ( statistics_to_output & WEAVE_STATISTIC_SUM2F_DET ) {
+      for ( size_t i = 0; i < params->detectors->length; ++i ) {
+        snprintf( col_name, sizeof( col_name ), "%s_%s%s", WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_SUM2F ), params->detectors->data[i], stage_suffix[istage] );
+        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, stage[istage].sum2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
+    }
+
+    // Add column for BSGL statistic
+    if ( statistics_to_output & WEAVE_STATISTIC_BSGL ) {
+      snprintf( col_name, sizeof( col_name ), "%s%s", WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_BSGL ), stage_suffix[istage] );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, stage[istage].log10BSGL, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+    // Add column for BSGLtL statistic
+    if ( statistics_to_output & WEAVE_STATISTIC_BSGLtL ) {
+      snprintf( col_name, sizeof( col_name ), "%s%s", WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_BSGLtL ), stage_suffix[istage] );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, stage[istage].log10BSGLtL, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+    // Add column for BtSGLtL statistic
+    if ( statistics_to_output & WEAVE_STATISTIC_BtSGLtL ) {
+      snprintf( col_name, sizeof( col_name ), "%s%s", WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_BtSGLtL ), stage_suffix[istage] );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, stage[istage].log10BtSGLtL, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+    // Add column for multi-detector number-count statistic
+    if ( statistics_to_output & WEAVE_STATISTIC_NCOUNT ) {
+      snprintf( col_name, sizeof( col_name ), "%s%s", WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_NCOUNT ), stage_suffix[istage] );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, stage[istage].ncount, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+    // Add column for per-detector number-count statistics
+    if ( statistics_to_output & WEAVE_STATISTIC_NCOUNT_DET ) {
+      for ( size_t i = 0; i < params->detectors->length; ++i ) {
+        snprintf( col_name, sizeof( col_name ), "%s_%s%s", WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_NCOUNT ), params->detectors->data[i], stage_suffix[istage] );
+        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL4, stage[istage].ncount_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
+    }
+
+    //
+    // Add columns for per-segment statistics
+    //
+
+    if ( istage == 0 ) { // Only output these for 'stage 0'
+      // We tie the output of per-segment coordinates to the output of any per-segment statistics
+      WeaveStatisticType per_segment_stats = ( statistics_to_output & ( WEAVE_STATISTIC_COH2F | WEAVE_STATISTIC_COH2F_DET ) );
+      // Add columns for coherent template parameters
+      if ( per_segment_stats ) {
+        if ( toplist->toplist_tmpl_idx ) {
+          XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, UINT8, params->nsegments, coh_index, "index_seg" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        }
+        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params->nsegments, coh_alpha, "alpha_seg [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params->nsegments, coh_delta, "delta_seg [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params->nsegments, coh_fkdot[0], "freq_seg [Hz]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        for ( size_t k = 1; k <= toplist->nspins; ++k ) {
+          snprintf( col_name, sizeof( col_name ), "f%zudot_seg [Hz/s^%zu]", k, k );
+          XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL8, params->nsegments, coh_fkdot[k], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+        }
+      }
+    }
+
+    // Add column for per-segment coherent multi-detector 2F statistics
+    if ( statistics_to_output & WEAVE_STATISTIC_COH2F ) {
+      snprintf( col_name, sizeof( col_name ), "%s%s", WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_COH2F ), stage_suffix[istage] );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, params->nsegments, stage[istage].coh2F, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+    // Add columns for per-segment coherent per-detector 2F statistics
+    if ( statistics_to_output & WEAVE_STATISTIC_COH2F_DET ) {
+      for ( size_t i = 0; i < params->detectors->length; ++i ) {
+        snprintf( col_name, sizeof( col_name ), "%s_%s%s", WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_COH2F ), params->detectors->data[i], stage_suffix[istage] );
+        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, params->nsegments, stage[istage].coh2F_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
+    }
+
+  }
 
   return XLAL_SUCCESS;
 
-} // toplist_fits_table_init()
+}
 
 ///
 /// Function to update given toplist item with missing 'completion loop' statistics
@@ -333,45 +334,45 @@ int toplist_fill_completionloop_stats(
   void *x
   )
 {
-  XLAL_CHECK ( param != NULL, XLAL_EFAULT );
-  XLAL_CHECK ( x != NULL, XLAL_EFAULT );
+  XLAL_CHECK( param != NULL, XLAL_EFAULT );
+  XLAL_CHECK( x != NULL, XLAL_EFAULT );
 
   WeaveResultsToplistItem *item = ( WeaveResultsToplistItem * ) x;
-  WeaveStatisticsParams *stats_params = (WeaveStatisticsParams *)param;
-  UINT4 ndetectors = stats_params -> detectors -> length;
-  UINT4 nsegments  = stats_params -> nsegments;
+  WeaveStatisticsParams *stats_params = ( WeaveStatisticsParams * )param;
+  UINT4 ndetectors = stats_params->detectors->length;
+  UINT4 nsegments = stats_params->nsegments;
 
   for ( UINT4 istage = 0; istage < 2; istage ++ ) {
-    WeaveStatisticType stage_stats = stats_params -> completionloop_statistics[istage];
+    WeaveStatisticType stage_stats = stats_params->completionloop_statistics[istage];
 
     // Re-calculate per-sement coherent 2F|2F_det statistics in semi-coherent template point
-    if ( stage_stats & (WEAVE_STATISTIC_COH2F|WEAVE_STATISTIC_COH2F_DET) ) {
-      XLAL_CHECK ( istage > 0, XLAL_EERR, "BUG: requested 'coh2F' or 'coh2F_det' in stage0 completion loop ==> should never happen!\n");
-      PulsarDopplerParams XLAL_INIT_DECL(semi_phys);
+    if ( stage_stats & ( WEAVE_STATISTIC_COH2F|WEAVE_STATISTIC_COH2F_DET ) ) {
+      XLAL_CHECK( istage > 0, XLAL_EERR, "BUG: requested 'coh2F' or 'coh2F_det' in stage0 completion loop ==> should never happen!\n" );
+      PulsarDopplerParams XLAL_INIT_DECL( semi_phys );
       semi_phys.refTime = stats_params->ref_time;
       semi_phys.Alpha = item->semi_alpha;
       semi_phys.Delta = item->semi_delta;
-      memcpy ( semi_phys.fkdot, item->semi_fkdot, sizeof(semi_phys.fkdot) );
+      memcpy( semi_phys.fkdot, item->semi_fkdot, sizeof( semi_phys.fkdot ) );
 
       const UINT4 nfreqs = 1;
       for ( size_t l = 0; l < nsegments; ++l ) {
-        XLAL_CHECK ( XLALWeaveCohResultsCompute ( &(stats_params->coh_res), stats_params->coh_input_recalc[l], &semi_phys, nfreqs, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK( XLALWeaveCohResultsCompute( &( stats_params->coh_res ), stats_params->coh_input_recalc[l], &semi_phys, nfreqs, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
         REAL4Vector *coh2F = NULL;
-        REAL4Vector * XLAL_INIT_DECL( coh2F_det, [PULSAR_MAX_DETECTORS] );
+        REAL4Vector *XLAL_INIT_DECL( coh2F_det, [PULSAR_MAX_DETECTORS] );
         BOOLEAN have_coh2F_det;
-        XLAL_CHECK ( XLALWeaveCohResultsExtract( &coh2F, coh2F_det, &have_coh2F_det, stats_params->coh_res, stats_params->coh_input_recalc[l] ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK( XLALWeaveCohResultsExtract( &coh2F, coh2F_det, &have_coh2F_det, stats_params->coh_res, stats_params->coh_input_recalc[l] ) == XLAL_SUCCESS, XLAL_EFUNC );
         if ( stage_stats & WEAVE_STATISTIC_COH2F ) {
           item->stage[istage].coh2F[l] = coh2F->data[0];
         }
         if ( stage_stats & WEAVE_STATISTIC_COH2F_DET ) {
-          XLAL_CHECK ( have_coh2F_det, XLAL_EFAILED, "BUG: caller requested per-detector 2F-statistic, but was not computed\n");
+          XLAL_CHECK( have_coh2F_det, XLAL_EFAILED, "BUG: caller requested per-detector 2F-statistic, but was not computed\n" );
           for ( UINT4 X = 0; X < ndetectors; ++X ) {
-            item->stage[istage].coh2F_det[X][l] = (coh2F_det[X] != NULL) ? coh2F_det[X]->data[0] : NAN;
+            item->stage[istage].coh2F_det[X][l] = ( coh2F_det[X] != NULL ) ? coh2F_det[X]->data[0] : NAN;
           }
         }
-      } // for l < nsegments
+      }
 
-    } // re-calc COH2F|COH2F_DET
+    }
 
     if ( stage_stats & WEAVE_STATISTIC_MAX2F ) {
       item->stage[istage].max2F = 0;
@@ -385,7 +386,7 @@ int toplist_fill_completionloop_stats(
         item->stage[istage].max2F_det[X] = 0;
         for ( size_t l = 0; l < nsegments; ++l ) {
           REAL4 item_Xl = item->stage[istage].coh2F_det[X][l];
-          item->stage[istage].max2F_det[X] = isnan(item_Xl) ? item->stage[istage].max2F_det[X] : fmaxf ( item->stage[istage].max2F_det[X], item_Xl );
+          item->stage[istage].max2F_det[X] = isnan( item_Xl ) ? item->stage[istage].max2F_det[X] : fmaxf( item->stage[istage].max2F_det[X], item_Xl );
         }
       }
     }
@@ -402,7 +403,7 @@ int toplist_fill_completionloop_stats(
         item->stage[istage].sum2F_det[X] = 0;
         for ( size_t l = 0; l < nsegments; ++l ) {
           REAL4 item_Xl = item->stage[istage].coh2F_det[X][l];
-          item->stage[istage].sum2F_det[X] += isnan(item_Xl) ? 0 : item_Xl;
+          item->stage[istage].sum2F_det[X] += isnan( item_Xl ) ? 0 : item_Xl;
         }
       }
     }
@@ -418,15 +419,15 @@ int toplist_fill_completionloop_stats(
     }
 
     if ( stage_stats & WEAVE_STATISTIC_BSGL ) {
-      item->stage[istage].log10BSGL = XLALComputeBSGL ( item->stage[istage].sum2F, item->stage[istage].sum2F_det, stats_params -> BSGL_setup );
+      item->stage[istage].log10BSGL = XLALComputeBSGL( item->stage[istage].sum2F, item->stage[istage].sum2F_det, stats_params->BSGL_setup );
     }
 
     if ( stage_stats & WEAVE_STATISTIC_BSGLtL ) {
-      item->stage[istage].log10BSGLtL = XLALComputeBSGLtL ( item->stage[istage].sum2F, item->stage[istage].sum2F_det, item->stage[istage].max2F_det, stats_params -> BSGL_setup );
+      item->stage[istage].log10BSGLtL = XLALComputeBSGLtL( item->stage[istage].sum2F, item->stage[istage].sum2F_det, item->stage[istage].max2F_det, stats_params->BSGL_setup );
     }
 
     if ( stage_stats & WEAVE_STATISTIC_BtSGLtL ) {
-      item->stage[istage].log10BtSGLtL = XLALComputeBtSGLtL ( item->stage[istage].max2F, item->stage[istage].sum2F_det, item->stage[istage].max2F_det, stats_params -> BSGL_setup );
+      item->stage[istage].log10BtSGLtL = XLALComputeBtSGLtL( item->stage[istage].max2F, item->stage[istage].sum2F_det, item->stage[istage].max2F_det, stats_params->BSGL_setup );
     }
 
     if ( stage_stats & WEAVE_STATISTIC_NCOUNT ) {
@@ -441,17 +442,19 @@ int toplist_fill_completionloop_stats(
         item->stage[istage].ncount_det[X] = 0;
         for ( size_t l = 0; l < nsegments; ++l ) {
           REAL4 item_Xl = item->stage[istage].coh2F_det[X][l];
-          if ( isnan(item_Xl) ) { continue; }
+          if ( isnan( item_Xl ) ) {
+            continue;
+          }
           item->stage[istage].ncount_det[X] += ( item_Xl > stats_params->nc_2Fth ) ? 1 : 0;
         }
       }
     }
 
-  } // for istage = 0 : 1
+  }
 
   return XLAL_SUCCESS;
 
-} // toplist_fill_completionloop_stats()
+}
 
 ///
 /// Visitor function for writing a toplist to a FITS table
@@ -464,7 +467,7 @@ int toplist_fits_table_write_visitor(
   FITSFile *file = ( FITSFile * ) param;
   XLAL_CHECK( XLALFITSTableWriteRow( file, x ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
-} // toplist_fits_table_write_visitor()
+}
 
 ///
 /// Sort toplist items by physical coordinates of semicoherent template.
@@ -486,7 +489,7 @@ int toplist_item_sort_by_semi_phys(
   }
   COMPARE_BY( ix->semi_fkdot[0], iy->semi_fkdot[0] );   // Compare in ascending order
   return 0;
-} // toplist_item_sort_by_semi_phys()
+}
 
 ///
 /// Compute two template parameters
@@ -574,7 +577,7 @@ int compare_templates(
 
   return XLAL_SUCCESS;
 
-} // compare_templates()
+}
 
 ///
 /// Compare two vectors of results
@@ -595,7 +598,7 @@ int compare_vectors(
     XLAL_ERROR( XLAL_EFUNC );
   }
   return XLAL_SUCCESS;
-} // compare_vectors()
+}
 
 ///
 /// Create results toplist
@@ -638,7 +641,7 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
 
   return toplist;
 
-} // XLALWeaveResultsToplistCreate()
+}
 
 ///
 /// Free results toplist
@@ -653,7 +656,7 @@ void XLALWeaveResultsToplistDestroy(
     toplist_item_destroy( toplist->saved_item );
     XLALFree( toplist );
   }
-} // XLALWeaveResultsToplistDestroy()
+}
 
 ///
 /// Add semicoherent results to toplist
@@ -687,9 +690,9 @@ int XLALWeaveResultsToplistAdd(
   UINT4 n_maybe_add = 0;
   XLAL_CHECK( XLALVectorFindScalarLessEqualREAL4( &n_maybe_add, toplist->maybe_add_freq_idxs->data, heap_root_rank_stat, toplist_rank_stats, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // whether we output per-segment template coordinates is currently tied to output of any per-segment statistics
+  // Whether we output per-segment template coordinates is currently tied to output of any per-segment statistics
   const WeaveStatisticsParams *params = toplist->statistics_params;
-  WeaveStatisticType per_seg_coords = params -> statistics_to_output[0] & (WEAVE_STATISTIC_COH2F | WEAVE_STATISTIC_COH2F_DET);
+  WeaveStatisticType per_seg_coords = params->statistics_to_output[0] & ( WEAVE_STATISTIC_COH2F | WEAVE_STATISTIC_COH2F_DET );
 
   // Iterate over semicoherent results which have been selected for possible toplist insertion
   for ( UINT4 idx = 0; idx < n_maybe_add; ++idx ) {
@@ -741,13 +744,13 @@ int XLALWeaveResultsToplistAdd(
     }
 
     //
-    // copy all 'mainloop_statistics_to_keep' statistic values, as they will be needed either 1) for output or 2) computing remaining completion-loop statistics
+    // Copy all 'mainloop_statistics_to_keep' statistic values, as they will be needed either 1) for output or 2) computing remaining completion-loop statistics
     //
-    WeaveStatisticType stats_to_keep  = params -> mainloop_statistics_to_keep;
+    WeaveStatisticType stats_to_keep = params->mainloop_statistics_to_keep;
 
     if ( stats_to_keep & WEAVE_STATISTIC_COH2F ) {
       for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
-        item->stage[0].coh2F[j] = (semi_res->coh2F[j] != NULL) ? semi_res->coh2F[j][freq_idx] : NAN;
+        item->stage[0].coh2F[j] = ( semi_res->coh2F[j] != NULL ) ? semi_res->coh2F[j][freq_idx] : NAN;
       }
     }
     if ( stats_to_keep & WEAVE_STATISTIC_COH2F_DET ) {
@@ -769,7 +772,7 @@ int XLALWeaveResultsToplistAdd(
     }
     if ( stats_to_keep & WEAVE_STATISTIC_MAX2F_DET ) {
       for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
-        item->stage[0].max2F_det[i]  = semi_res->max2F_det[i]->data[freq_idx];
+        item->stage[0].max2F_det[i] = semi_res->max2F_det[i]->data[freq_idx];
       }
     }
 
@@ -778,7 +781,7 @@ int XLALWeaveResultsToplistAdd(
     }
     if ( stats_to_keep & WEAVE_STATISTIC_SUM2F_DET ) {
       for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
-        item->stage[0].sum2F_det[i]  = semi_res->sum2F_det[i]->data[freq_idx];
+        item->stage[0].sum2F_det[i] = semi_res->sum2F_det[i]->data[freq_idx];
       }
     }
 
@@ -798,11 +801,11 @@ int XLALWeaveResultsToplistAdd(
       item->stage[0].log10BtSGLtL = semi_res->log10BtSGLtL->data[freq_idx];
     }
 
-  } // for i < n_maybe_add
+  }
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveResultsToplistAdd()
+}
 
 ///
 /// Compute all missing 'extra' (non-toplist-ranking) statistics for all toplist entries
@@ -814,12 +817,12 @@ int XLALWeaveResultsToplistCompletionLoop(
   // Check input
   XLAL_CHECK( toplist != NULL, XLAL_EFAULT );
 
-  // compute all completion-loop statistics on toplist items
+  // Compute all completion-loop statistics on toplist items
   XLAL_CHECK( XLALHeapModify( toplist->heap, toplist_fill_completionloop_stats, toplist->statistics_params ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveResultsToplistCompletionLoop()
+}
 
 ///
 /// Write results toplist to a FITS file
@@ -849,7 +852,7 @@ int XLALWeaveResultsToplistWrite(
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveResultsToplistWrite
+}
 
 ///
 /// Read results from a FITS file and append to existing results toplist
@@ -892,7 +895,7 @@ int XLALWeaveResultsToplistReadAppend(
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveResultsToplistReadAppend()
+}
 
 ///
 /// Compare two results toplists and return whether they are equal
@@ -918,7 +921,7 @@ int XLALWeaveResultsToplistCompare(
   XLAL_CHECK( strcmp( toplist_1->stat_desc, toplist_2->stat_desc ) == 0, XLAL_EINVAL );
 
   const WeaveResultsToplist *toplist = toplist_1;
-  const WeaveStatisticsParams *params = toplist -> statistics_params;
+  const WeaveStatisticsParams *params = toplist->statistics_params;
 
   // Results toplists are assumed equal until we find otherwise
   *equal = 1;
@@ -944,10 +947,10 @@ int XLALWeaveResultsToplistCompare(
     const WeaveResultsToplistItem **items_2 = ( const WeaveResultsToplistItem ** ) XLALHeapElements( toplist_2->heap );
     XLAL_CHECK( items_2 != NULL, XLAL_EFUNC );
 
-    REAL4 lowest_1 = toplist_1->item_get_rank_stat_fcn ( items_1[n-1] );
-    REAL4 lowest_2 = toplist_2->item_get_rank_stat_fcn ( items_2[n-1] );
+    REAL4 lowest_1 = toplist_1->item_get_rank_stat_fcn( items_1[n-1] );
+    REAL4 lowest_2 = toplist_2->item_get_rank_stat_fcn( items_2[n-1] );
 
-    XLALPrintInfo ( "lowest_1 = %.15g, lowest_2 = %.15g\n", lowest_1, lowest_2 );
+    XLALPrintInfo( "lowest_1 = %.15g, lowest_2 = %.15g\n", lowest_1, lowest_2 );
 
     // Sort toplist items by physical coordinates of semicoherent template
     // - Template coordinates are less likely to suffer from numerical differences
@@ -965,9 +968,9 @@ int XLALWeaveResultsToplistCompare(
     REAL4Vector *res_2 = XLALCreateREAL4Vector( n );
     XLAL_CHECK( res_2 != NULL, XLAL_EFUNC );
 
-    UINT4 *inds_1 = XLALCalloc ( n, sizeof(UINT4) );
+    UINT4 *inds_1 = XLALCalloc( n, sizeof( UINT4 ) );
     XLAL_CHECK( inds_1 != NULL, XLAL_EFUNC );
-    UINT4 *inds_2 = XLALCalloc ( n, sizeof(UINT4) );
+    UINT4 *inds_2 = XLALCalloc( n, sizeof( UINT4 ) );
     XLAL_CHECK( inds_2 != NULL, XLAL_EFUNC );
     UINT4 skip_1 = 0, skip_2 = 0;
     UINT4 i_1 = 0, i_2 = 0;
@@ -987,7 +990,7 @@ int XLALWeaveResultsToplistCompare(
 
         // Compare semicoherent template parameters
         {
-          snprintf( loc_str, sizeof(loc_str), "toplist item %zu", i );
+          snprintf( loc_str, sizeof( loc_str ), "toplist item %zu", i );
           const UINT8 semi_index_1 = toplist_1->toplist_tmpl_idx ? items_1[i_1]->semi_index : 0;
           const UINT8 semi_index_2 = toplist_2->toplist_tmpl_idx ? items_2[i_2]->semi_index : 0;
           PulsarDopplerParams XLAL_INIT_DECL( semi_phys_1 );
@@ -1001,10 +1004,10 @@ int XLALWeaveResultsToplistCompare(
             semi_phys_2.fkdot[k] = items_2[i_2]->semi_fkdot[k];
           };
           BOOLEAN equal_semi = 1;
-          XLAL_CHECK ( compare_templates( &equal_semi, loc_str, "semicoherent", param_tol_mism, setup->metrics->semi_rssky_metric, setup->metrics->semi_rssky_transf, semi_index_1, semi_index_2, &semi_phys_1, &semi_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK( compare_templates( &equal_semi, loc_str, "semicoherent", param_tol_mism, setup->metrics->semi_rssky_metric, setup->metrics->semi_rssky_transf, semi_index_1, semi_index_2, &semi_phys_1, &semi_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
           if ( ! equal_semi ) {
-            REAL4 rankstat_1 = toplist_1->item_get_rank_stat_fcn ( items_1[i_1] );
-            REAL4 rankstat_2 = toplist_2->item_get_rank_stat_fcn ( items_2[i_2] );
+            REAL4 rankstat_1 = toplist_1->item_get_rank_stat_fcn( items_1[i_1] );
+            REAL4 rankstat_2 = toplist_2->item_get_rank_stat_fcn( items_2[i_2] );
 
             XLALPrintInfo( "1: index=%15"LAL_UINT8_FORMAT" coord={%20.15g,%20.15g,%20.15g,%20.15g}, ranking statistic = %20.15g\n",
                            items_1[i_1]->semi_index, items_1[i_1]->semi_alpha, items_1[i_1]->semi_alpha, items_1[i_1]->semi_fkdot[0], items_1[i_1]->semi_fkdot[0], rankstat_1 );
@@ -1012,38 +1015,41 @@ int XLALWeaveResultsToplistCompare(
             XLALPrintInfo( "2: index=%15"LAL_UINT8_FORMAT" coord={%20.15g,%20.15g,%20.15g,%20.15g}, ranking statistic = %20.15g\n",
                            items_2[i_2]->semi_index, items_2[i_2]->semi_alpha, items_2[i_2]->semi_alpha, items_2[i_2]->semi_fkdot[0], items_2[i_2]->semi_fkdot[0], rankstat_2 );
 
-            XLALPrintInfo ( "Mismatched coordinates: check if one of the two ranking statistics was close to the toplist effective 'threshold'\n");
+            XLALPrintInfo( "Mismatched coordinates: check if one of the two ranking statistics was close to the toplist effective 'threshold'\n" );
 #define FINITE_OR_ONE(x)  (((x) != 0) ? (x) : 1.0)
 #define fRELERR(x,y) ( fabsf( (x) - (y) ) / FINITE_OR_ONE( 0.5 * (fabsf(x) + fabsf(y)) ) )
-            REAL4 relerr_1 = fRELERR ( rankstat_1, lowest_1 );
-            REAL4 relerr_2 = fRELERR ( rankstat_2, lowest_2 );
+            REAL4 relerr_1 = fRELERR( rankstat_1, lowest_1 );
+            REAL4 relerr_2 = fRELERR( rankstat_2, lowest_2 );
             if ( relerr_1 < result_tol->relErr_atMaxAbsx ) {
               skip_1 ++;
-              if ( i > 0 ) { i --;}	// try to repeat last loop step
-              XLALPrintInfo ( "Toplist 1 ranking statistics %.15g is within tolerance %g from lowest element %.15g => skipping\n", rankstat_1, result_tol->relErr_atMaxAbsx, lowest_1 );
+              if ( i > 0 ) {
+                i --; // Try to repeat last loop step
+              }
+              XLALPrintInfo( "Toplist 1 ranking statistics %.15g is within tolerance %g from lowest element %.15g => skipping\n", rankstat_1, result_tol->relErr_atMaxAbsx, lowest_1 );
               continue;
             }
             if ( relerr_2 < result_tol->relErr_atMaxAbsy ) {
               skip_2 ++;
-              if ( i > 0 ) { i --;}	// try to repeat last loop step
-              XLALPrintInfo ( "Toplist 2 ranking statistics %.15g is within tolerance %g from lowest element %.15g => skipping\n", rankstat_2, result_tol->relErr_atMaxAbsy, lowest_2 );
+              if ( i > 0 ) {
+                i --; // Try to repeat last loop step
+              }
+              XLALPrintInfo( "Toplist 2 ranking statistics %.15g is within tolerance %g from lowest element %.15g => skipping\n", rankstat_2, result_tol->relErr_atMaxAbsy, lowest_2 );
               continue;
             }
             if ( !equal_semi ) {
-              XLALPrintError ( "Negative: failed comparison\n");
-              (*equal) = 0;	// neither candidate close to threshold ==> comparison failed
+              XLALPrintError( "Negative: failed comparison\n" );
+              ( *equal ) = 0;	// Neither candidate close to threshold ==> comparison failed
             }
-          } // if !equal_semi
-          else { // keep track of all successfully 'matched' templates for further comparisons
+          } else { // Keep track of all successfully 'matched' templates for further comparisons
             inds_1[i] = i_1;
             inds_2[i] = i_2;
           }
         }
 
         // Compare coherent template parameters
-        if ( (*equal) && (params->statistics_to_output[0] & (WEAVE_STATISTIC_COH2F|WEAVE_STATISTIC_COH2F_DET)) ) {
-          for ( size_t j = 0; j < params -> nsegments; ++j ) {
-            snprintf( loc_str, sizeof(loc_str), "toplist item %zu, segment %zu", i, j );
+        if ( ( *equal ) && ( params->statistics_to_output[0] & ( WEAVE_STATISTIC_COH2F|WEAVE_STATISTIC_COH2F_DET ) ) ) {
+          for ( size_t j = 0; j < params->nsegments; ++j ) {
+            snprintf( loc_str, sizeof( loc_str ), "toplist item %zu, segment %zu", i, j );
             const UINT8 coh_index_1 = toplist_1->toplist_tmpl_idx ? items_1[i_1]->coh_index[j] : 0;
             const UINT8 coh_index_2 = toplist_2->toplist_tmpl_idx ? items_2[i_2]->coh_index[j] : 0;
             PulsarDopplerParams XLAL_INIT_DECL( coh_phys_1 );
@@ -1058,21 +1064,21 @@ int XLALWeaveResultsToplistCompare(
             };
             XLAL_CHECK( compare_templates( equal, loc_str, "coherent", param_tol_mism, setup->metrics->coh_rssky_metric[j], setup->metrics->coh_rssky_transf[j], coh_index_1, coh_index_2, &coh_phys_1, &coh_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
           }
-        } // if output per-segment coordinates
+        }
 
-      } // for i < n
+      }
 
       if ( !*equal ) {
         break;
       }
 
-      XLAL_CHECK ( skip_1 == skip_2, XLAL_ETOL, "%s: Failed to match up toplists after skipping near-threshold candidates.\n", __func__ ); // sanity check: shouldn't be possible
-      // truncate results vector to length of matched lists
+      XLAL_CHECK( skip_1 == skip_2, XLAL_ETOL, "%s: Failed to match up toplists after skipping near-threshold candidates.\n", __func__ );  // Sanity check: shouldn't be possible
+      // Truncate results vector to length of matched lists
       UINT4 n_matched = n - skip_1;
       res_1->length = n_matched;
       res_2->length = n_matched;
 
-      // compare statistics values from both stages ('stage 0' = main search, 'stage 1' = recalculation stage ('recalc'))
+      // Compare statistics values from both stages ('stage 0' = main search, 'stage 1' = recalculation stage ('recalc'))
       for ( UINT4 istage = 0; istage < 2; ++ istage ) {
         WeaveStatisticType stats_to_output = params->statistics_to_output[istage];
 
@@ -1091,8 +1097,8 @@ int XLALWeaveResultsToplistCompare(
 
         // Compare mean per-detector F-statistic
         if ( stats_to_output & WEAVE_STATISTIC_MEAN2F_DET ) {
-          for ( size_t k = 0; k < params -> detectors->length; ++k ) {
-            XLALPrintInfo( "%s: comparing mean per-detector F-statistics for detector '%s'...\n", __func__, params -> detectors->data[k] );
+          for ( size_t k = 0; k < params->detectors->length; ++k ) {
+            XLALPrintInfo( "%s: comparing mean per-detector F-statistics for detector '%s'...\n", __func__, params->detectors->data[k] );
             for ( size_t i = 0; i < n; ++i ) {
               res_1->data[i] = items_1[inds_1[i]]->stage[istage].mean2F_det[k];
               res_2->data[i] = items_2[inds_2[i]]->stage[istage].mean2F_det[k];
@@ -1106,7 +1112,7 @@ int XLALWeaveResultsToplistCompare(
 
         // Compare per-segment coherent multi-detector F-statistics
         if ( stats_to_output & WEAVE_STATISTIC_COH2F ) {
-          for ( size_t j = 0; j < params -> nsegments; ++j ) {
+          for ( size_t j = 0; j < params->nsegments; ++j ) {
             XLALPrintInfo( "%s: comparing coherent multi-detector F-statistics for segment %zu...\n", __func__, j );
             for ( size_t i = 0; i < n; ++i ) {
               res_1->data[i] = items_1[inds_1[i]]->stage[istage].coh2F[j];
@@ -1121,17 +1127,17 @@ int XLALWeaveResultsToplistCompare(
 
         // Compare per-segment per-detector F-statistics
         if ( stats_to_output & WEAVE_STATISTIC_COH2F_DET ) {
-          for ( size_t j = 0; j < params -> nsegments; ++j ) {
-            for ( size_t k = 0; k < params -> detectors->length; ++k ) {
+          for ( size_t j = 0; j < params->nsegments; ++j ) {
+            for ( size_t k = 0; k < params->detectors->length; ++k ) {
               if ( isfinite( items_1[0]->stage[istage].coh2F_det[k][j] ) || isfinite( items_2[0]->stage[istage].coh2F_det[k][j] ) ) {
-                XLALPrintInfo( "%s: comparing per-segment per-detector F-statistics for segment %zu, detector '%s'...\n", __func__, j, params -> detectors->data[k] );
+                XLALPrintInfo( "%s: comparing per-segment per-detector F-statistics for segment %zu, detector '%s'...\n", __func__, j, params->detectors->data[k] );
                 for ( size_t i = 0; i < n; ++i ) {
                   res_1->data[i] = items_1[inds_1[i]]->stage[istage].coh2F_det[k][j];
                   res_2->data[i] = items_2[inds_2[i]]->stage[istage].coh2F_det[k][j];
                 }
                 XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
               } else {
-                XLALPrintInfo( "%s: no per-segment per-detector F-statistics for segment %zu, detector '%s'; skipping comparison\n", __func__, j, params -> detectors->data[k] );
+                XLALPrintInfo( "%s: no per-segment per-detector F-statistics for segment %zu, detector '%s'; skipping comparison\n", __func__, j, params->detectors->data[k] );
               }
             }
           }
@@ -1155,8 +1161,8 @@ int XLALWeaveResultsToplistCompare(
 
         // Compare segment-max per-detector F-statistic
         if ( stats_to_output & WEAVE_STATISTIC_MAX2F_DET ) {
-          for ( size_t k = 0; k < params -> detectors->length; ++k ) {
-            XLALPrintInfo( "%s: comparing max per-detector F-statistics for detector '%s'...\n", __func__, params -> detectors->data[k] );
+          for ( size_t k = 0; k < params->detectors->length; ++k ) {
+            XLALPrintInfo( "%s: comparing max per-detector F-statistics for detector '%s'...\n", __func__, params->detectors->data[k] );
             for ( size_t i = 0; i < n; ++i ) {
               res_1->data[i] = items_1[inds_1[i]]->stage[istage].max2F_det[k];
               res_2->data[i] = items_2[inds_2[i]]->stage[istage].max2F_det[k];
@@ -1183,8 +1189,8 @@ int XLALWeaveResultsToplistCompare(
 
         // Compare sum per-detector F-statistic
         if ( stats_to_output & WEAVE_STATISTIC_SUM2F_DET ) {
-          for ( size_t k = 0; k < params -> detectors->length; ++k ) {
-            XLALPrintInfo( "%s: comparing sum per-detector F-statistics for detector '%s'...\n", __func__, params -> detectors->data[k] );
+          for ( size_t k = 0; k < params->detectors->length; ++k ) {
+            XLALPrintInfo( "%s: comparing sum per-detector F-statistics for detector '%s'...\n", __func__, params->detectors->data[k] );
             for ( size_t i = 0; i < n; ++i ) {
               res_1->data[i] = items_1[inds_1[i]]->stage[istage].sum2F_det[k];
               res_2->data[i] = items_2[inds_2[i]]->stage[istage].sum2F_det[k];
@@ -1249,8 +1255,8 @@ int XLALWeaveResultsToplistCompare(
         }
         // Compare 'Hough' per-detector line statistics
         if ( stats_to_output & WEAVE_STATISTIC_NCOUNT_DET ) {
-          for ( size_t k = 0; k < params -> detectors->length; ++k ) {
-            XLALPrintInfo( "%s: comparing 'Hough' per-detector number-count statistic for detector '%s'...\n", __func__, params -> detectors->data[k] );
+          for ( size_t k = 0; k < params->detectors->length; ++k ) {
+            XLALPrintInfo( "%s: comparing 'Hough' per-detector number-count statistic for detector '%s'...\n", __func__, params->detectors->data[k] );
             for ( size_t i = 0; i < n; ++i ) {
               res_1->data[i] = items_1[inds_1[i]]->stage[istage].ncount_det[k];
               res_2->data[i] = items_2[inds_2[i]]->stage[istage].ncount_det[k];
@@ -1261,17 +1267,17 @@ int XLALWeaveResultsToplistCompare(
             }
           }
         }
-      } // for istage = 0:1
+      }
 
-    } while (0);
+    } while ( 0 );
 
     // Cleanup
     XLALFree( items_1 );
     XLALFree( items_2 );
     XLALDestroyREAL4Vector( res_1 );
     XLALDestroyREAL4Vector( res_2 );
-    XLALFree ( inds_1 );
-    XLALFree ( inds_2 );
+    XLALFree( inds_1 );
+    XLALFree( inds_2 );
 
     if ( !*equal ) {
       return XLAL_SUCCESS;
@@ -1281,7 +1287,7 @@ int XLALWeaveResultsToplistCompare(
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveResultsToplistCompare()
+}
 
 // Local Variables:
 // c-file-style: "linux"

@@ -52,7 +52,7 @@ int XLALWeaveOutputResultsAdd(
   const WeaveSemiResults *semi_res,
   const UINT4 semi_nfreqs
   );
-int XLALWeaveOutputResultsCompletionLoop (
+int XLALWeaveOutputResultsCompletionLoop(
   WeaveOutputResults *out
   );
 int XLALWeaveOutputResultsWrite(

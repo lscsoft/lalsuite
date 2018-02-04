@@ -163,7 +163,7 @@ void cache_item_destroy(
     XLALWeaveCohResultsDestroy( ix->coh_res );
     XLALFree( ix );
   }
-} // cache_item_destroy()
+}
 
 ///
 /// Compare cache items by generation, then relevance
@@ -178,7 +178,7 @@ int cache_item_compare_by_relevance(
   COMPARE_BY( ix->generation, iy->generation );   // Compare in ascending order
   COMPARE_BY( ix->relevance, iy->relevance );   // Compare in ascending order
   return 0;
-} // cache_item_compare_by_relevance()
+}
 
 ///
 /// Compare cache items by generation, then locator index
@@ -193,7 +193,7 @@ int cache_item_compare_by_coh_index(
   COMPARE_BY( ix->generation, iy->generation );   // Compare in ascending order
   COMPARE_BY( ix->coh_index, iy->coh_index );   // Compare in ascending order
   return 0;
-} // cache_item_compare_by_coh_index()
+}
 
 ///
 /// Hash cache items by generation and locator index
@@ -207,7 +207,7 @@ UINT8 cache_item_hash(
   XLALPearsonHash( &hval, sizeof( hval ), &ix->generation, sizeof( ix->generation ) );
   XLALPearsonHash( &hval, sizeof( hval ), &ix->coh_index, sizeof( ix->coh_index ) );
   return hval;
-} // cache_item_hash()
+}
 
 ///
 /// Sample points on surface of coherent bounding box, convert to semicoherent supersky
@@ -375,7 +375,7 @@ WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
 
   return queries;
 
-} // XLALWeaveCacheQueriesCreate()
+}
 
 ///
 /// Destroy storage for a series of cache queries
@@ -396,7 +396,7 @@ void XLALWeaveCacheQueriesDestroy(
     XLALFree( queries->coh_ntmpl );
     XLALFree( queries );
   }
-} // XLALWeaveCacheQueriesDestroy()
+}
 
 ///
 /// Initialise a series of cache queries
@@ -441,7 +441,7 @@ int XLALWeaveCacheQueriesInit(
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveCacheQueriesInit()
+}
 
 ///
 /// Query a cache for the results nearest to a given coherent point
@@ -507,7 +507,7 @@ int XLALWeaveCacheQuery(
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveCacheQuery()
+}
 
 ///
 /// Finalise a series of cache queries
@@ -572,7 +572,7 @@ int XLALWeaveCacheQueriesFinal(
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveCacheQueriesFinal()
+}
 
 ///
 /// Get number of computed coherent results, and number of coherent and semicoherent templates
@@ -643,7 +643,7 @@ WeaveCache *XLALWeaveCacheCreate(
   //   i.e. the cache will only discard items once the fixed-size cache is full, but not
   //   try to remove cache items earlier based on their relevances
   // - Garbage collection is applied to as many items as possible if 'all_gc' is true
-  cache->any_gc = (max_size == 0);
+  cache->any_gc = ( max_size == 0 );
   cache->all_gc = all_gc;
 
   // Get number of parameter-space dimensions
@@ -758,7 +758,7 @@ WeaveCache *XLALWeaveCacheCreate(
 
   return cache;
 
-} // XLALWeaveCacheCreate()
+}
 
 ///
 /// Destroy a cache
@@ -775,7 +775,7 @@ void XLALWeaveCacheDestroy(
     XLALBitsetDestroy( cache->coh_computed_bitset );
     XLALFree( cache );
   }
-} // XLALWeaveCacheDestroy()
+}
 
 ///
 /// Write various information from caches to a FITS file
@@ -796,7 +796,7 @@ int XLALWeaveCacheWriteInfo(
   {
     UINT4 heap_max_size = 0;
     for ( size_t i = 0; i < ncache; ++i ) {
-        heap_max_size += cache[i]->heap_max_size;
+      heap_max_size += cache[i]->heap_max_size;
     }
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "cachemax", heap_max_size, "maximum size obtained by cache" ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
@@ -822,7 +822,7 @@ int XLALWeaveCacheExpire(
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveCacheExpire()
+}
 
 ///
 /// Clear all items in the cache from memory
@@ -844,7 +844,7 @@ int XLALWeaveCacheClear(
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveCacheClear()
+}
 
 ///
 /// Retrieve coherent results for a given query, or compute new coherent results if not found
@@ -987,7 +987,7 @@ int XLALWeaveCacheRetrieve(
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveCacheRetrieve()
+}
 
 // Local Variables:
 // c-file-style: "linux"

@@ -147,7 +147,7 @@ WeaveCohInput *XLALWeaveCohInputCreate(
   coh_input->seg_info.segment_end = segment->end;
 
   // Decide what F-statistic quantities to compute
-  WeaveStatisticType requested_stats = (recalc_stage) ? statistics_params -> completionloop_statistics[1] : statistics_params -> mainloop_statistics;
+  WeaveStatisticType requested_stats = ( recalc_stage ) ? statistics_params->completionloop_statistics[1] : statistics_params->mainloop_statistics;
   if ( requested_stats & WEAVE_STATISTIC_COH2F ) {
     coh_input->Fstat_what_to_compute |= FSTATQ_2F;
   }
@@ -207,8 +207,7 @@ WeaveCohInput *XLALWeaveCohInputCreate(
   // Map detectors in F-statistic data in the given segment to their index in the coherent results
   // - This is important when segments contain data from a subset of detectors
   // - Map entry 'i' in 'Fstat_detector_info' (F-statistic data) to entry 'idx' in 'detectors' (coherent results)
-  if ( coh_input->Fstat_what_to_compute & FSTATQ_2F_PER_DET )
-  {
+  if ( coh_input->Fstat_what_to_compute & FSTATQ_2F_PER_DET ) {
     const MultiLALDetector *Fstat_detector_info = XLALGetFstatInputDetectors( coh_input->Fstat_input );
     coh_input->Fstat_ndetectors = Fstat_detector_info->length;
     char *statistics_detectors_string = XLALConcatStringVector( statistics_params->detectors, "," );
@@ -248,7 +247,7 @@ WeaveCohInput *XLALWeaveCohInputCreate(
 
   return coh_input;
 
-} // XLALWeaveCohInputCreate()
+}
 
 ///
 /// Destroy coherent input data
@@ -261,7 +260,7 @@ void XLALWeaveCohInputDestroy(
     XLALDestroyFstatInput( coh_input->Fstat_input );
     XLALFree( coh_input );
   }
-} // XLALWeaveCohInputDestroy()
+}
 
 ///
 /// Write various information from coherent input data to a FITS file
@@ -361,7 +360,7 @@ int XLALWeaveCohInputWriteInfo(
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveCohInputWriteInfo()
+}
 
 ///
 /// Write various segment information from coherent input data to a FITS file
@@ -406,7 +405,7 @@ int XLALWeaveCohInputWriteSegInfo(
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveCohInputWriteSegInfo()
+}
 
 ///
 /// Create and compute coherent results
@@ -501,7 +500,7 @@ int XLALWeaveCohResultsCompute(
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveCohResultsCompute()
+}
 
 ///
 /// Destroy coherent results
@@ -517,7 +516,7 @@ void XLALWeaveCohResultsDestroy(
     }
     XLALFree( coh_res );
   }
-} // XLALWeaveCohResultsDestroy()
+}
 
 ///
 /// Create and initialise semicoherent results
@@ -558,12 +557,12 @@ int XLALWeaveSemiResultsInit(
     | WEAVE_STATISTIC_BtSGLtL
     );
 
-  WeaveStatisticType unsupported = (mainloop_stats & ~supported_mainloop);
+  WeaveStatisticType unsupported = ( mainloop_stats & ~supported_mainloop );
   if ( unsupported != 0 ) {
-    char *unsupported_names = XLALPrintStringValueOfUserFlag( (const int*)&unsupported, &WeaveStatisticChoices );
-    XLALPrintError ( "BUG: unsupported main-loop statistics requested: %s\n", unsupported_names );
-    XLALFree ( unsupported_names );
-    XLAL_ERROR ( XLAL_EERR );
+    char *unsupported_names = XLALPrintStringValueOfUserFlag( ( const int * )&unsupported, &WeaveStatisticChoices );
+    XLALPrintError( "BUG: unsupported main-loop statistics requested: %s\n", unsupported_names );
+    XLALFree( unsupported_names );
+    XLAL_ERROR( XLAL_EERR );
   }
 
   // Allocate results struct if required
@@ -575,7 +574,7 @@ int XLALWeaveSemiResultsInit(
     ( *semi_res )->coh_index = XLALCalloc( nsegments, sizeof( *( *semi_res )->coh_index ) );
     XLAL_CHECK( ( *semi_res )->coh_index != NULL, XLAL_ENOMEM );
 
-    // allocate array for per-segment coordinates
+    // Allocate array for per-segment coordinates
     ( *semi_res )->coh_phys = XLALCalloc( nsegments, sizeof( *( *semi_res )->coh_phys ) );
     XLAL_CHECK( ( *semi_res )->coh_phys != NULL, XLAL_ENOMEM );
 
@@ -593,7 +592,7 @@ int XLALWeaveSemiResultsInit(
       }
     }
 
-  } // if *semi_res == NULL
+  }
 
   // Set fields
   ( *semi_res )->simulation_level = simulation_level;
@@ -682,7 +681,7 @@ int XLALWeaveSemiResultsInit(
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveSemiResultsInit()
+}
 
 ///
 /// Add F-statistic array 'coh2F' to summed array 'sum2F', and keep track of the number of summations 'nsum'
@@ -694,13 +693,13 @@ static int semi_res_sum_2F(
   const UINT4 nfreqs
   )
 {
-  if ( (*nsum)++ == 0 ) {
+  if ( ( *nsum )++ == 0 ) {
     // If this is the first summation, just use memcpy()
     memcpy( sum2F, coh2F, sizeof( *sum2F ) * nfreqs );
     return XLAL_SUCCESS;
   }
   return XLALVectorAddREAL4( sum2F, sum2F, coh2F, nfreqs );
-} // semi_res_sum_2F()
+}
 
 ///
 /// Track maximum between F-statistic array 'coh2F' and 'max2F', and keep track of the number of maximum-comparisons 'nmax'
@@ -712,13 +711,13 @@ static int semi_res_max_2F(
   const UINT4 nfreqs
   )
 {
-  if ( (*nmax)++ == 0 ) {
+  if ( ( *nmax )++ == 0 ) {
     // If this is the first max-comparison, just use memcpy()
     memcpy( max2F, coh2F, sizeof( *max2F ) * nfreqs );
     return XLAL_SUCCESS;
   }
   return XLALVectorMaxREAL4( max2F, max2F, coh2F, nfreqs );
-} // semi_res_max_2F()
+}
 
 ///
 /// Add a new set of coherent results to the semicoherent results
@@ -769,7 +768,7 @@ int XLALWeaveSemiResultsAdd(
   if ( mainloop_stats & WEAVE_STATISTIC_COH2F_DET ) {
     for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
       semi_res->coh2F_det[i][j] = ( coh_res->coh2F_det[i] != NULL ) ? coh_res->coh2F_det[i]->data + coh_offset : NULL;
-    } // for i < ndetectors
+    }
   }
 
   // Start timing of semicoherent results
@@ -799,7 +798,7 @@ int XLALWeaveSemiResultsAdd(
   if ( mainloop_stats & WEAVE_STATISTIC_SUM2F ) {
     XLAL_CHECK( semi_res_sum_2F( &semi_res->nsum2F, semi_res->sum2F->data, coh_res->coh2F->data + coh_offset, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
   } else {
-    semi_res->nsum2F ++;             // even if not summing here: count number of 2F summands for (potential) completion-loop usage
+    semi_res->nsum2F ++;             // Even if not summing here: count number of 2F summands for (potential) completion-loop usage
   }
 
   // Switch timed statistic
@@ -811,7 +810,7 @@ int XLALWeaveSemiResultsAdd(
       if ( mainloop_stats & WEAVE_STATISTIC_SUM2F_DET ) {
         XLAL_CHECK( semi_res_sum_2F( &semi_res->nsum2F_det[i], semi_res->sum2F_det[i]->data, coh_res->coh2F_det[i]->data + coh_offset, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
       } else {
-        semi_res->nsum2F_det[i] ++;  // even if not summing here: count number of per-detector 2F summands for (potential) completion-loop usage
+        semi_res->nsum2F_det[i] ++;  // Even if not summing here: count number of per-detector 2F summands for (potential) completion-loop usage
       }
     }
   }
@@ -821,7 +820,7 @@ int XLALWeaveSemiResultsAdd(
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveSemiResultsAdd()
+}
 
 ///
 /// Compute all remaining *toplist-ranking* semicoherent statistics (ie 'mainloop-statistics').
@@ -839,7 +838,7 @@ int XLALWeaveSemiResultsComputeMain(
   XLAL_CHECK( semi_res->statistics_params != NULL, XLAL_EFAULT );
   XLAL_CHECK( tim != NULL, XLAL_EFAULT );
 
-  WeaveStatisticType mainloop_stats = semi_res -> statistics_params -> mainloop_statistics;
+  WeaveStatisticType mainloop_stats = semi_res->statistics_params->mainloop_statistics;
 
   // Return now if simulating search
   if ( semi_res->simulation_level & WEAVE_SIMULATE ) {
@@ -875,7 +874,7 @@ int XLALWeaveSemiResultsComputeMain(
 
   // Compute line-robust log10(B_S/GL) statistic per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_BSGL ) {
-    XLAL_CHECK ( XLALVectorComputeBSGL ( semi_res->log10BSGL->data, sum2F, sum2F_det, semi_res->nfreqs, semi_res->statistics_params->BSGL_setup ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALVectorComputeBSGL( semi_res->log10BSGL->data, sum2F, sum2F_det, semi_res->nfreqs, semi_res->statistics_params->BSGL_setup ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Switch timed statistic
@@ -883,7 +882,7 @@ int XLALWeaveSemiResultsComputeMain(
 
   // Compute transient-line-robust log10(B_S/GL) statistic per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_BSGLtL ) {
-    XLAL_CHECK ( XLALVectorComputeBSGLtL ( semi_res->log10BSGLtL->data, sum2F, sum2F_det, max2F_det, semi_res->nfreqs, semi_res->statistics_params->BSGL_setup ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALVectorComputeBSGLtL( semi_res->log10BSGLtL->data, sum2F, sum2F_det, max2F_det, semi_res->nfreqs, semi_res->statistics_params->BSGL_setup ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Switch timed statistic
@@ -891,7 +890,7 @@ int XLALWeaveSemiResultsComputeMain(
 
   // Compute transient-signal line-robust log10(B_tS/GL) statistic per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_BtSGLtL ) {
-    XLAL_CHECK ( XLALVectorComputeBtSGLtL ( semi_res->log10BtSGLtL->data, max2F, sum2F_det, max2F_det, semi_res->nfreqs, semi_res->statistics_params->BSGL_setup ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALVectorComputeBtSGLtL( semi_res->log10BtSGLtL->data, max2F, sum2F_det, max2F_det, semi_res->nfreqs, semi_res->statistics_params->BSGL_setup ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Stop timing of semicoherent results
@@ -899,7 +898,7 @@ int XLALWeaveSemiResultsComputeMain(
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveSemiResultsComputeMain()
+}
 
 ///
 /// Destroy final semicoherent results
@@ -932,7 +931,7 @@ void XLALWeaveSemiResultsDestroy(
   XLALFree( semi_res );
   return;
 
-} // XLALWeaveSemiResultsDestroy()
+}
 
 
 /// Simple API function to extract pointers to 2F results from WeaveCohResults
@@ -944,26 +943,26 @@ int XLALWeaveCohResultsExtract(
   const WeaveCohInput *coh_input
   )
 {
-  XLAL_CHECK ( coh_input != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( coh_res != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( coh_res->nfreqs >= 1, XLAL_EINVAL );
-  XLAL_CHECK ( coh2F != NULL && coh2F_det != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( have_coh2F_det != NULL, XLAL_EINVAL );
+  XLAL_CHECK( coh_input != NULL, XLAL_EINVAL );
+  XLAL_CHECK( coh_res != NULL, XLAL_EINVAL );
+  XLAL_CHECK( coh_res->nfreqs >= 1, XLAL_EINVAL );
+  XLAL_CHECK( coh2F != NULL && coh2F_det != NULL, XLAL_EINVAL );
+  XLAL_CHECK( have_coh2F_det != NULL, XLAL_EINVAL );
 
-  (*coh2F)     = coh_res->coh2F;
-  (*have_coh2F_det) = 0;
+  ( *coh2F ) = coh_res->coh2F;
+  ( *have_coh2F_det ) = 0;
   if ( coh_input->Fstat_what_to_compute & FSTATQ_2F_PER_DET ) {
-    (*have_coh2F_det) = 1;
-    // set all pointers to NULL first, the copy only the results from 'active' IFOs
-    memset ( coh2F_det, 0, PULSAR_MAX_DETECTORS * sizeof(coh2F_det[0]) );
+    ( *have_coh2F_det ) = 1;
+    // Set all pointers to NULL first, the copy only the results from 'active' IFOs
+    memset( coh2F_det, 0, PULSAR_MAX_DETECTORS * sizeof( coh2F_det[0] ) );
     for ( UINT4 i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
       const size_t idx = coh_input->Fstat_res_idx[i];
-      coh2F_det[idx]  = coh_res->coh2F_det[idx];
+      coh2F_det[idx] = coh_res->coh2F_det[idx];
     }
   }
 
   return XLAL_SUCCESS;
-} // XLALWeaveCohResultsExtract()
+}
 
 
 // Local Variables:

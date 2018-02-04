@@ -62,9 +62,18 @@ struct tagWeaveOutputResults {
 ///
 /// @{
 
-static const REAL4 *toplist_results_sum2F( const WeaveSemiResults *semi_res ) { return semi_res->sum2F->data; }
-static REAL4 toplist_item_get_sum2F( const WeaveResultsToplistItem *item ) { return item->stage[0].sum2F; }
-static void toplist_item_set_sum2F( WeaveResultsToplistItem *item, const REAL4 value ) { item->stage[0].sum2F = value; }
+static const REAL4 *toplist_results_sum2F( const WeaveSemiResults *semi_res )
+{
+  return semi_res->sum2F->data;
+}
+static REAL4 toplist_item_get_sum2F( const WeaveResultsToplistItem *item )
+{
+  return item->stage[0].sum2F;
+}
+static void toplist_item_set_sum2F( WeaveResultsToplistItem *item, const REAL4 value )
+{
+  item->stage[0].sum2F = value;
+}
 
 /// @}
 ///
@@ -72,9 +81,18 @@ static void toplist_item_set_sum2F( WeaveResultsToplistItem *item, const REAL4 v
 ///
 /// @{
 
-static const REAL4 *toplist_results_mean2F( const WeaveSemiResults *semi_res ) { return semi_res->mean2F->data; }
-static REAL4 toplist_item_get_mean2F( const WeaveResultsToplistItem *item ) { return item->stage[0].mean2F; }
-static void toplist_item_set_mean2F( WeaveResultsToplistItem *item, const REAL4 value ) { item->stage[0].mean2F = value; }
+static const REAL4 *toplist_results_mean2F( const WeaveSemiResults *semi_res )
+{
+  return semi_res->mean2F->data;
+}
+static REAL4 toplist_item_get_mean2F( const WeaveResultsToplistItem *item )
+{
+  return item->stage[0].mean2F;
+}
+static void toplist_item_set_mean2F( WeaveResultsToplistItem *item, const REAL4 value )
+{
+  item->stage[0].mean2F = value;
+}
 
 /// @}
 ///
@@ -82,9 +100,18 @@ static void toplist_item_set_mean2F( WeaveResultsToplistItem *item, const REAL4 
 ///
 /// @{
 
-static const REAL4 *toplist_results_log10BSGL( const WeaveSemiResults *semi_res ) { return semi_res->log10BSGL->data; }
-static REAL4 toplist_item_get_log10BSGL( const WeaveResultsToplistItem *item ) { return item->stage[0].log10BSGL; }
-static void toplist_item_set_log10BSGL( WeaveResultsToplistItem *item, const REAL4 value ) { item->stage[0].log10BSGL = value; }
+static const REAL4 *toplist_results_log10BSGL( const WeaveSemiResults *semi_res )
+{
+  return semi_res->log10BSGL->data;
+}
+static REAL4 toplist_item_get_log10BSGL( const WeaveResultsToplistItem *item )
+{
+  return item->stage[0].log10BSGL;
+}
+static void toplist_item_set_log10BSGL( WeaveResultsToplistItem *item, const REAL4 value )
+{
+  item->stage[0].log10BSGL = value;
+}
 
 /// @}
 ///
@@ -92,9 +119,18 @@ static void toplist_item_set_log10BSGL( WeaveResultsToplistItem *item, const REA
 ///
 /// @{
 
-static const REAL4 *toplist_results_log10BSGLtL( const WeaveSemiResults *semi_res ) { return semi_res->log10BSGLtL->data; }
-static REAL4 toplist_item_get_log10BSGLtL( const WeaveResultsToplistItem *item ) { return item->stage[0].log10BSGLtL; }
-static void toplist_item_set_log10BSGLtL( WeaveResultsToplistItem *item, const REAL4 value ) { item->stage[0].log10BSGLtL = value; }
+static const REAL4 *toplist_results_log10BSGLtL( const WeaveSemiResults *semi_res )
+{
+  return semi_res->log10BSGLtL->data;
+}
+static REAL4 toplist_item_get_log10BSGLtL( const WeaveResultsToplistItem *item )
+{
+  return item->stage[0].log10BSGLtL;
+}
+static void toplist_item_set_log10BSGLtL( WeaveResultsToplistItem *item, const REAL4 value )
+{
+  item->stage[0].log10BSGLtL = value;
+}
 
 /// @}
 ///
@@ -102,9 +138,18 @@ static void toplist_item_set_log10BSGLtL( WeaveResultsToplistItem *item, const R
 ///
 /// @{
 
-static const REAL4 *toplist_results_log10BtSGLtL( const WeaveSemiResults *semi_res ) { return semi_res->log10BtSGLtL->data; }
-static REAL4 toplist_item_get_log10BtSGLtL( const WeaveResultsToplistItem *item ) { return item->stage[0].log10BtSGLtL; }
-static void toplist_item_set_log10BtSGLtL( WeaveResultsToplistItem *item, const REAL4 value ) { item->stage[0].log10BtSGLtL = value; }
+static const REAL4 *toplist_results_log10BtSGLtL( const WeaveSemiResults *semi_res )
+{
+  return semi_res->log10BtSGLtL->data;
+}
+static REAL4 toplist_item_get_log10BtSGLtL( const WeaveResultsToplistItem *item )
+{
+  return item->stage[0].log10BtSGLtL;
+}
+static void toplist_item_set_log10BtSGLtL( WeaveResultsToplistItem *item, const REAL4 value )
+{
+  item->stage[0].log10BtSGLtL = value;
+}
 
 /// @}
 
@@ -141,7 +186,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   // Create a toplist which ranks results by mean multi-detector F-statistic
   if ( toplist_statistics & WEAVE_STATISTIC_MEAN2F ) {
-    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_MEAN2F), "average multi-detector F-statistic", toplist_limit, toplist_tmpl_idx, toplist_results_mean2F, toplist_item_get_mean2F, toplist_item_set_mean2F );
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_MEAN2F ), "average multi-detector F-statistic", toplist_limit, toplist_tmpl_idx, toplist_results_mean2F, toplist_item_get_mean2F, toplist_item_set_mean2F );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
     out->ntoplists++;
@@ -149,7 +194,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   // Create a toplist which ranks results by summed multi-detector F-statistic
   if ( toplist_statistics & WEAVE_STATISTIC_SUM2F ) {
-    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_SUM2F), "summed multi-detector F-statistic", toplist_limit, toplist_tmpl_idx, toplist_results_sum2F, toplist_item_get_sum2F, toplist_item_set_sum2F );
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_SUM2F ), "summed multi-detector F-statistic", toplist_limit, toplist_tmpl_idx, toplist_results_sum2F, toplist_item_get_sum2F, toplist_item_set_sum2F );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
     out->ntoplists++;
@@ -157,7 +202,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   // Create a toplist which ranks results by line-robust log10(B_S/GL) statistic
   if ( toplist_statistics & WEAVE_STATISTIC_BSGL ) {
-    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_BSGL), "line-robust log10BSGL statistic", toplist_limit, toplist_tmpl_idx, toplist_results_log10BSGL, toplist_item_get_log10BSGL, toplist_item_set_log10BSGL );
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_BSGL ), "line-robust log10BSGL statistic", toplist_limit, toplist_tmpl_idx, toplist_results_log10BSGL, toplist_item_get_log10BSGL, toplist_item_set_log10BSGL );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
     out->ntoplists++;
@@ -165,7 +210,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   // Create a toplist which ranks results by transient-line-robust log10(B_S/GLtL) statistic
   if ( toplist_statistics & WEAVE_STATISTIC_BSGLtL ) {
-    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_BSGLtL), "transient line-robust log10BSGLtL statistic", toplist_limit, toplist_tmpl_idx, toplist_results_log10BSGLtL, toplist_item_get_log10BSGLtL, toplist_item_set_log10BSGLtL );
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_BSGLtL ), "transient line-robust log10BSGLtL statistic", toplist_limit, toplist_tmpl_idx, toplist_results_log10BSGLtL, toplist_item_get_log10BSGLtL, toplist_item_set_log10BSGLtL );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
     out->ntoplists++;
@@ -173,7 +218,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   // Create a toplist which ranks results by transient-signal line-robust log10(B_tS/GLtL) statistic
   if ( toplist_statistics & WEAVE_STATISTIC_BtSGLtL ) {
-    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME(WEAVE_STATISTIC_BtSGLtL), "transient signal line-robust log10BtSGLtL statistic", toplist_limit, toplist_tmpl_idx, toplist_results_log10BtSGLtL, toplist_item_get_log10BtSGLtL, toplist_item_set_log10BtSGLtL );
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_BtSGLtL ), "transient signal line-robust log10BtSGLtL statistic", toplist_limit, toplist_tmpl_idx, toplist_results_log10BtSGLtL, toplist_item_get_log10BtSGLtL, toplist_item_set_log10BtSGLtL );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
     out->ntoplists++;
@@ -184,7 +229,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   return out;
 
-} // XLALWeaveOutputResultsCreate()
+}
 
 ///
 /// Free output results
@@ -194,13 +239,13 @@ void XLALWeaveOutputResultsDestroy(
   )
 {
   if ( out != NULL ) {
-    XLALWeaveStatisticsParamsDestroy ( out->statistics_params );
+    XLALWeaveStatisticsParamsDestroy( out->statistics_params );
     for ( size_t i = 0; i < out->ntoplists; ++i ) {
       XLALWeaveResultsToplistDestroy( out->toplists[i] );
     }
     XLALFree( out );
   }
-} // XLALWeaveOutputResultsDestroy()
+}
 
 ///
 /// Add semicoherent results to output
@@ -216,11 +261,11 @@ int XLALWeaveOutputResultsAdd(
   XLAL_CHECK( out != NULL, XLAL_EFAULT );
   XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
 
-  // store main-loop parameters relevant for completion-loop statistics calculation
+  // Store main-loop parameters relevant for completion-loop statistics calculation
   static BOOLEAN firstTime = 1;
   if ( firstTime ) {
-    out -> statistics_params -> nsum2F  = semi_res -> nsum2F;
-    memcpy ( out -> statistics_params -> nsum2F_det, semi_res -> nsum2F_det, sizeof(semi_res -> nsum2F_det) );
+    out->statistics_params->nsum2F = semi_res->nsum2F;
+    memcpy( out->statistics_params->nsum2F_det, semi_res->nsum2F_det, sizeof( semi_res->nsum2F_det ) );
     firstTime = 0;
   }
 
@@ -231,12 +276,12 @@ int XLALWeaveOutputResultsAdd(
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveOutputResultsAdd()
+}
 
 ///
 /// Compute all the missing 'completion-loop' statistics for all toplist entries
 ///
-int XLALWeaveOutputResultsCompletionLoop (
+int XLALWeaveOutputResultsCompletionLoop(
   WeaveOutputResults *out
   )
 {
@@ -245,12 +290,12 @@ int XLALWeaveOutputResultsCompletionLoop (
 
   // Iterate over all toplists
   for ( size_t i = 0; i < out->ntoplists; ++i ) {
-    XLAL_CHECK( XLALWeaveResultsToplistCompletionLoop ( out->toplists[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALWeaveResultsToplistCompletionLoop( out->toplists[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveOutputResultsCompletionLoop()
+}
 
 ///
 /// Write output results to a FITS file
@@ -279,29 +324,29 @@ int XLALWeaveOutputResultsWrite(
 
   // Write names of selected toplist types (ie ranking statistics)
   {
-    char *toplist_statistics = XLALPrintStringValueOfUserFlag ( (const int*)&(out->statistics_params->toplist_statistics), &WeaveToplistChoices );
+    char *toplist_statistics = XLALPrintStringValueOfUserFlag( ( const int * )&( out->statistics_params->toplist_statistics ), &WeaveToplistChoices );
     XLAL_CHECK( toplist_statistics != NULL, XLAL_EFUNC );
     XLAL_CHECK( XLALFITSHeaderWriteString( file, "toplists", toplist_statistics, "names of selected toplist statistics" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLALFree ( toplist_statistics );
+    XLALFree( toplist_statistics );
   }
 
   // Write names of all selected 'extra' output statistics
   {
-    WeaveStatisticType extras = (out->statistics_params->statistics_to_output[0] & ~out->statistics_params->toplist_statistics);
+    WeaveStatisticType extras = ( out->statistics_params->statistics_to_output[0] & ~out->statistics_params->toplist_statistics );
     if ( extras == 0 ) {
       extras = WEAVE_STATISTIC_NONE;
     }
-    char *extras_names = XLALPrintStringValueOfUserFlag ( (const int*)&extras, &WeaveStatisticChoices );
+    char *extras_names = XLALPrintStringValueOfUserFlag( ( const int * )&extras, &WeaveStatisticChoices );
     XLAL_CHECK( extras_names != NULL, XLAL_EFUNC );
     XLAL_CHECK( XLALFITSHeaderWriteString( file, "extras", extras_names, "names of additional selected output statistics" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLALFree ( extras_names );
+    XLALFree( extras_names );
   }
   // Write names of all requested 'recalc' statistics
   {
-    char *recalc_names = XLALPrintStringValueOfUserFlag ( (const int*)&out->statistics_params->statistics_to_output[1], &WeaveStatisticChoices );
+    char *recalc_names = XLALPrintStringValueOfUserFlag( ( const int * )&out->statistics_params->statistics_to_output[1], &WeaveStatisticChoices );
     XLAL_CHECK( recalc_names != NULL, XLAL_EFUNC );
     XLAL_CHECK( XLALFITSHeaderWriteString( file, "recalc", recalc_names, "names of selected recalc statistics" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLALFree ( recalc_names );
+    XLALFree( recalc_names );
   }
 
   // Write maximum size of toplists
@@ -317,7 +362,7 @@ int XLALWeaveOutputResultsWrite(
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveOutputResultsWrite()
+}
 
 ///
 /// Read results from a FITS file and append to new/existing output results
@@ -341,14 +386,14 @@ int XLALWeaveOutputResultsReadAppend(
   XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "nspins", &nspins ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // ----- read elements for 'statistics_params' struct ----------
-  WeaveStatisticsParams *statistics_params = XLALCalloc ( 1, sizeof( *statistics_params ) );
-  XLAL_CHECK ( statistics_params != NULL, XLAL_ENOMEM );
+  WeaveStatisticsParams *statistics_params = XLALCalloc( 1, sizeof( *statistics_params ) );
+  XLAL_CHECK( statistics_params != NULL, XLAL_ENOMEM );
 
   // Read list of detectors
-  XLAL_CHECK( XLALFITSHeaderReadStringVector( file, "detect", &(statistics_params->detectors) ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSHeaderReadStringVector( file, "detect", &( statistics_params->detectors ) ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /// Number of segments
-  XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "segments", &(statistics_params->nsegments) ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "segments", &( statistics_params->nsegments ) ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Read names of selected toplist statistics
   char *toplist_stats_names = NULL;
@@ -375,8 +420,8 @@ int XLALWeaveOutputResultsReadAppend(
     XLALFree( recalc_names );
   }
 
-  // compute and fill the full stats-dependency map
-  XLAL_CHECK ( XLALWeaveStatisticsParamsSetDependencyMap ( statistics_params, toplist_stats, extra_stats, recalc_stats ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Compute and fill the full stats-dependency map
+  XLAL_CHECK( XLALWeaveStatisticsParamsSetDependencyMap( statistics_params, toplist_stats, extra_stats, recalc_stats ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Read maximum size of toplists
   UINT4 toplist_limit = 0;
@@ -404,10 +449,10 @@ int XLALWeaveOutputResultsReadAppend(
     XLAL_CHECK( XLALGPSCmp( &ref_time, &( *out )->ref_time ) == 0, XLAL_EIO, "Inconsistent reference time: %" LAL_GPS_FORMAT " != %" LAL_GPS_FORMAT, LAL_GPS_PRINT( ref_time ), LAL_GPS_PRINT( ( *out )->ref_time ) );
 
     // Check number of spindowns
-    XLAL_CHECK( (size_t) nspins == ( *out )->nspins, XLAL_EIO, "Inconsistent number of spindowns: %i != %zu", nspins, ( *out )->nspins );
+    XLAL_CHECK( ( size_t ) nspins == ( *out )->nspins, XLAL_EIO, "Inconsistent number of spindowns: %i != %zu", nspins, ( *out )->nspins );
 
     // Check if list of detectors agrees
-    if ( statistics_params -> detectors != NULL ) {
+    if ( statistics_params->detectors != NULL ) {
       XLAL_CHECK( statistics_params->detectors->length == ( *out )->statistics_params->detectors->length, XLAL_EIO, "Inconsistent number of detectors: %u != %u", statistics_params->detectors->length, ( *out )->statistics_params->detectors->length );
       for ( size_t i = 0; i < statistics_params->detectors->length; ++i ) {
         XLAL_CHECK( strcmp( statistics_params->detectors->data[i], ( *out )->statistics_params->detectors->data[i] ) == 0, XLAL_EIO, "Inconsistent detectors: %s != %s", statistics_params->detectors->data[i], ( *out )->statistics_params->detectors->data[i] );
@@ -420,36 +465,36 @@ int XLALWeaveOutputResultsReadAppend(
     // Check list of selected toplist statistics
     if ( statistics_params->toplist_statistics != ( *out )->statistics_params->toplist_statistics ) {
       char *toplists1, *toplists2;
-      toplists1 = XLALPrintStringValueOfUserFlag ( (const int*)&(statistics_params->toplist_statistics), &WeaveToplistChoices );
-      XLAL_CHECK ( toplists1 != NULL, XLAL_EFUNC );
-      toplists2 = XLALPrintStringValueOfUserFlag ( (const int*)&(( *out )->statistics_params->toplist_statistics), &WeaveToplistChoices );
-      XLAL_CHECK ( toplists2 != NULL, XLAL_EFUNC );
-      XLALPrintError ( "Inconsistent set of toplist statistics: %s != %s\n", toplists1, toplists2 );
-      XLALFree ( toplists1 );
-      XLALFree ( toplists2 );
-      XLAL_ERROR ( XLAL_EIO );
+      toplists1 = XLALPrintStringValueOfUserFlag( ( const int * )&( statistics_params->toplist_statistics ), &WeaveToplistChoices );
+      XLAL_CHECK( toplists1 != NULL, XLAL_EFUNC );
+      toplists2 = XLALPrintStringValueOfUserFlag( ( const int * )&( ( *out )->statistics_params->toplist_statistics ), &WeaveToplistChoices );
+      XLAL_CHECK( toplists2 != NULL, XLAL_EFUNC );
+      XLALPrintError( "Inconsistent set of toplist statistics: %s != %s\n", toplists1, toplists2 );
+      XLALFree( toplists1 );
+      XLALFree( toplists2 );
+      XLAL_ERROR( XLAL_EIO );
     }
     // Check list of selected output statistics
     for ( UINT4 istage = 0; istage < 2; ++ istage ) {
       if ( statistics_params->statistics_to_output[istage] != ( *out )->statistics_params->statistics_to_output[istage] ) {
         char *output1, *output2;
-        output1 = XLALPrintStringValueOfUserFlag ( (const int*)&(statistics_params->statistics_to_output[istage]), &WeaveStatisticChoices );
-        XLAL_CHECK ( output1 != NULL, XLAL_EFUNC );
-        output2 = XLALPrintStringValueOfUserFlag ( (const int*)&(( *out )->statistics_params->statistics_to_output[istage]), &WeaveStatisticChoices );
-        XLAL_CHECK ( output2 != NULL, XLAL_EFUNC );
-        XLALPrintError ( "Inconsistent set of stage-%d output statistics: {%s} != {%s}\n", istage, output1, output2 );
-        XLALFree ( output1 );
-        XLALFree ( output2 );
-        XLAL_ERROR ( XLAL_EIO );
+        output1 = XLALPrintStringValueOfUserFlag( ( const int * )&( statistics_params->statistics_to_output[istage] ), &WeaveStatisticChoices );
+        XLAL_CHECK( output1 != NULL, XLAL_EFUNC );
+        output2 = XLALPrintStringValueOfUserFlag( ( const int * )&( ( *out )->statistics_params->statistics_to_output[istage] ), &WeaveStatisticChoices );
+        XLAL_CHECK( output2 != NULL, XLAL_EFUNC );
+        XLALPrintError( "Inconsistent set of stage-%d output statistics: {%s} != {%s}\n", istage, output1, output2 );
+        XLALFree( output1 );
+        XLALFree( output2 );
+        XLAL_ERROR( XLAL_EIO );
       }
     }
 
-    XLALWeaveStatisticsParamsDestroy ( statistics_params ); // not creating a new output, so we need to free this
+    XLALWeaveStatisticsParamsDestroy( statistics_params );  // Not creating a new output, so we need to free this
 
     // Check whether to output semicoherent/coherent template indexes
     XLAL_CHECK( !toplist_tmpl_idx == !( *out )->toplist_tmpl_idx, XLAL_EIO, "Inconsistent output template indexes? %i != %i", toplist_tmpl_idx, ( *out )->toplist_tmpl_idx );
 
-  } // if *out != NULL
+  }
 
   // Read and append to toplists
   for ( size_t i = 0; i < ( *out )->ntoplists; ++i ) {
@@ -458,7 +503,7 @@ int XLALWeaveOutputResultsReadAppend(
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveOutputResultsReadAppend()
+}
 
 ///
 /// Compare two output results and return whether they are equal
@@ -533,31 +578,31 @@ int XLALWeaveOutputResultsCompare(
   if ( out_1->statistics_params->toplist_statistics != out_2->statistics_params->toplist_statistics ) {
     *equal = 0;
     char *toplists1, *toplists2;
-    toplists1 = XLALPrintStringValueOfUserFlag ( (const int*)&(out_1->statistics_params->toplist_statistics), &WeaveToplistChoices );
-    XLAL_CHECK ( toplists1 != NULL, XLAL_EFUNC );
-    toplists2 = XLALPrintStringValueOfUserFlag ( (const int*)&(out_2->statistics_params->toplist_statistics), &WeaveToplistChoices );
-    XLAL_CHECK ( toplists2 != NULL, XLAL_EFUNC );
-    XLALPrintError ( "%s: Inconsistent set of toplist statistics: {%s} != {%s}\n", __func__, toplists1, toplists2 );
-    XLALFree ( toplists1 );
-    XLALFree ( toplists2 );
+    toplists1 = XLALPrintStringValueOfUserFlag( ( const int * )&( out_1->statistics_params->toplist_statistics ), &WeaveToplistChoices );
+    XLAL_CHECK( toplists1 != NULL, XLAL_EFUNC );
+    toplists2 = XLALPrintStringValueOfUserFlag( ( const int * )&( out_2->statistics_params->toplist_statistics ), &WeaveToplistChoices );
+    XLAL_CHECK( toplists2 != NULL, XLAL_EFUNC );
+    XLALPrintError( "%s: Inconsistent set of toplist statistics: {%s} != {%s}\n", __func__, toplists1, toplists2 );
+    XLALFree( toplists1 );
+    XLALFree( toplists2 );
     return XLAL_SUCCESS;
   }
 
   // Compare statistics_to_output
-  for ( UINT4 istage = 0; istage < 2; ++ istage) {
+  for ( UINT4 istage = 0; istage < 2; ++ istage ) {
     if ( out_1->statistics_params->statistics_to_output[istage] != out_2->statistics_params->statistics_to_output[istage] ) {
       *equal = 0;
       char *outputs1, *outputs2;
-      outputs1 = XLALPrintStringValueOfUserFlag ( (const int*)&(out_1->statistics_params->statistics_to_output[istage]), &WeaveStatisticChoices );
-      XLAL_CHECK ( outputs1 != NULL, XLAL_EFUNC );
-      outputs2 = XLALPrintStringValueOfUserFlag ( (const int*)&(out_2->statistics_params->statistics_to_output[istage]), &WeaveStatisticChoices );
-      XLAL_CHECK ( outputs2 != NULL, XLAL_EFUNC );
-      XLALPrintError ( "%s: Inconsistent set of stage-%d ouput statistics: {%s} != {%s}\n", __func__, istage, outputs1, outputs2 );
-      XLALFree ( outputs1 );
-      XLALFree ( outputs2 );
+      outputs1 = XLALPrintStringValueOfUserFlag( ( const int * )&( out_1->statistics_params->statistics_to_output[istage] ), &WeaveStatisticChoices );
+      XLAL_CHECK( outputs1 != NULL, XLAL_EFUNC );
+      outputs2 = XLALPrintStringValueOfUserFlag( ( const int * )&( out_2->statistics_params->statistics_to_output[istage] ), &WeaveStatisticChoices );
+      XLAL_CHECK( outputs2 != NULL, XLAL_EFUNC );
+      XLALPrintError( "%s: Inconsistent set of stage-%d ouput statistics: {%s} != {%s}\n", __func__, istage, outputs1, outputs2 );
+      XLALFree( outputs1 );
+      XLALFree( outputs2 );
       return XLAL_SUCCESS;
     }
-  } // for istage = 0:1
+  }
 
   // Compare toplists
   for ( size_t i = 0; i < out_1->ntoplists; ++i ) {
@@ -570,7 +615,7 @@ int XLALWeaveOutputResultsCompare(
 
   return XLAL_SUCCESS;
 
-} // XLALWeaveOutputResultsCompare()
+}
 
 // Local Variables:
 // c-file-style: "linux"

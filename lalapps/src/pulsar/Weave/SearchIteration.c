@@ -287,7 +287,7 @@ REAL8 XLALWeaveSearchIteratorProgress(
   XLAL_CHECK_REAL8( itr != NULL, XLAL_EFAULT );
 
   // Return iteration progress
-  return GSL_MAX( 0.0, GSL_MIN( ( (double) itr->prog_index ) / itr->prog_count, 1.0 ) ) * 100.0;
+  return GSL_MAX( 0.0, GSL_MIN( ( ( double ) itr->prog_index ) / itr->prog_count, 1.0 ) ) * 100.0;
 
 }
 

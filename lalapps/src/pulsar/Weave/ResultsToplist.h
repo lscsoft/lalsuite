@@ -70,7 +70,7 @@ typedef const REAL4 *( *WeaveResultsToplistRankingStats )( const WeaveSemiResult
 ///
 /// Function which returns the value of the statistic by which toplist items are ranked
 ///
-typedef REAL4 ( *WeaveResultsToplistItemGetRankStat )( const WeaveResultsToplistItem *item );
+typedef REAL4( *WeaveResultsToplistItemGetRankStat )( const WeaveResultsToplistItem *item );
 
 ///
 /// Function which sets the value of the statistic by which toplist items are ranked

@@ -48,9 +48,9 @@ struct tagWeaveSearchTiming {
   /// CPU time for current section being timed
   double curr_section_cpu_time;
   /// CPU time taken by various coherent/semicoherent statistics
-  double statistic_cpu_times[XLAL_BIT2IDX(WEAVE_STATISTIC_MAX)];
+  double statistic_cpu_times[XLAL_BIT2IDX( WEAVE_STATISTIC_MAX )];
   /// Section in which each statistic is timed
-  WeaveSearchTimingSection statistic_section[XLAL_BIT2IDX(WEAVE_STATISTIC_MAX)];
+  WeaveSearchTimingSection statistic_section[XLAL_BIT2IDX( WEAVE_STATISTIC_MAX )];
   /// Current statistic being timed
   WeaveStatisticType curr_statistic;
   /// CPU time for current statistic being timed
@@ -90,8 +90,8 @@ const char *denom_names[WEAVE_SEARCH_DENOM_MAX] = {
 /// Parameters of search timing sections
 ///
 const struct {
-  const char* name;
-  const char* comment;
+  const char *name;
+  const char *comment;
   const WeaveSearchTimingDenominator denom;
 } cpu_sections[WEAVE_SEARCH_TIMING_MAX] = {
   [WEAVE_SEARCH_TIMING_ITER]    = {"iter",      "parameter space iteration",                    WEAVE_SEARCH_DENOM_PSEMI},
@@ -110,8 +110,8 @@ const struct {
 ///
 /// @{
 
-static inline double wall_time(void);
-static inline double cpu_time(void);
+static inline double wall_time( void );
+static inline double cpu_time( void );
 
 /// @}
 
@@ -193,7 +193,7 @@ int XLALWeaveSearchTimingStart(
   for ( size_t i = 0; i < WEAVE_SEARCH_TIMING_MAX; ++i ) {
     tim->section_cpu_times[i] = 0;
   }
-  for ( size_t i = 0; i < XLAL_BIT2IDX(WEAVE_STATISTIC_MAX); ++i ) {
+  for ( size_t i = 0; i < XLAL_BIT2IDX( WEAVE_STATISTIC_MAX ); ++i ) {
     tim->statistic_cpu_times[i] = 0;
     tim->statistic_section[i] = WEAVE_SEARCH_TIMING_MAX;
   }
@@ -337,8 +337,8 @@ int XLALWeaveSearchTimingStatistic(
 
   // Stop timing previous statistic
   if ( prev_statistic & tim->statistics_params->all_statistics_to_compute ) {
-    XLAL_CHECK( tim->statistic_section[XLAL_BIT2IDX(prev_statistic)] == tim->curr_section, XLAL_EINVAL );
-    tim->statistic_cpu_times[XLAL_BIT2IDX(tim->curr_statistic)] += cpu_now - tim->curr_statistic_cpu_time;
+    XLAL_CHECK( tim->statistic_section[XLAL_BIT2IDX( prev_statistic )] == tim->curr_section, XLAL_EINVAL );
+    tim->statistic_cpu_times[XLAL_BIT2IDX( tim->curr_statistic )] += cpu_now - tim->curr_statistic_cpu_time;
   }
 
   // Change statistic
@@ -346,7 +346,7 @@ int XLALWeaveSearchTimingStatistic(
 
   // Start timing next statistic
   if ( next_statistic & tim->statistics_params->all_statistics_to_compute ) {
-    tim->statistic_section[XLAL_BIT2IDX(next_statistic)] = tim->curr_section;
+    tim->statistic_section[XLAL_BIT2IDX( next_statistic )] = tim->curr_section;
     tim->curr_statistic_cpu_time = cpu_now;
   }
 
@@ -410,16 +410,16 @@ int XLALWeaveSearchTimingWriteInfo(
     // Find any statistics computed within timing section
     BOOLEAN statistics_computed = 0;
     double section_cpu_time_remain = section_cpu_time;
-    for ( int j = 0; j < XLAL_BIT2IDX(WEAVE_STATISTIC_MAX); ++j ) {
+    for ( int j = 0; j < XLAL_BIT2IDX( WEAVE_STATISTIC_MAX ); ++j ) {
       const double statistic_cpu_time = tim->statistic_cpu_times[j];
       if ( tim->statistic_section[j] == i && statistic_cpu_time > 0 ) {
         statistics_computed = 1;
 
         // Get statistics name and determine statistic-specific denominator
         UINT8 statistic_denom = 1;
-        const char *statistic_name = WEAVE_STATISTIC_NAME(XLAL_IDX2BIT(j));
+        const char *statistic_name = WEAVE_STATISTIC_NAME( XLAL_IDX2BIT( j ) );
         const size_t statistic_name_len = strlen( statistic_name );
-        if ( statistic_name_len > 4 && strcmp( statistic_name + statistic_name_len - 4, "_det") == 0 ) {
+        if ( statistic_name_len > 4 && strcmp( statistic_name + statistic_name_len - 4, "_det" ) == 0 ) {
 
           // Normalise per-detector statistics by number of detectors
           statistic_denom = tim->statistics_params->detectors->length;
