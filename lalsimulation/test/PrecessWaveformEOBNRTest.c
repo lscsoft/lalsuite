@@ -58,6 +58,7 @@ int main(void){
   SphHarmTimeSeries *ts = XLALSimInspiralChooseTDModes(
     phi, dt,
     m1, m2,
+    0., 0., 0., 0., 0., 0.,
     f_min, f_ref,
     dist,
     LALpars,

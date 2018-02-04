@@ -66,6 +66,17 @@ XLAL_ERROR(XLAL_EINVAL);\
 } while (0)
 
 /*
+ * Macro procedure for aborting and returning NULL if non-zero spins
+ * given to a non-spinning approximant
+ */
+#define ABORT_NONZERO_SPINS_NULL(LALparams)\
+do {\
+XLALDestroyDict(LALparams);\
+XLALPrintError("XLAL Error - %s: Non-zero spins were given, but this is a non-spinning approximant.\n", __func__);\
+XLAL_ERROR_NULL(XLAL_EINVAL);\
+} while (0)
+
+/*
  * Macro procedure for aborting if non-zero transverse spin
  * components given to a non-precessing approximant
  */
