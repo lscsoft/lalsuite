@@ -10,12 +10,14 @@ pymoduledir = $(pkgpythondir)/plot
 pymodule_PYTHON = \
 	__init__.py \
 	allsky.py \
+	angle.py \
 	backend_pdf_vcs_friendly.py \
 	cmap.py \
 	healpix.py \
 	marker.py \
 	poly.py \
 	pp.py \
+	spindisk.py \
 	$(END_OF_LIST)
 
 dist_pymodule_DATA = \

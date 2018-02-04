@@ -1,4 +1,5 @@
 /*
+*  Copyright (C) 2017 Maximillian Bensch
 *  Copyright (C) 2015 Reinhard Prix
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -44,6 +45,11 @@ typedef struct
   REAL8Range f1dot;
   REAL8Range f2dot;
   REAL8Range FreqResolution;
+  REAL8Range orbitasini;
+  REAL8Range orbitPeriod;
+  REAL8Range orbitEcc;
+  REAL8Range orbitArgp;
+  LIGOTimeGPSRange orbitTp;
   INT4Range numFreqBins;
   INT4Range Tseg;
   INT4 numSegments;
@@ -95,6 +101,16 @@ main ( int argc, char *argv[] )
   uvar->numFreqBins[1] = 100000;
   uvar->Tseg[0] = 10 * 3600;
   uvar->Tseg[1] = 250 * 3600;
+  uvar->orbitasini[0] = 0;
+  uvar->orbitasini[1] = 0;
+  uvar->orbitPeriod[0] = 0;
+  uvar->orbitPeriod[1] = 0;
+  uvar->orbitEcc[0] = 0;
+  uvar->orbitEcc[1] = 0;
+  uvar->orbitArgp[0] = 0;
+  uvar->orbitArgp[1] = 0;
+  uvar->orbitTp[0].gpsSeconds = 0;
+  uvar->orbitTp[1].gpsSeconds = 0;
 
   uvar->numSegments = 90;
   uvar->numTrials = 1;
@@ -121,6 +137,12 @@ main ( int argc, char *argv[] )
   XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( f2dot,          REAL8Range,     0, OPTIONAL,  "Search 2nd spindown f2dot in Hz/s^2 [range to draw from]" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( FreqResolution, REAL8Range,     0, OPTIONAL,  "Frequency resolution 'R' in natural units 1/Tseg such that: dFreq = R/Tseg) [range to draw from]" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( orbitasini,     REAL8Range,     0, OPTIONAL,  "Binary Orbit: Projected semi-major axis in light-seconds [range to draw from]") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( orbitPeriod,    REAL8Range,     0, OPTIONAL,  "Binary Orbit: Period in seconds [range to draw from]") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( orbitTp,        EPOCHRange,     0, OPTIONAL,  "Binary Orbit: (true) epoch of periapsis: use 'xx.yy[GPS|MJD]' format. [range to draw from]") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( orbitArgp,      REAL8Range,     0, OPTIONAL,  "Binary Orbit: Orbital argument of periapse in radians [range to draw from]") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( orbitEcc,       REAL8Range,     0, OPTIONAL,  "Binary Orbit: Orbital eccentricity [range to draw from]") == XLAL_SUCCESS, XLAL_EFUNC );
+
   XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( startTime,      EPOCH,          0, OPTIONAL,  "Start time of first segment" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( Tseg,           INT4Range,      0, OPTIONAL,  "Coherent segment length in seconds [range to draw from]" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN ( XLALRegisterUvarMember ( numSegments,    INT4,           0, OPTIONAL,  "Number of semi-coherent segments" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -146,6 +168,19 @@ main ( int argc, char *argv[] )
   if ( should_exit ) {
     return EXIT_FAILURE;
   }
+
+   BOOLEAN have_orbitasini  = XLALUserVarWasSet ( &uvar->orbitasini );
+   BOOLEAN have_orbitPeriod = XLALUserVarWasSet ( &uvar->orbitPeriod );
+   BOOLEAN have_orbitTp     = XLALUserVarWasSet ( &uvar->orbitTp );
+   BOOLEAN have_orbitEcc    = XLALUserVarWasSet ( &uvar->orbitEcc );
+   BOOLEAN have_orbitArgp   = XLALUserVarWasSet ( &uvar->orbitArgp );
+
+   if ( have_orbitasini || have_orbitEcc || have_orbitPeriod || have_orbitArgp || have_orbitTp )
+     {
+        XLAL_CHECK ( uvar->orbitasini[0] >= 0, XLAL_EDOM );
+        XLAL_CHECK ( (uvar->orbitasini[1] == 0) || ( have_orbitPeriod && (uvar->orbitPeriod[0] > 0) && have_orbitTp ), XLAL_EINVAL, "If orbitasini>0 then we also need 'orbitPeriod>0' and 'orbitTp'\n" );
+        XLAL_CHECK ( (uvar->orbitEcc[0] >= 0) && (uvar->orbitEcc[1] <= 1), XLAL_EDOM );
+     }
 
   // produce log-string (for output-file headers)
   CHAR *logstring = NULL;
@@ -201,8 +236,8 @@ main ( int argc, char *argv[] )
       XLALFree ( parFname );
       fprintf ( timingLogFILE, "%s\n", logstring );
       fprintf ( timingParFILE, "%s\n", logstring );
-      fprintf ( timingParFILE, "%%%%%8s %20s %20s %20s %20s %20s %20s %20s %20s %12s\n",
-                "Nseg", "Tseg", "Freq", "FreqBand", "dFreq", "f1dot", "f2dot", "Alpha", "Delta", "memUsageMB" );
+      fprintf ( timingParFILE, "%%%%%8s %20s %20s %20s %20s %20s %20s %20s %20s %12s %20s %20s %20s %20s %20s\n",
+                "Nseg", "Tseg", "Freq", "FreqBand", "dFreq", "f1dot", "f2dot", "Alpha", "Delta", "memUsageMB", "asini", "period", "ecc", "argp", "tp" );
     }
   FstatInputVector *inputs;
   FstatQuantities whatToCompute = (FSTATQ_2F | FSTATQ_2F_PER_DET);
@@ -210,6 +245,7 @@ main ( int argc, char *argv[] )
 
 #define drawFromREAL8Range(range) (range[0] + (range[1] - range[0]) * rand() / RAND_MAX )
 #define drawFromINT4Range(range)  (range[0] + (INT4)round(1.0*(range[1] - range[0]) * rand() / RAND_MAX) )
+#define drawFromEPOCHRange(epoch, range) XLALGPSSetREAL8 ( epoch, (XLALGPSGetREAL8(&range[0]) + round(1.0*(XLALGPSGetREAL8(&range[1]) - XLALGPSGetREAL8(&range[0])) * rand() / RAND_MAX) ))
   // ---------- main loop over repeated trials: randomize uniformly over input ranges  ----------
   for ( INT4 i = 0; i < uvar->numTrials; i ++ )
     {
@@ -236,8 +272,6 @@ main ( int argc, char *argv[] )
       spinRange_i.fkdot[0] = drawFromREAL8Range ( uvar->Freq );
       spinRange_i.fkdot[1] = drawFromREAL8Range ( uvar->f1dot );
       spinRange_i.fkdot[2] = drawFromREAL8Range ( uvar->f2dot );
-      REAL8 asini = 0, period = 0, ecc = 0, argp = 0;
-      LIGOTimeGPS XLAL_INIT_DECL(tp);
 
       PulsarDopplerParams XLAL_INIT_DECL(Doppler_i);
       Doppler_i.refTime = refTime;
@@ -247,12 +281,11 @@ main ( int argc, char *argv[] )
       sDeltaRange[1] = sin ( uvar->Delta[1] );
       Doppler_i.Delta = asin ( drawFromREAL8Range ( sDeltaRange ) );
       memcpy ( &Doppler_i.fkdot, &spinRange_i.fkdot, sizeof(Doppler_i.fkdot) );;
-      // not allowing to randomize or control binary-orbital parameters yet
-      Doppler_i.period = period;
-      Doppler_i.ecc = ecc;
-      Doppler_i.asini = asini;
-      Doppler_i.tp = tp;
-      Doppler_i.argp = argp;
+      Doppler_i.period = drawFromREAL8Range ( uvar->orbitPeriod );
+      Doppler_i.ecc = drawFromREAL8Range ( uvar->orbitEcc );
+      Doppler_i.asini = drawFromREAL8Range ( uvar->orbitasini );
+      drawFromEPOCHRange (&Doppler_i.tp, uvar->orbitTp );
+      Doppler_i.argp = drawFromREAL8Range ( uvar->orbitArgp );
 
       UINT4 numFreqBins_i    = drawFromINT4Range ( uvar->numFreqBins );
       REAL8 FreqResolution_i = drawFromREAL8Range ( uvar->FreqResolution );
@@ -262,8 +295,8 @@ main ( int argc, char *argv[] )
 
       XLAL_CHECK_MAIN ( (inputs = XLALCreateFstatInputVector ( uvar->numSegments )) != NULL, XLAL_EFUNC );
 
-      fprintf ( stderr, "trial %d/%d: Tseg = %.1f d, numSegments = %d, Alpha = %.2f rad, Delta = %.2f rad, Freq = %.6f Hz, f1dot = %.1e Hz/s, f2dot = %.1e Hz/s^2, R = %.2f, numFreqBins = %d [dFreq = %.2e Hz, FreqBand = %.2e Hz]\n",
-                i+1, uvar->numTrials, Tseg_i / 86400.0, uvar->numSegments, Doppler_i.Alpha, Doppler_i.Delta, Doppler_i.fkdot[0], Doppler_i.fkdot[1], Doppler_i.fkdot[2], FreqResolution_i, numFreqBins_i, dFreq_i, FreqBand_i );
+      fprintf ( stderr, "trial %d/%d: Tseg = %.1f d, numSegments = %d, Alpha = %.2f rad, Delta = %.2f rad, Freq = %.6f Hz, f1dot = %.1e Hz/s, f2dot = %.1e Hz/s^2, R = %.2f, numFreqBins = %d, asini = %.2f, period = %.2f, ecc = %.2f, argp = %.2f, tp=%"LAL_GPS_FORMAT" [dFreq = %.2e Hz, FreqBand = %.2e Hz]\n",
+               i+1, uvar->numTrials, Tseg_i / 86400.0, uvar->numSegments, Doppler_i.Alpha, Doppler_i.Delta, Doppler_i.fkdot[0], Doppler_i.fkdot[1], Doppler_i.fkdot[2], FreqResolution_i, numFreqBins_i, Doppler_i.asini, Doppler_i.period, Doppler_i.ecc, Doppler_i.argp,LAL_GPS_PRINT(Doppler_i.tp), dFreq_i, FreqBand_i );
 
       spinRange_i.fkdotBand[0] = FreqBand_i;
       REAL8 minCoverFreq_il, maxCoverFreq_il;
@@ -311,8 +344,8 @@ main ( int argc, char *argv[] )
 
       if ( timingParFILE != NULL )
         {
-          fprintf ( timingParFILE, "%10d %20d %20.16g %20.16g %20.16g %20.16g %20.16g %20.16g %20.16g %12g\n",
-                    uvar->numSegments, Tseg_i, Doppler_i.fkdot[0], FreqBand_i, dFreq_i, Doppler_i.fkdot[1], Doppler_i.fkdot[2], Doppler_i.Alpha, Doppler_i.Delta, memUsage
+          fprintf ( timingParFILE, "%10d %20d %20.16g %20.16g %20.16g %20.16g %20.16g %20.16g %20.16g %12g %20.16g %20.16g %20.16g %20.16g %"LAL_GPS_FORMAT"\n",
+                    uvar->numSegments, Tseg_i, Doppler_i.fkdot[0], FreqBand_i, dFreq_i, Doppler_i.fkdot[1], Doppler_i.fkdot[2], Doppler_i.Alpha, Doppler_i.Delta, memUsage,Doppler_i.asini, Doppler_i.period, Doppler_i.ecc, Doppler_i.argp,LAL_GPS_PRINT(Doppler_i.tp)
                     );
         }
 

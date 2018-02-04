@@ -569,7 +569,7 @@ int XLALSimInspiralNRWaveformGetSpinsFromHDF5File(
   XLALSimInspiralNRWaveformGetSpinsFromHDF5FilePointer(S1x, S1y, S1z, S2x,
                                                        S2y, S2z, fRef, mTot,
                                                        file);
-
+  XLALH5FileClose(file);
   return XLAL_SUCCESS;
   #endif
 }

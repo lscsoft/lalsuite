@@ -279,7 +279,8 @@ void generate_interpolant( LALInferenceRunState *runState ){
         ts = generate_training_set( tmpRS, ntraining ); /* generate the training set */
 
         COMPLEX16Array *RB = NULL; /* the reduced basis */
-        maxprojerr = LALInferenceGenerateCOMPLEX16OrthonormalBasis(&RB, deltas, tolerance, ts); /* generate reduced basis */
+        UINT4Vector *greedypts = NULL; /* the points in the training set used to produce the reduced basis */
+        maxprojerr = LALInferenceGenerateCOMPLEX16OrthonormalBasis(&RB, deltas, tolerance, &ts, &greedypts); /* generate reduced basis */
         XLAL_CHECK_VOID( RB != NULL, XLAL_EFUNC, "Could not produce linear basis set" );
         nbases->data[i] = RB->dimLength->data[0];
 
@@ -292,9 +293,11 @@ void generate_interpolant( LALInferenceRunState *runState ){
           do {
             /* create a new training set to try and "enrich" the original one */
             COMPLEX16Array *tsenrich = NULL;
+            REAL8 newmaxprojerr = maxprojerr;
             tsenrich = generate_training_set( tmpRS, ntraining );
 
-            maxprojerr = LALInferenceEnrichCOMPLEX16Basis(deltas, tolerance, &RB, &ts, tsenrich); /* regenerate reduced basis */
+            newmaxprojerr = LALInferenceEnrichCOMPLEX16Basis(deltas, tolerance, &RB, &greedypts, ts, &tsenrich); /* regenerate reduced basis */
+            if ( newmaxprojerr != 0. ) { maxprojerr = newmaxprojerr; } // update only if a new reduced basis has been generated
 
             /* check if no new bases have been added */
             if ( nbases->data[i] == RB->dimLength->data[0] ){
@@ -313,12 +316,26 @@ void generate_interpolant( LALInferenceRunState *runState ){
             }
 
             if ( verbose ){ fprintf(stderr, "...%d", nbases->data[i]); }
+
+            // copy tsenrich into ts (as this is the new enriched training set from which the reduced basis was calculated)
+            if ( nbases->data[i] != RB->dimLength->data[0] ){
+              XLALDestroyCOMPLEX16Array( ts );
+              UINT4Vector *dimstmp = NULL;
+              dimstmp = XLALCreateUINT4Vector( 2 );
+              dimstmp->data[0] = tsenrich->dimLength->data[0];
+              dimstmp->data[1] = tsenrich->dimLength->data[1];
+              ts = XLALCreateCOMPLEX16Array( dimstmp );
+              for ( UINT4 didx = 0; didx < (dimstmp->data[0]*dimstmp->data[1]); didx++ ){ ts->data[didx] = tsenrich->data[didx]; }
+              XLALDestroyUINT4Vector( dimstmp );
+            }
+
             XLALDestroyCOMPLEX16Array( tsenrich );
             enrichcounts++;
           } while( enrichcounts < nenrichmax && conseccount < nconsec );
           if ( verbose ){ fprintf(stderr, "\n"); }
         }
 
+        XLALDestroyUINT4Vector( greedypts );           
         XLALDestroyCOMPLEX16Array( ts );
 
         if ( verbose ){
@@ -346,7 +363,8 @@ void generate_interpolant( LALInferenceRunState *runState ){
         tsquad = generate_training_set_quad( tmpRS, ntraining ); /* generate the training set */
 
         REAL8Array *RBquad = NULL; /* the reduced basis */
-        maxprojerr = LALInferenceGenerateREAL8OrthonormalBasis(&RBquad, deltas, tolerance, tsquad); /* generate reduced basis */
+        greedypts = NULL;
+        maxprojerr = LALInferenceGenerateREAL8OrthonormalBasis(&RBquad, deltas, tolerance, &tsquad, &greedypts); /* generate reduced basis */
         XLAL_CHECK_VOID( RBquad != NULL, XLAL_EFUNC, "Could not produce quadratic basis set" );
         nbasesquad->data[i] = RBquad->dimLength->data[0];
 
@@ -359,9 +377,11 @@ void generate_interpolant( LALInferenceRunState *runState ){
           do {
             /* create a new training set to try and "enrich" the original one */
             REAL8Array *tsenrich = NULL;
+            REAL8 newmaxprojerr = maxprojerr;
             tsenrich = generate_training_set_quad( tmpRS, ntraining );
 
-            maxprojerr = LALInferenceEnrichREAL8Basis(deltas, tolerance, &RBquad, &tsquad, tsenrich); /* regenerate reduced basis */
+            newmaxprojerr = LALInferenceEnrichREAL8Basis(deltas, tolerance, &RBquad, &greedypts, tsquad, &tsenrich); /* regenerate reduced basis */
+            if ( newmaxprojerr != 0. ) { maxprojerr = newmaxprojerr; } // update only if a new reduced basis has been generated
 
             /* check if no new bases have been added */
             if ( nbasesquad->data[i] == RBquad->dimLength->data[0] ){
@@ -379,6 +399,18 @@ void generate_interpolant( LALInferenceRunState *runState ){
               break;
             }
 
+            // copy tsenrich into tsquad (as this is the new enriched training set from which the reduced basis was calculated)
+            if ( nbasesquad->data[i] != RBquad->dimLength->data[0] ){
+              XLALDestroyREAL8Array( tsquad );
+              UINT4Vector *dimstmp = NULL;
+              dimstmp = XLALCreateUINT4Vector( 2 );
+              dimstmp->data[0] = tsenrich->dimLength->data[0];
+              dimstmp->data[1] = tsenrich->dimLength->data[1];
+              tsquad = XLALCreateREAL8Array( dimstmp );
+              for ( UINT4 didx = 0; didx < (dimstmp->data[0]*dimstmp->data[1]); didx++ ){ tsquad->data[didx] = tsenrich->data[didx]; }
+              XLALDestroyUINT4Vector( dimstmp );
+            }
+
             if ( verbose ){ fprintf(stderr, "...%d", nbasesquad->data[i]); }
             XLALDestroyREAL8Array( tsenrich );
             enrichcounts++;
@@ -386,6 +418,7 @@ void generate_interpolant( LALInferenceRunState *runState ){
           if ( verbose ){ fprintf(stderr, "\n"); }
         }
 
+        XLALDestroyUINT4Vector(greedypts);
         XLALDestroyREAL8Array(tsquad);
 
         if ( verbose ){ fprintf(stderr, "Number of quadratic reduced bases for ROQ generation is %d, with a maximum projection error of %le\n", nbasesquad->data[i], maxprojerr);}

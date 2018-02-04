@@ -389,8 +389,8 @@ fi
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
-echo " STEP 7: run HierarchSearchGCT using Resampling and triple toplist (BSGL, BSGLtL and BtSGLtL), "
-echo "         compared with separate runs for each of these 3 toplist rankings"
+echo " STEP 7: run HierarchSearchGCT using Resampling and triple toplists (BSGL, BSGLtL and BtSGLtL), "
+echo "          (2F, BSGLtL and BtSGLtL), compared with separate runs for each of these 3 toplist rankings"
 echo "----------------------------------------------------------------------------------------------------"
 echo
 
@@ -398,6 +398,8 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_RS_triple="${testDir}/GCT_RS_triple.dat"
 timingsfile_RS_triple="${testDir}/timing_RS_triple.dat"
 
+outfile_GCT_RS_triple2="${testDir}/GCT_RS_triple2.dat"
+timingsfile_RS_triple2="${testDir}/timing_RS_triple2.dat"
 
 # set plan mode so that results should be deterministic, easier to compare results of different runs this way
 
@@ -419,7 +421,42 @@ if ! eval "$cmdline"; then
 fi
 
 
-## re-run, but now create the three toplists one by one, then compare results
+# second variant of triple toplists, with 2F sorted first toplist
+
+cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple2' --outputTiming='$timingsfile_RS_triple2' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=7"
+if [ -n "$DEBUG" ]; then
+    cmdline="$cmdline"
+else
+    cmdline="$cmdline &> /dev/null"
+fi
+
+echo $cmdline
+if ! eval "$cmdline"; then
+    echo "Error.. something failed when running '$gct_code' ..."
+    exit 1
+fi
+
+
+
+
+## re-run, but now create the in total four toplists one by one, then compare results
+
+outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_0.dat"
+
+cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=0"
+if [ -n "$DEBUG" ]; then
+    cmdline="$cmdline"
+else
+    cmdline="$cmdline &> /dev/null"
+fi
+
+echo $cmdline
+if ! eval "$cmdline"; then
+    echo "Error.. something failed when running '$gct_code' ..."
+    exit 1
+fi
+
+
 
 outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_1.dat"
 
@@ -469,6 +506,7 @@ fi
 
 # filter out comments
 
+egrep -v "^%" ${testDir}/GCT_RS_triple_0.dat > ${testDir}/GCT_RS_triple_0.txt
 egrep -v "^%" ${testDir}/GCT_RS_triple_1.dat > ${testDir}/GCT_RS_triple_1.txt
 egrep -v "^%" ${testDir}/GCT_RS_triple_2.dat > ${testDir}/GCT_RS_triple_2.txt
 egrep -v "^%" ${testDir}/GCT_RS_triple_3.dat > ${testDir}/GCT_RS_triple_3.txt
@@ -477,6 +515,11 @@ egrep -v "^%" ${testDir}/GCT_RS_triple_3.dat > ${testDir}/GCT_RS_triple_3.txt
 egrep -v "^%" ${testDir}/GCT_RS_triple.dat > ${testDir}/GCT_RS_triple.txt
 egrep -v "^%" ${testDir}/GCT_RS_triple.dat-BSGLtL > ${testDir}/GCT_RS_triple-BSGLtL.txt
 egrep -v "^%" ${testDir}/GCT_RS_triple.dat-BtSGLtL > ${testDir}/GCT_RS_triple-BtSGLtL.txt
+
+egrep -v "^%" ${testDir}/GCT_RS_triple2.dat > ${testDir}/GCT_RS_triple2.txt
+egrep -v "^%" ${testDir}/GCT_RS_triple2.dat-BSGLtL > ${testDir}/GCT_RS_triple2-BSGLtL.txt
+egrep -v "^%" ${testDir}/GCT_RS_triple2.dat-BtSGLtL > ${testDir}/GCT_RS_triple2-BtSGLtL.txt
+
 
 if ! eval "diff ${testDir}/GCT_RS_triple_1.txt ${testDir}/GCT_RS_triple.txt"; then
     echo "Error: tripple toplists do not match separately generated toplists  (1) "
@@ -492,6 +535,24 @@ if ! eval "diff ${testDir}/GCT_RS_triple_3.txt ${testDir}/GCT_RS_triple-BtSGLtL.
     echo "Error: tripple toplists do not match separately generated toplists  (3) "
     exit 1
 fi
+
+if ! eval "diff ${testDir}/GCT_RS_triple_0.txt ${testDir}/GCT_RS_triple2.txt"; then
+    echo "Error: tripple toplists do not match separately generated toplists  (4) "
+    exit 1
+fi
+
+if ! eval "diff ${testDir}/GCT_RS_triple_2.txt ${testDir}/GCT_RS_triple2-BSGLtL.txt"; then
+    echo "Error: tripple toplists do not match separately generated toplists  (5) "
+    exit 1
+fi
+
+if ! eval "diff ${testDir}/GCT_RS_triple_3.txt ${testDir}/GCT_RS_triple2-BtSGLtL.txt"; then
+    echo "Error: tripple toplists do not match separately generated toplists  (6) "
+    exit 1
+fi
+
+
+
 
 
 

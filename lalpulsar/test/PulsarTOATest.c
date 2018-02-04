@@ -244,60 +244,59 @@ int main(int argc, char *argv[])
 
   tdat = XLALInitTimeCorrections( tcFile );
 
-  REAL8Vector *f0s = PulsarGetREAL8VectorParam(params, "F");
+  const REAL8Vector *f0s = PulsarGetREAL8VectorParam(params, "F");
   REAL8Vector *f0update = XLALCreateREAL8Vector( f0s->length );
 
   /* check for glitch parameters */
   REAL8 *glep = NULL, *glph = NULL, *glf0 = NULL, *glf1 = NULL, *glf2 = NULL, *glf0d = NULL, *gltd = NULL;
   UINT4 glnum = 0;
   if ( PulsarCheckParam( params, "GLEP" ) ){
-    REAL8Vector *glpars = NULL;
-    glpars = PulsarGetREAL8VectorParam( params, "GLEP" );
-    glnum = glpars->length;
+    const REAL8Vector *gleppars = PulsarGetREAL8VectorParam( params, "GLEP" );
+    glnum = gleppars->length;
 
     /* get epochs */
     glep = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    for ( j=0; j<(INT4)glpars->length; j++ ){ glep[j] = glpars->data[j]; }
+    for ( j=0; j<(INT4)gleppars->length; j++ ){ glep[j] = gleppars->data[j]; }
 
     /* get phase offsets */
     glph = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLPH" ) ){
-      glpars = PulsarGetREAL8VectorParam( params, "GLPH" );
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( params, "GLPH" );
       for ( j=0; j<(INT4)glpars->length; j++ ){ glph[j] = glpars->data[j]; }
     }
 
     /* get frequencies offsets */
     glf0 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLF0" ) ){
-      glpars = PulsarGetREAL8VectorParam( params, "GLF0" );
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( params, "GLF0" );
       for ( j=0; j<(INT4)glpars->length; j++ ){ glf0[j] = glpars->data[j]; }
     }
 
     /* get frequency derivative offsets */
     glf1 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLF1" ) ){
-      glpars = PulsarGetREAL8VectorParam( params, "GLF1" );
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( params, "GLF1" );
       for ( j=0; j<(INT4)glpars->length; j++ ){ glf1[j] = glpars->data[j]; }
     }
 
     /* get second frequency derivative offsets */
     glf2 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLF2" ) ){
-      glpars = PulsarGetREAL8VectorParam( params, "GLF2" );
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( params, "GLF2" );
       for ( j=0; j<(INT4)glpars->length; j++ ){ glf2[j] = glpars->data[j]; }
     }
 
     /* get decaying frequency component offset derivative */
     glf0d = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLF0D" ) ){
-      glpars = PulsarGetREAL8VectorParam( params, "GLF0D" );
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( params, "GLF0D" );
       for ( j=0; j<(INT4)glpars->length; j++ ){ glf0d[j] = glpars->data[j]; }
     }
 
     /* get decaying frequency component decay time constant */
     gltd = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLTD" ) ){
-      glpars = PulsarGetREAL8VectorParam( params, "GLTD" );
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( params, "GLTD" );
       for ( j=0; j<(INT4)glpars->length; j++ ){ gltd[j] = glpars->data[j]; }
     }
   }
@@ -371,8 +370,8 @@ int main(int argc, char *argv[])
       REAL8 dtWave = (XLALGPSGetREAL8(&emit.te) - PulsarGetREAL8ParamOrZero(params, "WAVEEPOCH"))/86400.;
       REAL8 om = PulsarGetREAL8ParamOrZero(params, "WAVE_OM");
 
-      REAL8Vector *waveSin = PulsarGetREAL8VectorParam(params, "WAVESIN");
-      REAL8Vector *waveCos = PulsarGetREAL8VectorParam(params, "WAVECOS");
+      const REAL8Vector *waveSin = PulsarGetREAL8VectorParam(params, "WAVESIN");
+      const REAL8Vector *waveCos = PulsarGetREAL8VectorParam(params, "WAVECOS");
 
       for( k = 0; k < (INT4)waveSin->length; k++ ){
         tWave += waveSin->data[k]*sin(om*(REAL8)(k+1.)*dtWave) + waveCos->data[k]*cos(om*(REAL8)(k+1.)*dtWave);

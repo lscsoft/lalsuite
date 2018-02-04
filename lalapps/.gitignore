@@ -209,6 +209,7 @@ src/pulsar/FITSTools/lalapps_fits_table_list
 src/pulsar/FITSTools/lalapps_fits_table_merge
 src/pulsar/FITSTools/lalapps_fits_table_select
 src/pulsar/Fscan/lalapps_spec_avg
+src/pulsar/Fscan/lalapps_spec_avg_long
 src/pulsar/Fstatistic/lalapps_ComputeFstatLatticeCount
 src/pulsar/Fstatistic/lalapps_ComputeFstatMCUpperLimit
 src/pulsar/Fstatistic/lalapps_ComputeFstatistic_v2

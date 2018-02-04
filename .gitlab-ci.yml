@@ -15,14 +15,13 @@ stages:
   - level2
   - level3
   - level4
-  - container
-  - tag
+  - release
   - nightly
 
 before_script:
   - ulimit -S -c 0
   - export VERBOSE="true"
-  - export PATH=/usr/lib/ccache:$PATH
+  - export PATH=/usr/lib/ccache:/opt/local/libexec/ccache:$PATH
   - export CCACHE_DIR=${PWD}/ccache
   - export PKG_CONFIG_PATH=${LAL_DIR}/lib/pkgconfig
   - mkdir -p opt/lalsuite
@@ -337,6 +336,35 @@ level4:lalapps:
     - pushes
     - schedules
 
+# release a debian docker image upon every tag in lalsuite
+docker:tags:
+  stage: release
+  before_script: []
+  script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker build --pull -t $TAG --file .Dockerfile.gitlab-ci .
+    - docker push $TAG
+  dependencies:
+    - level4:lalapps
+  only:
+    - tags
+
+# release a debian docker image of each nightly build
+docker:nightly:
+  stage: nightly
+  before_script: []
+  script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker build --pull -t $NIGHTLY --file .Dockerfile.gitlab-ci .
+    - docker push $NIGHTLY
+  dependencies:
+    - level4:lalapps
+  only:
+    - master@lscsoft/lalsuite
+    - schedules
+  except:
+    - pushes
+
 nightly:top-level:el7:
   image: ligo/lalsuite-dev:el7
   stage: nightly
@@ -387,18 +415,43 @@ nightly:top-level:xenial:
     - schedules
     - web
 
+nightly:top-level:artful:
+  image: skymoo/ligo-lalsuite-dev:artful
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+  allow_failure: true
+
 nightly:top-level:buster:
   image: skymoo/ligo-lalsuite-dev:buster
   stage: nightly
   dependencies: []
   script:
     - ./00boot
-    - ./configure --enable-swig-python --enable-doxygen
+    - ./configure --enable-swig --enable-doxygen
     - make -j4 distcheck
   only:
     - schedules
     - web
   allow_failure: true
+
+nightly:top-level:clang:
+  image: skymoo/ligo-lalsuite-clang:jessie
+  stage: nightly
+  script:
+    - ./00boot
+    - CC=clang CXX=clang++ ./configure --enable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
 
 nightly:mpi:jessie:
   image: ligo/lalsuite-dev:jessie
@@ -436,6 +489,20 @@ nightly:python3:stretch:
     - schedules
     - web
 
+nightly:macos:
+  tags:
+    - macos
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-swig --enable-doxygen
+    - make -j4
+    - make -j4 check
+  dependencies: []
+  only:
+    - schedules
+    - web
+
 pages:
   image: ligo/lalsuite-dev:stretch
   stage: nightly
@@ -444,48 +511,15 @@ pages:
     - ./configure --enable-doxygen --prefix=${LAL_DIR}
     - make -j4 install-html
     - cp -r ${LAL_DIR}/share/doc public/
+    - pushd public
+    - cp lalsuite/index.html index.html
+    - sed -i 's/..\/lal/lal/g' index.html
+    - popd
   dependencies: []
   artifacts:
     paths:
       - public
   only:
     - master@lscsoft/lalsuite
-    - schedules
   except:
     - pushes
-
-docker:tags:
-  stage: container
-  before_script: []
-  script:
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $TAG .
-    - docker push $TAG
-  dependencies:
-    - level4:lalapps
-  only:
-    - tags
-
-docker:nightly:
-  stage: container
-  before_script: []
-  script:
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $NIGHTLY .
-    - docker push $NIGHTLY
-  dependencies:
-    - level4:lalapps
-  only:
-    - master@lscsoft/lalsuite
-    - schedules
-  except:
-    - pushes
-
-tagged:
-  stage: tag
-  only:
-    - tags
-  before_script: []
-  script:
-    - docker tag $COMMIT $TAG
-    - docker push $TAG

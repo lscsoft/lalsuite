@@ -45,6 +45,7 @@ COMPLEX16 imag_model(double frequency, double Mchirp, double modperiod){
 int main(void) {
   REAL8Array *TS = NULL, *TSquad = NULL, *cTSquad = NULL;  /* the training set of real waveforms (and quadratic model) */
   COMPLEX16Array *cTS = NULL;              /* the training set of complex waveforms */
+  UINT4Vector *gdpts = NULL;               /* the greedy points used for the reduced basis generation */
 
   size_t TSsize;  /* the size of the training set (number of waveforms) */
   size_t wl;      /* the length of each waveform */
@@ -120,13 +121,17 @@ int main(void) {
 
   /* create reduced orthonormal basis from training set for linear part */
   REAL8 maxprojerr = 0.;
-  maxprojerr = LALInferenceGenerateREAL8OrthonormalBasis(&RBlinear, fweights, tolerance, TS);
+  maxprojerr = LALInferenceGenerateREAL8OrthonormalBasis(&RBlinear, fweights, tolerance, &TS, &gdpts);
+  XLALDestroyUINT4Vector( gdpts );
   fprintf(stderr, "No. linear nodes (real) = %d, %d x %d; Maximum projection err. = %le\n", RBlinear->dimLength->data[0], RBlinear->dimLength->data[0], RBlinear->dimLength->data[1], maxprojerr);
-  maxprojerr = LALInferenceGenerateCOMPLEX16OrthonormalBasis(&cRBlinear, fweights, tolerance, cTS);
+  maxprojerr = LALInferenceGenerateCOMPLEX16OrthonormalBasis(&cRBlinear, fweights, tolerance, &cTS, &gdpts);
+  XLALDestroyUINT4Vector( gdpts );
   fprintf(stderr, "No. linear nodes (complex) = %d, %d x %d; Maximum projection err. = %le\n", cRBlinear->dimLength->data[0], cRBlinear->dimLength->data[0], cRBlinear->dimLength->data[1], maxprojerr);
-  maxprojerr = LALInferenceGenerateREAL8OrthonormalBasis(&RBquad, fweights, tolerance, TSquad);
+  maxprojerr = LALInferenceGenerateREAL8OrthonormalBasis(&RBquad, fweights, tolerance, &TSquad, &gdpts);
+  XLALDestroyUINT4Vector( gdpts );
   fprintf(stderr, "No. quadratic nodes (real)  = %d, %d x %d; Maximum projection err. = %le\n", RBquad->dimLength->data[0], RBquad->dimLength->data[0], RBquad->dimLength->data[1], maxprojerr);
-  maxprojerr = LALInferenceGenerateREAL8OrthonormalBasis(&cRBquad, fweights, tolerance, cTSquad);
+  maxprojerr = LALInferenceGenerateREAL8OrthonormalBasis(&cRBquad, fweights, tolerance, &cTSquad, &gdpts);
+  XLALDestroyUINT4Vector( gdpts );
   fprintf(stderr, "No. quadratic nodes (complex)  = %d, %d x %d; Maximum projection err. = %le\n", cRBquad->dimLength->data[0], cRBquad->dimLength->data[0], cRBquad->dimLength->data[1], maxprojerr);
 
   /* free the training set */

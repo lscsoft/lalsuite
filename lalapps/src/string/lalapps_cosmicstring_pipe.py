@@ -229,7 +229,7 @@ def check_for_reused_offsetvectors(background_time_slides, injection_time_slides
 
 	for background_cache_entry, background_offsetvector in [(cache_entry, offsetvector) for cache_entry, offsetvectors in background_time_slides.items() for offsetvector in offsetvectors]:
 		for injection_cache_entry, injection_offsetvector in [(cache_entry, offsetvector) for cache_entry, offsetvectors in injection_time_slides.items() for offsetvector in offsetvectors]:
-			if not cmp(background_offsetvector, injection_offsetvector):
+			if background_offsetvector.delta == injection_offsetvector.delta:
 				raise ValueError, "injections offset vector %s from %s is the same as non-injections offset vector %s from %s.  to avoid a self-selection bias, injections must not be performed at the same relative time shifts as a non-injection run" % (str(injection_offsetvector), injection_cache_entry.url, str(background_offsetvector), background_cache_entry.url)
 
 check_for_reused_offsetvectors(background_time_slides, injection_time_slides)

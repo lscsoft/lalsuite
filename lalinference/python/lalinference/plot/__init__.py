@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2012-2016  Leo Singer
+# Copyright (C) 2012-2018  Leo Singer
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,11 +17,19 @@
 """
 Plotting classes and methods
 """
-from . import allsky, healpix, marker, poly, pp
-from .allsky import *
-from .healpix import *
-from .marker import *
-from .poly import *
-from .pp import *
-__all__ = (allsky.__all__ + healpix.__all__ + marker.__all__ + poly.__all__
-           + pp.__all__)
+from __future__ import absolute_import
+import os
+import pkgutil
+import six
+
+__all__ = ()
+
+# Import all symbols from all submodules of this module.
+for _, module, _ in pkgutil.iter_modules([os.path.dirname(__file__)]):
+    six.exec_('from . import {0};'
+              '__all__ += getattr({0}, "__all__", ());'
+              'from .{0} import *'.format(module))
+    del module
+
+# Clean up
+del os, pkgutil, six
