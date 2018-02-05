@@ -1052,7 +1052,7 @@ XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
         w = w0 + wdot*tt0; /* calculate w */
 
         if( !strcmp(model, "BTX") && PulsarCheckParam(params, "FB") ){
-          REAL8Vector *fb = PulsarGetREAL8VectorParam(params, "FB");
+          const REAL8Vector *fb = PulsarGetREAL8VectorParam(params, "FB");
 
           fac = 1.;
           for ( j=1 ; j < (INT4)fb->length + 1; j++){
@@ -1089,7 +1089,7 @@ XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
       if( !strcmp(model, "BTX") ){
         REAL8 fb0 = 0.;
         if ( PulsarCheckParam(params, "FB") ){
-          REAL8Vector *fb = PulsarGetREAL8VectorParam(params, "FB");
+          const REAL8Vector *fb = PulsarGetREAL8VectorParam(params, "FB");
           fb0 = fb->data[0];
         }
         /* dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +

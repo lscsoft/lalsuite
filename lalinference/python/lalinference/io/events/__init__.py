@@ -1,4 +1,4 @@
-# Copyright (C) 2017  Leo Singer
+# Copyright (C) 2017-2018  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -14,14 +14,19 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-from . import base, detector_disabled, ligolw, gracedb, hdf, magic, sqlite
-from .base import *
-from .detector_disabled import *
-from .ligolw import *
-from .gracedb import *
-from .hdf import *
-from .magic import *
-from .sqlite import *
-from .magic import open
-__all__ = (base.__all__ + detector_disabled.__all__ + ligolw.__all__ +
-           gracedb.__all__ + hdf.__all__ + magic.__all__ + sqlite.__all__)
+from __future__ import absolute_import
+import os
+import pkgutil
+import six
+
+__all__ = ()
+
+# Import all symbols from all submodules of this module.
+for _, module, _ in pkgutil.iter_modules([os.path.dirname(__file__)]):
+    six.exec_('from . import {0};'
+              '__all__ += getattr({0}, "__all__", ());'
+              'from .{0} import *'.format(module))
+    del module
+
+# Clean up
+del os, pkgutil, six

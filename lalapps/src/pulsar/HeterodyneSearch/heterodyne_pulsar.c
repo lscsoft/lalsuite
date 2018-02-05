@@ -143,7 +143,7 @@ int main(int argc, char *argv[]){
     fprintf(stderr, "alpha = %lf rads, delta = %lf rads.\n", rav, decv);
 
     if ( PulsarCheckParam( hetParams.het, "F" ) ) {
-      REAL8Vector *freqsv = PulsarGetREAL8VectorParam( hetParams.het, "F" );
+      const REAL8Vector *freqsv = PulsarGetREAL8VectorParam( hetParams.het, "F" );
       UINT4 i = 0;
 
       pepochv = PulsarGetREAL8ParamOrZero( hetParams.het, "PEPOCH" );
@@ -188,7 +188,7 @@ int main(int argc, char *argv[]){
       fprintf(stderr, "alpha = %lf rads, delta = %lf rads.\n", rav, decv);
 
       if ( PulsarCheckParam( hetParams.hetUpdate, "F" ) ) {
-        REAL8Vector *freqsv = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "F" );
+        const REAL8Vector *freqsv = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "F" );
         UINT4 i = 0;
 
         pepochv = PulsarGetREAL8ParamOrZero( hetParams.hetUpdate, "PEPOCH" );
@@ -1188,8 +1188,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
   REAL8 cgw = PulsarGetREAL8ParamOrZero( hetParams.het, "CGW" );
   REAL8 cgwu = PulsarGetREAL8ParamOrZero( hetParams.hetUpdate, "CGW" );
 
-  REAL8Vector *freqs = PulsarGetREAL8VectorParam( hetParams.het, "F" );
-  REAL8Vector *freqsu = NULL;
+  const REAL8Vector *freqs = PulsarGetREAL8VectorParam( hetParams.het, "F" );
+  const REAL8Vector *freqsu = NULL;
   if ( PulsarCheckParam( hetParams.hetUpdate, "F" ) ){
     freqsu = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "F" );
   }
@@ -1198,53 +1198,52 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
   REAL8 *glep = NULL, *glph = NULL, *glf0 = NULL, *glf1 = NULL, *glf2 = NULL, *glf0d = NULL, *gltd = NULL;
   UINT4 glnum = 0;
   if ( PulsarCheckParam( hetParams.hetUpdate, "GLEP" ) ){
-    REAL8Vector *glpars = NULL;
-    glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLEP" );
-    glnum = glpars->length;
+    const REAL8Vector *gleppars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLEP" );
+    glnum = gleppars->length;
 
     /* get epochs */
     glep = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    for ( i=0; i<(INT4)glpars->length; i++ ){ glep[i] = glpars->data[i]; }
+    for ( i=0; i<(INT4)gleppars->length; i++ ){ glep[i] = gleppars->data[i]; }
 
     /* get phase offsets */
     glph = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( hetParams.hetUpdate, "GLPH" ) ) {
-      glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLPH" );
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLPH" );
       for ( i=0; i<(INT4)glpars->length; i++ ){ glph[i] = glpars->data[i]; }
     }
 
     /* get frequencies offsets */
     glf0 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( hetParams.hetUpdate, "GLF0" ) ) {
-      glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLF0" );
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLF0" );
       for ( i=0; i<(INT4)glpars->length; i++ ){ glf0[i] = glpars->data[i]; }
     }
 
     /* get frequency derivative offsets */
     glf1 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( hetParams.hetUpdate, "GLF1" ) ) {
-      glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLF1" );
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLF1" );
       for ( i=0; i<(INT4)glpars->length; i++ ){ glf1[i] = glpars->data[i]; }
     }
 
     /* get second frequency derivative offsets */
     glf2 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( hetParams.hetUpdate, "GLF2" ) ) {
-      glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLF2" );
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLF2" );
       for ( i=0; i<(INT4)glpars->length; i++ ){ glf2[i] = glpars->data[i]; }
     }
 
     /* get decaying frequency component offset derivative */
     glf0d = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( hetParams.hetUpdate, "GLF0D" ) ) {
-      glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLF0D" );
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLF0D" );
       for ( i=0; i<(INT4)glpars->length; i++ ){ glf0d[i] = glpars->data[i]; }
     }
 
     /* get decaying frequency component decay time constant */
     gltd = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( hetParams.hetUpdate, "GLTD" ) ) {
-      glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLTD" );
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLTD" );
       for ( i=0; i<(INT4)glpars->length; i++ ){ gltd[i] = glpars->data[i]; }
     }
   }
@@ -1312,8 +1311,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
         REAL8 dtWave = (XLALGPSGetREAL8(&emit.te) - waveepoch)/86400.; /* in days */
         REAL8 tWave = 0.;
 
-        REAL8Vector *wavesin = PulsarGetREAL8VectorParam( hetParams.het, "WAVESIN" );
-        REAL8Vector *wavecos = PulsarGetREAL8VectorParam( hetParams.het, "WAVECOS" );
+        const REAL8Vector *wavesin = PulsarGetREAL8VectorParam( hetParams.het, "WAVESIN" );
+        const REAL8Vector *wavecos = PulsarGetREAL8VectorParam( hetParams.het, "WAVECOS" );
 
         for( UINT4 k = 0; k < wavesin->length; k++ ){
           tWave += wavesin->data[k]*sin(om*(REAL8)(k+1.)*dtWave) + wavecos->data[k]*cos(om*(REAL8)(k+1.)*dtWave);
@@ -1427,8 +1426,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       if ( PulsarCheckParam( hetParams.hetUpdate, "WAVESIN" ) && PulsarCheckParam( hetParams.hetUpdate, "WAVECOS" ) ){
         REAL8 dtWave = (XLALGPSGetREAL8(&emit.te) - waveepochu)/86400.; /* in days */
 
-        REAL8Vector *wavesin = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "WAVESIN" );
-        REAL8Vector *wavecos = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "WAVECOS" );
+        const REAL8Vector *wavesin = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "WAVESIN" );
+        const REAL8Vector *wavecos = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "WAVECOS" );
 
         for( UINT4 k = 0; k < wavesin->length; k++ ){
           tWave1 += wavesin->data[k]*sin(omu*(REAL8)(k+1.)*dtWave) + wavecos->data[k]*cos(omu*(REAL8)(k+1.)*dtWave);

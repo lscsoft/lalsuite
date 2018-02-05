@@ -41,7 +41,7 @@
 #include <lal/LogPrintf.h>
 #include <lal/MetricUtils.h>
 
-#include <lal/EstimateAmplitudeParams.h>
+#include <lal/FstatisticTools.h>
 #include <lal/UniversalDopplerMetric.h>
 #include <lal/MetricUtils.h>
 

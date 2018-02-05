@@ -201,7 +201,7 @@ DEFAULT_NESTED_NAMES = ('PROB', 'DISTMU', 'DISTSIGMA', 'DISTNORM')
 DEFAULT_NESTED_UNITS = (u.pix**-1, u.Mpc, u.Mpc, u.Mpc**-2)
 FITS_META_MAPPING = (
     ('objid', 'OBJECT', 'Unique identifier for this event',
-     identity, identity),
+     str, identity),
     ('url', 'REFERENC', 'URL of this event', identity, identity),
     ('instruments', 'INSTRUME', 'Instruments that triggered this event',
      instruments_to_fits, instruments_from_fits),
@@ -470,7 +470,8 @@ def read_sky_map(filename, nest=False, distances=False, moc=False, **kwargs):
 
     # Remove some keys that we do not need
     for key in (
-            'PIXTYPE', 'EXTNAME', 'NSIDE', 'FIRSTPIX', 'LASTPIX', 'INDXSCHM'):
+            'PIXTYPE', 'EXTNAME', 'NSIDE', 'FIRSTPIX', 'LASTPIX', 'INDXSCHM',
+            'MOCORDER'):
         m.meta.pop(key, None)
 
     if m.meta.pop('COORDSYS', 'C') != 'C':

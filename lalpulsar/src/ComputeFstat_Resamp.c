@@ -340,7 +340,7 @@ XLALSetupFstatResamp ( void **method_data,
       XLAL_CHECK ( dt_DET == dt_DETX, XLAL_EINVAL, "Input timeseries must have identical 'deltaT(X=%d)' (%.16g != %.16g)\n", X, dt_DET, dt_DETX);
 
       REAL8 fHetX = resamp->multiTimeSeries_DET->data[X]->f0;
-      XLAL_CHECK ( fHet == fHetX, XLAL_EINVAL, "Input timeseries must have identical heterodyning frequency 'f0(X=%d)' (%.16g != %.16g)\n", X, fHet, fHetX );
+      XLAL_CHECK ( fabs( fHet - fHetX ) < LAL_REAL8_EPS * fHet, XLAL_EINVAL, "Input timeseries must have identical heterodyning frequency 'f0(X=%d)' (%.16g != %.16g)\n", X, fHet, fHetX );
 
       REAL8 TsftX = common->multiTimestamps->data[X]->deltaT;
       XLAL_CHECK ( Tsft == TsftX, XLAL_EINVAL, "Input timestamps must have identical stepsize 'Tsft(X=%d)' (%.16g != %.16g)\n", X, Tsft, TsftX );
@@ -1003,8 +1003,10 @@ XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( ResampMethodData *resamp,		// [
       XLAL_CHECK ( dt_SRC == TimeSeries_SRCX_b->deltaT, XLAL_EINVAL );
       XLAL_CHECK ( numSamples_DETX > 0, XLAL_EINVAL, "Input timeseries for detector X=%d has zero samples. Can't handle that!\n", X );
       XLAL_CHECK ( (SRCtimesX->DeltaT->length == numSFTsX) && (SRCtimesX->Tdot->length == numSFTsX), XLAL_EINVAL );
-      XLAL_CHECK ( fHet == resamp->multiTimeSeries_DET->data[X]->f0, XLAL_EINVAL );
-      XLAL_CHECK ( Tsft == common->multiTimestamps->data[X]->deltaT, XLAL_EINVAL );
+      REAL8 fHetX = resamp->multiTimeSeries_DET->data[X]->f0;
+      XLAL_CHECK ( fabs( fHet - fHetX ) < LAL_REAL8_EPS * fHet, XLAL_EINVAL, "Input timeseries must have identical heterodyning frequency 'f0(X=%d)' (%.16g != %.16g)\n", X, fHet, fHetX );
+      REAL8 TsftX = common->multiTimestamps->data[X]->deltaT;
+      XLAL_CHECK ( Tsft == TsftX, XLAL_EINVAL, "Input timestamps must have identical stepsize 'Tsft(X=%d)' (%.16g != %.16g)\n", X, Tsft, TsftX );
 
       TimeSeries_SRCX_a->f0 = fHet;
       TimeSeries_SRCX_b->f0 = fHet;

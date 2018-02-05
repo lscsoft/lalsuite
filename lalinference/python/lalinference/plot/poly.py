@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2012-2016  Leo Singer
+# Copyright (C) 2012-2018  Leo Singer
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,31 +29,10 @@ import matplotlib
 import distutils.version
 mpl_version = distutils.version.LooseVersion(matplotlib.__version__)
 
-__all__ = ('wrapped_angle', 'wrapped_angle_deg', 'reference_angle',
-           'reference_angle_deg', 'subdivide_vertices', 'cut_dateline',
+from .angle import *
+
+__all__ = ('subdivide_vertices', 'cut_dateline',
            'cut_prime_meridian', 'make_rect_poly')
-
-
-def wrapped_angle(a):
-    """Convert an angle to a reference angle between 0 and 2*pi."""
-    return np.mod(a, 2 * np.pi)
-
-
-def wrapped_angle_deg(a):
-    """Convert an angle to a reference angle between 0 and 2*pi."""
-    return np.mod(a, 360)
-
-
-def reference_angle(a):
-    """Convert an angle to a reference angle between -pi and pi."""
-    a = np.mod(a, 2 * np.pi)
-    return np.where(a <= np.pi, a, a - 2 * np.pi)
-
-
-def reference_angle_deg(a):
-    """Convert an angle to a reference angle between -180 and 180 degrees."""
-    a = np.mod(a, 360)
-    return np.where(a <= 180, a, a - 360)
 
 
 def subdivide_vertices(vertices, subdivisions):

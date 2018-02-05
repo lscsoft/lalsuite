@@ -2463,6 +2463,12 @@ SphHarmTimeSeries *XLALSimInspiralNRSur7dq2Modes(
         REAL8 deltaT,                   /**< sampling interval (s) */
         REAL8 m1,                       /**< mass of companion 1 (kg) */
         REAL8 m2,                       /**< mass of companion 2 (kg) */
+        REAL8 S1x,                      /**< x-component of the dimensionless spin of object 1 */
+        REAL8 S1y,                      /**< y-component of the dimensionless spin of object 1 */
+        REAL8 S1z,                      /**< z-component of the dimensionless spin of object 1 */
+        REAL8 S2x,                      /**< x-component of the dimensionless spin of object 2 */
+        REAL8 S2y,                      /**< y-component of the dimensionless spin of object 2 */
+        REAL8 S2z,                      /**< z-component of the dimensionless spin of object 2 */
         REAL8 fMin,                     /**< start GW frequency (Hz) */
         REAL8 fRef,                     /**< reference GW frequency (Hz) */
         REAL8 distance,                 /**< distance of source (m) */
@@ -2470,7 +2476,6 @@ SphHarmTimeSeries *XLALSimInspiralNRSur7dq2Modes(
 ) {
     if (fabs(fMin) > 1.e-6) XLAL_PRINT_WARNING("NRSur7dq2 ignores fMin. Set fMin=0 to ignore this warning.");
 
-    // TODO: Implement spins somehow?!?!
     SphHarmTimeSeries *hlms = NULL;
 
     if (lmax > NRSUR7DQ2_LMAX) {
@@ -2479,20 +2484,26 @@ SphHarmTimeSeries *XLALSimInspiralNRSur7dq2Modes(
     }
 
     double chiA0[3], chiB0[3];
-    chiA0[0] = 0.0;
-    chiA0[1] = 0.0;
-    chiA0[2] = 0.0;
-    chiB0[0] = 0.0;
-    chiB0[1] = 0.0;
-    chiB0[2] = 0.0;
+    chiA0[0] = S1x;
+    chiA0[1] = S1y;
+    chiA0[2] = S1z;
+    chiB0[0] = S2x;
+    chiB0[1] = S2y;
+    chiB0[2] = S2z;
 
-    // BH A is defined to be the one with the larger mass, BH B with the smaller mass.
+    // In NRSur7dq2, BH A is defined to be the one with the larger mass, BH B with the smaller mass.
+    // TODO: Do we need an appropriate rotation by pi after evaluating to agree with LAL conventions?
+    int i;
     if (m2 > m1) {
         double tmp = m1;
         m1 = m2;
         m2 = tmp;
         phiRef += LAL_PI;
-        // TODO: If spins are implemented, also switch spin labels here.
+        for (i=0; i<3; i++) {
+            tmp = chiA0[i];
+            chiA0[i] = chiB0[i];
+            chiB0[i] = tmp;
+        }
     }
 
     // Parameters
@@ -2537,10 +2548,10 @@ SphHarmTimeSeries *XLALSimInspiralNRSur7dq2Modes(
     LIGOTimeGPS epoch = LIGOTIMEGPSZERO; // Dummy time
     gsl_interp_accel *acc = gsl_interp_accel_alloc();
 
-    // Sum over modes
+    // Create LAL modes
     COMPLEX16TimeSeries *tmp_mode;
     int ell, m;
-    int i=0;
+    i=0;
     char mode_name[32];
     for (ell=2; ell<=lmax; ell++) {
         for (m=-ell; m<=ell; m++) {

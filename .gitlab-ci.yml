@@ -342,7 +342,7 @@ docker:tags:
   before_script: []
   script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $TAG .
+    - docker build --pull -t $TAG --file .Dockerfile.gitlab-ci .
     - docker push $TAG
   dependencies:
     - level4:lalapps
@@ -355,7 +355,7 @@ docker:nightly:
   before_script: []
   script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $NIGHTLY .
+    - docker build --pull -t $NIGHTLY --file .Dockerfile.gitlab-ci .
     - docker push $NIGHTLY
   dependencies:
     - level4:lalapps
@@ -415,18 +415,43 @@ nightly:top-level:xenial:
     - schedules
     - web
 
+nightly:top-level:artful:
+  image: skymoo/ligo-lalsuite-dev:artful
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+  allow_failure: true
+
 nightly:top-level:buster:
   image: skymoo/ligo-lalsuite-dev:buster
   stage: nightly
   dependencies: []
   script:
     - ./00boot
-    - ./configure --enable-swig-python --enable-doxygen
+    - ./configure --enable-swig --enable-doxygen
     - make -j4 distcheck
   only:
     - schedules
     - web
   allow_failure: true
+
+nightly:top-level:clang:
+  image: skymoo/ligo-lalsuite-clang:jessie
+  stage: nightly
+  script:
+    - ./00boot
+    - CC=clang CXX=clang++ ./configure --enable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
 
 nightly:mpi:jessie:
   image: ligo/lalsuite-dev:jessie

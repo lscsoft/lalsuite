@@ -6,12 +6,9 @@ ENV LD_LIBRARY_PATH="/opt/lalsuite/lib" \
     PKG_CONFIG_PATH="/opt/lalsuite/lib/pkgconfig" \
     PYTHONPATH="/opt/lalsuite/lib/python2.7/site-packages"
 
-COPY /docker/sudoers-albert /etc/sudoers.d/albert
+RUN find /opt/lalsuite/lib/pkgconfig -type f -name 'lal*.pc' -exec sed -i 's|^prefix=.*|prefix=/opt/lalsuite|g' {} \;
+
 COPY /docker/startup /usr/local/bin/startup
 
-RUN mkdir /container \
-    && useradd -m -d /container/albert -s /bin/bash albert
-USER albert
-WORKDIR /container/albert
 ENTRYPOINT [ "/usr/local/bin/startup" ]
 CMD ["/bin/bash", "-i" ]

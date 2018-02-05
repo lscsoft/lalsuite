@@ -230,6 +230,19 @@ REAL8 PulsarGetREAL8ParamOrZero( const PulsarParameters *pars, const CHAR *name 
 }
 
 
+UINT4 PulsarGetUINT4Param( const PulsarParameters *pars, const CHAR *name ){
+  /* check type is a UINT4 */
+  if ( PulsarGetParamType( pars, name ) == PULSARTYPE_UINT4_t ){ return *(UINT4 *)PulsarGetParam( pars, name ); }
+  else{ XLAL_ERROR( XLAL_EINVAL, "Used wrong type for required parameter"  ); }
+}
+
+
+UINT4 PulsarGetUINT4ParamOrZero( const PulsarParameters *pars, const CHAR *name ){
+  /* if parameter is there return it otherwise return zero */
+  return PulsarCheckParam(pars, name) ? PulsarGetUINT4Param(pars, name) : 0;
+}
+
+
 const CHAR* PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name ){
   /* check type is a string */
   if ( PulsarGetParamType( pars, name ) == PULSARTYPE_string_t ){
@@ -240,7 +253,7 @@ const CHAR* PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name
 }
 
 
-REAL8Vector* PulsarGetREAL8VectorParam( const PulsarParameters *pars, const CHAR *name ){
+const REAL8Vector* PulsarGetREAL8VectorParam( const PulsarParameters *pars, const CHAR *name ){
   /* check type is a REAL8Vector */
   if ( PulsarGetParamType( pars, name ) == PULSARTYPE_REAL8Vector_t ){ return *(REAL8Vector **)PulsarGetParam( pars, name ); }
   else{ XLAL_ERROR_NULL( XLAL_EINVAL, "Used wrong type for required parameter" ); }
@@ -260,7 +273,7 @@ REAL8 PulsarGetREAL8VectorParamIndividual( const PulsarParameters *pars, const C
     token = strtok(namecopy, "0123456789");
   }
 
-  REAL8Vector *vpars = PulsarGetREAL8VectorParam( pars, token );
+  const REAL8Vector *vpars = PulsarGetREAL8VectorParam( pars, token );
 
   /* get the index value of the parameter name */
   INT4 idx = -1;
@@ -293,13 +306,28 @@ void *PulsarGetParamErr( const PulsarParameters *pars, const CHAR *name ){
 }
 
 
-UINT4 *PulsarGetParamFitFlag( const PulsarParameters *pars, const CHAR *name ){
+const UINT4 *PulsarGetParamFitFlag( const PulsarParameters *pars, const CHAR *name ){
 /* return the fit flag value */
   PulsarParam *item = PulsarGetParamItem( pars, name );
   if( !item ) { XLAL_ERROR_NULL( XLAL_EFAILED, "Entry \"%s\" not found.", name ); }
 
   if ( item->fitFlag == NULL ){ return NULL; }
-  else { return item->fitFlag; }
+  else {
+    if ( item->fitFlag->data == NULL ){ return NULL; }
+    else{ return item->fitFlag->data; }
+  }
+}
+
+
+const UINT4Vector *PulsarGetParamFitFlagAsVector( const PulsarParameters *pars, const CHAR *name ){
+/* return the fit flag value(s) */
+  PulsarParam *item = PulsarGetParamItem( pars, name );
+  if( !item ) { XLAL_ERROR_NULL( XLAL_EFAILED, "Entry \"%s\" not found.", name ); }
+
+  if ( item->fitFlag == NULL ){ return NULL; }
+  else {
+    return item->fitFlag;
+  }
 }
 
 
@@ -315,7 +343,7 @@ REAL8 PulsarGetREAL8ParamErr( const PulsarParameters *pars, const CHAR *name ){
 }
 
 
-REAL8Vector *PulsarGetREAL8VectorParamErr( const PulsarParameters *pars, const CHAR *name ){
+const REAL8Vector *PulsarGetREAL8VectorParamErr( const PulsarParameters *pars, const CHAR *name ){
 /* Return the error value of variable name from the pars structure */
   /* check type is a REAL8 */
   if ( PulsarGetParamType( pars, name ) == PULSARTYPE_REAL8Vector_t ){
@@ -340,7 +368,7 @@ REAL8 PulsarGetREAL8VectorParamErrIndividual( const PulsarParameters *pars, cons
     token = strtok(namecopy, "0123456789");
   }
 
-  REAL8Vector *vpars = PulsarGetREAL8VectorParamErr( pars, token );
+  const REAL8Vector *vpars = PulsarGetREAL8VectorParamErr( pars, token );
 
   /* get the index value of the parameter name */
   INT4 idx = -1;
@@ -380,7 +408,7 @@ void PulsarAddParam( PulsarParameters *pars, const CHAR *name, void *value, Puls
     old = PulsarGetParamItem( pars, name );
 
     /* If the type is incompatible, it should be removed */
-    if( old->type != type ){ PulsarRemoveParam( pars, name ); }
+    if( old->type != type || old->type == PULSARTYPE_REAL8Vector_t ){ PulsarRemoveParam( pars, name ); }
     else{
       PulsarSetParam( pars, name, value );
       return;
@@ -392,8 +420,30 @@ void PulsarAddParam( PulsarParameters *pars, const CHAR *name, void *value, Puls
   memset(new,0,sizeof(PulsarParam));
   if( new ) {
     new->value = (void *)XLALMalloc( PulsarTypeSize[type] );
-    new->err = NULL;
-    new->fitFlag = (UINT4 *)XLALMalloc( sizeof(UINT4) );
+    new->fitFlag = NULL;
+
+    /* for REAL8 and REAL8Vector parameters initialise errors and fit flags to zero  */
+    if ( type == PULSARTYPE_REAL8Vector_t ){
+      REAL8Vector *tmpvector = *(REAL8Vector **)value;
+      UINT4 dlength = tmpvector->length;
+
+      new->fitFlag = XLALCreateUINT4Vector( dlength );
+      memset(new->fitFlag->data, 0, sizeof(UINT4)*dlength); // initialise to zero
+
+      REAL8Vector *err = XLALCreateREAL8Vector( dlength );
+      memset(err->data, 0, sizeof(REAL8)*dlength); // initialise to zero
+
+      new->err = (void *)XLALMalloc( PulsarTypeSize[type] );
+      memcpy( new->err, (void *)&err, PulsarTypeSize[type] );
+    }
+    else if ( type == PULSARTYPE_REAL8_t ) {
+      new->fitFlag = XLALCreateUINT4Vector( 1 );
+      memset(new->fitFlag->data, 0, sizeof(UINT4)); // initialise to zero
+
+      new->err = (void *)XLALMalloc( sizeof(UINT4Vector *) );
+      REAL8 err = 0.;
+      memcpy( new->err, (void *)&err, PulsarTypeSize[type] );
+    }
   }
 
   if( new == NULL || new->value == NULL ) {
@@ -429,10 +479,13 @@ void PulsarAddUINT4Param(PulsarParameters *pars, const CHAR * name, UINT4 value)
 }
 
 
-void PulsarAddREAL8VectorParam(PulsarParameters *pars, const CHAR * name, REAL8Vector *value)
+void PulsarAddREAL8VectorParam(PulsarParameters *pars, const CHAR * name, const REAL8Vector *value)
 /* Typed version of PulsarAddParam for REAL8Vector values.*/
 {
-  PulsarAddParam(pars, name, (void*)&value, PULSARTYPE_REAL8Vector_t);
+  REAL8Vector *fval = NULL;
+  fval = XLALCreateREAL8Vector(value->length);
+  memcpy(fval->data, value->data, sizeof(REAL8)*value->length);
+  PulsarAddParam(pars, name, (void *)&fval, PULSARTYPE_REAL8Vector_t);
 }
 
 
@@ -476,9 +529,9 @@ void PulsarClearParams( PulsarParameters *pars ){
     else if ( this->type == PULSARTYPE_string_t ){
       if ( this->value ) { XLALFree( *(CHAR **)this->value ); }
     }
+    if ( this->fitFlag ) { XLALDestroyUINT4Vector( this->fitFlag ); }
     XLALFree( this->value );
     XLALFree( this->err );
-    XLALFree( this->fitFlag );
     XLALFree( this );
     this = next;
     if( this ) { next = this->next; }
@@ -529,9 +582,9 @@ void PulsarRemoveParam( PulsarParameters *pars, const CHAR *name ){
   else if ( this->type == PULSARTYPE_string_t ){
     if ( this->value ) { XLALFree( *(CHAR **)this->value ); }
   }
+  if ( this->fitFlag ) { XLALDestroyUINT4Vector( this->fitFlag ); }
   XLALFree( this->value );
   XLALFree( this->err );
-  XLALFree( this->fitFlag );
   this->value = NULL;
   this->err = NULL;
   this->fitFlag = NULL;
@@ -558,7 +611,7 @@ void PulsarSetParam( PulsarParameters* pars, const CHAR *name, const void *value
 
 
 /* Set the value of parameter name error in the pars structure to value */
-void PulsarSetParamErr( PulsarParameters* pars, const CHAR *name, void *value, UINT4 fitFlag, UINT4 nfits, UINT4 len ){
+void PulsarSetParamErr( PulsarParameters* pars, const CHAR *name, void *value, const UINT4 *fitFlag, UINT4 len ){
   PulsarParam *item;
 
   /* convert name to uppercase */
@@ -569,16 +622,46 @@ void PulsarSetParamErr( PulsarParameters* pars, const CHAR *name, void *value, U
   item = PulsarGetParamItem( pars, upperName );
   if( !item ) { XLAL_ERROR_VOID(XLAL_EINVAL, "Entry \"%s\" not found.", name); }
 
-  if ( item->err == NULL ){
-    if( ( item->err = (void *)XLALMalloc( PulsarTypeSize[PulsarGetParamType( pars, name )] ) ) == NULL ){
-      XLAL_ERROR_VOID(XLAL_ENOMEM, "Unable to allocate memory for list item.");
+  if ( item->err != NULL ){
+    // Remove previous error values if present
+    if ( item->type == PULSARTYPE_REAL8Vector_t ) {
+      XLALDestroyREAL8Vector( *(REAL8Vector **)item->err );
     }
+    XLALFree( item->err );
   }
 
-  if ( nfits > 1 && nfits > len-1 ){ item->fitFlag = XLALRealloc( item->fitFlag, sizeof(UINT4)*nfits ); }
-  item->fitFlag[nfits-1] = fitFlag;
+  if( ( item->err = (void *)XLALMalloc( PulsarTypeSize[PulsarGetParamType( pars, name )] ) ) == NULL ){
+    XLAL_ERROR_VOID(XLAL_ENOMEM, "Unable to allocate memory for list item.");
+  }
 
+  // Remove previous fit flag if present
+  if ( item->fitFlag != NULL ){
+    XLALDestroyUINT4Vector( item->fitFlag );
+
+    // set the fit flag values
+    item->fitFlag = NULL;
+    item->fitFlag = XLALCreateUINT4Vector( len );
+    memcpy( item->fitFlag->data, fitFlag, len*sizeof(UINT4) );
+  }
+
+  // set error values
   memcpy( item->err, value, PulsarTypeSize[item->type] );
+}
+
+
+/* Set the value of parameter name error in the pars structure to value */
+void PulsarSetREAL8ParamErr( PulsarParameters* pars, const CHAR *name, REAL8 value, UINT4 fitFlag ){
+  PulsarSetParamErr( pars, name, (void*)&value, &fitFlag, 1 );
+}
+
+
+/* Set the value of parameter name error in the pars structure to value */
+void PulsarSetREAL8VectorParamErr( PulsarParameters* pars, const CHAR *name, const REAL8Vector *value, const UINT4 *fitFlag ){
+  REAL8Vector *evals = NULL;
+  evals = XLALCreateREAL8Vector( value->length );
+  memcpy(evals->data, value->data, sizeof(REAL8)*value->length);
+
+  PulsarSetParamErr( pars, name, (void*)&evals, fitFlag, value->length );
 }
 
 
@@ -678,7 +761,7 @@ typedef struct tagParConversion{
 }ParConversion;
 
 
-#define NUM_PARS 107 /* number of allowed parameters */
+#define NUM_PARS 108 /* number of allowed parameters */
 
 /** Initialise conversion structure with most allowed TEMPO2 parameter names and conversion functions
  * (convert all read in parameters to SI units where necessary). See http://arxiv.org/abs/astro-ph/0603381 and
@@ -689,8 +772,9 @@ typedef struct tagParConversion{
  */
 ParConversion pc[NUM_PARS] = {
   { .name = "F", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8Vector_t }, /* vector containing frequency and derivatives (Hz, Hz/s, Hz/s^2 ...) */
+  { .name = "P", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8Vector_t }, /* vector containing period and derivatives (s, s/s, s/s^2 ...) */
   { .name = "DIST", .convfunc = ParConvKpcToMetres, .converrfunc = ParConvKpcToMetres, .ptype = PULSARTYPE_REAL8_t }, /* distance to pulsar in metres */
-  { .name = "PX", .convfunc = ParConvMasToRads, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* parallax (converted to radians) */
+  { .name = "PX", .convfunc = ParConvMasToRads, .converrfunc = ParConvMasToRads, .ptype = PULSARTYPE_REAL8_t }, /* parallax (converted to radians) */
   { .name = "DM", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* dispersion measure */
   { .name = "DM1", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /*first derivative of the dispersion measure */
 
@@ -868,12 +952,13 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
 
     /* check for parameters requiring placement in vectors */
     INT4 isfreq = ( !strncmp( nname, "F", 1 ) && !strcmp( "F", pc[i].name ) && sscanf( nname+strlen( "F" ), "%d",  &tmpnum ) == 1 );
+    INT4 isperiod = ( !strncmp( nname, "P", 1 ) && !strcmp( "P", pc[i].name ) && sscanf( nname+strlen( "P" ), "%d",  &tmpnum ) == 1 );
     INT4 iswave = ( ( !strncmp( nname, "WAVE", 4 ) && ( !strcmp( "WAVESIN", pc[i].name ) || !strcmp( "WAVECOS", pc[i].name ) ) ) && strcmp( "WAVE_OM", nname ) && strcmp( "WAVEEPOCH", nname ) );
     INT4 isfb = ( !strncmp( nname, "FB", 2 ) && !strcmp( "FB", pc[i].name ) );
     INT4 isgl = ( !strncmp( nname, "GL", 2 ) && strstr( nname, pc[i].name ) && !strncmp( nname, pc[i].name, strlen(nname)-2 ) );
 
-    if ( !strcmp( nname, pc[i].name ) || isfreq || iswave || isfb || isgl ){
-      UINT4 num = 0;
+    if ( !strcmp( nname, pc[i].name ) || isfreq || isperiod || iswave || isfb || isgl ){
+      UINT4 num = 0, nsize = 0;
 
       if ( pc[i].convfunc == NULL ){
         XLAL_PRINT_WARNING("No conversion function for parameter %s. Skipping parameter.\n", pc[i].name);
@@ -881,8 +966,9 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
       }
 
       /* add parameter */
-      if ( isfreq || isfb ){ /* add frequency and frequency derivative values or FB values */
-        REAL8Vector *ptr = NULL;
+      if ( isfreq || isperiod || isfb ){ /* add frequency/period and frequency/period derivative values, or FB values */
+        REAL8Vector *ptr = NULL, *eptr = NULL;
+        UINT4 *fitFlag = NULL;
 
         if ( isfb ){
           if ( strlen( nname ) > strlen( "FB" ) ){
@@ -891,9 +977,16 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
             }
           }
         }
-        else{
+        else if ( isfreq ) {
           if ( strlen( nname ) > strlen( "F" ) ){
             if ( sscanf( nname+strlen( "F" ), "%d", &num ) != 1 ){
+              XLAL_ERROR( XLAL_EINVAL, "Error...problem reading %s number from par file.\n", nname );
+            }
+          }
+        }
+        else{
+          if ( strlen( nname ) > strlen( "P" ) ){
+            if ( sscanf( nname+strlen( "P" ), "%d", &num ) != 1 ){
               XLAL_ERROR( XLAL_EINVAL, "Error...problem reading %s number from par file.\n", nname );
             }
           }
@@ -903,16 +996,48 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
 
         pc[i].convfunc( str1, val );
 
-        if( PulsarCheckParam( par, pc[i].name ) ){ ptr = PulsarGetREAL8VectorParam( par, pc[i].name ); }
-        else{ ptr = XLALCreateREAL8Vector( 1 ); }
+        nsize = num + 1;
+        if( PulsarCheckParam( par, pc[i].name ) ){
+          // copy any previous values
+          const REAL8Vector *cptr = PulsarGetREAL8VectorParam( par, pc[i].name );
+          nsize = (cptr->length > num+1) ? cptr->length : (num + 1);
+        }
 
-        if ( num+1 > ptr->length ) { ptr = XLALResizeREAL8Vector( ptr, num+1 ); }
+        // pointer for parameter values
+        ptr = XLALCreateREAL8Vector( nsize );
+        memset(ptr->data, 0, sizeof(REAL8)*nsize);
+
+        // pointers for error and fit flags
+        eptr = XLALCreateREAL8Vector( nsize );
+        memset(eptr->data, 0, sizeof(REAL8)*nsize);           // initialise with zeros
+        fitFlag = (UINT4*)XLALCalloc( nsize, sizeof(UINT4) ); // set fit values to zero (no-fit) by default
+
+        if( PulsarCheckParam( par, pc[i].name ) ){
+          // copy any previous values
+          const REAL8Vector *cptr = PulsarGetREAL8VectorParam( par, pc[i].name );
+          memcpy(ptr->data, cptr->data, cptr->length*sizeof(REAL8));
+
+          /* copy any error values, as updating REAL8Vector parameters destroys the original PulsarParam structure */
+          const REAL8Vector *ceptr = PulsarGetREAL8VectorParamErr( par, pc[i].name );
+          const UINT4 *ff = PulsarGetParamFitFlag( par, pc[i].name );
+          
+          // copy any previous error values
+          memcpy(eptr->data, ceptr->data, sizeof(REAL8)*cptr->length);
+          memcpy(fitFlag, ff, sizeof(UINT4)*cptr->length);
+        }
 
         ptr->data[num] = *(REAL8 *)val;
 
-        PulsarAddParam( par, pc[i].name, &ptr, PULSARTYPE_REAL8Vector_t );
+        // NOTE: this will destroy the previous held PulsarParam structure for this parameter
+        PulsarAddREAL8VectorParam( par, pc[i].name, (const REAL8Vector *)ptr );
+
+        // (re-)add errors
+        PulsarSetREAL8VectorParamErr( par, pc[i].name, (const REAL8Vector *)eptr, (const UINT4 *)fitFlag );
 
         XLALFree( val );
+        XLALDestroyREAL8Vector( ptr );
+        XLALDestroyREAL8Vector( eptr );
+        XLALFree(fitFlag);
       }
       else if ( iswave && nread == 2 ){ /* add WAVE values */
         REAL8Vector *ptr1 = NULL, *ptr2 = NULL;
@@ -932,34 +1057,50 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
         pc[i].convfunc( str1, val1 );
         pc[i].convfunc( str2, val2 );
 
+        nsize = num + 1;
         if( PulsarCheckParam( par, "WAVESIN" ) && PulsarCheckParam( par, "WAVECOS" ) ){
-          ptr1 = PulsarGetREAL8VectorParam( par, "WAVESIN" );
-          ptr2 = PulsarGetREAL8VectorParam( par, "WAVECOS" );
-        }
-        else{
-          ptr1 = XLALCreateREAL8Vector( 1 );
-          ptr2 = XLALCreateREAL8Vector( 1 );
+          // copy any previous values
+          const REAL8Vector *cptr = PulsarGetREAL8VectorParam( par, pc[i].name );
+          nsize = (cptr->length > num+1) ? cptr->length : (num + 1);
         }
 
-        if ( num+1 > ptr1->length ) {
-          ptr1 = XLALResizeREAL8Vector( ptr1, num+1 );
-          ptr2 = XLALResizeREAL8Vector( ptr2, num+1 );
+        // pointers for parameter values
+        ptr1 = XLALCreateREAL8Vector( nsize );
+        ptr2 = XLALCreateREAL8Vector( nsize );
+
+        if( PulsarCheckParam( par, "WAVESIN" ) && PulsarCheckParam( par, "WAVECOS" ) ){
+          const REAL8Vector *cptr1 = PulsarGetREAL8VectorParam( par, "WAVESIN" );
+          const REAL8Vector *cptr2 = PulsarGetREAL8VectorParam( par, "WAVECOS" );
+
+          // copy previous values
+          memcpy(ptr1->data, cptr1->data, ptr1->length*sizeof(REAL8));
+          memcpy(ptr2->data, cptr2->data, ptr2->length*sizeof(REAL8));
         }
 
         ptr1->data[num] = *(REAL8 *)val1;
         ptr2->data[num] = *(REAL8 *)val2;
 
-        PulsarAddParam( par, "WAVESIN", &ptr1, PULSARTYPE_REAL8Vector_t );
-        PulsarAddParam( par, "WAVECOS", &ptr2, PULSARTYPE_REAL8Vector_t );
+        PulsarAddREAL8VectorParam( par, "WAVESIN", (const REAL8Vector *)ptr1 );
+        PulsarAddREAL8VectorParam( par, "WAVECOS", (const REAL8Vector *)ptr2 );
 
         XLALFree( val1 );
         XLALFree( val2 );
+        XLALDestroyREAL8Vector( ptr1 );
+        XLALDestroyREAL8Vector( ptr2 );
 
-        /* there are no errors on the wave parameters, so break */
+        /* there are no errors on the wave parameters, so set defaults of zero and then break */
+        UINT4 *fitFlag = (UINT4 *)XLALCalloc(num+1, sizeof(UINT4));
+        REAL8Vector *eptr = XLALCreateREAL8Vector(num+1);
+        memset(eptr, 0, sizeof(REAL8)*(num+1));
+        PulsarSetREAL8VectorParamErr( par, pc[i].name, (const REAL8Vector *)eptr, (const UINT4*)fitFlag );
+        XLALDestroyREAL8Vector(eptr);
+        XLALFree(fitFlag);
+
         break;
       }
       else if ( isgl ){ /* get glitch parameters */
-        REAL8Vector *ptr = NULL;
+        REAL8Vector *ptr = NULL, *eptr = NULL;
+        UINT4 *fitFlag = NULL;
 
         if ( sscanf( strstr(nname, "_")+1, "%d", &num ) != 1 ){
           XLAL_ERROR( XLAL_EINVAL, "Error...problem reading %s number from par file.\n", nname);
@@ -971,16 +1112,47 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
 
         pc[i].convfunc( str1, val );
 
-        if( PulsarCheckParam( par, pc[i].name ) ){  ptr = PulsarGetREAL8VectorParam( par, pc[i].name ); }
-        else{ ptr = XLALCreateREAL8Vector( 1 ); }
+        nsize = num + 1;
+        if( PulsarCheckParam( par, pc[i].name ) ){
+          // copy any previous values
+          const REAL8Vector *cptr = PulsarGetREAL8VectorParam( par, pc[i].name );
+          nsize = (cptr->length > num+1) ? cptr->length : (num + 1);
+        }
 
-        if ( num+1 > ptr->length ) { ptr = XLALResizeREAL8Vector( ptr, num+1 ); }
+        // pointer for parameter values
+        ptr = XLALCreateREAL8Vector( nsize );
+        memset(ptr->data, 0, sizeof(REAL8)*nsize);
+
+        // pointers for error and fit flags
+        eptr = XLALCreateREAL8Vector( nsize );
+        memset(eptr->data, 0, sizeof(REAL8)*nsize);           // initialise with zeros
+        fitFlag = (UINT4*)XLALCalloc( nsize, sizeof(UINT4) ); // set fit values to zero (no-fit) by default
+
+        if( PulsarCheckParam( par, pc[i].name ) ){
+          // copy any previous values
+          const REAL8Vector *cptr = PulsarGetREAL8VectorParam( par, pc[i].name );
+          memcpy(ptr->data, cptr->data, cptr->length*sizeof(REAL8));
+
+          /* copy any error values, as updating REAL8Vector parameters destroys the original PulsarParam structure */
+          const REAL8Vector *ceptr = PulsarGetREAL8VectorParamErr( par, pc[i].name );
+          const UINT4 *ff = PulsarGetParamFitFlag( par, pc[i].name );
+          
+          // copy any previous error values
+          memcpy(eptr->data, ceptr->data, sizeof(REAL8)*cptr->length);
+          memcpy(fitFlag, ff, sizeof(UINT4)*cptr->length);
+        }
 
         ptr->data[num] = *(REAL8 *)val;
 
-        PulsarAddParam( par, pc[i].name, &ptr, PULSARTYPE_REAL8Vector_t );
+        PulsarAddREAL8VectorParam( par, pc[i].name, (const REAL8Vector*)ptr );
+
+        // (re-)add errors
+        PulsarSetREAL8VectorParamErr( par, pc[i].name, (const REAL8Vector *)eptr, (const UINT4 *)fitFlag );
 
         XLALFree( val );
+        XLALDestroyREAL8Vector( ptr );
+        XLALDestroyREAL8Vector( eptr );
+        XLALFree( fitFlag );
       }
       else{
         if ( pc[i].ptype != PULSARTYPE_string_t ){
@@ -1007,8 +1179,18 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
         UINT4 isFit = 0;
 
         /* get the fit flag */
-        if( isfreq || isfb || isgl ){ /* do this for REAL8Vector parameters */
-          REAL8Vector *ptr = NULL;
+        if( isfreq || isperiod || isfb || isgl ){ /* do this for REAL8Vector parameters */
+          const REAL8Vector *ptr = PulsarGetREAL8VectorParamErr( par, pc[i].name );
+          const UINT4 *fitFlag = PulsarGetParamFitFlag( par, pc[i].name );
+
+          XLAL_CHECK( ptr != NULL, XLAL_EFUNC, "No default errors set for parameter %s", pc[i].name );
+
+          // copy of parameter errors and fit flags
+          REAL8Vector *eptr = XLALCreateREAL8Vector( ptr->length );
+          UINT4 *ff = (UINT4*)XLALMalloc( sizeof(UINT4)*ptr->length );
+
+          memcpy(eptr->data, ptr->data, sizeof(REAL8)*ptr->length);
+          memcpy(ff, fitFlag, sizeof(UINT4)*ptr->length);
 
           if ( nread == 2 ) { pc[i].converrfunc( str2, val ); }
           else {
@@ -1016,12 +1198,13 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
             pc[i].converrfunc( str3, val );
           }
 
-          if( ( ptr = PulsarGetREAL8VectorParamErr( par, pc[i].name ) ) == NULL ) { ptr = XLALCreateREAL8Vector( 1 ); }
-          if ( num+1 > ptr->length ) { ptr = XLALResizeREAL8Vector( ptr, num+1 ); }
+          eptr->data[num] = *(REAL8 *)val;
+          ff[num] = isFit;
 
-          ptr->data[num] = *(REAL8 *)val;
+          PulsarSetREAL8VectorParamErr( par, pc[i].name, (const REAL8Vector *)eptr, (const UINT4*)ff );
 
-          PulsarSetParamErr( par, pc[i].name, &ptr, isFit, num+1, ptr->length );
+          XLALDestroyREAL8Vector( eptr );
+          XLALFree( ff );
         }
         else{
           if ( nread == 2 ) { pc[i].converrfunc( str2, val ); }
@@ -1030,7 +1213,7 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
             pc[i].converrfunc( str3, val );
           }
 
-          PulsarSetParamErr( par, pc[i].name, val, isFit, num+1, 1 );
+          PulsarSetREAL8ParamErr( par, pc[i].name, *(REAL8*)val, isFit );
         }
 
         XLALFree( val );

@@ -499,7 +499,7 @@ int main( int argc, char **argv ){
       /* this doesn't take relative motion effects into account */
 
       tAv=((REAL8)endt+(REAL8)startt)/2. - PulsarGetREAL8ParamOrZero(pulparams[0], "PEPOCH");
-      REAL8Vector *freqs = PulsarGetREAL8VectorParam(pulparams[0], "F");
+      const REAL8Vector *freqs = PulsarGetREAL8VectorParam(pulparams[0], "F");
 
       for ( h=0; h<freqs->length; h++ ){
         fAp += (freqs->data[h]*dtpow)/gsl_sf_fact(h);
@@ -724,7 +724,7 @@ int main( int argc, char **argv ){
         fnew = 0., phaseShift = 0.;
         REAL8 fstart = 0., fend = 0.;
         REAL8 dtpow = 1., dtspow = 1., dtepow = 1.;
-        REAL8Vector *freqs = PulsarGetREAL8VectorParam(pulparams[h], "F");
+        const REAL8Vector *freqs = PulsarGetREAL8VectorParam(pulparams[h], "F");
         for ( UINT4 k=0; k<freqs->length; k++ ){
           /* calculate frequency at the centre of the SFT */
           fnew += (freqs->data[k]*dtpow)/gsl_sf_fact(k);

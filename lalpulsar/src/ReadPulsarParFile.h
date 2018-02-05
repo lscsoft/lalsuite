@@ -87,7 +87,7 @@ typedef struct tagPulsarParam {
   CHAR                        name[PULSAR_PARNAME_MAX]; /**< Parameter name */
   void                        *value;                   /**< Parameter value */
   void                        *err;                     /**< Parameter error/uncertainty */
-  UINT4                       *fitFlag;                 /**< Set to 1 if the parameter has been fit in the par file */
+  UINT4Vector                 *fitFlag;                 /**< Set to 1 if the parameter has been fit in the par file */
   PulsarParamType             type;                     /**< Parameter type e.g. REAL8, CHAR, INT4 */
   struct tagPulsarParam       *next;
 } PulsarParam;
@@ -102,8 +102,7 @@ typedef struct tagPulsarParam {
 typedef struct tagPulsarParameters {
   PulsarParam       *head;                              /**< A linked list of \c PulsarParam structures */
   INT4              nparams;                            /**< The total number of parameters in the structure */
-  /* PulsarParam       *hash_table[PULSAR_HASHTABLE_SIZE]; */ /**< Hash table of parameters */
-  LALHashTbl        *hash_table;
+  LALHashTbl        *hash_table;                        /**< Hash table of parameters */
 } PulsarParameters;
 
 
@@ -384,7 +383,14 @@ void *PulsarGetParamErr( const PulsarParameters *pars, const CHAR *name );
  *
  * This function will return a \c UINT4 array to the parameter fit flag.
  */
-UINT4 *PulsarGetParamFitFlag( const PulsarParameters *pars, const CHAR *name );
+const UINT4 *PulsarGetParamFitFlag( const PulsarParameters *pars, const CHAR *name );
+
+/** \brief Get the fit flag array for a given parameter from the \c PulsarParameters structure
+ *
+ * This function will return a \c UINT4Vector array to the parameter fit flag.
+ */
+const UINT4Vector *PulsarGetParamFitFlagAsVector( const PulsarParameters *pars, const CHAR *name );
+
 
 /** \brief Return a \c REAL8 parameter error value
  *
@@ -396,7 +402,7 @@ REAL8 PulsarGetREAL8ParamErr( const PulsarParameters *pars, const CHAR *name );
  *
  * This function will call \c PulsarGetParamErr for a \c REAL8Vector parameter and properly cast it for returning.
  */
-REAL8Vector *PulsarGetREAL8VectorParamErr( const PulsarParameters *pars, const CHAR *name );
+const REAL8Vector *PulsarGetREAL8VectorParamErr( const PulsarParameters *pars, const CHAR *name );
 
 /** \brief Return an individual \c REAL8 value from a \c REAL8Vector parameter
  *
@@ -420,6 +426,16 @@ REAL8 PulsarGetREAL8Param( const PulsarParameters *pars, const CHAR *name );
  */
 REAL8 PulsarGetREAL8ParamOrZero( const PulsarParameters *pars, const CHAR *name );
 
+/** \brief Return a \c UINT4 parameter
+ *
+ * This function will call \c PulsarGetParam for a \c UINT4 parameter and properly cast it for returning.
+ */
+UINT4 PulsarGetUINT4Param( const PulsarParameters *pars, const CHAR *name );
+
+/** \brief Return a \c UINT4 parameter if it exists, otherwise return zero
+ */
+UINT4 PulsarGetUINT4ParamOrZero( const PulsarParameters *pars, const CHAR *name );
+
 #ifdef SWIG   /* SWIG interface directives */
 SWIGLAL(OWNS_THIS_STRING(const CHAR*, value));
 #endif
@@ -440,11 +456,22 @@ void PulsarAddStringParam(PulsarParameters *pars, const CHAR * name, const CHAR 
 SWIGLAL_CLEAR(OWNS_THIS_STRING(const CHAR*, value));
 #endif
 
+#ifdef SWIG   /* SWIG interface directives */
+SWIGLAL(OWNS_THIS_ARG(const REAL8Vector*, value));
+#endif
+
 /** \brief Return a \c REAL8Vector parameter
  *
  * This function will call \c PulsarGetParam for a \c REAL8Vector parameter and properly cast it for returning.
  */
-REAL8Vector *PulsarGetREAL8VectorParam( const PulsarParameters *pars, const CHAR *name );
+const REAL8Vector *PulsarGetREAL8VectorParam( const PulsarParameters *pars, const CHAR *name );
+
+/** \brief Add a \c REAL8Vector parameter to the \c PulsarParameters structure */
+void PulsarAddREAL8VectorParam(PulsarParameters *pars, const CHAR * name, const REAL8Vector *value);
+
+#ifdef SWIG   /* SWIG interface directives */
+SWIGLAL_CLEAR(OWNS_THIS_ARG(const REAL8Vector*, value));
+#endif
 
 /** \brief Return an individual \c REAL8 value from a \c REAL8Vector parameter
  *
@@ -467,9 +494,6 @@ void PulsarAddREAL8Param(PulsarParameters *pars, const CHAR * name, REAL8 value)
 /** \brief Add a \c UINT4 parameter to the \c PulsarParameters structure */
 void PulsarAddUINT4Param(PulsarParameters *pars, const CHAR * name, UINT4 value);
 
-/** \brief Add a \c REAL8Vector parameter to the \c PulsarParameters structure */
-void PulsarAddREAL8VectorParam(PulsarParameters *pars, const CHAR * name, REAL8Vector *value);
-
 /** \brief Free all the parameters from a \c PulsarParameters structure */
 void PulsarClearParams( PulsarParameters *pars );
 
@@ -491,7 +515,13 @@ void PulsarSetParam( PulsarParameters* pars, const CHAR *name, const void *value
  * TEMPO(2) fitting procedure) then that must be input as the fit flag (this can be a vector for e.g. FB
  * values with multiple parameters, in which case \c nfits will be the number of values in that vector).
  */
-void PulsarSetParamErr( PulsarParameters* pars, const CHAR *name, void *value, UINT4 fitFlag, UINT4 nfits, UINT4 len );
+void PulsarSetParamErr( PulsarParameters* pars, const CHAR *name, void *value, const UINT4 *fitFlag, UINT4 len );
+
+/** \brief Set the error value for a \c REAL8 parameter */
+void PulsarSetREAL8ParamErr( PulsarParameters* pars, const CHAR *name, REAL8 value, UINT4 fitFlag );
+
+/** \brief Set the error values for a \c REAL8Vector parameter */
+void PulsarSetREAL8VectorParamErr( PulsarParameters* pars, const CHAR *name, const REAL8Vector *value, const UINT4 *fitFlag );
 
 /** \brief Check for the existence of the parameter \c name in the \c PulsarParameters structure */
 int PulsarCheckParam( const PulsarParameters *pars, const CHAR *name );
