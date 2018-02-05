@@ -2242,7 +2242,7 @@ def gelman_rubins(chains):
 #  - the original length of each chain
 # Th input is a list of MCMC chain files
 def pulsar_mcmc_to_posterior(chainfiles):
-  from pylal import bayespputils as bppu
+  from lalinference import bayespputils as bppu
 
   cl = []
   neffs = []
@@ -2433,8 +2433,8 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
       e.g. if cosiota and iota exist then iota will be removed.
   """
 
-  from pylal import bayespputils as bppu
-  from pylal.bayespputils import replace_column
+  from lalinference import bayespputils as bppu
+  from lalinference.bayespputils import replace_column
 
   fe = os.path.splitext(postfile)[-1].lower() # file extension
 
