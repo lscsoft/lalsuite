@@ -35,7 +35,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 from .. import distance
-from . import moc
+from .. import moc
 from ..healpix_tree import *
 
 try:
