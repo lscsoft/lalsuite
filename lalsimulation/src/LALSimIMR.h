@@ -277,6 +277,7 @@ int XLALSimIMRPhenomDNRTidalFrequencySequence(COMPLEX16FrequencySeries **htilde,
 
 /* Function to generate IMRPhenomPv2_NRTidal waveform */
 int XLALSimIMRPhenomPv2NRTidal(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, REAL8 chi1_l, REAL8 chi2_l, REAL8 chip, REAL8 thetaJ, REAL8 alpha0, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 distance, const REAL8 lambda1, const REAL8 lambda2, const REAL8 quadparam1, const REAL8 quadparam2, const REAL8 phic, const REAL8 deltaF, const REAL8 f_min, const REAL8 f_max, const REAL8 f_ref, const LALSimInspiralTestGRParam *extraParams);
+int XLALSimIMRPhenomPv2NRTidalFrequencySequence(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, REAL8 chi1_l, REAL8 chi2_l, REAL8 chip, REAL8 thetaJ, REAL8 alpha0, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 distance, const REAL8 lambda1, const REAL8 lambda2, const REAL8 quadparam1, const REAL8 quadparam2, const REAL8 phic, const REAL8Sequence *freqs, const REAL8 f_ref, const LALSimInspiralTestGRParam *nonGRparams);
 
 #if 0
 { /* so that editors will match succeeding brace */

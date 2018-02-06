@@ -1234,6 +1234,35 @@ int XLALSimInspiralChooseFDWaveformSequence(
             }
             break;
 
+        case IMRPhenomPv2_NRTidal:
+            /* Waveform-specific sanity checks */
+            spin1[0]=S1x; spin1[1]=S1y; spin1[2]=S1z;
+            spin2[0]=S2x; spin2[1]=S2y; spin2[2]=S2z;
+            iTmp=i;
+            XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,f_ref,XLALSimInspiralGetFrameAxis(waveFlags));
+            if( !XLALSimInspiralModesChoiceIsDefault(          /* Default is (2,2) or l=2 modes. */
+                    XLALSimInspiralGetModesChoice(waveFlags) ) )
+                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+            LNhatx = sin(i);
+            LNhaty = 0.;
+            LNhatz = cos(i);
+            /* Tranform to model parameters */
+            if(f_ref==0.0)
+                f_ref = f_min; /* Default reference frequency is minimum frequency */
+
+            XLALSimIMRPhenomPCalculateModelParameters(
+                &chi1_l, &chi2_l, &chip, &thetaJ, &alpha0,
+                m1, m2, f_ref,
+                LNhatx, LNhaty, LNhatz,
+                S1x, S1y, S1z,
+                S2x, S2y, S2z, IMRPhenomPv2_V);
+
+            ret = XLALSimIMRPhenomPv2NRTidalFrequencySequence(hptilde, hctilde,
+              chi1_l, chi2_l, chip, thetaJ, alpha0,
+              m1, m2, r, lambda1, lambda2, quadparam1, quadparam2, phiRef, frequencies, f_ref, nonGRparams);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            break;
+
         default:
             XLALPrintError("FD version of approximant not implemented in lalsimulation\n");
             XLAL_ERROR(XLAL_EINVAL);

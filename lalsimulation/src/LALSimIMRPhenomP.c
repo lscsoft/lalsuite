@@ -796,6 +796,34 @@ int XLALSimIMRPhenomPv2NRTidal(
 
 }
 
+int XLALSimIMRPhenomPv2NRTidalFrequencySequence(
+  COMPLEX16FrequencySeries **hptilde,         /**< [out] Frequency-domain waveform h+ */
+  COMPLEX16FrequencySeries **hctilde,         /**< [out] Frequency-domain waveform hx */
+  REAL8 chi1_l,                  /**< Dimensionless aligned spin on companion 1 */
+  REAL8 chi2_l,                  /**< Dimensionless aligned spin on companion 2 */
+  REAL8 chip,                    /**< Effective spin in the orbital plane */
+  REAL8 thetaJ,                  /**< Angle between J0 and line of sight (z-direction) */
+  REAL8 alpha0,                  /**< Initial value of alpha angle (azimuthal precession angle) */
+  const REAL8 m1_SI,              /**< Mass of companion 1 (kg) */
+  const REAL8 m2_SI,              /**< Mass of companion 2 (kg) */
+  const REAL8 distance,           /**< Distance of source (m) */
+  const REAL8 lambda1,            /**< Dimensionless tidal deformability of mass 1 */
+  const REAL8 lambda2,            /**< Dimensionless tidal deformability of mass 2 */
+  const REAL8 quadparam1,
+  const REAL8 quadparam2,
+  const REAL8 phic,               /**< Orbital phase at the peak of the underlying non precessing model (rad) */
+  const REAL8Sequence *freqs,
+  const REAL8 f_ref,              /**< Reference frequency */
+  const LALSimInspiralTestGRParam *nonGRparams)
+{
+  
+  if (!freqs) XLAL_ERROR(XLAL_EFAULT);
+  int retcode = PhenomPCore_withTides(hptilde, hctilde,
+      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, quadparam1, quadparam2, lambda1, lambda2, alpha0, phic, f_ref, freqs, 0, nonGRparams);
+  XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to generate IMRPhenomP waveform.");
+  return (retcode);
+}
+
 static int PhenomPCore_withTides(
   COMPLEX16FrequencySeries **hptilde,        /**< [out] Frequency-domain waveform h+ */
   COMPLEX16FrequencySeries **hctilde,        /**< [out] Frequency-domain waveform hx */
