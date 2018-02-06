@@ -759,7 +759,7 @@ class Posterior(object):
         self._injFref=injFref
         self._injection=SimInspiralTableEntry
 
-        self._triggers=SnglInpiralList
+        self._triggers=SnglInspiralList
         self._loglaliases=['deltalogl', 'posterior', 'logl','logL','likelihood']
         self._logpaliases=['logp', 'logP','prior','logprior','Prior','logPrior']
 
@@ -6006,7 +6006,7 @@ class PEOutputParser(object):
         parameter names. Equivalent to '_common_to_pos' and work in progress.
         """
         if not tablename:
-            samples = read_samples(infile, tablename=lalinference.LALInferenceHDF5PosteriorSamplesDatasetName)
+            samples = read_samples(infile, tablename=posterior_grp_name)
         else:
             samples = read_samples(infile, tablename=tablename)
         params = samples.colnames
