@@ -68,7 +68,7 @@ import time
 import lal
 import six
 from astropy.table import Table
-from ..bayestar import moc
+from .. import moc
 
 # FIXME: Remove this after all Astropy monkeypatches are obsolete.
 import astropy

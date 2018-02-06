@@ -33,7 +33,7 @@ from .decorator import with_numpy_random_seed
 from .. import distance
 from . import filter
 from . import timing
-from . import moc
+from .. import moc
 from .. import healpix_tree
 from .. import InferenceVCSInfo as vcs_info
 try:
