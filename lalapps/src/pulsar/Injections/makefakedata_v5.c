@@ -59,6 +59,7 @@
 #include <lal/Window.h>
 #include <lal/LALString.h>
 #include <lal/LALCache.h>
+#include <lal/Units.h>
 
 #include <lal/TransientCW_utils.h>
 #include <lal/CWMakeFakeData.h>
@@ -557,6 +558,17 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
           XLAL_CHECK ( (ts = XLALFrStreamInputREAL8TimeSeries ( stream, channel, &ts_startGPS, ts_duration, limit )) != NULL,
                        XLAL_EFUNC, "Frame reading failed for stream created for '%s': ts_start = {%d,%d}, duration=%.0f\n",
                        uvar->inFrames->data[X], ts_startGPS.gpsSeconds, ts_startGPS.gpsNanoSeconds, ts_duration );
+
+          if ( XLALUnitCompare ( &(ts->sampleUnits), &lalStrainUnit ) != 0 )
+            {
+              char unitName[64];
+              XLAL_CHECK ( XLALUnitAsString( unitName, sizeof(unitName), &(ts->sampleUnits) ) != NULL, XLAL_EUNIT, "Failed to express time-series units as a string\n");
+              XLAL_CHECK ( XLALUnitIsDimensionless ( &(ts->sampleUnits) ), XLAL_EUNIT,
+                           "Timeseries input data has invalid units '%s': must be either strain or dimensionless!", unitName );
+              XLALPrintWarning ("Note: Input timeseries is dimensionless instead of strain units.\n");
+              ts->sampleUnits = lalStrainUnit;	// needed to make XLALCWMakeFakeData() work
+            }
+
           cfg->inputMultiTS->data[X] = ts;
 
           XLAL_CHECK ( XLALFrStreamClose ( stream ) == XLAL_SUCCESS, XLAL_EFUNC, "Stream closing failed for cache file '%s'\n", uvar->inFrames->data[X] );
