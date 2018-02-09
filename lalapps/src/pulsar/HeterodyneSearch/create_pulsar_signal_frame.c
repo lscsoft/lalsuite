@@ -19,7 +19,9 @@
  *  MA  02111-1307  USA
  */
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE   /* for alphasort() and scandir() */
+#endif
 #include <dirent.h>
 
 #include <stdio.h>
