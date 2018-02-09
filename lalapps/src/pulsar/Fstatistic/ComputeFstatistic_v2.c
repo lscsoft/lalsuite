@@ -2253,12 +2253,16 @@ write_TimingInfo ( const CHAR *fname, const timingInfo_t *ti, const ConfigVariab
   else
     {
       XLAL_CHECK ( (fp = fopen( fname, "wb" ) ), XLAL_ESYS, "Failed to open new timing-file '%s' for writing\n", fname );
-      fprintf ( fp, "%2s%6s %10s %10s %10s %10s %10s\n",
-                "%%", "NSFTs", "NFreq", "tauF[s]", "tauFEff[s]", "tauF0[s]", "FstatMethod" );
+      fprintf ( fp, "%2s%6s %10s %10s %10s %10s %10s %10s %10s %10s %10s %16s %12s\n",
+                "%%", "NSFTs", "NFreq", "tauF[s]", "tauFEff[s]", "tauF0[s]", "FstatMethod",
+                "tauMin", "tauMax", "NStart", "NTau", "tauTransFstatMap", "tauTransMarg"
+              );
     }
 
-  fprintf ( fp, "%8d %10d %10.1e %10.1e %10.1e %10s\n",
-            ti->NSFTs, ti->NFreq, ti->tauFstat, ti->tauTemplate, ti->tauF0, XLALGetFstatInputMethodName(cfg->Fstat_in) );
+  fprintf ( fp, "%8d %10d %10.1e %10.1e %10.1e %10s %10d %10d %10d %10d %16.1e %12.1e\n",
+            ti->NSFTs, ti->NFreq, ti->tauFstat, ti->tauTemplate, ti->tauF0, XLALGetFstatInputMethodName(cfg->Fstat_in),
+            ti->tauMin, ti->tauMax, ti->NStart, ti->NTau, ti->tauTransFstatMap, ti->tauTransMarg
+          );
 
   fclose ( fp );
   return XLAL_SUCCESS;
