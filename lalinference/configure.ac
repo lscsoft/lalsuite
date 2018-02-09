@@ -147,6 +147,7 @@ AC_CHECK_HEADERS([unistd.h])
 
 # check for specific functions
 AC_FUNC_STRNLEN
+AC_CHECK_FUNC([strdup], [], [AC_MSG_ERROR([could not find the strdup function])])
 
 # check for required libraries
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])

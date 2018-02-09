@@ -21,7 +21,9 @@
  */
 
 
+#include <config.h>
 #include <stdio.h>
+#include <string.h>
 #include <lal/Date.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/LALInference.h>

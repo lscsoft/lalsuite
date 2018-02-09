@@ -24,6 +24,8 @@
  *  MA  02111-1307  USA
  */
 
+#include <config.h>
+#include <string.h>
 #include <math.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
