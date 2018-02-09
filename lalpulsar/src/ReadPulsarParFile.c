@@ -56,8 +56,6 @@
 
 */
 
-#include <lal/ReadPulsarParFile.h>
-
 #include <config.h>
 #include <string.h>
 #include <math.h>
@@ -73,6 +71,7 @@
 #include <lal/TranslateAngles.h>
 #include <lal/TranslateMJD.h>
 #include <lal/LALHashFunc.h>
+#include <lal/ReadPulsarParFile.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
