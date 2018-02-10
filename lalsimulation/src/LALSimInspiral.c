@@ -150,6 +150,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(IMRPhenomC),
     INITIALIZE_NAME(IMRPhenomD),
     INITIALIZE_NAME(IMRPhenomD_NRTidal),
+    INITIALIZE_NAME(IMRPhenomHM),
     INITIALIZE_NAME(IMRPhenomP),
     INITIALIZE_NAME(IMRPhenomPv2),
     INITIALIZE_NAME(IMRPhenomPv2_NRTidal),
@@ -1333,6 +1334,27 @@ int XLALSimInspiralChooseFDWaveform(
                 (*hctilde)->data->data[j] = -I*cfac * (*hptilde)->data->data[j];
                 (*hptilde)->data->data[j] *= pfac;
             }
+            break;
+
+        case IMRPhenomHM:
+            /* Waveform-specific sanity checks */
+            // if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+            // ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
+            if (!checkTransverseSpinsZero(S1x, S1y, S2x, S2y))
+                ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
+            if (!checkTidesZero(lambda1, lambda2))
+                ABORT_NONZERO_TIDES(LALparams);
+            /* Call the waveform driver routine */
+
+            REAL8Sequence *freqs = XLALCreateREAL8Sequence(2);
+            freqs->data[0] = f_min;
+            freqs->data[1] = f_max;
+            ret = XLALSimIMRPhenomHM(hptilde, hctilde, freqs, m1, m2,
+                                     S1z, S2z, distance, inclination, phiRef, deltaF, f_ref,
+                                     LALparams);
+            if (ret == XLAL_FAILURE)
+                XLAL_ERROR(XLAL_EFUNC);
+            XLALDestroyREAL8Sequence(freqs);
             break;
 
         case EOBNRv2_ROM:
@@ -4710,6 +4732,7 @@ int XLALSimInspiralImplementedFDApproximants(
         case IMRPhenomC:
         case IMRPhenomD:
         case IMRPhenomD_NRTidal:
+        case IMRPhenomHM:
         case IMRPhenomP:
         case IMRPhenomPv2:
         case IMRPhenomPv2_NRTidal:
@@ -5142,6 +5165,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case IMRPhenomC:
     case IMRPhenomD:
     case IMRPhenomD_NRTidal:
+    case IMRPhenomHM:
     case SEOBNRv1:
     case SEOBNRv2:
     case SEOBNRv4:
@@ -5262,6 +5286,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case NR_hdf5:
     case NRSur4d2s:
     case NRSur7dq2:
+    case IMRPhenomHM:
     case NumApproximants:
       testGR_accept=LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS;
       break;

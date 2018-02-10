@@ -82,6 +82,7 @@ const char * usage =
 "                             IMRPhenomB\n"
 "                             IMRPhenomC\n"
 "                             IMRPhenomD\n"
+"                             IMRPhenomHM\n"
 "                             IMRPhenomPv2\n"
 "                             EOBNRv2\n"
 "                             EOBNRv2HM\n"
