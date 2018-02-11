@@ -17,7 +17,7 @@ If you with to contribute new code, or changes to existing code, please follow t
 
 **You only need to do this once**
 
-1. Go to the [LALSuite repository home page](/lscsoft/lalsuite)
+1. Go to the [LALSuite repository home page](https://git.ligo.org/lscsoft/lalsuite)
 2. Click on the *Fork* button, that should lead you [here](https://git.ligo.org/lscsoft/lalsuite/fork/new)
 
 If you can't see the *Fork* button, make sure that you are logged in by checking for your account profile photo in the top right-hand corner of the screen.
