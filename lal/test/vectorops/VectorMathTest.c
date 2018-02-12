@@ -37,7 +37,7 @@
 #define frand() (rand() / (REAL4)RAND_MAX)
 #define Relerr(dx,x) (fabsf(x)>0 ? fabsf((dx)/(x)) : fabsf(dx) )
 #define Relerrd(dx,x) (fabs(x)>0 ? fabs((dx)/(x)) : fabs(dx) )
-#define cRelerr(dx,x) (cabsf(x)>0 ? cabsf((dx)/(x)) : cabsf(dx) )
+#define cRelerr(dx,x) (cabsf(x)>0 ? cabsf((dx)/(x)) : fabsf(dx) )
 
 // ----- test and benchmark operators with 1 REAL4 vector input and 1 REAL4 vector output (S2S) ----------
 #define TESTBENCH_VECTORMATH_S2S(name,in)                               \
