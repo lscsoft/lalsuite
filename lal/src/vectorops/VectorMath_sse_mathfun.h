@@ -43,6 +43,7 @@
 
 /* __m128 is ugly to write */
 typedef __m128 v4sf;  // vector of 4 float (sse1)
+typedef __m128d v2sf;  // vector of 2 double (sse1)
 
 #ifdef USE_SSE2
 # include <emmintrin.h>
@@ -61,6 +62,17 @@ typedef ALIGN16_BEG union {
   v2si vi;
 #endif
 } ALIGN16_END V4SF;
+
+typedef ALIGN16_BEG union {
+  double f[2];
+  int i[2];
+  v2sf  v;
+#ifdef USE_SSE2
+  v4si vi;
+#else
+  v2si vi;
+#endif
+} ALIGN16_END V2SF;
 
 // ---------- Prototypes ----------
 static v4sf sin_ps(v4sf x);
