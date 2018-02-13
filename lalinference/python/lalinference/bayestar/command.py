@@ -31,12 +31,12 @@ import itertools
 import logging
 import os
 import shutil
-import sqlite3
 import sys
 import tempfile
 import matplotlib
 from matplotlib import cm
 from ..plot import cmap
+from ..util import sqlite
 
 
 # Set no-op Matplotlib backend to defer importing anything that requires a GUI
@@ -410,25 +410,6 @@ class DirType(object):
         return string
 
 
-def sqlite_open_a(string):
-    return sqlite3.connect(string)
-
-def sqlite_open_r(string):
-    if (sys.version_info.major, sys.version_info.minor) >= (3, 4):
-        return sqlite3.connect('file:{}?mode=ro'.format(string), uri=True)
-    else:  # FIXME: remove this code path when we drop Python < 3.4
-        fd = os.open(string, os.O_RDONLY)
-        try:
-            return sqlite3.connect('/dev/fd/{}'.format(fd))
-        finally:
-            os.close(fd)
-
-def sqlite_open_w(string):
-    with open(string, 'wb') as f:
-        pass
-    return sqlite3.connect(string)
-
-
 class SQLiteType(argparse.FileType):
     """Open an SQLite database, or fail if it does not exist.
     FIXME: use SQLite URI when we drop support for Python < 3.4.
@@ -446,6 +427,7 @@ class SQLiteType(argparse.FileType):
     argparse.ArgumentTypeError: ...
 
     If the file already exists, then it's fine:
+    >>> import sqlite3
     >>> filetype = SQLiteType('r')
     >>> with tempfile.NamedTemporaryFile() as f:
     ...     with sqlite3.connect(f.name) as db:
@@ -498,26 +480,10 @@ class SQLiteType(argparse.FileType):
         self.mode = mode
 
     def __call__(self, string):
-        if string in {'-', '/dev/stdin', '/dev/stdout'}:
-            raise argparse.ArgumentTypeError(
-                'Cannot open stdin/stdout as an SQLite database')
-        openers = {'a': sqlite_open_a, 'r': sqlite_open_r, 'w': sqlite_open_w}
-        opener = openers[self.mode]
         try:
-            return opener(string)
-        except (OSError, sqlite3.Error) as e:
-            raise argparse.ArgumentTypeError(
-                'Failed to open database {}: {}'.format(string, e))
-
-
-def sqlite_get_filename(connection):
-    """Get the name of the file associated with an SQLite connection"""
-    result = connection.execute('pragma database_list').fetchall()
-    try:
-        (_, _, filename), = result
-    except ValueError:
-        raise RuntimeError('Expected exactly one attached database')
-    return filename
+            return sqlite.open(string, self.mode)
+        except OSError as e:
+            raise argparse.ArgumentTypeError(e)
 
 
 def rename(src, dst):

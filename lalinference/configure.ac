@@ -25,6 +25,7 @@ AC_CONFIG_FILES([ \
   python/lalinference/popprior/Makefile \
   python/lalinference/rapid_pe/Makefile \
   python/lalinference/tiger/Makefile \
+  python/lalinference/util/Makefile \
   src/LALInferenceVCSInfo.c \
   src/LALInferenceVCSInfo.h \
   src/Makefile \

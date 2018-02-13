@@ -72,6 +72,7 @@ import sqlite3
 import numpy as np
 from lalinference.io import fits
 from lalinference.bayestar.postprocess import find_injection_moc
+from lalinference.util import sqlite
 
 
 def startup(dbfilename, opts_contour, opts_modes, opts_area):
@@ -108,7 +109,7 @@ def process(fitsfilename):
     if row is None:
         raise ValueError(
             "No database record found for event '{0}' in '{1}'".format(
-                coinc_event_id, command.sqlite_get_filename(db)))
+                coinc_event_id, sqlite.get_filename(db)))
     simulation_id, true_ra, true_dec, true_dist, far, snr = row
     searched_area, searched_prob, offset, searched_modes, contour_areas, \
         area_probs, contour_modes, searched_prob_dist, contour_dists, \
@@ -153,7 +154,7 @@ if __name__ == '__main__':
             from multiprocessing import Pool
         map = Pool(
             opts.jobs, startup,
-            (command.sqlite_get_filename(db), contours, modes, areas)
+            (sqlite.get_filename(db), contours, modes, areas)
             ).imap
 
     colnames = (
