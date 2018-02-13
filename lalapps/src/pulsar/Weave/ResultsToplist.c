@@ -1020,22 +1020,44 @@ int XLALWeaveResultsToplistCompare(
 #define fRELERR(x,y) ( fabsf( (x) - (y) ) / FINITE_OR_ONE( 0.5 * (fabsf(x) + fabsf(y)) ) )
             REAL4 relerr_1 = fRELERR( rankstat_1, lowest_1 );
             REAL4 relerr_2 = fRELERR( rankstat_2, lowest_2 );
-            if ( relerr_1 < result_tol->relErr_atMaxAbsx ) {
-              skip_1 ++;
+            BOOLEAN can_skip_1 = ( relerr_1 < result_tol->relErr_atMaxAbsx );
+            BOOLEAN can_skip_2 = ( relerr_2 < result_tol->relErr_atMaxAbsx );
+            UINT4 skip = 0;
+            if( can_skip_1 && can_skip_2 ) {
+              // heuristic: if one TL has fewer skipped entries, skip one from that one
+              if ( skip_1 < skip_2 ) {
+                skip = 1;
+              } else if ( skip_2 < skip_1 ) {
+                skip = 2;
+              } else { // heuristic: if equal number of skips: skip the one closer to threshold
+                if ( relerr_1 < relerr_2 ) {
+                  skip = 1;
+                } else {
+                  skip = 2;
+                }
+              }
+            } else if ( can_skip_1 ) {
+              skip = 1;
+            } else if ( can_skip_2 ) {
+              skip = 2;
+            }
+
+            if ( skip ) {
+              if ( skip == 1 ) {
+                skip_1 ++;
+                XLALPrintInfo( "Toplist 1 ranking statistics %.15g is within tolerance %g from lowest element %.15g => skipping\n",
+                               rankstat_1, result_tol->relErr_atMaxAbsx, lowest_1 );
+              } else if ( skip == 2 ) {
+                skip_2 ++;
+                XLALPrintInfo( "Toplist 2 ranking statistics %.15g is within tolerance %g from lowest element %.15g => skipping\n",
+                               rankstat_2, result_tol->relErr_atMaxAbsy, lowest_2 );
+              }
               if ( i > 0 ) {
                 i --; // Try to repeat last loop step
               }
-              XLALPrintInfo( "Toplist 1 ranking statistics %.15g is within tolerance %g from lowest element %.15g => skipping\n", rankstat_1, result_tol->relErr_atMaxAbsx, lowest_1 );
               continue;
             }
-            if ( relerr_2 < result_tol->relErr_atMaxAbsy ) {
-              skip_2 ++;
-              if ( i > 0 ) {
-                i --; // Try to repeat last loop step
-              }
-              XLALPrintInfo( "Toplist 2 ranking statistics %.15g is within tolerance %g from lowest element %.15g => skipping\n", rankstat_2, result_tol->relErr_atMaxAbsy, lowest_2 );
-              continue;
-            }
+
             if ( !equal_semi ) {
               XLALPrintError( "Negative: failed comparison\n" );
               ( *equal ) = 0;	// Neither candidate close to threshold ==> comparison failed
@@ -1076,7 +1098,8 @@ int XLALWeaveResultsToplistCompare(
         break;
       }
 
-      XLAL_CHECK( skip_1 == skip_2, XLAL_ETOL, "%s: Failed to match up toplists after skipping near-threshold candidates.\n", __func__ );  // Sanity check: shouldn't be possible
+      // Sanity check: shouldn't be possible
+      XLAL_CHECK( skip_1 == skip_2, XLAL_ETOL, "%s: Failed to match up toplists after skipping (%d != %d) near-threshold candidates.\n", __func__, skip_1, skip_2 );
       // Truncate results vector to length of matched lists
       UINT4 n_matched = n - skip_1;
       res_1->length = n_matched;
