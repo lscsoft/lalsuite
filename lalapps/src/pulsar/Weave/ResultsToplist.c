@@ -1062,7 +1062,11 @@ int XLALWeaveResultsToplistCompare(
               coh_phys_1.fkdot[k] = items_1[i_1]->coh_fkdot[k][j];
               coh_phys_2.fkdot[k] = items_2[i_2]->coh_fkdot[k][j];
             };
-            XLAL_CHECK( compare_templates( equal, loc_str, "coherent", param_tol_mism, setup->metrics->coh_rssky_metric[j], setup->metrics->coh_rssky_transf[j], coh_index_1, coh_index_2, &coh_phys_1, &coh_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+            BOOLEAN equal_coh = 1;
+            XLAL_CHECK( compare_templates( &equal_coh, loc_str, "coherent", param_tol_mism, setup->metrics->coh_rssky_metric[j], setup->metrics->coh_rssky_transf[j], coh_index_1, coh_index_2, &coh_phys_1, &coh_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+            if ( !equal_coh ) {
+              XLALPrintInfo( "%s: coherent-template mismatch detected, but continuing.\n" , __func__ );
+            }
           }
         }
 
