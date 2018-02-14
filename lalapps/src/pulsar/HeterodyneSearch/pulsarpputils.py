@@ -837,19 +837,16 @@ def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, mplparams=F
       maxsamp = np.max(pos_samps)
 
     if withhist:
-      ax1.hold(True)
       ax1.plot(pos_samps, '.', color=coldict[ifo], markersize=1)
 
       n, binedges = np.histogram( pos_samps, withhist, density=True )
       n = np.append(n, 0)
-      ax2.hold(True)
       ax2.step(n, binedges, color=coldict[ifo])
 
       if np.max(n) > maxn:
         maxn = np.max(n)
     else:
       plt.plot(pos_samps, '.', color=coldict[ifo], markersize=1)
-      plt.hold(True)
 
     if grr:
       try:
