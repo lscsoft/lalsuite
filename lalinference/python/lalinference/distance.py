@@ -294,6 +294,12 @@ Next, integrate analytically.
 Compare the two.
 >>> np.testing.assert_almost_equal(P, P_expected, decimal=4)
 
+Check that we get the same answer if the input is in ring ordering.
+FIXME: this is a very weak test, because the input sky map is isotropic!
+>>> P = volume_render(x, y, dmax, 0, 1, R, True,
+...                   prob, distmu, distsigma, distnorm)
+>>> np.testing.assert_almost_equal(P, P_expected, decimal=4)
+
 Last, check that we don't have a coordinate singularity at the origin.
 >>> x = np.concatenate(([0], np.logspace(1 - n, 0, n) * dmax))
 >>> y = 0.0
@@ -325,6 +331,14 @@ Returns
 -------
 pdf : `numpy.ndarray`
     Marginal probability density according to ansatz.
+
+>>> npix = 12
+>>> prob, distmu, distsigma, distnorm = np.random.uniform(size=(4, 12))
+>>> r = np.linspace(0, 1)
+>>> pdf_expected = np.dot(
+...     conditional_pdf(r[:, np.newaxis], distmu, distsigma, distnorm), prob)
+>>> pdf = marginal_pdf(r, prob, distmu, distsigma, distnorm)
+>>> np.testing.assert_allclose(pdf, pdf_expected, rtol=1e-4)
 """)
 marginal_pdf = require_contiguous(marginal_pdf)
 
@@ -349,6 +363,14 @@ Returns
 -------
 cdf : `numpy.ndarray`
     Marginal cumulative probability according to ansatz.
+
+>>> npix = 12
+>>> prob, distmu, distsigma, distnorm = np.random.uniform(size=(4, 12))
+>>> r = np.linspace(0, 1)
+>>> cdf_expected = np.dot(
+...     conditional_cdf(r[:, np.newaxis], distmu, distsigma, distnorm), prob)
+>>> cdf = marginal_cdf(r, prob, distmu, distsigma, distnorm)
+>>> np.testing.assert_allclose(cdf, cdf_expected, rtol=1e-4)
 """)
 marginal_cdf = require_contiguous(marginal_cdf)
 
@@ -374,6 +396,13 @@ Returns
 -------
 r : `numpy.ndarray`
     Distance at which the cdf is equal to `p`.
+
+>>> npix = 12
+>>> prob, distmu, distsigma, distnorm = np.random.uniform(size=(4, 12))
+>>> r_expected = np.linspace(0.4, 0.7)
+>>> cdf = marginal_cdf(r_expected, prob, distmu, distsigma, distnorm)
+>>> r = marginal_ppf(cdf, prob, distmu, distsigma, distnorm)
+>>> np.testing.assert_allclose(r, r_expected, rtol=1e-4)
 """)
 marginal_ppf = require_contiguous(marginal_ppf)
 
