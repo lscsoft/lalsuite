@@ -12,7 +12,7 @@ Source: %{name}-%{version}.tar.xz
 URL: http://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: glib2-devel
+BuildRequires: glib2-devel >= 2.14
 BuildRequires: gsl-devel
 BuildRequires: libmetaio-devel
 BuildRequires: numpy
@@ -50,7 +50,7 @@ that use the LAL DetChar library.
 Summary: Files and documentation needed for compiling programs that use LAL DetChar
 Group: LAL
 Requires: %{name} = %{version}
-Requires: glib2-devel
+Requires: glib2-devel >= 2.14
 Requires: gsl-devel
 Requires: libmetaio-devel
 Requires: lal-devel >= @MIN_LAL_VERSION@
