@@ -28,5 +28,6 @@ REAL8 XLALSimUniversalRelation( REAL8 x, REAL8 coeffs[] );
 REAL8 XLALSimUniversalRelationlambda3TidalVSlambda2Tidal( REAL8 lambda2Tidal );
 REAL8 XLALSimUniversalRelationomega02TidalVSlambda2Tidal( REAL8 lambda2Tidal );
 REAL8 XLALSimUniversalRelationomega03TidalVSlambda3Tidal( REAL8 lambda3Tidal );
+REAL8 XLALSimUniversalRelationQuadMonVSlambda2Tidal( REAL8 lambda2Tidal );
 
 #endif /* LALSimUniversalRelations_h */

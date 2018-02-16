@@ -449,6 +449,8 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
   REAL8 omega02Tidal2 = 0;
   REAL8 lambda3Tidal2 = 0;
   REAL8 omega03Tidal2 = 0;
+  REAL8 quadparam1 = 0;
+  REAL8 quadparam2 = 0;
 
   lambda2Tidal1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALParams);
   lambda2Tidal2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALParams);
@@ -478,6 +480,8 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
           XLAL_ERROR (XLAL_EDOM);
       }
     }
+  quadparam1 = 1. + XLALSimInspiralWaveformParamsLookupdQuadMon1(LALParams);
+  quadparam2 = 1. + XLALSimInspiralWaveformParamsLookupdQuadMon2(LALParams);
 
 
   REAL8Vector *nqcCoeffsInput = XLALCreateREAL8Vector(10);
@@ -499,7 +503,7 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
 #endif
       ret = XLALSimIMRSpinAlignedEOBWaveformAll (hplus, hcross, tVec, rVec, phiVec, prVec, pPhiVec,
                      phiC, 1./32768, m1BH, m2BH, 2*pow(10.,-1.5)/(2.*LAL_PI)/((m1BH + m2BH)*LAL_MTSUN_SI/LAL_MSUN_SI), r, inc, spin1z, spin2z, 400,
-					 0, 0, 0, 0, 0, 0, 0, 0, nqcCoeffsInput, nqcFlag);
+					 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, nqcCoeffsInput, nqcFlag);
 
       if( tVec )
         XLALDestroyREAL8Vector( tVec );
@@ -530,6 +534,7 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
                                                  omega02Tidal1, omega02Tidal2,
                                                  lambda3Tidal1, lambda3Tidal2,
                                                  omega03Tidal1, omega03Tidal2,
+                                                 quadparam1, quadparam2,
                                                  nqcCoeffsInput, nqcFlag);
       if( tVec )
         XLALDestroyREAL8Vector( tVec );
@@ -623,6 +628,10 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
                      /**<< octupole f-mode angular freq for body 1 m_1*omega_{03,1}*/
 				     const REAL8 omega03Tidal2,
                      /**<< octupole f-mode angular freq for body 2 m_2*omega_{03,2}*/
+             const REAL8 quadparam1,
+                     /**<< parameter kappa_1 of the spin-induced quadrupole for body 1, quadrupole is Q_A = -kappa_A m_A^3 chi_A^2 */
+				     const REAL8 quadparam2,
+                     /**<< parameter kappa_2 of the spin-induced quadrupole for body 2, quadrupole is Q_A = -kappa_A m_A^3 chi_A^2 */
                      REAL8Vector *nqcCoeffsInput,
                      /**<< Input NQC coeffs */
                      const INT4 nqcFlag
@@ -986,17 +995,20 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 
 // Rescale tidal polarizabilites by powers of mNS/M
 // Rescale f-mode freqs by M/mNS
+// No rescaling needed for spin-induced quadrupole parameters
   tidal1.mByM = m1SI / (m1SI + m2SI);
   tidal1.lambda2Tidal = lambda2Tidal1 * pow(tidal1.mByM,5);
   tidal1.omega02Tidal = omega02Tidal1 / tidal1.mByM;
   tidal1.lambda3Tidal = lambda3Tidal1 * pow(tidal1.mByM,7);
   tidal1.omega03Tidal = omega03Tidal1 / tidal1.mByM;
+  tidal1.quadparam = quadparam1;
 
   tidal2.mByM = m2SI / (m1SI + m2SI);
   tidal2.lambda2Tidal = lambda2Tidal2 * pow(tidal2.mByM,5);
   tidal2.omega02Tidal = omega02Tidal2 / tidal2.mByM;
   tidal2.lambda3Tidal = lambda3Tidal2 * pow(tidal2.mByM,7);
   tidal2.omega03Tidal = omega03Tidal2 / tidal2.mByM;
+  tidal2.quadparam = quadparam2;
 
   seobCoeffs.tidal1 = &tidal1;
   seobCoeffs.tidal2 = &tidal2;
@@ -1127,7 +1139,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 
   if (XLALSimIMREOBCalcSpinFacWaveformCoefficients
       (&hCoeffs, m1, m2, eta, tplspin, chiS, chiA,
-       SpinAlignedEOBversion) == XLAL_FAILURE)
+       SpinAlignedEOBversion, &seobParams) == XLAL_FAILURE)
     {
       XLALDestroyREAL8Vector (sigmaKerr);
       XLALDestroyREAL8Vector (sigmaStar);
