@@ -377,10 +377,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   /* Init ephemerides */
   XLAL_CHECK ( (cfg->edat = XLALInitBarycenter ( uvar->ephemEarth, uvar->ephemSun )) != NULL, XLAL_EFUNC );
 
-  /* check for negative fMin and Band, which would break the fMin_eff, fBand_eff calculation below */
-  XLAL_CHECK ( uvar->fmin >= 0, XLAL_EDOM, "Invalid negative frequency fMin=%f!\n\n", uvar->fmin );
-  XLAL_CHECK ( uvar->Band > 0, XLAL_EDOM, "Invalid non-positive frequency band Band=%f!\n\n", uvar->Band );
-
   // ---------- check user-input consistency ----------
 
   // ----- check if frames + frame channels given
@@ -422,9 +418,17 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   XLAL_CHECK ( !haveOverlap || !( have_noiseSFTs || have_timestampsFiles ), XLAL_EINVAL, "--SFToverlap incompatible with {--noiseSFTs or --timestampsFiles}\n" );
 
 
-  // in general frequency-band taken from user-input (or its default values) [default can be overloaded by noiseSFTs, though]
-  cfg->fminOut = uvar->fmin;
-  cfg->BandOut = uvar->Band;
+  // frequency-band either taken here from user-input, or later from noiseSFTs (no defaults)
+  UINT4 nSetfminBand = UVAR_SET2(fmin,Band);
+  XLAL_CHECK ( (nSetfminBand==2) || ( (nSetfminBand==0) && have_noiseSFTs ), XLAL_EINVAL, "Need either 'noiseSFTs' or BOTH of 'fMin' and 'Band'!\n");
+  if ( nSetfminBand==2 )
+    {
+      /* check for negative fMin and Band, which would break the fMin_eff, fBand_eff calculation below */
+      XLAL_CHECK ( uvar->fmin >= 0, XLAL_EDOM, "Invalid negative frequency fMin=%f!\n\n", uvar->fmin );
+      XLAL_CHECK ( uvar->Band > 0, XLAL_EDOM, "Invalid non-positive frequency band Band=%f!\n\n", uvar->Band );
+      cfg->fminOut = uvar->fmin;
+      cfg->BandOut = uvar->Band;
+    }
 
   // now handle the 3 mutually-exclusive cases: have_noiseSFTs || have_timestampsFiles || have_startTime (only)
   if ( have_noiseSFTs )
@@ -450,18 +454,14 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       // extract IFOs from multi-SFT catalog
       XLAL_CHECK ( XLALMultiLALDetectorFromMultiSFTCatalogView ( &(cfg->multiIFO), cfg->multiNoiseCatalogView ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-      // if user didn't specify a frequency range: extract the range from noise SFTs and use that one
-      UINT4 nSet = UVAR_SET2(fmin,Band);
-      XLAL_CHECK ( (nSet == 2) || (nSet == 0), XLAL_EINVAL, "Either none of both of 'fMin' and 'Band' need to be specified!\n");
       // if not given by user: extract frequency start + band from noise SFT catalog
-      if ( nSet == 0 )
+      if ( !UVAR_ANYSET2(fmin,Band) )
         {
           const SFTDescriptor *desc = &(cfg->multiNoiseCatalogView->data[0].data[0]);
           REAL8 noise_fmin    = desc->header.f0;
           REAL8 noise_dFreq   = desc->header.deltaF;
           UINT4 noise_numBins = desc->numBins;
           REAL8 noise_band    = (noise_numBins-1) * noise_dFreq;
-          // user give no input on {fmin,Band}: overload default values with noise-SFT values
           cfg->fminOut = noise_fmin;
           cfg->BandOut = noise_band;
         }
@@ -604,8 +604,6 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
   uvar->Tsft = 1800;
-  uvar->fmin = 0;	/* no heterodyning by default */
-  uvar->Band = 8192;	/* 1/2 LIGO sampling rate by default */
   uvar->outSingleSFT = 1; /* write our a single SFT file by default */
 
 #define MISC_DEFAULT "mfdv5"
@@ -633,8 +631,8 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember( timestampsFiles,       STRINGVector, 0,  OPTIONAL, "ALTERNATIVE: File to read timestamps from (file-format: lines with <seconds> <nanoseconds>)");
 
   /* sampling and heterodyning frequencies */
-  XLALRegisterUvarMember(  fmin,                 REAL8, 0, OPTIONAL, "Lowest frequency in output SFT (= heterodyning frequency)");
-  XLALRegisterUvarMember(  Band,                 REAL8, 0, OPTIONAL, "Bandwidth of output SFT in Hz (= 1/2 sampling frequency)");
+  XLALRegisterUvarMember(  fmin,                 REAL8, 0, NODEFAULT, "Lowest frequency in output SFT (heterodyning frequency), REQUIRED unless --noiseSFTs given.");
+  XLALRegisterUvarMember(  Band,                 REAL8, 0, NODEFAULT, "Bandwidth of output SFT in Hz (= 1/2 sampling frequency), REQUIRED unless --noiseSFTs given.");
 
   /* SFT properties */
   XLALRegisterUvarMember(  Tsft,                 REAL8, 0, OPTIONAL, "Time baseline of one SFT in seconds");
@@ -646,7 +644,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember( injectionSources,     STRINGVector, 0, OPTIONAL,  "Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}')" );
 
   /* noise */
-  XLALRegisterUvarMember( noiseSFTs,          STRING, 'D', OPTIONAL, "Noise-SFTs to be added to signal (Used also to set IFOs and timestamps)");
+  XLALRegisterUvarMember( noiseSFTs,          STRING, 'D', OPTIONAL, "Noise-SFTs to be added to signal (Used also to set IFOs and timestamps, and frequency range unless separately specified.)");
 
   /* frame input/output options */
 #ifdef HAVE_LIBLALFRAME

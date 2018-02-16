@@ -1202,8 +1202,6 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
   uvar->Tsft = 1800;
-  uvar->fmin = 0;	/* no heterodyning by default */
-  uvar->Band = 8192;	/* 1/2 LIGO sampling rate by default */
 
   // per default we now generate a timeseries per SFT: slower, but avoids potential confusion about sft-"nudging"
   uvar->generationMode = GENERATE_PER_SFT;
@@ -1238,8 +1236,8 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember( timestampsFile,      STRING, 0,  OPTIONAL, "ALTERNATIVE: File to read timestamps from (file-format: lines with <seconds> <nanoseconds>)");
 
   /* sampling and heterodyning frequencies */
-  XLALRegisterUvarMember(  fmin,                 REAL8, 0, OPTIONAL, "Lowest frequency in output SFT (= heterodyning frequency)");
-  XLALRegisterUvarMember(  Band,                 REAL8, 0, OPTIONAL, "Bandwidth of output SFT in Hz (= 1/2 sampling frequency)");
+  XLALRegisterUvarMember(  fmin,                 REAL8, 0, REQUIRED, "Lowest frequency in output SFT (= heterodyning frequency)");
+  XLALRegisterUvarMember(  Band,                 REAL8, 0, REQUIRED, "Bandwidth of output SFT in Hz (= 1/2 sampling frequency)");
 
   /* SFT properties */
   XLALRegisterUvarMember(  Tsft,                 REAL8, 0, OPTIONAL, "Time baseline of one SFT in seconds");
@@ -1274,7 +1272,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember(  orbitArgp,            REAL8, 0, OPTIONAL, "Argument of periapsis (radians)");
 
   /* noise */
-  XLALRegisterUvarMember( noiseSFTs,          STRING, 'D', OPTIONAL, "Noise-SFTs to be added to signal (Uses ONLY SFTs falling within (--startTime,--duration) or the set given in --timstampsFile)");
+  XLALRegisterUvarMember( noiseSFTs,          STRING, 'D', OPTIONAL, "Noise-SFTs to be added to signal (Uses ONLY SFTs falling within (--startTime,--duration) or the set given in --timstampsFile, and ONLY within (--fmin,--Band).)");
   XLALRegisterUvarMember(  noiseSqrtSh,          REAL8, 0, OPTIONAL,  "Gaussian noise with single-sided PSD sqrt(Sh)");
 
   XLALRegisterUvarMember(  lineFeature,          BOOLEAN, 0, OPTIONAL, "Generate a monochromatic 'line' of amplitude h0 and frequency 'Freq'}");
