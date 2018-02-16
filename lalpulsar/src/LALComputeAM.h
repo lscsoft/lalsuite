@@ -156,6 +156,9 @@ MultiAMCoeffs *XLALComputeMultiAMCoeffs ( const MultiDetectorStateSeries *multiD
 AMCoeffs *XLALCreateAMCoeffs ( UINT4 numSteps );
 void XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef );
 void XLALDestroyAMCoeffs ( AMCoeffs *amcoef );
+REAL4 XLALComputeAntennaPatternSqrtDeterminant ( REAL4 A, REAL4 B, REAL4 C, REAL4 E );
+void XLALSetAntennaPatternMaxCond ( REAL4 max_cond );
+void XLALSetAntennaPatternIllCondDeterminant ( REAL4 illCondDeterminant );
 
 /*@}*/
 
