@@ -88,6 +88,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_bindir}/lalsimulation_version
 %{_datarootdir}/lalsimulation/LALSimNeutronStarEOS_*
 %{_datarootdir}/lalsimulation/LIGO-P1200087*
+%{_datarootdir}/lalsimulation/LIGO-P1600143*
 %{_datarootdir}/lalsimulation/LIGO-T0900288*
 %{_datarootdir}/lalsimulation/LIGO-T1600593*
 %{_libdir}/*.so.*
