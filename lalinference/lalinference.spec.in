@@ -173,6 +173,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_bindir}/bayestar_*
 %{_bindir}/imrtgr_*
 %{_bindir}/rapidpe_*
+%{_bindir}/cbcBayes*
 %{_libdir}/python*
 
 %files octave
