@@ -1,4 +1,5 @@
 usr/bin/bayestar_*
 usr/bin/lalinference_pipe
 usr/bin/rapidpe_*
+usr/bin/cbcBayes*
 usr/lib/python2*
