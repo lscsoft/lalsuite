@@ -60,5 +60,5 @@ setup(
     package_data={'': ['*.so']},
     ext_modules=[Extension(filename.replace('.so', '').replace('/', '.'), [])
                  for filename in glob('lal*/**/*.so')],
-    install_requires=['numpy']
+    install_requires=['numpy>=1.7']
 )
