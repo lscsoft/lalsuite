@@ -21,16 +21,13 @@ Functions that support the command line interface.
 
 from __future__ import print_function
 import argparse
-import contextlib
 from distutils.dir_util import mkpath
 from distutils.errors import DistutilsFileError
-import errno
 import glob
 import inspect
 import itertools
 import logging
 import os
-import shutil
 import sys
 import tempfile
 import matplotlib
@@ -58,16 +55,6 @@ mpl_version = distutils.version.LooseVersion(matplotlib.__version__)
 def get_version():
     from .. import InferenceVCSInfo as vcs_info
     return vcs_info.name + ' ' + vcs_info.version
-
-
-@contextlib.contextmanager
-def TemporaryDirectory(suffix='', prefix='tmp', dir=None, delete=True):
-    try:
-        dir = tempfile.mkdtemp(suffix=suffix, prefix=prefix, dir=dir)
-        yield dir
-    finally:
-        if delete:
-            shutil.rmtree(dir)
 
 
 class GlobAction(argparse._StoreAction):
@@ -418,6 +405,7 @@ class SQLiteType(argparse.FileType):
     Here is an example of trying to open a file that does not exist for
     reading (mode='r'). It should raise an exception:
 
+    >>> import tempfile
     >>> filetype = SQLiteType('r')
     >>> filename = tempfile.mktemp()
     >>> # Note, simply check or a FileNotFound error in Python 3.
@@ -484,35 +472,6 @@ class SQLiteType(argparse.FileType):
             return sqlite.open(string, self.mode)
         except OSError as e:
             raise argparse.ArgumentTypeError(e)
-
-
-def rename(src, dst):
-    """Like os.rename(src, dst), but works across different devices because it
-    catches and handles EXDEV ('Invalid cross-device link') errors."""
-    try:
-        os.rename(src, dst)
-    except OSError as e:
-        if e.errno == errno.EXDEV:
-            dir, suffix = os.path.split(dst)
-            tmpfid, tmpdst = tempfile.mkstemp(dir=dir, suffix=suffix)
-            try:
-                os.close(tmpfid)
-                shutil.copy2(src, tmpdst)
-                os.rename(tmpdst, dst)
-            except:
-                os.remove(tmpdst)
-                raise
-        else:
-            raise
-
-
-def rm_f(filename):
-    """Remove a file, or be silent if the file does not exist, like `rm -f`."""
-    try:
-        os.remove(filename)
-    except OSError as e:
-        if e.errno != errno.ENOENT:
-            raise
 
 
 def _sanitize_arg_value_for_xmldoc(value):

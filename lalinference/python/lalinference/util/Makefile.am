@@ -9,6 +9,7 @@ pymoduledir = $(pkgpythondir)/util
 
 pymodule_PYTHON = \
 	__init__.py \
+	file.py \
 	sqlite.py \
 	$(END_OF_LIST)
 

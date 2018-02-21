@@ -79,6 +79,7 @@ import six
 from lalinference.bayestar.sky_map import localize, rasterize
 from lalinference.io import fits
 from lalinference.io import events
+from lalinference.util.file import rename, TemporaryDirectory
 import ligo.gracedb.logging
 import ligo.gracedb.rest
 
@@ -149,12 +150,12 @@ for graceid in six.iterkeys(event_source):
         log.info("sky localization complete")
 
         # upload FITS file
-        with command.TemporaryDirectory() as fitsdir:
+        with TemporaryDirectory() as fitsdir:
             fitspath = os.path.join(fitsdir, opts.output)
             fits.write_sky_map(fitspath, sky_map, nest=True)
             log.debug('wrote FITS file: %s', opts.output)
             if opts.dry_run:
-                command.rename(fitspath, os.path.join('.', opts.output))
+                rename(fitspath, os.path.join('.', opts.output))
             else:
                 gracedb.writeLog(
                     graceid, "BAYESTAR rapid sky localization ready",
