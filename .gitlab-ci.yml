@@ -453,18 +453,6 @@ nightly:top-level:clang:
     - schedules
     - web
 
-nightly:mpi:jessie:
-  image: ligo/lalsuite-dev:jessie
-  stage: nightly
-  dependencies: []
-  script:
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --enable-mpi
-    - make -j4 distcheck
-  only:
-    - schedules
-    - web
-
 nightly:openmp:jessie:
   image: ligo/lalsuite-dev:jessie
   stage: nightly
