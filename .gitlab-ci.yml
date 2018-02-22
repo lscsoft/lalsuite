@@ -330,7 +330,7 @@ level4:lalapps:
     - make dist
     - tar xf lalapps-*.tar.xz
     - cd lalapps-*
-    - ./configure --enable-cfitsio --enable-swig --enable-doxygen --prefix=${LAL_DIR}
+    - ./configure --enable-cfitsio --enable-swig --enable-doxygen --enable-mpi --prefix=${LAL_DIR}
     - make -j4 V=1
     - make -j4 V=1 VERBOSE=1 check
     - make -j4 installcheck
@@ -461,18 +461,6 @@ nightly:top-level:clang:
     - CC=clang CXX=clang++ ./configure --enable-swig --enable-doxygen
     - make -j4 distcheck
   dependencies: []
-  only:
-    - schedules
-    - web
-
-nightly:mpi:jessie:
-  image: ligo/lalsuite-dev:jessie
-  stage: nightly
-  dependencies: []
-  script:
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --enable-mpi
-    - make -j4 distcheck
   only:
     - schedules
     - web
