@@ -770,8 +770,8 @@ int XLALSimIMRPhenomPv2NRTidal(
   const REAL8 distance,           /**< Distance of source (m) */
   const REAL8 lambda1,            /**< Dimensionless tidal deformability of mass 1 */
   const REAL8 lambda2,            /**< Dimensionless tidal deformability of mass 2 */
-  const REAL8 quadparam1,
-  const REAL8 quadparam2,
+  const REAL8 quadparam1,        /**< Spin-induced quadrupole moment of mass 1 */
+  const REAL8 quadparam2,        /**< Spin-induced quadrupole moment of mass 2 */
   const REAL8 phic,               /**< Orbital phase at the peak of the underlying non precessing model (rad) */
   const REAL8 deltaF,             /**< Sampling frequency (Hz) */
   const REAL8 f_min,              /**< Starting GW frequency (Hz) */
@@ -834,10 +834,10 @@ static int PhenomPCore_withTides(
   const REAL8 m1_SI_in,                      /**< Mass of companion 1 (kg) */
   const REAL8 m2_SI_in,                      /**< Mass of companion 2 (kg) */
   const REAL8 distance,                      /**< Distance of source (m) */
-  const REAL8 quadparam1_in,
-  const REAL8 quadparam2_in,
-  const REAL8 lambda1_in,
-  const REAL8 lambda2_in,
+  const REAL8 quadparam1_in,                 /**< Spin-induced quadrupole moment of mass 1 */
+  const REAL8 quadparam2_in,                 /**< Spin-induced quadrupole moment of mass 2 */
+  const REAL8 lambda1_in,                    /**< Dimensionless tidal deformability parameter of mass 1 */
+  const REAL8 lambda2_in,                    /**< Dimensioness tidal deformability parameter of mass 2 */
   const REAL8 alpha0,                        /**< Initial value of alpha angle (azimuthal precession angle) */
   const REAL8 phic,                          /**< Orbital phase at the peak of the underlying non precessing model (rad) */
   const REAL8 f_ref,                         /**< Reference frequency */
@@ -1863,8 +1863,8 @@ static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon) {
 
 static int PhenomPCoreOneFrequency_withTides(
   const REAL8 fHz,                            /**< Frequency (Hz) */
-  const REAL8 ampTidal,
-  COMPLEX16 phaseTidal,
+  const REAL8 ampTidal,                       /**< Planck taper applied in NRTidal models; defined in LALSimNRTunedTides.c */
+  COMPLEX16 phaseTidal,                       /**< Closed-form tidal phase calculated in NRTides infrastructure; defined in LALSimNRTunedTides.c */
   const REAL8 eta,                            /**< Symmetric mass ratio */
   const REAL8 chi1_l,                         /**< Dimensionless aligned spin on companion 1 */
   const REAL8 chi2_l,                         /**< Dimensionless aligned spin on companion 2 */

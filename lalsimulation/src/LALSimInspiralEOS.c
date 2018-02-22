@@ -45,7 +45,11 @@
    return eos;
  }
 
-REAL8 XLALSimInspiralEOSLambda(LALEquationOfState eos_type, REAL8 m_intr_msun){/** this must be fed the INTRINSIC mass */
+REAL8 XLALSimInspiralEOSLambda(
+    LALEquationOfState eos_type, /**< Any of the known EOS types; defined in LALSimInspiralEOS.h  */ 
+    REAL8 m_intr_msun /**< Mass of compact object (in solar masses) */
+)
+{
 
     /* this is fed the intrinsic masses and then computes the value of \Lambda(m) See Hinderer et al ( http://arxiv.org/abs/0911.3535 ) for details of the EOSes*/
     /* \Lambda(m) is in units of s^5 */
@@ -92,7 +96,13 @@ REAL8 XLALSimInspiralEOSLambda(LALEquationOfState eos_type, REAL8 m_intr_msun){/
     else return lambda;
 }
 
-REAL8 XLALLambdaQuadratic(REAL8 c0, REAL8 c1, REAL8 c2, REAL8 mass) {
+REAL8 XLALLambdaQuadratic(
+    REAL8 c0, /**< Source-independent parameter at leading order (at M=1.4 msun) in Taylor series expansion of \Lambda(m); arXiv:1307.8338 */ 
+    REAL8 c1, /**< Source-independent parameter at linear order expansion of \Lambda(m); arXiv:1307.8338 */
+    REAL8 c2, /**< Source-independent quadratic order coefficient in Taylor expansion of \Lambda(m); arxiv:1503.05405 */
+    REAL8 mass /**< Mass of neutron star in solar masses */
+) 
+{
     mass = mass*LAL_MTSUN_SI;
     // [LAMBDA0] = SEC^5; [LAMBDA1] = SEC^4; [LAMBDA2] = SEC^3
     REAL8 lambda = 1.0E-23*c0 + 1.0E-18*(mass-1.4*LAL_MTSUN_SI)*c1 + 1.0E-13*(mass-1.4*LAL_MTSUN_SI)*(mass-1.4*LAL_MTSUN_SI)*c2;
@@ -101,7 +111,10 @@ REAL8 XLALLambdaQuadratic(REAL8 c0, REAL8 c1, REAL8 c2, REAL8 mass) {
 }
  
 
-REAL8 XLALSimInspiralEOSQfromLambda(REAL8 lambda) {
+REAL8 XLALSimInspiralEOSQfromLambda(
+    REAL8 lambda /**< Dimensionless tidal deformability parameter */
+) 
+{
     /* Quadrupole-monopole parameter calculated from love number;
        see http://arxiv.org/abs/1303.1528 */
     REAL8 q, loglam;
@@ -122,7 +135,11 @@ REAL8 XLALSimInspiralEOSQfromLambda(REAL8 lambda) {
 
 }
 
-REAL8 XLALSimInspiralEOSqmparameter(LALEquationOfState eos_type, REAL8 m_intr_msun){
+REAL8 XLALSimInspiralEOSqmparameter(
+    LALEquationOfState eos_type, /**< EOS type */
+    REAL8 m_intr_msun /**< Mass of compact object (in solar masses) */
+)
+{
   
   REAL8 q = 0.0 ;
   REAL8 m = m_intr_msun ;
@@ -178,13 +195,14 @@ REAL8 XLALSimInspiralEOSqmparameter(LALEquationOfState eos_type, REAL8 m_intr_ms
  * quark stars (since the relation is calibrated for this mass range and for 
  * the EoS APR4, MS1, H4).
  * For a BH, (lambda=0) it returns the Schwarzschild radius.
- * The arguments are:
- * m_intr_msun              the intrinsic mass in solar masses
- * barlambda                the dimensionless tidal deformability (lambda/m^5)
  * The return value is the radius in meters.
  */
 
-REAL8 XLALSimInspiralNSRadiusOfLambdaM(REAL8 m_intr_msun, REAL8 barlambda){
+REAL8 XLALSimInspiralNSRadiusOfLambdaM(
+    REAL8 m_intr_msun, /**< Mass of compact object (in solar masses) */ 
+    REAL8 barlambda /**< Dimensionless tidal deformability parameter of compact object */
+)
+{
 
   REAL8 loglambda;
   REAL8 compactness, radius ;
@@ -227,13 +245,16 @@ REAL8 XLALSimInspiralNSRadiusOfLambdaM(REAL8 m_intr_msun, REAL8 barlambda){
  * This function estimates the radius for a binary of given masses and
  * tidal deformability parameters.
  * It uses XLALSimInspiralNSRadiusOfLambdaM() to calculate radii (see above).
- * The arguments are:
- * m1_intr, m2_intr                      the intrinsic masses in solar masses
- * barlambda1, barlambda2                the dimensionless tidal deformabilities (lambda_i/m_i^5)
  * The return value is the GW contact frequency in Hz.
  */
 
-REAL8 XLALSimInspiralContactFrequency(REAL8 m1_intr, REAL8 barlambda1, REAL8 m2_intr, REAL8 barlambda2){
+REAL8 XLALSimInspiralContactFrequency(
+    REAL8 m1_intr, /**< Mass of companion 1 (in solar masses) */ 
+    REAL8 barlambda1, /**< Dimensionless tidal deformability parameter of mass 1 */
+    REAL8 m2_intr, /**< Mass of companion 2 (in solar masses) */
+    REAL8 barlambda2 /**< Dimensionless tidal deformability parameter of mass 2 */
+)
+{
 
   REAL8 r1, r2, rtot, mtot, f_gw_contact;
 
