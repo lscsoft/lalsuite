@@ -379,11 +379,11 @@ class psr_par:
 
     # convert epochs (including binary epochs) to GPS if possible
     try:
-      import lalpulsar
+      from lalpulsar import TTMJDtoGPS
       for epoch in ['PEPOCH', 'POSEPOCH', 'DMEPOCH', 'T0', 'TASC', 'T0_2', 'T0_3']:
         if hasattr(self, epoch):
           setattr(self, epoch+'_ORIGINAL', self[epoch]) # save original value
-          setattr(self, epoch, lalpulsar.TTMJDtoGPS(self[epoch]))
+          setattr(self, epoch, TTMJDtoGPS(self[epoch]))
 
           if hasattr(self, epoch+'_ERR'): # convert errors from days to seconds
             setattr(self, epoch+'_ERR_ORIGINAL', self[epoch+'_ERR']) # save original value
@@ -2441,9 +2441,9 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
       # use functions from lalapps_nest2pos to read values from nested sample files i.e. not a posterior file created by lalapps_nest2pos
       try:
         from lalinference.io import read_samples
-        import lalinference
+        from lalinference import LALInferenceHDF5NestedSamplesDatasetName
 
-        samples = read_samples(postfile, tablename=lalinference.LALInferenceHDF5NestedSamplesDatasetName)
+        samples = read_samples(postfile, tablename=LALInferenceHDF5NestedSamplesDatasetName)
         params = samples.colnames
 
         # make everything a float, since that's what's excected of a CommonResultsObj
