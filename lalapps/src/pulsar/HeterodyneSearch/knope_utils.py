@@ -2111,6 +2111,8 @@ class knopeDAG(pipeline.CondorDAG):
           finetmpfiles = [] # file list to concatenate if there is more than one "dataset"
           if self.ndatasets[ifo] > 1: # create concatenation node for fine heterodyne
             fineoutput = os.path.join(freqfacdirfine, 'fine-%s-%d-%d.txt' % (ifo, int(self.starttime[ifo][0]), int(self.endtime[ifo][-1])))
+            if self.fine_heterodyne_gzip_output:
+              fineoutput += '.gz'
             concatjob = concatJob(subfile=os.path.join(freqfacdirfine, 'concat.sub'), output=fineoutput, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir)
           for k in range(self.ndatasets[ifo]):
             # create output files
@@ -2194,6 +2196,7 @@ class knopeDAG(pipeline.CondorDAG):
 
               if self.fine_heterodyne_gzip_output:
                 finenode.set_gzip_output()
+                finetmpfiles[-1] += '.gz'
 
               self.add_node(finenode)
             
