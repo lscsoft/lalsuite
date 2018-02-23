@@ -2198,8 +2198,9 @@ class knopeDAG(pipeline.CondorDAG):
               self.add_node(finenode)
             
             if self.ndatasets[ifo] > 1:
-              concatnode.set_files(finetmpfiles)
-              self.add_node(concatnode)
+              if k == self.ndatasets[ifo]-1:
+                concatnode.set_files(finetmpfiles)
+                self.add_node(concatnode)
               # reset output name to that for the concatenated file
               fineoutput = os.path.join(freqfacdirfine, 'fine-%s-%d-%d.txt' % (ifo, int(self.starttime[ifo][0]), int(self.endtime[ifo][-1])))
 
