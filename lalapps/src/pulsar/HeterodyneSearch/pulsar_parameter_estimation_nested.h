@@ -204,11 +204,12 @@ extern "C" {
                      of the time stamps) for use in Monte-Carlo studies. NOTE: this will not\n\
                      work if using the code to create injections\n"\
 " --truncate-time     maximum GPS time to be analyzed (discards data with larger\n\
-                     timestamp\n"\
+                     timestamp)\n"\
 " --truncate-samples  maximum sample number to be analyzed (analyzes only first\n\
                      datapoints and discards rest)\n"\
-"\n"\
 " --truncate-fraction fraction of data samples to be analyzed (0<f<=1)\n"\
+" --veto-threshold    veto any data samples with an absolute value greater than the input\n\
+                     threshold (defaults to 1e-18)\n"\
 "\n"\
 " Nested sampling parameters:\n"\
 " --Nlive             (INT4) no. of live points for nested sampling\n"\

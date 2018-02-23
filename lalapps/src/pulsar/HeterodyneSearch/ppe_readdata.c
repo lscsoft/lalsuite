@@ -76,7 +76,10 @@
  *
  * If using real data the files must be specified in the \c input-files command line argument - these should be comma
  * separated for multiple files and be in the same order at the associated detector from which they came given by the
- * \c detectors command.
+ * \c detectors command. Any potentially spuriously large data values, with an absolute value of greater than 1e-18
+ * will be vetoed when the data in read in. If requiring a different threshold for the veto (e.g., you are working
+ * with very low frequency data, or simulated data with a different scaling) then the value can be changed by setting
+ * it with the \c --veto-threshold command line argument.
  *
  * The function also checks that valid Earth and Sun ephemeris files (from the lalpulsar suite) are set with the \c
  * ephem-earth and \c ephem-sun arguments, and that a valid output file for the nested samples is set via the \c outfile
@@ -445,6 +448,11 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
     }
   }
 
+  /* ignore data with absolute value larger than some input value (defaults to 1e-18) to chop out spurious extremely load noise */
+  ppt = LALInferenceGetProcParamVal( commandLine, "--veto-threshold" );
+  REAL8 vetothresh = 1e-18;
+  if ( ppt != NULL ) { vetothresh = atof( ppt->value ); }
+
   /* read in data, needs to read in two sets of data for each ifo for pinsf model */
   for( i = 0, prev=NULL, prevmodel=NULL ; i < ml*numDets ; i++, prev=ifodata, prevmodel=ifomodel ){
     CHAR *datafile = NULL;
@@ -603,7 +611,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
             exit(3);
           }
           /* ignore excessively large spurious values as they can screw things up */
-          if ( fabs(dataValsRe) > 1e-18 || fabs(dataValsIm) > 1e-18 ){ continue; }
+          if ( fabs(dataValsRe) > vetothresh || fabs(dataValsIm) > vetothresh ){ continue; }
 
           /* make sure timestamps are unique */
           if ( j > 0 ){
