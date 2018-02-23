@@ -2206,7 +2206,7 @@ class knopeDAG(pipeline.CondorDAG):
               # remove the seperate find heterodyned files
               rmjob = removeJob(accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir) # job for removing old files
               rmnode = removeNode(rmjob)
-              rmnode.set_files(finetempfiles)
+              rmnode.set_files(finetmpfiles)
               rmnode.add_parent(concatnode)
               self.add_node(rmnode)
 
@@ -3050,7 +3050,7 @@ class knopeDAG(pipeline.CondorDAG):
       sts = [starttime] # have start time as a list
       ets = [endtime]   # have end time as a list
     elif isinstance(starttime, list) and isinstance(endtime, list):
-      if len(starttime != len(endtime)):
+      if len(starttime) != len(endtime):
         print("Error... list of start and end times for the segments are not the same lengths", file=sys.stderr)
         self.error_code = KNOPE_ERROR_GENERAL
         return
