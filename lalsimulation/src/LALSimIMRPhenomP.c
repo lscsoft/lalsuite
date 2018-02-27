@@ -754,8 +754,9 @@ static int PhenomPCore(
 
 /**
  *  The following defines the function XLALSimIMRPhenomPv2NRTidal() which adds the tidal
- *  infrastructure in IMRPhenomD_NRTidal to the IMRPhenomPv2 waveform.
- *  For the following waveform, the tidal phase is applied first and then the waveform is twisted */
+ *  infrastructure in the NRTides infrastructure to the IMRPhenomPv2 waveform.
+ *  For the following waveform, the tidal phase is applied first and then the waveform is twisted
+ */
 
 int XLALSimIMRPhenomPv2NRTidal(
   COMPLEX16FrequencySeries **hptilde,         /**< [out] Frequency-domain waveform h+ */
@@ -796,6 +797,11 @@ int XLALSimIMRPhenomPv2NRTidal(
 
 }
 
+/**
+ * The following function will be called when a frequency sequence with a non-uniform
+ * spacing in frequency samples is used to generate a IMRPhenomPv2_NRTidal waveform
+ */
+
 int XLALSimIMRPhenomPv2NRTidalFrequencySequence(
   COMPLEX16FrequencySeries **hptilde,         /**< [out] Frequency-domain waveform h+ */
   COMPLEX16FrequencySeries **hctilde,         /**< [out] Frequency-domain waveform hx */
@@ -823,6 +829,11 @@ int XLALSimIMRPhenomPv2NRTidalFrequencySequence(
   XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to generate IMRPhenomP waveform.");
   return (retcode);
 }
+
+/**
+ * Internal core function to generate plus and cross polarisations of 
+ * IMRPhenomPv2_NRTidal waveform for a frequency sequence
+ */ 
 
 static int PhenomPCore_withTides(
   COMPLEX16FrequencySeries **hptilde,        /**< [out] Frequency-domain waveform h+ */
@@ -1860,6 +1871,13 @@ static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon) {
       *x = X;
   }
 }
+
+/**
+ * Internal core function to generate plus and cross
+ * polarisations for IMRPhenomPv2_NRTidal waveform
+ * for each frequency sample, the conventions for the spin-angles
+ * are the same as in PhenomPCoreOneFrequency() defined above
+ */
 
 static int PhenomPCoreOneFrequency_withTides(
   const REAL8 fHz,                            /**< Frequency (Hz) */

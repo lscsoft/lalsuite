@@ -586,10 +586,13 @@ XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(
   return (-15895./28. + 4595./28.*mByM + 5715./14.*mByM*mByM - 325./7.*mByM*mByM*mByM)*mByM*mByM*mByM*mByM;
 }
 
+/* Tidal phasing at 6.5PN, from eqn. (5) of arxiv: 1503.05405
+ */
+
 static REAL8 UNUSED 
 XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(
       REAL8 mByM /**< ratio of object mass to total mass */ 
-    ) /**< literature: Agathos et al (arxiv 1503.0545) eq (5)> */
+    ) /**< literature: Agathos et al (arxiv 1503.05405) eq (5)> */
     
     /**< the coefficient mByM4 conversion & transformation (6.5PN, 7PN, 7.5PN):
      * mByM=mA/M: mA= mass star A, M is total mass (mA+mB)
@@ -603,10 +606,13 @@ XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(
   return mByM*mByM*mByM*mByM * 24.L*(12.L - 11.L*mByM)*LAL_PI; 
 }
 
+/* Tidal phasing at 7PN, from eqn. (5) of arxiv: 1503.05405
+ */
+
 static REAL8 UNUSED
 XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(
       REAL8 mByM /**< ratio of object mass to total mass */ 
-    )/**< literature: Agathos et al (arxiv 1503.0545) eq (5) */ 
+    )/**< literature: Agathos et al (arxiv 1503.05405) eq (5) */ 
     /** caveat: these are incomplete terms */
     
     /**<conversion see XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff above>*/
@@ -616,10 +622,13 @@ XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(
   return - mByM4 * 24.L*(39927845.L/508032.L - 480043345.L/9144576.L*mByM + 9860575.L/127008.L*mByM*mByM - 421821905.L/2286144.L*mByM3 + 4359700.L/35721.L*mByM4 - 10578445.L/285768.L*mByM4*mByM);     
 }
 
+/* Tidal phasing at 7.5PN, from eqn. (5) of arxiv: 1503.05405
+ */
+
 static REAL8 UNUSED
 XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(
       REAL8 mByM /**< ratio of object mass to total mass */ 
-    )/**< literature: Agathos et al (arxiv 1503.0545) eq (5) */
+    )/**< literature: Agathos et al (arxiv 1503.05405) eq (5) */
     
     /**<conversion see XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff above>*/
 {
