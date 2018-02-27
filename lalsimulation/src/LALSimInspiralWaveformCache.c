@@ -26,6 +26,7 @@
 #include <lal/LALConstants.h>
 
 #include "check_waveform_macros.h"
+#include "LALSimInspiralPNCoefficients.c"
 
 /**
  * Bitmask enumerating which parameters have changed, to determine
@@ -879,6 +880,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
     int ret;
     unsigned int j;
     REAL8 pfac, cfac;
+    PNPhasingSeries pfa;
 
     /* Support variables for precessing wfs*/
     //REAL8 incl;
@@ -942,8 +944,11 @@ int XLALSimInspiralChooseFDWaveformSequence(
                 ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
 
             /* Call the waveform driver routine */
+            XLALSimInspiralPNPhasing_F2(&pfa, m1/LAL_MSUN_SI, m2/LAL_MSUN_SI,
+                                        S1z, S2z, S1z*S1z, S2z*S2z,
+                                        S1z*S2z, LALpars);
             ret = XLALSimInspiralTaylorF2Core(hptilde, frequencies, phiRef,
-                    m1, m2, S1z, S2z, f_ref, 0., distance, LALpars);
+                    m1, m2, f_ref, 0., distance, LALpars, NULL);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             /* Produce both polarizations */
             *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
