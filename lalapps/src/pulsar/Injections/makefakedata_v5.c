@@ -561,11 +561,19 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
           if ( XLALUnitCompare ( &(ts->sampleUnits), &lalStrainUnit ) != 0 )
             {
-              char unitName[64];
-              XLAL_CHECK ( XLALUnitAsString( unitName, sizeof(unitName), &(ts->sampleUnits) ) != NULL, XLAL_EUNIT, "Failed to express time-series units as a string\n");
-              XLAL_CHECK ( XLALUnitIsDimensionless ( &(ts->sampleUnits) ), XLAL_EUNIT,
-                           "Timeseries input data has invalid units '%s': must be either strain or dimensionless!", unitName );
-              XLALPrintWarning ("Note: Input timeseries is dimensionless instead of strain units.\n");
+              if ( XLALUnitCompare ( &(ts->sampleUnits), &lalADCCountUnit ) == 0 )
+                {
+                  XLALPrintWarning ("Note: Input timeseries has dimensions 'ADC count' [count] instead of strain.\n");
+                }
+              else
+                {
+                  char unitName[64];
+                  XLAL_CHECK ( XLALUnitAsString( unitName, sizeof(unitName), &(ts->sampleUnits) ) != NULL, XLAL_EUNIT,
+                               "Failed to express time-series units as a string\n");
+                  XLAL_CHECK ( XLALUnitIsDimensionless ( &(ts->sampleUnits) ), XLAL_EUNIT,
+                               "Timeseries input data has invalid units '%s': must be either strain or dimensionless!", unitName );
+                  XLALPrintWarning ("Note: Input timeseries is dimensionless instead of strain units.\n");
+                }
               ts->sampleUnits = lalStrainUnit;	// needed to make XLALCWMakeFakeData() work
             }
 
